@@ -6,6 +6,7 @@ E-MailRelay Change Log
 * Client protocol waits for a greeting from the server on startup [bug-id 842156].
 * Rewrite of MD5 code to avoid third-party copyrights.
 * Performance tuning.
+* Template emailrelay.conf installed in /etc.
 
 1.1.2 -> 1.2
 ------------

@@ -567,12 +567,14 @@ Files and directories
 ---------------------
 Following a normal build from source, a "make install" puts files in the 
 following locations:
+* /usr/local/etc/emailrelay.conf
 * /usr/local/libexec/emailrelay
 * /usr/local/libexec/emailrelay-deliver.sh
 * /usr/local/libexec/emailrelay-notify.sh
 * /usr/local/libexec/emailrelay-poke
 * /usr/local/libexec/emailrelay-process.sh
 * /usr/local/libexec/emailrelay-resubmit.sh
+* /usr/local/libexec/emailrelay-runperl.js
 * /usr/local/man/man1/emailrelay-passwd.1.gz
 * /usr/local/man/man1/emailrelay-poke.1.gz
 * /usr/local/man/man1/emailrelay-submit.1.gz
@@ -580,12 +582,14 @@ following locations:
 * /usr/local/sbin/emailrelay
 * /usr/local/sbin/emailrelay-passwd
 * /usr/local/sbin/emailrelay-submit
+* /usr/local/share/emailrelay/doc/*.png
 * /usr/local/share/emailrelay/doc/NEWS
 * /usr/local/share/emailrelay/doc/README
 * /usr/local/share/emailrelay/doc/changelog.gz
 * /usr/local/share/emailrelay/doc/changelog.html
 * /usr/local/share/emailrelay/doc/developer.html
 * /usr/local/share/emailrelay/doc/developer.txt
+* /usr/local/share/emailrelay/doc/emailrelay-man.html
 * /usr/local/share/emailrelay/doc/emailrelay.css
 * /usr/local/share/emailrelay/doc/index.html
 * /usr/local/share/emailrelay/doc/readme.html
@@ -604,22 +608,26 @@ than the Filesystem Hierarchy Standard (FHS).
 To force FHS compliance you can use the "--enable-fhs" switch when running 
 "configure", as is done for the RPMs. This results in the following file 
 locations:
+* /etc/emailrelay.conf
 * /etc/init.d/emailrelay
 * /usr/lib/emailrelay/emailrelay-poke
 * /usr/sbin/emailrelay
 * /usr/sbin/emailrelay-passwd
 * /usr/sbin/emailrelay-submit
+* /usr/share/doc/emailrelay/*.png
 * /usr/share/doc/emailrelay/NEWS
 * /usr/share/doc/emailrelay/README
 * /usr/share/doc/emailrelay/changelog.gz
 * /usr/share/doc/emailrelay/changelog.html
 * /usr/share/doc/emailrelay/developer.html
 * /usr/share/doc/emailrelay/developer.txt
+* /usr/share/doc/emailrelay/emailrelay-man.html
 * /usr/share/doc/emailrelay/emailrelay.css
 * /usr/share/doc/emailrelay/examples/emailrelay-deliver.sh
 * /usr/share/doc/emailrelay/examples/emailrelay-notify.sh
 * /usr/share/doc/emailrelay/examples/emailrelay-process.sh
 * /usr/share/doc/emailrelay/examples/emailrelay-resubmit.sh
+* /usr/share/doc/emailrelay/examples/emailrelay-runperl.js
 * /usr/share/doc/emailrelay/index.html
 * /usr/share/doc/emailrelay/readme.html
 * /usr/share/doc/emailrelay/reference.html
@@ -641,6 +649,7 @@ can be specified on the "configure" command-line (but note that the
 * e_sbindir
 * e_libexecdir
 * e_docdir
+* e_sysconfdir
 * e_initdir
 * e_spooldir
 * e_man1dir

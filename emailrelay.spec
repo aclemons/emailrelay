@@ -45,22 +45,26 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 
+/etc/emailrelay.conf
 /etc/init.d/emailrelay
 %{prefix}/lib/emailrelay/emailrelay-poke
 %{prefix}/sbin/emailrelay
 %{prefix}/sbin/emailrelay-passwd
 %{prefix}/sbin/emailrelay-submit
+%{prefix}/share/doc/emailrelay/*.png
 %{prefix}/share/doc/emailrelay/NEWS
 %{prefix}/share/doc/emailrelay/README
 %{prefix}/share/doc/emailrelay/changelog.gz
 %{prefix}/share/doc/emailrelay/changelog.html
 %{prefix}/share/doc/emailrelay/developer.html
 %{prefix}/share/doc/emailrelay/developer.txt
+%{prefix}/share/doc/emailrelay/emailrelay-man.html
 %{prefix}/share/doc/emailrelay/emailrelay.css
 %{prefix}/share/doc/emailrelay/examples/emailrelay-deliver.sh
 %{prefix}/share/doc/emailrelay/examples/emailrelay-notify.sh
 %{prefix}/share/doc/emailrelay/examples/emailrelay-process.sh
 %{prefix}/share/doc/emailrelay/examples/emailrelay-resubmit.sh
+%{prefix}/share/doc/emailrelay/examples/emailrelay-runperl.js
 %{prefix}/share/doc/emailrelay/index.html
 %{prefix}/share/doc/emailrelay/readme.html
 %{prefix}/share/doc/emailrelay/reference.html
