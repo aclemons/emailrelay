@@ -81,6 +81,11 @@ GSmtp::Client::Client( std::auto_ptr<StoredMessage> message , const Secrets & se
 	m_protocol.doneSignal().connect( G::slot(*this,&Client::protocolDone) ) ;
 }
 
+GSmtp::Client::~Client()
+{
+	m_protocol.doneSignal().disconnect() ;
+}
+
 std::string GSmtp::Client::startSending( const std::string & s , unsigned int connection_timeout )
 {
 	size_t pos = s.find(':') ;

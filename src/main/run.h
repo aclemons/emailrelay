@@ -116,13 +116,13 @@ private:
 	std::string m_switch_spec ;
 	std::auto_ptr<CommandLine> m_cl ;
 	std::auto_ptr<G::LogOutput> m_log_output ;
-	std::auto_ptr<GSmtp::Client> m_client ;
 	G::Arg m_arg ;
 	G::Signal3<std::string,std::string,std::string> m_signal ;
-	std::auto_ptr<GSmtp::FileStore> m_store ;
+	std::auto_ptr<GSmtp::FileStore> m_store ; // order dependency -- early
 	std::auto_ptr<GSmtp::Secrets> m_client_secrets ;
 	std::auto_ptr<GSmtp::AdminServer> m_admin_server ;
 	std::auto_ptr<GNet::Timer> m_poll_timer ;
+	std::auto_ptr<GSmtp::Client> m_client ; // order dependency -- late
 } ;
 
 #endif

@@ -1,6 +1,11 @@
 E-MailRelay Change Log
 ======================
 
+1.1.2 -> 1.1.3
+--------------
+* Fix for dangling reference bug, seen after "quit" command on Windows.
+* Keeps authentication after a "rset" command.
+
 1.1.1 -> 1.1.2
 --------------
 * Earlier check for un-bindable ports on startup, and later fork()ing [bug-id 776972].

@@ -50,7 +50,7 @@
 //static
 std::string Main::Run::versionNumber()
 {
-	return "1.1.2" ;
+	return "1.1.3" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string & switch_spec ) :
@@ -62,6 +62,9 @@ Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string &
 
 Main::Run::~Run()
 {
+	if( m_store.get() ) m_store->signal().disconnect() ;
+	if( m_client.get() ) m_client->doneSignal().disconnect() ;
+	if( m_client.get() ) m_client->eventSignal().disconnect() ;
 }
 
 Main::Configuration Main::Run::cfg() const

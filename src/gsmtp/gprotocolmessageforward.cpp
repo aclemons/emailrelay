@@ -51,6 +51,8 @@ G::Signal3<bool,unsigned long,std::string> & GSmtp::ProtocolMessageForward::stor
 
 GSmtp::ProtocolMessageForward::~ProtocolMessageForward()
 {
+	m_pm.doneSignal().disconnect() ;
+	if( m_client.get() ) m_client->doneSignal().disconnect() ;
 }
 
 G::Signal3<bool,unsigned long,std::string> & GSmtp::ProtocolMessageForward::doneSignal()

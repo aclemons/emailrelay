@@ -52,6 +52,7 @@ GSmtp::ProtocolMessageScanner::ProtocolMessageScanner( MessageStore & store ,
 
 void GSmtp::ProtocolMessageScanner::scannerInit()
 {
+        storageDoneSignal().disconnect() ; // base-class signal
 	m_scanner_client <<= 
 		new ScannerClient(m_scanner_server,m_scanner_connection_timeout,m_scanner_response_timeout) ;
 	m_scanner_client->connectedSignal().connect( G::slot(*this,&ProtocolMessageScanner::connectDone) ) ;
@@ -60,6 +61,12 @@ void GSmtp::ProtocolMessageScanner::scannerInit()
 
 GSmtp::ProtocolMessageScanner::~ProtocolMessageScanner()
 {
+	storageDoneSignal().disconnect() ; // base-class signal
+	if( m_scanner_client.get() )
+	{
+		m_scanner_client->connectedSignal().disconnect() ;
+		m_scanner_client->doneSignal().disconnect() ;
+	}
 }
 
 G::Signal3<bool,bool,std::string> & GSmtp::ProtocolMessageScanner::preparedSignal()

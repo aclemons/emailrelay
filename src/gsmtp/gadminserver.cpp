@@ -52,6 +52,7 @@ GSmtp::AdminPeer::~AdminPeer()
 	// only safe because AdminServer::dtor calls serverCleanup() -- otherwise
 	// the derived part of the server may already be destroyed
 	m_server.unregister( this ) ;
+        if( m_client.get() ) m_client->doneSignal().disconnect() ;
 }
 
 void GSmtp::AdminPeer::clientDone( std::string s )

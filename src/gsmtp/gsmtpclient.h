@@ -80,6 +80,9 @@ public:
 			// message is fail()ed if the connection to the 
 			// downstream server cannot be made.
 
+	virtual ~Client() ;
+		// Destructor.
+
 	G::Signal1<std::string> & doneSignal() ;
 		// Returns a signal which indicates that client processing
 		// is complete.

@@ -141,7 +141,7 @@ void GSmtp::ServerProtocol::processDone( bool success , unsigned long , std::str
 
 void GSmtp::ServerProtocol::doQuit( const std::string & , bool & )
 {
-	sendClosing() ;
+	// (could call sendClosing() here, but if it fails it does "delete this".
 	m_sender.protocolDone() ;
 	// do nothing more -- this object may have been deleted in protocolDone()
 }
@@ -390,7 +390,7 @@ void GSmtp::ServerProtocol::doUnknown( const std::string & line , bool & )
 void GSmtp::ServerProtocol::doRset( const std::string & , bool & )
 {
 	m_pmessage.clear() ;
-	m_sasl.init("") ; m_authenticated = false ; // (not clear in the RFCs)
+	// (could also reset authentication here)
 	sendRsetReply() ;
 }
 
@@ -574,6 +574,8 @@ void GSmtp::ServerProtocol::send( std::string line )
 
 GSmtp::ServerProtocol::~ServerProtocol()
 {
+	m_pmessage.doneSignal().disconnect() ;
+	m_pmessage.preparedSignal().disconnect() ;
 }
 
 std::string GSmtp::ServerProtocol::parseFrom( const std::string & line ) const
