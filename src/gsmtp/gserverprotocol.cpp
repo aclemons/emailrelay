@@ -429,7 +429,6 @@ void GSmtp::ServerProtocol::doUnknown( const std::string & line , bool & )
 void GSmtp::ServerProtocol::doRset( const std::string & , bool & )
 {
 	m_pmessage.clear() ;
-	m_sasl.init("") ; m_authenticated = false ; // (not clear in the RFCs)
 	sendRsetReply() ;
 	// now deleted
 }

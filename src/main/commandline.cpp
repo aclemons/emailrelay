@@ -188,8 +188,8 @@ std::string Main::CommandLine::semanticError() const
 	}
 
 	const bool forward_to = 
-		m_getopt.contains("as-proxy") || 
-		m_getopt.contains("as-client") || 
+		m_getopt.contains("as-proxy") || // => forward-to
+		m_getopt.contains("as-client") || // => forward-to
 		m_getopt.contains("forward-to") ;
 
 	if( ! forward_to && (
@@ -200,23 +200,50 @@ std::string Main::CommandLine::semanticError() const
 		return "the --forward, --immediate and --poll switches require --forward-to" ;
 	}
 
-	if( m_getopt.contains("scanner") && ! ( m_getopt.contains("as-proxy") || m_getopt.contains("immediate") ) )
+	const bool forwarding =
+		m_getopt.contains("as-proxy") ||  // => immediate
+		m_getopt.contains("as-client") ||  // => forward
+		m_getopt.contains("forward") || 
+		m_getopt.contains("immediate") || 
+		m_getopt.contains("poll") ;
+
+	if( m_getopt.contains("client-filter") && ! forwarding )
+	{
+		return "the --client-filter switch requires --as-proxy, --as-client, --poll, --immediate or --forward" ;
+	}
+
+	const bool not_serving = m_getopt.contains("dont-serve") || m_getopt.contains("as-client") ;
+
+	if( m_getopt.contains("filter") && not_serving )
+	{
+		return "the --filter switch cannot be used with --as-client or --dont-serve" ;
+	}
+
+	const bool immediate = 
+		m_getopt.contains("as-proxy") || // => immediate
+		m_getopt.contains("immediate") ;
+
+	if( m_getopt.contains("scanner") && ! immediate )
 	{
 		return "the --scanner switch requires --as-proxy or --immediate" ;
 	}
 
 	const bool log =
 		m_getopt.contains("log") ||
-		m_getopt.contains("as-server") ||
-		m_getopt.contains("as-client") ||
-		m_getopt.contains("as-proxy") ;
+		m_getopt.contains("as-server") || // => log
+		m_getopt.contains("as-client") || // => log
+		m_getopt.contains("as-proxy") ; // => log
 
 	if( m_getopt.contains("verbose") && ! ( m_getopt.contains("help") || log ) )
 	{
 		return "the --verbose switch must be used with --log, --help, --as-client, --as-server or --as-proxy" ;
 	}
 
-	if( cfg().daemon() && m_getopt.contains("hidden") ) // (win32)
+	const bool no_daemon =
+		m_getopt.contains("as-client") || // => no-daemon
+		m_getopt.contains("no-daemon") ;
+
+	if( m_getopt.contains("hidden") && ! no_daemon ) // (win32)
 	{
 		return "the --hidden switch requires --no-daemon or --as-client" ;
 	}

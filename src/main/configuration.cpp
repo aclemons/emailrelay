@@ -63,7 +63,7 @@ std::string Main::Configuration::str( const std::string & p , const std::string 
 	ss
 		<< p << "listening port: " << (doServing()?G::Str::fromUInt(port()):na()) << eol
 		<< p << "listening interface: " << (doServing()?any(listeningInterface()):na()) << eol
-		<< p << "next server address: " << ((doForwarding()||doPolling())?serverAddress():na()) << eol
+		<< p << "next server address: " << (serverAddress().length()?serverAddress():na()) << eol
 		<< p << "spool directory: " << spoolDir() << eol
 		<< p << "immediate forwarding? " << yn(immediate()) << eol
 		<< p << "mail processor: " << (useFilter()?filter():na()) << eol
