@@ -79,13 +79,16 @@ The code was originally developed on SuSE Linux 7.1 using:
 * glibc 2.2.4 (libc.so.6)
 * autoconf 2.52
 
-and ported to Windows 98 using:
+and to Windows 98 using:
 * MSVC 6.0
 
 Recent releases were developed on SuSE Linux 9.0 using:
 * linux 2.4.22
 * gcc 3.3.1
 * autoconf 2.57
+
+and on Windows NT4 SP6 using:
+* MSVC 6.0 SP3
 
 The code has also been built successfully on:
 * MacOS X
