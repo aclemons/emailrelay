@@ -73,15 +73,51 @@ void G::Arg::setPrefix()
 void G::Arg::parse( HINSTANCE hinstance , const std::string & command_line )
 {
 	m_array.push_back( moduleName(hinstance) ) ;
-	G::Str::splitIntoTokens( command_line , m_array , " \t" ) ;
+	parseCore( command_line ) ;
 	setPrefix() ;
 }
 
 void G::Arg::reparse( const std::string & command_line )
 {
-	while( m_array.size() > 1U )
-		m_array.pop_back() ;
-	G::Str::splitIntoTokens( command_line , m_array , " \t" ) ;
+	while( m_array.size() > 1U ) m_array.pop_back() ;
+	parseCore( command_line ) ;
+}
+
+void G::Arg::parseCore( const std::string & command_line )
+{
+	std::string s( command_line ) ;
+	protect( s ) ;
+	G::Str::splitIntoTokens( s , m_array , " " ) ;
+	unprotect( m_array ) ;
+}
+
+void G::Arg::protect( std::string & s )
+{
+	// replace all quoted spaces with a replacement
+	// (could do better: escaped quotes, tabs, single quotes)
+	G_DEBUG( "protect: before: " << Str::toPrintableAscii(s) ) ;
+	bool in_quote = false ;
+	const char quote = '"' ;
+	const char space = ' ' ;
+	const char replacement = '\0' ;
+	for( size_t pos = 0U ; pos < s.length() ; pos++ )
+	{
+		if( s.at(pos) == quote ) in_quote = ! in_quote ;
+		if( in_quote && s.at(pos) == space ) s[pos] = replacement ;
+	}
+	G_DEBUG( "protect: after: " << Str::toPrintableAscii(s) ) ;
+}
+
+void G::Arg::unprotect( StringArray & array )
+{
+	// restore replacements to spaces
+	const char space = ' ' ;
+	const char replacement = '\0' ;
+	for( StringArray::iterator p = array.begin() ; p != array.end() ; ++p )
+	{
+		std::string & s = *p ;
+		G::Str::replaceAll( s , std::string(1U,replacement) , std::string(1U,space) ) ;
+	}
 }
 
 bool G::Arg::contains( const std::string & sw , size_t sw_args , bool cs ) const

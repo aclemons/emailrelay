@@ -120,6 +120,9 @@ private:
 	bool find( bool , const std::string & , size_t , size_t * ) const ;
 	void setPrefix() ;
 	static bool match( bool , const std::string & , const std::string & ) ;
+	void parseCore( const std::string & ) ;
+	void protect( std::string & ) ;
+	void unprotect( StringArray & ) ;
 
 private:
 	StringArray m_array ;

@@ -1,6 +1,11 @@
 E-MailRelay Change Log
 ======================
 
+1.1.1 -> 1.1.2
+--------------
+* Resolved the file-descriptor kludge for "--verifier" on Windows.
+* Earlier check for un-bindable ports on startup, and later fork()ing [bug-id 776972].
+
 1.1.0 -> 1.1.1
 --------------
 * Restored the fix for building with gcc2.96.

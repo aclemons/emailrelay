@@ -176,6 +176,7 @@ redhat_cmd_start()
 	redhat_errno="$?"
 	#touch /var/lock/subsys/emailrelay
 	if test "${redhat_errno}" -eq 0 ; then success ; else failure ; fi
+	echo
 }
 
 redhat_cmd_stop()
@@ -185,6 +186,7 @@ redhat_cmd_stop()
 	redhat_errno="$?"
 	#rm -f /var/lock/subsys/emailrelay
 	if test "${redhat_errno}" -eq 0 ; then success ; else failure ; fi
+	echo
 }
 
 redhat_cmd_restarted()

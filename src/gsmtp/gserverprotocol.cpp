@@ -337,12 +337,13 @@ void GSmtp::ServerProtocol::doMail( const std::string & line , bool & predicate 
 void GSmtp::ServerProtocol::doRcpt( const std::string & line , bool & predicate )
 {
 	std::string to = parseTo( line ) ;
-	bool ok = m_pmessage.addTo( to , verify(to,m_pmessage.from()) ) ;
+	Verifier::Status status = verify( to , m_pmessage.from() ) ;
+	bool ok = m_pmessage.addTo( to , status ) ;
 	predicate = ok ;
 	if( ok )
 		sendRcptReply() ;
 	else
-		sendBadTo( to ) ;
+		sendBadTo( G::Str::toPrintableAscii(status.reason) ) ;
 }
 
 void GSmtp::ServerProtocol::doUnknown( const std::string & line , bool & )
@@ -491,9 +492,9 @@ void GSmtp::ServerProtocol::sendBadFrom( const std::string & /*from*/ )
 	send( "553 mailbox name not allowed" ) ;
 }
 
-void GSmtp::ServerProtocol::sendBadTo( const std::string & to )
+void GSmtp::ServerProtocol::sendBadTo( const std::string & text )
 {
-	send( std::string("550 mailbox unavailable: ") + to ) ;
+	send( std::string("550 mailbox unavailable: ") + text ) ;
 }
 
 void GSmtp::ServerProtocol::sendEhloReply( const std::string & domain )

@@ -92,6 +92,11 @@ public:
 		PeerInfo() ;
 	} ;
 
+	static bool canBind( const Address & listening_address , bool do_throw ) ;
+		// Checks that the specified address can be
+		// bound. Throws CannotBind if the address cannot 
+		// be bound and 'do_throw' is true.
+
 	explicit Server( unsigned int listening_port ) ;
 		// Constructor taking a port number. The server
 		// listens on all local interfaces.

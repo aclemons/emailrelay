@@ -108,6 +108,8 @@ private:
 	void raiseNetworkEvent( std::string , std::string ) ;
 	void emit( const std::string & , const std::string & , const std::string & ) ;
 	std::string doPoll() ;
+	void checkPorts() const ;
+	static void checkPort( const std::string & , unsigned int ) ;
 
 private:
 	Output & m_output ;
