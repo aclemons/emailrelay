@@ -36,22 +36,24 @@ namespace G
 class G::LogImp 
 {
 public:
-	static std::ostringstream &s() ;
+	static std::ostringstream & s() ;
 	static bool active() ;
 	static void empty() ;
-	static const char *m_file ;
+	static const char * m_file ;
 	static int m_line ;
-	static std::ostringstream *m_ss ;
+	static std::ostringstream * m_ss ;
 } ;
 
-const char *G::LogImp::m_file = NULL ;
-std::ostringstream *G::LogImp::m_ss = NULL ;
+const char * G::LogImp::m_file = NULL ;
+std::ostringstream * G::LogImp::m_ss = NULL ;
 int G::LogImp::m_line = 0 ;
 
 std::ostringstream & G::LogImp::s()
 {
 	if( m_ss == NULL )
+	{
 		m_ss = new std::ostringstream ;
+	}
 	return *m_ss ;
 }
 
@@ -59,7 +61,6 @@ void G::LogImp::empty()
 {
 	delete m_ss ;
 	m_ss = NULL ;
-	m_ss = new std::ostringstream ;
 }
 
 bool G::LogImp::active()
@@ -102,7 +103,7 @@ void G::Log::onEnd( G::Log::Severity severity )
 	G::LogImp::m_line = 0 ;
 }
 
-void G::Log::setFile( const char *file )
+void G::Log::setFile( const char * file )
 {
 	G::LogImp::m_file = file ;
 }

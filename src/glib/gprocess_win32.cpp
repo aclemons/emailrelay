@@ -336,7 +336,15 @@ HANDLE G::ProcessImp::createProcess( const std::string & exe , const std::string
 		process_attributes , thread_attributes , inherit ,
 		flags , env , cwd , &start , &info ) ;
 
-	return rc ? info.hProcess : HNULL ;
+	if( rc )
+	{
+		::CloseHandle( info.hThread ) ;
+		return info.hProcess ;
+	}
+	else
+	{
+		return HNULL ;
+	}
 }
 
 std::string G::ProcessImp::commandLine( std::string exe , Strings args )
@@ -364,6 +372,7 @@ std::string G::ProcessImp::commandLine( std::string exe , Strings args )
 
 DWORD G::ProcessImp::waitFor( HANDLE hprocess , DWORD default_exit_code )
 {
+	// waits for the process to end and closes the handle
 	DWORD timeout_ms = 30000UL ;
 	if( WAIT_TIMEOUT == ::WaitForSingleObject( hprocess , timeout_ms ) )
 	{
@@ -372,6 +381,7 @@ DWORD G::ProcessImp::waitFor( HANDLE hprocess , DWORD default_exit_code )
 	}
 	DWORD exit_code = default_exit_code ;
 	BOOL rc = ::GetExitCodeProcess( hprocess , &exit_code ) ;
+	::CloseHandle( hprocess ) ;
 	if( rc == 0 ) exit_code = default_exit_code ;
 	return exit_code ;
 }

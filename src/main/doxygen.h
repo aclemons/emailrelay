@@ -122,8 +122,8 @@ RFC 1321 MD5 algorithm that is independent of the rest of
 the E-MailRelay library code.
 
 Key classes are:
-- digest
 - digest_stream
+- digest
 
 */
 

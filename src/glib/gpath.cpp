@@ -27,6 +27,7 @@
 #include "gstr.h"
 #include "gdebug.h"
 #include "glog.h"
+#include "gassert.h"
 #include <cstring>
 
 G::Path::Path() :
@@ -47,6 +48,7 @@ G::Path::Path( const std::string & path )
 
 G::Path::Path( const char * path )
 {
+	G_ASSERT( path != NULL ) ;
 	set( std::string(path) ) ;
 	validate( "ctor(cstr)" ) ;
 }
@@ -408,7 +410,9 @@ G::Strings G::Path::split( bool no_dot ) const
 
 bool G::Path::operator==( const Path & other ) const
 {
-	return m_str == other.m_str ;
+	return 
+		( m_str.empty() && other.m_str.empty() ) ||
+		( m_str == other.m_str ) ;
 }
 
 bool G::Path::operator!=( const Path & other ) const

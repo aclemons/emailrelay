@@ -18,7 +18,7 @@
 // 
 // ===
 //
-// gmd5_native.cpp
+// gmd5_rsa.cpp
 //
 
 #include "gdef.h"
@@ -26,46 +26,52 @@
 #include "gstr.h"
 #include "gstrings.h"
 #include "gassert.h"
+
+typedef g_uint32_t UINT4 ;
+typedef unsigned char * POINTER ;
 #include "md5.h"
 
 namespace
 {
-	typedef md5::big_t big_t ;
-	typedef md5::digest_stream md5_state_t ;
-	typedef md5::digest::state_type state_type ;
-	typedef md5::format format ;
-
-	void init( md5_state_t & )
+	typedef MD5_CTX md5_state_t ;
+	void init( md5_state_t & context )
 	{
+		::MD5Init( &context ) ;
 	}
 	void update( md5_state_t & context , const std::string & input )
 	{
-		context.add( input ) ;
+		char * p = const_cast<char*>(input.c_str()) ;
+		unsigned int size = static_cast<int>( input.size() ) ;
+		::MD5Update( &context , reinterpret_cast<unsigned char*>(p) , size ) ;
 	}
 	std::string final( md5_state_t & context )
 	{
-		context.close() ;
-		return format::raw( context.state().d ) ;
+		const size_t L = 16U ; // output size
+		unsigned char buffer[L] ;
+		::MD5Final( buffer , &context ) ;
+		const char * buffer_p = reinterpret_cast<char *>(buffer) ;
+		return std::string( buffer_p , L ) ;
 	}
 	std::string writeOut( const md5_state_t & context )
 	{
-		G_ASSERT( context.state().s.length() == 0U ) ;
-		G_ASSERT( context.state().n == 64U ) ; // ie. magic number below
+		G_ASSERT( sizeof context.state[0] <= sizeof(unsigned long) ) ;
 		return 
-			G::Str::fromULong( context.state().d.a ) + "." +
-			G::Str::fromULong( context.state().d.b ) + "." +
-			G::Str::fromULong( context.state().d.c ) + "." +
-			G::Str::fromULong( context.state().d.d ) ;
+			G::Str::fromULong( context.state[0] ) + "." +
+			G::Str::fromULong( context.state[1] ) + "." +
+			G::Str::fromULong( context.state[2] ) + "." +
+			G::Str::fromULong( context.state[3] ) ;
 	}
 	void readIn( md5_state_t & context , G::Strings & s )
 	{
-		big_t a = G::Str::toULong(s.front()) ; s.pop_front() ;
-		big_t b = G::Str::toULong(s.front()) ; s.pop_front() ;
-		big_t c = G::Str::toULong(s.front()) ; s.pop_front() ;
-		big_t d = G::Str::toULong(s.front()) ; s.pop_front() ;
-		state_type state = { a , b , c , d } ;
-		md5::small_t magic_number = 64U ;
-		context = md5_state_t( state , magic_number ) ;
+		static md5_state_t zero_context ;
+		context = zero_context ;
+		context.count[0] = 0x200 ; // magic number -- see cyrus sasl lib/md5.c
+		G_ASSERT( context.count[1] == 0 ) ;
+		context.state[0] = G::Str::toULong(s.front()) ; s.pop_front() ;
+		context.state[1] = G::Str::toULong(s.front()) ; s.pop_front() ;
+		context.state[2] = G::Str::toULong(s.front()) ; s.pop_front() ;
+		context.state[3] = G::Str::toULong(s.front()) ; s.pop_front() ;
+		G_ASSERT( context.buffer[0] == 0 ) ;
 	}
 }
 
@@ -180,4 +186,10 @@ std::string G::Md5::printable( const std::string & input )
 
 	return result ;
 }
+
+// Source-file inclusion is not nice, but it means that the md5c.c
+// file can be left in its pristine state, inheriting the UINT4/POINTER
+// definitions from above.
+//
+#include "md5c.c"
 

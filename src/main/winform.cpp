@@ -85,7 +85,6 @@ void Main::WinForm::onCommand( unsigned int id )
 	if( id == IDOK && ( !m_confirm || m_app.confirm() ) )
 	{
 		m_app.formOk() ;
-		end() ;
 	}
 }
 

@@ -29,12 +29,15 @@
 #include "winapp.h"
 #include "commandline.h"
 #include "run.h"
+#include <clocale>
 
 int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , 
 	LPSTR command_line , int show )
 {
 	try
 	{
+		::setlocale( LC_ALL , "" ) ;
+
 		G::Arg arg ;
 		arg.parse( hinstance , command_line ) ;
 		Main::WinApp app( hinstance , previous , "E-MailRelay" ) ;

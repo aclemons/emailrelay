@@ -58,15 +58,15 @@ md5::digest::state_type md5::digest::state() const
 md5::digest::digest( const std::string & s )
 {
 	init() ;
-	small_t blocks = message::blocks( s.length() ) ;
-	for( small_t block = 0U ; block < blocks ; ++block )
+	small_t n = block::blocks( s.length() ) ;
+	for( small_t i = 0U ; i < n ; ++i )
 	{
-		message m( s , block , message::end(s.length()) ) ;
-		add( m ) ;
+		block b( s , i , block::end(s.length()) ) ;
+		add( b ) ;
 	}
 }
 
-void md5::digest::add( const message & m )
+void md5::digest::add( const block & m )
 {
 	digest old( *this ) ;
 	round1( m ) ;
@@ -100,7 +100,7 @@ void md5::digest::add( const digest & other )
 	d += other.d ;
 }
 
-void md5::digest::round1( const message & m )
+void md5::digest::round1( const block & m )
 {
 	digest & d = *this ;
 	d(m,F,ABCD, 0, 7, 1); d(m,F,DABC, 1,12, 2); d(m,F,CDAB, 2,17, 3); d(m,F,BCDA, 3,22, 4);
@@ -109,7 +109,7 @@ void md5::digest::round1( const message & m )
 	d(m,F,ABCD,12, 7,13); d(m,F,DABC,13,12,14); d(m,F,CDAB,14,17,15); d(m,F,BCDA,15,22,16);
 }
 
-void md5::digest::round2( const message & m )
+void md5::digest::round2( const block & m )
 {
 	digest & d = *this ;
 	d(m,G,ABCD, 1, 5,17); d(m,G,DABC, 6, 9,18); d(m,G,CDAB,11,14,19); d(m,G,BCDA, 0,20,20);
@@ -118,7 +118,7 @@ void md5::digest::round2( const message & m )
 	d(m,G,ABCD,13, 5,29); d(m,G,DABC, 2, 9,30); d(m,G,CDAB, 7,14,31); d(m,G,BCDA,12,20,32);
 }
 
-void md5::digest::round3( const message & m )
+void md5::digest::round3( const block & m )
 {
 	digest & d = *this ;
 	d(m,H,ABCD, 5, 4,33); d(m,H,DABC, 8,11,34); d(m,H,CDAB,11,16,35); d(m,H,BCDA,14,23,36);
@@ -127,7 +127,7 @@ void md5::digest::round3( const message & m )
 	d(m,H,ABCD, 9, 4,45); d(m,H,DABC,12,11,46); d(m,H,CDAB,15,16,47); d(m,H,BCDA, 2,23,48);
 }
 
-void md5::digest::round4( const message & m )
+void md5::digest::round4( const block & m )
 {
 	digest & d = *this ;
 	d(m,I,ABCD, 0, 6,49); d(m,I,DABC, 7,10,50); d(m,I,CDAB,14,15,51); d(m,I,BCDA, 5,21,52);
@@ -136,7 +136,7 @@ void md5::digest::round4( const message & m )
 	d(m,I,ABCD, 4, 6,61); d(m,I,DABC,11,10,62); d(m,I,CDAB, 2,15,63); d(m,I,BCDA, 9,21,64);
 }
 
-void md5::digest::operator()( const message & m , aux_fn_t aux , Permutation p , small_t k , small_t s , small_t i )
+void md5::digest::operator()( const block & m , aux_fn_t aux , Permutation p , small_t k , small_t s , small_t i )
 {
 	if( p == ABCD ) a = op( m , aux , a , b , c , d , k , s , i ) ;
 	if( p == DABC ) d = op( m , aux , d , a , b , c , k , s , i ) ;
@@ -145,7 +145,7 @@ void md5::digest::operator()( const message & m , aux_fn_t aux , Permutation p ,
 }
 
 //static
-md5::big_t md5::digest::op( const message & m , aux_fn_t aux , big_t a , big_t b , big_t c , big_t d , 
+md5::big_t md5::digest::op( const block & m , aux_fn_t aux , big_t a , big_t b , big_t c , big_t d , 
 	small_t k , small_t s , small_t i )
 {
 	return b + rot32( s , ( a + (*aux)( b , c , d ) + m.X(k) + T(i) ) ) ;
@@ -327,7 +327,7 @@ std::string md5::format::str1( small_t n )
 
 // ===
 
-md5::message::message( const std::string & s , small_t block , big_t end_value ) :
+md5::block::block( const std::string & s , small_t block , big_t end_value ) :
 	m_s(s) ,
 	m_block(block) ,
 	m_end_value(end_value)
@@ -335,7 +335,7 @@ md5::message::message( const std::string & s , small_t block , big_t end_value )
 }
 
 //static
-md5::big_t md5::message::end( small_t length )
+md5::big_t md5::block::end( small_t length )
 {
 	big_t result = length ;
 	result *= 8UL ;
@@ -343,20 +343,20 @@ md5::big_t md5::message::end( small_t length )
 }
 
 //static
-md5::small_t md5::message::rounded( small_t raw_byte_count )
+md5::small_t md5::block::rounded( small_t raw_byte_count )
 {
 	small_t n = raw_byte_count + 64U ;
 	return n - ( ( raw_byte_count + 8U ) % 64U ) ;
 }
 
 //static
-md5::small_t md5::message::blocks( small_t raw_byte_count )
+md5::small_t md5::block::blocks( small_t raw_byte_count )
 {
 	small_t byte_count = rounded(raw_byte_count) + 8U ;
 	return byte_count / 64UL ;
 }
 
-md5::big_t md5::message::X( small_t dword_index ) const
+md5::big_t md5::block::X( small_t dword_index ) const
 {
 	small_t byte_index = ( m_block * 64U ) + ( dword_index * 4U ) ;
 	big_t result = x( byte_index + 3U ) ;
@@ -366,7 +366,7 @@ md5::big_t md5::message::X( small_t dword_index ) const
 	return result ;
 }
 
-md5::small_t md5::message::x( small_t i ) const
+md5::small_t md5::block::x( small_t i ) const
 {
 	small_t length = m_s.length() ;
 	if( i < length )
@@ -414,7 +414,7 @@ void md5::digest_stream::add( const std::string & s )
 
 	while( m_buffer.length() >= 64U )
 	{
-		message m( m_buffer , 0U , 0UL ) ;
+		block m( m_buffer , 0U , 0UL ) ;
 		m_digest.add( m ) ;
 		m_buffer.erase( 0U , 64U ) ;
 	}
@@ -422,7 +422,7 @@ void md5::digest_stream::add( const std::string & s )
 
 void md5::digest_stream::close()
 {
-	m_digest.add( message(m_buffer,0U,message::end(m_length)) ) ;
+	m_digest.add( block(m_buffer,0U,block::end(m_length)) ) ;
 	m_buffer.erase() ;
 }
 
