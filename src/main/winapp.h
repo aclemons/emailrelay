@@ -62,6 +62,9 @@ public:
 	void output( const std::string & message , bool error ) ;
 		// Puts up a message box. See Main::Output.
 
+	void onError( const std::string & message ) ;
+		// To be called when WinMain() catches an exception.
+
 	unsigned int columns() ;
 		// See Main::Output.
 

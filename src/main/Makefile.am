@@ -47,6 +47,7 @@ EXTRA_DIST=\
 	winmain.cpp \
 	winmenu.cpp \
 	winmenu.h \
+	mingw.c \
 	mingw.mak
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\"

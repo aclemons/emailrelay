@@ -12,6 +12,7 @@ E-MailRelay Change Log
 * Performance tuning.
 * Template "emailrelay.conf" gets installed in "/etc".
 * New switches for the "configure" script.
+* More JavaScript example scripts.
 
 1.1.2 -> 1.2
 ------------

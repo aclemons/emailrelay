@@ -209,6 +209,8 @@ bool Main::WinApp::onClose()
 
 bool Main::WinApp::confirm()
 {
+	// (also called from winform)
+	G_ASSERT( ! m_hidden ) ;
 	return messageBoxQuery("Really quit?") ;
 }
 
@@ -260,9 +262,11 @@ unsigned int Main::WinApp::columns()
 
 void Main::WinApp::output( const std::string & text , bool )
 {
+	// (ignore 'hidden' for now)
+	const bool initialised = m_cfg.get() != NULL ;
 	G::Strings text_lines ;
 	G::Str::splitIntoFields( text , text_lines , "\r\n" ) ;
-	if( text_lines.size() > 20U )
+	if( text_lines.size() > 20U && initialised )
 	{
 		Box box( *this , text_lines ) ;
 		if( ! box.run() )
@@ -272,5 +276,11 @@ void Main::WinApp::output( const std::string & text , bool )
 	{
 		messageBox( text ) ;
 	}
+}
+
+void Main::WinApp::onError( const std::string & text )
+{
+	// called from WinMain(), possibly before init()
+	output( text , true ) ;
 }
 

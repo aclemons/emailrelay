@@ -53,7 +53,7 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous ,
 		}
 		catch( std::exception & e )
 		{
-			app.messageBox( e.what() ) ;
+			app.onError( e.what() ) ;
 		}
 
 		return 0 ;
