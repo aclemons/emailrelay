@@ -17,11 +17,4 @@
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ## 
 #
-EXTRA_DIST = emailrelay.spec ChangeLog
-SUBDIRS = src bin lib doc etc
-e_doc_DATA = NEWS README changelog.gz
-CLEANFILES = changelog.gz
-changelog.gz: ChangeLog
-	if test -n "$(GZIP)" ; then $(GZIP) -c $(top_srcdir)/ChangeLog > changelog.tmp && mv changelog.tmp changelog.gz ; fi
-uninstall-local:
-	-rmdir $(DESTDIR)$(e_docdir) 2>/dev/null
+e_sysconf_DATA = emailrelay.conf

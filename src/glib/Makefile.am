@@ -31,12 +31,12 @@ EXTRA_DIST=\
 	gfile_win32.cpp \
 	gregistry_win32.cpp \
 	gregistry.h \
-	md5.cpp \
-	md5.h \
 	mingw.mak
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION)
 noinst_LIBRARIES = libglib.a
 libglib_a_SOURCES = \
+	md5.cpp \
+	md5.h \
 	garg.cpp \
 	garg.h \
 	garg_unix.cpp \

@@ -20,6 +20,16 @@
 //
 // md5.h
 //
+// This code was developed from main body of RFC 1321 without reference to the
+// RSA reference implementation in the appendix.
+//
+// A minor portability advantage over the RSA implementation is that there is no 
+// need to define a datatype that is exactly 32 bits: the requirement is that 
+// 'big_t' is at least 32 bits, but it can be more.
+// 
+// Stylistic advantages are that it is written in C++ with an enclosing namespace,
+// it does not use preprocessor macros, and there is an element of layering with 
+// digest_stream built on top of the low-level digest class.
 
 #ifndef MD5_GHW_H
 #define MD5_GHW_H
@@ -28,7 +38,7 @@
 
 namespace md5
 {
-	typedef unsigned long big_t ; // at least 32 bits, may be longer
+	typedef unsigned long big_t ; // at least 32 bits, may be more
 	typedef unsigned int small_t ; // at least size_t
 	typedef char assert_big_t_is_big_enough[sizeof(big_t)>=4U?1:-1] ;
 	class digest ;
@@ -47,7 +57,7 @@ public:
 
 	explicit digest( const std::string & s ) ;
 		// Constuctor. Calculates a digest for the 
-		// given string.
+		// given message string.
 
 	explicit digest( state_ ) ;
 		// Constructor taking the result of an 
@@ -56,6 +66,14 @@ public:
 	state_ state() const ;
 		// Returns the internal state. Typically
 		// passed to the md5::format class.
+
+	digest() ; 
+		// Default constructor. The message to
+		// be digested should be add()ed
+		// in 64-byte blocks.
+
+	void add( const message & block ) ;
+		// Adds a 64-byte block of the message.
 
 private:
 	typedef big_t (*aux_fn_t)( big_t , big_t , big_t ) ;
@@ -66,9 +84,6 @@ private:
 	big_t d ;
 
 private:
-	friend class digest_stream ;
-	digest() ; // digest_stream
-	void add( const message & block ) ; // digest_stream
 	explicit digest( const message & m ) ;
 	digest( const digest & ) ;
 	void add( const digest & ) ;
@@ -115,24 +130,24 @@ private:
 } ;
 
 // Class: md5::message
-// Description: An implementation helper class for md5::digest representing a
+// Description: A helper class for md5::digest representing a
 // 64-character data block.
 //
 class md5::message 
 {
 public:
-	message( const std::string & s , small_t block_offset , big_t tail_value ) ;
+	message( const std::string & s , small_t block_offset , big_t end_value ) ;
 		// Constructor. Unusually, the string reference is 
 		// kept, so beware of temporaries.
 		//
 		// The 'block-offset' indicates, in units of 64-character
 		// blocks, how far down 's' the current block's data is.
 		//
-		// The 'tail-value' is derived from the length of the 
+		// The 'end-value' is derived from the length of the 
 		// full string (not just the current block). It is only
-		// used for the last block. See tailValue().
+		// used for the last block. See end().
 
-	static big_t tailValue( small_t data_length ) ;
+	static big_t end( small_t data_length ) ;
 		// Takes the total number of bytes in the input data and 
 		// returns a value which can be passed to the constructor's
 		// third parameter.
@@ -149,18 +164,18 @@ private:
 	void operator=( const message & ) ; // not implemented
 	big_t X( small_t ) const ;
 	small_t x( small_t ) const ;
-	static small_t paddedByteCount( small_t n ) ;
+	static small_t rounded( small_t n ) ;
 
 private:
 	const std::string & m_s ;
 	small_t m_block ;
-	big_t m_tail_value ;
+	big_t m_end_value ;
 } ;
 
 // Class: md5::digest_stream
 // Description: An md5 digest class with buffering. The buffering allows
-// incremental calculation of an md5 digest, without requiring the complete 
-// input string.
+// incremental calculation of an md5 digest, without requiring either
+// the complete input string or precise 64-byte blocks.
 //
 class md5::digest_stream 
 {
@@ -176,7 +191,7 @@ public:
 		// of sixty-four.
 
 	void add( const std::string & ) ;
-		// Adds more data.
+		// Adds more message data.
 
 	void close() ;
 		// Called after the last add().

@@ -20,6 +20,16 @@
 //
 // md5.cpp
 //
+// This code was developed from main body of RFC 1321 without reference to the
+// RSA reference implementation in the appendix.
+//
+// A minor portability advantage over the RSA implementation is that there is no 
+// need to define a datatype that is exactly 32 bits: the requirement is that 
+// 'big_t' is at least 32 bits, but it can be more.
+// 
+// Stylistic advantages are that it is written in C++ with an enclosing namespace,
+// it does not use preprocessor macros, and there is an element of layering with 
+// digest_stream built on top of the low-level digest class.
 
 #include "md5.h"
 
@@ -51,7 +61,7 @@ md5::digest::digest( const std::string & s )
 	small_t blocks = message::blocks( s.length() ) ;
 	for( small_t block = 0U ; block < blocks ; ++block )
 	{
-		message m( s , block , message::tailValue(s.length()) ) ;
+		message m( s , block , message::end(s.length()) ) ;
 		add( m ) ;
 	}
 }
@@ -317,15 +327,15 @@ std::string md5::format::str1( small_t n )
 
 // ===
 
-md5::message::message( const std::string & s , small_t block , big_t tail_value ) :
+md5::message::message( const std::string & s , small_t block , big_t end_value ) :
 	m_s(s) ,
 	m_block(block) ,
-	m_tail_value(tail_value)
+	m_end_value(end_value)
 {
 }
 
 //static
-md5::big_t md5::message::tailValue( small_t length )
+md5::big_t md5::message::end( small_t length )
 {
 	big_t result = length ;
 	result *= 8UL ;
@@ -333,7 +343,7 @@ md5::big_t md5::message::tailValue( small_t length )
 }
 
 //static
-md5::small_t md5::message::paddedByteCount( small_t raw_byte_count )
+md5::small_t md5::message::rounded( small_t raw_byte_count )
 {
 	small_t n = raw_byte_count + 64U ;
 	return n - ( ( raw_byte_count + 8U ) % 64U ) ;
@@ -342,7 +352,7 @@ md5::small_t md5::message::paddedByteCount( small_t raw_byte_count )
 //static
 md5::small_t md5::message::blocks( small_t raw_byte_count )
 {
-	small_t byte_count = paddedByteCount(raw_byte_count) + 8U ;
+	small_t byte_count = rounded(raw_byte_count) + 8U ;
 	return byte_count / 64UL ;
 }
 
@@ -363,13 +373,13 @@ md5::small_t md5::message::x( small_t i ) const
 	{
 		return static_cast<unsigned char>(m_s[i]) ;
 	}
-	else if( i < paddedByteCount(length) )
+	else if( i < rounded(length) )
 	{
 		return i == length ? 128U : 0U ;
 	}
 	else
 	{
-		small_t byte_shift = i - paddedByteCount(length) ;
+		small_t byte_shift = i - rounded(length) ;
 		if( byte_shift >= sizeof(big_t) ) 
 		{
 			return 0U ;
@@ -378,8 +388,8 @@ md5::small_t md5::message::x( small_t i ) const
 		{
 			small_t bit_shift = byte_shift * 8U ;
 
-			big_t tail_value = m_tail_value >> bit_shift ;
-			return static_cast<small_t>( tail_value & 0xffUL ) ;
+			big_t end_value = m_end_value >> bit_shift ;
+			return static_cast<small_t>( end_value & 0xffUL ) ;
 		}
 	}
 }
@@ -412,7 +422,7 @@ void md5::digest_stream::add( const std::string & s )
 
 void md5::digest_stream::close()
 {
-	m_digest.add( message(m_buffer,0U,message::tailValue(m_length)) ) ;
+	m_digest.add( message(m_buffer,0U,message::end(m_length)) ) ;
 	m_buffer.erase() ;
 }
 
@@ -426,63 +436,4 @@ md5::small_t md5::digest_stream::size() const
 {
 	return m_length ;
 }
-
-
-
-
-
-
-
-
-
-#ifdef MD5_TEST
-#include <iostream>
-#include <exception>
-#include <assert.h>
-static void stream_test() ;
-int main()
-{
-	try
-	{
-		assert( md5::message::blocks(0U) == 1U ) ;
-		assert( md5::message::blocks(55U) == 1U ) ;
-		assert( md5::message::blocks(56U) == 2U ) ;
-		assert( md5::message::blocks(64U) == 2U ) ;
-		assert( md5::message::blocks(119U) == 2U ) ;
-		assert( md5::message::blocks(120U) == 3U ) ;
-
-		std::cout
-		<< md5::format::rfc(md5::digest("")) << std::endl
-		<< md5::format::rfc(md5::digest("a")) << std::endl
-		<< md5::format::rfc(md5::digest("abc")) << std::endl
-		<< md5::format::rfc(md5::digest("message digest")) << std::endl
-		<< md5::format::rfc(md5::digest("abcdefghijklmnopqrstuvwxyz")) << std::endl
-		<< md5::format::rfc(md5::digest("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")) 
-		<< std::endl
-		<< md5::format::rfc(md5::digest("1234567890123456789012345678901234567890"
-			"1234567890123456789012345678901234567890"))
-		<< std::endl ;
-
-		md5::digest_stream ss ;
-		ss.add( std::string(50,' ') ) ;
-		ss.add( std::string(50,' ') ) ;
-		ss.add( std::string(50,' ') ) ;
-		ss.add( std::string(49,' ') ) ;
-		ss.close() ;
-
-		std::string s199( 199 , ' ' ) ;
-		md5::digest dd( s199 ) ;
-		assert( md5::format::rfc(ss.state().d) == md5::format::rfc(dd) ) ;
-	}
-	catch( std::exception & e )
-	{
-		std::cout << e.what() << std::endl ;
-	}
-	catch(...)
-	{
-		std::cout << "exception" << std::endl ;
-	}
-	return 0 ;
-}
-#endif
 

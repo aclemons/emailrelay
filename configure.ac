@@ -83,6 +83,8 @@ AC_SUBST(e_sbindir)
 if test "$e_sbindir" = "" ; then e_sbindir="$sbindir" ; fi
 AC_SUBST(e_libexecdir)
 if test "$e_libexecdir" = "" ; then e_libexecdir="$libexecdir" ; fi
+AC_SUBST(e_sysconfdir)
+if test "$e_sysconfdir" = "" ; then e_sysconfdir="$sysconfdir" ; fi
 AC_SUBST(e_docdir)
 if test "$e_docdir" = "" ; then e_docdir="$datadir/$PACKAGE/doc" ; fi
 AC_SUBST(e_initdir)
@@ -103,5 +105,5 @@ SET_MAKE=""
 dnl ===
 dnl generate files...
 dnl
-AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gnet/Makefile src/gsmtp/Makefile src/main/Makefile src/win32/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile lib/sunpro5/Makefile bin/Makefile doc/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gnet/Makefile src/gsmtp/Makefile src/main/Makefile src/win32/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile lib/sunpro5/Makefile bin/Makefile doc/Makefile etc/Makefile)
 

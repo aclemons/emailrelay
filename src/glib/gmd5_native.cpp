@@ -21,14 +21,12 @@
 // gmd5_native.cpp
 //
 
-// UGH!!
-#include "md5.cpp"
-
 #include "gdef.h"
 #include "gmd5.h"
 #include "gstr.h"
 #include "gstrings.h"
 #include "gassert.h"
+#include "md5.h"
 
 namespace
 {

@@ -23,11 +23,25 @@ emailrelay-passwd \- a password encoding utility for E-MailRelay
 .SH DESCRIPTION
 .I emailrelay-passwd
 is a utility which reads a plaintext password from the standard
-input, and writes it out in an encoded form onto the standard
+input, and writes out an encoded form onto the standard
 output. The encoded form is suitable for pasting into a CRAM-MD5
 line in an 
 .B emailrelay 
 secrets file.
+.LP
+A secrets file containing two CRAM-MD5 passwords might look like
+this:
+.LP
+#
+.br
+# emailrelay.auth
+.br
+#
+.br
+server cram-md5 bob 1465267825.1002706143.2005162520.2739353706.4126076156.3423185672.2674269368.3056934447
+.br
+server cram-md5 alice 4039336516.3719314525.4148590512.4209236927.1897255360.1012201638.2279588408.1076355329
+.br
 .SH SEE ALSO
 .BR emailrelay (1),
 .BR emailrelay-submit (1),

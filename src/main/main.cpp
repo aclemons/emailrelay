@@ -56,8 +56,6 @@ int main( int argc , char * argv [] )
 	try
 	{
 		G::Arg arg( argc , argv ) ;
- if( ::getenv("GARG") )
-  arg.reparse( ::getenv("GARG") ) ;
 		App app ;
 		Main::Run main( app , arg , Main::CommandLine::switchSpec(false) ) ;
 		if( main.prepare() )

@@ -175,10 +175,10 @@ AC_DEFUN([FHS_COMPLIANCE],
 	localstatedir='/var'
 	mandir='/usr/man'
 	datadir='/usr/share'
+	sysconfdir='/etc'
 	#
 	# not used by emailrelay
 	#bindir=
-	#sysconfdir=
 	#sharedstatedir=
 	#libdir=
 	#includedir=
@@ -193,5 +193,6 @@ AC_DEFUN([FHS_COMPLIANCE],
 	e_spooldir="$localstatedir/spool/$PACKAGE"
 	e_man1dir="$datadir/man/man1"
 	e_examplesdir="$datadir/doc/$PACKAGE/examples"
+	e_sysconfdir="$sysconfdir"
 ])
 

@@ -33,17 +33,18 @@ typedef unsigned char * POINTER ;
 
 namespace
 {
-	void init( MD5_CTX & context )
+	typedef MD5_CTX md5_state_t ;
+	void init( md5_state_t & context )
 	{
 		::MD5Init( &context ) ;
 	}
-	void update( MD5_CTX & context , const std::string & input )
+	void update( md5_state_t & context , const std::string & input )
 	{
 		char * p = const_cast<char*>(input.c_str()) ;
 		unsigned int size = static_cast<int>( input.size() ) ;
 		::MD5Update( &context , reinterpret_cast<unsigned char*>(p) , size ) ;
 	}
-	std::string final( MD5_CTX & context )
+	std::string final( md5_state_t & context )
 	{
 		const size_t L = 16U ; // output size
 		unsigned char buffer[L] ;
@@ -51,7 +52,7 @@ namespace
 		const char * buffer_p = reinterpret_cast<char *>(buffer) ;
 		return std::string( buffer_p , L ) ;
 	}
-	std::string writeOut( const MD5_CTX & context )
+	std::string writeOut( const md5_state_t & context )
 	{
 		G_ASSERT( sizeof context.state[0] <= sizeof(unsigned long) ) ;
 		return 
@@ -60,9 +61,9 @@ namespace
 			G::Str::fromULong( context.state[2] ) + "." +
 			G::Str::fromULong( context.state[3] ) ;
 	}
-	void readIn( MD5_CTX & context , G::Strings & s )
+	void readIn( md5_state_t & context , G::Strings & s )
 	{
-		static MD5_CTX zero_context ;
+		static md5_state_t zero_context ;
 		context = zero_context ;
 		context.count[0] = 0x200 ; // magic number -- see cyrus sasl lib/md5.c
 		G_ASSERT( context.count[1] == 0 ) ;
@@ -121,7 +122,7 @@ std::string G::Md5::mask( const std::string & k )
 
 std::string G::Md5::mask( const std::string & k64 , const std::string & pad )
 {
-	MD5_CTX context ;
+	md5_state_t context ;
 	init( context ) ;
 	update( context , xor_(k64,pad) ) ;
 	return writeOut( context ) ;
@@ -134,8 +135,8 @@ std::string G::Md5::hmac( const std::string & masked_key , const std::string & i
 	if( part_list.size() != 8U )
 		throw InvalidMaskedKey( masked_key ) ;
 
-	MD5_CTX inner_context ;
-	MD5_CTX outer_context ;
+	md5_state_t inner_context ;
+	md5_state_t outer_context ;
 	readIn( inner_context , part_list ) ;
 	readIn( outer_context , part_list ) ;
 	update( inner_context , input ) ;
@@ -161,7 +162,7 @@ std::string G::Md5::digest( const std::string & input_1 , const std::string & in
 
 std::string G::Md5::digest( const std::string & input_1 , const std::string * input_2 )
 {
-	MD5_CTX context ;
+	md5_state_t context ;
 	init( context ) ;
 	update( context , input_1 ) ;
 	if( input_2 != NULL )
