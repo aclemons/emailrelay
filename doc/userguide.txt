@@ -308,58 +308,6 @@ from cygwin/bash on Win98 keeps stderr open (albeit with dreadful performance),
 whereas the standard command prompt does not. If necessary the environment 
 variable "GLOGOUTPUT_FILE" can be defined as the name of a log file.
 
-SpamAssassin
-------------
-The E-MailRelay server can use *Spam Assassin* [http://spamassassin.org] to mark
-potential spam by having a small shell script which calls "spamassassin" 
-installed as the E-MailRelay mail pre-processor using the "--filter" command-line 
-switch.
-
-Your "--filter" shell script could look something like this:
-
-	#!/bin/sh
-	tmp="/tmp/`basename $0`.$$.tmp"
-	awk '{sub("\r$","");print}' "${1}" | spamassassin --local | awk '{print $0 "\r"}' > $tmp && mv $tmp "${1}"
-	rm -f $tmp 2>/dev/null
-	exit 0
-
-This just pipes the message content file into "spamassassin", using "awk" to 
-remove carriage-returns. The output is saved in a temporary file, and then put 
-back into the content file, using "awk" again to restore carriage-returns.
-
-To delete spam you could add "--exit-code" to the spamassassin command line
-and deal with messages according to the exit code:
-
-	#!/bin/sh
-	awk '{sub("\r$","");print}' "${1}" | spamassassin --local --exit-code > /dev/null
-	if test $? -ne 0
-	then
-		# spam...
-		content="${1}"
-		envelope="`echo \"${content}\" | sed 's/content/envelope.new/'`"
-		rm -f "${envelope}" "${content}"
-		exit 100 # <= tell E-MailRelay that the files are gone
-	fi
-	exit 0
-
-On Windows there is less of a problem with carriage returns, but because the
-"spamassassin" is a perl script it may be easier to run a SpamAssassin "spamd" 
-daemon separately and call "spamc.exe" from the E-MailRelay "--filter" script,
-something like this:
-
-	// filter.js
-	var content = WScript.Arguments(0) ;
-	var envelope = content.substr(0,content.length-7) + "envelope.new" ;
-	var sh = WScript.CreateObject( "Wscript.Shell" ) ;
-	var rc = sh.Run( "cmd.exe /c \"spamc.exe < " + content + "\"" ) ;
-	if( rc != 0 )
-	{
-		fs.DeleteFile( content ) ;
-		fs.DeleteFile( envelope ) ;
-		WScript.Quit( 100 )
-	}
-	WScript.Quit( 0 ) ;
-
 Preventing open mail relay
 --------------------------
 If you are running E-MailRelay as a server with a permanent connection to the
@@ -380,7 +328,96 @@ line in the secrets file. To complete the solution you must have an address
 verifier script ("--verifier") which rejects remote addresses if the client has
 not authenticated. Again, refer to the reference guide for further details.
 
+SpamAssassin
+------------
+The E-MailRelay server can use *Spam Assassin* [http://spamassassin.org] to mark
+potential spam by having a small shell script which calls "spamassassin" 
+installed as the E-MailRelay mail pre-processor using the "--filter" command-line 
+switch.
+
+Your "--filter" shell script could look something like this:
+
+	#!/bin/sh
+	tmp="/tmp/`basename $0`.$$.tmp"
+	awk '{sub("\r$","");print}' "${1}" | spamassassin --local | awk '{print $0 "\r"}' > $tmp && mv $tmp "${1}"
+	rm -f $tmp 2>/dev/null
+	exit 0
+
+This just pipes the message content file into "spamassassin", using "awk" to 
+remove carriage-returns. The output is saved in a temporary file, and then put 
+back into the content file, using "awk" again to restore carriage-returns.
+
+To delete spam altogether, rather than just marking it, you could add 
+"--exit-code" to the spamassassin command line and deal with messages according 
+to the exit code:
+
+	#!/bin/sh
+	awk '{sub("\r$","");print}' "${1}" | spamassassin --local --exit-code > /dev/null
+	if test $? -ne 0
+	then
+		# spam...
+		content="${1}"
+		envelope="`echo \"${content}\" | sed 's/content/envelope.new/'`"
+		rm -f "${envelope}" "${content}"
+		exit 100 # <= tell E-MailRelay that the files are gone
+	fi
+	exit 0
+
+On Windows there is less of a problem with carriage returns, but because
+"spamassassin" is a perl script it takes a bit of work to call it correctly.
+This JavaScript wrapper, installed with an E-MailRelay command-line like
+	--filter "cscript //nologo assassin.js" 
+may do the trick:
+
+	// assassin.js
+
+	// configuration (avoid spaces)
+	var cfg_assassin="spamassassin"
+	var cfg_perl="perl -S -T -w"
+
+	// parse our command line
+	var args = WScript.Arguments
+	var filename = args(0)
+
+	// prepare a command using CMD.EXE to do file redirection
+	var cmd_in = "\"" + filename + "\""
+	var cmd_out = "\"" + filename + ".tmp\""
+	var cmd_err = "\"" + filename + ".err\""
+	var cmd_perl = "cmd /c " + cfg_perl + " " + cfg_assassin
+	var cmd = cmd_perl + " < " + cmd_in + " > " + cmd_out + " 2> " + cmd_err
+
+	// run the command
+	var sh = WScript.CreateObject("WScript.Shell")
+	var rc = sh.Run( cmd , 0 , true )
+
+	// check the file redirection
+	var fs = WScript.CreateObject("Scripting.FileSystemObject")
+	if( !fs.FileExists(filename+".tmp") || !fs.FileExists(filename+".err") )
+	{
+		WScript.Echo("<<file redirection error>>")
+		WScript.Quit( 2 )
+	}
+
+	// success or failure
+	if( rc == 0 )
+	{
+		fs.DeleteFile( filename )
+		fs.MoveFile( filename + ".tmp" , filename )
+		fs.DeleteFile( filename + ".err" )
+		WScript.Quit( 0 )
+	}
+	else
+	{
+		fs.DeleteFile( filename + ".tmp" )
+		var error = fs.OpenTextFile( filename + ".err" , 1 )
+		if( ! error.AtEndOfStream )
+		{
+			var reason = error.ReadLine()
+			WScript.Echo( "<<" + reason + ">>" )
+		}
+		error.Close()
+		fs.DeleteFile( filename + ".err" )
+		WScript.Quit( rc )
+	}
 
 
-
-Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
