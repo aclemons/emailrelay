@@ -181,7 +181,7 @@ void Main::Run::runCore()
 	//
 	if( cfg().daemon() ) closeFiles() ; 
 
-	// release root privileges
+	// release root privileges and extra group memberships
 	//
 	G::Root::init( cfg().nobody() ) ;
 

@@ -60,7 +60,8 @@ base_dir="/tmp/`basename $0`.$$.tmp"
 summary_log="/tmp/`basename $0`.out"
 exit_code="1"
 watchdog_pid=""
-export MALLOC_CHECK_="2"
+MALLOC_CHECK_="2"
+export MALLOC_CHECK_
 ulimit -c 1000000
 if test "${use_valgrind}" -eq 1
 then

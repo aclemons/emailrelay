@@ -301,6 +301,11 @@ void G::Process::beSpecial( Identity , bool )
 	// not implemented
 }
 
+void G::Process::revokeExtraGroups()
+{
+	// not implemented
+}
+
 // not implemented...
 // Who G::Process::fork() {}
 // Who G::Process::fork( Id & child ) {}

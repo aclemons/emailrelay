@@ -159,7 +159,8 @@ public:
 
 	ClientProtocol( Sender & sender , const Secrets & secrets ,
 		const std::string & thishost_name ,
-		unsigned int timeout , bool must_authenticate ) ;
+		unsigned int timeout , bool must_authenticate , 
+		bool eight_bit_strict = false ) ;
 			// Constructor. The 'sender' and 'secrets' references 
 			// are kept.
 			//
@@ -168,6 +169,10 @@ public:
 			//
 			// The 'thishost_name' parameter is used in the
 			// SMTP EHLO request. 
+			//
+			// If the 'eight-bit-strict' flag is true then
+			// an eight-bit message being sent to a 
+			// seven-bit server will be failed.
 
 	G::Signal3<bool,bool,std::string> & doneSignal() ;
 		// Returns a signal which is raised once the protocol has
@@ -237,6 +242,8 @@ private:
 	std::string m_auth_mechanism ;
 	std::auto_ptr<SaslClient> m_sasl ;
 	bool m_must_authenticate ;
+	bool m_strict ;
+	bool m_warned ;
 	unsigned int m_timeout ;
 	G::Signal3<bool,bool,std::string> m_signal ;
 	bool m_signalled ;

@@ -27,6 +27,7 @@
 #include "gnewfile.h"
 #include "gmemory.h"
 #include "gprocess.h"
+#include "gstr.h"
 #include "groot.h"
 #include "gfile.h"
 #include "gxtext.h"
@@ -119,9 +120,10 @@ bool GSmtp::NewFile::store( const std::string & auth_id , const std::string & cl
 	bool cancelled = false ;
 	if( ok )
 	{
-		ok = preprocess( m_content_path , cancelled ) ;
+		std::string output ;
+		ok = preprocess( m_content_path , cancelled , output ) ;
 		if( !ok )
-			reason = "pre-processing failed" ;
+			reason = output.empty() ? std::string("pre-processing failed") : output ;
 	}
 	G_ASSERT( !(ok&&cancelled) ) ;
 
@@ -165,11 +167,11 @@ void GSmtp::NewFile::cleanup()
 	}
 }
 
-bool GSmtp::NewFile::preprocess( const G::Path & path , bool & cancelled )
+bool GSmtp::NewFile::preprocess( const G::Path & path , bool & cancelled , std::string & output )
 {
 	if( ! m_preprocess ) return true ;
 
-	int exit_code = preprocessCore( path ) ;
+	int exit_code = preprocessCore( path , output ) ;
 
 	bool is_ok = exit_code == 0 ;
 	bool is_special = exit_code >= 100 && exit_code <= 107 ;
@@ -199,15 +201,42 @@ bool GSmtp::NewFile::preprocess( const G::Path & path , bool & cancelled )
 	}
 }
 
-int GSmtp::NewFile::preprocessCore( const G::Path & path )
+int GSmtp::NewFile::preprocessCore( const G::Path & path , std::string & output )
 {
 	G_LOG( "GSmtp::NewFile::preprocess: " << m_preprocessor << " " << path ) ;
 	G::Strings args ;
 	args.push_back( path.str() ) ;
-	int exit_code = G::Process::spawn( G::Root::nobody() , m_preprocessor , args ) ;
-	G_LOG( "GSmtp::NewFile::preprocess: exit status " << exit_code ) ;
+	std::string raw_output ;
+	int exit_code = G::Process::spawn( G::Root::nobody() , m_preprocessor , args , &raw_output ) ;
+	output = parseOutput( raw_output ) ;
+	G_LOG( "GSmtp::NewFile::preprocess: exit status " << exit_code << " (\"" << output << "\")" ) ;
 	return exit_code ;
 }
+
+std::string GSmtp::NewFile::parseOutput( std::string s ) const
+{
+	G_DEBUG( "GSmtp::NewFile::parseOutput: in: \"" << G::Str::toPrintableAscii(s) << "\"" ) ;
+	const std::string start("<<") ;
+	const std::string end(">>") ;
+	std::string result ;
+	G::Str::replaceAll( s , "\r\n" , "\n" ) ;
+	G::Str::replaceAll( s , "\r" , "\n" ) ;
+	G::Strings lines ;
+	G::Str::splitIntoFields( s , lines , "\n" ) ;
+	for( G::Strings::iterator p = lines.begin() ; p != lines.end() ; ++p )
+	{
+		std::string line = *p ;
+		size_t pos_start = line.find(start) ;
+		size_t pos_end = line.find(end) ;
+		if( pos_start == 0U && pos_end != std::string::npos )
+		{
+			result = G::Str::toPrintableAscii(line.substr(start.length(),pos_end-start.length())) ;
+		}
+	}
+	G_DEBUG( "GSmtp::NewFile::parseOutput: in: \"" << G::Str::toPrintableAscii(result) << "\"" ) ;
+	return result ;
+}
+
 
 void GSmtp::NewFile::deliver( const G::Strings & /*to*/ , 
 	const G::Path & content_path , const G::Path & envelope_path_now ,

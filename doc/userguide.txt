@@ -12,7 +12,7 @@ the outside world, using the SMTP protocol. As soon as an e-mail message is
 received it is forwarded on to the next SMTP server for onward delivery. This 
 becomes more useful when you add in your own message processing: as each 
 message is received it can be passed one of your programs for editing,
-filtering, encypting etc.
+filtering, encrypting etc.
 
 When used as a store-and-forward transfer agent E-MailRelay runs in two modes: 
 the storage daemon part, and the forwarding agent. The storage daemon 

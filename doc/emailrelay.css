@@ -102,6 +102,20 @@ a.a-toc:hover
 	background-color: #ccc ;
 }
 
+a.a-toc-expander
+{
+	color: #09c ;
+	background-color: inherit ;
+	text-decoration: none ;
+	font-size: smaller ;
+}
+
+a.a-toc-expander:hover 
+{
+	color: #09c ;
+	background-color: #ccc ;
+}
+
 a.a-header
 {
 	text-decoration:none ;

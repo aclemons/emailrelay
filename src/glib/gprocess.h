@@ -115,6 +115,10 @@ public:
 	static int errno_() ;
 		// Returns the process's current 'errno' value.
 
+	static void revokeExtraGroups() ;
+		// Revokes secondary group memberships if really root
+		// or if suid.
+
 	static Identity beOrdinary( Identity nobody , bool change_group = true ) ;
 		// Revokes special privileges (root or suid).
 		//

@@ -289,6 +289,10 @@ SOURCE=..\gsmtp\gprotocolmessageforward.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\gsmtp\gprotocolmessagescanner.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\gsmtp\gprotocolmessagestore.cpp
 # End Source File
 # Begin Source File
@@ -326,6 +330,10 @@ SOURCE=..\glib\groot.cpp
 # Begin Source File
 
 SOURCE=..\gsmtp\gsasl_native.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gsmtp\gscannerclient.cpp
 # End Source File
 # Begin Source File
 

@@ -94,30 +94,16 @@ Class diagrams:
 * *GNet namespace* [gnet-classes.png]
 * *GSmtp namespace* [gsmtp-classes.png] 
 
-Sequence diagrams:
-* *ProtocolMessage::prepare() returns false* [sequence-1.png]
-* *ProtocolMessage::prepare() returns true* [sequence-2.png]
-* *Proxy mode forwarding* [sequence-3.png]
-* *Scanning* [sequence-4.png]
-
 State transition diagrams:
 * *GNet::Client* [gnet-client.png]
-* *GSmtp::ScannerClient* [gsmtp-scannerclient.png]
 * *GSmtp::ServerProtocol* [gsmtp-serverprotocol.png]
+* *GSmtp::ScannerClient* [gsmtp-scannerclient.png]
 
-Tour
-----
-For a quick bottom-up tour of the code take a look at the following headers:
-* src/glib/gpath.h
-* src/glib/gstr.h
-* lib/gcc2.95/sstream
-* src/gnet/gevent.h
-* src/gnet/gaddress.h
-* src/gnet/gsocket.h
-* src/gnet/gserver.h
-* src/smtp/gmessagestore.h
-* src/smtp/gserverprotocol.h
-* src/smtp/gsmtpserver.h
+Sequence diagrams:
+* *Proxy mode forwarding* [sequence-3.png]
+* *Scanning* [sequence-4.png]
+* *ProtocolMessage::prepare() returns false* [sequence-1.png]
+* *ProtocolMessage::prepare() returns true* [sequence-2.png]
 
 Portability
 -----------
@@ -191,6 +177,9 @@ Windows build
 -------------
 Simple MSVC project files are provided in the "src/main" directory, bundled into 
 the "emailrelay.dws" workspace.
+
+Makefiles for the *MinGW* [http://www.mingw.org/] system (gcc on Windows) are also
+provided.
 
 Style
 -----

@@ -29,8 +29,9 @@
 # The "-t" switch can be used to suppress expansion where the included
 # file has an extension of ".html".
 #
-# In edit mode (--edit) the exit value is 0 (shell true) if the file is 
-# modified. This allows for recursive expansion using a shell while loop.
+# In edit mode (--edit) the specified file is modified in-place. With this
+# switch the exit value is 0 (shell true) if the file is modified in any
+# way. This allows for recursive expansion using a shell while loop.
 #
 # usage: expand.sh [-a <awk>] [-t] { --edit <file> | [<file> ...] }
 #

@@ -4,7 +4,7 @@ Graeme Walker <graeme_walker@users.sourceforge.net>
 
 Credits
 -------
-The source in "glib/gmd5.cpp" is "derived from the RSA Data
+The source in "glib/md5c.c" and "glib/md5.h" is "derived from the RSA Data
 Security, Inc. MD5 Message-Digest Algorithm" by incorporating
 the "RSA Data Security, Inc. MD5 Message-Digest Algorithm" which
 is "Copyright (C) 1991, RSA Data Security, Inc. All rights reserved".

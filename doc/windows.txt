@@ -1,5 +1,5 @@
-E-MailRelay for Windows
-=======================
+E-MailRelay Windows installation
+================================
 
 Introduction
 ------------
@@ -91,14 +91,6 @@ windows directory, typically "c:\win98" for Windows 98.
 Finally you will need to configure your e-mail client program to use the local 
 E-MailRelay server for outgoing mail. Where it asks for the name of the SMTP 
 server for outgoing mail you should tell it to use "localhost" or "127.0.0.1".
-
-COM registration
-----------------
-The server can be optionally registered as a COM component by running the 
-executable with the "-regserver" command line switch. The COM interface may 
-allow stored messages to be forwarded to any remote server, so consider the 
-security implications before doing the COM registration. Refer to the reference 
-guide for more details.
 
 Uninstall
 ---------

@@ -292,6 +292,15 @@ void G::Process::beSpecial( Identity identity , bool change_group )
 	if( change_group) setEffectiveGroupTo( identity , do_throw ) ;
 }
 
+void G::Process::revokeExtraGroups()
+{
+	if( Identity::real().isRoot() || Identity::effective() != Identity::real() )
+	{
+		gid_t dummy ;
+		G_IGNORE ::setgroups( 0U , &dummy ) ; // (only works for root, so ignore the return code)
+	}
+}
+
 G::Identity G::Process::beOrdinary( Identity nobody , bool change_group )
 {
 	Identity special_identity( Identity::effective() ) ;
@@ -337,8 +346,11 @@ G::Process::Id::Id( const char * path ) :
 {
 	// reentrant implementation suitable for a signal handler...
 	int fd = ::open( path ? path : "" , O_RDONLY ) ;
-	char buffer[10] ;
-	ssize_t rc = ::read( fd , buffer , sizeof(buffer) ) ;
+	const size_t buffer_size = 11U ;
+	char buffer[buffer_size] ;
+	buffer[0U] = '\0' ;
+	ssize_t rc = ::read( fd , buffer , buffer_size - 1U ) ;
+	::close( fd ) ;
 	for( const char * p = buffer ; rc > 0 && *p >= '0' && *p <= '9' ; p++ , rc-- )
 	{
 		m_pid *= 10 ;

@@ -37,7 +37,7 @@
 #include "gassert.h"
 
 GSmtp::ClientProtocol::ClientProtocol( Sender & sender , const Secrets & secrets ,
-	const std::string & thishost_name , unsigned int timeout , bool must_authenticate ) :
+	const std::string & thishost_name , unsigned int timeout , bool must_authenticate , bool strict ) :
 		m_sender(sender) ,
 		m_secrets(secrets) ,
 		m_thishost(thishost_name) ,
@@ -47,6 +47,8 @@ GSmtp::ClientProtocol::ClientProtocol( Sender & sender , const Secrets & secrets
 		m_message_is_8bit(false) ,
 		m_authenticated_with_server(false) ,
 		m_must_authenticate(must_authenticate) ,
+		m_strict(strict) ,
+		m_warned(false) ,
 		m_timeout(timeout) ,
 		m_signalled(false)
 {
@@ -147,7 +149,8 @@ void GSmtp::ClientProtocol::apply( const std::string & rx )
 
 void GSmtp::ClientProtocol::sendMail()
 {
-	if( !m_server_has_8bitmime && m_message_is_8bit )
+	const bool dodgy = m_message_is_8bit && !m_server_has_8bitmime ;
+	if( dodgy && m_strict )
 	{
 		std::string reason = "cannot send 8-bit message to 7-bit server" ;
 		G_WARNING( "GSmtp::ClientProtocol: " << reason ) ;
@@ -156,6 +159,12 @@ void GSmtp::ClientProtocol::sendMail()
 	}
 	else
 	{
+		if( dodgy && !m_warned )
+		{
+			m_warned = true ;
+			G_WARNING( "GSmtp::ClientProtocol::sendMail: sending an eight-bit message "
+				"to a server which has not advertised the 8BITMIME extension" ) ;
+		}
 		sendMailCore() ;
 	}
 }

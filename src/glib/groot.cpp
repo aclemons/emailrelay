@@ -63,6 +63,7 @@ G::Root::~Root()
 //static
 void G::Root::init( const std::string & nobody )
 {
+	Process::revokeExtraGroups() ;
 	m_nobody = nobody.empty() ? Identity::invalid() : Identity(nobody) ;
 	m_special = Process::beOrdinary( m_nobody ) ;
 }

@@ -251,6 +251,11 @@ success, or a value between 1 and 99 to indicate failure. Exit codes between
 further processing of the message, and 103 has the effect of immediately expiring 
 any "--poll" timer.
 
+If the pre-processor program terminates with a non-zero exit code then the first
+few thousand characters of the standard output stream are searched for a line 
+starting with "<<" followed by ">>". The text inbetween is taken as a failure 
+reason, and passed back to the SMTP client.
+
 The pre-processor program can edit any part of the message's envelope file or
 content file: E-MailRelay remembers nothing about the message while the
 pre-processor is running, except the filename. But if the message is deleted
@@ -381,8 +386,8 @@ following precautions are taken:
 # execution environment 
 
   The mail pre-processor runs with an almost empty set of environment variables 
-  ("PATH" and "IFS"), and with no open file descriptors other than "stdin"/"stdout"/"stderr" 
-  open onto "/dev/null". 
+  ("PATH" and "IFS"), and with no open file descriptors other than "stdin" and 
+  "stderr" open onto "/dev/null", and "stdout" open onto a pipe.
 
 # configuration
 

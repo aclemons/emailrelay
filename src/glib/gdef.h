@@ -32,9 +32,13 @@
 #ifndef G_DEF_H
 #define G_DEF_H
 
-	// Autoconf stuff
+	// Autoconf, part 1
 	//
-	#if defined(HAVE_CONFIG_H)
+	#if defined( HAVE_CONFIG_H )
+
+		#if ! defined( G_UNIX )
+			#define G_UNIX
+		#endif
 
 		#include <config.h>
 
@@ -47,29 +51,10 @@
 			#include <ctime>
 		#endif
 
-		#if ! HAVE_GMTIME_R
-			inline std::tm * gmtime_r( const std::time_t * tp , std::tm * tm_p ) 
-			{
-				* tm_p = * std::gmtime( tp ) ;
-				return tm_p ;
-			}
-		#endif
-
-		#if ! HAVE_LOCALTIME_R
-			inline std::tm * localtime_r( const std::time_t * tp , std::tm * tm_p ) 
-			{
-				* tm_p = * std::localtime( tp ) ;
-				return tm_p ;
-			}
-		#endif
-
 		#if ! HAVE_SOCKLEN_T
 			typedef int socklen_t ;
 		#endif
 
-		#if ! defined( G_UNIX )
-			#define G_UNIX
-		#endif
 	#endif
 
 	// Check operating-system switches
@@ -111,6 +96,9 @@
 	#else
 		#include <unistd.h>
 		#include <sys/stat.h>
+		#if ! defined( HAVE_CONFIG_H )
+			#include <grp.h>
+		#endif
 	#endif
 
 	// Define Windows-style types (only used for 
@@ -176,6 +164,33 @@
 		#define G_IGNORE
 	#else
 		#define G_IGNORE (void)
+	#endif
+
+	// Autoconf, part 2
+	//
+	#if defined( HAVE_CONFIG_H )
+		#if ! HAVE_GMTIME_R
+			inline std::tm * gmtime_r( const std::time_t * tp , std::tm * tm_p ) 
+			{
+				* tm_p = * std::gmtime( tp ) ;
+				return tm_p ;
+			}
+		#endif
+		#if ! HAVE_LOCALTIME_R
+			inline std::tm * localtime_r( const std::time_t * tp , std::tm * tm_p ) 
+			{
+				* tm_p = * std::localtime( tp ) ;
+				return tm_p ;
+			}
+		#endif
+		#if HAVE_SETGROUPS
+			#include <grp.h>
+		#else
+			inline int setgroups( size_t , const gid_t * )
+			{
+				return 0 ;
+			}
+		#endif
 	#endif
 
 #endif

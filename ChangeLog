@@ -3,9 +3,12 @@ E-MailRelay Change Log
 
 1.1.1 -> 1.1.2
 --------------
-* Resolved the file-descriptor kludge for "--verifier" on Windows.
 * Earlier check for un-bindable ports on startup, and later fork()ing [bug-id 776972].
-* Undocumented "--scanner" switch added for asynchronous processesing by a separate network server.
+* Resolved the file-descriptor kludge for "--verifier" on Windows.
+* Less strict about failing eight bit messages sent to servers with no "8BITMIME" extension.
+* Supplementary group memberships revoked at startup if root or suid.
+* Pre-processor ("--filter") program's standard output searched for a failure reason string.
+* Undocumented "--scanner" switch added for asynchronous processing by a separate network server.
 
 1.1.0 -> 1.1.1
 --------------

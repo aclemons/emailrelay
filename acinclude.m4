@@ -23,18 +23,38 @@ dnl
 AC_DEFUN(ACLOCAL_TYPE_SOCKLEN_T,
 [AC_CACHE_CHECK([for socklen_t], aclocal_cv_type_socklen_t,
 [
-  AC_TRY_COMPILE(
-  [#include <sys/types.h>
+	AC_TRY_COMPILE(
+		[#include <sys/types.h>
 #include <sys/socket.h>],
-  [socklen_t len = 42; return len;],
-  aclocal_cv_type_socklen_t=yes,
-  aclocal_cv_type_socklen_t=no)
+		[socklen_t len = 42; return len;],
+		aclocal_cv_type_socklen_t=yes,
+		aclocal_cv_type_socklen_t=no )
 ])
-  if test $aclocal_cv_type_socklen_t = yes; then
-    AC_DEFINE(HAVE_SOCKLEN_T, 1,[Define if socklen_t type definition in sys/socket.h])
-  else
-    AC_DEFINE(HAVE_SOCKLEN_T, 0,[Define if socklen_t type definition in sys/socket.h])
-  fi
+	if test $aclocal_cv_type_socklen_t = yes; then
+		AC_DEFINE(HAVE_SOCKLEN_T, 1,[Define if socklen_t type definition in sys/socket.h])
+	else
+		AC_DEFINE(HAVE_SOCKLEN_T, 0,[Define if socklen_t type definition in sys/socket.h])
+	fi
+])
+
+dnl setgroups
+dnl
+AC_DEFUN([ACLOCAL_CHECK_SETGROUPS],
+[AC_CACHE_CHECK([for setgroups], aclocal_cv_setgroups,
+[
+	AC_TRY_COMPILE(
+		[#include <sys/types.h>
+#include <unistd.h>
+#include <grp.h>],
+		[setgroups(0,0) ;],
+		aclocal_cv_setgroups=yes ,
+		aclocal_cv_setgroups=no )
+])
+	if test $aclocal_cv_setgroups = yes; then
+		AC_DEFINE(HAVE_SETGROUPS,1,[Define if setgroups is available])
+	else
+		AC_DEFINE(HAVE_SETGROUPS,0,[Define if setgroups is available])
+	fi
 ])
 
 dnl gmtime_r
