@@ -153,6 +153,7 @@ private:
 			from(s1) , to(s2) , alt(s3) , action(a) {}
 	} ;
 	typedef std::multimap<Event,Transition> Map ;
+	typedef typename Map::value_type Map_value_type ;
 	Map m_map ;
 	State m_state ;
 	State m_end ;
@@ -191,7 +192,7 @@ void StateMachine<T,State,Event,Arg>::addTransition( Event event , State from , 
 	if( alt == m_end && to != m_end )
 		throw Error( "false predicates cannot take you to the end state" ) ;
 
-	m_map.insert( Map::value_type( event , Transition(from,to,action,alt) ) ) ;
+	m_map.insert( Map_value_type( event , Transition(from,to,action,alt) ) ) ;
 }
 
 template <class T, class State, class Event, class Arg>

@@ -20,6 +20,8 @@
 //
 // md5.h
 //
+// An implementation of the RFC-1321 message digest algorithm.
+//
 // This code was developed from main body of RFC 1321 without reference to the
 // RSA reference implementation in the appendix.
 //
@@ -113,7 +115,6 @@ private:
 
 private:
 	explicit digest( const block & ) ;
-	digest( const digest & ) ;
 	void add( const digest & ) ;
 	void init() ;
 	void calculate( const block & ) ;
@@ -194,11 +195,12 @@ public:
 		///< padding. In practice 0..55 maps to 1, 56..119 maps to
 		///< 2, etc.
 
+	big_t X( small_t ) const ;
+		///< Returns a value from within the block. See RFC 1321.
+
 private:
-	friend class digest ;
 	block( const block & ) ; // not implemented
 	void operator=( const block & ) ; // not implemented
-	big_t X( small_t ) const ;
 	small_t x( small_t ) const ;
 	static small_t rounded( small_t n ) ;
 
@@ -228,6 +230,7 @@ private:
 ///			std::getline( in , line ) ;
 ///			d.add( line ) ;
 ///		}
+///		d.close() ;
 ///		return md5::format::rfc( d ) ;
 ///	}
 /// \endcode
