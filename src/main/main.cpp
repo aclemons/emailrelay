@@ -29,6 +29,11 @@
 #include "commandline.h"
 #include <exception>
 
+// Class: App
+// Description: An implementation of the Main::Output abstract interface
+// that can be passed to Main::Run.
+// See also: Main::Run
+//
 struct App : public Main::Output
 {
 	void output( const std::string & text , bool e )

@@ -30,15 +30,15 @@ page gives a list of the namespace's key classes.
 The E-MailRelay <a href="../developer.html">design and implementation guide</a> gives an overview 
 of the code structure, and there are a number of supporting diagrams:
 <ul>
-<li><a href="../gnet-classes.png">GNet namespace class diagram</a></li>
-<li><a href="../gsmtp-classes.png">GSmtp namespace class diagram</a></li>
-<li><a href="../sequence-1.png">ProtocolMessage sequence diagram 1</a></li>
-<li><a href="../sequence-2.png">ProtocolMessage sequence diagram 2</a></li>
-<li><a href="../sequence-3.png">Proxy-mode forwarding sequence diagram</a></li>
-<li><a href="../sequence-4.png">Scanning sequence diagram</a></li>
-<li><a href="../gnet-client.png">GNet::Client state transition diagram</a></li>
-<li><a href="../gsmtp-scannerclient.png">GNet::ScannerClient state transition diagram</a></li>
-<li><a href="../gsmtp-serverprotocol.png">GSmtp::ServerProtocol state transition diagram</a></li>
+<li>GNet namespace <a href="../gnet-classes.png">class diagram</a></li>
+<li>GSmtp namespace <a href="../gsmtp-classes.png">class diagram</a></li>
+<li>ProtocolMessage <a href="../sequence-1.png">sequence diagram 1</a></li>
+<li>ProtocolMessage <a href="../sequence-2.png">sequence diagram 2</a></li>
+<li>Proxy-mode forwarding <a href="../sequence-3.png">sequence diagram</a></li>
+<li>Scanning <a href="../sequence-4.png">sequence diagram</a></li>
+<li>GNet::Client <a href="../gnet-client.png">state transition diagram</a></li>
+<li>GNet::ScannerClient <a href="../gsmtp-scannerclient.png">state transition diagram</a></li>
+<li>GSmtp::ServerProtocol <a href="../gsmtp-serverprotocol.png">state transition diagram</a></li>
 <li><a href="../auth.png">Authentication usage</a></li>
 </ul>
 
@@ -110,6 +110,20 @@ Key classes are:
 - Path
 - Process
 - Str
+
+*/
+
+/*! \namespace md5
+\short 
+A standalone implementation of the MD5 hashing algorithm.
+
+The md5 namespace is used for an implementation of the
+RFC 1321 MD5 algorithm that is independent of the rest of 
+the E-MailRelay library code.
+
+Key classes are:
+- digest
+- digest_stream
 
 */
 
