@@ -56,6 +56,9 @@ server.
 .B \-a,--admin \fIadmin-port\fR
 Enables the administration interface and specifies its listening port number.
 .TP
+.B \-Q,--admin-terminate 
+Enables the terminate command on the admin interface.
+.TP
 .B \-q,--as-client \fIhost:port\fR
 Runs as a client, forwarding spooled mail to <host>: equivalent to \fI--log\fR \fI--no-syslog\fR \fI--no-daemon\fR \fI--dont-serve\fR \fI--forward\fR \fI--forward-to\fR.
 .TP
@@ -67,6 +70,9 @@ Runs as a server: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--postmaster
 .TP
 .B \-C,--client-auth \fIfile\fR
 Enables authentication with remote server, using the given secrets file.
+.TP
+.B \-Y,--client-filter \fIprogram\fR
+Defines a mail processor program for when forwarding.
 .TP
 .B \-e,--close-stderr 
 Closes the standard error stream after start-up.
@@ -87,7 +93,7 @@ Dont listen for smtp connections (usually used with \fI--admin\fR).
 Dont act as a server (usually used with \fI--forward\fR).
 .TP
 .B \-z,--filter \fIprogram\fR
-Defines a mail processor program.
+Defines a mail processor program for when storing.
 .TP
 .B \-f,--forward 
 Forwards stored mail on startup (requires \fI--forward-to\fR).

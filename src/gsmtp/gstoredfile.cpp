@@ -324,7 +324,7 @@ const G::Strings & GSmtp::StoredFile::to() const
 
 bool GSmtp::StoredFile::preprocess()
 {
-	return m_store_preprocessor.process( m_envelope_path.str() ) ;
+	return m_store_preprocessor.process( contentPath().str() ) ;
 }
 
 std::auto_ptr<std::istream> GSmtp::StoredFile::extractContentStream() 

@@ -365,59 +365,17 @@ to the exit code:
 
 On Windows there is less of a problem with carriage returns, but because
 "spamassassin" is a perl script it takes a bit of work to call it correctly.
-This JavaScript wrapper, installed with an E-MailRelay command-line like
-	--filter "cscript //nologo assassin.js" 
-may do the trick:
+An example JavaScript wrapper called "emailrelay-runperl.js" is included in 
+the distribution that by default calls "spamassassin". 
 
-	// assassin.js
+Try an E-MailRelay command line like this:
 
-	// configuration (avoid spaces)
-	var cfg_assassin="spamassassin"
-	var cfg_perl="perl -S -T -w"
+	emailrelay --as-server --filter "cscript //nologo c:/program\ files/emailrelay/emailrelay-runperl.js"
 
-	// parse our command line
-	var args = WScript.Arguments
-	var filename = args(0)
-
-	// prepare a command using CMD.EXE to do file redirection
-	var cmd_in = "\"" + filename + "\""
-	var cmd_out = "\"" + filename + ".tmp\""
-	var cmd_err = "\"" + filename + ".err\""
-	var cmd_perl = "cmd /c " + cfg_perl + " " + cfg_assassin
-	var cmd = cmd_perl + " < " + cmd_in + " > " + cmd_out + " 2> " + cmd_err
-
-	// run the command
-	var sh = WScript.CreateObject("WScript.Shell")
-	var rc = sh.Run( cmd , 0 , true )
-
-	// check the file redirection
-	var fs = WScript.CreateObject("Scripting.FileSystemObject")
-	if( !fs.FileExists(filename+".tmp") || !fs.FileExists(filename+".err") )
-	{
-		WScript.Echo("<<file redirection error>>")
-		WScript.Quit( 2 )
-	}
-
-	// success or failure
-	if( rc == 0 )
-	{
-		fs.DeleteFile( filename )
-		fs.MoveFile( filename + ".tmp" , filename )
-		fs.DeleteFile( filename + ".err" )
-		WScript.Quit( 0 )
-	}
-	else
-	{
-		fs.DeleteFile( filename + ".tmp" )
-		var error = fs.OpenTextFile( filename + ".err" , 1 )
-		if( ! error.AtEndOfStream )
-		{
-			var reason = error.ReadLine()
-			WScript.Echo( "<<" + reason + ">>" )
-		}
-		error.Close()
-		fs.DeleteFile( filename + ".err" )
-		WScript.Quit( rc )
-	}
+But note that you may have to add explicit paths if perl or spamassassin are not
+on your path.
 
 
+
+
+Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

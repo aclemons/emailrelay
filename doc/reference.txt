@@ -16,6 +16,9 @@ where <switch> is:
 # --admin (-a)
   Enables the administration interface and specifies its listening port number.
 
+# --admin-terminate (-Q)
+  Enables the terminate command on the admin interface.
+
 # --as-client (-q)
   Runs as a client, forwarding spooled mail to <host>: equivalent to "--log --no-syslog --no-daemon --dont-serve --forward --forward-to".
 
@@ -27,6 +30,9 @@ where <switch> is:
 
 # --client-auth (-C)
   Enables authentication with remote server, using the given secrets file.
+
+# --client-filter (-Y)
+  Defines a mail processor program for when forwarding.
 
 # --close-stderr (-e)
   Closes the standard error stream after start-up.
@@ -47,7 +53,7 @@ where <switch> is:
   Dont act as a server (usually used with --forward).
 
 # --filter (-z)
-  Defines a mail processor program.
+  Defines a mail processor program for when storing.
 
 # --forward (-f)
   Forwards stored mail on startup (requires --forward-to).
@@ -324,13 +330,16 @@ distribution ("emailrelay-process.sh"). This does some simple MIME encoding, and
 could be used as a template for more sophisticated message encryption.
 
 There also a "--client-filter" switch that enables pre-processing of messages
-just before they are forwarded, rather then when stored. This is not recommended.
+just before they are forwarded, rather then when stored. But note that by then
+it is too late to notify the SMTP client of any processing failures.
 
 Some points to note when writing "--filter" programs:
 * The standard input and output are not used; the content filename is passed on the command line.
 * Programs run with a reduced set of environment variables.
 * The E-MailRelay process is completely blocked while the "--filter" program runs.
 * E-MailRelay files use CR-LF line terminators, as required by the RFCs.
+* Windows JScript and VBScript programs must be run using "cscript".
+* Windows Perl programs must be run from a batch file, or from a JScript/VBScript wrapper.
 
 Address verification
 --------------------
