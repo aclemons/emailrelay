@@ -1,0 +1,106 @@
+//
+// Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either
+// version 2 of the License, or (at your option) any later
+// version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// ===
+//
+// gtime.cpp
+//
+
+#include "gdef.h"
+#include "gtime.h"
+#include "gdatetime.h"
+#include "gassert.h"
+
+G::Time::Time( const G::DateTime::BrokenDownTime & tm )
+{
+	m_hh = tm.tm_hour ;
+	m_mm = tm.tm_min ;
+	m_ss = tm.tm_sec ;
+}
+
+G::Time::Time()
+{
+	G::DateTime::BrokenDownTime tm = G::DateTime::utc( G::DateTime::now() ) ;
+	m_hh = tm.tm_hour ;
+	m_mm = tm.tm_min ;
+	m_ss = tm.tm_sec ;
+}
+
+G::Time::Time( G::DateTime::EpochTime t )
+{
+	G::DateTime::BrokenDownTime tm = G::DateTime::utc( t ) ;
+	m_hh = tm.tm_hour ;
+	m_mm = tm.tm_min ;
+	m_ss = tm.tm_sec ;
+}
+
+G::Time::Time( const LocalTime & )
+{
+	G::DateTime::BrokenDownTime tm = G::DateTime::local( G::DateTime::now() ) ;
+	m_hh = tm.tm_hour ;
+	m_mm = tm.tm_min ;
+	m_ss = tm.tm_sec ;
+}
+
+G::Time::Time( G::DateTime::EpochTime t , const LocalTime & )
+{
+	G::DateTime::BrokenDownTime tm = G::DateTime::local( t ) ;
+	m_hh = tm.tm_hour ;
+	m_mm = tm.tm_min ;
+	m_ss = tm.tm_sec ;
+}
+
+unsigned int G::Time::hours() const
+{
+	return m_hh ;
+}
+
+unsigned int G::Time::minutes() const
+{
+	return m_mm ;
+}
+
+unsigned int G::Time::seconds() const
+{
+	return m_ss ;
+}
+
+std::string G::Time::hhmmss( const char * sep ) const
+{
+	if( sep == NULL ) sep = "" ;
+	std::ostringstream ss ;
+	ss << (m_hh/10U) << (m_hh%10U) << sep << (m_mm/10U) << (m_mm%10U) << sep << (m_ss/10U) << (m_ss%10U) ;
+	return ss.str() ;
+}
+
+std::string G::Time::hhmm( const char * sep ) const
+{
+	if( sep == NULL ) sep = "" ;
+	std::ostringstream ss ;
+	ss << (m_hh/10U) << (m_hh%10U) << sep << (m_mm/10U) << (m_mm%10U) ;
+	return ss.str() ;
+}
+
+std::string G::Time::ss() const
+{
+	std::ostringstream ss ;
+	ss << (m_ss/10U) << (m_ss%10U) ;
+	return ss.str() ;
+}
+
+

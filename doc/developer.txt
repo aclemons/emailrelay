@@ -1,0 +1,258 @@
+E-MailRelay Developer guide
+===========================
+
+Module structure
+----------------
+There are three C++ libraries in the E-MailRelay code: "glib" provides low-level
+classes for file-system abstraction, date and time representation, string 
+utility functions, logging, command line parsing etc., "gnet" provides network 
+classes using the Berkley socket and Winsock APIs, and "gsmtp" contains SMTP and 
+message-store classes. All three libraries are portable between POSIX-like 
+systems (eg. Linux) and Windows.
+
+Under Windows there is an additional library for event handling. Windows has 
+historically built network event processing on top of the GUI event system, 
+rather then implementing network events using a generic event notification 
+system as POSIX systems do. This means that the "gnet" library has to be able 
+to create GUI windows in order to process network events. The extra GUI and 
+event classes are put into a separate library in the "src/win32" directory, 
+using the namespace "GGui".
+
+Class structure
+---------------
+The message-store functionality uses three abstract interfaces: "MessageStore",
+"NewMessage" and "StoredMessage". The "NewMessage" interface is used to create
+messages within the store, and the "StoredMessage" interface is used for
+reading and extracting messages from the store. The concrete implementation
+classes based on these interfaces are respectively "FileStore", "NewFile" and
+"StoredFile".
+
+The interaction betweeen the server protocol class and the message store is 
+mediated by the "ProtocolMessage" interface. Two implementations of this 
+interface are supplied: one for normal spooling ("ProtocolMessageStore"), and 
+another for immediate forwarding ("ProtocolMessageForward").
+
+The protocol and message-store functionality are brought together by the 
+high-level "GSmtp::Server" and "GSmtp::Client" classes. 
+
+Simplified class diagrams for the *GNet* [gnet-classes.png] and 
+*GSmtp* [gsmtp-classes.png] namespaces are available.
+
+Directory structure
+-------------------
+
+# src          
+
+  Parent directory for source code.
+
+# src/glib     
+
+  A low-level class library, including classes for file-system abstraction, 
+  date and time, string utility functions, logging, command line parsing etc.
+
+# src/gnet     
+
+  A network library using Berkley sockets or Winsock.
+
+# src/gsmtp     
+
+  An SMTP library.
+
+# src/win32    
+
+  Additional classes for windows event processing.
+
+# src/main     
+
+  Application-level classes for E-MailRelay.
+
+# lib          
+
+  Parent directory for ANSI C++ fixes
+
+# lib/gcc2.95  
+
+  Standard headers which are missing in gcc2.95
+
+# lib/msvc6.0  
+
+  Standard headers which are missing (or broken) in msvc6.0
+
+Tour
+----
+For a quick bottom-up tour of the code take a look at the following headers:
+* src/glib/gpath.h
+* src/glib/gstr.h
+* lib/gcc2.95/sstream
+* src/gnet/gevent.h
+* src/gnet/gaddress.h
+* src/gnet/gsocket.h
+* src/gnet/gserver.h
+* src/smtp/gmessagestore.h
+* src/smtp/gserverprotocol.h
+* src/smtp/gsmtpserver.h
+
+Portability
+-----------
+The E-MailRelay code is written in ANSI C++, using the following
+language/library features:
+* templates
+* exceptions
+* namespaces
+* "explicit"
+* STL
+* std::string & std::stringstream
+* dynamic_cast<> & RTTI
+* static_cast<> & const_cast<>
+
+but not:
+* templated member functions
+* "mutable"
+
+The header files "gdef.h" in "src/glib", and "gnet.h" in "src/gnet" are intended 
+to be used to fix up portability issues such as missing standard types, 
+non-standard system headers etc. Conditional compilation is not used outside 
+of these headers (with the odd exception).
+
+Deficiencies in the ANSI C++ headers files provided by the compiler are fixed up
+in the "lib" directory tree. For example, the msvc6.0 compiler sometimes does 
+not put its names into the "std" namespace, even though the std-namespace 
+headers are used. This can be worked round by additional "using" declarations 
+in the "lib/msvc6.0" headers.  These work-rounds are kept out of the "src" tree 
+because they are likely to be fixed in later compiler releases. 
+Standards-compliant compilers should not need to include any headers from the 
+"lib" directory tree.
+
+Windows/unix portability is generally addressed by providing a common class 
+declaration with two implementations. Where necessary a "pimple" pattern is used 
+to hide the system-specific parts of the declaration.
+
+A good example is the "G::Directory" class used for iterating through files in 
+a directory. The header file "src/glib/gdirectory.h" is common to both systems,
+but two implementations are provided in "gdirectory_unix.cpp" and 
+"gdirectory_win32.cpp". The unix implementation uses opendir() and glob(), 
+while the windows implementation uses FindFirstFile().
+
+Sometimes only small parts of the implementation are system-specific. In 
+these cases there are three source files per header. For example, "gsocket.cpp",
+"gsocket_win32.cpp" and "gsocket_unix.cpp" in the "src/gnet" directory.
+
+Compile-time features
+---------------------
+The following features are available to source-code hackers:
+
+# IPv6
+
+  IPv6 is supported at compile-time by selecting source files in the "src/gnet" 
+  directory ending "_ipv6.cpp" rather than "_ipv4.cpp". The code has been tested 
+  to a limited extent on Linux.
+
+# Verbose logging
+
+  Verbose logging can be enabled by defining the pre-processor symbol "_DEBUG".
+  (See "src/glib/glog.h".)
+
+# Multiple listening ports
+
+  The server can be made to listen on several different addresses. Look at the 
+  "Server" constructor in "src/main/gsmtpserver.cpp", set the boolean variable 
+  "normal" to false and then edit the hard-coded address strings as needed. If 
+  the addresses need different port numbers then pass them to bind() in the third 
+  parameter.
+
+Windows build
+-------------
+A simple project file "emailrelay.dsp" for msvc6.0 is provided in the "src/main" 
+directory.
+
+Style
+-----
+The commenting style used in header files is compatible with doxygen if passed 
+through the simple awk-based pre-processor "emailrelay-doxygen-filter.sh". A 
+"make" in the "doc" directory will run doxygen if it is found on your path.
+
+Patterns
+--------
+Gang-of-four Design Patterns (ISBN 0-201-63361-2):
+
++ Factory method
+
+  - GNet::EventLoop::create()
+  - GNet::Server::newPeer()
+  - GSmtp::MessageStore::newMessage()
+
++ Iterator
+
+  - G::DirectoryIterator
+  - GNet::EventHandlerList::begin()/end()
+  - GSmtp::MessageStore::iterator()
+
++ Singleton
+
+  - G::LogOutput
+  - GGui::ApplicationInstance
+  - GNet::EventLoop
+
++ Facade
+
+  - G::File
+  - GNet::Address
+
++ Adapter/Mediator
+
+  - GSmtp::ProtocolMessage
+
+Lakos' Large Scale C++ Software Design patterns (ISBN 0-201-63362-0):
+
++ Insulation; fully insulating concrete class (Meyer's Effective C++ Item 34, pimple pattern)
+
+  - G::DirectoryIterator
+  - GNet::Address
+  - GNet::Resolver
+  - GSmtp::ProtocolMessage
+
++ Insulation; protocol class
+
+  - GNet::EventHandler
+  - GSmtp::NewMessage
+  - GSmtp::StoredMessage
+  - GSmtp::ProtocolMessage
+  - GSmtp::ServerProtocol::Sender
+  - GSmtp::ClientProtocol::Sender
+
+Meyer's More Effective C++ patterns (ISBN 0-201-63371-X):
+
++ Reference counting (Item 29)
+
+  - GSmtp::MessageStore::Iterator
+  - G::Slot0
+
++ Lazy evaluation (Item 17)
+
+  - GNet::EventHandlerList::list()
+  - G::Date::weekday()
+
+Other patterns:
+
++ Finite state machine
+
+  - GSmtp::ServerProtocol
+
++ Slot/signal
+
+  - G::Slot0
+  - G::Signal0
+
++ Exception-safe assignment using swap
+
+  - G::Slot0
+
+Idioms
+------
+The "<<=" operator defined in "src/glib/gmemory.h" is used idiomatically
+to reassign a std::auto_ptr<>.
+
+
+
+
+Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

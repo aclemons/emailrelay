@@ -1,0 +1,253 @@
+#!/bin/sh
+#
+# Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later
+# version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# 
+# ===
+#
+# emailrelay-test.sh
+#
+# Tests the E-MailRelay system.
+#
+# Creates four temporary spool directories under /tmp and runs
+# four emailrelay servers to bucket-brigade a test message from one to 
+# the next. The test succeeds if the message gets into the final 
+# spool directory.
+#
+# Once all the servers have been killed the separate log files are 
+# concatenated into the summary log file "/tmp/emailrelay-test.out".
+#
+# If this test takes more a minute then it has failed.
+#
+# usage: emailrelay-test.sh [-v] [-d] [<exe-dir>]
+#
+
+# configuration
+#
+use_valgrind="0" ; if test "${1}" = "-v" ; then use_valgrind="1" ; shift ; fi
+debug="" ; if test "${1}" = "-d" ; then debug="--debug" ; shift ; fi
+exe_dir="../src/main" ; if test "${1}" != "" ; then exe_dir="${1}" ; fi
+exe="${exe_dir}/emailrelay"
+poke="${exe_dir}/emailrelay-poke"
+null_filter="/bin/touch"
+content_file="/etc/services"
+pp="201" # port-prefix
+
+# configuration fallback
+#
+if test \! -f ${null_filter} 
+then 
+	null_filter="/usr/bin/touch"
+fi
+
+# initialisation
+#
+base_dir="/tmp/`basename $0`.$$.tmp"
+summary_log="/tmp/`basename $0`.out"
+exit_code="1"
+watchdog_pid=""
+export MALLOC_CHECK_="2"
+ulimit -c 1000000
+if test "${use_valgrind}" -eq 1
+then
+	exe="valgrind --logfile=${base_dir}/valgrind --trace-children=yes --num-callers=40 --leak-check=yes ${exe} --no-daemon"
+fi
+
+Cleanup()
+{
+	${poke} ${pp}11 terminate
+	${poke} ${pp}12 terminate
+	${poke} ${pp}13 terminate
+	${poke} ${pp}14 terminate
+	${poke} ${pp}15 terminate
+	${poke} ${pp}16 terminate
+	sleep 2
+
+	kill `cat ${base_dir}/pid-* 2>/dev/null` 2>/dev/null
+
+	if test -d ${base_dir}
+	then
+		grep "MailRelay-Reason" ${base_dir}/*/*envelope*bad > "${summary_log}" 2>/dev/null
+		grep "." ${base_dir}/log-? >> "${summary_log}" 2>/dev/null
+		ls -lR ${base_dir} >> "${summary_log}" 2>/dev/null
+		rm -rf ${base_dir} 2>/dev/null
+	fi
+}
+
+Trap() 
+{ 
+	Cleanup
+	exit ${exit_code}
+}
+
+RunServer()
+{
+	port_="${1}"
+	admin_port_="${2}"
+	spool_="${3}"
+	log_="${4}"
+	pidfile_="${5}"
+	extra_="${6}"
+
+	mkdir -p ${base_dir}/${spool_}
+	${exe} ${debug} --log --verbose --no-syslog --port ${port_} --spool-dir ${base_dir}/${spool_} \
+		--admin ${admin_port_} --admin-terminate \
+		--pid-file ${base_dir}/${pidfile_} ${extra_} 2> ${base_dir}/${log_} &
+}
+
+RunClient()
+{
+	to_="${1}"
+	spool_="${2}"
+	log_="${3}"
+	pidfile_="${4}"
+
+	${exe} --forward --no-daemon --dont-serve --log --no-syslog \
+		--pid-file ${base_dir}/${pidfile_} \
+		--forward-to ${to_} --spool-dir ${base_dir}/${spool_} 2> ${base_dir}/${log_}
+}
+
+RunPoke()
+{
+	port_="${1}"
+	log_="${2}"
+
+	${poke} ${port_} > ${base_dir}/${log_}
+}
+
+Content()
+{
+	echo "To: recipient-1@f.q.d.n, recipient-2@f.q.d.n"
+	echo "Subject: test message 1"
+	echo "From: sender"
+	echo " "
+	cat "${content_file}"
+}
+
+Envelope()
+{
+	echo "X-MailRelay-Format: #2821.3"
+	echo "X-MailRelay-Content: 8bit"
+	echo "X-MailRelay-From: sender"
+	echo "X-MailRelay-ToCount: 2"
+	echo "X-MailRelay-To-Remote: recipient-1@f.q.d.n"
+	echo "X-MailRelay-To-Remote: recipient-2@f.q.d.n"
+	echo "X-MailRelay-Authentication: "
+	echo "X-MailRelay-Client: 127.0.0.1"
+	echo "X-MailRelay-End: 1"
+}
+
+CrLf()
+{
+	sed 's/$/£/' | tr '£' '\r'
+}
+
+CheckResults()
+{
+	store="${1}"
+	if test "`ls -1 ${base_dir}/${store}/emailrelay.*.content 2>/dev/null | wc -l`" -eq 2 -a \
+		"`ls -1 ${base_dir}/${store}/emailrelay.*.envelope 2>/dev/null | wc -l`" -eq 2
+	then
+		exit_code="0"
+		echo `basename $0`: succeeded
+	else
+		false
+	fi
+}
+
+StartWatchdog()
+{
+	sleep 10 && kill `cat ${base_dir}/pid-* 2>/dev/null` 2>/dev/null &
+	watchdog_pid=$!
+}
+
+CreateMessages()
+{
+	mkdir -p ${base_dir}/store-1
+	Content | CrLf > ${base_dir}/store-1/emailrelay.0.1.content
+	Envelope | CrLf > ${base_dir}/store-1/emailrelay.0.1.envelope
+	Content | CrLf > ${base_dir}/store-1/emailrelay.0.2.content
+	Envelope | CrLf > ${base_dir}/store-1/emailrelay.0.2.envelope
+}
+
+CreateAuth()
+{
+	mkdir -p "${base_dir}"
+
+	# encrypted version "joes_password" provided by emailrelay-passwd
+	key="2168297042.2818429713.1297528852.2023008371.2713943401.1997919265.1829599518.235099638"
+
+	file="${base_dir}/server.auth"
+	echo "# server.auth" > ${file}
+	echo "LOGIN server fred freds_password" >> ${file}
+	echo "CRAM-MD5 server joe ${key}" >> ${file}
+	echo "CRAM-MD5 server brian 1.1.1.1.2.2.2.2" >> ${file}
+
+	file="${base_dir}/client-fred.auth"
+	echo "# client-fred.auth" > ${file}
+	echo "LOGIN client fred freds_password" >> ${file}
+
+	file="${base_dir}/client-joe.auth"
+	echo "# client-joe.auth" > ${file}
+	echo "CRAM-MD5 client joe ${key}" >> ${file}
+}
+
+CreateFilter()
+{
+cat <<EOF | sed 's/^_//' > ${base_dir}/filter.sh
+_#!/bin/sh
+_# filter.sh
+_tmp="/tmp/`basename $0`.\$\$.tmp"
+_tr 'a-z' 'A-Z' < \$1 > \$tmp && mv \$tmp \$1
+_exit 0
+EOF
+chmod +x ${base_dir}/filter.sh
+}
+
+trap "Trap ; exit" 1 2 3 13 15
+trap "Trap 0 ; exit" 0
+
+#StartWatchdog
+CreateAuth
+CreateFilter
+
+RunServer ${pp}01 ${pp}10 store-2 log-1 pid-1
+RunServer ${pp}02 ${pp}12 store-2 log-2 pid-2 "--forward-to localhost:${pp}03 --client-auth ${base_dir}/client-joe.auth"
+RunServer ${pp}03 ${pp}13 store-3 log-3 pid-3 "--immediate --forward-to localhost:${pp}04 --filter ${null_filter} --client-auth ${base_dir}/client-fred.auth --server-auth ${base_dir}/server.auth"
+RunServer ${pp}04 ${pp}14 store-4 log-4 pid-4 "--server-auth ${base_dir}/server.auth"
+RunServer ${pp}05 ${pp}15 store-4 log-5 pid-5 "--poll 1 --forward-to localhost:${pp}06"
+RunServer ${pp}06 ${pp}16 store-6 log-6 pid-6 "--filter ${base_dir}/filter.sh"
+
+CreateMessages
+RunClient localhost:${pp}01 store-1 log-c pid-5
+RunPoke ${pp}12 log-p
+
+for i in 0 1 2 3 4 5 6 7 8 9
+do
+	sleep 2
+	CheckResults store-6
+	if test $? -eq 0 ; then break ; fi
+done
+if test "${watchdog_pid}" != ""
+then
+	kill "${watchdog_pid}"
+fi
+if test ${exit_code} -ne 0
+then
+	echo `basename $0`: failed: see ${summary_log} >&2
+fi
+

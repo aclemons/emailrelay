@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# xar
+#
+# A replacement for 'ar' that does 'CC -xar' ignoring 
+# autoconf's bogus "cru" switches.
+#
+# For example:
+# $ chmod +x lib/sunpro5/xar
+# $ ./configure --enable-whatever AR=`pwd`/lib/sunpro5/xar
+#
+CC="CC" 
+if test -x "${CXX}" ; then CC="${CXX}" ; fi
+if test "${1}" = "--cxx" ; then CC="${2}" ; shift ; shift ; fi
+shift # get rid of "cru" flags
+exec ${CC} -xar -o "$@"

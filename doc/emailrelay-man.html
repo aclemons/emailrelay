@@ -1,0 +1,434 @@
+Content-type: text/html
+
+<HTML><HEAD><TITLE>Manpage of EMAILRELAY</TITLE>
+</HEAD><BODY>
+<H1>EMAILRELAY</H1>
+Section: User Commands  (1)<BR>Updated: local<BR><A HREF="#index">Index</A>
+<A HREF="http://localhost/cgi-bin/man/man2html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+emailrelay - e-mail transfer agent
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>emailrelay</B>
+
+[OPTIONS]
+<P>
+
+<B>emailrelay </B>
+
+--as-server
+<P>
+
+<B>emailrelay</B>
+
+--as-client 
+<I>server-address</I>
+
+<P>
+
+<B>emailrelay</B>
+
+--as-proxy 
+<I>server-address</I>
+
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<I>emailrelay</I>
+
+is an simple e-mail message transfer agent. It does store-and-forward
+mail relay to a fixed next-hop server, without any routing. 
+<P>
+
+It runs in two main modes: a storage daemon 
+(<I>--as-server</I>)
+
+and a forwarding 
+agent 
+(<I>--as-client</I>).
+
+The storage daemon is an SMTP server which stores e-mail 
+messages in a local spool directory. The forwarding agent acts as an
+SMTP client, which passes the spooled e-mail messages on to the next
+SMTP server in the chain.
+<P>
+
+It can also run in a third mode, as a proxy server
+(<I>--as-proxy</I>).
+
+In this mode all messages are forwarded immediately to the next-hop
+server.
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT><B>-a,--admin </B><I>admin-port</I>
+
+<DD>
+Enables the administration interface and specifies its listening port number.
+<DT><B>-q,--as-client </B><I>host:port</I>
+
+<DD>
+Runs as a client, forwarding spooled mail to &lt;host&gt;: equivalent to <I>--log</I> <I>--no-syslog</I> <I>--no-daemon</I> <I>--dont-serve</I> <I>--forward</I> <I>--forward-to</I>.
+<DT><B>-y,--as-proxy </B><I>host:port</I>
+
+<DD>
+Runs as a proxy: equivalent to <I>--log</I> <I>--close-stderr</I> <I>--immediate</I> <I>--forward-to</I>.
+<DT><B>-d,--as-server </B>
+
+<DD>
+Runs as a server: equivalent to <I>--log</I> <I>--close-stderr</I> <I>--postmaster</I>.
+<DT><B>-C,--client-auth </B><I>file</I>
+
+<DD>
+Enables authentication with remote server, using the given secrets file.
+<DT><B>-e,--close-stderr </B>
+
+<DD>
+Closes the standard error stream after start-up.
+<DT><B>-U,--connection-timeout </B><I>time</I>
+
+<DD>
+Sets the timeout (in seconds) when connecting to a remote server (default is 40).
+<DT><B>-g,--debug </B>
+
+<DD>
+Generates debug-level logging (if compiled-in).
+<DT><B>-D,--domain </B><I>fqdn</I>
+
+<DD>
+Sets an override for the host's fully qualified domain name.
+<DT><B>-X,--dont-listen </B>
+
+<DD>
+Dont listen for smtp connections (usually used with <I>--admin</I>).
+<DT><B>-x,--dont-serve </B>
+
+<DD>
+Dont act as a server (usually used with <I>--forward</I>).
+<DT><B>-z,--filter </B><I>program</I>
+
+<DD>
+Defines a mail processor program.
+<DT><B>-f,--forward </B>
+
+<DD>
+Forwards stored mail on startup (requires <I>--forward-to</I>).
+<DT><B>-o,--forward-to </B><I>host:port</I>
+
+<DD>
+Specifies the remote smtp server (required by <I>--forward</I> and <I>--admin</I>).
+<DT><B>-h,--help </B>
+
+<DD>
+Displays help text and exits.
+<DT><B>-m,--immediate </B>
+
+<DD>
+Forwards each message as soon as it is received (requires <I>--forward-to</I>).
+<DT><B>-I,--interface </B><I>ip-address</I>
+
+<DD>
+Listen on a specific interface.
+<DT><B>-l,--log </B>
+
+<DD>
+Writes log information on standard error and syslog.
+<DT><B>-L,--log-time </B>
+
+<DD>
+Adds a timestamp to the logging output.
+<DT><B>-t,--no-daemon </B>
+
+<DD>
+Does not detach from the terminal.
+<DT><B>-n,--no-syslog </B>
+
+<DD>
+Disables syslog output.
+<DT><B>-i,--pid-file </B><I>pid-file</I>
+
+<DD>
+Records the daemon process-id in the given file.
+<DT><B>-O,--poll </B><I>period</I>
+
+<DD>
+Enables polling with the specified period (requires <I>--forward-to</I>).
+<DT><B>-p,--port </B><I>port</I>
+
+<DD>
+Specifies the smtp listening port number.
+<DT><B>-P,--postmaster </B>
+
+<DD>
+Deliver to postmaster and reject all other local mailbox addresses.
+<DT><B>-r,--remote-clients </B>
+
+<DD>
+Allows remote clients to connect.
+<DT><B>-T,--response-timeout </B><I>time</I>
+
+<DD>
+Sets the response timeout (in seconds) when talking to a remote server (default is 1800).
+<DT><B>-S,--server-auth </B><I>file</I>
+
+<DD>
+Enables authentication of remote clients, using the given secrets file.
+<DT><B>-s,--spool-dir </B><I>dir</I>
+
+<DD>
+Specifies the spool directory (default is <I>/var/spool/emailrelay</I>).
+<DT><B>-u,--user </B><I>username</I>
+
+<DD>
+Names the effective user to switch to when started as root (default is <I>daemon</I>).
+<DT><B>-v,--verbose </B>
+
+<DD>
+Generates more verbose output (works with <I>--help</I> and <I>--log</I>).
+<DT><B>-Z,--verifier </B><I>program</I>
+
+<DD>
+Defines an external address verifier program.
+<DT><B>-V,--version </B>
+
+<DD>
+Displays version information and exits.
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>FILES</H2>
+
+GNU style...
+<BR>
+
+/usr/local/libexec/emailrelay
+<BR>
+
+/usr/local/libexec/emailrelay-deliver.sh
+<BR>
+
+/usr/local/libexec/emailrelay-notify.sh
+<BR>
+
+/usr/local/libexec/emailrelay-poke
+<BR>
+
+/usr/local/libexec/emailrelay-process.sh
+<BR>
+
+/usr/local/libexec/emailrelay-resubmit.sh
+<BR>
+
+/usr/local/man/man1/emailrelay-passwd.1.gz
+<BR>
+
+/usr/local/man/man1/emailrelay-poke.1.gz
+<BR>
+
+/usr/local/man/man1/emailrelay-submit.1.gz
+<BR>
+
+/usr/local/man/man1/emailrelay.1.gz
+<BR>
+
+/usr/local/sbin/emailrelay
+<BR>
+
+/usr/local/sbin/emailrelay-passwd
+<BR>
+
+/usr/local/sbin/emailrelay-submit
+<BR>
+
+/usr/local/share/emailrelay/doc/NEWS
+<BR>
+
+/usr/local/share/emailrelay/doc/README
+<BR>
+
+/usr/local/share/emailrelay/doc/changelog.gz
+<BR>
+
+/usr/local/share/emailrelay/doc/changelog.html
+<BR>
+
+/usr/local/share/emailrelay/doc/developer.html
+<BR>
+
+/usr/local/share/emailrelay/doc/developer.txt
+<BR>
+
+/usr/local/share/emailrelay/doc/emailrelay.css
+<BR>
+
+/usr/local/share/emailrelay/doc/index.html
+<BR>
+
+/usr/local/share/emailrelay/doc/readme.html
+<BR>
+
+/usr/local/share/emailrelay/doc/reference.html
+<BR>
+
+/usr/local/share/emailrelay/doc/reference.txt
+<BR>
+
+/usr/local/share/emailrelay/doc/userguide.html
+<BR>
+
+/usr/local/share/emailrelay/doc/userguide.txt
+<BR>
+
+/usr/local/share/emailrelay/doc/windows.html
+<BR>
+
+/usr/local/share/emailrelay/doc/windows.txt
+<BR>
+
+/usr/local/var/spool/emailrelay/emailrelay.*.content
+<BR>
+
+/usr/local/var/spool/emailrelay/emailrelay.*.envelope
+<P>
+
+FHS style...
+<BR>
+
+/etc/init.d/emailrelay
+<BR>
+
+/usr/lib/emailrelay/emailrelay-poke
+<BR>
+
+/usr/sbin/emailrelay
+<BR>
+
+/usr/sbin/emailrelay-passwd
+<BR>
+
+/usr/sbin/emailrelay-submit
+<BR>
+
+/usr/share/doc/emailrelay/NEWS
+<BR>
+
+/usr/share/doc/emailrelay/README
+<BR>
+
+/usr/share/doc/emailrelay/changelog.gz
+<BR>
+
+/usr/share/doc/emailrelay/changelog.html
+<BR>
+
+/usr/share/doc/emailrelay/developer.html
+<BR>
+
+/usr/share/doc/emailrelay/developer.txt
+<BR>
+
+/usr/share/doc/emailrelay/emailrelay.css
+<BR>
+
+/usr/share/doc/emailrelay/examples/emailrelay-deliver.sh
+<BR>
+
+/usr/share/doc/emailrelay/examples/emailrelay-notify.sh
+<BR>
+
+/usr/share/doc/emailrelay/examples/emailrelay-process.sh
+<BR>
+
+/usr/share/doc/emailrelay/examples/emailrelay-resubmit.sh
+<BR>
+
+/usr/share/doc/emailrelay/index.html
+<BR>
+
+/usr/share/doc/emailrelay/readme.html
+<BR>
+
+/usr/share/doc/emailrelay/reference.html
+<BR>
+
+/usr/share/doc/emailrelay/reference.txt
+<BR>
+
+/usr/share/doc/emailrelay/userguide.html
+<BR>
+
+/usr/share/doc/emailrelay/userguide.txt
+<BR>
+
+/usr/share/doc/emailrelay/windows.html
+<BR>
+
+/usr/share/doc/emailrelay/windows.txt
+<BR>
+
+/usr/share/man/man1/emailrelay-passwd.1.gz
+<BR>
+
+/usr/share/man/man1/emailrelay-poke.1.gz
+<BR>
+
+/usr/share/man/man1/emailrelay-submit.1.gz
+<BR>
+
+/usr/share/man/man1/emailrelay.1.gz
+<BR>
+
+/var/spool/emailrelay/emailrelay.*.content
+<BR>
+
+/var/spool/emailrelay/emailrelay.*.envelope
+<A NAME="lbAG">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+E-MailRelay user guide
+<BR>
+
+E-MailRelay reference
+<BR>
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+emailrelay-submit">emailrelay-submit</A></B>(1),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+emailrelay-poke">emailrelay-poke</A></B>(1),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+emailrelay-passwd">emailrelay-passwd</A></B>(1),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?3+syslog">syslog</A></B>(3),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?8+pppd">pppd</A></B>(8),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?7+init.d">init.d</A></B>(7)
+
+<A NAME="lbAH">&nbsp;</A>
+<H2>AUTHOR</H2>
+
+Graeme Walker, mailto:<A HREF="mailto:graeme_walker@users.sourceforge.net">graeme_walker@users.sourceforge.net</A>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">FILES</A><DD>
+<DT><A HREF="#lbAG">SEE ALSO</A><DD>
+<DT><A HREF="#lbAH">AUTHOR</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 12:51:06 GMT, July 05, 2003
+</BODY>
+</HTML>
+<!-- Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

@@ -1,0 +1,334 @@
+E-MailRelay User Guide
+======================
+
+What is it?
+-----------
+E-MailRelay is a simple store-and-forward message transfer agent and proxy server. 
+It runs on Unix-like operating systems (including Linux), and on Windows.
+
+When used as proxy server the E-MailRelay program ("emailrelay") runs in the 
+background and accepts e-mail from front-ends (KMail, Outlook etc.) or from
+the outside world, using the SMTP protocol. As soon as an e-mail message is 
+received it is forwarded on to the next SMTP server for onward delivery. This 
+becomes more useful when you add in your own message processing: as each 
+message is received it can be passed one of your programs for editing,
+filtering, encypting etc.
+
+When used as a store-and-forward transfer agent E-MailRelay runs in two modes: 
+the storage daemon part, and the forwarding agent. The storage daemon 
+waits for incoming mail and stores anything it receives in a spool directory. 
+As a forwarding agent E-MailRelay pulls messages out of the spool directory 
+and passes them on to a remote server -- perhaps your ISP mail server.
+
+What it's not
+-------------
+E-MailRelay is not a routing MTA. It forwards e-mail to a pre-configured SMTP
+server, regardless of any message addressing or DNS redirects.
+
+E-MailRelay does not do POP3 or IMAP protocols. Many ISPs accept outgoing e-mail
+using SMTP, but deliver mail to you using POP3 or IMAP. In this case E-MailRelay 
+does not get involved in processing incoming e-mail messages; it only operates 
+on outgoing messages. Incoming e-mail messages will probably be retrieved from 
+your ISP direcly by your e-mail front-end program.
+
+E-MailRelay is not a delivery agent. Some programs like "fetchmail" send
+locally-addressed e-mail to the local SMTP server in order to deliver them to 
+local mailboxes. E-MailRelay will not normally do this.
+
+Why use it?
+-----------
+E-MailRelay is a simple tool that does SMTP. For simple tasks it is likely
+to be easier to understand and configure than a more general purpose MTA.
+
+E-MailRelay is designed to be policy-free, so that you can implement your own 
+policies for message retries, bounces, local mailbox delivery, spam filtering 
+etc. through external scripts.
+
+Typical applications of E-MailRelay include:
+* spam filtering and virus checking incoming mail
+* adding digital signatures or legal disclaimers to outgoing mail
+* doing store-and-forward for outgoing mail across a dial-up internet connection
+* adding authentication where the existing infrastructure does not support it
+* simple proxying on a firewall host or DMZ
+
+Running E-MailRelay
+-------------------
+To run the program as a proxy use the "--as-proxy" command-line switch, followed by the
+address of the target SMTP server. If you want to edit or filter e-mail as it passes
+through the proxy then specify your pre-processor program with the "--filter" switch.
+You can optionally change the listening port number using "--port" and the
+spool directory using "--spool-dir".
+
+For example, to start up a local proxy which passes messages to some "addsig" script
+and then forwards them to an MTA running on "smarthost", use a command like this:
+
+	emailrelay --as-proxy smarthost:smtp --filter $HOME/bin/addsig --spool-dir $HOME/tmp
+
+To use E-MailRelay as a store-and-forward MTA use the "--as-server" switch
+to start the storage daemon in the background. And then trigger delivery of
+spooled messages by running emailrelay with the "--as-client" switch, followed 
+by the address of the target SMTP server.
+
+For example, to start a storage daemon listening on port 10025 use a command
+like this:
+
+	emailrelay --as-server --port 10025 --spool-dir $HOME/tmp
+
+And then to forward the spooled mail to "smarthost" run somthing like this:
+
+	emailrelay --as-client smarthost:smtp --spool-dir $HOME/tmp
+
+By default E-MailRelay will reject connections from remote machines. To
+allow connections from anywhere use the "--remote-clients" switch.
+
+For more information on the command-line options refer to the reference guide
+or run:
+
+	emailrelay --help --verbose
+
+Starting the daemon at boot-time
+--------------------------------
+The standard installation of E-MailRelay (using "make install") puts most of the 
+files into the right places, but it does not set things up so that the daemon 
+starts at boot time. You have to do that yourself because of the differences 
+between the various operating systems and distributions.
+
+Many systems provide GUI programs and command-line tools to make the necessary
+links into the boot system: "ksysv" (KDE), "redhat-config-services", "insserv" 
+(Suse), "chkconfig" (Redhat), "install_initd" (LSB) are examples. 
+
+If you do not have a suitable configuration tool you can set up the links
+manually as described below.
+
+The "System-V" boot system has a base directory "/etc/init.d" (or "/sbin/init.d") 
+containing a start/stop script for each daemon process, and then symbolic links 
+in the "rc<N>.d" subdirectories control which scripts are run when entering or 
+leaving a particular run-level (<N>). The links point back into the start/stop 
+script in the parent directory, using a "S" prefix for the starting link, and a 
+"K" prefix for the stopping link. The numeric part of the link name determines 
+the order in which the links are called.
+
+So the goal is to set up symbolic links to the "emailrelay" start/stop script 
+(not the binary) which "make install" will have put in "/etc/init.d" or 
+"/usr/local/libexec".
+
+Before you start you will need to know where your "init.d" directory can be 
+found and what your default run level is:
+
+	$ ls -d /*/init.d
+	$ runlevel | awk '{print $2}'
+
+Assuming these are "/etc/init.d" and "5" you should (as root) copy the 
+E-MailRelay start/stop script into "/etc/init.d" (if it is not already installed
+there):
+
+	$ cp /usr/local/libexec/emailrelay /etc/init.d
+
+Then determine an appropriate numeric value for the link names by looking at
+the "sendmail" links:
+
+	$ cd /etc/init.d/rc5.d
+	$ ls *sendmail*
+
+Assuming sendmail links are "S10sendmail" and "K10sendmail", create
+the "emailrelay" links in the same format:
+
+	$ cd /etc/init.d/rc5.d
+	$ ln -s ../emailrelay S10emailrelay
+	$ ln -s ../emailrelay K10emailrelay
+
+And finally remove sendmail from the run-level (otherwise both
+daemons compete for the standard SMTP listening port):
+
+	$ cd /etc/init.d/rc5.d
+	$ rm *sendmail
+
+Triggering onward delivery
+--------------------------
+If you are using E-MailRelay to store and forward e-mail over a dial-up link to
+the internet, then you will need to set things up so that the dialler tells
+E-MailRelay when to start forwarding.
+
+This section assumes that you are using "pppd" to establish your dial-up 
+Internet connection. (Note that KDE's "kppp" and Red Hat's "rp3" are graphical 
+front-ends to the underlying "pppd" daemon.)
+
+The ppp daemon calls the script "/etc/ppp/ip-up" when it has successfully 
+established a dial-up link to your ISP. This script will probably set up IP 
+routes, update the DNS configuration, initialise a firewall, run "fetchmail" 
+and "sendmail", etc. It may also call out to another script, "ip-up.local" 
+which is available for you to put stuff into without having to grub around 
+inside "ip-up" itself.
+
+The simplest approach for editing "ip-up" is to look for a "sendmail -q" line. 
+If you find "sendmail -q" then it should be sufficient to replace it with this:
+
+	emailrelay --as-client <myisp>:smtp
+
+where you substitute your ISP's SMTP server address for <myisp>.
+
+Or if your "ip-up" calls out to "ip-up.local" then create a two-line 
+"/etc/ppp/ip-up.local" script like this:
+
+	#!/bin/sh
+	exec /usr/local/sbin/emailrelay --as-client <myisp>:smtp
+
+If you create "ip-up.local" yourself remember to make it executable.
+
+Notification of failed e-mails
+------------------------------
+If e-mail messages become corrupted or inaccessible within the spool directory 
+then they will get failed within the E-MailRelay system, with the envelope files
+in the spool directory ending up with a ".bad" suffix.
+
+If you are not too worried about getting failed mail to bounce, or if you do not
+have a suitable delivery agent, then a simple check in your ".profile" script 
+for "*.bad" files in the spool directory may be sufficient:
+
+	if test -f /var/spool/emailrelay/*.envelope.bad
+	then 
+		echo Failed mail >&2 
+	fi
+
+This will warn you that something failed, but you will have to look at the 
+failure reason written into the envelope files, and at the log files, to 
+find out what went wrong.
+
+Or you can get failed e-mails to 'bounce' back into your in-tray by running the 
+"emailrelay-notify.sh" script as "root" periodically. But note that this is 
+only approporiate if you are using E-MailRelay for outgoing traffic, and it 
+assumes that you have "procmail" installed on your system to act as a "delivery 
+agent".
+
+If you want failed e-mails to be retried a few times you can run the 
+"emailrelay-resubmit.sh" script periodically. This simply removes the ".bad" 
+suffix from files in the spool directory, as long as they have not been retried 
+too many times already.
+
+Logging
+-------
+If the "--log" switch is used then E-MailRelay program issues warnings and error
+messages to the "syslog" system using the "LOG_MAIL" facility. Under Windows NT 
+it writes to the "Application" event log.
+
+The "syslog" system is configured through the "/etc/syslog.conf" file (try 
+"man syslog.conf"), and in most cases you will find that "LOG_MAIL" warnings and
+errors are directed to an appropriate log file (perhaps "/var/log/messages").
+
+To get a file which will accumulate all E-MailRelay log messages (and messages
+from all other mail programs), add a line like this to "/etc/syslog.conf":
+
+	mail.info: /var/log/mail.log
+
+You may have to restart the "syslogd" daemon, or send it a "SIGHUP" signal, in order 
+to have this change take effect.
+
+For less verbose logging change "mail.info" to "mail.warning".
+
+Troubleshooting
+---------------
+A useful technique for troubleshooting SMTP problems is to telnet into the 
+remote server and drive the SMTP protocol manually. Telnet can be told to 
+connect to the remote SMTP port by putting the port number (25) on the command 
+line after the remote hostname, for example: "telnet smtp.myisp.net 25". 
+
+Once connected you should get a startup banner from the server, which will 
+probably tell you what server software you have connected to. From there you 
+should type something like "EHLO myhost.mydomain". The response to the EHLO 
+command should contain a list of SMTP extensions which the server software 
+supports. If this includes the AUTH extension then the set of supported 
+authentication mechanisms (such as LOGIN, CRAM-MD5 etc.) will be listed on the 
+same line.
+
+After the EHLO response you should type "MAIL FROM:<myhost.mydomain>", retaining
+the angle brackets but substituing your own address. If this is accepted then 
+enter a "RCPT TO:<me@myhost.mydomain>" command to say where the e-mail is going.
+(Again, retain the angle brackets but substitute an appropriate address.)
+
+After one or more "RCPT TO" commands you should enter the "DATA" command, 
+followed by the message content. The message content should include an RFC822 
+header, followed by a blank line, followed by the message text. For testing 
+purposes you might get away without having any header/body structure at all, but
+to do things properly you should have at least a "To:" line, a "From:" line and 
+a "Subject:" line in the header.
+
+At the end of the message text type a "." on a line of its own. At that point the 
+message should get dispatched, and end up in your in-box in the usual way 
+(assuming you put your own address in the "RCPT TO" command).
+
+The following is an example SMTP dialogue, with ">>" and "<<" marks added to 
+show what was typed and what was received:
+	>> telnet smtp.myisp.net 25
+	<< Trying 12.34.56.78...
+	<< Connected to smtp.myisp.net.
+	<< Escape character is '^]'.
+	<< 220 mail12.myisp.net ESMTP Exim 3.13 #0 Sat, 17 Nov 2001 16:22:39 +0000
+	>> EHLO myhost.myisp.net
+	<< 250-mail12.myisp.net Hello modem-185.myisp.net [12.34.56.78]
+	<< 250-SIZE 104857600
+	<< 250-PIPELINING
+	<< 250 HELP
+	>> MAIL FROM:<me@myhost.myisp.net>
+	<< 250 <me@myhost.myisp.net> is syntactically correct
+	>> RCPT TO:<me@myhost.myisp.net>
+	<< 250 <me@myhost.myisp.net> verified
+	>> DATA
+	<< 354 Enter message, ending with "." on a line by itself
+	>> To: me@myhost.myisp.net
+	>> From: me@myhost.myisp.net
+	>> Subject: test
+	>> 
+	>> Test message.
+	>> .
+	<< 250 OK id=1658Fp-0000Il-00
+	>> QUIT
+	<< 221 mail12.myisp.net closing connection
+	<< Connection closed by foreign host.
+
+If you get some sort of "access denied" errors when talking to a server which
+does not support the AUTH extension, then your ISP may be using POP-before-SMTP
+authentication. In this scheme you are required to conduct an authenticated POP
+or IMAP dialogue before you try to use SMTP. The POP/IMAP dialogue is done 
+separately from the SMTP connection, but bear in mind that there might be a time
+limit so that your SMTP connection has to be made soon after the POP/IMAP 
+authentication. You should be able to use an e-mail front-end program, or
+something like "fetchmail" to do the POP/IMAP authentication.
+
+If you can send mail messages sucessfully using telnet, then you should look at 
+the E-MailRelay log output and compare what you do interactively with what 
+the program does. Usually when running as a server E-MailRelay logging goes to 
+the "syslog" system, and when running as a client it goes to the standard error 
+stream ("stderr"). To get the server to log onto stderr, replace the 
+"--as-server" command-line switch with "--log --no-syslog". Refer to the 
+reference guide for more information.
+
+On Windows things are a bit more difficult because there is no syslog equivalent 
+on Win9x, and the standard error stream often gets lost. Starting E-MailRelay
+from cygwin/bash on Win98 keeps stderr open (albeit with dreadful performance), 
+whereas the standard command prompt does not. If necessary the environment 
+variable "GLOGOUTPUT_FILE" can be defined as the name of a log file.
+
+Preventing open mail relay
+--------------------------
+If you are running E-MailRelay as a server with a permanent connection to the
+Internet it is important to prevent open mail relay. By default public mail
+relaying is not possible because E-MailRelay does not accept IP connections from
+remote clients. However, if the "--remote-clients" switch is used then you need
+to be more careful. One option is to require all clients to authenticate, by
+using the "--server-auth" switch. But if you need local clients, such as your
+own e-mail front-end, to connect without authentication then you will need to
+put those trusted IP addresses in the secrets file with an authentication
+mechanism of "NONE". Refer to the reference guide for more information.
+
+Taking it one stage further, you may want to allow clients to connect from any
+IP address without authentication, but only allow them to send mail to local
+users. You can do this by requiring authentication with the "--server-auth"
+switch but then exempt all clients from authentication with a "NONE server *.*.*.* x"
+line in the secrets file. To complete the solution you must have an address
+verifier script ("--verifier") which rejects remote addresses if the client has
+not authenticated. Again, refer to the reference guide for further details.
+
+
+
+
+Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

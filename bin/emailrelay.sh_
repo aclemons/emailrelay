@@ -1,0 +1,359 @@
+#!/bin/sh
+#
+# Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later
+# version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# 
+# ===
+# 
+# emailrelay
+# 
+# A shell-script wrapper for E-MailRelay designed for use in the SysV-init 
+# system (/etc/init.d).
+#
+# Additional command-line switches for the emailrelay daemon are sourced 
+# from the file "/etc/emailrelay.conf" if it exists. Uncommented lines in this 
+# file have "--" prepended to them and then they are pasted onto the command 
+# line.
+#
+# usage: emailrelay { start | stop | restart | force-reload | status }
+#
+# See also: LSB, start_daemon (lsb), startproc (suse), install_initd (lsb), 
+#           insserv (suse), /usr/share/doc/initscripts*/sysvinitfiles (redhat)
+#
+
+
+##
+# RedHat comment block...
+#
+# chkconfig: 345 80 20
+# description: E-MailRelay is a SMTP proxy and store-and-forward MTA.
+# pidfile: /var/run/emailrelay.pid
+# processname: emailrelay
+##
+
+
+##
+# LSB comment block...
+#
+# The bogus 345 run-levels are a workround for a buggy RedHat chkconfig which 
+# reads the LSB comment block (incorrectly) as an undocumented 'feature'.
+#
+### BEGIN INIT INFO
+# Provides:       emailrelay
+# Required-Start: $network
+# Required-Stop:  $network
+# Default-Start:  345 3 4 5
+# Default-Stop:   345 3 4 5
+# Description:    E-MailRelay SMTP proxy and store-and-forward MTA.
+### END INIT INFO
+##
+
+# choose an infrastructure style
+#
+if test -f /etc/rc.status 
+then 
+	style="suse"
+	. /etc/rc.status
+elif test -f /etc/init.d/functions
+then 
+	style="redhat" 
+	. /etc/init.d/functions
+elif test -f /lib/lsb/init-functions
+then 
+	style="lsb" 
+	. /lib/lsb/init-functions
+else
+	style="unix"
+fi
+
+# script configuration
+#
+var_run="/var/run"
+emailrelay="__SBIN_DIR__/emailrelay" # (absolute path required in some environments)
+if test \! -d "${var_run}" ; then var_run="/tmp" ; fi
+if test \! -x "${emailrelay}" ; then emailrelay="`pwd`/emailrelay" ; fi
+pid_file="${var_run}/emailrelay.pid"
+PATH="${PATH}:/sbin:/bin:/usr/bin"
+cfg_file="/etc/emailrelay.conf"
+
+# server configuration
+#
+start_switches="--as-server --pid-file ${pid_file} `cat \"${cfg_file}\" 2>/dev/null | egrep -v '^#|^ *$' | sed 's/^/--/'`"
+
+# functions...
+#
+# <style>_reset() -- initialise
+# <style>_cmd_stop() -- stop command
+# <style>_cmd_start() -- stop command
+# <style>_cmd_restarted() -- called after stop/start
+# <style>_cmd_status() -- status command
+# <style>_exit() -- exit with saved errno
+
+unix_reset()
+{
+	unix_errno="0"
+}
+
+unix_cmd_start()
+{
+	echo -n "${1}"
+	shift
+	"$@"
+	unix_errno="$?"
+	if test "${unix_errno}" -eq 0
+	then
+		echo " ... done"
+	else
+		echo " ... failed"
+	fi
+}
+
+unix_cmd_stop()
+{
+	echo -n "${1}"
+	if test -f "${pid_file}" && test "`cat ${pid_file}`" != ""
+	then
+		kill "`cat ${pid_file}`"
+		rm -f "${pid_file}" 2>/dev/null
+	fi
+	echo " ... done"
+	unix_errno="0" # (could do better)
+}
+
+unix_cmd_restarted()
+{
+	unix_errno="$?"
+}
+
+unix_cmd_status()
+{
+	echo -n "${1}"
+	if test -f "${pid_file}" && test "`cat ${pid_file}`" != "" && kill -0 "`cat ${pid_file}`" 2>/dev/null
+	then
+		echo " ... running"
+		unix_errno="0"
+	elif test -f "${pid_file}" 
+	then
+		echo " ... failed"
+		unix_errno="1"
+	else
+		echo " ... not running"
+		unix_errno="3"
+	fi
+}
+
+unix_exit()
+{
+	exit "${unix_errno}"
+}
+
+##
+
+redhat_reset()
+{
+	redhat_errno="0"
+}
+
+redhat_cmd_start()
+{
+	echo -n "${1}"
+	shift
+	initlog -q --cmd="$*"
+	redhat_errno="$?"
+	#touch /var/lock/subsys/emailrelay
+	if test "${redhat_errno}" -eq 0 ; then success ; else failure ; fi
+}
+
+redhat_cmd_stop()
+{
+	echo -n "${1}"
+	killproc "`basename ${emailrelay}`"
+	redhat_errno="$?"
+	#rm -f /var/lock/subsys/emailrelay
+	if test "${redhat_errno}" -eq 0 ; then success ; else failure ; fi
+}
+
+redhat_cmd_restarted()
+{
+	redhat_errno="$?"
+}
+
+redhat_cmd_status()
+{
+	echo -n "${1}"
+
+	if test -f "${pid_file}" && test "`cat ${pid_file}`" != "" && kill -0 "`cat ${pid_file}`" 2>/dev/null
+	then
+		redhat_errno="0"
+	elif test -f "${pid_file}" 
+	then
+		redhat_errno="1"
+	else
+		redhat_errno="3"
+	fi
+	if test "${redhat_errno}" -eq 0 ; then success ; else failure ; fi
+}
+
+redhat_exit()
+{
+	exit "${redhat_errno}"
+}
+
+##
+
+suse_reset()
+{
+	rc_reset
+}
+
+suse_cmd_start()
+{
+	echo -n "${1}"
+	shift
+	startproc "$@"
+	rc_status -v
+}
+
+suse_cmd_stop()
+{
+	echo -n "${1}"
+	killproc "${2}"
+	rc_status -v
+}
+
+suse_cmd_restarted()
+{
+	rc_status
+}
+
+suse_cmd_status()
+{
+	echo -n "${1}"
+	checkproc "${2}"
+	rc_status -v
+}
+
+suse_exit()
+{
+	rc_exit
+}
+
+##
+
+lsb_reset()
+{
+	lsb_errno="0"
+}
+
+lsb_cmd_start()
+{
+	lsb_text="${1}"
+	shift
+	start_daemon "$@"
+	lsb_errno=$?
+	if test "${lsb_errno}" -eq 0
+	then
+		log_success_msg "${lsb_text}"
+	else
+		log_failure_msg "${lsb_text}"
+	fi
+}
+
+lsb_cmd_stop()
+{
+	lsb_text="${1}"
+	killproc "`basename \"${2}\"`"
+	lsb_errno=$?
+	if test "${lsb_errno}" -eq 0
+	then
+		log_success_msg "${lsb_text}"
+	else
+		log_failure_msg "${lsb_text}"
+	fi
+}
+
+lsb_cmd_restarted()
+{
+	lsb_errno="$?"
+}
+ 
+lsb_cmd_status()
+{
+	lsb_text="${1}"
+	base="`basename \"${2}\"`"
+	pids="`pidofproc \"${base}\" | sed 's/ *$//'`"
+	if test "${pids}" != ""
+	then
+		lsb_errno="0"
+		log_success_msg "${lsb_text}"
+	else
+		lsb_errno="1"
+		log_failure_msg "${lsb_text}"
+	fi
+}
+
+lsb_exit()
+{
+	exit ${lsb_errno}
+}
+
+# check the command line
+#
+usage="{ start | stop | restart | force-reload | status }"
+if test $# -eq 0
+then
+	echo usage: `basename $0` "${usage}" >&2
+	exit 2
+fi
+
+# process the command line
+#
+${style}_reset
+case "${1}" in
+
+	start)
+		shift
+		${style}_cmd_start "Starting E-MailRelay server" ${emailrelay} ${start_switches} "$@"
+		;;
+
+	stop)
+		${style}_cmd_stop "Shutting down E-MailRelay" "${emailrelay}"
+		;;
+
+	restart|force-reload)
+		shift
+		$0 stop
+		$0 start "$@"
+		${style}_cmd_restarted
+		;;
+
+	reload)
+		echo usage: `basename $0` reload: not implemented >&2
+		exit 3
+		;;
+
+	status)
+		${style}_cmd_status "Checking for E-MailRelay" "${emailrelay}"
+		;;
+
+	*)
+		echo usage: `basename $0` "${usage}" >&2
+		exit 2
+		;;
+esac
+${style}_exit
+

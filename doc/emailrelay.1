@@ -1,0 +1,290 @@
+.\" Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
+.\" 
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License
+.\" as published by the Free Software Foundation; either
+.\" version 2 of the License, or (at your option) any later
+.\" version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\" 
+.TH EMAILRELAY 1 local
+.SH NAME
+emailrelay \- e-mail transfer agent
+.SH SYNOPSIS
+.B emailrelay
+[OPTIONS]
+.LP
+.B emailrelay 
+--as-server
+.LP
+.B emailrelay
+--as-client 
+.I server-address
+.LP
+.B emailrelay
+--as-proxy 
+.I server-address
+.SH DESCRIPTION
+.I emailrelay
+is an simple e-mail message transfer agent. It does store-and-forward
+mail relay to a fixed next-hop server, without any routing. 
+.LP
+It runs in two main modes: a storage daemon 
+.RI ( --as-server ) 
+and a forwarding 
+agent 
+.RI ( --as-client ). 
+The storage daemon is an SMTP server which stores e-mail 
+messages in a local spool directory. The forwarding agent acts as an
+SMTP client, which passes the spooled e-mail messages on to the next
+SMTP server in the chain.
+.LP
+It can also run in a third mode, as a proxy server
+.RI ( --as-proxy ). 
+In this mode all messages are forwarded immediately to the next-hop
+server.
+.SH OPTIONS
+.TP
+.B \-a,--admin \fIadmin-port\fR
+Enables the administration interface and specifies its listening port number.
+.TP
+.B \-q,--as-client \fIhost:port\fR
+Runs as a client, forwarding spooled mail to <host>: equivalent to \fI--log\fR \fI--no-syslog\fR \fI--no-daemon\fR \fI--dont-serve\fR \fI--forward\fR \fI--forward-to\fR.
+.TP
+.B \-y,--as-proxy \fIhost:port\fR
+Runs as a proxy: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--immediate\fR \fI--forward-to\fR.
+.TP
+.B \-d,--as-server 
+Runs as a server: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--postmaster\fR.
+.TP
+.B \-C,--client-auth \fIfile\fR
+Enables authentication with remote server, using the given secrets file.
+.TP
+.B \-e,--close-stderr 
+Closes the standard error stream after start-up.
+.TP
+.B \-U,--connection-timeout \fItime\fR
+Sets the timeout (in seconds) when connecting to a remote server (default is 40).
+.TP
+.B \-g,--debug 
+Generates debug-level logging (if compiled-in).
+.TP
+.B \-D,--domain \fIfqdn\fR
+Sets an override for the host's fully qualified domain name.
+.TP
+.B \-X,--dont-listen 
+Dont listen for smtp connections (usually used with \fI--admin\fR).
+.TP
+.B \-x,--dont-serve 
+Dont act as a server (usually used with \fI--forward\fR).
+.TP
+.B \-z,--filter \fIprogram\fR
+Defines a mail processor program.
+.TP
+.B \-f,--forward 
+Forwards stored mail on startup (requires \fI--forward-to\fR).
+.TP
+.B \-o,--forward-to \fIhost:port\fR
+Specifies the remote smtp server (required by \fI--forward\fR and \fI--admin\fR).
+.TP
+.B \-h,--help 
+Displays help text and exits.
+.TP
+.B \-m,--immediate 
+Forwards each message as soon as it is received (requires \fI--forward-to\fR).
+.TP
+.B \-I,--interface \fIip-address\fR
+Listen on a specific interface.
+.TP
+.B \-l,--log 
+Writes log information on standard error and syslog.
+.TP
+.B \-L,--log-time 
+Adds a timestamp to the logging output.
+.TP
+.B \-t,--no-daemon 
+Does not detach from the terminal.
+.TP
+.B \-n,--no-syslog 
+Disables syslog output.
+.TP
+.B \-i,--pid-file \fIpid-file\fR
+Records the daemon process-id in the given file.
+.TP
+.B \-O,--poll \fIperiod\fR
+Enables polling with the specified period (requires \fI--forward-to\fR).
+.TP
+.B \-p,--port \fIport\fR
+Specifies the smtp listening port number.
+.TP
+.B \-P,--postmaster 
+Deliver to postmaster and reject all other local mailbox addresses.
+.TP
+.B \-r,--remote-clients 
+Allows remote clients to connect.
+.TP
+.B \-T,--response-timeout \fItime\fR
+Sets the response timeout (in seconds) when talking to a remote server (default is 1800).
+.TP
+.B \-S,--server-auth \fIfile\fR
+Enables authentication of remote clients, using the given secrets file.
+.TP
+.B \-s,--spool-dir \fIdir\fR
+Specifies the spool directory (default is \fI/var/spool/emailrelay\fR).
+.TP
+.B \-u,--user \fIusername\fR
+Names the effective user to switch to when started as root (default is \fIdaemon\fR).
+.TP
+.B \-v,--verbose 
+Generates more verbose output (works with \fI--help\fR and \fI--log\fR).
+.TP
+.B \-Z,--verifier \fIprogram\fR
+Defines an external address verifier program.
+.TP
+.B \-V,--version 
+Displays version information and exits.
+.SH FILES
+GNU style...
+.br
+/usr/local/libexec/emailrelay
+.br
+/usr/local/libexec/emailrelay-deliver.sh
+.br
+/usr/local/libexec/emailrelay-notify.sh
+.br
+/usr/local/libexec/emailrelay-poke
+.br
+/usr/local/libexec/emailrelay-process.sh
+.br
+/usr/local/libexec/emailrelay-resubmit.sh
+.br
+/usr/local/man/man1/emailrelay-passwd.1.gz
+.br
+/usr/local/man/man1/emailrelay-poke.1.gz
+.br
+/usr/local/man/man1/emailrelay-submit.1.gz
+.br
+/usr/local/man/man1/emailrelay.1.gz
+.br
+/usr/local/sbin/emailrelay
+.br
+/usr/local/sbin/emailrelay-passwd
+.br
+/usr/local/sbin/emailrelay-submit
+.br
+/usr/local/share/emailrelay/doc/NEWS
+.br
+/usr/local/share/emailrelay/doc/README
+.br
+/usr/local/share/emailrelay/doc/changelog.gz
+.br
+/usr/local/share/emailrelay/doc/changelog.html
+.br
+/usr/local/share/emailrelay/doc/developer.html
+.br
+/usr/local/share/emailrelay/doc/developer.txt
+.br
+/usr/local/share/emailrelay/doc/emailrelay.css
+.br
+/usr/local/share/emailrelay/doc/index.html
+.br
+/usr/local/share/emailrelay/doc/readme.html
+.br
+/usr/local/share/emailrelay/doc/reference.html
+.br
+/usr/local/share/emailrelay/doc/reference.txt
+.br
+/usr/local/share/emailrelay/doc/userguide.html
+.br
+/usr/local/share/emailrelay/doc/userguide.txt
+.br
+/usr/local/share/emailrelay/doc/windows.html
+.br
+/usr/local/share/emailrelay/doc/windows.txt
+.br
+/usr/local/var/spool/emailrelay/emailrelay.*.content
+.br
+/usr/local/var/spool/emailrelay/emailrelay.*.envelope
+.LP
+FHS style...
+.br
+/etc/init.d/emailrelay
+.br
+/usr/lib/emailrelay/emailrelay-poke
+.br
+/usr/sbin/emailrelay
+.br
+/usr/sbin/emailrelay-passwd
+.br
+/usr/sbin/emailrelay-submit
+.br
+/usr/share/doc/emailrelay/NEWS
+.br
+/usr/share/doc/emailrelay/README
+.br
+/usr/share/doc/emailrelay/changelog.gz
+.br
+/usr/share/doc/emailrelay/changelog.html
+.br
+/usr/share/doc/emailrelay/developer.html
+.br
+/usr/share/doc/emailrelay/developer.txt
+.br
+/usr/share/doc/emailrelay/emailrelay.css
+.br
+/usr/share/doc/emailrelay/examples/emailrelay-deliver.sh
+.br
+/usr/share/doc/emailrelay/examples/emailrelay-notify.sh
+.br
+/usr/share/doc/emailrelay/examples/emailrelay-process.sh
+.br
+/usr/share/doc/emailrelay/examples/emailrelay-resubmit.sh
+.br
+/usr/share/doc/emailrelay/index.html
+.br
+/usr/share/doc/emailrelay/readme.html
+.br
+/usr/share/doc/emailrelay/reference.html
+.br
+/usr/share/doc/emailrelay/reference.txt
+.br
+/usr/share/doc/emailrelay/userguide.html
+.br
+/usr/share/doc/emailrelay/userguide.txt
+.br
+/usr/share/doc/emailrelay/windows.html
+.br
+/usr/share/doc/emailrelay/windows.txt
+.br
+/usr/share/man/man1/emailrelay-passwd.1.gz
+.br
+/usr/share/man/man1/emailrelay-poke.1.gz
+.br
+/usr/share/man/man1/emailrelay-submit.1.gz
+.br
+/usr/share/man/man1/emailrelay.1.gz
+.br
+/var/spool/emailrelay/emailrelay.*.content
+.br
+/var/spool/emailrelay/emailrelay.*.envelope
+.SH SEE ALSO
+E-MailRelay user guide
+.br
+E-MailRelay reference
+.br
+.BR emailrelay-submit (1),
+.BR emailrelay-poke (1),
+.BR emailrelay-passwd (1),
+.BR syslog (3),
+.BR pppd (8),
+.BR init.d (7)
+.SH AUTHOR
+Graeme Walker, mailto:graeme_walker@users.sourceforge.net

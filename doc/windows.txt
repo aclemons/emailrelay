@@ -1,0 +1,113 @@
+E-MailRelay for Windows
+=======================
+
+Introduction
+------------
+E-MailRelay was originally developed on Linux and so most of the documentation 
+relates to Unix-like operating systems rather than Microsoft Windows. This 
+document provides some help on installing and setting up E-MailRelay as a
+store-and-forward MTA on Windows.
+
+Quick start
+------------
+In summary, the Windows installation process is as follows:
+* Unpack the zip file to "Program Files\emailrelay".
+* Create a shortcut to the E-MailRelay executable in "Start->Programs->StartUp".
+* Add "storage-daemon" configuration options (if any) to the "StartUp" shortcut's command line.
+* Create a shortcut to the executable on the taskbar and/or desktop.
+* Add "forwarding-client" configuration options to the taskbar/desktop shortcut's command line. These configuration options will normally include something like "--as-client smtp.myisp.com:smtp".
+* Create a spool directory under "<windir>\spool", eg.  "c:\win98\spool\emailrelay".
+* Configure your e-mail client (eg. Outlook) to use SMTP on the local machine for outgoing e-mail.
+* Run the forwarding client from the taskbar/desktop shortcut once connected to the Internet.
+
+These steps are explained in more detail below.
+
+On versions of Windows that support services you could also try using Microsoft's 
+"srvany.exe" utility to run emailrelay as a service; you will need to add the 
+"--hidden" and "--no-daemon" switches to the E-MailRelay command-line for this.
+
+Unpacking
+---------
+To start the installation process you will need to extract the files from 
+the "zip" archive. If you have "WinZip" installed then double-clicking on 
+the E-MailRelay "zip" file should start WinZip and open the archive.
+
+From WinZip you can press the "Extract" button, or use the "Actions->Extract" 
+menu option. In the "Extract to" box you can type the full path of a new 
+sub-directory under "Program Files" which will hold the extracted files, eg.
+"C:\Program Files\emailrelay". WinZip will create the sub-directory 
+("emailrelay") if necessary.
+
+Server configuration
+--------------------
+Once the files are unpacked you need to create a shortcut to the E-MailRelay 
+executable in the Start menu's "StartUp" folder. This will make sure that the 
+E-MailRelay server is started automatically when you next boot the machine and 
+log in.
+
+One way to do this is to open up the "Program Files\emailrelay" folder using
+Windows Explorer or "My Computer", and open a second folder window for the 
+Start menu. To open thes second "Start menu" window: (1) right-click on a 
+blank part of the taskbar, (2) select "Properties" from the popup menu, (3) 
+select the "Start Menu Programs" tab, and (4) press the "Advanced..."
+button. In the Start menu window go down into the "Programs" folder and then
+into "StartUp". Then simply drag the "emailrelay.exe" file from one window 
+to the other using the right mouse button. When you drop the file, select 
+the "Create Shortcut Here" option on the pop-up menu.
+
+You can then configure the E-MailRelay server by adding configuration options
+to the shortcut's command line. The server should work okay without this step,
+but there may be options you want to add. Refer to the userguide and reference
+manual for more information on what configuration options are available.
+
+To add configuration options right-click on the new shortcut which you have 
+created in the "Start menu" window. Select "Properties" from the pop-up menu, 
+and then select the "Shortcut" tab in the properties dialog box. The "Target" 
+box should contain the name of the E-MailRelay executable. Add any additional 
+configuration options after the executable name, separated by a space.
+
+Client configuration
+--------------------
+Once the server is configured the next step is to create an icon on the desktop 
+(or taskbar) which you can use to start the E-MailRelay forwarding client once 
+you are connected to the Internet.
+
+You can do this by simply dragging the E-MailRelay executable file from the
+"Program Files\emailrelay" folder onto the desktop. Then right click on the new 
+icon and select "Properties" from the pop-up menu. 
+
+Again the "Target" box should contain the path of the E-MailRelay executable, 
+and you should add configuration options at the end, separated by a space. As a 
+minumum you will need to add "--as-client myisp:smtp", where "myisp" is replaced
+with the hostname of your ISP's SMTP server.
+
+Preparation
+-----------
+To complete the installation you should create a spool directory to hold your 
+e-mail messages while you are off-line. By default E-MailRelay will look for a 
+directory "<windir>\spool\emailrelay", where "<windir>" is the path of your main 
+windows directory, typically "c:\win98" for Windows 98.
+
+Finally you will need to configure your e-mail client program to use the local 
+E-MailRelay server for outgoing mail. Where it asks for the name of the SMTP 
+server for outgoing mail you should tell it to use "localhost" or "127.0.0.1".
+
+COM registration
+----------------
+The server can be optionally registered as a COM component by running the 
+executable with the "-regserver" command line switch. The COM interface may 
+allow stored messages to be forwarded to any remote server, so consider the 
+security implications before doing the COM registration. Refer to the reference 
+guide for more details.
+
+Uninstall
+---------
+If you have ever registered the executable as a COM component, then deregister it 
+using the "-unregserver" command-line switch. Then just delete the files under 
+"Program Files\emailrelay" and "<windir>\spool\emailrelay", and remove any 
+taskbar, desktop or "Start->Programs->StartUp" shortcuts.
+
+
+
+
+Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

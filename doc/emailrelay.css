@@ -1,0 +1,183 @@
+
+
+div.two-column-content
+{
+	margin-left: 220px ;
+	padding: 40px ;
+}
+
+div.two-column-menu
+{
+	color: inherit ;
+	background-color: #eee ;
+
+	position: absolute ;
+	top: 100px ;
+	left: 20px ;
+	padding: 10px ;
+
+	border-style: solid ;
+	border-width: 1px ;
+	border-color: #999 ;
+
+	width: 230px ; /* IE5 */
+	voice-family: "\"}\"" ; /* IE5 trick */
+	voice-family: inherit ;
+	width: 190px ; /* STD */
+}
+
+body 
+{
+	font-family: verdana, arial, helvetica, sans-serif ;
+
+	color: #000 ;
+	background-color: #fff ;
+}
+
+div.div-main
+{
+	margin-left: 10% ;
+	margin-right: 10% ;
+}
+
+div.div-toc
+{
+	color: inherit ;
+	background-color: #eee ;
+}
+
+p.p-toc
+{
+	padding: 5px ;
+	margin-top: 0px ;
+	margin-bottom: 0px ;
+	margin-left: 0.5em ;
+	text-align: left ;
+}
+
+div.div-pre
+{
+	margin-left: 3% ;
+	/* font-size: smaller ; */ /* smaller is unreadable on ie5 */
+	color: inherit ;
+	background-color: #eee ;
+	padding: 0.5em ;
+	border: none ;
+}
+
+h1
+{
+	text-align: center ;
+	color: #09c ;
+	background-color: inherit ;
+}
+
+img
+{
+	margin-left: 8% ;
+}
+
+h2
+{
+	color: #09c ;
+	background-color: inherit ;
+}
+
+p 
+{
+	font-family: verdana, arial, helvetica, sans-serif ;
+	text-align: justify ;
+}
+
+a.a-toc
+{
+	color: #09c ;
+	background-color: inherit ;
+	text-decoration: none ;
+}
+
+a.a-toc:hover 
+{
+	color: #09c ;
+	background-color: #ccc ;
+}
+
+a.a-header
+{
+	text-decoration:none ;
+}
+
+a.a-href
+{
+	text-decoration: none ;
+	font-weight: bold ;
+}
+
+a.a-href:link 
+{
+	color: #09c ;
+	background-color: inherit ;
+}
+
+a.a-href:visited 
+{
+	color: #07a ;
+	background-color: inherit ;
+}
+
+a.a-href:hover 
+{
+	color: #09c ;
+	background-color: #eee ;
+}
+
+div.two-column-header
+{
+	color: inherit ;
+	background-color: #eee ;
+
+	border-style: solid ;
+	border-color: #999 ;
+	border-width: 1px 0px ; /* top/bottom left/right */
+}
+
+em.quote
+{
+	font-weight: bold ;
+}
+
+em.fn
+{
+	font-weight: bold ;
+}
+
+li em.fn
+{
+	font-weight: normal ;
+	font-style: normal ;
+}
+
+dt
+{
+	font-weight: bold ;
+	margin-left: 3% ;
+}
+
+dd
+{
+	font-size: smaller ;
+	margin-left: 6% ;
+	padding-bottom: 4px ; /* for konqueror */
+}
+
+span.span-mailto
+{
+	font-size: smaller ;
+}
+
+#img-sourceforge
+{
+	border-width: 0px ;
+	border-style: none ; /* check */
+}
+

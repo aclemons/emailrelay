@@ -1,0 +1,293 @@
+//
+// Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either
+// version 2 of the License, or (at your option) any later
+// version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// ===
+//
+// gdate.cpp
+//
+
+#include "gdef.h"
+#include "gdate.h"
+#include "gdebug.h"
+#include <ctime>
+#include <iomanip>
+
+//static
+int G::Date::yearUpperLimit()
+{
+	return 2035 ; // see mktime()
+}
+
+//static
+int G::Date::yearLowerLimit()
+{
+	return 1970 ; // see mktime()
+}
+
+G::Date::Date()
+{
+	init( G::DateTime::utc(G::DateTime::now()) ) ;
+}
+
+G::Date::Date( G::DateTime::EpochTime t )
+{
+	init( G::DateTime::utc(t) ) ;
+}
+
+G::Date::Date( G::DateTime::EpochTime t , const LocalTime & )
+{
+	init( G::DateTime::local(t) ) ;
+}
+
+G::Date::Date( const G::DateTime::BrokenDownTime & tm )
+{
+	init( tm ) ;
+}
+
+G::Date::Date( const LocalTime & )
+{
+	init( G::DateTime::local(G::DateTime::now()) ) ;
+}
+
+G::Date::Date( int year , G::Date::Month month , int day_of_month )
+{
+	G_ASSERT( year >= yearLowerLimit() ) ;
+	G_ASSERT( year <= yearUpperLimit() ) ;
+	G_ASSERT( day_of_month > 0 ) ;
+	G_ASSERT( day_of_month < 32 ) ;
+	G_ASSERT( month >= 1 ) ;
+	G_ASSERT( month <= 12 ) ;
+
+	m_year = year ;
+	m_month = month ;
+	m_day = day_of_month ;
+	m_weekday_set = false ;
+}
+
+void G::Date::init( const G::DateTime::BrokenDownTime & tm )
+{
+	m_year = tm.tm_year + 1900 ;
+	m_month = tm.tm_mon + 1 ;
+	m_day = tm.tm_mday ;
+	m_weekday_set = false ;
+	m_weekday = sunday ;
+}
+
+std::string G::Date::string( Format format ) const
+{
+	std::ostringstream ss ;
+	if( format == yyyy_mm_dd_slash )
+	{
+		ss << yyyy() << "/" << mm() << "/" << dd() ;
+	}
+	else if( format == yyyy_mm_dd )
+	{
+		ss << yyyy() << mm() << dd() ;
+	}
+	else if( format == mm_dd )
+	{
+		ss << mm() << dd() ;
+	}
+	else
+	{
+		G_ASSERT( !"enum error" ) ;
+	}
+	return ss.str() ;
+}
+
+int G::Date::monthday() const
+{
+	return m_day ;
+}
+
+std::string G::Date::dd() const
+{
+	std::ostringstream ss ;
+	ss << std::setw(2) << std::setfill('0') << m_day ; 
+	return ss.str() ;
+}
+
+std::string G::Date::mm() const
+{
+	std::ostringstream ss ;
+	ss << std::setw(2) << std::setfill('0') << m_month ; 
+	return ss.str() ;
+}
+
+G::Date::Weekday G::Date::weekday() const
+{
+	if( ! m_weekday_set )
+	{
+		G::DateTime::BrokenDownTime tm ;
+		tm.tm_year = m_year - 1900 ;
+		tm.tm_mon = m_month - 1 ;
+		tm.tm_mday = m_day ;
+		tm.tm_hour = 12 ;
+		tm.tm_min = 0 ;
+		tm.tm_sec = 0 ;
+		tm.tm_wday = 0 ; // ignored
+		tm.tm_yday = 0 ; // ignored
+		tm.tm_isdst = 0 ; // ignored
+
+		G::DateTime::BrokenDownTime out = G::DateTime::utc(G::DateTime::epochTime(tm)) ;
+
+		const_cast<Date*>(this)->m_weekday_set = true ;
+		const_cast<Date*>(this)->m_weekday = Weekday(out.tm_wday) ;
+	}
+	return m_weekday ;
+}
+
+std::string G::Date::weekdayName( bool brief ) const
+{
+	if( weekday() == sunday ) return brief ? "Sun" : "Sunday" ;
+	if( weekday() == monday ) return brief ? "Mon" : "Monday" ;
+	if( weekday() == tuesday ) return brief ? "Tue" : "Tuesday" ;
+	if( weekday() == wednesday ) return brief ? "Wed" : "Wednesday" ;
+	if( weekday() == thursday ) return brief ? "Thu" : "Thursday" ;
+	if( weekday() == friday ) return brief ? "Fri" : "Friday" ;
+	if( weekday() == saturday ) return brief ? "Sat" : "Saturday" ;
+	return "" ;
+}
+
+G::Date::Month G::Date::month() const
+{
+	return Month(m_month) ;
+}
+
+std::string G::Date::monthName( bool brief ) const
+{
+	if( month() == january ) return brief ? "Jan" : "January" ;
+	if( month() == february ) return brief ? "Feb" : "February" ;
+	if( month() == march ) return brief ? "Mar" : "March" ;
+	if( month() == april ) return brief ? "Apr" : "April" ;
+	if( month() == may ) return brief ? "May" : "May" ;
+	if( month() == june ) return brief ? "Jun" : "June" ;
+	if( month() == july ) return brief ? "Jul" : "July" ;
+	if( month() == august ) return brief ? "Aug" : "August" ;
+	if( month() == september ) return brief ? "Sep" : "September" ;
+	if( month() == october ) return brief ? "Oct" : "October" ;
+	if( month() == november ) return brief ? "Nov" : "November" ;
+	if( month() == december ) return brief ? "Dec" : "December" ;
+	return "" ;
+}
+
+int G::Date::year() const
+{
+	return m_year ;
+}
+
+std::string G::Date::yyyy() const
+{
+	std::ostringstream ss ;
+	ss << std::setw(4) << std::setfill('0') << m_year ; 
+	return ss.str() ;
+}
+
+G::Date &G::Date::operator++()
+{
+	++m_day ;
+	if( m_day == (lastDay(m_month,m_year)+1U) )
+	{
+		m_day = 1U ;
+		++m_month ;
+		if( m_month == 13U )
+		{
+			m_month = 1U ;
+			++m_year ;
+		}
+	}
+	if( m_weekday_set )
+	{
+		if( m_weekday == saturday )
+			m_weekday = sunday ;
+		else
+			m_weekday = Weekday(int(m_weekday)+1) ;
+	}
+	return *this ;
+}
+
+G::Date & G::Date::operator--()
+{
+	if( m_day == 1U )
+	{
+		if( m_month == 1U )
+		{
+			m_year-- ;
+			m_month = 12U ;
+		}
+		else
+		{
+			m_month-- ;
+		}
+
+		m_day = lastDay( m_month , m_year ) ;
+	}
+	else
+	{
+		m_day-- ;
+	}
+	if( m_weekday_set )
+	{
+		if( m_weekday == sunday )
+			m_weekday = saturday ;
+		else
+			m_weekday = Weekday(int(m_weekday)-1) ;
+	}
+	return *this ;
+}
+
+//static
+unsigned int G::Date::lastDay( unsigned int month , unsigned int year )
+{
+	unsigned int end = 30U ;
+	if( month == 1U || 
+		month == 3U || 
+		month == 5U || 
+		month == 7U ||
+		month == 8U || 
+		month == 10U || 
+		month == 12U )
+	{
+		end = 31U ;
+	}
+	else if( month == 2U )
+	{
+		end = isLeapYear(year) ? 29U : 28U ;
+	}
+	return end ;
+}
+
+//static
+bool G::Date::isLeapYear( unsigned int y )
+{
+    return y >= 1800U && ( y % 400U == 0U || ( y % 100U != 0U && y % 4U == 0U ) ) ;
+}
+
+bool G::Date::operator==( const Date &other ) const
+{
+	return
+		year() == other.year() &&
+		month() == other.month() &&
+		monthday() == other.monthday() ;
+}
+
+bool G::Date::operator!=( const Date &other ) const
+{
+	return !( other == *this ) ;
+}
+
