@@ -233,17 +233,17 @@ Mail processing
 ---------------
 The "--filter" command-line switch allows you to specify a mail pre-processor 
 program which operates on mail messages as they pass through the E-MailRelay 
-system. The mail pre-processor program is run as soon as the mail message has been 
-stored in the spool directory, with the full path of the content file specified 
-on the command line.
+system. The mail pre-processor program is run as soon as the mail message has 
+been stored in the spool directory, with the full path of the content file added
+onto the end of the given command line.
 
 For example, the following command will start a proxy server on port 10025 which 
 processes mail using the specified filter program, and then forwards the mail on 
 to the system's default MTA (on port 25):
 
 	emailrelay --as-proxy localhost:smtp --port 10025 --no-syslog \
-	  --filter ${HOME}/.emailrelay/filter \
-	  --spool-dir ${HOME}/.emailrelay/spool
+	  --filter $HOME/.emailrelay/filter \
+	  --spool-dir $HOME/.emailrelay/spool
 
 The pre-processor program should terminate with an exit code of zero to indicate
 success, or a value between 1 and 99 to indicate failure. Exit codes between
@@ -262,17 +262,18 @@ pre-processor is running, except the filename. But if the message is deleted
 by the pre-processor then E-MailRelay will be upset, so to avoid the 
 error message use an exit code of 100.
 
-If the pre-processor program creates new messages in the spool directory then 
-they may not be processed immediately, or they may be completely ignored. To get 
-E-MailRelay to pick up new messages in the spool directory use the "--poll" 
-switch, or run "emailrelay --as-client" from within the pre-processor program.
+If the pre-processor program creates completely new messages in the spool 
+directory then they may not be processed immediately, or they may be completely 
+ignored. To get E-MailRelay to pick up new messages in the spool directory use 
+the "--poll" switch, or run "emailrelay --as-client" from within the 
+pre-processor program.
 
-As an example, the following shell script examines the client's IP address and 
-conditionally dumps the message into "sendmail" (using the sendmail command-line
-interface rather than SMTP):
+As an example of a simple pre-processor this shell script examines the sending
+client's IP address and conditionally passes the message into "sendmail" (using 
+the sendmail command-line interface rather than SMTP):
 
 	#!/bin/sh
-	#
+	# filter.sh
 	content="${1}"
 	envelope="`echo \"${content}\" | sed 's/content/envelope.new/'`"
 	ip="`awk '/MailRelay-Client:/ {print $2;exit}' \"${envelope}\"`"
@@ -286,14 +287,44 @@ interface rather than SMTP):
 
 The first thing this script does is convert the path of the content file which 
 it is given, into the corresponding envelope file. It then extracts the client's 
-IP address out of the envelope file using "awk". If this matches then it pipes the 
-message content into sendmail, deletes the message and exits with a value of 100.
-The exit value of 100 tells E-MailRelay to forget the message, and not to 
-complain about the files disappearing.
+IP address out of the envelope file using "awk". If this matches the fixed 
+address then it pipes the message content into sendmail, deletes the message and
+exits with a value of 100. The exit value of 100 tells E-MailRelay to forget the
+message, and not to complain about the files disappearing.
+
+For Windows this example can be rewritten in JavaScript:
+
+	// filter.js
+	var content = WScript.Arguments(0) ;
+	var envelope = content.substr(0,content.length-7) + "envelope.new" ;
+	var fs = WScript.CreateObject( "Scripting.FileSystemObject" ) ;
+	var ts = fs.OpenTextFile( envelope , 1 , false ) ;
+	var e = ts.ReadAll() ;
+	ts.Close() ;
+	var re = new RegExp( "MailRelay-Client: \(.*\)" ) ;
+	var ip = e.match(re)[1] ;
+	if( ip == "192.168.0.2" )
+	{
+		var sh = WScript.CreateObject( "Wscript.Shell" ) ;
+		sh.Run( "sendmail " + content ) ; // bogus
+		fs.DeleteFile( content ) ;
+		fs.DeleteFile( envelope ) ;
+		WScript.Quit( 100 )
+	}
+	WScript.Quit( 0 ) ;
+
+Pre-processor programs written in JavaScript can be run with "cscript", using an 
+E-MailRelay command line with a "--filter" switch something like this (V1.1.3 
+or later):
+
+	--filter "c:/winnt/system32/cscript.exe \\nologo c:/program\ files/emailrelay/filter.js"
 
 A more complex example script which does rot-13 masking is also provided in the 
 distribution ("emailrelay-process.sh"). This does some simple MIME encoding, and
 could be used as a template for more sophisticated message encryption.
+
+There also a "--client-filter" switch that enables pre-processing of messages
+just before they are forwarded, rather then when stored. This is not recommended.
 
 Some points to note when writing "--filter" programs:
 * The standard input and output are not used; the content filename is passed on the command line.
@@ -318,9 +349,7 @@ local host's fully qualified domain name, (5) the current "MAIL" command's "FROM
 address or the empty string for the "VRFY" command, (6) the IP address of the 
 client connection, (7) the authentication mechanism used by the client ("NONE" 
 if trusted), and (8) either the authentication name or the fourth field from 
-authentication secrets file if a trusted IP address. Under Windows there is an 
-additional command line argument: (1) is the file descriptor which must be
-used instead of stdout, (2) is the full address, etc.
+authentication secrets file if a trusted IP address.
 
 For valid local mailbox addresses the verifier is expected to write two lines to 
 the standard output -- the full name associated with the mailbox, and the
@@ -352,6 +381,7 @@ by connecting on a trusted IP address:
 
 	#!/bin/sh
 	# verifier.sh
+	address="${1}"
 	host="$3"
 	local_domain="$4"
 	auth_mechanism="$7"
@@ -364,6 +394,22 @@ by connecting on a trusted IP address:
 	echo "${address}" # again
 	exit 1 # accept the recipient address
  
+or in JavaScript:
+
+	// verifier.js
+	var address = WScript.Arguments(0) ;
+	var host = WScript.Arguments(2) ;
+	var local_domain = WScript.Arguments(3) ;
+	var auth_mechanism = WScript.Arguments(6) ;
+	if( auth_mechanism == "NONE" && host != local_domain )
+	{
+		WScript.Echo( "cannot relay without authentication" ) ;
+		WScript.Quit( 2 ) ;
+	}
+	WScript.Echo( address ) ;
+	WScript.Echo( address ) ;
+	WScript.Quit( 1 ) ;
+
 If this verifier script is used with a suitable "--server-auth" file then it can
 be used to prevent open relay without restricting authenticated clients.
 
@@ -507,44 +553,6 @@ Note that some ISPs require separate POP/IMAP authentication before SMTP access
 from a particular IP address is allowed. This type of POP-before-SMTP
 authentication can be done outside the E-MailRelay system by POP/IMAP utilities
 such as "fetchmail".
-
-Application notes
------------------
-# *Mutt* [http://www.mutt.org]
-
-  Mutt can be configured to use the E-MailRelay 'submit' program rather than 
-  "sendmail" with an entry in the ".muttrc" file like this:
-
-	set sendmail="/usr/local/libexec/emailrelay-submit"
-
-  or
-
-	set sendmail="/usr/sbin/emailrelay-submit"
-
-  This puts the messages in the E-MailRelay spool-directory, but note that in 
-  proxy mode they will be ignored unless you use "--poll". Or you could use 
-  "--admin" plus "flush"/"emailrelay-poke".
-
-# *Spam Assassin* [http://spamassassin.taint.org]
-
-  The E-MailRelay server can use Spam Assassin to mark potential spam by having
-  a small shell script which calls spamassassin's "spamc" program installed
-  as the E-MailRelay mail pre-processor (using the "--filter" command-line switch).
-
-  Your "--filter" shell script would look something like this:
-
-	#!/bin/sh
-	tmp="/tmp/`basename $0`.$$.tmp"
-	pre="dos2unix"
-	post="unix2dos"
-	${pre} < ${1} | spamc > ${tmp} 
-	if test $? -eq 0 ; then ${post} < ${tmp} > ${1} ; fi
-	rm -f ${tmp} 2>/dev/null
-	exit 0
-
-  This just pipes the content file into "spamc", using "dos2unix" to remove 
-  carriage-returns. The output is saved in a temporary file, and then put back 
-  into the content file using "unix2dos" to restore the carriage-returns.
 
 Files and directories
 ---------------------

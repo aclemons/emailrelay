@@ -31,6 +31,7 @@ mk_sources=\
 	gdatetime_win32.cpp \
 	gdirectory.cpp \
 	gdirectory_win32.cpp \
+	gexe.cpp \
 	gexception.cpp \
 	gfile.cpp \
 	gfile_win32.cpp \

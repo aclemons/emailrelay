@@ -43,6 +43,8 @@ libgsmtp_a_SOURCES = \
 	gnewfile.h \
 	gnewmessage.cpp \
 	gnewmessage.h \
+	gprocessor.cpp \
+	gprocessor.h \
 	gprotocolmessage.cpp \
 	gprotocolmessage.h \
 	gprotocolmessageforward.cpp \

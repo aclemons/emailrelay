@@ -81,7 +81,7 @@ bool GSmtp::ServerPeer::processLine( const std::string & line )
 	return m_protocol.apply( line ) ;
 }
 
-void GSmtp::ServerPeer::protocolSend( const std::string & line )
+void GSmtp::ServerPeer::protocolSend( const std::string & line , bool allow_delete_this )
 {
 	if( line.length() == 0U )
 		return ;
@@ -89,7 +89,8 @@ void GSmtp::ServerPeer::protocolSend( const std::string & line )
 	ssize_t rc = socket().write( line.data() , line.length() ) ;
 	if( rc < 0 && ! socket().eWouldBlock() )
 	{
-		doDelete() ; // onDelete() and "delete this"
+		if( allow_delete_this )
+			doDelete() ; // onDelete() and "delete this"
 	}
 	else if( rc < 0 || static_cast<size_t>(rc) < line.length() )
 	{

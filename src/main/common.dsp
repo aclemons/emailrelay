@@ -193,6 +193,10 @@ SOURCE=..\gnet\geventserver.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\glib\gexe.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\glib\gexception.cpp
 # End Source File
 # Begin Source File
@@ -278,6 +282,10 @@ SOURCE=..\glib\gpidfile.cpp
 # Begin Source File
 
 SOURCE=..\glib\gprocess_win32.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gsmtp\gprocessor.cpp
 # End Source File
 # Begin Source File
 

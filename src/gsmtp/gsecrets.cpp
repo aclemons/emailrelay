@@ -29,7 +29,66 @@
 #include "gstr.h"
 #include <fstream>
 
-GSmtp::Secrets::Secrets( const G::Path & path , const std::string & debug_name ) :
+// Class: GSmtp::SecretsImp
+// Description: A private pimple-pattern implemtation class used by GSmtp::Secrets.
+//
+class GSmtp::SecretsImp 
+{
+public:
+	SecretsImp( const G::Path & path , const std::string & name ) ;
+	~SecretsImp() ;
+	bool valid() const ;
+	std::string id( const std::string & mechanism ) const ;
+	std::string secret( const std::string & mechanism ) const ;
+	std::string secret(  const std::string & mechanism , const std::string & id ) const ;
+
+private:
+	void process( std::string mechanism , std::string side , std::string id , std::string secret ) ;
+	void read( std::istream & ) ;
+
+private:
+	typedef std::map<std::string,std::string> Map ;
+	G::Path m_path ;
+	std::string m_debug_name ;
+	bool m_valid ;
+	Map m_map ;
+} ;
+
+// ===
+
+GSmtp::Secrets::Secrets( const std::string & path , const std::string & name ) :
+	m_imp( new SecretsImp(G::Path(path),name) )
+{
+}
+
+GSmtp::Secrets::~Secrets()
+{
+	delete m_imp ;
+}
+
+bool GSmtp::Secrets::valid() const
+{
+	return m_imp->valid() ;
+}
+
+std::string GSmtp::Secrets::id( const std::string & mechanism ) const
+{
+	return m_imp->id( mechanism ) ;
+}
+
+std::string GSmtp::Secrets::secret( const std::string & mechanism ) const
+{
+	return m_imp->secret( mechanism ) ;
+}
+
+std::string GSmtp::Secrets::secret(  const std::string & mechanism , const std::string & id ) const
+{
+	return m_imp->secret( mechanism , id ) ;
+}
+
+// ===
+
+GSmtp::SecretsImp::SecretsImp( const G::Path & path , const std::string & debug_name ) :
 	m_path(path) ,
 	m_debug_name(debug_name)
 {
@@ -44,7 +103,7 @@ GSmtp::Secrets::Secrets( const G::Path & path , const std::string & debug_name )
 		G::Root claim_root ;
 		std::ifstream file( path.str().c_str() ) ;
 		if( !file.good() )
-			throw OpenError( path.str() ) ;
+			throw Secrets::OpenError( path.str() ) ;
 
 		read( file ) ;
 		m_valid = m_map.size() != 0U ;
@@ -58,7 +117,7 @@ GSmtp::Secrets::Secrets( const G::Path & path , const std::string & debug_name )
 	}
 }
 
-void GSmtp::Secrets::read( std::istream & file )
+void GSmtp::SecretsImp::read( std::istream & file )
 {
 	while( file.good() )
 	{
@@ -75,7 +134,7 @@ void GSmtp::Secrets::read( std::istream & file )
 	}
 }
 
-void GSmtp::Secrets::process( std::string mechanism , std::string side , std::string id , std::string secret )
+void GSmtp::SecretsImp::process( std::string mechanism , std::string side , std::string id , std::string secret )
 {
 	G::Str::toUpper( mechanism ) ;
 	const bool client = side.at(0U) == 'c' || side.at(0U) == 'C' ;
@@ -94,16 +153,16 @@ void GSmtp::Secrets::process( std::string mechanism , std::string side , std::st
 	m_map.insert( std::make_pair(key,value) ) ;
 }
 
-GSmtp::Secrets::~Secrets()
+GSmtp::SecretsImp::~SecretsImp()
 {
 }
 
-bool GSmtp::Secrets::valid() const
+bool GSmtp::SecretsImp::valid() const
 {
 	return m_valid ;
 }
 
-std::string GSmtp::Secrets::id( const std::string & mechanism ) const
+std::string GSmtp::SecretsImp::id( const std::string & mechanism ) const
 {
 	Map::const_iterator p = m_map.find( mechanism+" client" ) ;
 	std::string result ;
@@ -113,7 +172,7 @@ std::string GSmtp::Secrets::id( const std::string & mechanism ) const
 	return result ;
 }
 
-std::string GSmtp::Secrets::secret( const std::string & mechanism ) const
+std::string GSmtp::SecretsImp::secret( const std::string & mechanism ) const
 {
 	Map::const_iterator p = m_map.find( mechanism+" client" ) ;
 	if( p == m_map.end() || (*p).second.find(" ") == std::string::npos )
@@ -122,7 +181,7 @@ std::string GSmtp::Secrets::secret( const std::string & mechanism ) const
 		return Xtext::decode( (*p).second.substr((*p).second.find(" ")+1U) ) ;
 }
 
-std::string GSmtp::Secrets::secret(  const std::string & mechanism , const std::string & id ) const
+std::string GSmtp::SecretsImp::secret(  const std::string & mechanism , const std::string & id ) const
 {
 	Map::const_iterator p = m_map.find( mechanism+" server "+Xtext::encode(id) ) ;
 	if( p == m_map.end() )

@@ -27,12 +27,14 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gserver.h"
+#include "gstr.h"
 #include "glinebuffer.h"
 #include "gserverprotocol.h"
 #include "gsmtpclient.h"
 #include <string>
 #include <list>
 #include <sstream>
+#include <utility>
 
 namespace GSmtp
 {
@@ -47,8 +49,9 @@ namespace GSmtp
 class GSmtp::AdminPeer : public GNet::ServerPeer 
 {
 public:
-	AdminPeer( GNet::Server::PeerInfo , AdminServer & server , const std::string & , bool ) ;
-		// Constructor.
+	AdminPeer( GNet::Server::PeerInfo , AdminServer & , const GNet::Address & local , 
+		const std::string & remote , const G::StringMap & extra_commands , bool with_terminate ) ;
+			// Constructor.
 
 	virtual ~AdminPeer() ;
 		// Destructor.
@@ -63,21 +66,27 @@ private:
 	virtual void onData( const char * , size_t ) ; // from GNet::ServerPeer
 	virtual void clientDone( std::string ) ; // Client::doneSignal()
 	bool processLine( const std::string & line ) ;
-	static bool is( const std::string & , const char * ) ;
-	void flush( const std::string & ) ;
+	static bool is( const std::string & , const std::string & ) ;
+	static std::pair<bool,std::string> find( const std::string & line , const G::StringMap & map ) ;
+	void flush() ;
 	void help() ;
 	void info() ;
 	void list() ;
 	void send( std::string ) ;
+	void warranty() ;
+	void version() ;
+	void copyright() ;
 	static std::string crlf() ;
 	void prompt() ;
 
 private:
 	GNet::LineBuffer m_buffer ;
 	AdminServer & m_server ;
+	GNet::Address m_local_address ;
+	std::string m_remote_address ;
 	std::auto_ptr<GSmtp::Client> m_client ;
-	std::string m_server_address ;
 	bool m_notifying ;
+	G::StringMap m_extra_commands ;
 	bool m_with_terminate ;
 } ;
 
@@ -89,9 +98,9 @@ class GSmtp::AdminServer : public GNet::Server
 public:
 	AdminServer( MessageStore & store , const Secrets & client_secrets , 
 		const GNet::Address & listening_address , bool allow_remote , 
-		const std::string & server_address ,
+		const GNet::Address & local_address , const std::string & remote_address ,
 		unsigned int response_timeout , unsigned int connection_timeout , 
-		bool with_terminate ) ;
+		const G::StringMap & extra_commands , bool with_terminate ) ;
 			// Constructor. The 'store' and 'client-secrets' references
 			// are kept.
 
@@ -136,10 +145,12 @@ private:
 	PeerList m_peers ;
 	MessageStore & m_store ;
 	const Secrets & m_secrets ;
+	GNet::Address m_local_address ;
 	bool m_allow_remote ;
-	std::string m_server_address ;
+	std::string m_remote_address ;
 	unsigned int m_response_timeout ;
 	unsigned int m_connection_timeout ;
+	G::StringMap m_extra_commands ;
 	bool m_with_terminate ;
 } ;
 

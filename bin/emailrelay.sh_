@@ -98,7 +98,7 @@ start_switches="--as-server --pid-file ${pid_file} `cat \"${cfg_file}\" 2>/dev/n
 #
 # <style>_reset() -- initialise
 # <style>_cmd_stop() -- stop command
-# <style>_cmd_start() -- stop command
+# <style>_cmd_start() -- start command
 # <style>_cmd_restarted() -- called after stop/start
 # <style>_cmd_status() -- status command
 # <style>_exit() -- exit with saved errno

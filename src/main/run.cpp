@@ -44,13 +44,15 @@
 #include "gmemory.h"
 #include "glogoutput.h"
 #include "gdebug.h"
+#include "legal.h"
 #include <iostream>
 #include <exception>
+#include <utility>
 
 //static
 std::string Main::Run::versionNumber()
 {
-	return "1.1.3" ;
+	return "1.2" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string & switch_spec ) :
@@ -162,10 +164,10 @@ void Main::Run::checkPort( const std::string & interface_ , unsigned int port )
 void Main::Run::checkPorts() const
 {
 	if( cfg().doServing() && cfg().doSmtp() )
-		checkPort( cfg().interface_() , cfg().port() ) ;
+		checkPort( cfg().listeningInterface() , cfg().port() ) ;
 
 	if( cfg().doServing() && cfg().doAdmin() )
-		checkPort( cfg().interface_() , cfg().adminPort() ) ;
+		checkPort( cfg().listeningInterface() , cfg().adminPort() ) ;
 }
 
 void Main::Run::runCore()
@@ -206,10 +208,9 @@ void Main::Run::runCore()
 
 	// message store singleton
 	//
-	m_store <<= new GSmtp::FileStore( cfg().spoolDir() ) ;
+	m_store <<= new GSmtp::FileStore( cfg().spoolDir() , 
+		G::Executable(cfg().filter()) , G::Executable(cfg().clientFilter()) ) ;
 	m_store->signal().connect( G::slot(*this,&Run::raiseStoreEvent) ) ;
-	if( cfg().useFilter() )
-		GSmtp::NewFile::setPreprocessor( G::Path(cfg().filter()) ) ;
 
 	// authentication secrets
 	//
@@ -247,13 +248,14 @@ void Main::Run::doServing( GSmtp::MessageStore & store , const GSmtp::Secrets & 
 	if( cfg().doSmtp() )
 	{
 		GSmtp::Server::AddressList interfaces ;
-		if( cfg().interface_().length() )
-			interfaces.push_back( GNet::Address(cfg().interface_(),cfg().port()) ) ;
+		if( cfg().listeningInterface().length() )
+			interfaces.push_back( GNet::Address(cfg().listeningInterface(),cfg().port()) ) ;
 
 		smtp_server <<= new GSmtp::Server( 
 			store , 
 			server_secrets , 
-			GSmtp::Verifier(cfg().verifier(),cfg().deliverToPostmaster(),cfg().rejectLocalMailboxes()) ,
+			GSmtp::Verifier(G::Executable(cfg().verifier()),cfg().deliverToPostmaster(),
+				cfg().rejectLocalMailboxes()) ,
 			smtpIdent() , 
 			cfg().allowRemoteClients() , 
 			cfg().port() , 
@@ -269,20 +271,43 @@ void Main::Run::doServing( GSmtp::MessageStore & store , const GSmtp::Secrets & 
 
 	if( cfg().doAdmin() )
 	{
-		GNet::Address address = 
-			cfg().interface_().length() ? 
-				GNet::Address(cfg().interface_(),cfg().adminPort()) :
+		GNet::Address listening_address = 
+			cfg().listeningInterface().length() ? 
+				GNet::Address(cfg().listeningInterface(),cfg().adminPort()) :
 				GNet::Address(cfg().adminPort()) ;
+
+		GNet::Address local_address = 
+			cfg().clientInterface().length() ? 
+				GNet::Address(cfg().clientInterface(),0U) :
+				GNet::Address(0U) ;
+
+		G::StringMap extra_commands_map ;
+		extra_commands_map.insert( std::make_pair(std::string("version"),versionNumber()) ) ;
+		extra_commands_map.insert( std::make_pair(std::string("warranty"),
+			Legal::warranty(std::string(),std::string(1U,'\n'))) ) ;
+		extra_commands_map.insert( std::make_pair(std::string("copyright"),Legal::copyright()) ) ;
 
 		m_admin_server <<= new GSmtp::AdminServer( 
 			store , 
 			client_secrets , 
-			address ,
+			listening_address ,
 			cfg().allowRemoteClients() , 
+			local_address ,
 			cfg().serverAddress() ,
 			cfg().responseTimeout() , 
 			cfg().connectionTimeout() ,
+			extra_commands_map ,
 			cfg().withTerminate() ) ;
+
+		// undocumented forwards-compatibility feature, tcp://[<ip>[:<port>]][/<addressfile>], eg.
+		// "--admin tcp:///tmp/emailrelay_admin_address"
+		if( cfg().adminAddressFile() != G::Path() )
+		{
+			G::Root claim_root ;
+			std::ofstream address_file( cfg().adminAddressFile().str().c_str() ) ;
+			if( !address_file.good() ) throw G::Exception( "cannot create --admin address file" ) ;
+			address_file << m_admin_server->address().second.displayString() << std::endl ;
+		}
 	}
 
 	if( cfg().doPolling() )
@@ -307,8 +332,11 @@ void Main::Run::doForwarding( GSmtp::MessageStore & store , const GSmtp::Secrets
 	GNet::EventLoop & event_loop )
 {
 	const bool quit_on_disconnect = true ;
-	GSmtp::Client client( store , secrets , quit_on_disconnect , 
-		cfg().responseTimeout() ) ;
+
+	GNet::Address local_address = cfg().clientInterface().length() ?
+		GNet::Address(cfg().clientInterface(),0U ) : GNet::Address( 0U ) ;
+
+	GSmtp::Client client( store , secrets , local_address , quit_on_disconnect , cfg().responseTimeout() ) ;
 
 	client.doneSignal().connect( G::slot(*this,&Run::clientDone) ) ;
 	client.eventSignal().connect( G::slot(*this,&Run::clientEvent) ) ;
@@ -347,8 +375,12 @@ std::string Main::Run::doPoll()
 		G_LOG( "Main::Run::doPoll: polling" ) ;
 
 		const bool quit_on_disconnect = false ;
-		m_client <<= new GSmtp::Client( *m_store.get() , *m_client_secrets.get() , quit_on_disconnect , 
-			cfg().responseTimeout() ) ;
+
+		GNet::Address local_address = cfg().clientInterface().length() ?
+			GNet::Address(cfg().clientInterface(),0U ) : GNet::Address( 0U ) ;
+
+		m_client <<= new GSmtp::Client( *m_store.get() , *m_client_secrets.get() , 
+			local_address , quit_on_disconnect , cfg().responseTimeout() ) ;
 
 		m_client->doneSignal().connect( G::slot(*this,&Run::clientDone) ) ;
 		m_client->eventSignal().connect( G::slot(*this,&Run::clientEvent) ) ;

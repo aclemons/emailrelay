@@ -51,6 +51,10 @@ public:
 	virtual const G::Strings & to() const = 0 ;
 		// Returns the envelope 'to' fields.
 
+	virtual bool preprocess() = 0 ;
+		// Does synchronous pre-processing. Returns false
+		// on error.
+
 	virtual std::auto_ptr<std::istream> extractContentStream() = 0 ;
 		// Extracts the content stream.
 		// Can only be called once.

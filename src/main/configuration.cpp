@@ -62,7 +62,7 @@ std::string Main::Configuration::str( const std::string & p , const std::string 
 	std::ostringstream ss ;
 	ss
 		<< p << "listening port: " << (doServing()?G::Str::fromUInt(port()):na()) << eol
-		<< p << "listening interface: " << (doServing()?any(interface_()):na()) << eol
+		<< p << "listening interface: " << (doServing()?any(listeningInterface()):na()) << eol
 		<< p << "next server address: " << ((doForwarding()||doPolling())?serverAddress():na()) << eol
 		<< p << "spool directory: " << spoolDir() << eol
 		<< p << "immediate forwarding? " << yn(immediate()) << eol
@@ -122,15 +122,48 @@ unsigned int Main::Configuration::port() const
 		G::Str::toUInt(m_cl.value("port")) : 25U ;
 }
 
-std::string Main::Configuration::interface_() const
+std::string Main::Configuration::listeningInterface() const
 {
 	return m_cl.contains("interface") ? m_cl.value("interface") : std::string() ;
 }
 
+std::string Main::Configuration::clientInterface() const
+{
+	return listeningInterface() ; // or a separate switch?
+}
+
+G::Path Main::Configuration::adminAddressFile() const
+{
+	if( ! m_cl.contains("admin") ) 
+		return G::Path() ;
+
+	const std::string s = m_cl.value("admin") ;
+	if( s.find("tcp://") == 0U && s.length() > 6U && s.find("/",6U) != std::string::npos )
+	{
+		return G::Path(s.substr(s.find("/",6U))) ;
+	}
+	else
+	{
+		return G::Path() ;
+	}
+}
+
 unsigned int Main::Configuration::adminPort() const
 {
-	return m_cl.contains("admin") ?
-		G::Str::toUInt(m_cl.value("admin")) : 10025U ;
+	std::string s = m_cl.contains("admin") ? m_cl.value("admin") : std::string() ;
+	if( s.find("tcp://") == 0U )
+	{
+		s = 6U >= s.length() ? std::string() : s.substr(6U) ;
+
+		size_t p = s.find("/") ;
+		if( p != std::string::npos ) 
+			s = s.substr(0U,p) ;
+
+		p = s.find_last_of( ':' ) ;
+		if( p != std::string::npos )
+			s = (p+1U) >= s.length() ? std::string() : s.substr(p+1U) ;
+	}
+	return s.empty() ? 0U : G::Str::toUInt(s) ;
 }
 
 bool Main::Configuration::closeStderr() const
@@ -222,7 +255,12 @@ bool Main::Configuration::useFilter() const
 
 std::string Main::Configuration::filter() const
 {
-	return m_cl.value("filter") ;
+	return m_cl.contains("filter") ? m_cl.value("filter") : std::string() ;
+}
+
+std::string Main::Configuration::clientFilter() const
+{
+	return m_cl.contains("client-filter") ? m_cl.value("client-filter") : std::string() ;
 }
 
 unsigned int Main::Configuration::icon() const

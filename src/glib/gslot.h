@@ -26,6 +26,10 @@
 // * not supporting global function callbacks
 // * using only void returns
 //
+// Event-generating classes expose a "signal" object which
+// client objects can connect() to in order to receive events. 
+// The client receives events through a "slot" member function.
+//
 // The key to the implementation is that SlotImp<> is 
 // templated on the callback parameter P and the callback 
 // sink class T, but Slot<> is templated only on P, so 

@@ -117,10 +117,9 @@ public:
 		// Removes a timer from the list.
 		// Used by Timer::~Timer().
 
-	void update( G::DateTime::EpochTime previous_soonest , 
-		const std::string & why ) ;
-			// Called when one of the list's timers
-			// has changed.
+	void update( G::DateTime::EpochTime previous_soonest ) ;
+		// Called when one of the list's timers
+		// has changed.
 
 	G::DateTime::EpochTime soonest() const ;
 		// Returns the time of the first timer to expire,
@@ -145,12 +144,18 @@ public:
 private:
 	TimerList( const TimerList & ) ; // not implemented
 	void operator=( const TimerList & ) ; // not implemented
+	G::DateTime::EpochTime soonest( int ) const ; // fast overload
+	void update() ;
+	bool valid() const ;
 
 private:
 	static TimerList * m_this ;
 	typedef std::list<Timer*> List ;
 	List m_list ;
-	bool m_changed ;
+	bool m_list_changed ;
+	bool m_empty_set_timeout_hint ;
+	bool m_soonest_changed ; // mutable
+	G::DateTime::EpochTime m_soonest ;
 } ;
 
 

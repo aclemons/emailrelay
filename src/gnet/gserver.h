@@ -224,6 +224,7 @@ private:
 	void operator=( const ServerPeer & ) ; // not implemented
 
 private:
+	enum { c_buffer_size = 1500 } ;
 	Address m_address ;
 	std::auto_ptr<StreamSocket> m_socket ;
 	ServerPeerHandle * m_handle ;

@@ -34,11 +34,13 @@
 namespace GSmtp
 {
 	class Secrets ;
+	class SecretsImp ;
 }
 
 // Class: GSmtp::Secrets
 // Description: A simple interface to a store of secrets as used in
-// authentication.
+// authentication. The default implementation uses a flat file.
+//
 // See also: GSmtp::SaslClient, GSmtp::SaslServer
 //
 class GSmtp::Secrets 
@@ -46,8 +48,10 @@ class GSmtp::Secrets
 public:
 	G_EXCEPTION( OpenError , "cannot read secrets file" ) ;
 
-	explicit Secrets( const G::Path & path , const std::string & debug_name = std::string() ) ;
-		// Constructor.
+	explicit Secrets( const std::string & storage_path , const std::string & debug_name = std::string() ) ;
+		// Constructor. In principle the storage_path can
+		// be a path to a file, a database connection
+		// string, etc.
 
 	~Secrets() ;
 		// Destructor.
@@ -68,17 +72,11 @@ public:
 		// empty string if not a valid id.
 
 private:
-	void read( std::istream & ) ;
-	void process( std::string , std::string , std::string , std::string ) ;
 	Secrets( const Secrets & ) ; // not implemented
 	void operator=( const Secrets & ) ; // not implemented
 
 private:
-	typedef std::map<std::string,std::string> Map ;
-	G::Path m_path ;
-	std::string m_debug_name ;
-	bool m_valid ;
-	Map m_map ;
+	SecretsImp * m_imp ;
 } ;
 
 #endif

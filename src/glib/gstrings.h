@@ -28,6 +28,7 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <map>
 
 namespace G
 {
@@ -42,6 +43,11 @@ typedef std::list<std::string> Strings ;
 // Description: A std::vector of std::strings.
 //
 typedef std::vector<std::string> StringArray ;
+
+// Typedef: StringMap
+// Description: A std::map of std::strings.
+//
+typedef std::map<std::string,std::string> StringMap ;
 
 }
 

@@ -56,11 +56,11 @@ public:
 	unsigned int port() const ;
 		// Returns the main listening port number.
 
-	std::string interface_() const ;
+	std::string listeningInterface() const ;
 		// Returns the listening interface.
 
-	unsigned int adminPort() const ;
-		// Returns the admin port number.
+	std::string clientInterface() const ;
+		// Returns the sending interface.
 
 	bool closeStderr() const ;
 		// Returns true if stderr should be closed.
@@ -98,6 +98,12 @@ public:
 	bool doAdmin() const ;
 		// Returns true if listening for admin connections.
 
+	G::Path adminAddressFile() const ;
+		// Returns the admin address file path.
+
+	unsigned int adminPort() const ;
+		// Returns the admin port number.
+
 	bool allowRemoteClients() const ;
 		// Returns true if allowing remote clients to connect.
 
@@ -117,7 +123,10 @@ public:
 		// Returns true if pre-processing.
 
 	std::string filter() const ;
-		// Returns the pre-processor's path.
+		// Returns the path to a server-side pre-processor.
+
+	std::string clientFilter() const ;
+		// Returns the path to a client-side pre-processor.
 
 	unsigned int icon() const ;
 		// Returns the icon selector (win32).

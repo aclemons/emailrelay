@@ -65,7 +65,7 @@ class GSmtp::ServerProtocol
 public:
 	class Sender // An interface used by ServerProtocol to send protocol replies.
 	{
-		public: virtual void protocolSend( const std::string & s ) = 0 ;
+		public: virtual void protocolSend( const std::string & s , bool allow_delete_this ) = 0 ;
 		public: virtual void protocolDone() = 0 ;
 		public: virtual ~Sender() ;
 		private: void operator=( const Sender & ) ; // not implemented
@@ -139,7 +139,7 @@ private:
 private:
 	ServerProtocol( const ServerProtocol & ) ; // not implemented
 	void operator=( const ServerProtocol & ) ; // not implemented
-	void send( std::string ) ;
+	void send( std::string , bool = true ) ;
 	Event commandEvent( const std::string & ) const ;
 	std::string commandWord( const std::string & line ) const ;
 	std::string commandLine( const std::string & line ) const ;

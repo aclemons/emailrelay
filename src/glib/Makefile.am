@@ -58,6 +58,8 @@ libglib_a_SOURCES = \
 	gdirectory_unix.cpp \
 	gexception.cpp \
 	gexception.h \
+	gexe.cpp \
+	gexe.h \
 	gfile.cpp \
 	gfile.h \
 	gfile_unix.cpp \

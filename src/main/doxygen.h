@@ -39,6 +39,7 @@ of the code structure, and there are a number of supporting diagrams:
 <li><a href="../gnet-client.png">GNet::Client state transition diagram</a></li>
 <li><a href="../gsmtp-scannerclient.png">GNet::ScannerClient state transition diagram</a></li>
 <li><a href="../gsmtp-serverprotocol.png">GSmtp::ServerProtocol state transition diagram</a></li>
+<li><a href="../auth.png">Authentication usage</a></li>
 </ul>
 
 */

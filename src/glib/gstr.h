@@ -212,6 +212,8 @@ public:
 	static std::string join( const StringArray & strings , const std::string & sep ) ;
 		// Concatenates a set of strings.
 
+	static Strings keys( const StringMap & string_map ) ;
+		// Extracts the keys from a map of strings.
 
 private:
 	static void listPushBack( void * , const std::string & ) ;

@@ -87,17 +87,9 @@ public:
 		EventHandler * handler = NULL ) ;
 } ;
 
-inline
-GNet::EventHandlerListItem::EventHandlerListItem( Descriptor fd , EventHandler * handler ) :
-	m_fd(fd) , 
-	m_handler(handler) 
-{
-}
-
 namespace GNet
 {
-	typedef std::list<EventHandlerListItem>
-		EventHandlerListImp ;
+	typedef std::list<EventHandlerListItem> EventHandlerListImp ;
 }
 
 // Class: GNet::EventHandlerList
@@ -111,11 +103,11 @@ public:
 	typedef List::const_iterator Iterator ;
 
 public:
-	explicit EventHandlerList( std::string type ) ;
+	explicit EventHandlerList( const std::string & type ) ;
 		// Constructor. The type parameter (eg. "read")
 		// is used only in debugging messages.
 
-	void add( Descriptor fd , EventHandler *handler ) ;
+	void add( Descriptor fd , EventHandler * handler ) ;
 		// Adds a file-descriptor/handler pair to
 		// the list.
 
@@ -131,55 +123,35 @@ public:
 		// given file descriptor.
 
 	void lock() ; 
-		// Locks the list so that add() and remove() are 
-		// deferred until the matching unlock(). This
-		// is needed during iteration -- see begin()/end().
+		// Called at the start of an iteration which
+		// might change the list.
 
 	void unlock() ; 
-		// Applies any deferred changes. See lock().
+		// Called at the end of an iteration.
 
 	Iterator begin() const ;
-		// Returns an iterator (using the STL model).
+		// Returns a forward iterator.
 
 	Iterator end() const ;
-		// Returns an end iterator (using the STL model).
+		// Returns an end iterator.
 
 	static Descriptor fd( Iterator i ) ;
 		// Returns the iterator's file descriptor.
 
-	static EventHandler & handler( Iterator i ) ;
-		// Returns the iterator's handler.
-
-	std::string asString() const ;
-		// Returns a descriptive string for the list. Used 
-		// for debugging.
+	static EventHandler * handler( Iterator i ) ;
+		// Returns the iterator's handler. Returns null
+		// if the fd has been remove()d but the
+		// list is still lock()ed.
 
 private:
 	EventHandlerList( const EventHandlerList & ) ;
 	void operator=( const EventHandlerList & ) ;
-	static bool contains( const EventHandlerListImp & , Descriptor fd ) ;
-	EventHandlerListImp & list() ;
-	std::string asString( const EventHandlerListImp & ) const ;
 
 private:
-	std::string m_type ; // for debugging
+	std::string m_type ;
 	List m_list ;
-	List m_copy ;
 	unsigned int m_lock ;
-	bool m_copied ;
 } ;
-
-inline
-GNet::EventHandlerList::Iterator GNet::EventHandlerList::begin() const
-{
-	return m_list.begin() ;
-}
-
-inline
-GNet::EventHandlerList::Iterator GNet::EventHandlerList::end() const
-{
-	return m_list.end() ;
-}
 
 //static 
 inline
@@ -190,9 +162,9 @@ GNet::Descriptor GNet::EventHandlerList::fd( Iterator i )
 
 //static 
 inline
-GNet::EventHandler & GNet::EventHandlerList::handler( Iterator i )
+GNet::EventHandler * GNet::EventHandlerList::handler( Iterator i )
 {
-	return *((*i).m_handler) ;
+	return (*i).m_handler ;
 }
 
 #endif

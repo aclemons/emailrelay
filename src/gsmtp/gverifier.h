@@ -28,6 +28,7 @@
 #include "gsmtp.h"
 #include "gaddress.h"
 #include "gpath.h"
+#include "gexe.h"
 #include <string>
 
 namespace GSmtp
@@ -53,7 +54,7 @@ public:
 		std::string reason ;
 	} ;
 
-	Verifier( const G::Path & exe , bool deliver_to_postmaster , bool reject_local ) ;
+	Verifier( const G::Executable & exe , bool deliver_to_postmaster , bool reject_local ) ;
 		// Constructor. If an executable path is given (ie. not 
 		// G::Path()) then it is used for external verification.
 		// Otherwise the internal verifier is used, controlled
@@ -99,7 +100,7 @@ private:
 		const std::string & , const std::string & ) const ;
 
 private:
-	G::Path m_path ;
+	G::Executable m_external ;
 	bool m_deliver_to_postmaster ;
 	bool m_reject_local ;
 } ;

@@ -18,22 +18,48 @@
 // 
 // ===
 //
-// gresolve_ipv4.cpp
+// gexe.h
 //
+	
+#ifndef G_EXE_H
+#define G_EXE_H
 
 #include "gdef.h"
-#include "gresolve.h"
+#include "gpath.h"
+#include "gstrings.h"
+#include <string>
 
-//static
-bool GNet::Resolver::resolveHost( const std::string & host_name , HostInfo & host_info )
+namespace G
 {
-	hostent * host = ::gethostbyname( host_name.c_str() ) ;
-	if( host != NULL )
-	{
-		const char * h_name = host->h_name ;
-		host_info.canonical_name = std::string(h_name?h_name:"") ;
-		host_info.address = Address( *host , 0U ) ;
-	}
-	return host != NULL ;
+	class Executable ;
 }
+
+// Class: G::Executable
+// Description: A structure representing an external program,
+// holding a path and a set of arguments.
+// See also: G::Path, G::Args
+//
+class G::Executable 
+{
+public:
+	explicit Executable( const std::string & command_line = std::string() ) ;
+		// Constructor taking a complete command-line.
+		// The command-line is split up on unescaped
+		// space characters.
+
+	explicit Executable( const G::Path & exe ) ;
+		// Constructor for an executable with no extra arguments.
+
+	Path exe() const ;
+		// Returns the executable.
+
+	Strings args() const ;
+		// Returns the command-line arguments.
+
+private:
+	G::Path m_exe ;
+	G::Strings m_args ;
+} ;
+
+#endif
 

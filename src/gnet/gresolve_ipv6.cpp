@@ -39,7 +39,8 @@ bool GNet::Resolver::resolveHost( const std::string & host_name , HostInfo & hos
 		host = ::getipnodebyname( host_name.c_str() , AF_INET6 , AI_DEFAULT , &error ) ;
 		if( host != NULL )
 		{
-			host_info.canonical_name = std::string(host->h_name) ;
+			const char * h_name = host->h_name ;
+			host_info.canonical_name = std::string(h_name?h_name:"") ;
 			host_info.address = Address( *host , 0U ) ;
 			::freehostent( host ) ;
 		}

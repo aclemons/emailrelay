@@ -121,7 +121,7 @@ protected:
 	virtual void dropRead( Descriptor fd ) ;
 	virtual void dropWrite( Descriptor fd ) ;
 	virtual void dropException( Descriptor fd ) ;
-	virtual void setTimeout( G::DateTime::EpochTime ) ;
+	virtual void setTimeout( G::DateTime::EpochTime , bool & ) ;
 
 private:
 	Winsock( const Winsock & other ) ;
@@ -380,7 +380,7 @@ void GNet::Winsock::onTimer()
 	TimerList::instance().doTimeouts() ;
 }
 
-void GNet::Winsock::setTimeout( G::DateTime::EpochTime t )
+void GNet::Winsock::setTimeout( G::DateTime::EpochTime t , bool & )
 {
 	G_DEBUG( "GNet::Winsock::setTimeout: " << t ) ;
 	if( t != 0U )

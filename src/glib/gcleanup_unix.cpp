@@ -74,7 +74,8 @@ G::CleanupImp::Link * G::CleanupImp::m_tail = NULL ;
 
 void G::Cleanup::add( void (*fn)(const char*) , const char * arg )
 {
-	CleanupImp::add( fn , arg ) ;
+	if( arg != NULL )
+		CleanupImp::add( fn , arg ) ;
 }
 
 // ===

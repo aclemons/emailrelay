@@ -169,8 +169,8 @@ void G::LogOutput::addFileAndLine( char *buffer , size_t size , const char *file
 		add( buffer , size , basename ) ;
 		add( buffer , size , "(" ) ;
 		char b[15U] ;
-		add( buffer , sizeof(buffer) , itoa(b,sizeof(b),line) ) ;
-		add( buffer , sizeof(buffer) , "): " ) ;
+		add( buffer , size , itoa(b,sizeof(b),line) ) ;
+		add( buffer , size , "): " ) ;
 	}
 }
 

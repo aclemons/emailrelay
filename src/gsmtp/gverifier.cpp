@@ -33,8 +33,8 @@
 #include "gassert.h"
 #include "glog.h"
 
-GSmtp::Verifier::Verifier( const G::Path & path , bool deliver_to_postmaster , bool reject_local ) :
-	m_path(path) ,
+GSmtp::Verifier::Verifier( const G::Executable & external , bool deliver_to_postmaster , bool reject_local ) :
+	m_external(external) ,
 	m_deliver_to_postmaster(deliver_to_postmaster) ,
 	m_reject_local(reject_local)
 {
@@ -62,7 +62,7 @@ GSmtp::Verifier::Status GSmtp::Verifier::verify( const std::string & address ,
 	G::Str::toUpper( user ) ;
 
 	Status status = 
-		m_path == G::Path() ?
+		m_external.exe() == G::Path() ?
 			verifyInternal( address , user , host , fqdn ) :
 			verifyExternal( address , user , host , fqdn , from , ip , mechanism , extra ) ;
 
@@ -104,7 +104,7 @@ GSmtp::Verifier::Status GSmtp::Verifier::verifyExternal( const std::string & add
 	const std::string & host , const std::string & fqdn , const std::string & from ,
 	const GNet::Address & ip , const std::string & mechanism , const std::string & extra ) const
 {
-	G::Strings args ;
+	G::Strings args( m_external.args() ) ;
 	args.push_back( address ) ;
 	args.push_back( user ) ;
 	args.push_back( host ) ;
@@ -113,12 +113,12 @@ GSmtp::Verifier::Status GSmtp::Verifier::verifyExternal( const std::string & add
 	args.push_back( ip.displayString(false) ) ;
 	args.push_back( mechanism ) ;
 	args.push_back( extra ) ;
-	G_LOG( "GSmtp::Verifier: executing " << m_path << " " << address << " " << user << " "
+	G_LOG( "GSmtp::Verifier: executing " << m_external.exe() << " " << address << " " << user << " "
 		<< host << " " << fqdn << " " << from << " " << ip.displayString(false) << " "
 		<< "\"" << mechanism << "\" \"" << extra << "\"" ) ;
 
 	std::string response ;
-	int rc = G::Process::spawn( G::Root::nobody() , m_path , args , &response ) ;
+	int rc = G::Process::spawn( G::Root::nobody() , m_external.exe() , args , &response ) ;
 
 	G_LOG( "GSmtp::Verifier: " << rc << ": \"" << G::Str::toPrintableAscii(response) << "\"" ) ;
 	G::Str::trimRight( response , " \n\t" ) ;

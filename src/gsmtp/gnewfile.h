@@ -27,7 +27,9 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gfilestore.h"
+#include "gstrings.h"
 #include "gnewmessage.h"
+#include "gprocessor.h"
 #include "gexception.h"
 #include <iostream>
 
@@ -46,8 +48,9 @@ class GSmtp::NewFile : public GSmtp::NewMessage
 public:
 	G_EXCEPTION( InvalidPath , "invalid path -- must be absolute" ) ;
 
-	NewFile( const std::string & from , FileStore & store ) ;
-		// Constructor.
+	NewFile( const std::string & from , FileStore & store , Processor & store_preprocessor ) ;
+		// Constructor. The preprocessor is ignored if
+		// its exe() path is empty.
 
 	virtual ~NewFile() ;
 		// Destructor.
@@ -66,7 +69,7 @@ public:
 	virtual unsigned long id() const ;
 		// Returns the message's unique non-zero identifier.
 
-	static void setPreprocessor( const G::Path & exe ) ;
+	static void setPreprocessor( const G::Path & exe , const G::Strings & exe_args ) ;
 		// Defines a program which is used for pre-processing
 		// messages before they are stored.
 
@@ -75,6 +78,7 @@ public:
 
 private:
 	FileStore & m_store ;
+	Processor & m_store_preprocessor ;
 	unsigned long m_seq ;
 	std::string m_from ;
 	G::Strings m_to_local ;
@@ -84,8 +88,6 @@ private:
 	bool m_eight_bit ;
 	bool m_saved ;
 	bool m_repoll ;
-	static bool m_preprocess ;
-	static G::Path m_preprocessor ;
 
 private:
 	bool saveEnvelope( std::ostream & , const std::string & where , 

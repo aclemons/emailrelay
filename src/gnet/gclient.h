@@ -47,11 +47,15 @@ namespace GNet
 class GNet::Client : public GNet::Connection 
 {
 public:
-	explicit Client( bool priviledged = false , bool quit_on_disconnect = false ) ;
-		// Constructor. If the 'priviledged' parameter
-		// is true the the local endpoint of the
-		// outgoing connection is bound to a
-		// priviledged port number (ie. < 1024),
+	Client( const Address & local_interface , bool priviledged , bool quit_on_disconnect ) ;
+		// Constructor. 
+		//
+		// The socket is bound with the given local address,
+		// but with an arbitrary port number. The local address
+		// may be the INADDR_ANY address.
+		//
+		// If the 'priviledged' parameter is true then socket 
+		// is bound with priviledged port number (ie. < 1024),
 		// selected at random.
 		//
 		// If the 'quit' parameter is true then the client will
@@ -59,6 +63,10 @@ public:
 		// disconnects or looses the connection. Cleary 'quit' 
 		// should only be true if this client is the only thing 
 		// using the event loop.
+
+	explicit Client( bool priviledged = false , bool quit_on_disconnect = false ) ;
+		// Constructor overload for a INADDR_ANY local
+		// interface.
 
 	bool connect( std::string host, std::string service, 
 		std::string *error_string = NULL ,

@@ -55,10 +55,10 @@ public:
 	class Broadcast // An overload discriminator class for GNet::Address.
 		{} ;
 
-	Address( const Address &addr ) ;
+	Address( const Address & addr ) ;
 		// Copy constructor.
 
-	Address( const sockaddr *addr , int len ) ;
+	Address( const sockaddr * addr , int len ) ;
 		// Constructor using a given sockaddr.
 		//
 		// The given sockaddr address must be an Internet
@@ -183,7 +183,7 @@ private:
 
 private:
 	AddressImp * m_imp ;
-};
+} ;
 
 #endif
 

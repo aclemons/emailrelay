@@ -121,8 +121,9 @@ private:
 	void setPrefix() ;
 	static bool match( bool , const std::string & , const std::string & ) ;
 	void parseCore( const std::string & ) ;
-	void protect( std::string & ) ;
-	void unprotect( StringArray & ) ;
+	static void protect( std::string & ) ;
+	static void unprotect( StringArray & ) ;
+	static void dequote( StringArray & ) ;
 
 private:
 	StringArray m_array ;

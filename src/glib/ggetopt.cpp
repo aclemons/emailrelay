@@ -473,6 +473,7 @@ std::string G::GetOpt::value( char c ) const
 
 std::string G::GetOpt::value( const std::string & name ) const
 {
+	G_ASSERT( contains(name) ) ;
 	return value( key(name) ) ;
 }
 

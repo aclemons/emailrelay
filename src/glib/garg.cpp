@@ -89,6 +89,7 @@ void G::Arg::parseCore( const std::string & command_line )
 	protect( s ) ;
 	G::Str::splitIntoTokens( s , m_array , " " ) ;
 	unprotect( m_array ) ;
+	dequote( m_array ) ;
 }
 
 void G::Arg::protect( std::string & s )
@@ -117,6 +118,20 @@ void G::Arg::unprotect( StringArray & array )
 	{
 		std::string & s = *p ;
 		G::Str::replaceAll( s , std::string(1U,replacement) , std::string(1U,space) ) ;
+	}
+}
+
+void G::Arg::dequote( StringArray & array )
+{
+	// remove quotes if first and last characters
+	char qq = '\"' ;
+	for( StringArray::iterator p = array.begin() ; p != array.end() ; ++p )
+	{
+		std::string & s = *p ;
+		if( s.length() > 1U && s.at(0U) == qq && s.at(s.length()-1U) == qq )
+		{
+			s = s.substr(1U,s.length()-2U) ;
+		}
 	}
 }
 

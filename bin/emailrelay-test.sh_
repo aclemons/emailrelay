@@ -33,13 +33,17 @@
 #
 # If this test takes more a minute then it has failed.
 #
-# usage: emailrelay-test.sh [-v] [-d] [<exe-dir>]
+# usage: emailrelay-test.sh [-v] [-d] [-n] [<exe-dir>]
+#	-v    use valgrind
+#	-d    use --debug
+#	-n    no cleanup
 #
 
 # configuration
 #
 use_valgrind="0" ; if test "${1}" = "-v" ; then use_valgrind="1" ; shift ; fi
 debug="" ; if test "${1}" = "-d" ; then debug="--debug" ; shift ; fi
+no_cleanup="0" ; if test "${1}" = "-n" ; then no_cleanup="1" ; shift ; fi
 exe_dir="../src/main" ; if test "${1}" != "" ; then exe_dir="${1}" ; fi
 exe="${exe_dir}/emailrelay"
 poke="${exe_dir}/emailrelay-poke"
@@ -84,8 +88,15 @@ Cleanup()
 	then
 		grep "MailRelay-Reason" ${base_dir}/*/*envelope*bad > "${summary_log}" 2>/dev/null
 		grep "." ${base_dir}/log-? >> "${summary_log}" 2>/dev/null
+		if test "${use_valgrind}" -eq 1
+		then
+			grep "." ${base_dir}/valgrind.* >> "${summary_log}" 2>/dev/null
+		fi
 		ls -lR ${base_dir} >> "${summary_log}" 2>/dev/null
-		rm -rf ${base_dir} 2>/dev/null
+		if test "${no_cleanup}" -eq 0
+		then
+			rm -rf ${base_dir} 2>/dev/null
+		fi
 	fi
 }
 
@@ -117,7 +128,7 @@ RunClient()
 	log_="${3}"
 	pidfile_="${4}"
 
-	${exe} --forward --no-daemon --dont-serve --log --no-syslog \
+	${exe} ${debug} --forward --no-daemon --dont-serve --log --verbose --no-syslog \
 		--pid-file ${base_dir}/${pidfile_} \
 		--forward-to ${to_} --spool-dir ${base_dir}/${spool_} 2> ${base_dir}/${log_}
 }
@@ -234,12 +245,13 @@ RunServer ${pp}05 ${pp}15 store-4 log-5 pid-5 "--poll 1 --forward-to localhost:$
 RunServer ${pp}06 ${pp}16 store-6 log-6 pid-6 "--filter ${base_dir}/filter.sh"
 
 CreateMessages
-RunClient localhost:${pp}01 store-1 log-c pid-5
+RunClient localhost:${pp}01 store-1 log-c pid-7
 RunPoke ${pp}12 log-p
 
-for i in 0 1 2 3 4 5 6 7 8 9
+for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 do
-	sleep 2
+	if test "${use_valgrind}" -eq 1 ; then sleep 50 ; fi
+	sleep 10
 	CheckResults store-6
 	if test $? -eq 0 ; then break ; fi
 done

@@ -30,6 +30,7 @@ mk_sources=\
 	gmessagestore_win32.cpp \
 	gnewfile.cpp \
 	gnewmessage.cpp \
+	gprocessor.cpp \
 	gprotocolmessage.cpp \
 	gprotocolmessageforward.cpp \
 	gprotocolmessagestore.cpp \

@@ -65,7 +65,7 @@ public:
 
 private:
 	void runOnce() ;
-	virtual void setTimeout( G::DateTime::EpochTime t ) ;
+	virtual void setTimeout( G::DateTime::EpochTime t , bool & ) ;
 
 private:
 	bool m_quit ;
@@ -100,7 +100,7 @@ class GNet::FdSet
 public:
 	static int init( int n , fd_set * set , const EventHandlerList & list ) ;
 	static void raiseEvents( fd_set * set , EventHandlerList & list , 
-		void (EventHandler::*method)() , const char * type ) ;
+		void (EventHandler::*method)() ) ;
 private:
 	FdSet() ; // not implemented
 } ;
@@ -140,8 +140,7 @@ int GNet::FdSet::init( int n , fd_set * set , const EventHandlerList & list )
 }
 
 //static 
-void GNet::FdSet::raiseEvents( fd_set * set , EventHandlerList & list , 
-	void (EventHandler::*method)() , const char * /*type*/ )
+void GNet::FdSet::raiseEvents( fd_set * set , EventHandlerList & list , void (EventHandler::*method)() )
 {
 	// call the event-handler for fds in fd-set which are ISSET()
 
@@ -153,8 +152,9 @@ void GNet::FdSet::raiseEvents( fd_set * set , EventHandlerList & list ,
 		if( FD_ISSET( fd , set ) )
 		{
 			//G_DEBUG( "raiseEvents: " << type << " event on fd " << fd ) ;
-			EventHandler & h = EventHandlerList::handler( p ) ;
-			(h.*method)() ;
+			EventHandler * h = EventHandlerList::handler( p ) ;
+			if( h != NULL )
+				(h->*method)() ;
 		}
 	}
 }
@@ -228,18 +228,6 @@ void GNet::Select::runOnce()
 		timeout_p = infinite ? NULL : &timeout ;
 	}
 
-	// debug
-	//
-	const bool debug = false ;
-	if( debug )
-	{
-		G_DEBUG( "GNet::Select::runOnce: selecting: fd(max) = " << (n-1) << ": "
-			<< "read-list=\"" << m_read_list.asString() << "\": "
-			<< "write-list=\"" << m_write_list.asString() << "\": "
-			<< "exception-list=\"" << m_exception_list.asString() << "\": " 
-			<< "timeout=" << (timeout_p?G::Str::fromUInt(timeout_p->tv_sec):std::string("infinite")) ) ;
-	}
-
 	// do the select()
 	//
 	int rc = ::select( n , &r , &w , &e , timeout_p ) ;
@@ -256,9 +244,9 @@ void GNet::Select::runOnce()
 	else // rc > 0
 	{
 		G_DEBUG( "GNet::Select::runOnce: detected event(s) on " << rc << " fd(s)" ) ;
-		FdSet::raiseEvents( &r , m_read_list , & EventHandler::readEvent , "read" ) ;
-		FdSet::raiseEvents( &w , m_write_list , & EventHandler::writeEvent , "write" ) ;
-		FdSet::raiseEvents( &e , m_exception_list , & EventHandler::exceptionEvent , "exception" ) ;
+		FdSet::raiseEvents( &r , m_read_list , & EventHandler::readEvent ) ;
+		FdSet::raiseEvents( &w , m_write_list , & EventHandler::writeEvent ) ;
+		FdSet::raiseEvents( &e , m_exception_list , & EventHandler::exceptionEvent ) ;
 	}
 }
 
@@ -292,8 +280,9 @@ void GNet::Select::dropException( Descriptor fd )
 	m_exception_list.remove( fd ) ;
 }
 
-void GNet::Select::setTimeout( G::DateTime::EpochTime )
+void GNet::Select::setTimeout( G::DateTime::EpochTime , bool & empty_hint )
 {
-	// not used -- interval() in runOnce() suffices
+	// does nothing -- interval() in runOnce() suffices
+	empty_hint = true ;
 }
 

@@ -33,8 +33,9 @@
 #include "gassert.h"
 #include <fstream>
 
-GSmtp::StoredFile::StoredFile( FileStore & store , const G::Path & path ) :
+GSmtp::StoredFile::StoredFile( FileStore & store , Processor & store_preprocessor , const G::Path & path ) :
 	m_store(store) ,
+	m_store_preprocessor(store_preprocessor) ,
 	m_envelope_path(path) ,
 	m_eight_bit(false) ,
 	m_errors(0U) ,
@@ -319,6 +320,11 @@ const std::string & GSmtp::StoredFile::from() const
 const G::Strings & GSmtp::StoredFile::to() const 
 { 
 	return m_to_remote ; 
+}
+
+bool GSmtp::StoredFile::preprocess()
+{
+	return m_store_preprocessor.process( m_envelope_path.str() ) ;
 }
 
 std::auto_ptr<std::istream> GSmtp::StoredFile::extractContentStream() 

@@ -38,15 +38,13 @@ namespace GNet
 class GNet::TimerUpdate 
 {
 public:
-	TimerUpdate( Timer & , const std::string & ) ;
+	TimerUpdate() ;
 	~TimerUpdate() ;
 private:
 	TimerUpdate( const TimerUpdate & ) ; // not implemented
 	void operator=( const TimerUpdate & ) ; // not implemented
 private:
-	Timer & m_timer ;
-	std::string m_type ;
-	G::DateTime::EpochTime m_soonest ;
+	G::DateTime::EpochTime m_old_soonest ;
 } ;
 
 // ===
@@ -63,8 +61,8 @@ GNet::Timer::Timer( TimeoutHandler & handler ) :
 {
 	G_ASSERT( TimerList::instance(TimerList::NoThrow()) != NULL ) ;
 	G_ASSERT( EventLoop::exists() ) ;
-	TimerUpdate update( *this , "ctor" ) ;
 	TimerList::instance().add( *this ) ;
+	// no List::update() here since this timer has not started
 }
 
 GNet::Timer::Timer() :
@@ -73,8 +71,8 @@ GNet::Timer::Timer() :
 {
 	G_ASSERT( TimerList::instance(TimerList::NoThrow()) != NULL ) ;
 	G_ASSERT( EventLoop::exists() ) ;
-	TimerUpdate update( *this , "ctor" ) ;
 	TimerList::instance().add( *this ) ;
+	// no List::update() here since this timer has not started
 }
 
 GNet::Timer::~Timer()
@@ -83,8 +81,9 @@ GNet::Timer::~Timer()
 	{
 		if( TimerList::instance(TimerList::NoThrow()) != NULL )
 		{
-			TimerUpdate update( *this , "dtor" ) ;
+			TimerUpdate update ;
 			TimerList::instance().remove( *this ) ;
+			// List::update() here
 		}
 	}
 	catch(...)
@@ -94,26 +93,26 @@ GNet::Timer::~Timer()
 
 void GNet::Timer::startTimer( unsigned int time )
 {
-	TimerUpdate update( *this , "start" ) ;
+	TimerUpdate update ;
 	m_time = G::DateTime::now() + time ;
+	// List::update() here
 }
 
 void GNet::Timer::cancelTimer()
 {
-	TimerUpdate update( *this , "cancel" ) ;
+	TimerUpdate update ;
 	m_time = 0U ;
+	// List::update() here
 }
 
 void GNet::Timer::doTimeout()
 {
-	if( m_time != 0U )
-	{
-		m_time = 0U ;
-		G_DEBUG( "GNet::Timer::doTimeout" ) ;
-		onTimeout() ;
-		if( m_handler != NULL )
-			m_handler->onTimeout(*this) ;
-	}
+	G_ASSERT( m_time != 0U ) ;
+
+	m_time = 0U ;
+	onTimeout() ;
+	if( m_handler != NULL )
+		m_handler->onTimeout(*this) ;
 }
 
 void GNet::Timer::onTimeout()
@@ -131,7 +130,10 @@ G::DateTime::EpochTime GNet::Timer::t() const
 GNet::TimerList * GNet::TimerList::m_this = NULL ;
 
 GNet::TimerList::TimerList() :
-	m_changed(false)
+	m_list_changed(false) ,
+	m_empty_set_timeout_hint(false) ,
+	m_soonest_changed(true) ,
+	m_soonest(99U)
 {
 	if( m_this == NULL )
 		m_this = this ;
@@ -145,7 +147,7 @@ GNet::TimerList::~TimerList()
 
 void GNet::TimerList::add( Timer & t )
 {
-	m_changed = true ;
+	m_list_changed = true ;
 	m_list.push_back( &t ) ;
 }
 
@@ -156,21 +158,38 @@ void GNet::TimerList::remove( Timer & t )
 		if( *p == &t )
 		{
 			m_list.erase( p ) ;
-			m_changed = true ;
+			m_list_changed = true ;
 			break ;
 		}
 	}
 }
 
-void GNet::TimerList::update( G::DateTime::EpochTime t_old , 
-	const std::string & op )
+void GNet::TimerList::update( G::DateTime::EpochTime t_old )
 {
+	// after any change in the soonest() time notify the event loop 
+
 	G::DateTime::EpochTime t_new = soonest() ;
-	//G_DEBUG( "GNet::TimerList::update: " << op << ": " << t_old << " -> " << t_new ) ;
-	G_IGNORE op.length() ; // pacify the compiler
-	if( t_old != t_new && EventLoop::exists() )
+	if( t_old != t_new )
 	{
-		EventLoop::instance().setTimeout( t_new ) ;
+		m_soonest_changed = true ;
+		if( EventLoop::exists() )
+		{
+			G_DEBUG( "GNet::TimerList::update: " << t_old << " -> " << t_new ) ;
+			EventLoop::instance().setTimeout( t_new , m_empty_set_timeout_hint ) ;
+		}
+	}
+}
+
+void GNet::TimerList::update()
+{
+	// this overload just assumes that the soonest() time has probably changed
+
+	m_soonest_changed = true ;
+	if( EventLoop::exists() )
+	{
+		G::DateTime::EpochTime t_new = soonest() ;
+		G_DEBUG( "GNet::TimerList::update: ? -> " << t_new ) ;
+		EventLoop::instance().setTimeout( t_new , m_empty_set_timeout_hint ) ;
 	}
 }
 
@@ -186,9 +205,34 @@ G::DateTime::EpochTime GNet::TimerList::soonest() const
 	return result ;
 }
 
+G::DateTime::EpochTime GNet::TimerList::soonest( int ) const
+{
+	// this optimised overload is for interval() which
+	// gets called on _every_ fd event
+
+	if( m_soonest_changed )
+	{
+		TimerList * This = const_cast<TimerList*>(this) ;
+		This->m_soonest = soonest() ;
+		This->m_soonest_changed = false ;
+	}
+	//G_ASSERT( valid() ) ; // optimisation lost if this is active
+	return m_soonest ;
+}
+
+bool GNet::TimerList::valid() const
+{
+	if( soonest() != m_soonest )
+	{
+		G_ERROR( "GNet::TimerList::valid: soonest()=" << soonest() << ", m_soonest=" << m_soonest ) ;
+		return false ;
+	}
+	return true ;
+}
+
 unsigned int GNet::TimerList::interval( bool & infinite ) const
 {
-	G::DateTime::EpochTime then = soonest() ;
+	G::DateTime::EpochTime then = soonest(0) ; // fast
 	infinite = then == 0U ;
 	if( infinite )
 	{
@@ -219,30 +263,30 @@ void GNet::TimerList::doTimeouts()
 	G_DEBUG( "GNet::TimerList::doTimeouts" ) ;
 	G::DateTime::EpochTime now = G::DateTime::now() ;
 
+	// if the list changes break the loop and start again
 	do
 	{
-		m_changed = false ;
+		m_list_changed = false ;
 		for( List::iterator p = m_list.begin() ; p != m_list.end() ; ++p )
 		{
-			if( now >= (*p)->t() ) 
+			G::DateTime::EpochTime t = (*p)->t() ;
+			if( t != 0U && now >= t )
 			{
 				(*p)->doTimeout() ;
-				if( m_changed ) break ;
+				if( m_list_changed ) break ;
 			}
 		}
-	} while( m_changed ) ;
+	} while( m_list_changed ) ;
 
-	if( EventLoop::exists() )
-		EventLoop::instance().setTimeout( soonest() ) ;
+	// deal with any change in the soonest() time
+	update() ;
 }
 
 // ===
 
-GNet::TimerUpdate::TimerUpdate( Timer & timer , const std::string & type ) :
-	m_timer(timer) ,
-	m_type(type)
+GNet::TimerUpdate::TimerUpdate()
 {
-	m_soonest = TimerList::instance().soonest() ;
+	m_old_soonest = TimerList::instance().soonest() ;
 }
 
 GNet::TimerUpdate::~TimerUpdate()
@@ -250,7 +294,7 @@ GNet::TimerUpdate::~TimerUpdate()
 	try
 	{
 		if( TimerList::instance(TimerList::NoThrow()) != NULL )
-			TimerList::instance().update( m_soonest , m_type ) ;
+			TimerList::instance().update( m_old_soonest ) ;
 	}
 	catch(...)
 	{

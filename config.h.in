@@ -25,6 +25,9 @@
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
 
+/* Define if setgroups is available */
+#undef HAVE_SETGROUPS
+
 /* Define if socklen_t type definition in sys/socket.h */
 #undef HAVE_SOCKLEN_T
 

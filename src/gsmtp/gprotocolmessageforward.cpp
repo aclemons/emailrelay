@@ -147,7 +147,8 @@ bool GSmtp::ProtocolMessageForward::forward( unsigned long id , bool & nothing_t
 		}
 		else
 		{
-			m_client <<= new GSmtp::Client( message , m_client_secrets , m_response_timeout ) ;
+			GNet::Address local_address( 0U ) ;
+			m_client <<= new GSmtp::Client( message, m_client_secrets, local_address, m_response_timeout ) ;
 			m_client->doneSignal().connect( G::slot(*this,&ProtocolMessageForward::clientDone) ) ;
 			std::string reason = m_client->startSending( m_server , m_connection_timeout ) ;
 

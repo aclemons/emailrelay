@@ -54,6 +54,7 @@ public:
 	G_EXCEPTION( Insecure , "refusing to exec() while the user-id is zero" ) ;
 	G_EXCEPTION( InvalidId , "invalid process-id string" ) ;
 	G_EXCEPTION( PipeError , "pipe error" ) ;
+	G_EXCEPTION( NoExtension , "refusing to CreateProcess() without a file extension such as .exe" ) ; // windows
 
 	enum Who { Parent , Child } ;
 	class IdImp ;

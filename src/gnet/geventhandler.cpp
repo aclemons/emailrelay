@@ -27,7 +27,35 @@
 #include "geventloop.h"
 #include "gdebug.h"
 #include "gassert.h"
+#include "gdescriptor.h"
 #include "glog.h"
+#include <algorithm> // std::find
+
+namespace
+{
+	struct NotNull
+	{
+		GNet::Descriptor m_fd ;
+		explicit NotNull( GNet::Descriptor fd ) : m_fd(fd) {}
+		bool operator()( const GNet::EventHandlerListItem & item ) const 
+		{ 
+			return item.m_fd == m_fd && item.m_handler != NULL ;
+		}
+	} ;
+}
+
+GNet::EventHandlerListItem::EventHandlerListItem( Descriptor fd , EventHandler * handler ) :
+	m_fd(fd) , 
+	m_handler(handler) 
+{
+}
+
+bool operator!=( const GNet::EventHandlerListItem & a , const GNet::EventHandlerListItem & b )
+{
+	return a.m_fd != b.m_fd ;
+}
+
+// ===
 
 GNet::EventHandler::~EventHandler()
 {
@@ -50,95 +78,66 @@ void GNet::EventHandler::exceptionEvent()
 
 // ===
 
-GNet::EventHandlerList::EventHandlerList( std::string type ) :
+GNet::EventHandlerList::EventHandlerList( const std::string & type ) :
 	m_type(type) ,
-	m_lock(0U) ,
-	m_copied(false)
+	m_lock(0U)
 {
 }
 
-//static
-bool GNet::EventHandlerList::contains( const EventHandlerListImp & list , Descriptor fd )
+GNet::EventHandlerList::Iterator GNet::EventHandlerList::begin() const
 {
-	const List::const_iterator end = list.end() ;
-	for( List::const_iterator p = list.begin() ; p != end ; ++p )
-	{
-		if( (*p).m_fd == fd )
-			return true ;
-	}
-	return false ;
+	return m_list.begin() ;
+}
+
+GNet::EventHandlerList::Iterator GNet::EventHandlerList::end() const
+{
+	return m_list.end() ;
 }
 
 bool GNet::EventHandlerList::contains( Descriptor fd ) const
 {
-	return contains( m_list , fd ) ;
-}
-
-std::string GNet::EventHandlerList::asString() const
-{
-	return asString( m_list ) ;
-}
-
-std::string GNet::EventHandlerList::asString( const EventHandlerListImp & list ) const
-{
-	std::ostringstream ss ;
-	const char * sep = "" ;
-	for( List::const_iterator p = list.begin() ; p != list.end() ; ++p )
-	{
-		ss << sep << fd( p ) ;
-		sep = "," ;
-	}
-	return ss.str() ;
-}
-
-GNet::EventHandlerListImp & GNet::EventHandlerList::list()
-{
-	// lazy copy
-	if( m_lock != 0U && !m_copied )
-	{
-		m_copy = m_list ;
-		m_copied = true ;
-	}
-	
-	return m_lock == 0U ? m_list : m_copy ;
-}
-
-void GNet::EventHandlerList::add( Descriptor fd , EventHandler * handler )
-{
-	G_ASSERT( handler != NULL ) ;
-	if( ! contains(list(),fd) )
-	{
-		G_DEBUG( "GNet::EventHandlerList::add: " << m_type << "-list: adding " << fd << (m_lock?" (deferred)":"") ) ;
-		list().push_back( EventHandlerListItem(fd,handler) ) ;
-	}
-}
-
-void GNet::EventHandlerList::remove( Descriptor fd )
-{
-	G_DEBUG( "GNet::EventHandlerList::remove: " << m_type << "-list: removing " << fd << (m_lock?" (deferred)":"") ) ;
-	bool found = false ;
-	for( List::iterator p = list().begin() ; p != list().end() ; ++p )
-	{
-		if( (*p).m_fd == fd )
-		{
-			list().erase( p ) ;
-			found = true ;
-			break ;
-		}
-	}
-	//if( !found ) G_DEBUG( "GNet::EventHandlerList::remove: cannot find " << fd ) ;
+	const List::const_iterator end = m_list.end() ;
+	return std::find_if( m_list.begin() , end , NotNull(fd) ) != end ;
 }
 
 GNet::EventHandler * GNet::EventHandlerList::find( Descriptor fd )
 {
 	const List::iterator end = m_list.end() ;
-	for( List::iterator p = m_list.begin() ; p != end ; ++p )
+	List::iterator p = std::find_if( m_list.begin() , end , NotNull(fd) ) ;
+	return p != end ? (*p).m_handler : NULL ;
+}
+
+void GNet::EventHandlerList::add( Descriptor fd , EventHandler * handler )
+{
+	G_ASSERT( handler != NULL ) ;
+	G_DEBUG( "GNet::EventHandlerList::add: " << m_type << "-list: " << "adding " << fd ) ;
+
+	const List::iterator end = m_list.end() ;
+	List::iterator p = std::find( m_list.begin() , end , fd ) ;
+	if( p != end )
 	{
-		if( (*p).m_fd == fd )
-			return (*p).m_handler ;
+		G_ASSERT( (*p).m_handler == NULL ) ;
+		(*p).m_handler = handler ;
 	}
-	//G_DEBUG( "GNet::EventHandlerList::find: cannot find entry for " << fd ) ;
-	return NULL ;
+	else
+	{
+		m_list.push_back( EventHandlerListItem(fd,handler) ) ;
+	}
+}
+
+void GNet::EventHandlerList::remove( Descriptor fd )
+{
+	G_DEBUG( "GNet::EventHandlerList::remove: " << m_type << "-list: " << "removing " << fd ) ;
+
+	const List::iterator end = m_list.end() ;
+	List::iterator p = std::find( m_list.begin() , end , fd ) ;
+	if( p != end )
+	{
+		if( m_lock )
+			(*p).m_handler = NULL ;
+		else
+			m_list.erase( p ) ;
+	}
 }
 
 void GNet::EventHandlerList::lock()
@@ -149,11 +148,17 @@ void GNet::EventHandlerList::lock()
 void GNet::EventHandlerList::unlock()
 {
 	m_lock-- ;
-	if( m_lock == 0U && m_copied )
+	if( m_lock == 0U )
 	{
-		//G_DEBUG( "GNet::EventHandlerList::unlock: " << m_type << "-list: commiting: " << asString(m_copy) ) ;
-		m_list = m_copy ;
-		m_copied = false ;
+		// collect garbage
+		const List::iterator end = m_list.end() ;
+		for( List::iterator p = m_list.begin() ; p != end ; )
+		{
+			if( (*p).m_handler == NULL )
+				p = m_list.erase( p ) ;
+			else
+				++p ;
+		}
 	}
 }
 

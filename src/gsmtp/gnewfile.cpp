@@ -27,7 +27,7 @@
 #include "gnewfile.h"
 #include "gmemory.h"
 #include "gprocess.h"
-#include "gstr.h"
+#include "gstrings.h"
 #include "groot.h"
 #include "gfile.h"
 #include "gxtext.h"
@@ -36,11 +36,9 @@
 #include <iostream>
 #include <fstream>
 
-bool GSmtp::NewFile::m_preprocess = false ;
-G::Path GSmtp::NewFile::m_preprocessor ;
-
-GSmtp::NewFile::NewFile( const std::string & from , FileStore & store ) :
+GSmtp::NewFile::NewFile( const std::string & from , FileStore & store , Processor & store_preprocessor ) :
 	m_store(store),
+	m_store_preprocessor(store_preprocessor) ,
 	m_from(from) ,
 	m_eight_bit(false),
 	m_saved(false) ,
@@ -59,6 +57,7 @@ GSmtp::NewFile::~NewFile()
 {
 	try
 	{
+		G_DEBUG( "GSmtp::NewFile::dtor: " << m_content_path ) ;
 		cleanup() ;
 		m_store.updated( m_repoll ) ;
 	}
@@ -120,10 +119,11 @@ bool GSmtp::NewFile::store( const std::string & auth_id , const std::string & cl
 	bool cancelled = false ;
 	if( ok )
 	{
-		std::string output ;
-		ok = preprocess( m_content_path , cancelled , output ) ;
+		ok = m_store_preprocessor.process( m_content_path ) ;
+		cancelled = m_store_preprocessor.cancelled() ;
+		m_repoll = m_store_preprocessor.repoll() ;
 		if( !ok )
-			reason = output.empty() ? std::string("pre-processing failed") : output ;
+			reason = m_store_preprocessor.text("pre-processing failed") ;
 	}
 	G_ASSERT( !(ok&&cancelled) ) ;
 
@@ -166,77 +166,6 @@ void GSmtp::NewFile::cleanup()
 		G::File::remove( m_content_path , G::File::NoThrow() ) ;
 	}
 }
-
-bool GSmtp::NewFile::preprocess( const G::Path & path , bool & cancelled , std::string & output )
-{
-	if( ! m_preprocess ) return true ;
-
-	int exit_code = preprocessCore( path , output ) ;
-
-	bool is_ok = exit_code == 0 ;
-	bool is_special = exit_code >= 100 && exit_code <= 107 ;
-	bool is_failure = !is_ok && !is_special ;
-
-	if( is_special && ((exit_code-100)&2) != 0 )
-	{
-		m_repoll = true ;
-	}
-
-	// ok, fail or cancel
-	//
-	if( is_special && ((exit_code-100)&1) == 0 )
-	{
-		cancelled = true ;
-		G_LOG( "GSmtp::NewFile: message processing cancelled by preprocessor" ) ;
-		return false ;
-	}
-	else if( is_failure )
-	{
-		G_WARNING( "GSmtp::NewFile::preprocess: pre-processing failed: exit code " << exit_code ) ;
-		return false ;
-	}
-	else
-	{
-		return true ;
-	}
-}
-
-int GSmtp::NewFile::preprocessCore( const G::Path & path , std::string & output )
-{
-	G_LOG( "GSmtp::NewFile::preprocess: " << m_preprocessor << " " << path ) ;
-	G::Strings args ;
-	args.push_back( path.str() ) ;
-	std::string raw_output ;
-	int exit_code = G::Process::spawn( G::Root::nobody() , m_preprocessor , args , &raw_output ) ;
-	output = parseOutput( raw_output ) ;
-	G_LOG( "GSmtp::NewFile::preprocess: exit status " << exit_code << " (\"" << output << "\")" ) ;
-	return exit_code ;
-}
-
-std::string GSmtp::NewFile::parseOutput( std::string s ) const
-{
-	G_DEBUG( "GSmtp::NewFile::parseOutput: in: \"" << G::Str::toPrintableAscii(s) << "\"" ) ;
-	const std::string start("<<") ;
-	const std::string end(">>") ;
-	std::string result ;
-	G::Str::replaceAll( s , "\r\n" , "\n" ) ;
-	G::Str::replaceAll( s , "\r" , "\n" ) ;
-	G::Strings lines ;
-	G::Str::splitIntoFields( s , lines , "\n" ) ;
-	for( G::Strings::iterator p = lines.begin() ; p != lines.end() ; ++p )
-	{
-		std::string line = *p ;
-		size_t pos_start = line.find(start) ;
-		size_t pos_end = line.find(end) ;
-		if( pos_start == 0U && pos_end != std::string::npos )
-		{
-			result = G::Str::toPrintableAscii(line.substr(start.length(),pos_end-start.length())) ;
-		}
-	}
-	G_DEBUG( "GSmtp::NewFile::parseOutput: in: \"" << G::Str::toPrintableAscii(result) << "\"" ) ;
-	return result ;
-}
-
 
 void GSmtp::NewFile::deliver( const G::Strings & /*to*/ , 
 	const G::Path & content_path , const G::Path & envelope_path_now ,
@@ -295,14 +224,5 @@ unsigned long GSmtp::NewFile::id() const
 G::Path GSmtp::NewFile::contentPath() const
 {
 	return m_content_path ;
-}
-
-void GSmtp::NewFile::setPreprocessor( const G::Path & exe )
-{
-	if( exe.isRelative() )
-		throw InvalidPath( exe.str() ) ;
-
-	m_preprocess = true ;
-	m_preprocessor = exe ;
 }
 

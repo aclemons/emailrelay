@@ -48,6 +48,7 @@
 #include "gfilestore.h"
 #include "gnewmessage.h"
 #include "gexception.h"
+#include "gexe.h"
 #include "legal.h"
 #include <exception>
 #include <iostream>
@@ -81,13 +82,13 @@ static void process( const G::Path & path , std::istream & stream ,
 
 	// create the output file
 	//
-	GSmtp::FileStore store( path ) ;
+	GSmtp::FileStore store( path , G::Executable() , G::Executable() ) ;
 	std::auto_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from ) ;
 
 	// add "To:" lines to the envelope
 	//
-	G::Path verifier_exe ;
-	GSmtp::Verifier verifier( verifier_exe , false , false ) ;
+	G::Executable no_exe ;
+	GSmtp::Verifier verifier( no_exe , false , false ) ;
 	for( G::Strings::const_iterator to_p = to_list.begin() ; to_p != to_list.end() ; ++to_p )
 	{
 		std::string to = *to_p ;

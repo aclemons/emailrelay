@@ -27,6 +27,8 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gmessagestore.h"
+#include "gexe.h"
+#include "gprocessor.h"
 #include "gstoredmessage.h"
 #include "gexception.h"
 #include "gpath.h"
@@ -54,7 +56,7 @@ public:
 	G_EXCEPTION( StreamError , "envelope reading/parsing error" ) ;
 	G_EXCEPTION( InvalidFilename , "invalid filename" ) ;
 
-	StoredFile( FileStore & store , const G::Path & envelope_path ) ;
+	StoredFile( FileStore & store , Processor & store_preprocessor , const G::Path & envelope_path ) ;
 		// Constructor.
 
 	virtual ~StoredFile() ;
@@ -86,6 +88,9 @@ public:
 		// From StoredMessage.
 
 	virtual std::string authentication() const ;
+		// From StoredMessage.
+
+	virtual bool preprocess() ;
 		// From StoredMessage.
 
 	virtual void destroy() ;
@@ -123,6 +128,7 @@ private:
 
 private:
 	FileStore & m_store ;
+	Processor & m_store_preprocessor ;
 	G::Strings m_to_local ;
 	G::Strings m_to_remote ;
 	std::string m_from ;

@@ -52,20 +52,23 @@ namespace GSmtp
 class GSmtp::FileIterator : public GSmtp::MessageStore::IteratorImp , public G::noncopyable 
 {
 public:
-	FileIterator( FileStore & store , const G::Directory & dir , bool lock ) ;
+	FileIterator( FileStore & store , Processor & store_preprocessor , const G::Directory & dir , bool lock ) ;
 	virtual std::auto_ptr<GSmtp::StoredMessage> next() ;
 private:
 	FileStore & m_store ;
+	Processor & m_store_preprocessor ;
 	G::DirectoryIterator m_iter ;
 	bool m_lock ;
 } ;
 
 // ===
 
-GSmtp::FileIterator::FileIterator( FileStore & store , const G::Directory & dir , bool lock ) :
-	m_store(store) ,
-	m_iter(dir,"*.envelope") ,
-	m_lock(lock)
+GSmtp::FileIterator::FileIterator( FileStore & store , Processor & store_preprocessor , 
+	const G::Directory & dir , bool lock ) :
+		m_store(store) ,
+		m_store_preprocessor(store_preprocessor) ,
+		m_iter(dir,"*.envelope") ,
+		m_lock(lock)
 {
 }
 
@@ -73,7 +76,7 @@ std::auto_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
 {
 	while( !m_iter.error() && m_iter.more() )
 	{
-		std::auto_ptr<StoredFile> m( new StoredFile(m_store,m_iter.filePath()) ) ;
+		std::auto_ptr<StoredFile> m( new StoredFile(m_store,m_store_preprocessor,m_iter.filePath()) ) ;
 		if( m_lock && !m->lock() )
 		{
 			G_WARNING( "GSmtp::MessageStore: cannot lock file: \"" << m_iter.filePath() << "\"" ) ;
@@ -96,11 +99,14 @@ std::auto_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
 
 // ===
 
-GSmtp::FileStore::FileStore( const G::Path & dir , bool optimise ) : 
-	m_seq(1UL) ,
-	m_dir(dir) ,
-	m_optimise(optimise) ,
-	m_empty(false)
+GSmtp::FileStore::FileStore( const G::Path & dir , const G::Executable & newfile_preprocessor_exe , 
+	const G::Executable & storedfile_preprocessor_exe , bool optimise ) : 
+		m_seq(1UL) ,
+		m_dir(dir) ,
+		m_optimise(optimise) ,
+		m_empty(false) ,
+		m_newfile_preprocessor(newfile_preprocessor_exe) ,
+		m_storedfile_preprocessor(storedfile_preprocessor_exe)
 {
 	m_pid_modifier = static_cast<unsigned long>(G::DateTime::now()) % 1000000UL ;
 	checkPath( dir ) ;
@@ -215,14 +221,14 @@ bool GSmtp::FileStore::emptyCore() const
 GSmtp::MessageStore::Iterator GSmtp::FileStore::iterator( bool lock )
 {
 	FileReader claim_reader ;
-	return MessageStore::Iterator( new FileIterator(*this,G::Directory(m_dir),lock) ) ;
+	return MessageStore::Iterator( new FileIterator(*this,m_storedfile_preprocessor,G::Directory(m_dir),lock) ) ;
 }
 
 std::auto_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( unsigned long id )
 {
 	G::Path path = envelopePath( id ) ;
 
-	std::auto_ptr<StoredFile> message( new StoredFile(*this,path) ) ;
+	std::auto_ptr<StoredFile> message( new StoredFile(*this,m_storedfile_preprocessor,path) ) ;
 
 	if( ! message->lock() )
 		throw GetError( path.str() + ": cannot lock the file" ) ;
@@ -242,11 +248,12 @@ std::auto_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( unsigned long id )
 std::auto_ptr<GSmtp::NewMessage> GSmtp::FileStore::newMessage( const std::string & from )
 {
 	m_empty = false ;
-	return std::auto_ptr<NewMessage>( new NewFile(from,*this) ) ;
+	return std::auto_ptr<NewMessage>( new NewFile(from,*this,m_newfile_preprocessor) ) ;
 }
 
 void GSmtp::FileStore::updated( bool action )
 {
+	G_DEBUG( "GSmtp::FileStore::updated" ) ;
 	m_signal.emit( action ) ;
 }
 
@@ -276,4 +283,5 @@ GSmtp::FileWriter::FileWriter() :
 GSmtp::FileWriter::~FileWriter()
 {
 }
+
 

@@ -234,8 +234,7 @@ std::string GSmtp::ScannerClient::servicePart( const std::string & s )
 
 std::string GSmtp::ScannerClient::request( const G::Path & path ) const
 {
-	std::string prefix = "AREA: " ;
-	return prefix + path.str() + "\n" ;
+	return path.str() + "\n" ;
 }
 
 bool GSmtp::ScannerClient::isDone() const

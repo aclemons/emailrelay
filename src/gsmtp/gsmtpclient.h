@@ -57,7 +57,8 @@ class GSmtp::Client : private GNet::Client , private GNet::TimeoutHandler , priv
 public:
 	G_EXCEPTION( NotConnected , "not connected" ) ;
 
-	Client( MessageStore & store , const Secrets & secrets , 
+	Client( MessageStore & store , 
+		const Secrets & secrets , const GNet::Address & local_address , 
 		bool quit_on_disconnect , unsigned int response_timeout ) ;
 			// Constructor. The 'store' and 'secrets' 
 			// references are kept.
@@ -67,7 +68,8 @@ public:
 			// or that the server connection has
 			// been lost.
 
-	Client( std::auto_ptr<StoredMessage> message , const Secrets & secrets , 
+	Client( std::auto_ptr<StoredMessage> message , 
+		const Secrets & secrets , const GNet::Address & local_address ,
 		unsigned int response_timeout ) ;
 			// Constructor for sending a single message.
 			// The 'secrets' reference is kept.
@@ -153,6 +155,7 @@ private:
 	G::Signal2<std::string,std::string> m_event_signal ;
 	std::string m_host ;
 	GNet::Timer m_connect_timer ;
+	GNet::Timer m_preprocess_timer ;
 	unsigned int m_message_index ;
 	bool m_busy ;
 	bool m_force_message_fail ;

@@ -78,29 +78,20 @@ GNet::ClientResolver::ClientResolver( ClientImp & imp ) :
 //
 class GNet::ClientImp : public GNet::EventHandler 
 {
-private:
-	ClientResolver m_resolver ;
-	StreamSocket * m_s ;
-	Address m_address ;
-	std::string m_peer_name ;
-	Client & m_interface ;
-	bool m_priviledged ;
+public:
 	enum Status { Success , Failure , Retry , ImmediateSuccess } ;
-	static bool m_first ;
 	enum State { Idle , Resolving , Connecting , Connected , Failed , Disconnected } ;
-	State m_state ;
-	bool m_quit_on_disconnect ;
 
 public:
-	ClientImp( Client &intaface , bool priviledged , bool quit_on_disconnect ) ;
+	ClientImp( Client & intaface , const Address & local_address , bool priviledged , bool quit_on_disconnect ) ;
 	virtual ~ClientImp() ;
 	void resolveCon( bool ok , const Address & address , std::string reason ) ;
 	void readEvent() ;
 	void writeEvent() ;
 	void exceptionEvent() ;
-	bool connect( std::string host , std::string service , std::string *error , bool sync_dns ) ;
+	bool connect( std::string host , std::string service , std::string * error , bool sync_dns ) ;
 	std::string startConnecting( const Address & , const std::string & , bool & ) ;
-	Status connectCore( Address , std::string * , bool , unsigned int ) ;
+	Status connectCore( Address , Address , std::string * ) ;
 	void disconnect() ;
 	StreamSocket & s() ;
 	const StreamSocket & s() const ;
@@ -117,15 +108,35 @@ private:
 	ClientImp( const ClientImp & ) ;
 	void operator=( const ClientImp & ) ;
 	static int getRandomPort() ;
+
+private:
+	ClientResolver m_resolver ;
+	StreamSocket * m_s ;
+	Address m_local_address ;
+	Address m_remote_address ;
+	std::string m_peer_name ;
+	Client & m_interface ;
+	bool m_priviledged ;
+	static bool m_first ;
+	State m_state ;
+	bool m_quit_on_disconnect ;
 } ;
 
 // ===
+
+GNet::Client::Client( const Address & local_address , bool priviledged , bool quit_on_disconnect ) :
+	m_imp(NULL)
+{
+	G_DEBUG( "Client::ctor" ) ;
+	m_imp = new ClientImp( *this , local_address , priviledged , quit_on_disconnect ) ;
+	if( Monitor::instance() ) Monitor::instance()->add( *this ) ;
+}
 
 GNet::Client::Client( bool priviledged , bool quit_on_disconnect ) :
 	m_imp(NULL)
 {
 	G_DEBUG( "Client::ctor" ) ;
-	m_imp = new ClientImp( *this , priviledged , quit_on_disconnect ) ;
+	m_imp = new ClientImp( *this , Address(0U) , priviledged , quit_on_disconnect ) ;
 	if( Monitor::instance() ) Monitor::instance()->add( *this ) ;
 }
 
@@ -185,14 +196,16 @@ bool GNet::Client::canRetry( const std::string & error )
 
 bool GNet::ClientImp::m_first = true ;
 
-GNet::ClientImp::ClientImp( Client &intaface , bool priviledged , bool quit_on_disconnect ) :
-	m_resolver(*this) ,
-	m_s(NULL) ,
-	m_address(Address::invalidAddress()) ,
-	m_interface(intaface) ,
-	m_priviledged(priviledged) ,
-	m_state(Idle) ,
-	m_quit_on_disconnect(quit_on_disconnect)
+GNet::ClientImp::ClientImp( Client & intaface , const Address & local_address ,
+	bool priviledged , bool quit_on_disconnect ) :
+		m_resolver(*this) ,
+		m_s(NULL) ,
+		m_local_address(local_address) ,
+		m_remote_address(Address::invalidAddress()) ,
+		m_interface(intaface) ,
+		m_priviledged(priviledged) ,
+		m_state(Idle) ,
+		m_quit_on_disconnect(quit_on_disconnect)
 {
 	G_DEBUG( "ClientImp::ctor" ) ;
 }
@@ -330,11 +343,12 @@ void GNet::ClientImp::resolveCon( bool success , const Address &address ,
 	}
 }
 
-std::string GNet::ClientImp::startConnecting( const Address & address , const std::string & peer_name , bool & immediate )
+std::string GNet::ClientImp::startConnecting( const Address & remote_address , 
+	const std::string & peer_name , bool & immediate )
 {
 	// save the target address
-	G_DEBUG( "GNet::ClientImp::startConnecting: " << address.displayString() ) ;
-	m_address = address ;
+	G_DEBUG( "GNet::ClientImp::startConnecting: " << remote_address.displayString() ) ;
+	m_remote_address = remote_address ;
 	m_peer_name = peer_name ;
 
 	// create and open a socket
@@ -350,6 +364,8 @@ std::string GNet::ClientImp::startConnecting( const Address & address , const st
 	//
 	s().addWriteHandler( *this ) ;
 
+	// bind a local address to the socket and connect
+	//
 	Status status = Failure ;
 	std::string error ;
 	if( m_priviledged )
@@ -357,41 +373,44 @@ std::string GNet::ClientImp::startConnecting( const Address & address , const st
 		for( int i = 0 ; i < c_retries ; i++ )
 		{
 			int port = getRandomPort() ;
-			G_DEBUG( "GNet::ClientImp::resolveCon: trying to bind port " << port ) ;
-			status = connectCore( address, &error, true, port ) ;
+			m_local_address.setPort( port ) ;
+			G_DEBUG( "GNet::ClientImp::resolveCon: trying to bind " << m_local_address.displayString() ) ;
+			status = connectCore( m_local_address , remote_address , &error ) ;
 			if( status != Retry )
 				break ;
 		}
 	}
 	else
 	{
-		status = connectCore( address , &error , false , 0 ) ;
+		status = connectCore( m_local_address , remote_address , &error ) ;
 	}
 
+	// deal with immediate connection (typically if connecting locally)
+	//
 	immediate = status == ImmediateSuccess ;
 	if( status != Success )
 		s().dropWriteHandler() ;
 
-	if( status == Success ) error = std::string() ;
+	if( status == Success ) 
+		error = std::string() ;
+
 	return error ;
 }
 
-GNet::ClientImp::Status GNet::ClientImp::connectCore( Address remote_address , 
-	std::string *error_p , bool set_port , unsigned int port )
+GNet::ClientImp::Status GNet::ClientImp::connectCore( Address local_address , Address remote_address ,
+	std::string *error_p )
 {
 	G_ASSERT( error_p != NULL ) ;
 	std::string &error = *error_p ;
 
 	G::Root claim_root ;
-	Address local_address( set_port ? port : 0 ) ;
 	bool bound = s().bind(local_address) ;
 	if( !bound ) 
 	{
 		error = "cannot bind socket" ;
 		return Retry ;
 	}
-	G_DEBUG( "GNet::ClientImp::connectCore: bound local address "
-		<< local_address.displayString() ) ;
+	G_DEBUG( "GNet::ClientImp::connectCore: bound local address " << local_address.displayString() ) ;
 
 	// initiate the connection
 	//
@@ -441,7 +460,7 @@ void GNet::ClientImp::writeEvent()
 	else if( m_state == Connecting )
 	{
 		std::string message( c_cannot_connect_to ) ;
-		message.append( m_address.displayString().c_str() ) ;
+		message.append( m_remote_address.displayString().c_str() ) ;
 		setState( Failed ) ;
 		close() ;
 		m_interface.onError( message ) ;

@@ -45,14 +45,15 @@ std::string GSmtp::Client::crlf()
 	return std::string("\015\012") ;
 }
 
-GSmtp::Client::Client( MessageStore & store , const Secrets & secrets , 
+GSmtp::Client::Client( MessageStore & store , const Secrets & secrets , const GNet::Address & local_address ,
 	bool quit_on_disconnect , unsigned int response_timeout ) :
-		GNet::Client(false,quit_on_disconnect) ,
+		GNet::Client(local_address,false,quit_on_disconnect) ,
 		m_store(&store) ,
 		m_buffer(crlf()) ,
 		m_protocol(*this,secrets,GNet::Local::fqdn(),response_timeout,must_authenticate) ,
 		m_socket(NULL) ,
 		m_connect_timer(*this) ,
+		m_preprocess_timer(*this) ,
 		m_message_index(0U) ,
 		m_busy(true) ,
 		m_force_message_fail(false)
@@ -61,14 +62,15 @@ GSmtp::Client::Client( MessageStore & store , const Secrets & secrets ,
 }
 
 GSmtp::Client::Client( std::auto_ptr<StoredMessage> message , const Secrets & secrets ,
-	unsigned int response_timeout ) :
-		GNet::Client(false,false) ,
+	const GNet::Address & local_address , unsigned int response_timeout ) :
+		GNet::Client(local_address,false,false) ,
 		m_store(NULL) ,
 		m_message(message) ,
 		m_buffer(crlf()) ,
 		m_protocol(*this,secrets,GNet::Local::fqdn(),response_timeout,must_authenticate) ,
 		m_socket(NULL) ,
 		m_connect_timer(*this) ,
+		m_preprocess_timer(*this) ,
 		m_message_index(0U) ,
 		m_busy(true) ,
 		m_force_message_fail(false)
@@ -215,6 +217,16 @@ void GSmtp::Client::start( StoredMessage & message )
 	if( server_name.empty() )
 		server_name = m_host ;
 
+	// synchronous, client-side preprocessing -- treat errors
+	// asynchronously with a zero-length timer
+	//
+	if( ! message.preprocess() )
+	{
+		G_DEBUG( "GSmtp::Client::start: client-side pre-processing failed" ) ;
+		m_preprocess_timer.startTimer( 0U ) ;
+		return ;
+	}
+
 	std::auto_ptr<std::istream> content_stream( message.extractContentStream() ) ;
 	m_protocol.start( message.from() , message.to() , message.eightBit() ,
 		message.authentication() , server_name , content_stream ) ;
@@ -264,14 +276,24 @@ void GSmtp::Client::onDisconnect()
 	finish( reason , false ) ;
 }
 
-void GSmtp::Client::onTimeout( GNet::Timer & )
+void GSmtp::Client::onTimeout( GNet::Timer & timer )
 {
-	G_DEBUG( "GSmtp::Client::onTimeout" ) ;
-	std::string reason = "connection timeout" ;
-	if( m_force_message_fail )
-		messageFail( reason ) ;
-
-	finish( reason ) ;
+	if( &timer == &m_connect_timer )
+	{
+		G_DEBUG( "GSmtp::Client::onTimeout: connection timeout" ) ;
+		std::string reason = "connection timeout" ;
+		if( m_force_message_fail )
+			messageFail( reason ) ;
+		finish( reason ) ;
+	}
+	else
+	{
+		G_DEBUG( "GSmtp::Client::onTimeout: preprocessing failure timeout" ) ;
+		G_ASSERT( &timer == &m_preprocess_timer ) ;
+		messageFail( "pre-processing failed" ) ; // could do better
+		if( m_store == NULL || !sendNext() )
+			finish() ;
+	}
 }
 
 GNet::Socket & GSmtp::Client::socket()

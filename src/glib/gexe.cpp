@@ -18,22 +18,49 @@
 // 
 // ===
 //
-// gresolve_ipv4.cpp
+// gexe.cpp
 //
 
 #include "gdef.h"
-#include "gresolve.h"
+#include "gexe.h"
+#include "gstr.h"
 
-//static
-bool GNet::Resolver::resolveHost( const std::string & host_name , HostInfo & host_info )
+G::Executable::Executable( const G::Path & exe ) :
+	m_exe(exe)
 {
-	hostent * host = ::gethostbyname( host_name.c_str() ) ;
-	if( host != NULL )
+}
+
+G::Executable::Executable( const std::string & s )
+{
+	if( s.find(' ') == std::string::npos ) // optimisation
 	{
-		const char * h_name = host->h_name ;
-		host_info.canonical_name = std::string(h_name?h_name:"") ;
-		host_info.address = Address( *host , 0U ) ;
+		m_exe = G::Path(s) ;
 	}
-	return host != NULL ;
+	else
+	{
+		const std::string null( 1U , '\0' ) ;
+		std::string line( s ) ;
+		G::Str::replaceAll( line , "\\ " , null ) ;
+		G::Str::splitIntoTokens( line , m_args , " " ) ;
+		for( G::Strings::iterator p = m_args.begin() ; p != m_args.end() ; ++p )
+		{
+			G::Str::replaceAll( *p , null , " " ) ;
+		}
+		if( m_args.size() )
+		{
+			m_exe = G::Path( m_args.front() ) ;
+			m_args.pop_front() ;
+		}
+	}
+}
+
+G::Path G::Executable::exe() const
+{
+	return m_exe ;
+}
+
+G::Strings G::Executable::args() const
+{
+	return m_args ;
 }
 

@@ -20,6 +20,9 @@
 //
 // gserverprotocol.cpp
 //
+// The "now deleted" comments indicate that the Sender::protocolSend()
+// may have done a "delete this" if it could not stuff the string
+// down the wire. Sender::protocolDone() can also do "delete this".
 
 #include "gdef.h"
 #include "gsmtp.h"
@@ -75,6 +78,13 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 void GSmtp::ServerProtocol::init( const std::string & ident )
 {
 	sendGreeting( m_thishost , ident ) ;
+	// now deleted
+}
+
+GSmtp::ServerProtocol::~ServerProtocol()
+{
+	m_pmessage.doneSignal().disconnect() ;
+	m_pmessage.preparedSignal().disconnect() ;
 }
 
 void GSmtp::ServerProtocol::sendGreeting( const std::string & thishost , const std::string & ident )
@@ -124,6 +134,7 @@ bool GSmtp::ServerProtocol::apply( const std::string & line )
 		const bool protocol_error = new_state == s_Any ;
 		if( protocol_error )
 			sendOutOfSequence( line ) ;
+		// now deleted
 		return new_state == sEnd ;
 	}
 }
@@ -136,19 +147,21 @@ void GSmtp::ServerProtocol::processDone( bool success , unsigned long , std::str
 	{
 		m_fsm.reset( sIdle ) ;
 		sendCompletionReply( success , reason ) ;
+		// now deleted
 	}
 }
 
 void GSmtp::ServerProtocol::doQuit( const std::string & , bool & )
 {
-	// (could call sendClosing() here, but if it fails it does "delete this".
+	sendClosing() ;
 	m_sender.protocolDone() ;
-	// do nothing more -- this object may have been deleted in protocolDone()
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::doNoop( const std::string & , bool & )
 {
 	sendOk() ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::doVrfy( const std::string & line , bool & )
@@ -158,10 +171,13 @@ void GSmtp::ServerProtocol::doVrfy( const std::string & line , bool & )
 	bool local = rc.is_local ;
 	if( local && rc.full_name.length() )
 		sendVerified( rc.full_name ) ;
+		// now deleted
 	else if( local )
 		sendNotVerified( mbox ) ;
+		// now deleted
 	else
 		sendWillAccept( mbox ) ;
+		// now deleted
 } 
 
 GSmtp::Verifier::Status GSmtp::ServerProtocol::verify( const std::string & to , const std::string & from ) const
@@ -191,12 +207,14 @@ void GSmtp::ServerProtocol::doEhlo( const std::string & line , bool & predicate 
 	{
 		predicate = false ;
 		sendMissingParameter() ;
+		// now deleted
 	}
 	else
 	{
 		m_peer_name = peer_name ;
 		m_pmessage.clear() ;
 		sendEhloReply( m_thishost ) ;
+		// now deleted
 	}
 }
 
@@ -207,12 +225,14 @@ void GSmtp::ServerProtocol::doHelo( const std::string & line , bool & predicate 
 	{
 		predicate = false ;
 		sendMissingParameter() ;
+		// now deleted
 	}
 	else
 	{
 		m_peer_name = peer_name ;
 		m_pmessage.clear() ;
 		sendHeloReply( m_thishost ) ;
+		// now deleted
 	}
 }
 
@@ -233,23 +253,27 @@ void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate 
 		G_WARNING( "GSmtp::ServerProtocol: too many AUTHs" ) ;
 		predicate = false ; // => idle
 		sendOutOfSequence(line) ; // see RFC2554 "Restrictions"
+		// now deleted
 	}
 	else if( ! m_sasl.init(mechanism) )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: request for unsupported AUTH mechanism: " << mechanism ) ;
 		predicate = false ; // => idle
 		send( "504 Unsupported authentication mechanism" ) ;
+		// now deleted
 	}
 	else if( got_initial_response && ! Base64::valid(initial_response) )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: invalid base64 encoding of AUTH parameter" ) ;
 		predicate = false ; // => idle
 		send( "501 Invalid argument" ) ;
+		// now deleted
 	}
 	else if( got_initial_response && m_sasl.mustChallenge() )
 	{
 		predicate = false ; // => idle
 		sendAuthDone( false ) ;
+		// now deleted
 	}
 	else if( got_initial_response )
 	{
@@ -261,15 +285,18 @@ void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate 
 			predicate = false ; // => idle
 			m_authenticated = m_sasl.authenticated() ;
 			sendAuthDone( m_sasl.authenticated() ) ;
+			// now deleted
 		}
 		else
 		{
 			sendChallenge( next_challenge ) ;
+			// now deleted
 		}
 	}
 	else
 	{
 		sendChallenge( m_sasl.initialChallenge() ) ;
+		// now deleted
 	}
 }
 
@@ -279,6 +306,7 @@ void GSmtp::ServerProtocol::sendAuthDone( bool ok )
 		send( "235 Authentication sucessful" ) ;
 	else
 		send( "535 Authentication failed" ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::doAuthData( const std::string & line , bool & predicate )
@@ -287,12 +315,14 @@ void GSmtp::ServerProtocol::doAuthData( const std::string & line , bool & predic
 	{
 		predicate = false ; // => idle
 		send( "501 authentication cancelled" ) ;
+		// now deleted
 	}
 	else if( ! Base64::valid(line) )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: invalid base64 encoding of authentication response" ) ;
 		predicate = false ; // => idle
 		sendAuthDone( false ) ;
+		// now deleted
 	}
 	else
 	{
@@ -303,10 +333,12 @@ void GSmtp::ServerProtocol::doAuthData( const std::string & line , bool & predic
 			predicate = false ; // => idle
 			m_authenticated = m_sasl.authenticated() ;
 			sendAuthDone( m_sasl.authenticated() ) ;
+			// now deleted
 		}
 		else
 		{
 			sendChallenge( next_challenge ) ;
+			// now deleted
 		}
 	}
 }
@@ -322,6 +354,7 @@ void GSmtp::ServerProtocol::doMailPrepare( const std::string & line , bool & pre
 	{
 		predicate = false ;
 		sendAuthRequired() ;
+		// now deleted
 	}
 	else
 	{
@@ -338,6 +371,7 @@ void GSmtp::ServerProtocol::doMailPrepare( const std::string & line , bool & pre
 		else
 		{
 			sendBadFrom( from ) ;
+			// now deleted
 		}
 	}
 }
@@ -361,12 +395,14 @@ void GSmtp::ServerProtocol::doMail( const std::string & line , bool & predicate 
 	if( line.empty() )
 	{
 		sendMailReply() ;
+		// now deleted
 	}
 	else
 	{
 		predicate = false ;
 		bool temporary = line.at(0U) == ' ' ;
 		sendMailError( line.substr(temporary?1U:0U) , temporary ) ;
+		// now deleted
 	}
 }
 
@@ -378,41 +414,49 @@ void GSmtp::ServerProtocol::doRcpt( const std::string & line , bool & predicate 
 	predicate = ok ;
 	if( ok )
 		sendRcptReply() ;
+		// now deleted
 	else
 		sendBadTo( G::Str::toPrintableAscii(status.reason) ) ;
+		// now deleted
 }
 
 void GSmtp::ServerProtocol::doUnknown( const std::string & line , bool & )
 {
 	sendUnrecognised( line ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::doRset( const std::string & , bool & )
 {
 	m_pmessage.clear() ;
-	// (could also reset authentication here)
+	m_sasl.init("") ; m_authenticated = false ; // (not clear in the RFCs)
 	sendRsetReply() ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::doNoRecipients( const std::string & , bool & )
 {
 	sendNoRecipients() ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::doData( const std::string & , bool & )
 {
 	m_pmessage.addReceived( receivedLine() ) ;
 	sendDataReply() ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendOutOfSequence( const std::string & )
 {
 	send( "503 command out of sequence -- use RSET to resynchronise" ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendMissingParameter()
 {
 	send( "501 parameter required" ) ;
+	// now deleted
 }
 
 bool GSmtp::ServerProtocol::isEndOfText( const std::string & line ) const
@@ -462,81 +506,98 @@ GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( const std::str
 
 void GSmtp::ServerProtocol::sendClosing()
 {
-	send( "221 closing connection" ) ;
+	bool allow_delete_this = false ;
+	send( "221 closing connection" , allow_delete_this ) ;
+	// now deleted -- NOT
 }
 
 void GSmtp::ServerProtocol::sendVerified( const std::string & user )
 {
 	send( std::string("250 ") + user ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendNotVerified( const std::string & user )
 {
 	send( std::string("550 no such mailbox: ") + user ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendWillAccept( const std::string & user )
 {
 	send( std::string("252 cannot verify but will accept: ") + user ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendUnrecognised( const std::string & line )
 {
 	send( "500 command unrecognized: \"" + line + std::string("\"") ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendAuthRequired()
 {
 	send( "530 authentication required" ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendNoRecipients()
 {
 	send( "554 no valid recipients" ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendDataReply()
 {
 	send( "354 start mail input -- end with <CRLF>.<CRLF>" ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendRsetReply()
 {
 	send( "250 state reset" ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendMailReply()
 {
 	sendOk() ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendMailError( const std::string & reason , bool temporary )
 {
 	std::string number( temporary ? "452" : "550" ) ;
 	send( number + " " + reason ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendCompletionReply( bool ok , const std::string & reason )
 {
 	if( ok )
 		sendOk() ;
+		// now deleted
 	else
 		send( std::string("452 message processing failed: ") + reason ) ;
+		// now deleted
 }
 
 void GSmtp::ServerProtocol::sendRcptReply()
 {
 	sendOk() ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendBadFrom( const std::string & /*from*/ )
 {
 	send( "553 mailbox name not allowed" ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendBadTo( const std::string & text )
 {
 	send( std::string("550 mailbox unavailable: ") + text ) ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendEhloReply( const std::string & domain )
@@ -552,11 +613,13 @@ void GSmtp::ServerProtocol::sendEhloReply( const std::string & domain )
 void GSmtp::ServerProtocol::sendHeloReply( const std::string & /*domain*/ )
 {
 	sendOk() ;
+	// now deleted
 }
 
 void GSmtp::ServerProtocol::sendOk()
 {
 	send( "250 OK" ) ;
+	// now deleted
 }
 
 //static
@@ -565,17 +628,12 @@ std::string GSmtp::ServerProtocol::crlf()
 	return std::string( "\015\012" ) ;
 }
 
-void GSmtp::ServerProtocol::send( std::string line )
+void GSmtp::ServerProtocol::send( std::string line , bool allow_delete_this )
 {
 	G_LOG( "GSmtp::ServerProtocol: tx>>: \"" << line << "\"" ) ;
 	line.append( crlf() ) ;
-	m_sender.protocolSend( line ) ;
-}
-
-GSmtp::ServerProtocol::~ServerProtocol()
-{
-	m_pmessage.doneSignal().disconnect() ;
-	m_pmessage.preparedSignal().disconnect() ;
+	m_sender.protocolSend( line , allow_delete_this ) ;
+	// now deleted
 }
 
 std::string GSmtp::ServerProtocol::parseFrom( const std::string & line ) const

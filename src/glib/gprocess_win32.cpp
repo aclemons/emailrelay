@@ -32,13 +32,18 @@
 #include <io.h>
 #include <fcntl.h>
 
-namespace G
+namespace
 {
 	const int g_stderr_fileno = 2 ;
 	const int g_sc_open_max = 256 ; // 32 in limits.h !?
 	const HANDLE HNULL = INVALID_HANDLE_VALUE ;
+}
+
+namespace G
+{
 	class Pipe ;
-} ;
+	class ProcessImp ;
+}
 
 class G::Pipe 
 {
@@ -62,6 +67,154 @@ class G::Process::IdImp
 public: 
 	unsigned int m_pid ;
 } ;
+
+class G::ProcessImp 
+{
+public:
+	static std::string commandLine( std::string exe , Strings args ) ;
+	static HANDLE createProcess( const std::string & exe , const std::string & command_line , HANDLE hstdout ) ;
+	static DWORD waitFor( HANDLE hprocess , DWORD default_exit_code ) ;
+} ;
+
+// ===
+
+G::Process::Id::Id() 
+{
+	m_pid = static_cast<unsigned int>(::_getpid()) ; // or ::GetCurrentProcessId()
+}
+
+G::Process::Id::Id( const char * path ) :
+	m_pid(0)
+{
+	std::ifstream file( path ? path : "" ) ;
+	file >> m_pid ;
+	if( !file.good() )
+		m_pid = 0 ;
+}
+
+G::Process::Id::Id( std::istream & stream )
+{
+	stream >> m_pid ;
+	if( !stream.good() )
+		throw Process::InvalidId() ;
+}
+
+std::string G::Process::Id::str() const
+{
+	std::ostringstream ss ;
+	ss << m_pid ;
+	return ss.str() ;
+}
+
+bool G::Process::Id::operator==( const Id & rhs ) const
+{
+	return m_pid == rhs.m_pid ;
+}
+
+// not implemented...
+//G::Process::Id::Id( const char * pid_file_path ) {} 
+
+// ===
+
+void G::Process::closeFiles( bool keep_stderr )
+{
+	const int n = g_sc_open_max ;
+	for( int fd = 0 ; fd < n ; fd++ )
+	{
+		if( !keep_stderr || fd != g_stderr_fileno )
+			::_close( fd ) ;
+	}
+}
+
+void G::Process::closeStderr()
+{
+	int fd = g_stderr_fileno ;
+	::_close( fd ) ;
+}
+
+void G::Process::cd( const Path & dir )
+{
+	if( !cd(dir,NoThrow()) )
+		throw CannotChangeDirectory( dir.str() ) ;
+}
+
+bool G::Process::cd( const Path & dir , NoThrow )
+{
+	return 0 == ::_chdir( dir.str().c_str() ) ;
+}
+
+int G::Process::errno_()
+{
+	return errno ;
+}
+
+int G::Process::spawn( Identity , const Path & exe_path , const Strings & args , 
+	std::string * pipe_result_p , int error_return )
+{
+	G_DEBUG( "G::Process::spawn: [" << exe_path << "]: [" << Str::join(args,"],[") << "]" ) ;
+
+	// create a pipe
+	Pipe pipe( pipe_result_p != NULL ) ;
+
+	// create the process
+	std::string command_line = ProcessImp::commandLine( exe_path.str() , args ) ;
+	HANDLE hprocess = ProcessImp::createProcess( exe_path.str() , command_line , pipe.h() ) ;
+	if( hprocess == HNULL )
+	{
+		DWORD e = ::GetLastError() ;
+		G_ERROR( "G::Process::spawn: create-process error " << e << ": " << command_line ) ;
+		return error_return ;
+	}
+
+	// wait for the child process to exit
+	DWORD exit_code = ProcessImp::waitFor( hprocess , error_return ) ;
+	G_LOG( "G::Process::spawn: exit " << exit_code << " from \"" << exe_path << "\": " << exit_code ) ;
+
+	// return the contents of the pipe
+	if( pipe_result_p != NULL )
+		*pipe_result_p = pipe.read(false) ;
+
+	return exit_code ;
+}
+
+G::Identity G::Process::beOrdinary( Identity identity , bool )
+{
+	// not implemented
+	return identity ;
+}
+
+void G::Process::beSpecial( Identity , bool )
+{
+	// not implemented
+}
+
+void G::Process::revokeExtraGroups()
+{
+	// not implemented
+}
+
+// not implemented...
+// Who G::Process::fork() {}
+// Who G::Process::fork( Id & child ) {}
+// void G::Process::exec( const Path & exe , const std::string & arg ) {}
+// int G::Process::wait( const Id & child ) {}
+// int G::Process::wait( const Id & child , int error_return ) {}
+
+// ===
+
+G::Process::Umask::Umask( G::Process::Umask::Mode ) :
+	m_imp(0)
+{
+}
+
+G::Process::Umask::~Umask()
+{
+}
+
+void G::Process::Umask::set( G::Process::Umask::Mode )
+{
+	// not implemented
+}
 
 // ===
 
@@ -160,172 +313,66 @@ std::string G::Pipe::read( bool do_throw )
 
 // ===
 
-G::Process::Id::Id() 
+HANDLE G::ProcessImp::createProcess( const std::string & exe , const std::string & command_line , HANDLE hstdout )
 {
-	m_pid = static_cast<unsigned int>(::_getpid()) ; // or ::GetCurrentProcessId()
-}
-
-G::Process::Id::Id( const char * path ) :
-	m_pid(0)
-{
-	std::ifstream file( path ? path : "" ) ;
-	file >> m_pid ;
-	if( !file.good() )
-		m_pid = 0 ;
-}
-
-G::Process::Id::Id( std::istream & stream )
-{
-	stream >> m_pid ;
-	if( !stream.good() )
-		throw Process::InvalidId() ;
-}
-
-std::string G::Process::Id::str() const
-{
-	std::ostringstream ss ;
-	ss << m_pid ;
-	return ss.str() ;
-}
-
-bool G::Process::Id::operator==( const Id & rhs ) const
-{
-	return m_pid == rhs.m_pid ;
-}
-
-// not implemented...
-//G::Process::Id::Id( const char * pid_file_path ) {} 
-
-// ===
-
-void G::Process::closeFiles( bool keep_stderr )
-{
-	const int n = g_sc_open_max ;
-	for( int fd = 0 ; fd < n ; fd++ )
-	{
-		if( !keep_stderr || fd != g_stderr_fileno )
-			::_close( fd ) ;
-	}
-}
-
-void G::Process::closeStderr()
-{
-	int fd = g_stderr_fileno ;
-	::_close( fd ) ;
-}
-
-void G::Process::cd( const Path & dir )
-{
-	if( !cd(dir,NoThrow()) )
-		throw CannotChangeDirectory( dir.str() ) ;
-}
-
-bool G::Process::cd( const Path & dir , NoThrow )
-{
-	return 0 == ::_chdir( dir.str().c_str() ) ;
-}
-
-int G::Process::errno_()
-{
-	return errno ;
-}
-
-int G::Process::spawn( Identity , const Path & exe , const Strings & args , 
-	std::string * pipe_result_p , int error_return )
-{
-	G_DEBUG( "G::Process::spawn: \"" << exe << "\": \"" << Str::join(args,"\",\"") << "\"" ) ;
-
-	std::string command_line = std::string("\"") + exe.str() + "\"" ;
-	for( Strings::const_iterator arg_p = args.begin() ; arg_p != args.end() ; ++arg_p )
-	{
-		std::string arg = *arg_p ;
-		if( arg.find(" ") != std::string::npos && arg.find("\"") != 0U )
-			arg = std::string("\"") + arg + "\"" ;
-		command_line += ( std::string(" ") + arg ) ;
-	}
-
-	Pipe pipe( pipe_result_p != NULL ) ;
-
-	SECURITY_ATTRIBUTES * process_attributes = NULL ;
-	SECURITY_ATTRIBUTES * thread_attributes = NULL ;
-	BOOL inherit = TRUE ;
-	DWORD flags = CREATE_NO_WINDOW ;
-	LPVOID env = NULL ;
-	LPCTSTR cwd = NULL ;
 	static STARTUPINFO zero_start ;
 	STARTUPINFO start(zero_start) ;
 	start.cb = sizeof(start) ;
 	start.dwFlags = STARTF_USESTDHANDLES ;
 	start.hStdInput = HNULL ;
-	start.hStdOutput = pipe.h() ;
+	start.hStdOutput = hstdout ;
 	start.hStdError = HNULL ;
+
+	BOOL inherit = TRUE ;
+	DWORD flags = CREATE_NO_WINDOW ;
+	LPVOID env = NULL ;
+	LPCTSTR cwd = NULL ;
 	PROCESS_INFORMATION info ;
+	SECURITY_ATTRIBUTES * process_attributes = NULL ;
+	SECURITY_ATTRIBUTES * thread_attributes = NULL ;
 	char * command_line_p = const_cast<char*>(command_line.c_str()) ;
-	BOOL rc = ::CreateProcess( exe.str().c_str() , command_line_p ,
+
+	BOOL rc = ::CreateProcess( exe.c_str() , command_line_p ,
 		process_attributes , thread_attributes , inherit ,
 		flags , env , cwd , &start , &info ) ;
 
-	bool ok = !!rc ;
-	DWORD exit_code = error_return ;
-	if( !ok )
-	{
-		DWORD e = ::GetLastError() ;
-		G_ERROR( "G::Process::spawn: create-process error " << e << ": " << command_line ) ;
-	}
-	else
-	{
-		DWORD timeout_ms = 30000UL ;
-		if( WAIT_TIMEOUT == ::WaitForSingleObject( info.hProcess , timeout_ms ) )
-		{
-			G_ERROR( "G::Process::spawn: child process has not terminated: still waiting" ) ;
-			::WaitForSingleObject( info.hProcess , INFINITE ) ;
-		}
-		::GetExitCodeProcess( info.hProcess , &exit_code ) ;
-		G_LOG( "G::Process::spawn: exit " << exit_code << " from \"" << exe << "\": " << exit_code ) ;
+	return rc ? info.hProcess : HNULL ;
+}
 
-		if( pipe_result_p != NULL )
-			*pipe_result_p = pipe.read(false) ;
+std::string G::ProcessImp::commandLine( std::string exe , Strings args )
+{
+	// returns quoted exe followed by args -- args are quoted iff they have a 
+	// space and no quotes 
+
+	char q = '\"' ;
+	const std::string quote = std::string(1U,q) ;
+	const std::string space = std::string(" ") ;
+
+	bool exe_is_quoted = exe.length() > 1U && exe.at(0U) == q && exe.at(exe.length()-1U) == q ;
+
+	std::string command_line = exe_is_quoted ? exe : ( quote + exe + quote ) ;
+	for( Strings::const_iterator arg_p = args.begin() ; arg_p != args.end() ; ++arg_p )
+	{
+		std::string arg = *arg_p ;
+		if( arg.find(" ") != std::string::npos && arg.find("\"") != 0U )
+			arg = quote + arg + quote ;
+		command_line += ( space + arg ) ;
 	}
 
+	return command_line ;
+}
+
+DWORD G::ProcessImp::waitFor( HANDLE hprocess , DWORD default_exit_code )
+{
+	DWORD timeout_ms = 30000UL ;
+	if( WAIT_TIMEOUT == ::WaitForSingleObject( hprocess , timeout_ms ) )
+	{
+		G_ERROR( "G::Process::spawn: child process has not terminated: still waiting" ) ;
+		::WaitForSingleObject( hprocess , INFINITE ) ;
+	}
+	DWORD exit_code = default_exit_code ;
+	BOOL rc = ::GetExitCodeProcess( hprocess , &exit_code ) ;
+	if( rc == 0 ) exit_code = default_exit_code ;
 	return exit_code ;
-}
-
-G::Identity G::Process::beOrdinary( Identity identity , bool )
-{
-	// not implemented
-	return identity ;
-}
-
-void G::Process::beSpecial( Identity , bool )
-{
-	// not implemented
-}
-
-void G::Process::revokeExtraGroups()
-{
-	// not implemented
-}
-
-// not implemented...
-// Who G::Process::fork() {}
-// Who G::Process::fork( Id & child ) {}
-// void G::Process::exec( const Path & exe , const std::string & arg ) {}
-// int G::Process::wait( const Id & child ) {}
-// int G::Process::wait( const Id & child , int error_return ) {}
-
-// ===
-
-G::Process::Umask::Umask( G::Process::Umask::Mode ) :
-	m_imp(0)
-{
-}
-
-G::Process::Umask::~Umask()
-{
-}
-
-void G::Process::Umask::set( G::Process::Umask::Mode )
-{
-	// not implemented
 }
 

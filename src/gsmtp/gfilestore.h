@@ -30,10 +30,12 @@
 #include "gdatetime.h"
 #include "gexception.h"
 #include "gprocess.h"
+#include "gprocessor.h"
 #include "gnoncopyable.h"
 #include "gslot.h"
 #include "groot.h"
 #include "gpath.h"
+#include "gexe.h"
 #include <memory>
 #include <string>
 
@@ -46,7 +48,9 @@ namespace GSmtp
 
 // Class: GSmtp::FileStore
 // Description: A concrete implementation of the MessageStore
-// interface, dealing in paired flat files. 
+// interface dealing in paired flat files and with an optional
+// external preprocessor program which is used to process files 
+// once they have been stored.
 //
 // The implementation puts separate envelope and content files 
 // in the spool directory. The content file is written first. 
@@ -63,18 +67,25 @@ public:
 	G_EXCEPTION( InvalidDirectory , "invalid spool directory" ) ;
 	G_EXCEPTION( GetError , "error reading specific message" ) ;
 
-	explicit FileStore( const G::Path & dir , bool optimise = false ) ;
-		// Constructor. Throws an exception if the
-		// storage directory is invalid.
-		//
-		// If the optimise flag is set then the implementation
-		// of empty() will be efficient for an empty file
-		// store (ignoring failed and local-delivery messages).
-		// This might be useful for applications in which the 
-		// main event loop is used to check for pending jobs.
-		// The disadvantage is that this process will not be
-		// sensititive to messages deposited into its spool
-		// directory by other processes.
+	explicit FileStore( const G::Path & dir , const G::Executable & newfile_preprocessor , 
+		const G::Executable & storedfile_preprocessor , bool optimise = false ) ;
+			// Constructor. Throws an exception if the storage directory 
+			// is invalid.
+			//
+			// Files are pre-processed after they have been stored
+			// if the newfile_preprocessor exe() path is not empty.
+			//
+			// Files are pre-processed after they have been extracted
+			// if the storedfile_preprocessor exe() path is not empty.
+			//
+			// If the optimise flag is set then the implementation of
+			// empty() will be efficient for an empty filestore 
+			// (ignoring failed and local-delivery messages). This 
+			// might be useful for applications in which the main 
+			// event loop is used to check for pending jobs. The 
+			// disadvantage is that this process will not be
+			// sensititive to messages deposited into its spool
+			// directory by other processes.
 
 	unsigned long newSeq() ;
 		// Hands out a new non-zero sequence number.
@@ -138,6 +149,8 @@ private:
 	bool m_empty ; // mutable
 	unsigned long m_pid_modifier ;
 	G::Signal1<bool> m_signal ;
+	Processor m_newfile_preprocessor ;
+	Processor m_storedfile_preprocessor ;
 } ;
 
 // Class: GSmtp::FileReader

@@ -123,13 +123,17 @@ public:
 		// from the list of exception sources.
 		// See also Socket::dropExceptionHandler().
 
-	virtual void setTimeout( G::DateTime::EpochTime t ) = 0 ;
+	virtual void setTimeout( G::DateTime::EpochTime t , bool & empty_implementation_hint ) = 0 ;
 		// Used by GNet::TimerList. Sets the time at which 
 		// TimerList::doTimeouts() is to be called. 
 		// A parameter of zero is used to cancel the
-		// timer. Some concrete implementations of this 
+		// timer. 
+		//
+		// Some concrete implementations of this 
 		// interface may use TimerList::interval()
 		// rather than setTimeout()/doTimeouts().
+		// Empty implementations should set the 
+		// hint value to true as an optimisation.
 
 private:
 	static EventLoop * m_this ;

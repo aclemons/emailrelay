@@ -309,16 +309,9 @@ std::string G::Str::toPrintableAscii( const std::string & in , char escape )
 std::string G::Str::readLineFrom( std::istream & stream , char ignore )
 {
 	std::string line ;
-	char c ;
-	while( stream.get(c) ) // ie. while(stream.good())
-	{
-		if( c == '\n' )
-			break ;
-		if( ignore != '\0' && c == ignore )
-			;
-		else
-			line.append(1U,c) ;
-	}
+	G_IGNORE std::getline( stream , line ) ;
+	if( ignore != '\0' )
+		replaceAll( line , std::string(1U,ignore) , std::string() ) ;
 	return line ;
 }
 
@@ -509,7 +502,7 @@ void G::Str::splitIntoFields( const std::string & in_in , void * out ,
 	}
 }
 
-std::string G::Str::join( const G::Strings & strings , const std::string & sep )
+std::string G::Str::join( const Strings & strings , const std::string & sep )
 {
 	std::string result ;
 	bool first = true ;
@@ -529,6 +522,16 @@ std::string G::Str::join( const StringArray & strings , const std::string & sep 
 	{
 		if( !first ) result.append( sep ) ;
 		result.append( *p ) ;
+	}
+	return result ;
+}
+
+G::Strings G::Str::keys( const StringMap & map )
+{
+	Strings result ;
+	for( StringMap::const_iterator p = map.begin() ; p != map.end() ; ++p )
+	{
+		result.push_back( (*p).first ) ;
 	}
 	return result ;
 }

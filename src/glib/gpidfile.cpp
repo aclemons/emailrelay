@@ -38,8 +38,13 @@ namespace
 	char * strdup_( const char * p )
 	{
 		p = p ? p : "" ;
-		char * buffer = static_cast<char*>( std::malloc( std::strlen(p) + 1U ) ) ;
-		std::strcpy( buffer , p ) ;
+		const size_t n = std::strlen(p) ;
+		char * buffer = static_cast<char*>( std::malloc(n+1U) ) ;
+		if( buffer != NULL )
+		{
+			std::strncpy( buffer , p , n ) ;
+			buffer[n] = '\0' ;
+		}
 		return buffer ;
 	}
 }

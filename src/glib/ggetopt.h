@@ -140,10 +140,14 @@ public:
 	std::string value( const std::string & switch_name ) const ;
 		// Returns the value related to the given
 		// value-based switch.
+		//
+		// Precondition: contains(switch_name)
 
 	std::string value( char switch_letter ) const ;
 		// Returns the value related to the given
 		// value-based switch.
+		//
+		// Precondition: contains(switch_letter)
 
 private:
 	struct SwitchSpec // A private implementation structure used by G::GetOpt.

@@ -76,6 +76,17 @@
  #define BOOL int
 #endif
 
+#include <stdio.h>
+
+static void init( void )
+{
+  #ifdef G_WIN32
+	static WSADATA info ;
+	if( 0 != WSAStartup( MAKEWORD(1,1) , &info ) )
+		; /* error */
+  #endif
+}
+
 static void detach( void )
 {
   #ifndef G_WIN32
@@ -132,7 +143,9 @@ static BOOL poke( int argc , char * argv [] )
 	/* open the socket */
 	fd = socket( AF_INET , SOCK_STREAM , 0 ) ;
 	if( fd < 0 ) 
+	{
 		return FALSE ;
+	}
 
 	/* prepare the address */
 	memset( &address , 0 , sizeof(address) ) ;
@@ -186,6 +199,7 @@ int main( int argc , char * argv [] )
 	}
 
 	/* run once, or in a loop */
+	init() ;
 	if( daemon )
 	{
 		detach() ;

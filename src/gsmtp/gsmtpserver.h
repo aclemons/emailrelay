@@ -62,7 +62,7 @@ public:
 private:
 	ServerPeer( const ServerPeer & ) ;
 	void operator=( const ServerPeer & ) ;
-	virtual void protocolSend( const std::string & line ) ; // from ServerProtocol::Sender
+	virtual void protocolSend( const std::string & line , bool ) ; // from ServerProtocol::Sender
 	virtual void protocolDone() ; // from ServerProtocol::Sender
 	virtual void onDelete() ; // from GNet::ServerPeer
 	virtual void onData( const char * , size_t ) ; // from GNet::ServerPeer
