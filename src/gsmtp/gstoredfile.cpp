@@ -33,9 +33,9 @@
 #include "gassert.h"
 #include <fstream>
 
-GSmtp::StoredFile::StoredFile( FileStore & store , const G::Path & path ) :
+GSmtp::StoredFile::StoredFile( FileStore & store , const G::Path & envelope_path ) :
 	m_store(store) ,
-	m_envelope_path(path) ,
+	m_envelope_path(envelope_path) ,
 	m_eight_bit(false) ,
 	m_errors(0U) ,
 	m_locked(false)
@@ -64,7 +64,7 @@ std::string GSmtp::StoredFile::name() const
 
 std::string GSmtp::StoredFile::location() const
 {
-	return m_envelope_path.str() ;
+	return contentPath().str() ;
 }
 
 bool GSmtp::StoredFile::eightBit() const
