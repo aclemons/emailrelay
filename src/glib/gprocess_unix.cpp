@@ -97,7 +97,7 @@ void G::Process::chroot( const Path & dir )
 	if( 0 != ::chroot( dir.str().c_str() ) )
 	{
 		int error = errno_() ;
-		G_DEBUG( "G::Process::chroot: " << error ) ;
+		G_WARNING( "G::Process::chroot: cannot chroot to \"" << dir << "\": " << error ) ;
 		throw CannotChroot( dir.str() ) ;
 	}
 	cd( "/" ) ;

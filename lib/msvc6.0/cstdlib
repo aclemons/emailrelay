@@ -24,7 +24,8 @@
 #ifndef G_PORT_CSTDLIB_H
 #define G_PORT_CSTDLIB_H
 
-#include "stdlib.h"
+#include <stdlib.h>
+
 namespace std
 {
 	using ::rand ;

@@ -145,6 +145,10 @@
 		#endif
 	#endif
 
+	// Pull some std types into the global namespace
+	//
+	using std::size_t ;
+
 	// Modify compiler error handling
 	//
 	#if defined(G_COMPILER_IS_MICROSOFT)

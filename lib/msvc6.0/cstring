@@ -24,7 +24,8 @@
 #ifndef G_PORT_CSTRING_H
 #define G_PORT_CSTRING_H
 
-#include "string.h"
+#include <string.h>
+
 namespace std
 {
 	using ::strlen ;

@@ -31,7 +31,7 @@ EXTRA_DIST=\
 	gfile_win32.cpp \
 	gregistry_win32.cpp \
 	gregistry.h \
-	md5c.c \
+	md5.cpp \
 	md5.h \
 	mingw.mak
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION)
@@ -74,7 +74,7 @@ libglib_a_SOURCES = \
 	glogoutput.cpp \
 	glogoutput.h \
 	glogoutput_unix.cpp \
-	gmd5_rsa.cpp \
+	gmd5_native.cpp \
 	gmd5.h \
 	gmemory.h \
 	gnoncopyable.h \

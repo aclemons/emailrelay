@@ -166,8 +166,9 @@ public:
 		// An overload which uses 'eol' as the terminator, and
 		// without the 'ignore' feature.
 
-	static void readLineFrom( std::istream & stream , const std::string & eol , std::string & result ) ;
-		// An overload which avoids string copying.
+	static void readLineFrom( std::istream & stream , const std::string & eol , std::string & result , 
+		bool pre_erase_result = true ) ;
+			// An overload which avoids string copying.
 
 	static std::string wrap( std::string text , 
 		const std::string & prefix_first_line , const std::string & prefix_subsequent_lines , 

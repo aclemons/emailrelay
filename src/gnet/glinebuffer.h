@@ -26,9 +26,8 @@
 
 #include "gdef.h"
 #include "gnet.h"
-#include "gstrings.h"
+#include "gexception.h"
 #include <string>
-#include <list>
 
 namespace GNet
 {
@@ -52,30 +51,48 @@ namespace GNet
 class GNet::LineBuffer 
 {
 public:
+	G_EXCEPTION( Overflow , "line buffer overflow: maximum input line length exceeded" ) ;
+
 	explicit LineBuffer( const std::string & eol = std::string("\n") ) ;
 		// Constructor.
 
 	void add( const std::string & segment ) ;
 		// Adds a data segment.
 
+	void add( const char * p , size_t n ) ;
+		// Adds a data segment.
+
 	bool more() const ;
 		// Returns true if there are complete 
 		// line(s) to be extracted.
 
+	const std::string & current() const ;
+		// Returns the current line, without extracting 
+		// it. The line terminator is not included.
+		//
+		// Precondition: more()
+
+	void discard() ;
+		// Discards the current line.
+		//
+		// Precondition: more()
+
 	std::string line() ;
-		// Extracts a line. The line terminator
-		// is not included.
+		// Extracts a line and returns it as a string. 
+		// The line terminator is not included.
 
 private:
 	LineBuffer( const LineBuffer & ) ;
 	void operator=( const LineBuffer & ) ;
-	bool terminated() const ;
-	unsigned long count() const ;
+	void load() ;
+	void check( size_t ) const ;
 
 private:
 	static unsigned long m_limit ;
-	G::Strings m_lines ;
 	std::string m_eol ;
+	std::string m_current ;
+	std::string m_store ;
+	bool m_more ;
 } ;
 
 #endif

@@ -18,20 +18,17 @@
 // 
 // ===
 //
-// cstdio
+// cstddef
 //
 
-#ifndef G_PORT_CSTDIO_H
-#define G_PORT_CSTDIO_H
+#ifndef G_PORT_CSTDDEF_H
+#define G_PORT_CSTDDEF_H
 
-#include <stdio.h>
+#include <stddef.h>
 
 namespace std
 {
-	using ::remove ;
-	using ::rename ;
-	using ::sscanf ;
-	using ::sprintf ;
+	using ::size_t ;
 }
 
 #endif

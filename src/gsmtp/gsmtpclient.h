@@ -128,7 +128,7 @@ private:
 	virtual void onData( const char * data , size_t size ) ; // GNet::Client
 	virtual void onWriteable() ; // GNet::Client
 	virtual void onError( const std::string & error ) ; // GNet::Client
-	virtual bool protocolSend( const std::string & ) ; // ClientProtocol::Sender
+	virtual bool protocolSend( const std::string & , size_t ) ; // ClientProtocol::Sender
 	void protocolDone( bool , bool , std::string ) ; // ClientProtocol::doneSignal()
 	virtual void onTimeout( GNet::Timer & ) ; // GNet::TimeoutHandler
 	std::string init( const std::string & , const std::string & , unsigned int ) ;

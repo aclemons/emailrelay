@@ -27,73 +27,70 @@
 #include "gdebug.h"
 #include "gassert.h"
 
-unsigned long GNet::LineBuffer::m_limit = 10000000UL ; // 10Mb denial-of-service limit
+unsigned long GNet::LineBuffer::m_limit = 1000000UL ; // 1Mb denial-of-service line-length limit
 
 GNet::LineBuffer::LineBuffer( const std::string & eol ) :
-	m_eol(eol)
+	m_eol(eol) ,
+	m_more(false)
 {
 }
 
-unsigned long GNet::LineBuffer::count() const
+void GNet::LineBuffer::add( const char * p , size_t n )
 {
-	unsigned long result = 0UL ;
-	for( G::Strings::const_iterator p = m_lines.begin() ; p != m_lines.end() ; ++p )
-		result += (*p).length() ;
-	return result ;
+	G_ASSERT( p != NULL ) ;
+	check( n ) ;
+	m_store.append( p , n ) ;
+	load() ;
 }
 
-void GNet::LineBuffer::add( const std::string & segment )
+void GNet::LineBuffer::add( const std::string & s )
 {
-	if( m_limit == 0UL || count() < m_limit )
+	check( s.length() ) ;
+	m_store.append( s ) ;
+	load() ;
+}
+
+void GNet::LineBuffer::check( size_t n ) const
+{
+	if( (m_store.length()+n) > m_limit )
+		throw Overflow() ;
+}
+
+void GNet::LineBuffer::load()
+{
+	if( ! m_more )
 	{
-		size_t n = segment.size() ;
-		for( size_t i = 0U ; i < n ; i++ )
+		size_t pos = m_store.find(m_eol) ; // optimisation opportunity here using find(pos,s) overload
+		if( pos != std::string::npos )
 		{
-			if( m_lines.empty() )
-				m_lines.push_back( std::string() ) ;
-
-			char c = segment.at(i) ;
-			m_lines.back().append( 1U , c ) ;
-			if( terminated() )
-			{
-				m_lines.push_back( std::string() ) ;
-			}
+			m_more = true ;
+			m_current = m_store.substr(0U,pos) ;
+			m_store.erase( 0U , pos + m_eol.length() ) ;
 		}
-	}
-}
-
-bool GNet::LineBuffer::terminated() const
-{
-	G_ASSERT( ! m_lines.empty() ) ;
-	const std::string & s = m_lines.back() ;
-	if( s.length() < m_eol.length() )
-	{
-		return false ;
-	}
-	else
-	{
-		size_t pos = s.length() - m_eol.length() ;
-		return s.find(m_eol,pos) == pos ;
 	}
 }
 
 bool GNet::LineBuffer::more() const
 {
-	return 
-		( m_lines.size() == 1U && terminated() ) || 
-		m_lines.size() > 1U ;
+	return m_more ;
+}
+
+const std::string & GNet::LineBuffer::current() const
+{
+	return m_current ;
+}
+
+void GNet::LineBuffer::discard()
+{
+	m_current.erase() ;
+	m_more = false ;
+	load() ;
 }
 
 std::string GNet::LineBuffer::line()
 {
-	G_ASSERT( ! m_lines.empty() ) ;
-	std::string result = m_lines.front() ;
-	size_t n = result.length() ;
-	G_ASSERT( n >= m_eol.length() ) ;
-	n -= m_eol.length() ;
-	G_ASSERT( result.find(m_eol,n) == n ) ;
-	result.erase( n , m_eol.length() ) ;
-	m_lines.pop_front() ;
-	return result ;
+	std::string s( current() ) ;
+	discard() ;
+	return s ;
 }
 

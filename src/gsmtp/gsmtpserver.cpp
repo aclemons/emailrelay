@@ -66,13 +66,11 @@ void GSmtp::ServerPeer::onDelete()
 
 void GSmtp::ServerPeer::onData( const char * p , size_t n )
 {
-	std::string s( p , n ) ;
-	m_buffer.add( s ) ;
-	while( m_buffer.more() )
+	for( m_buffer.add(p,n) ; m_buffer.more() ; m_buffer.discard() )
 	{
-		bool this_deleted = processLine( m_buffer.line() ) ;
+		bool this_deleted = processLine( m_buffer.current() ) ;
 		if( this_deleted )
-			break ;
+			return ;
 	}
 }
 

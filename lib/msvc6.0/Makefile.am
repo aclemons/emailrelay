@@ -18,5 +18,5 @@
 ## 
 #
 
-EXTRA_DIST = cstdio cstdlib cstring ctime cmath
+EXTRA_DIST = cstdio cstdlib cstring ctime cmath cstddef
 

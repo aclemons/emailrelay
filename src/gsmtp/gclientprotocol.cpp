@@ -43,7 +43,6 @@ GSmtp::ClientProtocol::ClientProtocol( Sender & sender , const Secrets & secrets
 		m_thishost(thishost_name) ,
 		m_state(sStart) ,
 		m_server_has_8bitmime(false) ,
-		m_said_hello(false) ,
 		m_message_is_8bit(false) ,
 		m_authenticated_with_server(false) ,
 		m_must_authenticate(must_authenticate) ,
@@ -71,16 +70,16 @@ void GSmtp::ClientProtocol::start( const std::string & from , const G::Strings &
 	if( m_state != sStart && m_state != sEnd )
 		throw NotReady() ;
 
-	// say hello if this is the first message on the current connection
-	if( m_said_hello )
+	G_ASSERT( m_state == sStart || m_state == sEnd ) ;
+	if( m_state == sStart )
 	{
-		m_state = sSentMail ;
-		sendMail() ;
+		// wait for 220 greeting
+		startTimer( 20U ) ; // should be configurable
 	}
 	else
 	{
-		m_state = sSentEhlo ;
-		send( std::string("EHLO ") + m_thishost ) ;
+		m_state = sSentMail ;
+		sendMail() ;
 	}
 }
 
@@ -147,6 +146,16 @@ void GSmtp::ClientProtocol::apply( const std::string & rx )
 	}
 }
 
+void GSmtp::ClientProtocol::sendEhlo()
+{
+	send( std::string("EHLO ") + m_thishost ) ;
+}
+
+void GSmtp::ClientProtocol::sendHelo()
+{
+	send( std::string("HELO ") + m_thishost ) ;
+}
+
 void GSmtp::ClientProtocol::sendMail()
 {
 	const bool dodgy = m_message_is_8bit && !m_server_has_8bitmime ;
@@ -191,19 +200,10 @@ void GSmtp::ClientProtocol::applyEvent( const Reply & reply )
 {
 	cancelTimer() ;
 
-	if( reply.is(Reply::ServiceReady_220) )
+	if( m_state == sStart && reply.is(Reply::ServiceReady_220) )
 	{
-		; // no-op
-	}
-	else if( m_state == sReset )
-	{
-		m_state = sStart ;
-		m_said_hello = false ;
-		m_authenticated_with_server = false ;
-	}
-	else if( m_state == sStart )
-	{
-		;
+		m_state = sSentEhlo ;
+		sendEhlo() ;
 	}
 	else if( m_state == sSentEhlo && (
 		reply.is(Reply::SyntaxError_500) ||
@@ -212,7 +212,7 @@ void GSmtp::ClientProtocol::applyEvent( const Reply & reply )
 	{
 		// it didn't like EHLO so fall back to HELO
 		m_state = sSentHelo ;
-		send( std::string("HELO ") + m_thishost ) ;
+		sendHelo() ;
 	}
 	else if( (m_state==sSentEhlo || m_state==sSentHelo) && reply.is(Reply::Ok_250) )
 	{
@@ -222,7 +222,6 @@ void GSmtp::ClientProtocol::applyEvent( const Reply & reply )
 
 		m_auth_mechanism = m_sasl->preferred( serverAuthMechanisms(reply) ) ;
 		m_server_has_8bitmime = m_state == sSentEhlo && reply.textContains("\n8BITMIME") ;
-		m_said_hello = true ;
 
 		if( m_sasl->active() && !m_auth_mechanism.empty() )
 		{
@@ -334,9 +333,19 @@ void GSmtp::ClientProtocol::applyEvent( const Reply & reply )
 
 void GSmtp::ClientProtocol::onTimeout()
 {
-	G_WARNING( "GSmtp::ClientProtocol: timeout" ) ;
-	m_state = sEnd ;
-	raiseDoneSignal( false , false , "timeout" ) ;
+	if( m_state == sStart )
+	{
+		// no 220 greeting seen -- go on regardless
+		G_WARNING( "GSmtp::ClientProtocol: timeout: no greeting" ) ;
+		m_state = sSentEhlo ;
+		sendEhlo() ;
+	}
+	else
+	{
+		G_WARNING( "GSmtp::ClientProtocol: timeout" ) ;
+		m_state = sEnd ;
+		raiseDoneSignal( false , false , "timeout" ) ;
+	}
 }
  
 G::Strings GSmtp::ClientProtocol::serverAuthMechanisms( const ClientProtocolReply & reply ) const
@@ -371,8 +380,12 @@ bool GSmtp::ClientProtocol::endOfContent() const
 
 size_t GSmtp::ClientProtocol::sendLines()
 {
+	cancelTimer() ; // no response expected during data transfer
+
+	// the read buffer -- capacity grows to longest line, but start with something reasonable
+	std::string line( 200U , '.' ) ; 
+
 	size_t n = 0U ;
-	std::string line ;
 	while( sendLine(line) )
 		n++ ;
 	return n ;
@@ -380,11 +393,19 @@ size_t GSmtp::ClientProtocol::sendLines()
 
 bool GSmtp::ClientProtocol::sendLine( std::string & line )
 {
-	G::Str::readLineFrom( *(m_content.get()) , crlf() , line ) ;
+	line.erase( 1U ) ; // leave "."
+
+	const bool pre_erase = false ;
+	G::Str::readLineFrom( *(m_content.get()) , crlf() , line , pre_erase ) ;
+	G_ASSERT( line.length() >= 1U && line.at(0U) == '.' ) ;
+
 	if( m_content->good() )
 	{
-		const bool log_content = false ;
-		return send( line , false , log_content ) ;
+		line.append( crlf() ) ;
+		bool all_sent = m_sender.protocolSend( line , line.at(1U) == '.' ? 0U : 1U ) ;
+		if( !all_sent && m_timeout != 0U )
+			startTimer( m_timeout ) ; // use response timer for when flow-control asserted
+		return all_sent ;
 	}
 	else
 	{
@@ -397,12 +418,11 @@ bool GSmtp::ClientProtocol::send( const std::string & line , bool eot , bool log
 	if( m_timeout != 0U )
 		startTimer( m_timeout ) ;
 
-	bool add_prefix = !eot && line.length() && line.at(0U) == '.' ;
-	std::string prefix( add_prefix ? "." : "" ) ;
+	std::string prefix( !eot && line.length() && line.at(0U) == '.' ? "." : "" ) ;
 	if( log )
 		G_LOG( "GSmtp::ClientProtocol: tx>>: \"" << prefix << G::Str::toPrintableAscii(line) << "\"" ) ;
 
-	return m_sender.protocolSend( prefix + line + crlf() ) ;
+	return m_sender.protocolSend( prefix + line + crlf() , 0U ) ;
 }
 
 //static

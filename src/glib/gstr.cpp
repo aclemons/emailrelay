@@ -322,16 +322,24 @@ std::string G::Str::readLineFrom( std::istream & stream , const std::string & eo
 	return result ;
 }
 
-void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std::string & line )
+void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std::string & line , bool pre_erase )
 {
-	line.erase() ;
+	G_ASSERT( eol.length() != 0U ) ;
+
+	if( pre_erase )
+		line.erase() ;
 
 	const size_t eol_length = eol.length() ;
+	const char eol_final = eol.at(eol_length-1U) ;
+	size_t line_length = line.length() ;
+
 	char c ;
-	for( size_t line_length = 1U ; stream.get(c) ; ++line_length )
+	while( stream.get(c) )
 	{
-		line.append(1U,c) ;
-		if( line_length >= eol_length )
+		line.append(1U,c) ; // fast enough if 'line' starts with sufficient capacity
+		++line_length ;
+
+		if( line_length >= eol_length && c == eol_final )
 		{
 			const size_t offset = line_length - eol_length ;
 			if( line.find(eol,offset) == offset )

@@ -147,19 +147,22 @@ bool GSmtp::Client::busy() const
 	return m_busy ; // (was GNet::Client::connected())
 }
 
-bool GSmtp::Client::protocolSend( const std::string & line )
+bool GSmtp::Client::protocolSend( const std::string & line , size_t offset )
 {
-	ssize_t rc = socket().write( line.data() , line.length() ) ;
+	G_ASSERT( line.length() > offset ) ;
+	size_t n = line.length() - offset ;
+	ssize_t rc = socket().write( line.data() + offset , n ) ;
 	if( rc < 0 )
 	{
-		m_pending = line ;
+		m_pending = line.substr(offset) ;
 		if( socket().eWouldBlock() )
 			blocked() ;
 		return false ;
 	}
-	else if( static_cast<size_t>(rc) < line.length() )
+	else if( static_cast<size_t>(rc) < n )
 	{
-		m_pending = line.substr(rc) ;
+		size_t urc = static_cast<size_t>(rc) ;
+		m_pending = line.substr(urc+offset) ;
 		blocked() ; // GNet::Client::blocked() => addWriteHandler()
 		return false ;
 	}
@@ -305,12 +308,14 @@ GNet::Socket & GSmtp::Client::socket()
 
 void GSmtp::Client::onData( const char * data , size_t size )
 {
-	m_buffer.add( std::string(data,size) ) ;
-	while( m_buffer.more() )
+	for( m_buffer.add(data,size) ; m_buffer.more() ; m_buffer.discard() )
 	{
-		m_protocol.apply( m_buffer.line() ) ;
+		m_protocol.apply( m_buffer.current() ) ;
 		if( m_protocol.done() )
+		{
 			finish() ;
+			return ;
+		}
 	}
 }
 
@@ -352,7 +357,8 @@ void GSmtp::Client::raiseEventSignal( const std::string & s1 , const std::string
 
 void GSmtp::Client::onWriteable()
 {
-	if( protocolSend(m_pending) )
+	G_DEBUG( "GSmtp::Client::onWriteable" ) ;
+	if( protocolSend(m_pending,0U) )
 	{
 		m_protocol.sendDone() ;
 	}

@@ -1,6 +1,12 @@
 E-MailRelay Change Log
 ======================
 
+1.2 -> 1.2.1
+------------
+* Client protocol waits for a greeting from the server on startup [bug-id 842156].
+* Rewrite of MD5 code to avoid third-party copyrights.
+* Performance tuning.
+
 1.1.2 -> 1.2
 ------------
 * The "--filter" and "--verifier" arguments interpreted as command-lines; spaces in executable paths now need escaping.

@@ -143,9 +143,12 @@ public:
 
 	class Sender // An interface used by ClientProtocol to send protocol messages.
 	{
-		public: virtual bool protocolSend( const std::string & ) = 0 ;
+		public: virtual bool protocolSend( const std::string & , size_t offset ) = 0 ;
 			// Called by the Protocol class to send
 			// network data to the peer.
+			//
+			// The offset gives the location of the
+			// payload within the string buffer.
 			//
 			// Returns false if not all of the string
 			// was sent, either due to flow control
@@ -213,6 +216,8 @@ private:
 	bool send( const std::string & , bool eot = false , bool log = true ) ;
 	bool sendLine( std::string & ) ;
 	size_t sendLines() ;
+	void sendEhlo() ;
+	void sendHelo() ;
 	void sendMail() ;
 	void sendMailCore() ;
 	bool endOfContent() const ;
@@ -225,7 +230,7 @@ private:
 
 private:
 	enum State { sStart , sSentEhlo , sSentHelo , sAuth1 , sAuth2 , sSentMail , 
-		sSentRcpt , sSentData , sData , sDone , sEnd , sReset } ;
+		sSentRcpt , sSentData , sData , sDone , sEnd } ;
 	Sender & m_sender ;
 	const Secrets & m_secrets ;
 	std::string m_thishost ;
@@ -234,7 +239,6 @@ private:
 	G::Strings m_to ;
 	std::auto_ptr<std::istream> m_content ;
 	bool m_server_has_8bitmime ;
-	bool m_said_hello ;
 	bool m_message_is_8bit ;
 	std::string m_message_authentication ;
 	Reply m_reply ;
