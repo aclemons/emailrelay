@@ -254,8 +254,8 @@ any "--poll" timer.
 The pre-processor program can edit any part of the message's envelope file or
 content file: E-MailRelay remembers nothing about the message while the
 pre-processor is running, except the filename. But if the message is deleted
-by the pre-processor then E-MailRelay will be upset, unless the exit code
-is 100.
+by the pre-processor then E-MailRelay will be upset, so to avoid the 
+error message use an exit code of 100.
 
 If the pre-processor program creates new messages in the spool directory then 
 they may not be processed immediately, or they may be completely ignored. To get 

@@ -56,10 +56,16 @@ public:
 	virtual G::Signal3<bool,unsigned long,std::string> & doneSignal() ;
 		// See ProtocolMessage.
 
+	virtual G::Signal3<bool,bool,std::string> & preparedSignal() ;
+		// See ProtocolMessage.
+
 	virtual void clear() ;
 		// See ProtocolMessage.
 
 	virtual bool setFrom( const std::string & from_user ) ;
+		// See ProtocolMessage.
+
+	virtual bool prepare() ;
 		// See ProtocolMessage.
 
 	virtual bool addTo( const std::string & to_user , Verifier::Status to_status ) ;
@@ -84,7 +90,8 @@ private:
 	MessageStore & m_store ;
 	std::auto_ptr<NewMessage> m_msg ;
 	std::string m_from ;
-	G::Signal3<bool,unsigned long,std::string> m_signal ;
+	G::Signal3<bool,unsigned long,std::string> m_done_signal ;
+	G::Signal3<bool,bool,std::string> m_prepared_signal ;
 } ;
 
 #endif

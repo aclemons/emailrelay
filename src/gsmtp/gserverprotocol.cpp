@@ -45,6 +45,7 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 		m_sasl(secrets)
 {
 	m_pmessage.doneSignal().connect( G::slot(*this,&ServerProtocol::processDone) ) ;
+	m_pmessage.preparedSignal().connect( G::slot(*this,&ServerProtocol::prepareDone) ) ;
 
 	// (dont send anything to the peer from this ctor -- the Sender 
 	// object is not fuly constructed)
@@ -56,7 +57,8 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 	m_fsm.addTransition( eVrfy    , s_Any   , s_Same   , &GSmtp::ServerProtocol::doVrfy ) ;
 	m_fsm.addTransition( eEhlo    , s_Any   , sIdle    , &GSmtp::ServerProtocol::doEhlo , s_Same ) ;
 	m_fsm.addTransition( eHelo    , s_Any   , sIdle    , &GSmtp::ServerProtocol::doHelo , s_Same ) ;
-	m_fsm.addTransition( eMail    , sIdle   , sGotMail , &GSmtp::ServerProtocol::doMail , sIdle ) ;
+	m_fsm.addTransition( eMail    , sIdle   , sPrepare , &GSmtp::ServerProtocol::doMailPrepare , sIdle ) ;
+	m_fsm.addTransition( ePrepared, sPrepare, sGotMail , &GSmtp::ServerProtocol::doMail , sIdle ) ;
 	m_fsm.addTransition( eRcpt    , sGotMail, sGotRcpt , &GSmtp::ServerProtocol::doRcpt , sGotMail ) ;
 	m_fsm.addTransition( eRcpt    , sGotRcpt, sGotRcpt , &GSmtp::ServerProtocol::doRcpt ) ;
 	m_fsm.addTransition( eData    , sGotMail, sIdle    , &GSmtp::ServerProtocol::doNoRecipients ) ;
@@ -128,6 +130,7 @@ bool GSmtp::ServerProtocol::apply( const std::string & line )
 
 void GSmtp::ServerProtocol::processDone( bool success , unsigned long , std::string reason )
 {
+	G_DEBUG( "GSmtp::ServerProtocol::processDone: " << success << ", \"" << reason << "\"" ) ;
 	G_ASSERT( m_fsm.state() == sProcessing ) ; // (a RSET will call m_pmessage.clear() to cancel the callback)
 	if( m_fsm.state() == sProcessing ) // just in case
 	{
@@ -136,12 +139,11 @@ void GSmtp::ServerProtocol::processDone( bool success , unsigned long , std::str
 	}
 }
 
-
 void GSmtp::ServerProtocol::doQuit( const std::string & , bool & )
 {
 	sendClosing() ;
 	m_sender.protocolDone() ;
-	// do nothing more -- this object may have been deleted already
+	// do nothing more -- this object may have been deleted in protocolDone()
 }
 
 void GSmtp::ServerProtocol::doNoop( const std::string & , bool & )
@@ -314,7 +316,7 @@ void GSmtp::ServerProtocol::sendChallenge( const std::string & s )
 	send( std::string("334 ") + Base64::encode(s,std::string()) ) ;
 }
 
-void GSmtp::ServerProtocol::doMail( const std::string & line , bool & predicate )
+void GSmtp::ServerProtocol::doMailPrepare( const std::string & line , bool & predicate )
 {
 	if( m_sasl.active() && !m_sasl.trusted(m_peer_address) && !m_authenticated )
 	{
@@ -328,9 +330,43 @@ void GSmtp::ServerProtocol::doMail( const std::string & line , bool & predicate 
 		bool ok = m_pmessage.setFrom( from ) ;
 		predicate = ok ;
 		if( ok )
-			sendMailReply() ;
+		{
+			bool async_prepare = m_pmessage.prepare() ;
+			if( ! async_prepare )
+				m_fsm.apply( *this , ePrepared , "" ) ; // re-entrancy ok
+		}
 		else
+		{
 			sendBadFrom( from ) ;
+		}
+	}
+}
+
+void GSmtp::ServerProtocol::prepareDone( bool success , bool temporary_fault , std::string reason )
+{
+	G_DEBUG( "GSmtp::ServerProtocol::prepareDone: " << success << ", " 
+		<< temporary_fault << ", \"" << reason << "\"" ) ;
+
+	// as a kludge mark temporary failures by prepending a space
+	if( !success && temporary_fault )
+		reason = std::string(" ")+reason ;
+
+	m_fsm.apply( *this , ePrepared , reason ) ;
+}
+
+void GSmtp::ServerProtocol::doMail( const std::string & line , bool & predicate )
+{
+	// here 'line' comes from prepareDone(), or empty if no preparation stage
+	G_DEBUG( "GSmtp::ServerProtocol::doMail: \"" << line << "\"" ) ;
+	if( line.empty() )
+	{
+		sendMailReply() ;
+	}
+	else
+	{
+		predicate = false ;
+		bool temporary = line.at(0U) == ' ' ;
+		sendMailError( line.substr(temporary?1U:0U) , temporary ) ;
 	}
 }
 
@@ -472,6 +508,12 @@ void GSmtp::ServerProtocol::sendRsetReply()
 void GSmtp::ServerProtocol::sendMailReply()
 {
 	sendOk() ;
+}
+
+void GSmtp::ServerProtocol::sendMailError( const std::string & reason , bool temporary )
+{
+	std::string number( temporary ? "452" : "550" ) ;
+	send( number + " " + reason ) ;
 }
 
 void GSmtp::ServerProtocol::sendCompletionReply( bool ok , const std::string & reason )

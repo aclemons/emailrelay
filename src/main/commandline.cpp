@@ -76,6 +76,7 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "P!postmaster!deliver to postmaster and reject all other local mailbox addresses!0!!3|"
 		<< "Z!verifier!defines an external address verifier program!1!program!3|"
 		<< "Q!admin-terminate!!0!!0|"
+		<< "R!scanner!!1!host:port!0|"
 		;
 	return ss.str() ;
 }
@@ -191,6 +192,11 @@ std::string Main::CommandLine::semanticError() const
 		m_getopt.contains("immediate") ) )
 	{
 		return "the --forward, --immediate and --poll switches require --forward-to" ;
+	}
+
+	if( m_getopt.contains("scanner") && ! ( m_getopt.contains("as-proxy") || m_getopt.contains("immediate") ) )
+	{
+		return "the --scanner switch requires --as-proxy or --immediate" ;
 	}
 
 	const bool log =

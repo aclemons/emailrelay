@@ -1,5 +1,5 @@
-E-MailRelay Developer guide
-===========================
+E-MailRelay Design and implementation
+=====================================
 
 Module structure
 ----------------
@@ -27,8 +27,8 @@ reading and extracting messages from the store. The concrete implementation
 classes based on these interfaces are respectively "FileStore", "NewFile" and
 "StoredFile".
 
-The interaction betweeen the server protocol class and the message store is 
-mediated by the "ProtocolMessage" interface. Two implementations of this 
+The interaction between the server protocol class and the message store is 
+mediated by the "ProtocolMessage" interface. Two main implementations of this 
 interface are supplied: one for normal spooling ("ProtocolMessageStore"), and 
 another for immediate forwarding ("ProtocolMessageForward").
 
@@ -77,6 +77,33 @@ Directory structure
 # lib/msvc6.0  
 
   Standard headers which are missing (or broken) in msvc6.0
+
+Event model
+-----------
+The E-MailRelay server uses non-blocking socket i/o, with a select() event loop. 
+This event model means that the server can handle multiple clients simultaneously 
+from a single thread. The only significant blocking occurs when external programs 
+are executed (see "--filter" and "--verifier").
+
+At higher levels the slot/signal design pattern is used to propagate events 
+between objects.
+
+Diagrams
+--------
+Class diagrams:
+* *GNet namespace* [gnet-classes.png]
+* *GSmtp namespace* [gsmtp-classes.png] 
+
+Sequence diagrams:
+* *ProtocolMessage::prepare() returns false* [sequence-1.png]
+* *ProtocolMessage::prepare() returns true* [sequence-2.png]
+* *Proxy mode forwarding* [sequence-3.png]
+* *Scanning* [sequence-4.png]
+
+State transition diagrams:
+* *GNet::Client* [gnet-client.png]
+* *GSmtp::ScannerClient* [gsmtp-scannerclient.png]
+* *GSmtp::ServerProtocol* [gsmtp-serverprotocol.png]
 
 Tour
 ----
@@ -139,7 +166,7 @@ these cases there are three source files per header. For example, "gsocket.cpp",
 
 Compile-time features
 ---------------------
-The following features are available to source-code hackers:
+The following compile-time features can be enabled with some effort:
 
 # IPv6
 
@@ -162,8 +189,8 @@ The following features are available to source-code hackers:
 
 Windows build
 -------------
-A simple project file "emailrelay.dsp" for msvc6.0 is provided in the "src/main" 
-directory.
+Simple MSVC project files are provided in the "src/main" directory, bundled into 
+the "emailrelay.dws" workspace.
 
 Style
 -----

@@ -113,6 +113,7 @@ private:
 		eData ,
 		eRcpt ,
 		eMail ,
+		ePrepared ,
 		eVrfy ,
 		eHelp ,
 		eAuth ,
@@ -125,6 +126,7 @@ private:
 		sEnd ,
 		sIdle ,
 		sGotMail ,
+		sPrepare ,
 		sGotRcpt ,
 		sData ,
 		sProcessing ,
@@ -143,6 +145,7 @@ private:
 	std::string commandLine( const std::string & line ) const ;
 	static std::string crlf() ;
 	void processDone( bool , unsigned long , std::string ) ; // ProtocolMessage::doneSignal()
+	void prepareDone( bool , bool , std::string ) ;
 	bool isEndOfText( const std::string & ) const ;
 	bool isEscaped( const std::string & ) const ;
 	void doNoop( const std::string & , bool & ) ;
@@ -151,6 +154,7 @@ private:
 	void doHelo( const std::string & , bool & ) ;
 	void doAuth( const std::string & , bool & ) ;
 	void doAuthData( const std::string & , bool & ) ;
+	void doMailPrepare( const std::string & line , bool & ) ;
 	void doMail( const std::string & line , bool & ) ;
 	void doRcpt( const std::string & line , bool & ) ;
 	void doUnknown( const std::string & line , bool & ) ;
@@ -169,6 +173,7 @@ private:
 	void sendEhloReply( const std::string & ) ;
 	void sendRsetReply() ;
 	void sendMailReply() ;
+	void sendMailError( const std::string & , bool ) ;
 	void sendRcptReply() ;
 	void sendDataReply() ;
 	void sendCompletionReply( bool ok , const std::string & ) ;

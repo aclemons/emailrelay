@@ -5,6 +5,7 @@ E-MailRelay Change Log
 --------------
 * Resolved the file-descriptor kludge for "--verifier" on Windows.
 * Earlier check for un-bindable ports on startup, and later fork()ing [bug-id 776972].
+* Undocumented "--scanner" switch added for asynchronous processesing by a separate network server.
 
 1.1.0 -> 1.1.1
 --------------

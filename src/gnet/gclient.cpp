@@ -39,6 +39,7 @@ namespace
 	const int c_retries = 10 ; // number of retries when using a priviledged local port number
 	const int c_port_start = 512 ;
 	const int c_port_end = 1024 ;
+	const std::string c_cannot_connect_to( "cannot connect to " ) ;
 }
 
 namespace GNet
@@ -73,7 +74,7 @@ GNet::ClientResolver::ClientResolver( ClientImp & imp ) :
 // ===
 
 // Class: GNet::ClientImp
-// Description: A pimple-pattern implementation class for GClient.
+// Description: A pimple-pattern implementation class for GNet::Client.
 //
 class GNet::ClientImp : public GNet::EventHandler 
 {
@@ -174,6 +175,12 @@ std::string GNet::Client::peerName() const
 	return m_imp->peerName() ;
 }
 
+//static
+bool GNet::Client::canRetry( const std::string & error )
+{
+	return error.find( c_cannot_connect_to ) == 0U ;
+}
+
 // ===
 
 bool GNet::ClientImp::m_first = true ;
@@ -269,7 +276,7 @@ bool GNet::ClientImp::connect( std::string host , std::string service ,
 		}
 		if( immediate )
 		{
-			G_WARNING( "GNet::Client::connect: immediate connection" ) ; // delete soon
+			G_DEBUG( "GNet::Client::connect: immediate connection" ) ; // delete soon
 			s().addReadHandler( *this ) ;
 			s().addExceptionHandler( *this ) ;
 			setState( Connected ) ;
@@ -392,7 +399,7 @@ GNet::ClientImp::Status GNet::ClientImp::connectCore( Address remote_address ,
 	if( !s().connect( remote_address , &immediate ) )
 	{
 		G_DEBUG( "GNet::ClientImp::connect: immediate failure" ) ;
-		error = "cannot connect to " ;
+		error = c_cannot_connect_to ;
 		error.append( remote_address.displayString().c_str() ) ;
 
 		// we should return Failure here, but Microsoft's stack
@@ -433,7 +440,7 @@ void GNet::ClientImp::writeEvent()
 	}
 	else if( m_state == Connecting )
 	{
-		std::string message( "cannot connect to " ) ;
+		std::string message( c_cannot_connect_to ) ;
 		message.append( m_address.displayString().c_str() ) ;
 		setState( Failed ) ;
 		close() ;

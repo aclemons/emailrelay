@@ -27,10 +27,19 @@ source code. The <a href="namespaces.html">Namespace List</a> is a good starting
 for browsing -- the detailed description section towards the end of each namespace
 page gives a list of the namespace's key classes.
 
-The E-MailRelay <a href="../developer.html">developer's guide</a> also gives an overview 
-of the code structure, including simple class diagrams for the 
-<a href="../gnet-classes.png">GNet</a> and 
-<a href="../gsmtp-classes.png">GSmtp</a> namespaces.
+The E-MailRelay <a href="../developer.html">design and implementation guide</a> gives an overview 
+of the code structure, and there are a number of supporting diagrams:
+<ul>
+<li><a href="../gnet-classes.png">GNet namespace class diagram</a></li>
+<li><a href="../gsmtp-classes.png">GSmtp namespace class diagram</a></li>
+<li><a href="../sequence-1.png">ProtocolMessage sequence diagram 1</a></li>
+<li><a href="../sequence-2.png">ProtocolMessage sequence diagram 2</a></li>
+<li><a href="../sequence-3.png">Proxy-mode forwarding sequence diagram</a></li>
+<li><a href="../sequence-4.png">Scanning sequence diagram</a></li>
+<li><a href="../gnet-client.png">GNet::Client state transition diagram</a></li>
+<li><a href="../gsmtp-scannerclient.png">GNet::ScannerClient state transition diagram</a></li>
+<li><a href="../gsmtp-serverprotocol.png">GSmtp::ServerProtocol state transition diagram</a></li>
+</ul>
 
 */
 

@@ -121,8 +121,9 @@ GSmtp::Verifier::Status GSmtp::Verifier::verifyExternal( const std::string & add
 	int rc = G::Process::spawn( G::Root::nobody() , m_path , args , &response ) ;
 
 	G_LOG( "GSmtp::Verifier: " << rc << ": \"" << G::Str::toPrintableAscii(response) << "\"" ) ;
-	G::Str::trimRight( response , "\n\t" ) ;
+	G::Str::trimRight( response , " \n\t" ) ;
 	G::Str::replaceAll( response , "\r\n" , "\n" ) ;
+	G::Str::replaceAll( response , "\r" , "" ) ;
 	G::Strings response_parts ;
 	G::Str::splitIntoFields( response , response_parts , "\n" ) ;
 

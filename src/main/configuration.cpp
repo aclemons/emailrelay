@@ -67,7 +67,7 @@ std::string Main::Configuration::str( const std::string & p , const std::string 
 		<< p << "spool directory: " << spoolDir() << eol
 		<< p << "immediate forwarding? " << yn(immediate()) << eol
 		<< p << "mail processor: " << (useFilter()?filter():na()) << eol
-		//<< p << "address verifier: " << na(verifier().str()) << eol
+		<< p << "address verifier: " << na(verifier().str()) << eol
 		<< p << "admin port: " << (doAdmin()?G::Str::fromUInt(adminPort()):na()) << eol
 		<< p << "run as daemon? " << yn(daemon()) << eol
 		<< p << "verbose logging? " << yn(verbose()) << eol
@@ -299,4 +299,18 @@ bool Main::Configuration::withTerminate() const
 	return m_cl.contains("admin-terminate") ;
 }
 
+std::string Main::Configuration::scannerAddress() const
+{
+	return m_cl.contains("scanner") ? m_cl.value("scanner") : std::string() ;
+}
+
+unsigned int Main::Configuration::scannerConnectionTimeout() const
+{
+	return 10U ; // for now
+}
+
+unsigned int Main::Configuration::scannerResponseTimeout() const
+{
+	return 90U ; // for now
+}
 

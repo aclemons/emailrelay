@@ -147,9 +147,9 @@ void GNet::Server::init( const Address & listening_address )
 //static
 bool GNet::Server::canBind( const Address & address , bool do_throw )
 {
-	StreamSocket s ;
 	G::Root claim_root ;
-	bool ok = s.bind(address) ;
+	StreamSocket s ;
+	bool ok = s.canBindHint( address ) ;
 	if( !ok && do_throw )
 		throw CannotBind( address.displayString() ) ;
 	return ok ;

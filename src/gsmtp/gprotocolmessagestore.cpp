@@ -68,6 +68,11 @@ bool GSmtp::ProtocolMessageStore::setFrom( const std::string & from )
 	}
 }
 
+bool GSmtp::ProtocolMessageStore::prepare()
+{
+	return false ; // no async preparation required
+}
+
 bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , Verifier::Status to_status )
 {
 	G_ASSERT( m_msg.get() != NULL ) ;
@@ -121,19 +126,23 @@ void GSmtp::ProtocolMessageStore::process( const std::string & auth_id , const s
 				id = m_msg->id() ;
 		}
 		clear() ;
-		m_signal.emit( true , id , std::string() ) ;
+		m_done_signal.emit( true , id , std::string() ) ;
 	}
 	catch( std::exception & e )
 	{
 		G_ERROR( "GSmtp::ProtocolMessage::process: error: " << e.what() ) ;
 		clear() ;
-		m_signal.emit( false , 0UL , e.what() ) ;
+		m_done_signal.emit( false , 0UL , e.what() ) ;
 	}
 }
 
 G::Signal3<bool,unsigned long,std::string> & GSmtp::ProtocolMessageStore::doneSignal()
 {
-	return m_signal ;
+	return m_done_signal ;
 }
 
+G::Signal3<bool,bool,std::string> & GSmtp::ProtocolMessageStore::preparedSignal()
+{
+	return m_prepared_signal ;
+}
 

@@ -70,6 +70,9 @@ public:
 		// Defines a program which is used for pre-processing
 		// messages before they are stored.
 
+	G::Path contentPath() const ;
+		// Returns the path of the content file.
+
 private:
 	FileStore & m_store ;
 	unsigned long m_seq ;

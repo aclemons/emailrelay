@@ -47,7 +47,10 @@ public:
 	explicit Pipe( bool active , bool do_throw = true ) ;
 	~Pipe() ;
 	HANDLE h() const ;
-	std::string read() ;
+	std::string read( bool do_throw = true ) ;
+private:
+	static HANDLE create( HANDLE & h_write , bool do_throw ) ;
+	static HANDLE duplicate( HANDLE h , bool do_throw ) ;
 private:
 	bool m_active ;
 	HANDLE m_read ;
@@ -69,27 +72,12 @@ G::Pipe::Pipe( bool active , bool do_throw ) :
 {
 	if( m_active )
 	{
-		static SECURITY_ATTRIBUTES zero_attributes ;
-		SECURITY_ATTRIBUTES attributes( zero_attributes ) ;
-		attributes.nLength = sizeof(attributes) ;
-		attributes.lpSecurityDescriptor = NULL ;
-		attributes.bInheritHandle = TRUE ;
-
-		HANDLE h = HNULL ;
-		BOOL rc = ::CreatePipe( &h , &m_write , &attributes , 0 ) ;
-		if( rc == 0 )
-		{
-			if( do_throw )
-				throw Error() ;
-		}
-		else
+		const bool do_throw = true ;
+		HANDLE h = create( m_write , do_throw ) ;
+		if( h != HNULL )
 		{
 			// dont let child processes inherit the read end
-			rc = ::DuplicateHandle( GetCurrentProcess() , h , GetCurrentProcess() , 
-				&m_read , 0 , FALSE , DUPLICATE_SAME_ACCESS ) ;
-			::CloseHandle( h ) ;
-			if( ( rc == 0 || m_read == HNULL ) && do_throw )
-				throw Error() ;
+			m_read = duplicate( h , do_throw ) ;
 		}
 	}
 }
@@ -103,12 +91,52 @@ G::Pipe::~Pipe()
 	}
 }
 
+//static
+HANDLE G::Pipe::create( HANDLE & h_write , bool do_throw )
+{
+	static SECURITY_ATTRIBUTES zero_attributes ;
+	SECURITY_ATTRIBUTES attributes( zero_attributes ) ;
+	attributes.nLength = sizeof(attributes) ;
+	attributes.lpSecurityDescriptor = NULL ;
+	attributes.bInheritHandle = TRUE ;
+
+	HANDLE h_read = HNULL ;
+	h_write = HNULL ;
+	BOOL rc = ::CreatePipe( &h_read , &h_write , &attributes , 0 ) ;
+	if( rc == 0 )
+	{
+		DWORD error = ::GetLastError() ;
+		G_ERROR( "G::Pipe::create: pipe error: create: " << error ) ;
+		if( do_throw ) throw Error( "create" ) ;
+		h_read = h_write = HNULL ;
+	}
+	return h_read ;
+}
+
+//static
+HANDLE G::Pipe::duplicate( HANDLE h , bool do_throw )
+{
+	HANDLE result = HNULL ;
+	BOOL rc = ::DuplicateHandle( GetCurrentProcess() , h , GetCurrentProcess() , 
+		&result , 0 , FALSE , DUPLICATE_SAME_ACCESS ) ;
+	if( rc == 0 || result == HNULL )
+	{
+		DWORD error = ::GetLastError() ;
+		::CloseHandle( h ) ;
+		G_ERROR( "G::Pipe::duplicate: pipe error: dup: " << error ) ;
+		if( do_throw ) throw Error( "dup" ) ;
+		result = HNULL ;
+	}
+	::CloseHandle( h ) ;
+	return result ;
+}
+
 HANDLE G::Pipe::h() const
 {
 	return m_write ;
 }
 
-std::string G::Pipe::read()
+std::string G::Pipe::read( bool do_throw )
 {
 	if( ! m_active ) return std::string() ;
 	::CloseHandle( m_write ) ; m_write = HNULL ;
@@ -116,8 +144,17 @@ std::string G::Pipe::read()
 	DWORD n = sizeof(buffer) ;
 	DWORD m = 0UL ;
 	BOOL rc = ::ReadFile( m_read , buffer , n , &m , NULL ) ;
+	DWORD error = ::GetLastError() ;
 	::CloseHandle( m_read ) ; m_read = HNULL ;
-	if( ! rc ) throw Error() ;
+	if( !rc )
+	{
+		G_DEBUG( "G::Pipe::read: error: " << m << " byte(s): error=" << error ) ;
+		if( error != ERROR_BROKEN_PIPE )
+		{
+			G_ERROR( "G::Pipe::read: pipe read error: " << error ) ;
+			if( do_throw ) throw Error( "read" ) ;
+		}
+	}
 	return std::string( buffer , m ) ;
 }
 
@@ -247,7 +284,7 @@ int G::Process::spawn( Identity , const Path & exe , const Strings & args ,
 		G_LOG( "G::Process::spawn: exit " << exit_code << " from \"" << exe << "\": " << exit_code ) ;
 
 		if( pipe_result_p != NULL )
-			*pipe_result_p = pipe.read() ;
+			*pipe_result_p = pipe.read(false) ;
 	}
 
 	return exit_code ;

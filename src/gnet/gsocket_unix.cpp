@@ -18,7 +18,7 @@
 // 
 // ===
 //
-// gsocket_unix.cc
+// gsocket_unix.cpp
 //
 
 #include "gdef.h"
@@ -59,7 +59,7 @@ int GNet::Socket::reason()
 void GNet::Socket::doClose()
 {
 	G_ASSERT( valid() ) ;
-	::close( m_socket );
+	::close( m_socket ) ;
 	m_socket = -1;
 }
 
@@ -91,5 +91,12 @@ bool GNet::Socket::eMsgSize()
 void GNet::Socket::setFault()
 {
 	m_reason = EFAULT ;
+}
+
+bool GNet::Socket::canBindHint( const Address & address )
+{
+	bool can_bind = bind( address ) ;
+	close() ;
+	return can_bind ;
 }
 

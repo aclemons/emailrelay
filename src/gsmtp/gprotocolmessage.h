@@ -61,6 +61,13 @@ public:
 		// As a special case, if success is true and id is zero then 
 		// the message processing was cancelled.
 
+	virtual G::Signal3<bool,bool,std::string> & preparedSignal() = 0 ;
+		// Returns a signal which is raised once prepare() has
+		// completed.
+		//
+		// The signal parameters are 'success', 'temporary' and 
+		// 'reason'.
+
 	virtual void clear() = 0 ;
 		// Clears the message state and terminates
 		// any asynchronous message processing.
@@ -68,6 +75,13 @@ public:
 	virtual bool setFrom( const std::string & from_user ) = 0 ;
 		// Sets the message envelope 'from'.
 		// Returns false if an invalid user.
+
+	virtual bool prepare() = 0 ;
+		// Called to start any asynchronous preparation which is
+		// required after setFrom(). Returns true if there
+		// is something to do (in which case preparedSignal()
+		// must be fired later), or false if there is nothing
+		// to do.
 
 	virtual bool addTo( const std::string & to_user , Verifier::Status to_status ) = 0 ;
 		// Adds an envelope 'to'.

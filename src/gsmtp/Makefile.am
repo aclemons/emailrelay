@@ -47,10 +47,14 @@ libgsmtp_a_SOURCES = \
 	gprotocolmessage.h \
 	gprotocolmessageforward.cpp \
 	gprotocolmessageforward.h \
+	gprotocolmessagescanner.cpp \
+	gprotocolmessagescanner.h \
 	gprotocolmessagestore.cpp \
 	gprotocolmessagestore.h \
 	gsasl_native.cpp \
 	gsasl.h \
+	gscannerclient.cpp \
+	gscannerclient.h \
 	gsecrets.cpp \
 	gsecrets.h \
 	gserverprotocol.cpp \

@@ -91,3 +91,9 @@ void GNet::Socket::setFault()
 	m_reason = WSAEFAULT ;
 }
 
+bool GNet::Socket::canBindHint( const Address & )
+{
+	// rebinding the same port number fails, so a dummy implementation here
+	return true ;
+}
+

@@ -111,10 +111,13 @@ public:
 		const Secrets & server_secrets , const Verifier & verifier ,
 		const std::string & ident , bool allow_remote ,
 		unsigned int port , const AddressList & interfaces ,
-		const std::string & downstream_server_address ,
-		unsigned int response_timeout ,
-		unsigned int connection_timeout ,
-		const Secrets & client_secrets ) ;
+		const std::string & smtp_server_address ,
+		unsigned int smtp_response_timeout ,
+		unsigned int smtp_connection_timeout ,
+		const Secrets & client_secrets ,
+		const std::string & scanner_address ,
+		unsigned int scanner_response_timeout ,
+		unsigned int scanner_connection_timeout ) ;
 			// Constructor. Listens on the given port number
 			// using INET_ANY if 'interfaces' is empty, or
 			// on specific interfaces otherwise. Currently
@@ -138,6 +141,7 @@ public:
 
 private:
 	void bind( ServerImp & , GNet::Address , unsigned int ) ;
+	ProtocolMessage * newProtocolMessage() ;
 	ServerImp & imp( size_t n ) ;
 
 private:
@@ -146,9 +150,12 @@ private:
 	bool m_allow_remote ;
 	const Secrets & m_server_secrets ;
 	Verifier m_verifier ;
-	std::string m_downstream_server ;
-	unsigned int m_response_timeout ;
-	unsigned int m_connection_timeout ;
+	std::string m_smtp_server ;
+	unsigned int m_smtp_response_timeout ;
+	unsigned int m_smtp_connection_timeout ;
+	std::string m_scanner_server ;
+	unsigned int m_scanner_response_timeout ;
+	unsigned int m_scanner_connection_timeout ;
 	const Secrets & m_client_secrets ;
 	ServerImp m_gnet_server_1 ;
 	ServerImp m_gnet_server_2 ;

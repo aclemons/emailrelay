@@ -66,10 +66,16 @@ public:
 	virtual G::Signal3<bool,unsigned long,std::string> & doneSignal() ;
 		// See ProtocolMessage.
 
+	virtual G::Signal3<bool,bool,std::string> & preparedSignal() ;
+		// See ProtocolMessage.
+
 	virtual void clear() ;
 		// See ProtocolMessage.
 
 	virtual bool setFrom( const std::string & from_user ) ;
+		// See ProtocolMessage.
+
+	virtual bool prepare() ;
 		// See ProtocolMessage.
 
 	virtual bool addTo( const std::string & to_user , Verifier::Status to_status ) ;
@@ -87,9 +93,16 @@ public:
 	virtual void process( const std::string & auth_id , const std::string & client_ip ) ;
 		// See ProtocolMessage.
 
+protected:
+	G::Signal3<bool,unsigned long,std::string> & storageDoneSignal() ;
+		// Returns the signal which is used to signal that the storage
+		// is complete.
+
+	void processDone( bool , unsigned long , std::string ) ; 
+		// ...
+
 private:
 	void operator=( const ProtocolMessageForward & ) ; // not implemented
-	void processDone( bool , unsigned long , std::string ) ; // ProtocolMessage::doneSignal()
 	void clientDone( std::string ) ; // Client::doneSignal()
 	bool forward( unsigned long , bool & , std::string * ) ;
 
@@ -102,7 +115,8 @@ private:
 	unsigned long m_id ;
 	unsigned int m_response_timeout ;
 	unsigned int m_connection_timeout ;
-	G::Signal3<bool,unsigned long,std::string> m_signal ;
+	G::Signal3<bool,unsigned long,std::string> m_done_signal ;
+	G::Signal3<bool,bool,std::string> m_prepared_signal ;
 } ;
 
 #endif

@@ -94,10 +94,18 @@ public:
 		// address. This is used for listening
 		// sockets.
 
-	bool bind();
+	bool bind() ;
 		// Binds the socket with an INADDR_ANY network address
 		// and a zero port number. This is used to
 		// initialise the socket prior to connect().
+
+	bool canBindHint( const Address & address ) ;
+		// Returns true if the socket can probably be 
+		// bound with the given address. Some
+		// implementations will always return
+		// true. This method should be used on a 
+		// temporary socket of the correct dynamic 
+		// type.
 
 	bool connect( const Address &addr , bool *done = NULL ) ;
 		// Initiates a connection to (or association 

@@ -263,6 +263,11 @@ unsigned long GSmtp::NewFile::id() const
 	return m_seq ;
 }
 
+G::Path GSmtp::NewFile::contentPath() const
+{
+	return m_content_path ;
+}
+
 void GSmtp::NewFile::setPreprocessor( const G::Path & exe )
 {
 	if( exe.isRelative() )

@@ -185,16 +185,16 @@ void Main::Run::runCore()
 	//
 	G::Root::init( cfg().nobody() ) ;
 
-	// early check on socket bindability
-	//
-	checkPorts() ;
-
 	// event loop singletons
 	//
 	GNet::TimerList timer_list ;
 	std::auto_ptr<GNet::EventLoop> event_loop(GNet::EventLoop::create()) ;
 	if( ! event_loop->init() )
 		throw G::Exception( "cannot initialise network layer" ) ;
+
+	// early check on socket bindability
+	//
+	checkPorts() ;
 
 	// network monitor singleton
 	//
@@ -258,7 +258,10 @@ void Main::Run::doServing( GSmtp::MessageStore & store , const GSmtp::Secrets & 
 			cfg().immediate() ? cfg().serverAddress() : std::string() ,
 			cfg().responseTimeout() , 
 			cfg().connectionTimeout() ,
-			client_secrets ) ;
+			client_secrets ,
+			cfg().scannerAddress() ,
+			cfg().scannerResponseTimeout() ,
+			cfg().scannerConnectionTimeout() ) ;
 	}
 
 	if( cfg().doAdmin() )

@@ -100,24 +100,44 @@ public:
 		// Returns the peer's canonical name if available.
 		// Returns the empty string if not.
 
+	static bool canRetry( const std::string & error_string ) ;
+		// Parses the error string from onError(), retuning true 
+		// if it might be temporary. In practice it returns
+		// true iff Socket::connect() failed.
+
 protected:
 	friend class ClientImp ;
 
 	virtual void onConnect( Socket & socket ) = 0 ;
 		// Called once connected. May (unfortunately) be
 		// called from within connect().
+		//
+		// Precondition: !connected()
+		// Postcondition: connected()
 
 	virtual void onDisconnect() = 0 ;
 		// Called when disconnected by the peer.
+		//
+		// Precondition: connected()
+		// Postcondition: !connected()
 
 	virtual void onData( const char * data , size_t size ) = 0 ;
 		// Called on receipt of data.
+		//
+		// Precondition: connected()
+		// Postcondition: connected()
 
-	virtual void onError( const std::string &error ) = 0 ;
-		// Called when an asyncronous, and fatal, error occurs.
+	virtual void onError( const std::string & error ) = 0 ;
+		// Called when a connect request fails.
+		//
+		// Precondition: !connected()
+		// Postcondition: !connected()
 
 	virtual void onWriteable() = 0 ;
 		// Called when a blocked connection become writeable.
+		//
+		// Precondition: connected()
+		// Postcondition: connected()
 
 private:
 	Client( const Client& ) ; // Copy constructor. Not implemented.

@@ -167,6 +167,15 @@ public:
 		// Returns true if the admin interface should support the
 		// terminate command.
 
+	std::string scannerAddress() const ;
+		// Returns the address of a scanner process.
+
+	unsigned int scannerConnectionTimeout() const ;
+		// Returns a timeout for connecting to the scanner process.
+
+	unsigned int scannerResponseTimeout() const ;
+		// Returns a timeout for talking to the scanner process.
+
 private:
 	const CommandLine & m_cl ;
 

@@ -44,13 +44,23 @@ GSmtp::ProtocolMessageForward::ProtocolMessageForward( MessageStore & store ,
 	m_pm.doneSignal().connect( G::slot(*this,&ProtocolMessageForward::processDone) ) ;
 }
 
+G::Signal3<bool,unsigned long,std::string> & GSmtp::ProtocolMessageForward::storageDoneSignal()
+{
+	return m_pm.doneSignal() ;
+}
+
 GSmtp::ProtocolMessageForward::~ProtocolMessageForward()
 {
 }
 
 G::Signal3<bool,unsigned long,std::string> & GSmtp::ProtocolMessageForward::doneSignal()
 {
-	return m_signal ;
+	return m_done_signal ;
+}
+
+G::Signal3<bool,bool,std::string> & GSmtp::ProtocolMessageForward::preparedSignal()
+{
+	return m_prepared_signal ;
 }
 
 void GSmtp::ProtocolMessageForward::clear()
@@ -62,6 +72,11 @@ void GSmtp::ProtocolMessageForward::clear()
 bool GSmtp::ProtocolMessageForward::setFrom( const std::string & from )
 {
 	return m_pm.setFrom( from ) ;
+}
+
+bool GSmtp::ProtocolMessageForward::prepare()
+{
+	return false ; // no async preparation required
 }
 
 bool GSmtp::ProtocolMessageForward::addTo( const std::string & to , Verifier::Status to_status )
@@ -90,19 +105,24 @@ void GSmtp::ProtocolMessageForward::process( const std::string & auth_id ,
 	m_pm.process( auth_id , client_ip ) ;
 }
 
-void GSmtp::ProtocolMessageForward::processDone( bool success , unsigned long id , std::string reason_in )
+void GSmtp::ProtocolMessageForward::processDone( bool success , unsigned long id , std::string reason )
 {
-	std::string reason( reason_in ) ;
-	bool nothing_to_do = success && id == 0UL ;
 	if( success && id != 0UL )
 	{
 		m_id = id ;
-		success = forward( id , nothing_to_do , &reason ) ;
-	}
 
-	if( nothing_to_do || !success )
+		bool nothing_to_do = false ;
+		success = forward( id , nothing_to_do , &reason ) ;
+		if( !success || nothing_to_do )
+		{
+			// failed or no recipients
+			m_done_signal.emit( success , id , reason ) ;
+		}
+	}
+	else
 	{
-		m_signal.emit( success , id , reason ) ;
+		// failed or cancelled
+		m_done_signal.emit( success , id , reason ) ;
 	}
 }
 
@@ -131,14 +151,20 @@ bool GSmtp::ProtocolMessageForward::forward( unsigned long id , bool & nothing_t
 
 			ok = reason.empty() ;
 			if( !ok && reason_p != NULL )
+			{
+				G_DEBUG( "GSmtp::ProtocolMessageForward::forward: client connect error" ) ;
 				*reason_p = reason ;
+			}
 		}
 		return ok ;
 	}
 	catch( std::exception & e )
 	{
 		if( reason_p != NULL )
+		{
+			G_DEBUG( "GSmtp::ProtocolMessageForward::forward: exception" ) ;
 			*reason_p = e.what() ;
+		}
 		return false ;
 	}
 }
@@ -147,6 +173,6 @@ void GSmtp::ProtocolMessageForward::clientDone( std::string reason )
 {
 	G_DEBUG( "GSmtp::ProtocolMessageForward::clientDone: \"" << reason << "\"" ) ;
 	const bool ok = reason.empty() ;
-	m_signal.emit( ok , m_id , reason ) ;
+	m_done_signal.emit( ok , m_id , reason ) ;
 }
 

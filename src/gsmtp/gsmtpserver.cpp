@@ -26,6 +26,7 @@
 #include "gsmtpserver.h"
 #include "gprotocolmessagestore.h"
 #include "gprotocolmessageforward.h"
+#include "gprotocolmessagescanner.h"
 #include "gmemory.h"
 #include "glocal.h"
 #include "glog.h"
@@ -116,17 +117,22 @@ GSmtp::Server::Server( MessageStore & store ,
 	const Secrets & server_secrets , const Verifier & verifier ,
 	const std::string & ident , bool allow_remote , 
 	unsigned int port , const AddressList & interfaces ,
-	const std::string & downstream_server , 
-	unsigned int response_timeout , unsigned int connection_timeout ,
-	const Secrets & client_secrets ) :
+	const std::string & smtp_server , 
+	unsigned int smtp_response_timeout , unsigned int smtp_connection_timeout ,
+	const Secrets & client_secrets ,
+	const std::string & scanner_server ,
+	unsigned int scanner_response_timeout , unsigned int scanner_connection_timeout ) :
 		m_store(store) ,
 		m_ident(ident) ,
 		m_allow_remote( allow_remote ) ,
 		m_server_secrets(server_secrets) ,
 		m_verifier(verifier) ,
-		m_downstream_server(downstream_server) ,
-		m_response_timeout(response_timeout) ,
-		m_connection_timeout(connection_timeout) ,
+		m_smtp_server(smtp_server) ,
+		m_smtp_response_timeout(smtp_response_timeout) ,
+		m_smtp_connection_timeout(smtp_connection_timeout) ,
+		m_scanner_server(scanner_server) ,
+		m_scanner_response_timeout(scanner_response_timeout) ,
+		m_scanner_connection_timeout(scanner_connection_timeout) ,
 		m_client_secrets(client_secrets) ,
 		m_gnet_server_1( *this ) ,
 		m_gnet_server_2( *this ) ,
@@ -183,15 +189,32 @@ GNet::ServerPeer * GSmtp::Server::newPeer( GNet::Server::PeerInfo peer_info )
 		return NULL ;
 	}
 
-	const bool immediate = ! m_downstream_server.empty() ;
-
-	std::auto_ptr<ProtocolMessage> pmessage(
-		immediate ?
-			static_cast<ProtocolMessage*>(new ProtocolMessageForward(m_store,
-				m_client_secrets,m_downstream_server,m_response_timeout,m_connection_timeout)) :
-			static_cast<ProtocolMessage*>(new ProtocolMessageStore(m_store)) ) ;
-
+	std::auto_ptr<ProtocolMessage> pmessage( newProtocolMessage() ) ;
 	return new ServerPeer( peer_info , *this , pmessage , m_ident , m_server_secrets , m_verifier ) ;
+}
+
+GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()
+{
+	const bool immediate = ! m_smtp_server.empty() ;
+	const bool scan = ! m_scanner_server.empty() ;
+	if( immediate && scan )
+	{
+		G_DEBUG( "GSmtp::Server::newProtocolMessage: new ProtocolMessageScanner" ) ;
+		return new ProtocolMessageScanner(m_store,m_client_secrets,
+			m_smtp_server,m_smtp_response_timeout,m_smtp_connection_timeout,
+			m_scanner_server,m_scanner_response_timeout,m_scanner_connection_timeout) ;
+	}
+	else if( immediate )
+	{
+		G_DEBUG( "GSmtp::Server::newProtocolMessage: new ProtocolMessageForward" ) ;
+		return new ProtocolMessageForward(m_store,m_client_secrets,
+			m_smtp_server,m_smtp_response_timeout,m_smtp_connection_timeout) ;
+	}
+	else
+	{
+		G_DEBUG( "GSmtp::Server::newProtocolMessage: new ProtocolMessageStore" ) ;
+		return new ProtocolMessageStore(m_store) ;
+	}
 }
 
 // ===
