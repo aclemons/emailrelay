@@ -115,7 +115,7 @@ private:
 	GSmtp::Client::Config m_client_config ;
 	G::Executable m_newfile_preprocessor ;
 	const Secrets & m_client_secrets ;
-	ProtocolMessageStore m_pm ;
+	ProtocolMessageStore m_pms ;
 	std::string m_server ;
 	std::auto_ptr<Client> m_client ;
 	unsigned long m_id ;

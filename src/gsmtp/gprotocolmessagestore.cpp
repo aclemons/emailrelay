@@ -40,6 +40,7 @@ GSmtp::ProtocolMessageStore::ProtocolMessageStore( MessageStore & store ,
 
 GSmtp::ProtocolMessageStore::~ProtocolMessageStore()
 {
+	m_newfile_preprocessor.doneSignal().disconnect() ;
 }
 
 void GSmtp::ProtocolMessageStore::clear()
@@ -67,7 +68,7 @@ bool GSmtp::ProtocolMessageStore::setFrom( const std::string & from )
 	}
 	catch( std::exception & e )
 	{
-		G_ERROR( "GSmtp::ProtocolMessage::setFrom: error: " << e.what() ) ;
+		G_ERROR( "GSmtp::ProtocolMessage::setFrom: exception: " << e.what() ) ;
 		return false ;
 	}
 }
@@ -132,7 +133,7 @@ void GSmtp::ProtocolMessageStore::process( const std::string & auth_id , const s
 	}
 	catch( std::exception & e )
 	{
-		G_ERROR( "GSmtp::ProtocolMessage::process: error: " << e.what() ) ;
+		G_ERROR( "GSmtp::ProtocolMessage::process: exception: " << e.what() ) ;
 		clear() ;
 		m_done_signal.emit( false , 0UL , e.what() ) ;
 	}
@@ -166,7 +167,7 @@ void GSmtp::ProtocolMessageStore::preprocessorDone( bool ok )
 	}
 	catch( std::exception & e )
 	{
-		G_ERROR( "GSmtp::ProtocolMessage::preprocessorDone: error: " << e.what() ) ;
+		G_ERROR( "GSmtp::ProtocolMessage::preprocessorDone: exception: " << e.what() ) ;
 		clear() ;
 		m_done_signal.emit( false , 0UL , e.what() ) ;
 	}

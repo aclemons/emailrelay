@@ -81,6 +81,8 @@ GSmtp::Client::Client( std::auto_ptr<StoredMessage> message , const Secrets & se
 GSmtp::Client::~Client()
 {
 	m_protocol.doneSignal().disconnect() ;
+	m_protocol.preprocessorSignal().disconnect() ;
+	m_storedfile_preprocessor.doneSignal().disconnect() ;
 }
 
 std::string GSmtp::Client::startSending( const std::string & s , unsigned int connection_timeout )
@@ -204,6 +206,11 @@ bool GSmtp::Client::sendNext()
 {
 	m_message <<= 0 ;
 
+	// discard the previous message's "." response
+	while( m_buffer.more() ) 
+		m_buffer.discard() ;
+
+	// fetch the next message from the store, or return false if none
 	{
 		std::auto_ptr<StoredMessage> message( m_iter.next() ) ;
 		if( message.get() == NULL )
@@ -300,12 +307,9 @@ void GSmtp::Client::onData( const char * data , size_t size )
 {
 	for( m_buffer.add(data,size) ; m_buffer.more() ; m_buffer.discard() )
 	{
-		m_protocol.apply( m_buffer.current() ) ;
-		if( m_protocol.done() )
-		{
-			finish() ;
-			return ;
-		}
+		bool done = m_protocol.apply( m_buffer.current() ) ;
+		if( done )
+			break ; // if the protocol is done don't apply() any more
 	}
 }
 
@@ -313,7 +317,7 @@ void GSmtp::Client::onError( const std::string & error )
 {
 	G_LOG( "GSmtp::Client: smtp client error: \"" << error << "\"" ) ; // was warning
 
-	std::string reason = "error on connection to server: " ;
+	std::string reason = "error connecting to server: " ;
 	reason += error ;
 	if( m_force_message_fail )
 		messageFail( "connection failure" ) ;
@@ -323,10 +327,11 @@ void GSmtp::Client::onError( const std::string & error )
 
 void GSmtp::Client::finish( const std::string & reason , bool do_disconnect )
 {
-	raiseDoneSignal( reason ) ;
 	if( do_disconnect )
 		disconnect() ; // GNet::Client::disconnect()
 	m_socket = NULL ;
+
+	raiseDoneSignal( reason ) ;
 }
 
 void GSmtp::Client::raiseDoneSignal( const std::string & reason )
@@ -334,8 +339,8 @@ void GSmtp::Client::raiseDoneSignal( const std::string & reason )
 	if( m_busy )
 	{
 		m_event_signal.emit( "done" , reason ) ;
-		m_done_signal.emit( reason ) ;
 		m_busy = false ;
+		m_done_signal.emit( reason ) ;
 	}
 }
 

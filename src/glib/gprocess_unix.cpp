@@ -60,6 +60,7 @@ public:
 	int fd() const ;
 	void dup() ; // onto stdout
 	std::string read() ; // size-limited
+	void write( const std::string & ) ;
 private:
 	G_EXCEPTION( Error , "pipe error" ) ;
 	int m_fds[2] ;
@@ -156,6 +157,8 @@ G::Process::Who G::Process::fork()
 
 G::Process::Who G::Process::fork( Id & child_pid )
 {
+	std::cout << std::flush ;
+	std::cerr << std::flush ;
 	pid_t rc = ::fork() ;
 	const bool ok = rc != -1 ;
 	if( ok )
@@ -226,7 +229,7 @@ int G::Process::errno_()
 }
 
 int G::Process::spawn( Identity nobody , const Path & exe , const Strings & args , 
-	std::string * pipe_result_p , int error_return )
+	std::string * pipe_result_p , int error_return , std::string (*fn)(int) )
 {
 	if( exe.isRelative() )
 		throw InvalidPath( exe.str() ) ;
@@ -245,7 +248,12 @@ int G::Process::spawn( Identity nobody , const Path & exe , const Strings & args
 			pipe.inChild() ;
 			closeFiles( pipe.fd() ) ;
 			pipe.dup() ; // dup() onto stdout
-			execCore( exe , args ) ;
+			int error = execCore( exe , args ) ;
+			if( fn != 0 )
+			{
+				std::string s = (*fn)(error) ;
+				::write( STDOUT_FILENO , s.c_str() , s.length() ) ;
+			}
 		}
 		catch(...)
 		{
@@ -262,7 +270,7 @@ int G::Process::spawn( Identity nobody , const Path & exe , const Strings & args
 	}
 }
 
-void G::Process::execCore( const G::Path & exe , const Strings & args )
+int G::Process::execCore( const G::Path & exe , const Strings & args )
 {
 	char * env[3U] ;
 	std::string path( "PATH=/usr/bin:/bin" ) ; // no "."
@@ -282,7 +290,14 @@ void G::Process::execCore( const G::Path & exe , const Strings & args )
 	const int error = errno_() ;
 	delete [] argv ;
 
-	G_WARNING( "G::Process::exec: execve() returned: errno=" << error << ": " << exe ) ;
+	G_DEBUG( "G::Process::exec: execve() returned: errno=" << error << ": " << exe ) ;
+	return error ;
+}
+
+std::string G::Process::strerror( int errno_ )
+{
+	char * p = ::strerror( errno_ ) ;
+	return std::string( p ? p : "" ) ;
 }
 
 void G::Process::beSpecial( Identity identity , bool change_group )

@@ -155,7 +155,7 @@ std::string GSmtp::NewFile::prepare( const std::string & auth_id , const std::st
 		deliver( m_to_local , m_content_path , m_envelope_path_0 , m_envelope_path_1 ) ;
 	}
 
-	return m_envelope_path_0.str() ;
+	return m_content_path.str() ;
 }
 
 bool GSmtp::NewFile::saveEnvelope( const std::string & auth_id , const std::string & client_ip ) const

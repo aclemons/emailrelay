@@ -142,12 +142,12 @@ void Main::Run::run()
 	}
 	catch( std::exception & e )
 	{
-		G_LOG( "Main::Run::run: exception: " << e.what() ) ;
+		G_ERROR( "Main::Run::run: exception: " << e.what() ) ;
 		throw ;
 	}
 	catch(...)
 	{
-		G_LOG( "Main::Run::run: unknown exception" ) ;
+		G_ERROR( "Main::Run::run: unknown exception" ) ;
 		throw ;
 	}
 }
@@ -209,8 +209,6 @@ void Main::Run::runCore()
 	// message store singleton
 	//
 	m_store <<= new GSmtp::FileStore( cfg().spoolDir() ) ;
-//G::Executable(cfg().filter()) , 
-//G::Executable(cfg().clientFilter()) ) ;
 	m_store->signal().connect( G::slot(*this,&Run::raiseStoreEvent) ) ;
 
 	// authentication secrets

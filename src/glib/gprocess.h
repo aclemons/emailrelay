@@ -106,15 +106,26 @@ public:
 		// pid by reference to the parent.
 
 	static int spawn( Identity nobody , const Path & exe , const Strings & args , 
-		std::string * pipe_result_p = NULL , int error_return = 127 ) ;
+		std::string * pipe_result_p = NULL , int error_return = 127 ,
+		std::string (*error_decode_fn)(int) = 0 ) ;
 			// Runs a command in an unprivileged child process. Returns the
 			// child process's exit code, or 'error_return' on error.
+			//
+			// The identity should have come from beOrdinary().
+			//
 			// If the 'pipe_result_p' pointer is supplied then a pipe
 			// is used to read the first bit of whatever the child process 
-			// writes to stdout. The identity should have come from beOrdinary().
+			// writes to stdout. 
+			//
+			// If the function pointer is supplied then it is used
+			// to prepare a pipe-result string if the underlying
+			// exec() fails in the fork()ed child process.
 
 	static int errno_() ;
 		// Returns the process's current 'errno' value.
+
+	static std::string strerror( int errno_ ) ;
+		// Translates an 'errno' value into a meaningful diagnostic string.
 
 	static void revokeExtraGroups() ;
 		// Revokes secondary group memberships if really root
@@ -147,7 +158,7 @@ private:
 	Process() ;
 	static int wait( const Id & child ) ;
 	static int wait( const Id & child , int error_return ) ;
-	static void execCore( const Path & , const Strings & ) ;
+	static int execCore( const Path & , const Strings & ) ;
 	static void beNobody( Identity ) ;
 	static void closeFiles( int ) ;
 } ;

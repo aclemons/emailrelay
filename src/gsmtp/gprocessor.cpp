@@ -91,10 +91,19 @@ int GSmtp::Processor::preprocessCore( const G::Path & path )
 	G::Strings args( m_exe.args() ) ;
 	args.push_back( path.str() ) ;
 	std::string raw_output ;
-	int exit_code = G::Process::spawn( G::Root::nobody() , m_exe.exe() , args , &raw_output ) ;
+	int exit_code = G::Process::spawn( G::Root::nobody() , m_exe.exe() , args , &raw_output , 
+		127 , execErrorHandler ) ;
 	m_text = parseOutput( raw_output ) ;
 	G_LOG( "GSmtp::Processor::preprocess: exit status " << exit_code << " (\"" << m_text << "\")" ) ;
 	return exit_code ;
+}
+
+std::string GSmtp::Processor::execErrorHandler( int error )
+{
+	// (this runs in the fork()ed child process)
+	std::ostringstream ss ;
+	ss << "<<exec error " << error << ": " << G::Str::lower(G::Process::strerror(error)) << ">>" ;
+	return ss.str() ;
 }
 
 std::string GSmtp::Processor::parseOutput( std::string s ) const
@@ -128,13 +137,14 @@ G::Signal1<bool> & GSmtp::Processor::doneSignal()
 
 void GSmtp::Processor::abort()
 {
-	// no-op
+	// no-op -- not asynchronous
 }
 
 void GSmtp::Processor::start( const std::string & message_file )
 {
-	// not really asynchronous yet
+	// not asynchronous yet -- process() syncronously and emit the done signal
 	bool ok = process( message_file ) ;
 	m_done_signal.emit( ok ) ;
 }
+
 

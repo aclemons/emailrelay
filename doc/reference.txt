@@ -325,7 +325,7 @@ For Windows this example can be rewritten in JavaScript:
 	WScript.Quit( 0 ) ;
 
 Windows pre-processor programs written in JavaScript can be run using "cscript",
-with an E-MailRelay "--filter" switch something like this (V1.1.3 or later):
+with an E-MailRelay "--filter" switch something like this:
 
 	--filter "c:/winnt/system32/cscript.exe //nologo c:/program\ files/emailrelay/filter.js"
 
@@ -346,6 +346,7 @@ Bear in mind the following points when writing "--filter" programs:
 * Programs run with a reduced set of environment variables.
 * The E-MailRelay process is completely blocked while the "--filter" program runs.
 * E-MailRelay files use CR-LF line terminators, as required by the RFCs.
+* Envelope files will have a file extension of ".new" or ".busy" when the program runs.
 * Windows JScript and VBScript programs must be run using "cscript".
 * Windows Perl programs must be run from a batch file, or from a JScript/VBScript wrapper.
 

@@ -81,6 +81,7 @@ private:
 	int preprocessCore( const G::Path & ) ;
 	std::string parseOutput( std::string ) const ;
 	bool process( const std::string & path ) ;
+	static std::string execErrorHandler( int error ) ;
 
 private:
 	G::Signal1<bool> m_done_signal ;

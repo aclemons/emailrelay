@@ -222,19 +222,18 @@ public:
 			// domain name where possible.
 
 	void sendDone() ;
-		// Called when a blocked connection becomes unblocked.
+		// To be called when a blocked connection becomes unblocked.
 		// See ClientProtocol::Sender::protocolSend().
 
 	void preprocessorDone( const std::string & reason ) ;
-		// Called when the Preprocessor interface has done
+		// To be called when the Preprocessor interface has done
 		// its thing. The reason string should be empty
 		// on success.
 
-	void apply( const std::string & rx ) ;
+	bool apply( const std::string & rx ) ;
 		// Called on receipt of a line of text from the server.
-
-	bool done() const ;
-		// Returns true if the protocol is in the end state.
+		// Returns true if the protocol is done and the doneSignal()
+		// has been emited.
 
 private:
 	bool send( const std::string & , bool eot = false , bool log = true ) ;
@@ -246,7 +245,7 @@ private:
 	void sendMailCore() ;
 	bool endOfContent() const ;
 	static const std::string & crlf() ;
-	void applyEvent( const Reply & event , bool is_start_event = false ) ;
+	bool applyEvent( const Reply & event , bool is_start_event = false ) ;
 	static bool parseReply( Reply & , const std::string & , std::string & ) ;
 	void raiseDoneSignal( bool , bool , const std::string & ) ;
 	G::Strings serverAuthMechanisms( const ClientProtocolReply & reply ) const ;

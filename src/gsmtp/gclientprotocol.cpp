@@ -73,11 +73,6 @@ void GSmtp::ClientProtocol::start( const std::string & from , const G::Strings &
 	applyEvent( Reply() , true ) ;
 }
 
-bool GSmtp::ClientProtocol::done() const
-{
-	return m_state == sDone ;
-}
-
 void GSmtp::ClientProtocol::preprocessorDone( const std::string & reason )
 {
 	applyEvent( reason.empty() ? Reply::ok() : Reply::error(reason) ) ;
@@ -124,21 +119,23 @@ bool GSmtp::ClientProtocol::parseReply( Reply & stored_reply , const std::string
 	return ! stored_reply.incomplete() ;
 }
 
-void GSmtp::ClientProtocol::apply( const std::string & rx )
+bool GSmtp::ClientProtocol::apply( const std::string & rx )
 {
 	G_LOG( "GSmtp::ClientProtocol: rx<<: \"" << G::Str::toPrintableAscii(rx) << "\"" ) ;
 
 	std::string reason ;
-	bool complete = parseReply( m_reply , rx , reason ) ;
-	if( complete )
+	bool protocol_done = false ;
+	bool complete_reply = parseReply( m_reply , rx , reason ) ;
+	if( complete_reply )
 	{
-		applyEvent( m_reply ) ;
+		protocol_done = applyEvent( m_reply ) ;
 	}
 	else 
 	{
 		if( reason.length() != 0U )
 			send( std::string("550 syntax error: ")+reason ) ;
 	}
+	return protocol_done ;
 }
 
 void GSmtp::ClientProtocol::sendEhlo()
@@ -199,10 +196,11 @@ void GSmtp::ClientProtocol::startPreprocessing()
 	m_preprocessor_signal.emit() ;
 }
 
-void GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_event )
+bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_event )
 {
 	cancelTimer() ;
 
+	bool protocol_done = false ;
 	if( m_state == sInit && is_start_event )
 	{
 		// wait for 220 greeting
@@ -260,6 +258,7 @@ void GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 			std::string reason = "cannot do mandatory authentication" ; // eg. no suitable mechanism
 			G_WARNING( "GSmtp::ClientProtocol: " << reason ) ;
 			m_state = sDone ;
+			protocol_done = true ;
 			raiseDoneSignal( false , true , reason ) ;
 		}
 		else
@@ -291,6 +290,7 @@ void GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		if( !m_authenticated_with_server && m_must_authenticate )
 		{
 			m_state = sDone ;
+			protocol_done = true ;
 			raiseDoneSignal( false , true , "mandatory authentication failed" ) ;
 		}
 		else
@@ -307,6 +307,7 @@ void GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	else if( m_state == sPreprocessing )
 	{
 		m_state = sDone ;
+		protocol_done = true ;
 		raiseDoneSignal( false , false , reply.text() ) ;
 	}
 	else if( m_state == sSentMail && reply.is(Reply::Ok_250) )
@@ -336,6 +337,7 @@ void GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	{
 		G_WARNING( "GSmtp::ClientProtocol: recipient rejected" ) ;
 		m_state = sDone ;
+		protocol_done = true ;
 		raiseDoneSignal( false , false , reply.text() ) ;
 	}
 	else if( m_state == sSentData && reply.is(Reply::OkForData_354) )
@@ -358,6 +360,7 @@ void GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	{
 		const bool ok = reply.is(Reply::Ok_250) ;
 		m_state = sDone ;
+		protocol_done = true ;
 		raiseDoneSignal( ok , false , ok ? std::string() : reply.text() ) ;
 	}
 	else if( is_start_event )
@@ -366,10 +369,12 @@ void GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	}
 	else
 	{
-		G_WARNING( "GSmtp::ClientProtocol: failure in client protocol: " << static_cast<int>(m_state) ) ;
+		G_WARNING( "GSmtp::ClientProtocol: failure in client protocol: state " << static_cast<int>(m_state) ) ;
 		m_state = sDone ;
+		protocol_done = true ;
 		raiseDoneSignal( false , true , std::string("unexpected response: ")+reply.text() ) ;
 	}
+	return protocol_done ;
 }
 
 void GSmtp::ClientProtocol::onTimeout()
@@ -377,7 +382,7 @@ void GSmtp::ClientProtocol::onTimeout()
 	if( m_state == sStarted )
 	{
 		// no 220 greeting seen -- go on regardless
-		G_WARNING( "GSmtp::ClientProtocol: timeout: no greeting" ) ;
+		G_WARNING( "GSmtp::ClientProtocol: timeout: no greeting from remote server: continuing" ) ;
 		m_state = sSentEhlo ;
 		sendEhlo() ;
 	}

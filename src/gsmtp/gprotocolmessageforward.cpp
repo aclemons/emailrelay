@@ -39,21 +39,22 @@ GSmtp::ProtocolMessageForward::ProtocolMessageForward( MessageStore & store ,
 		m_client_config(client_config) ,
 		m_newfile_preprocessor(newfile_preprocessor) ,
 		m_client_secrets(client_secrets) ,
-		m_pm(store,newfile_preprocessor) ,
+		m_pms(store,newfile_preprocessor) ,
 		m_server(server) ,
 		m_connection_timeout(connection_timeout)
 {
-	m_pm.doneSignal().connect( G::slot(*this,&ProtocolMessageForward::processDone) ) ;
+	// plumbing to receive 'done' events from the protocol-messages-store object
+	m_pms.doneSignal().connect( G::slot(*this,&ProtocolMessageForward::processDone) ) ;
 }
 
 G::Signal3<bool,unsigned long,std::string> & GSmtp::ProtocolMessageForward::storageDoneSignal()
 {
-	return m_pm.doneSignal() ;
+	return m_pms.doneSignal() ;
 }
 
 GSmtp::ProtocolMessageForward::~ProtocolMessageForward()
 {
-	m_pm.doneSignal().disconnect() ;
+	m_pms.doneSignal().disconnect() ;
 	if( m_client.get() ) m_client->doneSignal().disconnect() ;
 }
 
@@ -69,13 +70,13 @@ G::Signal3<bool,bool,std::string> & GSmtp::ProtocolMessageForward::preparedSigna
 
 void GSmtp::ProtocolMessageForward::clear()
 {
-	m_pm.clear() ;
+	m_pms.clear() ;
 	m_client <<= 0 ;
 }
 
 bool GSmtp::ProtocolMessageForward::setFrom( const std::string & from )
 {
-	return m_pm.setFrom( from ) ;
+	return m_pms.setFrom( from ) ;
 }
 
 bool GSmtp::ProtocolMessageForward::prepare()
@@ -85,28 +86,28 @@ bool GSmtp::ProtocolMessageForward::prepare()
 
 bool GSmtp::ProtocolMessageForward::addTo( const std::string & to , Verifier::Status to_status )
 {
-	return m_pm.addTo( to , to_status ) ;
+	return m_pms.addTo( to , to_status ) ;
 }
 
 void GSmtp::ProtocolMessageForward::addReceived( const std::string & line )
 {
-	m_pm.addReceived( line ) ;
+	m_pms.addReceived( line ) ;
 }
 
 void GSmtp::ProtocolMessageForward::addText( const std::string & line )
 {
-	m_pm.addText( line ) ;
+	m_pms.addText( line ) ;
 }
 
 std::string GSmtp::ProtocolMessageForward::from() const
 {
-	return m_pm.from() ;
+	return m_pms.from() ;
 }
 
 void GSmtp::ProtocolMessageForward::process( const std::string & auth_id ,
 	const std::string & client_ip )
 {
-	m_pm.process( auth_id , client_ip ) ;
+	m_pms.process( auth_id , client_ip ) ;
 }
 
 void GSmtp::ProtocolMessageForward::processDone( bool success , unsigned long id , std::string reason )

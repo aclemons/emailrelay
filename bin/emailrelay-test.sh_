@@ -243,8 +243,10 @@ CreateFilter()
             _#!/bin/sh
             _# filter.sh
             _tmp="${cfg_base_dir}/\`basename \$0\`.\$\$.tmp"
-            _content="\`echo \\"\$1\\" | sed 's/\.envelope\..*/.content/'\`"
+            _content="\$1"
+            _envelope="\`echo \\"\$1\\" | sed 's/\.content/.envelope.new/'\`"
             _tr 'a-zA-Z' 'A-Za-z' < "\$content" > \$tmp && mv \$tmp "\$content"
+            _echo \`date\`: content=\$content >> "\$content"
             _exit 0
 EOF
 	chmod +x ${cfg_base_dir}/filter.sh
