@@ -23,7 +23,6 @@
 
 #include "gdef.h"
 #include "gsmtp.h"
-#include "gaddress.h"
 #include "legal.h"
 #include "configuration.h"
 #include "commandline.h"

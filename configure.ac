@@ -1,27 +1,9 @@
-dnl Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
-dnl 
-dnl This program is free software; you can redistribute it and/or
-dnl modify it under the terms of the GNU General Public License
-dnl as published by the Free Software Foundation; either
-dnl version 2 of the License, or (at your option) any later
-dnl version.
-dnl 
-dnl This program is distributed in the hope that it will be useful,
-dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
-dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-dnl GNU General Public License for more details.
-dnl 
-dnl You should have received a copy of the GNU General Public License
-dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-dnl 
-dnl ===
 dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
 AC_INIT(src/gsmtp/gsmtp.h)
-AM_INIT_AUTOMAKE(emailrelay,1.2.1)
+AM_INIT_AUTOMAKE(emailrelay,__VERSION__)
 AM_CONFIG_HEADER(config.h)
 
 dnl ===
@@ -67,6 +49,12 @@ dnl "--enable-debug"
 dnl
 AC_ARG_ENABLE(debug,AC_HELP_STRING([--enable-debug],[enable extra debug messages at compile-time]))
 ENABLE_DEBUG
+
+dnl ===
+dnl "--enable-fastbuild"
+dnl
+AC_ARG_ENABLE(fastbuild,AC_HELP_STRING([--enable-fastbuild],[enable experimetal fast building; requires --disable-dependency-tracking]))
+ENABLE_FASTBUILD
 
 dnl ===
 dnl "--with-workshop"

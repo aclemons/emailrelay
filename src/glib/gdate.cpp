@@ -26,6 +26,7 @@
 #include "gdebug.h"
 #include <ctime>
 #include <iomanip>
+#include <sstream>
 
 //static
 int G::Date::yearUpperLimit()

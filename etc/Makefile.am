@@ -17,4 +17,4 @@
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ## 
 #
-e_sysconf_DATA = emailrelay.conf
+e_sysconf_DATA = $(top_srcdir)/etc/emailrelay.conf

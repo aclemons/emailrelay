@@ -47,7 +47,7 @@ converter_helper3=$(top_builddir)/bin/expand.sh
 converter_helper3_src=$(top_srcdir)/bin/expand.sh_
 
 .txt.html:
-	$(converter) -a "$(AWK)" $(top_srcdir)/doc/$*.txt $(stylesheet) > $*.html
+	$(converter) -a "$(AWK)" $(top_srcdir)/doc/$*.txt $(top_srcdir)/doc/$(stylesheet) > $*.html
 
 $(filter): $(filter_src)
 	cp $(filter_src) $(filter)
@@ -78,10 +78,10 @@ emailrelay-man.html: emailrelay.1
 developer.html reference.html userguide.html: $(converter)
 
 readme.html: $(top_srcdir)/README $(converter)
-	$(converter) -a "$(AWK)" $(top_srcdir)/README $(stylesheet) > readme.html
+	$(converter) -a "$(AWK)" $(top_srcdir)/README $(top_srcdir)/doc/$(stylesheet) > readme.html
 
 changelog.html: $(top_srcdir)/ChangeLog $(converter)
-	$(converter) -a "$(AWK)" $(top_srcdir)/ChangeLog $(stylesheet) > changelog.html
+	$(converter) -a "$(AWK)" $(top_srcdir)/ChangeLog $(top_srcdir)/doc/$(stylesheet) > changelog.html
 
 emailrelay.1.gz : emailrelay.1
 	if test -n "$(GZIP)" ; then $(GZIP) -c $(top_srcdir)/doc/emailrelay.1 > emailrelay.1.gz ; fi

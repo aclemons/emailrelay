@@ -154,7 +154,7 @@ private:
 	void normalise() ;
 	void clear() ;	
 	void validate( const char * ) const ;
-	bool valid() const ;
+	bool validPath() const ;
 	static std::string slashString() ;
 	static std::string doubleSlashString() ;
 	std::string driveString() const ;

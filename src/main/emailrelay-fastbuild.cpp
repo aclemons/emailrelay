@@ -1,0 +1,143 @@
+//
+// Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either
+// version 2 of the License, or (at your option) any later
+// version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// ===
+//
+// emailrelay-fastbuild.cpp
+//
+#define _BSD_SOURCE
+#include "gdef.h"
+#include "gnet.h"
+#include "gsmtp.h"
+#ifdef G_UNIX
+#include <grp.h>
+#include "garg_unix.cpp"
+#include "gcleanup_unix.cpp"
+#include "gclient_unix.cpp"
+#include "gdaemon_unix.cpp"
+#include "gdatetime_unix.cpp"
+#include "gdescriptor_unix.cpp"
+#include "gdirectory_unix.cpp"
+#include "geventloop_unix.cpp"
+#include "gfile_unix.cpp"
+#include "gfs_unix.cpp"
+#include "gidentity_unix.cpp"
+#include "glocal_unix.cpp"
+#include "glogoutput_unix.cpp"
+#include "gmessagestore_unix.cpp"
+#include "gprocess_unix.cpp"
+#include "gresolve_unix.cpp"
+#include "gsocket_unix.cpp"
+#else
+#include "gappbase.cpp"
+#include "gappinst.cpp"
+#include "garg_win32.cpp"
+#include "gcleanup_win32.cpp"
+#include "gclient_win32.cpp"
+#include "gcontrol.cpp"
+#include "gcracker.cpp"
+#include "gdaemon_win32.cpp"
+#include "gdatetime_win32.cpp"
+#include "gdc.cpp"
+#include "gdescriptor_win32.cpp"
+#include "gdialog.cpp"
+#include "gdirectory_win32.cpp"
+#include "geventloop_win32.cpp"
+#include "gfile_win32.cpp"
+#include "gfs_win32.cpp"
+#include "gidentity_win32.cpp"
+#include "glocal_win32.cpp"
+#include "glogoutput_win32.cpp"
+#include "gmessagestore_win32.cpp"
+#include "gprocess_win32.cpp"
+#include "gpump.cpp"
+#include "gpump_dialog.cpp"
+#include "gregistry_win32.cpp"
+#include "grequest.cpp"
+#include "gresolve_win32.cpp"
+#include "gscmap.cpp"
+#include "gsocket_win32.cpp"
+#include "gtray.cpp"
+#include "gwinbase.cpp"
+#include "gwindow.cpp"
+#include "gwinhid.cpp"
+#include "winapp.cpp"
+#include "winform.cpp"
+#include "winmain.cpp"
+#include "winmenu.cpp"
+#endif
+#include "commandline.cpp"
+#include "configuration.cpp"
+#include "gaddress_ipv4.cpp"
+#include "gadminserver.cpp"
+#include "garg.cpp"
+#include "gbase64.cpp"
+#include "gclient.cpp"
+#include "gclientprotocol.cpp"
+#include "gconnection.cpp"
+#include "gdate.cpp"
+#include "gdatetime.cpp"
+#include "gdirectory.cpp"
+#include "geventhandler.cpp"
+#include "geventloop.cpp"
+#include "geventserver.cpp"
+#include "gexception.cpp"
+#include "gexe.cpp"
+#include "gfile.cpp"
+#include "gfilestore.cpp"
+#include "ggetopt.cpp"
+#include "glinebuffer.cpp"
+#include "glocal.cpp"
+#include "glog.cpp"
+#include "glogoutput.cpp"
+#include "md5.cpp"
+#include "gmd5_native.cpp"
+#include "gmessagestore.cpp"
+#include "gmonitor.cpp"
+#include "gnewfile.cpp"
+#include "gnewmessage.cpp"
+#include "gpath.cpp"
+#include "gpidfile.cpp"
+#include "gprocessor.cpp"
+#include "gprotocolmessage.cpp"
+#include "gprotocolmessageforward.cpp"
+#include "gprotocolmessagescanner.cpp"
+#include "gprotocolmessagestore.cpp"
+#include "gresolve.cpp"
+#include "gresolve_ipv4.cpp"
+#include "groot.cpp"
+#include "gsasl_native.cpp"
+#include "gscannerclient.cpp"
+#include "gsecrets.cpp"
+#include "gserver.cpp"
+#include "gserverprotocol.cpp"
+#include "gslot.cpp"
+#include "gsmtpclient.cpp"
+#include "gsmtpserver.cpp"
+#include "gsocket.cpp"
+#include "gstoredfile.cpp"
+#include "gstoredmessage.cpp"
+#include "gstr.cpp"
+#include "gtime.cpp"
+#include "gtimer.cpp"
+#include "gverifier.cpp"
+#include "gxtext.cpp"
+#include "legal.cpp"
+#include "main.cpp"
+#include "output.cpp"
+#include "run.cpp"

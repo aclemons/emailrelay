@@ -139,6 +139,20 @@ then
 fi
 ])
 
+dnl enable-fastbuild
+dnl
+AC_DEFUN([ENABLE_FASTBUILD],
+[
+if test "$enable_fastbuild" = "yes"
+then
+	CXX="`pwd`/bin/fastbuild.sh"
+	chmod +x "$CXX"
+	AR="`pwd`/bin/fastbuild.sh"
+	RANLIB="true"
+fi
+])
+
+
 dnl with-workshop
 dnl
 AC_DEFUN([WITH_WORKSHOP],
