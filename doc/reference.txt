@@ -1,4 +1,5 @@
 E-MailRelay Reference
+
 =====================
 
 Introduction
@@ -35,7 +36,7 @@ where <switch> is:
   Enables authentication with remote server, using the given secrets file.
 
 # --client-filter (-Y)
-  Defines a mail processor program for when forwarding.
+  Specifies an external program to process messages when they are forwarded.
 
 # --close-stderr (-e)
   Closes the standard error stream after start-up.
@@ -50,13 +51,13 @@ where <switch> is:
   Sets an override for the host's fully qualified domain name.
 
 # --dont-listen (-X)
-  Dont listen for smtp connections (usually used with --admin).
+  Disables listening for smtp connections (usually used with --admin).
 
 # --dont-serve (-x)
-  Dont act as a server (usually used with --forward).
+  Disables acting as a server (usually used with --forward).
 
 # --filter (-z)
-  Defines a mail processor program for when storing.
+  Specifies an external program to process messages as they are stored.
 
 # --forward (-f)
   Forwards stored mail on startup (requires --forward-to).
@@ -68,10 +69,10 @@ where <switch> is:
   Displays help text and exits.
 
 # --immediate (-m)
-  Forwards each message as soon as it is received (requires --forward-to).
+  Enables immediating forwarding of messages as soon as they are received (requires --forward-to).
 
 # --interface (-I)
-  Listen on a specific interface.
+  Defines the listening interface for new connections.
 
 # --log (-l)
   Writes log information on standard error and syslog.
@@ -86,7 +87,7 @@ where <switch> is:
   Disables syslog output.
 
 # --pid-file (-i)
-  Records the daemon process-id in the given file.
+  Defines a file for storing the daemon process-id.
 
 # --poll (-O)
   Enables polling with the specified period (requires --forward-to).
@@ -95,13 +96,16 @@ where <switch> is:
   Specifies the smtp listening port number.
 
 # --postmaster (-P)
-  Allow delivery to postmaster but reject all other local mailbox addresses.
+  Allows delivery to the postmaster but rejects all other local mailbox addresses.
 
 # --remote-clients (-r)
   Allows remote clients to connect.
 
 # --response-timeout (-T)
   Sets the response timeout (in seconds) when talking to a remote server (default is 1800).
+
+# --scanner (-R)
+  Specifies an external network server to process messages when they are stored.
 
 # --server-auth (-S)
   Enables authentication of remote clients, using the given secrets file.
@@ -116,7 +120,7 @@ where <switch> is:
   Generates more verbose output (works with --help and --log).
 
 # --verifier (-Z)
-  Defines an external address verifier program.
+  Specifies an external program for address verification.
 
 # --version (-V)
   Displays version information and exits.
@@ -345,6 +349,17 @@ Bear in mind the following points when writing "--filter" programs:
 * E-MailRelay files use CR-LF line terminators, as required by the RFCs.
 * Windows JScript and VBScript programs must be run using "cscript".
 * Windows Perl programs must be run from a batch file, or from a JScript/VBScript wrapper.
+
+It is also possible to run a separate server process to pre-process messages by 
+using the "--scanner" switch, which has the advantage of not blocking the main 
+E-MailRelay process during message pre-processing. The "--scanner" switch is 
+used to specify the IP address and port that the scanner server is listening on.
+E-MailRelay connects to this address and then uses a simple line-based dialog as
+each e-mail message is received. E-MailRelay sends the full path of the message
+content file, and the scanner is expected to respond with "ok" if the message is
+to be accepted, or an error message. No source code is provided for a scanner 
+process in this release, but *Python's* [http://python.org] support for threads 
+and sockets would make it a good choice of language.
 
 Address verification
 --------------------

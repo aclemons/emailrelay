@@ -4,8 +4,10 @@ E-MailRelay Change Log
 1.3 -> 1.3.1
 ------------
 * Windows resource leak from CreateProcess() fixed.
-* Windows dialog box double-closure bug fixed.
-* Windows WinMain() calls setlocale().
+* Windows dialog box double-close fix.
+* Windows console removed from MinGW build ("-mwindows").
+* Some documentation for the "--scanner" switch.
+* More words in the user guide.
 
 1.2 -> 1.3
 ----------

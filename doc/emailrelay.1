@@ -75,7 +75,7 @@ Runs as a server: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--postmaster
 Enables authentication with remote server, using the given secrets file.
 .TP
 .B \-Y,--client-filter \fIprogram\fR
-Defines a mail processor program for when forwarding.
+Specifies an external program to process messages when they are forwarded.
 .TP
 .B \-e,--close-stderr 
 Closes the standard error stream after start-up.
@@ -90,13 +90,13 @@ Generates debug-level logging (if compiled-in).
 Sets an override for the host's fully qualified domain name.
 .TP
 .B \-X,--dont-listen 
-Dont listen for smtp connections (usually used with \fI--admin\fR).
+Disables listening for smtp connections (usually used with \fI--admin\fR).
 .TP
 .B \-x,--dont-serve 
-Dont act as a server (usually used with \fI--forward\fR).
+Disables acting as a server (usually used with \fI--forward\fR).
 .TP
 .B \-z,--filter \fIprogram\fR
-Defines a mail processor program for when storing.
+Specifies an external program to process messages as they are stored.
 .TP
 .B \-f,--forward 
 Forwards stored mail on startup (requires \fI--forward-to\fR).
@@ -108,10 +108,10 @@ Specifies the remote smtp server (required by \fI--forward\fR, \fI--poll\fR, \fI
 Displays help text and exits.
 .TP
 .B \-m,--immediate 
-Forwards each message as soon as it is received (requires \fI--forward-to\fR).
+Enables immediating forwarding of messages as soon as they are received (requires \fI--forward-to\fR).
 .TP
 .B \-I,--interface \fIip-address\fR
-Listen on a specific interface.
+Defines the listening interface for new connections.
 .TP
 .B \-l,--log 
 Writes log information on standard error and syslog.
@@ -126,7 +126,7 @@ Does not detach from the terminal.
 Disables syslog output.
 .TP
 .B \-i,--pid-file \fIpid-file\fR
-Records the daemon process-id in the given file.
+Defines a file for storing the daemon process-id.
 .TP
 .B \-O,--poll \fIperiod\fR
 Enables polling with the specified period (requires \fI--forward-to\fR).
@@ -135,13 +135,16 @@ Enables polling with the specified period (requires \fI--forward-to\fR).
 Specifies the smtp listening port number.
 .TP
 .B \-P,--postmaster 
-Allow delivery to postmaster but reject all other local mailbox addresses.
+Allows delivery to the postmaster but rejects all other local mailbox addresses.
 .TP
 .B \-r,--remote-clients 
 Allows remote clients to connect.
 .TP
 .B \-T,--response-timeout \fItime\fR
 Sets the response timeout (in seconds) when talking to a remote server (default is 1800).
+.TP
+.B \-R,--scanner \fIhost:port\fR
+Specifies an external network server to process messages when they are stored.
 .TP
 .B \-S,--server-auth \fIfile\fR
 Enables authentication of remote clients, using the given secrets file.
@@ -156,7 +159,7 @@ Names the effective user to switch to when started as root (default is \fIdaemon
 Generates more verbose output (works with \fI--help\fR and \fI--log\fR).
 .TP
 .B \-Z,--verifier \fIprogram\fR
-Defines an external address verifier program.
+Specifies an external program for address verification.
 .TP
 .B \-V,--version 
 Displays version information and exits.

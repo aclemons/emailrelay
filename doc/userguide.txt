@@ -334,6 +334,36 @@ line in the secrets file. To complete the solution you must have an address
 verifier script ("--verifier") which rejects remote addresses if the client has
 not authenticated. Again, refer to the reference guide for further details.
 
+Usage patterns
+--------------
+The simplest ways of using E-MailRelay are as a proxy or as a store-and-forward 
+MTA, but other configurations are possible. For example, you could use the
+E-MailRelay to do message storing, but use something else to do the forwarding. 
+Or you could implement simple routing by having a "--filter" program that moves 
+message files into the spool directory of another E-MailRelay process. Or you 
+could have multiple forwarding E-MailRelay processes running off the same spool 
+directory, but trigger them at different times of the day.
+
+Another important technique is to run E-MailRelay as a server, but use the
+"--poll" switch so that the server process will also do periodic forwarding.
+With a short "--poll" period this behaves rather like a proxy, but the submitting
+client program does not have to wait for the message to be delivered to
+the remote server. If you don't like the idea of polling the spool directory,
+you can use a "--filter" program to force the "--poll" timer to expire as 
+soon as a new message is received by exiting with a value of 103.
+
+Remember that messages can be introduced directly into the E-MailRelay spool 
+directory using the "emailrelay-submit" utility, and they can be moved out again
+at any time as long as the envelope file is not "locked" with a ".busy" filename
+extension. Your "--filter" program can edit messages in any way you want, and it
+can even remove the current message from the spool directory as long as it lets 
+E-MailRelay know by terminating with an exit code of 100.
+
+For more ideas check out the "--client-filter", "--poll" and "--scanner" 
+switches, and don't overlook the administration interface ("--admin") which you 
+can use to receive notification of message arrival or force message forwarding 
+at any time. 
+
 SpamAssassin
 ------------
 The E-MailRelay server can use *Spam Assassin* [http://spamassassin.org] to mark
@@ -385,6 +415,31 @@ Try an E-MailRelay command line like this:
 
 But note that you may have to add explicit paths if perl or spamassassin are not
 on your path.
+
+If you have a problem with long SpamAssassin processing times causing the
+submitting program to time-out then you should try moving the spam processing 
+out of the storing server and into the forwarding process. You can do this by 
+replacing the "--filter" switch on the "--as-server" command with a
+"--client-filter" switch on the "--as-client" command. 
+
+So this:
+
+	emailrelay --as-server --filter /usr/local/bin/myfilter.sh
+	emailrelay --as-client smarthost:smtp
+
+becomes this:
+
+	emailrelay --as-server 
+	emailrelay --as-client smarthost:smtp --client-filter /usr/local/bin/myfilter.sh
+
+To avoid having to run the "--as-client" forwarding processes repeatedly (eg. 
+from "cron") you can start a long-lived forwarding process that polls the spool 
+directory itself, like this:
+
+	emailrelay --log --close-stderr --dont-listen --poll 30 --forward-to smarthost:smtp ...
+
+You could then try running several forwarding processes in parallel in order to 
+maximise throughput.
 
 
 

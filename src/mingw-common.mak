@@ -30,7 +30,7 @@ mk_rc=$(mk_bin)windres
 mk_rm_f=rm -f
 mk_objects=$(mk_sources:.cpp=.o)
 mk_gcc=$(mk_bin)g++
-mk_gcc_flags=-mno-cygwin -g
+mk_gcc_flags=-mno-cygwin -g -mwindows
 mk_defines=-DG_WIN32 -DG_MINGW
 mk_includes=-I../glib -I../gnet -I../gsmtp -I../win32
 mk_cpp_flags=$(mk_defines) $(mk_includes)

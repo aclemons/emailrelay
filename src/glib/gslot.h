@@ -20,11 +20,20 @@
 //
 // gslot.h
 //
-// Inspired by libsigc++, but simplified by:
+// Slots and signals provide a typesafe callback mechanism 
+// that separates event source classes from event sinks.
+// The slot/signal pattern is used in several C++ libraries
+// including libsigc++, Qt and boost.
+//
+// This implementation was inspired by libsigc++,
+// but simplified by:
 // * not doing multicast
 // * not detecting dangling references
 // * not supporting global function callbacks
 // * using only void returns
+//
+// Note that 'signals' in this context are not related 
+// to ANSI-C or POSIX signals (signal(), sigaction(2)).
 //
 // Event-generating classes expose a "signal" object which
 // client objects can connect() to in order to receive events. 
