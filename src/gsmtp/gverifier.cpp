@@ -136,6 +136,10 @@ GSmtp::Verifier::Status GSmtp::Verifier::verifyExternal( const std::string & add
 		response_parts.pop_front() ;
 		status.address = response_parts.front() ;
 	}
+	else if( rc == 100 )
+	{
+		throw AbortRequest() ;
+	}
 	else
 	{
 		status.is_valid = false ;

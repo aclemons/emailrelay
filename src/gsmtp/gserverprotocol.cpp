@@ -359,8 +359,8 @@ void GSmtp::ServerProtocol::doMailPrepare( const std::string & line , bool & pre
 	else
 	{
 		m_pmessage.clear() ;
-		std::string from = parseFrom( line ) ;
-		bool ok = m_pmessage.setFrom( from ) ;
+		std::pair<std::string,std::string> from_pair = parseFrom( line ) ;
+		bool ok = from_pair.second.empty() && m_pmessage.setFrom( from_pair.first ) ;
 		predicate = ok ;
 		if( ok )
 		{
@@ -370,7 +370,7 @@ void GSmtp::ServerProtocol::doMailPrepare( const std::string & line , bool & pre
 		}
 		else
 		{
-			sendBadFrom( from ) ;
+			sendBadFrom( from_pair.second ) ;
 			// now deleted
 		}
 	}
@@ -408,15 +408,23 @@ void GSmtp::ServerProtocol::doMail( const std::string & line , bool & predicate 
 
 void GSmtp::ServerProtocol::doRcpt( const std::string & line , bool & predicate )
 {
-	std::string to = parseTo( line ) ;
-	Verifier::Status status = verify( to , m_pmessage.from() ) ;
-	bool ok = m_pmessage.addTo( to , status ) ;
+	std::pair<std::string,std::string> to_pair = parseTo( line ) ;
+	std::string reason = to_pair.second ;
+	bool ok = reason.empty() ;
+	if( ok )
+	{
+		Verifier::Status status = verify( to_pair.first , m_pmessage.from() ) ;
+		ok = m_pmessage.addTo( to_pair.first , status ) ;
+		if( !ok )
+			reason = G::Str::toPrintableAscii(status.reason) ;
+	}
+
 	predicate = ok ;
 	if( ok )
 		sendRcptReply() ;
 		// now deleted
 	else
-		sendBadTo( G::Str::toPrintableAscii(status.reason) ) ;
+		sendBadTo( reason ) ;
 		// now deleted
 }
 
@@ -587,9 +595,15 @@ void GSmtp::ServerProtocol::sendRcptReply()
 	// now deleted
 }
 
-void GSmtp::ServerProtocol::sendBadFrom( const std::string & /*from*/ )
+void GSmtp::ServerProtocol::sendBadFrom( std::string reason )
 {
-	send( "553 mailbox name not allowed" ) ;
+	std::string msg("553 mailbox name not allowed") ;
+	if( ! reason.empty() )
+	{
+		msg.append( ": " ) ;
+		msg.append( reason ) ;
+	}
+	send( msg ) ;
 	// now deleted
 }
 
@@ -635,25 +649,28 @@ void GSmtp::ServerProtocol::send( std::string line , bool allow_delete_this )
 	// now deleted
 }
 
-std::string GSmtp::ServerProtocol::parseFrom( const std::string & line ) const
+std::pair<std::string,std::string> GSmtp::ServerProtocol::parseFrom( const std::string & line ) const
 {
 	// eg. MAIL FROM:<me@localhost>
 	return parse( line ) ;
 }
 
-std::string GSmtp::ServerProtocol::parseTo( const std::string & line ) const
+std::pair<std::string,std::string> GSmtp::ServerProtocol::parseTo( const std::string & line ) const
 {
 	// eg. RCPT TO:<@first.co.uk,@second.co.uk:you@final.co.uk>
 	// eg. RCPT TO:<Postmaster>
 	return parse( line ) ;
 }
 
-std::string GSmtp::ServerProtocol::parse( const std::string & line ) const
+std::pair<std::string,std::string> GSmtp::ServerProtocol::parse( const std::string & line ) const
 {
 	size_t start = line.find( '<' ) ;
 	size_t end = line.find( '>' ) ;
 	if( start == std::string::npos || end == std::string::npos || end < start )
-		return std::string() ;
+	{
+		std::string reason( "missing or invalid angle brackets in mailbox name" ) ;
+		return std::make_pair(std::string(),reason) ;
+	}
 
 	std::string s = line.substr( start + 1U , end - start - 1U ) ;
 	G::Str::trim( s , " \t" ) ;
@@ -663,11 +680,14 @@ std::string GSmtp::ServerProtocol::parse( const std::string & line ) const
 	{
 		size_t colon_pos = s.find( ':' ) ;
 		if( colon_pos == std::string::npos )
-			return std::string() ;
+		{
+			std::string reason( "missing colon" ) ;
+			return make_pair(std::string(),reason) ;
+		}
 		s = s.substr( colon_pos + 1U ) ;
 	}
 
-	return s ;
+	return std::make_pair(s,std::string()) ;
 }
 
 std::string GSmtp::ServerProtocol::parsePeerName( const std::string & line ) const

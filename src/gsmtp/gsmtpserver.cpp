@@ -76,7 +76,17 @@ void GSmtp::ServerPeer::onData( const char * p , size_t n )
 
 bool GSmtp::ServerPeer::processLine( const std::string & line )
 {
-	return m_protocol.apply( line ) ;
+	try
+	{
+		return m_protocol.apply( line ) ;
+	}
+	catch( Verifier::AbortRequest & e )
+	{
+		G_WARNING( "GSmtp::ServerPeer::processLine: verifier abort request: disconnecting from " <<
+			peerAddress().second.displayString() ) ;
+		doDelete() ;
+		return true ;
+	}
 }
 
 void GSmtp::ServerPeer::protocolSend( const std::string & line , bool allow_delete_this )

@@ -32,6 +32,7 @@
 #include "gsasl.h"
 #include "gstatemachine.h"
 #include <map>
+#include <utility>
 
 namespace GSmtp
 {
@@ -162,7 +163,7 @@ private:
 	void doData( const std::string & line , bool & ) ;
 	void doVrfy( const std::string & line , bool & ) ;
 	void doNoRecipients( const std::string & line , bool & ) ;
-	void sendBadFrom( const std::string & line ) ;
+	void sendBadFrom( std::string line ) ;
 	void sendChallenge( const std::string & line ) ;
 	void sendBadTo( const std::string & line ) ;
 	void sendOutOfSequence( const std::string & line ) ;
@@ -185,11 +186,11 @@ private:
 	void sendWillAccept( const std::string & ) ;
 	void sendAuthDone( bool ok ) ;
 	void sendOk() ;
-	std::string parseFrom( const std::string & ) const ;
-	std::string parseTo( const std::string & ) const ;
+	std::pair<std::string,std::string> parse( const std::string & ) const ;
+	std::pair<std::string,std::string> parseFrom( const std::string & ) const ;
+	std::pair<std::string,std::string> parseTo( const std::string & ) const ;
 	std::string parseMailbox( const std::string & ) const ;
 	std::string parsePeerName( const std::string & ) const ;
-	std::string parse( const std::string & ) const ;
 	std::string receivedLine() const ;
 	Verifier::Status verify( const std::string & , const std::string & ) const ;
 

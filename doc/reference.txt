@@ -325,13 +325,15 @@ or later):
 
 	--filter "c:/winnt/system32/cscript.exe \\nologo c:/program\ files/emailrelay/filter.js"
 
-A more complex example script which does rot-13 masking is also provided in the 
-distribution ("emailrelay-process.sh"). This does some simple MIME encoding, and
-could be used as a template for more sophisticated message encryption.
+As an example of more complex processing there is a "--filter" script included in 
+the distribution ("emailrelay-process.sh") that does rot-13 masking of messages. 
+This script also does some simple MIME encoding, so that the masked message 
+appears as an attachment within a plaintext bearer message.
 
-There also a "--client-filter" switch that enables pre-processing of messages
-just before they are forwarded, rather then when stored. But note that by then
-it is too late to notify the SMTP client of any processing failures.
+E-MailRelay also has a "--client-filter" switch that enables pre-processing of 
+messages just before they are forwarded, rather then after they are stored. But 
+note that by then it is too late to notify the SMTP client of any processing 
+failures, so in many applications using "--filter" will be more appropriate.
 
 Some points to note when writing "--filter" programs:
 * The standard input and output are not used; the content filename is passed on the command line.
@@ -345,20 +347,23 @@ Address verification
 --------------------
 In proxy mode all addresses supplied to the SMTP commands "RCPT" and "VRFY" are 
 accepted by E-MailRelay as valid. In server mode (or more accurately when 
-"--postmater" is in effect) addresses are accepted if they contain an at sign
-or if they are some sort of local "postmaster" address, as described in the SMTP 
-section above. 
+"--postmater" is in effect) addresses are accepted if they contain an at sign 
+("@") or if they are some sort of local "postmaster" address, as described in 
+the SMTP section above. 
 
 However, this behaviour can be modified by using an external verifier program, 
 using the "--verifier" command-line switch. 
 
 The verifier program is passed a command-line containing: (1) the full 
-address, (2) the user-name part of the address, (3) the host-name part, (4) the 
-local host's fully qualified domain name, (5) the current "MAIL" command's "FROM:" 
-address or the empty string for the "VRFY" command, (6) the IP address of the 
-client connection, (7) the authentication mechanism used by the client ("NONE" 
-if trusted), and (8) either the authentication name or the fourth field from 
-authentication secrets file if a trusted IP address.
+address, (2) the user-name part of the address in upper-case, (3) the host-name 
+part in upper-case, (4) the local host's fully qualified domain name, (5) the 
+current "MAIL" command's "FROM:" address or the empty string for the "VRFY" 
+command, (6) the IP address of the client connection, (7) the authentication 
+mechanism used by the client ("NONE" if trusted), and (8) either the 
+authentication name or the fourth field from authentication secrets file if a 
+trusted IP address:
+
+	myverifier me@myhost.mydomain ME MYHOST.MYDOMAIN MYHOST.MYDOMAIN bob@other.net 192.168.0.1 LOGIN bob
 
 For valid local mailbox addresses the verifier is expected to write two lines to 
 the standard output -- the full name associated with the mailbox, and the
@@ -367,12 +372,12 @@ addresses the first line of output should be empty, the second line should be
 copied from the first command-line argument, and the exit value should be one. 
 For invalid addresses the exit value should be greater than one, and anything
 written to the standard output is taken as the failure reason. (Only the few 
-few thousand characters are read from the verifier's standard output stream; 
-any more is thrown away.)
+few thousand characters are read from the verifier's standard output stream; any
+more is thrown away.) If the exit code is 100 then the connection is aborted 
+immediately.
 
 In this simple example script all addresses are accepted as long as they contain
-an at sign. This is equivalent to removing the "--postmaster" command-line
-switch:
+an at sign:
 
 	#!/bin/sh
 	# verifier.sh
