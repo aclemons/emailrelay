@@ -428,7 +428,10 @@ void md5::digest_stream::close()
 
 md5::digest_stream::state_ md5::digest_stream::state() const
 {
-	state_ result = { m_digest.state() , m_length , m_buffer } ;
+	state_ result ;
+	result.d = m_digest.state() ;
+	result.n = m_length ;
+	result.s = m_buffer ;
 	return result ;
 }
 

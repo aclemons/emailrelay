@@ -63,7 +63,7 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "z!filter!defines a mail processor program for when storing!1!program!3|"
 		<< "D!domain!sets an override for the host's fully qualified domain name!1!fqdn!3|"
 		<< "f!forward!forwards stored mail on startup (requires --forward-to)!0!!3|"
-		<< "o!forward-to!specifies the remote smtp server (required by --forward and --admin)!1!host:port!3|"
+		<< "o!forward-to!specifies the remote smtp server (required by --forward, --poll, --immediate and --admin)!1!host:port!3|"
 		<< "T!response-timeout!sets the response timeout (in seconds) when talking to a remote server "
 			<< "(default is 1800)!1!time!3|"
 		<< "U!connection-timeout!sets the timeout (in seconds) when connecting to a remote server "
@@ -72,11 +72,12 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "I!interface!listen on a specific interface!1!ip-address!3|"
 		<< "i!pid-file!records the daemon process-id in the given file!1!pid-file!3|"
 		<< "O!poll!enables polling with the specified period (requires --forward-to)!1!period!3|"
-		<< "P!postmaster!deliver to postmaster and reject all other local mailbox addresses!0!!3|"
+		<< "P!postmaster!allow delivery to postmaster but reject all other local mailbox addresses!0!!3|"
 		<< "Z!verifier!defines an external address verifier program!1!program!3|"
 		<< "Y!client-filter!defines a mail processor program for when forwarding!1!program!3|"
 		<< "Q!admin-terminate!enables the terminate command on the admin interface!0!!3|"
 		<< "R!scanner!!1!host:port!0|"
+		<< "A!anonymous!disables the smtp vrfy command and sends less verbose smtp responses!0!!3|"
 		;
 	return ss.str() ;
 }

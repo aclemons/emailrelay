@@ -59,6 +59,9 @@ Enables the administration interface and specifies its listening port number.
 .B \-Q,--admin-terminate 
 Enables the terminate command on the admin interface.
 .TP
+.B \-A,--anonymous 
+Disables the smtp vrfy command and sends less verbose smtp responses.
+.TP
 .B \-q,--as-client \fIhost:port\fR
 Runs as a client, forwarding spooled mail to <host>: equivalent to \fI--log\fR \fI--no-syslog\fR \fI--no-daemon\fR \fI--dont-serve\fR \fI--forward\fR \fI--forward-to\fR.
 .TP
@@ -99,7 +102,7 @@ Defines a mail processor program for when storing.
 Forwards stored mail on startup (requires \fI--forward-to\fR).
 .TP
 .B \-o,--forward-to \fIhost:port\fR
-Specifies the remote smtp server (required by \fI--forward\fR and \fI--admin\fR).
+Specifies the remote smtp server (required by \fI--forward\fR, \fI--poll\fR, \fI--immediate\fR and \fI--admin\fR).
 .TP
 .B \-h,--help 
 Displays help text and exits.
@@ -132,7 +135,7 @@ Enables polling with the specified period (requires \fI--forward-to\fR).
 Specifies the smtp listening port number.
 .TP
 .B \-P,--postmaster 
-Deliver to postmaster and reject all other local mailbox addresses.
+Allow delivery to postmaster but reject all other local mailbox addresses.
 .TP
 .B \-r,--remote-clients 
 Allows remote clients to connect.
@@ -176,25 +179,19 @@ GNU style...
 .br
 /usr/local/libexec/emailrelay-runperl.js
 .br
+/usr/local/man/man1/emailrelay.1.gz
+.br
 /usr/local/man/man1/emailrelay-passwd.1.gz
 .br
 /usr/local/man/man1/emailrelay-poke.1.gz
 .br
 /usr/local/man/man1/emailrelay-submit.1.gz
 .br
-/usr/local/man/man1/emailrelay.1.gz
-.br
 /usr/local/sbin/emailrelay
 .br
 /usr/local/sbin/emailrelay-passwd
 .br
 /usr/local/sbin/emailrelay-submit
-.br
-/usr/local/share/emailrelay/doc/*.png
-.br
-/usr/local/share/emailrelay/doc/NEWS
-.br
-/usr/local/share/emailrelay/doc/README
 .br
 /usr/local/share/emailrelay/doc/changelog.gz
 .br
@@ -204,11 +201,17 @@ GNU style...
 .br
 /usr/local/share/emailrelay/doc/developer.txt
 .br
-/usr/local/share/emailrelay/doc/emailrelay-man.html
-.br
 /usr/local/share/emailrelay/doc/emailrelay.css
 .br
+/usr/local/share/emailrelay/doc/emailrelay-man.html
+.br
 /usr/local/share/emailrelay/doc/index.html
+.br
+/usr/local/share/emailrelay/doc/NEWS
+.br
+/usr/local/share/emailrelay/doc/*.png
+.br
+/usr/local/share/emailrelay/doc/README
 .br
 /usr/local/share/emailrelay/doc/readme.html
 .br
@@ -242,12 +245,6 @@ FHS style...
 .br
 /usr/sbin/emailrelay-submit
 .br
-/usr/share/doc/emailrelay/*.png
-.br
-/usr/share/doc/emailrelay/NEWS
-.br
-/usr/share/doc/emailrelay/README
-.br
 /usr/share/doc/emailrelay/changelog.gz
 .br
 /usr/share/doc/emailrelay/changelog.html
@@ -256,9 +253,9 @@ FHS style...
 .br
 /usr/share/doc/emailrelay/developer.txt
 .br
-/usr/share/doc/emailrelay/emailrelay-man.html
-.br
 /usr/share/doc/emailrelay/emailrelay.css
+.br
+/usr/share/doc/emailrelay/emailrelay-man.html
 .br
 /usr/share/doc/emailrelay/examples/emailrelay-deliver.sh
 .br
@@ -271,6 +268,12 @@ FHS style...
 /usr/share/doc/emailrelay/examples/emailrelay-runperl.js
 .br
 /usr/share/doc/emailrelay/index.html
+.br
+/usr/share/doc/emailrelay/NEWS
+.br
+/usr/share/doc/emailrelay/*.png
+.br
+/usr/share/doc/emailrelay/README
 .br
 /usr/share/doc/emailrelay/readme.html
 .br
@@ -286,13 +289,13 @@ FHS style...
 .br
 /usr/share/doc/emailrelay/windows.txt
 .br
+/usr/share/man/man1/emailrelay.1.gz
+.br
 /usr/share/man/man1/emailrelay-passwd.1.gz
 .br
 /usr/share/man/man1/emailrelay-poke.1.gz
 .br
 /usr/share/man/man1/emailrelay-submit.1.gz
-.br
-/usr/share/man/man1/emailrelay.1.gz
 .br
 /var/spool/emailrelay/emailrelay.*.content
 .br

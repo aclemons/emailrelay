@@ -19,6 +19,9 @@ where <switch> is:
 # --admin-terminate (-Q)
   Enables the terminate command on the admin interface.
 
+# --anonymous (-A)
+  Disables the smtp vrfy command and sends less verbose smtp responses.
+
 # --as-client (-q)
   Runs as a client, forwarding spooled mail to <host>: equivalent to "--log --no-syslog --no-daemon --dont-serve --forward --forward-to".
 
@@ -59,7 +62,7 @@ where <switch> is:
   Forwards stored mail on startup (requires --forward-to).
 
 # --forward-to (-o)
-  Specifies the remote smtp server (required by --forward and --admin).
+  Specifies the remote smtp server (required by --forward, --poll, --immediate and --admin).
 
 # --help (-h)
   Displays help text and exits.
@@ -92,7 +95,7 @@ where <switch> is:
   Specifies the smtp listening port number.
 
 # --postmaster (-P)
-  Deliver to postmaster and reject all other local mailbox addresses.
+  Allow delivery to postmaster but reject all other local mailbox addresses.
 
 # --remote-clients (-r)
   Allows remote clients to connect.
@@ -130,13 +133,12 @@ behaviour is:
 * disable the administration interface
 * generate no logging or diagnostic messages
 
-The "--as-server" switch makes sure that logging is enabled and that 
-the standard error stream is closed.
+Adding the "--as-server" switch makes sure that logging is enabled and that the 
+standard error stream is closed.
 
-To foward spooled messages to the ISP the command-line switch "--as-client"
-is provided to run the program...
+To forward spooled messages the "--as-client" switch is provided to run the program
 * in foreground, exiting when all spooled mail has been processed
-* forwarding spooled mail from "/usr/local/var/spool/emailrelay" or "/var/spool/emailrelay"
+* taking spooled mail from "/usr/local/var/spool/emailrelay" or "/var/spool/emailrelay"
 * without listening on any port
 * with error, warning and information messages sent to stderr
 * without using syslog
@@ -231,9 +233,9 @@ command to an E-MailRelay server. For example:
 To use the "flush" command the next SMTP server address must have been defined 
 on the "emailrelay" command line at start-up using the "--forward-to" switch.
 
-Also, the "list" command lists the messages in the spool directory, the "info" 
-command provides network status information and activity statistics, and the 
-"notify" command enables asynchronous event notification.
+Also, the "list" command lists the messages in the spool directory, "info" 
+provides network status information and activity statistics, and "notify" 
+enables asynchronous event notification.
 
 Mail processing
 ---------------
@@ -319,11 +321,12 @@ For Windows this example can be rewritten in JavaScript:
 	}
 	WScript.Quit( 0 ) ;
 
-Pre-processor programs written in JavaScript can be run with "cscript", using an 
-E-MailRelay command line with a "--filter" switch something like this (V1.1.3 
-or later):
+Windows pre-processor programs written in JavaScript can be run using "cscript",
+with an E-MailRelay "--filter" switch something like this (V1.1.3 or later):
 
-	--filter "c:/winnt/system32/cscript.exe \\nologo c:/program\ files/emailrelay/filter.js"
+	--filter "c:/winnt/system32/cscript.exe //nologo c:/program\ files/emailrelay/filter.js"
+
+Note how the space character in the path is escaped with a backslash.
 
 As an example of more complex processing there is a "--filter" script included in 
 the distribution ("emailrelay-process.sh") that does rot-13 masking of messages. 
@@ -331,11 +334,11 @@ This script also does some simple MIME encoding, so that the masked message
 appears as an attachment within a plaintext bearer message.
 
 E-MailRelay also has a "--client-filter" switch that enables pre-processing of 
-messages just before they are forwarded, rather then after they are stored. But 
-note that by then it is too late to notify the SMTP client of any processing 
-failures, so in many applications using "--filter" will be more appropriate.
+messages just before they are forwarded, rather then after they are stored. The
+problem is that by then it is too late to notify the SMTP client of any 
+processing failures, so in many applications using "--filter" is more useful.
 
-Some points to note when writing "--filter" programs:
+Bear in mind the following points when writing "--filter" programs:
 * The standard input and output are not used; the content filename is passed on the command line.
 * Programs run with a reduced set of environment variables.
 * The E-MailRelay process is completely blocked while the "--filter" program runs.
@@ -346,15 +349,15 @@ Some points to note when writing "--filter" programs:
 Address verification
 --------------------
 In proxy mode all addresses supplied to the SMTP commands "RCPT" and "VRFY" are 
-accepted by E-MailRelay as valid. In server mode (or more accurately when 
-"--postmater" is in effect) addresses are accepted if they contain an at sign 
-("@") or if they are some sort of local "postmaster" address, as described in 
-the SMTP section above. 
+accepted by E-MailRelay as valid. But in server mode (or more accurately when 
+"--postmater" is in effect) addresses are only accepted if they contain an at 
+sign ("@") or if they are some sort of local "postmaster" address: "postmaster",
+"postmaster@localhost" or "postmaster@<fqdn>".
 
 However, this behaviour can be modified by using an external verifier program, 
-using the "--verifier" command-line switch. 
+specified with the "--verifier" command-line switch. 
 
-The verifier program is passed a command-line containing: (1) the full 
+The external verifier program is passed a command-line containing: (1) the full 
 address, (2) the user-name part of the address in upper-case, (3) the host-name 
 part in upper-case, (4) the local host's fully qualified domain name, (5) the 
 current "MAIL" command's "FROM:" address or the empty string for the "VRFY" 
@@ -381,10 +384,8 @@ an at sign:
 
 	#!/bin/sh
 	# verifier.sh
-	address="${1}"
-	user="${2}"
-	host="${3}"
-	if test "${address}" != "${user}@${host}" ; then exit 2 ; fi
+	address="$1"
+	expr "${address}" : ".*@" > /dev/null || exit 2
 	echo "${address}"
 	echo "${address}" # again
 	exit 1 # accept
@@ -395,7 +396,7 @@ by connecting on a trusted IP address:
 
 	#!/bin/sh
 	# verifier.sh
-	address="${1}"
+	address="$1"
 	host="$3"
 	local_domain="$4"
 	auth_mechanism="$7"
@@ -482,6 +483,9 @@ Authentication is enabled with the "--auth-client" and "--auth-server"
 command-line switches. The switch parameter is the name of a "secrets" file, 
 containing usernames and passwords.
 
+	emailrelay --as-server --auth-server /etc/client-secrets.txt
+	emailrelay --as-client myisp.net:smtp --auth-client /etc/isp-secret.txt
+
 The secrets file has a line-based format: blank lines are ignored and the hash
 character (#) is used for comments. Lines have four white-space delimited 
 fields: "mechanism", "client-or-server", "userid", and "secret". The "mechanism"
@@ -531,7 +535,7 @@ A "CRAM-MD5" version would look like this:
 When using the LOGIN mechanism you have to store plaintext passwords in a file 
 and then send them unencypted over a network. This is a bad thing. You should at 
 least make sure that the secrets file has tight permissions, and that the 
-passwords in it are not also used for anything important (such as root access).
+passwords in it are not also used for anything important.
 
 On the server side authentication is advertised by E-MailRealy in the response 
 to the SMTP "EHLO" command if the "--auth-server" command-line switch is used.
@@ -546,7 +550,7 @@ the third field, and an arbitrary keyword in the fourth field. The keyword
 is passed to any external address verifier program specified by the "--verifier"
 command-line switch.
 
-For example this secrets file allows any client connecting from the 192.168.0.0
+For example this secrets file allows any client connecting from the 192.168.0.0/24
 domain to connect without authentication desipte the "--auth-server" switch:
 
 	#
@@ -580,23 +584,23 @@ following locations:
 * /usr/local/libexec/emailrelay-process.sh
 * /usr/local/libexec/emailrelay-resubmit.sh
 * /usr/local/libexec/emailrelay-runperl.js
+* /usr/local/man/man1/emailrelay.1.gz
 * /usr/local/man/man1/emailrelay-passwd.1.gz
 * /usr/local/man/man1/emailrelay-poke.1.gz
 * /usr/local/man/man1/emailrelay-submit.1.gz
-* /usr/local/man/man1/emailrelay.1.gz
 * /usr/local/sbin/emailrelay
 * /usr/local/sbin/emailrelay-passwd
 * /usr/local/sbin/emailrelay-submit
-* /usr/local/share/emailrelay/doc/*.png
-* /usr/local/share/emailrelay/doc/NEWS
-* /usr/local/share/emailrelay/doc/README
 * /usr/local/share/emailrelay/doc/changelog.gz
 * /usr/local/share/emailrelay/doc/changelog.html
 * /usr/local/share/emailrelay/doc/developer.html
 * /usr/local/share/emailrelay/doc/developer.txt
-* /usr/local/share/emailrelay/doc/emailrelay-man.html
 * /usr/local/share/emailrelay/doc/emailrelay.css
+* /usr/local/share/emailrelay/doc/emailrelay-man.html
 * /usr/local/share/emailrelay/doc/index.html
+* /usr/local/share/emailrelay/doc/NEWS
+* /usr/local/share/emailrelay/doc/*.png
+* /usr/local/share/emailrelay/doc/README
 * /usr/local/share/emailrelay/doc/readme.html
 * /usr/local/share/emailrelay/doc/reference.html
 * /usr/local/share/emailrelay/doc/reference.txt
@@ -619,21 +623,21 @@ locations:
 * /usr/sbin/emailrelay
 * /usr/sbin/emailrelay-passwd
 * /usr/sbin/emailrelay-submit
-* /usr/share/doc/emailrelay/*.png
-* /usr/share/doc/emailrelay/NEWS
-* /usr/share/doc/emailrelay/README
 * /usr/share/doc/emailrelay/changelog.gz
 * /usr/share/doc/emailrelay/changelog.html
 * /usr/share/doc/emailrelay/developer.html
 * /usr/share/doc/emailrelay/developer.txt
-* /usr/share/doc/emailrelay/emailrelay-man.html
 * /usr/share/doc/emailrelay/emailrelay.css
+* /usr/share/doc/emailrelay/emailrelay-man.html
 * /usr/share/doc/emailrelay/examples/emailrelay-deliver.sh
 * /usr/share/doc/emailrelay/examples/emailrelay-notify.sh
 * /usr/share/doc/emailrelay/examples/emailrelay-process.sh
 * /usr/share/doc/emailrelay/examples/emailrelay-resubmit.sh
 * /usr/share/doc/emailrelay/examples/emailrelay-runperl.js
 * /usr/share/doc/emailrelay/index.html
+* /usr/share/doc/emailrelay/NEWS
+* /usr/share/doc/emailrelay/*.png
+* /usr/share/doc/emailrelay/README
 * /usr/share/doc/emailrelay/readme.html
 * /usr/share/doc/emailrelay/reference.html
 * /usr/share/doc/emailrelay/reference.txt
@@ -641,10 +645,10 @@ locations:
 * /usr/share/doc/emailrelay/userguide.txt
 * /usr/share/doc/emailrelay/windows.html
 * /usr/share/doc/emailrelay/windows.txt
+* /usr/share/man/man1/emailrelay.1.gz
 * /usr/share/man/man1/emailrelay-passwd.1.gz
 * /usr/share/man/man1/emailrelay-poke.1.gz
 * /usr/share/man/man1/emailrelay-submit.1.gz
-* /usr/share/man/man1/emailrelay.1.gz
 * /var/spool/emailrelay/emailrelay.*.content
 * /var/spool/emailrelay/emailrelay.*.envelope
 

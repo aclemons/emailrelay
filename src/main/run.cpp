@@ -266,7 +266,8 @@ void Main::Run::doServing( GSmtp::MessageStore & store , const GSmtp::Secrets & 
 			client_secrets ,
 			cfg().scannerAddress() ,
 			cfg().scannerResponseTimeout() ,
-			cfg().scannerConnectionTimeout() ) ;
+			cfg().scannerConnectionTimeout() ,
+			cfg().anonymous() ) ;
 	}
 
 	if( cfg().doAdmin() )

@@ -4,11 +4,14 @@ E-MailRelay Change Log
 1.2 -> 1.3
 ----------
 * Client protocol waits for a greeting from the server on startup [bug-id 842156].
-* Verifier programs can summarily abort a connection using an exit value of 100.
-* Better validation of MAIL-FROM and RCPT-TO formatting.
+* Fix for bogus backslash normalisation on "--verifier" command-lines containing spaces.
+* Verifier programs can now summarily abort a connection using an exit value of 100.
+* New "--anonymous" switch that reduces information leakage to the SMTP client and disables "VRFY".
+* Better validation of "MAIL-FROM" and "RCPT-TO" formatting.
 * Rewrite of MD5 code to avoid third-party copyrights.
 * Performance tuning.
 * Template "emailrelay.conf" gets installed in "/etc".
+* New switches for the "configure" script.
 
 1.1.2 -> 1.2
 ------------

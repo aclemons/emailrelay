@@ -34,24 +34,58 @@
 #include "gassert.h"
 #include <string>
 
+namespace
+{
+	struct AnonymousText : public GSmtp::ServerProtocol::Text
+	{
+		AnonymousText( const std::string & thishost , const GNet::Address & peer_address ) ;
+		virtual std::string greeting() const ;
+		virtual std::string hello( const std::string & peer_name ) const ;
+		virtual std::string received( const std::string & peer_name ) const ;
+		std::string m_thishost ;
+		GNet::Address m_peer_address ;
+	} ;
+}
+
+AnonymousText::AnonymousText( const std::string & thishost , const GNet::Address & peer_address ) :
+	m_thishost(thishost) ,
+	m_peer_address(peer_address)
+{
+}
+
+std::string AnonymousText::greeting() const 
+{ 
+	return "ready" ; 
+}
+
+std::string AnonymousText::hello( const std::string & ) const 
+{ 
+	return "hello" ; 
+}
+
+std::string AnonymousText::received( const std::string & peer_name ) const
+{ 
+	return GSmtp::ServerProtocolText::receivedLine( peer_name , 
+		m_peer_address.displayString(false) , m_thishost ) ;
+}
+
+// ===
+
 GSmtp::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info ,
-	Server & server , std::auto_ptr<ProtocolMessage> pmessage , const std::string & ident ,
-	const Secrets & server_secrets , const Verifier & verifier ) :
+	Server & server , std::auto_ptr<ProtocolMessage> pmessage ,
+	const Secrets & server_secrets , const Verifier & verifier , bool with_vrfy ,
+	std::auto_ptr<ServerProtocol::Text> ptext ) :
 		GNet::ServerPeer( peer_info ) ,
 		m_server( server ) ,
 		m_buffer( crlf() ) ,
 		m_verifier( verifier ) ,
 		m_pmessage( pmessage ) ,
-		m_protocol( *this , m_verifier , *m_pmessage.get() , server_secrets ,
-			thishost(), peer_info.m_address )
+		m_ptext( ptext ) ,
+		m_protocol( *this , m_verifier , *m_pmessage.get() , server_secrets , *m_ptext.get() ,
+			peer_info.m_address , with_vrfy )
 {
 	G_LOG_S( "GSmtp::ServerPeer: smtp connection from " << peer_info.m_address.displayString() ) ;
-	m_protocol.init( ident ) ;
-}
-
-std::string GSmtp::ServerPeer::thishost() const
-{
-	return GNet::Local::fqdn() ;
+	m_protocol.init() ;
 }
 
 std::string GSmtp::ServerPeer::crlf()
@@ -130,7 +164,8 @@ GSmtp::Server::Server( MessageStore & store ,
 	unsigned int smtp_response_timeout , unsigned int smtp_connection_timeout ,
 	const Secrets & client_secrets ,
 	const std::string & scanner_server ,
-	unsigned int scanner_response_timeout , unsigned int scanner_connection_timeout ) :
+	unsigned int scanner_response_timeout , unsigned int scanner_connection_timeout ,
+	bool anonymous ) :
 		m_store(store) ,
 		m_ident(ident) ,
 		m_allow_remote( allow_remote ) ,
@@ -145,7 +180,8 @@ GSmtp::Server::Server( MessageStore & store ,
 		m_client_secrets(client_secrets) ,
 		m_gnet_server_1( *this ) ,
 		m_gnet_server_2( *this ) ,
-		m_gnet_server_3( *this )
+		m_gnet_server_3( *this ) ,
+		m_anonymous(anonymous)
 {
 	if( interfaces.size() == 0U )
 	{
@@ -198,8 +234,19 @@ GNet::ServerPeer * GSmtp::Server::newPeer( GNet::Server::PeerInfo peer_info )
 		return NULL ;
 	}
 
+	bool with_vrfy = !m_anonymous ;
+	std::auto_ptr<ServerProtocol::Text> ptext( newProtocolText(m_anonymous,peer_info.m_address) ) ;
 	std::auto_ptr<ProtocolMessage> pmessage( newProtocolMessage() ) ;
-	return new ServerPeer( peer_info , *this , pmessage , m_ident , m_server_secrets , m_verifier ) ;
+	return new ServerPeer( peer_info , *this , pmessage , m_server_secrets , 
+		m_verifier , with_vrfy , ptext ) ;
+}
+
+GSmtp::ServerProtocol::Text * GSmtp::Server::newProtocolText( bool anonymous , GNet::Address peer_address ) const
+{
+	if( anonymous )
+		return new AnonymousText( GNet::Local::fqdn() , peer_address ) ;
+	else
+		return new ServerProtocolText( m_ident , GNet::Local::fqdn() , peer_address ) ;
 }
 
 GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()

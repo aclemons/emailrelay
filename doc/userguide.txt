@@ -50,7 +50,7 @@ is easy to build and install.
 Typical applications of E-MailRelay include:
 * spam filtering and virus checking incoming mail
 * adding digital signatures or legal disclaimers to outgoing mail
-* doing store-and-forward for outgoing mail across a dial-up internet connection
+* doing store-and-forward for outgoing mail across a dial-up Internet connection
 * adding authentication where the existing infrastructure does not support it
 * simple proxying on a firewall host or DMZ
 
@@ -62,7 +62,7 @@ through the proxy then specify your pre-processor program with the "--filter" sw
 You can optionally change the listening port number using "--port" and the
 spool directory using "--spool-dir".
 
-For example, to start up a local proxy which passes messages to some "addsig" script
+For example, to start up a local proxy that passes messages to some "addsig" script
 and then forwards them to an MTA running on "smarthost", use a command like this:
 
 	emailrelay --as-proxy smarthost:smtp --filter $HOME/bin/addsig --spool-dir $HOME/tmp
@@ -112,7 +112,7 @@ script in the parent directory, using a "S" prefix for the starting link, and a
 the order in which the links are called.
 
 So the goal is to set up symbolic links to the "emailrelay" start/stop script 
-(not the binary) which "make install" will have put in "/etc/init.d" or 
+(not the binary) which "make install" should have put in "/etc/init.d" or 
 "/usr/local/libexec".
 
 Before you start you will need to know where your "init.d" directory can be 
@@ -128,7 +128,7 @@ there):
 	$ cp /usr/local/libexec/emailrelay /etc/init.d
 
 Then determine an appropriate numeric value for the link names by looking at
-the "sendmail" links:
+similar server programs like "sendmail":
 
 	$ cd /etc/init.d/rc5.d
 	$ ls *sendmail*
@@ -140,8 +140,8 @@ the "emailrelay" links in the same format:
 	$ ln -s ../emailrelay S10emailrelay
 	$ ln -s ../emailrelay K10emailrelay
 
-And finally remove sendmail from the run-level (otherwise both
-daemons compete for the standard SMTP listening port):
+And finally remove any incomatible SMTP servers from the run-level that might 
+otherwise compete for the same SMTP listening port:
 
 	$ cd /etc/init.d/rc5.d
 	$ rm *sendmail
@@ -149,12 +149,12 @@ daemons compete for the standard SMTP listening port):
 Triggering onward delivery
 --------------------------
 If you are using E-MailRelay to store and forward e-mail over a dial-up link to
-the internet, then you will need to set things up so that the dialler tells
+the Internet, then you will need to set things up so that the dialler tells
 E-MailRelay when to start forwarding.
 
 This section assumes that you are using "pppd" to establish your dial-up 
-Internet connection. (Note that KDE's "kppp" and Red Hat's "rp3" are graphical 
-front-ends to the underlying "pppd" daemon.)
+Internet connection. (KDE's "kppp" and Red Hat's "rp3" are graphical 
+front-ends to an underlying "pppd" daemon.)
 
 The ppp daemon calls the script "/etc/ppp/ip-up" when it has successfully 
 established a dial-up link to your ISP. This script will probably set up IP 
@@ -211,8 +211,8 @@ too many times already.
 Logging
 -------
 If the "--log" switch is used then E-MailRelay program issues warnings and error
-messages to the "syslog" system using the "LOG_MAIL" facility. Under Windows NT 
-it writes to the "Application" event log.
+messages to the "syslog" system using the "LOG_MAIL" facility. Under Windows it
+writes to the "Application" event log.
 
 The "syslog" system is configured through the "/etc/syslog.conf" file (try 
 "man syslog.conf"), and in most cases you will find that "LOG_MAIL" warnings and
@@ -235,13 +235,12 @@ remote server and drive the SMTP protocol manually. Telnet can be told to
 connect to the remote SMTP port by putting the port number (25) on the command 
 line after the remote hostname, for example: "telnet smtp.myisp.net 25". 
 
-Once connected you should get a startup banner from the server, which will 
-probably tell you what server software you have connected to. From there you 
-should type something like "EHLO myhost.mydomain". The response to the EHLO 
-command should contain a list of SMTP extensions which the server software 
-supports. If this includes the AUTH extension then the set of supported 
-authentication mechanisms (such as LOGIN, CRAM-MD5 etc.) will be listed on the 
-same line.
+Once connected you should get a startup banner from the server, which may tell 
+you what server software you have connected to. From there you should type 
+something like "EHLO myhost.mydomain". The response to the EHLO command should 
+contain a list of SMTP extensions which the server software supports. If this 
+includes the AUTH extension then the set of supported authentication mechanisms 
+(such as LOGIN, CRAM-MD5 etc.) will be listed on the same line.
 
 After the EHLO response you should type "MAIL FROM:<myhost.mydomain>", retaining
 the angle brackets but substituing your own address. If this is accepted then 
@@ -256,8 +255,8 @@ to do things properly you should have at least a "To:" line, a "From:" line and
 a "Subject:" line in the header.
 
 At the end of the message text type a "." on a line of its own. At that point the 
-message should get dispatched, and end up in your in-box in the usual way 
-(assuming you put your own address in the "RCPT TO" command).
+message should get dispatched, and eventually end up in your in-box in the usual
+way (assuming you put your own address in the "RCPT TO" command).
 
 The following is an example SMTP dialogue, with ">>" and "<<" marks added to 
 show what was typed and what was received:
@@ -334,9 +333,9 @@ not authenticated. Again, refer to the reference guide for further details.
 SpamAssassin
 ------------
 The E-MailRelay server can use *Spam Assassin* [http://spamassassin.org] to mark
-potential spam by having a small shell script which calls "spamassassin" 
-installed as the E-MailRelay mail pre-processor using the "--filter" command-line 
-switch.
+potential spam. To do this you will need to have a small shell script to call
+"spamassassin", and pass the name of this script to E-MailRelay using the
+"--filter" command-line switch.
 
 Your "--filter" shell script could look something like this:
 
@@ -367,13 +366,18 @@ to the exit code:
 	exit 0
 
 On Windows there is less of a problem with carriage returns, but because
-"spamassassin" is a perl script it takes a bit of work to call it correctly.
+"spamassassin" is a perl script it takes a bit of work to call it correctly: on 
+Windows only ".exe" and ".bat" files can be executed directly by the operating 
+system. One solution is to have E-MailRelay run some JavaScript using 
+"cscript.exe", and the JavaScript can then run perl/spamassassin and pass the 
+results back to E-MailRelay.
+
 An example JavaScript wrapper called "emailrelay-runperl.js" is included in 
 the distribution that by default calls "spamassassin". 
 
 Try an E-MailRelay command line like this:
 
-	emailrelay --as-server --filter "cscript //nologo c:/program\ files/emailrelay/emailrelay-runperl.js"
+	emailrelay --as-server --filter "c:/winnt/system32/cscript.exe //nologo c:/program\ files/emailrelay/emailrelay-runperl.js"
 
 But note that you may have to add explicit paths if perl or spamassassin are not
 on your path.

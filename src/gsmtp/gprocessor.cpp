@@ -88,7 +88,7 @@ bool GSmtp::Processor::process( const G::Path & path )
 
 int GSmtp::Processor::preprocessCore( const G::Path & path )
 {
-	G_LOG( "GSmtp::Processor::preprocess: " << m_exe.exe() << " " << path ) ;
+	G_LOG( "GSmtp::Processor::preprocess: executable \"" << m_exe.exe() << "\": content \"" << path << "\"" ) ;
 	G::Strings args( m_exe.args() ) ;
 	args.push_back( path.str() ) ;
 	std::string raw_output ;

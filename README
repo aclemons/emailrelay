@@ -25,7 +25,7 @@ through the proxy then specify your pre-processor program with the "--filter" sw
 You can optionally change the listening port number using "--port" and the
 spool directory using "--spool-dir".
 
-For example, to start up a local proxy which passes messages to some "addsig" script
+For example, to start up a local proxy that passes messages to some "addsig" script
 and then forwards them to an MTA running on "smarthost", use a command like this:
 
 	emailrelay --as-proxy smarthost:smtp --filter $HOME/bin/addsig --spool-dir $HOME/tmp

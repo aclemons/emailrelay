@@ -51,21 +51,21 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/sbin/emailrelay
 %{prefix}/sbin/emailrelay-passwd
 %{prefix}/sbin/emailrelay-submit
-%{prefix}/share/doc/emailrelay/*.png
-%{prefix}/share/doc/emailrelay/NEWS
-%{prefix}/share/doc/emailrelay/README
 %{prefix}/share/doc/emailrelay/changelog.gz
 %{prefix}/share/doc/emailrelay/changelog.html
 %{prefix}/share/doc/emailrelay/developer.html
 %{prefix}/share/doc/emailrelay/developer.txt
-%{prefix}/share/doc/emailrelay/emailrelay-man.html
 %{prefix}/share/doc/emailrelay/emailrelay.css
+%{prefix}/share/doc/emailrelay/emailrelay-man.html
 %{prefix}/share/doc/emailrelay/examples/emailrelay-deliver.sh
 %{prefix}/share/doc/emailrelay/examples/emailrelay-notify.sh
 %{prefix}/share/doc/emailrelay/examples/emailrelay-process.sh
 %{prefix}/share/doc/emailrelay/examples/emailrelay-resubmit.sh
 %{prefix}/share/doc/emailrelay/examples/emailrelay-runperl.js
 %{prefix}/share/doc/emailrelay/index.html
+%{prefix}/share/doc/emailrelay/NEWS
+%{prefix}/share/doc/emailrelay/*.png
+%{prefix}/share/doc/emailrelay/README
 %{prefix}/share/doc/emailrelay/readme.html
 %{prefix}/share/doc/emailrelay/reference.html
 %{prefix}/share/doc/emailrelay/reference.txt
@@ -73,10 +73,10 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/share/doc/emailrelay/userguide.txt
 %{prefix}/share/doc/emailrelay/windows.html
 %{prefix}/share/doc/emailrelay/windows.txt
+%{prefix}/share/man/man1/emailrelay.1.gz
 %{prefix}/share/man/man1/emailrelay-passwd.1.gz
 %{prefix}/share/man/man1/emailrelay-poke.1.gz
 %{prefix}/share/man/man1/emailrelay-submit.1.gz
-%{prefix}/share/man/man1/emailrelay.1.gz
 /var/spool/emailrelay/
 
 %changelog

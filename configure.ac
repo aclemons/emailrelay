@@ -71,7 +71,7 @@ ENABLE_DEBUG
 dnl ===
 dnl "--enable-fastbuild"
 dnl
-AC_ARG_ENABLE(fastbuild,AC_HELP_STRING([--enable-fastbuild],[enable experimetal faster building; requires --disable-dependency-tracking]))
+AC_ARG_ENABLE(fastbuild,AC_HELP_STRING([--enable-fastbuild],[enable experimental faster building; requires --disable-dependency-tracking]))
 ENABLE_FASTBUILD
 
 dnl ===

@@ -249,7 +249,7 @@ SOURCE=..\glib\glogoutput_win32.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\glib\gmd5_rsa.cpp
+SOURCE=..\glib\gmd5_native.cpp
 # End Source File
 # Begin Source File
 
@@ -426,6 +426,10 @@ SOURCE=..\gsmtp\gxtext.cpp
 # Begin Source File
 
 SOURCE=legal.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\glib\md5.cpp
 # End Source File
 # End Group
 # Begin Group "Header Files"

@@ -67,7 +67,7 @@ std::string Main::Configuration::str( const std::string & p , const std::string 
 		<< p << "spool directory: " << spoolDir() << eol
 		<< p << "immediate forwarding? " << yn(immediate()) << eol
 		<< p << "mail processor: " << (useFilter()?filter():na()) << eol
-		<< p << "address verifier: " << na(verifier().str()) << eol
+		<< p << "address verifier: " << na(verifier()) << eol
 		<< p << "admin port: " << (doAdmin()?G::Str::fromUInt(adminPort()):na()) << eol
 		<< p << "run as daemon? " << yn(daemon()) << eol
 		<< p << "verbose logging? " << yn(verbose()) << eol
@@ -313,9 +313,9 @@ std::string Main::Configuration::nobody() const
 	return m_cl.contains("user") ? m_cl.value("user") : std::string("daemon") ;
 }
 
-G::Path Main::Configuration::verifier() const
+std::string Main::Configuration::verifier() const
 {
-	return m_cl.contains("verifier") ? G::Path(m_cl.value("verifier")) : G::Path() ;
+	return m_cl.contains("verifier") ? m_cl.value("verifier") : std::string() ;
 }
 
 bool Main::Configuration::deliverToPostmaster() const
@@ -350,5 +350,10 @@ unsigned int Main::Configuration::scannerConnectionTimeout() const
 unsigned int Main::Configuration::scannerResponseTimeout() const
 {
 	return 90U ; // for now
+}
+
+bool Main::Configuration::anonymous() const
+{
+	return m_cl.contains("anonymous") ;
 }
 

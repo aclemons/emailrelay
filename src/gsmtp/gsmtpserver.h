@@ -54,9 +54,9 @@ namespace GSmtp
 class GSmtp::ServerPeer : public GNet::ServerPeer , private GSmtp::ServerProtocol::Sender 
 {
 public:
-	ServerPeer( GNet::Server::PeerInfo , Server & server , 
-		std::auto_ptr<ProtocolMessage> pmessage , 
-		const std::string & ident , const Secrets & , const Verifier & verifier ) ;
+	ServerPeer( GNet::Server::PeerInfo , Server & server , std::auto_ptr<ProtocolMessage> pmessage , 
+		const Secrets & , const Verifier & verifier , bool with_vrfy ,
+		std::auto_ptr<ServerProtocol::Text> ptext ) ;
 			// Constructor.
 
 private:
@@ -67,15 +67,15 @@ private:
 	virtual void onDelete() ; // from GNet::ServerPeer
 	virtual void onData( const char * , size_t ) ; // from GNet::ServerPeer
 	bool processLine( const std::string & line ) ;
-	std::string thishost() const ;
 	static std::string crlf() ;
 
 private:
 	Server & m_server ;
 	GNet::LineBuffer m_buffer ;
-	Verifier m_verifier ; // order dependency -- first
-	std::auto_ptr<ProtocolMessage> m_pmessage ; // order dependency -- second
-	ServerProtocol m_protocol ; // order dependency -- third
+	Verifier m_verifier ; // order dependency
+	std::auto_ptr<ProtocolMessage> m_pmessage ; // order dependency
+	std::auto_ptr<ServerProtocol::Text> m_ptext ; // order dependency
+	ServerProtocol m_protocol ; // order dependency -- last
 } ;
 
 // Class: GSmtp::ServerImp
@@ -117,7 +117,8 @@ public:
 		const Secrets & client_secrets ,
 		const std::string & scanner_address ,
 		unsigned int scanner_response_timeout ,
-		unsigned int scanner_connection_timeout ) ;
+		unsigned int scanner_connection_timeout ,
+		bool anonymous ) ;
 			// Constructor. Listens on the given port number
 			// using INET_ANY if 'interfaces' is empty, or
 			// on specific interfaces otherwise. Currently
@@ -142,6 +143,7 @@ public:
 private:
 	void bind( ServerImp & , GNet::Address , unsigned int ) ;
 	ProtocolMessage * newProtocolMessage() ;
+	ServerProtocol::Text * newProtocolText( bool , GNet::Address ) const ;
 	ServerImp & imp( size_t n ) ;
 
 private:
@@ -160,6 +162,8 @@ private:
 	ServerImp m_gnet_server_1 ;
 	ServerImp m_gnet_server_2 ;
 	ServerImp m_gnet_server_3 ;
+	bool m_anonymous ;
+	std::auto_ptr<ServerProtocol::Text> m_protocol_text ;
 } ;
 
 #endif

@@ -20,17 +20,16 @@
 //
 // emailrelay-runperl.js
 //
-// An example JavaScript wrapper that runs a perl script
-// for E-MailRelay. The perl script's standard input
-// will the be the e-mail's content file. The perl script
-// should process this to its standard output, and
+// An example JavaScript wrapper that runs a perl script for E-MailRelay. 
+// The perl script's standard input will the be the e-mail's content file. 
+// The perl script should process this to its standard output, and
 // terminate with a zero exit code.
 //
 // Eg:
-//   emailrelay --as-server --filter "cscript.exe //nologo emailrelay-runperl.js"
+//   emailrelay --as-server --filter "c:/winnt/system32/cscript.exe //nologo c:/program\ files/emailrelay/emailrelay-runperl.js"
 //
-// Uses CMD.EXE which may be not be available on some
-// versions of Windows.
+// Uses CMD.EXE which may be not be available on some versions of 
+// Windows.
 //
 // Edit the next two lines as necessary, but avoid spaces in paths.
 //
