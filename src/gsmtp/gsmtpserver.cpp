@@ -73,8 +73,9 @@ std::string AnonymousText::received( const std::string & peer_name ) const
 
 GSmtp::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info ,
 	Server & server , std::auto_ptr<ProtocolMessage> pmessage ,
-	const Secrets & server_secrets , const Verifier & verifier , bool with_vrfy ,
-	std::auto_ptr<ServerProtocol::Text> ptext ) :
+	const Secrets & server_secrets , const Verifier & verifier , 
+	std::auto_ptr<ServerProtocol::Text> ptext ,
+	ServerProtocol::Config protocol_config ) :
 		GNet::ServerPeer( peer_info ) ,
 		m_server( server ) ,
 		m_buffer( crlf() ) ,
@@ -82,7 +83,7 @@ GSmtp::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info ,
 		m_pmessage( pmessage ) ,
 		m_ptext( ptext ) ,
 		m_protocol( *this , m_verifier , *m_pmessage.get() , server_secrets , *m_ptext.get() ,
-			peer_info.m_address , with_vrfy )
+			peer_info.m_address , protocol_config )
 {
 	G_LOG_S( "GSmtp::ServerPeer: smtp connection from " << peer_info.m_address.displayString() ) ;
 	m_protocol.init() ;
@@ -156,43 +157,40 @@ void GSmtp::ServerPeer::protocolDone()
 
 // ===
 
-GSmtp::Server::Server( MessageStore & store , 
-	const Secrets & server_secrets , const Verifier & verifier ,
-	const std::string & ident , bool allow_remote , 
-	unsigned int port , const AddressList & interfaces ,
-	const std::string & smtp_server , 
-	unsigned int smtp_response_timeout , unsigned int smtp_connection_timeout ,
-	const Secrets & client_secrets ,
-	const std::string & scanner_server ,
-	unsigned int scanner_response_timeout , unsigned int scanner_connection_timeout ,
-	bool anonymous ) :
+GSmtp::Server::Server( MessageStore & store , const Secrets & client_secrets , const Secrets & server_secrets ,
+	const Verifier & verifier , Config config ,
+	std::string smtp_server_address , unsigned int smtp_connection_timeout ,
+	GSmtp::Client::Config client_config ) :
 		m_store(store) ,
-		m_ident(ident) ,
-		m_allow_remote( allow_remote ) ,
+		m_newfile_preprocessor(config.newfile_preprocessor) ,
+		m_client_config(client_config) ,
+		m_ident(config.ident) ,
+		m_allow_remote(config.allow_remote) ,
 		m_server_secrets(server_secrets) ,
 		m_verifier(verifier) ,
-		m_smtp_server(smtp_server) ,
-		m_smtp_response_timeout(smtp_response_timeout) ,
+		m_smtp_server(smtp_server_address) ,
 		m_smtp_connection_timeout(smtp_connection_timeout) ,
-		m_scanner_server(scanner_server) ,
-		m_scanner_response_timeout(scanner_response_timeout) ,
-		m_scanner_connection_timeout(scanner_connection_timeout) ,
+		m_scanner_server(config.scanner_server) ,
+		m_scanner_response_timeout(config.scanner_response_timeout) ,
+		m_scanner_connection_timeout(config.scanner_connection_timeout) ,
 		m_client_secrets(client_secrets) ,
 		m_gnet_server_1( *this ) ,
 		m_gnet_server_2( *this ) ,
 		m_gnet_server_3( *this ) ,
-		m_anonymous(anonymous)
+		m_anonymous(config.anonymous) ,
+		m_preprocessor_timeout(config.preprocessor_timeout)
 {
-	if( interfaces.size() == 0U )
+	if( config.interfaces.size() == 0U )
 	{
-		bind( m_gnet_server_1 , GNet::Address(port) , port ) ;
+		bind( m_gnet_server_1 , GNet::Address(config.port) , config.port ) ;
 	}
 	else
 	{
 		size_t i = 0U ;
-		for( AddressList::const_iterator p = interfaces.begin() ; p != interfaces.end() ; ++p , ++i )
+		AddressList::const_iterator p = config.interfaces.begin() ;
+		for( ; p != config.interfaces.end() ; ++p , ++i )
 		{
-			bind( imp(i) , *p , port ) ;
+			bind( imp(i) , *p , config.port ) ;
 		}
 	}
 }
@@ -234,11 +232,10 @@ GNet::ServerPeer * GSmtp::Server::newPeer( GNet::Server::PeerInfo peer_info )
 		return NULL ;
 	}
 
-	bool with_vrfy = !m_anonymous ;
 	std::auto_ptr<ServerProtocol::Text> ptext( newProtocolText(m_anonymous,peer_info.m_address) ) ;
 	std::auto_ptr<ProtocolMessage> pmessage( newProtocolMessage() ) ;
 	return new ServerPeer( peer_info , *this , pmessage , m_server_secrets , 
-		m_verifier , with_vrfy , ptext ) ;
+		m_verifier , ptext , ServerProtocol::Config(!m_anonymous,m_preprocessor_timeout) ) ;
 }
 
 GSmtp::ServerProtocol::Text * GSmtp::Server::newProtocolText( bool anonymous , GNet::Address peer_address ) const
@@ -256,20 +253,20 @@ GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()
 	if( immediate && scan )
 	{
 		G_DEBUG( "GSmtp::Server::newProtocolMessage: new ProtocolMessageScanner" ) ;
-		return new ProtocolMessageScanner(m_store,m_client_secrets,
-			m_smtp_server,m_smtp_response_timeout,m_smtp_connection_timeout,
+		return new ProtocolMessageScanner(m_store,m_newfile_preprocessor,m_client_config,
+			m_client_secrets,m_smtp_server,m_smtp_connection_timeout,
 			m_scanner_server,m_scanner_response_timeout,m_scanner_connection_timeout) ;
 	}
 	else if( immediate )
 	{
 		G_DEBUG( "GSmtp::Server::newProtocolMessage: new ProtocolMessageForward" ) ;
-		return new ProtocolMessageForward(m_store,m_client_secrets,
-			m_smtp_server,m_smtp_response_timeout,m_smtp_connection_timeout) ;
+		return new ProtocolMessageForward(m_store,m_newfile_preprocessor,m_client_config,
+			m_client_secrets,m_smtp_server,m_smtp_connection_timeout) ;
 	}
 	else
 	{
 		G_DEBUG( "GSmtp::Server::newProtocolMessage: new ProtocolMessageStore" ) ;
-		return new ProtocolMessageStore(m_store) ;
+		return new ProtocolMessageStore(m_store,m_newfile_preprocessor) ;
 	}
 }
 
@@ -284,4 +281,26 @@ GNet::ServerPeer * GSmtp::ServerImp::newPeer( GNet::Server::PeerInfo peer_info )
 {
 	return m_server.newPeer( peer_info ) ;
 }
+
+// ===
+
+GSmtp::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const AddressList & interfaces_ , 
+	const std::string & ident_ , bool anonymous_ ,
+	const std::string & scanner_server_ , 
+	unsigned int scanner_response_timeout_ , 
+	unsigned int scanner_connection_timeout_ , 
+	const G::Executable & newfile_preprocessor_ , unsigned int preprocessor_timeout_ ) :
+		allow_remote(allow_remote_) ,
+		port(port_) ,
+		interfaces(interfaces_) ,
+		ident(ident_) ,
+		anonymous(anonymous_) ,
+		scanner_server(scanner_server_) ,
+		scanner_response_timeout(scanner_response_timeout_) ,
+		scanner_connection_timeout(scanner_connection_timeout_) ,
+		newfile_preprocessor(newfile_preprocessor_) ,
+		preprocessor_timeout(preprocessor_timeout_)
+{
+}
+
 

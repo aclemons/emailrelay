@@ -195,8 +195,8 @@ void GSmtp::AdminPeer::flush()
 	else
 	{
 		const bool quit_on_disconnect = false ;
-		m_client <<= new Client( m_server.store() , m_server.secrets() , m_local_address ,
-			quit_on_disconnect , m_server.responseTimeout() ) ;
+		m_client <<= new Client( m_server.store() , m_server.secrets() , 
+			m_server.clientConfig() , quit_on_disconnect ) ;
 		m_client->doneSignal().connect( G::slot(*this,&AdminPeer::clientDone) ) ;
 		std::string rc = m_client->startSending( m_remote_address , m_server.connectionTimeout() ) ;
 		if( rc.length() != 0U )
@@ -263,18 +263,17 @@ void GSmtp::AdminPeer::list()
 
 // ===
 
-GSmtp::AdminServer::AdminServer( MessageStore & store , const Secrets & secrets , 
-	const GNet::Address & listening_address , bool allow_remote , 
+GSmtp::AdminServer::AdminServer( MessageStore & store , const GSmtp::Client::Config & client_config ,
+	const Secrets & secrets , const GNet::Address & listening_address , bool allow_remote , 
 	const GNet::Address & local_address , const std::string & remote_address , 
-	unsigned int response_timeout , unsigned int connection_timeout , 
-	const G::StringMap & extra_commands , bool with_terminate ) :
+	unsigned int connection_timeout , const G::StringMap & extra_commands , bool with_terminate ) :
 		GNet::Server(listening_address) ,
 		m_store(store) ,
+		m_client_config(client_config) ,
 		m_secrets(secrets) ,
 		m_local_address(local_address) ,
 		m_allow_remote(allow_remote) ,
 		m_remote_address(remote_address) ,
-		m_response_timeout(response_timeout) ,
 		m_connection_timeout(connection_timeout) ,
 		m_extra_commands(extra_commands) ,
 		m_with_terminate(with_terminate)
@@ -328,13 +327,13 @@ const GSmtp::Secrets & GSmtp::AdminServer::secrets() const
 	return m_secrets ;
 }
 
-unsigned int GSmtp::AdminServer::responseTimeout() const
-{
-	return m_response_timeout ;
-}
-
 unsigned int GSmtp::AdminServer::connectionTimeout() const
 {
 	return m_connection_timeout ;
+}
+
+GSmtp::Client::Config GSmtp::AdminServer::clientConfig() const
+{
+	return m_client_config ;
 }
 

@@ -27,7 +27,9 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gnoncopyable.h"
+#include "gexe.h"
 #include "gserver.h"
+#include "gsmtpclient.h"
 #include "glinebuffer.h"
 #include "gverifier.h"
 #include "gmessagestore.h"
@@ -55,8 +57,8 @@ class GSmtp::ServerPeer : public GNet::ServerPeer , private GSmtp::ServerProtoco
 {
 public:
 	ServerPeer( GNet::Server::PeerInfo , Server & server , std::auto_ptr<ProtocolMessage> pmessage , 
-		const Secrets & , const Verifier & verifier , bool with_vrfy ,
-		std::auto_ptr<ServerProtocol::Text> ptext ) ;
+		const Secrets & , const Verifier & verifier , std::auto_ptr<ServerProtocol::Text> ptext ,
+		ServerProtocol::Config ) ;
 			// Constructor.
 
 private:
@@ -107,18 +109,30 @@ public:
 	typedef std::list<GNet::Address> AddressList ;
 	G_EXCEPTION( Overflow , "too many interface addresses" ) ;
 
-	Server( MessageStore & store , 
-		const Secrets & server_secrets , const Verifier & verifier ,
-		const std::string & ident , bool allow_remote ,
-		unsigned int port , const AddressList & interfaces ,
-		const std::string & smtp_server_address ,
-		unsigned int smtp_response_timeout ,
-		unsigned int smtp_connection_timeout ,
-		const Secrets & client_secrets ,
-		const std::string & scanner_address ,
-		unsigned int scanner_response_timeout ,
-		unsigned int scanner_connection_timeout ,
-		bool anonymous ) ;
+	struct Config // A structure containing GSmtp::Server configuration parameters.
+	{
+		bool allow_remote ;
+		unsigned int port ;
+		AddressList interfaces ;
+		//
+		std::string ident ;
+		bool anonymous ;
+		//
+		std::string scanner_server ;
+		unsigned int scanner_response_timeout ;
+		unsigned int scanner_connection_timeout ;
+		//
+		G::Executable newfile_preprocessor ;
+		unsigned int preprocessor_timeout ;
+		//
+		Config( bool , unsigned int , const AddressList & , const std::string & , bool ,
+			const std::string & , unsigned int , unsigned int , const G::Executable & , unsigned int ) ;
+	} ;
+
+	Server( MessageStore & store , const Secrets & client_secrets , const Secrets & server_secrets ,
+		const Verifier & verifier , Config server_config ,
+		std::string smtp_server_address , unsigned int smtp_connection_timeout ,
+		GSmtp::Client::Config client_config ) ;
 			// Constructor. Listens on the given port number
 			// using INET_ANY if 'interfaces' is empty, or
 			// on specific interfaces otherwise. Currently
@@ -148,12 +162,13 @@ private:
 
 private:
 	MessageStore & m_store ;
+	G::Executable m_newfile_preprocessor ;
+	GSmtp::Client::Config m_client_config ;
 	std::string m_ident ;
 	bool m_allow_remote ;
 	const Secrets & m_server_secrets ;
 	Verifier m_verifier ;
 	std::string m_smtp_server ;
-	unsigned int m_smtp_response_timeout ;
 	unsigned int m_smtp_connection_timeout ;
 	std::string m_scanner_server ;
 	unsigned int m_scanner_response_timeout ;
@@ -163,6 +178,7 @@ private:
 	ServerImp m_gnet_server_2 ;
 	ServerImp m_gnet_server_3 ;
 	bool m_anonymous ;
+	unsigned int m_preprocessor_timeout ;
 	std::auto_ptr<ServerProtocol::Text> m_protocol_text ;
 } ;
 

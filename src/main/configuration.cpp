@@ -357,3 +357,8 @@ bool Main::Configuration::anonymous() const
 	return m_cl.contains("anonymous") ;
 }
 
+unsigned int Main::Configuration::filterTimeout() const
+{
+	return 120U ; // for now
+}
+

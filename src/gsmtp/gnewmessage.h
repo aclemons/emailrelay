@@ -47,16 +47,19 @@ public:
 	virtual void addText( const std::string & line ) = 0 ;
 		// Adds a line of content.
 
-	virtual bool store( const std::string & auth_id , const std::string & client_ip ) = 0 ;
-		// Stores the message in the message store.
-		// Returns true if storage was deliberately
-		// cancelled.
+	virtual std::string prepare( const std::string & auth_id , const std::string & client_ip ) = 0 ;
+		// Prepares to store the message in the message store.
+		// Returns the location of the pre-commit()ed message.
+
+	virtual void commit() = 0 ;
+		// Commits the prepare()d message to the store.
 
 	virtual unsigned long id() const = 0 ;
 		// Returns the message's unique non-zero identifier.
 
 	virtual ~NewMessage() ;
-		// Destructor.
+		// Destructor. Rolls back any prepare()d storage
+		// if un-commit()ed.
 
 private:
 	void operator=( const NewMessage & ) ; // not implemented

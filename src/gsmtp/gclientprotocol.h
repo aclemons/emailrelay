@@ -80,6 +80,12 @@ public:
 		Invalid = 0
 	} ;
 
+	static ClientProtocolReply ok() ;
+		// Factory function for an ok reply.
+
+	static ClientProtocolReply error( const std::string & reason ) ;
+		// Factory function for a generalised error reply.
+
 	explicit ClientProtocolReply( const std::string & line = std::string() ) ;
 		// Constructor for one line of text.
 
@@ -91,7 +97,7 @@ public:
 		// Returns true if the reply is incomplete.
 
 	bool validFormat() const ;
-		// Returns true if
+		// Returns true if a valid format.
 
 	bool positive() const ;
 		// Returns true if the numeric value of the
@@ -123,12 +129,13 @@ public:
 		// Returns the reply sub-type.
 
 private:
+	static bool is_digit( char ) ;
+
+private:
 	bool m_complete ;
 	bool m_valid ;
 	unsigned int m_value ;
 	std::string m_text ;
-private:
-	static bool is_digit( char ) ;
 } ;
 
 // Class: GSmtp::ClientProtocol
@@ -160,25 +167,33 @@ public:
 		public: virtual ~Sender() ;
 	} ;
 
-	ClientProtocol( Sender & sender , const Secrets & secrets ,
-		const std::string & thishost_name ,
-		unsigned int timeout , bool must_authenticate , 
-		bool eight_bit_strict = false ) ;
-			// Constructor. The 'sender' and 'secrets' references 
-			// are kept.
-			//
-			// The Sender interface is used to send protocol 
-			// messages to the peer. 
-			//
-			// The 'thishost_name' parameter is used in the
-			// SMTP EHLO request. 
-			//
-			// If the 'eight-bit-strict' flag is true then
-			// an eight-bit message being sent to a 
-			// seven-bit server will be failed.
+	struct Config // A structure containing GSmtp::ClientProtocol configuration parameters.
+	{
+		std::string thishost_name ;
+		unsigned int response_timeout ;
+		unsigned int ready_timeout ;
+		unsigned int preprocessor_timeout ;
+		bool must_authenticate ;
+		bool eight_bit_strict ;
+		Config( const std::string & , unsigned int , unsigned int , unsigned int , bool , bool ) ;
+	} ;
+
+	ClientProtocol( Sender & sender , const Secrets & secrets , Config config ) ;
+		// Constructor. The 'sender' and 'secrets' references 
+		// are kept.
+		//
+		// The Sender interface is used to send protocol 
+		// messages to the peer. 
+		//
+		// The 'thishost_name' parameter is used in the
+		// SMTP EHLO request. 
+		//
+		// If the 'eight-bit-strict' flag is true then
+		// an eight-bit message being sent to a 
+		// seven-bit server will be failed.
 
 	G::Signal3<bool,bool,std::string> & doneSignal() ;
-		// Returns a signal which is raised once the protocol has
+		// Returns a signal that is raised once the protocol has
 		// finished with a given message. The signal parameters 
 		// are 'ok', 'abort' and 'reason'.
 		//
@@ -189,6 +204,10 @@ public:
 		// for example, authentication failed -- if
 		// it failed for one message then it will
 		// fail for all the others.
+
+	G::Signal0 & preprocessorSignal() ;
+		// Returns a signal that is raised when the protocol
+		// needs to do message preprocessing.
 
 	void start( const std::string & from , const G::Strings & to , bool eight_bit ,
 		std::string authentication , std::string server_name ,
@@ -206,6 +225,11 @@ public:
 		// Called when a blocked connection becomes unblocked.
 		// See ClientProtocol::Sender::protocolSend().
 
+	void preprocessorDone( const std::string & reason ) ;
+		// Called when the Preprocessor interface has done
+		// its thing. The reason string should be empty
+		// on success.
+
 	void apply( const std::string & rx ) ;
 		// Called on receipt of a line of text from the server.
 
@@ -222,15 +246,16 @@ private:
 	void sendMailCore() ;
 	bool endOfContent() const ;
 	static const std::string & crlf() ;
-	void applyEvent( const Reply & event ) ;
+	void applyEvent( const Reply & event , bool is_start_event = false ) ;
 	static bool parseReply( Reply & , const std::string & , std::string & ) ;
 	void raiseDoneSignal( bool , bool , const std::string & ) ;
 	G::Strings serverAuthMechanisms( const ClientProtocolReply & reply ) const ;
+	void startPreprocessing() ;
 	void onTimeout() ;
 
 private:
-	enum State { sStart , sSentEhlo , sSentHelo , sAuth1 , sAuth2 , sSentMail , 
-		sSentRcpt , sSentData , sData , sDone , sEnd } ;
+	enum State { sInit , sStarted , sServiceReady , sSentEhlo , sSentHelo , sAuth1 , sAuth2 , sSentMail , 
+		sPreprocessing , sSentRcpt , sSentData , sData , sSentDot , sDone } ;
 	Sender & m_sender ;
 	const Secrets & m_secrets ;
 	std::string m_thishost ;
@@ -248,8 +273,11 @@ private:
 	bool m_must_authenticate ;
 	bool m_strict ;
 	bool m_warned ;
-	unsigned int m_timeout ;
-	G::Signal3<bool,bool,std::string> m_signal ;
+	unsigned int m_response_timeout ;
+	unsigned int m_ready_timeout ;
+	unsigned int m_preprocessor_timeout ;
+	G::Signal3<bool,bool,std::string> m_done_signal ;
+	G::Signal0 m_preprocessor_signal ;
 	bool m_signalled ;
 } ;
 

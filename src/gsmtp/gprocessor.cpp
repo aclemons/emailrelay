@@ -31,6 +31,7 @@
 
 GSmtp::Processor::Processor( const G::Executable & exe ) :
 	m_exe(exe) ,
+	m_ok(true) ,
 	m_cancelled(false) ,
 	m_repoll(false)
 {
@@ -48,47 +49,45 @@ bool GSmtp::Processor::repoll() const
 
 std::string GSmtp::Processor::text( const std::string & default_ ) const
 {
+	if( m_ok ) return std::string() ;
 	return m_text.empty() ? default_ : m_text ;
 }
 
-bool GSmtp::Processor::process( const G::Path & path )
+bool GSmtp::Processor::process( const std::string & path )
 {
 	if( m_exe.exe() == G::Path() )
+	{
+		m_ok = true ;
 		return true ;
+	}
 
-	int exit_code = preprocessCore( path ) ;
+	int exit_code = preprocessCore( G::Path(path) ) ;
 
-	bool is_ok = exit_code == 0 ;
+	// zero, special or failure
+	bool is_zero = exit_code == 0 ;
 	bool is_special = exit_code >= 100 && exit_code <= 107 ;
-	bool is_failure = !is_ok && !is_special ;
-
-	if( is_special && ((exit_code-100)&2) != 0 )
-	{
-		m_repoll = true ;
-	}
-
-	// ok, fail or cancel
-	//
-	if( is_special && ((exit_code-100)&1) == 0 )
-	{
-		m_cancelled = true ;
-		G_LOG( "GSmtp::Processor: message processing cancelled by preprocessor" ) ;
-		return false ;
-	}
-	else if( is_failure )
+	bool is_failure = !is_zero && !is_special ;
+	if( is_failure )
 	{
 		G_WARNING( "GSmtp::Processor::preprocess: pre-processing failed: exit code " << exit_code ) ;
-		return false ;
 	}
-	else
+
+	// set special-repoll and special-cancelled flags
+	m_repoll = is_special && ((exit_code-100)&2) != 0 ;
+	m_cancelled = is_special && ((exit_code-100)&1) == 0 ;
+	if( m_cancelled )
 	{
-		return true ;
+		G_LOG( "GSmtp::Processor: message processing cancelled by preprocessor" ) ;
 	}
+
+	// treat special as ok, except for special-cancelled
+	m_ok = is_zero || ( is_special && !m_cancelled ) ;
+	return m_ok ;
 }
 
 int GSmtp::Processor::preprocessCore( const G::Path & path )
 {
-	G_LOG( "GSmtp::Processor::preprocess: executable \"" << m_exe.exe() << "\": content \"" << path << "\"" ) ;
+	G_LOG( "GSmtp::Processor::preprocess: executable \"" << m_exe.exe() << "\": file \"" << path << "\"" ) ;
 	G::Strings args( m_exe.args() ) ;
 	args.push_back( path.str() ) ;
 	std::string raw_output ;
@@ -120,5 +119,22 @@ std::string GSmtp::Processor::parseOutput( std::string s ) const
 	}
 	G_DEBUG( "GSmtp::Processor::parseOutput: in: \"" << G::Str::toPrintableAscii(result) << "\"" ) ;
 	return result ;
+}
+
+G::Signal1<bool> & GSmtp::Processor::doneSignal()
+{
+	return m_done_signal ;
+}
+
+void GSmtp::Processor::abort()
+{
+	// no-op
+}
+
+void GSmtp::Processor::start( const std::string & message_file )
+{
+	// not really asynchronous yet
+	bool ok = process( message_file ) ;
+	m_done_signal.emit( ok ) ;
 }
 

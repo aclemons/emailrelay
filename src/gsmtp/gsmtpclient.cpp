@@ -34,44 +34,37 @@
 #include "gassert.h"
 #include "glog.h"
 
-namespace
-{
-	const bool must_authenticate = true ;
-}
-
 //static
 std::string GSmtp::Client::crlf()
 {
 	return std::string("\015\012") ;
 }
 
-GSmtp::Client::Client( MessageStore & store , const Secrets & secrets , const GNet::Address & local_address ,
-	bool quit_on_disconnect , unsigned int response_timeout ) :
-		GNet::Client(local_address,false,quit_on_disconnect) ,
-		m_store(&store) ,
-		m_buffer(crlf()) ,
-		m_protocol(*this,secrets,GNet::Local::fqdn(),response_timeout,must_authenticate) ,
-		m_socket(NULL) ,
-		m_connect_timer(*this) ,
-		m_preprocess_timer(*this) ,
-		m_message_index(0U) ,
-		m_busy(true) ,
-		m_force_message_fail(false)
+GSmtp::Client::Client( MessageStore & store , const Secrets & secrets , Config config , bool quit_on_disconnect ) :
+	GNet::Client(config.local_address,false,quit_on_disconnect) ,
+	m_store(&store) ,
+	m_storedfile_preprocessor(config.storedfile_preprocessor) ,
+	m_buffer(crlf()) ,
+	m_protocol(*this,secrets,config.client_protocol_config) ,
+	m_socket(NULL) ,
+	m_connect_timer(*this) ,
+	m_busy(true) ,
+	m_force_message_fail(false)
 {
 	m_protocol.doneSignal().connect( G::slot(*this,&Client::protocolDone) ) ;
+	m_protocol.preprocessorSignal().connect( G::slot(*this,&Client::preprocessorStart) ) ;
+	m_storedfile_preprocessor.doneSignal().connect( G::slot(*this,&Client::preprocessorDone) ) ;
 }
 
-GSmtp::Client::Client( std::auto_ptr<StoredMessage> message , const Secrets & secrets ,
-	const GNet::Address & local_address , unsigned int response_timeout ) :
-		GNet::Client(local_address,false,false) ,
+GSmtp::Client::Client( std::auto_ptr<StoredMessage> message , const Secrets & secrets , Config config ) :
+		GNet::Client(config.local_address,false,false) ,
 		m_store(NULL) ,
+		m_storedfile_preprocessor(config.storedfile_preprocessor) ,
 		m_message(message) ,
 		m_buffer(crlf()) ,
-		m_protocol(*this,secrets,GNet::Local::fqdn(),response_timeout,must_authenticate) ,
+		m_protocol(*this,secrets,config.client_protocol_config) ,
 		m_socket(NULL) ,
 		m_connect_timer(*this) ,
-		m_preprocess_timer(*this) ,
-		m_message_index(0U) ,
 		m_busy(true) ,
 		m_force_message_fail(false)
 {
@@ -81,6 +74,8 @@ GSmtp::Client::Client( std::auto_ptr<StoredMessage> message , const Secrets & se
 	// submission.
 
 	m_protocol.doneSignal().connect( G::slot(*this,&Client::protocolDone) ) ;
+	m_protocol.preprocessorSignal().connect( G::slot(*this,&Client::preprocessorStart) ) ;
+	m_storedfile_preprocessor.doneSignal().connect( G::slot(*this,&Client::preprocessorDone) ) ;
 }
 
 GSmtp::Client::~Client()
@@ -100,7 +95,6 @@ std::string GSmtp::Client::startSending( const std::string & s , unsigned int co
 std::string GSmtp::Client::init( const std::string & host , const std::string & service , 
 	unsigned int connection_timeout )
 {
-	m_message_index = 0U ;
 	m_host = host ;
 
 	std::string result ;
@@ -172,6 +166,19 @@ bool GSmtp::Client::protocolSend( const std::string & line , size_t offset )
 	}
 }
 
+void GSmtp::Client::preprocessorStart()
+{
+	G_ASSERT( m_message.get() != NULL ) ;
+	if( m_message.get() )
+		m_storedfile_preprocessor.start( m_message->location() ) ;
+}
+
+void GSmtp::Client::preprocessorDone( bool ok )
+{
+	std::string reason = m_storedfile_preprocessor.text("preprocessing error") ;
+	m_protocol.preprocessorDone( ok ? std::string() : reason ) ;
+}
+
 void GSmtp::Client::onConnect( GNet::Socket & socket )
 {
 	m_connect_timer.cancelTimer() ;
@@ -213,22 +220,11 @@ bool GSmtp::Client::sendNext()
 
 void GSmtp::Client::start( StoredMessage & message )
 {
-	m_message_index++ ;
 	raiseEventSignal( "sending" , message.name() ) ;
 
 	std::string server_name = peerName() ; // (from GNet::Client)
 	if( server_name.empty() )
 		server_name = m_host ;
-
-	// synchronous, client-side preprocessing -- treat errors
-	// asynchronously with a zero-length timer
-	//
-	if( ! message.preprocess() )
-	{
-		G_DEBUG( "GSmtp::Client::start: client-side pre-processing failed" ) ;
-		m_preprocess_timer.startTimer( 0U ) ;
-		return ;
-	}
 
 	std::auto_ptr<std::istream> content_stream( message.extractContentStream() ) ;
 	m_protocol.start( message.from() , message.to() , message.eightBit() ,
@@ -246,6 +242,7 @@ void GSmtp::Client::protocolDone( bool ok , bool abort , std::string reason )
 	}
 	else
 	{
+		m_storedfile_preprocessor.abort() ;
 		error_message = std::string("smtp client protocol failure: ") + reason ;
 		messageFail( error_message ) ;
 	}
@@ -281,6 +278,7 @@ void GSmtp::Client::onDisconnect()
 
 void GSmtp::Client::onTimeout( GNet::Timer & timer )
 {
+	G_ASSERT( &timer == &m_connect_timer ) ;
 	if( &timer == &m_connect_timer )
 	{
 		G_DEBUG( "GSmtp::Client::onTimeout: connection timeout" ) ;
@@ -288,14 +286,6 @@ void GSmtp::Client::onTimeout( GNet::Timer & timer )
 		if( m_force_message_fail )
 			messageFail( reason ) ;
 		finish( reason ) ;
-	}
-	else
-	{
-		G_DEBUG( "GSmtp::Client::onTimeout: preprocessing failure timeout" ) ;
-		G_ASSERT( &timer == &m_preprocess_timer ) ;
-		messageFail( "pre-processing failed" ) ; // could do better
-		if( m_store == NULL || !sendNext() )
-			finish() ;
 	}
 }
 
@@ -372,5 +362,14 @@ G::Signal1<std::string> & GSmtp::Client::doneSignal()
 G::Signal2<std::string,std::string> & GSmtp::Client::eventSignal()
 {
 	return m_event_signal ;
+}
+
+// ==
+
+GSmtp::Client::Config::Config( G::Executable exe , GNet::Address address , ClientProtocol::Config protocol_config ) :
+	storedfile_preprocessor(exe) ,
+	local_address(address) ,
+	client_protocol_config(protocol_config)
+{
 }
 

@@ -45,15 +45,14 @@ public:
 	virtual std::string name() const = 0 ;
 		// Returns some sort of unique identifier for the message.
 
+	virtual std::string location() const = 0 ;
+		// Returns another sort of unique identifier for the message.
+
 	virtual const std::string & from() const = 0 ;
 		// Returns the envelope 'from' field.
 
 	virtual const G::Strings & to() const = 0 ;
 		// Returns the envelope 'to' fields.
-
-	virtual bool preprocess() = 0 ;
-		// Does synchronous pre-processing. Returns false
-		// on error.
 
 	virtual std::auto_ptr<std::istream> extractContentStream() = 0 ;
 		// Extracts the content stream.

@@ -34,14 +34,15 @@
 #ifndef MD5_GHW_H
 #define MD5_GHW_H
 
-#include <string>
+#include <string> // std::string
+#include <cstdlib> // std::size_t
 
 namespace md5
 {
 	typedef unsigned long big_t ; ///< To hold at least 32 bits, maybe more.
 	typedef unsigned int small_t ; ///< To hold at least a size_t.
 	typedef char assert_big_t_is_big_enough[sizeof(big_t)>=4U?1:-1] ; ///< A static assertion check.
-	typedef char assert_small_t_is_big_enough[sizeof(big_t)>=sizeof(size_t)?1:-1] ; ///< A static assertion check.
+	typedef char assert_small_t_is_big_enough[sizeof(big_t)>=sizeof(std::size_t)?1:-1] ; ///< A static assertion check.
 	class digest ;
 	class digest_stream ;
 	class format ;
@@ -63,10 +64,18 @@ namespace md5
 /// inconvenient, so the md5::digest_stream class is provided to allow 
 /// calculation of digests from a stream of arbitrarily-sized data blocks.
 ///
+/// \code
+///	std::string hash( const std::string & in )
+///	{
+///		md5::digest d( in ) ;
+///		return md5::format::rfc( d ) ;
+///	}
+/// \endcode
+///
 class md5::digest 
 {
 public:
-	struct state_type ///< Holds the md5 algorithm state. Used by md5::digest.
+	struct state_type /// Holds the md5 algorithm state. Used by md5::digest.
 		{ big_t a ; big_t b ; big_t c ; big_t d ; } ;
 
 	digest() ; 
@@ -208,6 +217,20 @@ private:
 /// allows incremental calculation of an md5 digest without 
 /// requiring either the complete input string or precise 
 /// 64-byte blocks.
+///
+/// \code
+///	std::string hash( std::istream & in )
+///	{
+///		md5::digest_stream d ;
+///		while( in.good() )
+///		{
+///			std::string line ;
+///			std::getline( in , line ) ;
+///			d.add( line ) ;
+///		}
+///		return md5::format::rfc( d ) ;
+///	}
+/// \endcode
 ///
 class md5::digest_stream 
 {

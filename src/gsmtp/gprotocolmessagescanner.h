@@ -29,6 +29,7 @@
 #include "gprotocolmessage.h"
 #include "gprotocolmessagestore.h"
 #include "gprotocolmessageforward.h"
+#include "gexe.h"
 #include "gscannerclient.h"
 #include "gsecrets.h"
 #include "gsmtpclient.h"
@@ -53,9 +54,12 @@ namespace GSmtp
 class GSmtp::ProtocolMessageScanner : public GSmtp::ProtocolMessageForward 
 {
 public:
-	ProtocolMessageScanner( MessageStore & store , const Secrets & client_secrets , 
+	ProtocolMessageScanner( MessageStore & store , 
+		const G::Executable & newfile_preprocessor ,
+		const GSmtp::Client::Config & client_config ,
+		const Secrets & client_secrets , 
 		const std::string & smtp_server_address , 
-		unsigned int smtp_response_timeout , unsigned int smtp_connection_timeout ,
+		unsigned int smtp_connection_timeout ,
 		const std::string & scanner_server_address , 
 		unsigned int scanner_response_timeout , unsigned int scanner_connection_timeout ) ;
 			// Constructor. The 'store' and 'client-secrets' references

@@ -32,13 +32,15 @@
 #include "glog.h"
 
 GSmtp::ProtocolMessageForward::ProtocolMessageForward( MessageStore & store , 
+	const G::Executable & newfile_preprocessor , const GSmtp::Client::Config & client_config ,
 	const Secrets & client_secrets , const std::string & server ,
-	unsigned int response_timeout , unsigned int connection_timeout ) :
+	unsigned int connection_timeout ) :
 		m_store(store) ,
+		m_client_config(client_config) ,
+		m_newfile_preprocessor(newfile_preprocessor) ,
 		m_client_secrets(client_secrets) ,
-		m_pm(store) ,
+		m_pm(store,newfile_preprocessor) ,
 		m_server(server) ,
-		m_response_timeout(response_timeout) ,
 		m_connection_timeout(connection_timeout)
 {
 	m_pm.doneSignal().connect( G::slot(*this,&ProtocolMessageForward::processDone) ) ;
@@ -147,8 +149,7 @@ bool GSmtp::ProtocolMessageForward::forward( unsigned long id , bool & nothing_t
 		}
 		else
 		{
-			GNet::Address local_address( 0U ) ;
-			m_client <<= new GSmtp::Client( message, m_client_secrets, local_address, m_response_timeout ) ;
+			m_client <<= new GSmtp::Client( message , m_client_secrets , m_client_config ) ;
 			m_client->doneSignal().connect( G::slot(*this,&ProtocolMessageForward::clientDone) ) ;
 			std::string reason = m_client->startSending( m_server , m_connection_timeout ) ;
 

@@ -30,9 +30,12 @@
 #include "gassert.h"
 #include "glog.h"
 
-GSmtp::ProtocolMessageStore::ProtocolMessageStore( MessageStore & store ) :
-	m_store(store)
+GSmtp::ProtocolMessageStore::ProtocolMessageStore( MessageStore & store , 
+	const G::Executable & newfile_preprocessor_exe ) :
+		m_store(store) ,
+		m_newfile_preprocessor(newfile_preprocessor_exe)
 {
+	m_newfile_preprocessor.doneSignal().connect( G::slot(*this,&ProtocolMessageStore::preprocessorDone) ) ;
 }
 
 GSmtp::ProtocolMessageStore::~ProtocolMessageStore()
@@ -43,6 +46,7 @@ void GSmtp::ProtocolMessageStore::clear()
 {
 	m_msg <<= 0 ;
 	m_from.erase() ;
+	m_newfile_preprocessor.abort() ;
 }
 
 bool GSmtp::ProtocolMessageStore::setFrom( const std::string & from )
@@ -70,7 +74,7 @@ bool GSmtp::ProtocolMessageStore::setFrom( const std::string & from )
 
 bool GSmtp::ProtocolMessageStore::prepare()
 {
-	return false ; // no async preparation required
+	return false ; // no async preparation required for this class
 }
 
 bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , Verifier::Status to_status )
@@ -80,7 +84,7 @@ bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , Verifier::Stat
 	{
 		if( !to_status.is_valid )
 		{
-			G_WARNING( "GSmtp::ProtocolMessage: rejecting recipient \"" << to << "\": " << to_status.reason ) ;
+			G_WARNING( "GSmtp::ProtocolMessage: rejecting recipient \"" <<to << "\": "<< to_status.reason );
 			return false ;
 		}
 		else
@@ -117,20 +121,52 @@ void GSmtp::ProtocolMessageStore::process( const std::string & auth_id , const s
 	try
 	{
 		G_ASSERT( m_msg.get() != NULL ) ;
+		if( m_msg.get() == NULL )
+			throw G::Exception( "internal error" ) ; // never gets here
+
+		// write ".new" envelope
+		std::string message_location = m_msg->prepare( auth_id , client_ip ) ; 
+
+		// start preprocessing
+		m_newfile_preprocessor.start( message_location ) ;
+	}
+	catch( std::exception & e )
+	{
+		G_ERROR( "GSmtp::ProtocolMessage::process: error: " << e.what() ) ;
+		clear() ;
+		m_done_signal.emit( false , 0UL , e.what() ) ;
+	}
+}
+
+void GSmtp::ProtocolMessageStore::preprocessorDone( bool ok )
+{
+	try
+	{
+		G_ASSERT( m_msg.get() != NULL ) ;
+		if( m_msg.get() == NULL )
+			throw G::Exception( "internal error" ) ; // never gets here
+
 		unsigned long id = 0UL ;
-		bool cancelled = false ;
-		if( m_msg.get() != NULL )
+		if( ok )
 		{
-			cancelled = m_msg->store( auth_id , client_ip ) ;
-			if( !cancelled )
-				id = m_msg->id() ;
+			m_msg->commit() ;
+			id = m_msg->id() ;
+		}
+		else if( ! m_newfile_preprocessor.cancelled() )
+		{
+			std::string reason = m_newfile_preprocessor.text("pre-processing failed") ;
+			throw ProtocolMessage::ProcessingError( reason ) ;
+		}
+		if( m_newfile_preprocessor.repoll() )
+		{
+			m_store.repoll() ;
 		}
 		clear() ;
 		m_done_signal.emit( true , id , std::string() ) ;
 	}
 	catch( std::exception & e )
 	{
-		G_ERROR( "GSmtp::ProtocolMessage::process: error: " << e.what() ) ;
+		G_ERROR( "GSmtp::ProtocolMessage::preprocessorDone: error: " << e.what() ) ;
 		clear() ;
 		m_done_signal.emit( false , 0UL , e.what() ) ;
 	}

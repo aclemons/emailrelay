@@ -27,6 +27,7 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gserver.h"
+#include "gexe.h"
 #include "gstr.h"
 #include "glinebuffer.h"
 #include "gserverprotocol.h"
@@ -96,11 +97,10 @@ private:
 class GSmtp::AdminServer : public GNet::Server 
 {
 public:
-	AdminServer( MessageStore & store , const Secrets & client_secrets , 
-		const GNet::Address & listening_address , bool allow_remote , 
+	AdminServer( MessageStore & store , const GSmtp::Client::Config & client_config ,
+		const Secrets & client_secrets , const GNet::Address & listening_address , bool allow_remote , 
 		const GNet::Address & local_address , const std::string & remote_address ,
-		unsigned int response_timeout , unsigned int connection_timeout , 
-		const G::StringMap & extra_commands , bool with_terminate ) ;
+		unsigned int connection_timeout , const G::StringMap & extra_commands , bool with_terminate ) ;
 			// Constructor. The 'store' and 'client-secrets' references
 			// are kept.
 
@@ -120,9 +120,8 @@ public:
 		// a "client-side" secrets file, used to authenticate
 		// ourselves with a remote server.
 
-	unsigned int responseTimeout() const ;
-		// Returns the response timeout, as passed in to the
-		// constructor.
+	GSmtp::Client::Config clientConfig() const ;
+		// Returns the client configuration.
 
 	unsigned int connectionTimeout() const ;
 		// Returns the connection timeout, as passed in to the
@@ -144,11 +143,11 @@ private:
 	typedef std::list<AdminPeer*> PeerList ;
 	PeerList m_peers ;
 	MessageStore & m_store ;
+	GSmtp::Client::Config m_client_config ;
 	const Secrets & m_secrets ;
 	GNet::Address m_local_address ;
 	bool m_allow_remote ;
 	std::string m_remote_address ;
-	unsigned int m_response_timeout ;
 	unsigned int m_connection_timeout ;
 	G::StringMap m_extra_commands ;
 	bool m_with_terminate ;

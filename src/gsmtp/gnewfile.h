@@ -29,7 +29,6 @@
 #include "gfilestore.h"
 #include "gstrings.h"
 #include "gnewmessage.h"
-#include "gprocessor.h"
 #include "gexception.h"
 #include <iostream>
 
@@ -48,12 +47,12 @@ class GSmtp::NewFile : public GSmtp::NewMessage
 public:
 	G_EXCEPTION( InvalidPath , "invalid path -- must be absolute" ) ;
 
-	NewFile( const std::string & from , FileStore & store , Processor & store_preprocessor ) ;
-		// Constructor. The preprocessor is ignored if
-		// its exe() path is empty.
+	NewFile( const std::string & from , FileStore & store ) ;
+		// Constructor.
 
 	virtual ~NewFile() ;
-		// Destructor.
+		// Destructor. If the new message has not been
+		// commit()ed then the files are deleted.
 
 	virtual void addTo( const std::string & to , bool local ) ;
 		// Adds a 'to' address.
@@ -61,46 +60,55 @@ public:
 	virtual void addText( const std::string & line ) ;
 		// Adds a line of content.
 
-	virtual bool store( const std::string & auth_id , const std::string & client_ip ) ;
-		// Stores the message in the message store.
-		// Returns true if storage was deliberately
-		// cancelled.
+	virtual std::string prepare( const std::string & auth_id , const std::string & client_ip ) ;
+		// Prepares to store the message in the message store.
+		//
+		// The implementation flushes and closes the
+		// content stream, creates a new envelope
+		// file (".new"), and does any local 'delivery'
+		// by creating ".local" copies. The path
+		// to the ".new" envelope file is returned.
+
+	virtual void commit() ;
+		// Commits the message to the message store.
+		//
+		// The implementation renames the ".new"
+		// envelope file, removing the extension.
 
 	virtual unsigned long id() const ;
 		// Returns the message's unique non-zero identifier.
-
-	static void setPreprocessor( const G::Path & exe , const G::Strings & exe_args ) ;
-		// Defines a program which is used for pre-processing
-		// messages before they are stored.
 
 	G::Path contentPath() const ;
 		// Returns the path of the content file.
 
 private:
 	FileStore & m_store ;
-	Processor & m_store_preprocessor ;
 	unsigned long m_seq ;
 	std::string m_from ;
 	G::Strings m_to_local ;
 	G::Strings m_to_remote ;
 	std::auto_ptr<std::ostream> m_content ;
 	G::Path m_content_path ;
+	G::Path m_envelope_path_0 ;
+	G::Path m_envelope_path_1 ;
+	bool m_committed ;
 	bool m_eight_bit ;
 	bool m_saved ;
-	bool m_repoll ;
 
 private:
-	bool saveEnvelope( std::ostream & , const std::string & where , 
-		const std::string & auth_id , const std::string & client_ip ) const ;
-	const std::string & crlf() const ;
-	static bool isEightBit( const std::string & line ) ;
-	void deliver( const G::Strings & , const G::Path & , const G::Path & , const G::Path & ) ;
-	bool preprocess( const G::Path & , bool & , std::string & ) ;
-	int preprocessCore( const G::Path & , std::string & ) ;
-	std::string parseOutput( std::string ) const ;
-	bool commit( const G::Path & , const G::Path & ) ;
-	void rollback() ;
 	void cleanup() ;
+	void flushContent() ;
+	void discardContent() ;
+	bool commitEnvelope() ;
+	void rollback() ;
+	void deleteContent() ;
+	void deleteEnvelope() ;
+	static bool isEightBit( const std::string & line ) ;
+	const std::string & crlf() const ;
+	bool saveEnvelope( const std::string & auth_id , const std::string & client_ip ) const ;
+	void writeEnvelope( std::ostream & , const std::string & where , 
+		const std::string & auth_id , const std::string & client_ip ) const ;
+	void deliver( const G::Strings & , const G::Path & , const G::Path & , const G::Path & ) ;
 } ;
 
 #endif

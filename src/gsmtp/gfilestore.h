@@ -30,7 +30,6 @@
 #include "gdatetime.h"
 #include "gexception.h"
 #include "gprocess.h"
-#include "gprocessor.h"
 #include "gnoncopyable.h"
 #include "gslot.h"
 #include "groot.h"
@@ -67,30 +66,23 @@ public:
 	G_EXCEPTION( InvalidDirectory , "invalid spool directory" ) ;
 	G_EXCEPTION( GetError , "error reading specific message" ) ;
 
-	explicit FileStore( const G::Path & dir , const G::Executable & newfile_preprocessor , 
-		const G::Executable & storedfile_preprocessor , bool optimise = false ) ;
-			// Constructor. Throws an exception if the storage directory 
-			// is invalid.
-			//
-			// Files are pre-processed after they have been stored
-			// if the newfile_preprocessor exe() path is not empty.
-			//
-			// Files are pre-processed after they have been extracted
-			// if the storedfile_preprocessor exe() path is not empty.
-			//
-			// If the optimise flag is set then the implementation of
-			// empty() will be efficient for an empty filestore 
-			// (ignoring failed and local-delivery messages). This 
-			// might be useful for applications in which the main 
-			// event loop is used to check for pending jobs. The 
-			// disadvantage is that this process will not be
-			// sensititive to messages deposited into its spool
-			// directory by other processes.
+	FileStore( const G::Path & dir , bool optimise = false ) ;
+		// Constructor. Throws an exception if the storage directory 
+		// is invalid.
+		//
+		// If the optimise flag is set then the implementation of
+		// empty() will be efficient for an empty filestore 
+		// (ignoring failed and local-delivery messages). This 
+		// might be useful for applications in which the main 
+		// event loop is used to check for pending jobs. The 
+		// disadvantage is that this process will not be
+		// sensititive to messages deposited into its spool
+		// directory by other processes.
 
 	unsigned long newSeq() ;
 		// Hands out a new non-zero sequence number.
 
-	std::auto_ptr<std::ostream> stream( const G::Path & path );
+	std::auto_ptr<std::ostream> stream( const G::Path & path ) ;
 		// Returns a stream to the given content.
 
 	G::Path contentPath( unsigned long seq ) const ;
@@ -123,15 +115,19 @@ public:
 		// implemented by this class. If n is -1 then
 		// it returns the previous format (etc.).
 
-	void updated( bool action = false ) ;
-		// Called by associated classes to raise the signal().
+	virtual void repoll() ;
+		// Ensures that the next updated() signal() has
+		// its parameter set to true.
 
-	G::Signal1<bool> & signal() ;
+	virtual void updated() ;
+		// Called by associated classes to indicate that the
+		// store has changed. Results in the signal() being
+		// emited.
+
+	virtual G::Signal1<bool> & signal() ;
 		// Provides a signal which is activated when something might 
-		// have changed in the file store.
-		//
-		// The signal parameter is used to indicate that some
-		// action is requested.
+		// have changed in the store. The boolean parameter is used 
+		// to indicate that repoll()ing is requested.
 
 private:
 	static void checkPath( const G::Path & dir ) ;
@@ -147,10 +143,9 @@ private:
 	G::Path m_dir ;
 	bool m_optimise ;
 	bool m_empty ; // mutable
+	bool m_repoll ;
 	unsigned long m_pid_modifier ;
 	G::Signal1<bool> m_signal ;
-	Processor m_newfile_preprocessor ;
-	Processor m_storedfile_preprocessor ;
 } ;
 
 // Class: GSmtp::FileReader

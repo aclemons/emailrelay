@@ -82,7 +82,7 @@ static void process( const G::Path & path , std::istream & stream ,
 
 	// create the output file
 	//
-	GSmtp::FileStore store( path , G::Executable() , G::Executable() ) ;
+	GSmtp::FileStore store( path ) ;
 	std::auto_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from ) ;
 
 	// add "To:" lines to the envelope
@@ -127,7 +127,8 @@ static void process( const G::Path & path , std::istream & stream ,
 	//
 	GNet::Address ip = GNet::Local::localhostAddress() ;
 	std::string auth_id = std::string() ;
-	msg->store( auth_id , ip.hostString() ) ;
+	msg->prepare( auth_id , ip.hostString() ) ;
+	msg->commit() ;
 }
 
 static void run( const G::Arg & arg )

@@ -29,6 +29,7 @@
 #include "gprotocolmessage.h"
 #include "gmessagestore.h"
 #include "gnewmessage.h"
+#include "gprocessor.h"
 #include "gslot.h"
 #include <string>
 #include <memory>
@@ -47,7 +48,7 @@ namespace GSmtp
 class GSmtp::ProtocolMessageStore : public GSmtp::ProtocolMessage 
 {
 public:
-	explicit ProtocolMessageStore( MessageStore & store ) ;
+	ProtocolMessageStore( MessageStore & store , const G::Executable & newfile_preprocessor ) ;
 		// Constructor.
 
 	virtual ~ProtocolMessageStore() ;
@@ -85,9 +86,11 @@ public:
 
 private:
 	void operator=( const ProtocolMessageStore & ) ; // not implemented
+	void preprocessorDone( bool ) ;
 
 private:
 	MessageStore & m_store ;
+	Processor m_newfile_preprocessor ;
 	std::auto_ptr<NewMessage> m_msg ;
 	std::string m_from ;
 	G::Signal3<bool,unsigned long,std::string> m_done_signal ;

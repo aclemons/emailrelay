@@ -31,6 +31,7 @@
 #include "gverifier.h"
 #include "gsasl.h"
 #include "gstatemachine.h"
+#include "gtimer.h"
 #include <map>
 #include <utility>
 
@@ -62,7 +63,7 @@ namespace GSmtp
 //
 // See also: GSmtp::ProtocolMessage, RFC2821
 //
-class GSmtp::ServerProtocol 
+class GSmtp::ServerProtocol : private GNet::Timer 
 {
 public:
 	class Sender // An interface used by ServerProtocol to send protocol replies.
@@ -80,9 +81,15 @@ public:
 		public: virtual ~Text() ;
 		private: void operator=( const Text & ) ; // not implemented
 	} ;
+	struct Config // A structure containing configuration parameters for ServerProtocol.
+	{
+		bool with_vrfy ;
+		unsigned int preprocessor_timeout ;
+		Config( bool , unsigned int ) ;
+	} ;
 
 	ServerProtocol( Sender & sender , Verifier & verifier , ProtocolMessage & pmessage ,
-		const Secrets & secrets , Text & text , GNet::Address peer_address , bool with_vrfy ) ;
+		const Secrets & secrets , Text & text , GNet::Address peer_address , Config config ) ;
 			// Constructor. 
 			//
 			// The Verifier interface is used to verify recipient
@@ -128,6 +135,8 @@ private:
 		eHelp ,
 		eAuth ,
 		eAuthData ,
+		eContent ,
+		eEot ,
 		eUnknown
 	} ;
 	enum State
@@ -149,11 +158,13 @@ private:
 private:
 	ServerProtocol( const ServerProtocol & ) ; // not implemented
 	void operator=( const ServerProtocol & ) ; // not implemented
+	virtual void onTimeout() ;
 	void send( std::string , bool = true ) ;
 	Event commandEvent( const std::string & ) const ;
 	std::string commandWord( const std::string & line ) const ;
 	std::string commandLine( const std::string & line ) const ;
 	static std::string crlf() ;
+	void reset() ;
 	void processDone( bool , unsigned long , std::string ) ; // ProtocolMessage::doneSignal()
 	void prepareDone( bool , bool , std::string ) ;
 	bool isEndOfText( const std::string & ) const ;
@@ -166,18 +177,20 @@ private:
 	void doHelo( const std::string & , bool & ) ;
 	void doAuth( const std::string & , bool & ) ;
 	void doAuthData( const std::string & , bool & ) ;
-	void doMailPrepare( const std::string & line , bool & ) ;
-	void doMail( const std::string & line , bool & ) ;
-	void doRcpt( const std::string & line , bool & ) ;
-	void doUnknown( const std::string & line , bool & ) ;
-	void doRset( const std::string & line , bool & ) ;
-	void doData( const std::string & line , bool & ) ;
-	void doVrfy( const std::string & line , bool & ) ;
-	void doNoRecipients( const std::string & line , bool & ) ;
-	void sendBadFrom( std::string line ) ;
-	void sendChallenge( const std::string & line ) ;
-	void sendBadTo( const std::string & line ) ;
-	void sendOutOfSequence( const std::string & line ) ;
+	void doMailPrepare( const std::string & , bool & ) ;
+	void doMail( const std::string & , bool & ) ;
+	void doRcpt( const std::string & , bool & ) ;
+	void doUnknown( const std::string & , bool & ) ;
+	void doRset( const std::string & , bool & ) ;
+	void doData( const std::string & , bool & ) ;
+	void doContent( const std::string & , bool & ) ;
+	void doEot( const std::string & , bool & ) ;
+	void doVrfy( const std::string & , bool & ) ;
+	void doNoRecipients( const std::string & , bool & ) ;
+	void sendBadFrom( std::string ) ;
+	void sendChallenge( const std::string & ) ;
+	void sendBadTo( const std::string & ) ;
+	void sendOutOfSequence( const std::string & ) ;
 	void sendGreeting( const std::string & ) ;
 	void sendClosing() ;
 	void sendUnrecognised( const std::string & ) ;
@@ -216,6 +229,8 @@ private:
 	bool m_authenticated ;
 	SaslServer m_sasl ;
 	bool m_with_vrfy ;
+	std::string m_buffer ;
+	unsigned int m_preprocessor_timeout ;
 } ;
 
 // Class: GSmtp::ServerProtocolText

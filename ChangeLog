@@ -1,6 +1,12 @@
 E-MailRelay Change Log
 ======================
 
+1.3.1 -> 1.3.2
+--------------
+* Fix for core dump when a remote server sends 'service ready'.
+* Refactored for asynchronous preprocessing.
+* Better file cleanup.
+
 1.3 -> 1.3.1
 ------------
 * Windows resource leak from CreateProcess() fixed.

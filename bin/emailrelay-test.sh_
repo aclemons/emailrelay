@@ -242,8 +242,9 @@ CreateFilter()
 	cat <<EOF | sed 's/^ *_//' > ${cfg_base_dir}/filter.sh
             _#!/bin/sh
             _# filter.sh
-            _tmp="/tmp/`basename $0`.\$\$.tmp"
-            _tr 'a-z' 'A-Z' < \$1 > \$tmp && mv \$tmp \$1
+            _tmp="${cfg_base_dir}/\`basename \$0\`.\$\$.tmp"
+            _content="\`echo \\"\$1\\" | sed 's/\.envelope\..*/.content/'\`"
+            _tr 'a-zA-Z' 'A-Za-z' < "\$content" > \$tmp && mv \$tmp "\$content"
             _exit 0
 EOF
 	chmod +x ${cfg_base_dir}/filter.sh
@@ -271,7 +272,7 @@ Main()
 	RunServer 02 12 store-2 log-2 pid-2 "--forward-to localhost:${cfg_pp}03 --client-auth ${cfg_base_dir}/client-joe.auth"
 	RunServer 03 13 store-3 log-3 pid-3 "--immediate --forward-to localhost:${cfg_pp}04 --filter ${cfg_null_filter} --client-auth ${cfg_base_dir}/client-fred.auth --server-auth ${cfg_base_dir}/server.auth"
 	RunServer 04 14 store-4 log-4 pid-4 "--server-auth ${cfg_base_dir}/server.auth"
-	RunServer 05 15 store-4 log-5 pid-5 "--poll 1 --forward-to localhost:${cfg_pp}06"
+	RunServer 05 15 store-4 log-5 pid-5 "--poll 1 --forward-to localhost:${cfg_pp}06 --client-filter ${cfg_base_dir}/filter.sh"
 	RunServer 06 16 store-6 log-6 pid-6 "--filter ${cfg_base_dir}/filter.sh"
 
 	sleep 1

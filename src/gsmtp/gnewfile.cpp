@@ -36,19 +36,21 @@
 #include <iostream>
 #include <fstream>
 
-GSmtp::NewFile::NewFile( const std::string & from , FileStore & store , Processor & store_preprocessor ) :
-	m_store(store),
-	m_store_preprocessor(store_preprocessor) ,
+GSmtp::NewFile::NewFile( const std::string & from , FileStore & store ) :
+	m_store(store) ,
 	m_from(from) ,
-	m_eight_bit(false),
-	m_saved(false) ,
-	m_repoll(false)
+	m_committed(false) ,
+	m_eight_bit(false) ,
+	m_saved(false)
 {
+	// ask the store for a unique id
+	//
 	m_seq = store.newSeq() ;
 
+	// ask the store for a content stream
+	//
 	m_content_path = m_store.contentPath( m_seq ) ;
 	G_LOG( "GSmtp::NewMessage: content file: " << m_content_path ) ;
-
 	std::auto_ptr<std::ostream> content_stream = m_store.stream( m_content_path ) ;
 	m_content = content_stream ;
 }
@@ -59,10 +61,49 @@ GSmtp::NewFile::~NewFile()
 	{
 		G_DEBUG( "GSmtp::NewFile::dtor: " << m_content_path ) ;
 		cleanup() ;
-		m_store.updated( m_repoll ) ;
+		m_store.updated() ;
 	}
 	catch(...)
 	{
+	}
+}
+
+void GSmtp::NewFile::cleanup()
+{
+	discardContent() ;
+	if( ! m_committed )
+	{
+		deleteEnvelope() ;
+		deleteContent() ;
+	}
+}
+
+void GSmtp::NewFile::flushContent()
+{
+	G_ASSERT( m_content.get() != NULL ) ;
+	m_content->flush() ;
+	if( ! m_content->good() )
+		throw GSmtp::MessageStore::WriteError( m_content_path.str() ) ;
+	m_content <<= 0 ;
+}
+
+void GSmtp::NewFile::discardContent()
+{
+	m_content <<= 0 ;
+}
+
+void GSmtp::NewFile::deleteContent()
+{
+	FileWriter claim_writer ;
+	G::File::remove( m_content_path , G::File::NoThrow() ) ;
+}
+
+void GSmtp::NewFile::deleteEnvelope()
+{
+	if( ! m_envelope_path_0.str().empty() )
+	{
+		FileWriter claim_writer ;
+		G::File::remove( m_envelope_path_0 , G::File::NoThrow() ) ;
 	}
 }
 
@@ -94,77 +135,56 @@ bool GSmtp::NewFile::isEightBit( const std::string & line )
 	return false ;
 }
 
-bool GSmtp::NewFile::store( const std::string & auth_id , const std::string & client_ip )
+std::string GSmtp::NewFile::prepare( const std::string & auth_id , const std::string & client_ip )
 {
-	// flush the content file
+	// flush and close the content file
 	//
-	m_content->flush() ;
-	if( ! m_content->good() )
-		throw GSmtp::MessageStore::WriteError( m_content_path.str() ) ;
-	m_content <<= 0 ;
+	flushContent() ;
 
 	// write the envelope
 	//
-	G::Path p0 = m_store.envelopeWorkingPath( m_seq ) ;
-	G::Path p1 = m_store.envelopePath( m_seq ) ;
-	bool ok = false ;
-	std::string reason = p0.str() ;
-	{
-		std::auto_ptr<std::ostream> envelope_stream = m_store.stream( p0 ) ;
-		ok = saveEnvelope( *(envelope_stream.get()) , p0.str() , auth_id , client_ip ) ;
-	}
-
-	// shell out to a message pre-processor
-	//
-	bool cancelled = false ;
-	if( ok )
-	{
-		ok = m_store_preprocessor.process( m_content_path ) ;
-		cancelled = m_store_preprocessor.cancelled() ;
-		m_repoll = m_store_preprocessor.repoll() ;
-		if( !ok )
-			reason = m_store_preprocessor.text("pre-processing failed") ;
-	}
-	G_ASSERT( !(ok&&cancelled) ) ;
+	m_envelope_path_0 = m_store.envelopeWorkingPath( m_seq ) ;
+	m_envelope_path_1 = m_store.envelopePath( m_seq ) ;
+	if( ! saveEnvelope( auth_id , client_ip ) )
+		throw GSmtp::MessageStore::StorageError( m_envelope_path_1.str() ) ;
 
 	// deliver to local mailboxes
 	//
-	if( ok && m_to_local.size() != 0U )
+	if( m_to_local.size() != 0U )
 	{
-		deliver( m_to_local , m_content_path , p0 , p1 ) ;
+		deliver( m_to_local , m_content_path , m_envelope_path_0 , m_envelope_path_1 ) ;
 	}
 
-	// commit the envelope, or rollback the content
-	//
-	FileWriter claim_writer ;
-	if( !ok || !commit(p0,p1) )
-	{
-		rollback() ;
-		if( !cancelled )
-			throw GSmtp::MessageStore::StorageError( reason ) ;
-	}
-
-	return cancelled ;
+	return m_envelope_path_0.str() ;
 }
 
-bool GSmtp::NewFile::commit( const G::Path & p0 , const G::Path & p1 )
+bool GSmtp::NewFile::saveEnvelope( const std::string & auth_id , const std::string & client_ip ) const
 {
-	m_saved = G::File::rename( p0 , p1 , G::File::NoThrow() ) ;
+	std::auto_ptr<std::ostream> envelope_stream = m_store.stream( m_envelope_path_0 ) ;
+	writeEnvelope( *(envelope_stream.get()) , m_envelope_path_0.str() , auth_id , client_ip ) ;
+	bool ok = envelope_stream->good() ;
+	return ok ;
+}
+
+void GSmtp::NewFile::commit()
+{
+	if( ! commitEnvelope() )
+		throw GSmtp::MessageStore::StorageError( m_envelope_path_1.str() ) ;
+
+	m_committed = true ;
+}
+
+bool GSmtp::NewFile::commitEnvelope()
+{
+	FileWriter claim_writer ;
+	m_saved = G::File::rename( m_envelope_path_0 , m_envelope_path_1 , G::File::NoThrow() ) ;
 	return m_saved ;
 }
 
 void GSmtp::NewFile::rollback()
 {
-	G::File::remove( m_content_path , G::File::NoThrow() ) ;
-}
-
-void GSmtp::NewFile::cleanup()
-{
-	if( !m_saved )
-	{
-		FileWriter claim_writer ;
-		G::File::remove( m_content_path , G::File::NoThrow() ) ;
-	}
+	discardContent() ;
+	deleteContent() ;
 }
 
 void GSmtp::NewFile::deliver( const G::Strings & /*to*/ , 
@@ -172,7 +192,7 @@ void GSmtp::NewFile::deliver( const G::Strings & /*to*/ ,
 	const G::Path & envelope_path_later )
 {
 	// could shell out to "procmail" or "deliver" here, but keep it 
-	// simple and within the scope of a "message-store" class
+	// simple and within the scope -- just copy into ".local" files
 
 	G_LOG_S( "GSmtp::NewMessage: copying message for local recipient(s): " 
 		<< content_path.basename() << ".local" ) ;
@@ -182,7 +202,7 @@ void GSmtp::NewFile::deliver( const G::Strings & /*to*/ ,
 	G::File::copy( envelope_path_now.str() , envelope_path_later.str()+".local" ) ;
 }
 
-bool GSmtp::NewFile::saveEnvelope( std::ostream & stream , const std::string & where , 
+void GSmtp::NewFile::writeEnvelope( std::ostream & stream , const std::string & where , 
 	const std::string & auth_id , const std::string & client_ip ) const
 {
 	G_LOG( "GSmtp::NewMessage: envelope file: " << where ) ;
@@ -207,7 +227,6 @@ bool GSmtp::NewFile::saveEnvelope( std::ostream & stream , const std::string & w
 	stream << x << "Client: " << client_ip << crlf() ;
 	stream << x << "End: 1" << crlf() ;
 	stream.flush() ;
-	return stream.good() ;
 }
 
 const std::string & GSmtp::NewFile::crlf() const

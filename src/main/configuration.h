@@ -128,6 +128,10 @@ public:
 	std::string clientFilter() const ;
 		// Returns the path to a client-side pre-processor.
 
+	unsigned int filterTimeout() const ;
+		// Returns the timeout for executing an ansynchronous 
+		// filter() or clientFilter() program.
+
 	unsigned int icon() const ;
 		// Returns the icon selector (win32).
 

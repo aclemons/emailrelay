@@ -28,6 +28,7 @@
 #include "gsmtp.h"
 #include "gprotocolmessage.h"
 #include "gprotocolmessagestore.h"
+#include "gexe.h"
 #include "gsecrets.h"
 #include "gsmtpclient.h"
 #include "gmessagestore.h"
@@ -54,8 +55,11 @@ namespace GSmtp
 class GSmtp::ProtocolMessageForward : public GSmtp::ProtocolMessage 
 {
 public:
-	ProtocolMessageForward( MessageStore & store , const Secrets & client_secrets , 
-		const std::string & server_address , unsigned int response_timeout ,
+	ProtocolMessageForward( MessageStore & store , 
+		const G::Executable & newfile_preprocessor ,
+		const GSmtp::Client::Config & client_config ,
+		const Secrets & client_secrets , 
+		const std::string & server_address , 
 		unsigned int connection_timeout ) ;
 			// Constructor. The 'store' and 'client-secrets' references
 			// are kept.
@@ -108,12 +112,13 @@ private:
 
 private:
 	MessageStore & m_store ;
+	GSmtp::Client::Config m_client_config ;
+	G::Executable m_newfile_preprocessor ;
 	const Secrets & m_client_secrets ;
 	ProtocolMessageStore m_pm ;
 	std::string m_server ;
 	std::auto_ptr<Client> m_client ;
 	unsigned long m_id ;
-	unsigned int m_response_timeout ;
 	unsigned int m_connection_timeout ;
 	G::Signal3<bool,unsigned long,std::string> m_done_signal ;
 	G::Signal3<bool,bool,std::string> m_prepared_signal ;
