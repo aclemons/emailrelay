@@ -5,10 +5,9 @@ E-MailRelay Change Log
 ------------
 * The "--filter" and "--verifier" arguments interpreted as command-lines; spaces in executable paths now need escaping.
 * The "--interface" switch applies to outgoing connections too.
+* New "--client-filter" switch to do synchronous message processing before sending.
 * Keeps authentication after a "rset" command.
 * Fix for dangling reference bug, seen after "quit" command on Windows.
-* Undocumented "--client-filter" switch added to do synchronous message processing before sending.
-* Some event-loop optimisation.
 * JavaScript examples in the documentation.
 
 1.1.1 -> 1.1.2
