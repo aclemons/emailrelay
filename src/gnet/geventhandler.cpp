@@ -1,23 +1,4 @@
 //
-// Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
-// ===
-//
 // geventhandler.cpp
 //
 
@@ -33,6 +14,15 @@
 
 namespace
 {
+	struct Eq
+	{
+		GNet::Descriptor m_fd ;
+		explicit Eq( GNet::Descriptor fd ) : m_fd(fd) {}
+		bool operator()( const GNet::EventHandlerListItem & item ) const 
+		{ 
+			return item.m_fd == m_fd ;
+		}
+	} ;
 	struct NotNull
 	{
 		GNet::Descriptor m_fd ;
@@ -113,7 +103,7 @@ void GNet::EventHandlerList::add( Descriptor fd , EventHandler * handler )
 	G_DEBUG( "GNet::EventHandlerList::add: " << m_type << "-list: " << "adding " << fd ) ;
 
 	const List::iterator end = m_list.end() ;
-	List::iterator p = std::find( m_list.begin() , end , fd ) ;
+	List::iterator p = std::find_if( m_list.begin() , end , Eq(fd) ) ;
 	if( p != end )
 	{
 		G_ASSERT( (*p).m_handler == NULL ) ;
@@ -130,7 +120,7 @@ void GNet::EventHandlerList::remove( Descriptor fd )
 	G_DEBUG( "GNet::EventHandlerList::remove: " << m_type << "-list: " << "removing " << fd ) ;
 
 	const List::iterator end = m_list.end() ;
-	List::iterator p = std::find( m_list.begin() , end , fd ) ;
+	List::iterator p = std::find_if( m_list.begin() , end , Eq(fd) ) ;
 	if( p != end )
 	{
 		if( m_lock )
