@@ -37,7 +37,7 @@ int main( int argc , char * argv [] )
 	0x0c, 0x00, 0x00, 0x00, 0x25, 0x31, 0x21, 0x73, 0x21, 0x0d, 0x0a, 0x00 } ;
 	FILE * fp_rc = fopen( "messages.rc" , "wt" ) ;
 	FILE * fp_bin = fopen( "MSG00001.bin" , "wb" ) ;
-	if( !fp_rc || !fp_bin ) { fprintf( stderr , "%s: failed\n" , argv[0] ) ; exit(1) ; }
+	if( !fp_rc || !fp_bin ) { fprintf( stderr , "%s: failed\n" , argv[0] ) ; return 1 ; }
 	for( i = 0 ; i < (sizeof(bin)/sizeof(bin[0])) ; i++ ) fprintf( fp_bin , "%c" , (char)(bin[i]) ) ;
 	fprintf( fp_rc , "LANGUAGE 0x9,0x1\n" ) ;
 	fprintf( fp_rc , "1 11 MSG00001.bin\n" ) ;
