@@ -59,7 +59,7 @@ public:
 		// The name should be in the format:
 		//
 		//	{<host-name>|<host-address>}:{<service-name>|<port-number>}
-		//	host-address := <n1>.<n2>.<n3>.<n4>
+		//	host-address := <n-1>.<n-2>.<n-3>.<n-4>
 		//
 		// (Clearly if either part is in its numeric format then the
 		// resolver has no name-to-address conversion work to do

@@ -41,7 +41,7 @@ namespace GSmtp
 // Description: A class which verifies recipient addresses.
 // This functionality is used in the VRFY and RCPT commands
 // in the SMTP server-side protocol.
-// See also: ServerProtocol
+// See also: GSmtp::ServerProtocol
 //
 class GSmtp::Verifier 
 {

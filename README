@@ -10,7 +10,7 @@ messages as they pass through. When running as a store-and-forward MTA incoming
 messages are stored in a local spool directory, and then forwarded to the next 
 SMTP server on request. 
 
-Because of its functional simplicity E-MailRelay is easy to configure, typically 
+Because of its functional simplicity E-MailRelay is easy to configure, typically
 only requiring the address of the target SMTP server to be put on the command 
 line.
 
@@ -19,20 +19,21 @@ Distribution is under the GNU General Public License.
 
 Quick start
 -----------
-To run the program as a proxy use the "--as-proxy" command-line switch, followed by the
-address of the target SMTP server. If you want to edit or filter e-mail as it passes
-through the proxy then specify your pre-processor program with the "--filter" switch.
-You can optionally change the listening port number using "--port" and the
-spool directory using "--spool-dir".
+To run the program as a proxy use the "--as-proxy" command-line switch followed
+by the address of the target SMTP server. If you want to edit or filter e-mail 
+as it passes through the proxy then specify your pre-processor program with the
+"--filter" switch. You can optionally change the listening port number using 
+"--port" and the spool directory using "--spool-dir".
 
-For example, to start up a local proxy that passes messages to some "addsig" script
-and then forwards them to an MTA running on "smarthost", use a command like this:
+For example, to start up a local proxy that passes messages to some "addsig" 
+script and then forwards them to an MTA running on "smarthost", use a command 
+like this:
 
 	emailrelay --as-proxy smarthost:smtp --filter $HOME/bin/addsig --spool-dir $HOME/tmp
 
 To use E-MailRelay as a store-and-forward MTA use the "--as-server" switch
 to start the storage daemon in the background. And then trigger delivery of
-spooled messages by running emailrelay with the "--as-client" switch, followed 
+spooled messages by running emailrelay with the "--as-client" switch followed 
 by the address of the target SMTP server.
 
 For example, to start a storage daemon listening on port 10025 use a command
@@ -43,6 +44,9 @@ like this:
 And then to forward the spooled mail to "smarthost" run somthing like this:
 
 	emailrelay --as-client smarthost:smtp --spool-dir $HOME/tmp
+
+You can also have an E-MailRelay storage daemon forward spooled e-mails 
+periodically by using the "--poll" switch.
 
 By default E-MailRelay will reject connections from remote machines. To
 allow connections from anywhere use the "--remote-clients" switch.
@@ -57,7 +61,7 @@ Documentation
 The following documentation is provided:
 * README             -- this document
 * COPYING            -- the GNU General Public License
-* INSTALL            -- build & install instructions (including the generic GNU text)
+* INSTALL            -- build & install instructions (including the GNU text)
 * AUTHORS            -- authors, credits and additional copyrights
 * copyright          -- main copyright and GPL reference 
 * userguide.txt      -- user guide
@@ -73,16 +77,15 @@ The code was originally developed on SuSE Linux 7.1 using:
 * linux 2.4.10
 * gcc 2.95.3
 * glibc 2.2.4 (libc.so.6)
-* gnu make 3.79.1
 * autoconf 2.52
 
 and ported to Windows 98 using:
 * MSVC 6.0
 
-Recent releases were developed on SuSE Linux 8.0 and 
-RedHat Linux 8.0 using:
-* gcc 2.95.3 and gcc 3.2
-* autoconf 2.53
+Recent releases were developed on SuSE Linux 9.0 using:
+* linux 2.4.22
+* gcc 3.3.1
+* autoconf 2.57
 
 The code has also been built successfully on:
 * MacOS X

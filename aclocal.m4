@@ -1,4 +1,4 @@
-# generated automatically by aclocal 1.7.8 -*- Autoconf -*-
+# generated automatically by aclocal 1.7.6 -*- Autoconf -*-
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002
 # Free Software Foundation, Inc.
@@ -11,7 +11,7 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
-dnl Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software; you can redistribute it and/or
 dnl modify it under the terms of the GNU General Public License
@@ -208,8 +208,6 @@ then
 	fi
 fi
 ])
-
-dnl enable-fhs
 
 dnl enable-fhs
 dnl
@@ -409,7 +407,7 @@ AC_DEFUN([AM_AUTOMAKE_VERSION],[am__api_version="1.7"])
 # Call AM_AUTOMAKE_VERSION so it can be traced.
 # This function is AC_REQUIREd by AC_INIT_AUTOMAKE.
 AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION],
-	 [AM_AUTOMAKE_VERSION([1.7.8])])
+	 [AM_AUTOMAKE_VERSION([1.7.6])])
 
 # Helper functions for option handling.                    -*- Autoconf -*-
 

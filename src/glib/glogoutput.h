@@ -36,7 +36,7 @@ namespace G
 // Description: Controls and implements low-level logging output, as used by the Log interface.
 // Applications should normally instantiate a LogOutput object in main() to enable
 // log output.
-// See also: Log
+// See also: G::Log
 //
 class G::LogOutput 
 {

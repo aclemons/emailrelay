@@ -42,7 +42,7 @@ namespace GSmtp
 // Description: A concrete implementation of the
 // ProtocolMessage interface which stores incoming
 // messages in the message store.
-// See also: ProtocolMessageForward
+// See also: GSmtp::ProtocolMessageForward
 //
 class GSmtp::ProtocolMessageStore : public GSmtp::ProtocolMessage 
 {

@@ -48,7 +48,7 @@ namespace GSmtp
 // 
 // The scanning part deletages to a ScannerClient data member.
 //
-// See also: ProtocolMessageStore, ProtocolMessageForward
+// See also: GSmtp::ProtocolMessageStore, GSmtp::ProtocolMessageForward
 //
 class GSmtp::ProtocolMessageScanner : public GSmtp::ProtocolMessageForward 
 {

@@ -60,7 +60,7 @@ namespace GSmtp
 // allows the ServerPeer implementation to contain an
 // instance of ServerProtocol as a data member.
 //
-// See also: ProtocolMessage, RFC2821
+// See also: GSmtp::ProtocolMessage, RFC2821
 //
 class GSmtp::ServerProtocol 
 {
@@ -107,7 +107,7 @@ public:
 
 	bool apply( const std::string & line ) ;
 		// Called on receipt of a string from the client.
-		// The string is expected to be <CRLF> terminated.
+		// The string is expected to be CR-LF terminated.
 		// Returns true if the protocol has completed
 		// and Sender::protocolDone() has been called.
 

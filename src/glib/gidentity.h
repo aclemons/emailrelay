@@ -35,9 +35,9 @@ namespace G
 	class IdentityUser ;
 }
 
-// Class: Identity
+// Class: G::Identity
 // Description: A very low-level interface to getpwnam() and the get/set/e/uid/gid functions.
-// See also: Process, Root
+// See also: G::Process, G::Root
 //
 class G::Identity  
 {
@@ -94,7 +94,7 @@ private:
 	gid_t m_gid ;
 } ;
 
-// Class: IdentityUser
+// Class: G::IdentityUser
 // Description: A convenience class which, when used as a private base,
 // can improve readability when calling Identity 'set' methods.
 //

@@ -36,7 +36,7 @@ namespace GSmtp
 // Class: GSmtp::NewMessage
 // Description: An abstract class to allow the creation
 // of a new message in the message store.
-// See also: MessageStore, MessageStore::newMessage()
+// See also: GSmtp::MessageStore, GSmtp::MessageStore::newMessage()
 //
 class GSmtp::NewMessage 
 {

@@ -238,7 +238,7 @@ void G::Str::toLower( std::string &s )
 {
 	for( std::string::iterator p = s.begin() ; p != s.end() ; ++p )
 	{
-		*p = static_cast<char>( ::tolower(*p) ) ;
+		*p = static_cast<char>( tolower(*p) ) ;
 	}
 }
 
@@ -253,7 +253,7 @@ void G::Str::toUpper( std::string &s )
 {
 	for( std::string::iterator p = s.begin() ; p != s.end() ; ++p )
 	{
-		*p = static_cast<char>( ::toupper(*p) ) ;
+		*p = static_cast<char>( toupper(*p) ) ;
 	}
 }
 

@@ -37,7 +37,7 @@ namespace G
 
 // Class: G::Date
 // Description: A date (dd/mm/yyyy) class.
-// See also: Time, DateTime
+// See also: G::Time, G::DateTime
 //
 class G::Date 
 {

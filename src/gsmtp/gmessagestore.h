@@ -41,7 +41,7 @@ namespace GSmtp
 // Description: A class which allows SMTP messages 
 // (envelope+content) to be stored and retrieved.
 //
-// See also: NewMessage, StoredMessage, ProtocolMessage
+// See also: GSmtp::NewMessage, GSmtp::StoredMessage, GSmtp::ProtocolMessage
 //
 class GSmtp::MessageStore 
 {

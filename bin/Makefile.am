@@ -18,7 +18,7 @@
 ## 
 #
 
-EXTRA_DIST = emailrelay-doxygen-filter.sh_ emailrelay-test.sh_ emailrelay-soak.sh_ emailrelay.sh_ txt2html.sh_ txt2mu.sh_ mu2html.sh_ expand.sh_ emailrelay-notify.sh_ emailrelay-resubmit.sh_ emailrelay-deliver.sh_ emailrelay-process.sh_ emailrelay-runperl.js emailrelay-resubmit.js
+EXTRA_DIST = emailrelay-doxygen-filter.sh_ emailrelay-test.sh_ emailrelay-soak.sh_ emailrelay.sh_ txt2html.sh_ txt2mu.sh_ mu2html.sh_ expand.sh_ emailrelay-notify.sh_ emailrelay-resubmit.sh_ emailrelay-deliver.sh_ emailrelay-process.sh_ emailrelay-runperl.js emailrelay-resubmit.js fastbuild.sh
 noinst_cleanup = emailrelay-doxygen-filter.sh emailrelay-test.sh emailrelay-soak.sh
 noinst_SCRIPTS = emailrelay-doxygen-filter.sh emailrelay-test.sh emailrelay-soak.sh emailrelay-runperl.js emailrelay-resubmit.js
 e_init_SCRIPTS = emailrelay

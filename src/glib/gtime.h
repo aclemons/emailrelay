@@ -36,7 +36,7 @@ namespace G
 
 // Class: G::Time
 // Description: A simple time-of-day (hh/mm/ss) class.
-// See also: Date, DateTime
+// See also: G::Date, G::DateTime
 //
 class G::Time 
 {

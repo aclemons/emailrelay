@@ -17,5 +17,5 @@
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ## 
 #
-SUBDIRS = glib gnet gsmtp main win32
 EXTRA_DIST = mingw.mak mingw-common.mak
+SUBDIRS = glib gnet gsmtp main win32

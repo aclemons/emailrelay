@@ -73,7 +73,7 @@ $(converter_helper3): $(converter_helper3_src)
 	if test "$(HAVE_DOXYGEN)" = "yes" ; then cat $(top_srcdir)/src/main/doxygen.cfg | sed "s:__TOP_SRC__:$(top_srcdir):g" | sed "s:__TOP_BUILD__:$(top_builddir):g" | doxygen - && touch .dox ; else echo no doxygen ; fi
 
 emailrelay-man.html: emailrelay.1
-	if test "$(HAVE_MAN2HTML)" = "yes" ; then man2html emailrelay.1 > emailrelay-man.html ; fi
+	if test "$(HAVE_MAN2HTML)" = "yes" ; then man2html emailrelay.1 < /dev/null > emailrelay-man.html.tmp && mv emailrelay-man.html.tmp emailrelay-man.html ; fi
 
 developer.html reference.html userguide.html: $(converter)
 

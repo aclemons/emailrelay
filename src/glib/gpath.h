@@ -40,7 +40,7 @@ namespace G
 // file system i/o. This class is necessary because
 // of the mess Microsoft made with drive letters (like
 // having a cwd associated with each drive).
-// See also: File, Directory, FileSystem
+// See also: G::File, G::Directory, G::FileSystem
 //
 class G::Path 
 {
@@ -83,20 +83,20 @@ public:
 		// this path is the top of the tree then the
 		// null path is returned.
 		//
-		// eg. c:foo\bar.exe -> c:foo
-		// eg. c:\foo\bar.exe -> c:\foo
-		// eg. c:bar.exe -> c:
-		// eg. c:\file -> c:\                              .
-		// eg. c:\ -> <empty>
-		// eg. c: -> <empty>
-		// eg. \foo\bar.exe -> \foo
-		// eg. \ -> <empty>
-		// eg. foo\bar\bletch -> foo\bar
-		// eg. foo\bar -> foo
-		// eg. bar.exe -> <empty>
-		// eg. \\machine\drive\dir\file.cc -> \\machine\drive\dir
-		// eg. \\machine\drive\file -> \\machine\drive
-		// eg. \\machine\drive -> <empty>
+		// eg. "c:foo\bar.exe" -> "c:foo"
+		// eg. "c:\foo\bar.exe" -> "c:\foo"
+		// eg. "c:bar.exe" -> "c:"
+		// eg. "c:\file" -> "c:\"                              .
+		// eg. "c:\" -> ""
+		// eg. "c:" -> ""
+		// eg. "\foo\bar.exe" -> "\foo"
+		// eg. "\" -> ""
+		// eg. "foo\bar\bletch" -> "foo\bar"
+		// eg. "foo\bar" -> "foo"
+		// eg. "bar.exe" -> ""
+		// eg. "\\machine\drive\dir\file.cc" -> "\\machine\drive\dir"
+		// eg. "\\machine\drive\file" -> "\\machine\drive"
+		// eg. "\\machine\drive" -> ""
 
 	std::string extension() const ;
 		// Returns the path's original extension, even

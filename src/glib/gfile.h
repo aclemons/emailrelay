@@ -37,7 +37,7 @@ namespace G
 
 // Class: G::File
 // Description: A simple static class for dealing with files.
-// See also: Path, FileSystem, Directory
+// See also: G::Path, G::FileSystem, G::Directory
 //
 class G::File 
 {

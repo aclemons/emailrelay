@@ -37,7 +37,7 @@ namespace GSmtp
 // Class: GSmtp::StoredMessage
 // Description: An abstract class for messages which have
 // come from the store.
-// See also: MessageStore, MessageStore::get()
+// See also: GSmtp::MessageStore, GSmtp::MessageStore::get()
 //
 class GSmtp::StoredMessage 
 {

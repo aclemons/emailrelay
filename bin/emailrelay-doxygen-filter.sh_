@@ -156,6 +156,7 @@ PostFilter()
 	${awk} '
 		{
 			if( match( $0 , "^[[:space:]]*class[[:space:]][^/]*//" ) ||
+			    match( $0 , "^[[:space:]]*union[[:space:]][^/]*//" ) ||
 			    match( $0 , "^[[:space:]]*struct[[:space:]][^/]*//" ) )
 			{
 				class = substr( $0 , 1 , RLENGTH-2 )
@@ -180,7 +181,11 @@ name="`basename \"${1}\"`"
 type="`echo \"${name}\" | ${awk} -F . '{print $NF}'`"
 classes="`fgrep '// Class:' \"${1}\" | wc -l`"
 
-if test "${name}" = "gdef.h" -o "${name}" = "gnet.h"
+if test "${name}" = "md5.h" -o "${name}" = "md5.cpp"
+then
+	cat "${1}"
+
+elif test "${name}" = "gdef.h" -o "${name}" = "gnet.h"
 then
 	cat "${1}" | BasicFilter
 

@@ -855,7 +855,7 @@ Optional Features:
   --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors
   --enable-debug          enable extra debug messages at compile-time
-  --enable-fastbuild      enable experimetal faster building; requires
+  --enable-fastbuild      enable experimental faster building; requires
                           --disable-dependency-tracking
   --enable-fhs            force FHS-compliant directories, ignoring --prefix
                           etc

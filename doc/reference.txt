@@ -588,6 +588,7 @@ following locations:
 * /usr/local/libexec/emailrelay-notify.sh
 * /usr/local/libexec/emailrelay-poke
 * /usr/local/libexec/emailrelay-process.sh
+* /usr/local/libexec/emailrelay-resubmit.js
 * /usr/local/libexec/emailrelay-resubmit.sh
 * /usr/local/libexec/emailrelay-runperl.js
 * /usr/local/man/man1/emailrelay.1.gz
@@ -639,7 +640,6 @@ locations:
 * /usr/share/doc/emailrelay/examples/emailrelay-notify.sh
 * /usr/share/doc/emailrelay/examples/emailrelay-process.sh
 * /usr/share/doc/emailrelay/examples/emailrelay-resubmit.sh
-* /usr/share/doc/emailrelay/examples/emailrelay-runperl.js
 * /usr/share/doc/emailrelay/index.html
 * /usr/share/doc/emailrelay/NEWS
 * /usr/share/doc/emailrelay/*.png

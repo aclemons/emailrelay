@@ -43,7 +43,7 @@ namespace G
 // or
 ///	G_LOG( a << b ) ;
 //
-// See also: LogOutput
+// See also: G::LogOutput
 //
 class G::Log 
 { 

@@ -197,8 +197,6 @@ fi
 ])
 
 dnl enable-fhs
-
-dnl enable-fhs
 dnl
 AC_DEFUN([ENABLE_FHS],
 [

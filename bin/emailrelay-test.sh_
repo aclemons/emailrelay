@@ -39,71 +39,83 @@
 #	-n    no cleanup
 #
 
+# parse the command line
+#
+opt_use_valgrind="0" ; if test "${1}" = "-v" ; then opt_use_valgrind="1" ; shift ; fi
+opt_debug="0" ; if test "${1}" = "-d" ; then opt_debug="1" ; shift ; fi
+opt_no_cleanup="0" ; if test "${1}" = "-n" ; then opt_no_cleanup="1" ; shift ; fi
+opt_exe_dir="${1}"
+
 # configuration
 #
-use_valgrind="0" ; if test "${1}" = "-v" ; then use_valgrind="1" ; shift ; fi
-debug="" ; if test "${1}" = "-d" ; then debug="--debug" ; shift ; fi
-no_cleanup="0" ; if test "${1}" = "-n" ; then no_cleanup="1" ; shift ; fi
-exe_dir="../src/main" ; if test "${1}" != "" ; then exe_dir="${1}" ; fi
-exe="${exe_dir}/emailrelay"
-poke="${exe_dir}/emailrelay-poke"
-null_filter="/bin/touch"
-content_file="/etc/services"
-pp="201" # port-prefix
+cfg_sw_debug="" ; test "${opt_debug}" -eq 0 || cfg_sw_debug="--debug"
+cfg_sw_extra="" ; test "${opt_use_valgrind}" -eq 0 || cfg_sw_extra="--no-daemon"
+cfg_exe_dir="../src/main" ; test -z "${opt_exe_dir}" || cfg_exe_dir="${opt_exe_dir}"
+cfg_main_exe="${cfg_exe_dir}/emailrelay"
+cfg_poke_exe="${cfg_exe_dir}/emailrelay-poke"
+cfg_null_filter="/bin/touch" ; test -f ${cfg_null_filter} || cfg_null_filter="/usr/bin/touch"
+cfg_content_file="/etc/services"
+cfg_pp="201" # port-prefix
+cfg_base_dir="/tmp/`basename $0`.$$.tmp"
+cfg_summary_log="/tmp/`basename $0`.out"
+cfg_sw_valgrind="--logfile=${cfg_base_dir}/valgrind --trace-children=yes --num-callers=40 --leak-check=yes"
+cfg_run="" ; test "${opt_use_valgrind}" -eq 0 || cfg_run="valgrind ${cfg_sw_valgrind}"
 
-# configuration fallback
-#
-if test \! -f ${null_filter} 
-then 
-	null_filter="/usr/bin/touch"
-fi
-
-# initialisation
-#
-base_dir="/tmp/`basename $0`.$$.tmp"
-summary_log="/tmp/`basename $0`.out"
-exit_code="1"
-watchdog_pid=""
-MALLOC_CHECK_="2"
-export MALLOC_CHECK_
-ulimit -c 1000000
-if test "${use_valgrind}" -eq 1
-then
-	exe="valgrind --logfile=${base_dir}/valgrind --trace-children=yes --num-callers=40 --leak-check=yes ${exe} --no-daemon"
-fi
-
-Cleanup()
+Init()
 {
-	${poke} ${pp}11 terminate
-	${poke} ${pp}12 terminate
-	${poke} ${pp}13 terminate
-	${poke} ${pp}14 terminate
-	${poke} ${pp}15 terminate
-	${poke} ${pp}16 terminate
-	sleep 2
-
-	kill `cat ${base_dir}/pid-* 2>/dev/null` 2>/dev/null
-
-	if test -d ${base_dir}
-	then
-		grep "MailRelay-Reason" ${base_dir}/*/*envelope*bad > "${summary_log}" 2>/dev/null
-		grep "." ${base_dir}/log-? >> "${summary_log}" 2>/dev/null
-		if test "${use_valgrind}" -eq 1
-		then
-			grep "." ${base_dir}/valgrind.* >> "${summary_log}" 2>/dev/null
-		fi
-		ls -lR ${base_dir} >> "${summary_log}" 2>/dev/null
-		if test "${no_cleanup}" -eq 0
-		then
-			rm -rf ${base_dir} 2>/dev/null
-		fi
-	fi
+	MALLOC_CHECK_="2"
+	export MALLOC_CHECK_
+	ulimit -c 1000000
+	trap "Trap 1 ; exit 1" 1 2 3 13 15
+	trap "e=\$? ; Trap 0 ; exit \$e" 0
 }
 
 Trap() 
 { 
-	Cleanup
-	exit ${exit_code}
+	trap 0 1 2 3 13 15
+	if test "$1" -ne 0 
+	then 
+		echo `basename $0`: cleaning up >&2 
+	fi
+	Cleanup > /dev/null 2>&1
+}
+
+Cleanup()
+{
+	${cfg_poke_exe} ${cfg_pp}11 terminate
+	${cfg_poke_exe} ${cfg_pp}12 terminate
+	${cfg_poke_exe} ${cfg_pp}13 terminate
+	${cfg_poke_exe} ${cfg_pp}14 terminate
+	${cfg_poke_exe} ${cfg_pp}15 terminate
+	${cfg_poke_exe} ${cfg_pp}16 terminate
+	sleep 2
+
+	kill `cat ${cfg_base_dir}/pid-* 2>/dev/null`
+
+	if test -d ${cfg_base_dir}
+	then
+		grep "MailRelay-Reason" ${cfg_base_dir}/*/*envelope*bad > "${cfg_summary_log}"
+		grep "." ${cfg_base_dir}/log-? >> "${cfg_summary_log}"
+		if test "${opt_use_valgrind}" -eq 1
+		then
+			grep "." ${cfg_base_dir}/valgrind.* >> "${cfg_summary_log}"
+		fi
+		ls -lR ${cfg_base_dir} >> "${cfg_summary_log}"
+		if test "${opt_no_cleanup}" -eq 0
+		then
+			rm -rf ${cfg_base_dir}
+		fi
+	fi
+}
+
+SanityChecks()
+{
+	if test "`${cfg_main_exe} --help | grep \"^Copyright\" | wc -l`" -ne 1
+	then
+		echo `basename $0`: cannot even run \"${cfg_main_exe} --help\" >&2
+		trap 0
+		exit 1
+	fi
 }
 
 RunServer()
@@ -115,10 +127,15 @@ RunServer()
 	pidfile_="${5}"
 	extra_="${6}"
 
-	mkdir -p ${base_dir}/${spool_}
-	${exe} ${debug} --log --verbose --no-syslog --port ${port_} --spool-dir ${base_dir}/${spool_} \
-		--admin ${admin_port_} --admin-terminate \
-		--pid-file ${base_dir}/${pidfile_} ${extra_} 2> ${base_dir}/${log_} &
+	mkdir -p ${cfg_base_dir}/${spool_}
+	${cfg_run} ${cfg_main_exe} ${cfg_sw_extra} ${cfg_sw_debug} \
+		--log --verbose --no-syslog \
+		--port ${cfg_pp}${port_} \
+		--spool-dir ${cfg_base_dir}/${spool_} \
+		--admin ${cfg_pp}${admin_port_} \
+		--admin-terminate \
+		--pid-file ${cfg_base_dir}/${pidfile_} \
+		${extra_} 2> ${cfg_base_dir}/${log_} &
 }
 
 RunClient()
@@ -128,9 +145,11 @@ RunClient()
 	log_="${3}"
 	pidfile_="${4}"
 
-	${exe} ${debug} --forward --no-daemon --dont-serve --log --verbose --no-syslog \
-		--pid-file ${base_dir}/${pidfile_} \
-		--forward-to ${to_} --spool-dir ${base_dir}/${spool_} 2> ${base_dir}/${log_}
+	${cfg_run} ${cfg_main_exe} ${cfg_sw_extra} ${cfg_sw_debug} \
+		--forward --no-daemon --dont-serve --log --verbose --no-syslog \
+		--pid-file ${cfg_base_dir}/${pidfile_} \
+		--forward-to ${to_} \
+		--spool-dir ${cfg_base_dir}/${spool_} 2> ${cfg_base_dir}/${log_}
 }
 
 RunPoke()
@@ -138,7 +157,7 @@ RunPoke()
 	port_="${1}"
 	log_="${2}"
 
-	${poke} ${port_} > ${base_dir}/${log_}
+	${cfg_poke_exe} ${cfg_pp}${port_} > ${cfg_base_dir}/${log_}
 }
 
 Content()
@@ -147,7 +166,7 @@ Content()
 	echo "Subject: test message 1"
 	echo "From: sender"
 	echo " "
-	cat "${content_file}"
+	cat "${cfg_content_file}"
 }
 
 Envelope()
@@ -168,99 +187,109 @@ CrLf()
 	sed 's/$/£/' | tr '£' '\r'
 }
 
-CheckResults()
+TestDone()
 {
-	store="${1}"
-	if test "`ls -1 ${base_dir}/${store}/emailrelay.*.content 2>/dev/null | wc -l`" -eq 2 -a \
-		"`ls -1 ${base_dir}/${store}/emailrelay.*.envelope 2>/dev/null | wc -l`" -eq 2
-	then
-		exit_code="0"
-		echo `basename $0`: succeeded
-	else
-		false
-	fi
+	store_="${1}"
+	test \
+		"`ls -1 ${cfg_base_dir}/${store_}/emailrelay.*.content 2>/dev/null | wc -l`" -eq 2 -a \
+		"`ls -1 ${cfg_base_dir}/${store_}/emailrelay.*.envelope 2>/dev/null | wc -l`" -eq 2
 }
 
-StartWatchdog()
+ReportResults()
 {
-	sleep 10 && kill `cat ${base_dir}/pid-* 2>/dev/null` 2>/dev/null &
-	watchdog_pid=$!
+	ok_="${1}"
+	if test "${ok_}" -eq 1
+	then
+		echo `basename $0`: succeeded
+	else
+		echo `basename $0`: failed: see ${cfg_summary_log} >&2
+	fi
 }
 
 CreateMessages()
 {
-	mkdir -p ${base_dir}/store-1
-	Content | CrLf > ${base_dir}/store-1/emailrelay.0.1.content
-	Envelope | CrLf > ${base_dir}/store-1/emailrelay.0.1.envelope
-	Content | CrLf > ${base_dir}/store-1/emailrelay.0.2.content
-	Envelope | CrLf > ${base_dir}/store-1/emailrelay.0.2.envelope
+	mkdir -p ${cfg_base_dir}/store-1
+	Content | CrLf > ${cfg_base_dir}/store-1/emailrelay.0.1.content
+	Envelope | CrLf > ${cfg_base_dir}/store-1/emailrelay.0.1.envelope
+	Content | CrLf > ${cfg_base_dir}/store-1/emailrelay.0.2.content
+	Envelope | CrLf > ${cfg_base_dir}/store-1/emailrelay.0.2.envelope
 }
 
 CreateAuth()
 {
-	mkdir -p "${base_dir}"
+	mkdir -p "${cfg_base_dir}"
 
 	# encrypted version "joes_password" provided by emailrelay-passwd
 	key="2168297042.2818429713.1297528852.2023008371.2713943401.1997919265.1829599518.235099638"
 
-	file="${base_dir}/server.auth"
+	file="${cfg_base_dir}/server.auth"
 	echo "# server.auth" > ${file}
 	echo "LOGIN server fred freds_password" >> ${file}
 	echo "CRAM-MD5 server joe ${key}" >> ${file}
 	echo "CRAM-MD5 server brian 1.1.1.1.2.2.2.2" >> ${file}
 
-	file="${base_dir}/client-fred.auth"
+	file="${cfg_base_dir}/client-fred.auth"
 	echo "# client-fred.auth" > ${file}
 	echo "LOGIN client fred freds_password" >> ${file}
 
-	file="${base_dir}/client-joe.auth"
+	file="${cfg_base_dir}/client-joe.auth"
 	echo "# client-joe.auth" > ${file}
 	echo "CRAM-MD5 client joe ${key}" >> ${file}
 }
 
 CreateFilter()
 {
-cat <<EOF | sed 's/^_//' > ${base_dir}/filter.sh
-_#!/bin/sh
-_# filter.sh
-_tmp="/tmp/`basename $0`.\$\$.tmp"
-_tr 'a-z' 'A-Z' < \$1 > \$tmp && mv \$tmp \$1
-_exit 0
+	cat <<EOF | sed 's/^ *_//' > ${cfg_base_dir}/filter.sh
+            _#!/bin/sh
+            _# filter.sh
+            _tmp="/tmp/`basename $0`.\$\$.tmp"
+            _tr 'a-z' 'A-Z' < \$1 > \$tmp && mv \$tmp \$1
+            _exit 0
 EOF
-chmod +x ${base_dir}/filter.sh
+	chmod +x ${cfg_base_dir}/filter.sh
 }
 
-trap "Trap ; exit" 1 2 3 13 15
-trap "Trap 0 ; exit" 0
+Sleep()
+{
+	if test "${opt_use_valgrind}" -eq 1 
+	then 
+		sleep 30 
+	else
+		sleep 5
+	fi
+}
 
-#StartWatchdog
-CreateAuth
-CreateFilter
+Main()
+{
+	Init
+	SanityChecks
+	CreateAuth
+	CreateFilter
+	CreateMessages
 
-RunServer ${pp}01 ${pp}10 store-2 log-1 pid-1
-RunServer ${pp}02 ${pp}12 store-2 log-2 pid-2 "--forward-to localhost:${pp}03 --client-auth ${base_dir}/client-joe.auth"
-RunServer ${pp}03 ${pp}13 store-3 log-3 pid-3 "--immediate --forward-to localhost:${pp}04 --filter ${null_filter} --client-auth ${base_dir}/client-fred.auth --server-auth ${base_dir}/server.auth"
-RunServer ${pp}04 ${pp}14 store-4 log-4 pid-4 "--server-auth ${base_dir}/server.auth"
-RunServer ${pp}05 ${pp}15 store-4 log-5 pid-5 "--poll 1 --forward-to localhost:${pp}06"
-RunServer ${pp}06 ${pp}16 store-6 log-6 pid-6 "--filter ${base_dir}/filter.sh"
+	RunServer 01 10 store-2 log-1 pid-1
+	RunServer 02 12 store-2 log-2 pid-2 "--forward-to localhost:${cfg_pp}03 --client-auth ${cfg_base_dir}/client-joe.auth"
+	RunServer 03 13 store-3 log-3 pid-3 "--immediate --forward-to localhost:${cfg_pp}04 --filter ${cfg_null_filter} --client-auth ${cfg_base_dir}/client-fred.auth --server-auth ${cfg_base_dir}/server.auth"
+	RunServer 04 14 store-4 log-4 pid-4 "--server-auth ${cfg_base_dir}/server.auth"
+	RunServer 05 15 store-4 log-5 pid-5 "--poll 1 --forward-to localhost:${cfg_pp}06"
+	RunServer 06 16 store-6 log-6 pid-6 "--filter ${cfg_base_dir}/filter.sh"
 
-CreateMessages
-RunClient localhost:${pp}01 store-1 log-c pid-7
-RunPoke ${pp}12 log-p
+	sleep 1
+	RunClient localhost:${cfg_pp}01 store-1 log-c pid-7
+	RunPoke 12 log-p
 
-for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-do
-	if test "${use_valgrind}" -eq 1 ; then sleep 50 ; fi
-	sleep 10
-	CheckResults store-6
-	if test $? -eq 0 ; then break ; fi
-done
-if test "${watchdog_pid}" != ""
-then
-	kill "${watchdog_pid}"
-fi
-if test ${exit_code} -ne 0
-then
-	echo `basename $0`: failed: see ${summary_log} >&2
-fi
+	success="0"
+	for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+	do
+		Sleep
+		if TestDone store-6
+		then 
+			success="1"
+			break 
+		fi
+	done
+	ReportResults "${success}"
+}
+
+Main
 

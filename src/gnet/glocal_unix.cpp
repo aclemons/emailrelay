@@ -30,7 +30,7 @@
 
 std::string GNet::Local::hostname()
 {
-	struct ::utsname info ;
+	struct utsname info ;
 	int rc = ::uname( &info ) ;
 	if( rc == -1 ) 
 		throw Error("uname") ;

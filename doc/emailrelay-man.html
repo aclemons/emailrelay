@@ -74,6 +74,10 @@ Enables the administration interface and specifies its listening port number.
 
 <DD>
 Enables the terminate command on the admin interface.
+<DT><B>-A,--anonymous </B>
+
+<DD>
+Disables the smtp vrfy command and sends less verbose smtp responses.
 <DT><B>-q,--as-client </B><I>host:port</I>
 
 <DD>
@@ -129,7 +133,7 @@ Forwards stored mail on startup (requires <I>--forward-to</I>).
 <DT><B>-o,--forward-to </B><I>host:port</I>
 
 <DD>
-Specifies the remote smtp server (required by <I>--forward</I> and <I>--admin</I>).
+Specifies the remote smtp server (required by <I>--forward</I>, <I>--poll</I>, <I>--immediate</I> and <I>--admin</I>).
 <DT><B>-h,--help </B>
 
 <DD>
@@ -173,7 +177,7 @@ Specifies the smtp listening port number.
 <DT><B>-P,--postmaster </B>
 
 <DD>
-Deliver to postmaster and reject all other local mailbox addresses.
+Allow delivery to postmaster but reject all other local mailbox addresses.
 <DT><B>-r,--remote-clients </B>
 
 <DD>
@@ -213,6 +217,9 @@ Displays version information and exits.
 GNU style...
 <BR>
 
+/usr/local/etc/emailrelay.conf
+<BR>
+
 /usr/local/libexec/emailrelay
 <BR>
 
@@ -228,7 +235,16 @@ GNU style...
 /usr/local/libexec/emailrelay-process.sh
 <BR>
 
+/usr/local/libexec/emailrelay-resubmit.js
+<BR>
+
 /usr/local/libexec/emailrelay-resubmit.sh
+<BR>
+
+/usr/local/libexec/emailrelay-runperl.js
+<BR>
+
+/usr/local/man/man1/emailrelay.1.gz
 <BR>
 
 /usr/local/man/man1/emailrelay-passwd.1.gz
@@ -240,9 +256,6 @@ GNU style...
 /usr/local/man/man1/emailrelay-submit.1.gz
 <BR>
 
-/usr/local/man/man1/emailrelay.1.gz
-<BR>
-
 /usr/local/sbin/emailrelay
 <BR>
 
@@ -250,12 +263,6 @@ GNU style...
 <BR>
 
 /usr/local/sbin/emailrelay-submit
-<BR>
-
-/usr/local/share/emailrelay/doc/NEWS
-<BR>
-
-/usr/local/share/emailrelay/doc/README
 <BR>
 
 /usr/local/share/emailrelay/doc/changelog.gz
@@ -273,7 +280,19 @@ GNU style...
 /usr/local/share/emailrelay/doc/emailrelay.css
 <BR>
 
+/usr/local/share/emailrelay/doc/emailrelay-man.html
+<BR>
+
 /usr/local/share/emailrelay/doc/index.html
+<BR>
+
+/usr/local/share/emailrelay/doc/NEWS
+<BR>
+
+/usr/local/share/emailrelay/doc/*.png
+<BR>
+
+/usr/local/share/emailrelay/doc/README
 <BR>
 
 /usr/local/share/emailrelay/doc/readme.html
@@ -306,6 +325,9 @@ GNU style...
 FHS style...
 <BR>
 
+/etc/emailrelay.conf
+<BR>
+
 /etc/init.d/emailrelay
 <BR>
 
@@ -319,12 +341,6 @@ FHS style...
 <BR>
 
 /usr/sbin/emailrelay-submit
-<BR>
-
-/usr/share/doc/emailrelay/NEWS
-<BR>
-
-/usr/share/doc/emailrelay/README
 <BR>
 
 /usr/share/doc/emailrelay/changelog.gz
@@ -342,6 +358,9 @@ FHS style...
 /usr/share/doc/emailrelay/emailrelay.css
 <BR>
 
+/usr/share/doc/emailrelay/emailrelay-man.html
+<BR>
+
 /usr/share/doc/emailrelay/examples/emailrelay-deliver.sh
 <BR>
 
@@ -355,6 +374,15 @@ FHS style...
 <BR>
 
 /usr/share/doc/emailrelay/index.html
+<BR>
+
+/usr/share/doc/emailrelay/NEWS
+<BR>
+
+/usr/share/doc/emailrelay/*.png
+<BR>
+
+/usr/share/doc/emailrelay/README
 <BR>
 
 /usr/share/doc/emailrelay/readme.html
@@ -378,6 +406,9 @@ FHS style...
 /usr/share/doc/emailrelay/windows.txt
 <BR>
 
+/usr/share/man/man1/emailrelay.1.gz
+<BR>
+
 /usr/share/man/man1/emailrelay-passwd.1.gz
 <BR>
 
@@ -385,9 +416,6 @@ FHS style...
 <BR>
 
 /usr/share/man/man1/emailrelay-submit.1.gz
-<BR>
-
-/usr/share/man/man1/emailrelay.1.gz
 <BR>
 
 /var/spool/emailrelay/emailrelay.*.content
@@ -436,7 +464,7 @@ Graeme Walker, mailto:<A HREF="mailto:graeme_walker@users.sourceforge.net">graem
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 11:03:16 GMT, November 22, 2003
+Time: 18:13:20 GMT, February 26, 2004
 </BODY>
 </HTML>
-<!-- Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

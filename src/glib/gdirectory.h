@@ -41,7 +41,7 @@ namespace G
 // Description: An encapsulation of a file system directory
 // which allows for iterating through the set of contained
 // files.
-// See also: Path, FileSystem, File
+// See also: G::Path, G::FileSystem, G::File
 //
 class G::Directory 
 {
@@ -119,7 +119,7 @@ public:
 
 	std::string sizeString() const ; 
 		// Returns the file size as a decimal string. The value
-		// may be more than 32 bits. See also class Number.
+		// may be more than 32 bits. See also class G::Number.
 
 	Path filePath() const ;
 		// Returns the path of the current item.

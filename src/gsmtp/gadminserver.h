@@ -44,7 +44,7 @@ namespace GSmtp
 
 // Class: GSmtp::AdminPeer
 // Description: A derivation of ServerPeer for the administration interface.
-// See also: AdminServer
+// See also: GSmtp::AdminServer
 //
 class GSmtp::AdminPeer : public GNet::ServerPeer 
 {

@@ -49,7 +49,7 @@ namespace GSmtp
 // class (ie. its sibling class) to do the storage, and to an instance 
 // of the Client class to do the forwarding.
 //
-// See also: ProtocolMessageStore
+// See also: GSmtp::ProtocolMessageStore
 //
 class GSmtp::ProtocolMessageForward : public GSmtp::ProtocolMessage 
 {

@@ -107,7 +107,7 @@ public:
 
 	void removeAt( size_t sw_index , size_t sw_args = 0U ) ;
 		// Removes the given argument and the
-		// following <sw_args> ones.
+		// following 'sw_args' ones.
 
 	Arg & operator=( const Arg & ) ;
 		// Assignment operator.

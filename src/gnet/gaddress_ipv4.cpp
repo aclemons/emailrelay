@@ -38,7 +38,8 @@ class GNet::AddressImp
 {
 public:
 	typedef sockaddr_in address_type ;
-	typedef union { address_type specific ; struct sockaddr general ; } Sockaddr ;
+	union Sockaddr // Used by GNet::AddressImp to casting between sockaddr and sockaddr_in.
+		{ address_type specific ; struct sockaddr general ; } ;
 
 	explicit AddressImp( unsigned int port ) ; // (not in_port_t -- see validPort(), setPort() etc)
 	explicit AddressImp( const servent & s ) ;
