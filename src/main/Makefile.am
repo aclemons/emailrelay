@@ -54,7 +54,7 @@ EXTRA_DIST=\
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\"
 
 e_sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd
-e_libexec_PROGRAMS = emailrelay-poke # emailrelay-scanner
+e_libexec_PROGRAMS = emailrelay-poke
 e_spool_DATA = 
 
 emailrelay_SOURCES = \
@@ -80,12 +80,6 @@ emailrelay_poke_LDADD =
 
 emailrelay_passwd_SOURCES = passwd.cpp legal.cpp
 emailrelay_passwd_LDADD = $(top_builddir)/src/glib/libglib.a
-
-emailrelay_scanner_SOURCES = scanner.cpp
-emailrelay_scanner_LDADD = \
-	$(top_builddir)/src/gsmtp/libgsmtp.a \
-	$(top_builddir)/src/glib/libglib.a \
-	$(top_builddir)/src/gnet/libgnet.a
 
 emailrelay_submit_SOURCES = submit.cpp legal.cpp
 emailrelay_submit_LDADD = \

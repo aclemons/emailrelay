@@ -338,19 +338,11 @@ Usage patterns
 --------------
 The simplest ways of using E-MailRelay are as a proxy or as a store-and-forward 
 MTA, but other configurations are possible. For example, you could use the
-E-MailRelay to do message storing, but use something else to do the forwarding. 
-Or you could implement simple routing by having a "--filter" program that moves 
-message files into the spool directory of another E-MailRelay process. Or you 
-could have multiple forwarding E-MailRelay processes running off the same spool 
-directory, but trigger them at different times of the day.
-
-Another important technique is to run E-MailRelay as a server, but use the
-"--poll" switch so that the server process will also do periodic forwarding.
-With a short "--poll" period this behaves rather like a proxy, but the submitting
-client program does not have to wait for the message to be delivered to
-the remote server. If you don't like the idea of polling the spool directory,
-you can use a "--filter" program to force the "--poll" timer to expire as 
-soon as a new message is received by exiting with a value of 103.
+E-MailRelay server to do message storing, but use something else to do the 
+forwarding. Or you could implement simple routing by having a "--filter" program
+that moves message files into the spool directory of another E-MailRelay 
+process. Or you could have multiple forwarding E-MailRelay processes running off
+the same spool directory, but trigger them at different times of the day.
 
 Remember that messages can be introduced directly into the E-MailRelay spool 
 directory using the "emailrelay-submit" utility, and they can be moved out again
@@ -358,6 +350,17 @@ at any time as long as the envelope file is not "locked" with a ".busy" filename
 extension. Your "--filter" program can edit messages in any way you want, and it
 can even remove the current message from the spool directory as long as it lets 
 E-MailRelay know by terminating with an exit code of 100.
+
+Another important technique is to run E-MailRelay as a server, but use the
+"--poll" switch so that the server process will also do periodic forwarding.
+With a short "--poll" period this behaves rather like a proxy, but the 
+submitting client program does not have to wait for the message to be delivered 
+to the remote server. A normal proxy only responds with OK after the SMTP DATA 
+transfer phase once the message has been sucessfully transfered to the next 
+server, but by using the "--poll" mechanism the client gets an OK response 
+immediately. If you don't like the idea of polling the spool directory, you can 
+use a "--filter" program to force the "--poll" timer to expire as soon as a new 
+message is received by exiting with a value of 103.
 
 For more ideas check out the "--client-filter", "--poll" and "--scanner" 
 switches, and don't overlook the administration interface ("--admin") which you 
