@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -53,17 +53,17 @@ namespace md5
 class md5::digest 
 {
 public:
-	struct state_ { big_t a ; big_t b ; big_t c ; big_t d ; } ;
+	struct state_type { big_t a ; big_t b ; big_t c ; big_t d ; } ;
 
 	explicit digest( const std::string & s ) ;
 		// Constuctor. Calculates a digest for the 
 		// given message string.
 
-	explicit digest( state_ ) ;
+	explicit digest( state_type ) ;
 		// Constructor taking the result of an 
 		// earlier call to state().
 
-	state_ state() const ;
+	state_type state() const ;
 		// Returns the internal state. Typically
 		// passed to the md5::format class.
 
@@ -113,10 +113,10 @@ public:
 	static std::string rfc( const digest & ) ;
 		// Returns the digest string in the RFC format.
 
-	static std::string rfc( const digest::state_ & ) ;
+	static std::string rfc( const digest::state_type & ) ;
 		// Returns the digest string in the RFC format.
 
-	static std::string raw( const digest::state_ & ) ;
+	static std::string raw( const digest::state_type & ) ;
 		// Returns the raw digest data as a std::string.
 		// The returned std::string buffer will typically 
 		// contain non-printing characters, including NULs.
@@ -180,13 +180,13 @@ private:
 class md5::digest_stream 
 {
 public:
-	struct state_ { digest::state_ d ; small_t n ; std::string s ; } ;
+	struct state_type { digest::state_type d ; small_t n ; std::string s ; } ;
 
 	digest_stream() ;
 		// Default constructor.
 
-	digest_stream( digest::state_ d , small_t n ) ;
-		// Constructor taking state(). The "state_::s" string
+	digest_stream( digest::state_type d , small_t n ) ;
+		// Constructor taking state(). The "state_type::s" string
 		// is implicitly empty, so 'n' must be a multiple
 		// of sixty-four.
 
@@ -200,7 +200,7 @@ public:
 		// Returns how many data bytes have been
 		// accumulated so far.
 
-	state_ state() const ;
+	state_type state() const ;
 		// Returns the current state. Only useful after
 		// close().
 

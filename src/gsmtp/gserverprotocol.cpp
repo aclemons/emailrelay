@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -45,7 +45,8 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 		m_peer_address(peer_address) ,
 		m_fsm(sStart,sEnd,s_Same,s_Any) ,
 		m_authenticated(false) ,
-		m_sasl(secrets)
+		m_sasl(secrets) ,
+		m_with_vrfy(with_vrfy)
 {
 	m_pmessage.doneSignal().connect( G::slot(*this,&ServerProtocol::processDone) ) ;
 	m_pmessage.preparedSignal().connect( G::slot(*this,&ServerProtocol::prepareDone) ) ;
@@ -57,8 +58,9 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 	m_fsm.addTransition( eUnknown , s_Any   , s_Same   , &GSmtp::ServerProtocol::doUnknown ) ;
 	m_fsm.addTransition( eRset    , s_Any   , sIdle    , &GSmtp::ServerProtocol::doRset ) ;
 	m_fsm.addTransition( eNoop    , s_Any   , s_Same   , &GSmtp::ServerProtocol::doNoop ) ;
-	if( with_vrfy )
-		m_fsm.addTransition( eVrfy    , s_Any   , s_Same   , &GSmtp::ServerProtocol::doVrfy ) ;
+	m_fsm.addTransition( eHelp    , s_Any   , s_Same   , &GSmtp::ServerProtocol::doHelp ) ;
+	m_fsm.addTransition( eExpn    , s_Any   , s_Same   , &GSmtp::ServerProtocol::doExpn ) ;
+	m_fsm.addTransition( eVrfy    , s_Any   , s_Same   , &GSmtp::ServerProtocol::doVrfy ) ;
 	m_fsm.addTransition( eEhlo    , s_Any   , sIdle    , &GSmtp::ServerProtocol::doEhlo , s_Same ) ;
 	m_fsm.addTransition( eHelo    , s_Any   , sIdle    , &GSmtp::ServerProtocol::doHelo , s_Same ) ;
 	m_fsm.addTransition( eMail    , sIdle   , sPrepare , &GSmtp::ServerProtocol::doMailPrepare , sIdle ) ;
@@ -163,20 +165,40 @@ void GSmtp::ServerProtocol::doNoop( const std::string & , bool & )
 	// now deleted
 }
 
+void GSmtp::ServerProtocol::doExpn( const std::string & , bool & )
+{
+	sendNotImplemented() ;
+	// now deleted
+}
+
+void GSmtp::ServerProtocol::doHelp( const std::string & , bool & )
+{
+	sendNotImplemented() ;
+	// now deleted
+}
+
 void GSmtp::ServerProtocol::doVrfy( const std::string & line , bool & )
 {
-	std::string mbox = parseMailbox( line ) ;
-	Verifier::Status rc = verify( mbox , "" ) ;
-	bool local = rc.is_local ;
-	if( local && rc.full_name.length() )
-		sendVerified( rc.full_name ) ;
-		// now deleted
-	else if( local )
-		sendNotVerified( mbox ) ;
-		// now deleted
+	if( m_with_vrfy )
+	{
+		std::string mbox = parseMailbox( line ) ;
+		Verifier::Status rc = verify( mbox , "" ) ;
+		bool local = rc.is_local ;
+		if( local && rc.full_name.length() )
+			sendVerified( rc.full_name ) ;
+			// now deleted
+		else if( local )
+			sendNotVerified( mbox ) ;
+			// now deleted
+		else
+			sendWillAccept( mbox ) ;
+			// now deleted
+	}
 	else
-		sendWillAccept( mbox ) ;
+	{
+		sendNotImplemented() ;
 		// now deleted
+	}
 } 
 
 GSmtp::Verifier::Status GSmtp::ServerProtocol::verify( const std::string & to , const std::string & from ) const
@@ -508,6 +530,7 @@ GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( const std::str
 	if( command == "MAIL" ) return eMail ;
 	if( command == "VRFY" ) return eVrfy ;
 	if( command == "NOOP" ) return eNoop ;
+	if( command == "EXPN" ) return eExpn ;
 	if( command == "HELP" ) return eHelp ;
 	if( m_sasl.active() && command == "AUTH" ) return eAuth ;
 	return eUnknown ;
@@ -541,6 +564,12 @@ void GSmtp::ServerProtocol::sendWillAccept( const std::string & user )
 void GSmtp::ServerProtocol::sendUnrecognised( const std::string & line )
 {
 	send( "500 command unrecognized: \"" + line + std::string("\"") ) ;
+	// now deleted
+}
+
+void GSmtp::ServerProtocol::sendNotImplemented()
+{
+	send( "502 command not implemented" ) ;
 	// now deleted
 }
 
@@ -621,6 +650,8 @@ void GSmtp::ServerProtocol::sendEhloReply()
 		ss << "250-" << m_text.hello(m_peer_name) << crlf() ;
 	if( m_sasl.active() )
 		ss << "250-AUTH " << m_sasl.mechanisms() << crlf() ;
+	if( m_with_vrfy )
+		ss << "250-VRFY" << crlf() ; // see RFC2821-3.5.2
 		ss << "250 8BITMIME" ;
 	send( ss.str() ) ;
 }

@@ -481,18 +481,24 @@ plaintext passwords, and the "CRAM-MD5" mechanism, as defined in RFC2195.
 
 Authentication is enabled with the "--auth-client" and "--auth-server" 
 command-line switches. The switch parameter is the name of a "secrets" file, 
-containing usernames and passwords.
+containing usernames and passwords:
 
 	emailrelay --as-server --auth-server /etc/client-secrets.txt
-	emailrelay --as-client myisp.net:smtp --auth-client /etc/isp-secret.txt
+	emailrelay --as-client myisp.net:smtp --auth-client /etc/myisp-secret.txt
 
 The secrets file has a line-based format: blank lines are ignored and the hash
-character (#) is used for comments. Lines have four white-space delimited 
-fields: "mechanism", "client-or-server", "userid", and "secret". The "mechanism"
-field must be "LOGIN" or "CRAM-MD5" (case-insensitive); the "client-or-server" 
-field must be "client" or "server"; the "userid" field is xtext-encoded user 
-identifier; and the "secret" field is the xtext-encoded "LOGIN" password or
-"CRAM-MD5" key. 
+character (#) is used for comments. 
+
+Lines have four white-space delimited fields: 
+* "mechanism"
+* "client-or-server"
+* "userid"
+* "secret"
+
+The "mechanism" field must be "LOGIN" or "CRAM-MD5" (case-insensitive); the 
+"client-or-server" field must be "client" or "server"; the "userid" field is 
+xtext-encoded user identifier; and the "secret" field is the xtext-encoded 
+"LOGIN" password or "CRAM-MD5" key. 
 
 The "xtext" encoding scheme is defined properly in RFC1891, but basically it 
 says that non alphanumeric characters should be represented in hexadecimal as 
@@ -692,4 +698,4 @@ if the directory exists, or in "/tmp" otherwise.
 
 
 
-Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

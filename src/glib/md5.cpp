@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -38,7 +38,7 @@ md5::digest::digest()
 	init() ;
 }
 
-md5::digest::digest( state_ d ) :
+md5::digest::digest( state_type d ) :
 	a(d.a) ,
 	b(d.b) ,
 	c(d.c) ,
@@ -46,12 +46,12 @@ md5::digest::digest( state_ d ) :
 {
 }
 
-md5::digest::state_ md5::digest::state() const
+md5::digest::state_type md5::digest::state() const
 {
 	big_t mask = ~0 ;
 	small_t thirty_two = 32U ;
 	if( sizeof(mask) > thirty_two ) mask <<= thirty_two ; // ignore warnings here
-	state_ result = { a & mask , b & mask , c & mask , d & mask } ;
+	state_type result = { a & mask , b & mask , c & mask , d & mask } ;
 	return result ;
 }
 
@@ -260,7 +260,7 @@ md5::big_t md5::digest::T( small_t i )
 
 // ===
 
-std::string md5::format::raw( const digest::state_ & d )
+std::string md5::format::raw( const digest::state_type & d )
 {
 	std::string result ;
 	result.reserve( 16U ) ;
@@ -288,7 +288,7 @@ std::string md5::format::rfc( const digest & d )
 	return rfc( d.state() ) ;
 }
 
-std::string md5::format::rfc( const digest::state_ & d )
+std::string md5::format::rfc( const digest::state_type & d )
 {
 	std::string result ;
 	result.reserve( 32U ) ;
@@ -401,7 +401,7 @@ md5::digest_stream::digest_stream() :
 {
 }
 
-md5::digest_stream::digest_stream( digest::state_ dd , small_t length ) :
+md5::digest_stream::digest_stream( digest::state_type dd , small_t length ) :
 	m_digest(dd) ,
 	m_length(length)
 {
@@ -426,9 +426,9 @@ void md5::digest_stream::close()
 	m_buffer.erase() ;
 }
 
-md5::digest_stream::state_ md5::digest_stream::state() const
+md5::digest_stream::state_type md5::digest_stream::state() const
 {
-	state_ result ;
+	state_type result ;
 	result.d = m_digest.state() ;
 	result.n = m_length ;
 	result.s = m_buffer ;

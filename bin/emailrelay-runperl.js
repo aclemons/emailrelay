@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -21,18 +21,24 @@
 // emailrelay-runperl.js
 //
 // An example JavaScript wrapper that runs a perl script for E-MailRelay. 
-// The perl script's standard input will the be the e-mail's content file. 
-// The perl script should process this to its standard output, and
-// terminate with a zero exit code.
+// The name of the perl script is hard-coded below: edit as necessary.
 //
-// Eg:
+// This JavaScript can be installed as an E-MailRelay "--filter" program
+// using an E-MailRelay command-line something like this:
+//
 //   emailrelay --as-server --filter "c:/winnt/system32/cscript.exe //nologo c:/program\ files/emailrelay/emailrelay-runperl.js"
 //
-// Uses CMD.EXE which may be not be available on some versions of 
-// Windows.
+// Note the use of "cscript.exe" to execute the JavaScript, and the backslash 
+// to escape the space in the path.
 //
-// Edit the next two lines as necessary, but avoid spaces in paths.
+// The e-mail's content file is fed to the perl script's standard input.
+// The perl code is expected to process this to its standard output and then
+// terminate with a zero exit code.
 //
+// The implementation of this JavaScript makes use of "CMD.EXE", which may be 
+// not be available on some versions of Windows.
+//
+// Edit the next two lines as necessary, but avoid spaces in paths:
 var cfg_perl="perl -S -T -w"
 var cfg_perl_script="spamassassin"
 
@@ -80,5 +86,4 @@ else
 	fs.DeleteFile( filename + ".err" )
 	WScript.Quit( rc )
 }
-
 

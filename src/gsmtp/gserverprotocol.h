@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -119,6 +119,7 @@ private:
 		eEhlo ,
 		eRset ,
 		eNoop ,
+		eExpn ,
 		eData ,
 		eRcpt ,
 		eMail ,
@@ -158,6 +159,8 @@ private:
 	bool isEndOfText( const std::string & ) const ;
 	bool isEscaped( const std::string & ) const ;
 	void doNoop( const std::string & , bool & ) ;
+	void doHelp( const std::string & line , bool & ) ;
+	void doExpn( const std::string & line , bool & ) ;
 	void doQuit( const std::string & , bool & ) ;
 	void doEhlo( const std::string & , bool & ) ;
 	void doHelo( const std::string & , bool & ) ;
@@ -178,6 +181,7 @@ private:
 	void sendGreeting( const std::string & ) ;
 	void sendClosing() ;
 	void sendUnrecognised( const std::string & ) ;
+	void sendNotImplemented() ;
 	void sendHeloReply() ;
 	void sendEhloReply() ;
 	void sendRsetReply() ;
@@ -211,6 +215,7 @@ private:
 	std::string m_peer_name ;
 	bool m_authenticated ;
 	SaslServer m_sasl ;
+	bool m_with_vrfy ;
 } ;
 
 // Class: GSmtp::ServerProtocolText

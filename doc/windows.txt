@@ -6,21 +6,21 @@ Introduction
 E-MailRelay was originally developed on Linux and so most of the documentation 
 relates to Unix-like operating systems rather than Microsoft Windows. This 
 document provides some help on installing and setting up E-MailRelay as a
-store-and-forward MTA on Windows.
+store-and-forward MTA on Windows 98.
 
 Quick start
 ------------
 In summary, the Windows installation process is as follows:
 * Unpack the zip file to "Program Files\emailrelay".
-* Create a shortcut to the E-MailRelay executable in "Start->Programs->StartUp".
-* Add "storage-daemon" configuration options (if any) to the "StartUp" shortcut's command line.
-* Create a shortcut to the executable on the taskbar and/or desktop.
-* Add "forwarding-client" configuration options to the taskbar/desktop shortcut's command line. These configuration options will normally include something like "--as-client smtp.myisp.com:smtp".
 * Create a spool directory under "<windir>\spool", eg.  "c:\win98\spool\emailrelay".
+* Create a shortcut to the E-MailRelay executable in "Start->Programs->StartUp".
+* Add "storage-daemon" configuration options such as "--as-server" to the "StartUp" shortcut's command line.
+* Create a shortcut to the executable on the taskbar and/or desktop.
+* Add "forwarding-client" configuration options such as "--as-client smtp.myisp.com:smtp" to the taskbar/desktop shortcut's command line.
 * Configure your e-mail client (eg. Outlook) to use SMTP on the local machine for outgoing e-mail.
 * Run the forwarding client from the taskbar/desktop shortcut once connected to the Internet.
 
-These steps are explained in more detail below.
+These steps are described in more detail below.
 
 On versions of Windows that support services you could also try using Microsoft's 
 "srvany.exe" utility to run emailrelay as a service; you will need to add the 
@@ -102,4 +102,4 @@ taskbar, desktop or "Start->Programs->StartUp" shortcuts.
 
 
 
-Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

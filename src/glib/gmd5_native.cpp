@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2003 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -32,7 +32,7 @@ namespace
 {
 	typedef md5::big_t big_t ;
 	typedef md5::digest_stream md5_state_t ;
-	typedef md5::digest::state_ state_ ;
+	typedef md5::digest::state_type state_type ;
 	typedef md5::message message ;
 	typedef md5::format format ;
 
@@ -64,7 +64,7 @@ namespace
 		big_t b = G::Str::toULong(s.front()) ; s.pop_front() ;
 		big_t c = G::Str::toULong(s.front()) ; s.pop_front() ;
 		big_t d = G::Str::toULong(s.front()) ; s.pop_front() ;
-		state_ state = { a , b , c , d } ;
+		state_type state = { a , b , c , d } ;
 		md5::small_t magic_number = 64U ;
 		context = md5_state_t( state , magic_number ) ;
 	}
