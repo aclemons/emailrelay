@@ -111,6 +111,7 @@ e_libexecdir = @e_libexecdir@
 e_man1dir = @e_man1dir@
 e_sbindir = @e_sbindir@
 e_spooldir = @e_spooldir@
+e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 includedir = @includedir@

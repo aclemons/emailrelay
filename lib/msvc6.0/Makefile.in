@@ -111,6 +111,7 @@ e_libexecdir = @e_libexecdir@
 e_man1dir = @e_man1dir@
 e_sbindir = @e_sbindir@
 e_spooldir = @e_spooldir@
+e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 includedir = @includedir@
@@ -128,7 +129,7 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 
-EXTRA_DIST = cstdio cstdlib cstring ctime cmath
+EXTRA_DIST = cstdio cstdlib cstring ctime cmath cstddef
 subdir = lib/msvc6.0
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs

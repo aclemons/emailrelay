@@ -108,6 +108,7 @@ e_libexecdir = @e_libexecdir@
 e_man1dir = @e_man1dir@
 e_sbindir = @e_sbindir@
 e_spooldir = @e_spooldir@
+e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 includedir = @includedir@
@@ -141,13 +142,13 @@ EXTRA_DIST = \
 	gfile_win32.cpp \
 	gregistry_win32.cpp \
 	gregistry.h \
-	md5c.c \
-	md5.h \
 	mingw.mak
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION)
 noinst_LIBRARIES = libglib.a
 libglib_a_SOURCES = \
+	md5.cpp \
+	md5.h \
 	garg.cpp \
 	garg.h \
 	garg_unix.cpp \
@@ -185,7 +186,7 @@ libglib_a_SOURCES = \
 	glogoutput.cpp \
 	glogoutput.h \
 	glogoutput_unix.cpp \
-	gmd5_rsa.cpp \
+	gmd5_native.cpp \
 	gmd5.h \
 	gmemory.h \
 	gnoncopyable.h \
@@ -216,14 +217,14 @@ LIBRARIES = $(noinst_LIBRARIES)
 
 libglib_a_AR = $(AR) cru
 libglib_a_LIBADD =
-am_libglib_a_OBJECTS = garg.$(OBJEXT) garg_unix.$(OBJEXT) \
+am_libglib_a_OBJECTS = md5.$(OBJEXT) garg.$(OBJEXT) garg_unix.$(OBJEXT) \
 	gcleanup_unix.$(OBJEXT) gdaemon_unix.$(OBJEXT) gdate.$(OBJEXT) \
 	gdatetime.$(OBJEXT) gdatetime_unix.$(OBJEXT) \
 	gdirectory.$(OBJEXT) gdirectory_unix.$(OBJEXT) \
 	gexception.$(OBJEXT) gexe.$(OBJEXT) gfile.$(OBJEXT) \
 	gfile_unix.$(OBJEXT) gfs_unix.$(OBJEXT) ggetopt.$(OBJEXT) \
 	gidentity_unix.$(OBJEXT) glog.$(OBJEXT) glogoutput.$(OBJEXT) \
-	glogoutput_unix.$(OBJEXT) gmd5_rsa.$(OBJEXT) gpath.$(OBJEXT) \
+	glogoutput_unix.$(OBJEXT) gmd5_native.$(OBJEXT) gpath.$(OBJEXT) \
 	gpidfile.$(OBJEXT) gprocess_unix.$(OBJEXT) groot.$(OBJEXT) \
 	gslot.$(OBJEXT) gstr.$(OBJEXT) gtime.$(OBJEXT)
 libglib_a_OBJECTS = $(am_libglib_a_OBJECTS)
@@ -244,11 +245,11 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/gidentity_unix.Po ./$(DEPDIR)/glog.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/glogoutput.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/glogoutput_unix.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gmd5_rsa.Po ./$(DEPDIR)/gpath.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/gmd5_native.Po ./$(DEPDIR)/gpath.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gpidfile.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gprocess_unix.Po ./$(DEPDIR)/groot.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gslot.Po ./$(DEPDIR)/gstr.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gtime.Po
+@AMDEP_TRUE@	./$(DEPDIR)/gtime.Po ./$(DEPDIR)/md5.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -304,7 +305,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glogoutput.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glogoutput_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmd5_rsa.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmd5_native.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpath.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpidfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprocess_unix.Po@am__quote@
@@ -312,6 +313,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gslot.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtime.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" \

@@ -71,7 +71,7 @@ ENABLE_DEBUG
 dnl ===
 dnl "--enable-fastbuild"
 dnl
-AC_ARG_ENABLE(fastbuild,AC_HELP_STRING([--enable-fastbuild],[enable experimetal fast building; requires --disable-dependency-tracking]))
+AC_ARG_ENABLE(fastbuild,AC_HELP_STRING([--enable-fastbuild],[enable experimetal faster building; requires --disable-dependency-tracking]))
 ENABLE_FASTBUILD
 
 dnl ===
@@ -79,6 +79,18 @@ dnl "--with-workshop"
 dnl
 AC_ARG_WITH(workshop,AC_HELP_STRING([--with-workshop],[use Sun WorkShop 'CC -xar' as the 'ar' tool]))
 WITH_WORKSHOP
+
+dnl ===
+dnl "--with-doxygen"
+dnl
+AC_ARG_WITH(doxygen,AC_HELP_STRING([--with-doxygen],[generate source code documentation with doxygen]))
+WITH_DOXYGEN
+
+dnl ===
+dnl "--with-man2html"
+dnl
+AC_ARG_WITH(man2html,AC_HELP_STRING([--with-man2html],[convert man pages to html using man2html]))
+WITH_MAN2HTML
 
 dnl ===
 dnl directory tweaking and "--enable-fhs" ...

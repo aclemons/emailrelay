@@ -8,7 +8,7 @@ E-MailRelay Change Log
 * Better validation of MAIL-FROM and RCPT-TO formatting.
 * Rewrite of MD5 code to avoid third-party copyrights.
 * Performance tuning.
-* Template emailrelay.conf gets installed in "/etc".
+* Template "emailrelay.conf" gets installed in "/etc".
 
 1.1.2 -> 1.2
 ------------

@@ -111,6 +111,7 @@ e_libexecdir = @e_libexecdir@
 e_man1dir = @e_man1dir@
 e_sbindir = @e_sbindir@
 e_spooldir = @e_spooldir@
+e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 includedir = @includedir@
@@ -132,6 +133,9 @@ target_alias = @target_alias@
 AM_INSTALL_PROGRAM_FLAGS = -s
 
 EXTRA_DIST = \
+	emailrelay-fastbuild.cpp \
+	passwd-fastbuild.cpp \
+	submit-fastbuild.cpp \
 	common.dsp \
 	doxygen.cfg \
 	doxygen.h \
@@ -153,7 +157,8 @@ EXTRA_DIST = \
 	winform.h \
 	winmain.cpp \
 	winmenu.cpp \
-	winmenu.h
+	winmenu.h \
+	mingw.mak
 
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\"
@@ -173,8 +178,7 @@ emailrelay_SOURCES = \
 	output.cpp \
 	output.h \
 	run.cpp \
-	run.h \
-	mingw.mak
+	run.h
 
 
 emailrelay_LDADD = \

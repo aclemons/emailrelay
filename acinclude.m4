@@ -152,7 +152,6 @@ then
 fi
 ])
 
-
 dnl with-workshop
 dnl
 AC_DEFUN([WITH_WORKSHOP],
@@ -164,6 +163,40 @@ then
 	AC_SUBST(AR)
 fi
 ])
+
+dnl with-doxygen
+dnl
+AC_DEFUN([WITH_DOXYGEN],
+[
+if test "$with_doxygen" != ""
+then
+	if test "$with_doxygen" = "yes" -a "$HAVE_DOXYGEN" != "yes"
+	then
+		echo ignoring --with-doxygen
+	else
+		HAVE_DOXYGEN="$with_doxygen"
+		AC_SUBST(HAVE_DOXYGEN)
+	fi
+fi
+])
+
+dnl with-man2html
+dnl
+AC_DEFUN([WITH_MAN2HTML],
+[
+if test "$with_man2html" != ""
+then
+	if test "$with_man2html" = "yes" -a "$HAVE_MAN2HTML" != "yes"
+	then
+		echo ignoring --with-man2html
+	else
+		HAVE_MAN2HTML="$with_man2html"
+		AC_SUBST(HAVE_MAN2HTML)
+	fi
+fi
+])
+
+dnl enable-fhs
 
 dnl enable-fhs
 dnl

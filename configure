@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE am__leading_dot CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE RANLIB ac_ct_RANLIB MAKE AR GZIP HAVE_DOXYGEN HAVE_MAN2HTML COMPILER_VERSION CPP EGREP e_sbindir e_libexecdir e_docdir e_initdir e_spooldir e_man1dir e_examplesdir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE am__leading_dot CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE RANLIB ac_ct_RANLIB MAKE AR GZIP HAVE_DOXYGEN HAVE_MAN2HTML COMPILER_VERSION CPP EGREP e_sbindir e_libexecdir e_sysconfdir e_docdir e_initdir e_spooldir e_man1dir e_examplesdir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -855,6 +855,8 @@ Optional Features:
   --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors
   --enable-debug          enable extra debug messages at compile-time
+  --enable-fastbuild      enable experimetal faster building; requires
+                          --disable-dependency-tracking
   --enable-fhs            force FHS-compliant directories, ignoring --prefix
                           etc
 
@@ -862,6 +864,8 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-workshop         use Sun WorkShop 'CC -xar' as the 'ar' tool
+  --with-doxygen          generate source code documentation with doxygen
+  --with-man2html         convert man pages to html using man2html
 
 Some influential environment variables:
   CC          C compiler command
@@ -1553,7 +1557,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=emailrelay
- VERSION=1.2
+ VERSION=1.3
 
 
 cat >>confdefs.h <<_ACEOF
@@ -5263,6 +5267,21 @@ _ACEOF
 fi
 
 
+# Check whether --enable-fastbuild or --disable-fastbuild was given.
+if test "${enable_fastbuild+set}" = set; then
+  enableval="$enable_fastbuild"
+
+fi;
+
+if test "$enable_fastbuild" = "yes"
+then
+	CXX="`pwd`/bin/fastbuild.sh"
+	chmod +x "$CXX"
+	AR="`pwd`/bin/fastbuild.sh"
+	RANLIB="true"
+fi
+
+
 
 # Check whether --with-workshop or --without-workshop was given.
 if test "${with_workshop+set}" = set; then
@@ -5278,6 +5297,44 @@ then
 fi
 
 
+
+# Check whether --with-doxygen or --without-doxygen was given.
+if test "${with_doxygen+set}" = set; then
+  withval="$with_doxygen"
+
+fi;
+
+if test "$with_doxygen" != ""
+then
+	if test "$with_doxygen" = "yes" -a "$HAVE_DOXYGEN" != "yes"
+	then
+		echo ignoring --with-doxygen
+	else
+		HAVE_DOXYGEN="$with_doxygen"
+
+	fi
+fi
+
+
+
+# Check whether --with-man2html or --without-man2html was given.
+if test "${with_man2html+set}" = set; then
+  withval="$with_man2html"
+
+fi;
+
+if test "$with_man2html" != ""
+then
+	if test "$with_man2html" = "yes" -a "$HAVE_MAN2HTML" != "yes"
+	then
+		echo ignoring --with-man2html
+	else
+		HAVE_MAN2HTML="$with_man2html"
+
+	fi
+fi
+
+
 # Check whether --enable-fhs or --disable-fhs was given.
 if test "${enable_fhs+set}" = set; then
   enableval="$enable_fhs"
@@ -5287,6 +5344,8 @@ fi;
 if test "$e_sbindir" = "" ; then e_sbindir="$sbindir" ; fi
 
 if test "$e_libexecdir" = "" ; then e_libexecdir="$libexecdir" ; fi
+
+if test "$e_sysconfdir" = "" ; then e_sysconfdir="$sysconfdir" ; fi
 
 if test "$e_docdir" = "" ; then e_docdir="$datadir/$PACKAGE/doc" ; fi
 
@@ -5311,10 +5370,10 @@ then
 	localstatedir='/var'
 	mandir='/usr/man'
 	datadir='/usr/share'
+	sysconfdir='/etc'
 	#
 	# not used by emailrelay
 	#bindir=
-	#sysconfdir=
 	#sharedstatedir=
 	#libdir=
 	#includedir=
@@ -5329,13 +5388,14 @@ then
 	e_spooldir="$localstatedir/spool/$PACKAGE"
 	e_man1dir="$datadir/man/man1"
 	e_examplesdir="$datadir/doc/$PACKAGE/examples"
+	e_sysconfdir="$sysconfdir"
 
 fi
 
 
 SET_MAKE=""
 
-                                                                                                                                  ac_config_files="$ac_config_files Makefile src/Makefile src/glib/Makefile src/gnet/Makefile src/gsmtp/Makefile src/main/Makefile src/win32/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile lib/sunpro5/Makefile bin/Makefile doc/Makefile"
+                                                                                                                                            ac_config_files="$ac_config_files Makefile src/Makefile src/glib/Makefile src/gnet/Makefile src/gsmtp/Makefile src/main/Makefile src/win32/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile lib/sunpro5/Makefile bin/Makefile doc/Makefile etc/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -5904,6 +5964,7 @@ do
   "lib/sunpro5/Makefile" ) CONFIG_FILES="$CONFIG_FILES lib/sunpro5/Makefile" ;;
   "bin/Makefile" ) CONFIG_FILES="$CONFIG_FILES bin/Makefile" ;;
   "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
+  "etc/Makefile" ) CONFIG_FILES="$CONFIG_FILES etc/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -6044,6 +6105,7 @@ s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@e_sbindir@,$e_sbindir,;t t
 s,@e_libexecdir@,$e_libexecdir,;t t
+s,@e_sysconfdir@,$e_sysconfdir,;t t
 s,@e_docdir@,$e_docdir,;t t
 s,@e_initdir@,$e_initdir,;t t
 s,@e_spooldir@,$e_spooldir,;t t
