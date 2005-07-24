@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -85,7 +85,7 @@ bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , Verifier::Stat
 	{
 		if( !to_status.is_valid )
 		{
-			G_WARNING( "GSmtp::ProtocolMessage: rejecting recipient \"" <<to << "\": "<< to_status.reason );
+			G_WARNING( "GSmtp::ProtocolMessage: rejecting recipient \"" <<to << "\": "<< to_status.reason << ": " << to_status.help );
 			return false ;
 		}
 		else

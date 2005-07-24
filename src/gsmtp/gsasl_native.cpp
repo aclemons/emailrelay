@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -352,7 +352,7 @@ std::string GSmtp::SaslClient::response( const std::string & mechanism ,
 
 std::string GSmtp::SaslClient::preferred( const G::Strings & mechanism_list ) const
 {
-	G_DEBUG( "GSmtp::SaslClient::preferred: server's mechanisms: " << G::Str::join(mechanism_list,",") ) ;
+	G_DEBUG( "GSmtp::SaslClient::preferred: server's mechanisms: [" << G::Str::join(mechanism_list,",") << "]" ) ;
 
 	// short-circuit if no secrets
 	//

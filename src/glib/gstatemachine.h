@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -101,7 +101,7 @@ G_EXCEPTION( StateMachine_Error , "invalid state machine transition" ) ;
 ///   }
 /// } ;
 //
-template <class T, class State, class Event, class Arg = std::string>
+template <typename T, typename State, typename Event, typename Arg = std::string>
 class StateMachine 
 {
 public:

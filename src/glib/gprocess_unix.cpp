@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -361,15 +361,18 @@ G::Process::Id::Id( const char * path ) :
 {
 	// reentrant implementation suitable for a signal handler...
 	int fd = ::open( path ? path : "" , O_RDONLY ) ;
-	const size_t buffer_size = 11U ;
-	char buffer[buffer_size] ;
-	buffer[0U] = '\0' ;
-	ssize_t rc = ::read( fd , buffer , buffer_size - 1U ) ;
-	::close( fd ) ;
-	for( const char * p = buffer ; rc > 0 && *p >= '0' && *p <= '9' ; p++ , rc-- )
+	if( fd >= 0 )
 	{
-		m_pid *= 10 ;
-		m_pid += ( *p - '0' ) ;
+		const size_t buffer_size = 11U ;
+		char buffer[buffer_size] ;
+		buffer[0U] = '\0' ;
+		ssize_t rc = ::read( fd , buffer , buffer_size - 1U ) ;
+		::close( fd ) ;
+		for( const char * p = buffer ; rc > 0 && *p >= '0' && *p <= '9' ; p++ , rc-- )
+		{
+			m_pid *= 10 ;
+			m_pid += ( *p - '0' ) ;
+		}
 	}
 }
 

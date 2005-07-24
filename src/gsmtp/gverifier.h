@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -55,6 +55,7 @@ public:
 		std::string full_name ; 
 		std::string address ; 
 		std::string reason ;
+		std::string help ;
 	} ;
 
 	Verifier( const G::Executable & exe , bool deliver_to_postmaster , bool reject_local ) ;
@@ -72,28 +73,24 @@ public:
 	Status verify( const std::string & rcpt_to_parameter ,
 		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
 		const std::string & auth_mechanism , const std::string & auth_extra ) const ;
-			// Checks a recipient address returning
-			// a structure which indicates whether the
-			// address is local, what the full name is,
-			// and the canonical address.
+			// Checks a recipient address returning a structure which 
+			// indicates whether the address is local, what the full name 
+			// is, and the canonical address.
 			//
-			// If invalid then 'is_valid' is set false
-			// and a 'reason' is supplied.
+			// If invalid then 'is_valid' is set false and a 'reason' 
+			// is supplied.
 			//
-			// If valid and syntactically local then
-			// 'is_local' is set true, 'full_name' is
-			// set to the full description
-			// and 'address' is set to the
-			// canonical local address (without an
-			// at sign).
+			// If valid and syntactically local then 'is_local' is set 
+			// true, 'full_name' is set to the full description
+			// and 'address' is set to the canonical local address 
+			// (without an at sign).
 			//
-			// If valid and syntactically remote, then
-			// 'is_local' is set false, 'full_name' is
-			// empty, and 'address' is copied from
-			// 'recipient_address'.
+			// If valid and syntactically remote, then 'is_local' is 
+			// set false, 'full_name' is empty, and 'address' is copied 
+			// from 'recipient_address'.
 			//
-			// The 'from' address is passed in for
-			// RCPT commands, but not VRFY.
+			// The 'from' address is passed in for RCPT commands, but 
+			// not VRFY.
 
 private:
 	Status verifyInternal( const std::string & , const std::string & , const std::string & , 

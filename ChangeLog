@@ -1,6 +1,15 @@
 E-MailRelay Change Log
 ======================
 
+1.3.2 -> 1.3.3
+--------------
+* No bind() for outgoing connections [bug-id 1051689].
+* Updated rpm spec file [bug-id 1224850].
+* Fix for gcc3.4 compilation error in "md5.cpp".
+* Fix for glob()/size_t compilation warning.
+* Documentation of "auth" switches corrected.
+* State-machine template type declaration modernised, possibly breaking older compilers.
+
 1.3.1 -> 1.3.2
 --------------
 * Fix for core dump when "--client-filter" pre-processing fails.

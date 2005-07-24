@@ -247,7 +247,7 @@ includes the AUTH extension then the set of supported authentication mechanisms
 (such as LOGIN, CRAM-MD5 etc.) will be listed on the same line.
 
 After the EHLO response you should type "MAIL FROM:<myhost.mydomain>", retaining
-the angle brackets but substituing your own address. If this is accepted then 
+the angle brackets but substituting your own address. If this is accepted then 
 enter a "RCPT TO:<me@myhost.mydomain>" command to say where the e-mail is going.
 (Again, retain the angle brackets but substitute an appropriate address.)
 
@@ -447,4 +447,4 @@ maximise throughput.
 
 
 
-Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

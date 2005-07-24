@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -65,13 +65,7 @@ GNet::Socket::Socket( Descriptor s ) :
 
 GNet::Socket::~Socket()
 {
-	try
-	{
-		close() ;
-	}
-	catch(...)
-	{
-	}
+	try { close() ; } catch(...) {}
 }
 
 void GNet::Socket::drop()
@@ -83,10 +77,8 @@ void GNet::Socket::drop()
 
 void GNet::Socket::close()
 {
-	drop() ;
-	if( valid() ) 
-		doClose() ;
-
+	try { drop() ; } catch(...) {}
+	if( valid() ) doClose() ;
 	G_ASSERT( !valid() ) ;
 }
 

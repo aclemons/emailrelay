@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software; you can redistribute it and/or
 dnl modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@ dnl ===
 dnl socketlen_t
 dnl derived from lars brinkhoff...
 dnl
-AC_DEFUN(ACLOCAL_TYPE_SOCKLEN_T,
+AC_DEFUN([ACLOCAL_TYPE_SOCKLEN_T],
 [AC_CACHE_CHECK([for socklen_t], aclocal_cv_type_socklen_t,
 [
 	AC_TRY_COMPILE(

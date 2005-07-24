@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -89,6 +89,8 @@ GSmtp::Verifier::Status GSmtp::Verifier::verifyInternal( const std::string & add
 		status.is_valid = false ;
 		status.is_local = true ;
 		status.reason = "invalid local mailbox" ;
+		status.help = std::string() + "rejecting all local recipient addresses" ;
+		if( m_deliver_to_postmaster ) status.help.append( " except postmaster" ) ;
 	}
 	else
 	{
@@ -145,6 +147,8 @@ GSmtp::Verifier::Status GSmtp::Verifier::verifyExternal( const std::string & add
 		status.is_valid = false ;
 		status.reason = response.empty() ? G::Str::fromInt(rc) : response ;
 		G::Str::replaceAll( status.reason , "\n" , " " ) ;
+		status.reason = G::Str::toPrintableAscii( status.reason ) ;
+		status.help = "rejected by external verifier program" ;
 	}
 	return status ;
 }

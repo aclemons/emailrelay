@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -64,7 +64,7 @@ bool G::Directory::valid( bool for_creation ) const
 			rc = false ;
 	}
 
-	G_DEBUG( "G::Directory::valid: \"" << m_path.str() << "\" is " << (rc?"":"not ") << "a directory" ) ;
+	G_DEBUG( "G::Directory::valid: \"" << m_path.str() << "\" is " << (rc?"":"not ") << "a valid directory for " << (for_creation?"writing":"reading") ) ;
 	return rc ;
 }
 
@@ -79,7 +79,7 @@ private:
 	glob_t m_glob ;
 	Directory m_dir ;
 	bool m_first ;
-	size_t m_index ;
+	size_t m_index ; // 'int' on some systems
 	bool m_error ;
 
 public:
@@ -157,7 +157,7 @@ G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory &dir ,
 	const std::string & wildcard ) :
 		m_dir(dir) ,
 		m_first(true) ,
-		m_index(0U) ,
+		m_index(0) ,
 		m_error(false)
 {
 	m_glob.gl_pathc = 0 ;
@@ -172,7 +172,7 @@ G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory &dir ,
 	int error  = ::glob( wild_path.pathCstr() , flags , gdirectory_unix_on_error_ , &m_glob ) ;
 	if( error || m_glob.gl_pathv == NULL )
 	{
-		G_DEBUG( "G::DirectoryIteratorImp::ctor: glob() error: " << error ) ;
+		G_DEBUG( "G::DirectoryIteratorImp::ctor: glob() returned " << error ) ;
 		m_error = true ;
 	}
 	else
@@ -195,7 +195,7 @@ bool G::DirectoryIteratorImp::more()
 		m_index++ ;
 	m_first = false ;
 
-	if( m_index >= m_glob.gl_pathc )
+	if( m_index >= static_cast<size_t>(m_glob.gl_pathc) )
 		return false ;
 
 	return true ;
@@ -203,7 +203,7 @@ bool G::DirectoryIteratorImp::more()
 
 G::Path G::DirectoryIteratorImp::filePath() const
 {
-	G_ASSERT( m_index < m_glob.gl_pathc ) ;
+	G_ASSERT( m_index < static_cast<size_t>(m_glob.gl_pathc) ) ;
 	G_ASSERT( m_glob.gl_pathv != NULL ) ;
 	G_ASSERT( m_glob.gl_pathv[m_index] != NULL ) ;
 	const char * file_path = m_glob.gl_pathv[m_index] ;

@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License
@@ -22,6 +22,9 @@
 AM_INSTALL_PROGRAM_FLAGS=-s
 
 EXTRA_DIST=\
+	emailrelay.xcode/root.pbxuser \
+	emailrelay.xcode/root.mode1 \
+	emailrelay.xcode/project.pbxproj \
 	emailrelay-fastbuild.cpp \
 	passwd-fastbuild.cpp \
 	submit-fastbuild.cpp \

@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software; you can redistribute it and/or
 dnl modify it under the terms of the GNU General Public License
@@ -21,7 +21,7 @@ dnl Process this file with autoconf to produce a configure script.
 dnl
 
 AC_INIT(src/gsmtp/gsmtp.h)
-AM_INIT_AUTOMAKE(emailrelay,1.3.2)
+AM_INIT_AUTOMAKE(emailrelay,1.3.3)
 AM_CONFIG_HEADER(config.h)
 
 dnl ===

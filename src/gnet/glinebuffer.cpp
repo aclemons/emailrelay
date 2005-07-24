@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -29,9 +29,10 @@
 
 unsigned long GNet::LineBuffer::m_limit = 1000000UL ; // 1Mb denial-of-service line-length limit
 
-GNet::LineBuffer::LineBuffer( const std::string & eol ) :
+GNet::LineBuffer::LineBuffer( const std::string & eol , bool do_throw ) :
 	m_eol(eol) ,
-	m_more(false)
+	m_more(false) ,
+	m_throw(do_throw)
 {
 }
 
@@ -50,10 +51,19 @@ void GNet::LineBuffer::add( const std::string & s )
 	load() ;
 }
 
-void GNet::LineBuffer::check( size_t n ) const
+void GNet::LineBuffer::check( size_t n )
 {
 	if( (m_store.length()+n) > m_limit )
-		throw Overflow() ;
+	{
+		size_t total = m_store.size() + m_current.size() + n ;
+		m_store.erase() ;
+		m_current.erase() ;
+		m_more = false ;
+		if( m_throw )
+			throw Overflow() ;
+		else
+			G_ERROR( "GNet::LineBuffer::check: line too long: discarding " << total << " bytes" ) ;
+	}
 }
 
 void GNet::LineBuffer::load()

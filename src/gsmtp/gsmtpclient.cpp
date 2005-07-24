@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -83,6 +83,17 @@ GSmtp::Client::~Client()
 	m_protocol.doneSignal().disconnect() ;
 	m_protocol.preprocessorSignal().disconnect() ;
 	m_storedfile_preprocessor.doneSignal().disconnect() ;
+}
+
+void GSmtp::Client::reset()
+{
+	// (not used, not tested...)
+	m_protocol.doneSignal().disconnect() ;
+	m_protocol.preprocessorSignal().disconnect() ;
+	m_storedfile_preprocessor.doneSignal().disconnect() ;
+	m_connect_timer.cancelTimer() ;
+	if( m_socket != NULL )
+		disconnect() ;
 }
 
 std::string GSmtp::Client::startSending( const std::string & s , unsigned int connection_timeout )
@@ -177,6 +188,11 @@ void GSmtp::Client::preprocessorStart()
 
 void GSmtp::Client::preprocessorDone( bool ok )
 {
+	G_ASSERT( m_message.get() != NULL ) ;
+	if( ok && m_message.get() != NULL )
+	{
+		m_message->sync() ;
+	}
 	std::string reason = m_storedfile_preprocessor.text("preprocessing error") ;
 	m_protocol.preprocessorDone( ok ? std::string() : reason ) ;
 }

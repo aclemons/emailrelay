@@ -494,12 +494,12 @@ the server-side and client-side. The only authentication mechanisms currently
 provided are the non-standard but widely used "LOGIN" mechanism, which uses 
 plaintext passwords, and the "CRAM-MD5" mechanism, as defined in RFC2195.
 
-Authentication is enabled with the "--auth-client" and "--auth-server" 
+Authentication is enabled with the "--client-auth" and "--server-auth" 
 command-line switches. The switch parameter is the name of a "secrets" file, 
 containing usernames and passwords:
 
-	emailrelay --as-server --auth-server /etc/client-secrets.txt
-	emailrelay --as-client myisp.net:smtp --auth-client /etc/myisp-secret.txt
+	emailrelay --as-server --server-auth /etc/client-secrets.txt
+	emailrelay --as-client myisp.net:smtp --client-auth /etc/myisp-secret.txt
 
 The secrets file has a line-based format: blank lines are ignored and the hash
 character (#) is used for comments. 
@@ -519,16 +519,16 @@ The "xtext" encoding scheme is defined properly in RFC1891, but basically it
 says that non alphanumeric characters should be represented in hexadecimal as 
 "+XX". 
 
-The client-side secrets file specified with "--auth-client" is used when 
+The client-side secrets file specified with "--client-auth" is used when 
 E-MailRelay talks to a remove server. The file should contain at least one 
 "LOGIN client" or "CRAM-MD5 client" entry. 
 
-A server-side secrets file specified with "--auth-server" is used when a remote 
+A server-side secrets file specified with "--server-auth" is used when a remote 
 client tries to authenticate with E-MailRelay. The file should normally contain 
 several "LOGIN server" or "CRAM-MD5 server" entries. 
 
-The same secrets file may be specified for both "--auth-client" and 
-"--auth-server" switches.
+The same secrets file may be specified for both "--client-auth" and 
+"--server-auth" switches.
 
 The "CRAM-MD5" keys can be generated using the "emailrelay-passwd" utility.
 
@@ -559,7 +559,7 @@ least make sure that the secrets file has tight permissions, and that the
 passwords in it are not also used for anything important.
 
 On the server side authentication is advertised by E-MailRealy in the response 
-to the SMTP "EHLO" command if the "--auth-server" command-line switch is used.
+to the SMTP "EHLO" command if the "--server-auth" command-line switch is used.
 Authentication by the client is mandatory unless the client's IP address is
 configured as a trusted address. If the client does authenticate then the 
 authenticated user-id is stored with the message and then passed on to the next 
@@ -572,7 +572,7 @@ is passed to any external address verifier program specified by the "--verifier"
 command-line switch.
 
 For example this secrets file allows any client connecting from the 192.168.0.0/24
-domain to connect without authentication desipte the "--auth-server" switch:
+domain to connect without authentication desipte the "--server-auth" switch:
 
 	#
 	# emailrelay secrets file
@@ -583,7 +583,7 @@ domain to connect without authentication desipte the "--auth-server" switch:
 
 On the client side authentication is performed when E-MailRelay has connected to 
 a server which supports the AUTH extension with the LOGIN or CRAM-MD5 mechanism.
-If client authentication is enabled (with the "--auth-client" switch) but the 
+If client authentication is enabled (with the "--client-auth" switch) but the 
 server does not support the AUTH extension, or does not support the LOGIN or
 CRAM-MD5 mechanism, then E-MailRelay will fail the first message and terminate 
 with an error message.
@@ -713,4 +713,4 @@ if the directory exists, or in "/tmp" otherwise.
 
 
 
-Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

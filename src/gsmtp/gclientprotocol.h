@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -207,7 +207,8 @@ public:
 
 	G::Signal0 & preprocessorSignal() ;
 		// Returns a signal that is raised when the protocol
-		// needs to do message preprocessing.
+		// needs to do message preprocessing. The callee
+		// must call preprocessorDone().
 
 	void start( const std::string & from , const G::Strings & to , bool eight_bit ,
 		std::string authentication , std::string server_name ,

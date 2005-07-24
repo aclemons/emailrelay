@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -72,6 +72,11 @@ bool GSmtp::StoredFile::eightBit() const
 	return m_eight_bit ;
 }
 
+void GSmtp::StoredFile::sync()
+{
+	readEnvelopeCore( true ) ;
+}
+
 bool GSmtp::StoredFile::readEnvelope( std::string & reason , bool check )
 {
 	try
@@ -135,6 +140,9 @@ void GSmtp::StoredFile::readFrom( std::istream & stream )
 
 void GSmtp::StoredFile::readToList( std::istream & stream )
 {
+	m_to_local.clear() ;
+	m_to_remote.clear() ;
+
 	std::string to_count_line = getline(stream) ;
 	unsigned int to_count = G::Str::toUInt( value(to_count_line,"ToCount") ) ;
 

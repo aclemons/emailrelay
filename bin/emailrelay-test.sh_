@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -25,15 +25,27 @@
 #
 # Creates four temporary spool directories under /tmp and runs
 # four emailrelay servers to bucket-brigade a test message from one to 
-# the next. The test succeeds if the message gets into the final 
-# spool directory.
+# the next...
+#
+#   The script creates messages in store-1. A client sends messages
+#   from store-1 to server-1. Server-1 stores messages in store-2.
+#   Server-2 is poked to read messages from store-2 and send to
+#   server-3 authenticating as 'joe'. Server-3 authenticates joe
+#   and runs as a proxy using store-3 to forward messages to
+#   server-4 as 'fred'. Server-4 authenticates fred and stores 
+#   messages in store-4 which server-5 is continuously polling.
+#   Server-5 forwards messages that appear in store-4 to
+#   server-6 using a client preprocessor. Server-6 stores messages
+#   in store-5 using a server preprocessor.
+#
+# The test succeeds if the message gets into the final spool directory.
 #
 # Once all the servers have been killed the separate log files are 
-# concatenated into the summary log file "/tmp/emailrelay-test.out".
+# concatenated into the summary log file "/tmp/emailrelay-test.sh.out".
 #
 # If this test takes more a minute then it has failed.
 #
-# usage: emailrelay-test.sh [-v] [-d] [-n] [<exe-dir>]
+# usage: emailrelay-test.sh [-v] [-d] [-n] [<exe-dir> [<content-file>]]
 #	-v    use valgrind
 #	-d    use --debug
 #	-n    no cleanup
@@ -41,10 +53,19 @@
 
 # parse the command line
 #
-opt_use_valgrind="0" ; if test "${1}" = "-v" ; then opt_use_valgrind="1" ; shift ; fi
-opt_debug="0" ; if test "${1}" = "-d" ; then opt_debug="1" ; shift ; fi
-opt_no_cleanup="0" ; if test "${1}" = "-n" ; then opt_no_cleanup="1" ; shift ; fi
+opt_use_valgrind="0"
+opt_debug="0"
+opt_no_cleanup="0"
+while getopts 'vdn' opt ; do
+	case "$opt" in 
+		v) opt_use_valgrind="1" ;;
+		d) opt_use_debug="1" ;;
+		n) opt_no_cleanup="1" ;;
+	esac
+done
+shift `expr $OPTIND - 1`
 opt_exe_dir="${1}"
+opt_content_file="${2}"
 
 # configuration
 #
@@ -54,11 +75,11 @@ cfg_exe_dir="../src/main" ; test -z "${opt_exe_dir}" || cfg_exe_dir="${opt_exe_d
 cfg_main_exe="${cfg_exe_dir}/emailrelay"
 cfg_poke_exe="${cfg_exe_dir}/emailrelay-poke"
 cfg_null_filter="/bin/touch" ; test -f ${cfg_null_filter} || cfg_null_filter="/usr/bin/touch"
-cfg_content_file="/etc/services"
+cfg_content_file="/etc/services" ; test -z "${opt_content_file}" || cfg_content_file="${opt_content_file}"
 cfg_pp="201" # port-prefix
 cfg_base_dir="/tmp/`basename $0`.$$.tmp"
 cfg_summary_log="/tmp/`basename $0`.out"
-cfg_sw_valgrind="--logfile=${cfg_base_dir}/valgrind --trace-children=yes --num-callers=40 --leak-check=yes"
+cfg_sw_valgrind="--logfile=${cfg_base_dir}/valgrind --trace-children=yes --num-callers=40 --leak-check=yes --track-fds=yes --time-stamp=yes"
 cfg_run="" ; test "${opt_use_valgrind}" -eq 0 || cfg_run="valgrind ${cfg_sw_valgrind}"
 
 Init()
@@ -244,12 +265,20 @@ CreateFilter()
             _# filter.sh
             _tmp="${cfg_base_dir}/\`basename \$0\`.\$\$.tmp"
             _content="\$1"
-            _envelope="\`echo \\"\$1\\" | sed 's/\.content/.envelope.new/'\`"
-            _tr 'a-zA-Z' 'A-Za-z' < "\$content" > \$tmp && mv \$tmp "\$content"
-            _echo \`date\`: content=\$content >> "\$content"
-            _exit 0
+            _tr 'a-zA-Z' 'A-Za-z' < "\$content" > \$tmp 
+            _cp \$tmp "\$content"
 EOF
 	chmod +x ${cfg_base_dir}/filter.sh
+}
+
+Wait()
+{
+	if test "${opt_use_valgrind}" -eq 1 
+	then 
+		sleep 30
+	else
+		sleep 1
+	fi
 }
 
 Sleep()
@@ -275,9 +304,9 @@ Main()
 	RunServer 03 13 store-3 log-3 pid-3 "--immediate --forward-to localhost:${cfg_pp}04 --filter ${cfg_null_filter} --client-auth ${cfg_base_dir}/client-fred.auth --server-auth ${cfg_base_dir}/server.auth"
 	RunServer 04 14 store-4 log-4 pid-4 "--server-auth ${cfg_base_dir}/server.auth"
 	RunServer 05 15 store-4 log-5 pid-5 "--poll 1 --forward-to localhost:${cfg_pp}06 --client-filter ${cfg_base_dir}/filter.sh"
-	RunServer 06 16 store-6 log-6 pid-6 "--filter ${cfg_base_dir}/filter.sh"
+	RunServer 06 16 store-5 log-6 pid-6 "--filter ${cfg_base_dir}/filter.sh"
 
-	sleep 1
+	Wait
 	RunClient localhost:${cfg_pp}01 store-1 log-c pid-7
 	RunPoke 12 log-p
 
@@ -285,7 +314,7 @@ Main()
 	for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 	do
 		Sleep
-		if TestDone store-6
+		if TestDone store-5
 		then 
 			success="1"
 			break 

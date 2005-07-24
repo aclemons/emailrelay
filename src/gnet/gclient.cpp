@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -36,11 +36,11 @@
 
 namespace
 {
-	const int c_retries = 10 ; // number of retries when using a priviledged local port number
+	const int c_retries = 10 ; // number of retries when using a privileged local port number
 	const int c_port_start = 512 ;
 	const int c_port_end = 1024 ;
 	const size_t c_buffer_size = 1500U ; // see also gserver.h
-	const std::string c_cannot_connect_to( "cannot connect to " ) ;
+	const char * c_cannot_connect_to = "cannot connect to " ;
 }
 
 namespace GNet
@@ -84,7 +84,7 @@ public:
 	enum State { Idle , Resolving , Connecting , Connected , Failed , Disconnected } ;
 
 public:
-	ClientImp( Client & intaface , const Address & local_address , bool priviledged , bool quit_on_disconnect ) ;
+	ClientImp( Client & intaface , const Address & local_address , bool privileged , bool quit_on_disconnect ) ;
 	virtual ~ClientImp() ;
 	void resolveCon( bool ok , const Address & address , std::string reason ) ;
 	void readEvent() ;
@@ -92,7 +92,8 @@ public:
 	void exceptionEvent() ;
 	bool connect( std::string host , std::string service , std::string * error , bool sync_dns ) ;
 	std::string startConnecting( const Address & , const std::string & , bool & ) ;
-	Status connectCore( Address , Address , std::string * ) ;
+	bool localBind( Address ) ;
+	Status connectCore( Address , std::string * ) ;
 	void disconnect() ;
 	StreamSocket & s() ;
 	const StreamSocket & s() const ;
@@ -117,7 +118,7 @@ private:
 	Address m_remote_address ;
 	std::string m_peer_name ;
 	Client & m_interface ;
-	bool m_priviledged ;
+	bool m_privileged ;
 	static bool m_first ;
 	State m_state ;
 	bool m_quit_on_disconnect ;
@@ -125,19 +126,19 @@ private:
 
 // ===
 
-GNet::Client::Client( const Address & local_address , bool priviledged , bool quit_on_disconnect ) :
+GNet::Client::Client( const Address & local_address , bool privileged , bool quit_on_disconnect ) :
 	m_imp(NULL)
 {
 	G_DEBUG( "Client::ctor" ) ;
-	m_imp = new ClientImp( *this , local_address , priviledged , quit_on_disconnect ) ;
+	m_imp = new ClientImp( *this , local_address , privileged , quit_on_disconnect ) ;
 	if( Monitor::instance() ) Monitor::instance()->add( *this ) ;
 }
 
-GNet::Client::Client( bool priviledged , bool quit_on_disconnect ) :
+GNet::Client::Client( bool privileged , bool quit_on_disconnect ) :
 	m_imp(NULL)
 {
 	G_DEBUG( "Client::ctor" ) ;
-	m_imp = new ClientImp( *this , Address(0U) , priviledged , quit_on_disconnect ) ;
+	m_imp = new ClientImp( *this , Address(0U) , privileged , quit_on_disconnect ) ;
 	if( Monitor::instance() ) Monitor::instance()->add( *this ) ;
 }
 
@@ -198,13 +199,13 @@ bool GNet::Client::canRetry( const std::string & error )
 bool GNet::ClientImp::m_first = true ;
 
 GNet::ClientImp::ClientImp( Client & intaface , const Address & local_address ,
-	bool priviledged , bool quit_on_disconnect ) :
+	bool privileged , bool quit_on_disconnect ) :
 		m_resolver(*this) ,
 		m_s(NULL) ,
 		m_local_address(local_address) ,
 		m_remote_address(Address::invalidAddress()) ,
 		m_interface(intaface) ,
-		m_priviledged(priviledged) ,
+		m_privileged(privileged) ,
 		m_state(Idle) ,
 		m_quit_on_disconnect(quit_on_disconnect)
 {
@@ -369,21 +370,25 @@ std::string GNet::ClientImp::startConnecting( const Address & remote_address ,
 	//
 	Status status = Failure ;
 	std::string error ;
-	if( m_priviledged )
+	if( m_privileged )
 	{
 		for( int i = 0 ; i < c_retries ; i++ )
 		{
 			int port = getRandomPort() ;
 			m_local_address.setPort( port ) ;
 			G_DEBUG( "GNet::ClientImp::resolveCon: trying to bind " << m_local_address.displayString() ) ;
-			status = connectCore( m_local_address , remote_address , &error ) ;
+			status = localBind(m_local_address) ? Success : Retry ;
+			if( status == Retry )
+				continue ;
+
+			status = connectCore( remote_address , &error ) ;
 			if( status != Retry )
 				break ;
 		}
 	}
 	else
 	{
-		status = connectCore( m_local_address , remote_address , &error ) ;
+		status = connectCore( remote_address , &error ) ;
 	}
 
 	// deal with immediate connection (typically if connecting locally)
@@ -398,20 +403,18 @@ std::string GNet::ClientImp::startConnecting( const Address & remote_address ,
 	return error ;
 }
 
-GNet::ClientImp::Status GNet::ClientImp::connectCore( Address local_address , Address remote_address ,
-	std::string *error_p )
+bool GNet::ClientImp::localBind( Address local_address )
+{
+	G::Root claim_root ;
+	bool bound = s().bind(local_address) ;
+	G_DEBUG( "GNet::ClientImp::bind: bound local address " << local_address.displayString() ) ;
+	return bound ;
+}
+
+GNet::ClientImp::Status GNet::ClientImp::connectCore( Address remote_address , std::string *error_p )
 {
 	G_ASSERT( error_p != NULL ) ;
 	std::string &error = *error_p ;
-
-	G::Root claim_root ;
-	bool bound = s().bind(local_address) ;
-	if( !bound ) 
-	{
-		error = "cannot bind socket" ;
-		return Retry ;
-	}
-	G_DEBUG( "GNet::ClientImp::connectCore: bound local address " << local_address.displayString() ) ;
 
 	// initiate the connection
 	//

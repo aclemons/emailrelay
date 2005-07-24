@@ -1,4 +1,4 @@
-.\" Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+.\" Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 .\" 
 .\" This program is free software; you can redistribute it and/or
 .\" modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@
 .\" 
 .TH EMAILRELAY 1 local
 .SH NAME
-emailrelay \- e-mail transfer agent
+emailrelay \- e-mail transfer agent and proxy
 .SH SYNOPSIS
 .B emailrelay
 [OPTIONS]
@@ -34,8 +34,9 @@ emailrelay \- e-mail transfer agent
 .I server-address
 .SH DESCRIPTION
 .I emailrelay
-is an simple e-mail message transfer agent. It does store-and-forward
-mail relay to a fixed next-hop server, without any routing. 
+is a simple SMTP proxy and store-and-forward message transfer agent.
+It does store-and-forward mail relay to a fixed next-hop server, without 
+any routing. 
 .LP
 It runs in two main modes: a storage daemon 
 .RI ( --as-server ) 
@@ -44,13 +45,14 @@ agent
 .RI ( --as-client ). 
 The storage daemon is an SMTP server which stores e-mail 
 messages in a local spool directory. The forwarding agent acts as an
-SMTP client, which passes the spooled e-mail messages on to the next
+SMTP client sending the spooled e-mail messages on to the next
 SMTP server in the chain.
 .LP
 It can also run in a third mode, as a proxy server
 .RI ( --as-proxy ). 
 In this mode all messages are forwarded immediately to the next-hop
-server.
+server. Messages are only fully accepted from the sender once they
+have been successfully delivered to the next-hop server.
 .SH OPTIONS
 .TP
 .B \-a,--admin \fIadmin-port\fR
@@ -304,9 +306,9 @@ FHS style...
 .br
 /var/spool/emailrelay/emailrelay.*.envelope
 .SH SEE ALSO
-E-MailRelay user guide
+E-MailRelay user guide, (http://emailrelay.sourceforge.net/user.html).
 .br
-E-MailRelay reference
+E-MailRelay reference, (http://emailrelay.sourceforge.net/reference.html).
 .br
 .BR emailrelay-submit (1),
 .BR emailrelay-poke (1),

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -53,7 +53,7 @@ class GNet::LineBuffer
 public:
 	G_EXCEPTION( Overflow , "line buffer overflow: maximum input line length exceeded" ) ;
 
-	explicit LineBuffer( const std::string & eol = std::string("\n") ) ;
+	explicit LineBuffer( const std::string & eol = std::string("\n") , bool do_throw_on_overflow = false ) ;
 		// Constructor.
 
 	void add( const std::string & segment ) ;
@@ -85,7 +85,7 @@ private:
 	LineBuffer( const LineBuffer & ) ;
 	void operator=( const LineBuffer & ) ;
 	void load() ;
-	void check( size_t ) const ;
+	void check( size_t ) ;
 
 private:
 	static unsigned long m_limit ;
@@ -93,6 +93,7 @@ private:
 	std::string m_current ;
 	std::string m_store ;
 	bool m_more ;
+	bool m_throw ;
 } ;
 
 #endif
