@@ -5,7 +5,7 @@ Release: 1
 License: GPL
 Group: System Environment/Daemons
 URL: http://emailrelay.sourceforge.net/
-Source: http://kent.dl.sourceforge.net/sourceforge/emailrelay/emailrelay-1.3.3.tar.gz
+Source: http://kent.dl.sourceforge.net/sourceforge/emailrelay/emailrelay-src-1.3.3.tar.gz
 BuildRoot: /tmp/emailrelay-install
 
 %description

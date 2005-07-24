@@ -21,12 +21,19 @@
 #
 # xar
 #
-# A replacement for 'ar' that does 'CC -xar' ignoring 
-# autoconf's bogus "cru" switches.
+# A replacement for 'ar' that uses the Workshop compiler 
+# as 'CC -xar'. It also discards autoconf's bogus "cru" 
+# command-line argument.
 #
 # For example:
 # $ chmod +x lib/sunpro5/xar
 # $ ./configure --enable-whatever AR=`pwd`/lib/sunpro5/xar
+#
+# Or just:
+# $ ./configure --enable-workshop
+#
+# Also note that gcc on solaris may require:
+# $ ./configure --enable-whatever AR=/usr/ccs/bin/ar
 #
 CC="CC" 
 if test -x "${CXX}" ; then CC="${CXX}" ; fi

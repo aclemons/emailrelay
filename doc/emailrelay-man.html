@@ -9,7 +9,7 @@ Section: User Commands  (1)<BR>Updated: local<BR><A HREF="#index">Index</A>
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-emailrelay - e-mail transfer agent
+emailrelay - e-mail transfer agent and proxy
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
@@ -40,8 +40,9 @@ emailrelay - e-mail transfer agent
 
 <I>emailrelay</I>
 
-is an simple e-mail message transfer agent. It does store-and-forward
-mail relay to a fixed next-hop server, without any routing. 
+is a simple SMTP proxy and store-and-forward message transfer agent.
+It does store-and-forward mail relay to a fixed next-hop server, without 
+any routing. 
 <P>
 
 It runs in two main modes: a storage daemon 
@@ -53,7 +54,7 @@ agent
 
 The storage daemon is an SMTP server which stores e-mail 
 messages in a local spool directory. The forwarding agent acts as an
-SMTP client, which passes the spooled e-mail messages on to the next
+SMTP client sending the spooled e-mail messages on to the next
 SMTP server in the chain.
 <P>
 
@@ -61,7 +62,8 @@ It can also run in a third mode, as a proxy server
 (<I>--as-proxy</I>).
 
 In this mode all messages are forwarded immediately to the next-hop
-server.
+server. Messages are only fully accepted from the sender once they
+have been successfully delivered to the next-hop server.
 <A NAME="lbAE">&nbsp;</A>
 <H2>OPTIONS</H2>
 
@@ -97,7 +99,7 @@ Enables authentication with remote server, using the given secrets file.
 <DT><B>-Y,--client-filter </B><I>program</I>
 
 <DD>
-Defines a mail processor program for when forwarding.
+Specifies an external program to process messages when they are forwarded.
 <DT><B>-e,--close-stderr </B>
 
 <DD>
@@ -117,15 +119,15 @@ Sets an override for the host's fully qualified domain name.
 <DT><B>-X,--dont-listen </B>
 
 <DD>
-Dont listen for smtp connections (usually used with <I>--admin</I>).
+Disables listening for smtp connections (usually used with <I>--admin</I>).
 <DT><B>-x,--dont-serve </B>
 
 <DD>
-Dont act as a server (usually used with <I>--forward</I>).
+Disables acting as a server (usually used with <I>--forward</I>).
 <DT><B>-z,--filter </B><I>program</I>
 
 <DD>
-Defines a mail processor program for when storing.
+Specifies an external program to process messages as they are stored.
 <DT><B>-f,--forward </B>
 
 <DD>
@@ -141,11 +143,11 @@ Displays help text and exits.
 <DT><B>-m,--immediate </B>
 
 <DD>
-Forwards each message as soon as it is received (requires <I>--forward-to</I>).
+Enables immediating forwarding of messages as soon as they are received (requires <I>--forward-to</I>).
 <DT><B>-I,--interface </B><I>ip-address</I>
 
 <DD>
-Listen on a specific interface.
+Defines the listening interface for new connections.
 <DT><B>-l,--log </B>
 
 <DD>
@@ -165,7 +167,7 @@ Disables syslog output.
 <DT><B>-i,--pid-file </B><I>pid-file</I>
 
 <DD>
-Records the daemon process-id in the given file.
+Defines a file for storing the daemon process-id.
 <DT><B>-O,--poll </B><I>period</I>
 
 <DD>
@@ -177,7 +179,7 @@ Specifies the smtp listening port number.
 <DT><B>-P,--postmaster </B>
 
 <DD>
-Allow delivery to postmaster but reject all other local mailbox addresses.
+Allows delivery to the postmaster but rejects all other local mailbox addresses.
 <DT><B>-r,--remote-clients </B>
 
 <DD>
@@ -186,6 +188,10 @@ Allows remote clients to connect.
 
 <DD>
 Sets the response timeout (in seconds) when talking to a remote server (default is 1800).
+<DT><B>-R,--scanner </B><I>host:port</I>
+
+<DD>
+Specifies an external network server to process messages when they are stored.
 <DT><B>-S,--server-auth </B><I>file</I>
 
 <DD>
@@ -205,7 +211,7 @@ Generates more verbose output (works with <I>--help</I> and <I>--log</I>).
 <DT><B>-Z,--verifier </B><I>program</I>
 
 <DD>
-Defines an external address verifier program.
+Specifies an external program for address verification.
 <DT><B>-V,--version </B>
 
 <DD>
@@ -425,10 +431,10 @@ FHS style...
 <A NAME="lbAG">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-E-MailRelay user guide
+E-MailRelay user guide, (<A HREF="http://emailrelay.sourceforge.net/user.html).">http://emailrelay.sourceforge.net/user.html).</A>
 <BR>
 
-E-MailRelay reference
+E-MailRelay reference, (<A HREF="http://emailrelay.sourceforge.net/reference.html).">http://emailrelay.sourceforge.net/reference.html).</A>
 <BR>
 
 <B><A HREF="http://localhost/cgi-bin/man/man2html?1+emailrelay-submit">emailrelay-submit</A></B>(1),
@@ -464,7 +470,7 @@ Graeme Walker, mailto:<A HREF="mailto:graeme_walker@users.sourceforge.net">graem
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 18:13:20 GMT, February 26, 2004
+Time: 14:38:57 GMT, July 24, 2005
 </BODY>
 </HTML>
-<!-- Copyright (C) 2001-2004 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

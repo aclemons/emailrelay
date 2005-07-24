@@ -22,9 +22,6 @@
 AM_INSTALL_PROGRAM_FLAGS=-s
 
 EXTRA_DIST=\
-	emailrelay.xcode/root.pbxuser \
-	emailrelay.xcode/root.mode1 \
-	emailrelay.xcode/project.pbxproj \
 	emailrelay-fastbuild.cpp \
 	passwd-fastbuild.cpp \
 	submit-fastbuild.cpp \
