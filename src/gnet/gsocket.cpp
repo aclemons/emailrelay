@@ -43,24 +43,30 @@ bool GNet::Socket::open( int domain, int type, int protocol )
 		G_DEBUG( "GNet::Socket::open: cannot open a socket (" << m_reason << ")" ) ;
 		return false ;
 	}
+	return prepare() ;
+}
 
-	if( !setNonBlock() )
+bool GNet::Socket::prepare()
+{
+	if( setNonBlock() )
+	{
+		return true ;
+	}
+	else
 	{
 		m_reason = reason() ;
 		doClose() ;
 		G_ASSERT( !valid() ) ;
-		G_DEBUG( "GNet::Socket::open: cannot make socket non-blocking (" << m_reason << ")" ) ;
+		G_WARNING( "GNet::Socket::open: cannot make socket non-blocking (" << m_reason << ")" ) ;
 		return false ;
 	}
-
-	return true ;
 }
 
 GNet::Socket::Socket( Descriptor s ) :
 	m_reason(0) ,
 	m_socket(s)
 {
-	;
+	prepare() ;
 }
 
 GNet::Socket::~Socket()
@@ -156,7 +162,7 @@ ssize_t GNet::Socket::write( const char *buf, size_t len )
 	if( static_cast<ssize_t>(len) < 0 )
 		G_WARNING( "GNet::Socket::write: too big" ) ; // EMSGSIZE from ::send() ?
 
-	ssize_t nsent = ::send( m_socket, buf, len, 0 ) ;
+	ssize_t nsent = ::send( m_socket , buf , len , 0 ) ;
 
 	if( sizeError(nsent) ) // if -1
 	{
@@ -168,8 +174,6 @@ ssize_t GNet::Socket::write( const char *buf, size_t len )
 	{
 		m_reason = reason() ;
 	}
-
-	//G_DEBUG( "GNet::Socket::write: wrote " << nsent << "/" << len << " byte(s)" ) ;
 	return nsent;
 }
 
@@ -199,7 +203,7 @@ void GNet::Socket::setReuse()
 
 bool GNet::Socket::listen( int backlog )
 {
-	int rc = ::listen( m_socket, backlog ) ;
+	int rc = ::listen( m_socket , backlog ) ;
 	if( error(rc) )
 	{
 		m_reason = reason() ;
@@ -297,7 +301,7 @@ std::string GNet::Socket::reasonString() const
 	return ss.str() ;
 }
 
-//===================================================================
+//==
 
 GNet::StreamSocket::StreamSocket() : 
 	Socket( PF_INET , SOCK_STREAM )
@@ -335,8 +339,6 @@ ssize_t GNet::StreamSocket::read( char *buf , size_t len )
 		G_DEBUG( "GNet::StreamSocket::read: fd " << m_socket << ": read error " << m_reason ) ;
 		return -1 ;
 	}
-
-	//G_DEBUG( "GNet::StreamSocket::read: fd " << m_socket << ": read " << nread << " bytes(s)" ) ;
 	return nread ;
 }
 
@@ -362,7 +364,7 @@ GNet::AcceptPair GNet::StreamSocket::accept()
 	return pair ;
 }
 
-//===================================================================
+//==
 
 GNet::DatagramSocket::DatagramSocket() : 
 	Socket( PF_INET , SOCK_DGRAM )
@@ -393,7 +395,7 @@ ssize_t GNet::DatagramSocket::read( void *buf , size_t len , Address & src_addre
 {
 	sockaddr sender ;
 	socklen_t sender_len = sizeof(sender) ;
-	ssize_t nread = ::recvfrom( m_socket, reinterpret_cast<char*>(buf), len, 0, &sender, &sender_len ) ;
+	ssize_t nread = ::recvfrom( m_socket , reinterpret_cast<char*>(buf) , len , 0 , &sender , &sender_len ) ;
 	if( sizeError(nread) )
 	{
 		m_reason = reason() ;
@@ -406,12 +408,9 @@ ssize_t GNet::DatagramSocket::read( void *buf , size_t len , Address & src_addre
 
 ssize_t GNet::DatagramSocket::write( const char *buf , size_t len , const Address &dst )
 {
-	G_DEBUG( "GNet::DatagramSocket::write: sending " << len << " bytes to " 
-		<< dst.displayString() ) ;
+	G_DEBUG( "GNet::DatagramSocket::write: sending " << len << " bytes to " << dst.displayString() ) ;
 
-	ssize_t nsent = ::sendto( m_socket, buf, 
-		len, 0, dst.address(), dst.length() ) ;
-
+	ssize_t nsent = ::sendto( m_socket, buf, len, 0, dst.address(), dst.length() ) ;
 	if( nsent < 0 )
 	{
 		m_reason = reason() ;
@@ -420,6 +419,4 @@ ssize_t GNet::DatagramSocket::write( const char *buf , size_t len , const Addres
 	}
 	return nsent ;
 }
-
-
 

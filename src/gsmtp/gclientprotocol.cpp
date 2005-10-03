@@ -179,7 +179,7 @@ void GSmtp::ClientProtocol::sendMailCore()
 	}
 	if( m_authenticated_with_server && !m_message_authentication.empty() )
 	{
-		mail_from.append( std::string(" AUTH=") + Xtext::encode(m_message_authentication) ) ;
+		mail_from.append( std::string(" AUTH=") + G::Xtext::encode(m_message_authentication) ) ;
 	}
 	else if( m_authenticated_with_server )
 	{

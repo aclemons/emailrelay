@@ -205,15 +205,14 @@ void GSmtp::ServerProtocol::doVrfy( const std::string & line , bool & )
 	{
 		std::string mbox = parseMailbox( line ) ;
 		Verifier::Status rc = verify( mbox , "" ) ;
-		bool local = rc.is_local ;
-		if( local && rc.full_name.length() )
-			sendVerified( rc.full_name ) ;
+		if( rc.is_valid && rc.is_local )
+			sendVerified( rc.full_name ) ; // 250
 			// now deleted
-		else if( local )
-			sendNotVerified( mbox ) ;
+		else if( rc.is_valid )
+			sendWillAccept( mbox ) ; // 252
 			// now deleted
 		else
-			sendWillAccept( mbox ) ;
+			sendNotVerified( mbox , rc.temporary ) ; // 550 or 450
 			// now deleted
 	}
 	else
@@ -310,12 +309,6 @@ void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate 
 		G_WARNING( "GSmtp::ServerProtocol: invalid base64 encoding of AUTH parameter" ) ;
 		predicate = false ; // => idle
 		send( "501 Invalid argument" ) ;
-		// now deleted
-	}
-	else if( got_initial_response && m_sasl.mustChallenge() )
-	{
-		predicate = false ; // => idle
-		sendAuthDone( false ) ;
 		// now deleted
 	}
 	else if( got_initial_response )
@@ -456,12 +449,16 @@ void GSmtp::ServerProtocol::doRcpt( const std::string & line , bool & predicate 
 	std::pair<std::string,std::string> to_pair = parseTo( line ) ;
 	std::string reason = to_pair.second ;
 	bool ok = reason.empty() ;
+	bool temporary = false ;
 	if( ok )
 	{
 		Verifier::Status status = verify( to_pair.first , m_pmessage.from() ) ;
 		ok = m_pmessage.addTo( to_pair.first , status ) ;
 		if( !ok )
+		{
 			reason = G::Str::toPrintableAscii(status.reason) ;
+			temporary = status.temporary ;
+		}
 	}
 
 	predicate = ok ;
@@ -469,7 +466,7 @@ void GSmtp::ServerProtocol::doRcpt( const std::string & line , bool & predicate 
 		sendRcptReply() ;
 		// now deleted
 	else
-		sendBadTo( reason ) ;
+		sendBadTo( reason , temporary ) ;
 		// now deleted
 }
 
@@ -579,9 +576,9 @@ void GSmtp::ServerProtocol::sendVerified( const std::string & user )
 	// now deleted
 }
 
-void GSmtp::ServerProtocol::sendNotVerified( const std::string & user )
+void GSmtp::ServerProtocol::sendNotVerified( const std::string & user , bool temporary )
 {
-	send( std::string("550 no such mailbox: ") + user ) ;
+	send( std::string() + (temporary?"450":"550") + " no such mailbox: " + user ) ;
 	// now deleted
 }
 
@@ -668,9 +665,9 @@ void GSmtp::ServerProtocol::sendBadFrom( std::string reason )
 	// now deleted
 }
 
-void GSmtp::ServerProtocol::sendBadTo( const std::string & text )
+void GSmtp::ServerProtocol::sendBadTo( const std::string & text , bool temporary )
 {
-	send( std::string("550 mailbox unavailable: ") + text ) ;
+	send( std::string() + (temporary?"450":"550") + " mailbox unavailable: " + text ) ;
 	// now deleted
 }
 

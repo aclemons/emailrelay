@@ -94,5 +94,7 @@ libglib_a_SOURCES = \
 	gstr.h \
 	gstrings.h \
 	gtime.cpp \
-	gtime.h
+	gtime.h \
+	gxtext.cpp \
+	gxtext.h
 

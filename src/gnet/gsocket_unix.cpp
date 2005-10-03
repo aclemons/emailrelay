@@ -46,7 +46,11 @@ bool GNet::Socket::setNonBlock()
 		return false ;
 
 	int rc = ::fcntl( m_socket , F_SETFL , mode | O_NONBLOCK ) ;
-	return rc >= 0 ;
+	bool ok = rc >= 0 ;
+	if( ok )
+		G_ASSERT( ::fcntl(m_socket,F_GETFL) & O_NONBLOCK ) ;
+
+	return ok ;
 }
 
 int GNet::Socket::reason()

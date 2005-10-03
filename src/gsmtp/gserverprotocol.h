@@ -189,7 +189,7 @@ private:
 	void doNoRecipients( const std::string & , bool & ) ;
 	void sendBadFrom( std::string ) ;
 	void sendChallenge( const std::string & ) ;
-	void sendBadTo( const std::string & ) ;
+	void sendBadTo( const std::string & , bool ) ;
 	void sendOutOfSequence( const std::string & ) ;
 	void sendGreeting( const std::string & ) ;
 	void sendClosing() ;
@@ -207,7 +207,7 @@ private:
 	void sendNoRecipients() ;
 	void sendMissingParameter() ;
 	void sendVerified( const std::string & ) ;
-	void sendNotVerified( const std::string & ) ;
+	void sendNotVerified( const std::string & , bool ) ;
 	void sendWillAccept( const std::string & ) ;
 	void sendAuthDone( bool ok ) ;
 	void sendOk() ;

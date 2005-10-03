@@ -64,8 +64,6 @@ GNet::StreamSocket & GNet::ServerPeer::socket()
 
 void GNet::ServerPeer::readEvent()
 {
-	//G_DEBUG( "GNet::ServerPeer::readEvent: peer=" << this ) ;
-
 	char buffer[c_buffer_size] ;
 	buffer[0] = '\0' ;
 	size_t buffer_size = sizeof(buffer) ;

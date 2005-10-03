@@ -43,8 +43,7 @@ mk_sources=\
 	gsmtpserver.cpp \
 	gstoredfile.cpp \
 	gstoredmessage.cpp \
-	gverifier.cpp \
-	gxtext.cpp
+	gverifier.cpp
 
 mk_target=gsmtp.a
 

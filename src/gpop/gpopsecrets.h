@@ -18,68 +18,63 @@
 // 
 // ===
 //
-// gsecrets.h
+// gpopsecrets.h
 //
 
-#ifndef G_SMTP_SECRETS_H
-#define G_SMTP_SECRETS_H
+#ifndef G_POP_SECRETS_H
+#define G_POP_SECRETS_H
 
 #include "gdef.h"
-#include "gsmtp.h"
+#include "gpop.h"
 #include "gpath.h"
 #include "gexception.h"
 #include <iostream>
 #include <map>
 
-namespace GSmtp
+namespace GPop
 {
 	class Secrets ;
 	class SecretsImp ;
 }
 
-// Class: GSmtp::Secrets
+// temporary...
+namespace GSmtp
+{
+	class Secrets ;
+}
+
+// Class: GPop::Secrets
 // Description: A simple interface to a store of secrets as used in
-// authentication. The default implementation uses a flat file.
+// authentication.
 //
-// See also: GSmtp::SaslClient, GSmtp::SaslServer
-//
-class GSmtp::Secrets 
+class GPop::Secrets 
 {
 public:
 	G_EXCEPTION( OpenError , "cannot read secrets file" ) ;
 
-	explicit Secrets( const std::string & storage_path , 
-		const std::string & debug_name ,
-		const std::string & server_type = std::string() ) ;
-			// Constructor. In principle the repository 'storage-path'
-			// can be a path to a file, a database connection string, 
-			// etc.
-			//
-			// The 'debug-name' is used in log messages to identify 
-			// the repository succinctly.
-			//
-			// The 'server-type' parameter can be used to select 
-			// a different set of server-side authentication records 
-			// that may be stored in the same repository.
+	static std::string defaultPath() ;
+		// Returns the default path.
+
+	explicit Secrets( const std::string & storage_path = defaultPath() ) ;
+		// Constructor. In principle the storage_path can
+		// be a path to a file, a database connection
+		// string, etc.
 
 	~Secrets() ;
 		// Destructor.
 
+	std::string path() const ;
+		// Returns the storate path.
+
 	bool valid() const ;
 		// Returns true if a valid file.
 
-	std::string id( const std::string & mechanism ) const ;
-		// Returns the default id for client-side
-		// authentication.
-
-	std::string secret( const std::string & mechanism ) const ;
-		// Returns the default secret for client-side
-		// authentication.
-
 	std::string secret(  const std::string & mechanism , const std::string & id ) const ;
-		// Returns the given user's secret for server-side
-		// authentication. Returns the empty string if not a 
-		// valid id.
+		// Returns the given user's secret. Returns the
+		// empty string if not a valid id.
+
+	const GSmtp::Secrets & smtp() const ;
+		// Temporary back-door.
 
 private:
 	Secrets( const Secrets & ) ; // not implemented

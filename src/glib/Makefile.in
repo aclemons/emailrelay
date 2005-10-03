@@ -60,7 +60,7 @@ am_libglib_a_OBJECTS = md5.$(OBJEXT) garg.$(OBJEXT) \
 	glogoutput.$(OBJEXT) glogoutput_unix.$(OBJEXT) \
 	gmd5_native.$(OBJEXT) gpath.$(OBJEXT) gpidfile.$(OBJEXT) \
 	gprocess_unix.$(OBJEXT) groot.$(OBJEXT) gslot.$(OBJEXT) \
-	gstr.$(OBJEXT) gtime.$(OBJEXT)
+	gstr.$(OBJEXT) gtime.$(OBJEXT) gxtext.$(OBJEXT)
 libglib_a_OBJECTS = $(am_libglib_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -82,7 +82,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/gpidfile.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gprocess_unix.Po ./$(DEPDIR)/groot.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gslot.Po ./$(DEPDIR)/gstr.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gtime.Po ./$(DEPDIR)/md5.Po
+@AMDEP_TRUE@	./$(DEPDIR)/gtime.Po ./$(DEPDIR)/gxtext.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/md5.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -144,6 +145,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+POPLIB = @POPLIB@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -269,7 +271,9 @@ libglib_a_SOURCES = \
 	gstr.h \
 	gstrings.h \
 	gtime.cpp \
-	gtime.h
+	gtime.h \
+	gxtext.cpp \
+	gxtext.h
 
 all: all-am
 
@@ -345,6 +349,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gslot.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtime.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gxtext.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Po@am__quote@
 
 .cpp.o:

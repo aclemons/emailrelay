@@ -33,6 +33,15 @@
 #include "gassert.h"
 #include "glog.h"
 
+GSmtp::Verifier::Status::Status() :
+	is_valid(false) ,
+	is_local(false) ,
+	temporary(false)
+{
+}
+
+// ==
+
 GSmtp::Verifier::Verifier( const G::Executable & external , bool deliver_to_postmaster , bool reject_local ) :
 	m_external(external) ,
 	m_deliver_to_postmaster(deliver_to_postmaster) ,
@@ -145,6 +154,7 @@ GSmtp::Verifier::Status GSmtp::Verifier::verifyExternal( const std::string & add
 	else
 	{
 		status.is_valid = false ;
+		status.temporary = rc == 3 ;
 		status.reason = response.empty() ? G::Str::fromInt(rc) : response ;
 		G::Str::replaceAll( status.reason , "\n" , " " ) ;
 		status.reason = G::Str::toPrintableAscii( status.reason ) ;

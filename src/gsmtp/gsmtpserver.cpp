@@ -145,7 +145,8 @@ void GSmtp::ServerPeer::protocolSend( const std::string & line , bool allow_dele
 		// client/network cannot cope -- so just drop the 
 		// connection
 		//
-		doDelete() ;
+		if( allow_delete_this )
+			doDelete() ;
 	}
 }
 
@@ -215,7 +216,7 @@ void GSmtp::Server::report() const
 	{
 		Server * This = const_cast<Server*>(this) ;
 		if( This->imp(i).address().first )
-			G_LOG_S( "GSmtp::Server: listening on " << This->imp(i).address().second.displayString() ) ;
+			G_LOG_S( "GSmtp::Server: smtp server on \"" << This->imp(i).address().second.displayString() << "\"" ) ;
 	}
 }
 

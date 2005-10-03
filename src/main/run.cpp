@@ -35,6 +35,7 @@
 #include "gfilestore.h"
 #include "gnewfile.h"
 #include "gadminserver.h"
+#include "gpopserver.h"
 #include "gslot.h"
 #include "gmonitor.h"
 #include "glocal.h"
@@ -52,7 +53,7 @@
 //static
 std::string Main::Run::versionNumber()
 {
-	return "1.3.3" ;
+	return "1.3.4" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string & switch_spec ) :
@@ -166,6 +167,9 @@ void Main::Run::checkPorts() const
 	if( cfg().doServing() && cfg().doSmtp() )
 		checkPort( cfg().listeningInterface() , cfg().port() ) ;
 
+	if( cfg().doServing() && cfg().doPop() )
+		checkPort( cfg().listeningInterface() , cfg().popPort() ) ;
+
 	if( cfg().doServing() && cfg().doAdmin() )
 		checkPort( cfg().listeningInterface() , cfg().adminPort() ) ;
 }
@@ -206,15 +210,17 @@ void Main::Run::runCore()
 	GNet::Monitor monitor ;
 	monitor.signal().connect( G::slot(*this,&Run::raiseNetworkEvent) ) ;
 
-	// message store singleton
+	// message store singletons
 	//
 	m_store <<= new GSmtp::FileStore( cfg().spoolDir() ) ;
 	m_store->signal().connect( G::slot(*this,&Run::raiseStoreEvent) ) ;
+	GPop::Store pop_store( cfg().spoolDir() , cfg().popByName() , ! cfg().popNoDelete() ) ;
 
 	// authentication secrets
 	//
 	m_client_secrets <<= new GSmtp::Secrets( cfg().clientSecretsFile() , "client" ) ;
 	GSmtp::Secrets server_secrets( cfg().serverSecretsFile() , "server" ) ;
+	GPop::Secrets pop_secrets( cfg().popSecretsFile() ) ;
 
 	// daemonise
 	//
@@ -236,12 +242,15 @@ void Main::Run::runCore()
 	//
 	if( cfg().doServing() )
 	{
-		doServing( *m_store.get() , server_secrets , *m_client_secrets.get() , pid_file , *event_loop.get() ) ;
+		doServing( *m_client_secrets.get() , *m_store.get() , server_secrets , 
+			pop_store , pop_secrets , pid_file , *event_loop.get() ) ;
 	}
 }
 
-void Main::Run::doServing( GSmtp::MessageStore & store , const GSmtp::Secrets & server_secrets , 
-	const GSmtp::Secrets & client_secrets , G::PidFile & pid_file , GNet::EventLoop & event_loop )
+void Main::Run::doServing( const GSmtp::Secrets & client_secrets , 
+	GSmtp::MessageStore & store , const GSmtp::Secrets & server_secrets , 
+	GPop::Store & pop_store , const GPop::Secrets & pop_secrets ,
+	G::PidFile & pid_file , GNet::EventLoop & event_loop )
 {
 	std::auto_ptr<GSmtp::Server> smtp_server ;
 	if( cfg().doSmtp() )
@@ -257,6 +266,12 @@ void Main::Run::doServing( GSmtp::MessageStore & store , const GSmtp::Secrets & 
 			cfg().connectionTimeout() ,
 			clientConfig() ) ;
 
+	}
+
+	std::auto_ptr<GPop::Server> pop_server ;
+	if( cfg().doPop() )
+	{
+		pop_server <<= new GPop::Server( pop_store , pop_secrets , popConfig() ) ;
 	}
 
 	if( cfg().doAdmin() )
@@ -314,6 +329,7 @@ void Main::Run::doServing( GSmtp::MessageStore & store , const GSmtp::Secrets & 
 	closeMoreFiles() ;
 	if( smtp_server.get() ) smtp_server->report() ;
 	if( m_admin_server.get() ) m_admin_server->report() ;
+	if( pop_server.get() ) pop_server->report() ;
 	event_loop.run() ;
 	m_admin_server <<= 0 ;
 }
@@ -356,6 +372,11 @@ GSmtp::Server::Config Main::Run::serverConfig() const
 			cfg().scannerConnectionTimeout() ,
 			G::Executable(cfg().filter()) ,
 			cfg().filterTimeout() ) ;
+}
+
+GPop::Server::Config Main::Run::popConfig() const
+{
+	return GPop::Server::Config( cfg().allowRemoteClients() , cfg().popPort() , cfg().listeningInterface() ) ;
 }
 
 GSmtp::Client::Config Main::Run::clientConfig() const

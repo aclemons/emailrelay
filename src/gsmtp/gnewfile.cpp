@@ -223,7 +223,7 @@ void GSmtp::NewFile::writeEnvelope( std::ostream & stream , const std::string & 
 		for( ; to_p != m_to_remote.end() ; ++to_p )
 			stream << x << "To-Remote: " << *to_p << crlf() ;
 	}
-	stream << x << "Authentication: " << Xtext::encode(auth_id) << crlf() ;
+	stream << x << "Authentication: " << G::Xtext::encode(auth_id) << crlf() ;
 	stream << x << "Client: " << client_ip << crlf() ;
 	stream << x << "End: 1" << crlf() ;
 	stream.flush() ;

@@ -42,6 +42,9 @@
 #include "gsmtpclient.h"
 #include "gsmtpserver.h"
 #include "gadminserver.h"
+#include "gpopserver.h"
+#include "gpopstore.h"
+#include "gpopsecrets.h"
 #include <iostream>
 #include <exception>
 #include <memory>
@@ -95,8 +98,8 @@ private:
 	void operator=( const Run & ) ; // not implemented
 	void runCore() ;
 	void doForwarding( GSmtp::MessageStore & , const GSmtp::Secrets & , GNet::EventLoop & ) ;
-	void doServing( GSmtp::MessageStore & , const GSmtp::Secrets & , const GSmtp::Secrets & ,
-		G::PidFile & , GNet::EventLoop & ) ;
+	void doServing( const GSmtp::Secrets & , GSmtp::MessageStore & , const GSmtp::Secrets & , 
+		GPop::Store & , const GPop::Secrets & , G::PidFile & , GNet::EventLoop & ) ;
 	void closeFiles() ;
 	void closeMoreFiles() ;
 	std::string smtpIdent() const ;
@@ -113,6 +116,7 @@ private:
 	static void checkPort( const std::string & , unsigned int ) ;
 	GSmtp::Client::Config clientConfig() const ;
 	GSmtp::Server::Config serverConfig() const ;
+	GPop::Server::Config popConfig() const ;
 
 private:
 	Output & m_output ;

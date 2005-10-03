@@ -62,20 +62,18 @@ public:
 		// Virtual destructor.
 
 	bool valid( bool for_creating_files = false ) const ;
-		// Returns true if the object 
-		// represents a valid directory.
+		// Returns true if the object represents a valid 
+		// directory.
 		//
-		// Does additional checks if the
-		// 'for-creating-files' parameter
-		// is true. But note that the
-		// answer is not definitive -- 
-		// file creation may fail, even 
-		// if valid() returns true.
+		// Does additional checks if the 'for-creating-files' 
+		// parameter is true. But note that the answer is not 
+		// definitive -- file creation may fail, even if 
+		// valid() returns true.
 
 	Path path() const ;
 		// Returns the directory's path.
 
-	Directory( const Directory &other ) ;
+	Directory( const Directory & other ) ;
 		// Copy constructor.
 
 	Directory &operator=( const Directory & ) ;
@@ -97,7 +95,7 @@ private:
 class G::DirectoryIterator 
 {
 public:
-	explicit DirectoryIterator( const Directory &dir , const std::string & wc = std::string() ) ;
+	explicit DirectoryIterator( const Directory & dir , const std::string & wc = std::string() ) ;
 		// Constructor taking a directory reference
 		// and an optional wildcard specification.
 
@@ -132,7 +130,7 @@ private:
 	void operator=( const DirectoryIterator & ) ;
 
 private:
-	DirectoryIteratorImp *m_imp ;
+	DirectoryIteratorImp * m_imp ;
 } ;
 
 #endif

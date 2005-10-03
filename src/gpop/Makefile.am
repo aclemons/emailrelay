@@ -17,49 +17,27 @@
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ## 
 #
-#
-# mingw.mak
-#
 
-mk_sources=\
-	md5.cpp \
-	garg.cpp \
-	garg_win32.cpp \
-	gcleanup_win32.cpp \
-	gexe.cpp \
-	gdaemon_win32.cpp \
-	gdate.cpp \
-	gdatetime.cpp \
-	gdatetime_win32.cpp \
-	gdirectory.cpp \
-	gdirectory_win32.cpp \
-	gexception.cpp \
-	gfile.cpp \
-	gfile_win32.cpp \
-	gfs_win32.cpp \
-	ggetopt.cpp \
-	gidentity_win32.cpp \
-	glog.cpp \
-	glogoutput.cpp \
-	glogoutput_win32.cpp \
-	gmd5_native.cpp \
-	gpath.cpp \
-	gpidfile.cpp \
-	gprocess_win32.cpp \
-	gregistry_win32.cpp \
-	groot.cpp \
-	gslot.cpp \
-	gstr.cpp \
-	gtime.cpp \
-	gxtext.cpp
+EXTRA_DIST=\
+	mingw.mak
 
-mk_target=glib.a
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\"
 
-all: $(mk_target)
+noinst_LIBRARIES = libgpop.a libgnopop.a
 
-include ../mingw-common.mak
+libgpop_a_SOURCES = \
+	gpopauth.cpp \
+	gpopauth.h \
+	gpop.h \
+	gpopsecrets.cpp \
+	gpopsecrets.h \
+	gpopserver.cpp \
+	gpopserver.h \
+	gpopstore.cpp \
+	gpopstore.h \
+	gpopserverprotocol.cpp \
+	gpopserverprotocol.h
 
-$(mk_target): $(mk_objects)
-	$(mk_ar) $(mk_target) $(mk_objects)
+libgnopop_a_SOURCES = gnopop.cpp
 
 

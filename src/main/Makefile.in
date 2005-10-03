@@ -60,7 +60,8 @@ PROGRAMS = $(e_libexec_PROGRAMS) $(e_sbin_PROGRAMS)
 am_emailrelay_OBJECTS = commandline.$(OBJEXT) configuration.$(OBJEXT) \
 	legal.$(OBJEXT) main.$(OBJEXT) output.$(OBJEXT) run.$(OBJEXT)
 emailrelay_OBJECTS = $(am_emailrelay_OBJECTS)
-emailrelay_DEPENDENCIES = $(top_builddir)/src/gsmtp/libgsmtp.a \
+emailrelay_DEPENDENCIES = $(top_builddir)/src/gpop/$(POPLIB) \
+	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gnet/libgnet.a
 am_emailrelay_passwd_OBJECTS = passwd.$(OBJEXT) legal.$(OBJEXT)
@@ -147,6 +148,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+POPLIB = @POPLIB@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -224,7 +226,7 @@ EXTRA_DIST = \
 	mingw.c \
 	mingw.mak
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\"
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\"
 e_spool_DATA = 
 emailrelay_SOURCES = \
 	commandline.cpp \
@@ -240,6 +242,7 @@ emailrelay_SOURCES = \
 	run.h
 
 emailrelay_LDADD = \
+	$(top_builddir)/src/gpop/$(POPLIB) \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gnet/libgnet.a

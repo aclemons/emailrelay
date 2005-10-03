@@ -89,7 +89,9 @@ public:
 
 	bool mustChallenge() const ;
 		// Returns true if the mechanism must start with
-		// a non-empty server challenge.
+		// a non-empty server challenge. Returns false for
+		// the "LOGIN" mechanism since the initial challenge
+		// ("username:") is not essential.
 
 	std::string initialChallenge() const ;
 		// Returns the initial server challenge. May return

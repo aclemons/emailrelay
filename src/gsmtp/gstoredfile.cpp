@@ -168,7 +168,7 @@ void GSmtp::StoredFile::readToList( std::istream & stream )
 
 void GSmtp::StoredFile::readAuthentication( std::istream & stream )
 {
-	m_authentication = Xtext::decode(value(getline(stream),"Authentication")) ;
+	m_authentication = G::Xtext::decode(value(getline(stream),"Authentication")) ;
 }
 
 void GSmtp::StoredFile::readClientIp( std::istream & stream )

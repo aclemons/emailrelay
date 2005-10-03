@@ -20,9 +20,12 @@
 //
 // passwd.cpp
 //
-// A utility which encrypts a password so that
-// it can be pasted into the emailrelay secrets
-// file(s).
+// A utility which encrypts a password so that it can be pasted 
+// into the emailrelay secrets file(s) and used for CRAM-MD5
+// authentication.
+//
+// The password must be supplied on the standard input so that it
+// is not visible in the command-line history.
 //
 
 #include "gdef.h"
@@ -40,7 +43,8 @@ int main( int argc , char * argv [] )
 		if( argc != 1 )
 		{
 			std::cerr 
-				<< arg.prefix() << ": too many command-line arguments" << std::endl
+				<< arg.prefix() << ": too many command-line arguments "
+					"(the password is read from the standard input)" << std::endl
 				<< "usage: " << arg.prefix() << std::endl
 				<< std::endl
 				<< Main::Legal::warranty("  ","\n")

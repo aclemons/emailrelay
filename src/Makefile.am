@@ -18,4 +18,4 @@
 ## 
 #
 EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.xcode/root.pbxuser emailrelay.xcode/root.mode1 emailrelay.xcode/project.pbxproj
-SUBDIRS = glib gnet gsmtp main win32
+SUBDIRS = glib gnet gsmtp gpop main win32

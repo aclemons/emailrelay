@@ -220,6 +220,7 @@ protected:
 	static int reason() ;
 	static bool error( int rc ) ;
 	static bool sizeError( ssize_t size ) ;
+	bool prepare() ;
 	void setFault() ;
 	void setNoLinger() ;
 	void setReuse() ;

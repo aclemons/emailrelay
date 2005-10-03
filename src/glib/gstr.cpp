@@ -162,6 +162,129 @@ bool G::Str::isULong( const std::string & s )
 	return true ;
 }
 
+std::string G::Str::fromBool( bool b )
+{
+	return b ? "true" : "false" ;
+}
+
+std::string G::Str::fromDouble( double d )
+{
+	std::ostringstream ss ;
+	ss << std::setprecision(16) << d ; // was "setprecision(DBL_DIG+1)
+	return ss.str() ;
+}
+
+std::string G::Str::fromInt( int i )
+{
+	std::ostringstream ss ;
+	ss << i ;
+	return ss.str() ;
+}
+
+std::string G::Str::fromLong( long l )
+{
+	std::ostringstream ss ;
+	ss << l ;
+	return ss.str() ;
+}
+
+std::string G::Str::fromShort( short s )
+{
+	std::ostringstream ss ;
+	ss << s ;
+	return ss.str() ;
+}
+
+std::string G::Str::fromUInt( unsigned int ui )
+{
+	std::ostringstream ss ;
+	ss << ui ;
+	return ss.str() ;
+}
+
+std::string G::Str::fromULong( unsigned long ul )
+{
+	std::ostringstream ss ;
+	ss << ul ;
+	return ss.str() ;
+}
+
+std::string G::Str::fromUShort( unsigned short us )
+{
+	std::ostringstream ss ;
+	ss << us ;
+	return ss.str() ;
+}
+
+bool G::Str::toBool( const std::string &s )
+{
+	std::string str = upper( s ) ;
+
+	if( str == "TRUE" )
+	{
+		return true ;
+	}
+	else if( str == "FALSE" )
+	{
+		return false ;
+	}
+	else
+	{
+		throw InvalidFormat( s ) ;
+		return false ; // never gets here -- pacifies MSVC
+	}
+}
+
+double G::Str::toDouble( const std::string &s )
+{
+	char * end = NULL ;
+	double result = ::strtod( s.c_str(), &end ) ; 
+
+	if( end == 0 || end[0] != '\0' )
+		throw InvalidFormat( s ) ;
+
+	if( result == HUGE_VAL || result == -1.0 * HUGE_VAL )
+	 	throw Overflow( s ) ;
+
+	return result ;
+}
+
+int G::Str::toInt( const std::string &s )
+{
+	long long_val = toLong( s ) ;
+	int int_val = static_cast<int>( long_val ) ;
+
+	if( int_val != long_val )
+		throw Overflow( s ) ;
+
+	return int_val ;
+}
+
+long G::Str::toLong( const std::string &s )
+{
+	char * end = NULL ;
+	long result = ::strtol( s.c_str(), &end, 0 ) ; 
+
+	if( end == 0 || end[0] != '\0' )
+		throw InvalidFormat( s ) ;
+
+	if( result == LONG_MAX || result == LONG_MIN )
+		throw Overflow( s ) ;
+
+	return result ;
+}
+
+short G::Str::toShort( const std::string &s )
+{
+	long long_val = toLong( s ) ;
+	short short_val = static_cast<short>( long_val ) ;
+
+	if( short_val != long_val )
+		throw Overflow( s ) ;
+
+	return short_val ;
+}
+
 unsigned int G::Str::toUInt( const std::string &s , bool limited )
 {
 	unsigned long ulong_val = toULong( s ) ;
@@ -211,27 +334,6 @@ unsigned short G::Str::toUShort( const std::string &s , bool limited )
 	}
 
 	return ushort_val ;
-}
-
-std::string G::Str::fromInt( int i )
-{
-	std::ostringstream ss ;
-	ss << i ;
-	return ss.str() ;
-}
-
-std::string G::Str::fromUInt( unsigned int n )
-{
-	std::ostringstream ss ;
-	ss << n ;
-	return ss.str() ;
-}
-
-std::string G::Str::fromULong( unsigned long ul )
-{
-	std::ostringstream ss ;
-	ss << ul ;
-	return ss.str() ;
 }
 
 void G::Str::toLower( std::string &s ) 
@@ -543,4 +645,5 @@ G::Strings G::Str::keys( const StringMap & map )
 	}
 	return result ;
 }
+
 

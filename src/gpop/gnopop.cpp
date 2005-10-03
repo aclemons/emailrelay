@@ -18,64 +18,53 @@
 // 
 // ===
 //
-// glog.cpp
+// gnopop.cpp
 //
 
 #include "gdef.h"
-#include "glog.h"
-#include "glogoutput.h"
+#include "gpop.h"
+#include "gpopserver.h"
+#include "gpopsecrets.h"
+#include "gpopstore.h"
 
-G::Log::Log( Severity severity , const char * file , int line ) :
-	m_severity(severity) ,
-	m_file(file) ,
-	m_line(line)
+std::string GPop::Secrets::defaultPath()
+{
+	return std::string() ;
+}
+
+GPop::Secrets::Secrets( const std::string & )
 {
 }
 
-G::Log::~Log()
+GPop::Secrets::~Secrets()
 {
-	try
-	{
-		flush() ;
-	}
-	catch(...)
-	{
-	}
 }
 
+// ==
 
-bool G::Log::active()
+GPop::Store::Store( G::Path , bool , bool )
 {
-	LogOutput * output = G::LogOutput::instance() ;
-	if( output == NULL )
-	{
-		return false ;
-	}
-	else
-	{
-		// (enable it just to get the original state, then restore it)
-		bool a = output->enable(true) ;
-		output->enable(a) ;
-		return a ;
-	}
 }
 
-void G::Log::flush()
+// ==
+
+GPop::Server::Config::Config( bool , unsigned int , const std::string & )
 {
-	if( G::Log::active() )
-	{
-		G::LogOutput::output( m_severity , m_file , m_line , m_ss.str().c_str() ) ;
-	}
 }
 
-std::ostream & G::Log::operator<<( const char * s )
+GPop::Server::Server( Store & store , const Secrets & secrets , Config ) :
+	m_store(store) ,
+	m_secrets(secrets)
 {
-	s = s ? s : "" ;
-	return m_ss << s ;
 }
 
-std::ostream & G::Log::operator<<( const std::string & s )
+void GPop::Server::report() const
 {
-	return m_ss << s ;
 }
+
+GNet::ServerPeer * GPop::Server::newPeer( GNet::Server::PeerInfo )
+{
+	return NULL ;
+}
+
 

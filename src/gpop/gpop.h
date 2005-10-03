@@ -18,36 +18,14 @@
 // 
 // ===
 //
-// gxtext.h
+// gpop.h
 //
 
-#ifndef G_XTEXT_H
-#define G_XTEXT_H
+#ifndef G_POP_H
+#define G_POP_H
 
 #include "gdef.h"
-#include "gsmtp.h"
-#include <string>
-
-namespace GSmtp
-{
-	class Xtext ;
-}
-
-// Class: GSmtp::Xtext
-// Description: An xtext codec class.
-// See also: RFC1891 section 5
-//
-class GSmtp::Xtext 
-{
-public:
-	static std::string encode( const std::string & ) ;
-		// Encodes the given string.
-
-	static std::string decode( const std::string & ) ;
-		// Decodes the given string.
-
-private:
-	Xtext() ;
-} ;
+#include "gnet.h"
+#include "glog.h"
 
 #endif

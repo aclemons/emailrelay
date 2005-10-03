@@ -58,6 +58,20 @@ Key classes are:
 
  */
 
+/*! \namespace GPop
+\short 
+POP3 classes.
+
+The GPop namespace contains classes relating to the POP3
+protocol.
+
+Key classes are:
+- Server
+- ServerProtocol
+- Store
+
+ */
+
 /*! \namespace GSmtp
 \short 
 SMTP and message-store classes.

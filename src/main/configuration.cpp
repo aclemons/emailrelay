@@ -228,6 +228,27 @@ bool Main::Configuration::doSmtp() const
 	return !m_cl.contains("dont-listen") ;
 }
 
+bool Main::Configuration::doPop() const
+{
+	return m_cl.contains("pop") ;
+}
+
+bool Main::Configuration::popByName() const
+{
+	return m_cl.contains("pop-by-name") ;
+}
+
+bool Main::Configuration::popNoDelete() const
+{
+	return m_cl.contains("pop-no-delete") ;
+}
+
+unsigned int Main::Configuration::popPort() const
+{
+	return m_cl.contains("pop-port") ?
+		G::Str::toUInt(m_cl.value("pop-port")) : 110U ;
+}
+
 bool Main::Configuration::allowRemoteClients() const
 {
 	return m_cl.contains("remote-clients") ;
@@ -282,6 +303,11 @@ bool Main::Configuration::hidden() const
 std::string Main::Configuration::clientSecretsFile() const
 {
 	return m_cl.contains("client-auth") ? m_cl.value("client-auth") : std::string() ;
+}
+
+std::string Main::Configuration::popSecretsFile() const
+{
+	return m_cl.contains("pop-auth") ? m_cl.value("pop-auth") : std::string() ;
 }
 
 std::string Main::Configuration::serverSecretsFile() const

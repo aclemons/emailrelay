@@ -25,6 +25,8 @@
 #define G_LOG_H
 
 #include "gdef.h"
+#include <sstream>
+#include <string>
 
 namespace G
 {
@@ -37,9 +39,7 @@ namespace G
 // convenient way of using this interface.
 //
 // Usage:
-///	G::Log::stream() 
-///		<< G::Log::Line(__FILE__,__LINE__)
-///		<< a << b << G::Log::end() ;
+///	G::Log(G::Log::s_LogSummary,__FILE__,__LINE__) << a << b ;
 // or
 ///	G_LOG( a << b ) ;
 //
@@ -48,60 +48,34 @@ namespace G
 class G::Log 
 { 
 public:
-	typedef std::ostream Stream ;
 	enum Severity { s_LogVerbose , s_LogSummary , s_Debug , s_Warning , s_Error , s_Assertion } ;
 
-	struct End // A private implementation class for Log. An End object from end() must be streamed out to flush a spooled message.
-		{ Severity m_s ; End(Severity s) : m_s(s) {} } ;
-
 	class Line // A class for adding line number information to the Log output.
-		{ public: Line( const char *file , int line ) ; } ;
+		{ public: const char * m_file ; int m_line ; Line( const char *file , int line ) : m_file(file) , m_line(line) {} } ;
 
-	static End end( Severity severity ) ;
-		// Returns an End object which can be used to close off a quantum 
-		// of logging. (The End::op<<() function calls G::Log::onEnd().)
+	Log( Severity , const char * file , int line ) ;
+		// Constructor.
 
-	static Stream & stream() ;
-		// Returns a stream for streaming messages into.
+	~Log() ;
+		// Destructor. Writes the accumulated string to the log output.
 
-	static void onEnd( Severity s ) ;
-		// A pseudo-private method used by ::operator<<(End).
+	std::ostream & operator<<( const char * s ) ;
+		// Streams 's' and then returns a stream for streaming more stuff into.
+
+	std::ostream & operator<<( const std::string & s ) ;
+		// Streams 's' and then returns a stream for streaming more stuff into.
+
+private:
+	void flush() ;
+	bool active() ;
 
 private:
 	friend class G::Log::Line ;
-	static void setFile( const char *file ) ;
-	static void setLine( int line ) ;
-	Log() ;
+	Severity m_severity ;
+	std::ostringstream m_ss ;
+	const char * m_file ;
+	int m_line ;
 } ;
-
-namespace G
-{
-	inline
-	std::ostream & operator<<( std::ostream & stream , const G::Log::Line & )
-	{
-		return stream ;
-	}
-}
-
-namespace G
-{
-	inline
-	std::ostream & operator<<( std::ostream & stream , const G::Log::End & end )
-	{
-		G::Log::onEnd( end.m_s ) ;
-		return stream ;
-	}
-}
-
-namespace G
-{
-	inline
-	G::Log::Line::Line( const char * file , int line )
-	{
-		G::Log::setFile( file ) ;
-		G::Log::setLine( line ) ;
-	}
-}
 
 // Macros: G_LOG, G_LOG_S, G_DEBUG, G_WARNING, G_ERROR
 // The debug macro is for debugging during development. The log macro 
@@ -111,12 +85,7 @@ namespace G
 // then warning/error messages should also get raised by some another 
 // independent means.
 //
-// (The G_LOG_OUTPUT implementation uses separate statements because
-// some compilers dont do Koenig lookup with nested classes. They
-// look for ::operator<<() or G::X::operator<<() rather than 
-// G::operator<<().)
-//
-#define G_LOG_OUTPUT( expr , severity ) do { G::Log::Stream & s_ = G::Log::stream() ; G::operator<<( s_ , G::Log::Line(__FILE__,__LINE__) ) ; s_ << expr ; G::operator<<( s_ , G::Log::end(severity) ) ; } while(0)
+#define G_LOG_OUTPUT( expr , severity ) do { G::Log(severity,__FILE__,__LINE__) << expr ; } while(0)
 #if defined(_DEBUG) && ! defined(G_NO_DEBUG) 
 #define G_DEBUG( expr ) G_LOG_OUTPUT( expr , G::Log::s_Debug )
 #else

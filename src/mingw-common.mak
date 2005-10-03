@@ -32,7 +32,7 @@ mk_objects=$(mk_sources:.cpp=.o)
 mk_gcc=$(mk_bin)g++
 mk_gcc_flags=-mno-cygwin -g -mwindows
 mk_defines=-DG_WIN32 -DG_MINGW
-mk_includes=-I../glib -I../gnet -I../gsmtp -I../win32
+mk_includes=-I../glib -I../gnet -I../gsmtp -I../gpop -I../win32
 mk_cpp_flags=$(mk_defines) $(mk_includes)
 
 .SUFFIXES: .rc .i
@@ -50,6 +50,7 @@ _all:
 	cd glib && make -f mingw.mak && cd ..
 	cd gnet && make -f mingw.mak && cd ..
 	cd gsmtp && make -f mingw.mak && cd ..
+	cd gpop && make -f mingw.mak && cd ..
 	cd win32 && make -f mingw.mak && cd ..
 	cd main && make -f mingw.mak && cd ..
 
@@ -57,6 +58,7 @@ _clean:
 	cd glib && make -f mingw.mak clean && cd ..
 	cd gnet && make -f mingw.mak clean && cd ..
 	cd gsmtp && make -f mingw.mak clean && cd ..
+	cd gpop && make -f mingw.mak clean && cd ..
 	cd win32 && make -f mingw.mak clean && cd ..
 	cd main && make -f mingw.mak clean && cd ..
 

@@ -71,7 +71,5 @@ libgsmtp_a_SOURCES = \
 	gstoredmessage.cpp \
 	gstoredmessage.h \
 	gverifier.cpp \
-	gverifier.h \
-	gxtext.cpp \
-	gxtext.h
+	gverifier.h
 

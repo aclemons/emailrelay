@@ -90,10 +90,20 @@ public:
 		// Returns true if running as a client.
 
 	bool doServing() const ;
-		// Returns true if running as a server (SMTP, admin or COM).
+		// Returns true if running as a server (SMTP, POP, admin or COM).
 
 	bool doSmtp() const ;
 		// Returns true if listening for smtp connections.
+
+	bool doPop() const ;
+		// Returns true if listening for pop connections.
+
+	bool popByName() const ;
+		// Returns true if the pop spool directory is
+		// modified according to the client name.
+
+	bool popNoDelete() const ;
+		// Returns true if pop deletion is to be disabled.
 
 	bool doAdmin() const ;
 		// Returns true if listening for admin connections.
@@ -103,6 +113,9 @@ public:
 
 	unsigned int adminPort() const ;
 		// Returns the admin port number.
+
+	unsigned int popPort() const ;
+		// Returns the pop port number.
 
 	bool allowRemoteClients() const ;
 		// Returns true if allowing remote clients to connect.
@@ -151,6 +164,10 @@ public:
 	std::string serverSecretsFile() const ;
 		// Returns the server-side autentication secrets (password) file.
 		// Returns the empty string if none.
+
+	std::string popSecretsFile() const ;
+		// Returns the pop-server autentication secrets (password) file.
+		// Returns the empty string if not defined.
 
 	std::string fqdn() const ;
 		// Returns the fully-qualified-domain-name override.

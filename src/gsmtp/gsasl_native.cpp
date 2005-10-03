@@ -55,10 +55,12 @@ public:
 	explicit SaslServerImp( const Secrets & ) ;
 	bool init( const std::string & mechanism ) ;
 	bool validate( const std::string & secret , const std::string & response ) const ;
+	static std::string digest( const std::string & secret , const std::string & challenge ) ;
+	static std::string cramDigest( const std::string & secret , const std::string & challenge ) ;
 	bool trusted( GNet::Address ) const ;
 	bool trustedCore( const std::string & , const std::string & ) const ;
 	static std::string clientResponse( const std::string & secret , 
-		const std::string & challenge , bool & error ) ;
+		const std::string & challenge , bool cram , bool & error ) ;
 } ;
 
 // Class: GSmtp::SaslClientImp
@@ -94,7 +96,7 @@ bool GSmtp::SaslServerImp::init( const std::string & mechanism )
 		m_mechanism = mechanism ;
 		return true ;
 	}
-	else if( mechanism == "CRAM-MD5" )
+	else if( mechanism == "CRAM-MD5" || mechanism == "MD5" )
 	{
 		m_mechanism = mechanism ;
 		std::ostringstream ss ;
@@ -112,8 +114,9 @@ bool GSmtp::SaslServerImp::validate( const std::string & secret , const std::str
 {
 	try
 	{
-		G_ASSERT( m_mechanism == "CRAM-MD5" ) ;
-		std::string hash = G::Md5::printable(G::Md5::hmac(secret,m_challenge,G::Md5::Masked())) ;
+		G_ASSERT( m_mechanism == "CRAM-MD5" || m_mechanism == "MD5" ) ;
+		bool cram = m_mechanism == "CRAM-MD5" ;
+		std::string hash = cram ? cramDigest(secret,m_challenge) : digest(secret,m_challenge) ;
 		return response == hash ;
 	}
 	catch( std::exception & e )
@@ -129,11 +132,12 @@ bool GSmtp::SaslServerImp::validate( const std::string & secret , const std::str
 }
 
 std::string GSmtp::SaslServerImp::clientResponse( const std::string & secret , 
-	const std::string & challenge , bool & error )
+	const std::string & challenge , bool cram , bool & error )
 {
 	try 
 	{ 
-		return G::Md5::printable(G::Md5::hmac(secret,challenge,G::Md5::Masked())) ; 
+		G_DEBUG( "GSmtp::SaslServerImp::clientResponse: challenge=\"" << challenge << "\"" ) ;
+		return cram ? cramDigest(secret,challenge) : digest(secret,challenge) ;
 	} 
 	catch( std::exception & e )
 	{ 
@@ -145,6 +149,16 @@ std::string GSmtp::SaslServerImp::clientResponse( const std::string & secret ,
 		error = true ; 
 	}
 	return std::string() ;
+}
+
+std::string GSmtp::SaslServerImp::cramDigest( const std::string & secret , const std::string & challenge )
+{
+	return G::Md5::printable(G::Md5::hmac(secret,challenge,G::Md5::Masked())) ; 
+}
+
+std::string GSmtp::SaslServerImp::digest( const std::string & secret , const std::string & challenge )
+{
+	return G::Md5::printable(G::Md5::digest(challenge,secret)) ;
 }
 
 bool GSmtp::SaslServerImp::trusted( GNet::Address address ) const
@@ -187,7 +201,7 @@ bool GSmtp::SaslServerImp::trustedCore( const std::string & full , const std::st
 std::string GSmtp::SaslServer::mechanisms( char c ) const
 {
 	std::string sep( 1U , c ) ;
-	std::string s = std::string() + "LOGIN" + sep + "CRAM-MD5" ;
+	std::string s = std::string() + "LOGIN" + sep + "CRAM-MD5" + sep + "MD5" ;
 	return s ;
 }
 
@@ -219,7 +233,7 @@ GSmtp::SaslServer::~SaslServer()
 
 bool GSmtp::SaslServer::mustChallenge() const
 {
-	return false ;
+	return m_imp->m_mechanism == "CRAM-MD5" || m_imp->m_mechanism == "MD5" ;
 }
 
 bool GSmtp::SaslServer::init( const std::string & mechanism )
@@ -240,38 +254,47 @@ std::string GSmtp::SaslServer::initialChallenge() const
 std::string GSmtp::SaslServer::apply( const std::string & response , bool & done )
 {
 	done = false ;
-	G_DEBUG( "GSmtp::SaslServer::apply: \"" << response << "\"" ) ;
 	std::string next_challenge ;
-	if( m_imp->m_mechanism == "CRAM-MD5" )
+	if( m_imp->m_mechanism == "CRAM-MD5" || m_imp->m_mechanism == "MD5" )
 	{
+		G_DEBUG( "GSmtp::SaslServer::apply: response: \"" << response << "\"" ) ;
 		G::Strings part_list ;
 		G::Str::splitIntoTokens( response , part_list , " " ) ;
-		G_DEBUG( "GSmtp::SaslServer::apply: " << part_list.size() << " part(s)" ) ;
 		if( part_list.size() == 2U )
 		{
 			m_imp->m_id = part_list.front() ;
+			std::string response_tail = part_list.back() ;
+
 			G_DEBUG( "GSmtp::SaslServer::apply: id \"" << m_imp->m_id << "\"" ) ;
 			std::string secret = m_imp->m_secrets.secret(m_imp->m_mechanism,m_imp->m_id) ;
-			m_imp->m_authenticated = m_imp->validate( secret , part_list.back() ) ;
+			m_imp->m_authenticated = m_imp->validate( secret , response_tail ) ;
+		}
+		else
+		{
+			G_DEBUG( "GSmtp::SaslServer::apply: invalid number of response parts: " << part_list.size() ) ;
 		}
 		done = true ;
 	}
-	else if( m_imp->m_first )
+	else if( m_imp->m_first ) // LOGIN username
 	{
+		G_DEBUG( "GSmtp::SaslServer::apply: response: \"" << response << "\"" ) ;
 		m_imp->m_first = false ;
 		m_imp->m_id = response ;
 		if( !m_imp->m_id.empty() )
 			next_challenge = login_challenge_2 ;
 	}
-	else
+	else // LOGIN password
 	{
+		G_DEBUG( "GSmtp::SaslServer::apply: response: \"[password not logged]\"" ) ;
 		std::string secret = m_imp->m_secrets.secret(m_imp->m_mechanism,m_imp->m_id) ;
 		m_imp->m_first = true ;
 		m_imp->m_authenticated = !response.empty() && response == secret ;
 		done = true ;
 	}
 
-	G_DEBUG( "GSmtp::SaslServer::apply: \"" << response << "\" -> \"" << next_challenge << "\"" ) ;
+	if( ! done )
+		G_DEBUG( "GSmtp::SaslServer::apply: challenge \"" << next_challenge << "\"" ) ;
+
 	return next_challenge ;
 }
 
@@ -318,13 +341,14 @@ std::string GSmtp::SaslClient::response( const std::string & mechanism ,
 	error = false ;
 
 	std::string rsp ;
-	if( mechanism == "CRAM-MD5" )
+	if( mechanism == "CRAM-MD5" || mechanism == "MD5" )
 	{
+		const bool cram = mechanism == "CRAM-MD5" ;
 		std::string id = m_imp->m_secrets.id(mechanism) ;
 		std::string secret = m_imp->m_secrets.secret(mechanism) ;
 		error = id.empty() || secret.empty() ;
 		if( !error )
-			rsp = id + " " + SaslServerImp::clientResponse( secret , challenge , error ) ;
+			rsp = id + " " + SaslServerImp::clientResponse( secret , challenge , cram , error ) ;
 
 		done = true ;
 	}
