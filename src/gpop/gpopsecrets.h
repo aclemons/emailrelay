@@ -37,7 +37,6 @@ namespace GPop
 	class SecretsImp ;
 }
 
-// temporary...
 namespace GSmtp
 {
 	class Secrets ;
@@ -64,7 +63,7 @@ public:
 		// Destructor.
 
 	std::string path() const ;
-		// Returns the storate path.
+		// Returns the storage path.
 
 	bool valid() const ;
 		// Returns true if a valid file.
@@ -74,7 +73,7 @@ public:
 		// empty string if not a valid id.
 
 	const GSmtp::Secrets & smtp() const ;
-		// Temporary back-door.
+		// Temporary back-door to the implementation class.
 
 private:
 	Secrets( const Secrets & ) ; // not implemented

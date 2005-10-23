@@ -27,7 +27,7 @@
 #include "gsecrets.h" // gsmtp
 
 // Class: GPop::SecretsImp
-// Description: A private pimple-pattern implemtation class used by GPop::Secrets.
+// Description: A private pimple-pattern implementation class used by GPop::Secrets.
 // The implementation delegates to GSmtp::Secrets.
 //
 class GPop::SecretsImp 

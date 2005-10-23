@@ -37,7 +37,7 @@ GPop::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info ,
 	const Secrets & secrets , 
 	std::auto_ptr<ServerProtocol::Text> ptext ,
 	ServerProtocol::Config protocol_config ) :
-		GNet::ServerPeer( peer_info ) ,
+		GNet::Sender( peer_info ) ,
 		m_server( server ) ,
 		m_buffer_in( crlf() ) ,
 		m_ptext( ptext ) ,
@@ -68,7 +68,7 @@ void GPop::ServerPeer::onData( const char * p , size_t n )
 	}
 	catch( std::exception & e )
 	{
-		G_LOG( "GPop::onData: exception: " << e.what() ) ;
+		G_LOG( "GPop::onData: " << e.what() ) ;
 		doDelete() ;
 	}
 }
@@ -80,55 +80,12 @@ void GPop::ServerPeer::processLine( const std::string & line )
 
 bool GPop::ServerPeer::protocolSend( const std::string & line , size_t offset )
 {
-	if( line.length() <= offset )
-		return true ; // nothing to send so treat as all-sent (?)
-
-	ssize_t rc = socket().write( line.data()+offset , line.length()-offset ) ;
-	if( rc < 0 && ! socket().eWouldBlock() )
-	{
-		throw SendError() ;
-	}
-	else if( rc < 0 || static_cast<size_t>(rc) < (line.length()-offset) )
-	{
-		G_DEBUG( "GPop::ServerPeer::protocolSend: flow-control asserted by peer: connection blocked" ) ;
-		size_t sent = static_cast<size_t>(rc) ;
-		m_buffer_out = line.substr( sent + offset ) ;
-		return false ; // not all-sent
-	}
-	else
-	{
-		return true ; // all-sent
-	}
+	return send( line , offset ) ; // GNet::Sender
 }
 
-void GPop::ServerPeer::writeEvent()
+void GPop::ServerPeer::onResume()
 {
-	try
-	{
-		G_DEBUG( "GPop::ServerPeer: flow-control released by peer" ) ;
-
-		ssize_t rc = socket().write( m_buffer_out.data() , m_buffer_out.length() ) ;
-		if( rc < 0 && ! socket().eWouldBlock() )
-		{
-			throw SendError() ;
-		}
-		else if( rc < 0 || static_cast<size_t>(rc) < m_buffer_out.length() )
-		{
-			G_DEBUG( "GPop::ServerPeer::protocolSend: flow-control reasserted immediately: " << rc ) ;
-			size_t sent = static_cast<size_t>(rc) ;
-			if( sent != 0U )
-				m_buffer_out = m_buffer_out.substr( sent ) ;
-		}
-		else
-		{
-			m_protocol.resume() ; // calls back to protocolSend()
-		}
-	}
-	catch( std::exception & e )
-	{
-		G_LOG( "GPop::ServerPeer::writeError: exception: " << e.what() ) ;
-		doDelete() ;
-	}
+	m_protocol.resume() ; // calls back to protocolSend()
 }
 
 // ===
@@ -148,8 +105,8 @@ GPop::Server::Server( Store & store , const Secrets & secrets , Config config ) 
 
 void GPop::Server::report() const
 {
-	G_LOG_S( "GPop::Server: pop server on " << address().second.displayString() << ": "
-		<< "authentication secrets in \"" << m_secrets.path() << "\"" ) ;
+	G_LOG_S( "GPop::Server: pop server on " << address().second.displayString() ) ;
+	G_LOG_S( "GPop::Server: authentication secrets from \"" << m_secrets.path() << "\"" ) ;
 }
 
 GNet::ServerPeer * GPop::Server::newPeer( GNet::Server::PeerInfo peer_info )

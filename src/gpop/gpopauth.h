@@ -35,18 +35,49 @@ namespace GPop
 }
 
 // Class: GPop::Auth
-// Description: An authenticator.
-// See also: GSmtp::SaslServer
+// Description: An authenticator using GSmtp::SaslServer in its
+// implementation.
+// See also: GSmtp::SaslServer, RFC2222
 //
 class GPop::Auth 
 {
 public:
 	explicit Auth( const Secrets & ) ;
+		// Constructor. Defaults to the APOP mechanism.
+
 	~Auth() ;
+		// Destructor.
+
 	bool valid() const ;
+		// Returns true if the secrets are valid.
+
 	bool init( const std::string & mechanism ) ;
-	bool authenticated( const std::string & , const std::string & ) ;
+		// Initialises or reinitialises with
+		// the specified mechanism. Returns
+		// false if not a supported mechanism.
+
 	std::string challenge() ;
+		// Returns an initial challenge appropriate to
+		// the current mechanism.
+
+	bool authenticated( const std::string & rsp1 , const std::string & rsp2 ) ;
+		// Authenticates a one-step (APOP) or two-step (LOGIN)
+		// challenge-response sequence.
+		//
+		// Returns true if authenticated.
+		//
+		// The second parameter is used as the second response
+		// in a two-step challenge. The challenge itself is
+		// not accessible, which only really makes sense for a 
+		// LOGIN password prompt.
+
+	std::string id() const ;
+		// Returns the authenticated user id.
+		// Precondition: authenticated()
+
+	std::string mechanisms() const ;
+		// Returns a space-separated list of standard, supported
+		// SASL mechanisms (so not including APOP).
 
 private:
 	Auth( const Auth & ) ;

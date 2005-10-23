@@ -152,6 +152,19 @@ then
 fi
 ])
 
+dnl enable-pop
+dnl
+AC_DEFUN([ENABLE_POP],
+[
+if test "$enable_pop" = "yes"
+then
+	POPLIB="libgpop.a"
+else
+	POPLIB="libgnopop.a"
+fi
+AC_SUBST(POPLIB)
+])
+
 dnl with-workshop
 dnl
 AC_DEFUN([WITH_WORKSHOP],

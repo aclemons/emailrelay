@@ -1,37 +1,54 @@
 
-
-div.two-column-content
-{
-	margin-left: 220px ;
-	padding: 40px ;
-}
-
-div.two-column-menu
-{
-	color: inherit ;
-	background-color: #eee ;
-
-	position: absolute ;
-	top: 100px ;
-	left: 20px ;
-	padding: 10px ;
-
-	border-style: solid ;
-	border-width: 1px ;
-	border-color: #999 ;
-
-	width: 230px ; /* IE5 */
-	voice-family: "\"}\"" ; /* IE5 trick */
-	voice-family: inherit ;
-	width: 190px ; /* STD */
-}
-
 body 
 {
 	font-family: verdana, arial, helvetica, sans-serif ;
 
 	color: #000 ;
 	background-color: #fff ;
+
+	margin: 0px ;
+	padding: 0px ;
+}
+
+div.two-column-header
+{
+	background-color: #eee ;
+
+	border-bottom: 1px #999 solid ;
+	height: 100px ;
+	width: 100% ;
+}
+
+h1
+{
+	text-align: center ;
+	color: #09c ;
+}
+
+div.two-column-header h1 
+{
+	margin: 0px ;
+}
+
+div.two-column-content
+{
+	margin-left: 210px ; /* menu width + 40px */
+	padding: 40px ;
+}
+
+div.two-column-menu
+{
+	background-color: #eee ;
+
+	float: left ;
+	width: 180px ;
+	margin-left: 30px ;
+	margin-top: 30px ;
+	margin-bottom: 10px ;
+
+	border-style: solid ;
+	border-width: 1px ;
+	border-color: #999 ;
 }
 
 div.div-main
@@ -42,7 +59,6 @@ div.div-main
 
 div.div-toc
 {
-	color: inherit ;
 	background-color: #eee ;
 }
 
@@ -58,8 +74,6 @@ p.p-toc
 div.div-pre
 {
 	margin-left: 3% ;
-	/* font-size: smaller ; */ /* smaller is unreadable on ie5 */
-	color: inherit ;
 	background-color: #eee ;
 	padding: 0.5em ;
 	border: none ;
@@ -69,7 +83,6 @@ h1
 {
 	text-align: center ;
 	color: #09c ;
-	background-color: inherit ;
 }
 
 img
@@ -80,7 +93,6 @@ img
 h2
 {
 	color: #09c ;
-	background-color: inherit ;
 }
 
 p 
@@ -89,11 +101,31 @@ p
 	text-align: justify ;
 }
 
+h3.h3-toc
+{
+	display: block ;
+	margin: 0px ;
+	padding: 0px ;
+	width: 100% ;
+	border-bottom: 1px #999 solid ;
+	text-decoration: none ;
+}
+
+p.p-toc
+{
+	padding-top: 0px ;
+	padding-bottom: 0px ;
+	padding-left: 15px ;
+	margin: 0px ;
+	border-bottom: 1px #999 solid ;
+}
+
 a.a-toc
 {
 	color: #09c ;
-	background-color: inherit ;
 	text-decoration: none ;
+	padding: 0px ;
+	margin: 0px ;
 }
 
 a.a-toc:hover 
@@ -105,7 +137,6 @@ a.a-toc:hover
 a.a-toc-expander
 {
 	color: #09c ;
-	background-color: inherit ;
 	text-decoration: none ;
 	font-size: smaller ;
 }
@@ -130,29 +161,17 @@ a.a-href
 a.a-href:link 
 {
 	color: #09c ;
-	background-color: inherit ;
 }
 
 a.a-href:visited 
 {
 	color: #07a ;
-	background-color: inherit ;
 }
 
 a.a-href:hover 
 {
 	color: #09c ;
 	background-color: #eee ;
-}
-
-div.two-column-header
-{
-	color: inherit ;
-	background-color: #eee ;
-
-	border-style: solid ;
-	border-color: #999 ;
-	border-width: 1px 0px ; /* top/bottom left/right */
 }
 
 em.quote

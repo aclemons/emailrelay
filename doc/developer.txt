@@ -1,5 +1,5 @@
-E-MailRelay Design and implementation
-=====================================
+E-MailRelay Internals
+=====================
 
 Module structure
 ----------------

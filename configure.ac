@@ -21,7 +21,7 @@ dnl Process this file with autoconf to produce a configure script.
 dnl
 
 AC_INIT(src/gsmtp/gsmtp.h)
-AM_INIT_AUTOMAKE(emailrelay,1.3.3)
+AM_INIT_AUTOMAKE(emailrelay,1.3.4)
 AM_CONFIG_HEADER(config.h)
 
 dnl ===
@@ -71,8 +71,14 @@ ENABLE_DEBUG
 dnl ===
 dnl "--enable-fastbuild"
 dnl
-AC_ARG_ENABLE(fastbuild,AC_HELP_STRING([--enable-fastbuild],[enable experimental faster building; requires --disable-dependency-tracking]))
+AC_ARG_ENABLE(fastbuild,AC_HELP_STRING([--enable-fastbuild],[enable faster building; requires --disable-dependency-tracking]))
 ENABLE_FASTBUILD
+
+dnl ===
+dnl "--enable-pop"
+dnl
+AC_ARG_ENABLE(pop,AC_HELP_STRING([--enable-pop],[enable pop server code]))
+ENABLE_POP
 
 dnl ===
 dnl "--with-workshop"
@@ -123,5 +129,5 @@ SET_MAKE=""
 dnl ===
 dnl generate files...
 dnl
-AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gnet/Makefile src/gsmtp/Makefile src/main/Makefile src/win32/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile lib/sunpro5/Makefile bin/Makefile doc/Makefile etc/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile lib/sunpro5/Makefile bin/Makefile doc/Makefile etc/Makefile)
 

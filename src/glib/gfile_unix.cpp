@@ -59,3 +59,17 @@ std::string G::File::sizeString( const Path & path )
 	return ss.str() ;
 }
 
+G::File::time_type G::File::time( const Path & path )
+{
+	struct stat statbuf ;
+	if( 0 != ::stat( path.pathCstr() , &statbuf ) )
+		throw TimeError( path.str() ) ;
+	return statbuf.st_mtime ;
+}
+
+G::File::time_type G::File::time( const Path & path , const NoThrow & )
+{
+	struct stat statbuf ;
+	return ::stat( path.pathCstr() , &statbuf ) == 0 ? statbuf.st_mtime : 0 ;
+}
+

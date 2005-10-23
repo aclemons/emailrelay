@@ -65,6 +65,8 @@ libgnet_a_SOURCES = gaddress_ipv4.cpp \
 	gnet.h \
 	grequest.h \
 	gresolve.h \
+	gsender.h \
+	gsender.cpp \
 	gserver.h \
 	gsocket.h \
 	gtimer.h

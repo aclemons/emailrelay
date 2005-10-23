@@ -78,3 +78,17 @@ bool G::File::exists( const char * path , bool & enoent )
 	return ok ;
 }
 
+G::File::time_type G::File::time( const Path & path )
+{
+	struct _stat statbuf ;
+	if( 0 != ::_stat( path.pathCstr() , &statbuf ) )
+		throw TimeError( path.str() ) ;
+	return statbuf.st_mtime ;
+}
+
+G::File::time_type G::File::time( const Path & path , const NoThrow & )
+{
+	struct _stat statbuf ;
+	return ::_stat( path.pathCstr() , &statbuf ) == 0 ? statbuf.st_mtime : 0 ;
+}
+

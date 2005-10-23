@@ -96,7 +96,7 @@ bool GSmtp::SaslServerImp::init( const std::string & mechanism )
 		m_mechanism = mechanism ;
 		return true ;
 	}
-	else if( mechanism == "CRAM-MD5" || mechanism == "MD5" )
+	else if( mechanism == "CRAM-MD5" || mechanism == "APOP" )
 	{
 		m_mechanism = mechanism ;
 		std::ostringstream ss ;
@@ -114,7 +114,7 @@ bool GSmtp::SaslServerImp::validate( const std::string & secret , const std::str
 {
 	try
 	{
-		G_ASSERT( m_mechanism == "CRAM-MD5" || m_mechanism == "MD5" ) ;
+		G_ASSERT( m_mechanism == "CRAM-MD5" || m_mechanism == "APOP" ) ;
 		bool cram = m_mechanism == "CRAM-MD5" ;
 		std::string hash = cram ? cramDigest(secret,m_challenge) : digest(secret,m_challenge) ;
 		return response == hash ;
@@ -201,7 +201,7 @@ bool GSmtp::SaslServerImp::trustedCore( const std::string & full , const std::st
 std::string GSmtp::SaslServer::mechanisms( char c ) const
 {
 	std::string sep( 1U , c ) ;
-	std::string s = std::string() + "LOGIN" + sep + "CRAM-MD5" + sep + "MD5" ;
+	std::string s = std::string() + "LOGIN" + sep + "CRAM-MD5" ;
 	return s ;
 }
 
@@ -233,7 +233,7 @@ GSmtp::SaslServer::~SaslServer()
 
 bool GSmtp::SaslServer::mustChallenge() const
 {
-	return m_imp->m_mechanism == "CRAM-MD5" || m_imp->m_mechanism == "MD5" ;
+	return m_imp->m_mechanism == "CRAM-MD5" || m_imp->m_mechanism == "APOP" ;
 }
 
 bool GSmtp::SaslServer::init( const std::string & mechanism )
@@ -255,7 +255,7 @@ std::string GSmtp::SaslServer::apply( const std::string & response , bool & done
 {
 	done = false ;
 	std::string next_challenge ;
-	if( m_imp->m_mechanism == "CRAM-MD5" || m_imp->m_mechanism == "MD5" )
+	if( m_imp->m_mechanism == "CRAM-MD5" || m_imp->m_mechanism == "APOP" )
 	{
 		G_DEBUG( "GSmtp::SaslServer::apply: response: \"" << response << "\"" ) ;
 		G::Strings part_list ;
@@ -341,7 +341,7 @@ std::string GSmtp::SaslClient::response( const std::string & mechanism ,
 	error = false ;
 
 	std::string rsp ;
-	if( mechanism == "CRAM-MD5" || mechanism == "MD5" )
+	if( mechanism == "CRAM-MD5" || mechanism == "APOP" )
 	{
 		const bool cram = mechanism == "CRAM-MD5" ;
 		std::string id = m_imp->m_secrets.id(mechanism) ;

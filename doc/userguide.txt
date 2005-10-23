@@ -308,12 +308,6 @@ stream ("stderr"). To get the server to log onto stderr, replace the
 "--as-server" command-line switch with "--log --no-syslog". Refer to the 
 reference guide for more information.
 
-On Windows things are a bit more difficult because there is no syslog equivalent 
-on Win9x, and the standard error stream often gets lost. Starting E-MailRelay
-from cygwin/bash on Win98 keeps stderr open (albeit with dreadful performance), 
-whereas the standard command prompt does not. If necessary the environment 
-variable "GLOGOUTPUT_FILE" can be defined as the name of a log file.
-
 Preventing open mail relay
 --------------------------
 If you are running E-MailRelay as a server with a permanent connection to the

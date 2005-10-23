@@ -26,6 +26,8 @@
 #include "gpopauth.h"
 #include "gsasl.h"
 
+// Class: GPop::AuthImp
+// Description: A private pimple-pattern implementation class used by GPop::Auth.
 class GPop::AuthImp 
 {
 public:
@@ -34,6 +36,9 @@ public:
 	bool init( const std::string & mechanism ) ;
 	bool authenticated( const std::string & , const std::string & ) ;
 	std::string challenge() ;
+	std::string id() const ;
+	std::string mechanisms() const ;
+
 private:
 	const Secrets & m_secrets ;
 	GSmtp::SaslServer m_sasl ;
@@ -45,7 +50,7 @@ GPop::AuthImp::AuthImp( const Secrets & secrets ) :
 	m_secrets(secrets) ,
 	m_sasl(secrets.smtp())
 {
-	m_sasl.init( "MD5" ) ; // for the initial challenge()
+	m_sasl.init( "APOP" ) ; // for the initial challenge()
 }
 
 bool GPop::AuthImp::valid() const
@@ -55,6 +60,7 @@ bool GPop::AuthImp::valid() const
 
 bool GPop::AuthImp::init( const std::string & mechanism )
 {
+	G_DEBUG( "GPop::AuthImp::init: mechanism " << mechanism ) ;
 	return m_sasl.init(mechanism) ;
 }
 
@@ -77,7 +83,17 @@ bool GPop::AuthImp::authenticated( const std::string & p1 , const std::string & 
 
 std::string GPop::AuthImp::challenge()
 {
-	return m_sasl.mustChallenge() ? m_sasl.initialChallenge() : std::string() ;
+	return m_sasl.initialChallenge() ;
+}
+
+std::string GPop::AuthImp::id() const
+{
+	return m_sasl.id() ;
+}
+
+std::string GPop::AuthImp::mechanisms() const
+{
+	return m_sasl.mechanisms() ;
 }
 
 // ==
@@ -110,5 +126,15 @@ bool GPop::Auth::authenticated( const std::string & p1 , const std::string & p2 
 std::string GPop::Auth::challenge()
 {
 	return m_imp->challenge() ;
+}
+
+std::string GPop::Auth::id() const
+{
+	return m_imp->id() ;
+}
+
+std::string GPop::Auth::mechanisms() const
+{
+	return m_imp->mechanisms() ;
 }
 

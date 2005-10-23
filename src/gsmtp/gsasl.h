@@ -48,6 +48,14 @@ namespace GSmtp
 // and the SMTP extension for authentication is described 
 // in RFC2554.
 //
+// Common SASL mechanisms are:
+// - GSSAPI [RFC2222]
+// - CRAM-MD5 [RFC2195]
+// - PLAIN [RFC2595]
+// - DIGEST-MD5 [RFC2831]
+// - KERBEROS_V5
+// - LOGIN
+//
 // Usage:
 /// SaslServer sasl( secrets ) ;
 /// if( sasl.init("MD5") )
@@ -110,7 +118,11 @@ public:
 		// empty string if not authenticated and not trusted.
 
 	std::string mechanisms( char sep = ' ' ) const ;
-		// Returns a list of supported mechanisms.
+		// Returns a list of supported, standard mechanisms
+		// (including LOGIN).
+		//
+		// Other non-standard mechanisms (APOP) may be accepted
+		// by init().
 
 	bool trusted( GNet::Address ) const ;
 		// Returns true if a trusted client that

@@ -61,7 +61,7 @@ am_libgnet_a_OBJECTS = gaddress_ipv4.$(OBJEXT) gclient.$(OBJEXT) \
 	glocal_unix.$(OBJEXT) glocal.$(OBJEXT) gmonitor.$(OBJEXT) \
 	gresolve.$(OBJEXT) gresolve_ipv4.$(OBJEXT) \
 	gresolve_unix.$(OBJEXT) gserver.$(OBJEXT) gsocket.$(OBJEXT) \
-	gsocket_unix.$(OBJEXT) gtimer.$(OBJEXT)
+	gsocket_unix.$(OBJEXT) gtimer.$(OBJEXT) gsender.$(OBJEXT)
 libgnet_a_OBJECTS = $(am_libgnet_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -79,8 +79,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/gresolve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gresolve_ipv4.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gresolve_unix.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gserver.Po ./$(DEPDIR)/gsocket.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gsocket_unix.Po ./$(DEPDIR)/gtimer.Po
+@AMDEP_TRUE@	./$(DEPDIR)/gsender.Po ./$(DEPDIR)/gserver.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/gsocket.Po ./$(DEPDIR)/gsocket_unix.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/gtimer.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -235,6 +236,8 @@ libgnet_a_SOURCES = gaddress_ipv4.cpp \
 	gnet.h \
 	grequest.h \
 	gresolve.h \
+	gsender.h \
+	gsender.cpp \
 	gserver.h \
 	gsocket.h \
 	gtimer.h
@@ -302,6 +305,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolve_ipv4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolve_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsender.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocket_unix.Po@am__quote@

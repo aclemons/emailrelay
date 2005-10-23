@@ -5,8 +5,8 @@ Introduction
 ------------
 E-MailRelay was originally developed on Linux and so most of the documentation 
 relates to Unix-like operating systems rather than Microsoft Windows. This 
-document provides some help on installing and setting up E-MailRelay as a
-store-and-forward MTA on Windows 98.
+document tries to provide some help for installing and setting up E-MailRelay 
+as a store-and-forward MTA on Windows 98.
 
 Quick start
 ------------
@@ -94,10 +94,9 @@ server for outgoing mail you should tell it to use "localhost" or "127.0.0.1".
 
 Uninstall
 ---------
-If you have ever registered the executable as a COM component, then deregister it 
-using the "-unregserver" command-line switch. Then just delete the files under 
-"Program Files\emailrelay" and "<windir>\spool\emailrelay", and remove any 
-taskbar, desktop or "Start->Programs->StartUp" shortcuts.
+To uninstall just delete the files under "Program Files\emailrelay" and 
+"<windir>\spool\emailrelay", and remove any taskbar, desktop or 
+"Start->Programs->StartUp" shortcuts.
 
 
 

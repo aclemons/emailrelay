@@ -27,6 +27,7 @@
 #include "gdef.h"
 #include "gpop.h"
 #include "gserver.h"
+#include "gsender.h"
 #include "glinebuffer.h"
 #include "gpopsecrets.h"
 #include "gpopserverprotocol.h"
@@ -47,7 +48,7 @@ namespace GPop
 // Instances are created on the heap by Server (only).
 // See also: GPop::Server
 //
-class GPop::ServerPeer : public GNet::ServerPeer , private GPop::ServerProtocol::Sender 
+class GPop::ServerPeer : public GNet::Sender , private GPop::ServerProtocol::Sender 
 {
 public:
 	G_EXCEPTION( SendError , "network send error" ) ;
@@ -62,14 +63,13 @@ private:
 	virtual bool protocolSend( const std::string & line , size_t ) ; // from ServerProtocol::Sender
 	virtual void onDelete() ; // from GNet::ServerPeer
 	virtual void onData( const char * , size_t ) ; // from GNet::ServerPeer
-	virtual void writeEvent() ; // from GNet::EventHandler
+	virtual void onResume() ; // from GNet::Sender
 	void processLine( const std::string & line ) ;
 	static std::string crlf() ;
 
 private:
 	Server & m_server ;
 	GNet::LineBuffer m_buffer_in ;
-	std::string m_buffer_out ;
 	std::auto_ptr<ServerProtocol::Text> m_ptext ; // order dependency
 	ServerProtocol m_protocol ; // order dependency -- last
 } ;

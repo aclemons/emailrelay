@@ -95,24 +95,29 @@ public:
 		// Throws ProtocolDone if done.
 
 	void resume() ;
-		// Called when the Sender can send again.
+		// Called when the Sender can send again. The Sender returns
+		// false from protocolSend() when blocked, and calls
+		// resume() when unblocked.
 
 private:
 	enum Event
 	{
-		eQuit ,
 		eApop ,
-		eStat ,
-		eList ,
-		eRetr ,
+		eAuth ,
+		eAuthData ,
+		eCapa ,
 		eDele ,
+		eList ,
 		eNoop ,
+		ePass ,
+		eQuit ,
+		eRetr ,
 		eRset ,
+		eSent ,
+		eStat ,
 		eTop ,
 		eUidl ,
 		eUser ,
-		ePass ,
-		eSent ,
 		eUnknown
 	} ;
 	enum State
@@ -121,6 +126,7 @@ private:
 		sEnd ,
 		sActive ,
 		sData ,
+		sAuth ,
 		s_Any ,
 		s_Same
 	} ;
@@ -143,6 +149,9 @@ private:
 	void doNothing( const std::string & line , bool & ) ;
 	void doApop( const std::string & line , bool & ) ;
 	void doTop( const std::string & line , bool & ) ;
+	void doCapa( const std::string & line , bool & ) ;
+	void doAuth( const std::string & line , bool & ) ;
+	void doAuthData( const std::string & line , bool & ) ;
 	void doUidl( const std::string & line , bool & ) ;
 	void sendInit() ;
 	void sendError() ;
@@ -157,6 +166,7 @@ private:
 	void sendContent() ;
 	bool sendContentLine( std::string & , bool & ) ;
 	void send( std::string ) ;
+	void lockStore() ;
 
 private:
 	Sender & m_sender ;

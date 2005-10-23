@@ -28,10 +28,23 @@
 #include "gfile.h"
 #include "gdirectory.h"
 #include "gmemory.h"
+#include "groot.h"
 #include "gassert.h"
-#include "gfilestore.h" // GSmtp::FileReader, GSmtp::FileWriter
 #include <sstream>
 #include <fstream>
+
+struct FileReader // stub -- message files are readable by group "daemon"
+{
+	FileReader() {}
+} ;
+
+// ==
+
+struct FileDeleter : private G::Root // not really necessary -- the spool directory is writeable by group "daemon"
+{
+} ;
+
+// ==
 
 GPop::Store::Store( G::Path path , bool by_name , bool allow_delete ) :
 	m_path(path) ,
@@ -104,7 +117,7 @@ void GPop::StoreLock::lock( const std::string & user )
 
 	// build a read-only list of files (inc. file sizes)
 	{
-		GSmtp::FileReader claim_reader ;
+		FileReader claim_reader ;
 		G::Directory dir( m_dir ) ;
 		G::DirectoryIterator iter( dir , "emailrelay.*.envelope" ) ;
 		while( iter.more() )
@@ -205,6 +218,7 @@ std::auto_ptr<std::istream> GPop::StoreLock::get( int id ) const
 	G_DEBUG( "GPop::StoreLock::get: " << id << ": " << path(id) ) ;
 
 	std::auto_ptr<std::ifstream> file ;
+	FileReader claim_reader ;
 	file <<= new std::ifstream( path(id).str().c_str() ) ;
 	return std::auto_ptr<std::istream>( file.release() ) ;
 }
@@ -256,7 +270,7 @@ void GPop::StoreLock::doCommit( Store & store ) const
 
 void GPop::StoreLock::deleteFile( const G::Path & path , bool & all_ok ) const
 {
-	GSmtp::FileWriter claim_writer ;
+	FileDeleter claim_deleter ;
 	bool ok = G::File::remove( path , G::File::NoThrow() ) ;
 	all_ok = ok && all_ok ;
 	if( ! ok )

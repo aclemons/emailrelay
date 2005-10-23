@@ -1,6 +1,14 @@
 E-MailRelay Change Log
 ======================
 
+1.3.3 -> 1.3.4
+--------------
+* Fix for logging reentrancy bug (esp. with "--debug").
+* Fix to ensure sockets are always non-blocking (affects "--scanner").
+* Allow "--verifier" scripts to reject addresses with a temporary "4xx" error code.
+* Automatic re-read of secrets files.
+* POP3 server ("./configure --enable-pop").
+
 1.3.2 -> 1.3.3
 --------------
 * No bind() for outgoing connections [bug-id 1051689].

@@ -77,7 +77,7 @@ class GPop::StoreLock
 public:
 	G_EXCEPTION( CannotDelete , "cannot delete message" ) ;
 	typedef unsigned long Size ;
-	struct Entry
+	struct Entry // Represents a file in the GPop::Store.
 	{
 		int id ;
 		StoreLock::Size size ;
@@ -144,7 +144,7 @@ public:
 		// Postcondition: !locked()
 
 private:
-	struct File
+	struct File // A private implementation class used by GPop::StoreLock.
 	{
 		std::string name ; // envelope
 		StoreLock::Size size ;

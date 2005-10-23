@@ -39,6 +39,7 @@ mk_sources=\
 	gresolve.cpp \
 	gresolve_ipv4.cpp \
 	gresolve_win32.cpp \
+	gsender.cpp \
 	gserver.cpp \
 	gsocket.cpp \
 	gsocket_win32.cpp \

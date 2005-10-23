@@ -348,7 +348,6 @@ void GSmtp::ServerProtocol::sendAuthDone( bool ok )
 void GSmtp::ServerProtocol::doAuthData( const std::string & line , bool & predicate )
 {
 	G_LOG( "GSmtp::ServerProtocol: rx<<: [authentication response not logged]" ) ;
-	G_DEBUG( "GSmtp::ServerProtocol: rx<<: {" << Base64::decode(line) << "}" ) ;
 	if( line == "*" )
 	{
 		predicate = false ; // => idle

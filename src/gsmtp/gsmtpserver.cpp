@@ -216,7 +216,7 @@ void GSmtp::Server::report() const
 	{
 		Server * This = const_cast<Server*>(this) ;
 		if( This->imp(i).address().first )
-			G_LOG_S( "GSmtp::Server: smtp server on \"" << This->imp(i).address().second.displayString() << "\"" ) ;
+			G_LOG_S( "GSmtp::Server: smtp server on " << This->imp(i).address().second.displayString() ) ;
 	}
 }
 

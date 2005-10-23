@@ -27,6 +27,8 @@
 #include "groot.h"
 #include "gxtext.h"
 #include "gstr.h"
+#include "gdatetime.h"
+#include "gfile.h"
 #include <fstream>
 #include <utility> // std::pair
 
@@ -45,7 +47,10 @@ public:
 
 private:
 	void process( std::string mechanism , std::string side , std::string id , std::string secret ) ;
+	bool read( const G::Path & ) ;
 	void read( std::istream & ) ;
+	void reread() const ;
+	void reread(int) ;
 
 private:
 	typedef std::map<std::string,std::string> Map ;
@@ -55,6 +60,8 @@ private:
 	std::string m_server_type ;
 	bool m_valid ;
 	Map m_map ;
+	G::DateTime::EpochTime m_file_time ;
+	G::DateTime::EpochTime m_check_time ;
 } ;
 
 // ===
@@ -98,33 +105,49 @@ GSmtp::SecretsImp::SecretsImp( const G::Path & path , bool auto_ , const std::st
 		m_path(path) ,
 		m_auto(auto_) ,
 		m_debug_name(debug_name) ,
-		m_server_type(server_type)
+		m_server_type(server_type) ,
+		m_file_time(0) ,
+		m_check_time(G::DateTime::now())
 {
-	if( m_server_type.empty() ) 
-		m_server_type = "server" ;
-
+	m_server_type = m_server_type.empty() ? std::string("server") : m_server_type ;
 	G_DEBUG( "GSmtp::Secrets: " << m_debug_name << ": \"" << path << "\"" ) ;
+	m_valid = path.str().empty() ? false : read(path) ;
+}
 
-	if( path.str().empty() )
-	{
-		m_valid = false ;
-	}
-	else
-	{
-		G::Root claim_root ;
-		std::ifstream file( path.str().c_str() ) ;
-		if( !file.good() )
-			throw Secrets::OpenError( path.str() ) ;
+bool GSmtp::SecretsImp::read( const G::Path & path )
+{
+	G::Root claim_root ;
+	std::ifstream file( path.str().c_str() ) ;
+	if( !file.good() )
+		throw Secrets::OpenError( path.str() ) ;
 
-		read( file ) ;
-		m_valid = m_map.size() != 0U ;
-	}
+	m_map.clear() ;
+	m_file_time = G::File::time( path ) ;
+	read( file ) ;
+	return m_map.size() != 0U ;
+}
 
-	const bool debug = false ; // security hole if true
-	if( debug )
+void GSmtp::SecretsImp::reread() const
+{
+	(const_cast<SecretsImp*>(this))->reread(0) ;
+}
+
+void GSmtp::SecretsImp::reread( int )
+{
+	G_DEBUG( "GSmtp::SecretsImp::reread" ) ;
+	if( m_auto )
 	{
-		for( Map::iterator p = m_map.begin() ; p != m_map.end() ; ++p )
-			G_DEBUG( "GSmtp::Secrets::ctor: \"" << (*p).first << "\", \"" << (*p).second << "\"" ) ;
+		G::DateTime::EpochTime now = G::DateTime::now() ;
+		G_DEBUG( "GSmtp::SecretsImp::reread: file time checked at " << m_check_time << ": now " << now ) ;
+		if( now == m_check_time ) return ; // at most once a second
+		m_check_time = now ;
+		G::DateTime::EpochTime t = G::File::time( m_path ) ;
+		G_DEBUG( "GSmtp::SecretsImp::reread: current file time " << t << ": saved file time " << m_file_time ) ;
+		if( t != m_file_time )
+		{
+			G_LOG_S( "GSmtp::Secrets: re-reading secrets file: " << m_path ) ;
+			(void) read( m_path ) ;
+		}
 	}
 }
 
@@ -175,6 +198,7 @@ bool GSmtp::SecretsImp::valid() const
 
 std::string GSmtp::SecretsImp::id( const std::string & mechanism ) const
 {
+	reread() ;
 	Map::const_iterator p = m_map.find( mechanism+" client" ) ;
 	std::string result ;
 	if( p != m_map.end() && (*p).second.find(" ") != std::string::npos )
@@ -185,6 +209,7 @@ std::string GSmtp::SecretsImp::id( const std::string & mechanism ) const
 
 std::string GSmtp::SecretsImp::secret( const std::string & mechanism ) const
 {
+	reread() ;
 	Map::const_iterator p = m_map.find( mechanism+" client" ) ;
 	if( p == m_map.end() || (*p).second.find(" ") == std::string::npos )
 		return std::string() ;
@@ -194,6 +219,7 @@ std::string GSmtp::SecretsImp::secret( const std::string & mechanism ) const
 
 std::string GSmtp::SecretsImp::secret(  const std::string & mechanism , const std::string & id ) const
 {
+	reread() ;
 	Map::const_iterator p = m_map.find( mechanism+":"+G::Xtext::encode(id) ) ;
 	if( p == m_map.end() )
 		return std::string() ;
