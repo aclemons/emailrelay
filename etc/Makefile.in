@@ -87,6 +87,9 @@ LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LTLIBOBJS = @LTLIBOBJS@
+MAINT = @MAINT@
+MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
+MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKE = @MAKE@
 MAKEINFO = @MAKEINFO@
 OBJEXT = @OBJEXT@
@@ -145,12 +148,12 @@ target_alias = @target_alias@
 
 #
 #
-EXTRA_DIST = emailrelay.conf
-e_sysconf_DATA = emailrelay.conf
+EXTRA_DIST = emailrelay.conf.template
+e_sysconf_DATA = emailrelay.conf.template
 all: all-am
 
 .SUFFIXES:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -175,9 +178,9 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-$(top_srcdir)/configure:  $(am__configure_deps)
+$(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
+$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 uninstall-info-am:
 install-e_sysconfDATA: $(e_sysconf_DATA)
@@ -281,6 +284,8 @@ info: info-am
 info-am:
 
 install-data-am: install-e_sysconfDATA
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
 install-exec-am:
 
@@ -318,6 +323,8 @@ uninstall-am: uninstall-e_sysconfDATA uninstall-info-am
 	pdf-am ps ps-am uninstall uninstall-am uninstall-e_sysconfDATA \
 	uninstall-info-am
 
+install-data-hook:
+	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

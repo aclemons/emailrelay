@@ -91,6 +91,21 @@ where <switch> is:
 # --poll (-O)
   Enables polling with the specified period (requires --forward-to).
 
+# --pop (-B)
+  Enables the pop server (if compiled-in).
+
+# --pop-auth (-F)
+  Defines the pop server secrets file.
+
+# --pop-by-name (-J)
+  Modifies the pop spool directory according to the user name.
+
+# --pop-no-delete (-G)
+  Disables message deletion via pop.
+
+# --pop-port (-E)
+  Specifies the pop listening port number.
+
 # --port (-p)
   Specifies the smtp listening port number.
 

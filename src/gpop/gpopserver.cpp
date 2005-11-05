@@ -31,11 +31,8 @@
 #include "gassert.h"
 #include <string>
 
-GPop::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info ,
-	Server & server ,
-	Store & store , 
-	const Secrets & secrets , 
-	std::auto_ptr<ServerProtocol::Text> ptext ,
+GPop::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info , Server & server , Store & store , 
+	const Secrets & secrets , std::auto_ptr<ServerProtocol::Text> ptext ,
 	ServerProtocol::Config protocol_config ) :
 		GNet::Sender( peer_info ) ,
 		m_server( server ) ,
@@ -106,7 +103,7 @@ GPop::Server::Server( Store & store , const Secrets & secrets , Config config ) 
 void GPop::Server::report() const
 {
 	G_LOG_S( "GPop::Server: pop server on " << address().second.displayString() ) ;
-	G_LOG_S( "GPop::Server: authentication secrets from \"" << m_secrets.path() << "\"" ) ;
+	G_LOG_S( "GPop::Server: pop authentication secrets from \"" << m_secrets.path() << "\"" ) ;
 }
 
 GNet::ServerPeer * GPop::Server::newPeer( GNet::Server::PeerInfo peer_info )

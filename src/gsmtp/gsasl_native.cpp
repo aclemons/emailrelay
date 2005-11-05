@@ -46,13 +46,13 @@ class GSmtp::SaslServerImp
 {
 public:
 	bool m_first ;
-	const Secrets & m_secrets ;
+	const SaslServer::Secrets & m_secrets ;
 	std::string m_mechanism ;
 	std::string m_challenge ;
 	bool m_authenticated ;
 	std::string m_id ;
 	std::string m_trustee ;
-	explicit SaslServerImp( const Secrets & ) ;
+	explicit SaslServerImp( const SaslServer::Secrets & ) ;
 	bool init( const std::string & mechanism ) ;
 	bool validate( const std::string & secret , const std::string & response ) const ;
 	static std::string digest( const std::string & secret , const std::string & challenge ) ;
@@ -69,13 +69,13 @@ public:
 class GSmtp::SaslClientImp 
 {
 public:
-	const Secrets & m_secrets ;
-	explicit SaslClientImp( const Secrets & ) ;
+	const SaslClient::Secrets & m_secrets ;
+	explicit SaslClientImp( const SaslClient::Secrets & ) ;
 } ;
 
 // ===
 
-GSmtp::SaslServerImp::SaslServerImp( const Secrets & secrets ) :
+GSmtp::SaslServerImp::SaslServerImp( const SaslServer::Secrets & secrets ) :
 	m_first(true) ,
 	m_secrets(secrets) ,
 	m_authenticated(false)
@@ -216,7 +216,7 @@ bool GSmtp::SaslServer::trusted( GNet::Address a ) const
 	return m_imp->trusted(a) ;
 }
 
-GSmtp::SaslServer::SaslServer( const Secrets & secrets ) :
+GSmtp::SaslServer::SaslServer( const SaslServer::Secrets & secrets ) :
 	m_imp(new SaslServerImp(secrets))
 {
 }
@@ -310,14 +310,14 @@ std::string GSmtp::SaslServer::id() const
 
 // ===
 
-GSmtp::SaslClientImp::SaslClientImp( const Secrets & secrets ) :
+GSmtp::SaslClientImp::SaslClientImp( const SaslClient::Secrets & secrets ) :
 	m_secrets(secrets)
 {
 }
 
 // ===
 
-GSmtp::SaslClient::SaslClient( const Secrets & secrets , const std::string & server_name ) :
+GSmtp::SaslClient::SaslClient( const SaslClient::Secrets & secrets , const std::string & server_name ) :
 	m_imp(new SaslClientImp(secrets) )
 {
 	G_DEBUG( "GSmtp::SaslClient::ctor: server-name=\"" << server_name << "\", active=" << active() ) ;
@@ -370,7 +370,6 @@ std::string GSmtp::SaslClient::response( const std::string & mechanism ,
 		done = true ;
 		error = true ;
 	}
-	G_DEBUG( "GSmtp::SaslClient::response: \"" << mechanism << "\", \"" << challenge << "\" -> \"" << rsp << "\"" ) ;
 	return rsp ;
 }
 

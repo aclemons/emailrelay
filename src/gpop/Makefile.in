@@ -58,14 +58,15 @@ libgnopop_a_OBJECTS = $(am_libgnopop_a_OBJECTS)
 libgpop_a_AR = $(AR) $(ARFLAGS)
 libgpop_a_LIBADD =
 am_libgpop_a_OBJECTS = gpopauth.$(OBJEXT) gpopsecrets.$(OBJEXT) \
-	gpopserver.$(OBJEXT) gpopstore.$(OBJEXT) \
-	gpopserverprotocol.$(OBJEXT)
+	gpopsecrets_unix.$(OBJEXT) gpopserver.$(OBJEXT) \
+	gpopstore.$(OBJEXT) gpopserverprotocol.$(OBJEXT)
 libgpop_a_OBJECTS = $(am_libgpop_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/gnopop.Po ./$(DEPDIR)/gpopauth.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gpopsecrets.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/gpopsecrets_unix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gpopserver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gpopserverprotocol.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gpopstore.Po
@@ -120,6 +121,9 @@ LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LTLIBOBJS = @LTLIBOBJS@
+MAINT = @MAINT@
+MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
+MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKE = @MAKE@
 MAKEINFO = @MAKEINFO@
 OBJEXT = @OBJEXT@
@@ -176,15 +180,17 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 EXTRA_DIST = \
-	mingw.mak
+	mingw.mak \
+	gpopsecrets_win32.cpp
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\"
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_SYSCONFDIR=\"$(e_sysconfdir)\"
 noinst_LIBRARIES = libgpop.a libgnopop.a
 libgpop_a_SOURCES = \
 	gpopauth.cpp \
 	gpopauth.h \
 	gpop.h \
 	gpopsecrets.cpp \
+	gpopsecrets_unix.cpp \
 	gpopsecrets.h \
 	gpopserver.cpp \
 	gpopserver.h \
@@ -198,7 +204,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .cpp .o .obj
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -223,9 +229,9 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-$(top_srcdir)/configure:  $(am__configure_deps)
+$(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
+$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
 clean-noinstLIBRARIES:
@@ -248,6 +254,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnopop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpopauth.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpopsecrets.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpopsecrets_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpopserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpopserverprotocol.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpopstore.Po@am__quote@

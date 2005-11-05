@@ -29,6 +29,7 @@ png_files=gsmtp-classes.png gnet-classes.png sequence-1.png sequence-2.png seque
 
 EXTRA_DIST = $(man_files_in) $(txt_files) $(html_files_in) $(html_files_thru) $(png_files)
 noinst_SCRIPTS = .dox
+e_man1_MANS = $(man_files_in)
 e_man1_DATA = $(man_files_out)
 e_doc_DATA = $(txt_files) $(html_files_out) $(html_files_thru) $(png_files)
 CLEANFILES = $(noinst_SCRIPTS) $(man_files_out) $(html_files_out) doxygen/*

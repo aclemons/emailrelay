@@ -33,7 +33,7 @@ mk_gcc=$(mk_bin)g++
 mk_gcc_flags=-mno-cygwin -g -mwindows
 mk_defines=-DG_WIN32 -DG_MINGW
 mk_includes=-I../glib -I../gnet -I../gsmtp -I../gpop -I../win32
-mk_cpp_flags=$(mk_defines) $(mk_includes)
+mk_cpp_flags=$(mk_defines) $(mk_defines_extra) $(mk_includes) $(mk_includes_extra)
 
 .SUFFIXES: .rc .i
 

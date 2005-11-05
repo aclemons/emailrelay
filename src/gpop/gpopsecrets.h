@@ -28,6 +28,7 @@
 #include "gpop.h"
 #include "gpath.h"
 #include "gexception.h"
+#include "gsasl.h"
 #include <iostream>
 #include <map>
 
@@ -46,7 +47,7 @@ namespace GSmtp
 // Description: A simple interface to a store of secrets as used in
 // authentication.
 //
-class GPop::Secrets 
+class GPop::Secrets : public GSmtp::SaslServer::Secrets 
 {
 public:
 	G_EXCEPTION( OpenError , "cannot read secrets file" ) ;
@@ -59,21 +60,18 @@ public:
 		// be a path to a file, a database connection
 		// string, etc.
 
-	~Secrets() ;
+	virtual ~Secrets() ;
 		// Destructor.
 
 	std::string path() const ;
 		// Returns the storage path.
 
-	bool valid() const ;
+	virtual bool valid() const ;
 		// Returns true if a valid file.
 
-	std::string secret(  const std::string & mechanism , const std::string & id ) const ;
+	virtual std::string secret(  const std::string & mechanism , const std::string & id ) const ;
 		// Returns the given user's secret. Returns the
 		// empty string if not a valid id.
-
-	const GSmtp::Secrets & smtp() const ;
-		// Temporary back-door to the implementation class.
 
 private:
 	Secrets( const Secrets & ) ; // not implemented

@@ -18,18 +18,22 @@
 // 
 // ===
 //
-// gpop.h
+// gpopsecrets_win32.cpp
 //
 
-#ifndef G_POP_H
-#define G_POP_H
-
 #include "gdef.h"
-#include "gnet.h"
-#include "glog.h"
+#include "gpop.h"
+#include "gpopsecrets.h"
+#include "gpath.h"
 
-#ifndef G_SYSCONFDIR
-	#define G_SYSCONFDIR ""
-#endif
+std::string GPop::Secrets::defaultPath()
+{
+	char buffer[(MAX_PATH * 2U) + 1U] ;
+	if( 0 == ::GetWindowsDirectory( buffer , sizeof(buffer)-1U ) )
+		buffer[0] = '\0' ;
 
-#endif
+	G::Path path( buffer ) ;
+	path.pathAppend( "emailrelay.auth" ) ;
+	return path.str() ;
+}
+

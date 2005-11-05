@@ -93,6 +93,9 @@ LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LTLIBOBJS = @LTLIBOBJS@
+MAINT = @MAINT@
+MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
+MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKE = @MAKE@
 MAKEINFO = @MAKEINFO@
 OBJEXT = @OBJEXT@
@@ -158,6 +161,7 @@ html_files_out = readme.html developer.html reference.html userguide.html window
 png_files = gsmtp-classes.png gnet-classes.png sequence-1.png sequence-2.png sequence-3.png sequence-4.png gnet-client.png gsmtp-serverprotocol.png gsmtp-scannerclient.png auth.png
 EXTRA_DIST = $(man_files_in) $(txt_files) $(html_files_in) $(html_files_thru) $(png_files)
 noinst_SCRIPTS = .dox
+e_man1_MANS = $(man_files_in)
 e_man1_DATA = $(man_files_out)
 e_doc_DATA = $(txt_files) $(html_files_out) $(html_files_thru) $(png_files)
 CLEANFILES = $(noinst_SCRIPTS) $(man_files_out) $(html_files_out) doxygen/*
@@ -176,7 +180,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .txt .html
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -201,9 +205,9 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-$(top_srcdir)/configure:  $(am__configure_deps)
+$(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
+$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 uninstall-info-am:
 install-e_docDATA: $(e_doc_DATA)

@@ -28,6 +28,7 @@
 #include "gsmtp.h"
 #include "gpath.h"
 #include "gexception.h"
+#include "gsasl.h"
 #include <iostream>
 #include <map>
 
@@ -43,7 +44,7 @@ namespace GSmtp
 //
 // See also: GSmtp::SaslClient, GSmtp::SaslServer
 //
-class GSmtp::Secrets 
+class GSmtp::Secrets : public GSmtp::SaslClient::Secrets , public GSmtp::SaslServer::Secrets 
 {
 public:
 	G_EXCEPTION( OpenError , "cannot read secrets file" ) ;
@@ -62,21 +63,21 @@ public:
 			// a different set of server-side authentication records 
 			// that may be stored in the same repository.
 
-	~Secrets() ;
+	virtual ~Secrets() ;
 		// Destructor.
 
-	bool valid() const ;
+	virtual bool valid() const ;
 		// Returns true if a valid file.
 
-	std::string id( const std::string & mechanism ) const ;
+	virtual std::string id( const std::string & mechanism ) const ;
 		// Returns the default id for client-side
 		// authentication.
 
-	std::string secret( const std::string & mechanism ) const ;
+	virtual std::string secret( const std::string & mechanism ) const ;
 		// Returns the default secret for client-side
 		// authentication.
 
-	std::string secret(  const std::string & mechanism , const std::string & id ) const ;
+	virtual std::string secret(  const std::string & mechanism , const std::string & id ) const ;
 		// Returns the given user's secret for server-side
 		// authentication. Returns the empty string if not a 
 		// valid id.

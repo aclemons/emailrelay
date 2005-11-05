@@ -26,7 +26,6 @@
 
 #include "gdef.h"
 #include "gsmtp.h"
-#include "gsecrets.h"
 #include "gexception.h"
 #include "gaddress.h"
 #include "gstrings.h"
@@ -40,7 +39,19 @@ namespace GSmtp
 	class SaslClientImp ;
 	class SaslServer ;
 	class SaslServerImp ;
+	struct Valid ;
 }
+
+// Class: GSmtp::Valid
+// Description: A mix-in interface containing a valid() method.
+class GSmtp::Valid 
+{
+public:
+	virtual bool valid() const = 0 ;
+		// Returns true if a valid source of information.
+
+	virtual ~Valid() {}
+} ;
 
 // Class: GSmtp::SaslServer
 // Description: A class for implementing the server-side SASL 
@@ -77,6 +88,12 @@ namespace GSmtp
 class GSmtp::SaslServer 
 {
 public:
+	struct Secrets : virtual Valid // An interface used by GSmtp::SaslServer to obtain authentication secrets.
+	{
+		virtual std::string secret(  const std::string & mechanism , const std::string & id ) const = 0 ;
+			// Returns the secret for the given mechanism and id.
+	} ;
+
 	explicit SaslServer( const Secrets & ) ;
 		// Constructor. The reference is kept.
 
@@ -146,6 +163,15 @@ private:
 class GSmtp::SaslClient 
 {
 public:
+	struct Secrets : virtual Valid // An interface used by GSmtp::SaslClient to obtain authentication secrets.
+	{
+		virtual std::string id( const std::string & ) const = 0 ;
+			// Returns the default id.
+
+		virtual std::string secret( const std::string & ) const = 0 ;
+			// Returns the secret for the given id.
+	} ;
+
 	SaslClient( const Secrets & secrets , const std::string & server_name ) ;
 		// Constructor. The secrets reference is kept.
 

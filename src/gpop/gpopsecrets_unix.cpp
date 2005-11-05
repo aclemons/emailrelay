@@ -18,18 +18,22 @@
 // 
 // ===
 //
-// gpop.h
+// gpopsecrets_unix.cpp
 //
 
-#ifndef G_POP_H
-#define G_POP_H
-
 #include "gdef.h"
-#include "gnet.h"
-#include "glog.h"
+#include "gpop.h"
+#include "gpopsecrets.h"
+#include "gpath.h"
 
-#ifndef G_SYSCONFDIR
-	#define G_SYSCONFDIR ""
-#endif
+std::string GPop::Secrets::defaultPath()
+{
+	std::string sysconfdir( G_SYSCONFDIR ) ;
+	if( sysconfdir.empty() )
+		sysconfdir = "/etc" ;
 
-#endif
+	G::Path path( sysconfdir ) ;
+	path.pathAppend( "emailrelay.auth" ) ;
+	return path.str() ; 
+}
+

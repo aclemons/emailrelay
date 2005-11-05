@@ -59,9 +59,12 @@ public:
 		public: virtual ~Sender() ;
 		private: void operator=( const Sender & ) ; // not implemented
 	} ;
-	class Text // An interface used by ServerProtocol to provide response text strings. NOT USED.
+	class Text // An interface used by ServerProtocol to provide response text strings.
 	{
-		public: virtual std::string dummy() const = 0 ;
+		public: virtual std::string greeting() const = 0 ;
+		public: virtual std::string quit() const = 0 ;
+		public: virtual std::string capa() const = 0 ;
+		public: virtual std::string user( const std::string & id ) const = 0 ;
 		public: virtual ~Text() ;
 		private: void operator=( const Text & ) ; // not implemented
 	} ;
@@ -71,7 +74,7 @@ public:
 		Config() ;
 	} ;
 
-	ServerProtocol( Sender & sender , Store & store , const Secrets & secrets , Text & text , 
+	ServerProtocol( Sender & sender , Store & store , const Secrets & secrets , const Text & text , 
 		GNet::Address peer_address , Config config ) ;
 			// Constructor. 
 			//
@@ -169,6 +172,7 @@ private:
 	void lockStore() ;
 
 private:
+	const Text & m_text ;
 	Sender & m_sender ;
 	Store & m_store ;
 	StoreLock m_store_lock ;
@@ -191,7 +195,16 @@ public:
 	explicit ServerProtocolText( GNet::Address peer ) ;
 		// Constructor.
 
-	virtual std::string dummy() const ;
+	virtual std::string greeting() const ;
+		// From ServerProtocol::Text.
+
+	virtual std::string quit() const ;
+		// From ServerProtocol::Text.
+
+	virtual std::string capa() const ;
+		// From ServerProtocol::Text.
+
+	virtual std::string user( const std::string & id ) const ;
 		// From ServerProtocol::Text.
 } ;
 

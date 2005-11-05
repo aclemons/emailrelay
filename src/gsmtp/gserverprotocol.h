@@ -30,6 +30,7 @@
 #include "gaddress.h"
 #include "gverifier.h"
 #include "gsasl.h"
+#include "gsecrets.h"
 #include "gstatemachine.h"
 #include "gtimer.h"
 #include <map>

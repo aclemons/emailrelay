@@ -53,7 +53,7 @@
 //static
 std::string Main::Run::versionNumber()
 {
-	return "1.3.4" ;
+	return "1.4" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string & switch_spec ) :

@@ -19,9 +19,10 @@
 #
 
 EXTRA_DIST=\
-	mingw.mak
+	mingw.mak \
+	gpopsecrets_win32.cpp
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\"
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_SYSCONFDIR=\"$(e_sysconfdir)\"
 
 noinst_LIBRARIES = libgpop.a libgnopop.a
 
@@ -30,6 +31,7 @@ libgpop_a_SOURCES = \
 	gpopauth.h \
 	gpop.h \
 	gpopsecrets.cpp \
+	gpopsecrets_unix.cpp \
 	gpopsecrets.h \
 	gpopserver.cpp \
 	gpopserver.h \

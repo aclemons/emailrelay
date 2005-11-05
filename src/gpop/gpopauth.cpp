@@ -48,7 +48,7 @@ private:
 
 GPop::AuthImp::AuthImp( const Secrets & secrets ) :
 	m_secrets(secrets) ,
-	m_sasl(secrets.smtp())
+	m_sasl(secrets)
 {
 	m_sasl.init( "APOP" ) ; // for the initial challenge()
 }
@@ -66,7 +66,7 @@ bool GPop::AuthImp::init( const std::string & mechanism )
 
 bool GPop::AuthImp::authenticated( const std::string & p1 , const std::string & p2 )
 {
-	G_DEBUG( "GPop::AuthImp::authenticated: \"" << p1 << "\", \"" << p2 << "\"" ) ;
+	G_DEBUG( "GPop::AuthImp::authenticated: \"" << p1 << "\"" ) ;
 	bool done_1 = false ;
 	std::string challenge_1 = m_sasl.apply( p1 , done_1 ) ;
 	if( done_1 ) 

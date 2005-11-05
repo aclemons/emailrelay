@@ -43,11 +43,6 @@ public:
 
 // ===
 
-std::string GPop::Secrets::defaultPath()
-{
-	return "/etc/emailrelay.auth" ; // TODO: win32
-}
-
 GPop::Secrets::Secrets( const std::string & path ) :
 	m_imp( new SecretsImp(path) )
 {
@@ -71,11 +66,6 @@ bool GPop::Secrets::valid() const
 std::string GPop::Secrets::secret(  const std::string & mechanism , const std::string & id ) const
 {
 	return m_imp->secret( mechanism , id ) ;
-}
-
-const GSmtp::Secrets & GPop::Secrets::smtp() const
-{
-	return m_imp->m_secrets ;
 }
 
 // ===

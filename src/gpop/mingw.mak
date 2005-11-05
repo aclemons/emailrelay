@@ -24,6 +24,7 @@
 mk_sources=\
 	gpopauth.cpp \
 	gpopsecrets.cpp \
+	gpopsecrets_win32.cpp \
 	gpopserver.cpp \
 	gpopstore.cpp \
 	gpopserverprotocol.cpp

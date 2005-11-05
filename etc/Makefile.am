@@ -17,5 +17,7 @@
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ## 
 #
-EXTRA_DIST = emailrelay.conf
-e_sysconf_DATA = emailrelay.conf
+EXTRA_DIST = emailrelay.conf.template
+e_sysconf_DATA = emailrelay.conf.template
+install-data-hook:
+	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi

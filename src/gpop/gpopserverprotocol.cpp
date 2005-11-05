@@ -30,8 +30,9 @@
 #include "glog.h"
 #include <sstream>
 
-GPop::ServerProtocol::ServerProtocol( Sender & sender , Store & store , const Secrets & secrets , Text & , 
+GPop::ServerProtocol::ServerProtocol( Sender & sender , Store & store , const Secrets & secrets , const Text & text , 
 	GNet::Address peer_address , Config ) :
+		m_text(text) ,
 		m_sender(sender) ,
 		m_store(store) ,
 		m_store_lock(m_store) ,
@@ -73,7 +74,7 @@ GPop::ServerProtocol::~ServerProtocol()
 
 void GPop::ServerProtocol::sendInit()
 {
-	std::string greeting = "+OK POP3 server ready" ;
+	std::string greeting = std::string() + "+OK " + m_text.greeting() ;
 	std::string apop_challenge = m_auth.challenge() ;
 	if( ! apop_challenge.empty() )
 	{
@@ -95,15 +96,21 @@ void GPop::ServerProtocol::sendError()
 
 void GPop::ServerProtocol::apply( const std::string & line )
 {
-	G_LOG( "GPop::ServerProtocol: rx<<: \"" << G::Str::toPrintableAscii(line) << "\"" ) ;
-
+	// decode the event
 	Event event = m_fsm.state() == sAuth ? eAuthData : commandEvent(commandWord(line)) ;
 
+	// log the input
+	std::string log_text = event == ePass ? 
+		(commandPart(line,0U)+" [password not logged]") : G::Str::toPrintableAscii(line) ;
+	G_LOG( "GPop::ServerProtocol: rx<<: \"" << log_text << "\"" ) ;
+
+	// apply the event to the state machine
 	State new_state = m_fsm.apply( *this , event , line ) ;
 	const bool protocol_error = new_state == s_Any ;
 	if( protocol_error )
 		sendError() ;
 
+	// squirt data down the pipe if appropriate
 	if( new_state == sData )
 		sendContent() ;
 }
@@ -220,7 +227,7 @@ GPop::ServerProtocol::Event GPop::ServerProtocol::commandEvent( const std::strin
 void GPop::ServerProtocol::doQuitEarly( const std::string & , bool & )
 {
 	cancelTimer() ;
-	send( "+OK signing off" ) ;
+	send( std::string() + "+OK " + m_text.quit() ) ;
 	throw ProtocolDone() ;
 }
 
@@ -228,7 +235,7 @@ void GPop::ServerProtocol::doQuit( const std::string & , bool & )
 {
 	cancelTimer() ;
 	m_store_lock.commit() ;
-	send( "+OK signing off" ) ;
+	send( std::string() + "+OK " + m_text.quit() ) ;
 	throw ProtocolDone() ;
 }
 
@@ -390,7 +397,7 @@ void GPop::ServerProtocol::lockStore()
 
 void GPop::ServerProtocol::doCapa( const std::string & , bool & )
 {
-	send( "+OK capability list follows" ) ;
+	send( std::string() + "+OK " + m_text.capa() ) ;
 	send( "USER" ) ;
 	send( "TOP" ) ;
 	send( "UIDL" ) ;
@@ -401,7 +408,7 @@ void GPop::ServerProtocol::doCapa( const std::string & , bool & )
 void GPop::ServerProtocol::doUser( const std::string & line , bool & )
 {
 	m_user = commandParameter(line) ;
-	send( std::string() + "+OK user: " + commandParameter(line) ) ;
+	send( std::string() + "+OK " + m_text.user(commandParameter(line)) ) ;
 }
 
 void GPop::ServerProtocol::doPass( const std::string & line , bool & ok )
@@ -420,7 +427,7 @@ void GPop::ServerProtocol::doPass( const std::string & line , bool & ok )
 
 void GPop::ServerProtocol::doApop( const std::string & line , bool & ok )
 {
-	std::string m_user = commandParameter(line,1) ;
+	m_user = commandParameter(line,1) ;
 	ok = m_auth.valid() && m_auth.authenticated(m_user+" "+commandParameter(line,2),std::string()) ;
 	if( ok )
 	{
@@ -458,9 +465,24 @@ GPop::ServerProtocolText::ServerProtocolText( GNet::Address )
 {
 }
 
-std::string GPop::ServerProtocolText::dummy() const
+std::string GPop::ServerProtocolText::greeting() const
 {
-	return "" ;
+	return "POP3 server ready" ;
+}
+
+std::string GPop::ServerProtocolText::quit() const
+{
+	return "signing off" ;
+}
+
+std::string GPop::ServerProtocolText::capa() const
+{
+	return "capability list follows" ;
+}
+
+std::string GPop::ServerProtocolText::user( const std::string & id ) const
+{
+	return std::string() + "user: " + id ;
 }
 
 // ===

@@ -3,10 +3,11 @@ E-MailRelay Windows installation
 
 Introduction
 ------------
-E-MailRelay was originally developed on Linux and so most of the documentation 
-relates to Unix-like operating systems rather than Microsoft Windows. This 
-document tries to provide some help for installing and setting up E-MailRelay 
-as a store-and-forward MTA on Windows 98.
+E-MailRelay has been developed on Linux and the documentation relates to 
+Unix-like operating systems rather than Microsoft Windows. This document
+was written from the perspective of setting up E-MailRelay as a 
+store-and-forward MTA on Windows 98 and it may or may not be relevant to more 
+up-to-date versions of Windows.
 
 Quick start
 ------------

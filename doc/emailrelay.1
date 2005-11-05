@@ -133,6 +133,21 @@ Defines a file for storing the daemon process-id.
 .B \-O,--poll \fIperiod\fR
 Enables polling with the specified period (requires \fI--forward-to\fR).
 .TP
+.B \-B,--pop 
+Enables the pop server (if compiled-in).
+.TP
+.B \-F,--pop-auth \fIpath\fR
+Defines the pop server secrets file.
+.TP
+.B \-J,--pop-by-name 
+Modifies the pop spool directory according to the user name.
+.TP
+.B \-G,--pop-no-delete 
+Disables message deletion via pop.
+.TP
+.B \-E,--pop-port \fIport\fR
+Specifies the pop listening port number.
+.TP
 .B \-p,--port \fIport\fR
 Specifies the smtp listening port number.
 .TP

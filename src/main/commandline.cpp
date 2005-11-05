@@ -81,11 +81,11 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "R!scanner!specifies an external network server to process messages when they are stored!1!host:port!3|"
 		<< "Q!admin-terminate!enables the terminate command on the admin interface!0!!3|"
 		<< "A!anonymous!disables the smtp vrfy command and sends less verbose smtp responses!0!!3|"
-		<< "B!pop!enable pop server!0!!" << pop_level << "|"
+		<< "B!pop!enables the pop server (if compiled-in)!0!!" << pop_level << "|"
 		<< "E!pop-port!specifies the pop listening port number!1!port!" << pop_level << "|"
-		<< "F!pop-auth!pop server secrets file!1!path!" << pop_level << "|"
-		<< "G!pop-no-delete!disable message deletion via pop server!0!!" << pop_level << "|"
-		<< "J!pop-by-name!pop spool directory modified according to the user name!0!!" << pop_level << "|"
+		<< "F!pop-auth!defines the pop server secrets file (default is \"" << pop_auth << "\")!1!file!" << pop_level << "|"
+		<< "G!pop-no-delete!disables message deletion via pop!0!!" << pop_level << "|"
+		<< "J!pop-by-name!modifies the pop spool directory according to the user name!0!!" << pop_level << "|"
 		;
 	return ss.str() ;
 }
