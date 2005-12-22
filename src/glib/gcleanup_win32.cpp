@@ -24,6 +24,11 @@
 #include "gdef.h"
 #include "gcleanup.h"
 
+void G::Cleanup::init()
+{
+	// no-op
+}
+
 void G::Cleanup::add( void (*)(const char*) , const char * )
 {
 	// not implemented

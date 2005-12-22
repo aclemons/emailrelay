@@ -1,0 +1,86 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "common"=".\main\common.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "emailrelay"=".\main\emailrelay.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name common
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "passwd"=".\main\passwd.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name common
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "poke"=".\main\poke.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "submit"=".\main\submit.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name common
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+

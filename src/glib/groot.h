@@ -60,6 +60,7 @@ public:
 
 private:
 	static Root * m_this ;
+	static bool m_initialised ;
 	static Identity m_special ;
 	static Identity m_nobody ;
 	bool m_change_group ;

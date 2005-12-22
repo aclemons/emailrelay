@@ -30,9 +30,8 @@ EXTRA_DIST=\
 	gresolve_ipv6.cpp \
 	mingw.mak
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib 
-noinst_LIBRARIES = libgnet.a
-libgnet_a_SOURCES = gaddress_ipv4.cpp \
-	gclient.cpp \
+noinst_LIBRARIES = libgnet.a libipv4.a libipv6.a
+libgnet_a_SOURCES = gclient.cpp \
 	gclient_unix.cpp \
 	gconnection.cpp \
 	gdescriptor_unix.cpp \
@@ -45,7 +44,6 @@ libgnet_a_SOURCES = gaddress_ipv4.cpp \
 	glocal.cpp \
 	gmonitor.cpp \
 	gresolve.cpp \
-	gresolve_ipv4.cpp \
 	gresolve_unix.cpp \
 	gserver.cpp \
 	gsocket.cpp \
@@ -70,3 +68,7 @@ libgnet_a_SOURCES = gaddress_ipv4.cpp \
 	gserver.h \
 	gsocket.h \
 	gtimer.h
+
+libipv4_a_SOURCES=gaddress_ipv4.cpp gresolve_ipv4.cpp
+libipv6_a_SOURCES=gaddress_ip.cpp gresolve_ip.cpp
+

@@ -74,7 +74,7 @@ Runs as a proxy: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--immediate\f
 Runs as a server: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--postmaster\fR.
 .TP
 .B \-C,--client-auth \fIfile\fR
-Enables authentication with remote server, using the given secrets file.
+Enables smtp authentication with remote server, using the given secrets file.
 .TP
 .B \-Y,--client-filter \fIprogram\fR
 Specifies an external program to process messages when they are forwarded.
@@ -86,16 +86,13 @@ Closes the standard error stream after start-up.
 Sets the timeout (in seconds) when connecting to a remote server (default is 40).
 .TP
 .B \-g,--debug 
-Generates debug-level logging (if compiled-in).
+Generates debug-level logging if compiled-in.
 .TP
 .B \-D,--domain \fIfqdn\fR
 Sets an override for the host's fully qualified domain name.
 .TP
-.B \-X,--dont-listen 
-Disables listening for smtp connections (usually used with \fI--admin\fR).
-.TP
 .B \-x,--dont-serve 
-Disables acting as a server (usually used with \fI--forward\fR).
+Disables acting as a server on any port (part of \fI--as-client\fR and usually used with \fI--forward\fR).
 .TP
 .B \-z,--filter \fIprogram\fR
 Specifies an external program to process messages as they are stored.
@@ -124,6 +121,9 @@ Adds a timestamp to the logging output.
 .B \-t,--no-daemon 
 Does not detach from the terminal.
 .TP
+.B \-X,--no-smtp 
+Disables listening for smtp connections (usually used with \fI--admin\fR or \fI--pop\fR).
+.TP
 .B \-n,--no-syslog 
 Disables syslog output.
 .TP
@@ -134,19 +134,19 @@ Defines a file for storing the daemon process-id.
 Enables polling with the specified period (requires \fI--forward-to\fR).
 .TP
 .B \-B,--pop 
-Enables the pop server (if compiled-in).
+Enables the pop server if compiled-in.
 .TP
-.B \-F,--pop-auth \fIpath\fR
-Defines the pop server secrets file.
+.B \-F,--pop-auth \fIfile\fR
+Defines the pop server secrets file (default is \fI/etc/emailrelay.auth\fR).
 .TP
 .B \-J,--pop-by-name 
-Modifies the pop spool directory according to the user name.
+Modifies the pop spool directory according to the user name (requires \fI--pop\fR).
 .TP
 .B \-G,--pop-no-delete 
-Disables message deletion via pop.
+Disables message deletion via pop (requires \fI--pop\fR).
 .TP
 .B \-E,--pop-port \fIport\fR
-Specifies the pop listening port number.
+Specifies the pop listening port number (requires \fI--pop\fR).
 .TP
 .B \-p,--port \fIport\fR
 Specifies the smtp listening port number.

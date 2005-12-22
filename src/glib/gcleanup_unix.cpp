@@ -48,6 +48,7 @@ public:
 	static void add( void (*fn)(const char*) , const char * ) ;
 	static void installDefault( int ) ;
 	static void callHandlers() ;
+	static void ignore( int ) ;
 
 private:
 	static void init() ;
@@ -72,6 +73,11 @@ G::CleanupImp::Link * G::CleanupImp::m_tail = NULL ;
 
 // ===
 
+void G::Cleanup::init()
+{
+	CleanupImp::ignore( SIGPIPE ) ;
+}
+
 void G::Cleanup::add( void (*fn)(const char*) , const char * arg )
 {
 	if( arg != NULL )
@@ -82,10 +88,13 @@ void G::Cleanup::add( void (*fn)(const char*) , const char * arg )
 
 void G::CleanupImp::init()
 {
+	// install our meta-handler for signals that normally terminate the process,
+	// except for sigpipe which we ignore
+	//
+	ignore( SIGPIPE ) ;
 	installHandler( SIGTERM ) ;
 	installHandler( SIGINT ) ;
 	installHandler( SIGHUP ) ;
-	installHandler( SIGPIPE ) ;
 	installHandler( SIGQUIT ) ;
 	//installHandler( SIGUSR1 ) ;
 	//installHandler( SIGUSR2 ) ;
@@ -129,12 +138,23 @@ bool G::CleanupImp::ignored( int signum )
 
 void G::CleanupImp::install( int signum , Handler fn )
 {
+	// install the given handler, or the system default if null
 	static struct sigaction zero_action ;
 	struct sigaction action( zero_action ) ;
 	action.sa_handler = fn ? fn : SIG_DFL ;
 	if( ::sigaction( signum , &action , NULL ) && fn != NULL )
 		throw Error( "sigaction" ) ;
 }
+
+void G::CleanupImp::ignore( int signum )
+{
+	static struct sigaction zero_action ;
+	struct sigaction action( zero_action ) ;
+	action.sa_handler = SIG_IGN ;
+	if( ::sigaction( signum , &action , NULL ) )
+		throw Error( "sigaction" ) ;
+}
+
 
 void G::CleanupImp::callHandlers()
 {
@@ -148,6 +168,7 @@ void G::CleanupImp::callHandlers()
 extern "C"
 void gcleanup_unix_handler_( int signum )
 {
+	// call the registered handler(s) and then do the system default action
 	try
 	{
 		G::CleanupImp::callHandlers() ;

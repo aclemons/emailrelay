@@ -3,12 +3,12 @@ E-MailRelay Internals
 
 Module structure
 ----------------
-There are three C++ libraries in the E-MailRelay code: "glib" provides low-level
+There are four C++ libraries in the E-MailRelay code: "glib" provides low-level
 classes for file-system abstraction, date and time representation, string
 utility functions, logging, command line parsing etc., "gnet" provides network
-classes using the Berkley socket and Winsock APIs, and "gsmtp" contains SMTP and
-message-store classes. All three libraries are portable between POSIX-like
-systems (eg. Linux) and Windows.
+classes using the Berkley socket and Winsock APIs, "gsmtp" contains SMTP and
+message-store classes, and "gpop" contains POP3 classes. All four libraries are
+portable between POSIX-like systems (eg. Linux) and Windows.
 
 Under Windows there is an additional library for event handling. Windows has
 historically built network event processing on top of the GUI event system,
@@ -95,6 +95,10 @@ Directory structure
 
   An SMTP library.
 
+# src/gpop
+
+  A POP3 library.
+
 # src/win32
 
   Additional classes for windows event processing.
@@ -122,14 +126,14 @@ supported language features like "mutable", templated methods and "export".
 
 The header files "gdef.h" in "src/glib", and "gnet.h" in "src/gnet" are intended
 to be used to fix up compiler portability issues such as missing standard types,
-non-standard system headers etc. Conditional compilation directives ("#if" 
+non-standard system headers etc. Conditional compilation directives ("#if"
 etc.) are largely confined to these headers in order to improve readability.
 
-Deficiencies in the ISO standard headers files provided by the compiler are 
+Deficiencies in the ISO standard headers files provided by the compiler are
 fixed up by files in the "lib" directory tree. For example, the msvc6.0 compiler
-sometimes does not put its names into the "std" namespace, even though the 
-std-namespace headers are used. This can be worked round by additional "using" 
-declarations in the "lib/msvc6.0" headers.  These work-rounds are kept out of 
+sometimes does not put its names into the "std" namespace, even though the
+std-namespace headers are used. This can be worked round by additional "using"
+declarations in the "lib/msvc6.0" headers.  These work-rounds are kept out of
 the "src" tree because they are likely to be fixed in later compiler releases.
 Standards-compliant compilers should not need to include any headers from the
 "lib" directory tree.
@@ -161,7 +165,7 @@ The following compile-time features can be enabled with some effort:
 # Verbose logging
 
   Verbose logging is enabled by defining the pre-processor symbol "_DEBUG".
-  The configure script's "--enable-debug" switch can be used to do this. 
+  The configure script's "--enable-debug" switch can be used to do this.
   (See "src/glib/glog.h".)
 
 # Multiple listening ports
@@ -177,8 +181,10 @@ Windows build
 Simple MSVC project files are provided in the "src/main" directory, bundled into
 the "emailrelay.dws" workspace.
 
-Makefiles for the *MinGW* [http://www.mingw.org/] system (gcc on Windows) are also
-provided.
+Makefiles for the *MinGW* [http://www.mingw.org/] system (gcc on Windows) are 
+also provided. If building from cygwin start by creating a "/mingw" mount to 
+your MinGW installation directory (eg. "mount -u c:/sw/mingw /mingw"), and then 
+run "make -f mingw.mak" from the E-MailRelay "src" directory.
 
 Style
 -----

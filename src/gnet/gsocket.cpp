@@ -25,6 +25,7 @@
 #include "gnet.h"
 #include "gassert.h"
 #include "gsocket.h"
+#include "gcleanup.h"
 #include "gmemory.h"
 #include "gdebug.h"
 
@@ -48,6 +49,7 @@ bool GNet::Socket::open( int domain, int type, int protocol )
 
 bool GNet::Socket::prepare()
 {
+	G::Cleanup::init() ; // ignore SIGPIPE
 	if( setNonBlock() )
 	{
 		return true ;

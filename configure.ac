@@ -58,6 +58,8 @@ AC_CHECK_HEADERS(sys/time.h)
 AC_CHECK_FUNCS(glob)
 AC_LANG_CPLUSPLUS
 ACLOCAL_TYPE_SOCKLEN_T
+ACLOCAL_CHECK_IPV6
+ACLOCAL_CHECK_GETIPNODEBYNAME
 ACLOCAL_CHECK_BUGGY_CTIME
 ACLOCAL_CHECK_GMTIME_R
 ACLOCAL_CHECK_LOCALTIME_R
@@ -66,58 +68,56 @@ ACLOCAL_CHECK_SETGROUPS
 dnl ===
 dnl "--enable-debug"
 dnl
-AC_ARG_ENABLE(debug,AC_HELP_STRING([--enable-debug],[enable extra debug messages at compile-time]))
+AC_ARG_ENABLE(debug,AC_HELP_STRING([--enable-debug],[enable extra debug messages at compile-time (default disabled)]))
 ENABLE_DEBUG
 
 dnl ===
 dnl "--enable-fastbuild"
 dnl
-AC_ARG_ENABLE(fastbuild,AC_HELP_STRING([--enable-fastbuild],[enable faster building; requires --disable-dependency-tracking]))
+AC_ARG_ENABLE(fastbuild,AC_HELP_STRING([--enable-fastbuild],[enable faster building (default disabled); requires --disable-dependency-tracking]))
 ENABLE_FASTBUILD
 
 dnl ===
 dnl "--enable-pop"
 dnl
-AC_ARG_ENABLE(pop,AC_HELP_STRING([--enable-pop],[enable pop server code]))
+AC_ARG_ENABLE(pop,AC_HELP_STRING([--enable-pop],[enable pop server code (default enabled)]))
 ENABLE_POP
+
+dnl ===
+dnl "--enable-ipv6"
+dnl
+AC_ARG_ENABLE(ipv6,AC_HELP_STRING([--enable-ipv6],[enable ipv6 (default disabled)]))
+ENABLE_IPV6
 
 dnl ===
 dnl "--with-workshop"
 dnl
-AC_ARG_WITH(workshop,AC_HELP_STRING([--with-workshop],[use Sun WorkShop 'CC -xar' as the 'ar' tool]))
+AC_ARG_WITH(workshop,AC_HELP_STRING([--with-workshop],[use Sun WorkShop 'CC -xar' as the 'ar' tool (default disabled)]))
 WITH_WORKSHOP
 
 dnl ===
 dnl "--with-doxygen"
 dnl
-AC_ARG_WITH(doxygen,AC_HELP_STRING([--with-doxygen],[generate source code documentation with doxygen]))
+AC_ARG_WITH(doxygen,AC_HELP_STRING([--with-doxygen],[generate source code documentation with doxygen (default auto)]))
 WITH_DOXYGEN
 
 dnl ===
 dnl "--with-man2html"
 dnl
-AC_ARG_WITH(man2html,AC_HELP_STRING([--with-man2html],[convert man pages to html using man2html]))
+AC_ARG_WITH(man2html,AC_HELP_STRING([--with-man2html],[convert man pages to html using man2html (default auto)]))
 WITH_MAN2HTML
 
 dnl ===
 dnl directory tweaking and "--enable-fhs" ...
 dnl
 dnl not AC_PREFIX_DEFAULT([/usr])
-AC_ARG_ENABLE(fhs,AC_HELP_STRING([--enable-fhs],[force FHS-compliant directories, ignoring --prefix etc]))
-AC_SUBST(e_sbindir)
-if test "$e_sbindir" = "" ; then e_sbindir="$sbindir" ; fi
-AC_SUBST(e_libexecdir)
-if test "$e_libexecdir" = "" ; then e_libexecdir="$libexecdir" ; fi
-AC_SUBST(e_sysconfdir)
-if test "$e_sysconfdir" = "" ; then e_sysconfdir="$sysconfdir" ; fi
+AC_ARG_ENABLE(fhs,AC_HELP_STRING([--enable-fhs],[force FHS-compliant directories, ignoring --prefix etc (default disabled)]))
 AC_SUBST(e_docdir)
 if test "$e_docdir" = "" ; then e_docdir="$datadir/$PACKAGE/doc" ; fi
 AC_SUBST(e_initdir)
 if test "$e_initdir" = "" ; then e_initdir="$libexecdir" ; fi
 AC_SUBST(e_spooldir)
 if test "$e_spooldir" = "" ; then e_spooldir="$localstatedir/spool/emailrelay" ; fi
-AC_SUBST(e_man1dir)
-if test "$e_man1dir" = "" ; then e_man1dir="$mandir/man1" ; fi
 AC_SUBST(e_examplesdir)
 if test "$e_examplesdir" = "" ; then e_examplesdir="$libexecdir" ; fi
 ENABLE_FHS

@@ -23,13 +23,18 @@
 
 #include "gdef.h"
 #include "gdirectory.h"
+#include "gprocess.h"
+#include "gdatetime.h"
 #include "gfs.h"
 #include "gfile.h"
 #include "gdebug.h"
 #include "glog.h"
+#include <sstream>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <glob.h>
+#include <fcntl.h>
 
 namespace G
 {
@@ -42,30 +47,51 @@ bool G::Directory::valid( bool for_creation ) const
 	struct stat statbuf ;
 	if( ::stat( m_path.pathCstr() , &statbuf ) )
 	{
-		rc = false ;
+		rc = false ; // doesnt exist
 	}
 	else if( !(statbuf.st_mode & S_IFDIR) )
 	{
-		rc = false ;
+		rc = false ; // not a directory
 	}
 	else
 	{
 		DIR * p = ::opendir( m_path.pathCstr() ) ;
 		if( p == NULL )
-			rc = false ;
+			rc = false ; // cant open directory for reading
 		else
 			::closedir( p ) ;
 	}
 
 	if( rc && for_creation )
 	{
-		// (see also GNU/Linux ::euidaccess())
+		// (not definitive -- see also GNU/Linux ::euidaccess())
 		if( 0 != ::access( m_path.pathCstr() , W_OK ) )
 			rc = false ;
 	}
-
-	G_DEBUG( "G::Directory::valid: \"" << m_path.str() << "\" is " << (rc?"":"not ") << "a valid directory for " << (for_creation?"writing":"reading") ) ;
 	return rc ;
+}
+
+std::string G::Directory::tmp()
+{
+	std::ostringstream ss ;
+	ss << "." << DateTime::now() << "." << Process::Id() << ".tmp" ;
+	return ss.str() ;
+}
+
+bool G::Directory::writeable( std::string tmp_filename ) const
+{
+	G::Path test_file( m_path ) ;
+	if( tmp_filename.empty() ) tmp_filename = tmp() ;
+	test_file.pathAppend( tmp_filename ) ;
+
+	int fd = ::open( test_file.str().c_str() , O_WRONLY | O_CREAT | O_EXCL , S_IRWXU ) ;
+	if( fd == -1 )
+	{
+		return false ;
+	}
+	::close( fd ) ;
+	bool ok = 0 == ::unlink( test_file.str().c_str() ) ;
+	return ok ;
 }
 
 // ===

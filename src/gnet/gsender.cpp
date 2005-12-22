@@ -27,8 +27,9 @@
 #include "gassert.h"
 #include "glog.h"
 
-GNet::Sender::Sender( Server::PeerInfo peer_info ) :
+GNet::Sender::Sender( Server::PeerInfo peer_info , bool throw_ ) :
 	ServerPeer(peer_info) ,
+	m_throw(throw_) ,
 	m_n(0UL)
 {
 }
@@ -42,7 +43,6 @@ bool GNet::Sender::send( const std::string & data , size_t offset )
 	if( data.length() <= offset )
 		return true ; // nothing to do
 
-	//G_DEBUG( "GNet::Sender::send: write " << (data.length()-offset) ) ;
 	ssize_t rc = socket().write( data.data()+offset , data.length()-offset ) ;
 	if( rc < 0 && ! socket().eWouldBlock() )
 	{
@@ -50,6 +50,9 @@ bool GNet::Sender::send( const std::string & data , size_t offset )
 	}
 	else if( rc < 0 || static_cast<size_t>(rc) < (data.length()-offset) )
 	{
+		if( m_throw )
+			throw SendError() ;
+
 		size_t sent = rc > 0 ? static_cast<size_t>(rc) : 0U ;
 		m_n += sent ;
 
@@ -99,7 +102,7 @@ void GNet::Sender::writeEvent()
 		else
 		{
 			m_n += m_residue.length() ;
-			m_residue.clear() ; // for luck
+			m_residue.erase() ; // for luck
 			socket().dropWriteHandler() ;
 			onResume() ;
 		}

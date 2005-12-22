@@ -57,7 +57,7 @@ md5::digest::state_type md5::digest::state() const
 	return result ;
 }
 
-md5::digest::digest( const std::string & s )
+md5::digest::digest( const md5::string_type & s )
 {
 	init() ;
 	small_t n = block::blocks( s.length() ) ;
@@ -254,9 +254,9 @@ md5::big_t md5::digest::T( small_t i )
 
 // ===
 
-std::string md5::format::raw( const digest::state_type & d )
+md5::string_type md5::format::raw( const digest::state_type & d )
 {
-	std::string result ;
+	string_type result ;
 	result.reserve( 16U ) ;
 	result.append( raw(d.a) ) ;
 	result.append( raw(d.b) ) ;
@@ -266,9 +266,9 @@ std::string md5::format::raw( const digest::state_type & d )
 }
 
 //static
-std::string md5::format::raw( big_t n )
+md5::string_type md5::format::raw( big_t n )
 {
-	std::string result ;
+	string_type result ;
 	result.reserve( 4U ) ;
 	result.append( 1U , static_cast<char>(n&0xffUL) ) ; n >>= 8U ;
 	result.append( 1U , static_cast<char>(n&0xffUL) ) ; n >>= 8U ;
@@ -277,14 +277,14 @@ std::string md5::format::raw( big_t n )
 	return result ;
 }
 
-std::string md5::format::rfc( const digest & d )
+md5::string_type md5::format::rfc( const digest & d )
 {
 	return rfc( d.state() ) ;
 }
 
-std::string md5::format::rfc( const digest::state_type & d )
+md5::string_type md5::format::rfc( const digest::state_type & d )
 {
-	std::string result ;
+	string_type result ;
 	result.reserve( 32U ) ;
 	result.append( str(d.a) ) ;
 	result.append( str(d.b) ) ;
@@ -294,9 +294,9 @@ std::string md5::format::rfc( const digest::state_type & d )
 }
 
 //static
-std::string md5::format::str( big_t n )
+md5::string_type md5::format::str( big_t n )
 {
-	std::string result ;
+	string_type result ;
 	result.reserve( 8U ) ;
 	result.append( str2(n&0xffUL) ) ; n >>= 8U ;
 	result.append( str2(n&0xffUL) ) ; n >>= 8U ;
@@ -306,22 +306,22 @@ std::string md5::format::str( big_t n )
 }
 
 //static
-std::string md5::format::str2( small_t n )
+md5::string_type md5::format::str2( small_t n )
 {
 	return str1((n>>4U)&0xfU) + str1(n&0xfU) ;
 }
 
 //static
-std::string md5::format::str1( small_t n )
+md5::string_type md5::format::str1( small_t n )
 {
 	n = n <= 15U ? n : 0U ;
 	const char * map = "0123456789abcdef" ;
-	return std::string( 1U , map[n] ) ;
+	return string_type( 1U , map[n] ) ;
 }
 
 // ===
 
-md5::block::block( const std::string & s , small_t block , big_t end_value ) :
+md5::block::block( const md5::string_type & s , small_t block , big_t end_value ) :
 	m_s(s) ,
 	m_block(block) ,
 	m_end_value(end_value)
@@ -401,7 +401,7 @@ md5::digest_stream::digest_stream( digest::state_type dd , small_t length ) :
 {
 }
 
-void md5::digest_stream::add( const std::string & s )
+void md5::digest_stream::add( const md5::string_type & s )
 {
 	m_buffer.append( s ) ;
 	m_length += s.length() ;

@@ -62,7 +62,7 @@ bool G::Log::active()
 
 void G::Log::flush()
 {
-	if( G::Log::active() )
+	if( active() )
 	{
 		G::LogOutput::output( m_severity , m_file , m_line , m_ss.str().c_str() ) ;
 	}

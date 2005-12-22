@@ -26,6 +26,7 @@
 #include "gaddress.h"
 #include "gstrings.h"
 #include "gstr.h"
+#include "gexception.h"
 #include "gassert.h"
 #include "gdebug.h"
 #include <climits>
@@ -38,14 +39,16 @@ class GNet::AddressImp
 {
 public:
 	typedef sockaddr_in6 address_type ;
+	typedef sockaddr_in other_address_type ;
 	union Sockaddr // Used by GNet::AddressImp to cast between sockaddr and sockaddr_in6.
-		{ address_type specific ; struct sockaddr general ; } ;
+		{ address_type specific ; struct sockaddr general ; other_address_type other ; } ;
 
 	explicit AddressImp( unsigned int port ) ; // (not in_port_t -- see validPort(), setPort() etc)
 	explicit AddressImp( const servent & s ) ;
 	explicit AddressImp( const std::string & s ) ;
 	AddressImp( const std::string & s , unsigned int port ) ;
 	AddressImp( unsigned int port , Address::Localhost ) ;
+	AddressImp( unsigned int port , Address::Broadcast ) ;
 	AddressImp( const hostent & h , unsigned int port ) ;
 	AddressImp( const hostent & h , const servent & s ) ;
 	AddressImp( const sockaddr * addr , size_t len ) ;
@@ -68,7 +71,7 @@ public:
 
 private:
 	void init() ;
-	void set( const sockaddr * general ) ;
+	void set4( const sockaddr * general ) ;
 	bool setAddress( const std::string & display_string , std::string & reason ) ;
 
 	static bool validPortNumber( const std::string & s ) ;
@@ -80,6 +83,8 @@ private:
 	address_type m_inet ;
 	static char m_port_separator ;
 } ;
+
+// ===
 
 char GNet::AddressImp::m_port_separator = ':' ;
 
@@ -107,6 +112,11 @@ GNet::AddressImp::AddressImp( unsigned int port , Address::Localhost )
 	init() ;
 	m_inet.sin6_addr = in6addr_loopback ;
 	setPort( port ) ;
+}
+
+GNet::AddressImp::AddressImp( unsigned int , Address::Broadcast )
+{
+	throw G::Exception( "broadcast addresses not implemented for ipv6" ) ; // for now
 }
 
 GNet::AddressImp::AddressImp( const hostent & h , unsigned int port )
@@ -137,10 +147,30 @@ GNet::AddressImp::AddressImp( const sockaddr * addr , size_t len )
 	if( addr == NULL )
 		throw Address::Error() ;
 
-	if( addr->sa_family != AF_INET6 || len != sizeof(m_inet.sin6_addr) )
-		throw Address::BadFamily( std::stringstream() << addr->sa_family ) ;
+	Sockaddr u ;
+	bool ipv6 = addr->sa_family == AF_INET6 && len == sizeof(u.specific) ;
+	bool ipv4 = addr->sa_family == AF_INET ; // && len == sizeof(...) ;
+	if( !ipv6 && !ipv4 )
+		throw Address::BadFamily( std::ostringstream() << addr->sa_family ) ;
 
-	set( addr ) ;
+	u.general = * addr ;
+	if( ipv6 )
+	{
+		m_inet = u.specific ;
+	}
+	else // ipv4
+	{
+		// this nastiness is for when the ipv6 is just a 
+		// compatibilty layer on top of ipv4 -- then getsockname()
+		// returns an ipv4 address for ports bound with ipv6 :-(
+		//
+		char buffer[80] ;
+		const char * p = inet_ntop( AF_INET , &u.other.sin_addr , buffer , sizeof(buffer) ) ;
+		std::string s = std::string() + "::FFFF:" + (p?p:"error") ;
+		int rc = ::inet_pton( AF_INET6 , s.c_str() , &m_inet.sin6_addr ) ;
+		if( rc != 1 ) throw G::Exception( "address family conversion error" ) ;
+		m_inet.sin6_port = u.other.sin_port ;
+	}
 }
 
 GNet::AddressImp::AddressImp( const AddressImp & other )
@@ -260,7 +290,7 @@ bool GNet::AddressImp::validString( const std::string & s , std::string * reason
 	std::string port_part = s.substr(pos+1U) ;
 	if( !validPortNumber(port_part) )
 	{
-		reason = "invalid port" ;
+		reason = "invalid port number" ;
 		return false ;
 	}
 
@@ -333,19 +363,24 @@ sockaddr * GNet::AddressImp::raw()
 	return reinterpret_cast<sockaddr*>(&m_inet) ;
 }
 
-void GNet::AddressImp::set( const sockaddr * general )
-{
-	Sockaddr u ;
-	u.general = * general ;
-	m_inet = u.specific ;
-}
-
 // ===
 
 //static
 GNet::Address GNet::Address::invalidAddress()
 {
 	return Address( 0U ) ;
+}
+
+//static
+GNet::Address GNet::Address::localhost( unsigned int port )
+{
+	return Address( port , Localhost() ) ;
+}
+
+//static
+GNet::Address GNet::Address::broadcastAddress( unsigned int port )
+{
+	return Address( port , Broadcast() ) ;
 }
 
 GNet::Address::Address( unsigned int port ) :
@@ -355,6 +390,11 @@ GNet::Address::Address( unsigned int port ) :
 
 GNet::Address::Address( unsigned int port , Localhost dummy ) :
 	m_imp( new AddressImp(port,dummy) )
+{
+}
+
+GNet::Address::Address( unsigned int port , Broadcast dummy ) :
+        m_imp( new AddressImp(port,dummy) )
 {
 }
 
@@ -460,11 +500,5 @@ unsigned int GNet::Address::port() const
 bool GNet::Address::validPort( unsigned int port )
 {
 	return AddressImp::validPort( port ) ;
-}
-
-//static
-GNet::Address GNet::Address::localhost( unsigned int port )
-{
-	return Address( port , Localhost() ) ;
 }
 

@@ -88,6 +88,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+IP = @IP@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -128,11 +129,7 @@ datadir = @datadir@
 e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_initdir = @e_initdir@
-e_libexecdir = @e_libexecdir@
-e_man1dir = @e_man1dir@
-e_sbindir = @e_sbindir@
 e_spooldir = @e_spooldir@
-e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 includedir = @includedir@
@@ -153,7 +150,7 @@ target_alias = @target_alias@
 
 #
 #
-EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.xcode/root.pbxuser emailrelay.xcode/root.mode1 emailrelay.xcode/project.pbxproj
+EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.dsw
 SUBDIRS = glib gnet gsmtp gpop main win32
 all: all-recursive
 
@@ -306,7 +303,6 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/emailrelay.xcode
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

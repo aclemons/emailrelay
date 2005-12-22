@@ -89,6 +89,7 @@ void G::LogOutput::init()
 
 static HANDLE source()
 {
+	// get our executable path
 	G::Path exe_path ;
 	{
 		HINSTANCE hinstance = 0 ;
@@ -99,20 +100,28 @@ static HANDLE source()
 		buffer[size-1U] = '\0' ;
 		exe_path = G::Path(buffer) ;
 	}
+
+	// parse out our executable basename
 	std::string exe_name ;
 	{
 		G::Path p( exe_path ) ;
 		p.removeExtension() ;
 		exe_name = p.basename() ;
 	}
+
+	// build a registry path for our executable
+	//
 	std::string reg_path_prefix( "SYSTEM\\CurrentControlSet\\Services\\"
 		"EventLog\\Application\\" ) ;
 	std::string reg_path = reg_path_prefix + exe_name ;
 
+	// create a registry entry
+	//
 	HKEY key = 0 ;
 	::RegCreateKey( HKEY_LOCAL_MACHINE , reg_path.c_str() , &key ) ;
 	bool ok = key != 0 ;
 
+	// add our executable path
 	if( ok )
 	{
 		std::string value = exe_path.str() ;
@@ -121,6 +130,7 @@ static HANDLE source()
 			reinterpret_cast<LPBYTE>(value_p) , value.length()+1U ) ;
 	}
 
+	// add our message types
 	if( ok )
 	{
 		DWORD value = 
@@ -130,14 +140,17 @@ static HANDLE source()
 
 		ok = ! ::RegSetValueEx( key , "TypesSupported" , 0 , REG_DWORD ,
 			reinterpret_cast<LPBYTE>(&value) , sizeof(value) ) ;
-
 	}
 
+	// close the registry
+	//
 	if( key != 0 )
 		::RegCloseKey( key ) ;
 
-	return ok ?
-		::RegisterEventSource( NULL , exe_name.c_str() ) :
-		0 ;
+	// if we failed to get access to the registry we can still write
+	// to the event log but the associated text will be messed up,
+	// so ignore 'ok' here
+	//
+	return ::RegisterEventSource( NULL , exe_name.c_str() ) ;
 }
 

@@ -37,6 +37,49 @@ AC_DEFUN([ACLOCAL_TYPE_SOCKLEN_T],
 	fi
 ])
 
+dnl ipv6
+dnl
+AC_DEFUN([ACLOCAL_CHECK_IPV6],
+[AC_CACHE_CHECK([for ipv6], aclocal_cv_ipv6,
+[
+	AC_TRY_COMPILE(
+		[#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>],
+		[sockaddr_in6 * p = 0;],
+		aclocal_cv_ipv6=yes ,
+		aclocal_cv_ipv6=no )
+])
+	if test $aclocal_cv_ipv6 = yes; then
+		AC_DEFINE(HAVE_IPV6,1,[Define if ipv6 is available])
+	else
+		AC_DEFINE(HAVE_IPV6,0,[Define if ipv6 is available])
+	fi
+])
+
+dnl getipnodebyname for ipv6 rfc2553
+dnl
+AC_DEFUN([ACLOCAL_CHECK_GETIPNODEBYNAME],
+[AC_CACHE_CHECK([for getipnodebyname], aclocal_cv_getipnodebyname,
+[
+	AC_TRY_COMPILE(
+		[#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>],
+		[int i=0; getipnodebyname("",AF_INET6,AI_DEFAULT,&i);],
+		aclocal_cv_getipnodebyname=yes ,
+		aclocal_cv_getipnodebyname=no )
+])
+	if test $aclocal_cv_getipnodebyname = yes; then
+		AC_DEFINE(HAVE_GETIPNODEBYNAME,1,[Define if getipnodebyname() is available])
+	else
+		AC_DEFINE(HAVE_GETIPNODEBYNAME,0,[Define if getipnodebyname() is available])
+	fi
+])
+
 dnl setgroups
 dnl
 AC_DEFUN([ACLOCAL_CHECK_SETGROUPS],
@@ -156,13 +199,32 @@ dnl enable-pop
 dnl
 AC_DEFUN([ENABLE_POP],
 [
-if test "$enable_pop" = "yes"
+if test "$enable_pop" = "no"
 then
-	POPLIB="libgpop.a"
-else
 	POPLIB="libgnopop.a"
+else
+	POPLIB="libgpop.a"
 fi
 AC_SUBST(POPLIB)
+])
+
+dnl enable-ipv6
+dnl
+AC_DEFUN([ENABLE_IPV6],
+[
+if test "$enable_ipv6" = "yes"
+then
+	if test "$aclocal_cv_ipv6" != "yes"
+	then
+		AC_MSG_WARN(ignoring --enable-ipv6)
+		IP="ipv4"
+	else
+		IP="ipv6"
+	fi
+else
+	IP="ipv4"
+fi
+AC_SUBST(IP)
 ])
 
 dnl with-workshop
@@ -185,7 +247,7 @@ if test "$with_doxygen" != ""
 then
 	if test "$with_doxygen" = "yes" -a "$HAVE_DOXYGEN" != "yes"
 	then
-		echo ignoring --with-doxygen
+		AC_MSG_WARN(ignoring --with-doxygen)
 	else
 		HAVE_DOXYGEN="$with_doxygen"
 		AC_SUBST(HAVE_DOXYGEN)
@@ -201,7 +263,7 @@ if test "$with_man2html" != ""
 then
 	if test "$with_man2html" = "yes" -a "$HAVE_MAN2HTML" != "yes"
 	then
-		echo ignoring --with-man2html
+		AC_MSG_WARN(ignoring --with-man2html)
 	else
 		HAVE_MAN2HTML="$with_man2html"
 		AC_SUBST(HAVE_MAN2HTML)

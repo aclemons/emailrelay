@@ -71,14 +71,14 @@ public:
 		// Inserts a separator as needed.
 
 	void append( std::ostream & s ) ;
-		// Appends the contents of the given std::stringstream 
+		// Appends the contents of the given std::ostringstream 
 		// (sic) to the what string. Does nothing if the
-		// dynamic type of 's' is not a std::stringstream. 
+		// dynamic type of 's' is not a std::ostringstream. 
 		// Inserts a separator as needed.
 		//
 		// This method allows a derived-class exception 
-		// to be constructed and thrown on one
-		// line using iostream formatting.
+		// to be constructed and thrown on one line using
+		// iostream formatting.
 		// Eg. throw Error( std::ostringstream() << a << b ) ;
 } ;
 

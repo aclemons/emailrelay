@@ -30,13 +30,15 @@
 
 G::Identity::Identity() :
 	m_uid(static_cast<uid_t>(-1)) ,
-	m_gid(static_cast<gid_t>(-1))
+	m_gid(static_cast<gid_t>(-1)) ,
+	m_h(0)
 {
 }
 
 G::Identity::Identity( const std::string & name ) :
 	m_uid(static_cast<uid_t>(-1)) ,
-	m_gid(static_cast<gid_t>(-1))
+	m_gid(static_cast<gid_t>(-1)) ,
+	m_h(0)
 {
 	::passwd * pw = ::getpwnam( name.c_str() ) ;
 	if( pw == NULL ) throw NoSuchUser(name) ;

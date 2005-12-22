@@ -17,5 +17,5 @@
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ## 
 #
-EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.xcode/root.pbxuser emailrelay.xcode/root.mode1 emailrelay.xcode/project.pbxproj
+EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.dsw
 SUBDIRS = glib gnet gsmtp gpop main win32

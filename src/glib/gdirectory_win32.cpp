@@ -45,6 +45,16 @@ bool G::Directory::valid( bool for_creation ) const
 	return ( attributes & FILE_ATTRIBUTE_DIRECTORY ) != 0 ;
 }
 
+std::string G::Directory::tmp()
+{
+	return std::string() ;
+}
+
+bool G::Directory::writeable( std::string ) const
+{
+	return true ; // not implemented
+}
+
 // ===
 
 // Class: G::DirectoryIteratorImp

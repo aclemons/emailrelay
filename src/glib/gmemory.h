@@ -28,7 +28,7 @@
 #include <memory>
 
 // Template function: operator<<=
-// Description: A fix for the problem of resetting an auto_ptr<> 
+// Description: A portable fix for the problem of resetting an auto_ptr<> 
 // portably. MSVC6.0 & GCC 2.91 do not have a reset() method, 
 // and GCC 2.95 has a non-const assignment operators.
 //

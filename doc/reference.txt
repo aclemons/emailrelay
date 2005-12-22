@@ -32,7 +32,7 @@ where <switch> is:
   Runs as a server: equivalent to "--log --close-stderr --postmaster".
 
 # --client-auth (-C)
-  Enables authentication with remote server, using the given secrets file.
+  Enables smtp authentication with remote server, using the given secrets file.
 
 # --client-filter (-Y)
   Specifies an external program to process messages when they are forwarded.
@@ -44,16 +44,13 @@ where <switch> is:
   Sets the timeout (in seconds) when connecting to a remote server (default is 40).
 
 # --debug (-g)
-  Generates debug-level logging (if compiled-in).
+  Generates debug-level logging if compiled-in.
 
 # --domain (-D)
   Sets an override for the host's fully qualified domain name.
 
-# --dont-listen (-X)
-  Disables listening for smtp connections (usually used with --admin).
-
 # --dont-serve (-x)
-  Disables acting as a server (usually used with --forward).
+  Disables acting as a server on any port (part of --as-client and usually used with --forward).
 
 # --filter (-z)
   Specifies an external program to process messages as they are stored.
@@ -82,6 +79,9 @@ where <switch> is:
 # --no-daemon (-t)
   Does not detach from the terminal.
 
+# --no-smtp (-X)
+  Disables listening for smtp connections (usually used with --admin or --pop).
+
 # --no-syslog (-n)
   Disables syslog output.
 
@@ -92,19 +92,19 @@ where <switch> is:
   Enables polling with the specified period (requires --forward-to).
 
 # --pop (-B)
-  Enables the pop server (if compiled-in).
+  Enables the pop server if compiled-in.
 
 # --pop-auth (-F)
-  Defines the pop server secrets file.
+  Defines the pop server secrets file (default is "/etc/emailrelay.auth").
 
 # --pop-by-name (-J)
-  Modifies the pop spool directory according to the user name.
+  Modifies the pop spool directory according to the user name (requires --pop).
 
 # --pop-no-delete (-G)
-  Disables message deletion via pop.
+  Disables message deletion via pop (requires --pop).
 
 # --pop-port (-E)
-  Specifies the pop listening port number.
+  Specifies the pop listening port number (requires --pop).
 
 # --port (-p)
   Specifies the smtp listening port number.
@@ -511,11 +511,13 @@ following precautions are taken:
 
   Suid privileges are revoked at start-up, switching the effective
   userid/groupid to be the real userid/groupid values. If started as "root"
-  then the effective userid/groupid are taken from the "daemon" user. Special
-  privileges are only reclaimed when needed to bind sockets and do file i/o.
-  Normally this means temporarily switching the userid and groupid back to what
-  they were at start-up. However, when writing spool files only the effective 
-  userid is changed, not the groupid.
+  then the effective userid/groupid are switched at start-up to those of user 
+  "daemon". Special privileges are only reclaimed when needed to bind sockets 
+  and do file i/o. Normally this means temporarily switching the userid and
+  groupid back to what they were at start-up. However, when writing spool files
+  after being started as "root" only the effective userid is changed, not the 
+  groupid, so that new files have group ownership corresponding to the 
+  "daemon" user.
 
 # execution environment
 
@@ -694,10 +696,6 @@ such as "fetchmail".
 
 Pop server
 ----------
-The current release of E-MailRelay can be built with POP3 server capabilities by
-using "./configure --enable-pop". However, POP3 features may be withdrawn from
-future releases.
-
 If E-MailRelay has been built with POP3 support then the "--help --verbose"
 output will show several new command-line switches:
 # --pop
@@ -730,7 +728,7 @@ output will show several new command-line switches:
   Modifies the spool directory according to the client authentication name.
   The client name is used as a sub-directory off the standard spool directory.
   So, for example, if a client authenticates as "bob" then the POP3 server
-  will supply messages from the "/var/spool/emailrelay/bob" directory.
+  will serve messages from the "/var/spool/emailrelay/bob" directory.
 
 # --pop-no-delete
 
@@ -817,17 +815,17 @@ locations:
 * /var/spool/emailrelay/emailrelay.*.content
 * /var/spool/emailrelay/emailrelay.*.envelope
 
-For finer control of the directory structure the following variables
-can be specified on the "configure" command-line (but note that the
-"--enable-fhs" will override them):
-* e_sbindir
-* e_libexecdir
-* e_docdir
-* e_sysconfdir
-* e_initdir
-* e_spooldir
-* e_man1dir
-* e_examplesdir
+For finer control of the directory structure the following can be specified on 
+the "configure" command-line (but note that the "--enable-fhs" will override 
+them):
+* --libexecdir=<dir>
+* --mandir=<dir>
+* --sbindir=<dir>
+* --sysconfdir=<dir>
+* e_docdir=<dir>
+* e_examplesdir=<dir>
+* e_initdir=<dir>
+* e_spooldir=<dir>
 
 For example, running "./configure --prefix=/usr e_spooldir=/tmp/spool" will
 create the GNU-style directory structure under "/usr" rather than "/usr/local",
@@ -841,15 +839,8 @@ different spool directory do a "make clean" in at least "src/main" and "bin".
 Even though the "--enable-fhs" switch overrides all other directory specifiers
 during the build process, it is still possible to change the installation root
 directory using "make install DESTDIR=<root>" or "DESTDIR=<root> make -e install".
-However, this will not affect the default spool directory path built into the
-scripts and executables; the spool directory path will have to be explicitly
-defined at run-time.
-
-For example, building with "configure --enable-fhs ; make ; make install DESTDIR=/export"
-would create a spool directory "/export/var/spool/emailrelay", but the
-server run as "/export/usr/sbin/emailrelay --as-server" would expect a spool
-directory of "/var/spool/emailrelay". The fix is to add
-"--spool-dir /export/var/spool/emailrelay" to the emailrelay command-line.
+However, this will not affect the default directory paths built into the scripts 
+and executables, so they will have to be explicitly defined at run-time.
 
 The "emailrelay" start/stop script in "init.d" creates a pid file in "/var/run"
 if the directory exists, or in "/tmp" otherwise.

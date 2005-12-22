@@ -36,7 +36,9 @@
 #   messages in store-4 which server-5 is continuously polling.
 #   Server-5 forwards messages that appear in store-4 to
 #   server-6 using a client preprocessor. Server-6 stores messages
-#   in store-5 using a server preprocessor.
+#   in store-5 using a server preprocessor. If using fetchmail
+#   then fetchmail extracts messages from server-6 and sends them 
+#   on to server-7 which stores them in store-6.
 #
 # The test succeeds if the message gets into the final spool directory.
 #
@@ -45,27 +47,32 @@
 #
 # If this test takes more a minute then it has failed.
 #
-# usage: emailrelay-test.sh [-v] [-d] [-n] [<exe-dir> [<content-file>]]
+# usage: emailrelay-test.sh [-v] [-f] [-d] [-n] [<exe-dir> [<content-file>]]
 #	-v    use valgrind
+#	-f    use fetchmail
 #	-d    use --debug
 #	-n    no cleanup
+#       -s    smaller content
 #
 
 # parse the command line
 #
 opt_use_valgrind="0"
+opt_use_fetchmail="0"
+opt_smaller="0"
 opt_debug="0"
 opt_no_cleanup="0"
-while getopts 'vdn' opt ; do
+while getopts 'vfdns' opt ; do
 	case "$opt" in 
 		v) opt_use_valgrind="1" ;;
-		d) opt_use_debug="1" ;;
+		f) opt_use_fetchmail="1" ;;
+		s) opt_smaller="1" ;;
+		d) opt_debug="1" ;;
 		n) opt_no_cleanup="1" ;;
 	esac
 done
 shift `expr $OPTIND - 1`
 opt_exe_dir="${1}"
-opt_content_file="${2}"
 
 # configuration
 #
@@ -75,7 +82,6 @@ cfg_exe_dir="../src/main" ; test -z "${opt_exe_dir}" || cfg_exe_dir="${opt_exe_d
 cfg_main_exe="${cfg_exe_dir}/emailrelay"
 cfg_poke_exe="${cfg_exe_dir}/emailrelay-poke"
 cfg_null_filter="/bin/touch" ; test -f ${cfg_null_filter} || cfg_null_filter="/usr/bin/touch"
-cfg_content_file="/etc/services" ; test -z "${opt_content_file}" || cfg_content_file="${opt_content_file}"
 cfg_pp="201" # port-prefix
 cfg_base_dir="/tmp/`basename $0`.$$.tmp"
 cfg_summary_log="/tmp/`basename $0`.out"
@@ -109,6 +115,10 @@ Cleanup()
 	${cfg_poke_exe} ${cfg_pp}14 terminate
 	${cfg_poke_exe} ${cfg_pp}15 terminate
 	${cfg_poke_exe} ${cfg_pp}16 terminate
+	if test "${opt_use_fetchmail}" -eq 1
+	then
+		${cfg_poke_exe} ${cfg_pp}17 terminate
+	fi
 	sleep 2
 
 	kill `cat ${cfg_base_dir}/pid-* 2>/dev/null`
@@ -148,6 +158,8 @@ RunServer()
 	pidfile_="${5}"
 	extra_="${6}"
 
+	pop_port_="`expr ${port_} + 80`"
+
 	mkdir -p ${cfg_base_dir}/${spool_}
 	${cfg_run} ${cfg_main_exe} ${cfg_sw_extra} ${cfg_sw_debug} \
 		--log --verbose --no-syslog \
@@ -155,6 +167,8 @@ RunServer()
 		--spool-dir ${cfg_base_dir}/${spool_} \
 		--admin ${cfg_pp}${admin_port_} \
 		--admin-terminate \
+		--pop --pop-port ${cfg_pp}${pop_port_} \
+		--pop-auth ${cfg_base_dir}/pop.auth \
 		--pid-file ${cfg_base_dir}/${pidfile_} \
 		${extra_} 2> ${cfg_base_dir}/${log_} &
 }
@@ -173,6 +187,18 @@ RunClient()
 		--spool-dir ${cfg_base_dir}/${spool_} 2> ${cfg_base_dir}/${log_}
 }
 
+RunFetchmail()
+{
+	pop_port_="${1}"
+	smtp_port_="${2}"
+
+	cfg_=${cfg_base_dir}/fetchmailrc
+	echo poll localhost username me password secret > ${cfg_}
+	chmod 700 ${cfg_}
+
+	fetchmail -f ${cfg_} --verbose --protocol APOP --port ${cfg_pp}${pop_port_} --smtphost localhost/${cfg_pp}${smtp_port_} localhost > ${cfg_base_dir}/log-fetchmail 2>&1
+}
+
 RunPoke()
 {
 	port_="${1}"
@@ -186,8 +212,16 @@ Content()
 	echo "To: recipient-1@f.q.d.n, recipient-2@f.q.d.n"
 	echo "Subject: test message 1"
 	echo "From: sender"
-	echo " "
-	cat "${cfg_content_file}"
+	echo " " | tr -d ' '
+	if test "${opt_smaller}" -eq 1
+	then	
+		cat $0
+	else
+		cat $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0
+		cat $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0
+		cat $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0
+		cat $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0 $0
+	fi
 }
 
 Envelope()
@@ -256,6 +290,9 @@ CreateAuth()
 	file="${cfg_base_dir}/client-joe.auth"
 	echo "# client-joe.auth" > ${file}
 	echo "CRAM-MD5 client joe ${key}" >> ${file}
+
+	file="${cfg_base_dir}/pop.auth"
+	echo "APOP server me secret" >> ${file}
 }
 
 CreateFilter()
@@ -299,7 +336,7 @@ Main()
 	CreateFilter
 	CreateMessages
 
-	RunServer 01 10 store-2 log-1 pid-1
+	RunServer 01 11 store-2 log-1 pid-1
 	RunServer 02 12 store-2 log-2 pid-2 "--forward-to localhost:${cfg_pp}03 --client-auth ${cfg_base_dir}/client-joe.auth"
 	RunServer 03 13 store-3 log-3 pid-3 "--immediate --forward-to localhost:${cfg_pp}04 --filter ${cfg_null_filter} --client-auth ${cfg_base_dir}/client-fred.auth --server-auth ${cfg_base_dir}/server.auth"
 	RunServer 04 14 store-4 log-4 pid-4 "--server-auth ${cfg_base_dir}/server.auth"
@@ -307,7 +344,7 @@ Main()
 	RunServer 06 16 store-5 log-6 pid-6 "--filter ${cfg_base_dir}/filter.sh"
 
 	Wait
-	RunClient localhost:${cfg_pp}01 store-1 log-c pid-7
+	RunClient localhost:${cfg_pp}01 store-1 log-c pid-c
 	RunPoke 12 log-p
 
 	success="0"
@@ -320,7 +357,21 @@ Main()
 			break 
 		fi
 	done
+
+	if test "${success}" -eq 1 -a "${opt_use_fetchmail}" -eq 1
+	then
+		success="0"
+		RunServer 07 17 store-6 log-7 pid-7
+		Wait
+		RunFetchmail 86 07
+		if TestDone store-6
+		then
+			success="1"
+		fi
+	fi
+
 	ReportResults "${success}"
+	test "${success}" -ne 0
 }
 
 Main

@@ -32,6 +32,7 @@
 // Stylistic advantages are that it is written in C++ with an enclosing namespace,
 // it does not use preprocessor macros, and there is an element of layering with 
 // digest_stream built on top of the low-level digest class.
+//
 
 #ifndef MD5_GHW_H
 #define MD5_GHW_H
@@ -41,6 +42,7 @@
 
 namespace md5
 {
+	typedef std::string string_type ; ///< A string type.
 	typedef unsigned long big_t ; ///< To hold at least 32 bits, maybe more.
 	typedef unsigned int small_t ; ///< To hold at least a size_t.
 	typedef char assert_big_t_is_big_enough[sizeof(big_t)>=4U?1:-1] ; ///< A static assertion check.
@@ -85,7 +87,7 @@ public:
 		///< be digested should be add()ed
 		///< in 64-byte blocks.
 
-	explicit digest( const std::string & s ) ;
+	explicit digest( const string_type & s ) ;
 		///< Constuctor. Calculates a digest for the 
 		///< given message string. Do not use add()
 		///< with this constructor.
@@ -134,29 +136,29 @@ private:
 
 /// \class md5::format
 /// A static string-formatting class for the output of md5::digest.
-/// Various static methods are prodived to convert the 
+/// Various static methods are provided to convert the 
 /// md5::digest::state_type structure into more useful formats, 
 /// including the printable format defined by RFC 1321.
 ///
 class md5::format 
 {
 public:
-	static std::string rfc( const digest & ) ;
+	static string_type rfc( const digest & ) ;
 		///< Returns the digest string in the RFC format.
 
-	static std::string rfc( const digest::state_type & ) ;
+	static string_type rfc( const digest::state_type & ) ;
 		///< Returns the digest string in the RFC format.
 
-	static std::string raw( const digest::state_type & ) ;
+	static string_type raw( const digest::state_type & ) ;
 		///< Returns the raw digest data as a std::string.
 		///< The returned std::string buffer will typically 
 		///< contain non-printing characters, including NULs.
 
 private:
-	static std::string raw( big_t n ) ;
-	static std::string str( big_t n ) ;
-	static std::string str2( small_t n ) ;
-	static std::string str1( small_t n ) ;
+	static string_type raw( big_t n ) ;
+	static string_type str( big_t n ) ;
+	static string_type str2( small_t n ) ;
+	static string_type str1( small_t n ) ;
 	format() ; // not implemented
 } ;
 
@@ -167,7 +169,7 @@ private:
 class md5::block 
 {
 public:
-	block( const std::string & s , small_t block_offset , big_t end_value ) ;
+	block( const string_type & s , small_t block_offset , big_t end_value ) ;
 		///< Constructor. Unusually, the string reference is 
 		///< kept, so beware of binding temporaries.
 		///<
@@ -205,7 +207,7 @@ private:
 	static small_t rounded( small_t n ) ;
 
 private:
-	const std::string & m_s ;
+	const string_type & m_s ;
 	small_t m_block ;
 	big_t m_end_value ;
 } ;
@@ -239,7 +241,7 @@ class md5::digest_stream
 {
 public:
 	struct state_type ///< Holds the state of an md5 digest stream. Used by md5::digest_stream.
-		{ digest::state_type d ; small_t n ; std::string s ; } ;
+		{ digest::state_type d ; small_t n ; string_type s ; } ;
 
 	digest_stream() ;
 		///< Default constructor.
@@ -251,7 +253,7 @@ public:
 		///< (since "state_type::s" string is implicitly 
 		///< empty).
 
-	void add( const std::string & ) ;
+	void add( const string_type & ) ;
 		///< Adds more message data.
 
 	void close() ;
@@ -267,7 +269,7 @@ public:
 
 private:
 	digest m_digest ;
-	std::string m_buffer ;
+	string_type m_buffer ;
 	small_t m_length ;
 } ;
 

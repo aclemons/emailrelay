@@ -17,6 +17,7 @@
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ## 
 #
+# see mingw-common.mak for help
 include mingw-common.mak
 all: all_
 clean:: clean_

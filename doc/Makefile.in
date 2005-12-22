@@ -51,10 +51,12 @@ CONFIG_CLEAN_FILES =
 SCRIPTS = $(noinst_SCRIPTS)
 SOURCES =
 DIST_SOURCES =
-am__installdirs = "$(DESTDIR)$(e_docdir)" "$(DESTDIR)$(e_man1dir)"
+man1dir = $(mandir)/man1
+am__installdirs = "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(e_docdir)"
+NROFF = nroff
+MANS = $(man1_MANS)
 e_docDATA_INSTALL = $(INSTALL_DATA)
-e_man1DATA_INSTALL = $(INSTALL_DATA)
-DATA = $(e_doc_DATA) $(e_man1_DATA)
+DATA = $(e_doc_DATA)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -89,6 +91,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+IP = @IP@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -129,11 +132,7 @@ datadir = @datadir@
 e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_initdir = @e_initdir@
-e_libexecdir = @e_libexecdir@
-e_man1dir = @e_man1dir@
-e_sbindir = @e_sbindir@
 e_spooldir = @e_spooldir@
-e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 includedir = @includedir@
@@ -161,8 +160,8 @@ html_files_out = readme.html developer.html reference.html userguide.html window
 png_files = gsmtp-classes.png gnet-classes.png sequence-1.png sequence-2.png sequence-3.png sequence-4.png gnet-client.png gsmtp-serverprotocol.png gsmtp-scannerclient.png auth.png
 EXTRA_DIST = $(man_files_in) $(txt_files) $(html_files_in) $(html_files_thru) $(png_files)
 noinst_SCRIPTS = .dox
-e_man1_MANS = $(man_files_in)
-e_man1_DATA = $(man_files_out)
+man1_MANS = $(man_files_in)
+#man1_DATA = $(man_files_out)
 e_doc_DATA = $(txt_files) $(html_files_out) $(html_files_thru) $(png_files)
 CLEANFILES = $(noinst_SCRIPTS) $(man_files_out) $(html_files_out) doxygen/*
 SUFFIXES = .txt .html
@@ -210,6 +209,51 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 uninstall-info-am:
+install-man1: $(man1_MANS) $(man_MANS)
+	@$(NORMAL_INSTALL)
+	test -z "$(man1dir)" || $(mkdir_p) "$(DESTDIR)$(man1dir)"
+	@list='$(man1_MANS) $(dist_man1_MANS) $(nodist_man1_MANS)'; \
+	l2='$(man_MANS) $(dist_man_MANS) $(nodist_man_MANS)'; \
+	for i in $$l2; do \
+	  case "$$i" in \
+	    *.1*) list="$$list $$i" ;; \
+	  esac; \
+	done; \
+	for i in $$list; do \
+	  if test -f $(srcdir)/$$i; then file=$(srcdir)/$$i; \
+	  else file=$$i; fi; \
+	  ext=`echo $$i | sed -e 's/^.*\\.//'`; \
+	  case "$$ext" in \
+	    1*) ;; \
+	    *) ext='1' ;; \
+	  esac; \
+	  inst=`echo $$i | sed -e 's/\\.[0-9a-z]*$$//'`; \
+	  inst=`echo $$inst | sed -e 's/^.*\///'`; \
+	  inst=`echo $$inst | sed '$(transform)'`.$$ext; \
+	  echo " $(INSTALL_DATA) '$$file' '$(DESTDIR)$(man1dir)/$$inst'"; \
+	  $(INSTALL_DATA) "$$file" "$(DESTDIR)$(man1dir)/$$inst"; \
+	done
+uninstall-man1:
+	@$(NORMAL_UNINSTALL)
+	@list='$(man1_MANS) $(dist_man1_MANS) $(nodist_man1_MANS)'; \
+	l2='$(man_MANS) $(dist_man_MANS) $(nodist_man_MANS)'; \
+	for i in $$l2; do \
+	  case "$$i" in \
+	    *.1*) list="$$list $$i" ;; \
+	  esac; \
+	done; \
+	for i in $$list; do \
+	  ext=`echo $$i | sed -e 's/^.*\\.//'`; \
+	  case "$$ext" in \
+	    1*) ;; \
+	    *) ext='1' ;; \
+	  esac; \
+	  inst=`echo $$i | sed -e 's/\\.[0-9a-z]*$$//'`; \
+	  inst=`echo $$inst | sed -e 's/^.*\///'`; \
+	  inst=`echo $$inst | sed '$(transform)'`.$$ext; \
+	  echo " rm -f '$(DESTDIR)$(man1dir)/$$inst'"; \
+	  rm -f "$(DESTDIR)$(man1dir)/$$inst"; \
+	done
 install-e_docDATA: $(e_doc_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(e_docdir)" || $(mkdir_p) "$(DESTDIR)$(e_docdir)"
@@ -226,23 +270,6 @@ uninstall-e_docDATA:
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
 	  echo " rm -f '$(DESTDIR)$(e_docdir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(e_docdir)/$$f"; \
-	done
-install-e_man1DATA: $(e_man1_DATA)
-	@$(NORMAL_INSTALL)
-	test -z "$(e_man1dir)" || $(mkdir_p) "$(DESTDIR)$(e_man1dir)"
-	@list='$(e_man1_DATA)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(e_man1DATA_INSTALL) '$$d$$p' '$(DESTDIR)$(e_man1dir)/$$f'"; \
-	  $(e_man1DATA_INSTALL) "$$d$$p" "$(DESTDIR)$(e_man1dir)/$$f"; \
-	done
-
-uninstall-e_man1DATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(e_man1_DATA)'; for p in $$list; do \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f '$(DESTDIR)$(e_man1dir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(e_man1dir)/$$f"; \
 	done
 tags: TAGS
 TAGS:
@@ -280,9 +307,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(SCRIPTS) $(DATA)
+all-am: Makefile $(SCRIPTS) $(MANS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(e_docdir)" "$(DESTDIR)$(e_man1dir)"; do \
+	for dir in "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(e_docdir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -328,14 +355,13 @@ info: info-am
 
 info-am:
 
-install-data-am: install-data-local install-e_docDATA \
-	install-e_man1DATA
+install-data-am: install-data-local install-e_docDATA install-man
 
 install-exec-am:
 
 install-info: install-info-am
 
-install-man:
+install-man: install-man1
 
 installcheck-am:
 
@@ -355,19 +381,21 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-e_docDATA uninstall-e_man1DATA \
-	uninstall-info-am uninstall-local
+uninstall-am: uninstall-e_docDATA uninstall-info-am uninstall-local \
+	uninstall-man
+
+uninstall-man: uninstall-man1
 
 .PHONY: all all-am check check-am clean clean-generic distclean \
 	distclean-generic distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am \
-	install-data-local install-e_docDATA install-e_man1DATA \
-	install-exec install-exec-am install-info install-info-am \
-	install-man install-strip installcheck installcheck-am \
+	install-data-local install-e_docDATA install-exec \
+	install-exec-am install-info install-info-am install-man \
+	install-man1 install-strip installcheck installcheck-am \
 	installdirs maintainer-clean maintainer-clean-generic \
 	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am uninstall \
-	uninstall-am uninstall-e_docDATA uninstall-e_man1DATA \
-	uninstall-info-am uninstall-local
+	uninstall-am uninstall-e_docDATA uninstall-info-am \
+	uninstall-local uninstall-man uninstall-man1
 
 
 .txt.html:
@@ -419,7 +447,7 @@ emailrelay-submit.1.gz : emailrelay-submit.1
 emailrelay-poke.1.gz: emailrelay-poke.1
 	if test -n "$(GZIP)" ; then $(GZIP) -c $(top_srcdir)/doc/emailrelay-poke.1 > emailrelay-poke.1.gz ; fi
 
-install-data-local: install-e_docDATA install-e_man1DATA
+install-data-local: install-e_docDATA
 	$(mkinstalldirs) $(DESTDIR)$(e_docdir)/doxygen
 	if test "$(HAVE_DOXYGEN)" = "yes" ; then for file in doxygen/* ; do $(INSTALL) $$file $(DESTDIR)$(e_docdir)/$$file ; done ; fi
 

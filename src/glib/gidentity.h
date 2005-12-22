@@ -92,6 +92,7 @@ private:
 private:
 	uid_t m_uid ;
 	gid_t m_gid ;
+	HANDLE m_h ; // windows
 } ;
 
 // Class: G::IdentityUser

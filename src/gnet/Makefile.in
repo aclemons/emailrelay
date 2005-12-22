@@ -17,7 +17,7 @@
 #
 #
 
-SOURCES = $(libgnet_a_SOURCES)
+SOURCES = $(libgnet_a_SOURCES) $(libipv4_a_SOURCES) $(libipv6_a_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -53,20 +53,28 @@ ARFLAGS = cru
 LIBRARIES = $(noinst_LIBRARIES)
 libgnet_a_AR = $(AR) $(ARFLAGS)
 libgnet_a_LIBADD =
-am_libgnet_a_OBJECTS = gaddress_ipv4.$(OBJEXT) gclient.$(OBJEXT) \
-	gclient_unix.$(OBJEXT) gconnection.$(OBJEXT) \
-	gdescriptor_unix.$(OBJEXT) geventloop.$(OBJEXT) \
-	geventloop_unix.$(OBJEXT) geventhandler.$(OBJEXT) \
-	geventserver.$(OBJEXT) glinebuffer.$(OBJEXT) \
-	glocal_unix.$(OBJEXT) glocal.$(OBJEXT) gmonitor.$(OBJEXT) \
-	gresolve.$(OBJEXT) gresolve_ipv4.$(OBJEXT) \
-	gresolve_unix.$(OBJEXT) gserver.$(OBJEXT) gsocket.$(OBJEXT) \
-	gsocket_unix.$(OBJEXT) gtimer.$(OBJEXT) gsender.$(OBJEXT)
+am_libgnet_a_OBJECTS = gclient.$(OBJEXT) gclient_unix.$(OBJEXT) \
+	gconnection.$(OBJEXT) gdescriptor_unix.$(OBJEXT) \
+	geventloop.$(OBJEXT) geventloop_unix.$(OBJEXT) \
+	geventhandler.$(OBJEXT) geventserver.$(OBJEXT) \
+	glinebuffer.$(OBJEXT) glocal_unix.$(OBJEXT) glocal.$(OBJEXT) \
+	gmonitor.$(OBJEXT) gresolve.$(OBJEXT) gresolve_unix.$(OBJEXT) \
+	gserver.$(OBJEXT) gsocket.$(OBJEXT) gsocket_unix.$(OBJEXT) \
+	gtimer.$(OBJEXT) gsender.$(OBJEXT)
 libgnet_a_OBJECTS = $(am_libgnet_a_OBJECTS)
+libipv4_a_AR = $(AR) $(ARFLAGS)
+libipv4_a_LIBADD =
+am_libipv4_a_OBJECTS = gaddress_ipv4.$(OBJEXT) gresolve_ipv4.$(OBJEXT)
+libipv4_a_OBJECTS = $(am_libipv4_a_OBJECTS)
+libipv6_a_AR = $(AR) $(ARFLAGS)
+libipv6_a_LIBADD =
+am_libipv6_a_OBJECTS = gaddress_ip.$(OBJEXT) gresolve_ip.$(OBJEXT)
+libipv6_a_OBJECTS = $(am_libipv6_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/gaddress_ipv4.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/gaddress_ip.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/gaddress_ipv4.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gclient.Po ./$(DEPDIR)/gclient_unix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gconnection.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gdescriptor_unix.Po \
@@ -76,7 +84,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/geventserver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/glinebuffer.Po ./$(DEPDIR)/glocal.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/glocal_unix.Po ./$(DEPDIR)/gmonitor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gresolve.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/gresolve.Po ./$(DEPDIR)/gresolve_ip.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gresolve_ipv4.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gresolve_unix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/gsender.Po ./$(DEPDIR)/gserver.Po \
@@ -91,8 +99,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libgnet_a_SOURCES)
-DIST_SOURCES = $(libgnet_a_SOURCES)
+SOURCES = $(libgnet_a_SOURCES) $(libipv4_a_SOURCES) \
+	$(libipv6_a_SOURCES)
+DIST_SOURCES = $(libgnet_a_SOURCES) $(libipv4_a_SOURCES) \
+	$(libipv6_a_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -129,6 +139,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+IP = @IP@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -169,11 +180,7 @@ datadir = @datadir@
 e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_initdir = @e_initdir@
-e_libexecdir = @e_libexecdir@
-e_man1dir = @e_man1dir@
-e_sbindir = @e_sbindir@
 e_spooldir = @e_spooldir@
-e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 includedir = @includedir@
@@ -204,9 +211,8 @@ EXTRA_DIST = \
 	mingw.mak
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib 
-noinst_LIBRARIES = libgnet.a
-libgnet_a_SOURCES = gaddress_ipv4.cpp \
-	gclient.cpp \
+noinst_LIBRARIES = libgnet.a libipv4.a libipv6.a
+libgnet_a_SOURCES = gclient.cpp \
 	gclient_unix.cpp \
 	gconnection.cpp \
 	gdescriptor_unix.cpp \
@@ -219,7 +225,6 @@ libgnet_a_SOURCES = gaddress_ipv4.cpp \
 	glocal.cpp \
 	gmonitor.cpp \
 	gresolve.cpp \
-	gresolve_ipv4.cpp \
 	gresolve_unix.cpp \
 	gserver.cpp \
 	gsocket.cpp \
@@ -245,6 +250,8 @@ libgnet_a_SOURCES = gaddress_ipv4.cpp \
 	gsocket.h \
 	gtimer.h
 
+libipv4_a_SOURCES = gaddress_ipv4.cpp gresolve_ipv4.cpp
+libipv6_a_SOURCES = gaddress_ip.cpp gresolve_ip.cpp
 all: all-am
 
 .SUFFIXES:
@@ -285,6 +292,14 @@ libgnet.a: $(libgnet_a_OBJECTS) $(libgnet_a_DEPENDENCIES)
 	-rm -f libgnet.a
 	$(libgnet_a_AR) libgnet.a $(libgnet_a_OBJECTS) $(libgnet_a_LIBADD)
 	$(RANLIB) libgnet.a
+libipv4.a: $(libipv4_a_OBJECTS) $(libipv4_a_DEPENDENCIES) 
+	-rm -f libipv4.a
+	$(libipv4_a_AR) libipv4.a $(libipv4_a_OBJECTS) $(libipv4_a_LIBADD)
+	$(RANLIB) libipv4.a
+libipv6.a: $(libipv6_a_OBJECTS) $(libipv6_a_DEPENDENCIES) 
+	-rm -f libipv6.a
+	$(libipv6_a_AR) libipv6.a $(libipv6_a_OBJECTS) $(libipv6_a_LIBADD)
+	$(RANLIB) libipv6.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -292,6 +307,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaddress_ip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaddress_ipv4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gclient_unix.Po@am__quote@
@@ -306,6 +322,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glocal_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmonitor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolve_ip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolve_ipv4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolve_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsender.Po@am__quote@

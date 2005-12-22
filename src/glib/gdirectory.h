@@ -68,7 +68,13 @@ public:
 		// Does additional checks if the 'for-creating-files' 
 		// parameter is true. But note that the answer is not 
 		// definitive -- file creation may fail, even if 
-		// valid() returns true.
+		// valid() returns true. For a more accurate test 
+		// use writeable().
+
+	bool writeable( std::string probe_filename = tmp() ) const ;
+		// Tries to create and then delete an empty test file 
+		// in the directory. Returns true on success.
+		// Precondition: valid()
 
 	Path path() const ;
 		// Returns the directory's path.
@@ -82,6 +88,12 @@ public:
 	static Directory root() ;
 		// Returns a root directory object. For DOSy file
 		// systems this will not contain a drive part.
+
+	static std::string tmp() ;
+		// A convenience function for constructing a
+		// filename for writeable(). This is factored out
+		// so that client code can minimise the time spent 
+		// with a privileged effective userid.
 
 private:
 	Path m_path ;

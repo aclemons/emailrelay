@@ -189,13 +189,13 @@ int G::Process::spawn( Identity , const Path & exe_path , const Strings & args ,
 
 G::Identity G::Process::beOrdinary( Identity identity , bool )
 {
-	// not implemented
+	// not implemented -- see also ImpersonateLoggedOnUser()
 	return identity ;
 }
 
 void G::Process::beSpecial( Identity , bool )
 {
-	// not implemented
+	// not implemented -- see also RevertToSelf()
 }
 
 void G::Process::revokeExtraGroups()

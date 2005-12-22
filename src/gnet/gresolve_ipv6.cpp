@@ -26,7 +26,7 @@
 #include "gdebug.h"
 #include "glog.h"
 
-#if defined( AI_DEFAULT )
+#if defined(HAVE_GETIPNODEBYNAME) && HAVE_GETIPNODEBYNAME
 // RFC 2553
 
 //static
@@ -68,7 +68,6 @@ bool GNet::Resolver::resolveHost( const std::string & host_name , HostInfo & hos
 	hostent * host = ::gethostbyname2( host_name.c_str() , AF_INET6 ) ;
 	if( host != NULL )
 	{
-G_DEBUG( "GNet::Resolver::resolveHost: canonical name of \"" << host_name << "\" is \"" << host->h_name << "\"" ) ;
 		host_info.canonical_name = std::string(host->h_name) ;
 		host_info.address = Address( *host , 0U ) ;
 	}

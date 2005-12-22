@@ -23,17 +23,19 @@
 
 #include "gdef.h"
 #include "groot.h"
+#include "gassert.h"
 #include "gprocess.h"
 #include "gdebug.h"
 
 G::Root * G::Root::m_this = NULL ;
+bool G::Root::m_initialised = false ;
 G::Identity G::Root::m_special( G::Identity::invalid() ) ;
 G::Identity G::Root::m_nobody( G::Identity::invalid() ) ;
 
 G::Root::Root( bool change_group ) :
 	m_change_group(change_group)
 {
-	if( m_this == NULL )
+	if( m_this == NULL && m_initialised )
 	{
 		Process::beSpecial( m_special , m_change_group ) ;
 		m_this = this ;
@@ -44,7 +46,7 @@ G::Root::~Root()
 {
 	try
 	{
-		if( m_this == this )
+		if( m_this == this && m_initialised )
 		{
 			m_this = NULL ;
 			Process::beOrdinary( m_nobody , m_change_group ) ;
@@ -64,8 +66,9 @@ G::Root::~Root()
 void G::Root::init( const std::string & nobody )
 {
 	Process::revokeExtraGroups() ;
-	m_nobody = nobody.empty() ? Identity::invalid() : Identity(nobody) ;
+	m_nobody = Identity(nobody) ;
 	m_special = Process::beOrdinary( m_nobody ) ;
+	m_initialised = true ;
 }
 
 //static

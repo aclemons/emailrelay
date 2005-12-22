@@ -211,6 +211,12 @@ Main()
 # item lines separated with 'ignore' patterns are
 # treated as being contiguous.
 #
+# Eg: Number foo bar
+#   foo,1: first line
+#   ignore,bar:
+#   foo,2: second line
+#   foo-end:
+#
 Number()
 {
 	${awk} -v item_tag="${1}" -v ignore_1="${2}" -v ignore_2="${3}" -v ignore_3="${4}" -v ignore_4="${5}" '

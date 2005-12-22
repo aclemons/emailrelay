@@ -65,7 +65,7 @@ void G::Exception::append( const std::string & more )
 
 void G::Exception::append( std::ostream & stream )
 {
-	std::stringstream * ss = dynamic_cast<std::stringstream*>(&stream) ;
+	std::ostringstream * ss = dynamic_cast<std::ostringstream*>(&stream) ;
 	if( ss != NULL )
 	{
 		append( ss->str() ) ;

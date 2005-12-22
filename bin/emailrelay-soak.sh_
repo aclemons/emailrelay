@@ -21,7 +21,17 @@
 #
 # emailrelay-soak.sh
 #
-# Soak tests the E-MailRelay system.
+# Soak tests the E-MailRelay system to check for large
+# memory leaks.
+#
+# It starts two servers, with a proxy fronting onto one
+# of them, then in a loop it creates a large message file
+# and runs a client to fowrard it to both servers in
+# turn.
+#
+# Use 'ps' to check for large leaks.
+#
+# Files are created under a sub-directory of /tmp.
 #
 # usage: emailrelay-soak.sh [<exe>]
 #
@@ -129,10 +139,12 @@ RunServer()
 	fi
 
 	mkdir -p "${spool_dir}"
+	set -x
 	${exe} ${as_server} --port ${port} --spool-dir ${spool_dir} \
 		--pid-file ${pid_file} \
 		--server-auth ${auth_file} \
 		--admin `expr ${port} + 100` --forward-to localhost:smtp --no-syslog 2> "${log}"
+	set +x
 }
 
 RunProxy()
@@ -149,11 +161,13 @@ RunProxy()
 	fi
 
 	mkdir -p "${spool_dir}"
+	set -x
 	${exe} ${as_proxy} ${to_address} --port ${port} --spool-dir ${spool_dir} \
 		--pid-file ${pid_file} \
 		--server-auth ${auth_file} \
 		--client-auth ${auth_file} \
 		--admin `expr ${port} + 100` --no-syslog 2> "${log}"
+	set +x
 }
 
 Init()

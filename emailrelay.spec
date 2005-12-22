@@ -20,6 +20,8 @@ Because of its functional simplicity E-MailRelay is easy to configure, typically
 only requiring the address of the target SMTP server to be put on the command 
 line.
 
+E-MailRelay can also run as a POP3 server.
+
 C++ source code is available for Linux, FreeBSD, MacOS X etc, and Windows.
 Distribution is under the GNU General Public License.
 

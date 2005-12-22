@@ -14,6 +14,8 @@ Because of its functional simplicity E-MailRelay is easy to configure, typically
 only requiring the address of the target SMTP server to be put on the command 
 line.
 
+E-MailRelay can also run as a POP3 server.
+
 C++ source code is available for Linux, FreeBSD, MacOS X etc, and Windows.
 Distribution is under the GNU General Public License.
 
@@ -45,10 +47,14 @@ And then to forward the spooled mail to "smarthost" run somthing like this:
 
 	emailrelay --as-client smarthost:smtp --spool-dir $HOME/tmp
 
-You can also have an E-MailRelay storage daemon forward spooled e-mails 
-periodically by using the "--poll" switch.
+To run E-MailRelay as a POP server without SMTP you can use a command like this:
 
-By default E-MailRelay will reject connections from remote machines. To
+	emailrelay --pop --no-smtp --log --close-stderr
+
+The "emailrelay-submit" utility can be used to put messages straight into the
+spool directory.
+
+By default E-MailRelay will always reject connections from remote machines. To
 allow connections from anywhere use the "--remote-clients" switch.
 
 For more information on the command-line options refer to the reference guide

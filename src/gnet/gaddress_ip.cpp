@@ -18,44 +18,15 @@
 // 
 // ===
 //
-// gcleanup.h
+// gaddress_ip.cpp
 //
-
-#ifndef G_CLEANUP_H
-#define G_CLEANUP_H
 
 #include "gdef.h"
-#include "gpath.h"
-#include "gexception.h"
+#include "gnet.h"
 
-namespace G
-{
-	class Cleanup ;
-}
-
-// Class: G::Cleanup
-// Description: An interface for registering cleanup functions
-// which are called when the process terminates abnormally.
-//
-class G::Cleanup 
-{
-public:
-	G_EXCEPTION( Error , "cleanup error" ) ;
-
-	static void init() ;
-		// An optional early-initialisation function.
-		// May be called more than once.
-
-	static void add( void (*fn)(const char*) , const char * arg ) ;
-		// Adds the given handler to the list which 
-		// are to be called when the process
-		// terminates abnormally. The handler 
-		// function must be fully reentrant.
-		// The 'arg' pointer is kept.
-
-private:
-	Cleanup() ; // not implemeneted
-} ;
-
+#if defined(HAVE_IPV6) && HAVE_IPV6
+#include "gaddress_ipv6.cpp"
+#else
+#include "gaddress_ipv4.cpp"
 #endif
 

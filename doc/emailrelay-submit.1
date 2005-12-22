@@ -20,7 +20,7 @@
 emailrelay-submit \- a submission utility for E-MailRelay
 .SH SYNOPSIS
 .B emailrelay-submit
-[--help] [--spool-dir 
+[--help] [--verbose] [--spool-dir 
 .IR spool-directory ] 
 [--from
 .IR from-address ]
@@ -33,6 +33,9 @@ input, with SMTP envelope recipient addresses passed on the
 command-line, and writes it into the 
 .B E-MailRelay 
 spool directory.
+.LP
+The verbose switch causes the path of the new content file
+to be printed.
 .SH SEE ALSO
 .BR emailrelay (1),
 .BR emailrelay-poke (1),

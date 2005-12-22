@@ -2,10 +2,10 @@
 # emailrelay.conf
 #
 # This is a configuration file for E-MailRelay (http://emailrelay.sf.net).
-# It is used by the emailrelay init.d script when it starts up an emailrelay 
+# It is used by the emailrelay "init.d" script when it starts up an emailrelay 
 # server. 
 #
-# The init.d script constructs an emailrelay command-line by starting
+# The "init.d" script constructs an emailrelay command-line by starting
 # with "--as-server --pid-file ..." and then contatenating uncommented lines
 # from this file, prefixing each with "--".
 #
@@ -15,32 +15,40 @@
 
 # Name: remote-clients
 # Format: remote-clients            
-# Description: Allows remote clients to connect.
+# Description: Allows remote clients to connect. By default only local
+# clients can connect to the server and connections from remote clients
+# are rejected.
 #
 #remote-clients
 
 # Name: spool-dir
 # Format: spool-dir <dir>           
 # Description: Specifies the spool directory. The default is compiled into the
-# program, but it is typically /var/spool/emailrelay.
+# program, but it is typically "/var/spool/emailrelay".
 #
 #spool-dir /var/spool/emailrelay
 
 # Name: interface
 # Format: interface <ip-address>    
-# Description: Specifies an interface to listen on.
+# Description: Specifies an interface to listen on. The default is to listen
+# on all interfaces (INADDR_ANY). Using a specific interface can make it harder
+# for clients on other sub-networks to connect, so improving security.
 #
 #interface 192.168.0.10
 
 # Name: filter
 # Format: filter <program>          
 # Description: Defines a mail processor program which is run as each message is stored.
+# The program or script is given the name of each message file on the command-line,
+# giving it the opportunity to edit, copy or delete it.
 #
 #filter /usr/local/bin/emailrelay-filter
 
 # Name: server-auth
 # Format: server-auth <file>        
-# Description: Enables authentication of remote clients, using the given secrets file.
+# Description: Enables authentication of remote SMTP clients, using the given secrets file.
+# The secrets file contains usernames and passwords, either in plain-text or as MD5
+# digests.
 #
 #server-auth /etc/emailrelay.auth
 
@@ -53,6 +61,8 @@
 # Name: client-auth
 # Format: client-auth <file>        
 # Description: Enables authentication with the remote server, using the given secrets file.
+# The secrets file contains the username and password that E-MailRelay uses to connect
+# to the remove SMTP server.
 #
 #client-auth /etc/emailrelay.auth
 

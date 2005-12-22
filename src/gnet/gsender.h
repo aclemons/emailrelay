@@ -43,18 +43,21 @@ class GNet::Sender : public GNet::ServerPeer
 public:
 	G_EXCEPTION( SendError , "socket send error" ) ;
 
-	explicit Sender( Server::PeerInfo ) ;
-		// Constructor.
+	explicit Sender( Server::PeerInfo , bool throw_on_flow_control = false ) ;
+		// Constructor. If the 'throw' parameter is true then
+		// a failure to send resulting from flow-control results 
+		// in a SendError exception, rather than the 
+		// return-false-and-on-resume mechanism.
 
 	virtual ~Sender() ;
 		// Destructor.
 
 	bool send( const std::string & data , size_t offset = 0U ) ;
-		// Sends data down the socket. Returns true if
-		// all the data is sent. Throws on error. 
+		// Sends data down the socket. Returns true if all
+		// the data is sent. Throws on error. 
 		//
-		// If flow control is asserted then the residue 
-		// is saved internally, a write-event handler is 
+		// If flow control is asserted then the residue is
+		// saved internally, a write-event handler is 
 		// installed on the socket, and false is returned. 
 		//
 		// When the socket's write-event is triggered the 
@@ -75,6 +78,7 @@ private:
 	virtual void writeEvent() ; // from EventHandler
 
 private:
+	bool m_throw ;
 	std::string m_residue ;
 	unsigned long m_n ;
 } ;

@@ -95,7 +95,7 @@ Runs as a server: equivalent to <I>--log</I> <I>--close-stderr</I> <I>--postmast
 <DT><B>-C,--client-auth </B><I>file</I>
 
 <DD>
-Enables authentication with remote server, using the given secrets file.
+Enables smtp authentication with remote server, using the given secrets file.
 <DT><B>-Y,--client-filter </B><I>program</I>
 
 <DD>
@@ -111,19 +111,15 @@ Sets the timeout (in seconds) when connecting to a remote server (default is 40)
 <DT><B>-g,--debug </B>
 
 <DD>
-Generates debug-level logging (if compiled-in).
+Generates debug-level logging if compiled-in.
 <DT><B>-D,--domain </B><I>fqdn</I>
 
 <DD>
 Sets an override for the host's fully qualified domain name.
-<DT><B>-X,--dont-listen </B>
-
-<DD>
-Disables listening for smtp connections (usually used with <I>--admin</I>).
 <DT><B>-x,--dont-serve </B>
 
 <DD>
-Disables acting as a server (usually used with <I>--forward</I>).
+Disables acting as a server on any port (part of <I>--as-client</I> and usually used with <I>--forward</I>).
 <DT><B>-z,--filter </B><I>program</I>
 
 <DD>
@@ -160,6 +156,10 @@ Adds a timestamp to the logging output.
 
 <DD>
 Does not detach from the terminal.
+<DT><B>-X,--no-smtp </B>
+
+<DD>
+Disables listening for smtp connections (usually used with <I>--admin</I> or <I>--pop</I>).
 <DT><B>-n,--no-syslog </B>
 
 <DD>
@@ -175,23 +175,23 @@ Enables polling with the specified period (requires <I>--forward-to</I>).
 <DT><B>-B,--pop </B>
 
 <DD>
-Enables the pop server (if compiled-in).
-<DT><B>-F,--pop-auth </B><I>path</I>
+Enables the pop server if compiled-in.
+<DT><B>-F,--pop-auth </B><I>file</I>
 
 <DD>
-Defines the pop server secrets file.
+Defines the pop server secrets file (default is <I>/etc/emailrelay.auth</I>).
 <DT><B>-J,--pop-by-name </B>
 
 <DD>
-Modifies the pop spool directory according to the user name.
+Modifies the pop spool directory according to the user name (requires <I>--pop</I>).
 <DT><B>-G,--pop-no-delete </B>
 
 <DD>
-Disables message deletion via pop.
+Disables message deletion via pop (requires <I>--pop</I>).
 <DT><B>-E,--pop-port </B><I>port</I>
 
 <DD>
-Specifies the pop listening port number.
+Specifies the pop listening port number (requires <I>--pop</I>).
 <DT><B>-p,--port </B><I>port</I>
 
 <DD>
@@ -490,7 +490,7 @@ Graeme Walker, mailto:<A HREF="mailto:graeme_walker@users.sourceforge.net">graem
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 13:05:08 GMT, November 05, 2005
+Time: 20:12:33 GMT, December 22, 2005
 </BODY>
 </HTML>
 <!-- Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

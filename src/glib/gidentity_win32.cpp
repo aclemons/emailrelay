@@ -27,13 +27,15 @@
 
 G::Identity::Identity() :
 	m_uid(0) ,
-	m_gid(0)
+	m_gid(0) ,
+	m_h(0)
 {
 }
 
 G::Identity::Identity( const std::string & ) :
 	m_uid(0) ,
-	m_gid(0)
+	m_gid(0) ,
+	m_h(0)
 {
 }
 
