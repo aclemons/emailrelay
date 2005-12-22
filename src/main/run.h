@@ -127,6 +127,7 @@ private:
 	G::Signal3<std::string,std::string,std::string> m_signal ;
 	std::auto_ptr<GSmtp::FileStore> m_store ; // order dependency -- early
 	std::auto_ptr<GSmtp::Secrets> m_client_secrets ;
+	std::auto_ptr<GPop::Secrets> m_pop_secrets ;
 	std::auto_ptr<GSmtp::AdminServer> m_admin_server ;
 	std::auto_ptr<GNet::Timer> m_poll_timer ;
 	std::auto_ptr<GSmtp::Client> m_client ; // order dependency -- late

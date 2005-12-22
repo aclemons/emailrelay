@@ -262,11 +262,9 @@ unsigned int Main::WinApp::columns()
 
 void Main::WinApp::output( const std::string & text , bool )
 {
-	// (ignore 'hidden' for now)
-	const bool initialised = m_cfg.get() != NULL ;
 	G::Strings text_lines ;
 	G::Str::splitIntoFields( text , text_lines , "\r\n" ) ;
-	if( text_lines.size() > 20U && initialised )
+	if( text_lines.size() > 25U )
 	{
 		Box box( *this , text_lines ) ;
 		if( ! box.run() )

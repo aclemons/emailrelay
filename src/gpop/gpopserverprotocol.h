@@ -182,7 +182,8 @@ private:
 	Fsm m_fsm ;
 	std::string m_user ;
 	std::auto_ptr<std::istream> m_content ;
-	long m_content_limit ;
+	long m_body_limit ;
+	bool m_in_body ;
 } ;
 
 // Class: GPop::ServerProtocolText

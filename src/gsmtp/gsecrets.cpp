@@ -29,8 +29,12 @@
 #include "gstr.h"
 #include "gdatetime.h"
 #include "gfile.h"
+#include "gmemory.h"
+#include <map>
+#include <set>
 #include <fstream>
 #include <utility> // std::pair
+#include <sstream>
 
 // Class: GSmtp::SecretsImp
 // Description: A private pimple-pattern implemtation class used by GSmtp::Secrets.
@@ -44,22 +48,26 @@ public:
 	std::string id( const std::string & mechanism ) const ;
 	std::string secret( const std::string & mechanism ) const ;
 	std::string secret(  const std::string & mechanism , const std::string & id ) const ;
+	std::string path() const ;
+	bool contains( const std::string & mechanism ) const ;
 
 private:
 	void process( std::string mechanism , std::string side , std::string id , std::string secret ) ;
-	bool read( const G::Path & ) ;
+	void read( const G::Path & ) ;
 	void read( std::istream & ) ;
 	void reread() const ;
 	void reread(int) ;
 
 private:
 	typedef std::map<std::string,std::string> Map ;
+	typedef std::set<std::string> Set ;
 	G::Path m_path ;
 	bool m_auto ;
 	std::string m_debug_name ;
 	std::string m_server_type ;
 	bool m_valid ;
 	Map m_map ;
+	Set m_set ;
 	G::DateTime::EpochTime m_file_time ;
 	G::DateTime::EpochTime m_check_time ;
 } ;
@@ -70,7 +78,7 @@ GSmtp::Secrets::Secrets( const std::string & path , const std::string & name , c
 	m_imp(NULL)
 {
 	const bool is_auto = true ;
-	m_imp =  new SecretsImp( path , is_auto , name , type ) ;
+	m_imp = new SecretsImp( path , is_auto , name , type ) ;
 }
 
 GSmtp::Secrets::~Secrets()
@@ -98,6 +106,11 @@ std::string GSmtp::Secrets::secret(  const std::string & mechanism , const std::
 	return m_imp->secret( mechanism , id ) ;
 }
 
+bool GSmtp::Secrets::contains( const std::string & mechanism ) const
+{
+	return m_imp->contains( mechanism ) ;
+}
+
 // ===
 
 GSmtp::SecretsImp::SecretsImp( const G::Path & path , bool auto_ , const std::string & debug_name ,
@@ -111,20 +124,31 @@ GSmtp::SecretsImp::SecretsImp( const G::Path & path , bool auto_ , const std::st
 {
 	m_server_type = m_server_type.empty() ? std::string("server") : m_server_type ;
 	G_DEBUG( "GSmtp::Secrets: " << m_debug_name << ": \"" << path << "\"" ) ;
-	m_valid = path.str().empty() ? false : read(path) ;
+	m_valid = ! path.str().empty() ;
+	if( m_valid )
+		read(path) ;
 }
 
-bool GSmtp::SecretsImp::read( const G::Path & path )
+bool GSmtp::SecretsImp::valid() const
 {
-	G::Root claim_root ;
-	std::ifstream file( path.str().c_str() ) ;
-	if( !file.good() )
-		throw Secrets::OpenError( path.str() ) ;
+	return m_valid ;
+}
+
+void GSmtp::SecretsImp::read( const G::Path & path )
+{
+	std::auto_ptr<std::ifstream> file ;
+	{
+		G::Root claim_root ;
+		file <<= new std::ifstream( path.str().c_str() ) ;
+	}
+	if( !file->good() )
+		throw Secrets::OpenError( std::ostringstream() 
+			<< "reading \"" << path << "\" for " << m_debug_name << " secrets" ) ;
 
 	m_map.clear() ;
+	m_set.clear() ;
 	m_file_time = G::File::time( path ) ;
-	read( file ) ;
-	return m_map.size() != 0U ;
+	read( *file.get() ) ;
 }
 
 void GSmtp::SecretsImp::reread() const
@@ -177,6 +201,7 @@ void GSmtp::SecretsImp::process( std::string mechanism , std::string side , std:
 		std::string key = mechanism + ":" + id ;
 		std::string value = secret ;
 		m_map.insert( std::make_pair(key,value) ) ;
+		m_set.insert( mechanism ) ;
 	}
 	else if( side.at(0U) == 'c' || side.at(0U) == 'C' )
 	{
@@ -189,11 +214,6 @@ void GSmtp::SecretsImp::process( std::string mechanism , std::string side , std:
 
 GSmtp::SecretsImp::~SecretsImp()
 {
-}
-
-bool GSmtp::SecretsImp::valid() const
-{
-	return m_valid ;
 }
 
 std::string GSmtp::SecretsImp::id( const std::string & mechanism ) const
@@ -225,5 +245,15 @@ std::string GSmtp::SecretsImp::secret(  const std::string & mechanism , const st
 		return std::string() ;
 	else
 		return G::Xtext::decode( (*p).second ) ;
+}
+
+std::string GSmtp::SecretsImp::path() const
+{
+	return m_path.str() ;
+}
+
+bool GSmtp::SecretsImp::contains( const std::string & mechanism ) const
+{
+	return m_set.find(mechanism) != m_set.end() ;
 }
 

@@ -54,15 +54,15 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "s!spool-dir!specifies the spool directory (default is \"" << dir << "\")!1!dir!2|"
 		<< "V!version!displays version information and exits!0!!2|"
 		<< ""
-		<< "g!debug!generates debug-level logging (if compiled-in)!0!!3|"
-		<< "C!client-auth!enables authentication with remote server, using the given secrets file!1!file!3|"
+		<< "g!debug!generates debug-level logging if compiled-in!0!!3|"
+		<< "C!client-auth!enables smtp authentication with remote server, using the given secrets file!1!file!3|"
 		<< "L!log-time!adds a timestamp to the logging output!0!!3|"
 		<< "S!server-auth!enables authentication of remote clients, using the given secrets file!1!file!3|"
 		<< "e!close-stderr!closes the standard error stream after start-up!0!!3|"
 		<< "a!admin!enables the administration interface and specifies its listening port number!"
 			<< "1!admin-port!3|"
-		<< "x!dont-serve!disables acting as a server (usually used with --forward)!0!!3|"
-		<< "X!dont-listen!disables listening for smtp connections (usually used with --admin)!0!!3|"
+		<< "x!dont-serve!disables acting as a server on any port (part of --as-client and usually used with --forward)!0!!3|"
+		<< "X!no-smtp!disables listening for smtp connections (usually used with --admin or --pop)!0!!3|"
 		<< "z!filter!specifies an external program to process messages as they are stored!1!program!3|"
 		<< "D!domain!sets an override for the host's fully qualified domain name!1!fqdn!3|"
 		<< "f!forward!forwards stored mail on startup (requires --forward-to)!0!!3|"
@@ -81,11 +81,11 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "R!scanner!specifies an external network server to process messages when they are stored!1!host:port!3|"
 		<< "Q!admin-terminate!enables the terminate command on the admin interface!0!!3|"
 		<< "A!anonymous!disables the smtp vrfy command and sends less verbose smtp responses!0!!3|"
-		<< "B!pop!enables the pop server (if compiled-in)!0!!" << pop_level << "|"
-		<< "E!pop-port!specifies the pop listening port number!1!port!" << pop_level << "|"
+		<< "B!pop!enables the pop server if compiled-in!0!!" << pop_level << "|"
+		<< "E!pop-port!specifies the pop listening port number (requires --pop)!1!port!" << pop_level << "|"
 		<< "F!pop-auth!defines the pop server secrets file (default is \"" << pop_auth << "\")!1!file!" << pop_level << "|"
-		<< "G!pop-no-delete!disables message deletion via pop!0!!" << pop_level << "|"
-		<< "J!pop-by-name!modifies the pop spool directory according to the user name!0!!" << pop_level << "|"
+		<< "G!pop-no-delete!disables message deletion via pop (requires --pop)!0!!" << pop_level << "|"
+		<< "J!pop-by-name!modifies the pop spool directory according to the user name (requires --pop)!0!!" << pop_level << "|"
 		;
 	return ss.str() ;
 }
@@ -232,7 +232,7 @@ std::string Main::CommandLine::semanticError() const
 
 	const bool not_serving = m_getopt.contains("dont-serve") || m_getopt.contains("as-client") ;
 
-	if( not_serving )
+	if( not_serving ) // ie. if not serving admin, smtp or pop
 	{
 		if( m_getopt.contains("filter") )
 			return "the --filter switch cannot be used with --as-client or --dont-serve" ;
@@ -253,16 +253,16 @@ std::string Main::CommandLine::semanticError() const
 			return "the --poll switch cannot be used with --as-client or --dont-serve" ;
 	}
 
-	if( m_getopt.contains("dont-listen" ) )
+	if( m_getopt.contains("no-smtp" ) ) // ie. if not serving smtp
 	{
 		if( m_getopt.contains("filter") )
-			return "the --filter switch cannot be used with --dont-listen" ;
+			return "the --filter switch cannot be used with --no-smtp" ;
 
 		if( m_getopt.contains("port") )
-			return "the --port switch cannot be used with --dont-listen" ;
+			return "the --port switch cannot be used with --no-smtp" ;
 
 		if( m_getopt.contains("server-auth") )
-			return "the --server-auth switch cannot be used with --dont-listen" ;
+			return "the --server-auth switch cannot be used with --no-smtp" ;
 	}
 
 	const bool immediate = 

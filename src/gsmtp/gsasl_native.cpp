@@ -47,12 +47,19 @@ class GSmtp::SaslServerImp
 public:
 	bool m_first ;
 	const SaslServer::Secrets & m_secrets ;
+	std::string m_mechanisms ;
 	std::string m_mechanism ;
 	std::string m_challenge ;
 	bool m_authenticated ;
 	std::string m_id ;
 	std::string m_trustee ;
-	explicit SaslServerImp( const SaslServer::Secrets & ) ;
+	bool m_strict ;
+	bool m_advertise_force_one ;
+	bool m_advertise_login ;
+	bool m_advertise_cram_md5 ;
+
+public:
+	SaslServerImp( const SaslServer::Secrets & , bool , bool ) ;
 	bool init( const std::string & mechanism ) ;
 	bool validate( const std::string & secret , const std::string & response ) const ;
 	static std::string digest( const std::string & secret , const std::string & challenge ) ;
@@ -61,6 +68,7 @@ public:
 	bool trustedCore( const std::string & , const std::string & ) const ;
 	static std::string clientResponse( const std::string & secret , 
 		const std::string & challenge , bool cram , bool & error ) ;
+	std::string mechanisms( const std::string & ) const ;
 } ;
 
 // Class: GSmtp::SaslClientImp
@@ -75,11 +83,41 @@ public:
 
 // ===
 
-GSmtp::SaslServerImp::SaslServerImp( const SaslServer::Secrets & secrets ) :
+GSmtp::SaslServerImp::SaslServerImp( const SaslServer::Secrets & secrets , bool strict , bool force_one ) :
 	m_first(true) ,
 	m_secrets(secrets) ,
-	m_authenticated(false)
+	m_authenticated(false) ,
+	m_strict(strict) ,
+	m_advertise_force_one(force_one)
 {
+	m_advertise_login = m_secrets.contains("LOGIN") ;
+	m_advertise_cram_md5 = m_secrets.contains("CRAM-MD5") ;
+	if( m_strict )
+	{
+		m_advertise_login = false ;
+	}
+	if( force_one && !m_advertise_login && !m_advertise_cram_md5 )
+	{
+		if( m_strict )
+			m_advertise_cram_md5 = true ;
+		else
+			m_advertise_login = true ;
+	}
+}
+
+std::string GSmtp::SaslServerImp::mechanisms( const std::string & sep ) const
+{
+	std::string s ;
+	if( m_advertise_login )
+	{
+		s.append("LOGIN") ;
+	}
+	if( m_advertise_cram_md5 ) 
+	{
+		if( !s.empty() ) s.append( sep ) ;
+		s.append("CRAM-MD5") ;
+	}
+	return s ;
 }
 
 bool GSmtp::SaslServerImp::init( const std::string & mechanism )
@@ -200,9 +238,7 @@ bool GSmtp::SaslServerImp::trustedCore( const std::string & full , const std::st
 
 std::string GSmtp::SaslServer::mechanisms( char c ) const
 {
-	std::string sep( 1U , c ) ;
-	std::string s = std::string() + "LOGIN" + sep + "CRAM-MD5" ;
-	return s ;
+	return m_imp->mechanisms( std::string(1U,c) ) ;
 }
 
 std::string GSmtp::SaslServer::mechanism() const
@@ -216,8 +252,8 @@ bool GSmtp::SaslServer::trusted( GNet::Address a ) const
 	return m_imp->trusted(a) ;
 }
 
-GSmtp::SaslServer::SaslServer( const SaslServer::Secrets & secrets ) :
-	m_imp(new SaslServerImp(secrets))
+GSmtp::SaslServer::SaslServer( const SaslServer::Secrets & secrets , bool strict , bool force_one ) :
+	m_imp(new SaslServerImp(secrets,strict,force_one))
 {
 }
 
@@ -267,11 +303,20 @@ std::string GSmtp::SaslServer::apply( const std::string & response , bool & done
 
 			G_DEBUG( "GSmtp::SaslServer::apply: id \"" << m_imp->m_id << "\"" ) ;
 			std::string secret = m_imp->m_secrets.secret(m_imp->m_mechanism,m_imp->m_id) ;
-			m_imp->m_authenticated = m_imp->validate( secret , response_tail ) ;
+			if( secret.empty() )
+			{
+				G_WARNING( "GSmtp::SaslServer::apply: no " << m_imp->m_mechanism 
+					<< " authentication secret available for \"" << m_imp->m_id << "\"" ) ;
+				m_imp->m_authenticated = false ;
+			}
+			else
+			{
+				m_imp->m_authenticated = m_imp->validate( secret , response_tail ) ;
+			}
 		}
 		else
 		{
-			G_DEBUG( "GSmtp::SaslServer::apply: invalid number of response parts: " << part_list.size() ) ;
+			G_WARNING( "GSmtp::SaslServer::apply: invalid authentication response" ) ;
 		}
 		done = true ;
 	}
@@ -425,4 +470,21 @@ std::string GSmtp::SaslClient::preferred( const G::Strings & mechanism_list ) co
 	return result ;
 }
 
+// ==
+
+GSmtp::Valid::~Valid() 
+{
+}
+
+// ==
+
+GSmtp::SaslServer::Secrets::~Secrets()
+{
+}
+
+// ==
+
+GSmtp::SaslClient::Secrets::~Secrets()
+{
+}
 

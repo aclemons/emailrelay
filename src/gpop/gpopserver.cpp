@@ -97,7 +97,7 @@ GPop::Server::Server( Store & store , const Secrets & secrets , Config config ) 
 			GNet::Address(config.port) : 
 			GNet::Address(config.address,config.port) ;
 
-	GNet::Server::init( address ) ;
+	init( address ) ; // GNet::Server
 }
 
 void GPop::Server::report() const

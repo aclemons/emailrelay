@@ -29,8 +29,6 @@
 #include "gpath.h"
 #include "gexception.h"
 #include "gsasl.h"
-#include <iostream>
-#include <map>
 
 namespace GSmtp
 {
@@ -56,31 +54,50 @@ public:
 			// can be a path to a file, a database connection string, 
 			// etc.
 			//
-			// The 'debug-name' is used in log messages to identify 
-			// the repository succinctly.
+			// The 'debug-name' is used in log and error messages to 
+			// identify the repository.
 			//
 			// The 'server-type' parameter can be used to select 
 			// a different set of server-side authentication records 
 			// that may be stored in the same repository.
+			//
+			// Throws on error, although an empty path is not
+			// considered an error: see valid().
 
 	virtual ~Secrets() ;
 		// Destructor.
 
 	virtual bool valid() const ;
-		// Returns true if a valid file.
+		// Returns false if the path was empty.
+		//
+		// Override from Valid virtual base class.
 
 	virtual std::string id( const std::string & mechanism ) const ;
 		// Returns the default id for client-side
 		// authentication.
+		//
+		// Override from SaslClient::Secrets.
 
 	virtual std::string secret( const std::string & mechanism ) const ;
 		// Returns the default secret for client-side
 		// authentication.
+		//
+		// Override from SaslClient::Secrets.
 
 	virtual std::string secret(  const std::string & mechanism , const std::string & id ) const ;
 		// Returns the given user's secret for server-side
 		// authentication. Returns the empty string if not a 
 		// valid id.
+		//
+		// Override from SaslServer::Secrets.
+
+	virtual bool contains( const std::string & mechanism ) const ;
+		// Returns true if there is one or more server 
+		// secrets using the given mechanism. This can 
+		// be used to limit the list of mechanisms
+		// advertised by a server.
+		//
+		// Override from SaslServer::Secrets.
 
 private:
 	Secrets( const Secrets & ) ; // not implemented

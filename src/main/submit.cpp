@@ -30,7 +30,11 @@
 // * the envelope "From" field is defaulted from the header "From:" line
 // * the header "From:" line is defaulted from the envelope "From" field
 //
-// usage: submit [--spool-dir <spool-dir>] [--from <envelope-from>] [--help] [<to> ...]
+// If the verbose switch is used then the full path of the new
+// content file is printed on the standard output (suitable
+// for shell-script backticks).
+//
+// usage: submit [--verbose] [--spool-dir <spool-dir>] [--from <envelope-from>] [--help] [<to> ...]
 //
 
 #include "gdef.h"
@@ -56,7 +60,7 @@
 
 G_EXCEPTION( NoBody , "no body text" ) ;
 
-static void process( const G::Path & path , std::istream & stream , 
+static std::string process( const G::Path & spool_dir , std::istream & stream , 
 	const G::Strings & to_list , std::string from , G::Strings header )
 {
 	// look for a "From:" line in the header if not on the command-line
@@ -82,7 +86,7 @@ static void process( const G::Path & path , std::istream & stream ,
 
 	// create the output file
 	//
-	GSmtp::FileStore store( path ) ;
+	GSmtp::FileStore store( spool_dir ) ;
 	std::auto_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from ) ;
 
 	// add "To:" lines to the envelope
@@ -127,13 +131,15 @@ static void process( const G::Path & path , std::istream & stream ,
 	//
 	GNet::Address ip = GNet::Local::localhostAddress() ;
 	std::string auth_id = std::string() ;
-	msg->prepare( auth_id , ip.hostString() ) ;
+	std::string new_path = msg->prepare( auth_id , ip.hostString() ) ;
 	msg->commit() ;
+	return new_path ;
 }
 
 static void run( const G::Arg & arg )
 {
 	G::GetOpt getopt( arg , 
+		"v/verbose/prints the path of the created envelope file/0//1|"
 		"s/spool-dir/specifies the spool directory/1/dir/1|"
 		"f/from/sets the envelope sender/1/name/1|"
 		"h/help/shows this help/0//1" ) ;
@@ -164,9 +170,9 @@ static void run( const G::Arg & arg )
 		std::auto_ptr<GNet::EventLoop> event_loop( GNet::EventLoop::create() ) ;
 		event_loop->init() ;
 
-		G::Path path = GSmtp::MessageStore::defaultDirectory() ;
+		G::Path spool_dir = GSmtp::MessageStore::defaultDirectory() ;
 		if( getopt.contains("spool-dir") )
-			path = getopt.value("spool-dir") ;
+			spool_dir = getopt.value("spool-dir") ;
 
 		std::string from ;
 		if( getopt.contains("from") )
@@ -197,7 +203,9 @@ static void run( const G::Arg & arg )
 			header.push_back( line ) ;
 		} 
 
-		process( path , stream , to_list , from , header ) ;
+		std::string new_path = process( spool_dir , stream , to_list , from , header ) ;
+		if( getopt.contains("verbose") )
+			std::cout << new_path << std::endl ;
 	}
 }
 

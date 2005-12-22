@@ -50,7 +50,7 @@ namespace GSmtp
 class GPop::Secrets : public GSmtp::SaslServer::Secrets 
 {
 public:
-	G_EXCEPTION( OpenError , "cannot read secrets file" ) ;
+	G_EXCEPTION( OpenError , "cannot open pop secrets file" ) ;
 
 	static std::string defaultPath() ;
 		// Returns the default path.
@@ -58,7 +58,7 @@ public:
 	explicit Secrets( const std::string & storage_path = defaultPath() ) ;
 		// Constructor. In principle the storage_path can
 		// be a path to a file, a database connection
-		// string, etc.
+		// string, etc. Throws on error.
 
 	virtual ~Secrets() ;
 		// Destructor.
@@ -67,11 +67,19 @@ public:
 		// Returns the storage path.
 
 	virtual bool valid() const ;
-		// Returns true if a valid file.
+		// Returns true. 
+		//
+		// Override from Valid virtual base class.
 
 	virtual std::string secret(  const std::string & mechanism , const std::string & id ) const ;
 		// Returns the given user's secret. Returns the
 		// empty string if not a valid id.
+		//
+		// Override from SaslServer::Secrets.
+
+	bool contains( const std::string & mechanism ) const ;
+		// Returns true if there is one or more secrets 
+		// using the given mechanism.
 
 private:
 	Secrets( const Secrets & ) ; // not implemented

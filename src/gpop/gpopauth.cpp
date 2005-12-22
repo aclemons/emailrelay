@@ -48,7 +48,7 @@ private:
 
 GPop::AuthImp::AuthImp( const Secrets & secrets ) :
 	m_secrets(secrets) ,
-	m_sasl(secrets)
+	m_sasl(secrets,true,false) // dont advertise SASL LOGIN since we have USER/PASS
 {
 	m_sasl.init( "APOP" ) ; // for the initial challenge()
 }

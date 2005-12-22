@@ -193,11 +193,11 @@ SOURCE=..\gnet\geventserver.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\glib\gexe.cpp
+SOURCE=..\glib\gexception.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\glib\gexception.cpp
+SOURCE=..\glib\gexe.cpp
 # End Source File
 # Begin Source File
 
@@ -281,6 +281,30 @@ SOURCE=..\glib\gpidfile.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\gpop\gpopauth.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gpop\gpopsecrets.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gpop\gpopsecrets_win32.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gpop\gpopserver.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gpop\gpopserverprotocol.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gpop\gpopstore.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\glib\gprocess_win32.cpp
 # End Source File
 # Begin Source File
@@ -353,6 +377,10 @@ SOURCE=..\gsmtp\gsecrets.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\gnet\gsender.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\gnet\gserver.cpp
 # End Source File
 # Begin Source File
@@ -421,7 +449,7 @@ SOURCE=..\win32\gwinhid.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gsmtp\gxtext.cpp
+SOURCE=..\glib\gxtext.cpp
 # End Source File
 # Begin Source File
 

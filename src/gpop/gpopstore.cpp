@@ -33,14 +33,14 @@
 #include <sstream>
 #include <fstream>
 
-struct FileReader // stub -- message files are readable by group "daemon"
+struct FileReader // stub -- message files are group-readable
 {
 	FileReader() {}
 } ;
 
 // ==
 
-struct FileDeleter : private G::Root // not really necessary -- the spool directory is writeable by group "daemon"
+struct FileDeleter : private G::Root // Root not really necessary -- the spool directory is group-writeable
 {
 } ;
 
@@ -51,6 +51,7 @@ GPop::Store::Store( G::Path path , bool by_name , bool allow_delete ) :
 	m_by_name(by_name) ,
 	m_allow_delete(allow_delete)
 {
+	checkPath( path , by_name , allow_delete ) ;
 }
 
 G::Path GPop::Store::dir() const
@@ -66,6 +67,57 @@ bool GPop::Store::allowDelete() const
 bool GPop::Store::byName() const
 {
 	return m_by_name ;
+}
+
+void GPop::Store::checkPath( G::Path dir_path , bool by_name , bool allow_delete )
+{
+	if( by_name )
+	{
+		if( !valid(dir_path,false) )
+			throw InvalidDirectory() ;
+
+		G::Directory dir( dir_path ) ;
+		G::DirectoryIterator iter( dir ) ;
+		int n = 0 ;
+		while( iter.more() )
+		{
+			if( iter.isDir() )
+			{
+				n++ ;
+				if( !valid(iter.filePath(),allow_delete) )
+					; // no-op -- warning only
+			}
+		}
+		if( n == 0 )
+			G_WARNING( "GPop::Store: no sub-directories for pop-by-name found in \"" << dir_path << "\"" ) ;
+	}
+	else if( !valid(dir_path,allow_delete) )
+	{
+		throw InvalidDirectory() ;
+	}
+}
+
+bool GPop::Store::valid( G::Path dir_path , bool allow_delete )
+{
+	G::Directory dir_test( dir_path ) ;
+	bool ok = false ;
+	if( allow_delete )
+	{
+		std::string tmp = G::Directory::tmp() ;
+		FileDeleter claim_deleter ;
+		ok = dir_test.valid() && dir_test.writeable(tmp) ;
+	}
+	else
+	{
+		FileReader claim_reader ;
+		ok = dir_test.valid() ;
+	}
+	if( !ok )
+	{
+		const char * op = allow_delete ? "writing" : "reading" ;
+		G_WARNING( "GPop::Store: directory not valid for " << op << ": \"" << dir_path << "\"" ) ;
+	}
+	return ok ;
 }
 
 // ===
@@ -123,7 +175,6 @@ void GPop::StoreLock::lock( const std::string & user )
 		while( iter.more() )
 		{
 			File file( contentPath(iter.fileName().str()) ) ;
-			G_DEBUG( "StoreLock::lock: " << file.name << " (" << file.size << ")" ) ;
 			m_initial.insert( file ) ;
 		}
 	}
@@ -167,7 +218,7 @@ bool GPop::StoreLock::valid( int id ) const
 GPop::StoreLock::Set::iterator GPop::StoreLock::find( int id )
 {
 	G_ASSERT( valid(id) ) ;
-	Set::const_iterator initial_p = m_initial.begin() ;
+	Set::iterator initial_p = m_initial.begin() ;
 	for( int i = 1 ; i < id && initial_p != m_initial.end() ; i++ , ++initial_p ) ;
 	return initial_p ;
 }
@@ -182,7 +233,7 @@ GPop::StoreLock::Set::const_iterator GPop::StoreLock::find( int id ) const
 
 GPop::StoreLock::Set::iterator GPop::StoreLock::find( const std::string & name )
 {
-	Set::const_iterator current_p = m_current.begin() ;
+	Set::iterator current_p = m_current.begin() ;
 	for( ; current_p != m_current.end() ; ++current_p )
 	{
 		if( (*current_p).name == name )
@@ -218,8 +269,14 @@ std::auto_ptr<std::istream> GPop::StoreLock::get( int id ) const
 	G_DEBUG( "GPop::StoreLock::get: " << id << ": " << path(id) ) ;
 
 	std::auto_ptr<std::ifstream> file ;
-	FileReader claim_reader ;
-	file <<= new std::ifstream( path(id).str().c_str() ) ;
+	{
+		FileReader claim_reader ;
+		file <<= new std::ifstream( path(id).str().c_str() ) ;
+	}
+
+	if( ! file->good() )
+		throw CannotRead( path(id).str() ) ;
+
 	return std::auto_ptr<std::istream>( file.release() ) ;
 }
 
@@ -270,8 +327,11 @@ void GPop::StoreLock::doCommit( Store & store ) const
 
 void GPop::StoreLock::deleteFile( const G::Path & path , bool & all_ok ) const
 {
-	FileDeleter claim_deleter ;
-	bool ok = G::File::remove( path , G::File::NoThrow() ) ;
+	bool ok = false ;
+	{
+		FileDeleter claim_deleter ;
+		ok = G::File::remove( path , G::File::NoThrow() ) ;
+	}
 	all_ok = ok && all_ok ;
 	if( ! ok )
 		G_ERROR( "StoreLock::remove: failed to delete " << path ) ;

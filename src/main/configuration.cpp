@@ -26,6 +26,7 @@
 #include "configuration.h"
 #include "commandline.h"
 #include "gmessagestore.h"
+#include "gpopsecrets.h"
 #include "gstr.h"
 #include "gdebug.h"
 #include <sstream>
@@ -61,24 +62,26 @@ std::string Main::Configuration::str( const std::string & p , const std::string 
 {
 	std::ostringstream ss ;
 	ss
-		<< p << "listening port: " << (doServing()?G::Str::fromUInt(port()):na()) << eol
-		<< p << "listening interface: " << (doServing()?any(listeningInterface()):na()) << eol
-		<< p << "next server address: " << (serverAddress().length()?serverAddress():na()) << eol
+		<< p << "allow remote clients? " << yn(allowRemoteClients()) << eol
+		<< p << "listening interface: " << (doServing()&&doSmtp()?any(listeningInterface()):na()) << eol
+		<< p << "smtp listening port: " << (doServing()&&doSmtp()?G::Str::fromUInt(port()):na()) << eol
+		<< p << "pop listening port: " << (doServing()&&doPop()?G::Str::fromUInt(popPort()):na()) << eol
+		<< p << "admin listening port: " << (doAdmin()?G::Str::fromUInt(adminPort()):na()) << eol
+		<< p << "next smtp server address: " << (serverAddress().length()?serverAddress():na()) << eol
 		<< p << "spool directory: " << spoolDir() << eol
+		<< p << "smtp client secrets file: " << na(clientSecretsFile()) << eol
+		<< p << "smtp server secrets file: " << na(serverSecretsFile()) << eol
+		<< p << "pop server secrets file: " << na(popSecretsFile()) << eol
+		<< p << "pid file: " << (usePidFile()?pidFile():na()) << eol
 		<< p << "immediate forwarding? " << yn(immediate()) << eol
 		<< p << "mail processor: " << (useFilter()?filter():na()) << eol
 		<< p << "address verifier: " << na(verifier()) << eol
-		<< p << "admin port: " << (doAdmin()?G::Str::fromUInt(adminPort()):na()) << eol
 		<< p << "run as daemon? " << yn(daemon()) << eol
 		<< p << "verbose logging? " << yn(verbose()) << eol
 		<< p << "debug logging? " << yn(debug()) << eol
 		<< p << "log to stderr/syslog? " << yn(log()) << eol
 		<< p << "use syslog? " << yn(syslog()) << eol
 		<< p << "close stderr? " << yn(closeStderr()) << eol
-		<< p << "allow remote clients? " << yn(allowRemoteClients()) << eol
-		<< p << "pid file: " << (usePidFile()?pidFile():na()) << eol
-		<< p << "client secrets file: " << na(clientSecretsFile()) << eol
-		<< p << "server secrets file: " << na(serverSecretsFile()) << eol
 		<< p << "connect timeout: " << connectionTimeout() << "s" << eol
 		<< p << "response timeout: " << responseTimeout() << "s" << eol
 		<< p << "domain override: " << na(fqdn()) << eol
@@ -225,7 +228,7 @@ unsigned int Main::Configuration::pollingTimeout() const
 
 bool Main::Configuration::doSmtp() const
 {
-	return !m_cl.contains("dont-listen") ;
+	return !m_cl.contains("no-smtp") ;
 }
 
 bool Main::Configuration::doPop() const
@@ -307,7 +310,7 @@ std::string Main::Configuration::clientSecretsFile() const
 
 std::string Main::Configuration::popSecretsFile() const
 {
-	return m_cl.contains("pop-auth") ? m_cl.value("pop-auth") : std::string() ;
+	return m_cl.contains("pop-auth") ? m_cl.value("pop-auth") : GPop::Secrets::defaultPath() ;
 }
 
 std::string Main::Configuration::serverSecretsFile() const

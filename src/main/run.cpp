@@ -220,7 +220,8 @@ void Main::Run::runCore()
 	//
 	m_client_secrets <<= new GSmtp::Secrets( cfg().clientSecretsFile() , "client" ) ;
 	GSmtp::Secrets server_secrets( cfg().serverSecretsFile() , "server" ) ;
-	GPop::Secrets pop_secrets( cfg().popSecretsFile() ) ;
+	if( cfg().doPop() )
+		m_pop_secrets <<= new GPop::Secrets( cfg().popSecretsFile() ) ;
 
 	// daemonise
 	//
@@ -243,7 +244,7 @@ void Main::Run::runCore()
 	if( cfg().doServing() )
 	{
 		doServing( *m_client_secrets.get() , *m_store.get() , server_secrets , 
-			pop_store , pop_secrets , pid_file , *event_loop.get() ) ;
+			pop_store , *m_pop_secrets.get() , pid_file , *event_loop.get() ) ;
 	}
 }
 

@@ -20,11 +20,14 @@
 #
 # mingw.mak
 #
+# See ../mingw-common.mak for help.
+#
 
 mk_sources=\
 	commandline.cpp \
 	configuration.cpp \
 	legal.cpp \
+	news.cpp \
 	output.cpp \
 	run.cpp \
 	winapp.cpp \
@@ -32,7 +35,7 @@ mk_sources=\
 	winmain.cpp \
 	winmenu.cpp
 
-libs=../gsmtp/gsmtp.a ../gnet/gnet.a ../win32/gwin32.a ../glib/glib.a 
+libs=../gpop/gpop.a ../gsmtp/gsmtp.a ../gnet/gnet.a ../win32/gwin32.a ../glib/glib.a 
 syslibs=-lgdi32 -lwsock32
 rc=emailrelay.rc
 fake_mc=mingw.exe
@@ -45,10 +48,10 @@ all: $(mk_target)
 include ../mingw-common.mak
 
 $(mk_target): $(mk_objects) $(res) $(libs)
-	$(mk_gcc) $(mk_gcc_flags) -o $(mk_target) $(mk_objects) $(res) $(libs) $(syslibs)
+	$(mk_link) $(mk_link_flags) -o $(mk_target) $(mk_objects) $(res) $(libs) $(syslibs)
 
-$(fake_mc): mingw.c
-	$(mk_gcc) -o $@ $<
+$(fake_mc): mingw.o
+	$(mk_link) $(mk_link_flags) -o $@ $<
 
 $(mc_output): $(fake_mc) messages.mc
 	$(fake_mc) messages.mc

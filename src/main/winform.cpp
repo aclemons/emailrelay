@@ -26,6 +26,7 @@
 #include "gmonitor.h"
 #include "run.h"
 #include "winform.h"
+#include "news.h"
 #include "winapp.h"
 #include "legal.h"
 #include "resource.h"
@@ -53,6 +54,9 @@ std::string Main::WinForm::text() const
 	std::ostringstream ss ;
 	ss
 		<< "E-MailRelay V" << Main::Run::versionNumber() << crlf << crlf
+		<< Main::News::text(crlf+crlf)
+		<< Main::Legal::warranty("",crlf) << crlf 
+		<< Main::Legal::copyright() << crlf << crlf 
 		<< "Configuration..." << crlf 
 		<< m_cfg.str("* ",crlf) 
 		;
@@ -62,10 +66,6 @@ std::string Main::WinForm::text() const
 		ss << crlf << "Network connections..." << crlf ;
 		GNet::Monitor::instance()->report( ss , "* " , crlf ) ;
 	}
-
-	ss 
-		<< crlf << Main::Legal::warranty("",crlf) 
-		<< crlf << Main::Legal::copyright() ;
 
 	return ss.str() ;
 }

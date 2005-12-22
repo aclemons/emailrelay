@@ -69,6 +69,7 @@ Key classes are:
 - Server
 - ServerProtocol
 - Store
+- StoreLock
 
  */
 

@@ -34,9 +34,9 @@ class GPop::SecretsImp
 {
 public:
 	explicit SecretsImp( const std::string & path ) ;
-	bool valid() const ;
 	std::string path() const ;
 	std::string secret(  const std::string & mechanism , const std::string & id ) const ;
+	bool contains( const std::string & mechanism ) const ;
 	std::string m_path ;
 	GSmtp::Secrets m_secrets ;
 } ;
@@ -60,20 +60,28 @@ std::string GPop::Secrets::path() const
 
 bool GPop::Secrets::valid() const
 {
-	return m_imp->valid() ;
+	return true ;
 }
 
-std::string GPop::Secrets::secret(  const std::string & mechanism , const std::string & id ) const
+std::string GPop::Secrets::secret( const std::string & mechanism , const std::string & id ) const
 {
 	return m_imp->secret( mechanism , id ) ;
+}
+
+bool GPop::Secrets::contains( const std::string & mechanism ) const
+{
+	return m_imp->contains( mechanism ) ;
 }
 
 // ===
 
 GPop::SecretsImp::SecretsImp( const std::string & path ) :
 	m_path(path) ,
-	m_secrets( path , "pop-server" )
+	m_secrets( path , "pop-server" ) // throws on error
 {
+	// throw if an empty path
+	if( !m_secrets.valid() )
+		throw GPop::Secrets::OpenError(path) ;
 }
 
 std::string GPop::SecretsImp::path() const
@@ -81,14 +89,13 @@ std::string GPop::SecretsImp::path() const
 	return m_path ;
 }
 
-bool GPop::SecretsImp::valid() const
-{
-	return m_secrets.valid() ;
-}
-
 std::string GPop::SecretsImp::secret(  const std::string & mechanism , const std::string & id ) const
 {
 	return m_secrets.secret( mechanism , id ) ;
 }
 
+bool GPop::SecretsImp::contains( const std::string & mechanism ) const
+{
+	return m_secrets.contains( mechanism ) ;
+}
 

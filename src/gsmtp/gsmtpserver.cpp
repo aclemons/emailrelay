@@ -76,7 +76,7 @@ GSmtp::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info ,
 	const Secrets & server_secrets , const Verifier & verifier , 
 	std::auto_ptr<ServerProtocol::Text> ptext ,
 	ServerProtocol::Config protocol_config ) :
-		GNet::ServerPeer( peer_info ) ,
+		GNet::Sender( peer_info , true ) ,
 		m_server( server ) ,
 		m_buffer( crlf() ) ,
 		m_verifier( verifier ) ,
@@ -99,61 +99,37 @@ void GSmtp::ServerPeer::onDelete()
 	G_LOG_S( "GSmtp::ServerPeer: smtp connection closed: " << peerAddress().second.displayString() ) ;
 }
 
-void GSmtp::ServerPeer::onData( const char * p , size_t n )
+void GSmtp::ServerPeer::onResume()
 {
-	for( m_buffer.add(p,n) ; m_buffer.more() ; m_buffer.discard() )
-	{
-		bool this_deleted = processLine( m_buffer.current() ) ;
-		if( this_deleted )
-			return ;
-	}
+	// never gets here -- see GNet::Sender ctor
 }
 
-bool GSmtp::ServerPeer::processLine( const std::string & line )
+void GSmtp::ServerPeer::onData( const char * p , size_t n )
 {
 	try
 	{
-		return m_protocol.apply( line ) ;
+		// apply lines to the protocol
+		for( m_buffer.add(p,n) ; m_buffer.more() ; m_buffer.discard() )
+		{
+			m_protocol.apply( m_buffer.current() ) ;
+		}
 	}
-	catch( Verifier::AbortRequest & e )
+	catch( Verifier::AbortRequest & )
 	{
 		G_WARNING( "GSmtp::ServerPeer::processLine: verifier abort request: disconnecting from " <<
 			peerAddress().second.displayString() ) ;
 		doDelete() ;
-		return true ;
+	}
+	catch( std::exception & e )
+	{
+		G_LOG( "GSmtp::ServerPeer::onData: " << e.what() ) ;
+		doDelete() ;
 	}
 }
 
-void GSmtp::ServerPeer::protocolSend( const std::string & line , bool allow_delete_this )
+void GSmtp::ServerPeer::protocolSend( const std::string & line )
 {
-	if( line.length() == 0U )
-		return ;
-
-	ssize_t rc = socket().write( line.data() , line.length() ) ;
-	if( rc < 0 && ! socket().eWouldBlock() )
-	{
-		if( allow_delete_this )
-			doDelete() ; // onDelete() and "delete this"
-	}
-	else if( rc < 0 || static_cast<size_t>(rc) < line.length() )
-	{
-		G_ERROR( "GSmtp::ServerPeer::protocolSend: " <<
-			"flow-control asserted: connection blocked" ) ;
-
-		// an SMTP server only sends short status messages
-		// back to the client so it is pretty wierd if the 
-		// client/network cannot cope -- so just drop the 
-		// connection
-		//
-		if( allow_delete_this )
-			doDelete() ;
-	}
-}
-
-void GSmtp::ServerPeer::protocolDone()
-{
-	G_DEBUG( "GSmtp::ServerPeer: disconnecting from " << peerAddress().second.displayString() ) ;
-	doDelete() ; // onDelete() and "delete this"
+	send( line , 0U ) ; // GNet::Sender -- may throw SendError
 }
 
 // ===

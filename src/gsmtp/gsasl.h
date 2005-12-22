@@ -39,7 +39,7 @@ namespace GSmtp
 	class SaslClientImp ;
 	class SaslServer ;
 	class SaslServerImp ;
-	struct Valid ;
+	class Valid ;
 }
 
 // Class: GSmtp::Valid
@@ -50,7 +50,8 @@ public:
 	virtual bool valid() const = 0 ;
 		// Returns true if a valid source of information.
 
-	virtual ~Valid() {}
+	virtual ~Valid() ;
+		// Destructor.
 } ;
 
 // Class: GSmtp::SaslServer
@@ -69,12 +70,13 @@ public:
 //
 // Usage:
 /// SaslServer sasl( secrets ) ;
-/// if( sasl.init("MD5") )
+/// client.advertise( sasl.mechanisms() ) ;
+/// if( sasl.init(client.preferredMechanism()) )
 /// {
 ///   client.send( sasl.initialChallenge() ) ;
 ///   for(;;)
 ///   {
-///     std::string reply = client.read() ;
+///     std::string reply = client.receive() ;
 ///     bool done = false ;
 ///     std::string challenge = sasl.apply( reply , done ) ;
 ///     if( done ) break ;
@@ -88,14 +90,24 @@ public:
 class GSmtp::SaslServer 
 {
 public:
-	struct Secrets : virtual Valid // An interface used by GSmtp::SaslServer to obtain authentication secrets.
+	class Secrets : public virtual Valid // An interface used by GSmtp::SaslServer to obtain authentication secrets.
 	{
-		virtual std::string secret(  const std::string & mechanism , const std::string & id ) const = 0 ;
-			// Returns the secret for the given mechanism and id.
+		public: virtual std::string secret( const std::string & mechanism, const std::string & id ) const = 0 ;
+		public: virtual ~Secrets() ;
+		public: virtual bool contains( const std::string & mechanism ) const = 0 ;
+		private: void operator=( const Secrets & ) ; // not implemented
 	} ;
 
-	explicit SaslServer( const Secrets & ) ;
-		// Constructor. The reference is kept.
+	SaslServer( const Secrets & , bool strict , bool force_one_mechanism ) ;
+		// Constructor. The secrets reference is kept.
+		//
+		// If the 'strict' flag is false then LOGIN is treated 
+		// as a standard mechanism and therefore advertised
+		// by mechanisms().
+		//
+		// If the 'force' flag is true then the list of
+		// mechanisms returned by mechanisms() will never
+		// be empty, even if no authentication is possible.
 
 	~SaslServer() ;
 		// Destructor.
@@ -103,6 +115,13 @@ public:
 	bool active() const ;
 		// Returns true if the constructor's "secrets" object 
 		// was valid. See also Secrets::valid().
+
+	std::string mechanisms( char sep = ' ' ) const ;
+		// Returns a list of supported, standard mechanisms
+		// that can be advertised to the client.
+		//
+		// Mechanisms (eg. APOP) may still be accepted by 
+		// init() even though they are not advertised.
 
 	bool init( const std::string & mechanism ) ;
 		// Initialiser. Returns true if a supported mechanism.
@@ -134,13 +153,6 @@ public:
 		// Returns the authenticated or trusted identity. Returns the
 		// empty string if not authenticated and not trusted.
 
-	std::string mechanisms( char sep = ' ' ) const ;
-		// Returns a list of supported, standard mechanisms
-		// (including LOGIN).
-		//
-		// Other non-standard mechanisms (APOP) may be accepted
-		// by init().
-
 	bool trusted( GNet::Address ) const ;
 		// Returns true if a trusted client that
 		// does not need to authenticate.
@@ -163,13 +175,12 @@ private:
 class GSmtp::SaslClient 
 {
 public:
-	struct Secrets : virtual Valid // An interface used by GSmtp::SaslClient to obtain authentication secrets.
+	class Secrets : public virtual Valid // An interface used by GSmtp::SaslClient to obtain authentication secrets.
 	{
-		virtual std::string id( const std::string & ) const = 0 ;
-			// Returns the default id.
-
-		virtual std::string secret( const std::string & ) const = 0 ;
-			// Returns the secret for the given id.
+		public: virtual std::string id( const std::string & mechanism ) const = 0 ;
+		public: virtual std::string secret( const std::string & id ) const = 0 ;
+		public: virtual ~Secrets() ;
+		private: void operator=( const Secrets & ) ; // not implemented
 	} ;
 
 	SaslClient( const Secrets & secrets , const std::string & server_name ) ;

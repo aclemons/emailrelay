@@ -98,7 +98,7 @@ void GSmtp::Client::reset()
 
 std::string GSmtp::Client::startSending( const std::string & s , unsigned int connection_timeout )
 {
-	size_t pos = s.find(':') ;
+	size_t pos = s.rfind(':') ;
 	if( pos == std::string::npos )
 		return "invalid address string: no colon (<host/ip>:<service/port>)" ;
 

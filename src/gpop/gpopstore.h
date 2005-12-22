@@ -37,6 +37,7 @@ namespace GPop
 {
 	class Store ;
 	class StoreLock ;
+	class StoreLockEntry ;
 }
 
 // Class: GPop::Store
@@ -45,6 +46,8 @@ namespace GPop
 class GPop::Store 
 {
 public:
+	G_EXCEPTION( InvalidDirectory , "invalid spool directory" ) ;
+
 	Store( G::Path dir , bool by_name , bool allow_delete ) ;
 		// Constructor.
 
@@ -61,11 +64,32 @@ public:
 private:
 	Store( const Store & ) ;
 	void operator=( const Store & ) ;
+	static void checkPath( G::Path , bool , bool ) ;
+	static bool valid( G::Path , bool ) ;
 
 private:
 	G::Path m_path ;
 	bool m_by_name ;
 	bool m_allow_delete ;
+} ;
+
+// Class: GPop::StoreLockEntry
+// Description: Represents a file in the GPop::Store.
+// See also: GPop::StoreLock
+//
+class GPop::StoreLockEntry  
+{
+public:
+	int id ;
+	typedef unsigned long Size ;
+	Size size ;
+	std::string uidl ;
+	StoreLockEntry( int id_ , Size size_ , const std::string & uidl_ ) :
+		id(id_) ,
+		size(size_) ,
+		uidl(uidl_)
+	{
+	}
 } ;
 
 // Class: GPop::StoreLock
@@ -75,20 +99,10 @@ private:
 class GPop::StoreLock 
 {
 public:
-	G_EXCEPTION( CannotDelete , "cannot delete message" ) ;
-	typedef unsigned long Size ;
-	struct Entry // Represents a file in the GPop::Store.
-	{
-		int id ;
-		StoreLock::Size size ;
-		std::string uidl ;
-		Entry( int id_ , StoreLock::Size size_ , const std::string & uidl_ ) :
-			id(id_) ,
-			size(size_) ,
-			uidl(uidl_)
-		{
-		}
-	} ;
+	G_EXCEPTION( CannotDelete , "cannot delete message file" ) ;
+	G_EXCEPTION( CannotRead , "cannot read message file" ) ;
+	typedef StoreLockEntry::Size Size ;
+	typedef StoreLockEntry Entry ;
 	typedef std::list<Entry> List ;
 	typedef void (*Fn)(std::ostream&,const std::string&) ;
 
@@ -147,11 +161,11 @@ private:
 	struct File // A private implementation class used by GPop::StoreLock.
 	{
 		std::string name ; // envelope
-		StoreLock::Size size ;
+		StoreLockEntry::Size size ;
 		explicit File( const G::Path & ) ;
 		File( const std::string & name_ , const std::string & size_string ) ;
 		bool operator<( const File & ) const ;
-		static StoreLock::Size toSize( const std::string & s ) ;
+		static StoreLockEntry::Size toSize( const std::string & s ) ;
 	} ;
 	typedef std::set<File> Set ;
 

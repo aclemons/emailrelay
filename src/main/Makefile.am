@@ -29,13 +29,15 @@ EXTRA_DIST=\
 	doxygen.cfg \
 	doxygen.h \
 	emailrelay.dsp \
-	emailrelay.dsw \
 	emailrelay.rc \
 	icon-32.ico \
 	icon2.ico \
 	icon3.ico \
 	icon4.ico \
+	icon5.ico \
 	messages.mc \
+	news.cpp \
+	news.h \
 	passwd.dsp \
 	poke.dsp \
 	resource.h \
@@ -53,8 +55,8 @@ EXTRA_DIST=\
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\"
 
-e_sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd
-e_libexec_PROGRAMS = emailrelay-poke
+sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd
+libexec_PROGRAMS = emailrelay-poke
 e_spool_DATA = 
 
 emailrelay_SOURCES = \
@@ -74,7 +76,8 @@ emailrelay_LDADD = \
 	$(top_builddir)/src/gpop/$(POPLIB) \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
-	$(top_builddir)/src/gnet/libgnet.a
+	$(top_builddir)/src/gnet/libgnet.a \
+	$(top_builddir)/src/gnet/lib$(IP).a
 
 emailrelay_poke_SOURCES = poke.c
 emailrelay_poke_LDADD =
@@ -86,17 +89,18 @@ emailrelay_submit_SOURCES = submit.cpp legal.cpp
 emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
-	$(top_builddir)/src/gnet/libgnet.a
+	$(top_builddir)/src/gnet/libgnet.a \
+	$(top_builddir)/src/gnet/lib$(IP).a
 
-install-data-local: install-e_sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS
+install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-libexecPROGRAMS
 	-chgrp daemon $(DESTDIR)$(e_spooldir)
 	-chmod 775 $(DESTDIR)$(e_spooldir)
-	-chgrp daemon $(DESTDIR)$(e_sbindir)/emailrelay-submit
-	-chmod g+s $(DESTDIR)$(e_sbindir)/emailrelay-submit
+	-chgrp daemon $(DESTDIR)$(sbindir)/emailrelay-submit
+	-chmod g+s $(DESTDIR)$(sbindir)/emailrelay-submit
 
 install-exec-local:
 
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_spooldir) 2>/dev/null
-	-rmdir $(DESTDIR)$(e_libexecdir) 2>/dev/null
+	-rmdir $(DESTDIR)$(libexecdir) 2>/dev/null
 

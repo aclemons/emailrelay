@@ -25,6 +25,7 @@
 #include "gpop.h"
 #include "gpopserverprotocol.h"
 #include "gstr.h"
+#include "gmemory.h"
 #include "gbase64.h"
 #include "gassert.h"
 #include "glog.h"
@@ -39,7 +40,9 @@ GPop::ServerProtocol::ServerProtocol( Sender & sender , Store & store , const Se
 		m_secrets(secrets) ,
 		m_auth(m_secrets) ,
 		m_peer_address(peer_address) ,
-		m_fsm(sStart,sEnd,s_Same,s_Any)
+		m_fsm(sStart,sEnd,s_Same,s_Any) ,
+		m_body_limit(-1L) ,
+		m_in_body(false)
 {
 	// (dont send anything to the peer from this ctor -- the Sender object is not fuly constructed)
 
@@ -129,9 +132,8 @@ void GPop::ServerProtocol::sendContent()
 	if( end_of_content )
 	{
 		G_LOG( "GPop::ServerProtocol: tx>>: ." ) ;
-		m_content.reset() ; // free up resources
-		State new_state = m_fsm.apply( *this , eSent , "" ) ; // sData -> sActive
-		G_ASSERT( new_state == sActive ) ;
+		m_content <<= 0 ; // free up resources
+		m_fsm.apply( *this , eSent , "" ) ; // sData -> sActive
 	}
 }
 
@@ -145,15 +147,17 @@ bool GPop::ServerProtocol::sendContentLine( std::string & line , bool & stop )
 {
 	G_ASSERT( m_content.get() != NULL ) ;
 
-	bool limited = m_content_limit == 0L ;
-	if( m_content_limit > 0L )
-		m_content_limit-- ;
+	// maintain the line limit
+	bool limited = m_in_body && m_body_limit == 0L ;
+	if( m_body_limit > 0L && m_in_body )
+		m_body_limit-- ;
 
+	// read the line of text
 	line.erase( 1U ) ; // leave "."
 	G::Str::readLineFrom( *(m_content.get()) , crlf() , line , false ) ;
 
+	// add crlf and choose an offset
 	bool eof = ! m_content->good() ;
-	//G_DEBUG( "ServerProtocol::sendContentLine: " << (line.length()-1U) << ", " << eof << ", " << limited ) ;
 	size_t offset = 0U ;
 	if( eof || limited )
 	{
@@ -167,8 +171,15 @@ bool GPop::ServerProtocol::sendContentLine( std::string & line , bool & stop )
 		line.append( crlf() ) ;
 		offset = line.at(1U) == '.' ? 0U : 1U ;
 	}
+
+	// maintain the in-body flag
+	if( !m_in_body && line.length() == (offset+2U) ) 
+		m_in_body = true ;
+
+	// send it
 	bool line_fully_sent = m_sender.protocolSend( line , offset ) ;
 
+	// continue to send while not finished or blocked by flow-control
 	stop = ( limited || eof ) && line_fully_sent ;
 	const bool pause = limited || eof || ! line_fully_sent ;
 	return !pause ;
@@ -260,6 +271,7 @@ void GPop::ServerProtocol::sendList( const std::string & line , bool uidl )
 {
 	std::string id_string = commandParameter( line ) ;
 
+	// parse and check the id if supplied
 	int id = -1 ;
 	if( ! id_string.empty() )
 	{
@@ -271,17 +283,20 @@ void GPop::ServerProtocol::sendList( const std::string & line , bool uidl )
 		}
 	}
 
+	// send back the list with sizes or uidls
+	bool multi_line = id == -1 ;
 	GPop::StoreLock::List list = m_store_lock.list( id ) ;
 	std::ostringstream ss ;
-	ss << "+OK " << list.size() << " message(s)" << crlf() ;
+	ss << "+OK " ;
+	if( multi_line ) ss << list.size() << " message(s)" << crlf() ;
 	for( GPop::StoreLock::List::iterator p = list.begin() ; p != list.end() ; ++p )
 	{
 		ss << (*p).id << " " ;
 		if( uidl ) ss << (*p).uidl ;
 		if( !uidl ) ss << (*p).size ;
-		ss << crlf() ;
+		if( multi_line ) ss << crlf() ;
 	}
-	ss << "." ;
+	if( multi_line ) ss << "." ;
 	send( ss.str() ) ;
 }
 
@@ -296,7 +311,7 @@ void GPop::ServerProtocol::doRetr( const std::string & line , bool & more )
 	else
 	{
 		m_content = m_store_lock.get( id ) ;
-		m_content_limit = -1L ;
+		m_body_limit = -1L ;
 
 		std::ostringstream ss ;
 		ss << "+OK " << m_store_lock.byteCount(id) << " octets" ;
@@ -317,7 +332,8 @@ void GPop::ServerProtocol::doTop( const std::string & line , bool & more )
 	else
 	{
 		m_content = m_store_lock.get( id ) ;
-		m_content_limit = n ;
+		m_body_limit = n ;
+		m_in_body = false ;
 		sendOk() ;
 	}
 }
@@ -353,10 +369,10 @@ void GPop::ServerProtocol::doNothing( const std::string & , bool & )
 
 void GPop::ServerProtocol::doAuth( const std::string & line , bool & ok )
 {
-	std::string mechanism = commandParameter(line) ;
+	std::string mechanism = G::Str::upper( commandParameter(line) ) ;
 
-	// reject the LOGIN mechanism here since USER/PASS is available and
-	// to keep things simple we only want one-step challenge-response
+	// reject the LOGIN mechanism here since we did not avertise it
+	// and we only want a one-step challenge-response dialogue
 
 	bool supported = mechanism != "LOGIN" && m_auth.init( mechanism ) ;
 	if( ! supported )
@@ -384,7 +400,6 @@ void GPop::ServerProtocol::doAuthData( const std::string & line , bool & ok )
 	else
 	{
 		sendError() ;
-		return ;
 	}
 }
 
@@ -401,7 +416,8 @@ void GPop::ServerProtocol::doCapa( const std::string & , bool & )
 	send( "USER" ) ;
 	send( "TOP" ) ;
 	send( "UIDL" ) ;
-	send( std::string() + "SASL " + m_auth.mechanisms() ) ;
+	if( ! m_auth.mechanisms().empty() )
+		send( std::string() + "SASL " + m_auth.mechanisms() ) ;
 	send( "." ) ;
 }
 
@@ -449,7 +465,7 @@ void GPop::ServerProtocol::onTimeout()
 
 void GPop::ServerProtocol::send( std::string line )
 {
-	G_LOG( "GPop::ServerProtocol: tx>>: \"" << line << "\"" ) ;
+	G_LOG( "GPop::ServerProtocol: tx>>: \"" << G::Str::toPrintableAscii(line) << "\"" ) ;
 	line.append( crlf() ) ;
 	m_sender.protocolSend( line , 0U ) ;
 }

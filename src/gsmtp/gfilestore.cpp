@@ -125,21 +125,28 @@ std::string GSmtp::FileStore::format( int n )
 //static
 void GSmtp::FileStore::checkPath( const G::Path & directory_path )
 {
-	FileWriter claim_writer ;
 	G::Directory dir_test( directory_path ) ;
+	bool ok = false ;
 
-	bool test_for_creation = false ;
-	if( ! dir_test.valid(test_for_creation) )
+	// fail if not readable (after switching effective userid)
+	{
+		FileWriter claim_writer ;
+		ok = dir_test.valid() ;
+	}
+	if( !ok )
 	{
 		throw InvalidDirectory( directory_path.str() ) ;
 	}
 
-	test_for_creation = true ;
-	if( ! dir_test.valid(test_for_creation) )
+	// warn if not writeable (after switching effective userid)
 	{
-		G_WARNING( "GSmtp::MessageStore: "
-			<< "directory not writable: \""
-			<< directory_path << "\"" ) ;
+		std::string tmp = G::Directory::tmp() ;
+		FileWriter claim_writer ;
+		ok = dir_test.writeable(tmp) ;
+	}
+	if( !ok )
+	{
+		G_WARNING( "GSmtp::MessageStore: directory not writable: \"" << directory_path << "\"" ) ;
 	}
 }
 
