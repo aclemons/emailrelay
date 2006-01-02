@@ -546,7 +546,7 @@ int GNet::Address::domain() const
 	return defaultDomain() ;
 }
 
-G::Strings GNet::Address::wildcards()
+G::Strings GNet::Address::wildcards() const
 {
 	std::string display_string = displayString(false) ;
 
