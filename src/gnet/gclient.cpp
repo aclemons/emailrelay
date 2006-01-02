@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -355,7 +355,7 @@ std::string GNet::ClientImp::startConnecting( const Address & remote_address ,
 
 	// create and open a socket
 	//
-	m_s = new StreamSocket ;
+	m_s = new StreamSocket( remote_address ) ;
 	if( !s().valid() )
 	{
 		return std::string( "cannot open socket" ) ;

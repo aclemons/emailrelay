@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -23,9 +23,23 @@
 
 #include "gdef.h"
 #include "glocal.h"
+#include "gassert.h"
 #include "gdebug.h"
+#include <sstream>
 
+std::string GNet::Local::m_fqdn ;
 std::string GNet::Local::m_fqdn_override ;
+GNet::Address GNet::Local::m_canonical_address(1U) ;
+
+GNet::Address GNet::Local::canonicalAddress()
+{
+	if( m_canonical_address.port() == 1U )
+	{
+		m_canonical_address = canonicalAddressImp() ;
+		G_ASSERT( m_canonical_address.port() != 1U ) ;
+	}
+	return m_canonical_address ;
+}
 
 std::string GNet::Local::domainname()
 {
@@ -45,14 +59,26 @@ GNet::Address GNet::Local::localhostAddress()
 
 std::string GNet::Local::fqdn()
 {
-	return 
-		m_fqdn_override.empty() ?
-			fqdnImp() :
-			m_fqdn_override ;
+	if( m_fqdn.empty() )
+	{
+		m_fqdn = m_fqdn_override.empty() ? fqdnImp() : m_fqdn_override ;
+	}
+	return m_fqdn ;
 }
 
 void GNet::Local::fqdn( const std::string & override )
 {
 	m_fqdn_override = override ;
+}
+
+bool GNet::Local::isLocal( const Address & address )
+{
+	std::string reason ;
+	return isLocal( address , reason ) ;
+}
+
+bool GNet::Local::isLocal( const Address & address , std::string & reason )
+{
+	return address.isLocal(reason,canonicalAddress()) ;
 }
 

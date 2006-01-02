@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -51,6 +51,8 @@ namespace GNet
 // The main disagvantage is that flow control has to be managed 
 // explicitly: see Socket::write() and Socket::eWouldBlock().)
 //
+// Exceptions are _not_ used for error reporting.
+//
 class GNet::Socket  
 {
 public:
@@ -74,30 +76,11 @@ public:
 		// peer. This can be used to see if a
 		// connect succeeded.
 
-	virtual void close() ;
-		// Closes the socket.
-		//
-		// Postcondition: !valid()
-
-	virtual bool reopen() = 0 ;
-		// Reopens a closed socket. The new socket is
-		// _not_ registered with the event source to 
-		// receive read and write events.
-		//
-		// Returns false on error.
-		//
-		// Postcondition: !valid()
-
-	bool bind( const Address &address ) ;
+	bool bind( const Address & address ) ;
 		// Binds the socket with an INADDR_ANY network address
 		// and the port number taken from the given
 		// address. This is used for listening
 		// sockets.
-
-	bool bind() ;
-		// Binds the socket with an INADDR_ANY network address
-		// and a zero port number. This is used to
-		// initialise the socket prior to connect().
 
 	bool canBindHint( const Address & address ) ;
 		// Returns true if the socket can probably be 
@@ -105,9 +88,10 @@ public:
 		// implementations will always return
 		// true. This method should be used on a 
 		// temporary socket of the correct dynamic 
-		// type.
+		// type since this socket may become
+		// unusable.
 
-	bool connect( const Address &addr , bool *done = NULL ) ;
+	bool connect( const Address & addr , bool *done = NULL ) ;
 		// Initiates a connection to (or association 
 		// with) the given address. Returns false on 
 		// error.
@@ -123,12 +107,12 @@ public:
 		// between two addresses. The socket should first be 
 		// bound with a local address.
 
-	bool listen( int backlog = 1 );
+	bool listen( int backlog = 1 ) ;
 		// Starts the socket listening on the bound
 		// address for incoming connections or incoming
 		// datagrams.
 
-	virtual ssize_t write( const char *buf, size_t len ) ;
+	virtual ssize_t write( const char * buf , size_t len ) ;
 		// Sends data. For datagram sockets the datagram
 		// is sent to the address specified in the
 		// previous connect(). Returns the amount
@@ -201,16 +185,11 @@ public:
 		// Only used in debugging.
 
 protected:
-	Socket( int domain, int type, int protocol = 0 ) ;
+	Socket( int domain , int type , int protocol ) ;
 		// Constructor used by derived classes.
 		// Opens the socket using ::socket().
 
-	bool open( int domain , int type , int protocol = 0 ) ;
-		// Used by derived classes to implement reopen().
-		// Opens the socket using ::socket().
-		// Returns false on error.
-
-	Socket( Descriptor s ) ;
+	explicit Socket( Descriptor s ) ;
 		// Constructor which creates a socket object from 
 		// an existing socket handle. Used only by 
 		// StreamSocket::accept().
@@ -220,7 +199,7 @@ protected:
 	static int reason() ;
 	static bool error( int rc ) ;
 	static bool sizeError( ssize_t size ) ;
-	bool prepare() ;
+	void prepare() ;
 	void setFault() ;
 	void setNoLinger() ;
 	void setReuse() ;
@@ -236,8 +215,8 @@ protected:
 	Descriptor m_socket ;
 
 private:
-	Socket( const Socket& );
-	void operator=( const Socket& );
+	Socket( const Socket & ) ;
+	void operator=( const Socket & ) ;
 	void drop() ;
 };
 
@@ -280,12 +259,16 @@ class GNet::StreamSocket : public GNet::Socket
 {
 public:
 	StreamSocket() ;
-		// Default constructor.
+		// Default constructor. Check with valid().
+
+	explicit StreamSocket( const Address & address_hint ) ;
+		// Constructor with a hint of the bind()/connect()
+		// address to be used later. Check with valid().
 
 	virtual ~StreamSocket() ;
 		// Destructor.
 
-	ssize_t read( char *buffer , size_t buffer_length ) ;
+	ssize_t read( char * buffer , size_t buffer_length ) ;
 		// Reads from the TCP stream. Returns
 		// 0 if the connection has been lost.
 		// Returns -1 on error, or if there is 
@@ -298,9 +281,6 @@ public:
 		// Accepts an incoming connection, returning
 		// a new()ed socket and the peer address.
 
-	virtual bool reopen() ;
-		// Inherited from Socket.
-
 private:
 	StreamSocket( const StreamSocket & ) ;
 		// Copy constructor. Not implemented.
@@ -310,7 +290,7 @@ private:
 
 	StreamSocket( Descriptor s ) ;
 		// A private constructor used in accept().
-};
+} ;
 
 // ===
 
@@ -321,8 +301,11 @@ private:
 class GNet::DatagramSocket : public GNet::Socket 
 {
 public:
-	DatagramSocket();
+	DatagramSocket() ;
 		// Default constructor.
+
+	explicit DatagramSocket( const Address & address_hint ) ;
+		// Constructor with a hint of a local address.
 
 	virtual ~DatagramSocket() ;
 		// Destructor.
@@ -347,9 +330,6 @@ public:
 		// datagram endpoints reversing the effect
 		// of the previous Socket::connect().
 
-	virtual bool reopen() ;
-		// Inherited from Socket.
- 
 private:
 	DatagramSocket( const DatagramSocket & ) ;
 		// Copy constructor. Not implemented.

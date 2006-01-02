@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -108,14 +108,10 @@ void GPop::Server::report() const
 
 GNet::ServerPeer * GPop::Server::newPeer( GNet::Server::PeerInfo peer_info )
 {
-	if( ! m_allow_remote && 
-		!peer_info.m_address.sameHost(GNet::Local::canonicalAddress()) &&
-		!peer_info.m_address.sameHost(GNet::Local::localhostAddress()) )
+	std::string reason ;
+	if( ! m_allow_remote && ! GNet::Local::isLocal(peer_info.m_address,reason) )
 	{
-		G_WARNING( "GPop::Server: configured to reject non-local connection: " 
-			<< peer_info.m_address.displayString(false) << " is not one of " 
-			<< GNet::Local::canonicalAddress().displayString(false) << ","
-			<< GNet::Local::localhostAddress().displayString(false) ) ;
+		G_WARNING( "GPop::Server: configured to reject non-local connection: " << reason ) ;
 		return NULL ;
 	}
 

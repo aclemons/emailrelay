@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -201,23 +201,14 @@ std::string GSmtp::SaslServerImp::digest( const std::string & secret , const std
 
 bool GSmtp::SaslServerImp::trusted( GNet::Address address ) const
 {
-	std::string ip = address.displayString(false) ;
-	G_DEBUG( "GSmtp::SaslServerImp::trusted: \"" << ip << "\"" ) ;
-	G::StringArray part ;
-	G::Str::splitIntoFields( ip , part , "." ) ;
-	if( part.size() == 4U )
+	G_DEBUG( "GSmtp::SaslServerImp::trusted: \"" << address.displayString(false) << "\"" ) ;
+	G::Strings wc = address.wildcards() ;
+	for( G::Strings::iterator p = wc.begin() ; p != wc.end() ; ++p )
 	{
-		return 
-			trustedCore(ip,ip) || 
-			trustedCore(ip,part[0]+"."+part[1]+"."+part[2]+".*") || 
-			trustedCore(ip,part[0]+"."+part[1]+".*.*") ||
-			trustedCore(ip,part[0]+".*.*.*") ||
-			trustedCore(ip,"*.*.*.*") ;
+		if( trustedCore(address.displayString(false),*p) )
+			return true ;
 	}
-	else
-	{
-		return trustedCore( ip , ip ) ;
-	}
+	return false ;
 }
 
 bool GSmtp::SaslServerImp::trustedCore( const std::string & full , const std::string & key ) const

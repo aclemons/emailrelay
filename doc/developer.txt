@@ -276,4 +276,4 @@ to reassign a std::auto_ptr<>.
 
 
 
-Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

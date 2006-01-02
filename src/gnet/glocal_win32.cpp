@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -28,57 +28,40 @@
 
 std::string GNet::Local::hostname()
 {
-	char buffer[1024U] ;
+	char buffer[1024U] = { '\0' } ;
 	if( 0 != ::gethostname( buffer , sizeof(buffer)-1U ) )
 	{
 		int error = ::WSAGetLastError() ;
 		throw Error( std::ostringstream() << "gethostname() (" << error << ")" ) ;
 	}
+	buffer[sizeof(buffer)-1U] = '\0' ;
 	return std::string(buffer) ;
 }
 
-GNet::Address GNet::Local::canonicalAddress()
+GNet::Address GNet::Local::canonicalAddressImp()
 {
-	static bool first = true ; // avoid multiple synchronous DNS queries
-	static Address result( Address::invalidAddress() ) ;
-	if( first )
-	{
-		first = false ;
+	std::pair<Resolver::HostInfo,std::string> rc = Resolver::resolve( hostname() , "0" ) ;
+	if( rc.second.length() != 0U )
+		throw Error( std::ostringstream() << "resolve: " << rc.second ) ;
 
-		std::pair<Resolver::HostInfo,std::string> rc = 
-			Resolver::resolve( hostname() , "0" ) ;
-
-		if( rc.second.length() != 0U )
-			throw Error( std::ostringstream() << "resolve: " << rc.second ) ;
-
-		result = rc.first.address ;
-	}
-	return result ;
+	return rc.first.address ;
 }
 
 std::string GNet::Local::fqdnImp()
 {
-	static bool first = true ; // avoid multiple synchronous DNS queries
-	static std::string result ;
-	if( first )
+	std::pair<Resolver::HostInfo,std::string> rc = Resolver::resolve( hostname() , "0" ) ;
+	if( rc.second.length() != 0U )
+		throw Error( std::ostringstream() << "resolve: " << rc.second ) ;
+
+	std::string result = rc.first.canonical_name ;
+
+	size_t pos = result.find( '.' ) ;
+	if( pos == std::string::npos )
 	{
-		first = false ;
-
-		std::pair<Resolver::HostInfo,std::string> rc = 
-			Resolver::resolve( hostname() , "0" ) ;
-
-		if( rc.second.length() != 0U )
-			throw Error( std::ostringstream() << "resolve: " << rc.second ) ;
-
-		result = rc.first.canonical_name ;
-
-		size_t pos = result.find( '.' ) ;
-		if( pos == std::string::npos )
-		{
-			G_WARNING( "GNet::Local: no valid domain in \"" << result << "\": defaulting to \".local\"" ) ;
-			result.append( ".local" ) ;
-		}
+		G_WARNING( "GNet::Local: no valid domain in \"" << result << "\": defaulting to \".local\"" ) ;
+		result.append( ".local" ) ;
 	}
+
 	return result ;
 }
 

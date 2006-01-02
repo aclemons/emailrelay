@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -132,7 +132,7 @@ void GNet::Server::init( unsigned int listening_port )
 void GNet::Server::init( const Address & listening_address )
 {
 	m_cleaned_up = false ;
-	m_socket <<= new StreamSocket ;
+	m_socket <<= new StreamSocket( listening_address ) ;
 	G_DEBUG( "GNet::Server::init: listening on " << listening_address.displayString() ) ;
 	G::Root claim_root ;
 	if( ! m_socket->bind( listening_address ) )

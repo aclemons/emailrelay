@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -26,14 +26,16 @@
 
 #include "gdef.h"
 #include "gnet.h"
+#include "gstrings.h"
 #include "gexception.h"
 #include <string>
-class GAddressImp ; 
 
 namespace GNet
 {
 	class Address ;
+	class AddressStorage ;
 	class AddressImp ;
+	class AddressStorageImp ;
 }
 
 // Class: GNet::Address
@@ -55,10 +57,16 @@ public:
 	class Broadcast // An overload discriminator class for GNet::Address.
 		{} ;
 
+	static int defaultDomain() ;
+		// Returns the default address 'domain', eg. PF_INET.
+
 	Address( const Address & addr ) ;
 		// Copy constructor.
 
-	Address( const sockaddr * addr , int len ) ;
+	explicit Address( const AddressStorage & ) ;
+		// Constructor taking a storage object.
+
+	Address( const sockaddr * addr , socklen_t len ) ;
 		// Constructor using a given sockaddr.
 		//
 		// The given sockaddr address must be an Internet
@@ -140,11 +148,11 @@ public:
 		// This is a non-const version of address() for compiling on
 		// systems which are not properly const-clean.
 
-	int length() const;
+	socklen_t length() const;
 		// Returns the size of the sockaddr address.
 		// See address().
 
-	std::string displayString( bool with_port = true ) const ;
+	std::string displayString( bool with_port = true , bool with_scope_id = false ) const ;
 		// Returns a string which represents the address for
 		// debugging and diagnostics purposes.
 
@@ -154,6 +162,14 @@ public:
 
 	unsigned int port() const;
 		// Returns port part of address.
+
+	int domain() const ;
+		// Returns the address 'domain', eg. PF_INET.
+
+	unsigned long scopeId( unsigned long default_ = 0UL ) const ;
+		// Returns the scope-id. Returns the default
+		// if scope-ids are not supported by the
+		// underlying address type.
 
 	static bool validPort( unsigned int n ) ;
 		// Returns true if the port number is within the
@@ -165,24 +181,75 @@ public:
 		// This can be used to avoid exceptions from
 		// the relevant constructor.
 
-	bool operator==( const Address &other ) const ;
-		// Comparison operator.
-
 	bool sameHost( const Address &other ) const ;
 		// Returns true if the two addresses have the
 		// same host part (ie. ignoring the port).
 		// (But note that a host can have more than
 		// one host address.)
 
+	bool isLocal( std::string & reason ) const ;
+		// Returns true if the address is definitely local.
+		// Returns false if remote or unknown, with a helpful
+		// reason string returned by reference.
+
+	bool isLocal( std::string & reason , const Address & local_hint ) const ;
+		// An overload with a hint that should be the host's 
+		// canonical address.
+
 	void setPort( unsigned int port ) ;
 		// Sets the port number. Throws an exception 
 		// if an invalid port number (ie. too big).
+
+	G::Strings wildcards() const ;
+		// Returns an ordered list of wildcard strings
+		// that match this address. The fully-address-specific 
+		// string (eg. "192.168.0.1") comes first, and the 
+		// most general match-all wildcard (eg. "*.*.*.*") 
+		// comes last.
+
+	bool operator==( const Address &other ) const ;
+		// Comparison operator.
 
 private:
 	void setHost( const hostent & ) ;
 
 private:
 	AddressImp * m_imp ;
+} ;
+
+// Class: GNet::AddressStorage
+// Description: A helper class for calling getsockname() and getpeername()
+// and hiding the definition of sockaddr_storage.
+//
+class GNet::AddressStorage 
+{
+public:
+	AddressStorage() ;
+		// Default constructor.
+
+	~AddressStorage() ;
+		// Destructor.
+
+	sockaddr * p1() ;
+		// Returns the sockaddr pointer for getsockname()/getpeername()
+		// to write into.
+
+	socklen_t * p2() ;
+		// Returns the length pointer for getsockname()/getpeername()
+		// to write into.
+
+	const sockaddr * p() const ;
+		// Returns the pointer.
+
+	socklen_t n() const ;
+		// Returns the length.
+
+private:
+	AddressStorage( const AddressStorage & ) ;
+	void operator=( const AddressStorage & ) ;
+
+private:
+	AddressStorageImp * m_imp ;
 } ;
 
 #endif

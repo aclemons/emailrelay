@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software; you can redistribute it and/or
 dnl modify it under the terms of the GNU General Public License
@@ -77,6 +77,26 @@ AC_DEFUN([ACLOCAL_CHECK_GETIPNODEBYNAME],
 		AC_DEFINE(HAVE_GETIPNODEBYNAME,1,[Define if getipnodebyname() is available])
 	else
 		AC_DEFINE(HAVE_GETIPNODEBYNAME,0,[Define if getipnodebyname() is available])
+	fi
+])
+
+dnl check for sin6_len in sockaddr_in6
+dnl
+AC_DEFUN([ACLOCAL_CHECK_SIN6_LEN],
+[AC_CACHE_CHECK([for sin6_len], aclocal_cv_sin6_len,
+[
+	AC_TRY_COMPILE(
+		[#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>],
+		[struct sockaddr_in6 s; s.sin6_len = 1;],
+		aclocal_cv_sin6_len=yes ,
+		aclocal_cv_sin6_len=no )
+])
+	if test $aclocal_cv_sin6_len = yes; then
+		AC_DEFINE(HAVE_SIN6_LEN,1,[Define if sockaddr_in6 has a sin6_len member])
+	else
+		AC_DEFINE(HAVE_SIN6_LEN,0,[Define if sockaddr_in6 has a sin6_len member])
 	fi
 ])
 

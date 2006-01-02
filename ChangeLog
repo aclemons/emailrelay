@@ -13,7 +13,7 @@ E-MailRelay Change Log
 * Better checking of spool directory access on startup.
 * New "emailrelay-submit.sh" example script for submitting messages for "--pop-by-name".
 * The "--dont-listen" switch is now "--no-smtp".
-* Better IPv6 support.
+* Better IPv6 support (Linux only).
 
 1.3.2 -> 1.3.3
 --------------

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -164,7 +164,6 @@ void GSmtp::ScannerClient::onData( const char * data , size_t size )
 	{
 		G_DEBUG( "GSmtp::ScannerClient::onData: done" ) ;
 		m_timer.cancelTimer() ;
-		m_socket->close() ;
 		setState( "end" ) ;
 		bool from_scanner = true ;
 		m_done_signal.emit( from_scanner , result() ) ;

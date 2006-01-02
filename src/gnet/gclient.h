@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -68,9 +68,8 @@ public:
 		// Constructor overload for a INADDR_ANY local
 		// interface.
 
-	bool connect( std::string host, std::string service, 
-		std::string *error_string = NULL ,
-		bool sync_dns = synchronousDnsDefault() );
+	bool connect( std::string host, std::string service, std::string * error_string = NULL ,
+		bool sync_dns = synchronousDnsDefault() ) ;
 			// Initates a connection to the remote server.
 			// Typically called before calling run().
 
@@ -118,7 +117,10 @@ protected:
 
 	virtual void onConnect( Socket & socket ) = 0 ;
 		// Called once connected. May (unfortunately) be
-		// called from within connect().
+		// called from within connect(). The socket should
+		// be used for reading and writing: opening and
+		// closing the socket remains the responsibility
+		// of this class.
 		//
 		// Precondition: !connected()
 		// Postcondition: connected()

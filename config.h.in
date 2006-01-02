@@ -34,6 +34,9 @@
 /* Define if setgroups is available */
 #undef HAVE_SETGROUPS
 
+/* Define if sockaddr_in6 has a sin6_len member */
+#undef HAVE_SIN6_LEN
+
 /* Define if socklen_t type definition in sys/socket.h */
 #undef HAVE_SOCKLEN_T
 

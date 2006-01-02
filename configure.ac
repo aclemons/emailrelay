@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2005 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software; you can redistribute it and/or
 dnl modify it under the terms of the GNU General Public License
@@ -60,6 +60,7 @@ AC_LANG_CPLUSPLUS
 ACLOCAL_TYPE_SOCKLEN_T
 ACLOCAL_CHECK_IPV6
 ACLOCAL_CHECK_GETIPNODEBYNAME
+ACLOCAL_CHECK_SIN6_LEN
 ACLOCAL_CHECK_BUGGY_CTIME
 ACLOCAL_CHECK_GMTIME_R
 ACLOCAL_CHECK_LOCALTIME_R
