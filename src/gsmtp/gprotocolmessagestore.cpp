@@ -121,6 +121,7 @@ void GSmtp::ProtocolMessageStore::process( const std::string & auth_id , const s
 {
 	try
 	{
+		G_DEBUG( "ProtocolMessageStore::process: \"" << auth_id << "\", \"" << client_ip << "\"" ) ;
 		G_ASSERT( m_msg.get() != NULL ) ;
 		if( m_msg.get() == NULL )
 			throw G::Exception( "internal error" ) ; // never gets here
@@ -143,6 +144,7 @@ void GSmtp::ProtocolMessageStore::preprocessorDone( bool ok )
 {
 	try
 	{
+		G_DEBUG( "ProtocolMessageStore::preprocessorDone: " << (ok?1:0) ) ;
 		G_ASSERT( m_msg.get() != NULL ) ;
 		if( m_msg.get() == NULL )
 			throw G::Exception( "internal error" ) ; // never gets here
@@ -163,6 +165,7 @@ void GSmtp::ProtocolMessageStore::preprocessorDone( bool ok )
 			m_store.repoll() ;
 		}
 		clear() ;
+		G_DEBUG( "ProtocolMessageStore::preprocessorDone: emiting done signal" ) ;
 		m_done_signal.emit( true , id , std::string() ) ;
 	}
 	catch( std::exception & e )

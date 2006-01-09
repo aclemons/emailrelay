@@ -112,6 +112,7 @@ void GSmtp::ProtocolMessageForward::process( const std::string & auth_id ,
 
 void GSmtp::ProtocolMessageForward::processDone( bool success , unsigned long id , std::string reason )
 {
+	G_DEBUG( "ProtocolMessageForward::processDone: " << (success?1:0) << ", " << id << ", \"" << reason << "\"" ) ;
 	if( success && id != 0UL )
 	{
 		m_id = id ;

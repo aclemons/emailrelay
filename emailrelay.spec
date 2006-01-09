@@ -47,8 +47,9 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %files
 
 %config /etc/emailrelay.conf
+/etc/emailrelay.conf.template
 /etc/init.d/emailrelay
-/usr/lib/emailrelay/emailrelay-poke
+/usr/lib/emailrelay-poke
 /usr/sbin/emailrelay
 /usr/sbin/emailrelay-passwd
 /usr/sbin/emailrelay-submit
@@ -62,6 +63,7 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /usr/share/doc/emailrelay/examples/emailrelay-notify.sh
 /usr/share/doc/emailrelay/examples/emailrelay-process.sh
 /usr/share/doc/emailrelay/examples/emailrelay-resubmit.sh
+/usr/share/doc/emailrelay/examples/emailrelay-submit.sh
 /usr/share/doc/emailrelay/index.html
 /usr/share/doc/emailrelay/NEWS
 /usr/share/doc/emailrelay/*.png

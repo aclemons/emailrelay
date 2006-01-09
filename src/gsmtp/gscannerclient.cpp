@@ -139,14 +139,14 @@ std::string GSmtp::ScannerClient::startScanning( const G::Path & path )
 
 void GSmtp::ScannerClient::onDisconnect()
 {
-	G_DEBUG( "GSmtp::ScannerClient::onDisconnect" ) ;
-	G_ASSERT( m_state == "connected" || m_state == "scanning" ) ;
+	G_DEBUG( "GSmtp::ScannerClient::onDisconnect: \"" << m_state << "\"" ) ;
+	G_ASSERT( m_state == "connected" || m_state == "scanning" || m_state == "end" ) ;
 
 	if( m_state == "connected" )
 	{
 		setState( "disconnected" ) ;
 	}
-	else
+	else if( m_state == "scanning" )
 	{
 		setState( "end" ) ;
 		m_done_signal.emit( false , "disconnected" ) ;

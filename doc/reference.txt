@@ -473,6 +473,7 @@ by connecting on a trusted IP address:
 	host="$3"
 	local_domain="$4"
 	auth_mechanism="$7"
+	if test -z "${auth_mechanism}" ; then auth_mechanism="NONE" ; fi
 	if test "${auth_mechanism}" = "NONE" -a "${host}" != "${local_domain}"
 	then
 		echo "cannot relay without authentication"
@@ -489,7 +490,7 @@ or in JavaScript:
 	var host = WScript.Arguments(2) ;
 	var local_domain = WScript.Arguments(3) ;
 	var auth_mechanism = WScript.Arguments(6) ;
-	if( auth_mechanism == "NONE" && host != local_domain )
+	if( ( auth_mechanism == "NONE" || auth_mechanism == "" ) && host != local_domain )
 	{
 		WScript.Echo( "cannot relay without authentication" ) ;
 		WScript.Quit( 2 ) ;
@@ -740,6 +741,7 @@ Files and directories
 Following a normal build from source, a "make install" puts files in the
 following locations:
 * /usr/local/etc/emailrelay.conf
+* /usr/local/etc/emailrelay.conf.template
 * /usr/local/libexec/emailrelay
 * /usr/local/libexec/emailrelay-deliver.sh
 * /usr/local/libexec/emailrelay-notify.sh
@@ -748,6 +750,7 @@ following locations:
 * /usr/local/libexec/emailrelay-resubmit.js
 * /usr/local/libexec/emailrelay-resubmit.sh
 * /usr/local/libexec/emailrelay-runperl.js
+* /usr/local/libexec/emailrelay-submit.sh
 * /usr/local/man/man1/emailrelay.1.gz
 * /usr/local/man/man1/emailrelay-passwd.1.gz
 * /usr/local/man/man1/emailrelay-poke.1.gz
@@ -782,8 +785,9 @@ To force FHS compliance you can use the "--enable-fhs" switch when running
 "configure", as is done for the RPMs. This results in the following file
 locations:
 * /etc/emailrelay.conf
+* /etc/emailrelay.conf.template
 * /etc/init.d/emailrelay
-* /usr/lib/emailrelay/emailrelay-poke
+* /usr/lib/emailrelay-poke
 * /usr/sbin/emailrelay
 * /usr/sbin/emailrelay-passwd
 * /usr/sbin/emailrelay-submit
@@ -797,6 +801,7 @@ locations:
 * /usr/share/doc/emailrelay/examples/emailrelay-notify.sh
 * /usr/share/doc/emailrelay/examples/emailrelay-process.sh
 * /usr/share/doc/emailrelay/examples/emailrelay-resubmit.sh
+* /usr/share/doc/emailrelay/examples/emailrelay-submit.sh
 * /usr/share/doc/emailrelay/index.html
 * /usr/share/doc/emailrelay/NEWS
 * /usr/share/doc/emailrelay/*.png

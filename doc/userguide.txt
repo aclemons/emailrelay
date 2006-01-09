@@ -42,8 +42,10 @@ E-MailRelay is designed to be policy-free, so that you can implement your own
 policies for message retries, bounces, local mailbox delivery, spam filtering
 etc. through external scripts.
 
-It has no dependencies on third-party libraries or run-time environments, so it
-is easy to build and install.
+It has no dependencies on third-party libraries or run-time environments so it
+is easy to build and install, and the single-threaded, event-driven design with
+non-blocking i/o may provide better performance and resource usage than some of
+the alternatives.
 
 Typical applications of E-MailRelay include:
 * spam filtering and virus checking incoming mail

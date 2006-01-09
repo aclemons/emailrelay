@@ -271,7 +271,7 @@ std::auto_ptr<std::istream> GPop::StoreLock::get( int id ) const
 	std::auto_ptr<std::ifstream> file ;
 	{
 		FileReader claim_reader ;
-		file <<= new std::ifstream( path(id).str().c_str() ) ;
+		file <<= new std::ifstream( path(id).str().c_str() , std::ios_base::binary | std::ios_base::in ) ;
 	}
 
 	if( ! file->good() )

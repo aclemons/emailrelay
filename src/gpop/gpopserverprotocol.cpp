@@ -162,7 +162,7 @@ bool GPop::ServerProtocol::sendContentLine( std::string & line , bool & stop )
 	if( eof || limited )
 	{
 		if( eof && line.length() > 1 ) 
-			G_WARNING( "ServerProtocol::sendContentLine: discarding unterminated line" ) ;
+			G_WARNING( "ServerProtocol::sendContentLine: discarding unterminated line: " << line.length() << " byte(s)" ) ;
 		line.erase( 1U ) ;
 		line.append( crlf() ) ;
 	}

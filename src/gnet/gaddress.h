@@ -42,7 +42,8 @@ namespace GNet
 //
 // Description: The Address class encapsulates an IP
 // transport address. The address is stored internally 
-// as a 'sockaddr_in/sockaddr_in6' structure.
+// as a 'sockaddr_in/sockaddr_in6' structure and exposed
+// as a 'sockaddr' structure.
 //
 // See also: GNet::Resolver
 //

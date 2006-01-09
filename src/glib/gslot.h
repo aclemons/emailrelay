@@ -156,6 +156,7 @@ void swap_( T & t1 , T & t2 ) // no std::swap in gcc2.95
 template <class T>
 class SlotImp0 : public SlotBase 
 {
+private:
 	T & m_object ;
 	void (T::*m_fn)() ;
 public:
@@ -179,12 +180,13 @@ public:
 //
 class Slot0 
 {
+private:
 	SlotBase * m_imp ;
 	void (*m_op)( SlotBase * ) ;
 public:
 	Slot0() : m_imp(0) , m_op(0) {}
 	Slot0( SlotBase * imp , void (*op)(SlotBase*) ) : m_imp(imp) , m_op(op) {}
-	~Slot0() { if( m_imp ) m_imp->down() ; }
+	~Slot0() { if(m_imp) m_imp->down() ; }
 	void callback() { if( m_imp ) (*m_op)( m_imp ) ; }
 	Slot0( const Slot0 & other ) : m_imp(other.m_imp) , m_op(other.m_op) { if(m_imp) m_imp->up() ; }
 	void swap( Slot0 & rhs ) { swap_(m_imp,rhs.m_imp) ; swap_(m_op,rhs.m_op) ; }
@@ -197,12 +199,14 @@ public:
 //
 class Signal0 : public noncopyable 
 {
+private:
 	Slot0 m_slot ;
 public:
 	Signal0() {}
 	void emit() { m_slot.callback() ; }
 	void connect( Slot0 slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
 	void disconnect() { m_slot = Slot0() ; }
+	bool connected() const { return m_slot.base() != NULL ; }
 } ;
 
 // Function: slot
@@ -223,6 +227,7 @@ Slot0 slot( T & object , void (T::*fn)() )
 template <class T, class P>
 class SlotImp1 : public SlotBase 
 {
+private:
 	T & m_object ;
 	void (T::*m_fn)( P ) ;
 public:
@@ -247,6 +252,7 @@ public:
 template <class P>
 class Slot1 
 {
+private:
 	SlotBase * m_imp ;
 	void (*m_op)( SlotBase * , P ) ;
 public:
@@ -266,12 +272,14 @@ public:
 template <class P>
 class Signal1 : public noncopyable 
 {
+private:
 	Slot1<P> m_slot ;
 public:
 	Signal1() {}
 	void emit( P p ) { m_slot.callback( p ) ; }
 	void connect( Slot1<P> slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
 	void disconnect() { m_slot = Slot1<P>() ; }
+	bool connected() const { return m_slot.base() != NULL ; }
 } ;
 
 // Function: slot
@@ -292,6 +300,7 @@ Slot1<P> slot( T & object , void (T::*fn)(P) )
 template <class T, class P1, class P2>
 class SlotImp2 : public SlotBase 
 {
+private:
 	T & m_object ;
 	void (T::*m_fn)( P1 , P2 ) ;
 public:
@@ -316,6 +325,7 @@ public:
 template <class P1, class P2>
 class Slot2 
 {
+private:
 	SlotBase * m_imp ;
 	void (*m_op)( SlotBase * , P1 , P2 ) ;
 public:
@@ -335,12 +345,14 @@ public:
 template <class P1, class P2>
 class Signal2 : public noncopyable 
 {
+private:
 	Slot2<P1,P2> m_slot ;
 public:
 	Signal2() {}
 	void emit( P1 p1 , P2 p2 ) { m_slot.callback( p1 , p2 ) ; }
 	void connect( Slot2<P1,P2> slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
 	void disconnect() { m_slot = Slot2<P1,P2>() ; }
+	bool connected() const { return m_slot.base() != NULL ; }
 } ;
 
 // Function: slot
@@ -361,6 +373,7 @@ Slot2<P1,P2> slot( T & object , void (T::*fn)(P1,P2) )
 template <class T, class P1, class P2, class P3>
 class SlotImp3 : public SlotBase 
 {
+private:
 	T & m_object ;
 	void (T::*m_fn)( P1 , P2 , P3 ) ;
 public:
@@ -385,6 +398,7 @@ public:
 template <class P1, class P2, class P3>
 class Slot3 
 {
+private:
 	SlotBase * m_imp ;
 	void (*m_op)( SlotBase * , P1 , P2 , P3 ) ;
 public:
@@ -404,12 +418,14 @@ public:
 template <class P1, class P2, class P3>
 class Signal3 : public noncopyable 
 {
+private:
 	Slot3<P1,P2,P3> m_slot ;
 public:
 	Signal3() {}
 	void emit( P1 p1 , P2 p2 , P3 p3 ) { m_slot.callback( p1 , p2 , p3 ) ; }
 	void connect( Slot3<P1,P2,P3> slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
 	void disconnect() { m_slot = Slot3<P1,P2,P3>() ; }
+	bool connected() const { return m_slot.base() != NULL ; }
 } ;
 
 // Function: slot

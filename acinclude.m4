@@ -313,7 +313,7 @@ AC_DEFUN([FHS_COMPLIANCE],
 	sbindir='/usr/sbin'
 	libexecdir='/usr/lib'
 	localstatedir='/var'
-	mandir='/usr/man'
+	mandir='/usr/share/man'
 	datadir='/usr/share'
 	sysconfdir='/etc'
 	#

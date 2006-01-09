@@ -100,10 +100,14 @@ public:
 protected:
 	G::Signal3<bool,unsigned long,std::string> & storageDoneSignal() ;
 		// Returns the signal which is used to signal that the storage
-		// is complete.
+		// is complete. Derived classes can use this to
+		// intercept the storage-done signal emit()ed by
+		// the ProtocolMessageStore object.
 
 	void processDone( bool , unsigned long , std::string ) ; 
-		// ...
+		// Called by derived classes that have intercepted
+		// the storageDoneSignal() when their own post-storage
+		// processing is complete.
 
 private:
 	void operator=( const ProtocolMessageForward & ) ; // not implemented
