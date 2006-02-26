@@ -28,15 +28,18 @@
 # Build with:
 #    $ make -f mingw.mak
 #
-# If building with mingw from cygwin then you must use an 
-# explicit path to the mingw tools to avoid picking up the
-# cygwin equivalents. Specify the mingw bin directory
+# If building using mingw from within a cygwin environment then you 
+# must set an explicit path to the mingw tools to avoid picking up 
+# the cygwin gcc equivalents; specify the mingw bin directory
 # on the make command-line as follows -- note the trailing
 # slash:
 #   $ make -f mingw.mak mk_bin=c:/opt/mingw/bin/
 #
-
+# or edit this line...
 mk_bin=
+
+# (trolltech qt is only needed for the installation utility)
+mk_qt=/opt/qt
 
 mk_ar=ar rc
 mk_rc=$(mk_bin)windres
@@ -44,20 +47,19 @@ mk_rm_f=rm -f
 mk_objects=$(mk_sources:.cpp=.o)
 mk_cc=$(mk_bin)g++
 mk_cc_flags_common=-mno-cygwin -mwindows
-mk_cc_flags_release=$(mk_cc_flags_common) -O
-mk_cc_flags_debug=$(mk_cc_flags_common) -g
+mk_cc_flags_release=$(mk_cc_flags_common) -O $(mk_cc_flags_release_extra)
+mk_cc_flags_debug=$(mk_cc_flags_common) -g $(mk_cc_flags_debug_extra)
 mk_link=$(mk_bin)g++
-mk_link_flags_release=--strip-all
-mk_link_flags_debug=-g
+mk_link_flags_release=--strip-all $(mk_link_flags_release_extra)
+mk_link_flags_debug=-g $(mk_link_flags_debug_extra)
 mk_defines_common=-DG_WIN32 -DG_MINGW
-mk_defines_debug=$(mk_defines_common) -D_DEBUG
-mk_defines_release=$(mk_defines_common) -DG_NO_DEBUG
-mk_includes=-I../glib -I../gnet -I../gsmtp -I../gpop -I../win32
-mk_cpp_flags=$(mk_defines) $(mk_defines_extra) $(mk_includes) $(mk_includes_extra)
-
-mk_defines=$(mk_defines_release)
-mk_cc_flags=$(mk_cc_flags_release)
-mk_link_flags=$(mk_link_flags_release)
+mk_defines_debug=$(mk_defines_common) -D_DEBUG $(mk_defines_debug_extra)
+mk_defines_release=$(mk_defines_common) -DG_NO_DEBUG $(mk_defines_release_extra)
+mk_includes=-I../glib -I../gnet -I../gsmtp -I../gpop -I../win32 $(mk_includes_extra)
+mk_cpp_flags=$(mk_defines) $(mk_defines_extra) $(mk_includes)
+mk_defines=$(mk_defines_release) $(mk_defines_extra)
+mk_cc_flags=$(mk_cc_flags_release) $(mk_cc_flags_extra)
+mk_link_flags=$(mk_link_flags_release) $(mk_link_flags_extra)
 
 .SUFFIXES: .rc .i
 .PHONY: clean

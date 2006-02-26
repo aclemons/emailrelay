@@ -87,6 +87,8 @@ h1
 
 img
 {
+	border-width: 0px ;
+	border-style: none ; /* check */
 	margin-left: 8% ;
 }
 
@@ -210,7 +212,5 @@ span.span-mailto
 
 #img-sourceforge
 {
-	border-width: 0px ;
-	border-style: none ; /* check */
 }
 

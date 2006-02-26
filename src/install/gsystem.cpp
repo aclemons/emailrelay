@@ -18,34 +18,35 @@
 // 
 // ===
 //
-// legal.cpp
+// gsystem.cpp
 //
 
-#ifndef G_MAIN_LEGAL_H
-#define G_MAIN_LEGAL_H
+#include "gsystem.h"
 
-#include "gdef.h"
-#include <string>
-
-namespace Main
+#ifdef _WIN32
+G::Path GSystem::install()
 {
-	class Legal ;
+	return "c:\\program files\\emailrelay" ;
 }
-
-// Class: Main::Legal
-// Description: A static class providing warranty and copyright text.
-//
-class Main::Legal 
+G::Path GSystem::spool()
 {
-public: 
-	static std::string warranty( const std::string & prefix , const std::string & eol ) ;
-		// Returns the warranty text.
-
-	static std::string copyright() ;
-		// Returns the copyright text.
-
-private:
-	Legal() ;
-} ;
-
+	return "c:\\windows\\spool\\emailrelay" ;
+}
+G::Path GSystem::config()
+{
+	return "c:\\windows" ;
+}
+#else
+G::Path GSystem::install()
+{
+	return "/usr/local/emailrelay" ;
+}
+G::Path GSystem::spool()
+{
+	return "/var/spool/emailrelay" ;
+}
+G::Path GSystem::config()
+{
+	return "/etc" ;
+}
 #endif

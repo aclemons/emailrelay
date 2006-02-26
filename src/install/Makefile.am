@@ -17,5 +17,4 @@
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ## 
 #
-EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.dsw
-SUBDIRS = glib gnet gsmtp gpop main win32 install
+EXTRA_DIST = gdialog.cpp gdialog.h gpage.cpp gpage.h gsystem.cpp gsystem.h install_main.cpp legal.cpp legal.h pages.cpp pages.h mingw.mak

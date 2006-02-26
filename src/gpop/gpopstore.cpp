@@ -120,16 +120,17 @@ bool GPop::Store::valid( G::Path dir_path , bool allow_delete )
 	return ok ;
 }
 
+
 // ===
 
-GPop::StoreLock::File::File( const G::Path & path ) :
-	name(path.basename()) ,
-	size(toSize(G::File::sizeString(path.str())))
+GPop::StoreLock::File::File( const G::Path & content_path ) :
+	name(content_path.basename()) ,
+	size(toSize(G::File::sizeString(content_path.str())))
 {
 }
 
-GPop::StoreLock::File::File( const std::string & name_ , const std::string & size_string ) :
-	name(name_) ,
+GPop::StoreLock::File::File( const std::string & content_name , const std::string & size_string ) :
+	name(content_name) ,
 	size(toSize(size_string))
 {
 }
@@ -314,7 +315,8 @@ void GPop::StoreLock::doCommit( Store & store ) const
 		if( store.allowDelete() )
 		{
 			deleteFile( envelopePath(*p) , all_ok ) ;
-			deleteFile( contentPath(*p) , all_ok ) ;
+			if( unlinked(store,*p) ) // race condition could leave content files undeleted
+				deleteFile( contentPath(*p) , all_ok ) ;
 		}
 		else
 		{
@@ -352,11 +354,24 @@ G::Path GPop::StoreLock::path( int id ) const
 	return contentPath( file ) ;
 }
 
-G::Path GPop::StoreLock::path( const std::string & filename ) const
+G::Path GPop::StoreLock::path( const std::string & filename , bool fallback ) const
 {
-	G::Path result = m_dir ;
-	result.pathAppend( filename ) ;
-	return result ;
+	// expected path
+	G::Path path_1 = m_dir ;
+	path_1.pathAppend( filename ) ;
+
+	// or fallback to the parent directory
+	G::Path path_2 = m_dir ; path_2.pathAppend("..") ;
+	path_2.pathAppend( filename ) ;
+
+	return ( fallback && !G::File::exists(path_1,G::File::NoThrow()) ) ? path_2 : path_1 ;
+}
+
+std::string GPop::StoreLock::envelopeName( const std::string & content_name ) const
+{
+	std::string filename = content_name ;
+	G::Str::replace( filename , "content" , "envelope" ) ;
+	return filename ;
 }
 
 std::string GPop::StoreLock::contentName( const std::string & envelope_name ) const
@@ -368,19 +383,19 @@ std::string GPop::StoreLock::contentName( const std::string & envelope_name ) co
 
 G::Path GPop::StoreLock::contentPath( const std::string & envelope_name ) const
 {
-	return path( contentName(envelope_name) ) ;
+	return path( contentName(envelope_name) , true ) ;
 }
 
 G::Path GPop::StoreLock::contentPath( const File & file ) const
 {
-	return path( file.name ) ;
+	return path( file.name , true ) ;
 }
 
 G::Path GPop::StoreLock::envelopePath( const File & file ) const
 {
 	std::string filename = file.name ;
 	G::Str::replace( filename , "content" , "envelope" ) ;
-	return path( filename ) ;
+	return path( filename , false ) ;
 }
 
 void GPop::StoreLock::rollback()
@@ -388,5 +403,48 @@ void GPop::StoreLock::rollback()
 	G_ASSERT( locked() ) ;
 	m_deleted.clear() ;
 	m_current = m_initial ;
+}
+
+bool GPop::StoreLock::unlinked( Store & store , const File & file ) const
+{
+	if( !store.byName() )
+	{
+		G_DEBUG( "StoreLock::unlinked: unlinked since not pop-by-name: " << file.name ) ;
+		return true ;
+	}
+
+	G::Path normal_content_path = m_dir ; normal_content_path.pathAppend( file.name ) ;
+	if( G::File::exists(normal_content_path,G::File::NoThrow()) )
+	{
+		G_DEBUG( "StoreLock::unlinked: unlinked since in its own directory: " << normal_content_path ) ;
+		return true ;
+	}
+
+	// look for corresponding envelopes in all child directories
+	bool found = false ;
+	{
+		G::Directory base_dir( store.dir() ) ;
+		G::DirectoryIterator iter( base_dir ) ;
+		while( iter.more() )
+		{
+			if( ! iter.isDir() ) continue ;
+			G_DEBUG( "Store::unlinked: checking sub-directory: " << iter.fileName() ) ;
+			G::Path envelope_path = iter.filePath() ; envelope_path.pathAppend(envelopeName(file.name)) ;
+			if( G::File::exists(envelope_path,G::File::NoThrow()) )
+			{
+				G_DEBUG( "StoreLock::unlinked: still in use: envelope exists: " << envelope_path ) ;
+				found = true ;
+				break ;
+			}
+		}
+	}
+
+	if( ! found )
+	{
+		G_DEBUG( "StoreLock::unlinked: unlinked since no envelope found in any sub-directory" ) ;
+		return true ;
+	}
+
+	return false ;
 }
 

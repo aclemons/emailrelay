@@ -111,7 +111,9 @@ bool Main::Configuration::debug() const
 
 bool Main::Configuration::syslog() const
 {
-	return !m_cl.contains("no-syslog") && !m_cl.contains("as-client") ;
+	bool basic = !m_cl.contains("no-syslog") && !m_cl.contains("as-client") ;
+	bool override = m_cl.contains("syslog") ;
+	return override || basic ;
 }
 
 bool Main::Configuration::logTimestamp() const

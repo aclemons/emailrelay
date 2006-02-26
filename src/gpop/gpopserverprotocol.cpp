@@ -58,7 +58,7 @@ GPop::ServerProtocol::ServerProtocol( Sender & sender , Store & store , const Se
 	m_fsm.addTransition( eUser , sStart , sStart , &GPop::ServerProtocol::doUser ) ;
 	m_fsm.addTransition( ePass , sStart , sActive , &GPop::ServerProtocol::doPass , sStart ) ;
 	m_fsm.addTransition( eApop , sStart , sActive , &GPop::ServerProtocol::doApop , sStart ) ;
-	m_fsm.addTransition( eApop , sStart , sEnd , &GPop::ServerProtocol::doQuitEarly ) ;
+	m_fsm.addTransition( eQuit , sStart , sEnd , &GPop::ServerProtocol::doQuitEarly ) ;
 	m_fsm.addTransition( eCapa , sStart , sStart , &GPop::ServerProtocol::doCapa ) ;
 	m_fsm.addTransition( eAuth , sStart , sAuth , &GPop::ServerProtocol::doAuth , sStart ) ;
 	m_fsm.addTransition( eAuthData , sAuth , sActive , &GPop::ServerProtocol::doAuthData , sStart ) ;

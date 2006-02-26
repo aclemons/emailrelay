@@ -56,7 +56,7 @@ EXTRA_DIST=\
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\"
 
 sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd
-libexec_PROGRAMS = emailrelay-poke
+libexec_PROGRAMS = emailrelay-poke emailrelay-filter-copy
 e_spool_DATA = 
 
 emailrelay_SOURCES = \
@@ -91,6 +91,10 @@ emailrelay_submit_LDADD = \
 	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a
+
+emailrelay_filter_copy_SOURCES = filter_copy.cpp
+emailrelay_filter_copy_LDADD = \
+	$(top_builddir)/src/glib/libglib.a
 
 install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-libexecPROGRAMS
 	-chgrp daemon $(DESTDIR)$(e_spooldir)

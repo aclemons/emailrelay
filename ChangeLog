@@ -1,6 +1,14 @@
 E-MailRelay Change Log
 ======================
 
+1.4 -> 1.4.1
+------------
+* Installation and configuration GUI using TrollTech Qt 4.x.
+* Windows installation document review.
+* Client protocol improvement if no valid recipients.
+* New "--syslog" switch to override "--no-syslog".
+* Content files can be left in the parent directory when using "--pop-by-name".
+
 1.3.3 -> 1.4
 ------------
 * POP3 server (enable with "--pop", disable at build-time with "./configure --disable-pop").

@@ -99,6 +99,7 @@ std::string Main::CommandLine::switchSpec_unix()
 		<< "t!no-daemon!does not detach from the terminal!0!!3|"
 		<< "u!user!names the effective user to switch to when started as root "
 			<< "(default is \"daemon\")!1!username!3|"
+		<< "k!syslog!force syslog output if logging is enabled (overrides --no-syslog)!0!!3|"
 		<< "n!no-syslog!disables syslog output!0!!3"
 		;
 	return ss.str() ;
@@ -111,6 +112,7 @@ std::string Main::CommandLine::switchSpec_windows()
 	ss
 		<< "l!log!writes log information on standard error and event log!0!!2|"
 		<< "t!no-daemon!use an ordinary window, not the system tray!0!!3|"
+		<< "k!syslog!force event log output if logging is enabled (overrides --no-syslog)!0!!3|"
 		<< "n!no-syslog!dont use the event log!0!!3|"
 		<< "c!icon!selects the application icon!1!0^|1^|2^|3!3|"
 		<< "H!hidden!hides the application window (requires --no-daemon)!0!!3"

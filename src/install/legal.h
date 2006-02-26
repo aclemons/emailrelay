@@ -21,28 +21,23 @@
 // legal.cpp
 //
 
-#ifndef G_MAIN_LEGAL_H
-#define G_MAIN_LEGAL_H
+#ifndef G_LEGAL_H
+#define G_LEGAL_H
 
 #include "gdef.h"
-#include <string>
+#include <QString>
 
-namespace Main
-{
-	class Legal ;
-}
-
-// Class: Main::Legal
+// Class: Legal
 // Description: A static class providing warranty and copyright text.
 //
-class Main::Legal 
+class Legal 
 {
 public: 
-	static std::string warranty( const std::string & prefix , const std::string & eol ) ;
-		// Returns the warranty text.
+	static QString text() ;
+		// Returns the introductory legal text.
 
-	static std::string copyright() ;
-		// Returns the copyright text.
+	static QString license() ;
+		// Returns the license text.
 
 private:
 	Legal() ;

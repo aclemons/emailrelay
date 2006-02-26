@@ -17,5 +17,29 @@
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ## 
 #
-EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.dsw
-SUBDIRS = glib gnet gsmtp gpop main win32 install
+#
+# mingw.mak
+#
+# See ../mingw-common.mak for help.
+#
+
+mk_sources=\
+	gdialog.cpp \
+	gpage.cpp \
+	gsystem.cpp \
+	install_main.cpp \
+	legal.cpp \
+	pages.cpp
+
+libs=../glib/glib.a 
+syslibs=-lgdi32 -lwsock32
+mk_target=install.exe
+
+all: $(mk_target)
+
+include ../mingw-common.mak
+
+$(mk_target): $(mk_objects) $(libs)
+	$(mk_link) $(mk_link_flags) -o $(mk_target) $(mk_objects) $(libs) $(syslibs)
+
+

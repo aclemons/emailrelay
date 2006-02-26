@@ -18,34 +18,32 @@
 // 
 // ===
 //
-// legal.cpp
+// gsystem.h
 //
 
-#ifndef G_MAIN_LEGAL_H
-#define G_MAIN_LEGAL_H
+#ifndef G_SYSTEM_H
+#define G_SYSTEM_H
 
-#include "gdef.h"
-#include <string>
+#include "gpath.h"
 
-namespace Main
-{
-	class Legal ;
-}
-
-// Class: Main::Legal
-// Description: A static class providing warranty and copyright text.
+// Class: GSystem
+// Description: Provides file-system paths.
 //
-class Main::Legal 
+class GSystem 
 {
-public: 
-	static std::string warranty( const std::string & prefix , const std::string & eol ) ;
-		// Returns the warranty text.
+public:
+	static G::Path install() ;
+		// Returns the installation path.
 
-	static std::string copyright() ;
-		// Returns the copyright text.
+	static G::Path spool() ;
+		// Returns the spool directory path.
+
+	static G::Path config() ;
+		// Returns the configuration directory path.
 
 private:
-	Legal() ;
+	GSystem() ;
 } ;
 
 #endif
+

@@ -41,18 +41,20 @@ namespace GPop
 }
 
 // Class: GPop::Store
-// Description: A message store.
+// Description: A message store. Unlike the SMTP message store the
+// POP message store allows content files to be in the envelope file's
+// parent directory.
 //
 class GPop::Store 
 {
 public:
 	G_EXCEPTION( InvalidDirectory , "invalid spool directory" ) ;
 
-	Store( G::Path dir , bool by_name , bool allow_delete ) ;
+	Store( G::Path spool_dir , bool by_name , bool allow_delete ) ;
 		// Constructor.
 
 	G::Path dir() const ;
-		// Returns the directory path.
+		// Returns the spool directory path.
 
 	bool allowDelete() const ;
 		// Returns true if files can be deleted.
@@ -160,7 +162,7 @@ public:
 private:
 	struct File // A private implementation class used by GPop::StoreLock.
 	{
-		std::string name ; // envelope
+		std::string name ; // content name
 		StoreLockEntry::Size size ;
 		explicit File( const G::Path & ) ;
 		File( const std::string & name_ , const std::string & size_string ) ;
@@ -177,12 +179,14 @@ private:
 	Set::iterator find( int id ) ;
 	void doCommit( Store & ) const ;
 	G::Path path( int id ) const ;
-	G::Path path( const std::string & ) const ;
+	G::Path path( const std::string & , bool fallback ) const ;
+	std::string envelopeName( const std::string & ) const ;
 	std::string contentName( const std::string & ) const ;
 	G::Path contentPath( const std::string & ) const ;
 	G::Path contentPath( const File & ) const ;
 	G::Path envelopePath( const File & ) const ;
 	void deleteFile( const G::Path & , bool & ) const ;
+	bool unlinked( Store & , const File & ) const ;
 
 private:
 	Store * m_store ;

@@ -18,7 +18,7 @@
 #
 
 
-SOURCES = $(emailrelay_SOURCES) $(emailrelay_passwd_SOURCES) $(emailrelay_poke_SOURCES) $(emailrelay_submit_SOURCES)
+SOURCES = $(emailrelay_SOURCES) $(emailrelay_filter_copy_SOURCES) $(emailrelay_passwd_SOURCES) $(emailrelay_poke_SOURCES) $(emailrelay_submit_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -42,7 +42,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 sbin_PROGRAMS = emailrelay$(EXEEXT) emailrelay-submit$(EXEEXT) \
 	emailrelay-passwd$(EXEEXT)
-libexec_PROGRAMS = emailrelay-poke$(EXEEXT)
+libexec_PROGRAMS = emailrelay-poke$(EXEEXT) \
+	emailrelay-filter-copy$(EXEEXT)
 subdir = src/main
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -65,6 +66,10 @@ emailrelay_DEPENDENCIES = $(top_builddir)/src/gpop/$(POPLIB) \
 	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a
+am_emailrelay_filter_copy_OBJECTS = filter_copy.$(OBJEXT)
+emailrelay_filter_copy_OBJECTS = $(am_emailrelay_filter_copy_OBJECTS)
+emailrelay_filter_copy_DEPENDENCIES =  \
+	$(top_builddir)/src/glib/libglib.a
 am_emailrelay_passwd_OBJECTS = passwd.$(OBJEXT) legal.$(OBJEXT)
 emailrelay_passwd_OBJECTS = $(am_emailrelay_passwd_OBJECTS)
 emailrelay_passwd_DEPENDENCIES = $(top_builddir)/src/glib/libglib.a
@@ -81,7 +86,8 @@ DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/commandline.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/configuration.Po ./$(DEPDIR)/legal.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/configuration.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/filter_copy.Po ./$(DEPDIR)/legal.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/main.Po ./$(DEPDIR)/output.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/passwd.Po ./$(DEPDIR)/poke.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/run.Po ./$(DEPDIR)/submit.Po
@@ -94,10 +100,12 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(emailrelay_SOURCES) $(emailrelay_passwd_SOURCES) \
-	$(emailrelay_poke_SOURCES) $(emailrelay_submit_SOURCES)
-DIST_SOURCES = $(emailrelay_SOURCES) $(emailrelay_passwd_SOURCES) \
-	$(emailrelay_poke_SOURCES) $(emailrelay_submit_SOURCES)
+SOURCES = $(emailrelay_SOURCES) $(emailrelay_filter_copy_SOURCES) \
+	$(emailrelay_passwd_SOURCES) $(emailrelay_poke_SOURCES) \
+	$(emailrelay_submit_SOURCES)
+DIST_SOURCES = $(emailrelay_SOURCES) $(emailrelay_filter_copy_SOURCES) \
+	$(emailrelay_passwd_SOURCES) $(emailrelay_poke_SOURCES) \
+	$(emailrelay_submit_SOURCES)
 e_spoolDATA_INSTALL = $(INSTALL_DATA)
 DATA = $(e_spool_DATA)
 ETAGS = etags
@@ -263,6 +271,10 @@ emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a
 
+emailrelay_filter_copy_SOURCES = filter_copy.cpp
+emailrelay_filter_copy_LDADD = \
+	$(top_builddir)/src/glib/libglib.a
+
 all: all-am
 
 .SUFFIXES:
@@ -345,6 +357,9 @@ clean-sbinPROGRAMS:
 emailrelay$(EXEEXT): $(emailrelay_OBJECTS) $(emailrelay_DEPENDENCIES) 
 	@rm -f emailrelay$(EXEEXT)
 	$(CXXLINK) $(emailrelay_LDFLAGS) $(emailrelay_OBJECTS) $(emailrelay_LDADD) $(LIBS)
+emailrelay-filter-copy$(EXEEXT): $(emailrelay_filter_copy_OBJECTS) $(emailrelay_filter_copy_DEPENDENCIES) 
+	@rm -f emailrelay-filter-copy$(EXEEXT)
+	$(CXXLINK) $(emailrelay_filter_copy_LDFLAGS) $(emailrelay_filter_copy_OBJECTS) $(emailrelay_filter_copy_LDADD) $(LIBS)
 emailrelay-passwd$(EXEEXT): $(emailrelay_passwd_OBJECTS) $(emailrelay_passwd_DEPENDENCIES) 
 	@rm -f emailrelay-passwd$(EXEEXT)
 	$(CXXLINK) $(emailrelay_passwd_LDFLAGS) $(emailrelay_passwd_OBJECTS) $(emailrelay_passwd_LDADD) $(LIBS)
@@ -363,6 +378,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/commandline.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/configuration.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter_copy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/legal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@

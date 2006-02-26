@@ -255,13 +255,14 @@ private:
 
 private:
 	enum State { sInit , sStarted , sServiceReady , sSentEhlo , sSentHelo , sAuth1 , sAuth2 , sSentMail , 
-		sPreprocessing , sSentRcpt , sSentData , sData , sSentDot , sDone } ;
+		sPreprocessing , sSentRcpt , sSentData , sSentDataStub , sData , sSentDot , sDone } ;
 	Sender & m_sender ;
 	const Secrets & m_secrets ;
 	std::string m_thishost ;
 	State m_state ;
 	std::string m_from ;
 	G::Strings m_to ;
+	size_t m_to_accepted ;
 	std::auto_ptr<std::istream> m_content ;
 	bool m_server_has_8bitmime ;
 	bool m_message_is_8bit ;
