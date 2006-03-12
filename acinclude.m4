@@ -202,6 +202,21 @@ then
 fi
 ])
 
+dnl enable-gui
+dnl
+AC_DEFUN([ENABLE_GUI],
+[
+if test "$enable_gui" = "yes"
+then
+	AC_DEFINE(HAVE_GUI,1,[Define to enable gui code])
+	MOC="${e_qtdir}/bin/moc"
+else
+	AC_DEFINE(HAVE_GUI,0,[Define to enable gui code])
+	MOC="./mock"
+fi
+AC_SUBST(MOC)
+])
+
 dnl enable-fastbuild
 dnl
 AC_DEFUN([ENABLE_FASTBUILD],

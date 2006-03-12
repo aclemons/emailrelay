@@ -77,6 +77,64 @@ public:
 	static DWORD waitFor( HANDLE hprocess , DWORD default_exit_code ) ;
 } ;
 
+class G::Process::ChildProcessImp 
+{
+public:
+	ChildProcessImp() ;
+	unsigned long m_ref_count ;
+	Pipe m_pipe ;
+	HANDLE m_hprocess ;
+private:
+	void operator=( const ChildProcessImp & ) ;
+	ChildProcessImp( const ChildProcessImp & ) ;
+} ;
+
+// ===
+
+G::Process::ChildProcessImp::ChildProcessImp() :
+	m_ref_count(0UL) ,
+	m_pipe(true,true) ,
+	m_hprocess(0)
+{
+}
+
+// ===
+
+G::Process::ChildProcess::ChildProcess( ChildProcessImp * imp ) :
+	m_imp(imp)
+{
+	m_imp->m_ref_count = 1 ;
+}
+
+G::Process::ChildProcess::~ChildProcess()
+{
+	m_imp->m_ref_count-- ;
+	if( m_imp->m_ref_count == 0 )
+		delete m_imp ;
+}
+
+G::Process::ChildProcess::ChildProcess( const ChildProcess & other ) :
+	m_imp(other.m_imp)
+{
+	m_imp->m_ref_count++ ;
+}
+
+void G::Process::ChildProcess::operator=( const ChildProcess & rhs )
+{
+	ChildProcess temp( rhs ) ;
+	std::swap( m_imp , temp.m_imp ) ;
+}
+
+int G::Process::ChildProcess::wait()
+{
+	return G::ProcessImp::waitFor( m_imp->m_hprocess , 127 ) ;
+}
+
+std::string G::Process::ChildProcess::read()
+{
+	return m_imp->m_pipe.read(false) ;
+}
+
 // ===
 
 G::Process::Id::Id() 
@@ -154,6 +212,14 @@ std::string G::Process::strerror( int errno_ )
 	std::stringstream ss ;
 	ss << errno_ ; // could do better
 	return ss.str() ;
+}
+
+G::Process::ChildProcess G::Process::spawn( const Path & exe , const Strings & args )
+{
+	ChildProcess child( new ChildProcessImp ) ;
+	std::string command_line = ProcessImp::commandLine( exe.str() , args ) ;
+	child.m_imp->m_hprocess = ProcessImp::createProcess( exe.str() , command_line , child.m_imp->m_pipe.h() ) ;
+	return child ;
 }
 
 int G::Process::spawn( Identity , const Path & exe_path , const Strings & args , 

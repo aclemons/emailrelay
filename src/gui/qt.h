@@ -18,29 +18,28 @@
 // 
 // ===
 //
-// legal.cpp
+// qt.h
 //
 
-#ifndef G_LEGAL_H
-#define G_LEGAL_H
+#if 1
 
-#include "gdef.h"
+// Mac-friendly...
+#include <QtCore/QtCore>
+#include <QtGui/QtGui>
+
+#else
+
+#include <QAbstractButton>
+#include <QApplication>
+#include <QComboBox>
+#include <QDialog>
+#include <QLabel>
+#include <QLineEdit>
+#include <QLocale>
+#include <QMessageBox>
+#include <QObject>
 #include <QString>
-
-// Class: Legal
-// Description: A static class providing warranty and copyright text.
-//
-class Legal 
-{
-public: 
-	static QString text() ;
-		// Returns the introductory legal text.
-
-	static QString license() ;
-		// Returns the license text.
-
-private:
-	Legal() ;
-} ;
+#include <QTranslator>
+#include <QWidget>
 
 #endif

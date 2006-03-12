@@ -23,17 +23,34 @@
 # See ../mingw-common.mak for help.
 #
 
+.PHONY: all
+
 mk_sources=\
 	gdialog.cpp \
 	gpage.cpp \
 	gsystem.cpp \
 	install_main.cpp \
 	legal.cpp \
-	pages.cpp
+	pages.cpp \
+	moc_gdialog.cpp \
+	moc_gpage.cpp \
+	moc_pages.cpp
 
-libs=../glib/glib.a 
-syslibs=-lgdi32 -lwsock32
+qtlib=$(mk_qt)/lib/libQt
+qt_libs_debug= \
+	$(qtlib)Guid.a \
+	$(qtlib)Cored.a \
+	$(qtlib)maind.a
+qt_libs_release= \
+	$(qtlib)Gui4.a \
+	$(qtlib)Core4.a \
+	$(qtlib)main.a
+
+libs=../glib/glib.a $(qt_libs_release)
+
+syslibs=-lgdi32 -lwsock32 -lole32 -loleaut32 -lwinspool -lcomdlg32 -limm32 -lwinmm -luuid
 mk_target=install.exe
+mk_includes_extra=-I$(mk_qt)/include -I$(mk_qt)/include/QtCore -I$(mk_qt)/include/QtGui
 
 all: $(mk_target)
 
@@ -42,4 +59,12 @@ include ../mingw-common.mak
 $(mk_target): $(mk_objects) $(libs)
 	$(mk_link) $(mk_link_flags) -o $(mk_target) $(mk_objects) $(libs) $(syslibs)
 
+moc_gdialog.cpp: gdialog.h
+	$(mk_qt)/bin/moc $<  -o $@
+
+moc_gpage.cpp: gpage.h
+	$(mk_qt)/bin/moc $< -o $@
+
+moc_pages.cpp: pages.h
+	$(mk_qt)/bin/moc $< -o $@
 

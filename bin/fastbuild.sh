@@ -37,8 +37,8 @@ Ar()
 
 ReallyCompile()
 {
-	source_="${1}"
-	new_="${2}"
+	new_="${1}"
+	source_="${2}"
 	shift
 	shift
 	echo fastbuild: compiling "${new_}" instead of "${source_}"
@@ -59,13 +59,15 @@ Skip()
 	touch "${output_}"
 }
 
-Compile()
+CompileOrSkip()
 {
 	source="`echo $@ | sed 's/.* //'`"
 	case "${source}" in
-	main.cpp) ReallyCompile "${source}" emailrelay-fastbuild.cpp "$@" ;;
-	passwd.cpp) ReallyCompile "${source}" passwd-fastbuild.cpp "$@" ;;
-	submit.cpp) ReallyCompile "${source}" submit-fastbuild.cpp "$@" ;;
+	main.cpp) ReallyCompile emailrelay-fastbuild.cpp "${source}" "$@" ;;
+	passwd.cpp) ReallyCompile passwd-fastbuild.cpp "${source}" "$@" ;;
+	submit.cpp) ReallyCompile submit-fastbuild.cpp "${source}" "$@" ;;
+	all.cpp) g++ "$@" ;;
+	moc_*.cpp) g++ "$@" ;;
 	*) Skip "${source}" "$@" ;;
 	esac
 }
@@ -95,7 +97,7 @@ then
 :
 elif test "`echo $@ | grep '\.cpp *$' | wc -l`" -ne 0
 then
-	Compile "$@"
+	CompileOrSkip "$@"
 :
 elif test "`echo $@ | grep -- '-o *[-a-z][-a-z]* ' | wc -l`" -ne 0
 then

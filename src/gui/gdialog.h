@@ -24,8 +24,8 @@
 #ifndef G_DIALOG_H
 #define G_DIALOG_H
 
+#include "qt.h"
 #include "gpage.h"
-#include <QDialog>
 #include <list>
 #include <map>
 class QHBoxLayout; 
@@ -46,7 +46,15 @@ public:
 	void add( GPage * ) ;
 		// Adds a page.
 
+	void add( GPage * , const std::string & conditional_page_name ) ;
+		// Adds a page but only if the the page name
+		// matches the given conditional name or if the given
+		// conditional name is empty.
+
 	GPage & page( const std::string & ) ;
+		// Finds a page by name.
+
+	const GPage & page( const std::string & ) const ;
 		// Finds a page by name.
 
 	std::string currentPageName() const ;
@@ -58,6 +66,12 @@ public:
 	bool historyContains( const std::string & ) const ;
 		// Returns true if the history contains the given page.
 
+	bool empty() const ;
+		// Returns true if there are no pages add()ed.
+
+	void dump( std::ostream & , const std::string & prefix = std::string(), const std::string & eol = "\n" ) const;
+		// Dumps the pages to a stream.
+
 private slots:
 	void backButtonClicked();
 	void nextButtonClicked();
@@ -65,7 +79,7 @@ private slots:
 
 private:
 	void setFirstPage( GPage & page ) ;
-	void switchPage( std::string new_page_name , std::string old_page_name = std::string() ) ;
+	void switchPage( std::string new_page_name , std::string old_page_name = std::string() , bool back = false ) ;
 
 private:
 	typedef std::list<std::string> History ;

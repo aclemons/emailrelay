@@ -62,7 +62,7 @@ public:
 	{
 		public: Id() ;
 		public: explicit Id( std::istream & ) ;
-		public: explicit Id( const char * pid_file_path ) ; // (re-entrant ctor)
+		public: explicit Id( const char * pid_file_path ) ; // (ctor for signal-handler)
 		public: std::string str() const ;
 		public: bool operator==( const Id & ) const ;
 		private: pid_t m_pid ;
@@ -79,6 +79,18 @@ public:
 		private: class UmaskImp ;
 		private: UmaskImp * m_imp ;
 	} ;
+	class ChildProcessImp ;
+	class ChildProcess // Represents the state of a child process.
+	{
+		private: explicit ChildProcess( ChildProcessImp * ) ;
+		public: ChildProcess( const ChildProcess & ) ;
+		public: ~ChildProcess() ;
+		public: void operator=( const ChildProcess & ) ;
+		public: int wait() ;
+		public: std::string read() ;
+		private: ChildProcessImp * m_imp ;
+		friend class Process ;
+	} ;
 	class NoThrow // An overload discriminator for Process.
 		{} ;
 
@@ -92,8 +104,7 @@ public:
 		// Changes directory.
 
 	static bool cd( const Path & dir , NoThrow ) ;
-		// Changes directory. Returns false on
-		// error.
+		// Changes directory. Returns false on error.
 
 	static void chroot( const Path & dir ) ;
 		// Does a chroot. Throws on error, or if not implemented.
@@ -111,15 +122,19 @@ public:
 			// Runs a command in an unprivileged child process. Returns the
 			// child process's exit code, or 'error_return' on error.
 			//
-			// The identity should have come from beOrdinary().
+			// The 'nobody' identity should have come from beOrdinary().
 			//
-			// If the 'pipe_result_p' pointer is supplied then a pipe
-			// is used to read the first bit of whatever the child process 
-			// writes to stdout. 
+			// If the 'pipe_result_p' pointer is supplied then the child
+			// process is given a pipe as its stdout and this is used
+			// to read the first bit of whatever it writes.
 			//
 			// If the function pointer is supplied then it is used
-			// to prepare a pipe-result string if the underlying
-			// exec() fails in the fork()ed child process.
+			// to generate a string that is written into the pipe if 
+			// the exec() fails in the fork()ed child process.
+
+	static ChildProcess spawn( const Path & exe , const Strings & args ) ;
+		// A simple overload to spawn a child process asynchronously.
+		// Does no special security checks.
 
 	static int errno_() ;
 		// Returns the process's current 'errno' value.
@@ -134,23 +149,19 @@ public:
 	static Identity beOrdinary( Identity nobody , bool change_group = true ) ;
 		// Revokes special privileges (root or suid).
 		//
-		// If really root (as opposed to suid root)
-		// then the effective id is changed to that
-		// passed in. 
+		// If really root (as opposed to suid root) then the effective 
+		// id is changed to that passed in. 
 		//
-		// If suid (including suid-root), then the effective
-		// id is changed to the real id, and the parameter 
-		// is ignored. 
+		// If suid (including suid-root), then the effective id is 	
+		// changed to the real id, and the parameter is ignored. 
 		//
-		// Returns the old identity, which can be passed to
-		// beSpecial().
+		// Returns the old identity, which can be passed to beSpecial().
 		//
 		// See also class G::Root.
 
 	static void beSpecial( Identity special , bool change_group = true ) ;
-		// Re-aquires special privileges (either root
-		// or suid). The parameter must have come from
-		// a previous call to beOrdinary().
+		// Re-aquires special privileges (either root or suid). The 
+		// parameter must have come from a previous call to beOrdinary().
 		//
 		// See also class G::Root.
 

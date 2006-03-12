@@ -18,32 +18,29 @@
 // 
 // ===
 //
-// gsystem.h
+// legal.cpp
 //
 
-#ifndef G_SYSTEM_H
-#define G_SYSTEM_H
+#ifndef G_LEGAL_H
+#define G_LEGAL_H
 
-#include "gpath.h"
+#include "qt.h"
+#include "gdef.h"
 
-// Class: GSystem
-// Description: Provides file-system paths.
+// Class: Legal
+// Description: A static class providing warranty and copyright text.
 //
-class GSystem 
+class Legal 
 {
-public:
-	static G::Path install() ;
-		// Returns the installation path.
+public: 
+	static QString text() ;
+		// Returns the introductory legal text.
 
-	static G::Path spool() ;
-		// Returns the spool directory path.
-
-	static G::Path config() ;
-		// Returns the configuration directory path.
+	static QString license() ;
+		// Returns the license text.
 
 private:
-	GSystem() ;
+	Legal() ;
 } ;
 
 #endif
-

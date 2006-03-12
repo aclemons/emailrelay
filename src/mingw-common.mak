@@ -83,6 +83,7 @@ _all:
 	cd gpop && make -f mingw.mak mk_bin=$(mk_bin) && cd ..
 	cd win32 && make -f mingw.mak mk_bin=$(mk_bin) && cd ..
 	cd main && make -f mingw.mak mk_bin=$(mk_bin) && cd ..
+	cd install && make -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) && cd ..
 
 _clean:
 	cd glib && make -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
@@ -91,6 +92,7 @@ _clean:
 	cd gpop && make -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
 	cd win32 && make -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
 	cd main && make -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
+	cd install && make -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) clean && cd ..
 
 clean::
 	$(mk_rm_f) $(mk_objects) $(mk_target)

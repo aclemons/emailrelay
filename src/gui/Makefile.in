@@ -16,8 +16,14 @@
 
 #
 #
+#
+# Makefile.am
+#
+# NOT FINISHED
+#
 
-SOURCES = $(libgsmtp_a_SOURCES)
+
+SOURCES = $(emailrelay_gui_SOURCES) $(EXTRA_emailrelay_gui_SOURCES) $(install_tool_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -39,7 +45,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-subdir = src/gsmtp
+bin_PROGRAMS = emailrelay-gui$(EXEEXT) install-tool$(EXEEXT)
+subdir = src/gui
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
@@ -49,57 +56,29 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(mkdir_p)
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
-ARFLAGS = cru
-LIBRARIES = $(noinst_LIBRARIES)
-libgsmtp_a_AR = $(AR) $(ARFLAGS)
-libgsmtp_a_LIBADD =
-am_libgsmtp_a_OBJECTS = gadminserver.$(OBJEXT) gbase64.$(OBJEXT) \
-	gclientprotocol.$(OBJEXT) gfilestore.$(OBJEXT) \
-	gmessagestore.$(OBJEXT) gmessagestore_unix.$(OBJEXT) \
-	gnewfile.$(OBJEXT) gnewmessage.$(OBJEXT) gprocessor.$(OBJEXT) \
-	gprotocolmessage.$(OBJEXT) gprotocolmessageforward.$(OBJEXT) \
-	gprotocolmessagescanner.$(OBJEXT) \
-	gprotocolmessagestore.$(OBJEXT) gsasl_native.$(OBJEXT) \
-	gscannerclient.$(OBJEXT) gsecrets.$(OBJEXT) \
-	gserverprotocol.$(OBJEXT) gsmtpclient.$(OBJEXT) \
-	gsmtpserver.$(OBJEXT) gstoredfile.$(OBJEXT) \
-	gstoredmessage.$(OBJEXT) gverifier.$(OBJEXT)
-libgsmtp_a_OBJECTS = $(am_libgsmtp_a_OBJECTS)
+am__installdirs = "$(DESTDIR)$(bindir)"
+binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
+PROGRAMS = $(bin_PROGRAMS)
+am_emailrelay_gui_OBJECTS = all.$(OBJEXT)
+emailrelay_gui_OBJECTS = $(am_emailrelay_gui_OBJECTS)
+am__DEPENDENCIES_1 = moc_gdialog.o moc_gpage.o moc_pages.o
+am_install_tool_OBJECTS = install-tool.$(OBJEXT)
+install_tool_OBJECTS = $(am_install_tool_OBJECTS)
+install_tool_LDADD = $(LDADD)
+SCRIPTS = $(noinst_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/gadminserver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gbase64.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gclientprotocol.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gfilestore.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gmessagestore.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gmessagestore_unix.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gnewfile.Po ./$(DEPDIR)/gnewmessage.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gprocessor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gprotocolmessage.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gprotocolmessageforward.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gprotocolmessagescanner.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gprotocolmessagestore.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gsasl_native.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gscannerclient.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gsecrets.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gserverprotocol.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gsmtpclient.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gsmtpserver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gstoredfile.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gstoredmessage.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gverifier.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/all.Po ./$(DEPDIR)/install-tool.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libgsmtp_a_SOURCES)
-DIST_SOURCES = $(libgsmtp_a_SOURCES)
+SOURCES = $(emailrelay_gui_SOURCES) $(EXTRA_emailrelay_gui_SOURCES) \
+	$(install_tool_SOURCES)
+DIST_SOURCES = $(emailrelay_gui_SOURCES) \
+	$(EXTRA_emailrelay_gui_SOURCES) $(install_tool_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -198,58 +177,77 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-EXTRA_DIST = \
-	gmessagestore_win32.cpp \
-	gsasl_cyrus.cpp \
-	mingw.mak
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -DG_SPOOLDIR=\"$(e_spooldir)\"
-noinst_LIBRARIES = libgsmtp.a
-libgsmtp_a_SOURCES = \
-	gadminserver.cpp \
-	gadminserver.h \
-	gbase64.cpp \
-	gbase64.h \
-	gclientprotocol.cpp \
-	gclientprotocol.h \
-	gfilestore.cpp \
-	gfilestore.h \
-	gmessagestore.cpp \
-	gmessagestore.h \
-	gmessagestore_unix.cpp \
-	gnewfile.cpp \
-	gnewfile.h \
-	gnewmessage.cpp \
-	gnewmessage.h \
-	gprocessor.cpp \
-	gprocessor.h \
-	gprotocolmessage.cpp \
-	gprotocolmessage.h \
-	gprotocolmessageforward.cpp \
-	gprotocolmessageforward.h \
-	gprotocolmessagescanner.cpp \
-	gprotocolmessagescanner.h \
-	gprotocolmessagestore.cpp \
-	gprotocolmessagestore.h \
-	gsasl_native.cpp \
-	gsasl.h \
-	gscannerclient.cpp \
-	gscannerclient.h \
-	gsecrets.cpp \
-	gsecrets.h \
-	gserverprotocol.cpp \
-	gserverprotocol.h \
-	gsmtp.h \
-	gsmtpclient.cpp \
-	gsmtpclient.h \
-	gsmtpserver.cpp \
-	gsmtpserver.h \
-	gstoredfile.cpp \
-	gstoredfile.h \
-	gstoredmessage.cpp \
-	gstoredmessage.h \
-	gverifier.cpp \
-	gverifier.h
+# force symbol stripping on 'make install' -- see also make 'install-strip'
+AM_INSTALL_PROGRAM_FLAGS = -s
+REAL_SOURCES = \
+	gdialog.cpp \
+	gdialog.h \
+	gpage.cpp \
+	gpage.h \
+	gsystem.cpp \
+	gsystem.h \
+	install_main.cpp \
+	legal.cpp \
+	legal.h \
+	pages.cpp \
+	pages.h \
+	qt.h
+
+EXTRA_DIST = \
+	$(REAL_SOURCES) \
+	mingw.mak \
+	mac.mak \
+	mock_ \
+	readme.txt \
+	Info.plist
+
+MOC_OUTPUT = \
+	moc_gdialog.cpp \
+	moc_gpage.cpp \
+	moc_pages.cpp
+
+MOC_OBJECTS = \
+	moc_gdialog.o \
+	moc_gpage.o \
+	moc_pages.o
+
+mock = mock
+mock_in = $(srcdir)/mock_
+CLEANFILES = $(MOC_OUTPUT) $(mock)
+INCLUDES = \
+	-I$(top_srcdir)/lib/$(COMPILER_VERSION) \
+	-I$(top_srcdir)/src/glib \
+	-I$(top_srcdir)/src/gnet \
+	-I$(top_srcdir)/src/gsmtp \
+	-I$(top_srcdir)/src/gpop \
+	-DG_SPOOLDIR=\"$(e_spooldir)\" \
+	-DG_SYSCONFDIR=\"$(sysconfdir)\" \
+	-DG_DESTDIR=\"$(DESTDIR)\"
+
+AM_CPPFLAGS = \
+	-I$(e_qtdir)/include \
+	-I$(e_qtdir)/include/Qt \
+	-I$(e_qtdir)/include/QtCore \
+	-I$(e_qtdir)/include/QtGui
+
+noinst_SCRIPTS = mock
+install_tool_SOURCES = install-tool.cpp
+emailrelay_gui_SOURCES = all.cpp
+emailrelay_gui_DEPENDENCIES = all.cpp $(MOC_OBJECTS)
+EXTRA_emailrelay_gui_SOURCES = $(MOC_OBJECTS)
+emailrelay_gui_LDADD = \
+	$(MOC_OBJECTS) \
+	$(top_builddir)/src/glib/libglib.a \
+	-lQtGui -lQtCore \
+	-lpng \
+	-lX11 -lXrender -lXft -lSM -lXi \
+	-lXrandr -lXinerama -lXcursor \
+	-lpthread
+
+emailrelay_gui_LDFLAGS = \
+	-L$(e_qtdir)/lib \
+	-L$(e_x11dir)/lib
 
 all: all-am
 
@@ -264,9 +262,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/gsmtp/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/gui/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/gsmtp/Makefile
+	  $(AUTOMAKE) --gnu  src/gui/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -284,13 +282,35 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+install-binPROGRAMS: $(bin_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	test -z "$(bindir)" || $(mkdir_p) "$(DESTDIR)$(bindir)"
+	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  p1=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
+	  if test -f $$p \
+	  ; then \
+	    f=`echo "$$p1" | sed 's,^.*/,,;$(transform);s/$$/$(EXEEXT)/'`; \
+	   echo " $(INSTALL_PROGRAM_ENV) $(binPROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(bindir)/$$f'"; \
+	   $(INSTALL_PROGRAM_ENV) $(binPROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(bindir)/$$f" || exit 1; \
+	  else :; fi; \
+	done
 
-clean-noinstLIBRARIES:
-	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libgsmtp.a: $(libgsmtp_a_OBJECTS) $(libgsmtp_a_DEPENDENCIES) 
-	-rm -f libgsmtp.a
-	$(libgsmtp_a_AR) libgsmtp.a $(libgsmtp_a_OBJECTS) $(libgsmtp_a_LIBADD)
-	$(RANLIB) libgsmtp.a
+uninstall-binPROGRAMS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  f=`echo "$$p" | sed 's,^.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/'`; \
+	  echo " rm -f '$(DESTDIR)$(bindir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(bindir)/$$f"; \
+	done
+
+clean-binPROGRAMS:
+	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+emailrelay-gui$(EXEEXT): $(emailrelay_gui_OBJECTS) $(emailrelay_gui_DEPENDENCIES) 
+	@rm -f emailrelay-gui$(EXEEXT)
+	$(CXXLINK) $(emailrelay_gui_LDFLAGS) $(emailrelay_gui_OBJECTS) $(emailrelay_gui_LDADD) $(LIBS)
+install-tool$(EXEEXT): $(install_tool_OBJECTS) $(install_tool_DEPENDENCIES) 
+	@rm -f install-tool$(EXEEXT)
+	$(CXXLINK) $(install_tool_LDFLAGS) $(install_tool_OBJECTS) $(install_tool_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -298,28 +318,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gadminserver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbase64.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gclientprotocol.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilestore.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewfile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewmessage.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprocessor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessage.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessageforward.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessagescanner.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessagestore.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsasl_native.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gscannerclient.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsecrets.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gserverprotocol.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpclient.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpserver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstoredfile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstoredmessage.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifier.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/all.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/install-tool.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -413,8 +413,11 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES)
+all-am: Makefile $(PROGRAMS) $(SCRIPTS)
 installdirs:
+	for dir in "$(DESTDIR)$(bindir)"; do \
+	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
+	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -432,6 +435,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-rm -f $(CONFIG_CLEAN_FILES)
@@ -441,7 +445,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-noinstLIBRARIES mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -461,7 +465,7 @@ info-am:
 
 install-data-am:
 
-install-exec-am:
+install-exec-am: install-binPROGRAMS
 
 install-info: install-info-am
 
@@ -486,19 +490,36 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am
+uninstall-am: uninstall-binPROGRAMS uninstall-info-am
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstLIBRARIES ctags distclean distclean-compile \
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
+	clean-generic ctags distclean distclean-compile \
 	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	html-am info info-am install install-am install-binPROGRAMS \
+	install-data install-data-am install-exec install-exec-am \
+	install-info install-info-am install-man install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-info-am
+	uninstall-am uninstall-binPROGRAMS uninstall-info-am
 
+
+moc_gdialog.cpp: $(srcdir)/gdialog.h $(mock)
+	$(MOC) $< -o $@
+
+moc_gpage.cpp: $(srcdir)/gpage.h $(mock)
+	$(MOC) $< -o $@
+
+moc_pages.cpp: $(srcdir)/pages.h $(mock)
+	$(MOC) $< -o $@
+
+$(mock): $(mock_in)
+	cat $< > $*.tmp && mv $*.tmp $@
+	chmod ugo+x $@
+
+$(install_tool): $(install_tool_in)
+	cat $< > $*.tmp && mv $*.tmp $@
+	chmod ugo+x $@
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

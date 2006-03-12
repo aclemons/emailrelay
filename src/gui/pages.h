@@ -24,7 +24,7 @@
 #ifndef G_PAGES_H
 #define G_PAGES_H
 
-#include <QObject>
+#include "qt.h"
 #include "gdialog.h"
 #include "gpage.h"
 
@@ -49,6 +49,7 @@ public:
 		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
 
 	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 
 private:
 	QLabel * m_label ;
@@ -61,6 +62,7 @@ public:
 		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
 
 	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 	virtual bool isComplete() ;
 
 private:
@@ -76,11 +78,13 @@ public:
 
 	virtual void reset() ;
 	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 	virtual bool isComplete() ;
 
 private slots:
 	void browseInstall() ;
 	void browseSpool() ;
+	void browseConfig() ;
 
 private:
 	QString browse( QString ) ;
@@ -94,6 +98,10 @@ private:
 	QLabel * m_spool_dir_label ;
 	QLineEdit * m_spool_dir_edit_box ;
 	QPushButton * m_spool_dir_browse_button ;
+	QLabel * m_config_dir_title ;
+	QLabel * m_config_dir_label ;
+	QLineEdit * m_config_dir_edit_box ;
+	QPushButton * m_config_dir_browse_button ;
 } ;
 
 class DoWhatPage : public GPage 
@@ -103,6 +111,7 @@ public:
 		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
 
 	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 	virtual bool isComplete() ;
 
 private:
@@ -125,6 +134,7 @@ public:
 		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
 
 	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 	virtual bool isComplete() ;
 
 private slots:
@@ -146,6 +156,7 @@ public:
 		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
 
 	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 	virtual bool isComplete() ;
 
 private:
@@ -165,6 +176,7 @@ public:
 		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
 
 	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 	virtual bool isComplete() ;
 
 private:
@@ -180,6 +192,7 @@ public:
 		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
 
 	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 	virtual bool isComplete() ;
 
 private:
@@ -201,6 +214,7 @@ public:
 		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
 
 	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 	virtual bool isComplete() ;
 
 private:
@@ -223,6 +237,7 @@ public:
 		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
 
 	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 
 private:
 	QCheckBox * m_on_boot_check_box ;
@@ -232,6 +247,37 @@ private:
 	QCheckBox * m_verbose_check_box ;
 } ;
 
+class ToDoPage : public GPage 
+{
+public:
+	ToDoPage( GDialog & dialog , const std::string & name ,
+		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+
+	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
+	virtual void onShow( bool back ) ;
+
+private:
+	std::string text() const ;
+
+private:
+	QTextEdit * m_text_edit ;
+} ;
+
+class ProgressPage : public GPage 
+{
+public:
+	ProgressPage( GDialog & dialog , const std::string & name ,
+		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+
+	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
+	virtual void onShow( bool back ) ;
+
+private:
+	QTextEdit * m_text_edit ;
+} ;
+
 class FinalPage : public GPage 
 {
 public:
@@ -239,6 +285,7 @@ public:
 		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
 
 	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 } ;
 
 #endif

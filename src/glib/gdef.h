@@ -137,10 +137,10 @@
 	// Define missing standard types
 	//
 	#if defined( G_WINDOWS )
-		typedef int ssize_t ;
 		typedef int uid_t ;
 		typedef int gid_t ;
 		#if ! defined( G_MINGW )
+			typedef int ssize_t ;
 			typedef unsigned int pid_t ;
 		#endif
 	#endif

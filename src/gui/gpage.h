@@ -24,11 +24,13 @@
 #ifndef G_PAGE_H
 #define G_PAGE_H
 
-#include <QWidget>
-#include <QLabel>
+#include "qt.h"
 #include <string>
 
 class GDialog ; 
+class QAbstractButton ; 
+class QLineEdit ; 
+class QComboBox ; 
 
 // Class: GPage
 // Description: A page widget that can be installed in a GDialog.
@@ -53,6 +55,10 @@ public:
 	virtual void reset() ;
 		// Resets the page contents.
 
+	virtual void onShow( bool back ) ;
+		// Called as this page becomes visible as a result
+		// of the previous page's 'next' button being clicked.
+
 	virtual std::string nextPage() = 0 ;
 		// Returns the name of the next page.
 		// Returns the empty string if last.
@@ -62,6 +68,20 @@ public:
 	virtual bool isComplete();
 		// Returns true if the page is complete
 		// and the 'next' button can be enabled.
+
+	virtual void dump( std::ostream & , const std::string & prefix , const std::string & eol ) const ;
+		// Dumps the page's state to the given
+		// stream. Overrides should start by
+		// calling this base-class implementation.
+
+	static void setTestMode() ;
+		// Sets a test-mode.
+
+	static void setTool( const std::string & ) ;
+		// Squirrels away the install-tool path.
+
+	static std::string tool() ;
+		// Returns the setTool() value.
 
 signals:
 	void onUpdate() ;
@@ -73,12 +93,18 @@ protected:
 	static QLabel * newTitle( QString ) ;
 	std::string next1() const ;
 	std::string next2() const ;
+	static std::string value( const QAbstractButton * ) ;
+	static std::string value( const QLineEdit * ) ;
+	static std::string value( const QComboBox * ) ;
+	bool testMode() const ;
 
 private:
 	GDialog & m_dialog ;
 	std::string m_name ;
 	std::string m_next_1 ;
 	std::string m_next_2 ;
+	static bool m_test_mode ;
+	static std::string m_tool ;
 } ;
 
 #endif

@@ -18,35 +18,25 @@
 // 
 // ===
 //
-// gfs.h
+// all.cpp
 //
 
-#ifndef G_FS_H
-#define G_FS_H
-
-#include "gdef.h"
-
-namespace G
-{
-	class FileSystem ;
-}
-
-// Class: G::FileSystem
-// Description: Provides information about the
-// local operating system's file system
-// conventions.
-// See also: Path, File
-//
-class G::FileSystem 
-{
-public:
-	static const char *nullDevice() ;
-	static bool allowsSpaces() ;
-	static char slash() ; // separator
-	static char nonSlash() ; // to be converted to slash()
-	static bool caseSensitive() ;
-	static bool usesDriveLetters() ; // <drive>:
-	static bool leadingDoubleSlash() ; // win32 network paths
-} ;
-
+#if defined(G_MINGW) && !defined(HAVE_CONFIG_H)
+ #define HAVE_GUI 1
+#else
+ #include "config.h"
 #endif
+
+#if HAVE_GUI
+ #include "gdialog.cpp"
+ #include "gpage.cpp"
+ #include "gsystem.cpp"
+ #include "install_main.cpp"
+ #include "legal.cpp"
+ #include "pages.cpp"
+#else
+ #include <cstdio>
+ using namespace std ;
+ int main() { printf("%s\n","error: gui not enabled"); return 1;}
+#endif
+

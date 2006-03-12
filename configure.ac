@@ -91,6 +91,12 @@ AC_ARG_ENABLE(ipv6,AC_HELP_STRING([--enable-ipv6],[enable ipv6 (default disabled
 ENABLE_IPV6
 
 dnl ===
+dnl "--enable-gui"
+dnl
+AC_ARG_ENABLE(gui,AC_HELP_STRING([--enable-gui],[enable configuration gui (requires Qt4) (default disabled)]))
+ENABLE_GUI
+
+dnl ===
 dnl "--with-workshop"
 dnl
 AC_ARG_WITH(workshop,AC_HELP_STRING([--with-workshop],[use Sun WorkShop 'CC -xar' as the 'ar' tool (default disabled)]))
@@ -121,6 +127,10 @@ AC_SUBST(e_spooldir)
 if test "$e_spooldir" = "" ; then e_spooldir="$localstatedir/spool/emailrelay" ; fi
 AC_SUBST(e_examplesdir)
 if test "$e_examplesdir" = "" ; then e_examplesdir="$libexecdir" ; fi
+AC_SUBST(e_x11dir)
+if test "$e_x11dir" = "" ; then e_x11dir="/usr/X11R6" ; fi
+AC_SUBST(e_qtdir)
+if test "$e_qtdir" = "" ; then e_qtdir="/usr/lib/qt" ; fi
 ENABLE_FHS
 
 dnl ===
@@ -131,5 +141,5 @@ SET_MAKE=""
 dnl ===
 dnl generate files...
 dnl
-AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/install/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile lib/sunpro5/Makefile bin/Makefile doc/Makefile etc/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile lib/sunpro5/Makefile bin/Makefile doc/Makefile etc/Makefile)
 

@@ -21,8 +21,8 @@
 // gdialog.cpp
 //
 
+#include "qt.h"
 #include "gdialog.h"
-#include <QtGui>
 #include "gdebug.h"
 #include <algorithm>
 #include <stdexcept>
@@ -31,25 +31,32 @@ GDialog::GDialog( QWidget *parent ) :
 	QDialog(parent) ,
 	m_first(true)
 {
-	m_cancel_button = new QPushButton(tr("Cancel"));
-	m_back_button = new QPushButton(tr("< &Back"));
-	m_next_button = new QPushButton(tr("Next >"));
-	m_finish_button = new QPushButton(tr("&Finish"));
+	m_cancel_button = new QPushButton(tr("Cancel")) ;
+	m_back_button = new QPushButton(tr("< &Back")) ;
+	m_next_button = new QPushButton(tr("Next >")) ;
+	m_finish_button = new QPushButton(tr("&Finish")) ;
 
-	connect(m_cancel_button, SIGNAL(clicked()), this, SLOT(reject()));
-	connect(m_back_button, SIGNAL(clicked()), this, SLOT(backButtonClicked()));
-	connect(m_next_button, SIGNAL(clicked()), this, SLOT(nextButtonClicked()));
+	connect( m_back_button, SIGNAL(clicked()), this, SLOT(backButtonClicked()) ) ;
+	connect( m_next_button, SIGNAL(clicked()), this, SLOT(nextButtonClicked()) ) ;
+	connect( m_cancel_button, SIGNAL(clicked()), this, SLOT(reject()) ) ;
+	connect( m_finish_button, SIGNAL(clicked()) , this , SLOT(accept()) ) ;
 
-	m_button_layout = new QHBoxLayout;
-	m_button_layout->addStretch(1);
-	m_button_layout->addWidget(m_cancel_button);
-	m_button_layout->addWidget(m_back_button);
-	m_button_layout->addWidget(m_next_button);
-	m_button_layout->addWidget(m_finish_button);
+	m_button_layout = new QHBoxLayout ;
+	m_button_layout->addStretch( 1 ) ;
+	m_button_layout->addWidget( m_cancel_button ) ;
+	m_button_layout->addWidget( m_back_button ) ;
+	m_button_layout->addWidget( m_next_button ) ;
+	m_button_layout->addWidget( m_finish_button ) ;
 
-	m_main_layout = new QVBoxLayout;
-	m_main_layout->addLayout(m_button_layout);
-	setLayout(m_main_layout);
+	m_main_layout = new QVBoxLayout ;
+	m_main_layout->addLayout( m_button_layout ) ;
+	setLayout( m_main_layout ) ;
+}
+
+void GDialog::add( GPage * page , const std::string & conditional_name )
+{
+	if( conditional_name.empty() || page->name() == conditional_name )
+		add( page ) ;
 }
 
 void GDialog::add( GPage * page )
@@ -60,6 +67,11 @@ void GDialog::add( GPage * page )
 	m_first = false ;
 }
 
+bool GDialog::empty() const
+{
+	return m_map.empty() ;
+}
+
 GPage & GDialog::page( const std::string & name )
 {
 	if( m_map.find(name) == m_map.end() )
@@ -67,10 +79,18 @@ GPage & GDialog::page( const std::string & name )
 	return *m_map[name] ;
 }
 
+const GPage & GDialog::page( const std::string & name ) const
+{
+	Map::const_iterator p = m_map.find(name) ;
+	if( p == m_map.end() )
+		throw std::runtime_error( std::string() + "internal error: no such page: " + name ) ;
+	return *(*p).second ;
+}
+
 void GDialog::setFirstPage( GPage & page )
 {
-	page.reset();
-	m_history.push_back(page.name());
+	page.reset() ;
+	m_history.push_back(page.name()) ;
 	switchPage( m_history.back() ) ;
 }
 
@@ -78,7 +98,7 @@ void GDialog::backButtonClicked()
 {
 	std::string oldPageName = m_history.back();
 	m_history.pop_back() ;
-	switchPage( m_history.back() , oldPageName ) ;
+	switchPage( m_history.back() , oldPageName , true ) ;
 }
 
 void GDialog::nextButtonClicked()
@@ -94,13 +114,13 @@ void GDialog::pageUpdated()
 	std::string currentPageName = m_history.back() ;
 	G_DEBUG( "GDialog::pageUpdated: " << currentPageName ) ;
 	GPage & currentPage = page(currentPageName) ;
-	if( currentPage.nextPage().empty() )
+	if( currentPage.nextPage().empty() || m_map.size() == 1U )
 		m_finish_button->setEnabled( currentPage.isComplete() ) ;
 	else
 		m_next_button->setEnabled( currentPage.isComplete() );
 }
 
-void GDialog::switchPage( std::string newPageName , std::string oldPageName )
+void GDialog::switchPage( std::string newPageName , std::string oldPageName , bool back )
 {
 	// hide and disconnect the old page
 	//
@@ -116,14 +136,15 @@ void GDialog::switchPage( std::string newPageName , std::string oldPageName )
 	//
 	GPage & newPage = page(newPageName) ;
 	m_main_layout->insertWidget(0, &newPage);
-	newPage.show();
-	newPage.setFocus();
+	newPage.onShow( back ) ; // GPage method
+	newPage.show() ;
+	newPage.setFocus() ;
 	connect(&newPage, SIGNAL(onUpdate()), this, SLOT(pageUpdated()));
 
 	// set the default state of the next and finish buttons
 	//
 	m_back_button->setEnabled( m_history.size() != 1U ) ;
-	if( newPage.nextPage().empty() )
+	if( newPage.nextPage().empty() ) // || m_map.size() == 1U )
 	{
 		m_next_button->setEnabled(false);
 		m_finish_button->setDefault(true);
@@ -156,5 +177,11 @@ GPage & GDialog::previousPage( unsigned int distance )
 	while( distance-- ) ++p ;
 	G_DEBUG( "GDialog::previousPage: " << currentPageName() << " -> " << *p ) ;
 	return page(*p) ;
+}
+
+void GDialog::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
+{
+	for( History::const_iterator p = m_history.begin() ; p != m_history.end() ; ++p )
+		page(*p).dump( stream , prefix , eol ) ;
 }
 

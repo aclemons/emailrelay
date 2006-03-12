@@ -18,4 +18,4 @@
 ## 
 #
 EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.dsw
-SUBDIRS = glib gnet gsmtp gpop main win32 install
+SUBDIRS = glib gnet gsmtp gpop main win32 gui

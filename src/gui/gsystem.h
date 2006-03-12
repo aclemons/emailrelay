@@ -18,35 +18,35 @@
 // 
 // ===
 //
-// gsystem.cpp
+// gsystem.h
 //
 
-#include "gsystem.h"
+#ifndef G_SYSTEM_H
+#define G_SYSTEM_H
 
-#ifdef _WIN32
-G::Path GSystem::install()
+#include "gpath.h"
+
+// Class: GSystem
+// Description: Provides file-system paths.
+//
+class GSystem 
 {
-	return "c:\\program files\\emailrelay" ;
-}
-G::Path GSystem::spool()
-{
-	return "c:\\windows\\spool\\emailrelay" ;
-}
-G::Path GSystem::config()
-{
-	return "c:\\windows" ;
-}
-#else
-G::Path GSystem::install()
-{
-	return "/usr/local/emailrelay" ;
-}
-G::Path GSystem::spool()
-{
-	return "/var/spool/emailrelay" ;
-}
-G::Path GSystem::config()
-{
-	return "/etc" ;
-}
+public:
+	static G::Path install() ;
+		// Returns the installation path.
+
+	static G::Path spool() ;
+		// Returns the spool directory path.
+
+	static G::Path config() ;
+		// Returns the configuration directory path.
+
+	static G::Path cwd() ;
+		// Returns the current working directory.
+
+private:
+	GSystem() ;
+} ;
+
 #endif
+

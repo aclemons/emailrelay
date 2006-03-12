@@ -21,8 +21,12 @@
 // gpage.h
 //
 
+#include "qt.h"
 #include "gpage.h"
 #include "gdialog.h"
+
+bool GPage::m_test_mode = false ;
+std::string GPage::m_tool ;
 
 GPage::GPage( GDialog & dialog , const std::string & name , const std::string & next_1 , const std::string & next_2 ) : 
 	QWidget(&dialog) , 
@@ -77,5 +81,50 @@ QLabel * GPage::newTitle( QString s )
 	p.setVerticalPolicy( QSizePolicy::Fixed ) ;
 	label->setSizePolicy( p ) ;
 	return label ;
+}
+
+void GPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
+{
+	stream << prefix << "# " << name() << eol ;
+}
+
+std::string GPage::value( const QAbstractButton * p )
+{
+	return p->isChecked() ? "y" : "n" ;
+}
+
+std::string GPage::value( const QLineEdit * p )
+{
+	return p->text().toStdString() ;
+}
+
+std::string GPage::value( const QComboBox * p )
+{
+	return p->currentText().toStdString() ;
+}
+
+void GPage::setTestMode()
+{
+	m_test_mode = true ;
+}
+
+bool GPage::testMode() const
+{
+	return m_test_mode ;
+}
+
+void GPage::onShow( bool )
+{
+	// no-op
+}
+
+void GPage::setTool( const std::string & tool )
+{
+	m_tool = tool ;
+}
+
+std::string GPage::tool()
+{
+	return m_tool ;
 }
 
