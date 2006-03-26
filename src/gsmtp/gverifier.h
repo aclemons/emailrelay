@@ -60,17 +60,11 @@ public:
 		Status() ;
 	} ;
 
-	Verifier( const G::Executable & exe , bool deliver_to_postmaster , bool reject_local ) ;
+	explicit Verifier( const G::Executable & exe ) ;
 		// Constructor. If an executable path is given (ie. exe.exe() 
 		// is not G::Path()) then it is used for external verification.
-		// Otherwise the internal verifier is used, controlled
-		// by the two boolean flags. The deliver-to-postmaster 
-		// flag enables the special treatment of local "postmaster" 
-		// addresses, as dictated by the RFC. If reject-local
-		// is true then local mailbox addresses (ie. without
-		// an at-sign) are rejected. If reject-local is false 
-		// then all addresses are treated as remote, and no 
-		// local delivery is attempted.
+		// Otherwise the internal "accept-all-as-remote" verifier is 
+		// used.
 
 	Status verify( const std::string & rcpt_to_parameter ,
 		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
@@ -103,8 +97,6 @@ private:
 
 private:
 	G::Executable m_external ;
-	bool m_deliver_to_postmaster ;
-	bool m_reject_local ;
 } ;
 
 #endif

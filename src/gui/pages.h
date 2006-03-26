@@ -25,6 +25,7 @@
 #define G_PAGES_H
 
 #include "qt.h"
+#include "thread.h"
 #include "gdialog.h"
 #include "gpage.h"
 
@@ -36,6 +37,7 @@ class QTextEdit;
 class QLabel; 
 class QLineEdit; 
 class QPushButton; 
+class QThread; 
 class DetailsPage; 
 class EvaluatePage; 
 class FinishPage; 
@@ -67,7 +69,7 @@ public:
 
 private:
 	QTextEdit * m_text_edit ;
-	QCheckBox * m_agree_check_box ;
+	QCheckBox * m_agree_checkbox ;
 };
 
 class DirectoryPage : public GPage 
@@ -76,7 +78,6 @@ public:
 	DirectoryPage( GDialog & dialog , const std::string & name ,
 		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
 
-	virtual void reset() ;
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 	virtual bool isComplete() ;
@@ -115,13 +116,13 @@ public:
 	virtual bool isComplete() ;
 
 private:
-	QCheckBox * m_pop_check_box ;
-	QCheckBox * m_smtp_check_box ;
-	QRadioButton * m_immediate_check_box ;
-	QRadioButton * m_periodically_check_box ;
-	QRadioButton * m_on_demand_check_box ;
-	QComboBox * m_period_combo_box ;
-	QGroupBox * m_forwarding_box ;
+	QCheckBox * m_pop_checkbox ;
+	QCheckBox * m_smtp_checkbox ;
+	QRadioButton * m_immediate_checkbox ;
+	QRadioButton * m_periodically_checkbox ;
+	QRadioButton * m_on_demand_checkbox ;
+	QComboBox * m_period_combo ;
+	QGroupBox * m_forwarding_group ;
 
 private slots:
 	void onToggle() ;
@@ -145,8 +146,8 @@ private:
 	QRadioButton * m_one ;
 	QRadioButton * m_shared ;
 	QRadioButton * m_pop_by_name ;
-	QCheckBox * m_no_delete_check_box ;
-	QCheckBox * m_auto_copy_check_box ;
+	QCheckBox * m_no_delete_checkbox ;
+	QCheckBox * m_auto_copy_checkbox ;
 } ;
 
 class PopAccountsPage : public GPage 
@@ -197,11 +198,13 @@ public:
 
 private:
 	QLineEdit * m_port_edit_box ;
-	QCheckBox * m_auth_check_box ;
+	QCheckBox * m_auth_checkbox ;
 	QComboBox * m_mechanism_combo ;
-	QGroupBox * m_account_box ;
+	QGroupBox * m_account_group ;
 	QLineEdit * m_account_name ;
 	QLineEdit * m_account_pwd ;
+	QLineEdit * m_trust_address ;
+	QGroupBox * m_trust_group ;
 
 private slots:
 	void onToggle() ;
@@ -220,9 +223,9 @@ public:
 private:
 	QLineEdit * m_server_edit_box ;
 	QLineEdit * m_port_edit_box ;
-	QCheckBox * m_auth_check_box ;
+	QCheckBox * m_auth_checkbox ;
 	QComboBox * m_mechanism_combo ;
-	QGroupBox * m_account_box ;
+	QGroupBox * m_account_group ;
 	QLineEdit * m_account_name ;
 	QLineEdit * m_account_pwd ;
 
@@ -240,18 +243,53 @@ public:
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 
 private:
-	QCheckBox * m_on_boot_check_box ;
-	QCheckBox * m_at_login_check_box ;
-	QCheckBox * m_add_menu_item_check_box ;
-	QCheckBox * m_add_desktop_item_check_box ;
-	QCheckBox * m_verbose_check_box ;
+	QCheckBox * m_on_boot_checkbox ;
+	QCheckBox * m_at_login_checkbox ;
+	QCheckBox * m_add_menu_item_checkbox ;
+	QCheckBox * m_add_desktop_item_checkbox ;
+	QCheckBox * m_verbose_checkbox ;
 } ;
 
-class ToDoPage : public GPage 
+class LoggingPage : public GPage 
 {
 public:
-	ToDoPage( GDialog & dialog , const std::string & name ,
+	LoggingPage( GDialog & dialog , const std::string & name ,
 		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+
+	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
+
+private:
+	QCheckBox * m_debug_checkbox ;
+	QCheckBox * m_verbose_checkbox ;
+	QCheckBox * m_syslog_checkbox ;
+} ;
+
+class ListeningPage : public GPage 
+{Q_OBJECT
+public:
+	ListeningPage( GDialog & dialog , const std::string & name ,
+		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+
+	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
+	virtual bool isComplete() ;
+
+private slots:
+	void onToggle() ;
+
+private:
+	QCheckBox * m_remote_checkbox ;
+	QRadioButton * m_all_radio ;
+	QRadioButton * m_one_radio ;
+	QLineEdit * m_listening_interface ;
+} ;
+
+class ConfigurationPage : public GPage 
+{
+public:
+	ConfigurationPage( GDialog & dialog , const std::string & name , const std::string & next_1 , 
+		bool final_button ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -265,24 +303,30 @@ private:
 } ;
 
 class ProgressPage : public GPage 
-{
+{Q_OBJECT
 public:
-	ProgressPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+	ProgressPage( GDialog & dialog , const std::string & name , const std::string & next_1 , bool close_button ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 	virtual void onShow( bool back ) ;
 
+private slots:
+	void onThreadChangeEvent() ;
+	void onThreadDoneEvent( int rc ) ;
+
+private:
+	static void check( bool ) ;
+
 private:
 	QTextEdit * m_text_edit ;
+	Thread * m_thread ;
 } ;
 
-class FinalPage : public GPage 
+class EndPage : public GPage 
 {
 public:
-	FinalPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+	EndPage( GDialog & dialog , const std::string & name ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;

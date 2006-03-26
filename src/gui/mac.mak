@@ -32,7 +32,7 @@ qt_moc=$(e_qtdir)/bin/moc
 srcdir=.
 top_builddir=../..
 
-moc_objects=moc_pages.o moc_gdialog.o moc_gpage.o
+moc_objects=moc_pages.o moc_gdialog.o moc_gpage.o moc_thread.o
 objects=all.o $(moc_objects)
 
 syslibs=\

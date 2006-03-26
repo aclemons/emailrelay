@@ -259,6 +259,9 @@ public:
 	static Strings keys( const StringMap & string_map ) ;
 		// Extracts the keys from a map of strings.
 
+	static std::string ws() ;
+		// A convenience function returning standard whitespace characters.
+
 private:
 	static void listPushBack( void * , const std::string & ) ;
 	static void arrayPushBack( void * , const std::string & ) ;

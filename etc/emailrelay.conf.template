@@ -110,7 +110,8 @@
 
 # Name: poll
 # Format: poll <period>             
-# Description: Enables polling with the specified period. Requires --forward-to.
+# Description: Enables polling of the spool directory for new messages with the 
+# specified period. Requires --forward-to.
 #
 #poll 120
 

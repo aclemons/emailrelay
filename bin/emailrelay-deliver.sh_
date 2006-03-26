@@ -22,9 +22,7 @@
 # emailrelay-deliver.sh
 #
 # Looks for local mail in the E-MailRelay spool directory, and delivers 
-# it using 'procmail'. Note that the only local mail should be for the local
-# postmaster, since E-MailRelay will not accept mail for any other
-# local recipient.
+# it using 'procmail'.
 #
 # usage: emailrelay-deliver.sh [<spool-dir>]
 #

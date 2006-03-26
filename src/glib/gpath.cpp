@@ -53,6 +53,13 @@ G::Path::Path( const char * path )
 	validate( "ctor(cstr)" ) ;
 }
 
+G::Path::Path( const Path & path , const std::string & tail )
+{
+	set( path.str() ) ;
+	validate( "c-ctor" ) ;
+	pathAppend( tail ) ;
+}
+
 G::Path::Path( const Path & other )
 {
 	set( other.str() ) ;

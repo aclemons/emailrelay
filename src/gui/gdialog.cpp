@@ -29,7 +29,8 @@
 
 GDialog::GDialog( QWidget *parent ) : 
 	QDialog(parent) ,
-	m_first(true)
+	m_first(true) ,
+	m_waiting(false)
 {
 	m_cancel_button = new QPushButton(tr("Cancel")) ;
 	m_back_button = new QPushButton(tr("< &Back")) ;
@@ -39,7 +40,7 @@ GDialog::GDialog( QWidget *parent ) :
 	connect( m_back_button, SIGNAL(clicked()), this, SLOT(backButtonClicked()) ) ;
 	connect( m_next_button, SIGNAL(clicked()), this, SLOT(nextButtonClicked()) ) ;
 	connect( m_cancel_button, SIGNAL(clicked()), this, SLOT(reject()) ) ;
-	connect( m_finish_button, SIGNAL(clicked()) , this , SLOT(accept()) ) ;
+	connect( m_finish_button, SIGNAL(clicked()) , this , SLOT(finishButtonClicked()) ) ;
 
 	m_button_layout = new QHBoxLayout ;
 	m_button_layout->addStretch( 1 ) ;
@@ -67,6 +68,11 @@ void GDialog::add( GPage * page )
 	m_first = false ;
 }
 
+void GDialog::add()
+{
+	pageUpdated() ;
+}
+
 bool GDialog::empty() const
 {
 	return m_map.empty() ;
@@ -89,75 +95,96 @@ const GPage & GDialog::page( const std::string & name ) const
 
 void GDialog::setFirstPage( GPage & page )
 {
-	page.reset() ;
 	m_history.push_back(page.name()) ;
 	switchPage( m_history.back() ) ;
 }
 
 void GDialog::backButtonClicked()
 {
-	std::string oldPageName = m_history.back();
+	std::string old_page_name = m_history.back();
 	m_history.pop_back() ;
-	switchPage( m_history.back() , oldPageName , true ) ;
+	switchPage( m_history.back() , old_page_name , true ) ;
 }
 
 void GDialog::nextButtonClicked()
 {
-	std::string oldPageName = m_history.back();
-	std::string newPageName = page(oldPageName).nextPage();
-	m_history.push_back(newPageName);
-	switchPage( m_history.back() , oldPageName ) ;
+	std::string old_page_name = m_history.back();
+	std::string new_page_name = page(old_page_name).nextPage();
+	m_history.push_back(new_page_name);
+	switchPage( m_history.back() , old_page_name ) ;
+}
+
+void GDialog::finishButtonClicked()
+{
+	std::string old_page_name = m_history.back();
+	std::string new_page_name = page(old_page_name).nextPage();
+	if( new_page_name.empty() )
+	{
+		accept() ;
+	}
+	else
+	{
+		m_history.push_back(new_page_name);
+		switchPage( m_history.back() , old_page_name ) ;
+	}
 }
 
 void GDialog::pageUpdated()
 {
-	std::string currentPageName = m_history.back() ;
-	G_DEBUG( "GDialog::pageUpdated: " << currentPageName ) ;
-	GPage & currentPage = page(currentPageName) ;
-	if( currentPage.nextPage().empty() || m_map.size() == 1U )
-		m_finish_button->setEnabled( currentPage.isComplete() ) ;
+	std::string current_page_name = m_history.back() ;
+	G_DEBUG( "GDialog::pageUpdated: \"" << current_page_name << "\" page updated" ) ;
+
+	GPage & current_page = page(current_page_name) ;
+	if( m_waiting ) 
+	{
+		; // no-op
+	}
+	else if( current_page.closeButton() )
+	{
+		m_cancel_button->setEnabled(false) ;
+		m_back_button->setEnabled(false) ;
+		m_next_button->setEnabled(false) ;
+		m_finish_button->setText(tr("Close")) ;
+		m_finish_button->setEnabled(true) ;
+	}
 	else
-		m_next_button->setEnabled( currentPage.isComplete() );
+	{
+		m_cancel_button->setEnabled(true) ;
+		m_back_button->setEnabled( m_history.size() != 1U ) ;
+
+		bool finish_button = current_page.useFinishButton() ;
+		QPushButton * active_button = finish_button ? m_finish_button : m_next_button ;
+		QPushButton * inactive_button = finish_button ? m_next_button : m_finish_button ;
+
+		active_button->setEnabled( current_page.isComplete() ) ;
+		inactive_button->setEnabled( false ) ;
+	}
 }
 
-void GDialog::switchPage( std::string newPageName , std::string oldPageName , bool back )
+void GDialog::switchPage( std::string new_page_name , std::string old_page_name , bool back )
 {
 	// hide and disconnect the old page
 	//
-	if( ! oldPageName.empty() )
+	if( ! old_page_name.empty() )
 	{
-		GPage & oldPage = page(oldPageName) ;
+		GPage & oldPage = page(old_page_name) ;
 		oldPage.hide();
 		m_main_layout->removeWidget(&oldPage);
-		disconnect(&oldPage, SIGNAL(onUpdate()), this, SLOT(pageUpdated()));
+		disconnect(&oldPage, SIGNAL(pageUpdateSignal()), this, SLOT(pageUpdated()));
 	}
 
 	// show and connect the new page
 	//
-	GPage & newPage = page(newPageName) ;
+	GPage & newPage = page(new_page_name) ;
 	m_main_layout->insertWidget(0, &newPage);
 	newPage.onShow( back ) ; // GPage method
 	newPage.show() ;
 	newPage.setFocus() ;
-	connect(&newPage, SIGNAL(onUpdate()), this, SLOT(pageUpdated()));
-
-	// set the default state of the next and finish buttons
-	//
-	m_back_button->setEnabled( m_history.size() != 1U ) ;
-	if( newPage.nextPage().empty() ) // || m_map.size() == 1U )
-	{
-		m_next_button->setEnabled(false);
-		m_finish_button->setDefault(true);
-	} 
-	else 
-	{
-		m_next_button->setDefault(true);
-		m_finish_button->setEnabled(false);
-	}
+	connect(&newPage, SIGNAL(pageUpdateSignal()), this, SLOT(pageUpdated())) ;
 
 	// modify the next and finish buttons according to the page state
 	//
-	pageUpdated();
+	pageUpdated() ;
 }
 
 bool GDialog::historyContains( const std::string & name ) const
@@ -183,5 +210,28 @@ void GDialog::dump( std::ostream & stream , const std::string & prefix , const s
 {
 	for( History::const_iterator p = m_history.begin() ; p != m_history.end() ; ++p )
 		page(*p).dump( stream , prefix , eol ) ;
+}
+
+void GDialog::wait( bool wait_on )
+{
+	if( wait_on && !m_waiting )
+	{
+		m_waiting = wait_on ;
+
+		m_back_state = m_back_button->isEnabled() ;
+		m_next_state = m_next_button->isEnabled() ;
+		m_finish_state = m_finish_button->isEnabled() ;
+
+		// all off
+		m_cancel_button->setEnabled(false);
+		m_back_button->setEnabled(false);
+		m_next_button->setEnabled(false);
+		m_finish_button->setEnabled(false);
+	}
+	else if( m_waiting && !wait_on )
+	{
+		m_waiting = wait_on ;
+		pageUpdated() ;
+	}
 }
 

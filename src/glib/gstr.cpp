@@ -646,4 +646,8 @@ G::Strings G::Str::keys( const StringMap & map )
 	return result ;
 }
 
+std::string G::Str::ws()
+{
+	return std::string(" \t\n\r") ;
+}
 

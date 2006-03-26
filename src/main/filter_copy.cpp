@@ -34,8 +34,11 @@
 #include <iostream>
 #include <exception>
 #include <stdexcept>
+#include <sstream>
+#include <list>
+#include <string>
 
-G_EXCEPTION( Error , "filter_copy" ) ;
+G_EXCEPTION( Error , "message copy" ) ;
 
 static void run( const std::string & content )
 {
@@ -56,22 +59,47 @@ static void run( const std::string & content )
 
 	// check the envelope file exists
 	//
-	G::Path envelope_path = dir_path ; envelope_path.pathAppend(envelope_name) ;
+	G::Path envelope_path = dir_path ; envelope_path.pathAppend(envelope_name+".new") ;
 	if( ! G::File::exists(envelope_path) )
-		throw Error( "no envelope file" ) ;
+		throw Error( std::string() + "no envelope file \"" + envelope_path.str() + "\"" ) ;
 
 	// copy the envelope into all subdirectories
 	//
+	int directory_count = 0 ;
+	std::list<std::string> failures ;
 	G::Directory dir( dir_path ) ;
 	G::DirectoryIterator iter( dir ) ;
 	while( iter.more() && !iter.error() )
 	{
 		if( iter.isDir() )
 		{
+			directory_count++ ;
 			G::Path target = iter.filePath() ; target.pathAppend(envelope_name) ;
-			std::cout << envelope_path << " -> " << target << std::endl ;
-			G::File::copy( envelope_path , target ) ;
+			bool ok = G::File::copy( envelope_path , target , G::File::NoThrow() ) ;
+			if( !ok )
+				failures.push_back( iter.fileName().str() ) ;
 		}
+	}
+
+	// notify failures
+	//
+	if( ! failures.empty() )
+	{
+		std::ostringstream ss ;
+		ss << "failed to copy envelope file " << envelope_path.str() << " into " ;
+		if( failures.size() == 1U )
+		{
+			ss << "the \"" << failures.front() << "\" sub-directory" ;
+		}
+		else
+		{
+			ss << failures.size() << " sub-directories, including \"" << failures.front() << "\"" ;
+		}
+		throw Error( ss.str() ) ;
+	}
+	if( directory_count == 0 ) // probably a permissioning problem
+	{
+		throw Error( "no sub-directories to copy into" ) ;
 	}
 }
 

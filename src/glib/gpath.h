@@ -55,6 +55,9 @@ public:
 	Path( const char *path ) ;
 		// Constructor.
 		
+	Path( const Path & path , const std::string & tail ) ;
+		// Constructor with an implicit pathAppend().
+
 	Path( const Path &other ) ;
 		// Copy constructor.
 		
@@ -176,6 +179,21 @@ namespace G
 	{
 		path.streamOut( stream ) ;
 		return stream ;
+	}
+
+	inline
+	Path & operator+=( Path & p , const std::string & str )
+	{
+		p.pathAppend( str ) ;
+		return p ;
+	}
+
+	inline
+	Path operator+( const Path & p , const std::string & str )
+	{
+		Path result( p ) ;
+		result.pathAppend( str ) ;
+		return result ;
 	}
 }
 

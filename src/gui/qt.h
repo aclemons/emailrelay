@@ -21,25 +21,21 @@
 // qt.h
 //
 
-#if 1
-
 // Mac-friendly...
 #include <QtCore/QtCore>
 #include <QtGui/QtGui>
 
-#else
+//#include <QAbstractButton>
+//#include <QApplication>
+//#include <QComboBox>
+//#include <QDialog>
+//#include <QLabel>
+//#include <QLineEdit>
+//#include <QLocale>
+//#include <QMessageBox>
+//#include <QObject>
+//#include <QString>
+//#include <QTranslator>
+//#include <QWidget>
+//#include <QThread>
 
-#include <QAbstractButton>
-#include <QApplication>
-#include <QComboBox>
-#include <QDialog>
-#include <QLabel>
-#include <QLineEdit>
-#include <QLocale>
-#include <QMessageBox>
-#include <QObject>
-#include <QString>
-#include <QTranslator>
-#include <QWidget>
-
-#endif

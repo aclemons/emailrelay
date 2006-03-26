@@ -30,10 +30,11 @@
 #if HAVE_GUI
  #include "gdialog.cpp"
  #include "gpage.cpp"
- #include "gsystem.cpp"
- #include "install_main.cpp"
+ #include "dir.cpp"
+ #include "main.cpp"
  #include "legal.cpp"
  #include "pages.cpp"
+ #include "thread.cpp"
 #else
  #include <cstdio>
  using namespace std ;

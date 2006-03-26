@@ -18,18 +18,18 @@
 // 
 // ===
 //
-// gsystem.h
+// dir.h
 //
 
-#ifndef G_SYSTEM_H
-#define G_SYSTEM_H
+#ifndef G_DIR_H
+#define G_DIR_H
 
 #include "gpath.h"
 
-// Class: GSystem
+// Class: Dir
 // Description: Provides file-system paths.
 //
-class GSystem 
+class Dir 
 {
 public:
 	static G::Path install() ;
@@ -41,11 +41,23 @@ public:
 	static G::Path config() ;
 		// Returns the configuration directory path.
 
+	static G::Path startup() ;
+		// Returns the startup configuration directory path (eg. "/etc/init.d").
+
+	static G::Path pid() ;
+		// Returns the directory for pid files.
+
 	static G::Path cwd() ;
 		// Returns the current working directory.
 
+	static G::Path tooldir() ;
+		// Returns the tool's directory.
+
+	static G::Path tooldir( const std::string & argv0 ) ;
+		// Returns the tool's directory.
+
 private:
-	GSystem() ;
+	Dir() ;
 } ;
 
 #endif

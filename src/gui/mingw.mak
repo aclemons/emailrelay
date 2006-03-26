@@ -28,8 +28,8 @@
 mk_sources=\
 	gdialog.cpp \
 	gpage.cpp \
-	gsystem.cpp \
-	install_main.cpp \
+	dir.cpp \
+	main.cpp \
 	legal.cpp \
 	pages.cpp \
 	moc_gdialog.cpp \
@@ -49,7 +49,7 @@ qt_libs_release= \
 libs=../glib/glib.a $(qt_libs_release)
 
 syslibs=-lgdi32 -lwsock32 -lole32 -loleaut32 -lwinspool -lcomdlg32 -limm32 -lwinmm -luuid
-mk_target=install.exe
+mk_target=emailrelay-gui.exe
 mk_includes_extra=-I$(mk_qt)/include -I$(mk_qt)/include/QtCore -I$(mk_qt)/include/QtGui
 
 all: $(mk_target)

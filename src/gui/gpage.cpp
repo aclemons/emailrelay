@@ -22,20 +22,25 @@
 //
 
 #include "qt.h"
+#include "gstr.h"
 #include "gpage.h"
 #include "gdialog.h"
 
 bool GPage::m_test_mode = false ;
 std::string GPage::m_tool ;
+std::string GPage::m_tool_arg ;
 
-GPage::GPage( GDialog & dialog , const std::string & name , const std::string & next_1 , const std::string & next_2 ) : 
-	QWidget(&dialog) , 
-	m_dialog(dialog) ,
-	m_name(name) ,
-	m_next_1(next_1) ,
-	m_next_2(next_2)
+GPage::GPage( GDialog & dialog , const std::string & name , const std::string & next_1 , 
+	const std::string & next_2 , bool finish_button , bool close_button ) : 
+		QWidget(&dialog) , 
+		m_dialog(dialog) ,
+		m_name(name) ,
+		m_next_1(next_1) ,
+		m_next_2(next_2) ,
+		m_finish_button(finish_button) ,
+		m_close_button(close_button)
 {
-	hide();
+	hide() ;
 }
 
 GDialog & GPage::dialog()
@@ -48,13 +53,19 @@ const GDialog & GPage::dialog() const
 	return m_dialog ;
 }
 
-void GPage::reset()
+bool GPage::useFinishButton() const
 {
+	return m_finish_button ;
+}
+
+bool GPage::closeButton() const
+{
+	return m_close_button ;
 }
 
 bool GPage::isComplete()
 {
-	return true;
+	return true ;
 }
 
 std::string GPage::name() const 
@@ -118,13 +129,22 @@ void GPage::onShow( bool )
 	// no-op
 }
 
-void GPage::setTool( const std::string & tool )
+void GPage::setTool( const std::string & tool , const std::string & arg )
 {
 	m_tool = tool ;
+	m_tool_arg = arg ;
 }
 
 std::string GPage::tool()
 {
 	return m_tool ;
+}
+
+G::Strings GPage::toolArgs( const std::string & prefix )
+{
+	G::Strings result ;
+	G::Str::splitIntoTokens( m_tool_arg , result , G::Str::ws() ) ;
+	if( ! prefix.empty() ) result.push_front(prefix) ;
+	return result ;
 }
 

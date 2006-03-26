@@ -92,7 +92,7 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 	// add "To:" lines to the envelope
 	//
 	G::Executable no_exe ;
-	GSmtp::Verifier verifier( no_exe , false , false ) ;
+	GSmtp::Verifier verifier( no_exe ) ;
 	for( G::Strings::const_iterator to_p = to_list.begin() ; to_p != to_list.end() ; ++to_p )
 	{
 		std::string to = *to_p ;

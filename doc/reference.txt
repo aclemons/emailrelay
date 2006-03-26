@@ -29,7 +29,7 @@ where <switch> is:
   Runs as a proxy: equivalent to "--log --close-stderr --immediate --forward-to".
 
 # --as-server (-d)
-  Runs as a server: equivalent to "--log --close-stderr --postmaster".
+  Runs as a server: equivalent to "--log --close-stderr".
 
 # --client-auth (-C)
   Enables smtp authentication with remote server, using the given secrets file.
@@ -109,9 +109,6 @@ where <switch> is:
 # --port (-p)
   Specifies the smtp listening port number.
 
-# --postmaster (-P)
-  Allows delivery to the postmaster but rejects all other local mailbox addresses.
-
 # --remote-clients (-r)
   Allows remote clients to connect.
 
@@ -186,76 +183,6 @@ a "local" suffix.
 
 If a message cannot be forwarded the envelope file is given a "bad" suffix,
 and the failure reason is written into the file.
-
-SMTP issues
------------
-# Authentication:
-
-  The AUTH extension is supported, providing the CRAM-MD5 and LOGIN mechanisms.
-
-# Local delivery:
-
-  In server mode (ie. with "--postmaster") recipient addresses like
-  "postmaster", "postmaster@localhost" and "postmaster@fqdn" (where "fqdn" is
-  the host's fully qualified domain name) are treated as the local postmaster, 
-  resulting in local delivery rather than mail forwarding. Recipient addresses
-  other than "postmaster" addresses with no "at" sign (@) or ending in 
-  "@localhost" will be rejected at the time the message is submitted by the
-  client.
-
-  Delivery of mail to a local "postmaster" is a feature of E-MailRelay which is
-  provided for completeness and for comformance to the SMTP specification. But
-  note that the E-MailRelay daemon does not actually deliver mail to the
-  postmaster mailbox.  All it does is create an envelope and content file in
-  the spool directory with a ".local" suffix. Some external system, such as a
-  shell script run from cron calling "procmail", should be used to process the
-  ".local" files. An example script is provided.
-
-# Timeouts:
-
-  A simple client-side timeout is implemented which will abort the transaction
-  if the server fails to respond to any of the client's SMTP commands within
-  the given time period.
-
-# Message loops:
-
-  Message loops are not detected.
-
-# Eight bit messages:
-
-  The 8BITMIME SMTP extension is supported, however no attempt is made to
-  re-encode 8-bit messages into 7-bit messages if the next-hop server
-  does not.
-
-Administration interface
-------------------------
-If enabled with the "--admin" command line switch, the E-MailRelay server will
-provide a network interface for performing administration tasks. This is a
-simple command-line interface which is compatible with "telnet":
-
-	$ emailrelay --as-server --port 125 --forward-to localhost:25 --admin 10026
-	$ telnet localhost 10026
-	E-MailRelay> help
-	E-MailRelay> quit
-
-The "flush" command is used to get the E-MailRelay server to forward spooled
-mail to the next SMTP server, as an alternative to running
-"emailrelay --as-client" as a separate process. In proxy mode it is a way of
-getting the proxy server to scan the spool-directory for new messages.
-
-The utility program "emailrelay-poke" can be used to issue the "flush"
-command to an E-MailRelay server. For example:
-
-	$ emailrelay --as-server --port 125 --forward-to localhost:25 --admin 10026
-	$ emailrelay-poke 10026
-	$ echo $?
-
-To use the "flush" command the next SMTP server address must have been defined
-on the "emailrelay" command line at start-up using the "--forward-to" switch.
-
-Also, the "list" command lists the messages in the spool directory, "info"
-provides network status information and activity statistics, and "notify"
-enables asynchronous event notification.
 
 Mail processing
 ---------------
@@ -380,22 +307,10 @@ support for threads and sockets would make it a good choice of language.
 
 Address verification
 --------------------
-In server mode (or more accurately when "--postmater" is in effect) addresses
-for incoming e-mails received in "RCPT" or "VRFY" commands are accepted as valid
-if they contain an at sign ("@") or if they are some sort of local "postmaster"
-address: "postmaster", "postmaster@localhost" or "postmaster@<fqdn>". Other
-addresses without an at sign are rejected.
-
-In proxy mode (more accurately without "--postmaster") all addresses are
-accepted as valid, whatever they look like.
-
-This is normally what you want for a proxy or store-and-forward MTA because the
-delivery address can only be fully verified once the message gets to the last
-machine in the chain and the message is finally delivered into a mailbox.
-
-However, the default behaviour can be modified by using an external verifier
-program, specified with the "--verifier" command-line switch, so that you get
-to choose which addresses are accepted as valid and which are rejected.
+By default all addresses for incoming e-mails are accepted as valid. However, 
+the default behaviour can be modified by using an external verifier program, 
+specified with the "--verifier" command-line switch, so that you get to choose 
+which addresses are accepted as valid and which are rejected.
 
 The external verifier program is passed a command-line containing: (1) the full
 address, (2) the user-name part of the address in upper-case, (3) the host-name
@@ -501,83 +416,6 @@ or in JavaScript:
 
 If this verifier script is used with a suitable "--server-auth" file then it can
 be used to prevent open relay without restricting authenticated clients.
-
-Security issues
----------------
-A significant security concern is the use of external mail pre-processors and
-address verifiers (using the "--filter" and "--verifier" switches), and so the
-following precautions are taken:
-
-# effective userid
-
-  Suid privileges are revoked at start-up, switching the effective
-  userid/groupid to be the real userid/groupid values. If started as "root"
-  then the effective userid/groupid are switched at start-up to those of user 
-  "daemon". Special privileges are only reclaimed when needed to bind sockets 
-  and do file i/o. Normally this means temporarily switching the userid and
-  groupid back to what they were at start-up. However, when writing spool files
-  after being started as "root" only the effective userid is changed, not the 
-  groupid, so that new files have group ownership corresponding to the 
-  "daemon" user.
-
-# execution environment
-
-  The mail pre-processor runs with an almost empty set of environment variables
-  ("PATH" and "IFS"), and with no open file descriptors other than "stdin" and
-  "stderr" open onto "/dev/null", and "stdout" open onto a pipe.
-
-# configuration
-
-  The mail pre-processor filename has to be configured using a full path, so
-  there is no dependence on the current working directory or the PATH
-  environment variable.
-
-Some other points are:
-# umask
-
-  The program runs for most of the time with a "umask" of 177, switching to 117
-  when creating spool files.
-
-# buffer overflow
-
-  Strings are dynamically allocated, so buffer overflow/truncation issues are
-  avoided.
-
-# remote clients
-
-  By default connections to the SMTP and administrative ports will be rejected
-  if they come from remote machines.
-
-# remote configuration
-
-  No configuration parameters can be changed through the administrative
-  interface.
-
-# use of exec() and system()
-
-  No exec(), system() or popen() calls are used other than execve() to spawn the
-  mail pre-processor and/or address verifier.
-
-# file permissions
-
-  After a normal installation the spool directory is has ownership of
-  "root.daemon" with permissions of "-rwxrwxr-x". Messages files are created
-  with permissions of "-rw-rw----". This allows normal users to list messages
-  files but not read them.
-
-  The "emailrelay-submit" program is given group ownership of "daemon" with its
-  group set-user-id flag set. This allows it to create message files in the
-  spool directory, and the files created end up owned by the submitter but with
-  group ownership of "daemon".
-
-Security issues which relate to the SMTP protocol itself are beyond the scope of
-this document, but RFC2821 makes the following observation: "SMTP mail is
-inherently insecure in that it is feasible for even [..] casual users to [..]
-create messages that will trick a [..] recipient into believing that they came
-from somewhere else. [..] Real [..] security lies [..] in end-to-end methods
-[..] such as those which use digital signatures."
-
-The "Authentication" section below also relates to security.
 
 Authentication
 --------------
@@ -735,6 +573,113 @@ output will show several new command-line switches:
 
   Disables message deletion. The POP3 DELE command will appear to succeed, but
   no files will be deleted from the spool directory.
+
+Security issues
+---------------
+A significant security concern is the use of external mail pre-processors and
+address verifiers (using the "--filter" and "--verifier" switches), and so the
+following precautions are taken:
+
+# effective userid
+
+  Suid privileges are revoked at start-up, switching the effective
+  userid/groupid to be the real userid/groupid values. If started as "root"
+  then the effective userid/groupid are switched at start-up to those of user 
+  "daemon". Special privileges are only reclaimed when needed to bind sockets 
+  and do file i/o. Normally this means temporarily switching the userid and
+  groupid back to what they were at start-up. However, when writing spool files
+  after being started as "root" only the effective userid is changed, not the 
+  groupid, so that new files have group ownership corresponding to the 
+  "daemon" user.
+
+# execution environment
+
+  The mail pre-processor runs with an almost empty set of environment variables
+  ("PATH" and "IFS"), and with no open file descriptors other than "stdin" and
+  "stderr" open onto "/dev/null", and "stdout" open onto a pipe.
+
+# configuration
+
+  The mail pre-processor filename has to be configured using a full path, so
+  there is no dependence on the current working directory or the PATH
+  environment variable.
+
+Some other points are:
+# umask
+
+  The program runs for most of the time with a "umask" of 177, switching to 117
+  when creating spool files.
+
+# buffer overflow
+
+  Strings are dynamically allocated, so buffer overflow/truncation issues are
+  avoided.
+
+# remote clients
+
+  By default connections to the SMTP and administrative ports will be rejected
+  if they come from remote machines.
+
+# remote configuration
+
+  No configuration parameters can be changed through the administrative
+  interface.
+
+# use of exec() and system()
+
+  No exec(), system() or popen() calls are used other than execve() to spawn the
+  mail pre-processor and/or address verifier.
+
+# file permissions
+
+  After a normal installation the spool directory is has ownership of
+  "root.daemon" with permissions of "-rwxrwxr-x". Messages files are created
+  with permissions of "-rw-rw----". This allows normal users to list messages
+  files but not read them.
+
+  The "emailrelay-submit" program is given group ownership of "daemon" with its
+  group set-user-id flag set. This allows it to create message files in the
+  spool directory, and the files created end up owned by the submitter but with
+  group ownership of "daemon".
+
+Security issues which relate to the SMTP protocol itself are beyond the scope of
+this document, but RFC2821 makes the following observation: "SMTP mail is
+inherently insecure in that it is feasible for even [..] casual users to [..]
+create messages that will trick a [..] recipient into believing that they came
+from somewhere else. [..] Real [..] security lies [..] in end-to-end methods
+[..] such as those which use digital signatures."
+
+The "Authentication" section below also relates to security.
+
+Administration interface
+------------------------
+If enabled with the "--admin" command line switch, the E-MailRelay server will
+provide a network interface for performing administration tasks. This is a
+simple command-line interface which is compatible with "telnet":
+
+	$ emailrelay --as-server --port 125 --forward-to localhost:25 --admin 10026
+	$ telnet localhost 10026
+	E-MailRelay> help
+	E-MailRelay> quit
+
+The "flush" command is used to get the E-MailRelay server to forward spooled
+mail to the next SMTP server, as an alternative to running
+"emailrelay --as-client" as a separate process. In proxy mode it is a way of
+getting the proxy server to scan the spool-directory for new messages.
+
+The utility program "emailrelay-poke" can be used to issue the "flush"
+command to an E-MailRelay server. For example:
+
+	$ emailrelay --as-server --port 125 --forward-to localhost:25 --admin 10026
+	$ emailrelay-poke 10026
+	$ echo $?
+
+To use the "flush" command the next SMTP server address must have been defined
+on the "emailrelay" command line at start-up using the "--forward-to" switch.
+
+Also, the "list" command lists the messages in the spool directory, "info"
+provides network status information and activity statistics, and "notify"
+enables asynchronous event notification.
 
 Files and directories
 ---------------------

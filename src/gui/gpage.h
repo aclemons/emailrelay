@@ -25,6 +25,7 @@
 #define G_PAGE_H
 
 #include "qt.h"
+#include "gstrings.h"
 #include <string>
 
 class GDialog ; 
@@ -37,12 +38,12 @@ class QComboBox ;
 //
 class GPage : public QWidget 
 {Q_OBJECT
-public:
-	GPage( GDialog & , const std::string & name , 
-		const std::string & next_1 = std::string() , 
-		const std::string & next_2 = std::string() ) ;
+protected:
+	GPage( GDialog & , const std::string & name , const std::string & next_1 , 
+		const std::string & next_2 , bool finish_button , bool close_button ) ;
 			// Constructor.
 
+public:
 	GDialog & dialog() ;
 		// Returns the dialog passed in to the ctor.
 
@@ -52,8 +53,11 @@ public:
 	std::string name() const ;
 		// Returns the page name.
 
-	virtual void reset() ;
-		// Resets the page contents.
+	bool useFinishButton() const ;
+		// Returns the ctor's finish_button parameter.
+
+	bool closeButton() const ;
+		// Returns the ctor's close_button parameter.
 
 	virtual void onShow( bool back ) ;
 		// Called as this page becomes visible as a result
@@ -65,7 +69,7 @@ public:
 		// Overrides should select next1() or
 		// next2().
 
-	virtual bool isComplete();
+	virtual bool isComplete() ;
 		// Returns true if the page is complete
 		// and the 'next' button can be enabled.
 
@@ -77,14 +81,17 @@ public:
 	static void setTestMode() ;
 		// Sets a test-mode.
 
-	static void setTool( const std::string & ) ;
+	static void setTool( const std::string & , const std::string & = std::string() ) ;
 		// Squirrels away the install-tool path.
 
 	static std::string tool() ;
 		// Returns the setTool() value.
 
+	static G::Strings toolArgs( const std::string & prefix = std::string() ) ;
+		// Returns the setTool() argument split into a container.
+
 signals:
-	void onUpdate() ;
+	void pageUpdateSignal() ;
 		// Emitted when the page's state changes.
 		// This allows the dialog box to update its 
 		// buttons according to the page's new state.
@@ -103,8 +110,11 @@ private:
 	std::string m_name ;
 	std::string m_next_1 ;
 	std::string m_next_2 ;
+	bool m_finish_button ;
+	bool m_close_button ;
 	static bool m_test_mode ;
 	static std::string m_tool ;
+	static std::string m_tool_arg ;
 } ;
 
 #endif

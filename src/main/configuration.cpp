@@ -349,20 +349,6 @@ std::string Main::Configuration::verifier() const
 	return m_cl.contains("verifier") ? m_cl.value("verifier") : std::string() ;
 }
 
-bool Main::Configuration::deliverToPostmaster() const
-{
-	return 
-		m_cl.contains("postmaster") ||
-		m_cl.contains("as-server") ;
-}
-
-bool Main::Configuration::rejectLocalMailboxes() const
-{
-	return 
-		m_cl.contains("postmaster") ||
-		m_cl.contains("as-server") ;
-}
-
 bool Main::Configuration::withTerminate() const
 {
 	return m_cl.contains("admin-terminate") ;

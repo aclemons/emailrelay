@@ -23,7 +23,7 @@
 #
 
 
-SOURCES = $(emailrelay_gui_SOURCES) $(EXTRA_emailrelay_gui_SOURCES) $(install_tool_SOURCES)
+SOURCES = $(emailrelay_gui_SOURCES) $(EXTRA_emailrelay_gui_SOURCES) $(emailrelay_install_tool_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -45,7 +45,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = emailrelay-gui$(EXEEXT) install-tool$(EXEEXT)
+bin_PROGRAMS = emailrelay-gui$(EXEEXT) \
+	emailrelay-install-tool$(EXEEXT)
 subdir = src/gui
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -61,24 +62,28 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_emailrelay_gui_OBJECTS = all.$(OBJEXT)
 emailrelay_gui_OBJECTS = $(am_emailrelay_gui_OBJECTS)
-am__DEPENDENCIES_1 = moc_gdialog.o moc_gpage.o moc_pages.o
-am_install_tool_OBJECTS = install-tool.$(OBJEXT)
-install_tool_OBJECTS = $(am_install_tool_OBJECTS)
-install_tool_LDADD = $(LDADD)
+am__DEPENDENCIES_1 = moc_gdialog.o moc_gpage.o moc_pages.o \
+	moc_thread.o
+am_emailrelay_install_tool_OBJECTS = tool.$(OBJEXT)
+emailrelay_install_tool_OBJECTS =  \
+	$(am_emailrelay_install_tool_OBJECTS)
+emailrelay_install_tool_DEPENDENCIES =  \
+	$(top_builddir)/src/glib/libglib.a
 SCRIPTS = $(noinst_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/all.Po ./$(DEPDIR)/install-tool.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/all.Po ./$(DEPDIR)/tool.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(emailrelay_gui_SOURCES) $(EXTRA_emailrelay_gui_SOURCES) \
-	$(install_tool_SOURCES)
+	$(emailrelay_install_tool_SOURCES)
 DIST_SOURCES = $(emailrelay_gui_SOURCES) \
-	$(EXTRA_emailrelay_gui_SOURCES) $(install_tool_SOURCES)
+	$(EXTRA_emailrelay_gui_SOURCES) \
+	$(emailrelay_install_tool_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -185,14 +190,16 @@ REAL_SOURCES = \
 	gdialog.h \
 	gpage.cpp \
 	gpage.h \
-	gsystem.cpp \
-	gsystem.h \
-	install_main.cpp \
+	dir.cpp \
+	dir.h \
+	main.cpp \
 	legal.cpp \
 	legal.h \
 	pages.cpp \
 	pages.h \
-	qt.h
+	qt.h \
+	thread.cpp \
+	thread.h
 
 EXTRA_DIST = \
 	$(REAL_SOURCES) \
@@ -205,12 +212,14 @@ EXTRA_DIST = \
 MOC_OUTPUT = \
 	moc_gdialog.cpp \
 	moc_gpage.cpp \
-	moc_pages.cpp
+	moc_pages.cpp \
+	moc_thread.cpp
 
 MOC_OBJECTS = \
 	moc_gdialog.o \
 	moc_gpage.o \
-	moc_pages.o
+	moc_pages.o \
+	moc_thread.o
 
 mock = mock
 mock_in = $(srcdir)/mock_
@@ -223,6 +232,7 @@ INCLUDES = \
 	-I$(top_srcdir)/src/gpop \
 	-DG_SPOOLDIR=\"$(e_spooldir)\" \
 	-DG_SYSCONFDIR=\"$(sysconfdir)\" \
+	-DG_LIBEXECDIR=\"$(libexecdir)\" \
 	-DG_DESTDIR=\"$(DESTDIR)\"
 
 AM_CPPFLAGS = \
@@ -232,10 +242,13 @@ AM_CPPFLAGS = \
 	-I$(e_qtdir)/include/QtGui
 
 noinst_SCRIPTS = mock
-install_tool_SOURCES = install-tool.cpp
+emailrelay_install_tool_SOURCES = tool.cpp
+emailrelay_install_tool_LDADD = \
+	$(top_builddir)/src/glib/libglib.a
+
 emailrelay_gui_SOURCES = all.cpp
 emailrelay_gui_DEPENDENCIES = all.cpp $(MOC_OBJECTS)
-EXTRA_emailrelay_gui_SOURCES = $(MOC_OBJECTS)
+EXTRA_emailrelay_gui_SOURCES = 
 emailrelay_gui_LDADD = \
 	$(MOC_OBJECTS) \
 	$(top_builddir)/src/glib/libglib.a \
@@ -308,9 +321,9 @@ clean-binPROGRAMS:
 emailrelay-gui$(EXEEXT): $(emailrelay_gui_OBJECTS) $(emailrelay_gui_DEPENDENCIES) 
 	@rm -f emailrelay-gui$(EXEEXT)
 	$(CXXLINK) $(emailrelay_gui_LDFLAGS) $(emailrelay_gui_OBJECTS) $(emailrelay_gui_LDADD) $(LIBS)
-install-tool$(EXEEXT): $(install_tool_OBJECTS) $(install_tool_DEPENDENCIES) 
-	@rm -f install-tool$(EXEEXT)
-	$(CXXLINK) $(install_tool_LDFLAGS) $(install_tool_OBJECTS) $(install_tool_LDADD) $(LIBS)
+emailrelay-install-tool$(EXEEXT): $(emailrelay_install_tool_OBJECTS) $(emailrelay_install_tool_DEPENDENCIES) 
+	@rm -f emailrelay-install-tool$(EXEEXT)
+	$(CXXLINK) $(emailrelay_install_tool_LDFLAGS) $(emailrelay_install_tool_OBJECTS) $(emailrelay_install_tool_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -319,7 +332,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/all.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/install-tool.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tool.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -513,11 +526,10 @@ moc_gpage.cpp: $(srcdir)/gpage.h $(mock)
 moc_pages.cpp: $(srcdir)/pages.h $(mock)
 	$(MOC) $< -o $@
 
-$(mock): $(mock_in)
-	cat $< > $*.tmp && mv $*.tmp $@
-	chmod ugo+x $@
+moc_thread.cpp: $(srcdir)/thread.h $(mock)
+	$(MOC) $< -o $@
 
-$(install_tool): $(install_tool_in)
+$(mock): $(mock_in)
 	cat $< > $*.tmp && mv $*.tmp $@
 	chmod ugo+x $@
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

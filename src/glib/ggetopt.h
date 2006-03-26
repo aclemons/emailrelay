@@ -52,7 +52,7 @@ public:
 		char sep_major = '|' , char sep_minor = '/' , char escape = '\\' ) ;
 			// Constructor taking a Arg reference and a 
 			// specification string. Uses specifications like 
-			// "p/port/defines the port number/1/port|v/verbose/shows more logging/0/".
+			// "p/port/defines the port number/1/port/1|v/verbose/shows more logging/0//1".
 			// made up of the following parts:
 			//    'single-character-switch-letter'
 			//    'multi-character-switch-name'
@@ -105,13 +105,14 @@ public:
 		Level level = levelDefault() ,
 		size_t tab_stop = tabDefault() , 
 		size_t wrap_width = wrapDefault() ) const ;
-			// Streams out multi-line usage text using
-			// usageSummary() and usageHelp().
+			// Streams out multi-line usage text using usageSummary() 
+			// and usageHelp(). The 'args' parameter should represent
+			// the non-switch arguments (with a leading space), like 
+			// " <foo> [<bar>]".
 
 	void showUsage( std::ostream & stream , const std::string & args , bool verbose ) const ;
-		// Streams out multi-line usage text using
-		// usageSummary() and usageHelp(). Shows
-		// only level one switches if 'verbose' 
+		// Streams out multi-line usage text using usageSummary() and 
+		// usageHelp(). Shows only level one switches if 'verbose' 
 		// is false.
 
 	bool hasErrors() const ;

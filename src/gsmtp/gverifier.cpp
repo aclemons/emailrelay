@@ -42,10 +42,8 @@ GSmtp::Verifier::Status::Status() :
 
 // ==
 
-GSmtp::Verifier::Verifier( const G::Executable & external , bool deliver_to_postmaster , bool reject_local ) :
-	m_external(external) ,
-	m_deliver_to_postmaster(deliver_to_postmaster) ,
-	m_reject_local(reject_local)
+GSmtp::Verifier::Verifier( const G::Executable & external ) :
+	m_external(external)
 {
 }
 
@@ -81,33 +79,11 @@ GSmtp::Verifier::Status GSmtp::Verifier::verify( const std::string & address ,
 GSmtp::Verifier::Status GSmtp::Verifier::verifyInternal( const std::string & address , const std::string & user , 
 	const std::string & host , const std::string & fqdn ) const
 {
+	// accept all addresses as if remote
 	Status status ;
-	bool is_postmaster = user == "POSTMASTER" && ( host.empty() || host == "LOCALHOST" || host == fqdn ) ;
-	bool is_local = host.empty() || host == "LOCALHOST" ;
-	if( is_postmaster && m_deliver_to_postmaster )
-	{
-		// accept 'postmaster' for local delivery
-		status.is_valid = true ;
-		status.is_local = true ;
-		status.full_name = "Local postmaster <postmaster@localhost>" ;
-		status.address = "postmaster" ;
-	}
-	else if( is_local && m_reject_local )
-	{
-		// reject local addressees
-		status.is_valid = false ;
-		status.is_local = true ;
-		status.reason = "invalid local mailbox" ;
-		status.help = std::string() + "rejecting all local recipient addresses" ;
-		if( m_deliver_to_postmaster ) status.help.append( " except postmaster" ) ;
-	}
-	else
-	{
-		// accept remote/fqdn addressees
-		status.is_valid = true ;
-		status.is_local = false ;
-		status.address = address ;
-	}
+	status.is_valid = true ;
+	status.is_local = false ;
+	status.address = address ;
 	return status ;
 }
 

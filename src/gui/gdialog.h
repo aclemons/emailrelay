@@ -41,7 +41,8 @@ class GDialog : public QDialog
 public:
 	
 	explicit GDialog( QWidget * parent = NULL ) ;
-		// Constructor.
+		// Constructor. Use a sequence of add()s to initialise
+		// ending with add(void).
 
 	void add( GPage * ) ;
 		// Adds a page.
@@ -50,6 +51,9 @@ public:
 		// Adds a page but only if the the page name
 		// matches the given conditional name or if the given
 		// conditional name is empty.
+
+	void add() ;
+		// To be called after other add()s.
 
 	GPage & page( const std::string & ) ;
 		// Finds a page by name.
@@ -72,9 +76,13 @@ public:
 	void dump( std::ostream & , const std::string & prefix = std::string(), const std::string & eol = "\n" ) const;
 		// Dumps the pages to a stream.
 
+	void wait( bool ) ;
+		// Disables all buttons.
+
 private slots:
 	void backButtonClicked();
 	void nextButtonClicked();
+	void finishButtonClicked();
 	void pageUpdated();
 
 private:
@@ -93,6 +101,10 @@ private:
 	QPushButton * m_finish_button;
 	QHBoxLayout * m_button_layout;
 	QVBoxLayout * m_main_layout;
+	bool m_waiting ;
+	bool m_back_state ;
+	bool m_next_state ;
+	bool m_finish_state ;
 };
 
 #endif

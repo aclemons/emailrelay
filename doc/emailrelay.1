@@ -71,7 +71,7 @@ Runs as a client, forwarding spooled mail to <host>: equivalent to \fI--log\fR \
 Runs as a proxy: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--immediate\fR \fI--forward-to\fR.
 .TP
 .B \-d,--as-server 
-Runs as a server: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--postmaster\fR.
+Runs as a server: equivalent to \fI--log\fR \fI--close-stderr\fR.
 .TP
 .B \-C,--client-auth \fIfile\fR
 Enables smtp authentication with remote server, using the given secrets file.
@@ -150,9 +150,6 @@ Specifies the pop listening port number (requires \fI--pop\fR).
 .TP
 .B \-p,--port \fIport\fR
 Specifies the smtp listening port number.
-.TP
-.B \-P,--postmaster 
-Allows delivery to the postmaster but rejects all other local mailbox addresses.
 .TP
 .B \-r,--remote-clients 
 Allows remote clients to connect.

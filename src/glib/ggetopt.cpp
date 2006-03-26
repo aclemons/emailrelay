@@ -57,14 +57,14 @@ void G::GetOpt::parseSpec( const std::string & spec , char sep_major , char sep_
 			ss << "\"" << *p << "\" (" << ws_minor << ")" ;
 			throw InvalidSpecification( ss.str() ) ;
 		}
-		bool valued = G::Str::toUInt( inner[3U] ) != 0U ;
+		bool is_valued = G::Str::toUInt( inner[3U] ) != 0U ;
 		unsigned int level = G::Str::toUInt( inner[5U] ) ;
-		addSpec( inner[1U] , inner[0U].at(0U) , inner[1U] , inner[2U] , valued , inner[4U] , level ) ;
+		addSpec( inner[1U] , inner[0U].at(0U) , inner[1U] , inner[2U] , is_valued , inner[4U] , level ) ;
 	}
 }
 
 void G::GetOpt::addSpec( const std::string & sort_key , char c , const std::string & name , 
-	const std::string & description , bool valued , const std::string & value_description ,
+	const std::string & description , bool is_valued , const std::string & value_description ,
 	unsigned int level )
 {
 	if( c == '\0' )
@@ -80,7 +80,7 @@ void G::GetOpt::addSpec( const std::string & sort_key , char c , const std::stri
 			<< "char=" << c << ": "
 			<< "name=" << name << ": " 
 			<< "description=" << description << ": " 
-			<< "valued=" << (valued?"true":"false") << ": " 
+			<< "valued=" << (is_valued?"true":"false") << ": " 
 			<< "value-description=" << value_description << ": "
 			<< "level=" << level ;
 		G_DEBUG( ss.str() ) ;
@@ -88,7 +88,7 @@ void G::GetOpt::addSpec( const std::string & sort_key , char c , const std::stri
 
 	std::pair<SwitchSpecMap::iterator,bool> rc = 
 		m_spec_map.insert( std::make_pair( sort_key , 
-			SwitchSpec(c,name,description,valued,value_description,level) ) ) ;
+			SwitchSpec(c,name,description,is_valued,value_description,level) ) ) ;
 
 	if( ! rc.second )
 		throw InvalidSpecification("duplication") ;
@@ -154,7 +154,7 @@ size_t G::GetOpt::widthLimit( size_t w )
 
 void G::GetOpt::showUsage( std::ostream & stream , const std::string & args , bool verbose ) const
 {
-	showUsage( stream , m_args.prefix() , introducerDefault() , args , verbose ? levelDefault() : Level(1U) ) ;
+	showUsage( stream , m_args.prefix() , args , introducerDefault() , verbose ? levelDefault() : Level(1U) ) ;
 }
 
 void G::GetOpt::showUsage( std::ostream & stream , const std::string & exe , const std::string & args , 

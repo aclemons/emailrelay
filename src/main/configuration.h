@@ -179,14 +179,6 @@ public:
 	std::string verifier() const ;
 		// Returns the path of an external address verifier program.
 
-	bool deliverToPostmaster() const ;
-		// Returns true if the internal address verifier should accept
-		// local postmaster addresses for local delivery.
-
-	bool rejectLocalMailboxes() const ;
-		// Returns true if the internal address verifier should reject
-		// local mailbox addresses.
-
 	bool doPolling() const ;
 		// Returns true if doing client polling.
 

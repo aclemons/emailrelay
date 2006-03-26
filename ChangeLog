@@ -3,6 +3,7 @@ E-MailRelay Change Log
 
 1.4 -> 1.4.1
 ------------
+* Default address verifier now accepts all addresses as if remote.
 * Installation and configuration GUI using TrollTech Qt 4.x.
 * Windows installation document review.
 * Client protocol improvement if no valid recipients.
