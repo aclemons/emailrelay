@@ -139,26 +139,6 @@ where <switch> is:
 Under Windows there are a few differences. Use "--help --verbose"
 to see the complete list.
 
-If no command-line switches are supplied at all then the default
-behaviour is:
-* to run as a daemon, detached from the terminal
-* listen on the standard SMTP port (25)
-* store e-mail messages in "/usr/local/var/spool/emailrelay" or "/var/spool/emailrelay"
-* reject connections from remote clients
-* disable the administration interface
-* generate no logging or diagnostic messages
-
-Adding the "--as-server" switch makes sure that logging is enabled and that the
-standard error stream is closed.
-
-To forward spooled messages the "--as-client" switch is provided to run the
-program
-* in foreground, exiting when all spooled mail has been processed
-* taking spooled mail from "/usr/local/var/spool/emailrelay" or "/var/spool/emailrelay"
-* without listening on any port
-* with error, warning and information messages sent to stderr
-* without using syslog
-
 Message store
 -------------
 Mail messages are stored as text files in the configured spool directory. Each
@@ -271,7 +251,7 @@ For Windows this example can be rewritten in JavaScript:
 Windows pre-processor programs written in JavaScript can be run using
 "cscript", with an E-MailRelay "--filter" switch something like this:
 
-	--filter "c:/winnt/system32/cscript.exe //nologo c:/program\ files/emailrelay/filter.js"
+	--filter "c:/windows/system32/cscript.exe //nologo c:/program\ files/emailrelay/filter.js"
 
 Note how the space character in the path is escaped with a backslash.
 
@@ -282,7 +262,7 @@ message appears as an attachment within a plaintext bearer message.
 
 E-MailRelay also has a "--client-filter" switch that enables pre-processing of
 messages just before they are forwarded, rather then after they are stored. The
-problem is that by then it is too late to notify the SMTP client of any
+disadvantage is that by then it is too late to notify the SMTP client of any 
 processing failures, so in many applications using "--filter" is more useful.
 
 Bear in mind the following points when writing "--filter" programs:
@@ -301,27 +281,32 @@ used to specify the IP address and port that the scanner server is listening
 on. E-MailRelay connects to this address and then uses a simple line-based
 dialog as each e-mail message is received. E-MailRelay sends the full path of
 the message content file, and the scanner is expected to respond with "ok" if
-the message is to be accepted, or an error message. No source code is provided
-for a scanner process in this release, but *Python's* [http://python.org]
-support for threads and sockets would make it a good choice of language.
+the message is to be accepted, or an error message.
 
 Address verification
 --------------------
-By default all addresses for incoming e-mails are accepted as valid. However, 
-the default behaviour can be modified by using an external verifier program, 
-specified with the "--verifier" command-line switch, so that you get to choose 
-which addresses are accepted as valid and which are rejected.
+By default the E-MailRelay server will accept all addresses for incoming e-mails
+as valid. However, this default behaviour can be modified by using an external 
+verifier program, specified with the "--verifier" command-line switch, so that 
+you get to choose which addresses are accepted as valid and which are rejected.
 
 The external verifier program is passed a command-line containing: (1) the full
-address, (2) the user-name part of the address in upper-case, (3) the host-name
-part in upper-case, (4) the local host's fully qualified domain name in
-upper-case, (5) the current "MAIL" command's "FROM:" address or the empty string
-for the "VRFY" command, (6) the IP address of the client connection, (7) the
+e-mail address as supplied by the remote client, (2) the user-name part of the 
+address in upper-case, (3) the host-name part in upper-case, (4) the local 
+host's fully qualified domain name in upper-case, (5) the "MAIL" command's 
+"FROM:" address as supplied by the client or the empty string in the case of the
+"VRFY" command, (6) the IP address of the client connection, (7) the
 authentication mechanism used by the client ("NONE" if trusted), and (8) either
 the authentication name or the fourth field from authentication secrets file if
-a trusted IP address:
+a trusted IP address.
+
+So, for example, a verifier script called "myverifier" might be run with the
+following command-line:
 
 	myverifier me@myhost.mydomain ME MYHOST.MYDOMAIN MYHOST.MYDOMAIN bob@other.net 192.168.0.1 LOGIN bob
+
+The verifier program is expected to generate two lines of output on the standard 
+output stream and then terminate with a specific exit code.
 
 For valid non-local addresses the first line of output is ignored, the second
 line should be copied from the first command-line argument, and the exit
@@ -343,6 +328,9 @@ then exit with a value of zero.
 	echo Local Postmaster '<postmaster@localhost>'
 	echo postmaster
 	exit 0
+
+(In practice local delivery just means that the message files in the spool
+directory are copied and given a ".local" filename suffix.)
 
 For invalid addresses the exit value should be greater than one, and anything
 written to the standard output is taken as the failure reason. (Only the few
@@ -368,7 +356,7 @@ If the exit code is 100 then the connection is aborted immediately.
 	exit 100
 
 In this more complete example all addresses are accepted as long as they contain
-an at sign:
+an "at" character:
 
 	#!/bin/sh
 	# address verifier -- accept only if containing an at sign
@@ -419,7 +407,7 @@ be used to prevent open relay without restricting authenticated clients.
 
 Authentication
 --------------
-E-MailRelay supports the ESMTP "AUTH" extension, as defined in RFC2554, on both
+E-MailRelay supports the SMTP "AUTH" extension, as defined in RFC2554, on both
 the server-side and client-side.
 
 The authentication mechanisms currently supported are:
@@ -437,8 +425,8 @@ Authentication is enabled with the "--client-auth" and "--server-auth"
 command-line switches. The switch parameter is the name of a "secrets" file,
 containing usernames and passwords:
 
-	emailrelay --as-server --server-auth /etc/client-secrets.txt
-	emailrelay --as-client myisp.net:smtp --client-auth /etc/myisp-secret.txt
+	emailrelay --as-server --server-auth /etc/emailrelay-clients.auth
+	emailrelay --as-client myisp.net:smtp --client-auth /etc/emailrelay-myisp.auth
 
 The secrets file has a line-based format: blank lines are ignored and the hash
 character (#) is used for comments.
@@ -459,12 +447,12 @@ says that non alphanumeric characters should be represented in hexadecimal as
 "+XX".
 
 The client-side secrets file specified with "--client-auth" is used when
-E-MailRelay talks to a remove server. The file should contain at least one
-"LOGIN client" or "CRAM-MD5 client" entry.
+E-MailRelay acts as a client to talk to a remove server. The file should contain
+at least one "LOGIN client" or "CRAM-MD5 client" entry.
 
 A server-side secrets file specified with "--server-auth" is used when a remote
-client tries to authenticate with E-MailRelay. The file should normally contain
-several "LOGIN server" or "CRAM-MD5 server" entries.
+client tries to authenticate with the E-MailRelay server. The file should 
+normally contain several "LOGIN server" or "CRAM-MD5 server" entries.
 
 The same secrets file may be specified for both "--client-auth" and
 "--server-auth" switches.
@@ -492,23 +480,21 @@ A "CRAM-MD5" version would look like this:
 	CRAM-MD5 server user1 4059553961.2316091643.3282746241.1444639637.3735501773.3404060330.2760590371.1201092398
 	CRAM-MD5 server user2 2798539199.3144534242.3784876256.2879973305.2327113479.216533878.2436460291.2361831919
 
-When using the "LOGIN" you have to store plaintext passwords in a file. This is
-a bad thing. You should at least make sure that the secrets file has tight
-permissions, and that the passwords in it are not also used for anything
-important.
+When using the "LOGIN" mechanism you have to store plaintext passwords in a 
+file. This is a bad thing. You should at least make sure that the secrets file 
+has tight permissions, and that the passwords in it are not also used for 
+anything important.
 
 On the server side authentication is advertised by E-MailRealy in the response
 to the SMTP "EHLO" command if the "--server-auth" command-line switch is used.
-Authentication by the client is mandatory unless the client's IP address is
-configured as a trusted address. If the client does authenticate then the
-authenticated user-id is stored with the message and then passed on to the next
-SMTP server using an "AUTH=userid" parameter on the SMTP "MAIL FROM" command.
+Authentication by the client is then mandatory unless the client's IP address is
+configured as a trusted address.
 
 Trusted IP addresses are configured with lines in the secrets file having "NONE"
 in the first field, "server" in the second field, a wildcarded IP address in
-the third field, and an arbitrary keyword in the fourth field. The keyword
+the third field, and an arbitrary keyword in the fourth field. The keyword field
 is passed to any external address verifier program specified by the "--verifier"
-command-line switch.
+command-line switch; it is not used for any other purpose.
 
 For example this secrets file allows any client connecting from the
 192.168.0.0/24 domain to connect without authentication desipte the
@@ -524,9 +510,9 @@ For example this secrets file allows any client connecting from the
 On the client side authentication is performed when E-MailRelay has connected to
 a server which implements the AUTH extension with one of the supported
 mechanisms. If client authentication is enabled (with the "--client-auth"
-switch) but the server does not support the AUTH extension, or does not support
-the LOGIN or CRAM-MD5 mechanism, then E-MailRelay will fail the first message
-and terminate with an error message.
+switch) but the remote server does not support the AUTH extension, or does not 
+support the LOGIN or CRAM-MD5 mechanism, then E-MailRelay will fail the first 
+message and terminate with an error message.
 
 Note that some ISPs require separate POP/IMAP authentication before SMTP access
 from a particular IP address is allowed. This type of POP-before-SMTP
@@ -536,7 +522,7 @@ such as "fetchmail".
 Pop server
 ----------
 If E-MailRelay has been built with POP3 support then the "--help --verbose"
-output will show several new command-line switches:
+output will show several additional command-line switches:
 # --pop
 
   Enables the POP3 server.
@@ -559,19 +545,25 @@ output will show several new command-line switches:
   used for "AUTH" authentication.
 
   Note that the basic POP3 protocol defines only "APOP" and "USER/PASS"
-  authentication, so some POP3 client programs may not be able to cope with
+  authentication, so some POP client programs may not be able to cope with
   CRAM-MD5 authentication using the POP3 "AUTH" extension.
 
 # --pop-by-name
 
-  Modifies the spool directory according to the client authentication name.
-  The client name is used as a sub-directory off the standard spool directory.
-  So, for example, if a client authenticates as "bob" then the POP3 server
-  will serve messages from the "/var/spool/emailrelay/bob" directory.
+  Modifies the POP spool directory according to the name used by the client 
+  to authenticate with the E-MailRelay server. The client name is used as a 
+  sub-directory off the standard spool directory. So, for example, if a client 
+  authenticates as "bob" then the POP3 server will serve messages from the "bob" 
+  sub-directory, "/var/spool/emailrelay/bob".
+
+  If E-MailRelay finds only the envelope file in the sub-directory and not the 
+  content file then it will look for the content file in the main spool 
+  directory, eg. "/var/spool/emailrelay". This feature can be used to save 
+  diskspace if serving the same message to multiple POP clients.
 
 # --pop-no-delete
 
-  Disables message deletion. The POP3 DELE command will appear to succeed, but
+  Disables message deletion: the POP3 DELE command will appear to succeed, but
   no files will be deleted from the spool directory.
 
 Security issues
@@ -617,8 +609,7 @@ Some other points are:
 
 # remote clients
 
-  By default connections to the SMTP and administrative ports will be rejected
-  if they come from remote machines.
+  By default connections will be rejected if they come from remote machines.
 
 # remote configuration
 
@@ -633,7 +624,7 @@ Some other points are:
 # file permissions
 
   After a normal installation the spool directory is has ownership of
-  "root.daemon" with permissions of "-rwxrwxr-x". Messages files are created
+  "root.daemon" with permissions of "-rwxrwxr-x" and messages files are created
   with permissions of "-rw-rw----". This allows normal users to list messages
   files but not read them.
 
@@ -688,38 +679,15 @@ following locations:
 * /usr/local/etc/emailrelay.conf
 * /usr/local/etc/emailrelay.conf.template
 * /usr/local/libexec/emailrelay
-* /usr/local/libexec/emailrelay-deliver.sh
-* /usr/local/libexec/emailrelay-notify.sh
 * /usr/local/libexec/emailrelay-poke
-* /usr/local/libexec/emailrelay-process.sh
-* /usr/local/libexec/emailrelay-resubmit.js
-* /usr/local/libexec/emailrelay-resubmit.sh
-* /usr/local/libexec/emailrelay-runperl.js
-* /usr/local/libexec/emailrelay-submit.sh
-* /usr/local/man/man1/emailrelay.1.gz
-* /usr/local/man/man1/emailrelay-passwd.1.gz
-* /usr/local/man/man1/emailrelay-poke.1.gz
-* /usr/local/man/man1/emailrelay-submit.1.gz
+* /usr/local/libexec/emailrelay-*.sh
+* /usr/local/man/man1/emailrelay*.1.gz
 * /usr/local/sbin/emailrelay
 * /usr/local/sbin/emailrelay-passwd
 * /usr/local/sbin/emailrelay-submit
-* /usr/local/share/emailrelay/doc/changelog.gz
-* /usr/local/share/emailrelay/doc/changelog.html
-* /usr/local/share/emailrelay/doc/developer.html
-* /usr/local/share/emailrelay/doc/developer.txt
-* /usr/local/share/emailrelay/doc/emailrelay.css
-* /usr/local/share/emailrelay/doc/emailrelay-man.html
+* /usr/local/share/emailrelay/doc/*
 * /usr/local/share/emailrelay/doc/index.html
-* /usr/local/share/emailrelay/doc/NEWS
-* /usr/local/share/emailrelay/doc/*.png
 * /usr/local/share/emailrelay/doc/README
-* /usr/local/share/emailrelay/doc/readme.html
-* /usr/local/share/emailrelay/doc/reference.html
-* /usr/local/share/emailrelay/doc/reference.txt
-* /usr/local/share/emailrelay/doc/userguide.html
-* /usr/local/share/emailrelay/doc/userguide.txt
-* /usr/local/share/emailrelay/doc/windows.html
-* /usr/local/share/emailrelay/doc/windows.txt
 * /usr/local/var/spool/emailrelay/emailrelay.*.content
 * /usr/local/var/spool/emailrelay/emailrelay.*.envelope
 
@@ -736,32 +704,11 @@ locations:
 * /usr/sbin/emailrelay
 * /usr/sbin/emailrelay-passwd
 * /usr/sbin/emailrelay-submit
-* /usr/share/doc/emailrelay/changelog.gz
-* /usr/share/doc/emailrelay/changelog.html
-* /usr/share/doc/emailrelay/developer.html
-* /usr/share/doc/emailrelay/developer.txt
-* /usr/share/doc/emailrelay/emailrelay.css
-* /usr/share/doc/emailrelay/emailrelay-man.html
-* /usr/share/doc/emailrelay/examples/emailrelay-deliver.sh
-* /usr/share/doc/emailrelay/examples/emailrelay-notify.sh
-* /usr/share/doc/emailrelay/examples/emailrelay-process.sh
-* /usr/share/doc/emailrelay/examples/emailrelay-resubmit.sh
-* /usr/share/doc/emailrelay/examples/emailrelay-submit.sh
+* /usr/share/doc/emailrelay/*
+* /usr/share/doc/emailrelay/examples/emailrelay-*.sh
 * /usr/share/doc/emailrelay/index.html
-* /usr/share/doc/emailrelay/NEWS
-* /usr/share/doc/emailrelay/*.png
 * /usr/share/doc/emailrelay/README
-* /usr/share/doc/emailrelay/readme.html
-* /usr/share/doc/emailrelay/reference.html
-* /usr/share/doc/emailrelay/reference.txt
-* /usr/share/doc/emailrelay/userguide.html
-* /usr/share/doc/emailrelay/userguide.txt
-* /usr/share/doc/emailrelay/windows.html
-* /usr/share/doc/emailrelay/windows.txt
-* /usr/share/man/man1/emailrelay.1.gz
-* /usr/share/man/man1/emailrelay-passwd.1.gz
-* /usr/share/man/man1/emailrelay-poke.1.gz
-* /usr/share/man/man1/emailrelay-submit.1.gz
+* /usr/share/man/man1/emailrelay*.1.gz
 * /var/spool/emailrelay/emailrelay.*.content
 * /var/spool/emailrelay/emailrelay.*.envelope
 
@@ -783,14 +730,14 @@ and create the E-MailRelay spool directory as "/tmp/spool" rather than
 "/usr/local/var/spool/emailrelay".
 
 The default spool directory path which is built into the executables and scripts
-comes from "configure", via the makefiles. So after running "configure" with a
-different spool directory do a "make clean" in at least "src/main" and "bin".
+comes from "configure" via the makefiles.
 
 Even though the "--enable-fhs" switch overrides all other directory specifiers
 during the build process, it is still possible to change the installation root
 directory using "make install DESTDIR=<root>" or "DESTDIR=<root> make -e install".
-However, this will not affect the default directory paths built into the scripts 
-and executables, so they will have to be explicitly defined at run-time.
+But note that this will not affect the default spool directory path built into 
+the scripts and executables so the correct spool directory will have to be 
+specified at run-time with the "--spool-dir" switch.
 
 The "emailrelay" start/stop script in "init.d" creates a pid file in "/var/run"
 if the directory exists, or in "/tmp" otherwise.

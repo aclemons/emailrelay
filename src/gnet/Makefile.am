@@ -43,6 +43,7 @@ libgnet_a_SOURCES = gclient.cpp \
 	glocal_unix.cpp \
 	glocal.cpp \
 	gmonitor.cpp \
+	gmultiserver.cpp \
 	gresolve.cpp \
 	gresolve_unix.cpp \
 	gserver.cpp \
@@ -51,6 +52,7 @@ libgnet_a_SOURCES = gclient.cpp \
 	gtimer.cpp \
 	gaddress.h \
 	gclient.h \
+	gclientbaseimp.h \
 	gconnection.h \
 	gdescriptor.h \
 	gevent.h \
@@ -60,6 +62,7 @@ libgnet_a_SOURCES = gclient.cpp \
 	glinebuffer.h \
 	glocal.h \
 	gmonitor.h \
+	gmultiserver.h \
 	gnet.h \
 	grequest.h \
 	gresolve.h \

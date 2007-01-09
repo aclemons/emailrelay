@@ -219,9 +219,11 @@ void G::LogOutput::doAssertion( const char * file , unsigned line , const char *
 	rawOutput( Log::s_Assertion , buffer ) ;
 }
 
+#include <fstream>
 //static
 void G::LogOutput::halt()
 {
+std::ofstream f("/tmp/aborted");
 	abort() ;
 }
 

@@ -55,10 +55,12 @@ public:
 	HANDLE h() const ;
 	std::string read( bool do_throw = true ) ;
 private:
+	std::string readSome( BOOL & ok , DWORD & error ) ;
 	static HANDLE create( HANDLE & h_write , bool do_throw ) ;
 	static HANDLE duplicate( HANDLE h , bool do_throw ) ;
 private:
 	bool m_active ;
+	bool m_first ;
 	HANDLE m_read ;
 	HANDLE m_write ;
 } ;
@@ -296,6 +298,7 @@ void G::Process::Umask::set( G::Process::Umask::Mode )
 
 G::Pipe::Pipe( bool active , bool do_throw ) :
 	m_active(active) ,
+	m_first(true) ,
 	m_read(HNULL) ,
 	m_write(HNULL)
 {
@@ -365,26 +368,44 @@ HANDLE G::Pipe::h() const
 	return m_write ;
 }
 
-std::string G::Pipe::read( bool do_throw )
+std::string G::Pipe::readSome( BOOL & ok , DWORD & error )
 {
-	if( ! m_active ) return std::string() ;
-	::CloseHandle( m_write ) ; m_write = HNULL ;
 	char buffer[4096] ;
+	buffer[0] = '\0' ;
 	DWORD n = sizeof(buffer) ;
 	DWORD m = 0UL ;
-	BOOL rc = ::ReadFile( m_read , buffer , n , &m , NULL ) ;
-	DWORD error = ::GetLastError() ;
-	::CloseHandle( m_read ) ; m_read = HNULL ;
-	if( !rc )
+	ok = ::ReadFile( m_read , buffer , n , &m , NULL ) ;
+	error = ::GetLastError() ;
+	m = m > n ? n : m ;
+	return m ? std::string(buffer,m) : std::string() ;
+}
+
+std::string G::Pipe::read( bool do_throw )
+{
+	if( ! m_active ) 
+		return std::string() ;
+
+	bool first = m_first ;
+	m_first = false ;
+	if( first )
 	{
-		G_DEBUG( "G::Pipe::read: error: " << m << " byte(s): error=" << error ) ;
+		::CloseHandle( m_write ) ; 
+		m_write = HNULL ;
+	}
+
+	BOOL ok = FALSE ;
+	DWORD error = 0 ;
+	std::string s = readSome( ok , error ) ;
+	if( !ok )
+	{
+		G_DEBUG( "G::Pipe::read: pipe read error: " << error ) ;
 		if( error != ERROR_BROKEN_PIPE )
 		{
 			G_ERROR( "G::Pipe::read: pipe read error: " << error ) ;
 			if( do_throw ) throw Error( "read" ) ;
 		}
 	}
-	return std::string( buffer , m ) ;
+	return s ;
 }
 
 // ===

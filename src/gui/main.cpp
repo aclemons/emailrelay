@@ -18,9 +18,10 @@
 // 
 // ===
 //
-// install.cpp
+// main.cpp
 //
 
+#include "gdef.h"
 #include "qt.h"
 #include "gdialog.h"
 #include "gfile.h"
@@ -30,17 +31,26 @@
 #include "ggetopt.h"
 #include "garg.h"
 #include "gpath.h"
+#include "gstr.h"
+#include "unpack.h"
 #include <string>
 #include <iostream>
 #include <stdexcept>
 
-namespace
-{
-	int width() { return 500 ; }
-	int height() { return 500 ; }
+static G::Path prepare_tool( const std::string & ) ;
+static void unpack( const std::string & from_exe , const std::string & to_dir , const std::string & name ) ;
+
+static int width() 
+{ 
+	return 500 ; 
 }
 
-void error( const std::string & what )
+static int height() 
+{ 
+	return 500 ; 
+}
+
+static void error( const std::string & what )
 {
 	QString title(QMessageBox::tr("E-MailRelay")) ;
 	QMessageBox::critical( NULL , title , 
@@ -60,7 +70,8 @@ int main( int argc , char * argv [] )
 			"x/tool/text-mode install tool/1/path/1|"
 			"X/tool-arg/text-mode install tool argument/1/arg/1|"
 			"d/debug/show debug messages if compiled-in/0//1|"
-			"p/page/single page test/1/page-name/0|"
+			"p/prefix/target directory prefix/1/path/0|"
+			"P/page/single page test/1/page-name/0|"
 			"t/test/test-mode/0//0" ) ;
 		if( getopt.hasErrors() )
 		{
@@ -77,12 +88,23 @@ int main( int argc , char * argv [] )
 		// parse the commandline
 		bool test_mode = getopt.contains("test") ;
 		bool install = ! getopt.contains("configure") ;
-		std::string test_page = getopt.contains("page") ? getopt.value("page") : std::string() ;
-		std::string tool = getopt.contains("tool") ? getopt.value("tool") : std::string() ;
-		std::string tool_arg = getopt.contains("tool-arg") ? getopt.value("tool-arg") : std::string() ;
+		std::string cfg_test_page = getopt.contains("page") ? getopt.value("page") : std::string() ;
+		std::string cfg_tool = getopt.contains("tool") ? getopt.value("tool") : std::string() ;
+		std::string cfg_tool_arg = getopt.contains("tool-arg") ? getopt.value("tool-arg") : std::string() ;
+		std::string cfg_prefix = getopt.contains("prefix") ? getopt.value("prefix") : std::string() ;
 
 		try
 		{
+			Dir dir( args.v(0) , cfg_prefix ) ;
+			G_DEBUG( "Dir::install: " << dir.install() ) ;
+			G_DEBUG( "Dir::spool: " << dir.spool() ) ;
+			G_DEBUG( "Dir::config: " << dir.config() ) ;
+			G_DEBUG( "Dir::startup: " << dir.startup() ) ;
+			G_DEBUG( "Dir::pid: " << dir.pid() ) ;
+			G_DEBUG( "Dir::cwd: " << dir.cwd() ) ;
+			G_DEBUG( "Dir::tooldir: " << dir.tooldir() ) ;
+			G_DEBUG( "Dir::thisdir: " << dir.thisdir() ) ;
+
 			// default translator
 			QTranslator qt_translator;
 			qt_translator.load(QString("qt_")+QLocale::system().name());
@@ -93,61 +115,50 @@ int main( int argc , char * argv [] )
 			translator.load(QString("emailrelay_install_")+QLocale::system().name());
 			app.installTranslator(&translator);
 
-			// prepare an absolute path to the non-gui tool
-			if( tool.empty() )
-			{
-				std::string tool_name = "emailrelay-install-tool" ;
-				tool = G::Path(Dir::tooldir(args.v(0)),tool_name).str() ;
-				if( !  G::File::exists(tool) )
-					tool = G::Path(Dir::tooldir(),tool_name).str() ;
-			}
-
-			// check the tool path is valid
-			if( ! G::File::exists(G::Path(tool)) )
-				throw std::runtime_error(std::string()+"invalid install tool: \""+tool+"\"") ;
+			// prepare the tool and store its path in GPage 
+			G::Path tool = prepare_tool( cfg_tool ) ;
+			GPage::setTool( tool.str() , cfg_tool_arg ) ;
 
 			// initialise GPage
-			GPage::setTool( tool , tool_arg ) ;
-			if( ! test_page.empty() || test_mode ) 
+			if( ! cfg_test_page.empty() || test_mode ) 
 				GPage::setTestMode() ;
 
 			// create the dialog and all its pages
 			GDialog d ;
 			if( install )
 			{
-				d.add( new TitlePage(d,"title","license") , test_page ) ;
-				d.add( new LicensePage(d,"license","directory") , test_page ) ;
-				d.add( new DirectoryPage(d,"directory","dowhat") , test_page ) ;
+				d.add( new TitlePage(d,"title","license","",false,false) , cfg_test_page ) ;
+				d.add( new LicensePage(d,"license","directory","",false,false) , cfg_test_page ) ;
+				d.add( new DirectoryPage(d,"directory","dowhat","",false,false) , cfg_test_page ) ;
 			}
 			else
 			{
-				d.add( new DirectoryPage(d,"directory","dowhat") , test_page ) ;
+				d.add( new DirectoryPage(d,"directory","dowhat","",false,false) , cfg_test_page ) ;
 			}
-			d.add( new DoWhatPage(d,"dowhat","pop","smtpserver") , test_page ) ;
-			d.add( new PopPage(d,"pop","popaccount","popaccounts") , test_page ) ;
-			d.add( new PopAccountPage(d,"popaccount","smtpserver","listening") , test_page ) ;
-			d.add( new PopAccountsPage(d,"popaccounts","smtpserver","listening") , test_page ) ;
-			d.add( new SmtpServerPage(d,"smtpserver","smtpclient") , test_page ) ;
-			d.add( new SmtpClientPage(d,"smtpclient","logging") , test_page ) ;
-			d.add( new LoggingPage(d,"logging","listening") , test_page ) ;
+			d.add( new DoWhatPage(d,"dowhat","pop","smtpserver",false,false) , cfg_test_page ) ;
+			d.add( new PopPage(d,"pop","popaccount","popaccounts",false,false) , cfg_test_page ) ;
+			d.add( new PopAccountPage(d,"popaccount","smtpserver","listening",false,false) , cfg_test_page ) ;
+			d.add( new PopAccountsPage(d,"popaccounts","smtpserver","listening",false,false) , cfg_test_page ) ;
+			d.add( new SmtpServerPage(d,"smtpserver","smtpclient","",false,false) , cfg_test_page ) ;
+			d.add( new SmtpClientPage(d,"smtpclient","logging","",false,false) , cfg_test_page ) ;
+			d.add( new LoggingPage(d,"logging","listening","",false,false) , cfg_test_page ) ;
 			if( install )
 			{
-				d.add( new ListeningPage(d,"listening","startup") , test_page ) ;
-				d.add( new StartupPage(d,"startup","configuration") , test_page ) ;
-				d.add( new ConfigurationPage(d,"configuration","progress",true) , test_page ) ;
-				d.add( new ProgressPage(d,"progress","",true) , test_page ) ;
+				d.add( new ListeningPage(d,"listening","startup","",false,false) , cfg_test_page ) ;
+				d.add( new StartupPage(d,"startup","configuration","",false,false) , cfg_test_page ) ;
+				d.add( new ConfigurationPage(d,"configuration","progress","",true,false) , cfg_test_page ) ;
+				d.add( new ProgressPage(d,"progress","","",false,true) , cfg_test_page ) ;
 			}
 			else
 			{
-				d.add( new ListeningPage(d,"listening","configuration") , test_page ) ;
-				d.add( new ConfigurationPage(d,"configuration","end",true) , test_page ) ;
-				d.add( new EndPage(d,"end") , test_page ) ;
+				d.add( new ListeningPage(d,"listening","end","",false,false) , cfg_test_page ) ;
+				d.add( new EndPage_(d,"end") , cfg_test_page ) ;
 			}
 			d.add() ;
 
-			// check the test_page value
+			// check the test-page value
 			if( d.empty() )
-				throw std::runtime_error(std::string()+"invalid page name: \""+test_page+"\"") ;
+				throw std::runtime_error(std::string()+"invalid page name: \""+cfg_test_page+"\"") ;
 
 			// set the dialog dimensions
 			QSize s = d.size() ;
@@ -156,13 +167,15 @@ int main( int argc , char * argv [] )
 			d.resize( s ) ;
 
 			// run the dialog
-			return d.exec() ;
+			d.exec() ;
+			return 0 ;
 		}
 		catch( std::exception & e )
 		{
 			error( e.what() ) ;
 			std::cerr << "exception: " << e.what() << std::endl ;
-			qCritical( "exception: %s" , e.what() ) ;
+			std::string message = G::Str::wrap( e.what() , "" , "" , 40 ) ;
+			qCritical( "exception: %s" , message.c_str() ) ;
 		}
 		catch(...)
 		{
@@ -175,7 +188,8 @@ int main( int argc , char * argv [] )
 	catch( std::exception & e )
 	{
 		std::cerr << "exception: " << e.what() << std::endl ;
-		qCritical( "exception: %s" , e.what() ) ;
+		std::string message = G::Str::wrap( e.what() , "" , "" , 40 ) ;
+		qCritical( "exception: %s" , message.c_str() ) ;
 	}
 	catch(...)
 	{
@@ -183,5 +197,43 @@ int main( int argc , char * argv [] )
 		qCritical( "%s" , "unknown exception" ) ;
 	}
 	return 1 ;
+}
+
+static G::Path prepare_tool( const std::string & cfg_tool )
+{
+	// if the path is specified on the command-line just
+	// make sure it exists
+	//
+	if( ! cfg_tool.empty() )
+	{
+		if( ! G::File::exists(G::Path(cfg_tool)) )
+			throw std::runtime_error(std::string()+"invalid install tool: \""+cfg_tool+"\"") ;
+		return G::Path(cfg_tool) ;
+	}
+
+	// if not specified then look in this exe's directory
+	//
+	std::string tool_name = std::string() + "emailrelay-install-tool" + Dir::dotexe() ;
+	G::Path tool_path( Dir::thisdir() , tool_name ) ;
+	if( G::File::exists(G::Path(tool_path)) )
+		return G::Path(tool_path) ;
+
+	// if it's not there then try unpacking it from this exe
+	//
+	G::Path unpack_dir = Dir::tmp() ;
+	G::Path unpack_path = G::Path(unpack_dir,tool_name) ;
+	G_DEBUG( "extracting " << tool_name << " from " << Dir::thisexe().basename() << " to \"" << unpack_path << "\"" );
+	unpack( Dir::thisexe().str() , Dir::tmp().str() , tool_name ) ;
+	G::File::chmodx( unpack_path ) ;
+	return unpack_path ;
+}
+
+static void unpack( const std::string & from_exe , const std::string & to_dir , const std::string & name )
+{
+	Unpack * unpack = unpack_new(from_exe.c_str(),0) ;
+	bool ok = !! unpack_file( unpack , to_dir.c_str() , name.c_str() ) ;
+	unpack_delete( unpack ) ;
+	if( !ok )
+		throw std::runtime_error( std::string() + "failed to unpack " + name + " from " + from_exe + " into " + to_dir);
 }
 

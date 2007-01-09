@@ -2,16 +2,15 @@ Introduction
 ============
 
    What follows are generic installation instructions for doing a 
-GNU-style "./configure; make; make install-strip" installation from 
+GNU-style "./configure; make; sudo make install" installation from 
 source under Linux, FreeBSD etc. The Windows installation instructions
 are in a separate document.
 
-   The E-MailRelay "configure" script provides a few extra switches, 
-which are shown in the output of "./configure --help". The most 
-important of these is "--enable-fhs", which overrides all other 
+   The E-MailRelay "configure" script provides a few extra confiruation
+switches, which are shown in the output of "./configure --help". The 
+most important of these is "--enable-fhs", which overrides all other 
 directory modifiers, forcing compliance with the File Hierarchy 
-Standard. This switch is used in building the RPMs, and may become the 
-default in future releases. 
+Standard.
 
    There are also a set of variables which can be defined on the 
 "configure" command line for controlling all the installation 

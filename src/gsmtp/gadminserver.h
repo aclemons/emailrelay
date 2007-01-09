@@ -26,7 +26,7 @@
 
 #include "gdef.h"
 #include "gsmtp.h"
-#include "gserver.h"
+#include "gmultiserver.h"
 #include "gexe.h"
 #include "gstr.h"
 #include "glinebuffer.h"
@@ -94,7 +94,7 @@ private:
 // Class: GSmtp::AdminServer
 // Description: A server class which implements the emailrelay administration interface.
 //
-class GSmtp::AdminServer : public GNet::Server 
+class GSmtp::AdminServer : public GNet::MultiServer 
 {
 public:
 	AdminServer( MessageStore & store , const GSmtp::Client::Config & client_config ,

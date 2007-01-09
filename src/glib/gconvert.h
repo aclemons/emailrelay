@@ -26,6 +26,7 @@
 
 #include "gdef.h"
 #include "gexception.h"
+#include <sstream>
 
 namespace G
 {
@@ -44,7 +45,11 @@ Tout Convert( const Tin & in )
 	Tout out = in ;
 	Tin copy = out ;
 	if( in != copy )
-		throw ConvertOverflow( std::ostringstream() << in ) ;
+	{
+		std::ostringstream ss ;
+		ss << in ;
+		throw ConvertOverflow( ss.str() ) ;
+	}
 	return out ;
 }
 

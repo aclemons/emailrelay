@@ -1,14 +1,20 @@
 E-MailRelay Change Log
 ======================
 
-1.4 -> 1.4.1
-------------
-* Default address verifier now accepts all addresses as if remote.
-* Installation and configuration GUI using TrollTech Qt 4.x.
-* Windows installation document review.
-* Client protocol improvement if no valid recipients.
+1.4 -> 1.5
+----------
+* New installation and configuration GUI using TrollTech Qt 4.x ("./configure --enable-gui")
+* Default address verifier accepts all addresses as valid and never treats them as local mailboxes.
+* Fix for server exit bug when failing to send data down a newly accepted connection.
+* Spooled content files can be left in the parent directory to save diskspace when using "--pop-by-name".
+* Client protocol improved for the case where there are no valid recipients.
 * New "--syslog" switch to override "--no-syslog".
-* Content files can be left in the parent directory when using "--pop-by-name".
+* New "--filter-timeout" switch added.
+* Support for "--foo=bar" switch syntax (ie. with "=").
+* Multiple listening interfaces allowed with a comma-separated "--interface" list.
+* New "--filter" utility called "emailrelay-filter-copy" to support "--pop-by-name".
+* Documentation also created in docbook format.
+* Windows installation document revised.
 
 1.3.3 -> 1.4
 ------------

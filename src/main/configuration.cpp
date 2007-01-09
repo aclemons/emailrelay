@@ -63,7 +63,7 @@ std::string Main::Configuration::str( const std::string & p , const std::string 
 	std::ostringstream ss ;
 	ss
 		<< p << "allow remote clients? " << yn(allowRemoteClients()) << eol
-		<< p << "listening interface: " << (doServing()&&doSmtp()?any(listeningInterface()):na()) << eol
+		<< p << "listening interface: " << (doServing()&&doSmtp()?any(firstListeningInterface()):na()) << eol
 		<< p << "smtp listening port: " << (doServing()&&doSmtp()?G::Str::fromUInt(port()):na()) << eol
 		<< p << "pop listening port: " << (doServing()&&doPop()?G::Str::fromUInt(popPort()):na()) << eol
 		<< p << "admin listening port: " << (doAdmin()?G::Str::fromUInt(adminPort()):na()) << eol
@@ -127,14 +127,30 @@ unsigned int Main::Configuration::port() const
 		G::Str::toUInt(m_cl.value("port")) : 25U ;
 }
 
-std::string Main::Configuration::listeningInterface() const
+G::Strings Main::Configuration::listeningInterfaces() const
 {
-	return m_cl.contains("interface") ? m_cl.value("interface") : std::string() ;
+	G::Strings result ;
+	if( m_cl.contains("interface") )
+	{
+		G::Str::splitIntoFields( m_cl.value("interface") , result , ",/" ) ;
+	}
+	if( result.empty() )
+	{
+		result.push_back( std::string() ) ;
+	}
+	return result ;
+}
+
+std::string Main::Configuration::firstListeningInterface() const
+{
+	G::Strings s = listeningInterfaces() ;
+	return s.size() ? s.front() : std::string() ;
 }
 
 std::string Main::Configuration::clientInterface() const
 {
-	return listeningInterface() ; // or a separate switch?
+	// TODO -- separate switch ?
+	return firstListeningInterface() ;
 }
 
 G::Path Main::Configuration::adminAddressFile() const
@@ -376,6 +392,8 @@ bool Main::Configuration::anonymous() const
 
 unsigned int Main::Configuration::filterTimeout() const
 {
-	return 120U ; // for now
+	const unsigned int default_timeout = 5U * 60U ;
+	return m_cl.contains("filter-timeout") ?
+		G::Str::toUInt(m_cl.value("filter-timeout")) : default_timeout ;
 }
 

@@ -107,10 +107,6 @@ void G::Path::normalise()
 	Str::replaceAll( m_str , "\n" , "" ) ;
 	Str::replaceAll( m_str , "\r" , "" ) ;
 
-	// normalise case
-	if( !FileSystem::caseSensitive() )
-		Str::toLower(m_str) ;
-
 	// remove trailing slashes where appropriate
 	while( ( 
 			m_str.size() > 1U && 

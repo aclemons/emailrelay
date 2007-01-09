@@ -48,6 +48,7 @@ public:
 	G_EXCEPTION( CannotRename , "cannot rename file" ) ;
 	G_EXCEPTION( CannotCopy , "cannot copy file" ) ;
 	G_EXCEPTION( CannotMkdir , "cannot mkdir" ) ;
+	G_EXCEPTION( CannotChmod , "cannot chmod file" ) ;
 	G_EXCEPTION( SizeOverflow , "file size overflow" ) ;
 	G_EXCEPTION( TimeError , "cannot get file modification time" ) ;
 	typedef DateTime::EpochTime time_type ;
@@ -71,6 +72,14 @@ public:
 
 	static void copy( const Path & from , const Path & to ) ;
 		// Copies a file.
+
+	static bool mkdirs( const Path & dir , const NoThrow & , int = 100 ) ;
+		// Creates a directory and all necessary parents. Returns false on error.
+		// Does chmodx() on all created directories.
+
+	static void mkdirs( const Path & dir , int = 100 ) ;
+		// Creates a directory and all necessary parents.
+		// Does chmodx() on all created directories.
 
 	static bool mkdir( const Path & dir , const NoThrow & ) ;
 		// Creates a directory. Returns false on error.
@@ -98,11 +107,18 @@ public:
 		// Returns the file's timestamp. Returns zero on
 		// error.
 
+	static void chmodx( const Path & file ) ;
+		// Makes the file executable.
+
+	static bool chmodx( const Path & file , const NoThrow & ) ;
+		// Makes the file executable.
+
 private:
 	friend class G::DirectoryIteratorImp ;
 	static std::string sizeString( g_uint32_t hi , g_uint32_t lo ) ; // win32
 	static bool exists( const Path & , bool , bool ) ;
 	static bool exists( const char * , bool & ) ; // o/s-specific
+	static bool chmodx( const Path & file , bool ) ;
 } ;
 
 #endif

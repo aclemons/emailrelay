@@ -198,6 +198,8 @@ private:
 	std::string usageHelpCore( const std::string & , Level , size_t , size_t , bool ) const ;
 	static size_t widthLimit( size_t ) ;
 	static bool visible( SwitchSpecMap::const_iterator , Level , bool ) ;
+	static size_t eqPos( const std::string & ) ;
+	static std::string eqValue( const std::string & , size_t ) ;
 
 private:
 	SwitchSpecMap m_spec_map ;

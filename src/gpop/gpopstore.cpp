@@ -33,14 +33,28 @@
 #include <sstream>
 #include <fstream>
 
-struct FileReader // stub -- message files are group-readable
+namespace GPop
+{
+	struct FileReader ;
+	struct FileDeleter ;
+}
+
+// Class: GPop::FileReader
+// Description: A trivial class which is used like G::Root by GPop::Store for reading files.
+// The implementation does nothing because files in the pop store are group-readable.
+//
+struct GPop::FileReader
 {
 	FileReader() {}
 } ;
 
 // ==
 
-struct FileDeleter : private G::Root // Root not really necessary -- the spool directory is group-writeable
+// Class: GPop::FileDeleter
+// Description: A trivial specialisation of G::Root used by GPop::Store for deleting files.
+// The specialisation is not really necessary because the pop store directory is group-writeable.
+//
+struct GPop::FileDeleter : private G::Root 
 {
 } ;
 
@@ -383,19 +397,20 @@ std::string GPop::StoreLock::contentName( const std::string & envelope_name ) co
 
 G::Path GPop::StoreLock::contentPath( const std::string & envelope_name ) const
 {
-	return path( contentName(envelope_name) , true ) ;
+	const bool try_parent_directory = true ;
+	return path( contentName(envelope_name) , try_parent_directory ) ;
 }
 
 G::Path GPop::StoreLock::contentPath( const File & file ) const
 {
-	return path( file.name , true ) ;
+	const bool try_parent_directory = true ;
+	return path( file.name , try_parent_directory ) ;
 }
 
 G::Path GPop::StoreLock::envelopePath( const File & file ) const
 {
-	std::string filename = file.name ;
-	G::Str::replace( filename , "content" , "envelope" ) ;
-	return path( filename , false ) ;
+	const bool try_parent_directory = false ;
+	return path( envelopeName(file.name) , try_parent_directory ) ;
 }
 
 void GPop::StoreLock::rollback()

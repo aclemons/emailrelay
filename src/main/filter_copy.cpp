@@ -21,8 +21,20 @@
 // filter_copy.cpp
 //
 // A utility that can be installed as a "--filter" program 
-// to copy the message envelope into all spool subdirectories 
+// to copy the message envelope into all spool sub-directories 
 // for use by "--pop-by-name".
+//
+// The envelope in the parent directory is removed iff it
+// has been copied at least once.
+// 
+// Note that the pop-by-name feature has the pop server look 
+// for envelopes in a user-specific sub-directory and look for
+// content files in the parent directory. If the envelope
+// is deleted in the sub-directory and the content file is
+// found to have no corresponding envelopes in any other
+// sub-directory then the content is deleted too.
+// See GPop::StoreLock::unlinked().
+//
 //
 
 
@@ -63,7 +75,7 @@ static void run( const std::string & content )
 	if( ! G::File::exists(envelope_path) )
 		throw Error( std::string() + "no envelope file \"" + envelope_path.str() + "\"" ) ;
 
-	// copy the envelope into all subdirectories
+	// copy the envelope into all sub-directories
 	//
 	int directory_count = 0 ;
 	std::list<std::string> failures ;
@@ -79,6 +91,13 @@ static void run( const std::string & content )
 			if( !ok )
 				failures.push_back( iter.fileName().str() ) ;
 		}
+	}
+
+	// delete the parent envelope (ignore errors)
+	//
+	if( directory_count > 0 && failures.empty() )
+	{
+		G::File::remove( envelope_path , G::File::NoThrow() ) ;
 	}
 
 	// notify failures

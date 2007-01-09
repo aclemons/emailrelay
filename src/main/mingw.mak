@@ -50,6 +50,9 @@ include ../mingw-common.mak
 $(mk_target): $(mk_objects) $(res) $(libs)
 	$(mk_link) $(mk_link_flags) -o $(mk_target) $(mk_objects) $(res) $(libs) $(syslibs)
 
+emailrelay-filter-copy.exe: filter_copy.o
+	$(mk_link) $(mk_link_flags) -o $@ $< $(libs) $(syslibs)
+
 $(fake_mc): mingw.o
 	$(mk_link) $(mk_link_flags) -o $@ $<
 

@@ -20,35 +20,48 @@
 #
 # Makefile.am
 #
-# NOT FINISHED
-#
+
+if GUI
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS=-s
 
-REAL_SOURCES=\
+GUI_SOURCES=\
 	gdialog.cpp \
 	gdialog.h \
 	gpage.cpp \
 	gpage.h \
 	dir.cpp \
+	dir_unix.cpp \
 	dir.h \
 	main.cpp \
 	legal.cpp \
 	legal.h \
+	package.h \
 	pages.cpp \
 	pages.h \
 	qt.h \
 	thread.cpp \
-	thread.h
+	thread.h \
+	unpack.c \
+	unpack.h
 
 EXTRA_DIST=\
-	$(REAL_SOURCES) \
+	emailrelay-icon.png \
+	gcominit.h \
+	glink.h \
+	glink.cpp \
+	dir_win32.cpp \
+	dir_winxp.cpp \
+	dir_winnt.cpp \
 	mingw.mak \
 	mac.mak \
-	mock_ \
 	readme.txt \
 	Info.plist
+
+PACKED_OUTPUT_FILES=\
+	emailrelay-install-tool.tmp \
+	emailrelay-gui.tmp
 
 MOC_OUTPUT=\
 	moc_gdialog.cpp \
@@ -62,9 +75,6 @@ MOC_OBJECTS=\
 	moc_pages.o \
 	moc_thread.o
 
-mock=mock
-mock_in=$(srcdir)/mock_
-
 moc_gdialog.cpp: $(srcdir)/gdialog.h $(mock)
 	$(MOC) $< -o $@
 
@@ -77,11 +87,7 @@ moc_pages.cpp: $(srcdir)/pages.h $(mock)
 moc_thread.cpp: $(srcdir)/thread.h $(mock)
 	$(MOC) $< -o $@
 
-$(mock): $(mock_in)
-	cat $< > $*.tmp && mv $*.tmp $@
-	chmod ugo+x $@
-
-CLEANFILES = $(MOC_OUTPUT) $(mock)
+CLEANFILES = $(PACKED_OUTPUT_FILES) $(MOC_OUTPUT) $(mock)
 
 INCLUDES=\
 	-I$(top_srcdir)/lib/$(COMPILER_VERSION) \
@@ -100,18 +106,25 @@ AM_CPPFLAGS=\
 	-I$(e_qtdir)/include/QtCore \
 	-I$(e_qtdir)/include/QtGui
 
-noinst_SCRIPTS=mock
-
 bin_PROGRAMS = emailrelay-gui emailrelay-install-tool
+noinst_SCRIPTS = mock emailrelay-setup
+noinst_PROGRAMS = run pack
 
-emailrelay_install_tool_SOURCES = tool.cpp
+pack_SOURCES = pack.cpp
+pack_LDADD = $(top_builddir)/src/glib/libglib.a
+pack_LDFLAGS = -lz
+
+run_SOURCES = run.c unpack.c
+run_LDADD =
+run_LDFLAGS = -lz
+
+emailrelay_install_tool_SOURCES = tool.cpp glink.cpp unpack.c
 emailrelay_install_tool_LDADD = \
 	$(top_builddir)/src/glib/libglib.a
 
-emailrelay_gui_SOURCES = all.cpp
+emailrelay_gui_SOURCES = $(GUI_SOURCES)
 
-emailrelay_gui_DEPENDENCIES = all.cpp $(MOC_OBJECTS)
-EXTRA_emailrelay_gui_SOURCES =
+emailrelay_gui_DEPENDENCIES = $(MOC_OBJECTS)
 
 emailrelay_gui_LDADD = \
 	$(MOC_OBJECTS) \
@@ -126,3 +139,58 @@ emailrelay_gui_LDFLAGS = \
 	-L$(e_qtdir)/lib \
 	-L$(e_x11dir)/lib
 
+# (for *nix we assume 'make install' does the install, so this is a short list...)
+PACKED_INPUT = \
+	emailrelay-icon.png
+
+PACKED_INPUT_LIST = \
+	emailrelay-icon.png emailrelay-icon.png
+
+# emailrelay-install-tool.tmp := emailrelay-install-tool, emailrelay, etc. etc.
+#
+emailrelay-install-tool.tmp: pack emailrelay-install-tool $(PACKED_INPUT)
+	./pack $@ emailrelay-install-tool $(PACKED_INPUT_LIST)
+
+# emailrelay-gui.tmp := emailrelay-gui + emailrelay-install-tool.tmp
+#
+emailrelay-gui.tmp: pack emailrelay-gui emailrelay-install-tool.tmp
+	./pack $@ emailrelay-gui emailrelay-install-tool.tmp emailrelay-install-tool
+
+# emailrelay-setup := run + emailrelay-gui.tmp
+#
+emailrelay-setup: pack run emailrelay-gui.tmp
+	./pack $@ run emailrelay-gui.tmp emailrelay-gui
+	chmod +x $@
+
+else
+
+EXTRA_DIST=\
+	dir.cpp \
+	dir.h \
+	dir_unix.cpp \
+	dir_win32.cpp \
+	dir_winnt.cpp \
+	dir_winxp.cpp \
+	emailrelay-icon.png \
+	gcominit.h \
+	gdialog.cpp \
+	gdialog.h \
+	glink.cpp \
+	glink.h \
+	gpage.cpp \
+	gpage.h \
+	Info.plist \
+	legal.cpp \
+	legal.h \
+	mac.mak \
+	main.cpp \
+	mingw.mak \
+	pack.cpp \
+	pages.cpp \
+	pages.h \
+	qt.h \
+	readme.txt \
+	thread.cpp \
+	thread.h
+
+endif

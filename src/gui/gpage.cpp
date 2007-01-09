@@ -85,8 +85,8 @@ std::string GPage::next2() const
 
 QLabel * GPage::newTitle( QString s )
 {
-	QString open( "<center><font color=\"blue\" size=\"5\"><b><i>" ) ;
-	QString close( "</i></b></font></center>" ) ;
+	QString open( "<center><font size=\"5\"><b>" ) ;
+	QString close( "</b></font></center>" ) ;
 	QLabel * label = new QLabel( open + s + close ) ;
 	QSizePolicy p = label->sizePolicy() ;
 	p.setVerticalPolicy( QSizePolicy::Fixed ) ;
@@ -146,5 +146,18 @@ G::Strings GPage::toolArgs( const std::string & prefix )
 	G::Str::splitIntoTokens( m_tool_arg , result , G::Str::ws() ) ;
 	if( ! prefix.empty() ) result.push_front(prefix) ;
 	return result ;
+}
+
+void GPage::mechanismUpdateSlot( const QString & m )
+{
+	static bool first = true ;
+	if( first && m != "CRAM-MD5" )
+	{
+		QString title(QMessageBox::tr("E-MailRelay")) ;
+		QMessageBox::warning( NULL , title , 
+			QMessageBox::tr("Passwords will be written to a text file in the clear if not using CRAM-MD5.\nIf security is important then use dummy passwords now and edit the secrets file \"emailrelay.auth\" later on.") ,
+			QMessageBox::Ok , QMessageBox::NoButton , QMessageBox::NoButton ) ;
+		first = false ;
+	}
 }
 

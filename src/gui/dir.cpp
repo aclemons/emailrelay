@@ -20,128 +20,85 @@
 //
 // dir.cpp
 //
+// See also "dir_unix.cpp" and "dir_win32.cpp".
+//
 
 #include "dir.h"
 #include "gpath.h"
-#include "gfile.h"
+#include <stdexcept>
 
-#ifndef G_SPOOLDIR
-	#define G_SPOOLDIR ""
-#endif
+Dir * Dir::m_this = NULL ;
 
-#ifndef G_SYSCONFDIR
-	#define G_SYSCONFDIR ""
-#endif
+Dir::Dir( const std::string & argv0 , const std::string & prefix ) :
+	m_argv0(argv0) ,
+	m_prefix(prefix)
+{
+	if( m_this == NULL )
+		m_this = this ;
+}
 
-#ifndef G_LIBEXECDIR
-	#define G_LIBEXECDIR ""
-#endif
+Dir::~Dir()
+{
+	if( this == m_this )
+		m_this = NULL ;
+}
 
-#ifndef G_DESTDIR
-	#define G_DESTDIR ""
-#endif
+Dir * Dir::instance()
+{
+	if( m_this == NULL )
+		throw std::runtime_error("internal error: no instance") ;
+	return m_this ;
+}
 
-#ifdef _WIN32
-G::Path Dir::install()
-{
-	return "c:\\program files\\emailrelay" ;
-}
-static G::Path windows()
-{
-	char buffer[MAX_PATH+20U] = { '\0' } ;
-	unsigned int n = sizeof(buffer) ;
-	::GetWindowsDirectory( buffer , n-1U ) ;
-	buffer[n-1U] = '\0' ;
-	return G::Path(buffer) ;
-}
-G::Path Dir::config()
-{
-	return ::windows() ;
-}
-G::Path Dir::spool()
-{
-        std::string spooldir( G_SPOOLDIR ) ;
-        if( spooldir.empty() )
-                spooldir = windows() + "spool" + "emailrelay" ;
-        return G::Path( spooldir ) ;
-}
-G::Path Dir::cwd()
-{
-	char buffer[10000] = { '\0' } ;
-	unsigned long n = ::GetCurrentDirectory( sizeof(buffer)-1U , buffer ) ;
-	buffer[sizeof(buffer)-1U] = '\0' ;
-	std::string s = n ? std::string(buffer) : std::string(".") ;
-	return G::Path( s ) ;
-}
-G::Path Dir::tooldir()
-{
-	return G::Path( "...." ) ; // bogus
-}
-G::Path Dir::startup()
-{
-	return G::Path( "...." ) ; // bogus
-}
-G::Path G::System::pid()
-{
-	return G::Path( "...." ) ; // bogus
-}
-#else
-#include <unistd.h>
-G::Path Dir::install()
-{
-	std::string s( G_DESTDIR ) ;
-	if( s.empty() )
-		s = "/usr/local/emailrelay" ;
-	return G::Path( s ) ;
-}
-G::Path Dir::config()
-{
-	std::string s( G_SYSCONFDIR ) ;
-	if( s.empty() )
-		s = "/etc" ;
-	return G::Path( s ) ;
-}
-G::Path Dir::spool()
-{
-        std::string spooldir( G_SPOOLDIR ) ;
-        if( spooldir.empty() )
-                spooldir = "/var/spool/emailrelay" ;
-        return G::Path( spooldir ) ;
-}
-G::Path Dir::cwd()
-{
-	char buffer[10000] = { '\0' } ;
-	const char * p = getcwd( buffer , sizeof(buffer)-1U ) ;
-	buffer[sizeof(buffer)-1U] = '\0' ;
-	std::string s = p ? std::string(buffer) : std::string(".") ;
-	return G::Path( s ) ;
-}
-G::Path Dir::tooldir()
-{
-	std::string s( G_LIBEXECDIR ) ;
-	if( s.empty() )
-		s = "/usr/lib" ;
-	return G::Path( s ) ;
-}
-G::Path Dir::startup()
-{
-	return config() + "init.d" ;
-}
-G::Path Dir::pid()
-{
-	G::Path var_run( "/var/run" ) ;
-	G::Path tmp( "/tmp" ) ;
-	return G::File::exists(var_run) ? var_run : tmp ;
-}
-#endif
-
-G::Path Dir::tooldir( const std::string & argv0 )
+G::Path Dir::thisdir()
 {
 	// (make some effort to return an absolute path -- not foolproof on windows)
-	G::Path exe_dir = G::Path(argv0).dirname() ; 
+	G::Path exe_dir = G::Path(instance()->m_argv0).dirname() ; 
 	return
 		( exe_dir.isRelative() && !exe_dir.hasDriveLetter() ) ?
 			( cwd() + exe_dir.str() ) :
 			exe_dir ;
+}
+
+G::Path Dir::thisexe()
+{
+	return G::Path( thisdir() , G::Path(instance()->m_argv0).basename() ) ;
+}
+
+G::Path Dir::desktop()
+{
+	return prefix(special("desktop")) ;
+}
+
+G::Path Dir::login()
+{
+	return prefix(special("login")) ;
+}
+
+G::Path Dir::menu()
+{
+	return prefix(special("menu")) ;
+}
+
+G::Path Dir::reskit()
+{
+	return prefix(special("reskit")) ;
+}
+
+G::Path Dir::tmp()
+{
+	return thisdir() ; // TODO -- check writable
+}
+
+G::Path Dir::prefix( G::Path tail )
+{
+	std::string p = instance()->m_prefix ;
+	return p.empty() ?  tail : ( G::Path(p) + tail.str() ) ;
+}
+
+G::Path Dir::prefix( std::string tail )
+{
+	std::string p = instance()->m_prefix ;
+	return p.empty() ?  tail : ( G::Path(p) + tail ) ;
 }
 

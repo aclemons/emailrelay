@@ -29,7 +29,7 @@ Move shortcuts to "Startup" folders as necessary. Or try using Microsoft's
 Diagnostics
 -----------
 * Set the environment variable "GLOGOUTPUT_FILE" to (eg.) "c:\emailrelay.log"
-* Add "--log --log-time --verbose" to the E-MailRelay command-lines.
+* Add "--log --log-time --verbose --syslog" to the E-MailRelay command-lines.
 * Check the event log (run "eventwwr.exe") for errors and warnings.
 * Check the spool directory for ".bad" envelope files -- remove the suffix to retry.
 

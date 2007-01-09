@@ -101,7 +101,9 @@ Key classes are:
 - Address
 - EventHandler
 - EventLoop
+- MultiServer
 - Resolver
+- Sender
 - Server
 - Socket
 - Timer

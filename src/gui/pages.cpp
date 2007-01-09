@@ -26,6 +26,7 @@
 #include "pages.h"
 #include "legal.h"
 #include "dir.h"
+#include "gfile.h"
 #include "gprocess.h"
 #include "gidentity.h"
 #include "gmd5.h"
@@ -55,8 +56,8 @@ namespace
 // ==
 
 TitlePage::TitlePage( GDialog & dialog , const std::string & name , 
-	const std::string & next_1 , const std::string & next_2 ) : 
-		GPage(dialog,name,next_1,next_2,false,false)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_label = new QLabel( Legal::text() ) ;
 
@@ -79,8 +80,8 @@ void TitlePage::dump( std::ostream & stream , const std::string & prefix , const
 // ==
 
 LicensePage::LicensePage( GDialog & dialog , const std::string & name , 
-	const std::string & next_1 , const std::string & next_2 ) : 
-		GPage(dialog,name,next_1,next_2,false,false)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_text_edit = new QTextEdit;
 	m_text_edit->setReadOnly(true) ;
@@ -122,8 +123,8 @@ bool LicensePage::isComplete()
 // ==
 
 DirectoryPage::DirectoryPage( GDialog & dialog , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 ) : 
-		GPage(dialog,name,next_1,next_2,false,false)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_install_dir_label = new QLabel(tr("&Directory:")) ;
 	m_install_dir_edit_box = new QLineEdit ;
@@ -225,10 +226,15 @@ std::string DirectoryPage::nextPage()
 void DirectoryPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
 	GPage::dump( stream , prefix , eol ) ;
-	stream << prefix << "install-dir: " << value(m_install_dir_edit_box) << eol ;
-	stream << prefix << "spool-dir: " << value(m_spool_dir_edit_box) << eol ;
-	stream << prefix << "config-dir: " << value(m_config_dir_edit_box) << eol ;
-	stream << prefix << "pid-dir: " << Dir::pid() << eol ;
+	stream << prefix << "dir-install: " << value(m_install_dir_edit_box) << eol ;
+	stream << prefix << "dir-spool: " << value(m_spool_dir_edit_box) << eol ;
+	stream << prefix << "dir-config: " << value(m_config_dir_edit_box) << eol ;
+	stream << prefix << "dir-pid: " << Dir::pid() << eol ;
+	stream << prefix << "dir-desktop: " << Dir::desktop() << eol ;
+	stream << prefix << "dir-login: " << Dir::login() << eol ;
+	stream << prefix << "dir-menu: " << Dir::menu() << eol ;
+	stream << prefix << "dir-reskit: " << Dir::reskit() << eol ;
+	stream << prefix << "dir-boot: " << Dir::boot() << eol ;
 }
 
 bool DirectoryPage::isComplete()
@@ -242,8 +248,8 @@ bool DirectoryPage::isComplete()
 // ==
 
 DoWhatPage::DoWhatPage( GDialog & dialog, const std::string & name , 
-	const std::string & next_1 , const std::string & next_2 ) : 
-		GPage(dialog,name,next_1,next_2,false,false)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_pop_checkbox = new QCheckBox(tr("&POP3 server"));
 	m_smtp_checkbox = new QCheckBox(tr("&SMTP server"));
@@ -341,8 +347,8 @@ bool DoWhatPage::isComplete()
 // ==
 
 PopPage::PopPage( GDialog & dialog , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 ) : 
-		GPage(dialog,name,next_1,next_2,false,false)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	QLabel * port_label = new QLabel( tr("P&ort:") ) ;
 	m_port_edit_box = new QLineEdit( tr("110") ) ;
@@ -424,14 +430,14 @@ void PopPage::onToggle()
 // ==
 
 PopAccountsPage::PopAccountsPage( GDialog & dialog , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 ) : 
-		GPage(dialog,name,next_1,next_2,false,false)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_mechanism_combo = new QComboBox ;
 	m_mechanism_combo->addItem( tr("APOP") ) ;
 	m_mechanism_combo->addItem( tr("CRAM-MD5") ) ;
 	m_mechanism_combo->addItem( tr("LOGIN") ) ;
-	m_mechanism_combo->setCurrentIndex( 0 ) ;
+	m_mechanism_combo->setCurrentIndex( 1 ) ;
 	m_mechanism_combo->setEditable( false ) ;
 	QLabel * mechanism_label = new QLabel( tr("Authentication &mechanism") ) ;
 	mechanism_label->setBuddy( m_mechanism_combo ) ;
@@ -478,6 +484,7 @@ PopAccountsPage::PopAccountsPage( GDialog & dialog , const std::string & name ,
 	layout->addStretch() ;
 	setLayout( layout ) ;
 
+	connect( m_mechanism_combo , SIGNAL(currentIndexChanged(QString)), this, SLOT(mechanismUpdateSlot(QString)) ) ;
 	connect( m_name_1 , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_pwd_1 , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_name_2 , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
@@ -522,14 +529,14 @@ bool PopAccountsPage::isComplete()
 // ==
 
 PopAccountPage::PopAccountPage( GDialog & dialog , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 ) : 
-		GPage(dialog,name,next_1,next_2,false,false)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_mechanism_combo = new QComboBox ;
 	m_mechanism_combo->addItem( tr("APOP") ) ;
 	m_mechanism_combo->addItem( tr("CRAM-MD5") ) ;
 	m_mechanism_combo->addItem( tr("LOGIN") ) ;
-	m_mechanism_combo->setCurrentIndex( 0 ) ;
+	m_mechanism_combo->setCurrentIndex( 1 ) ;
 	m_mechanism_combo->setEditable( false ) ;
 	QLabel * mechanism_label = new QLabel( tr("Authentication &mechanism") ) ;
 	mechanism_label->setBuddy( m_mechanism_combo ) ;
@@ -566,6 +573,7 @@ PopAccountPage::PopAccountPage( GDialog & dialog , const std::string & name ,
 	layout->addStretch() ;
 	setLayout( layout ) ;
 
+	connect( m_mechanism_combo , SIGNAL(currentIndexChanged(QString)), this, SLOT(mechanismUpdateSlot(QString)) ) ;
 	connect( m_name_1 , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_pwd_1 , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 }
@@ -596,8 +604,8 @@ bool PopAccountPage::isComplete()
 // ==
 
 SmtpServerPage::SmtpServerPage( GDialog & dialog , const std::string & name , 
-	const std::string & next_1 , const std::string & next_2 ) : 
-		GPage(dialog,name,next_1,next_2,false,false)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	QLabel * port_label = new QLabel(tr("P&ort:")) ;
 	m_port_edit_box = new QLineEdit(tr("25")) ;
@@ -681,11 +689,11 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const std::string & name ,
 	layout->addStretch() ;
 	setLayout( layout ) ;
 
+	connect( m_mechanism_combo , SIGNAL(currentIndexChanged(QString)), this, SLOT(mechanismUpdateSlot(QString)) ) ;
 	connect( m_port_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_account_name , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_account_pwd , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_trust_address , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
-
 	connect( m_auth_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_auth_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
 
@@ -727,8 +735,8 @@ bool SmtpServerPage::isComplete()
 // ==
 
 SmtpClientPage::SmtpClientPage( GDialog & dialog , const std::string & name , 
-	const std::string & next_1 , const std::string & next_2 ) : 
-		GPage(dialog,name,next_1,next_2,false,false)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	QLabel * server_label = new QLabel(tr("&Hostname:")) ;
 	m_server_edit_box = new QLineEdit ;
@@ -800,6 +808,7 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const std::string & name ,
 	layout->addStretch() ;
 	setLayout( layout ) ;
 
+	connect( m_mechanism_combo , SIGNAL(currentIndexChanged(QString)), this, SLOT(mechanismUpdateSlot(QString)) ) ;
 	connect( m_port_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_server_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_account_name , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
@@ -845,8 +854,8 @@ bool SmtpClientPage::isComplete()
 // ==
 
 LoggingPage::LoggingPage( GDialog & dialog , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 ) : 
-		GPage(dialog,name,next_1,next_2,false,false)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_debug_checkbox = new QCheckBox( tr("&Debug messages") ) ;
 	m_verbose_checkbox = new QCheckBox( tr("&Verbose logging") ) ;
@@ -887,8 +896,8 @@ void LoggingPage::dump( std::ostream & stream , const std::string & prefix , con
 // ==
 
 ListeningPage::ListeningPage( GDialog & dialog , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 ) : 
-		GPage(dialog,name,next_1,next_2,false,false)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_listening_interface = new QLineEdit ;
 	m_all_radio = new QRadioButton(tr("&All interfaces")) ;
@@ -972,14 +981,17 @@ void ListeningPage::dump( std::ostream & stream , const std::string & prefix , c
 // ==
 
 StartupPage::StartupPage( GDialog & dialog , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 ) : 
-		GPage(dialog,name,next_1,next_2,false,false)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_on_boot_checkbox = new QCheckBox( tr("At &system startup") ) ;
 	m_at_login_checkbox = new QCheckBox( tr("&When logging in") ) ;
 	QVBoxLayout * auto_layout = new QVBoxLayout ;
 	auto_layout->addWidget( m_on_boot_checkbox ) ;
 	auto_layout->addWidget( m_at_login_checkbox ) ;
+
+	if( ! testMode() )
+		m_on_boot_checkbox->setEnabled(false) ;
 
 	m_add_menu_item_checkbox = new QCheckBox( tr("Add to start menu") ) ;
 	m_add_desktop_item_checkbox = new QCheckBox( tr("Add to desktop") ) ;
@@ -1019,56 +1031,28 @@ void StartupPage::dump( std::ostream & stream , const std::string & prefix , con
 // ==
 
 ConfigurationPage::ConfigurationPage( GDialog & dialog , const std::string & name , const std::string & next_1 , 
-	bool final_button ) :
-		GPage(dialog,name,next_1,"",final_button,false)
+	const std::string & next_2 , bool finish , bool close ) :
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
-	m_text_edit = new QTextEdit;
-	m_text_edit->setReadOnly(true) ;
-	m_text_edit->setWordWrapMode(QTextOption::NoWrap) ;
-	m_text_edit->setLineWrapMode(QTextEdit::NoWrap) ;
-	m_text_edit->setFontFamily("courier") ;
+	m_label = new QLabel( text() ) ;
 
 	QVBoxLayout *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("Configuration"))) ;
-	layout->addWidget(m_text_edit) ;
-	setLayout( layout ) ;
+	layout->addWidget(newTitle(tr("Ready to install"))) ;
+	layout->addWidget(m_label);
+	setLayout(layout);
 }
 
-void ConfigurationPage::onShow( bool back )
+void ConfigurationPage::onShow( bool )
 {
-	if( ! back )
-		m_text_edit->setPlainText( QString(text().c_str()) ) ;
 }
 
-std::string ConfigurationPage::text() const
+QString ConfigurationPage::text() const
 {
-	// dump the user's choices to file and call out to the text-mode tool
-	std::string to_do_text ;
-	std::ofstream file( "install.cfg" ) ;
-	dialog().dump( file ) ;
-	bool file_good = file.good() ;
-	int rc = 1 ;
-	if( file.good() )
-	{
-		file.close() ;
-		rc = G::Process::spawn( G::Identity::real() , tool() , toolArgs("--show") , &to_do_text ) ;
-	}
-
-	// handle errors
-	if( !file_good || rc != 0 )
-	{
-		QString tool_name = G::Path(tool()).basename().c_str() ;
-		QString reason = file_good ? 
-			tr("Cannot run \"%1 --show -f install.cfg\"").arg(tool_name) :
-			tr("Cannot save \"install.cfg\"") ;
-		std::ostringstream ss ;
-		dialog().dump( ss ) ;
-		to_do_text = ss.str() ;
-		QMessageBox::critical( const_cast<ConfigurationPage*>(this) , tr("E-MailRelay Install") , 
-			tr("%1. Please save the text on the following page.").arg(reason) ) ;
-	}
-
-	return to_do_text ;
+	return GPage::tr(
+		"<center>"
+		"<p>Your configuration will now be saved to \"install.cfg\"</p>"
+		"<p>and processed by \"emailrelay-install-tool\"</p>"
+		"</center>" ) ;
 }
 
 std::string ConfigurationPage::nextPage()
@@ -1084,19 +1068,19 @@ void ConfigurationPage::dump( std::ostream & , const std::string & , const std::
 // ==
 
 ProgressPage::ProgressPage( GDialog & dialog , const std::string & name ,
-	const std::string & next_1 , bool close_button ) :
-		GPage(dialog,name,next_1,"",false,close_button) ,
-		m_thread(NULL)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) :
+		GPage(dialog,name,next_1,next_2,finish,close) ,
+		m_thread(NULL) ,
+		m_rc(1)
 {
 	m_text_edit = new QTextEdit;
 	m_text_edit->setReadOnly(true) ;
 	m_text_edit->setWordWrapMode(QTextOption::NoWrap) ;
 	m_text_edit->setLineWrapMode(QTextEdit::NoWrap) ;
 	m_text_edit->setFontFamily("courier") ;
-	m_text_edit->setPlainText("...") ;
 
 	QVBoxLayout *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("Progress"))) ;
+	layout->addWidget(newTitle(tr("Installing"))) ;
 	layout->addWidget(m_text_edit) ;
 	setLayout( layout ) ;
 }
@@ -1105,6 +1089,14 @@ void ProgressPage::onShow( bool back )
 {
 	if( ! back )
 	{
+		// write the config file
+		G::Path config_file( Dir::thisdir() , "install.cfg" ) ; // TODO -- try other directories on error
+		std::ofstream file( config_file.str().c_str() ) ;
+		dialog().dump( file ) ;
+		file.flush() ;
+		bool file_good = file.good() ; // TODO -- error handling
+
+		// spawn the thread that spawns the process and feeds its output back
 		check( m_thread == NULL ) ;
 		m_thread = new Thread( tool() , toolArgs() ) ;
 		connect( m_thread, SIGNAL(changeSignal()), this, SLOT(onThreadChangeEvent()), Qt::QueuedConnection ) ;
@@ -1119,12 +1111,14 @@ void ProgressPage::onThreadChangeEvent()
 	G_DEBUG( "ProcessPage::onThreadChangeEvent" ) ;
 	check( m_thread != NULL ) ;
 	QString text = m_thread->text() ;
+	m_text_edit->setFontFamily("courier") ;
 	m_text_edit->setPlainText( text ) ;
 }
 
 void ProgressPage::onThreadDoneEvent( int rc )
 {
 	G_DEBUG( "ProcessPage::onThreadDoneEvent: " << rc ) ;
+	m_rc = rc ;
 	check( m_thread != NULL ) ;
 	bool timeout = ! m_thread->wait( 2000U ) ;
 	Thread * p = timeout ? NULL : m_thread ; // on timeout leave the thread dangling and move on
@@ -1149,9 +1143,16 @@ void ProgressPage::check( bool ok )
 		throw std::runtime_error("internal error") ;
 }
 
+bool ProgressPage::closeButton() const
+{
+	bool result = m_rc == 0 ? GPage::closeButton() : false ;
+	G_DEBUG( "ProgressPage::closeButton: " << result ) ;
+	return result ;
+}
+
 // ==
 
-EndPage::EndPage( GDialog & dialog , const std::string & name ) :
+EndPage_::EndPage_( GDialog & dialog , const std::string & name ) :
 	GPage(dialog,name,"","",true,true)
 {
 	QVBoxLayout *layout = new QVBoxLayout;
@@ -1160,12 +1161,12 @@ EndPage::EndPage( GDialog & dialog , const std::string & name ) :
 	setLayout( layout ) ;
 }
 
-std::string EndPage::nextPage()
+std::string EndPage_::nextPage()
 {
 	return std::string() ;
 }
 
-void EndPage::dump( std::ostream & , const std::string & , const std::string & ) const
+void EndPage_::dump( std::ostream & , const std::string & , const std::string & ) const
 {
 	// no-op
 }

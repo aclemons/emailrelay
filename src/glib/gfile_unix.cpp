@@ -73,3 +73,11 @@ G::File::time_type G::File::time( const Path & path , const NoThrow & )
 	return ::stat( path.pathCstr() , &statbuf ) == 0 ? statbuf.st_mtime : 0 ;
 }
 
+bool G::File::chmodx( const Path & path , bool do_throw )
+{
+	bool ok = 0 == ::chmod( path.str().c_str() , S_IRUSR | S_IWUSR | S_IXUSR ) ;
+	if( !ok && do_throw )
+		throw CannotChmod( path.str() ) ;
+	return ok ;
+}
+

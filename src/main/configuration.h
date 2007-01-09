@@ -27,6 +27,7 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gpath.h"
+#include "gstrings.h"
 #include <string>
 
 namespace Main
@@ -56,8 +57,13 @@ public:
 	unsigned int port() const ;
 		// Returns the main listening port number.
 
-	std::string listeningInterface() const ;
-		// Returns the listening interface.
+	G::Strings listeningInterfaces() const ;
+		// Returns the listening interface(s).
+		// Returns a single empty string if no
+		// special interfaces are defined.
+
+	std::string firstListeningInterface() const ;
+		// A convenience method returning the first listeningInterface().
 
 	std::string clientInterface() const ;
 		// Returns the sending interface.

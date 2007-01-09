@@ -92,3 +92,7 @@ G::File::time_type G::File::time( const Path & path , const NoThrow & )
 	return ::_stat( path.pathCstr() , &statbuf ) == 0 ? statbuf.st_mtime : 0 ;
 }
 
+bool G::File::chmodx( const Path & , bool )
+{
+	return true ; // no-op
+}

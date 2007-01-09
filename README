@@ -22,41 +22,46 @@ Distribution is under the GNU General Public License.
 
 Quick start
 -----------
-To run the program as a proxy use the "--as-proxy" command-line switch followed
-by the address of the target SMTP server. If you want to edit or filter e-mail 
-as it passes through the proxy then specify your pre-processor program with the
-"--filter" switch. You can optionally change the listening port number using 
-"--port" and the spool directory using "--spool-dir".
+To use E-MailRelay in store-and-forward mode use the "--as-server" switch to 
+start the storage daemon in the background, and then trigger delivery of spooled
+messages by running with the "--as-client" switch and the address of the target
+host.
 
-For example, to start up a local proxy that passes messages to some "addsig" 
-script and then forwards them to an MTA running on "smarthost", use a command 
-like this:
+For example, to start a storage daemon listening on port 10025 use a command like
+this:
 
-	emailrelay --as-proxy smarthost:smtp --filter $HOME/bin/addsig --spool-dir $HOME/tmp
+	emailrelay --as-server --port 10025 --spool-dir /tmp
 
-To use E-MailRelay as a store-and-forward MTA use the "--as-server" switch
-to start the storage daemon in the background. And then trigger delivery of
-spooled messages by running emailrelay with the "--as-client" switch followed 
-by the address of the target SMTP server.
+And then to forward the spooled mail to "smarthost" run something like this:
 
-For example, to start a storage daemon listening on port 10025 use a command
-like this:
+	emailrelay --as-client smarthost:smtp --spool-dir /tmp
 
-	emailrelay --as-server --port 10025 --spool-dir $HOME/tmp
+To get behaviour more like a proxy you can add the "--poll" switch so that
+messages are forwarded continuously rather than on-demand. This example starts a 
+store-and-forward server that forwards spooled-up e-mail every hour:
 
-And then to forward the spooled mail to "smarthost" run somthing like this:
+	emailrelay --as-server --poll 3600 --forward-to smarthost:smtp
 
-	emailrelay --as-client smarthost:smtp --spool-dir $HOME/tmp
+For a proxy server that forwards each message as it is being received, without 
+any delay, you can use the "--as-proxy" mode:
 
-To run E-MailRelay as a POP server without SMTP you can use a command like this:
+	emailrelay --as-proxy smarthost:smtp
+
+If you want to edit or filter e-mail as it passes through the proxy then specify
+your pre-processor program with the "--filter" switch, something like this:
+
+	emailrelay --as-proxy smarthost:smtp --filter /usr/local/bin/addsig
+
+To run E-MailRelay as a POP server without SMTP use "--pop" and "--no-smtp":
 
 	emailrelay --pop --no-smtp --log --close-stderr
 
 The "emailrelay-submit" utility can be used to put messages straight into the
-spool directory.
+spool directory so that the POP clients can fetch them.
 
-By default E-MailRelay will always reject connections from remote machines. To
-allow connections from anywhere use the "--remote-clients" switch.
+Note that by default E-MailRelay will always reject connections from remote 
+machines. To allow connections from anywhere use the "--remote-clients" switch,
+but please consider implications if your machine is connected to the internet.
 
 For more information on the command-line options refer to the reference guide
 or run:
@@ -80,9 +85,9 @@ Source code documentation will be generated when building from source if
 
 Configurations
 --------------
-Recent releases were developed on SuSE Linux 9.0 using:
-* linux 2.6.11
-* gcc 3.3.3
+Recent releases were developed on Ubuntu Linux 6.06 using:
+* linux 2.6.15
+* gcc 4.0.3
 * autoconf 2.59
 
 and on Windows NT4 SP6 using:
@@ -94,7 +99,7 @@ The code was originally developed on SuSE Linux 7.1 using:
 * glibc 2.2.4 (libc.so.6)
 * autoconf 2.52
 
-and to Windows 98 using:
+and on Windows 98 using:
 * MSVC 6.0
 
 Versions of the code have also been built successfully on:
@@ -109,10 +114,12 @@ Versions of the code have also been built successfully on:
 * Windows NT 4.0 using MSVC 6.0
 * Windows NT 4.0 using Cygwin (DLL 1.3.22) and gcc 3.2
 * Windows NT 4.0 using MinGW 2.0.0 and gcc 3.2
+* Windows XP using MinGW 3.1.0 gcc 3.4.2
 
 
 Feedback
 --------
 Please feel free to e-mail the author at 
-"mailto:graeme_walker@users.sourceforge.net".
+"mailto:graeme_walker@users.sourceforge.net" or the SourceForge mailing list
+"mailto:emailrelay-help@lists.sourceforge.net".
 

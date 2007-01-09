@@ -138,12 +138,19 @@ protected:
 		// parameter through to the ServerPeer base-class 
 		// constructor.
 		//
-		// May return NULL.
+		// Should return NULL for non-fatal errors. It is 
+		// expected that a typical server process will 
+		// terminate if newPeer() throws, so most 
+		// implementations will catch any exceptions and 
+		// return NULL.
 
 	void serverCleanup() ;
 		// May be called from the derived class destructor
 		// in order to trigger early deletion of peer objects,
 		// before the derived part of the server disappears.
+		// If this is called from the most-derived Server
+		// class then it allows ServerPeer objects to use 
+		// their Server object safely during destruction.
 
 private:
 	Server( const Server & ) ; // not implemented
@@ -153,6 +160,7 @@ private:
 	virtual void exceptionEvent() ; // from EventHandler
 	void serverCleanupCore() ;
 	void collectGarbage() ;
+	void readEventCore() ;
 
 private:
 	typedef std::list<ServerPeerHandle> PeerList ;

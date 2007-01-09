@@ -173,7 +173,11 @@ GNet::AddressImp::AddressImp( const sockaddr * addr , size_t len )
 	Sockaddr u ;
 	bool ipv6 = addr->sa_family == family() && len == sizeof(u.specific) ;
 	if( !ipv6 )
-		throw Address::BadFamily( std::ostringstream() << addr->sa_family ) ;
+	{
+		std::ostringstream ss ;
+		ss << addr->sa_family ;
+		throw Address::BadFamily( ss.str() ) ;
+	}
 
 	u.general = * addr ;
 	m_inet = u.specific ;

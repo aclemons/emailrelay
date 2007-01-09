@@ -21,7 +21,7 @@ dnl Process this file with autoconf to produce a configure script.
 dnl
 
 AC_INIT(src/gsmtp/gsmtp.h)
-AM_INIT_AUTOMAKE(emailrelay,1.4.1)
+AM_INIT_AUTOMAKE(emailrelay,1.5)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -46,6 +46,7 @@ dnl
 AC_LANG_C
 AC_SEARCH_LIBS(gethostbyname,nsl)
 AC_SEARCH_LIBS(connect,socket)
+AC_SEARCH_LIBS(compress2,z)
 
 dnl ===
 dnl check for header files, functions and typedefs...
@@ -55,6 +56,7 @@ AC_HEADER_DIRENT
 AC_HEADER_TIME
 AC_CHECK_HEADERS(unistd.h)
 AC_CHECK_HEADERS(sys/time.h)
+AC_CHECK_HEADERS(zlib.h)
 AC_CHECK_FUNCS(glob)
 AC_LANG_CPLUSPLUS
 ACLOCAL_TYPE_SOCKLEN_T

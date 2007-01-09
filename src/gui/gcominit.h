@@ -18,26 +18,21 @@
 // 
 // ===
 //
-// all.cpp
+// gcominit.h
 //
 
-#if defined(G_MINGW) && !defined(HAVE_CONFIG_H)
- #define HAVE_GUI 1
+#ifndef G_COM_INIT_H__
+#define G_COM_INIT_H__
+
+#ifdef _WIN32
+#include <windows.h>
+struct GComInit
+{
+	GComInit() { CoInitializeEx(0,0) ; }
+	~GComInit() { CoUninitialize() ; }
+} ;
 #else
- #include "config.h"
+struct GComInit {} ;
 #endif
 
-#if HAVE_GUI
- #include "gdialog.cpp"
- #include "gpage.cpp"
- #include "dir.cpp"
- #include "main.cpp"
- #include "legal.cpp"
- #include "pages.cpp"
- #include "thread.cpp"
-#else
- #include <cstdio>
- using namespace std ;
- int main() { printf("%s\n","error: gui not enabled"); return 1;}
 #endif
-

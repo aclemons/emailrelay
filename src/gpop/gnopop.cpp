@@ -26,6 +26,7 @@
 #include "gpopserver.h"
 #include "gpopsecrets.h"
 #include "gpopstore.h"
+#include "gstrings.h"
 
 std::string GPop::Secrets::defaultPath()
 {
@@ -58,9 +59,11 @@ GPop::Store::Store( G::Path , bool , bool )
 
 // ==
 
-GPop::Server::Config::Config( bool , unsigned int , const std::string & )
+GPop::Server::Config::Config( bool , unsigned int , const G::Strings & )
 {
 }
+
+// ==
 
 GPop::Server::Server( Store & store , const Secrets & secrets , Config ) :
 	m_store(store) ,

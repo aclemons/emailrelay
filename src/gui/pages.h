@@ -48,7 +48,7 @@ class TitlePage : public GPage
 {
 public:
 	TitlePage( GDialog & dialog , const std::string & name , 
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -61,7 +61,7 @@ class LicensePage : public GPage
 {
 public:
 	LicensePage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -76,7 +76,7 @@ class DirectoryPage : public GPage
 {Q_OBJECT
 public:
 	DirectoryPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -109,7 +109,7 @@ class DoWhatPage : public GPage
 {Q_OBJECT
 public:
 	DoWhatPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -132,7 +132,7 @@ class PopPage : public GPage
 {Q_OBJECT
 public:
 	explicit PopPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -154,7 +154,7 @@ class PopAccountsPage : public GPage
 {
 public:
 	explicit PopAccountsPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -174,7 +174,7 @@ class PopAccountPage : public GPage
 {
 public:
 	explicit PopAccountPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -190,7 +190,7 @@ class SmtpServerPage : public GPage
 {Q_OBJECT
 public:
 	SmtpServerPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -214,7 +214,7 @@ class SmtpClientPage : public GPage
 {Q_OBJECT
 public:
 	SmtpClientPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -237,7 +237,7 @@ class StartupPage : public GPage
 {
 public:
 	StartupPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -254,7 +254,7 @@ class LoggingPage : public GPage
 {
 public:
 	LoggingPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -269,7 +269,7 @@ class ListeningPage : public GPage
 {Q_OBJECT
 public:
 	ListeningPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 = std::string() , const std::string & next_2 = std::string() ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -289,27 +289,29 @@ class ConfigurationPage : public GPage
 {
 public:
 	ConfigurationPage( GDialog & dialog , const std::string & name , const std::string & next_1 , 
-		bool final_button ) ;
+		const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 	virtual void onShow( bool back ) ;
 
 private:
-	std::string text() const ;
+	QString text() const ;
 
 private:
-	QTextEdit * m_text_edit ;
+	QLabel * m_label ;
 } ;
 
 class ProgressPage : public GPage 
 {Q_OBJECT
 public:
-	ProgressPage( GDialog & dialog , const std::string & name , const std::string & next_1 , bool close_button ) ;
+	ProgressPage( GDialog & dialog , const std::string & name , const std::string & next_1 , 
+		const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 	virtual void onShow( bool back ) ;
+	virtual bool closeButton() const ;
 
 private slots:
 	void onThreadChangeEvent() ;
@@ -321,12 +323,13 @@ private:
 private:
 	QTextEdit * m_text_edit ;
 	Thread * m_thread ;
+	int m_rc ;
 } ;
 
-class EndPage : public GPage 
+class EndPage_ : public GPage 
 {
 public:
-	EndPage( GDialog & dialog , const std::string & name ) ;
+	EndPage_( GDialog & dialog , const std::string & name ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;

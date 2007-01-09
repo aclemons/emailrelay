@@ -70,11 +70,17 @@ void G::File::copy( const Path & from , const Path & to )
 
 bool G::File::copy( const Path & from , const Path & to , const NoThrow & )
 {
-	std::ifstream in( from.str().c_str() , std::ios_base::binary | std::ios_base::in ) ;
-	std::ofstream out( to.str().c_str() , std::ios_base::binary | std::ios_base::out | std::ios_base::trunc ) ;
-	char c ;
-	while( in.get(c) )
-		out << c ;
+	std::ifstream in( from.str().c_str() , std::ios::binary | std::ios::in ) ;
+	std::ofstream out( to.str().c_str() , std::ios::binary | std::ios::out | std::ios::trunc ) ;
+	char buffer[1024U*4U] ;
+	while( in.good() && out.good() )
+	{
+		std::streamsize n = in.readsome( buffer , sizeof(buffer) ) ;
+		if( n == 0U ) break ;
+		out.write( buffer , n ) ;
+	}
+	out.flush() ;
+	in.get() ; // force eof
 	return in.eof() && out.good() ;
 }
 
@@ -111,5 +117,34 @@ bool G::File::exists( const Path & path , bool on_error , bool do_throw )
 		return on_error ;
 	}
 	return true ;
+}
+
+bool G::File::chmodx( const Path & path , const NoThrow & )
+{
+	return chmodx(path,false) ;
+}
+
+void G::File::chmodx( const Path & path )
+{
+	chmodx(path,true) ;
+}
+
+bool G::File::mkdirs( const Path & path , const NoThrow & , int limit )
+{
+	// (recursive)
+	G_DEBUG( "File::mkdirs: " << path ) ;
+	if( limit == 0 ) return false ;
+	if( exists(path) ) return true ;
+	if( path.str().empty() ) return true ;
+	if( ! mkdirs( path.dirname() , NoThrow() , limit-1 ) ) return false ;
+	bool ok = mkdir( path , NoThrow() ) ;
+	if( ok ) chmodx( path , NoThrow() ) ;
+	return ok ;
+}
+
+void G::File::mkdirs( const Path & path , int limit )
+{
+	if( ! mkdirs(path,NoThrow(),limit) )
+		throw CannotMkdir(path.str()) ;
 }
 

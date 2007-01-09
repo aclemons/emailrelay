@@ -56,8 +56,12 @@ public:
 	bool useFinishButton() const ;
 		// Returns the ctor's finish_button parameter.
 
-	bool closeButton() const ;
-		// Returns the ctor's close_button parameter.
+	virtual bool closeButton() const ;
+		// Returns true if the page should have _only_ a close
+		// button, typically if the last page.
+		//
+		// This default implementation returns the constructor
+		// parameter.
 
 	virtual void onShow( bool back ) ;
 		// Called as this page becomes visible as a result
@@ -95,6 +99,11 @@ signals:
 		// Emitted when the page's state changes.
 		// This allows the dialog box to update its 
 		// buttons according to the page's new state.
+
+private slots:
+	void mechanismUpdateSlot( const QString & ) ;
+		// Emitted when an encryption mechanism combo box
+		// selection is changed.
 
 protected:
 	static QLabel * newTitle( QString ) ;

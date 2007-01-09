@@ -64,6 +64,7 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "x!dont-serve!disables acting as a server on any port (part of --as-client and usually used with --forward)!0!!3|"
 		<< "X!no-smtp!disables listening for smtp connections (usually used with --admin or --pop)!0!!3|"
 		<< "z!filter!specifies an external program to process messages as they are stored!1!program!3|"
+		<< "W!filter-timeout!sets the timeout (in seconds) for running the --filter processor!1!time!3|"
 		<< "D!domain!sets an override for the host's fully qualified domain name!1!fqdn!3|"
 		<< "f!forward!forwards stored mail on startup (requires --forward-to)!0!!3|"
 		<< "o!forward-to!specifies the remote smtp server (required by --forward, --poll, --immediate and --admin)!1!host:port!3|"
@@ -74,7 +75,7 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "m!immediate!enables immediating forwarding of messages as soon as they are received (requires --forward-to)!0!!3|"
 		<< "I!interface!defines the listening interface for new connections!1!ip-address!3|"
 		<< "i!pid-file!defines a file for storing the daemon process-id!1!pid-file!3|"
-		<< "O!poll!enables polling with the specified period (requires --forward-to)!1!period!3|"
+		<< "O!poll!enables polling of the spool directory for messages to be forwarded with the specified period (requires --forward-to)!1!period!3|"
 		<< "P!postmaster!!0!!0|"
 		<< "Z!verifier!specifies an external program for address verification!1!program!3|"
 		<< "Y!client-filter!specifies an external program to process messages when they are forwarded!1!program!3|"
@@ -97,10 +98,10 @@ std::string Main::CommandLine::switchSpec_unix()
 	ss
 		<< "l!log!writes log information on standard error and syslog!0!!2|"
 		<< "t!no-daemon!does not detach from the terminal!0!!3|"
-		<< "u!user!names the effective user to switch to when started as root "
+		<< "u!user!names the effective user to switch to if started as root "
 			<< "(default is \"daemon\")!1!username!3|"
 		<< "k!syslog!force syslog output if logging is enabled (overrides --no-syslog)!0!!3|"
-		<< "n!no-syslog!disables syslog output!0!!3"
+		<< "n!no-syslog!disables syslog output (always overridden by --syslog)!0!!3"
 		;
 	return ss.str() ;
 }

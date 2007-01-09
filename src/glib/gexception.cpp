@@ -51,15 +51,15 @@ void G::Exception::append( const char * more )
 {
 	if( more != NULL && *more != '\0' )
 	{
-		m_what += ": " ;
-		m_what += more ;
+		m_what += std::string(": ") ;
+		m_what += std::string(more) ;
 	}
 }
 
 void G::Exception::append( const std::string & more )
 {
-	m_what += ": " ;
-	m_what += more ;
+	m_what += std::string(": ") ;
+	m_what += std::string(more) ;
 }
 
 

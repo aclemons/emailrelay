@@ -26,12 +26,13 @@
 
 #include "gdef.h"
 #include "gpop.h"
-#include "gserver.h"
+#include "gmultiserver.h"
 #include "gsender.h"
 #include "glinebuffer.h"
 #include "gpopsecrets.h"
 #include "gpopserverprotocol.h"
 #include "gexception.h"
+#include "gstrings.h"
 #include <string>
 #include <sstream>
 #include <memory>
@@ -77,28 +78,34 @@ private:
 // Class: GPop::Server
 // Description: A POP server class.
 //
-class GPop::Server : public GNet::Server 
+class GPop::Server : public GNet::MultiServer 
 {
 public:
+	G_EXCEPTION( Overflow , "too many interface addresses" ) ;
 	struct Config // A structure containing GPop::Server configuration parameters.
 	{
 		bool allow_remote ;
 		unsigned int port ;
-		std::string address ;
+		G::Strings interfaces ;
 		Config() ;
-		Config( bool , unsigned int , const std::string & address ) ;
+		Config( bool , unsigned int , const G::Strings & interfaces ) ;
 	} ;
 
 	Server( Store & store , const Secrets & , Config ) ;
 		// Constructor. The 'secrets' reference is kept.
 
-	virtual GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) ;
-		// From GNet::Server.
+	virtual ~Server() ;
+		// Destructor.
+
+	GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) ;
+		// From MultiServer.
 
 	void report() const ;
 		// Generates helpful diagnostics after construction.
 
 private:
+	Server( const Server & ) ; // not implemented
+	void operator=( const Server & ) ; // not implemented
 	ServerProtocol::Text * newProtocolText( GNet::Address ) const ;
 
 private:

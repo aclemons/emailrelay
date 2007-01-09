@@ -138,6 +138,7 @@ GSmtp::Server::Server( MessageStore & store , const Secrets & client_secrets , c
 	const Verifier & verifier , Config config ,
 	std::string smtp_server_address , unsigned int smtp_connection_timeout ,
 	GSmtp::Client::Config client_config ) :
+		GNet::MultiServer( GNet::MultiServer::addressList(config.interfaces,config.port) ) ,
 		m_store(store) ,
 		m_newfile_preprocessor(config.newfile_preprocessor) ,
 		m_client_config(client_config) ,
@@ -151,64 +152,43 @@ GSmtp::Server::Server( MessageStore & store , const Secrets & client_secrets , c
 		m_scanner_response_timeout(config.scanner_response_timeout) ,
 		m_scanner_connection_timeout(config.scanner_connection_timeout) ,
 		m_client_secrets(client_secrets) ,
-		m_gnet_server_1( *this ) ,
-		m_gnet_server_2( *this ) ,
-		m_gnet_server_3( *this ) ,
 		m_anonymous(config.anonymous) ,
 		m_preprocessor_timeout(config.preprocessor_timeout)
 {
-	if( config.interfaces.size() == 0U )
-	{
-		bind( m_gnet_server_1 , GNet::Address(config.port) , config.port ) ;
-	}
-	else
-	{
-		size_t i = 0U ;
-		AddressList::const_iterator p = config.interfaces.begin() ;
-		for( ; p != config.interfaces.end() ; ++p , ++i )
-		{
-			bind( imp(i) , *p , config.port ) ;
-		}
-	}
 }
 
-void GSmtp::Server::bind( GSmtp::ServerImp & gnet_server , GNet::Address address , unsigned int port )
+GSmtp::Server::~Server()
 {
-	address.setPort( port ) ;
-	gnet_server.init( address ) ;
-}
-
-GSmtp::ServerImp & GSmtp::Server::imp( size_t i )
-{
-	G_ASSERT( i < 3U ) ;
-	if( i >= 3U ) throw Overflow() ;
-	ServerImp * p[] = { &m_gnet_server_1 , &m_gnet_server_2 , &m_gnet_server_3 } ;
-	return *(p[i]) ;
+	// early cleanup -- not really required
+	serverCleanup() ; // base class
 }
 
 void GSmtp::Server::report() const
 {
-	for( size_t i = 0U ; i < 3U ; i++ )
-	{
-		Server * This = const_cast<Server*>(this) ;
-		if( This->imp(i).address().first )
-			G_LOG_S( "GSmtp::Server: smtp server on " << This->imp(i).address().second.displayString() ) ;
-	}
+	serverReport( "smtp" ) ; // base class
 }
 
 GNet::ServerPeer * GSmtp::Server::newPeer( GNet::Server::PeerInfo peer_info )
 {
-	std::string reason ;
-	if( ! m_allow_remote && ! GNet::Local::isLocal(peer_info.m_address,reason) )
+	try
 	{
-		G_WARNING( "GSmtp::Server: configured to reject non-local connection: " << reason ) ;
+		std::string reason ;
+		if( ! m_allow_remote && ! GNet::Local::isLocal(peer_info.m_address,reason) )
+		{
+			G_WARNING( "GSmtp::Server: configured to reject non-local connection: " << reason ) ;
+			return NULL ;
+		}
+
+		std::auto_ptr<ServerProtocol::Text> ptext( newProtocolText(m_anonymous,peer_info.m_address) ) ;
+		std::auto_ptr<ProtocolMessage> pmessage( newProtocolMessage() ) ;
+		return new ServerPeer( peer_info , *this , pmessage , m_server_secrets , 
+			m_verifier , ptext , ServerProtocol::Config(!m_anonymous,m_preprocessor_timeout) ) ;
+	}
+	catch( std::exception & e )
+	{
+		G_WARNING( "GSmtp::Server: exception from new connection: " << e.what() ) ;
 		return NULL ;
 	}
-
-	std::auto_ptr<ServerProtocol::Text> ptext( newProtocolText(m_anonymous,peer_info.m_address) ) ;
-	std::auto_ptr<ProtocolMessage> pmessage( newProtocolMessage() ) ;
-	return new ServerPeer( peer_info , *this , pmessage , m_server_secrets , 
-		m_verifier , ptext , ServerProtocol::Config(!m_anonymous,m_preprocessor_timeout) ) ;
 }
 
 GSmtp::ServerProtocol::Text * GSmtp::Server::newProtocolText( bool anonymous , GNet::Address peer_address ) const
@@ -241,18 +221,6 @@ GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()
 		G_DEBUG( "GSmtp::Server::newProtocolMessage: new ProtocolMessageStore" ) ;
 		return new ProtocolMessageStore(m_store,m_newfile_preprocessor) ;
 	}
-}
-
-// ===
-
-GSmtp::ServerImp::ServerImp( GSmtp::Server & server ) :
-	m_server(server)
-{
-}
-
-GNet::ServerPeer * GSmtp::ServerImp::newPeer( GNet::Server::PeerInfo peer_info )
-{
-	return m_server.newPeer( peer_info ) ;
 }
 
 // ===

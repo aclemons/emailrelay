@@ -33,6 +33,7 @@
 #include <map>
 #include <set>
 #include <fstream>
+#include <string>
 #include <utility> // std::pair
 #include <sstream>
 
@@ -142,8 +143,11 @@ void GSmtp::SecretsImp::read( const G::Path & path )
 		file <<= new std::ifstream( path.str().c_str() ) ;
 	}
 	if( !file->good() )
-		throw Secrets::OpenError( std::ostringstream() 
-			<< "reading \"" << path << "\" for " << m_debug_name << " secrets" ) ;
+	{
+		std::ostringstream ss ;
+		ss << "reading \"" << path << "\" for " << m_debug_name << " secrets" ;
+		throw Secrets::OpenError( ss.str() ) ;
+	}
 
 	m_map.clear() ;
 	m_set.clear() ;

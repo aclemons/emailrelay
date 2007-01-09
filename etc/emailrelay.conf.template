@@ -32,7 +32,8 @@
 # Format: interface <ip-address>    
 # Description: Specifies an interface to listen on. The default is to listen
 # on all interfaces (INADDR_ANY). Using a specific interface can make it harder
-# for clients on other sub-networks to connect, so improving security.
+# for clients on other sub-networks to connect, so improving security. Up to
+# three interface addresses can be spefified using comma separators.
 #
 #interface 192.168.0.10
 

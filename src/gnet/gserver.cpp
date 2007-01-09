@@ -196,6 +196,24 @@ std::pair<bool,GNet::Address> GNet::Server::address() const
 
 void GNet::Server::readEvent()
 {
+	try
+	{
+		readEventCore() ;
+	}
+	catch( std::exception & e )
+	{
+		// should probably never get here -- most servers will
+		// want to stay up if a new connection fails to
+		// initialise, so their peer factory method should
+		// catch its own exceptions and return null
+		//
+		G_ERROR( "GNet::Server::readEvent: exception while establishing a new connection: " << e.what() ) ;
+		throw ;
+	}
+}
+
+void GNet::Server::readEventCore()
+{
 	// read-event-on-listening-port => new connection to accept
 
 	G_DEBUG( "GNet::Server::readEvent: " << this ) ;

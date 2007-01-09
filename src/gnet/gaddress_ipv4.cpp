@@ -87,6 +87,9 @@ private:
 
 // ===
 
+// Class: GNet::AddressStorageImp
+// Description: A pimple-pattern implementation class for GNet::AddressStorage.
+//
 class GNet::AddressStorageImp 
 {
 public:

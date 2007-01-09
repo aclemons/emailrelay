@@ -72,8 +72,8 @@ State transition diagrams:
 Sequence diagrams:
 * *Proxy mode forwarding* [sequence-3.png]
 * *Scanning* [sequence-4.png]
-* *ProtocolMessage::prepare() returns false* [sequence-1.png]
-* *ProtocolMessage::prepare() returns true* [sequence-2.png]
+* ProtocolMessage::prepare() *returns false* [sequence-1.png]
+* ProtocolMessage::prepare() *returns true* [sequence-2.png]
 
 Directory structure
 -------------------
@@ -154,27 +154,14 @@ these cases there are three source files per header. For example, "gsocket.cpp",
 
 Compile-time features
 ---------------------
-The following compile-time features can be enabled with some effort:
+Compile-time features can normally be selected with switches passed to the
+"configure" script. These include the following:
 
-# IPv6
+* Debug-level logging ("--enable-debug")
+* IPv6 (Linux only) ("--enable-ipv6")
+* Configuration GUI ("--enable-gui")
 
-  IPv6 is supported at compile-time by selecting source files in the "src/gnet"
-  directory ending "_ipv6.cpp" rather than "_ipv4.cpp". The code has been tested
-  to a limited extent on Linux.
-
-# Verbose logging
-
-  Verbose logging is enabled by defining the pre-processor symbol "_DEBUG".
-  The configure script's "--enable-debug" switch can be used to do this.
-  (See "src/glib/glog.h".)
-
-# Multiple listening ports
-
-  The server can be made to listen on several different addresses. Look at the
-  "Server" constructor in "src/main/gsmtpserver.cpp", set the boolean variable
-  "normal" to false and then edit the hard-coded address strings as needed. If
-  the addresses need different port numbers then pass them to bind() in the third
-  parameter.
+Use "./configure --help" to see a complete list.
 
 Windows build
 -------------

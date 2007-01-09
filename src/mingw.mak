@@ -19,5 +19,5 @@
 #
 # see mingw-common.mak for help
 include mingw-common.mak
-all: all_
-clean:: clean_
+all: _all
+clean:: _clean

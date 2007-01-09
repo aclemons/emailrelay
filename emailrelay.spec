@@ -1,11 +1,11 @@
 Summary: Simple e-mail message transfer agent and proxy using SMTP
 Name: emailrelay
-Version: 1.4.1
+Version: 1.5
 Release: 1
 License: GPL
 Group: System Environment/Daemons
 URL: http://emailrelay.sourceforge.net/
-Source: http://kent.dl.sourceforge.net/sourceforge/emailrelay/emailrelay-src-1.4.1.tar.gz
+Source: http://kent.dl.sourceforge.net/sourceforge/emailrelay/emailrelay-src-1.5.tar.gz
 BuildRoot: /tmp/emailrelay-install
 
 %description
@@ -54,32 +54,11 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /usr/sbin/emailrelay
 /usr/sbin/emailrelay-passwd
 /usr/sbin/emailrelay-submit
-/usr/share/doc/emailrelay/changelog.gz
-/usr/share/doc/emailrelay/changelog.html
-/usr/share/doc/emailrelay/developer.html
-/usr/share/doc/emailrelay/developer.txt
-/usr/share/doc/emailrelay/emailrelay.css
-/usr/share/doc/emailrelay/emailrelay-man.html
-/usr/share/doc/emailrelay/examples/emailrelay-deliver.sh
-/usr/share/doc/emailrelay/examples/emailrelay-notify.sh
-/usr/share/doc/emailrelay/examples/emailrelay-process.sh
-/usr/share/doc/emailrelay/examples/emailrelay-resubmit.sh
-/usr/share/doc/emailrelay/examples/emailrelay-submit.sh
+/usr/share/doc/emailrelay/*
+/usr/share/doc/emailrelay/examples/emailrelay-*.sh
 /usr/share/doc/emailrelay/index.html
-/usr/share/doc/emailrelay/NEWS
-/usr/share/doc/emailrelay/*.png
 /usr/share/doc/emailrelay/README
-/usr/share/doc/emailrelay/readme.html
-/usr/share/doc/emailrelay/reference.html
-/usr/share/doc/emailrelay/reference.txt
-/usr/share/doc/emailrelay/userguide.html
-/usr/share/doc/emailrelay/userguide.txt
-/usr/share/doc/emailrelay/windows.html
-/usr/share/doc/emailrelay/windows.txt
-/usr/share/man/man1/emailrelay.1.gz
-/usr/share/man/man1/emailrelay-passwd.1.gz
-/usr/share/man/man1/emailrelay-poke.1.gz
-/usr/share/man/man1/emailrelay-submit.1.gz
+/usr/share/man/man1/emailrelay*.1.gz
 /var/spool/emailrelay/
 
 %changelog

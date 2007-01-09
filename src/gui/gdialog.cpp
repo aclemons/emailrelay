@@ -152,11 +152,17 @@ void GDialog::pageUpdated()
 		m_cancel_button->setEnabled(true) ;
 		m_back_button->setEnabled( m_history.size() != 1U ) ;
 
+		// enable either 'next' or 'finish'...
 		bool finish_button = current_page.useFinishButton() ;
 		QPushButton * active_button = finish_button ? m_finish_button : m_next_button ;
 		QPushButton * inactive_button = finish_button ? m_next_button : m_finish_button ;
 
-		active_button->setEnabled( current_page.isComplete() ) ;
+		// ...or neither
+		bool active_state = current_page.isComplete() ;
+		if( active_button == m_next_button && current_page.nextPage().empty() )
+			active_state = false ;
+
+		active_button->setEnabled( active_state ) ;
 		inactive_button->setEnabled( false ) ;
 	}
 }

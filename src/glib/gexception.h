@@ -82,7 +82,7 @@ public:
 		// Eg. throw Error( std::ostringstream() << a << b ) ;
 } ;
 
-#define G_EXCEPTION( class_name , description ) class class_name : public G::Exception { public: class_name() { m_what = description ; } public: explicit class_name ( std::ostream & stream ) { m_what = description ; append(stream) ; } public: explicit class_name( const char * more ) { m_what = description ; append(more) ; } public: explicit class_name( const std::string & more ) { m_what = description ; append(more) ; } }
+#define G_EXCEPTION( class_name , description ) class class_name : public G::Exception { public: class_name() { m_what = description ; } public: explicit class_name( const char * more ) { m_what = description ; append(more) ; } public: explicit class_name( const std::string & more ) { m_what = description ; append(more) ; } }
 
 #endif
 

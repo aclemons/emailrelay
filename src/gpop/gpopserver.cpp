@@ -88,36 +88,45 @@ void GPop::ServerPeer::onResume()
 // ===
 
 GPop::Server::Server( Store & store , const Secrets & secrets , Config config ) :
+	GNet::MultiServer( GNet::MultiServer::addressList(config.interfaces,config.port) ) ,
 	m_allow_remote(config.allow_remote) ,
 	m_store(store) ,
 	m_secrets(secrets)
 {
-	GNet::Address address = 
-		config.address.empty() ? 
-			GNet::Address(config.port) : 
-			GNet::Address(config.address,config.port) ;
+}
 
-	init( address ) ; // GNet::Server
+GPop::Server::~Server()
+{
+	// early cleanup -- not really required
+	serverCleanup() ; // base class
 }
 
 void GPop::Server::report() const
 {
-	G_LOG_S( "GPop::Server: pop server on " << address().second.displayString() ) ;
+	serverReport( "pop" ) ; // base class implementation
 	G_LOG_S( "GPop::Server: pop authentication secrets from \"" << m_secrets.path() << "\"" ) ;
 }
 
 GNet::ServerPeer * GPop::Server::newPeer( GNet::Server::PeerInfo peer_info )
 {
-	std::string reason ;
-	if( ! m_allow_remote && ! GNet::Local::isLocal(peer_info.m_address,reason) )
+	try
 	{
-		G_WARNING( "GPop::Server: configured to reject non-local connection: " << reason ) ;
+		std::string reason ;
+		if( ! m_allow_remote && ! GNet::Local::isLocal(peer_info.m_address,reason) )
+		{
+			G_WARNING( "GPop::Server: configured to reject non-local connection: " << reason ) ;
+			return NULL ;
+		}
+
+		std::auto_ptr<ServerProtocol::Text> ptext( newProtocolText(peer_info.m_address) ) ;
+		return new ServerPeer( peer_info , *this , m_store , m_secrets , 
+			ptext , ServerProtocol::Config() ) ;
+	}
+	catch( std::exception & e )
+	{
+		G_WARNING( "GPop::Server: exception from new connection: " << e.what() ) ;
 		return NULL ;
 	}
-
-	std::auto_ptr<ServerProtocol::Text> ptext( newProtocolText(peer_info.m_address) ) ;
-	return new ServerPeer( peer_info , *this , m_store , m_secrets , 
-		ptext , ServerProtocol::Config() ) ;
 }
 
 GPop::ServerProtocol::Text * GPop::Server::newProtocolText( GNet::Address peer_address ) const
@@ -133,10 +142,10 @@ GPop::Server::Config::Config() :
 {
 }
 
-GPop::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const std::string & address_ ) :
+GPop::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const G::Strings & interfaces_ ) :
 		allow_remote(allow_remote_) ,
 		port(port_) ,
-		address(address_)
+		interfaces(interfaces_)
 {
 }
 

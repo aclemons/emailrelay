@@ -36,6 +36,7 @@ namespace GNet
 {
 	class Client ;
 	class ClientImp ;
+	class ClientBaseImp ;
 }
 
 // Class: GNet::Client
@@ -113,7 +114,7 @@ public:
 		// true iff Socket::connect() failed.
 
 protected:
-	friend class ClientImp ;
+	friend class GNet::ClientImp ;
 
 	virtual void onConnect( Socket & socket ) = 0 ;
 		// Called once connected. May (unfortunately) be
@@ -154,7 +155,7 @@ private:
 	void operator=( const Client& ) ; // Assignment operator. Not implemented.
 
 private:
-	ClientImp * m_imp ;
+	ClientBaseImp * m_imp ;
 } ;
 
 #endif

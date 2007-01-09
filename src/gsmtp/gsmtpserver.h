@@ -29,7 +29,7 @@
 #include "gnoncopyable.h"
 #include "gexe.h"
 #include "gsender.h"
-#include "gserver.h"
+#include "gmultiserver.h"
 #include "gsmtpclient.h"
 #include "glinebuffer.h"
 #include "gverifier.h"
@@ -46,7 +46,6 @@ namespace GSmtp
 {
 	class Server ;
 	class ServerPeer ;
-	class ServerImp ;
 }
 
 // Class: GSmtp::ServerPeer
@@ -80,30 +79,10 @@ private:
 	ServerProtocol m_protocol ; // order dependency -- last
 } ;
 
-// Class: GSmtp::ServerImp
-// Description: A private implementation class for GSmtp::Server.
-//
-class GSmtp::ServerImp : public GNet::Server 
-{
-public:
-	explicit ServerImp( GSmtp::Server & ) ;
-		// Constructor.
-
-	virtual GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) ;
-		// ServerPeer factory method.
-
-private:
-	ServerImp( const ServerImp & ) ; // not implemented
-	void operator=( const ServerImp & ) ; // not implemented
-
-private:
-	GSmtp::Server & m_server ;
-} ;
-
 // Class: GSmtp::Server
 // Description: An SMTP server class.
 //
-class GSmtp::Server : public G::noncopyable 
+class GSmtp::Server : public GNet::MultiServer 
 {
 public:
 	typedef std::list<GNet::Address> AddressList ;
@@ -113,7 +92,7 @@ public:
 	{
 		bool allow_remote ;
 		unsigned int port ;
-		AddressList interfaces ;
+		AddressList interfaces ; // up to three currently
 		//
 		std::string ident ;
 		bool anonymous ;
@@ -148,17 +127,18 @@ public:
 			//
 			// The 'store' and 'secrets' references are kept.
 
+	virtual ~Server() ;
+		// Destructor.
+
 	void report() const ;
 		// Generates helpful diagnostics after construction.
 
 	GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) ;
-		// ServerPeer factory method used by ServerImp.
+		// From MultiServer.
 
 private:
-	void bind( ServerImp & , GNet::Address , unsigned int ) ;
 	ProtocolMessage * newProtocolMessage() ;
 	ServerProtocol::Text * newProtocolText( bool , GNet::Address ) const ;
-	ServerImp & imp( size_t n ) ;
 
 private:
 	MessageStore & m_store ;
@@ -174,9 +154,6 @@ private:
 	unsigned int m_scanner_response_timeout ;
 	unsigned int m_scanner_connection_timeout ;
 	const Secrets & m_client_secrets ;
-	ServerImp m_gnet_server_1 ;
-	ServerImp m_gnet_server_2 ;
-	ServerImp m_gnet_server_3 ;
 	bool m_anonymous ;
 	unsigned int m_preprocessor_timeout ;
 	std::auto_ptr<ServerProtocol::Text> m_protocol_text ;
