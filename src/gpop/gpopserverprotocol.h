@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gpopserverprotocol.h
-//
+///
+/// \file gpopserverprotocol.h
+///
 
 #ifndef G_POP_SERVER_PROTOCOL_H
 #define G_POP_SERVER_PROTOCOL_H
@@ -35,31 +35,34 @@
 #include "gtimer.h"
 #include "gexception.h"
 
+/// \namespace GPop
 namespace GPop
 {
 	class ServerProtocol ;
 	class ServerProtocolText ;
 }
 
-// Class: GPop::ServerProtocol
-// Description: Implements the POP server-side protocol.
-//
-// Uses the ServerProtocol::Sender as its "sideways"
-// interface to talk back to the client.
-// 
-// See also: RFC1939
-//
+/// \class GPop::ServerProtocol
+/// Implements the POP server-side protocol.
+///
+/// Uses the ServerProtocol::Sender as its "sideways"
+/// interface to talk back to the client.
+/// 
+/// \see RFC1939
+///
 class GPop::ServerProtocol : private GNet::Timer 
 {
 public:
 	G_EXCEPTION( ProtocolDone , "pop protocol done" ) ;
-	class Sender // An interface used by ServerProtocol to send protocol replies.
+	/// An interface used by ServerProtocol to send protocol replies.
+	class Sender 
 	{
 		public: virtual bool protocolSend( const std::string & s , size_t offset ) = 0 ;
 		public: virtual ~Sender() ;
 		private: void operator=( const Sender & ) ; // not implemented
 	} ;
-	class Text // An interface used by ServerProtocol to provide response text strings.
+	/// An interface used by ServerProtocol to provide response text strings.
+	class Text 
 	{
 		public: virtual std::string greeting() const = 0 ;
 		public: virtual std::string quit() const = 0 ;
@@ -68,7 +71,8 @@ public:
 		public: virtual ~Text() ;
 		private: void operator=( const Text & ) ; // not implemented
 	} ;
-	struct Config // A structure containing configuration parameters for ServerProtocol. NOT USED.
+	/// A structure containing configuration parameters for ServerProtocol. NOT USED.
+	struct Config 
 	{
 		bool dummy ;
 		Config() ;
@@ -76,31 +80,31 @@ public:
 
 	ServerProtocol( Sender & sender , Store & store , const Secrets & secrets , const Text & text , 
 		GNet::Address peer_address , Config config ) ;
-			// Constructor. 
-			//
-			// The Sender interface is used to send protocol
-			// replies back to the client.
-			//
-			// The Text interface is used to get informational text
-			// for returning to the client.
-			//
-			// All references are kept.
+			///< Constructor. 
+			///<
+			///< The Sender interface is used to send protocol
+			///< replies back to the client.
+			///<
+			///< The Text interface is used to get informational text
+			///< for returning to the client.
+			///<
+			///< All references are kept.
 
 	virtual ~ServerProtocol() ;
-		// Destructor.
+		///< Destructor.
 
 	void init() ;
-		// Starts the protocol.
+		///< Starts the protocol.
 
 	void apply( const std::string & line ) ;
-		// Called on receipt of a string from the client.
-		// The string is expected to be CR-LF terminated.
-		// Throws ProtocolDone if done.
+		///< Called on receipt of a string from the client.
+		///< The string is expected to be CR-LF terminated.
+		///< Throws ProtocolDone if done.
 
 	void resume() ;
-		// Called when the Sender can send again. The Sender returns
-		// false from protocolSend() when blocked, and calls
-		// resume() when unblocked.
+		///< Called when the Sender can send again. The Sender returns
+		///< false from protocolSend() when blocked, and calls
+		///< resume() when unblocked.
 
 private:
 	enum Event
@@ -186,27 +190,27 @@ private:
 	bool m_in_body ;
 } ;
 
-// Class: GPop::ServerProtocolText
-// Description: A default implementation for the 
-// ServerProtocol::Text interface.
-//
+/// \class GPop::ServerProtocolText
+/// A default implementation for the 
+/// ServerProtocol::Text interface.
+///
 class GPop::ServerProtocolText : public GPop::ServerProtocol::Text 
 {
 public:
 	explicit ServerProtocolText( GNet::Address peer ) ;
-		// Constructor.
+		///< Constructor.
 
 	virtual std::string greeting() const ;
-		// From ServerProtocol::Text.
+		///< From ServerProtocol::Text.
 
 	virtual std::string quit() const ;
-		// From ServerProtocol::Text.
+		///< From ServerProtocol::Text.
 
 	virtual std::string capa() const ;
-		// From ServerProtocol::Text.
+		///< From ServerProtocol::Text.
 
 	virtual std::string user( const std::string & id ) const ;
-		// From ServerProtocol::Text.
+		///< From ServerProtocol::Text.
 } ;
 
 #endif

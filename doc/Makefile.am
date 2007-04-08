@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License
@@ -36,8 +36,6 @@ CLEANFILES = $(noinst_SCRIPTS) $(man_files_out) $(html_files_out) $(docbook_file
 
 SUFFIXES = .txt .html .db .mu
 
-filter=$(top_builddir)/bin/emailrelay-doxygen-filter.sh
-filter_src=$(top_srcdir)/bin/emailrelay-doxygen-filter.sh_
 converter_html=$(top_builddir)/bin/txt2html.sh
 converter_html_src=$(top_srcdir)/bin/txt2html.sh_
 converter_txt2mu=$(top_builddir)/bin/txt2mu.sh
@@ -57,10 +55,6 @@ converter_mu2docbook_src=$(top_srcdir)/bin/mu2docbook.sh_
 
 .mu.db:
 	$(converter_mu2docbook) -a "$(AWK)" -x < $(top_builddir)/doc/$*.mu > $*.db
-
-$(filter): $(filter_src)
-	cp $(filter_src) $(filter)
-	chmod ugo+x $(filter)
 
 $(converter_html): $(converter_html_src) $(converter_txt2mu) $(converter_mu2html) $(converter_expand) 
 	cp $(converter_html_src) $(converter_html)
@@ -98,7 +92,7 @@ $(converter_mu2docbook): $(converter_mu2docbook_src)
 	cp $(converter_mu2docbook_src) $(converter_mu2docbook)
 	chmod ugo+x $(converter_mu2docbook)
 
-.dox: $(filter)
+.dox:
 	if test "$(HAVE_DOXYGEN)" = "yes" ; then cat $(top_srcdir)/src/main/doxygen.cfg | sed "s:__TOP_SRC__:$(top_srcdir):g" | sed "s:__TOP_BUILD__:$(top_builddir):g" | doxygen - && touch .dox ; else echo no doxygen ; fi
 
 emailrelay-man.html: emailrelay.1

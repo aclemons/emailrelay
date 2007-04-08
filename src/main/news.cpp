@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -27,8 +27,10 @@
 std::string Main::News::text( const std::string & eol )
 {
 
-// sell-by 2008/1/1
-if( G::DateTime::now() > 1199145600U ) return std::string() ;
+// sell-by 2009/1/1
+const G::DateTime::EpochTime _2008 = 1199145600U ;
+const G::DateTime::EpochTime non_leap_year = 60U * 60U * 24U * 365U ;
+if( G::DateTime::now() > (_2008+non_leap_year) ) return std::string() ;
 
 return std::string() +
 
@@ -38,9 +40,10 @@ return std::string() +
 "alternative to Microsoft Windows, supporting a wide range of desktop " +
 "and server applications. You can try Linux for yourself without " +
 "installing it on your hard drive by downloading and burning a " +
-"\"Live-CD\". Free Live-CDs and DVDs are available from ubuntu.com, " +
-"mandriva.com, suse.com, and many other Linux distributors." +
+"\"Live-CD\". Free Live-CDs and DVDs are available from ubuntu.com " +
+"and many other Linux distributors." +
 eol
 ;
 }
 
+/// \file news.cpp

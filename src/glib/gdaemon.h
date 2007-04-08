@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gdaemon.h
-//
+///
+/// \file gdaemon.h
+///
 
 #ifndef G_DAEMON_H
 #define G_DAEMON_H
@@ -31,42 +31,43 @@
 #include <sys/types.h>
 #include <string>
 
+/// \namespace G
 namespace G
 {
 	class Daemon ;
 }
 
-// Class: G::Daemon
-// Description: A class for deamonising the calling process.
-// Deamonisation includes fork()ing, detaching from the
-// controlling terminal, setting the process umask, etc.
-// The windows implementation does nothing.
-// See also: G::Process
-//
+/// \class G::Daemon
+/// A class for deamonising the calling process.
+/// Deamonisation includes fork()ing, detaching from the
+/// controlling terminal, setting the process umask, etc.
+/// The windows implementation does nothing.
+/// \see G::Process
+///
 class G::Daemon 
 {
 public:
 	G_EXCEPTION( CannotFork , "cannot fork" ) ;
 
 	static void detach() ;
-		// Detaches from the parent environment.
-		// This typically involves fork()ing,
-		// _exit()ing the parent, and calling 
-		// setsid() in the child.
+		///< Detaches from the parent environment.
+		///< This typically involves fork()ing,
+		///< _exit()ing the parent, and calling 
+		///< setsid() in the child.
 
 	static void detach( PidFile & pid_file ) ;
-		// An overload which allows for a delayed write
-		// of the new process-id to a file.
-		//
-		// A delayed write is useful for network daemons
-		// which open a listening port. A second instance
-		// of the process will fail on startup, and should 
-		// not overwrite the pid file of the running
-		// server. In this situation PidFile::commit() 
-		// should be called just before entering the event 
-		// loop.
-		//
-		// Throws PidFile::Error on error.
+		///< An overload which allows for a delayed write
+		///< of the new process-id to a file.
+		///<
+		///< A delayed write is useful for network daemons
+		///< which open a listening port. A second instance
+		///< of the process will fail on startup, and should 
+		///< not overwrite the pid file of the running
+		///< server. In this situation PidFile::commit() 
+		///< should be called just before entering the event 
+		///< loop.
+		///<
+		///< Throws PidFile::Error on error.
 
 private:
 	Daemon() ;

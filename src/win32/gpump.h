@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,45 +17,46 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gpump.h
-//
+///
+/// \file gpump.h
+///
 
 #ifndef G_PUMP_H
 #define G_PUMP_H
 
 #include "gdef.h"
 
+/// \namespace GGui
 namespace GGui
 {
 	class Pump ;
 }
 
-// Class: GGui::Pump
-//
-// Description: A static class which implements a 
-// Windows message pump. Uses GGui::Dialog::dialogMessage() 
-// in its implementation in order to support modeless
-// dialog boxes.
-//
-// See also: GGui::Cracker, GGui::Dialog, GGui::ApplicationInstance
-//
+/// \class GGui::Pump
+///
+/// A static class which implements a 
+/// Windows message pump. Uses GGui::Dialog::dialogMessage() 
+/// in its implementation in order to support modeless
+/// dialog boxes.
+///
+/// \see GGui::Cracker, GGui::Dialog, GGui::ApplicationInstance
+///
 class GGui::Pump 
 {
 public:
 	static void run() ;
-		// GetMessage()/DispatchMessage() message pump.
-		// Typically called from WinMain().
+		///< GetMessage()/DispatchMessage() message pump.
+		///< Typically called from WinMain().
 
 	static void run( HWND idle_window , unsigned int idle_message ) ;
-		// An overload which sends idle messages once
-		// the message queue is empty. If the idle message 
-		// handler returns 1 then the message is sent again.
+		///< An overload which sends idle messages once
+		///< the message queue is empty. If the idle message 
+		///< handler returns 1 then the message is sent again.
 
 	static void quit() ;
-		// Causes run() to return (once the call stack
-		// has unwound). Use this in preference to
-		// ::PostQuitMessage().
+		///< Causes run() to return (once the call stack
+		///< has unwound). Use this in preference to
+		///< ::PostQuitMessage().
 
 private:
 	static bool dialogMessage( MSG & ) ; // links gpump.cpp to gdialog.cpp (or not)

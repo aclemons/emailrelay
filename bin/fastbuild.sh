@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -66,6 +66,8 @@ CompileOrSkip()
 	main.cpp) ReallyCompile emailrelay-fastbuild.cpp "${source}" "$@" ;;
 	passwd.cpp) ReallyCompile passwd-fastbuild.cpp "${source}" "$@" ;;
 	submit.cpp) ReallyCompile submit-fastbuild.cpp "${source}" "$@" ;;
+	guimain.cpp) ReallyCompile gui-fastbuild.cpp "${source}" "$@" ;;
+	filter_copy.cpp) ReallyCompile filtercopy-fastbuild.cpp "${source}" "$@" ;;
 	all.cpp) g++ "$@" ;;
 	moc_*.cpp) g++ "$@" ;;
 	*) Skip "${source}" "$@" ;;
@@ -87,6 +89,8 @@ Link()
 	emailrelay) ReallyLink ${output_} main.o ;;
 	emailrelay-submit) ReallyLink ${output_} submit.o ;;
 	emailrelay-passwd) ReallyLink ${output_} passwd.o ;;
+	emailrelay-gui) ReallyLink ${output_} guimain.o ;;
+	emailrelay-filter-copy) ReallyLink ${output_} filter_copy.o ;;
 	*) echo fastbuild: error: unrecognised target binary >&2 ;;
 	esac
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gconnection.h
-//
+///
+/// \file gconnection.h
+///
 
 #ifndef G_NET_CONNECTION_H
 #define G_NET_CONNECTION_H
@@ -28,29 +28,30 @@
 #include "gnet.h"
 #include "gaddress.h"
 
+/// \namespace GNet
 namespace GNet
 {
 	class Connection ;
 }
 
-// Class: GNet::Connection
-// Description: An interface which provides address information 
-// for a network connection.
-// See also: GNet::Client, GNet::ServerPeer
-//
+/// \class GNet::Connection
+/// An interface which provides address information 
+/// for a network connection.
+/// \see GNet::Client, GNet::ServerPeer
+///
 class GNet::Connection 
 {
 public:
 	virtual std::pair<bool,Address> localAddress() const = 0 ;
-		// Returns the connection's local address.
-		// Pair.first is false if none.
+		///< Returns the connection's local address.
+		///< Pair.first is false if none.
 
 	virtual std::pair<bool,Address> peerAddress() const = 0 ;
-		// Returns the connection's peer address.
-		// Pair.first is false if none.
+		///< Returns the connection's peer address.
+		///< Pair.first is false if none.
 
 	virtual ~Connection() ;
-		// Destructor.
+		///< Destructor.
 
 private:
 	void operator=( const Connection & ) ; // not implemented

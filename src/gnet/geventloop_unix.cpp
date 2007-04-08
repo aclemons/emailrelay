@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -42,10 +42,10 @@ namespace GNet
 	class FdSet ;
 }
 
-// Class: GNet::Select
-// Description: A concrete implementation of GNet::EventLoop using
-// ::select() in the implementation.
-//
+/// \class GNet::Select
+/// A concrete implementation of GNet::EventLoop using
+///  ::select() in the implementation.
+/// 
 class GNet::Select : public GNet::EventLoop , public G::noncopyable 
 {
 public:
@@ -75,10 +75,10 @@ private:
 	EventHandlerList m_exception_list ;
 } ;
 
-// Class: GNet::Lock
-// Description: A private implementation class used by GNet::Select to
-// lock data structures in the face of reentrancy.
-//
+/// \class GNet::Lock
+/// A private implementation class used by GNet::Select to
+///  lock data structures in the face of reentrancy.
+/// 
 class GNet::Lock 
 {
 public:
@@ -91,10 +91,10 @@ private:
 	void operator=( const Lock & ) ; // not implemented
 } ;
 
-// Class: GNet::FdSet
-// Description: A static implementation interface used by GNet::Select
-// to do fd_set iteration.
-//
+/// \class GNet::FdSet
+/// A static implementation interface used by GNet::Select
+///  to do fd_set iteration.
+/// 
 class GNet::FdSet 
 {
 public:

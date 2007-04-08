@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -345,3 +345,4 @@ GSmtp::Client::Config GSmtp::AdminServer::clientConfig() const
 	return m_client_config ;
 }
 
+/// \file gadminserver.cpp

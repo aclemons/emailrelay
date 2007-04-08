@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,47 +17,28 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// emailrelay-runperl.js
-//
-// An example JavaScript wrapper that runs a perl script for E-MailRelay. 
-// The name of the perl script is hard-coded below: edit as necessary.
-//
-// This JavaScript can be installed as an E-MailRelay "--filter" program
-// using an E-MailRelay command-line something like this:
-//
-//   emailrelay --as-server --filter "c:/winnt/system32/cscript.exe //nologo c:/program\ files/emailrelay/emailrelay-runperl.js"
-//
-// Note the use of "cscript.exe" to execute the JavaScript, and the backslash 
-// to escape the space in the path.
-//
-// The e-mail's content file is fed to the perl script's standard input.
-// The perl code is expected to process this to its standard output and then
-// terminate with a zero exit code.
-//
-// The implementation of this JavaScript makes use of "CMD.EXE", which may be 
-// not be available on some versions of Windows.
-//
-// Edit the next two lines as necessary, but avoid spaces in paths:
+///
+/// \file emailrelay-runperl.js
+///
 var cfg_perl="perl -S -T -w"
 var cfg_perl_script="spamassassin"
 
-// parse our command line
+/// parse our command line
 var args = WScript.Arguments
 var filename = args(0)
 
-// prepare a command using CMD.EXE to do file redirection
+/// prepare a command using CMD.EXE to do file redirection
 var cmd_in = "\"" + filename + "\""
 var cmd_out = "\"" + filename + ".tmp\""
 var cmd_err = "\"" + filename + ".err\""
 var cmd_perl = "cmd /c " + cfg_perl + " " + cfg_perl_script
 var cmd = cmd_perl + " < " + cmd_in + " > " + cmd_out + " 2> " + cmd_err
 
-// run the command
+/// run the command
 var sh = WScript.CreateObject("WScript.Shell")
 var rc = sh.Run( cmd , 0 , true )
 
-// check the file redirection
+/// check the file redirection
 var fs = WScript.CreateObject("Scripting.FileSystemObject")
 if( !fs.FileExists(filename+".tmp") || !fs.FileExists(filename+".err") )
 {
@@ -65,7 +46,7 @@ if( !fs.FileExists(filename+".tmp") || !fs.FileExists(filename+".err") )
 	WScript.Quit( 2 )
 }
 
-// success or failure
+/// success or failure
 if( rc == 0 )
 {
 	fs.DeleteFile( filename )

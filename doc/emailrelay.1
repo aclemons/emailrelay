@@ -1,4 +1,4 @@
-.\" Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+.\" Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 .\" 
 .\" This program is free software; you can redistribute it and/or
 .\" modify it under the terms of the GNU General Public License
@@ -55,127 +55,133 @@ server. Messages are only fully accepted from the sender once they
 have been successfully delivered to the next-hop server.
 .SH OPTIONS
 .TP
-.B \-a,--admin \fIadmin-port\fR
+.B \-a, --admin \fI<admin-port>\fR
 Enables the administration interface and specifies its listening port number.
 .TP
-.B \-Q,--admin-terminate 
+.B \-Q, --admin-terminate 
 Enables the terminate command on the admin interface.
 .TP
-.B \-A,--anonymous 
+.B \-A, --anonymous 
 Disables the smtp vrfy command and sends less verbose smtp responses.
 .TP
-.B \-q,--as-client \fIhost:port\fR
+.B \-q, --as-client \fI<host:port>\fR
 Runs as a client, forwarding spooled mail to <host>: equivalent to \fI--log\fR \fI--no-syslog\fR \fI--no-daemon\fR \fI--dont-serve\fR \fI--forward\fR \fI--forward-to\fR.
 .TP
-.B \-y,--as-proxy \fIhost:port\fR
+.B \-y, --as-proxy \fI<host:port>\fR
 Runs as a proxy: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--immediate\fR \fI--forward-to\fR.
 .TP
-.B \-d,--as-server 
+.B \-d, --as-server 
 Runs as a server: equivalent to \fI--log\fR \fI--close-stderr\fR.
 .TP
-.B \-C,--client-auth \fIfile\fR
+.B \-C, --client-auth \fI<file>\fR
 Enables smtp authentication with remote server, using the given secrets file.
 .TP
-.B \-Y,--client-filter \fIprogram\fR
+.B \-Y, --client-filter \fI<program>\fR
 Specifies an external program to process messages when they are forwarded.
 .TP
-.B \-e,--close-stderr 
+.B \-e, --close-stderr 
 Closes the standard error stream after start-up.
 .TP
-.B \-U,--connection-timeout \fItime\fR
+.B \-U, --connection-timeout \fI<time>\fR
 Sets the timeout (in seconds) when connecting to a remote server (default is 40).
 .TP
-.B \-g,--debug 
+.B \-g, --debug 
 Generates debug-level logging if compiled-in.
 .TP
-.B \-D,--domain \fIfqdn\fR
+.B \-D, --domain \fI<fqdn>\fR
 Sets an override for the host's fully qualified domain name.
 .TP
-.B \-x,--dont-serve 
+.B \-x, --dont-serve 
 Disables acting as a server on any port (part of \fI--as-client\fR and usually used with \fI--forward\fR).
 .TP
-.B \-z,--filter \fIprogram\fR
+.B \-z, --filter \fI<program>\fR
 Specifies an external program to process messages as they are stored.
 .TP
-.B \-f,--forward 
+.B \-W, --filter-timeout \fI<time>\fR
+Sets the timeout (in seconds) for running the \fI--filter\fR processor.
+.TP
+.B \-f, --forward 
 Forwards stored mail on startup (requires \fI--forward-to\fR).
 .TP
-.B \-o,--forward-to \fIhost:port\fR
+.B \-o, --forward-to \fI<host:port>\fR
 Specifies the remote smtp server (required by \fI--forward\fR, \fI--poll\fR, \fI--immediate\fR and \fI--admin\fR).
 .TP
-.B \-h,--help 
+.B \-h, --help 
 Displays help text and exits.
 .TP
-.B \-m,--immediate 
+.B \-m, --immediate 
 Enables immediating forwarding of messages as soon as they are received (requires \fI--forward-to\fR).
 .TP
-.B \-I,--interface \fIip-address\fR
+.B \-I, --interface \fI<ip-address>\fR
 Defines the listening interface for new connections.
 .TP
-.B \-l,--log 
+.B \-l, --log 
 Writes log information on standard error and syslog.
 .TP
-.B \-L,--log-time 
+.B \-L, --log-time 
 Adds a timestamp to the logging output.
 .TP
-.B \-t,--no-daemon 
+.B \-t, --no-daemon 
 Does not detach from the terminal.
 .TP
-.B \-X,--no-smtp 
+.B \-X, --no-smtp 
 Disables listening for smtp connections (usually used with \fI--admin\fR or \fI--pop\fR).
 .TP
-.B \-n,--no-syslog 
-Disables syslog output.
+.B \-n, --no-syslog 
+Disables syslog output (always overridden by \fI--syslog\fR).
 .TP
-.B \-i,--pid-file \fIpid-file\fR
+.B \-i, --pid-file \fI<pid-file>\fR
 Defines a file for storing the daemon process-id.
 .TP
-.B \-O,--poll \fIperiod\fR
-Enables polling with the specified period (requires \fI--forward-to\fR).
+.B \-O, --poll \fI<period>\fR
+Enables polling of the spool directory for messages to be forwarded with the specified period (requires \fI--forward-to\fR).
 .TP
-.B \-B,--pop 
+.B \-B, --pop 
 Enables the pop server if compiled-in.
 .TP
-.B \-F,--pop-auth \fIfile\fR
+.B \-F, --pop-auth \fI<file>\fR
 Defines the pop server secrets file (default is \fI/etc/emailrelay.auth\fR).
 .TP
-.B \-J,--pop-by-name 
+.B \-J, --pop-by-name 
 Modifies the pop spool directory according to the user name (requires \fI--pop\fR).
 .TP
-.B \-G,--pop-no-delete 
+.B \-G, --pop-no-delete 
 Disables message deletion via pop (requires \fI--pop\fR).
 .TP
-.B \-E,--pop-port \fIport\fR
+.B \-E, --pop-port \fI<port>\fR
 Specifies the pop listening port number (requires \fI--pop\fR).
 .TP
-.B \-p,--port \fIport\fR
+.B \-p, --port \fI<port>\fR
 Specifies the smtp listening port number.
 .TP
-.B \-r,--remote-clients 
+.B \-r, --remote-clients 
 Allows remote clients to connect.
 .TP
-.B \-T,--response-timeout \fItime\fR
+.B \-T, --response-timeout \fI<time>\fR
 Sets the response timeout (in seconds) when talking to a remote server (default is 1800).
 .TP
-.B \-R,--scanner \fIhost:port\fR
+.B \-R, --scanner \fI<host:port>\fR
 Specifies an external network server to process messages when they are stored.
 .TP
-.B \-S,--server-auth \fIfile\fR
+.B \-S, --server-auth \fI<file>\fR
 Enables authentication of remote clients, using the given secrets file.
 .TP
-.B \-s,--spool-dir \fIdir\fR
+.B \-s, --spool-dir \fI<dir>\fR
 Specifies the spool directory (default is \fI/var/spool/emailrelay\fR).
 .TP
-.B \-u,--user \fIusername\fR
-Names the effective user to switch to when started as root (default is \fIdaemon\fR).
+.B \-k, --syslog 
+Force syslog output if logging is enabled (overrides \fI--no-syslog\fR).
 .TP
-.B \-v,--verbose 
+.B \-u, --user \fI<username>\fR
+Names the effective user to switch to if started as root (default is \fIdaemon\fR).
+.TP
+.B \-v, --verbose 
 Generates more verbose output (works with \fI--help\fR and \fI--log\fR).
 .TP
-.B \-Z,--verifier \fIprogram\fR
+.B \-Z, --verifier \fI<program>\fR
 Specifies an external program for address verification.
 .TP
-.B \-V,--version 
+.B \-V, --version 
 Displays version information and exits.
 .SH FILES
 GNU style...

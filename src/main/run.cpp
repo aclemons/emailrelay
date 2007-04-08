@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -129,7 +129,7 @@ bool Main::Run::prepare()
 	m_log_output <<= new G::LogOutput( m_arg.prefix() , cfg().log() , cfg().log() , 
 		cfg().verbose() , cfg().debug() , true , 
 		cfg().logTimestamp() , !cfg().debug() ,
-		cfg().syslog() , G::LogOutput::Mail ) ;
+		cfg().useSyslog() , G::LogOutput::Mail ) ;
 
 	return do_run ;
 }
@@ -515,3 +515,4 @@ G::Signal3<std::string,std::string,std::string> & Main::Run::signal()
 	return m_signal ;
 }
 
+/// \file run.cpp

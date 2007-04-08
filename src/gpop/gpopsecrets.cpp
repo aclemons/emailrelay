@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -26,10 +26,10 @@
 #include "gpopsecrets.h"
 #include "gsecrets.h" // gsmtp
 
-// Class: GPop::SecretsImp
-// Description: A private pimple-pattern implementation class used by GPop::Secrets.
-// The implementation delegates to GSmtp::Secrets.
-//
+/// \class GPop::SecretsImp
+/// A private pimple-pattern implementation class used by GPop::Secrets.
+///  The implementation delegates to GSmtp::Secrets.
+/// 
 class GPop::SecretsImp 
 {
 public:

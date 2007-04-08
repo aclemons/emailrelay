@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gbase64.h
-//
+///
+/// \file gbase64.h
+///
 
 #ifndef G_BASE64_H
 #define G_BASE64_H
@@ -29,33 +29,34 @@
 #include "gexception.h"
 #include <string>
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class Base64 ;
 }
 
-// Class: GSmtp::Base64
-// Description: A base64 codec class.
-// See also: RFC 1341 section 5.2
-//
+/// \class GSmtp::Base64
+/// A base64 codec class.
+/// \see RFC 1341 section 5.2
+///
 class GSmtp::Base64 
 {
 public:
 	G_EXCEPTION( Error , "base64 encoding error" ) ;
 
 	static std::string encode( const std::string & s , const std::string & line_break ) ;
-		// Encodes the given string.
+		///< Encodes the given string.
 
 	static std::string encode( const std::string & s ) ;
-		// Encodes the given string. Uses carriage-return-line-feed
-		// as the line-break string.
+		///< Encodes the given string. Uses carriage-return-line-feed
+		///< as the line-break string.
 
 	static std::string decode( const std::string & ) ;
-		// Decodes the given string. Throws an exception
-		// if not a valid encoding.
+		///< Decodes the given string. Throws an exception
+		///< if not a valid encoding.
 
 	static bool valid( const std::string & ) ;
-		// Returns true if the string can be decoded.
+		///< Returns true if the string can be decoded.
 
 private:
 	Base64() ;

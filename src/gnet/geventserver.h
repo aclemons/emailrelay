@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// geventserver.h
-//
+///
+/// \file geventserver.h
+///
 
 #ifndef G_EVENT_SERVER_H
 #define G_EVENT_SERVER_H
@@ -28,30 +28,31 @@
 #include "gnet.h"
 #include "gserver.h"
 
+/// \namespace GNet
 namespace GNet
 {
 	class EventServer ;
 	class EventServerImp ;
 }
 
-// Class: GNet::EventServer
-// Description: A simple derivation from Server which
-// simply adds an event loop. Only one instance
-// may be created.
-// See also: GNet::EventLoop
-//
+/// \class GNet::EventServer
+/// A simple derivation from Server which
+/// simply adds an event loop. Only one instance
+/// may be created.
+/// \see GNet::EventLoop
+///
 class GNet::EventServer : public GNet::Server 
 {
 public:
 	explicit EventServer( unsigned int listening_port ) ;
-		// Constructor. Throws exceptions on
-		// error.
+		///< Constructor. Throws exceptions on
+		///< error.
 
 	virtual ~EventServer() ;
-		// Destructor.
+		///< Destructor.
 
 	void run() ;
-		// Runs the event loop.
+		///< Runs the event loop.
 
 private:
 	EventServer( const EventServer & ) ;

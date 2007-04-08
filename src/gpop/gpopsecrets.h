@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gpopsecrets.h
-//
+///
+/// \file gpopsecrets.h
+///
 
 #ifndef G_POP_SECRETS_H
 #define G_POP_SECRETS_H
@@ -32,54 +32,56 @@
 #include <iostream>
 #include <map>
 
+/// \namespace GPop
 namespace GPop
 {
 	class Secrets ;
 	class SecretsImp ;
 }
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class Secrets ;
 }
 
-// Class: GPop::Secrets
-// Description: A simple interface to a store of secrets as used in
-// authentication.
-//
+/// \class GPop::Secrets
+/// A simple interface to a store of secrets as used in
+/// authentication.
+///
 class GPop::Secrets : public GSmtp::SaslServer::Secrets 
 {
 public:
 	G_EXCEPTION( OpenError , "cannot open pop secrets file" ) ;
 
 	static std::string defaultPath() ;
-		// Returns the default path.
+		///< Returns the default path.
 
 	explicit Secrets( const std::string & storage_path = defaultPath() ) ;
-		// Constructor. In principle the storage_path can
-		// be a path to a file, a database connection
-		// string, etc. Throws on error.
+		///< Constructor. In principle the storage_path can
+		///< be a path to a file, a database connection
+		///< string, etc. Throws on error.
 
 	virtual ~Secrets() ;
-		// Destructor.
+		///< Destructor.
 
 	std::string path() const ;
-		// Returns the storage path.
+		///< Returns the storage path.
 
 	virtual bool valid() const ;
-		// Returns true. 
-		//
-		// Override from Valid virtual base class.
+		///< Returns true. 
+		///<
+		///< Override from Valid virtual base class.
 
 	virtual std::string secret(  const std::string & mechanism , const std::string & id ) const ;
-		// Returns the given user's secret. Returns the
-		// empty string if not a valid id.
-		//
-		// Override from SaslServer::Secrets.
+		///< Returns the given user's secret. Returns the
+		///< empty string if not a valid id.
+		///<
+		///< Override from SaslServer::Secrets.
 
 	bool contains( const std::string & mechanism ) const ;
-		// Returns true if there is one or more secrets 
-		// using the given mechanism.
+		///< Returns true if there is one or more secrets 
+		///< using the given mechanism.
 
 private:
 	Secrets( const Secrets & ) ; // not implemented

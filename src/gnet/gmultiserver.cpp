@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -105,8 +105,8 @@ void GNet::MultiServer::init( const AddressList & address_list )
 
 void GNet::MultiServer::init( const Address & address )
 {
-	ServerPtr ptr( new ServerImp(*this,address) ) ;
-	m_server_list.push_back( ServerPtr() ) ;
+	MultiServerPtr ptr( new MultiServerImp(*this,address) ) ;
+	m_server_list.push_back( MultiServerPtr() ) ;
 	m_server_list.back().swap( ptr ) ;
 }
 
@@ -155,47 +155,48 @@ std::pair<bool,GNet::Address> GNet::MultiServer::firstAddress() const
 
 // ==
 
-GNet::MultiServer::ServerImp::ServerImp( MultiServer & ms , const Address & address ) : 
+GNet::MultiServerImp::MultiServerImp( MultiServer & ms , const Address & address ) : 
 	Server(address) ,
 	m_ms(ms)
 {
 }
 
-GNet::ServerPeer * GNet::MultiServer::ServerImp::newPeer( PeerInfo peer_info )
+GNet::ServerPeer * GNet::MultiServerImp::newPeer( PeerInfo peer_info )
 {
 	return m_ms.newPeer( peer_info ) ;
 }
 
-void GNet::MultiServer::ServerImp::cleanup()
+void GNet::MultiServerImp::cleanup()
 {
 	serverCleanup() ;
 }
 
 // ==
 
-GNet::MultiServer::ServerPtr::ServerPtr( ServerImp * p ) :
+GNet::MultiServerPtr::MultiServerPtr( ServerImp * p ) :
 	m_p(p)
 {
 }
 
-GNet::MultiServer::ServerPtr::~ServerPtr()
+GNet::MultiServerPtr::~MultiServerPtr()
 {
 	delete m_p ;
 }
 
-void GNet::MultiServer::ServerPtr::swap( ServerPtr & other )
+void GNet::MultiServerPtr::swap( MultiServerPtr & other )
 {
 	std::swap( other.m_p , m_p ) ;
 }
 
 
-GNet::MultiServer::ServerImp * GNet::MultiServer::ServerPtr::get()
+GNet::MultiServerImp * GNet::MultiServerPtr::get()
 {
 	return m_p ;
 }
 
-const GNet::MultiServer::ServerImp * GNet::MultiServer::ServerPtr::get() const
+const GNet::MultiServerImp * GNet::MultiServerPtr::get() const
 {
 	return m_p ;
 }
 
+/// \file gmultiserver.cpp

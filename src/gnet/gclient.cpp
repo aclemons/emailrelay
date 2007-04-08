@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -52,9 +52,9 @@ namespace GNet
 	class ClientTestImp ;
 }
 
-// Class: GNet::ClientResolver
-// Description: A resolver class which calls ClientImp::resolveCon() when done.
-//
+/// \class GNet::ClientResolver
+/// A resolver class which calls ClientImp::resolveCon() when done.
+/// 
 class GNet::ClientResolver : public GNet::Resolver 
 {
 private:
@@ -78,9 +78,9 @@ GNet::ClientResolver::ClientResolver( ClientImp & imp ) :
 
 // ===
 
-// Class: GNet::ClientImp
-// Description: A pimple-pattern implementation class for GNet::Client.
-//
+/// \class GNet::ClientImp
+/// A pimple-pattern implementation class for GNet::Client.
+/// 
 class GNet::ClientImp : public GNet::ClientBaseImp 
 {
 public:

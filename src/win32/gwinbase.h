@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gwinbase.h
-//
+///
+/// \file gwinbase.h
+///
 
 #ifndef G_WINBASE_H
 #define G_WINBASE_H
@@ -27,54 +27,55 @@
 #include "gdef.h"
 #include "gsize.h"
 
+/// \namespace GGui
 namespace GGui
 {
 	class WindowBase ;
 }
 
-// Class: GGui::WindowBase
-// Description: A low-level window class which
-// encapsulates a window handle and provides methods
-// to retrieve basic window attributes. Knows
-// nothing about window messages.
-// See also: GGui::Cracker, GGui::Window, GGui::Dialog
-//
+/// \class GGui::WindowBase
+/// A low-level window class which
+/// encapsulates a window handle and provides methods
+/// to retrieve basic window attributes. Knows
+/// nothing about window messages.
+/// \see GGui::Cracker, GGui::Window, GGui::Dialog
+///
 class GGui::WindowBase 
 {
 
 public:
 	explicit WindowBase( HWND hwnd ) ;
-		// Constructor.
+		///< Constructor.
 
 	virtual ~WindowBase() ;
-		// Virtual destructor.
+		///< Virtual destructor.
 
 	HWND handle() const ;
-		// Returns the window handle.
+		///< Returns the window handle.
 
 	WindowBase &operator=( const WindowBase &other ) ;
-		// Assignment operator.
+		///< Assignment operator.
 
 	WindowBase( const WindowBase &other ) ;
-		// Copy constructor.
+		///< Copy constructor.
 
 	Size externalSize() const ;
-		// Returns the external size of the window.
+		///< Returns the external size of the window.
 
 	Size internalSize() const ;
-		// Returns the internal size of the window.
-		// (ie. the size of the client area) 
+		///< Returns the internal size of the window.
+		///< (ie. the size of the client area) 
 
 	std::string windowClass() const ;
-		// Returns the window's window-class name.
+		///< Returns the window's window-class name.
 
 	HINSTANCE windowInstanceHandle() const ;
-		// Returns the window's application instance.
-		// See also: GGui::ApplicationInstance
+		///< Returns the window's application instance.
+		///< See also: GGui::ApplicationInstance
 
 protected:
 	void setHandle( HWND hwnd ) ;
-		// Sets the window handle.
+		///< Sets the window handle.
 
 protected:
 	HWND m_hwnd ;

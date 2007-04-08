@@ -21,6 +21,9 @@ refer to the E-MailRelay reference document under "Files and directories".
    If compiling with something other than "gcc" then check for any 
 compiler-specific help in the relevant lib/<compiler> directory.
 
+   If building the E-MailRelay GUI ("./configure --enable-gui") refer 
+to the INSTALL document in the src/gui directory.
+
    The E-MailRelay user guide describes what needs to be done after the 
 "make install" in order to get the emailrelay daemon to start up at 
 boot-time, automatically forward e-mail and bounce failed mail.

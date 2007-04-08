@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -111,6 +111,7 @@
 #include "gmd5_native.cpp"
 #include "gmessagestore.cpp"
 #include "gmonitor.cpp"
+#include "gmultiserver.cpp"
 #include "gnewfile.cpp"
 #include "gnewmessage.cpp"
 #include "gpath.cpp"
@@ -149,3 +150,4 @@
 #include "main.cpp"
 #include "output.cpp"
 #include "run.cpp"
+/// \file emailrelay-fastbuild.cpp

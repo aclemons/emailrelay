@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// glink.h
-//
+///
+/// \file glink.h
+///
 
 #ifndef G_LINK_H__
 #define G_LINK_H__
@@ -40,16 +40,16 @@ public:
 	GLink( const G::Path & target_path , const std::string & name , const std::string & description , 
 		const G::Path & working_dir , const std::string & args = std::string() , 
 		const G::Path & icon_source = G::Path() , Show show = Show_Default ) ;
-			// Constructor.
+			///< Constructor.
 
 	static std::string filename( const std::string & name ) ;
-		// Returns a normalised filename including an extension like ".lnk" or ".desktop".
+		///< Returns a normalised filename including an extension like ".lnk" or ".desktop".
 
 	void saveAs( const G::Path & link_path ) ;
-		// Saves the link.
+		///< Saves the link.
 
 	~GLink() ;
-		// Destructor.
+		///< Destructor.
 
 private:
 	GLink( const GLink & ) ;

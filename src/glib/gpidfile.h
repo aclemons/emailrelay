@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gpidfile.h
-//
+///
+/// \file gpidfile.h
+///
 
 #ifndef G_PIDFILE_H
 #define G_PIDFILE_H
@@ -30,53 +30,54 @@
 #include <sys/types.h>
 #include <string>
 
+/// \namespace G
 namespace G
 {
 	class PidFile ;
 	class Daemon ;
 }
 
-// Class: G::PidFile
-// Description: A class for creating pid files.
-// See also: G::Daemon
-//
+/// \class G::PidFile
+/// A class for creating pid files.
+/// \see G::Daemon
+///
 class G::PidFile 
 {
 public:
 	G_EXCEPTION( Error , "invalid pid file" ) ;
 
 	static void cleanup( const char * path ) ;
-		// Deletes the specified pid file if it
-		// contains this process's id.
-		//
-		// Reentrant implementation.
+		///< Deletes the specified pid file if it
+		///< contains this process's id.
+		///<
+		///< Reentrant implementation.
 
 	explicit PidFile( const Path & pid_file_path ) ;
-		// Constructor. The path should normally be
-		// an absolute path. Use commit() to actually
-		// create the file.
+		///< Constructor. The path should normally be
+		///< an absolute path. Use commit() to actually
+		///< create the file.
 
 	PidFile() ;
-		// Default constructor. Constructs a
-		// do-nothing object. Initialise with init().
+		///< Default constructor. Constructs a
+		///< do-nothing object. Initialise with init().
 
 	void init( const Path & pid_file_path ) ;
-		// Used after default construction.
+		///< Used after default construction.
 
 	~PidFile() ;
-		// Destructor. Calls cleanup() to delete
-		// the file.
+		///< Destructor. Calls cleanup() to delete
+		///< the file.
 
 	void commit() ;
-		// Creates the file.
+		///< Creates the file.
 
 	void check() ;
-		// Throws an exception if the path is not
-		// absolute.
+		///< Throws an exception if the path is not
+		///< absolute.
 
 	Path path() const ;
-		// Returns the path as supplied to the constructor
-		// or init().
+		///< Returns the path as supplied to the constructor
+		///< or init().
 
 private:
 	Path m_path ;

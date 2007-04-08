@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -27,9 +27,9 @@
 #include "gassert.h"
 #include <set>
 
-// Class: GNet::MontiorImp
-// Description: A pimple pattern implementation class for GNet::Monitor.
-//
+/// \class GNet::MonitorImp
+/// A pimple pattern implementation class for GNet::Monitor.
+/// 
 class GNet::MonitorImp 
 {
 public:

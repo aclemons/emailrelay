@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -27,8 +27,6 @@
 #include "gdialog.h"
 
 bool GPage::m_test_mode = false ;
-std::string GPage::m_tool ;
-std::string GPage::m_tool_arg ;
 
 GPage::GPage( GDialog & dialog , const std::string & name , const std::string & next_1 , 
 	const std::string & next_2 , bool finish_button , bool close_button ) : 
@@ -129,35 +127,15 @@ void GPage::onShow( bool )
 	// no-op
 }
 
-void GPage::setTool( const std::string & tool , const std::string & arg )
-{
-	m_tool = tool ;
-	m_tool_arg = arg ;
-}
-
-std::string GPage::tool()
-{
-	return m_tool ;
-}
-
-G::Strings GPage::toolArgs( const std::string & prefix )
-{
-	G::Strings result ;
-	G::Str::splitIntoTokens( m_tool_arg , result , G::Str::ws() ) ;
-	if( ! prefix.empty() ) result.push_front(prefix) ;
-	return result ;
-}
-
 void GPage::mechanismUpdateSlot( const QString & m )
 {
 	static bool first = true ;
 	if( first && m != "CRAM-MD5" )
 	{
-		QString title(QMessageBox::tr("E-MailRelay")) ;
-		QMessageBox::warning( NULL , title , 
-			QMessageBox::tr("Passwords will be written to a text file in the clear if not using CRAM-MD5.\nIf security is important then use dummy passwords now and edit the secrets file \"emailrelay.auth\" later on.") ,
-			QMessageBox::Ok , QMessageBox::NoButton , QMessageBox::NoButton ) ;
+		//QString title(QMessageBox::tr("E-MailRelay")) ;
+		//QMessageBox::warning( NULL , title , "... ..." , QMessageBox::Ok , QMessageBox::NoButton , QMessageBox::NoButton ) ;
 		first = false ;
 	}
 }
 
+/// \file gpage.cpp

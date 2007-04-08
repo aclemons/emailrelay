@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gdate.h
-//
+///
+/// \file gdate.h
+///
 
 #ifndef G_DATE_H
 #define G_DATE_H
@@ -30,19 +30,21 @@
 #include <ctime>
 #include <string>
 
+/// \namespace G
 namespace G
 {
 	class Date ;
 }
 
-// Class: G::Date
-// Description: A date (dd/mm/yyyy) class.
-// See also: G::Time, G::DateTime
-//
+/// \class G::Date
+/// A date (dd/mm/yyyy) class.
+/// \see G::Time, G::DateTime
+///
 class G::Date 
 {
 public:
-	class LocalTime // An overload discriminator class for Date constructors.
+	/// An overload discriminator class for Date constructors.
+	class LocalTime 
 		{} ;
 
 	enum Weekday 
@@ -56,79 +58,79 @@ public:
 		{ yyyy_mm_dd_slash , yyyy_mm_dd , mm_dd } ;
 
 	static int yearUpperLimit() ;
-		// Returns the smallest supported year value.
+		///< Returns the smallest supported year value.
 
 	static int yearLowerLimit() ;
-		// Returns the largest supported year value.
+		///< Returns the largest supported year value.
 
 	Date() ;
-		// Default constructor the current date
-		// in the UTC timezone.
+		///< Default constructor the current date
+		///< in the UTC timezone.
 
 	explicit Date( const LocalTime & ) ;
-		// Constructor for the current date
-		// in the local timezone.
+		///< Constructor for the current date
+		///< in the local timezone.
 
 	Date( const G::DateTime::BrokenDownTime & tm ) ;
-		// Constructor for the specified date.
+		///< Constructor for the specified date.
 
 	explicit Date( G::DateTime::EpochTime t ) ;
-		// Constructor for the date in the UTC
-		// timezone as at the given epoch time.
+		///< Constructor for the date in the UTC
+		///< timezone as at the given epoch time.
 
 	Date( G::DateTime::EpochTime t , const LocalTime & ) ;
-		// Constructor for the date in the local
-		// timezone as at the given epoch time.
+		///< Constructor for the date in the local
+		///< timezone as at the given epoch time.
 
 	Date( int year , Month month , int day_of_month ) ;
-		// Constructor for the specified date.
+		///< Constructor for the specified date.
 
 	std::string string( Format format = yyyy_mm_dd_slash ) const ;
-		// Returns a string representation of the date.
+		///< Returns a string representation of the date.
 
 	Weekday weekday() const ;
-		// Returns the day of the week.
+		///< Returns the day of the week.
 
 	std::string weekdayName( bool brief = false ) const ;
-		// Returns an english string representation of 
-		// the day of the week.
-		// (Was weekdayString().)
+		///< Returns an english string representation of 
+		///< the day of the week.
+		///< (Was weekdayString().)
 
 	int monthday() const ;
-		// Returns the day of the month.
+		///< Returns the day of the month.
 
 	std::string dd() const ;
-		// Returns the day of the month as a two-digit decimal string.
-		// (Was monthdayString().)
+		///< Returns the day of the month as a two-digit decimal string.
+		///< (Was monthdayString().)
 
 	Month month() const ;
-		// Returns the month.
+		///< Returns the month.
 
 	std::string monthName( bool brief = false ) const ;
-		// Returns the month as a string (in english).
-		// (Was monthString().)
+		///< Returns the month as a string (in english).
+		///< (Was monthString().)
 
 	std::string mm() const ;
-		// Returns the month as a two-digit decimal string.
+		///< Returns the month as a two-digit decimal string.
 
 	int year() const ;
-		// Returns the year.
+		///< Returns the year.
 
 	std::string yyyy() const ;
-		// Returns the year as a four-digit decimal string.
-		// (Was yearString().)
+		///< Returns the year as a four-digit decimal string.
+		///< (Was yearString().)
 
 	Date & operator++() ;
-		// Increments the date by one day.
+		///< Increments the date by one day.
 
 	Date & operator--() ;
-		// Decrements the date by one day.
+		///< Decrements the date by one day.
 
 	bool operator==( const Date & rhs ) const ;
-		// Comparison operator.
+		///< Comparison operator.
 
 	bool operator!=( const Date & rhs ) const ;
-		// Comparison operator.
+		///< Comparison operator.
 
 private:
 	void init( const G::DateTime::BrokenDownTime & ) ;

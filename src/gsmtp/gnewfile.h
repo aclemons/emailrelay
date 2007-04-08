@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gnewfile.h
-//
+///
+/// \file gnewfile.h
+///
 
 #ifndef G_SMTP_NEW_FILE_H
 #define G_SMTP_NEW_FILE_H
@@ -32,54 +32,55 @@
 #include "gexception.h"
 #include <iostream>
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class NewFile ;
 }
 
-// Class: GSmtp::NewFile
-// Description: A concrete derived class implementing the 
-// NewMessage interface. Writes itself to the i/o streams 
-// supplied by MessageStoreImp.
-//
+/// \class GSmtp::NewFile
+/// A concrete derived class implementing the 
+/// NewMessage interface. Writes itself to the i/o streams 
+/// supplied by MessageStoreImp.
+///
 class GSmtp::NewFile : public GSmtp::NewMessage 
 {
 public:
 	G_EXCEPTION( InvalidPath , "invalid path -- must be absolute" ) ;
 
 	NewFile( const std::string & from , FileStore & store ) ;
-		// Constructor.
+		///< Constructor.
 
 	virtual ~NewFile() ;
-		// Destructor. If the new message has not been
-		// commit()ed then the files are deleted.
+		///< Destructor. If the new message has not been
+		///< commit()ed then the files are deleted.
 
 	virtual void addTo( const std::string & to , bool local ) ;
-		// Adds a 'to' address.
+		///< Adds a 'to' address.
 
 	virtual void addText( const std::string & line ) ;
-		// Adds a line of content.
+		///< Adds a line of content.
 
 	virtual std::string prepare( const std::string & auth_id , const std::string & client_ip ) ;
-		// Prepares to store the message in the message store.
-		//
-		// The implementation flushes and closes the
-		// content stream, creates a new envelope
-		// file (".new"), and does any local 'delivery'
-		// by creating ".local" copies. The path
-		// to the ".new" envelope file is returned.
+		///< Prepares to store the message in the message store.
+		///<
+		///< The implementation flushes and closes the
+		///< content stream, creates a new envelope
+		///< file (".new"), and does any local 'delivery'
+		///< by creating ".local" copies. The path
+		///< to the ".new" envelope file is returned.
 
 	virtual void commit() ;
-		// Commits the message to the message store.
-		//
-		// The implementation renames the ".new"
-		// envelope file, removing the extension.
+		///< Commits the message to the message store.
+		///<
+		///< The implementation renames the ".new"
+		///< envelope file, removing the extension.
 
 	virtual unsigned long id() const ;
-		// Returns the message's unique non-zero identifier.
+		///< Returns the message's unique non-zero identifier.
 
 	G::Path contentPath() const ;
-		// Returns the path of the content file.
+		///< Returns the path of the content file.
 
 private:
 	FileStore & m_store ;

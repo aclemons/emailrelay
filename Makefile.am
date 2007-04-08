@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License
@@ -18,7 +18,7 @@
 ## 
 #
 EXTRA_DIST = emailrelay.spec ChangeLog
-SUBDIRS = src bin lib doc etc
+SUBDIRS = src bin lib etc doc
 e_doc_DATA = NEWS README changelog.gz
 CLEANFILES = changelog.gz
 changelog.gz: ChangeLog

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gmonitor.h
-//
+///
+/// \file gmonitor.h
+///
 
 #ifndef G_GNET_MONITOR_H
 #define G_GNET_MONITOR_H
@@ -32,53 +32,54 @@
 #include "gserver.h"
 #include <iostream>
 
+/// \namespace GNet
 namespace GNet
 {
 	class Monitor ;
 	class MonitorImp ;
 }
 
-// Class: GNet::Monitor
-// Description: A singleton for monitoring Client and ServerPeer connections.
-// See also: GNet::Client, GNet::ServerPeer
-//
+/// \class GNet::Monitor
+/// A singleton for monitoring Client and ServerPeer connections.
+/// \see GNet::Client, GNet::ServerPeer
+///
 class GNet::Monitor : public G::noncopyable 
 {
 public:
 	Monitor() ;
-		// Default constructor.
+		///< Default constructor.
 
 	virtual ~Monitor() ;
-		// Destructor.
+		///< Destructor.
 
 	static Monitor * instance() ;
-		// Returns the singleton pointer. Returns null if none.
+		///< Returns the singleton pointer. Returns null if none.
 
 	void add( const Client & client ) ;
-		// Adds a client.
+		///< Adds a client.
 
 	void remove( const Client & client ) ;
-		// Removes a client.
+		///< Removes a client.
 
 	void add( const ServerPeer & peer ) ;
-		// Adds a server peer.
+		///< Adds a server peer.
 
 	void remove( const ServerPeer & peer ) ;
-		// Removes a server peer.
+		///< Removes a server peer.
 
 	void report( std::ostream & stream , 
 		const std::string & line_prefix = std::string() , 
 		const std::string & eol = std::string("\n") ) ;
-			// Reports itself onto a stream.
+			///< Reports itself onto a stream.
 
 	G::Signal2<std::string,std::string> & signal() ;
-		// Provides a callback signal which can be connect()ed
-		// to a slot.
-		//
-		// The signal emits events with two
-		// string parameters: the first
-		// is "in" or "out", and the second
-		// is "start" or "stop".
+		///< Provides a callback signal which can be connect()ed
+		///< to a slot.
+		///<
+		///< The signal emits events with two
+		///< string parameters: the first
+		///< is "in" or "out", and the second
+		///< is "start" or "stop".
 
 private:
 	static Monitor * m_this ;

@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software; you can redistribute it and/or
 dnl modify it under the terms of the GNU General Public License
@@ -33,6 +33,7 @@ AC_PROG_CXX
 AC_PROG_RANLIB
 AC_PROG_INSTALL
 AC_PROG_AWK
+AC_PROG_GREP
 AC_CHECK_PROGS(MAKE,make gmake)
 AC_CHECK_PROGS(AR,ar gar)
 AC_CHECK_PROGS(GZIP,gzip)
@@ -69,16 +70,15 @@ ACLOCAL_CHECK_LOCALTIME_R
 ACLOCAL_CHECK_SETGROUPS
 
 dnl ===
+dnl initialise aclocal/pkg.m4...
+dnl
+PKG_PROG_PKG_CONFIG(0.9.0)
+
+dnl ===
 dnl "--enable-debug"
 dnl
 AC_ARG_ENABLE(debug,AC_HELP_STRING([--enable-debug],[enable extra debug messages at compile-time (default disabled)]))
 ENABLE_DEBUG
-
-dnl ===
-dnl "--enable-fastbuild"
-dnl
-AC_ARG_ENABLE(fastbuild,AC_HELP_STRING([--enable-fastbuild],[enable faster building (default disabled); requires --disable-dependency-tracking]))
-ENABLE_FASTBUILD
 
 dnl ===
 dnl "--enable-pop"
@@ -95,7 +95,7 @@ ENABLE_IPV6
 dnl ===
 dnl "--enable-gui"
 dnl
-AC_ARG_ENABLE(gui,AC_HELP_STRING([--enable-gui],[enable configuration gui (requires Qt4) (default disabled)]))
+AC_ARG_ENABLE(gui,AC_HELP_STRING([--enable-gui],[enable configuration gui (requires Qt4) (default auto)]))
 ENABLE_GUI
 
 dnl ===
@@ -129,10 +129,8 @@ AC_SUBST(e_spooldir)
 if test "$e_spooldir" = "" ; then e_spooldir="$localstatedir/spool/emailrelay" ; fi
 AC_SUBST(e_examplesdir)
 if test "$e_examplesdir" = "" ; then e_examplesdir="$libexecdir" ; fi
-AC_SUBST(e_x11dir)
-if test "$e_x11dir" = "" ; then e_x11dir="/usr/X11R6" ; fi
-AC_SUBST(e_qtdir)
-if test "$e_qtdir" = "" ; then e_qtdir="/usr/lib/qt" ; fi
+AC_SUBST(e_qtmoc)
+if test "$e_qtmoc" = "" ; then e_qtmoc="moc" ; fi
 ENABLE_FHS
 
 dnl ===

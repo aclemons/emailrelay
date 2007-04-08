@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+   Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
    
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -36,15 +36,16 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
 #ifdef _WIN32
-static char exe [] = "emailrelay-gui.exe" ;
+static char gui_exe [] = "emailrelay-gui.exe" ;
 #else
-static char exe [] = "emailrelay-gui" ;
+static char gui_exe [] = "emailrelay-gui" ;
 #endif
-static char cfg [] = "emailrelay-gui.cfg" ;
+static char gui_cfg [] = "emailrelay-gui.cfg" ;
 
 static void split( char * buffer , char * argv [] ) ;
 static int unpack( const char * path ) ;
@@ -60,6 +61,34 @@ static void chmodx( const char * p )
 {
 	/* no-op */
 }
+static char * strcat_( const char * p1 , const char * p2 )
+{
+	char * dst = malloc(strlen(p1)+strlen(p2)+10) ;
+	static char nothing[] = { '\0' } ;
+	if( dst == NULL ) return nothing ;
+	strcpy( dst , p1 ) ;
+	strcat( dst , p2 ) ;
+	return dst ;
+}
+static int match_end( const char * p1 , const char * p2 )
+{
+	const char * p = p2 ;
+	if( strlen(p1) < strlen(p2) ) return 0 ;
+	for( ; *p ; p++ )
+	{
+		if( tolower(*p) != tolower(*(p1+strlen(p1)-strlen(p))) )
+			return 0 ;
+	}
+	return 1 ;
+}
+static const char * add_dot_exe( const char * this_exe )
+{
+	if( ! match_end( this_exe , ".exe" ) )
+	{
+		this_exe = strcat_( this_exe , ".exe" ) ;
+	}
+	return this_exe ;
+}
 #else
 #include <stdio.h>
 #include <unistd.h>
@@ -74,6 +103,10 @@ static void chmodx( const char * p )
 	if( rc != 0 )
 		on_error( "cannot chmod" ) ;
 }
+static const char * add_dot_exe( const char * this_exe )
+{
+	return this_exe ;
+}
 #endif
 
 #define BUFFER_SIZE 10000
@@ -81,21 +114,35 @@ static void chmodx( const char * p )
 
 int main( int argc_in , char * argv_in [] )
 {
-	static char buffer[BUFFER_SIZE+1] ;
-	char * argv [ARGV_SIZE+1] = { exe , NULL } ;
+	int ok = 0 ;
+	const char * this_exe = argv_in[0] ;
+	static char buffer[BUFFER_SIZE+1] = { '\0' } ;
+	char * argv [ARGV_SIZE+1] = { gui_exe , NULL } ;
+	const char * prefix = argv_in[0] ;
+	prefix = strrchr(prefix,'/') ? (strrchr(prefix,'/')+1) : prefix ;
+	prefix = strrchr(prefix,'\\') ? (strrchr(prefix,'\\')+1) : prefix ;
+
+	/* startup banner */
+	printf( "%s: self-extracting archive for %s\n" , prefix , argv[0] ) ;
+	if( argc_in > 1 && argv_in[1][0] == '-' && ( argv_in[1][1] == 'h' || argv_in[1][1] == '-' ) )
+	{
+		printf( "  %s\n" , "http://emailrelay.sourceforge.net" ) ;
+		return 0 ;
+	}
+	fflush( stdout ) ;
 
 	/* unpack files */
-	int ok = unpack( argv_in[0] ) ;
-	if( !ok ) 
+	ok = unpack( add_dot_exe(this_exe) ) ;
+	if( !ok )
 	{
 		on_error( "unpack error" ) ;
 		return 1 ;
 	}
 
-	/* read any extra command-line parameters */
+	/* read any extra command-line parameters from an optional config file */
+	buffer[0] = '\0' ;
 	{
-		FILE * fp = fopen( cfg , "r" ) ;
-		buffer[0] = '\0' ;
+		FILE * fp = fopen( gui_cfg , "r" ) ;
 		if( fp != NULL )
 		{
 			int rc = fread( buffer , 1 , BUFFER_SIZE , fp ) ;
@@ -108,14 +155,15 @@ int main( int argc_in , char * argv_in [] )
 		if( strchr(buffer,'\n') )
 			*strchr(buffer,'\n') = '\0' ;
 	}
+	printf( "%s: running %s %s\n" , prefix , gui_exe , buffer ) ;
 
 	/* split up the command-line */
 	split( buffer , argv ) ;
 
 	/* run the target exe */
 	{
-		chmodx( exe ) ;
-		execv( exe , argv ) ;
+		chmodx( gui_exe ) ;
+		execv( gui_exe , argv ) ;
 	}
 
 	on_error( "exec error" ) ;

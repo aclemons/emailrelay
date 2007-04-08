@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gprotocolmessageforward.h
-//
+///
+/// \file gprotocolmessageforward.h
+///
 
 #ifndef G_SMTP_PROTOCOL_MESSAGE_FORWARD_H
 #define G_SMTP_PROTOCOL_MESSAGE_FORWARD_H
@@ -36,22 +36,23 @@
 #include <string>
 #include <memory>
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class ProtocolMessageForward ;
 }
 
-// Class: GSmtp::ProtocolMessageForward
-// Description: A concrete implementation of the ProtocolMessage 
-// interface which stores incoming messages in the message store 
-// and then immediately forwards them on to the downstream server.
-// 
-// The implementation delegates to an instance of the ProtocolMessageStore 
-// class (ie. its sibling class) to do the storage, and to an instance 
-// of the Client class to do the forwarding.
-//
-// See also: GSmtp::ProtocolMessageStore
-//
+/// \class GSmtp::ProtocolMessageForward
+/// A concrete implementation of the ProtocolMessage 
+/// interface which stores incoming messages in the message store 
+/// and then immediately forwards them on to the downstream server.
+/// 
+/// The implementation delegates to an instance of the ProtocolMessageStore 
+/// class (ie. its sibling class) to do the storage, and to an instance 
+/// of the Client class to do the forwarding.
+///
+/// \see GSmtp::ProtocolMessageStore
+///
 class GSmtp::ProtocolMessageForward : public GSmtp::ProtocolMessage 
 {
 public:
@@ -61,53 +62,53 @@ public:
 		const Secrets & client_secrets , 
 		const std::string & server_address , 
 		unsigned int connection_timeout ) ;
-			// Constructor. The 'store' and 'client-secrets' references
-			// are kept.
+			///< Constructor. The 'store' and 'client-secrets' references
+			///< are kept.
 
 	virtual ~ProtocolMessageForward() ;
-		// Destructor.
+		///< Destructor.
 
 	virtual G::Signal3<bool,unsigned long,std::string> & doneSignal() ;
-		// See ProtocolMessage.
+		///< See ProtocolMessage.
 
 	virtual G::Signal3<bool,bool,std::string> & preparedSignal() ;
-		// See ProtocolMessage.
+		///< See ProtocolMessage.
 
 	virtual void clear() ;
-		// See ProtocolMessage.
+		///< See ProtocolMessage.
 
 	virtual bool setFrom( const std::string & from_user ) ;
-		// See ProtocolMessage.
+		///< See ProtocolMessage.
 
 	virtual bool prepare() ;
-		// See ProtocolMessage.
+		///< See ProtocolMessage.
 
 	virtual bool addTo( const std::string & to_user , Verifier::Status to_status ) ;
-		// See ProtocolMessage.
+		///< See ProtocolMessage.
 
 	virtual void addReceived( const std::string & ) ;
-		// See ProtocolMessage.
+		///< See ProtocolMessage.
 
 	virtual void addText( const std::string & ) ;
-		// See ProtocolMessage.
+		///< See ProtocolMessage.
 
 	virtual std::string from() const ;
-		// See ProtocolMessage.
+		///< See ProtocolMessage.
 
 	virtual void process( const std::string & auth_id , const std::string & client_ip ) ;
-		// See ProtocolMessage.
+		///< See ProtocolMessage.
 
 protected:
 	G::Signal3<bool,unsigned long,std::string> & storageDoneSignal() ;
-		// Returns the signal which is used to signal that the storage
-		// is complete. Derived classes can use this to
-		// intercept the storage-done signal emit()ed by
-		// the ProtocolMessageStore object.
+		///< Returns the signal which is used to signal that the storage
+		///< is complete. Derived classes can use this to
+		///< intercept the storage-done signal emit()ed by
+		///< the ProtocolMessageStore object.
 
 	void processDone( bool , unsigned long , std::string ) ; 
-		// Called by derived classes that have intercepted
-		// the storageDoneSignal() when their own post-storage
-		// processing is complete.
+		///< Called by derived classes that have intercepted
+		///< the storageDoneSignal() when their own post-storage
+		///< processing is complete.
 
 private:
 	void operator=( const ProtocolMessageForward & ) ; // not implemented

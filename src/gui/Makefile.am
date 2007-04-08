@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License
@@ -29,51 +29,50 @@ AM_INSTALL_PROGRAM_FLAGS=-s
 GUI_SOURCES=\
 	gdialog.cpp \
 	gdialog.h \
+	glink.h \
+	glink.cpp \
 	gpage.cpp \
 	gpage.h \
+	gunpack.h \
+	gunpack.cpp \
 	dir.cpp \
 	dir_unix.cpp \
 	dir.h \
-	main.cpp \
+	installer.cpp \
+	installer.h \
+	guimain.cpp \
 	legal.cpp \
 	legal.h \
 	package.h \
 	pages.cpp \
 	pages.h \
 	qt.h \
-	thread.cpp \
-	thread.h \
 	unpack.c \
 	unpack.h
 
 EXTRA_DIST=\
+	INSTALL \
 	emailrelay-icon.png \
 	gcominit.h \
-	glink.h \
-	glink.cpp \
 	dir_win32.cpp \
-	dir_winxp.cpp \
-	dir_winnt.cpp \
 	mingw.mak \
 	mac.mak \
-	readme.txt \
+	run.c \
+	unpack_plain.c \
 	Info.plist
 
 PACKED_OUTPUT_FILES=\
-	emailrelay-install-tool.tmp \
 	emailrelay-gui.tmp
 
 MOC_OUTPUT=\
 	moc_gdialog.cpp \
 	moc_gpage.cpp \
-	moc_pages.cpp \
-	moc_thread.cpp
+	moc_pages.cpp
 
 MOC_OBJECTS=\
 	moc_gdialog.o \
 	moc_gpage.o \
-	moc_pages.o \
-	moc_thread.o
+	moc_pages.o
 
 moc_gdialog.cpp: $(srcdir)/gdialog.h $(mock)
 	$(MOC) $< -o $@
@@ -82,9 +81,6 @@ moc_gpage.cpp: $(srcdir)/gpage.h $(mock)
 	$(MOC) $< -o $@
 
 moc_pages.cpp: $(srcdir)/pages.h $(mock)
-	$(MOC) $< -o $@
-
-moc_thread.cpp: $(srcdir)/thread.h $(mock)
 	$(MOC) $< -o $@
 
 CLEANFILES = $(PACKED_OUTPUT_FILES) $(MOC_OUTPUT) $(mock)
@@ -100,27 +96,19 @@ INCLUDES=\
 	-DG_LIBEXECDIR=\"$(libexecdir)\" \
 	-DG_DESTDIR=\"$(DESTDIR)\"
 
-AM_CPPFLAGS=\
-	-I$(e_qtdir)/include \
-	-I$(e_qtdir)/include/Qt \
-	-I$(e_qtdir)/include/QtCore \
-	-I$(e_qtdir)/include/QtGui
+AM_CPPFLAGS=$(QT_CFLAGS)
 
-bin_PROGRAMS = emailrelay-gui emailrelay-install-tool
+sbin_PROGRAMS = emailrelay-gui
 noinst_SCRIPTS = mock emailrelay-setup
 noinst_PROGRAMS = run pack
 
 pack_SOURCES = pack.cpp
 pack_LDADD = $(top_builddir)/src/glib/libglib.a
-pack_LDFLAGS = -lz
+pack_LDFLAGS = 
 
-run_SOURCES = run.c unpack.c
+run_SOURCES = run.c unpack_plain.c
 run_LDADD =
-run_LDFLAGS = -lz
-
-emailrelay_install_tool_SOURCES = tool.cpp glink.cpp unpack.c
-emailrelay_install_tool_LDADD = \
-	$(top_builddir)/src/glib/libglib.a
+run_LDFLAGS = -static
 
 emailrelay_gui_SOURCES = $(GUI_SOURCES)
 
@@ -129,15 +117,7 @@ emailrelay_gui_DEPENDENCIES = $(MOC_OBJECTS)
 emailrelay_gui_LDADD = \
 	$(MOC_OBJECTS) \
 	$(top_builddir)/src/glib/libglib.a \
-	-lQtGui -lQtCore \
-	-lpng \
-	-lX11 -lXrender -lXft -lSM -lXi \
-	-lXrandr -lXinerama -lXcursor \
-	-lpthread
-
-emailrelay_gui_LDFLAGS = \
-	-L$(e_qtdir)/lib \
-	-L$(e_x11dir)/lib
+	$(QT_LIBS)
 
 # (for *nix we assume 'make install' does the install, so this is a short list...)
 PACKED_INPUT = \
@@ -146,20 +126,15 @@ PACKED_INPUT = \
 PACKED_INPUT_LIST = \
 	emailrelay-icon.png emailrelay-icon.png
 
-# emailrelay-install-tool.tmp := emailrelay-install-tool, emailrelay, etc. etc.
+# emailrelay-gui.tmp := emailrelay-gui, emailrelay, etc.
 #
-emailrelay-install-tool.tmp: pack emailrelay-install-tool $(PACKED_INPUT)
-	./pack $@ emailrelay-install-tool $(PACKED_INPUT_LIST)
+emailrelay-gui.tmp: pack emailrelay-gui $(PACKED_INPUT)
+	./pack $@ emailrelay-gui $(PACKED_INPUT_LIST)
 
-# emailrelay-gui.tmp := emailrelay-gui + emailrelay-install-tool.tmp
-#
-emailrelay-gui.tmp: pack emailrelay-gui emailrelay-install-tool.tmp
-	./pack $@ emailrelay-gui emailrelay-install-tool.tmp emailrelay-install-tool
-
-# emailrelay-setup := run + emailrelay-gui.tmp
+# emailrelay-setup := run, emailrelay-gui.tmp
 #
 emailrelay-setup: pack run emailrelay-gui.tmp
-	./pack $@ run emailrelay-gui.tmp emailrelay-gui
+	./pack -p $@ run emailrelay-gui.tmp emailrelay-gui
 	chmod +x $@
 
 else
@@ -169,8 +144,8 @@ EXTRA_DIST=\
 	dir.h \
 	dir_unix.cpp \
 	dir_win32.cpp \
-	dir_winnt.cpp \
-	dir_winxp.cpp \
+	installer.cpp \
+	installer.h \
 	emailrelay-icon.png \
 	gcominit.h \
 	gdialog.cpp \
@@ -183,14 +158,14 @@ EXTRA_DIST=\
 	legal.cpp \
 	legal.h \
 	mac.mak \
-	main.cpp \
+	guimain.cpp \
 	mingw.mak \
 	pack.cpp \
 	pages.cpp \
 	pages.h \
 	qt.h \
-	readme.txt \
-	thread.cpp \
-	thread.h
+	run.c \
+	unpack_plain.c \
+	INSTALL
 
 endif

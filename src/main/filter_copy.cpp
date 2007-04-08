@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -35,9 +35,8 @@
 // sub-directory then the content is deleted too.
 // See GPop::StoreLock::unlinked().
 //
-//
 
-
+#include "gdef.h"
 #include "garg.h"
 #include "gfile.h"
 #include "gstr.h"
@@ -71,9 +70,16 @@ static void run( const std::string & content )
 
 	// check the envelope file exists
 	//
-	G::Path envelope_path = dir_path ; envelope_path.pathAppend(envelope_name+".new") ;
+	G::Path envelope_path = G::Path( dir_path , envelope_name + ".new" ) ;
 	if( ! G::File::exists(envelope_path) )
-		throw Error( std::string() + "no envelope file \"" + envelope_path.str() + "\"" ) ;
+	{
+		// fall back to no ".new" extension in case we are run manually for some reason
+		G::Path envelope_path_alt = G::Path( dir_path , envelope_name ) ;
+		if( G::File::exists(envelope_path_alt) )
+			envelope_path = envelope_path_alt ;
+		else
+			throw Error( std::string() + "no envelope file \"" + envelope_path.str() + "\"" ) ;
+	}
 
 	// copy the envelope into all sub-directories
 	//
@@ -86,7 +92,7 @@ static void run( const std::string & content )
 		if( iter.isDir() )
 		{
 			directory_count++ ;
-			G::Path target = iter.filePath() ; target.pathAppend(envelope_name) ;
+			G::Path target = G::Path( iter.filePath() , envelope_name ) ;
 			bool ok = G::File::copy( envelope_path , target , G::File::NoThrow() ) ;
 			if( !ok )
 				failures.push_back( iter.fileName().str() ) ;
@@ -128,7 +134,7 @@ int main( int argc , char * argv [] )
 	{
 		G::Arg args( argc , argv ) ;
 		if( args.c() <= 1U )
-			throw Error( "usage error" ) ;
+			throw Error( "usage error: must be run by the emailrelay server with the full path of a message content file" ) ;
 
 		run( args.v(1U) ) ;
 		return 0 ;
@@ -144,3 +150,4 @@ int main( int argc , char * argv [] )
 	return 1 ;
 }
 
+/// \file filter_copy.cpp

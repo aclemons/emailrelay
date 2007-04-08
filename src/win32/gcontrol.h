@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gcontrol.h
-//	
+///
+/// \file gcontrol.h
+///
 
 #ifndef G_CONTROL_H
 #define G_CONTROL_H
@@ -30,6 +30,7 @@
 #include <string>
 #include <list>
 
+/// \namespace GGui
 namespace GGui
 {
 	class Control ;
@@ -39,14 +40,14 @@ namespace GGui
 	class Button ;
 }
 
-// Class: GGui::Control
-// Description: A base class for dialog box control objects.
-// Normally a dialog box object (derived from Dialog) will
-// have Control-derived objects embedded within it to
-// represent some of the dialog box controls. Supports
-// sub-classing.
-// See also: EditBox, ListBox, CheckBox, Button
-//
+/// \class GGui::Control
+/// A base class for dialog box control objects.
+/// Normally a dialog box object (derived from Dialog) will
+/// have Control-derived objects embedded within it to
+/// represent some of the dialog box controls. Supports
+/// sub-classing.
+/// \see EditBox, ListBox, CheckBox, Button
+///
 class GGui::Control 
 {
 public:
@@ -60,66 +61,66 @@ public:
 	} ;
 	
 	Control( Dialog & dialog , int id ) ;
-		// Constructor. The lifetime of the Control
-		// object should not exceed that of the given
-		// dialog box; normally the control object
-		// should be a member of the dialog object.
+		///< Constructor. The lifetime of the Control
+		///< object should not exceed that of the given
+		///< dialog box; normally the control object
+		///< should be a member of the dialog object.
 
 	void invalidate() ;
-		// Called by the Dialog class when this
-		// control's dialog box object becomes invalid.
+		///< Called by the Dialog class when this
+		///< control's dialog box object becomes invalid.
 		
 	bool valid() const ;
-		// Returns true if this control is usable.
+		///< Returns true if this control is usable.
 
 	Dialog & dialog() const ;
-		// Returns a reference to the control's
-		// dialog box.
+		///< Returns a reference to the control's
+		///< dialog box.
 		
 	int id() const ;
-		// Returns the control's identifier.
+		///< Returns the control's identifier.
 
 	HWND handle() const ;
-		// Returns the control's window handle.
+		///< Returns the control's window handle.
 				
 	virtual ~Control() ;
-		// Virtual destructor.
+		///< Virtual destructor.
 		
 	LRESULT sendMessage( unsigned message , WPARAM wparam = 0 , LPARAM lparam = 0 ) const ;
-		// Sends a window message to this control.
+		///< Sends a window message to this control.
 		
 	bool subClass() ;
-		// Subclasses the control so that all received messages	
-		// are passed to onMessage().
+		///< Subclasses the control so that all received messages	
+		///< are passed to onMessage().
 
 	LRESULT wndProc( unsigned message , WPARAM wparam , LPARAM lparam , WNDPROC super_class ) ;
-		// Not for general use. Called from the exported
-		// window procedure.
+		///< Not for general use. Called from the exported
+		///< window procedure.
 		
 protected:	
 	virtual LRESULT onMessage( unsigned message , WPARAM wparam , 
 		LPARAM lparam , WNDPROC super_class , bool & forward ) ;
-			// Overridable. Called on receipt of a window message
-			// sent to a sub-classed control. 
-			//
-			// If the implementation sets 'forward' true,
-			// or leaves it alone, then the message is
-			// passed on to the super-class handler and
-			// the implementation's return value is ignored.
-			// This means that an empty implementation
-			// does not affect the control's behaviour.
-			//
-			// If the implementation handles the message
-			// fully it should reset 'forward' and return
-			// an appropriate value; if it does something 
-			// but still needs the super-class behaviour 
-			// then it should leave 'forward' alone.
-			//
-			// The 'super_class' parameter is normally only
-			// needed if the super-class handler's
-			// return value needs to be modified or if the
-			// sub-class behaviour must be done after
-			// the super-class behaviour.
+			///< Overridable. Called on receipt of a window message
+			///< sent to a sub-classed control. 
+			///<
+			///< If the implementation sets 'forward' true,
+			///< or leaves it alone, then the message is
+			///< passed on to the super-class handler and
+			///< the implementation's return value is ignored.
+			///< This means that an empty implementation
+			///< does not affect the control's behaviour.
+			///<
+			///< If the implementation handles the message
+			///< fully it should reset 'forward' and return
+			///< an appropriate value; if it does something 
+			///< but still needs the super-class behaviour 
+			///< then it should leave 'forward' alone.
+			///<
+			///< The 'super_class' parameter is normally only
+			///< needed if the super-class handler's
+			///< return value needs to be modified or if the
+			///< sub-class behaviour must be done after
+			///< the super-class behaviour.
 
 private:
 	Control( const Control & ) ; // not implemented
@@ -134,95 +135,95 @@ private:
 	HWND m_hwnd ;
 } ;
 
-// Class: GGui::ListBox
-// Description: A list box class.
-//
+/// \class GGui::ListBox
+/// A list box class.
+///
 class GGui::ListBox : public GGui::Control 
 {
 public:
 	ListBox( Dialog & dialog , int id ) ;
-		// Constructor.
+		///< Constructor.
 		
 	virtual ~ListBox() ;
-		// Virtual destructor.
+		///< Virtual destructor.
 	
 	void set( const G::Strings & list ) ;
-		// Puts a list of strings into the
-		// given list box control.
+		///< Puts a list of strings into the
+		///< given list box control.
 		
 	int getSelection() ;
-		// Returns the currently selected item
-		// in a list box. Returns -1 if none.
+		///< Returns the currently selected item
+		///< in a list box. Returns -1 if none.
 		
 	void setSelection( int index ) ;
-		// Sets the list box selection. For no
-		// selection index should be -1.
+		///< Sets the list box selection. For no
+		///< selection index should be -1.
 		
 	std::string getItem( int index ) const ;
-		// Returns the specified item in a
-		// list box.
+		///< Returns the specified item in a
+		///< list box.
 		
 	unsigned entries() const ;
-		// Returns the number of list box entries.
+		///< Returns the number of list box entries.
 
 private:
 	void operator=( const ListBox & ) ; // not implemented
 	ListBox( const ListBox & ) ; // not implemented
 } ;
 
-// Class: GGui::EditBox
-// Description: An edit box class.
-//
+/// \class GGui::EditBox
+/// An edit box class.
+///
 class GGui::EditBox : public GGui::Control 
 {
 public:
 	EditBox( Dialog & dialog , int id ) ;
-		// Constructor.
+		///< Constructor.
 	
 	virtual ~EditBox() ;
-		// Virtual destructor.
+		///< Virtual destructor.
 	
 	void set( const G::Strings &list ) ;
-		// Puts a list of strings into the
-		// given multi-line edit box control.
-		// Does no scrolling.
+		///< Puts a list of strings into the
+		///< given multi-line edit box control.
+		///< Does no scrolling.
 		
 	void set( const std::string & string ) ;
-		// Sets the text of the edit control.
+		///< Sets the text of the edit control.
 
 	std::string get() const ;
-		// Gets the text of a single-line edit control.
+		///< Gets the text of a single-line edit control.
 	
 	unsigned lines() ;
-		// Returns the number of lines. This will 
-		// in general be more than the number of
-		// strings passed to set(G::Strings) because of
-		// line wrapping.
+		///< Returns the number of lines. This will 
+		///< in general be more than the number of
+		///< strings passed to set(G::Strings) because of
+		///< line wrapping.
 
 	void scrollToEnd() ;
-		// Scrolls forward so that _no_ text is
-		// visible. Normally used before scrollBack().
+		///< Scrolls forward so that _no_ text is
+		///< visible. Normally used before scrollBack().
 
 	void scrollBack( int lines ) ;
-		// Scrolls back 'lines' lines. Does nothing
-		// if 'lines' is zero or negative.
+		///< Scrolls back 'lines' lines. Does nothing
+		///< if 'lines' is zero or negative.
 
 	unsigned linesInWindow() ;
-		// Return the (approximate) number of lines
-		// which will fit inside the edit box window.
+		///< Return the (approximate) number of lines
+		///< which will fit inside the edit box window.
 
 	unsigned scrollPosition() ;
-		// Returns a value representing the vertical
-		// scroll position.
-		//
-		// See also SBM_SETPOS.
+		///< Returns a value representing the vertical
+		///< scroll position.
+		///<
+		///< See also SBM_SETPOS.
 
 	unsigned scrollRange() ;
-		// Returns a value representing the vertical
-		// scroll range. This is similar to lines(),
-		// but it is never zero.
-		//
-		// See also SBM_SETRANGE.
+		///< Returns a value representing the vertical
+		///< scroll range. This is similar to lines(),
+		///< but it is never zero.
+		///<
+		///< See also SBM_SETRANGE.
 
 private:
 	unsigned windowHeight() ; // not const
@@ -234,50 +235,50 @@ private:
 	unsigned m_character_height ;
 } ;
 
-// Class: GGui::CheckBox
-// Description: A check box class.
-//
+/// \class GGui::CheckBox
+/// A check box class.
+///
 class GGui::CheckBox : public GGui::Control 
 {
 public:
 	CheckBox( Dialog & dialog , int id ) ;
-		// Constructor.
+		///< Constructor.
 	
 	virtual ~CheckBox() ;
-		// Virtual destructor.
+		///< Virtual destructor.
 		
 	bool get() const ;
-		// Returns the state of a boolean check box.
+		///< Returns the state of a boolean check box.
 
 	void set( bool b ) ;
-		// Sets the state of a boolean check box.
+		///< Sets the state of a boolean check box.
 
 private:
 	void operator=( const CheckBox ) ; // not implemented
 	CheckBox( const CheckBox & ) ; // not implemented
 } ;
 	
-// Class: GGui::Button
-// Description: A button class.
-//
+/// \class GGui::Button
+/// A button class.
+///
 class GGui::Button : public GGui::Control 
 {
 public:
 	Button( Dialog & dialog , int id ) ;
-		// Constructor.
+		///< Constructor.
 	
 	virtual ~Button() ;
-		// Virtual destructor.
+		///< Virtual destructor.
 
 	bool enabled() const ;
-		// Returns true if the button is enabled.
+		///< Returns true if the button is enabled.
 				
 	void enable( bool b = true ) ;
-		// Enables the button. Disables it if 'b'
-		// is false.
+		///< Enables the button. Disables it if 'b'
+		///< is false.
 		
 	void disable() ;
-		// Disables the button, greying it.
+		///< Disables the button, greying it.
 
 private:
 	void operator=( const Button & ) ; // not implemented

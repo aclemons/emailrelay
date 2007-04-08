@@ -170,14 +170,8 @@ the "emailrelay.dws" workspace.
 
 Makefiles for the *MinGW* [http://www.mingw.org/] system (gcc on Windows) are 
 also provided. If building from cygwin start by creating a "/mingw" mount to 
-your MinGW installation directory (eg. "mount -u c:/sw/mingw /mingw"), and then 
+your MinGW installation directory (eg. "mount -u c:/opt/mingw /mingw"), and then
 run "make -f mingw.mak" from the E-MailRelay "src" directory.
-
-Style
------
-The commenting style used in header files is compatible with doxygen if passed
-through the simple awk-based pre-processor "emailrelay-doxygen-filter.sh". A
-"make" in the "doc" directory will run doxygen if it is found on your path.
 
 Patterns
 --------
@@ -263,4 +257,4 @@ to reassign a std::auto_ptr<>.
 
 
 
-Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

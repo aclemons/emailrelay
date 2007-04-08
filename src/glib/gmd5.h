@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gmd5.h
-//
+///
+/// \file gmd5.h
+///
 
 #ifndef G_MD5_H
 #define G_MD5_H
@@ -28,44 +28,46 @@
 #include "gexception.h"
 #include <string>
 
+/// \namespace G
 namespace G
 {
 	class Md5 ;
 }
 
-// Class: G::Md5
-// Description: MD5 class.
-//
+/// \class G::Md5
+/// MD5 class.
+///
 class G::Md5 
 {
 public:
 	G_EXCEPTION( InvalidMaskedKey , "invalid md5 key" ) ;
-	struct Masked  // An overload discriminator for G::Md5::hmac()
+	/// An overload discriminator for G::Md5::hmac()
+	struct Masked  
 		{} ;
 
 	static std::string digest( const std::string & input ) ;
-		// Creates an MD5 digest. The resulting
-		// string is not generally printable and
-		// may have embedded NULs.
+		///< Creates an MD5 digest. The resulting
+		///< string is not generally printable and
+		///< may have embedded NULs.
 
 	static std::string digest( const std::string & input_1 , const std::string & input_2 ) ;
-		// An overload which processes two input strings.
+		///< An overload which processes two input strings.
 
 	static std::string printable( const std::string & input ) ;
-		// Converts a binary string into a printable
-		// form, using a lowercase hexadecimal encoding.
-		// See also RFC2095.
+		///< Converts a binary string into a printable
+		///< form, using a lowercase hexadecimal encoding.
+		///< See also RFC2095.
 
 	static std::string hmac( const std::string & key , const std::string & input ) ;
-		// Computes a Hashed Message Authentication Code
-		// using MD5 as the hash function.
-		// See also RFC2104 [HMAC-MD5].
+		///< Computes a Hashed Message Authentication Code
+		///< using MD5 as the hash function.
+		///< See also RFC2104 [HMAC-MD5].
 
 	static std::string hmac( const std::string & masked_key , const std::string & input , Masked ) ;
-		// An hmac() overload using a masked key.
+		///< An hmac() overload using a masked key.
 
 	static std::string mask( const std::string & key ) ;
-		// Masks an HMAC key so that it can be stored more safely.
+		///< Masks an HMAC key so that it can be stored more safely.
 
 private:
 	static std::string digest( const std::string & input_1 , const std::string * input_2 ) ;

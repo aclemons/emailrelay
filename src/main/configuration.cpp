@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -80,7 +80,7 @@ std::string Main::Configuration::str( const std::string & p , const std::string 
 		<< p << "verbose logging? " << yn(verbose()) << eol
 		<< p << "debug logging? " << yn(debug()) << eol
 		<< p << "log to stderr/syslog? " << yn(log()) << eol
-		<< p << "use syslog? " << yn(syslog()) << eol
+		<< p << "use syslog? " << yn(useSyslog()) << eol
 		<< p << "close stderr? " << yn(closeStderr()) << eol
 		<< p << "connect timeout: " << connectionTimeout() << "s" << eol
 		<< p << "response timeout: " << responseTimeout() << "s" << eol
@@ -109,7 +109,7 @@ bool Main::Configuration::debug() const
 	return m_cl.contains("debug") ;
 }
 
-bool Main::Configuration::syslog() const
+bool Main::Configuration::useSyslog() const
 {
 	bool basic = !m_cl.contains("no-syslog") && !m_cl.contains("as-client") ;
 	bool override = m_cl.contains("syslog") ;
@@ -397,3 +397,4 @@ unsigned int Main::Configuration::filterTimeout() const
 		G::Str::toUInt(m_cl.value("filter-timeout")) : default_timeout ;
 }
 
+/// \file configuration.cpp

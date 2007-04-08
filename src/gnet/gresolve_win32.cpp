@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -30,9 +30,9 @@
 #include "gassert.h"
 #include "glog.h"
 
-// Class: GNet::ResolverImp
-// Description: A pimple-pattern implementation class for GNet::Resolver.
-//
+/// \class GNet::ResolverImp
+/// A pimple-pattern implementation class for GNet::Resolver.
+/// 
 class GNet::ResolverImp : public GGui::WindowHidden 
 {
 private:

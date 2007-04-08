@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -39,10 +39,10 @@ namespace GPop
 	struct FileDeleter ;
 }
 
-// Class: GPop::FileReader
-// Description: A trivial class which is used like G::Root by GPop::Store for reading files.
-// The implementation does nothing because files in the pop store are group-readable.
-//
+/// \class GPop::FileReader
+/// A trivial class which is used like G::Root by GPop::Store for reading files.
+///  The implementation does nothing because files in the pop store are group-readable.
+/// 
 struct GPop::FileReader
 {
 	FileReader() {}
@@ -50,10 +50,10 @@ struct GPop::FileReader
 
 // ==
 
-// Class: GPop::FileDeleter
-// Description: A trivial specialisation of G::Root used by GPop::Store for deleting files.
-// The specialisation is not really necessary because the pop store directory is group-writeable.
-//
+/// \class GPop::FileDeleter
+/// A trivial specialisation of G::Root used by GPop::Store for deleting files.
+///  The specialisation is not really necessary because the pop store directory is group-writeable.
+/// 
 struct GPop::FileDeleter : private G::Root 
 {
 } ;
@@ -103,7 +103,7 @@ void GPop::Store::checkPath( G::Path dir_path , bool by_name , bool allow_delete
 			}
 		}
 		if( n == 0 )
-			G_WARNING( "GPop::Store: no sub-directories for pop-by-name found in \"" << dir_path << "\"" ) ;
+			G_WARNING( "GPop::Store: no sub-directories for pop-by-name found in \"" << dir_path << "\": create one sub-directory for each authorised pop account" ) ;
 	}
 	else if( !valid(dir_path,allow_delete) )
 	{

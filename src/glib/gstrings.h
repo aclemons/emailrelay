@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gstrings.h
-//
+///
+/// \file gstrings.h
+///
 
 #ifndef G_STRINGS_H
 #define G_STRINGS_H
@@ -30,23 +30,24 @@
 #include <vector>
 #include <map>
 
+/// \namespace G
 namespace G
 {
 
-// Typedef: Strings
-// Description: A std::list of std::strings.
-// See also: Str
-//
+/// 
+/// A std::list of std::strings.
+/// \see Str
+///
 typedef std::list<std::string> Strings ;
 
-// Typedef: StringArray
-// Description: A std::vector of std::strings.
-//
+/// 
+/// A std::vector of std::strings.
+///
 typedef std::vector<std::string> StringArray ;
 
-// Typedef: StringMap
-// Description: A std::map of std::strings.
-//
+/// 
+/// A std::map of std::strings.
+///
 typedef std::map<std::string,std::string> StringMap ;
 
 }

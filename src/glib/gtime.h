@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gtime.h
-//
+///
+/// \file gtime.h
+///
 
 #ifndef G_TIME_H
 #define G_TIME_H
@@ -29,53 +29,55 @@
 #include "gdatetime.h"
 #include <ctime>
 
+/// \namespace G
 namespace G
 {
 	class Time ;
 }
 
-// Class: G::Time
-// Description: A simple time-of-day (hh/mm/ss) class.
-// See also: G::Date, G::DateTime
-//
+/// \class G::Time
+/// A simple time-of-day (hh/mm/ss) class.
+/// \see G::Date, G::DateTime
+///
 class G::Time 
 {
 public:
-	class LocalTime // An overload discriminator class for Time constructors.
+	/// An overload discriminator class for Time constructors.
+	class LocalTime 
 		{} ;
 
 	Time() ;
-		// Constructor, using UTC, for now.
+		///< Constructor, using UTC, for now.
 
 	explicit Time( const G::DateTime::BrokenDownTime & tm ) ;
-		// Constructor for the given broken-down time.
+		///< Constructor for the given broken-down time.
 
 	explicit Time( G::DateTime::EpochTime t ) ;
-		// Constructor, using UTC, for the given epoch time.
+		///< Constructor, using UTC, for the given epoch time.
 
 	Time( G::DateTime::EpochTime t , const LocalTime & ) ;
-		// Constructor, using the local timezone, for the given epoch time.
+		///< Constructor, using the local timezone, for the given epoch time.
 
 	explicit Time( const LocalTime & ) ;
-		// Localtime constructor for now.
+		///< Localtime constructor for now.
 
 	unsigned int hours() const ;
-		// Returns the hours (0 <= h < 24).
+		///< Returns the hours (0 <= h < 24).
 
 	unsigned int minutes() const ;
-		// Returns the minutes (0 <= m < 60).
+		///< Returns the minutes (0 <= m < 60).
 
 	unsigned int seconds() const ;
-		// Returns the seconds (0 <= s <= 61 [sic]).
+		///< Returns the seconds (0 <= s <= 61 [sic]).
 
 	std::string hhmmss( const char * sep = NULL ) const ;
-		// Returns a hhmmss string.
+		///< Returns a hhmmss string.
 
 	std::string hhmm( const char * sep = NULL ) const ;
-		// Returns a hhmm string.
+		///< Returns a hhmm string.
 
 	std::string ss() const ;
-		// Returns the seconds as a two-digit decimal seconds.
+		///< Returns the seconds as a two-digit decimal seconds.
 
 private:
 	unsigned int m_hh ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gfile.h
-//
+///
+/// \file gfile.h
+///
 	
 #ifndef G_FILE_H
 #define G_FILE_H
@@ -30,16 +30,17 @@
 #include "gdatetime.h"
 #include <cstdio> // std::remove()
 
+/// \namespace G
 namespace G
 {
 	class File ;
 	class DirectoryIteratorImp ;
 }
 
-// Class: G::File
-// Description: A simple static class for dealing with files.
-// See also: G::Path, G::FileSystem, G::Directory
-//
+/// \class G::File
+/// A simple static class for dealing with files.
+/// \see G::Path, G::FileSystem, G::Directory
+///
 class G::File 
 {
 public:
@@ -52,66 +53,67 @@ public:
 	G_EXCEPTION( SizeOverflow , "file size overflow" ) ;
 	G_EXCEPTION( TimeError , "cannot get file modification time" ) ;
 	typedef DateTime::EpochTime time_type ;
-	class NoThrow // An overload discriminator class for File methods.
+	/// An overload discriminator class for File methods.
+	class NoThrow 
 		{} ;
 
 	static bool remove( const Path & path , const NoThrow & ) ;
-		// Deletes the file or directory. Returns false on error.
+		///< Deletes the file or directory. Returns false on error.
 
 	static void remove( const Path & path ) ;
-		// Deletes the file or directory. Throws an exception on error.
+		///< Deletes the file or directory. Throws an exception on error.
 
 	static bool rename( const Path & from , const Path & to , const NoThrow & ) ;
-		// Renames the file. Returns false on error.
+		///< Renames the file. Returns false on error.
 
 	static void rename( const Path & from , const Path & to ) ;
-		// Renames the file.
+		///< Renames the file.
 
 	static bool copy( const Path & from , const Path & to , const NoThrow & ) ;
-		// Copies a file. Returns false on error.
+		///< Copies a file. Returns false on error.
 
 	static void copy( const Path & from , const Path & to ) ;
-		// Copies a file.
+		///< Copies a file.
 
 	static bool mkdirs( const Path & dir , const NoThrow & , int = 100 ) ;
-		// Creates a directory and all necessary parents. Returns false on error.
-		// Does chmodx() on all created directories.
+		///< Creates a directory and all necessary parents. Returns false on error.
+		///< Does chmodx() on all created directories.
 
 	static void mkdirs( const Path & dir , int = 100 ) ;
-		// Creates a directory and all necessary parents.
-		// Does chmodx() on all created directories.
+		///< Creates a directory and all necessary parents.
+		///< Does chmodx() on all created directories.
 
 	static bool mkdir( const Path & dir , const NoThrow & ) ;
-		// Creates a directory. Returns false on error.
+		///< Creates a directory. Returns false on error.
 
 	static void mkdir( const Path & dir ) ;
-		// Creates a directory.
+		///< Creates a directory.
 
 	static std::string sizeString( const Path & file ) ;
-		// Returns the file's size in string format.
-		// Returns the empty string on error.
+		///< Returns the file's size in string format.
+		///< Returns the empty string on error.
 
 	static bool exists( const Path & file ) ;
-		// Returns true if the file (or link or device etc.)
-		// exists. Throws an exception if permission denied
-		// or too many symlinks etc.
+		///< Returns true if the file (or link or device etc.)
+		///< exists. Throws an exception if permission denied
+		///< or too many symlinks etc.
 
 	static bool exists( const Path & file , const NoThrow & ) ;
-		// Returns true if the file (or link or device etc.)
-		// exists. Returns false on error.
+		///< Returns true if the file (or link or device etc.)
+		///< exists. Returns false on error.
 
 	static time_type time( const Path & file ) ;
-		// Returns the file's timestamp.
+		///< Returns the file's timestamp.
 
 	static time_type time( const Path & file , const NoThrow & ) ;
-		// Returns the file's timestamp. Returns zero on
-		// error.
+		///< Returns the file's timestamp. Returns zero on
+		///< error.
 
 	static void chmodx( const Path & file ) ;
-		// Makes the file executable.
+		///< Makes the file executable.
 
 	static bool chmodx( const Path & file , const NoThrow & ) ;
-		// Makes the file executable.
+		///< Makes the file executable.
 
 private:
 	friend class G::DirectoryIteratorImp ;

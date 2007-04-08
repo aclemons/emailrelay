@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// glinebuffer.h
-//
+///
+/// \file glinebuffer.h
+///
 
 #ifndef G_LINE_BUFFER_H
 #define G_LINE_BUFFER_H
@@ -29,16 +29,18 @@
 #include "gexception.h"
 #include <string>
 
+/// \namespace GNet
 namespace GNet
 {
 	class LineBuffer ;
 }
 
-// Class: GNet::LineBuffer
-// Description: A class which does line buffering. Raw
-// data is added, and newline-delimited lines are
-// extracted.
-// Usage:
+/// \class GNet::LineBuffer
+/// A class which does line buffering. Raw
+/// data is added, and newline-delimited lines are
+/// extracted.
+/// Usage:
+/// \code
 /// {
 ///   GNet::LineBuffer buffer ;
 ///   buffer.add("abc") ;
@@ -47,39 +49,40 @@ namespace GNet
 ///   while( buffer.more() )
 ///     cout << buffer.line() << endl ;
 /// }
-//
+/// \endcode
+///
 class GNet::LineBuffer 
 {
 public:
 	G_EXCEPTION( Overflow , "line buffer overflow: maximum input line length exceeded" ) ;
 
 	explicit LineBuffer( const std::string & eol = std::string("\n") , bool do_throw_on_overflow = false ) ;
-		// Constructor.
+		///< Constructor.
 
 	void add( const std::string & segment ) ;
-		// Adds a data segment.
+		///< Adds a data segment.
 
 	void add( const char * p , size_t n ) ;
-		// Adds a data segment.
+		///< Adds a data segment.
 
 	bool more() const ;
-		// Returns true if there are complete 
-		// line(s) to be extracted.
+		///< Returns true if there are complete 
+		///< line(s) to be extracted.
 
 	const std::string & current() const ;
-		// Returns the current line, without extracting 
-		// it. The line terminator is not included.
-		//
-		// Precondition: more()
+		///< Returns the current line, without extracting 
+		///< it. The line terminator is not included.
+		///<
+		///< Precondition: more()
 
 	void discard() ;
-		// Discards the current line.
-		//
-		// Precondition: more()
+		///< Discards the current line.
+		///<
+		///< Precondition: more()
 
 	std::string line() ;
-		// Extracts a line and returns it as a string. 
-		// The line terminator is not included.
+		///< Extracts a line and returns it as a string. 
+		///< The line terminator is not included.
 
 private:
 	LineBuffer( const LineBuffer & ) ;

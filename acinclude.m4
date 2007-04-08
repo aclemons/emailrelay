@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software; you can redistribute it and/or
 dnl modify it under the terms of the GNU General Public License
@@ -206,28 +206,26 @@ dnl enable-gui
 dnl
 AC_DEFUN([ENABLE_GUI],
 [
-if test "$enable_gui" = "yes"
+qt4="no"
+if test "$enable_gui" = "no"
 then
-	AC_DEFINE(HAVE_GUI,1,[Define to enable gui code])
-else
 	AC_DEFINE(HAVE_GUI,0,[Define to enable gui code])
+else
+	PKG_CHECK_MODULES(QT,QtGui >= 4.0.1)
+	MOC="${e_qtmoc}"
+	AC_PATH_PROG(MOC,moc)
+	AC_MSG_CHECKING([moc is for qt 4])
+	if test -x "$MOC" -a "`$MOC -v 2>&1 | $GREP 'Qt 4'`" != "" ; then
+		AC_MSG_RESULT([yes])
+		AC_DEFINE(HAVE_GUI,1,[Define to enable gui code])
+		qt4="yes"
+	else
+		AC_MSG_ERROR([no moc for qt 4])
+		AC_DEFINE(HAVE_GUI,0,[Define to enable gui code])
+	fi
 fi
-MOC="${e_qtdir}/bin/moc"
 AC_SUBST(MOC)
-AM_CONDITIONAL(GUI,test x$enable_gui = xyes)
-])
-
-dnl enable-fastbuild
-dnl
-AC_DEFUN([ENABLE_FASTBUILD],
-[
-if test "$enable_fastbuild" = "yes"
-then
-	CXX="`pwd`/bin/fastbuild.sh"
-	chmod +x "$CXX"
-	AR="`pwd`/bin/fastbuild.sh"
-	RANLIB="true"
-fi
+AM_CONDITIONAL(GUI,test x$enable_gui != xno -a x$qt4 = xyes )
 ])
 
 dnl enable-pop

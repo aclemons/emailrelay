@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// groot.h
-//
+///
+/// \file groot.h
+///
 
 #ifndef G_ROOT_H
 #define G_ROOT_H
@@ -28,35 +28,36 @@
 #include "gidentity.h"
 #include "gnoncopyable.h"
 
+/// \namespace G
 namespace G
 {
 	class Root ;
 }
 
-// Class: G::Root
-// Description: A class which aquires special privileges.
-// The implementation uses G::Process and G::Identity.
-//
+/// \class G::Root
+/// A class which aquires special privileges.
+/// The implementation uses G::Process and G::Identity.
+///
 class G::Root : private G::noncopyable 
 {
 public:
 	explicit Root( bool change_group = true ) ;
-		// Constructor. Aquires special
-		// privileges if possible.
+		///< Constructor. Aquires special
+		///< privileges if possible.
 
 	~Root() ;
-		// Desctructor. Releases special privileges
-		// if this instance aquired them.
+		///< Desctructor. Releases special privileges
+		///< if this instance aquired them.
 
 	static void init( const std::string & nobody ) ;
-		// Releases root or suid privileges. Used
-		// at process start-up. The parameter
-		// gives a non-privileged username which
-		// is used if the real user-id is root.
+		///< Releases root or suid privileges. Used
+		///< at process start-up. The parameter
+		///< gives a non-privileged username which
+		///< is used if the real user-id is root.
 
 	static Identity nobody() ;
-		// Returns the 'nobody' identity.
-		// Precondition: init() called
+		///< Returns the 'nobody' identity.
+		///< Precondition: init() called
 
 private:
 	static Root * m_this ;

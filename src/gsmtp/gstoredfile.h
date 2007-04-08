@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gstoredfile.h
-//
+///
+/// \file gstoredfile.h
+///
 
 #ifndef G_SMTP_STORED_FILE_H
 #define G_SMTP_STORED_FILE_H
@@ -35,15 +35,16 @@
 #include <iostream>
 #include <memory>
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class StoredFile ;
 }
 
-// Class: GSmtp::StoredFile
-// Description: A concete derived class implementing the
-// StoredMessage interface.
-//
+/// \class GSmtp::StoredFile
+/// A concete derived class implementing the
+/// StoredMessage interface.
+///
 class GSmtp::StoredFile : public GSmtp::StoredMessage 
 {
 public:
@@ -56,59 +57,59 @@ public:
 	G_EXCEPTION( InvalidFilename , "invalid filename" ) ;
 
 	StoredFile( FileStore & store , const G::Path & envelope_path ) ;
-		// Constructor.
+		///< Constructor.
 
 	virtual ~StoredFile() ;
-		// Destructor. Unlocks the file if it has been lock()ed
-		// but not destroy()ed or fail()ed.
+		///< Destructor. Unlocks the file if it has been lock()ed
+		///< but not destroy()ed or fail()ed.
 
 	bool lock() ;
-		// Locks the file by renaming the envelope file.
-		// Used by FileStore and FileIterator.
+		///< Locks the file by renaming the envelope file.
+		///< Used by FileStore and FileIterator.
 
 	bool readEnvelope( std::string & reason , bool check_for_no_remote_recipients ) ;
-		// Reads the envelope. Returns false on error.
-		// Used by FileStore and FileIterator.
+		///< Reads the envelope. Returns false on error.
+		///< Used by FileStore and FileIterator.
 
 	bool openContent( std::string & reason ) ;
-		// Opens the content file. Returns false on error.
-		// Used by FileStore and FileIterator.
+		///< Opens the content file. Returns false on error.
+		///< Used by FileStore and FileIterator.
 
 	virtual std::string name() const ;
-		// From StoredMessage.
+		///< From StoredMessage.
 
 	virtual std::string location() const ;
-		// From StoredMessage.
+		///< From StoredMessage.
 
 	virtual bool eightBit() const ;
-		// From StoredMessage.
+		///< From StoredMessage.
 
 	virtual const std::string & from() const ;
-		// From StoredMessage.
+		///< From StoredMessage.
 
 	virtual const G::Strings & to() const ;
-		// From StoredMessage.
+		///< From StoredMessage.
 
 	virtual std::string authentication() const ;
-		// From StoredMessage.
+		///< From StoredMessage.
 
 	virtual void destroy() ;
-		// From StoredMessage.
+		///< From StoredMessage.
 
 	virtual void fail( const std::string & reason ) ;
-		// From StoredMessage.
+		///< From StoredMessage.
 
 	virtual std::auto_ptr<std::istream> extractContentStream() ;
-		// From StoredMessage.
+		///< From StoredMessage.
 
 	virtual size_t remoteRecipientCount() const ;
-		// From StoredMessage.
+		///< From StoredMessage.
 
 	virtual size_t errorCount() const ;
-		// From StoredMessage.
+		///< From StoredMessage.
 
 	virtual void sync() ;
-		// From StoredMessage.
+		///< From StoredMessage.
 
 private:
 	StoredFile( const StoredFile & ) ;

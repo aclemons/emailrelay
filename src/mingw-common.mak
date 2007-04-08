@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License
@@ -22,25 +22,49 @@
 #
 # Included by "mingw.mak" files.
 # 
-# (MinGW is the GNU gcc compiler for Windows. It is a free
-# alternative to Microsoft Visual Studio. See "http://mingw.org".)
+# MinGW is the GNU gcc compiler for Windows. It is a free alternative to
+# Microsoft Visual Studio. It can be obtained from http://mingw.org,
+# either directly or as part of a Qt installation (http://www.trolltech.com).
 #
-# Build with:
-#    $ make -f mingw.mak
+# To build using MinGW you should use the MinGW "make" utility called 
+# "mingw32-make". The top level makefile "mingw.mak" can be found in the "src" 
+# directory. 
 #
-# If building using mingw from within a cygwin environment then you 
-# must set an explicit path to the mingw tools to avoid picking up 
-# the cygwin gcc equivalents; specify the mingw bin directory
-# on the make command-line as follows -- note the trailing
-# slash:
-#   $ make -f mingw.mak mk_bin=c:/opt/mingw/bin/
+# For example:
+#    c:\emailrelay\src> c:\mingw\bin\mingw32-make -f mingw.mak
 #
-# or edit this line...
-mk_bin=
-
-# (these are needed for the gui)
-mk_qt=c:/opt/qt
-mk_zlib=$(mk_qt)/src/3rdparty/zlib
+# GUI build
+# ---------
+# If building the GUI you must have Qt version 4 installed, and you must edit
+# this file as described below.
+#
+# Your version of MinGW should ideally be the version supported by Qt. The Qt 
+# installation process can download and install its preferred version of MinGW 
+# for you.
+# 
+# The GUI build also needs the zlib library (http://www.zlib.net), but the
+# zlib source code is normally available within the Qt distribution under the 
+# src/3rdparty directory. To build the zlib library from the source code in Qt 
+# you can go through the whole Qt build, or try something like this:
+#
+#    c:\qt\src\3rdparty\zlib> c:\mingw\bin\mingw32-make CC=gcc CFLAGS=../../corelib/global
+#
+###
+## Uncomment and edit these for the GUI build ...
+##
+## "mk_gui" must be set to "gui" to enable the GUI build
+#mk_gui=gui
+##
+## "mk_bin" must be set to the MinGW "bin" directory -- with a trailing slash!
+#mk_bin=c:/mingw/bin/
+##
+## "mk_qt" must point to the Qt installation directory
+#mk_qt=c:/qt
+##
+## "mk_zlib" must point to the zlib directory
+#mk_zlib=$(mk_qt)/src/3rdparty/zlib
+##
+###
 
 mk_ar=ar rc
 mk_rc=$(mk_bin)windres
@@ -90,22 +114,26 @@ mk_link_flags=$(mk_link_flags_common) $(mk_link_flags_release) $(mk_link_flags_e
 	$(mk_rc) --include-dir . -i $*.rc -o $*.o
 
 _all:
-	cd glib && make -f mingw.mak mk_bin=$(mk_bin) && cd ..
-	cd gnet && make -f mingw.mak mk_bin=$(mk_bin) && cd ..
-	cd gsmtp && make -f mingw.mak mk_bin=$(mk_bin) && cd ..
-	cd gpop && make -f mingw.mak mk_bin=$(mk_bin) && cd ..
-	cd win32 && make -f mingw.mak mk_bin=$(mk_bin) && cd ..
-	cd main && make -f mingw.mak mk_bin=$(mk_bin) && cd ..
-	cd gui && make -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) && cd ..
+	cd glib && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) && cd ..
+	cd gnet && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) && cd ..
+	cd gsmtp && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) && cd ..
+	cd gpop && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) && cd ..
+	cd win32 && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) && cd ..
+	cd main && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) && cd ..
+ifeq ("$(mk_gui)","gui")
+	cd gui && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) mk_zlib=$(mk_zlib) && cd ..
+endif
 
 _clean:
-	cd glib && make -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
-	cd gnet && make -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
-	cd gsmtp && make -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
-	cd gpop && make -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
-	cd win32 && make -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
-	cd main && make -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
-	cd gui && make -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) clean && cd ..
+	cd glib && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
+	cd gnet && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
+	cd gsmtp && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
+	cd gpop && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
+	cd win32 && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
+	cd main && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
+ifeq ("$(mk_gui)","gui")
+	cd gui && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) mk_zlib=$(mk_zlib) clean && cd ..
+endif
 
 clean::
 	$(mk_rm_f) $(mk_objects) $(mk_target)

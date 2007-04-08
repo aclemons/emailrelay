@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -51,9 +51,9 @@ namespace Main
 
 static int sleep_time = 30 ;
 
-// Class: Main::ScannerPeer
-// Description: A GNet::ServerPeer class used by Scanner.
-//
+/// \class Main::ScannerPeer
+/// A GNet::ServerPeer class used by Scanner.
+/// 
 class Main::ScannerPeer : public GNet::ServerPeer 
 {
 public:
@@ -140,9 +140,9 @@ void Main::ScannerPeer::processFile( std::string path )
 
 // ===
 
-// Class: Main::Scanner
-// Description: A GNet::Server class used by the scanner utility.
-//
+/// \class Main::Scanner
+/// A GNet::Server class used by the scanner utility.
+/// 
 class Main::Scanner : public GNet::Server 
 {
 public:

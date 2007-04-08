@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -85,6 +85,13 @@ void G::Str::trimRight( std::string & s , const std::string & ws )
 void G::Str::trim( std::string & s , const std::string & ws )
 {
 	trimLeft(s,ws) ; trimRight(s,ws) ;
+}
+
+std::string G::Str::trimmed( const std::string & s_in , const std::string & ws )
+{
+	std::string s( s_in ) ;
+	trim(s,ws) ;
+	return s ;
 }
 
 bool G::Str::isNumeric( const std::string & s , bool allow_minus_sign )
@@ -653,3 +660,4 @@ std::string G::Str::ws()
 	return std::string(" \t\n\r") ;
 }
 
+/// \file gstr.cpp

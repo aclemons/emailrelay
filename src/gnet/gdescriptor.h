@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gdescriptor.h
-//
+///
+/// \file gdescriptor.h
+///
 
 #ifndef G_DESCRIPTOR_H
 #define G_DESCRIPTOR_H
@@ -27,15 +27,16 @@
 #include "gdef.h"
 #include "gnet.h"
 
+/// \namespace GNet
 namespace GNet
 {
 	typedef ::SOCKET Descriptor ; // (SOCKET is defined in gnet.h)
 
 	bool Descriptor__valid( Descriptor fd ) ;
-		// Tests whether the given network descriptor is valid.
+		///< Tests whether the given network descriptor is valid.
 
 	Descriptor Descriptor__invalid() ;
-		// Returns an invalid network descriptor.
+		///< Returns an invalid network descriptor.
 }
 
 #endif

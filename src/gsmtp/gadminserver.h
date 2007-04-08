@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gadminserver.h
-//
+///
+/// \file gadminserver.h
+///
 
 #ifndef G_SMTP_ADMIN_H
 #define G_SMTP_ADMIN_H
@@ -37,28 +37,29 @@
 #include <sstream>
 #include <utility>
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class AdminPeer ;
 	class AdminServer ;
 }
 
-// Class: GSmtp::AdminPeer
-// Description: A derivation of ServerPeer for the administration interface.
-// See also: GSmtp::AdminServer
-//
+/// \class GSmtp::AdminPeer
+/// A derivation of ServerPeer for the administration interface.
+/// \see GSmtp::AdminServer
+///
 class GSmtp::AdminPeer : public GNet::ServerPeer 
 {
 public:
 	AdminPeer( GNet::Server::PeerInfo , AdminServer & , const GNet::Address & local , 
 		const std::string & remote , const G::StringMap & extra_commands , bool with_terminate ) ;
-			// Constructor.
+			///< Constructor.
 
 	virtual ~AdminPeer() ;
-		// Destructor.
+		///< Destructor.
 
 	void notify( const std::string & s0 , const std::string & s1 , const std::string & s2 ) ;
-		// Called when something happens.
+		///< Called when something happens.
 
 private:
 	AdminPeer( const AdminPeer & ) ;
@@ -91,9 +92,9 @@ private:
 	bool m_with_terminate ;
 } ;
 
-// Class: GSmtp::AdminServer
-// Description: A server class which implements the emailrelay administration interface.
-//
+/// \class GSmtp::AdminServer
+/// A server class which implements the emailrelay administration interface.
+///
 class GSmtp::AdminServer : public GNet::MultiServer 
 {
 public:
@@ -101,38 +102,38 @@ public:
 		const Secrets & client_secrets , const GNet::Address & listening_address , bool allow_remote , 
 		const GNet::Address & local_address , const std::string & remote_address ,
 		unsigned int connection_timeout , const G::StringMap & extra_commands , bool with_terminate ) ;
-			// Constructor. The 'store' and 'client-secrets' references
-			// are kept.
+			///< Constructor. The 'store' and 'client-secrets' references
+			///< are kept.
 
 	virtual ~AdminServer() ;
-		// Destructor.
+		///< Destructor.
 
 	void report() const ;
-		// Generates helpful diagnostics.
+		///< Generates helpful diagnostics.
 
 	MessageStore & store() ;
-		// Returns a reference to the message store, as
-		// passed in to the constructor.
+		///< Returns a reference to the message store, as
+		///< passed in to the constructor.
 
 	const Secrets & secrets() const ;
-		// Returns a reference to the secrets object, as
-		// passed in to the constructor. Note that this is 
-		// a "client-side" secrets file, used to authenticate
-		// ourselves with a remote server.
+		///< Returns a reference to the secrets object, as
+		///< passed in to the constructor. Note that this is 
+		///< a "client-side" secrets file, used to authenticate
+		///< ourselves with a remote server.
 
 	GSmtp::Client::Config clientConfig() const ;
-		// Returns the client configuration.
+		///< Returns the client configuration.
 
 	unsigned int connectionTimeout() const ;
-		// Returns the connection timeout, as passed in to the
-		// constructor.
+		///< Returns the connection timeout, as passed in to the
+		///< constructor.
 
 	void notify( const std::string & s0 , const std::string & s1 , const std::string & s2 ) ;
-		// Called when something happens which the admin
-		// user might be interested in.
+		///< Called when something happens which the admin
+		///< user might be interested in.
 
 	void unregister( AdminPeer * ) ;
-		// Called from the AdminPeer destructor.
+		///< Called from the AdminPeer destructor.
 
 private:
 	virtual GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) ;

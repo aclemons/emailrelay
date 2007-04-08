@@ -61,7 +61,8 @@ spool directory so that the POP clients can fetch them.
 
 Note that by default E-MailRelay will always reject connections from remote 
 machines. To allow connections from anywhere use the "--remote-clients" switch,
-but please consider implications if your machine is connected to the internet.
+but please consider the implications if your machine is connected to the 
+internet.
 
 For more information on the command-line options refer to the reference guide
 or run:
@@ -85,10 +86,10 @@ Source code documentation will be generated when building from source if
 
 Configurations
 --------------
-Recent releases were developed on Ubuntu Linux 6.06 using:
-* linux 2.6.15
-* gcc 4.0.3
-* autoconf 2.59
+Recent releases were developed on Ubuntu Linux 6.10 using:
+* linux 2.6.17
+* gcc 4.1.2
+* autoconf 2.60
 
 and on Windows NT4 SP6 using:
 * MSVC 6.0 SP3

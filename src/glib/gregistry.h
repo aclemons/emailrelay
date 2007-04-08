@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gregistry.h
-//
+///
+/// \file gregistry.h
+///
 
 #ifndef G_REGISTRY_H
 #define G_REGISTRY_H
@@ -28,6 +28,7 @@
 #include "gexception.h"
 #include <string>
 
+/// \namespace G
 namespace G
 {
 	class RegistryKey ;
@@ -35,67 +36,68 @@ namespace G
 	class RegistryValue ;
 }
 
-// Class: G::RegistryKey
-// Description: Used to navigate the system registry. Works with
-// the G::RegistryValue class to get and set values.
-// See also: G::RegistryValue
-//
+/// \class G::RegistryKey
+/// Used to navigate the system registry. Works with
+/// the G::RegistryValue class to get and set values.
+/// \see G::RegistryValue
+///
 class G::RegistryKey 
 {
 public:
 	G_EXCEPTION( InvalidHandle , "registry handle error" ) ;
 	G_EXCEPTION( RemoveError , "registry removal error" ) ;
 	G_EXCEPTION( Error , "registry error" ) ;
-	struct NoThrow // Overload discriminator for G::RegistryKey.
+	/// Overload discriminator for G::RegistryKey.
+	struct NoThrow 
 		{} ;
 
 	static RegistryKey currentUser() ;
-		// Returns a key for the current-user "hive".
+		///< Returns a key for the current-user "hive".
 
 	static RegistryKey localMachine() ;
-		// Returns a key for the local-machine "hive".
+		///< Returns a key for the local-machine "hive".
 
 	static RegistryKey classes() ;
-		// Returns a key for the classes-root "hive".
+		///< Returns a key for the classes-root "hive".
 
 	~RegistryKey() ;
-		// Destructor.
+		///< Destructor.
 
 	RegistryKey create( std::string sub_path , bool & created ) const ;
-		// Opens or creates a sub-key.
+		///< Opens or creates a sub-key.
 
 	RegistryKey create( const std::string & sub_path ) const ;
-		// Opens or creates a sub-key.
+		///< Opens or creates a sub-key.
 
 	RegistryKey open( const std::string & sub_path ) const ;
-		// Opens an existing sub-key. Throws if non-existant.
+		///< Opens an existing sub-key. Throws if non-existant.
 
 	RegistryKey open( const std::string & sub_path , const NoThrow & ) const ;
-		// Opens an existing sub-key. Returns
-		// an invalid key on error (eg. if non-existant).
+		///< Opens an existing sub-key. Returns
+		///< an invalid key on error (eg. if non-existant).
 
 	bool valid() const ;
-		// Returns true if a valid key.
-		// (Invalid keys are only created
-		// by the NoThrow overload of
-		// open().)
+		///< Returns true if a valid key.
+		///< (Invalid keys are only created
+		///< by the NoThrow overload of
+		///< open().)
 
 	RegistryKey( const RegistryKey & ) ;
-		// Copy ctor.
+		///< Copy ctor.
 
 	void operator=( const RegistryKey & ) ;
-		// Assignment operator.
+		///< Assignment operator.
 
 	void remove( const std::string & sub_path ) const ;
-		// Removes the named sub-key.
-		// Throws on error.
+		///< Removes the named sub-key.
+		///< Throws on error.
 
 	void remove( const std::string & sub_path , const NoThrow & ) const ;
-		// Removes the named sub-key.
-		// Ignores errors.
+		///< Removes the named sub-key.
+		///< Ignores errors.
 
 	const RegistryKeyImp & imp() const ;
-		// Used by RegistryValue.
+		///< Used by RegistryValue.
 
 private:
 	typedef RegistryKeyImp Imp ;
@@ -109,11 +111,11 @@ private:
 	bool m_is_root ;
 } ;
 
-// Class: G::RegistryValue
-// Description: Works with G::RegistryKey to get and set
-// registry values.
-// See also: G::RegistryKey
-//
+/// \class G::RegistryValue
+/// Works with G::RegistryKey to get and set
+/// registry values.
+/// \see G::RegistryKey
+///
 class G::RegistryValue 
 {
 public:
@@ -124,35 +126,35 @@ public:
 
 	explicit RegistryValue( const RegistryKey & hkey , 
 		const std::string & name = std::string() ) ;
-			// Constructor.
+			///< Constructor.
 
 	std::string getString() const ;
-		// Returns a string value. Throws if the value
-		// does not exist, or if it is not a string type.
+		///< Returns a string value. Throws if the value
+		///< does not exist, or if it is not a string type.
 
 	std::string getString( const std::string & defolt ) const ;
-		// Returns a string. Returns the supplied default 
-		// value if it does not exist.
+		///< Returns a string. Returns the supplied default 
+		///< value if it does not exist.
 
 	bool getBool() const ;
-		// Returns a boolean value. Throws if the value
-		// does not exist.
+		///< Returns a boolean value. Throws if the value
+		///< does not exist.
 
 	g_uint32_t getDword() const ;
-		// Returns an unsigned 32-bit value. Throws if the value
-		// does not exist.
+		///< Returns an unsigned 32-bit value. Throws if the value
+		///< does not exist.
 
 	void set( const std::string & ) ;
-		// Stores a string value.
+		///< Stores a string value.
 
 	void set( const char * ) ;
-		// Stores a string value.
+		///< Stores a string value.
 
 	void set( bool ) ;
-		// Stores a boolean value.
+		///< Stores a boolean value.
 
 	void set( g_uint32_t ) ;
-		// Stores an unsigned 32-bit value.
+		///< Stores an unsigned 32-bit value.
 
 private:
 	std::string getString( const std::string & defolt , bool ) const ;

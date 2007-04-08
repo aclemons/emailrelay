@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// package.h
-//
+///
+/// \file package.h
+///
 
 #ifndef PACKAGE_H__
 #define PACKAGE_H__
@@ -29,27 +29,27 @@
 #include <string>
 #include <stdexcept>
 
-// Class: Package
-// Description: A simple inline 'c++' wrapper to the 'c' unpack interface.
-//
+/// \class Package
+/// A simple inline 'c++' wrapper to the 'c' unpack interface.
+///
 class Package 
 {
 public:
 	explicit Package( G::Path exe ) ;
-		// Constructor.
+		///< Constructor.
 
 	~Package() ;
-		// Destructor.
+		///< Destructor.
 
 	int count() const ;
-		// Returns the number of packaged files.
+		///< Returns the number of packaged files.
 
 	std::string name( int i ) ;
-		// Returns the i'th file name or relative path.
+		///< Returns the i'th file name or relative path.
 
 	void unpack( G::Path base_dir , const std::string & name ) ;
-		// Unpacks the specified file. The target directory
-		// (not just the base directory) must exist.
+		///< Unpacks the specified file. The target directory
+		///< (not just the base directory) must exist.
 
 private:
 	Package( const Package & ) ;

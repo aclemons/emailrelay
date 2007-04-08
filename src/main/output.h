@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// output.h
-//
+///
+/// \file output.h
+///
 
 #ifndef G_MAIN_OUTPUT_H
 #define G_MAIN_OUTPUT_H
@@ -27,26 +27,27 @@
 #include "gdef.h"
 #include <string>
 
+/// \namespace Main
 namespace Main
 {
 	class Output ;
 }
 
-// Class: Main::Output
-// Description: An abstract interface for generating output.
-// The implementation is controlled from main()/WinMain().
-//
+/// \class Main::Output
+/// An abstract interface for generating output.
+/// The implementation is controlled from main()/WinMain().
+///
 class Main::Output 
 {
 public: 
 	virtual unsigned int columns() = 0 ;
-		// Returns the output line width.
+		///< Returns the output line width.
 
 	virtual void output( const std::string & , bool error ) = 0 ;
-		// Outputs the given string.
+		///< Outputs the given string.
 
 	virtual ~Output() ;
-		// Destructor.
+		///< Destructor.
 
 private:
 	void operator=( const Output & ) ; // not implemented

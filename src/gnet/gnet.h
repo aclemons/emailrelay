@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,15 +17,15 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gnet.h
-//
+///
+/// \file gnet.h
+///
 
 #ifndef G_NET_H 
 #define G_NET_H
 
-// Title: gnet.h
-// Description: gnet.h includes o/s-dependent network header files.
+/// Title: gnet.h
+/// gnet.h includes o/s-dependent network header files.
 
 #ifdef G_UNIX
 	#include <sys/types.h>
@@ -36,7 +36,7 @@
 	#include <arpa/inet.h> // for inet_ntoa()
 	typedef int SOCKET ; // used in gdescriptor.h
 #else
-	//#include <winsock.h> // winsock.h comes via windows.h
+	///<#include <winsock.h> // winsock.h comes via windows.h
 	typedef int socklen_t ;
 #endif
 

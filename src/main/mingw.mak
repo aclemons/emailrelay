@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License
@@ -38,20 +38,33 @@ mk_sources=\
 libs=../gpop/gpop.a ../gsmtp/gsmtp.a ../gnet/gnet.a ../win32/gwin32.a ../glib/glib.a 
 syslibs=-lgdi32 -lwsock32
 rc=emailrelay.rc
-fake_mc=mingw.exe
+fake_mc=mingw32-mc.exe
 mc_output=MSG00001.bin messages.rc
-mk_target=emailrelay.exe
+mk_exe_main=emailrelay.exe
+mk_exe_filter=emailrelay-filter-copy.exe
+mk_exe_poke=emailrelay-poke.exe
+mk_exe_passwd=emailrelay-passwd.exe
+mk_exe_submit=emailrelay-submit.exe
 res=$(rc:.rc=.o)
 
-all: $(mk_target)
+all: $(mk_exe_main) $(mk_exe_filter) $(mk_exe_poke) $(mk_exe_passwd) $(mk_exe_submit)
 
 include ../mingw-common.mak
 
-$(mk_target): $(mk_objects) $(res) $(libs)
-	$(mk_link) $(mk_link_flags) -o $(mk_target) $(mk_objects) $(res) $(libs) $(syslibs)
+$(mk_exe_main): $(mk_objects) $(res) $(libs)
+	$(mk_link) $(mk_link_flags) -o $(mk_exe_main) $(mk_objects) $(res) $(libs) $(syslibs)
 
-emailrelay-filter-copy.exe: filter_copy.o
+$(mk_exe_filter): filter_copy.o
 	$(mk_link) $(mk_link_flags) -o $@ $< $(libs) $(syslibs)
+
+$(mk_exe_poke): poke.o
+	$(mk_link) $(mk_link_flags) -o $@ $< $(libs) $(syslibs)
+
+$(mk_exe_passwd): passwd.o legal.o
+	$(mk_link) $(mk_link_flags) -o $@ passwd.o legal.o $(libs) $(syslibs)
+
+$(mk_exe_submit): submit.o legal.o
+	$(mk_link) $(mk_link_flags) -o $@ submit.o legal.o $(libs) $(syslibs)
 
 $(fake_mc): mingw.o
 	$(mk_link) $(mk_link_flags) -o $@ $<

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -388,6 +388,15 @@ std::string G::Path::extension() const
 	return m_extension ;
 }
 
+G::Path G::Path::join( const G::Path & p1 , const G::Path & p2 )
+{
+	G::Path result( p1 ) ;
+	Strings list = p2.split() ;
+	for( Strings::iterator p = list.begin() ; p != list.end() ; ++p )
+		result.pathAppend( *p ) ;
+	return result ;
+}
+
 G::Strings G::Path::split( bool no_dot ) const
 {
 	Path path( *this ) ;
@@ -431,3 +440,4 @@ G::Path &G::Path::operator=( const Path & other )
 }
 
 
+/// \file gpath.cpp

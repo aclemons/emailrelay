@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -330,7 +330,7 @@ std::string GGui::EditBox::get() const
 	char *buffer = new char[length+2] ;
 	G_ASSERT( buffer != NULL ) ;
 	::GetWindowText( handle() , buffer , length+1 ) ;
-	G_ASSERT( strlen(buffer) <= (unsigned)length ) ;
+	buffer[length+1] = '\0' ;
 	std::string s( buffer ) ;
 	delete [] buffer ;
 	return s ;
@@ -424,3 +424,4 @@ void GGui::Button::disable()
 	::EnableWindow( handle() , false ) ;
 }
 
+/// \file gcontrol.cpp

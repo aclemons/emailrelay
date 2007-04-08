@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gstoredmessage.h
-//
+///
+/// \file gstoredmessage.h
+///
 
 #ifndef G_SMTP_STORED_MESSAGE_H
 #define G_SMTP_STORED_MESSAGE_H
@@ -29,61 +29,62 @@
 #include "gstrings.h"
 #include "gpath.h"
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class StoredMessage ;
 }
 
-// Class: GSmtp::StoredMessage
-// Description: An abstract class for messages which have
-// come from the store.
-// See also: GSmtp::MessageStore, GSmtp::MessageStore::get()
-//
+/// \class GSmtp::StoredMessage
+/// An abstract class for messages which have
+/// come from the store.
+/// \see GSmtp::MessageStore, GSmtp::MessageStore::get()
+///
 class GSmtp::StoredMessage 
 {
 public:
 	virtual std::string name() const = 0 ;
-		// Returns some sort of unique identifier for the message.
+		///< Returns some sort of unique identifier for the message.
 
 	virtual std::string location() const = 0 ;
-		// Returns another sort of unique identifier for the message.
+		///< Returns another sort of unique identifier for the message.
 
 	virtual const std::string & from() const = 0 ;
-		// Returns the envelope 'from' field.
+		///< Returns the envelope 'from' field.
 
 	virtual const G::Strings & to() const = 0 ;
-		// Returns the envelope 'to' fields.
+		///< Returns the envelope 'to' fields.
 
 	virtual std::auto_ptr<std::istream> extractContentStream() = 0 ;
-		// Extracts the content stream.
-		// Can only be called once.
+		///< Extracts the content stream.
+		///< Can only be called once.
 
 	virtual void destroy() = 0 ;
-		// Deletes the message within the store.
+		///< Deletes the message within the store.
 
 	virtual void fail( const std::string & reason ) = 0 ;
-		// Marks the message as failed within the store.
+		///< Marks the message as failed within the store.
 
 	virtual bool eightBit() const = 0 ;
-		// Returns true if the message content (header+body)
-		// contains a character with the most significant
-		// bit set.
+		///< Returns true if the message content (header+body)
+		///< contains a character with the most significant
+		///< bit set.
 
 	virtual std::string authentication() const = 0 ;
-		// Returns the message authentication string.
+		///< Returns the message authentication string.
 
 	virtual size_t remoteRecipientCount() const = 0 ;
-		// Returns the number of non-local recipients.
+		///< Returns the number of non-local recipients.
 
 	virtual size_t errorCount() const = 0 ;
-		// Returns the number of accumulated submission errors.
+		///< Returns the number of accumulated submission errors.
 
 	virtual void sync() = 0 ;
-		// Syncronises the message object with the underlying
-		// storage.
+		///< Syncronises the message object with the underlying
+		///< storage.
 
 	virtual ~StoredMessage() ;
-		// Destructor.
+		///< Destructor.
 
 private:
 	void operator=( const StoredMessage & ) ; // not implemented

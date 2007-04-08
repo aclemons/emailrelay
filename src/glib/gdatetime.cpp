@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -104,3 +104,4 @@ bool G::DateTime::same( const BrokenDownTime & bdt1 , const BrokenDownTime & bdt
 		bdt1.tm_min == bdt2.tm_min ;
 }
 
+/// \file gdatetime.cpp

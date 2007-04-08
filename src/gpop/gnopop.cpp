@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -51,6 +51,11 @@ std::string GPop::Secrets::secret(  const std::string & , const std::string & ) 
 	return std::string() ;
 }
 
+bool GPop::Secrets::contains( const std::string & mechanism ) const
+{
+	return false ;
+}
+
 // ==
 
 GPop::Store::Store( G::Path , bool , bool )
@@ -71,6 +76,10 @@ GPop::Server::Server( Store & store , const Secrets & secrets , Config ) :
 {
 }
 
+GPop::Server::~Server()
+{
+}
+
 void GPop::Server::report() const
 {
 }
@@ -81,3 +90,4 @@ GNet::ServerPeer * GPop::Server::newPeer( GNet::Server::PeerInfo )
 }
 
 
+/// \file gnopop.cpp

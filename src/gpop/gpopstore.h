@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gpopstore.h
-//
+///
+/// \file gpopstore.h
+///
 
 #ifndef G_POP_STORE_H
 #define G_POP_STORE_H
@@ -33,6 +33,7 @@
 #include <set>
 #include <list>
 
+/// \namespace GPop
 namespace GPop
 {
 	class Store ;
@@ -40,28 +41,28 @@ namespace GPop
 	class StoreLockEntry ;
 }
 
-// Class: GPop::Store
-// Description: A message store. Unlike the SMTP message store the
-// POP message store allows content files to be in the envelope file's
-// parent directory.
-//
+/// \class GPop::Store
+/// A message store. Unlike the SMTP message store the
+/// POP message store allows content files to be in the envelope file's
+/// parent directory.
+///
 class GPop::Store 
 {
 public:
 	G_EXCEPTION( InvalidDirectory , "invalid spool directory" ) ;
 
 	Store( G::Path spool_dir , bool by_name , bool allow_delete ) ;
-		// Constructor.
+		///< Constructor.
 
 	G::Path dir() const ;
-		// Returns the spool directory path.
+		///< Returns the spool directory path.
 
 	bool allowDelete() const ;
-		// Returns true if files can be deleted.
+		///< Returns true if files can be deleted.
 
 	bool byName() const ;
-		// Returns true if the spool directory is affected
-		// by the user name.
+		///< Returns true if the spool directory is affected
+		///< by the user name.
 
 private:
 	Store( const Store & ) ;
@@ -75,10 +76,10 @@ private:
 	bool m_allow_delete ;
 } ;
 
-// Class: GPop::StoreLockEntry
-// Description: Represents a file in the GPop::Store.
-// See also: GPop::StoreLock
-//
+/// \class GPop::StoreLockEntry
+/// Represents a file in the GPop::Store.
+/// \see GPop::StoreLock
+///
 class GPop::StoreLockEntry  
 {
 public:
@@ -94,10 +95,10 @@ public:
 	}
 } ;
 
-// Class: GPop::StoreLock
-// Description: Represents an exclusive lock on the message store.
-// See also: RFC-1939
-//
+/// \class GPop::StoreLock
+/// Represents an exclusive lock on the message store.
+/// \see RFC-1939
+///
 class GPop::StoreLock 
 {
 public:
@@ -109,58 +110,59 @@ public:
 	typedef void (*Fn)(std::ostream&,const std::string&) ;
 
 	explicit StoreLock( Store & store ) ;
-		// Constructor. Keeps the reference.
-		//
-		// Postcondition: !locked()
+		///< Constructor. Keeps the reference.
+		///<
+		///< Postcondition: !locked()
 
 	void lock( const std::string & user ) ;
-		// Initialisation.
-		//
-		// Precondition: !user.empty() && !locked()
-		// Postcondition: locked()
+		///< Initialisation.
+		///<
+		///< Precondition: !user.empty() && !locked()
+		///< Postcondition: locked()
 
 	bool locked() const ;
-		// Returns true if locked.
+		///< Returns true if locked.
 
 	~StoreLock() ;
-		// Destructor.
+		///< Destructor.
 
 	Size messageCount() const ;
-		// Returns the store's message count.
+		///< Returns the store's message count.
 
 	Size totalByteCount() const ;
-		// Returns the store's total byte count.
+		///< Returns the store's total byte count.
 
 	Size byteCount( int id ) const ;
-		// Returns a message size.
+		///< Returns a message size.
 
 	std::string uidl( int id ) const ;
-		// Returns a message's unique id.
+		///< Returns a message's unique id.
 
 	bool valid( int id ) const ;
-		// Validates a message number.
+		///< Validates a message number.
 
 	List list( int id = -1 ) const ;
-		// Lists messages in the store.
+		///< Lists messages in the store.
 
 	std::auto_ptr<std::istream> get( int id ) const ;
-		// Retrieves the message content.
+		///< Retrieves the message content.
 
 	void remove( int ) ;
-		// Marks the message for removal.
+		///< Marks the message for removal.
 
 	void rollback() ;
-		// Rolls back remove()als but retains the lock.
-		//
-		// Precondition: locked()
-		// Postcondition: locked() [sic]
+		///< Rolls back remove()als but retains the lock.
+		///<
+		///< Precondition: locked()
+		///< Postcondition: locked() [sic]
 
 	void commit() ;
-		// Commits remove()als.
-		// Postcondition: !locked()
+		///< Commits remove()als.
+		///< Postcondition: !locked()
 
 private:
-	struct File // A private implementation class used by GPop::StoreLock.
+	/// A private implementation class used by GPop::StoreLock.
+	struct File 
 	{
 		std::string name ; // content name
 		StoreLockEntry::Size size ;

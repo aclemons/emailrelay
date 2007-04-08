@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -41,14 +41,14 @@ namespace GNet
 	class WinsockWindow ;
 } ;
 
-// Class: GNet::Winsock
-// Description: A concrete implementation of GNet::EventLoop
-// using the WinSock system.
-//
-// Note that WinSock events are delivered as messages to the 
-// application's main message queue, and these messages have 
-// to be passed on the the WinSock layer.
-//
+/// \class GNet::Winsock
+/// A concrete implementation of GNet::EventLoop
+///  using the WinSock system.
+/// 
+///  Note that WinSock events are delivered as messages to the 
+///  application's main message queue, and these messages have 
+///  to be passed on the the WinSock layer.
+/// 
 class GNet::Winsock : public GNet::EventLoop 
 {
 public:
@@ -144,10 +144,10 @@ private:
 	unsigned int m_timer_id ;
 } ;
 
-// Class: GNet::WinsockWindow
-// Description: An private implementation class used by GNet::Winsock
-// to hook into GGui::Window event processing.
-//
+/// \class GNet::WinsockWindow
+/// An private implementation class used by GNet::Winsock
+///  to hook into GGui::Window event processing.
+/// 
 class GNet::WinsockWindow : public GGui::WindowHidden 
 {
 public:

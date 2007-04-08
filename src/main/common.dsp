@@ -265,6 +265,10 @@ SOURCE=..\gnet\gmonitor.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\gnet\gmultiserver.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\gsmtp\gnewfile.cpp
 # End Source File
 # Begin Source File
@@ -463,6 +467,10 @@ SOURCE=..\glib\md5.cpp
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=..\gnet\gmultiserver.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\glib\gslot.h

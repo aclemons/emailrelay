@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -39,9 +39,9 @@ namespace
 	const char * login_challenge_2 = "Password:" ;
 }
 
-// Class: GSmtp::SaslServerImp
-// Description: A private pimple-pattern implementation class used by GSmtp::SaslServer.
-//
+/// \class GSmtp::SaslServerImp
+/// A private pimple-pattern implementation class used by GSmtp::SaslServer.
+/// 
 class GSmtp::SaslServerImp 
 {
 public:
@@ -71,9 +71,9 @@ public:
 	std::string mechanisms( const std::string & ) const ;
 } ;
 
-// Class: GSmtp::SaslClientImp
-// Description: A private pimple-pattern implementation class used by GSmtp::SaslClient.
-//
+/// \class GSmtp::SaslClientImp
+/// A private pimple-pattern implementation class used by GSmtp::SaslClient.
+/// 
 class GSmtp::SaslClientImp 
 {
 public:

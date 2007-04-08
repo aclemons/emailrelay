@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -138,20 +138,20 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 
 static void run( const G::Arg & arg )
 {
-	G::GetOpt getopt( arg , 
+	G::GetOpt opt( arg , 
 		"v/verbose/prints the path of the created envelope file/0//1|"
 		"s/spool-dir/specifies the spool directory/1/dir/1|"
 		"f/from/sets the envelope sender/1/name/1|"
 		"h/help/shows this help/0//1" ) ;
 
-	if( getopt.hasErrors() )
+	if( opt.hasErrors() )
 	{
-		getopt.showErrors( std::cerr , arg.prefix() ) ;
+		opt.showErrors( std::cerr , arg.prefix() ) ;
 	}
-	else if( getopt.contains("help") )
+	else if( opt.contains("help") )
 	{
 		std::ostream & stream = std::cerr ;
-		getopt.showUsage( stream , arg.prefix() , std::string(" <to-address> [<to-address> ...]") ) ;
+		opt.showUsage( stream , arg.prefix() , std::string(" <to-address> [<to-address> ...]") ) ;
 		stream
 			<< std::endl
 			<< Main::Legal::warranty("","\n")
@@ -159,10 +159,10 @@ static void run( const G::Arg & arg )
 			<< Main::Legal::copyright()
 			<< std::endl ;
 	}
-	else if( getopt.args().c() == 1U )
+	else if( opt.args().c() == 1U )
 	{
 		std::cerr 
-			<< getopt.usageSummary( arg.prefix() , " <to-address> [<to-address> ...]" ) 
+			<< opt.usageSummary( arg.prefix() , " <to-address> [<to-address> ...]" ) 
 			<< std::endl ;
 	}
 	else
@@ -171,15 +171,15 @@ static void run( const G::Arg & arg )
 		event_loop->init() ;
 
 		G::Path spool_dir = GSmtp::MessageStore::defaultDirectory() ;
-		if( getopt.contains("spool-dir") )
-			spool_dir = getopt.value("spool-dir") ;
+		if( opt.contains("spool-dir") )
+			spool_dir = opt.value("spool-dir") ;
 
 		std::string from ;
-		if( getopt.contains("from") )
-			from = getopt.value("from") ;
+		if( opt.contains("from") )
+			from = opt.value("from") ;
 
 		G::Strings to_list ;
-		G::Arg a = getopt.args() ;
+		G::Arg a = opt.args() ;
 		for( unsigned int i = 1U ; i < a.c() ; i++ )
 		{
 			std::string to = a.v(i) ;
@@ -204,7 +204,7 @@ static void run( const G::Arg & arg )
 		} 
 
 		std::string new_path = process( spool_dir , stream , to_list , from , header ) ;
-		if( getopt.contains("verbose") )
+		if( opt.contains("verbose") )
 			std::cout << new_path << std::endl ;
 	}
 }
@@ -228,3 +228,4 @@ int main( int argc , char * argv[] )
 	return EXIT_FAILURE ;
 }
 
+/// \file submit.cpp

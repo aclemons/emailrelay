@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gscannerclient.h
-//
+///
+/// \file gscannerclient.h
+///
 
 #ifndef G_SCANNER_CLIENT_H
 #define G_SCANNER_CLIENT_H
@@ -34,15 +34,16 @@
 #include "glinebuffer.h"
 #include "gexception.h"
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class ScannerClient ;
 }
 
-// Class: GSmtp::ScannerClient
-// Description: A class which interacts with a remote 'scanner' process. The
-// interface is asynchronous, with separate 'connect' and 'scan' stages.
-//
+/// \class GSmtp::ScannerClient
+/// A class which interacts with a remote 'scanner' process. The
+/// interface is asynchronous, with separate 'connect' and 'scan' stages.
+///
 class GSmtp::ScannerClient : private GNet::Client , private GNet::TimeoutHandler 
 {
 public:
@@ -50,46 +51,46 @@ public:
 
 	ScannerClient( const std::string & host_and_service , 
 		unsigned int connect_timeout , unsigned int response_timeout ) ;
-			// Constructor.
+			///< Constructor.
 
 	ScannerClient( const std::string & host , const std::string & service , 
 		unsigned int connect_timeout , unsigned int response_timeout ) ;
-			// Constructor.
+			///< Constructor.
 
 	G::Signal2<std::string,bool> & connectedSignal() ;
-		// Returns a signal which indicates that connection
-		// is complete.
-		//
-		// The signal parameters are the empty string on success
-		// or a failure reason, and a boolean flag which is
-		// true if the failure reason implies a temporary
-		// error.
+		///< Returns a signal which indicates that connection
+		///< is complete.
+		///<
+		///< The signal parameters are the empty string on success
+		///< or a failure reason, and a boolean flag which is
+		///< true if the failure reason implies a temporary
+		///< error.
 
 	G::Signal2<bool,std::string> & doneSignal() ;
-		// Returns a signal which indicates that scanning
-		// is complete.
-		//
-		// The signal parameters are a boolean flag and
-		// a string. If the flag is true then the string is
-		// the response from the scanner, empty on success. 
-		// If the flag is false then there has been a network 
-		// error and the string is a reason string.
+		///< Returns a signal which indicates that scanning
+		///< is complete.
+		///<
+		///< The signal parameters are a boolean flag and
+		///< a string. If the flag is true then the string is
+		///< the response from the scanner, empty on success. 
+		///< If the flag is false then there has been a network 
+		///< error and the string is a reason string.
 
 	void startConnecting() ;
-		// Initiates a connection to the scanner.
-		//
-		// The connectedSignal() will get raised
-		// some time later.
+		///< Initiates a connection to the scanner.
+		///<
+		///< The connectedSignal() will get raised
+		///< some time later.
 
 	std::string startScanning( const G::Path & path ) ;
-		// Starts the scanning process for the given
-		// content file.
-		//
-		// Returns an error string if an immediate error. 
-		//
-		// The doneSignal() will get raised some time 
-		// after startScanning() returns the empty 
-		// string.
+		///< Starts the scanning process for the given
+		///< content file.
+		///<
+		///< Returns an error string if an immediate error. 
+		///<
+		///< The doneSignal() will get raised some time 
+		///< after startScanning() returns the empty 
+		///< string.
 
 private:
 	virtual void onConnect( GNet::Socket & socket ) ; // GNet::Client

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "glocal.h"
 #include "gresolve.h"
+#include "gstr.h"
 #include "glog.h"
 #include <sys/utsname.h>
 #include <cstdlib> // getenv
@@ -46,9 +47,8 @@ std::string GNet::Local::hostname()
 	//
 	if( name.empty() )
 	{
-		static const char * p = std::getenv( "HOSTNAME" ) ;
-		static std::string s( p ? p : "" ) ;
-		name = s ;
+		const char * p = std::getenv( "HOSTNAME" ) ;
+		name = G::Str::toPrintableAscii( std::string(p?p:"") , '_' ) ;
 	}
 
 	return name ;
@@ -73,3 +73,4 @@ std::string GNet::Local::fqdnImp()
 	return rc.first.canonical_name ;
 }
 
+/// \file glocal_unix.cpp

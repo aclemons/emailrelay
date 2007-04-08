@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gpopserver.h
-//
+///
+/// \file gpopserver.h
+///
 
 #ifndef G_POP_SERVER_H
 #define G_POP_SERVER_H
@@ -38,17 +38,18 @@
 #include <memory>
 #include <list>
 
+/// \namespace GPop
 namespace GPop
 {
 	class Server ;
 	class ServerPeer ;
 }
 
-// Class: GPop::ServerPeer
-// Description: Represents a connection from a POP client.
-// Instances are created on the heap by Server (only).
-// See also: GPop::Server
-//
+/// \class GPop::ServerPeer
+/// Represents a connection from a POP client.
+/// Instances are created on the heap by Server (only).
+/// \see GPop::Server
+///
 class GPop::ServerPeer : public GNet::Sender , private GPop::ServerProtocol::Sender 
 {
 public:
@@ -56,7 +57,7 @@ public:
  
 	ServerPeer( GNet::Server::PeerInfo , Server & , Store & , const Secrets & , 
 		std::auto_ptr<ServerProtocol::Text> ptext , ServerProtocol::Config ) ;
-			// Constructor.
+			///< Constructor.
 
 private:
 	ServerPeer( const ServerPeer & ) ;
@@ -75,14 +76,15 @@ private:
 	ServerProtocol m_protocol ; // order dependency -- last
 } ;
 
-// Class: GPop::Server
-// Description: A POP server class.
-//
+/// \class GPop::Server
+/// A POP server class.
+///
 class GPop::Server : public GNet::MultiServer 
 {
 public:
 	G_EXCEPTION( Overflow , "too many interface addresses" ) ;
-	struct Config // A structure containing GPop::Server configuration parameters.
+	/// A structure containing GPop::Server configuration parameters.
+	struct Config 
 	{
 		bool allow_remote ;
 		unsigned int port ;
@@ -92,16 +94,16 @@ public:
 	} ;
 
 	Server( Store & store , const Secrets & , Config ) ;
-		// Constructor. The 'secrets' reference is kept.
+		///< Constructor. The 'secrets' reference is kept.
 
 	virtual ~Server() ;
-		// Destructor.
+		///< Destructor.
 
 	GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) ;
-		// From MultiServer.
+		///< From MultiServer.
 
 	void report() const ;
-		// Generates helpful diagnostics after construction.
+		///< Generates helpful diagnostics after construction.
 
 private:
 	Server( const Server & ) ; // not implemented

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -33,7 +33,7 @@ QString Legal::text()
 		"<p>You may redistribure copies of this program under</p>"
 		"<p>the terms of the GNU General Public License.</p>"
 		"<p></p>"
-		"<p>Copyright (C) 2001-2006 Graeme Walker</p>" 
+		"<p>Copyright (C) 2001-2007 Graeme Walker</p>" 
 		"</center>" ) ;
 }
 
@@ -384,3 +384,4 @@ QString Legal::license()
 	) ;
 }
 
+/// \file legal.cpp

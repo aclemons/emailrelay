@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+   Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
    
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -49,6 +49,7 @@ typedef struct M_tag
 {
 	Fn fn ;
 	unsigned long max_size ;
+	bool compressed ;
 	Entry * map ;
 	char * path ;
 	FILE * input ;
@@ -59,7 +60,12 @@ typedef struct M_tag
 #ifdef _WIN32
 static const char * r = "rb" ;
 static const char * w = "wb" ;
+static int os_mkdir( const char * p , int mode ) { return _mkdir( p ) ; }
+ #ifndef G_MINGW
+  static int access( const char * p , int mode ) { return _access( p , mode ) ; }
+ #endif
 #else
+static int os_mkdir( const char * p , int mode ) { return mkdir( p , mode ) ; }
 static const char * r = "r" ;
 static const char * w = "w" ;
 #endif
@@ -68,10 +74,16 @@ static void unpack_delete_( M * m ) ;
 static bool unpack_init( M * m ) ;
 
 /* still compile if no zlib but exit at run-time */
+#ifdef NO_ZLIB
+ #ifdef HAVE_ZLIB_H
+  #undef HAVE_ZLIB_H
+ #endif
+#endif
 #ifdef HAVE_ZLIB_H
  #include <zlib.h>
+ static bool have_zlib( void ) { return true ; }
 #else
- #pragma warning("no zlib")
+ static bool have_zlib( void ) { return false ; }
  typedef char Bytef ;
  char * const Z_NULL = 0 ;
  int Z_SYNC_FLUSH = 0 ;
@@ -98,6 +110,77 @@ static char * strdup_( const char * src )
 	return dst ;
 }
 
+static char * first_slash( char * p )
+{
+	char * p1 = p ? strchr( p , '/' ) : NULL ;
+	char * p2 = p ? strchr( p , '\\' ) : NULL ;
+	return ( p1 && p2 ) ? ( p1 > p2 ? p1 : p2 ) : ( p1 ? p1 : p2 ) ;
+}
+
+static char * last_slash( char * p )
+{
+	char * p1 = p ? strrchr( p , '/' ) : NULL ;
+	char * p2 = p ? strrchr( p , '\\' ) : NULL ;
+	return ( p1 && p2 ) ? ( p1 > p2 ? p1 : p2 ) : ( p1 ? p1 : p2 ) ;
+}
+
+static char * after( char * p )
+{
+	return p ? (p+1) : p ;
+}
+
+static bool is_slash( const char * p )
+{
+	return p && ( *p == '/' || *p == '\\' ) ;
+}
+
+static char * chomp( char * path )
+{
+	bool windows_has_drive = strlen(path) > 2U && path[1] == ':' ;
+	bool windows_is_unc = strlen(path) > 2U && is_slash(path+0) && is_slash(path+1) ;
+	char * unc_root = first_slash( after(first_slash(path+2)) ) ;
+	char * p = last_slash( path ) ;
+	bool is_root = ( p == path ) || ( windows_has_drive && p == (path+2) ) || ( windows_is_unc && p == unc_root ) ;
+	p = (p && !is_root) ? p : NULL ;
+	char * nul = p ? p : (path+strlen(path)) ;
+	*nul = '\0' ;
+	return p ;
+}
+
+static bool unchomp( char * p , const char * ref )
+{
+	if( p == NULL || ref == NULL || strlen(p) == strlen(ref) )
+	{
+		return false ;
+	}
+	else
+	{
+		char c = ref[strlen(p)] ;
+		p[strlen(p)] = c ;
+		return true ;
+	}
+}
+
+static bool mkdir_for( const char * path_in )
+{
+	bool ok = true ;
+	char * path = strdup_( path_in ) ;
+	if( path && chomp(path) )
+	{
+		char * dir = strdup_( path ) ;
+		char * p = NULL ;
+		while( ( p = chomp(path) ) ) ;
+		do
+		{
+			ok = ( 0 == access(path,F_OK) ) || ( 0 == os_mkdir(path,0777) ) ;
+			if( !ok ) break ;
+		} while( unchomp(path,dir) ) ;
+		if( dir ) free( dir ) ;
+	}
+	if( path ) free( path ) ;
+	return ok ;
+}
+
 static Bytef * zptr( char * p )
 {
 	return (Bytef*)p ;
@@ -112,6 +195,7 @@ static M * unpack_new_( const char * path , Fn fn )
 
 	m->fn = fn ;
 	m->max_size = 0UL ;
+	m->compressed = 0 ;
 	m->map = NULL ;
 	m->path = strdup_( path ) ;
 	m->input = NULL ;
@@ -205,6 +289,7 @@ static bool unpack_init( M * m )
 	unsigned long exe_size = 0UL ;
 	unsigned long exe_offset = 0UL ;
 	unsigned long file_offset = 0UL ;
+	int c = 0 ;
 	int rc = 0 ;
 	Entry * tail = NULL ;
 
@@ -235,8 +320,16 @@ static bool unpack_init( M * m )
 	check_that( (exe_offset+12U) < exe_size , "invalid offset" ) ;
 	check_that( !feof(m->input) && !ferror(m->input) , "offset read error" ) ;
 
-	/* seek to the directory */
+	/* read the compression flag */
 	rc = fseek( m->input , exe_offset , SEEK_SET ) ;
+	check_that( !feof(m->input) && !ferror(m->input) , "table seek error" ) ;
+	c = fgetc( m->input ) ;
+	check_that( ( c == '1' || c == '0' ) && c != EOF && !feof(m->input) && !ferror(m->input) , "format error" ) ;
+	m->compressed = c == '1' ;
+	check_that( !m->compressed || have_zlib() , "cannot decompress: not built with zlib" ) ;
+
+	/* seek to the directory */
+	rc = fseek( m->input , exe_offset + 2UL , SEEK_SET ) ;
 	check_that( !feof(m->input) && !ferror(m->input) , "table seek error" ) ;
 
 	/* read the directory */
@@ -280,34 +373,34 @@ static bool unpack_init( M * m )
 			m->max_size = file_size ;
 	}
 
-	/* reserve a buffer */
-	check_that( m->max_size < 100000000UL , "too big" ) ; /* sanity limit */
-	m->buffer = malloc( m->max_size + 1UL ) ;
-	check_that( m->buffer != NULL , "out of memory" ) ;
-
 	/* eat the newline */
 	rc = fgetc( m->input ) ;
 	check_that( rc != EOF , "file-map read error" ) ;
 	m->start = ftell( m->input ) ;
 
+	/* reserve a buffer */
+	check_that( m->max_size < 100000000UL , "too big" ) ; /* sanity limit */
+	m->buffer = malloc( m->max_size + 1UL ) ;
+	check_that( m->buffer != NULL , "out of memory" ) ;
+
 	return true ;
 }
 
-static bool unpack_imp( M * m , const char * to_dir , const Entry * entry )
+static bool unpack_imp( M * m , const char * base_dir , const Entry * entry )
 {
 	int rc = 0 ;
 	FILE * output = NULL ;
 
 	/* belt-and-braces */
 	if( m == NULL ) return false ;
-	check_that( to_dir != NULL , "usage error" ) ;
+	check_that( base_dir != NULL , "usage error" ) ;
 	check_that( entry != NULL , "internal error" ) ;
 
 	/* sync up */
 	rc = fseek( m->input , m->start + entry->offset , SEEK_SET ) ;
 	check_that( rc == 0 , "seek error" ) ;
 
-	/* read file data */
+	/* read file data into the buffer */
 	{
 		unsigned long i = 0UL ;
 		char * p = m->buffer ;
@@ -325,13 +418,17 @@ static bool unpack_imp( M * m , const char * to_dir , const Entry * entry )
 	/* open the output */
 	output = NULL ;
 	{
+		bool ok = false ;
 		char * to_path = NULL ;
 
-		to_path = malloc( strlen(to_dir) + 1 + strlen(entry->path) + 1 ) ;
+		to_path = malloc( strlen(base_dir) + 1 + strlen(entry->path) + 1 ) ;
 		check_that( to_path != NULL , "out of memory" ) ;
-		strcpy( to_path , to_dir ) ;
+		strcpy( to_path , base_dir ) ;
 		strcat( to_path , "/" ) ;
 		strcat( to_path , entry->path ) ;
+
+		ok = mkdir_for( to_path ) ;
+		check_that( ok , "cannot create output directory" ) ;
 
 		output = fopen( to_path , w ) ;
 		free( to_path ) ;
@@ -340,6 +437,7 @@ static bool unpack_imp( M * m , const char * to_dir , const Entry * entry )
 	}
 
 	/* unzip the buffer into the output file */
+	if( m->compressed )
 	{
 		char buffer_out[1024U*8U] ;
 		z_stream z ;
@@ -375,6 +473,11 @@ static bool unpack_imp( M * m , const char * to_dir , const Entry * entry )
 		rc = inflateEnd( &z ) ;
 		check_that( rc == Z_OK , "inflateEnd() error" ) ;
 	}
+	else
+	{
+		size_t n_written = fwrite( m->buffer , 1 , entry->size , output ) ;
+		check_that( entry->size == n_written , "write error" ) ;
+	}
 
 	check_that( !ferror(output) , "write error" ) ;
 	rc = fclose( output ) ;
@@ -382,20 +485,20 @@ static bool unpack_imp( M * m , const char * to_dir , const Entry * entry )
 	return true ;
 }
 
-static bool unpack_all_( M * m , const char * to_dir )
+static bool unpack_all_( M * m , const char * base_dir )
 {
 	const Entry * p = NULL ;
 	if( m == NULL ) return false ;
 	for( p = m->map ; p != NULL ; p = p->next )
 	{
-		bool ok = unpack_imp( m , to_dir , p ) ;
+		bool ok = unpack_imp( m , base_dir , p ) ;
 		if( !ok )
 			return false ;
 	}
 	return true ;
 }
 
-static bool unpack_file_( M * m , const char * to_dir , const char * name )
+static bool unpack_file_( M * m , const char * base_dir , const char * name )
 {
 	const Entry * p = NULL ;
 	bool ok = false ;
@@ -404,7 +507,7 @@ static bool unpack_file_( M * m , const char * to_dir , const char * name )
 	{
 		if( 0 == strcmp(p->path,name) )
 		{
-			ok = unpack_imp( m , to_dir , p ) ;
+			ok = unpack_imp( m , base_dir , p ) ;
 			break ;
 		}
 	}
@@ -440,14 +543,14 @@ unsigned long unpack_packed_size( const Unpack * p , int i )
 	return unpack_packed_size_( (const M*)p , i ) ;
 }
 
-int unpack_all( Unpack * p , const char * to_dir )
+int unpack_all( Unpack * p , const char * base_dir )
 {
-	return unpack_all_( (M*)p , to_dir ) ;
+	return unpack_all_( (M*)p , base_dir ) ;
 }
 
-int unpack_file( Unpack * p , const char * to_dir , const char * name )
+int unpack_file( Unpack * p , const char * base_dir , const char * name )
 {
-	return unpack_file_( (M*)p , to_dir , name ) ;
+	return unpack_file_( (M*)p , base_dir , name ) ;
 }
 
 void unpack_delete( Unpack * p )

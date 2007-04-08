@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gsecrets.h
-//
+///
+/// \file gsecrets.h
+///
 
 #ifndef G_SMTP_SECRETS_H
 #define G_SMTP_SECRETS_H
@@ -30,18 +30,19 @@
 #include "gexception.h"
 #include "gsasl.h"
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class Secrets ;
 	class SecretsImp ;
 }
 
-// Class: GSmtp::Secrets
-// Description: A simple interface to a store of secrets as used in
-// authentication. The default implementation uses a flat file.
-//
-// See also: GSmtp::SaslClient, GSmtp::SaslServer
-//
+/// \class GSmtp::Secrets
+/// A simple interface to a store of secrets as used in
+/// authentication. The default implementation uses a flat file.
+///
+/// \see GSmtp::SaslClient, GSmtp::SaslServer
+///
 class GSmtp::Secrets : public GSmtp::SaslClient::Secrets , public GSmtp::SaslServer::Secrets 
 {
 public:
@@ -50,54 +51,54 @@ public:
 	explicit Secrets( const std::string & storage_path , 
 		const std::string & debug_name ,
 		const std::string & server_type = std::string() ) ;
-			// Constructor. In principle the repository 'storage-path'
-			// can be a path to a file, a database connection string, 
-			// etc.
-			//
-			// The 'debug-name' is used in log and error messages to 
-			// identify the repository.
-			//
-			// The 'server-type' parameter can be used to select 
-			// a different set of server-side authentication records 
-			// that may be stored in the same repository.
-			//
-			// Throws on error, although an empty path is not
-			// considered an error: see valid().
+			///< Constructor. In principle the repository 'storage-path'
+			///< can be a path to a file, a database connection string, 
+			///< etc.
+			///<
+			///< The 'debug-name' is used in log and error messages to 
+			///< identify the repository.
+			///<
+			///< The 'server-type' parameter can be used to select 
+			///< a different set of server-side authentication records 
+			///< that may be stored in the same repository.
+			///<
+			///< Throws on error, although an empty path is not
+			///< considered an error: see valid().
 
 	virtual ~Secrets() ;
-		// Destructor.
+		///< Destructor.
 
 	virtual bool valid() const ;
-		// Returns false if the path was empty.
-		//
-		// Override from Valid virtual base class.
+		///< Returns false if the path was empty.
+		///<
+		///< Override from Valid virtual base class.
 
 	virtual std::string id( const std::string & mechanism ) const ;
-		// Returns the default id for client-side
-		// authentication.
-		//
-		// Override from SaslClient::Secrets.
+		///< Returns the default id for client-side
+		///< authentication.
+		///<
+		///< Override from SaslClient::Secrets.
 
 	virtual std::string secret( const std::string & mechanism ) const ;
-		// Returns the default secret for client-side
-		// authentication.
-		//
-		// Override from SaslClient::Secrets.
+		///< Returns the default secret for client-side
+		///< authentication.
+		///<
+		///< Override from SaslClient::Secrets.
 
 	virtual std::string secret(  const std::string & mechanism , const std::string & id ) const ;
-		// Returns the given user's secret for server-side
-		// authentication. Returns the empty string if not a 
-		// valid id.
-		//
-		// Override from SaslServer::Secrets.
+		///< Returns the given user's secret for server-side
+		///< authentication. Returns the empty string if not a 
+		///< valid id.
+		///<
+		///< Override from SaslServer::Secrets.
 
 	virtual bool contains( const std::string & mechanism ) const ;
-		// Returns true if there is one or more server 
-		// secrets using the given mechanism. This can 
-		// be used to limit the list of mechanisms
-		// advertised by a server.
-		//
-		// Override from SaslServer::Secrets.
+		///< Returns true if there is one or more server 
+		///< secrets using the given mechanism. This can 
+		///< be used to limit the list of mechanisms
+		///< advertised by a server.
+		///<
+		///< Override from SaslServer::Secrets.
 
 private:
 	Secrets( const Secrets & ) ; // not implemented

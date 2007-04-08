@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,56 +17,57 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gappinst.h
-//
+///
+/// \file gappinst.h
+///
 
 #ifndef G_APPINST_H
 #define G_APPINST_H
 
 #include "gdef.h"
 
+/// \namespace GGui
 namespace GGui
 {
 	class ApplicationInstance ;
 }
 
-// Class: GGui::ApplicationInstance
-//
-// Description: A class for storing the application's
-// instance handle, as obtained from WinMain().
-//
-// Other low-level classes in this library use this 
-// interface to obtain the application instance handle, 
-// rather than some higher-level mechanism.
-//
-// Programs which need a message pump, but want to
-// avoid the overhead of the full GUI application
-// framework must, as an absolute minimum, use this 
-// class to set the application instance handle.
-//
-// See also: GGui::ApplicationBase
-//
+/// \class GGui::ApplicationInstance
+///
+/// A class for storing the application's
+/// instance handle, as obtained from WinMain().
+///
+/// Other low-level classes in this library use this 
+/// interface to obtain the application instance handle, 
+/// rather than some higher-level mechanism.
+///
+/// Programs which need a message pump, but want to
+/// avoid the overhead of the full GUI application
+/// framework must, as an absolute minimum, use this 
+/// class to set the application instance handle.
+///
+/// \see GGui::ApplicationBase
+///
 class GGui::ApplicationInstance 
 {
 protected:
 	explicit ApplicationInstance( HINSTANCE h ) ; 
-		// Protected constructor which calls
-		// hinstance(h).
-		//
-		// (Providing a constructor can simplify
-		// early initialisation.)
+		///< Protected constructor which calls
+		///< hinstance(h).
+		///<
+		///< (Providing a constructor can simplify
+		///< early initialisation.)
 
 public:
 	static void hinstance( HINSTANCE h ) ;
-		// Sets the instance handle which is
-		// subsequently returned by hinstance().
+		///< Sets the instance handle which is
+		///< subsequently returned by hinstance().
 
 	static HINSTANCE hinstance() ;
-		// Returns the instance handle that was
-		// passed to the constructor. Returns
-		// zero hinstance(h) has never been
-		// called.
+		///< Returns the instance handle that was
+		///< passed to the constructor. Returns
+		///< zero hinstance(h) has never been
+		///< called.
 
 private:
 	static HINSTANCE m_hinstance ;

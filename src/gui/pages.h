@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,15 +17,16 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// pages.h
-//
+///
+/// \file pages.h
+///
 
 #ifndef G_PAGES_H
 #define G_PAGES_H
 
 #include "qt.h"
-#include "thread.h"
+#include "installer.h"
+#include "gpath.h"
 #include "gdialog.h"
 #include "gpage.h"
 
@@ -37,7 +38,6 @@ class QTextEdit;
 class QLabel; 
 class QLineEdit; 
 class QPushButton; 
-class QThread; 
 class DetailsPage; 
 class EvaluatePage; 
 class FinishPage; 
@@ -285,10 +285,10 @@ private:
 	QLineEdit * m_listening_interface ;
 } ;
 
-class ConfigurationPage : public GPage 
+class ReadyPage : public GPage 
 {
 public:
-	ConfigurationPage( GDialog & dialog , const std::string & name , const std::string & next_1 , 
+	ReadyPage( GDialog & dialog , const std::string & name , const std::string & next_1 , 
 		const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
@@ -306,24 +306,26 @@ class ProgressPage : public GPage
 {Q_OBJECT
 public:
 	ProgressPage( GDialog & dialog , const std::string & name , const std::string & next_1 , 
-		const std::string & next_2 , bool finish , bool close ) ;
+		const std::string & next_2 , bool finish , bool close , G::Path argv0 , G::Path dump_file ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
 	virtual void onShow( bool back ) ;
 	virtual bool closeButton() const ;
+	virtual bool isComplete() ;
 
 private slots:
-	void onThreadChangeEvent() ;
-	void onThreadDoneEvent( int rc ) ;
+	void poke() ;
 
 private:
-	static void check( bool ) ;
+	void addLine( const std::string & ) ;
 
 private:
 	QTextEdit * m_text_edit ;
-	Thread * m_thread ;
-	int m_rc ;
+	QTimer * m_timer ;
+	Installer m_installer ;
+	QString m_text ;
+	G::Path m_dump_file ;
 } ;
 
 class EndPage_ : public GPage 

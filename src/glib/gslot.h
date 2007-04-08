@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,71 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gslot.h
-//
-// Slots and signals provide a typesafe callback mechanism 
-// that separates event source classes from event sinks.
-// The slot/signal pattern is used in several C++ libraries
-// including libsigc++, Qt and boost.
-//
-// This implementation was inspired by libsigc++,
-// but simplified by:
-// * not doing multicast
-// * not detecting dangling references
-// * not supporting global function callbacks
-// * using only void returns
-//
-// Note that 'signals' in this context are not related 
-// to ANSI-C or POSIX signals (signal(), sigaction(2)).
-//
-// Event-generating classes expose a "signal" object which
-// client objects can connect() to in order to receive events. 
-// The client receives events through a "slot" member function.
-//
-// The key to the implementation is that SlotImp<> is 
-// templated on the callback parameter P and the callback 
-// sink class T, but Slot<> is templated only on P, so 
-// the event-source class does not need to know the type 
-// of the event-sink. The SlotOp<> classes are used to 
-// resolve this mismatch, by downcasting to the T-specific
-// SlotImp<> class. The Slot<> classes are reference-counting 
-// handles to SlotImp<> (via SlotBase), with an additional 
-// function pointer for the relevant SlotOp<> downcasting 
-// method.
-//
-// The overloaded template function slot<>() creates 
-// a Slot<> handle, passing it a suitable SlotBase body 
-// and casting function. The dynamic type of the SlotBase 
-// reference is a SlotImp<> class which knows about the
-// specific sink class T, and the casting function knows 
-// how to access the derived class. The combination of
-// SlotBase polymorphism and casting function isolates the
-// slot class from the sink class.
-//
-// Usage:
-/// class Source
-/// {
-/// public:
-///   Signal1<int> m_signal ;
-/// private:
-///   void Source::raiseEvent()
-///   {
-///     int n = 123 ;
-///     m_signal.emit( n ) ;
-///   }
-/// } ;
 ///
-/// class Sink
-/// {
-/// public:
-///   void onEvent( int n ) ;
-///   Sink( Source & source ) 
-///   { 
-///      source.m_signal.connect( slot(*this,&Sink::onEvent) ) ; 
-///   }
-/// } ;
-//
+/// \file gslot.h
+///
 
 #ifndef G_SLOT_H
 #define G_SLOT_H
@@ -90,30 +28,31 @@
 #include "gexception.h"
 #include "gnoncopyable.h"
 
+/// \namespace G
 namespace G
 {
 
-// Class: SlotBase
-// Description: Part of the slot/signal system.
-// Used as a base class to all SlotImp<> classes
-// allowing them to be used as bodies to the
-// Slot<> reference-counting handle.
-//
+/// \class SlotBase
+/// Part of the slot/signal system.
+/// Used as a base class to all SlotImp<> classes
+/// allowing them to be used as bodies to the
+/// Slot<> reference-counting handle.
+///
 class SlotBase 
 {
 public:
 	virtual ~SlotBase() ;
-		// Destructor.
+		///< Destructor.
 
 	SlotBase() ;
-		// Default constuctor.
+		///< Default constuctor.
 
 	void up() ;
-		// Increments the reference count.
+		///< Increments the reference count.
 
 	void down() ;
-		// Decrements the reference count
-		// and does "delete this" on zero.
+		///< Decrements the reference count
+		///< and does "delete this" on zero.
 
 private:
 	SlotBase( const SlotBase & ) ; // not implemented
@@ -124,10 +63,10 @@ private:
 } ;
 
 
-// Class: SignalImp
-// Description: Part of the slot/signal system.
-// A static helper class used by Signal<> classes.
-//
+/// \class SignalImp
+/// Part of the slot/signal system.
+/// A static helper class used by Signal<> classes.
+///
 class SignalImp 
 {
 public:
@@ -146,13 +85,13 @@ void swap_( T & t1 , T & t2 ) // no std::swap in gcc2.95
 	t2 = temp ;
 }
 
-// ===
+/// ===
 
-// Class: SlotImp0
-// Description: Part of the slot/signal system.
-// An implementation class for Slot0<>. An instance
-// is created by the slot<>()
-//
+/// \class SlotImp0
+/// Part of the slot/signal system.
+/// An implementation class for Slot0<>. An instance
+/// is created by the slot<>()
+///
 template <class T>
 class SlotImp0 : public SlotBase 
 {
@@ -164,9 +103,9 @@ public:
 	void callback() { (m_object.*m_fn)() ; }
 } ;
 
-// Class: SlotOp0
-// Description: Part of the slot/signal system.
-//
+/// \class SlotOp0
+/// Part of the slot/signal system.
+///
 template <class T>
 class SlotOp0 
 {
@@ -175,9 +114,9 @@ public:
 		{ static_cast<SlotImp0<T>*>(imp)->callback() ; }
 } ;
 
-// Class: Slot0
-// Description: Part of the slot/signal system.
-//
+/// \class Slot0
+/// Part of the slot/signal system.
+///
 class Slot0 
 {
 private:
@@ -194,9 +133,9 @@ public:
 	const SlotBase * base() const { return m_imp ; }
 } ;
 
-// Class: Signal0
-// Description: Part of the slot/signal system.
-//
+/// \class Signal0
+/// Part of the slot/signal system.
+///
 class Signal0 : public noncopyable 
 {
 private:
@@ -209,9 +148,9 @@ public:
 	bool connected() const { return m_slot.base() != NULL ; }
 } ;
 
-// Function: slot
-// Description: Part of the slot/signal system.
-//
+/// Function: slot
+/// Part of the slot/signal system.
+///
 template <class T>
 inline
 Slot0 slot( T & object , void (T::*fn)() )
@@ -219,11 +158,11 @@ Slot0 slot( T & object , void (T::*fn)() )
 	return Slot0( new SlotImp0<T>(object,fn) , SlotOp0<T>::callback ) ;
 }
 
-// ===
+/// ===
 
-// Class: SlotImp1
-// Description: Part of the slot/signal system.
-//
+/// \class SlotImp1
+/// Part of the slot/signal system.
+///
 template <class T, class P>
 class SlotImp1 : public SlotBase 
 {
@@ -235,9 +174,9 @@ public:
 	void callback( P p ) { (m_object.*m_fn)(p) ; }
 } ;
 
-// Class: SlotOp1
-// Description: Part of the slot/signal system.
-//
+/// \class SlotOp1
+/// Part of the slot/signal system.
+///
 template <class T, class P>
 class SlotOp1 
 {
@@ -246,9 +185,9 @@ public:
 		{ static_cast<SlotImp1<T,P>*>(imp)->callback( p ) ; }
 } ;
 
-// Class: Slot1
-// Description: Part of the slot/signal system.
-//
+/// \class Slot1
+/// Part of the slot/signal system.
+///
 template <class P>
 class Slot1 
 {
@@ -266,9 +205,9 @@ public:
 	const SlotBase * base() const { return m_imp ; }
 } ;
 
-// Class: Signal1
-// Description: Part of the slot/signal system.
-//
+/// \class Signal1
+/// Part of the slot/signal system.
+///
 template <class P>
 class Signal1 : public noncopyable 
 {
@@ -282,9 +221,9 @@ public:
 	bool connected() const { return m_slot.base() != NULL ; }
 } ;
 
-// Function: slot
-// Description: Part of the slot/signal system.
-//
+/// Function: slot
+/// Part of the slot/signal system.
+///
 template <class T,class P>
 inline
 Slot1<P> slot( T & object , void (T::*fn)(P) )
@@ -292,11 +231,11 @@ Slot1<P> slot( T & object , void (T::*fn)(P) )
 	return Slot1<P>( new SlotImp1<T,P>(object,fn) , SlotOp1<T,P>::callback ) ;
 }
 
-// ===
+/// ===
 
-// Class: SlotImp2
-// Description: Part of the slot/signal system.
-//
+/// \class SlotImp2
+/// Part of the slot/signal system.
+///
 template <class T, class P1, class P2>
 class SlotImp2 : public SlotBase 
 {
@@ -308,9 +247,9 @@ public:
 	void callback( P1 p1 , P2 p2 ) { (m_object.*m_fn)(p1,p2) ; }
 } ;
 
-// Class: SlotOp2
-// Description: Part of the slot/signal system.
-//
+/// \class SlotOp2
+/// Part of the slot/signal system.
+///
 template <class T, class P1 , class P2>
 class SlotOp2 
 {
@@ -319,9 +258,9 @@ public:
 		{ static_cast<SlotImp2<T,P1,P2>*>(imp)->callback( p1 , p2 ) ; }
 } ;
 
-// Class: Slot2
-// Description: Part of the slot/signal system.
-//
+/// \class Slot2
+/// Part of the slot/signal system.
+///
 template <class P1, class P2>
 class Slot2 
 {
@@ -339,9 +278,9 @@ public:
 	const SlotBase * base() const { return m_imp ; }
 } ;
 
-// Class: Signal2
-// Description: Part of the slot/signal system.
-//
+/// \class Signal2
+/// Part of the slot/signal system.
+///
 template <class P1, class P2>
 class Signal2 : public noncopyable 
 {
@@ -355,9 +294,9 @@ public:
 	bool connected() const { return m_slot.base() != NULL ; }
 } ;
 
-// Function: slot
-// Description: Part of the slot/signal system.
-//
+/// Function: slot
+/// Part of the slot/signal system.
+///
 template <class T, class P1, class P2>
 inline
 Slot2<P1,P2> slot( T & object , void (T::*fn)(P1,P2) )
@@ -365,11 +304,11 @@ Slot2<P1,P2> slot( T & object , void (T::*fn)(P1,P2) )
 	return Slot2<P1,P2>( new SlotImp2<T,P1,P2>(object,fn) , SlotOp2<T,P1,P2>::callback ) ;
 }
 
-// ===
+/// ===
 
-// Class: SlotImp3
-// Description: Part of the slot/signal system.
-//
+/// \class SlotImp3
+/// Part of the slot/signal system.
+///
 template <class T, class P1, class P2, class P3>
 class SlotImp3 : public SlotBase 
 {
@@ -381,9 +320,9 @@ public:
 	void callback( P1 p1 , P2 p2 , P3 p3 ) { (m_object.*m_fn)(p1,p2,p3) ; }
 } ;
 
-// Class: SlotOp3
-// Description: Part of the slot/signal system.
-//
+/// \class SlotOp3
+/// Part of the slot/signal system.
+///
 template <class T, class P1 , class P2, class P3>
 class SlotOp3 
 {
@@ -392,9 +331,9 @@ public:
 		{ static_cast<SlotImp3<T,P1,P2,P3>*>(imp)->callback( p1 , p2 , p3 ) ; }
 } ;
 
-// Class: Slot3
-// Description: Part of the slot/signal system.
-//
+/// \class Slot3
+/// Part of the slot/signal system.
+///
 template <class P1, class P2, class P3>
 class Slot3 
 {
@@ -412,9 +351,9 @@ public:
 	const SlotBase * base() const { return m_imp ; }
 } ;
 
-// Class: Signal3
-// Description: Part of the slot/signal system.
-//
+/// \class Signal3
+/// Part of the slot/signal system.
+///
 template <class P1, class P2, class P3>
 class Signal3 : public noncopyable 
 {
@@ -428,9 +367,9 @@ public:
 	bool connected() const { return m_slot.base() != NULL ; }
 } ;
 
-// Function: slot
-// Description: Part of the slot/signal system.
-//
+/// Function: slot
+/// Part of the slot/signal system.
+///
 template <class T, class P1, class P2, class P3>
 inline
 Slot3<P1,P2,P3> slot( T & object , void (T::*fn)(P1,P2,P3) )

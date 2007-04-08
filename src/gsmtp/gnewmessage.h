@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gnewmessage.h
-//
+///
+/// \file gnewmessage.h
+///
 
 #ifndef G_SMTP_NEW_MESSAGE_H
 #define G_SMTP_NEW_MESSAGE_H
@@ -27,39 +27,40 @@
 #include "gdef.h"
 #include "gsmtp.h"
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class NewMessage ;
 	class MessageStoreImp ;
 }
 
-// Class: GSmtp::NewMessage
-// Description: An abstract class to allow the creation
-// of a new message in the message store.
-// See also: GSmtp::MessageStore, GSmtp::MessageStore::newMessage()
-//
+/// \class GSmtp::NewMessage
+/// An abstract class to allow the creation
+/// of a new message in the message store.
+/// \see GSmtp::MessageStore, GSmtp::MessageStore::newMessage()
+///
 class GSmtp::NewMessage 
 {
 public:
 	virtual void addTo( const std::string & to , bool local ) = 0 ;
-		// Adds a 'to' address.
+		///< Adds a 'to' address.
 
 	virtual void addText( const std::string & line ) = 0 ;
-		// Adds a line of content.
+		///< Adds a line of content.
 
 	virtual std::string prepare( const std::string & auth_id , const std::string & client_ip ) = 0 ;
-		// Prepares to store the message in the message store.
-		// Returns the location of the pre-commit()ed message.
+		///< Prepares to store the message in the message store.
+		///< Returns the location of the pre-commit()ed message.
 
 	virtual void commit() = 0 ;
-		// Commits the prepare()d message to the store.
+		///< Commits the prepare()d message to the store.
 
 	virtual unsigned long id() const = 0 ;
-		// Returns the message's unique non-zero identifier.
+		///< Returns the message's unique non-zero identifier.
 
 	virtual ~NewMessage() ;
-		// Destructor. Rolls back any prepare()d storage
-		// if un-commit()ed.
+		///< Destructor. Rolls back any prepare()d storage
+		///< if un-commit()ed.
 
 private:
 	void operator=( const NewMessage & ) ; // not implemented

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -71,6 +71,9 @@ void G::File::copy( const Path & from , const Path & to )
 bool G::File::copy( const Path & from , const Path & to , const NoThrow & )
 {
 	std::ifstream in( from.str().c_str() , std::ios::binary | std::ios::in ) ;
+	if( !in.good() )
+		return false ;
+
 	std::ofstream out( to.str().c_str() , std::ios::binary | std::ios::out | std::ios::trunc ) ;
 	char buffer[1024U*4U] ;
 	while( in.good() && out.good() )
@@ -148,3 +151,4 @@ void G::File::mkdirs( const Path & path , int limit )
 		throw CannotMkdir(path.str()) ;
 }
 
+/// \file gfile.cpp

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,7 +19,11 @@
 # 
 # ===
 #
+# doxygen_filter.sh
+#
 # A doxygen filter.
+#
+# usage: doxygen_filter.sh <source-file>
 #
 
 awk="gawk"
@@ -57,24 +61,24 @@ SourceFilter()
 			if( !in_class_comment && start )
 			{
 				in_class_comment = 1
-				print "/**"
+				print "///"
 			}
 			else if( !in_class_comment )
 			{
-				print
+				print "///" $0
 			}
 			else if( end )
 			{
 				in_class_comment = 0
-				print " */"
-				print
+				print "///" $0
+				print "///"
 			}
 			else
 			{
 				sub( "^// Description: " , "" )
 				sub( "^// See also: " , "\\see " )
 				sub( "^//" , "" )
-				printf( " * %s\n" , $0 )
+				printf( "/// %s\n" , $0 )
 			}
 		}
 	'
@@ -85,25 +89,32 @@ SourceFilter()
 #
 HeaderFilter()
 {
-	${awk} ' BEGIN { 
+	${awk} -v name="${1}" ' BEGIN { 
 		was_comment_line = 0 
 		was_code_line = 0 
 		re_namespace = "^[[:space:]]*namespace" 
-		re_comment = "^[[:space:]]*//" 
+		re_class_comment = "^//" 
+		re_method_comment = "^[[:space:]][[:space:]]*//" 
 		re_code = "^[[:space:]]*///" 
+		print "///"
+		print "/// \\file " name
+		print "///"
 	}
 	{
 		is_namespace_line = match($0,re_namespace)
 
-		is_comment_line = match($0,re_comment)
-		re_comment_length = RLENGTH
+		is_class_comment_line = match($0,re_class_comment)
+		re_class_comment_length = RLENGTH
+
+		is_method_comment_line = match($0,re_method_comment)
+		re_method_comment_length = RLENGTH
 
 		is_code_line = match($0,re_code)
 		re_code_length = RLENGTH
 
 		if( is_namespace_line )
 		{
-			printf( "/*! \\namespace %s */\n" , $2 )
+			printf( "/// \\namespace %s\n" , $2 )
 		}
 
 		if( is_code_line )
@@ -111,39 +122,36 @@ HeaderFilter()
 			sub( "///" , "//" )
 		}
 
-		if( is_comment_line )
+		if( is_class_comment_line )
 		{
 			indent = substr( $0 , 1 , re_comment_length-2 )
 			sub( "Class: " , "\\class " )
 			sub( "Typedef: .*" , "" )
 			sub( "Description: " , "" )
 			sub( "See also: " , "\\see " )
-			if( was_comment_line )
-				sub( re_comment , indent "    " )
-			else if( length(indent) )
-				sub( re_comment , indent "/**<" )
-			else
-				sub( re_comment , indent "/** " )
+			sub( re_class_comment , indent "///" )
+		}
+
+		if( is_method_comment_line )
+		{
+			indent = substr( $0 , 1 , re_method_comment_length-2 )
+			sub( re_method_comment , indent "///<" )
 		}
 
 		if( is_code_line && !was_code_line )
 		{
-			print indent "\\code"
+			print indent "/// \\code"
 		}
 
 		if( was_code_line && !is_code_line )
 		{
-			print indent "\\endcode"
-		}
-
-		if( was_comment_line && !is_comment_line )
-		{
-			print indent "*/"
+			print indent "/// \\endcode"
 		}
 
 		print
 
-		was_comment_line = is_comment_line
+		was_class_comment_line = is_class_comment_line
+		was_method_comment_line = is_method_comment_line
 		was_code_line = is_code_line
 	} '
 }
@@ -153,7 +161,7 @@ HeaderFilter()
 #
 PostFilter()
 {
-	${awk} '
+	${awk} -v tab="\t" '
 		{
 			if( match( $0 , "^[[:space:]]*class[[:space:]][^/]*//" ) ||
 			    match( $0 , "^[[:space:]]*union[[:space:]][^/]*//" ) ||
@@ -161,7 +169,7 @@ PostFilter()
 			{
 				class = substr( $0 , 1 , RLENGTH-2 )
 				description = substr( $0 , RLENGTH+1 )
-				printf( "  /** %s */\n" , description )
+				printf( tab "///%s\n" , description )
 				printf( "%s\n" , class )
 			}
 			else
@@ -174,18 +182,19 @@ PostFilter()
 BasicFilter()
 {
 	cat
-	echo '/* \\file */'
+	echo '/// \\file'
 }
 
 name="`basename \"${1}\"`"
 type="`echo \"${name}\" | ${awk} -F . '{print $NF}'`"
 classes="`fgrep '// Class:' \"${1}\" | wc -l`"
+has_doxygen_comments="`egrep '\\\\file|\\\\class|\\\\code|\\\\see' \"${1}\" | wc -l`"
 
-if test "${name}" = "md5.h" -o "${name}" = "md5.cpp"
+if test "${has_doxygen_comments}" -gt 0
 then
 	cat "${1}"
 
-elif test "${name}" = "gdef.h" -o "${name}" = "gnet.h"
+elif test "${name}" = "gdef.h" -o "${name}" = "gnet.h" -o "${name}" = "gpop.h"
 then
 	cat "${1}" | BasicFilter
 
@@ -198,6 +207,6 @@ then
 	cat "${1}" | SourceFilter | PostFilter
 
 else
-	cat "${1}" | PreFilter | HeaderFilter | PostFilter
+	cat "${1}" | PreFilter | HeaderFilter "${name}" | PostFilter
 fi
 

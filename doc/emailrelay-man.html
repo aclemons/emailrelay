@@ -68,167 +68,175 @@ have been successfully delivered to the next-hop server.
 <H2>OPTIONS</H2>
 
 <DL COMPACT>
-<DT><B>-a,--admin </B><I>admin-port</I>
+<DT><B>-a, --admin </B><I>&lt;admin-port&gt;</I>
 
 <DD>
 Enables the administration interface and specifies its listening port number.
-<DT><B>-Q,--admin-terminate </B>
+<DT><B>-Q, --admin-terminate </B>
 
 <DD>
 Enables the terminate command on the admin interface.
-<DT><B>-A,--anonymous </B>
+<DT><B>-A, --anonymous </B>
 
 <DD>
 Disables the smtp vrfy command and sends less verbose smtp responses.
-<DT><B>-q,--as-client </B><I>host:port</I>
+<DT><B>-q, --as-client </B><I>&lt;host:port&gt;</I>
 
 <DD>
 Runs as a client, forwarding spooled mail to &lt;host&gt;: equivalent to <I>--log</I> <I>--no-syslog</I> <I>--no-daemon</I> <I>--dont-serve</I> <I>--forward</I> <I>--forward-to</I>.
-<DT><B>-y,--as-proxy </B><I>host:port</I>
+<DT><B>-y, --as-proxy </B><I>&lt;host:port&gt;</I>
 
 <DD>
 Runs as a proxy: equivalent to <I>--log</I> <I>--close-stderr</I> <I>--immediate</I> <I>--forward-to</I>.
-<DT><B>-d,--as-server </B>
+<DT><B>-d, --as-server </B>
 
 <DD>
 Runs as a server: equivalent to <I>--log</I> <I>--close-stderr</I>.
-<DT><B>-C,--client-auth </B><I>file</I>
+<DT><B>-C, --client-auth </B><I>&lt;file&gt;</I>
 
 <DD>
 Enables smtp authentication with remote server, using the given secrets file.
-<DT><B>-Y,--client-filter </B><I>program</I>
+<DT><B>-Y, --client-filter </B><I>&lt;program&gt;</I>
 
 <DD>
 Specifies an external program to process messages when they are forwarded.
-<DT><B>-e,--close-stderr </B>
+<DT><B>-e, --close-stderr </B>
 
 <DD>
 Closes the standard error stream after start-up.
-<DT><B>-U,--connection-timeout </B><I>time</I>
+<DT><B>-U, --connection-timeout </B><I>&lt;time&gt;</I>
 
 <DD>
 Sets the timeout (in seconds) when connecting to a remote server (default is 40).
-<DT><B>-g,--debug </B>
+<DT><B>-g, --debug </B>
 
 <DD>
 Generates debug-level logging if compiled-in.
-<DT><B>-D,--domain </B><I>fqdn</I>
+<DT><B>-D, --domain </B><I>&lt;fqdn&gt;</I>
 
 <DD>
 Sets an override for the host's fully qualified domain name.
-<DT><B>-x,--dont-serve </B>
+<DT><B>-x, --dont-serve </B>
 
 <DD>
 Disables acting as a server on any port (part of <I>--as-client</I> and usually used with <I>--forward</I>).
-<DT><B>-z,--filter </B><I>program</I>
+<DT><B>-z, --filter </B><I>&lt;program&gt;</I>
 
 <DD>
 Specifies an external program to process messages as they are stored.
-<DT><B>-f,--forward </B>
+<DT><B>-W, --filter-timeout </B><I>&lt;time&gt;</I>
+
+<DD>
+Sets the timeout (in seconds) for running the <I>--filter</I> processor.
+<DT><B>-f, --forward </B>
 
 <DD>
 Forwards stored mail on startup (requires <I>--forward-to</I>).
-<DT><B>-o,--forward-to </B><I>host:port</I>
+<DT><B>-o, --forward-to </B><I>&lt;host:port&gt;</I>
 
 <DD>
 Specifies the remote smtp server (required by <I>--forward</I>, <I>--poll</I>, <I>--immediate</I> and <I>--admin</I>).
-<DT><B>-h,--help </B>
+<DT><B>-h, --help </B>
 
 <DD>
 Displays help text and exits.
-<DT><B>-m,--immediate </B>
+<DT><B>-m, --immediate </B>
 
 <DD>
 Enables immediating forwarding of messages as soon as they are received (requires <I>--forward-to</I>).
-<DT><B>-I,--interface </B><I>ip-address</I>
+<DT><B>-I, --interface </B><I>&lt;ip-address&gt;</I>
 
 <DD>
 Defines the listening interface for new connections.
-<DT><B>-l,--log </B>
+<DT><B>-l, --log </B>
 
 <DD>
 Writes log information on standard error and syslog.
-<DT><B>-L,--log-time </B>
+<DT><B>-L, --log-time </B>
 
 <DD>
 Adds a timestamp to the logging output.
-<DT><B>-t,--no-daemon </B>
+<DT><B>-t, --no-daemon </B>
 
 <DD>
 Does not detach from the terminal.
-<DT><B>-X,--no-smtp </B>
+<DT><B>-X, --no-smtp </B>
 
 <DD>
 Disables listening for smtp connections (usually used with <I>--admin</I> or <I>--pop</I>).
-<DT><B>-n,--no-syslog </B>
+<DT><B>-n, --no-syslog </B>
 
 <DD>
-Disables syslog output.
-<DT><B>-i,--pid-file </B><I>pid-file</I>
+Disables syslog output (always overridden by <I>--syslog</I>).
+<DT><B>-i, --pid-file </B><I>&lt;pid-file&gt;</I>
 
 <DD>
 Defines a file for storing the daemon process-id.
-<DT><B>-O,--poll </B><I>period</I>
+<DT><B>-O, --poll </B><I>&lt;period&gt;</I>
 
 <DD>
-Enables polling with the specified period (requires <I>--forward-to</I>).
-<DT><B>-B,--pop </B>
+Enables polling of the spool directory for messages to be forwarded with the specified period (requires <I>--forward-to</I>).
+<DT><B>-B, --pop </B>
 
 <DD>
 Enables the pop server if compiled-in.
-<DT><B>-F,--pop-auth </B><I>file</I>
+<DT><B>-F, --pop-auth </B><I>&lt;file&gt;</I>
 
 <DD>
 Defines the pop server secrets file (default is <I>/etc/emailrelay.auth</I>).
-<DT><B>-J,--pop-by-name </B>
+<DT><B>-J, --pop-by-name </B>
 
 <DD>
 Modifies the pop spool directory according to the user name (requires <I>--pop</I>).
-<DT><B>-G,--pop-no-delete </B>
+<DT><B>-G, --pop-no-delete </B>
 
 <DD>
 Disables message deletion via pop (requires <I>--pop</I>).
-<DT><B>-E,--pop-port </B><I>port</I>
+<DT><B>-E, --pop-port </B><I>&lt;port&gt;</I>
 
 <DD>
 Specifies the pop listening port number (requires <I>--pop</I>).
-<DT><B>-p,--port </B><I>port</I>
+<DT><B>-p, --port </B><I>&lt;port&gt;</I>
 
 <DD>
 Specifies the smtp listening port number.
-<DT><B>-r,--remote-clients </B>
+<DT><B>-r, --remote-clients </B>
 
 <DD>
 Allows remote clients to connect.
-<DT><B>-T,--response-timeout </B><I>time</I>
+<DT><B>-T, --response-timeout </B><I>&lt;time&gt;</I>
 
 <DD>
 Sets the response timeout (in seconds) when talking to a remote server (default is 1800).
-<DT><B>-R,--scanner </B><I>host:port</I>
+<DT><B>-R, --scanner </B><I>&lt;host:port&gt;</I>
 
 <DD>
 Specifies an external network server to process messages when they are stored.
-<DT><B>-S,--server-auth </B><I>file</I>
+<DT><B>-S, --server-auth </B><I>&lt;file&gt;</I>
 
 <DD>
 Enables authentication of remote clients, using the given secrets file.
-<DT><B>-s,--spool-dir </B><I>dir</I>
+<DT><B>-s, --spool-dir </B><I>&lt;dir&gt;</I>
 
 <DD>
 Specifies the spool directory (default is <I>/var/spool/emailrelay</I>).
-<DT><B>-u,--user </B><I>username</I>
+<DT><B>-k, --syslog </B>
 
 <DD>
-Names the effective user to switch to when started as root (default is <I>daemon</I>).
-<DT><B>-v,--verbose </B>
+Force syslog output if logging is enabled (overrides <I>--no-syslog</I>).
+<DT><B>-u, --user </B><I>&lt;username&gt;</I>
+
+<DD>
+Names the effective user to switch to if started as root (default is <I>daemon</I>).
+<DT><B>-v, --verbose </B>
 
 <DD>
 Generates more verbose output (works with <I>--help</I> and <I>--log</I>).
-<DT><B>-Z,--verifier </B><I>program</I>
+<DT><B>-Z, --verifier </B><I>&lt;program&gt;</I>
 
 <DD>
 Specifies an external program for address verification.
-<DT><B>-V,--version </B>
+<DT><B>-V, --version </B>
 
 <DD>
 Displays version information and exits.
@@ -366,7 +374,7 @@ Graeme Walker, mailto:<A HREF="mailto:graeme_walker@users.sourceforge.net">graem
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 21:53:48 GMT, January 08, 2007
+Time: 17:16:37 GMT, April 08, 2007
 </BODY>
 </HTML>
-<!-- Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

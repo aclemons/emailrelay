@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gfilestore.h
-//
+///
+/// \file gfilestore.h
+///
 
 #ifndef G_SMTP_FILE_STORE_H
 #define G_SMTP_FILE_STORE_H
@@ -38,6 +38,7 @@
 #include <memory>
 #include <string>
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class FileStore ;
@@ -45,21 +46,21 @@ namespace GSmtp
 	class FileWriter ;
 }
 
-// Class: GSmtp::FileStore
-// Description: A concrete implementation of the MessageStore
-// interface dealing in paired flat files and with an optional
-// external preprocessor program which is used to process files 
-// once they have been stored.
-//
-// The implementation puts separate envelope and content files 
-// in the spool directory. The content file is written first. 
-// The presence of a matching envelope file is used to indicate 
-// that the content file is valid and that it has been commited 
-// to the care of the SMTP system for delivery.
-//
-// Passes out unique sequence numbers, filesystem paths and 
-// i/o streams to NewMessageImp.
-//
+/// \class GSmtp::FileStore
+/// A concrete implementation of the MessageStore
+/// interface dealing in paired flat files and with an optional
+/// external preprocessor program which is used to process files 
+/// once they have been stored.
+///
+/// The implementation puts separate envelope and content files 
+/// in the spool directory. The content file is written first. 
+/// The presence of a matching envelope file is used to indicate 
+/// that the content file is valid and that it has been commited 
+/// to the care of the SMTP system for delivery.
+///
+/// Passes out unique sequence numbers, filesystem paths and 
+/// i/o streams to NewMessageImp.
+///
 class GSmtp::FileStore : public GSmtp::MessageStore 
 {
 public:
@@ -67,67 +68,67 @@ public:
 	G_EXCEPTION( GetError , "error reading specific message" ) ;
 
 	FileStore( const G::Path & dir , bool optimise = false ) ;
-		// Constructor. Throws an exception if the storage directory 
-		// is invalid.
-		//
-		// If the optimise flag is set then the implementation of
-		// empty() will be efficient for an empty filestore 
-		// (ignoring failed and local-delivery messages). This 
-		// might be useful for applications in which the main 
-		// event loop is used to check for pending jobs. The 
-		// disadvantage is that this process will not be
-		// sensititive to messages deposited into its spool
-		// directory by other processes.
+		///< Constructor. Throws an exception if the storage directory 
+		///< is invalid.
+		///<
+		///< If the optimise flag is set then the implementation of
+		///< empty() will be efficient for an empty filestore 
+		///< (ignoring failed and local-delivery messages). This 
+		///< might be useful for applications in which the main 
+		///< event loop is used to check for pending jobs. The 
+		///< disadvantage is that this process will not be
+		///< sensititive to messages deposited into its spool
+		///< directory by other processes.
 
 	unsigned long newSeq() ;
-		// Hands out a new non-zero sequence number.
+		///< Hands out a new non-zero sequence number.
 
 	std::auto_ptr<std::ostream> stream( const G::Path & path ) ;
-		// Returns a stream to the given content.
+		///< Returns a stream to the given content.
 
 	G::Path contentPath( unsigned long seq ) const ;
-		// Returns the path for a content file.
+		///< Returns the path for a content file.
 
 	G::Path envelopePath( unsigned long seq ) const ;
-		// Returns the path for an envelope file.
+		///< Returns the path for an envelope file.
 
 	G::Path envelopeWorkingPath( unsigned long seq ) const ;
-		// Returns the path for an envelope file
-		// which is in the process of being written.
+		///< Returns the path for an envelope file
+		///< which is in the process of being written.
 
 	virtual bool empty() const ;
-		// Returns true if there are no stored messages.
+		///< Returns true if there are no stored messages.
 
 	virtual std::auto_ptr<StoredMessage> get( unsigned long id ) ;
-		// Extracts a stored message.
+		///< Extracts a stored message.
 
 	virtual MessageStore::Iterator iterator( bool lock ) ;
-		// Returns an iterator for stored messages.
+		///< Returns an iterator for stored messages.
 
 	virtual std::auto_ptr<NewMessage> newMessage( const std::string & from ) ;
-		// Creates a new message in the store.
+		///< Creates a new message in the store.
 
 	static std::string x() ;
-		// Returns the prefix for envelope header lines.
+		///< Returns the prefix for envelope header lines.
 
 	static std::string format( int n = 0 ) ;
-		// Returns an identifier for the storage format
-		// implemented by this class. If n is -1 then
-		// it returns the previous format (etc.).
+		///< Returns an identifier for the storage format
+		///< implemented by this class. If n is -1 then
+		///< it returns the previous format (etc.).
 
 	virtual void repoll() ;
-		// Ensures that the next updated() signal() has
-		// its parameter set to true.
+		///< Ensures that the next updated() signal() has
+		///< its parameter set to true.
 
 	virtual void updated() ;
-		// Called by associated classes to indicate that the
-		// store has changed. Results in the signal() being
-		// emited.
+		///< Called by associated classes to indicate that the
+		///< store has changed. Results in the signal() being
+		///< emited.
 
 	virtual G::Signal1<bool> & signal() ;
-		// Provides a signal which is activated when something might 
-		// have changed in the store. The boolean parameter is used 
-		// to indicate that repoll()ing is requested.
+		///< Provides a signal which is activated when something might 
+		///< have changed in the store. The boolean parameter is used 
+		///< to indicate that repoll()ing is requested.
 
 private:
 	static void checkPath( const G::Path & dir ) ;
@@ -148,11 +149,11 @@ private:
 	G::Signal1<bool> m_signal ;
 } ;
 
-// Class: GSmtp::FileReader
-// Description: Used by GSmtp::FileStore, GSmtp::NewFile and
-// GSmtp::StoredFile to claim read permissions.
-// See also: G::Root
-//
+/// \class GSmtp::FileReader
+/// Used by GSmtp::FileStore, GSmtp::NewFile and
+/// GSmtp::StoredFile to claim read permissions.
+/// \see G::Root
+///
 class GSmtp::FileReader : public G::noncopyable 
 {
 public:
@@ -160,11 +161,11 @@ public:
 	~FileReader() ;
 } ;
 
-// Class: GSmtp::FileWriter
-// Description: Used by GSmtp::FileStore, GSmtp::NewFile and
-// GSmtp::StoredFile to claim write permissions.
-// See also: G::Root
-//
+/// \class GSmtp::FileWriter
+/// Used by GSmtp::FileStore, GSmtp::NewFile and
+/// GSmtp::StoredFile to claim write permissions.
+/// \see G::Root
+///
 class GSmtp::FileWriter : public G::noncopyable 
 {
 public:

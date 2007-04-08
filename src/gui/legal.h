@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// legal.cpp
-//
+///
+/// \file legal.h
+///
 
 #ifndef G_LEGAL_H
 #define G_LEGAL_H
@@ -27,17 +27,17 @@
 #include "qt.h"
 #include "gdef.h"
 
-// Class: Legal
-// Description: A static class providing warranty and copyright text.
-//
+/// \class Legal
+/// A static class providing warranty and copyright text.
+///
 class Legal 
 {
 public: 
 	static QString text() ;
-		// Returns the introductory legal text.
+		///< Returns the introductory legal text.
 
 	static QString license() ;
-		// Returns the license text.
+		///< Returns the license text.
 
 private:
 	Legal() ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "glogoutput.h"
+#include "gstr.h"
 #include "gpath.h"
 #include <cstdlib> // getenv
 
@@ -50,11 +51,11 @@ void G::LogOutput::rawOutput( G::Log::Severity severity , const char *message )
 
 	// file
 	//
-	static const char * key = "GLOGOUTPUT_FILE" ;
-	static const char * filename = std::getenv( key ) ;
-	if( filename != NULL && *filename != '\0' )
+	static const char * key = "GLOGOUTPUT_DIR" ;
+	static const char * dir_p = std::getenv( key ) ;
+	if( dir_p != NULL && *dir_p != '\0' )
 	{
-		static std::ofstream file( filename ) ;
+		static std::ofstream file( Path(Str::toPrintableAscii(std::string(dir_p),'_'),"glog.txt").str().c_str() ) ;
 		file << message << std::endl ;
 	}
 
@@ -154,3 +155,4 @@ static HANDLE source()
 	return ::RegisterEventSource( NULL , exe_name.c_str() ) ;
 }
 
+/// \file glogoutput_win32.cpp

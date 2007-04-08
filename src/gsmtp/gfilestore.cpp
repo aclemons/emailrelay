@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -43,12 +43,12 @@ namespace GSmtp
 	class FileIterator ;
 }
 
-// Class: FileIterator
-// Description: A 'body' class for the MessageStore::Iterator
-// 'handle'. The handle/body pattern allows us to copy
-// iterators by value, and therefore return them
-// from MessageStore::iterator().
-//
+/// \class GSmtp::FileIterator
+/// A 'body' class for the MessageStore::Iterator
+///  'handle'. The handle/body pattern allows us to copy
+///  iterators by value, and therefore return them
+///  from MessageStore::iterator().
+/// 
 class GSmtp::FileIterator : public GSmtp::MessageStore::IteratorImp , public G::noncopyable 
 {
 public:

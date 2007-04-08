@@ -30,6 +30,21 @@ Package=<4>
 
 ###############################################################################
 
+Project: "filter"=".\main\filter.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name common
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "passwd"=".\main\passwd.dsp" - Package Owner=<4>
 
 Package=<5>

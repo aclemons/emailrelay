@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,27 +17,28 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// news.h
-//
+///
+/// \file news.h
+///
 
 #ifndef NEWS_H
 #define NEWS_H
 
 #include <string>
 
+/// \namespace Main
 namespace Main
 {
 	struct News ;
 }
 
-// Class: Main::News
-// Description: A static class providing some news text.
-//
+/// \class Main::News
+/// A static class providing some news text.
+///
 struct Main::News
 {
 	static std::string text( const std::string & eol ) ;
-		// Returns some 'news' text.
+		///< Returns some 'news' text.
 } ;
 
 #endif

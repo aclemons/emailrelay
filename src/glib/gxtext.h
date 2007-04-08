@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gxtext.h
-//
+///
+/// \file gxtext.h
+///
 
 #ifndef G_XTEXT_H
 #define G_XTEXT_H
@@ -27,23 +27,24 @@
 #include "gdef.h"
 #include <string>
 
+/// \namespace G
 namespace G
 {
 	class Xtext ;
 }
 
-// Class: G::Xtext
-// Description: An xtext codec class.
-// See also: RFC1891 section 5
-//
+/// \class G::Xtext
+/// An xtext codec class.
+/// \see RFC1891 section 5
+///
 class G::Xtext 
 {
 public:
 	static std::string encode( const std::string & ) ;
-		// Encodes the given string.
+		///< Encodes the given string.
 
 	static std::string decode( const std::string & ) ;
-		// Decodes the given string.
+		///< Decodes the given string.
 
 private:
 	Xtext() ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// ggetopt.h
-//	
+///
+/// \file ggetopt.h
+///
 
 #ifndef G_GETOPT_H
 #define G_GETOPT_H
@@ -32,126 +32,129 @@
 #include <list>
 #include <map>
 
+/// \namespace G
 namespace G
 {
 	class GetOpt ;
 }
 
-// Class: G::GetOpt
-// Description: A command line switch parser.
-// See also: G::Arg
-//
+/// \class G::GetOpt
+/// A command line switch parser.
+/// \see G::Arg
+///
 class G::GetOpt 
 {
 public:
-	struct Level // Used by G::GetOpt for extra type safety.
+	/// Used by G::GetOpt for extra type safety.
+	struct Level 
 		{ unsigned int level ; explicit Level(unsigned int l) : level(l) {} } ;
 	G_EXCEPTION( InvalidSpecification , "invalid options specification string" ) ;
 
 	GetOpt( const Arg & arg , const std::string & spec , 
 		char sep_major = '|' , char sep_minor = '/' , char escape = '\\' ) ;
-			// Constructor taking a Arg reference and a 
-			// specification string. Uses specifications like 
-			// "p/port/defines the port number/1/port/1|v/verbose/shows more logging/0//1".
-			// made up of the following parts:
-			//    'single-character-switch-letter'
-			//    'multi-character-switch-name'
-			//    'switch-description'
-			//    'value-type' (0 is none, and 1 is a string)
-			//    'value-description'
-			//    'level'
-			//
-			// If the switch-description field is empty or
-			// if the level is zero then the switch is hidden.
-			// By convention main-stream switches should have 
-			// a level of 1, and obscure ones level 2 and above.
+			///< Constructor taking a Arg reference and a 
+			///< specification string. Uses specifications like 
+			///< "p/port/defines the port number/1/port/1|v/verbose/shows more logging/0//1".
+			///< made up of the following parts:
+			///<    'single-character-switch-letter'
+			///<    'multi-character-switch-name'
+			///<    'switch-description'
+			///<    'value-type' (0 is none, and 1 is a string)
+			///<    'value-description'
+			///<    'level'
+			///<
+			///< If the switch-description field is empty or
+			///< if the level is zero then the switch is hidden.
+			///< By convention main-stream switches should have 
+			///< a level of 1, and obscure ones level 2 and above.
 
 	Arg args() const ;
-		// Returns all the non-switch command-line arguments.
+		///< Returns all the non-switch command-line arguments.
 
 	Strings errorList() const ;
-		// Returns the list of errors.
+		///< Returns the list of errors.
 
 	static size_t wrapDefault() ;
-		// Returns a default word-wrapping width.
+		///< Returns a default word-wrapping width.
 
 	static size_t tabDefault() ;
-		// Returns a default tab-stop.
+		///< Returns a default tab-stop.
 
 	static Level levelDefault() ;
-		// Returns the default level.
+		///< Returns the default level.
 
 	static std::string introducerDefault() ;
-		// Returns "usage: ".
+		///< Returns "usage: ".
 
 	std::string usageSummary( const std::string & exe , const std::string & args , 
 		const std::string & introducer = introducerDefault() ,
 		Level level = levelDefault() , size_t wrap_width = wrapDefault() ) const ;
-			// Returns a one-line usage summary, as
-			// "usage: <exe> <usageSummarySwitches()> <args>"
+			///< Returns a one-line usage summary, as
+			///< "usage: <exe> <usageSummarySwitches()> <args>"
 
 	std::string usageSummarySwitches( Level level = levelDefault() ) const ;
-		// Returns the one-line summary of switches. Does _not_ 
-		// include the usual "usage: <exe>" prefix
-		// or non-switch arguments.
+		///< Returns the one-line summary of switches. Does _not_ 
+		///< include the usual "usage: <exe>" prefix
+		///< or non-switch arguments.
 
 	std::string usageHelp( Level level = levelDefault() ,
 		size_t tab_stop = tabDefault() , size_t wrap_width = wrapDefault() ,
 		bool level_exact = false ) const ;
-			// Returns a multi-line string giving help on each switch.
+			///< Returns a multi-line string giving help on each switch.
 
 	void showUsage( std::ostream & stream , const std::string & exe , 
 		const std::string & args , const std::string & introducer = introducerDefault() ,
 		Level level = levelDefault() ,
 		size_t tab_stop = tabDefault() , 
 		size_t wrap_width = wrapDefault() ) const ;
-			// Streams out multi-line usage text using usageSummary() 
-			// and usageHelp(). The 'args' parameter should represent
-			// the non-switch arguments (with a leading space), like 
-			// " <foo> [<bar>]".
+			///< Streams out multi-line usage text using usageSummary() 
+			///< and usageHelp(). The 'args' parameter should represent
+			///< the non-switch arguments (with a leading space), like 
+			///< " <foo> [<bar>]".
 
 	void showUsage( std::ostream & stream , const std::string & args , bool verbose ) const ;
-		// Streams out multi-line usage text using usageSummary() and 
-		// usageHelp(). Shows only level one switches if 'verbose' 
-		// is false.
+		///< Streams out multi-line usage text using usageSummary() and 
+		///< usageHelp(). Shows only level one switches if 'verbose' 
+		///< is false.
 
 	bool hasErrors() const ;
-		// Returns true if there are errors.
+		///< Returns true if there are errors.
 
 	void showErrors( std::ostream & stream , std::string prefix_1 , 
 		std::string prefix_2 = std::string(": ") ) const ;
-			// A convenience function which streams out each errorList()
-			// item to the given stream, prefixed with the given
-			// prefix(es). The two prefixes are simply concatenated.
+			///< A convenience function which streams out each errorList()
+			///< item to the given stream, prefixed with the given
+			///< prefix(es). The two prefixes are simply concatenated.
 
 	void showErrors( std::ostream & stream ) const ;
-		// An overload which uses Arg::prefix() as 'prefix_1'.
+		///< An overload which uses Arg::prefix() as 'prefix_1'.
 
 	void show( std::ostream & stream , std::string prefix ) const ;
-		// For debugging.
+		///< For debugging.
 
 	bool contains( char switch_letter ) const ;
-		// Returns true if the command line contains
-		// the given switch.
+		///< Returns true if the command line contains
+		///< the given switch.
 
 	bool contains( const std::string & switch_name ) const ;
-		// Returns true if the command line contains
-		// the given switch.
+		///< Returns true if the command line contains
+		///< the given switch.
 
 	std::string value( const std::string & switch_name ) const ;
-		// Returns the value related to the given
-		// value-based switch.
-		//
-		// Precondition: contains(switch_name)
+		///< Returns the value related to the given
+		///< value-based switch.
+		///<
+		///< Precondition: contains(switch_name)
 
 	std::string value( char switch_letter ) const ;
-		// Returns the value related to the given
-		// value-based switch.
-		//
-		// Precondition: contains(switch_letter)
+		///< Returns the value related to the given
+		///< value-based switch.
+		///<
+		///< Precondition: contains(switch_letter)
 
 private:
-	struct SwitchSpec // A private implementation structure used by G::GetOpt.
+	/// A private implementation structure used by G::GetOpt.
+	struct SwitchSpec 
 	{ 
 		char c ; 
 		std::string name ; 

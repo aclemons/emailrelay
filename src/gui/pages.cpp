@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -22,7 +22,6 @@
 //
 
 #include "qt.h"
-#include "thread.h"
 #include "pages.h"
 #include "legal.h"
 #include "dir.h"
@@ -32,6 +31,7 @@
 #include "gmd5.h"
 #include "gdebug.h"
 #include <stdexcept>
+#include <fstream>
 
 namespace
 {
@@ -1030,7 +1030,7 @@ void StartupPage::dump( std::ostream & stream , const std::string & prefix , con
 
 // ==
 
-ConfigurationPage::ConfigurationPage( GDialog & dialog , const std::string & name , const std::string & next_1 , 
+ReadyPage::ReadyPage( GDialog & dialog , const std::string & name , const std::string & next_1 , 
 	const std::string & next_2 , bool finish , bool close ) :
 		GPage(dialog,name,next_1,next_2,finish,close)
 {
@@ -1042,25 +1042,24 @@ ConfigurationPage::ConfigurationPage( GDialog & dialog , const std::string & nam
 	setLayout(layout);
 }
 
-void ConfigurationPage::onShow( bool )
+void ReadyPage::onShow( bool )
 {
 }
 
-QString ConfigurationPage::text() const
+QString ReadyPage::text() const
 {
 	return GPage::tr(
 		"<center>"
-		"<p>Your configuration will now be saved to \"install.cfg\"</p>"
-		"<p>and processed by \"emailrelay-install-tool\"</p>"
+		"<p>E-MailRelay will now be installed.</p>"
 		"</center>" ) ;
 }
 
-std::string ConfigurationPage::nextPage()
+std::string ReadyPage::nextPage()
 {
 	return next1() ;
 }
 
-void ConfigurationPage::dump( std::ostream & , const std::string & , const std::string & ) const
+void ReadyPage::dump( std::ostream & , const std::string & , const std::string & ) const
 {
 	// no-op
 }
@@ -1068,10 +1067,11 @@ void ConfigurationPage::dump( std::ostream & , const std::string & , const std::
 // ==
 
 ProgressPage::ProgressPage( GDialog & dialog , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) :
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
+	G::Path argv0 , G::Path dump_file ) :
 		GPage(dialog,name,next_1,next_2,finish,close) ,
-		m_thread(NULL) ,
-		m_rc(1)
+		m_installer(argv0) ,
+		m_dump_file(dump_file)
 {
 	m_text_edit = new QTextEdit;
 	m_text_edit->setReadOnly(true) ;
@@ -1089,42 +1089,68 @@ void ProgressPage::onShow( bool back )
 {
 	if( ! back )
 	{
-		// write the config file
-		G::Path config_file( Dir::thisdir() , "install.cfg" ) ; // TODO -- try other directories on error
-		std::ofstream file( config_file.str().c_str() ) ;
-		dialog().dump( file ) ;
-		file.flush() ;
-		bool file_good = file.good() ; // TODO -- error handling
+		// ask the pages to dump their configuration into our stringstream
+		std::stringstream ss ;
+		dialog().dump( ss ) ;
 
-		// spawn the thread that spawns the process and feeds its output back
-		check( m_thread == NULL ) ;
-		m_thread = new Thread( tool() , toolArgs() ) ;
-		connect( m_thread, SIGNAL(changeSignal()), this, SLOT(onThreadChangeEvent()), Qt::QueuedConnection ) ;
-		connect( m_thread, SIGNAL(doneSignal(int)), this, SLOT(onThreadDoneEvent(int)), Qt::QueuedConnection ) ;
-		dialog().wait(true) ;
-		m_thread->start() ;
+		// copy to file for testing purposes
+		if( ! m_dump_file.str().empty() )
+		{
+			std::ofstream dump_file( m_dump_file.str().c_str() ) ;
+			dump_file << ss.str() ;
+		}
+
+		// run the installer
+		m_installer.start( ss ) ;
+		dialog().wait( true ) ;
+		m_text = QString() ;
+		m_text_edit->setPlainText( m_text ) ;
+		m_timer = new QTimer( this ) ;
+		connect( m_timer , SIGNAL(timeout()) , this , SLOT(poke()) ) ;
+		m_timer->start() ;
 	}
 }
 
-void ProgressPage::onThreadChangeEvent()
+void ProgressPage::poke()
 {
-	G_DEBUG( "ProcessPage::onThreadChangeEvent" ) ;
-	check( m_thread != NULL ) ;
-	QString text = m_thread->text() ;
-	m_text_edit->setFontFamily("courier") ;
-	m_text_edit->setPlainText( text ) ;
+	try
+	{
+		if( m_timer == NULL ) 
+			throw std::runtime_error("internal error") ;
+
+		bool more = m_installer.next() ;
+		if( more )
+		{
+			addLine( m_installer.beforeText() + "... " ) ;
+			m_installer.run() ;
+			addLine( m_installer.afterText() + "\n" ) ;
+		}
+		else
+		{
+			dialog().wait( false ) ;
+			m_timer->stop() ;
+			{ QTimer * p = m_timer ; m_timer = NULL ; delete p ; }
+		}
+		emit pageUpdateSignal() ;
+	}
+	catch( std::exception & e )
+	{
+		std::cerr << "exception in timer callback: " << e.what() << std::endl ;
+		throw ;
+	}
+	catch(...)
+	{
+		std::cerr << "exception in timer callback" << std::endl ;
+		throw ;
+	}
 }
 
-void ProgressPage::onThreadDoneEvent( int rc )
+void ProgressPage::addLine( const std::string & line )
 {
-	G_DEBUG( "ProcessPage::onThreadDoneEvent: " << rc ) ;
-	m_rc = rc ;
-	check( m_thread != NULL ) ;
-	bool timeout = ! m_thread->wait( 2000U ) ;
-	Thread * p = timeout ? NULL : m_thread ; // on timeout leave the thread dangling and move on
-	m_thread = NULL ;
-	delete p ;
-	dialog().wait(false) ;
+	G_DEBUG( "ProcessPage::addLine: [" << line << "]" ) ;
+	m_text.append( line.c_str() ) ;
+	m_text_edit->setFontFamily("courier") ;
+	m_text_edit->setPlainText( m_text ) ;
 }
 
 std::string ProgressPage::nextPage()
@@ -1137,17 +1163,19 @@ void ProgressPage::dump( std::ostream & , const std::string & , const std::strin
 	// no-op
 }
 
-void ProgressPage::check( bool ok )
-{
-	if( !ok )
-		throw std::runtime_error("internal error") ;
-}
-
 bool ProgressPage::closeButton() const
 {
-	bool result = m_rc == 0 ? GPage::closeButton() : false ;
-	G_DEBUG( "ProgressPage::closeButton: " << result ) ;
-	return result ;
+	bool close_button = GPage::closeButton() ;
+	if( m_installer.done() && m_installer.failed() )
+		close_button = false ;
+
+	G_DEBUG( "ProgressPage::closeButton: " << close_button ) ;
+	return close_button ;
+}
+
+bool ProgressPage::isComplete()
+{
+	return m_installer.done() && !m_installer.failed() ;
 }
 
 // ==
@@ -1171,3 +1199,4 @@ void EndPage_::dump( std::ostream & , const std::string & , const std::string & 
 	// no-op
 }
 
+/// \file pages.cpp

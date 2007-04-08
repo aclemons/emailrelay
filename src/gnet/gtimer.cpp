@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -32,9 +32,9 @@ namespace GNet
 	class TimerUpdate ;
 }
 
-// Class: GNet::TimerUpdate
-// Description: A private implementation class used by GNet::Timer.
-//
+/// \class GNet::TimerUpdate
+/// A private implementation class used by GNet::Timer.
+/// 
 class GNet::TimerUpdate 
 {
 public:

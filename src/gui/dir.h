@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// dir.h
-//
+///
+/// \file dir.h
+///
 
 #ifndef G_GUI_DIR_H
 #define G_GUI_DIR_H
@@ -27,78 +27,78 @@
 #include "gpath.h"
 #include <string>
 
-// Class: Dir
-// Description: Provides file-system paths.
-//
+/// \class Dir
+/// Provides file-system paths.
+///
 class Dir 
 {
 public:
 	Dir( const std::string & argv0 , const std::string & prefix ) ;
-		// Constructor.
+		///< Constructor.
 
 	~Dir() ;
-		// Destructor.
+		///< Destructor.
 
 	static G::Path install() ;
-		// Returns the installation path.
+		///< Returns the installation path.
 
 	static G::Path spool() ;
-		// Returns the spool directory path.
+		///< Returns the spool directory path.
 
 	static G::Path config() ;
-		// Returns the configuration directory path.
+		///< Returns the configuration directory path.
 
 	static G::Path startup() ;
-		// Returns the system startup directory (eg. "/etc/init.d").
+		///< Returns the system startup directory (eg. "/etc/init.d").
 
 	static G::Path pid() ;
-		// Returns the directory for pid files.
+		///< Returns the directory for pid files.
 
 	static G::Path cwd() ;
-		// Returns the current working directory.
+		///< Returns the current working directory.
 
 	static G::Path tooldir() ;
-		// Returns the tool's directory.
+		///< Returns the tool's directory.
 
 	static G::Path thisdir() ;
-		// Returns the argv0 directory as an absolute path.
+		///< Returns the argv0 directory as an absolute path.
 
 	static G::Path thisexe() ;
-		// Returns the argv0 path.
+		///< Returns the argv0 path.
 
 	static G::Path tmp() ;
-		// Returns a writable directory for temporary files.
-		// Returns thisdir() as long as it is found to be a 
-		// writeable directory.
+		///< Returns a writable directory for temporary files.
+		///< Returns thisdir() as long as it is found to be a 
+		///< writeable directory.
 
 	static G::Path desktop() ;
-		// Returns the desktop path.
+		///< Returns the desktop path.
 
 	static G::Path login() ;
-		// Returns the login autostart directory path.
+		///< Returns the login autostart directory path.
 
 	static G::Path boot() ;
-		// Returns the boot-time autostart directory path.
+		///< Returns the boot-time autostart directory path.
 
 	static G::Path menu() ;
-		// Returns the menu path.
+		///< Returns the menu path.
 
 	static G::Path reskit() ;
-		// Returns the windows resource kit path.
+		///< Returns the windows resource kit path.
 
 	static std::string dotexe() ;
-		// Returns ".exe" or not.
+		///< Returns ".exe" or not.
 
 private:
 	static G::Path special( const std::string & key ) ;
-		// Returns a special directory. The key is one 
-		// of "desktop", "menu", "boot", "login", etc.
+	static G::Path ntspecial( const std::string & key ) ;
 
 private:
 	Dir() ;
 	static Dir * instance() ;
 	static G::Path windows() ;
 	static std::string env( const std::string & , const std::string & = std::string() ) ;
+	static bool ok( const std::string & ) ;
 	static G::Path oneOf( std::string , std::string = std::string() , std::string = std::string() , 
 		std::string = std::string() , std::string = std::string() ) ;
 	static G::Path prefix( G::Path ) ;

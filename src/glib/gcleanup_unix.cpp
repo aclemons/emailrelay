@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -39,9 +39,9 @@ namespace G
 	class CleanupImp ;
 }
 
-// Class: G::CleanupImp
-// Description: A private implementation class used by G::Cleanup.
-//
+/// \class G::CleanupImp
+/// A private implementation class used by G::Cleanup.
+/// 
 class G::CleanupImp 
 {
 public:
@@ -58,7 +58,8 @@ private:
 
 private:
 	typedef Cleanup::Error Error ;
-	struct Link // A private linked-list structure used by G::CleanupImp.
+	/// A private linked-list structure used by G::CleanupImp.
+	struct Link 
 	{
 		void (*fn)(const char*) ;
 		const char * arg ;

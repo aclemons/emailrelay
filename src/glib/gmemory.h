@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gmemory.h
-//
+///
+/// \file gmemory.h
+///
 
 #ifndef G_MEMORY_H
 #define G_MEMORY_H
@@ -27,12 +27,13 @@
 #include "gdef.h"
 #include <memory>
 
-// Template function: operator<<=
-// Description: A portable fix for the problem of resetting an auto_ptr<> 
-// portably. MSVC6.0 & GCC 2.91 do not have a reset() method, 
-// and GCC 2.95 has a non-const assignment operators.
-//
-// Usage:
+/// Template function: operator<<=
+/// A portable fix for the problem of resetting an auto_ptr<> 
+/// portably. MSVC6.0 & GCC 2.91 do not have a reset() method, 
+/// and GCC 2.95 has a non-const assignment operators.
+///
+/// Usage:
+/// \code
 /// #include <memory>
 /// #include "gmemory.h"
 /// {
@@ -44,7 +45,8 @@
 ///         eatFoo( ptr->release() ) ;
 ///   }
 /// }
-//
+/// \endcode
+///
 template <class T>
 void operator<<=( std::auto_ptr<T> & ap , T * p )
 {
@@ -52,9 +54,9 @@ void operator<<=( std::auto_ptr<T> & ap , T * p )
 	ap = temp ;
 }
 
-// Template function: operator<<=
-// Description: A version for null-pointer constants.
-//
+/// Template function: operator<<=
+/// A version for null-pointer constants.
+///
 template <class T>
 void operator<<=( std::auto_ptr<T> & ap , int /* null_pointer */ )
 {

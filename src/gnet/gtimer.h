@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gtimer.h
-//
+///
+/// \file gtimer.h
+///
 
 #ifndef G_NET_TIMER_H
 #define G_NET_TIMER_H
@@ -30,6 +30,7 @@
 #include "gexception.h"
 #include <list>
 
+/// \namespace GNet
 namespace GNet
 {
 	class Timer ;
@@ -37,48 +38,48 @@ namespace GNet
 	class TimerList ;
 }
 
-// Class: GNet::TimeoutHandler
-// Description: An interface used by GNet::Timer.
-//
+/// \class GNet::TimeoutHandler
+/// An interface used by GNet::Timer.
+///
 class GNet::TimeoutHandler 
 {
 public:
 	virtual ~TimeoutHandler() ;
-		// Destructor.
+		///< Destructor.
 
 	virtual void onTimeout( Timer & ) = 0 ;
-		// Called when the associated timer
-		// expires.
+		///< Called when the associated timer
+		///< expires.
 
 private:
 	void operator=( const TimeoutHandler & ) ; // not implemented
 } ;
 
-// Class: GNet::Timer
-// Description: A timer class.
-//
+/// \class GNet::Timer
+/// A timer class.
+///
 class GNet::Timer 
 {
 public:
 	explicit Timer( TimeoutHandler & handler ) ;
-		// Constructor.
+		///< Constructor.
 
 	Timer() ;
-		// Default constructor.
+		///< Default constructor.
 
 	virtual ~Timer() ;
-		// Destructor.
+		///< Destructor.
 
 	void startTimer( unsigned int time ) ;
-		// Starts the timer.
+		///< Starts the timer.
 
 	void cancelTimer() ;
-		// Cancels the timer.
+		///< Cancels the timer.
 
 protected:
 	virtual void onTimeout() ;
-		// Called when the timer expires (or soon
-		// after).
+		///< Called when the timer expires (or soon
+		///< after).
 private:
 	Timer( const Timer & ) ; // not implemented
 	void operator=( const Timer & ) ; // not implemented
@@ -93,53 +94,54 @@ private:
 	TimeoutHandler * m_handler ;
 } ;
 
-// Class: GNet::TimerList
-// Description: A singleton which maintains a list of all Timer
-// objects, and interfaces to the event loop on their behalf.
-//
+/// \class GNet::TimerList
+/// A singleton which maintains a list of all Timer
+/// objects, and interfaces to the event loop on their behalf.
+///
 class GNet::TimerList 
 {
 public:
 	G_EXCEPTION( NoInstance , "no TimerList instance" ) ;
-	class NoThrow // Overload discriminator class for TimerList.
+	/// Overload discriminator class for TimerList.
+	class NoThrow 
 		{} ;
 
 	TimerList() ;
-		// Default constructor.
+		///< Default constructor.
 
 	~TimerList() ;
-		// Destructor.
+		///< Destructor.
 
 	void add( Timer & ) ;
-		// Adds a timer. Used by Timer::Timer().
+		///< Adds a timer. Used by Timer::Timer().
 
 	void remove( Timer & ) ;
-		// Removes a timer from the list.
-		// Used by Timer::~Timer().
+		///< Removes a timer from the list.
+		///< Used by Timer::~Timer().
 
 	void update( G::DateTime::EpochTime previous_soonest ) ;
-		// Called when one of the list's timers
-		// has changed.
+		///< Called when one of the list's timers
+		///< has changed.
 
 	G::DateTime::EpochTime soonest() const ;
-		// Returns the time of the first timer to expire,
-		// or zero if none.
+		///< Returns the time of the first timer to expire,
+		///< or zero if none.
 
 	unsigned int interval( bool & infinite ) const ;
-		// Returns the interval to the next
-		// timer expiry. The 'infinite' value is
-		// set to true if there are no timers 
-		// running.
+		///< Returns the interval to the next
+		///< timer expiry. The 'infinite' value is
+		///< set to true if there are no timers 
+		///< running.
 
 	void doTimeouts() ;
-		// Triggers the timeout callbacks of any expired
-		// timers. Called by the event loop (GNet::EventLoop).
+		///< Triggers the timeout callbacks of any expired
+		///< timers. Called by the event loop (GNet::EventLoop).
 
 	static TimerList * instance( const NoThrow & ) ;
-		// Singleton access. Returns NULL if none.
+		///< Singleton access. Returns NULL if none.
 
 	static TimerList & instance() ;
-		// Singleton access. Throws an exception if none.
+		///< Singleton access. Throws an exception if none.
 
 private:
 	TimerList( const TimerList & ) ; // not implemented

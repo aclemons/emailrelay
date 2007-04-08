@@ -55,6 +55,9 @@ where <switch> is:
 # --filter (-z)
   Specifies an external program to process messages as they are stored.
 
+# --filter-timeout (-W)
+  Sets the timeout (in seconds) for running the --filter processor.
+
 # --forward (-f)
   Forwards stored mail on startup (requires --forward-to).
 
@@ -83,13 +86,13 @@ where <switch> is:
   Disables listening for smtp connections (usually used with --admin or --pop).
 
 # --no-syslog (-n)
-  Disables syslog output.
+  Disables syslog output (always overridden by --syslog).
 
 # --pid-file (-i)
   Defines a file for storing the daemon process-id.
 
 # --poll (-O)
-  Enables polling with the specified period (requires --forward-to).
+  Enables polling of the spool directory for messages to be forwarded with the specified period (requires --forward-to).
 
 # --pop (-B)
   Enables the pop server if compiled-in.
@@ -124,8 +127,11 @@ where <switch> is:
 # --spool-dir (-s)
   Specifies the spool directory (default is "/var/spool/emailrelay").
 
+# --syslog (-k)
+  Force syslog output if logging is enabled (overrides --no-syslog).
+
 # --user (-u)
-  Names the effective user to switch to when started as root (default is "daemon").
+  Names the effective user to switch to if started as root (default is "daemon").
 
 # --verbose (-v)
   Generates more verbose output (works with --help and --log).
@@ -739,10 +745,16 @@ But note that this will not affect the default spool directory path built into
 the scripts and executables so the correct spool directory will have to be 
 specified at run-time with the "--spool-dir" switch.
 
-The "emailrelay" start/stop script in "init.d" creates a pid file in "/var/run"
-if the directory exists, or in "/tmp" otherwise.
+If building the configuration GUI then you may need to set the "PKG_CONFIG_PATH"
+environment variable to point to the ".pc" files in the Qt "lib" directory and 
+set the "e_qtmoc" configure variable to point to the Qt "moc" utility. You
+may also need to set the correct library directory for Qt if it is wrong in 
+the ".pc" file by setting "LDFLAGS":
+
+	export QT=/usr/local/qt4
+	LDFLAGS=-L$QT/lib PKG_CONFIG_PATH=$QT/lib ./configure --enable-gui e_qtmoc="$QT/bin/moc"
 
 
 
 
-Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

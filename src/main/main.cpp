@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -29,11 +29,11 @@
 #include "commandline.h"
 #include <exception>
 
-// Class: App
-// Description: An implementation of the Main::Output abstract interface
-// that can be passed to Main::Run.
-// See also: Main::Run
-//
+/// \class App
+/// An implementation of the Main::Output abstract interface
+///  that can be passed to Main::Run.
+/// \see Main::Run
+/// 
 struct App : public Main::Output
 {
 	void output( const std::string & text , bool e )

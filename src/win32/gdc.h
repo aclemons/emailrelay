@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,62 +17,63 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gdc.h
-//
+///
+/// \file gdc.h
+///
 
 #ifndef G_DC_H
 #define G_DC_H
 
 #include "gdef.h"
 
+/// \namespace GGui
 namespace GGui
 {
 	class DeviceContext ;
 	class ScreenDeviceContext ;
 }
 
-// Class: GGui::DeviceContext
-// Description: A thin wrapper for a GDI device 
-// context corresponding to a window.
-// See also: GGui::ScreenDeviceContext
-//
+/// \class GGui::DeviceContext
+/// A thin wrapper for a GDI device 
+/// context corresponding to a window.
+/// \see GGui::ScreenDeviceContext
+///
 class GGui::DeviceContext 
 {
 public:
 	explicit DeviceContext( HWND hwnd ) ;
-		// Constructor for a window's device context.
-		//
-		// The GDI device context is released in
-		// the destructor.
+		///< Constructor for a window's device context.
+		///<
+		///< The GDI device context is released in
+		///< the destructor.
 
 	explicit DeviceContext( HDC hdc ) ;
-		// Constructor to wrap the given GDI handle.
-		// The GDI handle typically comes from ::BeginPaint()
-		// while processing a WM_PAINT message.
-		//
-		// The GDI device context is _not_ released in
-		// the destructor.
+		///< Constructor to wrap the given GDI handle.
+		///< The GDI handle typically comes from ::BeginPaint()
+		///< while processing a WM_PAINT message.
+		///<
+		///< The GDI device context is _not_ released in
+		///< the destructor.
 
 	~DeviceContext() ;
-		// Destructor.
+		///< Destructor.
 
 	HDC handle() const ;
-		// Returns the GDI device context handle.
+		///< Returns the GDI device context handle.
 
 	HDC extractHandle() ;
-		// Extracts the GDI device context handle.
-		// The destructor will no longer release it.
+		///< Extracts the GDI device context handle.
+		///< The destructor will no longer release it.
 
 	HDC operator()() const ;
-		// Returns the GDI device context handle.
+		///< Returns the GDI device context handle.
 
 	void swapBuffers() ;
-		// If the device context has double buffering
-		// then the two pixel buffers are swapped.
-		// This is typically called after the 
-		// "back" buffer has been filled with
-		// a new image.
+		///< If the device context has double buffering
+		///< then the two pixel buffers are swapped.
+		///< This is typically called after the 
+		///< "back" buffer has been filled with
+		///< a new image.
 
 private:
 	HDC m_hdc ;
@@ -84,40 +85,40 @@ private:
 	void operator=( const DeviceContext & ) ;
 } ;
 
-// Class: GGui::ScreenDeviceContext
-// Description: A thin wrapper for a GDI device 
-// context corresponding to the whole screen.
-// See also: GGui::DeviceContext
-//
+/// \class GGui::ScreenDeviceContext
+/// A thin wrapper for a GDI device 
+/// context corresponding to the whole screen.
+/// \see GGui::DeviceContext
+///
 class GGui::ScreenDeviceContext 
 {
 public:
 	ScreenDeviceContext() ;
-		// Default constructor.
+		///< Default constructor.
 
 	~ScreenDeviceContext() ;
-		// Destructor.
+		///< Destructor.
 
 	HDC handle() ;
-		// Returns the GDI device context handle.
+		///< Returns the GDI device context handle.
 
 	HDC operator()() ;
-		// Returns the GDI device context handle.
+		///< Returns the GDI device context handle.
 
 	int colours() const ;
-		// Returns the number of colours.
+		///< Returns the number of colours.
 
 	int dx() const ;
-		// Returns the screen width.
+		///< Returns the screen width.
 
 	int dy() const ;
-		// Returns the screen height.
+		///< Returns the screen height.
 
 	int aspectx() const ;
-		// Returns one part of the screen's aspect ratio.
+		///< Returns one part of the screen's aspect ratio.
 
 	int aspecty() const ;
-		// Returns the other part of the screen's aspect ratio.
+		///< Returns the other part of the screen's aspect ratio.
 
 private:
 	ScreenDeviceContext( const ScreenDeviceContext & ) ;

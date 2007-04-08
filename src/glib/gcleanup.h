@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gcleanup.h
-//
+///
+/// \file gcleanup.h
+///
 
 #ifndef G_CLEANUP_H
 #define G_CLEANUP_H
@@ -28,30 +28,31 @@
 #include "gpath.h"
 #include "gexception.h"
 
+/// \namespace G
 namespace G
 {
 	class Cleanup ;
 }
 
-// Class: G::Cleanup
-// Description: An interface for registering cleanup functions
-// which are called when the process terminates abnormally.
-//
+/// \class G::Cleanup
+/// An interface for registering cleanup functions
+/// which are called when the process terminates abnormally.
+///
 class G::Cleanup 
 {
 public:
 	G_EXCEPTION( Error , "cleanup error" ) ;
 
 	static void init() ;
-		// An optional early-initialisation function.
-		// May be called more than once.
+		///< An optional early-initialisation function.
+		///< May be called more than once.
 
 	static void add( void (*fn)(const char*) , const char * arg ) ;
-		// Adds the given handler to the list which 
-		// are to be called when the process
-		// terminates abnormally. The handler 
-		// function must be fully reentrant.
-		// The 'arg' pointer is kept.
+		///< Adds the given handler to the list which 
+		///< are to be called when the process
+		///< terminates abnormally. The handler 
+		///< function must be fully reentrant.
+		///< The 'arg' pointer is kept.
 
 private:
 	Cleanup() ; // not implemeneted

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gstatemachine.h
-//
+///
+/// \file gstatemachine.h
+///
 
 #ifndef G_STATE_MACHINE_H
 #define G_STATE_MACHINE_H
@@ -28,55 +28,57 @@
 #include "gexception.h"
 #include <map>
 
+/// \namespace G
 namespace G
 {
 
 G_EXCEPTION( StateMachine_Error , "invalid state machine transition" ) ;
 
-// Class: StateMachine
-// Description: A finite state machine class template. 
-//
-// The finite state machine has a persistant 'state'. When an 'event' is 
-// apply()d to the state machine, it undergoes a state 'transition'
-// and then calls the associated 'action' method.
-//
-// Predicates are supported. Any action method can return a boolean
-// predicate value which is used to select between two transitions --
-// the 'normal' transition if the predicate is true, and an 'alternative'
-// transition if false.
-//
-// Transition states can be implemented by having the relevant action
-// method call apply() on the state-machine. The state machine's state
-// is always changed before any action method is called -- although only
-// using the 'normal' transition, not the 'alternative' -- so this sort
-// of reentrancy is valid, as long as the action method going into
-// the transition state returns a predicate value of 'true'.
-//
-// Default transitions for a given state are not supported directly. But
-// note that protocol errors do not invalidate the state machine and
-// do not result in a change of state. This means that client code can 
-// achieve the effect of default transitions by handling protocol errors 
-// for that state in a special manner.
-// 
-// Special states 'same' and 'any' can be defined to simplify the
-// definition of state transitions. A transition with a 'source'
-// state of 'any' will match any state. This is typically used
-// for error events or timeouts. A transition with a 'destination' 
-// state of 'same' will not result in a state change. This is
-// sometimes used when handling predicates -- the predicate can
-// be used to control whether the state changes, or stays the
-// same. The 'any' state is also used as a return value from 
-// apply() to signal a protocol error.
-//
-// The 'end' state is special in that predicates are ignored for
-// transitions which have 'end' as their 'normal' destintation 
-// state. This is because of a special implementation feature
-// which allows the state machine object to be deleted within the
-// action method which causes a transition to the 'end' state.
-// (This feature also means that transitions with an 'alternative'
-// state of 'end' are not valid.)
-//
-// Usage:
+/// \class StateMachine
+/// A finite state machine class template. 
+///
+/// The finite state machine has a persistant 'state'. When an 'event' is 
+/// apply()d to the state machine, it undergoes a state 'transition'
+/// and then calls the associated 'action' method.
+///
+/// Predicates are supported. Any action method can return a boolean
+/// predicate value which is used to select between two transitions --
+/// the 'normal' transition if the predicate is true, and an 'alternative'
+/// transition if false.
+///
+/// Transition states can be implemented by having the relevant action
+/// method call apply() on the state-machine. The state machine's state
+/// is always changed before any action method is called -- although only
+/// using the 'normal' transition, not the 'alternative' -- so this sort
+/// of reentrancy is valid, as long as the action method going into
+/// the transition state returns a predicate value of 'true'.
+///
+/// Default transitions for a given state are not supported directly. But
+/// note that protocol errors do not invalidate the state machine and
+/// do not result in a change of state. This means that client code can 
+/// achieve the effect of default transitions by handling protocol errors 
+/// for that state in a special manner.
+/// 
+/// Special states 'same' and 'any' can be defined to simplify the
+/// definition of state transitions. A transition with a 'source'
+/// state of 'any' will match any state. This is typically used
+/// for error events or timeouts. A transition with a 'destination' 
+/// state of 'same' will not result in a state change. This is
+/// sometimes used when handling predicates -- the predicate can
+/// be used to control whether the state changes, or stays the
+/// same. The 'any' state is also used as a return value from 
+/// apply() to signal a protocol error.
+///
+/// The 'end' state is special in that predicates are ignored for
+/// transitions which have 'end' as their 'normal' destintation 
+/// state. This is because of a special implementation feature
+/// which allows the state machine object to be deleted within the
+/// action method which causes a transition to the 'end' state.
+/// (This feature also means that transitions with an 'alternative'
+/// state of 'end' are not valid.)
+///
+/// Usage:
+/// \code
 /// class Protocol
 /// {
 ///   struct ProtocolError {} ;
@@ -100,7 +102,8 @@ G_EXCEPTION( StateMachine_Error , "invalid state machine transition" ) ;
 ///      if( s == sAny ) throw ProtocolError() ;
 ///   }
 /// } ;
-//
+/// \endcode
+///
 template <typename T, typename State, typename Event, typename Arg = std::string>
 class StateMachine 
 {
@@ -109,41 +112,42 @@ public:
 	typedef StateMachine_Error Error ;
 
 	StateMachine( State s_start , State s_end , State s_same , State s_any ) ;
-		// Constructor.
+		///< Constructor.
 
 	void addTransition( Event event , State from , State to , Action action ) ;
-		// Adds a transition. Special semantics apply if 'from' is
-		// 's_any', or if 'to' is 's_same'.
+		///< Adds a transition. Special semantics apply if 'from' is
+		///< 's_any', or if 'to' is 's_same'.
 
 	void addTransition( Event event , State from , State to , Action action , State alt ) ;
-		// An overload which adds a transition with predicate support.
-		// The 'alt' state is taken as an alternative 'to' state
-		// if the action's predicate is returned as false.
+		///< An overload which adds a transition with predicate support.
+		///< The 'alt' state is taken as an alternative 'to' state
+		///< if the action's predicate is returned as false.
 
 	State apply( T & t , Event event , const Arg & arg ) ;
-		// Applies an event. Calls the appropriate action method
-		// on object "t" and changes state. The state change
-		// takes into account the predicate returned by the 
-		// action method. 
-		//
-		// If the event is valid then the new state is returned.
-		// If the event results in a protocol error the StateMachine's
-		// state is unchanged, no action method is called, and
-		// this method returns 's_any' (see ctor).
-		//
-		// As a special implementation feature the StateMachine
-		// object may be deleted during the last action method
-		// call (ie. the one which takes the state to the
-		// 's_end' state).
+		///< Applies an event. Calls the appropriate action method
+		///< on object "t" and changes state. The state change
+		///< takes into account the predicate returned by the 
+		///< action method. 
+		///<
+		///< If the event is valid then the new state is returned.
+		///< If the event results in a protocol error the StateMachine's
+		///< state is unchanged, no action method is called, and
+		///< this method returns 's_any' (see ctor).
+		///<
+		///< As a special implementation feature the StateMachine
+		///< object may be deleted during the last action method
+		///< call (ie. the one which takes the state to the
+		///< 's_end' state).
 
 	State state() const ;
-		// Returns the current state.
+		///< Returns the current state.
 
 	State reset( State new_state ) ;
-		// Sets the current state. Returns the old state.
+		///< Sets the current state. Returns the old state.
 
 private:
-	struct Transition // A private structure used by G::StateMachine<>.
+	/// A private structure used by G::StateMachine<>.
+	struct Transition 
 	{ 
 		State from ; 
 		State to ; 
@@ -214,30 +218,30 @@ State StateMachine<T,State,Event,Arg>::state() const
 template <class T, class State, class Event, class Arg>
 State StateMachine<T,State,Event,Arg>::apply( T & t , Event event , const Arg & arg )
 {
-	// look up in the multimap keyed on current-state + event
-	//
+	///< look up in the multimap keyed on current-state + event
+	///<
 	State state = m_state ;
 	typename Map::iterator p = m_map.find(event) ;
 	for( ; p != m_map.end() && (*p).first == event ; ++p )
 	{
 		if( (*p).second.from == m_any || (*p).second.from == m_state )
 		{
-			// change state
-			//
+			///< change state
+			///<
 			State old_state = m_state ;
 			if( (*p).second.to != m_same )
 				state = m_state = (*p).second.to ;
 
-			// (avoid using members after the action method call)
+			///< (avoid using members after the action method call)
 			State end = m_end ;
 
-			// perform action
-			//
+			///< perform action
+			///<
 			bool predicate = true ;
 			(t.*((*p).second.action))( arg , predicate ) ;
 
-			// respond to predicate
-			//
+			///< respond to predicate
+			///<
 			if( state != end && !predicate )
 			{
 				State alt_state = (*p).second.alt ;

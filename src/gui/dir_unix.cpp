@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -23,6 +23,7 @@
 
 #include "dir.h"
 #include "gpath.h"
+#include "gdirectory.h"
 #include "gprocess.h"
 #include "gfile.h"
 #include <cstdlib> //getenv
@@ -47,26 +48,40 @@
 
 namespace
 {
-	G::Path kde( const std::string & key )
+	G::Path kde( const std::string & key , const G::Path & default_ )
 	{
-		G::Strings args;
+		std::string exe = "/usr/bin/kde-config" ; // TODO ?
+		G::Strings args ;
 		args.push_back( "kde-config" ) ;
+		args.push_back( "--userpath" ) ;
 		args.push_back( key ) ;
-		std::string exe = "/usr/bin/kde-config" ; // TODO
+
 		G::Process::ChildProcess child = G::Process::spawn( exe , args ) ;
 		child.wait() ;
 		std::string s = child.read() ;
-		return s ;
+		return s.empty() ? default_ : G::Path(s) ;
 	}
 
-	G::Path kdeDesktop()
+	G::Path kdeDesktop( const G::Path & default_ = G::Path() )
 	{
-		return kde("desktop") ;
+		return kde( "desktop" , default_ ) ;
 	}
 	
-	G::Path kdeAutostart()
+	G::Path kdeAutostart( const G::Path & default_ = G::Path() )
 	{
-		return kde("autostart") ;
+		return kde( "autostart" , default_ ) ;
+	}
+
+	std::string env( const std::string & key , const std::string & default_ = std::string() )
+	{
+		const char * p = ::getenv( key.c_str() ) ;
+		return p == NULL ? default_ : std::string(p) ;
+	}
+
+	G::Path envPath( const std::string & key , const G::Path & default_ = std::string() )
+	{
+		const char * p = ::getenv( key.c_str() ) ;
+		return p == NULL ? default_ : G::Path(std::string(p)) ;
 	}
 }
 
@@ -130,19 +145,23 @@ G::Path Dir::special( const std::string & type )
 {
 	// see "http://standards.freedesktop.org"
 
-	const char * home_p = ::getenv("HOME") ? ::getenv("HOME") : "~" ;
-	const char * xdg_data_home_p = ::getenv("XDG_DATA_HOME") ? ::getenv("XDG_DATA_HOME") : "" ;
-	const char * xdg_config_home_p = ::getenv("XDG_CONFIG_HOME") ? ::getenv("XDG_CONFIG_HOME") : "" ;
-	G::Path home( home_p ) ;
-	G::Path data_home = *xdg_data_home_p ? G::Path(xdg_data_home_p) : ( home + ".local" + "share" ) ;
-	G::Path config_home = *xdg_config_home_p ? G::Path(xdg_config_home_p) : ( home + ".config" ) ;
+	G::Path home = envPath( "HOME" , "~" ) ;
+	G::Path data_home = envPath( "XDG_DATA_HOME" , home + ".local" + "share" ) ;
+	G::Path config_home = envPath( "XDG_CONFIG_HOME" , home + ".config" ) ;
 
-	if( type == "desktop" ) return kdeDesktop() == G::Path() ? ( home + "Desktop" ) : kdeDesktop() ;
-	if( type == "menu" ) return data_home + "applications" ;
-	if( type == "login" ) return kdeAutostart() == G::Path() ? ( config_home + "autostart" ) : kdeAutostart() ; 
-	if( type == "lib" ) return tooldir() ;
-	if( type == "programs" ) return "/usr/bin" ;
-	if( type == "reskit" ) return "" ;
+	G::Path desktop = kdeDesktop( home + "Desktop" ) ;
+	G::Path menu = data_home + "applications" ;
+	G::Path login = kdeAutostart( config_home + "autostart" ) ;
+	G::Path lib = tooldir() ;
+	G::Path programs = "/usr/bin" ;
+	G::Path reskit ;
+
+	if( type == "desktop" ) return desktop ;
+	if( type == "menu" ) return menu ;
+	if( type == "login" ) return login ;
+	if( type == "lib" ) return lib ;
+	if( type == "programs" ) return programs ;
+	if( type == "reskit" ) return reskit ;
 	return G::Path() ;
 }
 
@@ -151,13 +170,22 @@ G::Path Dir::boot()
 	return oneOf( "/etc/init.d" , "/Library/StartupItems" ) ;
 }
 
+bool Dir::ok( const std::string & s )
+{
+	return 
+		!s.empty() && 
+		G::File::exists(G::Path(s)) && 
+		G::Directory(G::Path(s)).valid() && 
+		G::Directory(G::Path(s)).writeable() ;
+}
+
 G::Path Dir::oneOf( std::string d1 , std::string d2 , std::string d3 , std::string d4 , std::string d5 )
 {
-	if( !d1.empty() && G::File::exists(G::Path(d1)) ) return G::Path(d1) ;
-	if( !d2.empty() && G::File::exists(G::Path(d2)) ) return G::Path(d2) ;
-	if( !d3.empty() && G::File::exists(G::Path(d3)) ) return G::Path(d3) ;
-	if( !d4.empty() && G::File::exists(G::Path(d4)) ) return G::Path(d4) ;
-	if( !d5.empty() && G::File::exists(G::Path(d5)) ) return G::Path(d5) ;
+	if( ok(d1) ) return G::Path(d1) ;
+	if( ok(d2) ) return G::Path(d2) ;
+	if( ok(d3) ) return G::Path(d3) ;
+	if( ok(d4) ) return G::Path(d4) ;
 	return G::Path() ;
 }
 
+/// \file dir_unix.cpp

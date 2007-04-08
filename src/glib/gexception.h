@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gexception.h
-//
+///
+/// \file gexception.h
+///
 
 #ifndef G_EXCEPTION_H
 #define G_EXCEPTION_H
@@ -28,15 +28,16 @@
 #include <string>
 #include <iostream>
 
+/// \namespace G
 namespace G
 {
 	class Exception ;
 }
 
-// Class: G::Exception
-// Description: A general-purpose exception class derived from std::exception
-// and containing a std::string.
-//
+/// \class G::Exception
+/// A general-purpose exception class derived from std::exception
+/// and containing a std::string.
+///
 class G::Exception : public std::exception 
 {
 protected:
@@ -44,42 +45,42 @@ protected:
 
 public:
 	Exception() ;
-		// Default constructor.
+		///< Default constructor.
 
 	explicit Exception( const char * what ) ;
-		// Constructor.
+		///< Constructor.
 
 	explicit Exception( const std::string & what ) ;
-		// Constructor.
+		///< Constructor.
 
 	virtual ~Exception() throw() ;
-		// Destructor.
+		///< Destructor.
 
 	virtual const char * what() const throw() ;
-		// Override from std::exception.
+		///< Override from std::exception.
 
 	void prepend( const char * context ) ;
-		// Prepends context to the what string.
-		// Inserts a separator as needed.
+		///< Prepends context to the what string.
+		///< Inserts a separator as needed.
 
 	void append( const char * more ) ;
-		// Appends 'more' to the what string.
-		// Inserts a separator as needed.
+		///< Appends 'more' to the what string.
+		///< Inserts a separator as needed.
 
 	void append( const std::string & more ) ;
-		// Appends 'more' to the what string.
-		// Inserts a separator as needed.
+		///< Appends 'more' to the what string.
+		///< Inserts a separator as needed.
 
 	void append( std::ostream & s ) ;
-		// Appends the contents of the given std::ostringstream 
-		// (sic) to the what string. Does nothing if the
-		// dynamic type of 's' is not a std::ostringstream. 
-		// Inserts a separator as needed.
-		//
-		// This method allows a derived-class exception 
-		// to be constructed and thrown on one line using
-		// iostream formatting.
-		// Eg. throw Error( std::ostringstream() << a << b ) ;
+		///< Appends the contents of the given std::ostringstream 
+		///< (sic) to the what string. Does nothing if the
+		///< dynamic type of 's' is not a std::ostringstream. 
+		///< Inserts a separator as needed.
+		///<
+		///< This method allows a derived-class exception 
+		///< to be constructed and thrown on one line using
+		///< iostream formatting.
+		///< Eg. throw Error( std::ostringstream() << a << b ) ;
 } ;
 
 #define G_EXCEPTION( class_name , description ) class class_name : public G::Exception { public: class_name() { m_what = description ; } public: explicit class_name( const char * more ) { m_what = description ; append(more) ; } public: explicit class_name( const std::string & more ) { m_what = description ; append(more) ; } }

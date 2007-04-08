@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gserverprotocol.h
-//
+///
+/// \file gserverprotocol.h
+///
 
 #ifndef G_SMTP_SERVER_PROTOCOL_H
 #define G_SMTP_SERVER_PROTOCOL_H
@@ -37,35 +37,38 @@
 #include <map>
 #include <utility>
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class ServerProtocol ;
 	class ServerProtocolText ;
 }
 
-// Class: GSmtp::ServerProtocol
-// Description: Implements the SMTP server-side protocol.
-//
-// Uses the ProtocolMessage class as its down-stream interface,
-// used for assembling and processing the incoming email
-// messages. 
-//
-// Uses the ServerProtocol::Sender as its "sideways"
-// interface to talk back to the email-sending client.
-// 
-// See also: GSmtp::ProtocolMessage, RFC2821
-//
+/// \class GSmtp::ServerProtocol
+/// Implements the SMTP server-side protocol.
+///
+/// Uses the ProtocolMessage class as its down-stream interface,
+/// used for assembling and processing the incoming email
+/// messages. 
+///
+/// Uses the ServerProtocol::Sender as its "sideways"
+/// interface to talk back to the email-sending client.
+/// 
+/// \see GSmtp::ProtocolMessage, RFC2821
+///
 class GSmtp::ServerProtocol : private GNet::Timer 
 {
 public:
 	G_EXCEPTION( ProtocolDone , "smtp protocol done" ) ;
-	class Sender // An interface used by ServerProtocol to send protocol replies.
+	/// An interface used by ServerProtocol to send protocol replies.
+	class Sender 
 	{
 		public: virtual void protocolSend( const std::string & s ) = 0 ;
 		public: virtual ~Sender() ;
 		private: void operator=( const Sender & ) ; // not implemented
 	} ;
-	class Text // An interface used by ServerProtocol to provide response text strings.
+	/// An interface used by ServerProtocol to provide response text strings.
+	class Text 
 	{
 		public: virtual std::string greeting() const = 0 ;
 		public: virtual std::string hello( const std::string & peer_name ) const = 0 ;
@@ -73,7 +76,8 @@ public:
 		public: virtual ~Text() ;
 		private: void operator=( const Text & ) ; // not implemented
 	} ;
-	struct Config // A structure containing configuration parameters for ServerProtocol.
+	/// A structure containing configuration parameters for ServerProtocol.
+	struct Config 
 	{
 		bool with_vrfy ;
 		unsigned int preprocessor_timeout ;
@@ -82,31 +86,31 @@ public:
 
 	ServerProtocol( Sender & sender , Verifier & verifier , ProtocolMessage & pmessage ,
 		const Secrets & secrets , Text & text , GNet::Address peer_address , Config config ) ;
-			// Constructor. 
-			//
-			// The Verifier interface is used to verify recipient
-			// addresses. See GSmtp::Verifier.
-			//
-			// The ProtocolMessage interface is used to assemble and
-			// process an incoming message.
-			//
-			// The Sender interface is used to send protocol
-			// replies back to the client.
-			//
-			// The Text interface is used to get informational text
-			// for returning to the client.
-			//
-			// All references are kept.
+			///< Constructor. 
+			///<
+			///< The Verifier interface is used to verify recipient
+			///< addresses. See GSmtp::Verifier.
+			///<
+			///< The ProtocolMessage interface is used to assemble and
+			///< process an incoming message.
+			///<
+			///< The Sender interface is used to send protocol
+			///< replies back to the client.
+			///<
+			///< The Text interface is used to get informational text
+			///< for returning to the client.
+			///<
+			///< All references are kept.
 
 	void init() ;
-		// Starts the protocol.
+		///< Starts the protocol.
 
 	virtual ~ServerProtocol() ;
-		// Destructor.
+		///< Destructor.
 
 	void apply( const std::string & line ) ;
-		// Called on receipt of a string from the client.
-		// The string is expected to be CR-LF terminated.
+		///< Called on receipt of a string from the client.
+		///< The string is expected to be CR-LF terminated.
 
 private:
 	enum Event
@@ -223,29 +227,29 @@ private:
 	unsigned int m_preprocessor_timeout ;
 } ;
 
-// Class: GSmtp::ServerProtocolText
-// Description: A default implementation for the 
-// ServerProtocol::Text interface.
-//
+/// \class GSmtp::ServerProtocolText
+/// A default implementation for the 
+/// ServerProtocol::Text interface.
+///
 class GSmtp::ServerProtocolText : public GSmtp::ServerProtocol::Text 
 {
 public:
 	ServerProtocolText( const std::string & ident , const std::string & thishost ,
 		const GNet::Address & peer_address ) ;
-			// Constructor.
+			///< Constructor.
 
 	virtual std::string greeting() const ;
-		// From ServerProtocol::Text.
+		///< From ServerProtocol::Text.
 
 	virtual std::string hello( const std::string & peer_name_from_helo ) const ;
-		// From ServerProtocol::Text.
+		///< From ServerProtocol::Text.
 
 	virtual std::string received( const std::string & peer_name_from_helo ) const ;
-		// From ServerProtocol::Text.
+		///< From ServerProtocol::Text.
 
 	static std::string receivedLine( const std::string & peer_name_from_helo , const std::string & peer_address , 
 		const std::string & thishost ) ;
-			// Returns a standard "Received:" line.
+			///< Returns a standard "Received:" line.
 
 private:
 	std::string m_ident ;

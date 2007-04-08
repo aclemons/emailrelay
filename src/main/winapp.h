@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// winapp.h
-//
+///
+/// \file winapp.h
+///
 
 #ifndef WIN_APP_H
 #define WIN_APP_H
@@ -33,52 +33,53 @@
 #include "output.h"
 #include <memory>
 
+/// \namespace Main
 namespace Main
 {
 	class WinApp ;
 }
 
-// Class: Main::WinApp
-// Description: An application class instantiated in WinMain()
-// and containing a Main::WinForm object. WinMain() sets up 
-// slot/signal links from Main::Run to Main::WinApp. Derives
-// from Main::Output so that Main::CommandLine can call
-// output() to throw up message boxes.
-//
+/// \class Main::WinApp
+/// An application class instantiated in WinMain()
+/// and containing a Main::WinForm object. WinMain() sets up 
+/// slot/signal links from Main::Run to Main::WinApp. Derives
+/// from Main::Output so that Main::CommandLine can call
+/// output() to throw up message boxes.
+///
 class Main::WinApp : public GGui::ApplicationBase , public Main::Output 
 {
 public:
 	G_EXCEPTION( Error , "application error" ) ;
 
 	WinApp( HINSTANCE h , HINSTANCE p , const char * name ) ;
-		// Constructor. Initialise with init().
+		///< Constructor. Initialise with init().
 
 	virtual ~WinApp() ;
-		// Destructor.
+		///< Destructor.
 
 	void init( const Main::Configuration & cfg ) ;
-		// Initialises the object after construction.
+		///< Initialises the object after construction.
 
 	void output( const std::string & message , bool error ) ;
-		// Puts up a message box. See Main::Output.
+		///< Puts up a message box. See Main::Output.
 
 	void onError( const std::string & message ) ;
-		// To be called when WinMain() catches an exception.
+		///< To be called when WinMain() catches an exception.
 
 	unsigned int columns() ;
-		// See Main::Output.
+		///< See Main::Output.
 
 	bool confirm() ;
-		// Puts up a confirmation message box.
+		///< Puts up a confirmation message box.
 
 	void formOk() ;
-		// Called from the form's ok button handler.
+		///< Called from the form's ok button handler.
 
 	void formDone() ;
-		// Called from the form's nc-destroy message handler.
+		///< Called from the form's nc-destroy message handler.
 
 	void onRunEvent( std::string , std::string , std::string ) ;
-		// Slot for Main::Run::signal().
+		///< Slot for Main::Run::signal().
 
 private:
 	void doOpen() ;

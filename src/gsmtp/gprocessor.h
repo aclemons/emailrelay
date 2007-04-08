@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gprocessor.h
-//
+///
+/// \file gprocessor.h
+///
 
 #ifndef G_SMTP_PROCESSOR_H
 #define G_SMTP_PROCESSOR_H
@@ -29,51 +29,52 @@
 #include "gexe.h"
 #include "gslot.h"
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class Processor ;
 }
 
-// Class: GSmtp::Processor
-// Description: Processes message files using an external preprocessor
-// program.
-//
+/// \class GSmtp::Processor
+/// Processes message files using an external preprocessor
+/// program.
+///
 class GSmtp::Processor 
 {
 public:
 	explicit Processor( const G::Executable & preprocessor ) ;
-		// Constructor.
+		///< Constructor.
 
 	G::Signal1<bool> & doneSignal() ;
-		// Returns a signal which is raised once start() has
-		// completed. The signal parameter is equivalent
-		// to the process() return value.
+		///< Returns a signal which is raised once start() has
+		///< completed. The signal parameter is equivalent
+		///< to the process() return value.
 
 	void start( const std::string & path ) ;
-		// Starts the processor asynchronously.
-		// Any previous, incomplete processing 
-		// is abort()ed. Asynchronous completion
-		// is indicated by the doneSignal().
+		///< Starts the processor asynchronously.
+		///< Any previous, incomplete processing 
+		///< is abort()ed. Asynchronous completion
+		///< is indicated by the doneSignal().
 
 	void abort() ;
-		// Aborts any incomplete processing.
+		///< Aborts any incomplete processing.
 
 	std::string text( const std::string & default_ = std::string() ) const ;
-		// Returns the empty string if process() returned 
-		// true, or the "<<text>>" output by the processor
-		// program. If process() returned false and
-		// there was no text from the processor then
-		// the given default string is returned.
+		///< Returns the empty string if process() returned 
+		///< true, or the "<<text>>" output by the processor
+		///< program. If process() returned false and
+		///< there was no text from the processor then
+		///< the given default string is returned.
 
 	bool cancelled() const ;
-		// Returns true if the exit code indicated that 
-		// further message processesing is to be cancelled.
-		// (If cancelled() then process() returns false.)
+		///< Returns true if the exit code indicated that 
+		///< further message processesing is to be cancelled.
+		///< (If cancelled() then process() returns false.)
 
 	bool repoll() const ;
-		// Returns true if the exit code indicated that 
-		// the message store should be repolled immediately.
-		// (This indicator is independent of cancelled().)
+		///< Returns true if the exit code indicated that 
+		///< the message store should be repolled immediately.
+		///< (This indicator is independent of cancelled().)
 
 private:
 	Processor( const Processor & ) ; // not implemented

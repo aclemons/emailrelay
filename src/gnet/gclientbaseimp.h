@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,10 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gclientbaseimp.h
-//
-
+///
+/// \file gclientbaseimp.h
+///
 
 #ifndef G_CLIENT_BASE_IMP_H__
 #define G_CLIENT_BASE_IMP_H__
@@ -32,15 +31,16 @@
 #include <utility>
 #include <string>
 
+/// \namespace GNet
 namespace GNet
 {
 	class ClientBaseImp ;
 }
 
-// Class: GNet::ClientBaseImp
-// Description: A base class for GNet::Client pimple-pattern implementation
-// classes.
-//
+/// \class GNet::ClientBaseImp
+/// A base class for GNet::Client pimple-pattern implementation
+/// classes.
+///
 class GNet::ClientBaseImp : public GNet::EventHandler 
 {
 public:

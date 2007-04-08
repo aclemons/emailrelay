@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// run.h
-//
+///
+/// \file run.h
+///
 
 #ifndef G_MAIN_RUN_H
 #define G_MAIN_RUN_H
@@ -49,14 +49,16 @@
 #include <exception>
 #include <memory>
 
+/// \namespace Main
 namespace Main
 {
 	class Run ;
 }
 
-// Class: Main::Run
-// Description: A top-level class for the process.
-// Usage:
+/// \class Main::Run
+/// A top-level class for the process.
+/// Usage:
+/// \code
 /// int main( int argc , char ** argv )
 /// {
 ///   G::Arg arg( argc , argv ) ;
@@ -66,32 +68,33 @@ namespace Main
 ///      run.run() ;
 ///   return 0 ;
 /// }
-//
+/// \endcode
+///
 class Main::Run : private GNet::TimeoutHandler 
 {
 public:
 	Run( Output & output , const G::Arg & arg , const std::string & switch_spec ) ;
-		// Constructor.
+		///< Constructor.
 
 	virtual ~Run() ;
-		// Destructor.
+		///< Destructor.
 
 	bool prepare() ;
-		// Prepares to run(). Returns
-		// false on error.
+		///< Prepares to run(). Returns
+		///< false on error.
 
 	void run() ;
-		// Runs the application.
-		// Precondition: prepare() returned true
+		///< Runs the application.
+		///< Precondition: prepare() returned true
 
 	Configuration cfg() const ;
-		// Returns a configuration object.
+		///< Returns a configuration object.
 
 	static std::string versionNumber() ;
-		// Returns the application version number string.
+		///< Returns the application version number string.
 
 	G::Signal3<std::string,std::string,std::string> & signal() ;
-		// Provides a signal which is activated when something changes.
+		///< Provides a signal which is activated when something changes.
 
 private:
 	Run( const Run & ) ; // not implemented

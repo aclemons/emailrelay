@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// winform.h
-//
+///
+/// \file winform.h
+///
 
 #ifndef WIN_FORM_H
 #define WIN_FORM_H
@@ -30,6 +30,7 @@
 #include "configuration.h"
 #include <string>
 
+/// \namespace Main
 namespace Main
 {
 	class WinForm ;
@@ -40,10 +41,10 @@ class Main::WinForm : public GGui::Dialog
 {
 public: 
 	WinForm( WinApp & , const Configuration & cfg , bool confirm ) ;
-		// Constructor.
+		///< Constructor.
 
 	void close() ;
-		// Closes the form.
+		///< Closes the form.
 
 private:
 	virtual bool onInit() ;

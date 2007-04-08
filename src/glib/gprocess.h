@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gprocess.h
-//
+///
+/// \file gprocess.h
+///
 
 #ifndef G_PROCESS_H
 #define G_PROCESS_H
@@ -33,20 +33,20 @@
 #include <sys/types.h>
 #include <string>
 
+/// \namespace G
 namespace G
 {
 	class Process ;
 }
 
-// Class: G::Process
-// Description: A static interface for doing things with processes.
-// See also: G::Daemon
-//
+/// \class G::Process
+/// A static interface for doing things with processes.
+/// \see G::Daemon
+///
 class G::Process : private G::IdentityUser 
 {
 public:
 	G_EXCEPTION( CannotFork , "cannot fork()" ) ;
-	G_EXCEPTION( CannotChroot , "cannot chroot()" ) ;
 	G_EXCEPTION( CannotChangeDirectory , "cannot cd()" ) ;
 	G_EXCEPTION( WaitError , "cannot wait()" ) ;
 	G_EXCEPTION( ChildError , "child process terminated abnormally or stopped" ) ;
@@ -58,7 +58,8 @@ public:
 
 	enum Who { Parent , Child } ;
 	class IdImp ;
-	class Id // Process-id class.
+	/// Process-id class.
+	class Id 
 	{
 		public: Id() ;
 		public: explicit Id( std::istream & ) ;
@@ -68,7 +69,8 @@ public:
 		private: pid_t m_pid ;
 		friend class Process ;
 	} ;
-	class Umask // Used to temporarily modify the process umask.
+	/// Used to temporarily modify the process umask.
+	class Umask 
 	{
 		public: enum Mode { Readable , Tighter , Tightest } ;
 		public: explicit Umask( Mode ) ;
@@ -80,7 +82,8 @@ public:
 		private: UmaskImp * m_imp ;
 	} ;
 	class ChildProcessImp ;
-	class ChildProcess // Represents the state of a child process.
+	/// Represents the state of a child process.
+	class ChildProcess 
 	{
 		private: explicit ChildProcess( ChildProcessImp * ) ;
 		public: ChildProcess( const ChildProcess & ) ;
@@ -91,79 +94,77 @@ public:
 		private: ChildProcessImp * m_imp ;
 		friend class Process ;
 	} ;
-	class NoThrow // An overload discriminator for Process.
+	/// An overload discriminator for Process.
+	class NoThrow 
 		{} ;
 
 	static void closeFiles( bool keep_stderr = false ) ;
-		// Closes all open file descriptors.
+		///< Closes all open file descriptors.
 
 	static void closeStderr() ;
-		// Closes stderr.
+		///< Closes stderr.
 
 	static void cd( const Path & dir ) ;
-		// Changes directory.
+		///< Changes directory.
 
 	static bool cd( const Path & dir , NoThrow ) ;
-		// Changes directory. Returns false on error.
-
-	static void chroot( const Path & dir ) ;
-		// Does a chroot. Throws on error, or if not implemented.
+		///< Changes directory. Returns false on error.
 
 	static Who fork() ;
-		// Forks a child process.
+		///< Forks a child process.
 
 	static Who fork( Id & child ) ;
-		// Forks a child process. Returns the child
-		// pid by reference to the parent.
+		///< Forks a child process. Returns the child
+		///< pid by reference to the parent.
 
 	static int spawn( Identity nobody , const Path & exe , const Strings & args , 
 		std::string * pipe_result_p = NULL , int error_return = 127 ,
 		std::string (*error_decode_fn)(int) = 0 ) ;
-			// Runs a command in an unprivileged child process. Returns the
-			// child process's exit code, or 'error_return' on error.
-			//
-			// The 'nobody' identity should have come from beOrdinary().
-			//
-			// If the 'pipe_result_p' pointer is supplied then the child
-			// process is given a pipe as its stdout and this is used
-			// to read the first bit of whatever it writes.
-			//
-			// If the function pointer is supplied then it is used
-			// to generate a string that is written into the pipe if 
-			// the exec() fails in the fork()ed child process.
+			///< Runs a command in an unprivileged child process. Returns the
+			///< child process's exit code, or 'error_return' on error.
+			///<
+			///< The 'nobody' identity should have come from beOrdinary().
+			///<
+			///< If the 'pipe_result_p' pointer is supplied then the child
+			///< process is given a pipe as its stdout and this is used
+			///< to read the first bit of whatever it writes.
+			///<
+			///< If the function pointer is supplied then it is used
+			///< to generate a string that is written into the pipe if 
+			///< the exec() fails in the fork()ed child process.
 
 	static ChildProcess spawn( const Path & exe , const Strings & args ) ;
-		// A simple overload to spawn a child process asynchronously.
-		// Does no special security checks.
+		///< A simple overload to spawn a child process asynchronously.
+		///< Does no special security checks.
 
 	static int errno_() ;
-		// Returns the process's current 'errno' value.
+		///< Returns the process's current 'errno' value.
 
 	static std::string strerror( int errno_ ) ;
-		// Translates an 'errno' value into a meaningful diagnostic string.
+		///< Translates an 'errno' value into a meaningful diagnostic string.
 
 	static void revokeExtraGroups() ;
-		// Revokes secondary group memberships if really root
-		// or if suid.
+		///< Revokes secondary group memberships if really root
+		///< or if suid.
 
 	static Identity beOrdinary( Identity nobody , bool change_group = true ) ;
-		// Revokes special privileges (root or suid).
-		//
-		// If really root (as opposed to suid root) then the effective 
-		// id is changed to that passed in. 
-		//
-		// If suid (including suid-root), then the effective id is 	
-		// changed to the real id, and the parameter is ignored. 
-		//
-		// Returns the old identity, which can be passed to beSpecial().
-		//
-		// See also class G::Root.
+		///< Revokes special privileges (root or suid).
+		///<
+		///< If really root (as opposed to suid root) then the effective 
+		///< id is changed to that passed in. 
+		///<
+		///< If suid (including suid-root), then the effective id is 	
+		///< changed to the real id, and the parameter is ignored. 
+		///<
+		///< Returns the old identity, which can be passed to beSpecial().
+		///<
+		///< See also class G::Root.
 
 	static void beSpecial( Identity special , bool change_group = true ) ;
-		// Re-aquires special privileges (either root or suid). The 
-		// parameter must have come from a previous call to beOrdinary().
-		//
-		// See also class G::Root.
+		///< Re-aquires special privileges (either root or suid). The 
+		///< parameter must have come from a previous call to beOrdinary().
+		///<
+		///< See also class G::Root.
 
 private:
 	Process() ;
@@ -174,6 +175,7 @@ private:
 	static void closeFiles( int ) ;
 } ;
 
+/// \namespace G
 namespace G
 {
 	inline

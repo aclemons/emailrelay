@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -37,3 +37,4 @@ bool GNet::Resolver::resolveHost( const std::string & host_name , HostInfo & hos
 	return host != NULL ;
 }
 
+/// \file gresolve_ipv4.cpp

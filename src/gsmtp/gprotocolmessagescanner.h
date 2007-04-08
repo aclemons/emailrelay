@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2006 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,9 +17,9 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// gprotocolmessagescanner.h
-//
+///
+/// \file gprotocolmessagescanner.h
+///
 
 #ifndef G_SMTP_PROTOCOL_MESSAGE_SCANNER_H
 #define G_SMTP_PROTOCOL_MESSAGE_SCANNER_H
@@ -38,19 +38,20 @@
 #include <string>
 #include <memory>
 
+/// \namespace GSmtp
 namespace GSmtp
 {
 	class ProtocolMessageScanner ;
 }
 
-// Class: GSmtp::ProtocolMessageScanner
-// Description: A derivation of ProtocolMessageForward which adds in
-// a scanning step.
-// 
-// The scanning part deletages to a ScannerClient data member.
-//
-// See also: GSmtp::ProtocolMessageStore, GSmtp::ProtocolMessageForward
-//
+/// \class GSmtp::ProtocolMessageScanner
+/// A derivation of ProtocolMessageForward which adds in
+/// a scanning step.
+/// 
+/// The scanning part deletages to a ScannerClient data member.
+///
+/// \see GSmtp::ProtocolMessageStore, GSmtp::ProtocolMessageForward
+///
 class GSmtp::ProtocolMessageScanner : public GSmtp::ProtocolMessageForward 
 {
 public:
@@ -62,20 +63,20 @@ public:
 		unsigned int smtp_connection_timeout ,
 		const std::string & scanner_server_address , 
 		unsigned int scanner_response_timeout , unsigned int scanner_connection_timeout ) ;
-			// Constructor. The 'store' and 'client-secrets' references
-			// are kept.
+			///< Constructor. The 'store' and 'client-secrets' references
+			///< are kept.
 
 	virtual ~ProtocolMessageScanner() ;
-		// Destructor.
+		///< Destructor.
 
 	virtual G::Signal3<bool,bool,std::string> & preparedSignal() ;
-		// See ProtocolMessage.
+		///< See ProtocolMessage.
 
 	virtual bool prepare() ;
-		// See ProtocolMessage.
+		///< See ProtocolMessage.
 
 	virtual void clear() ;
-		// See ProtocolMessage.
+		///< See ProtocolMessage.
 
 private:
 	void operator=( const ProtocolMessageScanner & ) ; // not implemented
