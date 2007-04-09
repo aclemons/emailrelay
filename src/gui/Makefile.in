@@ -54,14 +54,12 @@ PROGRAMS = $(sbin_PROGRAMS)
 am__emailrelay_gui_SOURCES_DIST = gdialog.cpp gdialog.h glink.h \
 	glink.cpp gpage.cpp gpage.h gunpack.h gunpack.cpp dir.cpp \
 	dir_unix.cpp dir.h installer.cpp installer.h guimain.cpp \
-	legal.cpp legal.h package.h pages.cpp pages.h qt.h unpack.c \
-	unpack.h
-@GUI_TRUE@am__objects_1 = gdialog.$(OBJEXT) glink.$(OBJEXT) \
-@GUI_TRUE@	gpage.$(OBJEXT) gunpack.$(OBJEXT) dir.$(OBJEXT) \
-@GUI_TRUE@	dir_unix.$(OBJEXT) installer.$(OBJEXT) \
+	legal.cpp legal.h pages.cpp pages.h qt.h unpack.c unpack.h
+@GUI_TRUE@am_emailrelay_gui_OBJECTS = gdialog.$(OBJEXT) \
+@GUI_TRUE@	glink.$(OBJEXT) gpage.$(OBJEXT) gunpack.$(OBJEXT) \
+@GUI_TRUE@	dir.$(OBJEXT) dir_unix.$(OBJEXT) installer.$(OBJEXT) \
 @GUI_TRUE@	guimain.$(OBJEXT) legal.$(OBJEXT) pages.$(OBJEXT) \
 @GUI_TRUE@	unpack.$(OBJEXT)
-@GUI_TRUE@am_emailrelay_gui_OBJECTS = $(am__objects_1)
 emailrelay_gui_OBJECTS = $(am_emailrelay_gui_OBJECTS)
 am__DEPENDENCIES_1 =
 SCRIPTS = $(noinst_SCRIPTS)
@@ -189,69 +187,19 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+EXTRA_DIST = \
+	emailrelay-icon.png \
+	gcominit.h \
+	dir_win32.cpp \
+	mingw.mak \
+	mac.mak \
+	pack.cpp \
+	run.c \
+	mock
+
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 @GUI_TRUE@AM_INSTALL_PROGRAM_FLAGS = -s
-@GUI_TRUE@GUI_SOURCES = \
-@GUI_TRUE@	gdialog.cpp \
-@GUI_TRUE@	gdialog.h \
-@GUI_TRUE@	glink.h \
-@GUI_TRUE@	glink.cpp \
-@GUI_TRUE@	gpage.cpp \
-@GUI_TRUE@	gpage.h \
-@GUI_TRUE@	gunpack.h \
-@GUI_TRUE@	gunpack.cpp \
-@GUI_TRUE@	dir.cpp \
-@GUI_TRUE@	dir_unix.cpp \
-@GUI_TRUE@	dir.h \
-@GUI_TRUE@	installer.cpp \
-@GUI_TRUE@	installer.h \
-@GUI_TRUE@	guimain.cpp \
-@GUI_TRUE@	legal.cpp \
-@GUI_TRUE@	legal.h \
-@GUI_TRUE@	package.h \
-@GUI_TRUE@	pages.cpp \
-@GUI_TRUE@	pages.h \
-@GUI_TRUE@	qt.h \
-@GUI_TRUE@	unpack.c \
-@GUI_TRUE@	unpack.h
-
-@GUI_FALSE@EXTRA_DIST = \
-@GUI_FALSE@	dir.cpp \
-@GUI_FALSE@	dir.h \
-@GUI_FALSE@	dir_unix.cpp \
-@GUI_FALSE@	dir_win32.cpp \
-@GUI_FALSE@	installer.cpp \
-@GUI_FALSE@	installer.h \
-@GUI_FALSE@	emailrelay-icon.png \
-@GUI_FALSE@	gcominit.h \
-@GUI_FALSE@	gdialog.cpp \
-@GUI_FALSE@	gdialog.h \
-@GUI_FALSE@	glink.cpp \
-@GUI_FALSE@	glink.h \
-@GUI_FALSE@	gpage.cpp \
-@GUI_FALSE@	gpage.h \
-@GUI_FALSE@	legal.cpp \
-@GUI_FALSE@	legal.h \
-@GUI_FALSE@	mock \
-@GUI_FALSE@	mac.mak \
-@GUI_FALSE@	guimain.cpp \
-@GUI_FALSE@	mingw.mak \
-@GUI_FALSE@	pack.cpp \
-@GUI_FALSE@	pages.cpp \
-@GUI_FALSE@	pages.h \
-@GUI_FALSE@	qt.h \
-@GUI_FALSE@	run.c
-
-@GUI_TRUE@EXTRA_DIST = \
-@GUI_TRUE@	emailrelay-icon.png \
-@GUI_TRUE@	gcominit.h \
-@GUI_TRUE@	dir_win32.cpp \
-@GUI_TRUE@	mingw.mak \
-@GUI_TRUE@	mac.mak \
-@GUI_TRUE@	run.c \
-@GUI_TRUE@	mock
-
 @GUI_TRUE@MOC_OUTPUT = \
 @GUI_TRUE@	moc_gdialog.cpp \
 @GUI_TRUE@	moc_gpage.cpp \
@@ -276,7 +224,29 @@ top_srcdir = @top_srcdir@
 
 @GUI_TRUE@AM_CPPFLAGS = $(QT_CFLAGS)
 @GUI_TRUE@noinst_SCRIPTS = mock
-@GUI_TRUE@emailrelay_gui_SOURCES = $(GUI_SOURCES)
+@GUI_TRUE@emailrelay_gui_SOURCES = \
+@GUI_TRUE@	gdialog.cpp \
+@GUI_TRUE@	gdialog.h \
+@GUI_TRUE@	glink.h \
+@GUI_TRUE@	glink.cpp \
+@GUI_TRUE@	gpage.cpp \
+@GUI_TRUE@	gpage.h \
+@GUI_TRUE@	gunpack.h \
+@GUI_TRUE@	gunpack.cpp \
+@GUI_TRUE@	dir.cpp \
+@GUI_TRUE@	dir_unix.cpp \
+@GUI_TRUE@	dir.h \
+@GUI_TRUE@	installer.cpp \
+@GUI_TRUE@	installer.h \
+@GUI_TRUE@	guimain.cpp \
+@GUI_TRUE@	legal.cpp \
+@GUI_TRUE@	legal.h \
+@GUI_TRUE@	pages.cpp \
+@GUI_TRUE@	pages.h \
+@GUI_TRUE@	qt.h \
+@GUI_TRUE@	unpack.c \
+@GUI_TRUE@	unpack.h
+
 @GUI_TRUE@emailrelay_gui_DEPENDENCIES = $(MOC_OBJECTS)
 @GUI_TRUE@emailrelay_gui_LDADD = \
 @GUI_TRUE@	$(MOC_OBJECTS) \

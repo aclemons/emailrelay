@@ -207,25 +207,37 @@ dnl
 AC_DEFUN([ENABLE_GUI],
 [
 qt4="no"
+qt4moc="no"
 if test "$enable_gui" = "no"
 then
 	AC_DEFINE(HAVE_GUI,0,[Define to enable gui code])
 else
-	PKG_CHECK_MODULES(QT,QtGui >= 4.0.1)
-	MOC="${e_qtmoc}"
-	AC_PATH_PROG(MOC,moc)
-	AC_MSG_CHECKING([moc is for qt 4])
-	if test -x "$MOC" -a "`$MOC -v 2>&1 | $GREP 'Qt 4'`" != "" ; then
-		AC_MSG_RESULT([yes])
-		AC_DEFINE(HAVE_GUI,1,[Define to enable gui code])
-		qt4="yes"
+	PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes],[AC_MSG_RESULT([no])])
+	if test "$qt4" = "yes"
+	then
+		MOC="${e_qtmoc}"
+		AC_PATH_PROG(MOC,moc)
+		AC_MSG_CHECKING([moc is for qt 4])
+		if test x$GREP = x ; then GREP=grep ; fi
+		if test -x "$MOC" -a "`$MOC -v 2>&1 | $GREP 'Qt 4'`" != "" ; then
+			AC_MSG_RESULT([yes])
+			qt4moc="yes"
+		else
+			AC_MSG_RESULT([no])
+		fi
 	else
-		AC_MSG_ERROR([no moc for qt 4])
-		AC_DEFINE(HAVE_GUI,0,[Define to enable gui code])
+		QT_LIBS=""
+		AC_SUBST(QT_LIBS)
 	fi
 fi
+if test "$qt4moc" = "yes"
+then
+	AC_DEFINE(HAVE_GUI,1,[Define to enable gui code])
+else
+	AC_DEFINE(HAVE_GUI,0,[Define to enable gui code])
+fi
 AC_SUBST(MOC)
-AM_CONDITIONAL(GUI,test x$enable_gui != xno -a x$qt4 = xyes )
+AM_CONDITIONAL(GUI,test x$enable_gui != xno -a x$qt4moc = xyes )
 ])
 
 dnl enable-pop

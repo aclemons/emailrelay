@@ -21,43 +21,20 @@
 # Makefile.am
 #
 
-if GUI
-
-# force symbol stripping on 'make install' -- see also make 'install-strip'
-AM_INSTALL_PROGRAM_FLAGS=-s
-
-GUI_SOURCES=\
-	gdialog.cpp \
-	gdialog.h \
-	glink.h \
-	glink.cpp \
-	gpage.cpp \
-	gpage.h \
-	gunpack.h \
-	gunpack.cpp \
-	dir.cpp \
-	dir_unix.cpp \
-	dir.h \
-	installer.cpp \
-	installer.h \
-	guimain.cpp \
-	legal.cpp \
-	legal.h \
-	package.h \
-	pages.cpp \
-	pages.h \
-	qt.h \
-	unpack.c \
-	unpack.h
-
 EXTRA_DIST=\
 	emailrelay-icon.png \
 	gcominit.h \
 	dir_win32.cpp \
 	mingw.mak \
 	mac.mak \
+	pack.cpp \
 	run.c \
 	mock
+
+if GUI
+
+# force symbol stripping on 'make install' -- see also make 'install-strip'
+AM_INSTALL_PROGRAM_FLAGS=-s
 
 MOC_OUTPUT=\
 	moc_gdialog.cpp \
@@ -96,7 +73,28 @@ AM_CPPFLAGS=$(QT_CFLAGS)
 sbin_PROGRAMS = emailrelay-gui
 noinst_SCRIPTS = mock
 
-emailrelay_gui_SOURCES = $(GUI_SOURCES)
+emailrelay_gui_SOURCES = \
+	gdialog.cpp \
+	gdialog.h \
+	glink.h \
+	glink.cpp \
+	gpage.cpp \
+	gpage.h \
+	gunpack.h \
+	gunpack.cpp \
+	dir.cpp \
+	dir_unix.cpp \
+	dir.h \
+	installer.cpp \
+	installer.h \
+	guimain.cpp \
+	legal.cpp \
+	legal.h \
+	pages.cpp \
+	pages.h \
+	qt.h \
+	unpack.c \
+	unpack.h
 
 emailrelay_gui_DEPENDENCIES = $(MOC_OBJECTS)
 
@@ -112,34 +110,5 @@ install-exec-hook:
 
 uninstall-hook:
 	-rm $(DESTDIR)$(sbindir)/emailrelay-gui.state
-
-else
-
-EXTRA_DIST=\
-	dir.cpp \
-	dir.h \
-	dir_unix.cpp \
-	dir_win32.cpp \
-	installer.cpp \
-	installer.h \
-	emailrelay-icon.png \
-	gcominit.h \
-	gdialog.cpp \
-	gdialog.h \
-	glink.cpp \
-	glink.h \
-	gpage.cpp \
-	gpage.h \
-	legal.cpp \
-	legal.h \
-	mock \
-	mac.mak \
-	guimain.cpp \
-	mingw.mak \
-	pack.cpp \
-	pages.cpp \
-	pages.h \
-	qt.h \
-	run.c
 
 endif
