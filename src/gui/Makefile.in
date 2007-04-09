@@ -38,9 +38,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 @GUI_TRUE@sbin_PROGRAMS = emailrelay-gui$(EXEEXT)
-@GUI_TRUE@noinst_PROGRAMS = run$(EXEEXT) pack$(EXEEXT)
 subdir = src/gui
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in INSTALL
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
 	$(top_srcdir)/configure.ac
@@ -51,7 +50,7 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
-PROGRAMS = $(noinst_PROGRAMS) $(sbin_PROGRAMS)
+PROGRAMS = $(sbin_PROGRAMS)
 am__emailrelay_gui_SOURCES_DIST = gdialog.cpp gdialog.h glink.h \
 	glink.cpp gpage.cpp gpage.h gunpack.h gunpack.cpp dir.cpp \
 	dir_unix.cpp dir.h installer.cpp installer.h guimain.cpp \
@@ -65,18 +64,6 @@ am__emailrelay_gui_SOURCES_DIST = gdialog.cpp gdialog.h glink.h \
 @GUI_TRUE@am_emailrelay_gui_OBJECTS = $(am__objects_1)
 emailrelay_gui_OBJECTS = $(am_emailrelay_gui_OBJECTS)
 am__DEPENDENCIES_1 =
-am__pack_SOURCES_DIST = pack.cpp
-@GUI_TRUE@am_pack_OBJECTS = pack.$(OBJEXT)
-pack_OBJECTS = $(am_pack_OBJECTS)
-@GUI_TRUE@pack_DEPENDENCIES = $(top_builddir)/src/glib/libglib.a
-pack_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(pack_LDFLAGS) \
-	$(LDFLAGS) -o $@
-am__run_SOURCES_DIST = run.c unpack_plain.c
-@GUI_TRUE@am_run_OBJECTS = run.$(OBJEXT) unpack_plain.$(OBJEXT)
-run_OBJECTS = $(am_run_OBJECTS)
-run_DEPENDENCIES =
-run_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(run_LDFLAGS) $(LDFLAGS) -o \
-	$@
 SCRIPTS = $(noinst_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -90,9 +77,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(emailrelay_gui_SOURCES) $(pack_SOURCES) $(run_SOURCES)
-DIST_SOURCES = $(am__emailrelay_gui_SOURCES_DIST) \
-	$(am__pack_SOURCES_DIST) $(am__run_SOURCES_DIST)
+SOURCES = $(emailrelay_gui_SOURCES)
+DIST_SOURCES = $(am__emailrelay_gui_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -245,9 +231,9 @@ top_srcdir = @top_srcdir@
 @GUI_FALSE@	glink.h \
 @GUI_FALSE@	gpage.cpp \
 @GUI_FALSE@	gpage.h \
-@GUI_FALSE@	Info.plist \
 @GUI_FALSE@	legal.cpp \
 @GUI_FALSE@	legal.h \
+@GUI_FALSE@	mock \
 @GUI_FALSE@	mac.mak \
 @GUI_FALSE@	guimain.cpp \
 @GUI_FALSE@	mingw.mak \
@@ -255,23 +241,16 @@ top_srcdir = @top_srcdir@
 @GUI_FALSE@	pages.cpp \
 @GUI_FALSE@	pages.h \
 @GUI_FALSE@	qt.h \
-@GUI_FALSE@	run.c \
-@GUI_FALSE@	unpack_plain.c \
-@GUI_FALSE@	INSTALL
+@GUI_FALSE@	run.c
 
 @GUI_TRUE@EXTRA_DIST = \
-@GUI_TRUE@	INSTALL \
 @GUI_TRUE@	emailrelay-icon.png \
 @GUI_TRUE@	gcominit.h \
 @GUI_TRUE@	dir_win32.cpp \
 @GUI_TRUE@	mingw.mak \
 @GUI_TRUE@	mac.mak \
 @GUI_TRUE@	run.c \
-@GUI_TRUE@	unpack_plain.c \
-@GUI_TRUE@	Info.plist
-
-@GUI_TRUE@PACKED_OUTPUT_FILES = \
-@GUI_TRUE@	emailrelay-gui.tmp
+@GUI_TRUE@	mock
 
 @GUI_TRUE@MOC_OUTPUT = \
 @GUI_TRUE@	moc_gdialog.cpp \
@@ -283,7 +262,7 @@ top_srcdir = @top_srcdir@
 @GUI_TRUE@	moc_gpage.o \
 @GUI_TRUE@	moc_pages.o
 
-@GUI_TRUE@CLEANFILES = $(PACKED_OUTPUT_FILES) $(MOC_OUTPUT) $(mock)
+@GUI_TRUE@CLEANFILES = $(MOC_OUTPUT) $(mock)
 @GUI_TRUE@INCLUDES = \
 @GUI_TRUE@	-I$(top_srcdir)/lib/$(COMPILER_VERSION) \
 @GUI_TRUE@	-I$(top_srcdir)/src/glib \
@@ -296,27 +275,13 @@ top_srcdir = @top_srcdir@
 @GUI_TRUE@	-DG_DESTDIR=\"$(DESTDIR)\"
 
 @GUI_TRUE@AM_CPPFLAGS = $(QT_CFLAGS)
-@GUI_TRUE@noinst_SCRIPTS = mock emailrelay-setup
-@GUI_TRUE@pack_SOURCES = pack.cpp
-@GUI_TRUE@pack_LDADD = $(top_builddir)/src/glib/libglib.a
-@GUI_TRUE@pack_LDFLAGS = 
-@GUI_TRUE@run_SOURCES = run.c unpack_plain.c
-@GUI_TRUE@run_LDADD = 
-@GUI_TRUE@run_LDFLAGS = -static
+@GUI_TRUE@noinst_SCRIPTS = mock
 @GUI_TRUE@emailrelay_gui_SOURCES = $(GUI_SOURCES)
 @GUI_TRUE@emailrelay_gui_DEPENDENCIES = $(MOC_OBJECTS)
 @GUI_TRUE@emailrelay_gui_LDADD = \
 @GUI_TRUE@	$(MOC_OBJECTS) \
 @GUI_TRUE@	$(top_builddir)/src/glib/libglib.a \
 @GUI_TRUE@	$(QT_LIBS)
-
-
-# (for *nix we assume 'make install' does the install, so this is a short list...)
-@GUI_TRUE@PACKED_INPUT = \
-@GUI_TRUE@	emailrelay-icon.png
-
-@GUI_TRUE@PACKED_INPUT_LIST = \
-@GUI_TRUE@	emailrelay-icon.png emailrelay-icon.png
 
 all: all-am
 
@@ -351,9 +316,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-
-clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	test -z "$(sbindir)" || $(MKDIR_P) "$(DESTDIR)$(sbindir)"
@@ -380,12 +342,6 @@ clean-sbinPROGRAMS:
 emailrelay-gui$(EXEEXT): $(emailrelay_gui_OBJECTS) $(emailrelay_gui_DEPENDENCIES) 
 	@rm -f emailrelay-gui$(EXEEXT)
 	$(CXXLINK) $(emailrelay_gui_OBJECTS) $(emailrelay_gui_LDADD) $(LIBS)
-pack$(EXEEXT): $(pack_OBJECTS) $(pack_DEPENDENCIES) 
-	@rm -f pack$(EXEEXT)
-	$(pack_LINK) $(pack_OBJECTS) $(pack_LDADD) $(LIBS)
-run$(EXEEXT): $(run_OBJECTS) $(run_DEPENDENCIES) 
-	@rm -f run$(EXEEXT)
-	$(run_LINK) $(run_OBJECTS) $(run_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -402,11 +358,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gunpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/installer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/legal.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pages.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/run.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unpack.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unpack_plain.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -542,10 +495,11 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+@GUI_FALSE@install-exec-hook:
+@GUI_FALSE@uninstall-hook:
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS clean-sbinPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-sbinPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -568,6 +522,8 @@ install-data-am:
 install-dvi: install-dvi-am
 
 install-exec-am: install-sbinPROGRAMS
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 
 install-html: install-html-am
 
@@ -599,21 +555,24 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-sbinPROGRAMS
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 
-.MAKE: install-am install-strip
+.MAKE: install-am install-exec-am install-strip uninstall-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS clean-sbinPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
+	clean-sbinPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-exec-hook install-html install-html-am \
 	install-info install-info-am install-man install-pdf \
 	install-pdf-am install-ps install-ps-am install-sbinPROGRAMS \
 	install-strip installcheck installcheck-am installdirs \
 	maintainer-clean maintainer-clean-generic mostlyclean \
 	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-sbinPROGRAMS
+	tags uninstall uninstall-am uninstall-hook \
+	uninstall-sbinPROGRAMS
 
 
 @GUI_TRUE@moc_gdialog.cpp: $(srcdir)/gdialog.h $(mock)
@@ -625,16 +584,13 @@ uninstall-am: uninstall-sbinPROGRAMS
 @GUI_TRUE@moc_pages.cpp: $(srcdir)/pages.h $(mock)
 @GUI_TRUE@	$(MOC) $< -o $@
 
-# emailrelay-gui.tmp := emailrelay-gui, emailrelay, etc.
-#
-@GUI_TRUE@emailrelay-gui.tmp: pack emailrelay-gui $(PACKED_INPUT)
-@GUI_TRUE@	./pack $@ emailrelay-gui $(PACKED_INPUT_LIST)
+# tell the configuration gui where make install has put everything -- see Dir::read() in dir.cpp
+@GUI_TRUE@install-exec-hook:
+@GUI_TRUE@	echo $(DESTDIR)$(e_spooldir) > $(DESTDIR)$(sbindir)/emailrelay-gui.state
+@GUI_TRUE@	echo $(DESTDIR)$(sysconfdir) >> $(DESTDIR)$(sbindir)/emailrelay-gui.state
 
-# emailrelay-setup := run, emailrelay-gui.tmp
-#
-@GUI_TRUE@emailrelay-setup: pack run emailrelay-gui.tmp
-@GUI_TRUE@	./pack -p $@ run emailrelay-gui.tmp emailrelay-gui
-@GUI_TRUE@	chmod +x $@
+@GUI_TRUE@uninstall-hook:
+@GUI_TRUE@	-rm $(DESTDIR)$(sbindir)/emailrelay-gui.state
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

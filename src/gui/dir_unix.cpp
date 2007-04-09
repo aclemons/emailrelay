@@ -90,28 +90,28 @@ std::string Dir::dotexe()
 	return std::string() ;
 }
 
-G::Path Dir::install()
+G::Path Dir::os_install() const
 {
 	std::string s( G_DESTDIR ) ;
 	if( s.empty() )
 		s = "/usr/sbin" ;
-	return prefix(s) ;
+	return s ;
 }
 
-G::Path Dir::config()
+G::Path Dir::os_config() const
 {
 	std::string s( G_SYSCONFDIR ) ;
 	if( s.empty() )
 		s = "/etc" ;
-	return prefix(s) ;
+	return s ;
 }
 
-G::Path Dir::spool()
+G::Path Dir::os_spool() const
 {
         std::string spooldir( G_SPOOLDIR ) ;
         if( spooldir.empty() )
                 spooldir = "/var/spool/emailrelay" ;
-        return prefix(spooldir) ;
+        return spooldir ;
 }
 
 G::Path Dir::cwd()
@@ -123,20 +123,12 @@ G::Path Dir::cwd()
 	return G::Path( s ) ;
 }
 
-G::Path Dir::tooldir()
-{
-	std::string s( G_LIBEXECDIR ) ;
-	if( s.empty() )
-		s = "/usr/lib" ;
-	return prefix(s) ;
-}
-
-G::Path Dir::startup()
+G::Path Dir::os_startup() const
 {
 	return config() + "init.d" ;
 }
 
-G::Path Dir::pid()
+G::Path Dir::os_pid() const
 {
 	return oneOf( "/var/run" , "/tmp" ) ;
 }
@@ -152,20 +144,18 @@ G::Path Dir::special( const std::string & type )
 	G::Path desktop = kdeDesktop( home + "Desktop" ) ;
 	G::Path menu = data_home + "applications" ;
 	G::Path login = kdeAutostart( config_home + "autostart" ) ;
-	G::Path lib = tooldir() ;
 	G::Path programs = "/usr/bin" ;
 	G::Path reskit ;
 
 	if( type == "desktop" ) return desktop ;
 	if( type == "menu" ) return menu ;
 	if( type == "login" ) return login ;
-	if( type == "lib" ) return lib ;
 	if( type == "programs" ) return programs ;
 	if( type == "reskit" ) return reskit ;
 	return G::Path() ;
 }
 
-G::Path Dir::boot()
+G::Path Dir::os_boot() const
 {
 	return oneOf( "/etc/init.d" , "/Library/StartupItems" ) ;
 }

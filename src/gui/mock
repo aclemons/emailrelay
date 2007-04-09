@@ -17,28 +17,13 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // 
 // ===
-//
-// passwd-fastbuild.cpp
-//
-#define G_NO_DEBUG
-#define G_NO_ASSERT
-#define _BSD_SOURCE
-#include "gdef.h"
-#include "gnet.h"
-#include "gsmtp.h"
-#ifdef G_UNIX
-#include "garg_unix.cpp"
-#include "gfs_unix.cpp"
-#else
-#include "garg_win32.cpp"
-#include "gfs_win32.cpp"
-#endif
-#include "garg.cpp"
-#include "gexception.cpp"
-#include "md5.cpp"
-#include "gmd5_native.cpp"
-#include "gpath.cpp"
-#include "gstr.cpp"
-#include "legal.cpp"
-#include "passwd.cpp"
-/// \file passwd-fastbuild.cpp
+///
+/// \file mock
+///
+#
+# mock
+#
+# A mock moc.
+#
+PATH="/bin:/usr/bin"
+touch "${3}"

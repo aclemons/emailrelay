@@ -24,82 +24,117 @@
 //
 
 #include "dir.h"
+#include "gstr.h"
 #include "gpath.h"
 #include <stdexcept>
 
-Dir * Dir::m_this = NULL ;
-
-Dir::Dir( const std::string & argv0 , const std::string & prefix ) :
-	m_argv0(argv0) ,
-	m_prefix(prefix)
+Dir::Dir( const std::string & argv0 , bool installed ) :
+	m_argv0(argv0)
 {
-	if( m_this == NULL )
-		m_this = this ;
+	G::Path exe_dir = G::Path(m_argv0).dirname() ; 
+	m_thisdir = ( exe_dir.isRelative() && !exe_dir.hasDriveLetter() ) ? ( cwd() + exe_dir.str() ) : exe_dir ;
+	m_thisexe = G::Path( m_thisdir , G::Path(m_argv0).basename() ) ;
+	m_tmp = m_thisdir ; // TODO -- check writable
+	m_install = installed ? m_thisdir : os_install() ;
+	m_spool = os_spool() ;
+	m_config = os_config() ;
+	m_pid = os_pid() ;
+	m_boot = os_boot() ;
+	m_startup = os_startup() ;
+	m_desktop = special("desktop") ;
+	m_login = special("login") ;
+	m_menu = special("menu") ;
+	m_reskit = special("reskit") ;
 }
 
 Dir::~Dir()
 {
-	if( this == m_this )
-		m_this = NULL ;
 }
 
-Dir * Dir::instance()
+void Dir::read( std::istream & file )
 {
-	if( m_this == NULL )
-		throw std::runtime_error("internal error: no instance") ;
-	return m_this ;
+	std::string line ;
+
+	// these are presented by the gui...
+	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_spool = line ;
+	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_config = line ;
+
+	// these allow "make install" to take full control if it needs to...
+	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_pid = line ;
+	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_boot = line ;
+	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_startup = line ;
+	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_desktop = line ;
+	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_login = line ;
+	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_menu = line ;
+	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_reskit = line ;
+
+	// this is for completeness only...
+	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_install = line ;
 }
 
-G::Path Dir::thisdir()
+G::Path Dir::thisdir() const
 {
-	// (make some effort to return an absolute path -- not foolproof on windows)
-	G::Path exe_dir = G::Path(instance()->m_argv0).dirname() ; 
-	return
-		( exe_dir.isRelative() && !exe_dir.hasDriveLetter() ) ?
-			( cwd() + exe_dir.str() ) :
-			exe_dir ;
+	return m_thisdir ;
 }
 
-G::Path Dir::thisexe()
+G::Path Dir::thisexe() const
 {
-	return G::Path( thisdir() , G::Path(instance()->m_argv0).basename() ) ;
+	return m_thisexe ;
 }
 
-G::Path Dir::desktop()
+G::Path Dir::desktop() const
 {
-	return prefix(special("desktop")) ;
+	return m_desktop ;
 }
 
-G::Path Dir::login()
+G::Path Dir::login() const
 {
-	return prefix(special("login")) ;
+	return m_login ;
 }
 
-G::Path Dir::menu()
+G::Path Dir::menu() const
 {
-	return prefix(special("menu")) ;
+	return m_menu ;
 }
 
-G::Path Dir::reskit()
+G::Path Dir::reskit() const
 {
-	return prefix(special("reskit")) ;
+	return m_reskit ;
 }
 
-G::Path Dir::tmp()
+G::Path Dir::tmp() const
 {
-	return thisdir() ; // TODO -- check writable
+	return m_tmp ;
 }
 
-G::Path Dir::prefix( G::Path tail )
+G::Path Dir::pid() const
 {
-	std::string p = instance()->m_prefix ;
-	return p.empty() ?  tail : ( G::Path(p) + tail.str() ) ;
+	return m_pid ;
 }
 
-G::Path Dir::prefix( std::string tail )
+G::Path Dir::startup() const
 {
-	std::string p = instance()->m_prefix ;
-	return p.empty() ?  tail : ( G::Path(p) + tail ) ;
+	return m_startup ;
+}
+
+G::Path Dir::config() const
+{
+	return m_config ;
+}
+
+G::Path Dir::install() const
+{
+	return m_install ;
+}
+
+G::Path Dir::spool() const
+{
+	return m_spool ;
+}
+
+G::Path Dir::boot() const
+{
+	return m_boot ;
 }
 
 /// \file dir.cpp

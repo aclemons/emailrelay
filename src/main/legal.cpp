@@ -29,7 +29,7 @@
 //static
 std::string Main::Legal::copyright()
 {
-	return "Copyright (C) 2001-2006 Graeme Walker" ;
+	return "Copyright (C) 2001-2007 Graeme Walker" ;
 }
 
 //static

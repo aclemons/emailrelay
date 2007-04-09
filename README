@@ -86,10 +86,10 @@ Source code documentation will be generated when building from source if
 
 Configurations
 --------------
-Recent releases were developed on Ubuntu Linux 6.10 using:
-* linux 2.6.17
+Recent releases were developed on Ubuntu Linux 7.04 using:
+* linux 2.6.20
 * gcc 4.1.2
-* autoconf 2.60
+* autoconf 2.61
 
 and on Windows NT4 SP6 using:
 * MSVC 6.0 SP3

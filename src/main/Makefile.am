@@ -22,9 +22,6 @@
 AM_INSTALL_PROGRAM_FLAGS=-s
 
 EXTRA_DIST=\
-	emailrelay-fastbuild.cpp \
-	passwd-fastbuild.cpp \
-	submit-fastbuild.cpp \
 	common.dsp \
 	doxygen.cfg \
 	doxygen.h \

@@ -192,7 +192,6 @@ EXTRA_DIST = \
 	gfs_win32.cpp \
 	gidentity_win32.cpp \
 	glogoutput_win32.cpp \
-	gmd5_aladdin.cpp \
 	gprocess_win32.cpp \
 	gfile_win32.cpp \
 	gregistry_win32.cpp \

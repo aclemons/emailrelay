@@ -123,8 +123,10 @@ bool LicensePage::isComplete()
 // ==
 
 DirectoryPage::DirectoryPage( GDialog & dialog , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
-		GPage(dialog,name,next_1,next_2,finish,close)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
+	const Dir & dir ) : 
+		GPage(dialog,name,next_1,next_2,finish,close) ,
+		m_dir(dir)
 {
 	m_install_dir_label = new QLabel(tr("&Directory:")) ;
 	m_install_dir_edit_box = new QLineEdit ;
@@ -171,9 +173,9 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const std::string & name ,
 
 	setFocusProxy( m_install_dir_edit_box ) ;
 
-	m_install_dir_edit_box->setText( QString(Dir::install().str().c_str()) ) ;
-	m_spool_dir_edit_box->setText( QString(Dir::spool().str().c_str()) ) ;
-	m_config_dir_edit_box->setText( QString(Dir::config().str().c_str()) ) ;
+	m_install_dir_edit_box->setText( QString(m_dir.install().str().c_str()) ) ;
+	m_spool_dir_edit_box->setText( QString(m_dir.spool().str().c_str()) ) ;
+	m_config_dir_edit_box->setText( QString(m_dir.config().str().c_str()) ) ;
 
 	QVBoxLayout * layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("Directories"))) ;
@@ -229,12 +231,12 @@ void DirectoryPage::dump( std::ostream & stream , const std::string & prefix , c
 	stream << prefix << "dir-install: " << value(m_install_dir_edit_box) << eol ;
 	stream << prefix << "dir-spool: " << value(m_spool_dir_edit_box) << eol ;
 	stream << prefix << "dir-config: " << value(m_config_dir_edit_box) << eol ;
-	stream << prefix << "dir-pid: " << Dir::pid() << eol ;
-	stream << prefix << "dir-desktop: " << Dir::desktop() << eol ;
-	stream << prefix << "dir-login: " << Dir::login() << eol ;
-	stream << prefix << "dir-menu: " << Dir::menu() << eol ;
-	stream << prefix << "dir-reskit: " << Dir::reskit() << eol ;
-	stream << prefix << "dir-boot: " << Dir::boot() << eol ;
+	stream << prefix << "dir-pid: " << m_dir.pid() << eol ;
+	stream << prefix << "dir-desktop: " << m_dir.desktop() << eol ;
+	stream << prefix << "dir-login: " << m_dir.login() << eol ;
+	stream << prefix << "dir-menu: " << m_dir.menu() << eol ;
+	stream << prefix << "dir-reskit: " << m_dir.reskit() << eol ;
+	stream << prefix << "dir-boot: " << m_dir.boot() << eol ;
 }
 
 bool DirectoryPage::isComplete()

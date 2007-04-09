@@ -56,19 +56,19 @@ std::string Dir::dotexe()
 	return ".exe" ;
 }
 
-G::Path Dir::install()
+G::Path Dir::os_install() const
 {
-	return prefix(special("programs")) + "emailrelay" ;
+	return special("programs") + "emailrelay" ;
 }
 
-G::Path Dir::config()
+G::Path Dir::os_config() const
 {
-	return prefix(windows()) ;
+	return windows() ;
 }
 
-G::Path Dir::spool()
+G::Path Dir::os_spool() const
 {
-	return prefix(windows()) + "spool" + "emailrelay" ;
+	return windows() + "spool" + "emailrelay" ;
 }
 
 G::Path Dir::cwd()
@@ -80,22 +80,17 @@ G::Path Dir::cwd()
 	return G::Path( s ) ;
 }
 
-G::Path Dir::tooldir()
+G::Path Dir::os_startup() const
 {
-	return thisdir() ;
+	return special("login") ;
 }
 
-G::Path Dir::startup()
-{
-	return prefix(special("login")) ;
-}
-
-G::Path Dir::pid()
+G::Path Dir::os_pid() const
 {
 	return windows() ;
 }
 
-G::Path Dir::boot()
+G::Path Dir::os_boot() const
 {
 	return windows() ; // not used
 }
@@ -107,7 +102,6 @@ namespace
 		if( type == "desktop" ) return CSIDL_DESKTOPDIRECTORY ;
 		if( type == "menu" ) return CSIDL_PROGRAMS ;
 		if( type == "login" ) return CSIDL_STARTUP ;
-		if( type == "lib" ) return CSIDL_APPDATA ;
 		throw std::runtime_error("internal error") ;
 		return 0 ;
 	}
@@ -164,10 +158,6 @@ G::Path Dir::ntspecial( const std::string & type )
 	if( type == "login" ) 
 	{
 		return user_profile + "Start Menu" + "Programs" + "Startup" ;
-	}
-	if( type == "lib" ) 
-	{
-		return G::Path() ;
 	}
 	if( type == "programs" )
 	{

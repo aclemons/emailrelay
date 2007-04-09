@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "qt.h"
+#include "gunpack.h"
 #include "gdialog.h"
 #include "gfile.h"
 #include "dir.h"
@@ -63,7 +64,7 @@ int main( int argc , char * argv [] )
 		G::GetOpt getopt( args , 
 			"h/help/show this help text and exit/0//1|"
 			"d/debug/show debug messages if compiled-in/0//1|"
-			"p/prefix/target directory prefix/1/path/0|"
+			//"p/prefix/target directory prefix/1/path/0|"
 			"P/page/single page test/1/page-name/0|"
 			"f/file/write configuration to file/1/file/0|"
 			"t/test/test-mode/0//0" ) ;
@@ -82,12 +83,20 @@ int main( int argc , char * argv [] )
 		// parse the commandline
 		bool test_mode = getopt.contains("test") ;
 		std::string cfg_test_page = getopt.contains("page") ? getopt.value("page") : std::string() ;
-		std::string cfg_prefix = getopt.contains("prefix") ? getopt.value("prefix") : std::string() ;
+		//std::string cfg_prefix = getopt.contains("prefix") ? getopt.value("prefix") : std::string() ;
 		G::Path cfg_dump_file( getopt.contains("file") ? getopt.value("file") : std::string() ) ;
 
 		try
 		{
-			Dir dir( args.v(0) , cfg_prefix ) ;
+			bool is_setup = G::Unpack::isPacked(args.v(0)) ; // are we "setup" or "gui"?
+			bool is_installed = !is_setup ;
+			Dir dir( args.v(0) , is_installed ) ;
+			if( is_installed )
+			{
+				std::ifstream dir_state( G::Path(G::Path(args.v(0)).dirname(),"emailrelay-gui.state").str().c_str() ) ;
+				dir.read( dir_state ) ;
+			}
+
 			G_DEBUG( "Dir::install: " << dir.install() ) ;
 			G_DEBUG( "Dir::spool: " << dir.spool() ) ;
 			G_DEBUG( "Dir::config: " << dir.config() ) ;
@@ -114,7 +123,7 @@ int main( int argc , char * argv [] )
 			GDialog d ;
 			d.add( new TitlePage(d,"title","license","",false,false) , cfg_test_page ) ;
 			d.add( new LicensePage(d,"license","directory","",false,false) , cfg_test_page ) ;
-			d.add( new DirectoryPage(d,"directory","dowhat","",false,false) , cfg_test_page ) ;
+			d.add( new DirectoryPage(d,"directory","dowhat","",false,false,dir) , cfg_test_page ) ;
 			d.add( new DoWhatPage(d,"dowhat","pop","smtpserver",false,false) , cfg_test_page ) ;
 			d.add( new PopPage(d,"pop","popaccount","popaccounts",false,false) , cfg_test_page ) ;
 			d.add( new PopAccountPage(d,"popaccount","smtpserver","listening",false,false) , cfg_test_page ) ;

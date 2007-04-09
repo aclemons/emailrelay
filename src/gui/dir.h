@@ -33,81 +33,93 @@
 class Dir 
 {
 public:
-	Dir( const std::string & argv0 , const std::string & prefix ) ;
+	Dir( const std::string & argv0 , bool installed ) ;
 		///< Constructor.
+
+	void read( std::istream & ) ;
+		///< Reads from a state file.
 
 	~Dir() ;
 		///< Destructor.
 
-	static G::Path install() ;
+	G::Path install() const ;
 		///< Returns the installation path.
 
-	static G::Path spool() ;
+	G::Path spool() const ;
 		///< Returns the spool directory path.
 
-	static G::Path config() ;
+	G::Path config() const ;
 		///< Returns the configuration directory path.
 
-	static G::Path startup() ;
+	G::Path startup() const ;
 		///< Returns the system startup directory (eg. "/etc/init.d").
 
-	static G::Path pid() ;
+	G::Path pid() const ;
 		///< Returns the directory for pid files.
 
 	static G::Path cwd() ;
 		///< Returns the current working directory.
 
-	static G::Path tooldir() ;
-		///< Returns the tool's directory.
-
-	static G::Path thisdir() ;
+	G::Path thisdir() const ;
 		///< Returns the argv0 directory as an absolute path.
 
-	static G::Path thisexe() ;
+	G::Path thisexe() const ;
 		///< Returns the argv0 path.
 
-	static G::Path tmp() ;
+	G::Path tmp() const ;
 		///< Returns a writable directory for temporary files.
 		///< Returns thisdir() as long as it is found to be a 
 		///< writeable directory.
 
-	static G::Path desktop() ;
+	G::Path desktop() const ;
 		///< Returns the desktop path.
 
-	static G::Path login() ;
+	G::Path login() const ;
 		///< Returns the login autostart directory path.
 
-	static G::Path boot() ;
+	G::Path boot() const ;
 		///< Returns the boot-time autostart directory path.
 
-	static G::Path menu() ;
+	G::Path menu() const ;
 		///< Returns the menu path.
 
-	static G::Path reskit() ;
+	G::Path reskit() const ;
 		///< Returns the windows resource kit path.
 
 	static std::string dotexe() ;
 		///< Returns ".exe" or not.
 
 private:
-	static G::Path special( const std::string & key ) ;
-	static G::Path ntspecial( const std::string & key ) ;
-
-private:
 	Dir() ;
-	static Dir * instance() ;
 	static G::Path windows() ;
 	static std::string env( const std::string & , const std::string & = std::string() ) ;
 	static bool ok( const std::string & ) ;
 	static G::Path oneOf( std::string , std::string = std::string() , std::string = std::string() , 
 		std::string = std::string() , std::string = std::string() ) ;
-	static G::Path prefix( G::Path ) ;
-	static G::Path prefix( std::string ) ;
+	G::Path os_install() const ;
+	G::Path os_config() const ;
+	G::Path os_spool() const ;
+	G::Path os_startup() const ;
+	G::Path os_pid() const ;
+	G::Path os_boot() const ;
+	static G::Path special( const std::string & key ) ;
+	static G::Path ntspecial( const std::string & key ) ;
 
 private:
 	std::string m_argv0 ;
-	std::string m_prefix ;
-	static Dir * m_this ;
+	G::Path m_install ;
+	G::Path m_spool ;
+	G::Path m_config ;
+	G::Path m_startup ;
+	G::Path m_pid ;
+	G::Path m_thisdir ;
+	G::Path m_thisexe ;
+	G::Path m_tmp ;
+	G::Path m_desktop ;
+	G::Path m_login ;
+	G::Path m_boot ;
+	G::Path m_menu ;
+	G::Path m_reskit ;
 } ;
 
 #endif

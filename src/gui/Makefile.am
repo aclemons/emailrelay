@@ -51,18 +51,13 @@ GUI_SOURCES=\
 	unpack.h
 
 EXTRA_DIST=\
-	INSTALL \
 	emailrelay-icon.png \
 	gcominit.h \
 	dir_win32.cpp \
 	mingw.mak \
 	mac.mak \
 	run.c \
-	unpack_plain.c \
-	Info.plist
-
-PACKED_OUTPUT_FILES=\
-	emailrelay-gui.tmp
+	mock
 
 MOC_OUTPUT=\
 	moc_gdialog.cpp \
@@ -83,7 +78,7 @@ moc_gpage.cpp: $(srcdir)/gpage.h $(mock)
 moc_pages.cpp: $(srcdir)/pages.h $(mock)
 	$(MOC) $< -o $@
 
-CLEANFILES = $(PACKED_OUTPUT_FILES) $(MOC_OUTPUT) $(mock)
+CLEANFILES = $(MOC_OUTPUT) $(mock)
 
 INCLUDES=\
 	-I$(top_srcdir)/lib/$(COMPILER_VERSION) \
@@ -99,16 +94,7 @@ INCLUDES=\
 AM_CPPFLAGS=$(QT_CFLAGS)
 
 sbin_PROGRAMS = emailrelay-gui
-noinst_SCRIPTS = mock emailrelay-setup
-noinst_PROGRAMS = run pack
-
-pack_SOURCES = pack.cpp
-pack_LDADD = $(top_builddir)/src/glib/libglib.a
-pack_LDFLAGS = 
-
-run_SOURCES = run.c unpack_plain.c
-run_LDADD =
-run_LDFLAGS = -static
+noinst_SCRIPTS = mock
 
 emailrelay_gui_SOURCES = $(GUI_SOURCES)
 
@@ -119,23 +105,13 @@ emailrelay_gui_LDADD = \
 	$(top_builddir)/src/glib/libglib.a \
 	$(QT_LIBS)
 
-# (for *nix we assume 'make install' does the install, so this is a short list...)
-PACKED_INPUT = \
-	emailrelay-icon.png
+# tell the configuration gui where make install has put everything -- see Dir::read() in dir.cpp
+install-exec-hook:
+	echo $(DESTDIR)$(e_spooldir) > $(DESTDIR)$(sbindir)/emailrelay-gui.state
+	echo $(DESTDIR)$(sysconfdir) >> $(DESTDIR)$(sbindir)/emailrelay-gui.state
 
-PACKED_INPUT_LIST = \
-	emailrelay-icon.png emailrelay-icon.png
-
-# emailrelay-gui.tmp := emailrelay-gui, emailrelay, etc.
-#
-emailrelay-gui.tmp: pack emailrelay-gui $(PACKED_INPUT)
-	./pack $@ emailrelay-gui $(PACKED_INPUT_LIST)
-
-# emailrelay-setup := run, emailrelay-gui.tmp
-#
-emailrelay-setup: pack run emailrelay-gui.tmp
-	./pack -p $@ run emailrelay-gui.tmp emailrelay-gui
-	chmod +x $@
+uninstall-hook:
+	-rm $(DESTDIR)$(sbindir)/emailrelay-gui.state
 
 else
 
@@ -154,9 +130,9 @@ EXTRA_DIST=\
 	glink.h \
 	gpage.cpp \
 	gpage.h \
-	Info.plist \
 	legal.cpp \
 	legal.h \
+	mock \
 	mac.mak \
 	guimain.cpp \
 	mingw.mak \
@@ -164,8 +140,6 @@ EXTRA_DIST=\
 	pages.cpp \
 	pages.h \
 	qt.h \
-	run.c \
-	unpack_plain.c \
-	INSTALL
+	run.c
 
 endif

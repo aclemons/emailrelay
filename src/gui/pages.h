@@ -26,6 +26,7 @@
 
 #include "qt.h"
 #include "installer.h"
+#include "dir.h"
 #include "gpath.h"
 #include "gdialog.h"
 #include "gpage.h"
@@ -76,7 +77,8 @@ class DirectoryPage : public GPage
 {Q_OBJECT
 public:
 	DirectoryPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
+		const Dir & dir ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
@@ -91,6 +93,7 @@ private:
 	QString browse( QString ) ;
 
 private:
+	const Dir & m_dir ;
 	QLabel * m_install_dir_title ;
 	QLabel * m_install_dir_label ;
 	QLineEdit * m_install_dir_edit_box ;
