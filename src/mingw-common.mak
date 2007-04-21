@@ -55,14 +55,14 @@
 ## "mk_gui" must be set to "gui" to enable the GUI build
 #mk_gui=gui
 ##
-## "mk_bin" must be set to the MinGW "bin" directory -- with a trailing slash!
-#mk_bin=c:/mingw/bin/
-##
 ## "mk_qt" must point to the Qt installation directory
 #mk_qt=c:/qt
 ##
 ## "mk_zlib" must point to the zlib directory
-#mk_zlib=$(mk_qt)/src/3rdparty/zlib
+mk_zlib=$(mk_qt)/src/3rdparty/zlib
+##
+## "mk_mingw" must point to a directory containing the mingw runtime dll
+mk_mingw=$(mk_qt)/bin
 ##
 ###
 
@@ -121,7 +121,7 @@ _all:
 	cd win32 && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) && cd ..
 	cd main && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) && cd ..
 ifeq ("$(mk_gui)","gui")
-	cd gui && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) mk_zlib=$(mk_zlib) && cd ..
+	cd gui && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) mk_zlib=$(mk_zlib) mk_mingw=$(mk_mingw) && cd ..
 endif
 
 _clean:
@@ -132,7 +132,7 @@ _clean:
 	cd win32 && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
 	cd main && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
 ifeq ("$(mk_gui)","gui")
-	cd gui && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) mk_zlib=$(mk_zlib) clean && cd ..
+	cd gui && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) mk_zlib=$(mk_zlib) mk_mingw=$(mk_mingw) clean && cd ..
 endif
 
 clean::

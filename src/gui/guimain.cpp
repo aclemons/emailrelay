@@ -93,6 +93,7 @@ int main( int argc , char * argv [] )
 			Dir dir( args.v(0) , is_installed ) ;
 			if( is_installed )
 			{
+				// read base directories from the state file, typically written by "make install"
 				std::ifstream dir_state( G::Path(G::Path(args.v(0)).dirname(),"emailrelay-gui.state").str().c_str() ) ;
 				dir.read( dir_state ) ;
 			}
@@ -123,7 +124,7 @@ int main( int argc , char * argv [] )
 			GDialog d ;
 			d.add( new TitlePage(d,"title","license","",false,false) , cfg_test_page ) ;
 			d.add( new LicensePage(d,"license","directory","",false,false) , cfg_test_page ) ;
-			d.add( new DirectoryPage(d,"directory","dowhat","",false,false,dir) , cfg_test_page ) ;
+			d.add( new DirectoryPage(d,"directory","dowhat","",false,false,dir,is_setup) , cfg_test_page ) ;
 			d.add( new DoWhatPage(d,"dowhat","pop","smtpserver",false,false) , cfg_test_page ) ;
 			d.add( new PopPage(d,"pop","popaccount","popaccounts",false,false) , cfg_test_page ) ;
 			d.add( new PopAccountPage(d,"popaccount","smtpserver","listening",false,false) , cfg_test_page ) ;
@@ -133,7 +134,7 @@ int main( int argc , char * argv [] )
 			d.add( new LoggingPage(d,"logging","listening","",false,false) , cfg_test_page ) ;
 			d.add( new ListeningPage(d,"listening","startup","",false,false) , cfg_test_page ) ;
 			d.add( new StartupPage(d,"startup","ready","",false,false) , cfg_test_page ) ;
-			d.add( new ReadyPage(d,"ready","progress","",true,false) , cfg_test_page ) ;
+			d.add( new ReadyPage(d,"ready","progress","",true,false,is_setup) , cfg_test_page ) ;
 			d.add( new ProgressPage(d,"progress","","",true,true,args.v(0),cfg_dump_file) , cfg_test_page ) ;
 			d.add() ;
 

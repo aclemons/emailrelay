@@ -1,11 +1,11 @@
 Summary: Simple e-mail message transfer agent and proxy using SMTP
 Name: emailrelay
-Version: 1.5
+Version: 1.5.1
 Release: 1
 License: GPL
 Group: System Environment/Daemons
 URL: http://emailrelay.sourceforge.net/
-Source: http://kent.dl.sourceforge.net/sourceforge/emailrelay/emailrelay-src-1.5.tar.gz
+Source: http://kent.dl.sourceforge.net/sourceforge/emailrelay/emailrelay-src-1.5.1.tar.gz
 BuildRoot: /tmp/emailrelay-install
 
 %description

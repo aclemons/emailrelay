@@ -26,6 +26,8 @@
 #include "gstr.h"
 #include "gpath.h"
 #include "gfile.h"
+#include "gdate.h"
+#include "gtime.h"
 #include "gstr.h"
 #include "gdirectory.h"
 #include "gprocess.h"
@@ -33,7 +35,6 @@
 #include "glink.h"
 #include "garg.h"
 #include "gunpack.h"
-#include "package.h"
 #include "ggetopt.h"
 #include "glogoutput.h"
 #include "glog.h"
@@ -347,6 +348,16 @@ std::string CreateSecrets::text() const
 
 void CreateSecrets::run()
 {
+	// make a backup -- ignore errors for now
+	if( G::File::exists(m_path) )
+	{
+		G::DateTime::BrokenDownTime now = G::DateTime::local( G::DateTime::now() ) ;
+		std::string timestamp = G::Date(now).string(G::Date::yyyy_mm_dd) + G::Time(now).hhmmss() ;
+		G::Path backup( m_path.dirname() , m_path.basename() + "." + timestamp ) ;
+		G::File::copy( m_path , backup , G::File::NoThrow() ) ;
+	}
+
+	// write
 	std::ofstream file( m_path.str().c_str() ) ;
 	bool ok = file.good() ;
 	file << m_content ;
@@ -430,7 +441,18 @@ void EditConfigFile::run()
 			line_list.push_back( G::Str::trimmed(G::Str::readLineFrom(file_in),G::Str::ws()) ) ;
 	}
 
-	// edit
+	// comment-out everything
+	for( List::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
+	{
+		std::string line = *line_p ;
+		if( !line.empty() && line.at(0U) != '#' )
+		{
+			line = std::string(1U,'#') + line ;
+			*line_p = line ;
+		}
+	}
+
+	// un-comment-out (or add) values from the map
 	for( Map::const_iterator map_p = m_map.begin() ; map_p != m_map.end() ; ++map_p )
 	{
 		bool found = false ;
@@ -445,11 +467,28 @@ void EditConfigFile::run()
 				break ;
 			}
 		}
+
 		if( !found )
-			line_list.push_back( (*map_p).first + " " + (*map_p).second ) ;
+		{
+			// dont add things that the init.d script takes care of
+			const bool ignore = 
+				(*map_p).first == "syslog" ||
+				(*map_p).first == "close-stderr" ||
+				(*map_p).first == "pid-file" ||
+				(*map_p).first == "log" ;
+
+			if( !ignore )
+				line_list.push_back( (*map_p).first + " " + (*map_p).second ) ;
+		}
 	}
 
 	// TODO -- "--syslog" and "--no-syslog" interaction
+
+	// make a backup -- ignore errors for now
+	G::DateTime::BrokenDownTime now = G::DateTime::local( G::DateTime::now() ) ;
+	std::string timestamp = G::Date(now).string(G::Date::yyyy_mm_dd) + G::Time(now).hhmmss() ;
+	G::Path backup( m_path.dirname() , m_path.basename() + "." + timestamp ) ;
+	G::File::copy( m_path , backup , G::File::NoThrow() ) ;
 
 	// write
 	std::ofstream file_out( m_path.str().c_str() ) ;

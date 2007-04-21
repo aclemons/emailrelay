@@ -124,9 +124,10 @@ bool LicensePage::isComplete()
 
 DirectoryPage::DirectoryPage( GDialog & dialog , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
-	const Dir & dir ) : 
+	const Dir & dir , bool installing ) : 
 		GPage(dialog,name,next_1,next_2,finish,close) ,
-		m_dir(dir)
+		m_dir(dir) ,
+		m_installing(installing)
 {
 	m_install_dir_label = new QLabel(tr("&Directory:")) ;
 	m_install_dir_edit_box = new QLineEdit ;
@@ -184,6 +185,19 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const std::string & name ,
 	layout->addWidget( config_group ) ;
 	layout->addStretch() ;
 	setLayout( layout ) ;
+
+	if( ! m_installing )
+	{
+		// if just configuring dont allow the base directories to change -- they 
+		// are read from the ".state" file written by "make install"
+		//
+		m_install_dir_browse_button->setEnabled(false) ;
+		m_install_dir_edit_box->setEnabled(false) ;
+		m_config_dir_browse_button->setEnabled(false) ;
+		m_config_dir_edit_box->setEnabled(false) ;
+		m_spool_dir_browse_button->setEnabled(false) ; // ??
+		m_spool_dir_edit_box->setEnabled(false) ; // ??
+	}
 
 	connect( m_install_dir_browse_button , SIGNAL(clicked()) , this , SLOT(browseInstall()) ) ;
 	connect( m_spool_dir_browse_button , SIGNAL(clicked()) , this , SLOT(browseSpool()) ) ;
@@ -1033,13 +1047,15 @@ void StartupPage::dump( std::ostream & stream , const std::string & prefix , con
 // ==
 
 ReadyPage::ReadyPage( GDialog & dialog , const std::string & name , const std::string & next_1 , 
-	const std::string & next_2 , bool finish , bool close ) :
-		GPage(dialog,name,next_1,next_2,finish,close)
+	const std::string & next_2 , bool finish , bool close , bool installing ) :
+		GPage(dialog,name,next_1,next_2,finish,close) ,
+		m_installing(installing)
 {
 	m_label = new QLabel( text() ) ;
 
 	QVBoxLayout *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("Ready to install"))) ;
+	std::string message = std::string() + "Ready to " + verb(false) ;
+	layout->addWidget(newTitle(tr(message.c_str()))) ;
 	layout->addWidget(m_label);
 	setLayout(layout);
 }
@@ -1048,12 +1064,18 @@ void ReadyPage::onShow( bool )
 {
 }
 
+std::string ReadyPage::verb( bool pp ) const
+{
+	return std::string( m_installing ? (pp?"install":"installed") : (pp?"configured":"configure") ) ;
+}
+
 QString ReadyPage::text() const
 {
-	return GPage::tr(
-		"<center>"
-		"<p>E-MailRelay will now be installed.</p>"
-		"</center>" ) ;
+	std::string html = std::string() +
+		"<center>" + 
+		"<p>E-MailRelay will now be " + verb(true) + ".</p>" +
+		"</center>" ;
+	return GPage::tr(html.c_str()) ;
 }
 
 std::string ReadyPage::nextPage()

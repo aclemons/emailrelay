@@ -35,11 +35,7 @@ mk_qt=c:/qt
 endif
 
 ifeq ("$(mk_mingw)","")
-ifeq ("$(mk_bin)","")
 mk_mingw=$(mk_qt)/bin
-else
-mk_mingw=$(mk_bin)
-endif
 endif
 
 ifeq ("$(mk_zlib)","")

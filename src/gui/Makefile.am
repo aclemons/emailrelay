@@ -103,6 +103,7 @@ emailrelay_gui_LDADD = \
 	$(top_builddir)/src/glib/libglib.a \
 	$(QT_LIBS)
 
+
 # tell the configuration gui where make install has put everything -- see Dir::read() in dir.cpp
 install-exec-hook:
 	echo $(DESTDIR)$(e_spooldir) > $(DESTDIR)$(sbindir)/emailrelay-gui.state
@@ -110,5 +111,11 @@ install-exec-hook:
 
 uninstall-hook:
 	-rm $(DESTDIR)$(sbindir)/emailrelay-gui.state
+
+else
+
+install-exec-hook:
+
+uninstall-hook:
 
 endif
