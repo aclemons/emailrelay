@@ -32,7 +32,7 @@
 #include "gmemory.h"
 #include "gxtext.h"
 #include "gclientprotocol.h"
-#include "gresolve.h"
+#include "gresolver.h"
 #include "glog.h"
 #include "gassert.h"
 
@@ -51,7 +51,7 @@ GSmtp::ClientProtocol::ClientProtocol( Sender & sender , const Secrets & secrets
 	m_response_timeout(config.response_timeout) ,
 	m_ready_timeout(config.ready_timeout) ,
 	m_preprocessor_timeout(config.preprocessor_timeout) ,
-	m_signalled(false)
+	m_done_signal(true)
 {
 }
 
@@ -61,7 +61,6 @@ void GSmtp::ClientProtocol::start( const std::string & from , const G::Strings &
 	G_DEBUG( "GSmtp::ClientProtocol::start" ) ;
 
 	// reinitialise for the new message & server
-	m_signalled = false ;
 	m_to = to ;
 	m_to_accepted = 0U ;
 	m_from = from ;
@@ -70,6 +69,7 @@ void GSmtp::ClientProtocol::start( const std::string & from , const G::Strings &
 	m_message_authentication = authentication ;
 	m_reply = Reply() ;
 	m_sasl <<= new SaslClient( m_secrets , server_name ) ;
+	m_done_signal.reset() ;
 
 	// (re)start the protocol
 	applyEvent( Reply() , true ) ;
@@ -410,6 +410,15 @@ void GSmtp::ClientProtocol::onTimeout()
 		raiseDoneSignal( false , false , "response timeout" ) ;
 	}
 }
+
+void GSmtp::ClientProtocol::onTimeoutException( std::exception & e )
+{
+	if( m_state != sDone )
+	{
+		m_state = sDone ;
+		raiseDoneSignal( false , false , e.what() ) ;
+	}
+}
  
 G::Strings GSmtp::ClientProtocol::serverAuthMechanisms( const ClientProtocolReply & reply ) const
 {
@@ -429,11 +438,7 @@ void GSmtp::ClientProtocol::raiseDoneSignal( bool ok , bool abort , const std::s
 	G_DEBUG( "GSmtp::ClientProtocol::raiseDoneSignal: " << ok << ": \"" << reason << "\"" ) ;
 	cancelTimer() ;
 	m_content <<= 0 ;
-	if( ! m_signalled )
-	{
-		m_signalled = true ;
-		m_done_signal.emit( ok , abort , reason ) ;
-	}
+	m_done_signal.emit( ok , abort , reason ) ;
 }
 
 bool GSmtp::ClientProtocol::endOfContent() const

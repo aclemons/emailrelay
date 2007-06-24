@@ -32,12 +32,12 @@
 #include <sstream>
 
 bool G::Str::replace( std::string &s , const std::string &from , 
-	const std::string &to , size_t *pos_p )
+	const std::string &to , size_type *pos_p )
 {
 	if( from.length() == 0 )
 		return false ;
 
-	size_t pos = pos_p == NULL ? 0 : *pos_p ;
+	size_type pos = pos_p == NULL ? 0 : *pos_p ;
 	if( pos >= s.length() )
 		return false ;
 
@@ -55,18 +55,18 @@ bool G::Str::replace( std::string &s , const std::string &from ,
 	}
 }
 
-size_t G::Str::replaceAll( std::string &s , const std::string &from , 
+unsigned int G::Str::replaceAll( std::string &s , const std::string &from , 
 	const std::string &to )
 {
-	size_t count = 0U ;
-	for( size_t pos = 0U ; replace( s , from , to , &pos ) ; count++ )
+	unsigned int count = 0U ;
+	for( size_type pos = 0U ; replace( s , from , to , &pos ) ; count++ )
 		; // no-op
 	return count ;
 }
 
 void G::Str::trimLeft( std::string & s , const std::string & ws )
 {
-	size_t n = s.find_first_not_of( ws ) ;
+	size_type n = s.find_first_not_of( ws ) ;
 	if( n == std::string::npos )
 		s = std::string() ;
 	else if( n != 0U )
@@ -75,7 +75,7 @@ void G::Str::trimLeft( std::string & s , const std::string & ws )
 
 void G::Str::trimRight( std::string & s , const std::string & ws )
 {
-	size_t n = s.find_last_not_of( ws ) ;
+	size_type n = s.find_last_not_of( ws ) ;
 	if( n == std::string::npos )
 		s = std::string() ;
 	else if( n != 0U )
@@ -375,45 +375,54 @@ std::string G::Str::upper( const std::string &s )
 
 std::string G::Str::toPrintableAscii( char c , char escape )
 {
+	std::string result ;
+	toPrintableAscii( result , c , escape ) ;
+	return result ;
+}
+
+void G::Str::toPrintableAscii( std::string & result , char c , char escape )
+{
 	if( c == escape )
 	{
-		return std::string( 2U , c ) ;
+		result.append( 2U , c ) ;
 	}
 	else if( c >= 0x20 && c < 0x7f )
 	{
-		return std::string( 1U , c ) ;
-	}
-
-	std::string result( 1U , escape ) ;
-	if( c == '\n' ) 
-	{
-		result.append( 1U , 'n' ) ;
-	}
-	else if( c == '\t' ) 
-	{
-		result.append( 1U , 't' ) ;
-	}
-	else if( c == '\0' )
-	{
-		result.append( 1U , '0' ) ;
+		result.append( 1U , c ) ;
 	}
 	else
 	{
-		unsigned int n = c ;
-		n = n & 0xff ;
-		const char * const map = "0123456789abcdef" ;
-		result.append( 1U , 'x' ) ;
-		result.append( 1U , map[(n/16U)%16U] ) ;
-		result.append( 1U , map[n%16U] ) ;
+		result.append( 1U , escape ) ;
+		if( c == '\n' ) 
+		{
+			result.append( 1U , 'n' ) ;
+		}
+		else if( c == '\t' ) 
+		{
+			result.append( 1U , 't' ) ;
+		}
+		else if( c == '\0' )
+		{
+			result.append( 1U , '0' ) ;
+		}
+		else
+		{
+			unsigned int n = c ;
+			n = n & 0xff ;
+			const char * const map = "0123456789abcdef" ;
+			result.append( 1U , 'x' ) ;
+			result.append( 1U , map[(n/16U)%16U] ) ;
+			result.append( 1U , map[n%16U] ) ;
+		}
 	}
-	return result ;
 }
 
 std::string G::Str::toPrintableAscii( const std::string & in , char escape )
 {
 	std::string result ;
+	result.reserve( in.length() + 1U ) ;
 	for( std::string::const_iterator p = in.begin() ; p != in.end() ; ++p )
-		result.append( toPrintableAscii(*p,escape) ) ;
+		toPrintableAscii(result,*p,escape) ;
 	return result ;
 }
 
@@ -440,9 +449,9 @@ void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std
 	if( pre_erase )
 		line.erase() ;
 
-	const size_t eol_length = eol.length() ;
+	const size_type eol_length = eol.length() ;
 	const char eol_final = eol.at(eol_length-1U) ;
-	size_t line_length = line.length() ;
+	size_type line_length = line.length() ;
 
 	char c ;
 	while( stream.get(c) )
@@ -452,7 +461,7 @@ void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std
 
 		if( line_length >= eol_length && c == eol_final )
 		{
-			const size_t offset = line_length - eol_length ;
+			const size_type offset = line_length - eol_length ;
 			if( line.find(eol,offset) == offset )
 			{
 				line.erase(offset) ;
@@ -463,17 +472,17 @@ void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std
 }
 
 std::string G::Str::wrap( std::string text , const std::string & prefix_1 , 
-	const std::string & prefix_2 , size_t width )
+	const std::string & prefix_2 , size_type width )
 {
 	std::string ws( " \t\n" ) ;
 	std::ostringstream ss ;
 	for( bool first_line = true ; text.length() ; first_line = false )
 	{
-		const size_t prefix_length = 
+		const size_type prefix_length = 
 			first_line ? prefix_1.length() : prefix_2.length() ;
-		size_t w = (width > prefix_length) ? (width-prefix_length) : width ;
+		size_type w = (width > prefix_length) ? (width-prefix_length) : width ;
 
-		const size_t pos_nl = text.find_first_of("\n") ;
+		const size_type pos_nl = text.find_first_of("\n") ;
 		if( pos_nl != std::string::npos && pos_nl != 0U && pos_nl < w )
 		{
 			w = pos_nl ;
@@ -485,8 +494,8 @@ std::string G::Str::wrap( std::string text , const std::string & prefix_1 ,
 			line = text.substr( 0U , w ) ;
 			if( text.find_first_of(ws,w) != w )
 			{
-				const size_t white_space = line.find_last_of( ws ) ;
-				const size_t black_space = line.find_first_not_of( ws ) ;
+				const size_type white_space = line.find_last_of( ws ) ;
+				const size_type black_space = line.find_first_not_of( ws ) ;
 				if( white_space != std::string::npos && 
 					black_space != std::string::npos && 
 					(white_space+1U) != black_space )
@@ -504,11 +513,11 @@ std::string G::Str::wrap( std::string text , const std::string & prefix_1 ,
 		text = text.length() == line.length() ? 
 			std::string() : text.substr(line.length()) ;
 
-		const size_t black_space = text.find_first_not_of( ws ) ;
+		const size_type black_space = text.find_first_not_of( ws ) ;
 		if( black_space != 0U && black_space != std::string::npos )
 		{
-			size_t newlines = 0U ;
-			for( size_t pos = 0U ; pos < black_space ; ++pos )
+			unsigned int newlines = 0U ;
+			for( size_type pos = 0U ; pos < black_space ; ++pos )
 			{
 				if( text.at(pos) == '\n' )
 				{
@@ -552,13 +561,13 @@ void G::Str::splitIntoTokens( const std::string & in ,
 	void * out , void (*fn)(void*,const std::string&) , 
 	const std::string & ws )
 {
-	for( size_t p = 0U ; p != std::string::npos ; )
+	for( size_type p = 0U ; p != std::string::npos ; )
 	{
 		p = in.find_first_not_of( ws , p ) ;
 		if( p != std::string::npos )
 		{
-			size_t end = in.find_first_of( ws , p ) ;
-			size_t len = end == std::string::npos ? end : (end-p) ;
+			size_type end = in.find_first_of( ws , p ) ;
+			size_type len = end == std::string::npos ? end : (end-p) ;
 			(*fn)( out , in.substr( p , len ) ) ;
 			p = end ;
 		}
@@ -590,9 +599,9 @@ void G::Str::splitIntoFields( const std::string & in_in , void * out ,
 	if( in_in.length() ) 
 	{
 		std::string in = in_in ;
-		size_t start = 0U ;
-		size_t last_pos = in.length() - 1U ;
-		size_t pos = 0U ;
+		size_type start = 0U ;
+		size_type last_pos = in.length() - 1U ;
+		size_type pos = 0U ;
 		for(;;)
 		{
 			if( pos >= in.length() ) break ;

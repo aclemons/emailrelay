@@ -3,11 +3,11 @@ E-MailRelay Windows installation
 
 Setup program
 -------------
-Installing E-MailRelay on Windows should be straightfowrard if you have
-self-extracting archive program "emailrelay-setup.exe". Make sure that the setup
-program is in a writeable directory with plenty of space on the disk because
-when you run it is will extract an installation GUI program plus dependent DLLs
-in into the same directory.
+Installing E-MailRelay on Windows should be straightfowrard if you have 
+self-extracting archive program "emailrelay-setup-*.exe". Make sure that the 
+setup program is in a writeable directory with plenty of space on the disk 
+because when you run it is will extract an installation GUI program plus 
+dependent DLLs in into the same directory.
 
 The installation GUI program will take you through the installation options and
 then install the run-time files into your chosen directory.
@@ -26,25 +26,32 @@ the self-extracting setup program, is as follows:
 * Add "--as-server --verbose" to the server shortcut properties.
 * Add "--as-client myisp.net:smtp --hidden --client-auth c:/emailrelay.auth" to the client shortcut.
 
-Move shortcuts to "Startup" folders as necessary. Or try using Microsoft's
-"srvany.exe" utility to run emailrelay as a service; you will need to use the
-"--hidden" and "--no-daemon" switches on the E-MailRelay command-line for this.
+Move shortcuts to "Startup" folders as necessary. 
+
+Running as a service
+--------------------
+To install E-MailRelay as a service so that it starts up automatically at
+boot-time you must first create a one-line batch file called
+"emailrelay-start.bat" in the main E-MailRelay directory. This should contain
+the full server startup command, including the "--hidden" and "--no-daemon"
+switches. Then run "emailrelay-service --install" to install the service.
 
 Diagnostics
 -----------
-* Set the environment variable "GLOGOUTPUT_DIR" to (eg.) "c:\temp" and look for "glog.txt"
 * Add "--log --log-time --verbose --syslog" to the E-MailRelay command-lines.
 * Check the event log (run "eventvwr.exe") for errors and warnings.
 * Check the spool directory for ".bad" envelope files -- remove the suffix to retry.
+* Set the environment variable "GLOGOUTPUT_DIR" to (eg.) "c:\temp" and look for "glog.txt"
 
 Building from source
 --------------------
-E-MailRelay can be compiled using Microsoft Visual C++ (MSVC) 6 or MinGW,
+E-MailRelay can be compiled using Microsoft Visual Studio C++ (MSVC) 6 or MinGW,
 although the installation/configuration GUI can only be built with MinGW because
 of its dependence on Qt.
 
-There is a workspace file for MSVC 6 in the "src" directory. For MinGW please
-follow the guidelines in "mingw-common.mak" also in the "src" directory.
+There is a Visual Studio workspace file for MSVC 6 in the "src" directory. For 
+MinGW please follow the guidelines in "mingw-common.mak" also in the "src" 
+directory.
 
 
 

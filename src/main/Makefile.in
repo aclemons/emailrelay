@@ -61,7 +61,8 @@ emailrelay_DEPENDENCIES = $(top_builddir)/src/gpop/$(POPLIB) \
 	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a
-am_emailrelay_filter_copy_OBJECTS = filter_copy.$(OBJEXT)
+am_emailrelay_filter_copy_OBJECTS = filter_copy.$(OBJEXT) \
+	legal.$(OBJEXT)
 emailrelay_filter_copy_OBJECTS = $(am_emailrelay_filter_copy_OBJECTS)
 emailrelay_filter_copy_DEPENDENCIES =  \
 	$(top_builddir)/src/glib/libglib.a
@@ -221,6 +222,7 @@ EXTRA_DIST = \
 	doxygen.cfg \
 	doxygen.h \
 	emailrelay.dsp \
+	filter.dsp \
 	emailrelay.rc \
 	icon-32.ico \
 	icon2.ico \
@@ -278,7 +280,7 @@ emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a
 
-emailrelay_filter_copy_SOURCES = filter_copy.cpp
+emailrelay_filter_copy_SOURCES = filter_copy.cpp legal.cpp
 emailrelay_filter_copy_LDADD = \
 	$(top_builddir)/src/glib/libglib.a
 

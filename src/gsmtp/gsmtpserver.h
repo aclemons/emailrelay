@@ -28,10 +28,9 @@
 #include "gsmtp.h"
 #include "gnoncopyable.h"
 #include "gexe.h"
-#include "gsender.h"
+#include "gbufferedserverpeer.h"
 #include "gmultiserver.h"
 #include "gsmtpclient.h"
-#include "glinebuffer.h"
 #include "gverifier.h"
 #include "gmessagestore.h"
 #include "gserverprotocol.h"
@@ -54,7 +53,7 @@ namespace GSmtp
 /// Instances are created on the heap by Server (only).
 /// \see GSmtp::Server
 ///
-class GSmtp::ServerPeer : public GNet::Sender , private GSmtp::ServerProtocol::Sender 
+class GSmtp::ServerPeer : public GNet::BufferedServerPeer , private GSmtp::ServerProtocol::Sender 
 {
 public:
 	ServerPeer( GNet::Server::PeerInfo , Server & server , std::auto_ptr<ProtocolMessage> pmessage , 
@@ -66,14 +65,13 @@ private:
 	ServerPeer( const ServerPeer & ) ;
 	void operator=( const ServerPeer & ) ;
 	virtual void protocolSend( const std::string & line ) ; // from ServerProtocol::Sender
-	virtual void onResume() ; // from GNet::Sender
+	virtual void onSendComplete() ; // from GNet::Sender
 	virtual void onDelete() ; // from GNet::ServerPeer
-	virtual void onData( const char * , size_t ) ; // from GNet::ServerPeer
+	virtual bool onReceive( const std::string & ) ; // from GNet::BufferedServerPeer
 	static std::string crlf() ;
 
 private:
 	Server & m_server ;
-	GNet::LineBuffer m_buffer ;
 	Verifier m_verifier ; // order dependency
 	std::auto_ptr<ProtocolMessage> m_pmessage ; // order dependency
 	std::auto_ptr<ServerProtocol::Text> m_ptext ; // order dependency

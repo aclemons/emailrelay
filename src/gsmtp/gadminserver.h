@@ -31,7 +31,9 @@
 #include "gstr.h"
 #include "glinebuffer.h"
 #include "gserverprotocol.h"
+#include "gclientptr.h"
 #include "gsmtpclient.h"
+#include "gbufferedserverpeer.h"
 #include <string>
 #include <list>
 #include <sstream>
@@ -40,41 +42,41 @@
 /// \namespace GSmtp
 namespace GSmtp
 {
-	class AdminPeer ;
+	class AdminServerPeer ;
 	class AdminServer ;
 }
 
-/// \class GSmtp::AdminPeer
+/// \class GSmtp::AdminServerPeer
 /// A derivation of ServerPeer for the administration interface.
 /// \see GSmtp::AdminServer
 ///
-class GSmtp::AdminPeer : public GNet::ServerPeer 
+class GSmtp::AdminServerPeer : public GNet::BufferedServerPeer 
 {
 public:
-	AdminPeer( GNet::Server::PeerInfo , AdminServer & , const GNet::Address & local , 
+	AdminServerPeer( GNet::Server::PeerInfo , AdminServer & , const GNet::Address & local , 
 		const std::string & remote , const G::StringMap & extra_commands , bool with_terminate ) ;
 			///< Constructor.
 
-	virtual ~AdminPeer() ;
+	virtual ~AdminServerPeer() ;
 		///< Destructor.
 
 	void notify( const std::string & s0 , const std::string & s1 , const std::string & s2 ) ;
 		///< Called when something happens.
 
 private:
-	AdminPeer( const AdminPeer & ) ;
-	void operator=( const AdminPeer & ) ;
+	AdminServerPeer( const AdminServerPeer & ) ;
+	void operator=( const AdminServerPeer & ) ;
+	virtual void onSendComplete() ; // from GNet::BufferedServerPeer
 	virtual void onDelete() ; // from GNet::ServerPeer
-	virtual void onData( const char * , size_t ) ; // from GNet::ServerPeer
-	virtual void clientDone( std::string ) ; // Client::doneSignal()
-	bool processLine( const std::string & line ) ;
+	virtual bool onReceive( const std::string & ) ; // from GNet::BufferedServerPeer
+	virtual void clientDone( std::string , bool ) ; // Client::doneSignal()
 	static bool is( const std::string & , const std::string & ) ;
 	static std::pair<bool,std::string> find( const std::string & line , const G::StringMap & map ) ;
-	void flush() ;
+	bool flush() ;
 	void help() ;
 	void info() ;
 	void list() ;
-	void send( std::string ) ;
+	void sendLine( std::string ) ;
 	void warranty() ;
 	void version() ;
 	void copyright() ;
@@ -86,7 +88,7 @@ private:
 	AdminServer & m_server ;
 	GNet::Address m_local_address ;
 	std::string m_remote_address ;
-	std::auto_ptr<GSmtp::Client> m_client ;
+	GNet::ClientPtr<GSmtp::Client> m_client ;
 	bool m_notifying ;
 	G::StringMap m_extra_commands ;
 	bool m_with_terminate ;
@@ -132,8 +134,8 @@ public:
 		///< Called when something happens which the admin
 		///< user might be interested in.
 
-	void unregister( AdminPeer * ) ;
-		///< Called from the AdminPeer destructor.
+	void unregister( AdminServerPeer * ) ;
+		///< Called from the AdminServerPeer destructor.
 
 private:
 	virtual GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) ;
@@ -141,7 +143,7 @@ private:
 	void operator=( const AdminServer & ) ;
 
 private:
-	typedef std::list<AdminPeer*> PeerList ;
+	typedef std::list<AdminServerPeer*> PeerList ;
 	PeerList m_peers ;
 	MessageStore & m_store ;
 	GSmtp::Client::Config m_client_config ;

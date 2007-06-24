@@ -25,6 +25,7 @@
 #include "pages.h"
 #include "legal.h"
 #include "dir.h"
+#include "boot.h"
 #include "gfile.h"
 #include "gprocess.h"
 #include "gidentity.h"
@@ -997,7 +998,7 @@ void ListeningPage::dump( std::ostream & stream , const std::string & prefix , c
 // ==
 
 StartupPage::StartupPage( GDialog & dialog , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close , const Dir & dir ) : 
 		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_on_boot_checkbox = new QCheckBox( tr("At &system startup") ) ;
@@ -1006,8 +1007,8 @@ StartupPage::StartupPage( GDialog & dialog , const std::string & name ,
 	auto_layout->addWidget( m_on_boot_checkbox ) ;
 	auto_layout->addWidget( m_at_login_checkbox ) ;
 
-	if( ! testMode() )
-		m_on_boot_checkbox->setEnabled(false) ;
+	// (using dir.boot() is okay for now here since we do not allow the user to change it)
+	m_on_boot_checkbox->setEnabled( Boot::able(dir.boot(),"emailrelay") ) ;
 
 	m_add_menu_item_checkbox = new QCheckBox( tr("Add to start menu") ) ;
 	m_add_desktop_item_checkbox = new QCheckBox( tr("Add to desktop") ) ;

@@ -54,13 +54,13 @@ public:
 	Path( const std::string & path ) ;
 		///< Implicit constructor.
 		
-	Path( const char *path ) ;
+	Path( const char * path ) ;
 		///< Implicit constructor.
 		
 	Path( const Path & path , const std::string & tail ) ;
 		///< Constructor with an implicit pathAppend().
 
-	Path( const Path &other ) ;
+	Path( const Path & other ) ;
 		///< Copy constructor.
 		
 	virtual ~Path() ;
@@ -76,7 +76,7 @@ public:
 	std::string str() const ;
 		///< Returns the path string.
 
-	const char *pathCstr() const ;
+	const char * pathCstr() const ;
 		///< Returns the path string.
 
 	std::string basename() const ;
@@ -129,7 +129,7 @@ public:
 		///< Returns true if the path has a leading drive letter 
 		///< (and the operating system uses drive letters).
 
-	Path & operator=( const Path &other ) ;
+	Path & operator=( const Path & other ) ;
 		///< Assignment operator.
 	
 	void setDirectory( const std::string & dir ) ;
@@ -164,7 +164,7 @@ private:
 	static std::string slashString() ;
 	static std::string doubleSlashString() ;
 	std::string driveString() const ;
-	size_t slashAt() const ;
+	std::string::size_type slashAt() const ;
 	bool noSlash() const ;
 	std::string noTail() const ;
 	bool hasNetworkDrive() const ;

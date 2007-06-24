@@ -59,10 +59,9 @@ public:
 		///< Converts from epoch time to local broken-down-time.
 
 	static Offset offset( EpochTime epoch_time ) ;
-		///< Returns the offset between UTC and localtime
-		///< as at 'epoch_time'. The returned pair has
-		///< 'first' set to true if localtime is
-		///< ahead of (ie. east of) UTC.
+		///< Returns the offset between UTC and localtime as at 
+		///< 'epoch_time'. The returned pair has 'first' set to 
+		///< true if localtime is ahead of (ie. east of) UTC.
 		///<
 		///< (Note that this may be a relatively expensive 
 		///< operation.)

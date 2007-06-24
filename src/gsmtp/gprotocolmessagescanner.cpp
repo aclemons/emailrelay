@@ -42,22 +42,19 @@ GSmtp::ProtocolMessageScanner::ProtocolMessageScanner( MessageStore & store ,
 		ProtocolMessageForward(store,newfile_preprocessor,client_config,
 			client_secrets,smtp_server,smtp_connection_timeout),
 		m_store(store) ,
-		m_scanner_server(scanner_server) ,
+		m_scanner_resolver_info(scanner_server) ,
 		m_scanner_response_timeout(scanner_response_timeout) ,
 		m_scanner_connection_timeout(scanner_connection_timeout) ,
+		m_scanner_client(NULL,true) ,
 		m_id(0UL)
 {
 	G_DEBUG( "GSmtp::ProtocolMessageScanner::ctor" ) ;
-	scannerInit() ;
-}
 
-void GSmtp::ProtocolMessageScanner::scannerInit()
-{
-	m_scanner_client <<= 
-		new ScannerClient(m_scanner_server,m_scanner_connection_timeout,m_scanner_response_timeout) ;
+	m_scanner_client.reset( new ScannerClient(m_scanner_resolver_info,
+		m_scanner_connection_timeout,m_scanner_response_timeout) ) ;
 
-	m_scanner_client->connectedSignal().connect( G::slot(*this,&ProtocolMessageScanner::connectDone) ) ;
-	m_scanner_client->doneSignal().connect( G::slot(*this,&ProtocolMessageScanner::scannerDone) ) ;
+	m_scanner_client.eventSignal().connect( G::slot(*this,&ProtocolMessageScanner::scannerEvent) ) ;
+	m_scanner_client.doneSignal().connect( G::slot(*this,&ProtocolMessageScanner::scannerDone) ) ;
 
 	// rewire the base class slot/signal so that the storage 'done' signal
 	// is delivered to this class
@@ -69,28 +66,8 @@ void GSmtp::ProtocolMessageScanner::scannerInit()
 GSmtp::ProtocolMessageScanner::~ProtocolMessageScanner()
 {
 	storageDoneSignal().disconnect() ; // base-class signal
-	if( m_scanner_client.get() ) 
-	{
-		m_scanner_client->connectedSignal().disconnect() ;
-		m_scanner_client->doneSignal().disconnect() ;
-	}
-}
-
-G::Signal3<bool,bool,std::string> & GSmtp::ProtocolMessageScanner::preparedSignal()
-{
-	return m_prepared_signal ;
-}
-
-bool GSmtp::ProtocolMessageScanner::prepare()
-{
-	m_scanner_client->startConnecting() ;
-	return true ;
-}
-
-void GSmtp::ProtocolMessageScanner::connectDone( std::string reason , bool temporary_error )
-{
-	G_DEBUG( "GSmtp::ProtocolMessageScanner::connectDone: \"" << reason << "\", " << temporary_error ) ;
-	m_prepared_signal.emit( reason.empty() , temporary_error , reason ) ;
+	m_scanner_client.eventSignal().disconnect() ;
+	m_scanner_client.doneSignal().disconnect() ;
 }
 
 void GSmtp::ProtocolMessageScanner::storageDone( bool , unsigned long id , std::string )
@@ -98,18 +75,32 @@ void GSmtp::ProtocolMessageScanner::storageDone( bool , unsigned long id , std::
 	G_DEBUG( "GSmtp::ProtocolMessageScanner::storageDone" ) ;
 	m_id = id ;
 	FileStore & file_store = dynamic_cast<FileStore&>(m_store) ;
+
+	if( m_scanner_client.get() == NULL )
+		m_scanner_client.reset( new ScannerClient(m_scanner_resolver_info,
+			m_scanner_connection_timeout,m_scanner_response_timeout) ) ;
+
 	m_scanner_client->startScanning( file_store.contentPath(id) ) ;
 }
 
-void GSmtp::ProtocolMessageScanner::scannerDone( bool /* reason_is_from_scanner */ , std::string reason )
+void GSmtp::ProtocolMessageScanner::scannerEvent( std::string s1 , std::string s2 )
 {
-	const bool ok = reason.empty() ;
+	if( s1 == "scanner" )
+	{
+		const bool ok = s2.empty() ;
+		ProtocolMessageForward::processDone( ok , m_id , s2 ) ;
+	}
+}
+
+void GSmtp::ProtocolMessageScanner::scannerDone( std::string reason , bool )
+{
+	const bool ok = false ;
 	ProtocolMessageForward::processDone( ok , m_id , reason ) ;
 }
 
 void GSmtp::ProtocolMessageScanner::clear()
 {
-	scannerInit() ;
+	m_scanner_client.reset() ;
 	Base::clear() ;
 }
 

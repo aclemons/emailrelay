@@ -46,9 +46,11 @@ namespace GSmtp
 
 /// \class GSmtp::ProtocolMessageScanner
 /// A derivation of ProtocolMessageForward which adds in
-/// a scanning step.
-/// 
-/// The scanning part deletages to a ScannerClient data member.
+/// a scanning step. The implementation rewires the base class's
+/// storage-done signal so that it can be used to start the
+/// scanning. The scanning process uses a ScannerClient data member.
+/// When scanning is complete the base class's processDone() method
+/// is called.
 ///
 /// \see GSmtp::ProtocolMessageStore, GSmtp::ProtocolMessageForward
 ///
@@ -69,29 +71,22 @@ public:
 	virtual ~ProtocolMessageScanner() ;
 		///< Destructor.
 
-	virtual G::Signal3<bool,bool,std::string> & preparedSignal() ;
-		///< See ProtocolMessage.
-
-	virtual bool prepare() ;
-		///< See ProtocolMessage.
-
 	virtual void clear() ;
 		///< See ProtocolMessage.
 
 private:
 	void operator=( const ProtocolMessageScanner & ) ; // not implemented
-	void connectDone( std::string reason , bool ) ;
 	void storageDone( bool success , unsigned long id , std::string reason ) ;
-	void scannerDone( bool b , std::string reason ) ;
-	void scannerInit() ;
+	void scannerDone( std::string , bool ) ;
+	void scannerEvent( std::string , std::string ) ;
 
 private:
 	typedef ProtocolMessageForward Base ;
 	MessageStore & m_store ;
-	std::string m_scanner_server ;
+	GNet::ResolverInfo m_scanner_resolver_info ;
 	unsigned int m_scanner_response_timeout ;
 	unsigned int m_scanner_connection_timeout ;
-	std::auto_ptr<ScannerClient> m_scanner_client ;
+	GNet::ClientPtr<ScannerClient> m_scanner_client ;
 	G::Signal3<bool,bool,std::string> m_prepared_signal ;
 	unsigned long m_id ;
 } ;

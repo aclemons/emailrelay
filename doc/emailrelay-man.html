@@ -143,7 +143,7 @@ Displays help text and exits.
 <DT><B>-m, --immediate </B>
 
 <DD>
-Enables immediating forwarding of messages as soon as they are received (requires <I>--forward-to</I>).
+Enables immediate forwarding of messages as soon as they are received (requires <I>--forward-to</I>).
 <DT><B>-I, --interface </B><I>&lt;ip-address&gt;</I>
 
 <DD>
@@ -200,6 +200,10 @@ Specifies the pop listening port number (requires <I>--pop</I>).
 
 <DD>
 Specifies the smtp listening port number.
+<DT><B>-w, --prompt-timeout </B><I>&lt;time&gt;</I>
+
+<DD>
+Sets the timeout (in seconds) for getting an initial prompt from the server.
 <DT><B>-r, --remote-clients </B>
 
 <DD>
@@ -256,6 +260,9 @@ GNU style...
 /usr/local/libexec/emailrelay
 <BR>
 
+/usr/local/libexec/emailrelay-filter-copy
+<BR>
+
 /usr/local/libexec/emailrelay-poke
 <BR>
 
@@ -299,6 +306,9 @@ FHS style...
 <BR>
 
 /etc/init.d/emailrelay
+<BR>
+
+/usr/lib/emailrelay-filter-copy
 <BR>
 
 /usr/lib/emailrelay-poke
@@ -374,7 +384,7 @@ Graeme Walker, mailto:<A HREF="mailto:graeme_walker@users.sourceforge.net">graem
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:11:55 GMT, April 21, 2007
+Time: 12:35:49 GMT, June 24, 2007
 </BODY>
 </HTML>
 <!-- Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

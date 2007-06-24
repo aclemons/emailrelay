@@ -51,9 +51,6 @@ public:
 	G::Path config() const ;
 		///< Returns the configuration directory path.
 
-	G::Path startup() const ;
-		///< Returns the system startup directory (eg. "/etc/init.d").
-
 	G::Path pid() const ;
 		///< Returns the directory for pid files.
 
@@ -99,7 +96,7 @@ private:
 	G::Path os_install() const ;
 	G::Path os_config() const ;
 	G::Path os_spool() const ;
-	G::Path os_startup() const ;
+	G::Path os_login() const ;
 	G::Path os_pid() const ;
 	G::Path os_boot() const ;
 	static G::Path special( const std::string & key ) ;
@@ -110,13 +107,12 @@ private:
 	G::Path m_install ;
 	G::Path m_spool ;
 	G::Path m_config ;
-	G::Path m_startup ;
+	G::Path m_login ;
 	G::Path m_pid ;
 	G::Path m_thisdir ;
 	G::Path m_thisexe ;
 	G::Path m_tmp ;
 	G::Path m_desktop ;
-	G::Path m_login ;
 	G::Path m_boot ;
 	G::Path m_menu ;
 	G::Path m_reskit ;

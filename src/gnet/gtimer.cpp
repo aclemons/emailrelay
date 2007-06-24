@@ -33,7 +33,7 @@ namespace GNet
 }
 
 /// \class GNet::TimerUpdate
-/// A private implementation class used by GNet::Timer.
+/// A private implementation class used by GNet::AbstractTimer.
 /// 
 class GNet::TimerUpdate 
 {
@@ -55,17 +55,25 @@ GNet::TimeoutHandler::~TimeoutHandler()
 
 // ===
 
-GNet::Timer::Timer( TimeoutHandler & handler ) :
-	m_time(0UL) ,
-	m_handler(&handler)
+GNet::ConcreteTimer::ConcreteTimer( TimeoutHandler & timeout_handler , EventHandler & event_handler ) :
+	m_timeout_handler(timeout_handler) ,
+	m_event_handler(event_handler)
 {
-	G_ASSERT( TimerList::instance(TimerList::NoThrow()) != NULL ) ;
-	G_ASSERT( EventLoop::exists() ) ;
-	TimerList::instance().add( *this ) ;
-	// no List::update() here since this timer has not started
 }
 
-GNet::Timer::Timer() :
+void GNet::ConcreteTimer::onTimeout()
+{
+	m_timeout_handler.onTimeout(*this) ;
+}
+
+void GNet::ConcreteTimer::onTimeoutException( std::exception & e )
+{
+	m_event_handler.onException( e ) ;
+}
+
+// ===
+
+GNet::AbstractTimer::AbstractTimer() :
 	m_time(0UL) ,
 	m_handler(NULL)
 {
@@ -75,7 +83,7 @@ GNet::Timer::Timer() :
 	// no List::update() here since this timer has not started
 }
 
-GNet::Timer::~Timer()
+GNet::AbstractTimer::~AbstractTimer()
 {
 	try
 	{
@@ -91,36 +99,39 @@ GNet::Timer::~Timer()
 	}
 }
 
-void GNet::Timer::startTimer( unsigned int time )
+void GNet::AbstractTimer::startTimer( unsigned int time )
 {
 	TimerUpdate update ;
 	m_time = G::DateTime::now() + time ;
 	// List::update() here
 }
 
-void GNet::Timer::cancelTimer()
+void GNet::AbstractTimer::cancelTimer()
 {
 	TimerUpdate update ;
 	m_time = 0U ;
 	// List::update() here
 }
 
-void GNet::Timer::doTimeout()
+void GNet::AbstractTimer::doTimeout()
 {
 	G_ASSERT( m_time != 0U ) ;
-
 	m_time = 0U ;
-	onTimeout() ;
-	if( m_handler != NULL )
-		m_handler->onTimeout(*this) ;
+
+	try
+	{
+		if( m_handler != NULL )
+			m_handler->onTimeout(*this) ;
+		else
+			onTimeout() ;
+	}
+	catch( std::exception & e )
+	{
+		onTimeoutException( e ) ;
+	}
 }
 
-void GNet::Timer::onTimeout()
-{
-	// no-op
-}
-
-G::DateTime::EpochTime GNet::Timer::t() const
+G::DateTime::EpochTime GNet::AbstractTimer::t() const
 {
 	return m_time ;
 }
@@ -145,23 +156,25 @@ GNet::TimerList::~TimerList()
 		m_this = NULL ;
 }
 
-void GNet::TimerList::add( Timer & t )
+void GNet::TimerList::add( AbstractTimer & t )
 {
 	m_list_changed = true ;
 	m_list.push_back( &t ) ;
 }
 
-void GNet::TimerList::remove( Timer & t )
+void GNet::TimerList::remove( AbstractTimer & t )
 {
+	bool removed = false ;
 	for( List::iterator p = m_list.begin() ; p != m_list.end() ; ++p )
 	{
 		if( *p == &t )
 		{
-			m_list.erase( p ) ;
-			m_list_changed = true ;
+			*p = NULL ;
+			removed = true ;
 			break ;
 		}
 	}
+	// could assert(removed) here
 }
 
 void GNet::TimerList::update( G::DateTime::EpochTime t_old )
@@ -199,7 +212,7 @@ G::DateTime::EpochTime GNet::TimerList::soonest() const
 	const List::const_iterator end = m_list.end() ;
 	for( List::const_iterator p = m_list.begin() ; p != end ; ++p )
 	{
-		if( (*p)->t() != 0UL && ( result == 0U || (*p)->t() < result ) )
+		if( *p != NULL && (*p)->t() != 0UL && ( result == 0U || (*p)->t() < result ) )
 			result = (*p)->t() ;
 	}
 	return result ;
@@ -263,23 +276,31 @@ void GNet::TimerList::doTimeouts()
 	G_DEBUG( "GNet::TimerList::doTimeouts" ) ;
 	G::DateTime::EpochTime now = G::DateTime::now() ;
 
-	// if the list changes break the loop and start again
-	do
+	for( List::iterator p = m_list.begin() ; p != m_list.end() ; ++p )
 	{
-		m_list_changed = false ;
-		for( List::iterator p = m_list.begin() ; p != m_list.end() ; ++p )
+		if( *p != NULL )
 		{
 			G::DateTime::EpochTime t = (*p)->t() ;
 			if( t != 0U && now >= t )
 			{
 				(*p)->doTimeout() ;
-				if( m_list_changed ) break ;
 			}
 		}
-	} while( m_list_changed ) ;
+	}
 
 	// deal with any change in the soonest() time
 	update() ;
+}
+
+void GNet::TimerList::collectGarbage()
+{
+	for( List::iterator p = m_list.begin() ; p != m_list.end() ; )
+	{
+		if( *p == NULL )
+			p = m_list.erase( p ) ;
+		else
+			++p ;
+	}
 }
 
 // ===

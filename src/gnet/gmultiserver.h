@@ -46,8 +46,14 @@ class GNet::MultiServerImp : public GNet::Server
 {
 public:
 	MultiServerImp( MultiServer & ms , const Address & ) ;
+		///< Constructor.
+
 	virtual ServerPeer * newPeer( PeerInfo ) ;
+		///< Server peer factory method.
+
 	void cleanup() ;
+		///< Does cleanup.
+
 private:
 	MultiServer & m_ms ;
 } ;
@@ -60,11 +66,22 @@ class GNet::MultiServerPtr
 {
 public:
 	typedef GNet::MultiServerImp ServerImp ;
+
 	explicit MultiServerPtr( ServerImp * = NULL ) ;
+		///< Constructor.
+
 	~MultiServerPtr() ;
+		///< Destructor.
+
 	void swap( MultiServerPtr & ) ;
+		///< Swaps internals with the other.
+
 	MultiServerImp * get() ;
+		///< Returns the raw pointer.
+
 	const MultiServerImp * get() const ;
+		///< Returns the raw const pointer.
+
 private:
 	MultiServerImp * m_p ;
 } ;
@@ -86,7 +103,7 @@ public:
 
 	static AddressList addressList( const Address & ) ;
 		///< A trivial convenience fuction that returns the given 
-		///< addresses as a list.
+		///< addresses as a single-element list.
 
 	static AddressList addressList( const AddressList & , unsigned int port ) ;
 		///< Returns the given list of addresses with the port set

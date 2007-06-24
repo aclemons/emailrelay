@@ -62,7 +62,7 @@ public:
 	void add( const std::string & segment ) ;
 		///< Adds a data segment.
 
-	void add( const char * p , size_t n ) ;
+	void add( const char * p , std::string::size_type n ) ;
 		///< Adds a data segment.
 
 	bool more() const ;
@@ -88,7 +88,7 @@ private:
 	LineBuffer( const LineBuffer & ) ;
 	void operator=( const LineBuffer & ) ;
 	void load() ;
-	void check( size_t ) ;
+	void check( std::string::size_type ) ;
 
 private:
 	static unsigned long m_limit ;

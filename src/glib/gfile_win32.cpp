@@ -96,4 +96,17 @@ bool G::File::chmodx( const Path & , bool )
 {
 	return true ; // no-op
 }
+
+void G::File::link( const Path & , const Path & new_link )
+{
+	CannotLink e( new_link.str() ) ;
+	e.append( "not supported" ) ;
+	throw e ;
+}
+
+bool G::File::link( const Path & , const Path & , const NoThrow & )
+{
+	return false ; // not supported
+}
+
 /// \file gfile_win32.cpp

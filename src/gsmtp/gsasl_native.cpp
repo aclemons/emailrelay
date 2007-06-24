@@ -452,11 +452,6 @@ std::string GSmtp::SaslClient::preferred( const G::Strings & mechanism_list ) co
 				result = std::string() ;
 		}
 		G_DEBUG( "GSmtp::SaslClient::preferred: we now prefer \"" << result << "\"" ) ;
-
-		// one-shot warning
-		static bool first = true ;
-		if( first ) G_WARNING( "GSmtp::SaslClient: missing \"login\" or \"cram-md5\" entry in secrets file" ) ;
-		first = false ;
 	}
 	return result ;
 }

@@ -110,7 +110,7 @@ Specifies the remote smtp server (required by \fI--forward\fR, \fI--poll\fR, \fI
 Displays help text and exits.
 .TP
 .B \-m, --immediate 
-Enables immediating forwarding of messages as soon as they are received (requires \fI--forward-to\fR).
+Enables immediate forwarding of messages as soon as they are received (requires \fI--forward-to\fR).
 .TP
 .B \-I, --interface \fI<ip-address>\fR
 Defines the listening interface for new connections.
@@ -154,6 +154,9 @@ Specifies the pop listening port number (requires \fI--pop\fR).
 .B \-p, --port \fI<port>\fR
 Specifies the smtp listening port number.
 .TP
+.B \-w, --prompt-timeout \fI<time>\fR
+Sets the timeout (in seconds) for getting an initial prompt from the server.
+.TP
 .B \-r, --remote-clients 
 Allows remote clients to connect.
 .TP
@@ -192,6 +195,8 @@ GNU style...
 .br
 /usr/local/libexec/emailrelay
 .br
+/usr/local/libexec/emailrelay-filter-copy
+.br
 /usr/local/libexec/emailrelay-poke
 .br
 /usr/local/libexec/emailrelay-*.sh
@@ -221,6 +226,8 @@ FHS style...
 /etc/emailrelay.conf.template
 .br
 /etc/init.d/emailrelay
+.br
+/usr/lib/emailrelay-filter-copy
 .br
 /usr/lib/emailrelay-poke
 .br

@@ -140,7 +140,8 @@ void GPop::ServerProtocol::sendContent()
 void GPop::ServerProtocol::resume()
 {
 	G_LOG_S( "GPop::ServerProtocol::resume" ) ;
-	sendContent() ;
+	if( m_fsm.state() == sData )
+		sendContent() ;
 }
 
 bool GPop::ServerProtocol::sendContentLine( std::string & line , bool & stop )
@@ -237,14 +238,12 @@ GPop::ServerProtocol::Event GPop::ServerProtocol::commandEvent( const std::strin
 
 void GPop::ServerProtocol::doQuitEarly( const std::string & , bool & )
 {
-	cancelTimer() ;
 	send( std::string() + "+OK " + m_text.quit() ) ;
 	throw ProtocolDone() ;
 }
 
 void GPop::ServerProtocol::doQuit( const std::string & , bool & )
 {
-	cancelTimer() ;
 	m_store_lock.commit() ;
 	send( std::string() + "+OK " + m_text.quit() ) ;
 	throw ProtocolDone() ;
@@ -455,13 +454,6 @@ void GPop::ServerProtocol::doApop( const std::string & line , bool & ok )
 		sendError() ;
 	}
 }
-
-void GPop::ServerProtocol::onTimeout()
-{
-	// not used
-	G_WARNING( "GPop::ServerProtocol::onTimeout: operation timed out" ) ;
-}
-
 
 void GPop::ServerProtocol::send( std::string line )
 {

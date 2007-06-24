@@ -87,12 +87,11 @@ bool GSmtp::Processor::process( const std::string & path )
 
 int GSmtp::Processor::preprocessCore( const G::Path & path )
 {
-	G_LOG( "GSmtp::Processor::preprocess: executable \"" << m_exe.exe() << "\": file \"" << path << "\"" ) ;
+	G_LOG( "GSmtp::Processor::preprocess: running executable \"" << m_exe.exe() << "\": file \"" << path << "\"" ) ;
 	G::Strings args( m_exe.args() ) ;
 	args.push_back( path.str() ) ;
 	std::string raw_output ;
-	int exit_code = G::Process::spawn( G::Root::nobody() , m_exe.exe() , args , &raw_output , 
-		127 , execErrorHandler ) ;
+	int exit_code = G::Process::spawn( G::Root::nobody() , m_exe.exe() , args , &raw_output , 127 , execErrorHandler ) ;
 	m_text = parseOutput( raw_output ) ;
 	G_LOG( "GSmtp::Processor::preprocess: exit status " << exit_code << " (\"" << m_text << "\")" ) ;
 	return exit_code ;
@@ -142,10 +141,9 @@ void GSmtp::Processor::abort()
 
 void GSmtp::Processor::start( const std::string & message_file )
 {
-	// not asynchronous yet -- process() syncronously and emit the done signal
+	// not asynchronous yet -- process() synchronously and emit the done signal
 	bool ok = process( message_file ) ;
 	m_done_signal.emit( ok ) ;
 }
-
 
 /// \file gprocessor.cpp

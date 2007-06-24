@@ -349,15 +349,19 @@ SOURCE=..\gnet\grequest.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gnet\gresolve.cpp
+SOURCE=..\gnet\gresolver.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gnet\gresolve_ipv4.cpp
+SOURCE=..\gnet\gresolverinfo.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gnet\gresolve_win32.cpp
+SOURCE=..\gnet\gresolver_ipv4.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gnet\gresolver_win32.cpp
 # End Source File
 # Begin Source File
 

@@ -142,7 +142,7 @@ private:
 /// \class GSmtp::ClientProtocol
 /// Implements the client-side SMTP protocol.
 ///
-class GSmtp::ClientProtocol : private GNet::Timer 
+class GSmtp::ClientProtocol : private GNet::AbstractTimer 
 {
 public:
 	G_EXCEPTION( NotReady , "not ready" ) ;
@@ -160,10 +160,12 @@ public:
 			///< payload within the string buffer.
 			///<
 			///< Returns false if not all of the string
-			///< was sent, either due to flow control
-			///< or disconnection. After false is returned
-			///< ClientProtocol::sendDone() should be called
-			///< as soon as the full string has been sent.
+			///< was send due to flow control. In this
+			///< case ClientProtocol::sendDone() should be
+			///< called as soon as the full string has
+			///< been sent.
+			///<
+			///< Throws on error, eg. if disconnected.
 
 		private: void operator=( const Sender & ) ; // not implemented
 		public: virtual ~Sender() ;
@@ -254,7 +256,8 @@ private:
 	void raiseDoneSignal( bool , bool , const std::string & ) ;
 	G::Strings serverAuthMechanisms( const ClientProtocolReply & reply ) const ;
 	void startPreprocessing() ;
-	void onTimeout() ;
+	virtual void onTimeout() ; // from GNet::AbstractTimer
+	virtual void onTimeoutException( std::exception & ) ; // from GNet::AbstractTimer
 
 private:
 	enum State { sInit , sStarted , sServiceReady , sSentEhlo , sSentHelo , sAuth1 , sAuth2 , sSentMail , 
@@ -282,7 +285,6 @@ private:
 	unsigned int m_preprocessor_timeout ;
 	G::Signal3<bool,bool,std::string> m_done_signal ;
 	G::Signal0 m_preprocessor_signal ;
-	bool m_signalled ;
 } ;
 
 #endif

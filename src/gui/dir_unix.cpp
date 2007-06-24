@@ -123,11 +123,6 @@ G::Path Dir::cwd()
 	return G::Path( s ) ;
 }
 
-G::Path Dir::os_startup() const
-{
-	return config() + "init.d" ;
-}
-
 G::Path Dir::os_pid() const
 {
 	return oneOf( "/var/run" , "/tmp" ) ;
@@ -157,7 +152,7 @@ G::Path Dir::special( const std::string & type )
 
 G::Path Dir::os_boot() const
 {
-	return oneOf( "/etc/init.d" , "/Library/StartupItems" ) ;
+	return oneOf( "/etc/init.d" , "/Library/StartupItems" , "/sbin/init.d" ) ;
 }
 
 bool Dir::ok( const std::string & s )

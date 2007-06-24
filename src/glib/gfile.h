@@ -50,6 +50,7 @@ public:
 	G_EXCEPTION( CannotCopy , "cannot copy file" ) ;
 	G_EXCEPTION( CannotMkdir , "cannot mkdir" ) ;
 	G_EXCEPTION( CannotChmod , "cannot chmod file" ) ;
+	G_EXCEPTION( CannotLink , "cannot create symlink" ) ;
 	G_EXCEPTION( SizeOverflow , "file size overflow" ) ;
 	G_EXCEPTION( TimeError , "cannot get file modification time" ) ;
 	typedef DateTime::EpochTime time_type ;
@@ -75,6 +76,10 @@ public:
 	static void copy( const Path & from , const Path & to ) ;
 		///< Copies a file.
 
+	static void copy( std::istream & from , std::ostream & to , 
+		std::streamsize limit = 0U , std::string::size_type block = 0U ) ;
+			///< Copies a stream.
+
 	static bool mkdirs( const Path & dir , const NoThrow & , int = 100 ) ;
 		///< Creates a directory and all necessary parents. Returns false on error.
 		///< Does chmodx() on all created directories.
@@ -94,12 +99,12 @@ public:
 		///< Returns the empty string on error.
 
 	static bool exists( const Path & file ) ;
-		///< Returns true if the file (or link or device etc.)
+		///< Returns true if the file (directory, link, device etc.)
 		///< exists. Throws an exception if permission denied
 		///< or too many symlinks etc.
 
 	static bool exists( const Path & file , const NoThrow & ) ;
-		///< Returns true if the file (or link or device etc.)
+		///< Returns true if the file (directory, link, device etc.)
 		///< exists. Returns false on error.
 
 	static time_type time( const Path & file ) ;
@@ -114,6 +119,12 @@ public:
 
 	static bool chmodx( const Path & file , const NoThrow & ) ;
 		///< Makes the file executable.
+
+	static void link( const Path & target , const Path & new_link ) ;
+		///< Creates a symlink.
+
+	static bool link( const Path & target , const Path & new_link , const NoThrow & ) ;
+		///< Creates a symlink.
 
 private:
 	friend class G::DirectoryIteratorImp ;

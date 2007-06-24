@@ -65,6 +65,7 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "X!no-smtp!disables listening for smtp connections (usually used with --admin or --pop)!0!!3|"
 		<< "z!filter!specifies an external program to process messages as they are stored!1!program!3|"
 		<< "W!filter-timeout!sets the timeout (in seconds) for running the --filter processor!1!time!3|"
+		<< "w!prompt-timeout!sets the timeout (in seconds) for getting an initial prompt from the server!1!time!3|"
 		<< "D!domain!sets an override for the host's fully qualified domain name!1!fqdn!3|"
 		<< "f!forward!forwards stored mail on startup (requires --forward-to)!0!!3|"
 		<< "o!forward-to!specifies the remote smtp server (required by --forward, --poll, --immediate and --admin)!1!host:port!3|"
@@ -156,7 +157,7 @@ void Main::CommandLine::showUsage( bool e ) const
 	else
 		introducer = std::string("abbreviated ") + introducer ;
 
-	size_t tab_stop = 34U ;
+	std::string::size_type tab_stop = 34U ;
 	m_getopt.showUsage( show.s() , m_arg.prefix() , "" , 
 		introducer , level , tab_stop , m_output.columns() ) ;
 }

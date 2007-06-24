@@ -131,6 +131,7 @@ private:
 	static void unpack( const Path & , const std::vector<char> & ) ;
 	static void unpack( std::ostream & , const std::vector<char> & ) ;
 	static unsigned long offset( Path ) ;
+	static void copy( std::istream & , std::ostream & , std::streamsize ) ;
 
 private:
 	Map m_map ;

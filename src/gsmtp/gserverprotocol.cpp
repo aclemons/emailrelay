@@ -163,6 +163,12 @@ void GSmtp::ServerProtocol::onTimeout()
 	sendCompletionReply( false , "message processing timed out" ) ;
 }
 
+void GSmtp::ServerProtocol::onTimeoutException( std::exception & e )
+{
+	G_ERROR( "GSmtp::ServerProtocol::onTimeoutException: exception: " << e.what() ) ;
+	throw ;
+}
+
 void GSmtp::ServerProtocol::doQuit( const std::string & , bool & )
 {
 	reset() ;
@@ -637,7 +643,7 @@ std::string GSmtp::ServerProtocol::crlf()
 
 void GSmtp::ServerProtocol::send( std::string line )
 {
-	G_LOG( "GSmtp::ServerProtocol: tx>>: \"" << line << "\"" ) ;
+	G_LOG( "GSmtp::ServerProtocol: tx>>: \"" << G::Str::toPrintableAscii(line) << "\"" ) ;
 	line.append( crlf() ) ;
 	m_sender.protocolSend( line ) ;
 }

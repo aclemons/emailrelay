@@ -26,6 +26,8 @@
 
 #include "gdef.h"
 #include "gsmtp.h"
+#include "gresolverinfo.h"
+#include "gclientptr.h"
 #include "gprotocolmessage.h"
 #include "gprotocolmessagestore.h"
 #include "gexe.h"
@@ -112,17 +114,17 @@ protected:
 
 private:
 	void operator=( const ProtocolMessageForward & ) ; // not implemented
-	void clientDone( std::string ) ; // Client::doneSignal()
+	void clientDone( std::string , bool ) ; // Client::doneSignal()
 	bool forward( unsigned long , bool & , std::string * ) ;
 
 private:
 	MessageStore & m_store ;
-	GSmtp::Client::Config m_client_config ;
+	GNet::ResolverInfo m_client_resolver_info ;
+	Client::Config m_client_config ;
 	G::Executable m_newfile_preprocessor ;
 	const Secrets & m_client_secrets ;
 	ProtocolMessageStore m_pms ;
-	std::string m_server ;
-	std::auto_ptr<Client> m_client ;
+	GNet::ClientPtr<GNet::Client> m_client ;
 	unsigned long m_id ;
 	unsigned int m_connection_timeout ;
 	G::Signal3<bool,unsigned long,std::string> m_done_signal ;

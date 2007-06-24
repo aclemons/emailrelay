@@ -318,7 +318,7 @@ void GGui::Window::resize( Size new_size , bool repaint )
 void GGui::Window::onException( std::exception & e )
 {
 	// it is not clear that it is safe to throw out of a
-	// window procedure, but it seems to work okay
+	// window procedure, but it seems to work okay in practice
 	//
 	throw ;
 }

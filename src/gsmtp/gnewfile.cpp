@@ -146,7 +146,7 @@ std::string GSmtp::NewFile::prepare( const std::string & auth_id , const std::st
 	m_envelope_path_0 = m_store.envelopeWorkingPath( m_seq ) ;
 	m_envelope_path_1 = m_store.envelopePath( m_seq ) ;
 	if( ! saveEnvelope( auth_id , client_ip ) )
-		throw GSmtp::MessageStore::StorageError( m_envelope_path_1.str() ) ;
+		throw GSmtp::MessageStore::StorageError( std::string() + "cannot write " + m_envelope_path_0.str() ) ;
 
 	// deliver to local mailboxes
 	//
@@ -169,7 +169,7 @@ bool GSmtp::NewFile::saveEnvelope( const std::string & auth_id , const std::stri
 void GSmtp::NewFile::commit()
 {
 	if( ! commitEnvelope() )
-		throw GSmtp::MessageStore::StorageError( m_envelope_path_1.str() ) ;
+		throw GSmtp::MessageStore::StorageError( std::string() + "cannot rename to " + m_envelope_path_1.str() ) ;
 
 	m_committed = true ;
 }

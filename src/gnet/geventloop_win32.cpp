@@ -34,6 +34,7 @@
 #include "gassert.h"
 #include "gdebug.h"
 #include "glog.h"
+#include <stdexcept>
 
 namespace GNet
 {
@@ -349,19 +350,46 @@ void GNet::Winsock::onMessage( WPARAM wparam , LPARAM lparam )
 	{
 		EventHandler *handler = findHandler( m_read_list , fd ) ;
 		if( handler )
-			handler->readEvent();
+		{
+			try
+			{
+				handler->readEvent();
+			}
+			catch( std::exception & e )
+			{
+				handler->onException( e ) ;
+			}
+		}
 	} 
 	else if( event & WRITE_EVENTS )
 	{
 		EventHandler *handler = findHandler( m_write_list , fd ) ;
 		if( handler )
-			handler->writeEvent();
+		{
+			try
+			{
+				handler->writeEvent();
+			}
+			catch( std::exception & e )
+			{
+				handler->onException( e ) ;
+			}
+		}
 	} 
 	else if( event & EXCEPTION_EVENTS )
 	{
 		EventHandler *handler = findHandler( m_exception_list , fd ) ;
 		if( handler )
-			handler->exceptionEvent();
+		{
+			try
+			{
+				handler->exceptionEvent();
+			}
+			catch( std::exception & e )
+			{
+				handler->onException( e ) ;
+			}
+		}
 	} 
 	else if( err )
 	{

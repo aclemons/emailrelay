@@ -60,7 +60,7 @@ public:
 	explicit ScannerPeer( GNet::Server::PeerInfo info ) ;
 private:	
 	virtual void onDelete() ;
-	virtual void onData( const char * , size_t ) ;
+	virtual void onData( const char * , GNet::ServerPeer::size_type ) ;
 	void process() ;
 	void processFile( std::string ) ;
 private:
@@ -77,10 +77,9 @@ void Main::ScannerPeer::onDelete()
 	process() ;
 }
 
-void Main::ScannerPeer::onData( const char * p , size_t n )
+void Main::ScannerPeer::onData( const char * p , GNet::ServerPeer::size_type n )
 {
-	std::string s( p , n ) ;
-	m_buffer.add( s ) ;
+	m_buffer.add( p , n ) ;
 	process() ;
 }
 

@@ -34,9 +34,10 @@ GNet::LineBuffer::LineBuffer( const std::string & eol , bool do_throw ) :
 	m_more(false) ,
 	m_throw(do_throw)
 {
+	G_ASSERT( !eol.empty() ) ;
 }
 
-void GNet::LineBuffer::add( const char * p , size_t n )
+void GNet::LineBuffer::add( const char * p , std::string::size_type n )
 {
 	G_ASSERT( p != NULL ) ;
 	check( n ) ;
@@ -51,11 +52,11 @@ void GNet::LineBuffer::add( const std::string & s )
 	load() ;
 }
 
-void GNet::LineBuffer::check( size_t n )
+void GNet::LineBuffer::check( std::string::size_type n )
 {
 	if( (m_store.length()+n) > m_limit )
 	{
-		size_t total = m_store.size() + m_current.size() + n ;
+		std::string::size_type total = m_store.size() + m_current.size() + n ;
 		m_store.erase() ;
 		m_current.erase() ;
 		m_more = false ;
@@ -70,7 +71,7 @@ void GNet::LineBuffer::load()
 {
 	if( ! m_more )
 	{
-		size_t pos = m_store.find(m_eol) ; // optimisation opportunity here using find(pos,s) overload
+		std::string::size_type pos = m_store.find(m_eol) ; // optimisation opportunity here using find(pos,s) overload
 		if( pos != std::string::npos )
 		{
 			m_more = true ;

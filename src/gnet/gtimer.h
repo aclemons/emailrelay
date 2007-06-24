@@ -27,19 +27,21 @@
 #include "gdef.h"
 #include "gnet.h"
 #include "gdatetime.h"
+#include "geventhandler.h"
 #include "gexception.h"
 #include <list>
 
 /// \namespace GNet
 namespace GNet
 {
-	class Timer ;
+	class ConcreteTimer ;
+	class AbstractTimer ;
 	class TimeoutHandler ;
 	class TimerList ;
 }
 
 /// \class GNet::TimeoutHandler
-/// An interface used by GNet::Timer.
+/// An interface used by GNet::ConcreteTimer.
 ///
 class GNet::TimeoutHandler 
 {
@@ -47,27 +49,25 @@ public:
 	virtual ~TimeoutHandler() ;
 		///< Destructor.
 
-	virtual void onTimeout( Timer & ) = 0 ;
-		///< Called when the associated timer
-		///< expires.
+	virtual void onTimeout( AbstractTimer & ) = 0 ;
+		///< Called when the associated timer expires.
+		///<
+		///< If an exception is thrown out of the
+		///< override then the event loop will call the 
+		///< timer object's onTimeoutException() method.
 
 private:
 	void operator=( const TimeoutHandler & ) ; // not implemented
 } ;
 
-/// \class GNet::Timer
-/// A timer class.
+/// \class GNet::AbstractTimer
+/// A timer base class that calls a pure virtual
+/// method on expiry.
 ///
-class GNet::Timer 
+class GNet::AbstractTimer 
 {
 public:
-	explicit Timer( TimeoutHandler & handler ) ;
-		///< Constructor.
-
-	Timer() ;
-		///< Default constructor.
-
-	virtual ~Timer() ;
+	virtual ~AbstractTimer() ;
 		///< Destructor.
 
 	void startTimer( unsigned int time ) ;
@@ -77,12 +77,22 @@ public:
 		///< Cancels the timer.
 
 protected:
-	virtual void onTimeout() ;
-		///< Called when the timer expires (or soon
-		///< after).
+	AbstractTimer() ;
+		///< Default constructor.
+
+	virtual void onTimeout() = 0 ;
+		///< Called when the timer expires (or soon after).
+
+	virtual void onTimeoutException( std::exception & ) = 0 ;
+		///< Called by the event loop when the onTimeout() 
+		///< override throws. 
+		///<
+		///< The implementation can just throw the current
+		///< exception so that the event loop terminates.
+
 private:
-	Timer( const Timer & ) ; // not implemented
-	void operator=( const Timer & ) ; // not implemented
+	AbstractTimer( const AbstractTimer & ) ; // not implemented
+	void operator=( const AbstractTimer & ) ; // not implemented
 
 private:
 	friend class TimerList ;
@@ -92,6 +102,29 @@ private:
 private:
 	G::DateTime::EpochTime m_time ;
 	TimeoutHandler * m_handler ;
+} ;
+
+/// \class GNet::ConcreteTimer
+/// A concrete timer class that calls
+/// TimeoutHandler::onTimeout() on expiry and 
+/// EventHandler::onException() on error.
+///
+class GNet::ConcreteTimer : public GNet::AbstractTimer 
+{
+public:
+	ConcreteTimer( TimeoutHandler & , EventHandler & ) ;
+		///< Constructor. The EventHandler reference is required
+		///< in case the timeout handler throws.
+
+private:
+	ConcreteTimer( const ConcreteTimer & ) ; // not implemented
+	void operator=( const ConcreteTimer & ) ; // not implemented
+	virtual void onTimeout() ; // from AbstractTimer
+	virtual void onTimeoutException( std::exception & ) ; // from AbstractTimer
+
+private:
+	TimeoutHandler & m_timeout_handler ;
+	EventHandler & m_event_handler ;
 } ;
 
 /// \class GNet::TimerList
@@ -112,26 +145,24 @@ public:
 	~TimerList() ;
 		///< Destructor.
 
-	void add( Timer & ) ;
+	void add( AbstractTimer & ) ;
 		///< Adds a timer. Used by Timer::Timer().
 
-	void remove( Timer & ) ;
-		///< Removes a timer from the list.
-		///< Used by Timer::~Timer().
+	void remove( AbstractTimer & ) ;
+		///< Removes a timer from the list. Used by 
+		///< Timer::~Timer().
 
 	void update( G::DateTime::EpochTime previous_soonest ) ;
-		///< Called when one of the list's timers
-		///< has changed.
+		///< Called when one of the list's timers has changed.
 
 	G::DateTime::EpochTime soonest() const ;
 		///< Returns the time of the first timer to expire,
 		///< or zero if none.
 
 	unsigned int interval( bool & infinite ) const ;
-		///< Returns the interval to the next
-		///< timer expiry. The 'infinite' value is
-		///< set to true if there are no timers 
-		///< running.
+		///< Returns the interval to the next timer expiry. 
+		///< The 'infinite' value is set to true if there 
+		///< are no timers running.
 
 	void doTimeouts() ;
 		///< Triggers the timeout callbacks of any expired
@@ -146,19 +177,19 @@ public:
 private:
 	TimerList( const TimerList & ) ; // not implemented
 	void operator=( const TimerList & ) ; // not implemented
+	void collectGarbage() ;
 	G::DateTime::EpochTime soonest( int ) const ; // fast overload
 	void update() ;
 	bool valid() const ;
 
 private:
 	static TimerList * m_this ;
-	typedef std::list<Timer*> List ;
+	typedef std::list<AbstractTimer*> List ;
 	List m_list ;
 	bool m_list_changed ;
 	bool m_empty_set_timeout_hint ;
 	bool m_soonest_changed ; // mutable
 	G::DateTime::EpochTime m_soonest ;
 } ;
-
 
 #endif

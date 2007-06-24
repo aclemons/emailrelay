@@ -41,10 +41,12 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous ,
 		G::Arg arg ;
 		arg.parse( hinstance , command_line ) ;
 		Main::WinApp app( hinstance , previous , "E-MailRelay" ) ;
+		Main::Run run( app , arg , Main::CommandLine::switchSpec(true) ) ;
+		if( run.hidden() )
+			app.disableOutput() ;
 
 		try
 		{
-			Main::Run run( app , arg , Main::CommandLine::switchSpec(true) ) ;
 			if( run.prepare() )
 			{
 				const bool visible = ! run.cfg().daemon() ;
@@ -57,6 +59,7 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous ,
 		catch( std::exception & e )
 		{
 			app.onError( e.what() ) ;
+			return 1 ;
 		}
 
 		return 0 ;

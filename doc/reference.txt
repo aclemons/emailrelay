@@ -68,7 +68,7 @@ where <switch> is:
   Displays help text and exits.
 
 # --immediate (-m)
-  Enables immediating forwarding of messages as soon as they are received (requires --forward-to).
+  Enables immediate forwarding of messages as soon as they are received (requires --forward-to).
 
 # --interface (-I)
   Defines the listening interface for new connections.
@@ -111,6 +111,9 @@ where <switch> is:
 
 # --port (-p)
   Specifies the smtp listening port number.
+
+# --prompt-timeout (-w)
+  Sets the timeout (in seconds) for getting an initial prompt from the server.
 
 # --remote-clients (-r)
   Allows remote clients to connect.
@@ -685,6 +688,7 @@ following locations:
 * /usr/local/etc/emailrelay.conf
 * /usr/local/etc/emailrelay.conf.template
 * /usr/local/libexec/emailrelay
+* /usr/local/libexec/emailrelay-filter-copy
 * /usr/local/libexec/emailrelay-poke
 * /usr/local/libexec/emailrelay-*.sh
 * /usr/local/man/man1/emailrelay*.1.gz
@@ -706,6 +710,7 @@ locations:
 * /etc/emailrelay.conf
 * /etc/emailrelay.conf.template
 * /etc/init.d/emailrelay
+* /usr/lib/emailrelay-filter-copy
 * /usr/lib/emailrelay-poke
 * /usr/sbin/emailrelay
 * /usr/sbin/emailrelay-passwd

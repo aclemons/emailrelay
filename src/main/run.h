@@ -31,6 +31,7 @@
 #include "output.h"
 #include "geventloop.h"
 #include "gtimer.h"
+#include "gclientptr.h"
 #include "glogoutput.h"
 #include "gdaemon.h"
 #include "gpidfile.h"
@@ -70,18 +71,22 @@ namespace Main
 /// }
 /// \endcode
 ///
-class Main::Run : private GNet::TimeoutHandler 
+class Main::Run : private GNet::TimeoutHandler , private GNet::EventHandler 
 {
 public:
 	Run( Output & output , const G::Arg & arg , const std::string & switch_spec ) ;
-		///< Constructor.
+		///< Constructor. Tries not to throw.
 
 	virtual ~Run() ;
 		///< Destructor.
 
+	bool hidden() const ;
+		///< Returns true if the program should run in hidden mode.
+
 	bool prepare() ;
-		///< Prepares to run(). Returns
-		///< false on error.
+		///< Prepares to run() typically by parsing the commandline. 
+		///< Error messages are sent to the Output interface.
+		///< Returns false on error.
 
 	void run() ;
 		///< Runs the application.
@@ -108,9 +113,11 @@ private:
 	std::string smtpIdent() const ;
 	void recordPid() ;
 	const CommandLine & cl() const ;
-	virtual void clientDone( std::string ) ; // Client::doneSignal()
-	virtual void clientEvent( std::string , std::string ) ; // Client::eventSignal()
-	virtual void onTimeout( GNet::Timer & ) ; // from TimeoutHandler
+	void forwardingClientDone( std::string , bool ) ; // Client::doneSignal()
+	void pollingClientDone( std::string , bool ) ; // Client::doneSignal()
+	void clientEvent( std::string , std::string ) ; // Client::eventSignal()
+	virtual void onTimeout( GNet::AbstractTimer & ) ; // from TimeoutHandler
+	virtual void onException( std::exception & ) ; // from EventHandler
 	void raiseStoreEvent( bool ) ;
 	void raiseNetworkEvent( std::string , std::string ) ;
 	void emit( const std::string & , const std::string & , const std::string & ) ;
@@ -132,8 +139,9 @@ private:
 	std::auto_ptr<GSmtp::Secrets> m_client_secrets ;
 	std::auto_ptr<GPop::Secrets> m_pop_secrets ;
 	std::auto_ptr<GSmtp::AdminServer> m_admin_server ;
-	std::auto_ptr<GNet::Timer> m_poll_timer ;
-	std::auto_ptr<GSmtp::Client> m_client ; // order dependency -- late
+	std::auto_ptr<GNet::ConcreteTimer> m_poll_timer ;
+	GNet::ResolverInfo m_polling_client_resolver_info ;
+	GNet::ClientPtr<GSmtp::Client> m_polling_client ; // order dependency -- late
 } ;
 
 #endif

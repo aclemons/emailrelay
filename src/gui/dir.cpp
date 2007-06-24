@@ -40,7 +40,6 @@ Dir::Dir( const std::string & argv0 , bool installed ) :
 	m_config = os_config() ;
 	m_pid = os_pid() ;
 	m_boot = os_boot() ;
-	m_startup = os_startup() ;
 	m_desktop = special("desktop") ;
 	m_login = special("login") ;
 	m_menu = special("menu") ;
@@ -62,7 +61,7 @@ void Dir::read( std::istream & file )
 	// these allow "make install" to take full control if it needs to...
 	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_pid = line ;
 	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_boot = line ;
-	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_startup = line ;
+	line = G::Str::readLineFrom(file) ; // was m_startup -- ignored
 	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_desktop = line ;
 	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_login = line ;
 	line = G::Str::readLineFrom(file) ; if( file.good() && !line.empty() ) m_menu = line ;
@@ -110,11 +109,6 @@ G::Path Dir::tmp() const
 G::Path Dir::pid() const
 {
 	return m_pid ;
-}
-
-G::Path Dir::startup() const
-{
-	return m_startup ;
 }
 
 G::Path Dir::config() const

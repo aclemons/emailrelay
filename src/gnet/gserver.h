@@ -27,6 +27,7 @@
 #include "gdef.h"
 #include "gnet.h"
 #include "gsocket.h"
+#include "gtimer.h"
 #include "gconnection.h"
 #include "gevent.h"
 #include <utility>
@@ -39,6 +40,7 @@ namespace GNet
 {
 	class Server ;
 	class ServerPeer ;
+	class ServerPeerTimer ;
 	class ServerPeerHandle ;
 }
 
@@ -159,7 +161,7 @@ private:
 	void operator=( const Server & ) ; // not implemented
 	virtual void readEvent() ; // from EventHandler
 	virtual void writeEvent() ; // from EventHandler
-	virtual void exceptionEvent() ; // from EventHandler
+	virtual void onException( std::exception & e ) ; // from EventHandler
 	void serverCleanupCore() ;
 	void collectGarbage() ;
 	void readEventCore() ;
@@ -169,6 +171,25 @@ private:
 	std::auto_ptr<StreamSocket> m_socket ;
 	PeerList m_peer_list ;
 	bool m_cleaned_up ;
+} ;
+
+/// \class GNet::ServerPeerTimer
+/// A private implementation class used by GNet::ServerPeer.
+///
+class GNet::ServerPeerTimer : public GNet::AbstractTimer 
+{
+public:
+	explicit ServerPeerTimer( ServerPeer * ) ;
+		///< Constructor.
+
+	virtual void onTimeout() ;
+		///< From AbstractTimer.
+
+	virtual void onTimeoutException( std::exception & ) ;
+		///< From AbstractTimer.
+
+private:
+	ServerPeer * m_server_peer ;
 } ;
 
 /// \class GNet::ServerPeer
@@ -181,6 +202,7 @@ private:
 class GNet::ServerPeer : public GNet::EventHandler , public GNet::Connection 
 {
 public:
+	typedef std::string::size_type size_type ;
 	enum { c_buffer_size = 1500 } ;
 
 	explicit ServerPeer( Server::PeerInfo ) ;
@@ -214,7 +236,7 @@ protected:
 		///< Called just before destruction. (Note 
 		///< that the object typically deletes itself.)
 
-	virtual void onData( const char * , size_t ) = 0 ;
+	virtual void onData( const char * , size_type ) = 0 ;
 		///< Called on receipt of data.
 
 	StreamSocket & socket() ;
@@ -227,15 +249,16 @@ protected:
 		///< been destroyed.
 
 private:
-	virtual void readEvent() ; // from EventHandler
-	virtual void exceptionEvent() ; // from EventHandler
 	ServerPeer( const ServerPeer & ) ; // not implemented
 	void operator=( const ServerPeer & ) ; // not implemented
+	virtual void readEvent() ; // from EventHandler
+	virtual void onException( std::exception & ) ;
 
 private:
 	Address m_address ;
 	std::auto_ptr<StreamSocket> m_socket ;
 	ServerPeerHandle * m_handle ;
+	ServerPeerTimer m_delete_timer ;
 } ;
 
 #endif

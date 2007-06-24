@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "glocal.h"
-#include "gresolve.h"
+#include "gresolver.h"
 #include "glog.h"
 #include <sstream>
 
@@ -66,7 +66,7 @@ std::string GNet::Local::fqdnImp()
 
 	std::string result = rc.first.canonical_name ;
 
-	size_t pos = result.find( '.' ) ;
+	std::string::size_type pos = result.find( '.' ) ;
 	if( pos == std::string::npos )
 	{
 		G_WARNING( "GNet::Local: no valid domain in \"" << result << "\": defaulting to \".local\"" ) ;

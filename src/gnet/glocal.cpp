@@ -44,9 +44,9 @@ GNet::Address GNet::Local::canonicalAddress()
 std::string GNet::Local::domainname()
 {
 	std::string full = fqdn() ;
-	size_t pos = full.rfind( '.' ) ;
+	std::string::size_type pos = full.rfind( '.' ) ;
 	if( pos == std::string::npos )
-		throw Error( "invalid fqdn" ) ;
+		throw Error( std::string() + "invalid fqdn: no dot in \"" + full + "\"" ) ;
 
 	G_DEBUG( "GNet::Local::domainname: \"" << full.substr(pos+1U) << "\"" ) ;
 	return full.substr( pos+1U ) ;

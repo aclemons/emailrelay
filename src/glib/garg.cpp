@@ -101,7 +101,7 @@ void G::Arg::protect( std::string & s )
 	const char quote = '"' ;
 	const char space = ' ' ;
 	const char replacement = '\0' ;
-	for( size_t pos = 0U ; pos < s.length() ; pos++ )
+	for( std::string::size_type pos = 0U ; pos < s.length() ; pos++ )
 	{
 		if( s.at(pos) == quote ) in_quote = ! in_quote ;
 		if( in_quote && s.at(pos) == space ) s[pos] = replacement ;
@@ -135,15 +135,14 @@ void G::Arg::dequote( StringArray & array )
 	}
 }
 
-bool G::Arg::contains( const std::string & sw , size_t sw_args , bool cs ) const
+bool G::Arg::contains( const std::string & sw , size_type sw_args , bool cs ) const
 {
 	return find( cs , sw , sw_args , NULL ) ;
 }
 
-bool G::Arg::find( bool cs , const std::string & sw , size_t sw_args , 
-	size_t * index_p ) const
+bool G::Arg::find( bool cs , const std::string & sw , size_type sw_args , size_type * index_p ) const
 {
-	for( size_t i = 1 ; i < m_array.size() ; i++ ) // start from v[1]
+	for( size_type i = 1 ; i < m_array.size() ; i++ ) // start from v[1]
 	{
 		if( match(cs,sw,m_array[i]) && (i+sw_args) < m_array.size() )
 		{
@@ -164,39 +163,40 @@ bool G::Arg::match( bool cs , const std::string & s1 , const std::string & s2 )
 			Str::upper(s1) == Str::upper(s2) ;
 }
 
-void G::Arg::remove( const std::string & sw , size_t sw_args )
+bool G::Arg::remove( const std::string & sw , size_type sw_args )
 {
-	size_t i = 0U ;
+	size_type i = 0U ;
 	const bool found = find( true , sw , sw_args , &i ) ;
 	if( found )
 		removeAt( i , sw_args ) ;
+	return found ;
 }
 
-void G::Arg::removeAt( size_t sw_index , size_t sw_args )
+void G::Arg::removeAt( size_type sw_index , size_type sw_args )
 {
 	G_ASSERT( sw_index > 0U && sw_index < m_array.size() ) ;
 	if( sw_index > 0U && sw_index < m_array.size() )
 	{
 		StringArray::iterator p = m_array.begin() + sw_index ;
 		p = m_array.erase( p ) ;
-		for( size_t i = 0U ; i < sw_args && p != m_array.end() ; i++ )
+		for( size_type i = 0U ; i < sw_args && p != m_array.end() ; i++ )
 			p = m_array.erase( p ) ;
 	}
 }
 
-size_t G::Arg::index( const std::string & sw , size_t sw_args ) const
+G::Arg::size_type G::Arg::index( const std::string & sw , size_type sw_args ) const
 {
-	size_t i = 0U ;
+	size_type i = 0U ;
 	const bool found = find( true , sw , sw_args , &i ) ;
 	return found ? i : 0U ;
 }
 
-size_t G::Arg::c() const
+G::Arg::size_type G::Arg::c() const
 {
 	return m_array.size() ;
 }
 
-std::string G::Arg::v( size_t i ) const
+std::string G::Arg::v( size_type i ) const
 {
 	G_ASSERT( i < m_array.size() ) ;
 	return m_array[i] ;

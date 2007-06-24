@@ -49,6 +49,7 @@ public:
 	struct Level 
 		{ unsigned int level ; explicit Level(unsigned int l) : level(l) {} } ;
 	G_EXCEPTION( InvalidSpecification , "invalid options specification string" ) ;
+	typedef std::string::size_type size_type ;
 
 	GetOpt( const Arg & arg , const std::string & spec , 
 		char sep_major = '|' , char sep_minor = '/' , char escape = '\\' ) ;
@@ -74,10 +75,10 @@ public:
 	Strings errorList() const ;
 		///< Returns the list of errors.
 
-	static size_t wrapDefault() ;
+	static size_type wrapDefault() ;
 		///< Returns a default word-wrapping width.
 
-	static size_t tabDefault() ;
+	static size_type tabDefault() ;
 		///< Returns a default tab-stop.
 
 	static Level levelDefault() ;
@@ -88,7 +89,7 @@ public:
 
 	std::string usageSummary( const std::string & exe , const std::string & args , 
 		const std::string & introducer = introducerDefault() ,
-		Level level = levelDefault() , size_t wrap_width = wrapDefault() ) const ;
+		Level level = levelDefault() , size_type wrap_width = wrapDefault() ) const ;
 			///< Returns a one-line usage summary, as
 			///< "usage: <exe> <usageSummarySwitches()> <args>"
 
@@ -98,15 +99,15 @@ public:
 		///< or non-switch arguments.
 
 	std::string usageHelp( Level level = levelDefault() ,
-		size_t tab_stop = tabDefault() , size_t wrap_width = wrapDefault() ,
+		size_type tab_stop = tabDefault() , size_type wrap_width = wrapDefault() ,
 		bool level_exact = false ) const ;
 			///< Returns a multi-line string giving help on each switch.
 
 	void showUsage( std::ostream & stream , const std::string & exe , 
 		const std::string & args , const std::string & introducer = introducerDefault() ,
 		Level level = levelDefault() ,
-		size_t tab_stop = tabDefault() , 
-		size_t wrap_width = wrapDefault() ) const ;
+		size_type tab_stop = tabDefault() , 
+		size_type wrap_width = wrapDefault() ) const ;
 			///< Streams out multi-line usage text using usageSummary() 
 			///< and usageHelp(). The 'args' parameter should represent
 			///< the non-switch arguments (with a leading space), like 
@@ -178,7 +179,7 @@ private:
 	void parseSpec( const std::string & spec , char , char , char ) ;
 	void addSpec( const std::string & , char c , const std::string & , 
 		const std::string & , bool , const std::string & , unsigned int ) ;
-	size_t parseArgs( const Arg & args_in ) ;
+	size_type parseArgs( const Arg & args_in ) ;
 	bool isOldSwitch( const std::string & arg ) const ;
 	bool isNewSwitch( const std::string & arg ) const ;
 	bool isSwitchSet( const std::string & arg ) const ;
@@ -193,16 +194,16 @@ private:
 	void errorUnknownSwitch( char c ) ;
 	void errorUnknownSwitch( const std::string & ) ;
 	char key( const std::string & s ) const ;
-	void remove( size_t n ) ;
+	void remove( size_type n ) ;
 	bool valid( const std::string & ) const ;
 	bool valid( char c ) const ;
 	std::string usageSummaryPartOne( Level ) const ;
 	std::string usageSummaryPartTwo( Level ) const ;
-	std::string usageHelpCore( const std::string & , Level , size_t , size_t , bool ) const ;
-	static size_t widthLimit( size_t ) ;
+	std::string usageHelpCore( const std::string & , Level , size_type , size_type , bool ) const ;
+	static size_type widthLimit( size_type ) ;
 	static bool visible( SwitchSpecMap::const_iterator , Level , bool ) ;
-	static size_t eqPos( const std::string & ) ;
-	static std::string eqValue( const std::string & , size_t ) ;
+	static size_type eqPos( const std::string & ) ;
+	static std::string eqValue( const std::string & , size_type ) ;
 
 private:
 	SwitchSpecMap m_spec_map ;

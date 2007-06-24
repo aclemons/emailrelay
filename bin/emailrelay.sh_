@@ -35,45 +35,22 @@
 #           insserv (suse), /usr/share/doc/initscripts*/sysvinitfiles (redhat)
 #
 
-
-##
-# RedHat comment block...
-#
-# chkconfig: 345 80 20
-# description: E-MailRelay is a SMTP proxy and store-and-forward MTA.
-# pidfile: /var/run/emailrelay.pid
-# processname: emailrelay
-##
-
-
 ##
 # LSB comment block...
-#
-# The bogus 345 run-levels are a workround for a buggy RedHat chkconfig which 
-# reads the LSB comment block as an undocumented 'feature' and then parses it
-# wrongly.
 #
 ### BEGIN INIT INFO
 # Provides:       emailrelay
 # Required-Start: $network
 # Required-Stop:  $network
-# Default-Start:  345 3 4 5
-# Default-Stop:   345 3 4 5
+# Default-Start:  3 4 5
+# Default-Stop:   3 4 5
 # Description:    E-MailRelay SMTP proxy and store-and-forward MTA.
 ### END INIT INFO
 ##
 
 # choose an infrastructure style
 #
-if test -f /etc/rc.status 
-then 
-	style="suse"
-	. /etc/rc.status
-elif test -f /etc/init.d/functions
-then 
-	style="redhat" 
-	. /etc/init.d/functions
-elif test -f /lib/lsb/init-functions
+if test -f /lib/lsb/init-functions
 then 
 	style="lsb" 
 	. /lib/lsb/init-functions
@@ -160,99 +137,6 @@ unix_cmd_status()
 unix_exit()
 {
 	exit "${unix_errno}"
-}
-
-##
-
-redhat_reset()
-{
-	redhat_errno="0"
-}
-
-redhat_cmd_start()
-{
-	echo -n "${1}"
-	shift
-	initlog -q --cmd="$*"
-	redhat_errno="$?"
-	#touch /var/lock/subsys/emailrelay
-	if test "${redhat_errno}" -eq 0 ; then success ; else failure ; fi
-	echo
-}
-
-redhat_cmd_stop()
-{
-	echo -n "${1}"
-	killproc "`basename ${emailrelay}`"
-	redhat_errno="$?"
-	#rm -f /var/lock/subsys/emailrelay
-	if test "${redhat_errno}" -eq 0 ; then success ; else failure ; fi
-	echo
-}
-
-redhat_cmd_restarted()
-{
-	redhat_errno="$?"
-}
-
-redhat_cmd_status()
-{
-	echo -n "${1}"
-
-	if test -f "${pid_file}" && test "`cat ${pid_file}`" != "" && kill -0 "`cat ${pid_file}`" 2>/dev/null
-	then
-		redhat_errno="0"
-	elif test -f "${pid_file}" 
-	then
-		redhat_errno="1"
-	else
-		redhat_errno="3"
-	fi
-	if test "${redhat_errno}" -eq 0 ; then success ; else failure ; fi
-}
-
-redhat_exit()
-{
-	exit "${redhat_errno}"
-}
-
-##
-
-suse_reset()
-{
-	rc_reset
-}
-
-suse_cmd_start()
-{
-	echo -n "${1}"
-	shift
-	startproc "$@"
-	rc_status -v
-}
-
-suse_cmd_stop()
-{
-	echo -n "${1}"
-	killproc "${2}"
-	rc_status -v
-}
-
-suse_cmd_restarted()
-{
-	rc_status
-}
-
-suse_cmd_status()
-{
-	echo -n "${1}"
-	checkproc "${2}"
-	rc_status -v
-}
-
-suse_exit()
-{
-	rc_exit
 }
 
 ##

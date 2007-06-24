@@ -33,7 +33,7 @@
 class GNet::MonitorImp 
 {
 public:
-	typedef const Client * C_p ;
+	typedef const SimpleClient * C_p ;
 	typedef const ServerPeer * S_p ;
 	typedef std::set<C_p> Clients ;
 	typedef std::pair<Clients::iterator,bool> ClientInsertion ;
@@ -82,7 +82,7 @@ GNet::Monitor * GNet::Monitor::instance()
 	return m_this ;
 }
 
-void GNet::Monitor::add( const Client & client )
+void GNet::Monitor::add( const SimpleClient & client )
 {
 	MonitorImp::ClientInsertion rc = m_imp->m_clients.insert( &client ) ;
 	if( rc.second )
@@ -90,7 +90,7 @@ void GNet::Monitor::add( const Client & client )
 	m_signal.emit( "out" , "start" ) ;
 }
 
-void GNet::Monitor::remove( const Client & client )
+void GNet::Monitor::remove( const SimpleClient & client )
 {
 	if( m_imp->m_clients.erase( &client ) )
 		m_imp->m_client_removes++ ;

@@ -28,30 +28,31 @@
 #include "gnet.h"
 #include "gdatetime.h"
 #include "gdescriptor.h"
-#include <list>
+#include <map>
 #include <string>
 
 /// \namespace GNet
 namespace GNet
 {
 	class EventHandler ;
-	class EventHandlerListItem ;
 	class EventHandlerList ;
 	class TimerList ;
 }
 
 /// \class GNet::EventHandler
-/// A pseudo-abstract base class for classes
-/// which handle asynchronous socket events. ("Pseudo" because
-/// there are empty implementations for the virtual methods, 
-/// since you dont want to have to override all three every time.)
+/// A base class for classes that handle asynchronous 
+/// socket events.
 ///
 /// An event handler object has its virtual methods called when
 /// an event is detected on the associated file descriptor.
 ///
-/// A file descriptor and its associated event handler
-/// are typically kept in a EventHandlerListItem
-/// structure, within the EventLoop singleton.
+/// If an event handler throws an exception which is caught
+/// by the event loop then the event loop calls the handler's
+/// onException() method.
+///
+/// A file descriptors and associated event handlers are
+/// typically kept in a EventHandlerList container within 
+/// the EventLoop singleton.
 ///
 class GNet::EventHandler 
 {
@@ -69,30 +70,27 @@ public:
 
 	virtual void exceptionEvent() ;
 		///< Called for an exception event. The default 
-		///< implementation does nothing.
+		///< implementation throws an exception resulting	
+		///< in a call to onException().
+
+	virtual void onException( std::exception & ) = 0 ;
+		///< Called when an exception is thrown out of
+		///< readEvent(), writeEvent() or exceptionEvent().
+		///<
+		///< The implementation may just do a "throw" to throw
+		///< the current exception out of the event loop, 
+		///< or a "delete this" for objects that manage
+		///< themselves on the heap.
+		///<
+		///< EventHandler objects or timer objects that are 
+		///< sub-objects of other EventHandler objects will 
+		///< normally have their implementation of 
+		///< onException() or onTimerException() delgate
+		///< to the outer object's onException().
 
 private:
 	void operator=( const EventHandler & ) ; // not implemented
 } ;
-
-/// \class GNet::EventHandlerListItem
-/// A private class which contains a file descriptor
-/// and a reference to its handler.
-///
-class GNet::EventHandlerListItem 
-{
-public:
-	Descriptor m_fd ;
-	EventHandler * m_handler ;
-	EventHandlerListItem( Descriptor fd = Descriptor__invalid() , 
-		EventHandler * handler = NULL ) ;
-} ;
-
-/// \namespace GNet
-namespace GNet
-{
-	typedef std::list<EventHandlerListItem> EventHandlerListImp ;
-}
 
 /// \class GNet::EventHandlerList
 /// A class which can be used in the implemention
@@ -101,8 +99,8 @@ namespace GNet
 class GNet::EventHandlerList 
 {
 public:
-	typedef EventHandlerListImp List ;
-	typedef List::const_iterator Iterator ;
+	typedef std::map<Descriptor,EventHandler*> Map ;
+	typedef Map::const_iterator Iterator ;
 
 public:
 	explicit EventHandlerList( const std::string & type ) ;
@@ -148,25 +146,25 @@ public:
 private:
 	EventHandlerList( const EventHandlerList & ) ;
 	void operator=( const EventHandlerList & ) ;
+	void collectGarbage() ;
 
 private:
 	std::string m_type ;
-	List m_list ;
+	Map m_map ;
 	unsigned int m_lock ;
+	bool m_has_garbage ;
 } ;
 
-///static 
 inline
 GNet::Descriptor GNet::EventHandlerList::fd( Iterator i )
 {
-	return (*i).m_fd ;
+	return (*i).first ;
 }
 
-///static 
 inline
 GNet::EventHandler * GNet::EventHandlerList::handler( Iterator i )
 {
-	return (*i).m_handler ;
+	return (*i).second ;
 }
 
 #endif

@@ -87,12 +87,17 @@ Main::WinApp::~WinApp()
 {
 }
 
+void Main::WinApp::disableOutput()
+{
+	m_hidden = true ;
+}
+
 void Main::WinApp::init( const Configuration & cfg )
 {
 	m_use_tray = cfg.daemon() ;
 	m_cfg <<= new Configuration(cfg) ;
 	m_icon = m_cfg->icon() % 4U ;
-	m_hidden = m_cfg->hidden() ;
+	m_hidden = m_hidden || m_cfg->hidden() ;
 }
 
 void Main::WinApp::onDimension( int & dx , int & dy )
@@ -262,17 +267,20 @@ unsigned int Main::WinApp::columns()
 
 void Main::WinApp::output( const std::string & text , bool )
 {
-	G::Strings text_lines ;
-	G::Str::splitIntoFields( text , text_lines , "\r\n" ) ;
-	if( text_lines.size() > 25U )
+	if( !m_hidden )
 	{
-		Box box( *this , text_lines ) ;
-		if( ! box.run() )
+		G::Strings text_lines ;
+		G::Str::splitIntoFields( text , text_lines , "\r\n" ) ;
+		if( text_lines.size() > 25U )
+		{
+			Box box( *this , text_lines ) ;
+			if( ! box.run() )
+				messageBox( text ) ;
+		}
+		else
+		{
 			messageBox( text ) ;
-	}
-	else
-	{
-		messageBox( text ) ;
+		}
 	}
 }
 

@@ -146,7 +146,7 @@ bool GNet::Socket::connect( const Address & address , bool *done )
 	return true;
 }
 
-ssize_t GNet::Socket::write( const char *buf, size_t len )
+ssize_t GNet::Socket::write( const char *buf , size_t len )
 {
 	if( static_cast<ssize_t>(len) < 0 )
 		G_WARNING( "GNet::Socket::write: too big" ) ; // EMSGSIZE from ::send() ?
@@ -313,7 +313,7 @@ GNet::StreamSocket::~StreamSocket()
 {
 }
 
-ssize_t GNet::StreamSocket::read( char *buf , size_t len )
+ssize_t GNet::StreamSocket::read( char * buf , size_t len )
 {
 	if( len == 0 ) return 0 ;
 	G_ASSERT( valid() ) ;

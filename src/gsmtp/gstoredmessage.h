@@ -80,7 +80,7 @@ public:
 		///< Returns the number of accumulated submission errors.
 
 	virtual void sync() = 0 ;
-		///< Syncronises the message object with the underlying
+		///< Synchronises the message object with the underlying
 		///< storage.
 
 	virtual ~StoredMessage() ;

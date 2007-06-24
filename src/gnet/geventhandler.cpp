@@ -25,46 +25,11 @@
 #include "gnet.h"
 #include "geventhandler.h"
 #include "geventloop.h"
+#include "gexception.h"
 #include "gdebug.h"
 #include "gassert.h"
 #include "gdescriptor.h"
 #include "glog.h"
-#include <algorithm> // std::find
-
-namespace
-{
-	struct Eq
-	{
-		GNet::Descriptor m_fd ;
-		explicit Eq( GNet::Descriptor fd ) : m_fd(fd) {}
-		bool operator()( const GNet::EventHandlerListItem & item ) const 
-		{ 
-			return item.m_fd == m_fd ;
-		}
-	} ;
-	struct NotNull
-	{
-		GNet::Descriptor m_fd ;
-		explicit NotNull( GNet::Descriptor fd ) : m_fd(fd) {}
-		bool operator()( const GNet::EventHandlerListItem & item ) const 
-		{ 
-			return item.m_fd == m_fd && item.m_handler != NULL ;
-		}
-	} ;
-}
-
-GNet::EventHandlerListItem::EventHandlerListItem( Descriptor fd , EventHandler * handler ) :
-	m_fd(fd) , 
-	m_handler(handler) 
-{
-}
-
-bool operator!=( const GNet::EventHandlerListItem & a , const GNet::EventHandlerListItem & b )
-{
-	return a.m_fd != b.m_fd ;
-}
-
-// ===
 
 GNet::EventHandler::~EventHandler()
 {
@@ -82,38 +47,37 @@ void GNet::EventHandler::writeEvent()
 
 void GNet::EventHandler::exceptionEvent()
 {
-	G_DEBUG( "GNet::EventHandler::exceptionEvent: no override" ) ;
+	throw G::Exception( "exception event" ) ;
 }
 
 // ===
 
 GNet::EventHandlerList::EventHandlerList( const std::string & type ) :
 	m_type(type) ,
-	m_lock(0U)
+	m_lock(0U) ,
+	m_has_garbage(false)
 {
 }
 
 GNet::EventHandlerList::Iterator GNet::EventHandlerList::begin() const
 {
-	return m_list.begin() ;
+	return m_map.begin() ;
 }
 
 GNet::EventHandlerList::Iterator GNet::EventHandlerList::end() const
 {
-	return m_list.end() ;
+	return m_map.end() ;
 }
 
 bool GNet::EventHandlerList::contains( Descriptor fd ) const
 {
-	const List::const_iterator end = m_list.end() ;
-	return std::find_if( m_list.begin() , end , NotNull(fd) ) != end ;
+	return m_map.find(fd) != m_map.end() ;
 }
 
 GNet::EventHandler * GNet::EventHandlerList::find( Descriptor fd )
 {
-	const List::iterator end = m_list.end() ;
-	List::iterator p = std::find_if( m_list.begin() , end , NotNull(fd) ) ;
-	return p != end ? (*p).m_handler : NULL ;
+	Map::iterator p = m_map.find( fd ) ;
+	return p != m_map.end() ? (*p).second : NULL ;
 }
 
 void GNet::EventHandlerList::add( Descriptor fd , EventHandler * handler )
@@ -121,31 +85,25 @@ void GNet::EventHandlerList::add( Descriptor fd , EventHandler * handler )
 	G_ASSERT( handler != NULL ) ;
 	G_DEBUG( "GNet::EventHandlerList::add: " << m_type << "-list: " << "adding " << fd ) ;
 
-	const List::iterator end = m_list.end() ;
-	List::iterator p = std::find_if( m_list.begin() , end , Eq(fd) ) ;
-	if( p != end )
-	{
-		G_ASSERT( (*p).m_handler == NULL ) ; // assert not re-adding same fd
-		(*p).m_handler = handler ;
-	}
-	else
-	{
-		m_list.push_back( EventHandlerListItem(fd,handler) ) ;
-	}
+	m_map[fd] = handler ;
 }
 
 void GNet::EventHandlerList::remove( Descriptor fd )
 {
 	G_DEBUG( "GNet::EventHandlerList::remove: " << m_type << "-list: " << "removing " << fd ) ;
 
-	const List::iterator end = m_list.end() ;
-	List::iterator p = std::find_if( m_list.begin() , end , Eq(fd) ) ;
-	if( p != end )
+	Map::iterator p = m_map.find( fd ) ;
+	if( p != m_map.end() )
 	{
 		if( m_lock )
-			(*p).m_handler = NULL ;
+		{
+			(*p).second = NULL ;
+			m_has_garbage = true ;
+		}
 		else
-			m_list.erase( p ) ;
+		{
+			m_map.erase( p ) ;
+		}
 	}
 }
 
@@ -156,19 +114,22 @@ void GNet::EventHandlerList::lock()
 
 void GNet::EventHandlerList::unlock()
 {
+	G_ASSERT( m_lock != 0U ) ;
 	m_lock-- ;
-	if( m_lock == 0U )
+	if( m_lock == 0U && m_has_garbage )
+		collectGarbage() ;
+}
+
+void GNet::EventHandlerList::collectGarbage()
+{
+	const Map::iterator end = m_map.end() ;
+	for( Map::iterator p = m_map.begin() ; p != end ; )
 	{
-		// collect garbage
-		const List::iterator end = m_list.end() ;
-		for( List::iterator p = m_list.begin() ; p != end ; )
-		{
-			if( (*p).m_handler == NULL )
-				p = m_list.erase( p ) ;
-			else
-				++p ;
-		}
+		Map::iterator test = p++ ;
+		if( (*test).second == NULL )
+			m_map.erase( test ) ;
 	}
+	m_has_garbage = false ;
 }
 
 /// \file geventhandler.cpp

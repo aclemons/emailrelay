@@ -60,6 +60,9 @@ public:
 	void init( const Main::Configuration & cfg ) ;
 		///< Initialises the object after construction.
 
+	void disableOutput() ;
+		///< Disables subsequent calls to output().
+
 	void output( const std::string & message , bool error ) ;
 		///< Puts up a message box. See Main::Output.
 

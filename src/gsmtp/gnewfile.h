@@ -49,7 +49,7 @@ public:
 	G_EXCEPTION( InvalidPath , "invalid path -- must be absolute" ) ;
 
 	NewFile( const std::string & from , FileStore & store ) ;
-		///< Constructor.
+		///< Constructor. The FileStore reference is kept.
 
 	virtual ~NewFile() ;
 		///< Destructor. If the new message has not been

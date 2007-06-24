@@ -156,8 +156,9 @@ const char * G::LogOutput::timestampString()
 	}
 	return m_time_buffer ;
 }
+
 //static
-void G::LogOutput::addFileAndLine( char *buffer , size_t size , const char *file , int line )
+void G::LogOutput::addFileAndLine( char *buffer , size_type size , const char *file , int line )
 {
 	if( file != NULL )
 	{
@@ -175,13 +176,13 @@ void G::LogOutput::addFileAndLine( char *buffer , size_t size , const char *file
 }
 
 //static
-void G::LogOutput::add( char * buffer , size_t size , const std::string & p )
+void G::LogOutput::add( char * buffer , size_type size , const std::string & p )
 {
 	add( buffer , size , p.c_str() ) ;
 }
 
 //static
-void G::LogOutput::add( char * buffer , size_t size , const char * p )
+void G::LogOutput::add( char * buffer , size_type size , const char * p )
 {
 	std::strncat( buffer+std::strlen(buffer) , p , size-std::strlen(buffer)-1U ) ;
 }
@@ -200,7 +201,7 @@ void G::LogOutput::doAssertion( const char * file , unsigned line , const char *
 {
 	char buffer[100U] ;
 	std::strcpy( buffer , "Assertion error: " ) ;
-	size_t size = sizeof(buffer) - 10U ; // -10 for luck
+	size_type size = sizeof(buffer) - 10U ; // -10 for luck
 	if( file )
 	{
 		addFileAndLine( buffer , size , file , line ) ;
@@ -240,7 +241,7 @@ const char * G::LogOutput::levelString( Log::Severity s )
 }
 
 //static
-const char * G::LogOutput::itoa( char * buffer , size_t buffer_size , unsigned int n )
+const char * G::LogOutput::itoa( char * buffer , size_type buffer_size , unsigned int n )
 {
 	buffer[0U] = '0' ; buffer[1U] = '\0' ;
 	n %= 1000000U ;

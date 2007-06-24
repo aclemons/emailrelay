@@ -34,11 +34,10 @@
 GPop::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info , Server & server , Store & store , 
 	const Secrets & secrets , std::auto_ptr<ServerProtocol::Text> ptext ,
 	ServerProtocol::Config protocol_config ) :
-		GNet::Sender( peer_info ) ,
-		m_server( server ) ,
-		m_buffer_in( crlf() ) ,
-		m_ptext( ptext ) ,
-		m_protocol( *this , store , secrets , *m_ptext.get() , peer_info.m_address , protocol_config )
+		GNet::BufferedServerPeer(peer_info,crlf()) ,
+		m_server(server) ,
+		m_ptext(ptext) ,
+		m_protocol(*this,store,secrets,*m_ptext.get(),peer_info.m_address,protocol_config)
 {
 	G_LOG_S( "GPop::ServerPeer: pop connection from " << peer_info.m_address.displayString() ) ;
 	m_protocol.init() ;
@@ -54,20 +53,10 @@ void GPop::ServerPeer::onDelete()
 	G_LOG_S( "GPop::ServerPeer: pop connection closed: " << peerAddress().second.displayString() ) ;
 }
 
-void GPop::ServerPeer::onData( const char * p , size_t n )
+bool GPop::ServerPeer::onReceive( const std::string & line )
 {
-	try
-	{
-		for( m_buffer_in.add(p,n) ; m_buffer_in.more() ; m_buffer_in.discard() )
-		{
-			processLine( m_buffer_in.current() ) ;
-		}
-	}
-	catch( std::exception & e )
-	{
-		G_LOG( "GPop::onData: " << e.what() ) ;
-		doDelete() ;
-	}
+	processLine( line ) ;
+	return true ;
 }
 
 void GPop::ServerPeer::processLine( const std::string & line )
@@ -77,10 +66,10 @@ void GPop::ServerPeer::processLine( const std::string & line )
 
 bool GPop::ServerPeer::protocolSend( const std::string & line , size_t offset )
 {
-	return send( line , offset ) ; // GNet::Sender
+	return send( line , offset ) ; // BufferedServerPeer::send() -- see also GNet::Sender
 }
 
-void GPop::ServerPeer::onResume()
+void GPop::ServerPeer::onSendComplete()
 {
 	m_protocol.resume() ; // calls back to protocolSend()
 }

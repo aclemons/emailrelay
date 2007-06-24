@@ -31,9 +31,9 @@ AC_DEFUN([ACLOCAL_TYPE_SOCKLEN_T],
 		aclocal_cv_type_socklen_t=no )
 ])
 	if test $aclocal_cv_type_socklen_t = yes; then
-		AC_DEFINE(HAVE_SOCKLEN_T, 1,[Define if socklen_t type definition in sys/socket.h])
+		AC_DEFINE(HAVE_SOCKLEN_T, 1,[Define to 1 if socklen_t type definition in sys/socket.h])
 	else
-		AC_DEFINE(HAVE_SOCKLEN_T, 0,[Define if socklen_t type definition in sys/socket.h])
+		AC_DEFINE(HAVE_SOCKLEN_T, 0,[Define to 1 if socklen_t type definition in sys/socket.h])
 	fi
 ])
 
@@ -52,9 +52,9 @@ AC_DEFUN([ACLOCAL_CHECK_IPV6],
 		aclocal_cv_ipv6=no )
 ])
 	if test $aclocal_cv_ipv6 = yes; then
-		AC_DEFINE(HAVE_IPV6,1,[Define if ipv6 is available])
+		AC_DEFINE(HAVE_IPV6,1,[Define to 1 if ipv6 is available])
 	else
-		AC_DEFINE(HAVE_IPV6,0,[Define if ipv6 is available])
+		AC_DEFINE(HAVE_IPV6,0,[Define to 1 if ipv6 is available])
 	fi
 ])
 
@@ -74,9 +74,9 @@ AC_DEFUN([ACLOCAL_CHECK_GETIPNODEBYNAME],
 		aclocal_cv_getipnodebyname=no )
 ])
 	if test $aclocal_cv_getipnodebyname = yes; then
-		AC_DEFINE(HAVE_GETIPNODEBYNAME,1,[Define if getipnodebyname() is available])
+		AC_DEFINE(HAVE_GETIPNODEBYNAME,1,[Define to 1 if getipnodebyname() is available])
 	else
-		AC_DEFINE(HAVE_GETIPNODEBYNAME,0,[Define if getipnodebyname() is available])
+		AC_DEFINE(HAVE_GETIPNODEBYNAME,0,[Define to 1 if getipnodebyname() is available])
 	fi
 ])
 
@@ -94,9 +94,9 @@ AC_DEFUN([ACLOCAL_CHECK_SIN6_LEN],
 		aclocal_cv_sin6_len=no )
 ])
 	if test $aclocal_cv_sin6_len = yes; then
-		AC_DEFINE(HAVE_SIN6_LEN,1,[Define if sockaddr_in6 has a sin6_len member])
+		AC_DEFINE(HAVE_SIN6_LEN,1,[Define to 1 if sockaddr_in6 has a sin6_len member])
 	else
-		AC_DEFINE(HAVE_SIN6_LEN,0,[Define if sockaddr_in6 has a sin6_len member])
+		AC_DEFINE(HAVE_SIN6_LEN,0,[Define to 1 if sockaddr_in6 has a sin6_len member])
 	fi
 ])
 
@@ -114,9 +114,9 @@ AC_DEFUN([ACLOCAL_CHECK_SETGROUPS],
 		aclocal_cv_setgroups=no )
 ])
 	if test $aclocal_cv_setgroups = yes; then
-		AC_DEFINE(HAVE_SETGROUPS,1,[Define if setgroups is available])
+		AC_DEFINE(HAVE_SETGROUPS,1,[Define to 1 if setgroups is available])
 	else
-		AC_DEFINE(HAVE_SETGROUPS,0,[Define if setgroups is available])
+		AC_DEFINE(HAVE_SETGROUPS,0,[Define to 1 if setgroups is available])
 	fi
 ])
 
@@ -132,9 +132,9 @@ AC_DEFUN([ACLOCAL_CHECK_GMTIME_R],
 		aclocal_cv_gmtime_r=no )
 ])
 	if test $aclocal_cv_gmtime_r = yes; then
-		AC_DEFINE(HAVE_GMTIME_R,1,[Define if gmtime_r in time.h])
+		AC_DEFINE(HAVE_GMTIME_R,1,[Define to 1 if gmtime_r in time.h])
 	else
-		AC_DEFINE(HAVE_GMTIME_R,0,[Define if gmtime_r in time.h])
+		AC_DEFINE(HAVE_GMTIME_R,0,[Define to 1 if gmtime_r in time.h])
 	fi
 ])
 
@@ -150,9 +150,9 @@ AC_DEFUN([ACLOCAL_CHECK_LOCALTIME_R],
 		aclocal_cv_localtime_r=no )
 ])
 	if test $aclocal_cv_localtime_r = yes; then
-		AC_DEFINE(HAVE_LOCALTIME_R,1,[Define if localtime_r in time.h])
+		AC_DEFINE(HAVE_LOCALTIME_R,1,[Define to 1 if localtime_r in time.h])
 	else
-		AC_DEFINE(HAVE_LOCALTIME_R,0,[Define if localtime_r in time.h])
+		AC_DEFINE(HAVE_LOCALTIME_R,0,[Define to 1 if localtime_r in time.h])
 	fi
 ])
 
@@ -170,9 +170,9 @@ AC_DEFUN([ACLOCAL_CHECK_BUGGY_CTIME],
 		aclocal_cv_buggy_ctime=yes )
 ])
 	if test $aclocal_cv_buggy_ctime = yes; then
-		AC_DEFINE(HAVE_BUGGY_CTIME,1,[Define if <ctime> requires <time.h>])
+		AC_DEFINE(HAVE_BUGGY_CTIME,1,[Define to 1 if <ctime> requires <time.h>])
 	else
-		AC_DEFINE(HAVE_BUGGY_CTIME,0,[Define if <ctime> requires <time.h>])
+		AC_DEFINE(HAVE_BUGGY_CTIME,0,[Define to 1 if <ctime> requires <time.h>])
 	fi
 ])
 
@@ -210,7 +210,7 @@ qt4="no"
 qt4moc="no"
 if test "$enable_gui" = "no"
 then
-	AC_DEFINE(HAVE_GUI,0,[Define to enable gui code])
+	AC_DEFINE(HAVE_GUI,0,[Define to 1 to enable gui code])
 else
 	PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes],[AC_MSG_RESULT([no])])
 	if test "$qt4" = "yes"
@@ -232,9 +232,9 @@ else
 fi
 if test "$qt4moc" = "yes"
 then
-	AC_DEFINE(HAVE_GUI,1,[Define to enable gui code])
+	AC_DEFINE(HAVE_GUI,1,[Define to 1 to enable gui code])
 else
-	AC_DEFINE(HAVE_GUI,0,[Define to enable gui code])
+	AC_DEFINE(HAVE_GUI,0,[Define to 1 to enable gui code])
 fi
 AC_SUBST(MOC)
 AM_CONDITIONAL(GUI,test x$enable_gui != xno -a x$qt4moc = xyes )

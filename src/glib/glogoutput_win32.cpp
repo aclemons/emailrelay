@@ -94,7 +94,7 @@ static HANDLE source()
 	G::Path exe_path ;
 	{
 		HINSTANCE hinstance = 0 ;
-		char buffer[260U*4U] ; // *4 for luck
+		char buffer[10000U] ;
 		size_t size = sizeof(buffer) ;
 		*buffer = '\0' ;
 		::GetModuleFileName( hinstance , buffer , size-1U ) ;

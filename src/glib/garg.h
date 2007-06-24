@@ -47,6 +47,8 @@ namespace G
 class G::Arg 
 {
 public:
+	typedef unsigned int size_type ;
+
 	Arg( int argc , char *argv[] ) ;
 		///< Constructor taking argc/argv.
 
@@ -71,12 +73,12 @@ public:
 	~Arg() ;
 		///< Destructor.
 
-	size_t c() const ;
+	size_type c() const ;
 		///< Returns the number of tokens in the
 		///< command line, including the program
 		///< name.
 
-	std::string v( size_t i ) const ;
+	std::string v( size_type i ) const ;
 		///< Returns the i'th argument.
 		///< Precondition: i < c()
 
@@ -90,23 +92,21 @@ public:
 		///< block.
 
 	bool contains( const std::string & sw , 
-		size_t sw_args = 0U , bool case_sensitive = true ) const ;
+		size_type sw_args = 0U , bool case_sensitive = true ) const ;
 			///< Returns true if the command line
 			///< contains the given switch with enough
 			///< command line arguments left to satisfy 
 			///< the given number of switch arguments.
 
-	size_t index( const std::string & sw , size_t sw_args = 0U ) const ;
+	size_type index( const std::string & sw , size_type sw_args = 0U ) const ;
 		///< Returns the index of the given switch.
 		///< Returns zero if not present.
 
-	void remove( const std::string & sw , size_t sw_args = 0U ) ;
-		///< Removes the given switch and its
-		///< arguments.
-		///<
-		///< Precondition: contains()
+	bool remove( const std::string & sw , size_type sw_args = 0U ) ;
+		///< Removes the given switch and its arguments.
+		///< Returns false if the switch does not exist.
 
-	void removeAt( size_t sw_index , size_t sw_args = 0U ) ;
+	void removeAt( size_type sw_index , size_type sw_args = 0U ) ;
 		///< Removes the given argument and the
 		///< following 'sw_args' ones.
 
@@ -118,7 +118,7 @@ public:
 
 private:
 	static std::string moduleName( HINSTANCE h ) ;
-	bool find( bool , const std::string & , size_t , size_t * ) const ;
+	bool find( bool , const std::string & , size_type , size_type * ) const ;
 	void setPrefix() ;
 	static bool match( bool , const std::string & , const std::string & ) ;
 	void parseCore( const std::string & ) ;

@@ -40,8 +40,8 @@ namespace GNet
 }
 
 /// \class GNet::Monitor
-/// A singleton for monitoring Client and ServerPeer connections.
-/// \see GNet::Client, GNet::ServerPeer
+/// A singleton for monitoring SimpleClient and ServerPeer connections.
+/// \see GNet::SimpleClient, GNet::ServerPeer
 ///
 class GNet::Monitor : public G::noncopyable 
 {
@@ -55,10 +55,10 @@ public:
 	static Monitor * instance() ;
 		///< Returns the singleton pointer. Returns null if none.
 
-	void add( const Client & client ) ;
+	void add( const SimpleClient & client ) ;
 		///< Adds a client.
 
-	void remove( const Client & client ) ;
+	void remove( const SimpleClient & client ) ;
 		///< Removes a client.
 
 	void add( const ServerPeer & peer ) ;

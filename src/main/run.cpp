@@ -53,21 +53,24 @@
 //static
 std::string Main::Run::versionNumber()
 {
-	return "1.5.1" ;
+	return "1.6" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string & switch_spec ) :
 	m_output(output) ,
 	m_switch_spec(switch_spec) ,
-	m_arg(arg)
+	m_arg(arg) ,
+	m_polling_client_resolver_info(std::string(),std::string())
 {
+	m_polling_client.doneSignal().connect( G::slot(*this,&Run::pollingClientDone) ) ;
+	m_polling_client.eventSignal().connect( G::slot(*this,&Run::clientEvent) ) ;
 }
 
 Main::Run::~Run()
 {
 	if( m_store.get() ) m_store->signal().disconnect() ;
-	if( m_client.get() ) m_client->doneSignal().disconnect() ;
-	if( m_client.get() ) m_client->eventSignal().disconnect() ;
+	m_polling_client.doneSignal().disconnect() ;
+	m_polling_client.eventSignal().disconnect() ;
 }
 
 Main::Configuration Main::Run::cfg() const
@@ -93,6 +96,11 @@ void Main::Run::closeMoreFiles()
 {
 	if( cfg().closeStderr() ) // was "daemon && close-stderr", but too confusing
 		G::Process::closeStderr() ;
+}
+
+bool Main::Run::hidden() const
+{
+	return cl().contains("hidden") ;
 }
 
 bool Main::Run::prepare()
@@ -321,7 +329,7 @@ void Main::Run::doServing( const GSmtp::Secrets & client_secrets ,
 
 	if( cfg().doPolling() )
 	{
-		m_poll_timer <<= new GNet::Timer( *this ) ;
+		m_poll_timer <<= new GNet::ConcreteTimer( *this , *this ) ;
 		m_poll_timer->startTimer( cfg().pollingTimeout() ) ;
 	}
 
@@ -341,18 +349,14 @@ void Main::Run::doServing( const GSmtp::Secrets & client_secrets ,
 void Main::Run::doForwarding( GSmtp::MessageStore & store , const GSmtp::Secrets & secrets , 
 	GNet::EventLoop & event_loop )
 {
-	const bool quit_on_disconnect = true ;
-
 	GNet::Address local_address = cfg().clientInterface().length() ?
 		GNet::Address(cfg().clientInterface(),0U) : GNet::Address(0U) ;
 
-	GSmtp::Client client( store , secrets , clientConfig() , quit_on_disconnect ) ;
+	GNet::ClientPtr<GSmtp::Client> client_ptr( new GSmtp::Client( 
+		GNet::ResolverInfo(cfg().serverAddress()) , store , secrets , clientConfig() ) ) ;
 
-	client.doneSignal().connect( G::slot(*this,&Run::clientDone) ) ;
-	client.eventSignal().connect( G::slot(*this,&Run::clientEvent) ) ;
-	std::string error = client.startSending( cfg().serverAddress() , cfg().connectionTimeout() ) ;
-	if( error.length() )
-		throw G::Exception( error + ": " + cfg().serverAddress() ) ;
+	client_ptr.doneSignal().connect( G::slot(*this,&Run::forwardingClientDone) ) ;
+	client_ptr.eventSignal().connect( G::slot(*this,&Run::clientEvent) ) ;
 
 	closeMoreFiles() ;
 	event_loop.run() ;
@@ -400,20 +404,21 @@ GSmtp::Client::Config Main::Run::clientConfig() const
 			GSmtp::ClientProtocol::Config(
 				GNet::Local::fqdn() ,
 				cfg().responseTimeout() , 
-				10U , // ("service ready" timeout)
+				cfg().promptTimeout() , // waiting for "service ready"
 				cfg().filterTimeout() ,
 				true , // (must-authenticate)
-				false ) ) ;  // (eight-bit-strict)
+				false ) , // (eight-bit-strict)
+			cfg().connectionTimeout() ) ;
 }
 
-void Main::Run::onTimeout( GNet::Timer & timer )
+void Main::Run::onTimeout( GNet::AbstractTimer & timer )
 {
 	G_ASSERT( &timer == m_poll_timer.get() ) ;
 	G_DEBUG( "Main::Run::onTimeout" ) ;
 
 	timer.startTimer( cfg().pollingTimeout() ) ;
 
-	if( m_client.get() && m_client->busy() )
+	if( m_polling_client.busy() )
 	{
 		G_LOG( "Main::Run::onTimeout: polling: still busy from last time" ) ;
 		emit( "poll" , "busy" , "" ) ;
@@ -426,30 +431,28 @@ void Main::Run::onTimeout( GNet::Timer & timer )
 	}
 }
 
+void Main::Run::onException( std::exception & e )
+{
+	// gets here if onTimeout() throws
+	G_ERROR( "Main::Run::onException: exception while polling: " << e.what() ) ;
+}
+
 std::string Main::Run::doPoll()
 {
 	try
 	{
 		G_LOG( "Main::Run::doPoll: polling" ) ;
+		if( ! m_store->empty() )
+		{
+			GNet::Address local_address = cfg().clientInterface().length() ?
+				GNet::Address(cfg().clientInterface(),0U) : GNet::Address(0U) ;
 
-		const bool quit_on_disconnect = false ;
-
-		GNet::Address local_address = cfg().clientInterface().length() ?
-			GNet::Address(cfg().clientInterface(),0U) : GNet::Address(0U) ;
-
-		m_client <<= new GSmtp::Client( *m_store.get() , *m_client_secrets.get() , 
-			clientConfig() , quit_on_disconnect ) ;
-
-		m_client->doneSignal().connect( G::slot(*this,&Run::clientDone) ) ;
-		m_client->eventSignal().connect( G::slot(*this,&Run::clientEvent) ) ;
-		std::string error = m_client->startSending( cfg().serverAddress() , cfg().connectionTimeout() ) ;
-
-		if( error.length() && ! GSmtp::Client::nothingToSend(error) )
-			G_WARNING( "Main::Run::doPoll: polling: " + error ) ;
-
-		return error ;
+			m_polling_client.reset( new GSmtp::Client( GNet::ResolverInfo(cfg().serverAddress()) ,
+				*m_store.get() , *m_client_secrets.get() , clientConfig() ) ) ;
+		}
+		return std::string() ;
 	}
-	catch( G::Exception & e )
+	catch( std::exception & e )
 	{
 		G_ERROR( "Main::Run::doPoll: polling: exception: " << e.what() ) ;
 		return e.what() ;
@@ -466,11 +469,22 @@ const Main::CommandLine & Main::Run::cl() const
 	return *m_cl.get() ;
 }
 
-void Main::Run::clientDone( std::string reason )
+void Main::Run::forwardingClientDone( std::string reason , bool )
 {
-	G_DEBUG( "Main::Run::clientDone: \"" << reason << "\"" ) ;
-	if( ! reason.empty() && m_client.get() == NULL )
+	G_DEBUG( "Main::Run::forwardingClientDone: \"" << reason << "\"" ) ;
+	if( ! reason.empty() )
 		throw G::Exception( reason ) ;
+	else
+		GNet::EventLoop::instance().quit() ;
+}
+
+void Main::Run::pollingClientDone( std::string reason , bool )
+{
+	G_DEBUG( "Main::Run::pollingClientDone: \"" << reason << "\"" ) ;
+	if( ! reason.empty() )
+	{
+		G_ERROR( "Main::Run::pollingClientDone: polling: exception: " << reason ) ;
+	}
 }
 
 void Main::Run::clientEvent( std::string s1 , std::string s2 )

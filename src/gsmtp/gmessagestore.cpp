@@ -93,7 +93,7 @@ GSmtp::MessageStore::Iterator & GSmtp::MessageStore::Iterator::operator=( const 
 			m_imp->m_ref_count++ ;
 		}
 	}
-	return * this ;
+	return *this ;
 }
 
 /// \file gmessagestore.cpp

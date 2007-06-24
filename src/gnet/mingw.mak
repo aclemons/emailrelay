@@ -23,6 +23,8 @@
 
 mk_sources=\
 	gaddress_ipv4.cpp \
+	gbufferedserverpeer.cpp \
+	gbufferedclient.cpp \
 	gclient.cpp \
 	gclient_win32.cpp \
 	gconnection.cpp \

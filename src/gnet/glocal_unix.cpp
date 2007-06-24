@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "glocal.h"
-#include "gresolve.h"
+#include "gresolver.h"
 #include "gstr.h"
 #include "glog.h"
 #include <sys/utsname.h>
@@ -37,7 +37,7 @@ std::string GNet::Local::hostname()
 		throw Error("uname") ;
 
 	std::string name = std::string(info.nodename) ;
-	size_t pos = name.find('.') ;
+	std::string::size_type pos = name.find('.') ;
 	if( pos != std::string::npos )
 		name = name.substr( 0U , pos ) ;
 
@@ -56,21 +56,21 @@ std::string GNet::Local::hostname()
 
 GNet::Address GNet::Local::canonicalAddressImp()
 {
-	std::pair<Resolver::HostInfo,std::string> rc = Resolver::resolve( hostname() , "0" ) ;
-	if( rc.second.length() != 0U )
-		throw Error(rc.second) ;
-
-	return rc.first.address ;
+	ResolverInfo info( hostname() , "0" ) ;
+	std::string error = Resolver::resolve( info ) ;
+	if( !error.empty() )
+		throw Error(error) ;
+	return info.address() ;
 }
 
 std::string GNet::Local::fqdnImp()
 {
-	std::pair<Resolver::HostInfo,std::string> rc = Resolver::resolve( hostname() , "0" ) ;
-	if( rc.second.length() != 0U )
-		throw Error(rc.second) ;
-
-	G_DEBUG( "GNet::Local::fqdnImp: \"" << rc.first.canonical_name << "\"" ) ;
-	return rc.first.canonical_name ;
+	ResolverInfo info( hostname() , "0" ) ;
+	std::string error = Resolver::resolve( info ) ;
+	if( !error.empty() )
+		throw Error(error) ;
+	G_DEBUG( "GNet::Local::fqdnImp: \"" << info.name() << "\"" ) ;
+	return info.name() ;
 }
 
 /// \file glocal_unix.cpp

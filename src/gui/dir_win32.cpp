@@ -80,11 +80,6 @@ G::Path Dir::cwd()
 	return G::Path( s ) ;
 }
 
-G::Path Dir::os_startup() const
-{
-	return special("login") ;
-}
-
 G::Path Dir::os_pid() const
 {
 	return windows() ;
@@ -92,7 +87,7 @@ G::Path Dir::os_pid() const
 
 G::Path Dir::os_boot() const
 {
-	return windows() ; // not used
+	return G::Path() ;
 }
 
 namespace

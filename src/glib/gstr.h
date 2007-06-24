@@ -46,15 +46,16 @@ class G::Str
 public:
 	G_EXCEPTION( Overflow , "conversion error: over/underflow" ) ;
 	G_EXCEPTION( InvalidFormat, "conversion error: invalid format" ) ;
+	typedef std::string::size_type size_type ;
 
 	static bool replace( std::string &s , 
 		const std::string &from , const std::string &to , 
-		size_t *pos_p = NULL ) ;
+		size_type * pos_p = NULL ) ;
 			///< Replaces 'from' with 'to', starting at offset '*pos_p'. 
 			///< Returns true if a substitution was made, and adjusts 
 			///< '*pos_p' by to.length().
 
-	static size_t replaceAll( std::string &s , const std::string &from , 
+	static unsigned int replaceAll( std::string &s , const std::string &from , 
 		const std::string &to ) ;
 			///< Does a global replace on string 's', replacing all 
 			///< occurences of sub-string 'from' with 'to'. Returns 
@@ -219,7 +220,7 @@ public:
 
 	static std::string wrap( std::string text , 
 		const std::string & prefix_first_line , const std::string & prefix_subsequent_lines , 
-		size_t width = 70U ) ;
+		size_type width = 70U ) ;
 			///< Does word-wrapping. The return value is a string with
 			///< embedded newlines.
 
@@ -274,6 +275,7 @@ private:
 		const std::string & , char , bool ) ;
 	static void splitIntoTokens( const std::string & , void * ,
 		void (*fn)(void*,const std::string&) , const std::string & ) ;
+	static void toPrintableAscii( std::string & , char , char ) ;
 	Str() ; // not implemented
 } ;
 

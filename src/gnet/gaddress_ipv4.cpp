@@ -201,9 +201,9 @@ bool GNet::AddressImp::setAddress( const std::string & display_string , std::str
 	if( !validString(display_string,&reason) )
 		return false ;
 
-	const size_t pos = display_string.rfind(m_port_separator) ;
-	std::string port_part = display_string.substr(pos+1U) ;
+	const std::string::size_type pos = display_string.rfind(m_port_separator) ;
 	std::string host_part = display_string.substr(0U,pos) ;
+	std::string port_part = display_string.substr(pos+1U) ;
 
 	m_inet.sin_family = family() ;
 	m_inet.sin_addr.s_addr = ::inet_addr( host_part.c_str() ) ;
@@ -260,7 +260,7 @@ bool GNet::AddressImp::validString( const std::string & s , std::string * reason
 	if( reason_p == NULL ) reason_p = &buffer ;
 	std::string & reason = *reason_p ;
 
-	const size_t pos = s.rfind(m_port_separator) ;
+	const std::string::size_type pos = s.rfind(m_port_separator) ;
 	if( pos == std::string::npos )
 	{
 		reason = "no port separator" ;
@@ -270,7 +270,7 @@ bool GNet::AddressImp::validString( const std::string & s , std::string * reason
 	std::string port_part = s.substr(pos+1U) ;
 	if( !validPortNumber(port_part) )
 	{
-		reason = "invalid port number" ;
+		reason = std::string() + "invalid port number: [" + port_part + "]" ;
 		return false ;
 	}
 
@@ -561,11 +561,58 @@ G::Strings GNet::Address::wildcards() const
 	G::Str::splitIntoFields( display_string , part , "." ) ;
 
 	G_ASSERT( part.size() == 4U ) ;
-	if( part.size() != 4U ) return result ;
+	if( part.size() != 4U || 
+		!G::Str::isUInt(part[0]) ||
+		!G::Str::isUInt(part[1]) ||
+		!G::Str::isUInt(part[2]) ||
+		!G::Str::isUInt(part[3]) )
+	{
+		return result ;
+	}
 
+	unsigned int n0 = G::Str::toUInt(part[0]) ;
+	unsigned int n1 = G::Str::toUInt(part[1]) ;
+	unsigned int n2 = G::Str::toUInt(part[2]) ;
+	unsigned int n3 = G::Str::toUInt(part[3]) ;
+
+	result.push_back( part[0] + "." + part[1] + "." + part[2] + "." + part[3] + "/32" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + part[2] + "." + G::Str::fromUInt(n3&0xfe) + "/31" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + part[2] + "." + G::Str::fromUInt(n3&0xfc) + "/30" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + part[2] + "." + G::Str::fromUInt(n3&0xf8) + "/29" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + part[2] + "." + G::Str::fromUInt(n3&0xf0) + "/28" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + part[2] + "." + G::Str::fromUInt(n3&0xe0) + "/27" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + part[2] + "." + G::Str::fromUInt(n3&0xc0) + "/26" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + part[2] + "." + G::Str::fromUInt(n3&0x80) + "/25" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + part[2] + ".0/24" ) ;
 	result.push_back( part[0] + "." + part[1] + "." + part[2] + ".*" ) ;
+
+	result.push_back( part[0] + "." + part[1] + "." + G::Str::fromUInt(n2&0xfe) + ".0/23" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + G::Str::fromUInt(n2&0xfc) + ".0/22" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + G::Str::fromUInt(n2&0xf8) + ".0/21" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + G::Str::fromUInt(n2&0xf0) + ".0/20" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + G::Str::fromUInt(n2&0xe0) + ".0/19" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + G::Str::fromUInt(n2&0xc0) + ".0/18" ) ;
+	result.push_back( part[0] + "." + part[1] + "." + G::Str::fromUInt(n2&0x80) + ".0/17" ) ;
+	result.push_back( part[0] + "." + part[1] + ".0.0/16" ) ;
 	result.push_back( part[0] + "." + part[1] + ".*.*" ) ;
+
+	result.push_back( part[0] + "." + G::Str::fromUInt(n1&0xfe) + ".0.0/15" ) ;
+	result.push_back( part[0] + "." + G::Str::fromUInt(n1&0xfc) + ".0.0/14" ) ;
+	result.push_back( part[0] + "." + G::Str::fromUInt(n1&0xf8) + ".0.0/13" ) ;
+	result.push_back( part[0] + "." + G::Str::fromUInt(n1&0xf0) + ".0.0/12" ) ;
+	result.push_back( part[0] + "." + G::Str::fromUInt(n1&0xe0) + ".0.0/11" ) ;
+	result.push_back( part[0] + "." + G::Str::fromUInt(n1&0xc0) + ".0.0/10" ) ;
+	result.push_back( part[0] + "." + G::Str::fromUInt(n1&0x80) + ".0.0/9" ) ;
+	result.push_back( part[0] + ".0.0.0/8" ) ;
 	result.push_back( part[0] + ".*.*.*" ) ;
+
+	result.push_back( G::Str::fromUInt(n0&0xfe) + ".0.0.0/7" ) ;
+	result.push_back( G::Str::fromUInt(n0&0xfc) + ".0.0.0/6" ) ;
+	result.push_back( G::Str::fromUInt(n0&0xf8) + ".0.0.0/5" ) ;
+	result.push_back( G::Str::fromUInt(n0&0xf0) + ".0.0.0/3" ) ;
+	result.push_back( G::Str::fromUInt(n0&0xe0) + ".0.0.0/2" ) ;
+	result.push_back( G::Str::fromUInt(n0&0xc0) + ".0.0.0/1" ) ;
+	result.push_back( "0.0.0.0/0" ) ;
 	result.push_back( "*.*.*.*" ) ;
 
 	return result ;

@@ -30,7 +30,7 @@
 #include "gmemory.h"
 #include "gtimer.h"
 #include "gsmtpclient.h"
-#include "gresolve.h"
+#include "gresolver.h"
 #include "gassert.h"
 #include "glog.h"
 
@@ -40,32 +40,28 @@ std::string GSmtp::Client::crlf()
 	return std::string("\015\012") ;
 }
 
-GSmtp::Client::Client( MessageStore & store , const Secrets & secrets , Config config , bool quit_on_disconnect ) :
-	GNet::Client(config.local_address,false,quit_on_disconnect) ,
-	m_store(&store) ,
-	m_storedfile_preprocessor(config.storedfile_preprocessor) ,
-	m_buffer(crlf()) ,
-	m_protocol(*this,secrets,config.client_protocol_config) ,
-	m_socket(NULL) ,
-	m_connect_timer(*this) ,
-	m_busy(true) ,
-	m_force_message_fail(false)
+GSmtp::Client::Client( const GNet::ResolverInfo & remote , MessageStore & store , const Secrets & secrets , 
+	Config config ) :
+		GNet::Client(remote,config.connection_timeout,0U,crlf(),config.local_address) ,
+		m_store(&store) ,
+		m_storedfile_preprocessor(config.storedfile_preprocessor) ,
+		m_protocol(*this,secrets,config.client_protocol_config) ,
+		m_force_message_fail(false)
 {
+	G_ASSERT( !store.empty() ) ; // (new)
+
 	m_protocol.doneSignal().connect( G::slot(*this,&Client::protocolDone) ) ;
 	m_protocol.preprocessorSignal().connect( G::slot(*this,&Client::preprocessorStart) ) ;
 	m_storedfile_preprocessor.doneSignal().connect( G::slot(*this,&Client::preprocessorDone) ) ;
 }
 
-GSmtp::Client::Client( std::auto_ptr<StoredMessage> message , const Secrets & secrets , Config config ) :
-		GNet::Client(config.local_address,false,false) ,
+GSmtp::Client::Client( const GNet::ResolverInfo & remote , std::auto_ptr<StoredMessage> message , 
+	const Secrets & secrets , Config config ) :
+		GNet::Client(remote,config.connection_timeout,0U,crlf(),config.local_address) ,
 		m_store(NULL) ,
 		m_storedfile_preprocessor(config.storedfile_preprocessor) ,
 		m_message(message) ,
-		m_buffer(crlf()) ,
 		m_protocol(*this,secrets,config.client_protocol_config) ,
-		m_socket(NULL) ,
-		m_connect_timer(*this) ,
-		m_busy(true) ,
 		m_force_message_fail(false)
 {
 	// The m_force_message_fail member could be set true here to accommodate
@@ -85,98 +81,9 @@ GSmtp::Client::~Client()
 	m_storedfile_preprocessor.doneSignal().disconnect() ;
 }
 
-void GSmtp::Client::reset()
-{
-	// (not used, not tested...)
-	m_protocol.doneSignal().disconnect() ;
-	m_protocol.preprocessorSignal().disconnect() ;
-	m_storedfile_preprocessor.doneSignal().disconnect() ;
-	m_connect_timer.cancelTimer() ;
-	if( m_socket != NULL )
-		disconnect() ;
-}
-
-std::string GSmtp::Client::startSending( const std::string & s , unsigned int connection_timeout )
-{
-	size_t pos = s.rfind(':') ;
-	if( pos == std::string::npos )
-		return "invalid address string: no colon (<host/ip>:<service/port>)" ;
-
-	return init( s.substr(0U,pos) , s.substr(pos+1U) , connection_timeout ) ;
-}
-
-std::string GSmtp::Client::init( const std::string & host , const std::string & service , 
-	unsigned int connection_timeout )
-{
-	m_host = host ;
-
-	std::string result ;
-	bool empty = m_store != NULL && m_store->empty() ;
-	if( empty )
-	{
-		result = none() ;
-	}
-	else
-	{
-		raiseEventSignal( "connecting" , host ) ;
-
-		if( connection_timeout != 0U )
-			m_connect_timer.startTimer( connection_timeout ) ;
-
-		bool ok = connect( host , service , &result ) ;
-		if( !ok )
-		{
-			result = result.empty() ? std::string("error") : result ; // just in case
-			raiseEventSignal( "failed" , result ) ;
-		}
-	}
-	if( !result.empty() )
-	{
-		m_busy = false ;
-	}
-	return result ;
-}
-
-//static
-std::string GSmtp::Client::none()
-{
-	return "no messages to send" ;
-}
-
-//static
-bool GSmtp::Client::nothingToSend( const std::string & reason )
-{
-	return reason == none() ;
-}
-
-bool GSmtp::Client::busy() const
-{
-	return m_busy ; // (was GNet::Client::connected())
-}
-
 bool GSmtp::Client::protocolSend( const std::string & line , size_t offset )
 {
-	G_ASSERT( line.length() > offset ) ;
-	size_t n = line.length() - offset ;
-	ssize_t rc = socket().write( line.data() + offset , n ) ;
-	if( rc < 0 )
-	{
-		m_pending = line.substr(offset) ;
-		if( socket().eWouldBlock() )
-			blocked() ;
-		return false ;
-	}
-	else if( static_cast<size_t>(rc) < n )
-	{
-		size_t urc = static_cast<size_t>(rc) ;
-		m_pending = line.substr(urc+offset) ;
-		blocked() ; // GNet::Client::blocked() => addWriteHandler()
-		return false ;
-	}
-	else
-	{
-		return true ;
-	}
+	return send( line , offset ) ; // BufferedClient::send()
 }
 
 void GSmtp::Client::preprocessorStart()
@@ -197,19 +104,13 @@ void GSmtp::Client::preprocessorDone( bool ok )
 	m_protocol.preprocessorDone( ok ? std::string() : reason ) ;
 }
 
-void GSmtp::Client::onConnect( GNet::Socket & socket )
+void GSmtp::Client::onConnect()
 {
-	m_connect_timer.cancelTimer() ;
-
-	raiseEventSignal( "connected" , 
-		socket.getPeerAddress().second.displayString() ) ;
-
-	m_socket = &socket ;
 	if( m_store != NULL )
 	{
 		m_iter = m_store->iterator(true) ;
 		if( !sendNext() )
-			finish() ;
+			doDelete( std::string() ) ;
 	}
 	else
 	{
@@ -223,8 +124,7 @@ bool GSmtp::Client::sendNext()
 	m_message <<= 0 ;
 
 	// discard the previous message's "." response
-	while( m_buffer.more() ) 
-		m_buffer.discard() ;
+	clearInput() ;
 
 	// fetch the next message from the store, or return false if none
 	{
@@ -243,11 +143,12 @@ bool GSmtp::Client::sendNext()
 
 void GSmtp::Client::start( StoredMessage & message )
 {
-	raiseEventSignal( "sending" , message.name() ) ;
+	eventSignal().emit( "sending" , message.name() ) ;
 
-	std::string server_name = peerName() ; // (from GNet::Client)
+	// prepare the remote server name -- use the dns canonical name if available
+	std::string server_name = resolverInfo().name() ;
 	if( server_name.empty() )
-		server_name = m_host ;
+		server_name = resolverInfo().host() ;
 
 	std::auto_ptr<std::istream> content_stream( message.extractContentStream() ) ;
 	m_protocol.start( message.from() , message.to() , message.eightBit() ,
@@ -272,125 +173,57 @@ void GSmtp::Client::protocolDone( bool ok , bool abort , std::string reason )
 
 	if( m_store == NULL || abort || !sendNext() )
 	{
-		finish( error_message ) ;
+		doDelete( error_message ) ;
 	}
 }
 
 void GSmtp::Client::messageDestroy()
 {
 	if( m_message.get() != NULL )
-		m_message.get()->destroy() ;
-	m_message <<= 0 ;
+	{
+		StoredMessage * message = m_message.release() ;
+		message->destroy() ;
+	}
 }
 
 void GSmtp::Client::messageFail( const std::string & reason )
 {
 	if( m_message.get() != NULL )
-		m_message.get()->fail( reason ) ;
-	m_message <<= 0 ;
-}
-
-void GSmtp::Client::onDisconnect()
-{
-	std::string reason = "connection to server lost" ;
-	if( m_force_message_fail )
-		messageFail( reason ) ;
-
-	finish( reason , false ) ;
-}
-
-void GSmtp::Client::onTimeout( GNet::Timer & timer )
-{
-	G_ASSERT( &timer == &m_connect_timer ) ;
-	if( &timer == &m_connect_timer )
 	{
-		G_DEBUG( "GSmtp::Client::onTimeout: connection timeout" ) ;
-		std::string reason = "connection timeout" ;
+		StoredMessage * message = m_message.release() ;
+		message->fail( reason ) ;
+	}
+}
+
+bool GSmtp::Client::onReceive( const std::string & line )
+{
+	bool done = m_protocol.apply( line ) ;
+	return !done ; // if the protocol is done don't apply() any more
+}
+
+void GSmtp::Client::onDelete( const std::string & error , bool )
+{
+	if( ! error.empty() )
+	{
+		G_LOG( "GSmtp::Client: smtp client error: \"" << error << "\"" ) ; // was warning
 		if( m_force_message_fail )
-			messageFail( reason ) ;
-		finish( reason ) ;
+			messageFail( error ) ;
 	}
 }
 
-GNet::Socket & GSmtp::Client::socket()
+void GSmtp::Client::onSendComplete()
 {
-	if( m_socket == NULL )
-		throw NotConnected() ;
-	return * m_socket ;
-}
-
-void GSmtp::Client::onData( const char * data , size_t size )
-{
-	for( m_buffer.add(data,size) ; m_buffer.more() ; m_buffer.discard() )
-	{
-		bool done = m_protocol.apply( m_buffer.current() ) ;
-		if( done )
-			break ; // if the protocol is done don't apply() any more
-	}
-}
-
-void GSmtp::Client::onError( const std::string & error )
-{
-	G_LOG( "GSmtp::Client: smtp client error: \"" << error << "\"" ) ; // was warning
-
-	std::string reason = "error connecting to server: " ;
-	reason += error ;
-	if( m_force_message_fail )
-		messageFail( "connection failure" ) ;
-
-	finish( reason , false ) ;
-}
-
-void GSmtp::Client::finish( const std::string & reason , bool do_disconnect )
-{
-	if( do_disconnect )
-		disconnect() ; // GNet::Client::disconnect()
-	m_socket = NULL ;
-
-	raiseDoneSignal( reason ) ;
-}
-
-void GSmtp::Client::raiseDoneSignal( const std::string & reason )
-{
-	if( m_busy )
-	{
-		m_event_signal.emit( "done" , reason ) ;
-		m_busy = false ;
-		m_done_signal.emit( reason ) ;
-	}
-}
-
-void GSmtp::Client::raiseEventSignal( const std::string & s1 , const std::string & s2 )
-{
-	if( m_busy )
-		m_event_signal.emit( s1 , s2 ) ;
-}
-
-void GSmtp::Client::onWriteable()
-{
-	G_DEBUG( "GSmtp::Client::onWriteable" ) ;
-	if( protocolSend(m_pending,0U) )
-	{
-		m_protocol.sendDone() ;
-	}
-}
-
-G::Signal1<std::string> & GSmtp::Client::doneSignal()
-{
-	return m_done_signal ;
-}
-
-G::Signal2<std::string,std::string> & GSmtp::Client::eventSignal()
-{
-	return m_event_signal ;
+	m_protocol.sendDone() ;
 }
 
 // ==
 
-GSmtp::Client::Config::Config( G::Executable exe , GNet::Address address , ClientProtocol::Config protocol_config ) :
-	storedfile_preprocessor(exe) ,
-	local_address(address) ,
-	client_protocol_config(protocol_config)
+GSmtp::Client::Config::Config( G::Executable exe , GNet::Address address , ClientProtocol::Config protocol_config ,
+	unsigned int connection_timeout_ ) :
+		storedfile_preprocessor(exe) ,
+		local_address(address) ,
+		client_protocol_config(protocol_config) ,
+		connection_timeout(connection_timeout_)
 {
 }
 

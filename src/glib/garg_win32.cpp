@@ -27,7 +27,7 @@
 
 std::string G::Arg::moduleName( HINSTANCE hinstance )
 {
-	char buffer[260] ;
+	char buffer[10000U] ;
 	size_t size = sizeof(buffer) ;
 	*buffer = '\0' ;
 	::GetModuleFileName( hinstance , buffer , size-1U ) ;

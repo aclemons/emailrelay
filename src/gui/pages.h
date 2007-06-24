@@ -241,7 +241,8 @@ class StartupPage : public GPage
 {
 public:
 	StartupPage( GDialog & dialog , const std::string & name ,
-		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
+		const Dir & dir ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;

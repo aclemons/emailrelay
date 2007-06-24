@@ -307,7 +307,7 @@ void GSmtp::StoredFile::addReason( const G::Path & path , const std::string & re
 {
 	FileWriter claim_writer ;
 	std::ofstream file( path.str().c_str() , 
-		std::ios_base::binary | std::ios_base::app ) ; // app not ate for win32
+		std::ios_base::binary | std::ios_base::app ) ; // "app", not "ate", for win32
 	file << FileStore::x() << "Reason: " << reason << crlf() ;
 }
 

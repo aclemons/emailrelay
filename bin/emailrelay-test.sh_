@@ -52,7 +52,7 @@
 #	-f    use fetchmail
 #	-d    use --debug
 #	-n    no cleanup
-#       -s    smaller content
+#	-s    smaller content
 #
 
 # parse the command line
@@ -85,7 +85,7 @@ cfg_null_filter="/bin/touch" ; test -f ${cfg_null_filter} || cfg_null_filter="/u
 cfg_pp="201" # port-prefix
 cfg_base_dir="/tmp/`basename $0`.$$.tmp"
 cfg_summary_log="/tmp/`basename $0`.out"
-cfg_sw_valgrind="--logfile=${cfg_base_dir}/valgrind --trace-children=yes --num-callers=40 --leak-check=yes --track-fds=yes --time-stamp=yes"
+cfg_sw_valgrind="--log-file=${cfg_base_dir}/valgrind --trace-children=yes --num-callers=40 --leak-check=yes --track-fds=yes --time-stamp=yes"
 cfg_run="" ; test "${opt_use_valgrind}" -eq 0 || cfg_run="valgrind ${cfg_sw_valgrind}"
 
 Init()

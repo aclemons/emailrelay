@@ -107,58 +107,16 @@ Starting the daemon at boot-time
 --------------------------------
 The standard installation of E-MailRelay (using "make install") puts most of the
 files into the right places, but it does not set things up so that the daemon
-starts at boot time. You have to do that yourself because of the differences
+starts at boot time. You may have to do that yourself because of the differences
 between the various operating systems and distributions.
 
-Many systems provide GUI programs and command-line tools to make the necessary
-links into the boot system: "ksysv" (KDE), "redhat-config-services", "insserv"
-(Suse), "chkconfig" (Redhat), "install_initd" (LSB) are examples.
+Most systems now provide GUI programs and command-line tools to make the 
+necessary links into the boot system: "ksysv", "insserv", "chkconfig" and 
+"install_initd" are examples.
 
-If you do not have a suitable configuration tool you can set up the links
-manually as described below.
-
-The "System-V" boot system has a base directory "/etc/init.d" (or
-"/sbin/init.d") containing a start/stop script for each daemon process, and then
-symbolic links in the "rc<N>.d" subdirectories control which scripts are run
-when entering or leaving a particular run-level (<N>). The links point back into
-the start/stop script in the parent directory, using a "S" prefix for the
-starting link, and a "K" prefix for the stopping link. The numeric part of the
-link name determines the order in which the links are called.
-
-So the goal is to set up symbolic links to the "emailrelay" start/stop script
-(not the binary) which "make install" should have put in "/etc/init.d" or
-"/usr/local/libexec".
-
-Before you start you will need to know where your "init.d" directory can be
-found and what your default run level is:
-
-	$ ls -d /*/init.d
-	$ runlevel | awk '{print $2}'
-
-Assuming these are "/etc/init.d" and "5" you should (as root) copy the
-E-MailRelay start/stop script into "/etc/init.d" (if it is not already installed
-there):
-
-	$ cp /usr/local/libexec/emailrelay /etc/init.d
-
-Then determine an appropriate numeric value for the link names by looking at
-similar server programs like "sendmail":
-
-	$ cd /etc/init.d/rc5.d
-	$ ls *sendmail*
-
-Assuming sendmail links are "S10sendmail" and "K10sendmail", create
-the "emailrelay" links in the same format:
-
-	$ cd /etc/init.d/rc5.d
-	$ ln -s ../emailrelay S10emailrelay
-	$ ln -s ../emailrelay K10emailrelay
-
-And finally remove any incomatible SMTP servers from the run-level that might
-otherwise compete for the same SMTP listening port:
-
-	$ cd /etc/init.d/rc5.d
-	$ rm *sendmail
+If you do not have a suitable configuration tool you may have to set up the 
+links manually. Typically this involves creating symbolic links somthing 
+like "/etc/rc3.d/S50emailrelay" pointing to "/etc/init.d/emailrelay".
 
 Triggering onward delivery
 --------------------------
@@ -194,34 +152,22 @@ If you create "ip-up.local" yourself remember to make it executable.
 
 Notification of failed e-mails
 ------------------------------
-If e-mail messages corrupted or inaccessible within the spool directory 
-(typically becuase the disk is full) then they will get failed within the 
-E-MailRelay system, with the envelope files in the spool directory ending up 
-with a ".bad" suffix.
+If e-mail messages cannot be forwarded by the E-MailRelay system then the 
+envelope files in the spool directory are given a ".bad" suffix. The reason for
+the failure will be recorded in the envelope file itself.
 
-If you are not too worried about getting failed mail to bounce, or if you do not
-have a suitable delivery agent, then a simple check in your ".profile" script
-for "*.bad" files in the spool directory may be sufficient:
-
-	if test -f /var/spool/emailrelay/*.envelope.bad
-	then
-		echo Failed mail >&2
-	fi
-
-This will warn you that something failed, but you will have to look at the
-failure reason written into the envelope files, and at the log files, to
-find out what went wrong.
-
-Or you can get failed e-mails to 'bounce' back into your in-tray by running the
-"emailrelay-notify.sh" script as "root" periodically. But note that this is
-only approporiate if you are using E-MailRelay for outgoing traffic, and it
-assumes that you have "procmail" installed on your system to act as a "delivery
-agent".
+You should check for ".bad" envelope files in the E-MailRelay spool directory 
+from time to time.
 
 If you want failed e-mails to be retried a few times you can run the
-"emailrelay-resubmit.sh" script periodically. This simply removes the ".bad"
-suffix from files in the spool directory, as long as they have not been retried
-too many times already.
+"emailrelay-resubmit.sh" script periodically, perhaps from "cron". This script 
+simply removes the ".bad" suffix from files in the spool directory, as long as 
+they have not been retried too many times already.
+
+If you are using E-MailRelay to forward outgoing e-mails then you can also get 
+failed e-mails to bounce back to your in-tray by running the 
+"emailrelay-notify.sh" script periodically as "root", although this does require
+"procmail" to be available to act as a delivery agent.
 
 Logging
 -------
@@ -232,16 +178,6 @@ writes to the "Application" event log.
 The "syslog" system is configured through the "/etc/syslog.conf" file (try
 "man syslog.conf"), and in most cases you will find that "LOG_MAIL" warnings and
 errors are directed to an appropriate log file (perhaps "/var/log/messages").
-
-To get a file which will accumulate all E-MailRelay log messages (and messages
-from all other mail programs), add a line like this to "/etc/syslog.conf":
-
-	mail.info: /var/log/mail.log
-
-You may have to restart the "syslogd" daemon, or send it a "SIGHUP" signal, in
-order to have this change take effect.
-
-For less verbose logging change "mail.info" to "mail.warning".
 
 Troubleshooting
 ---------------
@@ -313,11 +249,7 @@ something like "fetchmail" to do the POP/IMAP authentication.
 
 If you can send mail messages sucessfully using telnet, then you should look at
 the E-MailRelay log output and compare what you do interactively with what
-the program does. Usually when running as a server E-MailRelay logging goes to
-the "syslog" system, and when running as a client it goes to the standard error
-stream ("stderr"). To get the server to log onto stderr, replace the
-"--as-server" command-line switch with "--log --no-syslog". Refer to the
-reference guide for more information.
+the program does.
 
 Reporting problems
 ------------------
@@ -340,12 +272,13 @@ reference guide for more information.
 
 Taking it one stage further, you may want to allow clients to connect from any
 IP address without authentication, but only allow them to send mail to local
-users. You can do this by requiring authentication with the "--server-auth"
-switch but then exempt all clients from authentication with a
-"NONE server *.*.*.* x" line in the secrets file. To complete the solution
-you must have an address verifier script ("--verifier") which rejects remote
-addresses if the client has not authenticated. Again, refer to the reference
-guide for further details.
+users. In other words you want to allow anyone to deliver e-mail to your system, 
+but not allow them to spam someone else. You can do this by requiring 
+authentication with the "--server-auth" switch but then exempt all clients from 
+authentication with a "NONE server *.*.*.* x" line in the secrets file. To 
+complete the solution you must have an address verifier script ("--verifier") 
+which rejects remote addresses if the client has not authenticated. Again, refer
+to the reference guide for further details.
 
 Running as a POP server
 -----------------------
@@ -364,9 +297,11 @@ like this:
 	APOP server user1 password1
 	APOP server user2 password2
 
-If you need to serve up messages to more than one user consider using the
+If you need to serve up messages to more than one POP client consider using the
 "--pop-by-name" option with a "--filter" script that moves messages into the
-appropriate subdirectory based on the "To:" address.
+appropriate subdirectory. The "emailrelay-filter-copy" program is designed
+to be used in this way; when a message is received over SMTP is copies it
+into all available sub-directories for collection by multiple POP clients.
 
 Refer to the reference guide for more information.
 

@@ -84,6 +84,7 @@ std::string Main::Configuration::str( const std::string & p , const std::string 
 		<< p << "close stderr? " << yn(closeStderr()) << eol
 		<< p << "connect timeout: " << connectionTimeout() << "s" << eol
 		<< p << "response timeout: " << responseTimeout() << "s" << eol
+		<< p << "prompt timeout: " << promptTimeout() << "s" << eol
 		<< p << "domain override: " << na(fqdn()) << eol
 		<< p << "polling period: " << (pollingTimeout()?(G::Str::fromUInt(pollingTimeout())+"s"):na()) << eol
 		;
@@ -176,7 +177,7 @@ unsigned int Main::Configuration::adminPort() const
 	{
 		s = 6U >= s.length() ? std::string() : s.substr(6U) ;
 
-		size_t p = s.find("/") ;
+		std::string::size_type p = s.find("/") ;
 		if( p != std::string::npos ) 
 			s = s.substr(0U,p) ;
 
@@ -242,6 +243,11 @@ bool Main::Configuration::doPolling() const
 unsigned int Main::Configuration::pollingTimeout() const
 {
 	return m_cl.contains("poll") ? G::Str::toUInt(m_cl.value("poll")) : 0U ;
+}
+
+unsigned int Main::Configuration::promptTimeout() const
+{
+	return m_cl.contains("prompt-timeout") ? G::Str::toUInt(m_cl.value("prompt-timeout")) : 20U ;
 }
 
 bool Main::Configuration::doSmtp() const

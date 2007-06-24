@@ -54,8 +54,8 @@ include ../mingw-common.mak
 $(mk_exe_main): $(mk_objects) $(res) $(libs)
 	$(mk_link) $(mk_link_flags) -o $(mk_exe_main) $(mk_objects) $(res) $(libs) $(syslibs)
 
-$(mk_exe_filter): filter_copy.o
-	$(mk_link) $(mk_link_flags) -o $@ $< $(libs) $(syslibs)
+$(mk_exe_filter): filter_copy.o legal.o
+	$(mk_link) $(mk_link_flags) -o $@ filter_copy.o legal.o $(libs) $(syslibs)
 
 $(mk_exe_poke): poke.o
 	$(mk_link) $(mk_link_flags) -o $@ $< $(libs) $(syslibs)

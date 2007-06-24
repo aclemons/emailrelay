@@ -56,7 +56,7 @@ namespace GSmtp
 /// 
 /// \see GSmtp::ProtocolMessage, RFC2821
 ///
-class GSmtp::ServerProtocol : private GNet::Timer 
+class GSmtp::ServerProtocol : private GNet::AbstractTimer 
 {
 public:
 	G_EXCEPTION( ProtocolDone , "smtp protocol done" ) ;
@@ -152,7 +152,8 @@ private:
 private:
 	ServerProtocol( const ServerProtocol & ) ; // not implemented
 	void operator=( const ServerProtocol & ) ; // not implemented
-	virtual void onTimeout() ;
+	virtual void onTimeout() ; // from AbstractTimer
+	virtual void onTimeoutException( std::exception & ) ; // from AbstractTimer
 	void send( std::string ) ;
 	Event commandEvent( const std::string & ) const ;
 	std::string commandWord( const std::string & line ) const ;

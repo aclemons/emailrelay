@@ -304,9 +304,9 @@ bool G::Path::noSlash() const
 	return m_str.find( slashString() ) == std::string::npos ;
 }
 
-size_t G::Path::slashAt() const
+std::string::size_type G::Path::slashAt() const
 {
-	size_t position = m_str.find( slashString() ) ;
+	std::string::size_type position = m_str.find( slashString() ) ;
 	G_ASSERT( position != std::string::npos ) ;
 	return position ;
 }

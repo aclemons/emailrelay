@@ -81,4 +81,26 @@ bool G::File::chmodx( const Path & path , bool do_throw )
 	return ok ;
 }
 
+void G::File::link( const Path & target , const Path & new_link )
+{
+	if( !link(target,new_link,NoThrow()) )
+	{
+		int error = G::Process::errno_() ; // keep first
+		CannotLink e( new_link.str() ) ;
+		std::ostringstream ss ;
+		ss << "(" << error << ")" ;
+		e.append( ss.str() ) ;
+		throw e ;
+	}
+}
+
+bool G::File::link( const Path & target , const Path & new_link , const NoThrow & )
+{
+	if( exists(target) )
+		remove( target , NoThrow() ) ;
+	int rc = ::symlink( target.str().c_str() , new_link.str().c_str() ) ;
+	// dont put anything here
+	return rc == 0 ;
+}
+
 /// \file gfile_unix.cpp

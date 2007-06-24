@@ -76,9 +76,8 @@ GSmtp::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info ,
 	const Secrets & server_secrets , const Verifier & verifier , 
 	std::auto_ptr<ServerProtocol::Text> ptext ,
 	ServerProtocol::Config protocol_config ) :
-		GNet::Sender( peer_info , true ) ,
+		GNet::BufferedServerPeer( peer_info , crlf() , true ) , // <= throw-on-flow-control
 		m_server( server ) ,
-		m_buffer( crlf() ) ,
 		m_verifier( verifier ) ,
 		m_pmessage( pmessage ) ,
 		m_ptext( ptext ) ,
@@ -99,32 +98,16 @@ void GSmtp::ServerPeer::onDelete()
 	G_LOG_S( "GSmtp::ServerPeer: smtp connection closed: " << peerAddress().second.displayString() ) ;
 }
 
-void GSmtp::ServerPeer::onResume()
+void GSmtp::ServerPeer::onSendComplete()
 {
 	// never gets here -- see GNet::Sender ctor
 }
 
-void GSmtp::ServerPeer::onData( const char * p , size_t n )
+bool GSmtp::ServerPeer::onReceive( const std::string & line )
 {
-	try
-	{
-		// apply lines to the protocol
-		for( m_buffer.add(p,n) ; m_buffer.more() ; m_buffer.discard() )
-		{
-			m_protocol.apply( m_buffer.current() ) ;
-		}
-	}
-	catch( Verifier::AbortRequest & )
-	{
-		G_WARNING( "GSmtp::ServerPeer::processLine: verifier abort request: disconnecting from " <<
-			peerAddress().second.displayString() ) ;
-		doDelete() ;
-	}
-	catch( std::exception & e )
-	{
-		G_LOG( "GSmtp::ServerPeer::onData: " << e.what() ) ;
-		doDelete() ;
-	}
+	// apply the line to the protocol
+	m_protocol.apply( line ) ;
+	return true ;
 }
 
 void GSmtp::ServerPeer::protocolSend( const std::string & line )

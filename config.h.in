@@ -1,31 +1,31 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define if <ctime> requires <time.h> */
+/* Define to 1 if <ctime> requires <time.h> */
 #undef HAVE_BUGGY_CTIME
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H
 
-/* Define if getipnodebyname() is available */
+/* Define to 1 if getipnodebyname() is available */
 #undef HAVE_GETIPNODEBYNAME
 
 /* Define to 1 if you have the `glob' function. */
 #undef HAVE_GLOB
 
-/* Define if gmtime_r in time.h */
+/* Define to 1 if gmtime_r in time.h */
 #undef HAVE_GMTIME_R
 
-/* Define to enable gui code */
+/* Define to 1 to enable gui code */
 #undef HAVE_GUI
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define if ipv6 is available */
+/* Define to 1 if ipv6 is available */
 #undef HAVE_IPV6
 
-/* Define if localtime_r in time.h */
+/* Define to 1 if localtime_r in time.h */
 #undef HAVE_LOCALTIME_R
 
 /* Define to 1 if you have the <memory.h> header file. */
@@ -34,13 +34,13 @@
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
 
-/* Define if setgroups is available */
+/* Define to 1 if setgroups is available */
 #undef HAVE_SETGROUPS
 
-/* Define if sockaddr_in6 has a sin6_len member */
+/* Define to 1 if sockaddr_in6 has a sin6_len member */
 #undef HAVE_SIN6_LEN
 
-/* Define if socklen_t type definition in sys/socket.h */
+/* Define to 1 if socklen_t type definition in sys/socket.h */
 #undef HAVE_SOCKLEN_T
 
 /* Define to 1 if you have the <stdint.h> header file. */

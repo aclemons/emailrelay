@@ -20,20 +20,17 @@
 //
 // filter_copy.cpp
 //
-// A utility that can be installed as a "--filter" program 
-// to copy the message envelope into all spool sub-directories 
-// for use by "--pop-by-name".
+// A utility that can be installed as a "--filter" program to copy the message 
+// envelope into all spool sub-directories for use by "--pop-by-name".
 //
-// The envelope in the parent directory is removed iff it
-// has been copied at least once.
+// If the envelope in the parent directory has been copied at least once then
+// it is removed and the program exits with a value of 100.
 // 
-// Note that the pop-by-name feature has the pop server look 
-// for envelopes in a user-specific sub-directory and look for
-// content files in the parent directory. If the envelope
-// is deleted in the sub-directory and the content file is
-// found to have no corresponding envelopes in any other
-// sub-directory then the content is deleted too.
-// See GPop::StoreLock::unlinked().
+// Note that the pop-by-name feature has the pop server look for envelopes 
+// in a user-specific sub-directory and look for content files in the parent 
+// directory; if the pop server deletes the envelope in the sub-directory and 
+// the content file is found to have no envelopes in any other sub-directory 
+// then the content is deleted too.
 //
 
 #include "gdef.h"
@@ -42,6 +39,7 @@
 #include "gstr.h"
 #include "gexception.h"
 #include "gdirectory.h"
+#include "legal.h"
 #include <iostream>
 #include <exception>
 #include <stdexcept>
@@ -51,7 +49,42 @@
 
 G_EXCEPTION( Error , "message copy" ) ;
 
-static void run( const std::string & content )
+#if 0
+static bool match( G::Path dir , std::string to )
+{
+	G::Path dot_file_path( dir , ".address" ) ;
+	if( G::File::exists(dot_file_path) )
+	{
+		std::ifstream dot_file( dot_file_path.str().c_str() ) ;
+		std::string dot_file_address = G::Str::trimmed(G::Str::lower(G::Str::readLineFrom(dot_file)),G::Str::ws()) ;
+		G::Str::toLower(to) ;
+		return to.find(dot_file_address) != std::string::npos ;
+	}
+	else
+	{
+		return true ;
+	}
+}
+#else
+static bool match( G::Path , std::string )
+{
+	return true ;
+}
+#endif
+
+static void showHelp( const std::string & prefix )
+{
+	std::cout 
+		<< "usage: " << prefix << " <emailrelay-content-file>" << std::endl
+		<< std::endl
+		<< "Copies the corresponding envelope file into all " << std::endl
+		<< "subdirectories of the spool directory." << std::endl
+		<< std::endl
+		<< Main::Legal::warranty(std::string(),"\n") << std::endl
+		<< Main::Legal::copyright() << std::endl ;
+}
+
+static bool run( const std::string & content )
 {
 	// check the content file exists
 	//
@@ -81,6 +114,22 @@ static void run( const std::string & content )
 			throw Error( std::string() + "no envelope file \"" + envelope_path.str() + "\"" ) ;
 	}
 
+	// read the content "to" address
+	std::string to ;
+	{
+#if 0
+		std::ifstream content( content_path.str().c_str() ) ;
+		while( content.good() )
+		{
+			std::string line = G::Str::readLineFrom( content ) ;
+			if( line.empty() )
+				break ;
+			if( line.find("To:") == 0U )
+				to = G::Str::trimmed( line.substr(3U) , G::Str::ws() ) ;
+		}
+#endif
+	}
+
 	// copy the envelope into all sub-directories
 	//
 	int directory_count = 0 ;
@@ -89,7 +138,7 @@ static void run( const std::string & content )
 	G::DirectoryIterator iter( dir ) ;
 	while( iter.more() && !iter.error() )
 	{
-		if( iter.isDir() )
+		if( iter.isDir() && match(iter.filePath(),to) )
 		{
 			directory_count++ ;
 			G::Path target = G::Path( iter.filePath() , envelope_name ) ;
@@ -101,9 +150,10 @@ static void run( const std::string & content )
 
 	// delete the parent envelope (ignore errors)
 	//
+	bool envelope_deleted = false ;
 	if( directory_count > 0 && failures.empty() )
 	{
-		G::File::remove( envelope_path , G::File::NoThrow() ) ;
+		envelope_deleted = G::File::remove( envelope_path , G::File::NoThrow() ) ;
 	}
 
 	// notify failures
@@ -124,8 +174,10 @@ static void run( const std::string & content )
 	}
 	if( directory_count == 0 ) // probably a permissioning problem
 	{
-		throw Error( "no sub-directories to copy into" ) ;
+		throw Error( "no sub-directories to copy into: check permissions" ) ;
 	}
+
+	return envelope_deleted ;
 }
 
 int main( int argc , char * argv [] )
@@ -133,11 +185,19 @@ int main( int argc , char * argv [] )
 	try
 	{
 		G::Arg args( argc , argv ) ;
-		if( args.c() <= 1U )
-			throw Error( "usage error: must be run by the emailrelay server with the full path of a message content file" ) ;
 
-		run( args.v(1U) ) ;
-		return 0 ;
+		if( args.c() <= 1U )
+			throw Error( "usage error: must be run by emailrelay with the full path of a message content file" ) ;
+
+		if( args.v(1U) == "--help" )
+		{
+			showHelp( args.prefix() ) ;
+			return 1 ;
+		}
+		else
+		{
+			return run( args.v(1U) ) ? 100 : 0 ;
+		}
 	}
 	catch( std::exception & e )
 	{

@@ -22,6 +22,7 @@
 #
 
 EXTRA_DIST=\
+	Info.plist \
 	emailrelay-icon.png \
 	gcominit.h \
 	dir_win32.cpp \
@@ -29,6 +30,9 @@ EXTRA_DIST=\
 	mac.mak \
 	pack.cpp \
 	run.c \
+	service_install.cpp \
+	service_install.h \
+	service_wrapper.cpp \
 	mock
 
 if GUI
@@ -85,6 +89,8 @@ emailrelay_gui_SOURCES = \
 	dir.cpp \
 	dir_unix.cpp \
 	dir.h \
+	boot.cpp \
+	boot.h \
 	installer.cpp \
 	installer.h \
 	guimain.cpp \

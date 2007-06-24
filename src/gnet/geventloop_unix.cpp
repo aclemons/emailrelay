@@ -42,6 +42,26 @@ namespace GNet
 	class FdSet ;
 }
 
+/// \class GNet::FdSet
+/// An "fd_set" wrapper type.
+/// 
+class GNet::FdSet 
+{
+public:
+	FdSet() ;
+	void init( const EventHandlerList & ) ;
+	void raiseEvents( EventHandlerList & , void (EventHandler::*method)() ) ;
+	void raiseEvent( EventHandler * , void (EventHandler::*method)() ) ;
+	void invalidate() ;
+	int fdmax( int = 0 ) const ;
+	fd_set * operator()() ;
+private:
+	bool m_valid ;
+	int m_fdmax ;
+	fd_set m_set_internal ;
+	fd_set m_set_external ;
+} ;
+ 
 /// \class GNet::Select
 /// A concrete implementation of GNet::EventLoop using
 ///  ::select() in the implementation.
@@ -71,8 +91,11 @@ private:
 	bool m_quit ;
 	bool m_running ;
 	EventHandlerList m_read_list ;
+	FdSet m_read_set ;
 	EventHandlerList m_write_list ;
+	FdSet m_write_set ;
 	EventHandlerList m_exception_list ;
+	FdSet m_exception_set ;
 } ;
 
 /// \class GNet::Lock
@@ -91,30 +114,14 @@ private:
 	void operator=( const Lock & ) ; // not implemented
 } ;
 
-/// \class GNet::FdSet
-/// A static implementation interface used by GNet::Select
-///  to do fd_set iteration.
-/// 
-class GNet::FdSet 
-{
-public:
-	static int init( int n , fd_set * set , const EventHandlerList & list ) ;
-	static void raiseEvents( fd_set * set , EventHandlerList & list , 
-		void (EventHandler::*method)() ) ;
-private:
-	FdSet() ; // not implemented
-} ;
- 
 // ===
 
-inline
 GNet::Lock::Lock( EventHandlerList & list ) : 
 	m_list(list) 
 { 
 	m_list.lock() ; 
 }
 
-inline
 GNet::Lock::~Lock() 
 { 
 	m_list.unlock() ; 
@@ -122,25 +129,48 @@ GNet::Lock::~Lock()
 
 // ===
 
-//static
-int GNet::FdSet::init( int n , fd_set * set , const EventHandlerList & list )
+GNet::FdSet::FdSet() :
+	m_valid(false) ,
+	m_fdmax(1)
 {
-	// copy the event-handler-list into the fd-set
-
-	FD_ZERO( set ) ;
-	const EventHandlerList::Iterator end = list.end() ;
-	for( EventHandlerList::Iterator p = list.begin() ; p != end ; ++p )
-	{
-		Descriptor fd = EventHandlerList::fd( p ) ;
-		FD_SET( fd , set ) ;
-		if( (fd+1) > n )
-			n = (fd+1) ;
-	}
-	return n ;
 }
 
-//static 
-void GNet::FdSet::raiseEvents( fd_set * set , EventHandlerList & list , void (EventHandler::*method)() )
+fd_set * GNet::FdSet::operator()()
+{
+	return &m_set_external ;
+}
+
+void GNet::FdSet::invalidate()
+{
+	m_valid = false ;
+}
+
+void GNet::FdSet::init( const EventHandlerList & list )
+{
+	if( !m_valid )
+	{
+		// copy the event-handler-list into the internal fd-set
+		m_fdmax = 1 ;
+		FD_ZERO( &m_set_internal ) ;
+		const EventHandlerList::Iterator end = list.end() ;
+		for( EventHandlerList::Iterator p = list.begin() ; p != end ; ++p )
+		{
+			Descriptor fd = EventHandlerList::fd( p ) ;
+			FD_SET( fd , &m_set_internal ) ;
+			if( (fd+1) > m_fdmax )
+				m_fdmax = (fd+1) ;
+		}
+		m_valid = true ;
+	}
+	m_set_external = m_set_internal ; // hopefully fast, depending on the definition of fd_set
+}
+
+int GNet::FdSet::fdmax( int n ) const
+{
+	return n > m_fdmax ? n : m_fdmax ;
+}
+
+void GNet::FdSet::raiseEvents( EventHandlerList & list , void (EventHandler::*method)() )
 {
 	// call the event-handler for fds in fd-set which are ISSET()
 
@@ -149,13 +179,24 @@ void GNet::FdSet::raiseEvents( fd_set * set , EventHandlerList & list , void (Ev
 	for( EventHandlerList::Iterator p = list.begin() ; p != end ; ++p )
 	{
 		Descriptor fd = EventHandlerList::fd( p ) ;
-		if( FD_ISSET( fd , set ) )
+		if( FD_ISSET( fd , &m_set_external ) )
 		{
-			//G_DEBUG( "raiseEvents: " << type << " event on fd " << fd ) ;
 			EventHandler * h = EventHandlerList::handler( p ) ;
 			if( h != NULL )
-				(h->*method)() ;
+				raiseEvent( h , method ) ;
 		}
+	}
+}
+
+void GNet::FdSet::raiseEvent( EventHandler * h , void (EventHandler::*method)() )
+{
+	try
+	{
+		(h->*method)() ;
+	}
+	catch( std::exception & e )
+	{
+		h->onException( e ) ;
 	}
 }
 
@@ -172,9 +213,9 @@ GNet::EventLoop * GNet::EventLoop::create()
 GNet::Select::Select() :
 	m_quit(false) ,
 	m_running(false) ,
-	m_read_list(std::string("read")) ,
-	m_write_list(std::string("write")) ,
-	m_exception_list(std::string("exception"))
+	m_read_list("read") ,
+	m_write_list("write") ,
+	m_exception_list("exception")
 {
 }
 
@@ -211,10 +252,10 @@ void GNet::Select::runOnce()
 {
 	// build fd-sets from handler lists
 	//
-	int n = 1 ;
-	fd_set r ; n = FdSet::init( n , &r , m_read_list ) ;
-	fd_set w ; n = FdSet::init( n , &w , m_write_list ) ;
-	fd_set e ; n = FdSet::init( n , &e , m_exception_list ) ;
+	m_read_set.init( m_read_list ) ;
+	m_write_set.init( m_write_list ) ;
+	m_exception_set.init( m_exception_list ) ;
+	int n = m_read_set.fdmax( m_write_set.fdmax(m_exception_set.fdmax()) ) ;
 
 	// get a timeout interval() from TimerList
 	//
@@ -230,54 +271,60 @@ void GNet::Select::runOnce()
 
 	// do the select()
 	//
-	int rc = ::select( n , &r , &w , &e , timeout_p ) ;
+	int rc = ::select( n , m_read_set() , m_write_set() , m_exception_set() , timeout_p ) ;
 	if( rc < 0 )
 		throw Error() ;
 
 	// call the event handlers
 	//
-	if( rc == 0 )
+	if( rc == 0 || ( timeout_p != NULL && timeout_p->tv_sec == 0 ) )
 	{
 		G_DEBUG( "GNet::Select::runOnce: select() timeout" ) ;
 		TimerList::instance().doTimeouts() ;
 	}
-	else // rc > 0
+	if( rc > 0 )
 	{
 		G_DEBUG( "GNet::Select::runOnce: detected event(s) on " << rc << " fd(s)" ) ;
-		FdSet::raiseEvents( &r , m_read_list , & EventHandler::readEvent ) ;
-		FdSet::raiseEvents( &w , m_write_list , & EventHandler::writeEvent ) ;
-		FdSet::raiseEvents( &e , m_exception_list , & EventHandler::exceptionEvent ) ;
+		m_read_set.raiseEvents( m_read_list , & EventHandler::readEvent ) ;
+		m_write_set.raiseEvents( m_write_list , & EventHandler::writeEvent ) ;
+		m_exception_set.raiseEvents( m_exception_list , & EventHandler::exceptionEvent ) ;
 	}
 }
 
 void GNet::Select::addRead( Descriptor fd , EventHandler & handler )
 {
 	m_read_list.add( fd , & handler ) ;
+	m_read_set.invalidate() ;
 }
 
 void GNet::Select::addWrite( Descriptor fd , EventHandler & handler )
 {
 	m_write_list.add( fd , & handler ) ;
+	m_write_set.invalidate() ;
 }
 
 void GNet::Select::addException( Descriptor fd , EventHandler & handler )
 {
 	m_exception_list.add( fd , & handler ) ;
+	m_exception_set.invalidate() ;
 }
 
 void GNet::Select::dropRead( Descriptor fd )
 {
 	m_read_list.remove( fd ) ;
+	m_read_set.invalidate() ;
 }
 
 void GNet::Select::dropWrite( Descriptor fd )
 {
 	m_write_list.remove( fd ) ;
+	m_write_set.invalidate() ;
 }
 
 void GNet::Select::dropException( Descriptor fd )
 {
 	m_exception_list.remove( fd ) ;
+	m_exception_set.invalidate() ;
 }
 
 void GNet::Select::setTimeout( G::DateTime::EpochTime , bool & empty_hint )

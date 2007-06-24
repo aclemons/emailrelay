@@ -17,7 +17,7 @@
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ## 
 #
-EXTRA_DIST = emailrelay.spec ChangeLog
+EXTRA_DIST = emailrelay.spec ChangeLog README.windows
 SUBDIRS = src bin lib etc doc
 e_doc_DATA = NEWS README changelog.gz
 CLEANFILES = changelog.gz

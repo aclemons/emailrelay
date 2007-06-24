@@ -164,6 +164,9 @@ public:
 	unsigned int connectionTimeout() const ;
 		///< Returns the client-side connection timeout value.
 
+	unsigned int promptTimeout() const ;
+		///< Returns the timeout for getting a prompt from the SMTP server.
+
 	std::string clientSecretsFile() const ;
 		///< Returns the client-side autentication secrets (password) file.
 		///< Returns the empty string if none.

@@ -75,16 +75,33 @@ bool G::File::copy( const Path & from , const Path & to , const NoThrow & )
 		return false ;
 
 	std::ofstream out( to.str().c_str() , std::ios::binary | std::ios::out | std::ios::trunc ) ;
-	char buffer[1024U*4U] ;
-	while( in.good() && out.good() )
-	{
-		std::streamsize n = in.readsome( buffer , sizeof(buffer) ) ;
-		if( n == 0U ) break ;
-		out.write( buffer , n ) ;
-	}
+	if( !out.good() )
+		return false ;
+
+	copy( from , to ) ;
 	out.flush() ;
-	in.get() ; // force eof
-	return in.eof() && out.good() ;
+
+	return !in.fail() && !in.bad() && out.good() ;
+}
+
+void G::File::copy( std::istream & in , std::ostream & out , std::streamsize limit , std::string::size_type block )
+{
+	// cf. "out<<in.rdbuf()"
+
+	block = block ? block : 102400U ;
+	std::vector<char> buffer ;
+	buffer.reserve( block ) ;
+
+	const std::streamsize b = static_cast<std::streamsize>(block) ;
+	std::streamsize size = 0U ;
+	while( size < limit && in.good() && out.good() )
+	{
+		std::streamsize request = limit == 0U || (limit-size) > b ? b : (limit-size) ;
+		std::streamsize result = in.readsome( &buffer[0] , request ) ;
+		if( result == 0U ) break ;
+		out.write( &buffer[0] , result ) ;
+		size += result ;
+	}
 }
 
 void G::File::mkdir( const Path & dir )

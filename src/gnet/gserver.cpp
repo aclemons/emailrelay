@@ -34,7 +34,8 @@
 GNet::ServerPeer::ServerPeer( Server::PeerInfo peer_info ) :
 	m_address(peer_info.m_address) ,
 	m_socket(peer_info.m_socket) ,
-	m_handle(peer_info.m_handle)
+	m_handle(peer_info.m_handle) ,
+	m_delete_timer(this)
 {
 	G_ASSERT( m_socket.get() != NULL ) ;
 	G_DEBUG( "GNet::ServerPeer::ctor: [" << this << "]: fd " << asString() << ": " << m_address.displayString() ) ;
@@ -75,7 +76,7 @@ void GNet::ServerPeer::readEvent()
 	}
 	else if( rc != -1 )
 	{
-		size_t n = rc ;
+		size_type n = static_cast<size_type>(rc) ;
 		onData( buffer , n ) ;
 	}
 	else 
@@ -84,16 +85,16 @@ void GNet::ServerPeer::readEvent()
 	}
 }
 
-void GNet::ServerPeer::exceptionEvent()
+void GNet::ServerPeer::onException( std::exception & e )
 {
-	G_DEBUG( "GNet::Server::exceptionEvent: peer=" << this ) ;
+	G_DEBUG( "ServerPeer::onException: " << e.what() ) ;
 	doDelete() ;
 }
 
 void GNet::ServerPeer::doDelete()
 {
 	onDelete() ;
-	delete this ;
+	m_delete_timer.startTimer( 0U ) ;
 }
 
 std::pair<bool,GNet::Address> GNet::ServerPeer::localAddress() const
@@ -186,6 +187,12 @@ void GNet::Server::serverCleanupCore()
 	}
 }
 
+void GNet::Server::onException( std::exception & e )
+{
+	G_ERROR( "Server::onException: exception: " << e.what() ) ;
+	throw ; // out of the event loop
+}
+
 std::pair<bool,GNet::Address> GNet::Server::address() const
 {
 	std::pair<bool,Address> result( false , Address::invalidAddress() ) ;
@@ -274,11 +281,6 @@ void GNet::Server::writeEvent()
 	G_DEBUG( "GNet::Server::writeEvent" ) ;
 }
 
-void GNet::Server::exceptionEvent()
-{
-	G_DEBUG( "GNet::Server::exceptionEvent" ) ;
-}
-
 // ===
 
 GNet::Server::PeerInfo::PeerInfo() :
@@ -314,6 +316,24 @@ void GNet::ServerPeerHandle::set( ServerPeer * p )
 {
 	m_p = p ;
 	m_old = p ;
+}
+
+// ===
+
+GNet::ServerPeerTimer::ServerPeerTimer( ServerPeer * p ) :
+	m_server_peer(p)
+{
+}
+
+void GNet::ServerPeerTimer::onTimeout()
+{
+	delete m_server_peer ;
+}
+
+void GNet::ServerPeerTimer::onTimeoutException( std::exception & e )
+{
+	// should never get here
+	G_ERROR( "ServerPeerTimer::onTimeoutException: exception: " << e.what() ) ;
 }
 
 /// \file gserver.cpp

@@ -26,6 +26,7 @@ EXTRA_DIST=\
 	doxygen.cfg \
 	doxygen.h \
 	emailrelay.dsp \
+	filter.dsp \
 	emailrelay.rc \
 	icon-32.ico \
 	icon2.ico \
@@ -89,7 +90,7 @@ emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a
 
-emailrelay_filter_copy_SOURCES = filter_copy.cpp
+emailrelay_filter_copy_SOURCES = filter_copy.cpp legal.cpp
 emailrelay_filter_copy_LDADD = \
 	$(top_builddir)/src/glib/libglib.a
 

@@ -30,6 +30,10 @@
 
 class GLinkImp ; 
 
+/// \class GLink
+/// A class for creating desktop links (aka "shortcuts") and 
+/// application menu items.
+///
 class GLink 
 {
 public:
@@ -40,7 +44,10 @@ public:
 	GLink( const G::Path & target_path , const std::string & name , const std::string & description , 
 		const G::Path & working_dir , const std::string & args = std::string() , 
 		const G::Path & icon_source = G::Path() , Show show = Show_Default ) ;
-			///< Constructor.
+			///< Constructor. Note that the path of the link itself
+			///< is specified in saveAs(), not the constructor.
+			///< The "working_dir" is the current-working-directory
+			///< when the link is used.
 
 	static std::string filename( const std::string & name ) ;
 		///< Returns a normalised filename including an extension like ".lnk" or ".desktop".

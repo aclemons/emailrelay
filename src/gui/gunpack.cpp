@@ -303,17 +303,18 @@ void G::Unpack::unpackOriginal( const Path & dst )
 	if( !out.good() ) 
 		throw PackingError( "cannot open file for reading: " + dst.str() ) ;
 
-	// TODO -- read in a loop
-	std::vector<char> buffer ;
-	buffer.reserve( m_offset ) ;
-	std::streamsize n = input.readsome( &buffer[0] , m_offset ) ;
-	if( n != m_offset ) 
+	copy( input , out , m_offset ) ;
+	if( !input.good() )
 		throw PackingError( "cannot read file" ) ;
 
-	out.write( &buffer[0] , m_offset ) ;
 	out.flush() ;
 	if( !out.good() ) 
 		throw PackingError( "cannot write: " + dst.str() ) ;
+}
+
+void G::Unpack::copy( std::istream & in , std::ostream & out , std::streamsize size )
+{
+	File::copy( in , out , size ) ;
 }
 
 /// \file gunpack.cpp

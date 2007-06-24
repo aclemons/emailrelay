@@ -96,12 +96,13 @@ public:
 		///< recursive dialog box creation.)
 
 private:
+	typedef size_t size_type ;
 	LogOutput( const LogOutput & ) ;
 	void operator=( const LogOutput & ) ;
-	static const char * itoa( char * , size_t , unsigned int ) ;
-	static void addFileAndLine( char * , size_t , const char * , int ) ;
-	static void add( char * , size_t , const char * ) ;
-	static void add( char * , size_t , const std::string & ) ;
+	static const char * itoa( char * , size_type , unsigned int ) ;
+	static void addFileAndLine( char * , size_type , const char * , int ) ;
+	static void add( char * , size_type , const char * ) ;
+	static void add( char * , size_type , const std::string & ) ;
 	const char * timestampString() ;
 	static void halt() ;
 	void doOutput( G::Log::Severity , const char * ) ;

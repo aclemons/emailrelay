@@ -50,7 +50,7 @@ namespace GPop
 /// 
 /// \see RFC1939
 ///
-class GPop::ServerProtocol : private GNet::Timer 
+class GPop::ServerProtocol 
 {
 public:
 	G_EXCEPTION( ProtocolDone , "pop protocol done" ) ;
@@ -142,7 +142,6 @@ private:
 private:
 	ServerProtocol( const ServerProtocol & ) ; // not implemented
 	void operator=( const ServerProtocol & ) ; // not implemented
-	virtual void onTimeout() ; // from GNet::Timer
 	void doQuit( const std::string & line , bool & ) ;
 	void doQuitEarly( const std::string & line , bool & ) ;
 	void doStat( const std::string & line , bool & ) ;
