@@ -3,23 +3,21 @@ E-MailRelay Internals
 
 Module structure
 ----------------
-There are four C++ libraries in the E-MailRelay code: "glib" provides low-level
-classes for file-system abstraction, date and time representation, string
-utility functions, logging, command line parsing etc., "gnet" provides network
-classes using the Berkley socket and Winsock APIs, "gsmtp" contains SMTP and
-message-store classes, and "gpop" contains POP3 classes. All four libraries are
-portable between POSIX-like systems (eg. Linux) and Windows.
+There are four main C++ libraries in the E-MailRelay code: "glib" provides
+low-level classes for file-system abstraction, date and time representation,
+string utility functions, logging, command line parsing etc., "gnet" provides
+network classes using the Berkley socket and Winsock APIs, "gsmtp" contains SMTP
+and message-store classes, and "gpop" contains POP3 classes. All four libraries
+are portable between POSIX-like systems (eg. Linux) and Windows.
 
 Under Windows there is an additional library for event handling. Windows has
-historically built network event processing on top of the GUI event system,
-rather then implementing network events using a generic event notification
-system as POSIX systems do. This means that the "gnet" library has to be able
-to create GUI windows in order to process network events. The extra GUI and
-event classes are put into a separate library in the "src/win32" directory,
-using the namespace "GGui".
+historically built network event processing on top of the GUI event system which
+means that the "gnet" library has to be able to create GUI windows in order to
+process network events. The extra GUI and event classes are put into a separate
+library in the "src/win32" directory, using the namespace "GGui".
 
-Class structure
----------------
+Core class structure
+--------------------
 The message-store functionality uses three abstract interfaces: "MessageStore",
 "NewMessage" and "StoredMessage". The "NewMessage" interface is used to create
 messages within the store, and the "StoredMessage" interface is used for
@@ -49,14 +47,65 @@ See *C10K Problem* [http://www.kegel.com/c10k.html] for a discussion of
 different network event models.
 
 At higher levels the slot/signal design pattern is used to propagate events
-between objects (not to be confused with operating system signals).
+between objects. (This C++ pattern should not be confused with operating
+system signals.)
+
+Event handling and exceptions
+-----------------------------
+The use of non-blocking i/o in the low-level "gnet" network library means
+that most processing operates within the context of an i/o or timeout callback.
+The top level of the call stack is therefore nearly always the event loop
+code and this can make using exceptions a bit awkward because it is not
+possible to put a single catch block around a given high-level feature.
+
+The approach taken is to have all i/o events delivered to an abstract EventHandler
+interface, and all timeout events delivered to the AbstractTimer interface.
+The event loop code calls these interfaces to deliver events to the application
+code. If these callbacks throw exceptions then the event loop will catch them
+and deliver them back to the same interface through the virtual functions
+onException() and onTimerException() respectively. If exceptions are thrown
+out of these callbacks then the event loop code lets them propagate back
+to main(), typically terminating the program.
+
+This approach is extended slightly by having a Timer class that requires an
+EventHandler object to be associated with each Timer. The Timer class routes all
+exceptions thrown out of the timeout callback to the designated EventHandler
+interface. This means that both i/o and timeout exceptions are delivered to the
+same place.
+
+In common with other event-driven frameworks this leads to a programming
+model where objects are instantiated on the heap and the objects delete
+themselves when they receive certain events from the framework. In the
+"gnet" library the ServerPeer and HeapClient classes embody this lifetime
+management. Instances of these classes delete themselves when the associated
+network connection goes away or when an exception is thrown out their
+event-handling code.
+
+A significant disadvantage is that all exceptions are delivered using a base 
+class exception type. This means that all exceptions from asynchronous code have
+to be handled in the same way, typically by deleting the object associated with
+the connection or terminating the event loop, leaving non-fatal errors to be 
+propagated through the mainline code.
 
 Protocol implementation
 -----------------------
-The SMTP protocols (client-side and server-side) are implemented using state
-machines.  This fits well with the single-threaded, non-blocking event model
-since the protocol state can be stored as data within an object rather than
-being implicit in the progress of a thread's execution.
+The SMTP and POP protocols are implemented using finite state machines. This
+fits well with the single-threaded, non-blocking event model since the protocol
+state can be stored as data within an object rather than being implicit in the
+progress of a thread's execution.
+
+Windows service
+---------------
+To get E-MailRelay to run as a Windows service there is a service wrapper
+program called "emailrelay-service.exe". This program registers itself as
+a service when run with the "--install" commandline switch. When the service
+runs the wrapper starts the actual E-MailRelay server by looking for a batch
+file called "emailrelay-start.bat" in the same directory as service wrapper
+executable. It reads the contents of this batch file in order to construct the
+E-MailRelay command-line, adding "--no-daemon" and "--hidden" switches if they
+are not there. The service name and display name can be put onto the
+wrapper's "--install" command-line, and it is the service name that is used to
+derive the name of the "start" batch file.
 
 Diagrams
 --------
@@ -162,16 +211,6 @@ Compile-time features can normally be selected with switches passed to the
 * Configuration GUI ("--enable-gui")
 
 Use "./configure --help" to see a complete list.
-
-Windows build
--------------
-Simple MSVC project files are provided in the "src/main" directory, bundled into
-the "emailrelay.dws" workspace.
-
-Makefiles for the *MinGW* [http://www.mingw.org/] system (gcc on Windows) are 
-also provided. If building from cygwin start by creating a "/mingw" mount to 
-your MinGW installation directory (eg. "mount -u c:/opt/mingw /mingw"), and then
-run "make -f mingw.mak" from the E-MailRelay "src" directory.
 
 Patterns
 --------

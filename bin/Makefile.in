@@ -111,7 +111,6 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
-POPLIB = @POPLIB@
 QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
@@ -166,14 +165,12 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = emailrelay-test.sh_ emailrelay-soak.sh_ emailrelay.sh_ txt2html.sh_ txt2mu.sh_ mu2html.sh_ mu2docbook.sh_ expand.sh_ emailrelay-notify.sh_ emailrelay-resubmit.sh_ emailrelay-deliver.sh_ emailrelay-process.sh_ emailrelay-runperl.js emailrelay-resubmit.js emailrelay-submit.sh_
-noinst_cleanup = emailrelay-test.sh emailrelay-soak.sh
-noinst_SCRIPTS = emailrelay-test.sh emailrelay-soak.sh emailrelay-runperl.js emailrelay-resubmit.js
+EXTRA_DIST = emailrelay.sh_ txt2html.sh_ txt2mu.sh_ mu2html.sh_ mu2docbook.sh_ expand.sh_ emailrelay-notify.sh_ emailrelay-resubmit.sh_ emailrelay-deliver.sh_ emailrelay-process.sh_ emailrelay-runperl.js emailrelay-resubmit.js emailrelay-submit.sh_
+noinst_SCRIPTS = emailrelay-runperl.js emailrelay-resubmit.js
 e_init_SCRIPTS = emailrelay
 e_examples_DATA = emailrelay-process.sh emailrelay-notify.sh emailrelay-deliver.sh emailrelay-resubmit.sh emailrelay-submit.sh
 work_scripts = txt2mu.sh mu2html.sh mu2docbook.sh expand.sh txt2html.sh emailrelay.sh
-CLEANFILES = $(noinst_cleanup) $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts)
-TESTS = emailrelay-test.sh
+CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts)
 SUFFIXES = .sh_ .sh
 all: all-am
 
@@ -251,79 +248,6 @@ ctags: CTAGS
 CTAGS:
 
 
-check-TESTS: $(TESTS)
-	@failed=0; all=0; xfail=0; xpass=0; skip=0; ws='[	 ]'; \
-	srcdir=$(srcdir); export srcdir; \
-	list=' $(TESTS) '; \
-	if test -n "$$list"; then \
-	  for tst in $$list; do \
-	    if test -f ./$$tst; then dir=./; \
-	    elif test -f $$tst; then dir=; \
-	    else dir="$(srcdir)/"; fi; \
-	    if $(TESTS_ENVIRONMENT) $${dir}$$tst; then \
-	      all=`expr $$all + 1`; \
-	      case " $(XFAIL_TESTS) " in \
-	      *$$ws$$tst$$ws*) \
-		xpass=`expr $$xpass + 1`; \
-		failed=`expr $$failed + 1`; \
-		echo "XPASS: $$tst"; \
-	      ;; \
-	      *) \
-		echo "PASS: $$tst"; \
-	      ;; \
-	      esac; \
-	    elif test $$? -ne 77; then \
-	      all=`expr $$all + 1`; \
-	      case " $(XFAIL_TESTS) " in \
-	      *$$ws$$tst$$ws*) \
-		xfail=`expr $$xfail + 1`; \
-		echo "XFAIL: $$tst"; \
-	      ;; \
-	      *) \
-		failed=`expr $$failed + 1`; \
-		echo "FAIL: $$tst"; \
-	      ;; \
-	      esac; \
-	    else \
-	      skip=`expr $$skip + 1`; \
-	      echo "SKIP: $$tst"; \
-	    fi; \
-	  done; \
-	  if test "$$failed" -eq 0; then \
-	    if test "$$xfail" -eq 0; then \
-	      banner="All $$all tests passed"; \
-	    else \
-	      banner="All $$all tests behaved as expected ($$xfail expected failures)"; \
-	    fi; \
-	  else \
-	    if test "$$xpass" -eq 0; then \
-	      banner="$$failed of $$all tests failed"; \
-	    else \
-	      banner="$$failed of $$all tests did not behave as expected ($$xpass unexpected passes)"; \
-	    fi; \
-	  fi; \
-	  dashes="$$banner"; \
-	  skipped=""; \
-	  if test "$$skip" -ne 0; then \
-	    skipped="($$skip tests were not run)"; \
-	    test `echo "$$skipped" | wc -c` -le `echo "$$banner" | wc -c` || \
-	      dashes="$$skipped"; \
-	  fi; \
-	  report=""; \
-	  if test "$$failed" -ne 0 && test -n "$(PACKAGE_BUGREPORT)"; then \
-	    report="Please report to $(PACKAGE_BUGREPORT)"; \
-	    test `echo "$$report" | wc -c` -le `echo "$$banner" | wc -c` || \
-	      dashes="$$report"; \
-	  fi; \
-	  dashes=`echo "$$dashes" | sed s/./=/g`; \
-	  echo "$$dashes"; \
-	  echo "$$banner"; \
-	  test -z "$$skipped" || echo "$$skipped"; \
-	  test -z "$$report" || echo "$$report"; \
-	  echo "$$dashes"; \
-	  test "$$failed" -eq 0; \
-	else :; fi
-
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -351,7 +275,6 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-am
 all-am: Makefile $(SCRIPTS) $(DATA)
 installdirs:
@@ -441,9 +364,9 @@ uninstall-am: uninstall-e_examplesDATA uninstall-e_initSCRIPTS \
 
 .MAKE: install-am install-strip
 
-.PHONY: all all-am check check-TESTS check-am clean clean-generic \
-	distclean distclean-generic distdir dvi dvi-am html html-am \
-	info info-am install install-am install-data install-data-am \
+.PHONY: all all-am check check-am clean clean-generic distclean \
+	distclean-generic distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am \
 	install-data-local install-dvi install-dvi-am \
 	install-e_examplesDATA install-e_initSCRIPTS install-exec \
 	install-exec-am install-html install-html-am install-info \

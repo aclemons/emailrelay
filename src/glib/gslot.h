@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gslot.h
@@ -138,13 +135,16 @@ public:
 class Signal0 : public noncopyable 
 {
 private:
+	bool m_emitted ;
+	bool m_once ;
 	Slot0 m_slot ;
 public:
-	Signal0() {}
-	void emit() { m_slot.callback() ; }
+	explicit Signal0( bool once = false ) : m_emitted(false) , m_once(once) {}
+	void emit() { if(!m_once||!m_emitted) { m_emitted = true ; m_slot.callback() ; } }
 	void connect( Slot0 slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
 	void disconnect() { m_slot = Slot0() ; }
 	bool connected() const { return m_slot.base() != NULL ; }
+	void reset() { m_emitted = false ; }
 } ;
 
 /// Function: slot

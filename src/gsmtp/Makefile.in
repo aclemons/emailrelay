@@ -48,11 +48,12 @@ ARFLAGS = cru
 libgsmtp_a_AR = $(AR) $(ARFLAGS)
 libgsmtp_a_LIBADD =
 am_libgsmtp_a_OBJECTS = gadminserver.$(OBJEXT) gbase64.$(OBJEXT) \
-	gclientprotocol.$(OBJEXT) gfilestore.$(OBJEXT) \
-	gmessagestore.$(OBJEXT) gmessagestore_unix.$(OBJEXT) \
-	gnewfile.$(OBJEXT) gnewmessage.$(OBJEXT) gprocessor.$(OBJEXT) \
+	gclientprotocol.$(OBJEXT) gexecutableprocessor.$(OBJEXT) \
+	gfilestore.$(OBJEXT) gmessagestore.$(OBJEXT) \
+	gmessagestore_unix.$(OBJEXT) gnetworkprocessor.$(OBJEXT) \
+	gnewfile.$(OBJEXT) gnewmessage.$(OBJEXT) \
+	gnullprocessor.$(OBJEXT) gprocessor.$(OBJEXT) \
 	gprotocolmessage.$(OBJEXT) gprotocolmessageforward.$(OBJEXT) \
-	gprotocolmessagescanner.$(OBJEXT) \
 	gprotocolmessagestore.$(OBJEXT) gsasl_native.$(OBJEXT) \
 	gscannerclient.$(OBJEXT) gsecrets.$(OBJEXT) \
 	gserverprotocol.$(OBJEXT) gsmtpclient.$(OBJEXT) \
@@ -128,7 +129,6 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
-POPLIB = @POPLIB@
 QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
@@ -197,36 +197,40 @@ libgsmtp_a_SOURCES = \
 	gbase64.h \
 	gclientprotocol.cpp \
 	gclientprotocol.h \
+	gexecutableprocessor.cpp \
+	gexecutableprocessor.h \
 	gfilestore.cpp \
 	gfilestore.h \
 	gmessagestore.cpp \
 	gmessagestore.h \
 	gmessagestore_unix.cpp \
+	gnetworkprocessor.cpp \
+	gnetworkprocessor.h \
 	gnewfile.cpp \
 	gnewfile.h \
 	gnewmessage.cpp \
 	gnewmessage.h \
+	gnullprocessor.cpp \
+	gnullprocessor.h \
 	gprocessor.cpp \
 	gprocessor.h \
 	gprotocolmessage.cpp \
-	gprotocolmessage.h \
 	gprotocolmessageforward.cpp \
 	gprotocolmessageforward.h \
-	gprotocolmessagescanner.cpp \
-	gprotocolmessagescanner.h \
+	gprotocolmessage.h \
 	gprotocolmessagestore.cpp \
 	gprotocolmessagestore.h \
-	gsasl_native.cpp \
 	gsasl.h \
+	gsasl_native.cpp \
 	gscannerclient.cpp \
 	gscannerclient.h \
 	gsecrets.cpp \
 	gsecrets.h \
 	gserverprotocol.cpp \
 	gserverprotocol.h \
-	gsmtp.h \
 	gsmtpclient.cpp \
 	gsmtpclient.h \
+	gsmtp.h \
 	gsmtpserver.cpp \
 	gsmtpserver.h \
 	gstoredfile.cpp \
@@ -286,15 +290,17 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gadminserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbase64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gclientprotocol.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutableprocessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilestore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnetworkprocessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewmessage.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnullprocessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprocessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessageforward.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessagescanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessagestore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsasl_native.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gscannerclient.Po@am__quote@

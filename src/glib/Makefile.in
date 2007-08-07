@@ -54,7 +54,8 @@ am_libglib_a_OBJECTS = md5.$(OBJEXT) garg.$(OBJEXT) \
 	glogoutput.$(OBJEXT) glogoutput_unix.$(OBJEXT) \
 	gmd5_native.$(OBJEXT) gpath.$(OBJEXT) gpidfile.$(OBJEXT) \
 	gprocess_unix.$(OBJEXT) groot.$(OBJEXT) gslot.$(OBJEXT) \
-	gstr.$(OBJEXT) gtime.$(OBJEXT) gxtext.$(OBJEXT)
+	gstr.$(OBJEXT) gtest.$(OBJEXT) gtime.$(OBJEXT) \
+	gxtext.$(OBJEXT)
 libglib_a_OBJECTS = $(am_libglib_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -125,7 +126,6 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
-POPLIB = @POPLIB@
 QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
@@ -253,12 +253,16 @@ libglib_a_SOURCES = \
 	groot.cpp \
 	groot.h \
 	gsetter.h \
+	gsignalsafe.h \
+	gsleep.h \
 	gslot.cpp \
 	gslot.h \
 	gstatemachine.h \
 	gstr.cpp \
 	gstr.h \
 	gstrings.h \
+	gtest.cpp \
+	gtest.h \
 	gtime.cpp \
 	gtime.h \
 	gxtext.cpp \
@@ -337,6 +341,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/groot.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gslot.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtime.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gxtext.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Po@am__quote@

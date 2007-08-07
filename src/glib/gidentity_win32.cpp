@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gidentity_win32.cpp
@@ -79,6 +76,10 @@ bool G::Identity::operator!=( const Identity & other ) const
 	return false ;
 }
 
+void G::Identity::setEffectiveUser( SignalSafe )
+{
+}
+
 void G::Identity::setEffectiveUser( bool do_throw )
 {
 }
@@ -88,6 +89,10 @@ void G::Identity::setRealUser( bool do_throw )
 }
 
 void G::Identity::setEffectiveGroup( bool do_throw )
+{
+}
+
+void G::Identity::setEffectiveGroup( SignalSafe )
 {
 }
 
@@ -105,11 +110,19 @@ void G::IdentityUser::setEffectiveUserTo( Identity , bool )
 {
 }
 
+void G::IdentityUser::setEffectiveUserTo( SignalSafe , Identity )
+{
+}
+
 void G::IdentityUser::setRealGroupTo( Identity , bool )
 {
 }
 
 void G::IdentityUser::setEffectiveGroupTo( Identity , bool )
+{
+}
+
+void G::IdentityUser::setEffectiveGroupTo( SignalSafe , Identity )
 {
 }
 

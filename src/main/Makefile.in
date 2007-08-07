@@ -56,7 +56,7 @@ PROGRAMS = $(libexec_PROGRAMS) $(sbin_PROGRAMS)
 am_emailrelay_OBJECTS = commandline.$(OBJEXT) configuration.$(OBJEXT) \
 	legal.$(OBJEXT) main.$(OBJEXT) output.$(OBJEXT) run.$(OBJEXT)
 emailrelay_OBJECTS = $(am_emailrelay_OBJECTS)
-emailrelay_DEPENDENCIES = $(top_builddir)/src/gpop/$(POPLIB) \
+emailrelay_DEPENDENCIES = $(top_builddir)/src/gpop/libgpop.a \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gnet/libgnet.a \
@@ -77,7 +77,8 @@ emailrelay_submit_OBJECTS = $(am_emailrelay_submit_OBJECTS)
 emailrelay_submit_DEPENDENCIES = $(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a
+	$(top_builddir)/src/gnet/lib$(IP).a \
+	$(top_builddir)/src/glib/libglib.a
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -159,7 +160,6 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
-POPLIB = @POPLIB@
 QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
@@ -235,7 +235,6 @@ EXTRA_DIST = \
 	passwd.dsp \
 	poke.dsp \
 	resource.h \
-	scanner.cpp \
 	submit.dsp \
 	winapp.cpp \
 	winapp.h \
@@ -263,7 +262,7 @@ emailrelay_SOURCES = \
 	run.h
 
 emailrelay_LDADD = \
-	$(top_builddir)/src/gpop/$(POPLIB) \
+	$(top_builddir)/src/gpop/libgpop.a \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gnet/libgnet.a \
@@ -278,7 +277,8 @@ emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a
+	$(top_builddir)/src/gnet/lib$(IP).a \
+	$(top_builddir)/src/glib/libglib.a
 
 emailrelay_filter_copy_SOURCES = filter_copy.cpp legal.cpp
 emailrelay_filter_copy_LDADD = \

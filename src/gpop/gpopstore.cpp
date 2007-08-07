@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gpopstore.cpp
@@ -28,6 +25,7 @@
 #include "gfile.h"
 #include "gdirectory.h"
 #include "gmemory.h"
+#include "gtest.h"
 #include "groot.h"
 #include "gassert.h"
 #include <sstream>
@@ -36,6 +34,7 @@
 namespace GPop
 {
 	struct FileReader ;
+	struct DirectoryReader ;
 	struct FileDeleter ;
 }
 
@@ -48,7 +47,14 @@ struct GPop::FileReader
 	FileReader() {}
 } ;
 
-// ==
+/// \class GPop::DirectoryReader
+/// A trivial class which is used like G::Root by GPop::Store for reading 
+///  directory listings.
+/// 
+struct GPop::DirectoryReader : private G::Root
+{
+	DirectoryReader() {}
+} ;
 
 /// \class GPop::FileDeleter
 /// A trivial specialisation of G::Root used by GPop::Store for deleting files.
@@ -90,8 +96,12 @@ void GPop::Store::checkPath( G::Path dir_path , bool by_name , bool allow_delete
 		if( !valid(dir_path,false) )
 			throw InvalidDirectory() ;
 
-		G::Directory dir( dir_path ) ;
-		G::DirectoryIterator iter( dir ) ;
+		G::DirectoryList iter ;
+		{
+			DirectoryReader claim_reader ;
+			iter.init( dir_path ) ;
+		}
+
 		int n = 0 ;
 		while( iter.more() )
 		{
@@ -103,7 +113,10 @@ void GPop::Store::checkPath( G::Path dir_path , bool by_name , bool allow_delete
 			}
 		}
 		if( n == 0 )
-			G_WARNING( "GPop::Store: no sub-directories for pop-by-name found in \"" << dir_path << "\": create one sub-directory for each authorised pop account" ) ;
+		{
+			G_WARNING( "GPop::Store: no sub-directories for pop-by-name found in \"" << dir_path << "\": "
+				<< "create one sub-directory for each authorised pop account" ) ;
+		}
 	}
 	else if( !valid(dir_path,allow_delete) )
 	{
@@ -134,7 +147,6 @@ bool GPop::Store::valid( G::Path dir_path , bool allow_delete )
 	return ok ;
 }
 
-
 // ===
 
 GPop::StoreLock::File::File( const G::Path & content_path ) :
@@ -156,12 +168,7 @@ bool GPop::StoreLock::File::operator<( const File & rhs ) const
 
 GPop::StoreLock::Size GPop::StoreLock::File::toSize( const std::string & s )
 {
-	// could do better...
-	Size size = 0 ;
-	std::stringstream ss ;
-	ss << s ;
-	ss >> size ;
-	return size ;
+	return G::Str::toULong( s , true ) ;
 }
 
 // ===
@@ -184,13 +191,25 @@ void GPop::StoreLock::lock( const std::string & user )
 
 	// build a read-only list of files (inc. file sizes)
 	{
-		FileReader claim_reader ;
-		G::Directory dir( m_dir ) ;
-		G::DirectoryIterator iter( dir , "emailrelay.*.envelope" ) ;
+		DirectoryReader claim_reader ;
+		G::DirectoryList iter ;
+		iter.init( m_dir , "emailrelay.*.envelope" ) ;
 		while( iter.more() )
 		{
 			File file( contentPath(iter.fileName().str()) ) ;
 			m_initial.insert( file ) ;
+		}
+	}
+
+	if( G::Test::enabled("large-pop-list") )
+	{
+		// create a larger list
+		unsigned int limit = m_initial.size() * 1000U ;
+		for( unsigned int i = 0U ; i < limit ; i++ )
+		{
+			std::ostringstream ss ;
+			ss << "dummy." << i << ".content" ;
+			m_initial.insert( File(ss.str()) ) ;
 		}
 	}
 
@@ -438,8 +457,11 @@ bool GPop::StoreLock::unlinked( Store & store , const File & file ) const
 	// look for corresponding envelopes in all child directories
 	bool found = false ;
 	{
-		G::Directory base_dir( store.dir() ) ;
-		G::DirectoryIterator iter( base_dir ) ;
+		G::DirectoryList iter ;
+		{
+			DirectoryReader claim_reader ;
+			iter.init( store.dir() ) ;
+		}
 		while( iter.more() )
 		{
 			if( ! iter.isDir() ) continue ;

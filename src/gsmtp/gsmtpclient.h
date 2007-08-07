@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gsmtpclient.h
@@ -70,37 +67,46 @@ public:
 		Config( G::Executable , GNet::Address , ClientProtocol::Config , unsigned int ) ;
 	} ;
 
-	Client( const GNet::ResolverInfo & remote , MessageStore & store , const Secrets & secrets , Config config ) ;
-		///< Constructor for sending messages from the message
-		///< store. All the references are kept.
+	Client( const GNet::ResolverInfo & remote , const Secrets & secrets , Config config ) ;
+		///< Constructor. Starts connecting immediately.
 		///<
-		///< All instances must be on the heap since they delete
-		///< themselves after raising the done signal.
+		///< All Client instances must be on the heap since they 
+		///< delete themselves after raising the done signal.
+
+	static std::auto_ptr<Processor> newProcessor( Config ) ;
+		///< A convenience factory function for a heap-allocated processor.
+
+	void sendMessages( MessageStore & store ) ;
+		///< Sends all messages from the given message store once 
+		///< connected and deletes itself when done. This must be 
+		///< used immediately after construction with a non-empty 
+		///< message store.
 		///<
-		///< The doneSignal() is used to indicate that all message 
-		///< processing has finished or that the server connection has
-		///< been lost.
+		///< The base class doneSignal() can be used as an indication
+		///< that all messages have been sent and the object has
+		///< deleted itself.
 
-	Client( const GNet::ResolverInfo & remote , std::auto_ptr<StoredMessage> message , 
-		const Secrets & secrets , Config config ) ;
-			///< Constructor for sending a single message.
-			///< The references are kept.
-			///<
-			///< All instances must be on the heap since they delete
-			///< themselves after raising the done signal.
-			///<
-			///< The doneSignal() is used to indicate that all
-			///< message processing has finished or that the 
-			///< server connection has been lost.
-			///<
-			///< With this constructor (designed for proxying) the 
-			///< message is fail()ed if the connection to the 
-			///< downstream server cannot be made.
+	void sendMessage( std::auto_ptr<StoredMessage> message ) ;
+		///< Starts sending the given message. Cannot be called
+		///< if there is a message already in the pipeline.
+		///<
+		///< The messageDoneSignal() is used to indicate that the message 
+		///< processing has finished or failed.
+		///<
+		///< The message is fail()ed if it cannot be sent. If this
+		///< Client object is deleted before the message is sent
+		///< the message is neither fail()ed or destroy()ed.
 
+	G::Signal1<std::string> & messageDoneSignal() ;
+		///< Returns a signal that indicates that sendMessage()
+		///< has completed or failed.
+
+protected:
 	virtual ~Client() ;
 		///< Destructor.
 
 private:
+	static Processor * newProcessor( G::Executable ) ;
 	virtual void onConnect() ; // GNet::SimpleClient
 	virtual bool onReceive( const std::string & ) ; // GNet::Client
 	virtual void onDelete( const std::string & , bool ) ; // GNet::HeapClient
@@ -117,11 +123,11 @@ private:
 
 private:
 	MessageStore * m_store ;
-	Processor m_storedfile_preprocessor ;
+	std::auto_ptr<Processor> m_processor ;
 	std::auto_ptr<StoredMessage> m_message ;
 	MessageStore::Iterator m_iter ;
 	ClientProtocol m_protocol ;
-	bool m_force_message_fail ;
+	G::Signal1<std::string> m_message_done_signal ;
 } ;
 
 #endif

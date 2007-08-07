@@ -14,6 +14,9 @@
 
 @SET_MAKE@
 
+#
+#
+
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -54,7 +57,7 @@ am_libgnet_a_OBJECTS = gbufferedclient.$(OBJEXT) \
 	gresolverinfo.$(OBJEXT) gresolver_unix.$(OBJEXT) \
 	gsender.$(OBJEXT) gserver.$(OBJEXT) gsimpleclient.$(OBJEXT) \
 	gsimpleclient_unix.$(OBJEXT) gsocket.$(OBJEXT) \
-	gsocket_unix.$(OBJEXT) gtimer.$(OBJEXT)
+	gsocket_unix.$(OBJEXT) gtimer.$(OBJEXT) gtimerlist.$(OBJEXT)
 libgnet_a_OBJECTS = $(am_libgnet_a_OBJECTS)
 libipv4_a_AR = $(AR) $(ARFLAGS)
 libipv4_a_LIBADD =
@@ -136,7 +139,6 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
-POPLIB = @POPLIB@
 QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
@@ -253,7 +255,9 @@ libgnet_a_SOURCES = \
 	gsocket.h \
 	gsocket_unix.cpp \
 	gtimer.cpp \
-	gtimer.h
+	gtimer.h \
+	gtimerlist.cpp \
+	gtimerlist.h
 
 libipv4_a_SOURCES = gaddress_ipv4.cpp gresolver_ipv4.cpp
 libipv6_a_SOURCES = gaddress_ip.cpp gresolver_ip.cpp
@@ -340,6 +344,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocket_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtimer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtimerlist.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

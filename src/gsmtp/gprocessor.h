@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gprocessor.h
@@ -26,7 +23,6 @@
 
 #include "gdef.h"
 #include "gsmtp.h"
-#include "gexe.h"
 #include "gslot.h"
 
 /// \namespace GSmtp
@@ -36,61 +32,61 @@ namespace GSmtp
 }
 
 /// \class GSmtp::Processor
-/// Processes message files using an external preprocessor
-/// program.
+/// An interface for processing message files.
+/// \code
+///
+/// Foo::process()
+/// {
+///   m_processor->start( message ) ;
+/// }
+/// void Foo::processorDone( bool ok )
+/// {
+///   if( ok ) { ... }
+///   else if( m_processor->cancelled() ) { ... }
+///   else { handleError(m_processor->text()) ; }
+///   if( m_processor->repoll() ) { ... }
+/// }
+/// \endcode
 ///
 class GSmtp::Processor 
 {
 public:
-	explicit Processor( const G::Executable & preprocessor ) ;
-		///< Constructor.
+	virtual ~Processor() ;
+		///< Destructor.
 
-	G::Signal1<bool> & doneSignal() ;
+	virtual void start( const std::string & path ) = 0 ;
+		///< Starts the processor for the given message file.
+		///<
+		///< Any previous, incomplete processing is abort()ed. 
+		///<
+		///< Asynchronous completion is indicated by a doneSignal(). 
+		///< The signal may be raised before start() returns.
+
+	virtual G::Signal1<bool> & doneSignal() = 0 ;
 		///< Returns a signal which is raised once start() has
-		///< completed. The signal parameter is equivalent
-		///< to the process() return value.
+		///< completed or failed. The signal parameter is a 
+		///< success flag.
 
-	void start( const std::string & path ) ;
-		///< Starts the processor asynchronously.
-		///< Any previous, incomplete processing 
-		///< is abort()ed. Asynchronous completion
-		///< is indicated by the doneSignal().
-
-	void abort() ;
+	virtual void abort() = 0 ;
 		///< Aborts any incomplete processing.
 
-	std::string text( const std::string & default_ = std::string() ) const ;
-		///< Returns the empty string if process() returned 
-		///< true, or the "<<text>>" output by the processor
-		///< program. If process() returned false and
-		///< there was no text from the processor then
-		///< the given default string is returned.
+	virtual std::string text() const = 0 ;
+		///< Returns a non-empty reason string if the 
+		///< processor failed.
 
-	bool cancelled() const ;
-		///< Returns true if the exit code indicated that 
+	virtual bool cancelled() const = 0 ;
+		///< Returns true if the processor failed and
 		///< further message processesing is to be cancelled.
-		///< (If cancelled() then process() returns false.)
 
-	bool repoll() const ;
-		///< Returns true if the exit code indicated that 
+	virtual bool repoll() const = 0 ;
+		///< Returns true if the processor indicated that 
 		///< the message store should be repolled immediately.
-		///< (This indicator is independent of cancelled().)
+		///< This this indicator is a side-effect of
+		///< message processing, independent of success
+		///< or failure.
 
 private:
-	Processor( const Processor & ) ; // not implemented
 	void operator=( const Processor & ) ; // not implemented
-	int preprocessCore( const G::Path & ) ;
-	std::string parseOutput( std::string ) const ;
-	bool process( const std::string & path ) ;
-	static std::string execErrorHandler( int error ) ;
-
-private:
-	G::Signal1<bool> m_done_signal ;
-	G::Executable m_exe ;
-	std::string m_text ;
-	bool m_ok ;
-	bool m_cancelled ;
-	bool m_repoll ;
 } ;
 
 #endif

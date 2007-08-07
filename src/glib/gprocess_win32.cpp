@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gprocess_win32.cpp
@@ -144,7 +141,7 @@ G::Process::Id::Id()
 	m_pid = static_cast<unsigned int>(::_getpid()) ; // or ::GetCurrentProcessId()
 }
 
-G::Process::Id::Id( const char * path ) :
+G::Process::Id::Id( SignalSafe , const char * path ) :
 	m_pid(0)
 {
 	std::ifstream file( path ? path : "" ) ;
@@ -211,7 +208,7 @@ int G::Process::errno_()
 
 std::string G::Process::strerror( int errno_ )
 {
-	std::stringstream ss ;
+	std::ostringstream ss ;
 	ss << errno_ ; // could do better
 	return ss.str() ;
 }
@@ -261,9 +258,22 @@ G::Identity G::Process::beOrdinary( Identity identity , bool )
 	return identity ;
 }
 
-void G::Process::beSpecial( Identity , bool )
+G::Identity G::Process::beOrdinary( SignalSafe , Identity identity , bool )
+{
+	// not implemented -- see also ImpersonateLoggedOnUser()
+	return identity ;
+}
+
+G::Identity G::Process::beSpecial( Identity identity , bool )
 {
 	// not implemented -- see also RevertToSelf()
+	return identity ;
+}
+
+G::Identity G::Process::beSpecial( SignalSafe , Identity identity , bool )
+{
+	// not implemented -- see also RevertToSelf()
+	return identity ;
 }
 
 void G::Process::revokeExtraGroups()
@@ -323,7 +333,6 @@ G::Pipe::~Pipe()
 	}
 }
 
-//static
 HANDLE G::Pipe::create( HANDLE & h_write , bool do_throw )
 {
 	static SECURITY_ATTRIBUTES zero_attributes ;
@@ -345,7 +354,6 @@ HANDLE G::Pipe::create( HANDLE & h_write , bool do_throw )
 	return h_read ;
 }
 
-//static
 HANDLE G::Pipe::duplicate( HANDLE h , bool do_throw )
 {
 	HANDLE result = HNULL ;

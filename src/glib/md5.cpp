@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // md5.cpp
@@ -138,14 +135,12 @@ void md5::digest::operator()( const block & m , aux_fn_t aux , Permutation p , s
 	if( p == BCDA ) b = op( m , aux , b , c , d , a , k , s , i ) ;
 }
 
-//static
 md5::big_t md5::digest::op( const block & m , aux_fn_t aux , big_t a , big_t b , big_t c , big_t d , 
 	small_t k , small_t s , small_t i )
 {
 	return b + rot32( s , ( a + (*aux)( b , c , d ) + m.X(k) + T(i) ) ) ;
 }
 
-//static
 md5::big_t md5::digest::rot32( small_t places , big_t n )
 {
 	// circular rotate of 32 LSBs, with corruption of higher bits
@@ -154,31 +149,26 @@ md5::big_t md5::digest::rot32( small_t places , big_t n )
 	return ( n << places ) | ( overflow & overflow_mask ) ;
 }
 
-//static
 md5::big_t md5::digest::F( big_t x , big_t y , big_t z )
 {
 	return ( x & y ) | ( ~x & z ) ;
 }
 
-//static
 md5::big_t md5::digest::G( big_t x , big_t y , big_t z )
 {
 	return ( x & z ) | ( y & ~z ) ;
 }
 
-//static
 md5::big_t md5::digest::H( big_t x , big_t y , big_t z )
 {
 	return x ^ y ^ z ;
 }
 
-//static
 md5::big_t md5::digest::I( big_t x , big_t y , big_t z )
 {
 	return y ^ ( x | ~z ) ;
 }
 
-//static
 md5::big_t md5::digest::T( small_t i )
 {
 	// T = static_cast<big_t>( 4294967296.0 * std::fabs(std::sin(static_cast<double>(i))) ) for 1 <= i <= 64
@@ -265,7 +255,6 @@ md5::string_type md5::format::raw( const digest::state_type & d )
 	return result ;
 }
 
-//static
 md5::string_type md5::format::raw( big_t n )
 {
 	string_type result ;
@@ -293,7 +282,6 @@ md5::string_type md5::format::rfc( const digest::state_type & d )
 	return result ;
 }
 
-//static
 md5::string_type md5::format::str( big_t n )
 {
 	string_type result ;
@@ -305,13 +293,11 @@ md5::string_type md5::format::str( big_t n )
 	return result ;
 }
 
-//static
 md5::string_type md5::format::str2( small_t n )
 {
 	return str1((n>>4U)&0xfU) + str1(n&0xfU) ;
 }
 
-//static
 md5::string_type md5::format::str1( small_t n )
 {
 	n = n <= 15U ? n : 0U ;
@@ -328,7 +314,6 @@ md5::block::block( const md5::string_type & s , small_t block , big_t end_value 
 {
 }
 
-//static
 md5::big_t md5::block::end( small_t length )
 {
 	big_t result = length ;
@@ -336,14 +321,12 @@ md5::big_t md5::block::end( small_t length )
 	return result ;
 }
 
-//static
 md5::small_t md5::block::rounded( small_t raw_byte_count )
 {
 	small_t n = raw_byte_count + 64U ;
 	return n - ( ( raw_byte_count + 8U ) % 64U ) ;
 }
 
-//static
 md5::small_t md5::block::blocks( small_t raw_byte_count )
 {
 	small_t byte_count = rounded(raw_byte_count) + 8U ;

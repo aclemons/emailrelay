@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gsecrets.cpp
@@ -29,6 +26,7 @@
 #include "gstr.h"
 #include "gdatetime.h"
 #include "gfile.h"
+#include "gassert.h"
 #include "gmemory.h"
 #include <map>
 #include <set>
@@ -55,9 +53,10 @@ public:
 private:
 	void process( std::string mechanism , std::string side , std::string id , std::string secret ) ;
 	void read( const G::Path & ) ;
-	void read( std::istream & ) ;
+	unsigned int read( std::istream & ) ;
 	void reread() const ;
 	void reread(int) ;
+	static G::DateTime::EpochTime readFileTime( const G::Path & ) ;
 
 private:
 	typedef std::map<std::string,std::string> Map ;
@@ -135,6 +134,32 @@ bool GSmtp::SecretsImp::valid() const
 	return m_valid ;
 }
 
+void GSmtp::SecretsImp::reread() const
+{
+	(const_cast<SecretsImp*>(this))->reread(0) ;
+}
+
+void GSmtp::SecretsImp::reread( int )
+{
+	G_DEBUG( "GSmtp::SecretsImp::reread" ) ;
+	if( m_auto )
+	{
+		G::DateTime::EpochTime now = G::DateTime::now() ;
+		G_DEBUG( "GSmtp::SecretsImp::reread: file time checked at " << m_check_time << ": now " << now ) ;
+		if( now != m_check_time ) // at most once a second
+		{
+			m_check_time = now ;
+			G::DateTime::EpochTime t = readFileTime( m_path ) ;
+			G_DEBUG( "GSmtp::SecretsImp::reread: current file time " << t << ": saved file time " << m_file_time ) ;
+			if( t != m_file_time )
+			{
+				G_LOG_S( "GSmtp::Secrets: re-reading secrets file: " << m_path ) ;
+				(void) read( m_path ) ;
+			}
+		}
+	}
+}
+
 void GSmtp::SecretsImp::read( const G::Path & path )
 {
 	std::auto_ptr<std::ifstream> file ;
@@ -148,40 +173,24 @@ void GSmtp::SecretsImp::read( const G::Path & path )
 		ss << "reading \"" << path << "\" for " << m_debug_name << " secrets" ;
 		throw Secrets::OpenError( ss.str() ) ;
 	}
+	m_file_time = readFileTime( path ) ;
 
 	m_map.clear() ;
 	m_set.clear() ;
-	m_file_time = G::File::time( path ) ;
-	read( *file.get() ) ;
+	unsigned int count = read( *file.get() ) ;
+	G_DEBUG( "GSmtp::SecretsImp::read: processed " << count << " records" ) ;
 }
 
-void GSmtp::SecretsImp::reread() const
+G::DateTime::EpochTime GSmtp::SecretsImp::readFileTime( const G::Path & path )
 {
-	(const_cast<SecretsImp*>(this))->reread(0) ;
+	G::Root claim_root ;
+	return G::File::time( path ) ;
 }
 
-void GSmtp::SecretsImp::reread( int )
+unsigned int GSmtp::SecretsImp::read( std::istream & file )
 {
-	G_DEBUG( "GSmtp::SecretsImp::reread" ) ;
-	if( m_auto )
-	{
-		G::DateTime::EpochTime now = G::DateTime::now() ;
-		G_DEBUG( "GSmtp::SecretsImp::reread: file time checked at " << m_check_time << ": now " << now ) ;
-		if( now == m_check_time ) return ; // at most once a second
-		m_check_time = now ;
-		G::DateTime::EpochTime t = G::File::time( m_path ) ;
-		G_DEBUG( "GSmtp::SecretsImp::reread: current file time " << t << ": saved file time " << m_file_time ) ;
-		if( t != m_file_time )
-		{
-			G_LOG_S( "GSmtp::Secrets: re-reading secrets file: " << m_path ) ;
-			(void) read( m_path ) ;
-		}
-	}
-}
-
-void GSmtp::SecretsImp::read( std::istream & file )
-{
-	while( file.good() )
+	unsigned int count = 0U ;
+	for( unsigned int line_number = 1U ; file.good() ; ++line_number )
 	{
 		std::string line = G::Str::readLineFrom( file ) ;
 		const std::string ws = " \t" ;
@@ -190,10 +199,24 @@ void GSmtp::SecretsImp::read( std::istream & file )
 		{
 			G::StringArray word_array ;
 			G::Str::splitIntoTokens( line , word_array , ws ) ;
-			if( word_array.size() == 4U )
+			if( word_array.size() > 4U )
+			{
+				G_WARNING( "GSmtp::SecretsImp::read: ignoring extra fields on line " 
+					<< line_number << " of secrets file" ) ;
+			}
+			if( word_array.size() >= 4U )
+			{
 				process( word_array[0U] , word_array[1U] , word_array[2U] , word_array[3U] ) ;
+				count++ ;
+			}
+			else
+			{
+				G_WARNING( "GSmtp::SecretsImp::read: ignoring line " 
+					<< line_number << " of secrets file: too few fields" ) ;
+			}
 		}
 	}
+	return count ;
 }
 
 void GSmtp::SecretsImp::process( std::string mechanism , std::string side , std::string id , std::string secret )

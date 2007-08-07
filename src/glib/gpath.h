@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gpath.h
@@ -74,9 +71,6 @@ public:
 		///< return the empty string.
 
 	std::string str() const ;
-		///< Returns the path string.
-
-	const char * pathCstr() const ;
 		///< Returns the path string.
 
 	std::string basename() const ;
@@ -152,9 +146,6 @@ public:
 	bool operator!=( const Path & path ) const ;
 		///< Comparison operator.
 	
-	void streamOut( std::ostream & stream ) const ;
-		///< Streams out the path.
-
 private:
 	void set( const std::string & path ) ;
 	void normalise() ;
@@ -172,7 +163,7 @@ private:
 private:
 	std::string m_str ;
 	std::string m_extension ;
-	const char *m_dot ;
+	std::string::size_type m_dot ;
 } ;
 
 /// \namespace G
@@ -181,8 +172,7 @@ namespace G
 	inline
 	std::ostream & operator<<( std::ostream & stream , const Path & path )
 	{
-		path.streamOut( stream ) ;
-		return stream ;
+		return stream << path.str() ;
 	}
 
 	inline

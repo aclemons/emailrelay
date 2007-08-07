@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gfilestore.h
@@ -44,6 +41,7 @@ namespace GSmtp
 	class FileStore ;
 	class FileReader ;
 	class FileWriter ;
+	class DirectoryReader ;
 }
 
 /// \class GSmtp::FileStore
@@ -151,14 +149,36 @@ private:
 
 /// \class GSmtp::FileReader
 /// Used by GSmtp::FileStore, GSmtp::NewFile and
-/// GSmtp::StoredFile to claim read permissions.
+/// GSmtp::StoredFile to claim read permissions for 
+/// reading a file.
 /// \see G::Root
 ///
-class GSmtp::FileReader : public G::noncopyable 
+class GSmtp::FileReader : private G::Root 
 {
 public:
 	FileReader() ;
+		///< Default constructor. Switches identity for
+		///< reading a file.
+
 	~FileReader() ;
+		///< Destructor. Switches identity back.
+} ;
+
+/// \class GSmtp::DirectoryReader
+/// Used by GSmtp::FileStore, GSmtp::NewFile and
+/// GSmtp::StoredFile to claim read permissions for 
+/// reading a directory.
+/// \see G::Root
+///
+class GSmtp::DirectoryReader : private G::Root 
+{
+public:
+	DirectoryReader() ;
+		///< Default constructor. Switches identity for
+		///< reading a directory.
+
+	~DirectoryReader() ;
+		///< Destructor. Switches identity back.
 } ;
 
 /// \class GSmtp::FileWriter
@@ -166,14 +186,15 @@ public:
 /// GSmtp::StoredFile to claim write permissions.
 /// \see G::Root
 ///
-class GSmtp::FileWriter : public G::noncopyable 
+class GSmtp::FileWriter : private G::Root , private G::Process::Umask 
 {
 public:
 	FileWriter() ;
+		///< Default constructor. Switches identity for
+		///< writing a file.
+
 	~FileWriter() ;
-private:
-	G::Root m_root ;
-	G::Process::Umask m_umask ;
+		///< Destructor. Switches identity back.
 } ;
 
 #endif

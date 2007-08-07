@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gstoredfile.cpp
@@ -52,7 +49,7 @@ GSmtp::StoredFile::~StoredFile()
 	{
 		unlock() ;
 	}
-	catch(...)
+	catch(...) // dtor
 	{
 	}
 }
@@ -84,7 +81,7 @@ bool GSmtp::StoredFile::readEnvelope( std::string & reason , bool check )
 		readEnvelopeCore( check ) ;
 		return true ;
 	}
-	catch( std::exception & e )
+	catch( std::exception & e ) // invalid file in store
 	{
 		reason = e.what() ;
 		return false ;
@@ -96,7 +93,7 @@ void GSmtp::StoredFile::readEnvelopeCore( bool check )
 	FileReader claim_reader ;
 	std::ifstream stream( m_envelope_path.str().c_str() , std::ios_base::binary | std::ios_base::in ) ;
 	if( ! stream.good() )
-		throw OpenError() ;
+		throw OpenError( m_envelope_path.str() ) ;
 
 	readFormat( stream ) ;
 	readFlag( stream ) ;
@@ -209,13 +206,13 @@ bool GSmtp::StoredFile::openContent( std::string & reason )
 			return false ;
 		}
 
-		G_LOG( "GSmtp::MessageStore: processing envelope \"" << m_envelope_path.basename() << "\"" ) ;
-		G_LOG( "GSmtp::MessageStore: processing content \"" << content_path.basename() << "\"" ) ;
+		G_DEBUG( "GSmtp::MessageStore: processing envelope \"" << m_envelope_path.basename() << "\"" ) ;
+		G_DEBUG( "GSmtp::MessageStore: processing content \"" << content_path.basename() << "\"" ) ;
 
 		m_content = stream ;
 		return true ;
 	}
-	catch( std::exception & e )
+	catch( std::exception & e ) // invalid file in store
 	{
 		G_WARNING( "GSmtp::FileStore: exception: " << e.what() ) ;
 		reason = e.what() ;
@@ -244,7 +241,6 @@ std::string GSmtp::StoredFile::value( const std::string & s , const std::string 
 	return s.substr(pos+2U) ;
 }
 
-//static
 std::string GSmtp::StoredFile::crlf()
 {
 	return std::string( "\015\012" ) ;
@@ -282,27 +278,20 @@ void GSmtp::StoredFile::unlock()
 
 void GSmtp::StoredFile::fail( const std::string & reason )
 {
-	try
+	if( G::File::exists( m_envelope_path ) ) // client-side preprocessing may have removed it
 	{
-		if( G::File::exists( m_envelope_path ) ) // client-side preprocessing may have removed it
-		{
-			addReason( m_envelope_path , reason ) ;
+		addReason( m_envelope_path , reason ) ;
 
-			G::Path bad_path = badPath( m_envelope_path ) ;
-			G_LOG_S( "GSmtp::StoredMessage: failing file: "
-				<< "\"" << m_envelope_path.basename() << "\" -> "
-				<< "\"" << bad_path.basename() << "\"" ) ;
+		G::Path bad_path = badPath( m_envelope_path ) ;
+		G_LOG_S( "GSmtp::StoredMessage: failing file: "
+			<< "\"" << m_envelope_path.basename() << "\" -> "
+			<< "\"" << bad_path.basename() << "\"" ) ;
 
-			FileWriter claim_writer ;
-			G::File::rename( m_envelope_path , bad_path , G::File::NoThrow() ) ;
-		}
-	}
-	catch(...)
-	{
+		FileWriter claim_writer ;
+		G::File::rename( m_envelope_path , bad_path , G::File::NoThrow() ) ;
 	}
 }
 
-//static
 void GSmtp::StoredFile::addReason( const G::Path & path , const std::string & reason )
 {
 	FileWriter claim_writer ;
@@ -311,7 +300,6 @@ void GSmtp::StoredFile::addReason( const G::Path & path , const std::string & re
 	file << FileStore::x() << "Reason: " << reason << crlf() ;
 }
 
-//static
 G::Path GSmtp::StoredFile::badPath( G::Path busy_path )
 {
 	busy_path.removeExtension() ; // "foo.envelope.busy" -> "foo.envelope"
@@ -320,20 +308,14 @@ G::Path GSmtp::StoredFile::badPath( G::Path busy_path )
 
 void GSmtp::StoredFile::destroy()
 {
-	try
-	{
-		FileWriter claim_writer ;
-		G_LOG( "GSmtp::StoredMessage: deleting file: \"" << m_envelope_path.basename() << "\"" ) ;
-		G::File::remove( m_envelope_path , G::File::NoThrow() ) ;
+	FileWriter claim_writer ;
+	G_LOG( "GSmtp::StoredMessage: deleting file: \"" << m_envelope_path.basename() << "\"" ) ;
+	G::File::remove( m_envelope_path , G::File::NoThrow() ) ;
 
-		G::Path content_path = contentPath() ;
-		G_LOG( "GSmtp::StoredMessage: deleting file: \"" << content_path.basename() << "\"" ) ;
-		m_content <<= 0 ; // close it first
-		G::File::remove( content_path , G::File::NoThrow() ) ;
-	}
-	catch(...)
-	{
-	}
+	G::Path content_path = contentPath() ;
+	G_LOG( "GSmtp::StoredMessage: deleting file: \"" << content_path.basename() << "\"" ) ;
+	m_content <<= 0 ; // close it first
+	G::File::remove( content_path , G::File::NoThrow() ) ;
 }
 
 const std::string & GSmtp::StoredFile::from() const 

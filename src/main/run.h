@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file run.h
@@ -71,7 +68,7 @@ namespace Main
 /// }
 /// \endcode
 ///
-class Main::Run : private GNet::TimeoutHandler , private GNet::EventHandler 
+class Main::Run : private GNet::EventHandler 
 {
 public:
 	Run( Output & output , const G::Arg & arg , const std::string & switch_spec ) ;
@@ -86,7 +83,10 @@ public:
 	bool prepare() ;
 		///< Prepares to run() typically by parsing the commandline. 
 		///< Error messages are sent to the Output interface.
-		///< Returns false on error.
+		///< Returns true if run() should be called.
+
+	bool prepareError() const ;
+		///< Returns true if prepare() failed.
 
 	void run() ;
 		///< Runs the application.
@@ -116,11 +116,11 @@ private:
 	void forwardingClientDone( std::string , bool ) ; // Client::doneSignal()
 	void pollingClientDone( std::string , bool ) ; // Client::doneSignal()
 	void clientEvent( std::string , std::string ) ; // Client::eventSignal()
-	virtual void onTimeout( GNet::AbstractTimer & ) ; // from TimeoutHandler
 	virtual void onException( std::exception & ) ; // from EventHandler
 	void raiseStoreEvent( bool ) ;
 	void raiseNetworkEvent( std::string , std::string ) ;
 	void emit( const std::string & , const std::string & , const std::string & ) ;
+	void onPollTimeout() ;
 	std::string doPoll() ;
 	void checkPorts() const ;
 	static void checkPort( const std::string & , unsigned int ) ;
@@ -139,9 +139,10 @@ private:
 	std::auto_ptr<GSmtp::Secrets> m_client_secrets ;
 	std::auto_ptr<GPop::Secrets> m_pop_secrets ;
 	std::auto_ptr<GSmtp::AdminServer> m_admin_server ;
-	std::auto_ptr<GNet::ConcreteTimer> m_poll_timer ;
+	std::auto_ptr<GNet::Timer<Run> > m_poll_timer ;
 	GNet::ResolverInfo m_polling_client_resolver_info ;
 	GNet::ClientPtr<GSmtp::Client> m_polling_client ; // order dependency -- late
+	bool m_prepare_error ;
 } ;
 
 #endif

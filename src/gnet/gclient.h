@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gclient.h
@@ -34,6 +31,7 @@
 /// \namespace GNet
 namespace GNet
 {
+	class ClientTimer ;
 	class Client ;
 }
 
@@ -50,7 +48,7 @@ namespace GNet
 /// are used by the containing object (in particular so that the
 /// container is informed when the client object deletes itself).
 ///
-class GNet::Client : public GNet::BufferedClient , private GNet::TimeoutHandler 
+class GNet::Client : public GNet::BufferedClient 
 {
 public:
 	explicit Client( const ResolverInfo & remote_info , unsigned int connection_timeout = 0U ,
@@ -58,9 +56,6 @@ public:
 		const Address & local_interface = Address(0U) , bool privileged = false , 
 		bool sync_dns = synchronousDnsDefault() ) ;
 			///< Constructor.
-
-	virtual ~Client() ;
-		///< Destructor.
 
 	G::Signal2<std::string,bool> & doneSignal() ;
 		///< Returns a signal that indicates that client processing
@@ -75,13 +70,17 @@ public:
 		///< has happened.
 		///<
 		///< The first signal parameter is one of "connecting",
-		///< "failed", "connected", "sending", or "done".
+		///< "connected", "sending", "failed" (on error) or "done" 
+		///< (for normal termination).
 
 	G::Signal0 & connectedSignal() ;
 		///< Returns a signal that incidcates that the client
 		///< has successfully connected to the server.
 
 protected:
+	virtual ~Client() ;
+		///< Destructor.
+
 	virtual bool onReceive( const std::string & ) = 0 ;
 		///< Called when a complete line is received from the peer.
 		///< Returns false if no more lines should be delivered.
@@ -89,15 +88,18 @@ protected:
 	void clearInput() ;
 		///< Clears any pending input from the server.
 
+    virtual void onDeleteImp( const std::string & , bool ) ; 
+		///< Override from GNet::HeapClient.
+
 private:
 	Client( const Client& ) ; // Not implemented.
 	void operator=( const Client& ) ; // Not implemented.
     virtual void onConnectImp() ; // GNet::SimpleClient
 	virtual void onData( const char * , SimpleClient::size_type ) ; // GNet::SimpleClient
-    virtual void onDeleteImp( const std::string & , bool ) ; // GNet::HeapClient
 	virtual void onConnecting() ; // GNet::HeapClient
 	virtual void onSendImp() ; // GNet::BufferedClient
-	virtual void onTimeout( GNet::AbstractTimer & ) ; // GNet::TimeoutHandler
+	void onConnectionTimeout() ;
+	void onResponseTimeout() ;
 
 private:
 	G::Signal2<std::string,bool> m_done_signal ;
@@ -105,8 +107,8 @@ private:
 	G::Signal0 m_connected_signal ;
 	unsigned int m_connection_timeout ;
 	unsigned int m_response_timeout ;
-	GNet::ConcreteTimer m_connection_timer ;
-	GNet::ConcreteTimer m_response_timer ;
+	GNet::Timer<Client> m_connection_timer ;
+	GNet::Timer<Client> m_response_timer ;
 	GNet::LineBuffer m_line_buffer ;
 } ;
 

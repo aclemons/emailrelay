@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gclient.cpp
@@ -29,10 +26,12 @@ GNet::Client::Client( const ResolverInfo & remote_info , unsigned int connection
 	unsigned int response_timeout , const std::string & eol , const Address & local_interface , 
 	bool privileged , bool sync_dns ) :
 		BufferedClient(remote_info,local_interface,privileged,sync_dns) ,
+		m_done_signal(true) ,
+		m_connected_signal(true) ,
 		m_connection_timeout(connection_timeout) ,
 		m_response_timeout(response_timeout) ,
-		m_connection_timer(*this,*this) ,
-		m_response_timer(*this,*this) ,
+		m_connection_timer(*this,&Client::onConnectionTimeout,*this) ,
+		m_response_timer(*this,&Client::onResponseTimeout,*this) ,
 		m_line_buffer(eol)
 {
 	if( connection_timeout != 0U )
@@ -72,11 +71,14 @@ void GNet::Client::onSendImp()
 		m_response_timer.startTimer( m_response_timeout ) ;
 }
 
-void GNet::Client::onTimeout( GNet::AbstractTimer & timer )
+void GNet::Client::onConnectionTimeout()
 {
-	std::string reason = &timer == &m_connection_timer ? "connection timeout" : "response timeout" ;
-	m_event_signal.emit( "failed" , reason ) ;
-	doDelete( reason ) ;
+	doDelete( "connection timeout" ) ;
+}
+
+void GNet::Client::onResponseTimeout()
+{
+	doDelete( "response timeout" ) ;
 }
 
 G::Signal2<std::string,bool> & GNet::Client::doneSignal()
@@ -97,13 +99,14 @@ G::Signal0 & GNet::Client::connectedSignal()
 void GNet::Client::onData( const char * p , SimpleClient::size_type n )
 {
 	bool first = true ;
-	for( m_line_buffer.add(p,n) ; m_line_buffer.more() ; m_line_buffer.discard() )
+	m_line_buffer.add(p,n) ; 
+	while( m_line_buffer.more() )
 	{
 		if( first && m_response_timeout != 0U )
 			m_response_timer.cancelTimer() ;
 		first = false ;
 
-		bool ok = onReceive( m_line_buffer.current() ) ;
+		bool ok = onReceive( m_line_buffer.line() ) ;
 		if( !ok )
 			break ;
 	}

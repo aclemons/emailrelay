@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gprotocolmessagestore.cpp
@@ -30,62 +27,60 @@
 #include "gassert.h"
 #include "glog.h"
 
-GSmtp::ProtocolMessageStore::ProtocolMessageStore( MessageStore & store , 
-	const G::Executable & newfile_preprocessor_exe ) :
-		m_store(store) ,
-		m_newfile_preprocessor(newfile_preprocessor_exe)
+GSmtp::ProtocolMessageStore::ProtocolMessageStore( MessageStore & store , std::auto_ptr<Processor> processor ) :
+	m_store(store) ,
+	m_processor(processor)
 {
-	m_newfile_preprocessor.doneSignal().connect( G::slot(*this,&ProtocolMessageStore::preprocessorDone) ) ;
+	m_processor->doneSignal().connect( G::slot(*this,&ProtocolMessageStore::preprocessorDone) ) ;
 }
 
 GSmtp::ProtocolMessageStore::~ProtocolMessageStore()
 {
-	m_newfile_preprocessor.doneSignal().disconnect() ;
+	m_processor->doneSignal().disconnect() ;
+}
+
+void GSmtp::ProtocolMessageStore::reset()
+{
+	G_DEBUG( "GSmtp::ProtocolMessageStore::reset" ) ;
+	clear() ;
 }
 
 void GSmtp::ProtocolMessageStore::clear()
 {
+	G_DEBUG( "GSmtp::ProtocolMessageStore::clear" ) ;
 	m_msg <<= 0 ;
 	m_from.erase() ;
-	m_newfile_preprocessor.abort() ;
+	m_processor->abort() ;
 }
 
 bool GSmtp::ProtocolMessageStore::setFrom( const std::string & from )
 {
-	try
-	{
-		if( from.length() == 0U ) // => probably a failure notification message
-			G_WARNING( "GSmtp::ProtocolMessageStore: empty MAIL-FROM return path" ) ;
+	G_DEBUG( "GSmtp::ProtocolMessageStore::setFrom: " << from ) ;
 
-		G_ASSERT( m_msg.get() == NULL ) ;
-		clear() ; // just in case
+	if( from.length() == 0U ) // => probably a failure notification message
+		G_WARNING( "GSmtp::ProtocolMessageStore: empty MAIL-FROM return path" ) ;
 
-		std::auto_ptr<NewMessage> new_message( m_store.newMessage(from) ) ;
-		m_msg <<= new_message.release() ;
+	G_ASSERT( m_msg.get() == NULL ) ;
+	clear() ; // just in case
 
-		m_from = from ;
-		return true ;
-	}
-	catch( std::exception & e )
-	{
-		G_ERROR( "GSmtp::ProtocolMessage::setFrom: exception: " << e.what() ) ;
-		return false ;
-	}
-}
+	std::auto_ptr<NewMessage> new_message( m_store.newMessage(from) ) ;
+	m_msg <<= new_message.release() ;
 
-bool GSmtp::ProtocolMessageStore::prepare()
-{
-	return false ; // no async preparation required for this class
+	m_from = from ;
+	return true ; // accept any name
 }
 
 bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , Verifier::Status to_status )
 {
+	G_DEBUG( "GSmtp::ProtocolMessageStore::addTo: " << to ) ;
+
 	G_ASSERT( m_msg.get() != NULL ) ;
 	if( to.length() > 0U && m_msg.get() != NULL )
 	{
 		if( !to_status.is_valid )
 		{
-			G_WARNING( "GSmtp::ProtocolMessage: rejecting recipient \"" <<to << "\": "<< to_status.reason << ": " << to_status.help );
+			G_WARNING( "GSmtp::ProtocolMessage: rejecting recipient \"" << to << "\": "
+				<< to_status.reason << ": " << to_status.help );
 			return false ;
 		}
 		else
@@ -102,6 +97,7 @@ bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , Verifier::Stat
 
 void GSmtp::ProtocolMessageStore::addReceived( const std::string & line )
 {
+	G_DEBUG( "GSmtp::ProtocolMessageStore::addReceived" ) ;
 	addText( line ) ;
 }
 
@@ -130,9 +126,9 @@ void GSmtp::ProtocolMessageStore::process( const std::string & auth_id , const s
 		std::string message_location = m_msg->prepare( auth_id , client_ip ) ; 
 
 		// start preprocessing
-		m_newfile_preprocessor.start( message_location ) ;
+		m_processor->start( message_location ) ;
 	}
-	catch( std::exception & e )
+	catch( std::exception & e ) // catch preprocessing errors
 	{
 		G_ERROR( "GSmtp::ProtocolMessage::process: exception: " << e.what() ) ;
 		clear() ;
@@ -150,25 +146,27 @@ void GSmtp::ProtocolMessageStore::preprocessorDone( bool ok )
 			throw G::Exception( "internal error" ) ; // never gets here
 
 		unsigned long id = 0UL ;
+		std::string reason ;
 		if( ok )
 		{
 			m_msg->commit() ;
 			id = m_msg->id() ;
 		}
-		else if( ! m_newfile_preprocessor.cancelled() )
+		else if( ! m_processor->cancelled() )
 		{
-			std::string reason = m_newfile_preprocessor.text("pre-processing failed") ;
-			throw ProtocolMessage::ProcessingError( reason ) ;
+			reason = m_processor->text() ;
+			reason = reason.empty() ? "error" : reason ;
+			G_LOG_S( "GSmtp::ProtocolMessageStore::preprocessorDone: error storing message: " << reason ) ;
 		}
-		if( m_newfile_preprocessor.repoll() )
+		if( m_processor->repoll() )
 		{
 			m_store.repoll() ;
 		}
 		clear() ;
 		G_DEBUG( "ProtocolMessageStore::preprocessorDone: emiting done signal" ) ;
-		m_done_signal.emit( true , id , std::string() ) ;
+		m_done_signal.emit( reason.empty() , id , reason ) ;
 	}
-	catch( std::exception & e )
+	catch( std::exception & e ) // catch preprocessing errors
 	{
 		G_ERROR( "GSmtp::ProtocolMessage::preprocessorDone: exception: " << e.what() ) ;
 		clear() ;
@@ -179,11 +177,6 @@ void GSmtp::ProtocolMessageStore::preprocessorDone( bool ok )
 G::Signal3<bool,unsigned long,std::string> & GSmtp::ProtocolMessageStore::doneSignal()
 {
 	return m_done_signal ;
-}
-
-G::Signal3<bool,bool,std::string> & GSmtp::ProtocolMessageStore::preparedSignal()
-{
-	return m_prepared_signal ;
 }
 
 /// \file gprotocolmessagestore.cpp

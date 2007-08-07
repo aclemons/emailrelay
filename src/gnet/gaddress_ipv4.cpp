@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gaddress_ipv4.cpp
@@ -102,7 +99,6 @@ public:
 
 char GNet::AddressImp::m_port_separator = ':' ;
 
-//static
 int GNet::AddressImp::family()
 {
 	return AF_INET ;
@@ -247,13 +243,11 @@ std::string GNet::AddressImp::hostString() const
 	return ss.str() ;
 }
 
-//static
 bool GNet::AddressImp::validPort( unsigned int port )
 {
 	return port <= 0xFFFFU ; // port numbers are now explicitly 16 bits, not short ints
 }
 
-//static
 bool GNet::AddressImp::validString( const std::string & s , std::string * reason_p )
 {
 	std::string buffer ;
@@ -300,19 +294,16 @@ bool GNet::AddressImp::validString( const std::string & s , std::string * reason
 	return true ;
 }
 
-//static
 bool GNet::AddressImp::validPortNumber( const std::string & s )
 {
 	return validNumber(s) && G::Str::isUInt(s) && validPort(G::Str::toUInt(s)) ;
 }
 
-//static
 bool GNet::AddressImp::validNumber( const std::string & s )
 {
 	return s.length() != 0U && G::Str::isNumeric(s) ;
 }
 
-//static
 bool GNet::AddressImp::validPart( const std::string & s )
 {
 	return validNumber(s) && G::Str::toUInt(s,true) <= 255U ;
@@ -335,7 +326,6 @@ bool GNet::AddressImp::sameHost( const AddressImp & other ) const
 		sameAddr( m_inet.sin_addr , other.m_inet.sin_addr ) ;
 }
 
-//static
 bool GNet::AddressImp::sameAddr( const ::in_addr & a , const ::in_addr & b )
 {
 	return a.s_addr == b.s_addr ;
@@ -365,19 +355,16 @@ void GNet::AddressImp::set( const sockaddr * general )
 
 // ===
 
-//static
 GNet::Address GNet::Address::invalidAddress()
 {
 	return Address( 0U ) ;
 }
 
-//static
 GNet::Address GNet::Address::localhost( unsigned int port )
 {
 	return Address( port , Localhost() ) ;
 }
 
-//static
 GNet::Address GNet::Address::broadcastAddress( unsigned int port )
 {
 	return Address( port , Broadcast() ) ;
@@ -450,9 +437,12 @@ void GNet::Address::setPort( unsigned int port )
 
 void GNet::Address::operator=( const Address & addr )
 {
-	delete m_imp ;
-	m_imp = NULL ;
-	m_imp = new AddressImp(*addr.m_imp) ;
+	if( this != &addr )
+	{
+		delete m_imp ;
+		m_imp = NULL ;
+		m_imp = new AddressImp(*addr.m_imp) ;
+	}
 }
 
 bool GNet::Address::operator==( const Address & other ) const
@@ -502,7 +492,6 @@ std::string GNet::Address::hostString() const
 	return m_imp->hostString() ;
 }
 
-//static
 bool GNet::Address::validString( const std::string & s , std::string * reason_p )
 {
 	return AddressImp::validString( s , reason_p ) ;
@@ -533,13 +522,11 @@ unsigned long GNet::Address::scopeId( unsigned long default_ ) const
 	return default_ ;
 }
 
-//static
 bool GNet::Address::validPort( unsigned int port )
 {
 	return AddressImp::validPort( port ) ;
 }
 
-//static
 int GNet::Address::defaultDomain()
 {
 	return PF_INET ;

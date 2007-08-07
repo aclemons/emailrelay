@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gtimer.h
@@ -29,36 +26,13 @@
 #include "gdatetime.h"
 #include "geventhandler.h"
 #include "gexception.h"
-#include <list>
+#include "gtimerlist.h"
 
 /// \namespace GNet
 namespace GNet
 {
-	class ConcreteTimer ;
 	class AbstractTimer ;
-	class TimeoutHandler ;
-	class TimerList ;
 }
-
-/// \class GNet::TimeoutHandler
-/// An interface used by GNet::ConcreteTimer.
-///
-class GNet::TimeoutHandler 
-{
-public:
-	virtual ~TimeoutHandler() ;
-		///< Destructor.
-
-	virtual void onTimeout( AbstractTimer & ) = 0 ;
-		///< Called when the associated timer expires.
-		///<
-		///< If an exception is thrown out of the
-		///< override then the event loop will call the 
-		///< timer object's onTimeoutException() method.
-
-private:
-	void operator=( const TimeoutHandler & ) ; // not implemented
-} ;
 
 /// \class GNet::AbstractTimer
 /// A timer base class that calls a pure virtual
@@ -101,95 +75,72 @@ private:
 
 private:
 	G::DateTime::EpochTime m_time ;
-	TimeoutHandler * m_handler ;
 } ;
 
-/// \class GNet::ConcreteTimer
-/// A concrete timer class that calls
-/// TimeoutHandler::onTimeout() on expiry and 
-/// EventHandler::onException() on error.
+/// \namespace GNet
+namespace GNet
+{
+
+/// \class Timer
+/// A timer class template in which the timeout
+/// is delivered to the specified method. Any exception thrown
+/// out of the timeout handler is delivered to the specified
+/// EventHandler interface so that it can be handled or
+/// rethrown.
 ///
-class GNet::ConcreteTimer : public GNet::AbstractTimer 
+/// Eg:
+/// \code
+/// struct Foo : public EventHandler
+/// {
+///   Timer<Foo> m_timer ;
+///   Foo() : m_timer(*this,&Foo::onTimeout,*this) {}
+///   void onTimeout() {}
+///   void onException( std::exception & ) { throw ; }
+/// } ;
+/// \endcode
+///
+template <typename T>
+class Timer : public AbstractTimer 
 {
 public:
-	ConcreteTimer( TimeoutHandler & , EventHandler & ) ;
+	typedef void (T::*method_type)() ;
+
+	Timer( T & t , method_type m , EventHandler & exception_handler ) ;
 		///< Constructor. The EventHandler reference is required
 		///< in case the timeout handler throws.
 
 private:
-	ConcreteTimer( const ConcreteTimer & ) ; // not implemented
-	void operator=( const ConcreteTimer & ) ; // not implemented
+	Timer( const Timer<T> & ) ; // not implemented
+	void operator=( const Timer<T> & ) ; // not implemented
 	virtual void onTimeout() ; // from AbstractTimer
 	virtual void onTimeoutException( std::exception & ) ; // from AbstractTimer
 
 private:
-	TimeoutHandler & m_timeout_handler ;
+	T & m_t ;
+	method_type m_m ;
 	EventHandler & m_event_handler ;
 } ;
 
-/// \class GNet::TimerList
-/// A singleton which maintains a list of all Timer
-/// objects, and interfaces to the event loop on their behalf.
-///
-class GNet::TimerList 
+template <typename T>
+Timer<T>::Timer( T & t , method_type m , EventHandler & e ) :
+	m_t(t) ,
+	m_m(m) ,
+	m_event_handler(e)
 {
-public:
-	G_EXCEPTION( NoInstance , "no TimerList instance" ) ;
-	/// Overload discriminator class for TimerList.
-	class NoThrow 
-		{} ;
+}
 
-	TimerList() ;
-		///< Default constructor.
+template <typename T>
+void Timer<T>::onTimeout()
+{
+	(m_t.*m_m)() ;
+}
 
-	~TimerList() ;
-		///< Destructor.
+template <typename T>
+void Timer<T>::onTimeoutException( std::exception & e )
+{
+	m_event_handler.onException( e ) ;
+}
 
-	void add( AbstractTimer & ) ;
-		///< Adds a timer. Used by Timer::Timer().
-
-	void remove( AbstractTimer & ) ;
-		///< Removes a timer from the list. Used by 
-		///< Timer::~Timer().
-
-	void update( G::DateTime::EpochTime previous_soonest ) ;
-		///< Called when one of the list's timers has changed.
-
-	G::DateTime::EpochTime soonest() const ;
-		///< Returns the time of the first timer to expire,
-		///< or zero if none.
-
-	unsigned int interval( bool & infinite ) const ;
-		///< Returns the interval to the next timer expiry. 
-		///< The 'infinite' value is set to true if there 
-		///< are no timers running.
-
-	void doTimeouts() ;
-		///< Triggers the timeout callbacks of any expired
-		///< timers. Called by the event loop (GNet::EventLoop).
-
-	static TimerList * instance( const NoThrow & ) ;
-		///< Singleton access. Returns NULL if none.
-
-	static TimerList & instance() ;
-		///< Singleton access. Throws an exception if none.
-
-private:
-	TimerList( const TimerList & ) ; // not implemented
-	void operator=( const TimerList & ) ; // not implemented
-	void collectGarbage() ;
-	G::DateTime::EpochTime soonest( int ) const ; // fast overload
-	void update() ;
-	bool valid() const ;
-
-private:
-	static TimerList * m_this ;
-	typedef std::list<AbstractTimer*> List ;
-	List m_list ;
-	bool m_list_changed ;
-	bool m_empty_set_timeout_hint ;
-	bool m_soonest_changed ; // mutable
-	G::DateTime::EpochTime m_soonest ;
-} ;
+}
 
 #endif

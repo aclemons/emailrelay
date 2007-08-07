@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gserverprotocol.h
@@ -103,7 +100,7 @@ public:
 			///< All references are kept.
 
 	void init() ;
-		///< Starts the protocol.
+		///< Starts the protocol. Use only once after construction.
 
 	virtual ~ServerProtocol() ;
 		///< Destructor.
@@ -111,6 +108,7 @@ public:
 	void apply( const std::string & line ) ;
 		///< Called on receipt of a string from the client.
 		///< The string is expected to be CR-LF terminated.
+		///< Throws ProtocolDone at the end of the protocol.
 
 private:
 	enum Event
@@ -124,7 +122,6 @@ private:
 		eData ,
 		eRcpt ,
 		eMail ,
-		ePrepared ,
 		eVrfy ,
 		eHelp ,
 		eAuth ,
@@ -139,7 +136,6 @@ private:
 		sEnd ,
 		sIdle ,
 		sGotMail ,
-		sPrepare ,
 		sGotRcpt ,
 		sData ,
 		sProcessing ,
@@ -160,6 +156,7 @@ private:
 	std::string commandLine( const std::string & line ) const ;
 	static std::string crlf() ;
 	void reset() ;
+	void badClientEvent() ;
 	void processDone( bool , unsigned long , std::string ) ; // ProtocolMessage::doneSignal()
 	void prepareDone( bool , bool , std::string ) ;
 	bool isEndOfText( const std::string & ) const ;
@@ -172,7 +169,6 @@ private:
 	void doHelo( const std::string & , bool & ) ;
 	void doAuth( const std::string & , bool & ) ;
 	void doAuthData( const std::string & , bool & ) ;
-	void doMailPrepare( const std::string & , bool & ) ;
 	void doMail( const std::string & , bool & ) ;
 	void doRcpt( const std::string & , bool & ) ;
 	void doUnknown( const std::string & , bool & ) ;
@@ -194,7 +190,6 @@ private:
 	void sendEhloReply() ;
 	void sendRsetReply() ;
 	void sendMailReply() ;
-	void sendMailError( const std::string & , bool ) ;
 	void sendRcptReply() ;
 	void sendDataReply() ;
 	void sendCompletionReply( bool ok , const std::string & ) ;
@@ -226,6 +221,8 @@ private:
 	bool m_with_vrfy ;
 	std::string m_buffer ;
 	unsigned int m_preprocessor_timeout ;
+	unsigned int m_bad_client_count ;
+	unsigned int m_bad_client_limit ;
 } ;
 
 /// \class GSmtp::ServerProtocolText

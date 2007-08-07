@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // garg.cpp
@@ -28,6 +25,20 @@
 #include "gdebug.h"
 #include "gassert.h"
 #include <cstring>
+
+G::Arg::Arg( int argc , char *argv[] )
+{
+	G_ASSERT( argc > 0 ) ;
+	G_ASSERT( argv != NULL ) ;
+	for( int i = 0 ; i < argc ; i++ )
+		m_array.push_back( argv[i] ) ;
+
+	setPrefix() ;
+}
+
+G::Arg::~Arg()
+{ 
+}
 
 G::Arg::Arg()
 {
@@ -48,18 +59,6 @@ G::Arg & G::Arg::operator=( const Arg & rhs )
 		m_prefix = rhs.m_prefix ;
 	}
 	return *this ;
-}
-
-G::Arg::~Arg()
-{ 
-}
-
-G::Arg::Arg( int argc , char *argv[] )
-{
-	for( int i = 0 ; i < argc ; i++ )
-		m_array.push_back( argv[i] ) ;
-
-	setPrefix() ;
 }
 
 void G::Arg::setPrefix()
@@ -96,7 +95,7 @@ void G::Arg::protect( std::string & s )
 {
 	// replace all quoted spaces with a replacement
 	// (could do better: escaped quotes, tabs, single quotes)
-	G_DEBUG( "protect: before: " << Str::toPrintableAscii(s) ) ;
+	G_DEBUG( "protect: before: " << Str::printable(s) ) ;
 	bool in_quote = false ;
 	const char quote = '"' ;
 	const char space = ' ' ;
@@ -106,7 +105,7 @@ void G::Arg::protect( std::string & s )
 		if( s.at(pos) == quote ) in_quote = ! in_quote ;
 		if( in_quote && s.at(pos) == space ) s[pos] = replacement ;
 	}
-	G_DEBUG( "protect: after: " << Str::toPrintableAscii(s) ) ;
+	G_DEBUG( "protect: after: " << Str::printable(s) ) ;
 }
 
 void G::Arg::unprotect( StringArray & array )
@@ -154,7 +153,6 @@ bool G::Arg::find( bool cs , const std::string & sw , size_type sw_args , size_t
 	return false ;
 }
 
-//static
 bool G::Arg::match( bool cs , const std::string & s1 , const std::string & s2 )
 {
 	return
@@ -207,7 +205,6 @@ std::string G::Arg::prefix() const
 	return m_prefix ;
 }
 
-//static
 const char * G::Arg::prefix( char * argv [] ) // throw()
 {
 	const char * exe = argv[0] ;

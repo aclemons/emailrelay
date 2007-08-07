@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gclientprotocol.h
@@ -153,17 +150,15 @@ public:
 	class Sender 
 	{
 		public: virtual bool protocolSend( const std::string & , size_t offset ) = 0 ;
-			///< Called by the Protocol class to send
-			///< network data to the peer.
+			///< Called by the Protocol class to send network data to 
+			///< the peer.
 			///<
-			///< The offset gives the location of the
-			///< payload within the string buffer.
+			///< The offset gives the location of the payload within the 
+			///< string buffer.
 			///<
-			///< Returns false if not all of the string
-			///< was send due to flow control. In this
-			///< case ClientProtocol::sendDone() should be
-			///< called as soon as the full string has
-			///< been sent.
+			///< Returns false if not all of the string was send due to 
+			///< flow control. In this case ClientProtocol::sendDone() should 
+			///< be called as soon as the full string has been sent.
 			///<
 			///< Throws on error, eg. if disconnected.
 
@@ -184,31 +179,27 @@ public:
 	} ;
 
 	ClientProtocol( Sender & sender , const Secrets & secrets , Config config ) ;
-		///< Constructor. The 'sender' and 'secrets' references 
-		///< are kept.
+		///< Constructor. The 'sender' and 'secrets' references are kept.
 		///<
-		///< The Sender interface is used to send protocol 
-		///< messages to the peer. 
+		///< The Sender interface is used to send protocol messages to 
+		///< the peer. 
 		///<
-		///< The 'thishost_name' parameter is used in the
-		///< SMTP EHLO request. 
+		///< The 'thishost_name' parameter is used in the SMTP EHLO 
+		///< request. 
 		///<
-		///< If the 'eight-bit-strict' flag is true then
-		///< an eight-bit message being sent to a 
-		///< seven-bit server will be failed.
+		///< If the 'eight-bit-strict' flag is true then an eight-bit 
+		///< message being sent to a seven-bit server will be failed.
 
 	G::Signal3<bool,bool,std::string> & doneSignal() ;
 		///< Returns a signal that is raised once the protocol has
 		///< finished with a given message. The signal parameters 
 		///< are 'ok', 'abort' and 'reason'.
 		///<
-		///< If 'ok' is false then 'abort' indicates
-		///< whether there is any point in trying to 
-		///< send more messages to the same server.
-		///< The 'abort' parameter will be true if,
-		///< for example, authentication failed -- if
-		///< it failed for one message then it will
-		///< fail for all the others.
+		///< If 'ok' is false then 'abort' indicates whether there 
+		///< is any point in trying to send more messages to the same 
+		///< server. The 'abort' parameter will be true if, for example, 
+		///< authentication failed -- if it failed for one message 
+		///< then it will fail for all the others.
 
 	G::Signal0 & preprocessorSignal() ;
 		///< Returns a signal that is raised when the protocol

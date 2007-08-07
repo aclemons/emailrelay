@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gprotocolmessage.h
@@ -55,21 +52,18 @@ namespace GSmtp
 /// sequence:
 /// - clear()
 /// - setFrom()
-/// - prepare() -> preparedSignal() [async]
 /// - addTo() [1..n]
 /// - addReceived() [0..n]
 /// - addText() [0..n]
 /// - process() -> doneSignal() [async]
 ///
-/// The prepare() and process() methods are asynchronous, but
-/// note that the completion signals may be emited before the
-/// initiating call returns.
+/// The process() method is asynchronous, but note that the 
+/// completion signal may be emited before the initiating call 
+/// returns.
 ///
 class GSmtp::ProtocolMessage 
 {
 public:
-	G_EXCEPTION( ProcessingError , "error storing message" ) ;
-
 	virtual ~ProtocolMessage() ;
 		///< Destructor.
 
@@ -82,12 +76,8 @@ public:
 		///< As a special case, if success is true and id is zero then 
 		///< the message processing was cancelled.
 
-	virtual G::Signal3<bool,bool,std::string> & preparedSignal() = 0 ;
-		///< Returns a signal which is raised once prepare() has
-		///< completed.
-		///<
-		///< The signal parameters are 'success', 'temporary' and 
-		///< 'reason'.
+	virtual void reset() = 0 ;
+		///< Resets the object state as if just constructed.
 
 	virtual void clear() = 0 ;
 		///< Clears the message state and terminates
@@ -96,13 +86,6 @@ public:
 	virtual bool setFrom( const std::string & from_user ) = 0 ;
 		///< Sets the message envelope 'from'.
 		///< Returns false if an invalid user.
-
-	virtual bool prepare() = 0 ;
-		///< Called to start any asynchronous preparation which is
-		///< required after setFrom(). Returns true if there
-		///< is something to do (in which case preparedSignal()
-		///< must be fired later), or false if there is nothing
-		///< to do.
 
 	virtual bool addTo( const std::string & to_user , Verifier::Status to_status ) = 0 ;
 		///< Adds an envelope 'to'.

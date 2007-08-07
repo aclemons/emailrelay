@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gserver.cpp
@@ -27,6 +24,7 @@
 #include "groot.h"
 #include "gmonitor.h"
 #include "gdebug.h"
+#include "gtest.h"
 #include "gassert.h"
 #include "gmemory.h"
 #include <algorithm> // std::find()
@@ -35,10 +33,11 @@ GNet::ServerPeer::ServerPeer( Server::PeerInfo peer_info ) :
 	m_address(peer_info.m_address) ,
 	m_socket(peer_info.m_socket) ,
 	m_handle(peer_info.m_handle) ,
-	m_delete_timer(this)
+	m_delete_timer(*this,&ServerPeer::onTimeout,*this)
 {
 	G_ASSERT( m_socket.get() != NULL ) ;
-	G_DEBUG( "GNet::ServerPeer::ctor: [" << this << "]: fd " << asString() << ": " << m_address.displayString() ) ;
+	G_DEBUG( "GNet::ServerPeer::ctor: [" << this << "]: " << logId() ) ;
+
 	m_socket->addReadHandler( *this ) ;
 	m_socket->addExceptionHandler( *this ) ;
 	if( Monitor::instance() ) Monitor::instance()->add(*this) ;
@@ -46,15 +45,15 @@ GNet::ServerPeer::ServerPeer( Server::PeerInfo peer_info ) :
 
 GNet::ServerPeer::~ServerPeer()
 {
-	G_DEBUG( "GNet::ServerPeer::dtor: [" << this << "]: fd " << asString() ) ;
+	G_DEBUG( "GNet::ServerPeer::dtor: [" << this << "]: fd " << logId() ) ;
 	if( Monitor::instance() ) Monitor::instance()->remove(*this) ;
 	m_handle->reset() ;
 	m_socket->dropReadHandler() ;
 }
 
-std::string GNet::ServerPeer::asString() const
+std::string GNet::ServerPeer::logId() const
 {
-	return m_socket->asString() ; // ie. the fd
+	return m_address.displayString() + "@" + m_socket->asString() ;
 }
 
 GNet::StreamSocket & GNet::ServerPeer::socket()
@@ -67,7 +66,7 @@ void GNet::ServerPeer::readEvent()
 {
 	char buffer[c_buffer_size] ;
 	buffer[0] = '\0' ;
-	size_t buffer_size = sizeof(buffer) ;
+	const size_t buffer_size = G::Test::enabled("small-server-input-buffer") ? 3 : sizeof(buffer) ;
 	ssize_t rc = m_socket->read( buffer , buffer_size ) ;
 
 	if( rc == 0 || (rc == -1 && !m_socket->eWouldBlock()) )
@@ -76,8 +75,8 @@ void GNet::ServerPeer::readEvent()
 	}
 	else if( rc != -1 )
 	{
-		size_type n = static_cast<size_type>(rc) ;
-		onData( buffer , n ) ;
+		G_ASSERT( static_cast<size_t>(rc) <= buffer_size ) ;
+		onData( buffer , static_cast<size_type>(rc) ) ;
 	}
 	else 
 	{ 
@@ -87,7 +86,7 @@ void GNet::ServerPeer::readEvent()
 
 void GNet::ServerPeer::onException( std::exception & e )
 {
-	G_DEBUG( "ServerPeer::onException: " << e.what() ) ;
+	G_WARNING( "ServerPeer::onException: exception: " << e.what() ) ;
 	doDelete() ;
 }
 
@@ -106,6 +105,11 @@ std::pair<bool,GNet::Address> GNet::ServerPeer::localAddress() const
 std::pair<bool,GNet::Address> GNet::ServerPeer::peerAddress() const
 {
 	return std::pair<bool,Address>( true , m_address ) ;
+}
+
+void GNet::ServerPeer::onTimeout()
+{
+	delete this ;
 }
 
 // ===
@@ -143,7 +147,6 @@ void GNet::Server::init( const Address & listening_address )
 	m_socket->addReadHandler( *this ) ;
 }
 
-//static
 bool GNet::Server::canBind( const Address & address , bool do_throw )
 {
 	G::Root claim_root ;
@@ -169,7 +172,7 @@ void GNet::Server::serverCleanup()
 			serverCleanupCore() ;
 		}
 	}
-	catch(...) // since always called from dtor
+	catch(...) // dtor
 	{
 	}
 }
@@ -203,58 +206,51 @@ std::pair<bool,GNet::Address> GNet::Server::address() const
 
 void GNet::Server::readEvent()
 {
-	try
-	{
-		readEventCore() ;
-	}
-	catch( std::exception & e )
-	{
-		// should probably never get here -- most servers will
-		// want to stay up if a new connection fails to
-		// initialise, so their peer factory method should
-		// catch its own exceptions and return null
-		//
-		G_ERROR( "GNet::Server::readEvent: exception while establishing a new connection: " << e.what() ) ;
-		throw ;
-	}
-}
-
-void GNet::Server::readEventCore()
-{
 	// read-event-on-listening-port => new connection to accept
 
 	G_DEBUG( "GNet::Server::readEvent: " << this ) ;
 	G_ASSERT( m_socket.get() != NULL ) ;
 
+	// take this opportunity to do garbage collection
 	collectGarbage() ;
 
-	G::Root claim_root ;
-	AcceptPair pair = m_socket->accept() ;
-	if( pair.first.get() == NULL )
+	// accept the connection
+	PeerInfo peer_info ;
+	accept( peer_info ) ;
+	G_DEBUG( "GNet::Server::readEvent: new connection from " << peer_info.m_address.displayString() ) ;
+
+	// keep track of peer objects
+	m_peer_list.push_back( ServerPeerHandle() ) ;
+	peer_info.m_handle = &m_peer_list.back() ;
+
+	// create the peer object -- newPeer() implementations will normally 
+	// catch their exceptions to avoid terminating the server
+	//
+	ServerPeer * peer = newPeer( peer_info ) ;
+
+	// commit or roll back
+	if( peer == NULL )
 	{
-		G_WARNING( "GNet::Server::readEvent: accept error" ) ;
+		m_peer_list.pop_back() ;
+		G_WARNING( "GNet::Server::readEvent: connection rejected from " << peer_info.m_address.displayString() ) ;
 	}
 	else
 	{
-		G_DEBUG( "GNet::Server::readEvent: new connection from " << pair.second.displayString() ) ;
-		m_peer_list.push_back( ServerPeerHandle() ) ;
-
-		PeerInfo peer_info ;
-		peer_info.m_socket = pair.first ; // auto_ptr
-		peer_info.m_address = pair.second ;
-		peer_info.m_handle = &m_peer_list.back() ;
-
-		ServerPeer * peer = newPeer(peer_info) ;
-		if( peer == NULL )
-		{
-			m_peer_list.pop_back() ;
-		}
-		else
-		{
-			m_peer_list.back().set( peer ) ;
-			G_DEBUG( "GNet::Server::readEvent: new connection accepted onto fd " << peer->asString() ) ;
-		}
+		m_peer_list.back().set( peer ) ;
+		G_DEBUG( "GNet::Server::readEvent: new connection accepted: " << peer->logId() ) ;
 	}
+}
+
+void GNet::Server::accept( PeerInfo & peer_info )
+{
+	{
+		G::Root claim_root ;
+		AcceptPair accept_pair = m_socket->accept() ;
+		peer_info.m_socket = accept_pair.first ; // auto_ptr assignment
+		peer_info.m_address = accept_pair.second ;
+	}
+	if( peer_info.m_socket.get() == NULL )
+		throw AcceptError() ;
 }
 
 void GNet::Server::collectGarbage()
@@ -318,22 +314,5 @@ void GNet::ServerPeerHandle::set( ServerPeer * p )
 	m_old = p ;
 }
 
-// ===
-
-GNet::ServerPeerTimer::ServerPeerTimer( ServerPeer * p ) :
-	m_server_peer(p)
-{
-}
-
-void GNet::ServerPeerTimer::onTimeout()
-{
-	delete m_server_peer ;
-}
-
-void GNet::ServerPeerTimer::onTimeoutException( std::exception & e )
-{
-	// should never get here
-	G_ERROR( "ServerPeerTimer::onTimeoutException: exception: " << e.what() ) ;
-}
 
 /// \file gserver.cpp

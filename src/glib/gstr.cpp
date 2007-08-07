@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gstr.cpp
@@ -373,20 +370,38 @@ std::string G::Str::upper( const std::string &s )
 	return result ;
 }
 
-std::string G::Str::toPrintableAscii( char c , char escape )
+std::string G::Str::printable( const std::string & in , char escape )
 {
 	std::string result ;
-	toPrintableAscii( result , c , escape ) ;
+	result.reserve( in.length() + 1U ) ;
+	for( std::string::const_iterator p = in.begin() ; p != in.end() ; ++p )
+		addPrintable( result , *p , static_cast<unsigned char>(*p) , escape , true ) ;
 	return result ;
 }
 
-void G::Str::toPrintableAscii( std::string & result , char c , char escape )
+std::string G::Str::toPrintableAscii( const std::string & in , char escape )
+{
+	std::string result ;
+	result.reserve( in.length() + 1U ) ;
+	for( std::string::const_iterator p = in.begin() ; p != in.end() ; ++p )
+		addPrintable( result , *p , static_cast<unsigned char>(*p) , escape , false ) ;
+	return result ;
+}
+
+std::string G::Str::toPrintableAscii( char c , char escape )
+{
+	std::string result ;
+	addPrintable( result , c , static_cast<unsigned char>(c) , escape , false ) ;
+	return result ;
+}
+
+void G::Str::addPrintable( std::string & result , char c , unsigned char uc , char escape , bool eight_bit )
 {
 	if( c == escape )
 	{
 		result.append( 2U , c ) ;
 	}
-	else if( c >= 0x20 && c < 0x7f )
+	else if( uc >= 0x20 && ( eight_bit || uc < 0x7f ) && uc != 0xff )
 	{
 		result.append( 1U , c ) ;
 	}
@@ -407,7 +422,7 @@ void G::Str::toPrintableAscii( std::string & result , char c , char escape )
 		}
 		else
 		{
-			unsigned int n = c ;
+			unsigned int n = uc ;
 			n = n & 0xff ;
 			const char * const map = "0123456789abcdef" ;
 			result.append( 1U , 'x' ) ;
@@ -415,15 +430,6 @@ void G::Str::toPrintableAscii( std::string & result , char c , char escape )
 			result.append( 1U , map[n%16U] ) ;
 		}
 	}
-}
-
-std::string G::Str::toPrintableAscii( const std::string & in , char escape )
-{
-	std::string result ;
-	result.reserve( in.length() + 1U ) ;
-	for( std::string::const_iterator p = in.begin() ; p != in.end() ; ++p )
-		toPrintableAscii(result,*p,escape) ;
-	return result ;
 }
 
 std::string G::Str::readLineFrom( std::istream & stream , char ignore )

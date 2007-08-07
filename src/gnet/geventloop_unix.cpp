@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // geventloop_unix.cpp
@@ -29,6 +26,7 @@
 #include "gstr.h"
 #include "gsetter.h"
 #include "gtimer.h"
+#include "gtest.h"
 #include "gdebug.h"
 #include <sys/types.h>
 #include <sys/time.h>
@@ -194,7 +192,7 @@ void GNet::FdSet::raiseEvent( EventHandler * h , void (EventHandler::*method)() 
 	{
 		(h->*method)() ;
 	}
-	catch( std::exception & e )
+	catch( std::exception & e ) // strategy
 	{
 		h->onException( e ) ;
 	}
@@ -288,6 +286,14 @@ void GNet::Select::runOnce()
 		m_read_set.raiseEvents( m_read_list , & EventHandler::readEvent ) ;
 		m_write_set.raiseEvents( m_write_list , & EventHandler::writeEvent ) ;
 		m_exception_set.raiseEvents( m_exception_list , & EventHandler::exceptionEvent ) ;
+	}
+
+	if( G::Test::enabled("slow-event-loop") )
+	{
+		Timeval timeout ;
+		timeout.tv_sec = 0 ;
+		timeout.tv_usec = 100000 ;
+		::select( 0 , NULL , NULL , NULL , &timeout ) ;
 	}
 }
 

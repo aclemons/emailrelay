@@ -1,11 +1,10 @@
 #
 ## Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
-## This program is free software; you can redistribute it and/or
-## modify it under the terms of the GNU General Public License
-## as published by the Free Software Foundation; either
-## version 2 of the License, or (at your option) any later
-## version.
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or 
+## (at your option) any later version.
 ## 
 ## This program is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,21 +12,16 @@
 ## GNU General Public License for more details.
 ## 
 ## You should have received a copy of the GNU General Public License
-## along with this program; if not, write to the Free Software
-## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-## 
+## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-EXTRA_DIST = emailrelay-test.sh_ emailrelay-soak.sh_ emailrelay.sh_ txt2html.sh_ txt2mu.sh_ mu2html.sh_ mu2docbook.sh_ expand.sh_ emailrelay-notify.sh_ emailrelay-resubmit.sh_ emailrelay-deliver.sh_ emailrelay-process.sh_ emailrelay-runperl.js emailrelay-resubmit.js emailrelay-submit.sh_
-noinst_cleanup = emailrelay-test.sh emailrelay-soak.sh
-noinst_SCRIPTS = emailrelay-test.sh emailrelay-soak.sh emailrelay-runperl.js emailrelay-resubmit.js
+EXTRA_DIST = emailrelay.sh_ txt2html.sh_ txt2mu.sh_ mu2html.sh_ mu2docbook.sh_ expand.sh_ emailrelay-notify.sh_ emailrelay-resubmit.sh_ emailrelay-deliver.sh_ emailrelay-process.sh_ emailrelay-runperl.js emailrelay-resubmit.js emailrelay-submit.sh_
+noinst_SCRIPTS = emailrelay-runperl.js emailrelay-resubmit.js
 e_init_SCRIPTS = emailrelay
 e_examples_DATA = emailrelay-process.sh emailrelay-notify.sh emailrelay-deliver.sh emailrelay-resubmit.sh emailrelay-submit.sh
 work_scripts = txt2mu.sh mu2html.sh mu2docbook.sh expand.sh txt2html.sh emailrelay.sh
 
-CLEANFILES = $(noinst_cleanup) $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts)
-
-TESTS = emailrelay-test.sh
+CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts)
 
 SUFFIXES = .sh_ .sh
 

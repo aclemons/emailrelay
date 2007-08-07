@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gprocess.h
@@ -63,7 +60,7 @@ public:
 	{
 		public: Id() ;
 		public: explicit Id( std::istream & ) ;
-		public: explicit Id( const char * pid_file_path ) ; // (ctor for signal-handler)
+		public: Id( SignalSafe , const char * pid_file_path ) ; // (ctor for signal-handler)
 		public: std::string str() const ;
 		public: bool operator==( const Id & ) const ;
 		private: pid_t m_pid ;
@@ -72,7 +69,7 @@ public:
 	/// Used to temporarily modify the process umask.
 	class Umask 
 	{
-		public: enum Mode { Readable , Tighter , Tightest } ;
+		public: enum Mode { Readable , Tighter , Tightest , GroupOpen } ;
 		public: explicit Umask( Mode ) ;
 		public: ~Umask() ;
 		public: static void set( Mode ) ;
@@ -160,11 +157,19 @@ public:
 		///<
 		///< See also class G::Root.
 
-	static void beSpecial( Identity special , bool change_group = true ) ;
-		///< Re-aquires special privileges (either root or suid). The 
+	static Identity beSpecial( Identity special , bool change_group = true ) ;
+		///< Re-acquires special privileges (either root or suid). The 
 		///< parameter must have come from a previous call to beOrdinary().
 		///<
+		///< Returns the old identity (which is normally ignored).
+		///<
 		///< See also class G::Root.
+
+	static Identity beOrdinary( SignalSafe , Identity nobody , bool change_group = true ) ;
+		///< A signal-safe overload.
+
+	static Identity beSpecial( SignalSafe , Identity special , bool change_group = true ) ;
+		///< A signal-safe overload.
 
 private:
 	Process() ;

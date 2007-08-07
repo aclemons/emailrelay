@@ -148,7 +148,7 @@
 
 # Name: pop
 # Format: pop
-# Description: Enables the pop server if enabled at build-time: use "./configure --enable-pop".
+# Description: Enables the pop server.
 #
 #pop
 

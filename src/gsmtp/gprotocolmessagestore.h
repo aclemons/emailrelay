@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gprotocolmessagestore.h
@@ -41,15 +38,14 @@ namespace GSmtp
 }
 
 /// \class GSmtp::ProtocolMessageStore
-/// A concrete implementation of the
-/// ProtocolMessage interface which stores incoming
-/// messages in the message store.
+/// A concrete implementation of the ProtocolMessage interface 
+/// that stores incoming messages in the message store.
 /// \see GSmtp::ProtocolMessageForward
 ///
 class GSmtp::ProtocolMessageStore : public GSmtp::ProtocolMessage 
 {
 public:
-	ProtocolMessageStore( MessageStore & store , const G::Executable & newfile_preprocessor ) ;
+	ProtocolMessageStore( MessageStore & store , std::auto_ptr<Processor> ) ;
 		///< Constructor.
 
 	virtual ~ProtocolMessageStore() ;
@@ -58,16 +54,13 @@ public:
 	virtual G::Signal3<bool,unsigned long,std::string> & doneSignal() ;
 		///< See ProtocolMessage.
 
-	virtual G::Signal3<bool,bool,std::string> & preparedSignal() ;
+	virtual void reset() ;
 		///< See ProtocolMessage.
 
 	virtual void clear() ;
 		///< See ProtocolMessage.
 
 	virtual bool setFrom( const std::string & from_user ) ;
-		///< See ProtocolMessage.
-
-	virtual bool prepare() ;
 		///< See ProtocolMessage.
 
 	virtual bool addTo( const std::string & to_user , Verifier::Status to_status ) ;
@@ -91,11 +84,10 @@ private:
 
 private:
 	MessageStore & m_store ;
-	Processor m_newfile_preprocessor ;
+	std::auto_ptr<Processor> m_processor ;
 	std::auto_ptr<NewMessage> m_msg ;
 	std::string m_from ;
 	G::Signal3<bool,unsigned long,std::string> m_done_signal ;
-	G::Signal3<bool,bool,std::string> m_prepared_signal ;
 } ;
 
 #endif

@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gcleanup_unix.cpp
@@ -45,7 +42,7 @@ namespace G
 class G::CleanupImp 
 {
 public:
-	static void add( void (*fn)(const char*) , const char * ) ;
+	static void add( void (*fn)(SignalSafe,const char*) , const char * ) ;
 	static void installDefault( int ) ;
 	static void callHandlers() ;
 	static void ignore( int ) ;
@@ -61,7 +58,7 @@ private:
 	/// A private linked-list structure used by G::CleanupImp.
 	struct Link 
 	{
-		void (*fn)(const char*) ;
+		void (*fn)(SignalSafe,const char*) ;
 		const char * arg ;
 		Link * next ;
 	} ;
@@ -79,7 +76,7 @@ void G::Cleanup::init()
 	CleanupImp::ignore( SIGPIPE ) ;
 }
 
-void G::Cleanup::add( void (*fn)(const char*) , const char * arg )
+void G::Cleanup::add( void (*fn)(SignalSafe,const char*) , const char * arg )
 {
 	if( arg != NULL )
 		CleanupImp::add( fn , arg ) ;
@@ -101,7 +98,7 @@ void G::CleanupImp::init()
 	//installHandler( SIGUSR2 ) ;
 }
 
-void G::CleanupImp::add( void (*fn)(const char*) , const char * arg )
+void G::CleanupImp::add( void (*fn)(SignalSafe,const char*) , const char * arg )
 {
 	Link * p = new Link ;
 	p->fn = fn ;
@@ -156,13 +153,12 @@ void G::CleanupImp::ignore( int signum )
 		throw Error( "sigaction" ) ;
 }
 
-
 void G::CleanupImp::callHandlers()
 {
 	G::Root claim_root ;
 	for( const Link * p = m_head ; p != NULL ; p = p->next )
 	{
-		(*(p->fn))(p->arg) ;
+		(*(p->fn))(SignalSafe(),p->arg) ;
 	}
 }
 

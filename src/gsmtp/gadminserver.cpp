@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gadminserver.cpp
@@ -28,6 +25,8 @@
 #include "gadminserver.h"
 #include "gmessagestore.h"
 #include "gstoredmessage.h"
+#include "gnullprocessor.h"
+#include "gexecutableprocessor.h"
 #include "gmonitor.h"
 #include "gslot.h"
 #include "gstr.h"
@@ -62,11 +61,11 @@ GSmtp::AdminServerPeer::~AdminServerPeer()
 
 void GSmtp::AdminServerPeer::clientDone( std::string s , bool )
 {
+	m_client.reset() ;
 	if( s.empty() )
 		sendLine( "OK" ) ;
 	else
 		sendLine( std::string("error: ") + s ) ;
-
 	prompt() ;
 }
 
@@ -134,13 +133,11 @@ bool GSmtp::AdminServerPeer::onReceive( const std::string & line )
 	return true ;
 }
 
-//static
 std::string GSmtp::AdminServerPeer::crlf()
 {
 	return "\015\012" ;
 }
 
-//static
 bool GSmtp::AdminServerPeer::is( const std::string & line_in , const std::string & key )
 {
 	std::string line( line_in ) ;
@@ -149,7 +146,6 @@ bool GSmtp::AdminServerPeer::is( const std::string & line_in , const std::string
 	return line.find(key) == 0U ;
 }
 
-//static
 std::pair<bool,std::string> GSmtp::AdminServerPeer::find( const std::string & line , const G::StringMap & map )
 {
 	for( G::StringMap::const_iterator p = map.begin() ; p != map.end() ; ++p )
@@ -197,8 +193,8 @@ bool GSmtp::AdminServerPeer::flush()
 	}
 	else
 	{
-		m_client.reset( new Client( GNet::ResolverInfo(m_remote_address) , m_server.store() , m_server.secrets() , 
-			m_server.clientConfig() ) ) ;
+		m_client.reset( new Client(GNet::ResolverInfo(m_remote_address),m_server.secrets(),m_server.clientConfig()) ) ;
+		m_client->sendMessages( m_server.store() ) ;
 	}
 	return do_prompt ;
 }
@@ -288,7 +284,7 @@ GNet::ServerPeer * GSmtp::AdminServer::newPeer( GNet::Server::PeerInfo peer_info
 		m_peers.push_back( peer ) ;
 		return peer ;
 	}
-	catch( std::exception & e )
+	catch( std::exception & e ) // newPeer()
 	{
 		G_WARNING( "GSmtp::AdminServer: exception from new connection: " << e.what() ) ;
 		return NULL ;

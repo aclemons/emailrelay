@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gsmtpserver.cpp
@@ -26,12 +23,15 @@
 #include "gsmtpserver.h"
 #include "gprotocolmessagestore.h"
 #include "gprotocolmessageforward.h"
-#include "gprotocolmessagescanner.h"
+#include "gexecutableprocessor.h"
+#include "gnetworkprocessor.h"
+#include "gnullprocessor.h"
 #include "gmemory.h"
 #include "glocal.h"
 #include "glog.h"
 #include "gdebug.h"
 #include "gassert.h"
+#include "gtest.h"
 #include <string>
 
 namespace
@@ -167,7 +167,7 @@ GNet::ServerPeer * GSmtp::Server::newPeer( GNet::Server::PeerInfo peer_info )
 		return new ServerPeer( peer_info , *this , pmessage , m_server_secrets , 
 			m_verifier , ptext , ServerProtocol::Config(!m_anonymous,m_preprocessor_timeout) ) ;
 	}
-	catch( std::exception & e )
+	catch( std::exception & e ) // newPeer()
 	{
 		G_WARNING( "GSmtp::Server: exception from new connection: " << e.what() ) ;
 		return NULL ;
@@ -182,27 +182,52 @@ GSmtp::ServerProtocol::Text * GSmtp::Server::newProtocolText( bool anonymous , G
 		return new ServerProtocolText( m_ident , GNet::Local::fqdn() , peer_address ) ;
 }
 
-GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()
+GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessageStore( std::auto_ptr<Processor> processor )
 {
-	const bool immediate = ! m_smtp_server.empty() ;
-	const bool scan = ! m_scanner_server.empty() ;
-	if( immediate && scan )
+	return new ProtocolMessageStore( m_store , processor ) ;
+}
+
+GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessageForward( std::auto_ptr<ProtocolMessage> pm )
+{
+	return new ProtocolMessageForward( m_store , pm , m_newfile_preprocessor ,
+		m_client_config , m_client_secrets , m_smtp_server , m_smtp_connection_timeout ) ;
+}
+
+GSmtp::Processor * GSmtp::Server::newProcessor( G::Executable exe , 
+	std::string scanner_server , unsigned int scanner_connection_timeout , unsigned int scanner_response_timeout )
+{
+	if( ! scanner_server.empty() )
 	{
-		G_DEBUG( "GSmtp::Server::newProtocolMessage: new ProtocolMessageScanner" ) ;
-		return new ProtocolMessageScanner(m_store,m_newfile_preprocessor,m_client_config,
-			m_client_secrets,m_smtp_server,m_smtp_connection_timeout,
-			m_scanner_server,m_scanner_response_timeout,m_scanner_connection_timeout) ;
+		return new NetworkProcessor( scanner_server , scanner_connection_timeout , scanner_response_timeout ) ;
 	}
-	else if( immediate )
+	else if( exe.exe() == G::Path() )
 	{
-		G_DEBUG( "GSmtp::Server::newProtocolMessage: new ProtocolMessageForward" ) ;
-		return new ProtocolMessageForward(m_store,m_newfile_preprocessor,m_client_config,
-			m_client_secrets,m_smtp_server,m_smtp_connection_timeout) ;
+		return new NullProcessor ;
 	}
 	else
 	{
-		G_DEBUG( "GSmtp::Server::newProtocolMessage: new ProtocolMessageStore" ) ;
-		return new ProtocolMessageStore(m_store,m_newfile_preprocessor) ;
+		return new ExecutableProcessor( exe ) ;
+	}
+}
+
+GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()
+{
+	// dependency injection...
+
+	std::auto_ptr<Processor> store_processor( newProcessor(m_newfile_preprocessor,
+		m_scanner_server,m_scanner_connection_timeout,m_scanner_response_timeout) ) ;
+
+	std::auto_ptr<ProtocolMessage> store( newProtocolMessageStore( store_processor ) ) ;
+
+	const bool do_forward = ! m_smtp_server.empty() ;
+	if( do_forward )
+	{
+		std::auto_ptr<ProtocolMessage> forward( newProtocolMessageForward(store) ) ;
+		return forward.release() ;
+	}
+	else
+	{
+		return store.release() ;
 	}
 }
 
@@ -225,6 +250,10 @@ GSmtp::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const A
 		newfile_preprocessor(newfile_preprocessor_) ,
 		preprocessor_timeout(preprocessor_timeout_)
 {
+	if( G::Test::enabled("scanner-response-timeout") )
+		scanner_response_timeout = 1 ;
+	if( G::Test::enabled("scanner-connection-timeout") )
+		scanner_connection_timeout = 1 ;
 }
 
 

@@ -131,7 +131,6 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
-POPLIB = @POPLIB@
 QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
@@ -190,7 +189,7 @@ top_srcdir = @top_srcdir@
 #
 #
 EXTRA_DIST = emailrelay.spec ChangeLog README.windows
-SUBDIRS = src bin lib etc doc
+SUBDIRS = src bin lib etc doc test
 e_doc_DATA = NEWS README changelog.gz
 CLEANFILES = changelog.gz
 all: config.h

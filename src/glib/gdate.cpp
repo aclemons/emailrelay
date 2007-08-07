@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gdate.cpp
@@ -28,13 +25,11 @@
 #include <iomanip>
 #include <sstream>
 
-//static
 int G::Date::yearUpperLimit()
 {
 	return 2035 ; // see mktime()
 }
 
-//static
 int G::Date::yearLowerLimit()
 {
 	return 1970 ; // see mktime()
@@ -252,7 +247,6 @@ G::Date & G::Date::operator--()
 	return *this ;
 }
 
-//static
 unsigned int G::Date::lastDay( unsigned int month , unsigned int year )
 {
 	unsigned int end = 30U ;
@@ -273,7 +267,6 @@ unsigned int G::Date::lastDay( unsigned int month , unsigned int year )
 	return end ;
 }
 
-//static
 bool G::Date::isLeapYear( unsigned int y )
 {
     return y >= 1800U && ( y % 400U == 0U || ( y % 100U != 0U && y % 4U == 0U ) ) ;

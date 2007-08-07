@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gfile.cpp
@@ -30,14 +27,14 @@
 
 bool G::File::remove( const Path & path , const G::File::NoThrow & )
 {
-	bool rc = 0 == std::remove( path.pathCstr() ) ;
+	bool rc = 0 == std::remove( path.str().c_str() ) ;
 	G_DEBUG( "G::File::remove: \"" << path << "\": success=" << rc ) ;
 	return rc ;
 }
 
 void G::File::remove( const Path & path )
 {
-	if( 0 != std::remove( path.pathCstr() ) )
+	if( 0 != std::remove( path.str().c_str() ) )
 	{
 		//int error = G::Process::errno_() ;
 		throw CannotRemove( path.str() ) ;
@@ -47,17 +44,17 @@ void G::File::remove( const Path & path )
 
 bool G::File::rename( const Path & from , const Path & to , const NoThrow & )
 {
-	bool rc = 0 == std::rename( from.pathCstr() , to.pathCstr() ) ;
+	bool rc = 0 == std::rename( from.str().c_str() , to.str().c_str() ) ;
 	G_DEBUG( "G::File::rename: \"" << from << "\" -> \"" << to << "\": success=" << rc ) ;
 	return rc ;
 }
 
 void G::File::rename( const Path & from , const Path & to )
 {
-	if( 0 != std::rename( from.pathCstr() , to.pathCstr() ) )
+	if( 0 != std::rename( from.str().c_str() , to.str().c_str() ) )
 	{
 		//int error = G::Process::errno_() ;
-		throw CannotRename( from.str() ) ;
+		throw CannotRename( std::string() + "[" + from.str() + "] to [" + to.str() + "]" ) ;
 	}
 	G_DEBUG( "G::File::rename: \"" << from << "\" -> \"" << to << "\"" ) ;
 }
@@ -65,7 +62,7 @@ void G::File::rename( const Path & from , const Path & to )
 void G::File::copy( const Path & from , const Path & to )
 {
 	if( !copy(from,to,NoThrow()) )
-		throw CannotCopy( from.str() ) ;
+		throw CannotCopy( std::string() + "[" + from.str() + "] to [" + to.str() + "]" ) ;
 }
 
 bool G::File::copy( const Path & from , const Path & to , const NoThrow & )
@@ -78,7 +75,7 @@ bool G::File::copy( const Path & from , const Path & to , const NoThrow & )
 	if( !out.good() )
 		return false ;
 
-	copy( from , to ) ;
+	copy( in , out ) ;
 	out.flush() ;
 
 	return !in.fail() && !in.bad() && out.good() ;
@@ -94,7 +91,7 @@ void G::File::copy( std::istream & in , std::ostream & out , std::streamsize lim
 
 	const std::streamsize b = static_cast<std::streamsize>(block) ;
 	std::streamsize size = 0U ;
-	while( size < limit && in.good() && out.good() )
+	while( ( limit == 0U || size < limit ) && in.good() && out.good() )
 	{
 		std::streamsize request = limit == 0U || (limit-size) > b ? b : (limit-size) ;
 		std::streamsize result = in.readsome( &buffer[0] , request ) ;
@@ -123,7 +120,7 @@ bool G::File::exists( const Path & path , const NoThrow & )
 bool G::File::exists( const Path & path , bool on_error , bool do_throw )
 {
 	bool enoent = false ;
-	bool rc = exists( path.pathCstr() , enoent ) ; // o/s-specific
+	bool rc = exists( path.str().c_str() , enoent ) ; // o/s-specific
 	if( !rc && enoent )
 	{
 		return false ;

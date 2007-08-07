@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gmd5.h
@@ -46,9 +43,8 @@ public:
 		{} ;
 
 	static std::string digest( const std::string & input ) ;
-		///< Creates an MD5 digest. The resulting
-		///< string is not generally printable and
-		///< may have embedded NULs.
+		///< Creates an MD5 digest. The resulting string is not 
+		///< generally printable and may have embedded NULs.
 
 	static std::string digest( const std::string & input_1 , const std::string & input_2 ) ;
 		///< An overload which processes two input strings.

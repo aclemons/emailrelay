@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gclientprotocol.cpp
@@ -95,7 +92,6 @@ void GSmtp::ClientProtocol::sendDone()
 	}
 }
 
-//static
 bool GSmtp::ClientProtocol::parseReply( Reply & stored_reply , const std::string & rx , std::string & reason )
 {
 	Reply this_reply = Reply( rx ) ;
@@ -123,7 +119,7 @@ bool GSmtp::ClientProtocol::parseReply( Reply & stored_reply , const std::string
 
 bool GSmtp::ClientProtocol::apply( const std::string & rx )
 {
-	G_LOG( "GSmtp::ClientProtocol: rx<<: \"" << G::Str::toPrintableAscii(rx) << "\"" ) ;
+	G_LOG( "GSmtp::ClientProtocol: rx<<: \"" << G::Str::printable(rx) << "\"" ) ;
 
 	std::string reason ;
 	bool protocol_done = false ;
@@ -200,6 +196,8 @@ void GSmtp::ClientProtocol::startPreprocessing()
 
 bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_event )
 {
+	G_DEBUG( "GSmtp::ClientProtocol::applyEvent: " << reply.value() << ": " << reply.text() ) ;
+
 	cancelTimer() ;
 
 	bool protocol_done = false ;
@@ -245,7 +243,7 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	{
 		G_ASSERT( m_sasl.get() != NULL ) ;
 		G_DEBUG( "GSmtp::ClientProtocol::applyEvent: ehlo reply \""
-			<< G::Str::toPrintableAscii(reply.text()) << "\"" ) ;
+			<< G::Str::printable(reply.text()) << "\"" ) ;
 
 		m_auth_mechanism = m_sasl->preferred( serverAuthMechanisms(reply) ) ;
 		m_server_has_8bitmime = m_state == sSentEhlo && reply.textContains("\n8BITMIME") ;
@@ -488,12 +486,11 @@ bool GSmtp::ClientProtocol::send( const std::string & line , bool eot , bool log
 
 	std::string prefix( !eot && line.length() && line.at(0U) == '.' ? "." : "" ) ;
 	if( log )
-		G_LOG( "GSmtp::ClientProtocol: tx>>: \"" << prefix << G::Str::toPrintableAscii(line) << "\"" ) ;
+		G_LOG( "GSmtp::ClientProtocol: tx>>: \"" << prefix << G::Str::printable(line) << "\"" ) ;
 
 	return m_sender.protocolSend( prefix + line + crlf() , 0U ) ;
 }
 
-//static
 const std::string & GSmtp::ClientProtocol::crlf()
 {
 	static std::string s("\015\012") ;
@@ -535,7 +532,6 @@ GSmtp::ClientProtocolReply::ClientProtocolReply( const std::string & line ) :
 	}
 }
 
-//static 
 GSmtp::ClientProtocolReply GSmtp::ClientProtocolReply::ok()
 {
 	ClientProtocolReply reply( "250 OK" ) ;
@@ -544,10 +540,9 @@ GSmtp::ClientProtocolReply GSmtp::ClientProtocolReply::ok()
 	return reply ;
 }
 
-//static 
 GSmtp::ClientProtocolReply GSmtp::ClientProtocolReply::error( const std::string & reason )
 {
-	ClientProtocolReply reply( std::string("500 ")+G::Str::toPrintableAscii(reason) ) ;
+	ClientProtocolReply reply( std::string("500 ")+G::Str::printable(reason) ) ;
 	G_ASSERT( ! reply.incomplete() ) ;
 	G_ASSERT( ! reply.positive() ) ;
 	return reply ;
@@ -598,7 +593,6 @@ std::string GSmtp::ClientProtocolReply::textLine( const std::string & prefix ) c
 	}
 }
 
-//static
 bool GSmtp::ClientProtocolReply::is_digit( char c )
 {
 	return c >= '0' && c <= '9' ;

@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // glogoutput.cpp
@@ -89,7 +86,6 @@ bool G::LogOutput::enable( bool enabled )
 	return was_enabled ;
 }
 
-//static
 void G::LogOutput::output( Log::Severity severity , const char * file , unsigned int line , const char * text )
 {
 	if( m_this != NULL )
@@ -157,7 +153,6 @@ const char * G::LogOutput::timestampString()
 	return m_time_buffer ;
 }
 
-//static
 void G::LogOutput::addFileAndLine( char *buffer , size_type size , const char *file , int line )
 {
 	if( file != NULL )
@@ -175,13 +170,11 @@ void G::LogOutput::addFileAndLine( char *buffer , size_type size , const char *f
 	}
 }
 
-//static
 void G::LogOutput::add( char * buffer , size_type size , const std::string & p )
 {
 	add( buffer , size , p.c_str() ) ;
 }
 
-//static
 void G::LogOutput::add( char * buffer , size_type size , const char * p )
 {
 	std::strncat( buffer+std::strlen(buffer) , p , size-std::strlen(buffer)-1U ) ;
@@ -193,6 +186,8 @@ void G::LogOutput::assertion( const char *file , unsigned line , bool test , con
 	{
 		if( instance() )
 			instance()->doAssertion( file , line , test_string ) ;
+		else
+			fprintf( stderr , "assertion error: %s(%d): %s\n" , file , line , test_string ) ;
 		halt() ;
 	}
 }
@@ -220,15 +215,11 @@ void G::LogOutput::doAssertion( const char * file , unsigned line , const char *
 	rawOutput( Log::s_Assertion , buffer ) ;
 }
 
-#include <fstream>
-//static
 void G::LogOutput::halt()
 {
-std::ofstream f("/tmp/aborted");
 	abort() ;
 }
 
-//static
 const char * G::LogOutput::levelString( Log::Severity s )
 {
 	if( s == Log::s_Debug ) return "debug: " ;
@@ -240,7 +231,6 @@ const char * G::LogOutput::levelString( Log::Severity s )
 	return "" ;
 }
 
-//static
 const char * G::LogOutput::itoa( char * buffer , size_type buffer_size , unsigned int n )
 {
 	buffer[0U] = '0' ; buffer[1U] = '\0' ;

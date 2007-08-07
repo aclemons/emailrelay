@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // commandline.cpp
@@ -31,7 +28,6 @@
 #include "gstr.h"
 #include "gdebug.h"
 
-//static
 std::string Main::CommandLine::switchSpec( bool is_windows )
 {
 	std::string dir = GSmtp::MessageStore::defaultDirectory().str() ;
@@ -92,7 +88,6 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 	return ss.str() ;
 }
 
-//static
 std::string Main::CommandLine::switchSpec_unix()
 {
 	std::ostringstream ss ;
@@ -107,7 +102,6 @@ std::string Main::CommandLine::switchSpec_unix()
 	return ss.str() ;
 }
 
-//static
 std::string Main::CommandLine::switchSpec_windows()
 {
 	std::ostringstream ss ;
@@ -159,7 +153,7 @@ void Main::CommandLine::showUsage( bool e ) const
 
 	std::string::size_type tab_stop = 34U ;
 	m_getopt.showUsage( show.s() , m_arg.prefix() , "" , 
-		introducer , level , tab_stop , m_output.columns() ) ;
+		introducer , level , tab_stop ) ;
 }
 
 bool Main::CommandLine::contains( const std::string & name ) const
@@ -241,6 +235,9 @@ std::string Main::CommandLine::semanticError() const
 		if( m_getopt.contains("filter") )
 			return "the --filter switch cannot be used with --as-client or --dont-serve" ;
 
+		if( m_getopt.contains("scanner") )
+			return "the --scanner switch cannot be used with --as-client or --dont-serve" ;
+
 		if( m_getopt.contains("port") )
 			return "the --port switch cannot be used with --as-client or --dont-serve" ;
 
@@ -262,20 +259,14 @@ std::string Main::CommandLine::semanticError() const
 		if( m_getopt.contains("filter") )
 			return "the --filter switch cannot be used with --no-smtp" ;
 
+		if( m_getopt.contains("scanner") )
+			return "the --scanner switch cannot be used with --no-smtp" ;
+
 		if( m_getopt.contains("port") )
 			return "the --port switch cannot be used with --no-smtp" ;
 
 		if( m_getopt.contains("server-auth") )
 			return "the --server-auth switch cannot be used with --no-smtp" ;
-	}
-
-	const bool immediate = 
-		m_getopt.contains("as-proxy") || // => immediate
-		m_getopt.contains("immediate") ;
-
-	if( m_getopt.contains("scanner") && ! immediate )
-	{
-		return "the --scanner switch requires --as-proxy or --immediate" ;
 	}
 
 	const bool log =

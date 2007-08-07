@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gdirectory.h
@@ -28,6 +25,7 @@
 #include "gpath.h"
 #include "gexception.h"
 #include <string>
+#include <vector>
 #include <sys/types.h>
 
 /// \namespace G
@@ -36,6 +34,7 @@ namespace G
 	class DirectoryIteratorImp ;
 	class Directory ;
 	class DirectoryIterator ;
+	class DirectoryList ;
 }
 
 /// \class G::Directory
@@ -101,8 +100,7 @@ private:
 } ;
 
 /// \class G::DirectoryIterator
-/// An iterator for Directory.
-/// The iteration model is
+/// A Directory iterator. The iteration model is
 /// \code
 /// while(iter.more()) { (void)iter.filePath() ; }
 /// \endcode
@@ -121,7 +119,7 @@ public:
 		///< Returns true on error. The caller should stop the iteration.
 
 	bool more() ;
-		///< Returns true if more.
+		///< Returns true if more and advances by one.
 
 	bool isDir() const ;
 		///< Returns true if the current item is a directory.
@@ -146,6 +144,43 @@ private:
 
 private:
 	DirectoryIteratorImp * m_imp ;
+} ;
+
+/// \class G::DirectoryList
+/// A Directory iterator that does all file i/o in one go.
+///
+class G::DirectoryList 
+{
+public:
+	DirectoryList() ;
+		///< Default constructor for an empty list. Initialise with init().
+
+	void init( const Path & dir , const std::string & wc = std::string() ) ;
+		///< An initialiser that is to be used after default construction.
+		///< All file i/o is done in here.
+
+	bool more() ;
+		///< Returns true if more and advances by one.
+
+	bool isDir() const ;
+		///< Returns true if the current item is a directory.
+
+	G::Path filePath() const ;
+		///< Returns the current path.
+
+	G::Path fileName() const ;
+		///< Returns the current filename.
+
+private:
+	DirectoryList( const DirectoryList & ) ;
+	void operator=( const DirectoryList & ) ;
+
+private:
+	bool m_first ;
+	unsigned int m_index ;
+	std::vector<int> m_is_dir ;
+	std::vector<G::Path> m_path ;
+	std::vector<G::Path> m_name ;
 } ;
 
 #endif

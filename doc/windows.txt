@@ -3,7 +3,7 @@ E-MailRelay Windows installation
 
 Setup program
 -------------
-Installing E-MailRelay on Windows should be straightfowrard if you have 
+Installing E-MailRelay on Windows should be straightforward if you have 
 self-extracting archive program "emailrelay-setup-*.exe". Make sure that the 
 setup program is in a writeable directory with plenty of space on the disk 
 because when you run it is will extract an installation GUI program plus 

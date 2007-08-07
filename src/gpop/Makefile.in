@@ -45,10 +45,6 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
-libgnopop_a_AR = $(AR) $(ARFLAGS)
-libgnopop_a_LIBADD =
-am_libgnopop_a_OBJECTS = gnopop.$(OBJEXT)
-libgnopop_a_OBJECTS = $(am_libgnopop_a_OBJECTS)
 libgpop_a_AR = $(AR) $(ARFLAGS)
 libgpop_a_LIBADD =
 am_libgpop_a_OBJECTS = gpopauth.$(OBJEXT) gpopsecrets.$(OBJEXT) \
@@ -67,8 +63,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libgnopop_a_SOURCES) $(libgpop_a_SOURCES)
-DIST_SOURCES = $(libgnopop_a_SOURCES) $(libgpop_a_SOURCES)
+SOURCES = $(libgpop_a_SOURCES)
+DIST_SOURCES = $(libgpop_a_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -124,7 +120,6 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
-POPLIB = @POPLIB@
 QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
@@ -184,7 +179,7 @@ EXTRA_DIST = \
 	gpopsecrets_win32.cpp
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_SYSCONFDIR=\"$(sysconfdir)\"
-noinst_LIBRARIES = libgpop.a libgnopop.a
+noinst_LIBRARIES = libgpop.a
 libgpop_a_SOURCES = \
 	gpopauth.cpp \
 	gpopauth.h \
@@ -199,7 +194,6 @@ libgpop_a_SOURCES = \
 	gpopserverprotocol.cpp \
 	gpopserverprotocol.h
 
-libgnopop_a_SOURCES = gnopop.cpp
 all: all-am
 
 .SUFFIXES:
@@ -236,10 +230,6 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libgnopop.a: $(libgnopop_a_OBJECTS) $(libgnopop_a_DEPENDENCIES) 
-	-rm -f libgnopop.a
-	$(libgnopop_a_AR) libgnopop.a $(libgnopop_a_OBJECTS) $(libgnopop_a_LIBADD)
-	$(RANLIB) libgnopop.a
 libgpop.a: $(libgpop_a_OBJECTS) $(libgpop_a_DEPENDENCIES) 
 	-rm -f libgpop.a
 	$(libgpop_a_AR) libgpop.a $(libgpop_a_OBJECTS) $(libgpop_a_LIBADD)
@@ -251,7 +241,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnopop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpopauth.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpopsecrets.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpopsecrets_unix.Po@am__quote@

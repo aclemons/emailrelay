@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gdirectory_unix.cpp
@@ -45,7 +42,7 @@ bool G::Directory::valid( bool for_creation ) const
 {
 	bool rc = true ;
 	struct stat statbuf ;
-	if( ::stat( m_path.pathCstr() , &statbuf ) )
+	if( ::stat( m_path.str().c_str() , &statbuf ) )
 	{
 		rc = false ; // doesnt exist
 	}
@@ -55,7 +52,7 @@ bool G::Directory::valid( bool for_creation ) const
 	}
 	else
 	{
-		DIR * p = ::opendir( m_path.pathCstr() ) ;
+		DIR * p = ::opendir( m_path.str().c_str() ) ;
 		if( p == NULL )
 			rc = false ; // cant open directory for reading
 		else
@@ -65,7 +62,7 @@ bool G::Directory::valid( bool for_creation ) const
 	if( rc && for_creation )
 	{
 		// (not definitive -- see also GNU/Linux ::euidaccess())
-		if( 0 != ::access( m_path.pathCstr() , W_OK ) )
+		if( 0 != ::access( m_path.str().c_str() , W_OK ) )
 			rc = false ;
 	}
 	return rc ;
@@ -179,12 +176,11 @@ extern "C" int gdirectory_unix_on_error_( const char * , int )
 	return abort ;
 }
 
-G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory &dir , 
-	const std::string & wildcard ) :
-		m_dir(dir) ,
-		m_first(true) ,
-		m_index(0) ,
-		m_error(false)
+G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory & dir , const std::string & wildcard ) :
+	m_dir(dir) ,
+	m_first(true) ,
+	m_index(0) ,
+	m_error(false)
 {
 	m_glob.gl_pathc = 0 ;
 	m_glob.gl_pathv = NULL ;
@@ -192,19 +188,10 @@ G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory &dir ,
 	Path wild_path( m_dir.path() ) ;
 	wild_path.pathAppend( wildcard.empty() ? std::string("*") : wildcard ) ;
 
-	G_DEBUG( "G::DirectoryIteratorImp::ctor: glob(\"" << wild_path << "\")" ) ;
-
 	int flags = 0 | GLOB_ERR ;
-	int error  = ::glob( wild_path.pathCstr() , flags , gdirectory_unix_on_error_ , &m_glob ) ;
+	int error  = ::glob( wild_path.str().c_str() , flags , gdirectory_unix_on_error_ , &m_glob ) ;
 	if( error || m_glob.gl_pathv == NULL )
-	{
-		G_DEBUG( "G::DirectoryIteratorImp::ctor: glob() returned " << error ) ;
 		m_error = true ;
-	}
-	else
-	{
-		G_ASSERT( m_glob.gl_pathc == 0 || m_glob.gl_pathv[0] != NULL ) ;
-	}
 }
 
 bool G::DirectoryIteratorImp::error() const
@@ -229,10 +216,11 @@ bool G::DirectoryIteratorImp::more()
 
 G::Path G::DirectoryIteratorImp::filePath() const
 {
-	G_ASSERT( m_index < static_cast<size_t>(m_glob.gl_pathc) ) ;
-	G_ASSERT( m_glob.gl_pathv != NULL ) ;
-	G_ASSERT( m_glob.gl_pathv[m_index] != NULL ) ;
-	const char * file_path = m_glob.gl_pathv[m_index] ;
+	const bool sane =
+		m_index < static_cast<size_t>(m_glob.gl_pathc) &&
+		m_glob.gl_pathv != NULL &&
+		m_glob.gl_pathv[m_index] != NULL ;
+	const char * file_path = sane ? m_glob.gl_pathv[m_index] : "" ;
 	return Path( file_path ) ;
 }
 

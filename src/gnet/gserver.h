@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gserver.h
@@ -86,6 +83,7 @@ class GNet::Server : public GNet::EventHandler
 public:
 	G_EXCEPTION( CannotBind , "cannot bind the listening port" ) ;
 	G_EXCEPTION( CannotListen , "cannot listen" ) ;
+	G_EXCEPTION( AcceptError , "socket accept() failed" ) ;
 
 	/// A structure used in GNet::Server::newPeer().
 	struct PeerInfo 
@@ -164,32 +162,13 @@ private:
 	virtual void onException( std::exception & e ) ; // from EventHandler
 	void serverCleanupCore() ;
 	void collectGarbage() ;
-	void readEventCore() ;
+	void accept( PeerInfo & ) ;
 
 private:
 	typedef std::list<ServerPeerHandle> PeerList ;
 	std::auto_ptr<StreamSocket> m_socket ;
 	PeerList m_peer_list ;
 	bool m_cleaned_up ;
-} ;
-
-/// \class GNet::ServerPeerTimer
-/// A private implementation class used by GNet::ServerPeer.
-///
-class GNet::ServerPeerTimer : public GNet::AbstractTimer 
-{
-public:
-	explicit ServerPeerTimer( ServerPeer * ) ;
-		///< Constructor.
-
-	virtual void onTimeout() ;
-		///< From AbstractTimer.
-
-	virtual void onTimeoutException( std::exception & ) ;
-		///< From AbstractTimer.
-
-private:
-	ServerPeer * m_server_peer ;
 } ;
 
 /// \class GNet::ServerPeer
@@ -213,11 +192,8 @@ public:
 	void doDelete() ; 
 		///< Does "onDelete(); delete this".
 
-	std::string asString() const ;
-		///< Returns a string representation of the
-		///< socket descriptor. Typically used in 
-		///< log message to destinguish one connection
-		///< from another.
+	std::string logId() const ;
+		///< Returns an identification string for logging purposes.
 
 	virtual std::pair<bool,Address> localAddress() const ;
 		///< Returns the local address.
@@ -253,12 +229,13 @@ private:
 	void operator=( const ServerPeer & ) ; // not implemented
 	virtual void readEvent() ; // from EventHandler
 	virtual void onException( std::exception & ) ;
+	void onTimeout() ;
 
 private:
 	Address m_address ;
 	std::auto_ptr<StreamSocket> m_socket ;
 	ServerPeerHandle * m_handle ;
-	ServerPeerTimer m_delete_timer ;
+	Timer<ServerPeer> m_delete_timer ;
 } ;
 
 #endif

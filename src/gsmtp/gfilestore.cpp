@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gfilestore.cpp
@@ -29,6 +26,7 @@
 #include "gstoredfile.h"
 #include "gprocess.h"
 #include "gdirectory.h"
+#include "groot.h"
 #include "gmemory.h"
 #include "gpath.h"
 #include "gfile.h"
@@ -52,26 +50,27 @@ namespace GSmtp
 class GSmtp::FileIterator : public GSmtp::MessageStore::IteratorImp , public G::noncopyable 
 {
 public:
-	FileIterator( FileStore & store , const G::Directory & dir , bool lock ) ;
+	FileIterator( FileStore & store , const G::Path & dir , bool lock ) ;
 	virtual std::auto_ptr<GSmtp::StoredMessage> next() ;
 private:
 	FileStore & m_store ;
-	G::DirectoryIterator m_iter ;
+	G::DirectoryList m_iter ;
 	bool m_lock ;
 } ;
 
 // ===
 
-GSmtp::FileIterator::FileIterator( FileStore & store , const G::Directory & dir , bool lock ) :
+GSmtp::FileIterator::FileIterator( FileStore & store , const G::Path & dir , bool lock ) :
 	m_store(store) ,
-	m_iter(dir,"*.envelope") ,
 	m_lock(lock)
 {
+	DirectoryReader claim_reader ;
+	m_iter.init( dir , "*.envelope" ) ;
 }
 
 std::auto_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
 {
-	while( !m_iter.error() && m_iter.more() )
+	while( m_iter.more() )
 	{
 		std::auto_ptr<StoredFile> m( new StoredFile(m_store,m_iter.filePath()) ) ;
 		if( m_lock && !m->lock() )
@@ -107,13 +106,11 @@ GSmtp::FileStore::FileStore( const G::Path & dir , bool optimise ) :
 	checkPath( dir ) ;
 }
 
-//static
 std::string GSmtp::FileStore::x()
 {
 	return "X-MailRelay-" ;
 }
 
-//static
 std::string GSmtp::FileStore::format( int n )
 {
 	if( n == 0 )
@@ -122,7 +119,6 @@ std::string GSmtp::FileStore::format( int n )
 		return "#2821.2" ; // old
 }
 
-//static
 void GSmtp::FileStore::checkPath( const G::Path & directory_path )
 {
 	G::Directory dir_test( directory_path ) ;
@@ -154,7 +150,7 @@ std::auto_ptr<std::ostream> GSmtp::FileStore::stream( const G::Path & path )
 {
 	FileWriter claim_writer ;
 	std::auto_ptr<std::ostream> ptr( 
-		new std::ofstream( path.pathCstr() , 
+		new std::ofstream( path.str().c_str() , 
 			std::ios_base::binary | std::ios_base::out | std::ios_base::trunc ) ) ;
 	return ptr ;
 }
@@ -213,17 +209,16 @@ bool GSmtp::FileStore::empty() const
 
 bool GSmtp::FileStore::emptyCore() const
 {
-	FileReader claim_reader ;
-	G::Directory dir( m_dir ) ;
-	G::DirectoryIterator iter( dir , "*.envelope" ) ;
-	const bool no_more = iter.error() || !iter.more() ;
+	G::DirectoryList iter ;
+	DirectoryReader claim_reader ;
+	iter.init( m_dir , "*.envelope" ) ;
+	const bool no_more = !iter.more() ;
 	return no_more ;
 }
 
 GSmtp::MessageStore::Iterator GSmtp::FileStore::iterator( bool lock )
 {
-	FileReader claim_reader ;
-	return MessageStore::Iterator( new FileIterator(*this,G::Directory(m_dir),lock) ) ;
+	return MessageStore::Iterator( new FileIterator(*this,m_dir,lock) ) ;
 }
 
 std::auto_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( unsigned long id )
@@ -242,6 +237,8 @@ std::auto_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( unsigned long id )
 
 	if( ! message->openContent(reason) )
 		throw GetError( path.str() + ": cannot read the content: " + reason ) ;
+
+	G_LOG( "GSmtp::FileStore::get: processing message \"" << message->name() << "\"" ) ;
 
 	std::auto_ptr<StoredMessage> message_base_ptr( message.release() ) ;
 	return message_base_ptr ;
@@ -283,14 +280,23 @@ GSmtp::FileReader::~FileReader()
 
 // ===
 
+GSmtp::DirectoryReader::DirectoryReader()
+{
+}
+
+GSmtp::DirectoryReader::~DirectoryReader()
+{
+}
+
+// ===
+
 GSmtp::FileWriter::FileWriter() :
-	m_root(false) ,
-	m_umask(G::Process::Umask::Tighter)
+	G::Root(false) ,
+	G::Process::Umask(G::Process::Umask::Tighter)
 {
 }
 
 GSmtp::FileWriter::~FileWriter()
 {
 }
-
 

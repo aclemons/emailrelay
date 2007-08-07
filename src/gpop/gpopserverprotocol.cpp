@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gpopserverprotocol.cpp
@@ -104,7 +101,7 @@ void GPop::ServerProtocol::apply( const std::string & line )
 
 	// log the input
 	std::string log_text = event == ePass ? 
-		(commandPart(line,0U)+" [password not logged]") : G::Str::toPrintableAscii(line) ;
+		(commandPart(line,0U)+" [password not logged]") : G::Str::printable(line) ;
 	G_LOG( "GPop::ServerProtocol: rx<<: \"" << log_text << "\"" ) ;
 
 	// apply the event to the state machine
@@ -139,7 +136,7 @@ void GPop::ServerProtocol::sendContent()
 
 void GPop::ServerProtocol::resume()
 {
-	G_LOG_S( "GPop::ServerProtocol::resume" ) ;
+	G_DEBUG( "GPop::ServerProtocol::resume: flow control released" ) ;
 	if( m_fsm.state() == sData )
 		sendContent() ;
 }
@@ -189,9 +186,16 @@ bool GPop::ServerProtocol::sendContentLine( std::string & line , bool & stop )
 int GPop::ServerProtocol::commandNumber( const std::string & line , int default_ , size_t index ) const
 {
 	int number = default_ ;
-	try { number = G::Str::toInt( commandParameter(line,index) ) ; }
-	catch( G::Str::Overflow & ) {}
-	catch( G::Str::InvalidFormat & ) {}
+	try 
+	{ 
+		number = G::Str::toInt( commandParameter(line,index) ) ; 
+	}
+	catch( G::Str::Overflow & ) // defaulted
+	{
+	}
+	catch( G::Str::InvalidFormat & ) // defaulted
+	{
+	}
 	return number ;
 }
 
@@ -457,7 +461,7 @@ void GPop::ServerProtocol::doApop( const std::string & line , bool & ok )
 
 void GPop::ServerProtocol::send( std::string line )
 {
-	G_LOG( "GPop::ServerProtocol: tx>>: \"" << G::Str::toPrintableAscii(line) << "\"" ) ;
+	G_LOG( "GPop::ServerProtocol: tx>>: \"" << G::Str::printable(line) << "\"" ) ;
 	line.append( crlf() ) ;
 	m_sender.protocolSend( line , 0U ) ;
 }

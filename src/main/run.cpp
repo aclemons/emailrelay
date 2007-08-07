@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // run.cpp
@@ -50,7 +47,6 @@
 #include <exception>
 #include <utility>
 
-//static
 std::string Main::Run::versionNumber()
 {
 	return "1.6" ;
@@ -60,7 +56,8 @@ Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string &
 	m_output(output) ,
 	m_switch_spec(switch_spec) ,
 	m_arg(arg) ,
-	m_polling_client_resolver_info(std::string(),std::string())
+	m_polling_client_resolver_info(std::string(),std::string()) ,
+	m_prepare_error(false)
 {
 	m_polling_client.doneSignal().connect( G::slot(*this,&Run::pollingClientDone) ) ;
 	m_polling_client.eventSignal().connect( G::slot(*this,&Run::clientEvent) ) ;
@@ -71,6 +68,11 @@ Main::Run::~Run()
 	if( m_store.get() ) m_store->signal().disconnect() ;
 	m_polling_client.doneSignal().disconnect() ;
 	m_polling_client.eventSignal().disconnect() ;
+}
+
+bool Main::Run::prepareError() const
+{
+	return m_prepare_error ;
 }
 
 Main::Configuration Main::Run::cfg() const
@@ -105,41 +107,53 @@ bool Main::Run::hidden() const
 
 bool Main::Run::prepare()
 { 
-	bool do_run = false ;
 	if( cl().contains("help") )
 	{
 		cl().showHelp( false ) ;
+		m_prepare_error = false ;
+		return false ;
 	}
 	else if( cl().hasUsageErrors() )
 	{
 		cl().showUsageErrors( true ) ;
+		m_prepare_error = true ;
+		return false ;
 	}
 	else if( cl().contains("version") )
 	{
 		cl().showVersion( false ) ;
+		m_prepare_error = false ;
+		return false ;
 	}
 	else if( cl().argc() > 1U )
 	{
 		cl().showArgcError( true ) ;
+		m_prepare_error = true ;
+		return false ;
 	}
 	else if( cl().hasSemanticError() )
 	{
 		cl().showSemanticError( true ) ;
+		m_prepare_error = true ;
+		return false ;
 	}
 	else
 	{
-		do_run = true ;
+		// early singletons...
+		//
+		m_log_output <<= new G::LogOutput( m_arg.prefix() , 
+			cfg().log() , // output
+			cfg().log() , // with-logging
+			cfg().verbose() , // with-verbose-logging
+			cfg().debug() , // with-debug
+			true , // with-level
+			cfg().logTimestamp() , // with-timestamp
+			!cfg().debug() , // strip-context
+			cfg().useSyslog() , // use-syslog
+			G::LogOutput::Mail // facility 
+		) ;
+		return true ;
 	}
-
-	// early singletons...
-	//
-	// (prefix,output,log,verbose-log,debug,level,timestamp,strip-context,syslog)
-	m_log_output <<= new G::LogOutput( m_arg.prefix() , cfg().log() , cfg().log() , 
-		cfg().verbose() , cfg().debug() , true , 
-		cfg().logTimestamp() , !cfg().debug() ,
-		cfg().useSyslog() , G::LogOutput::Mail ) ;
-
-	return do_run ;
 }
 
 void Main::Run::run()
@@ -200,7 +214,10 @@ void Main::Run::runCore()
 	// systems when running as a daemon -- this has to be done 
 	// early, before opening any sockets or message-store streams
 	//
-	if( cfg().daemon() ) closeFiles() ; 
+	if( cfg().daemon() ) 
+	{
+		closeFiles() ; 
+	}
 
 	// release root privileges and extra group memberships
 	//
@@ -329,12 +346,14 @@ void Main::Run::doServing( const GSmtp::Secrets & client_secrets ,
 
 	if( cfg().doPolling() )
 	{
-		m_poll_timer <<= new GNet::ConcreteTimer( *this , *this ) ;
+		m_poll_timer <<= new GNet::Timer<Run>(*this,&Run::onPollTimeout,*this) ; // after GNet::TimerList constructed
 		m_poll_timer->startTimer( cfg().pollingTimeout() ) ;
 	}
 
 	{
-		G::Root claim_root ;
+		// dont change the effective group id here -- create the pid file with the 
+		// unprivileged group ownership so that it can be deleted more easily
+		G::Root claim_root(false) ; 
 		pid_file.commit() ;
 	}
 
@@ -353,7 +372,9 @@ void Main::Run::doForwarding( GSmtp::MessageStore & store , const GSmtp::Secrets
 		GNet::Address(cfg().clientInterface(),0U) : GNet::Address(0U) ;
 
 	GNet::ClientPtr<GSmtp::Client> client_ptr( new GSmtp::Client( 
-		GNet::ResolverInfo(cfg().serverAddress()) , store , secrets , clientConfig() ) ) ;
+		GNet::ResolverInfo(cfg().serverAddress()) , secrets , clientConfig() ) ) ;
+
+	client_ptr->sendMessages( store ) ;
 
 	client_ptr.doneSignal().connect( G::slot(*this,&Run::forwardingClientDone) ) ;
 	client_ptr.eventSignal().connect( G::slot(*this,&Run::clientEvent) ) ;
@@ -411,12 +432,11 @@ GSmtp::Client::Config Main::Run::clientConfig() const
 			cfg().connectionTimeout() ) ;
 }
 
-void Main::Run::onTimeout( GNet::AbstractTimer & timer )
+void Main::Run::onPollTimeout()
 {
-	G_ASSERT( &timer == m_poll_timer.get() ) ;
-	G_DEBUG( "Main::Run::onTimeout" ) ;
+	G_DEBUG( "Main::Run::onPollTimeout" ) ;
 
-	timer.startTimer( cfg().pollingTimeout() ) ;
+	m_poll_timer->startTimer( cfg().pollingTimeout() ) ;
 
 	if( m_polling_client.busy() )
 	{
@@ -448,7 +468,9 @@ std::string Main::Run::doPoll()
 				GNet::Address(cfg().clientInterface(),0U) : GNet::Address(0U) ;
 
 			m_polling_client.reset( new GSmtp::Client( GNet::ResolverInfo(cfg().serverAddress()) ,
-				*m_store.get() , *m_client_secrets.get() , clientConfig() ) ) ;
+				*m_client_secrets.get() , clientConfig() ) ) ;
+
+			m_polling_client->sendMessages( *m_store.get() ) ;
 		}
 		return std::string() ;
 	}
@@ -495,11 +517,11 @@ void Main::Run::clientEvent( std::string s1 , std::string s2 )
 void Main::Run::raiseStoreEvent( bool repoll )
 {
 	emit( "store" , "update" , repoll ? std::string("poll") : std::string() ) ;
-	if( repoll && cfg().doPolling() && m_poll_timer.get() != NULL )
+	if( repoll && cfg().doPolling() )
 	{
 		G_LOG( "Main::Run::raiseStoreEvent: polling timeout forced" ) ;
 		m_poll_timer->cancelTimer() ;
-		m_poll_timer->startTimer( 1U ) ; // (could use zero)
+		m_poll_timer->startTimer( 0U ) ;
 	}
 }
 

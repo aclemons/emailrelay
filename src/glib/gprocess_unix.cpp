@@ -1,11 +1,10 @@
 //
 // Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later
-// version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or 
+// (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,9 +12,7 @@
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// 
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // gprocess_unix.cpp
@@ -139,20 +136,17 @@ G::Process::ChildProcessImp::ChildProcessImp() :
 
 // ===
 
-//static
 void G::Process::cd( const Path & dir )
 {
 	if( ! cd(dir,NoThrow()) )
 		throw CannotChangeDirectory( dir.str() ) ;
 }
 
-//static
 bool G::Process::cd( const Path & dir , NoThrow )
 {
 	return 0 == ::chdir( dir.str().c_str() ) ;
 }
 
-//static
 void G::Process::closeStderr()
 {
 	::close( STDERR_FILENO ) ;
@@ -160,13 +154,11 @@ void G::Process::closeStderr()
 	noCloseOnExec( STDERR_FILENO ) ;
 }
 
-//static
 void G::Process::closeFiles( bool keep_stderr )
 {
 	closeFiles( keep_stderr ? STDERR_FILENO : -1 ) ;
 }
 
-//static
 void G::Process::closeFiles( int keep )
 {
 	G_ASSERT( keep == -1 || keep >= STDERR_FILENO ) ;
@@ -270,7 +262,6 @@ int G::Process::wait( const Id & child_pid , int error_return )
 	return error_return ;
 }
 
-//static
 int G::Process::errno_()
 {
 	return errno ; // not ::errno or std::errno for gcc2.95
@@ -353,7 +344,8 @@ int G::Process::execCore( const G::Path & exe , const Strings & args )
 	env[2U] = NULL ;
 
 	char ** argv = new char* [ args.size() + 2U ] ;
-	argv[0U] = const_cast<char*>( exe.pathCstr() ) ;
+	std::string str_exe = exe.str() ;
+	argv[0U] = const_cast<char*>( str_exe.c_str() ) ;
 	unsigned int argc = 1U ;
 	for( Strings::const_iterator arg_p = args.begin() ; arg_p != args.end() ; ++arg_p , argc++ )
 		argv[argc] = const_cast<char*>(arg_p->c_str()) ;
@@ -373,19 +365,6 @@ std::string G::Process::strerror( int errno_ )
 	return std::string( p ? p : "" ) ;
 }
 
-void G::Process::beSpecial( Identity special_identity , bool change_group )
-{
-	// force a group change if not really root because change-group=false
-	// is only to avoid creating files with group ownership of "root"
-	// if started as root
-	if( ! Identity::real().isRoot() )
-		change_group = true ;
-
-	const bool do_throw = false ; // ignore errors
-	setEffectiveUserTo( special_identity , do_throw ) ;
-	if( change_group ) setEffectiveGroupTo( special_identity , do_throw ) ;
-}
-
 void G::Process::revokeExtraGroups()
 {
 	if( Identity::real().isRoot() || Identity::effective() != Identity::real() )
@@ -393,6 +372,26 @@ void G::Process::revokeExtraGroups()
 		gid_t dummy ;
 		G_IGNORE ::setgroups( 0U , &dummy ) ; // (only works for root, so ignore the return code)
 	}
+}
+
+G::Identity G::Process::beSpecial( Identity special_identity , bool change_group )
+{
+	change_group = Identity::real().isRoot() ? change_group : true ;
+	Identity old_identity( Identity::effective() ) ;
+	setEffectiveUserTo( special_identity ) ;
+	if( change_group ) 
+	setEffectiveGroupTo( special_identity ) ;
+	return old_identity ;
+}
+
+G::Identity G::Process::beSpecial( SignalSafe safe , Identity special_identity , bool change_group )
+{
+	change_group = Identity::real().isRoot() ? change_group : true ;
+	Identity old_identity( Identity::effective() ) ;
+	setEffectiveUserTo( safe , special_identity ) ;
+	if( change_group ) 
+	setEffectiveGroupTo( safe , special_identity ) ;
+	return old_identity ;
 }
 
 G::Identity G::Process::beOrdinary( Identity nobody , bool change_group )
@@ -410,6 +409,25 @@ G::Identity G::Process::beOrdinary( Identity nobody , bool change_group )
 		setEffectiveUserTo( Identity::real() ) ;
 		if( change_group )
 		setEffectiveGroupTo( Identity::real() ) ;
+	}
+	return special_identity ;
+}
+
+G::Identity G::Process::beOrdinary( SignalSafe safe , Identity nobody , bool change_group )
+{
+	Identity special_identity( Identity::effective() ) ;
+	if( Identity::real().isRoot() )
+	{
+		setEffectiveUserTo( safe , Identity::root() ) ;
+		if( change_group ) 
+		setEffectiveGroupTo( safe , nobody ) ;
+		setEffectiveUserTo( safe , nobody ) ;
+	}
+	else
+	{
+		setEffectiveUserTo( safe , Identity::real() ) ;
+		if( change_group )
+		setEffectiveGroupTo( safe , Identity::real() ) ;
 	}
 	return special_identity ;
 }
@@ -435,10 +453,10 @@ G::Process::Id::Id()
 	m_pid = ::getpid() ;
 }
 
-G::Process::Id::Id( const char * path ) :
+G::Process::Id::Id( SignalSafe , const char * path ) :
 	m_pid(0)
 {
-	// reentrant implementation suitable for a signal handler...
+	// signal-safe, reentrant implementation suitable for a signal handler...
 	int fd = ::open( path ? path : "" , O_RDONLY ) ;
 	if( fd >= 0 )
 	{
@@ -486,8 +504,12 @@ public:
 G::Process::Umask::Umask( Mode mode ) :
 	m_imp(new UmaskImp)
 {
-	m_imp->m_old_mode = 
-		::umask( mode==Readable?0133:(mode==Tighter?0117:0177) ) ;
+	mode_t m = 0 ;
+	if( mode == Tightest ) m = 0177 ;
+	if( mode == Tighter ) m = 0117 ;
+	if( mode == Readable ) m = 0133 ;
+	if( mode == GroupOpen ) m = 0113 ;
+	m_imp->m_old_mode = ::umask( m ) ;
 }
 
 G::Process::Umask::~Umask()
@@ -496,7 +518,6 @@ G::Process::Umask::~Umask()
 	delete m_imp ;
 }
 
-//static
 void G::Process::Umask::set( Mode mode )
 {
 	// Tightest: -rw------- 
