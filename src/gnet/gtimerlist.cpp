@@ -27,6 +27,7 @@
 GNet::TimerList * GNet::TimerList::m_this = NULL ;
 
 GNet::TimerList::TimerList() :
+	m_run_on_destruction(true) ,
 	m_list_changed(false) ,
 	m_empty_set_timeout_hint(false) ,
 	m_soonest_changed(true) ,
@@ -38,6 +39,17 @@ GNet::TimerList::TimerList() :
 
 GNet::TimerList::~TimerList()
 {
+	if( m_run_on_destruction )
+	{
+		try
+		{
+			doTimeouts() ;
+		}
+		catch(...)
+		{
+		}
+	}
+
 	if( m_this == this )
 		m_this = NULL ;
 }

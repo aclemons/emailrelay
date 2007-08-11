@@ -23,7 +23,7 @@ html_files_in=doxygen_header.html
 html_files_thru=index.html emailrelay-man.html $(stylesheet)
 html_files_out=readme.html developer.html reference.html userguide.html windows.html changelog.html
 docbook_files_out=emailrelay.docbook
-png_files=gsmtp-classes.png gnet-classes.png sequence-1.png sequence-2.png sequence-3.png sequence-4.png gnet-client.png gsmtp-serverprotocol.png gsmtp-scannerclient.png auth.png
+png_files=gsmtp-classes.png gnet-classes.png sequence-3.png sequence-4.png gnet-client.png gsmtp-serverprotocol.png gsmtp-scannerclient.png auth.png
 
 EXTRA_DIST = $(man_files_in) $(txt_files) $(html_files_in) $(html_files_thru) $(png_files)
 noinst_SCRIPTS = .dox .docbook

@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gsmtpserver.h"
+#include "gresolver.h"
 #include "gprotocolmessagestore.h"
 #include "gprotocolmessageforward.h"
 #include "gexecutableprocessor.h"
@@ -123,7 +124,8 @@ GSmtp::Server::Server( MessageStore & store , const Secrets & client_secrets , c
 	GSmtp::Client::Config client_config ) :
 		GNet::MultiServer( GNet::MultiServer::addressList(config.interfaces,config.port) ) ,
 		m_store(store) ,
-		m_newfile_preprocessor(config.newfile_preprocessor) ,
+		m_processor_address(config.processor_address) ,
+		m_processor_timeout(config.processor_timeout) ,
 		m_client_config(client_config) ,
 		m_ident(config.ident) ,
 		m_allow_remote(config.allow_remote) ,
@@ -131,12 +133,8 @@ GSmtp::Server::Server( MessageStore & store , const Secrets & client_secrets , c
 		m_verifier(verifier) ,
 		m_smtp_server(smtp_server_address) ,
 		m_smtp_connection_timeout(smtp_connection_timeout) ,
-		m_scanner_server(config.scanner_server) ,
-		m_scanner_response_timeout(config.scanner_response_timeout) ,
-		m_scanner_connection_timeout(config.scanner_connection_timeout) ,
 		m_client_secrets(client_secrets) ,
-		m_anonymous(config.anonymous) ,
-		m_preprocessor_timeout(config.preprocessor_timeout)
+		m_anonymous(config.anonymous)
 {
 }
 
@@ -158,14 +156,14 @@ GNet::ServerPeer * GSmtp::Server::newPeer( GNet::Server::PeerInfo peer_info )
 		std::string reason ;
 		if( ! m_allow_remote && ! GNet::Local::isLocal(peer_info.m_address,reason) )
 		{
-			G_WARNING( "GSmtp::Server: configured to reject non-local connection: " << reason ) ;
+			G_WARNING( "GSmtp::Server: configured to reject non-local smtp connection: " << reason ) ;
 			return NULL ;
 		}
 
 		std::auto_ptr<ServerProtocol::Text> ptext( newProtocolText(m_anonymous,peer_info.m_address) ) ;
 		std::auto_ptr<ProtocolMessage> pmessage( newProtocolMessage() ) ;
 		return new ServerPeer( peer_info , *this , pmessage , m_server_secrets , 
-			m_verifier , ptext , ServerProtocol::Config(!m_anonymous,m_preprocessor_timeout) ) ;
+			m_verifier , ptext , ServerProtocol::Config(!m_anonymous,m_processor_timeout) ) ;
 	}
 	catch( std::exception & e ) // newPeer()
 	{
@@ -189,24 +187,25 @@ GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessageStore( std::auto_ptr<P
 
 GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessageForward( std::auto_ptr<ProtocolMessage> pm )
 {
-	return new ProtocolMessageForward( m_store , pm , m_newfile_preprocessor ,
+	return new ProtocolMessageForward( m_store , pm ,
 		m_client_config , m_client_secrets , m_smtp_server , m_smtp_connection_timeout ) ;
 }
 
-GSmtp::Processor * GSmtp::Server::newProcessor( G::Executable exe , 
-	std::string scanner_server , unsigned int scanner_connection_timeout , unsigned int scanner_response_timeout )
+GSmtp::Processor * GSmtp::Server::newProcessor( const std::string & address , unsigned int timeout )
 {
-	if( ! scanner_server.empty() )
-	{
-		return new NetworkProcessor( scanner_server , scanner_connection_timeout , scanner_response_timeout ) ;
-	}
-	else if( exe.exe() == G::Path() )
+	std::string s1 ;
+	std::string s2 ;
+	if( address.empty() )
 	{
 		return new NullProcessor ;
 	}
+	else if( GNet::Resolver::parse(address,s1,s2) )
+	{
+		return new NetworkProcessor( address , timeout , timeout ) ;
+	}
 	else
 	{
-		return new ExecutableProcessor( exe ) ;
+		return new ExecutableProcessor( G::Executable(address) ) ;
 	}
 }
 
@@ -214,8 +213,7 @@ GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()
 {
 	// dependency injection...
 
-	std::auto_ptr<Processor> store_processor( newProcessor(m_newfile_preprocessor,
-		m_scanner_server,m_scanner_connection_timeout,m_scanner_response_timeout) ) ;
+	std::auto_ptr<Processor> store_processor( newProcessor(m_processor_address,m_processor_timeout) ) ;
 
 	std::auto_ptr<ProtocolMessage> store( newProtocolMessageStore( store_processor ) ) ;
 
@@ -235,26 +233,16 @@ GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()
 
 GSmtp::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const AddressList & interfaces_ , 
 	const std::string & ident_ , bool anonymous_ ,
-	const std::string & scanner_server_ , 
-	unsigned int scanner_response_timeout_ , 
-	unsigned int scanner_connection_timeout_ , 
-	const G::Executable & newfile_preprocessor_ , unsigned int preprocessor_timeout_ ) :
+	const std::string & processor_address_ , 
+	unsigned int processor_timeout_ ) :
 		allow_remote(allow_remote_) ,
 		port(port_) ,
 		interfaces(interfaces_) ,
 		ident(ident_) ,
 		anonymous(anonymous_) ,
-		scanner_server(scanner_server_) ,
-		scanner_response_timeout(scanner_response_timeout_) ,
-		scanner_connection_timeout(scanner_connection_timeout_) ,
-		newfile_preprocessor(newfile_preprocessor_) ,
-		preprocessor_timeout(preprocessor_timeout_)
+		processor_address(processor_address_) ,
+		processor_timeout(processor_timeout_)
 {
-	if( G::Test::enabled("scanner-response-timeout") )
-		scanner_response_timeout = 1 ;
-	if( G::Test::enabled("scanner-connection-timeout") )
-		scanner_connection_timeout = 1 ;
 }
-
 
 /// \file gsmtpserver.cpp

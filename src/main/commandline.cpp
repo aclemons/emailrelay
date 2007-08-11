@@ -76,7 +76,6 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "P!postmaster!!0!!0|"
 		<< "Z!verifier!specifies an external program for address verification!1!program!3|"
 		<< "Y!client-filter!specifies an external program to process messages when they are forwarded!1!program!3|"
-		<< "R!scanner!specifies an external network server to process messages when they are stored!1!host:port!3|"
 		<< "Q!admin-terminate!enables the terminate command on the admin interface!0!!3|"
 		<< "A!anonymous!disables the smtp vrfy command and sends less verbose smtp responses!0!!3|"
 		<< "B!pop!enables the pop server if compiled-in!0!!" << pop_level << "|"
@@ -235,9 +234,6 @@ std::string Main::CommandLine::semanticError() const
 		if( m_getopt.contains("filter") )
 			return "the --filter switch cannot be used with --as-client or --dont-serve" ;
 
-		if( m_getopt.contains("scanner") )
-			return "the --scanner switch cannot be used with --as-client or --dont-serve" ;
-
 		if( m_getopt.contains("port") )
 			return "the --port switch cannot be used with --as-client or --dont-serve" ;
 
@@ -258,9 +254,6 @@ std::string Main::CommandLine::semanticError() const
 	{
 		if( m_getopt.contains("filter") )
 			return "the --filter switch cannot be used with --no-smtp" ;
-
-		if( m_getopt.contains("scanner") )
-			return "the --scanner switch cannot be used with --no-smtp" ;
 
 		if( m_getopt.contains("port") )
 			return "the --port switch cannot be used with --no-smtp" ;

@@ -75,6 +75,7 @@ public:
 		SyntaxError_501 = 501 ,
 		NotImplemented_502 = 502 ,
 		BadSequence_503 = 503 ,
+		NotAuthenticated_535 = 535 ,
 		Invalid = 0
 	} ;
 
@@ -112,6 +113,11 @@ public:
 		///< excluding the numeric part, and with
 		///< embedded newlines.
 
+	std::string errorText() const ;
+		///< Returns the text() string but with the guarantee 
+		///< that the returned string is empty if and only
+		///< if the reply value is exactly 250.
+
 	bool textContains( std::string s ) const ;
 		///< Returns true if the text() contains
 		///< the given substring.
@@ -139,11 +145,20 @@ private:
 /// \class GSmtp::ClientProtocol
 /// Implements the client-side SMTP protocol.
 ///
+/// Note that fatal, non-message-specific errors result in 
+/// an exception being thrown, possibly out of an event-loop 
+/// callback. In practice these will result in the connection 
+/// being dropped immediately without failing the message.
+///
 class GSmtp::ClientProtocol : private GNet::AbstractTimer 
 {
 public:
 	G_EXCEPTION( NotReady , "not ready" ) ;
-	G_EXCEPTION( NoRecipients , "no recipients" ) ;
+	G_EXCEPTION( ResponseError , "protocol error: unexpected response" ) ;
+	G_EXCEPTION( NoMechanism , "cannot do authentication mandated by the server" ) ;
+	G_EXCEPTION( AuthenticationRequired , "authentication required by the server" ) ;
+	G_EXCEPTION( AuthenticationNotSupported , "authentication not supported by the server" ) ;
+	G_EXCEPTION( AuthenticationError , "authentication error" ) ;
 	typedef ClientProtocolReply Reply ;
 
 	/// An interface used by ClientProtocol to send protocol messages.
@@ -190,16 +205,10 @@ public:
 		///< If the 'eight-bit-strict' flag is true then an eight-bit 
 		///< message being sent to a seven-bit server will be failed.
 
-	G::Signal3<bool,bool,std::string> & doneSignal() ;
+	G::Signal1<std::string> & doneSignal() ;
 		///< Returns a signal that is raised once the protocol has
-		///< finished with a given message. The signal parameters 
-		///< are 'ok', 'abort' and 'reason'.
-		///<
-		///< If 'ok' is false then 'abort' indicates whether there 
-		///< is any point in trying to send more messages to the same 
-		///< server. The 'abort' parameter will be true if, for example, 
-		///< authentication failed -- if it failed for one message 
-		///< then it will fail for all the others.
+		///< finished with a given message. The signal parameter
+		///< is the empty string, or a non-empty reason on error.
 
 	G::Signal0 & preprocessorSignal() ;
 		///< Returns a signal that is raised when the protocol
@@ -244,7 +253,8 @@ private:
 	static const std::string & crlf() ;
 	bool applyEvent( const Reply & event , bool is_start_event = false ) ;
 	static bool parseReply( Reply & , const std::string & , std::string & ) ;
-	void raiseDoneSignal( bool , bool , const std::string & ) ;
+	void raiseDoneSignal( const std::string & , bool = false ) ;
+	bool serverAuth( const ClientProtocolReply & reply ) const ;
 	G::Strings serverAuthMechanisms( const ClientProtocolReply & reply ) const ;
 	void startPreprocessing() ;
 	virtual void onTimeout() ; // from GNet::AbstractTimer
@@ -274,7 +284,7 @@ private:
 	unsigned int m_response_timeout ;
 	unsigned int m_ready_timeout ;
 	unsigned int m_preprocessor_timeout ;
-	G::Signal3<bool,bool,std::string> m_done_signal ;
+	G::Signal1<std::string> m_done_signal ;
 	G::Signal0 m_preprocessor_signal ;
 } ;
 

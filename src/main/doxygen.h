@@ -29,8 +29,6 @@ of the code structure, and there are a number of supporting diagrams:
 <ul>
 <li>GNet namespace <a href="../gnet-classes.png">class diagram</a></li>
 <li>GSmtp namespace <a href="../gsmtp-classes.png">class diagram</a></li>
-<li>ProtocolMessage <a href="../sequence-1.png">sequence diagram 1</a></li>
-<li>ProtocolMessage <a href="../sequence-2.png">sequence diagram 2</a></li>
 <li>Proxy-mode forwarding <a href="../sequence-3.png">sequence diagram</a></li>
 <li>Scanning <a href="../sequence-4.png">sequence diagram</a></li>
 <li>GNet::Client <a href="../gnet-client.png">state transition diagram</a></li>

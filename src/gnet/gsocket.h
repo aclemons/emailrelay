@@ -218,7 +218,7 @@ private:
 	void drop() ;
 };
 
-/// ===
+///
 
 /// \class GNet::AcceptPair
 /// A class which behaves like std::pair<std::auto_ptr<StreamSocket>,Address>.
@@ -248,7 +248,7 @@ public:
 		///< Assignment operator.
 } ;
 
-/// ===
+///
 
 /// \class GNet::StreamSocket
 /// A derivation of Socket for a stream socket. 
@@ -290,7 +290,7 @@ private:
 		///< A private constructor used in accept().
 } ;
 
-/// ===
+///
 
 /// \class GNet::DatagramSocket
 /// A derivation of Socket for a connectionless
@@ -336,7 +336,7 @@ private:
 		///< Assignment operator. Not implemented.
 } ;
 
-/// ===
+///
 
 inline
 ssize_t GNet::DatagramSocket::write( const char *buf, size_t len ) 
@@ -344,7 +344,7 @@ ssize_t GNet::DatagramSocket::write( const char *buf, size_t len )
 	return Socket::write(buf,len) ; 
 }
 
-/// ===
+///
 
 inline 
 GNet::AcceptPair::AcceptPair( StreamSocket * p , Address a ) : 

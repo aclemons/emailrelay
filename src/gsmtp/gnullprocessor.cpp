@@ -14,43 +14,49 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-///
-/// \file gconvert.h
-///
-
-#ifndef G_CONVERT_H
-#define G_CONVERT_H
+//
+// gnullprocessor.cpp
+//
 
 #include "gdef.h"
-#include "gexception.h"
-#include <sstream>
+#include "gsmtp.h"
+#include "gnullprocessor.h"
 
-/// \namespace G
-namespace G
+GSmtp::NullProcessor::NullProcessor()
 {
-
-G_EXCEPTION( ConvertOverflow , "arithmetic overflow" ) ;
-
-/// Template function: G::Convert
-/// Does arithmetic conversions with
-/// overflow checking.
-/// \see boost::numeric_cast<>()
-///
-template <typename Tout, typename Tin>
-Tout Convert( const Tin & in )
-{
-	Tout out = in ;
-	Tin copy = out ;
-	if( in != copy )
-	{
-		std::ostringstream ss ;
-		ss << in ;
-		throw ConvertOverflow( ss.str() ) ;
-	}
-	return out ;
 }
 
+GSmtp::NullProcessor::~NullProcessor()
+{
 }
 
-#endif
+bool GSmtp::NullProcessor::cancelled() const
+{
+	return false ;
+}
 
+bool GSmtp::NullProcessor::repoll() const
+{
+	return false ;
+}
+
+std::string GSmtp::NullProcessor::text() const
+{
+	return std::string() ;
+}
+
+G::Signal1<bool> & GSmtp::NullProcessor::doneSignal()
+{
+	return m_done_signal ;
+}
+
+void GSmtp::NullProcessor::abort()
+{
+}
+
+void GSmtp::NullProcessor::start( const std::string & )
+{
+	m_done_signal.emit( true ) ;
+}
+
+/// \file gnullprocessor.cpp

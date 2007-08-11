@@ -52,7 +52,7 @@ public:
 	Arg() ;
 		///< Default constructor for Windows. 
 		///< Initialise (once) with parse().
-		
+
 	void parse( HINSTANCE hinstance , const std::string & command_line ) ;
 		///< Windows only.
 		///<

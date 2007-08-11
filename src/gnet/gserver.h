@@ -185,8 +185,7 @@ public:
 	enum { c_buffer_size = 1500 } ;
 
 	explicit ServerPeer( Server::PeerInfo ) ;
-		///< Constructor. This constructor is
-		///< only used from within the 
+		///< Constructor. This constructor is only used from within the 
 		///< override of GServer::newPeer().
 
 	void doDelete() ; 
@@ -203,26 +202,25 @@ public:
 		///< Returns the peer address.
 
 	virtual ~ServerPeer() ;
-		///< Destructor. Note that objects will delete
-		///< themselves when they detect that the
-		///< connection has been lost -- see doDelete().
+		///< Destructor. Note that objects will delete themselves 
+		///< when they detect that the connection has been 
+		///< lost -- see doDelete().
 
 protected:
 	virtual void onDelete() = 0 ;
-		///< Called just before destruction. (Note 
-		///< that the object typically deletes itself.)
+		///< Called just before destruction. (Note that the
+		///< object typically deletes itself.)
 
 	virtual void onData( const char * , size_type ) = 0 ;
 		///< Called on receipt of data.
 
 	StreamSocket & socket() ;
-		///< Returns a reference to the client-server
-		///< connection socket.
+		///< Returns a reference to the client-server connection 
+		///< socket.
 
 	Server * server() ;
-		///< Returns a pointer to the associated server 
-		///< object. Returns NULL if the server has
-		///< been destroyed.
+		///< Returns a pointer to the associated server object. 
+		///< Returns NULL if the server has been destroyed.
 
 private:
 	ServerPeer( const ServerPeer & ) ; // not implemented

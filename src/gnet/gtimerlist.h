@@ -51,7 +51,8 @@ public:
 		///< Default constructor.
 
 	~TimerList() ;
-		///< Destructor.
+		///< Destructor. Any expired timers are have their timeouts
+		///< called.
 
 	void add( AbstractTimer & ) ;
 		///< Adds a timer. Used by Timer::Timer().
@@ -93,6 +94,7 @@ private:
 private:
 	static TimerList * m_this ;
 	typedef std::list<AbstractTimer*> List ;
+	bool m_run_on_destruction ;
 	List m_list ;
 	bool m_list_changed ;
 	bool m_empty_set_timeout_hint ;

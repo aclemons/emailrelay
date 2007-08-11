@@ -232,7 +232,7 @@ void GNet::Server::readEvent()
 	if( peer == NULL )
 	{
 		m_peer_list.pop_back() ;
-		G_WARNING( "GNet::Server::readEvent: connection rejected from " << peer_info.m_address.displayString() ) ;
+		G_DEBUG( "GNet::Server::readEvent: connection rejected from " << peer_info.m_address.displayString() ) ;
 	}
 	else
 	{

@@ -33,7 +33,7 @@
 # Description: Specifies an interface to listen on. The default is to listen
 # on all interfaces (INADDR_ANY). Using a specific interface can make it harder
 # for clients on other sub-networks to connect, so improving security. Up to
-# three interface addresses can be spefified using comma separators.
+# three interface addresses can be specified using comma separators.
 #
 #interface 192.168.0.10
 
@@ -76,24 +76,29 @@
 # Name: domain
 # Format: domain <fqdn>             
 # Description: Sets an override for this host's fully qualified domain name.
+# This is used as an identifier in the SMTP protocol and is therefore visible 
+# to remote SMTP servers and clients.
 #
 #domain myhost.mydomain.net
 
 # Name: forward
 # Format: forward                   
 # Description: Forwards stored mail on startup. Requires --forward-to.
+# This is implicit in the --as-proxy switch.
 #
 #forward
 
 # Name: forward-to
 # Format: forward-to <host:port>    
-# Description: Specifies the remote SMTP server when using --forward or --admin.
+# Description: Specifies the remote SMTP server when using --forward, --as-proxy 
+# or --admin.
 #
 #forward-to smarthost.mydomain.net
 
 # Name: immediate
 # Format: immediate                 
 # Description: Forwards each message as soon as it is received. Requires --forward-to.
+# This is implicit in the --as-proxy switch.
 #
 #immediate
 
@@ -112,7 +117,7 @@
 # Name: poll
 # Format: poll <period>             
 # Description: Enables polling of the spool directory for new messages with the 
-# specified period. Requires --forward-to.
+# specified period (in seconds). Requires --forward-to.
 #
 #poll 120
 
@@ -174,7 +179,7 @@
 # Name: pop-by-name
 # Format: pop-by-name
 # Description: Serves messages from a user-specific subdirectory of the main spool directory.
+# The subdirectory name is the name used in the POP authentication.
 #
 #pop-by-name
-
 

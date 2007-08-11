@@ -58,7 +58,7 @@ namespace GSmtp
 /// - process() -> doneSignal() [async]
 ///
 /// The process() method is asynchronous, but note that the 
-/// completion signal may be emited before the initiating call 
+/// completion signal may be emitted before the initiating call 
 /// returns.
 ///
 class GSmtp::ProtocolMessage 

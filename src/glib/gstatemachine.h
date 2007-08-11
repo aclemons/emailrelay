@@ -38,10 +38,9 @@ G_EXCEPTION( StateMachine_Error , "invalid state machine transition" ) ;
 /// apply()d to the state machine, it undergoes a state 'transition'
 /// and then calls the associated 'action' method.
 ///
-/// Predicates are supported. Any action method can return a boolean
-/// predicate value which is used to select between two transitions --
-/// the 'normal' transition if the predicate is true, and an 'alternative'
-/// transition if false.
+/// Any action method can return a boolean predicate value which is used to select 
+/// between two transitions -- the 'normal' transition if the predicate is 
+/// true, and an 'alternative' transition if false.
 ///
 /// Transition states can be implemented by having the relevant action
 /// method call apply() on the state-machine. The state machine's state
@@ -162,7 +161,7 @@ private:
 	State m_any ;
 } ;
 
-template <class T, class State, class Event, class Arg>
+template <typename T, typename State, typename Event, typename Arg>
 StateMachine<T,State,Event,Arg>::StateMachine( State s_start , State s_end , State s_same , State s_any ) :
 	m_state(s_start) ,
 	m_end(s_end) ,
@@ -171,14 +170,13 @@ StateMachine<T,State,Event,Arg>::StateMachine( State s_start , State s_end , Sta
 {
 }
 
-template <class T, class State, class Event, class Arg>
-inline
+template <typename T, typename State, typename Event, typename Arg>
 void StateMachine<T,State,Event,Arg>::addTransition( Event event , State from , State to , Action action )
 {
 	addTransition( event , from , to , action , to ) ;
 }
 
-template <class T, class State, class Event, class Arg>
+template <typename T, typename State, typename Event, typename Arg>
 void StateMachine<T,State,Event,Arg>::addTransition( Event event , State from , State to , Action action , State alt )
 {
 	if( to == m_any || alt == m_any )
@@ -196,8 +194,7 @@ void StateMachine<T,State,Event,Arg>::addTransition( Event event , State from , 
 	m_map.insert( Map_value_type( event , Transition(from,to,action,alt) ) ) ;
 }
 
-template <class T, class State, class Event, class Arg>
-inline
+template <typename T, typename State, typename Event, typename Arg>
 State StateMachine<T,State,Event,Arg>::reset( State new_state )
 {
 	State old_state = m_state ;
@@ -205,41 +202,31 @@ State StateMachine<T,State,Event,Arg>::reset( State new_state )
 	return old_state ;
 }
 
-template <class T, class State, class Event, class Arg>
-inline
+template <typename T, typename State, typename Event, typename Arg>
 State StateMachine<T,State,Event,Arg>::state() const
 {
 	return m_state ;
 }
 
-template <class T, class State, class Event, class Arg>
+template <typename T, typename State, typename Event, typename Arg>
 State StateMachine<T,State,Event,Arg>::apply( T & t , Event event , const Arg & arg )
 {
-	///< look up in the multimap keyed on current-state + event
-	///<
 	State state = m_state ;
-	typename Map::iterator p = m_map.find(event) ;
+	typename Map::iterator p = m_map.find(event) ; // look up in the multimap keyed on current-state + event
 	for( ; p != m_map.end() && (*p).first == event ; ++p )
 	{
 		if( (*p).second.from == m_any || (*p).second.from == m_state )
 		{
-			///< change state
-			///<
-			State old_state = m_state ;
+			State old_state = m_state ; // change state
 			if( (*p).second.to != m_same )
 				state = m_state = (*p).second.to ;
 
-			///< (avoid using members after the action method call)
-			State end = m_end ;
+			State end = m_end ; // (avoid using members after the action method call)
 
-			///< perform action
-			///<
 			bool predicate = true ;
-			(t.*((*p).second.action))( arg , predicate ) ;
+			(t.*((*p).second.action))( arg , predicate ) ; // perform action
 
-			///< respond to predicate
-			///<
-			if( state != end && !predicate )
+			if( state != end && !predicate ) // respond to predicate
 			{
 				State alt_state = (*p).second.alt ;
 				state = m_state = alt_state == m_same ? old_state : alt_state ;

@@ -57,7 +57,6 @@ class GSmtp::ProtocolMessageForward : public GSmtp::ProtocolMessage
 public:
 	ProtocolMessageForward( MessageStore & store , 
 		std::auto_ptr<ProtocolMessage> pm ,
-		const G::Executable & newfile_preprocessor ,
 		const GSmtp::Client::Config & client_config ,
 		const Secrets & client_secrets , 
 		const std::string & server_address , 
@@ -117,7 +116,6 @@ private:
 	MessageStore & m_store ;
 	GNet::ResolverInfo m_client_resolver_info ;
 	Client::Config m_client_config ;
-	G::Executable m_newfile_preprocessor ;
 	const Secrets & m_client_secrets ;
 	std::auto_ptr<ProtocolMessage> m_pm ;
 	GNet::ClientPtr<GSmtp::Client> m_client ;

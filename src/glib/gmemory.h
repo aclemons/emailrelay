@@ -44,7 +44,7 @@
 /// }
 /// \endcode
 ///
-template <class T>
+template <typename T>
 void operator<<=( std::auto_ptr<T> & ap , T * p )
 {
 	std::auto_ptr<T> temp( p ) ;
@@ -54,7 +54,7 @@ void operator<<=( std::auto_ptr<T> & ap , T * p )
 /// Template function: operator<<=
 /// A version for null-pointer constants.
 ///
-template <class T>
+template <typename T>
 void operator<<=( std::auto_ptr<T> & ap , int /* null_pointer */ )
 {
 	T * p = 0 ;

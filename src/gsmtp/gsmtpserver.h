@@ -94,15 +94,11 @@ public:
 		std::string ident ;
 		bool anonymous ;
 		///<
-		std::string scanner_server ;
-		unsigned int scanner_response_timeout ;
-		unsigned int scanner_connection_timeout ;
-		///<
-		G::Executable newfile_preprocessor ;
-		unsigned int preprocessor_timeout ;
+		std::string processor_address ;
+		unsigned int processor_timeout ;
 		///<
 		Config( bool , unsigned int , const AddressList & , const std::string & , bool ,
-			const std::string & , unsigned int , unsigned int , const G::Executable & , unsigned int ) ;
+			const std::string & , unsigned int ) ;
 	} ;
 
 	Server( MessageStore & store , const Secrets & client_secrets , const Secrets & server_secrets ,
@@ -139,11 +135,12 @@ private:
 	ProtocolMessage * newProtocolMessageScanner( std::auto_ptr<ProtocolMessage> ) ;
 	ProtocolMessage * newProtocolMessageForward( std::auto_ptr<ProtocolMessage> ) ;
 	ServerProtocol::Text * newProtocolText( bool , GNet::Address ) const ;
-	static Processor * newProcessor( G::Executable , std::string , unsigned int , unsigned int ) ;
+	static Processor * newProcessor( const std::string & , unsigned int ) ;
 
 private:
 	MessageStore & m_store ;
-	G::Executable m_newfile_preprocessor ;
+	std::string m_processor_address ;
+	unsigned int m_processor_timeout ;
 	GSmtp::Client::Config m_client_config ;
 	std::string m_ident ;
 	bool m_allow_remote ;
@@ -151,12 +148,8 @@ private:
 	Verifier m_verifier ;
 	std::string m_smtp_server ;
 	unsigned int m_smtp_connection_timeout ;
-	std::string m_scanner_server ;
-	unsigned int m_scanner_response_timeout ;
-	unsigned int m_scanner_connection_timeout ;
 	const Secrets & m_client_secrets ;
 	bool m_anonymous ;
-	unsigned int m_preprocessor_timeout ;
 	std::auto_ptr<ServerProtocol::Text> m_protocol_text ;
 } ;
 

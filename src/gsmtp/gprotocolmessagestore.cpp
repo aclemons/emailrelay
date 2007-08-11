@@ -130,7 +130,7 @@ void GSmtp::ProtocolMessageStore::process( const std::string & auth_id , const s
 	}
 	catch( std::exception & e ) // catch preprocessing errors
 	{
-		G_ERROR( "GSmtp::ProtocolMessage::process: exception: " << e.what() ) ;
+		G_DEBUG( "GSmtp::ProtocolMessage::process: exception: " << e.what() ) ;
 		clear() ;
 		m_done_signal.emit( false , 0UL , e.what() ) ;
 	}
@@ -168,7 +168,7 @@ void GSmtp::ProtocolMessageStore::preprocessorDone( bool ok )
 	}
 	catch( std::exception & e ) // catch preprocessing errors
 	{
-		G_ERROR( "GSmtp::ProtocolMessage::preprocessorDone: exception: " << e.what() ) ;
+		G_DEBUG( "GSmtp::ProtocolMessage::preprocessorDone: exception: " << e.what() ) ;
 		clear() ;
 		m_done_signal.emit( false , 0UL , e.what() ) ;
 	}

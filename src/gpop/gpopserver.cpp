@@ -100,7 +100,7 @@ GNet::ServerPeer * GPop::Server::newPeer( GNet::Server::PeerInfo peer_info )
 		std::string reason ;
 		if( ! m_allow_remote && ! GNet::Local::isLocal(peer_info.m_address,reason) )
 		{
-			G_WARNING( "GPop::Server: configured to reject non-local connection: " << reason ) ;
+			G_WARNING( "GPop::Server: configured to reject non-local pop connection: " << reason ) ;
 			return NULL ;
 		}
 

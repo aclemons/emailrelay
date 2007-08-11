@@ -7,12 +7,13 @@ E-MailRelay Change Log
 * New "--prompt-timeout" switch for the timeout when waiting for the initial 220 prompt from the SMTP server.
 * Fix for flow-control assertion error when the pop server sends a very long list of spooled messages.
 * Widespread code refactoring and cleanup.
-* Better wildcard matching for trusted IP addresses in the authentication secrets file.
-* More extensive switching of effective user-id to read files and directories when running as root.
-* Multiple protocol errors caused by a remote SMTP client now result in the the server dropping the connection.
+* Wildcard matching for trusted IP addresses in the authentication secrets file can use CIDR notation.
+* More fine-grained switching of effective user-id to read files and directories when running as root.
+* The server drops the connection if a remote SMTP client causes too many protocol errors.
 * More rigorous implementation of "--hidden" on Windows.
+* Scanner switch ("--scanner") replaced by a more general interpretation of "--filter" and "--client-filter".
 * Better support for running as a Windows service ("emailrelay-service --install").
-* The filter program "emailrelay-filter-copy" exits with 100 if it deletes the envelope file.
+* The utility filter program "emailrelay-filter-copy" exits with 100 if it deletes the envelope file.
 * Installation GUI makes backups of the files it edits and preserves authentication secrets.
 * Installation GUI can install "init.d" links.
 * Authentication diagram corrected.

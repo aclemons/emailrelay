@@ -49,12 +49,14 @@ sub new
 		m_pidfile => System::tempfile("pidfile",$tmp_dir) ,
 		m_pid => undef ,
 		m_pop_secrets => System::tempfile("pop.auth",$tmp_dir) ,
+		m_client_secrets => System::tempfile("client.auth",$tmp_dir) ,
 		m_poll_timeout => 1 ,
 		m_dst => "dummy:25" ,
 		m_spool_dir => (defined($spool_dir)?$spool_dir:System::createSpoolDir(undef,$tmp_dir)) ,
 		m_user => "nobody" ,
 		m_full_command => undef ,
 		m_filter => System::tempfile("filter",$tmp_dir) ,
+		m_client_filter => System::tempfile("client-filter",$tmp_dir) ,
 		m_scanner => "localhost:$scanner_port" ,
 	) ;
 	my $this = bless \%me , $classname ;
@@ -69,6 +71,7 @@ sub adminPort { return shift->{'m_admin_port'} }
 sub scannerAddress { return shift->{'m_scanner'} }
 sub popPort { return shift->{'m_pop_port'} }
 sub popSecrets { return shift->{'m_pop_secrets'} }
+sub clientSecrets { return shift->{'m_client_secrets'} }
 sub pollTimeout { return shift->{'m_poll_timeout'} }
 sub set_pollTimeout { $_[0]->{'m_poll_timeout'} = $_[1] }
 sub stdout { return shift->{'m_stdout'} }
@@ -82,6 +85,7 @@ sub set_spoolDir { $_[0]->{'m_spool_dir'} = $_[1] }
 sub user { return shift->{'m_user'} }
 sub command { return shift->{'m_full_command'} }
 sub filter { return shift->{'m_filter'} }
+sub clientFilter { return shift->{'m_client_filter'} }
 sub rc { return shift->{'m_rc'} }
 
 sub _check
@@ -139,6 +143,7 @@ sub _switches
 		( exists($sw{AdminTerminate}) ? "--admin-terminate " : "" ) .
 		( exists($sw{Help}) ? "--help " : "" ) .
 		( exists($sw{Verbose}) ? "--verbose " : "" ) .
+		( exists($sw{Forward}) ? "--forward " : "" ) .
 		( exists($sw{ForwardTo}) ? "--forward-to __FORWARD_TO__ " : "" ) .
 		( exists($sw{User}) ? "--user __USER__ " : "" ) .
 		( exists($sw{Debug}) ? "--debug " : "" ) .
@@ -146,8 +151,12 @@ sub _switches
 		( exists($sw{NoSmtp}) ? "--no-smtp " : "" ) .
 		( exists($sw{Poll}) ? "--poll __POLL_TIMEOUT__ " : "" ) .
 		( exists($sw{Filter}) ? "--filter __FILTER__ " : "" ) .
+		( exists($sw{FilterTimeout}) ? "--filter-timeout 1 " : "" ) .
+		( exists($sw{ClientFilter}) ? "--client-filter __CLIENT_FILTER__ " : "" ) .
 		( exists($sw{Immediate}) ? "--immediate " : "" ) .
-		( exists($sw{Scanner}) ? "--scanner __SCANNER__ " : "" ) .
+		( exists($sw{Scanner}) ? "--filter __SCANNER__ " : "" ) .
+		( exists($sw{DontServe}) ? "--dont-serve " : "" ) .
+		( exists($sw{ClientAuth}) ? "--client-auth __CLIENT_SECRETS__ " : "" ) .
 		"" ;
 }
 
@@ -167,9 +176,12 @@ sub _set_all
 	$command_tail = _set( $command_tail , "__USER__" , $this->user() ) ;
 	$command_tail = _set( $command_tail , "__POLL_TIMEOUT__" , $this->pollTimeout() ) ;
 	$command_tail = _set( $command_tail , "__FILTER__" , $this->filter() ) ;
+	$command_tail = _set( $command_tail , "__CLIENT_FILTER__" , $this->clientFilter() ) ;
 	$command_tail = _set( $command_tail , "__SCANNER__" , $this->scannerAddress() ) ;
+	$command_tail = _set( $command_tail , "__CLIENT_SECRETS__" , $this->clientSecrets() ) ;
 
-	return $this->exe() . " " .  $command_tail ;
+	my $valgrind = "" ;
+	return $valgrind . $this->exe() . " " .  $command_tail ;
 }
 
 sub run
@@ -258,6 +270,7 @@ sub cleanup
 	unlink( $this->stdout() ) ;
 	unlink( $this->stderr() ) ;
 	unlink( $this->popSecrets() ) ;
+	unlink( $this->clientSecrets() ) ;
 	unlink( $this->filter() ) ;
 }
 

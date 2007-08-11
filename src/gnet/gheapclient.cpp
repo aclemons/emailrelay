@@ -57,9 +57,9 @@ void GNet::HeapClient::onDeletionTimeout()
 void GNet::HeapClient::doDelete( const std::string & reason )
 {
 	m_connect_timer.cancelTimer() ;
+	m_delete_timer.startTimer( 0U ) ; // before the callbacks, in case they throw
 	onDeleteImp( reason , canRetry(reason) ) ; // first -- for 'internal' library classes
 	onDelete( reason , canRetry(reason) ) ; // second -- for 'external' client classes
-	m_delete_timer.startTimer( 0U ) ;
 }
 
 void GNet::HeapClient::doDeleteThis()

@@ -149,22 +149,6 @@ std::string Main::Configuration::clientInterface() const
 	return firstListeningInterface() ;
 }
 
-G::Path Main::Configuration::adminAddressFile() const
-{
-	if( ! m_cl.contains("admin") ) 
-		return G::Path() ;
-
-	const std::string s = m_cl.value("admin") ;
-	if( s.find("tcp://") == 0U && s.length() > 6U && s.find("/",6U) != std::string::npos )
-	{
-		return G::Path(s.substr(s.find("/",6U))) ;
-	}
-	else
-	{
-		return G::Path() ;
-	}
-}
-
 unsigned int Main::Configuration::adminPort() const
 {
 	std::string s = m_cl.contains("admin") ? m_cl.value("admin") : std::string() ;

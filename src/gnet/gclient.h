@@ -67,7 +67,7 @@ public:
 
 	G::Signal2<std::string,std::string> & eventSignal() ;
 		///< Returns a signal that indicates that something interesting
-		///< has happened.
+		///< has happened. Typically used for progress logging.
 		///<
 		///< The first signal parameter is one of "connecting",
 		///< "connected", "sending", "failed" (on error) or "done" 
@@ -83,7 +83,9 @@ protected:
 
 	virtual bool onReceive( const std::string & ) = 0 ;
 		///< Called when a complete line is received from the peer.
-		///< Returns false if no more lines should be delivered.
+		///< The implementation should return false if no more 
+		///< lines should be delivered, if for example the
+		///< object has deleted itself.
 
 	void clearInput() ;
 		///< Clears any pending input from the server.

@@ -165,7 +165,7 @@ void Main::Run::run()
 	}
 	catch( std::exception & e )
 	{
-		G_ERROR( "Main::Run::run: exception: " << e.what() ) ;
+		G_ERROR( "Main::Run::run: " << e.what() ) ;
 		throw ;
 	}
 	catch(...)
@@ -332,16 +332,6 @@ void Main::Run::doServing( const GSmtp::Secrets & client_secrets ,
 			cfg().connectionTimeout() ,
 			extra_commands_map ,
 			cfg().withTerminate() ) ;
-
-		// undocumented forwards-compatibility feature, tcp://[<ip>[:<port>]][/<addressfile>], eg.
-		// "--admin tcp:///tmp/emailrelay_admin_address"
-		if( cfg().adminAddressFile() != G::Path() )
-		{
-			G::Root claim_root ;
-			std::ofstream address_file( cfg().adminAddressFile().str().c_str() ) ;
-			if( !address_file.good() ) throw G::Exception( "cannot create --admin address file" ) ;
-			address_file << m_admin_server->firstAddress().second.displayString() << std::endl ;
-		}
 	}
 
 	if( cfg().doPolling() )
@@ -402,10 +392,7 @@ GSmtp::Server::Config Main::Run::serverConfig() const
 			interfaces ,
 			smtpIdent() , 
 			cfg().anonymous() ,
-			cfg().scannerAddress() ,
-			cfg().scannerResponseTimeout() ,
-			cfg().scannerConnectionTimeout() ,
-			G::Executable(cfg().filter()) ,
+			cfg().filter() ,
 			cfg().filterTimeout() ) ;
 }
 
@@ -418,7 +405,8 @@ GSmtp::Client::Config Main::Run::clientConfig() const
 {
 	return
 		GSmtp::Client::Config(
-			G::Executable(cfg().clientFilter()) ,
+			cfg().clientFilter() ,
+			cfg().filterTimeout() ,
 			cfg().clientInterface().length() ?
 				GNet::Address(cfg().clientInterface(),0U) : 
 				GNet::Address(0U) ,
@@ -476,7 +464,7 @@ std::string Main::Run::doPoll()
 	}
 	catch( std::exception & e )
 	{
-		G_ERROR( "Main::Run::doPoll: polling: exception: " << e.what() ) ;
+		G_ERROR( "Main::Run::doPoll: polling: " << e.what() ) ;
 		return e.what() ;
 	}
 }
@@ -505,7 +493,7 @@ void Main::Run::pollingClientDone( std::string reason , bool )
 	G_DEBUG( "Main::Run::pollingClientDone: \"" << reason << "\"" ) ;
 	if( ! reason.empty() )
 	{
-		G_ERROR( "Main::Run::pollingClientDone: polling: exception: " << reason ) ;
+		G_ERROR( "Main::Run::pollingClientDone: polling: " << reason ) ;
 	}
 }
 
@@ -542,7 +530,7 @@ void Main::Run::emit( const std::string & s0 , const std::string & s1 , const st
 	}
 	catch( std::exception & e )
 	{
-		G_WARNING( "Main::Run::emit: exception: " << e.what() ) ;
+		G_WARNING( "Main::Run::emit: " << e.what() ) ;
 	}
 }
 

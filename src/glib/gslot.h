@@ -73,7 +73,6 @@ private:
 } ;
 
 template <typename T>
-inline
 void swap_( T & t1 , T & t2 ) // no std::swap in gcc2.95
 {
 	T temp( t1 ) ;
@@ -81,7 +80,7 @@ void swap_( T & t1 , T & t2 ) // no std::swap in gcc2.95
 	t2 = temp ;
 }
 
-/// ===
+///
 
 /// \class SlotImp0
 /// Part of the slot/signal system.
@@ -151,13 +150,12 @@ public:
 /// Part of the slot/signal system.
 ///
 template <typename T>
-inline
 Slot0 slot( T & object , void (T::*fn)() )
 {
 	return Slot0( new SlotImp0<T>(object,fn) , SlotOp0<T>::callback ) ;
 }
 
-/// ===
+///
 
 /// \class SlotImp1
 /// Part of the slot/signal system.
@@ -227,13 +225,12 @@ public:
 /// Part of the slot/signal system.
 ///
 template <typename T,typename P>
-inline
 Slot1<P> slot( T & object , void (T::*fn)(P) )
 {
 	return Slot1<P>( new SlotImp1<T,P>(object,fn) , SlotOp1<T,P>::callback ) ;
 }
 
-/// ===
+///
 
 /// \class SlotImp2
 /// Part of the slot/signal system.
@@ -303,13 +300,12 @@ public:
 /// Part of the slot/signal system.
 ///
 template <typename T, typename P1, typename P2>
-inline
 Slot2<P1,P2> slot( T & object , void (T::*fn)(P1,P2) )
 {
 	return Slot2<P1,P2>( new SlotImp2<T,P1,P2>(object,fn) , SlotOp2<T,P1,P2>::callback ) ;
 }
 
-/// ===
+///
 
 /// \class SlotImp3
 /// Part of the slot/signal system.
@@ -379,7 +375,6 @@ public:
 /// Part of the slot/signal system.
 ///
 template <typename T, typename P1, typename P2, typename P3>
-inline
 Slot3<P1,P2,P3> slot( T & object , void (T::*fn)(P1,P2,P3) )
 {
 	return Slot3<P1,P2,P3>( new SlotImp3<T,P1,P2,P3>(object,fn) , SlotOp3<T,P1,P2,P3>::callback ) ;

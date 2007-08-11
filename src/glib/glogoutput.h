@@ -45,19 +45,17 @@ public:
 		bool with_verbose_logging , bool with_debug , bool with_level ,
 		bool with_timestamp , bool strip_context ,
 		bool use_syslog , SyslogFacility syslog_facility = User ) ;
-			///< Constructor. If there is no LogOutput object,
-			///< or if 'output' is false, then there is no 
-			///< output of any sort. Otherwise at least
-			///< warning and error messages are generated.
+			///< Constructor. If there is no LogOutput object, or if 'output' 
+			///< is false, then there is no output of any sort. Otherwise at 
+			///< least warning and error messages are generated.
 			///<
-			///< If 'with-logging' is true then log[summary] messages 
-			///< are output. If 'with-verbose-logging' is true then 
-			///< log[verbose] messages are output. If 'with_debug' is 
-			///< true then debug messages will also be generated
-			///< (but only if compiled in).
+			///< If 'with-logging' is true then log[summary] messages are 
+			///< output. If 'with-verbose-logging' is true then log[verbose] 
+			///< messages are output. If 'with_debug' is true then debug 
+			///< messages will also be generated (but only if compiled in).
 			///<
-			///< More than one LogOutput object may be created, but 
-			///< only the first one controls output.
+			///< More than one LogOutput object may be created, but only
+			///< the first one controls output.
 
 	explicit LogOutput( bool output_with_logging , bool verbose_and_debug = true ) ;
 		///< Constructor.
@@ -70,12 +68,11 @@ public:
 		///< output (with OutputDebugString() or stderr).
 		
 	static LogOutput * instance() ;
-		///< Returns a pointer to the controlling
-		///< LogOutput object. Returns NULL if none.
+		///< Returns a pointer to the controlling LogOutput object. Returns 
+		///< NULL if none.
 		
 	bool enable( bool enabled = true ) ;
-		///< Enables or disables output.
-		///< Returns the previous setting.
+		///< Enables or disables output. Returns the previous setting.
 
 	static void output( G::Log::Severity s , const char *file , unsigned line , const char *text ) ;
 		///< Generates output if there is an existing
@@ -83,14 +80,12 @@ public:
 
 	static void assertion( const char *file , unsigned line , bool test , const char *test_string ) ;	
 		///< Makes an assertion check (regardless of any LogOutput
-		///< object). Calls output() if the 'file' parameter is 
-		///< not null.
+		///< object). Calls output() if the 'file' parameter is not null.
 
 	virtual void onAssert() ;
-		///< Called during an assertion failure. This allows
-		///< Windows applications to stop timers etc. (Timers
-		///< can cause reentrancy problems and infinitely 
-		///< recursive dialog box creation.)
+		///< Called during an assertion failure. This allows Windows 
+		///< applications to stop timers etc. (Timers can cause reentrancy 
+		///< problems and infinitely recursive dialog box creation.)
 
 private:
 	typedef size_t size_type ;

@@ -27,7 +27,9 @@
 #include "gmemory.h"
 #include "gtimer.h"
 #include "gsmtpclient.h"
+#include "gresolver.h"
 #include "gexecutableprocessor.h"
+#include "gnetworkprocessor.h"
 #include "gnullprocessor.h"
 #include "gresolver.h"
 #include "gassert.h"
@@ -41,7 +43,7 @@ std::string GSmtp::Client::crlf()
 GSmtp::Client::Client( const GNet::ResolverInfo & remote , const Secrets & secrets , Config config ) :
 	GNet::Client(remote,config.connection_timeout,0U,crlf(),config.local_address,false) ,
 	m_store(NULL) ,
-	m_processor(newProcessor(config.storedfile_preprocessor)) ,
+	m_processor(newProcessor(config.processor_address,config.processor_timeout)) ,
 	m_protocol(*this,secrets,config.client_protocol_config)
 {
 	m_protocol.doneSignal().connect( G::slot(*this,&Client::protocolDone) ) ;
@@ -61,13 +63,23 @@ G::Signal1<std::string> & GSmtp::Client::messageDoneSignal()
 	return m_message_done_signal ;
 }
 
-GSmtp::Processor * GSmtp::Client::newProcessor( G::Executable exe )
+GSmtp::Processor * GSmtp::Client::newProcessor( const std::string & address , unsigned int timeout )
 {
 	// (this could be done externally to this class with proper DI, but no need for now)
-	if( exe.exe() == G::Path() )
+	std::string s1 ;
+	std::string s2 ;
+	if( address.empty() )
+	{
 		return new NullProcessor ;
+	}
+	else if( GNet::Resolver::parse(address,s1,s2) )
+	{
+		return new NetworkProcessor( address , timeout , timeout ) ;
+	}
 	else
-		return new ExecutableProcessor( exe ) ;
+	{
+		return new ExecutableProcessor( G::Executable(address) ) ;
+	}
 }
 
 void GSmtp::Client::sendMessages( MessageStore & store )
@@ -161,13 +173,13 @@ void GSmtp::Client::start( StoredMessage & message )
 		message.authentication() , server_name , content_stream ) ;
 }
 
-void GSmtp::Client::protocolDone( bool ok , bool abort , std::string reason )
+void GSmtp::Client::protocolDone( std::string reason )
 {
-	G_DEBUG( "GSmtp::Client::protocolDone: " << ok << ": \"" << reason << "\"" ) ;
+	G_DEBUG( "GSmtp::Client::protocolDone: \"" << reason << "\"" ) ;
 	if( ! reason.empty() )
-		reason = std::string("smtp client protocol failure: ") + reason ;
+		reason = std::string("smtp client failure: ") + reason ;
 
-	if( ok )
+	if( reason.empty() )
 	{
 		messageDestroy() ;
 	}
@@ -177,12 +189,7 @@ void GSmtp::Client::protocolDone( bool ok , bool abort , std::string reason )
 		messageFail( reason ) ;
 	}
 
-	if( abort )
-	{
-		G_DEBUG( "GSmtp::Client::protocolDone: deleting" ) ;
-		doDelete( reason ) ;
-	}
-	else if( m_store != NULL )
+	if( m_store != NULL )
 	{
 		if( !sendNext() )
 		{
@@ -223,11 +230,13 @@ bool GSmtp::Client::onReceive( const std::string & line )
 
 void GSmtp::Client::onDelete( const std::string & error , bool )
 {
+	G_DEBUG( "GSmtp::Client::onDelete: error [" << error << "]" ) ;
 	if( ! error.empty() )
 	{
 		G_LOG( "GSmtp::Client: smtp client error: \"" << error << "\"" ) ; // was warning
 		messageFail( error ) ; // if not already failed or destroyed
 	}
+	m_message <<= 0 ;
 }
 
 void GSmtp::Client::onSendComplete()
@@ -237,9 +246,10 @@ void GSmtp::Client::onSendComplete()
 
 // ==
 
-GSmtp::Client::Config::Config( G::Executable exe , GNet::Address address , ClientProtocol::Config protocol_config ,
-	unsigned int connection_timeout_ ) :
-		storedfile_preprocessor(exe) ,
+GSmtp::Client::Config::Config( std::string processor_address_ , unsigned int processor_timeout_ , 
+	GNet::Address address , ClientProtocol::Config protocol_config , unsigned int connection_timeout_ ) :
+		processor_address(processor_address_) ,
+		processor_timeout(processor_timeout_) ,
 		local_address(address) ,
 		client_protocol_config(protocol_config) ,
 		connection_timeout(connection_timeout_)

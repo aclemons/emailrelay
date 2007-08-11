@@ -121,8 +121,6 @@ State transition diagrams:
 Sequence diagrams:
 * *Proxy mode forwarding* [sequence-3.png]
 * *Scanning* [sequence-4.png]
-* ProtocolMessage::prepare() *returns false* [sequence-1.png]
-* ProtocolMessage::prepare() *returns true* [sequence-2.png]
 
 Directory structure
 -------------------

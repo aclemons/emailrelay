@@ -27,6 +27,7 @@
 #include "gstoredmessage.h"
 #include "gnullprocessor.h"
 #include "gexecutableprocessor.h"
+#include "glocal.h"
 #include "gmonitor.h"
 #include "gslot.h"
 #include "gstr.h"
@@ -279,6 +280,13 @@ GNet::ServerPeer * GSmtp::AdminServer::newPeer( GNet::Server::PeerInfo peer_info
 {
 	try
 	{
+		std::string reason ;
+		if( ! m_allow_remote && ! GNet::Local::isLocal(peer_info.m_address,reason) )
+		{
+			G_WARNING( "GSmtp::Server: configured to reject non-local admin connection: " << reason ) ;
+			return NULL ;
+		}
+
 		AdminServerPeer * peer = new AdminServerPeer( peer_info , *this , m_local_address , m_remote_address , 
 			m_extra_commands , m_with_terminate ) ;
 		m_peers.push_back( peer ) ;

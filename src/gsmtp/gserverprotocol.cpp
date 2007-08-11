@@ -161,7 +161,7 @@ void GSmtp::ServerProtocol::onTimeout()
 
 void GSmtp::ServerProtocol::onTimeoutException( std::exception & e )
 {
-	G_ERROR( "GSmtp::ServerProtocol::onTimeoutException: exception: " << e.what() ) ;
+	G_DEBUG( "GSmtp::ServerProtocol::onTimeoutException: exception: " << e.what() ) ;
 	throw ;
 }
 

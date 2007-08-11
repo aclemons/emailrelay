@@ -214,7 +214,7 @@ bool GSmtp::StoredFile::openContent( std::string & reason )
 	}
 	catch( std::exception & e ) // invalid file in store
 	{
-		G_WARNING( "GSmtp::FileStore: exception: " << e.what() ) ;
+		G_DEBUG( "GSmtp::FileStore: exception: " << e.what() ) ;
 		reason = e.what() ;
 		return false ;
 	}

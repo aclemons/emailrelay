@@ -93,6 +93,7 @@ bool GNet::Resolver::parse( const std::string & s , std::string & host , std::st
 	std::string::size_type pos = s.rfind( ':' ) ;
 	if( pos == std::string::npos || pos == 0U || (pos+1U) == s.length() )
 		return false ;
+
 	host = s.substr(0U,pos) ;
 	service = s.substr(pos+1U) ;
 	return true ;

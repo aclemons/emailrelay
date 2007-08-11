@@ -30,7 +30,8 @@ GSmtp::ScannerClient::ScannerClient( const GNet::ResolverInfo & resolver_info ,
 		GNet::Client(resolver_info,connect_timeout,response_timeout,eol()) ,
 		m_timer(*this,&ScannerClient::onTimeout,*this)
 {
-	G_DEBUG( "GSmtp::ScannerClient::ctor: " << resolver_info.displayString() << ": " << response_timeout ) ;
+	G_DEBUG( "GSmtp::ScannerClient::ctor: " << resolver_info.displayString() << ": " 
+		<< connect_timeout << " " << response_timeout ) ;
 }
 
 GSmtp::ScannerClient::~ScannerClient()

@@ -112,9 +112,6 @@ public:
 	bool doAdmin() const ;
 		///< Returns true if listening for admin connections.
 
-	G::Path adminAddressFile() const ;
-		///< Returns the admin address file path.
-
 	unsigned int adminPort() const ;
 		///< Returns the admin port number.
 

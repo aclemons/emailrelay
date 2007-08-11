@@ -60,11 +60,12 @@ public:
 	/// A structure containing GSmtp::Client configuration parameters.
 	struct Config 
 	{
-		G::Executable storedfile_preprocessor ;
+		std::string processor_address ;
+		unsigned int processor_timeout ;
 		GNet::Address local_address ;
 		ClientProtocol::Config client_protocol_config ;
 		unsigned int connection_timeout ;
-		Config( G::Executable , GNet::Address , ClientProtocol::Config , unsigned int ) ;
+		Config( std::string , unsigned int , GNet::Address , ClientProtocol::Config , unsigned int ) ;
 	} ;
 
 	Client( const GNet::ResolverInfo & remote , const Secrets & secrets , Config config ) ;
@@ -72,9 +73,6 @@ public:
 		///<
 		///< All Client instances must be on the heap since they 
 		///< delete themselves after raising the done signal.
-
-	static std::auto_ptr<Processor> newProcessor( Config ) ;
-		///< A convenience factory function for a heap-allocated processor.
 
 	void sendMessages( MessageStore & store ) ;
 		///< Sends all messages from the given message store once 
@@ -106,13 +104,13 @@ protected:
 		///< Destructor.
 
 private:
-	static Processor * newProcessor( G::Executable ) ;
+	static Processor * newProcessor( const std::string & , unsigned int ) ;
 	virtual void onConnect() ; // GNet::SimpleClient
 	virtual bool onReceive( const std::string & ) ; // GNet::Client
 	virtual void onDelete( const std::string & , bool ) ; // GNet::HeapClient
 	virtual void onSendComplete() ; // GNet::BufferedClient
 	virtual bool protocolSend( const std::string & , size_t ) ; // ClientProtocol::Sender
-	void protocolDone( bool , bool , std::string ) ; // see ClientProtocol::doneSignal()
+	void protocolDone( std::string ) ; // see ClientProtocol::doneSignal()
 	void preprocessorStart() ;
 	void preprocessorDone( bool ) ;
 	static std::string crlf() ;

@@ -32,13 +32,12 @@
 
 GSmtp::ProtocolMessageForward::ProtocolMessageForward( MessageStore & store , 
 	std::auto_ptr<ProtocolMessage> pm ,
-	const G::Executable & newfile_preprocessor , const GSmtp::Client::Config & client_config ,
+	const GSmtp::Client::Config & client_config ,
 	const Secrets & client_secrets , const std::string & server ,
 	unsigned int connection_timeout ) :
 		m_store(store) ,
 		m_client_resolver_info(server) ,
 		m_client_config(client_config) ,
-		m_newfile_preprocessor(newfile_preprocessor) ,
 		m_client_secrets(client_secrets) ,
 		m_pm(pm) ,
 		m_client(NULL,true) ,
