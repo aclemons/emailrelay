@@ -127,6 +127,9 @@ private:
 	GSmtp::Client::Config clientConfig() const ;
 	GSmtp::Server::Config serverConfig() const ;
 	GPop::Server::Config popConfig() const ;
+	void checkScripts() const ;
+	void checkScript( const std::string & ) const ;
+	void checkProcessorScript( const std::string & ) const ;
 
 private:
 	Output & m_output ;

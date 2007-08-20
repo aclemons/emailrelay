@@ -25,8 +25,6 @@ EXTRA_DIST=\
 	glogoutput_win32.cpp \
 	gprocess_win32.cpp \
 	gfile_win32.cpp \
-	gregistry_win32.cpp \
-	gregistry.h \
 	mingw.mak
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION)
 noinst_LIBRARIES = libglib.a

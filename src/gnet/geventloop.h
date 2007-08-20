@@ -87,9 +87,12 @@ public:
 	virtual bool running() const = 0 ;
 		///< Returns true if called from within run().
 
-	virtual void quit() = 0 ;
+	virtual bool quit() = 0 ;
 		///< Causes run() to return (once the call stack
-		///< has unwound).
+		///< has unwound). Returns true, or on some platforms
+		///< the previous state of the quit flag. (This means
+		///< that run() can be used to process one event at
+		///< a time for testing purposes).
 
 	virtual void addRead( Descriptor fd , EventHandler &handler ) = 0 ;
 		///< Adds the given event source descriptor

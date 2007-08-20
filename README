@@ -10,7 +10,7 @@ messages as they pass through. When running as a store-and-forward MTA incoming
 messages are stored in a local spool directory, and then forwarded to the next 
 SMTP server on request. 
 
-Because of its functional simplicity E-MailRelay is easy to configure, typically
+Because of its functional simplicity E-MailRelay is easy to configure, often
 only requiring the address of the target SMTP server to be put on the command 
 line.
 
@@ -18,7 +18,7 @@ E-MailRelay can also run as a POP3 server. Messages received over SMTP can be
 automatically dropped into several independent POP3 mailboxes.
 
 C++ source code is available for Linux, FreeBSD, MacOS X etc, and Windows.
-Distribution is under the GNU General Public License.
+Distribution is under the GNU General Public License V3.
 
 Quick start
 -----------
@@ -86,9 +86,9 @@ Source code documentation will be generated when building from source if
 
 Configurations
 --------------
-Recent releases were developed on Ubuntu Linux 7.04 using:
-* linux 2.6.20
-* gcc 4.1.2
+Recent releases were developed on Ubuntu Linux 7.10 using:
+* linux 2.6.22
+* gcc 4.1.3
 * autoconf 2.61
 
 and on Windows NT4 SP6 using:

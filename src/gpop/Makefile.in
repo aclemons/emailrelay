@@ -148,8 +148,10 @@ dvidir = @dvidir@
 e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_initdir = @e_initdir@
+e_libexecdir = @e_libexecdir@
 e_qtmoc = @e_qtmoc@
 e_spooldir = @e_spooldir@
+e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -178,7 +180,7 @@ EXTRA_DIST = \
 	mingw.mak \
 	gpopsecrets_win32.cpp
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_SYSCONFDIR=\"$(sysconfdir)\"
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_SYSCONFDIR=\"$(e_sysconfdir)\"
 noinst_LIBRARIES = libgpop.a
 libgpop_a_SOURCES = \
 	gpopauth.cpp \

@@ -135,7 +135,6 @@ private:
 	ProtocolMessage * newProtocolMessageScanner( std::auto_ptr<ProtocolMessage> ) ;
 	ProtocolMessage * newProtocolMessageForward( std::auto_ptr<ProtocolMessage> ) ;
 	ServerProtocol::Text * newProtocolText( bool , GNet::Address ) const ;
-	static Processor * newProcessor( const std::string & , unsigned int ) ;
 
 private:
 	MessageStore & m_store ;

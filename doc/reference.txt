@@ -200,14 +200,14 @@ failure reason, and passed back to the SMTP client.
 The pre-processor program can edit any part of the message's envelope file or
 content file: E-MailRelay remembers nothing about the message while the
 pre-processor is running, except the filename. But if the message is deleted
-by the pre-processor then E-MailRelay will be upset, so to avoid the
-error message use an exit code of 100.
+by the pre-processor then E-MailRelay may be upset, so to avoid the error 
+message use an exit code of 100.
 
 If the pre-processor program creates completely new messages in the spool
 directory then they may not be processed immediately, or they may be completely
-ignored. To get E-MailRelay to pick up new messages in the spool directory use
-the "--poll" switch, or run "emailrelay --as-client" from within the
-pre-processor program.
+ignored. To get E-MailRelay to pick up any new messages you create in the spool 
+directory use the "--poll" switch, or run "emailrelay --as-client" from within 
+the pre-processor program.
 
 As an example of a simple pre-processor this shell script examines the sending
 client's IP address and conditionally passes the message into "sendmail" (using
@@ -281,13 +281,14 @@ Bear in mind the following points when writing "--filter" programs:
 * Windows Perl programs must be run from a batch file, or from a JScript/VBScript wrapper.
 
 It is also possible to use a separate server process to pre-process messages by
-specifying a network address and port number instead of a filesystem path in the
-"--filter" and "-client-filter" switches. E-MailRelay connects to this address
-and then uses a simple line-based dialog as each e-mail message is processed:
-E-MailRelay sends the full path of the message content file in one line and
-expects the remote process to respond with an "ok" line if the message is to be
-accepted, or an error message. One advantage of this is that the E-MailRelay
-server is not blocked while the messages are being processed.
+specifying a network address and port number in the "--filter" and 
+"-client-filter" switches. E-MailRelay connects to this address and then uses a 
+simple line-based dialog as each e-mail message is processed: E-MailRelay sends 
+the full path of the message content file in one line and expects the remote 
+process to respond with an "ok" line if the message is to be accepted, or an 
+error message. One advantage of using a network pre-processor compared to 
+running a program is that the E-MailRelay server is not blocked while the 
+messages are being pre-processed.
 
 Address verification
 --------------------
@@ -388,8 +389,8 @@ by connecting on a trusted IP address:
 		echo "cannot relay without authentication"
 		exit 2 # reject the recipient address
 	fi
+	echo ""
 	echo "${address}"
-	echo "${address}" # again
 	exit 1 # accept the recipient address
 
 or in JavaScript:
@@ -404,7 +405,7 @@ or in JavaScript:
 		WScript.Echo( "cannot relay without authentication" ) ;
 		WScript.Quit( 2 ) ;
 	}
-	WScript.Echo( address ) ;
+	WScript.Echo( "" ) ;
 	WScript.Echo( address ) ;
 	WScript.Quit( 1 ) ;
 
@@ -527,8 +528,11 @@ such as "fetchmail".
 
 Pop server
 ----------
-If E-MailRelay has been built with POP3 support then the "--help --verbose"
-output will show several additional command-line switches:
+E-MailRelay can be used as a POP3 server so that POP clients have access to 
+spooled messages. 
+
+The following command-line switches are used:
+
 # --pop
 
   Enables the POP3 server.
@@ -602,7 +606,8 @@ following precautions are taken:
   there is no dependence on the current working directory or the PATH
   environment variable.
 
-Some other points are:
+Some other points to note are:
+
 # umask
 
   The program runs for most of the time with a "umask" of 177, switching to 117
@@ -639,6 +644,19 @@ Some other points are:
   spool directory, and the files created end up owned by the submitter but with
   group ownership of "daemon".
 
+# logging
+
+  All logging output is conditioned so that ANSI escape sequences cannot appear 
+  in the log.
+
+  Passwords and message content are not logged except if using the "--debug" 
+  switch with debug logging support enabled at build time.
+
+# information leakage
+
+  The "--anonymous" switch can be used to slightly reduce the amount of information
+  released to remote clients.
+
 Security issues which relate to the SMTP protocol itself are beyond the scope of
 this document, but RFC2821 makes the following observation: "SMTP mail is
 inherently insecure in that it is feasible for even [..] casual users to [..]
@@ -664,19 +682,9 @@ mail to the next SMTP server, as an alternative to running
 "emailrelay --as-client" as a separate process. In proxy mode it is a way of
 getting the proxy server to scan the spool-directory for new messages.
 
-The utility program "emailrelay-poke" can be used to issue the "flush"
-command to an E-MailRelay server. For example:
-
-	$ emailrelay --as-server --port 125 --forward-to localhost:25 --admin 10026
-	$ emailrelay-poke 10026
-	$ echo $?
-
-To use the "flush" command the next SMTP server address must have been defined
-on the "emailrelay" command line at start-up using the "--forward-to" switch.
-
-Also, the "list" command lists the messages in the spool directory, "info"
-provides network status information and activity statistics, and "notify"
-enables asynchronous event notification.
+The "list" command lists the messages in the spool directory, "info" provides 
+network status information and activity statistics, and "notify" enables 
+asynchronous event notification.
 
 Files and directories
 ---------------------
@@ -684,10 +692,10 @@ Following a normal build from source, a "make install" puts files in the
 following locations:
 * /usr/local/etc/emailrelay.conf
 * /usr/local/etc/emailrelay.conf.template
-* /usr/local/libexec/emailrelay
-* /usr/local/libexec/emailrelay-filter-copy
-* /usr/local/libexec/emailrelay-poke
-* /usr/local/libexec/emailrelay-*.sh
+* /usr/local/libexec/emailrelay/emailrelay-filter-copy
+* /usr/local/libexec/emailrelay/emailrelay-poke
+* /usr/local/libexec/emailrelay/examples/*
+* /usr/local/libexec/emailrelay/init/emailrelay
 * /usr/local/man/man1/emailrelay*.1.gz
 * /usr/local/sbin/emailrelay
 * /usr/local/sbin/emailrelay-passwd
@@ -707,13 +715,13 @@ locations:
 * /etc/emailrelay.conf
 * /etc/emailrelay.conf.template
 * /etc/init.d/emailrelay
-* /usr/lib/emailrelay-filter-copy
-* /usr/lib/emailrelay-poke
+* /usr/lib/emailrelay/emailrelay-filter-copy
+* /usr/lib/emailrelay/emailrelay-poke
+* /usr/lib/emailrelay/examples/*
 * /usr/sbin/emailrelay
 * /usr/sbin/emailrelay-passwd
 * /usr/sbin/emailrelay-submit
 * /usr/share/doc/emailrelay/*
-* /usr/share/doc/emailrelay/examples/emailrelay-*.sh
 * /usr/share/doc/emailrelay/index.html
 * /usr/share/doc/emailrelay/README
 * /usr/share/man/man1/emailrelay*.1.gz
@@ -723,10 +731,10 @@ locations:
 For finer control of the directory structure the following can be specified on 
 the "configure" command-line (but note that the "--enable-fhs" will override 
 them):
-* --libexecdir=<dir>
 * --mandir=<dir>
 * --sbindir=<dir>
-* --sysconfdir=<dir>
+* e_libexecdir=<dir>
+* e_sysconfdir=<dir>
 * e_docdir=<dir>
 * e_examplesdir=<dir>
 * e_initdir=<dir>

@@ -110,24 +110,27 @@ WITH_MAN2HTML
 dnl ===
 dnl directory tweaking and "--enable-fhs" ...
 dnl
+dnl define e_ prefixed variables with a gnu feel and then
+dnl use the enable_fhs macro tweak them for fhs
+dnl
 dnl not AC_PREFIX_DEFAULT([/usr])
 AC_ARG_ENABLE(fhs,AC_HELP_STRING([--enable-fhs],[force FHS-compliant directories, ignoring --prefix etc (default disabled)]))
 AC_SUBST(e_docdir)
+if test "$e_docdir" = "" ; then e_docdir="$docdir" ; fi
 if test "$e_docdir" = "" ; then e_docdir="$datadir/$PACKAGE/doc" ; fi
 AC_SUBST(e_initdir)
-if test "$e_initdir" = "" ; then e_initdir="$libexecdir" ; fi
+if test "$e_initdir" = "" ; then e_initdir="$libexecdir/$PACKAGE/init" ; fi
 AC_SUBST(e_spooldir)
-if test "$e_spooldir" = "" ; then e_spooldir="$localstatedir/spool/emailrelay" ; fi
+if test "$e_spooldir" = "" ; then e_spooldir="$localstatedir/spool/$PACKAGE" ; fi
 AC_SUBST(e_examplesdir)
-if test "$e_examplesdir" = "" ; then e_examplesdir="$libexecdir" ; fi
+if test "$e_examplesdir" = "" ; then e_examplesdir="$libexecdir/$PACKAGE/examples" ; fi
+AC_SUBST(e_libexecdir)
+if test "$e_libexecdir" = "" ; then e_libexecdir="$libexecdir/$PACKAGE" ; fi
+AC_SUBST(e_sysconfdir)
+if test "$e_sysconfdir" = "" ; then e_sysconfdir="$sysconfdir" ; fi
 AC_SUBST(e_qtmoc)
 if test "$e_qtmoc" = "" ; then e_qtmoc="moc" ; fi
 ENABLE_FHS
-
-dnl ===
-dnl attempt to fix recursive makes where make is gmake -- may break something else
-dnl
-SET_MAKE=""
 
 dnl ===
 dnl generate files...

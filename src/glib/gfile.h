@@ -123,6 +123,12 @@ public:
 	static bool link( const Path & target , const Path & new_link , const NoThrow & ) ;
 		///< Creates a symlink.
 
+	static bool executable( const Path & ) ;
+		///< Returns true if the path is probably executable.
+		///< Because of portability and implementation difficulties
+		///< this does not return a definitive result so it should
+		///< only used for generating warnings on a false return.
+
 private:
 	friend class G::DirectoryIteratorImp ;
 	static std::string sizeString( g_uint32_t hi , g_uint32_t lo ) ; // win32

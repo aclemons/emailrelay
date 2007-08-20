@@ -643,7 +643,7 @@ std::pair<std::string,std::string> GSmtp::ServerProtocol::parse( const std::stri
 		size_t colon_pos = s.find( ':' ) ;
 		if( colon_pos == std::string::npos )
 		{
-			std::string reason( "missing colon" ) ;
+			std::string reason( "invalid mailbox name: no colon after leading at character" ) ;
 			return std::make_pair(std::string(),reason) ;
 		}
 		s = s.substr( colon_pos + 1U ) ;

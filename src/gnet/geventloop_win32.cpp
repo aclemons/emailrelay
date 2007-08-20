@@ -109,7 +109,7 @@ public:
 	virtual bool running() const ;
 		// Override from EventLoop. Returns true if in run().
 
-	virtual void quit() ;
+	virtual bool quit() ;
 		// Override from EventLoop. Calls GGui::Pump::quit().
 
 protected:
@@ -439,8 +439,9 @@ bool GNet::Winsock::running() const
 	return m_running ;
 }
 
-void GNet::Winsock::quit()
+bool GNet::Winsock::quit()
 {
 	GGui::Pump::quit() ;
+	return false ;
 }
 

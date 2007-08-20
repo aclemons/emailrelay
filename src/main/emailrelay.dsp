@@ -139,7 +139,7 @@ SOURCE=.\emailrelay.rc
 # End Source File
 # Begin Source File
 
-SOURCE=".\icon-32.ico"
+SOURCE=.\icon-32.ico
 # End Source File
 # Begin Source File
 

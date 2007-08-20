@@ -63,10 +63,10 @@
 	/* Check operating-system switches
 	 */
 	#if !defined( G_WIN32 ) && !defined( G_UNIX )
-		#error invalid compilation switches
+		#error invalid compilation switches - define G_WIN32 or G_UNIX
 	#endif
 	#if defined( G_WIN32 ) && defined( G_UNIX )
-		#error invalid compilation switches
+		#error invalid compilation switches - define G_WIN32 or G_UNIX
 	#endif
 
 	/* Define supplementary o/s compilation switches
@@ -104,8 +104,7 @@
 		#endif
 	#endif
 
-	/* Define Windows-style types (only used for 
-	 * unimplemented declarations under unix)
+	/* Define Windows-style types (only used for unimplemented declarations under unix)
 	 */
 	#if ! defined( G_WINDOWS )
 		typedef unsigned char BOOL ;
@@ -114,8 +113,7 @@
 		typedef unsigned int HANDLE ;
 	#endif
 
-	/* Include commonly-used system headers (good for
-	 * pre-compilation)
+	/* Include commonly-used system headers (good for pre-compilation)
 	 */
 	#ifdef __cplusplus
 		#include <cstddef>

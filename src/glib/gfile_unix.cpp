@@ -45,6 +45,23 @@ bool G::File::exists( const char * path , bool & enoent )
 	}
 }
 
+bool G::File::executable( const Path & path )
+{
+	struct stat statbuf ;
+	if( 0 == ::stat( path.str().c_str() , &statbuf ) )
+	{
+		bool x = !!( statbuf.st_mode & S_IXUSR ) ;
+		bool r = 
+			( statbuf.st_mode & S_IFMT ) == S_IFREG ||
+			( statbuf.st_mode & S_IFMT ) == S_IFLNK ;
+		return x && r ; // indicitive only
+	}
+	else
+	{
+		return false ;
+	}
+}
+
 std::string G::File::sizeString( const Path & path )
 {
 	struct stat statbuf ;

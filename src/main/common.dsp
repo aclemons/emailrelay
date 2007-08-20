@@ -89,6 +89,18 @@ SOURCE=..\gnet\gaddress_ipv4.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\gnet\gbufferedclient.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gnet\gbufferedserverpeer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gnet\gheapclient.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\gsmtp\gadminserver.cpp
 # End Source File
 # Begin Source File
@@ -118,10 +130,6 @@ SOURCE=..\glib\gcleanup_win32.cpp
 # Begin Source File
 
 SOURCE=..\gnet\gclient.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\gnet\gclient_win32.cpp
 # End Source File
 # Begin Source File
 
@@ -189,15 +197,23 @@ SOURCE=..\gnet\geventloop_win32.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gnet\geventserver.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\glib\gexception.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\glib\gexe.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gsmtp\gspamprocessor.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gsmtp\gspamclient.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gsmtp\gexecutableprocessor.cpp
 # End Source File
 # Begin Source File
 
@@ -269,11 +285,19 @@ SOURCE=..\gnet\gmultiserver.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\gsmtp\gnetworkprocessor.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\gsmtp\gnewfile.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\gsmtp\gnewmessage.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gsmtp\gnullprocessor.cpp
 # End Source File
 # Begin Source File
 
@@ -317,15 +341,15 @@ SOURCE=..\gsmtp\gprocessor.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\gsmtp\gprocessorfactory.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\gsmtp\gprotocolmessage.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\gsmtp\gprotocolmessageforward.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\gsmtp\gprotocolmessagescanner.cpp
 # End Source File
 # Begin Source File
 
@@ -341,19 +365,15 @@ SOURCE=..\win32\gpump_dialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\glib\gregistry_win32.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\gnet\grequest.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gnet\gresolver.cpp
+SOURCE=..\gsmtp\grequestclient.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gnet\gresolverinfo.cpp
+SOURCE=..\gnet\gresolver.cpp
 # End Source File
 # Begin Source File
 
@@ -365,15 +385,15 @@ SOURCE=..\gnet\gresolver_win32.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\gnet\gresolverinfo.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\glib\groot.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\gsmtp\gsasl_native.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\gsmtp\gscannerclient.cpp
 # End Source File
 # Begin Source File
 
@@ -394,6 +414,14 @@ SOURCE=..\gnet\gserver.cpp
 # Begin Source File
 
 SOURCE=..\gsmtp\gserverprotocol.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gnet\gsimpleclient.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gnet\gsimpleclient_win32.cpp
 # End Source File
 # Begin Source File
 
@@ -429,11 +457,19 @@ SOURCE=..\glib\gstr.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\glib\gtest.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\glib\gtime.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\gnet\gtimer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gnet\gtimerlist.cpp
 # End Source File
 # Begin Source File
 
@@ -471,10 +507,6 @@ SOURCE=..\glib\md5.cpp
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
-# Begin Source File
-
-SOURCE=..\gnet\gmultiserver.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\glib\gslot.h

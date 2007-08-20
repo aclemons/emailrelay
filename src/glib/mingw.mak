@@ -19,11 +19,9 @@
 #
 
 mk_sources=\
-	md5.cpp \
 	garg.cpp \
 	garg_win32.cpp \
 	gcleanup_win32.cpp \
-	gexe.cpp \
 	gdaemon_win32.cpp \
 	gdate.cpp \
 	gdatetime.cpp \
@@ -31,6 +29,7 @@ mk_sources=\
 	gdirectory.cpp \
 	gdirectory_win32.cpp \
 	gexception.cpp \
+	gexe.cpp \
 	gfile.cpp \
 	gfile_win32.cpp \
 	gfs_win32.cpp \
@@ -43,12 +42,13 @@ mk_sources=\
 	gpath.cpp \
 	gpidfile.cpp \
 	gprocess_win32.cpp \
-	gregistry_win32.cpp \
 	groot.cpp \
 	gslot.cpp \
 	gstr.cpp \
+	gtest.cpp \
 	gtime.cpp \
-	gxtext.cpp
+	gxtext.cpp \
+	md5.cpp
 
 mk_target=glib.a
 

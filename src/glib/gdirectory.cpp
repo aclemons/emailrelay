@@ -106,7 +106,7 @@ bool G::DirectoryList::more()
 
 bool G::DirectoryList::isDir() const
 {
-	return m_is_dir.at(m_index) ;
+	return !! m_is_dir.at(m_index) ;
 }
 
 G::Path G::DirectoryList::filePath() const

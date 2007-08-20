@@ -20,30 +20,33 @@
 
 mk_sources=\
 	gaddress_ipv4.cpp \
-	gbufferedserverpeer.cpp \
 	gbufferedclient.cpp \
+	gbufferedserverpeer.cpp \
 	gclient.cpp \
-	gclient_win32.cpp \
 	gconnection.cpp \
 	gdescriptor_win32.cpp \
 	geventhandler.cpp \
 	geventloop.cpp \
 	geventloop_win32.cpp \
-	geventserver.cpp \
+	gheapclient.cpp \
 	glinebuffer.cpp \
 	glocal.cpp \
 	glocal_win32.cpp \
 	gmonitor.cpp \
 	gmultiserver.cpp \
 	grequest.cpp \
-	gresolve.cpp \
-	gresolve_ipv4.cpp \
-	gresolve_win32.cpp \
+	gresolver.cpp \
+	gresolverinfo.cpp \
+	gresolver_ipv4.cpp \
+	gresolver_win32.cpp \
 	gsender.cpp \
 	gserver.cpp \
+	gsimpleclient.cpp \
+	gsimpleclient_win32.cpp \
 	gsocket.cpp \
 	gsocket_win32.cpp \
-	gtimer.cpp
+	gtimer.cpp \
+	gtimerlist.cpp
 
 mk_target=gnet.a
 

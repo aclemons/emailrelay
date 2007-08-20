@@ -161,8 +161,10 @@ dvidir = @dvidir@
 e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_initdir = @e_initdir@
+e_libexecdir = @e_libexecdir@
 e_qtmoc = @e_qtmoc@
 e_spooldir = @e_spooldir@
+e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -222,8 +224,8 @@ EXTRA_DIST = \
 @GUI_TRUE@	-I$(top_srcdir)/src/gsmtp \
 @GUI_TRUE@	-I$(top_srcdir)/src/gpop \
 @GUI_TRUE@	-DG_SPOOLDIR=\"$(e_spooldir)\" \
-@GUI_TRUE@	-DG_SYSCONFDIR=\"$(sysconfdir)\" \
-@GUI_TRUE@	-DG_LIBEXECDIR=\"$(libexecdir)\" \
+@GUI_TRUE@	-DG_SYSCONFDIR=\"$(e_sysconfdir)\" \
+@GUI_TRUE@	-DG_LIBEXECDIR=\"$(e_libexecdir)\" \
 @GUI_TRUE@	-DG_DESTDIR=\"$(DESTDIR)\"
 
 @GUI_TRUE@AM_CPPFLAGS = $(QT_CFLAGS)
@@ -562,7 +564,7 @@ uninstall-am: uninstall-sbinPROGRAMS
 # tell the configuration gui where make install has put everything -- see Dir::read() in dir.cpp
 @GUI_TRUE@install-exec-hook:
 @GUI_TRUE@	echo $(DESTDIR)$(e_spooldir) > $(DESTDIR)$(sbindir)/emailrelay-gui.state
-@GUI_TRUE@	echo $(DESTDIR)$(sysconfdir) >> $(DESTDIR)$(sbindir)/emailrelay-gui.state
+@GUI_TRUE@	echo $(DESTDIR)$(e_sysconfdir) >> $(DESTDIR)$(sbindir)/emailrelay-gui.state
 
 @GUI_TRUE@uninstall-hook:
 @GUI_TRUE@	-rm $(DESTDIR)$(sbindir)/emailrelay-gui.state

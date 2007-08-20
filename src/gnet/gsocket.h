@@ -182,6 +182,9 @@ public:
 		///< Returns the failure reason as a string.
 		///< Only used in debugging.
 
+	void shutdown( bool for_writing = true ) ;
+		///< Shuts the socket for writing (or reading).
+
 protected:
 	Socket( int domain , int type , int protocol ) ;
 		///< Constructor used by derived classes.
@@ -216,7 +219,7 @@ private:
 	Socket( const Socket & ) ;
 	void operator=( const Socket & ) ;
 	void drop() ;
-};
+} ;
 
 ///
 

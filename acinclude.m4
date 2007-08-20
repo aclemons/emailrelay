@@ -335,13 +335,11 @@ AC_DEFUN([FHS_COMPLIANCE],
 	#infodir=
 	#
 	# emailrelay-specific
-	e_sbindir="$sbindir"
 	e_libexecdir="$libexecdir/$PACKAGE"
 	e_docdir="$datadir/doc/$PACKAGE"
 	e_initdir="/etc/init.d"
 	e_spooldir="$localstatedir/spool/$PACKAGE"
-	e_man1dir="$datadir/man/man1"
-	e_examplesdir="$datadir/doc/$PACKAGE/examples"
+	e_examplesdir="$libexecdir/$PACKAGE/examples"
 	e_sysconfdir="$sysconfdir"
 ])
 

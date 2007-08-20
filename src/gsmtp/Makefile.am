@@ -48,16 +48,18 @@ libgsmtp_a_SOURCES = \
 	gnullprocessor.h \
 	gprocessor.cpp \
 	gprocessor.h \
+	gprocessorfactory.cpp \
+	gprocessorfactory.h \
 	gprotocolmessage.cpp \
 	gprotocolmessageforward.cpp \
 	gprotocolmessageforward.h \
 	gprotocolmessage.h \
 	gprotocolmessagestore.cpp \
 	gprotocolmessagestore.h \
+	grequestclient.cpp \
+	grequestclient.h \
 	gsasl.h \
 	gsasl_native.cpp \
-	gscannerclient.cpp \
-	gscannerclient.h \
 	gsecrets.cpp \
 	gsecrets.h \
 	gserverprotocol.cpp \
@@ -67,6 +69,10 @@ libgsmtp_a_SOURCES = \
 	gsmtp.h \
 	gsmtpserver.cpp \
 	gsmtpserver.h \
+	gspamclient.cpp \
+	gspamclient.h \
+	gspamprocessor.cpp \
+	gspamprocessor.h \
 	gstoredfile.cpp \
 	gstoredfile.h \
 	gstoredmessage.cpp \

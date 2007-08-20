@@ -53,11 +53,13 @@ am_libgsmtp_a_OBJECTS = gadminserver.$(OBJEXT) gbase64.$(OBJEXT) \
 	gmessagestore_unix.$(OBJEXT) gnetworkprocessor.$(OBJEXT) \
 	gnewfile.$(OBJEXT) gnewmessage.$(OBJEXT) \
 	gnullprocessor.$(OBJEXT) gprocessor.$(OBJEXT) \
-	gprotocolmessage.$(OBJEXT) gprotocolmessageforward.$(OBJEXT) \
-	gprotocolmessagestore.$(OBJEXT) gsasl_native.$(OBJEXT) \
-	gscannerclient.$(OBJEXT) gsecrets.$(OBJEXT) \
+	gprocessorfactory.$(OBJEXT) gprotocolmessage.$(OBJEXT) \
+	gprotocolmessageforward.$(OBJEXT) \
+	gprotocolmessagestore.$(OBJEXT) grequestclient.$(OBJEXT) \
+	gsasl_native.$(OBJEXT) gsecrets.$(OBJEXT) \
 	gserverprotocol.$(OBJEXT) gsmtpclient.$(OBJEXT) \
-	gsmtpserver.$(OBJEXT) gstoredfile.$(OBJEXT) \
+	gsmtpserver.$(OBJEXT) gspamclient.$(OBJEXT) \
+	gspamprocessor.$(OBJEXT) gstoredfile.$(OBJEXT) \
 	gstoredmessage.$(OBJEXT) gverifier.$(OBJEXT)
 libgsmtp_a_OBJECTS = $(am_libgsmtp_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
@@ -157,8 +159,10 @@ dvidir = @dvidir@
 e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_initdir = @e_initdir@
+e_libexecdir = @e_libexecdir@
 e_qtmoc = @e_qtmoc@
 e_spooldir = @e_spooldir@
+e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -214,16 +218,18 @@ libgsmtp_a_SOURCES = \
 	gnullprocessor.h \
 	gprocessor.cpp \
 	gprocessor.h \
+	gprocessorfactory.cpp \
+	gprocessorfactory.h \
 	gprotocolmessage.cpp \
 	gprotocolmessageforward.cpp \
 	gprotocolmessageforward.h \
 	gprotocolmessage.h \
 	gprotocolmessagestore.cpp \
 	gprotocolmessagestore.h \
+	grequestclient.cpp \
+	grequestclient.h \
 	gsasl.h \
 	gsasl_native.cpp \
-	gscannerclient.cpp \
-	gscannerclient.h \
 	gsecrets.cpp \
 	gsecrets.h \
 	gserverprotocol.cpp \
@@ -233,6 +239,10 @@ libgsmtp_a_SOURCES = \
 	gsmtp.h \
 	gsmtpserver.cpp \
 	gsmtpserver.h \
+	gspamclient.cpp \
+	gspamclient.h \
+	gspamprocessor.cpp \
+	gspamprocessor.h \
 	gstoredfile.cpp \
 	gstoredfile.h \
 	gstoredmessage.cpp \
@@ -299,15 +309,18 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewmessage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnullprocessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprocessor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprocessorfactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessageforward.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessagestore.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grequestclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsasl_native.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gscannerclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsecrets.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gserverprotocol.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpserver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gspamclient.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gspamprocessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstoredfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstoredmessage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifier.Po@am__quote@

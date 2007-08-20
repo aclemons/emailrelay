@@ -65,8 +65,8 @@ INCLUDES=\
 	-I$(top_srcdir)/src/gsmtp \
 	-I$(top_srcdir)/src/gpop \
 	-DG_SPOOLDIR=\"$(e_spooldir)\" \
-	-DG_SYSCONFDIR=\"$(sysconfdir)\" \
-	-DG_LIBEXECDIR=\"$(libexecdir)\" \
+	-DG_SYSCONFDIR=\"$(e_sysconfdir)\" \
+	-DG_LIBEXECDIR=\"$(e_libexecdir)\" \
 	-DG_DESTDIR=\"$(DESTDIR)\"
 
 AM_CPPFLAGS=$(QT_CFLAGS)
@@ -110,7 +110,7 @@ emailrelay_gui_LDADD = \
 # tell the configuration gui where make install has put everything -- see Dir::read() in dir.cpp
 install-exec-hook:
 	echo $(DESTDIR)$(e_spooldir) > $(DESTDIR)$(sbindir)/emailrelay-gui.state
-	echo $(DESTDIR)$(sysconfdir) >> $(DESTDIR)$(sbindir)/emailrelay-gui.state
+	echo $(DESTDIR)$(e_sysconfdir) >> $(DESTDIR)$(sbindir)/emailrelay-gui.state
 
 uninstall-hook:
 	-rm $(DESTDIR)$(sbindir)/emailrelay-gui.state

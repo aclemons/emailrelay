@@ -48,9 +48,9 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(sysconfdir)"
-sysconfDATA_INSTALL = $(INSTALL_DATA)
-DATA = $(sysconf_DATA)
+am__installdirs = "$(DESTDIR)$(e_sysconfdir)"
+e_sysconfDATA_INSTALL = $(INSTALL_DATA)
+DATA = $(e_sysconf_DATA)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -132,8 +132,10 @@ dvidir = @dvidir@
 e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_initdir = @e_initdir@
+e_libexecdir = @e_libexecdir@
 e_qtmoc = @e_qtmoc@
 e_spooldir = @e_spooldir@
+e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -162,7 +164,7 @@ top_srcdir = @top_srcdir@
 #
 #
 EXTRA_DIST = emailrelay.conf.template
-sysconf_DATA = emailrelay.conf.template
+e_sysconf_DATA = emailrelay.conf.template
 all: all-am
 
 .SUFFIXES:
@@ -195,22 +197,22 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-install-sysconfDATA: $(sysconf_DATA)
+install-e_sysconfDATA: $(e_sysconf_DATA)
 	@$(NORMAL_INSTALL)
-	test -z "$(sysconfdir)" || $(MKDIR_P) "$(DESTDIR)$(sysconfdir)"
-	@list='$(sysconf_DATA)'; for p in $$list; do \
+	test -z "$(e_sysconfdir)" || $(MKDIR_P) "$(DESTDIR)$(e_sysconfdir)"
+	@list='$(e_sysconf_DATA)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f=$(am__strip_dir) \
-	  echo " $(sysconfDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(sysconfdir)/$$f'"; \
-	  $(sysconfDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(sysconfdir)/$$f"; \
+	  echo " $(e_sysconfDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(e_sysconfdir)/$$f'"; \
+	  $(e_sysconfDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(e_sysconfdir)/$$f"; \
 	done
 
-uninstall-sysconfDATA:
+uninstall-e_sysconfDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(sysconf_DATA)'; for p in $$list; do \
+	@list='$(e_sysconf_DATA)'; for p in $$list; do \
 	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(sysconfdir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(sysconfdir)/$$f"; \
+	  echo " rm -f '$(DESTDIR)$(e_sysconfdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(e_sysconfdir)/$$f"; \
 	done
 tags: TAGS
 TAGS:
@@ -249,7 +251,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(sysconfdir)"; do \
+	for dir in "$(DESTDIR)$(e_sysconfdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -294,13 +296,13 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-e_sysconfDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
 install-dvi: install-dvi-am
 
-install-exec-am: install-sysconfDATA
+install-exec-am:
 
 install-html: install-html-am
 
@@ -330,23 +332,24 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-sysconfDATA
+uninstall-am: uninstall-e_sysconfDATA
 
 .MAKE: install-am install-data-am install-strip
 
 .PHONY: all all-am check check-am clean clean-generic distclean \
 	distclean-generic distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am \
-	install-data-hook install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip install-sysconfDATA \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
-	pdf-am ps ps-am uninstall uninstall-am uninstall-sysconfDATA
+	install-data-hook install-dvi install-dvi-am \
+	install-e_sysconfDATA install-exec install-exec-am \
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am uninstall \
+	uninstall-am uninstall-e_sysconfDATA
 
 install-data-hook:
-	if test -f "$(DESTDIR)$(sysconfdir)/emailrelay.conf" ; then : ; else cp "$(DESTDIR)$(sysconfdir)/emailrelay.conf.template" "$(DESTDIR)$(sysconfdir)/emailrelay.conf" ; fi
+	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

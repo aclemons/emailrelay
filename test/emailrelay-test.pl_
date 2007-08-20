@@ -609,42 +609,34 @@ sub testServerPollingOverlap
 		Verbose => 1 ,
 		Poll => 1 ,
 	) ;
-	my $spool_dir_1 = System::createSpoolDir(undef,undef,"spool-1") ;
-	my $spool_dir_2 = System::createSpoolDir(undef,undef,"spool-2") ;
+	my $spool_dir = System::createSpoolDir() ;
 	my $message_count = 1 ;
 	for( my $i = 0 ; $i < $message_count ; $i++ )
 	{
-		System::submitMessage( $spool_dir_1 , undef , 1000 ) ;
+		System::submitMessage( $spool_dir , undef , 1000 ) ;
 	}
-	Check::fileMatchCount( $spool_dir_1 ."/emailrelay.*.content", $message_count ) ;
-	my $server_1 = new Server(undef,undef,undef,$spool_dir_1) ;
-	my $server_2 = new Server($server_1->smtpPort()+100,undef,$server_1->adminPort()+100,$spool_dir_2) ;
-	$server_1->set_dst("localhost:".$server_2->smtpPort()) ;
-	$server_1->run(\%args) ;
-	$main::ENV{'G_TEST'} = 'slow-event-loop' ;
-	delete $args{Poll} ;
-	$server_2->run(\%args) ;
-	Check::running( $server_1->pid() , $server_1->message() ) ;
-	Check::running( $server_2->pid() , $server_2->message() ) ;
+	Check::fileMatchCount( $spool_dir ."/emailrelay.*.content", $message_count ) ;
+	my $emailrelay = new Server(undef,undef,undef,$spool_dir) ;
+	my $test_server = new TestServer(10125) ;
+	$emailrelay->set_dst("localhost:".$test_server->port()) ;
+	$emailrelay->run(\%args) ;
+	$test_server->run("--slow") ;
+	Check::running( $emailrelay->pid() , $emailrelay->message() ) ;
+	Check::running( $test_server->pid() ) ;
 
 	# test that overlapping poll cycles result in an appropriate log message
-	Check::ok( System::drain($server_1->spoolDir(),10) , "message not forwarded" ) ;
-	Check::fileContains( $server_1->stderr() , "info: polling: still busy from last time" ) ;
-	Check::fileMatchCount( $spool_dir_1 ."/emailrelay.*.content" , 0 ) ;
-	Check::fileMatchCount( $spool_dir_2 ."/emailrelay.*.content" , $message_count ) ;
+	Check::ok( System::drain($emailrelay->spoolDir(),10) , "message not forwarded" ) ;
+	Check::fileContains( $emailrelay->stderr() , "info: polling: still busy from last time" ) ;
 
 	# tear down
-	$main::ENV{'G_TEST'} = 'xx' ;
-	$server_1->kill() ;
-	$server_2->kill() ;
-	Check::notRunning( $server_1->pid() ) ;
-	Check::notRunning( $server_2->pid() ) ;
-	Check::fileDeleted( $server_1->pidFile() , "pid file" ) ;
-	Check::fileDeleted( $server_2->pidFile() , "pid file" ) ;
-	$server_1->cleanup() ;
-	$server_2->cleanup() ;
-	System::deleteSpoolDir($spool_dir_1) ;
-	System::deleteSpoolDir($spool_dir_2) ;
+	$emailrelay->kill() ;
+	$test_server->kill() ;
+	Check::notRunning( $emailrelay->pid() ) ;
+	Check::notRunning( $test_server->pid() ) ;
+	Check::fileDeleted( $emailrelay->pidFile() , "pid file" ) ;
+	$emailrelay->cleanup() ;
+	$test_server->cleanup() ;
+	System::deleteSpoolDir($spool_dir) ;
 }
 
 sub testServerWithBadClient
@@ -1317,7 +1309,7 @@ if( !$run_all_ok )
 
 sub cleanup
 {
-	for my $pid ( @Server::pid_list , @Scanner::pid_list )
+	for my $pid ( @Server::pid_list , @Scanner::pid_list , @TestServer::pid_list )
 	{
 		if( defined($pid) && $pid > 0 )
 		{

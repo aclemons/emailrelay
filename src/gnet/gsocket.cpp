@@ -292,6 +292,11 @@ std::string GNet::Socket::reasonString() const
 	return ss.str() ;
 }
 
+void GNet::Socket::shutdown( bool for_writing )
+{
+	::shutdown( m_socket , for_writing ? 1 : 0 ) ;
+}
+
 //==
 
 GNet::StreamSocket::StreamSocket() : 

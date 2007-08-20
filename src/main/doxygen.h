@@ -30,9 +30,7 @@ of the code structure, and there are a number of supporting diagrams:
 <li>GNet namespace <a href="../gnet-classes.png">class diagram</a></li>
 <li>GSmtp namespace <a href="../gsmtp-classes.png">class diagram</a></li>
 <li>Proxy-mode forwarding <a href="../sequence-3.png">sequence diagram</a></li>
-<li>Scanning <a href="../sequence-4.png">sequence diagram</a></li>
 <li>GNet::Client <a href="../gnet-client.png">state transition diagram</a></li>
-<li>GNet::ScannerClient <a href="../gsmtp-scannerclient.png">state transition diagram</a></li>
 <li>GSmtp::ServerProtocol <a href="../gsmtp-serverprotocol.png">state transition diagram</a></li>
 <li><a href="../auth.png">Authentication usage</a></li>
 </ul>

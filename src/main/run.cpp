@@ -33,9 +33,12 @@
 #include "gnewfile.h"
 #include "gadminserver.h"
 #include "gpopserver.h"
+#include "gprocessorfactory.h"
 #include "gslot.h"
 #include "gmonitor.h"
 #include "glocal.h"
+#include "gfile.h"
+#include "gpath.h"
 #include "groot.h"
 #include "gexception.h"
 #include "gprocess.h"
@@ -233,6 +236,10 @@ void Main::Run::runCore()
 	// early check on socket bindability
 	//
 	checkPorts() ;
+
+	// early check on script executablity
+	//
+	checkScripts() ;
 
 	// network monitor singleton
 	//
@@ -537,6 +544,34 @@ void Main::Run::emit( const std::string & s0 , const std::string & s1 , const st
 G::Signal3<std::string,std::string,std::string> & Main::Run::signal()
 {
 	return m_signal ;
+}
+
+void Main::Run::checkScripts() const
+{
+	checkProcessorScript( cfg().filter() ) ;
+	checkProcessorScript( cfg().clientFilter() ) ;
+	checkScript( cfg().verifier() ) ;
+}
+
+void Main::Run::checkScript( const std::string & s ) const
+{
+	std::string reason ;
+	if( !s.empty() && !G::File::exists(s,G::File::NoThrow()) ) reason = "no such file" ;
+	if( !s.empty() && !G::File::executable(s) ) reason = "probably not executable" ;
+	if( !s.empty() && G::Path(s).isRelative() ) reason = "not an absolute path" ;
+	if( !reason.empty() )
+	{
+		G_WARNING( "Main::Run::checkScript: invalid executable: " << s << ": " << reason ) ;
+	}
+}
+
+void Main::Run::checkProcessorScript( const std::string & s ) const
+{
+	std::string reason = GSmtp::ProcessorFactory::check( s ) ;
+	if( !reason.empty() )
+	{
+		G_WARNING( "Main::Run::checkScript: invalid preprocessor: " << s << ": " << reason ) ;
+	}
 }
 
 /// \file run.cpp

@@ -36,7 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 sbin_PROGRAMS = emailrelay$(EXEEXT) emailrelay-submit$(EXEEXT) \
 	emailrelay-passwd$(EXEEXT)
-libexec_PROGRAMS = emailrelay-poke$(EXEEXT) \
+e_libexec_PROGRAMS = emailrelay-poke$(EXEEXT) \
 	emailrelay-filter-copy$(EXEEXT)
 subdir = src/main
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -48,11 +48,11 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
-am__installdirs = "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(sbindir)" \
+am__installdirs = "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(sbindir)" \
 	"$(DESTDIR)$(e_spooldir)"
-libexecPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
+e_libexecPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
-PROGRAMS = $(libexec_PROGRAMS) $(sbin_PROGRAMS)
+PROGRAMS = $(e_libexec_PROGRAMS) $(sbin_PROGRAMS)
 am_emailrelay_OBJECTS = commandline.$(OBJEXT) configuration.$(OBJEXT) \
 	legal.$(OBJEXT) main.$(OBJEXT) output.$(OBJEXT) run.$(OBJEXT)
 emailrelay_OBJECTS = $(am_emailrelay_OBJECTS)
@@ -188,8 +188,10 @@ dvidir = @dvidir@
 e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_initdir = @e_initdir@
+e_libexecdir = @e_libexecdir@
 e_qtmoc = @e_qtmoc@
 e_spooldir = @e_spooldir@
+e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -317,29 +319,29 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-install-libexecPROGRAMS: $(libexec_PROGRAMS)
+install-e_libexecPROGRAMS: $(e_libexec_PROGRAMS)
 	@$(NORMAL_INSTALL)
-	test -z "$(libexecdir)" || $(MKDIR_P) "$(DESTDIR)$(libexecdir)"
-	@list='$(libexec_PROGRAMS)'; for p in $$list; do \
+	test -z "$(e_libexecdir)" || $(MKDIR_P) "$(DESTDIR)$(e_libexecdir)"
+	@list='$(e_libexec_PROGRAMS)'; for p in $$list; do \
 	  p1=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
 	  if test -f $$p \
 	  ; then \
 	    f=`echo "$$p1" | sed 's,^.*/,,;$(transform);s/$$/$(EXEEXT)/'`; \
-	   echo " $(INSTALL_PROGRAM_ENV) $(libexecPROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(libexecdir)/$$f'"; \
-	   $(INSTALL_PROGRAM_ENV) $(libexecPROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(libexecdir)/$$f" || exit 1; \
+	   echo " $(INSTALL_PROGRAM_ENV) $(e_libexecPROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(e_libexecdir)/$$f'"; \
+	   $(INSTALL_PROGRAM_ENV) $(e_libexecPROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(e_libexecdir)/$$f" || exit 1; \
 	  else :; fi; \
 	done
 
-uninstall-libexecPROGRAMS:
+uninstall-e_libexecPROGRAMS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(libexec_PROGRAMS)'; for p in $$list; do \
+	@list='$(e_libexec_PROGRAMS)'; for p in $$list; do \
 	  f=`echo "$$p" | sed 's,^.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/'`; \
-	  echo " rm -f '$(DESTDIR)$(libexecdir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(libexecdir)/$$f"; \
+	  echo " rm -f '$(DESTDIR)$(e_libexecdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(e_libexecdir)/$$f"; \
 	done
 
-clean-libexecPROGRAMS:
-	-test -z "$(libexec_PROGRAMS)" || rm -f $(libexec_PROGRAMS)
+clean-e_libexecPROGRAMS:
+	-test -z "$(e_libexec_PROGRAMS)" || rm -f $(e_libexec_PROGRAMS)
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	test -z "$(sbindir)" || $(MKDIR_P) "$(DESTDIR)$(sbindir)"
@@ -519,7 +521,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(PROGRAMS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_spooldir)"; do \
+	for dir in "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_spooldir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -548,7 +550,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libexecPROGRAMS clean-sbinPROGRAMS \
+clean-am: clean-e_libexecPROGRAMS clean-generic clean-sbinPROGRAMS \
 	mostlyclean-am
 
 distclean: distclean-am
@@ -571,7 +573,7 @@ install-data-am: install-data-local install-e_spoolDATA
 
 install-dvi: install-dvi-am
 
-install-exec-am: install-exec-local install-libexecPROGRAMS \
+install-exec-am: install-e_libexecPROGRAMS install-exec-local \
 	install-sbinPROGRAMS
 
 install-html: install-html-am
@@ -603,29 +605,29 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-e_spoolDATA uninstall-libexecPROGRAMS \
+uninstall-am: uninstall-e_libexecPROGRAMS uninstall-e_spoolDATA \
 	uninstall-local uninstall-sbinPROGRAMS
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libexecPROGRAMS clean-sbinPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-data-local install-dvi \
-	install-dvi-am install-e_spoolDATA install-exec \
-	install-exec-am install-exec-local install-html \
-	install-html-am install-info install-info-am \
-	install-libexecPROGRAMS install-man install-pdf install-pdf-am \
+.PHONY: CTAGS GTAGS all all-am check check-am clean \
+	clean-e_libexecPROGRAMS clean-generic clean-sbinPROGRAMS ctags \
+	distclean distclean-compile distclean-generic distclean-tags \
+	distdir dvi dvi-am html html-am info info-am install \
+	install-am install-data install-data-am install-data-local \
+	install-dvi install-dvi-am install-e_libexecPROGRAMS \
+	install-e_spoolDATA install-exec install-exec-am \
+	install-exec-local install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
 	install-ps install-ps-am install-sbinPROGRAMS install-strip \
 	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-e_spoolDATA uninstall-libexecPROGRAMS \
+	uninstall-am uninstall-e_libexecPROGRAMS uninstall-e_spoolDATA \
 	uninstall-local uninstall-sbinPROGRAMS
 
 
-install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-libexecPROGRAMS
+install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS
 	-chgrp daemon $(DESTDIR)$(e_spooldir)
 	-chmod 775 $(DESTDIR)$(e_spooldir)
 	-chgrp daemon $(DESTDIR)$(sbindir)/emailrelay-submit
@@ -635,7 +637,7 @@ install-exec-local:
 
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_spooldir) 2>/dev/null
-	-rmdir $(DESTDIR)$(libexecdir) 2>/dev/null
+	-rmdir $(DESTDIR)$(e_libexecdir) 2>/dev/null
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

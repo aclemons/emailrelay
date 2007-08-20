@@ -28,7 +28,8 @@ EXTRA_DIST = \
 	Scanner.pm \
 	Server.pm \
 	SmtpClient.pm \
-	System.pm
+	System.pm \
+	TestServer.pm
 
 noinst_SCRIPTS = emailrelay-test.sh emailrelay-test.pl emailrelay-chain-test.sh emailrelay-soak-test.sh
 noinst_PROGRAMS = emailrelay-test-scanner emailrelay-test-server

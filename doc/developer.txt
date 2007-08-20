@@ -16,26 +16,6 @@ means that the "gnet" library has to be able to create GUI windows in order to
 process network events. The extra GUI and event classes are put into a separate
 library in the "src/win32" directory, using the namespace "GGui".
 
-Core class structure
---------------------
-The message-store functionality uses three abstract interfaces: "MessageStore",
-"NewMessage" and "StoredMessage". The "NewMessage" interface is used to create
-messages within the store, and the "StoredMessage" interface is used for
-reading and extracting messages from the store. The concrete implementation
-classes based on these interfaces are respectively "FileStore", "NewFile" and
-"StoredFile".
-
-The interaction between the server protocol class and the message store is
-mediated by the "ProtocolMessage" interface. Two main implementations of this
-interface are supplied: one for normal spooling ("ProtocolMessageStore"), and
-another for immediate forwarding ("ProtocolMessageForward").
-
-The protocol and message-store functionality are brought together by the
-high-level "GSmtp::Server" and "GSmtp::Client" classes.
-
-Simplified class diagrams for the *GNet* [gnet-classes.png] and
-*GSmtp* [gsmtp-classes.png] namespaces are available.
-
 Event model
 -----------
 The E-MailRelay server uses non-blocking socket i/o, with a select() event loop.
@@ -46,53 +26,81 @@ when external programs are executed (see "--filter" and "--verifier").
 See *C10K Problem* [http://www.kegel.com/c10k.html] for a discussion of
 different network event models.
 
-At higher levels the slot/signal design pattern is used to propagate events
-between objects. (This C++ pattern should not be confused with operating
-system signals.)
+At higher levels the C++ slot/signal design pattern is used to propagate events
+between objects (not to be confused with operating system signals). The
+slot/signal implementation has been simplified compared to Qt or boost by not
+supporting signal multicasting, so each signal connects to no more than one
+slot. For historical reasons the slot/signal pattern is not used in the lowest
+layers of the network library.
 
 Event handling and exceptions
 -----------------------------
-The use of non-blocking i/o in the low-level "gnet" network library means
-that most processing operates within the context of an i/o or timeout callback.
-The top level of the call stack is therefore nearly always the event loop
-code and this can make using exceptions a bit awkward because it is not
-possible to put a single catch block around a given high-level feature.
+The use of non-blocking i/o in the network library means that most processing
+operates within the context of an i/o event or timeout callback which means that
+the top level of the call stack is nearly always the event loop code. This can 
+make using C++ exceptions a bit awkward compared to a multi-threaded approach 
+because it is not possible to put a single catch block around a particular 
+high-level feature.
 
-The approach taken is to have all i/o events delivered to an abstract EventHandler
-interface, and all timeout events delivered to the AbstractTimer interface.
-The event loop code calls these interfaces to deliver events to the application
-code. If these callbacks throw exceptions then the event loop will catch them
-and deliver them back to the same interface through the virtual functions
-onException() and onTimerException() respectively. If exceptions are thrown
-out of these callbacks then the event loop code lets them propagate back
-to main(), typically terminating the program.
+The event loop delivers all asynchronous events to the abstract "EventHandler" 
+and "AbstractTimer" interfaces. If these callbacks throw exceptions then the 
+event loop will catch them and deliver them back to the same interface through 
+the virtual functions onException() and onTimerException() respectively. If 
+exceptions are thrown out of _these_ callbacks then the event loop code lets 
+them propagate back to main(), typically terminating the program.
 
-This approach is extended slightly by having a Timer class that requires an
-EventHandler object to be associated with each Timer. The Timer class routes all
-exceptions thrown out of the timeout callback to the designated EventHandler
-interface. This means that both i/o and timeout exceptions are delivered to the
-same place.
+The two callback interfaces are brought together by having a concrete "Timer"
+class that requires an "EventHandler" object to be associated with each timer.
+The "Timer" class routes any exceptions thrown out of the timeout callback to
+the designated "EventHandler" interface so that both i/o and timeout exceptions
+are delivered to the same place.
 
 In common with other event-driven frameworks this leads to a programming
 model where objects are instantiated on the heap and the objects delete
 themselves when they receive certain events from the framework. In the
-"gnet" library the ServerPeer and HeapClient classes embody this lifetime
-management. Instances of these classes delete themselves when the associated
+"gnet" library the "ServerPeer" and "HeapClient" classes embody this lifetime
+management; instances of these classes delete themselves when the associated
 network connection goes away or when an exception is thrown out their
 event-handling code.
 
-A significant disadvantage is that all exceptions are delivered using a base 
-class exception type. This means that all exceptions from asynchronous code have
-to be handled in the same way, typically by deleting the object associated with
-the connection or terminating the event loop, leaving non-fatal errors to be 
-propagated through the mainline code.
+A disadvantage of all of this is that exceptions are delivered using a base
+class type so all exceptions from asynchronous code have to be handled in the 
+same way, typically by deleting the object associated with the connection or 
+terminating the event loop.
 
-Protocol implementation
------------------------
-The SMTP and POP protocols are implemented using finite state machines. This
-fits well with the single-threaded, non-blocking event model since the protocol
-state can be stored as data within an object rather than being implicit in the
-progress of a thread's execution.
+Core class structure
+--------------------
+The message-store functionality uses three abstract interfaces: "MessageStore",
+"NewMessage" and "StoredMessage". The "NewMessage" interface is used to create
+messages within the store, and the "StoredMessage" interface is used for
+reading and extracting messages from the store. The concrete implementation
+classes based on these interfaces are respectively "FileStore", "NewFile" and
+"StoredFile".
+
+Protocol classes such as "GSmtp::ServerProtocol" receive network and timer
+events from their container and use an abstract "Sender" interface to send
+network data. This means that the protocols can be largely independent of the
+network and event loop framework.
+
+The interaction between the SMTP server protocol class and the message store is
+mediated by the "ProtocolMessage" interface. Two main implementations of this
+interface are available: one for normal spooling ("ProtocolMessageStore"), and
+another for immediate forwarding ("ProtocolMessageForward"). The gang-of-four
+"Decorator" pattern is used whereby the forwarding class uses an instance of the
+storage class to do the message storing and pre-processing, while adding in an 
+instance of the "GSmtp::Client" class to do the forwarding.
+
+Message pre-processing (see "--filter") is implemented via an abstract
+"Processor" interface. Concrete implementations are provided for doing nothing, 
+running an external executable program and talking to an external network server.
+
+The protocol, processor and message-store interfaces are brought together by the
+high-level "GSmtp::Server" and "GSmtp::Client" classes. Dependency injection is
+used to create the concrete instances of the "ProtocolMessage" and "Processor"
+interfaces.
+
+Simplified class diagrams for the *GNet* [gnet-classes.png] and
+*GSmtp* [gsmtp-classes.png] namespaces are available.
 
 Windows service
 ---------------
@@ -103,8 +111,8 @@ runs the wrapper starts the actual E-MailRelay server by looking for a batch
 file called "emailrelay-start.bat" in the same directory as service wrapper
 executable. It reads the contents of this batch file in order to construct the
 E-MailRelay command-line, adding "--no-daemon" and "--hidden" switches if they
-are not there. The service name and display name can be put onto the
-wrapper's "--install" command-line, and it is the service name that is used to
+are not there already. The service name and display name can be put onto the 
+wrapper's "--install" command-line, and it is the service name that is used to 
 derive the name of the "start" batch file.
 
 Diagrams
@@ -116,11 +124,9 @@ Class diagrams:
 State transition diagrams:
 * *GNet::Client* [gnet-client.png]
 * *GSmtp::ServerProtocol* [gsmtp-serverprotocol.png]
-* *GSmtp::ScannerClient* [gsmtp-scannerclient.png]
 
 Sequence diagrams:
 * *Proxy mode forwarding* [sequence-3.png]
-* *Scanning* [sequence-4.png]
 
 Directory structure
 -------------------
@@ -154,17 +160,17 @@ Directory structure
 
   Application-level classes for E-MailRelay.
 
+# src/gui
+
+  Installation and configuration GUI program using Qt 4.
+
 # lib
 
-  Parent directory for ANSI C++ fixes
+  Parent directory for ISO C++ fixups for various compilers.
 
-# lib/gcc2.95
+# test
 
-  Standard headers which are missing in gcc2.95
-
-# lib/msvc6.0
-
-  Standard headers which are missing (or broken) in msvc6.0
+  Test scripts and utilities.
 
 Portability
 -----------
@@ -176,14 +182,12 @@ to be used to fix up compiler portability issues such as missing standard types,
 non-standard system headers etc. Conditional compilation directives ("#if"
 etc.) are largely confined to these headers in order to improve readability.
 
-Deficiencies in the ISO standard headers files provided by the compiler are
-fixed up by files in the "lib" directory tree. For example, the msvc6.0 compiler
+Deficiencies in the standard headers files provided by older compilers are fixed
+up by files in the "lib" directory tree. For example, the msvc6.0 compiler 
 sometimes does not put its names into the "std" namespace, even though the
 std-namespace headers are used. This can be worked round by additional "using"
 declarations in the "lib/msvc6.0" headers.  These work-rounds are kept out of
-the "src" tree because they are likely to be fixed in later compiler releases.
-Standards-compliant compilers should not need to include any headers from the
-"lib" directory tree.
+the "src" tree because they are not necessary for more modern compilers.
 
 Windows/unix portability is generally addressed by providing a common class
 declaration with two implementations. Where necessary a "pimple" pattern is used
@@ -231,13 +235,14 @@ Gang-of-four Design Patterns (ISBN 0-201-63361-2):
   - G::LogOutput
   - GGui::ApplicationInstance
   - GNet::EventLoop
+  - GNet::TimerList
 
 + Facade
 
   - G::File
   - GNet::Address
 
-+ Adapter/Mediator
++ Decorator
 
   - GSmtp::ProtocolMessage
 

@@ -142,7 +142,7 @@ LRESULT GNet::ResolverImp::onUser( WPARAM wparam , LPARAM lparam )
 	try
 	{
 		G_DEBUG( "GNet::ResolverImp::onUser: wparam = " << wparam << ", lparam = " << lparam ) ;
-		return onUserImp( wparam , lparam ) ;
+		onUserImp( wparam , lparam ) ;
 	}
 	catch( std::exception & e ) // strategy
 	{
@@ -197,16 +197,6 @@ void GNet::ResolverImp::onUserImp( WPARAM wparam , LPARAM lparam )
 }
 
 // ===
-
-GNet::Resolver::Resolver() :
-	m_imp(NULL)
-{
-	ResolverImp * imp = new ResolverImp(*this,NULL) ;
-	if( !imp->valid() )
-		delete imp ;
-	else
-		m_imp = imp ;
-}
 
 GNet::Resolver::Resolver( EventHandler & event_handler ) :
 	m_imp(NULL)

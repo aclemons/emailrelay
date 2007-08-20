@@ -30,6 +30,11 @@ bool G::File::mkdir( const Path & dir , const NoThrow & )
 	return 0 == ::_mkdir( dir.str().c_str() ) ;
 }
 
+bool G::File::executable( const Path & path )
+{
+	return exists( path , NoThrow() ) ;
+}
+
 std::string G::File::sizeString( const Path & path )
 {
 	WIN32_FIND_DATA info ;

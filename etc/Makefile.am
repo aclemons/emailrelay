@@ -15,6 +15,6 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 EXTRA_DIST = emailrelay.conf.template
-sysconf_DATA = emailrelay.conf.template
+e_sysconf_DATA = emailrelay.conf.template
 install-data-hook:
-	if test -f "$(DESTDIR)$(sysconfdir)/emailrelay.conf" ; then : ; else cp "$(DESTDIR)$(sysconfdir)/emailrelay.conf.template" "$(DESTDIR)$(sysconfdir)/emailrelay.conf" ; fi
+	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi

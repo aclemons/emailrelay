@@ -22,20 +22,23 @@ mk_sources=\
 	gadminserver.cpp \
 	gbase64.cpp \
 	gclientprotocol.cpp \
+	gexecutableprocessor.cpp \
 	gfilestore.cpp \
 	gmessagestore.cpp \
 	gmessagestore_win32.cpp \
+	gnetworkprocessor.cpp \
 	gnewfile.cpp \
 	gnewmessage.cpp \
+	gnullprocessor.cpp \
 	gprocessor.cpp \
+	gprocessorfactory.cpp \
 	gprotocolmessage.cpp \
 	gprotocolmessageforward.cpp \
 	gprotocolmessagestore.cpp \
-	gprotocolmessagescanner.cpp \
+	grequestclient.cpp \
 	gsasl_native.cpp \
 	gsecrets.cpp \
 	gserverprotocol.cpp \
-	gscannerclient.cpp \
 	gsmtpclient.cpp \
 	gsmtpserver.cpp \
 	gstoredfile.cpp \

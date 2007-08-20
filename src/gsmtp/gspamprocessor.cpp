@@ -15,42 +15,39 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// gnetworkprocessor.cpp
+// gspamprocessor.cpp
 //
 
 #include "gdef.h"
 #include "gsmtp.h"
-#include "gnetworkprocessor.h"
+#include "gspamprocessor.h"
 #include "glog.h"
 
-GSmtp::NetworkProcessor::NetworkProcessor( const std::string & server , 
-	unsigned int connection_timeout , unsigned int response_timeout , bool lazy ) :
+GSmtp::SpamProcessor::SpamProcessor( const std::string & server , 
+	unsigned int connection_timeout , unsigned int response_timeout ) :
 		m_resolver_info(server) ,
 		m_connection_timeout(connection_timeout) ,
-		m_response_timeout(response_timeout) ,
-		m_lazy(lazy)
+		m_response_timeout(response_timeout)
 {
-	m_client.eventSignal().connect( G::slot(*this,&GSmtp::NetworkProcessor::clientEvent) ) ;
+	m_client.eventSignal().connect( G::slot(*this,&GSmtp::SpamProcessor::clientEvent) ) ;
 }
 
-GSmtp::NetworkProcessor::~NetworkProcessor()
+GSmtp::SpamProcessor::~SpamProcessor()
 {
 	m_client.eventSignal().disconnect() ;
 }
 
-void GSmtp::NetworkProcessor::start( const std::string & path )
+void GSmtp::SpamProcessor::start( const std::string & path )
 {
-	if( !m_lazy || m_client.get() == NULL )
-	{
-		m_client.reset( new RequestClient("scanner","ok","\n",m_resolver_info,m_connection_timeout,m_response_timeout));
-	}
+	m_client.reset( new SpamClient(m_resolver_info,m_connection_timeout,m_response_timeout));
+
 	m_text.erase() ;
 	m_client->request( path ) ; // (no need to wait for connection)
 }
 
-void GSmtp::NetworkProcessor::clientEvent( std::string s1 , std::string s2 )
+void GSmtp::SpamProcessor::clientEvent( std::string s1 , std::string s2 )
 {
-	G_DEBUG( "GSmtp::NetworkProcessor::clientEvent: [" << s1 << "] [" << s2 << "]" ) ;
+	G_DEBUG( "GSmtp::SpamProcessor::clientEvent: [" << s1 << "] [" << s2 << "]" ) ;
 	if( s1 == "scanner" )
 	{
 		m_text = s2 ;
@@ -58,31 +55,31 @@ void GSmtp::NetworkProcessor::clientEvent( std::string s1 , std::string s2 )
 	}
 }
 
-bool GSmtp::NetworkProcessor::cancelled() const
+bool GSmtp::SpamProcessor::cancelled() const
 {
 	return false ;
 }
 
-bool GSmtp::NetworkProcessor::repoll() const
+bool GSmtp::SpamProcessor::repoll() const
 {
 	return false ;
 }
 
-std::string GSmtp::NetworkProcessor::text() const
+std::string GSmtp::SpamProcessor::text() const
 {
 	return m_text ;
 }
 
-G::Signal1<bool> & GSmtp::NetworkProcessor::doneSignal()
+G::Signal1<bool> & GSmtp::SpamProcessor::doneSignal()
 {
 	return m_done_signal ;
 }
 
-void GSmtp::NetworkProcessor::abort()
+void GSmtp::SpamProcessor::abort()
 {
 	m_text.erase() ;
 	if( m_client.get() != NULL && m_client->busy() )
 		m_client.reset() ;
 }
 
-/// \file gnetworkprocessor.cpp
+/// \file gspamprocessor.cpp

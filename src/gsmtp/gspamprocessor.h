@@ -15,37 +15,38 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gnetworkprocessor.h
+/// \file gspamprocessor.h
 ///
 
-#ifndef G_SMTP_NETWORK_PROCESSOR_H
-#define G_SMTP_NETWORK_PROCESSOR_H
+#ifndef G_SMTP_SPAM_PROCESSOR_H
+#define G_SMTP_SPAM_PROCESSOR_H
 
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gprocessor.h"
 #include "gclientptr.h"
-#include "grequestclient.h"
+#include "gspamclient.h"
 
 /// \namespace GSmtp
 namespace GSmtp
 {
-	class NetworkProcessor ;
+	class SpamProcessor ;
 }
 
-/// \class GSmtp::NetworkProcessor
-/// A Processor class that passes the name of a
-/// message file to a remote process over the network.
+/// \class GSmtp::SpamProcessor
+/// A Processor class that passes the body of a
+/// message file to a remote process over the network and stores
+/// the response back into the file. It looks for a spam
+/// header line in the resulting file to determine the
+/// overall result.
 ///
-class GSmtp::NetworkProcessor : public GSmtp::Processor 
+class GSmtp::SpamProcessor : public GSmtp::Processor 
 {
 public:
-	NetworkProcessor( const std::string & , unsigned int connection_timeout , unsigned int response_timeout , 
-		bool lazy = true ) ;
-			///< Constructor. If lazy then the internal client object
-			///< is retained from one start() request to the next.
+	SpamProcessor( const std::string & , unsigned int connection_timeout , unsigned int response_timeout ) ;
+		///< Constructor. 
 
-	virtual ~NetworkProcessor() ;
+	virtual ~SpamProcessor() ;
 		///< Destructor.
 
 	virtual G::Signal1<bool> & doneSignal() ;
@@ -67,8 +68,8 @@ public:
 		///< From Processor.
 
 private:
-	NetworkProcessor( const NetworkProcessor & ) ; // not implemented
-	void operator=( const NetworkProcessor & ) ; // not implemented
+	SpamProcessor( const SpamProcessor & ) ; // not implemented
+	void operator=( const SpamProcessor & ) ; // not implemented
 	void clientEvent( std::string , std::string ) ;
 
 private:
@@ -76,8 +77,7 @@ private:
 	GNet::ResolverInfo m_resolver_info ;
 	unsigned int m_connection_timeout ;
 	unsigned int m_response_timeout ;
-	bool m_lazy ;
-	GNet::ClientPtr<RequestClient> m_client ;
+	GNet::ClientPtr<SpamClient> m_client ;
 	std::string m_text ;
 } ;
 

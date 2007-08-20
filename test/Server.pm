@@ -272,6 +272,7 @@ sub cleanup
 	unlink( $this->popSecrets() ) ;
 	unlink( $this->clientSecrets() ) ;
 	unlink( $this->filter() ) ;
+	unlink( $this->clientFilter() ) ;
 }
 
 1 ;

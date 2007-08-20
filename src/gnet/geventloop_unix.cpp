@@ -73,7 +73,7 @@ public:
 	virtual bool init() ;
 	virtual void run() ;
 	virtual bool running() const ;
-	virtual void quit() ;
+	virtual bool quit() ;
 	virtual void addRead( Descriptor fd , EventHandler &handler ) ;
 	virtual void addWrite( Descriptor fd , EventHandler &handler ) ;
 	virtual void addException( Descriptor fd , EventHandler &handler ) ;
@@ -229,10 +229,10 @@ bool GNet::Select::init()
 void GNet::Select::run()
 {
 	G::Setter setter( m_running ) ;
-	while( !m_quit )
+	do
 	{
 		runOnce() ;
-	}
+	} while( !m_quit ) ;
 	m_quit = false ;
 }
 
@@ -241,9 +241,11 @@ bool GNet::Select::running() const
 	return m_running ;
 }
 
-void GNet::Select::quit()
+bool GNet::Select::quit()
 {
+	bool q = m_quit ;
 	m_quit = true ;
+	return q ;
 }
 
 void GNet::Select::runOnce()

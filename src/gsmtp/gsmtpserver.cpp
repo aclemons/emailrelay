@@ -24,9 +24,7 @@
 #include "gresolver.h"
 #include "gprotocolmessagestore.h"
 #include "gprotocolmessageforward.h"
-#include "gexecutableprocessor.h"
-#include "gnetworkprocessor.h"
-#include "gnullprocessor.h"
+#include "gprocessorfactory.h"
 #include "gmemory.h"
 #include "glocal.h"
 #include "glog.h"
@@ -191,29 +189,11 @@ GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessageForward( std::auto_ptr
 		m_client_config , m_client_secrets , m_smtp_server , m_smtp_connection_timeout ) ;
 }
 
-GSmtp::Processor * GSmtp::Server::newProcessor( const std::string & address , unsigned int timeout )
-{
-	std::string s1 ;
-	std::string s2 ;
-	if( address.empty() )
-	{
-		return new NullProcessor ;
-	}
-	else if( GNet::Resolver::parse(address,s1,s2) )
-	{
-		return new NetworkProcessor( address , timeout , timeout ) ;
-	}
-	else
-	{
-		return new ExecutableProcessor( G::Executable(address) ) ;
-	}
-}
-
 GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()
 {
 	// dependency injection...
 
-	std::auto_ptr<Processor> store_processor( newProcessor(m_processor_address,m_processor_timeout) ) ;
+	std::auto_ptr<Processor> store_processor( ProcessorFactory::newProcessor(m_processor_address,m_processor_timeout) );
 
 	std::auto_ptr<ProtocolMessage> store( newProtocolMessageStore( store_processor ) ) ;
 

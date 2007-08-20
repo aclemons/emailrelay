@@ -104,7 +104,6 @@ protected:
 		///< Destructor.
 
 private:
-	static Processor * newProcessor( const std::string & , unsigned int ) ;
 	virtual void onConnect() ; // GNet::SimpleClient
 	virtual bool onReceive( const std::string & ) ; // GNet::Client
 	virtual void onDelete( const std::string & , bool ) ; // GNet::HeapClient

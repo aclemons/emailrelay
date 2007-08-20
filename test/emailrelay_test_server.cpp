@@ -22,7 +22,6 @@
 
 #include "gdef.h"
 #include "gnet.h"
-#include "gsmtp.h"
 #include "geventloop.h"
 #include "gtimerlist.h"
 #include "gstr.h"
@@ -40,10 +39,12 @@
 
 struct Config
 {
+	unsigned int m_port ;
 	bool m_auth_foo_bar ;
 	bool m_auth_login ;
 	int m_fail_at ;
-	Config( bool auth_foo_bar , bool auth_login , int fail_at ) : 
+	Config( unsigned int port , bool auth_foo_bar , bool auth_login , int fail_at ) : 
+		m_port(port) ,
 		m_auth_foo_bar(auth_foo_bar) ,
 		m_auth_login(auth_login) ,
 		m_fail_at(fail_at)
@@ -74,7 +75,7 @@ public:
 } ;
 
 Server::Server( Config config ) : 
-	GNet::Server(10025) ,
+	GNet::Server(config.m_port) ,
 	m_config(config)
 {
 }
@@ -126,7 +127,7 @@ bool Peer::onReceive( const std::string & line )
 	else if( line == "." )
 	{
 		m_in_data = false ;
-		bool fail = m_message >= m_config.m_fail_at ;
+		bool fail = m_config.m_fail_at >= 0 && m_message >= m_config.m_fail_at ;
 		m_message++ ;
 		tx( fail ? "452 failed\r\n" : "250 OK\r\n" ) ;
 	}
@@ -166,7 +167,9 @@ int main( int argc , char * argv [] )
 		G::Arg arg( argc , argv ) ;
 		bool auth_foo_bar = arg.remove( "--auth-foo-bar" ) ;
 		bool auth_login = arg.remove( "--auth-login" ) ;
+		bool slow = arg.remove( "--slow" ) ;
 		int fail_at = arg.contains("--fail-at",1U) ? G::Str::toInt(arg.v(arg.index("--fail-at",1U)+1U)) : -1 ;
+		int port = arg.contains("--port",1U) ? G::Str::toInt(arg.v(arg.index("--port",1U)+1U)) : 10025 ;
 
 		std::string pid_file_name = std::string(".") + G::Path(arg.v(0)).basename() + ".pid" ;
 		{
@@ -177,8 +180,26 @@ int main( int argc , char * argv [] )
 		G::LogOutput log( "" , true , true , false , false , true , false , true , false ) ;
 		GNet::EventLoop * loop = GNet::EventLoop::create() ;
 		GNet::TimerList timer_list ;
-		Server server( Config(auth_foo_bar,auth_login,fail_at) ) ;
-		loop->run() ;
+		Server server( Config(port,auth_foo_bar,auth_login,fail_at) ) ;
+
+		if( slow )
+		{
+			while( true )
+			{
+				if( loop->quit() )
+					break ;
+				loop->run() ;
+				struct timeval t ;
+				t.tv_sec = 0 ;
+				t.tv_usec = 100000 ;
+				::select( 0 , NULL , NULL , NULL , &t ) ;
+			}
+		}
+		else
+		{
+			loop->run() ;
+		}
+
 		return 0 ;
 	}
 	catch( std::exception & e )

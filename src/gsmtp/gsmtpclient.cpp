@@ -28,9 +28,7 @@
 #include "gtimer.h"
 #include "gsmtpclient.h"
 #include "gresolver.h"
-#include "gexecutableprocessor.h"
-#include "gnetworkprocessor.h"
-#include "gnullprocessor.h"
+#include "gprocessorfactory.h"
 #include "gresolver.h"
 #include "gassert.h"
 #include "glog.h"
@@ -43,7 +41,7 @@ std::string GSmtp::Client::crlf()
 GSmtp::Client::Client( const GNet::ResolverInfo & remote , const Secrets & secrets , Config config ) :
 	GNet::Client(remote,config.connection_timeout,0U,crlf(),config.local_address,false) ,
 	m_store(NULL) ,
-	m_processor(newProcessor(config.processor_address,config.processor_timeout)) ,
+	m_processor(ProcessorFactory::newProcessor(config.processor_address,config.processor_timeout)) ,
 	m_protocol(*this,secrets,config.client_protocol_config)
 {
 	m_protocol.doneSignal().connect( G::slot(*this,&Client::protocolDone) ) ;
@@ -61,25 +59,6 @@ GSmtp::Client::~Client()
 G::Signal1<std::string> & GSmtp::Client::messageDoneSignal()
 {
 	return m_message_done_signal ;
-}
-
-GSmtp::Processor * GSmtp::Client::newProcessor( const std::string & address , unsigned int timeout )
-{
-	// (this could be done externally to this class with proper DI, but no need for now)
-	std::string s1 ;
-	std::string s2 ;
-	if( address.empty() )
-	{
-		return new NullProcessor ;
-	}
-	else if( GNet::Resolver::parse(address,s1,s2) )
-	{
-		return new NetworkProcessor( address , timeout , timeout ) ;
-	}
-	else
-	{
-		return new ExecutableProcessor( G::Executable(address) ) ;
-	}
 }
 
 void GSmtp::Client::sendMessages( MessageStore & store )

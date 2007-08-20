@@ -40,28 +40,25 @@ std::string GNet::Local::hostname()
 
 GNet::Address GNet::Local::canonicalAddressImp()
 {
-	std::pair<Resolver::HostInfo,std::string> rc = Resolver::resolve( hostname() , "0" ) ;
-	if( rc.second.length() != 0U )
+	ResolverInfo info( hostname() , "0" ) ;
+	std::string error = Resolver::resolve( info ) ;
+	if( !error.empty() )
 	{
-		std::ostringstream ss ;
-		ss << "resolve: " << rc.second ;
-		throw Error( ss.str() ) ;
+		throw Error( std::string() + "resolve: " + error ) ;
 	}
-
-	return rc.first.address ;
+	return info.address() ;
 }
 
 std::string GNet::Local::fqdnImp()
 {
-	std::pair<Resolver::HostInfo,std::string> rc = Resolver::resolve( hostname() , "0" ) ;
-	if( rc.second.length() != 0U )
+	ResolverInfo info( hostname() , "0" ) ;
+	std::string error = Resolver::resolve( info ) ;
+	if( !error.empty() )
 	{
-		std::ostringstream ss ;
-		ss << "resolve: " << rc.second ;
-		throw Error( ss.str() ) ;
+		throw Error( std::string() + "resolve: " + error ) ;
 	}
 
-	std::string result = rc.first.canonical_name ;
+	std::string result = info.name() ;
 
 	std::string::size_type pos = result.find( '.' ) ;
 	if( pos == std::string::npos )
