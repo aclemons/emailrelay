@@ -176,8 +176,7 @@ void GNet::Socket::setNoLinger()
 	options.l_onoff = 0 ;
 	options.l_linger = 0 ;
 	socklen_t sizeof_options = sizeof(options) ;
-	G_IGNORE ::setsockopt( m_socket , SOL_SOCKET , SO_LINGER , 
-		reinterpret_cast<char*>(&options) , sizeof_options ) ;
+	G_IGNORE ::setsockopt( m_socket , SOL_SOCKET , SO_LINGER , reinterpret_cast<char*>(&options) , sizeof_options ) ;
 }
 
 void GNet::Socket::setKeepAlive()
@@ -190,8 +189,7 @@ void GNet::Socket::setKeepAlive()
 void GNet::Socket::setReuse()
 {
 	int on = 1 ;
-	G_IGNORE ::setsockopt( m_socket , SOL_SOCKET , 
-		SO_REUSEADDR , reinterpret_cast<char*>(&on) , sizeof(on) ) ;
+	G_IGNORE ::setsockopt( m_socket , SOL_SOCKET , SO_REUSEADDR , reinterpret_cast<char*>(&on) , sizeof(on) ) ;
 }
 
 bool GNet::Socket::listen( int backlog )

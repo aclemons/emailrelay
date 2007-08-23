@@ -155,12 +155,10 @@ bool GPop::ServerProtocol::sendContentLine( std::string & line , bool & stop )
 	G::Str::readLineFrom( *(m_content.get()) , crlf() , line , false ) ;
 
 	// add crlf and choose an offset
-	bool eof = ! m_content->good() ;
+	bool eof = m_content->fail() || m_content->bad() ;
 	size_t offset = 0U ;
 	if( eof || limited )
 	{
-		if( eof && line.length() > 1 ) 
-			G_WARNING( "ServerProtocol::sendContentLine: discarding unterminated line: " << line.length() << " byte(s)" ) ;
 		line.erase( 1U ) ;
 		line.append( crlf() ) ;
 	}

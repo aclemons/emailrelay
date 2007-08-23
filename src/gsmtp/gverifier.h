@@ -26,7 +26,7 @@
 #include "gaddress.h"
 #include "gpath.h"
 #include "gexception.h"
-#include "gexe.h"
+#include "gexecutable.h"
 #include <string>
 
 /// \namespace GSmtp

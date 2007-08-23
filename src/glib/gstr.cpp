@@ -455,17 +455,34 @@ void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std
 	if( pre_erase )
 		line.erase() ;
 
+	const size_type limit = line.max_size() ;
 	const size_type eol_length = eol.length() ;
-	const char eol_final = eol.at(eol_length-1U) ;
+	const char eol_final = eol.at( eol_length - 1U ) ;
 	size_type line_length = line.length() ;
 
+	bool changed = false ;
 	char c ;
-	while( stream.get(c) )
+	for(;;)
 	{
-		line.append(1U,c) ; // fast enough if 'line' starts with sufficient capacity
+		stream.get( c ) ; // sets the fail bit at eof
+		if( stream.fail() )
+		{
+			// work more like std::getline() in <string>
+			stream.clear( ( stream.rdstate() & ~std::ios_base::failbit ) | std::ios_base::eofbit ) ;
+			break ;
+		}
+
+		if( line_length == limit ) // pathological case -- see also std::getline()
+		{
+			stream.setstate( std::ios_base::failbit ) ;
+			break ;
+		}
+
+		line.append( 1U , c ) ; // fast enough if 'line' has sufficient capacity
+		changed = true ;
 		++line_length ;
 
-		if( line_length >= eol_length && c == eol_final )
+		if( line_length >= eol_length && c == eol_final ) // optimisation
 		{
 			const size_type offset = line_length - eol_length ;
 			if( line.find(eol,offset) == offset )
@@ -475,6 +492,8 @@ void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std
 			}
 		}
 	}
+	if( !changed )
+		stream.setstate( std::ios_base::failbit ) ;
 }
 
 std::string G::Str::wrap( std::string text , const std::string & prefix_1 , 

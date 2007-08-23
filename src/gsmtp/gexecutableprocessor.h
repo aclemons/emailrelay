@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gsmtp.h"
-#include "gexe.h"
+#include "gexecutable.h"
 #include "gprocessor.h"
 
 /// \namespace GSmtp
@@ -57,7 +57,7 @@ public:
 	virtual std::string text() const ;
 		///< From Processor. 
 		///<
-		///< Returns any "<<text>>" output by the executable.
+		///< Returns any "<<text>>" or "[[text]]" output by the executable.
 
 	virtual bool cancelled() const ;
 		///< From Processor.

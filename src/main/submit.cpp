@@ -49,7 +49,7 @@
 #include "gfilestore.h"
 #include "gnewmessage.h"
 #include "gexception.h"
-#include "gexe.h"
+#include "gexecutable.h"
 #include "legal.h"
 #include <exception>
 #include <iostream>
@@ -115,11 +115,11 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 		msg->addText( std::string() ) ;
 	}
 
-	// stream out the content
+	// read and stream out the content
 	while( stream.good() )
 	{
-		std::string line = G::Str::readLineFrom( stream ) ;
-		if( line == "." )
+		std::string line = G::Str::readLineFrom( stream , "\n" ) ;
+		if( !stream || line == "." )
 			break ;
 		msg->addText( line ) ;
 	}
@@ -191,10 +191,10 @@ static void run( const G::Arg & arg )
 		G::Strings header ;
 		while( stream.good() )
 		{
-			std::string line = G::Str::readLineFrom( stream ) ;
+			std::string line = G::Str::readLineFrom( stream , "\n" ) ;
 			if( line == "." )
 				throw NoBody() ;
-			if( line.empty() )
+			if( !stream || line.empty() )
 				break ;
 			header.push_back( line ) ;
 		} 

@@ -20,6 +20,7 @@ EXTRA_DIST=\
 	gdaemon_win32.cpp \
 	gdatetime_win32.cpp \
 	gdirectory_win32.cpp \
+	gexecutable_win32.cpp \
 	gfs_win32.cpp \
 	gidentity_win32.cpp \
 	glogoutput_win32.cpp \
@@ -52,8 +53,9 @@ libglib_a_SOURCES = \
 	gdirectory_unix.cpp \
 	gexception.cpp \
 	gexception.h \
-	gexe.cpp \
-	gexe.h \
+	gexecutable_unix.cpp \
+	gexecutable.cpp \
+	gexecutable.h \
 	gfile.cpp \
 	gfile.h \
 	gfile_unix.cpp \

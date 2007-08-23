@@ -24,7 +24,7 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gmultiserver.h"
-#include "gexe.h"
+#include "gexecutable.h"
 #include "gstr.h"
 #include "glinebuffer.h"
 #include "gserverprotocol.h"

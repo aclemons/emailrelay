@@ -469,22 +469,24 @@ bool GSmtp::ClientProtocol::sendLine( std::string & line )
 {
 	line.erase( 1U ) ; // leave "."
 
-	const bool pre_erase = false ;
-	G::Str::readLineFrom( *(m_content.get()) , crlf() , line , pre_erase ) ;
-	G_ASSERT( line.length() >= 1U && line.at(0U) == '.' ) ;
+	bool ok = false ;
+	std::istream & stream = *(m_content.get()) ;
+	if( stream.good() )
+	{
+		const bool pre_erase = false ;
+		G::Str::readLineFrom( stream , crlf() , line , pre_erase ) ;
+		G_ASSERT( line.length() >= 1U && line.at(0U) == '.' ) ;
 
-	if( m_content->good() )
-	{
-		line.append( crlf() ) ;
-		bool all_sent = m_sender.protocolSend( line , line.at(1U) == '.' ? 0U : 1U ) ;
-		if( !all_sent && m_response_timeout != 0U )
-			startTimer( m_response_timeout ) ; // use response timer for when flow-control asserted
-		return all_sent ;
+		if( !stream.fail() )
+		{
+			line.append( crlf() ) ;
+			bool all_sent = m_sender.protocolSend( line , line.at(1U) == '.' ? 0U : 1U ) ;
+			if( !all_sent && m_response_timeout != 0U )
+				startTimer( m_response_timeout ) ; // use response timer for when flow-control asserted
+			ok = true ;
+		}
 	}
-	else
-	{
-		return false ;
-	}
+	return ok ;
 }
 
 bool GSmtp::ClientProtocol::send( const std::string & line , bool eot , bool log )

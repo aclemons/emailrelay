@@ -14,6 +14,10 @@
 
 @SET_MAKE@
 
+#
+#
+
+
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -30,7 +34,9 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-subdir = src/glib
+noinst_PROGRAMS = emailrelay-test-scanner$(EXEEXT) \
+	emailrelay-test-server$(EXEEXT)
+subdir = test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
@@ -40,24 +46,22 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
-LIBRARIES = $(noinst_LIBRARIES)
-ARFLAGS = cru
-libglib_a_AR = $(AR) $(ARFLAGS)
-libglib_a_LIBADD =
-am_libglib_a_OBJECTS = md5.$(OBJEXT) garg.$(OBJEXT) \
-	garg_unix.$(OBJEXT) gcleanup_unix.$(OBJEXT) \
-	gdaemon_unix.$(OBJEXT) gdate.$(OBJEXT) gdatetime.$(OBJEXT) \
-	gdatetime_unix.$(OBJEXT) gdirectory.$(OBJEXT) \
-	gdirectory_unix.$(OBJEXT) gexception.$(OBJEXT) \
-	gexecutable_unix.$(OBJEXT) gexecutable.$(OBJEXT) \
-	gfile.$(OBJEXT) gfile_unix.$(OBJEXT) gfs_unix.$(OBJEXT) \
-	ggetopt.$(OBJEXT) gidentity_unix.$(OBJEXT) glog.$(OBJEXT) \
-	glogoutput.$(OBJEXT) glogoutput_unix.$(OBJEXT) \
-	gmd5_native.$(OBJEXT) gpath.$(OBJEXT) gpidfile.$(OBJEXT) \
-	gprocess_unix.$(OBJEXT) groot.$(OBJEXT) gslot.$(OBJEXT) \
-	gstr.$(OBJEXT) gtest.$(OBJEXT) gtime.$(OBJEXT) \
-	gxtext.$(OBJEXT)
-libglib_a_OBJECTS = $(am_libglib_a_OBJECTS)
+PROGRAMS = $(noinst_PROGRAMS)
+am_emailrelay_test_scanner_OBJECTS =  \
+	emailrelay_test_scanner.$(OBJEXT)
+emailrelay_test_scanner_OBJECTS =  \
+	$(am_emailrelay_test_scanner_OBJECTS)
+emailrelay_test_scanner_DEPENDENCIES =  \
+	$(top_builddir)/src/gnet/libgnet.a \
+	$(top_builddir)/src/gnet/lib$(IP).a \
+	$(top_builddir)/src/glib/libglib.a
+am_emailrelay_test_server_OBJECTS = emailrelay_test_server.$(OBJEXT)
+emailrelay_test_server_OBJECTS = $(am_emailrelay_test_server_OBJECTS)
+emailrelay_test_server_DEPENDENCIES =  \
+	$(top_builddir)/src/gnet/libgnet.a \
+	$(top_builddir)/src/gnet/lib$(IP).a \
+	$(top_builddir)/src/glib/libglib.a
+SCRIPTS = $(noinst_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -66,12 +70,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libglib_a_SOURCES)
-DIST_SOURCES = $(libglib_a_SOURCES)
+SOURCES = $(emailrelay_test_scanner_SOURCES) \
+	$(emailrelay_test_server_SOURCES)
+DIST_SOURCES = $(emailrelay_test_scanner_SOURCES) \
+	$(emailrelay_test_server_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -183,98 +185,43 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-
-#
-#
 EXTRA_DIST = \
-	garg_win32.cpp \
-	gcleanup_win32.cpp \
-	gdaemon_win32.cpp \
-	gdatetime_win32.cpp \
-	gdirectory_win32.cpp \
-	gexecutable_win32.cpp \
-	gfs_win32.cpp \
-	gidentity_win32.cpp \
-	glogoutput_win32.cpp \
-	gprocess_win32.cpp \
-	gfile_win32.cpp \
-	mingw.mak
+	emailrelay-test.pl_ \
+	emailrelay-test.sh_ \
+	emailrelay-chain-test.sh_ \
+	emailrelay-soak-test.sh_ \
+	AdminClient.pm \
+	Check.pm \
+	Filter.pm \
+	PopClient.pm \
+	Port.pm \
+	Scanner.pm \
+	Server.pm \
+	SmtpClient.pm \
+	System.pm \
+	TestServer.pm
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION)
-noinst_LIBRARIES = libglib.a
-libglib_a_SOURCES = \
-	md5.cpp \
-	md5.h \
-	garg.cpp \
-	garg.h \
-	garg_unix.cpp \
-	gassert.h \
-	gconvert.h \
-	gcleanup.h \
-	gcleanup_unix.cpp \
-	gdaemon.h \
-	gdaemon_unix.cpp \
-	gdate.cpp \
-	gdate.h \
-	gdatetime.cpp \
-	gdatetime.h \
-	gdatetime_unix.cpp \
-	gdebug.h \
-	gdef.h \
-	gdirectory.cpp \
-	gdirectory.h \
-	gdirectory_unix.cpp \
-	gexception.cpp \
-	gexception.h \
-	gexecutable_unix.cpp \
-	gexecutable.cpp \
-	gexecutable.h \
-	gfile.cpp \
-	gfile.h \
-	gfile_unix.cpp \
-	gfs.h \
-	gfs_unix.cpp \
-	ggetopt.cpp \
-	ggetopt.h \
-	gidentity.h \
-	gidentity_unix.cpp \
-	glog.cpp \
-	glog.h \
-	glogoutput.cpp \
-	glogoutput.h \
-	glogoutput_unix.cpp \
-	gmd5_native.cpp \
-	gmd5.h \
-	gmemory.h \
-	gnoncopyable.h \
-	gpath.cpp \
-	gpath.h \
-	gpidfile.cpp \
-	gpidfile.h \
-	gprocess.h \
-	gprocess_unix.cpp \
-	groot.cpp \
-	groot.h \
-	gsetter.h \
-	gsignalsafe.h \
-	gsleep.h \
-	gslot.cpp \
-	gslot.h \
-	gstatemachine.h \
-	gstr.cpp \
-	gstr.h \
-	gstrings.h \
-	gtest.cpp \
-	gtest.h \
-	gtime.cpp \
-	gtime.h \
-	gxtext.cpp \
-	gxtext.h
+noinst_SCRIPTS = emailrelay-test.sh emailrelay-test.pl emailrelay-chain-test.sh emailrelay-soak-test.sh
+TESTS = emailrelay-test.sh emailrelay-chain-test.sh
+CLEANFILES = $(noinst_SCRIPTS) $(noinst_PROGRAMS)
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -DG_SPOOLDIR=\"$(e_spooldir)\"
+emailrelay_test_scanner_SOURCES = emailrelay_test_scanner.cpp
+emailrelay_test_scanner_LDADD = \
+	$(top_builddir)/src/gnet/libgnet.a \
+	$(top_builddir)/src/gnet/lib$(IP).a \
+	$(top_builddir)/src/glib/libglib.a
 
+emailrelay_test_server_SOURCES = emailrelay_test_server.cpp
+emailrelay_test_server_LDADD = \
+	$(top_builddir)/src/gnet/libgnet.a \
+	$(top_builddir)/src/gnet/lib$(IP).a \
+	$(top_builddir)/src/glib/libglib.a
+
+.SUFFIXES = .pm .pl .pl_ .sh .sh_
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .cpp .o .obj .pl .pl_ .sh .sh_
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -284,9 +231,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/glib/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  test/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/glib/Makefile
+	  $(AUTOMAKE) --gnu  test/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -305,12 +252,14 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-clean-noinstLIBRARIES:
-	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libglib.a: $(libglib_a_OBJECTS) $(libglib_a_DEPENDENCIES) 
-	-rm -f libglib.a
-	$(libglib_a_AR) libglib.a $(libglib_a_OBJECTS) $(libglib_a_LIBADD)
-	$(RANLIB) libglib.a
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+emailrelay-test-scanner$(EXEEXT): $(emailrelay_test_scanner_OBJECTS) $(emailrelay_test_scanner_DEPENDENCIES) 
+	@rm -f emailrelay-test-scanner$(EXEEXT)
+	$(CXXLINK) $(emailrelay_test_scanner_OBJECTS) $(emailrelay_test_scanner_LDADD) $(LIBS)
+emailrelay-test-server$(EXEEXT): $(emailrelay_test_server_OBJECTS) $(emailrelay_test_server_DEPENDENCIES) 
+	@rm -f emailrelay-test-server$(EXEEXT)
+	$(CXXLINK) $(emailrelay_test_server_OBJECTS) $(emailrelay_test_server_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -318,37 +267,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garg_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcleanup_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdaemon_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdate.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdatetime.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdatetime_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdirectory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdirectory_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexception.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutable.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutable_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfile_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfs_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ggetopt.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gidentity_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glog.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glogoutput.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glogoutput_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmd5_native.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpath.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpidfile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprocess_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/groot.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gslot.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtime.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gxtext.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_scanner.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_server.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -412,6 +332,79 @@ GTAGS:
 distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
+check-TESTS: $(TESTS)
+	@failed=0; all=0; xfail=0; xpass=0; skip=0; ws='[	 ]'; \
+	srcdir=$(srcdir); export srcdir; \
+	list=' $(TESTS) '; \
+	if test -n "$$list"; then \
+	  for tst in $$list; do \
+	    if test -f ./$$tst; then dir=./; \
+	    elif test -f $$tst; then dir=; \
+	    else dir="$(srcdir)/"; fi; \
+	    if $(TESTS_ENVIRONMENT) $${dir}$$tst; then \
+	      all=`expr $$all + 1`; \
+	      case " $(XFAIL_TESTS) " in \
+	      *$$ws$$tst$$ws*) \
+		xpass=`expr $$xpass + 1`; \
+		failed=`expr $$failed + 1`; \
+		echo "XPASS: $$tst"; \
+	      ;; \
+	      *) \
+		echo "PASS: $$tst"; \
+	      ;; \
+	      esac; \
+	    elif test $$? -ne 77; then \
+	      all=`expr $$all + 1`; \
+	      case " $(XFAIL_TESTS) " in \
+	      *$$ws$$tst$$ws*) \
+		xfail=`expr $$xfail + 1`; \
+		echo "XFAIL: $$tst"; \
+	      ;; \
+	      *) \
+		failed=`expr $$failed + 1`; \
+		echo "FAIL: $$tst"; \
+	      ;; \
+	      esac; \
+	    else \
+	      skip=`expr $$skip + 1`; \
+	      echo "SKIP: $$tst"; \
+	    fi; \
+	  done; \
+	  if test "$$failed" -eq 0; then \
+	    if test "$$xfail" -eq 0; then \
+	      banner="All $$all tests passed"; \
+	    else \
+	      banner="All $$all tests behaved as expected ($$xfail expected failures)"; \
+	    fi; \
+	  else \
+	    if test "$$xpass" -eq 0; then \
+	      banner="$$failed of $$all tests failed"; \
+	    else \
+	      banner="$$failed of $$all tests did not behave as expected ($$xpass unexpected passes)"; \
+	    fi; \
+	  fi; \
+	  dashes="$$banner"; \
+	  skipped=""; \
+	  if test "$$skip" -ne 0; then \
+	    skipped="($$skip tests were not run)"; \
+	    test `echo "$$skipped" | wc -c` -le `echo "$$banner" | wc -c` || \
+	      dashes="$$skipped"; \
+	  fi; \
+	  report=""; \
+	  if test "$$failed" -ne 0 && test -n "$(PACKAGE_BUGREPORT)"; then \
+	    report="Please report to $(PACKAGE_BUGREPORT)"; \
+	    test `echo "$$report" | wc -c` -le `echo "$$banner" | wc -c` || \
+	      dashes="$$report"; \
+	  fi; \
+	  dashes=`echo "$$dashes" | sed s/./=/g`; \
+	  echo "$$dashes"; \
+	  echo "$$banner"; \
+	  test -z "$$skipped" || echo "$$skipped"; \
+	  test -z "$$report" || echo "$$report"; \
+	  echo "$$dashes"; \
+	  test "$$failed" -eq 0; \
+	else :; fi
+
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -439,8 +432,9 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
+	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-am
-all-am: Makefile $(LIBRARIES)
+all-am: Makefile $(PROGRAMS) $(SCRIPTS)
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -459,6 +453,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -468,7 +463,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-noinstLIBRARIES mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -525,19 +520,27 @@ uninstall-am:
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstLIBRARIES ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+.PHONY: CTAGS GTAGS all all-am check check-TESTS check-am clean \
+	clean-generic clean-noinstPROGRAMS ctags distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am
 
+
+.pl_.pl:
+	cat $(top_srcdir)/test/$*.pl_ > $*.pl
+	chmod +x $*.pl
+
+.sh_.sh:
+	cat $(top_srcdir)/test/$*.sh_ > $*.sh
+	chmod +x $*.sh
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

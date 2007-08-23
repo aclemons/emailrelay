@@ -10,11 +10,13 @@ E-MailRelay Change Log
 * More fine-grained switching of effective user-id to read files and directories when running as root.
 * The server drops the connection if a remote SMTP client causes too many protocol errors.
 * More rigorous implementation of "--hidden" on Windows.
-* Scanner switch ("--scanner") replaced by a more general interpretation of "--filter" and "--client-filter".
+* Scanner switch ("--scanner") replaced by a more general "--filter" and "--client-filter" switch syntax.
 * Better support for running as a Windows service ("emailrelay-service --install").
 * Utility filter program "emailrelay-filter-copy" exits with 100 if it deletes the envelope file.
+* Windows "cscript.exe" wrapper is added automatically to non-"bat"/"exe" "--filter" command-lines.
 * Installation GUI makes backups of the files it edits and preserves authentication secrets.
 * Installation GUI can install "init.d" links.
+* Experimental SpamAssassin spamc/spamd protocol support.
 * Acceptance tests added to the distribution.
 
 1.4 -> 1.5

@@ -51,7 +51,7 @@ static bool match( G::Path dir , std::string to )
 	if( G::File::exists(dot_file_path) )
 	{
 		std::ifstream dot_file( dot_file_path.str().c_str() ) ;
-		std::string dot_file_address = G::Str::trimmed(G::Str::lower(G::Str::readLineFrom(dot_file)),G::Str::ws()) ;
+		std::string dot_file_address = G::Str::trimmed(G::Str::lower(G::Str::readLineFrom(dot_file,"\n")),G::Str::ws());
 		G::Str::toLower(to) ;
 		return to.find(dot_file_address) != std::string::npos ;
 	}
@@ -73,8 +73,8 @@ std::string readTo( const std::string & content_path )
 	std::ifstream content( content_path.str().c_str() ) ;
 	while( content.good() )
 	{
-		std::string line = G::Str::readLineFrom( content ) ;
-		if( line.empty() )
+		std::string line = G::Str::readLineFrom( content , "\n" ) ;
+		if( !content )
 			break ;
 		if( line.find("To:") == 0U )
 			return G::Str::trimmed( line.substr(3U) , G::Str::ws() ) ;

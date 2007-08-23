@@ -201,7 +201,11 @@ SOURCE=..\glib\gexception.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\glib\gexe.cpp
+SOURCE=..\glib\gexecutable.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\glib\gexecutable_win32.cpp
 # End Source File
 # Begin Source File
 

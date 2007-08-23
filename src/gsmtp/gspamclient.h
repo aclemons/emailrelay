@@ -31,6 +31,7 @@
 #include "gexception.h"
 #include "gmemory.h"
 #include <fstream>
+#include <vector>
 
 /// \namespace GSmtp
 namespace GSmtp
@@ -40,7 +41,8 @@ namespace GSmtp
 
 /// \class GSmtp::SpamClient
 /// A client class that interacts with a remote process
-/// with a spamd protocol. 
+/// using a protocol somewhat similar to the spamassassin spamc/spamd
+/// protocol.
 ///
 class GSmtp::SpamClient : public GNet::Client 
 {
@@ -79,12 +81,26 @@ private:
 	virtual void onDeleteImp( const std::string & , bool ) ; // GNet::Client
 	void onTimeout() ;
 	void sendContent() ;
-	std::string result() const ;
+	std::string headerResult() const ;
+	bool nextContentLine( std::string & ) ;
+	bool haveCompleteHeader() const ;
+	std::string headerLine( const std::string & , const std::string & = std::string() ) const ;
+	unsigned long headerBodyLength() const ;
+	void addHeader( const std::string & ) ;
+	void addBody( const std::string & ) ;
+	std::string part( const std::string & , unsigned int , const std::string & = std::string() ) const ;
 
 private:
+	typedef std::vector<std::string> StringArray ;
 	std::string m_path ;
 	std::auto_ptr<std::ifstream> m_in ;
 	std::auto_ptr<std::ofstream> m_out ;
+	unsigned long m_out_size ;
+	unsigned long m_out_lines ;
+	unsigned long m_n ;
+	unsigned int m_header_out_index ;
+	StringArray m_header_out ;
+	StringArray m_header_in ;
 	GNet::Timer<SpamClient> m_timer ;
 } ;
 

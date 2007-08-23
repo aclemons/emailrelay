@@ -35,7 +35,7 @@
 #include "gslot.h"
 #include "gtimer.h"
 #include "gstrings.h"
-#include "gexe.h"
+#include "gexecutable.h"
 #include "gexception.h"
 #include <memory>
 #include <iostream>

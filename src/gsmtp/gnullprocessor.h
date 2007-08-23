@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gsmtp.h"
-#include "gexe.h"
+#include "gexecutable.h"
 #include "gprocessor.h"
 
 /// \namespace GSmtp

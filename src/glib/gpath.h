@@ -57,6 +57,9 @@ public:
 	Path( const Path & path , const std::string & tail ) ;
 		///< Constructor with an implicit pathAppend().
 
+	Path( const Path & path , const std::string & tail_1 , const std::string & tail_2 ) ;
+		///< Constructor with two implicit pathAppend()s.
+
 	Path( const Path & other ) ;
 		///< Copy constructor.
 		

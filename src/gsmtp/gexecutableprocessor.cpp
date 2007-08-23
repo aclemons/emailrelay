@@ -83,13 +83,20 @@ bool GSmtp::ExecutableProcessor::process( const std::string & path )
 
 int GSmtp::ExecutableProcessor::preprocessCore( const G::Path & path )
 {
-	G_LOG( "GSmtp::ExecutableProcessor::preprocess: running \"" << m_exe.exe() << "\": file \"" << path << "\"" ) ;
+	G_LOG( "GSmtp::ExecutableProcessor::preprocess: running \"" << m_exe.displayString() << " " << path << "\"" ) ;
+
+	// add the path of the content file as a trailing command-line parameter
 	G::Strings args( m_exe.args() ) ;
 	args.push_back( path.str() ) ;
+
+	// run the program
 	std::string raw_output ;
 	int exit_code = G::Process::spawn( G::Root::nobody() , m_exe.exe() , args , &raw_output , 127 , execErrorHandler ) ;
+
+	// search the output for diagnostics
 	m_text = parseOutput( raw_output ) ;
 	G_LOG( "GSmtp::ExecutableProcessor::preprocess: exit status " << exit_code << " (\"" << m_text << "\")" ) ;
+
 	return exit_code ;
 }
 
@@ -104,8 +111,12 @@ std::string GSmtp::ExecutableProcessor::execErrorHandler( int error )
 std::string GSmtp::ExecutableProcessor::parseOutput( std::string s ) const
 {
 	G_DEBUG( "GSmtp::ExecutableProcessor::parseOutput: in: \"" << G::Str::printable(s) << "\"" ) ;
-	const std::string start("<<") ;
-	const std::string end(">>") ;
+
+	const std::string start_1("<<") ;
+	const std::string end_1(">>") ;
+	const std::string start_2("[[") ;
+	const std::string end_2("]]") ;
+
 	std::string result ;
 	while( G::Str::replaceAll( s , "\r\n" , "\n" ) ) ;
 	G::Str::replaceAll( s , "\r" , "\n" ) ;
@@ -114,11 +125,17 @@ std::string GSmtp::ExecutableProcessor::parseOutput( std::string s ) const
 	for( G::Strings::iterator p = lines.begin() ; p != lines.end() ; ++p )
 	{
 		std::string line = *p ;
-		size_t pos_start = line.find(start) ;
-		size_t pos_end = line.find(end) ;
+		size_t pos_start = line.find(start_1) ;
+		size_t pos_end = line.find(end_1) ;
+		if( pos_start != 0U )
+		{
+			pos_start = line.find(start_2) ;
+			pos_end = line.find(end_2) ;
+		}
 		if( pos_start == 0U && pos_end != std::string::npos )
 		{
-			result = G::Str::printable(line.substr(start.length(),pos_end-start.length())) ;
+			result = G::Str::printable(line.substr(2U,pos_end-2U)) ;
+			break ;
 		}
 	}
 	G_DEBUG( "GSmtp::ExecutableProcessor::parseOutput: out: \"" << G::Str::printable(result) << "\"" ) ;

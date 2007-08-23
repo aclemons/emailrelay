@@ -555,13 +555,16 @@ void Main::Run::checkScripts() const
 
 void Main::Run::checkScript( const std::string & s ) const
 {
+	// parses the complete command-line to get at the executable
+	G::Executable exe( s ) ; 
+
 	std::string reason ;
-	if( !s.empty() && !G::File::exists(s,G::File::NoThrow()) ) reason = "no such file" ;
-	if( !s.empty() && !G::File::executable(s) ) reason = "probably not executable" ;
-	if( !s.empty() && G::Path(s).isRelative() ) reason = "not an absolute path" ;
+	if( !s.empty() && !G::File::exists(exe.exe(),G::File::NoThrow()) ) reason = "no such file" ;
+	if( !s.empty() && !G::File::executable(exe.exe()) ) reason = "probably not executable" ;
+	if( !s.empty() && exe.exe().isRelative() ) reason = "not an absolute path" ;
 	if( !reason.empty() )
 	{
-		G_WARNING( "Main::Run::checkScript: invalid executable: " << s << ": " << reason ) ;
+		G_WARNING( "Main::Run::checkScript: invalid executable: " << exe.exe() << ": " << reason ) ;
 	}
 }
 

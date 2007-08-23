@@ -376,8 +376,8 @@ void CreateSecrets::run()
 		std::ifstream file( m_path.str().c_str() ) ;
 		while( file.good() )
 		{
-			std::string line = G::Str::readLineFrom(file) ;
-			if( line.empty() && !file.good() ) break ;
+			std::string line = G::Str::readLineFrom( file , "\n" ) ;
+			if( !file ) break ;
 			line_list.push_back( line ) ;
 		}
 	}
@@ -527,8 +527,8 @@ void EditConfigFile::run()
 		if( !file_in.good() ) throw std::runtime_error( std::string() + "cannot read \"" + m_path.str() + "\"" ) ;
 		while( file_in.good() )
 		{
-			std::string line = G::Str::readLineFrom(file_in) ;
-			if( line.empty() && !file_in.good() ) break ;
+			std::string line = G::Str::readLineFrom( file_in , "\n" ) ;
+			if( !file_in ) break ;
 			line_list.push_back( line ) ;
 		}
 	}
@@ -635,6 +635,8 @@ void InstallerImp::read( std::istream & ss )
 		G::Str::readLineFrom( ss , "\n" , line ) ;
 		if( line.empty() || line.find('#') == 0U || line.find_first_not_of(" \t\r") == std::string::npos )
 			continue ;
+		if( !ss )
+			break ;
 
 		G::StringArray part ;
 		G::Str::splitIntoTokens( line , part , " \t" ) ;

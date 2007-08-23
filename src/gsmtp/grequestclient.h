@@ -15,11 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gscannerclient.h
+/// \file grequestclient.h
 ///
 
-#ifndef G_SCANNER_CLIENT_H
-#define G_SCANNER_CLIENT_H
+#ifndef G_REQUEST_CLIENT_H
+#define G_REQUEST_CLIENT_H
 
 #include "gdef.h"
 #include "gnet.h"
@@ -33,57 +33,59 @@
 /// \namespace GSmtp
 namespace GSmtp
 {
-	class ScannerClient ;
+	class RequestClient ;
 }
 
-/// \class GSmtp::ScannerClient
-/// A client class which interacts with a remote 'scanner' 
-/// process. The client connects to the scanner process and asks it
-/// to scan one or more files.
+/// \class GSmtp::RequestClient
+/// A client class that interacts with a remote process
+/// with a stateless line-based request/response protocol. 
 ///
-class GSmtp::ScannerClient : public GNet::Client 
+class GSmtp::RequestClient : public GNet::Client 
 {
 public:
-	G_EXCEPTION( FormatError , "scanner server format error" ) ;
-	G_EXCEPTION( ProtocolError , "scanner protocol error" ) ;
+	G_EXCEPTION( ProtocolError , "protocol error" ) ;
 
-	ScannerClient( const GNet::ResolverInfo & host_and_service , 
-		unsigned int connect_timeout , unsigned int response_timeout ) ;
+	RequestClient( const std::string & key , const std::string & ok , const std::string & eol , 
+		const GNet::ResolverInfo & host_and_service , unsigned int connect_timeout , unsigned int response_timeout ) ;
 			///< Constructor.
 
-	void startScanning( const G::Path & path ) ;
-		///< Starts the scanning process for the specified content file. The
-		///< base class's "event" signal emitted when scanning is complete 
-		///< with a first signal parameter of "scanner" and a second parameter
-		///< giving the results of the scan (empty on success). Every
-		///< scanning request will get a single response as long as this
-		///< method is not called re-entrantly from within the previous
-		///< request's response signal.
+	void request( const std::string & ) ;
+		///< Issues a request. The base class's "event" signal emitted when 
+		///< processing is complete with a first signal parameter of the
+		///< "key" string specified in the constructor call and a second 
+		///< parameter giving the parsed response. 
+		///<
+		///< Every request will get a single response as long as this method 
+		///< is not called re-entrantly from within the previous request's 
+		///< response signal.
 
 	bool busy() const ;
-		///< Returns true after startScanning() and before the subsequent
+		///< Returns true after request() and before the subsequent
 		///< event signal.
 
 protected:
-	virtual ~ScannerClient() ;
+	virtual ~RequestClient() ;
 		///< Destructor.
 
 private:
-	ScannerClient( const ScannerClient & ) ; // not implemented
-	void operator=( const ScannerClient & ) ; // not implemented
+	typedef GNet::Client Base ;
+	RequestClient( const RequestClient & ) ; // not implemented
+	void operator=( const RequestClient & ) ; // not implemented
 	virtual void onConnect() ; // GNet::SimpleClient
 	virtual bool onReceive( const std::string & ) ; // GNet::Client
 	virtual void onSendComplete() ; // GNet::BufferedClient
 	virtual void onDelete( const std::string & , bool ) ; // GNet::HeapClient
 	virtual void onDeleteImp( const std::string & , bool ) ; // GNet::Client
 	void onTimeout() ;
-	std::string request( const G::Path & ) const ;
+	std::string requestLine( const std::string & ) const ;
 	std::string result( std::string ) const ;
-	static std::string eol() ;
 
 private:
-	G::Path m_path ;
-	GNet::Timer<ScannerClient> m_timer ;
+	std::string m_key ;
+	std::string m_ok ;
+	std::string m_eol ;
+	std::string m_request ;
+	GNet::Timer<RequestClient> m_timer ;
 } ;
 
 #endif

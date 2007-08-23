@@ -22,12 +22,16 @@
 #include "gnet.h"
 #include "gsmtp.h"
 #include "gstr.h"
+#include "gfile.h"
 #include "gspamclient.h"
 #include "gassert.h"
 
 GSmtp::SpamClient::SpamClient( const GNet::ResolverInfo & resolver_info ,
 	unsigned int connect_timeout , unsigned int response_timeout ) :
 		GNet::Client(resolver_info,connect_timeout,response_timeout,"\n") ,
+		m_out_size(0UL) ,
+		m_out_lines(0UL) ,
+		m_header_out_index(0U) ,
 		m_timer(*this,&SpamClient::onTimeout,*this)
 {
 	G_DEBUG( "GSmtp::SpamClient::ctor: " << resolver_info.displayString() << ": " 
@@ -36,30 +40,6 @@ GSmtp::SpamClient::SpamClient( const GNet::ResolverInfo & resolver_info ,
 
 GSmtp::SpamClient::~SpamClient()
 {
-}
-
-void GSmtp::SpamClient::onConnect()
-{
-	G_DEBUG( "GSmtp::SpamClient::onConnect" ) ;
-	if( busy() )
-		sendContent() ;
-}
-
-void GSmtp::SpamClient::request( const std::string & path )
-{
-	G_DEBUG( "GSmtp::SpamClient::request: \"" << path << "\"" ) ;
-	if( busy() ) 
-		throw ProtocolError() ;
-
-	m_path = path ;
-	m_in <<= new std::ifstream( path.c_str() ) ;
-	m_timer.startTimer( 0U ) ;
-}
-
-void GSmtp::SpamClient::onTimeout()
-{
-	if( connected() )
-		sendContent() ;
 }
 
 bool GSmtp::SpamClient::busy() const
@@ -83,44 +63,163 @@ void GSmtp::SpamClient::onDeleteImp( const std::string & reason , bool b )
 	{
 		m_in <<= 0 ;
 		m_out <<= 0 ;
-		eventSignal().emit( "spam" , reason.empty() ? result() : reason ) ;
+		eventSignal().emit( "spam" , m_out_size >= headerBodyLength() ? headerResult() : reason ) ;
 	}
 	Base::onDeleteImp( reason , b ) ; // use typedef because of ms compiler bug
 }
 
-bool GSmtp::SpamClient::onReceive( const std::string & line )
+void GSmtp::SpamClient::request( const std::string & path )
 {
-	G_DEBUG( "GSmtp::SpamClient::onReceive: [" << G::Str::printable(line) << "]" ) ;
+	G_DEBUG( "GSmtp::SpamClient::request: \"" << path << "\"" ) ;
+	if( busy() ) 
+		throw ProtocolError() ;
 
-	if( m_in.get() != NULL )
-		throw ProtocolError( G::Str::printable(line) ) ; // the spamd has sent a response too early
+	m_path = path ;
+	m_in <<= new std::ifstream( path.c_str() , std::ios_base::binary | std::ios_base::in ) ;
 
-	if( m_out.get() == NULL )
-		m_out <<= new std::ofstream( m_path.c_str() ) ;
+	std::string username = "root" ; // TODO
+	m_header_out.push_back( std::string() + "PROCESS SPAMC/1.4" ) ;
+	m_header_out.push_back( std::string() + "User: " + username ) ;
+	m_header_out.push_back( std::string() + "Content-length: " + G::File::sizeString(m_path) ) ;
+	m_header_out.push_back( std::string() ) ;
+	m_header_out_index = 0U ;
 
-	std::ostream & out = *m_out.get() ;
-	out << line << std::endl ;
-	return true ;
+	m_timer.startTimer( 0U ) ;
+	m_header_in.clear() ;
 }
 
-void GSmtp::SpamClient::sendContent()
+void GSmtp::SpamClient::onConnect()
 {
-	// TODO -- send whole content file from m_in and then shutdown() the socket 
-	// for writing and reset m_in -- (no need for a response timer here)
-	G_ERROR( "GSmtp::SpamClient::sendContent: feature not implemented" ) ;
-	throw ProtocolError( "not implemented" ) ;
+	G_DEBUG( "GSmtp::SpamClient::onConnect" ) ;
+	if( busy() )
+		sendContent() ;
+}
+
+void GSmtp::SpamClient::onTimeout()
+{
+	if( connected() )
+		sendContent() ;
 }
 
 void GSmtp::SpamClient::onSendComplete()
 {
-	// TODO
+	sendContent() ;
 }
 
-std::string GSmtp::SpamClient::result() const
+void GSmtp::SpamClient::sendContent()
 {
-	// TODO -- read the file (m_path) and parse out the X-Spam line -- or 
-	// parse as you go in onReceive()
-	return std::string() ;
+	std::string line ;
+	while( nextContentLine(line) )
+	{
+		if( !send( line + "\r\n" ) )
+			break ;
+	}
+}
+
+bool GSmtp::SpamClient::nextContentLine( std::string & line )
+{
+	bool ok = false ;
+	if( m_in.get() != NULL )
+	{
+		if( m_header_out_index < m_header_out.size() )
+		{
+			line = m_header_out.at(m_header_out_index++) ;
+			G_DEBUG( "GSmtp::SpamClient::sendContent: spam>>: \"" << G::Str::printable(line) << "\"" ) ;
+			ok = true ;
+		}
+		else
+		{
+			std::istream & stream = *(m_in.get()) ;
+			if( stream.good() )
+			{
+				G::Str::readLineFrom( stream , "\r\n" , line ) ;
+				ok = !! stream ;
+			}
+			if( !ok )
+			{
+				m_in <<= 0 ;
+				socket().shutdown() ; // send eof
+			}
+		}
+	}
+	return ok ;
+}
+
+bool GSmtp::SpamClient::onReceive( const std::string & line )
+{
+	if( m_in.get() != NULL )
+		throw ProtocolError( G::Str::printable(line) ) ; // the spamd has sent a response too early
+
+	if( m_out.get() == NULL )
+	{
+		m_out <<= new std::ofstream( m_path.c_str() , 
+			std::ios_base::binary | std::ios_base::out | std::ios_base::trunc ) ;
+		m_out_size = 0UL ;
+		m_out_lines = 0UL ;
+	}
+
+	if( ! haveCompleteHeader() )
+		addHeader( line ) ;
+	else
+		addBody( line ) ;
+
+	return true ;
+}
+
+bool GSmtp::SpamClient::haveCompleteHeader() const
+{
+	return m_header_in.size() != 0U && m_header_in.back().empty() ;
+}
+
+void GSmtp::SpamClient::addHeader( const std::string & line )
+{
+	G_LOG( "GSmtp::SpamClient::onReceive: spam<<: \"" << G::Str::printable(G::Str::trimmed(line,"\r\n")) << "\"" ) ;
+	m_header_in.push_back( G::Str::trimmed(line,"\r\n") ) ;
+	m_n = 0UL ;
+}
+
+void GSmtp::SpamClient::addBody( const std::string & line )
+{
+	if( m_out.get() != NULL && m_out_size < headerBodyLength() )
+	{
+		std::ostream & out = *m_out.get() ;
+		out << line << "\n" ;
+		m_out_size += line.length() + 1U ;
+		m_out_lines++ ;
+
+		if( m_out_size >= headerBodyLength() )
+			G_LOG( "GSmtp::SpamClient::addBody: spam<<: [" << m_out_lines 
+				<< " lines of body text in " << m_out_size << " bytes]" ) ;
+	}
+}
+
+std::string GSmtp::SpamClient::headerResult() const
+{
+	return G::Str::lower( part(headerLine("Spam:"),1U,"true") ) == "true" ? "marked as spam" : std::string() ;
+}
+
+std::string GSmtp::SpamClient::part( const std::string & line , unsigned int i , const std::string & default_ ) const
+{
+	StringArray part ;
+	G::Str::splitIntoTokens( line , part , "\t :" ) ;
+	return part.size() > i ? part.at(i) : default_ ;
+}
+
+unsigned long GSmtp::SpamClient::headerBodyLength() const
+{
+	if( m_n == 0UL )
+		(const_cast<SpamClient*>(this))->m_n = G::Str::toULong( part(headerLine("Content-length:"),1U,"0") ) ;
+	return m_n ;
+}
+
+std::string GSmtp::SpamClient::headerLine( const std::string & key , const std::string & default_ ) const
+{
+	for( StringArray::const_iterator p = m_header_in.begin() ; p != m_header_in.end() ; ++p )
+	{
+		if( (*p).find(key) == 0U )
+			return *p ;
+	}
+	return default_ ;
 }
 
 /// \file gspamclient.cpp

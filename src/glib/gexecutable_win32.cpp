@@ -15,50 +15,34 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// gexe.cpp
+// gexecutable_win32.cpp
 //
 
 #include "gdef.h"
-#include "gexe.h"
-#include "gstr.h"
+#include "gexecutable.h"
 
-G::Executable::Executable( const G::Path & exe ) :
-	m_exe(exe)
+bool G::Executable::osNativelyRunnable() const
 {
+	std::string type = m_exe.extension() ;
+	return type == "exe" || type == "bat" ;
 }
 
-G::Executable::Executable( const std::string & s )
+void G::Executable::osAddWrapper()
 {
-	if( s.find(' ') == std::string::npos ) // optimisation
+	std::string windows ;
 	{
-		m_exe = G::Path(s) ;
+    	char buffer[MAX_PATH+20U] = { '\0' } ;
+    	unsigned int n = sizeof(buffer) ;
+    	::GetWindowsDirectory( buffer , n-1U ) ;
+    	buffer[n-1U] = '\0' ;
+		windows = std::string(buffer) ;
 	}
-	else
-	{
-		const std::string null( 1U , '\0' ) ;
-		std::string line( s ) ;
-		G::Str::replaceAll( line , "\\ " , null ) ;
-		G::Str::splitIntoTokens( line , m_args , " " ) ;
-		for( G::Strings::iterator p = m_args.begin() ; p != m_args.end() ; ++p )
-		{
-			G::Str::replaceAll( *p , null , " " ) ;
-		}
-		if( m_args.size() )
-		{
-			m_exe = G::Path( m_args.front() ) ;
-			m_args.pop_front() ;
-		}
-	}
+
+	G::Path cscript ( windows , "system32" , "cscript.exe" ) ;
+	m_args.push_front( m_exe.str() ) ;
+	m_args.push_front( "//B" ) ; // portable?
+	m_args.push_front( "//nologo" ) ;
+	m_exe = cscript ;
 }
 
-G::Path G::Executable::exe() const
-{
-	return m_exe ;
-}
-
-G::Strings G::Executable::args() const
-{
-	return m_args ;
-}
-
-/// \file gexe.cpp
+/// \file gexecutable_win32.cpp

@@ -24,7 +24,7 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gnoncopyable.h"
-#include "gexe.h"
+#include "gexecutable.h"
 #include "gbufferedserverpeer.h"
 #include "gmultiserver.h"
 #include "gsmtpclient.h"

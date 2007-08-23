@@ -57,6 +57,14 @@ G::Path::Path( const Path & path , const std::string & tail )
 	pathAppend( tail ) ;
 }
 
+G::Path::Path( const Path & path , const std::string & tail_1 , const std::string & tail_2 )
+{
+	set( path.str() ) ;
+	validate( "c-ctor" ) ;
+	pathAppend( tail_1 ) ;
+	pathAppend( tail_2 ) ;
+}
+
 G::Path::Path( const Path & other )
 {
 	set( other.str() ) ;

@@ -194,19 +194,19 @@ expiring any "--poll" timer.
 
 If the pre-processor program terminates with a non-zero exit code then the
 first few thousand characters of the standard output stream are searched for a
-line starting with "<<" followed by ">>". The text inbetween is taken as a
-failure reason, and passed back to the SMTP client.
+line starting with "<<" or "[[" followed by ">>" or "]]" respectively. The text
+in between is taken as a failure reason, and passed back to the SMTP client.
 
 The pre-processor program can edit any part of the message's envelope file or
 content file: E-MailRelay remembers nothing about the message while the
 pre-processor is running, except the filename. But if the message is deleted
-by the pre-processor then E-MailRelay may be upset, so to avoid the error 
+by the pre-processor then E-MailRelay may be upset, so to avoid the error
 message use an exit code of 100.
 
 If the pre-processor program creates completely new messages in the spool
 directory then they may not be processed immediately, or they may be completely
-ignored. To get E-MailRelay to pick up any new messages you create in the spool 
-directory use the "--poll" switch, or run "emailrelay --as-client" from within 
+ignored. To get E-MailRelay to pick up any new messages you create in the spool
+directory use the "--poll" switch, or run "emailrelay --as-client" from within
 the pre-processor program.
 
 As an example of a simple pre-processor this shell script examines the sending
@@ -268,7 +268,7 @@ message appears as an attachment within a plaintext bearer message.
 
 E-MailRelay also has a "--client-filter" switch that enables pre-processing of
 messages just before they are forwarded, rather then after they are stored. The
-disadvantage is that by then it is too late to notify the SMTP client of any 
+disadvantage is that by then it is too late to notify the SMTP client of any
 processing failures, so in many applications using "--filter" is more useful.
 
 Bear in mind the following points when writing "--filter" programs:
@@ -281,26 +281,26 @@ Bear in mind the following points when writing "--filter" programs:
 * Windows Perl programs must be run from a batch file, or from a JScript/VBScript wrapper.
 
 It is also possible to use a separate server process to pre-process messages by
-specifying a network address and port number in the "--filter" and 
-"-client-filter" switches. E-MailRelay connects to this address and then uses a 
-simple line-based dialog as each e-mail message is processed: E-MailRelay sends 
-the full path of the message content file in one line and expects the remote 
-process to respond with an "ok" line if the message is to be accepted, or an 
-error message. One advantage of using a network pre-processor compared to 
-running a program is that the E-MailRelay server is not blocked while the 
-messages are being pre-processed.
+specifying a network address and port number in the "--filter" and
+"-client-filter" switches as "net:<address>:<port>". E-MailRelay connects to
+this address and then uses a simple line-based dialog as each e-mail message is
+processed: E-MailRelay sends the full path of the message content file in one
+line and expects the remote process to respond with an "ok" line if the message
+is to be accepted, or an error message. One advantage of using a network
+pre-processor compared to running a program is that the E-MailRelay server is
+not blocked while the messages are being pre-processed.
 
 Address verification
 --------------------
 By default the E-MailRelay server will accept all addresses for incoming e-mails
-as valid. However, this default behaviour can be modified by using an external 
-verifier program, specified with the "--verifier" command-line switch, so that 
+as valid. However, this default behaviour can be modified by using an external
+verifier program, specified with the "--verifier" command-line switch, so that
 you get to choose which addresses are accepted as valid and which are rejected.
 
 The external verifier program is passed a command-line containing: (1) the full
-e-mail address as supplied by the remote client, (2) the user-name part of the 
-address in upper-case, (3) the host-name part in upper-case, (4) the local 
-host's fully qualified domain name in upper-case, (5) the "MAIL" command's 
+e-mail address as supplied by the remote client, (2) the user-name part of the
+address in upper-case, (3) the host-name part in upper-case, (4) the local
+host's fully qualified domain name in upper-case, (5) the "MAIL" command's
 "FROM:" address as supplied by the client or the empty string in the case of the
 "VRFY" command, (6) the IP address of the client connection, (7) the
 authentication mechanism used by the client ("NONE" if trusted), and (8) either
@@ -312,7 +312,7 @@ following command-line:
 
 	myverifier me@myhost.mydomain ME MYHOST.MYDOMAIN MYHOST.MYDOMAIN bob@other.net 192.168.0.1 LOGIN bob
 
-The verifier program is expected to generate two lines of output on the standard 
+The verifier program is expected to generate two lines of output on the standard
 output stream and then terminate with a specific exit code.
 
 For valid non-local addresses the first line of output is ignored, the second
@@ -458,7 +458,7 @@ E-MailRelay acts as a client to talk to a remove server. The file should contain
 at least one "LOGIN client" or "CRAM-MD5 client" entry.
 
 A server-side secrets file specified with "--server-auth" is used when a remote
-client tries to authenticate with the E-MailRelay server. The file should 
+client tries to authenticate with the E-MailRelay server. The file should
 normally contain several "LOGIN server" or "CRAM-MD5 server" entries.
 
 The same secrets file may be specified for both "--client-auth" and
@@ -487,9 +487,9 @@ A "CRAM-MD5" version would look like this:
 	CRAM-MD5 server user1 4059553961.2316091643.3282746241.1444639637.3735501773.3404060330.2760590371.1201092398
 	CRAM-MD5 server user2 2798539199.3144534242.3784876256.2879973305.2327113479.216533878.2436460291.2361831919
 
-When using the "LOGIN" mechanism you have to store plaintext passwords in a 
-file. This is a bad thing. You should at least make sure that the secrets file 
-has tight permissions, and that the passwords in it are not also used for 
+When using the "LOGIN" mechanism you have to store plaintext passwords in a
+file. This is a bad thing. You should at least make sure that the secrets file
+has tight permissions, and that the passwords in it are not also used for
 anything important.
 
 On the server side authentication is advertised by E-MailRealy in the response
@@ -517,8 +517,8 @@ For example this secrets file allows any client connecting from the
 On the client side authentication is performed when E-MailRelay has connected to
 a server which implements the AUTH extension with one of the supported
 mechanisms. If client authentication is enabled (with the "--client-auth"
-switch) but the remote server does not support the AUTH extension, or does not 
-support the LOGIN or CRAM-MD5 mechanism, then E-MailRelay will fail the first 
+switch) but the remote server does not support the AUTH extension, or does not
+support the LOGIN or CRAM-MD5 mechanism, then E-MailRelay will fail the first
 message and terminate with an error message.
 
 Note that some ISPs require separate POP/IMAP authentication before SMTP access
@@ -528,8 +528,8 @@ such as "fetchmail".
 
 Pop server
 ----------
-E-MailRelay can be used as a POP3 server so that POP clients have access to 
-spooled messages. 
+E-MailRelay can be used as a POP3 server so that POP clients have access to
+spooled messages.
 
 The following command-line switches are used:
 
@@ -560,15 +560,15 @@ The following command-line switches are used:
 
 # --pop-by-name
 
-  Modifies the POP spool directory according to the name used by the client 
-  to authenticate with the E-MailRelay server. The client name is used as a 
-  sub-directory off the standard spool directory. So, for example, if a client 
-  authenticates as "bob" then the POP3 server will serve messages from the "bob" 
+  Modifies the POP spool directory according to the name used by the client
+  to authenticate with the E-MailRelay server. The client name is used as a
+  sub-directory off the standard spool directory. So, for example, if a client
+  authenticates as "bob" then the POP3 server will serve messages from the "bob"
   sub-directory, "/var/spool/emailrelay/bob".
 
-  If E-MailRelay finds only the envelope file in the sub-directory and not the 
-  content file then it will look for the content file in the main spool 
-  directory, eg. "/var/spool/emailrelay". This feature can be used to save 
+  If E-MailRelay finds only the envelope file in the sub-directory and not the
+  content file then it will look for the content file in the main spool
+  directory, eg. "/var/spool/emailrelay". This feature can be used to save
   diskspace if serving the same message to multiple POP clients.
 
 # --pop-no-delete
@@ -586,12 +586,12 @@ following precautions are taken:
 
   Suid privileges are revoked at start-up, switching the effective
   userid/groupid to be the real userid/groupid values. If started as "root"
-  then the effective userid/groupid are switched at start-up to those of user 
-  "daemon". Special privileges are only reclaimed when needed to bind sockets 
+  then the effective userid/groupid are switched at start-up to those of user
+  "daemon". Special privileges are only reclaimed when needed to bind sockets
   and do file i/o. Normally this means temporarily switching the userid and
   groupid back to what they were at start-up. However, when writing spool files
-  after being started as "root" only the effective userid is changed, not the 
-  groupid, so that new files have group ownership corresponding to the 
+  after being started as "root" only the effective userid is changed, not the
+  groupid, so that new files have group ownership corresponding to the
   "daemon" user.
 
 # execution environment
@@ -646,10 +646,10 @@ Some other points to note are:
 
 # logging
 
-  All logging output is conditioned so that ANSI escape sequences cannot appear 
+  All logging output is conditioned so that ANSI escape sequences cannot appear
   in the log.
 
-  Passwords and message content are not logged except if using the "--debug" 
+  Passwords and message content are not logged except if using the "--debug"
   switch with debug logging support enabled at build time.
 
 # information leakage
@@ -682,8 +682,8 @@ mail to the next SMTP server, as an alternative to running
 "emailrelay --as-client" as a separate process. In proxy mode it is a way of
 getting the proxy server to scan the spool-directory for new messages.
 
-The "list" command lists the messages in the spool directory, "info" provides 
-network status information and activity statistics, and "notify" enables 
+The "list" command lists the messages in the spool directory, "info" provides
+network status information and activity statistics, and "notify" enables
 asynchronous event notification.
 
 Files and directories
@@ -728,8 +728,8 @@ locations:
 * /var/spool/emailrelay/emailrelay.*.content
 * /var/spool/emailrelay/emailrelay.*.envelope
 
-For finer control of the directory structure the following can be specified on 
-the "configure" command-line (but note that the "--enable-fhs" will override 
+For finer control of the directory structure the following can be specified on
+the "configure" command-line (but note that the "--enable-fhs" will override
 them):
 * --mandir=<dir>
 * --sbindir=<dir>
@@ -751,14 +751,14 @@ comes from "configure" via the makefiles.
 Even though the "--enable-fhs" switch overrides all other directory specifiers
 during the build process, it is still possible to change the installation root
 directory using "make install DESTDIR=<root>" or "DESTDIR=<root> make -e install".
-But note that this will not affect the default spool directory path built into 
-the scripts and executables so the correct spool directory will have to be 
+But note that this will not affect the default spool directory path built into
+the scripts and executables so the correct spool directory will have to be
 specified at run-time with the "--spool-dir" switch.
 
 If building the configuration GUI then you may need to set the "PKG_CONFIG_PATH"
-environment variable to point to the ".pc" files in the Qt "lib" directory and 
+environment variable to point to the ".pc" files in the Qt "lib" directory and
 set the "e_qtmoc" configure variable to point to the Qt "moc" utility. You
-may also need to set the correct library directory for Qt if it is wrong in 
+may also need to set the correct library directory for Qt if it is wrong in
 the ".pc" file by setting "LDFLAGS":
 
 	export QT=/usr/local/qt4

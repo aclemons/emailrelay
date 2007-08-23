@@ -192,7 +192,10 @@ unsigned int GSmtp::SecretsImp::read( std::istream & file )
 	unsigned int count = 0U ;
 	for( unsigned int line_number = 1U ; file.good() ; ++line_number )
 	{
-		std::string line = G::Str::readLineFrom( file ) ;
+		std::string line = G::Str::readLineFrom( file , "\n" ) ;
+		if( !file ) 
+			break ;
+
 		const std::string ws = " \t" ;
 		G::Str::trim( line , ws ) ;
 		if( !line.empty() && line.at(0U) != '#' )

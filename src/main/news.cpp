@@ -24,21 +24,25 @@
 std::string Main::News::text( const std::string & eol )
 {
 
-// sell-by 2009/1/1
+// sell-by 2011/1/1
 const G::DateTime::EpochTime _2008 = 1199145600U ;
-const G::DateTime::EpochTime non_leap_year = 60U * 60U * 24U * 365U ;
-if( G::DateTime::now() > (_2008+non_leap_year) ) return std::string() ;
+const G::DateTime::EpochTime year = 60U * 60U * 24U * 365U ;
+if( G::DateTime::now() > (_2008+year+year+year) ) return std::string() ;
 
 return std::string() +
 
-"E-MailRelay (http://emailrelay.sf.net) has been " +
-"developed with free tools (GNU) on a free and " +
-"open operating system (Linux). Linux is a secure and easy-to-use " +
+"E-MailRelay (http://emailrelay.sf.net) has been developed " +
+"with free tools on a free operating system. Free " +
+"software is a matter of liberty, not price. To understand " +
+"the concept, you should think of \"free\" as in \"free speech,\" " +
+"not as in \"free beer\". Linux is a free, secure and easy-to-use " +
 "alternative to Microsoft Windows, supporting a wide range of desktop " +
 "and server applications. You can try Linux for yourself without " +
 "installing it on your hard drive by downloading and burning a " +
-"\"Live-CD\". Free Live-CDs and DVDs are available from ubuntu.com " +
-"and many other Linux distributors." +
+"\"Live-CD\". Live-CDs are available from http://www.ubuntu.com " +
+"and many other Linux distributors. Please refer to the " +
+"Free Software Foundation website http://www.fsf.org for " +
+"more information about software freedom." +
 eol
 ;
 }

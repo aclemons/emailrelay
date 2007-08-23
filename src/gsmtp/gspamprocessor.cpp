@@ -48,7 +48,7 @@ void GSmtp::SpamProcessor::start( const std::string & path )
 void GSmtp::SpamProcessor::clientEvent( std::string s1 , std::string s2 )
 {
 	G_DEBUG( "GSmtp::SpamProcessor::clientEvent: [" << s1 << "] [" << s2 << "]" ) ;
-	if( s1 == "scanner" )
+	if( s1 == "spam" )
 	{
 		m_text = s2 ;
 		m_done_signal.emit( s2.empty() ) ;

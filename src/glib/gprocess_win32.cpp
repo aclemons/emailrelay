@@ -481,7 +481,7 @@ DWORD G::ProcessImp::waitFor( HANDLE hprocess , DWORD default_exit_code )
 	DWORD timeout_ms = 30000UL ;
 	if( WAIT_TIMEOUT == ::WaitForSingleObject( hprocess , timeout_ms ) )
 	{
-		G_ERROR( "G::Process::spawn: child process has not terminated: still waiting" ) ;
+		G_WARNING( "G::Process::spawn: child process has not terminated: still waiting" ) ;
 		::WaitForSingleObject( hprocess , INFINITE ) ;
 	}
 	DWORD exit_code = default_exit_code ;

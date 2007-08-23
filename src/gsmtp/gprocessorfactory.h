@@ -15,49 +15,41 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gexe.h
+/// \file gprocessorfactory.h
 ///
-	
-#ifndef G_EXE_H
-#define G_EXE_H
+
+#ifndef G_SMTP_PROCESSOR_FACTORY_H
+#define G_SMTP_PROCESSOR_FACTORY_H
 
 #include "gdef.h"
-#include "gpath.h"
-#include "gstrings.h"
+#include "gsmtp.h"
+#include "gprocessor.h"
 #include <string>
+#include <utility>
 
-/// \namespace G
-namespace G
+/// \namespace GSmtp
+namespace GSmtp
 {
-	class Executable ;
+	class ProcessorFactory ;
 }
 
-/// \class G::Executable
-/// A structure representing an external program,
-/// holding a path and a set of arguments.
-/// \see G::Path, G::Args
+/// \class GSmtp::ProcessorFactory
+/// A factory for message processors.
 ///
-class G::Executable 
+class GSmtp::ProcessorFactory 
 {
 public:
-	explicit Executable( const std::string & command_line = std::string() ) ;
-		///< Constructor taking a complete command-line.
-		///< The command-line is split up on unescaped
-		///< space characters.
+	static Processor * newProcessor( const std::string & address , unsigned int timeout ) ;
+		///< Returns a Processor on the heap.
 
-	explicit Executable( const G::Path & exe ) ;
-		///< Constructor for an executable with no extra arguments.
-
-	Path exe() const ;
-		///< Returns the executable.
-
-	Strings args() const ;
-		///< Returns the command-line arguments.
+	static std::string check( const std::string & address ) ;
+		///< Checks an address. Returns an empty string if okay,
+		///< or a diagnostic reason string.
 
 private:
-	G::Path m_exe ;
-	G::Strings m_args ;
+	ProcessorFactory() ; // not implemented
+	typedef std::pair<std::string,std::string> Pair ;
+	static Pair split( const std::string & ) ;
 } ;
 
 #endif
-

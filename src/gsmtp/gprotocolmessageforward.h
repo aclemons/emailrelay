@@ -27,7 +27,7 @@
 #include "gclientptr.h"
 #include "gprotocolmessage.h"
 #include "gprotocolmessagestore.h"
-#include "gexe.h"
+#include "gexecutable.h"
 #include "gsecrets.h"
 #include "gsmtpclient.h"
 #include "gmessagestore.h"

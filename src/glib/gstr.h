@@ -200,6 +200,7 @@ public:
 		///< Returns a printable represention of the given input string.
 		///< Typically used to prevent escape sequences getting into log files.
 
+ private:
 	static std::string readLineFrom( std::istream & stream , char ignore = '\015' ) ;
 		///< Reads a string from the given stream using newline as the
 		///< terminator. The terminator is read from the stream
@@ -210,10 +211,26 @@ public:
 		///< Any 'ignore' characters (control-m by default) read
 		///< from the stream are discarded. An 'ignore' 
 		///< character of NUL ('\0') disables this feature.
+ public:
 
 	static std::string readLineFrom( std::istream & stream , const std::string & eol ) ;
-		///< An overload which uses 'eol' as the terminator, and
-		///< without the 'ignore' feature.
+		///< Reads a line from the stream using the given line terminator.
+		///< The line terminator is not part of the returned string.
+		///<
+		///< The stream's fail bit is set if (1) an empty string was 
+		///< returned because the stream was already at eof or (2)
+		///< the string overflowed. Therefore, ignoring overflow, if 
+		///< the stream ends in an incomplete line that line fragment 
+		///< is returned with the stream's eof flag set but the fail bit 
+		///< reset and the next attempted read will return an empty string
+		///< with the fail bit set. If the stream ends with a complete
+		///< line then the last line is returned with eof and fail
+		///< bits reset and the next attempted read will return
+		///< an empty string with eof and fail bits set. 
+		///<
+		///< If we don't worry too much about the 'bad' state and note 
+		///< that the boolean tests on a stream test its 'fail' flag we 
+		///< can use a read loop like "while(s.good()){read(s);if(s)...}".
 
 	static void readLineFrom( std::istream & stream , const std::string & eol , std::string & result ,
 		bool pre_erase_result = true ) ;
@@ -225,7 +242,7 @@ public:
 			///< Does word-wrapping. The return value is a string with
 			///< embedded newlines.
 
-	static void splitIntoTokens( const std::string & in , Strings &out , 
+	static void splitIntoTokens( const std::string & in , Strings & out , 
 		const std::string & ws ) ;
 			///< Splits the string into 'ws'-delimited tokens. The 
 			///< behaviour is like ::strtok() in that adjacent delimiters
