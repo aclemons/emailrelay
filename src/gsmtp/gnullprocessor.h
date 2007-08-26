@@ -45,24 +45,22 @@ public:
 		///< Destructor.
 
 	virtual G::Signal1<bool> & doneSignal() ;
-		///< From Processor.
+		///< Final override from GSmtp::Processor.
 
 	virtual void start( const std::string & path ) ;
-		///< From Processor.
+		///< Final override from GSmtp::Processor.
 
 	virtual void abort() ;
-		///< From Processor.
+		///< Final override from GSmtp::Processor.
 
 	virtual std::string text() const ;
-		///< From Processor. 
-		///<
-		///< Returns any "<<text>>" output by the executable.
+		///< Final override from GSmtp::Processor.
 
 	virtual bool cancelled() const ;
-		///< From Processor.
+		///< Final override from GSmtp::Processor.
 
 	virtual bool repoll() const ;
-		///< From Processor.
+		///< Final override from GSmtp::Processor.
 
 private:
 	NullProcessor( const NullProcessor & ) ; // not implemented

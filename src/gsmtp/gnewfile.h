@@ -53,13 +53,13 @@ public:
 		///< commit()ed then the files are deleted.
 
 	virtual void addTo( const std::string & to , bool local ) ;
-		///< Adds a 'to' address.
+		///< Final override from GSmtp::NewMessage.
 
 	virtual void addText( const std::string & line ) ;
-		///< Adds a line of content.
+		///< Final override from GSmtp::NewMessage.
 
 	virtual std::string prepare( const std::string & auth_id , const std::string & client_ip ) ;
-		///< Prepares to store the message in the message store.
+		///< Final override from GSmtp::NewMessage.
 		///<
 		///< The implementation flushes and closes the
 		///< content stream, creates a new envelope
@@ -68,13 +68,13 @@ public:
 		///< to the ".new" envelope file is returned.
 
 	virtual void commit() ;
-		///< Commits the message to the message store.
+		///< Final override from GSmtp::NewMessage.
 		///<
 		///< The implementation renames the ".new"
 		///< envelope file, removing the extension.
 
 	virtual unsigned long id() const ;
-		///< Returns the message's unique non-zero identifier.
+		///< Final override from GSmtp::NewMessage.
 
 	G::Path contentPath() const ;
 		///< Returns the path of the content file.

@@ -42,9 +42,10 @@ mk_exe_filter=emailrelay-filter-copy.exe
 mk_exe_poke=emailrelay-poke.exe
 mk_exe_passwd=emailrelay-passwd.exe
 mk_exe_submit=emailrelay-submit.exe
+mk_exe_service=emailrelay-service.exe
 res=$(rc:.rc=.o)
 
-all: $(mk_exe_main) $(mk_exe_filter) $(mk_exe_poke) $(mk_exe_passwd) $(mk_exe_submit)
+all: $(mk_exe_main) $(mk_exe_filter) $(mk_exe_poke) $(mk_exe_passwd) $(mk_exe_submit) $(mk_exe_service)
 
 include ../mingw-common.mak
 
@@ -62,6 +63,9 @@ $(mk_exe_passwd): passwd.o legal.o
 
 $(mk_exe_submit): submit.o legal.o
 	$(mk_link) $(mk_link_flags) -o $@ submit.o legal.o $(libs) $(syslibs)
+
+$(mk_exe_service): service_install.o service_wrapper.o
+	$(mk_link) $(mk_link_flags) -o $@ service_install.o service_wrapper.o $(syslibs)
 
 $(fake_mc): mingw.o
 	$(mk_link) $(mk_link_flags) -o $@ $<

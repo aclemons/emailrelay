@@ -88,13 +88,11 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 
 	// add "To:" lines to the envelope
 	//
-	G::Executable no_exe ;
-	GSmtp::Verifier verifier( no_exe ) ;
 	for( G::Strings::const_iterator to_p = to_list.begin() ; to_p != to_list.end() ; ++to_p )
 	{
 		std::string to = *to_p ;
 		G::Str::trim( to , " \t\r\n" ) ;
-		GSmtp::Verifier::Status status = verifier.verify( to , "" , GNet::Address::localhost(0U) , "" , "" ) ;
+		GSmtp::Verifier::Status status( to ) ;
 		msg->addTo( status.address , status.is_local ) ;
 	}
 
@@ -118,7 +116,8 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 	// read and stream out the content
 	while( stream.good() )
 	{
-		std::string line = G::Str::readLineFrom( stream , "\n" ) ;
+		std::string line = G::Str::readLineFrom( stream ) ;
+		G::Str::trimRight( line , "\r" , 1U ) ;
 		if( !stream || line == "." )
 			break ;
 		msg->addText( line ) ;
@@ -191,7 +190,8 @@ static void run( const G::Arg & arg )
 		G::Strings header ;
 		while( stream.good() )
 		{
-			std::string line = G::Str::readLineFrom( stream , "\n" ) ;
+			std::string line = G::Str::readLineFrom( stream ) ;
+			G::Str::trimRight( line , "\r" , 1U ) ;
 			if( line == "." )
 				throw NoBody() ;
 			if( !stream || line.empty() )

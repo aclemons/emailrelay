@@ -68,31 +68,31 @@ public:
 		///< Destructor.
 
 	virtual G::Signal3<bool,unsigned long,std::string> & doneSignal() ;
-		///< See ProtocolMessage.
+		///< Final override from GSmtp::ProtocolMessage.
 
 	virtual void reset() ;
-		///< See ProtocolMessage.
+		///< Final override from GSmtp::ProtocolMessage.
 
 	virtual void clear() ;
-		///< See ProtocolMessage.
+		///< Final override from GSmtp::ProtocolMessage.
 
 	virtual bool setFrom( const std::string & from_user ) ;
-		///< See ProtocolMessage.
+		///< Final override from GSmtp::ProtocolMessage.
 
 	virtual bool addTo( const std::string & to_user , Verifier::Status to_status ) ;
-		///< See ProtocolMessage.
+		///< Final override from GSmtp::ProtocolMessage.
 
 	virtual void addReceived( const std::string & ) ;
-		///< See ProtocolMessage.
+		///< Final override from GSmtp::ProtocolMessage.
 
 	virtual void addText( const std::string & ) ;
-		///< See ProtocolMessage.
+		///< Final override from GSmtp::ProtocolMessage.
 
 	virtual std::string from() const ;
-		///< See ProtocolMessage.
+		///< Final override from GSmtp::ProtocolMessage.
 
 	virtual void process( const std::string & auth_id , const std::string & client_ip ) ;
-		///< See ProtocolMessage.
+		///< Final override from GSmtp::ProtocolMessage.
 
 protected:
 	G::Signal3<bool,unsigned long,std::string> & storageDoneSignal() ;

@@ -63,8 +63,8 @@ public:
 	Path( const Path & other ) ;
 		///< Copy constructor.
 		
-	virtual ~Path() ;
-		///< Virtual destructor.
+	~Path() ;
+		///< Destructor.
 
 	bool simple() const ;
 		///< Returns true if the path is just a 
@@ -153,8 +153,6 @@ private:
 	void set( const std::string & path ) ;
 	void normalise() ;
 	void clear() ;	
-	void validate( const char * ) const ;
-	bool validPath() const ;
 	static std::string slashString() ;
 	static std::string doubleSlashString() ;
 	std::string driveString() const ;

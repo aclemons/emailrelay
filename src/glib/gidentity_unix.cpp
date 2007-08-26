@@ -37,7 +37,7 @@ G::Identity::Identity( const std::string & name ) :
 	m_gid(static_cast<gid_t>(-1)) ,
 	m_h(0)
 {
-	::passwd * pw = ::getpwnam( name.c_str() ) ;
+	::passwd * pw = ::getpwnam( name.c_str() ) ; // (no leak here, the rtl maintains a structure on the heap)
 	if( pw == NULL ) throw NoSuchUser(name) ;
 	m_uid = pw->pw_uid ;
 	m_gid = pw->pw_gid ;

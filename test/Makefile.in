@@ -217,11 +217,11 @@ emailrelay_test_server_LDADD = \
 	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(top_builddir)/src/glib/libglib.a
 
-.SUFFIXES = .pm .pl .pl_ .sh .sh_
+SUFFIXES = .pm .pl .pl_ .sh .sh_
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj .pl .pl_ .sh .sh_
+.SUFFIXES: .pm .pl .pl_ .sh .sh_ .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \

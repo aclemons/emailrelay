@@ -38,11 +38,11 @@ namespace G
 class SlotBase 
 {
 public:
-	virtual ~SlotBase() ;
-		///< Destructor.
-
 	SlotBase() ;
 		///< Default constuctor.
+
+	virtual ~SlotBase() ;
+		///< Destructor.
 
 	void up() ;
 		///< Increments the reference count.

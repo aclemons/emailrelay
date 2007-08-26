@@ -54,24 +54,31 @@ class GSmtp::ServerPeer : public GNet::BufferedServerPeer , private GSmtp::Serve
 {
 public:
 	ServerPeer( GNet::Server::PeerInfo , Server & server , std::auto_ptr<ProtocolMessage> pmessage , 
-		const Secrets & , const Verifier & verifier , std::auto_ptr<ServerProtocol::Text> ptext ,
-		ServerProtocol::Config ) ;
+		const Secrets & , const std::string & verifier_address , unsigned int verifier_timeout ,
+		std::auto_ptr<ServerProtocol::Text> ptext , ServerProtocol::Config ) ;
 			///< Constructor.
+
+protected:
+	virtual void onSendComplete() ; 
+		///< Final override from GNet::BufferedServerPeer.
+
+	virtual void onDelete() ; 
+		///< Final override from GNet::ServerPeer.
+
+	virtual bool onReceive( const std::string & ) ; 
+		///< Final override from GNet::BufferedServerPeer.
 
 private:
 	ServerPeer( const ServerPeer & ) ;
 	void operator=( const ServerPeer & ) ;
-	virtual void protocolSend( const std::string & line ) ; // from ServerProtocol::Sender
-	virtual void onSendComplete() ; // from GNet::Sender
-	virtual void onDelete() ; // from GNet::ServerPeer
-	virtual bool onReceive( const std::string & ) ; // from GNet::BufferedServerPeer
+	virtual void protocolSend( const std::string & line ) ; // override from private base class
 	static std::string crlf() ;
 
 private:
 	Server & m_server ;
-	Verifier m_verifier ; // order dependency
-	std::auto_ptr<ProtocolMessage> m_pmessage ; // order dependency
-	std::auto_ptr<ServerProtocol::Text> m_ptext ; // order dependency
+	std::auto_ptr<Verifier> m_verifier ;
+	std::auto_ptr<ProtocolMessage> m_pmessage ;
+	std::auto_ptr<ServerProtocol::Text> m_ptext ;
 	ServerProtocol m_protocol ; // order dependency -- last
 } ;
 
@@ -97,13 +104,15 @@ public:
 		std::string processor_address ;
 		unsigned int processor_timeout ;
 		///<
+		std::string verifier_address ;
+		unsigned int verifier_timeout ;
+		///<
 		Config( bool , unsigned int , const AddressList & , const std::string & , bool ,
-			const std::string & , unsigned int ) ;
+			const std::string & , unsigned int , const std::string & , unsigned int ) ;
 	} ;
 
 	Server( MessageStore & store , const Secrets & client_secrets , const Secrets & server_secrets ,
-		const Verifier & verifier , Config server_config ,
-		std::string smtp_server_address , unsigned int smtp_connection_timeout ,
+		Config server_config , std::string smtp_server_address , unsigned int smtp_connection_timeout ,
 		GSmtp::Client::Config client_config ) ;
 			///< Constructor. Listens on the given port number
 			///< using INET_ANY if 'interfaces' is empty, or
@@ -118,7 +127,7 @@ public:
 			///< If the 'downstream-server-address' parameter is
 			///< empty then the timeout values are ignored.
 			///<
-			///< The 'store' and 'secrets' references are kept.
+			///< The references are kept.
 
 	virtual ~Server() ;
 		///< Destructor.
@@ -144,10 +153,11 @@ private:
 	std::string m_ident ;
 	bool m_allow_remote ;
 	const Secrets & m_server_secrets ;
-	Verifier m_verifier ;
 	std::string m_smtp_server ;
 	unsigned int m_smtp_connection_timeout ;
 	const Secrets & m_client_secrets ;
+	std::string m_verifier_address ;
+	unsigned int m_verifier_timeout ;
 	bool m_anonymous ;
 	std::auto_ptr<ServerProtocol::Text> m_protocol_text ;
 } ;

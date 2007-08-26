@@ -39,6 +39,8 @@ libglib_a_SOURCES = \
 	gconvert.h \
 	gcleanup.h \
 	gcleanup_unix.cpp \
+	gcounter.cpp \
+	gcounter.h \
 	gdaemon.h \
 	gdaemon_unix.cpp \
 	gdate.cpp \

@@ -79,8 +79,8 @@ public:
 	virtual void resolveCon( bool success, const Address & address ,
 		std::string fqdn_or_failure_reason ) ;
 			///< Called when the resolution process is complete.
-			///< This function is never called from within
-			///< resolveReq().
+			///< Overridable. This default implementation does nothing.
+			///< This function is never called from within resolveReq().
 			///<
 			///< Precondition: state == resolving
 			///< Postcondition: state == idle

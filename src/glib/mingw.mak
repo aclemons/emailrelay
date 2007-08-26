@@ -22,6 +22,7 @@ mk_sources=\
 	garg.cpp \
 	garg_win32.cpp \
 	gcleanup_win32.cpp \
+	gcounter.cpp \
 	gdaemon_win32.cpp \
 	gdate.cpp \
 	gdatetime.cpp \
@@ -29,7 +30,8 @@ mk_sources=\
 	gdirectory.cpp \
 	gdirectory_win32.cpp \
 	gexception.cpp \
-	gexe.cpp \
+	gexecutable.cpp \
+	gexecutable_win32.cpp \
 	gfile.cpp \
 	gfile_win32.cpp \
 	gfs_win32.cpp \

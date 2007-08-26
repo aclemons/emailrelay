@@ -241,6 +241,13 @@ public:
 		///< Returns true if the protocol is done and the doneSignal()
 		///< has been emited.
 
+protected:
+	virtual void onTimeout() ; 
+		///< Final override from GNet::AbstractTimer.
+
+	virtual void onTimeoutException( std::exception & ) ;
+		///< Final override from GNet::AbstractTimer.
+
 private:
 	bool send( const std::string & , bool eot = false , bool log = true ) ;
 	bool sendLine( std::string & ) ;
@@ -257,8 +264,6 @@ private:
 	bool serverAuth( const ClientProtocolReply & reply ) const ;
 	G::Strings serverAuthMechanisms( const ClientProtocolReply & reply ) const ;
 	void startPreprocessing() ;
-	virtual void onTimeout() ; // from GNet::AbstractTimer
-	virtual void onTimeoutException( std::exception & ) ; // from GNet::AbstractTimer
 
 private:
 	enum State { sInit , sStarted , sServiceReady , sSentEhlo , sSentHelo , sAuth1 , sAuth2 , sSentMail , 

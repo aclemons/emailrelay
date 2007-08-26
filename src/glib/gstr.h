@@ -59,11 +59,11 @@ public:
 			///< the number of substitutions made. Consider using 
 			///< in a while loop if 'from' is more than one character.
 
-	static void trimLeft( std::string & s , const std::string & ws ) ;
-		///< Trims the lhs of s, taking off any of the 'ws' characters.
+	static void trimLeft( std::string & s , const std::string & ws , size_type limit = 0U ) ;
+		///< Trims the lhs of s, taking off up to 'limit' of the 'ws' characters.
 
-	static void trimRight( std::string & s , const std::string & ws ) ;
-		///< Trims the rhs of s, taking off any of the 'ws' characters.
+	static void trimRight( std::string & s , const std::string & ws , size_type limit = 0U ) ;
+		///< Trims the rhs of s, taking off up to 'limit' of the 'ws' characters.
 
 	static void trim( std::string & s , const std::string & ws ) ;
 		///< Trims both ends of s, taking off any of the 'ws' characters.
@@ -200,22 +200,10 @@ public:
 		///< Returns a printable represention of the given input string.
 		///< Typically used to prevent escape sequences getting into log files.
 
- private:
-	static std::string readLineFrom( std::istream & stream , char ignore = '\015' ) ;
-		///< Reads a string from the given stream using newline as the
-		///< terminator. The terminator is read from the stream
-		///< but not put into the returned string. 
-		///<
-		///< May return a partial line at the end of the stream.
-		///<
-		///< Any 'ignore' characters (control-m by default) read
-		///< from the stream are discarded. An 'ignore' 
-		///< character of NUL ('\0') disables this feature.
- public:
-
-	static std::string readLineFrom( std::istream & stream , const std::string & eol ) ;
+	static std::string readLineFrom( std::istream & stream , const std::string & eol = std::string() ) ;
 		///< Reads a line from the stream using the given line terminator.
 		///< The line terminator is not part of the returned string.
+		///< The terminator defaults to the newline.
 		///<
 		///< The stream's fail bit is set if (1) an empty string was 
 		///< returned because the stream was already at eof or (2)
@@ -281,6 +269,18 @@ public:
 
 	static Strings keys( const StringMap & string_map ) ;
 		///< Extracts the keys from a map of strings.
+
+	static std::string head( const std::string & in , std::string::size_type pos , 
+		const std::string & default_ = std::string() ) ;
+			///< Returns the first part of the string up to just before the given position.
+			///< The character at pos is not returned. Returns the supplied default 
+			///< if pos is npos.
+
+	static std::string tail( const std::string & in , std::string::size_type pos , 
+		const std::string & default_ = std::string() ) ;
+			///< Returns the last part of the string after the given position.
+			///< The character at pos is not returned. Returns the supplied default 
+			///< if pos is npos.
 
 	static std::string ws() ;
 		///< A convenience function returning standard whitespace characters.

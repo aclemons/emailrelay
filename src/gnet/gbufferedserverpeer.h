@@ -61,6 +61,9 @@ public:
 		///< flow control was asserted and the constructor's
 		///< throw parameter was true.
 
+	virtual void writeEvent() ; 
+		///< Final override from EventHandler.
+
 protected:
 	virtual void onSendComplete() = 0 ;
 		///< Called after flow-control has been released and all 
@@ -74,11 +77,12 @@ protected:
 		///< Called when a complete line is received from the peer.
 		///< Returns false if no more lines should be delivered.
 
+	virtual void onData( const char * , ServerPeer::size_type ) ; 
+		///< Final override from ServerPeer.
+
 private:
 	BufferedServerPeer( const BufferedServerPeer & ) ;
 	void operator=( const BufferedServerPeer & ) ;
-	virtual void writeEvent() ; // from EventHandler
-	virtual void onData( const char * , ServerPeer::size_type ) ; // from ServerPeer
 	void logFlowControlAsserted() const ;
 	void logFlowControlReleased() const ;
 	void logFlowControlReasserted() const ;

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- see "http://developer.apple.com/documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/PListKeys.html" -->
+<plist version="1.0">
+ <dict>
+  <key>CFBundleExecutable</key>
+  <string>emailrelay-gui</string>
+  <key>CFBundleVersion</key>
+  <string>1.6</string>
+  <key>CFBundleGetInfoString</key>
+  <string>(c) 2001-2007 Graeme Walker</string>
+  <key>NSHumanReadableCopyright</key>
+  <string>Copyright (c) 2001-2007 Graeme Walker</string>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>English</string>
+ </dict>
+</plist>

@@ -32,7 +32,7 @@ void G::LogOutput::cleanup()
 		::DeregisterEventSource( m_handle ) ;
 }
 
-void G::LogOutput::rawOutput( G::Log::Severity severity , const char *message )
+void G::LogOutput::rawOutput( G::Log::Severity severity , const std::string & message )
 {
 	// standard error
 	//
@@ -43,7 +43,7 @@ void G::LogOutput::rawOutput( G::Log::Severity severity , const char *message )
 	static bool debugger = std::getenv("GLOGOUTPUT_DEBUGGER") != NULL ;
 	if( debugger )
 	{
-		::OutputDebugString( message ) ;
+		::OutputDebugString( message.c_str() ) ;
 	}
 
 	// file
@@ -75,7 +75,7 @@ void G::LogOutput::rawOutput( G::Log::Severity severity , const char *message )
 			type = EVENTLOG_ERROR_TYPE ;
 		}
 
-		const char * p[] = { message , NULL } ;
+		const char * p[] = { message.c_str() , NULL } ;
 		G_IGNORE ::ReportEvent( m_handle, type, 0, id, NULL, 1, 0, p, NULL ) ;
 	}
 }

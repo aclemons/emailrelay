@@ -21,75 +21,36 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gprocessorfactory.h"
+#include "gfactoryparser.h"
 #include "gnullprocessor.h"
 #include "gnetworkprocessor.h"
 #include "gexecutableprocessor.h"
 #include "gspamprocessor.h"
-#include "gfile.h"
-
-GSmtp::ProcessorFactory::Pair GSmtp::ProcessorFactory::split( const std::string & address )
-{
-	std::string::size_type colon = address.find(":") ;
-	bool has_prefix = colon != std::string::npos && colon >= 1U && (colon+1U) < address.length() ;
-	std::string prefix = has_prefix ? address.substr(0U,colon) : std::string() ;
-	std::string tail = has_prefix ? address.substr(colon+1U) : address ;
-	return
-		has_prefix ?
-			std::make_pair(prefix,tail) :
-			std::make_pair(std::string(),address) ;
-}
 
 std::string GSmtp::ProcessorFactory::check( const std::string & address )
 {
-	Pair p = split( address ) ;
-	if( address.empty() )
-	{
-		return std::string() ;
-	}
-	else if( p.first == "spam" || p.first == "ip" || p.first == "net" )
-	{
-		std::string s1 , s2 ;
-		return GNet::Resolver::parse(p.second,s1,s2) ? std::string() : "invalid network address" ;
-	}
-	else
-	{
-		G::Executable exe( p.second ) ;
-		if( ! G::File::exists(exe.exe(),G::File::NoThrow()) )
-			return "no such file" ;
-		else if( ! G::File::executable(exe.exe()) )
-			return "probably not executable" ;
-		else if( ! exe.exe().isRelative() )
-			return "not an absolute path" ;
-		else
-			return std::string() ;
-	}
+	return FactoryParser::check( address  , "spam" ) ;
 }
 
 GSmtp::Processor * GSmtp::ProcessorFactory::newProcessor( const std::string & address , unsigned int timeout )
 {
-	Pair p = split( address ) ;
-	bool ok = check(address).empty() ;
+	Pair p = FactoryParser::parse( address  , "spam" ) ;
 
-	if( address.empty() )
+	if( p.first.empty() )
 	{
 		return new NullProcessor ;
 	}
-	else if( ok && p.first == "spam" )
+	else if( p.first == "spam" )
 	{
 		return new SpamProcessor( p.second , timeout , timeout ) ;
 	}
-	else if( ok && p.first == "ip" || p.first == "net" )
+	else if( p.first == "net" )
 	{
 		return new NetworkProcessor( p.second , timeout , timeout ) ;
 	}
-	else if( ok && p.first == "file" || p.first == "exe" )
-	{
-		return new ExecutableProcessor( G::Executable(p.second) ) ;
-	}
 	else 
 	{
-		// if not completely valid assume it's a file-system path
-		return new ExecutableProcessor( G::Executable(address) ) ;
+		return new ExecutableProcessor( G::Executable(p.second) ) ;
 	}
 }
 

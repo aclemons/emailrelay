@@ -47,7 +47,10 @@ public:
 
 	RequestClient( const std::string & key , const std::string & ok , const std::string & eol , 
 		const GNet::ResolverInfo & host_and_service , unsigned int connect_timeout , unsigned int response_timeout ) ;
-			///< Constructor.
+			///< Constructor. The key parameter is used in the callback
+			///< signal; the (optional) ok parameter is a response
+			///< string that is considered to be a success response;
+			///< the eol parameter is the response end-of-line.
 
 	void request( const std::string & ) ;
 		///< Issues a request. The base class's "event" signal emitted when 
@@ -67,15 +70,25 @@ protected:
 	virtual ~RequestClient() ;
 		///< Destructor.
 
+	virtual void onConnect() ; 
+		///< Final override from GNet::SimpleClient.
+
+	virtual bool onReceive( const std::string & ) ; 
+		///< Final override from GNet::Client.
+
+	virtual void onSendComplete() ; 
+		///< Final override from GNet::BufferedClient.
+
+	virtual void onDelete( const std::string & , bool ) ; 
+		///< Final override from GNet::HeapClient.
+
+	virtual void onDeleteImp( const std::string & , bool ) ;
+		///< Final override from GNet::Client.
+
 private:
 	typedef GNet::Client Base ;
 	RequestClient( const RequestClient & ) ; // not implemented
 	void operator=( const RequestClient & ) ; // not implemented
-	virtual void onConnect() ; // GNet::SimpleClient
-	virtual bool onReceive( const std::string & ) ; // GNet::Client
-	virtual void onSendComplete() ; // GNet::BufferedClient
-	virtual void onDelete( const std::string & , bool ) ; // GNet::HeapClient
-	virtual void onDeleteImp( const std::string & , bool ) ; // GNet::Client
 	void onTimeout() ;
 	std::string requestLine( const std::string & ) const ;
 	std::string result( std::string ) const ;

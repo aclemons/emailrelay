@@ -95,16 +95,16 @@ public:
 		///< which is in the process of being written.
 
 	virtual bool empty() const ;
-		///< Returns true if there are no stored messages.
+		///< Final override from GSmtp::MessageStore.
 
 	virtual std::auto_ptr<StoredMessage> get( unsigned long id ) ;
-		///< Extracts a stored message.
+		///< Final override from GSmtp::MessageStore.
 
 	virtual MessageStore::Iterator iterator( bool lock ) ;
-		///< Returns an iterator for stored messages.
+		///< Final override from GSmtp::MessageStore.
 
 	virtual std::auto_ptr<NewMessage> newMessage( const std::string & from ) ;
-		///< Creates a new message in the store.
+		///< Final override from GSmtp::MessageStore.
 
 	static std::string x() ;
 		///< Returns the prefix for envelope header lines.
@@ -115,18 +115,13 @@ public:
 		///< it returns the previous format (etc.).
 
 	virtual void repoll() ;
-		///< Ensures that the next updated() signal() has
-		///< its parameter set to true.
+		///< Final override from GSmtp::MessageStore.
 
 	virtual void updated() ;
-		///< Called by associated classes to indicate that the
-		///< store has changed. Results in the signal() being
-		///< emited.
+		///< Final override from GSmtp::MessageStore.
 
 	virtual G::Signal1<bool> & signal() ;
-		///< Provides a signal which is activated when something might 
-		///< have changed in the store. The boolean parameter is used 
-		///< to indicate that repoll()ing is requested.
+		///< Final override from GSmtp::MessageStore.
 
 private:
 	static void checkPath( const G::Path & dir ) ;

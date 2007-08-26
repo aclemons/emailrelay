@@ -89,8 +89,9 @@ bool GNet::ResolverImp::resolveReq( std::string host_part, std::string service_p
 	m_s = new StreamSocket ;
 	if( ! m_s->valid() || ! m_s->connect(m_address) )
 	{
-		delete m_s ;
+		StreamSocket * s = m_s ;
 		m_s = NULL ;
+		delete s ;
 		return false ;
 	}
 	else

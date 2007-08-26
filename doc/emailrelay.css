@@ -33,8 +33,8 @@ div.Header h1
 
 div.Content
 {
-	margin-left: 210px ; /* menu width + 40px */
-	padding: 40px ;
+	margin-left: 230px ;
+	padding: 5px ;
 }
 
 div.Menu
@@ -43,11 +43,12 @@ div.Menu
 
 	float: left ;
 	width: 180px ;
-	margin-left: 30px ;
-	margin-top: 30px ;
+	margin-left: 25px ;
+	margin-right: 0px ;
+	margin-top: 100px ;
 	margin-bottom: 10px ;
 
-	border-style: solid ;
+	border-style: dashed ;
 	border-width: 1px ;
 	border-color: #999 ;
 
@@ -69,27 +70,12 @@ div.div-toc
 	background-color: #ddd ;
 }
 
-p.p-toc
-{
-	padding: 5px ;
-	margin-top: 0px ;
-	margin-bottom: 0px ;
-	margin-left: 0.5em ;
-	text-align: left ;
-}
-
 div.div-pre
 {
 	margin-left: 3% ;
 	background-color: #ddd ;
 	padding: 0.5em ;
 	border: none ;
-}
-
-h1
-{
-	text-align: center ;
-	color: #09c ;
 }
 
 img
@@ -116,17 +102,27 @@ h3.h3-toc
 	margin: 0px ;
 	padding: 0px ;
 	width: 100% ;
-	border-bottom: 1px #999 solid ;
+	border-bottom: 1px #999 dashed ;
+	text-decoration: none ;
+}
+
+h3.h3-toc-last
+{
+	display: block ;
+	margin: 0px ;
+	padding: 0px ;
+	width: 100% ;
 	text-decoration: none ;
 }
 
 p.p-toc
 {
-	padding-top: 0px ;
-	padding-bottom: 0px ;
-	padding-left: 15px ;
-	margin: 0px ;
-	border-bottom: 1px #999 solid ;
+    padding-top: 0px ;
+    padding-bottom: 0px ;
+    padding-left: 15px ;
+    margin: 0px ;
+    border-bottom: 1px #999 dashed ;
+	text-align: left ;
 }
 
 a.a-toc

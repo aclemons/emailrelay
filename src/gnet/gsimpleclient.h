@@ -100,12 +100,14 @@ public:
 		///< Returns true if connected to the peer.
 
 	virtual std::pair<bool,Address> localAddress() const ;
-		///< Override from Connection. Returns the local address. 
-		///< Pair.first is false on error.
+		///< Override from Connection. Returns the local 
+		///< address. Pair.first is false on error.
+		///< Final override from GNet::Connection.
 
 	virtual std::pair<bool,Address> peerAddress() const ;
-		///< Override from Connection. Returns the peer address. 
-		///< Pair.first is false on error.
+		///< Override from Connection. Returns the peer 
+		///< address. Pair.first is false on error.
+		///< Final override from GNet::Connection.
 
 	ResolverInfo resolverInfo() const ;
 		///< Returns a ResolverInfo structure containing the
@@ -123,6 +125,12 @@ public:
 		///< same host and service name. This is only useful 
 		///< immediately after construction and before 
 		///< re-entering the event loop.
+
+	virtual void readEvent() ; 
+		///< Final override from GNet::EventHandler.
+
+	virtual void writeEvent() ;
+		///< Final override from GNet::EventHandler.
 
 protected:
 	virtual ~SimpleClient() ;
@@ -161,8 +169,8 @@ private:
 	void resolveCon( bool , const Address & , std::string ) ;
 
 private:
-	SimpleClient( const SimpleClient& ) ; // Copy constructor. Not implemented.
-	void operator=( const SimpleClient& ) ; // Assignment operator. Not implemented.
+	SimpleClient( const SimpleClient& ) ; // not implemented
+	void operator=( const SimpleClient& ) ; // not implemented
 	void close() ;
 	static int getRandomPort() ;
 	StreamSocket & s() ;
@@ -170,8 +178,6 @@ private:
 	bool startConnecting() ;
 	bool localBind( Address ) ;
 	ConnectStatus connectCore( Address remote_address , std::string *error_p ) ;
-	virtual void readEvent() ; // from EventHandler
-	virtual void writeEvent() ; // from EventHandler
 	void setState( State ) ;
 	void immediateConnection() ;
 

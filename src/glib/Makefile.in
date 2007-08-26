@@ -45,7 +45,7 @@ ARFLAGS = cru
 libglib_a_AR = $(AR) $(ARFLAGS)
 libglib_a_LIBADD =
 am_libglib_a_OBJECTS = md5.$(OBJEXT) garg.$(OBJEXT) \
-	garg_unix.$(OBJEXT) gcleanup_unix.$(OBJEXT) \
+	garg_unix.$(OBJEXT) gcleanup_unix.$(OBJEXT) gcounter.$(OBJEXT) \
 	gdaemon_unix.$(OBJEXT) gdate.$(OBJEXT) gdatetime.$(OBJEXT) \
 	gdatetime_unix.$(OBJEXT) gdirectory.$(OBJEXT) \
 	gdirectory_unix.$(OBJEXT) gexception.$(OBJEXT) \
@@ -212,6 +212,8 @@ libglib_a_SOURCES = \
 	gconvert.h \
 	gcleanup.h \
 	gcleanup_unix.cpp \
+	gcounter.cpp \
+	gcounter.h \
 	gdaemon.h \
 	gdaemon_unix.cpp \
 	gdate.cpp \
@@ -321,6 +323,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garg_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcleanup_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcounter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdaemon_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdatetime.Po@am__quote@

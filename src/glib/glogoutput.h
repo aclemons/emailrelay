@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "glog.h"
+#include <string>
 
 /// \namespace G
 namespace G
@@ -31,9 +32,9 @@ namespace G
 }
 
 /// \class G::LogOutput
-/// Controls and implements low-level logging output, as used by the Log interface.
-/// Applications should normally instantiate a LogOutput object in main() to enable
-/// log output.
+/// Controls and implements low-level logging output, as 
+/// used by the Log interface. Applications should instantiate a LogOutput 
+/// object in main() to enable log output.
 /// \see G::Log
 ///
 class G::LogOutput 
@@ -63,7 +64,7 @@ public:
 	virtual ~LogOutput() ;
 		///< Destructor.
 
-	virtual void rawOutput( G::Log::Severity s , const char *string ) ;
+	virtual void rawOutput( G::Log::Severity , const std::string & ) ;
 		///< Overridable. Used to do the final message 
 		///< output (with OutputDebugString() or stderr).
 		
@@ -74,11 +75,11 @@ public:
 	bool enable( bool enabled = true ) ;
 		///< Enables or disables output. Returns the previous setting.
 
-	static void output( G::Log::Severity s , const char *file , unsigned line , const char *text ) ;
+	static void output( G::Log::Severity , const char * file , int line , const std::string & ) ;
 		///< Generates output if there is an existing
 		///< LogOutput object which is enabled. Uses rawOutput().
 
-	static void assertion( const char *file , unsigned line , bool test , const char *test_string ) ;	
+	static void assertion( const char * file , int line , bool test , const std::string & ) ;
 		///< Makes an assertion check (regardless of any LogOutput
 		///< object). Calls output() if the 'file' parameter is not null.
 
@@ -89,20 +90,18 @@ public:
 
 private:
 	typedef size_t size_type ;
-	LogOutput( const LogOutput & ) ;
-	void operator=( const LogOutput & ) ;
-	static const char * itoa( char * , size_type , unsigned int ) ;
-	static void addFileAndLine( char * , size_type , const char * , int ) ;
-	static void add( char * , size_type , const char * ) ;
-	static void add( char * , size_type , const std::string & ) ;
-	const char * timestampString() ;
-	static void halt() ;
-	void doOutput( G::Log::Severity , const char * ) ;
-	void doOutput( G::Log::Severity s , const char * , unsigned , const char * ) ;
-	void doAssertion( const char * , unsigned , const char * ) ;
-	const char * levelString( Log::Severity s ) ;
+	LogOutput( const LogOutput & ) ; // not implemented
+	void operator=( const LogOutput & ) ; // not implemented
 	void init() ;
 	void cleanup() ;
+	std::string timestampString() ;
+	void doOutput( G::Log::Severity , const std::string & ) ;
+	void doOutput( G::Log::Severity s , const char * , int , const std::string & ) ;
+	void doAssertion( const char * , int , const std::string & ) ;
+	static std::string levelString( Log::Severity s ) ;
+	static std::string itoa( int ) ;
+	static std::string fileAndLine( const char * , int ) ;
+	static void halt() ;
 
 private:
 	static LogOutput * m_this ;

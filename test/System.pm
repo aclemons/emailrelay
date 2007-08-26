@@ -67,7 +67,7 @@ sub createMessageFile
 	print $fh "\r\n" ;
 	for( my $i = 0 ; $i < $n ; $i++ )
 	{
-		print $fh "ddflgkjrpodfpgdsflkgjxcmselrkjwlenwoiuoiuoiuwoeiruw\r\n" ;
+		print $fh "${i}_ddflgkjrpodfpgdsflkgjxcmselrkjwlenwoiuoiuoiuwoeiruw\r\n" ;
 	}
 	$fh->close() ;
 	return $path ;

@@ -93,13 +93,21 @@ protected:
     virtual void onDeleteImp( const std::string & , bool ) ; 
 		///< Override from GNet::HeapClient.
 
+    virtual void onConnectImp() ; 
+		///< Final override from GNet::SimpleClient.
+
+	virtual void onData( const char * , SimpleClient::size_type ) ; 
+		///< Final override from GNet::SimpleClient.
+
+	virtual void onConnecting() ; 
+		///< Final override from GNet::HeapClient.
+
+	virtual void onSendImp() ; 
+		///< Final override from GNet::BufferedClient.
+
 private:
-	Client( const Client& ) ; // Not implemented.
-	void operator=( const Client& ) ; // Not implemented.
-    virtual void onConnectImp() ; // GNet::SimpleClient
-	virtual void onData( const char * , SimpleClient::size_type ) ; // GNet::SimpleClient
-	virtual void onConnecting() ; // GNet::HeapClient
-	virtual void onSendImp() ; // GNet::BufferedClient
+	Client( const Client& ) ; // not implemented
+	void operator=( const Client& ) ; // not implemented
 	void onConnectionTimeout() ;
 	void onResponseTimeout() ;
 

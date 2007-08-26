@@ -40,31 +40,29 @@ namespace GSmtp
 class GSmtp::NetworkProcessor : public GSmtp::Processor 
 {
 public:
-	NetworkProcessor( const std::string & , unsigned int connection_timeout , unsigned int response_timeout , 
-		bool lazy = true ) ;
-			///< Constructor. If lazy then the internal client object
-			///< is retained from one start() request to the next.
+	NetworkProcessor( const std::string & , unsigned int connection_timeout , unsigned int response_timeout ) ;
+		///< Constructor.
 
 	virtual ~NetworkProcessor() ;
 		///< Destructor.
 
 	virtual G::Signal1<bool> & doneSignal() ;
-		///< From Processor.
+		///< Final override from GNet::Processor.
 
 	virtual void start( const std::string & path ) ;
-		///< From Processor.
+		///< Final override from GNet::Processor.
 
 	virtual void abort() ;
-		///< From Processor.
+		///< Final override from GNet::Processor.
 
 	virtual std::string text() const ;
-		///< From Processor. 
+		///< Final override from GNet::Processor.
 
 	virtual bool cancelled() const ;
-		///< From Processor.
+		///< Final override from GNet::Processor.
 
 	virtual bool repoll() const ;
-		///< From Processor.
+		///< Final override from GNet::Processor.
 
 private:
 	NetworkProcessor( const NetworkProcessor & ) ; // not implemented

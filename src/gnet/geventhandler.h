@@ -58,17 +58,17 @@ public:
 		///< Destructor.
 
 	virtual void readEvent() ;
-		///< Called for a read event. The default 
-		///< implementation does nothing.
+		///< Called for a read event. Overridable.
+		///< The default implementation does nothing.
 
 	virtual void writeEvent() ;
-		///< Called for a write event. The default 
-		///< implementation does nothing.
+		///< Called for a write event. Overrideable.
+		///< The default implementation does nothing.
 
 	virtual void exceptionEvent() ;
-		///< Called for an exception event. The default 
-		///< implementation throws an exception resulting	
-		///< in a call to onException().
+		///< Called for an exception event. Overridable.
+		///< The default implementation throws an exception 
+		///< resulting in a call to onException().
 
 	virtual void onException( std::exception & ) = 0 ;
 		///< Called when an exception is thrown out of

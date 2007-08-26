@@ -56,13 +56,22 @@ public:
 		std::auto_ptr<ServerProtocol::Text> ptext , ServerProtocol::Config ) ;
 			///< Constructor.
 
+	virtual bool protocolSend( const std::string & line , size_t ) ; 
+		///< Final override from GPop::ServerProtocol::Sender.
+
+protected:
+	virtual void onDelete() ; 
+		///< Final override from GNet::ServerPeer.
+
+	virtual bool onReceive( const std::string & ) ; 
+		///< Final override from GNet::BufferedServerPeer.
+
+	virtual void onSendComplete() ; 
+		///< Final override from GNet::BufferedServerPeer.
+
 private:
 	ServerPeer( const ServerPeer & ) ;
 	void operator=( const ServerPeer & ) ;
-	virtual bool protocolSend( const std::string & line , size_t ) ; // from ServerProtocol::Sender
-	virtual void onDelete() ; // from GNet::ServerPeer
-	virtual bool onReceive( const std::string & ) ; // from GNet::BufferedServerPeer
-	virtual void onSendComplete() ; // from GNet::Sender
 	void processLine( const std::string & line ) ;
 	static std::string crlf() ;
 

@@ -70,15 +70,25 @@ protected:
 	virtual ~SpamClient() ;
 		///< Destructor.
 
+	virtual void onConnect() ; 
+		///< Final override from GNet::SimpleClient.
+
+	virtual bool onReceive( const std::string & ) ; 
+		///< Final override from GNet::Client.
+
+	virtual void onSendComplete() ; 
+		///< Final override from GNet::BufferedClient.
+
+	virtual void onDelete( const std::string & , bool ) ; 
+		///< Final override from GNet::HeapClient.
+
+	virtual void onDeleteImp( const std::string & , bool ) ; 
+		///< Final override from GNet::Client.
+
 private:
 	typedef GNet::Client Base ;
 	SpamClient( const SpamClient & ) ; // not implemented
 	void operator=( const SpamClient & ) ; // not implemented
-	virtual void onConnect() ; // GNet::SimpleClient
-	virtual bool onReceive( const std::string & ) ; // GNet::Client
-	virtual void onSendComplete() ; // GNet::BufferedClient
-	virtual void onDelete( const std::string & , bool ) ; // GNet::HeapClient
-	virtual void onDeleteImp( const std::string & , bool ) ; // GNet::Client
 	void onTimeout() ;
 	void sendContent() ;
 	std::string headerResult() const ;
@@ -89,11 +99,14 @@ private:
 	void addHeader( const std::string & ) ;
 	void addBody( const std::string & ) ;
 	std::string part( const std::string & , unsigned int , const std::string & = std::string() ) const ;
+	void turnRound() ;
 
 private:
 	typedef std::vector<std::string> StringArray ;
 	std::string m_path ;
 	std::auto_ptr<std::ifstream> m_in ;
+	unsigned long m_in_size ;
+	unsigned long m_in_lines ;
 	std::auto_ptr<std::ofstream> m_out ;
 	unsigned long m_out_size ;
 	unsigned long m_out_lines ;

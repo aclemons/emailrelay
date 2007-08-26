@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gnet.h"
 #include "gbufferedserverpeer.h"
+#include "gstr.h"
 #include "gtest.h"
 #include "gassert.h"
 #include "glog.h"

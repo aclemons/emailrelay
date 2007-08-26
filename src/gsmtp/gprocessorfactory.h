@@ -47,8 +47,8 @@ public:
 		///< or a diagnostic reason string.
 
 private:
-	ProcessorFactory() ; // not implemented
 	typedef std::pair<std::string,std::string> Pair ;
+	ProcessorFactory() ; // not implemented
 	static Pair split( const std::string & ) ;
 } ;
 

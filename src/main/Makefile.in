@@ -237,6 +237,10 @@ EXTRA_DIST = \
 	passwd.dsp \
 	poke.dsp \
 	resource.h \
+	service.dsp \
+	service_install.cpp \
+	service_install.h \
+	service_wrapper.cpp \
 	submit.dsp \
 	winapp.cpp \
 	winapp.h \

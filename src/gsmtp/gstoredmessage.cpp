@@ -24,7 +24,6 @@
 
 GSmtp::StoredMessage::~StoredMessage()
 {
-        // empty
 }
 
 /// \file gstoredmessage.cpp

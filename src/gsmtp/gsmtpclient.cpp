@@ -186,8 +186,8 @@ void GSmtp::Client::messageDestroy()
 {
 	if( m_message.get() != NULL )
 	{
-		StoredMessage * message = m_message.release() ;
-		message->destroy() ;
+		m_message->destroy() ;
+		m_message <<= 0 ;
 	}
 }
 
@@ -195,8 +195,8 @@ void GSmtp::Client::messageFail( const std::string & reason )
 {
 	if( m_message.get() != NULL )
 	{
-		StoredMessage * message = m_message.release() ;
-		message->fail( reason ) ;
+		m_message->fail( reason ) ;
+		m_message <<= 0 ;
 	}
 }
 

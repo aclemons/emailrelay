@@ -50,7 +50,7 @@ emailrelay_test_server_LDADD = \
 	$(top_builddir)/src/glib/libglib.a
 
 
-.SUFFIXES = .pm .pl .pl_ .sh .sh_
+SUFFIXES = .pm .pl .pl_ .sh .sh_
 
 .pl_.pl:
 	cat $(top_srcdir)/test/$*.pl_ > $*.pl

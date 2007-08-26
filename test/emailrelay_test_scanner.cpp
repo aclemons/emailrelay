@@ -15,16 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// scanner.cpp
+// emailrelay_test_scanner.cpp
 //
-// A dummy scanner process for testing "emailrelay --scanner" 
-// (eg. "emailrelay --as-proxy localhost:10025 --scanner localhost:10010")
+// A dummy network processor for testing "emailrelay --filter net:<host>:<port>".
 //
-// usage: scanner [--log] [--debug] [--pid-file <pidfile>]
+// usage: emailrelay-test-scanner [--log] [--debug] [--pid-file <pidfile>]
 //
-// Listens on port 10010. Treats the message file as a mini script
-// taking commands of "send [<string>]", "sleep [<time>]",
-// "disconnect" and "terminate".
+// Listens on port 10010. Each request is a filename and the
+// message file is treated as a mini script with commands of
+// "send [<string>]", "sleep [<time>]", "disconnect" and "terminate".
 //
 
 #include "gdef.h"
@@ -48,9 +47,6 @@ namespace Main
 	class Scanner ;
 }
 
-/// \class Main::ScannerPeer
-/// A GNet::ServerPeer class used by Scanner.
-/// 
 class Main::ScannerPeer : public GNet::ServerPeer 
 {
 public:
@@ -114,7 +110,7 @@ bool Main::ScannerPeer::processFile( std::string path )
 	}
 	while( file.good() )
 	{
-		std::string line = G::Str::readLineFrom( file ) ;
+		std::string line = G::Str::readLineFrom( file , "\n" ) ;
 		G_LOG( "ScannerPeer::processFile: line: \"" << G::Str::printable(line) << "\"" ) ;
 		if( line.find("send") == 0U )
 		{

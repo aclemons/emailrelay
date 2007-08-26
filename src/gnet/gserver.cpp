@@ -109,6 +109,11 @@ std::pair<bool,GNet::Address> GNet::ServerPeer::peerAddress() const
 
 void GNet::ServerPeer::onTimeout()
 {
+	doDeleteThis(1) ;
+}
+
+void GNet::ServerPeer::doDeleteThis( int )
+{
 	delete this ;
 }
 
@@ -185,7 +190,7 @@ void GNet::Server::serverCleanupCore()
 		if( handle.peer() != NULL )
 		{
 			G_DEBUG( "GNet::Server::serverCleanupCore: deleting peer: [" << handle.peer() << "]" ) ;
-			delete handle.peer() ;
+			handle.peer()->doDeleteThis(1) ;
 		}
 	}
 }

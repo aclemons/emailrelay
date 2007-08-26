@@ -49,7 +49,7 @@ int main( int argc , char * argv [] )
 			return EXIT_FAILURE ;
 		}
 
-		std::string key = G::Str::readLineFrom( std::cin , "\n" ) ;
+		std::string key = G::Str::readLineFrom( std::cin ) ;
 		G::Str::trim( key , " \t\n\r" ) ;
 		if( key.length() == 0U )
 		{

@@ -26,6 +26,7 @@
 #include "gexception.h"
 #include "gassert.h"
 #include "gdebug.h"
+#include <algorithm> // std::swap<>()
 #include <climits>
 #include <sys/types.h>
 #include <vector>
@@ -443,11 +444,6 @@ GNet::Address::Address( const sockaddr * addr , socklen_t len ) :
 {
 }
 
-GNet::Address::Address( const Address & other ) :
-	m_imp( new AddressImp(*other.m_imp) )
-{
-}
-
 GNet::Address::Address( const std::string & s ) :
 	m_imp( new AddressImp(s) )
 {
@@ -458,6 +454,17 @@ GNet::Address::Address( const std::string & s , unsigned int port ) :
 {
 }
 
+GNet::Address::Address( const Address & other ) :
+	m_imp( new AddressImp(*other.m_imp) )
+{
+}
+
+void GNet::Address::operator=( const Address & addr )
+{
+	Address temp( addr ) ;
+	std::swap( m_imp , temp.m_imp ) ;
+}
+
 GNet::Address::~Address()
 {
 	delete m_imp ;
@@ -466,16 +473,6 @@ GNet::Address::~Address()
 void GNet::Address::setPort( unsigned int port )
 {
 	m_imp->setPort( port ) ;
-}
-
-void GNet::Address::operator=( const Address & addr )
-{
-	if( this != &addr )
-	{
-		delete m_imp ;
-		m_imp = NULL ;
-		m_imp = new AddressImp(*addr.m_imp) ;
-	}
 }
 
 bool GNet::Address::operator==( const Address & other ) const

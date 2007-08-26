@@ -19,6 +19,8 @@
 //
 // A dummy smtp server for testing purposes.
 //
+// usage: emailrelay-test-server [--auth-foo-bar] [--auth-login] [--slow] [--fail-at <n>] [--port <port>]
+//
 
 #include "gdef.h"
 #include "gnet.h"

@@ -47,9 +47,9 @@ namespace GNet
 ///
 /// The smart pointer also optionally maintains an internal 
 /// ResolverInfo object so that name resolution results can be 
-/// retained from one client object to the next. If the smart
-/// pointer is loaded with a new client that has the same
-/// host and service name in its ResolverInfo as the previous
+/// retained from one contained client object to the next. If 
+/// the smart pointer is loaded with a new client that has the 
+/// same host and service name in its ResolverInfo as the previous
 /// client then the resolved address is propagated into the 
 /// new client so that name lookup is short-circuited within
 /// the SimpleClient code. The danger with this is that the
@@ -123,11 +123,19 @@ ClientPtr<TClient>::ClientPtr( TClient * p , bool update ) :
 	m_update(update) ,
 	m_resolver_info(std::string(),std::string())
 {
-	if( m_p != NULL )
+	try
 	{
-		m_resolver_info = m_p->resolverInfo() ;
+		if( m_p != NULL )
+		{
+			m_resolver_info = m_p->resolverInfo() ;
+		}
+		connectSignalsToSlots() ;
 	}
-	connectSignalsToSlots() ;
+	catch(...)
+	{
+		///< should p->doDelete() here
+		throw ;
+	}
 }
 
 template <typename TClient>

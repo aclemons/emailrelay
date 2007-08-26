@@ -57,7 +57,7 @@ sub new
 		m_full_command => undef ,
 		m_filter => System::tempfile("filter",$tmp_dir) ,
 		m_client_filter => System::tempfile("client-filter",$tmp_dir) ,
-		m_scanner => "localhost:$scanner_port" ,
+		m_scanner => "net:localhost:$scanner_port" ,
 	) ;
 	my $this = bless \%me , $classname ;
 	$this->_check() ;

@@ -101,6 +101,9 @@ public:
 	G::Signal3<std::string,std::string,std::string> & signal() ;
 		///< Provides a signal which is activated when something changes.
 
+	virtual void onException( std::exception & ) ; 
+		///< Final override from GNet::EventHandler.
+
 private:
 	Run( const Run & ) ; // not implemented
 	void operator=( const Run & ) ; // not implemented
@@ -116,7 +119,6 @@ private:
 	void forwardingClientDone( std::string , bool ) ; // Client::doneSignal()
 	void pollingClientDone( std::string , bool ) ; // Client::doneSignal()
 	void clientEvent( std::string , std::string ) ; // Client::eventSignal()
-	virtual void onException( std::exception & ) ; // from EventHandler
 	void raiseStoreEvent( bool ) ;
 	void raiseNetworkEvent( std::string , std::string ) ;
 	void emit( const std::string & , const std::string & , const std::string & ) ;
@@ -128,7 +130,7 @@ private:
 	GSmtp::Server::Config serverConfig() const ;
 	GPop::Server::Config popConfig() const ;
 	void checkScripts() const ;
-	void checkScript( const std::string & ) const ;
+	void checkVerifierScript( const std::string & ) const ;
 	void checkProcessorScript( const std::string & ) const ;
 
 private:

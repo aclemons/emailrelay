@@ -46,26 +46,34 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 		m_bad_client_limit(8U)
 {
 	m_pmessage.doneSignal().connect( G::slot(*this,&ServerProtocol::processDone) ) ;
+	verifier.doneSignal().connect( G::slot(*this,&ServerProtocol::verifyDone) ) ;
 
 	// (dont send anything to the peer from this ctor -- the Sender 
 	// object is not fuly constructed)
 
-	m_fsm.addTransition( eQuit    , s_Any   , sEnd     , &GSmtp::ServerProtocol::doQuit ) ;
-	m_fsm.addTransition( eUnknown , s_Any   , s_Same   , &GSmtp::ServerProtocol::doUnknown ) ;
-	m_fsm.addTransition( eRset    , s_Any   , sIdle    , &GSmtp::ServerProtocol::doRset ) ;
-	m_fsm.addTransition( eNoop    , s_Any   , s_Same   , &GSmtp::ServerProtocol::doNoop ) ;
-	m_fsm.addTransition( eHelp    , s_Any   , s_Same   , &GSmtp::ServerProtocol::doHelp ) ;
-	m_fsm.addTransition( eExpn    , s_Any   , s_Same   , &GSmtp::ServerProtocol::doExpn ) ;
-	m_fsm.addTransition( eVrfy    , s_Any   , s_Same   , &GSmtp::ServerProtocol::doVrfy ) ;
-	m_fsm.addTransition( eEhlo    , s_Any   , sIdle    , &GSmtp::ServerProtocol::doEhlo , s_Same ) ;
-	m_fsm.addTransition( eHelo    , s_Any   , sIdle    , &GSmtp::ServerProtocol::doHelo , s_Same ) ;
-	m_fsm.addTransition( eMail    , sIdle   , sGotMail , &GSmtp::ServerProtocol::doMail , sIdle ) ;
-	m_fsm.addTransition( eRcpt    , sGotMail, sGotRcpt , &GSmtp::ServerProtocol::doRcpt , sGotMail ) ;
-	m_fsm.addTransition( eRcpt    , sGotRcpt, sGotRcpt , &GSmtp::ServerProtocol::doRcpt ) ;
-	m_fsm.addTransition( eData    , sGotMail, sIdle    , &GSmtp::ServerProtocol::doNoRecipients ) ;
-	m_fsm.addTransition( eData    , sGotRcpt, sData    , &GSmtp::ServerProtocol::doData ) ;
-	m_fsm.addTransition( eContent , sData   , sData    , &GSmtp::ServerProtocol::doContent ) ;
-	m_fsm.addTransition( eEot     , sData , sProcessing, &GSmtp::ServerProtocol::doEot ) ;
+	m_fsm.addTransition( eQuit     , s_Any       , sEnd        , &GSmtp::ServerProtocol::doQuit ) ;
+	m_fsm.addTransition( eUnknown  , s_Any       , s_Same      , &GSmtp::ServerProtocol::doUnknown ) ;
+	m_fsm.addTransition( eRset     , s_Any       , sIdle       , &GSmtp::ServerProtocol::doRset ) ;
+	m_fsm.addTransition( eNoop     , s_Any       , s_Same      , &GSmtp::ServerProtocol::doNoop ) ;
+	m_fsm.addTransition( eHelp     , s_Any        , s_Same     , &GSmtp::ServerProtocol::doHelp ) ;
+	m_fsm.addTransition( eExpn     , s_Any        , s_Same     , &GSmtp::ServerProtocol::doExpn ) ;
+	m_fsm.addTransition( eVrfy     , sIdle       , sVrfyIdle   , &GSmtp::ServerProtocol::doVrfy , s_Same ) ;
+	m_fsm.addTransition( eVrfyReply, sVrfyIdle   , sIdle       , &GSmtp::ServerProtocol::doVrfyReply ) ;
+	m_fsm.addTransition( eVrfy     , sGotMail    , sVrfyGotMail, &GSmtp::ServerProtocol::doVrfy , s_Same ) ;
+	m_fsm.addTransition( eVrfyReply, sVrfyGotMail, sGotMail    , &GSmtp::ServerProtocol::doVrfyReply ) ;
+	m_fsm.addTransition( eVrfy     , sGotRcpt    , sVrfyGotRcpt, &GSmtp::ServerProtocol::doVrfy , s_Same ) ;
+	m_fsm.addTransition( eVrfyReply, sVrfyGotRcpt, sGotRcpt    , &GSmtp::ServerProtocol::doVrfyReply ) ;
+	m_fsm.addTransition( eEhlo     , s_Any       , sIdle       , &GSmtp::ServerProtocol::doEhlo , s_Same ) ;
+	m_fsm.addTransition( eHelo     , s_Any       , sIdle       , &GSmtp::ServerProtocol::doHelo , s_Same ) ;
+	m_fsm.addTransition( eMail     , sIdle       , sGotMail    , &GSmtp::ServerProtocol::doMail , sIdle ) ;
+	m_fsm.addTransition( eRcpt     , sGotMail    , sVrfyTo1    , &GSmtp::ServerProtocol::doRcpt , s_Same ) ;
+	m_fsm.addTransition( eVrfyReply, sVrfyTo1    , sGotRcpt    , &GSmtp::ServerProtocol::doVrfyToReply , sGotMail ) ;
+	m_fsm.addTransition( eRcpt     , sGotRcpt    , sVrfyTo2    , &GSmtp::ServerProtocol::doRcpt , s_Same ) ;
+	m_fsm.addTransition( eVrfyReply, sVrfyTo2    , sGotRcpt    , &GSmtp::ServerProtocol::doVrfyToReply ) ;
+	m_fsm.addTransition( eData     , sGotMail    , sIdle       , &GSmtp::ServerProtocol::doNoRecipients ) ;
+	m_fsm.addTransition( eData     , sGotRcpt    , sData        , &GSmtp::ServerProtocol::doData ) ;
+	m_fsm.addTransition( eContent  , sData       , sData       , &GSmtp::ServerProtocol::doContent ) ;
+	m_fsm.addTransition( eEot      , sData       , sProcessing  , &GSmtp::ServerProtocol::doEot ) ;
 
 	if( m_sasl.active() )
 	{
@@ -83,6 +91,7 @@ void GSmtp::ServerProtocol::init()
 GSmtp::ServerProtocol::~ServerProtocol()
 {
 	m_pmessage.doneSignal().disconnect() ;
+	m_verifier.doneSignal().disconnect() ;
 }
 
 void GSmtp::ServerProtocol::sendGreeting( const std::string & text )
@@ -187,43 +196,64 @@ void GSmtp::ServerProtocol::doHelp( const std::string & , bool & )
 	sendNotImplemented() ;
 }
 
-void GSmtp::ServerProtocol::doVrfy( const std::string & line , bool & )
+void GSmtp::ServerProtocol::doVrfy( const std::string & line , bool & predicate )
 {
 	if( m_with_vrfy )
 	{
-		std::string mbox = parseMailbox( line ) ;
-		Verifier::Status rc = verify( mbox , "" ) ;
-		if( rc.is_valid && rc.is_local )
-			sendVerified( rc.full_name ) ; // 250
-		else if( rc.is_valid )
-			sendWillAccept( mbox ) ; // 252
+		std::string to = parseToParameter( line ) ;
+		if( to.empty() )
+		{
+			predicate = false ;
+			sendNotVerified( to , false ) ;
+		}
 		else
-			sendNotVerified( mbox , rc.temporary ) ; // 550 or 450
+		{
+			verify( to , "" ) ;
+		}
 	}
 	else
 	{
+		predicate = false ;
 		sendNotImplemented() ;
 	}
-} 
+}
 
-GSmtp::Verifier::Status GSmtp::ServerProtocol::verify( const std::string & to , const std::string & from ) const
+void GSmtp::ServerProtocol::verify( const std::string & to , const std::string & from )
 {
 	std::string mechanism = m_sasl.active() ? m_sasl.mechanism() : std::string() ;
 	std::string id = m_sasl.active() ? m_sasl.id() : std::string() ;
 	if( m_sasl.active() && !m_authenticated )
 		mechanism = "NONE" ;
-	return m_verifier.verify( to , from , m_peer_address , mechanism , id ) ;
+	m_verifier.verify( to , from , m_peer_address , mechanism , id ) ;
 }
 
-std::string GSmtp::ServerProtocol::parseMailbox( const std::string & line ) const
+void GSmtp::ServerProtocol::verifyDone( std::string mbox , Verifier::Status status )
 {
-	std::string user ;
+	m_fsm.apply( *this , eVrfyReply , status.str(mbox) ) ;
+}
+
+void GSmtp::ServerProtocol::doVrfyReply( const std::string & line , bool & )
+{
+	std::string mbox ;
+	Verifier::Status rc = Verifier::Status::parse( line , mbox ) ;
+
+	if( rc.is_valid && rc.is_local )
+		sendVerified( rc.full_name ) ; // 250
+	else if( rc.is_valid )
+		sendWillAccept( mbox ) ; // 252
+	else
+		sendNotVerified( mbox , rc.temporary ) ; // 550 or 450
+} 
+
+std::string GSmtp::ServerProtocol::parseToParameter( const std::string & line ) const
+{
+	std::string to ;
 	size_t pos = line.find_first_of( " \t" ) ;
 	if( pos != std::string::npos )
-		user = line.substr(pos) ;
+		to = line.substr(pos) ;
 
-	G::Str::trim( user , " \t" ) ;
-	return user ;
+	G::Str::trim( to , " \t" ) ;
+	return to ;
 }
 
 void GSmtp::ServerProtocol::doEhlo( const std::string & line , bool & predicate )
@@ -383,23 +413,33 @@ void GSmtp::ServerProtocol::doRcpt( const std::string & line , bool & predicate 
 	std::pair<std::string,std::string> to_pair = parseTo( line ) ;
 	std::string reason = to_pair.second ;
 	bool ok = reason.empty() ;
-	bool temporary = false ;
+
 	if( ok )
 	{
-		Verifier::Status status = verify( to_pair.first , m_pmessage.from() ) ;
-		ok = m_pmessage.addTo( to_pair.first , status ) ;
-		if( !ok )
-		{
-			reason = G::Str::printable(status.reason) ;
-			temporary = status.temporary ;
-		}
+		verify( to_pair.first , m_pmessage.from() ) ;
 	}
-
-	predicate = ok ;
-	if( ok )
-		sendRcptReply() ;
 	else
-		sendBadTo( reason , temporary ) ;
+	{
+		predicate = false ;
+		sendBadTo( reason , false ) ;
+	}
+}
+
+void GSmtp::ServerProtocol::doVrfyToReply( const std::string & line , bool & predicate )
+{
+	std::string to ;
+	Verifier::Status status = Verifier::Status::parse( line , to ) ;
+
+	bool ok = m_pmessage.addTo( to , status ) ;
+	if( ok )
+	{
+		sendRcptReply() ;
+	}
+	else
+	{
+		predicate = false ;
+		sendBadTo( G::Str::printable(status.reason) , status.temporary ) ;
+	}
 }
 
 void GSmtp::ServerProtocol::doUnknown( const std::string & line , bool & )
@@ -411,6 +451,7 @@ void GSmtp::ServerProtocol::reset()
 {
 	cancelTimer() ;
 	m_pmessage.clear() ;
+	m_verifier.reset() ;
 	m_bad_client_count = 0U ;
 }
 

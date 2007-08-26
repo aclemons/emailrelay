@@ -123,6 +123,15 @@ public:
 		///< Returns the listening address. Pair.first
 		///< is false if not properly init()ialised.
 
+	virtual void readEvent() ;
+		///< Final override from GNet::EventHandler.
+
+	virtual void writeEvent() ;
+		///< Final override from GNet::EventHandler.
+
+	virtual void onException( std::exception & e ) ;
+		///< Final override from GNet::EventHandler.
+
 protected:
 	virtual ServerPeer * newPeer( PeerInfo ) = 0 ;
 		///< A factory method which new()s a ServerPeer-derived 
@@ -157,9 +166,6 @@ protected:
 private:
 	Server( const Server & ) ; // not implemented
 	void operator=( const Server & ) ; // not implemented
-	virtual void readEvent() ; // from EventHandler
-	virtual void writeEvent() ; // from EventHandler
-	virtual void onException( std::exception & e ) ; // from EventHandler
 	void serverCleanupCore() ;
 	void collectGarbage() ;
 	void accept( PeerInfo & ) ;
@@ -197,16 +203,28 @@ public:
 	virtual std::pair<bool,Address> localAddress() const ;
 		///< Returns the local address.
 		///< Pair.first is false on error.
+		///< Final override from GNet::Connection.
 
 	virtual std::pair<bool,Address> peerAddress() const ;
 		///< Returns the peer address.
+		///< Final override from GNet::Connection.
 
+	virtual void readEvent() ; 
+		///< Final override from GNet::EventHandler.
+
+	virtual void onException( std::exception & ) ;
+		///< Final override from GNet::EventHandler.
+
+	void doDeleteThis( int ) ;
+		///< Does delete this. Should only be used by 
+		///< the GNet::Server class.
+
+protected:
 	virtual ~ServerPeer() ;
 		///< Destructor. Note that objects will delete themselves 
 		///< when they detect that the connection has been 
 		///< lost -- see doDelete().
 
-protected:
 	virtual void onDelete() = 0 ;
 		///< Called just before destruction. (Note that the
 		///< object typically deletes itself.)
@@ -225,8 +243,6 @@ protected:
 private:
 	ServerPeer( const ServerPeer & ) ; // not implemented
 	void operator=( const ServerPeer & ) ; // not implemented
-	virtual void readEvent() ; // from EventHandler
-	virtual void onException( std::exception & ) ;
 	void onTimeout() ;
 
 private:

@@ -42,6 +42,7 @@ struct App : public Main::Output
 
 int main( int argc , char * argv [] )
 {
+	bool ok = false ;
 	try
 	{
 		G::Arg arg( argc , argv ) ;
@@ -51,7 +52,7 @@ int main( int argc , char * argv [] )
 		{
 			main.run() ;
 		}
-		return main.prepareError() ? EXIT_FAILURE : EXIT_SUCCESS ;
+		ok = ! main.prepareError() ;
 	}
 	catch( std::exception & e )
 	{
@@ -61,6 +62,6 @@ int main( int argc , char * argv [] )
 	{
 		std::cerr << G::Arg::prefix(argv) << ": unrecognised exception" << std::endl ;
 	}
-	return EXIT_FAILURE ;
+	return ok ? EXIT_SUCCESS : EXIT_FAILURE ;
 }
 

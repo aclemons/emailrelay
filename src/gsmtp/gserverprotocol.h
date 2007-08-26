@@ -110,6 +110,13 @@ public:
 		///< The string is expected to be CR-LF terminated.
 		///< Throws ProtocolDone at the end of the protocol.
 
+protected:
+	virtual void onTimeout() ; 
+		///< Final override from GNet::AbstractTimer.
+
+	virtual void onTimeoutException( std::exception & ) ;
+		///< Final override from GNet::AbstractTimer.
+
 private:
 	enum Event
 	{
@@ -123,6 +130,7 @@ private:
 		eRcpt ,
 		eMail ,
 		eVrfy ,
+		eVrfyReply ,
 		eHelp ,
 		eAuth ,
 		eAuthData ,
@@ -137,6 +145,11 @@ private:
 		sIdle ,
 		sGotMail ,
 		sGotRcpt ,
+		sVrfyIdle ,
+		sVrfyGotMail ,
+		sVrfyGotRcpt ,
+		sVrfyTo1 ,
+		sVrfyTo2 ,
 		sData ,
 		sProcessing ,
 		sAuth ,
@@ -148,8 +161,6 @@ private:
 private:
 	ServerProtocol( const ServerProtocol & ) ; // not implemented
 	void operator=( const ServerProtocol & ) ; // not implemented
-	virtual void onTimeout() ; // from AbstractTimer
-	virtual void onTimeoutException( std::exception & ) ; // from AbstractTimer
 	void send( std::string ) ;
 	Event commandEvent( const std::string & ) const ;
 	std::string commandWord( const std::string & line ) const ;
@@ -177,7 +188,10 @@ private:
 	void doContent( const std::string & , bool & ) ;
 	void doEot( const std::string & , bool & ) ;
 	void doVrfy( const std::string & , bool & ) ;
+	void doVrfyReply( const std::string & line , bool & ) ;
+	void doVrfyToReply( const std::string & line , bool & ) ;
 	void doNoRecipients( const std::string & , bool & ) ;
+	void verifyDone( std::string , Verifier::Status status ) ;
 	void sendBadFrom( std::string ) ;
 	void sendChallenge( const std::string & ) ;
 	void sendBadTo( const std::string & , bool ) ;
@@ -204,9 +218,9 @@ private:
 	std::pair<std::string,std::string> parse( const std::string & ) const ;
 	std::pair<std::string,std::string> parseFrom( const std::string & ) const ;
 	std::pair<std::string,std::string> parseTo( const std::string & ) const ;
-	std::string parseMailbox( const std::string & ) const ;
+	std::string parseToParameter( const std::string & ) const ;
 	std::string parsePeerName( const std::string & ) const ;
-	Verifier::Status verify( const std::string & , const std::string & ) const ;
+	void verify( const std::string & , const std::string & ) ;
 
 private:
 	Sender & m_sender ;
@@ -237,13 +251,13 @@ public:
 			///< Constructor.
 
 	virtual std::string greeting() const ;
-		///< From ServerProtocol::Text.
+		///< Final override from GSmtp::ServerProtocol::Text.
 
 	virtual std::string hello( const std::string & peer_name_from_helo ) const ;
-		///< From ServerProtocol::Text.
+		///< Final override from GSmtp::ServerProtocol::Text.
 
 	virtual std::string received( const std::string & peer_name_from_helo ) const ;
-		///< From ServerProtocol::Text.
+		///< Final override from GSmtp::ServerProtocol::Text.
 
 	static std::string receivedLine( const std::string & peer_name_from_helo , const std::string & peer_address , 
 		const std::string & thishost ) ;

@@ -23,10 +23,13 @@ mk_sources=\
 	gbase64.cpp \
 	gclientprotocol.cpp \
 	gexecutableprocessor.cpp \
+	gexecutableverifier.cpp \
+	gfactoryparser.cpp \
 	gfilestore.cpp \
 	gmessagestore.cpp \
 	gmessagestore_win32.cpp \
 	gnetworkprocessor.cpp \
+	gnetworkverifier.cpp \
 	gnewfile.cpp \
 	gnewmessage.cpp \
 	gnullprocessor.cpp \
@@ -41,9 +44,12 @@ mk_sources=\
 	gserverprotocol.cpp \
 	gsmtpclient.cpp \
 	gsmtpserver.cpp \
+	gspamclient.cpp \
+	gspamprocessor.cpp \
 	gstoredfile.cpp \
 	gstoredmessage.cpp \
-	gverifier.cpp
+	gverifier.cpp \
+	gverifierfactory.cpp
 
 mk_target=gsmtp.a
 

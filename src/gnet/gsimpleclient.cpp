@@ -185,8 +185,9 @@ const GNet::StreamSocket & GNet::SimpleClient::s() const
 
 void GNet::SimpleClient::close()
 {
-	delete m_s ;
+	StreamSocket * s = m_s ;
 	m_s = NULL ;
+	delete s ;
 }
 
 bool GNet::SimpleClient::connected() const
@@ -216,6 +217,7 @@ bool GNet::SimpleClient::startConnecting()
 
 	// create and open a socket
 	//
+	delete m_s ; m_s = NULL ; // just in case -- should be null
 	m_s = new StreamSocket( m_remote.address() ) ;
 	if( !s().valid() )
 		throw ConnectError( "cannot open socket" ) ;

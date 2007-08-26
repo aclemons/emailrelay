@@ -65,18 +65,20 @@ protected:
 		///< Called when all residual data has been sent.
 
 	virtual void onSendImp() ;
-		///< Called just before send() returns. The default
-		///< implementation does nothing. Overrides typically 
-		///< start a response timer.
+		///< Called just before send() returns. The default 
+		///< implementation does nothing. Overridable. 
+		///< Overrides typically start a response timer.
+
+	virtual void onWriteable() ;
+		///< Final override from SimpleClient.
 
 private:
-	virtual void onWriteable() ;
 	void logFlowControlReleased() const ;
 	void logFlowControlAsserted() const ;
 
 private:
-	BufferedClient( const BufferedClient& ) ; // Not implemented.
-	void operator=( const BufferedClient& ) ; // Not implemented.
+	BufferedClient( const BufferedClient& ) ; // not implemented
+	void operator=( const BufferedClient& ) ; // not implemented
 
 private:
 	Sender m_sender ;

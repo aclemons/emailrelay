@@ -16,17 +16,17 @@
 #
 
 EXTRA_DIST = emailrelay.sh_ txt2html.sh_ txt2mu.sh_ mu2html.sh_ mu2docbook.sh_ expand.sh_ emailrelay-notify.sh_ emailrelay-resubmit.sh_ emailrelay-deliver.sh_ emailrelay-process.sh_ emailrelay-runperl.js emailrelay-resubmit.js emailrelay-submit.sh_
-noinst_SCRIPTS = emailrelay-runperl.js emailrelay-resubmit.js
+work_scripts = txt2mu.sh mu2html.sh mu2docbook.sh expand.sh txt2html.sh emailrelay.sh
+noinst_SCRIPTS = emailrelay-runperl.js emailrelay-resubmit.js $(work_scripts)
 e_init_SCRIPTS = emailrelay
 e_examples_DATA = emailrelay-process.sh emailrelay-notify.sh emailrelay-deliver.sh emailrelay-resubmit.sh emailrelay-submit.sh
-work_scripts = txt2mu.sh mu2html.sh mu2docbook.sh expand.sh txt2html.sh emailrelay.sh
 
 CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts)
 
 SUFFIXES = .sh_ .sh
 
 .sh_.sh:
-	cat $(srcdir)/../bin/$*.sh_ | sed "s%__SPOOL_DIR__%${e_spooldir}%g;s%__SBIN_DIR__%${sbindir}%g" > $*.tmp && mv $*.tmp $*.sh 
+	cat $(srcdir)/../bin/$*.sh_ | sed "s%__SPOOL_DIR__%${e_spooldir}%g;s%__SBIN_DIR__%${sbindir}%g;"'s/\[:digit:\]/0-9/g;s/\[:space:\]/ \\t/g' > $*.tmp && mv $*.tmp $*.sh 
 	chmod ugo+x $*.sh
 
 emailrelay: emailrelay.sh

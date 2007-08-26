@@ -25,10 +25,8 @@
 #include "gcleanup.h"
 #include "gfile.h"
 #include "gdebug.h"
-#include <cstdlib> // std::malloc()
-#include <cstring> // std::strdup()
 #include <fstream>
-#include <fcntl.h>
+#include <string>
 
 G::PidFile::PidFile()
 {

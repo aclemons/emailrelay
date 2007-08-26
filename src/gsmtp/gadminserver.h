@@ -60,13 +60,20 @@ public:
 	void notify( const std::string & s0 , const std::string & s1 , const std::string & s2 ) ;
 		///< Called when something happens.
 
+protected:
+	virtual void onSendComplete() ; 
+		///< Final override from GNet::BufferedServerPeer.
+
+	virtual bool onReceive( const std::string & ) ;
+		///< Final override from GNet::BufferedServerPeer.
+
+	virtual void onDelete() ; 
+		///< Final override from GNet::ServerPeer.
+
 private:
 	AdminServerPeer( const AdminServerPeer & ) ;
 	void operator=( const AdminServerPeer & ) ;
-	virtual void onSendComplete() ; // from GNet::BufferedServerPeer
-	virtual void onDelete() ; // from GNet::ServerPeer
-	virtual bool onReceive( const std::string & ) ; // from GNet::BufferedServerPeer
-	virtual void clientDone( std::string , bool ) ; // Client::doneSignal()
+	void clientDone( std::string , bool ) ; 
 	static bool is( const std::string & , const std::string & ) ;
 	static std::pair<bool,std::string> find( const std::string & line , const G::StringMap & map ) ;
 	bool flush() ;
@@ -134,10 +141,13 @@ public:
 	void unregister( AdminServerPeer * ) ;
 		///< Called from the AdminServerPeer destructor.
 
-private:
+protected:
 	virtual GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) ;
-	AdminServer( const AdminServer & ) ;
-	void operator=( const AdminServer & ) ;
+		///< Final override from GNet::MultiServer.
+
+private:
+	AdminServer( const AdminServer & ) ; // not implemented
+	void operator=( const AdminServer & ) ; // not implemented
 
 private:
 	typedef std::list<AdminServerPeer*> PeerList ;

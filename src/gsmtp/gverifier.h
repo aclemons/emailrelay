@@ -24,20 +24,64 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gaddress.h"
-#include "gpath.h"
+#include "gslot.h"
 #include "gexception.h"
-#include "gexecutable.h"
 #include <string>
 
 /// \namespace GSmtp
 namespace GSmtp
 {
+	class VerifierStatus ;
 	class Verifier ;
 }
 
+/// \class GSmtp::VerifierStatus
+/// A structure returned by GSmtp::Verifier to describe 
+/// the status of a rcpt-to recipient.
+///
+/// If describing an invalid recipient then 'is_valid' is set false 
+/// and a 'reason' is supplied.
+///
+/// If a valid local recipient then 'is_local' is set true, 'full_name' 
+/// is set to the full description of the mailbox and 'address' is set 
+/// to the recipient's mailbox name (which should not have an at sign).
+///
+/// If a valid remote recipient then 'is_local' is set false, 'full_name' 
+/// is empty, and 'address' is copied from the original recipient 'to' address.
+///
+/// The 'help' string can be added by the user of the verifier to give 
+/// more context in the log in addition to 'reason'.
+///
+class GSmtp::VerifierStatus  
+{ 
+public:
+	bool is_valid ;
+	bool is_local ; 
+	bool temporary ;
+	std::string full_name ; 
+	std::string address ; 
+	std::string reason ;
+	std::string help ;
+
+	VerifierStatus() ;
+		///< Default constructor for an invalid remote mailbox.
+
+	explicit VerifierStatus( const std::string & ) ;
+		///< Constructor for a valid remote mailbox with the
+		///< given 'address' field.
+
+	static VerifierStatus parse( const std::string & str , std::string & to_ref ) ;
+		///< Parses a str() string into a structure and a 
+		///< recipient 'to' address (by reference).
+
+	std::string str( const std::string & to ) const ;
+		///< Returns a string representation of the structure
+		///< plus the original recipient 'to' address.
+} ;
+
 /// \class GSmtp::Verifier
-/// A class which verifies recipient addresses.
-/// This functionality is used in the VRFY and RCPT commands
+/// An asynchronous interface that verifies recipient 'to'
+/// addresses. This functionality is used in the VRFY and RCPT commands 
 /// in the SMTP server-side protocol.
 /// \see GSmtp::ServerProtocol
 ///
@@ -46,56 +90,31 @@ class GSmtp::Verifier
 public:
 	G_EXCEPTION( AbortRequest , "verifier abort request" ) ;
 
-	/// A structure returned by GSmtp::Verifier::verify().
-	struct Status 
-	{ 
-		bool is_valid ;
-		bool is_local ; 
-		bool temporary ;
-		std::string full_name ; 
-		std::string address ; 
-		std::string reason ;
-		std::string help ;
-		Status() ;
-	} ;
+	typedef VerifierStatus Status ;
 
-	explicit Verifier( const G::Executable & exe ) ;
-		///< Constructor. If an executable path is given (ie. exe.exe() 
-		///< is not G::Path()) then it is used for external verification.
-		///< Otherwise the internal "accept-all-as-remote" verifier is 
-		///< used.
-
-	Status verify( const std::string & rcpt_to_parameter ,
+	virtual void verify( const std::string & rcpt_to_parameter ,
 		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
-		const std::string & auth_mechanism , const std::string & auth_extra ) const ;
-			///< Checks a recipient address returning a structure which 
-			///< indicates whether the address is local, what the full name 
-			///< is, and the canonical address.
+		const std::string & auth_mechanism , const std::string & auth_extra ) = 0 ;
+			///< Checks a recipient address and asynchronously returns a 
+			///< structure to indicate whether the address is a local
+			///< mailbox, what the full name is, and the canonical address.
 			///<
-			///< If invalid then 'is_valid' is set false and a 'reason' 
-			///< is supplied.
-			///<
-			///< If valid and syntactically local then 'is_local' is set 
-			///< true, 'full_name' is set to the full description
-			///< and 'address' is set to the canonical local address 
-			///< (without an at sign).
-			///<
-			///< If valid and syntactically remote, then 'is_local' is 
-			///< set false, 'full_name' is empty, and 'address' is copied 
-			///< from 'recipient_address'.
-			///<
-			///< The 'from' address is passed in for RCPT commands, but 
+			///< The 'mail-from' address is passed in for RCPT commands, but 
 			///< not VRFY.
+			///<
+			///< Throws an AbortRequest if the verifier wants to terminate 
+			///< the connection.
 
-private:
-	Status verifyInternal( const std::string & , const std::string & , const std::string & , 
-		const std::string & ) const ;
-	Status verifyExternal( const std::string & , const std::string & , const std::string & , 
-		const std::string & , const std::string & , const GNet::Address & ,
-		const std::string & , const std::string & ) const ;
+	virtual G::Signal2<std::string,VerifierStatus> & doneSignal() = 0 ;
+		///< Returns a signal that is emit()ed when the verify() request
+		///< is complete. The first signal parameter is the mailbox
+		///< name (ie. rcpt_to_parameter).
 
-private:
-	G::Executable m_external ;
+	virtual void reset() = 0 ;
+		///< Aborts any current processing.
+
+	virtual ~Verifier() ;
+		///< Destructor.
 } ;
 
 #endif

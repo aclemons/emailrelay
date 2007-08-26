@@ -5,15 +5,17 @@ E-MailRelay Change Log
 ----------
 * GPLv3 licence (see "http://gplv3.fsf.org").
 * New "--prompt-timeout" switch for the timeout when waiting for the initial 220 prompt from the SMTP server.
-* Fix for flow-control assertion error when the pop server sends a very long list of spooled messages.
+* Fix for flow-control assertion error when the POP server sends a very long list of spooled messages.
 * Wildcard matching for trusted IP addresses in the authentication secrets file can now use CIDR notation.
 * More fine-grained switching of effective user-id to read files and directories when running as root.
+* Fewer new client connections when proxying.
 * The server drops the connection if a remote SMTP client causes too many protocol errors.
-* More rigorous implementation of "--hidden" on Windows.
+* More complete implementation of "--hidden" on Windows.
 * Scanner switch ("--scanner") replaced by a more general "--filter" and "--client-filter" switch syntax.
+* Support for address verification ("--verifier") over the network.
 * Better support for running as a Windows service ("emailrelay-service --install").
 * Utility filter program "emailrelay-filter-copy" exits with 100 if it deletes the envelope file.
-* Windows "cscript.exe" wrapper is added automatically to non-"bat"/"exe" "--filter" command-lines.
+* Windows "cscript.exe" wrapper is added automatically to non-bat/exe "--filter" command-lines.
 * Installation GUI makes backups of the files it edits and preserves authentication secrets.
 * Installation GUI can install "init.d" links.
 * Experimental SpamAssassin spamc/spamd protocol support.

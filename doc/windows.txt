@@ -35,8 +35,11 @@ at boot-time you must first create a one-line batch file called
 "emailrelay-start.bat" in the main E-MailRelay directory. This should contain
 the full server startup command, including the "--hidden" and "--no-daemon"
 switches. Then run "emailrelay-service --install" to install the service.
+
 Note that the batch file and the main E-MailRelay executable must be in the same
-directory.
+directory and that the batch file is only read at install time; if you need to 
+change the command-line switches for the service you must edit the service 
+properties.
 
 Diagnostics
 -----------

@@ -61,7 +61,7 @@ void G::Log::flush()
 {
 	if( active() )
 	{
-		G::LogOutput::output( m_severity , m_file , m_line , m_ss.str().c_str() ) ;
+		G::LogOutput::output( m_severity , m_file , m_line , m_ss.str() ) ;
 	}
 }
 

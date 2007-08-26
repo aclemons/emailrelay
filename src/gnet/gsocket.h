@@ -124,8 +124,8 @@ public:
 		///< less than 'len' then assume that there was a partial 
 		///< flow control problem (do not use eWouldBlock()).
 		///<
-		///< (This is virtual to allow overloading --
-		///<  not overriding -- in derived classes.)
+		///< This method is virtual to allow overloading (sic)
+		///< in derived classes.
 
 	bool eWouldBlock() ;
 		///< Returns true if the previous socket operation
@@ -283,14 +283,9 @@ public:
 		///< a new()ed socket and the peer address.
 
 private:
-	StreamSocket( const StreamSocket & ) ;
-		///< Copy constructor. Not implemented.
-
-	void operator=( const StreamSocket & ) ;
-		///< Assignment operator. Not implemented.
-
-	StreamSocket( Descriptor s ) ;
-		///< A private constructor used in accept().
+	StreamSocket( const StreamSocket & ) ; // not implemented
+	void operator=( const StreamSocket & ) ; // not implemented
+	StreamSocket( Descriptor s ) ; // A private constructor used in accept().
 } ;
 
 ///
@@ -332,11 +327,8 @@ public:
 		///< of the previous Socket::connect().
 
 private:
-	DatagramSocket( const DatagramSocket & ) ;
-		///< Copy constructor. Not implemented.
-
-	void operator=( const DatagramSocket & ) ;
-		///< Assignment operator. Not implemented.
+	DatagramSocket( const DatagramSocket & ) ; // not implemented
+	void operator=( const DatagramSocket & ) ; // not implemented
 } ;
 
 ///

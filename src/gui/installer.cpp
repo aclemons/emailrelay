@@ -77,7 +77,7 @@ struct Helper
 	static bool isWindows() ;
 	static bool isMac() ;
 	static std::string exe() ;
-	static std::string quote( const std::string & ) ;
+	static std::string quote( std::string , bool = false ) ;
 	static std::string str( const G::Strings & list ) ;
 } ;
 
@@ -839,9 +839,8 @@ LinkInfo InstallerImp::targetLinkInfo() const
 
 bool InstallerImp::addIndirection( LinkInfo & link_info ) const
 {
-	// create a batch script if the command-line is too long
-	//bool long_commandline = (link_info.target.str().length()+1+str(link_info.args).length()) >= 235U ;
-	bool use_batch_file = isWindows() ; // && long_commandline ;
+	// create a batch script on windows -- (the service stuff requires a batch file)
+	bool use_batch_file = isWindows() ;
 	if( use_batch_file )
 	{
 		link_info.target = G::Path( value("dir-install") , "emailrelay-start.bat" ) ;
@@ -865,7 +864,15 @@ G::Strings InstallerImp::commandlineArgs( bool short_ ) const
 		std::string dash = switch_.length() > 1U ? "--" : "-" ;
 		result.push_back( dash + switch_ ) ;
 		if( ! switch_arg.empty() )
-			result.push_back( quote(switch_arg) ) ;
+		{
+			// (move this?)
+			bool is_commandline = 
+				result.back() == "--filter" || result.back() == "-z" ||
+				result.back() == "--client-filter" || result.back() == "-Y" ||
+				result.back() == "--verifier" || result.back() == "-Z" ;
+
+			result.push_back( quote(switch_arg,is_commandline) ) ;
+		}
 	}
 	return result ;
 }
@@ -1055,8 +1062,12 @@ bool Helper::isMac()
 	return G::File::exists("/Library/StartupItems") ; // could do better
 }
 
-std::string Helper::quote( const std::string & s )
+std::string Helper::quote( std::string s , bool escape_spaces )
 {
+	if( escape_spaces )
+	{
+		G::Str::replaceAll( s , " " , "\\ " ) ;
+	}
 	return s.find_first_of(" \t") == std::string::npos ? s : (std::string()+"\""+s+"\"") ;
 }
 

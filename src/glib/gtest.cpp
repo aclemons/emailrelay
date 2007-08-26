@@ -31,7 +31,7 @@ bool G::Test::enabled( const std::string & name )
 
  #ifdef G_DEBUG
 	static const char * p = std::getenv("G_TEST") ;
-	result = p ? ( std::string(p).find(name) != std::string::npos ) : false ;
+	result = p ? ( std::string(p).find(name) != std::string::npos ) : false ; // (could do better)
  #endif
 
 	if( result )

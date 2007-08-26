@@ -49,18 +49,20 @@ libgsmtp_a_AR = $(AR) $(ARFLAGS)
 libgsmtp_a_LIBADD =
 am_libgsmtp_a_OBJECTS = gadminserver.$(OBJEXT) gbase64.$(OBJEXT) \
 	gclientprotocol.$(OBJEXT) gexecutableprocessor.$(OBJEXT) \
+	gexecutableverifier.$(OBJEXT) gfactoryparser.$(OBJEXT) \
 	gfilestore.$(OBJEXT) gmessagestore.$(OBJEXT) \
 	gmessagestore_unix.$(OBJEXT) gnetworkprocessor.$(OBJEXT) \
-	gnewfile.$(OBJEXT) gnewmessage.$(OBJEXT) \
-	gnullprocessor.$(OBJEXT) gprocessor.$(OBJEXT) \
-	gprocessorfactory.$(OBJEXT) gprotocolmessage.$(OBJEXT) \
-	gprotocolmessageforward.$(OBJEXT) \
+	gnetworkverifier.$(OBJEXT) gnewfile.$(OBJEXT) \
+	gnewmessage.$(OBJEXT) gnullprocessor.$(OBJEXT) \
+	gprocessor.$(OBJEXT) gprocessorfactory.$(OBJEXT) \
+	gprotocolmessage.$(OBJEXT) gprotocolmessageforward.$(OBJEXT) \
 	gprotocolmessagestore.$(OBJEXT) grequestclient.$(OBJEXT) \
 	gsasl_native.$(OBJEXT) gsecrets.$(OBJEXT) \
 	gserverprotocol.$(OBJEXT) gsmtpclient.$(OBJEXT) \
 	gsmtpserver.$(OBJEXT) gspamclient.$(OBJEXT) \
 	gspamprocessor.$(OBJEXT) gstoredfile.$(OBJEXT) \
-	gstoredmessage.$(OBJEXT) gverifier.$(OBJEXT)
+	gstoredmessage.$(OBJEXT) gverifier.$(OBJEXT) \
+	gverifierfactory.$(OBJEXT)
 libgsmtp_a_OBJECTS = $(am_libgsmtp_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -203,6 +205,10 @@ libgsmtp_a_SOURCES = \
 	gclientprotocol.h \
 	gexecutableprocessor.cpp \
 	gexecutableprocessor.h \
+	gexecutableverifier.cpp \
+	gexecutableverifier.h \
+	gfactoryparser.cpp \
+	gfactoryparser.h \
 	gfilestore.cpp \
 	gfilestore.h \
 	gmessagestore.cpp \
@@ -210,6 +216,8 @@ libgsmtp_a_SOURCES = \
 	gmessagestore_unix.cpp \
 	gnetworkprocessor.cpp \
 	gnetworkprocessor.h \
+	gnetworkverifier.cpp \
+	gnetworkverifier.h \
 	gnewfile.cpp \
 	gnewfile.h \
 	gnewmessage.cpp \
@@ -248,7 +256,9 @@ libgsmtp_a_SOURCES = \
 	gstoredmessage.cpp \
 	gstoredmessage.h \
 	gverifier.cpp \
-	gverifier.h
+	gverifier.h \
+	gverifierfactory.cpp \
+	gverifierfactory.h
 
 all: all-am
 
@@ -301,10 +311,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbase64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gclientprotocol.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutableprocessor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutableverifier.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfactoryparser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilestore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnetworkprocessor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnetworkverifier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewmessage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnullprocessor.Po@am__quote@
@@ -324,6 +337,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstoredfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstoredmessage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifier.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifierfactory.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

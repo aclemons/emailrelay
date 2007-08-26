@@ -66,36 +66,36 @@ public:
 		///< Destructor.
 
 	virtual bool valid() const ;
-		///< Returns false if the path was empty.
+		///< Final override from GSmtp::Valid virtual base.
 		///<
-		///< Override from Valid virtual base class.
+		///< The implementation returns false if the path was empty.
 
 	virtual std::string id( const std::string & mechanism ) const ;
+		///< Final override from GSmtp::SaslClient::Secrets.
+		///<
 		///< Returns the default id for client-side
 		///< authentication.
-		///<
-		///< Override from SaslClient::Secrets.
 
 	virtual std::string secret( const std::string & mechanism ) const ;
+		///< Final override from GSmtp::SaslClient::Secrets.
+		///<
 		///< Returns the default secret for client-side
 		///< authentication.
-		///<
-		///< Override from SaslClient::Secrets.
 
 	virtual std::string secret(  const std::string & mechanism , const std::string & id ) const ;
+		///< Final override from GSmtp::SaslServer::Secrets.
+		///<
 		///< Returns the given user's secret for server-side
 		///< authentication. Returns the empty string if not a 
 		///< valid id.
-		///<
-		///< Override from SaslServer::Secrets.
 
 	virtual bool contains( const std::string & mechanism ) const ;
+		///< Final override from GSmtp::SaslServer::Secrets.
+		///<
 		///< Returns true if there is one or more server 
 		///< secrets using the given mechanism. This can 
 		///< be used to limit the list of mechanisms
 		///< advertised by a server.
-		///<
-		///< Override from SaslServer::Secrets.
 
 private:
 	Secrets( const Secrets & ) ; // not implemented

@@ -102,8 +102,9 @@ void GNet::MultiServer::init( const AddressList & address_list )
 
 void GNet::MultiServer::init( const Address & address )
 {
+	// note that the Ptr class does not have proper value semantics...
 	MultiServerPtr ptr( new MultiServerImp(*this,address) ) ;
-	m_server_list.push_back( MultiServerPtr() ) ;
+	m_server_list.push_back( MultiServerPtr() ) ; // copy a null pointer into the list
 	m_server_list.back().swap( ptr ) ;
 }
 
@@ -175,16 +176,25 @@ GNet::MultiServerPtr::MultiServerPtr( ServerImp * p ) :
 {
 }
 
+GNet::MultiServerPtr::MultiServerPtr( const MultiServerPtr & other ) :
+	m_p(other.m_p)
+{
+}
+
 GNet::MultiServerPtr::~MultiServerPtr()
 {
 	delete m_p ;
+}
+
+void GNet::MultiServerPtr::operator=( const MultiServerPtr & rhs )
+{
+	m_p = rhs.m_p ;
 }
 
 void GNet::MultiServerPtr::swap( MultiServerPtr & other )
 {
 	std::swap( other.m_p , m_p ) ;
 }
-
 
 GNet::MultiServerImp * GNet::MultiServerPtr::get()
 {

@@ -119,7 +119,7 @@ bool GSmtp::AdminServerPeer::onReceive( const std::string & line )
 	}
 	else if( find(line,m_extra_commands).first )
 	{
-		send( find(line,m_extra_commands).second ) ;
+		sendLine( find(line,m_extra_commands).second ) ;
 		prompt() ;
 	}
 	else if( line.find_first_not_of(" \r\n\t") != std::string::npos )

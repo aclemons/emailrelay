@@ -198,9 +198,6 @@ EXTRA_DIST = \
 	mac.mak \
 	pack.cpp \
 	run.c \
-	service_install.cpp \
-	service_install.h \
-	service_wrapper.cpp \
 	mock
 
 
@@ -223,6 +220,7 @@ EXTRA_DIST = \
 @GUI_TRUE@	-I$(top_srcdir)/src/gnet \
 @GUI_TRUE@	-I$(top_srcdir)/src/gsmtp \
 @GUI_TRUE@	-I$(top_srcdir)/src/gpop \
+@GUI_TRUE@	-I$(top_srcdir)/src/main \
 @GUI_TRUE@	-DG_SPOOLDIR=\"$(e_spooldir)\" \
 @GUI_TRUE@	-DG_SYSCONFDIR=\"$(e_sysconfdir)\" \
 @GUI_TRUE@	-DG_LIBEXECDIR=\"$(e_libexecdir)\" \

@@ -192,8 +192,7 @@ top_srcdir = @top_srcdir@
 #
 EXTRA_DIST = emailrelay.spec ChangeLog README.windows
 SUBDIRS = src bin lib etc doc test
-e_doc_DATA = NEWS README changelog.gz
-CLEANFILES = changelog.gz
+e_doc_DATA = NEWS README ChangeLog
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -564,7 +563,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -648,8 +646,6 @@ uninstall-am: uninstall-e_docDATA uninstall-local
 	pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
 	uninstall-e_docDATA uninstall-local
 
-changelog.gz: ChangeLog
-	if test -n "$(GZIP)" ; then $(GZIP) -c $(top_srcdir)/ChangeLog > changelog.tmp && mv changelog.tmp changelog.gz ; fi
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_docdir) 2>/dev/null
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

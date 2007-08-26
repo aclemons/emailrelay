@@ -16,9 +16,6 @@
 #
 EXTRA_DIST = emailrelay.spec ChangeLog README.windows
 SUBDIRS = src bin lib etc doc test
-e_doc_DATA = NEWS README changelog.gz
-CLEANFILES = changelog.gz
-changelog.gz: ChangeLog
-	if test -n "$(GZIP)" ; then $(GZIP) -c $(top_srcdir)/ChangeLog > changelog.tmp && mv changelog.tmp changelog.gz ; fi
+e_doc_DATA = NEWS README ChangeLog
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_docdir) 2>/dev/null

@@ -483,7 +483,7 @@ bool GSmtp::ClientProtocol::sendLine( std::string & line )
 			bool all_sent = m_sender.protocolSend( line , line.at(1U) == '.' ? 0U : 1U ) ;
 			if( !all_sent && m_response_timeout != 0U )
 				startTimer( m_response_timeout ) ; // use response timer for when flow-control asserted
-			ok = true ;
+			ok = all_sent ;
 		}
 	}
 	return ok ;

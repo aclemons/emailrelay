@@ -61,18 +61,24 @@ unsigned int G::Str::replaceAll( std::string &s , const std::string &from ,
 	return count ;
 }
 
-void G::Str::trimLeft( std::string & s , const std::string & ws )
+void G::Str::trimLeft( std::string & s , const std::string & ws , size_type limit )
 {
 	size_type n = s.find_first_not_of( ws ) ;
+	if( limit != 0U && ( n == std::string::npos || n > limit ) )
+		n = limit >= s.length() ? std::string::npos : limit ;
+G_ASSERT(n==std::string::npos||n<s.length());
 	if( n == std::string::npos )
 		s = std::string() ;
 	else if( n != 0U )
 		s.erase( 0U , n ) ;
 }
 
-void G::Str::trimRight( std::string & s , const std::string & ws )
+void G::Str::trimRight( std::string & s , const std::string & ws , size_type limit )
 {
 	size_type n = s.find_last_not_of( ws ) ;
+	if( limit != 0U && ( n == std::string::npos || s.length() > (limit+n+1U) ) )
+		n = limit >= s.length() ? std::string::npos : (s.length()-limit-1U) ;
+G_ASSERT(n==std::string::npos||n<s.length());
 	if( n == std::string::npos )
 		s = std::string() ;
 	else if( n != 0U )
@@ -412,6 +418,10 @@ void G::Str::addPrintable( std::string & result , char c , unsigned char uc , ch
 		{
 			result.append( 1U , 'n' ) ;
 		}
+		else if( c == '\r' ) 
+		{
+			result.append( 1U , 'r' ) ;
+		}
 		else if( c == '\t' ) 
 		{
 			result.append( 1U , 't' ) ;
@@ -432,19 +442,10 @@ void G::Str::addPrintable( std::string & result , char c , unsigned char uc , ch
 	}
 }
 
-std::string G::Str::readLineFrom( std::istream & stream , char ignore )
-{
-	std::string line ;
-	G_IGNORE std::getline( stream , line ) ;
-	if( ignore != '\0' )
-		replaceAll( line , std::string(1U,ignore) , std::string() ) ;
-	return line ;
-}
-
 std::string G::Str::readLineFrom( std::istream & stream , const std::string & eol )
 {
 	std::string result ;
-	readLineFrom( stream , eol , result ) ;
+	readLineFrom( stream , eol.empty() ? std::string(1U,'\n') : eol , result ) ;
 	return result ;
 }
 
@@ -692,6 +693,22 @@ G::Strings G::Str::keys( const StringMap & map )
 std::string G::Str::ws()
 {
 	return std::string(" \t\n\r") ;
+}
+
+std::string G::Str::head( const std::string & in , std::string::size_type pos , const std::string & default_ )
+{
+	return
+		pos == std::string::npos ?
+			default_ :
+			( pos == 0U ? std::string() : in.substr(0U,pos) ) ;
+}
+
+std::string G::Str::tail( const std::string & in , std::string::size_type pos , const std::string & default_ )
+{
+	return
+		pos == std::string::npos ?
+			default_ :
+			( (pos+1U) == in.length() ? std::string() : in.substr(pos+1U) ) ;
 }
 
 /// \file gstr.cpp

@@ -66,15 +66,13 @@ public:
 		///< Returns the storage path.
 
 	virtual bool valid() const ;
-		///< Returns true. 
-		///<
-		///< Override from Valid virtual base class.
+		///< Returns true. Final override from GSmtp::Valid virtual base class.
 
 	virtual std::string secret(  const std::string & mechanism , const std::string & id ) const ;
 		///< Returns the given user's secret. Returns the
 		///< empty string if not a valid id.
 		///<
-		///< Override from SaslServer::Secrets.
+		///< Final override from GSmtp::SaslServer::Secrets.
 
 	bool contains( const std::string & mechanism ) const ;
 		///< Returns true if there is one or more secrets 

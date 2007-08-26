@@ -109,11 +109,16 @@ public:
 		///< Constructor. The EventHandler reference is required
 		///< in case the timeout handler throws.
 
+protected:
+	virtual void onTimeout() ; 
+		///< Final override from GNet::AbstractTimer.
+
+	virtual void onTimeoutException( std::exception & ) ;
+		///< Final override from GNet::AbstractTimer.
+
 private:
 	Timer( const Timer<T> & ) ; // not implemented
 	void operator=( const Timer<T> & ) ; // not implemented
-	virtual void onTimeout() ; // from AbstractTimer
-	virtual void onTimeoutException( std::exception & ) ; // from AbstractTimer
 
 private:
 	T & m_t ;

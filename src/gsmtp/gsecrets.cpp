@@ -75,10 +75,8 @@ private:
 // ===
 
 GSmtp::Secrets::Secrets( const std::string & path , const std::string & name , const std::string & type ) :
-	m_imp(NULL)
+	m_imp(new SecretsImp(path,true,name,type))
 {
-	const bool is_auto = true ;
-	m_imp = new SecretsImp( path , is_auto , name , type ) ;
 }
 
 GSmtp::Secrets::~Secrets()
@@ -192,7 +190,7 @@ unsigned int GSmtp::SecretsImp::read( std::istream & file )
 	unsigned int count = 0U ;
 	for( unsigned int line_number = 1U ; file.good() ; ++line_number )
 	{
-		std::string line = G::Str::readLineFrom( file , "\n" ) ;
+		std::string line = G::Str::readLineFrom( file ) ;
 		if( !file ) 
 			break ;
 

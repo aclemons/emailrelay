@@ -73,44 +73,44 @@ public:
 		///< Used by FileStore and FileIterator.
 
 	virtual std::string name() const ;
-		///< From StoredMessage.
+		///< Final override from GSmtp::StoredMessage.
 
 	virtual std::string location() const ;
-		///< From StoredMessage.
+		///< Final override from GSmtp::StoredMessage.
 
 	virtual bool eightBit() const ;
-		///< From StoredMessage.
+		///< Final override from GSmtp::StoredMessage.
 
 	virtual const std::string & from() const ;
-		///< From StoredMessage.
+		///< Final override from GSmtp::StoredMessage.
 
 	virtual const G::Strings & to() const ;
-		///< From StoredMessage.
+		///< Final override from GSmtp::StoredMessage.
 
 	virtual std::string authentication() const ;
-		///< From StoredMessage.
+		///< Final override from GSmtp::StoredMessage.
 
 	virtual void destroy() ;
-		///< From StoredMessage.
+		///< Final override from GSmtp::StoredMessage.
 
 	virtual void fail( const std::string & reason ) ;
-		///< From StoredMessage.
+		///< Final override from GSmtp::StoredMessage.
 
 	virtual std::auto_ptr<std::istream> extractContentStream() ;
-		///< From StoredMessage.
+		///< Final override from GSmtp::StoredMessage.
 
 	virtual size_t remoteRecipientCount() const ;
-		///< From StoredMessage.
+		///< Final override from GSmtp::StoredMessage.
 
 	virtual size_t errorCount() const ;
-		///< From StoredMessage.
+		///< Final override from GSmtp::StoredMessage.
 
 	virtual void sync() ;
-		///< From StoredMessage.
+		///< Final override from GSmtp::StoredMessage.
 
 private:
-	StoredFile( const StoredFile & ) ;
-	void operator=( const StoredFile & ) ;
+	StoredFile( const StoredFile & ) ; // not implemented
+	void operator=( const StoredFile & ) ; // not implemented
 	static std::string crlf() ;
 	std::string getline( std::istream & stream ) const ;
 	std::string value( const std::string & s , const std::string & k = std::string() ) const ;

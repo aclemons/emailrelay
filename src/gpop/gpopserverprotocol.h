@@ -197,16 +197,16 @@ public:
 		///< Constructor.
 
 	virtual std::string greeting() const ;
-		///< From ServerProtocol::Text.
+		///< Final override from GPop::ServerProtocol::Text.
 
 	virtual std::string quit() const ;
-		///< From ServerProtocol::Text.
+		///< Final override from GPop::ServerProtocol::Text.
 
 	virtual std::string capa() const ;
-		///< From ServerProtocol::Text.
+		///< Final override from GPop::ServerProtocol::Text.
 
 	virtual std::string user( const std::string & id ) const ;
-		///< From ServerProtocol::Text.
+		///< Final override from GPop::ServerProtocol::Text.
 } ;
 
 #endif

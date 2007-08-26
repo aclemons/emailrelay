@@ -240,7 +240,7 @@ std::auto_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( unsigned long id )
 
 	G_LOG( "GSmtp::FileStore::get: processing message \"" << message->name() << "\"" ) ;
 
-	std::auto_ptr<StoredMessage> message_base_ptr( message.release() ) ;
+	std::auto_ptr<StoredMessage> message_base_ptr( message.release() ) ; // up-cast
 	return message_base_ptr ;
 }
 

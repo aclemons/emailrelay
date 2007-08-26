@@ -2,10 +2,10 @@ Summary: Simple e-mail message transfer agent and proxy using SMTP
 Name: emailrelay
 Version: 1.6
 Release: 1
-License: GPL
+License: GPL3
 Group: System Environment/Daemons
 URL: http://emailrelay.sourceforge.net/
-Source: http://kent.dl.sourceforge.net/sourceforge/emailrelay/emailrelay-src-1.6.tar.gz
+Source: http://sourceforge.net/sourceforge/emailrelay/emailrelay-src-1.6.tar.gz
 BuildRoot: /tmp/emailrelay-install
 
 %description
@@ -30,7 +30,7 @@ Distribution is under the GNU General Public License V3.
 %setup
 
 %build
-./configure --enable-fhs --without-man2html --without-doxygen
+./configure --enable-fhs --disable-gui --without-man2html --without-doxygen
 make
 
 %install
@@ -50,17 +50,46 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %config /etc/emailrelay.conf
 /etc/emailrelay.conf.template
 /etc/init.d/emailrelay
-/usr/lib/emailrelay/emailrelay-filter-copy
+/usr/share/man/man1/emailrelay-submit.1.gz
+/usr/share/man/man1/emailrelay.1.gz
+/usr/share/man/man1/emailrelay-poke.1.gz
+/usr/share/man/man1/emailrelay-passwd.1.gz
+%docdir /usr/share/doc/emailrelay
+/usr/share/doc/emailrelay/index.html
+/usr/share/doc/emailrelay/windows.html
+/usr/share/doc/emailrelay/gsmtp-classes.png
+/usr/share/doc/emailrelay/emailrelay.docbook
+%doc /usr/share/doc/emailrelay/developer.txt
+/usr/share/doc/emailrelay/reference.html
+%doc /usr/share/doc/emailrelay/NEWS
+%doc /usr/share/doc/emailrelay/reference.txt
+/usr/share/doc/emailrelay/developer.html
+/usr/share/doc/emailrelay/auth.png
+/usr/share/doc/emailrelay/emailrelay.css
+/usr/share/doc/emailrelay/sequence-3.png
+/usr/share/doc/emailrelay/gsmtp-serverprotocol.png
+/usr/share/doc/emailrelay/gnet-client.png
+/usr/share/doc/emailrelay/gnet-classes.png
+%doc /usr/share/doc/emailrelay/README
+/usr/share/doc/emailrelay/changelog.html
+%doc /usr/share/doc/emailrelay/userguide.txt
+/usr/share/doc/emailrelay/readme.html
+/usr/share/doc/emailrelay/userguide.html
+%doc /usr/share/doc/emailrelay/ChangeLog
+%doc /usr/share/doc/emailrelay/windows.txt
+/usr/share/doc/emailrelay/emailrelay-man.html
+%dir /usr/lib/emailrelay
+%dir /usr/lib/emailrelay/examples
+/usr/lib/emailrelay/examples/emailrelay-process.sh
+/usr/lib/emailrelay/examples/emailrelay-deliver.sh
+/usr/lib/emailrelay/examples/emailrelay-resubmit.sh
+/usr/lib/emailrelay/examples/emailrelay-notify.sh
+/usr/lib/emailrelay/examples/emailrelay-submit.sh
 /usr/lib/emailrelay/emailrelay-poke
-/usr/lib/emailrelay/examples/*
+/usr/lib/emailrelay/emailrelay-filter-copy
+/usr/sbin/emailrelay-submit
 /usr/sbin/emailrelay
 /usr/sbin/emailrelay-passwd
-/usr/sbin/emailrelay-submit
-/usr/share/doc/emailrelay/*
-/usr/share/doc/emailrelay/index.html
-/usr/share/doc/emailrelay/README
-/usr/share/man/man1/emailrelay*.1.gz
-/var/spool/emailrelay/
 
 %changelog
 

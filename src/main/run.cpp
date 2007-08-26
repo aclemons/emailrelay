@@ -34,6 +34,7 @@
 #include "gadminserver.h"
 #include "gpopserver.h"
 #include "gprocessorfactory.h"
+#include "gverifierfactory.h"
 #include "gslot.h"
 #include "gmonitor.h"
 #include "glocal.h"
@@ -71,6 +72,16 @@ Main::Run::~Run()
 	if( m_store.get() ) m_store->signal().disconnect() ;
 	m_polling_client.doneSignal().disconnect() ;
 	m_polling_client.eventSignal().disconnect() ;
+
+	// avoid 'still reachable' in valgrind leak checks
+	m_polling_client.reset() ;
+	m_poll_timer <<= 0 ;
+	m_admin_server <<= 0 ;
+	m_pop_secrets <<= 0 ;
+	m_client_secrets <<= 0 ;
+	m_store <<= 0 ;
+	m_log_output <<= 0 ;
+	m_cl <<= 0 ;
 }
 
 bool Main::Run::prepareError() const
@@ -296,7 +307,6 @@ void Main::Run::doServing( const GSmtp::Secrets & client_secrets ,
 			store , 
 			client_secrets ,
 			server_secrets , 
-			GSmtp::Verifier(G::Executable(cfg().verifier())) ,
 			serverConfig() ,
 			cfg().immediate() ? cfg().serverAddress() : std::string() ,
 			cfg().connectionTimeout() ,
@@ -400,7 +410,9 @@ GSmtp::Server::Config Main::Run::serverConfig() const
 			smtpIdent() , 
 			cfg().anonymous() ,
 			cfg().filter() ,
-			cfg().filterTimeout() ) ;
+			cfg().filterTimeout() ,
+			cfg().verifier() ,
+			cfg().filterTimeout() ) ; // verifier timeout
 }
 
 GPop::Server::Config Main::Run::popConfig() const
@@ -550,21 +562,15 @@ void Main::Run::checkScripts() const
 {
 	checkProcessorScript( cfg().filter() ) ;
 	checkProcessorScript( cfg().clientFilter() ) ;
-	checkScript( cfg().verifier() ) ;
+	checkVerifierScript( cfg().verifier() ) ;
 }
 
-void Main::Run::checkScript( const std::string & s ) const
+void Main::Run::checkVerifierScript( const std::string & s ) const
 {
-	// parses the complete command-line to get at the executable
-	G::Executable exe( s ) ; 
-
-	std::string reason ;
-	if( !s.empty() && !G::File::exists(exe.exe(),G::File::NoThrow()) ) reason = "no such file" ;
-	if( !s.empty() && !G::File::executable(exe.exe()) ) reason = "probably not executable" ;
-	if( !s.empty() && exe.exe().isRelative() ) reason = "not an absolute path" ;
+	std::string reason = GSmtp::VerifierFactory::check( s ) ;
 	if( !reason.empty() )
 	{
-		G_WARNING( "Main::Run::checkScript: invalid executable: " << exe.exe() << ": " << reason ) ;
+		G_WARNING( "Main::Run::checkScript: invalid verifier \"" << s << "\": " << reason ) ;
 	}
 }
 
@@ -573,7 +579,7 @@ void Main::Run::checkProcessorScript( const std::string & s ) const
 	std::string reason = GSmtp::ProcessorFactory::check( s ) ;
 	if( !reason.empty() )
 	{
-		G_WARNING( "Main::Run::checkScript: invalid preprocessor: " << s << ": " << reason ) ;
+		G_WARNING( "Main::Run::checkScript: invalid preprocessor \"" << s << "\": " << reason ) ;
 	}
 }
 

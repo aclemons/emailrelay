@@ -103,12 +103,20 @@ protected:
 	virtual ~Client() ;
 		///< Destructor.
 
+	virtual void onConnect() ; 
+		///< Final override from GNet::SimpleClient.
+
+	virtual bool onReceive( const std::string & ) ; 
+		///< Final override from GNet::Client.
+
+	virtual void onDelete( const std::string & , bool ) ; 
+		///< Final override from GNet::HeapClient.
+
+	virtual void onSendComplete() ; 
+		///< Final override from GNet::BufferedClient.
+
 private:
-	virtual void onConnect() ; // GNet::SimpleClient
-	virtual bool onReceive( const std::string & ) ; // GNet::Client
-	virtual void onDelete( const std::string & , bool ) ; // GNet::HeapClient
-	virtual void onSendComplete() ; // GNet::BufferedClient
-	virtual bool protocolSend( const std::string & , size_t ) ; // ClientProtocol::Sender
+	virtual bool protocolSend( const std::string & , size_t ) ; // override from private base class
 	void protocolDone( std::string ) ; // see ClientProtocol::doneSignal()
 	void preprocessorStart() ;
 	void preprocessorDone( bool ) ;

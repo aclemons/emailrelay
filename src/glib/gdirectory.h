@@ -58,8 +58,8 @@ public:
 	explicit Directory( const std::string & path ) ;
 		///< Constructor.
 		
-	virtual ~Directory() ;
-		///< Virtual destructor.
+	~Directory() ;
+		///< Destructor.
 
 	bool valid( bool for_creating_files = false ) const ;
 		///< Returns true if the object represents a valid 
@@ -82,7 +82,7 @@ public:
 	Directory( const Directory & other ) ;
 		///< Copy constructor.
 
-	Directory &operator=( const Directory & ) ;
+	Directory & operator=( const Directory & ) ;
 		///< Assignment operator.
 
 	static Directory root() ;
@@ -139,8 +139,8 @@ public:
 		///< Returns the name of the current item.
 
 private:
-	DirectoryIterator( const DirectoryIterator & ) ;
-	void operator=( const DirectoryIterator & ) ;
+	DirectoryIterator( const DirectoryIterator & ) ; // not implemented
+	void operator=( const DirectoryIterator & ) ; // not implemented
 
 private:
 	DirectoryIteratorImp * m_imp ;

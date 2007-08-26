@@ -20,10 +20,11 @@
 
 #include "gdef.h"
 #include "gexecutable.h"
+#include "gstr.h"
 
 bool G::Executable::osNativelyRunnable() const
 {
-	std::string type = m_exe.extension() ;
+	std::string type = G::Str::lower(m_exe.extension()) ;
 	return type == "exe" || type == "bat" ;
 }
 

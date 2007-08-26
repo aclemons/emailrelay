@@ -25,6 +25,7 @@
 #include "gprotocolmessagestore.h"
 #include "gprotocolmessageforward.h"
 #include "gprocessorfactory.h"
+#include "gverifierfactory.h"
 #include "gmemory.h"
 #include "glocal.h"
 #include "glog.h"
@@ -71,16 +72,16 @@ std::string AnonymousText::received( const std::string & peer_name ) const
 // ===
 
 GSmtp::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info ,
-	Server & server , std::auto_ptr<ProtocolMessage> pmessage ,
-	const Secrets & server_secrets , const Verifier & verifier , 
+	Server & server , std::auto_ptr<ProtocolMessage> pmessage , const Secrets & server_secrets , 
+	const std::string & verifier_address , unsigned int verifier_timeout ,
 	std::auto_ptr<ServerProtocol::Text> ptext ,
 	ServerProtocol::Config protocol_config ) :
 		GNet::BufferedServerPeer( peer_info , crlf() , true ) , // <= throw-on-flow-control
 		m_server( server ) ,
-		m_verifier( verifier ) ,
+		m_verifier( VerifierFactory::newVerifier(verifier_address,verifier_timeout) ) ,
 		m_pmessage( pmessage ) ,
 		m_ptext( ptext ) ,
-		m_protocol( *this , m_verifier , *m_pmessage.get() , server_secrets , *m_ptext.get() ,
+		m_protocol( *this , *m_verifier.get() , *m_pmessage.get() , server_secrets , *m_ptext.get() ,
 			peer_info.m_address , protocol_config )
 {
 	G_LOG_S( "GSmtp::ServerPeer: smtp connection from " << peer_info.m_address.displayString() ) ;
@@ -117,8 +118,7 @@ void GSmtp::ServerPeer::protocolSend( const std::string & line )
 // ===
 
 GSmtp::Server::Server( MessageStore & store , const Secrets & client_secrets , const Secrets & server_secrets ,
-	const Verifier & verifier , Config config ,
-	std::string smtp_server_address , unsigned int smtp_connection_timeout ,
+	Config config , std::string smtp_server_address , unsigned int smtp_connection_timeout ,
 	GSmtp::Client::Config client_config ) :
 		GNet::MultiServer( GNet::MultiServer::addressList(config.interfaces,config.port) ) ,
 		m_store(store) ,
@@ -128,10 +128,11 @@ GSmtp::Server::Server( MessageStore & store , const Secrets & client_secrets , c
 		m_ident(config.ident) ,
 		m_allow_remote(config.allow_remote) ,
 		m_server_secrets(server_secrets) ,
-		m_verifier(verifier) ,
 		m_smtp_server(smtp_server_address) ,
 		m_smtp_connection_timeout(smtp_connection_timeout) ,
 		m_client_secrets(client_secrets) ,
+		m_verifier_address(config.verifier_address) ,
+		m_verifier_timeout(config.verifier_timeout) ,
 		m_anonymous(config.anonymous)
 {
 }
@@ -161,7 +162,8 @@ GNet::ServerPeer * GSmtp::Server::newPeer( GNet::Server::PeerInfo peer_info )
 		std::auto_ptr<ServerProtocol::Text> ptext( newProtocolText(m_anonymous,peer_info.m_address) ) ;
 		std::auto_ptr<ProtocolMessage> pmessage( newProtocolMessage() ) ;
 		return new ServerPeer( peer_info , *this , pmessage , m_server_secrets , 
-			m_verifier , ptext , ServerProtocol::Config(!m_anonymous,m_processor_timeout) ) ;
+			m_verifier_address , m_verifier_timeout ,
+			ptext , ServerProtocol::Config(!m_anonymous,m_processor_timeout) ) ;
 	}
 	catch( std::exception & e ) // newPeer()
 	{
@@ -195,7 +197,7 @@ GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()
 
 	std::auto_ptr<Processor> store_processor( ProcessorFactory::newProcessor(m_processor_address,m_processor_timeout) );
 
-	std::auto_ptr<ProtocolMessage> store( newProtocolMessageStore( store_processor ) ) ;
+	std::auto_ptr<ProtocolMessage> store( newProtocolMessageStore(store_processor) ) ;
 
 	const bool do_forward = ! m_smtp_server.empty() ;
 	if( do_forward )
@@ -214,14 +216,18 @@ GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()
 GSmtp::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const AddressList & interfaces_ , 
 	const std::string & ident_ , bool anonymous_ ,
 	const std::string & processor_address_ , 
-	unsigned int processor_timeout_ ) :
+	unsigned int processor_timeout_ ,
+	const std::string & verifier_address_ , 
+	unsigned int verifier_timeout_ ) :
 		allow_remote(allow_remote_) ,
 		port(port_) ,
 		interfaces(interfaces_) ,
 		ident(ident_) ,
 		anonymous(anonymous_) ,
 		processor_address(processor_address_) ,
-		processor_timeout(processor_timeout_)
+		processor_timeout(processor_timeout_) ,
+		verifier_address(verifier_address_) ,
+		verifier_timeout(verifier_timeout_)
 {
 }
 

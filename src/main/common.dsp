@@ -125,6 +125,10 @@ SOURCE=..\gsmtp\gbase64.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\glib\gcounter.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\glib\gcleanup_win32.cpp
 # End Source File
 # Begin Source File
@@ -221,6 +225,10 @@ SOURCE=..\gsmtp\gexecutableprocessor.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\gsmtp\gexecutableverifier.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\glib\gfile.cpp
 # End Source File
 # Begin Source File
@@ -293,6 +301,10 @@ SOURCE=..\gsmtp\gnetworkprocessor.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\gsmtp\gnetworkverifier.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\gsmtp\gnewfile.cpp
 # End Source File
 # Begin Source File
@@ -338,6 +350,10 @@ SOURCE=..\gpop\gpopstore.cpp
 # Begin Source File
 
 SOURCE=..\glib\gprocess_win32.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gsmtp\gfactoryparser.cpp
 # End Source File
 # Begin Source File
 
@@ -482,6 +498,10 @@ SOURCE=..\win32\gtray.cpp
 # Begin Source File
 
 SOURCE=..\gsmtp\gverifier.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gsmtp\gverifierfactory.cpp
 # End Source File
 # Begin Source File
 

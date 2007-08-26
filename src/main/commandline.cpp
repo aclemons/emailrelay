@@ -78,7 +78,7 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "Y!client-filter!specifies an external program to process messages when they are forwarded!1!program!3|"
 		<< "Q!admin-terminate!enables the terminate command on the admin interface!0!!3|"
 		<< "A!anonymous!disables the smtp vrfy command and sends less verbose smtp responses!0!!3|"
-		<< "B!pop!enables the pop server if compiled-in!0!!" << pop_level << "|"
+		<< "B!pop!enables the pop server!0!!" << pop_level << "|"
 		<< "E!pop-port!specifies the pop listening port number (requires --pop)!1!port!" << pop_level << "|"
 		<< "F!pop-auth!defines the pop server secrets file (default is \"" << pop_auth << "\")!1!file!" << pop_level << "|"
 		<< "G!pop-no-delete!disables message deletion via pop (requires --pop)!0!!" << pop_level << "|"

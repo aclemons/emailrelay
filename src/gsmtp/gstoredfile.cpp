@@ -314,7 +314,7 @@ void GSmtp::StoredFile::destroy()
 
 	G::Path content_path = contentPath() ;
 	G_LOG( "GSmtp::StoredMessage: deleting file: \"" << content_path.basename() << "\"" ) ;
-	m_content <<= 0 ; // close it first
+	m_content <<= 0 ; // close it first (but not much good if it's been extracted already)
 	G::File::remove( content_path , G::File::NoThrow() ) ;
 }
 
@@ -330,7 +330,7 @@ const G::Strings & GSmtp::StoredFile::to() const
 
 std::auto_ptr<std::istream> GSmtp::StoredFile::extractContentStream() 
 { 
-	G_ASSERT( m_content.get() != NULL ) ;
+	G_ASSERT( m_content.get() != NULL ) ; // (a stronger assertion would be that we own it too)
 	return m_content ;
 }
 

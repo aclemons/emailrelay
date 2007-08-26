@@ -27,9 +27,6 @@ EXTRA_DIST=\
 	mac.mak \
 	pack.cpp \
 	run.c \
-	service_install.cpp \
-	service_install.h \
-	service_wrapper.cpp \
 	mock
 
 if GUI
@@ -64,6 +61,7 @@ INCLUDES=\
 	-I$(top_srcdir)/src/gnet \
 	-I$(top_srcdir)/src/gsmtp \
 	-I$(top_srcdir)/src/gpop \
+	-I$(top_srcdir)/src/main \
 	-DG_SPOOLDIR=\"$(e_spooldir)\" \
 	-DG_SYSCONFDIR=\"$(e_sysconfdir)\" \
 	-DG_LIBEXECDIR=\"$(e_libexecdir)\" \

@@ -33,6 +33,10 @@ libgsmtp_a_SOURCES = \
 	gclientprotocol.h \
 	gexecutableprocessor.cpp \
 	gexecutableprocessor.h \
+	gexecutableverifier.cpp \
+	gexecutableverifier.h \
+	gfactoryparser.cpp \
+	gfactoryparser.h \
 	gfilestore.cpp \
 	gfilestore.h \
 	gmessagestore.cpp \
@@ -40,6 +44,8 @@ libgsmtp_a_SOURCES = \
 	gmessagestore_unix.cpp \
 	gnetworkprocessor.cpp \
 	gnetworkprocessor.h \
+	gnetworkverifier.cpp \
+	gnetworkverifier.h \
 	gnewfile.cpp \
 	gnewfile.h \
 	gnewmessage.cpp \
@@ -78,5 +84,7 @@ libgsmtp_a_SOURCES = \
 	gstoredmessage.cpp \
 	gstoredmessage.h \
 	gverifier.cpp \
-	gverifier.h
+	gverifier.h \
+	gverifierfactory.cpp \
+	gverifierfactory.h
 

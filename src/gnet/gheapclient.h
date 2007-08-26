@@ -61,6 +61,9 @@ public:
 	void doDelete( const std::string & reason ) ;
 		///< Calls onDelete() and then does "delete this".
 
+	virtual void onException( std::exception & ) ; 
+		///< Final override from GNet::EventHandler.
+
 protected:
 	virtual ~HeapClient() ;
 		///< Destructor.
@@ -75,12 +78,11 @@ protected:
 
 	virtual void onConnecting() ;
 		///< Called just before the connection is initiated.
-		///< The default implementation does nothing.
+		///< Overridable. The default implementation does nothing.
 
 private:
-	HeapClient( const HeapClient& ) ; // Copy constructor. Not implemented.
-	void operator=( const HeapClient& ) ; // Assignment operator. Not implemented.
-	virtual void onException( std::exception & ) ; // From EventHandler.
+	HeapClient( const HeapClient& ) ; // not implemented
+	void operator=( const HeapClient& ) ; // not implemented
 	void onConnectionTimeout() ;
 	void onDeletionTimeout() ;
 	void doDeleteThis() ;

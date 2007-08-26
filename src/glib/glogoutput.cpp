@@ -20,9 +20,11 @@
 
 #include "gdef.h"
 #include "glogoutput.h"
-#include <cstdlib>
-#include <cstring>
+#include <sstream>
+#include <string>
 #include <ctime>
+
+// (note that the implementation here has to be reentrant and using only the standard runtime library)
 
 G::LogOutput * G::LogOutput::m_this = NULL ;
 
@@ -86,14 +88,15 @@ bool G::LogOutput::enable( bool enabled )
 	return was_enabled ;
 }
 
-void G::LogOutput::output( Log::Severity severity , const char * file , unsigned int line , const char * text )
+void G::LogOutput::output( Log::Severity severity , const char * file , int line , const std::string & text )
 {
 	if( m_this != NULL )
 		m_this->doOutput( severity , file , line , text ) ;
 }
 
-void G::LogOutput::doOutput( Log::Severity severity , const char * file , unsigned int line , const char * text )
+void G::LogOutput::doOutput( Log::Severity severity , const char * file , int line , const std::string & text )
 {
+	// decide what to do
 	bool do_output = m_enabled ;
 	if( severity == Log::s_Debug ) 
 		do_output = m_enabled && m_debug ;
@@ -104,32 +107,54 @@ void G::LogOutput::doOutput( Log::Severity severity , const char * file , unsign
 
 	if( do_output )
 	{
-		text = text ? text : "" ;
+		// allocate a buffer
+		const size_type limit = 1000U ;
+		std::string buffer ;
+		buffer.reserve( (text.length()>limit?limit:text.length()) + 40U ) ;
 
-		char buffer[500U] ;
-		buffer[0U] = '\0' ;
-
+		// add the preamble to tbe buffer
+		std::string::size_type text_pos = 0U ;
 		if( severity == Log::s_Debug )
 		{
-			addFileAndLine( buffer , sizeof(buffer) , file , line ) ;
+			buffer.append( fileAndLine(file,line) ) ;
 		}
 		else
 		{
 			if( m_prefix.length() )
-				add( buffer , sizeof(buffer) , m_prefix + ": " ) ;
+			{
+				buffer.append( m_prefix ) ;
+				buffer.append( ": " ) ;
+			}
 
 			if( m_timestamp )
-				add( buffer , sizeof(buffer) , timestampString() ) ;
+				buffer.append( timestampString() ) ;
 
 			if( m_level )
-				add( buffer , sizeof(buffer) , levelString(severity) ) ;
+				buffer.append( levelString(severity) ) ;
 
 			if( m_strip )
-				text = std::strchr(text,' ') ? (std::strchr(text,' ')+1U) : text ;
+			{
+				text_pos = text.find(' ') ;
+				if( text_pos == std::string::npos || (text_pos+1U) == text.length() )
+					text_pos = 0U ;
+				else
+					text_pos++ ;
+			}
 		}
 
-		add( buffer , sizeof(buffer) , text ) ;
+		// add the text to the buffer, with a sanity limit
+		size_type text_len = text.length() - text_pos ;
+		bool limited = text_len > limit ;
+		text_len = text_len > limit ? limit : text_len ;
+		buffer.append( text , text_pos , text_len ) ;
+		if( limited )
+			buffer.append( " ..." ) ;
 
+		// last ditch removal of ansi escape sequences
+		while( buffer.find('\033') != std::string::npos )
+			buffer[buffer.find('\033')] = '.' ;
+
+		// do the actual output in an o/s-specific manner
 		rawOutput( severity , buffer ) ;
 	}
 }
@@ -139,80 +164,56 @@ void G::LogOutput::onAssert()
 	// no-op
 }
 
-const char * G::LogOutput::timestampString()
+std::string G::LogOutput::timestampString()
 {
+	// use a data member buffer to optimise away calls to localtime() and strftime()
 	std::time_t now = std::time(NULL) ;
-	if( m_time == 0 || m_time != now ) // optimise calls to localtime() & strftime()
+	if( m_time == 0 || m_time != now )
 	{
 		m_time = now ;
-		struct std::tm * tm_p = std::localtime( &m_time ) ;
+		struct std::tm * tm_p = std::localtime( &m_time ) ; // see also gdef.h
 		m_time_buffer[0] = '\0' ;
 		std::strftime( m_time_buffer , sizeof(m_time_buffer)-1U , "%Y" "%m" "%d." "%H" "%M" "%S: " , tm_p ) ;
 		m_time_buffer[sizeof(m_time_buffer)-1U] = '\0' ;
 	}
-	return m_time_buffer ;
+	return std::string(m_time_buffer) ;
 }
 
-void G::LogOutput::addFileAndLine( char *buffer , size_type size , const char *file , int line )
+std::string G::LogOutput::fileAndLine( const char * file , int line )
 {
 	if( file != NULL )
 	{
-		const char *forward = std::strrchr( file , '/' ) ;
-		const char *back = std::strrchr( file , '\\' ) ;
-		const char *last = forward > back ? forward : back ;
-		const char *basename = last ? (last+1) : file ;
-
-		add( buffer , size , basename ) ;
-		add( buffer , size , "(" ) ;
-		char b[15U] ;
-		add( buffer , size , itoa(b,sizeof(b),line) ) ;
-		add( buffer , size , "): " ) ;
+		std::string basename( file ) ;
+		std::string::size_type slash_pos = basename.find_last_of( "/\\" ) ;
+		if( slash_pos != std::string::npos && (slash_pos+1U) < basename.length() )
+			basename.erase( 0U , slash_pos+1U ) ;
+		return basename + "(" + itoa(line) + "): " ;
+	}
+	else
+	{
+		return std::string() ;
 	}
 }
 
-void G::LogOutput::add( char * buffer , size_type size , const std::string & p )
-{
-	add( buffer , size , p.c_str() ) ;
-}
-
-void G::LogOutput::add( char * buffer , size_type size , const char * p )
-{
-	std::strncat( buffer+std::strlen(buffer) , p , size-std::strlen(buffer)-1U ) ;
-}
-
-void G::LogOutput::assertion( const char *file , unsigned line , bool test , const char *test_string )
+void G::LogOutput::assertion( const char * file , int line , bool test , const std::string & test_string )
 {
 	if( !test )
 	{
 		if( instance() )
 			instance()->doAssertion( file , line , test_string ) ;
 		else
-			fprintf( stderr , "assertion error: %s(%d): %s\n" , file , line , test_string ) ;
+			std::cerr << "assertion error: " << file << "(" << line << "): " << test_string << std::endl ;
 		halt() ;
 	}
 }
 
-void G::LogOutput::doAssertion( const char * file , unsigned line , const char * test_string )
+void G::LogOutput::doAssertion( const char * file , int line , const std::string & test_string )
 {
-	char buffer[100U] ;
-	std::strcpy( buffer , "Assertion error: " ) ;
-	size_type size = sizeof(buffer) - 10U ; // -10 for luck
-	if( file )
-	{
-		addFileAndLine( buffer , size , file , line ) ;
-	}
-	if( test_string )
-	{
-		add( buffer , size , test_string ) ;
-	}
-
-	// forward to derived classes -- these
-	// overrides may safely re-enter this method --
-	// all code in this class is re-entrant
-	//
+	// forward to derived classes -- overrides may safely re-enter this 
+	// method since all code in this class is re-entrant
 	onAssert() ;
 
-	rawOutput( Log::s_Assertion , buffer ) ;
+	rawOutput( Log::s_Assertion , std::string() + "Assertion error: " + fileAndLine(file,line) + test_string ) ;
 }
 
 void G::LogOutput::halt()
@@ -220,7 +221,7 @@ void G::LogOutput::halt()
 	abort() ;
 }
 
-const char * G::LogOutput::levelString( Log::Severity s )
+std::string G::LogOutput::levelString( Log::Severity s )
 {
 	if( s == Log::s_Debug ) return "debug: " ;
 	else if( s == Log::s_LogSummary ) return "info: " ;
@@ -228,12 +229,16 @@ const char * G::LogOutput::levelString( Log::Severity s )
 	else if( s == Log::s_Warning ) return "warning: " ;
 	else if( s == Log::s_Error ) return "error: " ;
 	else if( s == Log::s_Assertion ) return "fatal: " ;
-	return "" ;
+	return std::string() ;
 }
 
-const char * G::LogOutput::itoa( char * buffer , size_type buffer_size , unsigned int n )
+std::string G::LogOutput::itoa( int n_ )
 {
-	buffer[0U] = '0' ; buffer[1U] = '\0' ;
+	// diy implementation for speed and portability
+	if( n_ < 0 ) return std::string(1U,'0') ;
+	char buffer[20] = { '0' , '\0' } ;
+	unsigned int buffer_size = sizeof(buffer) ;
+	unsigned int n = static_cast<unsigned int>(n_) ;
 	n %= 1000000U ;
 	bool zero = n == 0U ;
 	char * p = buffer + buffer_size - 1U ;
@@ -241,4 +246,5 @@ const char * G::LogOutput::itoa( char * buffer , size_type buffer_size , unsigne
 		*p = '0' + (n % 10U) ;
 	return zero ? buffer : (p+1U) ;
 }
+
 /// \file glogoutput.cpp

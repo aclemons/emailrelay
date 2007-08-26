@@ -48,11 +48,11 @@ namespace
 	}
 }
 
-void G::LogOutput::rawOutput( G::Log::Severity severity , const char *message )
+void G::LogOutput::rawOutput( G::Log::Severity severity , const std::string & message )
 {
 	if( severity != G::Log::s_Debug && m_syslog )
 	{
-		::syslog( mode(m_facility,severity) , "%s" , message ) ;
+		::syslog( mode(m_facility,severity) , "%s" , message.c_str() ) ;
 	}
 	std::cerr << message << std::endl ;
 }

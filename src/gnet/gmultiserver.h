@@ -45,11 +45,13 @@ public:
 	MultiServerImp( MultiServer & ms , const Address & ) ;
 		///< Constructor.
 
-	virtual ServerPeer * newPeer( PeerInfo ) ;
-		///< Server peer factory method.
-
 	void cleanup() ;
 		///< Does cleanup.
+
+protected:
+	virtual ServerPeer * newPeer( PeerInfo ) ;
+		///< Server peer factory method.
+		///< Final override from GNet::Server.
 
 private:
 	MultiServer & m_ms ;
@@ -57,7 +59,10 @@ private:
 
 /// \class GNet::MultiServerPtr
 /// A private implementation class used by
-/// GNet::MultiServer.
+/// GNet::MultiServer. The implementation is unusual
+/// in that only has proper value semantics if the
+/// contained pointer is null; it is used in a way 
+/// that makes allowances for that restriction.
 ///
 class GNet::MultiServerPtr 
 {
@@ -78,6 +83,12 @@ public:
 
 	const MultiServerImp * get() const ;
 		///< Returns the raw const pointer.
+
+	MultiServerPtr( const MultiServerPtr & ) ;
+		///< Copy constructor.
+
+	void operator=( const MultiServerPtr & ) ; 
+		///< Assignment operator.
 
 private:
 	MultiServerImp * m_p ;

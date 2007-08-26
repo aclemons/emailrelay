@@ -243,7 +243,7 @@ int G::Process::spawn( Identity , const Path & exe_path , const Strings & args ,
 
 	// wait for the child process to exit
 	DWORD exit_code = ProcessImp::waitFor( hprocess , error_return ) ;
-	G_LOG( "G::Process::spawn: exit " << exit_code << " from \"" << exe_path << "\": " << exit_code ) ;
+	G_LOG( "G::Process::spawn: exit " << exit_code << " from \"" << command_line << "\": " << exit_code ) ;
 
 	// return the contents of the pipe
 	if( pipe_result_p != NULL )

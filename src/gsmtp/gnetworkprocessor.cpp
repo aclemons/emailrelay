@@ -24,11 +24,11 @@
 #include "glog.h"
 
 GSmtp::NetworkProcessor::NetworkProcessor( const std::string & server , 
-	unsigned int connection_timeout , unsigned int response_timeout , bool lazy ) :
+	unsigned int connection_timeout , unsigned int response_timeout ) :
 		m_resolver_info(server) ,
 		m_connection_timeout(connection_timeout) ,
 		m_response_timeout(response_timeout) ,
-		m_lazy(lazy)
+		m_lazy(true)
 {
 	m_client.eventSignal().connect( G::slot(*this,&GSmtp::NetworkProcessor::clientEvent) ) ;
 }
@@ -42,7 +42,7 @@ void GSmtp::NetworkProcessor::start( const std::string & path )
 {
 	if( !m_lazy || m_client.get() == NULL )
 	{
-		m_client.reset( new RequestClient("scanner","ok","\n",m_resolver_info,m_connection_timeout,m_response_timeout));
+		m_client.reset(new RequestClient("scanner","ok","\n",m_resolver_info,m_connection_timeout,m_response_timeout));
 	}
 	m_text.erase() ;
 	m_client->request( path ) ; // (no need to wait for connection)

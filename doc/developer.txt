@@ -36,17 +36,16 @@ layers of the network library.
 Event handling and exceptions
 -----------------------------
 The use of non-blocking i/o in the network library means that most processing
-operates within the context of an i/o event or timeout callback which means that
-the top level of the call stack is nearly always the event loop code. This can 
-make using C++ exceptions a bit awkward compared to a multi-threaded approach 
-because it is not possible to put a single catch block around a particular 
-high-level feature.
+operates within the context of an i/o event or timeout callback so the top level
+of the call stack is nearly always the event loop code. This can make using C++
+exceptions a bit awkward compared to a multi-threaded approach because it is not
+possible to put a single catch block around a particular high-level feature.
 
-The event loop delivers all asynchronous events to the abstract "EventHandler" 
-and "AbstractTimer" interfaces. If these callbacks throw exceptions then the 
-event loop will catch them and deliver them back to the same interface through 
-the virtual functions onException() and onTimerException() respectively. If 
-exceptions are thrown out of _these_ callbacks then the event loop code lets 
+The event loop delivers all asynchronous events to the abstract "EventHandler"
+and "AbstractTimer" interfaces. If these callbacks throw exceptions then the
+event loop will catch them and deliver them back to the same interface through
+the virtual functions onException() and onTimerException() respectively. If
+exceptions are thrown out of _these_ callbacks then the event loop code lets
 them propagate back to main(), typically terminating the program.
 
 The two callback interfaces are brought together by having a concrete "Timer"
@@ -58,15 +57,10 @@ are delivered to the same place.
 In common with other event-driven frameworks this leads to a programming
 model where objects are instantiated on the heap and the objects delete
 themselves when they receive certain events from the framework. In the
-"gnet" library the "ServerPeer" and "HeapClient" classes embody this lifetime
+"gnet" library the "ServerPeer" and "HeapClient" classes do this lifetime 
 management; instances of these classes delete themselves when the associated
 network connection goes away or when an exception is thrown out their
 event-handling code.
-
-A disadvantage of all of this is that exceptions are delivered using a base
-class type so all exceptions from asynchronous code have to be handled in the 
-same way, typically by deleting the object associated with the connection or 
-terminating the event loop.
 
 Core class structure
 --------------------
@@ -85,13 +79,13 @@ network and event loop framework.
 The interaction between the SMTP server protocol class and the message store is
 mediated by the "ProtocolMessage" interface. Two main implementations of this
 interface are available: one for normal spooling ("ProtocolMessageStore"), and
-another for immediate forwarding ("ProtocolMessageForward"). The gang-of-four
-"Decorator" pattern is used whereby the forwarding class uses an instance of the
-storage class to do the message storing and pre-processing, while adding in an 
-instance of the "GSmtp::Client" class to do the forwarding.
+another for immediate forwarding ("ProtocolMessageForward"). The "Decorator" 
+pattern is used whereby the forwarding class uses an instance of the storage 
+class to do the message storing and pre-processing, while adding in an instance
+of the "GSmtp::Client" class to do the forwarding.
 
 Message pre-processing (see "--filter") is implemented via an abstract
-"Processor" interface. Concrete implementations are provided for doing nothing, 
+"Processor" interface. Concrete implementations are provided for doing nothing,
 running an external executable program and talking to an external network server.
 
 The protocol, processor and message-store interfaces are brought together by the
@@ -111,8 +105,8 @@ runs the wrapper starts the actual E-MailRelay server by looking for a batch
 file called "emailrelay-start.bat" in the same directory as service wrapper
 executable. It reads the contents of this batch file in order to construct the
 E-MailRelay command-line, adding "--no-daemon" and "--hidden" switches if they
-are not there already. The service name and display name can be put onto the 
-wrapper's "--install" command-line, and it is the service name that is used to 
+are not there already. The service name and display name can be put onto the
+wrapper's "--install" command-line, and it is the service name that is used to
 derive the name of the "start" batch file.
 
 Diagrams
@@ -183,7 +177,7 @@ non-standard system headers etc. Conditional compilation directives ("#if"
 etc.) are largely confined to these headers in order to improve readability.
 
 Deficiencies in the standard headers files provided by older compilers are fixed
-up by files in the "lib" directory tree. For example, the msvc6.0 compiler 
+up by files in the "lib" directory tree. For example, the msvc6.0 compiler
 sometimes does not put its names into the "std" namespace, even though the
 std-namespace headers are used. This can be worked round by additional "using"
 declarations in the "lib/msvc6.0" headers.  These work-rounds are kept out of
@@ -294,8 +288,7 @@ Other patterns:
 Idioms
 ------
 The "<<=" operator defined in "src/glib/gmemory.h" is used idiomatically
-to reassign a std::auto_ptr<>.
-
+to reassign a std::auto_ptr<> since reset() is not always available.
 
 
 

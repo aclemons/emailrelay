@@ -87,7 +87,7 @@ std::string G::Unpack::packingError( Path path )
 		if( !input.good() ) return "cannot open" ;
 		input.seekg( exe_size - 12UL ) ;
 		if( !input.good() ) return "cannot seek" ;
-		std::string str_offset = Str::readLineFrom( input , "\n" ) ;
+		std::string str_offset = Str::readLineFrom( input ) ;
 		if( str_offset.length() != 11U || str_offset.find_first_not_of(" 0123456789") != std::string::npos ) 
 			return std::string() + "no offset string: [" + Str::printable(str_offset) + "]" ;
 		std::streamsize offset = static_cast<std::streamsize>( G::Str::toULong( str_offset ) ) ;
