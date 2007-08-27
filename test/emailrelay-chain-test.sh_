@@ -270,6 +270,7 @@ CreateMessages()
 CreateAuth()
 {
 	mkdir -p "${cfg_base_dir}"
+	chmod 777 "${cfg_base_dir}"
 
 	# encrypted version "joes_password" provided by emailrelay-passwd
 	key="2168297042.2818429713.1297528852.2023008371.2713943401.1997919265.1829599518.235099638"
