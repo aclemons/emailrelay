@@ -73,7 +73,7 @@ bool GSmtp::ExecutableProcessor::process( const std::string & path )
 	m_cancelled = is_special && ((exit_code-100)&1) == 0 ;
 	if( m_cancelled )
 	{
-		G_LOG( "GSmtp::ExecutableProcessor: message processing cancelled by preprocessor" ) ;
+		G_LOG( "GSmtp::ExecutableProcessor: message abandoned by the pre-processor" ) ;
 	}
 
 	// treat special as ok, except for special-cancelled

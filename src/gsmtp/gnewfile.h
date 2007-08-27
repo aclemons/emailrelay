@@ -98,7 +98,6 @@ private:
 	void flushContent() ;
 	void discardContent() ;
 	bool commitEnvelope() ;
-	void rollback() ;
 	void deleteContent() ;
 	void deleteEnvelope() ;
 	static bool isEightBit( const std::string & line ) ;

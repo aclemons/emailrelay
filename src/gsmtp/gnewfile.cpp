@@ -75,6 +75,53 @@ void GSmtp::NewFile::cleanup()
 	}
 }
 
+std::string GSmtp::NewFile::prepare( const std::string & auth_id , const std::string & client_ip )
+{
+	// flush and close the content file
+	//
+	flushContent() ;
+
+	// write the envelope
+	//
+	m_envelope_path_0 = m_store.envelopeWorkingPath( m_seq ) ;
+	m_envelope_path_1 = m_store.envelopePath( m_seq ) ;
+	if( ! saveEnvelope( auth_id , client_ip ) )
+		throw GSmtp::MessageStore::StorageError( std::string() + "cannot write " + m_envelope_path_0.str() ) ;
+
+	// deliver to local mailboxes
+	//
+	if( m_to_local.size() != 0U )
+	{
+		deliver( m_to_local , m_content_path , m_envelope_path_0 , m_envelope_path_1 ) ;
+	}
+
+	return m_content_path.str() ;
+}
+
+void GSmtp::NewFile::commit()
+{
+	bool ok = commitEnvelope() ;
+	m_committed = true ;
+	if( !ok )
+		throw GSmtp::MessageStore::StorageError( std::string() + "cannot rename to " + m_envelope_path_1.str() ) ;
+}
+
+void GSmtp::NewFile::addTo( const std::string & to , bool local )
+{
+	if( local )
+		m_to_local.push_back( to ) ;
+	else
+		m_to_remote.push_back( to ) ;
+}
+
+void GSmtp::NewFile::addText( const std::string & line )
+{
+	if( ! m_eight_bit )
+		m_eight_bit = isEightBit(line) ;
+
+	*(m_content.get()) << line << crlf() ;
+}
+
 void GSmtp::NewFile::flushContent()
 {
 	G_ASSERT( m_content.get() != NULL ) ;
@@ -104,22 +151,6 @@ void GSmtp::NewFile::deleteEnvelope()
 	}
 }
 
-void GSmtp::NewFile::addTo( const std::string & to , bool local )
-{
-	if( local )
-		m_to_local.push_back( to ) ;
-	else
-		m_to_remote.push_back( to ) ;
-}
-
-void GSmtp::NewFile::addText( const std::string & line )
-{
-	if( ! m_eight_bit )
-		m_eight_bit = isEightBit(line) ;
-
-	*(m_content.get()) << line << crlf() ;
-}
-
 bool GSmtp::NewFile::isEightBit( const std::string & line )
 {
 	std::string::const_iterator end = line.end() ;
@@ -132,29 +163,6 @@ bool GSmtp::NewFile::isEightBit( const std::string & line )
 	return false ;
 }
 
-std::string GSmtp::NewFile::prepare( const std::string & auth_id , const std::string & client_ip )
-{
-	// flush and close the content file
-	//
-	flushContent() ;
-
-	// write the envelope
-	//
-	m_envelope_path_0 = m_store.envelopeWorkingPath( m_seq ) ;
-	m_envelope_path_1 = m_store.envelopePath( m_seq ) ;
-	if( ! saveEnvelope( auth_id , client_ip ) )
-		throw GSmtp::MessageStore::StorageError( std::string() + "cannot write " + m_envelope_path_0.str() ) ;
-
-	// deliver to local mailboxes
-	//
-	if( m_to_local.size() != 0U )
-	{
-		deliver( m_to_local , m_content_path , m_envelope_path_0 , m_envelope_path_1 ) ;
-	}
-
-	return m_content_path.str() ;
-}
-
 bool GSmtp::NewFile::saveEnvelope( const std::string & auth_id , const std::string & client_ip ) const
 {
 	std::auto_ptr<std::ostream> envelope_stream = m_store.stream( m_envelope_path_0 ) ;
@@ -163,25 +171,11 @@ bool GSmtp::NewFile::saveEnvelope( const std::string & auth_id , const std::stri
 	return ok ;
 }
 
-void GSmtp::NewFile::commit()
-{
-	if( ! commitEnvelope() )
-		throw GSmtp::MessageStore::StorageError( std::string() + "cannot rename to " + m_envelope_path_1.str() ) ;
-
-	m_committed = true ;
-}
-
 bool GSmtp::NewFile::commitEnvelope()
 {
 	FileWriter claim_writer ;
 	m_saved = G::File::rename( m_envelope_path_0 , m_envelope_path_1 , G::File::NoThrow() ) ;
 	return m_saved ;
-}
-
-void GSmtp::NewFile::rollback()
-{
-	discardContent() ;
-	deleteContent() ;
 }
 
 void GSmtp::NewFile::deliver( const G::Strings & /*to*/ , 

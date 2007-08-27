@@ -152,7 +152,11 @@ void GSmtp::ProtocolMessageStore::preprocessorDone( bool ok )
 			m_msg->commit() ;
 			id = m_msg->id() ;
 		}
-		else if( ! m_processor->cancelled() )
+		else if( m_processor->cancelled() )
+		{
+			try { m_msg->commit() ; } catch( std::exception & ) {}
+		}
+		else
 		{
 			reason = m_processor->text() ;
 			reason = reason.empty() ? "error" : reason ;

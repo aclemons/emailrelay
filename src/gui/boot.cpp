@@ -47,6 +47,7 @@ bool Boot::install( G::Path , G::Path target , G::Strings )
 	std::string reason = service_install( commandline , "emailrelay" , "E-MailRelay" ) ;
 	if( !reason.empty() )
 		throw std::runtime_error( reason ) ;
+	return true ;
 }
 
 #else

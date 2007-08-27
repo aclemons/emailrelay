@@ -33,21 +33,9 @@
 
 namespace
 {
-	std::string rot13( const std::string & in )
-	{
-		std::string s( in ) ;
-		for( std::string::iterator p = s.begin() ; p != s.end() ; ++p )
-		{
-			if( *p >= 'a' && *p <= 'z' ) 
-				*p = 'a' + ( ( ( *p - 'a' ) + 13U ) % 26U ) ;
-			if( *p >= 'A' && *p <= 'Z' )
-				*p = 'A' + ( ( ( *p - 'A' ) + 13U ) % 26U ) ;
-		}
-		return s ;
-	}
 	std::string encrypt( const std::string & pwd , const std::string & mechanism )
 	{
-		return mechanism == "CRAM-MD5" ? G::Md5::mask(pwd) : rot13(pwd) ;
+		return mechanism == "CRAM-MD5" ? G::Md5::mask(pwd) : pwd ;
 	}
 }
 
