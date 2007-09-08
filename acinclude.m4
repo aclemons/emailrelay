@@ -192,7 +192,7 @@ if test "$enable_gui" = "no"
 then
 	AC_DEFINE(HAVE_GUI,0,[Define to 1 to enable gui code])
 else
-	PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes])
+    PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes],[AC_MSG_RESULT([no])])
 	if test "$qt4" = "yes"
 	then
 		MOC="${e_qtmoc}"
@@ -255,7 +255,7 @@ then
 		AC_DEFINE(HAVE_OPENSSL,1,[Define to 1 to enable tls/ssh code using openssl])
 		SSL_LIBS="-lssl -lcrypto"
 	else
-		AC_MSG_WARN(ignoring --with-openssl, try setting CFLAGS)
+		AC_MSG_WARN(ignoring --with-openssl, check config.log and try setting CFLAGS)
 		AC_DEFINE(HAVE_OPENSSL,0,[Define to 1 to enable tls/ssh code using openssl])
 		SSL_LIBS=""
 	fi

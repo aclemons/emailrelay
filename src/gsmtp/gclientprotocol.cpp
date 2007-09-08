@@ -261,7 +261,9 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 
 		if( m_server_has_tls && !GNet::SocketProtocol::sslCapable() )
 		{
-			G_WARNING( "GSmtp::ClientProtocol::applyEvent: cannot do tls/ssl required by server" ) ;
+			std::string msg( "GSmtp::ClientProtocol::applyEvent: cannot do tls/ssl required by remote smtp server" );
+			if( !m_auth_mechanism.empty() ) msg.append( ": authentication will probably fail" ) ;
+			G_WARNING( msg ) ;
 		}
 
 		if( m_state == sSentEhlo && m_server_has_tls && GNet::SocketProtocol::sslCapable() )
