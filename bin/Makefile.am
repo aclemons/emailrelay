@@ -15,7 +15,7 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-EXTRA_DIST = emailrelay.sh_ txt2html.sh_ txt2mu.sh_ mu2html.sh_ mu2docbook.sh_ expand.sh_ emailrelay-notify.sh_ emailrelay-resubmit.sh_ emailrelay-deliver.sh_ emailrelay-process.sh_ emailrelay-runperl.js emailrelay-resubmit.js emailrelay-submit.sh_
+EXTRA_DIST = emailrelay.sh_ doxygen.sh_ txt2html.sh_ txt2mu.sh_ mu2html.sh_ mu2docbook.sh_ expand.sh_ emailrelay-notify.sh_ emailrelay-resubmit.sh_ emailrelay-deliver.sh_ emailrelay-process.sh_ emailrelay-runperl.js emailrelay-resubmit.js emailrelay-submit.sh_
 work_scripts = doxygen.sh txt2mu.sh mu2html.sh mu2docbook.sh expand.sh txt2html.sh emailrelay.sh
 noinst_SCRIPTS = emailrelay-runperl.js emailrelay-resubmit.js $(work_scripts)
 e_init_SCRIPTS = emailrelay
