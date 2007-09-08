@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gnet.h"
-#include "gbufferedclient.h"
+#include "gheapclient.h"
 #include "glinebuffer.h"
 #include "gtimer.h"
 #include "gslot.h"
@@ -48,7 +48,7 @@ namespace GNet
 /// are used by the containing object (in particular so that the
 /// container is informed when the client object deletes itself).
 ///
-class GNet::Client : public GNet::BufferedClient 
+class GNet::Client : public GNet::HeapClient 
 {
 public:
 	explicit Client( const ResolverInfo & remote_info , unsigned int connection_timeout = 0U ,
@@ -77,6 +77,10 @@ public:
 		///< Returns a signal that incidcates that the client
 		///< has successfully connected to the server.
 
+	G::Signal0 & secureSignal() ;
+		///< Returns a signal that incidcates that the security 
+		///< layer has been successfully established.
+
 protected:
 	virtual ~Client() ;
 		///< Destructor.
@@ -97,7 +101,7 @@ protected:
 		///< Final override from GNet::SimpleClient.
 
 	virtual void onData( const char * , SimpleClient::size_type ) ; 
-		///< Final override from GNet::SimpleClient.
+		///< Final override from GNet::SocketProtocolSink.
 
 	virtual void onConnecting() ; 
 		///< Final override from GNet::HeapClient.

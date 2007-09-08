@@ -32,8 +32,6 @@ noinst_LIBRARIES = libgnet.a libipv4.a libipv6.a
 
 libgnet_a_SOURCES = \
 	gaddress.h \
-	gbufferedclient.cpp \
-	gbufferedclient.h \
 	gbufferedserverpeer.cpp \
 	gbufferedserverpeer.h \
 	gclientptr.h \
@@ -67,16 +65,18 @@ libgnet_a_SOURCES = \
 	gresolverinfo.cpp \
 	gresolverinfo.h \
 	gresolver_unix.cpp \
-	gsender.cpp \
-	gsender.h \
 	gserver.cpp \
 	gserver.h \
 	gsimpleclient.cpp \
 	gsimpleclient.h \
 	gsimpleclient_unix.cpp \
+	gssl.cpp \
+	gssl.h \
 	gsocket.cpp \
 	gsocket.h \
 	gsocket_unix.cpp \
+	gsocketprotocol.cpp \
+	gsocketprotocol.h \
 	gtimer.cpp \
 	gtimer.h \
 	gtimerlist.cpp \

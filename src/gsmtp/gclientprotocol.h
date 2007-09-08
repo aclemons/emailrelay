@@ -66,6 +66,8 @@ public:
 	} ;
 	enum Value
 	{
+		Internal_2xx = 222 ,
+		Internal_2yy = 223 ,
 		ServiceReady_220 = 220 ,
 		Ok_250 = 250 ,
 		Authenticated_235 = 235 ,
@@ -76,11 +78,15 @@ public:
 		NotImplemented_502 = 502 ,
 		BadSequence_503 = 503 ,
 		NotAuthenticated_535 = 535 ,
+		NotAvailable_454 = 454 ,
 		Invalid = 0
 	} ;
 
 	static ClientProtocolReply ok() ;
 		///< Factory function for an ok reply.
+
+	static ClientProtocolReply ok( Value ) ;
+		///< Factory function for an ok reply with a specific 2xx value.
 
 	static ClientProtocolReply error( const std::string & reason ) ;
 		///< Factory function for a generalised error reply.
@@ -155,16 +161,17 @@ class GSmtp::ClientProtocol : private GNet::AbstractTimer
 public:
 	G_EXCEPTION( NotReady , "not ready" ) ;
 	G_EXCEPTION( ResponseError , "protocol error: unexpected response" ) ;
-	G_EXCEPTION( NoMechanism , "cannot do authentication mandated by the server" ) ;
-	G_EXCEPTION( AuthenticationRequired , "authentication required by the server" ) ;
-	G_EXCEPTION( AuthenticationNotSupported , "authentication not supported by the server" ) ;
+	G_EXCEPTION( NoMechanism , "cannot do authentication mandated by the remote smtp server" ) ;
+	G_EXCEPTION( AuthenticationRequired , "authentication required by the remote smtp server" ) ;
+	G_EXCEPTION( AuthenticationNotSupported , "authentication not supported by the remote smtp server" ) ;
 	G_EXCEPTION( AuthenticationError , "authentication error" ) ;
+	G_EXCEPTION( TlsError , "tls/ssl error" ) ;
 	typedef ClientProtocolReply Reply ;
 
 	/// An interface used by ClientProtocol to send protocol messages.
 	class Sender 
 	{
-		public: virtual bool protocolSend( const std::string & , size_t offset ) = 0 ;
+		public: virtual bool protocolSend( const std::string & , size_t offset , bool go_secure ) = 0 ;
 			///< Called by the Protocol class to send network data to 
 			///< the peer.
 			///<
@@ -236,6 +243,10 @@ public:
 		///< its thing. The reason string should be empty
 		///< on success.
 
+	void secure() ;
+		///< To be called when the secure socket protocol
+		///< has been successfully established.
+
 	bool apply( const std::string & rx ) ;
 		///< Called on receipt of a line of text from the server.
 		///< Returns true if the protocol is done and the doneSignal()
@@ -267,7 +278,7 @@ private:
 
 private:
 	enum State { sInit , sStarted , sServiceReady , sSentEhlo , sSentHelo , sAuth1 , sAuth2 , sSentMail , 
-		sPreprocessing , sSentRcpt , sSentData , sSentDataStub , sData , sSentDot , sDone } ;
+		sPreprocessing , sSentRcpt , sSentData , sSentDataStub , sData , sSentDot , sStartTls , sSentTlsEhlo , sDone } ;
 	Sender & m_sender ;
 	const Secrets & m_secrets ;
 	std::string m_thishost ;
@@ -276,7 +287,9 @@ private:
 	G::Strings m_to ;
 	size_t m_to_accepted ;
 	std::auto_ptr<std::istream> m_content ;
+	bool m_server_has_auth ;
 	bool m_server_has_8bitmime ;
+	bool m_server_has_tls ;
 	bool m_message_is_8bit ;
 	std::string m_message_authentication ;
 	Reply m_reply ;

@@ -50,6 +50,10 @@ void GPop::ServerPeer::onDelete()
 	G_LOG_S( "GPop::ServerPeer: pop connection closed: " << peerAddress().second.displayString() ) ;
 }
 
+void GPop::ServerPeer::onSecure()
+{
+}
+
 bool GPop::ServerPeer::onReceive( const std::string & line )
 {
 	processLine( line ) ;

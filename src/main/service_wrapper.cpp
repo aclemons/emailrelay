@@ -20,7 +20,7 @@
 // A service wrapper program. On service startup a pre-configured process 
 // is forked; on sutdown the forked process is terminated.
 //
-// usage: service_wrapper [--install [<service-name> [<service-display-name>]]]
+// usage: service_wrapper [ { --remove [<service-name>] | --install [<service-name> [<service-display-name>]] } ]
 //
 // The service wrapper looks for a one-line batch file called 
 // "<name>-start.bat" in the same directory as itself which it then 
@@ -34,6 +34,7 @@
 //
 
 #include "service_install.h"
+#include "service_remove.h"
 #include <windows.h>
 #include <sstream>
 #include <stdexcept>
@@ -66,6 +67,25 @@ struct Error : public std::runtime_error
 	DWORD error() const { return m_error ; }
 } ;
 
+namespace
+{
+	std::string lowercase( const std::string & s_ )
+	{
+		std::map<char,char> map ;
+		char c_out = 'a' ;
+		for( char c_in = 'A' ; c_in <= 'Z' ; ++c_in , ++c_out )
+			map[c_in] = c_out ;
+
+		std::string s( s_ ) ;
+		for( std::string::iterator p = s.begin() ; p != s.end() ; ++p )
+		{
+			if( map.find(*p) != map.end() )
+				*p = map[*p] ;
+		}
+		return s ;
+	}
+}
+
 struct Child
 {
 	HANDLE m_hprocess ;
@@ -90,6 +110,7 @@ private:
 	HANDLE m_thread_exit ;
 public:
 	static void install( const std::string & name , const std::string & display_name ) ;
+	static void remove( const std::string & name ) ;
 	static void start() ;
 	Service() ;
 	void init( std::string name ) ;
@@ -118,12 +139,17 @@ int main( int argc , char * argv [] )
 {
 	try
 	{
-		std::string arg1 = argc > 1 ? std::string(argv[1]) : std::string() ;
+		std::string arg1 = argc > 1 ? lowercase(std::string(argv[1])) : std::string() ;
 		std::string arg2 = argc > 2 ? std::string(argv[2]) : std::string("emailrelay") ;
 		std::string arg3 = argc > 3 ? std::string(argv[3]) : std::string("E-MailRelay") ;
 		bool install = arg1 == "--install" || arg1 == "-install" || arg1 == "/install" ;
+		bool remove = 
+			arg1 == "--remove" || arg1 == "-remove" || arg1 == "/remove" ||
+			arg1 == "--uninstall" || arg1 == "-uninstall" || arg1 == "/uninstall" ;
 		if( install )
 			Service::install( arg2 , arg3 ) ;
+		else if( remove )
+			Service::remove( arg2 ) ;
 		else
 			Service::start() ;
 		return 0 ;
@@ -216,6 +242,13 @@ void Service::install( const std::string & service_name , const std::string & di
 
 	// create the service
 	std::string reason = service_install( command_line , service_name , display_name ) ;
+	if( !reason.empty() )
+		throw std::runtime_error( reason ) ;
+}
+
+void Service::remove( const std::string & service_name )
+{
+	std::string reason = service_remove( service_name ) ;
 	if( !reason.empty() )
 		throw std::runtime_error( reason ) ;
 }

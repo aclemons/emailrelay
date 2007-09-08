@@ -235,7 +235,7 @@ void DirectoryPage::dump( std::ostream & stream , const std::string & prefix , c
 	stream << prefix << "dir-desktop: " << m_dir.desktop() << eol ;
 	stream << prefix << "dir-login: " << m_dir.login() << eol ;
 	stream << prefix << "dir-menu: " << m_dir.menu() << eol ;
-	stream << prefix << "dir-reskit: " << m_dir.reskit() << eol ;
+	stream << prefix << "dir-reskit: " << std::string() << eol ;
 	stream << prefix << "dir-boot: " << m_dir.boot() << eol ;
 }
 

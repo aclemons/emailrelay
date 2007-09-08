@@ -38,7 +38,6 @@ namespace
 	const int c_retries = 10 ; // number of retries when using a privileged local port number
 	const int c_port_start = 512 ;
 	const int c_port_end = 1024 ;
-	const size_t c_buffer_size = 1500U ; // see also gserver.h
 	const char * c_cannot_connect_to = "cannot connect to " ;
 }
 
@@ -46,8 +45,6 @@ namespace
 
 GNet::SimpleClient::SimpleClient( const ResolverInfo & remote ,
 	const Address & local_address , bool privileged , bool sync_dns ) :
-		m_resolver(*this) ,
-		m_s(NULL) ,
 		m_remote(remote) ,
 		m_local_address(local_address) ,
 		m_privileged(privileged) ,
@@ -67,7 +64,7 @@ GNet::SimpleClient::~SimpleClient()
 std::string GNet::SimpleClient::logId() const
 {
 	std::string s = m_remote.displayString(true) ;
-	if( m_s != NULL )
+	if( m_s.get() != NULL )
 		s.append( std::string() + "@" + m_s->asString() ) ; // cf. ServerPeer::logId()
 	return s ;
 }
@@ -86,11 +83,18 @@ void GNet::SimpleClient::updateResolverInfo( const ResolverInfo & update )
 	}
 }
 
-GNet::Socket & GNet::SimpleClient::socket()
+GNet::StreamSocket & GNet::SimpleClient::socket()
 {
-	if( m_s == NULL )
+	if( m_s.get() == NULL )
 		throw NotConnected() ;
-	return *m_s ;
+	return *m_s.get() ;
+}
+
+const GNet::StreamSocket & GNet::SimpleClient::socket() const
+{
+	if( m_s.get() == NULL )
+		throw NotConnected() ;
+	return *m_s.get() ;
 }
 
 void GNet::SimpleClient::connect()
@@ -133,10 +137,10 @@ void GNet::SimpleClient::connect()
 	}
 	else
 	{
-		if( !m_resolver.resolveReq( m_remote.str() ) )
-		{
+		if( m_resolver.get() == NULL )
+			m_resolver <<= new ClientResolver( *this ) ;
+		if( !m_resolver->resolveReq( m_remote.str() ) )
 			throw DnsError( m_remote.str() ) ;
-		}
 		setState( Resolving ) ;
 	}
 }
@@ -144,8 +148,8 @@ void GNet::SimpleClient::connect()
 void GNet::SimpleClient::immediateConnection()
 {
 	G_DEBUG( "GNet::SimpleClient::connect: immediate connection" ) ;
-	s().addReadHandler( *this ) ;
-	s().addExceptionHandler( *this ) ;
+	socket().addReadHandler( *this ) ;
+	socket().addExceptionHandler( *this ) ;
 	setState( Connected ) ;
 	onConnectImp() ; // from within connect()
 	onConnect() ; // from within connect()
@@ -171,23 +175,10 @@ int GNet::SimpleClient::getRandomPort()
 	return r + c_port_start ;
 }
 
-GNet::StreamSocket & GNet::SimpleClient::s()
-{ 
-	G_ASSERT( m_s != NULL ) ;
-	return *m_s ;
-}
-
-const GNet::StreamSocket & GNet::SimpleClient::s() const
-{ 
-	G_ASSERT( m_s != NULL ) ;
-	return *m_s ;
-}
-
 void GNet::SimpleClient::close()
 {
-	StreamSocket * s = m_s ;
-	m_s = NULL ;
-	delete s ;
+	m_sp <<= 0 ;
+	m_s <<= 0 ;
 }
 
 bool GNet::SimpleClient::connected() const
@@ -217,15 +208,18 @@ bool GNet::SimpleClient::startConnecting()
 
 	// create and open a socket
 	//
-	delete m_s ; m_s = NULL ; // just in case -- should be null
-	m_s = new StreamSocket( m_remote.address() ) ;
-	if( !s().valid() )
+	m_s <<= new StreamSocket( m_remote.address() ) ;
+	if( !socket().valid() )
 		throw ConnectError( "cannot open socket" ) ;
+
+	// create a socket protocol object
+	//
+	m_sp <<= new SocketProtocol( *this , *this , *m_s.get() ) ;
 
 	// specifiy this as a 'write' event handler for the socket
 	// (before the connect() in case it is reentrant)
 	//
-	s().addWriteHandler( *this ) ;
+	socket().addWriteHandler( *this ) ;
 
 	// bind a local address to the socket and connect
 	//
@@ -256,7 +250,7 @@ bool GNet::SimpleClient::startConnecting()
 	//
 	bool immediate = status == ImmediateSuccess ;
 	if( status != Success )
-		s().dropWriteHandler() ;
+		socket().dropWriteHandler() ;
 
 	return immediate ;
 }
@@ -264,7 +258,7 @@ bool GNet::SimpleClient::startConnecting()
 bool GNet::SimpleClient::localBind( Address local_address )
 {
 	G::Root claim_root ;
-	bool bound = s().bind(local_address) ;
+	bool bound = socket().bind(local_address) ;
 	G_DEBUG( "GNet::SimpleClient::bind: bound local address " << local_address.displayString() ) ;
 	return bound ;
 }
@@ -277,7 +271,7 @@ GNet::SimpleClient::ConnectStatus GNet::SimpleClient::connectCore( Address remot
 	// initiate the connection
 	//
 	bool immediate = false ;
-	if( !s().connect( remote_address , &immediate ) )
+	if( !socket().connect( remote_address , &immediate ) )
 	{
 		G_DEBUG( "GNet::SimpleClient::connectCore: immediate failure" ) ;
 		error = c_cannot_connect_to + remote_address.displayString() ; // see canRetry()
@@ -301,14 +295,14 @@ void GNet::SimpleClient::writeEvent()
 
 	if( m_state == Connected )
 	{
-		s().dropWriteHandler() ;
-		onWriteable() ;
+		if( m_sp->writeEvent() )
+			onSendComplete() ;
 	}
-	else if( m_state == Connecting && s().hasPeer() )
+	else if( m_state == Connecting && socket().hasPeer() )
 	{
-		s().addReadHandler( *this ) ;
-		s().addExceptionHandler( *this ) ;
-		s().dropWriteHandler() ;
+		socket().addReadHandler( *this ) ;
+		socket().addExceptionHandler( *this ) ;
+		socket().dropWriteHandler() ;
 
 		setState( Connected ) ;
 		onConnectImp() ;
@@ -322,24 +316,9 @@ void GNet::SimpleClient::writeEvent()
 
 void GNet::SimpleClient::readEvent()
 {
-	char buffer[c_buffer_size] ;
-	buffer[0] = '\0' ;
-	const size_t buffer_size = G::Test::enabled("small-client-input-buffer") ? 3 : sizeof(buffer) ;
-	ssize_t rc = s().read( buffer , buffer_size ) ;
-
-	if( rc == 0 || ( rc == -1 && !s().eWouldBlock() ) )
-	{
-		throw ReadError() ;
-	}
-	else if( rc != -1 )
-	{
-		G_ASSERT( static_cast<size_t>(rc) <= buffer_size ) ;
-		onData( buffer , static_cast<size_type>(rc) ) ;
-	}
-	else
-	{
-		; // no-op (windows)
-	}
+	G_ASSERT( m_sp.get() != NULL ) ;
+	if( m_sp.get() != NULL )
+		m_sp->readEvent() ;
 }
 
 void GNet::SimpleClient::setState( State new_state )
@@ -350,20 +329,45 @@ void GNet::SimpleClient::setState( State new_state )
 std::pair<bool,GNet::Address> GNet::SimpleClient::localAddress() const
 {
 	return 
-		m_s != NULL ?
-			s().getLocalAddress() :
+		m_s.get() != NULL ?
+			socket().getLocalAddress() :
 			std::make_pair(false,GNet::Address::invalidAddress()) ;
 }
 
 std::pair<bool,GNet::Address> GNet::SimpleClient::peerAddress() const
 {
 	return 
-		m_s != NULL ?
-			s().getPeerAddress() :
+		m_s.get() != NULL ?
+			socket().getPeerAddress() :
 			std::make_pair(false,GNet::Address::invalidAddress()) ;
 }
 
+void GNet::SimpleClient::sslAccept()
+{
+	if( m_sp.get() == NULL )
+		throw NotConnected( "for ssl-accept" ) ;
+	m_sp->sslAccept() ;
+}
+
+void GNet::SimpleClient::sslConnect()
+{
+	if( m_sp.get() == NULL )
+		throw NotConnected( "for ssl-connect" ) ;
+	m_sp->sslConnect() ;
+}
+
 void GNet::SimpleClient::onConnectImp()
+{
+}
+
+bool GNet::SimpleClient::send( const std::string & data , std::string::size_type offset )
+{
+	bool rc = m_sp->send( data , offset ) ;
+	onSendImp() ; // remove this ugly mechanism sometime
+	return rc ;
+}
+
+void GNet::SimpleClient::onSendImp()
 {
 }
 

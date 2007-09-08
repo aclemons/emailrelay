@@ -65,7 +65,7 @@ class G::Unpack
 {
 public:
 	G_EXCEPTION( NoSuchFile , "no such file" ) ;
-	G_EXCEPTION( PackingError , "packing error" ) ;
+	G_EXCEPTION( PackingError , "unpacking error" ) ;
 	/// An overload discriminator class for the Unpack constructor.
 	class NoThrow 
 		{} ;

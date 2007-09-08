@@ -78,9 +78,12 @@ void GSmtp::Client::sendMessage( std::auto_ptr<StoredMessage> message )
 	}
 }
 
-bool GSmtp::Client::protocolSend( const std::string & line , size_t offset )
+bool GSmtp::Client::protocolSend( const std::string & line , size_t offset , bool go_secure )
 {
-	return send( line , offset ) ; // BufferedClient::send()
+	bool rc = send( line , offset ) ; // BufferedClient::send()
+	if( go_secure )
+		sslConnect() ;
+	return rc ;
 }
 
 void GSmtp::Client::preprocessorStart()
@@ -99,6 +102,12 @@ void GSmtp::Client::preprocessorDone( bool ok )
 	}
 	std::string reason = m_processor->text() ;
 	m_protocol.preprocessorDone( ok ? std::string() : reason ) ;
+}
+
+void GSmtp::Client::onSecure()
+{
+	G_LOG( "GSmtp::Client::onSecure: tls/ssl protocol established with " << peerAddress().second.displayString() ) ;
+	m_protocol.secure() ;
 }
 
 void GSmtp::Client::onConnect()

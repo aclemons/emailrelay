@@ -421,10 +421,14 @@ E-MailRelay supports the SMTP "AUTH" extension, as defined in RFC2554, on both
 the server-side and client-side.
 
 The authentication mechanisms currently supported are:
-# "LOGIN"
+# "PLAIN"
 
   Passwords are stored in clear-text, sent over the network in clear-text, and
-  are replayable. This is a widely used mechanism, but officially obsolete.
+  are replayable. Defined in RFC2595.
+
+# "LOGIN"
+
+  Similar to "PLAIN". Officially obsolete although widely used.
 
 # "CRAM-MD5" mechanism
 

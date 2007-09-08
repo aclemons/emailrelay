@@ -21,10 +21,13 @@
 #include "gdef.h"
 #include "gresolver.h"
 #include "glinebuffer.h"
-#include "gsender.h"
+#include "gsimpleclient.h"
+#include "gsocketprotocol.h"
+#include "gresolverinfo.h"
 #include "gexception.h"
 #include "gsocket.h"
 #include "gevent.h"
+#include "gmemory.h"
 #include "gstr.h"
 #include "gdebug.h"
 #include "glog.h"
@@ -37,162 +40,130 @@ namespace
 /// \class GNet::ResolverImp
 /// A pimple-pattern implementation class for GNet::Resolver.
 /// 
-class GNet::ResolverImp : public GNet::EventHandler 
+///  Note that the implementation uses GNet::SimpleClient even though 
+///  GNet::SimpleClient uses a resolver. This is possible because
+///  this class passes a fully-resolved ResolverInfo object to the
+///  client and the client class only instantiates a resolver
+///  when necessary.
+/// 
+class GNet::ResolverImp : public GNet::SimpleClient 
 {
 public:
 	ResolverImp( EventHandler & event_handler , Resolver & resolver , unsigned int port ) ;
 	virtual ~ResolverImp() ;
 	bool resolveReq( std::string host_part, std::string service_part , bool udp ) ;
-	void cancelReq() ;
 	bool busy() const ;
 
+protected:
+	virtual void onConnect() ;
+	virtual void onSendComplete() ;
+	virtual void onData( const char * , std::string::size_type ) ;
+	virtual void onSecure() ;
+	virtual void onException( std::exception & ) ;
+
 private:
-	void operator=( const ResolverImp & ) ;
-	ResolverImp( const ResolverImp & ) ;
-	void end() ;
-	void readEvent() ;
-	void writeEvent() ;
-	void onException( std::exception & ) ;
+	void operator=( const ResolverImp & ) ; // not implemented
+	ResolverImp( const ResolverImp & ) ; // not implemented
+	static ResolverInfo resolverInfo( unsigned int ) ;
 
 private:
 	EventHandler & m_event_handler ;
-	Sender m_sender ;
-	LineBuffer m_line_buffer ;
-	Address m_address ;
 	Resolver & m_outer ;
-	StreamSocket * m_s ;
+	LineBuffer m_line_buffer ;
 	std::string m_request ;
 } ;
 
 // ===
 
 GNet::ResolverImp::ResolverImp( EventHandler & event_handler , Resolver & resolver , unsigned int port ) :
+	SimpleClient(resolverInfo(port)) ,
 	m_event_handler(event_handler) ,
-	m_sender(event_handler) ,
-	m_address(Address::localhost(port)) ,
-	m_outer(resolver) ,
-	m_s(NULL)
+	m_outer(resolver)
 { 
 }
 
 GNet::ResolverImp::~ResolverImp() 
 {
-	delete m_s ;
+}
+
+GNet::ResolverInfo GNet::ResolverImp::resolverInfo( unsigned int port )
+{
+	ResolverInfo info( "localhost" , "0" ) ;
+	info.update( Address::localhost(port) , "localhost" ) ;
+	return info ;
 }
 
 bool GNet::ResolverImp::resolveReq( std::string host_part, std::string service_part , bool udp )
 {
-	if( m_s != NULL ) 
+	if( ! m_request.empty() )
 		return false ; // still busy
-
 	m_request = host_part + ":" + service_part + ":" + ( udp ? "udp" : "tcp" ) + "\n" ;
-	m_s = new StreamSocket ;
-	if( ! m_s->valid() || ! m_s->connect(m_address) )
-	{
-		StreamSocket * s = m_s ;
-		m_s = NULL ;
-		delete s ;
-		return false ;
-	}
+
+	if( connected() )
+		send( m_request ) ;
 	else
-	{
-		m_s->addWriteHandler( *this ) ;
-		return true ;
-	}
+		connect() ;
+
+	return true ;
 }
 
-void GNet::ResolverImp::writeEvent()
+void GNet::ResolverImp::onConnect()
 {
-	G_ASSERT( m_s != NULL ) ;
-	std::pair<bool,Address> peer_pair = m_s->getPeerAddress() ;
-	bool connected = peer_pair.first ;
+	if( ! m_request.empty() )
+		send( m_request ) ;
+}
 
-	if( !connected )
+void GNet::ResolverImp::onSendComplete()
+{
+}
+
+void GNet::ResolverImp::onSecure()
+{
+}
+
+void GNet::ResolverImp::onData( const char * p , std::string::size_type n )
+{
+	m_line_buffer.add( p , n ) ;
+	while( m_line_buffer.more() )
 	{
-		end() ;
-		m_outer.resolveCon( false , Address::invalidAddress() , 
-			std::string("cannot connect to the resolver daemon at ") + m_address.displayString() ) ;
-	}
-	else 
-	{
-		if( m_sender.busy() )
+		m_request.erase() ;
+
+		std::string result = m_line_buffer.line() ;
+		G_DEBUG( "GNet::ResolverImp::readEvent: \"" << result << "\"" ) ;
+		G::Str::trim( result , " \n\r" ) ;
+		std::string::size_type pos = result.find( ' ' ) ;
+		std::string head = pos == std::string::npos ? result : result.substr(0U,pos) ;
+		std::string tail = pos == std::string::npos ? std::string() : result.substr(pos+1U) ;
+		if( Address::validString(head) )
 		{
-			m_sender.resumeSending( *m_s ) ;
+			G::Str::trim( tail , " \n" ) ;
+			m_outer.resolveCon( true , Address(head) , tail ) ;
 		}
 		else
 		{
-			m_s->addReadHandler( *this ) ;
-			m_s->dropWriteHandler() ;
-			m_sender.send( *m_s , m_request ) ;
-		}
-		if( m_sender.failed() )
-		{
-			end() ;
-			m_outer.resolveCon( false , Address::invalidAddress() , 
-				std::string("cannot communicate with resolver daemon at ") + m_address.displayString() ) ;
-		}
-	}
-}
-
-void GNet::ResolverImp::readEvent()
-{
-	G_ASSERT( m_s != NULL ) ;
-
-	static char buffer[200U] ;
-	ssize_t rc = m_s->read( buffer , sizeof(buffer) ) ;
-	G_DEBUG( "GNet::ResolverImp::readEvent: " << rc << " byte(s)" ) ;
-
-	end() ;
-	if( rc == 0 )
-	{
-		m_outer.resolveCon( false , Address::invalidAddress() , "disconnected" ) ;
-	}
-	else
-	{
-		std::string::size_type n = static_cast<std::string::size_type>(rc) ;
-		m_line_buffer.add( buffer , n ) ;
-		if( m_line_buffer.more() )
-		{
-			std::string result = m_line_buffer.line() ;
-			G_DEBUG( "GNet::ResolverImp::readEvent: \"" << result << "\"" ) ;
-			G::Str::trim( result , " \n\r" ) ;
-			std::string::size_type pos = result.find( ' ' ) ;
-			std::string head = pos == std::string::npos ? result : result.substr(0U,pos) ;
-			std::string tail = pos == std::string::npos ? std::string() : result.substr(pos+1U) ;
-			if( Address::validString(head) )
-			{
-				G::Str::trim( tail , " \n" ) ;
-				m_outer.resolveCon( true , Address(head) , tail ) ;
-			}
-			else
-			{
-				std::string reason = result ;
-				reason = G::Str::isPrintableAscii( reason ) ? reason : std::string("dns error") ;
-				m_outer.resolveCon( false , Address::invalidAddress() , reason ) ;
-			}
+			std::string reason = result ;
+			reason = G::Str::isPrintableAscii( reason ) ? reason : std::string("dns error") ;
+			m_outer.resolveCon( false , Address::invalidAddress() , reason ) ;
 		}
 	}
 }
 
 void GNet::ResolverImp::onException( std::exception & e )
 {
-	m_event_handler.onException( e ) ;
-}
-
-void GNet::ResolverImp::cancelReq()
-{
-	end() ;
-}
-
-void GNet::ResolverImp::end()
-{
-	delete m_s ;
-	m_s = NULL ;
+	if( busy() )
+	{
+		m_request.erase() ;
+		m_outer.resolveCon( false , Address::invalidAddress() , e.what() ) ;
+	}
+	else
+	{
+		m_event_handler.onException( e ) ;
+	}
 }
 
 bool GNet::ResolverImp::busy() const
 {
-	return m_s != NULL ;
+	return ! m_request.empty() ;
 }
 
 // ===
@@ -241,8 +212,4 @@ bool GNet::Resolver::busy() const
 	return m_imp->busy() ;
 }
 
-void GNet::Resolver::cancelReq()
-{
-	m_imp->cancelReq() ;
-}
 

@@ -17,15 +17,15 @@
 
 stylesheet=emailrelay.css
 txt_files=developer.txt reference.txt userguide.txt windows.txt 
-man_files_in=emailrelay.1 emailrelay-passwd.1 emailrelay-poke.1 emailrelay-submit.1 
-man_files_out=emailrelay.1.gz emailrelay-passwd.1.gz emailrelay-poke.1.gz emailrelay-submit.1.gz 
+man_files_in=emailrelay.1 emailrelay-passwd.1 emailrelay-poke.1 emailrelay-submit.1 emailrelay-filter-copy.1
+man_files_out=emailrelay.1.gz emailrelay-passwd.1.gz emailrelay-poke.1.gz emailrelay-submit.1.gz emailrelay-filter-copy.1.gz
 html_files_in=doxygen_header.html
 html_files_thru=index.html emailrelay-man.html $(stylesheet)
 html_files_out=readme.html developer.html reference.html userguide.html windows.html changelog.html
 docbook_files_out=emailrelay.docbook
 png_files=gsmtp-classes.png gnet-classes.png sequence-3.png gnet-client.png gsmtp-serverprotocol.png auth.png
 
-EXTRA_DIST = $(man_files_in) $(txt_files) $(html_files_in) $(html_files_thru) $(png_files)
+EXTRA_DIST = $(man_files_in) $(txt_files) $(html_files_in) $(html_files_thru) $(png_files) doxygen_missing.html
 noinst_SCRIPTS = .dox .docbook
 man1_MANS = $(man_files_in)
 e_doc_DATA = $(txt_files) $(html_files_out) $(html_files_thru) $(png_files) $(docbook_files_out)
@@ -38,6 +38,7 @@ converter_txt2mu=$(top_builddir)/bin/txt2mu.sh
 converter_mu2html=$(top_builddir)/bin/mu2html.sh
 converter_expand=$(top_builddir)/bin/expand.sh
 converter_mu2docbook=$(top_builddir)/bin/mu2docbook.sh
+run_doxygen=$(top_builddir)/bin/doxygen.sh
 
 .txt.html:
 	$(converter_html) -a "$(AWK)" $(top_srcdir)/doc/$*.txt $(stylesheet) > $*.html
@@ -61,7 +62,7 @@ emailrelay.docbook: head.db tail.db userguide.db reference.db developer.db
 	-xmlto -o docbook html emailrelay.docbook && touch .docbook && cp *.png docbook/
 
 .dox:
-	if test "$(HAVE_DOXYGEN)" = "yes" ; then cat $(top_srcdir)/src/main/doxygen.cfg | sed "s:__TOP_SRC__:$(top_srcdir):g" | sed "s:__TOP_BUILD__:$(top_builddir):g" | doxygen - && touch .dox ; else echo no doxygen ; fi
+	$(run_doxygen) "$(HAVE_DOXYGEN)" "$(top_srcdir)" "$(top_builddir)" && touch .dox
 
 emailrelay-man.html: emailrelay.1
 	if test "$(HAVE_MAN2HTML)" = "yes" ; then man2html -r -L. emailrelay.1 < /dev/null > emailrelay-man.html.tmp && mv emailrelay-man.html.tmp emailrelay-man.html ; grep -v '^Content-type:' < emailrelay-man.html > emailrelay-man.html.tmp && mv emailrelay-man.html.tmp emailrelay-man.html ; fi
@@ -84,6 +85,9 @@ emailrelay-passwd.1.gz : emailrelay-passwd.1
 
 emailrelay-submit.1.gz : emailrelay-submit.1
 	if test -n "$(GZIP)" ; then $(GZIP) -c $(top_srcdir)/doc/emailrelay-submit.1 > emailrelay-submit.1.gz ; fi
+
+emailrelay-filter-copy.1.gz : emailrelay-filter-copy.1
+	if test -n "$(GZIP)" ; then $(GZIP) -c $(top_srcdir)/doc/emailrelay-filter-copy.1 > emailrelay-filter-copy.1.gz ; fi
 
 emailrelay-poke.1.gz: emailrelay-poke.1
 	if test -n "$(GZIP)" ; then $(GZIP) -c $(top_srcdir)/doc/emailrelay-poke.1 > emailrelay-poke.1.gz ; fi

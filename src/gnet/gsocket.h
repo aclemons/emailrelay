@@ -39,21 +39,24 @@ namespace GNet
 
 /// \class GNet::Socket
 ///
-/// The Socket class encapsulates an asynchronous 
-/// (ie. non-blocking) Unix socket file descriptor or a Windows 
-/// 'SOCKET' handle. The class hides all differences between BSD 
-/// sockets and WinSock.
+/// The Socket class encapsulates a non-blocking
+/// Unix socket file descriptor or a Windows 'SOCKET' handle. 
+/// The class hides all differences between BSD sockets and 
+/// WinSock.
 ///
 /// (Non-blocking network i/o is particularly appropriate for single-
 /// threaded server processes which manage multiple client connections.
 /// The main disagvantage is that flow control has to be managed 
 /// explicitly: see Socket::write() and Socket::eWouldBlock().)
 ///
-/// Exceptions are _not_ used for error reporting.
+/// Exceptions are not used.
 ///
 class GNet::Socket  
 {
 public:
+	typedef size_t size_type ;
+	typedef ssize_t ssize_type ;
+
 	virtual ~Socket() ;
 		///< Destructor.
 
@@ -110,7 +113,7 @@ public:
 		///< address for incoming connections or incoming
 		///< datagrams.
 
-	virtual ssize_t write( const char * buf , size_t len ) ;
+	virtual ssize_type write( const char * buf , size_type len ) ;
 		///< Sends data. For datagram sockets the datagram
 		///< is sent to the address specified in the
 		///< previous connect(). Returns the amount
@@ -199,7 +202,7 @@ protected:
 	static bool valid( Descriptor s ) ;
 	static int reason() ;
 	static bool error( int rc ) ;
-	static bool sizeError( ssize_t size ) ;
+	static bool sizeError( ssize_type size ) ;
 	void prepare() ;
 	void setFault() ;
 	void setNoLinger() ;
@@ -259,6 +262,9 @@ public:
 class GNet::StreamSocket : public GNet::Socket 
 {
 public:
+	typedef Socket::size_type size_type ;
+	typedef Socket::ssize_type ssize_type ;
+
 	StreamSocket() ;
 		///< Default constructor. Check with valid().
 
@@ -269,14 +275,14 @@ public:
 	virtual ~StreamSocket() ;
 		///< Destructor.
 
-	ssize_t read( char * buffer , size_t buffer_length ) ;
-		///< Reads from the TCP stream. Returns
-		///< 0 if the connection has been lost.
-		///< Returns -1 on error, or if there is 
-		///< nothing to read (eWouldBlock() true). 
-		///< Note that under Windows there can 
-		///< be nothing to read even after receiving 
-		///< a read event.
+	ssize_type read( char * buffer , size_type buffer_length ) ;
+		///< Reads data from the socket stream. 
+		///<
+		///< Returns 0 if the connection has been lost.
+		///< Returns -1 on error, or if there is nothing 
+		///< to read (eWouldBlock() true). Note that 
+		///< having nothing to read is not an error, 
+		///< even after getting a read event.
 
 	AcceptPair accept() ;
 		///< Accepts an incoming connection, returning
@@ -306,19 +312,19 @@ public:
 	virtual ~DatagramSocket() ;
 		///< Destructor.
 
-	ssize_t read( void * buffer , size_t len , Address & src ) ; 
+	ssize_type read( void * buffer , size_type len , Address & src ) ; 
 		///< Reads a datagram and returns the sender's address
 		///< by reference. If connect() has been used then
 		///< only datagrams from the address specified in the
 		///< connect() call will be received.
 
-	ssize_t write( const char * buffer , size_t len , const Address & dst ) ; 
+	ssize_type write( const char * buffer , size_type len , const Address & dst ) ; 
 		///< Sends a datagram to the given address.
 		///< This form of write() should be used
 		///< if there is no connect() assocation 
 		///< in effect.
 
-	ssize_t write( const char * buffer , size_t len ) ;
+	ssize_type write( const char * buffer , size_type len ) ;
 		///< See Socket::write().
 
 	void disconnect() ;
@@ -334,7 +340,7 @@ private:
 ///
 
 inline
-ssize_t GNet::DatagramSocket::write( const char *buf, size_t len ) 
+GNet::Socket::ssize_type GNet::DatagramSocket::write( const char *buf, size_type len ) 
 { 
 	return Socket::write(buf,len) ; 
 }

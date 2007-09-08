@@ -51,10 +51,10 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "V!version!displays version information and exits!0!!2|"
 		<< ""
 		<< "g!debug!generates debug-level logging if compiled-in!0!!3|"
-		<< "C!client-auth!enables smtp authentication with remote server, using the given secrets file!1!file!3|"
+		<< "C!client-auth!enables smtp authentication with the remote server, using the given secrets file!1!file!3|"
 		<< "L!log-time!adds a timestamp to the logging output!0!!3|"
 		<< "S!server-auth!enables authentication of remote clients, using the given secrets file!1!file!3|"
-		<< "e!close-stderr!closes the standard error stream after start-up!0!!3|"
+		<< "e!close-stderr!closes the standard error stream soon after start-up!0!!3|"
 		<< "a!admin!enables the administration interface and specifies its listening port number!"
 			<< "1!admin-port!3|"
 		<< "x!dont-serve!disables acting as a server on any port (part of --as-client and usually used with --forward)!0!!3|"
@@ -70,7 +70,7 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "U!connection-timeout!sets the timeout (in seconds) when connecting to a remote server "
 			<< "(default is 40)!1!time!3|"
 		<< "m!immediate!enables immediate forwarding of messages as soon as they are received (requires --forward-to)!0!!3|"
-		<< "I!interface!defines the listening interface for new connections!1!ip-address!3|"
+		<< "I!interface!defines the listening interface for incoming connections!1!ip-address!3|"
 		<< "i!pid-file!defines a file for storing the daemon process-id!1!pid-file!3|"
 		<< "O!poll!enables polling of the spool directory for messages to be forwarded with the specified period (requires --forward-to)!1!period!3|"
 		<< "P!postmaster!!0!!0|"
@@ -95,7 +95,7 @@ std::string Main::CommandLine::switchSpec_unix()
 		<< "t!no-daemon!does not detach from the terminal!0!!3|"
 		<< "u!user!names the effective user to switch to if started as root "
 			<< "(default is \"daemon\")!1!username!3|"
-		<< "k!syslog!force syslog output if logging is enabled (overrides --no-syslog)!0!!3|"
+		<< "k!syslog!forces syslog output if logging is enabled (overrides --no-syslog)!0!!3|"
 		<< "n!no-syslog!disables syslog output (always overridden by --syslog)!0!!3"
 		;
 	return ss.str() ;
@@ -106,11 +106,11 @@ std::string Main::CommandLine::switchSpec_windows()
 	std::ostringstream ss ;
 	ss
 		<< "l!log!writes log information on standard error and event log!0!!2|"
-		<< "t!no-daemon!use an ordinary window, not the system tray!0!!3|"
-		<< "k!syslog!force event log output if logging is enabled (overrides --no-syslog)!0!!3|"
-		<< "n!no-syslog!dont use the event log!0!!3|"
+		<< "t!no-daemon!uses an ordinary window, not the system tray!0!!3|"
+		<< "k!syslog!forces system event log output if logging is enabled (overrides --no-syslog)!0!!3|"
+		<< "n!no-syslog!disables use of the system event log!0!!3|"
 		<< "c!icon!selects the application icon!1!0^|1^|2^|3!3|"
-		<< "H!hidden!hides the application window (requires --no-daemon)!0!!3"
+		<< "H!hidden!hides the application window and suppresses message boxes (requires --no-daemon)!0!!3"
 		;
 	return ss.str() ;
 }

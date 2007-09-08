@@ -14,9 +14,6 @@
 
 @SET_MAKE@
 
-#
-#
-
 
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
@@ -51,16 +48,17 @@ am_emailrelay_test_scanner_OBJECTS =  \
 	emailrelay_test_scanner.$(OBJEXT)
 emailrelay_test_scanner_OBJECTS =  \
 	$(am_emailrelay_test_scanner_OBJECTS)
+am__DEPENDENCIES_1 =
 emailrelay_test_scanner_DEPENDENCIES =  \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a \
-	$(top_builddir)/src/glib/libglib.a
+	$(top_builddir)/src/glib/libglib.a $(am__DEPENDENCIES_1)
 am_emailrelay_test_server_OBJECTS = emailrelay_test_server.$(OBJEXT)
 emailrelay_test_server_OBJECTS = $(am_emailrelay_test_server_OBJECTS)
 emailrelay_test_server_DEPENDENCIES =  \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a \
-	$(top_builddir)/src/glib/libglib.a
+	$(top_builddir)/src/glib/libglib.a $(am__DEPENDENCIES_1)
 SCRIPTS = $(noinst_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -134,6 +132,7 @@ QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
@@ -209,13 +208,15 @@ emailrelay_test_scanner_SOURCES = emailrelay_test_scanner.cpp
 emailrelay_test_scanner_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a \
-	$(top_builddir)/src/glib/libglib.a
+	$(top_builddir)/src/glib/libglib.a \
+	$(SSL_LIBS)
 
 emailrelay_test_server_SOURCES = emailrelay_test_server.cpp
 emailrelay_test_server_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a \
-	$(top_builddir)/src/glib/libglib.a
+	$(top_builddir)/src/glib/libglib.a \
+	$(SSL_LIBS)
 
 SUFFIXES = .pm .pl .pl_ .sh .sh_
 all: all-am

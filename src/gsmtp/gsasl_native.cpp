@@ -29,6 +29,8 @@
 #include "gmemory.h"
 #include "gdebug.h"
 #include <sstream>
+#include <algorithm> // set_intersection
+#include <set>
 
 namespace
 {
@@ -50,10 +52,10 @@ public:
 	bool m_authenticated ;
 	std::string m_id ;
 	std::string m_trustee ;
-	bool m_strict ;
-	bool m_advertise_force_one ;
 	bool m_advertise_login ;
+	bool m_advertise_plain ;
 	bool m_advertise_cram_md5 ;
+	bool m_advertise_force_one ;
 
 public:
 	SaslServerImp( const SaslServer::Secrets & , bool , bool ) ;
@@ -80,53 +82,44 @@ public:
 
 // ===
 
-GSmtp::SaslServerImp::SaslServerImp( const SaslServer::Secrets & secrets , bool strict , bool force_one ) :
+GSmtp::SaslServerImp::SaslServerImp( const SaslServer::Secrets & secrets , bool , bool force_one ) :
 	m_first(true) ,
 	m_secrets(secrets) ,
 	m_authenticated(false) ,
-	m_strict(strict) ,
-	m_advertise_force_one(force_one)
+	m_advertise_login(false) ,
+	m_advertise_plain(false) ,
+	m_advertise_cram_md5(false) ,
+	m_advertise_force_one(force_one) 
 {
+	// only advertise mechanisms that appear in the secrets file
 	m_advertise_login = m_secrets.contains("LOGIN") ;
+	m_advertise_plain = m_secrets.contains("LOGIN") || m_secrets.contains("PLAIN") ;
 	m_advertise_cram_md5 = m_secrets.contains("CRAM-MD5") ;
-	if( m_strict )
+	if( force_one && !m_advertise_login && !m_advertise_cram_md5 && !m_advertise_plain )
 	{
-		m_advertise_login = false ;
-	}
-	if( force_one && !m_advertise_login && !m_advertise_cram_md5 )
-	{
-		if( m_strict )
-			m_advertise_cram_md5 = true ;
-		else
-			m_advertise_login = true ;
+		m_advertise_login = true ;
 	}
 }
 
 std::string GSmtp::SaslServerImp::mechanisms( const std::string & sep ) const
 {
-	std::string s ;
-	if( m_advertise_login )
-	{
-		s.append("LOGIN") ;
-	}
-	if( m_advertise_cram_md5 ) 
-	{
-		if( !s.empty() ) s.append( sep ) ;
-		s.append("CRAM-MD5") ;
-	}
-	return s ;
+	G::Strings m ;
+	if( m_advertise_login ) m.push_back( "LOGIN" ) ;
+	if( m_advertise_plain ) m.push_back( "PLAIN" ) ;
+	if( m_advertise_cram_md5 ) m.push_back( "CRAM-MD5" ) ;
+	return G::Str::join( m , sep ) ;
 }
 
 bool GSmtp::SaslServerImp::init( const std::string & mechanism )
 {
 	m_authenticated = false ;
-	m_id = std::string() ;
-	m_trustee = std::string() ;
+	m_id.erase() ;
+	m_trustee.erase() ;
 	m_first = true ;
-	m_challenge = std::string() ;
-	m_mechanism = std::string() ;
+	m_challenge.erase() ;
+	m_mechanism.erase() ;
 
-	if( mechanism == "LOGIN" )
+	if( mechanism == "LOGIN" || mechanism == "PLAIN" )
 	{
 		m_mechanism = mechanism ;
 		return true ;
@@ -261,8 +254,11 @@ bool GSmtp::SaslServer::init( const std::string & mechanism )
 
 std::string GSmtp::SaslServer::initialChallenge() const
 {
-	if( m_imp->m_mechanism == "LOGIN" )
+	std::string m = m_imp->m_mechanism ;
+	if( m == "LOGIN" )
 		return login_challenge_1 ;
+	else if( m == "PLAIN" )
+		return std::string() ;
 	else
 		return m_imp->m_challenge ;
 }
@@ -300,8 +296,23 @@ std::string GSmtp::SaslServer::apply( const std::string & response , bool & done
 		}
 		done = true ;
 	}
+	else if( m_imp->m_mechanism == "PLAIN" )
+	{
+		G_DEBUG( "GSmtp::SaslServer::apply: response: \"" << G::Str::printable(response) << "\"" ) ;
+		std::string sep( 1U , '\0' ) ;
+		std::string s = G::Str::tail( response , response.find(sep) , std::string() ) ;
+		std::string id = G::Str::head( s , s.find(sep) , std::string() ) ;
+		std::string pwd = G::Str::tail( s , s.find(sep) , std::string() ) ;
+		std::string secret = m_imp->m_secrets.secret("PLAIN",id).empty() ?
+			m_imp->m_secrets.secret("LOGIN",id) : m_imp->m_secrets.secret("PLAIN",id) ;
+
+		m_imp->m_id = id ;
+		m_imp->m_authenticated = !id.empty() && !pwd.empty() && pwd == secret ;
+		done = true ;
+	}
 	else if( m_imp->m_first ) // LOGIN username
 	{
+		G_ASSERT( m_imp->m_mechanism == "LOGIN" ) ;
 		G_DEBUG( "GSmtp::SaslServer::apply: response: \"" << response << "\"" ) ;
 		m_imp->m_first = false ;
 		m_imp->m_id = response ;
@@ -310,6 +321,7 @@ std::string GSmtp::SaslServer::apply( const std::string & response , bool & done
 	}
 	else // LOGIN password
 	{
+		G_ASSERT( m_imp->m_mechanism == "LOGIN" ) ;
 		G_DEBUG( "GSmtp::SaslServer::apply: response: \"[password not logged]\"" ) ;
 		std::string secret = m_imp->m_secrets.secret(m_imp->m_mechanism,m_imp->m_id) ;
 		m_imp->m_first = true ;
@@ -359,8 +371,8 @@ bool GSmtp::SaslClient::active() const
 	return m_imp->m_secrets.valid() ;
 }
 
-std::string GSmtp::SaslClient::response( const std::string & mechanism , 
-	const std::string & challenge , bool & done , bool & error ) const
+std::string GSmtp::SaslClient::response( const std::string & mechanism , const std::string & challenge , 
+	bool & done , bool & error ) const
 {
 	done = false ;
 	error = false ;
@@ -377,24 +389,45 @@ std::string GSmtp::SaslClient::response( const std::string & mechanism ,
 
 		done = true ;
 	}
-	else if( challenge == login_challenge_1 )
+	else if( mechanism == "PLAIN" )
 	{
-		rsp = m_imp->m_secrets.id(mechanism) ;
-		error = rsp.empty() ;
-		done = false ;
-	}
-	else if( challenge == login_challenge_2 )
-	{
-		rsp = m_imp->m_secrets.secret(mechanism) ;
-		error = rsp.empty() ;
+		std::string sep( 1U , '\0' ) ;
+		std::string id = m_imp->m_secrets.id(mechanism) ;
+		std::string secret = m_imp->m_secrets.secret(mechanism) ;
+		rsp = sep + id + sep + secret ;
+		error = id.empty() || secret.empty() ;
 		done = true ;
+	}
+	else if( mechanism == "LOGIN" )
+	{
+		if( challenge == login_challenge_1 )
+		{
+			rsp = m_imp->m_secrets.id(mechanism) ;
+			error = rsp.empty() ;
+			done = false ;
+		}
+		else if( challenge == login_challenge_2 )
+		{
+			rsp = m_imp->m_secrets.secret(mechanism) ;
+			error = rsp.empty() ;
+			done = true ;
+		}
+		else
+		{
+			error = true ;
+		}
 	}
 	else
 	{
-		G_WARNING( "GSmtp::SaslClient: invalid challenge" ) ;
-		done = true ;
 		error = true ;
 	}
+
+	if( error )
+	{
+		G_WARNING( "GSmtp::SaslClient: invalid challenge" ) ;
+		done = true ;
+	}
+
 	return rsp ;
 }
 
@@ -407,42 +440,33 @@ std::string GSmtp::SaslClient::preferred( const G::Strings & mechanism_list ) co
 	if( !active() )
 		return std::string() ;
 
-	// look for cram-md5 and login in the list
-	//
 	const std::string login( "LOGIN" ) ;
+	const std::string plain( "PLAIN" ) ;
 	const std::string cram( "CRAM-MD5" ) ;
-	bool has_login = false ;
-	bool has_cram = false ;
+
+	// create a them set
+	std::set<std::string> them ;
 	for( G::Strings::const_iterator p = mechanism_list.begin() ; p != mechanism_list.end() ; ++p )
-	{
-		std::string mechanism = *p ;
-		G::Str::toUpper( mechanism ) ;
-		if( mechanism == login )
-			has_login = true ;
-		else if( mechanism == cram )
-			has_cram = true ;
-	}
+		them.insert( G::Str::upper(*p) ) ;
 
-	// prefer cram-md5 over login...
-	//
-	std::string result = has_cram ? cram : ( has_login ? login : std::string() ) ;
-	G_DEBUG( "GSmtp::SaslClient::preferred: we prefer \"" << result << "\"" ) ;
+	// create an us set
+	std::set<std::string> us ;
+	if( !m_imp->m_secrets.id(login).empty() ) us.insert(login) ;
+	if( !m_imp->m_secrets.id(plain).empty() ) us.insert(plain) ;
+	if( !m_imp->m_secrets.id(cram).empty() ) us.insert(cram) ;
 
-	// ... but only if a secret is defined for it
-	//
-	if( !result.empty() && m_imp->m_secrets.id(result).empty() )
-	{
-		G_DEBUG( "GSmtp::SaslClient::preferred: .. but no secret" ) ;
-		result = std::string() ;
-		if( has_cram && has_login )
-		{
-			result = login ;
-			if( m_imp->m_secrets.id(login).empty() )
-				result = std::string() ;
-		}
-		G_DEBUG( "GSmtp::SaslClient::preferred: we now prefer \"" << result << "\"" ) ;
-	}
-	return result ;
+	// get the intersection
+	std::set<std::string> both ;
+	std::set_intersection( them.begin() , them.end() , us.begin() , us.end() , std::inserter(both,both.end()) ) ;
+
+	// preferred order: cram, plain, login
+	std::string m ;
+	if( m.empty() && both.find(cram) != both.end() ) m = cram ;
+	if( m.empty() && both.find(plain) != both.end() ) m = plain ;
+	if( m.empty() && both.find(login) != both.end() ) m = login ;
+	G_DEBUG( "GSmtp::SaslClient::preferred: we prefer \"" << m << "\"" ) ;
+
+	return m ;
 }
 
 // ==

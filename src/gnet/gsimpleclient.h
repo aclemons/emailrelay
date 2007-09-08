@@ -24,12 +24,14 @@
 #include "gdef.h"
 #include "gnet.h"
 #include "gaddress.h"
+#include "gmemory.h"
 #include "gconnection.h"
 #include "gexception.h"
 #include "geventhandler.h"
 #include "gresolver.h"
 #include "gresolverinfo.h"
 #include "gsocket.h"
+#include "gsocketprotocol.h"
 #include "gevent.h"
 #include <string>
 
@@ -62,11 +64,10 @@ private:
 
 /// \class GNet::SimpleClient
 /// A class for making an outgoing connection to a remote server. 
-/// The class handles address resolution and connection issues and it reads 
-/// incoming data. However, it has only minimal support for flow-control
-/// when sending.
+/// The class handles address resolution and connection issues, it reads 
+/// incoming data and it manages flow-control when sending.
 ///
-class GNet::SimpleClient : public GNet::EventHandler , public GNet::Connection 
+class GNet::SimpleClient : public GNet::EventHandler , public GNet::Connection , public GNet::SocketProtocolSink 
 {
 public:
 	enum ConnectStatus { Success , Failure , Retry , ImmediateSuccess } ;
@@ -74,7 +75,6 @@ public:
 	G_EXCEPTION( DnsError , "dns error" ) ;
 	G_EXCEPTION( ConnectError , "connect failure" ) ;
 	G_EXCEPTION( NotConnected , "socket not connected" ) ;
-	G_EXCEPTION( ReadError , "read error: disconnected" ) ;
 	typedef std::string::size_type size_type ;
 
 	SimpleClient( const ResolverInfo & remote_info ,
@@ -132,12 +132,19 @@ public:
 	virtual void writeEvent() ;
 		///< Final override from GNet::EventHandler.
 
+	bool send( const std::string & data , std::string::size_type offset = 0 ) ;
+		///< Returns true if all sent, or false if flow
+		///< control was asserted. Throws on error.
+
 protected:
 	virtual ~SimpleClient() ;
 		///< Destructor.
 
-	Socket & socket() ;
+	StreamSocket & socket() ;
 		///< Returns a reference to the socket. Throws if not connected.
+
+	const StreamSocket & socket() const ;
+		///< Returns a const reference to the socket. Throws if not connected.
 
 	virtual void onConnect() = 0 ;
 		///< Called once connected. May (unfortunately) be
@@ -147,17 +154,22 @@ protected:
 		///< An alternative to onConnect() for private implementation 
 		///< classes. The default implementation does nothing.
 
-	virtual void onData( const char * data , size_type size ) = 0 ;
-		///< Called on receipt of data.
+	virtual void onSendComplete() = 0 ;
+		///< Called when all residual data from send() has been sent.
 
-	virtual void onWriteable() = 0 ;
-		///< Called when the socket becomes writable
-		///< after flow control is released.
+	virtual void onSendImp() ;
+		///< ...
+
+	void sslAccept() ;
+		///< ...
+
+	void sslConnect() ;
+		///< ...
 
 	static bool canRetry( const std::string & reason ) ;
 		///< Parses the given failure reason and returns
 		///< true if the client can reasonably retry
-		///< at some later time.
+		///< at some later time. (Not used?)
 
 	std::string logId() const ;
 		///< Returns a identification string for logging purposes.
@@ -173,17 +185,18 @@ private:
 	void operator=( const SimpleClient& ) ; // not implemented
 	void close() ;
 	static int getRandomPort() ;
-	StreamSocket & s() ;
-	const StreamSocket & s() const ;
 	bool startConnecting() ;
 	bool localBind( Address ) ;
 	ConnectStatus connectCore( Address remote_address , std::string *error_p ) ;
 	void setState( State ) ;
 	void immediateConnection() ;
+	void logFlowControlAsserted() const ;
+	void logFlowControlReleased() const ;
 
 private:
-	ClientResolver m_resolver ;
-	StreamSocket * m_s ;
+	std::auto_ptr<ClientResolver> m_resolver ;
+	std::auto_ptr<StreamSocket> m_s ;
+	std::auto_ptr<SocketProtocol> m_sp ;
 	ResolverInfo m_remote ;
 	Address m_local_address ;
 	bool m_privileged ;

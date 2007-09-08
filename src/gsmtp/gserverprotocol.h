@@ -110,6 +110,10 @@ public:
 		///< The string is expected to be CR-LF terminated.
 		///< Throws ProtocolDone at the end of the protocol.
 
+	void secure() ;
+		///< To be called when the transport protocol goes 
+		///< into secure mode.
+
 protected:
 	virtual void onTimeout() ; 
 		///< Final override from GNet::AbstractTimer.

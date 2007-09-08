@@ -28,7 +28,8 @@
 # directory. 
 #
 # For example:
-#    c:\emailrelay\src> c:\mingw\bin\mingw32-make -f mingw.mak
+#    c:\emailrelay\src> PATH=%PATH%;c:\mingw\bin
+#    c:\emailrelay\src> mingw32-make -f mingw.mak
 #
 # GUI build
 # ---------
@@ -44,7 +45,7 @@
 # src/3rdparty directory. To build the zlib library from the source code in Qt 
 # you can go through the whole Qt build, or try something like this:
 #
-#    c:\qt\src\3rdparty\zlib> c:\mingw\bin\mingw32-make CC=gcc CFLAGS=../../corelib/global
+#    c:\qt\src\3rdparty\zlib> c:\mingw\bin\mingw32-make CC=gcc CFLAGS=-I../../corelib/global
 #
 ###
 ## Uncomment and edit these for the GUI build ...

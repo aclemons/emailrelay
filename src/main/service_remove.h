@@ -14,36 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gtest.cpp
-//
+///
+/// \file service_remove.h
+///
 
-#include "gdef.h"
-#include "gtest.h"
-#include "gdebug.h"
+#ifndef GUI_SERVICE_REMOVE_H__
+#define GUI_SERVICE_REMOVE_H__
+
 #include <string>
-#include <cstdlib> // getenv
-#include <set>
 
-bool G::Test::enabled( const std::string & name )
-{
-	bool result = false ;
+std::string service_remove( const std::string & name ) ;
 
- #ifdef _DEBUG
-	static const char * p = std::getenv("G_TEST") ;
-	result = p ? ( std::string(p).find(name) != std::string::npos ) : false ; // (could do better)
- #endif
-
-	if( result )
-	{
-		static std::set<std::string> warned ;
-		if( warned.find(name) == warned.end() )
-		{
-			warned.insert( name ) ;
-			G_WARNING( "G::Test::enabled: test case enabled: [" << name << "]" ) ;
-		}
-	}
-	return result ;
-}
-
-/// \file gtest.cpp
+#endif

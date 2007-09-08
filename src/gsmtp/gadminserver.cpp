@@ -80,6 +80,10 @@ void GSmtp::AdminServerPeer::onDelete()
 	G_LOG_S( "GSmtp::AdminServerPeer: admin connection closed: " << peerAddress().second.displayString() ) ;
 }
 
+void GSmtp::AdminServerPeer::onSecure()
+{
+}
+
 bool GSmtp::AdminServerPeer::onReceive( const std::string & line )
 {
 	if( is(line,"flush") )

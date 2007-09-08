@@ -89,10 +89,6 @@ SOURCE=..\gnet\gaddress_ipv4.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gnet\gbufferedclient.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\gnet\gbufferedserverpeer.cpp
 # End Source File
 # Begin Source File

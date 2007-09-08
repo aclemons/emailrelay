@@ -32,6 +32,7 @@
 GNet::ServerPeer::ServerPeer( Server::PeerInfo peer_info ) :
 	m_address(peer_info.m_address) ,
 	m_socket(peer_info.m_socket) ,
+	m_sp(*this,*this,*m_socket.get()) ,
 	m_handle(peer_info.m_handle) ,
 	m_delete_timer(*this,&ServerPeer::onTimeout,*this)
 {
@@ -64,23 +65,13 @@ GNet::StreamSocket & GNet::ServerPeer::socket()
 
 void GNet::ServerPeer::readEvent()
 {
-	char buffer[c_buffer_size] ;
-	buffer[0] = '\0' ;
-	const size_t buffer_size = G::Test::enabled("small-server-input-buffer") ? 3 : sizeof(buffer) ;
-	ssize_t rc = m_socket->read( buffer , buffer_size ) ;
-
-	if( rc == 0 || (rc == -1 && !m_socket->eWouldBlock()) )
+	try
+	{
+		m_sp.readEvent() ;
+	}
+	catch( SocketProtocol::ReadError & ) // avoid the warning in onException()
 	{
 		doDelete() ;
-	}
-	else if( rc != -1 )
-	{
-		G_ASSERT( static_cast<size_t>(rc) <= buffer_size ) ;
-		onData( buffer , static_cast<size_type>(rc) ) ;
-	}
-	else 
-	{ 
-		; // no-op (windows)
 	}
 }
 
@@ -115,6 +106,25 @@ void GNet::ServerPeer::onTimeout()
 void GNet::ServerPeer::doDeleteThis( int )
 {
 	delete this ;
+}
+
+bool GNet::ServerPeer::send( const std::string & data , std::string::size_type offset )
+{
+	return m_sp.send( data , offset ) ;
+}
+
+void GNet::ServerPeer::writeEvent()
+{
+	try
+	{
+		if( m_sp.writeEvent() )
+			onSendComplete() ;
+	}
+	catch( std::exception & e ) // strategy
+	{
+		G_WARNING( "GNet::ServerPeer::writeEvent: exception: " << e.what() ) ;
+		doDelete() ;
+	}
 }
 
 // ===

@@ -77,9 +77,6 @@ public:
 	G::Path menu() const ;
 		///< Returns the menu path.
 
-	G::Path reskit() const ;
-		///< Returns the windows resource kit path.
-
 	static std::string dotexe() ;
 		///< Returns ".exe" or not.
 
@@ -112,7 +109,6 @@ private:
 	G::Path m_desktop ;
 	G::Path m_boot ;
 	G::Path m_menu ;
-	G::Path m_reskit ;
 } ;
 
 #endif

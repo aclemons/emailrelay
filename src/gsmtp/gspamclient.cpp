@@ -169,6 +169,10 @@ void GSmtp::SpamClient::turnRound()
 	m_out_lines = 0UL ;
 }
 
+void GSmtp::SpamClient::onSecure()
+{
+}
+
 bool GSmtp::SpamClient::onReceive( const std::string & line )
 {
 	if( m_in.get() != NULL )

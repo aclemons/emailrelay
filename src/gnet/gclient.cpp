@@ -25,7 +25,7 @@
 GNet::Client::Client( const ResolverInfo & remote_info , unsigned int connection_timeout ,
 	unsigned int response_timeout , const std::string & eol , const Address & local_interface , 
 	bool privileged , bool sync_dns ) :
-		BufferedClient(remote_info,local_interface,privileged,sync_dns) ,
+		HeapClient(remote_info,local_interface,privileged,sync_dns) ,
 		m_done_signal(true) ,
 		m_connected_signal(true) ,
 		m_connection_timeout(connection_timeout) ,

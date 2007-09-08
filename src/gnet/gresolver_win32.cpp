@@ -37,7 +37,6 @@ public:
 	bool valid() ;
 	virtual ~ResolverImp() ;
 	bool resolveReq( std::string host_part, std::string service_part , bool udp ) ;
-	void cancelReq() ;
 	bool busy() const ;
 
 private:
@@ -102,11 +101,6 @@ bool GNet::ResolverImp::resolveReq( std::string host_part, std::string service_p
 	}
 
 	return true ;
-}
-
-void GNet::ResolverImp::cancelReq()
-{
-	cleanup() ;
 }
 
 void GNet::ResolverImp::cleanup()
@@ -248,11 +242,5 @@ void GNet::Resolver::resolveCon( bool , const Address &, std::string )
 bool GNet::Resolver::busy() const
 {
 	return m_imp != NULL ? m_imp->busy() : true ;
-}
-
-void GNet::Resolver::cancelReq()
-{
-	if( m_imp != NULL )
-		m_imp->cancelReq() ;
 }
 

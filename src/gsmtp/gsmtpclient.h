@@ -115,8 +115,11 @@ protected:
 	virtual void onSendComplete() ; 
 		///< Final override from GNet::BufferedClient.
 
+	virtual void onSecure() ;
+		///< Final override from GNet::SocketProtocol.
+
 private:
-	virtual bool protocolSend( const std::string & , size_t ) ; // override from private base class
+	virtual bool protocolSend( const std::string & , size_t , bool ) ; // override from private base class
 	void protocolDone( std::string ) ; // see ClientProtocol::doneSignal()
 	void preprocessorStart() ;
 	void preprocessorDone( bool ) ;

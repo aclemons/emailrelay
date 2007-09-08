@@ -34,7 +34,10 @@ div.Header h1
 div.Content
 {
 	margin-left: 230px ;
-	padding: 5px ;
+	padding-left: 5px ;
+	padding-top: 5px ;
+	padding-bottom: 5px ;
+	padding-right: 40px ;
 }
 
 div.Menu

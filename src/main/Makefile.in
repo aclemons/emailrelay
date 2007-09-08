@@ -56,13 +56,14 @@ PROGRAMS = $(e_libexec_PROGRAMS) $(sbin_PROGRAMS)
 am_emailrelay_OBJECTS = commandline.$(OBJEXT) configuration.$(OBJEXT) \
 	legal.$(OBJEXT) main.$(OBJEXT) output.$(OBJEXT) run.$(OBJEXT)
 emailrelay_OBJECTS = $(am_emailrelay_OBJECTS)
+am__DEPENDENCIES_1 =
 emailrelay_DEPENDENCIES = $(top_builddir)/src/gpop/libgpop.a \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a
+	$(top_builddir)/src/gnet/lib$(IP).a $(am__DEPENDENCIES_1)
 am_emailrelay_filter_copy_OBJECTS = filter_copy.$(OBJEXT) \
-	legal.$(OBJEXT)
+	filter.$(OBJEXT) legal.$(OBJEXT)
 emailrelay_filter_copy_OBJECTS = $(am_emailrelay_filter_copy_OBJECTS)
 emailrelay_filter_copy_DEPENDENCIES =  \
 	$(top_builddir)/src/glib/libglib.a
@@ -165,6 +166,7 @@ QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
@@ -240,6 +242,8 @@ EXTRA_DIST = \
 	service.dsp \
 	service_install.cpp \
 	service_install.h \
+	service_remove.cpp \
+	service_remove.h \
 	service_wrapper.cpp \
 	submit.dsp \
 	winapp.cpp \
@@ -272,13 +276,14 @@ emailrelay_LDADD = \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a
+	$(top_builddir)/src/gnet/lib$(IP).a \
+	$(SSL_LIBS)
 
 emailrelay_poke_SOURCES = poke.c
 emailrelay_poke_LDADD = 
-emailrelay_passwd_SOURCES = passwd.cpp legal.cpp
+emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
 emailrelay_passwd_LDADD = $(top_builddir)/src/glib/libglib.a
-emailrelay_submit_SOURCES = submit.cpp legal.cpp
+emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
@@ -286,7 +291,7 @@ emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(top_builddir)/src/glib/libglib.a
 
-emailrelay_filter_copy_SOURCES = filter_copy.cpp legal.cpp
+emailrelay_filter_copy_SOURCES = filter_copy.cpp filter.cpp filter.h legal.cpp legal.h
 emailrelay_filter_copy_LDADD = \
 	$(top_builddir)/src/glib/libglib.a
 
@@ -393,6 +398,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/commandline.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/configuration.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter_copy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/legal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@

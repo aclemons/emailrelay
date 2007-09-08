@@ -54,6 +54,8 @@ public:
 private:	
 	virtual void onDelete() ;
 	virtual void onData( const char * , GNet::ServerPeer::size_type ) ;
+	virtual void onSecure() ;
+	virtual void onSendComplete() ;
 	void process() ;
 	bool processFile( std::string ) ;
 private:
@@ -71,11 +73,19 @@ void Main::ScannerPeer::onDelete()
 	G_LOG_S( "ScannerPeer::onDelete: disconnected" ) ;
 }
 
+void Main::ScannerPeer::onSecure()
+{
+}
+
 void Main::ScannerPeer::onData( const char * p , GNet::ServerPeer::size_type n )
 {
 	G_DEBUG( "ScannerPeer::onData: " << G::Str::printable(std::string(p,n)) ) ;
 	m_buffer.add( p , n ) ;
 	process() ;
+}
+
+void Main::ScannerPeer::onSendComplete()
+{
 }
 
 void Main::ScannerPeer::process()

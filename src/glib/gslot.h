@@ -142,7 +142,6 @@ public:
 	void emit() { if(!m_once||!m_emitted) { m_emitted = true ; m_slot.callback() ; } }
 	void connect( Slot0 slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
 	void disconnect() { m_slot = Slot0() ; }
-	bool connected() const { return m_slot.base() != NULL ; }
 	void reset() { m_emitted = false ; }
 } ;
 
@@ -217,7 +216,6 @@ public:
 	void emit( P p ) { if(!m_once||!m_emitted) { m_emitted = true ; m_slot.callback( p ) ; } }
 	void connect( Slot1<P> slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
 	void disconnect() { m_slot = Slot1<P>() ; }
-	bool connected() const { return m_slot.base() != NULL ; }
 	void reset() { m_emitted = false ; }
 } ;
 
@@ -292,7 +290,6 @@ public:
 	void emit( P1 p1 , P2 p2 ) { if(!m_once||!m_emitted) { m_emitted = true ; m_slot.callback( p1 , p2 ) ; } }
 	void connect( Slot2<P1,P2> slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
 	void disconnect() { m_slot = Slot2<P1,P2>() ; }
-	bool connected() const { return m_slot.base() != NULL ; }
 	void reset() { m_emitted = false ; }
 } ;
 
@@ -367,7 +364,6 @@ public:
 	void emit( P1 p1 , P2 p2 , P3 p3 ) { if(!m_once||!m_emitted) { m_emitted = true ; m_slot.callback( p1 , p2 , p3 ) ; }}
 	void connect( Slot3<P1,P2,P3> slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
 	void disconnect() { m_slot = Slot3<P1,P2,P3>() ; }
-	bool connected() const { return m_slot.base() != NULL ; }
 	void reset() { m_emitted = false ; }
 } ;
 
@@ -380,7 +376,7 @@ Slot3<P1,P2,P3> slot( T & object , void (T::*fn)(P1,P2,P3) )
 	return Slot3<P1,P2,P3>( new SlotImp3<T,P1,P2,P3>(object,fn) , SlotOp3<T,P1,P2,P3>::callback ) ;
 }
 
-} // namespace
+}
 
 #endif
 

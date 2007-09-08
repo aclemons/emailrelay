@@ -14,36 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gtest.cpp
-//
+///
+/// \file filter.h
+///
+
+#ifndef G_MAIN_FILTER_H
+#define G_MAIN_FILTER_H
 
 #include "gdef.h"
-#include "gtest.h"
-#include "gdebug.h"
+#include "gpath.h"
 #include <string>
-#include <cstdlib> // getenv
-#include <set>
 
-bool G::Test::enabled( const std::string & name )
-{
-	bool result = false ;
+void filter_help( const std::string & prefix ) ;
+bool filter_run( const std::string & content ) ;
+int filter_main( int argc , char * argv [] ) ;
 
- #ifdef _DEBUG
-	static const char * p = std::getenv("G_TEST") ;
-	result = p ? ( std::string(p).find(name) != std::string::npos ) : false ; // (could do better)
- #endif
+bool filter_match( G::Path , std::string ) ;
+std::string filter_read_to( const std::string & ) ;
 
-	if( result )
-	{
-		static std::set<std::string> warned ;
-		if( warned.find(name) == warned.end() )
-		{
-			warned.insert( name ) ;
-			G_WARNING( "G::Test::enabled: test case enabled: [" << name << "]" ) ;
-		}
-	}
-	return result ;
-}
-
-/// \file gtest.cpp
+#endif

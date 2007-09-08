@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gnet.h"
 #include "gsocket.h"
+#include "gsocketprotocol.h"
 #include "gtimer.h"
 #include "gconnection.h"
 #include "gevent.h"
@@ -184,15 +185,17 @@ private:
 /// delete themselves when the connection is lost.
 /// \see GNet::Server, GNet::EventHandler
 ///
-class GNet::ServerPeer : public GNet::EventHandler , public GNet::Connection 
+class GNet::ServerPeer : public GNet::EventHandler , public GNet::Connection , public GNet::SocketProtocolSink 
 {
 public:
 	typedef std::string::size_type size_type ;
-	enum { c_buffer_size = 1500 } ;
 
 	explicit ServerPeer( Server::PeerInfo ) ;
 		///< Constructor. This constructor is only used from within the 
 		///< override of GServer::newPeer().
+
+	bool send( const std::string & data , std::string::size_type offset = 0U ) ;
+		///< TODO
 
 	void doDelete() ; 
 		///< Does "onDelete(); delete this".
@@ -212,6 +215,9 @@ public:
 	virtual void readEvent() ; 
 		///< Final override from GNet::EventHandler.
 
+	virtual void writeEvent() ;
+		///< Final override from GNet::EventHandler.
+
 	virtual void onException( std::exception & ) ;
 		///< Final override from GNet::EventHandler.
 
@@ -229,8 +235,13 @@ protected:
 		///< Called just before destruction. (Note that the
 		///< object typically deletes itself.)
 
-	virtual void onData( const char * , size_type ) = 0 ;
-		///< Called on receipt of data.
+    virtual void onSendComplete() = 0 ;
+        ///< Called after flow-control has been released and all
+        ///< residual data sent.
+        ///<
+        ///< If an exception is thrown in the override then this
+        ///< object catches it and deletes iteself by calling
+        ///< doDelete().
 
 	StreamSocket & socket() ;
 		///< Returns a reference to the client-server connection 
@@ -247,7 +258,8 @@ private:
 
 private:
 	Address m_address ;
-	std::auto_ptr<StreamSocket> m_socket ;
+	std::auto_ptr<StreamSocket> m_socket ; // order dependency -- first
+	SocketProtocol m_sp ; // order dependency -- second
 	ServerPeerHandle * m_handle ;
 	Timer<ServerPeer> m_delete_timer ;
 } ;

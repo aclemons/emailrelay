@@ -19,7 +19,7 @@
 //
 // A dummy smtp server for testing purposes.
 //
-// usage: emailrelay-test-server [--auth-foo-bar] [--auth-login] [--slow] [--fail-at <n>] [--port <port>]
+// usage: emailrelay-test-server [--tls] [--auth-foo-bar] [--auth-login] [--auth-plain] [--auth-ok] [--slow] [--fail-at <n>] [--port <port>]
 //
 
 #include "gdef.h"
@@ -44,12 +44,18 @@ struct Config
 	unsigned int m_port ;
 	bool m_auth_foo_bar ;
 	bool m_auth_login ;
+	bool m_auth_plain ;
+	bool m_auth_ok ;
 	int m_fail_at ;
-	Config( unsigned int port , bool auth_foo_bar , bool auth_login , int fail_at ) : 
+	bool m_tls ;
+	Config( unsigned int port , bool auth_foo_bar , bool auth_login , bool auth_plain , bool auth_ok , int fail_at , bool tls ) : 
 		m_port(port) ,
 		m_auth_foo_bar(auth_foo_bar) ,
 		m_auth_login(auth_login) ,
-		m_fail_at(fail_at)
+		m_auth_plain(auth_plain) ,
+		m_auth_ok(auth_ok) ,
+		m_fail_at(fail_at) ,
+		m_tls(tls)
 	{
 	}
 } ;
@@ -61,10 +67,12 @@ public:
 	virtual void onDelete() ;
 	virtual void onSendComplete() ;
 	virtual bool onReceive( const std::string & ) ;
+	virtual void onSecure() ;
 	void tx( const std::string & ) ;
 	Config m_config ;
 	bool m_in_data ;
-	bool m_in_auth ;
+	bool m_in_auth_1 ;
+	bool m_in_auth_2 ;
 	int m_message ;
 } ;
 
@@ -88,11 +96,14 @@ GNet::ServerPeer * Server::newPeer( PeerInfo info )
 	return new Peer( info , m_config ) ;
 }
 
+//
+
 Peer::Peer( GNet::Server::PeerInfo info , Config config ) :
-	GNet::BufferedServerPeer(info,"\r\n",true) ,
+	GNet::BufferedServerPeer(info,"\r\n") ,
 	m_config(config) ,
 	m_in_data(false) ,
-	m_in_auth(false) ,
+	m_in_auth_1(false) ,
+	m_in_auth_2(false) ,
 	m_message(0)
 {
 	send( "220 test server\r\n" ) ;
@@ -107,19 +118,35 @@ void Peer::onSendComplete()
 {
 }
 
+void Peer::onSecure()
+{
+}
+
 bool Peer::onReceive( const std::string & line )
 {
 	std::cout << "rx<<: [" << line << "]" << std::endl ;
 
 	if( G::Str::upper(line).find("EHLO") == 0UL )
 	{
-		std::string s1( "250-hello\r\n" "250-VRFY\r\n" ) ;
-		std::string s2a( "250-AUTH FOO BAR\r\n" ) ;
-		std::string s2b( "250-AUTH LOGIN\r\n" ) ;
-		std::string s3( "250 8BITMIME\r\n" ) ;
-		bool auth = m_config.m_auth_foo_bar || m_config.m_auth_login ;
-		std::string s2 = m_config.m_auth_foo_bar ? s2a : s2b ;
-		tx( auth ? (s1+s2+s3) : (s1+s3) ) ;
+		bool auth = m_config.m_auth_foo_bar || m_config.m_auth_login || m_config.m_auth_plain ;
+
+		std::ostringstream ss ;
+		ss << "250-HELLO\r\n" ;
+		ss << "250-VRFY\r\n" ;
+		if( auth )
+			ss << "250-AUTH" ;
+		if( m_config.m_auth_foo_bar )
+			ss << " FOO BAR" ;
+		if( m_config.m_auth_login )
+			ss << " LOGIN" ;
+		if( m_config.m_auth_plain )
+			ss << " PLAIN" ;
+		if( auth )
+			ss << "\r\n" ;
+		if( m_config.m_tls )
+			ss << "250-STARTTLS\r\n" ;
+		ss << "250 8BITMIME\r\n" ;
+		tx( ss.str() ) ;
 	}
 	else if( G::Str::upper(line) == "DATA" )
 	{
@@ -133,19 +160,47 @@ bool Peer::onReceive( const std::string & line )
 		m_message++ ;
 		tx( fail ? "452 failed\r\n" : "250 OK\r\n" ) ;
 	}
-	else if( G::Str::upper(line).find("AUTH") == 0U )
+	else if( G::Str::upper(line) == "STARTTLS" )
 	{
-		m_in_auth = true ;
-		tx( "334 VXNlcm5hbWU6\r\n" ) ; // assume login mechanism
+		; // no response (tbc?)
 	}
 	else if( G::Str::upper(line) == "QUIT" )
 	{
 		doDelete() ;
 	}
-	else if( m_in_auth )
+	else if( G::Str::trimmed(G::Str::upper(line),G::Str::ws()) == "AUTH PLAIN" ) 
 	{
-		m_in_auth = false ; // assume one challenge
-		tx( "535 authentication failed\r\n" ) ;
+		// got auth command on its own, without credentials
+		m_in_auth_2 = true ;
+		tx( "334\r\n" ) ;
+	}
+	else if( G::Str::upper(line).find("AUTH") == 0U && G::Str::upper(line).find("PLAIN") != std::string::npos )
+	{
+		// got auth command with credentials
+		tx( m_config.m_auth_ok ? "235 authentication ok\r\n" : "535 authentication failed\r\n" ) ;
+	}
+	else if( G::Str::upper(line).find("AUTH") == 0U && G::Str::upper(line).find("LOGIN") != std::string::npos )
+	{
+		m_in_auth_1 = true ;
+		tx( "334 VXNlcm5hbWU6\r\n" ) ;
+	}
+	else if( m_in_auth_1 )
+	{
+		m_in_auth_1 = false ;
+		if( m_config.m_auth_ok )
+		{
+			tx( "334 UGFzc3dvcmQ6\r\n" ) ;
+			m_in_auth_2 = true ;
+		}
+		else
+		{
+			tx( "535 authentication failed\r\n" ) ;
+		}
+	}
+	else if( m_in_auth_2 )
+	{
+		m_in_auth_2 = false ;
+		tx( m_config.m_auth_ok ? "235 authentication ok\r\n" : "535 authentication failed\r\n" ) ;
 	}
 	else if( !m_in_data )
 	{
@@ -162,6 +217,8 @@ void Peer::tx( const std::string & s )
 	send( s ) ;
 }
 
+//
+
 int main( int argc , char * argv [] )
 {
 	try
@@ -169,7 +226,10 @@ int main( int argc , char * argv [] )
 		G::Arg arg( argc , argv ) ;
 		bool auth_foo_bar = arg.remove( "--auth-foo-bar" ) ;
 		bool auth_login = arg.remove( "--auth-login" ) ;
+		bool auth_plain = arg.remove( "--auth-plain" ) ;
+		bool auth_ok = arg.remove( "--auth-ok" ) ;
 		bool slow = arg.remove( "--slow" ) ;
+		bool tls = arg.remove( "--tls" ) ;
 		int fail_at = arg.contains("--fail-at",1U) ? G::Str::toInt(arg.v(arg.index("--fail-at",1U)+1U)) : -1 ;
 		int port = arg.contains("--port",1U) ? G::Str::toInt(arg.v(arg.index("--port",1U)+1U)) : 10025 ;
 
@@ -182,7 +242,7 @@ int main( int argc , char * argv [] )
 		G::LogOutput log( "" , true , true , false , false , true , false , true , false ) ;
 		GNet::EventLoop * loop = GNet::EventLoop::create() ;
 		GNet::TimerList timer_list ;
-		Server server( Config(port,auth_foo_bar,auth_login,fail_at) ) ;
+		Server server( Config(port,auth_foo_bar,auth_login,auth_plain,auth_ok,fail_at,tls) ) ;
 
 		if( slow )
 		{

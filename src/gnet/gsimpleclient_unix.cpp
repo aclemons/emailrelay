@@ -21,9 +21,13 @@
 #include "gdef.h"
 #include "gnet.h"
 #include "gclient.h"
+#include "gtest.h"
 
 bool GNet::SimpleClient::synchronousDnsDefault()
 {
+	if( G::Test::enabled("asynchronous-dns") )
+		return false ;
+
 	return true ;
 }
 

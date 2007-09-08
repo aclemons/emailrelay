@@ -39,6 +39,8 @@ EXTRA_DIST=\
 	service.dsp \
 	service_install.cpp \
 	service_install.h \
+	service_remove.cpp \
+	service_remove.h \
 	service_wrapper.cpp \
 	submit.dsp \
 	winapp.cpp \
@@ -75,15 +77,16 @@ emailrelay_LDADD = \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a
+	$(top_builddir)/src/gnet/lib$(IP).a \
+	$(SSL_LIBS)
 
 emailrelay_poke_SOURCES = poke.c
 emailrelay_poke_LDADD =
 
-emailrelay_passwd_SOURCES = passwd.cpp legal.cpp
+emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
 emailrelay_passwd_LDADD = $(top_builddir)/src/glib/libglib.a
 
-emailrelay_submit_SOURCES = submit.cpp legal.cpp
+emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
@@ -91,7 +94,7 @@ emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(top_builddir)/src/glib/libglib.a
 
-emailrelay_filter_copy_SOURCES = filter_copy.cpp legal.cpp
+emailrelay_filter_copy_SOURCES = filter_copy.cpp filter.cpp filter.h legal.cpp legal.h
 emailrelay_filter_copy_LDADD = \
 	$(top_builddir)/src/glib/libglib.a
 

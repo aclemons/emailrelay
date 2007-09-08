@@ -85,6 +85,9 @@ protected:
 	virtual void onDeleteImp( const std::string & , bool ) ; 
 		///< Final override from GNet::Client.
 
+	virtual void onSecure() ;
+		///< Final override from GNet::SocketProtocol.
+
 private:
 	typedef GNet::Client Base ;
 	SpamClient( const SpamClient & ) ; // not implemented

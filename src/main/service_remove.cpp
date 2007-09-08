@@ -15,35 +15,32 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// gtest.cpp
+// service_remove.cpp
 //
 
-#include "gdef.h"
-#include "gtest.h"
-#include "gdebug.h"
-#include <string>
-#include <cstdlib> // getenv
-#include <set>
+#include "service_remove.h"
 
-bool G::Test::enabled( const std::string & name )
+#ifdef _WIN32
+
+#include "windows.h"
+
+std::string service_remove( const std::string & name )
 {
-	bool result = false ;
-
- #ifdef _DEBUG
-	static const char * p = std::getenv("G_TEST") ;
-	result = p ? ( std::string(p).find(name) != std::string::npos ) : false ; // (could do better)
- #endif
-
-	if( result )
-	{
-		static std::set<std::string> warned ;
-		if( warned.find(name) == warned.end() )
-		{
-			warned.insert( name ) ;
-			G_WARNING( "G::Test::enabled: test case enabled: [" << name << "]" ) ;
-		}
-	}
-	return result ;
+	SC_HANDLE hmanager = OpenSCManager( NULL , NULL , SC_MANAGER_ALL_ACCESS ) ;
+	SC_HANDLE hservice = hmanager ? OpenService( hmanager , name.c_str() , DELETE ) : 0 ;
+	bool ok = hservice ? !!DeleteService( hservice ) : false ;
+	if( hservice ) CloseServiceHandle( hservice ) ;
+	if( hmanager ) CloseServiceHandle( hmanager ) ;
+	return ok ? std::string() : ( std::string() + "cannot remove the service \"" + name + "\"" ) ;
 }
 
-/// \file gtest.cpp
+#else
+
+std::string service_remove( const std::string & name )
+{
+	return std::string() ;
+}
+
+#endif
+
+/// \file service_remove.cpp

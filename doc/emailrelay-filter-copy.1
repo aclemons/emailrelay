@@ -1,0 +1,42 @@
+.\" Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or 
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.TH EMAILRELAY-FILTER-COPY 1 local
+.SH NAME
+emailrelay-filter-copy \- an E-MailRelay filter for pop-by-name
+.SH SYNOPSIS
+.B emailrelay-filter-copy
+.I <emailrelay-content-file>
+.LP
+.B emailrelay-filter-copy
+[--help]
+.SH DESCRIPTION
+The 
+.I emailrelay-filter-copy
+utility can be used as an 
+.B E-MailRelay
+.I "--filter" 
+pre-processor program to copy e-mail messages from the main spool 
+directory into all available sub-directories. When using the
+.I "--pop-by-name"
+feature of the 
+.B E-MailRelay
+server this results in messages being copied all POP clients.
+.LP
+Only the message envelope is copied; the content file stays in 
+the main directory.
+.SH SEE ALSO
+.BR emailrelay (1),
+.SH AUTHOR
+Graeme Walker, mailto:graeme_walker@users.sourceforge.net

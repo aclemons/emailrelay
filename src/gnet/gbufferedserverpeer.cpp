@@ -21,50 +21,16 @@
 #include "gdef.h"
 #include "gnet.h"
 #include "gbufferedserverpeer.h"
-#include "gstr.h"
-#include "gtest.h"
-#include "gassert.h"
 #include "glog.h"
 
-GNet::BufferedServerPeer::BufferedServerPeer( Server::PeerInfo peer_info , const std::string & eol , bool throw_ ) :
+GNet::BufferedServerPeer::BufferedServerPeer( Server::PeerInfo peer_info , const std::string & eol ) :
 	ServerPeer(peer_info) ,
-	m_sender(*this) ,
-	m_line_buffer(eol) ,
-	m_throw(throw_)
+	m_line_buffer(eol)
 {
 }
 
 GNet::BufferedServerPeer::~BufferedServerPeer()
 {
-}
-
-bool GNet::BufferedServerPeer::send( const std::string & data , std::string::size_type offset )
-{
-	bool all_sent = m_sender.send( socket() , data , offset ) ;
-	if( !all_sent && ( m_sender.failed() || m_throw ) )
-		throw SendError() ;
-	if( !all_sent )
-		logFlowControlAsserted() ;
-	return all_sent ;
-}
-
-void GNet::BufferedServerPeer::writeEvent()
-{
-	try
-	{
-		logFlowControlReleased() ;
-		if( m_sender.resumeSending( socket() ) )
-			onSendComplete() ;
-		else if( m_sender.failed() )
-			throw SendError() ;
-		else 
-			logFlowControlReasserted() ;
-	}
-	catch( std::exception & e ) // strategy
-	{
-		G_WARNING( "GNet::BufferedServerPeer::writeEvent: exception: " << e.what() ) ;
-		doDelete() ;
-	}
 }
 
 void GNet::BufferedServerPeer::onData( const char * p , ServerPeer::size_type n )
@@ -75,27 +41,6 @@ void GNet::BufferedServerPeer::onData( const char * p , ServerPeer::size_type n 
 		if( !ok )
 			break ;
 	}
-}
-
-void GNet::BufferedServerPeer::logFlowControlAsserted() const
-{
-	const bool log = G::Test::enabled("log-flow-control") ;
-	if( log )
-		G_LOG( "GNet::BufferedServerPeer::send: server " << logId() << ": flow control asserted" ) ;
-}
-
-void GNet::BufferedServerPeer::logFlowControlReleased() const
-{
-	const bool log = G::Test::enabled("log-flow-control") ;
-	if( log )
-		G_LOG( "GNet::BufferedServerPeer::writeEvent: server " << logId() << ": flow control released" ) ;
-}
-
-void GNet::BufferedServerPeer::logFlowControlReasserted() const
-{
-	const bool log = G::Test::enabled("log-flow-control") ;
-	if( log )
-		G_LOG( "GNet::BufferedServerPeer::writeEvent: server " << logId() << ": flow control reasserted" ) ;
 }
 
 /// \file gbufferedserverpeer.cpp

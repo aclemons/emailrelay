@@ -76,7 +76,7 @@ GSmtp::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info ,
 	const std::string & verifier_address , unsigned int verifier_timeout ,
 	std::auto_ptr<ServerProtocol::Text> ptext ,
 	ServerProtocol::Config protocol_config ) :
-		GNet::BufferedServerPeer( peer_info , crlf() , true ) , // <= throw-on-flow-control
+		GNet::BufferedServerPeer( peer_info , crlf() ) ,
 		m_server( server ) ,
 		m_verifier( VerifierFactory::newVerifier(verifier_address,verifier_timeout) ) ,
 		m_pmessage( pmessage ) ,
@@ -108,6 +108,11 @@ bool GSmtp::ServerPeer::onReceive( const std::string & line )
 	// apply the line to the protocol
 	m_protocol.apply( line ) ;
 	return true ;
+}
+
+void GSmtp::ServerPeer::onSecure()
+{
+	m_protocol.secure() ;
 }
 
 void GSmtp::ServerPeer::protocolSend( const std::string & line )

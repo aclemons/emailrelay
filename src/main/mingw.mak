@@ -64,8 +64,8 @@ $(mk_exe_passwd): passwd.o legal.o
 $(mk_exe_submit): submit.o legal.o
 	$(mk_link) $(mk_link_flags) -o $@ submit.o legal.o $(libs) $(syslibs)
 
-$(mk_exe_service): service_install.o service_wrapper.o
-	$(mk_link) $(mk_link_flags) -o $@ service_install.o service_wrapper.o $(syslibs)
+$(mk_exe_service): service_install.o service_remove.o service_wrapper.o
+	$(mk_link) $(mk_link_flags) -o $@ service_install.o service_remove.o service_wrapper.o $(syslibs)
 
 $(fake_mc): mingw.o
 	$(mk_link) $(mk_link_flags) -o $@ $<

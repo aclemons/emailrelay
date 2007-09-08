@@ -70,6 +70,9 @@ protected:
 	virtual void onDelete() ; 
 		///< Final override from GNet::ServerPeer.
 
+	virtual void onSecure() ;
+		///< Final override from GNet::SocketProtocolSink.
+
 private:
 	AdminServerPeer( const AdminServerPeer & ) ;
 	void operator=( const AdminServerPeer & ) ;

@@ -54,7 +54,7 @@ public:
 
 /// \class GSmtp::SaslServer
 /// A class for implementing the server-side SASL 
-/// challenge/response concept. SASL is described in RFC2222,
+/// challenge/response concept. SASL is described in RFC4422,
 /// and the SMTP extension for authentication is described 
 /// in RFC2554.
 ///
@@ -65,6 +65,7 @@ public:
 /// - DIGEST-MD5 [RFC2831]
 /// - KERBEROS_V5
 /// - LOGIN
+/// - PLAIN
 ///
 /// Usage:
 /// \code
@@ -85,7 +86,7 @@ public:
 /// }
 /// \endcode
 ///
-/// \see GSmtp::SaslClient, RFC2554, RFC2222
+/// \see GSmtp::SaslClient, RFC2554, RFC4422
 ///
 class GSmtp::SaslServer 
 {
@@ -99,12 +100,8 @@ public:
 		private: void operator=( const Secrets & ) ; // not implemented
 	} ;
 
-	SaslServer( const Secrets & , bool strict , bool force_one_mechanism ) ;
+	SaslServer( const Secrets & , bool ignored , bool force_one_mechanism ) ;
 		///< Constructor. The secrets reference is kept.
-		///<
-		///< If the 'strict' flag is false then LOGIN is treated 
-		///< as a standard mechanism and therefore advertised
-		///< by mechanisms().
 		///<
 		///< If the 'force' flag is true then the list of
 		///< mechanisms returned by mechanisms() will never
@@ -168,10 +165,10 @@ private:
 
 /// \class GSmtp::SaslClient
 /// A class for implementing the client-side SASL 
-/// challenge/response concept. SASL is described in RFC2222,
+/// challenge/response concept. SASL is described in RFC4422,
 /// and the SMTP extension for authentication is described 
 /// in RFC2554.
-/// \see GSmtp::SaslServer, RFC2222, RFC2554.
+/// \see GSmtp::SaslServer, RFC4422, RFC2554.
 ///
 class GSmtp::SaslClient 
 {

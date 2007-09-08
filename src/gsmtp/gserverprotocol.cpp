@@ -94,6 +94,11 @@ GSmtp::ServerProtocol::~ServerProtocol()
 	m_verifier.doneSignal().disconnect() ;
 }
 
+void GSmtp::ServerProtocol::secure()
+{
+	// not yet implemented
+}
+
 void GSmtp::ServerProtocol::sendGreeting( const std::string & text )
 {
 	send( std::string("220 ") + text ) ;

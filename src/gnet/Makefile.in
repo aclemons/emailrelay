@@ -47,17 +47,17 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libgnet_a_AR = $(AR) $(ARFLAGS)
 libgnet_a_LIBADD =
-am_libgnet_a_OBJECTS = gbufferedclient.$(OBJEXT) \
-	gbufferedserverpeer.$(OBJEXT) gclient.$(OBJEXT) \
+am_libgnet_a_OBJECTS = gbufferedserverpeer.$(OBJEXT) gclient.$(OBJEXT) \
 	gconnection.$(OBJEXT) gdescriptor_unix.$(OBJEXT) \
 	geventhandler.$(OBJEXT) geventloop.$(OBJEXT) \
 	geventloop_unix.$(OBJEXT) gheapclient.$(OBJEXT) \
 	glinebuffer.$(OBJEXT) glocal.$(OBJEXT) glocal_unix.$(OBJEXT) \
 	gmonitor.$(OBJEXT) gmultiserver.$(OBJEXT) gresolver.$(OBJEXT) \
 	gresolverinfo.$(OBJEXT) gresolver_unix.$(OBJEXT) \
-	gsender.$(OBJEXT) gserver.$(OBJEXT) gsimpleclient.$(OBJEXT) \
-	gsimpleclient_unix.$(OBJEXT) gsocket.$(OBJEXT) \
-	gsocket_unix.$(OBJEXT) gtimer.$(OBJEXT) gtimerlist.$(OBJEXT)
+	gserver.$(OBJEXT) gsimpleclient.$(OBJEXT) \
+	gsimpleclient_unix.$(OBJEXT) gssl.$(OBJEXT) gsocket.$(OBJEXT) \
+	gsocket_unix.$(OBJEXT) gsocketprotocol.$(OBJEXT) \
+	gtimer.$(OBJEXT) gtimerlist.$(OBJEXT)
 libgnet_a_OBJECTS = $(am_libgnet_a_OBJECTS)
 libipv4_a_AR = $(AR) $(ARFLAGS)
 libipv4_a_LIBADD =
@@ -144,6 +144,7 @@ QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
@@ -211,8 +212,6 @@ INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib
 noinst_LIBRARIES = libgnet.a libipv4.a libipv6.a
 libgnet_a_SOURCES = \
 	gaddress.h \
-	gbufferedclient.cpp \
-	gbufferedclient.h \
 	gbufferedserverpeer.cpp \
 	gbufferedserverpeer.h \
 	gclientptr.h \
@@ -246,16 +245,18 @@ libgnet_a_SOURCES = \
 	gresolverinfo.cpp \
 	gresolverinfo.h \
 	gresolver_unix.cpp \
-	gsender.cpp \
-	gsender.h \
 	gserver.cpp \
 	gserver.h \
 	gsimpleclient.cpp \
 	gsimpleclient.h \
 	gsimpleclient_unix.cpp \
+	gssl.cpp \
+	gssl.h \
 	gsocket.cpp \
 	gsocket.h \
 	gsocket_unix.cpp \
+	gsocketprotocol.cpp \
+	gsocketprotocol.h \
 	gtimer.cpp \
 	gtimer.h \
 	gtimerlist.cpp \
@@ -320,7 +321,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaddress_ip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaddress_ipv4.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbufferedclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbufferedserverpeer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconnection.Po@am__quote@
@@ -339,12 +339,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolver_ipv4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolver_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolverinfo.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsender.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsimpleclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsimpleclient_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocket_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocketprotocol.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtimer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtimerlist.Po@am__quote@
 

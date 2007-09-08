@@ -34,6 +34,9 @@
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
 
+/* Define to 1 to enable tls/ssh code using openssl */
+#undef HAVE_OPENSSL
+
 /* Define to 1 if setgroups is available */
 #undef HAVE_SETGROUPS
 

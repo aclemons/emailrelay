@@ -91,12 +91,6 @@ public:
 		///< Postcondition: state == resolving <= returns true
 		///< Postcondition: state == idle <= returns false
 
-	void cancelReq() ;
-		///< Cancels an outstanding resolve request.
-		///<
-		///< Precondition: state == resolving
-		///< Postcondition: state == idle
-
 	static std::string resolve( ResolverInfo & host_and_service , bool udp = false ) ;
 		///< Does syncronous name resolution. Fills in the
 		///< name and address fields of the supplied ResolverInfo 

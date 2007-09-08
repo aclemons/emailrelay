@@ -22,8 +22,10 @@
 
 #ifdef _WIN32
 
+#include "service_remove.h"
 #include <windows.h>
 #include <sstream>
+#include <utility>
 
 static std::string decode( DWORD e )
 {
@@ -44,16 +46,37 @@ static std::string decode( DWORD e )
 	return ss.str() ;
 }
 
-std::string service_install( std::string commandline , std::string name , std::string display_name )
+namespace
 {
-	if( name.empty() || display_name.empty() )
-		return "invalid zero-length service name" ;
+	struct Result
+	{
+		bool manager ;
+		DWORD e ;
+		std::string reason ;
+		Result() :
+			manager(false) ,
+			e(0)
+		{
+		}
+		Result( bool manager_ , DWORD e_ ) :
+			manager(manager_) ,
+			e(e_)
+		{
+			if( manager )
+				reason = std::string() + "cannot attach to the service manager (" + decode(e) + ")" ;
+			else
+				reason = std::string() + "cannot create the service (" + decode(e) + ")" ;
+		}
+	} ;
+}
 
+static Result install( std::string commandline , std::string name , std::string display_name )
+{
 	SC_HANDLE hmanager = OpenSCManager( NULL , NULL , SC_MANAGER_ALL_ACCESS ) ;
 	if( hmanager == 0 )
 	{
 		DWORD e = GetLastError() ;
-		return std::string() + "cannot attach to the service manager (" + decode(e) + ")" ;
+		return Result(true,e) ;
 	}
 
 	SC_HANDLE hservice = CreateService( hmanager , name.c_str() , display_name.c_str() ,
@@ -64,12 +87,31 @@ std::string service_install( std::string commandline , std::string name , std::s
 	if( hservice == 0 )
 	{
 		DWORD e = GetLastError() ;
-		return std::string() + "cannot create the service (" + decode(e) + ")" ;
+		CloseServiceHandle( hmanager ) ;
+		return Result(false,e) ;
 	}
-		
+
 	CloseServiceHandle( hservice ) ;
 	CloseServiceHandle( hmanager ) ;
-	return std::string() ;
+	return Result() ;
+}
+
+std::string service_install( std::string commandline , std::string name , std::string display_name )
+{
+	if( name.empty() || display_name.empty() )
+		return "invalid zero-length service name" ;
+
+	Result r = install( commandline , name , display_name ) ;
+	if( !r.manager && r.e == ERROR_SERVICE_EXISTS )
+	{
+		std::string error = service_remove( name ) ;
+		if( !error.empty() )
+			return error ;
+
+		r = install( commandline , name , display_name ) ;
+	}
+
+	return r.reason ;
 }
 
 #else

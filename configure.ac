@@ -18,7 +18,7 @@ dnl Process this file with autoconf to produce a configure script.
 dnl
 
 AC_INIT(src/gsmtp/gsmtp.h)
-AM_INIT_AUTOMAKE(emailrelay,1.6)
+AM_INIT_AUTOMAKE(emailrelay,1.7)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -106,6 +106,12 @@ dnl "--with-man2html"
 dnl
 AC_ARG_WITH(man2html,AC_HELP_STRING([--with-man2html],[convert man pages to html using man2html (default auto)]))
 WITH_MAN2HTML
+
+dnl ===
+dnl "--with-openssl"
+dnl
+AC_ARG_WITH(openssl,AC_HELP_STRING([--with-openssl],[use openssl for smtp client tls extension (default disabled)]))
+WITH_OPENSSL
 
 dnl ===
 dnl directory tweaking and "--enable-fhs" ...

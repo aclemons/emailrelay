@@ -14,36 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gtest.cpp
-//
 
-#include "gdef.h"
-#include "gtest.h"
-#include "gdebug.h"
-#include <string>
-#include <cstdlib> // getenv
-#include <set>
+// TODO ...
 
-bool G::Test::enabled( const std::string & name )
-{
-	bool result = false ;
+// http://josefsson.org/gsasl
 
- #ifdef _DEBUG
-	static const char * p = std::getenv("G_TEST") ;
-	result = p ? ( std::string(p).find(name) != std::string::npos ) : false ; // (could do better)
- #endif
-
-	if( result )
-	{
-		static std::set<std::string> warned ;
-		if( warned.find(name) == warned.end() )
-		{
-			warned.insert( name ) ;
-			G_WARNING( "G::Test::enabled: test case enabled: [" << name << "]" ) ;
-		}
-	}
-	return result ;
-}
-
-/// \file gtest.cpp
+/// \file gsasl_gnu.cpp

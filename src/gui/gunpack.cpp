@@ -50,12 +50,12 @@ namespace
 	void check( bool ok , const std::string & p )
 	{
 		if( ! ok )
-			throw G::Unpack::PackingError(std::string()+"unpack error: "+p) ;
+			throw G::Unpack::PackingError(p) ;
 	}
 	void check( bool ok , const std::string & p1 , const std::string & p2 )
 	{
 		if( ! ok )
-			throw G::Unpack::PackingError(std::string()+"unpack error: "+p2+": "+p1) ;
+			throw G::Unpack::PackingError(std::string()+p2+": "+p1) ;
 	}
 	Bytef * zptr( char * p )
 	{
@@ -247,7 +247,7 @@ void G::Unpack::unpack( const Path & dst , const std::vector<char> & buffer )
 {
 	std::ofstream output( dst.str().c_str() , std::ios_base::binary ) ;
 	unpack( output , buffer ) ;
-	check( output.good() , "write error" ) ;
+	check( output.good() , std::string() + "cannot create \"" + dst.str() + "\"" ) ;
 }
 
 void G::Unpack::unpack( std::ostream & output , const std::vector<char> & buffer_in )
