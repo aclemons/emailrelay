@@ -64,6 +64,7 @@ mk_mingw=$(mk_qt)/bin
 ##
 ###
 
+mk_ssl=none
 mk_ar=ar rc
 mk_rc=$(mk_bin)windres
 mk_rm_f=rm -f

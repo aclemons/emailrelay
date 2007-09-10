@@ -39,7 +39,7 @@ mk_sources=\
 	gresolverinfo.cpp \
 	gresolver_ipv4.cpp \
 	gresolver_win32.cpp \
-	gsender.cpp \
+	gssl_$(mk_ssl).cpp \
 	gserver.cpp \
 	gsimpleclient.cpp \
 	gsimpleclient_win32.cpp \

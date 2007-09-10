@@ -35,6 +35,7 @@
 #include "gpopserver.h"
 #include "gprocessorfactory.h"
 #include "gverifierfactory.h"
+#include "gssl.h"
 #include "gslot.h"
 #include "gmonitor.h"
 #include "glocal.h"
@@ -251,6 +252,10 @@ void Main::Run::runCore()
 	// early check on script executablity
 	//
 	checkScripts() ;
+
+	// ssl library singleton
+	//
+	GSsl::Library ssl ;
 
 	// network monitor singleton
 	//

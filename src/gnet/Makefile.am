@@ -16,16 +16,18 @@
 #
 
 EXTRA_DIST=\
-	gaddress_ipv6.cpp \
-	gdescriptor_win32.cpp \
-	geventloop_win32.cpp \
-	glocal_win32.cpp \
-	grequest.cpp \
-	gresolver_ipv6.cpp \
-	gresolver_win32.cpp \
-	gsimpleclient_win32.cpp \
-	gsocket_win32.cpp \
-	mingw.mak
+    gaddress_ipv6.cpp \
+    gdescriptor_win32.cpp \
+    geventloop_win32.cpp \
+    glocal_win32.cpp \
+    grequest.cpp \
+    gresolver_ipv6.cpp \
+    gresolver_win32.cpp \
+    gsimpleclient_win32.cpp \
+    gsocket_win32.cpp \
+    gssl_none.cpp \
+	gssl_openssl.cpp \
+    mingw.mak
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib 
 noinst_LIBRARIES = libgnet.a libipv4.a libipv6.a

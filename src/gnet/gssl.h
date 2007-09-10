@@ -23,67 +23,15 @@
 
 #include "gdef.h"
 #include <string>
-#include <exception>
-#include <vector>
 
 /// \namespace GSsl
 namespace GSsl
 {
 	class Library ;
-	class Context ;
 	class Protocol ;
-	class Error ;
-
 	class LibraryImp ;
-	class ContextImp ;
 	class ProtocolImp ;
 }
-
-/// \class GSsl::Context
-/// An openssl context wrapper.
-///
-class GSsl::Context 
-{
-public:
-	Context() ;
-		///< Constructor.
-
-	~Context() ;
-		///< Destructor.
-
-	const ContextImp * p( int ) const ;
-		///< Private accessor for the Protocol class.
-
-private:
-	ContextImp * m_imp ;
-
-private:
-	Context( const Context & ) ;
-	void operator=( const Context & ) ;
-	void setQuietShutdown() ;
-} ;
-
-/// \class GSsl::Error
-/// An exception class.
-///
-class GSsl::Error : public std::exception 
-{
-public:
-	explicit Error( const std::string & ) ;
-		///< Constructor.
-
-	Error( const std::string & , unsigned long ) ;
-		///< Constructor.
-
-	virtual ~Error() throw() ;
-		///< Destructor.
-
-	virtual const char * what() const throw() ;
-		///< Override from std::exception.
-
-private:
-	std::string m_what ;
-} ;
 
 /// \class GSsl::Protocol
 /// An SSL protocol class. The protocol object
@@ -97,10 +45,10 @@ public:
 	enum Result { Result_ok , Result_read , Result_write , Result_error } ;
 	typedef void (*LogFn)( const std::string & ) ;
 
-	explicit Protocol( const Context & ) ;
+	explicit Protocol( const Library & ) ;
 		///< Constructor.
 
-	Protocol( const Context & , LogFn , bool hexdump = false ) ;
+	Protocol( const Library & , LogFn , bool hexdump = false ) ;
 		///< Constructor.
 
 	~Protocol() ;
@@ -127,23 +75,17 @@ public:
 		///< Note that a retry will need the same buffer
 		///< pointer value.
 
-private:
-	LogFn m_log_fn ;
-	ProtocolImp * m_imp ;
-	bool m_fd_set ;
-
-private:
-	friend class GSsl::LibraryImp ;
-	LogFn log() const ;
+	static std::string str( Result result ) ;
+		///< Converts a result enumeration into a 
+		///< printable string. Used in logging and 
+		///< diagnostics.
 
 private:
 	Protocol( const Protocol & ) ;
 	void operator=( const Protocol & ) ;
-	int error( const char * , int ) const ;
-	void set( int ) ;
-	Result connect() ;
-	Result accept() ;
-	static Result convert( int ) ;
+
+private:
+	ProtocolImp * m_imp ;
 } ;
 
 /// \class GSsl::Library
@@ -158,18 +100,21 @@ public:
 	~Library() ;
 		///< Destructor. Cleans up the underlying ssl library.
 
-	static void clearErrors() ;
-		///< Clears the error stack.
+	static Library * instance() ;
+		///< Returns a pointer to a library object, if any.
 
-	static std::string str( Protocol::Result result ) ;
-		///< Converts a protocol result enumeration
-		///< into a printable string. Used in 
-		///< logging and diagnostics.
+	bool enabled() const ;
+		///< Returns true if this is a real ssl library
+		///< rather than a stub.
 
 private:
 	Library( const Library & ) ;
 	void operator=( const Library & ) ;
-} ;
 
+private:
+	friend class GSsl::Protocol ;
+	static Library * m_this ;
+	LibraryImp * m_imp ;
+} ;
 
 #endif

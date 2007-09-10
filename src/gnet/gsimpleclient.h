@@ -158,13 +158,13 @@ protected:
 		///< Called when all residual data from send() has been sent.
 
 	virtual void onSendImp() ;
-		///< ...
+		///< Called from within send().
 
 	void sslAccept() ;
-		///< ...
+		///< Starts TLS/SSL server-side negotiation.
 
 	void sslConnect() ;
-		///< ...
+		///< Starts TLS/SSL client-side negotiation.
 
 	static bool canRetry( const std::string & reason ) ;
 		///< Parses the given failure reason and returns

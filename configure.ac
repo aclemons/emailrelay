@@ -110,7 +110,7 @@ WITH_MAN2HTML
 dnl ===
 dnl "--with-openssl"
 dnl
-AC_ARG_WITH(openssl,AC_HELP_STRING([--with-openssl],[use openssl for smtp client tls extension (default disabled)]))
+AC_ARG_WITH(openssl,AC_HELP_STRING([--with-openssl],[use openssl for smtp client tls extension (default auto)]))
 WITH_OPENSSL
 
 dnl ===

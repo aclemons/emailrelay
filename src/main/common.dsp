@@ -421,11 +421,15 @@ SOURCE=..\gsmtp\gsecrets.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gnet\gsender.cpp
+SOURCE=..\gnet\gserver.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gnet\gserver.cpp
+SOURCE=..\gnet\gsocketprotocol.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gnet\gssl_none.cpp
 # End Source File
 # Begin Source File
 

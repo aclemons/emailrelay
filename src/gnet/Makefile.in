@@ -144,6 +144,7 @@ QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SSL = @SSL@
 SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 VERSION = @VERSION@
@@ -197,16 +198,18 @@ target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 EXTRA_DIST = \
-	gaddress_ipv6.cpp \
-	gdescriptor_win32.cpp \
-	geventloop_win32.cpp \
-	glocal_win32.cpp \
-	grequest.cpp \
-	gresolver_ipv6.cpp \
-	gresolver_win32.cpp \
-	gsimpleclient_win32.cpp \
-	gsocket_win32.cpp \
-	mingw.mak
+    gaddress_ipv6.cpp \
+    gdescriptor_win32.cpp \
+    geventloop_win32.cpp \
+    glocal_win32.cpp \
+    grequest.cpp \
+    gresolver_ipv6.cpp \
+    gresolver_win32.cpp \
+    gsimpleclient_win32.cpp \
+    gsocket_win32.cpp \
+    gssl_none.cpp \
+	gssl_openssl.cpp \
+    mingw.mak
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib 
 noinst_LIBRARIES = libgnet.a libipv4.a libipv6.a
