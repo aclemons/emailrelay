@@ -47,24 +47,34 @@
 #
 #    c:\qt\src\3rdparty\zlib> c:\mingw\bin\mingw32-make CC=gcc CFLAGS=-I../../corelib/global
 #
+
 ###
-## Uncomment and edit these for the GUI build ...
+## Edit this section...
 ##
-## "mk_gui" must be set to "gui" to enable the GUI build
-#mk_gui=gui
+## "mk_ssl" is set to "opensll" for tls/ssl support, or "none"
+mk_ssl=none
 ##
-## "mk_qt" must point to the Qt installation directory
-#mk_qt=c:/qt
+## "mk_openssl" points to the openssl directory (tls/ssl only)
+mk_openssl=c:/openssl-0.9.8x
 ##
-## "mk_zlib" must point to the zlib directory
+## "mk_gui" is set to "gui" to enable the GUI build
+mk_gui=none
+##
+## "mk_qt" points to the Qt installation directory (gui only)
+mk_qt=c:/qt
+##
+## "mk_zlib" points to the zlib directory (gui only)
 mk_zlib=$(mk_qt)/src/3rdparty/zlib
 ##
-## "mk_mingw" must point to a directory containing the mingw runtime dll
+## "mk_mingw" points to a directory containing the mingw runtime dll (gui only)
 mk_mingw=$(mk_qt)/bin
 ##
 ###
 
-mk_ssl=none
+ifeq ("$(mk_ssl)","openssl")
+mk_ssl_libs=$(mk_openssl)/out/libssl.a $(mk_openssl)/out/libcrypto.a
+endif
+
 mk_ar=ar rc
 mk_rc=$(mk_bin)windres
 mk_rm_f=rm -f

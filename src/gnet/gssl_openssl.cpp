@@ -22,6 +22,7 @@
 #include "gssl.h"
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <openssl/rand.h>
 #include <exception>
 #include <vector>
 #include <cassert>
@@ -148,7 +149,13 @@ GSsl::LibraryImp::LibraryImp()
 	SSL_load_error_strings() ;
 	SSL_library_init() ;
 
-	// TODO -- add entropy here -- for now assume /dev/urandom
+	// we probably don't need entropy but make a token effort to find 
+	// some: "openssl automatically queries EGD when [...] the 
+	// status is checked via RAND_status() for the first time if [a] 
+	// socket is located at /var/run/edg-pool ..."
+	//
+	if( ! RAND_status() ) 
+		;
 
 	m_context = new Context ;
 }
@@ -157,6 +164,7 @@ GSsl::LibraryImp::~LibraryImp()
 {
 	delete m_context ;
 	ERR_free_strings() ;
+	RAND_cleanup() ;
 }
 
 GSsl::Context & GSsl::LibraryImp::ctx()

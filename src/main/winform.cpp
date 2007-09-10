@@ -21,6 +21,7 @@
 
 #include "gdef.h"
 #include "gmonitor.h"
+#include "gssl.h"
 #include "run.h"
 #include "winform.h"
 #include "news.h"
@@ -57,6 +58,12 @@ std::string Main::WinForm::text() const
 		<< "Configuration..." << crlf 
 		<< m_cfg.str("* ",crlf) 
 		;
+
+	if( GSsl::Library::instance() != NULL )
+	{
+		bool ssl = GSsl::Library::instance()->enabled() ;
+		ss << "* tls/ssl? " << (ssl?"yes":"no") << crlf ;
+	}
 
 	if( GNet::Monitor::instance() )
 	{

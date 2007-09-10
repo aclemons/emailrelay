@@ -24,7 +24,14 @@
 #
 
 perl -I../../test emailrelay-test.pl "$@"
+rc=$?
 
-# ignore failures for now because the tests
-# have to be tuned to the machine :-< ...
+# ignore failures for now because of the dependency
+# on perl and because the tests have to be tuned 
+# to the machine ...
+if test "$rc" -ne 0
+then
+	echo `basename $0`: ignoring failures >&2
+fi
+rm -rf .tmp.*
 exit 0

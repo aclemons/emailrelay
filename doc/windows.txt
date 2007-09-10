@@ -33,29 +33,32 @@ Running as a service
 To manually install E-MailRelay as a service so that it starts up automatically
 at boot-time you must first create a one-line batch file called
 "emailrelay-start.bat" in the main E-MailRelay directory containing
-the full E-MailRelay server command-line. Then run "emailrelay-service --install" 
-to install the service. 
+the full E-MailRelay server command-line. Then run "emailrelay-service --install"
+to install the service.
 
-When the E-MailRelay server is run in this way it has the "--hidden" and 
-"--no-daemon" switches added so that there is no user interface.
+When the E-MailRelay server is run in this way it has the "--no-daemon" and
+"--hidden" switches added so that there is no user interface. (The "--no-daemon"
+switch on Windows changes the interface from using the system-tray to using a
+normal window, and the "--hidden" switch suppresses the window and any message
+boxes.)
 
 Note that the batch file and the main E-MailRelay executable must be in the same
-directory and that the batch file is only read at install time; if you need to 
-change the command-line switches for the service you must edit the service 
+directory and that the batch file is only read at install time; if you need to
+change the command-line switches for the service you must edit the service
 properties.
 
 Diagnostics
 -----------
-E-MailRelay normally writes errors and warnings into the system event log, which 
+E-MailRelay normally writes errors and warnings into the system event log, which
 you can view by running "eventvwr.exe". You can increase the verbosity by adding
 the "--verbose" switch to the E-MailRelay command-line.
 
-The E-MailRelay server also logs to the standard error stream, but note that the
-"--as-server" and "--as-proxy" switches implicitly incorporate "--close-stderr",
+The E-MailRelay server also logs to the standard error stream but the
+"--as-server" and "--as-proxy" switches implicitly incorporate "--close-stderr"
 so with these switches the standard error logging will stop soon after startup.
-You should replace "--as-server" with "--log" and "--as-proxy" with 
-"--immediate --forward-to", and then you will be able to redirect the standard 
-error stream to a log file.
+To get continuous logging you should replace "--as-server" with "--log" and
+"--as-proxy" with "--immediate --forward-to". Then you will be able to redirect
+the standard error stream to a log file.
 
 Building from source
 --------------------

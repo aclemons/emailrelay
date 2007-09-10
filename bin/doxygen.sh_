@@ -36,6 +36,6 @@ then
 	doxygen -
 else 
 	mkdir doxygen 2>/dev/null
-	cp -f doxygen_missing.html doxygen/index.html
+	cp -f "${top_srcdir}/doc/doxygen_missing.html" doxygen/index.html
 fi
 

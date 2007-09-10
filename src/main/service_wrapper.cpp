@@ -40,6 +40,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
+#include <map>
 #include <string>
 
 #define G_DEBUG( expr ) do { std::ostringstream ss ; ss << expr ; log( ss.str() ) ; } while(0)

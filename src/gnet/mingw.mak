@@ -20,7 +20,6 @@
 
 mk_sources=\
 	gaddress_ipv4.cpp \
-	gbufferedclient.cpp \
 	gbufferedserverpeer.cpp \
 	gclient.cpp \
 	gconnection.cpp \
@@ -45,10 +44,13 @@ mk_sources=\
 	gsimpleclient_win32.cpp \
 	gsocket.cpp \
 	gsocket_win32.cpp \
+	gsocketprotocol.cpp \
 	gtimer.cpp \
 	gtimerlist.cpp
 
 mk_target=gnet.a
+
+mk_includes_extra=-I$(mk_openssl)/outinc
 
 all: $(mk_target)
 
