@@ -18,6 +18,7 @@
 // pages.cpp
 //
 
+#include "gdef.h"
 #include "qt.h"
 #include "pages.h"
 #include "legal.h"
@@ -46,10 +47,12 @@ TitlePage::TitlePage( GDialog & dialog , const std::string & name ,
 		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_label = new QLabel( Legal::text() ) ;
+	m_credit = new QLabel( Legal::credit() ) ;
 
 	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("E-MailRelay"))) ;
 	layout->addWidget(m_label);
+	layout->addWidget(m_credit);
 	setLayout(layout);
 }
 
@@ -761,6 +764,9 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const std::string & name ,
 	QGroupBox * server_group = new QGroupBox(tr("Remote server")) ;
 	server_group->setLayout( server_layout ) ;
 
+	m_tls_checkbox = new QCheckBox( tr("&Allow TLS/SSL encryption") ) ;
+	m_tls_checkbox->setChecked(true) ;
+
 	m_auth_checkbox = new QCheckBox( tr("&Supply authentication") ) ;
 
 	m_mechanism_combo = new QComboBox ;
@@ -799,6 +805,7 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const std::string & name ,
 	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("SMTP client"))) ;
 	layout->addWidget( server_group ) ;
+	layout->addWidget( m_tls_checkbox ) ;
 	layout->addWidget( m_auth_checkbox ) ;
 	{
 		QHBoxLayout * inner = new QHBoxLayout ;
@@ -815,6 +822,7 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const std::string & name ,
 	connect( m_server_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_account_name , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_account_pwd , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_tls_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_auth_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_auth_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
 
@@ -837,6 +845,7 @@ void SmtpClientPage::dump( std::ostream & stream , const std::string & prefix , 
 	GPage::dump( stream , prefix , eol ) ;
 	stream << prefix << "smtp-client-host: " << value(m_server_edit_box) << eol ;
 	stream << prefix << "smtp-client-port: " << value(m_port_edit_box) << eol ;
+	stream << prefix << "smtp-client-tls: " << value(m_tls_checkbox) << eol ;
 	stream << prefix << "smtp-client-auth: " << value(m_auth_checkbox) << eol ;
 	stream << prefix << "smtp-client-auth-mechanism: " << value(m_mechanism_combo) << eol ;
 	stream << prefix << "smtp-client-account-name: " << value(m_account_name) << eol ;

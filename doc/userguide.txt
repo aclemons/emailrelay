@@ -418,6 +418,21 @@ switch:
 This might be useful if spam filtering is creating a bottleneck in the
 E-MailRelay server.
 
+Google mail
+-----------
+To send mail via Google mail's SMTP gateway you will need to create a client
+secrets file containing your account details and enable TLS support in
+E-MailRelay by using the "--client-tls" switch.
+
+The secrets file should contain one line of text something like this:
+
+	login client myname@gmail.com mypassword
+
+Refer to this file using "--client-auth" on the E-MailRelay command-line and
+also add in the "--client-tls" switch:
+
+	emailrelay --as-proxy smtp.gmail.com:587 --client-tls --client-auth /etc/emailrelay.auth ...
+
 
 
 

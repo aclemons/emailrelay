@@ -141,5 +141,5 @@ ENABLE_FHS
 dnl ===
 dnl generate files...
 dnl
-AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile lib/sunpro5/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile lib/sunpro5/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile)
 

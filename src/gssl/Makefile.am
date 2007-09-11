@@ -14,5 +14,16 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.dsw
-SUBDIRS = glib gssl gnet gsmtp gpop main win32 gui
+
+EXTRA_DIST=\
+    gssl_none.cpp \
+	gssl_openssl.cpp \
+    mingw.mak
+
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib 
+noinst_LIBRARIES = libgssl.a
+
+libgssl_a_SOURCES = \
+	gssl.cpp \
+	gssl.h
+

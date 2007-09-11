@@ -38,7 +38,6 @@ mk_sources=\
 	gresolverinfo.cpp \
 	gresolver_ipv4.cpp \
 	gresolver_win32.cpp \
-	gssl_$(mk_ssl).cpp \
 	gserver.cpp \
 	gsimpleclient.cpp \
 	gsimpleclient_win32.cpp \
@@ -49,8 +48,6 @@ mk_sources=\
 	gtimerlist.cpp
 
 mk_target=gnet.a
-
-mk_includes_extra=-I$(mk_openssl)/outinc
 
 all: $(mk_target)
 

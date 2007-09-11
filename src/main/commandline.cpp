@@ -19,6 +19,7 @@
 //
 
 #include "gdef.h"
+#include "gssl.h"
 #include "gsmtp.h"
 #include "legal.h"
 #include "configuration.h"
@@ -32,7 +33,6 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 {
 	std::string dir = GSmtp::MessageStore::defaultDirectory().str() ;
 	std::string pop_auth = GPop::Secrets::defaultPath() ;
-	std::string pop_level = pop_auth.empty() ? "0" : "3" ;
 	std::ostringstream ss ;
 	ss
 		<< (is_windows?switchSpec_windows():switchSpec_unix()) << "|"
@@ -50,6 +50,8 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "s!spool-dir!specifies the spool directory (default is \"" << dir << "\")!1!dir!2|"
 		<< "V!version!displays version information and exits!0!!2|"
 		<< ""
+		<< "j!client-tls!enables tls/ssl layer for smtp client (if openssl built in)!0!!3|"
+		//<< "K!server-tls!enables tls/ssl layer for smtp server using the given openssl certificate file (if openssl built in)!1!pem-file!3|"
 		<< "g!debug!generates debug-level logging if compiled-in!0!!3|"
 		<< "C!client-auth!enables smtp authentication with the remote server, using the given secrets file!1!file!3|"
 		<< "L!log-time!adds a timestamp to the logging output!0!!3|"
@@ -78,11 +80,11 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "Y!client-filter!specifies an external program to process messages when they are forwarded!1!program!3|"
 		<< "Q!admin-terminate!enables the terminate command on the admin interface!0!!3|"
 		<< "A!anonymous!disables the smtp vrfy command and sends less verbose smtp responses!0!!3|"
-		<< "B!pop!enables the pop server!0!!" << pop_level << "|"
-		<< "E!pop-port!specifies the pop listening port number (requires --pop)!1!port!" << pop_level << "|"
-		<< "F!pop-auth!defines the pop server secrets file (default is \"" << pop_auth << "\")!1!file!" << pop_level << "|"
-		<< "G!pop-no-delete!disables message deletion via pop (requires --pop)!0!!" << pop_level << "|"
-		<< "J!pop-by-name!modifies the pop spool directory according to the user name (requires --pop)!0!!" << pop_level << "|"
+		<< "B!pop!enables the pop server!0!!3|"
+		<< "E!pop-port!specifies the pop listening port number (requires --pop)!1!port!3|"
+		<< "F!pop-auth!defines the pop server secrets file (default is \"" << pop_auth << "\")!1!file!3|"
+		<< "G!pop-no-delete!disables message deletion via pop (requires --pop)!0!!3|"
+		<< "J!pop-by-name!modifies the pop spool directory according to the user name (requires --pop)!0!!3|"
 		;
 	return ss.str() ;
 }
@@ -368,31 +370,38 @@ void Main::CommandLine::showNoop( bool e ) const
 	show.s() << m_arg.prefix() << ": no messages to send" << std::endl ;
 }
 
-void Main::CommandLine::showBanner( bool e ) const
+void Main::CommandLine::showBanner( bool e , const std::string & final ) const
 {
 	Show show( m_output , e ) ;
 	show.s() 
-		<< "E-MailRelay V" << m_version << std::endl ;
+		<< "E-MailRelay V" << m_version << std::endl << final ;
 }
 
-void Main::CommandLine::showCopyright( bool e ) const
+void Main::CommandLine::showCopyright( bool e , const std::string & final ) const
 {
 	Show show( m_output , e ) ;
-	show.s() << Legal::copyright() << std::endl ;
+	show.s() << Legal::copyright() << std::endl << final ;
 }
 
-void Main::CommandLine::showWarranty( bool e ) const
+void Main::CommandLine::showWarranty( bool e , const std::string & final ) const
 {
 	Show show( m_output , e ) ;
-	show.s() << Legal::warranty("","\n") ;
+	show.s() << Legal::warranty("","\n") << final ;
+}
+
+void Main::CommandLine::showCredit( bool e , const std::string & final ) const
+{
+	Show show( m_output , e ) ;
+	show.s() << GSsl::Library::credit("","\n",final) ;
 }
 
 void Main::CommandLine::showVersion( bool e ) const
 {
 	Show show( m_output , e ) ;
-	showBanner( e ) ;
+	showBanner( e , "\n" ) ;
+	showCopyright( e , "\n" ) ;
+	showCredit( e , "\n" ) ;
 	showWarranty( e ) ;
-	showCopyright( e ) ;
 }
 
 // ===

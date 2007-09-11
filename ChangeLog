@@ -3,7 +3,7 @@ E-MailRelay Change Log
 
 1.6 -> 1.7
 ------------
-* Client-side SMTP TLS/SSL support using OpenSSL ("./configure --with-openssl").
+* Client-side SMTP TLS/SSL support using OpenSSL ("./configure --with-openssl" and "--client-tls").
 * Authentication mechanism "PLAIN" added.
 * Windows service wrapper has "--uninstall" option.
 * Installation GUI uninstalls Windows service before reinstalling it.

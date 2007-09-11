@@ -311,6 +311,16 @@ std::string Main::Configuration::clientSecretsFile() const
 	return m_cl.contains("client-auth") ? m_cl.value("client-auth") : std::string() ;
 }
 
+bool Main::Configuration::clientTls() const
+{
+	return m_cl.contains("client-tls") ;
+}
+
+std::string Main::Configuration::serverTlsFile() const
+{
+	return m_cl.contains("server-tls") ? m_cl.value("server-tls") : std::string() ;
+}
+
 std::string Main::Configuration::popSecretsFile() const
 {
 	return m_cl.contains("pop-auth") ? m_cl.value("pop-auth") : GPop::Secrets::defaultPath() ;

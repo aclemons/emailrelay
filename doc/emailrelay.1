@@ -71,13 +71,16 @@ Runs as a proxy: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--immediate\f
 Runs as a server: equivalent to \fI--log\fR \fI--close-stderr\fR.
 .TP
 .B \-C, --client-auth \fI<file>\fR
-Enables smtp authentication with remote server, using the given secrets file.
+Enables smtp authentication with the remote server, using the given secrets file.
 .TP
 .B \-Y, --client-filter \fI<program>\fR
 Specifies an external program to process messages when they are forwarded.
 .TP
+.B \-j, --client-tls 
+Enables tls/ssl layer for smtp client (if openssl built in).
+.TP
 .B \-e, --close-stderr 
-Closes the standard error stream after start-up.
+Closes the standard error stream soon after start-up.
 .TP
 .B \-U, --connection-timeout \fI<time>\fR
 Sets the timeout (in seconds) when connecting to a remote server (default is 40).
@@ -95,7 +98,7 @@ Disables acting as a server on any port (part of \fI--as-client\fR and usually u
 Specifies an external program to process messages as they are stored.
 .TP
 .B \-W, --filter-timeout \fI<time>\fR
-Sets the timeout (in seconds) for running the \fI--filter\fR processor.
+Sets the timeout (in seconds) for running the \fI--filter\fR processor (default is 300).
 .TP
 .B \-f, --forward 
 Forwards stored mail on startup (requires \fI--forward-to\fR).
@@ -110,7 +113,7 @@ Displays help text and exits.
 Enables immediate forwarding of messages as soon as they are received (requires \fI--forward-to\fR).
 .TP
 .B \-I, --interface \fI<ip-address>\fR
-Defines the listening interface for new connections.
+Defines the listening interface for incoming connections.
 .TP
 .B \-l, --log 
 Writes log information on standard error and syslog.
@@ -134,7 +137,7 @@ Defines a file for storing the daemon process-id.
 Enables polling of the spool directory for messages to be forwarded with the specified period (requires \fI--forward-to\fR).
 .TP
 .B \-B, --pop 
-Enables the pop server if compiled-in.
+Enables the pop server.
 .TP
 .B \-F, --pop-auth \fI<file>\fR
 Defines the pop server secrets file (default is \fI/etc/emailrelay.auth\fR).
@@ -167,7 +170,7 @@ Enables authentication of remote clients, using the given secrets file.
 Specifies the spool directory (default is \fI/var/spool/emailrelay\fR).
 .TP
 .B \-k, --syslog 
-Force syslog output if logging is enabled (overrides \fI--no-syslog\fR).
+Forces syslog output if logging is enabled (overrides \fI--no-syslog\fR).
 .TP
 .B \-u, --user \fI<username>\fR
 Names the effective user to switch to if started as root (default is \fIdaemon\fR).

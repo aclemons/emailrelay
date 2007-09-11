@@ -27,13 +27,16 @@ where <switch> is:
   Runs as a server: equivalent to "--log --close-stderr".
 
 # --client-auth (-C)
-  Enables smtp authentication with remote server, using the given secrets file.
+  Enables smtp authentication with the remote server, using the given secrets file.
 
 # --client-filter (-Y)
   Specifies an external program to process messages when they are forwarded.
 
+# --client-tls (-j)
+  Enables tls/ssl layer for smtp client (if openssl built in).
+
 # --close-stderr (-e)
-  Closes the standard error stream after start-up.
+  Closes the standard error stream soon after start-up.
 
 # --connection-timeout (-U)
   Sets the timeout (in seconds) when connecting to a remote server (default is 40).
@@ -51,7 +54,7 @@ where <switch> is:
   Specifies an external program to process messages as they are stored.
 
 # --filter-timeout (-W)
-  Sets the timeout (in seconds) for running the --filter processor.
+  Sets the timeout (in seconds) for running the --filter processor (default is 300).
 
 # --forward (-f)
   Forwards stored mail on startup (requires --forward-to).
@@ -66,7 +69,7 @@ where <switch> is:
   Enables immediate forwarding of messages as soon as they are received (requires --forward-to).
 
 # --interface (-I)
-  Defines the listening interface for new connections.
+  Defines the listening interface for incoming connections.
 
 # --log (-l)
   Writes log information on standard error and syslog.
@@ -90,7 +93,7 @@ where <switch> is:
   Enables polling of the spool directory for messages to be forwarded with the specified period (requires --forward-to).
 
 # --pop (-B)
-  Enables the pop server if compiled-in.
+  Enables the pop server.
 
 # --pop-auth (-F)
   Defines the pop server secrets file (default is "/etc/emailrelay.auth").
@@ -123,7 +126,7 @@ where <switch> is:
   Specifies the spool directory (default is "/var/spool/emailrelay").
 
 # --syslog (-k)
-  Force syslog output if logging is enabled (overrides --no-syslog).
+  Forces syslog output if logging is enabled (overrides --no-syslog).
 
 # --user (-u)
   Names the effective user to switch to if started as root (default is "daemon").

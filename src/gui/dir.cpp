@@ -20,6 +20,7 @@
 // See also "dir_unix.cpp" and "dir_win32.cpp".
 //
 
+#include "gdef.h"
 #include "dir.h"
 #include "gstr.h"
 #include "gpath.h"

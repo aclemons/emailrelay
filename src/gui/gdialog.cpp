@@ -18,6 +18,7 @@
 // gdialog.cpp
 //
 
+#include "gdef.h"
 #include "qt.h"
 #include "gdialog.h"
 #include "gdebug.h"

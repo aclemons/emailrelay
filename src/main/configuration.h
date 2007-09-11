@@ -206,6 +206,14 @@ public:
 		///< Returns true if the server protocol should be
 		///< slightly more anonymous.
 
+	bool clientTls() const ;
+		///< Returns true if the client protocol should take
+		///< account of the server's tls capability.
+
+	std::string serverTlsFile() const ;
+		///< Returns the tls certificate file if the server
+		///< should support tls.
+
 private:
 	const CommandLine & m_cl ;
 

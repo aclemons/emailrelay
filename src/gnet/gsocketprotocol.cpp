@@ -40,7 +40,7 @@ class GNet::SocketProtocolImp
 private:
 	typedef SocketProtocol::ReadError ReadError ;
 	typedef SocketProtocol::SendError SendError ;
-	enum State { State_raw , State_connecting , State_accepting , State_reading , State_writing , State_idle } ;
+	enum State { State_raw , State_connecting , State_accepting , State_writing , State_idle } ;
 
 	EventHandler & m_handler ;
 	SocketProtocol::Sink & m_sink ;
@@ -115,7 +115,7 @@ void GNet::SocketProtocolImp::readEvent()
 		sslAcceptImp() ;
 	else if( m_state == State_writing )
 		sslSendImp() ;
-	else
+	else // State_idle
 		sslReadImp() ;
 }
 
@@ -129,8 +129,6 @@ bool GNet::SocketProtocolImp::writeEvent()
 		sslConnectImp() ;
 	else if( m_state == State_accepting )
 		sslAcceptImp() ;
-	else if( m_state == State_reading )
-		sslReadImp() ;
 	else
 		sslSendImp() ;
 	return rc ;
@@ -146,10 +144,25 @@ bool GNet::SocketProtocolImp::send( const std::string & data , std::string::size
 	{
 		rc = rawSend( data , offset ) ;
 	}
+	else if( m_state == State_connecting || m_state == State_accepting )
+	{
+		throw SendError( "still busy negotiating" ) ;
+	}
+	else if( m_state == State_writing )
+	{
+		// throw here rather than add to the pending buffer because openssl 
+		// requires that the parameters stay the same -- we could use double
+		// buffering, with a buffer switch and a call to sslSendImp() 
+		// rather than returning to the idle state, but in practice
+		// we rely on the client code taking account of the return value 
+		// from send() and waiting for onSendComplete() when required
+		//
+		throw SendError( "still busy sending the last packet" ) ;
+	}
 	else
 	{
 		m_state = State_writing ;
-		m_ssl_send_data.append( data.substr(offset) ) ; // kiss
+		m_ssl_send_data.append( data.substr(offset) ) ;
 		rc = sslSendImp() ;
 	}
 	return rc ;
@@ -162,8 +175,9 @@ void GNet::SocketProtocolImp::log( const std::string & line )
 
 GSsl::Protocol * GNet::SocketProtocolImp::newProtocol()
 {
-	// TODO -- move to main()
-	static GSsl::Library * library = new GSsl::Library ;
+	GSsl::Library * library = GSsl::Library::instance() ;
+	if( library == NULL )
+		throw G::Exception( "SocketProtocolImp::newProtocol: internal error: no library instance" ) ;
 
 	return new GSsl::Protocol( *library , log ) ;
 }
@@ -183,7 +197,7 @@ void GNet::SocketProtocolImp::sslConnectImp()
 	G_DEBUG( "SocketProtocolImp::sslConnectImp" ) ;
 	G_ASSERT( m_ssl != NULL ) ;
 	G_ASSERT( m_state == State_connecting ) ;
-	LocalSocket & p = reinterpret_cast<LocalSocket&>(socket()) ; // TODO -- remove access hack
+	LocalSocket & p = reinterpret_cast<LocalSocket&>(socket()) ;
 	GSsl::Protocol::Result rc = m_ssl->connect( p.fd() ) ;
 	G_DEBUG( "SocketProtocolImp::sslConnectImp: result=" << GSsl::Protocol::str(rc) ) ;
 	if( rc == GSsl::Protocol::Result_error )
@@ -223,7 +237,7 @@ void GNet::SocketProtocolImp::sslAcceptImp()
 	G_DEBUG( "SocketProtocolImp::sslAcceptImp" ) ;
 	G_ASSERT( m_ssl != NULL ) ;
 	G_ASSERT( m_state == State_accepting ) ;
-	LocalSocket & p = reinterpret_cast<LocalSocket&>(socket()) ; // TODO -- remove access hack
+	LocalSocket & p = reinterpret_cast<LocalSocket&>(socket()) ;
 	GSsl::Protocol::Result rc = m_ssl->accept( p.fd() ) ;
 	G_DEBUG( "SocketProtocolImp::sslAcceptImp: result=" << GSsl::Protocol::str(rc) ) ;
 	if( rc == GSsl::Protocol::Result_error )
@@ -251,7 +265,7 @@ void GNet::SocketProtocolImp::sslAcceptImp()
 
 bool GNet::SocketProtocolImp::sslEnabled() const
 {
-	return m_state == State_reading || m_state == State_writing || m_state == State_idle ;
+	return m_state == State_writing || m_state == State_idle ;
 }
 
 bool GNet::SocketProtocolImp::sslSendImp()
@@ -287,7 +301,7 @@ bool GNet::SocketProtocolImp::sslSendImp()
 void GNet::SocketProtocolImp::sslReadImp()
 {
 	G_DEBUG( "SocketProtocolImp::sslReadImp" ) ;
-	G_ASSERT( m_state == State_reading || m_state == State_idle ) ;
+	G_ASSERT( m_state == State_idle ) ;
 	G_ASSERT( m_ssl != NULL ) ;
 	static char buffer[c_buffer_size] ;
 	GSsl::Protocol::ssize_type n = 0 ;

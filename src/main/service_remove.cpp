@@ -36,7 +36,7 @@ std::string service_remove( const std::string & name )
 
 #else
 
-std::string service_remove( const std::string & name )
+std::string service_remove( const std::string & )
 {
 	return std::string() ;
 }

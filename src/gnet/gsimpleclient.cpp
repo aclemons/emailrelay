@@ -342,13 +342,6 @@ std::pair<bool,GNet::Address> GNet::SimpleClient::peerAddress() const
 			std::make_pair(false,GNet::Address::invalidAddress()) ;
 }
 
-void GNet::SimpleClient::sslAccept()
-{
-	if( m_sp.get() == NULL )
-		throw NotConnected( "for ssl-accept" ) ;
-	m_sp->sslAccept() ;
-}
-
 void GNet::SimpleClient::sslConnect()
 {
 	if( m_sp.get() == NULL )

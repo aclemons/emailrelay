@@ -19,7 +19,6 @@
 //
 
 #include "gdef.h"
-#include "gnet.h"
 
 #if HAVE_OPENSSL
 #include "gssl_openssl.cpp"

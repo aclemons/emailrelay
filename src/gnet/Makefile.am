@@ -25,11 +25,9 @@ EXTRA_DIST=\
     gresolver_win32.cpp \
     gsimpleclient_win32.cpp \
     gsocket_win32.cpp \
-    gssl_none.cpp \
-	gssl_openssl.cpp \
     mingw.mak
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib 
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib  -I$(top_srcdir)/src/gssl
 noinst_LIBRARIES = libgnet.a libipv4.a libipv6.a
 
 libgnet_a_SOURCES = \
@@ -72,8 +70,6 @@ libgnet_a_SOURCES = \
 	gsimpleclient.cpp \
 	gsimpleclient.h \
 	gsimpleclient_unix.cpp \
-	gssl.cpp \
-	gssl.h \
 	gsocket.cpp \
 	gsocket.h \
 	gsocket_unix.cpp \

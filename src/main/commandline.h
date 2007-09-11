@@ -86,14 +86,15 @@ public:
 	void showVersion( bool error_stream = false ) const ;
 		///< Writes the version number.
 
-	void showBanner( bool error_stream = false ) const ;
+	void showBanner( bool error_stream = false , const std::string & = std::string() ) const ;
 		///< Writes a startup banner.
 
-	void showCopyright( bool error_stream = false ) const ;
+	void showCopyright( bool error_stream = false , const std::string & = std::string() ) const ;
 		///< Writes a copyright message.
 
 private:
-	void showWarranty( bool error_stream ) const ;
+	void showWarranty( bool error_stream , const std::string & = std::string() ) const ;
+	void showCredit( bool error_stream , const std::string & = std::string() ) const ;
 	void showShortHelp( bool error_stream ) const ;
 	std::string semanticError() const ;
 	void showUsage( bool e ) const ;

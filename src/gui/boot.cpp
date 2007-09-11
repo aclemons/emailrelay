@@ -71,7 +71,7 @@ bool Boot::install( G::Path dir_boot , G::Path target , G::Strings )
 
 #endif
 
-bool Boot::uninstall( G::Path dir_boot , G::Path target , G::Strings args )
+bool Boot::uninstall( G::Path , G::Path , G::Strings )
 {
 	return true ; // TODO
 }

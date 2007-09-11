@@ -48,7 +48,7 @@ public:
 	explicit Protocol( const Library & ) ;
 		///< Constructor.
 
-	Protocol( const Library & , LogFn , bool hexdump = false ) ;
+	Protocol( const Library & , LogFn , bool hexdump = defaultHexdump() ) ;
 		///< Constructor.
 
 	~Protocol() ;
@@ -80,6 +80,9 @@ public:
 		///< printable string. Used in logging and 
 		///< diagnostics.
 
+	static bool defaultHexdump() ;
+		///< Returns a default value for the constructor parameter.
+
 private:
 	Protocol( const Protocol & ) ;
 	void operator=( const Protocol & ) ;
@@ -97,6 +100,11 @@ public:
 	Library() ;
 		///< Constructor. Initialises the underlying ssl library.
 
+	Library( bool active , const std::string & pem_file ) ;
+		///< Constructor. Initialises the underlying ssl library
+		///< or not. The pem file is needed if acting as a
+		///< server.
+
 	~Library() ;
 		///< Destructor. Cleans up the underlying ssl library.
 
@@ -104,8 +112,11 @@ public:
 		///< Returns a pointer to a library object, if any.
 
 	bool enabled() const ;
-		///< Returns true if this is a real ssl library
-		///< rather than a stub.
+		///< Returns true if this is a real and enabled 
+		///< ssl library.
+
+	static std::string credit( const std::string & prefix , const std::string & eol , const std::string & final ) ;
+		///< Returns a credit string.
 
 private:
 	Library( const Library & ) ;

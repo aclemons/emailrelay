@@ -32,7 +32,7 @@ mk_sources=\
 	winmain.cpp \
 	winmenu.cpp
 
-libs=../gpop/gpop.a ../gsmtp/gsmtp.a ../gnet/gnet.a ../win32/gwin32.a ../glib/glib.a $(mk_ssl_libs)
+libs=../gpop/gpop.a ../gsmtp/gsmtp.a ../gnet/gnet.a ../gssl/gssl.a ../win32/gwin32.a ../glib/glib.a $(mk_ssl_libs)
 syslibs=-lgdi32 -lwsock32
 rc=emailrelay.rc
 fake_mc=mingw32-mc.exe
@@ -52,7 +52,7 @@ include ../mingw-common.mak
 $(mk_exe_main): $(mk_objects) $(res) $(libs)
 	$(mk_link) $(mk_link_flags) -o $(mk_exe_main) $(mk_objects) $(res) $(libs) $(syslibs)
 
-$(mk_exe_filter_copy): filter_copy.o legal.o filter.cpp
+$(mk_exe_filter_copy): filter_copy.o legal.o filter.o
 	$(mk_link) $(mk_link_flags) -o $@ filter_copy.o legal.o filter.o $(libs) $(syslibs)
 
 $(mk_exe_poke): poke.o

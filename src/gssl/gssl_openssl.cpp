@@ -57,14 +57,15 @@ namespace GSsl
 class GSsl::Context 
 {
 public:
-	Context() ;
+	explicit Context( const std::string & pem_file = std::string() ) ;
 	~Context() ;
 	SSL_CTX * p() const ;
 
 private:
 	Context( const Context & ) ;
 	void operator=( const Context & ) ;
-	void setQuietShutdown() ;
+	void init( const std::string & pem_file ) ;
+	static void check( int , const char * ) ;
 
 private:
 	SSL_CTX * m_ssl_ctx ;
@@ -76,7 +77,7 @@ private:
 class GSsl::LibraryImp 
 {
 public:
-	LibraryImp() ;
+	explicit LibraryImp( const std::string & pem_file = std::string() ) ;
 	~LibraryImp() ;
 	Context & ctx() ;
 
@@ -144,7 +145,7 @@ private:
 
 //
 
-GSsl::LibraryImp::LibraryImp()
+GSsl::LibraryImp::LibraryImp( const std::string & pem_file )
 {
 	SSL_load_error_strings() ;
 	SSL_library_init() ;
@@ -157,7 +158,7 @@ GSsl::LibraryImp::LibraryImp()
 	if( ! RAND_status() ) 
 		;
 
-	m_context = new Context ;
+	m_context = new Context( pem_file ) ;
 }
 
 GSsl::LibraryImp::~LibraryImp()
@@ -184,6 +185,15 @@ GSsl::Library::Library() :
 	m_imp = new LibraryImp ;
 }
 
+GSsl::Library::Library( bool active , const std::string & pem_file ) :
+	m_imp(NULL)
+{
+	if( m_this == NULL )
+		m_this = this ;
+	if( active )
+		m_imp = new LibraryImp( pem_file ) ;
+}
+
 GSsl::Library::~Library()
 {
 	delete m_imp ;
@@ -198,18 +208,28 @@ GSsl::Library * GSsl::Library::instance()
 
 bool GSsl::Library::enabled() const
 {
-	return true ;
+	return m_imp != NULL ;
+}
+
+std::string GSsl::Library::credit( const std::string & prefix , const std::string & eol , const std::string & final )
+{
+	std::ostringstream ss ;
+	ss
+		<< prefix << "This product includes software developed by the OpenSSL Project" << eol
+		<< prefix << "for use in the OpenSSL Toolkit (http://www.openssl.org/)" << eol
+		<< final ;
+	return ss.str() ;
 }
 
 //
 
-GSsl::Context::Context()
+GSsl::Context::Context( const std::string & pem_file )
 {
 	m_ssl_ctx = SSL_CTX_new(TLSv1_method()) ;
 	if( m_ssl_ctx == NULL )
 		throw Error( "SSL_CTX_new" , ERR_get_error() ) ;
 
-	setQuietShutdown() ;
+	init( pem_file ) ;
 }
 
 GSsl::Context::~Context()
@@ -222,9 +242,21 @@ SSL_CTX * GSsl::Context::p() const
 	return m_ssl_ctx ;
 }
 
-void GSsl::Context::setQuietShutdown()
+void GSsl::Context::init( const std::string & pem_file )
 {
 	SSL_CTX_set_quiet_shutdown( m_ssl_ctx , 1 ) ;
+	if( !pem_file.empty() )
+	{
+		check( SSL_CTX_use_certificate_chain_file(m_ssl_ctx,pem_file.c_str()) , "use_certificate_chain_file" ) ;
+		check( SSL_CTX_use_RSAPrivateKey_file(m_ssl_ctx,pem_file.c_str(),SSL_FILETYPE_PEM) , "use_RSAPrivateKey_file" );
+		check( SSL_CTX_set_cipher_list(m_ssl_ctx,"DEFAULT") , "set_cipher_list" ) ;
+	}
+}
+
+void GSsl::Context::check( int rc , const char * op )
+{
+	if( rc != 1 )
+		throw Error( std::string() + "SSL_CTX_" + op ) ;
 }
 
 //
@@ -363,6 +395,8 @@ void GSsl::ProtocolImp::loghex( void (*fn)(const std::string&) , const char * pr
 			line.erase() ;
 		}
 	}
+	if( !line.empty() )
+		(*fn)( std::string(prefix) + line ) ;
 }
 
 void GSsl::ProtocolImp::callback( int write , int v , int type , const void * buffer , size_t n , SSL * , void * p )
@@ -528,5 +562,10 @@ GSsl::Protocol::Result GSsl::ProtocolImp::write( const char * buffer , size_type
 	{
 		return convert(error("SSL_write",rc)) ;
 	}
+}
+
+bool GSsl::Protocol::defaultHexdump()
+{
+	return false ; // perhaps G::Test::enabled() ?
 }
 

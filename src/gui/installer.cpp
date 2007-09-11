@@ -912,6 +912,10 @@ std::pair<std::string,InstallerImp::Map> InstallerImp::commandlineMap( bool shor
 			out[short_?"S":"server-auth"] = auth ;
 		}
 		out[short_?"o":"forward-to"] = value("smtp-client-host") + ":" + value("smtp-client-port") ;
+		if( yes(value("smtp-client-tls")) )
+		{
+			out[short_?"j":"client-tls"] ;
+		}
 		if( yes(value("smtp-client-auth")) )
 		{
 			out[short_?"C":"client-auth"] = auth ;

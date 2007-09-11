@@ -53,6 +53,7 @@ public:
 
 private:
 	QLabel * m_label ;
+	QLabel * m_credit ;
 };
 
 class LicensePage : public GPage 
@@ -224,6 +225,7 @@ public:
 private:
 	QLineEdit * m_server_edit_box ;
 	QLineEdit * m_port_edit_box ;
+	QCheckBox * m_tls_checkbox ;
 	QCheckBox * m_auth_checkbox ;
 	QComboBox * m_mechanism_combo ;
 	QGroupBox * m_account_group ;

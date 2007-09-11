@@ -18,6 +18,7 @@
 // dir_unix.cpp
 //
 
+#include "gdef.h"
 #include "dir.h"
 #include "gpath.h"
 #include "gdirectory.h"

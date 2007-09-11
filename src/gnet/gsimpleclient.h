@@ -160,9 +160,6 @@ protected:
 	virtual void onSendImp() ;
 		///< Called from within send().
 
-	void sslAccept() ;
-		///< Starts TLS/SSL server-side negotiation.
-
 	void sslConnect() ;
 		///< Starts TLS/SSL client-side negotiation.
 

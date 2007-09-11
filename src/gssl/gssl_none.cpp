@@ -45,6 +45,11 @@ bool GSsl::Library::enabled() const
 	return false ;
 }
 
+std::string GSsl::Library::credit( const std::string & , const std::string & , const std::string & )
+{
+	return std::string() ;
+}
+
 //
 
 std::string GSsl::Protocol::str( Protocol::Result )
@@ -88,5 +93,11 @@ GSsl::Protocol::Result GSsl::Protocol::write( const char * , size_type , ssize_t
 {
 	return Result_error ;
 }
+
+bool GSsl::Protocol::defaultHexdump()
+{
+	return false ;
+}
+
 
 /// \file gssl_none.cpp

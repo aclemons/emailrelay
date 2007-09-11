@@ -87,11 +87,10 @@ void GNet::EventHandlerList::add( Descriptor fd , EventHandler * handler )
 
 void GNet::EventHandlerList::remove( Descriptor fd )
 {
-	G_DEBUG( "GNet::EventHandlerList::remove: " << m_type << "-list: " << "removing " << fd ) ;
-
 	Map::iterator p = m_map.find( fd ) ;
 	if( p != m_map.end() )
 	{
+		G_DEBUG( "GNet::EventHandlerList::remove: " << m_type << "-list: " << "removing " << fd ) ;
 		if( m_lock )
 		{
 			(*p).second = NULL ;

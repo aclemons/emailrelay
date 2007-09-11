@@ -53,7 +53,7 @@ EXTRA_DIST=\
 	mingw.c \
 	mingw.mak
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\"
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\"
 
 sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd
 e_libexec_PROGRAMS = emailrelay-poke emailrelay-filter-copy
@@ -76,6 +76,7 @@ emailrelay_LDADD = \
 	$(top_builddir)/src/gpop/libgpop.a \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
+	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(SSL_LIBS)

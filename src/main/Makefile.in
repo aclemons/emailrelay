@@ -60,6 +60,7 @@ am__DEPENDENCIES_1 =
 emailrelay_DEPENDENCIES = $(top_builddir)/src/gpop/libgpop.a \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
+	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a $(am__DEPENDENCIES_1)
 am_emailrelay_filter_copy_OBJECTS = filter_copy.$(OBJEXT) \
@@ -257,7 +258,7 @@ EXTRA_DIST = \
 	mingw.c \
 	mingw.mak
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\"
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\"
 e_spool_DATA = 
 emailrelay_SOURCES = \
 	commandline.cpp \
@@ -276,6 +277,7 @@ emailrelay_LDADD = \
 	$(top_builddir)/src/gpop/libgpop.a \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/glib/libglib.a \
+	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(SSL_LIBS)

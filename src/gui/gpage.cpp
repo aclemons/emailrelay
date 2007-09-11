@@ -18,6 +18,7 @@
 // gpage.h
 //
 
+#include "gdef.h"
 #include "qt.h"
 #include "gstr.h"
 #include "gpage.h"

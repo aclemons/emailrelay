@@ -95,15 +95,19 @@ Runs as a server: equivalent to <I>--log</I> <I>--close-stderr</I>.
 <DT><B>-C, --client-auth </B><I>&lt;file&gt;</I>
 
 <DD>
-Enables smtp authentication with remote server, using the given secrets file.
+Enables smtp authentication with the remote server, using the given secrets file.
 <DT><B>-Y, --client-filter </B><I>&lt;program&gt;</I>
 
 <DD>
 Specifies an external program to process messages when they are forwarded.
+<DT><B>-j, --client-tls </B>
+
+<DD>
+Enables tls/ssl layer for smtp client (if openssl built in).
 <DT><B>-e, --close-stderr </B>
 
 <DD>
-Closes the standard error stream after start-up.
+Closes the standard error stream soon after start-up.
 <DT><B>-U, --connection-timeout </B><I>&lt;time&gt;</I>
 
 <DD>
@@ -127,7 +131,7 @@ Specifies an external program to process messages as they are stored.
 <DT><B>-W, --filter-timeout </B><I>&lt;time&gt;</I>
 
 <DD>
-Sets the timeout (in seconds) for running the <I>--filter</I> processor.
+Sets the timeout (in seconds) for running the <I>--filter</I> processor (default is 300).
 <DT><B>-f, --forward </B>
 
 <DD>
@@ -147,7 +151,7 @@ Enables immediate forwarding of messages as soon as they are received (requires 
 <DT><B>-I, --interface </B><I>&lt;ip-address&gt;</I>
 
 <DD>
-Defines the listening interface for new connections.
+Defines the listening interface for incoming connections.
 <DT><B>-l, --log </B>
 
 <DD>
@@ -179,7 +183,7 @@ Enables polling of the spool directory for messages to be forwarded with the spe
 <DT><B>-B, --pop </B>
 
 <DD>
-Enables the pop server if compiled-in.
+Enables the pop server.
 <DT><B>-F, --pop-auth </B><I>&lt;file&gt;</I>
 
 <DD>
@@ -223,7 +227,7 @@ Specifies the spool directory (default is <I>/var/spool/emailrelay</I>).
 <DT><B>-k, --syslog </B>
 
 <DD>
-Force syslog output if logging is enabled (overrides <I>--no-syslog</I>).
+Forces syslog output if logging is enabled (overrides <I>--no-syslog</I>).
 <DT><B>-u, --user </B><I>&lt;username&gt;</I>
 
 <DD>
@@ -372,7 +376,7 @@ Graeme Walker, mailto:<A HREF="mailto:graeme_walker@users.sourceforge.net">graem
 This document was created by
 <A HREF="lynxcgi:FOO/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 13:14:43 GMT, September 10, 2007
+Time: 23:55:18 GMT, September 11, 2007
 </BODY>
 </HTML>
 <!-- Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

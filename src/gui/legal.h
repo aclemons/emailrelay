@@ -36,6 +36,9 @@ public:
 	static QString license() ;
 		///< Returns the license text.
 
+	static QString credit() ;
+		///< Returns the OpenSSL credit text.
+
 private:
 	Legal() ;
 } ;

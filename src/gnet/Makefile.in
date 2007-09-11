@@ -55,7 +55,7 @@ am_libgnet_a_OBJECTS = gbufferedserverpeer.$(OBJEXT) gclient.$(OBJEXT) \
 	gmonitor.$(OBJEXT) gmultiserver.$(OBJEXT) gresolver.$(OBJEXT) \
 	gresolverinfo.$(OBJEXT) gresolver_unix.$(OBJEXT) \
 	gserver.$(OBJEXT) gsimpleclient.$(OBJEXT) \
-	gsimpleclient_unix.$(OBJEXT) gssl.$(OBJEXT) gsocket.$(OBJEXT) \
+	gsimpleclient_unix.$(OBJEXT) gsocket.$(OBJEXT) \
 	gsocket_unix.$(OBJEXT) gsocketprotocol.$(OBJEXT) \
 	gtimer.$(OBJEXT) gtimerlist.$(OBJEXT)
 libgnet_a_OBJECTS = $(am_libgnet_a_OBJECTS)
@@ -207,11 +207,9 @@ EXTRA_DIST = \
     gresolver_win32.cpp \
     gsimpleclient_win32.cpp \
     gsocket_win32.cpp \
-    gssl_none.cpp \
-	gssl_openssl.cpp \
     mingw.mak
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib 
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib  -I$(top_srcdir)/src/gssl
 noinst_LIBRARIES = libgnet.a libipv4.a libipv6.a
 libgnet_a_SOURCES = \
 	gaddress.h \
@@ -253,8 +251,6 @@ libgnet_a_SOURCES = \
 	gsimpleclient.cpp \
 	gsimpleclient.h \
 	gsimpleclient_unix.cpp \
-	gssl.cpp \
-	gssl.h \
 	gsocket.cpp \
 	gsocket.h \
 	gsocket_unix.cpp \
@@ -348,7 +344,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocket_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocketprotocol.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtimer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtimerlist.Po@am__quote@
 

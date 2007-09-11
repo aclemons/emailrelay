@@ -57,6 +57,11 @@ std::string GNet::ServerPeer::logId() const
 	return m_address.displayString() + "@" + m_socket->asString() ;
 }
 
+void GNet::ServerPeer::sslAccept()
+{
+	m_sp.sslAccept() ;
+}
+
 GNet::StreamSocket & GNet::ServerPeer::socket()
 {
 	G_ASSERT( m_socket.get() != NULL ) ;

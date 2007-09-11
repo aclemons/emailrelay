@@ -195,7 +195,9 @@ public:
 		///< override of GServer::newPeer().
 
 	bool send( const std::string & data , std::string::size_type offset = 0U ) ;
-		///< TODO
+		///< Sends data down the socket to the peer. Returns 
+		///< false if flow control asserted (see onSendComplete()). 
+		///< Throws on error.
 
 	void doDelete() ; 
 		///< Does "onDelete(); delete this".
@@ -242,6 +244,10 @@ protected:
         ///< If an exception is thrown in the override then this
         ///< object catches it and deletes iteself by calling
         ///< doDelete().
+
+	void sslAccept() ;
+		///< Waits for the peer to start a secure session.
+		///< See also GNet::SocketProtocolSink::onSecure().
 
 	StreamSocket & socket() ;
 		///< Returns a reference to the client-server connection 

@@ -18,6 +18,7 @@
 // dir_win32.cpp
 //
 
+#include "gdef.h"
 #define _WIN32_IE 0x600
 #include <shlwapi.h>
 #include <shlobj.h>
