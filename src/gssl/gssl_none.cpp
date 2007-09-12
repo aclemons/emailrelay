@@ -40,7 +40,7 @@ GSsl::Library * GSsl::Library::instance()
 	return m_this ;
 }
 
-bool GSsl::Library::enabled() const
+bool GSsl::Library::enabled( bool ) const
 {
 	return false ;
 }

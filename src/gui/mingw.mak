@@ -84,7 +84,7 @@ syslibs=\
 	-lgdi32 \
 	-lole32 \
 	-loleaut32 \
-	-luuid \
+	-luuid
 
 mk_defines_extra=\
 	-DQT_LARGEFILE_SUPPORT \
@@ -146,11 +146,12 @@ $(mk_exe_gui_tmp): $(mk_exe_gui) $(mk_exe_pack)
 	./$(mk_exe_pack) -a $(mk_exe_gui_tmp) $(mk_exe_gui) ../../README readme.txt ../../COPYING copying.txt ../../ChangeLog changelog.txt ../../AUTHORS authors.txt --dir "" ../main/emailrelay-service.exe ../main/emailrelay.exe ../main/emailrelay-submit.exe ../main/emailrelay-filter-copy.exe ../main/emailrelay-poke.exe ../main/emailrelay-passwd.exe --dir "doc" ../../doc/*.png ../../doc/*.txt ../../doc/emailrelay.css --opt ../../doc/*.html
 
 ../../doc/userguide.html:
-	-@echo warning: incomplete html documentation in the setup exe: add html files to the doc directory
+	-@echo ..
+	-@echo warning: incomplete html documentation in the setup exe: add to doc directory
+	-@echo ..
 
-$(mk_exe_setup): $(mk_exe_pack) $(mk_exe_gui_tmp) $(mk_exe_run)
+$(mk_exe_setup): $(mk_exe_pack) $(mk_exe_gui_tmp) $(mk_exe_run) ../../doc/userguide.html
 	./$(mk_exe_pack) $(mk_exe_setup) $(mk_exe_run) $(mk_qt)/bin/$(mk_dll_qt_1) $(mk_dll_qt_1) $(mk_qt)/bin/$(mk_dll_qt_2) $(mk_dll_qt_2) $(mk_mingw)/$(mk_dll_mingw) $(mk_dll_mingw) $(mk_exe_gui_tmp) $(mk_exe_gui)
-	-@$(MAKE) --no-print-directory -$(MAKEFLAGS)f mingw.mak ../../doc/userguide.html
 
 moc_gdialog.cpp: gdialog.h
 	$(mk_qt)/bin/moc $< -o $@

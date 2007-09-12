@@ -80,6 +80,7 @@ public:
 	explicit LibraryImp( const std::string & pem_file = std::string() ) ;
 	~LibraryImp() ;
 	Context & ctx() ;
+	std::string pem() const ;
 
 private:
 	LibraryImp( const LibraryImp & ) ;
@@ -87,6 +88,7 @@ private:
 
 private:
 	Context * m_context ;
+	std::string m_pem_file ;
 } ;
 
 /// \class GSsl::ProtocolImp
@@ -118,7 +120,7 @@ private:
 	Result accept() ;
 	static Result convert( int ) ;
 	static unsigned long getError() ;
-	static void loghex( void (*fn)(const std::string&) , const char * , const std::string & ) ;
+	static void loghex( void (*fn)(int,const std::string&) , int , const char * , const std::string & ) ;
 	static void callback( int , int , int , const void * , size_t , SSL * , void * p ) ;
 	static void clearErrors() ;
 
@@ -145,7 +147,9 @@ private:
 
 //
 
-GSsl::LibraryImp::LibraryImp( const std::string & pem_file )
+GSsl::LibraryImp::LibraryImp( const std::string & pem_file ) :
+	m_context(NULL) ,
+	m_pem_file(pem_file)
 {
 	SSL_load_error_strings() ;
 	SSL_library_init() ;
@@ -171,6 +175,11 @@ GSsl::LibraryImp::~LibraryImp()
 GSsl::Context & GSsl::LibraryImp::ctx()
 {
 	return *m_context ;
+}
+
+std::string GSsl::LibraryImp::pem() const
+{
+	return m_pem_file ;
 }
 
 //
@@ -206,9 +215,9 @@ GSsl::Library * GSsl::Library::instance()
 	return m_this ;
 }
 
-bool GSsl::Library::enabled() const
+bool GSsl::Library::enabled( bool for_server ) const
 {
-	return m_imp != NULL ;
+	return m_imp != NULL && ( !for_server || !m_imp->pem().empty() ) ;
 }
 
 std::string GSsl::Library::credit( const std::string & prefix , const std::string & eol , const std::string & final )
@@ -371,7 +380,8 @@ GSsl::ProtocolImp::~ProtocolImp()
 	SSL_free( m_ssl ) ;
 }
 
-void GSsl::ProtocolImp::loghex( void (*fn)(const std::string&) , const char * prefix , const std::string & in )
+void GSsl::ProtocolImp::loghex( void (*fn)(int,const std::string&) , int arg , 
+	const char * prefix , const std::string & in )
 {
 	std::string line ;
 	unsigned int i = 0 ;
@@ -391,12 +401,12 @@ void GSsl::ProtocolImp::loghex( void (*fn)(const std::string&) , const char * pr
 
 		if( i > 0 && ((i+1)%16) == 0 )
 		{
-			(*fn)( std::string(prefix) + line ) ;
+			(*fn)( arg , std::string(prefix) + line ) ;
 			line.erase() ;
 		}
 	}
 	if( !line.empty() )
-		(*fn)( std::string(prefix) + line ) ;
+		(*fn)( arg , std::string(prefix) + line ) ;
 }
 
 void GSsl::ProtocolImp::callback( int write , int v , int type , const void * buffer , size_t n , SSL * , void * p )
@@ -418,7 +428,7 @@ void GSsl::ProtocolImp::callback( int write , int v , int type , const void * bu
 		data.append( 1U , static_cast<char>(length_lo) ) ;
 		data.append( std::string(reinterpret_cast<const char*>(buffer),n) ) ;
 
-		loghex( This->m_log_fn , write?"ssl-tx>>: ":"ssl-rx<<: " , data ) ;
+		loghex( This->m_log_fn , 0 , write?"ssl-tx>>: ":"ssl-rx<<: " , data ) ;
 	}
 }
 
@@ -436,14 +446,14 @@ int GSsl::ProtocolImp::error( const char * op , int rc ) const
 	{
 		std::ostringstream ss ;
 		ss << "ssl error: " << op << ": rc=" << rc << ": error " << e << " => " << Protocol::str(convert(e)) ;
-		(*m_log_fn)( ss.str() ) ;
+		(*m_log_fn)( 1 , ss.str() ) ;
 		unsigned long ee = 0 ;
-		for(;;)
+		for( int i = 2 ; i < 10000 ; i++ )
 		{
 			ee = ERR_get_error() ;
 			if( ee == 0 ) break ;
 			Error eee( op , ee ) ;
-			(*m_log_fn)( std::string() + eee.what() ) ;
+			(*m_log_fn)( i , std::string() + eee.what() ) ;
 		}
 	}
 

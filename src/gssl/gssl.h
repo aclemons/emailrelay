@@ -43,7 +43,7 @@ public:
 	typedef size_t size_type ;
 	typedef ssize_t ssize_type ;
 	enum Result { Result_ok , Result_read , Result_write , Result_error } ;
-	typedef void (*LogFn)( const std::string & ) ;
+	typedef void (*LogFn)( int , const std::string & ) ;
 
 	explicit Protocol( const Library & ) ;
 		///< Constructor.
@@ -111,7 +111,7 @@ public:
 	static Library * instance() ;
 		///< Returns a pointer to a library object, if any.
 
-	bool enabled() const ;
+	bool enabled( bool for_serving = false ) const ;
 		///< Returns true if this is a real and enabled 
 		///< ssl library.
 

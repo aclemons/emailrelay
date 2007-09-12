@@ -112,12 +112,15 @@ bool GSmtp::ServerPeer::onReceive( const std::string & line )
 
 void GSmtp::ServerPeer::onSecure()
 {
+	G_LOG( "GSmtp::ServerPeer::onSecure: tls/ssl protocol established with " << peerAddress().second.displayString() ) ;
 	m_protocol.secure() ;
 }
 
-void GSmtp::ServerPeer::protocolSend( const std::string & line )
+void GSmtp::ServerPeer::protocolSend( const std::string & line , bool go_secure )
 {
 	send( line , 0U ) ; // GNet::Sender -- may throw SendError
+	if( go_secure )
+		sslAccept() ;
 }
 
 // ===

@@ -306,7 +306,7 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	else if( m_state == sStartTls && reply.is(Reply::Internal_2yy) )
 	{
 		m_state = sSentTlsEhlo ;
-		send( "EHLO" ) ;
+		sendEhlo() ;
 	}
 	else if( m_state == sAuth1 && reply.is(Reply::Challenge_334) && Base64::valid(reply.text()) )
 	{

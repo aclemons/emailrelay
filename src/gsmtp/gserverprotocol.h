@@ -60,7 +60,7 @@ public:
 	/// An interface used by ServerProtocol to send protocol replies.
 	class Sender 
 	{
-		public: virtual void protocolSend( const std::string & s ) = 0 ;
+		public: virtual void protocolSend( const std::string & s , bool go_secure ) = 0 ;
 		public: virtual ~Sender() ;
 		private: void operator=( const Sender & ) ; // not implemented
 	} ;
@@ -133,6 +133,8 @@ private:
 		eData ,
 		eRcpt ,
 		eMail ,
+		eStartTls ,
+		eSecure ,
 		eVrfy ,
 		eVrfyReply ,
 		eHelp ,
@@ -157,6 +159,7 @@ private:
 		sData ,
 		sProcessing ,
 		sAuth ,
+		sStartingTls ,
 		s_Any ,
 		s_Same
 	} ;
@@ -165,7 +168,7 @@ private:
 private:
 	ServerProtocol( const ServerProtocol & ) ; // not implemented
 	void operator=( const ServerProtocol & ) ; // not implemented
-	void send( std::string ) ;
+	void send( std::string , bool = false ) ;
 	Event commandEvent( const std::string & ) const ;
 	std::string commandWord( const std::string & line ) const ;
 	std::string commandLine( const std::string & line ) const ;
@@ -195,6 +198,8 @@ private:
 	void doVrfyReply( const std::string & line , bool & ) ;
 	void doVrfyToReply( const std::string & line , bool & ) ;
 	void doNoRecipients( const std::string & , bool & ) ;
+	void doStartTls( const std::string & , bool & ) ;
+	void doSecure( const std::string & , bool & ) ;
 	void verifyDone( std::string , Verifier::Status status ) ;
 	void sendBadFrom( std::string ) ;
 	void sendChallenge( const std::string & ) ;
@@ -237,6 +242,7 @@ private:
 	bool m_authenticated ;
 	SaslServer m_sasl ;
 	bool m_with_vrfy ;
+	bool m_with_ssl ;
 	std::string m_buffer ;
 	unsigned int m_preprocessor_timeout ;
 	unsigned int m_bad_client_count ;

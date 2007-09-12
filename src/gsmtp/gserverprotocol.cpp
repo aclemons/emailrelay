@@ -22,6 +22,7 @@
 #include "gsmtp.h"
 #include "gserverprotocol.h"
 #include "gbase64.h"
+#include "gssl.h"
 #include "gdate.h"
 #include "gtime.h"
 #include "gdatetime.h"
@@ -48,8 +49,9 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 	m_pmessage.doneSignal().connect( G::slot(*this,&ServerProtocol::processDone) ) ;
 	verifier.doneSignal().connect( G::slot(*this,&ServerProtocol::verifyDone) ) ;
 
-	// (dont send anything to the peer from this ctor -- the Sender 
-	// object is not fuly constructed)
+	// (dont send anything to the peer from this ctor -- the Sender object is not fuly constructed)
+
+	// (TODO -- why can helo appear at any time? not appropriate in sStartingTls -- check the rfc)
 
 	m_fsm.addTransition( eQuit     , s_Any       , sEnd        , &GSmtp::ServerProtocol::doQuit ) ;
 	m_fsm.addTransition( eUnknown  , s_Any       , s_Same      , &GSmtp::ServerProtocol::doUnknown ) ;
@@ -81,6 +83,14 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 		m_fsm.addTransition( eAuth    , sIdle   , sAuth    , &GSmtp::ServerProtocol::doAuth , sIdle ) ;
 		m_fsm.addTransition( eAuthData, sAuth   , sAuth    , &GSmtp::ServerProtocol::doAuthData , sIdle ) ;
 	}
+
+	GSsl::Library * ssl = GSsl::Library::instance() ;
+	m_with_ssl = ssl != NULL && ssl->enabled(true) ;
+	if( m_with_ssl )
+	{
+		m_fsm.addTransition( eStartTls , sIdle , sStartingTls , &GSmtp::ServerProtocol::doStartTls ) ;
+		m_fsm.addTransition( eSecure   , sStartingTls , sIdle , &GSmtp::ServerProtocol::doSecure ) ;
+	}
 }
 
 void GSmtp::ServerProtocol::init()
@@ -96,7 +106,24 @@ GSmtp::ServerProtocol::~ServerProtocol()
 
 void GSmtp::ServerProtocol::secure()
 {
-	// not yet implemented
+	std::string line ;
+	Event event = eSecure ;
+	const std::string * event_data = &line ;
+
+	State new_state = m_fsm.apply( *this , event , *event_data ) ;
+	const bool protocol_error = new_state == s_Any ;
+	if( protocol_error )
+		throw ProtocolDone( "protocol error" ) ;
+}
+
+void GSmtp::ServerProtocol::doSecure( const std::string & , bool & )
+{
+	G_DEBUG( "GSmtp::ServerProtocol::doSecure" ) ;
+}
+
+void GSmtp::ServerProtocol::doStartTls( const std::string & , bool & )
+{
+	send( "220 ready to start tls" , true ) ;
 }
 
 void GSmtp::ServerProtocol::sendGreeting( const std::string & text )
@@ -458,6 +485,7 @@ void GSmtp::ServerProtocol::reset()
 	m_pmessage.clear() ;
 	m_verifier.reset() ;
 	m_bad_client_count = 0U ;
+	// TODO -- what if we have done sslAccept()?
 }
 
 void GSmtp::ServerProtocol::doRset( const std::string & , bool & )
@@ -534,6 +562,7 @@ GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( const std::str
 	if( command == "NOOP" ) return eNoop ;
 	if( command == "EXPN" ) return eExpn ;
 	if( command == "HELP" ) return eHelp ;
+	if( command == "STARTTLS" ) return eStartTls ;
 	if( m_sasl.active() && command == "AUTH" ) return eAuth ;
 	return eUnknown ;
 }
@@ -629,6 +658,8 @@ void GSmtp::ServerProtocol::sendEhloReply()
 		ss << "250-" << m_text.hello(m_peer_name) << crlf() ;
 	if( m_sasl.active() )
 		ss << "250-AUTH " << m_sasl.mechanisms() << crlf() ;
+	if( m_with_ssl )
+		ss << "250-STARTTLS" << crlf() ; // TODO -- not if already secure
 	if( m_with_vrfy )
 		ss << "250-VRFY" << crlf() ; // see RFC2821-3.5.2
 		ss << "250 8BITMIME" ;
@@ -650,11 +681,11 @@ std::string GSmtp::ServerProtocol::crlf()
 	return std::string( "\015\012" ) ;
 }
 
-void GSmtp::ServerProtocol::send( std::string line )
+void GSmtp::ServerProtocol::send( std::string line , bool go_secure )
 {
 	G_LOG( "GSmtp::ServerProtocol: tx>>: \"" << G::Str::printable(line) << "\"" ) ;
 	line.append( crlf() ) ;
-	m_sender.protocolSend( line ) ;
+	m_sender.protocolSend( line , go_secure ) ;
 }
 
 std::pair<std::string,std::string> GSmtp::ServerProtocol::parseFrom( const std::string & line ) const

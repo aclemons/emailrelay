@@ -51,7 +51,7 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 		<< "V!version!displays version information and exits!0!!2|"
 		<< ""
 		<< "j!client-tls!enables tls/ssl layer for smtp client (if openssl built in)!0!!3|"
-		//<< "K!server-tls!enables tls/ssl layer for smtp server using the given openssl certificate file (if openssl built in)!1!pem-file!3|"
+		<< "K!server-tls!enables tls/ssl layer for smtp server using the given openssl certificate file (if openssl built in)!1!pem-file!0|"
 		<< "g!debug!generates debug-level logging if compiled-in!0!!3|"
 		<< "C!client-auth!enables smtp authentication with the remote server, using the given secrets file!1!file!3|"
 		<< "L!log-time!adds a timestamp to the logging output!0!!3|"

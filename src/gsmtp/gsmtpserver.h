@@ -74,7 +74,7 @@ protected:
 private:
 	ServerPeer( const ServerPeer & ) ;
 	void operator=( const ServerPeer & ) ;
-	virtual void protocolSend( const std::string & line ) ; // override from private base class
+	virtual void protocolSend( const std::string & line , bool ) ; // override from private base class
 	static std::string crlf() ;
 
 private:

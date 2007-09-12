@@ -66,7 +66,7 @@ private:
 	SocketProtocolImp( const SocketProtocolImp & ) ;
 	void operator=( const SocketProtocolImp & ) ;
 	static GSsl::Protocol * newProtocol() ;
-	static void log( const std::string & line ) ;
+	static void log( int level , const std::string & line ) ;
 	StreamSocket & socket() ;
 	bool failed() const ;
 	bool rawSendImp( const std::string & , std::string::size_type , std::string & ) ;
@@ -168,9 +168,12 @@ bool GNet::SocketProtocolImp::send( const std::string & data , std::string::size
 	return rc ;
 }
 
-void GNet::SocketProtocolImp::log( const std::string & line )
+void GNet::SocketProtocolImp::log( int level , const std::string & line )
 {
-	G_DEBUG( "ssl: " << line ) ;
+	if( level == 2 )
+		G_WARNING( "GNet::SocketProtocolImp::log: " << line ) ;
+	else
+		G_DEBUG( "ssl: " << line ) ;
 }
 
 GSsl::Protocol * GNet::SocketProtocolImp::newProtocol()
