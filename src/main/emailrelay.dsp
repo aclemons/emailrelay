@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /W3 /GR /GX /O2 /I "../../lib/msvc6.0" /I "../gsmtp" /I "../gpop" /I "../gnet" /I "../glib" /I "../win32" /D "NDEBUG" /D "G_WIN32" /D "_CONSOLE" /D "WIN32" /D "_MBCS" /YX"gdef.h" /FD /c
+# ADD CPP /nologo /W3 /GR /GX /O2 /I "../../lib/msvc6.0" /I "../gsmtp" /I "../gpop" /I "../gnet" /I "../gssl" /I "../glib" /I "../win32" /D "NDEBUG" /D "G_WIN32" /D "_CONSOLE" /D "WIN32" /D "_MBCS" /YX"gdef.h" /FD /c
 # SUBTRACT CPP /X
 # ADD BASE RSC /l 0x809 /d "NDEBUG"
 # ADD RSC /l 0x809 /d "NDEBUG"
@@ -68,7 +68,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GR /GX /ZI /Od /I "../../src/glib" /I "../../src/gnet" /I "../../src/win32" /I "../../lib/msvc6.0" /I "../gsmtp" /I "../gpop" /I "../gnet" /I "../glib" /I "../win32" /D "_DEBUG" /D "G_WIN32" /D "WIN32" /D "_MBCS" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GR /GX /ZI /Od /I "../../lib/msvc6.0" /I "../gsmtp" /I "../gpop" /I "../gnet" /I "../gssl" /I "../glib" /I "../win32" /D "_DEBUG" /D "G_WIN32" /D "WIN32" /D "_MBCS" /FD /GZ /c
 # SUBTRACT CPP /YX /Yc /Yu
 # ADD BASE RSC /l 0x809 /d "_DEBUG"
 # ADD RSC /l 0x809 /d "_DEBUG"
@@ -139,7 +139,7 @@ SOURCE=.\emailrelay.rc
 # End Source File
 # Begin Source File
 
-SOURCE=.\icon-32.ico
+SOURCE=".\icon-32.ico"
 # End Source File
 # Begin Source File
 

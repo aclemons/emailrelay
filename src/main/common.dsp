@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "CommonRelease"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /W3 /GR /GX /O2 /I "../../lib/msvc6.0" /I "../gsmtp" /I "../gnet" /I "../glib" /I "../win32" /D "NDEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "G_WIN32" /YX"gdef.h" /FD /c
+# ADD CPP /nologo /W3 /GR /GX /O2 /I "../../lib/msvc6.0" /I "../gsmtp" /I "../gnet" /I "../gssl" /I "../glib" /I "../win32" /D "NDEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "G_WIN32" /YX"gdef.h" /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -64,7 +64,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "CommonDebug"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GR /GX /ZI /Od /I "../../lib/msvc6.0" /I "../gsmtp" /I "../gnet" /I "../glib" /I "../win32" /D "_DEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "G_WIN32" /YX"gdef.h" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GR /GX /ZI /Od /I "../../lib/msvc6.0" /I "../gsmtp" /I "../gnet" /I "../gssl" /I "../glib" /I "../win32" /D "_DEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "G_WIN32" /YX"gdef.h" /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -86,14 +86,6 @@ LIB32=link.exe -lib
 # Begin Source File
 
 SOURCE=..\gnet\gaddress_ipv4.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\gnet\gbufferedserverpeer.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\gnet\gheapclient.cpp
 # End Source File
 # Begin Source File
 
@@ -121,7 +113,7 @@ SOURCE=..\gsmtp\gbase64.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\glib\gcounter.cpp
+SOURCE=..\gnet\gbufferedserverpeer.cpp
 # End Source File
 # Begin Source File
 
@@ -142,6 +134,10 @@ SOURCE=..\gnet\gconnection.cpp
 # Begin Source File
 
 SOURCE=..\win32\gcontrol.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\glib\gcounter.cpp
 # End Source File
 # Begin Source File
 
@@ -209,19 +205,15 @@ SOURCE=..\glib\gexecutable_win32.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gsmtp\gspamprocessor.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\gsmtp\gspamclient.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\gsmtp\gexecutableprocessor.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\gsmtp\gexecutableverifier.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gsmtp\gfactoryparser.cpp
 # End Source File
 # Begin Source File
 
@@ -242,6 +234,10 @@ SOURCE=..\glib\gfs_win32.cpp
 # Begin Source File
 
 SOURCE=..\glib\ggetopt.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gnet\gheapclient.cpp
 # End Source File
 # Begin Source File
 
@@ -349,10 +345,6 @@ SOURCE=..\glib\gprocess_win32.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gsmtp\gfactoryparser.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\gsmtp\gprocessor.cpp
 # End Source File
 # Begin Source File
@@ -425,14 +417,6 @@ SOURCE=..\gnet\gserver.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gnet\gsocketprotocol.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\gnet\gssl_none.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\gsmtp\gserverprotocol.cpp
 # End Source File
 # Begin Source File
@@ -462,6 +446,22 @@ SOURCE=..\gnet\gsocket.cpp
 # Begin Source File
 
 SOURCE=..\gnet\gsocket_win32.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gnet\gsocketprotocol.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gsmtp\gspamclient.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gsmtp\gspamprocessor.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gssl\gssl_none.cpp
 # End Source File
 # Begin Source File
 

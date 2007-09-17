@@ -192,7 +192,7 @@ top_srcdir = @top_srcdir@
 
 #
 #
-EXTRA_DIST = emailrelay.spec ChangeLog README.windows
+EXTRA_DIST = emailrelay.spec ChangeLog README.windows LICENSE
 SUBDIRS = src bin lib etc doc test
 e_doc_DATA = NEWS README ChangeLog
 all: config.h

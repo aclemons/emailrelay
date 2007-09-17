@@ -166,6 +166,9 @@ Sets the response timeout (in seconds) when talking to a remote server (default 
 .B \-S, --server-auth \fI<file>\fR
 Enables authentication of remote clients, using the given secrets file.
 .TP
+.B \-K, --server-tls \fI<pem-file>\fR
+Enables tls/ssl layer for smtp server using the given openssl certificate file (if openssl built in).
+.TP
 .B \-s, --spool-dir \fI<dir>\fR
 Specifies the spool directory (default is \fI/var/spool/emailrelay\fR).
 .TP

@@ -122,6 +122,9 @@ where <switch> is:
 # --server-auth (-S)
   Enables authentication of remote clients, using the given secrets file.
 
+# --server-tls (-K)
+  Enables tls/ssl layer for smtp server using the given openssl certificate file (if openssl built in).
+
 # --spool-dir (-s)
   Specifies the spool directory (default is "/var/spool/emailrelay").
 

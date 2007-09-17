@@ -14,7 +14,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-EXTRA_DIST = emailrelay.spec ChangeLog README.windows
+EXTRA_DIST = emailrelay.spec ChangeLog README.windows LICENSE
 SUBDIRS = src bin lib etc doc test
 e_doc_DATA = NEWS README ChangeLog
 uninstall-local:

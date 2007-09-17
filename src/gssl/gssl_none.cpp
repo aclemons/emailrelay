@@ -29,6 +29,12 @@ GSsl::Library::Library()
 		m_this = this ;
 }
 
+GSsl::Library::Library( bool , const std::string & )
+{
+	if( m_this == NULL )
+		m_this = this ;
+}
+
 GSsl::Library::~Library()
 {
 	if( this == m_this )

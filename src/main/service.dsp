@@ -91,6 +91,10 @@ SOURCE=..\main\service_install.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\service_remove.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\main\service_wrapper.cpp
 # End Source File
 # End Group

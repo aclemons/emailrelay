@@ -65,6 +65,11 @@ G_EXCEPTION( StateMachine_Error , "invalid state machine transition" ) ;
 /// same. The 'any' state is also used as a return value from 
 /// apply() to signal a protocol error.
 ///
+/// If the 'any' state is numerically the largest then it can be used 
+/// to identify a default transition for the given event; transitions
+/// identified by an exact match with the current state will be
+/// chosen in preference to the 'any' transition.
+///
 /// The 'end' state is special in that predicates are ignored for
 /// transitions which have 'end' as their 'normal' destintation 
 /// state. This is because of a special implementation feature
@@ -212,7 +217,7 @@ template <typename T, typename State, typename Event, typename Arg>
 State StateMachine<T,State,Event,Arg>::apply( T & t , Event event , const Arg & arg )
 {
 	State state = m_state ;
-	typename Map::iterator p = m_map.find(event) ; // look up in the multimap keyed on current-state + event
+	typename Map::iterator p = m_map.find(event) ; // look up in the multimap keyed on event + current-state
 	for( ; p != m_map.end() && (*p).first == event ; ++p )
 	{
 		if( (*p).second.from == m_any || (*p).second.from == m_state )

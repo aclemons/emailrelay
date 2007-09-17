@@ -142,6 +142,8 @@ private:
 		eAuthData ,
 		eContent ,
 		eEot ,
+		eDone ,
+		eTimeout ,
 		eUnknown
 	} ;
 	enum State
@@ -151,6 +153,7 @@ private:
 		sIdle ,
 		sGotMail ,
 		sGotRcpt ,
+		sVrfyStart ,
 		sVrfyIdle ,
 		sVrfyGotMail ,
 		sVrfyGotRcpt ,
@@ -193,6 +196,7 @@ private:
 	void doRset( const std::string & , bool & ) ;
 	void doData( const std::string & , bool & ) ;
 	void doContent( const std::string & , bool & ) ;
+	void doComplete( const std::string & , bool & ) ;
 	void doEot( const std::string & , bool & ) ;
 	void doVrfy( const std::string & , bool & ) ;
 	void doVrfyReply( const std::string & line , bool & ) ;
@@ -240,6 +244,7 @@ private:
 	Fsm m_fsm ;
 	std::string m_peer_name ;
 	bool m_authenticated ;
+	bool m_secure ;
 	SaslServer m_sasl ;
 	bool m_with_vrfy ;
 	bool m_with_ssl ;
