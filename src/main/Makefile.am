@@ -79,7 +79,7 @@ emailrelay_LDADD = \
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a \
-	$(SSL_LIBS)
+	$(STATIC_START) $(SSL_LIBS) $(STATIC_END)
 
 emailrelay_poke_SOURCES = poke.c
 emailrelay_poke_LDADD =

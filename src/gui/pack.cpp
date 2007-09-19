@@ -19,7 +19,7 @@
 //
 // Creates a self-extracting archive.
 //
-// usage: pack [-a] [-p] <output> <stub> <payload-in> <payload-out> [<in> <out> ...] [--dir] [<file> ...]
+// usage: pack [-a] [-p] <output> <stub> <payload-in> <payload-out> [<in> <out> ...] [--dir] [<file> ... [--opt] ...]
 //
 // The table of contents is stored in the output file after
 // the stub program. The final twelve bytes of the output provide 
@@ -31,6 +31,13 @@
 // The packed files are compressed with zlib (unless using -p)
 // and then concatenated immediately following the table of 
 // contents.
+//
+// The "--dir" switch introduces a set of input files which
+// are to be unpacked into the specified output directory.
+//
+// The "--opt" switch indicates that all subsequent files
+// are optional; if they do not exist then they are silently
+// ignored.
 //
 
 #include "gdef.h"
@@ -189,12 +196,20 @@ int main( int argc , char * argv [] )
 			}
 			else if( dir_mode )
 			{
+				// in dir mode take each parameter as an input path to be output
+				// to the specified directory -- if also in opt mode and there 
+				// is still a wildcard in the name then the shell could not find 
+				// a match so silently ignore it
+
 				if( !opt_mode || arg.v(i).find('*') == std::string::npos )
 					payload.push_back( std::make_pair(arg.v(i),G::Path(dir,G::Path(arg.v(i)).basename()).str()) ) ;
 			}
 			else
 			{
-				payload.push_back( std::make_pair(arg.v(i),arg.v(i+1)) ) ; 
+				// take in/out pair
+				G::Path p1( arg.v(i) ) ;
+				G::Path p2( arg.v(i+1) ) ;
+				payload.push_back( std::make_pair(p1.str(),p2.str()) ) ;
 				i++ ;
 			}
 		}
@@ -205,8 +220,7 @@ int main( int argc , char * argv [] )
 		std::cout << "pack: copying stub: " << path_stub << ": " << stub_size << std::endl ;
 		G::File::copy( path_stub , path_out ) ;
 
-		// read and compress the files -- ignore filenames that contain wildcards
-		// so that we can add files that may or may not exist
+		// read and compress the files
 		//
 		std::list<File*> list ;
 		for( StringPairs::iterator p = payload.begin() ; p != payload.end() ; ++p )

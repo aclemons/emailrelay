@@ -114,6 +114,12 @@ AC_ARG_WITH(openssl,AC_HELP_STRING([--with-openssl],[use openssl for smtp client
 WITH_OPENSSL
 
 dnl ===
+dnl "--enable-static-linking"
+dnl
+AC_ARG_ENABLE(static-linking,AC_HELP_STRING([--enable-static-linking],[prefer static linking for some libraries (default no)]))
+ENABLE_STATIC_LINKING
+
+dnl ===
 dnl directory tweaking and "--enable-fhs" ...
 dnl
 dnl define e_ prefixed variables with a gnu feel and then

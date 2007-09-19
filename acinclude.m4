@@ -291,6 +291,24 @@ AC_SUBST(SSL_LIBS)
 AC_SUBST(SSL)
 ])
 
+dnl enable-static-linking
+dnl
+dnl TODO remove -ldl
+dnl
+AC_DEFUN([ENABLE_STATIC_LINKING],
+[
+if test "$enable_static_linking" = "yes"
+then
+	STATIC_START="-Xlinker -Bstatic"
+	STATIC_END="-Xlinker -Bdynamic -ldl"
+else
+	STATIC_START=""
+	STATIC_END=""
+fi
+AC_SUBST(STATIC_START)
+AC_SUBST(STATIC_END)
+])
+
 dnl with-workshop
 dnl
 AC_DEFUN([WITH_WORKSHOP],

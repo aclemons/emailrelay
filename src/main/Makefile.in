@@ -62,7 +62,8 @@ emailrelay_DEPENDENCIES = $(top_builddir)/src/gpop/libgpop.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a $(am__DEPENDENCIES_1)
+	$(top_builddir)/src/gnet/lib$(IP).a $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_emailrelay_filter_copy_OBJECTS = filter_copy.$(OBJEXT) \
 	filter.$(OBJEXT) legal.$(OBJEXT)
 emailrelay_filter_copy_OBJECTS = $(am_emailrelay_filter_copy_OBJECTS)
@@ -169,6 +170,8 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SSL = @SSL@
 SSL_LIBS = @SSL_LIBS@
+STATIC_END = @STATIC_END@
+STATIC_START = @STATIC_START@
 STRIP = @STRIP@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
@@ -280,7 +283,7 @@ emailrelay_LDADD = \
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a \
-	$(SSL_LIBS)
+	$(STATIC_START) $(SSL_LIBS) $(STATIC_END)
 
 emailrelay_poke_SOURCES = poke.c
 emailrelay_poke_LDADD = 

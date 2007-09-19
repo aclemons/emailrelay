@@ -67,11 +67,9 @@ public:
 		///< Destructor.
 
 	bool simple() const ;
-		///< Returns true if the path is just a 
-		///< file/directory name without 
-		///< any separators. Note that if the path
-		///< is simple() then dirname() will
-		///< return the empty string.
+		///< Returns true if the path is just a file/directory name without 
+		///< any separators. Note that if the path is simple() then dirname() 
+		///< will return the empty string.
 
 	std::string str() const ;
 		///< Returns the path string.
@@ -81,9 +79,8 @@ public:
 		///< Does nothing with the extension (cf. basename(1)).
 
 	Path dirname() const ;
-		///< Returns the drive/directory parts of the path. If
-		///< this path is the top of the tree then the
-		///< null path is returned.
+		///< Returns the drive/directory parts of the path. If this path is 
+		///< the top of the tree then the null path is returned.
 		///<
 		///< eg. "c:foo\bar.exe" -> "c:foo"
 		///< eg. "c:\foo\bar.exe" -> "c:\foo"
@@ -101,20 +98,18 @@ public:
 		///< eg. "\\machine\drive" -> ""
 
 	std::string extension() const ;
-		///< Returns the path's original extension, even
-		///< after removeExtension(). Returns
-		///< the zero-length string if there is none.
+		///< Returns the path's original extension, even after 
+		///< removeExtension(). Returns the zero-length string if 
+		///< there is none.
 	
 	void removeExtension() ;
-		///< Modifies the path by removing any extension.
-		///< However, the extension returned by extension() is
-		///< unchanged.
+		///< Modifies the path by removing any extension. However, 
+		///< the extension returned by extension() is unchanged.
 		
 	void setExtension( const std::string & extension ) ;
-		///< Replaces the extension. Any leading dot in the
-		///< given string is ignored. (The given extension
-		///< will be returned by subsequent calls
-		///< to extension().)
+		///< Replaces the extension. Any leading dot in the given 
+		///< string is ignored. (The given extension will be returned 
+		///< by subsequent calls to extension().)
 
 	bool isAbsolute() const ;
 		///< Returns !isRelative().
@@ -137,8 +132,8 @@ public:
 		///< is added if necessary.
 
 	static G::Path join( const G::Path & p1 , const G::Path & p2 ) ;
-		///< Joins two paths together. The second should
-		///< be a relative path.
+		///< Joins two paths together. The second should be a 
+		///< relative path.
 
 	Strings split( bool no_dot = true ) const ;
 		///< Spits the path into a list of component parts.

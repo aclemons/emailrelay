@@ -5,7 +5,7 @@ Release: 1
 License: GPL3
 Group: System Environment/Daemons
 URL: http://emailrelay.sourceforge.net/
-Source: http://sourceforge.net/sourceforge/emailrelay/emailrelay-src-1.7.tar.gz
+Source: http://sourceforge.net/sourceforge/emailrelay/emailrelay-1.7-src.tar.gz
 BuildRoot: /tmp/emailrelay-install
 
 %description
@@ -30,7 +30,7 @@ Distribution is under the GNU General Public License V3.
 %setup
 
 %build
-./configure --enable-fhs --disable-gui --without-man2html --without-doxygen
+./configure --enable-fhs --disable-gui --without-man2html --without-doxygen --with-openssl --enable-static-linking
 make
 
 %install
@@ -50,10 +50,11 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %config /etc/emailrelay.conf
 /etc/emailrelay.conf.template
 /etc/init.d/emailrelay
-/usr/share/man/man1/emailrelay-submit.1.gz
 /usr/share/man/man1/emailrelay.1.gz
+/usr/share/man/man1/emailrelay-filter-copy.1.gz
 /usr/share/man/man1/emailrelay-poke.1.gz
 /usr/share/man/man1/emailrelay-passwd.1.gz
+/usr/share/man/man1/emailrelay-submit.1.gz
 %docdir /usr/share/doc/emailrelay
 /usr/share/doc/emailrelay/index.html
 /usr/share/doc/emailrelay/windows.html
