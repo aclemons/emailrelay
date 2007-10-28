@@ -65,7 +65,7 @@ public:
 		///< content stream, creates a new envelope
 		///< file (".new"), and does any local 'delivery'
 		///< by creating ".local" copies. The path
-		///< to the ".new" envelope file is returned.
+		///< to the content file is returned.
 
 	virtual void commit() ;
 		///< Final override from GSmtp::NewMessage.

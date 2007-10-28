@@ -167,8 +167,11 @@ std::string Main::CommandLine::value( const std::string & name ) const
 	return m_getopt.value( name ) ;
 }
 
-std::string Main::CommandLine::semanticError() const
+std::string Main::CommandLine::semanticError( bool & fatal ) const
 {
+	fatal = true ;
+	std::string warning ;
+
 	if( 
 		( cfg().doAdmin() && cfg().adminPort() == cfg().port() ) ||
 		( cfg().doPop() && cfg().popPort() == cfg().port() ) ||
@@ -252,7 +255,7 @@ std::string Main::CommandLine::semanticError() const
 			return "the --poll switch cannot be used with --as-client or --dont-serve" ;
 	}
 
-	if( m_getopt.contains("no-smtp" ) ) // ie. if not serving smtp
+	if( m_getopt.contains("no-smtp") ) // ie. if not serving smtp
 	{
 		if( m_getopt.contains("filter") )
 			return "the --filter switch cannot be used with --no-smtp" ;
@@ -275,6 +278,11 @@ std::string Main::CommandLine::semanticError() const
 		return "the --verbose switch must be used with --log, --help, --as-client, --as-server or --as-proxy" ;
 	}
 
+	if( m_getopt.contains("debug") && !log )
+	{
+		return "the --debug switch requires --log, --as-client, --as-server or --as-proxy" ;
+	}
+
 	const bool no_daemon =
 		m_getopt.contains("as-client") || // => no-daemon
 		m_getopt.contains("no-daemon") ;
@@ -284,18 +292,61 @@ std::string Main::CommandLine::semanticError() const
 		return "the --hidden switch requires --no-daemon or --as-client" ;
 	}
 
-	return std::string() ;
+	const bool no_syslog = 
+		m_getopt.contains("no-syslog") || 
+		m_getopt.contains("as-client") ;
+
+	const bool syslog =
+		! ( no_syslog && ! m_getopt.contains("syslog") ) ;
+
+	const bool close_stderr =
+		m_getopt.contains("close-stderr") ||
+		m_getopt.contains("as-server") ||
+		m_getopt.contains("as-proxy") ;
+
+	if( log && close_stderr && !syslog ) // ie. logging to nowhere
+	{
+		std::string close_stderr_switch =
+			( m_getopt.contains("close-stderr") ? "--close-stderr" : 
+			( m_getopt.contains("as-server") ? "--as-server" :
+			"--as-proxy" ) ) ;
+
+		warning = "logging is enabled but it has nowhere to go because " +
+			close_stderr_switch + " closes the standard error stream soon after startup and " +
+			"output to the system log is disabled" ;
+
+		if( m_getopt.contains("as-server") && !m_getopt.contains("log") )
+			warning = warning + ": replace --as-server with --log" ;
+		else if( m_getopt.contains("as-server") )
+			warning = warning + ": remove --as-server" ;
+		else if( m_getopt.contains("as-proxy" ) )
+			warning = warning + ": replace --as-proxy with --log --immediate --forward-to" ;
+	}
+
+	fatal = false ;
+	return warning ;
 }
 
 bool Main::CommandLine::hasSemanticError() const
 {
-	return ! semanticError().empty() ;
+	bool fatal = false ;
+	bool error = ! semanticError(fatal).empty() ;
+	return error && fatal ;
 }
 
 void Main::CommandLine::showSemanticError( bool e ) const
 {
 	Show show( m_output , e ) ;
-	show.s() << m_arg.prefix() << ": usage error: " << semanticError() << std::endl ;
+	bool fatal = false ;
+	show.s() << m_arg.prefix() << ": usage error: " << semanticError(fatal) << std::endl ;
+}
+
+void Main::CommandLine::logSemanticWarnings() const
+{
+	bool fatal = false ;
+	std::string warning = semanticError( fatal ) ;
+	if( !warning.empty() && !fatal )
+		G_WARNING( "CommandLine::logSemanticWarnings: " << warning ) ;
 }
 
 void Main::CommandLine::showUsageErrors( bool e ) const

@@ -19,6 +19,7 @@
 //
 	
 #include "gdef.h"
+#include "glimits.h"
 #include "gfile.h"
 #include "gprocess.h"
 #include "glog.h"
@@ -61,31 +62,45 @@ void G::File::rename( const Path & from , const Path & to )
 
 void G::File::copy( const Path & from , const Path & to )
 {
-	if( !copy(from,to,NoThrow()) )
-		throw CannotCopy( std::string() + "[" + from.str() + "] to [" + to.str() + "]" ) ;
+	std::string reason = copy( from , to , 0 ) ;
+	if( !reason.empty() )
+		throw CannotCopy( std::string() + "[" + from.str() + "] to [" + to.str() + "]: " + reason ) ;
 }
 
 bool G::File::copy( const Path & from , const Path & to , const NoThrow & )
 {
+	return copy(from,to,0).empty() ;
+}
+
+std::string G::File::copy( const Path & from , const Path & to , int )
+{
 	std::ifstream in( from.str().c_str() , std::ios::binary | std::ios::in ) ;
 	if( !in.good() )
-		return false ;
+		return "cannot open input file" ;
 
 	std::ofstream out( to.str().c_str() , std::ios::binary | std::ios::out | std::ios::trunc ) ;
 	if( !out.good() )
-		return false ;
+		return "cannot open output file" ;
 
-	copy( in , out ) ;
-	out.flush() ;
+	out << in.rdbuf() ;
 
-	return !in.fail() && !in.bad() && out.good() ;
+	if( in.fail() || in.bad() )
+		return "read error" ;
+
+	if( !out.good() )
+		return "write error" ;
+
+	in.close() ;
+	out.close() ;
+	if( sizeString(from) != sizeString(to) )
+		return "file size mismatch" ;
+
+	return std::string() ;
 }
 
 void G::File::copy( std::istream & in , std::ostream & out , std::streamsize limit , std::string::size_type block )
 {
-	// cf. "out<<in.rdbuf()"
-
-	block = block ? block : 102400U ;
+	block = block ? block : static_cast<std::string::size_type>(limits::file_buffer) ;
 	std::vector<char> buffer ;
 	buffer.reserve( block ) ;
 
@@ -94,11 +109,16 @@ void G::File::copy( std::istream & in , std::ostream & out , std::streamsize lim
 	while( ( limit == 0U || size < limit ) && in.good() && out.good() )
 	{
 		std::streamsize request = limit == 0U || (limit-size) > b ? b : (limit-size) ;
-		std::streamsize result = in.readsome( &buffer[0] , request ) ;
-		if( result == 0U ) break ;
+		in.read( &buffer[0] , request ) ;
+		std::streamsize result = in.gcount() ;
+		if( result == 0U ) 
+			break ;
 		out.write( &buffer[0] , result ) ;
 		size += result ;
 	}
+
+	out.flush() ;
+	in.clear( in.rdstate() & ~std::ios_base::failbit ) ; // failbit set at eof so not useful
 }
 
 void G::File::mkdir( const Path & dir )

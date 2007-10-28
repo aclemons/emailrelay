@@ -20,11 +20,12 @@
 
 #include "gdef.h"
 #include "garg.h"
+#include "glimits.h"
 #include "gdebug.h"
 
 std::string G::Arg::moduleName( HINSTANCE hinstance )
 {
-	char buffer[10000U] ;
+	char buffer[limits::path] ;
 	size_t size = sizeof(buffer) ;
 	*buffer = '\0' ;
 	::GetModuleFileName( hinstance , buffer , size-1U ) ;

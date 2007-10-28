@@ -95,8 +95,8 @@ private:
 } ;
 
 /// \class GNet::MultiServer
-/// A server that listens on multiple interfaces using
-/// a facade pattern to Server instances.
+/// A server that listens on more than one interface using
+/// a facade pattern to multiple Server instances.
 ///
 class GNet::MultiServer 
 {

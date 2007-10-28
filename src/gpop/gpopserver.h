@@ -76,7 +76,7 @@ private:
 	ServerPeer( const ServerPeer & ) ;
 	void operator=( const ServerPeer & ) ;
 	void processLine( const std::string & line ) ;
-	static std::string crlf() ;
+	static const std::string & crlf() ;
 
 private:
 	Server & m_server ;

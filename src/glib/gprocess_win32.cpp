@@ -378,7 +378,7 @@ HANDLE G::Pipe::h() const
 
 std::string G::Pipe::readSome( BOOL & ok , DWORD & error )
 {
-	char buffer[4096] ;
+	char buffer[limits::pipe_buffer] ;
 	buffer[0] = '\0' ;
 	DWORD n = sizeof(buffer) ;
 	DWORD m = 0UL ;
@@ -478,7 +478,7 @@ std::string G::ProcessImp::commandLine( std::string exe , Strings args )
 DWORD G::ProcessImp::waitFor( HANDLE hprocess , DWORD default_exit_code )
 {
 	// waits for the process to end and closes the handle
-	DWORD timeout_ms = 30000UL ;
+	DWORD timeout_ms = 30000UL ; // not critical -- only used for the warning message
 	if( WAIT_TIMEOUT == ::WaitForSingleObject( hprocess , timeout_ms ) )
 	{
 		G_WARNING( "G::Process::spawn: child process has not terminated: still waiting" ) ;

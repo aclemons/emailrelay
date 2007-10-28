@@ -77,6 +77,9 @@ public:
 	void showSemanticError( bool error_stream = true ) const ;
 		///< Writes the logic errors.
 
+	void logSemanticWarnings() const ;
+		///< Emits warnings about conflicting switches.
+
 	void showArgcError( bool error_stream = true ) const ;
 		///< Writes a too-many-arguments error message.
 
@@ -96,7 +99,7 @@ private:
 	void showWarranty( bool error_stream , const std::string & = std::string() ) const ;
 	void showCredit( bool error_stream , const std::string & = std::string() ) const ;
 	void showShortHelp( bool error_stream ) const ;
-	std::string semanticError() const ;
+	std::string semanticError( bool & ) const ;
 	void showUsage( bool e ) const ;
 	void showExtraHelp( bool error_stream ) const ;
 	static std::string switchSpec_unix() ;

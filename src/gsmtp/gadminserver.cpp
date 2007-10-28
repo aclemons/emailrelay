@@ -138,9 +138,10 @@ bool GSmtp::AdminServerPeer::onReceive( const std::string & line )
 	return true ;
 }
 
-std::string GSmtp::AdminServerPeer::crlf()
+const std::string & GSmtp::AdminServerPeer::crlf()
 {
-	return "\015\012" ;
+	static const std::string s( "\015\012" ) ;
+	return s ;
 }
 
 bool GSmtp::AdminServerPeer::is( const std::string & line_in , const std::string & key )

@@ -464,9 +464,10 @@ void GPop::ServerProtocol::send( std::string line )
 	m_sender.protocolSend( line , 0U ) ;
 }
 
-std::string GPop::ServerProtocol::crlf()
+const std::string & GPop::ServerProtocol::crlf()
 {
-	return "\r\n" ;
+	static const std::string s( "\015\012" ) ;
+	return s ;
 }
 
 // ===

@@ -111,7 +111,7 @@ public:
 private:
 	StoredFile( const StoredFile & ) ; // not implemented
 	void operator=( const StoredFile & ) ; // not implemented
-	static std::string crlf() ;
+	static const std::string & crlf() ;
 	std::string getline( std::istream & stream ) const ;
 	std::string value( const std::string & s , const std::string & k = std::string() ) const ;
 	G::Path contentPath() const ;

@@ -112,6 +112,7 @@ bool G::File::link( const Path & target , const Path & new_link , const NoThrow 
 {
 	if( exists(target) )
 		remove( target , NoThrow() ) ;
+
 	int rc = ::symlink( target.str().c_str() , new_link.str().c_str() ) ;
 	// dont put anything here
 	return rc == 0 ;

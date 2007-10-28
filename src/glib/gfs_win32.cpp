@@ -55,4 +55,5 @@ bool G::FileSystem::leadingDoubleSlash()
 {
 	return true ; // (but false for win16)
 }
+
 /// \file gfs_win32.cpp

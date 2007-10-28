@@ -88,9 +88,10 @@ GSmtp::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info ,
 	m_protocol.init() ;
 }
 
-std::string GSmtp::ServerPeer::crlf()
+const std::string & GSmtp::ServerPeer::crlf()
 {
-	return std::string("\015\012") ;
+	static const std::string s( "\015\012" ) ;
+	return s ;
 }
 
 void GSmtp::ServerPeer::onDelete()

@@ -67,17 +67,6 @@ public:
 	void append( const std::string & more ) ;
 		///< Appends 'more' to the what string.
 		///< Inserts a separator as needed.
-
-	void append( std::ostream & s ) ;
-		///< Appends the contents of the given std::ostringstream 
-		///< (sic) to the what string. Does nothing if the
-		///< dynamic type of 's' is not a std::ostringstream. 
-		///< Inserts a separator as needed.
-		///<
-		///< This method allows a derived-class exception 
-		///< to be constructed and thrown on one line using
-		///< iostream formatting.
-		///< Eg. throw Error( std::ostringstream() << a << b ) ;
 } ;
 
 #define G_EXCEPTION( class_name , description ) class class_name : public G::Exception { public: class_name() { m_what = description ; } public: explicit class_name( const char * more ) { m_what = description ; append(more) ; } public: explicit class_name( const std::string & more ) { m_what = description ; append(more) ; } class_name( const std::string & more1 , const std::string & more2 ) { m_what = description ; append(more1) ; append(more2) ; } }

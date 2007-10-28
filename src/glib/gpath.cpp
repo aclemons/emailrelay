@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-//	gpath.cpp
+// gpath.cpp
 //
 
 #include "gdef.h"
@@ -94,17 +94,15 @@ void G::Path::normalise()
 	Str::replaceAll( m_str , ns , s ) ;
 
 	// save leading double-slashes
-	bool has_leading_double_slash = 
-		FileSystem::leadingDoubleSlash() &&
-		m_str.find( ss ) == 0U ;
+	bool has_leading_double_slash = FileSystem::leadingDoubleSlash() && m_str.find( ss ) == 0U ;
 
 	// normalise double slashes
 	Str::replaceAll( m_str , ss , s ) ;
 
 	// normalise funny characters
-	Str::replaceAll( m_str , "\t" , "" ) ;
-	Str::replaceAll( m_str , "\n" , "" ) ;
-	Str::replaceAll( m_str , "\r" , "" ) ;
+	Str::removeAll( m_str , '\t' ) ;
+	Str::removeAll( m_str , '\n' ) ;
+	Str::removeAll( m_str , '\r' ) ;
 
 	// remove trailing slashes where appropriate
 	while( ( 
@@ -141,7 +139,7 @@ std::string G::Path::str() const
 
 bool G::Path::simple() const
 {
-	return dirname().str().empty() ;
+	return dirnameImp().empty() ;
 }
 
 bool G::Path::isRelative() const
@@ -180,29 +178,32 @@ std::string G::Path::basename() const
 	// for consistency compare m_str with dirname() and return the
 	// difference, excluding any leading slash
 
-	std::string result( m_str ) ;
-	std::string head( dirname().str() ) ;
+	std::string head( dirnameImp() ) ;
 	if( head.length() == 0 )
 	{
+		return m_str ;
 	}
 	else
 	{
+		std::string result( m_str ) ;
 		result.erase( 0U , head.length() ) ;
 		if( result.at(0) == FileSystem::slash() )
 			result.erase(0U,1U) ;
+		return result ;
 	}
-
-	return result ;
 }
 
 G::Path G::Path::dirname() const
 {
+	return Path( dirnameImp() ) ;
+}
 
+std::string G::Path::dirnameImp() const
+{
 	std::string result ;
-
 	if( FileSystem::usesDriveLetters() && m_str.size() >= 2 && m_str.at(1) == ':' )
 	{
-		if( noSlash() )
+		if( hasNoSlash() )
 		{
 			result = m_str.size() > 2 ? driveString() : std::string() ;
 		}
@@ -216,66 +217,60 @@ G::Path G::Path::dirname() const
 				}
 				else
 				{
-					result = noTail() ;
+					result = withoutTail() ;
 					if( result.length() == 2 )
 						result.append( slashString() ) ;
 				}
 			}
 			else
 			{
-				result = noTail() ;
+				result = withoutTail() ;
 			}
 		}
 	}
-	else if( FileSystem::leadingDoubleSlash() &&
-		m_str.size() >= 2U &&
-		m_str.substr(0U,2U) == doubleSlashString() )
+	else if( FileSystem::leadingDoubleSlash() && m_str.size() >= 2U && m_str.substr(0U,2U) == doubleSlashString() )
 	{
 		size_t slash_count = 0U ;
 		for( std::string::const_iterator p = m_str.begin() ; p != m_str.end() ; ++p )
 			if( *p == FileSystem::slash() )
 				slash_count++ ;
 
-		result = slash_count > 3U ? noTail() : std::string() ;
+		result = slash_count > 3U ? withoutTail() : std::string() ;
+	}
+	else if( hasNoSlash() || m_str.size() == 1U )
+	{
+		;
 	}
 	else
 	{
-		if( noSlash() || m_str.size() == 1U )
-		{
-			result.erase() ;
-		}
-		else
-		{
-			result = noTail() ;
-			if( result.length() == 0 )
-				result = slashString() ;
-		}
+		result = withoutTail() ;
+		if( result.length() == 0U )
+			result = slashString() ;
 	}
-
-	return Path(result) ;
+	return result ;
 }
 
-std::string G::Path::noTail() const
+std::string G::Path::withoutTail() const
 {
-	G_ASSERT( !noSlash() ) ;
-	return m_str.substr( 0 , m_str.rfind(slashString()) ) ;
+	G_ASSERT( !hasNoSlash() ) ;
+	return m_str.substr( 0U , m_str.rfind(FileSystem::slash()) ) ;
 }
 
-bool G::Path::noSlash() const
+bool G::Path::hasNoSlash() const
 {
-	return m_str.find( slashString() ) == std::string::npos ;
+	return m_str.find(FileSystem::slash()) == std::string::npos ;
 }
 
 std::string::size_type G::Path::slashAt() const
 {
-	std::string::size_type position = m_str.find( slashString() ) ;
+	std::string::size_type position = m_str.find( FileSystem::slash() ) ;
 	G_ASSERT( position != std::string::npos ) ;
 	return position ;
 }
 
 std::string G::Path::slashString()
 {
-	return std::string ( 1U , FileSystem::slash() ) ;
+	return std::string( 1U , FileSystem::slash() ) ;
 }
 
 std::string G::Path::doubleSlashString()
@@ -361,7 +356,7 @@ G::Strings G::Path::split( bool no_dot ) const
 	Strings list ;
 	for( unsigned int part = 0U ;; part++ )
 	{
-		std::string front = path.dirname().str() ;
+		std::string front = path.dirnameImp() ;
 		std::string back = path.basename() ;
 
 		// if a dot in the middle or end of the path...
@@ -396,6 +391,5 @@ G::Path &G::Path::operator=( const Path & other )
 		set( other.str() ) ;
 	return *this ; 
 }
-
 
 /// \file gpath.cpp

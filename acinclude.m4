@@ -189,11 +189,14 @@ changequote([,])
 ])
 
 dnl enable-debug
+dnl defaults to no but allows --enable-debug=full as per kdevelop
 dnl
 AC_DEFUN([ENABLE_DEBUG],
 [
-if test "$enable_debug" = "yes"
+if test "$enable_debug" = "no" -o -z "$enable_debug"
 then
+	:
+else
 	AC_DEFINE(_DEBUG,1,[Define to enable extra debug messages at compile-time])
 fi
 ])

@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gdirectory.h"
 #include "gfs.h"
+#include "gstr.h"
 #include "glog.h"
 
 G::Directory::Directory() :
@@ -78,7 +79,36 @@ G::DirectoryList::DirectoryList() :
 {
 }
 
-void G::DirectoryList::init( const G::Path & dir , const std::string & wildcard )
+void G::DirectoryList::readAll( const G::Path & dir )
+{
+	readType( dir , std::string() ) ;
+}
+
+void G::DirectoryList::readType( const G::Path & dir , const std::string & suffix , unsigned int limit )
+{
+	// could call readMatching(dir,"*"+suffix) here, but we
+	// do our own filename matching so as to reduce our
+	// dependency on the glob()bing DirectoryIterator
+
+	Directory directory( dir ) ;
+	DirectoryIterator iter( directory ) ;
+	for( unsigned int i = 0U ; iter.more() && !iter.error() ; ++i )
+	{
+		if( suffix.empty() || Str::tailMatch(iter.fileName().str(),suffix) )
+		{
+			if( limit == 0U || m_path.size() < limit )
+			{
+				m_is_dir.push_back( iter.isDir() ) ;
+				m_path.push_back( iter.filePath() ) ;
+				m_name.push_back( iter.fileName() ) ;
+			}
+			if( m_path.size() == limit )
+				break ;
+		}
+	}
+}
+
+void G::DirectoryList::readMatching( const G::Path & dir , const std::string & wildcard )
 {
 	Directory directory( dir ) ;
 	DirectoryIterator iter( directory , wildcard ) ;

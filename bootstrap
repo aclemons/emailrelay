@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# bootstrap
+#
+# Autogenerates stuff.
+#
+aclocal
+autoconf
+autoheader
+automake -a

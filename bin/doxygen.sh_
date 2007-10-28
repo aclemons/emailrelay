@@ -19,7 +19,7 @@
 # doxygen.sh
 #
 # Used by doc/Makefile to run doxygen with a bit of 
-# post-processing.
+# config-file pre-processing.
 #
 # usage: doxygen <have-doxygen> <top-srcdir> <top-builddir>
 #

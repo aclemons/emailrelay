@@ -45,7 +45,7 @@
 ### END INIT INFO
 ##
 
-# choose an infrastructure style
+# choose an infrastructure style -- linux-standard-base (lsb) or unix
 #
 if test -f /lib/lsb/init-functions
 then 

@@ -129,7 +129,7 @@ private:
 	std::string filePrefix( unsigned long seq ) const ;
 	std::string getline( std::istream & ) const ;
 	std::string value( const std::string & ) const ;
-	std::string crlf() const ;
+	static const std::string & crlf() ;
 	bool emptyCore() const ;
 
 private:

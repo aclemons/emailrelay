@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "glogoutput.h"
 #include "gstr.h"
+#include "glimits.h"
 #include "gpath.h"
 #include <cstdlib> // getenv
 
@@ -91,7 +92,7 @@ static HANDLE source()
 	G::Path exe_path ;
 	{
 		HINSTANCE hinstance = 0 ;
-		char buffer[10000U] ;
+		char buffer[G::limits::path] ;
 		size_t size = sizeof(buffer) ;
 		*buffer = '\0' ;
 		::GetModuleFileName( hinstance , buffer , size-1U ) ;

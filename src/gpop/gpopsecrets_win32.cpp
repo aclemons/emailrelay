@@ -19,13 +19,14 @@
 //
 
 #include "gdef.h"
+#include "glimits.h"
 #include "gpop.h"
 #include "gpopsecrets.h"
 #include "gpath.h"
 
 std::string GPop::Secrets::defaultPath()
 {
-	char buffer[(MAX_PATH * 2U) + 1U] ;
+	char buffer[G::limits::path] ;
 	if( 0 == ::GetWindowsDirectory( buffer , sizeof(buffer)-1U ) )
 		buffer[0] = '\0' ;
 

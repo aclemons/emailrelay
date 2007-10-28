@@ -152,9 +152,10 @@ private:
 	static std::string doubleSlashString() ;
 	std::string driveString() const ;
 	std::string::size_type slashAt() const ;
-	bool noSlash() const ;
-	std::string noTail() const ;
+	bool hasNoSlash() const ;
+	std::string withoutTail() const ;
 	bool hasNetworkDrive() const ;
+	std::string dirnameImp() const ;
 
 private:
 	std::string m_str ;

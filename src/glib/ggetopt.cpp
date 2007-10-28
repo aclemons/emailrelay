@@ -537,8 +537,7 @@ void G::GetOpt::showErrors( std::ostream & stream ) const
 	showErrors( stream , m_args.prefix() ) ;
 }
 
-void G::GetOpt::showErrors( std::ostream & stream , std::string prefix_1 , 
-	std::string prefix_2 ) const
+void G::GetOpt::showErrors( std::ostream & stream , std::string prefix_1 , std::string prefix_2 ) const
 {
 	if( m_errors.size() != 0U )
 	{

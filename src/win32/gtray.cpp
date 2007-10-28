@@ -31,9 +31,7 @@ GGui::Tray::Tray( unsigned int icon_id , const WindowBase & window ,
 	m_info.uID = message ;
 	m_info.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP ;
 	m_info.uCallbackMessage = message ;
-	m_info.hIcon = 
-		::LoadIcon( ApplicationInstance::hinstance() ,
-			MAKEINTRESOURCE(icon_id)) ;
+	m_info.hIcon = ::LoadIcon( ApplicationInstance::hinstance() , MAKEINTRESOURCE(icon_id)) ;
 
 	char * p = m_info.szTip ;
 	const size_t n = sizeof(m_info.szTip) ;

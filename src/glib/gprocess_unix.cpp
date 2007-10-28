@@ -19,6 +19,7 @@
 //
 
 #include "gdef.h"
+#include "glimits.h"
 #include "gprocess.h"
 #include "gidentity.h"
 #include "gassert.h"
@@ -577,7 +578,7 @@ void G::Pipe::dup()
 
 std::string G::Pipe::read()
 {
-	char buffer[4096] ;
+	char buffer[limits::pipe_buffer] ;
 	int rc = m_fd == -1 ? 0 : ::read( m_fd , buffer , sizeof(buffer) ) ;
 	if( rc < 0 ) throw Error("read") ;
 	return std::string(buffer,rc) ;

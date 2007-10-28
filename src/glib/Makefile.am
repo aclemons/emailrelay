@@ -67,6 +67,7 @@ libglib_a_SOURCES = \
 	ggetopt.h \
 	gidentity.h \
 	gidentity_unix.cpp \
+	glimits.h \
 	glog.cpp \
 	glog.h \
 	glogoutput.cpp \

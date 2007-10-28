@@ -19,6 +19,7 @@
 //
 
 #include "gdef.h"
+#include "glimits.h"
 #include "gnet.h"
 #include "gssl.h"
 #include "gsocketprotocol.h"
@@ -28,7 +29,7 @@
 
 namespace
 {
-	const size_t c_buffer_size = 1500U ;
+	const size_t c_buffer_size = G::limits::net_buffer ;
 	class LocalSocket : public GNet::StreamSocket // TODO remove access hack
 	{
 		public: int fd() const { return m_socket ; }

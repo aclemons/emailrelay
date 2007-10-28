@@ -18,7 +18,7 @@ dnl Process this file with autoconf to produce a configure script.
 dnl
 
 AC_INIT(src/gsmtp/gsmtp.h)
-AM_INIT_AUTOMAKE(emailrelay,1.7)
+AM_INIT_AUTOMAKE(emailrelay,1.8)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 

@@ -30,6 +30,8 @@
 #include "gxtext.h"
 #include "gassert.h"
 #include "glog.h"
+#include <functional>
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 
@@ -117,7 +119,7 @@ void GSmtp::NewFile::addTo( const std::string & to , bool local )
 void GSmtp::NewFile::addText( const std::string & line )
 {
 	if( ! m_eight_bit )
-		m_eight_bit = isEightBit(line) ;
+		m_eight_bit = isEightBit( line ) ;
 
 	*(m_content.get()) << line << crlf() ;
 }
@@ -151,16 +153,17 @@ void GSmtp::NewFile::deleteEnvelope()
 	}
 }
 
+namespace
+{
+	struct EightBit : std::unary_function<char,bool>
+	{
+		bool operator()( char c ) { return static_cast<unsigned char>(c) & 0x80U ; }
+	} ;
+}
+
 bool GSmtp::NewFile::isEightBit( const std::string & line )
 {
-	std::string::const_iterator end = line.end() ;
-	for( std::string::const_iterator p = line.begin() ; p != end ; ++p )
-	{
-		const unsigned char c = static_cast<unsigned char>(*p) ;
-		if( c > 0x7fU )
-			return true ;
-	}
-	return false ;
+	return std::find_if( line.begin() , line.end() , EightBit() ) != line.end() ;
 }
 
 bool GSmtp::NewFile::saveEnvelope( const std::string & auth_id , const std::string & client_ip ) const
@@ -222,7 +225,7 @@ void GSmtp::NewFile::writeEnvelope( std::ostream & stream , const std::string & 
 
 const std::string & GSmtp::NewFile::crlf() const
 {
-	static std::string s( "\015\012" ) ;
+	static const std::string s( "\015\012" ) ;
 	return s ;
 }
 

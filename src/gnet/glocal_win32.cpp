@@ -19,6 +19,7 @@
 //
 
 #include "gdef.h"
+#include "glimits.h"
 #include "glocal.h"
 #include "gresolver.h"
 #include "glog.h"
@@ -26,7 +27,7 @@
 
 std::string GNet::Local::hostname()
 {
-	char buffer[1024U] = { '\0' } ;
+	char buffer[G::limits::net_hostname] = { '\0' } ;
 	if( 0 != ::gethostname( buffer , sizeof(buffer)-1U ) )
 	{
 		int error = ::WSAGetLastError() ;

@@ -19,6 +19,7 @@
 //
 
 #include "gdef.h"
+#include "glimits.h"
 #include "gcracker.h"
 #include "gstrings.h"
 #include "gdebug.h"
@@ -191,7 +192,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 			G::Strings list ;
 			for( int i = 0 ; i < count ; i++ )
 			{
-				static char buffer[512] ;
+				static char buffer[G::limits::path] ;
 				if( ::DragQueryFile( hdrop , i , buffer , sizeof(buffer) ) < sizeof(buffer) )
 				{
 					G_DEBUG( "Cracker::onDrop: \"" << buffer << "\"" ) ;
@@ -303,8 +304,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 			const bool left = !!( wparam & MK_LBUTTON ) ;
 			const bool middle = !!( wparam & MK_MBUTTON ) ;
 			const bool right = !!( wparam & MK_RBUTTON ) ;
-			(void)onMouseMove( x , y , shift , control , 
-				left , middle , right ) ;
+			G_IGNORE onMouseMove( x , y , shift , control , left , middle , right ) ;
 			return 0 ;
 		}
 
@@ -369,8 +369,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 		case WM_INITMENUPOPUP:
 		{
 			onInitMenuPopup( reinterpret_cast<HMENU>(wparam) , 
-				static_cast<unsigned int>(LOWORD(lparam)) , 
-				!!HIWORD(lparam) ) ;
+				static_cast<unsigned int>(LOWORD(lparam)) , !!HIWORD(lparam) ) ;
 			return 0 ;
 		}
 

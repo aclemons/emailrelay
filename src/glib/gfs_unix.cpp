@@ -38,7 +38,7 @@ char G::FileSystem::nonSlash()
 
 bool G::FileSystem::allowsSpaces()
 {
-	return false ;
+	return true ;
 }
 
 bool G::FileSystem::caseSensitive()

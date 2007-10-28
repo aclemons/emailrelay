@@ -52,8 +52,8 @@ do
 		failures="`fgrep MailRelay-Reason: < ${file} | wc -l`"
 		if test "${failures}" -lt "${retry_limit}"
 		then
-			good_file="`echo ${file} | sed 's/\.bad$//'`"
-			mv -f ${file} ${good_file}
+			good_file="`echo \"${file}\" | sed 's/\.bad$//'`"
+			mv -f "${file}" "${good_file}"
 		fi
 	fi
 done

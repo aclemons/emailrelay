@@ -123,9 +123,18 @@ private:
 
 // ===
 
+G::DirectoryIterator::DirectoryIterator( const Directory & dir ) :
+	m_imp( new DirectoryIteratorImp(dir,std::string()) )
+{
+}
+
 G::DirectoryIterator::DirectoryIterator( const Directory & dir , const std::string & wc ) :
 	m_imp( new DirectoryIteratorImp(dir,wc) )
 {
+	// note that this overload is rarely used -- if glob() is 
+	// unavailable and this overload is never called then the
+	// DirectoryIteratorImp class can be rewritten with
+	// just a default constructor that uses readdir()
 }
 
 bool G::DirectoryIterator::error() const
@@ -185,8 +194,7 @@ G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory & dir , const std
 	m_glob.gl_pathc = 0 ;
 	m_glob.gl_pathv = NULL ;
 
-	Path wild_path( m_dir.path() ) ;
-	wild_path.pathAppend( wildcard.empty() ? std::string("*") : wildcard ) ;
+	Path wild_path( dir.path() , wildcard.empty() ? std::string("*") : wildcard ) ;
 
 	int flags = 0 | GLOB_ERR ;
 	int error  = ::glob( wild_path.str().c_str() , flags , gdirectory_unix_on_error_ , &m_glob ) ;

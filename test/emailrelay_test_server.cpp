@@ -19,7 +19,7 @@
 //
 // A dummy smtp server for testing purposes.
 //
-// usage: emailrelay-test-server [--tls] [--auth-foo-bar] [--auth-login] [--auth-plain] [--auth-ok] [--slow] [--fail-at <n>] [--port <port>]
+// usage: emailrelay-test-server [--quiet] [--tls] [--auth-foo-bar] [--auth-login] [--auth-plain] [--auth-ok] [--slow] [--fail-at <n>] [--port <port>]
 //
 
 #include "gdef.h"
@@ -48,14 +48,16 @@ struct Config
 	bool m_auth_ok ;
 	int m_fail_at ;
 	bool m_tls ;
-	Config( unsigned int port , bool auth_foo_bar , bool auth_login , bool auth_plain , bool auth_ok , int fail_at , bool tls ) : 
+	bool m_quiet ;
+	Config( unsigned int port , bool auth_foo_bar , bool auth_login , bool auth_plain , bool auth_ok , int fail_at , bool tls , bool quiet ) : 
 		m_port(port) ,
 		m_auth_foo_bar(auth_foo_bar) ,
 		m_auth_login(auth_login) ,
 		m_auth_plain(auth_plain) ,
 		m_auth_ok(auth_ok) ,
 		m_fail_at(fail_at) ,
-		m_tls(tls)
+		m_tls(tls) ,
+		m_quiet(quiet)
 	{
 	}
 } ;
@@ -124,7 +126,8 @@ void Peer::onSecure()
 
 bool Peer::onReceive( const std::string & line )
 {
-	std::cout << "rx<<: [" << line << "]" << std::endl ;
+	if( !m_config.m_quiet )
+		std::cout << "rx<<: [" << line << "]" << std::endl ;
 
 	if( G::Str::upper(line).find("EHLO") == 0UL )
 	{
@@ -213,7 +216,8 @@ void Peer::tx( const std::string & s )
 {
 	std::string ss( s ) ;
 	G::Str::trimRight( ss , "\n\r" ) ;
-	std::cout << "tx>>: [" << ss << "]" << std::endl ;
+	if( !m_config.m_quiet )
+		std::cout << "tx>>: [" << ss << "]" << std::endl ;
 	send( s ) ;
 }
 
@@ -230,6 +234,7 @@ int main( int argc , char * argv [] )
 		bool auth_ok = arg.remove( "--auth-ok" ) ;
 		bool slow = arg.remove( "--slow" ) ;
 		bool tls = arg.remove( "--tls" ) ;
+		bool quiet = arg.remove( "--quiet" ) ;
 		int fail_at = arg.contains("--fail-at",1U) ? G::Str::toInt(arg.v(arg.index("--fail-at",1U)+1U)) : -1 ;
 		int port = arg.contains("--port",1U) ? G::Str::toInt(arg.v(arg.index("--port",1U)+1U)) : 10025 ;
 
@@ -239,10 +244,10 @@ int main( int argc , char * argv [] )
 			pid_file << G::Process::Id().str() << std::endl ;
 		}
 
-		G::LogOutput log( "" , true , true , false , false , true , false , true , false ) ;
+		G::LogOutput log( "" , !quiet , !quiet , false , false , true , false , true , false ) ;
 		GNet::EventLoop * loop = GNet::EventLoop::create() ;
 		GNet::TimerList timer_list ;
-		Server server( Config(port,auth_foo_bar,auth_login,auth_plain,auth_ok,fail_at,tls) ) ;
+		Server server( Config(port,auth_foo_bar,auth_login,auth_plain,auth_ok,fail_at,tls,quiet) ) ;
 
 		if( slow )
 		{

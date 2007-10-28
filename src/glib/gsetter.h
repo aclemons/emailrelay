@@ -31,8 +31,7 @@ namespace G
 }
 
 /// \class G::Setter
-/// A class to manage a boolean flag 
-/// while in scope.
+/// A class to manage a boolean flag while in scope.
 ///
 class G::Setter : public G::noncopyable 
 {

@@ -33,6 +33,7 @@
 // considered not to have started.
 //
 
+#include "glimits.h"
 #include "service_install.h"
 #include "service_remove.h"
 #include <windows.h>
@@ -327,7 +328,7 @@ void Service::stopThread()
 std::string Service::exe()
 {
 	HINSTANCE hinstance = 0 ;
-	char buffer[10000U] ;
+	char buffer[G::limits::path] ;
 	size_t size = sizeof(buffer) ;
 	*buffer = '\0' ;
 	::GetModuleFileName( hinstance , buffer , size-1U ) ;

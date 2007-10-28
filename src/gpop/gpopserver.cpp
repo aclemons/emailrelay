@@ -40,9 +40,10 @@ GPop::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info , Server & server
 	m_protocol.init() ;
 }
 
-std::string GPop::ServerPeer::crlf()
+const std::string & GPop::ServerPeer::crlf()
 {
-	return std::string("\015\012") ;
+	static const std::string s( "\015\012" ) ;
+	return s ;
 }
 
 void GPop::ServerPeer::onDelete()
@@ -133,9 +134,9 @@ GPop::Server::Config::Config() :
 }
 
 GPop::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const G::Strings & interfaces_ ) :
-		allow_remote(allow_remote_) ,
-		port(port_) ,
-		interfaces(interfaces_)
+	allow_remote(allow_remote_) ,
+	port(port_) ,
+	interfaces(interfaces_)
 {
 }
 

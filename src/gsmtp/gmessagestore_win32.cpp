@@ -19,13 +19,14 @@
 //
 
 #include "gdef.h"
+#include "glimits.h"
 #include "gsmtp.h"
 #include "gmessagestore.h"
 #include "gpath.h"
 
 G::Path GSmtp::MessageStore::defaultDirectory()
 {
-	char buffer[(MAX_PATH * 2U) + 1U] ;
+	char buffer[G::limits::path] ;
 	if( 0 == ::GetWindowsDirectory( buffer , sizeof(buffer)-1U ) )
 		buffer[0] = '\0' ;
 

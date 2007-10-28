@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "glogoutput.h"
+#include "glimits.h"
 #include <sstream>
 #include <string>
 #include <ctime>
@@ -108,7 +109,7 @@ void G::LogOutput::doOutput( Log::Severity severity , const char * file , int li
 	if( do_output )
 	{
 		// allocate a buffer
-		const size_type limit = 1000U ;
+		const size_type limit = static_cast<size_type>(limits::log) ;
 		std::string buffer ;
 		buffer.reserve( (text.length()>limit?limit:text.length()) + 40U ) ;
 

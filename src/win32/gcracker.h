@@ -312,8 +312,7 @@ protected:
 
 private:
 	typedef void (Cracker::*Fn)(int,int,bool,bool) ;
-	LRESULT doMouseButton( Fn fn , MouseButton , MouseButtonDirection , 
-		unsigned int , WPARAM , LPARAM ) ;
+	LRESULT doMouseButton( Fn fn , MouseButton , MouseButtonDirection , unsigned int , WPARAM , LPARAM ) ;
 } ;
 
 #endif

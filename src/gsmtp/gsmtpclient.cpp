@@ -33,9 +33,10 @@
 #include "gassert.h"
 #include "glog.h"
 
-std::string GSmtp::Client::crlf()
+const std::string & GSmtp::Client::crlf()
 {
-	return std::string("\015\012") ;
+	static const std::string s( "\015\012" ) ;
+	return s ;
 }
 
 GSmtp::Client::Client( const GNet::ResolverInfo & remote , const Secrets & secrets , Config config ) :

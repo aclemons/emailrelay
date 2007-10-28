@@ -52,12 +52,17 @@ public:
 			///< Returns true if a substitution was made, and adjusts 
 			///< '*pos_p' by to.length().
 
-	static unsigned int replaceAll( std::string & s , const std::string & from , 
-		const std::string & to ) ;
-			///< Does a global replace on string 's', replacing all 
-			///< occurences of sub-string 'from' with 'to'. Returns 
-			///< the number of substitutions made. Consider using 
-			///< in a while loop if 'from' is more than one character.
+	static unsigned int replaceAll( std::string & s , const std::string & from , const std::string & to ) ;
+		///< Does a global replace on string 's', replacing all 
+		///< occurences of sub-string 'from' with 'to'. Returns 
+		///< the number of substitutions made. Consider using 
+		///< in a while loop if 'from' is more than one character.
+
+	static unsigned int replaceAll( std::string & s , const char * from , const char * to ) ;
+		///< A c-string overload, provided for performance reasons.
+
+	static void removeAll( std::string & , char ) ;
+		///< Removes all occurrences of the character from the string.
 
 	static void trimLeft( std::string & s , const std::string & ws , size_type limit = 0U ) ;
 		///< Trims the lhs of s, taking off up to 'limit' of the 'ws' characters.
@@ -205,6 +210,11 @@ public:
 		///< The line terminator is not part of the returned string.
 		///< The terminator defaults to the newline.
 		///<
+		///< Note that alternatives in the standard library such as 
+		///< std::istream::getline() or std::getline(stream,string) 
+		///< in <string> are limited to a single character as the
+		///< terminator.
+		///<
 		///< The stream's fail bit is set if (1) an empty string was 
 		///< returned because the stream was already at eof or (2)
 		///< the string overflowed. Therefore, ignoring overflow, if 
@@ -216,9 +226,9 @@ public:
 		///< bits reset and the next attempted read will return
 		///< an empty string with eof and fail bits set. 
 		///<
-		///< If we don't worry too much about the 'bad' state and note 
-		///< that the boolean tests on a stream test its 'fail' flag we 
-		///< can use a read loop like "while(s.good()){read(s);if(s)...}".
+		///< If we don't worry too much about the 'bad' state and note that
+		///< the boolean tests on a stream test its 'fail' flag (not eof) 
+		///< we can use a read loop like "while(s.good()){read(s);if(s)...}".
 
 	static void readLineFrom( std::istream & stream , const std::string & eol , std::string & result ,
 		bool pre_erase_result = true ) ;
@@ -282,6 +292,9 @@ public:
 			///< The character at pos is not returned. Returns the supplied default 
 			///< if pos is npos.
 
+	static bool tailMatch( const std::string & in , const std::string & ending ) ;
+		///< Returns true if the given string has the given ending.
+
 	static std::string ws() ;
 		///< A convenience function returning standard whitespace characters.
 
@@ -293,6 +306,7 @@ private:
 	static void splitIntoTokens( const std::string & , void * , void (*fn)(void*,const std::string&) , 
 		const std::string & ) ;
 	static void addPrintable( std::string & , char , unsigned char , char , bool ) ;
+	static void readLineFromImp( std::istream & , const std::string & , std::string & ) ;
 	Str() ; // not implemented
 } ;
 

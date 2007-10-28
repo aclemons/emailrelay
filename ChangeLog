@@ -1,6 +1,13 @@
 E-MailRelay Change Log
 ======================
 
+1.7 -> 1.8
+----------
+* Performance tuning (using KDevelop/valgrind/KCachegrind).
+* A warning is printed if logging is requested but both stderr and syslog are disabled.
+* Compile-time limits factored out into a new header, "glimits.h".
+* New example script for SMTP multicasting.
+
 1.6 -> 1.7
 ----------
 * TLS/SSL support for SMTP using OpenSSL ("./configure --with-openssl" with "--client-tls" and "--server-tls").

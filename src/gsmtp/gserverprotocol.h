@@ -175,7 +175,7 @@ private:
 	Event commandEvent( const std::string & ) const ;
 	std::string commandWord( const std::string & line ) const ;
 	std::string commandLine( const std::string & line ) const ;
-	static std::string crlf() ;
+	static const std::string & crlf() ;
 	void reset() ;
 	void badClientEvent() ;
 	void processDone( bool , unsigned long , std::string ) ; // ProtocolMessage::doneSignal()

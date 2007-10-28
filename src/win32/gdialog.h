@@ -60,11 +60,10 @@ namespace GGui
 class GGui::Dialog : public GGui::WindowBase 
 {
 public:
-	Dialog( HINSTANCE hinstance , HWND hwnd_parent , 
-		const std::string & title = std::string() ) ;
-			///< Constructor. After contruction just call
-			///< run() or runModeless() with the appropriate
-			///< dialog resource id or name.
+	Dialog( HINSTANCE hinstance , HWND hwnd_parent , const std::string & title = std::string() ) ;
+		///< Constructor. After contruction just call
+		///< run() or runModeless() with the appropriate
+		///< dialog resource id or name.
 
 	explicit Dialog( const GGui::ApplicationBase & app , bool top_level = false ) ;
 		///< Contructor for a dialog box which takes some
@@ -81,7 +80,7 @@ public:
 		///< is running, it is left running, but
 		///< in headless chicken mode.
 
-	static bool dialogMessage( MSG &msg ) ;
+	static bool dialogMessage( MSG & msg ) ;
 		///< Processes messages for all modeless dialog boxes.
 		///< This should be put in the application's main message 
 		///< loop (as the GGui::Pump class does). 

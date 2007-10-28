@@ -123,7 +123,7 @@ private:
 	void protocolDone( std::string ) ; // see ClientProtocol::doneSignal()
 	void preprocessorStart() ;
 	void preprocessorDone( bool ) ;
-	static std::string crlf() ;
+	static const std::string & crlf() ;
 	bool sendNext() ;
 	void start( StoredMessage & ) ;
 	void messageFail( const std::string & reason ) ;

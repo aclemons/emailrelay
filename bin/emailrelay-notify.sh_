@@ -113,7 +113,7 @@ do
 		# deliver the notification using procmail
 		#
 		echo `basename $0`: delivering `basename ${content}` to ${deliver_to}
-		${procmail} -d ${deliver_to} < ${tmp}
+		${procmail} -d "${deliver_to}" < ${tmp}
 		rc=$?
 
 		# clean up

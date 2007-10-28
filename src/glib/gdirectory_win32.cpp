@@ -85,6 +85,11 @@ private:
 
 // ===
 
+G::DirectoryIterator::DirectoryIterator( const Directory &dir )
+{
+	m_imp = new DirectoryIteratorImp( dir , std::string() ) ;
+}
+
 G::DirectoryIterator::DirectoryIterator( const Directory &dir , const std::string & wc )
 {
 	m_imp = new DirectoryIteratorImp( dir , wc ) ;
@@ -149,8 +154,7 @@ G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory & dir ,
 	Path wild_path( m_dir.path() ) ;
 	wild_path.pathAppend( wildcard.empty() ? std::string("*.*") : wildcard ) ;
 
-	G_DEBUG( "G::DirectoryIteratorImp::ctor: FindFirstFile(\"" 
-		<< wild_path << "\")" ) ;
+	G_DEBUG( "G::DirectoryIteratorImp::ctor: FindFirstFile(\"" << wild_path << "\")" ) ;
 
 	m_handle = ::FindFirstFile( wild_path.str().c_str() , &m_context ) ;
 	if( m_handle == INVALID_HANDLE_VALUE )
@@ -163,14 +167,12 @@ G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory & dir ,
 		else
 		{
 			m_error = true ;
-			G_DEBUG( "G::DirectoryIteratorImp::ctor: error " << err << " for "
-				<< wild_path ) ;
+			G_DEBUG( "G::DirectoryIteratorImp::ctor: error " << err << " for " << wild_path ) ;
 		}
 	}
 	else
 	{
-		G_DEBUG( "G::DirectoryIteratorImp::ctor: first \"" 
-			<< m_context.cFileName << "\"" ) ;
+		G_DEBUG( "G::DirectoryIteratorImp::ctor: first \"" << m_context.cFileName << "\"" ) ;
 	}
 }
 
@@ -194,9 +196,8 @@ bool G::DirectoryIteratorImp::more()
 	if( m_first )
 	{
 		m_first = false ;
-		if( std::string(m_context.cFileName) != "." &&
-			std::string(m_context.cFileName) != ".." )
-				return true ;
+		if( std::string(m_context.cFileName) != "." && std::string(m_context.cFileName) != ".." )
+			return true ;
 
 		G_DEBUG( "G::DirectoryIteratorImp::more: ignoring " << m_context.cFileName);
 	}
@@ -281,7 +282,7 @@ std::string G::DirectoryIteratorImp::modificationTimeString() const
 	if( m_special )
 	{
 		// ??
-		G_ASSERT( !"modificationTimeString() not fully implemented for .." ) ;
+		G_ASSERT( !"modificationTimeString() not fully implemented for \"..\"" ) ;
 		return std::string() ;
 	}
 

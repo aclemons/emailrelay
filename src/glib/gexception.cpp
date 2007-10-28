@@ -59,16 +59,6 @@ void G::Exception::append( const std::string & more )
 	m_what += std::string(more) ;
 }
 
-
-void G::Exception::append( std::ostream & stream )
-{
-	std::ostringstream * ss = dynamic_cast<std::ostringstream*>(&stream) ;
-	if( ss != NULL )
-	{
-		append( ss->str() ) ;
-	}
-}
-
 void G::Exception::prepend( const char * context )
 {
 	if( context != NULL && *context != '\0' )

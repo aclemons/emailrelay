@@ -65,7 +65,7 @@ GSmtp::FileIterator::FileIterator( FileStore & store , const G::Path & dir , boo
 	m_lock(lock)
 {
 	DirectoryReader claim_reader ;
-	m_iter.init( dir , "*.envelope" ) ;
+	m_iter.readType( dir , ".envelope" ) ;
 }
 
 std::auto_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
@@ -209,10 +209,10 @@ bool GSmtp::FileStore::empty() const
 
 bool GSmtp::FileStore::emptyCore() const
 {
-	G::DirectoryList iter ;
+	G::DirectoryList list ;
 	DirectoryReader claim_reader ;
-	iter.init( m_dir , "*.envelope" ) ;
-	const bool no_more = !iter.more() ;
+	list.readType( m_dir , ".envelope" , 1U ) ;
+	const bool no_more = !list.more() ;
 	return no_more ;
 }
 

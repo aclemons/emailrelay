@@ -159,7 +159,7 @@ private:
 	void sendInit() ;
 	void sendError() ;
 	void sendOk() ;
-	static std::string crlf() ;
+	static const std::string & crlf() ;
 	Event commandEvent( const std::string & ) const ;
 	int commandNumber( const std::string & , int , size_t index = 1U ) const ;
 	void sendList( const std::string & , bool ) ;

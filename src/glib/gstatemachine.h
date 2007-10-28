@@ -242,7 +242,7 @@ State StateMachine<T,State,Event,Arg>::apply( T & t , Event event , const Arg & 
 	return m_any ;
 }
 
-} // namespace
+}
 
 #endif
 

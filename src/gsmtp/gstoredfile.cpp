@@ -241,9 +241,10 @@ std::string GSmtp::StoredFile::value( const std::string & s , const std::string 
 	return s.substr(pos+2U) ;
 }
 
-std::string GSmtp::StoredFile::crlf()
+const std::string & GSmtp::StoredFile::crlf()
 {
-	return std::string( "\015\012" ) ;
+	static const std::string s( "\015\012" ) ;
+	return s ;
 }
 
 bool GSmtp::StoredFile::lock()

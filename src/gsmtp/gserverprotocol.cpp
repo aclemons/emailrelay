@@ -528,12 +528,12 @@ void GSmtp::ServerProtocol::sendMissingParameter()
 
 bool GSmtp::ServerProtocol::isEndOfText( const std::string & line ) const
 {
-	return line.length() == 1U && line.at(0U) == '.' ;
+	return line.length() == 1U && line[0U] == '.' ;
 }
 
 bool GSmtp::ServerProtocol::isEscaped( const std::string & line ) const
 {
-	return line.length() > 1U && line.at(0U) == '.' ;
+	return line.length() > 1U && line[0U] == '.' ;
 }
 
 std::string GSmtp::ServerProtocol::commandWord( const std::string & line_in ) const
@@ -682,9 +682,10 @@ void GSmtp::ServerProtocol::sendOk()
 	send( "250 OK" ) ;
 }
 
-std::string GSmtp::ServerProtocol::crlf()
+const std::string & GSmtp::ServerProtocol::crlf()
 {
-	return std::string( "\015\012" ) ;
+	static const std::string s( "\015\012" ) ;
+	return s ;
 }
 
 void GSmtp::ServerProtocol::send( std::string line , bool go_secure )

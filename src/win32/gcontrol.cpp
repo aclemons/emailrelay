@@ -85,12 +85,10 @@ bool GGui::Control::subClass()
 {
 	G_ASSERT( handle() != 0 ) ;
 
-	SubClassMap::Proc old = reinterpret_cast<SubClassMap::Proc>(
-		::GetWindowLong( handle() , GWL_WNDPROC ) ) ;
+	SubClassMap::Proc old = reinterpret_cast<SubClassMap::Proc>( ::GetWindowLong( handle() , GWL_WNDPROC ) ) ;
 
 	m_dialog.map().add( handle() , old , static_cast<void*>(this) ) ;
-	::SetWindowLong( handle() , GWL_WNDPROC, 
-		reinterpret_cast<DWORD>(gcontrol_wndproc_export) ) ;
+	::SetWindowLong( handle() , GWL_WNDPROC, reinterpret_cast<DWORD>(gcontrol_wndproc_export) ) ;
 	return true ;
 }
 
@@ -270,8 +268,7 @@ void GGui::EditBox::set( const G::Strings & list )
 
 		std::string total ;
 		const char *sep = "" ;
-		for( G::Strings::const_iterator iter = list.begin() ; 
-			iter != list.end() ; ++iter )
+		for( G::Strings::const_iterator iter = list.begin() ; iter != list.end() ; ++iter )
 		{
 			total.append( sep ) ;
 			sep = "\x0D\x0A" ;

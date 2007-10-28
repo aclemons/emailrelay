@@ -87,7 +87,7 @@ private:
 	void warranty() ;
 	void version() ;
 	void copyright() ;
-	static std::string crlf() ;
+	static const std::string & crlf() ;
 	void prompt() ;
 
 private:

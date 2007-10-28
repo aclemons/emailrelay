@@ -539,7 +539,7 @@ bool GSmtp::ClientProtocol::send( const std::string & line , bool eot , bool log
 
 const std::string & GSmtp::ClientProtocol::crlf()
 {
-	static std::string s("\015\012") ;
+	static const std::string s( "\015\012" ) ;
 	return s ;
 }
 

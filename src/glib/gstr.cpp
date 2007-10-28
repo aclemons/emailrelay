@@ -28,8 +28,7 @@
 #include <string>
 #include <sstream>
 
-bool G::Str::replace( std::string &s , const std::string &from , 
-	const std::string &to , size_type *pos_p )
+bool G::Str::replace( std::string & s , const std::string & from , const std::string & to , size_type * pos_p )
 {
 	if( from.length() == 0 )
 		return false ;
@@ -52,13 +51,39 @@ bool G::Str::replace( std::string &s , const std::string &from ,
 	}
 }
 
-unsigned int G::Str::replaceAll( std::string &s , const std::string &from , 
-	const std::string &to )
+unsigned int G::Str::replaceAll( std::string & s , const std::string & from , const std::string & to )
 {
 	unsigned int count = 0U ;
-	for( size_type pos = 0U ; replace( s , from , to , &pos ) ; count++ )
+	for( size_type pos = 0U ; replace(s,from,to,&pos) ; count++ )
 		; // no-op
 	return count ;
+}
+
+unsigned int G::Str::replaceAll( std::string & s , const char * from , const char * to )
+{
+	// this overload is an optimisation -- if the optimisation presumption 
+	// fails then fall back to the normal implementation
+	if( s.find(from) != std::string::npos )
+	{
+		unsigned int count = 0U ;
+		for( size_type pos = 0U ; replace(s,from,to,&pos) ; count++ )
+			; // no-op
+		return count ;
+	}
+	else
+	{
+		return 0U ;
+	}
+}
+
+void G::Str::removeAll( std::string & s , char c )
+{
+	for( size_type pos = 0U ; ; s.erase(pos,1U) )
+	{
+		pos = s.find( c , pos ) ;
+		if( pos == std::string::npos )
+			break ;
+	}
 }
 
 void G::Str::trimLeft( std::string & s , const std::string & ws , size_type limit )
@@ -66,7 +91,6 @@ void G::Str::trimLeft( std::string & s , const std::string & ws , size_type limi
 	size_type n = s.find_first_not_of( ws ) ;
 	if( limit != 0U && ( n == std::string::npos || n > limit ) )
 		n = limit >= s.length() ? std::string::npos : limit ;
-G_ASSERT(n==std::string::npos||n<s.length());
 	if( n == std::string::npos )
 		s = std::string() ;
 	else if( n != 0U )
@@ -78,7 +102,6 @@ void G::Str::trimRight( std::string & s , const std::string & ws , size_type lim
 	size_type n = s.find_last_not_of( ws ) ;
 	if( limit != 0U && ( n == std::string::npos || s.length() > (limit+n+1U) ) )
 		n = limit >= s.length() ? std::string::npos : (s.length()-limit-1U) ;
-G_ASSERT(n==std::string::npos||n<s.length());
 	if( n == std::string::npos )
 		s = std::string() ;
 	else if( n != 0U )
@@ -445,7 +468,7 @@ void G::Str::addPrintable( std::string & result , char c , unsigned char uc , ch
 std::string G::Str::readLineFrom( std::istream & stream , const std::string & eol )
 {
 	std::string result ;
-	readLineFrom( stream , eol.empty() ? std::string(1U,'\n') : eol , result ) ;
+	readLineFrom( stream , eol.empty() ? std::string(1U,'\n') : eol , result , true ) ;
 	return result ;
 }
 
@@ -456,6 +479,31 @@ void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std
 	if( pre_erase )
 		line.erase() ;
 
+	// this is a special optimisation for a two-character terminator with a one-character initial string ;-)
+	if( eol.length() == 2U && eol[0] != eol[1] && line.length() == 1U )
+	{
+		const char c = line[0] ;
+		std::getline( stream , line , eol[1] ) ; // usually faster than one character at a time
+		line.insert( 0U , &c , 1U ) ;
+		const std::string::size_type line_length = line.length() ;
+		if( line_length > 1U && *line.rbegin() == eol[0] )
+		{
+			line.resize( line_length - 1U ) ;
+		}
+		else if( !stream.fail() )
+		{
+			line.append( 1U , eol[1] ) ;
+			readLineFromImp( stream , eol , line ) ;
+		}
+	}
+	else
+	{
+		readLineFromImp( stream , eol , line ) ;
+	}
+}
+
+void G::Str::readLineFromImp( std::istream & stream , const std::string & eol , std::string & line )
+{
 	const size_type limit = line.max_size() ;
 	const size_type eol_length = eol.length() ;
 	const char eol_final = eol.at( eol_length - 1U ) ;
@@ -468,7 +516,8 @@ void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std
 		stream.get( c ) ; // sets the fail bit at eof
 		if( stream.fail() )
 		{
-			// work more like std::getline() in <string>
+			// work more like std::getline() in <string> -- reset the failbit and set eof
+			// (remember that clear() sets all the flags explicitly to the given values)
 			stream.clear( ( stream.rdstate() & ~std::ios_base::failbit ) | std::ios_base::eofbit ) ;
 			break ;
 		}
@@ -494,7 +543,11 @@ void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std
 		}
 	}
 	if( !changed )
-		stream.setstate( std::ios_base::failbit ) ;
+	{
+		// set the failbit
+		// (remember that setstate() sets the flag(s) identified by the given bitmask to 1)
+		stream.setstate( std::ios_base::failbit ) ; 
+	}
 }
 
 std::string G::Str::wrap( std::string text , const std::string & prefix_1 , 
@@ -569,8 +622,7 @@ void G::Str::arrayPushBack( void * out , const std::string & s )
 	reinterpret_cast<StringArray*>(out)->push_back( s ) ;
 }
 
-void G::Str::splitIntoTokens( const std::string &in , Strings &out , 
-	const std::string & ws )
+void G::Str::splitIntoTokens( const std::string &in , Strings &out , const std::string & ws )
 {
 	splitIntoTokens( in , reinterpret_cast<void*>(&out) , 
 		&listPushBack , ws ) ;
@@ -583,8 +635,7 @@ void G::Str::splitIntoTokens( const std::string &in , StringArray &out ,
 		&arrayPushBack , ws ) ;
 }
 
-void G::Str::splitIntoTokens( const std::string & in , 
-	void * out , void (*fn)(void*,const std::string&) , 
+void G::Str::splitIntoTokens( const std::string & in , void * out , void (*fn)(void*,const std::string&) , 
 	const std::string & ws )
 {
 	for( size_type p = 0U ; p != std::string::npos ; )
@@ -600,22 +651,19 @@ void G::Str::splitIntoTokens( const std::string & in ,
 	}
 }
 
-void G::Str::splitIntoFields( const std::string & in , Strings &out , 
-	const std::string & ws , char escape , bool discard_bogus )
+void G::Str::splitIntoFields( const std::string & in , Strings &out , const std::string & ws , 
+	char escape , bool discard_bogus )
 {
-	splitIntoFields( in , reinterpret_cast<void*>(&out) , 
-		&listPushBack , ws , escape , discard_bogus ) ;
+	splitIntoFields( in , reinterpret_cast<void*>(&out) , &listPushBack , ws , escape , discard_bogus ) ;
 }
 
-void G::Str::splitIntoFields( const std::string & in , StringArray &out , 
-	const std::string & ws , char escape , bool discard_bogus )
+void G::Str::splitIntoFields( const std::string & in , StringArray &out , const std::string & ws , 
+	char escape , bool discard_bogus )
 {
-	splitIntoFields( in , reinterpret_cast<void*>(&out) , 
-		&arrayPushBack , ws , escape , discard_bogus ) ;
+	splitIntoFields( in , reinterpret_cast<void*>(&out) , &arrayPushBack , ws , escape , discard_bogus ) ;
 }
 
-void G::Str::splitIntoFields( const std::string & in_in , void * out , 
-	void (*fn)(void*,const std::string&) , 
+void G::Str::splitIntoFields( const std::string & in_in , void * out , void (*fn)(void*,const std::string&) , 
 	const std::string & ws , char escape , bool discard_bogus )
 {
 	std::string all( ws ) ;
@@ -709,6 +757,15 @@ std::string G::Str::tail( const std::string & in , std::string::size_type pos , 
 		pos == std::string::npos ?
 			default_ :
 			( (pos+1U) == in.length() ? std::string() : in.substr(pos+1U) ) ;
+}
+
+bool G::Str::tailMatch( const std::string & in , const std::string & ending )
+{
+	// (use compare() to avoid the temporary from substr())
+	return
+		ending.empty() ||
+		( in.length() >= ending.length() && 
+			0 == in.compare( in.length() - ending.length() , ending.length() , ending ) ) ;
 }
 
 /// \file gstr.cpp

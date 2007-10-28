@@ -14,31 +14,41 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gbufferedserverpeer.cpp
-//
+///
+/// \file glimits.h
+///
+
+#ifndef G_LIMITS_H__
+#define G_LIMITS_H__
 
 #include "gdef.h"
-#include "gnet.h"
-#include "gbufferedserverpeer.h"
-#include "glog.h"
 
-GNet::BufferedServerPeer::BufferedServerPeer( Server::PeerInfo peer_info , const std::string & eol ) :
-	ServerPeer(peer_info) ,
-	m_line_buffer(eol)
+/// \namespace G
+namespace G
 {
+	struct limits ;
 }
 
-GNet::BufferedServerPeer::~BufferedServerPeer()
+/// \class G::limits
+/// A scoping structure for a set of buffer sizes.
+/// Intended to be used to reduce memory requirements in 
+/// embedded environments.
+///
+class G::limits 
 {
-}
+public:
+	enum { path = 10000 } ; // cf. MAX_PATH, PATH_MAX, MAXPATHLEN
+	enum { log = 1000 } ; // log line limit
+	enum { file_buffer = 102400 } ; // cf. BUFSIZ
+	enum { pipe_buffer = 4096 } ; // one-off read from a pipe
+	enum { net_buffer = 1500 } ;
+	enum { net_line_limit = 1000000 } ; // denial of service limit
+	enum { net_hostname = 1024 } ;
+	enum { win32_subclass_limit = 80 } ;
+	enum { win32_classname_buffer = 256 } ;
 
-void GNet::BufferedServerPeer::onData( const char * p , ServerPeer::size_type n )
-{
-	m_line_buffer.add(p,n) ; 
-	LineBufferIterator iter( m_line_buffer ) ;
-	while( iter.more() && onReceive(iter.line()) )
-		;
-}
+private:
+	limits() ; // not implemented
+} ;
 
-/// \file gbufferedserverpeer.cpp
+#endif

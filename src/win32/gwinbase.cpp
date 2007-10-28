@@ -19,6 +19,7 @@
 //
 
 #include "gdef.h"
+#include "glimits.h"
 #include "gwinbase.h"
 #include "gdebug.h"
 #include <windowsx.h>
@@ -86,7 +87,7 @@ GGui::Size GGui::WindowBase::externalSize() const
 
 std::string GGui::WindowBase::windowClass() const
 {
-	char buffer[256U] ;
+	char buffer[G::limits::win32_classname_buffer] ;
 	buffer[0U] = '\0' ;
 	::GetClassName( m_hwnd , buffer , sizeof(buffer)-1U ) ;
 	buffer[sizeof(buffer)-1U] = '\0' ;

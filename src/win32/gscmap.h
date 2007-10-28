@@ -22,6 +22,7 @@
 #define G_SCMAP_H
 
 #include "gdef.h"
+#include "glimits.h"
 
 /// \namespace GGui
 namespace GGui
@@ -65,7 +66,7 @@ private:
 	void operator=( const SubClassMap &other ) ;
 
 private:
-	enum { SlotsLimit = 80 } ;
+	enum { SlotsLimit = G::limits::win32_subclass_limit } ;
 	struct Slot
 	{
 		Proc proc ;

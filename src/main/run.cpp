@@ -45,6 +45,7 @@
 #include "gexception.h"
 #include "gprocess.h"
 #include "gmemory.h"
+#include "gtest.h"
 #include "glogoutput.h"
 #include "gdebug.h"
 #include "legal.h"
@@ -54,7 +55,7 @@
 
 std::string Main::Run::versionNumber()
 {
-	return "1.7" ;
+	return "1.8" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string & switch_spec ) :
@@ -111,7 +112,7 @@ void Main::Run::closeFiles()
 
 void Main::Run::closeMoreFiles()
 {
-	if( cfg().closeStderr() ) // was "daemon && close-stderr", but too confusing
+	if( cfg().closeStderr() )
 		G::Process::closeStderr() ;
 }
 
@@ -152,23 +153,25 @@ bool Main::Run::prepare()
 		m_prepare_error = true ;
 		return false ;
 	}
-	else
-	{
-		// early singletons...
-		//
-		m_log_output <<= new G::LogOutput( m_arg.prefix() , 
-			cfg().log() , // output
-			cfg().log() , // with-logging
-			cfg().verbose() , // with-verbose-logging
-			cfg().debug() , // with-debug
-			true , // with-level
-			cfg().logTimestamp() , // with-timestamp
-			!cfg().debug() , // strip-context
-			cfg().useSyslog() , // use-syslog
-			G::LogOutput::Mail // facility 
-		) ;
-		return true ;
-	}
+
+	// early singletons...
+	//
+	m_log_output <<= new G::LogOutput( m_arg.prefix() , 
+		cfg().log() , // output
+		cfg().log() , // with-logging
+		cfg().verbose() , // with-verbose-logging
+		cfg().debug() , // with-debug
+		true , // with-level
+		cfg().logTimestamp() , // with-timestamp
+		!cfg().debug() , // strip-context
+		cfg().useSyslog() , // use-syslog
+		G::LogOutput::Mail // facility 
+	) ;
+
+	// emit warnings for dodgy switch combinations
+	cl().logSemanticWarnings() ;
+
+	return true ;
 }
 
 void Main::Run::run()
@@ -319,7 +322,6 @@ void Main::Run::doServing( const GSmtp::Secrets & client_secrets ,
 			cfg().immediate() ? cfg().serverAddress() : std::string() ,
 			cfg().connectionTimeout() ,
 			clientConfig() ) ;
-
 	}
 
 	std::auto_ptr<GPop::Server> pop_server ;

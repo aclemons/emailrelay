@@ -27,5 +27,4 @@ bool GGui::Pump::dialogMessage( MSG & msg )
 	return Dialog::dialogMessage( msg ) ;
 }
 
-
 /// \file gpump_dialog.cpp
