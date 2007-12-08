@@ -6,7 +6,7 @@ Setup program
 Installing E-MailRelay on Windows should be straightforward if you have
 self-extracting archive program "emailrelay-setup.exe". Make sure that the
 setup program is in a writeable directory with plenty of space on the disk
-because when you run it is will extract an installation GUI program plus
+because when you run it it will extract an installation GUI program plus
 dependent DLLs in into the same directory.
 
 The installation GUI program will take you through the installation options and
@@ -44,8 +44,8 @@ boxes.)
 
 Note that the batch file and the main E-MailRelay executable must be in the same
 directory and that the batch file is only read at install time; if you need to
-change the command-line switches for the service you must edit the service
-properties.
+change the command-line switches for the service you should edit the batch
+file and then reinstall the service.
 
 Diagnostics
 -----------

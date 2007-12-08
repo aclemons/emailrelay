@@ -15,15 +15,38 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// gcounter.cpp
+// ghostname_unix.cpp
 //
 
 #include "gdef.h"
-#include "gcounter.h"
+#include "ghostname.h"
+#include "gstr.h"
+#include <sys/utsname.h>
+#include <cstdlib> // getenv
 
-void G::CounterImp::check( const char * , unsigned long )
+std::string G::hostname()
 {
-	// no-op -- could do something with G::Test
+	struct utsname info ;
+	int rc = ::uname( &info ) ;
+	if( rc == -1 ) 
+		return std::string() ;
+
+	std::string name = std::string(info.nodename) ;
+	std::string::size_type pos = name.find('.') ;
+	if( pos != std::string::npos )
+		name = name.substr( 0U , pos ) ;
+
+	// pathologically "uname -n" can be empty, so
+	// allow "export HOSTNAME=localhost" as a
+	// workround
+	//
+	if( name.empty() )
+	{
+		const char * p = std::getenv( "HOSTNAME" ) ;
+		name = G::Str::toPrintableAscii( std::string(p?p:"") , '_' ) ;
+	}
+
+	return name ;
 }
 
-/// \file gcounter.cpp
+/// \file ghostname_unix.cpp

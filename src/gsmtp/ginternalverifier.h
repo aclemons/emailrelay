@@ -15,32 +15,36 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gexecutableverifier.h
+/// \file ginternalverifier.h
 ///
 
-#ifndef G_SMTP_EXECUTABLE_VERIFIER_H
-#define G_SMTP_EXECUTABLE_VERIFIER_H
+#ifndef G_SMTP_INTERNAL_VERIFIER_H
+#define G_SMTP_INTERNAL_VERIFIER_H
 
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gverifier.h"
-#include "gexecutable.h"
+#include "grequestclient.h"
+#include "gclientptr.h"
 #include <string>
 
 /// \namespace GSmtp
 namespace GSmtp
 {
-	class ExecutableVerifier ;
+	class InternalVerifier ;
 }
 
-/// \class GSmtp::ExecutableVerifier
-/// A Verifier that runs an executable.
+/// \class GSmtp::InternalVerifier
+/// The standard internal Verifier.
 ///
-class GSmtp::ExecutableVerifier : public GSmtp::Verifier 
+class GSmtp::InternalVerifier : public GSmtp::Verifier 
 {
 public:
-	explicit ExecutableVerifier( const G::Executable & ) ;
+	InternalVerifier() ;
 		///< Constructor.
+
+	virtual ~InternalVerifier() ;
+		///< Destructor.
 
 	virtual void verify( const std::string & rcpt_to_parameter ,
 		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
@@ -54,15 +58,10 @@ public:
 		///< Final override from GSmtp::Verifier.
 
 private:
-	ExecutableVerifier( const ExecutableVerifier & ) ; // not implemented
-	void operator=( const ExecutableVerifier & ) ; // not implemented
-	VerifierStatus verifyExternal( const std::string & , 
-		const std::string & , const std::string & , const std::string & , const std::string & ,
-		const GNet::Address & , const std::string & , const std::string & ) const ;
-
-private:
-	G::Executable m_exe ;
+	InternalVerifier( const InternalVerifier & ) ; // not implemented
+	void operator=( const InternalVerifier & ) ; // not implemented
 	G::Signal2<std::string,VerifierStatus> m_done_signal ;
+	VerifierStatus verifyInternal( const std::string & address ) const ;
 } ;
 
 #endif

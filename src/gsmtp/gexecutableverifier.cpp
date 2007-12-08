@@ -47,23 +47,10 @@ void GSmtp::ExecutableVerifier::verify( const std::string & to ,
 	std::string host = G::Str::tail( to , to.find('@') , std::string() ) ;
 
 	VerifierStatus status = 
-		m_exe.exe() == G::Path() ?
-			verifyInternal( to , std::string() , std::string() , std::string() ) :
 			verifyExternal( to , G::Str::upper(user) , G::Str::upper(host) , 
 				G::Str::upper(GNet::Local::fqdn()) , from , ip , mechanism , extra ) ;
 
 	doneSignal().emit( to , status ) ;
-}
-
-GSmtp::VerifierStatus GSmtp::ExecutableVerifier::verifyInternal( const std::string & address , const std::string & , 
-	const std::string & , const std::string & ) const
-{
-	// accept all addresses as if remote
-	VerifierStatus status ;
-	status.is_valid = true ;
-	status.is_local = false ;
-	status.address = address ;
-	return status ;
 }
 
 GSmtp::VerifierStatus GSmtp::ExecutableVerifier::verifyExternal( const std::string & address , 

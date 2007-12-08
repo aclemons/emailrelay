@@ -110,8 +110,7 @@ static HANDLE source()
 
 	// build a registry path for our executable
 	//
-	std::string reg_path_prefix( "SYSTEM\\CurrentControlSet\\Services\\"
-		"EventLog\\Application\\" ) ;
+	std::string reg_path_prefix( "SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\" ) ;
 	std::string reg_path = reg_path_prefix + exe_name ;
 
 	// create a registry entry

@@ -32,10 +32,17 @@ namespace G
 }
 
 /// \class G::Root
-/// A class which acquires special privileges.
-/// The implementation uses G::Process and G::Identity.
+/// A class which acquires the process's
+/// special privileges on construction and releases
+/// them on destruction.
+///
 /// If instances are nested then the inner instances
 /// have no effect.
+///
+/// The implementation uses G::Process and G::Identity.
+///
+/// The class must be initialised by calling a static
+/// init() method.
 ///
 class G::Root : private G::noncopyable 
 {
@@ -49,10 +56,11 @@ public:
 		///< if this instance acquired them.
 
 	static void init( const std::string & nobody ) ;
-		///< Releases root or suid privileges. Used
-		///< at process start-up. The parameter
-		///< gives a non-privileged username which
-		///< is used if the real user-id is root.
+		///< Initialises this class on process start-up by
+		///< releasing root or suid privileges.
+		///<
+		///< The parameter gives a non-privileged username 
+		///< which is used if the real user-id is root.
 
 	static Identity nobody() ;
 		///< Returns the 'nobody' identity.

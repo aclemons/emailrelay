@@ -26,6 +26,7 @@ mk_sources=\
 	gexecutableverifier.cpp \
 	gfactoryparser.cpp \
 	gfilestore.cpp \
+	ginternalverifier.cpp \
 	gmessagestore.cpp \
 	gmessagestore_win32.cpp \
 	gnetworkprocessor.cpp \

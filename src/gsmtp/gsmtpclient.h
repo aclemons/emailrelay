@@ -120,13 +120,13 @@ protected:
 
 private:
 	virtual bool protocolSend( const std::string & , size_t , bool ) ; // override from private base class
-	void protocolDone( std::string ) ; // see ClientProtocol::doneSignal()
+	void protocolDone( std::string , int ) ; // see ClientProtocol::doneSignal()
 	void preprocessorStart() ;
 	void preprocessorDone( bool ) ;
 	static const std::string & crlf() ;
 	bool sendNext() ;
 	void start( StoredMessage & ) ;
-	void messageFail( const std::string & reason ) ;
+	void messageFail( const std::string & , int = 0 ) ;
 	void messageDestroy() ;
 
 private:

@@ -22,8 +22,9 @@
 #include "gexecutable.h"
 #include "gstr.h"
 
-G::Executable::Executable( const std::string & s )
+G::Executable::Executable( const std::string & s_ )
 {
+	std::string s( s_ ) ;
 	if( s.find(' ') == std::string::npos ) // optimisation
 	{
 		m_exe = G::Path(s) ;
@@ -32,13 +33,12 @@ G::Executable::Executable( const std::string & s )
 	{
 		// mark escaped spaces using nul
 		const std::string null( 1U , '\0' ) ;
-		std::string line( s ) ;
-		G::Str::replaceAll( line , "\\ " , null ) ;
+		G::Str::replaceAll( s , "\\ " , null ) ;
 
 		// split up on (unescaped) spaces
-		G::Str::splitIntoTokens( line , m_args , " " ) ;
+		G::Str::splitIntoTokens( s , m_args , " " ) ;
 
-		// replace up the escaped spaces
+		// replace the escaped spaces
 		for( G::Strings::iterator p = m_args.begin() ; p != m_args.end() ; ++p )
 		{
 			G::Str::replaceAll( *p , null , " " ) ;

@@ -23,7 +23,8 @@
 # usage: emailrelay-test.sh
 #
 
-perl -I../../test emailrelay-test.pl "$@"
+if test -z "${srcdir}" ; then srcdir="." ; fi
+perl -I../../test -I"${srcdir}" emailrelay-test.pl "$@"
 rc=$?
 
 # ignore failures for now because of the dependency

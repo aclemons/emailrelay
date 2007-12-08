@@ -136,17 +136,17 @@ bool G::DirectoryList::more()
 
 bool G::DirectoryList::isDir() const
 {
-	return !! m_is_dir.at(m_index) ;
+	return !! m_is_dir[m_index] ;
 }
 
 G::Path G::DirectoryList::filePath() const
 {
-	return m_path.at(m_index) ;
+	return m_path[m_index] ;
 }
 
 G::Path G::DirectoryList::fileName() const
 {
-	return m_name.at(m_index) ;
+	return m_name[m_index] ;
 }
 
 /// \file gdirectory.cpp

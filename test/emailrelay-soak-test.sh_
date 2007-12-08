@@ -30,7 +30,7 @@
 #
 # Files are created under a sub-directory of /tmp.
 #
-# usage: emailrelay-soak-test.sh [<exe>]
+# usage: emailrelay-soak-test.sh [-v] [<exe>]
 #
 # (As a side-effect it does "killall emailrelay".)
 #

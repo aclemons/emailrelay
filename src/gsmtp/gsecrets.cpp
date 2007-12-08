@@ -79,6 +79,11 @@ GSmtp::Secrets::Secrets( const std::string & path , const std::string & name , c
 {
 }
 
+GSmtp::Secrets::Secrets() :
+	m_imp(new SecretsImp(std::string(),true,std::string(),std::string()))
+{
+}
+
 GSmtp::Secrets::~Secrets()
 {
 	delete m_imp ;
@@ -176,7 +181,8 @@ void GSmtp::SecretsImp::read( const G::Path & path )
 	m_map.clear() ;
 	m_set.clear() ;
 	unsigned int count = read( *file.get() ) ;
-	G_DEBUG( "GSmtp::SecretsImp::read: processed " << count << " records" ) ;
+	count++ ; // avoid 'unused' warning
+	G_DEBUG( "GSmtp::SecretsImp::read: processed " << (count-1) << " records" ) ;
 }
 
 G::DateTime::EpochTime GSmtp::SecretsImp::readFileTime( const G::Path & path )

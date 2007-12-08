@@ -26,7 +26,7 @@
 /// \namespace G
 namespace G
 {
-	struct limits ;
+	class limits ;
 }
 
 /// \class G::limits
@@ -37,6 +37,8 @@ namespace G
 class G::limits 
 {
 public:
+
+ #ifndef G_SMALL
 	enum { path = 10000 } ; // cf. MAX_PATH, PATH_MAX, MAXPATHLEN
 	enum { log = 1000 } ; // log line limit
 	enum { file_buffer = 102400 } ; // cf. BUFSIZ
@@ -46,6 +48,17 @@ public:
 	enum { net_hostname = 1024 } ;
 	enum { win32_subclass_limit = 80 } ;
 	enum { win32_classname_buffer = 256 } ;
+ #else
+	enum { path = 256 } ;
+	enum { log = 120 } ;
+	enum { file_buffer = 128 } ;
+	enum { pipe_buffer = 128 } ;
+	enum { net_buffer = 512 } ;
+	enum { net_line_limit = 2000 } 
+	enum { net_hostname = 128 } ;
+	enum { win32_subclass_limit = 2 } ;
+	enum { win32_classname_buffer = 128 } ;
+ #endif
 
 private:
 	limits() ; // not implemented

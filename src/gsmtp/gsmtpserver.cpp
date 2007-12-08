@@ -206,17 +206,17 @@ GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()
 
 	std::auto_ptr<Processor> store_processor( ProcessorFactory::newProcessor(m_processor_address,m_processor_timeout) );
 
-	std::auto_ptr<ProtocolMessage> store( newProtocolMessageStore(store_processor) ) ;
+	std::auto_ptr<ProtocolMessage> pmstore( newProtocolMessageStore(store_processor) ) ;
 
 	const bool do_forward = ! m_smtp_server.empty() ;
 	if( do_forward )
 	{
-		std::auto_ptr<ProtocolMessage> forward( newProtocolMessageForward(store) ) ;
+		std::auto_ptr<ProtocolMessage> forward( newProtocolMessageForward(pmstore) ) ;
 		return forward.release() ;
 	}
 	else
 	{
-		return store.release() ;
+		return pmstore.release() ;
 	}
 }
 

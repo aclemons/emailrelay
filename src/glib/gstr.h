@@ -159,7 +159,7 @@ public:
 		///< Exception: Overflow
 		///< Exception: InvalidFormat
 
-	static unsigned long toULong( const std::string &s , bool limited = false ) ;
+	static unsigned long toULong( const std::string & s , bool limited = false ) ;
 		///< Converts string 's' to an unsigned long.
 		///<
 		///< If 'limited' is true then very large numeric strings
@@ -169,7 +169,7 @@ public:
 		///< Exception: Overflow
 		///< Exception: InvalidFormat
 
-	static unsigned short toUShort( const std::string &s , bool limited = false ) ;
+	static unsigned short toUShort( const std::string & s , bool limited = false ) ;
 		///< Converts string 's' to an unsigned short.
 		///<
 		///< If 'limited' is true then very large numeric strings
@@ -179,19 +179,19 @@ public:
 		///< Exception: Overflow
 		///< Exception: InvalidFormat
 
-	static void toUpper( std::string &s ) ;
+	static void toUpper( std::string & s ) ;
 		///< Replaces all lowercase characters in string 's' by 
 		///< uppercase characters.
 		
-	static void toLower( std::string &s ) ;
+	static void toLower( std::string & s ) ;
 		///< Replaces all uppercase characters in string 's' by 
 		///< lowercase characters.
 		
-	static std::string upper( const std::string &s ) ;
+	static std::string upper( const std::string & s ) ;
 		///< Returns a copy of 's' in which all lowercase characters 
 		///< have been replaced by uppercase characters.
 		
-	static std::string lower( const std::string &s ) ;
+	static std::string lower( const std::string & s ) ;
 		///< Returns a copy of 's' in which all uppercase characters 
 		///< have been replaced by lowercase characters.
 
@@ -240,18 +240,16 @@ public:
 			///< Does word-wrapping. The return value is a string with
 			///< embedded newlines.
 
-	static void splitIntoTokens( const std::string & in , Strings & out , 
-		const std::string & ws ) ;
-			///< Splits the string into 'ws'-delimited tokens. The 
-			///< behaviour is like ::strtok() in that adjacent delimiters
-			///< count as one and leading and trailing delimiters are ignored.
-			///< Ths output array is cleared first.
+	static void splitIntoTokens( const std::string & in , Strings & out , const std::string & ws ) ;
+		///< Splits the string into 'ws'-delimited tokens. The 
+		///< behaviour is like ::strtok() in that adjacent delimiters
+		///< count as one and leading and trailing delimiters are ignored.
+		///< Ths output array is cleared first.
 
-	static void splitIntoTokens( const std::string & in , StringArray & out ,
-		const std::string & ws ) ;
-			///< Overload for vector<string>.
+	static void splitIntoTokens( const std::string & in , StringArray & out , const std::string & ws ) ;
+		///< Overload for vector<string>.
 
-	static void splitIntoFields( const std::string & in , Strings &out , 
+	static void splitIntoFields( const std::string & in , Strings & out , 
 		const std::string & seperators , char escape = '\0' , 
 		bool discard_bogus_escapes = true ) ;
 			///< Splits the string into fields. Duplicated, leading
@@ -267,8 +265,7 @@ public:
 			///< time the sub-strings are split.
 
 	static void splitIntoFields( const std::string & in , StringArray & out ,
-		const std::string & seperators , char escape = '\0' , 
-		bool discard_bogus_escapes = true ) ;
+		const std::string & seperators , char escape = '\0' , bool discard_bogus_escapes = true ) ;
 			///< Overload for vector<string>.
 
 	static std::string join( const Strings & strings , const std::string & sep ) ;
@@ -299,13 +296,6 @@ public:
 		///< A convenience function returning standard whitespace characters.
 
 private:
-	static void listPushBack( void * , const std::string & ) ;
-	static void arrayPushBack( void * , const std::string & ) ;
-	static void splitIntoFields( const std::string & , void * , void (*fn)(void*,const std::string&) ,
-		const std::string & , char , bool ) ;
-	static void splitIntoTokens( const std::string & , void * , void (*fn)(void*,const std::string&) , 
-		const std::string & ) ;
-	static void addPrintable( std::string & , char , unsigned char , char , bool ) ;
 	static void readLineFromImp( std::istream & , const std::string & , std::string & ) ;
 	Str() ; // not implemented
 } ;

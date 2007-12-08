@@ -372,10 +372,11 @@ bool GSmtp::SaslClient::active() const
 }
 
 std::string GSmtp::SaslClient::response( const std::string & mechanism , const std::string & challenge , 
-	bool & done , bool & error ) const
+	bool & done , bool & error , bool & sensitive ) const
 {
 	done = false ;
 	error = false ;
+	sensitive = false ;
 
 	std::string rsp ;
 	if( mechanism == "CRAM-MD5" || mechanism == "APOP" )
@@ -397,6 +398,7 @@ std::string GSmtp::SaslClient::response( const std::string & mechanism , const s
 		rsp = sep + id + sep + secret ;
 		error = id.empty() || secret.empty() ;
 		done = true ;
+		sensitive = true ;
 	}
 	else if( mechanism == "LOGIN" )
 	{
@@ -411,6 +413,7 @@ std::string GSmtp::SaslClient::response( const std::string & mechanism , const s
 			rsp = m_imp->m_secrets.secret(mechanism) ;
 			error = rsp.empty() ;
 			done = true ;
+			sensitive = true ;
 		}
 		else
 		{

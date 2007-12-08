@@ -311,7 +311,8 @@ void GPop::ServerProtocol::doRetr( const std::string & line , bool & more )
 	}
 	else
 	{
-		m_content = m_store_lock.get( id ) ;
+		std::auto_ptr<std::istream> content( m_store_lock.get(id) ) ; // for gcc2.95
+		m_content <<= content.release() ;
 		m_body_limit = -1L ;
 
 		std::ostringstream ss ;
@@ -332,7 +333,8 @@ void GPop::ServerProtocol::doTop( const std::string & line , bool & more )
 	}
 	else
 	{
-		m_content = m_store_lock.get( id ) ;
+		std::auto_ptr<std::istream> content( m_store_lock.get(id) ) ; // for gcc2.95
+		m_content <<= content.release() ;
 		m_body_limit = n ;
 		m_in_body = false ;
 		sendOk() ;

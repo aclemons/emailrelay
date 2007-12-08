@@ -689,13 +689,13 @@ sub testFilter
 		Filter => 1 ,
 	) ;
 	my $server = new Server() ;
-	Check::ok( $server->run(\%args) ) ;
-	Check::running( $server->pid() , $server->message() ) ;
-	my $outputfile = System::tempfile("output") ;
+	my $outputfile = System::tempfile("output","/tmp") ; # writeable by daemon
 	Filter::create( $server->filter() , 
 		"echo \"\$\@\" | sed 's/^/arg: /' > $outputfile" ,
 		"env | sed 's/^/env: /' >> $outputfile" , 
 		"exit 0" ) ;
+	Check::ok( $server->run(\%args) ) ;
+	Check::running( $server->pid() , $server->message() ) ;
 	my $c = new SmtpClient( $server->smtpPort() ) ;
 	Check::ok( $c->open() ) ;
 
@@ -730,7 +730,7 @@ sub testFilterIdentity
 	my $server = new Server() ;
 	Check::ok( $server->run(\%args) ) ;
 	Check::running( $server->pid() , $server->message() ) ;
-	my $outputfile = System::tempfile("output") ;
+	my $outputfile = System::tempfile("output","/tmp") ;
 	Filter::create( $server->filter() , 
 		"cat /proc/self/status | fgrep id: | sed 's/^/proc: /' > $outputfile" , 
 		"exit 0" ) ;
@@ -1071,7 +1071,7 @@ sub testClientFilterPass
 	Check::ok( $server_2->run(\%server_args) ) ;
 	Check::running( $server_2->pid() , $server_2->message() ) ;
 	$server_1->set_dst("localhost:".$server_2->smtpPort()) ;
-	my $outputfile = System::tempfile("output") ;
+	my $outputfile = System::tempfile("output","/tmp") ;
 	Filter::create( $server_1->clientFilter() , 
 		"echo \"\$\@\" | sed 's/^/arg: /' > $outputfile" ,
 		"env | sed 's/^/env: /' >> $outputfile" , 
@@ -1124,7 +1124,7 @@ sub testClientFilterBlock
 	Check::ok( $server_2->run(\%server_args) ) ;
 	Check::running( $server_2->pid() , $server_2->message() ) ;
 	$server_1->set_dst("localhost:".$server_2->smtpPort()) ;
-	my $outputfile = System::tempfile("output") ;
+	my $outputfile = System::tempfile("output","/tmp") ;
 	Filter::create( $server_1->clientFilter() , "echo '<<foo bar>>sldkfj'" , "echo a > $outputfile" , "exit 13" ) ;
 	Check::ok( $server_1->run(\%args) ) ;
 
@@ -1169,7 +1169,7 @@ sub testClientGivenUnknownMechanisms
 	# test that protocol fails and the messages remain spooled
 	$emailrelay->run( \%args ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 2 ) ;
-	Check::fileContains( $emailrelay->stderr() , "cannot do authentication mandated by the server" ) ;
+	Check::fileContains( $emailrelay->stderr() , "cannot do authentication mandated by the remote smtp server" ) ;
 
 	# tear down
 	$emailrelay->cleanup() ;

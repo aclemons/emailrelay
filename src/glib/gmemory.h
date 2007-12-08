@@ -31,7 +31,6 @@
 ///
 /// Usage:
 /// \code
-/// #include <memory>
 /// #include "gmemory.h"
 /// {
 ///   std::auto_ptr<Foo> ptr ;

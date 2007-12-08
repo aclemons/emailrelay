@@ -1061,7 +1061,7 @@ void ReadyPage::onShow( bool )
 
 std::string ReadyPage::verb( bool pp ) const
 {
-	return std::string( m_installing ? (pp?"install":"installed") : (pp?"configured":"configure") ) ;
+	return std::string( m_installing ? (pp?"installed":"install") : (pp?"configured":"configure") ) ;
 }
 
 QString ReadyPage::text() const

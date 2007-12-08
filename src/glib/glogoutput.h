@@ -59,7 +59,8 @@ public:
 			///< the first one controls output.
 
 	explicit LogOutput( bool output_with_logging , bool verbose_and_debug = true ) ;
-		///< Constructor.
+		///< Constructor for test programs. Only generates output if the 
+		///< first parameter is true. Never uses syslog.
 
 	virtual ~LogOutput() ;
 		///< Destructor.

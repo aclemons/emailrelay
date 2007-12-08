@@ -127,7 +127,7 @@ bool GSmtp::SpamClient::nextContentLine( std::string & line )
 	{
 		if( m_header_out_index < m_header_out.size() )
 		{
-			line = m_header_out.at(m_header_out_index++) ;
+			line = m_header_out[m_header_out_index++] ;
 			G_LOG( "GSmtp::SpamClient::sendContent: spam>>: \"" << G::Str::printable(line) << "\"" ) ;
 			ok = true ;
 		}
@@ -222,7 +222,7 @@ std::string GSmtp::SpamClient::part( const std::string & line , unsigned int i ,
 {
 	StringArray part ;
 	G::Str::splitIntoTokens( line , part , "\t :" ) ;
-	return part.size() > i ? part.at(i) : default_ ;
+	return part.size() > i ? part[i] : default_ ;
 }
 
 unsigned long GSmtp::SpamClient::headerBodyLength() const

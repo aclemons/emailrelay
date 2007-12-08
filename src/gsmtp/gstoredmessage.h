@@ -59,7 +59,7 @@ public:
 	virtual void destroy() = 0 ;
 		///< Deletes the message within the store.
 
-	virtual void fail( const std::string & reason ) = 0 ;
+	virtual void fail( const std::string & reason , int reason_code ) = 0 ;
 		///< Marks the message as failed within the store.
 
 	virtual bool eightBit() const = 0 ;

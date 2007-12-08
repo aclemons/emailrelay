@@ -277,11 +277,11 @@ void GSmtp::StoredFile::unlock()
 	}
 }
 
-void GSmtp::StoredFile::fail( const std::string & reason )
+void GSmtp::StoredFile::fail( const std::string & reason , int reason_code )
 {
 	if( G::File::exists( m_envelope_path ) ) // client-side preprocessing may have removed it
 	{
-		addReason( m_envelope_path , reason ) ;
+		addReason( m_envelope_path , reason , reason_code ) ;
 
 		G::Path bad_path = badPath( m_envelope_path ) ;
 		G_LOG_S( "GSmtp::StoredMessage: failing file: "
@@ -293,12 +293,13 @@ void GSmtp::StoredFile::fail( const std::string & reason )
 	}
 }
 
-void GSmtp::StoredFile::addReason( const G::Path & path , const std::string & reason )
+void GSmtp::StoredFile::addReason( const G::Path & path , const std::string & reason , int reason_code )
 {
 	FileWriter claim_writer ;
 	std::ofstream file( path.str().c_str() , 
 		std::ios_base::binary | std::ios_base::app ) ; // "app", not "ate", for win32
 	file << FileStore::x() << "Reason: " << reason << crlf() ;
+	file << FileStore::x() << "ReasonCode:" ; if( reason_code ) file << " " << reason_code ; file << crlf() ;
 }
 
 G::Path GSmtp::StoredFile::badPath( G::Path busy_path )

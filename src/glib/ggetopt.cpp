@@ -26,6 +26,9 @@
 #include "gassert.h"
 #include "gdebug.h"
 #include <sstream>
+#include <algorithm>
+#include <functional>
+#include <utility>
 #include <cstdlib> // getenv
 
 G::GetOpt::GetOpt( const Arg & args_in , const std::string & spec , 
@@ -68,22 +71,6 @@ void G::GetOpt::addSpec( const std::string & sort_key , char c , const std::stri
 	if( c == '\0' )
 		throw InvalidSpecification() ;
 
-	const bool debug = true ;
-	if( debug )
-	{
-		std::ostringstream ss ;
-		ss
-			<< "G::GetOpt::addSpec: "
-			<< "sort-key=" << sort_key << ": "
-			<< "char=" << c << ": "
-			<< "name=" << name << ": " 
-			<< "description=" << description << ": " 
-			<< "valued=" << (is_valued?"true":"false") << ": " 
-			<< "value-description=" << value_description << ": "
-			<< "level=" << level ;
-		G_DEBUG( ss.str() ) ;
-	}
-
 	std::pair<SwitchSpecMap::iterator,bool> rc = 
 		m_spec_map.insert( std::make_pair( sort_key , 
 			SwitchSpec(c,name,description,is_valued,value_description,level) ) ) ;
@@ -99,25 +86,16 @@ bool G::GetOpt::valued( const std::string & name ) const
 
 bool G::GetOpt::valued( char c ) const
 {
-	for( SwitchSpecMap::const_iterator p = m_spec_map.begin() ; p != m_spec_map.end() ; ++p )
-	{
-		if( (*p).second.c == c )
-			return (*p).second.valued ;
-	}
-	return false ;
+	SwitchSpecMap::const_iterator p = 
+		std::find_if( m_spec_map.begin() , m_spec_map.end() , std::bind1st(std::ptr_fun(&SwitchSpec::eqc),c)) ;
+	return p == m_spec_map.end() ? false : (*p).second.valued ;
 }
 
 char G::GetOpt::key( const std::string & name ) const
 {
-	for( SwitchSpecMap::const_iterator p = m_spec_map.begin() ; p != m_spec_map.end() ; ++p )
-	{
-		if( (*p).second.name == name )
-		{
-			return (*p).second.c ;
-		}
-	}
-	G_DEBUG( "G::GetOpt::key: " << name << " not found" ) ;
-	return '\0' ;
+	SwitchSpecMap::const_iterator p = 
+		std::find_if( m_spec_map.begin() , m_spec_map.end() , std::bind1st(std::ptr_fun(&SwitchSpec::eqn),name)) ;
+	return p == m_spec_map.end() ? '\0' : (*p).second.c ;
 }
 
 unsigned int G::GetOpt::wrapDefault()
@@ -347,7 +325,6 @@ G::GetOpt::size_type G::GetOpt::parseArgs( const Arg & args_in )
 		}
 	}
 	i-- ;
-	G_DEBUG( "G::GetOpt::parseArgs: removing " << i << " switch args" ) ;
 	return i ;
 }
 
@@ -499,7 +476,7 @@ G::Arg G::GetOpt::args() const
 	return m_args ;
 }
 
-void G::GetOpt::show( std::ostream &stream , std::string prefix ) const
+void G::GetOpt::show( std::ostream & stream , std::string prefix ) const
 {
 	for( SwitchMap::const_iterator p = m_map.begin() ; p != m_map.end() ; ++p )
 	{
@@ -508,15 +485,9 @@ void G::GetOpt::show( std::ostream &stream , std::string prefix ) const
 		bool valued = v.first ;
 		std::string value = v.second ;
 
-		std::string name ;
-		for( SwitchSpecMap::const_iterator q = m_spec_map.begin() ; q != m_spec_map.end() ; ++q )
-		{
-			if( (*q).second.c == c )
-			{
-				name = (*q).second.name ;
-				break ;
-			}
-		}
+		SwitchSpecMap::const_iterator q = std::find_if( m_spec_map.begin() , m_spec_map.end() , 
+			std::bind1st(std::ptr_fun(&SwitchSpec::eqc),c)) ;
+		std::string name = q == m_spec_map.end() ? std::string() : (*q).second.name ;
 
 		stream << prefix << "-" << c ;
 		if( !name.empty() )
@@ -539,13 +510,9 @@ void G::GetOpt::showErrors( std::ostream & stream ) const
 
 void G::GetOpt::showErrors( std::ostream & stream , std::string prefix_1 , std::string prefix_2 ) const
 {
-	if( m_errors.size() != 0U )
+	for( Strings::const_iterator p = m_errors.begin() ; p != m_errors.end() ; ++p )
 	{
-		for( Strings::const_iterator p = m_errors.begin() ;
-			p != m_errors.end() ; ++p )
-		{
-			stream << prefix_1 << prefix_2 << *p << std::endl ;
-		}
+		stream << prefix_1 << prefix_2 << *p << std::endl ;
 	}
 }
 
@@ -564,13 +531,7 @@ bool G::GetOpt::valid( const std::string & name ) const
 
 bool G::GetOpt::valid( char c ) const
 {
-	for( SwitchSpecMap::const_iterator p = m_spec_map.begin() ; p != m_spec_map.end() ; ++p )
-	{
-		if( (*p).second.c == c )
-			return true ;
-	}
-	return false ;
+	return !! std::count_if( m_spec_map.begin() , m_spec_map.end() , std::bind1st(std::ptr_fun(&SwitchSpec::eqc),c)) ;
 }
-
 
 /// \file ggetopt.cpp

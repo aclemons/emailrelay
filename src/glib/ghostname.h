@@ -14,16 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gcounter.cpp
-//
+///
+/// \file ghostname.h
+///
+
+#ifndef G_HOSTNAME_H
+#define G_HOSTNAME_H
 
 #include "gdef.h"
-#include "gcounter.h"
+#include <string>
 
-void G::CounterImp::check( const char * , unsigned long )
+/// \namespace G
+namespace G
 {
-	// no-op -- could do something with G::Test
+	std::string hostname() ;
+		/// \code
+		///<< Returns the hostname.
+		/// \endcode
 }
 
-/// \file gcounter.cpp
+#endif
+

@@ -93,7 +93,7 @@ public:
 	virtual void destroy() ;
 		///< Final override from GSmtp::StoredMessage.
 
-	virtual void fail( const std::string & reason ) ;
+	virtual void fail( const std::string & reason , int reason_code ) ;
 		///< Final override from GSmtp::StoredMessage.
 
 	virtual std::auto_ptr<std::istream> extractContentStream() ;
@@ -124,7 +124,7 @@ private:
 	void readAuthentication( std::istream & stream ) ;
 	void readClientIp( std::istream & stream ) ;
 	void readEnvelopeCore( bool ) ;
-	static void addReason( const G::Path & path , const std::string & reason ) ;
+	static void addReason( const G::Path & path , const std::string & , int ) ;
 	static G::Path badPath( G::Path ) ;
 	void unlock() ;
 

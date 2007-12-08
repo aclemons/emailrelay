@@ -122,14 +122,21 @@ void G::Arg::unprotect( StringArray & array )
 
 void G::Arg::dequote( StringArray & array )
 {
-	// remove quotes if first and last characters
+	// remove quotes if first and last characters (or equivalent)
 	char qq = '\"' ;
 	for( StringArray::iterator p = array.begin() ; p != array.end() ; ++p )
 	{
 		std::string & s = *p ;
-		if( s.length() > 1U && s.at(0U) == qq && s.at(s.length()-1U) == qq )
+		if( s.length() > 1U )
 		{
-			s = s.substr(1U,s.length()-2U) ;
+			std::string::size_type start = s.at(0U) == qq ? 0U : s.find("=\"") ;
+			if( start != std::string::npos && s.at(start) != qq ) ++start ;
+			std::string::size_type end = s.at(s.length()-1U) == qq ? (s.length()-1U) : std::string::npos ;
+			if( start != std::string::npos && end != std::string::npos && start != end )
+			{
+				s.erase( start , 1U ) ;
+				s.erase( end , 1U ) ;
+			}
 		}
 	}
 }

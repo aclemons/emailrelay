@@ -175,6 +175,16 @@
 		#define G_IGNORE (void)
 	#endif
 
+	/* Use smaller buffers and limits if building with the uClibc run-time library.
+	 * See glimits.h. This assumes that features.h has been included as a side-effect 
+	 * of including system headers above.
+	 */
+	#ifdef __UCLIBC__
+		#ifndef G_NOT_SMALL
+			#define G_SMALL
+		#endif
+	#endif
+
 	/* Autoconf, part 2
 	 */
 	#if defined( HAVE_CONFIG_H )

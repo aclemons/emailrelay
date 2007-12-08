@@ -21,11 +21,12 @@ EXTRA_DIST=\
 	gdatetime_win32.cpp \
 	gdirectory_win32.cpp \
 	gexecutable_win32.cpp \
+	gfile_win32.cpp \
 	gfs_win32.cpp \
+	ghostname_win32.cpp \
 	gidentity_win32.cpp \
 	glogoutput_win32.cpp \
 	gprocess_win32.cpp \
-	gfile_win32.cpp \
 	mingw.mak
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION)
 noinst_LIBRARIES = libglib.a
@@ -65,6 +66,8 @@ libglib_a_SOURCES = \
 	gfs_unix.cpp \
 	ggetopt.cpp \
 	ggetopt.h \
+	ghostname_unix.cpp \
+	ghostname.h \
 	gidentity.h \
 	gidentity_unix.cpp \
 	glimits.h \

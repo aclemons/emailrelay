@@ -193,8 +193,9 @@ public:
 		///< is valid.
 
 	std::string response( const std::string & mechanism , const std::string & challenge , 
-		bool & done , bool & error ) const ;
+		bool & done , bool & error , bool & sensitive ) const ;
 			///< Returns a response to the given challenge.
+			///< Returns various boolean flags by reference.
 
 	std::string preferred( const G::Strings & mechanisms ) const ;
 		///< Returns the name of the preferred mechanism taken from

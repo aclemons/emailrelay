@@ -161,11 +161,13 @@ private:
 		bool hidden ;
 		std::string value_description ;
 		unsigned int level ;
-		SwitchSpec(char c_,const std::string &name_,const std::string &description_,
-			bool v_,const std::string &vd_,unsigned int level_) :
+		SwitchSpec(char c_,const std::string & name_,const std::string & description_,
+			bool v_,const std::string & vd_,unsigned int level_) :
 				c(c_) , name(name_) , description(description_) , 
 				valued(v_) , hidden(description_.empty()||level_==0U) ,
 				value_description(vd_) , level(level_) {}
+		static bool eqc( char c , std::pair<std::string,SwitchSpec> p ) { return p.second.c == c ; }
+		static bool eqn( std::string n , std::pair<std::string,SwitchSpec> p ) { return p.second.name == n ; }
 	} ;
 	typedef std::map<std::string,SwitchSpec> SwitchSpecMap ;
 	typedef std::pair<bool,std::string> Value ;

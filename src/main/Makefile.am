@@ -75,10 +75,10 @@ emailrelay_SOURCES = \
 emailrelay_LDADD = \
 	$(top_builddir)/src/gpop/libgpop.a \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
-	$(top_builddir)/src/glib/libglib.a \
-	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a \
+	$(top_builddir)/src/gssl/libgssl.a \
+	$(top_builddir)/src/glib/libglib.a \
 	$(STATIC_START) $(SSL_LIBS) $(STATIC_END)
 
 emailrelay_poke_SOURCES = poke.c
@@ -90,7 +90,6 @@ emailrelay_passwd_LDADD = $(top_builddir)/src/glib/libglib.a
 emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
-	$(top_builddir)/src/glib/libglib.a \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(top_builddir)/src/glib/libglib.a

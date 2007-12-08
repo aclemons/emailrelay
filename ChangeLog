@@ -5,8 +5,12 @@ E-MailRelay Change Log
 ----------
 * Performance tuning (using KDevelop/valgrind/KCachegrind).
 * A warning is printed if logging is requested but both stderr and syslog are disabled.
+* SMTP client protocol emits a RSET after a rejected recipient as a workround for broken server protocols.
+* SMTP client protocol tries to continue if the server advertises AUTH but the client has no authentication secrets.
+* When a message cannot be forwarded the offending SMTP protocol response number, if any, is put in the envelope file.
 * Compile-time limits factored out into a new header, "glimits.h".
 * New example script for SMTP multicasting.
+* Compatibility with gcc v2.95 restored.
 
 1.6 -> 1.7
 ----------

@@ -172,6 +172,7 @@ public:
 		///< A signal-safe overload.
 
 private:
+	friend class ChildProcess ;
 	Process() ;
 	static int wait( const Id & child ) ;
 	static int wait( const Id & child , int error_return ) ;

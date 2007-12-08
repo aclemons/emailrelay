@@ -99,7 +99,7 @@ public:
 	{
 		bool allow_remote ;
 		unsigned int port ;
-		AddressList interfaces ; // up to three currently
+		AddressList interfaces ;
 		///<
 		std::string ident ;
 		bool anonymous ;
@@ -117,18 +117,16 @@ public:
 	Server( MessageStore & store , const Secrets & client_secrets , const Secrets & server_secrets ,
 		Config server_config , std::string smtp_server_address , unsigned int smtp_connection_timeout ,
 		GSmtp::Client::Config client_config ) ;
-			///< Constructor. Listens on the given port number
-			///< using INET_ANY if 'interfaces' is empty, or
-			///< on specific interfaces otherwise. Currently
-			///< only three interface addresses are supported.
+			///< Constructor. Listens on the given port number using 
+			///< INET_ANY if 'interfaces' is empty, or on specific 
+			///< interfaces otherwise.
 			///<
-			///< If the 'downstream-server-address' parameter is
-			///< given then all messages are forwarded immediately,
-			///< using the specified client-side timeout values
-			///< and client-side secrets.
+			///< If the 'smtp-server-address' parameter is given then all 
+			///< messages are forwarded immediately, using the specified 
+			///< client-side timeout values and client-side secrets.
 			///<
-			///< If the 'downstream-server-address' parameter is
-			///< empty then the timeout values are ignored.
+			///< If the 'smtp-server-address' parameter is empty then 
+			///< the timeout values are ignored.
 			///<
 			///< The references are kept.
 

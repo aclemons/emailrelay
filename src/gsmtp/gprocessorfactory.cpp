@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gprocessorfactory.h"
+#include "gexception.h"
 #include "gfactoryparser.h"
 #include "gnullprocessor.h"
 #include "gnetworkprocessor.h"
@@ -35,7 +36,6 @@ std::string GSmtp::ProcessorFactory::check( const std::string & address )
 GSmtp::Processor * GSmtp::ProcessorFactory::newProcessor( const std::string & address , unsigned int timeout )
 {
 	Pair p = FactoryParser::parse( address  , "spam" ) ;
-
 	if( p.first.empty() )
 	{
 		return new NullProcessor ;

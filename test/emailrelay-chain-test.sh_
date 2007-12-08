@@ -42,7 +42,8 @@
 # Once all the servers have been killed the separate log files are 
 # concatenated into the summary log file "/tmp/emailrelay-test.sh.out".
 #
-# If this test takes more a minute then it has failed.
+# If this test takes more a minute (without valgrind) then it 
+# has failed.
 #
 # usage: emailrelay-chain-test.sh [-v] [-f] [-d] [-n] [<exe-dir> [<content-file>]]
 #	-v    use valgrind

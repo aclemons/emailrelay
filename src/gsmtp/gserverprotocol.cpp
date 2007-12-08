@@ -201,6 +201,7 @@ void GSmtp::ServerProtocol::onTimeout()
 
 void GSmtp::ServerProtocol::onTimeoutException( std::exception & e )
 {
+	G_IGNORE e.what() ; // avoid 'unused' warning
 	G_DEBUG( "GSmtp::ServerProtocol::onTimeoutException: exception: " << e.what() ) ;
 	throw ;
 }

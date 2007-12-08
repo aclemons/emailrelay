@@ -19,6 +19,7 @@
 //
 
 #include "gdef.h"
+#include "glimits.h"
 #include "gprocess.h"
 #include "gexception.h"
 #include "gstr.h"

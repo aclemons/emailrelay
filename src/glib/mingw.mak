@@ -36,6 +36,7 @@ mk_sources=\
 	gfile_win32.cpp \
 	gfs_win32.cpp \
 	ggetopt.cpp \
+	ghostname_win32.cpp \
 	gidentity_win32.cpp \
 	glog.cpp \
 	glogoutput.cpp \

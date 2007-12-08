@@ -46,14 +46,14 @@ GSmtp::VerifierStatus GSmtp::VerifierStatus::parse( const std::string & line , s
 		VerifierStatus s ;
 		G::StringArray part ;
 		G::Str::splitIntoFields( line , part , sep ) ;
-		mbox = part.at(0U) ;
-		s.is_valid = part.at(1U) == "1" ;
-		s.is_local = part.at(2U) == "1" ;
-		s.temporary = part.at(3U) == "1" ;
-		s.full_name = part.at(4U) ;
-		s.address = part.at(5U) ;
-		s.reason = part.at(6U) ;
-		s.help = part.at(7U) ;
+		mbox = part[0U] ;
+		s.is_valid = part[1U] == "1" ;
+		s.is_local = part[2U] == "1" ;
+		s.temporary = part[3U] == "1" ;
+		s.full_name = part[4U] ;
+		s.address = part[5U] ;
+		s.reason = part[6U] ;
+		s.help = part[7U] ;
 		return s ;
 	}
 	catch( std::exception & e )

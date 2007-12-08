@@ -50,12 +50,13 @@ libgsmtp_a_LIBADD =
 am_libgsmtp_a_OBJECTS = gadminserver.$(OBJEXT) gbase64.$(OBJEXT) \
 	gclientprotocol.$(OBJEXT) gexecutableprocessor.$(OBJEXT) \
 	gexecutableverifier.$(OBJEXT) gfactoryparser.$(OBJEXT) \
-	gfilestore.$(OBJEXT) gmessagestore.$(OBJEXT) \
-	gmessagestore_unix.$(OBJEXT) gnetworkprocessor.$(OBJEXT) \
-	gnetworkverifier.$(OBJEXT) gnewfile.$(OBJEXT) \
-	gnewmessage.$(OBJEXT) gnullprocessor.$(OBJEXT) \
-	gprocessor.$(OBJEXT) gprocessorfactory.$(OBJEXT) \
-	gprotocolmessage.$(OBJEXT) gprotocolmessageforward.$(OBJEXT) \
+	gfilestore.$(OBJEXT) ginternalverifier.$(OBJEXT) \
+	gmessagestore.$(OBJEXT) gmessagestore_unix.$(OBJEXT) \
+	gnetworkprocessor.$(OBJEXT) gnetworkverifier.$(OBJEXT) \
+	gnewfile.$(OBJEXT) gnewmessage.$(OBJEXT) \
+	gnullprocessor.$(OBJEXT) gprocessor.$(OBJEXT) \
+	gprocessorfactory.$(OBJEXT) gprotocolmessage.$(OBJEXT) \
+	gprotocolmessageforward.$(OBJEXT) \
 	gprotocolmessagestore.$(OBJEXT) grequestclient.$(OBJEXT) \
 	gsasl_native.$(OBJEXT) gsecrets.$(OBJEXT) \
 	gserverprotocol.$(OBJEXT) gsmtpclient.$(OBJEXT) \
@@ -215,6 +216,8 @@ libgsmtp_a_SOURCES = \
 	gfactoryparser.h \
 	gfilestore.cpp \
 	gfilestore.h \
+	ginternalverifier.cpp \
+	ginternalverifier.h \
 	gmessagestore.cpp \
 	gmessagestore.h \
 	gmessagestore_unix.cpp \
@@ -229,9 +232,9 @@ libgsmtp_a_SOURCES = \
 	gnullprocessor.cpp \
 	gnullprocessor.h \
 	gprocessor.cpp \
-	gprocessor.h \
 	gprocessorfactory.cpp \
 	gprocessorfactory.h \
+	gprocessor.h \
 	gprotocolmessage.cpp \
 	gprotocolmessageforward.cpp \
 	gprotocolmessageforward.h \
@@ -260,9 +263,9 @@ libgsmtp_a_SOURCES = \
 	gstoredmessage.cpp \
 	gstoredmessage.h \
 	gverifier.cpp \
-	gverifier.h \
 	gverifierfactory.cpp \
-	gverifierfactory.h
+	gverifierfactory.h \
+	gverifier.h
 
 all: all-am
 
@@ -318,6 +321,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutableverifier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfactoryparser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilestore.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ginternalverifier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnetworkprocessor.Po@am__quote@

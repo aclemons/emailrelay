@@ -62,7 +62,7 @@ std::string Main::Configuration::str( const std::string & p , const std::string 
 		<< p << "smtp listening port: " << (doServing()&&doSmtp()?G::Str::fromUInt(port()):na()) << eol
 		<< p << "pop listening port: " << (doServing()&&doPop()?G::Str::fromUInt(popPort()):na()) << eol
 		<< p << "admin listening port: " << (doAdmin()?G::Str::fromUInt(adminPort()):na()) << eol
-		<< p << "next smtp server address: " << (serverAddress().length()?serverAddress():na()) << eol
+		<< p << "forward-to address: " << (serverAddress().length()?serverAddress():na()) << eol
 		<< p << "spool directory: " << spoolDir() << eol
 		<< p << "smtp client secrets file: " << na(clientSecretsFile()) << eol
 		<< p << "smtp server secrets file: " << na(serverSecretsFile()) << eol

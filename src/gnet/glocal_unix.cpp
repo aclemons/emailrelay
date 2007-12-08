@@ -23,33 +23,6 @@
 #include "gresolver.h"
 #include "gstr.h"
 #include "glog.h"
-#include <sys/utsname.h>
-#include <cstdlib> // getenv
-
-std::string GNet::Local::hostname()
-{
-	struct utsname info ;
-	int rc = ::uname( &info ) ;
-	if( rc == -1 ) 
-		throw Error("uname") ;
-
-	std::string name = std::string(info.nodename) ;
-	std::string::size_type pos = name.find('.') ;
-	if( pos != std::string::npos )
-		name = name.substr( 0U , pos ) ;
-
-	// pathalogically "uname -n" can be empty, so
-	// allow "export HOSTNAME=localhost" as a
-	// workround
-	//
-	if( name.empty() )
-	{
-		const char * p = std::getenv( "HOSTNAME" ) ;
-		name = G::Str::toPrintableAscii( std::string(p?p:"") , '_' ) ;
-	}
-
-	return name ;
-}
 
 GNet::Address GNet::Local::canonicalAddressImp()
 {

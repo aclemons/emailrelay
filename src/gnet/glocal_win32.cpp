@@ -23,21 +23,6 @@
 #include "glocal.h"
 #include "gresolver.h"
 #include "glog.h"
-#include <sstream>
-
-std::string GNet::Local::hostname()
-{
-	char buffer[G::limits::net_hostname] = { '\0' } ;
-	if( 0 != ::gethostname( buffer , sizeof(buffer)-1U ) )
-	{
-		int error = ::WSAGetLastError() ;
-		std::ostringstream ss ;
-		ss << "gethostname() (" << error << ")" ;
-		throw Error( ss.str() ) ;
-	}
-	buffer[sizeof(buffer)-1U] = '\0' ;
-	return std::string(buffer) ;
-}
 
 GNet::Address GNet::Local::canonicalAddressImp()
 {

@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "glocal.h"
+#include "ghostname.h"
 #include "gassert.h"
 #include "gdebug.h"
 #include <sstream>
@@ -27,6 +28,14 @@
 std::string GNet::Local::m_fqdn ;
 std::string GNet::Local::m_fqdn_override ;
 GNet::Address GNet::Local::m_canonical_address(1U) ;
+
+std::string GNet::Local::hostname()
+{
+	std::string name = G::hostname() ;
+	if( name.empty() )
+		throw Error("hostname") ;
+	return name ;
+}
 
 GNet::Address GNet::Local::canonicalAddress()
 {

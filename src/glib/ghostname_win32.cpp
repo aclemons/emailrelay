@@ -15,15 +15,27 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// gcounter.cpp
+// ghostname_win32.cpp
 //
 
 #include "gdef.h"
-#include "gcounter.h"
+#include "glimits.h"
+#include "ghostname.h"
+#include "gstr.h"
 
-void G::CounterImp::check( const char * , unsigned long )
+std::string G::hostname()
 {
-	// no-op -- could do something with G::Test
+	char buffer[G::limits::net_hostname] = { '\0' } ;
+	if( 0 == ::gethostname( buffer , sizeof(buffer)-1U ) )
+	{
+		buffer[sizeof(buffer)-1U] = '\0' ;
+		return std::string(buffer) ;
+	}
+	else
+	{
+		const char * p = std::getenv( "COMPUTERNAME" ) ;
+		return G::Str::toPrintableAscii( std::string(p?p:"") , '_' ) ;
+	}
 }
 
-/// \file gcounter.cpp
+/// \file ghostname_win32.cpp

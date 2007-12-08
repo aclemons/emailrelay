@@ -88,12 +88,11 @@ public:
 		///< be used in main() outside of the outermost try
 		///< block.
 
-	bool contains( const std::string & sw , 
-		size_type sw_args = 0U , bool case_sensitive = true ) const ;
-			///< Returns true if the command line
-			///< contains the given switch with enough
-			///< command line arguments left to satisfy 
-			///< the given number of switch arguments.
+	bool contains( const std::string & sw , size_type sw_args = 0U , bool case_sensitive = true ) const ;
+		///< Returns true if the command line
+		///< contains the given switch with enough
+		///< command line arguments left to satisfy 
+		///< the given number of switch arguments.
 
 	size_type index( const std::string & sw , size_type sw_args = 0U ) const ;
 		///< Returns the index of the given switch.

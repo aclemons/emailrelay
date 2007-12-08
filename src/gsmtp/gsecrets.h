@@ -45,7 +45,7 @@ class GSmtp::Secrets : public GSmtp::SaslClient::Secrets , public GSmtp::SaslSer
 public:
 	G_EXCEPTION( OpenError , "cannot read secrets file" ) ;
 
-	explicit Secrets( const std::string & storage_path , 
+	Secrets( const std::string & storage_path , 
 		const std::string & debug_name ,
 		const std::string & server_type = std::string() ) ;
 			///< Constructor. In principle the repository 'storage-path'
@@ -61,6 +61,9 @@ public:
 			///<
 			///< Throws on error, although an empty path is not
 			///< considered an error: see valid().
+
+	Secrets() ;
+		///< Default constructor for an in-valid(), empty-path object.
 
 	virtual ~Secrets() ;
 		///< Destructor.

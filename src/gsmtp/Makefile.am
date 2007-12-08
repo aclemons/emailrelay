@@ -39,6 +39,8 @@ libgsmtp_a_SOURCES = \
 	gfactoryparser.h \
 	gfilestore.cpp \
 	gfilestore.h \
+	ginternalverifier.cpp \
+	ginternalverifier.h \
 	gmessagestore.cpp \
 	gmessagestore.h \
 	gmessagestore_unix.cpp \
@@ -53,9 +55,9 @@ libgsmtp_a_SOURCES = \
 	gnullprocessor.cpp \
 	gnullprocessor.h \
 	gprocessor.cpp \
-	gprocessor.h \
 	gprocessorfactory.cpp \
 	gprocessorfactory.h \
+	gprocessor.h \
 	gprotocolmessage.cpp \
 	gprotocolmessageforward.cpp \
 	gprotocolmessageforward.h \
@@ -84,7 +86,7 @@ libgsmtp_a_SOURCES = \
 	gstoredmessage.cpp \
 	gstoredmessage.h \
 	gverifier.cpp \
-	gverifier.h \
 	gverifierfactory.cpp \
-	gverifierfactory.h
+	gverifierfactory.h \
+	gverifier.h
 

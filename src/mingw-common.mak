@@ -51,22 +51,22 @@
 ###
 ## Edit this section...
 ##
-## "mk_ssl" is set to "opensll" for tls/ssl support, or "none"
+## "mk_ssl" is set to "openssl" for tls/ssl support, or "none"
 mk_ssl=none
 ##
-## "mk_openssl" points to the openssl directory (tls/ssl only)
+## "mk_openssl" points to the openssl directory (for openssl build)
 mk_openssl=c:/openssl-0.9.8x
 ##
-## "mk_gui" is set to "gui" to enable the GUI build
+## "mk_gui" is set to "gui" to enable the GUI build, or "none"
 mk_gui=none
 ##
-## "mk_qt" points to the Qt installation directory (gui only)
+## "mk_qt" points to the Qt installation directory (for gui build)
 mk_qt=c:/qt
 ##
-## "mk_zlib" points to the zlib directory (gui only)
+## "mk_zlib" points to the zlib directory (for gui build)
 mk_zlib=$(mk_qt)/src/3rdparty/zlib
 ##
-## "mk_mingw" points to a directory containing the mingw runtime dll (gui only)
+## "mk_mingw" points to a directory containing the mingw runtime dll (for gui build)
 mk_mingw=$(mk_qt)/bin
 ##
 ###

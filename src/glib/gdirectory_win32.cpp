@@ -282,7 +282,7 @@ std::string G::DirectoryIteratorImp::modificationTimeString() const
 	if( m_special )
 	{
 		// ??
-		G_ASSERT( !"modificationTimeString() not fully implemented for \"..\"" ) ;
+		G_ASSERT( !"modificationTimeString() not fully implemented for .." ) ;
 		return std::string() ;
 	}
 

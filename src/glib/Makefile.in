@@ -51,12 +51,12 @@ am_libglib_a_OBJECTS = md5.$(OBJEXT) garg.$(OBJEXT) \
 	gdirectory_unix.$(OBJEXT) gexception.$(OBJEXT) \
 	gexecutable_unix.$(OBJEXT) gexecutable.$(OBJEXT) \
 	gfile.$(OBJEXT) gfile_unix.$(OBJEXT) gfs_unix.$(OBJEXT) \
-	ggetopt.$(OBJEXT) gidentity_unix.$(OBJEXT) glog.$(OBJEXT) \
-	glogoutput.$(OBJEXT) glogoutput_unix.$(OBJEXT) \
-	gmd5_native.$(OBJEXT) gpath.$(OBJEXT) gpidfile.$(OBJEXT) \
-	gprocess_unix.$(OBJEXT) groot.$(OBJEXT) gslot.$(OBJEXT) \
-	gstr.$(OBJEXT) gtest.$(OBJEXT) gtime.$(OBJEXT) \
-	gxtext.$(OBJEXT)
+	ggetopt.$(OBJEXT) ghostname_unix.$(OBJEXT) \
+	gidentity_unix.$(OBJEXT) glog.$(OBJEXT) glogoutput.$(OBJEXT) \
+	glogoutput_unix.$(OBJEXT) gmd5_native.$(OBJEXT) \
+	gpath.$(OBJEXT) gpidfile.$(OBJEXT) gprocess_unix.$(OBJEXT) \
+	groot.$(OBJEXT) gslot.$(OBJEXT) gstr.$(OBJEXT) gtest.$(OBJEXT) \
+	gtime.$(OBJEXT) gxtext.$(OBJEXT)
 libglib_a_OBJECTS = $(am_libglib_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -197,11 +197,12 @@ EXTRA_DIST = \
 	gdatetime_win32.cpp \
 	gdirectory_win32.cpp \
 	gexecutable_win32.cpp \
+	gfile_win32.cpp \
 	gfs_win32.cpp \
+	ghostname_win32.cpp \
 	gidentity_win32.cpp \
 	glogoutput_win32.cpp \
 	gprocess_win32.cpp \
-	gfile_win32.cpp \
 	mingw.mak
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION)
@@ -242,6 +243,8 @@ libglib_a_SOURCES = \
 	gfs_unix.cpp \
 	ggetopt.cpp \
 	ggetopt.h \
+	ghostname_unix.cpp \
+	ghostname.h \
 	gidentity.h \
 	gidentity_unix.cpp \
 	glimits.h \
@@ -342,6 +345,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfile_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfs_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ggetopt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ghostname_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gidentity_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glogoutput.Po@am__quote@

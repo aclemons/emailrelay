@@ -21,7 +21,9 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gfactoryparser.h"
+#include "gexception.h"
 #include "gverifierfactory.h"
+#include "ginternalverifier.h"
 #include "gexecutableverifier.h"
 #include "gnetworkverifier.h"
 
@@ -33,10 +35,9 @@ std::string GSmtp::VerifierFactory::check( const std::string & address )
 GSmtp::Verifier * GSmtp::VerifierFactory::newVerifier( const std::string & address , unsigned int timeout )
 {
 	Pair p = FactoryParser::parse( address , "net" ) ;
-
 	if( p.first.empty() )
 	{
-		return new ExecutableVerifier( G::Executable() ) ;
+		return new InternalVerifier ;
 	}
 	else if( p.first == "net" )
 	{

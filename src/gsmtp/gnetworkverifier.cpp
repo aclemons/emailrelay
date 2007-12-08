@@ -76,30 +76,30 @@ void GSmtp::NetworkVerifier::clientEvent( std::string s1 , std::string s2 )
 		//
 		G::StringArray part ;
 		G::Str::splitIntoFields( s2 , part , "|" ) ;
-		if( part.size() >= 1U && part.at(0U) == "100" )
+		if( part.size() >= 1U && part[0U] == "100" )
 		{
 			status.is_valid = false ;
 			status.reason = "abort request" ; // TODO -- make this drop the connection
 			status.temporary = false ;
 		}
-		else if( part.size() >= 2U && part.at(0U) == "1" )
+		else if( part.size() >= 2U && part[0U] == "1" )
 		{
 			status.is_valid = true ;
 			status.is_local = false ;
-			status.address = part.at(1U) ;
+			status.address = part[1U] ;
 		}
-		else if( part.size() >= 3U && part.at(0U) == "0" )
+		else if( part.size() >= 3U && part[0U] == "0" )
 		{
 			status.is_valid = true ;
 			status.is_local = true ;
-			status.address = part.at(1U) ;
-			status.full_name = part.at(2U) ;
+			status.address = part[1U] ;
+			status.full_name = part[2U] ;
 		}
-		else if( part.size() >= 2U && ( part.at(0U) == "2" || part.at(0U) == "3" ) )
+		else if( part.size() >= 2U && ( part[0U] == "2" || part[0U] == "3" ) )
 		{
 			status.is_valid = false ;
-			status.reason = part.at(1U) ;
-			status.temporary = part.at(0U) == "3" ;
+			status.reason = part[1U] ;
+			status.temporary = part[0U] == "3" ;
 		}
 		else
 		{
