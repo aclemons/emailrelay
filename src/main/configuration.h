@@ -47,11 +47,6 @@ public:
 	explicit Configuration( const CommandLine & cl ) ;
 		///< Constructor. The reference is kept.
 
-	std::string str( const std::string & line_prefix = std::string() , 
-		const std::string & eol = std::string("\n") ) const ;
-			///< Reports the configuration in a multi-line
-			///< string.
-
 	unsigned int port() const ;
 		///< Returns the main listening port number.
 
@@ -216,12 +211,6 @@ public:
 
 private:
 	const CommandLine & m_cl ;
-
-private:
-	static std::string yn( bool ) ;
-	static std::string any( const std::string & ) ;
-	std::string na() const ;
-	std::string na( const std::string & ) const ;
 } ;
 
 #endif

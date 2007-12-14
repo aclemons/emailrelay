@@ -26,6 +26,7 @@
 #include "gprotocolmessage.h"
 #include "gaddress.h"
 #include "gverifier.h"
+#include "gverifierstatus.h"
 #include "gsasl.h"
 #include "gsecrets.h"
 #include "gstatemachine.h"
@@ -204,7 +205,7 @@ private:
 	void doNoRecipients( const std::string & , bool & ) ;
 	void doStartTls( const std::string & , bool & ) ;
 	void doSecure( const std::string & , bool & ) ;
-	void verifyDone( std::string , Verifier::Status status ) ;
+	void verifyDone( std::string , VerifierStatus status ) ;
 	void sendBadFrom( std::string ) ;
 	void sendChallenge( const std::string & ) ;
 	void sendBadTo( const std::string & , bool ) ;

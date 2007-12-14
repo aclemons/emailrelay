@@ -265,7 +265,7 @@ void GSmtp::ServerProtocol::verify( const std::string & to , const std::string &
 	m_verifier.verify( to , from , m_peer_address , mechanism , id ) ;
 }
 
-void GSmtp::ServerProtocol::verifyDone( std::string mbox , Verifier::Status status )
+void GSmtp::ServerProtocol::verifyDone( std::string mbox , VerifierStatus status )
 {
 	State new_state = m_fsm.apply( *this , eVrfyReply , status.str(mbox) ) ;
 	if( new_state == s_Any )
@@ -275,7 +275,7 @@ void GSmtp::ServerProtocol::verifyDone( std::string mbox , Verifier::Status stat
 void GSmtp::ServerProtocol::doVrfyReply( const std::string & line , bool & )
 {
 	std::string mbox ;
-	Verifier::Status rc = Verifier::Status::parse( line , mbox ) ;
+	VerifierStatus rc = VerifierStatus::parse( line , mbox ) ;
 
 	if( rc.is_valid && rc.is_local )
 		sendVerified( rc.full_name ) ; // 250
@@ -468,7 +468,7 @@ void GSmtp::ServerProtocol::doRcpt( const std::string & line , bool & predicate 
 void GSmtp::ServerProtocol::doVrfyToReply( const std::string & line , bool & predicate )
 {
 	std::string to ;
-	Verifier::Status status = Verifier::Status::parse( line , to ) ;
+	VerifierStatus status = VerifierStatus::parse( line , to ) ;
 
 	bool ok = m_pmessage.addTo( to , status ) ;
 	if( ok )

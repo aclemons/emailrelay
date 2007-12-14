@@ -131,7 +131,8 @@ int main( int argc , char * argv [] )
 			if( is_installed )
 			{
 				// read base directories from the state file, typically written by "make install"
-				std::ifstream dir_state( G::Path(G::Path(args.v(0)).dirname(),"emailrelay-gui.state").str().c_str() ) ;
+				G::Path state_path = G::Path( G::Path(args.v(0)).dirname() , "emailrelay-gui.state" ) ;
+				std::ifstream dir_state( state_path.str().c_str() ) ;
 				dir.read( dir_state ) ;
 			}
 

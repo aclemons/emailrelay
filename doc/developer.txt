@@ -166,6 +166,14 @@ Directory structure
 
   Test scripts and utilities.
 
+Source file names
+-----------------
+Generally the source file names are follow the name of the principal class, 
+(often including the namespace) but all in lowercase. Any underscores in the 
+name indicate a choice of implementation, so class "G::Foo" might have two
+implementations in the files "gfoo_main.cpp" and "gfoo_alternate.cpp".
+The choice is normally made by the makefile.
+
 Portability
 -----------
 The E-MailRelay code is written in ISO C++, although avoiding less-widely

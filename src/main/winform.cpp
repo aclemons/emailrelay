@@ -17,7 +17,6 @@
 //
 // winform.cpp
 //
-//
 
 #include "gdef.h"
 #include "gssl.h"
@@ -57,7 +56,7 @@ std::string Main::WinForm::text() const
 		<< GSsl::Library::credit("",crlf,crlf)
 		<< Main::Legal::warranty("",crlf) << crlf 
 		<< "Configuration..." << crlf 
-		<< m_cfg.str("* ",crlf) 
+		<< str(m_cfg,"* ",crlf) 
 		;
 
 	if( GSsl::Library::instance() != NULL )
@@ -91,6 +90,59 @@ void Main::WinForm::onCommand( unsigned int id )
 	{
 		m_app.formOk() ;
 	}
+}
+
+std::string Main::WinForm::yn( bool b )
+{
+	return b ? std::string("yes") : std::string("no") ;
+}
+
+std::string Main::WinForm::na() const
+{
+	return "<none>" ;
+}
+
+std::string Main::WinForm::na( const std::string & s ) const
+{
+	return s.empty() ? na() : s ;
+}
+
+std::string Main::WinForm::any( const std::string & s )
+{
+	return s.empty() ? std::string("<any>") : s ;
+}
+
+std::string Main::WinForm::str( const Configuration & c , const std::string & p , const std::string & eol )
+{
+	std::ostringstream ss ;
+	ss
+		<< p << "allow remote clients? " << yn(c.allowRemoteClients()) << eol
+		<< p << "listening interface: " << (c.doServing()&&c.doSmtp()?any(c.firstListeningInterface()):na()) << eol
+		<< p << "smtp listening port: " << (c.doServing()&&c.doSmtp()?G::Str::fromUInt(c.port()):na()) << eol
+		<< p << "pop listening port: " << (c.doServing()&&c.doPop()?G::Str::fromUInt(c.popPort()):na()) << eol
+		<< p << "admin listening port: " << (c.doAdmin()?G::Str::fromUInt(c.adminPort()):na()) << eol
+		<< p << "forward-to address: " << (c.serverAddress().length()?c.serverAddress():na()) << eol
+		<< p << "spool directory: " << c.spoolDir() << eol
+		<< p << "smtp client secrets file: " << na(c.clientSecretsFile()) << eol
+		<< p << "smtp server secrets file: " << na(c.serverSecretsFile()) << eol
+		<< p << "pop server secrets file: " << na(c.popSecretsFile()) << eol
+		<< p << "pid file: " << (c.usePidFile()?c.pidFile():na()) << eol
+		<< p << "immediate forwarding? " << yn(c.immediate()) << eol
+		<< p << "mail processor: " << (c.useFilter()?c.filter():na()) << eol
+		<< p << "address verifier: " << na(c.verifier()) << eol
+		<< p << "run as daemon? " << yn(c.daemon()) << eol
+		<< p << "verbose logging? " << yn(c.verbose()) << eol
+		<< p << "debug logging? " << yn(c.debug()) << eol
+		<< p << "log to stderr/syslog? " << yn(c.log()) << eol
+		<< p << "use syslog? " << yn(c.useSyslog()) << eol
+		<< p << "close stderr? " << yn(c.closeStderr()) << eol
+		<< p << "connect timeout: " << c.connectionTimeout() << "s" << eol
+		<< p << "response timeout: " << c.responseTimeout() << "s" << eol
+		<< p << "prompt timeout: " << c.promptTimeout() << "s" << eol
+		<< p << "domain override: " << na(c.fqdn()) << eol
+		<< p << "polling period: " << (c.pollingTimeout()?(G::Str::fromUInt(c.pollingTimeout())+"s"):na()) << eol
+		;
+	return ss.str() ;
 }
 
 /// \file winform.cpp

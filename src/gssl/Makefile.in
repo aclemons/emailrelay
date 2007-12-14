@@ -47,7 +47,10 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libgssl_a_AR = $(AR) $(ARFLAGS)
 libgssl_a_LIBADD =
-am_libgssl_a_OBJECTS = gssl.$(OBJEXT)
+am__libgssl_a_SOURCES_DIST = gssl_none.cpp gssl_openssl.cpp gssl.h
+@OPENSSL_FALSE@am__objects_1 = gssl_none.$(OBJEXT)
+@OPENSSL_TRUE@am__objects_1 = gssl_openssl.$(OBJEXT)
+am_libgssl_a_OBJECTS = $(am__objects_1)
 libgssl_a_OBJECTS = $(am_libgssl_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -62,7 +65,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libgssl_a_SOURCES)
-DIST_SOURCES = $(libgssl_a_SOURCES)
+DIST_SOURCES = $(am__libgssl_a_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -99,7 +102,6 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-IP = @IP@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -123,7 +125,6 @@ QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SSL = @SSL@
 SSL_LIBS = @SSL_LIBS@
 STATIC_END = @STATIC_END@
 STATIC_START = @STATIC_START@
@@ -178,15 +179,18 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@OPENSSL_FALSE@OPENSSL_EXTRA_DIST = gssl_openssl.cpp
+@OPENSSL_TRUE@OPENSSL_EXTRA_DIST = gssl_none.cpp
+@OPENSSL_FALSE@OPENSSL_SOURCES = gssl_none.cpp
+@OPENSSL_TRUE@OPENSSL_SOURCES = gssl_openssl.cpp
 EXTRA_DIST = \
-    gssl_none.cpp \
-	gssl_openssl.cpp \
+    $(OPENSSL_EXTRA_DIST) \
     mingw.mak
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib 
 noinst_LIBRARIES = libgssl.a
 libgssl_a_SOURCES = \
-	gssl.cpp \
+	$(OPENSSL_SOURCES) \
 	gssl.h
 
 all: all-am
@@ -236,7 +240,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_none.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_openssl.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

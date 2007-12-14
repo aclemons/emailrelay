@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gprocess.h"
+#include "gnewprocess.h"
 #include "gexecutableprocessor.h"
 #include "gstr.h"
 #include "groot.h"
@@ -91,7 +92,8 @@ int GSmtp::ExecutableProcessor::preprocessCore( const G::Path & path )
 
 	// run the program
 	std::string raw_output ;
-	int exit_code = G::Process::spawn( G::Root::nobody() , m_exe.exe() , args , &raw_output , 127 , execErrorHandler ) ;
+	int exit_code = G::NewProcess::spawn( G::Root::nobody() , m_exe.exe() , args , 
+		&raw_output , 127 , execErrorHandler ) ;
 
 	// search the output for diagnostics
 	m_text = parseOutput( raw_output ) ;

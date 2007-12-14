@@ -24,112 +24,53 @@
 #include "commandline.h"
 #include "gmessagestore.h"
 #include "gpopsecrets.h"
-#include "gstr.h"
+#include "gstrings.h"
 #include "gdebug.h"
-#include <sstream>
 
 Main::Configuration::Configuration( const CommandLine & cl ) :
 	m_cl(cl)
 {
 }
 
-std::string Main::Configuration::yn( bool b )
-{
-	return b ? std::string("yes") : std::string("no") ;
-}
-
-std::string Main::Configuration::na() const
-{
-	return "<none>" ;
-}
-
-std::string Main::Configuration::na( const std::string & s ) const
-{
-	return s.empty() ? na() : s ;
-}
-
-std::string Main::Configuration::any( const std::string & s )
-{
-	return s.empty() ? std::string("<any>") : s ;
-}
-
-std::string Main::Configuration::str( const std::string & p , const std::string & eol ) const
-{
-	std::ostringstream ss ;
-	ss
-		<< p << "allow remote clients? " << yn(allowRemoteClients()) << eol
-		<< p << "listening interface: " << (doServing()&&doSmtp()?any(firstListeningInterface()):na()) << eol
-		<< p << "smtp listening port: " << (doServing()&&doSmtp()?G::Str::fromUInt(port()):na()) << eol
-		<< p << "pop listening port: " << (doServing()&&doPop()?G::Str::fromUInt(popPort()):na()) << eol
-		<< p << "admin listening port: " << (doAdmin()?G::Str::fromUInt(adminPort()):na()) << eol
-		<< p << "forward-to address: " << (serverAddress().length()?serverAddress():na()) << eol
-		<< p << "spool directory: " << spoolDir() << eol
-		<< p << "smtp client secrets file: " << na(clientSecretsFile()) << eol
-		<< p << "smtp server secrets file: " << na(serverSecretsFile()) << eol
-		<< p << "pop server secrets file: " << na(popSecretsFile()) << eol
-		<< p << "pid file: " << (usePidFile()?pidFile():na()) << eol
-		<< p << "immediate forwarding? " << yn(immediate()) << eol
-		<< p << "mail processor: " << (useFilter()?filter():na()) << eol
-		<< p << "address verifier: " << na(verifier()) << eol
-		<< p << "run as daemon? " << yn(daemon()) << eol
-		<< p << "verbose logging? " << yn(verbose()) << eol
-		<< p << "debug logging? " << yn(debug()) << eol
-		<< p << "log to stderr/syslog? " << yn(log()) << eol
-		<< p << "use syslog? " << yn(useSyslog()) << eol
-		<< p << "close stderr? " << yn(closeStderr()) << eol
-		<< p << "connect timeout: " << connectionTimeout() << "s" << eol
-		<< p << "response timeout: " << responseTimeout() << "s" << eol
-		<< p << "prompt timeout: " << promptTimeout() << "s" << eol
-		<< p << "domain override: " << na(fqdn()) << eol
-		<< p << "polling period: " << (pollingTimeout()?(G::Str::fromUInt(pollingTimeout())+"s"):na()) << eol
-		;
-	return ss.str() ;
-}
-
 bool Main::Configuration::log() const
 {
 	return 
-		m_cl.contains("log") || 
-		m_cl.contains("as-client") || 
-		m_cl.contains("as-proxy") || 
-		m_cl.contains("as-server") ;
+		m_cl.contains( "log" ) || 
+		m_cl.contains( "as-client" ) || 
+		m_cl.contains( "as-proxy" ) || 
+		m_cl.contains( "as-server" ) ;
 }
 
 bool Main::Configuration::verbose() const
 {
-	return m_cl.contains("verbose") ;
+	return m_cl.contains( "verbose" ) ;
 }
 
 bool Main::Configuration::debug() const
 {
-	return m_cl.contains("debug") ;
+	return m_cl.contains( "debug" ) ;
 }
 
 bool Main::Configuration::useSyslog() const
 {
 	bool basic = !m_cl.contains("no-syslog") && !m_cl.contains("as-client") ;
-	bool override = m_cl.contains("syslog") ;
+	bool override = m_cl.contains( "syslog" ) ;
 	return override || basic ;
 }
 
 bool Main::Configuration::logTimestamp() const
 {
-	return m_cl.contains("log-time") ;
+	return m_cl.contains( "log-time" ) ;
 }
 
 unsigned int Main::Configuration::port() const
 {
-	return m_cl.contains("port") ?
-		G::Str::toUInt(m_cl.value("port")) : 25U ;
+	return m_cl.value( "port" , 25U ) ;
 }
 
 G::Strings Main::Configuration::listeningInterfaces() const
 {
-	G::Strings result ;
-	if( m_cl.contains("interface") )
-	{
-		G::Str::splitIntoFields( m_cl.value("interface") , result , ",/" ) ;
-	}
+	G::Strings result = m_cl.value( "interface" , ",/" ) ;
 	if( result.empty() )
 	{
 		result.push_back( std::string() ) ;
@@ -151,20 +92,7 @@ std::string Main::Configuration::clientInterface() const
 
 unsigned int Main::Configuration::adminPort() const
 {
-	std::string s = m_cl.contains("admin") ? m_cl.value("admin") : std::string() ;
-	if( s.find("tcp://") == 0U )
-	{
-		s = 6U >= s.length() ? std::string() : s.substr(6U) ;
-
-		std::string::size_type p = s.find("/") ;
-		if( p != std::string::npos ) 
-			s = s.substr(0U,p) ;
-
-		p = s.find_last_of( ':' ) ;
-		if( p != std::string::npos )
-			s = (p+1U) >= s.length() ? std::string() : s.substr(p+1U) ;
-	}
-	return s.empty() ? 0U : G::Str::toUInt(s) ;
+	return m_cl.value( "admin" , 0U ) ;
 }
 
 bool Main::Configuration::closeStderr() const
@@ -221,63 +149,62 @@ bool Main::Configuration::doPolling() const
 
 unsigned int Main::Configuration::pollingTimeout() const
 {
-	return m_cl.contains("poll") ? G::Str::toUInt(m_cl.value("poll")) : 0U ;
+	return m_cl.value( "poll" , 0U ) ;
 }
 
 unsigned int Main::Configuration::promptTimeout() const
 {
-	return m_cl.contains("prompt-timeout") ? G::Str::toUInt(m_cl.value("prompt-timeout")) : 20U ;
+	return m_cl.value( "prompt-timeout" , 20U ) ;
 }
 
 bool Main::Configuration::doSmtp() const
 {
-	return !m_cl.contains("no-smtp") ;
+	return ! m_cl.contains( "no-smtp" ) ;
 }
 
 bool Main::Configuration::doPop() const
 {
-	return m_cl.contains("pop") ;
+	return m_cl.contains( "pop" ) ;
 }
 
 bool Main::Configuration::popByName() const
 {
-	return m_cl.contains("pop-by-name") ;
+	return m_cl.contains( "pop-by-name" ) ;
 }
 
 bool Main::Configuration::popNoDelete() const
 {
-	return m_cl.contains("pop-no-delete") ;
+	return m_cl.contains( "pop-no-delete" ) ;
 }
 
 unsigned int Main::Configuration::popPort() const
 {
-	return m_cl.contains("pop-port") ?
-		G::Str::toUInt(m_cl.value("pop-port")) : 110U ;
+	return m_cl.value( "pop-port" , 110U ) ;
 }
 
 bool Main::Configuration::allowRemoteClients() const
 {
-	return m_cl.contains("remote-clients") ;
+	return m_cl.contains( "remote-clients" ) ;
 }
 
 bool Main::Configuration::doAdmin() const
 {
-	return m_cl.contains("admin") ;
+	return m_cl.contains( "admin" ) ;
 }
 
 bool Main::Configuration::usePidFile() const
 {
-	return m_cl.contains("pid-file") ;
+	return m_cl.contains( "pid-file" ) ;
 }
 
 std::string Main::Configuration::pidFile() const
 {
-	return m_cl.value("pid-file") ;
+	return m_cl.value( "pid-file" ) ;
 }
 
 bool Main::Configuration::useFilter() const
 {
-	return m_cl.contains("filter") ;
+	return m_cl.contains( "filter" ) ;
 }
 
 std::string Main::Configuration::filter() const
@@ -292,18 +219,13 @@ std::string Main::Configuration::clientFilter() const
 
 unsigned int Main::Configuration::icon() const
 {
-	unsigned int n = 0U ;
-	if( m_cl.contains("icon") )
-	{
-		n = G::Str::toUInt(m_cl.value("icon")) ;
-		n %= 4U ;
-	}
-	return n ;
+	unsigned int n = m_cl.value( "icon" , 0U ) ;
+	return n % 4U ;
 }
 
 bool Main::Configuration::hidden() const
 {
-	return m_cl.contains("hidden") ;
+	return m_cl.contains( "hidden" ) ;
 }
 
 std::string Main::Configuration::clientSecretsFile() const
@@ -313,7 +235,7 @@ std::string Main::Configuration::clientSecretsFile() const
 
 bool Main::Configuration::clientTls() const
 {
-	return m_cl.contains("client-tls") ;
+	return m_cl.contains( "client-tls" ) ;
 }
 
 std::string Main::Configuration::serverTlsFile() const
@@ -333,16 +255,12 @@ std::string Main::Configuration::serverSecretsFile() const
 
 unsigned int Main::Configuration::responseTimeout() const
 {
-	const unsigned int default_timeout = 30U * 60U ;
-	return m_cl.contains("response-timeout") ?
-		G::Str::toUInt(m_cl.value("response-timeout")) : default_timeout ;
+	return m_cl.value( "response-timeout" , 30U * 60U ) ;
 }
 
 unsigned int Main::Configuration::connectionTimeout() const
 {
-	const unsigned int default_timeout = 40U ;
-	return m_cl.contains("connection-timeout") ?
-		G::Str::toUInt(m_cl.value("connection-timeout")) : default_timeout ;
+	return m_cl.value( "connection-timeout" , 40U ) ;
 }
 
 std::string Main::Configuration::fqdn() const
@@ -362,7 +280,7 @@ std::string Main::Configuration::verifier() const
 
 bool Main::Configuration::withTerminate() const
 {
-	return m_cl.contains("admin-terminate") ;
+	return m_cl.contains( "admin-terminate" ) ;
 }
 
 std::string Main::Configuration::scannerAddress() const
@@ -382,14 +300,12 @@ unsigned int Main::Configuration::scannerResponseTimeout() const
 
 bool Main::Configuration::anonymous() const
 {
-	return m_cl.contains("anonymous") ;
+	return m_cl.contains( "anonymous" ) ;
 }
 
 unsigned int Main::Configuration::filterTimeout() const
 {
-	const unsigned int default_timeout = 5U * 60U ;
-	return m_cl.contains("filter-timeout") ?
-		G::Str::toUInt(m_cl.value("filter-timeout")) : default_timeout ;
+	return m_cl.value( "filter-timeout" , 5U * 60U ) ;
 }
 
 /// \file configuration.cpp

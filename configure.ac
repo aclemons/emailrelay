@@ -17,8 +17,9 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT(src/gsmtp/gsmtp.h)
-AM_INIT_AUTOMAKE(emailrelay,1.8)
+AC_INIT([E-MailRelay],[1.8],,[emailrelay])
+AC_CONFIG_SRCDIR(src/gsmtp/gsmtp.h)
+AM_INIT_AUTOMAKE([no-define])
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -90,6 +91,42 @@ AC_ARG_ENABLE(gui,AC_HELP_STRING([--enable-gui],[enable configuration gui (requi
 ENABLE_GUI
 
 dnl ===
+dnl "--enable-pop"
+dnl
+AC_ARG_ENABLE(pop,AC_HELP_STRING([--enable-pop],[enable pop3 protocol (default yes)]))
+ENABLE_POP
+
+dnl ===
+dnl "--enable-exec"
+dnl
+AC_ARG_ENABLE(exec,AC_HELP_STRING([--enable-exec],[enable running of external programs (default yes)]))
+ENABLE_EXEC
+
+dnl ===
+dnl "--enable-admin"
+dnl
+AC_ARG_ENABLE(exec,AC_HELP_STRING([--enable-admin],[enable admin interface (default yes)]))
+ENABLE_ADMIN
+
+dnl ===
+dnl "--enable-auth"
+dnl
+AC_ARG_ENABLE(exec,AC_HELP_STRING([--enable-auth],[enable authentication (disable-auth requires disable-pop) (default yes)]))
+ENABLE_AUTH
+
+dnl ===
+dnl "--enable-simple-config"
+dnl
+AC_ARG_ENABLE(exec,AC_HELP_STRING([--enable-simple-config],[enable simplfied confuration code (experts only) (default no)]))
+ENABLE_SIMPLE_CONFIG
+
+dnl ===
+dnl "--enable-fragments"
+dnl
+AC_ARG_ENABLE(exec,AC_HELP_STRING([--enable-fragments],[enable fragmented object files for smaller binaries (default no)]))
+ENABLE_FRAGMENTS
+
+dnl ===
 dnl "--with-workshop"
 dnl
 AC_ARG_WITH(workshop,AC_HELP_STRING([--with-workshop],[use Sun WorkShop 'CC -xar' as the 'ar' tool (default disabled)]))
@@ -147,5 +184,5 @@ ENABLE_FHS
 dnl ===
 dnl generate files...
 dnl
-AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile lib/sunpro5/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile lib/sunpro5/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile)
 

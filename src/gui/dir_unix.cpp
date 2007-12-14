@@ -22,7 +22,7 @@
 #include "dir.h"
 #include "gpath.h"
 #include "gdirectory.h"
-#include "gprocess.h"
+#include "gnewprocess.h"
 #include "gfile.h"
 #include <cstdlib> //getenv
 #include <stdexcept>
@@ -54,7 +54,7 @@ namespace
 		args.push_back( "--userpath" ) ;
 		args.push_back( key ) ;
 
-		G::Process::ChildProcess child = G::Process::spawn( exe , args ) ;
+		G::NewProcess::ChildProcess child = G::NewProcess::spawn( exe , args ) ;
 		child.wait() ;
 		std::string s = child.read() ;
 		return s.empty() ? default_ : G::Path(s) ;

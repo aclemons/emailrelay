@@ -274,7 +274,7 @@ like this:
 
 If you need to serve up messages to more than one POP client consider using the
 "--pop-by-name" option with a "--filter" script that moves messages into the
-appropriate subdirectory. The "emailrelay-filter-copy" program is designed
+appropriate sub-directory. The "emailrelay-filter-copy" program is designed
 to be used in this way: when a message is received over SMTP it copies it
 into all available sub-directories for collection by multiple POP clients.
 
@@ -325,7 +325,7 @@ they have not been retried too many times already.
 If you are using E-MailRelay to forward outgoing e-mails then you can also get
 failed e-mails to bounce back to your in-tray by running the
 "emailrelay-notify.sh" script periodically as "root", although this does require
-"procmail" to be available to act as a delivery agent.
+"procmail" to act as a delivery agent.
 
 Usage patterns
 --------------
@@ -352,10 +352,9 @@ to expire as each new message is received by using a special exit value of 103.
 When using E-MailRelay as a POP server the "--pop-by-name" feature can be used
 to serve up different spooled messages according to the username that the client
 authenticated with: each user's messages are taken from their own sub-directory
-of the main spool directory. This means that you can decide how to move or copy
-the messages into those sub-directories. If messages are coming in over SMTP
-then you could install an SMTP "--filter" script to move each new message into
-the relevant sub-directory based on the message addressing.
+of the main spool directory. If messages are coming in over SMTP then you could
+install an SMTP "--filter" script to move each new message into the relevant 
+sub-directory based on the message addressing.
 
 For more ideas check out the "--client-filter" and "--poll" switches, and don't
 overlook the administration and control interface ("--admin") which you can use

@@ -15,15 +15,9 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-EXTRA_DIST=\
-	mingw.mak \
-	gpopsecrets_win32.cpp
-
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_SYSCONFDIR=\"$(e_sysconfdir)\"
-
-noinst_LIBRARIES = libgpop.a
-
-libgpop_a_SOURCES = \
+if POP
+POP_EXTRA_DIST= gpop_disabled.cpp
+POP_SOURCES= \
 	gpopauth.cpp \
 	gpopauth.h \
 	gpop.h \
@@ -36,4 +30,31 @@ libgpop_a_SOURCES = \
 	gpopstore.h \
 	gpopserverprotocol.cpp \
 	gpopserverprotocol.h
+else
+POP_EXTRA_DIST= \
+	gpopauth.cpp \
+	gpopauth.h \
+	gpop.h \
+	gpopsecrets.cpp \
+	gpopsecrets_unix.cpp \
+	gpopsecrets.h \
+	gpopserver.cpp \
+	gpopserver.h \
+	gpopstore.cpp \
+	gpopstore.h \
+	gpopserverprotocol.cpp \
+	gpopserverprotocol.h
+POP_SOURCES= gpop_disabled.cpp
+endif
+
+EXTRA_DIST=\
+	$(POP_EXTRA_DIST) \
+	mingw.mak \
+	gpopsecrets_win32.cpp
+
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_SYSCONFDIR=\"$(e_sysconfdir)\"
+
+noinst_LIBRARIES = libgpop.a
+
+libgpop_a_SOURCES = $(POP_SOURCES)
 

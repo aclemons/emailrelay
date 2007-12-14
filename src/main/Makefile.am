@@ -15,10 +15,28 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+if ADMIN
+ADMIN_EXTRA_DIST = admin_disabled.cpp
+ADMIN_SOURCES = admin_enabled.cpp
+else
+ADMIN_EXTRA_DIST = admin_enabled.cpp
+ADMIN_SOURCES = admin_disabled.cpp
+endif
+
+if SIMPLE_CONFIG
+CONFIG_EXTRA_DIST = commandline_full.cpp
+CONFIG_SOURCES = commandline_simple.cpp
+else
+CONFIG_EXTRA_DIST = commandline_simple.cpp
+CONFIG_SOURCES = commandline_full.cpp
+endif
+
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS=-s
 
 EXTRA_DIST=\
+	$(ADMIN_EXTRA_DIST) \
+	$(CONFIG_EXTRA_DIST) \
 	common.dsp \
 	doxygen.cfg \
 	doxygen.h \
@@ -60,10 +78,12 @@ e_libexec_PROGRAMS = emailrelay-poke emailrelay-filter-copy
 e_spool_DATA = 
 
 emailrelay_SOURCES = \
-	commandline.cpp \
+	$(ADMIN_SOURCES) \
+	$(CONFIG_SOURCES) \
+	admin.h \
 	commandline.h \
-	configuration.cpp \
 	configuration.h \
+	configuration.cpp \
 	legal.cpp \
 	legal.h \
 	main.cpp \
@@ -76,7 +96,6 @@ emailrelay_LDADD = \
 	$(top_builddir)/src/gpop/libgpop.a \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(STATIC_START) $(SSL_LIBS) $(STATIC_END)
@@ -91,7 +110,6 @@ emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(top_builddir)/src/glib/libglib.a
 
 emailrelay_filter_copy_SOURCES = filter_copy.cpp filter.cpp filter.h legal.cpp legal.h

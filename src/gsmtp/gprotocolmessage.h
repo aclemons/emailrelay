@@ -87,7 +87,7 @@ public:
 		///< Sets the message envelope 'from'.
 		///< Returns false if an invalid user.
 
-	virtual bool addTo( const std::string & to_user , Verifier::Status to_status ) = 0 ;
+	virtual bool addTo( const std::string & to_user , VerifierStatus to_status ) = 0 ;
 		///< Adds an envelope 'to'.
 		///<
 		///< The 'to_status' parameter comes from

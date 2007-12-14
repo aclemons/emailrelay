@@ -47,27 +47,38 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libgnet_a_AR = $(AR) $(ARFLAGS)
 libgnet_a_LIBADD =
-am_libgnet_a_OBJECTS = gbufferedserverpeer.$(OBJEXT) gclient.$(OBJEXT) \
-	gconnection.$(OBJEXT) gdescriptor_unix.$(OBJEXT) \
-	geventhandler.$(OBJEXT) geventloop.$(OBJEXT) \
-	geventloop_unix.$(OBJEXT) gheapclient.$(OBJEXT) \
-	glinebuffer.$(OBJEXT) glocal.$(OBJEXT) glocal_unix.$(OBJEXT) \
-	gmonitor.$(OBJEXT) gmultiserver.$(OBJEXT) gresolver.$(OBJEXT) \
+am__libgnet_a_SOURCES_DIST = gaddress_ipv4.cpp gresolver_ipv4.cpp \
+	gaddress_ipv6.cpp gresolver_ipv6.cpp gaddress.h \
+	gbufferedserverpeer.cpp gbufferedserverpeer.h gclientptr.h \
+	gclient.cpp gclient.h gconnection.cpp gconnection.h \
+	gdescriptor.h gdescriptor_unix.cpp gevent.h geventhandler.cpp \
+	geventhandler.h geventloop.cpp geventloop.h \
+	geventloop_unix.cpp gheapclient.cpp gheapclient.h \
+	glinebuffer.cpp glinebuffer.h glocal.cpp glocal.h \
+	glocal_unix.cpp gmonitor.cpp gmonitor.h gmultiserver.cpp \
+	gmultiserver.h gnet.h grequest.h gresolver.cpp gresolver.h \
+	gresolverinfo.cpp gresolverinfo.h gresolver_unix.cpp \
+	gserver.cpp gserver.h gsimpleclient.cpp gsimpleclient.h \
+	gsimpleclient_unix.cpp gsocket.cpp gsocket.h gsocket_unix.cpp \
+	gsocketprotocol.cpp gsocketprotocol.h gtimer.cpp gtimer.h \
+	gtimerlist.cpp gtimerlist.h
+@IPV6_FALSE@am__objects_1 = gaddress_ipv4.$(OBJEXT) \
+@IPV6_FALSE@	gresolver_ipv4.$(OBJEXT)
+@IPV6_TRUE@am__objects_1 = gaddress_ipv6.$(OBJEXT) \
+@IPV6_TRUE@	gresolver_ipv6.$(OBJEXT)
+am_libgnet_a_OBJECTS = $(am__objects_1) gbufferedserverpeer.$(OBJEXT) \
+	gclient.$(OBJEXT) gconnection.$(OBJEXT) \
+	gdescriptor_unix.$(OBJEXT) geventhandler.$(OBJEXT) \
+	geventloop.$(OBJEXT) geventloop_unix.$(OBJEXT) \
+	gheapclient.$(OBJEXT) glinebuffer.$(OBJEXT) glocal.$(OBJEXT) \
+	glocal_unix.$(OBJEXT) gmonitor.$(OBJEXT) \
+	gmultiserver.$(OBJEXT) gresolver.$(OBJEXT) \
 	gresolverinfo.$(OBJEXT) gresolver_unix.$(OBJEXT) \
 	gserver.$(OBJEXT) gsimpleclient.$(OBJEXT) \
 	gsimpleclient_unix.$(OBJEXT) gsocket.$(OBJEXT) \
 	gsocket_unix.$(OBJEXT) gsocketprotocol.$(OBJEXT) \
 	gtimer.$(OBJEXT) gtimerlist.$(OBJEXT)
 libgnet_a_OBJECTS = $(am_libgnet_a_OBJECTS)
-libipv4_a_AR = $(AR) $(ARFLAGS)
-libipv4_a_LIBADD =
-am_libipv4_a_OBJECTS = gaddress_ipv4.$(OBJEXT) \
-	gresolver_ipv4.$(OBJEXT)
-libipv4_a_OBJECTS = $(am_libipv4_a_OBJECTS)
-libipv6_a_AR = $(AR) $(ARFLAGS)
-libipv6_a_LIBADD =
-am_libipv6_a_OBJECTS = gaddress_ip.$(OBJEXT) gresolver_ip.$(OBJEXT)
-libipv6_a_OBJECTS = $(am_libipv6_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -80,10 +91,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libgnet_a_SOURCES) $(libipv4_a_SOURCES) \
-	$(libipv6_a_SOURCES)
-DIST_SOURCES = $(libgnet_a_SOURCES) $(libipv4_a_SOURCES) \
-	$(libipv6_a_SOURCES)
+SOURCES = $(libgnet_a_SOURCES)
+DIST_SOURCES = $(am__libgnet_a_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -120,7 +129,6 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-IP = @IP@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -144,7 +152,6 @@ QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SSL = @SSL@
 SSL_LIBS = @SSL_LIBS@
 STATIC_END = @STATIC_END@
 STATIC_START = @STATIC_START@
@@ -199,21 +206,25 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@IPV6_FALSE@IPV6_EXTRA_DIST = gaddress_ipv6.cpp gresolver_ipv6.cpp
+@IPV6_TRUE@IPV6_EXTRA_DIST = gaddress_ipv4.cpp gresolver_ipv4.cpp
+@IPV6_FALSE@IPV6_SOURCES = gaddress_ipv4.cpp gresolver_ipv4.cpp
+@IPV6_TRUE@IPV6_SOURCES = gaddress_ipv6.cpp gresolver_ipv6.cpp
 EXTRA_DIST = \
-    gaddress_ipv6.cpp \
+	$(IPV6_EXTRA_DIST) \
     gdescriptor_win32.cpp \
     geventloop_win32.cpp \
     glocal_win32.cpp \
     grequest.cpp \
-    gresolver_ipv6.cpp \
     gresolver_win32.cpp \
     gsimpleclient_win32.cpp \
     gsocket_win32.cpp \
     mingw.mak
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib  -I$(top_srcdir)/src/gssl
-noinst_LIBRARIES = libgnet.a libipv4.a libipv6.a
+noinst_LIBRARIES = libgnet.a
 libgnet_a_SOURCES = \
+	$(IPV6_SOURCES) \
 	gaddress.h \
 	gbufferedserverpeer.cpp \
 	gbufferedserverpeer.h \
@@ -263,8 +274,6 @@ libgnet_a_SOURCES = \
 	gtimerlist.cpp \
 	gtimerlist.h
 
-libipv4_a_SOURCES = gaddress_ipv4.cpp gresolver_ipv4.cpp
-libipv6_a_SOURCES = gaddress_ip.cpp gresolver_ip.cpp
 all: all-am
 
 .SUFFIXES:
@@ -305,14 +314,6 @@ libgnet.a: $(libgnet_a_OBJECTS) $(libgnet_a_DEPENDENCIES)
 	-rm -f libgnet.a
 	$(libgnet_a_AR) libgnet.a $(libgnet_a_OBJECTS) $(libgnet_a_LIBADD)
 	$(RANLIB) libgnet.a
-libipv4.a: $(libipv4_a_OBJECTS) $(libipv4_a_DEPENDENCIES) 
-	-rm -f libipv4.a
-	$(libipv4_a_AR) libipv4.a $(libipv4_a_OBJECTS) $(libipv4_a_LIBADD)
-	$(RANLIB) libipv4.a
-libipv6.a: $(libipv6_a_OBJECTS) $(libipv6_a_DEPENDENCIES) 
-	-rm -f libipv6.a
-	$(libipv6_a_AR) libipv6.a $(libipv6_a_OBJECTS) $(libipv6_a_LIBADD)
-	$(RANLIB) libipv6.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -320,8 +321,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaddress_ip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaddress_ipv4.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaddress_ipv6.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbufferedserverpeer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconnection.Po@am__quote@
@@ -336,8 +337,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmonitor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmultiserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolver_ip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolver_ipv4.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolver_ipv6.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolver_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolverinfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gserver.Po@am__quote@

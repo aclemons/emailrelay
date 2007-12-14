@@ -112,7 +112,6 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-IP = @IP@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -136,7 +135,6 @@ QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SSL = @SSL@
 SSL_LIBS = @SSL_LIBS@
 STATIC_END = @STATIC_END@
 STATIC_START = @STATIC_START@
@@ -194,8 +192,8 @@ top_srcdir = @top_srcdir@
 
 #
 #
-EXTRA_DIST = emailrelay.spec ChangeLog README.windows LICENSE
-SUBDIRS = src bin lib etc doc test
+EXTRA_DIST = emailrelay.spec ChangeLog README.windows README.mips LICENSE bootstrap autogen.sh
+SUBDIRS = src bin lib etc doc test extra
 e_doc_DATA = NEWS README ChangeLog
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive

@@ -133,13 +133,14 @@ static bool is_slash( const char * p )
 
 static char * chomp( char * path )
 {
+	char * nul ;
 	bool windows_has_drive = strlen(path) > 2U && path[1] == ':' ;
 	bool windows_is_unc = strlen(path) > 2U && is_slash(path+0) && is_slash(path+1) ;
 	char * unc_root = first_slash( after(first_slash(path+2)) ) ;
 	char * p = last_slash( path ) ;
 	bool is_root = ( p == path ) || ( windows_has_drive && p == (path+2) ) || ( windows_is_unc && p == unc_root ) ;
 	p = (p && !is_root) ? p : NULL ;
-	char * nul = p ? p : (path+strlen(path)) ;
+	nul = p ? p : (path+strlen(path)) ;
 	*nul = '\0' ;
 	return p ;
 }
@@ -185,9 +186,10 @@ static Bytef * zptr( char * p )
 
 static M * unpack_new_( const char * path , Fn fn )
 {
+	M * m ;
 	if( path == NULL ) return NULL ;
 
-	M * m = (M*) malloc( sizeof(M) ) ;
+	m = (M*) malloc( sizeof(M) ) ;
 	if( m == NULL ) return NULL ;
 
 	m->fn = fn ;
@@ -230,9 +232,9 @@ static void unpack_delete_( M * m )
 
 static int unpack_count_( const M * m )
 {
+	int n = 0 ;
 	const Entry * p = NULL ;
 	if( m == NULL ) return 0 ;
-	int n = 0 ;
 	for( p = m->map ; p != NULL ; p = p->next , n++ )
 		/* no-op */ ;
 	return n ;
@@ -268,9 +270,10 @@ static unsigned long unpack_packed_size_( const M * m , int n )
 static unsigned long file_size( const char * path )
 {
 	static struct stat zero ;
-	if( path == NULL ) return 0UL ;
 	struct stat buf = zero ;
-	int rc = stat( path , &buf ) ;
+	int rc ;
+	if( path == NULL ) return 0UL ;
+	rc = stat( path , &buf ) ;
 	if( rc != 0 ) buf.st_size = 0 ;
 	return buf.st_size ;
 }
@@ -352,18 +355,20 @@ static bool unpack_init( M * m )
 			break ;
 		}
 
-		Entry * entry = malloc( sizeof(Entry) ) ;
-		check_that( entry != NULL , "out of memory" ) ;
-		entry->next = NULL ;
-		entry->path = file_path ;
-		entry->size = file_size ;
-		entry->offset = file_offset ;
+		{
+			Entry * entry = malloc( sizeof(Entry) ) ;
+			check_that( entry != NULL , "out of memory" ) ;
+			entry->next = NULL ;
+			entry->path = file_path ;
+			entry->size = file_size ;
+			entry->offset = file_offset ;
 
-		if( tail == NULL )
-			m->map = entry ;
-		else
-			tail->next = entry ;
-		tail = entry ;
+			if( tail == NULL )
+				m->map = entry ;
+			else
+				tail->next = entry ;
+			tail = entry ;
+		}
 
 		file_offset += file_size ;
 		if( file_size > m->max_size )

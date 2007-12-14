@@ -70,7 +70,7 @@ bool GSmtp::ProtocolMessageStore::setFrom( const std::string & from )
 	return true ; // accept any name
 }
 
-bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , Verifier::Status to_status )
+bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , VerifierStatus to_status )
 {
 	G_DEBUG( "GSmtp::ProtocolMessageStore::addTo: " << to ) ;
 

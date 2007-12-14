@@ -96,9 +96,12 @@ private:
 #endif
 #if ! defined(G_NO_LOG)
 #define G_LOG( expr ) G_LOG_OUTPUT( expr , G::Log::s_LogVerbose )
-#define G_LOG_S( expr ) G_LOG_OUTPUT( expr , G::Log::s_LogSummary )
 #else
 #define G_LOG( expr )
+#endif
+#if ! defined(G_NO_LOG_S)
+#define G_LOG_S( expr ) G_LOG_OUTPUT( expr , G::Log::s_LogSummary )
+#else
 #define G_LOG_S( expr )
 #endif
 #define G_WARNING( expr ) G_LOG_OUTPUT( expr , G::Log::s_Warning )

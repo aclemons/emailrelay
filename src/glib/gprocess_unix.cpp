@@ -41,46 +41,6 @@ namespace
 	}
 }
 
-namespace G
-{
-	class Pipe ;
-}
-
-/// \class G::Pipe
-/// A private implementation class used by G::Process.
-/// 
-class G::Pipe 
-{
-public:
-	explicit Pipe( bool active ) ;
-	~Pipe() ;
-	void inChild() ; // writer
-	void inParent() ; // reader
-	int fd() const ;
-	void dup() ; // onto stdout
-	std::string read() ; // size-limited
-	void write( const std::string & ) ;
-private:
-	G_EXCEPTION( Error , "pipe error" ) ;
-	int m_fds[2] ;
-	int m_fd ;
-} ;
-
-/// \class G::Process::ChildProcessImp
-/// A private implementation class used by G::Process.
-/// 
-class G::Process::ChildProcessImp 
-{
-public:
-	ChildProcessImp() ;
-	unsigned long m_ref_count ;
-	Id m_id ;
-	Pipe m_pipe ;
-private:
-	void operator=( const ChildProcessImp & ) ;
-	ChildProcessImp( const ChildProcessImp & ) ;
-} ;
-
 /// \class G::Process::IdImp
 /// A private implementation class used by G::Process.
 /// 
@@ -89,51 +49,6 @@ class G::Process::IdImp
 public: 
 	pid_t m_pid ;
 } ;
-
-// ===
-
-G::Process::ChildProcess::ChildProcess( ChildProcessImp * imp ) :
-	m_imp(imp)
-{
-	m_imp->m_ref_count = 1 ;
-}
-
-G::Process::ChildProcess::~ChildProcess()
-{
-	m_imp->m_ref_count-- ;
-	if( m_imp->m_ref_count == 0 )
-		delete m_imp ;
-}
-
-G::Process::ChildProcess::ChildProcess( const ChildProcess & other ) :
-	m_imp(other.m_imp)
-{
-	m_imp->m_ref_count++ ;
-}
-
-void G::Process::ChildProcess::operator=( const ChildProcess & rhs )
-{
-	ChildProcess temp( rhs ) ;
-	std::swap( m_imp , temp.m_imp ) ;
-}
-
-int G::Process::ChildProcess::wait()
-{
-	return G::Process::wait( m_imp->m_id , 127 ) ;
-}
-
-std::string G::Process::ChildProcess::read()
-{
-	return m_imp->m_pipe.read() ;
-}
-
-// ===
-
-G::Process::ChildProcessImp::ChildProcessImp() :
-	m_ref_count(0UL) ,
-	m_pipe(true)
-{
-}
 
 // ===
 
@@ -190,174 +105,9 @@ void G::Process::closeFiles( int keep )
 	noCloseOnExec( STDERR_FILENO ) ;
 }
 
-G::Process::Who G::Process::fork()
-{
-	Id id ;
-	return fork( id ) ;
-}
-
-G::Process::Who G::Process::fork( Id & child_pid )
-{
-	std::cout << std::flush ;
-	std::cerr << std::flush ;
-	pid_t rc = ::fork() ;
-	const bool ok = rc != -1 ;
-	if( ok )
-	{
-		if( rc != 0 )
-			child_pid.m_pid = rc ;
-	}
-	else
-	{
-		throw CannotFork() ;
-	}
-	return rc == 0 ? Child : Parent ;
-}
-
-int G::Process::wait( const Id & child_pid )
-{
-	int status ;
-	for(;;)
-	{
-		G_DEBUG( "G::Process::wait: waiting" ) ;
-		int rc = ::waitpid( child_pid.m_pid , &status , 0 ) ;
-		if( rc == -1 && errno_() == EINTR )
-		{
-			; // signal in parent -- keep waiting
-		}
-		else if( rc == -1 )
-		{
-			int error = errno_() ;
-			std::ostringstream ss ;
-			ss << "errno=" << error ;
-			throw WaitError( ss.str() ) ;
-		}
-		else
-		{
-			break ;
-		}
-	}
-	G_DEBUG( "G::Process::wait: done" ) ;
-
-	if( ! WIFEXITED(status) )
-	{
-		// uncaught signal or stopped
-		std::ostringstream ss ;
-		ss << "status=" << status ;
-		throw ChildError( ss.str() ) ;
-	}
-
-	const int exit_status = WEXITSTATUS(status) ;
-	return exit_status ;
-}
-
-int G::Process::wait( const Id & child_pid , int error_return )
-{
-	try
-	{
-		return wait( child_pid ) ;
-	}
-	catch(...)
-	{
-	}
-	return error_return ;
-}
-
 int G::Process::errno_()
 {
 	return errno ; // not ::errno or std::errno for gcc2.95
-}
-
-G::Process::ChildProcess G::Process::spawn( const Path & exe , const Strings & args )
-{
-	ChildProcess child( new ChildProcessImp ) ;
-	if( fork(child.m_imp->m_id) == Child )
-	{
-		try
-		{
-			child.m_imp->m_pipe.inChild() ;
-			closeFiles( child.m_imp->m_pipe.fd() ) ;
-			child.m_imp->m_pipe.dup() ;
-			execCore( exe , args ) ;
-		}
-		catch(...)
-		{
-		}
-		::_exit( 127 ) ;
-		return ChildProcess(0) ; // pacify the compiler
-	}
-	else
-	{
-		child.m_imp->m_pipe.inParent() ;
-		return child ;
-	}
-}
-
-int G::Process::spawn( Identity nobody , const Path & exe , const Strings & args , 
-	std::string * pipe_result_p , int error_return , std::string (*fn)(int) )
-{
-	if( exe.isRelative() )
-		throw InvalidPath( exe.str() ) ;
-
-	if( Identity::effective().isRoot() || nobody.isRoot() )
-		throw Insecure() ;
-
-	Pipe pipe( pipe_result_p != NULL ) ;
-	Id child_pid ;
-	if( fork(child_pid) == Child )
-	{
-		try
-		{
-			beNobody( nobody ) ;
-			G_ASSERT( ::getuid() != 0U && ::geteuid() != 0U ) ;
-			pipe.inChild() ;
-			closeFiles( pipe.fd() ) ;
-			pipe.dup() ; // dup() onto stdout
-			int error = execCore( exe , args ) ;
-			if( fn != 0 )
-			{
-				std::string s = (*fn)(error) ;
-				::write( STDOUT_FILENO , s.c_str() , s.length() ) ;
-			}
-		}
-		catch(...)
-		{
-		}
-		::_exit( error_return ) ;
-		return error_return ; // pacify the compiler
-	}
-	else
-	{
-		pipe.inParent() ;
-		int exit_status = wait( child_pid , error_return ) ;
-		if( pipe_result_p != NULL ) *pipe_result_p = pipe.read() ;
-		return exit_status ;
-	}
-}
-
-int G::Process::execCore( const G::Path & exe , const Strings & args )
-{
-	char * env[3U] ;
-	std::string path( "PATH=/usr/bin:/bin" ) ; // no "."
-	std::string ifs( "IFS= \t\n" ) ;
-	env[0U] = const_cast<char*>( path.c_str() ) ;
-	env[1U] = const_cast<char*>( ifs.c_str() ) ;
-	env[2U] = NULL ;
-
-	char ** argv = new char* [ args.size() + 2U ] ;
-	std::string str_exe = exe.str() ;
-	argv[0U] = const_cast<char*>( str_exe.c_str() ) ;
-	unsigned int argc = 1U ;
-	for( Strings::const_iterator arg_p = args.begin() ; arg_p != args.end() ; ++arg_p , argc++ )
-		argv[argc] = const_cast<char*>(arg_p->c_str()) ;
-	argv[argc] = NULL ;
-
-	::execve( exe.str().c_str() , argv , env ) ;
-	const int error = errno_() ;
-	delete [] argv ;
-
-	G_DEBUG( "G::Process::exec: execve() returned: errno=" << error << ": " << exe ) ;
-	return error ;
 }
 
 std::string G::Process::strerror( int errno_ )
@@ -435,10 +185,6 @@ G::Identity G::Process::beOrdinary( SignalSafe safe , Identity nobody , bool cha
 
 void G::Process::beNobody( Identity nobody )
 {
-	// this private method is only used before an exec()
-	// so the effective ids are lost anyway -- the
-	// Identity will only be valid if getuid() is zero
-
 	if( Identity::real().isRoot() )
 	{
 		setEffectiveUserTo( Identity::root() ) ;
@@ -525,62 +271,5 @@ void G::Process::Umask::set( Mode mode )
 	// Tighter:  -rw-rw----
 	// Readable: -rw-r--r--
 	::umask( mode==Readable?0133:(mode==Tighter?0117:0177) ) ;
-}
-
-// ===
-
-G::Pipe::Pipe( bool active ) : 
-	m_fd(-1) 
-{ 
-	m_fds[0] = m_fds[1] = -1 ;
-	if( active && ::pipe( m_fds ) < 0 ) 
-		throw Error() ; 
-	G_DEBUG( "G::Pipe::ctor: " << m_fds[0] << " " << m_fds[1] ) ;
-}
-
-G::Pipe::~Pipe()
-{
-	if( m_fds[0] >= 0 ) ::close( m_fds[0] ) ;
-	if( m_fds[1] >= 0 ) ::close( m_fds[1] ) ;
-}
-
-void G::Pipe::inChild() 
-{ 
-	::close( m_fds[0] ) ; 
-	m_fds[0] = -1 ;
-	m_fd = m_fds[1] ; // writer
-}
-
-void G::Pipe::inParent() 
-{ 
-	::close( m_fds[1] ) ; 
-	m_fds[1] = -1 ;
-	m_fd = m_fds[0] ; // reader
-}
-
-int G::Pipe::fd() const
-{ 
-	return m_fd ; 
-}
-
-void G::Pipe::dup()
-{ 
-	if( m_fd != -1 && m_fd != STDOUT_FILENO )
-	{
-		if( ::dup2(m_fd,STDOUT_FILENO) != STDOUT_FILENO )
-			throw Error() ;
-		::close( m_fd ) ;
-		m_fd = -1 ;
-		m_fds[1] = -1 ;
-		noCloseOnExec( STDOUT_FILENO ) ;
-	}
-}
-
-std::string G::Pipe::read()
-{
-	char buffer[limits::pipe_buffer] ;
-	int rc = m_fd == -1 ? 0 : ::read( m_fd , buffer , sizeof(buffer) ) ;
-	if( rc < 0 ) throw Error("read") ;
-	return std::string(buffer,rc) ;
 }
 

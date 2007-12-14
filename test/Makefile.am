@@ -40,7 +40,6 @@ INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(
 emailrelay_test_scanner_SOURCES = emailrelay_test_scanner.cpp
 emailrelay_test_scanner_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(SSL_LIBS)
@@ -48,7 +47,6 @@ emailrelay_test_scanner_LDADD = \
 emailrelay_test_server_SOURCES = emailrelay_test_server.cpp
 emailrelay_test_server_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(SSL_LIBS)

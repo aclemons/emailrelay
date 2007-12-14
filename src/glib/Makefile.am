@@ -14,7 +14,71 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+if EXEC
+EXEC_EXTRA_DIST = gnewprocess_unix_exec_disabled.cpp
+EXEC_SOURCES = gnewprocess_unix_exec_enabled.cpp
+else
+EXEC_EXTRA_DIST = gnewprocess_unix_exec_enabled.cpp
+EXEC_SOURCES = gnewprocess_unix_exec_disabled.cpp
+endif
+
+if FRAGMENTS
+FRAGMENTS_EXTRA_DIST = gstr.cpp
+FRAGMENTS_SOURCES =
+FRAGMENTS_NODIST_SOURCES = \
+L_str_replace.cpp \
+L_str_replaceAll_1.cpp \
+L_str_replaceAll_2.cpp \
+L_str_removeAll.cpp \
+L_str_trimLeft.cpp \
+L_str_trimRight.cpp \
+L_str_trim.cpp \
+L_str_trimmed.cpp \
+L_str_isNumeric.cpp \
+L_str_isPrintableAscii.cpp \
+L_str_isUShort.cpp \
+L_str_isUInt.cpp \
+L_str_isULong.cpp \
+L_str_fromBool.cpp \
+L_str_fromDouble.cpp \
+L_str_fromInt.cpp \
+L_str_fromLong.cpp \
+L_str_fromShort.cpp \
+L_str_fromUInt.cpp \
+L_str_fromULong.cpp \
+L_str_fromUShort.cpp \
+L_str_toBool.cpp \
+L_str_toDouble.cpp \
+L_str_toInt.cpp \
+L_str_toLong.cpp \
+L_str_toShort.cpp \
+L_str_toUInt.cpp \
+L_str_toULong.cpp \
+L_str_toUShort.cpp \
+L_str_lower.cpp \
+L_str_upper.cpp \
+L_str_printable.cpp \
+L_str_readLineFrom.cpp \
+L_str_wrap.cpp \
+L_str_splitIntoTokens.cpp \
+L_str_splitIntoFields.cpp \
+L_str_join.cpp \
+L_str_keys.cpp \
+L_str_ws.cpp \
+L_str_head.cpp \
+L_str_tail.cpp \
+L_str_tailMatch.cpp \
+L_str_replace.cpp
+else
+FRAGMENTS_NODIST_SOURCES =
+FRAGMENTS_EXTRA_DIST =
+FRAGMENTS_SOURCES = gstr.cpp
+endif
+
 EXTRA_DIST=\
+	$(EXEC_EXTRA_DIST) \
+	$(FRAGMENTS_EXTRA_DIST) \
 	garg_win32.cpp \
 	gcleanup_win32.cpp \
 	gdaemon_win32.cpp \
@@ -27,10 +91,18 @@ EXTRA_DIST=\
 	gidentity_win32.cpp \
 	glogoutput_win32.cpp \
 	gprocess_win32.cpp \
+	gnewprocess_win32.cpp \
 	mingw.mak
+
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION)
+
 noinst_LIBRARIES = libglib.a
+
+nodist_libglib_a_SOURCES = $(FRAGMENTS_NODIST_SOURCES)
+
 libglib_a_SOURCES = \
+	$(EXEC_SOURCES) \
+	$(FRAGMENTS_SOURCES) \
 	md5.cpp \
 	md5.h \
 	garg.cpp \
@@ -64,8 +136,8 @@ libglib_a_SOURCES = \
 	gfile_unix.cpp \
 	gfs.h \
 	gfs_unix.cpp \
-	ggetopt.cpp \
 	ggetopt.h \
+	ggetopt.cpp \
 	ghostname_unix.cpp \
 	ghostname.h \
 	gidentity.h \
@@ -76,6 +148,7 @@ libglib_a_SOURCES = \
 	glogoutput.cpp \
 	glogoutput.h \
 	glogoutput_unix.cpp \
+	gnewprocess.h \
 	gmd5_native.cpp \
 	gmd5.h \
 	gmemory.h \
@@ -94,7 +167,6 @@ libglib_a_SOURCES = \
 	gslot.cpp \
 	gslot.h \
 	gstatemachine.h \
-	gstr.cpp \
 	gstr.h \
 	gstrings.h \
 	gtest.cpp \

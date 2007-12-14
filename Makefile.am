@@ -14,8 +14,8 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-EXTRA_DIST = emailrelay.spec ChangeLog README.windows LICENSE
-SUBDIRS = src bin lib etc doc test
+EXTRA_DIST = emailrelay.spec ChangeLog README.windows README.mips LICENSE bootstrap autogen.sh
+SUBDIRS = src bin lib etc doc test extra
 e_doc_DATA = NEWS README ChangeLog
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_docdir) 2>/dev/null

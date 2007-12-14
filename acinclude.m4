@@ -209,7 +209,7 @@ qt4="no"
 qt4moc="no"
 if test "$enable_gui" = "no"
 then
-	AC_DEFINE(HAVE_GUI,0,[Define to 1 to enable gui code])
+	:
 else
     PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes],[AC_MSG_RESULT([no])])
 	if test "$qt4" = "yes"
@@ -229,17 +229,85 @@ else
 		AC_SUBST(QT_LIBS)
 	fi
 fi
-if test "$qt4moc" = "yes"
-then
-	AC_DEFINE(HAVE_GUI,1,[Define to 1 to enable gui code])
-else
-	AC_DEFINE(HAVE_GUI,0,[Define to 1 to enable gui code])
-fi
 AC_SUBST(MOC)
 AM_CONDITIONAL(GUI,test x$enable_gui != xno -a x$qt4moc = xyes )
 ])
 
+dnl enable-pop
+dnl
+dnl disable-pop builds the pop library from do-nothing stubs
+dnl
+AC_DEFUN([ENABLE_POP],
+[
+AM_CONDITIONAL(POP,test x$enable_pop != xno)
+])
+
+dnl enable-exec
+dnl
+dnl disable-exec removes source files are concerned with exec-ing external programs
+dnl
+AC_DEFUN([ENABLE_EXEC],
+[
+AM_CONDITIONAL(EXEC,test x$enable_exec != xno)
+])
+
+dnl enable-admin
+dnl
+dnl disable-admin removes source files that implement the admin interface
+dnl
+AC_DEFUN([ENABLE_ADMIN],
+[
+AM_CONDITIONAL(ADMIN,test x$enable_admin != xno)
+])
+
+dnl enable-auth
+dnl
+dnl disable-admin removes source files that implement authentication
+dnl
+AC_DEFUN([ENABLE_AUTH],
+[
+AM_CONDITIONAL(AUTH,test x$enable_auth != xno)
+])
+
+dnl enable-fragments
+dnl
+dnl enable-fragments compiles certain source files in lots of little pieces so
+dnl the linker can throw away fragments that are not needed in the final executable
+dnl
+AC_DEFUN([ENABLE_FRAGMENTS],
+[
+AM_CONDITIONAL(FRAGMENTS,test x$enable_fragments = xyes)
+if test x$enable_fragments = xyes
+then
+	AC_MSG_NOTICE([creating source file fragments])
+	for aclocal_f in `find $srcdir/src -name \*.cpp | xargs fgrep -l L_fragments | fgrep -v L_` 
+	do 
+		for aclocal_x in `grep '#define L_.*_' ${aclocal_f} | sed 's/#define *//' | sed 's/  *1//'`
+		do 
+			aclocal_s="`dirname ${aclocal_f}`/${aclocal_x}.cpp"
+			aclocal_i="`basename ${aclocal_f}`"
+			AC_MSG_NOTICE([creating source file fragment for ${aclocal_i}: ${aclocal_s}])
+			echo '#define L_fragments 1' > ${aclocal_s}
+			echo "#define ${aclocal_x} 1" >> ${aclocal_s}
+			echo '#include "'"${aclocal_i}"'"' >> ${aclocal_s}
+		done 
+	done
+fi
+])
+
+dnl enable-simple-config
+dnl
+dnl enable-simple-config replaces the complex command-line parsing code
+dnl with something simpler and less functional
+dnl
+AC_DEFUN([ENABLE_SIMPLE_CONFIG],
+[
+AM_CONDITIONAL(SIMPLE_CONFIG,test x$enable_simple_config = xyes)
+])
+
 dnl enable-ipv6
+dnl
+dnl requires ACLOCAL_CHECK_IPV6 to have been run
 dnl
 AC_DEFUN([ENABLE_IPV6],
 [
@@ -248,14 +316,14 @@ then
 	if test "$aclocal_ipv6" != "yes"
 	then
 		AC_MSG_WARN([ignoring --enable-ipv6])
-		IP="ipv4"
+		aclocal_ip="ipv4"
 	else
-		IP="ipv6"
+		aclocal_ip="ipv6"
 	fi
 else
-	IP="ipv4"
+	aclocal_ip="ipv4"
 fi
-AC_SUBST(IP)
+AM_CONDITIONAL(IPV6,test x$aclocal_ip = xipv6)
 ])
 
 dnl with-openssl
@@ -273,25 +341,22 @@ then
 ])
     if test "$aclocal_openssl" = "yes"
 	then
-		AC_DEFINE(HAVE_OPENSSL,1,[Define to 1 to enable tls/ssh code using openssl])
 		SSL_LIBS="-lssl -lcrypto"
-		SSL="openssl"
+		aclocal_ssl="openssl"
 	else
 		if test "$with_openssl" = "yes"
 		then
 			AC_MSG_WARN([ignoring --with-openssl, check config.log and try setting CFLAGS])
 		fi
-		AC_DEFINE(HAVE_OPENSSL,0,[Define to 1 to enable tls/ssh code using openssl])
 		SSL_LIBS=""
-		SSL="none"
+		aclocal_ssl="none"
 	fi
 else
-	AC_DEFINE(HAVE_OPENSSL,0,[Define to 1 to enable tls/ssh code using openssl])
 	SSL_LIBS=""
-	SSL="none"
+	aclocal_ssl="none"
 fi
 AC_SUBST(SSL_LIBS)
-AC_SUBST(SSL)
+AM_CONDITIONAL(OPENSSL,test x$aclocal_ssl = xopenssl)
 ])
 
 dnl enable-static-linking

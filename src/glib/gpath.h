@@ -17,7 +17,7 @@
 ///
 /// \file gpath.h
 ///
-	
+
 #ifndef G_PATH_H
 #define G_PATH_H
 
@@ -33,10 +33,10 @@ namespace G
 }
 
 /// \class G::Path
-/// A Path object represents a file system path. 
-/// The class is concerned with path syntax, not file system i/o. 
-/// This class is necessary because of the mess Microsoft made 
-/// with drive letters (like having a cwd associated with each 
+/// A Path object represents a file system path.
+/// The class is concerned with path syntax, not file system i/o.
+/// This class is necessary because of the mess Microsoft made
+/// with drive letters (like having a cwd associated with each
 /// drive).
 ///
 /// \see G::File, G::Directory, G::FileSystem
@@ -47,13 +47,13 @@ public:
 	Path() ;
 		///< Default constructor. Creates
 		///< a zero-length path.
-		
+
 	Path( const std::string & path ) ;
 		///< Implicit constructor.
-		
+
 	Path( const char * path ) ;
 		///< Implicit constructor.
-		
+
 	Path( const Path & path , const std::string & tail ) ;
 		///< Constructor with an implicit pathAppend().
 
@@ -62,13 +62,13 @@ public:
 
 	Path( const Path & other ) ;
 		///< Copy constructor.
-		
+
 	~Path() ;
 		///< Destructor.
 
 	bool simple() const ;
-		///< Returns true if the path is just a file/directory name without 
-		///< any separators. Note that if the path is simple() then dirname() 
+		///< Returns true if the path is just a file/directory name without
+		///< any separators. Note that if the path is simple() then dirname()
 		///< will return the empty string.
 
 	std::string str() const ;
@@ -79,7 +79,7 @@ public:
 		///< Does nothing with the extension (cf. basename(1)).
 
 	Path dirname() const ;
-		///< Returns the drive/directory parts of the path. If this path is 
+		///< Returns the drive/directory parts of the path. If this path is
 		///< the top of the tree then the null path is returned.
 		///<
 		///< eg. "c:foo\bar.exe" -> "c:foo"
@@ -98,17 +98,17 @@ public:
 		///< eg. "\\machine\drive" -> ""
 
 	std::string extension() const ;
-		///< Returns the path's original extension, even after 
-		///< removeExtension(). Returns the zero-length string if 
+		///< Returns the path's original extension, even after
+		///< removeExtension(). Returns the zero-length string if
 		///< there is none.
-	
+
 	void removeExtension() ;
-		///< Modifies the path by removing any extension. However, 
+		///< Modifies the path by removing any extension. However,
 		///< the extension returned by extension() is unchanged.
-		
+
 	void setExtension( const std::string & extension ) ;
-		///< Replaces the extension. Any leading dot in the given 
-		///< string is ignored. (The given extension will be returned 
+		///< Replaces the extension. Any leading dot in the given
+		///< string is ignored. (The given extension will be returned
 		///< by subsequent calls to extension().)
 
 	bool isAbsolute() const ;
@@ -118,21 +118,21 @@ public:
 		///< Returns true if the path is a relative path.
 
 	bool hasDriveLetter() const ;
-		///< Returns true if the path has a leading drive letter 
+		///< Returns true if the path has a leading drive letter
 		///< (and the operating system uses drive letters).
 
 	Path & operator=( const Path & other ) ;
 		///< Assignment operator.
-	
+
 	void setDirectory( const std::string & dir ) ;
 		///< Sets the drive/directory.
-		
+
 	void pathAppend( const std::string & tail ) ;
 		///< Appends a filename to the path. A path separator
 		///< is added if necessary.
 
 	static G::Path join( const G::Path & p1 , const G::Path & p2 ) ;
-		///< Joins two paths together. The second should be a 
+		///< Joins two paths together. The second should be a
 		///< relative path.
 
 	Strings split( bool no_dot = true ) const ;
@@ -140,14 +140,14 @@ public:
 
 	bool operator==( const Path & path ) const ;
 		///< Comparison operator.
-	
+
 	bool operator!=( const Path & path ) const ;
 		///< Comparison operator.
-	
+
 private:
 	void set( const std::string & path ) ;
 	void normalise() ;
-	void clear() ;	
+	void clear() ;
 	static std::string slashString() ;
 	static std::string doubleSlashString() ;
 	std::string driveString() const ;

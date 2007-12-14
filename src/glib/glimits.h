@@ -54,7 +54,7 @@ public:
 	enum { file_buffer = 128 } ;
 	enum { pipe_buffer = 128 } ;
 	enum { net_buffer = 512 } ;
-	enum { net_line_limit = 2000 } 
+	enum { net_line_limit = 2000 } ;
 	enum { net_hostname = 128 } ;
 	enum { win32_subclass_limit = 2 } ;
 	enum { win32_classname_buffer = 128 } ;

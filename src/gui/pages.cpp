@@ -1121,6 +1121,7 @@ void ProgressPage::onShow( bool back )
 
 		// run the installer
 		m_installer.start( ss ) ; // reads from istream
+		//std::istream iss(ss.rdbuf()) ; m_installer.start( iss ) ; // for gcc 2.95
 		dialog().wait( true ) ;
 		m_text = QString() ;
 		m_text_edit->setPlainText( m_text ) ;

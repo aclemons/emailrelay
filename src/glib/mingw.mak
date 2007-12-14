@@ -45,6 +45,7 @@ mk_sources=\
 	gpath.cpp \
 	gpidfile.cpp \
 	gprocess_win32.cpp \
+	gnewprocess_win32.cpp \
 	groot.cpp \
 	gslot.cpp \
 	gstr.cpp \

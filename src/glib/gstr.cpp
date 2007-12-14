@@ -30,6 +30,54 @@
 #include <string>
 #include <sstream>
 
+// size optimisation -- allow compilation into separate object files
+#ifndef L_fragments
+#define L_str_replace 1
+#define L_str_replaceAll_1 1
+#define L_str_replaceAll_2 1
+#define L_str_removeAll 1
+#define L_str_trimLeft 1
+#define L_str_trimRight 1
+#define L_str_trim 1
+#define L_str_trimmed 1
+#define L_str_isNumeric 1
+#define L_str_isPrintableAscii 1
+#define L_str_isUShort 1
+#define L_str_isUInt 1
+#define L_str_isULong 1
+#define L_str_fromBool 1
+#define L_str_fromDouble 1
+#define L_str_fromInt 1
+#define L_str_fromLong 1
+#define L_str_fromShort 1
+#define L_str_fromUInt 1
+#define L_str_fromULong 1
+#define L_str_fromUShort 1
+#define L_str_toBool 1
+#define L_str_toDouble 1
+#define L_str_toInt 1
+#define L_str_toLong 1
+#define L_str_toShort 1
+#define L_str_toUInt 1
+#define L_str_toULong 1
+#define L_str_toUShort 1
+#define L_str_lower 1
+#define L_str_upper 1
+#define L_str_printable 1
+#define L_str_readLineFrom 1
+#define L_str_wrap 1
+#define L_str_splitIntoTokens 1
+#define L_str_splitIntoFields 1
+#define L_str_join 1
+#define L_str_keys 1
+#define L_str_ws 1
+#define L_str_head 1
+#define L_str_tail 1
+#define L_str_tailMatch 1
+#define L_str_replace 1
+#endif
+
+#ifdef L_str_replace
 bool G::Str::replace( std::string & s , const std::string & from , const std::string & to , size_type * pos_p )
 {
 	if( from.length() == 0 )
@@ -52,7 +100,9 @@ bool G::Str::replace( std::string & s , const std::string & from , const std::st
 		return true ;
 	}
 }
+#endif
 
+#ifdef L_str_replaceAll_1
 unsigned int G::Str::replaceAll( std::string & s , const std::string & from , const std::string & to )
 {
 	unsigned int count = 0U ;
@@ -60,7 +110,9 @@ unsigned int G::Str::replaceAll( std::string & s , const std::string & from , co
 		; // no-op
 	return count ;
 }
+#endif
 
+#ifdef L_str_replaceAll_2
 unsigned int G::Str::replaceAll( std::string & s , const char * from , const char * to )
 {
 	// this char* overload is an optimisation to avoid constructing
@@ -79,13 +131,17 @@ unsigned int G::Str::replaceAll( std::string & s , const char * from , const cha
 		return 0U ;
 	}
 }
+#endif
 
+#ifdef L_str_removeAll
 void G::Str::removeAll( std::string & s , char c )
 {
 	const std::string::iterator end = s.end() ;
 	s.erase( std::remove_if( s.begin() , end , std::bind1st(std::equal_to<char>(),c) ) , end ) ;
 }
+#endif
 
+#ifdef L_str_trimLeft
 void G::Str::trimLeft( std::string & s , const std::string & ws , size_type limit )
 {
 	size_type n = s.find_first_not_of( ws ) ;
@@ -96,7 +152,9 @@ void G::Str::trimLeft( std::string & s , const std::string & ws , size_type limi
 	else if( n != 0U )
 		s.erase( 0U , n ) ;
 }
+#endif
 
+#ifdef L_str_trimRight
 void G::Str::trimRight( std::string & s , const std::string & ws , size_type limit )
 {
 	size_type n = s.find_last_not_of( ws ) ;
@@ -107,19 +165,25 @@ void G::Str::trimRight( std::string & s , const std::string & ws , size_type lim
 	else if( n != 0U )
 		s.resize( n+1U ) ;
 }
+#endif
 
+#ifdef L_str_trim
 void G::Str::trim( std::string & s , const std::string & ws )
 {
 	trimLeft(s,ws) ; trimRight(s,ws) ;
 }
+#endif
 
+#ifdef L_str_trimmed
 std::string G::Str::trimmed( const std::string & s_in , const std::string & ws )
 {
 	std::string s( s_in ) ;
 	trim( s , ws ) ;
 	return s ;
 }
+#endif
 
+#ifdef L_str_isNumeric
 namespace
 {
 	struct IsDigit : std::unary_function<char,bool>
@@ -127,7 +191,6 @@ namespace
 		bool operator()( char c ) const { return !! isdigit( c ) ; }
 	} ;
 }
-
 bool G::Str::isNumeric( const std::string & s , bool allow_minus_sign )
 {
 	const std::string::const_iterator end = s.end() ;
@@ -135,7 +198,9 @@ bool G::Str::isNumeric( const std::string & s , bool allow_minus_sign )
 	if( allow_minus_sign && p != end && *p == '-' ) ++p ;
 	return std::find_if( p , end , std::not1(IsDigit()) ) == end ;
 }
+#endif
 
+#ifdef L_str_isPrintableAscii
 namespace
 {
 	struct IsPrintableAscii : std::unary_function<char,bool>
@@ -143,13 +208,14 @@ namespace
 		bool operator()( char c ) const { return c >= 0x20 && c < 0x7f ; }
 	} ;
 }
-
 bool G::Str::isPrintableAscii( const std::string & s )
 {
 	const std::string::const_iterator end = s.end() ;
 	return std::find_if( s.begin() , end , std::not1(IsPrintableAscii()) ) == end ;
 }
+#endif
 
+#ifdef L_str_isUShort
 bool G::Str::isUShort( const std::string & s )
 {
 	try
@@ -166,7 +232,9 @@ bool G::Str::isUShort( const std::string & s )
 	}
 	return true ;
 }
+#endif
 
+#ifdef L_str_isUInt
 bool G::Str::isUInt( const std::string & s )
 {
 	try
@@ -183,7 +251,9 @@ bool G::Str::isUInt( const std::string & s )
 	}
 	return true ;
 }
+#endif
 
+#ifdef L_str_isULong
 bool G::Str::isULong( const std::string & s )
 {
 	try
@@ -200,61 +270,79 @@ bool G::Str::isULong( const std::string & s )
 	}
 	return true ;
 }
+#endif
 
+#ifdef L_str_fromBool
 std::string G::Str::fromBool( bool b )
 {
 	return b ? "true" : "false" ;
 }
+#endif
 
+#ifdef L_str_fromDouble
 std::string G::Str::fromDouble( double d )
 {
 	std::ostringstream ss ;
 	ss << std::setprecision(16) << d ; // was "setprecision(DBL_DIG+1)
 	return ss.str() ;
 }
+#endif
 
+#ifdef L_str_fromInt
 std::string G::Str::fromInt( int i )
 {
 	std::ostringstream ss ;
 	ss << i ;
 	return ss.str() ;
 }
+#endif
 
+#ifdef L_str_fromLong
 std::string G::Str::fromLong( long l )
 {
 	std::ostringstream ss ;
 	ss << l ;
 	return ss.str() ;
 }
+#endif
 
+#ifdef L_str_fromShort
 std::string G::Str::fromShort( short s )
 {
 	std::ostringstream ss ;
 	ss << s ;
 	return ss.str() ;
 }
+#endif
 
+#ifdef L_str_fromUInt
 std::string G::Str::fromUInt( unsigned int ui )
 {
 	std::ostringstream ss ;
 	ss << ui ;
 	return ss.str() ;
 }
+#endif
 
+#ifdef L_str_fromULong
 std::string G::Str::fromULong( unsigned long ul )
 {
 	std::ostringstream ss ;
 	ss << ul ;
 	return ss.str() ;
 }
+#endif
 
+#ifdef L_str_fromUShort
 std::string G::Str::fromUShort( unsigned short us )
 {
 	std::ostringstream ss ;
 	ss << us ;
 	return ss.str() ;
 }
+#endif
 
+#ifdef L_str_toBool
 bool G::Str::toBool( const std::string & s )
 {
 	std::string str = lower( s ) ;
@@ -272,7 +360,9 @@ bool G::Str::toBool( const std::string & s )
 		return false ; // never gets here -- the return pacifies some compilers
 	}
 }
+#endif
 
+#ifdef L_str_toDouble
 double G::Str::toDouble( const std::string &s )
 {
 	char * end = NULL ;
@@ -286,7 +376,9 @@ double G::Str::toDouble( const std::string &s )
 
 	return result ;
 }
+#endif
 
+#ifdef L_str_toInt
 int G::Str::toInt( const std::string &s )
 {
 	long long_val = toLong( s ) ;
@@ -297,7 +389,9 @@ int G::Str::toInt( const std::string &s )
 
 	return int_val ;
 }
+#endif
 
+#ifdef L_str_toLong
 long G::Str::toLong( const std::string &s )
 {
 	char * end = NULL ;
@@ -311,7 +405,9 @@ long G::Str::toLong( const std::string &s )
 
 	return result ;
 }
+#endif
 
+#ifdef L_str_toShort
 short G::Str::toShort( const std::string &s )
 {
 	long long_val = toLong( s ) ;
@@ -322,7 +418,9 @@ short G::Str::toShort( const std::string &s )
 
 	return short_val ;
 }
+#endif
 
+#ifdef L_str_toUInt
 unsigned int G::Str::toUInt( const std::string &s , bool limited )
 {
 	unsigned long ulong_val = toULong( s ) ;
@@ -338,7 +436,9 @@ unsigned int G::Str::toUInt( const std::string &s , bool limited )
 
 	return uint_val ;
 }
+#endif
 
+#ifdef L_str_toULong
 unsigned long G::Str::toULong( const std::string &s , bool limited )
 {
 	char * end = NULL ;
@@ -357,7 +457,9 @@ unsigned long G::Str::toULong( const std::string &s , bool limited )
 
 	return result ;
 }
+#endif
 
+#ifdef L_str_toUShort
 unsigned short G::Str::toUShort( const std::string &s , bool limited )
 {
 	unsigned long ulong_val = toULong( s ) ;
@@ -373,7 +475,9 @@ unsigned short G::Str::toUShort( const std::string &s , bool limited )
 
 	return ushort_val ;
 }
+#endif
 
+#ifdef L_str_lower
 namespace
 {
 	struct ToLower : std::unary_function<char,char>
@@ -381,19 +485,19 @@ namespace
 		char operator()( char c ) { return static_cast<char>( tolower(c) ) ; }
 	} ;
 }
-
 void G::Str::toLower( std::string & s ) 
 {
 	std::transform( s.begin() , s.end() , s.begin() , ToLower() ) ; 
 }
-
 std::string G::Str::lower( const std::string & in ) 
 {
 	std::string out = in ;
 	toLower( out ) ;
 	return out ;
 }
+#endif
 
+#ifdef L_str_upper
 namespace
 {
 	struct ToUpper : std::unary_function<char,char>
@@ -401,19 +505,19 @@ namespace
 		char operator()( char c ) { return static_cast<char>( toupper(c) ) ; }
 	} ;
 }
-
 void G::Str::toUpper( std::string & s ) 
 {
 	std::transform( s.begin() , s.end() , s.begin() , ToUpper() ) ;
 }
-
 std::string G::Str::upper( const std::string & in ) 
 {
 	std::string out = in ;
 	toUpper( out ) ;
 	return out ;
 }
+#endif
 
+#ifdef L_str_printable
 namespace
 {
 	struct PrintableAppender : std::unary_function<char,void>
@@ -494,7 +598,9 @@ std::string G::Str::toPrintableAscii( char c , char escape )
 	append_printable( c ) ;
 	return result ;
 }
+#endif
 
+#ifdef L_str_readLineFrom
 std::string G::Str::readLineFrom( std::istream & stream , const std::string & eol )
 {
 	std::string result ;
@@ -512,17 +618,25 @@ void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std
 	// this is a special optimisation for a two-character terminator with a one-character initial string ;-)
 	if( eol.length() == 2U && eol[0] != eol[1] && line.length() == 1U )
 	{
+		// Save the initial character, use std::getline() for speed (terminating
+		// on the second character of the given two-character terminator), 
+		// check that the one-character terminator was actually part of 
+		// the required two-character terminator, remove the first 
+		// character of the two-character terminator, and finally
+		// re-insert the initial character.
+		//
 		const char c = line[0] ;
 		line.erase() ; // since getline() doesnt erase it if already at eof
 		std::getline( stream , line , eol[1] ) ; // fast
-		line.insert( 0U , &c , 1U ) ;
 		const std::string::size_type line_length = line.length() ;
-		if( line_length > 1U && line[line_length-1U] == eol[0] )
+		if( line_length > 0U && line[line_length-1U] == eol[0] )
 		{
 			line.resize( line_length - 1U ) ;
+			line.insert( 0U , &c , 1U ) ;
 		}
 		else if( stream.good() )
 		{
+			line.insert( 0U , &c , 1U ) ;
 			line.append( 1U , eol[1] ) ;
 			readLineFromImp( stream , eol , line ) ;
 		}
@@ -580,7 +694,9 @@ void G::Str::readLineFromImp( std::istream & stream , const std::string & eol , 
 		stream.setstate( std::ios_base::failbit ) ; 
 	}
 }
+#endif
 
+#ifdef L_str_wrap
 std::string G::Str::wrap( std::string text , const std::string & prefix_1 , 
 	const std::string & prefix_2 , size_type width )
 {
@@ -642,7 +758,9 @@ std::string G::Str::wrap( std::string text , const std::string & prefix_1 ,
 	}
 	return ss.str() ;
 }
+#endif
 
+#ifdef L_str_splitIntoTokens
 namespace
 {
 	template <typename T>
@@ -672,7 +790,9 @@ void G::Str::splitIntoTokens( const std::string &in , StringArray &out , const s
 {
 	splitIntoTokens_( in , out , ws ) ;
 }
+#endif
 
+#ifdef L_str_splitIntoFields
 namespace
 {
 	template <typename T>
@@ -727,7 +847,9 @@ void G::Str::splitIntoFields( const std::string & in , StringArray & out , const
 {
 	splitIntoFields_( in , out , ws , escape , discard_bogus ) ;
 }
+#endif
 
+#ifdef L_str_join
 namespace
 {
 	template <typename T>
@@ -767,7 +889,9 @@ std::string G::Str::join( const StringArray & strings , const std::string & sep 
 	std::for_each( strings.begin() , strings.end() , Joiner<std::string>(result,sep,first) ) ; 
 	return result ;
 }
+#endif
 
+#ifdef L_str_keys
 namespace
 {
 	template <typename T>
@@ -783,12 +907,16 @@ G::Strings G::Str::keys( const StringMap & map )
 	std::transform( map.begin() , map.end() , std::back_inserter(result) , Firster<StringMap::value_type>() ) ;
 	return result ;
 }
+#endif
 
+#ifdef L_str_ws
 std::string G::Str::ws()
 {
 	return std::string(" \t\n\r") ;
 }
+#endif
 
+#ifdef L_str_head
 std::string G::Str::head( const std::string & in , std::string::size_type pos , const std::string & default_ )
 {
 	return
@@ -796,7 +924,9 @@ std::string G::Str::head( const std::string & in , std::string::size_type pos , 
 			default_ :
 			( pos == 0U ? std::string() : in.substr(0U,pos) ) ;
 }
+#endif
 
+#ifdef L_str_tail
 std::string G::Str::tail( const std::string & in , std::string::size_type pos , const std::string & default_ )
 {
 	return
@@ -804,15 +934,17 @@ std::string G::Str::tail( const std::string & in , std::string::size_type pos , 
 			default_ :
 			( (pos+1U) == in.length() ? std::string() : in.substr(pos+1U) ) ;
 }
+#endif
 
+#ifdef L_str_tailMatch
 bool G::Str::tailMatch( const std::string & in , const std::string & ending )
 {
-	// (use compare() to avoid the temporary from substr())
 	return
 		ending.empty() ||
 		( in.length() >= ending.length() && 
 			in.substr( in.length() - ending.length() ) == ending ) ;
 			// 0 == in.compare( in.length() - ending.length() , ending.length() , ending ) // faster, but not gcc2.95
 }
+#endif
 
 /// \file gstr.cpp

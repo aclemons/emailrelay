@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gdaemon.h"
 #include "gprocess.h"
+#include "gnewprocess.h"
 
 void G::Daemon::detach( PidFile & pid_file )
 {
@@ -32,13 +33,13 @@ void G::Daemon::detach()
 {
 	// see Stevens, ISBN 0-201-563137-7, ch 13.
 
-	if( Process::fork() == Process::Parent )
+	if( NewProcess::fork() == NewProcess::Parent )
 		::_exit( 0 ) ;
 
 	setsid() ;
 	G_IGNORE Process::cd( "/" , Process::NoThrow() ) ;
 
-	if( Process::fork() == Process::Parent )
+	if( NewProcess::fork() == NewProcess::Parent )
 		::_exit( 0 ) ;
 }
 

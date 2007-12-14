@@ -48,6 +48,11 @@ private:
 	virtual void onNcDestroy() ;
 	virtual void onCommand( unsigned int id ) ;
 	std::string text() const ;
+	static std::string str( const Configuration & , const std::string & line_prefix , const std::string & eol ) ;
+	static std::string yn( bool b ) ;
+	static std::string na() ;
+	static std::string na( const std::string & s ) ;
+	static std::string any( const std::string & s ) ;
 
 private:
 	WinApp & m_app ;

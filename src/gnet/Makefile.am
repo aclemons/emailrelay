@@ -15,22 +15,30 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+if IPV6
+IPV6_EXTRA_DIST = gaddress_ipv4.cpp gresolver_ipv4.cpp
+IPV6_SOURCES = gaddress_ipv6.cpp gresolver_ipv6.cpp
+else
+IPV6_EXTRA_DIST = gaddress_ipv6.cpp gresolver_ipv6.cpp
+IPV6_SOURCES = gaddress_ipv4.cpp gresolver_ipv4.cpp
+endif
+
 EXTRA_DIST=\
-    gaddress_ipv6.cpp \
+	$(IPV6_EXTRA_DIST) \
     gdescriptor_win32.cpp \
     geventloop_win32.cpp \
     glocal_win32.cpp \
     grequest.cpp \
-    gresolver_ipv6.cpp \
     gresolver_win32.cpp \
     gsimpleclient_win32.cpp \
     gsocket_win32.cpp \
     mingw.mak
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib  -I$(top_srcdir)/src/gssl
-noinst_LIBRARIES = libgnet.a libipv4.a libipv6.a
+noinst_LIBRARIES = libgnet.a
 
 libgnet_a_SOURCES = \
+	$(IPV6_SOURCES) \
 	gaddress.h \
 	gbufferedserverpeer.cpp \
 	gbufferedserverpeer.h \
@@ -79,7 +87,4 @@ libgnet_a_SOURCES = \
 	gtimer.h \
 	gtimerlist.cpp \
 	gtimerlist.h
-
-libipv4_a_SOURCES=gaddress_ipv4.cpp gresolver_ipv4.cpp
-libipv6_a_SOURCES=gaddress_ip.cpp gresolver_ip.cpp
 

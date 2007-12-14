@@ -53,14 +53,22 @@ am__installdirs = "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(sbindir)" \
 e_libexecPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(e_libexec_PROGRAMS) $(sbin_PROGRAMS)
-am_emailrelay_OBJECTS = commandline.$(OBJEXT) configuration.$(OBJEXT) \
-	legal.$(OBJEXT) main.$(OBJEXT) output.$(OBJEXT) run.$(OBJEXT)
+am__emailrelay_SOURCES_DIST = admin_disabled.cpp admin_enabled.cpp \
+	commandline_full.cpp commandline_simple.cpp admin.h \
+	commandline.h configuration.h configuration.cpp legal.cpp \
+	legal.h main.cpp output.cpp output.h run.cpp run.h
+@ADMIN_FALSE@am__objects_1 = admin_disabled.$(OBJEXT)
+@ADMIN_TRUE@am__objects_1 = admin_enabled.$(OBJEXT)
+@SIMPLE_CONFIG_FALSE@am__objects_2 = commandline_full.$(OBJEXT)
+@SIMPLE_CONFIG_TRUE@am__objects_2 = commandline_simple.$(OBJEXT)
+am_emailrelay_OBJECTS = $(am__objects_1) $(am__objects_2) \
+	configuration.$(OBJEXT) legal.$(OBJEXT) main.$(OBJEXT) \
+	output.$(OBJEXT) run.$(OBJEXT)
 emailrelay_OBJECTS = $(am_emailrelay_OBJECTS)
 am__DEPENDENCIES_1 =
 emailrelay_DEPENDENCIES = $(top_builddir)/src/gpop/libgpop.a \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/glib/libglib.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
@@ -79,7 +87,6 @@ am_emailrelay_submit_OBJECTS = submit.$(OBJEXT) legal.$(OBJEXT)
 emailrelay_submit_OBJECTS = $(am_emailrelay_submit_OBJECTS)
 emailrelay_submit_DEPENDENCIES = $(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(top_builddir)/src/glib/libglib.a
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -96,9 +103,9 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 SOURCES = $(emailrelay_SOURCES) $(emailrelay_filter_copy_SOURCES) \
 	$(emailrelay_passwd_SOURCES) $(emailrelay_poke_SOURCES) \
 	$(emailrelay_submit_SOURCES)
-DIST_SOURCES = $(emailrelay_SOURCES) $(emailrelay_filter_copy_SOURCES) \
-	$(emailrelay_passwd_SOURCES) $(emailrelay_poke_SOURCES) \
-	$(emailrelay_submit_SOURCES)
+DIST_SOURCES = $(am__emailrelay_SOURCES_DIST) \
+	$(emailrelay_filter_copy_SOURCES) $(emailrelay_passwd_SOURCES) \
+	$(emailrelay_poke_SOURCES) $(emailrelay_submit_SOURCES)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -143,7 +150,6 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-IP = @IP@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -167,7 +173,6 @@ QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SSL = @SSL@
 SSL_LIBS = @SSL_LIBS@
 STATIC_END = @STATIC_END@
 STATIC_START = @STATIC_START@
@@ -222,10 +227,20 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@ADMIN_FALSE@ADMIN_EXTRA_DIST = admin_enabled.cpp
+@ADMIN_TRUE@ADMIN_EXTRA_DIST = admin_disabled.cpp
+@ADMIN_FALSE@ADMIN_SOURCES = admin_disabled.cpp
+@ADMIN_TRUE@ADMIN_SOURCES = admin_enabled.cpp
+@SIMPLE_CONFIG_FALSE@CONFIG_EXTRA_DIST = commandline_simple.cpp
+@SIMPLE_CONFIG_TRUE@CONFIG_EXTRA_DIST = commandline_full.cpp
+@SIMPLE_CONFIG_FALSE@CONFIG_SOURCES = commandline_full.cpp
+@SIMPLE_CONFIG_TRUE@CONFIG_SOURCES = commandline_simple.cpp
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS = -s
 EXTRA_DIST = \
+	$(ADMIN_EXTRA_DIST) \
+	$(CONFIG_EXTRA_DIST) \
 	common.dsp \
 	doxygen.cfg \
 	doxygen.h \
@@ -263,10 +278,12 @@ EXTRA_DIST = \
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\"
 e_spool_DATA = 
 emailrelay_SOURCES = \
-	commandline.cpp \
+	$(ADMIN_SOURCES) \
+	$(CONFIG_SOURCES) \
+	admin.h \
 	commandline.h \
-	configuration.cpp \
 	configuration.h \
+	configuration.cpp \
 	legal.cpp \
 	legal.h \
 	main.cpp \
@@ -279,7 +296,6 @@ emailrelay_LDADD = \
 	$(top_builddir)/src/gpop/libgpop.a \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(STATIC_START) $(SSL_LIBS) $(STATIC_END)
@@ -292,7 +308,6 @@ emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gnet/lib$(IP).a \
 	$(top_builddir)/src/glib/libglib.a
 
 emailrelay_filter_copy_SOURCES = filter_copy.cpp filter.cpp filter.h legal.cpp legal.h
@@ -400,7 +415,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/commandline.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/admin_disabled.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/admin_enabled.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/commandline_full.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/commandline_simple.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/configuration.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter_copy.Po@am__quote@

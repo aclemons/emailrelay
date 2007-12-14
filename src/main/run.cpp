@@ -22,6 +22,7 @@
 #include "gssl.h"
 #include "gsmtp.h"
 #include "run.h"
+#include "admin.h"
 #include "gsmtpserver.h"
 #include "gsmtpclient.h"
 #include "gsasl.h"
@@ -332,35 +333,9 @@ void Main::Run::doServing( const GSmtp::Secrets & client_secrets ,
 
 	if( cfg().doAdmin() )
 	{
-		GNet::Address listening_address = 
-			cfg().firstListeningInterface().length() ? 
-				GNet::Address(cfg().firstListeningInterface(),cfg().adminPort()) :
-				GNet::Address(cfg().adminPort()) ;
-
-		GNet::Address local_address = 
-			cfg().clientInterface().length() ? 
-				GNet::Address(cfg().clientInterface(),0U) :
-				GNet::Address(0U) ;
-
-		G::StringMap extra_commands_map ;
-		extra_commands_map.insert( std::make_pair(std::string("version"),versionNumber()) ) ;
-		extra_commands_map.insert( std::make_pair(std::string("warranty"),
-			Legal::warranty(std::string(),std::string(1U,'\n'))) ) ;
-		extra_commands_map.insert( std::make_pair(std::string("credit"),
-			GSsl::Library::credit(std::string(),std::string(1U,'\n'),std::string())) ) ;
-		extra_commands_map.insert( std::make_pair(std::string("copyright"),Legal::copyright()) ) ;
-
-		m_admin_server <<= new GSmtp::AdminServer( 
-			store , 
-			clientConfig() ,
-			client_secrets , 
-			listening_address ,
-			cfg().allowRemoteClients() , 
-			local_address ,
-			cfg().serverAddress() ,
-			cfg().connectionTimeout() ,
-			extra_commands_map ,
-			cfg().withTerminate() ) ;
+		std::auto_ptr<GSmtp::AdminServer> admin_server = Admin::newServer( cfg() , store , clientConfig() , 
+			client_secrets , versionNumber() ) ;
+		m_admin_server <<= admin_server.release() ;
 	}
 
 	if( cfg().doPolling() )
@@ -378,7 +353,7 @@ void Main::Run::doServing( const GSmtp::Secrets & client_secrets ,
 
 	closeMoreFiles() ;
 	if( smtp_server.get() ) smtp_server->report() ;
-	if( m_admin_server.get() ) m_admin_server->report() ;
+	if( m_admin_server.get() ) Admin::report( *m_admin_server.get() ) ;
 	if( pop_server.get() ) pop_server->report() ;
 	event_loop.run() ;
 	m_admin_server <<= 0 ;
@@ -556,7 +531,7 @@ void Main::Run::emit( const std::string & s0 , const std::string & s1 , const st
 		m_signal.emit( s0 , s1 , s2 ) ;
 		if( m_admin_server.get() != NULL )
 		{
-			m_admin_server->notify( s0 , s1 , s2 ) ;
+			Admin::notify( *m_admin_server.get() , s0 , s1 , s2 ) ;
 		}
 	}
 	catch( std::exception & e )

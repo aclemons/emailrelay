@@ -84,7 +84,7 @@ bool GSmtp::ProtocolMessageForward::setFrom( const std::string & from )
 	return m_pm->setFrom( from ) ;
 }
 
-bool GSmtp::ProtocolMessageForward::addTo( const std::string & to , Verifier::Status to_status )
+bool GSmtp::ProtocolMessageForward::addTo( const std::string & to , VerifierStatus to_status )
 {
 	return m_pm->addTo( to , to_status ) ;
 }

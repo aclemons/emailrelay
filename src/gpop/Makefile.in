@@ -47,9 +47,15 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libgpop_a_AR = $(AR) $(ARFLAGS)
 libgpop_a_LIBADD =
-am_libgpop_a_OBJECTS = gpopauth.$(OBJEXT) gpopsecrets.$(OBJEXT) \
-	gpopsecrets_unix.$(OBJEXT) gpopserver.$(OBJEXT) \
-	gpopstore.$(OBJEXT) gpopserverprotocol.$(OBJEXT)
+am__libgpop_a_SOURCES_DIST = gpop_disabled.cpp gpopauth.cpp gpopauth.h \
+	gpop.h gpopsecrets.cpp gpopsecrets_unix.cpp gpopsecrets.h \
+	gpopserver.cpp gpopserver.h gpopstore.cpp gpopstore.h \
+	gpopserverprotocol.cpp gpopserverprotocol.h
+@POP_FALSE@am__objects_1 = gpop_disabled.$(OBJEXT)
+@POP_TRUE@am__objects_1 = gpopauth.$(OBJEXT) gpopsecrets.$(OBJEXT) \
+@POP_TRUE@	gpopsecrets_unix.$(OBJEXT) gpopserver.$(OBJEXT) \
+@POP_TRUE@	gpopstore.$(OBJEXT) gpopserverprotocol.$(OBJEXT)
+am_libgpop_a_OBJECTS = $(am__objects_1)
 libgpop_a_OBJECTS = $(am_libgpop_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -64,7 +70,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libgpop_a_SOURCES)
-DIST_SOURCES = $(libgpop_a_SOURCES)
+DIST_SOURCES = $(am__libgpop_a_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -101,7 +107,6 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-IP = @IP@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -125,7 +130,6 @@ QT_LIBS = @QT_LIBS@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SSL = @SSL@
 SSL_LIBS = @SSL_LIBS@
 STATIC_END = @STATIC_END@
 STATIC_START = @STATIC_START@
@@ -180,26 +184,44 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@POP_FALSE@POP_EXTRA_DIST = \
+@POP_FALSE@	gpopauth.cpp \
+@POP_FALSE@	gpopauth.h \
+@POP_FALSE@	gpop.h \
+@POP_FALSE@	gpopsecrets.cpp \
+@POP_FALSE@	gpopsecrets_unix.cpp \
+@POP_FALSE@	gpopsecrets.h \
+@POP_FALSE@	gpopserver.cpp \
+@POP_FALSE@	gpopserver.h \
+@POP_FALSE@	gpopstore.cpp \
+@POP_FALSE@	gpopstore.h \
+@POP_FALSE@	gpopserverprotocol.cpp \
+@POP_FALSE@	gpopserverprotocol.h
+
+@POP_TRUE@POP_EXTRA_DIST = gpop_disabled.cpp
+@POP_FALSE@POP_SOURCES = gpop_disabled.cpp
+@POP_TRUE@POP_SOURCES = \
+@POP_TRUE@	gpopauth.cpp \
+@POP_TRUE@	gpopauth.h \
+@POP_TRUE@	gpop.h \
+@POP_TRUE@	gpopsecrets.cpp \
+@POP_TRUE@	gpopsecrets_unix.cpp \
+@POP_TRUE@	gpopsecrets.h \
+@POP_TRUE@	gpopserver.cpp \
+@POP_TRUE@	gpopserver.h \
+@POP_TRUE@	gpopstore.cpp \
+@POP_TRUE@	gpopstore.h \
+@POP_TRUE@	gpopserverprotocol.cpp \
+@POP_TRUE@	gpopserverprotocol.h
+
 EXTRA_DIST = \
+	$(POP_EXTRA_DIST) \
 	mingw.mak \
 	gpopsecrets_win32.cpp
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_SYSCONFDIR=\"$(e_sysconfdir)\"
 noinst_LIBRARIES = libgpop.a
-libgpop_a_SOURCES = \
-	gpopauth.cpp \
-	gpopauth.h \
-	gpop.h \
-	gpopsecrets.cpp \
-	gpopsecrets_unix.cpp \
-	gpopsecrets.h \
-	gpopserver.cpp \
-	gpopserver.h \
-	gpopstore.cpp \
-	gpopstore.h \
-	gpopserverprotocol.cpp \
-	gpopserverprotocol.h
-
+libgpop_a_SOURCES = $(POP_SOURCES)
 all: all-am
 
 .SUFFIXES:
@@ -247,6 +269,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpop_disabled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpopauth.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpopsecrets.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpopsecrets_unix.Po@am__quote@

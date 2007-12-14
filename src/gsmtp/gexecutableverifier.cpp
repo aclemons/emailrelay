@@ -23,6 +23,7 @@
 #include "gstrings.h"
 #include "gexecutableverifier.h"
 #include "gprocess.h"
+#include "gnewprocess.h"
 #include "gfile.h"
 #include "groot.h"
 #include "gstr.h"
@@ -71,7 +72,7 @@ GSmtp::VerifierStatus GSmtp::ExecutableVerifier::verifyExternal( const std::stri
 		<< "\"" << mechanism << "\" \"" << extra << "\"" ) ;
 
 	std::string response ;
-	int rc = G::Process::spawn( G::Root::nobody() , m_exe.exe() , args , &response ) ;
+	int rc = G::NewProcess::spawn( G::Root::nobody() , m_exe.exe() , args , &response ) ;
 
 	G_LOG( "GSmtp::ExecutableVerifier: " << rc << ": \"" << G::Str::printable(response) << "\"" ) ;
 	G::Str::trimRight( response , " \n\t" ) ;

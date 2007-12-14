@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or 
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ===
+#
+# configure-mips.sh
+#
+# Runs the configure script for a size-optimised mips build.
+#
+# The toolchain is expected to have been built by extra/mips/toolchain.mak.
+#
+# usage: configure-mips.sh [<toolchain-root>]
+#
+# eg: 
+#
+#  build the toolchain...
+#   $ cd ~/emailrelay-1.8/extra/mips
+#   $ vi toolchain.mak
+#   $ make -f toolchain.mak
+#
+#  build emailrelay...
+#   $ mkdir -p ~/emailrelay-1.8/mips
+#   $ cd ~/emailrelay-1.8/mips
+#   $ ../extra/mips/configure-mips.sh
+#   $ make
+#
+#  install...
+#   $ ../extra/mips/binutils/bin/mipsel-elf-linux-gnu-strip src/main/emailrelay
+#   $ cp src/main/emailrelay ...
+#   $ cp ../extra/mips/uclibc/lib/libuClibc-0.9.27.so ...
+#   $ cp ../extra/mips/uclibc/usr/uClibc++/lib/libuClibc++-0.2.2.so ...
+#
+# For even smaller shared libraries look at uClibc*/extra/libstrip/libstrip.
+#
+
+TOOLCHAIN="${1}"
+if test ! -d "${TOOLCHAIN}" ; then TOOLCHAIN="`dirname $0`" ; fi
+if test ! -d "${TOOLCHAIN}/gcc" -a -d "${HOME}/cross/gcc" ; then TOOLCHAIN="${HOME}/cross" ; fi
+
+# make absolute
+TOOLCHAIN="`cd $TOOLCHAIN && pwd`"
+
+echo `basename $0`: toolchain root: $TOOLCHAIN
+
+CXX=$TOOLCHAIN/uclibc/usr/uClibc++/bin/g++-uc CC=$TOOLCHAIN/gcc/2/bin/gcc-mips CPPFLAGS="-I$TOOLCHAIN/uclibc/usr/uClibc++/include -DG_NO_LOG" CXXFLAGS="-Os" LDFLAGS="-L$TOOLCHAIN/uclibc/usr/uClibc++/lib -Xlinker --dynamic-linker=/lib/ld-uClibc.so.0 -Xlinker -Map -Xlinker /tmp/map" ../configure --disable-debug --enable-fhs --host=mipsel-elf-linux-gnu --disable-exec --disable-pop --disable-admin --disable-gui --disable-auth --enable-simple-config --enable-fragments --without-openssl --without-doxygen --without-man2html
+

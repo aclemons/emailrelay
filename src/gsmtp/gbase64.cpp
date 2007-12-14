@@ -23,6 +23,7 @@
 #include "gbase64.h"
 #include "gassert.h"
 #include "gstr.h"
+#include <cstring>
 
 namespace
 {

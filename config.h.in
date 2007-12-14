@@ -16,9 +16,6 @@
 /* Define to 1 if gmtime_r in time.h */
 #undef HAVE_GMTIME_R
 
-/* Define to 1 to enable gui code */
-#undef HAVE_GUI
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -33,9 +30,6 @@
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
-
-/* Define to 1 to enable tls/ssh code using openssl */
-#undef HAVE_OPENSSL
 
 /* Define to 1 if setgroups is available */
 #undef HAVE_SETGROUPS
@@ -81,9 +75,6 @@
 /* Define to 1 if you have the <zlib.h> header file. */
 #undef HAVE_ZLIB_H
 
-/* Name of package */
-#undef PACKAGE
-
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
@@ -104,9 +95,6 @@
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
-
-/* Version number of package */
-#undef VERSION
 
 /* Define to enable extra debug messages at compile-time */
 #undef _DEBUG
