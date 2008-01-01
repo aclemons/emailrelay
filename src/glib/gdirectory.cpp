@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -86,9 +86,8 @@ void G::DirectoryList::readAll( const G::Path & dir )
 
 void G::DirectoryList::readType( const G::Path & dir , const std::string & suffix , unsigned int limit )
 {
-	// could call readMatching(dir,"*"+suffix) here, but we
-	// do our own filename matching so as to reduce our
-	// dependency on the glob()bing DirectoryIterator
+	// we do our own filename matching here so as to reduce
+	// our dependency on the glob()bing DirectoryIterator
 
 	Directory directory( dir ) ;
 	DirectoryIterator iter( directory ) ;
@@ -105,18 +104,6 @@ void G::DirectoryList::readType( const G::Path & dir , const std::string & suffi
 			if( m_path.size() == limit )
 				break ;
 		}
-	}
-}
-
-void G::DirectoryList::readMatching( const G::Path & dir , const std::string & wildcard )
-{
-	Directory directory( dir ) ;
-	DirectoryIterator iter( directory , wildcard ) ;
-	while( iter.more() && !iter.error() )
-	{
-		m_is_dir.push_back( iter.isDir() ) ;
-		m_path.push_back( iter.filePath() ) ;
-		m_name.push_back( iter.fileName() ) ;
 	}
 }
 

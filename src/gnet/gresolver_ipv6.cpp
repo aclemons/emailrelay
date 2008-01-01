@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,9 +28,24 @@
 #include "gdebug.h"
 #include "glog.h"
 
+unsigned int GNet::Resolver::resolveService( const std::string & service_name , bool udp , std::string & error )
+{
+	servent * service = ::getservbyname( service_name.c_str() , udp ? "udp" : "tcp" ) ;
+	if( service == NULL )
+	{
+		error = "invalid service name" ;
+		return 0U ;
+	}
+	else
+	{
+		Address service_address( *service ) ;
+		return service_address.port() ;
+	}
+}
+
 #if defined(HAVE_GETIPNODEBYNAME) && HAVE_GETIPNODEBYNAME
 
-bool GNet::Resolver::resolveHost( const std::string & host_name , unsigned int port , ResolverInfo & result )
+std::string GNet::Resolver::resolveHost( const std::string & host_name , unsigned int port , ResolverInfo & result )
 {
 	hostent * host = NULL ;
 	try
@@ -43,7 +58,7 @@ bool GNet::Resolver::resolveHost( const std::string & host_name , unsigned int p
 			result.update( Address(*host,port) , std::string(h_name?h_name:"") ) ;
 			::freehostent( host ) ;
 		}
-		return host != NULL ;
+		return host == NULL ? ( std::string("invalid host name: \"") + host_name + "\"" ) : std::string() ;
 	}
 	catch(...) // rethrown
 	{
@@ -57,7 +72,7 @@ bool GNet::Resolver::resolveHost( const std::string & host_name , unsigned int p
 #include <resolv.h> // requires -D_USE_BSD
 extern "C" { struct hostent * gethostbyname2( const char * , int ) ; } ;
 
-bool GNet::Resolver::resolveHost( const std::string & host_name , unsigned int port , ResolverInfo & result )
+std::string GNet::Resolver::resolveHost( const std::string & host_name , unsigned int port , ResolverInfo & result )
 {
 	res_init() ;
 	_res.options |= RES_USE_INET6 ;
@@ -67,7 +82,7 @@ bool GNet::Resolver::resolveHost( const std::string & host_name , unsigned int p
 	{
 		result.update( Address(*host,port) , std::string(host->h_name) ) ;
 	}
-	return host != NULL ;
+	return host == NULL ? ( std::string("invalid host name: \"") + host_name + "\"" ) : std::string() ;
 }
 
 #endif

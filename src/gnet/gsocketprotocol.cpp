@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,8 +39,6 @@ namespace
 class GNet::SocketProtocolImp 
 {
 private:
-	typedef SocketProtocol::ReadError ReadError ;
-	typedef SocketProtocol::SendError SendError ;
 	enum State { State_raw , State_connecting , State_accepting , State_writing , State_idle } ;
 
 	EventHandler & m_handler ;
@@ -147,7 +145,7 @@ bool GNet::SocketProtocolImp::send( const std::string & data , std::string::size
 	}
 	else if( m_state == State_connecting || m_state == State_accepting )
 	{
-		throw SendError( "still busy negotiating" ) ;
+		throw SocketProtocol::SendError( "still busy negotiating" ) ;
 	}
 	else if( m_state == State_writing )
 	{
@@ -158,7 +156,7 @@ bool GNet::SocketProtocolImp::send( const std::string & data , std::string::size
 		// we rely on the client code taking account of the return value 
 		// from send() and waiting for onSendComplete() when required
 		//
-		throw SendError( "still busy sending the last packet" ) ;
+		throw SocketProtocol::SendError( "still busy sending the last packet" ) ;
 	}
 	else
 	{
@@ -208,7 +206,7 @@ void GNet::SocketProtocolImp::sslConnectImp()
 	{
 		socket().dropWriteHandler() ;
 		m_state = State_raw ;
-		throw ReadError( "ssl connect" ) ;
+		throw SocketProtocol::ReadError( "ssl connect" ) ;
 	}
 	else if( rc == GSsl::Protocol::Result_read )
 	{
@@ -248,7 +246,7 @@ void GNet::SocketProtocolImp::sslAcceptImp()
 	{
 		socket().dropWriteHandler() ;
 		m_state = State_raw ;
-		throw ReadError( "ssl accept" ) ;
+		throw SocketProtocol::ReadError( "ssl accept" ) ;
 	}
 	else if( rc == GSsl::Protocol::Result_read )
 	{
@@ -282,7 +280,7 @@ bool GNet::SocketProtocolImp::sslSendImp()
 	{
 		socket().dropWriteHandler() ;
 		m_state = State_idle ;
-		throw SendError( "ssl write" ) ;
+		throw SocketProtocol::SendError( "ssl write" ) ;
 	}
 	else if( result == GSsl::Protocol::Result_read )
 	{
@@ -315,7 +313,7 @@ void GNet::SocketProtocolImp::sslReadImp()
 	{
 		socket().dropWriteHandler() ;
 		m_state = State_idle ;
-		throw ReadError( "ssl read" ) ;
+		throw SocketProtocol::ReadError( "ssl read" ) ;
 	}
 	else if( rc == GSsl::Protocol::Result_read )
 	{
@@ -343,7 +341,7 @@ void GNet::SocketProtocolImp::rawReadEvent()
 
 	if( rc == 0 || ( rc == -1 && !socket().eWouldBlock() ) )
 	{
-		throw ReadError() ;
+		throw SocketProtocol::ReadError() ;
 	}
 	else if( rc != -1 )
 	{
@@ -360,7 +358,7 @@ bool GNet::SocketProtocolImp::rawSend( const std::string & data , std::string::s
 {
 	bool all_sent = rawSendImp( data , offset , m_raw_residue ) ;
 	if( !all_sent && failed() )
-		throw SendError() ;
+		throw SocketProtocol::SendError() ;
 	if( !all_sent )
 	{
 		socket().addWriteHandler( m_handler ) ;
@@ -375,7 +373,7 @@ bool GNet::SocketProtocolImp::rawWriteEvent()
 	logFlowControlReleased() ;
 	bool all_sent = rawSendImp( m_raw_residue , 0 , m_raw_residue ) ;
 	if( !all_sent && failed() )
-		throw SendError() ;
+		throw SocketProtocol::SendError() ;
 	if( !all_sent )
 	{
 		socket().addWriteHandler( m_handler ) ;

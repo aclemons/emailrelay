@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-EXTRA_DIST = emailrelay.sh_ doxygen.sh_ txt2html.sh_ txt2mu.sh_ mu2html.sh_ mu2docbook.sh_ expand.sh_ emailrelay-notify.sh_ emailrelay-resubmit.sh_ emailrelay-deliver.sh_ emailrelay-process.sh_ emailrelay-runperl.js emailrelay-resubmit.js emailrelay-submit.sh_ emailrelay-multicast.sh_
-work_scripts = doxygen.sh txt2mu.sh mu2html.sh mu2docbook.sh expand.sh txt2html.sh emailrelay.sh
+EXTRA_DIST = emailrelay.sh_ doxygen.sh_ txt2html.sh_ txt2mu.sh_ mu2html.sh_ mu2docbook.sh_ expand.sh_ emailrelay-notify.sh_ emailrelay-resubmit.sh_ emailrelay-deliver.sh_ emailrelay-process.sh_ emailrelay-runperl.js emailrelay-resubmit.js emailrelay-submit.sh_ emailrelay-multicast.sh_ fragment.pl_
+work_scripts = doxygen.sh txt2mu.sh mu2html.sh mu2docbook.sh expand.sh txt2html.sh emailrelay.sh fragment.pl
 noinst_SCRIPTS = emailrelay-runperl.js emailrelay-resubmit.js $(work_scripts)
 e_init_SCRIPTS = emailrelay
 e_examples_DATA = emailrelay-process.sh emailrelay-notify.sh emailrelay-deliver.sh emailrelay-resubmit.sh emailrelay-submit.sh emailrelay-multicast.sh
@@ -28,6 +28,10 @@ SUFFIXES = .sh_ .sh
 .sh_.sh:
 	cat $(srcdir)/../bin/$*.sh_ | sed "s%__SPOOL_DIR__%${e_spooldir}%g;s%__SBIN_DIR__%${sbindir}%g;"'s/\[:digit:\]/0-9/g;s/\[:space:\]/ \\t/g' > $*.tmp && mv $*.tmp $*.sh 
 	chmod ugo+x $*.sh
+
+.pl_.pl:
+	cp $(srcdir)/../bin/$*.pl_ $*.pl
+	chmod ugo+x $*.pl
 
 emailrelay: emailrelay.sh
 	cp emailrelay.sh emailrelay

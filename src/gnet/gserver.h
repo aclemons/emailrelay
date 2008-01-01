@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -199,15 +199,14 @@ public:
 		///< false if flow control asserted (see onSendComplete()). 
 		///< Throws on error.
 
-	void doDelete() ; 
+	void doDelete( const std::string & = std::string() ) ; 
 		///< Does "onDelete(); delete this".
 
 	std::string logId() const ;
 		///< Returns an identification string for logging purposes.
 
 	virtual std::pair<bool,Address> localAddress() const ;
-		///< Returns the local address.
-		///< Pair.first is false on error.
+		///< Returns the local address. Pair.first is false on error.
 		///< Final override from GNet::Connection.
 
 	virtual std::pair<bool,Address> peerAddress() const ;
@@ -224,8 +223,7 @@ public:
 		///< Final override from GNet::EventHandler.
 
 	void doDeleteThis( int ) ;
-		///< Does delete this. Should only be used by 
-		///< the GNet::Server class.
+		///< Does delete this. Should only be used by the GNet::Server class.
 
 protected:
 	virtual ~ServerPeer() ;
@@ -233,7 +231,7 @@ protected:
 		///< when they detect that the connection has been 
 		///< lost -- see doDelete().
 
-	virtual void onDelete() = 0 ;
+	virtual void onDelete( const std::string & reason ) = 0 ;
 		///< Called just before destruction. (Note that the
 		///< object typically deletes itself.)
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -92,7 +92,7 @@ public:
 		///< Runs the application.
 		///< Precondition: prepare() returned true
 
-	Configuration cfg() const ;
+	const Configuration & config() const ;
 		///< Returns a configuration object.
 
 	static std::string versionNumber() ;
@@ -137,6 +137,7 @@ private:
 	Output & m_output ;
 	std::string m_switch_spec ;
 	std::auto_ptr<CommandLine> m_cl ;
+	std::auto_ptr<Configuration> m_cfg ;
 	std::auto_ptr<G::LogOutput> m_log_output ;
 	G::Arg m_arg ;
 	G::Signal3<std::string,std::string,std::string> m_signal ;

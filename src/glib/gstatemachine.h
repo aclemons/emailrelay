@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 namespace G
 {
 
-G_EXCEPTION( StateMachine_Error , "invalid state machine transition" ) ;
+G_EXCEPTION_CLASS( StateMachine_Error , "invalid state machine transition" ) ;
 
 /// \class StateMachine
 /// A finite state machine class template. 
@@ -137,7 +137,7 @@ public:
 		///<
 		///< As a special implementation feature the StateMachine
 		///< object may be deleted during the last action method
-		///< call (ie. the one which takes the state to the
+		///< callback (ie. the one which takes the state to the
 		///< 's_end' state).
 
 	State state() const ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,12 +35,14 @@
 #include <iostream>
 #include <fstream>
 
-GSmtp::NewFile::NewFile( const std::string & from , FileStore & store ) :
+GSmtp::NewFile::NewFile( const std::string & from , FileStore & store , unsigned long max_size ) :
 	m_store(store) ,
 	m_from(from) ,
 	m_committed(false) ,
 	m_eight_bit(false) ,
-	m_saved(false)
+	m_saved(false) ,
+	m_size(0UL) ,
+	m_max_size(max_size)
 {
 	// ask the store for a unique id
 	//
@@ -116,12 +118,14 @@ void GSmtp::NewFile::addTo( const std::string & to , bool local )
 		m_to_remote.push_back( to ) ;
 }
 
-void GSmtp::NewFile::addText( const std::string & line )
+bool GSmtp::NewFile::addText( const std::string & line )
 {
+	m_size += ( line.size() + 2U ) ;
 	if( ! m_eight_bit )
 		m_eight_bit = isEightBit( line ) ;
 
 	*(m_content.get()) << line << crlf() ;
+	return m_max_size == 0UL || m_size < m_max_size ;
 }
 
 void GSmtp::NewFile::flushContent()

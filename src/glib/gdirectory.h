@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -165,17 +165,12 @@ public:
 	void readAll( const Path & dir ) ;
 		///< An initialiser that is to be used after default 
 		///< construction. Reads all files in the directory.
-		///< All file i/o is done in init()/initType().
-
-	void readMatching( const Path & dir , const std::string & wc ) ;
-		///< An initialiser that is to be used after default 
-		///< construction. Reads all files matching the wildcard.
-		///< All file i/o is done in init()/initType().
+		///< All file i/o is done in readAll()/readType().
 
 	void readType( const Path & dir , const std::string & suffix , unsigned int limit = 0U ) ;
 		///< An initialiser that is to be used after default 
 		///< construction. Reads all files that have the given suffix.
-		///< All file i/o is done in init()/initType().
+		///< All file i/o is done in readAll()/readType().
 
 	bool more() ;
 		///< Returns true if more and advances by one.

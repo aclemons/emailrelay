@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -70,25 +70,18 @@ GNet::StreamSocket & GNet::ServerPeer::socket()
 
 void GNet::ServerPeer::readEvent()
 {
-	try
-	{
-		m_sp.readEvent() ;
-	}
-	catch( SocketProtocol::ReadError & ) // avoid the warning in onException()
-	{
-		doDelete() ;
-	}
+	m_sp.readEvent() ;
 }
 
 void GNet::ServerPeer::onException( std::exception & e )
 {
-	G_WARNING( "ServerPeer::onException: exception: " << e.what() ) ;
-	doDelete() ;
+	G_DEBUG( "ServerPeer::onException: exception: " << e.what() ) ;
+	doDelete( e.what() ) ;
 }
 
-void GNet::ServerPeer::doDelete()
+void GNet::ServerPeer::doDelete( const std::string & reason )
 {
-	onDelete() ;
+	onDelete( reason ) ;
 	m_delete_timer.startTimer( 0U ) ;
 }
 

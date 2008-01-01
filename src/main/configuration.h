@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -208,6 +208,14 @@ public:
 	std::string serverTlsFile() const ;
 		///< Returns the tls certificate file if the server
 		///< should support tls.
+
+	unsigned int maxSize() const ;
+		///< Returns the maximum size of submitted messages, or zero.
+
+private:
+	bool contains( const char * ) const ;
+	std::string value( const char * ) const ;
+	unsigned int value( const char * , unsigned int ) const ;
 
 private:
 	const CommandLine & m_cl ;

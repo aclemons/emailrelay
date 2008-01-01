@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,72 +20,42 @@
 
 #include "gdef.h"
 #include "gresolver.h"
-#include "gexception.h"
-#include "gsocket.h"
-#include "gevent.h"
 #include "gstr.h"
 #include "gdebug.h"
 #include "glog.h"
 
-unsigned int GNet::Resolver::resolveService( const std::string & service_name , bool udp , std::string & error )
-{
-	if( service_name.length() != 0U && G::Str::isNumeric(service_name) )
-	{
-		if( ! G::Str::isUInt(service_name) )
-		{
-			error = "silly port number" ;
-			return 0U ;
-		}
-
-		unsigned int port = G::Str::toUInt(service_name) ;
-		if( ! Address::validPort(port) )
-		{
-			error = "invalid port number" ;
-			return 0U ;
-		}
-
-		return port ;
-	}
-	else
-	{
-		servent * service = ::getservbyname( service_name.c_str() , udp ? "udp" : "tcp" ) ;
-		if( service == NULL )
-		{
-			error = "invalid service name" ;
-			return 0U ;
-		}
-		Address service_address( *service ) ;
-		return service_address.port() ;
-	}
-}
-
 std::string GNet::Resolver::resolve( ResolverInfo & in , bool udp )
 {
-	std::string error ;
-	unsigned int port = resolveService( in.service() , udp , error ) ;
-	if( ! error.empty() )
-	{
-		G_DEBUG( "GNet::Resolver::resolve: service error: \"" << in.service() << "\": " << error ) ;
-		return error ;
-	}
+	// service
 
-	ResolverInfo result( in ) ; // copy to ensure atomic update
-	const bool valid_host = resolveHost( in.host() , port , result ) ;
-	if( !valid_host )
+	unsigned int port = 0U ;
+	std::string service_name = in.service() ;
+	if( !service_name.empty() && G::Str::isNumeric(service_name) )
 	{
-		G_DEBUG( "GNet::Resolver::resolve: host error: \"" << in.host() << "\"" ) ;
-		return std::string("invalid hostname: \"") + in.host() + "\"" ;
+		if( ! G::Str::isUInt(service_name) )
+			return "silly port number" ;
+
+		port = G::Str::toUInt(service_name) ;
+		if( ! Address::validPort(port) )
+			return "invalid port number" ;
 	}
 	else
 	{
-		G_DEBUG( "GNet::Resolver::resolve: \"" << in.host() << "\" + "
-			<< "\"" << in.service() << "\" -> "
-			<< "\"" << result.address().displayString() << "\" "
-			<< "(" << result.name() << ")" ) ;
-
-		in = result ;
-		return std::string() ;
+		std::string error ;
+		port = resolveService( in.service() , udp , error ) ;
+		if( !error.empty() )
+			return error ;
 	}
+
+	// host
+
+	ResolverInfo result( in ) ; // copy to ensure atomic update
+	std::string host_error = resolveHost( in.host() , port , result ) ;
+	if( !host_error.empty() )
+		return host_error ;
+
+	in = result ;
+	return std::string() ;
 }
 
 bool GNet::Resolver::parse( const std::string & s , std::string & host , std::string & service )

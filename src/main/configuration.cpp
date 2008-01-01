@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,37 +35,37 @@ Main::Configuration::Configuration( const CommandLine & cl ) :
 bool Main::Configuration::log() const
 {
 	return 
-		m_cl.contains( "log" ) || 
-		m_cl.contains( "as-client" ) || 
-		m_cl.contains( "as-proxy" ) || 
-		m_cl.contains( "as-server" ) ;
+		contains( "log" ) || 
+		contains( "as-client" ) || 
+		contains( "as-proxy" ) || 
+		contains( "as-server" ) ;
 }
 
 bool Main::Configuration::verbose() const
 {
-	return m_cl.contains( "verbose" ) ;
+	return contains( "verbose" ) ;
 }
 
 bool Main::Configuration::debug() const
 {
-	return m_cl.contains( "debug" ) ;
+	return contains( "debug" ) ;
 }
 
 bool Main::Configuration::useSyslog() const
 {
-	bool basic = !m_cl.contains("no-syslog") && !m_cl.contains("as-client") ;
-	bool override = m_cl.contains( "syslog" ) ;
+	bool basic = !contains("no-syslog") && !contains("as-client") ;
+	bool override = contains( "syslog" ) ;
 	return override || basic ;
 }
 
 bool Main::Configuration::logTimestamp() const
 {
-	return m_cl.contains( "log-time" ) ;
+	return contains( "log-time" ) ;
 }
 
 unsigned int Main::Configuration::port() const
 {
-	return m_cl.value( "port" , 25U ) ;
+	return value( "port" , 25U ) ;
 }
 
 G::Strings Main::Configuration::listeningInterfaces() const
@@ -92,200 +92,205 @@ std::string Main::Configuration::clientInterface() const
 
 unsigned int Main::Configuration::adminPort() const
 {
-	return m_cl.value( "admin" , 0U ) ;
+	return value( "admin" , 0U ) ;
 }
 
 bool Main::Configuration::closeStderr() const
 {
 	return 
-		m_cl.contains("close-stderr") || 
-		m_cl.contains("as-proxy") ||
-		m_cl.contains("as-server") ;
+		contains("close-stderr") || 
+		contains("as-proxy") ||
+		contains("as-server") ;
 }
 
 bool Main::Configuration::immediate() const
 {
 	return
-		m_cl.contains("immediate") ||
-		m_cl.contains("as-proxy") ;
+		contains("immediate") ||
+		contains("as-proxy") ;
 }
 
 bool Main::Configuration::daemon() const
 {
-	return !m_cl.contains("no-daemon") && !m_cl.contains("as-client") ;
+	return !contains("no-daemon") && !contains("as-client") ;
 }
 
 G::Path Main::Configuration::spoolDir() const
 {
-	return m_cl.contains("spool-dir") ?
-		G::Path(m_cl.value("spool-dir")) : 
+	return contains("spool-dir") ?
+		G::Path(value("spool-dir")) : 
 		GSmtp::MessageStore::defaultDirectory() ;
 }
 
 std::string Main::Configuration::serverAddress() const
 {
 	const char * key = "forward-to" ;
-	if( m_cl.contains("as-client") )
+	if( contains("as-client") )
 		key = "as-client" ;
-	else if( m_cl.contains("as-proxy") )
+	else if( contains("as-proxy") )
 		key = "as-proxy" ;
-	return m_cl.contains(key) ? m_cl.value(key) : std::string() ;
+	return contains(key) ? value(key) : std::string() ;
 }
 
 bool Main::Configuration::doForwarding() const
 {
-	return m_cl.contains("forward") || m_cl.contains("as-client") ;
+	return contains("forward") || contains("as-client") ;
 }
 
 bool Main::Configuration::doServing() const
 {
-	return !m_cl.contains("dont-serve") && !m_cl.contains("as-client") ;
+	return !contains("dont-serve") && !contains("as-client") ;
 }
 
 bool Main::Configuration::doPolling() const
 {
-	return m_cl.contains("poll") ;
+	return contains( "poll" ) ;
 }
 
 unsigned int Main::Configuration::pollingTimeout() const
 {
-	return m_cl.value( "poll" , 0U ) ;
+	return value( "poll" , 0U ) ;
 }
 
 unsigned int Main::Configuration::promptTimeout() const
 {
-	return m_cl.value( "prompt-timeout" , 20U ) ;
+	return value( "prompt-timeout" , 20U ) ;
 }
 
 bool Main::Configuration::doSmtp() const
 {
-	return ! m_cl.contains( "no-smtp" ) ;
+	return ! contains( "no-smtp" ) ;
 }
 
 bool Main::Configuration::doPop() const
 {
-	return m_cl.contains( "pop" ) ;
+	return contains( "pop" ) ;
 }
 
 bool Main::Configuration::popByName() const
 {
-	return m_cl.contains( "pop-by-name" ) ;
+	return contains( "pop-by-name" ) ;
 }
 
 bool Main::Configuration::popNoDelete() const
 {
-	return m_cl.contains( "pop-no-delete" ) ;
+	return contains( "pop-no-delete" ) ;
 }
 
 unsigned int Main::Configuration::popPort() const
 {
-	return m_cl.value( "pop-port" , 110U ) ;
+	return value( "pop-port" , 110U ) ;
 }
 
 bool Main::Configuration::allowRemoteClients() const
 {
-	return m_cl.contains( "remote-clients" ) ;
+	return contains( "remote-clients" ) ;
 }
 
 bool Main::Configuration::doAdmin() const
 {
-	return m_cl.contains( "admin" ) ;
+	return contains( "admin" ) ;
 }
 
 bool Main::Configuration::usePidFile() const
 {
-	return m_cl.contains( "pid-file" ) ;
+	return contains( "pid-file" ) ;
 }
 
 std::string Main::Configuration::pidFile() const
 {
-	return m_cl.value( "pid-file" ) ;
+	return value( "pid-file" ) ;
 }
 
 bool Main::Configuration::useFilter() const
 {
-	return m_cl.contains( "filter" ) ;
+	return contains( "filter" ) ;
 }
 
 std::string Main::Configuration::filter() const
 {
-	return m_cl.contains("filter") ? m_cl.value("filter") : std::string() ;
+	return contains("filter") ? value("filter") : std::string() ;
 }
 
 std::string Main::Configuration::clientFilter() const
 {
-	return m_cl.contains("client-filter") ? m_cl.value("client-filter") : std::string() ;
+	return contains("client-filter") ? value("client-filter") : std::string() ;
 }
 
 unsigned int Main::Configuration::icon() const
 {
-	unsigned int n = m_cl.value( "icon" , 0U ) ;
+	unsigned int n = value( "icon" , 0U ) ;
 	return n % 4U ;
 }
 
 bool Main::Configuration::hidden() const
 {
-	return m_cl.contains( "hidden" ) ;
+	return contains( "hidden" ) ;
 }
 
 std::string Main::Configuration::clientSecretsFile() const
 {
-	return m_cl.contains("client-auth") ? m_cl.value("client-auth") : std::string() ;
+	return contains("client-auth") ? value("client-auth") : std::string() ;
 }
 
 bool Main::Configuration::clientTls() const
 {
-	return m_cl.contains( "client-tls" ) ;
+	return contains( "client-tls" ) ;
 }
 
 std::string Main::Configuration::serverTlsFile() const
 {
-	return m_cl.contains("server-tls") ? m_cl.value("server-tls") : std::string() ;
+	return contains("server-tls") ? value("server-tls") : std::string() ;
 }
 
 std::string Main::Configuration::popSecretsFile() const
 {
-	return m_cl.contains("pop-auth") ? m_cl.value("pop-auth") : GPop::Secrets::defaultPath() ;
+	return contains("pop-auth") ? value("pop-auth") : GPop::Secrets::defaultPath() ;
 }
 
 std::string Main::Configuration::serverSecretsFile() const
 {
-	return m_cl.contains("server-auth") ? m_cl.value("server-auth") : std::string() ;
+	return contains("server-auth") ? value("server-auth") : std::string() ;
 }
 
 unsigned int Main::Configuration::responseTimeout() const
 {
-	return m_cl.value( "response-timeout" , 30U * 60U ) ;
+	return value( "response-timeout" , 30U * 60U ) ;
 }
 
 unsigned int Main::Configuration::connectionTimeout() const
 {
-	return m_cl.value( "connection-timeout" , 40U ) ;
+	return value( "connection-timeout" , 40U ) ;
 }
 
 std::string Main::Configuration::fqdn() const
 {
-	return m_cl.contains("domain") ? m_cl.value("domain") : std::string() ;
+	return contains("domain") ? value("domain") : std::string() ;
 }
 
 std::string Main::Configuration::nobody() const
 {
-	return m_cl.contains("user") ? m_cl.value("user") : std::string("daemon") ;
+	return contains("user") ? value("user") : std::string("daemon") ;
 }
 
 std::string Main::Configuration::verifier() const
 {
-	return m_cl.contains("verifier") ? m_cl.value("verifier") : std::string() ;
+	return contains("verifier") ? value("verifier") : std::string() ;
 }
 
 bool Main::Configuration::withTerminate() const
 {
-	return m_cl.contains( "admin-terminate" ) ;
+	return contains( "admin-terminate" ) ;
+}
+
+unsigned int Main::Configuration::maxSize() const
+{
+	return value( "max-size" , 0U ) ;
 }
 
 std::string Main::Configuration::scannerAddress() const
 {
-	return m_cl.contains("scanner") ? m_cl.value("scanner") : std::string() ;
+	return contains("scanner") ? value("scanner") : std::string() ;
 }
 
 unsigned int Main::Configuration::scannerConnectionTimeout() const
@@ -300,12 +305,27 @@ unsigned int Main::Configuration::scannerResponseTimeout() const
 
 bool Main::Configuration::anonymous() const
 {
-	return m_cl.contains( "anonymous" ) ;
+	return contains( "anonymous" ) ;
 }
 
 unsigned int Main::Configuration::filterTimeout() const
 {
-	return m_cl.value( "filter-timeout" , 5U * 60U ) ;
+	return value( "filter-timeout" , 5U * 60U ) ;
+}
+
+bool Main::Configuration::contains( const char * s ) const
+{
+	return m_cl.contains( s ) ;
+}
+
+std::string Main::Configuration::value( const char * s ) const
+{
+	return m_cl.value( s ) ;
+}
+
+unsigned int Main::Configuration::value( const char * s , unsigned int d ) const
+{
+	return m_cl.value( s , d ) ;
 }
 
 /// \file configuration.cpp

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,11 +18,16 @@
 #
 # configure-mips.sh
 #
-# Runs the configure script for a size-optimised mips build.
+# Runs the emailrelay configure script for a size-optimised mips build 
+# using uclibc.
 #
-# The toolchain is expected to have been built by extra/mips/toolchain.mak.
+# The toolchain is expected to have been built by "extra/mips/toolchain.mak".
 #
-# usage: configure-mips.sh [<toolchain-root>]
+# Note that in order to minimise the size of the executable a lot of
+# functionality is disabled using "--disable-whatever" switches, 
+# and the command-line usage is altered.
+#
+# usage: configure-mips.sh [-a|-x|-n] [-d <toolchain-root>] [{enable|disable} ...]
 #
 # eg: 
 #
@@ -43,17 +48,108 @@
 #   $ cp ../extra/mips/uclibc/lib/libuClibc-0.9.27.so ...
 #   $ cp ../extra/mips/uclibc/usr/uClibc++/lib/libuClibc++-0.2.2.so ...
 #
-# For even smaller shared libraries look at uClibc*/extra/libstrip/libstrip.
+# For even smaller shared libraries look at "uClibc*/extra/libstrip/libstrip".
+#
+# Edit the dynamic-linker switch to match the target environment.
 #
 
-TOOLCHAIN="${1}"
-if test ! -d "${TOOLCHAIN}" ; then TOOLCHAIN="`dirname $0`" ; fi
+# configure the ld.so path on the target system
+UCLIBC="/lib/ld-uClibc.so.0"
+
+# parse the command line switches
+if test "$1" = "-a" -o "$1" = "-x" -o "$1" = "-n" ; then sw="$1" ; shift ; fi
+
+# get the absolute path of the toolchain directory
+TOOLCHAIN="`dirname $0`"
+if test "$1" = "-d" ; then shift ; TOOLCHAIN="$1" ; shift ; fi
 if test ! -d "${TOOLCHAIN}/gcc" -a -d "${HOME}/cross/gcc" ; then TOOLCHAIN="${HOME}/cross" ; fi
-
-# make absolute
 TOOLCHAIN="`cd $TOOLCHAIN && pwd`"
-
 echo `basename $0`: toolchain root: $TOOLCHAIN
 
-CXX=$TOOLCHAIN/uclibc/usr/uClibc++/bin/g++-uc CC=$TOOLCHAIN/gcc/2/bin/gcc-mips CPPFLAGS="-I$TOOLCHAIN/uclibc/usr/uClibc++/include -DG_NO_LOG" CXXFLAGS="-Os" LDFLAGS="-L$TOOLCHAIN/uclibc/usr/uClibc++/lib -Xlinker --dynamic-linker=/lib/ld-uClibc.so.0 -Xlinker -Map -Xlinker /tmp/map" ../configure --disable-debug --enable-fhs --host=mipsel-elf-linux-gnu --disable-exec --disable-pop --disable-admin --disable-gui --disable-auth --enable-simple-config --enable-fragments --without-openssl --without-doxygen --without-man2html
+if test "$sw" = "" -o "$sw" = "-n"
+then
+
+	# prepare enable/disable switches
+	debug=${1-disable}
+	exec=${2-disable}
+	auth=${3-disable}
+	admin=${4-disable}
+	identity=${5-disable}
+	pop=${6-disable}
+	dns=${7-disable}
+	if test "$8" = "enable" ; then a8="disable" ; else a8="enable" ; fi
+	if test "$9" = "enable" ; then a9="disable" ; else a9="enable" ; fi
+	if test "$10" = "enable" ; then a10="disable" ; else a10="enable" ; fi
+	verbose=${11-disable}
+	proxy=${12-disable}
+	small_config=${a8}
+	small_exceptions=${a9}
+	small_fragments=${a10}
+	args="--$debug-debug --$exec-exec --$auth-auth --$admin-admin --$identity-identity --$pop-pop --$dns-dns"
+	args="$args --$a8-small-config --$a9-small-exceptions --$a10-small-fragments --$verbose-verbose --$proxy-proxy"
+	
+	# prepare the configure command-line parts
+	cxx="$TOOLCHAIN/uclibc/usr/uClibc++/bin/g++-uc"
+	cc="$TOOLCHAIN/gcc/2/bin/gcc-mips"
+	cppflags="-I$TOOLCHAIN/uclibc/usr/uClibc++/include"
+	cxxflags="-Os"
+	ldflags="-L$TOOLCHAIN/uclibc/usr/uClibc++/lib -Xlinker --dynamic-linker=$UCLIBC -Xlinker -Map -Xlinker /tmp/map"
+	cfg="../configure" 
+	args_="--host=mipsel-elf-linux-gnu --enable-fhs --disable-gui --without-glob --without-openssl"
+	args_="$args_ --without-doxygen --without-man2html"
+
+	# run "configure"
+	if test "$sw" = ""
+	then
+		CXX="$cxx" CC="$cc" CPPFLAGS="$cppflags" CXXFLAGS="$cxxflags" LDFLAGS="$ldflags" $cfg $args_ $args
+	else
+		echo -n CXX=\"$cxx\" CC=\"$cc\" CPPFLAGS=\"$cppflags\" CXXFLAGS=\"$cxxflags\" LDFLAGS=\"$ldflags\" 
+		echo $cfg $args_ $args
+	fi
+
+	exit
+fi
+
+# extra stuff for testing ...
+
+Args()
+{
+        for i_ in 1 2 3 4 5 6 7 8 9 10 11 12
+        do
+                if test $1 -ge $i_ ; then echo -n "enable " ; else echo -n "disable " ; fi
+        done
+        echo ''
+}
+
+if test "$sw" = "-a"
+then
+	for i in 00 01 02 03 04 05 06 07 08 09 10 11 12
+	do
+        echo ./configure-mips.sh '"$@"' `Args $i` > configure-$i.sh
+		chmod +x configure-$i.sh
+	done
+	exit
+fi
+
+Make()
+{
+	make distclean
+	rm -f src/main/emailrelay
+	./configure-$i.sh
+	grep '#' config.h | sed 's/^/:: /'
+	grep 'echo.*running.*configure' config.status | sed 's/^/++ /'
+	make -j 4
+	$TOOLCHAIN/binutils/bin/mipsel-elf-linux-gnu-strip src/main/emailrelay
+	ls -l src/main/emailrelay | sed 's/^/** /'
+	mv src/main/emailrelay emailrelay-$1
+	cd src/main && make emailrelay && cp /tmp/map ../../map-$1
+}
+
+if test "$sw" = "-x"
+then
+	for i in 00 01 02 03 04 05 06 07 08 09 10 11 12
+	do
+		Make $i > make-$i.out 2>&1
+	done
+fi
 

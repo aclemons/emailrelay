@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,9 +46,10 @@ const std::string & GPop::ServerPeer::crlf()
 	return s ;
 }
 
-void GPop::ServerPeer::onDelete()
+void GPop::ServerPeer::onDelete( const std::string & reason )
 {
-	G_LOG_S( "GPop::ServerPeer: pop connection closed: " << peerAddress().second.displayString() ) ;
+	G_LOG_S( "GPop::ServerPeer: pop connection closed: " << reason << (reason.empty()?"":": ")
+		<< peerAddress().second.displayString() ) ;
 }
 
 void GPop::ServerPeer::onSecure()

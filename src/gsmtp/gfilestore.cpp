@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -95,12 +95,13 @@ std::auto_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
 
 // ===
 
-GSmtp::FileStore::FileStore( const G::Path & dir , bool optimise ) : 
+GSmtp::FileStore::FileStore( const G::Path & dir , bool optimise , unsigned long max_size ) : 
 	m_seq(1UL) ,
 	m_dir(dir) ,
 	m_optimise(optimise) ,
 	m_empty(false) ,
-	m_repoll(false)
+	m_repoll(false) ,
+	m_max_size(max_size)
 {
 	m_pid_modifier = static_cast<unsigned long>(G::DateTime::now()) % 1000000UL ;
 	checkPath( dir ) ;
@@ -247,7 +248,7 @@ std::auto_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( unsigned long id )
 std::auto_ptr<GSmtp::NewMessage> GSmtp::FileStore::newMessage( const std::string & from )
 {
 	m_empty = false ;
-	return std::auto_ptr<NewMessage>( new NewFile(from,*this) ) ;
+	return std::auto_ptr<NewMessage>( new NewFile(from,*this,m_max_size) ) ;
 }
 
 void GSmtp::FileStore::updated()

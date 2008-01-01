@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -60,22 +60,25 @@ public:
 	bool contains( const std::string & switch_ ) const ;
 		///< Returns true if the command line contained the give switch.
 
-	std::string value( const char * switch_ ) const ;
-		///< Returns the given switch's string value.
+	bool contains( const char * switch_ ) const ;
+		///< Returns true if the command line contained the give switch.
 
 	std::string value( const std::string & switch_ ) const ;
 		///< Returns the given switch's string value.
 
-	unsigned int value( const char * switch_ , unsigned int default_ ) const ;
-		///< Returns the given switch's integer value.
+	std::string value( const char * switch_ ) const ;
+		///< Returns the given switch's string value.
 
 	unsigned int value( const std::string & switch_ , unsigned int default_ ) const ;
 		///< Returns the given switch's integer value.
 
-	G::Strings value( const char * switch_ , const char * separators ) const ;
-		///< Returns the given switch's list-of-string value.
+	unsigned int value( const char * switch_ , unsigned int default_ ) const ;
+		///< Returns the given switch's integer value.
 
 	G::Strings value( const std::string & switch_ , const std::string & separators ) const ;
+		///< Returns the given switch's list-of-string value.
+
+	G::Strings value( const char * switch_ , const char * separators ) const ;
 		///< Returns the given switch's list-of-string value.
 
 	unsigned int argc() const ;

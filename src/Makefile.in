@@ -78,6 +78,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+FRAGMENTS_LIST = @FRAGMENTS_LIST@
 GREP = @GREP@
 GZIP = @GZIP@
 HAVE_DOXYGEN = @HAVE_DOXYGEN@
@@ -168,7 +169,7 @@ top_srcdir = @top_srcdir@
 #
 #
 EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.dsw
-SUBDIRS = glib gssl gnet gsmtp gpop main win32 gui
+SUBDIRS = glib gssl gnet gsmtp gpop fragments main win32 gui
 all: all-recursive
 
 .SUFFIXES:

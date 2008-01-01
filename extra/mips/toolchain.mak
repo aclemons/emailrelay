@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 #
-# Makefile
+# Makefile / toolchain.mak
 #
 # A makefile for building a cross-compiling toolchain for little-endian 
 # mips ("mipsel") using:
@@ -26,20 +26,24 @@
 #  * uclibc++ 0.2.2
 #  * binutils 2.18-ubuntu
 #
+foo bar
 # These versions of linux and uclibc correspond to those pre-installed
 # on the Buffalo WHR-G54S router as of late 2007. The version of gcc
 # is 3.4.6 rather than 3.3.3 because of compiler bugs in the c++
 # code generation.
 #
+# Note that unlike other toolchain build scripts the required source 
+# packages (linux, uclibc, etc) are not downloaded automatically.
+#
 # Uses perl with the MIME::Base64 package to prepare patch files.
 #
 # The final cross-compiler ends up in "gcc/2/bin", with a gcc wrapper 
-# script for using uclibc++ in uclibc/usr/uClibc++/bin.
+# script for using uclibc++ in "uclibc/usr/uClibc++/bin".
 #
 # In addition to the cross-compiler there are various bits and bobs
 # which are built to run on the target machine:
-#  * uclibc utilities in uclibc/*/utils
-#  * binutils under binutils/build-for-target
+#  * uclibc utilities in "uclibc/*/utils"
+#  * binutils under "binutils/build-for-target"
 #  * simple hello-world test programs in the cwd
 #
 # This makefile works by defining the following top-level build tasks:
@@ -80,8 +84,8 @@
 # install trees are deleted they will get reinstalled, etc.
 #
 # Deleting directory trees is the preferred way to trigger rebuilds,
-# but there are also a set of pseudo-targets defined (mostly with 
-# leading underscores) to help with debugging this makefile.
+# but there are also a set of pseudo-targets defined to help with 
+# debugging this makefile.
 #
 # Note that "make clean" does not clean the binutils build. This
 # is because the binutils build is only dependent on native tools 
@@ -94,17 +98,17 @@
 #
 #####
 # configure these...
-binutils_tar_dir=/usr/share/data/packages/development/binutils
-gcc_tar_dir=/usr/share/data/packages/development/gcc
-uclibc_tar_dir=/usr/share/data/packages/development/uclibc
-linux_tar_dir=/usr/share/data/packages/linux
+tar_dir = /usr/share/data/packages
+binutils_tar_dir = $(tar_dir)/development/binutils
+gcc_tar_dir = $(tar_dir)/development/gcc
+uclibc_tar_dir = $(tar_dir)/development/uclibc
+linux_tar_dir = $(tar_dir)/linux
 #####
 
 # define TEE=|tee for more verbosity, but note that the pipe messes up the exit codes
 TEE:=>
 TEEE:=2>&1
 
-LANGUAGES:=c,c++
 mk_root = $(shell pwd)
 gcc_configure_1 = --program-suffix=-mips --with-gnu-as --with-gnu-ld --with-abi=32
 gcc_configure_2 = --target=mipsel-elf-linux-gnu
@@ -113,11 +117,6 @@ gcc_configure_4 = --with-ld=$(mk_root)/binutils/mipsel-elf-linux-gnu/bin/ld
 gcc_configure = $(gcc_configure_1) $(gcc_configure_2) $(gcc_configure_3) $(gcc_configure_4) 
 gcc_1_configure = $(gcc_configure) --disable-threads --enable-languages=c --without-headers --with-newlib
 gcc_2_configure = $(gcc_configure) --enable-languages=c,c++ --enable-sjlj-exceptions --enable-threads=posix --with-sysroot=$(mk_root)/uclibc 
-
-.PHONY: all
-.PHONY: vclean
-.PHONY: clean
-.PHONY: done
 
 gcc_files = gcc/gcc-3.4.6/README
 gcc_diff = gcc-3.4.6.diff
@@ -157,6 +156,8 @@ test_cpp_for_target = test-c++
 test_cpp_for_target_static = test-c++-s
 test_cpp_for_target_uclibcpp = test-c++-u
 tests = $(test_c_for_target) $(test_cpp_for_target) $(test_cpp_for_target_static) $(test_cpp_for_target_uclibcpp)
+
+.PHONY: all
 
 all: $(uclibc_for_target) $(binutils_for_target_make) $(tests) $(uclibcpp_install) configure-mips.sh
 
@@ -300,6 +301,7 @@ $(uclibcpp_config): $(uclibcpp_patch) $(uclibc_config)
 	@cd uclibc/uClibc++-0.2.2 && make defconfig $(TEE) ../../uclibcpp_config.out $(TEEE)
 	@sed 's:.*UCLIBCXX_HAS_LONG_DOUBLE.*:# UCLIBCXX_HAS_LONG_DOUBLE is not set:' -i uclibc/uClibc++-0.2.2/.config
 	@sed 's:.*UCLIBCXX_HAS_TLS.*:# UCLIBCXX_HAS_TLS is not set:' -i uclibc/uClibc++-0.2.2/.config
+	@sed 's:.*UCLIBCXX_HAS_LFS.*:# UCLIBCXX_HAS_LFS is not set:' -i uclibc/uClibc++-0.2.2/.config
 	@rm -f uclibc/uClibc++-0.2.2/include/system_configuration.h
 
 $(uclibcpp_make): $(uclibcpp_config) $(gcc_2_install)
@@ -461,7 +463,7 @@ gcc-343.diff.tmp:
 	@echo biBlbnVtLgo= >> $@
 
 gcc-336.diff: gcc-334.diff
-	cp $< $@
+	@cp $< $@
 
 gcc-346.diff: gcc-346.diff.tmp
 	@perl -e 'use MIME::Base64;while(<>){print MIME::Base64::decode_base64($$_)}'< $< >.tmp && mv .tmp $@
@@ -539,6 +541,8 @@ configure-mips.sh:
 
 # ==
 
+.PHONY: vclean
+
 vclean: clean clean_binutils
 	@rm -f *.out
 	@rm -f *.tmp
@@ -554,6 +558,8 @@ clean_binutils:
 	@rm -rf binutils/bin binutils/info binutils/lib binutils/man binutils/mips*-elf-linux-gnu binutils/share
 	@rm -rf binutils/build-for-target
 	@if test -d binutils ; then rmdir binutils ; fi
+
+.PHONY: clean
 
 clean:
 	@rm $(gcc_1_make) 2>/dev/null || true
@@ -580,6 +586,8 @@ clean:
 	@if test -d uclibc ; then rmdir uclibc ; fi
 	@if test -d gcc ; then rmdir gcc ; fi
 
+.PHONY: done
+
 done:
 	touch $(linux_files) || true
 	touch $(linux_config) || true
@@ -605,61 +613,61 @@ done:
 	touch $(binutils_for_target_make) || true
 	touch $(uclibc_for_target) || true
 
-.PHONY: _gcc_files
-.PHONY: _gcc_diff
-.PHONY: _gcc_patch
-.PHONY: _gcc_1_config
-.PHONY: _gcc_1_make
-.PHONY: _gcc_1_install
-.PHONY: _gcc_2_config
-.PHONY: _gcc_2_make
-.PHONY: _gcc_2_install
-.PHONY: _binutils_files
-.PHONY: _binutils_config
-.PHONY: _binutils_make
-.PHONY: _binutils_install
-.PHONY: _binutils_for_target_config
-.PHONY: _binutils_for_target_make
-.PHONY: _linux_files
-.PHONY: _linux_config
-.PHONY: _uclibc_files
-.PHONY: _uclibc_config
-.PHONY: _uclibc_patch
-.PHONY: _uclibc_make
-.PHONY: _uclibc_install
-.PHONY: _uclibc_for_target
-.PHONY: _uclibcpp_files
-.PHONY: _uclibcpp_patch
-.PHONY: _uclibcpp_config
-.PHONY: _uclibcpp_make
-.PHONY: _uclibcpp_install
+.PHONY: gcc_files
+.PHONY: gcc_diff
+.PHONY: gcc_patch
+.PHONY: gcc_1_config
+.PHONY: gcc_1_make
+.PHONY: gcc_1_install
+.PHONY: gcc_2_config
+.PHONY: gcc_2_make
+.PHONY: gcc_2_install
+.PHONY: binutils_files
+.PHONY: binutils_config
+.PHONY: binutils_make
+.PHONY: binutils_install
+.PHONY: binutils_for_target_config
+.PHONY: binutils_for_target_make
+.PHONY: linux_files
+.PHONY: linux_config
+.PHONY: uclibc_files
+.PHONY: uclibc_config
+.PHONY: uclibc_patch
+.PHONY: uclibc_make
+.PHONY: uclibc_install
+.PHONY: uclibc_for_target
+.PHONY: uclibcpp_files
+.PHONY: uclibcpp_patch
+.PHONY: uclibcpp_config
+.PHONY: uclibcpp_make
+.PHONY: uclibcpp_install
 
-_gcc_files: $(gcc_files)
-_gcc_diff: $(gcc_diff)
-_gcc_patch: $(gcc_patch)
-_gcc_1_config: $(gcc_1_config)
-_gcc_1_make: $(gcc_1_make)
-_gcc_1_install: $(gcc_1_install)
-_gcc_2_config: $(gcc_2_config)
-_gcc_2_make: $(gcc_2_make)
-_gcc_2_install: $(gcc_2_install)
-_binutils_files: $(binutils_files)
-_binutils_config: $(binutils_config)
-_binutils_make: $(binutils_make)
-_binutils_install: $(binutils_install)
-_binutils_for_target_config: $(binutils_for_target_config)
-_binutils_for_target_make: $(binutils_for_target_make)
-_linux_files: $(linux_files)
-_linux_config: $(linux_config)
-_uclibc_files: $(uclibc_files)
-_uclibc_config: $(uclibc_config)
-_uclibc_patch: $(uclibc_patch)
-_uclibc_make: $(uclibc_make)
-_uclibc_install: $(uclibc_install)
-_uclibc_for_target: $(uclibc_for_target)
-_uclibcpp_files: $(uclibcpp_files)
-_uclibcpp_patch: $(uclibcpp_patch)
-_uclibcpp_config: $(uclibcpp_config)
-_uclibcpp_make: $(uclibcpp_make)
-_uclibcpp_install: $(uclibcpp_install)
+gcc_files: $(gcc_files)
+gcc_diff: $(gcc_diff)
+gcc_patch: $(gcc_patch)
+gcc_1_config: $(gcc_1_config)
+gcc_1_make: $(gcc_1_make)
+gcc_1_install: $(gcc_1_install)
+gcc_2_config: $(gcc_2_config)
+gcc_2_make: $(gcc_2_make)
+gcc_2_install: $(gcc_2_install)
+binutils_files: $(binutils_files)
+binutils_config: $(binutils_config)
+binutils_make: $(binutils_make)
+binutils_install: $(binutils_install)
+binutils_for_target_config: $(binutils_for_target_config)
+binutils_for_target_make: $(binutils_for_target_make)
+linux_files: $(linux_files)
+linux_config: $(linux_config)
+uclibc_files: $(uclibc_files)
+uclibc_config: $(uclibc_config)
+uclibc_patch: $(uclibc_patch)
+uclibc_make: $(uclibc_make)
+uclibc_install: $(uclibc_install)
+uclibc_for_target: $(uclibc_for_target)
+uclibcpp_files: $(uclibcpp_files)
+uclibcpp_patch: $(uclibcpp_patch)
+uclibcpp_config: $(uclibcpp_config)
+uclibcpp_make: $(uclibcpp_make)
+uclibcpp_install: $(uclibcpp_install)
 

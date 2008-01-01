@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -94,9 +94,10 @@ const std::string & GSmtp::ServerPeer::crlf()
 	return s ;
 }
 
-void GSmtp::ServerPeer::onDelete()
+void GSmtp::ServerPeer::onDelete( const std::string & reason )
 {
-	G_LOG_S( "GSmtp::ServerPeer: smtp connection closed: " << peerAddress().second.displayString() ) ;
+	G_LOG_S( "GSmtp::ServerPeer: smtp connection closed: " << reason << (reason.empty()?"":": ")
+		<< peerAddress().second.displayString() ) ;
 }
 
 void GSmtp::ServerPeer::onSendComplete()
@@ -196,8 +197,12 @@ GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessageStore( std::auto_ptr<P
 
 GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessageForward( std::auto_ptr<ProtocolMessage> pm )
 {
+ #ifdef USE_NO_PROXY
+	throw G::Exception( "proxying disabled at build time" ) ;
+ #else
 	return new ProtocolMessageForward( m_store , pm ,
 		m_client_config , m_client_secrets , m_smtp_server , m_smtp_connection_timeout ) ;
+ #endif
 }
 
 GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()

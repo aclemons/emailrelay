@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,9 +35,15 @@ namespace GNet
 }
 
 /// \class GNet::ResolverInfo
-/// A simple structure holding a host/service name pair
-/// and optionally the corresponding remote address and canonical
-/// host name.
+/// A class that holds a host/service name pair and
+/// optionally the results of a name-to-address lookup, ie. the
+/// remote address and canonical host name. The actual name
+/// lookup is done externally, and the results are deposited
+/// into the ResolverInfo object with update().
+///
+/// This class can be used to minimise the amount of name lookup
+/// performed when the same host/service name is used repeatedly.
+/// See GNet::ClientPtr for an example of this.
 ///
 class GNet::ResolverInfo 
 {
@@ -74,8 +80,8 @@ public:
 		///< not available.
 
 	std::string str() const ;
-		///< Returns a string representation of the host and service
-		///< names that can be passed to the Resolver's resolveReq() method.
+		///< Returns a string representation of the host and service names
+		///< that can be passed to the Resolver's resolveReq() method.
 
 	std::string displayString( bool simple = false ) const ;
 		///< Returns a string representation for logging and debug.

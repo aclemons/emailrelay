@@ -7,4 +7,4 @@
 aclocal
 autoconf
 autoheader
-automake -a
+automake -a -Woverride -Wportability

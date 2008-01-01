@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -159,20 +159,6 @@ bool G::Path::isAbsolute() const
 	return str.length() > 0U && str.at(0U) == FileSystem::slash() ;
 }
 
-void G::Path::setExtension( const std::string & extension )
-{
-	bool dotted = extension.length() && extension.at(0U) == '.' ;
-
-	Path copy = *this ;
-	copy.removeExtension() ;
-
-	std::string s( copy.str() ) ;
-	s.append( 1U , '.' ) ;
-	s.append( dotted ? extension.substr(1U) : extension ) ;
-
-	set( s ) ;
-}
-
 std::string G::Path::basename() const
 {
 	// for consistency compare m_str with dirname() and return the
@@ -188,7 +174,7 @@ std::string G::Path::basename() const
 		std::string result( m_str ) ;
 		result.erase( 0U , head.length() ) ;
 		if( result.at(0) == FileSystem::slash() )
-			result.erase(0U,1U) ;
+			result.erase( 0U , 1U ) ;
 		return result ;
 	}
 }
@@ -310,13 +296,6 @@ void G::Path::removeExtension()
 		m_dot = std::string::npos ;
 		normalise() ; // in case of dir/foo.bar.bletch
 	}
-}
-
-void G::Path::setDirectory( const std::string & dir )
-{
-	std::string temp( basename() ) ;
-	set( dir ) ;
-	pathAppend( temp ) ;
 }
 
 void G::Path::pathAppend( const std::string & tail )

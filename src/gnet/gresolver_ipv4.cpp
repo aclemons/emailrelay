@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,15 +21,30 @@
 #include "gdef.h"
 #include "gresolver.h"
 
-bool GNet::Resolver::resolveHost( const std::string & host_name , unsigned int port , ResolverInfo & result )
+unsigned int GNet::Resolver::resolveService( const std::string & service_name , bool udp , std::string & error )
+{
+	servent * service = ::getservbyname( service_name.c_str() , udp ? "udp" : "tcp" ) ;
+	if( service == NULL )
+	{
+		error = "invalid service name" ;
+		return 0U ;
+	}
+	else
+	{
+		Address service_address( *service ) ;
+		return service_address.port() ;
+	}
+}
+
+std::string GNet::Resolver::resolveHost( const std::string & host_name , unsigned int port , ResolverInfo & result )
 {
 	hostent * host = ::gethostbyname( host_name.c_str() ) ;
-	if( host != NULL )
-	{
-		const char * h_name = host->h_name ;
-		result.update( Address(*host,port) , std::string(h_name?h_name:"") ) ;
-	}
-	return host != NULL ;
+	if( host == NULL )
+		return std::string("invalid host name: \"") + host_name + "\"" ;
+
+	const char * h_name = host->h_name ;
+	result.update( Address(*host,port) , std::string(h_name?h_name:"") ) ;
+	return std::string() ;
 }
 
 /// \file gresolver_ipv4.cpp

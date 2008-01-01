@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -95,17 +95,18 @@ bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , VerifierStatus
 	}
 }
 
-void GSmtp::ProtocolMessageStore::addReceived( const std::string & line )
+void GSmtp::ProtocolMessageStore::addReceived( const std::string & received_line )
 {
 	G_DEBUG( "GSmtp::ProtocolMessageStore::addReceived" ) ;
-	addText( line ) ;
+	addText( received_line ) ;
 }
 
-void GSmtp::ProtocolMessageStore::addText( const std::string & line )
+bool GSmtp::ProtocolMessageStore::addText( const std::string & line )
 {
 	G_ASSERT( m_msg.get() != NULL ) ;
-	if( m_msg.get() != NULL )
-		m_msg->addText( line ) ;
+	if( m_msg.get() == NULL )
+		return true ;
+	return m_msg->addText( line ) ;
 }
 
 std::string GSmtp::ProtocolMessageStore::from() const

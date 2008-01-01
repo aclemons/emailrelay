@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,6 +17,15 @@
 //
 // commandline_simple.cpp
 //
+// This implementation reads a configuration file specified using a
+// single command-line parameter. The file contains the long form
+// of the documented command-line switches without the double-dash
+// and using equals where necessary.
+//
+// eg.
+//    $ ( echo port=2525 ; echo user=root ; echo log ; echo verbose ) > emailrelay.cfg
+//    $ ./emailrelay emailrelay.cfg
+//
 
 #include "gdef.h"
 #include "gsmtp.h"
@@ -25,6 +34,7 @@
 #include "gstr.h"
 #include <fstream>
 #include <map>
+#include <stdexcept>
 
 class Main::CommandLineImp 
 {
@@ -42,24 +52,30 @@ std::string Main::CommandLine::switchSpec( bool )
 Main::CommandLine::CommandLine( Main::Output & , const G::Arg & arg , const std::string & , const std::string & ) :
 	m_imp(NULL)
 {
-	if( arg.c() == 1U )
+	bool ok = false ;
+	if( arg.c() == 2U )
 	{
 		std::string path = arg.v(1U) ;
 		std::ifstream f( path.c_str() ) ;
+		ok = f.good() ;
 		std::string key_value ;
 		while( f )
 		{
+			if( m_imp == NULL ) m_imp = new CommandLineImp ;
 			f >> key_value ;
+			std::string key = key_value ;
+			std::string value ;
 			std::string::size_type pos = key_value.find('=') ;
 			if( pos != std::string::npos && pos != 0U )
 			{
-				std::string key = key_value.substr(0U,pos) ;
-				std::string value = G::Str::tail( key_value , pos ) ;
-				if( m_imp == NULL ) m_imp = new CommandLineImp ;
-				m_imp->m[key] = value ;
+				key = key_value.substr(0U,pos) ;
+				value = G::Str::tail( key_value , pos ) ;
 			}
+			m_imp->m[key] = value ;
 		}
 	}
+	if( !ok )
+		throw std::runtime_error( "usage error (usage modified at configure-time, so not as documented)" ) ;
 }
 
 Main::CommandLine::~CommandLine()
@@ -90,6 +106,11 @@ G::Strings Main::CommandLine::value( const char * switch_ , const char * separat
 bool Main::CommandLine::contains( const std::string & s ) const
 {
 	return m_imp && m_imp->m.find(s) != m_imp->m.end() ;
+}
+
+bool Main::CommandLine::contains( const char * s ) const
+{
+	return contains( std::string(s) ) ;
 }
 
 std::string Main::CommandLine::value( const std::string & s ) const

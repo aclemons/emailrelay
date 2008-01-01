@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -100,11 +100,9 @@ void G::File::link( const Path & target , const Path & new_link )
 	if( !link(target,new_link,NoThrow()) )
 	{
 		int error = G::Process::errno_() ; // keep first
-		CannotLink e( new_link.str() ) ;
 		std::ostringstream ss ;
 		ss << "(" << error << ")" ;
-		e.append( ss.str() ) ;
-		throw e ;
+		throw CannotLink( ss.str() ) ;
 	}
 }
 

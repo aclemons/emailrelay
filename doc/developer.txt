@@ -207,12 +207,31 @@ these cases there are three source files per header. For example, "gsocket.cpp",
 
 Compile-time features
 ---------------------
-Compile-time features can normally be selected with switches passed to the
-"configure" script. These include the following:
+Compile-time features can be selected with switches passed to the "configure" 
+script. These include the following:
 
 * Debug-level logging ("--enable-debug")
 * IPv6 (Linux only) ("--enable-ipv6")
 * Configuration GUI ("--enable-gui")
+
+The "--enable-fhs" switch alters the compiled-in default directories to conform
+to the Linux File Hierarchy Standard (FHS). This is recommended for most modern 
+Linux distributions.
+
+Some functionality can be disabled at compile-time in order to reduce the size 
+of the executable, typically when building for embedded systems:
+
+* Disable POP3 protocol, "--disable-pop"
+* Disable authentication, "--disable-auth" (requires "--disable-pop")
+* Disable administration interface, "--disable-admin"
+* Disable execution of external programs, "--disable-exec"
+
+The "--enable-small-config" switch can be used to change the command-line 
+parsing code to use a configuration file instead, resulting in a smaller 
+executable. This also removes a lot of the configuration checking code, so it is
+not recommended unless size is critical. (The format of the configuration file 
+is similar to the command-line using the long-form switches without the 
+double-dash and using '=' to separate the switch from the switch value.)
 
 Use "./configure --help" to see a complete list.
 
@@ -300,4 +319,4 @@ to reassign a std::auto_ptr<> since reset() is not always available.
 
 
 
-Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

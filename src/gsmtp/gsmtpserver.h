@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -62,10 +62,10 @@ protected:
 	virtual void onSendComplete() ; 
 		///< Final override from GNet::BufferedServerPeer.
 
-	virtual void onDelete() ; 
+	virtual void onDelete( const std::string & reason ) ; 
 		///< Final override from GNet::ServerPeer.
 
-	virtual bool onReceive( const std::string & ) ; 
+	virtual bool onReceive( const std::string & line ) ; 
 		///< Final override from GNet::BufferedServerPeer.
 
 	virtual void onSecure() ;

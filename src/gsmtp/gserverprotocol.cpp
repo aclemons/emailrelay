@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,7 +45,8 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 		m_with_vrfy(config.with_vrfy) ,
 		m_preprocessor_timeout(config.preprocessor_timeout) ,
 		m_bad_client_count(0U) ,
-		m_bad_client_limit(8U)
+		m_bad_client_limit(8U) ,
+		m_disconnect_on_overflow(config.disconnect_on_overflow)
 {
 	m_pmessage.doneSignal().connect( G::slot(*this,&ServerProtocol::processDone) ) ;
 	verifier.doneSignal().connect( G::slot(*this,&ServerProtocol::verifyDone) ) ;
@@ -76,16 +77,20 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 	m_fsm.addTransition( eVrfyReply   , sVrfyTo2    , sGotRcpt    , &GSmtp::ServerProtocol::doVrfyToReply ) ;
 	m_fsm.addTransition( eData        , sGotMail    , sIdle       , &GSmtp::ServerProtocol::doNoRecipients ) ;
 	m_fsm.addTransition( eData        , sGotRcpt    , sData       , &GSmtp::ServerProtocol::doData ) ;
-	m_fsm.addTransition( eContent     , sData       , sData       , &GSmtp::ServerProtocol::doContent ) ;
+	m_fsm.addTransition( eContent     , sData       , sData       , &GSmtp::ServerProtocol::doContent , sDiscarding ) ;
 	m_fsm.addTransition( eEot         , sData       , sProcessing , &GSmtp::ServerProtocol::doEot ) ;
 	m_fsm.addTransition( eDone        , sProcessing , sIdle       , &GSmtp::ServerProtocol::doComplete ) ;
 	m_fsm.addTransition( eTimeout     , sProcessing , sIdle       , &GSmtp::ServerProtocol::doComplete ) ;
+	m_fsm.addTransition( eContent     , sDiscarding , sDiscarding , &GSmtp::ServerProtocol::doDiscard ) ;
+	m_fsm.addTransition( eEot         , sDiscarding , sIdle       , &GSmtp::ServerProtocol::doDiscarded ) ;
 
+ #ifndef USE_NO_AUTH
 	if( m_sasl.active() )
 	{
 		m_fsm.addTransition( eAuth    , sIdle   , sAuth    , &GSmtp::ServerProtocol::doAuth , sIdle ) ;
 		m_fsm.addTransition( eAuthData, sAuth   , sAuth    , &GSmtp::ServerProtocol::doAuthData , sIdle ) ;
 	}
+ #endif
 
 	GSsl::Library * ssl = GSsl::Library::instance() ;
 	m_with_ssl = ssl != NULL && ssl->enabled(true) ;
@@ -135,11 +140,11 @@ void GSmtp::ServerProtocol::apply( const std::string & line )
 	Event event = eUnknown ;
 	State state = m_fsm.state() ;
 	const std::string * event_data = &line ;
-	if( state == sData && isEndOfText(line) )
+	if( (state == sData || state == sDiscarding) && isEndOfText(line) )
 	{
 		event = eEot ;
 	}
-	else if( state == sData )
+	else if( state == sData || state == sDiscarding )
 	{
 		event = eContent ;
 	}
@@ -160,12 +165,15 @@ void GSmtp::ServerProtocol::apply( const std::string & line )
 		sendOutOfSequence( line ) ;
 }
 
-void GSmtp::ServerProtocol::doContent( const std::string & line , bool & )
+void GSmtp::ServerProtocol::doContent( const std::string & line , bool & ok )
 {
 	if( isEscaped(line) ) 
-		m_pmessage.addText( line.substr(1U) ) ; // temporary string constructed, but rare
+		ok = m_pmessage.addText( line.substr(1U) ) ; // temporary string constructed, but rare
 	else
-		m_pmessage.addText( line ) ;
+		ok = m_pmessage.addText( line ) ;
+
+	if( !ok && m_disconnect_on_overflow )
+		sendTooBig( true ) ;
 }
 
 void GSmtp::ServerProtocol::doEot( const std::string & line , bool & )
@@ -201,7 +209,7 @@ void GSmtp::ServerProtocol::onTimeout()
 
 void GSmtp::ServerProtocol::onTimeoutException( std::exception & e )
 {
-	G_IGNORE e.what() ; // avoid 'unused' warning
+	G_IGNORE e.what() ; // avoid unused parameter warning
 	G_DEBUG( "GSmtp::ServerProtocol::onTimeoutException: exception: " << e.what() ) ;
 	throw ;
 }
@@ -219,9 +227,29 @@ void GSmtp::ServerProtocol::doQuit( const std::string & , bool & )
 	throw ProtocolDone() ;
 }
 
+void GSmtp::ServerProtocol::doDiscard( const std::string & , bool & )
+{
+	if( m_disconnect_on_overflow )
+	{
+		reset() ;
+		sendClosing() ; // never deletes this
+		throw ProtocolDone() ;
+	}
+}
+
 void GSmtp::ServerProtocol::doNoop( const std::string & , bool & )
 {
 	sendOk() ;
+}
+
+void GSmtp::ServerProtocol::doNothing( const std::string & , bool & )
+{
+}
+
+void GSmtp::ServerProtocol::doDiscarded( const std::string & , bool & )
+{
+	reset() ;
+	sendTooBig() ;
 }
 
 void GSmtp::ServerProtocol::doExpn( const std::string & , bool & )
@@ -328,6 +356,7 @@ void GSmtp::ServerProtocol::doHelo( const std::string & line , bool & predicate 
 	}
 }
 
+#ifndef USE_NO_AUTH
 void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate )
 {
 	G::StringArray word_array ;
@@ -379,6 +408,7 @@ void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate 
 		sendChallenge( m_sasl.initialChallenge() ) ;
 	}
 }
+#endif
 
 void GSmtp::ServerProtocol::sendAuthDone( bool ok )
 {
@@ -388,6 +418,7 @@ void GSmtp::ServerProtocol::sendAuthDone( bool ok )
 		send( "535 Authentication failed" ) ;
 }
 
+#ifndef USE_NO_AUTH
 void GSmtp::ServerProtocol::doAuthData( const std::string & line , bool & predicate )
 {
 	G_LOG( "GSmtp::ServerProtocol: rx<<: [authentication response not logged]" ) ;
@@ -418,6 +449,7 @@ void GSmtp::ServerProtocol::doAuthData( const std::string & line , bool & predic
 		}
 	}
 }
+#endif
 
 void GSmtp::ServerProtocol::sendChallenge( const std::string & s )
 {
@@ -615,6 +647,11 @@ void GSmtp::ServerProtocol::sendNoRecipients()
 	send( "554 no valid recipients" ) ;
 }
 
+void GSmtp::ServerProtocol::sendTooBig( bool disconnecting )
+{
+	send( disconnecting ? "554 message too big, disconnecting" : "554 message too big" ) ;
+}
+
 void GSmtp::ServerProtocol::sendDataReply()
 {
 	send( "354 start mail input -- end with <CRLF>.<CRLF>" ) ;
@@ -787,20 +824,15 @@ std::string GSmtp::ServerProtocolText::received( const std::string & peer_name )
 std::string GSmtp::ServerProtocolText::receivedLine( const std::string & peer_name , 
 	const std::string & peer_address , const std::string & thishost )
 {
-	G::DateTime::EpochTime t = G::DateTime::now() ;
-	G::DateTime::BrokenDownTime tm = G::DateTime::local(t) ;
-	std::string zone = G::DateTime::offsetString(G::DateTime::offset(t)) ;
-	G::Date date( tm ) ;
-	G::Time time( tm ) ;
+	const G::DateTime::EpochTime t = G::DateTime::now() ;
+	const G::DateTime::BrokenDownTime tm = G::DateTime::local(t) ;
+	const std::string zone = G::DateTime::offsetString(G::DateTime::offset(t)) ;
+	const G::Date date( tm ) ;
+	const G::Time time( tm ) ;
 
 	std::ostringstream ss ;
 	ss 
-		<< "Received: "
-		<< "FROM " << peer_name << " "
-		<< "([" << peer_address << "]) "
-		<< "BY " << thishost << " "
-		<< "WITH ESMTP "
-		<< "; "
+		<< "Received: FROM " << peer_name << " ([" << peer_address << "]) BY " << thishost << " WITH ESMTP ; "
 		<< date.weekdayName(true) << ", "
 		<< date.monthday() << " " 
 		<< date.monthName(true) << " "
@@ -826,7 +858,8 @@ GSmtp::ServerProtocol::Sender::~Sender()
 
 GSmtp::ServerProtocol::Config::Config( bool b , unsigned int i ) :
 	with_vrfy(b) ,
-	preprocessor_timeout(i)
+	preprocessor_timeout(i) ,
+	disconnect_on_overflow(true) // (too harsh?)
 {
 }
 

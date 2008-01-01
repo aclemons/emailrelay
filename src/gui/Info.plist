@@ -8,9 +8,9 @@
   <key>CFBundleVersion</key>
   <string>1.8</string>
   <key>CFBundleGetInfoString</key>
-  <string>(c) 2001-2007 Graeme Walker</string>
+  <string>(c) 2001-2008 Graeme Walker</string>
   <key>NSHumanReadableCopyright</key>
-  <string>Copyright (c) 2001-2007 Graeme Walker</string>
+  <string>Copyright (c) 2001-2008 Graeme Walker</string>
   <key>CFBundleDevelopmentRegion</key>
   <string>English</string>
  </dict>

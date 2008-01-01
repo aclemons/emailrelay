@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
 /// \file glocal.h
 ///
 
-#ifndef G_GNET_LOCAL_SYSTEM_H
-#define G_GNET_LOCAL_SYSTEM_H
+#ifndef G_GNET_LOCAL_H
+#define G_GNET_LOCAL_H
 
 #include "gdef.h"
 #include "gnet.h"
@@ -33,8 +33,8 @@ namespace GNet
 }
 
 /// \class GNet::Local
-/// A static class for getting information
-/// about the local system.
+/// A static class for getting information about the
+/// local machine's network name and address.
 ///
 class GNet::Local 
 {
@@ -42,39 +42,37 @@ public:
 	G_EXCEPTION( Error , "local domainname/hostname error" ) ;
 
 	static std::string hostname() ;
-		///< Returns the hostname.
+		///< Returns the hostname. 
+		///<
+		///< On unix systems this ususally comes from uname().
 
 	static Address canonicalAddress() ;
-		///< Returns the canonical address associated with 
-		///< hostname().
+		///< Returns the canonical address associated with hostname().
 
 	static std::string fqdn() ;
 		///< Returns the fully-qualified-domain-name.
 		///<
-		///< This is typically implemented by doing a DNS
-		///< lookup on hostname(), but it is overridable by
-		///< calling fdqn(string).
+		///< This is typically implemented by doing a DNS lookup on 
+		///< hostname(), but it is overridable by calling fdqn(string).
 
 	static std::string domainname() ;
-		///< Returns the fqdn()'s domainname.
+		///< Returns the fqdn()'s domainname. Throws if the fqdn() does 
+		///< not contain a domain part.
 
 	static void fqdn( const std::string & fqdn_override ) ;
-		///< Sets the fqdn() (and therefore domainname()) 
-		///< override.
+		///< Sets the fqdn() (and therefore domainname()) override.
 
 	static Address localhostAddress() ;
-		///< A convenience function returning the
-		///< "127.0.0.1:0" address.
+		///< A convenience function that returns the "127.0.0.1:0" address.
 
 	static bool isLocal( const Address & ) ;
-		///< Returns true if the given address appears to
-		///< be local. A simple implemenetation may compare
-		///< the given address with localhostAddress() and
-		///< canonicalAddress().
+		///< Returns true if the given address appears to be local. 
+		///< A simple implementation may compare the given address with 
+		///< localhostAddress() and canonicalAddress().
 
 	static bool isLocal( const Address & , std::string & reason ) ;
 		///< An override that returns a helpful message by reference
-		///< if not local.
+		///< if the address not local.
 
 private:
 	static std::string m_fqdn ;

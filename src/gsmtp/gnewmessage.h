@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,8 +42,8 @@ public:
 	virtual void addTo( const std::string & to , bool local ) = 0 ;
 		///< Adds a 'to' address.
 
-	virtual void addText( const std::string & line ) = 0 ;
-		///< Adds a line of content.
+	virtual bool addText( const std::string & line ) = 0 ;
+		///< Adds a line of content. Returns false on overflow.
 
 	virtual std::string prepare( const std::string & auth_id , const std::string & client_ip ) = 0 ;
 		///< Prepares to store the message in the message store.

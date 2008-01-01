@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ class GSmtp::NewFile : public GSmtp::NewMessage
 public:
 	G_EXCEPTION( InvalidPath , "invalid path -- must be absolute" ) ;
 
-	NewFile( const std::string & from , FileStore & store ) ;
+	NewFile( const std::string & from , FileStore & store , unsigned long max_size = 0UL ) ;
 		///< Constructor. The FileStore reference is kept.
 
 	virtual ~NewFile() ;
@@ -55,7 +55,7 @@ public:
 	virtual void addTo( const std::string & to , bool local ) ;
 		///< Final override from GSmtp::NewMessage.
 
-	virtual void addText( const std::string & line ) ;
+	virtual bool addText( const std::string & line ) ;
 		///< Final override from GSmtp::NewMessage.
 
 	virtual std::string prepare( const std::string & auth_id , const std::string & client_ip ) ;
@@ -92,6 +92,8 @@ private:
 	bool m_committed ;
 	bool m_eight_bit ;
 	bool m_saved ;
+	unsigned long m_size ;
+	unsigned long m_max_size ;
 
 private:
 	void cleanup() ;

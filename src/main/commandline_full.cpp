@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -149,6 +149,7 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 		"F!pop-auth!defines the pop server secrets file (default is \"" << pop_auth << "\")!1!file!3|"
 		"G!pop-no-delete!disables message deletion via pop (requires --pop)!0!!3|"
 		"J!pop-by-name!modifies the pop spool directory according to the user name (requires --pop)!0!!3|"
+		"M!max-size!limits the size of submitted messages!1!bytes!3|"
 		;
 	return ss.str() ;
 }
@@ -639,6 +640,11 @@ G::Strings Main::CommandLine::value( const std::string & switch_ , const std::st
 		G::Str::splitIntoFields( value(switch_) , result , separators ) ;
 	}
 	return result ;
+}
+
+bool Main::CommandLine::contains( const char * switch_ ) const
+{
+	return contains( std::string(switch_) ) ;
 }
 
 std::string Main::CommandLine::value( const char * switch_ ) const

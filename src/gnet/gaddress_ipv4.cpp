@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ private:
 
 private:
 	address_type m_inet ;
-	static char m_port_separator ;
+	static const char m_port_separator = ':' ;
 } ;
 
 // ===
@@ -97,8 +97,7 @@ public:
 } ;
 
 // ===
-
-char GNet::AddressImp::m_port_separator = ':' ;
+#pragma fragments
 
 int GNet::AddressImp::family()
 {

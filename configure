@@ -723,13 +723,22 @@ ADMIN_TRUE
 ADMIN_FALSE
 AUTH_TRUE
 AUTH_FALSE
-SIMPLE_CONFIG_TRUE
-SIMPLE_CONFIG_FALSE
-FRAGMENTS_TRUE
-FRAGMENTS_FALSE
+DNS_TRUE
+DNS_FALSE
+IDENTITY_TRUE
+IDENTITY_FALSE
+SMALL_CONFIG_TRUE
+SMALL_CONFIG_FALSE
+SMALL_FRAGMENTS_TRUE
+SMALL_FRAGMENTS_FALSE
+FRAGMENTS_LIST
+PROXY_TRUE
+PROXY_FALSE
 SSL_LIBS
 OPENSSL_TRUE
 OPENSSL_FALSE
+GLOB_TRUE
+GLOB_FALSE
 STATIC_START
 STATIC_END
 e_docdir
@@ -1337,35 +1346,43 @@ Optional Features:
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-debug          enable extra debug messages at compile-time (default
-                          disabled)
-  --enable-ipv6           enable ipv6 (default disabled)
+                          no)
+  --enable-ipv6           enable ipv6 (default no)
   --enable-gui            enable configuration gui (requires Qt4) (default
                           auto)
+  --enable-verbose        enable verbose logging (default yes)
   --enable-pop            enable pop3 protocol (default yes)
-  --enable-exec           enable running of external programs (default yes)
+  --enable-exec           enable running of external programs (disable-exec
+                          requires disable-gui) (default yes)
   --enable-admin          enable admin interface (default yes)
   --enable-auth           enable authentication (disable-auth requires
                           disable-pop) (default yes)
-  --enable-simple-config  enable simplfied confuration code (experts only)
+  --enable-dns            enable dns lookup (default yes)
+  --enable-identity       enable process userid switching (default yes)
+  --enable-small-config   enable simplified confuration code for smaller
+                          binaries (rtfm) (default no)
+  --enable-small-fragments
+                          enable fragmented object files for smaller binaries
                           (default no)
-  --enable-fragments      enable fragmented object files for smaller binaries
+  --enable-small-exceptions
+                          optimise exception classes for smaller binaries
                           (default no)
+  --enable-proxy          enable proxying (default yes)
   --enable-static-linking prefer static linking for some libraries (default
                           no)
   --enable-fhs            force FHS-compliant directories, ignoring --prefix
-                          etc (default disabled)
+                          etc (default no)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-workshop         use Sun WorkShop 'CC -xar' as the 'ar' tool (default
-                          disabled)
   --with-doxygen          generate source code documentation with doxygen
                           (default auto)
   --with-man2html         convert man pages to html using man2html (default
                           auto)
   --with-openssl          use openssl for smtp client tls extension (default
                           auto)
+  --with-glob             use glob() for reading directories (default auto)
 
 Some influential environment variables:
   CC          C compiler command
@@ -6703,14 +6720,19 @@ then
 	then
 		{ echo "$as_me:$LINENO: WARNING: ignoring --enable-ipv6" >&5
 echo "$as_me: WARNING: ignoring --enable-ipv6" >&2;}
-		aclocal_ip="ipv4"
+		aclocal_use_ipv6="no"
 	else
-		aclocal_ip="ipv6"
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_IPV6 1
+_ACEOF
+
+		aclocal_use_ipv6="yes"
 	fi
 else
-	aclocal_ip="ipv4"
+	aclocal_use_ipv6="no"
 fi
- if test x$aclocal_ip = xipv6; then
+ if test x$aclocal_use_ipv6 = xyes; then
   IPV6_TRUE=
   IPV6_FALSE='#'
 else
@@ -6873,6 +6895,30 @@ else
   GUI_FALSE=
 fi
 
+	if test x$enable_exec = xno -a x$enable_gui != xno -a x$qt4moc = xyes
+	then
+		{ { echo "$as_me:$LINENO: error: using --disable-exec requires --disable-gui" >&5
+echo "$as_me: error: using --disable-exec requires --disable-gui" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+
+
+# Check whether --enable-verbose was given.
+if test "${enable_verbose+set}" = set; then
+  enableval=$enable_verbose;
+fi
+
+
+	if test x$enable_verbose != xno
+	then
+		:
+	else
+
+cat >>confdefs.h <<\_ACEOF
+#define G_NO_LOG 1
+_ACEOF
+
+	fi
 
 
 # Check whether --enable-pop was given.
@@ -6881,6 +6927,16 @@ if test "${enable_pop+set}" = set; then
 fi
 
 
+	if test x$enable_pop != xno
+	then
+		:
+	else
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_NO_POP 1
+_ACEOF
+
+	fi
  if test x$enable_pop != xno; then
   POP_TRUE=
   POP_FALSE='#'
@@ -6897,6 +6953,16 @@ if test "${enable_exec+set}" = set; then
 fi
 
 
+	if test x$enable_exec != xno
+	then
+		:
+	else
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_NO_EXEC 1
+_ACEOF
+
+	fi
  if test x$enable_exec != xno; then
   EXEC_TRUE=
   EXEC_FALSE='#'
@@ -6913,6 +6979,16 @@ if test "${enable_exec+set}" = set; then
 fi
 
 
+	if test x$enable_admin != xno
+	then
+		:
+	else
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_NO_ADMIN 1
+_ACEOF
+
+	fi
  if test x$enable_admin != xno; then
   ADMIN_TRUE=
   ADMIN_FALSE='#'
@@ -6929,6 +7005,16 @@ if test "${enable_exec+set}" = set; then
 fi
 
 
+	if test x$enable_auth != xno
+	then
+		:
+	else
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_NO_AUTH 1
+_ACEOF
+
+	fi
  if test x$enable_auth != xno; then
   AUTH_TRUE=
   AUTH_FALSE='#'
@@ -6937,6 +7023,12 @@ else
   AUTH_FALSE=
 fi
 
+	if test x$enable_auth = xno -a x$enable_pop != xno
+	then
+		{ { echo "$as_me:$LINENO: error: using --disable-auth requires --disable-pop" >&5
+echo "$as_me: error: using --disable-auth requires --disable-pop" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 
 
 # Check whether --enable-exec was given.
@@ -6945,12 +7037,12 @@ if test "${enable_exec+set}" = set; then
 fi
 
 
- if test x$enable_simple_config = xyes; then
-  SIMPLE_CONFIG_TRUE=
-  SIMPLE_CONFIG_FALSE='#'
+ if test x$enable_dns != xno; then
+  DNS_TRUE=
+  DNS_FALSE='#'
 else
-  SIMPLE_CONFIG_TRUE='#'
-  SIMPLE_CONFIG_FALSE=
+  DNS_TRUE='#'
+  DNS_FALSE=
 fi
 
 
@@ -6961,47 +7053,111 @@ if test "${enable_exec+set}" = set; then
 fi
 
 
- if test x$enable_fragments = xyes; then
-  FRAGMENTS_TRUE=
-  FRAGMENTS_FALSE='#'
+ if test x$enable_identity != xno; then
+  IDENTITY_TRUE=
+  IDENTITY_FALSE='#'
 else
-  FRAGMENTS_TRUE='#'
-  FRAGMENTS_FALSE=
+  IDENTITY_TRUE='#'
+  IDENTITY_FALSE=
 fi
 
-if test x$enable_fragments = xyes
+
+
+# Check whether --enable-exec was given.
+if test "${enable_exec+set}" = set; then
+  enableval=$enable_exec;
+fi
+
+
+	if test x$enable_small_config = xyes
+	then
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_SMALL_CONFIG 1
+_ACEOF
+
+	else
+		:
+	fi
+ if test x$enable_small_config = xyes; then
+  SMALL_CONFIG_TRUE=
+  SMALL_CONFIG_FALSE='#'
+else
+  SMALL_CONFIG_TRUE='#'
+  SMALL_CONFIG_FALSE=
+fi
+
+
+
+# Check whether --enable-exec was given.
+if test "${enable_exec+set}" = set; then
+  enableval=$enable_exec;
+fi
+
+
+ if test x$enable_small_fragments = xyes; then
+  SMALL_FRAGMENTS_TRUE=
+  SMALL_FRAGMENTS_FALSE='#'
+else
+  SMALL_FRAGMENTS_TRUE='#'
+  SMALL_FRAGMENTS_FALSE=
+fi
+
+if test x$enable_small_fragments = xyes
 then
 	{ echo "$as_me:$LINENO: creating source file fragments" >&5
 echo "$as_me: creating source file fragments" >&6;}
-	for aclocal_f in `find $srcdir/src -name \*.cpp | xargs fgrep -l L_fragments | fgrep -v L_`
-	do
-		for aclocal_x in `grep '#define L_.*_' ${aclocal_f} | sed 's/#define *//' | sed 's/  *1//'`
-		do
-			aclocal_s="`dirname ${aclocal_f}`/${aclocal_x}.cpp"
-			aclocal_i="`basename ${aclocal_f}`"
-			{ echo "$as_me:$LINENO: creating source file fragment for ${aclocal_i}: ${aclocal_s}" >&5
-echo "$as_me: creating source file fragment for ${aclocal_i}: ${aclocal_s}" >&6;}
-			echo '#define L_fragments 1' > ${aclocal_s}
-			echo "#define ${aclocal_x} 1" >> ${aclocal_s}
-			echo '#include "'"${aclocal_i}"'"' >> ${aclocal_s}
-		done
-	done
+	FRAGMENTS_LIST="`perl $srcdir/bin/fragment.pl_ -r $srcdir/src $srcdir/src/fragments`"
+	for fragment in $FRAGMENTS_LIST "" ; do if test "$fragment" != "" ; then
+		{ echo "$as_me:$LINENO: creating source file fragment for $fragment" >&5
+echo "$as_me: creating source file fragment for $fragment" >&6;}
+	fi ; done
 fi
 
 
 
-# Check whether --with-workshop was given.
-if test "${with_workshop+set}" = set; then
-  withval=$with_workshop;
+# Check whether --enable-exec was given.
+if test "${enable_exec+set}" = set; then
+  enableval=$enable_exec;
 fi
 
 
-if test "$with_workshop" = "yes"
-then
-	chmod +x lib/sunpro5/xar
-	AR="`pwd`/lib/sunpro5/xar --cxx \"$CXX\""
+	if test x$enable_small_config = xyes
+	then
 
+cat >>confdefs.h <<\_ACEOF
+#define USE_SMALL_EXCEPTIONS 1
+_ACEOF
+
+	else
+		:
+	fi
+
+
+# Check whether --enable-proxy was given.
+if test "${enable_proxy+set}" = set; then
+  enableval=$enable_proxy;
 fi
+
+
+	if test x$enable_proxy != xno
+	then
+		:
+	else
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_NO_PROXY 1
+_ACEOF
+
+	fi
+ if test x$enable_proxy != xno; then
+  PROXY_TRUE=
+  PROXY_FALSE='#'
+else
+  PROXY_TRUE='#'
+  PROXY_FALSE=
+fi
+
 
 
 
@@ -7131,6 +7287,94 @@ fi
 
 
 
+
+# Check whether --with-glob was given.
+if test "${with_glob+set}" = set; then
+  withval=$with_glob;
+fi
+
+if test "$with_glob" != "no"
+then
+{ echo "$as_me:$LINENO: checking for glob" >&5
+echo $ECHO_N "checking for glob... $ECHO_C" >&6; }
+if test "${aclocal_have_glob+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <glob.h>
+int
+main ()
+{
+glob_t * p = 0 ; globfree(p) ; return 1;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  aclocal_have_glob=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	aclocal_have_glob=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ echo "$as_me:$LINENO: result: $aclocal_have_glob" >&5
+echo "${ECHO_T}$aclocal_have_glob" >&6; }
+    if test "$aclocal_have_glob" = "yes"
+	then
+		aclocal_use_glob="yes"
+	else
+		if test "$with_glob" = "yes"
+		then
+			{ echo "$as_me:$LINENO: WARNING: ignoring --with-glob" >&5
+echo "$as_me: WARNING: ignoring --with-glob" >&2;}
+		fi
+		aclocal_use_glob="no"
+	fi
+else
+    if test "$aclocal_have_glob" = "yes"
+	then
+		{ echo "$as_me:$LINENO: WARNING: not using available glob()" >&5
+echo "$as_me: WARNING: not using available glob()" >&2;}
+	fi
+	aclocal_use_glob="no"
+fi
+ if test x$aclocal_use_glob = xyes; then
+  GLOB_TRUE=
+  GLOB_FALSE='#'
+else
+  GLOB_TRUE='#'
+  GLOB_FALSE=
+fi
+
+
+
 # Check whether --enable-static-linking was given.
 if test "${enable_static_linking+set}" = set; then
   enableval=$enable_static_linking;
@@ -7140,7 +7384,7 @@ fi
 if test "$enable_static_linking" = "yes"
 then
 	STATIC_START="-Xlinker -Bstatic"
-	STATIC_END="-Xlinker -Bdynamic -ldl"
+	STATIC_END=""
 else
 	STATIC_START=""
 	STATIC_END=""
@@ -7204,7 +7448,7 @@ then
 fi
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile lib/sunpro5/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile src/fragments/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -7372,17 +7616,38 @@ echo "$as_me: error: conditional \"AUTH\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${SIMPLE_CONFIG_TRUE}" && test -z "${SIMPLE_CONFIG_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"SIMPLE_CONFIG\" was never defined.
+if test -z "${DNS_TRUE}" && test -z "${DNS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"DNS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"SIMPLE_CONFIG\" was never defined.
+echo "$as_me: error: conditional \"DNS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${FRAGMENTS_TRUE}" && test -z "${FRAGMENTS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"FRAGMENTS\" was never defined.
+if test -z "${IDENTITY_TRUE}" && test -z "${IDENTITY_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"IDENTITY\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"FRAGMENTS\" was never defined.
+echo "$as_me: error: conditional \"IDENTITY\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${SMALL_CONFIG_TRUE}" && test -z "${SMALL_CONFIG_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"SMALL_CONFIG\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"SMALL_CONFIG\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${SMALL_FRAGMENTS_TRUE}" && test -z "${SMALL_FRAGMENTS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"SMALL_FRAGMENTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"SMALL_FRAGMENTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${PROXY_TRUE}" && test -z "${PROXY_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"PROXY\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"PROXY\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -7390,6 +7655,13 @@ if test -z "${OPENSSL_TRUE}" && test -z "${OPENSSL_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"OPENSSL\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"OPENSSL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${GLOB_TRUE}" && test -z "${GLOB_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"GLOB\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"GLOB\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -7875,13 +8147,13 @@ do
     "lib/Makefile") CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
     "lib/gcc2.95/Makefile") CONFIG_FILES="$CONFIG_FILES lib/gcc2.95/Makefile" ;;
     "lib/msvc6.0/Makefile") CONFIG_FILES="$CONFIG_FILES lib/msvc6.0/Makefile" ;;
-    "lib/sunpro5/Makefile") CONFIG_FILES="$CONFIG_FILES lib/sunpro5/Makefile" ;;
     "bin/Makefile") CONFIG_FILES="$CONFIG_FILES bin/Makefile" ;;
     "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
     "etc/Makefile") CONFIG_FILES="$CONFIG_FILES etc/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "extra/Makefile") CONFIG_FILES="$CONFIG_FILES extra/Makefile" ;;
     "extra/mips/Makefile") CONFIG_FILES="$CONFIG_FILES extra/mips/Makefile" ;;
+    "src/fragments/Makefile") CONFIG_FILES="$CONFIG_FILES src/fragments/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -8095,13 +8367,22 @@ ADMIN_TRUE!$ADMIN_TRUE$ac_delim
 ADMIN_FALSE!$ADMIN_FALSE$ac_delim
 AUTH_TRUE!$AUTH_TRUE$ac_delim
 AUTH_FALSE!$AUTH_FALSE$ac_delim
-SIMPLE_CONFIG_TRUE!$SIMPLE_CONFIG_TRUE$ac_delim
-SIMPLE_CONFIG_FALSE!$SIMPLE_CONFIG_FALSE$ac_delim
-FRAGMENTS_TRUE!$FRAGMENTS_TRUE$ac_delim
-FRAGMENTS_FALSE!$FRAGMENTS_FALSE$ac_delim
+DNS_TRUE!$DNS_TRUE$ac_delim
+DNS_FALSE!$DNS_FALSE$ac_delim
+IDENTITY_TRUE!$IDENTITY_TRUE$ac_delim
+IDENTITY_FALSE!$IDENTITY_FALSE$ac_delim
+SMALL_CONFIG_TRUE!$SMALL_CONFIG_TRUE$ac_delim
+SMALL_CONFIG_FALSE!$SMALL_CONFIG_FALSE$ac_delim
+SMALL_FRAGMENTS_TRUE!$SMALL_FRAGMENTS_TRUE$ac_delim
+SMALL_FRAGMENTS_FALSE!$SMALL_FRAGMENTS_FALSE$ac_delim
+FRAGMENTS_LIST!$FRAGMENTS_LIST$ac_delim
+PROXY_TRUE!$PROXY_TRUE$ac_delim
+PROXY_FALSE!$PROXY_FALSE$ac_delim
 SSL_LIBS!$SSL_LIBS$ac_delim
 OPENSSL_TRUE!$OPENSSL_TRUE$ac_delim
 OPENSSL_FALSE!$OPENSSL_FALSE$ac_delim
+GLOB_TRUE!$GLOB_TRUE$ac_delim
+GLOB_FALSE!$GLOB_FALSE$ac_delim
 STATIC_START!$STATIC_START$ac_delim
 STATIC_END!$STATIC_END$ac_delim
 e_docdir!$e_docdir$ac_delim
@@ -8115,7 +8396,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 31; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 40; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -36,16 +36,19 @@ at boot-time you must first create a one-line batch file called
 the full E-MailRelay server command-line. Then run "emailrelay-service --install"
 to install the service.
 
-When the E-MailRelay server is run in this way it has the "--no-daemon" and
-"--hidden" switches added so that there is no user interface. (The "--no-daemon"
-switch on Windows changes the interface from using the system-tray to using a
-normal window, and the "--hidden" switch suppresses the window and any message
-boxes.)
+When the E-MailRelay server is run in this way the "--no-daemon" and "--hidden"
+switches are added automatically to whatever is in the "emailrelay-start" batch
+file, so that there is no user interface. (The "--no-daemon" switch on Windows
+changes the interface from using the system-tray to using a normal window, and
+the "--hidden" switch suppresses the window and any message boxes.)
 
 Note that the batch file and the main E-MailRelay executable must be in the same
-directory and that the batch file is only read at install time; if you need to
-change the command-line switches for the service you should edit the batch
-file and then reinstall the service.
+directory.
+
+If you need to run multiple E-MailRelay services then pass a unique service name
+on the "emailrelay-server --install" command-line. This name is used to derive
+the name of the batch file that contains the E-MailRelay server's command-line
+switches.
 
 Diagnostics
 -----------
@@ -53,12 +56,14 @@ E-MailRelay normally writes errors and warnings into the system event log, which
 you can view by running "eventvwr.exe". You can increase the verbosity by adding
 the "--verbose" switch to the E-MailRelay command-line.
 
-The E-MailRelay server also logs to the standard error stream but the
+The E-MailRelay server also logs to the standard error stream, however the
 "--as-server" and "--as-proxy" switches implicitly incorporate "--close-stderr"
 so with these switches the standard error logging will stop soon after startup.
 To get continuous logging you should replace "--as-server" with "--log" and
 "--as-proxy" with "--immediate --forward-to". Then you will be able to redirect
-the standard error stream to a log file.
+the standard error stream to a log file, eg:
+
+	"c:\program files\emailrelay\emailrelay.exe" --log -v -L ... > c:\temp.out 2>&1
 
 Building from source
 --------------------
@@ -72,4 +77,4 @@ MinGW please follow the guidelines in "mingw-common.mak" which is also in the
 
 
 
-Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

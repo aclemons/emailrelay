@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ public:
 	G_EXCEPTION( InvalidDirectory , "invalid spool directory" ) ;
 	G_EXCEPTION( GetError , "error reading specific message" ) ;
 
-	FileStore( const G::Path & dir , bool optimise = false ) ;
+	FileStore( const G::Path & dir , bool optimise = false , unsigned long max_size = 0UL ) ;
 		///< Constructor. Throws an exception if the storage directory 
 		///< is invalid.
 		///<
@@ -138,6 +138,7 @@ private:
 	bool m_optimise ;
 	bool m_empty ; // mutable
 	bool m_repoll ;
+	unsigned long m_max_size ;
 	unsigned long m_pid_modifier ;
 	G::Signal1<bool> m_signal ;
 } ;

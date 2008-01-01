@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -23,12 +23,18 @@ ADMIN_EXTRA_DIST = admin_enabled.cpp
 ADMIN_SOURCES = admin_disabled.cpp
 endif
 
-if SIMPLE_CONFIG
+if SMALL_CONFIG
 CONFIG_EXTRA_DIST = commandline_full.cpp
 CONFIG_SOURCES = commandline_simple.cpp
 else
 CONFIG_EXTRA_DIST = commandline_simple.cpp
 CONFIG_SOURCES = commandline_full.cpp
+endif
+
+if SMALL_FRAGMENTS
+FRAGMENTS_LDADD = $(top_builddir)/src/fragments/libfragments.a
+else
+FRAGMENTS_LDADD = 
 endif
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
@@ -92,29 +98,35 @@ emailrelay_SOURCES = \
 	run.cpp \
 	run.h
 
+COMMON_LDADD = \
+	$(FRAGMENTS_LDADD) \
+	$(top_builddir)/src/glib/libglib.a \
+	$(FRAGMENTS_LDADD)
+
 emailrelay_LDADD = \
 	$(top_builddir)/src/gpop/libgpop.a \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/glib/libglib.a \
+	$(COMMON_LDADD) \
 	$(STATIC_START) $(SSL_LIBS) $(STATIC_END)
 
 emailrelay_poke_SOURCES = poke.c
 emailrelay_poke_LDADD =
 
 emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
-emailrelay_passwd_LDADD = $(top_builddir)/src/glib/libglib.a
+emailrelay_passwd_LDADD = \
+	$(COMMON_LDADD)
 
 emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/glib/libglib.a
+	$(COMMON_LDADD)
 
 emailrelay_filter_copy_SOURCES = filter_copy.cpp filter.cpp filter.h legal.cpp legal.h
 emailrelay_filter_copy_LDADD = \
-	$(top_builddir)/src/glib/libglib.a
+	$(COMMON_LDADD)
 
 install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS
 	-chgrp daemon $(DESTDIR)$(e_spooldir)

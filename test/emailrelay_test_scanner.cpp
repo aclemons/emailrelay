@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ class Main::ScannerPeer : public GNet::ServerPeer
 public:
 	explicit ScannerPeer( GNet::Server::PeerInfo info ) ;
 private:	
-	virtual void onDelete() ;
+	virtual void onDelete( const std::string & ) ;
 	virtual void onData( const char * , GNet::ServerPeer::size_type ) ;
 	virtual void onSecure() ;
 	virtual void onSendComplete() ;
@@ -68,7 +68,7 @@ Main::ScannerPeer::ScannerPeer( GNet::Server::PeerInfo info ) :
 	G_LOG_S( "ScannerPeer::ctor: new connection from " << info.m_address.displayString() ) ;
 }
 
-void Main::ScannerPeer::onDelete() 
+void Main::ScannerPeer::onDelete( const std::string & )
 {
 	G_LOG_S( "ScannerPeer::onDelete: disconnected" ) ;
 }

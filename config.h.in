@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to disable the G_LOG macro */
+#undef G_NO_LOG
+
 /* Define to 1 if <ctime> requires <time.h> */
 #undef HAVE_BUGGY_CTIME
 
@@ -95,6 +98,30 @@
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
+
+/* Define to use IPv6 */
+#undef USE_IPV6
+
+/* Define to eliminate unused admin interface code as a size optimisation */
+#undef USE_NO_ADMIN
+
+/* Define to eliminate unused authentication code as a size optimisation */
+#undef USE_NO_AUTH
+
+/* Define to eliminate unused exec-ing code as a size optimisation */
+#undef USE_NO_EXEC
+
+/* Define to eliminate unused pop code as a size optimisation */
+#undef USE_NO_POP
+
+/* Define to eliminate proxying code as a size optimisation */
+#undef USE_NO_PROXY
+
+/* Define to eliminate unused config code as a size optimisation */
+#undef USE_SMALL_CONFIG
+
+/* Define to have exception types as functions as a size optimisation */
+#undef USE_SMALL_EXCEPTIONS
 
 /* Define to enable extra debug messages at compile-time */
 #undef _DEBUG

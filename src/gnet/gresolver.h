@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ public:
 		///<
 		///< The input format should be:
 		///<	{<host-name>|<host-address>}:{<service-name>|<port-number>}
-		///<	where host-address := <n-1>.<n-2>.<n-3>.<n-4>
+		///<	where host-address := <n1>.<n2>.<n3>.<n4> for ipv4
 
 	bool resolveReq( std::string name , bool udp = false ) ;
 		///< Initiates a name-to-address resolution. Returns
@@ -101,7 +101,7 @@ private:
 	void operator=( const Resolver & ) ; // not implemented
 	Resolver( const Resolver & ) ; // not implemented
 	static unsigned int resolveService( const std::string & , bool , std::string & ) ;
-	static bool resolveHost( const std::string & host_name , unsigned int , ResolverInfo & ) ;
+	static std::string resolveHost( const std::string & host_name , unsigned int , ResolverInfo & ) ;
 
 private:
 	ResolverImp *m_imp ;

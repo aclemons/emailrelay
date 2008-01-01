@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -98,18 +98,11 @@ public:
 		///< eg. "\\machine\drive" -> ""
 
 	std::string extension() const ;
-		///< Returns the path's original extension, even after
-		///< removeExtension(). Returns the zero-length string if
-		///< there is none.
+		///< Returns the path's filename extension. Returns the 
+		///< zero-length string if there is none.
 
 	void removeExtension() ;
-		///< Modifies the path by removing any extension. However,
-		///< the extension returned by extension() is unchanged.
-
-	void setExtension( const std::string & extension ) ;
-		///< Replaces the extension. Any leading dot in the given
-		///< string is ignored. (The given extension will be returned
-		///< by subsequent calls to extension().)
+		///< Modifies the path by removing any extension.
 
 	bool isAbsolute() const ;
 		///< Returns !isRelative().
@@ -124,9 +117,6 @@ public:
 	Path & operator=( const Path & other ) ;
 		///< Assignment operator.
 
-	void setDirectory( const std::string & dir ) ;
-		///< Sets the drive/directory.
-
 	void pathAppend( const std::string & tail ) ;
 		///< Appends a filename to the path. A path separator
 		///< is added if necessary.
@@ -137,6 +127,8 @@ public:
 
 	Strings split( bool no_dot = true ) const ;
 		///< Spits the path into a list of component parts.
+		///< Eliminates "/./" parts if the optional parameter
+		///< is true.
 
 	bool operator==( const Path & path ) const ;
 		///< Comparison operator.

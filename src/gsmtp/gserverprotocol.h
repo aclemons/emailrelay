@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -79,6 +79,7 @@ public:
 	{
 		bool with_vrfy ;
 		unsigned int preprocessor_timeout ;
+		bool disconnect_on_overflow ;
 		Config( bool , unsigned int ) ;
 	} ;
 
@@ -164,6 +165,7 @@ private:
 		sProcessing ,
 		sAuth ,
 		sStartingTls ,
+		sDiscarding ,
 		s_Any ,
 		s_Same
 	} ;
@@ -184,6 +186,9 @@ private:
 	bool isEndOfText( const std::string & ) const ;
 	bool isEscaped( const std::string & ) const ;
 	void doNoop( const std::string & , bool & ) ;
+	void doNothing( const std::string & , bool & ) ;
+	void doDiscarded( const std::string & , bool & ) ;
+	void doDiscard( const std::string & , bool & ) ;
 	void doHelp( const std::string & line , bool & ) ;
 	void doExpn( const std::string & line , bool & ) ;
 	void doQuit( const std::string & , bool & ) ;
@@ -207,6 +212,7 @@ private:
 	void doSecure( const std::string & , bool & ) ;
 	void verifyDone( std::string , VerifierStatus status ) ;
 	void sendBadFrom( std::string ) ;
+	void sendTooBig( bool disconnecting = false ) ;
 	void sendChallenge( const std::string & ) ;
 	void sendBadTo( const std::string & , bool ) ;
 	void sendOutOfSequence( const std::string & ) ;
@@ -253,6 +259,7 @@ private:
 	unsigned int m_preprocessor_timeout ;
 	unsigned int m_bad_client_count ;
 	unsigned int m_bad_client_limit ;
+	bool m_disconnect_on_overflow ;
 } ;
 
 /// \class GSmtp::ServerProtocolText

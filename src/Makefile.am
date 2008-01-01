@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -15,4 +15,4 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.dsw
-SUBDIRS = glib gssl gnet gsmtp gpop main win32 gui
+SUBDIRS = glib gssl gnet gsmtp gpop fragments main win32 gui

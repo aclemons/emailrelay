@@ -1,1 +1,17 @@
-See extra/mips/toolchain.mak and extra/mips/configure.sh
+For running on mips embedded systems (eg. Buffalo routers) 
+see extra/mips/toolchain.mak and extra/mips/configure.sh.
+
+Build-time size optimisations yield the following approximate 
+savings for the main executable:
+
+* --disable-exec 190k
+* --enable-small-exceptions 170k
+* --enable-small-config 170k
+* --disable-pop 120k
+* --disable-auth 100k
+* --disable-debug 70k
+* --enable-small-fragments 70k
+* --disable-admin 60k
+* --disable-identity 40k
+* --disable-dns 20k
+

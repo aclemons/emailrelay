@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,8 +41,8 @@ namespace G
 class G::Str 
 {
 public:
-	G_EXCEPTION( Overflow , "conversion error: over/underflow" ) ;
-	G_EXCEPTION( InvalidFormat, "conversion error: invalid format" ) ;
+	G_EXCEPTION_CLASS( Overflow , "conversion error: over/underflow" ) ;
+	G_EXCEPTION_CLASS( InvalidFormat, "conversion error: invalid format" ) ;
 	typedef std::string::size_type size_type ;
 
 	static bool replace( std::string & s , 

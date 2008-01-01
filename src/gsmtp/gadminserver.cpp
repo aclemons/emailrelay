@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -75,9 +75,10 @@ void GSmtp::AdminServerPeer::onSendComplete()
 	// never gets here
 }
 
-void GSmtp::AdminServerPeer::onDelete()
+void GSmtp::AdminServerPeer::onDelete( const std::string & reason )
 {
-	G_LOG_S( "GSmtp::AdminServerPeer: admin connection closed: " << peerAddress().second.displayString() ) ;
+	G_LOG_S( "GSmtp::AdminServerPeer: admin connection closed: " << reason << (reason.empty()?"":": ")
+		<< peerAddress().second.displayString() ) ;
 }
 
 void GSmtp::AdminServerPeer::onSecure()

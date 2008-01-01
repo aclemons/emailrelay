@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,7 +54,6 @@ private:
 	static bool ignored( int ) ;
 
 private:
-	typedef Cleanup::Error Error ;
 	/// A private linked-list structure used by G::CleanupImp.
 	struct Link 
 	{
@@ -130,7 +129,7 @@ bool G::CleanupImp::ignored( int signum )
 	static struct sigaction zero_action ;
 	struct sigaction action( zero_action ) ;
 	if( ::sigaction( signum , NULL , &action ) )
-		throw Error( "sigaction" ) ;
+		throw Cleanup::Error( "sigaction" ) ;
 	return action.sa_handler == SIG_IGN ;
 }
 
@@ -141,7 +140,7 @@ void G::CleanupImp::install( int signum , Handler fn )
 	struct sigaction action( zero_action ) ;
 	action.sa_handler = fn ? fn : SIG_DFL ;
 	if( ::sigaction( signum , &action , NULL ) && fn != NULL )
-		throw Error( "sigaction" ) ;
+		throw Cleanup::Error( "sigaction" ) ;
 }
 
 void G::CleanupImp::ignore( int signum )
@@ -150,7 +149,7 @@ void G::CleanupImp::ignore( int signum )
 	struct sigaction action( zero_action ) ;
 	action.sa_handler = SIG_IGN ;
 	if( ::sigaction( signum , &action , NULL ) )
-		throw Error( "sigaction" ) ;
+		throw Cleanup::Error( "sigaction" ) ;
 }
 
 void G::CleanupImp::callHandlers()

@@ -51,17 +51,20 @@ am_emailrelay_test_scanner_OBJECTS =  \
 	emailrelay_test_scanner.$(OBJEXT)
 emailrelay_test_scanner_OBJECTS =  \
 	$(am_emailrelay_test_scanner_OBJECTS)
-am__DEPENDENCIES_1 =
+@SMALL_FRAGMENTS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/src/fragments/libfragments.a
+am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) \
+	$(top_builddir)/src/glib/libglib.a $(am__DEPENDENCIES_1)
+am__DEPENDENCIES_3 =
 emailrelay_test_scanner_DEPENDENCIES =  \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/glib/libglib.a $(am__DEPENDENCIES_1)
+	$(top_builddir)/src/gssl/libgssl.a $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
 am_emailrelay_test_server_OBJECTS = emailrelay_test_server.$(OBJEXT)
 emailrelay_test_server_OBJECTS = $(am_emailrelay_test_server_OBJECTS)
 emailrelay_test_server_DEPENDENCIES =  \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/glib/libglib.a $(am__DEPENDENCIES_1)
+	$(top_builddir)/src/gssl/libgssl.a $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
 SCRIPTS = $(noinst_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -102,6 +105,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+FRAGMENTS_LIST = @FRAGMENTS_LIST@
 GREP = @GREP@
 GZIP = @GZIP@
 HAVE_DOXYGEN = @HAVE_DOXYGEN@
@@ -188,6 +192,8 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@SMALL_FRAGMENTS_FALSE@FRAGMENTS_LDADD = 
+@SMALL_FRAGMENTS_TRUE@FRAGMENTS_LDADD = $(top_builddir)/src/fragments/libfragments.a
 EXTRA_DIST = \
 	emailrelay-test.pl_ \
 	emailrelay-test.sh_ \
@@ -208,18 +214,23 @@ noinst_SCRIPTS = emailrelay-test.sh emailrelay-test.pl emailrelay-chain-test.sh 
 TESTS = emailrelay-test.sh emailrelay-chain-test.sh
 CLEANFILES = $(noinst_SCRIPTS) $(noinst_PROGRAMS)
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -DG_SPOOLDIR=\"$(e_spooldir)\"
+COMMON_LDADD = \
+	$(FRAGMENTS_LDADD) \
+	$(top_builddir)/src/glib/libglib.a \
+	$(FRAGMENTS_LDADD)
+
 emailrelay_test_scanner_SOURCES = emailrelay_test_scanner.cpp
 emailrelay_test_scanner_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/glib/libglib.a \
+	$(COMMON_LDADD) \
 	$(SSL_LIBS)
 
 emailrelay_test_server_SOURCES = emailrelay_test_server.cpp
 emailrelay_test_server_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/glib/libglib.a \
+	$(COMMON_LDADD) \
 	$(SSL_LIBS)
 
 SUFFIXES = .pm .pl .pl_ .sh .sh_

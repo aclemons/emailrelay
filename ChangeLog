@@ -5,11 +5,12 @@ E-MailRelay Change Log
 ----------
 * Speed optimisations (using KCachegrind/valgrind in KDevelop).
 * Size optimisations at configure-time (eg. "./configure --disable-exec").
+* New switch to limit the size of submitted messages ("--max-size").
 * A warning is printed if logging is requested but both stderr and syslog are disabled.
 * SMTP client protocol emits a RSET after a rejected recipient as a workround for broken server protocols.
 * SMTP client protocol tries to continue if the server advertises AUTH but the client has no authentication secrets.
 * When a message cannot be forwarded the offending SMTP protocol response number, if any, is put in the envelope file.
-* Toolchain builder for embedded mips-based routers added as an extra.
+* A cross-compiling toolchain builder script added for running on mips-based routers ("extra/mips").
 * New example script for SMTP multicasting.
 * Compatibility with gcc 2.95 restored.
 

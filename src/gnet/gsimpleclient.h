@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -64,8 +64,16 @@ private:
 
 /// \class GNet::SimpleClient
 /// A class for making an outgoing connection to a remote server. 
-/// The class handles address resolution and connection issues, it reads 
+/// The class handles name-to-address resolution and connection issues, it reads 
 /// incoming data and it manages flow-control when sending.
+///
+/// Name-to-address lookup is performed if the supplied ResolverInfo object
+/// does not contain an address. This can be done synchronously or asynchronously.
+/// The results of the lookup can be obtained via the resolverInfo() method
+/// and possibly fed back to the next SimpleClient that connects to the same
+/// host/service in order to implement name lookup cacheing (see GNet::ClientPtr).
+/// However, most operating systems implement their own name lookup cacheing,
+/// so this is not terribly useful in practice.
 ///
 class GNet::SimpleClient : public GNet::EventHandler , public GNet::Connection , public GNet::SocketProtocolSink 
 {
@@ -87,7 +95,7 @@ public:
 			///< The local address defaults to the INADDR_ANY address.
 			///<
 			///< If the 'privileged' parameter is true then the local socket
-			///< is bound with privileged port number (ie. < 1024), selected 
+			///< is bound with a privileged port number (ie. < 1024), selected 
 			///< at random.
 
 	void connect() ;

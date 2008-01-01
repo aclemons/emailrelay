@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -27,9 +27,9 @@ AC_DEFUN([ACLOCAL_TYPE_SOCKLEN_T],
 		aclocal_type_socklen_t=no )
 ])
 	if test $aclocal_type_socklen_t = yes; then
-		AC_DEFINE(HAVE_SOCKLEN_T, 1,[Define to 1 if socklen_t type definition in sys/socket.h])
+		AC_DEFINE(HAVE_SOCKLEN_T,1,[Define to 1 if socklen_t type definition in sys/socket.h])
 	else
-		AC_DEFINE(HAVE_SOCKLEN_T, 0,[Define to 1 if socklen_t type definition in sys/socket.h])
+		AC_DEFINE(HAVE_SOCKLEN_T,0,[Define to 1 if socklen_t type definition in sys/socket.h])
 	fi
 ])
 
@@ -231,6 +231,24 @@ else
 fi
 AC_SUBST(MOC)
 AM_CONDITIONAL(GUI,test x$enable_gui != xno -a x$qt4moc = xyes )
+	if test x$enable_exec = xno -a x$enable_gui != xno -a x$qt4moc = xyes
+	then
+		AC_MSG_ERROR([using --disable-exec requires --disable-gui])
+	fi
+])
+
+dnl enable-verbose
+dnl
+dnl disable-verbose disables the verbose-logging macro
+dnl
+AC_DEFUN([ENABLE_VERBOSE],
+[
+	if test x$enable_verbose != xno
+	then
+		:
+	else
+		AC_DEFINE(G_NO_LOG,1,[Define to disable the G_LOG macro])
+	fi
 ])
 
 dnl enable-pop
@@ -239,6 +257,12 @@ dnl disable-pop builds the pop library from do-nothing stubs
 dnl
 AC_DEFUN([ENABLE_POP],
 [
+	if test x$enable_pop != xno
+	then
+		:
+	else
+		AC_DEFINE(USE_NO_POP,1,[Define to eliminate unused pop code as a size optimisation])
+	fi
 AM_CONDITIONAL(POP,test x$enable_pop != xno)
 ])
 
@@ -248,6 +272,12 @@ dnl disable-exec removes source files are concerned with exec-ing external progr
 dnl
 AC_DEFUN([ENABLE_EXEC],
 [
+	if test x$enable_exec != xno
+	then
+		:
+	else
+		AC_DEFINE(USE_NO_EXEC,1,[Define to eliminate unused exec-ing code as a size optimisation])
+	fi
 AM_CONDITIONAL(EXEC,test x$enable_exec != xno)
 ])
 
@@ -257,6 +287,12 @@ dnl disable-admin removes source files that implement the admin interface
 dnl
 AC_DEFUN([ENABLE_ADMIN],
 [
+	if test x$enable_admin != xno
+	then
+		:
+	else
+		AC_DEFINE(USE_NO_ADMIN,1,[Define to eliminate unused admin interface code as a size optimisation])
+	fi
 AM_CONDITIONAL(ADMIN,test x$enable_admin != xno)
 ])
 
@@ -266,43 +302,87 @@ dnl disable-admin removes source files that implement authentication
 dnl
 AC_DEFUN([ENABLE_AUTH],
 [
+	if test x$enable_auth != xno
+	then
+		:
+	else
+		AC_DEFINE(USE_NO_AUTH,1,[Define to eliminate unused authentication code as a size optimisation])
+	fi
 AM_CONDITIONAL(AUTH,test x$enable_auth != xno)
+	if test x$enable_auth = xno -a x$enable_pop != xno
+	then
+		AC_MSG_ERROR([using --disable-auth requires --disable-pop])
+	fi
 ])
 
-dnl enable-fragments
+dnl enable-dns
+dnl
+dnl disable-dns disables dns lookup so host and service names must be ip addresses and port numbers
+dnl
+AC_DEFUN([ENABLE_DNS],
+[
+AM_CONDITIONAL(DNS,test x$enable_dns != xno)
+])
+
+dnl enable-identity
+dnl
+dnl disable-identity disables userid switching, removing the dependence on getpwnam
+dnl
+AC_DEFUN([ENABLE_IDENTITY],
+[
+AM_CONDITIONAL(IDENTITY,test x$enable_identity != xno)
+])
+
+dnl enable-small-fragments
 dnl
 dnl enable-fragments compiles certain source files in lots of little pieces so
 dnl the linker can throw away fragments that are not needed in the final executable
 dnl
-AC_DEFUN([ENABLE_FRAGMENTS],
+dnl requires perl on the path and probably messes up a lot of autoconf/automake 
+dnl features, so only use if necessary
+dnl
+AC_DEFUN([ENABLE_SMALL_FRAGMENTS],
 [
-AM_CONDITIONAL(FRAGMENTS,test x$enable_fragments = xyes)
-if test x$enable_fragments = xyes
+AM_CONDITIONAL(SMALL_FRAGMENTS,test x$enable_small_fragments = xyes)
+if test x$enable_small_fragments = xyes
 then
 	AC_MSG_NOTICE([creating source file fragments])
-	for aclocal_f in `find $srcdir/src -name \*.cpp | xargs fgrep -l L_fragments | fgrep -v L_` 
-	do 
-		for aclocal_x in `grep '#define L_.*_' ${aclocal_f} | sed 's/#define *//' | sed 's/  *1//'`
-		do 
-			aclocal_s="`dirname ${aclocal_f}`/${aclocal_x}.cpp"
-			aclocal_i="`basename ${aclocal_f}`"
-			AC_MSG_NOTICE([creating source file fragment for ${aclocal_i}: ${aclocal_s}])
-			echo '#define L_fragments 1' > ${aclocal_s}
-			echo "#define ${aclocal_x} 1" >> ${aclocal_s}
-			echo '#include "'"${aclocal_i}"'"' >> ${aclocal_s}
-		done 
-	done
+	FRAGMENTS_LIST="`perl $srcdir/bin/fragment.pl_ -r $srcdir/src $srcdir/src/fragments`"
+	for fragment in $FRAGMENTS_LIST "" ; do if test "$fragment" != "" ; then
+		AC_MSG_NOTICE([creating source file fragment for $fragment])
+	fi ; done
 fi
+AC_SUBST(FRAGMENTS_LIST)
 ])
 
-dnl enable-simple-config
+dnl enable-small-config
 dnl
-dnl enable-simple-config replaces the complex command-line parsing code
+dnl enable-small-config replaces the complex command-line parsing code
 dnl with something simpler and less functional
 dnl
-AC_DEFUN([ENABLE_SIMPLE_CONFIG],
+AC_DEFUN([ENABLE_SMALL_CONFIG],
 [
-AM_CONDITIONAL(SIMPLE_CONFIG,test x$enable_simple_config = xyes)
+	if test x$enable_small_config = xyes
+	then
+		AC_DEFINE(USE_SMALL_CONFIG,1,[Define to eliminate unused config code as a size optimisation])
+	else
+		:
+	fi
+AM_CONDITIONAL(SMALL_CONFIG,test x$enable_small_config = xyes)
+])
+
+dnl enable-small-exceptions
+dnl
+dnl enable-small-exceptions defines exception classes as functions
+dnl
+AC_DEFUN([ENABLE_SMALL_EXCEPTIONS],
+[
+	if test x$enable_small_config = xyes
+	then
+		AC_DEFINE(USE_SMALL_EXCEPTIONS,1,[Define to have exception types as functions as a size optimisation])
+	else
+		:
+	fi
 ])
 
 dnl enable-ipv6
@@ -316,14 +396,30 @@ then
 	if test "$aclocal_ipv6" != "yes"
 	then
 		AC_MSG_WARN([ignoring --enable-ipv6])
-		aclocal_ip="ipv4"
+		aclocal_use_ipv6="no"
 	else
-		aclocal_ip="ipv6"
+		AC_DEFINE(USE_IPV6,1,[Define to use IPv6])
+		aclocal_use_ipv6="yes"
 	fi
 else
-	aclocal_ip="ipv4"
+	aclocal_use_ipv6="no"
 fi
-AM_CONDITIONAL(IPV6,test x$aclocal_ip = xipv6)
+AM_CONDITIONAL(IPV6,test x$aclocal_use_ipv6 = xyes)
+])
+
+dnl enable-proxy
+dnl
+dnl disable-pop disables smtp proxying
+dnl
+AC_DEFUN([ENABLE_PROXY],
+[
+	if test x$enable_proxy != xno
+	then
+		:
+	else
+		AC_DEFINE(USE_NO_PROXY,1,[Define to eliminate proxying code as a size optimisation])
+	fi
+AM_CONDITIONAL(PROXY,test x$enable_proxy != xno)
 ])
 
 dnl with-openssl
@@ -359,34 +455,53 @@ AC_SUBST(SSL_LIBS)
 AM_CONDITIONAL(OPENSSL,test x$aclocal_ssl = xopenssl)
 ])
 
-dnl enable-static-linking
+dnl with-glob
 dnl
-dnl TODO remove -ldl
+AC_DEFUN([WITH_GLOB],
+if test "$with_glob" != "no"
+then
+[AC_CACHE_CHECK([for glob],[aclocal_have_glob],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[[#include <glob.h>]],
+		[[glob_t * p = 0 ; globfree(p) ; return 1;]])],
+		aclocal_have_glob=yes,
+		aclocal_have_glob=no )
+])
+    if test "$aclocal_have_glob" = "yes"
+	then
+		aclocal_use_glob="yes"
+	else
+		if test "$with_glob" = "yes"
+		then
+			AC_MSG_WARN([ignoring --with-glob])
+		fi
+		aclocal_use_glob="no"
+	fi
+else
+    if test "$aclocal_have_glob" = "yes"
+	then
+		AC_MSG_WARN([not using available glob()])
+	fi
+	aclocal_use_glob="no"
+fi
+AM_CONDITIONAL(GLOB,test x$aclocal_use_glob = xyes)
+])
+
+dnl enable-static-linking
 dnl
 AC_DEFUN([ENABLE_STATIC_LINKING],
 [
 if test "$enable_static_linking" = "yes"
 then
 	STATIC_START="-Xlinker -Bstatic"
-	STATIC_END="-Xlinker -Bdynamic -ldl"
+	STATIC_END=""
 else
 	STATIC_START=""
 	STATIC_END=""
 fi
 AC_SUBST(STATIC_START)
 AC_SUBST(STATIC_END)
-])
-
-dnl with-workshop
-dnl
-AC_DEFUN([WITH_WORKSHOP],
-[
-if test "$with_workshop" = "yes"
-then
-	chmod +x lib/sunpro5/xar
-	AR="`pwd`/lib/sunpro5/xar --cxx \"$CXX\""
-	AC_SUBST(AR)
-fi
 ])
 
 dnl with-doxygen

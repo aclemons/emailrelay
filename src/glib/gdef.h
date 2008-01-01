@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2007 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -56,6 +56,30 @@
 		#if ! HAVE_SOCKLEN_T
 			typedef int socklen_t ;
 		#endif
+
+		/* just in case, undefine if defined as zero in config.h */
+		#if ! USE_NO_ADMIN
+			#undef USE_NO_ADMIN
+		#endif
+		#if ! USE_NO_AUTH
+			#undef USE_NO_AUTH
+		#endif
+		#if ! USE_NO_EXEC
+			#undef USE_NO_EXEC
+		#endif
+		#if ! USE_NO_POP
+			#undef USE_NO_POP
+		#endif
+		#if ! USE_SMALL_CONFIG
+			#undef USE_SMALL_CONFIG
+		#endif
+		#if ! USE_SMALL_EXCEPTIONS
+			#undef USE_SMALL_EXCEPTIONS
+		#endif
+		#if ! USE_IPV6
+			#undef USE_IPV6
+		#endif
+
 	#else
 		#define HAVE_ZLIB_H 1
 	#endif
@@ -120,7 +144,6 @@
 		#include <exception>
 		#include <fstream>
 		#include <iostream>
-		#include <limits>
 		#include <memory>
 		#include <sstream>
 		#include <string>
