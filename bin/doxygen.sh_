@@ -28,7 +28,7 @@ HAVE_DOXYGEN="$1"
 top_srcdir="$2"
 top_builddir="$3"
 
-if test "$HAVE_DOXYGEN" = "yes" -o -z "$HAVE_DOXYGEN"
+if test "$HAVE_DOXYGEN" = "yes"
 then 
 	cat "${top_srcdir}/src/main/doxygen.cfg" | \
 	sed "s:__TOP_SRC__:${top_srcdir}:g" | \
