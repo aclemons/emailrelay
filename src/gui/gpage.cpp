@@ -92,7 +92,22 @@ QLabel * GPage::newTitle( QString s )
 
 void GPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
-	stream << prefix << "# " << name() << eol ;
+	stream << prefix << "# page: " << name() << eol ;
+}
+
+void GPage::dumpItem( std::ostream & stream , const std::string & prefix , const std::string & key ,
+	const G::Path & value , const std::string & eol ) const
+{
+	dumpItem( stream , prefix , key , value.str() , eol ) ;
+}
+
+void GPage::dumpItem( std::ostream & stream , const std::string & prefix , const std::string & key ,
+	const std::string & value , const std::string & eol ) const
+{
+	std::string k = key ;
+	G::Str::replaceAll( k , "-" , "_" ) ;
+	G::Str::toUpper( k ) ;
+	stream << prefix << k << "=" << value << eol ;
 }
 
 std::string GPage::value( const QAbstractButton * p )

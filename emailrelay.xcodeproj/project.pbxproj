@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		8DD76F6A0486A84900D96B5E /* emailrelay.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859E8B029090EE04C91782 /* emailrelay.1 */; };
 		EE303C5D0D326C9700D840F2 /* empty.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303AD50D326C9600D840F2 /* empty.cpp */; };
 		EE303D000D326C9700D840F2 /* admin_enabled.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C050D326C9600D840F2 /* admin_enabled.cpp */; };
 		EE303D010D326C9700D840F2 /* commandline_full.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C070D326C9600D840F2 /* commandline_full.cpp */; };
@@ -165,7 +164,6 @@
 			dstPath = /usr/share/man/man1/;
 			dstSubfolderSpec = 0;
 			files = (
-				8DD76F6A0486A84900D96B5E /* emailrelay.1 in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
@@ -173,7 +171,6 @@
 
 /* Begin PBXFileReference section */
 		8DD76F6C0486A84900D96B5E /* emailrelay */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = emailrelay; sourceTree = BUILT_PRODUCTS_DIR; };
-		C6859E8B029090EE04C91782 /* emailrelay.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = emailrelay.1; sourceTree = "<group>"; };
 		EE303AD30D326C9600D840F2 /* emailrelay.dsw */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = emailrelay.dsw; sourceTree = "<group>"; };
 		EE303AD50D326C9600D840F2 /* empty.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = empty.cpp; sourceTree = "<group>"; };
 		EE303AD60D326C9600D840F2 /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
@@ -669,7 +666,6 @@
 		C6859E8C029090F304C91782 /* Documentation */ = {
 			isa = PBXGroup;
 			children = (
-				C6859E8B029090EE04C91782 /* emailrelay.1 */,
 			);
 			name = Documentation;
 			sourceTree = "<group>";

@@ -173,13 +173,16 @@ AC_DEFUN([ACLOCAL_CHECK_BUGGY_CTIME],
 ])
 
 dnl compiler name and version 
-dnl used for -Ilib/<version> -- only needed for pre 3.0 
-dnl gcc -- maps gcc2.96 onto gcc2.95
+dnl
+dnl used for -Ilib/<version> -- doesnt work very well but only 
+dnl needed for pre 3.0 gcc -- maps gcc2.96 onto gcc2.95
+dnl
+dnl ("sed q" is "head -1")
 dnl
 AC_DEFUN([ACLOCAL_COMPILER_VERSION],
 [
 changequote(<<,>>)
-	COMPILER_VERSION=`$CXX --version 2>/dev/null | sed q | sed 's/[^0-9 .]*//g;s/\./ /g;s/^ *//;s/ /./;s/ .*//;s/^/gcc/' | sed 's/gcc2.96/gcc2.95/'`
+	COMPILER_VERSION=`$CXX --version 2>/dev/null | sed q | sed 's/[a-zA-Z][a-zA-Z]*[0-9]*//g' | sed 's/[^0-9 .]*//g;s/\./ /g;s/^ *//;s/ /./;s/ .*//;s/^/gcc/' | sed 's/gcc2.96/gcc2.95/'`
 	if test -z "${COMPILER_VERSION}"
 	then
 		COMPILER_VERSION=`$CXX -V 2>&1 | sed q | grep WorkShop | sed 's/[^0-9]*//;s/[ \.].*//;s/^/sunpro/'`
@@ -507,6 +510,8 @@ AC_DEFUN([ENABLE_STATIC_LINKING],
 ])
 
 dnl with-doxygen
+dnl
+dnl defines HAVE_DOXYGEN as yes or the empty string
 dnl
 AC_DEFUN([WITH_DOXYGEN],
 [

@@ -232,15 +232,15 @@ std::string DirectoryPage::nextPage()
 void DirectoryPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
 	GPage::dump( stream , prefix , eol ) ;
-	stream << prefix << "dir-install: " << value(m_install_dir_edit_box) << eol ;
-	stream << prefix << "dir-spool: " << value(m_spool_dir_edit_box) << eol ;
-	stream << prefix << "dir-config: " << value(m_config_dir_edit_box) << eol ;
-	stream << prefix << "dir-pid: " << m_dir.pid() << eol ;
-	stream << prefix << "dir-desktop: " << m_dir.desktop() << eol ;
-	stream << prefix << "dir-login: " << m_dir.login() << eol ;
-	stream << prefix << "dir-menu: " << m_dir.menu() << eol ;
-	stream << prefix << "dir-reskit: " << std::string() << eol ;
-	stream << prefix << "dir-boot: " << m_dir.boot() << eol ;
+	dumpItem( stream , prefix , "dir-install" , value(m_install_dir_edit_box) , eol ) ;
+	dumpItem( stream , prefix , "dir-spool" , value(m_spool_dir_edit_box) , eol ) ;
+	dumpItem( stream , prefix , "dir-config" , value(m_config_dir_edit_box) , eol ) ;
+	dumpItem( stream , prefix , "dir-pid" , m_dir.pid() , eol ) ;
+	dumpItem( stream , prefix , "dir-desktop" , m_dir.desktop() , eol ) ;
+	dumpItem( stream , prefix , "dir-login" , m_dir.login() , eol ) ;
+	dumpItem( stream , prefix , "dir-menu" , m_dir.menu() , eol ) ;
+	dumpItem( stream , prefix , "dir-reskit" , std::string() , eol ) ;
+	dumpItem( stream , prefix , "dir-boot" , m_dir.boot() , eol ) ;
 }
 
 bool DirectoryPage::isComplete()
@@ -336,11 +336,11 @@ std::string DoWhatPage::nextPage()
 void DoWhatPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
 	GPage::dump( stream , prefix , eol ) ;
-	stream << prefix << "do-pop: " << value(m_pop_checkbox) << eol ;
-	stream << prefix << "do-smtp: " << value(m_smtp_checkbox) << eol ;
-	stream << prefix << "forward-immediate: " << value(m_immediate_checkbox) << eol ;
-	stream << prefix << "forward-poll: " << value(m_periodically_checkbox) << eol ;
-	stream << prefix << "forward-poll-period: " << value(m_period_combo) << eol ;
+	dumpItem( stream , prefix , "do-pop" , value(m_pop_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "do-smtp" , value(m_smtp_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "forward-immediate" , value(m_immediate_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "forward-poll" , value(m_periodically_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "forward-poll-period" , value(m_period_combo) , eol ) ;
 }
 
 bool DoWhatPage::isComplete()
@@ -414,12 +414,12 @@ std::string PopPage::nextPage()
 void PopPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
 	GPage::dump( stream , prefix , eol ) ;
-	stream << prefix << "pop-port: " << value(m_port_edit_box) << eol ;
-	stream << prefix << "pop-simple: " << value(m_one) << eol ;
-	stream << prefix << "pop-shared: " << value(m_shared) << eol ;
-	stream << prefix << "pop-shared-no-delete: " << value(m_no_delete_checkbox) << eol ;
-	stream << prefix << "pop-by-name: " << value(m_pop_by_name) << eol ;
-	stream << prefix << "pop-by-name-auto-copy: " << value(m_auto_copy_checkbox) << eol ;
+	dumpItem( stream , prefix , "pop-port" , value(m_port_edit_box) , eol ) ;
+	dumpItem( stream , prefix , "pop-simple" , value(m_one) , eol ) ;
+	dumpItem( stream , prefix , "pop-shared" , value(m_shared) , eol ) ;
+	dumpItem( stream , prefix , "pop-shared-no-delete" , value(m_no_delete_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "pop-by-name" , value(m_pop_by_name) , eol ) ;
+	dumpItem( stream , prefix , "pop-by-name-auto-copy" , value(m_auto_copy_checkbox) , eol ) ;
 }
 
 bool PopPage::isComplete()
@@ -515,13 +515,13 @@ std::string PopAccountsPage::nextPage()
 void PopAccountsPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
 	GPage::dump( stream , prefix , eol ) ;
-	stream << prefix << "pop-auth-mechanism: " << value(m_mechanism_combo) << eol ;
-	stream << prefix << "pop-account-1-name: " << value(m_name_1) << eol ;
-	stream << prefix << "pop-account-1-password: " << encrypt(value(m_pwd_1),value(m_mechanism_combo)) << eol ;
-	stream << prefix << "pop-account-2-name: " << value(m_name_2) << eol ;
-	stream << prefix << "pop-account-2-password: " << encrypt(value(m_pwd_2),value(m_mechanism_combo)) << eol ;
-	stream << prefix << "pop-account-3-name: " << value(m_name_3) << eol ;
-	stream << prefix << "pop-account-3-password: " << encrypt(value(m_pwd_3),value(m_mechanism_combo)) << eol ;
+	dumpItem( stream , prefix , "pop-auth-mechanism" , value(m_mechanism_combo) , eol ) ;
+	dumpItem( stream , prefix , "pop-account-1-name" , value(m_name_1) , eol ) ;
+	dumpItem( stream , prefix , "pop-account-1-password" , encrypt(value(m_pwd_1),value(m_mechanism_combo)) , eol ) ;
+	dumpItem( stream , prefix , "pop-account-2-name" , value(m_name_2) , eol ) ;
+	dumpItem( stream , prefix , "pop-account-2-password" , encrypt(value(m_pwd_2),value(m_mechanism_combo)) , eol ) ;
+	dumpItem( stream , prefix , "pop-account-3-name" , value(m_name_3) , eol ) ;
+	dumpItem( stream , prefix , "pop-account-3-password" , encrypt(value(m_pwd_3),value(m_mechanism_combo)) , eol ) ;
 }
 
 bool PopAccountsPage::isComplete()
@@ -596,9 +596,9 @@ std::string PopAccountPage::nextPage()
 void PopAccountPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
 	GPage::dump( stream , prefix , eol ) ;
-	stream << prefix << "pop-auth-mechanism: " << value(m_mechanism_combo) << eol ;
-	stream << prefix << "pop-account-1-name: " << value(m_name_1) << eol ;
-	stream << prefix << "pop-account-1-password: " << encrypt(value(m_pwd_1),value(m_mechanism_combo)) << eol ;
+	dumpItem( stream , prefix , "pop-auth-mechanism" , value(m_mechanism_combo) , eol ) ;
+	dumpItem( stream , prefix , "pop-account-1-name" , value(m_name_1) , eol ) ;
+	dumpItem( stream , prefix , "pop-account-1-password" , encrypt(value(m_pwd_1),value(m_mechanism_combo)) , eol ) ;
 }
 
 bool PopAccountPage::isComplete()
@@ -714,12 +714,12 @@ std::string SmtpServerPage::nextPage()
 void SmtpServerPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
 	GPage::dump( stream , prefix , eol ) ;
-	stream << prefix << "smtp-server-port: " << value(m_port_edit_box) << eol ;
-	stream << prefix << "smtp-server-auth: " << value(m_auth_checkbox) << eol ;
-	stream << prefix << "smtp-server-auth-mechanism: " << value(m_mechanism_combo) << eol ;
-	stream << prefix << "smtp-server-account-name: " << value(m_account_name) << eol ;
-	stream << prefix << "smtp-server-account-password: " << encrypt(value(m_account_pwd),value(m_mechanism_combo)) << eol ;
-	stream << prefix << "smtp-server-trust: " << value(m_trust_address) << eol ;
+	dumpItem( stream , prefix , "smtp-server-port" , value(m_port_edit_box) , eol ) ;
+	dumpItem( stream , prefix , "smtp-server-auth" , value(m_auth_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "smtp-server-auth-mechanism" , value(m_mechanism_combo) , eol ) ;
+	dumpItem( stream , prefix , "smtp-server-account-name" , value(m_account_name) , eol ) ;
+	dumpItem( stream , prefix , "smtp-server-account-password" , encrypt(value(m_account_pwd),value(m_mechanism_combo)) , eol ) ;
+	dumpItem( stream , prefix , "smtp-server-trust" , value(m_trust_address) , eol ) ;
 }
 
 void SmtpServerPage::onToggle()
@@ -844,13 +844,13 @@ std::string SmtpClientPage::nextPage()
 void SmtpClientPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
 	GPage::dump( stream , prefix , eol ) ;
-	stream << prefix << "smtp-client-host: " << value(m_server_edit_box) << eol ;
-	stream << prefix << "smtp-client-port: " << value(m_port_edit_box) << eol ;
-	stream << prefix << "smtp-client-tls: " << value(m_tls_checkbox) << eol ;
-	stream << prefix << "smtp-client-auth: " << value(m_auth_checkbox) << eol ;
-	stream << prefix << "smtp-client-auth-mechanism: " << value(m_mechanism_combo) << eol ;
-	stream << prefix << "smtp-client-account-name: " << value(m_account_name) << eol ;
-	stream << prefix << "smtp-client-account-password: " << encrypt(value(m_account_pwd),value(m_mechanism_combo)) << eol ;
+	dumpItem( stream , prefix , "smtp-client-host" , value(m_server_edit_box) , eol ) ;
+	dumpItem( stream , prefix , "smtp-client-port" , value(m_port_edit_box) , eol ) ;
+	dumpItem( stream , prefix , "smtp-client-tls" , value(m_tls_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "smtp-client-auth" , value(m_auth_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "smtp-client-auth-mechanism" , value(m_mechanism_combo) , eol ) ;
+	dumpItem( stream , prefix , "smtp-client-account-name" , value(m_account_name) , eol ) ;
+	dumpItem( stream , prefix , "smtp-client-account-password" , encrypt(value(m_account_pwd),value(m_mechanism_combo)) , eol ) ;
 }
 
 bool SmtpClientPage::isComplete()
@@ -900,9 +900,9 @@ std::string LoggingPage::nextPage()
 void LoggingPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
 	GPage::dump( stream , prefix , eol ) ;
-	stream << prefix << "logging-verbose: " << value(m_verbose_checkbox) << eol ;
-	stream << prefix << "logging-debug: " << value(m_debug_checkbox) << eol ;
-	stream << prefix << "logging-syslog: " << value(m_syslog_checkbox) << eol ;
+	dumpItem( stream , prefix , "logging-verbose" , value(m_verbose_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "logging-debug" , value(m_debug_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "logging-syslog" , value(m_syslog_checkbox) , eol ) ;
 }
 
 // ==
@@ -985,9 +985,9 @@ bool ListeningPage::isComplete()
 void ListeningPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
 	GPage::dump( stream , prefix , eol ) ;
-	stream << prefix << "listening-all: " << value(m_all_radio) << eol ;
-	stream << prefix << "listening-interface: " << value(m_listening_interface) << eol ;
-	stream << prefix << "listening-remote: " << value(m_remote_checkbox) << eol ;
+	dumpItem( stream , prefix , "listening-all" , value(m_all_radio) , eol ) ;
+	dumpItem( stream , prefix , "listening-interface" , value(m_listening_interface) , eol ) ;
+	dumpItem( stream , prefix , "listening-remote" , value(m_remote_checkbox) , eol ) ;
 }
 
 // ==
@@ -1034,10 +1034,10 @@ std::string StartupPage::nextPage()
 void StartupPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
 	GPage::dump( stream , prefix , eol ) ;
-	stream << prefix << "start-on-boot: " << value(m_on_boot_checkbox) << eol ;
-	stream << prefix << "start-at-login: " << value(m_at_login_checkbox) << eol ;
-	stream << prefix << "start-link-menu: " << value(m_add_menu_item_checkbox) << eol ;
-	stream << prefix << "start-link-desktop: " << value(m_add_desktop_item_checkbox) << eol ;
+	dumpItem( stream , prefix , "start-on-boot" , value(m_on_boot_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "start-at-login" , value(m_at_login_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "start-link-menu" , value(m_add_menu_item_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "start-link-desktop" , value(m_add_desktop_item_checkbox) , eol ) ;
 }
 
 // ==

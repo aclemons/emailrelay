@@ -58,7 +58,7 @@ stylesheet="${2}"
 
 if test "${stylesheet}" != "" -a \! -f "${stylesheet}"
 then
-	echo `basename $0`: warning: missing stylesheet: ${stylesheet} >&2
+	: # echo `basename $0`: warning: missing stylesheet: ${stylesheet} >&2
 fi
 
 Main()

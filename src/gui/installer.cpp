@@ -226,6 +226,7 @@ private:
 	void operator=( const InstallerImp & ) ;
 	void read( std::istream & ) ;
 	void insertActions() ;
+	static std::string normalised( const std::string & ) ;
 	std::string value( const std::string & key ) const ;
 	std::string value( const std::string & key , const std::string & default_ ) const ;
 	bool exists( const std::string & key ) const ;
@@ -707,7 +708,6 @@ void Action::run()
 InstallerImp::InstallerImp( G::Path argv0 , std::istream & ss ) :
 	m_unpack(argv0,G::Unpack::NoThrow())
 {
-
 	read( ss ) ;
 	insertActions() ;
 	m_p = m_list.end() ; // sic
@@ -725,15 +725,16 @@ void InstallerImp::read( std::istream & ss )
 		G::Str::readLineFrom( ss , "\n" , line ) ;
 		if( line.empty() || line.find('#') == 0U || line.find_first_not_of(" \t\r") == std::string::npos )
 			continue ;
+
 		if( !ss )
 			break ;
 
 		G::StringArray part ;
-		G::Str::splitIntoTokens( line , part , " \t" ) ;
+		G::Str::splitIntoTokens( line , part , " =\t" ) ;
 		if( part.size() == 0U )
 			continue ;
 
-		std::string value = part.size() == 1U ? std::string() : line.substr(part[0].length()) ;
+		std::string value = part.size() == 1U ? std::string() : line.substr(part[0].length()+1U) ;
 		value = G::Str::trimmed( value , G::Str::ws() ) ;
 		std::string key = part[0] ;
 		G_DEBUG( "InstallerImp::read: \"" << key << "\" = \"" << value << "\"" ) ;
@@ -755,15 +756,23 @@ Action & InstallerImp::current()
 	return *m_p ;
 }
 
+std::string InstallerImp::normalised( const std::string & key )
+{
+	std::string k = key ;
+	G::Str::replaceAll( k , "-" , "_" ) ;
+	G::Str::toUpper( k ) ;
+	return k ;
+}
+
 std::string InstallerImp::value( const std::string & key , const std::string & default_ ) const
 {
-	Map::const_iterator p = m_map.find(key+":") ;
+	Map::const_iterator p = m_map.find(normalised(key)) ;
 	return p == m_map.end() ? default_ : (*p).second ;
 }
 
 std::string InstallerImp::value( const std::string & key ) const
 {
-	Map::const_iterator p = m_map.find(key+":") ;
+	Map::const_iterator p = m_map.find(normalised(key)) ;
 	if( p == m_map.end() )
 		throw std::runtime_error( std::string() + "no such value: " + key ) ;
 	return (*p).second ;
@@ -771,7 +780,7 @@ std::string InstallerImp::value( const std::string & key ) const
 
 bool InstallerImp::exists( const std::string & key ) const
 {
-	return m_map.find(key+":") != m_map.end() ;
+	return m_map.find(normalised(key)) != m_map.end() ;
 }
 
 bool InstallerImp::yes( const std::string & value )

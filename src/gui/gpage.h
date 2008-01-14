@@ -23,6 +23,7 @@
 
 #include "qt.h"
 #include "gstrings.h"
+#include "gpath.h"
 #include <string>
 
 class GDialog ; 
@@ -101,6 +102,10 @@ protected:
 	static std::string value( const QLineEdit * ) ;
 	static std::string value( const QComboBox * ) ;
 	bool testMode() const ;
+	void dumpItem( std::ostream & , const std::string & prefix , const std::string & key ,
+		const std::string & value , const std::string & eol ) const ;
+	void dumpItem( std::ostream & , const std::string & prefix , const std::string & key ,
+		const G::Path & value , const std::string & eol ) const ;
 
 private:
 	GDialog & m_dialog ;
