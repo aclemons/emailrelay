@@ -19,7 +19,8 @@
 //
 // A dummy smtp server for testing purposes.
 //
-// usage: emailrelay-test-server [--quiet] [--tls] [--auth-foo-bar] [--auth-login] [--auth-plain] [--auth-ok] [--slow] [--fail-at <n>] [--port <port>]
+// usage: emailrelay-test-server [--quiet] [--tls] [--auth-foo-bar] [--auth-login] [--auth-plain] 
+//        [--auth-ok] [--slow] [--fail-at <n>] [--port <port>]
 //
 
 #include "gdef.h"

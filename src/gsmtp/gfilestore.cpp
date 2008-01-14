@@ -112,12 +112,9 @@ std::string GSmtp::FileStore::x()
 	return "X-MailRelay-" ;
 }
 
-std::string GSmtp::FileStore::format( int n )
+std::string GSmtp::FileStore::format()
 {
-	if( n == 0 )
-		return "#2821.3" ; // current -- includes message authentication and client ip
-	else
-		return "#2821.2" ; // old
+	return "#2821.3" ;
 }
 
 void GSmtp::FileStore::checkPath( const G::Path & directory_path )

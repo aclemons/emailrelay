@@ -92,7 +92,7 @@ G::Path Dir::os_install() const
 {
 	std::string s( G_DESTDIR ) ;
 	if( s.empty() )
-		s = "/usr/sbin" ;
+		s = "/usr" ;
 	return s ;
 }
 
@@ -106,10 +106,10 @@ G::Path Dir::os_config() const
 
 G::Path Dir::os_spool() const
 {
-        std::string spooldir( G_SPOOLDIR ) ;
-        if( spooldir.empty() )
-                spooldir = "/var/spool/emailrelay" ;
-        return spooldir ;
+	std::string spooldir( G_SPOOLDIR ) ;
+	if( spooldir.empty() )
+		spooldir = "/var/spool/emailrelay" ;
+	return spooldir ;
 }
 
 G::Path Dir::cwd()

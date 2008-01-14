@@ -24,6 +24,7 @@
 #include "legal.h"
 #include "dir.h"
 #include "boot.h"
+#include "gstr.h"
 #include "gfile.h"
 #include "gprocess.h"
 #include "gidentity.h"
@@ -69,7 +70,7 @@ void TitlePage::dump( std::ostream & stream , const std::string & prefix , const
 // ==
 
 LicensePage::LicensePage( GDialog & dialog , const std::string & name , 
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) : 
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool accepted ) : 
 		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_text_edit = new QTextEdit;
@@ -82,7 +83,7 @@ LicensePage::LicensePage( GDialog & dialog , const std::string & name ,
 	m_agree_checkbox = new QCheckBox(tr("I agree to the terms and conditions of the license"));
 	setFocusProxy( m_agree_checkbox ) ;
 
-	if( testMode() )
+	if( testMode() || accepted )
 		m_agree_checkbox->setChecked(true) ;
 
 	QVBoxLayout *layout = new QVBoxLayout;
@@ -1167,7 +1168,7 @@ void ProgressPage::poke()
 
 void ProgressPage::addLine( const std::string & line )
 {
-	G_DEBUG( "ProcessPage::addLine: [" << line << "]" ) ;
+	G_DEBUG( "ProcessPage::addLine: [" << G::Str::printable(line) << "]" ) ;
 	m_text.append( line.c_str() ) ;
 	m_text_edit->setFontFamily("courier") ;
 	m_text_edit->setPlainText( m_text ) ;

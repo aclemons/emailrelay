@@ -40,7 +40,7 @@ EXTRA_DIST=\
     gdescriptor_win32.cpp \
     geventloop_win32.cpp \
     glocal_win32.cpp \
-    grequest.cpp \
+    grequest_win32.cpp \
     gresolver_win32.cpp \
     gsimpleclient_win32.cpp \
     gsocket_win32.cpp \

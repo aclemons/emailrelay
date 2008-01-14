@@ -47,10 +47,12 @@ public:
 		///< See also: TrackPopupMenuEx()
 
 private: 
-	HMENU m_hmenu ;
-	HMENU m_hmenu_popup ;
 	WinMenu( const WinMenu & ) ; // not implemented
 	void operator=( const WinMenu & ) ; // not implemented
+
+private:
+	HMENU m_hmenu ;
+	HMENU m_hmenu_popup ;
 } ;
 
 #endif

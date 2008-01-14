@@ -180,7 +180,9 @@ sub fragment
 	my $output = undef ;
 	my @head = () ;
 	my $state = 0 ;
+	my $previous_line = "" ;
 	my $was_brace = 0 ;
+	my $was_hash_if = 0 ;
 	my $seen_pragma = 0 ;
 	my @file_list = () ;
 	first_file_out() ;
@@ -194,6 +196,7 @@ sub fragment
 		my $is_method = $line =~ m/^[^[:space:]].*::.*\(/ ;
 		my $is_blank = $line =~ m/^[[:space:]]*$/ ;
 		my $is_brace = $line =~ m/^}/ ;
+		my $is_hash_if = $line =~ m/^#if/ ;
 
 		if( ( $state == 0 || $state == 2 ) && ( ($seen_pragma || !$has_pragma) && ( $is_namespace || $is_method ) ) )
 		{
@@ -204,6 +207,7 @@ sub fragment
 			push @file_list , name_to_show($file_out) ;
 			print_banner( $output , $file_in , $file_out ) ;
 			print_header( $output , \@head ) ;
+			if( $was_hash_if ) { print $output $previous_line , "\n" }
 			print $output $line , "\n" ;
 		}
 		elsif( $state == 1 && $was_brace && $is_blank )
@@ -219,7 +223,9 @@ sub fragment
 			push @head , $line unless $is_pragma ;
 		}
 		$was_brace = $is_brace ;
+		$was_hash_if = $is_hash_if ;
 		$seen_pragma = $seen_pragma || $is_pragma ;
+		$previous_line = $line ;
 	}
 	close $input or die ;
 	if( defined($output) ) { close $output or die basename($0).": cannot close output file" }

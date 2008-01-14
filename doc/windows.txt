@@ -46,9 +46,9 @@ Note that the batch file and the main E-MailRelay executable must be in the same
 directory.
 
 If you need to run multiple E-MailRelay services then pass a unique service name
-on the "emailrelay-server --install" command-line. This name is used to derive
-the name of the batch file that contains the E-MailRelay server's command-line
-switches.
+on the "emailrelay-server --install <name>" command-line. This name is used to 
+derive the name of the "<name>-start.bat" batch file that contains the 
+E-MailRelay server's command-line switches so you will need to create this too.
 
 Diagnostics
 -----------
@@ -59,9 +59,10 @@ the "--verbose" switch to the E-MailRelay command-line.
 The E-MailRelay server also logs to the standard error stream, however the
 "--as-server" and "--as-proxy" switches implicitly incorporate "--close-stderr"
 so with these switches the standard error logging will stop soon after startup.
-To get continuous logging you should replace "--as-server" with "--log" and
-"--as-proxy" with "--immediate --forward-to". Then you will be able to redirect
-the standard error stream to a log file, eg:
+
+To get continuous logging to a log file you should replace "--as-server" with 
+"--log" and "--as-proxy" with "--immediate --forward-to" and then use "2>" to 
+redirect the standard error stream, eg:
 
 	"c:\program files\emailrelay\emailrelay.exe" --log -v -L ... > c:\temp.out 2>&1
 

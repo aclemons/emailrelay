@@ -486,11 +486,14 @@ std::string Main::Run::doPoll()
 {
 	try
 	{
-		G_LOG( "Main::Run::doPoll: polling" ) ;
+		const Configuration & cfg = config() ;
+
+		G_DEBUG( "Main::Run::doPoll: polling" ) ;
+		if( cfg.pollingTimeout() > 60U ) // avoid log spam
+			G_LOG( "Main::Run::doPoll: polling" ) ;
+
 		if( ! m_store->empty() )
 		{
-			const Configuration & cfg = config() ;
-
 			GNet::Address local_address = cfg.clientInterface().length() ?
 				GNet::Address(cfg.clientInterface(),0U) : GNet::Address(0U) ;
 

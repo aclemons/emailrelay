@@ -21,10 +21,14 @@
 	A program that unpacks itself and then execs "./emailrelay-gui".
 
 	The first line of any "emailrelay-gui.cfg" file is put onto the
-	command-line.
+	command-line. This is typically only used during development to add
+	debug switches etc.
 
-	This is written in "C" so that is does no have to be dependent
-	on non-standard (ie. mingw) DLLs when built on windows.
+	This is written in "C" so that a self-extracting archive does 
+	not have any dependence on the C++ runtime library. This is 
+	important for Windows since the MinGW C++ runtime is not installed
+	as standard.
+
 */
 
 #include "gdef.h"

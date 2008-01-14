@@ -14,45 +14,13 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-#
-# mingw.mak
-#
-
-mk_sources=\
-	gaddress_ipv4.cpp \
-	gbufferedserverpeer.cpp \
-	gclient.cpp \
-	gconnection.cpp \
-	gdescriptor_win32.cpp \
-	geventhandler.cpp \
-	geventloop.cpp \
-	geventloop_win32.cpp \
-	gheapclient.cpp \
-	glinebuffer.cpp \
-	glocal.cpp \
-	glocal_win32.cpp \
-	gmonitor.cpp \
-	gmultiserver.cpp \
-	grequest_win32.cpp \
-	gresolver.cpp \
-	gresolverinfo.cpp \
-	gresolver_ipv4.cpp \
-	gresolver_win32.cpp \
-	gserver.cpp \
-	gsimpleclient.cpp \
-	gsimpleclient_win32.cpp \
-	gsocket.cpp \
-	gsocket_win32.cpp \
-	gsocketprotocol.cpp \
-	gtimer.cpp \
-	gtimerlist.cpp
-
-mk_target=gnet.a
-
-all: $(mk_target)
-
-include ../mingw-common.mak
-
-$(mk_target): $(mk_objects)
-	$(mk_ar) $(mk_target) $(mk_objects)
-
+noinst_LIBRARIES = libfragments.a
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) 
+INCLUDES += -I$(top_srcdir)/src/glib  
+INCLUDES += -I$(top_srcdir)/src/gssl
+INCLUDES += -I$(top_srcdir)/src/gnet
+libfragments_a_SOURCES = empty.cpp
+libfragments_a_LIBADD = @FRAGMENTS_LIST@
+libfragments_a_DEPENDENCIES = @FRAGMENTS_LIST@
+distclean-local:
+	$(RM) g*.cpp

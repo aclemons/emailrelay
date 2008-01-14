@@ -92,18 +92,25 @@ public:
 	Path path() const ;
 		///< Returns the path as passed in to the constructor.
 
-	void unpack( const Path & to_dir ) ;
+	void unpack( const Path & to_base_dir ) ;
 		///< Unpacks all the files.
 
-	void unpack( const Path & to_dir , const std::string & name ) ;
-		///< Unpacks one file. Throws NoSuchFile if the
+	void unpack( const Path & to_base_dir , const std::string & name ) ;
+		///< Unpacks one file. The final path of the unpacked file is
+		///< the concatenation of the two parameters. Throws NoSuchFile if the
+		///< name is invalid.
+
+	void unpack( const std::string & name , const Path & dst ) ;
+		///< Unpacks one file. The final path of the unpacked file
+		///< is exactly the destination path given, idependent of
+		///< the packed name. Throws NoSuchFile if the
 		///< name is invalid.
 
 	Strings names() const ;
 		///< Returns the list of file names.
 
-	void unpackOriginal( const Path & to_dir ) ;
-		///< Copies the original unpacked file to the given directory.
+	void unpackOriginal( const Path & dst ) ;
+		///< Copies the unpacked executable to the given path.
 
 private:
 	struct Entry 
@@ -124,7 +131,8 @@ private:
 	Unpack( const Unpack & ) ;
 	void operator=( const Unpack & ) ;
 	void init() ;
-	void unpack( const Path & to_dir , std::istream & , const Entry & ) ;
+	void unpack( const Path & , std::istream & , const Entry & ) ;
+	void unpack( std::istream & , unsigned long , unsigned long , const Path & ) ;
 	static void unpack( const Path & , const std::vector<char> & ) ;
 	static void unpack( std::ostream & , const std::vector<char> & ) ;
 	static unsigned long offset( Path ) ;

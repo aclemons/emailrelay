@@ -147,7 +147,7 @@ ENABLE_SMALL_FRAGMENTS
 dnl ===
 dnl "--enable-small-exceptions"
 dnl
-AC_ARG_ENABLE(exec,AC_HELP_STRING([--enable-small-exceptions],[optimise exception classes for smaller binaries (default no)]))
+AC_ARG_ENABLE(small_exceptions,AC_HELP_STRING([--enable-small-exceptions],[optimise exception classes for smaller binaries (default no)]))
 ENABLE_SMALL_EXCEPTIONS
 
 dnl ===

@@ -23,6 +23,7 @@
 #include "gpath.h"
 #include "gfile.h"
 #include "service_install.h"
+#include "service_remove.h"
 #include <stdexcept>
 
 #ifdef _WIN32
@@ -50,6 +51,11 @@ bool Boot::install( G::Path , G::Path target , G::Strings )
 	return true ;
 }
 
+bool Boot::uninstall( G::Path , G::Path , G::Strings )
+{
+	return service_remove("emailrelay").empty() ;
+}
+
 #else
 
 bool Boot::able( G::Path dir , G::Path )
@@ -69,11 +75,14 @@ bool Boot::install( G::Path dir_boot , G::Path target , G::Strings )
 	return ok1 && ok2 && ok3 ;
 }
 
-#endif
-
-bool Boot::uninstall( G::Path , G::Path , G::Strings )
+bool Boot::uninstall( G::Path dir_boot , G::Path target , G::Strings )
 {
-	return true ; // TODO
+	std::string name = std::string() + "S50" + target.basename() ;
+	bool ok1 = G::File::remove( dir_boot+".."+"rc3.d"+name , G::File::NoThrow() ) ;
+	bool ok2 = G::File::remove( dir_boot+".."+"rc4.d"+name , G::File::NoThrow() ) ;
+	bool ok3 = G::File::remove( dir_boot+".."+"rc5.d"+name , G::File::NoThrow() ) ;
+	return ok1 && ok2 && ok3 ;
 }
 
+#endif
 /// \file boot.cpp

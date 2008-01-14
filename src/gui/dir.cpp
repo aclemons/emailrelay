@@ -24,6 +24,7 @@
 #include "dir.h"
 #include "gstr.h"
 #include "gpath.h"
+#include "gdebug.h"
 #include <stdexcept>
 
 Dir::Dir( const std::string & argv0 , bool installed ) :
@@ -49,23 +50,57 @@ Dir::~Dir()
 
 void Dir::read( std::istream & file )
 {
-	std::string line ;
+	G::Path dummy ;
+	bool plain = true ;
 
 	// these are presented by the gui...
-	line = G::Str::readLineFrom(file,"\n") ; if( file.good() && !line.empty() ) m_spool = line ;
-	line = G::Str::readLineFrom(file,"\n") ; if( file.good() && !line.empty() ) m_config = line ;
+	read( m_spool , file , plain ) ;
+	read( m_config , file , plain ) ;
 
 	// these allow "make install" to take full control if it needs to...
-	line = G::Str::readLineFrom(file,"\n") ; if( file.good() && !line.empty() ) m_pid = line ;
-	line = G::Str::readLineFrom(file,"\n") ; if( file.good() && !line.empty() ) m_boot = line ;
-	line = G::Str::readLineFrom(file,"\n") ; // was m_startup -- ignored
-	line = G::Str::readLineFrom(file,"\n") ; if( file.good() && !line.empty() ) m_desktop = line ;
-	line = G::Str::readLineFrom(file,"\n") ; if( file.good() && !line.empty() ) m_login = line ;
-	line = G::Str::readLineFrom(file,"\n") ; if( file.good() && !line.empty() ) m_menu = line ;
-	line = G::Str::readLineFrom(file,"\n") ; if( file.good() && !line.empty() ) ; // reskit not used
+	read( m_pid , file , plain ) ;
+	read( m_boot , file , plain ) ;
+	read( dummy , file , plain ) ; // was m_startup -- ignored
+	read( m_desktop , file , plain ) ;
+	read( m_login , file , plain ) ;
+	read( m_menu , file , plain ) ;
+	read( dummy , file , plain ) ; // was reskit -- ignored
 
 	// this is for completeness only...
-	line = G::Str::readLineFrom(file,"\n") ; if( file.good() && !line.empty() ) m_install = line ;
+	read( m_install , file , plain ) ;
+}
+
+void Dir::read( G::Path & value , std::istream & file , bool & plain )
+{
+	// This supports two file formats: the old format is a simple text file
+	// with one value on each line and the new format uses hash for comment
+	// lines and values given as "key=value" (although the key is ignored 
+	// for now).
+
+	while( file.good() )
+	{
+		std::string line = G::Str::readLineFrom( file , "\n" ) ;
+		if( file.good() && !line.empty() ) 
+		{
+			G::Str::trim( line , G::Str::ws() ) ;
+			if( line.at(0U) == '#' || line.at(0U) == '@' )
+			{
+				if( plain )
+					G_DEBUG( "Dir::read: not a plain state file" ) ;
+				plain = false ;
+				continue ;
+			}
+			std::string::size_type pos = line.find( '=' ) ;
+			if( plain || pos != std::string::npos )
+			{
+				value = plain ? line : G::Str::tail(line,pos) ;
+				G_DEBUG( "Dir::read: state file value [" << value << "]" ) ;
+				break ;
+			}
+		}
+		if( plain )
+			break ;
+	}
 }
 
 G::Path Dir::thisdir() const

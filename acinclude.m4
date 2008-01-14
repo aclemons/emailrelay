@@ -193,44 +193,44 @@ dnl defaults to no but allows --enable-debug=full as per kdevelop
 dnl
 AC_DEFUN([ENABLE_DEBUG],
 [
-if test "$enable_debug" = "no" -o -z "$enable_debug"
-then
-	:
-else
-	AC_DEFINE(_DEBUG,1,[Define to enable extra debug messages at compile-time])
-fi
+	if test "$enable_debug" = "no" -o -z "$enable_debug"
+	then
+		:
+	else
+		AC_DEFINE(_DEBUG,1,[Define to enable extra debug messages at compile-time])
+	fi
 ])
 
 dnl enable-gui
 dnl
 AC_DEFUN([ENABLE_GUI],
 [
-qt4="no"
-qt4moc="no"
-if test "$enable_gui" = "no"
-then
-	:
-else
-    PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes],[AC_MSG_RESULT([no])])
-	if test "$qt4" = "yes"
+	qt4="no"
+	qt4moc="no"
+	if test "$enable_gui" = "no"
 	then
-		MOC="${e_qtmoc}"
-		AC_PATH_PROG(MOC,moc)
-		AC_MSG_CHECKING([moc is for qt 4])
-		if test x$GREP = x ; then GREP=grep ; fi
-		if test -x "$MOC" -a "`$MOC -v 2>&1 | $GREP 'Qt 4'`" != "" ; then
-			AC_MSG_RESULT([yes])
-			qt4moc="yes"
-		else
-			AC_MSG_RESULT([no])
-		fi
+		:
 	else
-		QT_LIBS=""
-		AC_SUBST(QT_LIBS)
+    	PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes],[AC_MSG_RESULT([no])])
+		if test "$qt4" = "yes"
+		then
+			MOC="${e_qtmoc}"
+			AC_PATH_PROG(MOC,moc)
+			AC_MSG_CHECKING([moc is for qt 4])
+			if test x$GREP = x ; then GREP=grep ; fi
+			if test -x "$MOC" -a "`$MOC -v 2>&1 | $GREP 'Qt 4'`" != "" ; then
+				AC_MSG_RESULT([yes])
+				qt4moc="yes"
+			else
+				AC_MSG_RESULT([no])
+			fi
+		else
+			QT_LIBS=""
+			AC_SUBST(QT_LIBS)
+		fi
 	fi
-fi
-AC_SUBST(MOC)
-AM_CONDITIONAL(GUI,test x$enable_gui != xno -a x$qt4moc = xyes )
+	AC_SUBST(MOC)
+	AM_CONDITIONAL(GUI,test x$enable_gui != xno -a x$qt4moc = xyes )
 	if test x$enable_exec = xno -a x$enable_gui != xno -a x$qt4moc = xyes
 	then
 		AC_MSG_ERROR([using --disable-exec requires --disable-gui])
@@ -263,7 +263,7 @@ AC_DEFUN([ENABLE_POP],
 	else
 		AC_DEFINE(USE_NO_POP,1,[Define to eliminate unused pop code as a size optimisation])
 	fi
-AM_CONDITIONAL(POP,test x$enable_pop != xno)
+	AM_CONDITIONAL(POP,test x$enable_pop != xno)
 ])
 
 dnl enable-exec
@@ -278,7 +278,7 @@ AC_DEFUN([ENABLE_EXEC],
 	else
 		AC_DEFINE(USE_NO_EXEC,1,[Define to eliminate unused exec-ing code as a size optimisation])
 	fi
-AM_CONDITIONAL(EXEC,test x$enable_exec != xno)
+	AM_CONDITIONAL(EXEC,test x$enable_exec != xno)
 ])
 
 dnl enable-admin
@@ -293,7 +293,7 @@ AC_DEFUN([ENABLE_ADMIN],
 	else
 		AC_DEFINE(USE_NO_ADMIN,1,[Define to eliminate unused admin interface code as a size optimisation])
 	fi
-AM_CONDITIONAL(ADMIN,test x$enable_admin != xno)
+	AM_CONDITIONAL(ADMIN,test x$enable_admin != xno)
 ])
 
 dnl enable-auth
@@ -308,7 +308,7 @@ AC_DEFUN([ENABLE_AUTH],
 	else
 		AC_DEFINE(USE_NO_AUTH,1,[Define to eliminate unused authentication code as a size optimisation])
 	fi
-AM_CONDITIONAL(AUTH,test x$enable_auth != xno)
+	AM_CONDITIONAL(AUTH,test x$enable_auth != xno)
 	if test x$enable_auth = xno -a x$enable_pop != xno
 	then
 		AC_MSG_ERROR([using --disable-auth requires --disable-pop])
@@ -317,20 +317,20 @@ AM_CONDITIONAL(AUTH,test x$enable_auth != xno)
 
 dnl enable-dns
 dnl
-dnl disable-dns disables dns lookup so host and service names must be ip addresses and port numbers
+dnl disable-dns disables dns lookup so host and service names must be given as ip addresses and port numbers
 dnl
 AC_DEFUN([ENABLE_DNS],
 [
-AM_CONDITIONAL(DNS,test x$enable_dns != xno)
+	AM_CONDITIONAL(DNS,test x$enable_dns != xno)
 ])
 
 dnl enable-identity
 dnl
-dnl disable-identity disables userid switching, removing the dependence on getpwnam
+dnl disable-identity disables userid switching thereby removing the dependence on getpwnam and /etc/passwd
 dnl
 AC_DEFUN([ENABLE_IDENTITY],
 [
-AM_CONDITIONAL(IDENTITY,test x$enable_identity != xno)
+	AM_CONDITIONAL(IDENTITY,test x$enable_identity != xno)
 ])
 
 dnl enable-small-fragments
@@ -339,20 +339,20 @@ dnl enable-fragments compiles certain source files in lots of little pieces so
 dnl the linker can throw away fragments that are not needed in the final executable
 dnl
 dnl requires perl on the path and probably messes up a lot of autoconf/automake 
-dnl features, so only use if necessary
+dnl features, so only use if really necessary
 dnl
 AC_DEFUN([ENABLE_SMALL_FRAGMENTS],
 [
-AM_CONDITIONAL(SMALL_FRAGMENTS,test x$enable_small_fragments = xyes)
-if test x$enable_small_fragments = xyes
-then
-	AC_MSG_NOTICE([creating source file fragments])
-	FRAGMENTS_LIST="`perl $srcdir/bin/fragment.pl_ -r $srcdir/src $srcdir/src/fragments`"
-	for fragment in $FRAGMENTS_LIST "" ; do if test "$fragment" != "" ; then
-		AC_MSG_NOTICE([creating source file fragment for $fragment])
-	fi ; done
-fi
-AC_SUBST(FRAGMENTS_LIST)
+	AM_CONDITIONAL(SMALL_FRAGMENTS,test x$enable_small_fragments = xyes)
+	if test x$enable_small_fragments = xyes
+	then
+		AC_MSG_NOTICE([creating source file fragments])
+		FRAGMENTS_LIST="`perl $srcdir/bin/fragment.pl_ -r $srcdir/src $srcdir/src/fragments`"
+		for fragment in $FRAGMENTS_LIST "" ; do if test "$fragment" != "" ; then
+			AC_MSG_NOTICE([creating source file fragment for $fragment])
+		fi ; done
+	fi
+	AC_SUBST(FRAGMENTS_LIST)
 ])
 
 dnl enable-small-config
@@ -368,7 +368,7 @@ AC_DEFUN([ENABLE_SMALL_CONFIG],
 	else
 		:
 	fi
-AM_CONDITIONAL(SMALL_CONFIG,test x$enable_small_config = xyes)
+	AM_CONDITIONAL(SMALL_CONFIG,test x$enable_small_config = xyes)
 ])
 
 dnl enable-small-exceptions
@@ -377,7 +377,7 @@ dnl enable-small-exceptions defines exception classes as functions
 dnl
 AC_DEFUN([ENABLE_SMALL_EXCEPTIONS],
 [
-	if test x$enable_small_config = xyes
+	if test x$enable_small_exceptions = xyes
 	then
 		AC_DEFINE(USE_SMALL_EXCEPTIONS,1,[Define to have exception types as functions as a size optimisation])
 	else
@@ -391,25 +391,25 @@ dnl requires ACLOCAL_CHECK_IPV6 to have been run
 dnl
 AC_DEFUN([ENABLE_IPV6],
 [
-if test "$enable_ipv6" = "yes"
-then
-	if test "$aclocal_ipv6" != "yes"
+	if test "$enable_ipv6" = "yes"
 	then
-		AC_MSG_WARN([ignoring --enable-ipv6])
-		aclocal_use_ipv6="no"
+		if test "$aclocal_ipv6" != "yes"
+		then
+			AC_MSG_WARN([ignoring --enable-ipv6])
+			aclocal_use_ipv6="no"
+		else
+			AC_DEFINE(USE_IPV6,1,[Define to use IPv6])
+			aclocal_use_ipv6="yes"
+		fi
 	else
-		AC_DEFINE(USE_IPV6,1,[Define to use IPv6])
-		aclocal_use_ipv6="yes"
+		aclocal_use_ipv6="no"
 	fi
-else
-	aclocal_use_ipv6="no"
-fi
-AM_CONDITIONAL(IPV6,test x$aclocal_use_ipv6 = xyes)
+	AM_CONDITIONAL(IPV6,test x$aclocal_use_ipv6 = xyes)
 ])
-
+	
 dnl enable-proxy
 dnl
-dnl disable-pop disables smtp proxying
+dnl disable-proxy disables smtp proxying
 dnl
 AC_DEFUN([ENABLE_PROXY],
 [
@@ -419,7 +419,7 @@ AC_DEFUN([ENABLE_PROXY],
 	else
 		AC_DEFINE(USE_NO_PROXY,1,[Define to eliminate proxying code as a size optimisation])
 	fi
-AM_CONDITIONAL(PROXY,test x$enable_proxy != xno)
+	AM_CONDITIONAL(PROXY,test x$enable_proxy != xno)
 ])
 
 dnl with-openssl
@@ -490,63 +490,65 @@ AM_CONDITIONAL(GLOB,test x$aclocal_use_glob = xyes)
 
 dnl enable-static-linking
 dnl
+dnl only applicable to gcc
+dnl
 AC_DEFUN([ENABLE_STATIC_LINKING],
 [
-if test "$enable_static_linking" = "yes"
-then
-	STATIC_START="-Xlinker -Bstatic"
-	STATIC_END=""
-else
-	STATIC_START=""
-	STATIC_END=""
-fi
-AC_SUBST(STATIC_START)
-AC_SUBST(STATIC_END)
+	if test "$enable_static_linking" = "yes"
+	then
+		STATIC_START="-Xlinker -Bstatic"
+		STATIC_END=""
+	else
+		STATIC_START=""
+		STATIC_END=""
+	fi
+	AC_SUBST(STATIC_START)
+	AC_SUBST(STATIC_END)
 ])
 
 dnl with-doxygen
 dnl
 AC_DEFUN([WITH_DOXYGEN],
 [
-if test "$with_doxygen" != ""
-then
-	if test "$with_doxygen" = "yes" -a "$HAVE_DOXYGEN" != "yes"
+	if test "$with_doxygen" != ""
 	then
-		AC_MSG_WARN([ignoring --with-doxygen])
-	else
-		HAVE_DOXYGEN="$with_doxygen"
-		AC_SUBST(HAVE_DOXYGEN)
+		if test "$with_doxygen" = "yes" -a "$HAVE_DOXYGEN" != "yes"
+		then
+			AC_MSG_WARN([ignoring --with-doxygen])
+		else
+			HAVE_DOXYGEN="$with_doxygen"
+			AC_SUBST(HAVE_DOXYGEN)
+		fi
 	fi
-fi
 ])
 
 dnl with-man2html
 dnl
 AC_DEFUN([WITH_MAN2HTML],
 [
-if test "$with_man2html" != ""
-then
-	if test "$with_man2html" = "yes" -a "$HAVE_MAN2HTML" != "yes"
+	if test "$with_man2html" != ""
 	then
-		AC_MSG_WARN([ignoring --with-man2html])
-	else
-		HAVE_MAN2HTML="$with_man2html"
-		AC_SUBST(HAVE_MAN2HTML)
+		if test "$with_man2html" = "yes" -a "$HAVE_MAN2HTML" != "yes"
+		then
+			AC_MSG_WARN([ignoring --with-man2html])
+		else
+			HAVE_MAN2HTML="$with_man2html"
+			AC_SUBST(HAVE_MAN2HTML)
+		fi
 	fi
-fi
 ])
 
 dnl enable-fhs
 dnl
 AC_DEFUN([ENABLE_FHS],
 [
-if test "$enable_fhs" = "yes"
-then
-	FHS_COMPLIANCE
-fi
+	if test "$enable_fhs" = "yes"
+	then
+		FHS_COMPLIANCE
+	fi
 ])
 
-dnl fhs
+dnl fhs-compiliance
 dnl
 AC_DEFUN([FHS_COMPLIANCE],
 [

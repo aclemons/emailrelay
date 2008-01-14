@@ -42,7 +42,7 @@
 # 
 # The GUI build also needs the zlib library (http://www.zlib.net), but the
 # zlib source code is normally available within the Qt distribution under the 
-# src/3rdparty directory. To build the zlib library from the source code in Qt 
+# "src/3rdparty" directory. To build the zlib library from the source code in Qt 
 # you can go through the whole Qt build, or try something like this:
 #
 #    c:\qt\src\3rdparty\zlib> c:\mingw\bin\mingw32-make CC=gcc CFLAGS=-I../../corelib/global

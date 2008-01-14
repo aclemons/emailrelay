@@ -25,7 +25,7 @@
 #
 # Typically used for smtp multicast with an emailrelay
 # forwarding process polling each sub-directory (with
-# eg. "-le --no-smtp --poll 10 --forward-to ...").
+# eg. "--log -e --no-smtp --poll 10 --forward-to ...").
 #
 # Hard links are used for the content files in order to
 # conserve disk space.

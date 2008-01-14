@@ -26,6 +26,7 @@
 #include "gmultiserver.h"
 #include "gexecutable.h"
 #include "gstr.h"
+#include "gstrings.h"
 #include "glinebuffer.h"
 #include "gserverprotocol.h"
 #include "gclientptr.h"

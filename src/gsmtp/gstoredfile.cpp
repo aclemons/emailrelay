@@ -99,11 +99,8 @@ void GSmtp::StoredFile::readEnvelopeCore( bool check )
 	readFlag( stream ) ;
 	readFrom( stream ) ;
 	readToList( stream ) ;
-	if( m_format == FileStore::format() )
-	{
-		readAuthentication( stream ) ;
-		readClientIp( stream ) ;
-	}
+	readAuthentication( stream ) ;
+	readClientIp( stream ) ;
 	readEnd( stream ) ;
 
 	if( check && m_to_remote.size() == 0U )
@@ -119,7 +116,7 @@ void GSmtp::StoredFile::readFormat( std::istream & stream )
 {
 	std::string format_line = getline(stream) ;
 	m_format = value(format_line,"Format") ;
-	if( m_format != FileStore::format() && m_format != FileStore::format(-1) )
+	if( m_format != FileStore::format() )
 		throw InvalidFormat( m_format ) ;
 }
 
@@ -279,7 +276,7 @@ void GSmtp::StoredFile::unlock()
 
 void GSmtp::StoredFile::fail( const std::string & reason , int reason_code )
 {
-	if( G::File::exists( m_envelope_path ) ) // client-side preprocessing may have removed it
+	if( G::File::exists(m_envelope_path) ) // client-side preprocessing may have removed it
 	{
 		addReason( m_envelope_path , reason , reason_code ) ;
 

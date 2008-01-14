@@ -26,7 +26,6 @@
 #  * uclibc++ 0.2.2
 #  * binutils 2.18-ubuntu
 #
-foo bar
 # These versions of linux and uclibc correspond to those pre-installed
 # on the Buffalo WHR-G54S router as of late 2007. The version of gcc
 # is 3.4.6 rather than 3.3.3 because of compiler bugs in the c++

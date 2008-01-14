@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gfile.h"
 #include "gprocess.h"
+#include "gdebug.h"
 #include <errno.h>
 #include <sys/stat.h>
 #include <sstream>
@@ -89,7 +90,18 @@ G::File::time_type G::File::time( const Path & path , const NoThrow & )
 
 bool G::File::chmodx( const Path & path , bool do_throw )
 {
-	bool ok = 0 == ::chmod( path.str().c_str() , S_IRUSR | S_IWUSR | S_IXUSR ) ;
+	mode_t mode = S_IRUSR | S_IWUSR | S_IXUSR ;
+	struct stat statbuf ;
+	if( 0 == ::stat( path.str().c_str() , &statbuf ) )
+	{
+		G_DEBUG( "G::File::chmodx: old: " << statbuf.st_mode ) ;
+		mode = statbuf.st_mode | S_IXUSR ;
+		if( mode & S_IRGRP ) mode |= S_IXGRP ;
+		if( mode & S_IROTH ) mode |= S_IXOTH ;
+		G_DEBUG( "G::File::chmodx: new: " << mode ) ;
+	}
+
+	bool ok = 0 == ::chmod( path.str().c_str() , mode ) ;
 	if( !ok && do_throw )
 		throw CannotChmod( path.str() ) ;
 	return ok ;

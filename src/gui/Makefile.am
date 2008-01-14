@@ -26,6 +26,7 @@ EXTRA_DIST=\
 	mingw.mak \
 	mac.mak \
 	pack.cpp \
+	make-setup.sh \
 	run.c \
 	mock
 
@@ -69,10 +70,11 @@ INCLUDES=\
 
 AM_CPPFLAGS=$(QT_CFLAGS)
 
-sbin_PROGRAMS = emailrelay-gui
+sbin_PROGRAMS = emailrelay-gui.real
 noinst_SCRIPTS = mock
+noinst_PROGRAMS = pack
 
-emailrelay_gui_SOURCES = \
+emailrelay_gui_real_SOURCES = \
 	gdialog.cpp \
 	gdialog.h \
 	glink.h \
@@ -97,21 +99,25 @@ emailrelay_gui_SOURCES = \
 	unpack.c \
 	unpack.h
 
-emailrelay_gui_DEPENDENCIES = $(MOC_OBJECTS)
+emailrelay_gui_real_DEPENDENCIES = $(MOC_OBJECTS)
 
-emailrelay_gui_LDADD = \
+emailrelay_gui_real_LDADD = \
 	$(MOC_OBJECTS) \
 	$(top_builddir)/src/glib/libglib.a \
 	$(QT_LIBS)
 
+pack_SOURCES = pack.cpp
+pack_LDADD = $(top_builddir)/src/glib/libglib.a
 
-# tell the configuration gui where make install has put everything -- see Dir::read() in dir.cpp
 install-exec-hook:
-	echo $(DESTDIR)$(e_spooldir) > $(DESTDIR)$(sbindir)/emailrelay-gui.state
-	echo $(DESTDIR)$(e_sysconfdir) >> $(DESTDIR)$(sbindir)/emailrelay-gui.state
+	@echo "#!/bin/sh" > $(DESTDIR)$(sbindir)/emailrelay-gui
+	@echo SPOOL_DIR=$(DESTDIR)$(e_spooldir) >> $(DESTDIR)$(sbindir)/emailrelay-gui
+	@echo CONFIG_DIR=$(DESTDIR)$(e_sysconfdir) >> $(DESTDIR)$(sbindir)/emailrelay-gui
+	@echo exec $(DESTDIR)$(sbindir)/emailrelay-gui.real \"$$\@\" >> $(DESTDIR)$(sbindir)/emailrelay-gui
+	@chmod +x $(DESTDIR)$(sbindir)/emailrelay-gui
 
 uninstall-hook:
-	-rm $(DESTDIR)$(sbindir)/emailrelay-gui.state
+	-rm $(DESTDIR)$(sbindir)/emailrelay-gui
 
 else
 
@@ -120,3 +126,11 @@ install-exec-hook:
 uninstall-hook:
 
 endif
+
+.PHONY: setup
+setup: emailrelay-setup
+emailrelay-setup: pack emailrelay-gui.real
+	@chmod +x $(top_srcdir)/src/gui/make-setup.sh
+	$(top_srcdir)/src/gui/make-setup.sh $(MAKE_SETUP_DEBUG) $@ emailrelay-gui.real pack
+	@chmod +x $@
+

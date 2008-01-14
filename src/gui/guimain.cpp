@@ -18,8 +18,8 @@
 // guimain.cpp
 //
 // This GUI program is primarily intended to help with initial 
-// installation and configuration, but it can also be used
-// to reconfigure an existing installation (with certain
+// installation and configuration, but it can also be used 
+// to reconfigure an existing installation (with certain 
 // limitations).
 //
 // The program determines whether it is running as a self-extracting
@@ -32,18 +32,29 @@
 // is being run after a successful installation, so the target 
 // directory paths are greyed out in the GUI. However, it still 
 // needs to know what the installation directories were and it
-// tries to obtain these from a special ".state" file located
+// tries to obtain these from a special "state" file located
 // in the same directory as the executable.
 //
 // In a unix-like installation the build and install steps are
 // done from the command-line using "make" and "make install". 
 // In this case the GUI is only expected to do post-installation 
 // configuration so there are no packed files appended to the
-// executable and the ".state" file is created by "make install".
+// executable and the state file is created by "make install".
 //
-// In a windows-like installation the ".state" file is created
+// In a windows-like installation the state file is created
 // by the GUI at the same time as the packed files are extracted
 // into the target directories.
+//
+// The name of the state file is the name of the GUI executable
+// without any extension; or if the GUI executable had no extension
+// to begin with then it is the name of the GUI executable with
+// ".state" appended.
+//
+// The format of the state file (since v1.8) allows it to be a 
+// simple shell script. This means that a unix-like "make install" 
+// can install the GUI executable as "emailrelay-gui.real" and the
+// state file "emailrelay-gui" can double-up as a wrapper
+// shell script.
 //
 // Note that it is possible to do a windows-like, self-extracting
 // installation on unix-like operating systems.
@@ -127,22 +138,30 @@ int main( int argc , char * argv [] )
 		{
 			bool is_setup = G::Unpack::isPacked(args.v(0)) ; // are we "setup" or "gui"?
 			bool is_installed = !is_setup ;
+			G_DEBUG( "main: packed files " << (is_setup?"":"not ") << "found" ) ;
+
 			Dir dir( args.v(0) , is_installed ) ;
 			if( is_installed )
 			{
 				// read base directories from the state file, typically written by "make install"
-				G::Path state_path = G::Path( G::Path(args.v(0)).dirname() , "emailrelay-gui.state" ) ;
+				G::Path argv0( args.v(0) ) ;
+				std::string state_extension = argv0.basename().find('.') == std::string::npos ? ".state" : "" ;
+				argv0.removeExtension() ;
+				std::string state_name = argv0.basename() ;
+				state_name.append( state_extension ) ;
+				G::Path state_path = G::Path( G::Path(args.v(0)).dirname() , state_name ) ;
+				G_DEBUG( "main: state file: " << state_path ) ;
 				std::ifstream dir_state( state_path.str().c_str() ) ;
 				dir.read( dir_state ) ;
 			}
 
-			G_DEBUG( "Dir::install: " << dir.install() ) ;
-			G_DEBUG( "Dir::spool: " << dir.spool() ) ;
-			G_DEBUG( "Dir::config: " << dir.config() ) ;
-			G_DEBUG( "Dir::boot: " << dir.boot() ) ;
-			G_DEBUG( "Dir::pid: " << dir.pid() ) ;
-			G_DEBUG( "Dir::cwd: " << dir.cwd() ) ;
-			G_DEBUG( "Dir::thisdir: " << dir.thisdir() ) ;
+			G_DEBUG( "main: Dir::install: " << dir.install() ) ;
+			G_DEBUG( "main: Dir::spool: " << dir.spool() ) ;
+			G_DEBUG( "main: Dir::config: " << dir.config() ) ;
+			G_DEBUG( "main: Dir::boot: " << dir.boot() ) ;
+			G_DEBUG( "main: Dir::pid: " << dir.pid() ) ;
+			G_DEBUG( "main: Dir::cwd: " << dir.cwd() ) ;
+			G_DEBUG( "main: Dir::thisdir: " << dir.thisdir() ) ;
 
 			// default translator
 			QTranslator qt_translator;
@@ -161,7 +180,7 @@ int main( int argc , char * argv [] )
 			// create the dialog and all its pages
 			GDialog d ;
 			d.add( new TitlePage(d,"title","license","",false,false) , cfg_test_page ) ;
-			d.add( new LicensePage(d,"license","directory","",false,false) , cfg_test_page ) ;
+			d.add( new LicensePage(d,"license","directory","",false,false,is_installed) , cfg_test_page ) ;
 			d.add( new DirectoryPage(d,"directory","dowhat","",false,false,dir,is_setup) , cfg_test_page ) ;
 			d.add( new DoWhatPage(d,"dowhat","pop","smtpserver",false,false) , cfg_test_page ) ;
 			d.add( new PopPage(d,"pop","popaccount","popaccounts",false,false) , cfg_test_page ) ;

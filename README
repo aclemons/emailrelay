@@ -105,6 +105,7 @@ and on Windows 98 using:
 
 Versions of the code have also been built successfully on:
 * MacOS X 10.3.9
+* MacOS X 10.5.1 using gcc 4.0.1 on G4 PPC hardware
 * FreeBSD on Intel hardware
 * Linux on Alpha hardware (Debian 2.2)
 * Linux on Sparc hardware
@@ -116,7 +117,7 @@ Versions of the code have also been built successfully on:
 * Windows NT 4.0 using Cygwin (DLL 1.3.22) and gcc 3.2
 * Windows NT 4.0 using MinGW 2.0.0 and gcc 3.2
 * Windows XP using MinGW 3.1.0 gcc 3.4.2
-
+* Linux 2.4.20 using gcc 3.4.6 on MIPS (mipsel)
 
 Feedback
 --------

@@ -57,7 +57,7 @@ are delivered to the same place.
 In common with other event-driven frameworks this leads to a programming
 model where objects are instantiated on the heap and the objects delete
 themselves when they receive certain events from the framework. In the
-"gnet" library the "ServerPeer" and "HeapClient" classes do this lifetime 
+"gnet" library the "ServerPeer" and "HeapClient" classes do this lifetime
 management; instances of these classes delete themselves when the associated
 network connection goes away or when an exception is thrown out their
 event-handling code.
@@ -79,8 +79,8 @@ network and event loop framework.
 The interaction between the SMTP server protocol class and the message store is
 mediated by the "ProtocolMessage" interface. Two main implementations of this
 interface are available: one for normal spooling ("ProtocolMessageStore"), and
-another for immediate forwarding ("ProtocolMessageForward"). The "Decorator" 
-pattern is used whereby the forwarding class uses an instance of the storage 
+another for immediate forwarding ("ProtocolMessageForward"). The "Decorator"
+pattern is used whereby the forwarding class uses an instance of the storage
 class to do the message storing and pre-processing, while adding in an instance
 of the "GSmtp::Client" class to do the forwarding.
 
@@ -122,6 +122,53 @@ State transition diagrams:
 Sequence diagrams:
 * *Proxy mode forwarding* [sequence-3.png]
 
+Configuration GUI
+-----------------
+The optional configuration GUI program "emailrelay-gui" uses TrollTech Qt v4
+for its user interface components. The GUI can run as a stand-alone
+configuration helper or as part of a self-extracting installation program called
+"emailrelay-setup".
+
+The packing scheme used to assemble a self-extracting archive is a simple
+concatenation of the "stub" executable followed by a table of contents for the
+payload files, followed by the payload files themselves (possibly compressed by
+"zlib"), and ending with an twelve-byte ascii representation of the offset of
+the table of contents.
+
+On Windows there are two levels of packing: the "setup" program has a stub
+executable written in "C" that prints an "extracting..." message to the standard
+output, with a payload comprising another packed executable and a small number of
+"C++" runtime library files. The inner packed executable has the emailrelay GUI
+program as its stub and all the other installable files, including the main
+emailrelay executable, as its payload.
+
+When the GUI runs it checks whether it has a payload of packed files. If it
+has then it runs as an installer; if it does not then it runs as a configuration
+helper. Refer to the comments in "src/gui/guimain.cpp" for more details.
+
+The code works exactly the same on Windows, Mac OS X and unix-like operating
+systems. However, on unix-like operating systems no "setup" program is built or
+distributed by default because "make install", possibly run via some package
+manager, is the preferred way to install files. 
+
+The user interface is structured as a "wizard" having a dialog box with the
+forward and back buttons at the bottom and a single Qt layout object for the
+main area. A stack of Qt widgets representing the various pages of the wizard
+are installed into the main layout object in turn as the user navigates from
+one page to the next.
+
+Once the wizard is completed it asks each page to dump its state as a set of
+key-value pairs into a stringstream (see "src/gui/pages.cpp"). These key-value
+pairs are processed by an installer class into a list of action objects (in the
+"Command" design pattern) and then the action objects are run in turn. In order
+to display the progress of the installation each action object is run within a
+timer callback so that the Qt framework get a chance to update the GUI between
+each one.
+
+During development the user interface and the installer can be tested separately
+since the interface between them is a simple text stream containing key-value
+pairs.
+
 Directory structure
 -------------------
 
@@ -156,7 +203,7 @@ Directory structure
 
 # src/gui
 
-  Installation and configuration GUI program using Qt 4.
+  Installation and configuration GUI program using Qt v4.
 
 # lib
 
@@ -168,8 +215,8 @@ Directory structure
 
 Source file names
 -----------------
-Generally the source file names are follow the name of the principal class, 
-(often including the namespace) but all in lowercase. Any underscores in the 
+Generally the source file names are follow the name of the principal class,
+(often including the namespace) but all in lowercase. Any underscores in the
 name indicate a choice of implementation, so class "G::Foo" might have two
 implementations in the files "gfoo_main.cpp" and "gfoo_alternate.cpp".
 The choice is normally made by the makefile.
@@ -182,7 +229,8 @@ supported language features like "mutable", templated methods and "export".
 The header files "gdef.h" in "src/glib", and "gnet.h" in "src/gnet" are intended
 to be used to fix up compiler portability issues such as missing standard types,
 non-standard system headers etc. Conditional compilation directives ("#if"
-etc.) are largely confined to these headers in order to improve readability.
+etc.) are confined to these headers as far as possible in order to improve
+readability.
 
 Deficiencies in the standard headers files provided by older compilers are fixed
 up by files in the "lib" directory tree. For example, the msvc6.0 compiler
@@ -192,8 +240,8 @@ declarations in the "lib/msvc6.0" headers.  These work-rounds are kept out of
 the "src" tree because they are not necessary for more modern compilers.
 
 Windows/unix portability is generally addressed by providing a common class
-declaration with two implementations. Where necessary a "pimple" pattern is used
-to hide the system-specific parts of the declaration.
+declaration with two implementations. Where necessary a "pimple" (or "Bridge")
+pattern is used to hide the system-specific parts of the declaration.
 
 A good example is the "G::Directory" class used for iterating through files in
 a directory. The header file "src/glib/gdirectory.h" is common to both systems,
@@ -207,7 +255,7 @@ these cases there are three source files per header. For example, "gsocket.cpp",
 
 Compile-time features
 ---------------------
-Compile-time features can be selected with switches passed to the "configure" 
+Compile-time features can be selected with switches passed to the "configure"
 script. These include the following:
 
 * Debug-level logging ("--enable-debug")
@@ -215,10 +263,10 @@ script. These include the following:
 * Configuration GUI ("--enable-gui")
 
 The "--enable-fhs" switch alters the compiled-in default directories to conform
-to the Linux File Hierarchy Standard (FHS). This is recommended for most modern 
+to the Linux File Hierarchy Standard (FHS). This is recommended for most modern
 Linux distributions.
 
-Some functionality can be disabled at compile-time in order to reduce the size 
+Some functionality can be disabled at compile-time in order to reduce the size
 of the executable, typically when building for embedded systems:
 
 * Disable POP3 protocol, "--disable-pop"
@@ -226,14 +274,15 @@ of the executable, typically when building for embedded systems:
 * Disable administration interface, "--disable-admin"
 * Disable execution of external programs, "--disable-exec"
 
-The "--enable-small-config" switch can be used to change the command-line 
-parsing code to use a configuration file instead, resulting in a smaller 
+The "--enable-small-config" switch can be used to change the command-line
+parsing code to use a configuration file instead, resulting in a smaller
 executable. This also removes a lot of the configuration checking code, so it is
-not recommended unless size is critical. (The format of the configuration file 
-is similar to the command-line using the long-form switches without the 
+not recommended unless size is critical. (The format of the configuration file
+is similar to the command-line using the long-form switches without the
 double-dash and using '=' to separate the switch from the switch value.)
 
-Use "./configure --help" to see a complete list.
+Use "./configure --help" to see a complete list of options and refer to
+"acinclude.m4" for more detailed comments.
 
 Patterns
 --------

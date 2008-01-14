@@ -215,6 +215,11 @@ void G::Unpack::unpack( const Path & to_dir )
 	}
 }
 
+void G::Unpack::unpack( const Path & to_dir , std::istream & input , const Entry & entry )
+{
+	unpack( input , entry.offset , entry.size , Path::join(to_dir,entry.path) ) ;
+}
+
 void G::Unpack::unpack( const Path & to_dir , const std::string & name )
 {
 	G_DEBUG( "Unpack::unpack: [" << name << "] (" << m_map.size() << ")" ) ;
@@ -223,24 +228,32 @@ void G::Unpack::unpack( const Path & to_dir , const std::string & name )
 	unpack( to_dir , *m_input , (*p).second ) ;
 }
 
-void G::Unpack::unpack( const Path & to_dir , std::istream & input , const Entry & entry )
+void G::Unpack::unpack( const std::string & name , const Path & dst )
+{
+	G_DEBUG( "Unpack::unpack: [" << name << "] (" << m_map.size() << ")" ) ;
+	Map::iterator p = m_map.find(name) ;
+	if( p == m_map.end() ) throw NoSuchFile(name) ;
+	unpack( *m_input , (*p).second.offset , (*p).second.size , dst ) ;
+}
+
+void G::Unpack::unpack( std::istream & input, unsigned long entry_offset, unsigned long entry_size, const Path & dst )
 {
 	// sync up
-	input.seekg( m_start + entry.offset ) ;
+	input.seekg( m_start + entry_offset ) ;
 	m_buffer.clear() ;
 
 	// read file data
-	G_DEBUG( "Unpack::unpack: reading " << entry.size << " bytes at offset " << (m_start+entry.offset) 
-		<< "(0x" << std::hex << (m_start+entry.offset) << ") for \"" << entry.path << "\"" ) ;
+	G_DEBUG( "Unpack::unpack: reading " << entry_size << " bytes at offset " << (m_start+entry_offset) 
+		<< "(0x" << std::hex << (m_start+entry_offset) << ") for \"" << dst << "\"" ) ;
 	unsigned long i = 0UL ;
-	for( ; i < entry.size && input.good() ; i++ )
+	for( ; i < entry_size && input.good() ; i++ )
 		m_buffer.push_back( input.get() ) ;
 	check( input.good() , "read error" ) ;
-	check( i == entry.size , "read error (2)" ) ;
-	check( m_buffer.size() == entry.size , "read error (3)" ) ;
+	check( i == entry_size , "read error (2)" ) ;
+	check( m_buffer.size() == entry_size , "read error (3)" ) ;
 
 	// continue
-	unpack( Path(to_dir,entry.path) , m_buffer ) ;
+	unpack( dst , m_buffer ) ;
 }
 
 void G::Unpack::unpack( const Path & dst , const std::vector<char> & buffer )

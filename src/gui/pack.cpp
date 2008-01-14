@@ -19,7 +19,8 @@
 //
 // Creates a self-extracting archive.
 //
-// usage: pack [-a] [-p] <output> <stub> <payload-in> <payload-out> [<in> <out> ...] [--dir] [<file> ... [--opt] ...]
+// usage: 
+//  pack [-apq] [-f <list-file>] <output> <stub> <in> <out> [<in> <out> ...] [--dir] [<file> ... [--opt] ...]
 //
 // The table of contents is stored in the output file after
 // the stub program. The final twelve bytes of the output provide 
@@ -43,6 +44,7 @@
 #include "gdef.h"
 #include "garg.h"
 #include "gpath.h"
+#include "gstr.h"
 #include "gfile.h"
 #include <iostream>
 #include <sstream>
@@ -163,13 +165,21 @@ int main( int argc , char * argv [] )
 	std::string path_out ;
 	try
 	{
-		// check the command-line
+		// parse the command-line
 		//
 		G::Arg arg( argc , argv ) ;
 		bool plain = arg.contains( "-p" ) ; if( plain ) arg.remove( "-p" ) ;
 		bool auto_xtod = arg.contains( "-a" ) ; if( auto_xtod ) arg.remove( "-a" ) ;
-		const char * usage = "usage: pack [-p] <output> <stub> <payload-in> <payload-out> [<payload-in> ...]" ;
-		check( arg.c() >= 5 , usage ) ;
+		bool quiet = arg.contains( "-q" ) ; if( quiet ) arg.remove( "-q" ) ;
+		std::string list_file ;
+		if( arg.contains("-f",1U) )
+		{
+			list_file = arg.v( arg.index("-f",1U)+1U ) ;
+			arg.remove( "-f" , 1U ) ;
+		}
+		const char * usage = 
+			"usage: pack [-apq] [-f <list-file>] <output> <stub> <payload-in> <payload-out> [<payload-in> ...]" ;
+		check( arg.c() >= 3 , usage ) ;
 		path_out = arg.v(1) ;
 		std::string path_stub( arg.v(2) ) ;
 		std::cout << "pack: creating " << path_out << std::endl ;
@@ -213,6 +223,23 @@ int main( int argc , char * argv [] )
 				i++ ;
 			}
 		}
+		if( !list_file.empty() )
+		{
+			unsigned int n = payload.size() ;
+			std::cout << "pack: reading file list from \"" << list_file << "\"" << std::endl ;
+			std::ifstream f( list_file.c_str() ) ;
+			std::string previous ;
+			for( int i = 0 ; f.good() ; i++ )
+			{
+				std::string line = G::Str::readLineFrom( f , "\n" ) ;
+				if( !f ) break ;
+				G::Str::trim( line , G::Str::ws() ) ;
+				if( (i % 2U) == 1U )
+					payload.push_back( std::make_pair(previous,line) ) ;
+				previous = line ;
+			}
+			std::cout << "pack: read " << (payload.size()-n) << " files from file list" << std::endl ;
+		}
 
 		// start building the output
 		//
@@ -229,9 +256,12 @@ int main( int argc , char * argv [] )
 			File * file = new File( plain , (*p).first , (*p).second , auto_xtod && is_txt ) ;
 			list.push_back( file ) ;
 			file->compress() ;
-			std::cout 
-				<< "pack: compression: " << file->m_path_in << ": " 
-				<< file->m_data_in_size << " -> " << file->m_data_out_size << std::endl ;
+			if( !quiet )
+			{
+				std::cout 
+					<< "pack: compression: " << file->m_path_in << ": " 
+					<< file->m_data_in_size << " -> " << file->m_data_out_size << std::endl ;
+			}
 		}
 
 		// write the table of contents
@@ -254,7 +284,8 @@ int main( int argc , char * argv [] )
 			File * file = (*p) ;
 			std::list<File*>::iterator next = p ; ++next ;
 			bool last = next == list.end() ;
-			std::cout << "pack: appending " << file->m_path_out << std::endl ;
+			if( !quiet )
+				std::cout << "pack: appending " << file->m_path_out << std::endl ;
 			(*p)->append( path_out , last ? stub_size : 0UL ) ;
 		}
 		return 0 ;

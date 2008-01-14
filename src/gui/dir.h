@@ -95,6 +95,7 @@ private:
 	G::Path os_boot() const ;
 	static G::Path special( const std::string & key ) ;
 	static G::Path ntspecial( const std::string & key ) ;
+	static void read( G::Path & , std::istream & , bool & ) ;
 
 private:
 	std::string m_argv0 ;

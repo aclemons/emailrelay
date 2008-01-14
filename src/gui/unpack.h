@@ -21,6 +21,12 @@
 	unpack.h
 
 	A 'C' interface for unpacking packed executables.
+
+	This is written in "C" so that a self-extracting archive does 
+	not have any dependence on the C++ runtime library. This is 
+	important for Windows since the MinGW C++ runtime is not installed
+	as standard.
+
 */
 
 #ifndef G_UNPACK_C_H__

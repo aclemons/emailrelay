@@ -109,10 +109,9 @@ public:
 	static std::string x() ;
 		///< Returns the prefix for envelope header lines.
 
-	static std::string format( int n = 0 ) ;
+	static std::string format() ;
 		///< Returns an identifier for the storage format
-		///< implemented by this class. If n is -1 then
-		///< it returns the previous format (etc.).
+		///< implemented by this class.
 
 	virtual void repoll() ;
 		///< Final override from GSmtp::MessageStore.
