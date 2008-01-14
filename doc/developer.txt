@@ -169,6 +169,13 @@ During development the user interface and the installer can be tested separately
 since the interface between them is a simple text stream containing key-value
 pairs.
 
+Source control
+--------------
+The source code is stored in the SourceForge "svn" repository. A working
+copy can be checked out as follows:
+
+	$ svn co https://emailrelay.svn.sourceforge.net/svnroot/emailrelay
+
 Directory structure
 -------------------
 
