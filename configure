@@ -6696,16 +6696,16 @@ if test "${enable_debug+set}" = set; then
 fi
 
 
-if test "$enable_debug" = "no" -o -z "$enable_debug"
-then
-	:
-else
+	if test "$enable_debug" = "no" -o -z "$enable_debug"
+	then
+		:
+	else
 
 cat >>confdefs.h <<\_ACEOF
 #define _DEBUG 1
 _ACEOF
 
-fi
+	fi
 
 
 # Check whether --enable-ipv6 was given.
@@ -6714,25 +6714,25 @@ if test "${enable_ipv6+set}" = set; then
 fi
 
 
-if test "$enable_ipv6" = "yes"
-then
-	if test "$aclocal_ipv6" != "yes"
+	if test "$enable_ipv6" = "yes"
 	then
-		{ echo "$as_me:$LINENO: WARNING: ignoring --enable-ipv6" >&5
+		if test "$aclocal_ipv6" != "yes"
+		then
+			{ echo "$as_me:$LINENO: WARNING: ignoring --enable-ipv6" >&5
 echo "$as_me: WARNING: ignoring --enable-ipv6" >&2;}
-		aclocal_use_ipv6="no"
-	else
+			aclocal_use_ipv6="no"
+		else
 
 cat >>confdefs.h <<\_ACEOF
 #define USE_IPV6 1
 _ACEOF
 
-		aclocal_use_ipv6="yes"
+			aclocal_use_ipv6="yes"
+		fi
+	else
+		aclocal_use_ipv6="no"
 	fi
-else
-	aclocal_use_ipv6="no"
-fi
- if test x$aclocal_use_ipv6 = xyes; then
+	 if test x$aclocal_use_ipv6 = xyes; then
   IPV6_TRUE=
   IPV6_FALSE='#'
 else
@@ -6748,12 +6748,12 @@ if test "${enable_gui+set}" = set; then
 fi
 
 
-qt4="no"
-qt4moc="no"
-if test "$enable_gui" = "no"
-then
-	:
-else
+	qt4="no"
+	qt4moc="no"
+	if test "$enable_gui" = "no"
+	then
+		:
+	else
 
 pkg_failed=no
 { echo "$as_me:$LINENO: checking for QT" >&5
@@ -6827,10 +6827,10 @@ else
 echo "${ECHO_T}yes" >&6; }
 	qt4=yes
 fi
-	if test "$qt4" = "yes"
-	then
-		MOC="${e_qtmoc}"
-		# Extract the first word of "moc", so it can be a program name with args.
+		if test "$qt4" = "yes"
+		then
+			MOC="${e_qtmoc}"
+			# Extract the first word of "moc", so it can be a program name with args.
 set dummy moc; ac_word=$2
 { echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
@@ -6870,24 +6870,24 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
-		{ echo "$as_me:$LINENO: checking moc is for qt 4" >&5
+			{ echo "$as_me:$LINENO: checking moc is for qt 4" >&5
 echo $ECHO_N "checking moc is for qt 4... $ECHO_C" >&6; }
-		if test x$GREP = x ; then GREP=grep ; fi
-		if test -x "$MOC" -a "`$MOC -v 2>&1 | $GREP 'Qt 4'`" != "" ; then
-			{ echo "$as_me:$LINENO: result: yes" >&5
+			if test x$GREP = x ; then GREP=grep ; fi
+			if test -x "$MOC" -a "`$MOC -v 2>&1 | $GREP 'Qt 4'`" != "" ; then
+				{ echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
-			qt4moc="yes"
-		else
-			{ echo "$as_me:$LINENO: result: no" >&5
+				qt4moc="yes"
+			else
+				{ echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
+			fi
+		else
+			QT_LIBS=""
+
 		fi
-	else
-		QT_LIBS=""
-
 	fi
-fi
 
- if test x$enable_gui != xno -a x$qt4moc = xyes ; then
+	 if test x$enable_gui != xno -a x$qt4moc = xyes ; then
   GUI_TRUE=
   GUI_FALSE='#'
 else
@@ -6937,7 +6937,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 	fi
- if test x$enable_pop != xno; then
+	 if test x$enable_pop != xno; then
   POP_TRUE=
   POP_FALSE='#'
 else
@@ -6963,7 +6963,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 	fi
- if test x$enable_exec != xno; then
+	 if test x$enable_exec != xno; then
   EXEC_TRUE=
   EXEC_FALSE='#'
 else
@@ -6989,7 +6989,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 	fi
- if test x$enable_admin != xno; then
+	 if test x$enable_admin != xno; then
   ADMIN_TRUE=
   ADMIN_FALSE='#'
 else
@@ -7015,7 +7015,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 	fi
- if test x$enable_auth != xno; then
+	 if test x$enable_auth != xno; then
   AUTH_TRUE=
   AUTH_FALSE='#'
 else
@@ -7037,7 +7037,7 @@ if test "${enable_exec+set}" = set; then
 fi
 
 
- if test x$enable_dns != xno; then
+	 if test x$enable_dns != xno; then
   DNS_TRUE=
   DNS_FALSE='#'
 else
@@ -7053,7 +7053,7 @@ if test "${enable_exec+set}" = set; then
 fi
 
 
- if test x$enable_identity != xno; then
+	 if test x$enable_identity != xno; then
   IDENTITY_TRUE=
   IDENTITY_FALSE='#'
 else
@@ -7079,7 +7079,7 @@ _ACEOF
 	else
 		:
 	fi
- if test x$enable_small_config = xyes; then
+	 if test x$enable_small_config = xyes; then
   SMALL_CONFIG_TRUE=
   SMALL_CONFIG_FALSE='#'
 else
@@ -7095,7 +7095,7 @@ if test "${enable_exec+set}" = set; then
 fi
 
 
- if test x$enable_small_fragments = xyes; then
+	 if test x$enable_small_fragments = xyes; then
   SMALL_FRAGMENTS_TRUE=
   SMALL_FRAGMENTS_FALSE='#'
 else
@@ -7103,26 +7103,26 @@ else
   SMALL_FRAGMENTS_FALSE=
 fi
 
-if test x$enable_small_fragments = xyes
-then
-	{ echo "$as_me:$LINENO: creating source file fragments" >&5
+	if test x$enable_small_fragments = xyes
+	then
+		{ echo "$as_me:$LINENO: creating source file fragments" >&5
 echo "$as_me: creating source file fragments" >&6;}
-	FRAGMENTS_LIST="`perl $srcdir/bin/fragment.pl_ -r $srcdir/src $srcdir/src/fragments`"
-	for fragment in $FRAGMENTS_LIST "" ; do if test "$fragment" != "" ; then
-		{ echo "$as_me:$LINENO: creating source file fragment for $fragment" >&5
+		FRAGMENTS_LIST="`perl $srcdir/bin/fragment.pl_ -r $srcdir/src $srcdir/src/fragments`"
+		for fragment in $FRAGMENTS_LIST "" ; do if test "$fragment" != "" ; then
+			{ echo "$as_me:$LINENO: creating source file fragment for $fragment" >&5
 echo "$as_me: creating source file fragment for $fragment" >&6;}
-	fi ; done
+		fi ; done
+	fi
+
+
+
+# Check whether --enable-small_exceptions was given.
+if test "${enable_small_exceptions+set}" = set; then
+  enableval=$enable_small_exceptions;
 fi
 
 
-
-# Check whether --enable-exec was given.
-if test "${enable_exec+set}" = set; then
-  enableval=$enable_exec;
-fi
-
-
-	if test x$enable_small_config = xyes
+	if test x$enable_small_exceptions = xyes
 	then
 
 cat >>confdefs.h <<\_ACEOF
@@ -7150,7 +7150,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 	fi
- if test x$enable_proxy != xno; then
+	 if test x$enable_proxy != xno; then
   PROXY_TRUE=
   PROXY_FALSE='#'
 else
@@ -7167,17 +7167,17 @@ if test "${with_doxygen+set}" = set; then
 fi
 
 
-if test "$with_doxygen" != ""
-then
-	if test "$with_doxygen" = "yes" -a "$HAVE_DOXYGEN" != "yes"
+	if test "$with_doxygen" != ""
 	then
-		{ echo "$as_me:$LINENO: WARNING: ignoring --with-doxygen" >&5
+		if test "$with_doxygen" = "yes" -a "$HAVE_DOXYGEN" != "yes"
+		then
+			{ echo "$as_me:$LINENO: WARNING: ignoring --with-doxygen" >&5
 echo "$as_me: WARNING: ignoring --with-doxygen" >&2;}
-	else
-		HAVE_DOXYGEN="$with_doxygen"
+		else
+			HAVE_DOXYGEN="$with_doxygen"
 
+		fi
 	fi
-fi
 
 
 
@@ -7187,17 +7187,17 @@ if test "${with_man2html+set}" = set; then
 fi
 
 
-if test "$with_man2html" != ""
-then
-	if test "$with_man2html" = "yes" -a "$HAVE_MAN2HTML" != "yes"
+	if test "$with_man2html" != ""
 	then
-		{ echo "$as_me:$LINENO: WARNING: ignoring --with-man2html" >&5
+		if test "$with_man2html" = "yes" -a "$HAVE_MAN2HTML" != "yes"
+		then
+			{ echo "$as_me:$LINENO: WARNING: ignoring --with-man2html" >&5
 echo "$as_me: WARNING: ignoring --with-man2html" >&2;}
-	else
-		HAVE_MAN2HTML="$with_man2html"
+		else
+			HAVE_MAN2HTML="$with_man2html"
 
+		fi
 	fi
-fi
 
 
 
@@ -7381,14 +7381,14 @@ if test "${enable_static_linking+set}" = set; then
 fi
 
 
-if test "$enable_static_linking" = "yes"
-then
-	STATIC_START="-Xlinker -Bstatic"
-	STATIC_END=""
-else
-	STATIC_START=""
-	STATIC_END=""
-fi
+	if test "$enable_static_linking" = "yes"
+	then
+		STATIC_START="-Xlinker -Bstatic"
+		STATIC_END=""
+	else
+		STATIC_START=""
+		STATIC_END=""
+	fi
 
 
 
@@ -7414,8 +7414,8 @@ if test "$e_sysconfdir" = "" ; then e_sysconfdir="$sysconfdir" ; fi
 
 if test "$e_qtmoc" = "" ; then e_qtmoc="moc" ; fi
 
-if test "$enable_fhs" = "yes"
-then
+	if test "$enable_fhs" = "yes"
+	then
 
 	# tweaks for fhs compliance...
 	#
@@ -7445,7 +7445,7 @@ then
 	e_examplesdir="$libexecdir/$PACKAGE/examples"
 	e_sysconfdir="$sysconfdir"
 
-fi
+	fi
 
 
 ac_config_files="$ac_config_files Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile src/fragments/Makefile"

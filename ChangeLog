@@ -13,6 +13,7 @@ E-MailRelay Change Log
 * When a message cannot be forwarded the offending SMTP protocol response number, if any, is put in the envelope file.
 * A cross-compiling toolchain builder script added for running on mips-based routers ("extra/mips").
 * New example scripts for SMTP multicasting and editing envelope files.
+* Support for xcode v3 on Mac OS X.
 * Compatibility with gcc 2.95 restored.
 
 1.6 -> 1.7
