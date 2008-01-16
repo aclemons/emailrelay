@@ -42,6 +42,8 @@ work_scripts = \
 	expand.sh \
 	txt2html.sh \
 	emailrelay.sh \
+	make-setup.sh \
+	make-bundle.sh \
 	fragment.pl
 
 noinst_SCRIPTS = \

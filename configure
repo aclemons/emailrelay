@@ -6814,6 +6814,11 @@ echo "$as_me: WARNING: ignoring --enable-gui, set e_qtmoc to a Qt4 moc program t
 		MOC="$aclocal_moc"
 	fi
 
+	if test "`uname`" = "Darwin" and "$QT_LIBS" = ""
+	then
+		QT_LIBS="-framework QtGui -framework QtCore"
+	fi
+
 
 
 	 if test x$MOC != x ; then

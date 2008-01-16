@@ -237,6 +237,12 @@ AC_DEFUN([ACLOCAL_CHECK_QT4],
 	fi
 ])
 
+dnl enable-gui
+dnl
+dnl Sets QT_LIBS, MOC and "if GUI" in makefiles if a GUI build is required.
+dnl
+dnl Requires ACLOCAL_CHECK_QT4 to have been run first.
+dnl
 AC_DEFUN([ENABLE_GUI],
 [
 	if test "$enable_gui" = "no"
@@ -248,6 +254,11 @@ AC_DEFUN([ENABLE_GUI],
 			AC_MSG_WARN([ignoring --enable-gui, set e_qtmoc to a Qt4 moc program to override])
 		fi
 		MOC="$aclocal_moc"
+	fi
+
+	if test "`uname`" = "Darwin" and "$QT_LIBS" = ""
+	then
+		QT_LIBS="-framework QtGui -framework QtCore"
 	fi
 
 	AC_SUBST(QT_LIBS)
