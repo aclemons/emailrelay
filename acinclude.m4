@@ -14,7 +14,9 @@ dnl You should have received a copy of the GNU General Public License
 dnl along with this program.  If not, see <http://www.gnu.org/licenses/>.
 dnl ===
 
-dnl socketlen_t
+dnl aclocal-type-socketlen-t
+dnl
+dnl Defines HAVE_SOCKLEN_T.
 dnl
 AC_DEFUN([ACLOCAL_TYPE_SOCKLEN_T],
 [AC_CACHE_CHECK([for socklen_t],[aclocal_type_socklen_t],
@@ -33,7 +35,9 @@ AC_DEFUN([ACLOCAL_TYPE_SOCKLEN_T],
 	fi
 ])
 
-dnl ipv6
+dnl aclocal-check-ipv6
+dnl
+dnl Defines HAVE_IPV6.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_IPV6],
 [AC_CACHE_CHECK([for ipv6],[aclocal_ipv6],
@@ -54,7 +58,10 @@ AC_DEFUN([ACLOCAL_CHECK_IPV6],
 	fi
 ])
 
-dnl getipnodebyname for ipv6 rfc2553
+dnl aclocal-check-getipnodebyname 
+dnl
+dnl Defines HAVE_GETIPNODEBYNAME if the ipv6 function 
+dnl getipnodebyname() as per rfc2553 is available.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_GETIPNODEBYNAME],
 [AC_CACHE_CHECK([for getipnodebyname],[aclocal_getipnodebyname],
@@ -76,7 +83,9 @@ AC_DEFUN([ACLOCAL_CHECK_GETIPNODEBYNAME],
 	fi
 ])
 
-dnl check for sin6_len in sockaddr_in6
+dnl aclocal-check-sin6-len
+dnl
+dnl Defines HAVE_SIN6_LEN if sin6_len is in sockaddr_in6.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_SIN6_LEN],
 [AC_CACHE_CHECK([for sin6_len],[aclocal_sin6_len],
@@ -96,7 +105,9 @@ AC_DEFUN([ACLOCAL_CHECK_SIN6_LEN],
 	fi
 ])
 
-dnl setgroups
+dnl aclocal-check-setgroups
+dnl
+dnl Defines HAVE_SETGROUPS.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_SETGROUPS],
 [AC_CACHE_CHECK([for setgroups],[aclocal_setgroups],
@@ -118,6 +129,8 @@ AC_DEFUN([ACLOCAL_CHECK_SETGROUPS],
 
 dnl gmtime_r
 dnl
+dnl Defines HAVE_GMTIME_R.
+dnl
 AC_DEFUN([ACLOCAL_CHECK_GMTIME_R],
 [AC_CACHE_CHECK([for gmtime_r],[aclocal_gmtime_r],
 [
@@ -134,7 +147,9 @@ AC_DEFUN([ACLOCAL_CHECK_GMTIME_R],
 	fi
 ])
 
-dnl localtime_r
+dnl aclocal-check-localtime_r
+dnl
+dnl Defines HAVE_LOCALTIME_R.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_LOCALTIME_R],
 [AC_CACHE_CHECK([for localtime_r],[aclocal_localtime_r],
@@ -152,8 +167,10 @@ AC_DEFUN([ACLOCAL_CHECK_LOCALTIME_R],
 	fi
 ])
 
-dnl buggy ctime
-dnl sunpro5 ctime + unistd.h doesnt compile -- fix with time.h first
+dnl aclocal-check-buggy-ctime
+dnl
+dnl Defines HAVE_BUGGY_CTIME if ctime + unistd.h doesnt compile.
+dnl Needed for old versions of sunpro. Remove soon.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_BUGGY_CTIME],
 [AC_CACHE_CHECK([for buggy ctime],[aclocal_buggy_ctime],
@@ -172,12 +189,12 @@ AC_DEFUN([ACLOCAL_CHECK_BUGGY_CTIME],
 	fi
 ])
 
-dnl compiler name and version 
+dnl aclocal-compiler-version
 dnl
-dnl used for -Ilib/<version> -- doesnt work very well but only 
-dnl needed for pre 3.0 gcc -- maps gcc2.96 onto gcc2.95
+dnl Sets COMPILER_VERSION in makefiles.
 dnl
-dnl ("sed q" is "head -1")
+dnl Used for -Ilib/<version>. Doesnt work very well but only 
+dnl needed for pre 3.0 gcc. Maps gcc2.96 onto gcc2.95.
 dnl
 AC_DEFUN([ACLOCAL_COMPILER_VERSION],
 [
@@ -191,8 +208,62 @@ changequote([,])
 	AC_SUBST(COMPILER_VERSION)
 ])
 
+dnl aclocal-check-qt4
+dnl
+dnl Sets the $MOC variable and MOC in makefiles to the moc
+dnl path if qt4 is found. Also sets the $aclocal_moc
+dnl variable to the same value if the moc is from qt4.
+dnl
+dnl In the implementation remember that AC_PATH_PROG does
+dnl nothing if the variable is already defined, and that
+dnl it does an internal AC_SUBST.
+dnl
+AC_DEFUN([ACLOCAL_CHECK_QT4],
+[
+	MOC="${e_qtmoc}"
+	AC_PATH_PROG(MOC,moc)
+
+	if test "$MOC" != ""
+	then
+		AC_MSG_CHECKING([moc is for qt 4])
+		if test x$GREP = x ; then GREP=grep ; fi
+		if test -x "$MOC" -a "`$MOC -v 2>&1 | $GREP 'Qt 4'`" != "" ; then
+			AC_MSG_RESULT([yes])
+			aclocal_moc="$MOC"
+		else
+			AC_MSG_RESULT([no])
+			aclocal_moc=""
+		fi
+	fi
+])
+
+AC_DEFUN([ENABLE_GUI],
+[
+	if test "$enable_gui" = "no"
+	then
+		MOC=""
+	else
+		if test "$enable_gui" = "yes" -a "$aclocal_moc" = ""
+		then
+			AC_MSG_WARN([ignoring --enable-gui, set e_qtmoc to a Qt4 moc program to override])
+		fi
+		MOC="$aclocal_moc"
+	fi
+
+	AC_SUBST(QT_LIBS)
+	AC_SUBST(MOC)
+	AM_CONDITIONAL(GUI,test x$MOC != x )
+
+	if test x$enable_exec = xno -a x$MOC != x
+	then
+		AC_MSG_ERROR([using --disable-exec requires --disable-gui])
+	fi
+])
+
 dnl enable-debug
-dnl defaults to no but allows --enable-debug=full as per kdevelop
+dnl
+dnl Defines _DEBUG if requested. Defaults to "no" but 
+dnl allows "--enable-debug=full" as per kdevelop.
 dnl
 AC_DEFUN([ENABLE_DEBUG],
 [
@@ -204,45 +275,9 @@ AC_DEFUN([ENABLE_DEBUG],
 	fi
 ])
 
-dnl enable-gui
-dnl
-AC_DEFUN([ENABLE_GUI],
-[
-	qt4="no"
-	qt4moc="no"
-	if test "$enable_gui" = "no"
-	then
-		:
-	else
-    	PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes],[AC_MSG_RESULT([no])])
-		if test "$qt4" = "yes"
-		then
-			MOC="${e_qtmoc}"
-			AC_PATH_PROG(MOC,moc)
-			AC_MSG_CHECKING([moc is for qt 4])
-			if test x$GREP = x ; then GREP=grep ; fi
-			if test -x "$MOC" -a "`$MOC -v 2>&1 | $GREP 'Qt 4'`" != "" ; then
-				AC_MSG_RESULT([yes])
-				qt4moc="yes"
-			else
-				AC_MSG_RESULT([no])
-			fi
-		else
-			QT_LIBS=""
-			AC_SUBST(QT_LIBS)
-		fi
-	fi
-	AC_SUBST(MOC)
-	AM_CONDITIONAL(GUI,test x$enable_gui != xno -a x$qt4moc = xyes )
-	if test x$enable_exec = xno -a x$enable_gui != xno -a x$qt4moc = xyes
-	then
-		AC_MSG_ERROR([using --disable-exec requires --disable-gui])
-	fi
-])
-
 dnl enable-verbose
 dnl
-dnl disable-verbose disables the verbose-logging macro
+dnl The "--disable-verbose" switch disables the verbose-logging macro.
 dnl
 AC_DEFUN([ENABLE_VERBOSE],
 [
@@ -256,7 +291,8 @@ AC_DEFUN([ENABLE_VERBOSE],
 
 dnl enable-pop
 dnl
-dnl disable-pop builds the pop library from do-nothing stubs
+dnl The "--disable-pop" switch builds the pop library from 
+dnl do-nothing stubs.
 dnl
 AC_DEFUN([ENABLE_POP],
 [
@@ -271,7 +307,8 @@ AC_DEFUN([ENABLE_POP],
 
 dnl enable-exec
 dnl
-dnl disable-exec removes source files are concerned with exec-ing external programs
+dnl The "--disable-exec" switch removes source files are concerned 
+dnl with exec-ing external programs.
 dnl
 AC_DEFUN([ENABLE_EXEC],
 [
@@ -286,7 +323,8 @@ AC_DEFUN([ENABLE_EXEC],
 
 dnl enable-admin
 dnl
-dnl disable-admin removes source files that implement the admin interface
+dnl The "--disable-admin" switch removes source files that implement 
+dnl the admin interface.
 dnl
 AC_DEFUN([ENABLE_ADMIN],
 [
@@ -301,7 +339,7 @@ AC_DEFUN([ENABLE_ADMIN],
 
 dnl enable-auth
 dnl
-dnl disable-admin removes source files that implement authentication
+dnl The "--disable-admin" switch removes source files that implement authentication.
 dnl
 AC_DEFUN([ENABLE_AUTH],
 [
@@ -320,7 +358,9 @@ AC_DEFUN([ENABLE_AUTH],
 
 dnl enable-dns
 dnl
-dnl disable-dns disables dns lookup so host and service names must be given as ip addresses and port numbers
+dnl The "--disable-dns" switch disables dns lookup so host and service 
+dnl names must be given as ip addresses and port numbers. This can be
+dnl make static linking easier, especially in embedded systems.
 dnl
 AC_DEFUN([ENABLE_DNS],
 [
@@ -329,7 +369,9 @@ AC_DEFUN([ENABLE_DNS],
 
 dnl enable-identity
 dnl
-dnl disable-identity disables userid switching thereby removing the dependence on getpwnam and /etc/passwd
+dnl The "--disable-identity" switch disables userid switching thereby 
+dnl removing the dependence on getpwnam and /etc/passwd. This can
+dnl make static linking easier, especially in embedded systems.
 dnl
 AC_DEFUN([ENABLE_IDENTITY],
 [
@@ -338,11 +380,12 @@ AC_DEFUN([ENABLE_IDENTITY],
 
 dnl enable-small-fragments
 dnl
-dnl enable-fragments compiles certain source files in lots of little pieces so
-dnl the linker can throw away fragments that are not needed in the final executable
+dnl The "--enable-small-fragments" sewitch compiles certain source files in 
+dnl lots of little pieces so the linker can throw away fragments that 
+dnl are not needed in the final executable.
 dnl
-dnl requires perl on the path and probably messes up a lot of autoconf/automake 
-dnl features, so only use if really necessary
+dnl This requires perl on the path and probably messes up a lot of 
+dnl autoconf/automake features, so only use if really necessary.
 dnl
 AC_DEFUN([ENABLE_SMALL_FRAGMENTS],
 [
@@ -360,8 +403,8 @@ AC_DEFUN([ENABLE_SMALL_FRAGMENTS],
 
 dnl enable-small-config
 dnl
-dnl enable-small-config replaces the complex command-line parsing code
-dnl with something simpler and less functional
+dnl The "--enable-small-config" switch replaces the complex command-line 
+dnl parsing code with something simpler and less functional.
 dnl
 AC_DEFUN([ENABLE_SMALL_CONFIG],
 [
@@ -376,7 +419,9 @@ AC_DEFUN([ENABLE_SMALL_CONFIG],
 
 dnl enable-small-exceptions
 dnl
-dnl enable-small-exceptions defines exception classes as functions
+dnl The "--enable-small-exceptions" defines exception classes as functions
+dnl as a size optimisation. This should probably become the default when
+dnl it has had more testing.
 dnl
 AC_DEFUN([ENABLE_SMALL_EXCEPTIONS],
 [
@@ -390,7 +435,9 @@ AC_DEFUN([ENABLE_SMALL_EXCEPTIONS],
 
 dnl enable-ipv6
 dnl
-dnl requires ACLOCAL_CHECK_IPV6 to have been run
+dnl The "--enable-ipv6" switch enables ipv6 as long as ipv6 is available.
+dnl
+dnl Note that this requires ACLOCAL_CHECK_IPV6 to have been run.
 dnl
 AC_DEFUN([ENABLE_IPV6],
 [
@@ -409,10 +456,10 @@ AC_DEFUN([ENABLE_IPV6],
 	fi
 	AM_CONDITIONAL(IPV6,test x$aclocal_use_ipv6 = xyes)
 ])
-	
+
 dnl enable-proxy
 dnl
-dnl disable-proxy disables smtp proxying
+dnl The "--disable-proxy" switch disables smtp proxying as a size optimisation.
 dnl
 AC_DEFUN([ENABLE_PROXY],
 [
@@ -426,6 +473,8 @@ AC_DEFUN([ENABLE_PROXY],
 ])
 
 dnl with-openssl
+dnl
+dnl Sets SSL_LIBS and "if OPENSSL" in makefiles.
 dnl
 AC_DEFUN([WITH_OPENSSL],
 if test "$with_openssl" != "no"
@@ -460,6 +509,8 @@ AM_CONDITIONAL(OPENSSL,test x$aclocal_ssl = xopenssl)
 
 dnl with-glob
 dnl
+dnl Sets "if GLOB" in makefiles. Defaults to auto.
+dnl
 AC_DEFUN([WITH_GLOB],
 if test "$with_glob" != "no"
 then
@@ -493,7 +544,8 @@ AM_CONDITIONAL(GLOB,test x$aclocal_use_glob = xyes)
 
 dnl enable-static-linking
 dnl
-dnl only applicable to gcc
+dnl The "--enable-static-linking" makes a half-hearted
+dnl attempt at static linking. Only applicable to gcc.
 dnl
 AC_DEFUN([ENABLE_STATIC_LINKING],
 [
@@ -511,7 +563,10 @@ AC_DEFUN([ENABLE_STATIC_LINKING],
 
 dnl with-doxygen
 dnl
-dnl defines HAVE_DOXYGEN as yes or the empty string
+dnl Sets HAVE_DOXYGEN in makefiles if doxygen is to be used.
+dnl
+dnl Usually used after doing a doxygen program check to set 
+dnl the default value for $HAVE_DOXYGEN.
 dnl
 AC_DEFUN([WITH_DOXYGEN],
 [
@@ -519,15 +574,19 @@ AC_DEFUN([WITH_DOXYGEN],
 	then
 		if test "$with_doxygen" = "yes" -a "$HAVE_DOXYGEN" != "yes"
 		then
-			AC_MSG_WARN([ignoring --with-doxygen])
-		else
-			HAVE_DOXYGEN="$with_doxygen"
-			AC_SUBST(HAVE_DOXYGEN)
+			AC_MSG_WARN([forcing use of doxygen even though not found])
 		fi
+		HAVE_DOXYGEN="$with_doxygen"
 	fi
+	AC_SUBST(HAVE_DOXYGEN)
 ])
 
 dnl with-man2html
+dnl
+dnl Sets HAVE_MAN2HTML in makefiles if man2html is to be used.
+dnl
+dnl Usually used after doing a man2html program check to set 
+dnl the default value for $HAVE_MAN2HTML.
 dnl
 AC_DEFUN([WITH_MAN2HTML],
 [
@@ -535,15 +594,17 @@ AC_DEFUN([WITH_MAN2HTML],
 	then
 		if test "$with_man2html" = "yes" -a "$HAVE_MAN2HTML" != "yes"
 		then
-			AC_MSG_WARN([ignoring --with-man2html])
-		else
-			HAVE_MAN2HTML="$with_man2html"
-			AC_SUBST(HAVE_MAN2HTML)
+			AC_MSG_WARN([forcing use of man2html even though not found])
 		fi
+		HAVE_MAN2HTML="$with_man2html"
 	fi
+	AC_SUBST(HAVE_MAN2HTML)
 ])
 
 dnl enable-fhs
+dnl
+dnl The "--enable-fhs" switch forces directores to comply
+dnl with the linux file hierarchy standard.
 dnl
 AC_DEFUN([ENABLE_FHS],
 [
@@ -554,6 +615,8 @@ AC_DEFUN([ENABLE_FHS],
 ])
 
 dnl fhs-compiliance
+dnl
+dnl Implementation for "--enable-fhs".
 dnl
 AC_DEFUN([FHS_COMPLIANCE],
 [
