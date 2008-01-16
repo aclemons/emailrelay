@@ -17,6 +17,8 @@
 #
 # mac.mak
 #
+# An old makefile for building the gui on Mac OS X.
+#
 
 .PHONY: all clean bundle install
 
@@ -29,7 +31,7 @@ qt_moc=$(e_qtdir)/bin/moc
 srcdir=.
 top_builddir=../..
 
-moc_objects=moc_pages.o moc_gdialog.o moc_gpage.o moc_thread.o
+moc_objects=moc_pages.o moc_gdialog.o moc_gpage.o
 objects=all.o $(moc_objects)
 
 syslibs=\
