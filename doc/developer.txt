@@ -147,9 +147,10 @@ has then it runs as an installer; if it does not then it runs as a configuration
 helper. Refer to the comments in "src/gui/guimain.cpp" for more details.
 
 The code works exactly the same on Windows, Mac OS X and unix-like operating
-systems. However, on unix-like operating systems no "setup" program is built or
-distributed by default because "make install", possibly run via some package
-manager, is the preferred way to install files. 
+systems. However, on unix-like operating systems "make install", possibly run
+via some package manager, is the preferred way to install files so the "setup"
+is never normally built or distributed. On Mac OS X the default packing scheme 
+works well enough, but a "bundle" is more natural.
 
 The user interface is structured as a "wizard" having a dialog box with the
 forward and back buttons at the bottom and a single Qt layout object for the

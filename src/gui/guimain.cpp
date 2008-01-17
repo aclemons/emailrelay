@@ -138,6 +138,7 @@ int main( int argc , char * argv [] )
 		{
 			bool is_setup = G::Unpack::isPacked(args.v(0)) ; // are we "setup" or "gui"?
 			bool is_installed = !is_setup ;
+			bool is_mac = G::File::exists("/Library/StartupItems") ; // also in installer.cpp
 			G_DEBUG( "main: packed files " << (is_setup?"":"not ") << "found" ) ;
 
 			Dir dir( args.v(0) , is_installed ) ;
@@ -190,7 +191,7 @@ int main( int argc , char * argv [] )
 			d.add( new SmtpClientPage(d,"smtpclient","logging","",false,false) , cfg_test_page ) ;
 			d.add( new LoggingPage(d,"logging","listening","",false,false) , cfg_test_page ) ;
 			d.add( new ListeningPage(d,"listening","startup","",false,false) , cfg_test_page ) ;
-			d.add( new StartupPage(d,"startup","ready","",false,false,dir) , cfg_test_page ) ;
+			d.add( new StartupPage(d,"startup","ready","",false,false,dir,is_mac) , cfg_test_page ) ;
 			d.add( new ReadyPage(d,"ready","progress","",true,false,is_setup) , cfg_test_page ) ;
 			d.add( new ProgressPage(d,"progress","","",true,true,args.v(0),cfg_dump_file) , cfg_test_page ) ;
 			d.add() ;

@@ -218,8 +218,12 @@ dnl In the implementation remember that AC_PATH_PROG does
 dnl nothing if the variable is already defined, and that
 dnl it does an internal AC_SUBST.
 dnl
+dnl The PKG_CHECK_MODULES macro is used to modify CFLAGS etc.
+dnl
 AC_DEFUN([ACLOCAL_CHECK_QT4],
 [
+	PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes],[AC_MSG_RESULT([no])])
+
 	MOC="${e_qtmoc}"
 	AC_PATH_PROG(MOC,moc)
 
@@ -612,51 +616,80 @@ AC_DEFUN([WITH_MAN2HTML],
 	AC_SUBST(HAVE_MAN2HTML)
 ])
 
-dnl enable-fhs
+dnl set-directories
 dnl
-dnl The "--enable-fhs" switch forces directores to comply
-dnl with the linux file hierarchy standard.
+dnl Sets directory paths taking account of "--enable-fhs".
 dnl
-AC_DEFUN([ENABLE_FHS],
+AC_DEFUN([SET_DIRECTORIES],
 [
 	if test "$enable_fhs" = "yes"
 	then
-		FHS_COMPLIANCE
+		prefix='/usr'
+		exec_prefix='/usr'
+		sbindir="/usr/sbin"
+		libexecdir="/usr/lib"
+		localstatedir="/var"
+		mandir="/usr/share/man"
+		datadir="/usr/share"
+		sysconfdir="/etc"
 	fi
-])
-
-dnl fhs-compiliance
-dnl
-dnl Implementation for "--enable-fhs".
-dnl
-AC_DEFUN([FHS_COMPLIANCE],
-[
-	# tweaks for fhs compliance...
-	#
-	prefix='/usr'
-	exec_prefix='/usr'
-	#
-	sbindir='/usr/sbin'
-	libexecdir='/usr/lib'
-	localstatedir='/var'
-	mandir='/usr/share/man'
-	datadir='/usr/share'
-	sysconfdir='/etc'
-	#
-	# not used by emailrelay
-	#bindir=
-	#sharedstatedir=
-	#libdir=
-	#includedir=
-	#oldincludedir=
-	#infodir=
-	#
-	# emailrelay-specific
-	e_libexecdir="$libexecdir/$PACKAGE"
-	e_docdir="$datadir/doc/$PACKAGE"
-	e_initdir="/etc/init.d"
-	e_spooldir="$localstatedir/spool/$PACKAGE"
-	e_examplesdir="$libexecdir/$PACKAGE/examples"
-	e_sysconfdir="$sysconfdir"
+	if test "$e_docdir" = "" 
+	then 
+		if test "$enable_fhs" = "yes" 
+		then 
+			e_docdir="$datadir/doc/$PACKAGE" 
+		else 
+			e_docdir="$docdir"
+			if test "$e_docdir" = ""
+			then
+				e_docdir="$datadir/$PACKAGE/doc" 
+			fi
+		fi
+	fi
+	if test "$e_initdir" = "" 
+	then 
+		if test "$enable_fhs" = "yes" 
+		then 
+			e_initdir="/etc/init.d" 
+		else 
+			e_initdir="$libexecdir/$PACKAGE/init" 
+		fi
+	fi
+	if test "$e_spooldir" = "" 
+	then 
+		if test "$enable_fhs" = "yes" 
+		then 
+			e_spooldir="$localstatedir/spool/$PACKAGE"
+		else 
+			e_spooldir="$localstatedir/spool/$PACKAGE" 
+		fi
+	fi
+	if test "$e_examplesdir" = "" 
+	then 
+		if test "$enable_fhs" = "yes" 
+		then
+			e_examplesdir="$libexecdir/$PACKAGE/examples"
+		else 
+			e_examplesdir="$libexecdir/$PACKAGE/examples" 
+		fi
+	fi
+	if test "$e_libexecdir" = "" 
+	then 
+		if test "$enable_fhs" = "yes" 
+		then 
+			e_libexecdir="$libexecdir/$PACKAGE" 
+		else 
+			e_libexecdir="$libexecdir/$PACKAGE" 
+		fi
+	fi
+	if test "$e_sysconfdir" = "" 
+	then 
+		if test "$enable_fhs" = "yes" 
+		then 
+			e_sysconfdir="$sysconfdir"
+		else 
+			e_sysconfdir="$sysconfdir" 
+		fi
+	fi
 ])
 
