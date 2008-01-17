@@ -994,7 +994,7 @@ void ListeningPage::dump( std::ostream & stream , const std::string & prefix , c
 
 StartupPage::StartupPage( GDialog & dialog , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 , bool finish , bool close , const Dir & dir ,
-	bool all_grey ) : 
+	bool is_mac ) : 
 		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_on_boot_checkbox = new QCheckBox( tr("At &system startup") ) ;
@@ -1009,14 +1009,22 @@ StartupPage::StartupPage( GDialog & dialog , const std::string & name ,
 	QVBoxLayout * manual_layout = new QVBoxLayout ;
 	manual_layout->addWidget( m_add_menu_item_checkbox ) ;
 	manual_layout->addWidget( m_add_desktop_item_checkbox ) ;
-	m_add_menu_item_checkbox->setChecked(true) ;
+	m_add_menu_item_checkbox->setChecked( true ) ;
 
 	// (using dir.boot() is okay for now here since we do not allow the user to change it)
 	const bool can_do_boot = Boot::able(dir.boot(),"emailrelay") ;
-	m_on_boot_checkbox->setEnabled( can_do_boot && !all_grey ) ;
-	m_on_boot_checkbox->setEnabled( !all_grey ) ;
-	m_at_login_checkbox->setEnabled( !all_grey ) ;
-	m_add_menu_item_checkbox->setEnabled( !all_grey ) ;
+	m_on_boot_checkbox->setEnabled( can_do_boot ) ;
+
+	if( is_mac )
+	{
+		// only install to the desktop on mac
+		m_on_boot_checkbox->setEnabled( false ) ;
+		m_at_login_checkbox->setEnabled( false ) ;
+		m_add_menu_item_checkbox->setEnabled( false ) ;
+		m_add_menu_item_checkbox->setChecked( false ) ;
+		m_add_desktop_item_checkbox->setEnabled( false ) ;
+		m_add_desktop_item_checkbox->setChecked( true ) ;
+	}
 
 	QGroupBox * auto_group = new QGroupBox(tr("Automatic")) ;
 	auto_group->setLayout( auto_layout ) ;

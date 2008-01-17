@@ -36,10 +36,6 @@
 	#define G_SYSCONFDIR ""
 #endif
 
-#ifndef G_LIBEXECDIR
-	#define G_LIBEXECDIR ""
-#endif
-
 #ifndef G_DESTDIR
 	#define G_DESTDIR ""
 #endif

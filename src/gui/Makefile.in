@@ -54,12 +54,14 @@ sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(noinst_PROGRAMS) $(sbin_PROGRAMS)
 am__emailrelay_gui_real_SOURCES_DIST = gdialog.cpp gdialog.h glink.h \
 	glink.cpp gpage.cpp gpage.h gunpack.h gunpack.cpp dir.cpp \
-	dir_unix.cpp dir.h boot.cpp boot.h installer.cpp installer.h \
-	guimain.cpp legal.cpp legal.h pages.cpp pages.h qt.h unpack.c \
-	unpack.h
+	dir_unix.cpp dir_mac.cpp dir.h boot.cpp boot.h installer.cpp \
+	installer.h guimain.cpp legal.cpp legal.h pages.cpp pages.h \
+	qt.h unpack.c unpack.h
+@MAC_FALSE@am__objects_1 = dir_unix.$(OBJEXT)
+@MAC_TRUE@am__objects_1 = dir_mac.$(OBJEXT)
 @GUI_TRUE@am_emailrelay_gui_real_OBJECTS = gdialog.$(OBJEXT) \
 @GUI_TRUE@	glink.$(OBJEXT) gpage.$(OBJEXT) gunpack.$(OBJEXT) \
-@GUI_TRUE@	dir.$(OBJEXT) dir_unix.$(OBJEXT) boot.$(OBJEXT) \
+@GUI_TRUE@	dir.$(OBJEXT) $(am__objects_1) boot.$(OBJEXT) \
 @GUI_TRUE@	installer.$(OBJEXT) guimain.$(OBJEXT) \
 @GUI_TRUE@	legal.$(OBJEXT) pages.$(OBJEXT) unpack.$(OBJEXT)
 emailrelay_gui_real_OBJECTS = $(am_emailrelay_gui_real_OBJECTS)
@@ -198,6 +200,10 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@MAC_FALSE@MAC_EXTRA_DIST = dir_mac.cpp
+@MAC_TRUE@MAC_EXTRA_DIST = dir_unix.cpp
+@MAC_FALSE@MAC_SOURCES = dir_unix.cpp
+@MAC_TRUE@MAC_SOURCES = dir_mac.cpp
 EXTRA_DIST = \
 	Info.plist \
 	emailrelay-icon.png \
@@ -207,7 +213,8 @@ EXTRA_DIST = \
 	mac.mak \
 	pack.cpp \
 	run.c \
-	mock
+	mock \
+	$(MAC_EXTRA_DIST)
 
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
@@ -247,7 +254,7 @@ EXTRA_DIST = \
 @GUI_TRUE@	gunpack.h \
 @GUI_TRUE@	gunpack.cpp \
 @GUI_TRUE@	dir.cpp \
-@GUI_TRUE@	dir_unix.cpp \
+@GUI_TRUE@	$(MAC_SOURCES) \
 @GUI_TRUE@	dir.h \
 @GUI_TRUE@	boot.cpp \
 @GUI_TRUE@	boot.h \
@@ -344,6 +351,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boot.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir_mac.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdialog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glink.Po@am__quote@

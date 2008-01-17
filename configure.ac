@@ -158,6 +158,12 @@ AC_ARG_ENABLE(proxy,AC_HELP_STRING([--enable-proxy],[enable proxying (default ye
 ENABLE_PROXY
 
 dnl ===
+dnl "--enable-mac"
+dnl
+AC_ARG_ENABLE(mac,AC_HELP_STRING([--enable-mac],[enable building for a mac os x target (default auto)]))
+ENABLE_MAC
+
+dnl ===
 dnl "--with-doxygen"
 dnl
 AC_ARG_WITH(doxygen,AC_HELP_STRING([--with-doxygen],[generate source code documentation with doxygen (default auto)]))

@@ -8,9 +8,9 @@ FreeBSD etc. Windows specific installation instructions are in a separate
 document, "doc/windows.txt".
 
    The E-MailRelay "configure" script provides a few extra confiruation switches, 
-which are shown in the output of "./configure --help". The most important of 
-these is "--enable-fhs", which overrides all other directory modifiers, forcing 
-compliance with the File Hierarchy Standard.
+which are shown in the output of "./configure --help". One of these is
+"--enable-fhs", which sets the default directories to comply with the File 
+Hierarchy Standard.
 
    There are also a set of variables which can be defined on the "configure" 
 command line for controlling all the installation directories in more detail, 

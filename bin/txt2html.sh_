@@ -89,5 +89,5 @@ fi
 txt2mu="`dirname $0`/txt2mu.sh"
 mu2html="`dirname $0`/mu2html.sh"
 expand="`dirname $0`/expand.sh"
-cat ${file} | ${expand} -a "${awk}" ${t} | ${txt2mu} -a "${awk}" ${t} | ${mu2html} -a "${awk}" ${x} "${title}" "${stylesheet}" | ${expand} -a "${awk}"
+cat "${file}" | "${expand}" -a "${awk}" "${t}" | "${txt2mu}" -a "${awk}" "${t}" | "${mu2html}" -a "${awk}" ${x} "${title}" "${stylesheet}" | "${expand}" -a "${awk}"
 

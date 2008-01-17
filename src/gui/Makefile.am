@@ -18,6 +18,14 @@
 # Makefile.am
 #
 
+if MAC
+MAC_EXTRA_DIST=dir_unix.cpp
+MAC_SOURCES=dir_mac.cpp
+else
+MAC_EXTRA_DIST=dir_mac.cpp
+MAC_SOURCES=dir_unix.cpp
+endif
+
 EXTRA_DIST=\
 	Info.plist \
 	emailrelay-icon.png \
@@ -27,7 +35,8 @@ EXTRA_DIST=\
 	mac.mak \
 	pack.cpp \
 	run.c \
-	mock
+	mock \
+	$(MAC_EXTRA_DIST)
 
 if GUI
 
@@ -83,7 +92,7 @@ emailrelay_gui_real_SOURCES = \
 	gunpack.h \
 	gunpack.cpp \
 	dir.cpp \
-	dir_unix.cpp \
+	$(MAC_SOURCES) \
 	dir.h \
 	boot.cpp \
 	boot.h \

@@ -324,7 +324,7 @@ Cat()
 
 # ==
 
-Cat ${file} | \
+Cat "${file}" | \
 	Main "${text_mode}" | \
 	Compress | \
 	Number "item" | \

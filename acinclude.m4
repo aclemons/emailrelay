@@ -487,6 +487,19 @@ AC_DEFUN([ENABLE_PROXY],
 	AM_CONDITIONAL(PROXY,test x$enable_proxy != xno)
 ])
 
+dnl enable-mac
+dnl
+dnl The "--enable-mac" switch tweaks things for a mac build.
+dnl
+AC_DEFUN([ENABLE_MAC],
+[
+	if test x$enable_mac = xyes -o "`uname`" = "Darwin"
+	then
+		:
+	fi
+	AM_CONDITIONAL(MAC,test x$enable_mac = xyes -o "`uname`" = "Darwin")
+])
+
 dnl with-openssl
 dnl
 dnl Sets SSL_LIBS and "if OPENSSL" in makefiles.

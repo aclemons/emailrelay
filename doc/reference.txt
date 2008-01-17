@@ -742,8 +742,7 @@ To force FHS compliance you can use the "--enable-fhs" switch when running
 * /var/spool/emailrelay/emailrelay.*.envelope
 
 For finer control of the directory structure the following can be specified on
-the "configure" command-line (but note that the "--enable-fhs" will override
-them):
+the "configure" command-line:
 * --mandir=<dir>
 * --sbindir=<dir>
 * e_libexecdir=<dir>

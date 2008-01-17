@@ -25,7 +25,7 @@
 # Silently does nothing on non-Mac systems.
 #
 
-force="" ; if test "$1" = "-f" ; then force="1" ; shift ; fi
+force="0" ; if test "$1" = "-f" ; then force="1" ; shift ; fi
 name="$1"
 exe="$2"
 icon="$3"
@@ -61,7 +61,7 @@ mkdir -p "${dir}/Resources" 2>/dev/null
 ln -f "${exe}" "${dir}/MacOS/${name}"
 ln -f "${icon}" "${dir}/Resources/${name}.icns"
 
-cat > "${dir}/Contents/Info.plist" <<EOF
+cat > "${dir}/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">

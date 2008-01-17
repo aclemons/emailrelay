@@ -734,6 +734,8 @@ SMALL_FRAGMENTS_FALSE
 FRAGMENTS_LIST
 PROXY_TRUE
 PROXY_FALSE
+MAC_TRUE
+MAC_FALSE
 SSL_LIBS
 OPENSSL_TRUE
 OPENSSL_FALSE
@@ -1368,6 +1370,7 @@ Optional Features:
                           optimise exception classes for smaller binaries
                           (default no)
   --enable-proxy          enable proxying (default yes)
+  --enable-mac            enable building for a mac os x target (default auto)
   --enable-static-linking prefer static linking for some libraries (default
                           no)
   --enable-fhs            force FHS-compliant directories, ignoring --prefix
@@ -7294,6 +7297,26 @@ fi
 
 
 
+# Check whether --enable-mac was given.
+if test "${enable_mac+set}" = set; then
+  enableval=$enable_mac;
+fi
+
+
+	if test x$enable_mac = xyes -o "`uname`" = "Darwin"
+	then
+		:
+	fi
+	 if test x$enable_mac = xyes -o "`uname`" = "Darwin"; then
+  MAC_TRUE=
+  MAC_FALSE='#'
+else
+  MAC_TRUE='#'
+  MAC_FALSE=
+fi
+
+
+
 
 # Check whether --with-doxygen was given.
 if test "${with_doxygen+set}" = set; then
@@ -7810,6 +7833,13 @@ if test -z "${PROXY_TRUE}" && test -z "${PROXY_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"PROXY\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"PROXY\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MAC_TRUE}" && test -z "${MAC_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MAC\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MAC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -8540,6 +8570,8 @@ SMALL_FRAGMENTS_FALSE!$SMALL_FRAGMENTS_FALSE$ac_delim
 FRAGMENTS_LIST!$FRAGMENTS_LIST$ac_delim
 PROXY_TRUE!$PROXY_TRUE$ac_delim
 PROXY_FALSE!$PROXY_FALSE$ac_delim
+MAC_TRUE!$MAC_TRUE$ac_delim
+MAC_FALSE!$MAC_FALSE$ac_delim
 SSL_LIBS!$SSL_LIBS$ac_delim
 OPENSSL_TRUE!$OPENSSL_TRUE$ac_delim
 OPENSSL_FALSE!$OPENSSL_FALSE$ac_delim
@@ -8558,7 +8590,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 40; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 42; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
