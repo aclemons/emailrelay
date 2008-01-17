@@ -20,9 +20,12 @@
 #
 # Makes a Mac OS X application bundle.
 #
-# usage: make-bundle.sh <name> <exe> [<version>]
+# usage: make-bundle.sh [-f] <name> <exe> [<version>]
+#
+# Silently does nothing on non-Mac systems.
 #
 
+force="" ; if test "$1" = "-f" ; then force="1" ; shift ; fi
 name="$1"
 exe="$2"
 icon="$3"
@@ -30,8 +33,13 @@ version="$4" ; if test "${version}" = "" ; then version="1.8.0" ; fi
 
 if test "${name}" = ""
 then
-	echo usage: `basename $0` '<name> <exe> <icon> [<version>]' >&2
+	echo usage: `basename $0` '[-f] <name> <exe> <icon> [<version>]' >&2
 	exit 1
+fi
+
+if test "`uname`" != "Darwin" -a "$force" -eq 0
+then
+	exit 0
 fi
 
 if test ! -x "${exe}"
@@ -50,10 +58,10 @@ dir="${name}.app/Contents"
 mkdir -p "${dir}/MacOS" 2>/dev/null
 mkdir -p "${dir}/Resources" 2>/dev/null
 
-ln "${exe}" "${dir}/MacOS/${key}"
-ln "${icon}" "${dir}/Resources/${name}.icns"
+ln -f "${exe}" "${dir}/MacOS/${name}"
+ln -f "${icon}" "${dir}/Resources/${name}.icns"
 
-cat > Contents/Info.plist <<EOF
+cat > "${dir}/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">

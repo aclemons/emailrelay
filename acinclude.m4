@@ -256,7 +256,7 @@ AC_DEFUN([ENABLE_GUI],
 		MOC="$aclocal_moc"
 	fi
 
-	if test "`uname`" = "Darwin" and "$QT_LIBS" = ""
+	if test "`uname`" = "Darwin" -a "$QT_LIBS" = ""
 	then
 		QT_LIBS="-framework QtGui -framework QtCore"
 	fi
