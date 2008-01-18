@@ -122,11 +122,11 @@ int main( int argc , char * argv [] )
 		G::GetOpt getopt( args , 
 			"h/help/show this help text and exit/0//1|"
 			"d/debug/show debug messages if compiled-in/0//1|"
-			"i/install/install mode, as if payload present/0//0|"
-			"c/configure/configure mode, as if no payload present/0//0|"
+			"i/as-install/install mode, as if payload present/0//1|"
+			"c/as-configure/configure mode, as if no payload present/0//1|"
 			"P/page/single page test/1/page-name/0|"
 			"f/file/write configuration to file/1/file/0|"
-			"m/mac/enable some mac runtime behaviour/0//0|"
+			"m/mac/enable some mac-like runtime behaviour/0//1|"
 			"t/test/test-mode/0//0" ) ;
 		if( getopt.hasErrors() )
 		{
@@ -145,8 +145,8 @@ int main( int argc , char * argv [] )
 		std::string cfg_test_page = getopt.contains("page") ? getopt.value("page") : std::string() ;
 		G::Path cfg_dump_file( getopt.contains("file") ? getopt.value("file") : std::string() ) ;
 		bool cfg_as_mac = getopt.contains("mac") ;
-		bool cfg_install = getopt.contains("install") ;
-		bool cfg_configure = getopt.contains("configure") ;
+		bool cfg_install = getopt.contains("as-install") ;
+		bool cfg_configure = getopt.contains("as-configure") ;
 
 		try
 		{

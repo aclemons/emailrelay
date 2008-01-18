@@ -53,8 +53,12 @@ copyright="Copyright (c) 2001-${yyyy} Graeme Walker &lt;graeme_walker@users.sour
 bundle_version="`date -u +'%Y.%m.%d.%H.%M.%S'`"
 key="`basename \"${exe}\"`"
 
-dir="${name}.app/Contents"
+if test -d "${name}.app"
+then
+	rm -rf "${name}.app"
+fi
 
+dir="${name}.app/Contents"
 mkdir -p "${dir}/MacOS" 2>/dev/null
 mkdir -p "${dir}/Resources" 2>/dev/null
 
@@ -67,7 +71,7 @@ cat > "${dir}/Info.plist" <<EOF
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key> <string>${name}</string>
-	<key>CFBundleIconFile</key> <string>${icon}.icns</string>
+	<key>CFBundleIconFile</key> <string>${name}.icns</string>
 	<key>CFBundleIdentifier</key> <string>net.sourceforge.emailrelay.${key}</string>
 	<key>CFBundleName</key> <string>${name}</string>
 	<key>CFBundlePackageType</key> <string>APPL</string>

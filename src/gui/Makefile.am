@@ -143,7 +143,7 @@ emailrelay-setup: pack emailrelay-gui.real
 .PHONY: bundle
 bundle:
 	@chmod +x $(top_srcdir)/bin/make-bundle.sh
-	$(top_srcdir)/bin/make-bundle.sh "E-MailRelay Setup" emailrelay-gui.real $(top_srcdir)/src/gui/emailrelay.icns
+	$(top_srcdir)/bin/make-bundle.sh "E-MailRelay Setup" emailrelay-gui.real $(top_srcdir)/src/gui/emailrelay-icon.icns
 
 .PHONY: desktop-bundle
 desktop-bundle: bundle
