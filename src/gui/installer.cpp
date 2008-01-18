@@ -73,7 +73,6 @@ struct ActionInterface
 struct Helper
 {
 	static bool isWindows() ;
-	static bool isMac() ;
 	static std::string exe() ;
 	static std::string quote( std::string , bool = false ) ;
 	static std::string str( const G::Strings & list ) ;
@@ -1166,16 +1165,11 @@ std::string Helper::exe()
 
 bool Helper::isWindows()
 {
- #ifdef _WIN32
+ #ifdef G_WIN32
 	return true ;
  #else
 	return false ;
  #endif
-}
-
-bool Helper::isMac()
-{
-	return G::File::exists("/Library/StartupItems") ; // could do better
 }
 
 std::string Helper::quote( std::string s , bool escape_spaces )

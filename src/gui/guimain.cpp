@@ -103,6 +103,16 @@ static void error( const std::string & what )
 		QMessageBox::Abort , QMessageBox::NoButton , QMessageBox::NoButton ) ;
 }
 
+static bool isMac()
+{
+	// (a compile-time test is problably better than run-time)
+ #ifdef G_MAC
+	return true ;
+ #else
+	return false ;
+ #endif
+}
+
 int main( int argc , char * argv [] )
 {
 	try
@@ -112,9 +122,11 @@ int main( int argc , char * argv [] )
 		G::GetOpt getopt( args , 
 			"h/help/show this help text and exit/0//1|"
 			"d/debug/show debug messages if compiled-in/0//1|"
-			//"p/prefix/target directory prefix/1/path/0|"
+			"i/install/install mode, as if payload present/0//0|"
+			"c/configure/configure mode, as if no payload present/0//0|"
 			"P/page/single page test/1/page-name/0|"
 			"f/file/write configuration to file/1/file/0|"
+			"m/mac/enable some mac runtime behaviour/0//0|"
 			"t/test/test-mode/0//0" ) ;
 		if( getopt.hasErrors() )
 		{
@@ -131,14 +143,16 @@ int main( int argc , char * argv [] )
 		// parse the commandline
 		bool test_mode = getopt.contains("test") ;
 		std::string cfg_test_page = getopt.contains("page") ? getopt.value("page") : std::string() ;
-		//std::string cfg_prefix = getopt.contains("prefix") ? getopt.value("prefix") : std::string() ;
 		G::Path cfg_dump_file( getopt.contains("file") ? getopt.value("file") : std::string() ) ;
+		bool cfg_as_mac = getopt.contains("mac") ;
+		bool cfg_install = getopt.contains("install") ;
+		bool cfg_configure = getopt.contains("configure") ;
 
 		try
 		{
-			bool is_setup = G::Unpack::isPacked(args.v(0)) ; // are we "setup" or "gui"?
+			// are we "setup" or "gui", ie. install-mode or configure-mode?
+			bool is_setup = ( cfg_install || G::Unpack::isPacked(args.v(0)) ) && !cfg_configure ;
 			bool is_installed = !is_setup ;
-			bool is_mac = G::File::exists("/Library/StartupItems") ; // also in installer.cpp
 			G_DEBUG( "main: packed files " << (is_setup?"":"not ") << "found" ) ;
 
 			Dir dir( args.v(0) , is_installed ) ;
@@ -191,7 +205,7 @@ int main( int argc , char * argv [] )
 			d.add( new SmtpClientPage(d,"smtpclient","logging","",false,false) , cfg_test_page ) ;
 			d.add( new LoggingPage(d,"logging","listening","",false,false) , cfg_test_page ) ;
 			d.add( new ListeningPage(d,"listening","startup","",false,false) , cfg_test_page ) ;
-			d.add( new StartupPage(d,"startup","ready","",false,false,dir,is_mac) , cfg_test_page ) ;
+			d.add( new StartupPage(d,"startup","ready","",false,false,dir,isMac()||cfg_as_mac) , cfg_test_page ) ;
 			d.add( new ReadyPage(d,"ready","progress","",true,false,is_setup) , cfg_test_page ) ;
 			d.add( new ProgressPage(d,"progress","","",true,true,args.v(0),cfg_dump_file) , cfg_test_page ) ;
 			d.add() ;

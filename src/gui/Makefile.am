@@ -19,11 +19,11 @@
 #
 
 if MAC
-MAC_EXTRA_DIST=dir_unix.cpp
-MAC_SOURCES=dir_mac.cpp
+MAC_EXTRA_DIST=dir_unix.cpp boot_unix.cpp glink_unix.cpp
+MAC_SOURCES=dir_mac.cpp boot_mac.cpp glink_mac.cpp
 else
-MAC_EXTRA_DIST=dir_mac.cpp
-MAC_SOURCES=dir_unix.cpp
+MAC_EXTRA_DIST=dir_mac.cpp boot_mac.cpp glink_mac.cpp
+MAC_SOURCES=dir_unix.cpp boot_unix.cpp glink_unix.cpp
 endif
 
 EXTRA_DIST=\

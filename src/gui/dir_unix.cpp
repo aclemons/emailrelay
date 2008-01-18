@@ -24,7 +24,6 @@
 #include "gdirectory.h"
 #include "gnewprocess.h"
 #include "gfile.h"
-#include <cstdlib> //getenv
 #include <stdexcept>
 #include <unistd.h>
 
@@ -64,18 +63,6 @@ namespace
 	G::Path kdeAutostart( const G::Path & default_ = G::Path() )
 	{
 		return kde( "autostart" , default_ ) ;
-	}
-
-	std::string env( const std::string & key , const std::string & default_ = std::string() )
-	{
-		const char * p = ::getenv( key.c_str() ) ;
-		return p == NULL ? default_ : std::string(p) ;
-	}
-
-	G::Path envPath( const std::string & key , const G::Path & default_ = std::string() )
-	{
-		const char * p = ::getenv( key.c_str() ) ;
-		return p == NULL ? default_ : G::Path(std::string(p)) ;
 	}
 }
 
@@ -122,15 +109,14 @@ G::Path Dir::os_pid() const
 	return oneOf( "/var/run" , "/tmp" ) ;
 }
 
-G::Path Dir::special( const std::string & type )
+G::Path Dir::special( const std::string & type ) const
 {
 	// see "http://standards.freedesktop.org"
 
-	G::Path home = envPath( "HOME" , "~" ) ;
-	G::Path data_home = envPath( "XDG_DATA_HOME" , home + ".local" + "share" ) ;
-	G::Path config_home = envPath( "XDG_CONFIG_HOME" , home + ".config" ) ;
+	G::Path data_home = envPath( "XDG_DATA_HOME" , home() + ".local" + "share" ) ;
+	G::Path config_home = envPath( "XDG_CONFIG_HOME" , home() + ".config" ) ;
 
-	G::Path desktop = kdeDesktop( home + "Desktop" ) ;
+	G::Path desktop = kdeDesktop( home() + "Desktop" ) ;
 	G::Path menu = data_home + "applications" ;
 	G::Path login = kdeAutostart( config_home + "autostart" ) ;
 	G::Path programs = "/usr/bin" ;

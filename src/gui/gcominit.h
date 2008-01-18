@@ -21,7 +21,7 @@
 #ifndef G_COM_INIT_H__
 #define G_COM_INIT_H__
 
-#ifdef _WIN32
+#ifdef G_WIN32
 #include <windows.h>
 struct GComInit
 {

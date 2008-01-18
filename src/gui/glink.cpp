@@ -26,7 +26,7 @@
 #include <sstream>
 #include <iostream>
 
-#ifdef _WIN32
+#ifdef G_WIN32
 
 #define _WIN32_IE 0x600
 #include <shlwapi.h>

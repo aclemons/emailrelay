@@ -25,7 +25,7 @@
 #include "gstr.h"
 #include "gpath.h"
 #include "gdebug.h"
-#include <stdexcept>
+#include <cstdlib> //getenv
 
 Dir::Dir( const std::string & argv0 , bool installed ) :
 	m_argv0(argv0)
@@ -156,6 +156,23 @@ G::Path Dir::spool() const
 G::Path Dir::boot() const
 {
 	return m_boot ;
+}
+
+std::string Dir::env( const std::string & key , const std::string & default_ )
+{
+	const char * p = ::getenv( key.c_str() ) ;
+	return p == NULL ? default_ : std::string(p) ;
+}
+
+G::Path Dir::envPath( const std::string & key , const G::Path & default_ )
+{
+	const char * p = ::getenv( key.c_str() ) ;
+	return p == NULL ? default_ : G::Path(std::string(p)) ;
+}
+
+G::Path Dir::home() const
+{
+	return envPath( "HOME" , "~" ) ;
 }
 
 /// \file dir.cpp

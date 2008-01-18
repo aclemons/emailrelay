@@ -495,7 +495,7 @@ AC_DEFUN([ENABLE_MAC],
 [
 	if test x$enable_mac = xyes -o "`uname`" = "Darwin"
 	then
-		:
+		AC_DEFINE(G_MAC,1,[Define for a mac build])
 	fi
 	AM_CONDITIONAL(MAC,test x$enable_mac = xyes -o "`uname`" = "Darwin")
 ])

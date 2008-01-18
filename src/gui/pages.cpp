@@ -179,14 +179,14 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const std::string & name ,
 	if( ! m_installing )
 	{
 		// if just configuring dont allow the base directories to change -- they 
-		// are read from the ".state" file written by "make install"
+		// are read from the "state" file written by "make install"
 		//
 		m_install_dir_browse_button->setEnabled(false) ;
 		m_install_dir_edit_box->setEnabled(false) ;
 		m_config_dir_browse_button->setEnabled(false) ;
 		m_config_dir_edit_box->setEnabled(false) ;
-		m_spool_dir_browse_button->setEnabled(false) ; // ??
-		m_spool_dir_edit_box->setEnabled(false) ; // ??
+		//m_spool_dir_browse_button->setEnabled(false) ; // ??
+		//m_spool_dir_edit_box->setEnabled(false) ; // ??
 	}
 
 	connect( m_install_dir_browse_button , SIGNAL(clicked()) , this , SLOT(browseInstall()) ) ;
@@ -229,12 +229,19 @@ std::string DirectoryPage::nextPage()
 	return next1() ;
 }
 
+G::Path DirectoryPage::normalise( const G::Path & dir ) const
+{
+	// make relative paths relative to the home directory since
+	// gui users probably dont have a sense of the cwd
+	return dir.isRelative() && m_dir.home() != G::Path() ? (G::Path::join(m_dir.home(),dir)) : dir ;
+}
+
 void DirectoryPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
 	GPage::dump( stream , prefix , eol ) ;
-	dumpItem( stream , prefix , "dir-install" , value(m_install_dir_edit_box) , eol ) ;
-	dumpItem( stream , prefix , "dir-spool" , value(m_spool_dir_edit_box) , eol ) ;
-	dumpItem( stream , prefix , "dir-config" , value(m_config_dir_edit_box) , eol ) ;
+	dumpItem( stream , prefix , "dir-install" , normalise(value(m_install_dir_edit_box)) , eol ) ;
+	dumpItem( stream , prefix , "dir-spool" , normalise(value(m_spool_dir_edit_box)) , eol ) ;
+	dumpItem( stream , prefix , "dir-config" , normalise(value(m_config_dir_edit_box)) , eol ) ;
 	dumpItem( stream , prefix , "dir-pid" , m_dir.pid() , eol ) ;
 	dumpItem( stream , prefix , "dir-desktop" , m_dir.desktop() , eol ) ;
 	dumpItem( stream , prefix , "dir-login" , m_dir.login() , eol ) ;
@@ -995,7 +1002,8 @@ void ListeningPage::dump( std::ostream & stream , const std::string & prefix , c
 StartupPage::StartupPage( GDialog & dialog , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 , bool finish , bool close , const Dir & dir ,
 	bool is_mac ) : 
-		GPage(dialog,name,next_1,next_2,finish,close)
+		GPage(dialog,name,next_1,next_2,finish,close) ,
+		m_is_mac(is_mac)
 {
 	m_on_boot_checkbox = new QCheckBox( tr("At &system startup") ) ;
 	m_at_login_checkbox = new QCheckBox( tr("&When logging in") ) ;
@@ -1012,18 +1020,17 @@ StartupPage::StartupPage( GDialog & dialog , const std::string & name ,
 	m_add_menu_item_checkbox->setChecked( true ) ;
 
 	// (using dir.boot() is okay for now here since we do not allow the user to change it)
-	const bool can_do_boot = Boot::able(dir.boot(),"emailrelay") ;
-	m_on_boot_checkbox->setEnabled( can_do_boot ) ;
+	m_on_boot_checkbox->setEnabled( Boot::able(dir.boot(),"emailrelay") ) ;
 
-	if( is_mac )
+	if( m_is_mac )
 	{
-		// only install to the desktop on mac
-		m_on_boot_checkbox->setEnabled( false ) ;
+		// we dont use links on a mac so the desktop check-box should be a read-only 
+		// indication of whether the install directory is the desktop
 		m_at_login_checkbox->setEnabled( false ) ;
 		m_add_menu_item_checkbox->setEnabled( false ) ;
 		m_add_menu_item_checkbox->setChecked( false ) ;
 		m_add_desktop_item_checkbox->setEnabled( false ) ;
-		m_add_desktop_item_checkbox->setChecked( true ) ;
+		//m_add_desktop_item_checkbox->setChecked( ... ) ;
 	}
 
 	QGroupBox * auto_group = new QGroupBox(tr("Automatic")) ;
@@ -1038,6 +1045,14 @@ StartupPage::StartupPage( GDialog & dialog , const std::string & name ,
 	layout->addWidget(manual_group) ;
 	layout->addStretch() ;
 	setLayout( layout ) ;
+
+	connect( m_on_boot_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
+	connect( m_add_desktop_item_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
+}
+
+bool StartupPage::isComplete()
+{
+	return true ;
 }
 
 std::string StartupPage::nextPage()

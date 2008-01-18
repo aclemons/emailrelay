@@ -26,7 +26,7 @@
 #include "service_remove.h"
 #include <stdexcept>
 
-#ifdef _WIN32
+#ifdef G_WIN32
 
 bool Boot::able( G::Path , G::Path )
 {

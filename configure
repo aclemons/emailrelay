@@ -7305,7 +7305,11 @@ fi
 
 	if test x$enable_mac = xyes -o "`uname`" = "Darwin"
 	then
-		:
+
+cat >>confdefs.h <<\_ACEOF
+#define G_MAC 1
+_ACEOF
+
 	fi
 	 if test x$enable_mac = xyes -o "`uname`" = "Darwin"; then
   MAC_TRUE=

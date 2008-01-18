@@ -102,7 +102,7 @@ namespace
 	typedef HRESULT (*FnSpecial)( HWND , LPTSTR , int , BOOL ) ;
 }
 
-G::Path Dir::special( const std::string & type )
+G::Path Dir::special( const std::string & type ) const
 {
 	// use dynamic loading since NT does not have SHGetFolderPath()
 	static HMODULE h = LoadLibrary( "SHELL32.DLL" ) ;
@@ -130,7 +130,7 @@ G::Path Dir::special( const std::string & type )
 	}
 }
 
-G::Path Dir::ntspecial( const std::string & type )
+G::Path Dir::ntspecial( const std::string & type ) const
 {
 	std::string user = env("USERNAME") ;
 	G::Path user_profile = windows() + "Profiles" + user ;

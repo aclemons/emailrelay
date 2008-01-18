@@ -89,6 +89,7 @@ private slots:
 
 private:
 	QString browse( QString ) ;
+	G::Path normalise( const G::Path & ) const ;
 
 private:
 	const Dir & m_dir ;
@@ -245,8 +246,10 @@ public:
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & ) const ;
+	virtual bool isComplete() ;
 
 private:
+	bool m_is_mac ;
 	QCheckBox * m_on_boot_checkbox ;
 	QCheckBox * m_at_login_checkbox ;
 	QCheckBox * m_add_menu_item_checkbox ;

@@ -21,7 +21,6 @@
 #include "gdef.h"
 #include "dir.h"
 #include "gpath.h"
-#include <cstdlib> //getenv
 
 #ifndef G_SPOOLDIR
 	#define G_SPOOLDIR ""
@@ -35,26 +34,6 @@
 	#define G_DESTDIR ""
 #endif
 
-namespace
-{
-	std::string env( const std::string & key , const std::string & default_ = std::string() )
-	{
-		const char * p = ::getenv( key.c_str() ) ;
-		return p == NULL ? default_ : std::string(p) ;
-	}
-
-	G::Path envPath( const std::string & key , const G::Path & default_ = std::string() )
-	{
-		const char * p = ::getenv( key.c_str() ) ;
-		return p == NULL ? default_ : G::Path(std::string(p)) ;
-	}
-
-	G::Path desktop_()
-	{
-		return envPath("HOME") + "Desktop" ;
-	}
-}
-
 std::string Dir::dotexe()
 {
 	return std::string() ;
@@ -63,7 +42,7 @@ std::string Dir::dotexe()
 G::Path Dir::os_install() const
 {
 	std::string s( G_DESTDIR ) ;
-	return s.empty() ? desktop_() : G::Path(s) ;
+	return s.empty() ? (home()+"Desktop") : G::Path(s) ;
 }
 
 G::Path Dir::os_config() const
@@ -78,7 +57,7 @@ G::Path Dir::os_spool() const
 {
 	std::string spooldir( G_SPOOLDIR ) ;
 	if( spooldir.empty() )
-		spooldir = "/var/spool/emailrelay" ;
+		spooldir = "/Library/E-MailRelay Spool" ;
 	return spooldir ;
 }
 
@@ -96,9 +75,9 @@ G::Path Dir::os_pid() const
 	return "/var/run" ;
 }
 
-G::Path Dir::special( const std::string & type )
+G::Path Dir::special( const std::string & type ) const
 {
-	if( type == "desktop" ) return desktop_() ;
+	if( type == "desktop" ) return home()+"Desktop" ;
 	if( type == "menu" ) return G::Path() ;
 	if( type == "login" ) return G::Path() ;
 	if( type == "programs" ) return G::Path() ;

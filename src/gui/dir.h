@@ -42,6 +42,9 @@ public:
 	G::Path install() const ;
 		///< Returns the installation path.
 
+	G::Path home() const ;
+		///< Returns the user's home directory.
+
 	G::Path spool() const ;
 		///< Returns the spool directory path.
 
@@ -84,6 +87,7 @@ private:
 	Dir() ;
 	static G::Path windows() ;
 	static std::string env( const std::string & , const std::string & = std::string() ) ;
+	static G::Path envPath( const std::string & , const G::Path & = G::Path() ) ;
 	static bool ok( const std::string & ) ;
 	static G::Path oneOf( std::string , std::string = std::string() , std::string = std::string() , 
 		std::string = std::string() , std::string = std::string() ) ;
@@ -93,8 +97,8 @@ private:
 	G::Path os_login() const ;
 	G::Path os_pid() const ;
 	G::Path os_boot() const ;
-	static G::Path special( const std::string & key ) ;
-	static G::Path ntspecial( const std::string & key ) ;
+	G::Path special( const std::string & key ) const ;
+	G::Path ntspecial( const std::string & key ) const ;
 	static void read( G::Path & , std::istream & , bool & ) ;
 
 private:
