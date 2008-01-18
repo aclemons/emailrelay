@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define for a mac build */
+#undef G_MAC
+
 /* Define to disable the G_LOG macro */
 #undef G_NO_LOG
 
