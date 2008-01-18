@@ -53,20 +53,20 @@ am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(noinst_PROGRAMS) $(sbin_PROGRAMS)
 am__emailrelay_gui_real_SOURCES_DIST = gdialog.cpp gdialog.h glink.h \
-	glink.cpp gpage.cpp gpage.h gunpack.h gunpack.cpp dir.cpp \
-	dir_unix.cpp boot_unix.cpp glink_unix.cpp dir_mac.cpp \
-	boot_mac.cpp glink_mac.cpp dir.h boot.cpp boot.h installer.cpp \
-	installer.h guimain.cpp legal.cpp legal.h pages.cpp pages.h \
-	qt.h unpack.c unpack.h
+	gpage.cpp gpage.h gunpack.h gunpack.cpp dir.cpp dir_unix.cpp \
+	boot_unix.cpp glink_unix.cpp dir_mac.cpp boot_mac.cpp \
+	glink_mac.cpp dir.h boot.h installer.cpp installer.h \
+	guimain.cpp legal.cpp legal.h pages.cpp pages.h qt.h unpack.c \
+	unpack.h
 @MAC_FALSE@am__objects_1 = dir_unix.$(OBJEXT) boot_unix.$(OBJEXT) \
 @MAC_FALSE@	glink_unix.$(OBJEXT)
 @MAC_TRUE@am__objects_1 = dir_mac.$(OBJEXT) boot_mac.$(OBJEXT) \
 @MAC_TRUE@	glink_mac.$(OBJEXT)
 @GUI_TRUE@am_emailrelay_gui_real_OBJECTS = gdialog.$(OBJEXT) \
-@GUI_TRUE@	glink.$(OBJEXT) gpage.$(OBJEXT) gunpack.$(OBJEXT) \
-@GUI_TRUE@	dir.$(OBJEXT) $(am__objects_1) boot.$(OBJEXT) \
-@GUI_TRUE@	installer.$(OBJEXT) guimain.$(OBJEXT) \
-@GUI_TRUE@	legal.$(OBJEXT) pages.$(OBJEXT) unpack.$(OBJEXT)
+@GUI_TRUE@	gpage.$(OBJEXT) gunpack.$(OBJEXT) dir.$(OBJEXT) \
+@GUI_TRUE@	$(am__objects_1) installer.$(OBJEXT) \
+@GUI_TRUE@	guimain.$(OBJEXT) legal.$(OBJEXT) pages.$(OBJEXT) \
+@GUI_TRUE@	unpack.$(OBJEXT)
 emailrelay_gui_real_OBJECTS = $(am_emailrelay_gui_real_OBJECTS)
 am__DEPENDENCIES_1 =
 am__pack_SOURCES_DIST = pack.cpp
@@ -251,7 +251,6 @@ EXTRA_DIST = \
 @GUI_TRUE@	gdialog.cpp \
 @GUI_TRUE@	gdialog.h \
 @GUI_TRUE@	glink.h \
-@GUI_TRUE@	glink.cpp \
 @GUI_TRUE@	gpage.cpp \
 @GUI_TRUE@	gpage.h \
 @GUI_TRUE@	gunpack.h \
@@ -259,7 +258,6 @@ EXTRA_DIST = \
 @GUI_TRUE@	dir.cpp \
 @GUI_TRUE@	$(MAC_SOURCES) \
 @GUI_TRUE@	dir.h \
-@GUI_TRUE@	boot.cpp \
 @GUI_TRUE@	boot.h \
 @GUI_TRUE@	installer.cpp \
 @GUI_TRUE@	installer.h \
@@ -352,14 +350,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boot.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boot_mac.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boot_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir_mac.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdialog.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glink.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glink_mac.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glink_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpage.Po@am__quote@

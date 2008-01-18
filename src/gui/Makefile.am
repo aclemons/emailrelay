@@ -86,7 +86,6 @@ emailrelay_gui_real_SOURCES = \
 	gdialog.cpp \
 	gdialog.h \
 	glink.h \
-	glink.cpp \
 	gpage.cpp \
 	gpage.h \
 	gunpack.h \
@@ -94,7 +93,6 @@ emailrelay_gui_real_SOURCES = \
 	dir.cpp \
 	$(MAC_SOURCES) \
 	dir.h \
-	boot.cpp \
 	boot.h \
 	installer.cpp \
 	installer.h \
