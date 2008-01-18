@@ -20,7 +20,7 @@
 #
 # Makes a Mac OS X application bundle.
 #
-# usage: make-bundle.sh [-f] <name> <exe> [<version>]
+# usage: make-bundle.sh [-f] <name> <exe> <icon> [<version>]
 #
 # Silently does nothing on non-Mac systems.
 #
@@ -59,7 +59,7 @@ mkdir -p "${dir}/MacOS" 2>/dev/null
 mkdir -p "${dir}/Resources" 2>/dev/null
 
 ln -f "${exe}" "${dir}/MacOS/${name}"
-ln -f "${icon}" "${dir}/Resources/${name}.icns"
+cp "${icon}" "${dir}/Resources/${name}.icns"
 
 cat > "${dir}/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -67,6 +67,7 @@ cat > "${dir}/Info.plist" <<EOF
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key> <string>${name}</string>
+	<key>CFBundleIconFile</key> <string>${icon}.icns</string>
 	<key>CFBundleIdentifier</key> <string>net.sourceforge.emailrelay.${key}</string>
 	<key>CFBundleName</key> <string>${name}</string>
 	<key>CFBundlePackageType</key> <string>APPL</string>

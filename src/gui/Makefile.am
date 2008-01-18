@@ -145,3 +145,7 @@ bundle:
 	@chmod +x $(top_srcdir)/bin/make-bundle.sh
 	$(top_srcdir)/bin/make-bundle.sh "E-MailRelay Setup" emailrelay-gui.real $(top_srcdir)/src/gui/emailrelay.icns
 
+.PHONY: desktop-bundle
+desktop-bundle: bundle
+	cp -r "E-MailRelay Setup.app" ~/Desktop
+
