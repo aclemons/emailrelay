@@ -149,3 +149,7 @@ bundle:
 desktop-bundle: bundle
 	cp -r "E-MailRelay Setup.app" ~/Desktop
 
+.PHONY: image
+image: bundle
+	hdiutil create -srcfolder "E-MailRelay Setup.app" "E-MailRelay.dmg" && hdiutil internet-enable -yes "E-MailRelay Setup.app"
+

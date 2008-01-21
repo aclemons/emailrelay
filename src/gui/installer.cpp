@@ -871,12 +871,17 @@ void InstallerImp::insertActions()
 	// create links
 	//
 	G::Path working_dir = value("dir-config") ;
-	insert( new UpdateLink(yes(value("start-link-desktop")),value("dir-desktop"),working_dir,target_link_info) ) ;
-	insert( new UpdateLink(yes(value("start-link-menu")),value("dir-menu"),working_dir,target_link_info) ) ;
-	insert( new UpdateLink(yes(value("start-at-login")),value("dir-login"),working_dir,target_link_info) ) ;
+	if( !isMac() )
+	{
+		insert( new UpdateLink(yes(value("start-link-desktop")),value("dir-desktop"),working_dir,target_link_info) ) ;
+		insert( new UpdateLink(yes(value("start-link-menu")),value("dir-menu"),working_dir,target_link_info) ) ;
+		insert( new UpdateLink(yes(value("start-at-login")),value("dir-login"),working_dir,target_link_info) ) ;
+	}
 	insert( new UpdateBootLink(yes(value("start-on-boot")),value("dir-boot"),target_link_info) ) ;
 	if( isWindows() )
+	{
 		insert( new UpdateLink(true,value("dir-install"),working_dir,target_link_info) ) ;
+	}
 
 	// edit the boot-time config file -- the ".conf" file is created from the
 	// template if necessary

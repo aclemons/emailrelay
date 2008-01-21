@@ -618,6 +618,10 @@ bundle:
 .PHONY: desktop-bundle
 desktop-bundle: bundle
 	cp -r "E-MailRelay Setup.app" ~/Desktop
+
+.PHONY: image
+image: bundle
+	hdiutil create -srcfolder "E-MailRelay Setup.app" "E-MailRelay.dmg" && hdiutil internet-enable -yes "E-MailRelay Setup.app"
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

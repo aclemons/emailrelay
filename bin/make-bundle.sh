@@ -51,7 +51,7 @@ fi
 yyyy="`date -u +'%Y'`"
 copyright="Copyright (c) 2001-${yyyy} Graeme Walker &lt;graeme_walker@users.sourceforge.net&gt;>"
 bundle_version="`date -u +'%Y.%m.%d.%H.%M.%S'`"
-key="`basename \"${exe}\"`"
+key="`basename \"${exe}\" | sed 's/\..*//'`"
 
 if test -d "${name}.app"
 then

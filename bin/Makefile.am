@@ -60,7 +60,14 @@ e_examples_DATA = \
 	emailrelay-submit.sh \
 	emailrelay-multicast.sh
 
+if MAC
+e_init_SCRIPTS = E-MailRelay StartupParameters.plist
+MAC_EXTRA_DIST = 
+else
 e_init_SCRIPTS = emailrelay
+MAC_EXTRA_DIST = startup-mac.sh startup-mac.plist
+else
+endif
 
 CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts)
 
@@ -77,6 +84,12 @@ SUFFIXES = .sh_ .sh
 emailrelay: emailrelay.sh
 	cp emailrelay.sh emailrelay
 	chmod ugo+x emailrelay
+
+E-MailRelay: startup-mac.sh
+	cp startup-mac.sh $@
+
+StartupParameters.plist: startup-mac.plist
+	cp startup-mac.plist $@
 
 install-data-local: install-e_examplesDATA install-e_initSCRIPTS
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-process.sh

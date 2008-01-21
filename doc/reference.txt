@@ -535,6 +535,15 @@ switch) but the remote server does not support the AUTH extension, or does not
 support the LOGIN or CRAM-MD5 mechanism, then E-MailRelay will log an error
 and not forward any messages.
 
+If E-MailRelay successfully authenticates with the remote server then the
+client's authentication name (if any) is passed as a parameter to the MAIL
+command when the message is forwarded. Some SMTP servers are reported to reject
+the message if the name on the MAIL command does not match the name used to
+authenticate with them. However, the name passed as a parameter to the MAIL
+command is stored in the message's envelope file, so a "--filter" script can be
+used to change this to match whatever the remote server expects. An example
+script is provided in the distribution.
+
 Note that some ISPs require separate POP/IMAP authentication before SMTP access
 from a particular IP address is allowed. This type of POP-before-SMTP
 authentication can be done outside the E-MailRelay system by POP/IMAP utilities
