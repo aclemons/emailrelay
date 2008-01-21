@@ -124,9 +124,10 @@ int main( int argc , char * argv [] )
 			"d/debug/show debug messages if compiled-in/0//1|"
 			"i/as-install/install mode, as if payload present/0//1|"
 			"c/as-configure/configure mode, as if no payload present/0//1|"
+			// hidden...
 			"P/page/single page test/1/page-name/0|"
 			"f/file/write configuration to file/1/file/0|"
-			"m/mac/enable some mac-like runtime behaviour/0//1|"
+			"m/mac/enable some mac-like runtime behaviour/0//0|"
 			"t/test/test-mode/0//0" ) ;
 		if( getopt.hasErrors() )
 		{
