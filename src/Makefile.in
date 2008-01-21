@@ -168,7 +168,7 @@ top_srcdir = @top_srcdir@
 
 #
 #
-EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.dsw emailrelay.xcodeproj/project.pbxproj
+EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.dsw 
 SUBDIRS = glib gssl gnet gsmtp gpop fragments main win32 gui
 all: all-recursive
 

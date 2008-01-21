@@ -31,9 +31,9 @@ lib="/Library"
 
 ../configure \
 	--enable-mac \
-	e_spooldir="${lib}/Mail/Spool \
+	e_spooldir="${lib}/Mail/Spool" \
 	e_initdir="${lib}/StartupItems/E-MailRelay" \
-	--sysconfdir="${lib}/Preferences/E-MailRelay \
+	--sysconfdir="${lib}/Preferences/E-MailRelay" \
 	--sbindir="${app}" \
 	--mandir="${app}/Documentation/man" \
 	e_docdir="${app}/Documentation" \

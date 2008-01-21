@@ -871,7 +871,8 @@ void InstallerImp::insertActions()
 	// create links
 	//
 	G::Path working_dir = value("dir-config") ;
-	if( !isMac() )
+	const bool is_mac = yes(value("start-is-mac")) ;
+	if( !is_mac )
 	{
 		insert( new UpdateLink(yes(value("start-link-desktop")),value("dir-desktop"),working_dir,target_link_info) ) ;
 		insert( new UpdateLink(yes(value("start-link-menu")),value("dir-menu"),working_dir,target_link_info) ) ;

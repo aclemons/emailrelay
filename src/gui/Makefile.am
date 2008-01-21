@@ -27,12 +27,10 @@ MAC_SOURCES=dir_unix.cpp boot_unix.cpp glink_unix.cpp
 endif
 
 EXTRA_DIST=\
-	Info.plist \
 	emailrelay-icon.png \
 	gcominit.h \
 	dir_win32.cpp \
 	mingw.mak \
-	mac.mak \
 	pack.cpp \
 	run.c \
 	mock \

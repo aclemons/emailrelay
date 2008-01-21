@@ -1063,6 +1063,7 @@ std::string StartupPage::nextPage()
 void StartupPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
 {
 	GPage::dump( stream , prefix , eol ) ;
+	dumpItem( stream , prefix , "start-is-mac" , value(m_is_mac) , eol ) ;
 	dumpItem( stream , prefix , "start-on-boot" , value(m_on_boot_checkbox) , eol ) ;
 	dumpItem( stream , prefix , "start-at-login" , value(m_at_login_checkbox) , eol ) ;
 	dumpItem( stream , prefix , "start-link-menu" , value(m_add_menu_item_checkbox) , eol ) ;

@@ -208,12 +208,10 @@ top_srcdir = @top_srcdir@
 @MAC_FALSE@MAC_SOURCES = dir_unix.cpp boot_unix.cpp glink_unix.cpp
 @MAC_TRUE@MAC_SOURCES = dir_mac.cpp boot_mac.cpp glink_mac.cpp
 EXTRA_DIST = \
-	Info.plist \
 	emailrelay-icon.png \
 	gcominit.h \
 	dir_win32.cpp \
 	mingw.mak \
-	mac.mak \
 	pack.cpp \
 	run.c \
 	mock \

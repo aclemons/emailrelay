@@ -193,7 +193,7 @@ top_srcdir = @top_srcdir@
 
 #
 #
-EXTRA_DIST = emailrelay.spec ChangeLog README.windows README.mips LICENSE bootstrap autogen.sh
+EXTRA_DIST = emailrelay.spec ChangeLog README.windows README.mips LICENSE bootstrap autogen.sh emailrelay-gui.xcodeproj/project.pbxproj emailrelay.xcodeproj/project.pbxproj 
 SUBDIRS = src bin lib etc doc test extra
 e_doc_DATA = NEWS README ChangeLog
 all: config.h

@@ -98,6 +98,7 @@ protected:
 	static QLabel * newTitle( QString ) ;
 	std::string next1() const ;
 	std::string next2() const ;
+	static std::string value( bool ) ;
 	static std::string value( const QAbstractButton * ) ;
 	static std::string value( const QLineEdit * ) ;
 	static std::string value( const QComboBox * ) ;

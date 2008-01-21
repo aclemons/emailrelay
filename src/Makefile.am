@@ -14,5 +14,5 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.dsw emailrelay.xcodeproj/project.pbxproj
+EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.dsw 
 SUBDIRS = glib gssl gnet gsmtp gpop fragments main win32 gui

@@ -110,6 +110,11 @@ void GPage::dumpItem( std::ostream & stream , const std::string & prefix , const
 	stream << prefix << k << "=" << value << eol ;
 }
 
+std::string GPage::value( bool b )
+{
+	return b ? "y" : "n" ;
+}
+
 std::string GPage::value( const QAbstractButton * p )
 {
 	return p->isChecked() ? "y" : "n" ;
