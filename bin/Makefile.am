@@ -77,7 +77,7 @@ CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts)
 SUFFIXES = .sh_ .sh
 
 .sh_.sh:
-	cat $(top_srcdir)/bin/$*.sh_ | sed "s%__SPOOL_DIR__%${e_spooldir}%g;s%__SBIN_DIR__%${sbindir}%g;"'s/\[:digit:\]/0-9/g;s/\[:space:\]/ \\t/g' > $*.tmp && mv $*.tmp $*.sh 
+	cat $(top_srcdir)/bin/$*.sh_ | sed "s%__SPOOL_DIR__%${e_spooldir}%g;s%__SBIN_DIR__%${sbindir}%g;s%__SYSCONF_DIR__%${e_sysconfdir}%g;"'s/\[:digit:\]/0-9/g;s/\[:space:\]/ \\t/g' > $*.tmp && mv $*.tmp $*.sh 
 	chmod ugo+x $*.sh
 
 .pl_.pl:
@@ -88,8 +88,8 @@ emailrelay: emailrelay.sh
 	cp emailrelay.sh emailrelay
 	chmod ugo+x emailrelay
 
-E-MailRelay: startup-mac.sh
-	cp startup-mac.sh $@
+E-MailRelay: emailrelay.sh
+	cp emailrelay.sh $@
 
 StartupParameters.plist: startup-mac.plist
 	cp $(top_srcdir)/bin/startup-mac.plist $@

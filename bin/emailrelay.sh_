@@ -63,7 +63,7 @@ if test \! -d "${var_run}" ; then var_run="/tmp" ; fi
 if test \! -x "${emailrelay}" ; then emailrelay="`pwd`/emailrelay" ; fi
 pid_file="${var_run}/emailrelay.pid"
 PATH="${PATH}:/sbin:/bin:/usr/bin"
-cfg_file="/etc/emailrelay.conf"
+cfg_file="__SYSCONF_DIR__/emailrelay.conf"
 
 # server configuration using the config file
 #
