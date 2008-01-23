@@ -16,7 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
 #
-# TODO...
+# startup-mac.sh
+#
+# Called from the AppleScript script "startup-mac.as".
 #
 exe="/Applications/E-MailRelay/emailrelay"
 cfg="/Library/Preferences/E-MailRelay/emailrelay.conf"

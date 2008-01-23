@@ -18,7 +18,7 @@
 #
 # make-bundle.sh
 #
-# Makes a Mac OS X application bundle.
+# Makes a Mac OS X application bundle. Called from make.
 #
 # usage: make-bundle.sh [-f] <name> <exe> <icon> [<version>]
 #

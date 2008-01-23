@@ -18,7 +18,7 @@
 #
 # make-applet.sh
 #
-# Makes a Mac OS X script bundle.
+# Makes a Mac OS X script bundle. Called from make.
 #
 # usage: make-applet.sh [-f] <bundle-out> <apple-script-in> [<icon> [<callee-in> [<callee-target-name]]]
 #        -f   fake it
