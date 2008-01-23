@@ -14,8 +14,23 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-EXTRA_DIST = emailrelay.spec ChangeLog README.windows README.mips LICENSE bootstrap autogen.sh emailrelay-gui.xcodeproj/project.pbxproj emailrelay.xcodeproj/project.pbxproj 
+
+EXTRA_DIST = \
+	emailrelay.spec \
+	ChangeLog \
+	README.windows \
+	README.mips \
+	README.mac \
+	LICENSE \
+	bootstrap \
+	autogen.sh \
+	emailrelay-gui.xcodeproj/project.pbxproj \
+	emailrelay.xcodeproj/project.pbxproj 
+
 SUBDIRS = src bin lib etc doc test extra
+
 e_doc_DATA = NEWS README ChangeLog
+
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_docdir) 2>/dev/null
+	-for d in $(DESTDIR)$(e_sysconfdir) $(DESTDIR)$(e_libexecdir) $(DESTDIR)$(e_examplesdir) $(DESTDIR)$(e_spooldir) $(DESTDIR)$(e_initdir) $(DESTDIR)$(e_docdir) ; do if test "`basename \"$$d\"`" = "E-MailRelay" ; then rmdir "$$d" 2>/dev/null ; fi ; done

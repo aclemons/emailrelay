@@ -14,6 +14,9 @@
 
 @SET_MAKE@
 
+#
+#
+
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -190,10 +193,18 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+EXTRA_DIST = \
+	emailrelay.spec \
+	ChangeLog \
+	README.windows \
+	README.mips \
+	README.mac \
+	LICENSE \
+	bootstrap \
+	autogen.sh \
+	emailrelay-gui.xcodeproj/project.pbxproj \
+	emailrelay.xcodeproj/project.pbxproj 
 
-#
-#
-EXTRA_DIST = emailrelay.spec ChangeLog README.windows README.mips LICENSE bootstrap autogen.sh emailrelay-gui.xcodeproj/project.pbxproj emailrelay.xcodeproj/project.pbxproj 
 SUBDIRS = src bin lib etc doc test extra
 e_doc_DATA = NEWS README ChangeLog
 all: config.h
@@ -649,8 +660,10 @@ uninstall-am: uninstall-e_docDATA uninstall-local
 	pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
 	uninstall-e_docDATA uninstall-local
 
+
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_docdir) 2>/dev/null
+	-for d in $(DESTDIR)$(e_sysconfdir) $(DESTDIR)$(e_libexecdir) $(DESTDIR)$(e_examplesdir) $(DESTDIR)$(e_spooldir) $(DESTDIR)$(e_initdir) $(DESTDIR)$(e_docdir) ; do if test "`basename \"$$d\"`" = "E-MailRelay" ; then rmdir "$$d" 2>/dev/null ; fi ; done
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

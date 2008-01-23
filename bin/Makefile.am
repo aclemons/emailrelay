@@ -34,7 +34,11 @@ EXTRA_DIST = \
 	emailrelay-multicast.sh_ \
 	make-setup.sh_ \
 	make-bundle.sh_ \
+	make-applet.sh_ \
 	configure-mac.sh \
+	startup-mac.sh_ \
+	startup-mac.as \
+	startup-mac.plist \
 	fragment.pl_
 
 work_scripts = \
@@ -46,6 +50,7 @@ work_scripts = \
 	txt2html.sh \
 	emailrelay.sh \
 	make-setup.sh \
+	make-applet.sh \
 	make-bundle.sh \
 	fragment.pl
 
@@ -68,11 +73,11 @@ e_init_SCRIPTS = E-MailRelay StartupParameters.plist
 MAC_EXTRA_DIST = 
 else
 e_init_SCRIPTS = emailrelay
-MAC_EXTRA_DIST = startup-mac.sh_ startup-mac.plist
+MAC_EXTRA_DIST = 
 else
 endif
 
-CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts)
+CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts) $(e_init_SCRIPTS)
 
 SUFFIXES = .sh_ .sh
 
@@ -94,6 +99,9 @@ E-MailRelay: emailrelay.sh
 StartupParameters.plist: startup-mac.plist
 	cp $(top_srcdir)/bin/startup-mac.plist $@
 
+E-MailRelay.app: startup-mac.as make-applet.sh
+	$(top_srcdir)/bin/make-applet.sh E-MailRelay.app $(top_scrdir)/bin/startup-mac.as
+
 install-data-local: install-e_examplesDATA install-e_initSCRIPTS
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-process.sh
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-notify.sh
@@ -101,6 +109,7 @@ install-data-local: install-e_examplesDATA install-e_initSCRIPTS
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-resubmit.sh
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-submit.sh
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-multicast.sh
+	cp -r $(top_srcdir)/bin/E-MailRelay.app $(DESTDIR)${sbindir}
 
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_examplesdir) 2>/dev/null
