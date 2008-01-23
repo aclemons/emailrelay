@@ -170,6 +170,12 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@MAC_FALSE@e_init_SCRIPTS = emailrelay
+@MAC_TRUE@e_init_SCRIPTS = E-MailRelay StartupParameters.plist
+@MAC_FALSE@MAC_EXTRA_DIST = 
+@MAC_TRUE@MAC_EXTRA_DIST = 
+@MAC_FALSE@MAC_NOINST = 
+@MAC_TRUE@MAC_NOINST = E-MailRelay.app
 EXTRA_DIST = \
 	emailrelay.sh_ \
 	doxygen.sh_ \
@@ -213,6 +219,7 @@ noinst_SCRIPTS = \
 	emailrelay-runperl.js \
 	emailrelay-resubmit.js \
 	emailrelay-change-auth.js \
+	$(MAC_NOINST) \
 	$(work_scripts)
 
 e_examples_DATA = \
@@ -223,10 +230,6 @@ e_examples_DATA = \
 	emailrelay-submit.sh \
 	emailrelay-multicast.sh
 
-@MAC_FALSE@e_init_SCRIPTS = emailrelay
-@MAC_TRUE@e_init_SCRIPTS = E-MailRelay StartupParameters.plist
-@MAC_FALSE@MAC_EXTRA_DIST = 
-@MAC_TRUE@MAC_EXTRA_DIST = 
 CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts) $(e_init_SCRIPTS)
 SUFFIXES = .sh_ .sh
 all: all-am
@@ -365,7 +368,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-local mostlyclean-am
 
 distclean: distclean-am
 	-rm -f Makefile
@@ -421,9 +424,9 @@ uninstall-am: uninstall-e_examplesDATA uninstall-e_initSCRIPTS \
 
 .MAKE: install-am install-strip
 
-.PHONY: all all-am check check-am clean clean-generic distclean \
-	distclean-generic distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am \
+.PHONY: all all-am check check-am clean clean-generic clean-local \
+	distclean distclean-generic distdir dvi dvi-am html html-am \
+	info info-am install install-am install-data install-data-am \
 	install-data-local install-dvi install-dvi-am \
 	install-e_examplesDATA install-e_initSCRIPTS install-exec \
 	install-exec-am install-html install-html-am install-info \
@@ -454,8 +457,15 @@ E-MailRelay: emailrelay.sh
 StartupParameters.plist: startup-mac.plist
 	cp $(top_srcdir)/bin/startup-mac.plist $@
 
-E-MailRelay.app: startup-mac.as make-applet.sh
-	$(top_srcdir)/bin/make-applet.sh E-MailRelay.app $(top_scrdir)/bin/startup-mac.as
+E-MailRelay.app: startup-mac.as make-applet.sh startup-mac.sh
+	./make-applet.sh E-MailRelay.app $(top_scrdir)/bin/startup-mac.as $(top_srcdir)/src/gui/emailrelay-icon.png startup-mac.sh
+
+.PHONY: bundle
+bundle: startup-mac.as make-applet.sh startup-mac.sh
+	./make-applet.sh -f E-MailRelay.app $(top_scrdir)/bin/startup-mac.as $(top_srcdir)/src/gui/emailrelay-icon.png startup-mac.sh
+
+clean-local:
+	rm -rf E-MailRelay.app
 
 install-data-local: install-e_examplesDATA install-e_initSCRIPTS
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-process.sh
@@ -464,10 +474,11 @@ install-data-local: install-e_examplesDATA install-e_initSCRIPTS
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-resubmit.sh
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-submit.sh
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-multicast.sh
-	cp -r $(top_srcdir)/bin/E-MailRelay.app $(DESTDIR)${sbindir}
+	cp -r E-MailRelay.app $(DESTDIR)${sbindir}
 
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_examplesdir) 2>/dev/null
+	-rm -rf $(DESTDIR)${sbindir}/E-MailRelay.app 2>/dev/null
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

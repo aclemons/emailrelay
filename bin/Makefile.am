@@ -15,6 +15,16 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+if MAC
+e_init_SCRIPTS = E-MailRelay StartupParameters.plist
+MAC_EXTRA_DIST = 
+MAC_NOINST = E-MailRelay.app
+else
+e_init_SCRIPTS = emailrelay
+MAC_EXTRA_DIST = 
+MAC_NOINST = 
+endif
+
 EXTRA_DIST = \
 	emailrelay.sh_ \
 	doxygen.sh_ \
@@ -58,6 +68,7 @@ noinst_SCRIPTS = \
 	emailrelay-runperl.js \
 	emailrelay-resubmit.js \
 	emailrelay-change-auth.js \
+	$(MAC_NOINST) \
 	$(work_scripts)
 
 e_examples_DATA = \
@@ -67,15 +78,6 @@ e_examples_DATA = \
 	emailrelay-resubmit.sh \
 	emailrelay-submit.sh \
 	emailrelay-multicast.sh
-
-if MAC
-e_init_SCRIPTS = E-MailRelay StartupParameters.plist
-MAC_EXTRA_DIST = 
-else
-e_init_SCRIPTS = emailrelay
-MAC_EXTRA_DIST = 
-else
-endif
 
 CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts) $(e_init_SCRIPTS)
 
@@ -99,8 +101,15 @@ E-MailRelay: emailrelay.sh
 StartupParameters.plist: startup-mac.plist
 	cp $(top_srcdir)/bin/startup-mac.plist $@
 
-E-MailRelay.app: startup-mac.as make-applet.sh
-	$(top_srcdir)/bin/make-applet.sh E-MailRelay.app $(top_scrdir)/bin/startup-mac.as
+E-MailRelay.app: startup-mac.as make-applet.sh startup-mac.sh
+	./make-applet.sh E-MailRelay.app $(top_scrdir)/bin/startup-mac.as $(top_srcdir)/src/gui/emailrelay-icon.png startup-mac.sh
+
+.PHONY: bundle
+bundle: startup-mac.as make-applet.sh startup-mac.sh
+	./make-applet.sh -f E-MailRelay.app $(top_scrdir)/bin/startup-mac.as $(top_srcdir)/src/gui/emailrelay-icon.png startup-mac.sh
+
+clean-local:
+	rm -rf E-MailRelay.app
 
 install-data-local: install-e_examplesDATA install-e_initSCRIPTS
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-process.sh
@@ -109,8 +118,9 @@ install-data-local: install-e_examplesDATA install-e_initSCRIPTS
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-resubmit.sh
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-submit.sh
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-multicast.sh
-	cp -r $(top_srcdir)/bin/E-MailRelay.app $(DESTDIR)${sbindir}
+	cp -r E-MailRelay.app $(DESTDIR)${sbindir}
 
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_examplesdir) 2>/dev/null
+	-rm -rf $(DESTDIR)${sbindir}/E-MailRelay.app 2>/dev/null
 
