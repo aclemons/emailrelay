@@ -65,7 +65,7 @@ emailrelay.docbook: head.db tail.db userguide.db reference.db developer.db
 	$(run_doxygen) "$(HAVE_DOXYGEN)" "$(top_srcdir)" "$(top_builddir)" && touch .dox
 
 emailrelay-man.html: emailrelay.1
-	if test "$(HAVE_MAN2HTML)" = "yes" ; then man2html -r -L. emailrelay.1 < /dev/null > emailrelay-man.html.tmp && mv emailrelay-man.html.tmp emailrelay-man.html ; grep -v '^Content-type:' < emailrelay-man.html > emailrelay-man.html.tmp && mv emailrelay-man.html.tmp emailrelay-man.html ; fi
+	if test "$(HAVE_MAN2HTML)" = "yes" ; then man2html -r -L. emailrelay.1 < /dev/null > emailrelay-man.html.tmp && mv emailrelay-man.html.tmp emailrelay-man.html ; grep -v '^Content-type:' < emailrelay-man.html | grep -v '^Time:' > emailrelay-man.html.tmp ; mv emailrelay-man.html.tmp emailrelay-man.html ; fi
 
 developer.html reference.html userguide.html: $(converter_html)
 
