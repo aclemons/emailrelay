@@ -34,6 +34,7 @@ EXTRA_DIST = \
 	emailrelay-multicast.sh_ \
 	make-setup.sh_ \
 	make-bundle.sh_ \
+	configure-mac.sh \
 	fragment.pl_
 
 work_scripts = \

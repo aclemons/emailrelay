@@ -108,6 +108,9 @@ linux_tar_dir = $(tar_dir)/linux
 TEE:=>
 TEEE:=2>&1
 
+# gnu sed, or write a wrapper that supports --in-place
+SED=sed
+
 mk_root = $(shell pwd)
 gcc_configure_1 = --program-suffix=-mips --with-gnu-as --with-gnu-ld --with-abi=32
 gcc_configure_2 = --target=mipsel-elf-linux-gnu
@@ -215,7 +218,7 @@ $(binutils_for_target_config):
 	@echo ++ configuring binutils for target
 	@if test -d binutils/build-for-target ; then : ; else mkdir binutils/build-for-target ; fi
 	@cd binutils/build-for-target && PATH="`dirname \`pwd\``/bin:$$PATH" CC=`dirname \`pwd\``/../gcc/2/bin/gcc-mips ../binutils-2.18/configure --with-build-time-tools=`dirname \`pwd\``/bin --with-build-sysroot=`dirname \`pwd\``/../uclibc --target=mipsel-elf-linux-gnu --host=mipsel-elf-linux-gnu $(TEE) ../../binutils_for_target_config.out $(TEEE)
-	@sed -e 's/^CFLAGS_FOR_BUILD *=.*/CFLAGS_FOR_BUILD = /' -i binutils/build-for-target/Makefile
+	@$(SED) -e 's/^CFLAGS_FOR_BUILD *=.*/CFLAGS_FOR_BUILD = /' --in-place binutils/build-for-target/Makefile
 
 # ==
 
@@ -229,28 +232,28 @@ $(uclibc_files):
 $(uclibc_config): $(uclibc_files) $(linux_config) $(gcc_1_install)
 	@echo
 	@echo ++ configuring uclibc
-	@sed -e 's/\( *\)default TARGET_i386/\1default TARGET_mips/' -i.orig uclibc/uClibc-0.9.27/extra/Configs/Config.in
+	@$(SED) -e 's/\( *\)default TARGET_i386/\1default TARGET_mips/' --in-place=.orig uclibc/uClibc-0.9.27/extra/Configs/Config.in
 	@cd uclibc/uClibc-0.9.27 && make defconfig $(TEE) ../../uclibc_config.out $(TEEE)
-	@sed -e 's:^KERNEL_SOURCE=.*:KERNEL_SOURCE="'"`pwd`/linux/linux-2.4.20"'":' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:^SHARED_LIB_LOADER_PREFIX=.*:SHARED_LIB_LOADER_PREFIX="'"/lib"'":' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:^RUNTIME_PREFIX=.*:RUNTIME_PREFIX="'"`pwd`/uclibc"'":' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:^DEVEL_PREFIX=.*:DEVEL_PREFIX="'"`pwd`/uclibc/usr"'":' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:^LDSO_BASE_FILENAME=.*:LDSO_BASE_FILENAME="'"ld-uClibc.so"'":' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*CONFIG_MIPS_ISA_MIPS32.*:CONFIG_MIPS_ISA_MIPS32=y:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:^CONFIG_MIPS_ISA_1.*:# CONFIG_MIPS_ISA_1 is not set:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*UCLIBC_HAS_WCHAR.*:UCLIBC_HAS_WCHAR=y:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*UCLIBC_HAS_LOCALE.*:# UCLIBC_HAS_LOCALE is not set:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*UCLIBC_HAS_TM_EXTENSIONS.*:# UCLIBC_HAS_TM_EXTENSIONS is not set:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*UCLIBC_HAS_RPC.*:UCLIBC_HAS_RPC=y\nUCLIBC_HAS_FULL_RPC=y:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*UCLIBC_HAS_FULL_RPC.*:UCLIBC_HAS_FULL_RPC=y:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*UCLIBC_HAS_CTYPE_TABLES.*:UCLIBC_HAS_CTYPE_TABLES=y:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*UCLIBC_HAS_CTYPE_SIGNED.*:# UCLIBC_HAS_CTYPE_SIGNED is not set:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*UCLIBC_HAS_CTYPE_UNSAFE.*:# UCLIBC_HAS_CTYPE_UNSAFE is not set:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*UCLIBC_HAS_GLIBC_CUSTOM_PRINTF.*:UCLIBC_HAS_GLIBC_CUSTOM_PRINTF=y:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*UCLIBC_HAS_HEXADECIMAL_FLOATS.*:# UCLIBC_HAS_HEXADECIMAL_FLOATS is not set:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*UCLIBC_HAS_GLIBC_CUSTOM_STREAMS.*:UCLIBC_HAS_GLIBC_CUSTOM_STREAMS=y:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*UNIX98PTY_ONLY.*:# UNIX98PTY_ONLY is not set:' -i uclibc/uClibc-0.9.27/.config
-	@sed -e 's:.*UCLIBC_HAS_FTW.*:UCLIBC_HAS_FTW=y:' -i uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:^KERNEL_SOURCE=.*:KERNEL_SOURCE="'"`pwd`/linux/linux-2.4.20"'":' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:^SHARED_LIB_LOADER_PREFIX=.*:SHARED_LIB_LOADER_PREFIX="'"/lib"'":' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:^RUNTIME_PREFIX=.*:RUNTIME_PREFIX="'"`pwd`/uclibc"'":' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:^DEVEL_PREFIX=.*:DEVEL_PREFIX="'"`pwd`/uclibc/usr"'":' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:^LDSO_BASE_FILENAME=.*:LDSO_BASE_FILENAME="'"ld-uClibc.so"'":' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*CONFIG_MIPS_ISA_MIPS32.*:CONFIG_MIPS_ISA_MIPS32=y:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:^CONFIG_MIPS_ISA_1.*:# CONFIG_MIPS_ISA_1 is not set:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*UCLIBC_HAS_WCHAR.*:UCLIBC_HAS_WCHAR=y:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*UCLIBC_HAS_LOCALE.*:# UCLIBC_HAS_LOCALE is not set:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*UCLIBC_HAS_TM_EXTENSIONS.*:# UCLIBC_HAS_TM_EXTENSIONS is not set:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*UCLIBC_HAS_RPC.*:UCLIBC_HAS_RPC=y\nUCLIBC_HAS_FULL_RPC=y:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*UCLIBC_HAS_FULL_RPC.*:UCLIBC_HAS_FULL_RPC=y:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*UCLIBC_HAS_CTYPE_TABLES.*:UCLIBC_HAS_CTYPE_TABLES=y:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*UCLIBC_HAS_CTYPE_SIGNED.*:# UCLIBC_HAS_CTYPE_SIGNED is not set:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*UCLIBC_HAS_CTYPE_UNSAFE.*:# UCLIBC_HAS_CTYPE_UNSAFE is not set:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*UCLIBC_HAS_GLIBC_CUSTOM_PRINTF.*:UCLIBC_HAS_GLIBC_CUSTOM_PRINTF=y:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*UCLIBC_HAS_HEXADECIMAL_FLOATS.*:# UCLIBC_HAS_HEXADECIMAL_FLOATS is not set:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*UCLIBC_HAS_GLIBC_CUSTOM_STREAMS.*:UCLIBC_HAS_GLIBC_CUSTOM_STREAMS=y:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*UNIX98PTY_ONLY.*:# UNIX98PTY_ONLY is not set:' --in-place uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's:.*UCLIBC_HAS_FTW.*:UCLIBC_HAS_FTW=y:' --in-place uclibc/uClibc-0.9.27/.config
 	@rm uclibc/uClibc-0.9.27/include/bits/uClibc_config.h 2>/dev/null || true
 
 $(uclibc_patch): $(uclibc_files)
@@ -298,9 +301,9 @@ $(uclibcpp_config): $(uclibcpp_patch) $(uclibc_config)
 	@echo
 	@echo ++ configuring uclibc++
 	@cd uclibc/uClibc++-0.2.2 && make defconfig $(TEE) ../../uclibcpp_config.out $(TEEE)
-	@sed 's:.*UCLIBCXX_HAS_LONG_DOUBLE.*:# UCLIBCXX_HAS_LONG_DOUBLE is not set:' -i uclibc/uClibc++-0.2.2/.config
-	@sed 's:.*UCLIBCXX_HAS_TLS.*:# UCLIBCXX_HAS_TLS is not set:' -i uclibc/uClibc++-0.2.2/.config
-	@sed 's:.*UCLIBCXX_HAS_LFS.*:# UCLIBCXX_HAS_LFS is not set:' -i uclibc/uClibc++-0.2.2/.config
+	@$(SED) 's:.*UCLIBCXX_HAS_LONG_DOUBLE.*:# UCLIBCXX_HAS_LONG_DOUBLE is not set:' --in-place uclibc/uClibc++-0.2.2/.config
+	@$(SED) 's:.*UCLIBCXX_HAS_TLS.*:# UCLIBCXX_HAS_TLS is not set:' --in-place uclibc/uClibc++-0.2.2/.config
+	@$(SED) 's:.*UCLIBCXX_HAS_LFS.*:# UCLIBCXX_HAS_LFS is not set:' --in-place uclibc/uClibc++-0.2.2/.config
 	@rm -f uclibc/uClibc++-0.2.2/include/system_configuration.h
 
 $(uclibcpp_make): $(uclibcpp_config) $(gcc_2_install)
