@@ -1,1 +1,12 @@
-// TODO
+{
+  Description     = "E-MailRelay server";
+  Provides        = ("E-MailRelay");
+  Requires        = ("Network");
+  Uses            = ("Network");
+  OrderPreference = "Late";
+  Messages =
+  {
+    start = "Starting E-MailRelay";
+    stop  = "Stopping E-MailRelay";
+  };
+}
