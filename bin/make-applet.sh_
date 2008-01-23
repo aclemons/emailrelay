@@ -20,7 +20,7 @@
 #
 # Makes a Mac OS X script bundle.
 #
-# usage: make-applet.sh [-f] <bundle-out> <apple-script-in> [<icon> [<callee>]]
+# usage: make-applet.sh [-f] <bundle-out> <apple-script-in> [<icon> [<callee-in> [<callee-target-name]]]
 #        -f   fake it
 #
 # Silently does nothing on non-Mac systems.
@@ -31,6 +31,7 @@ out="$1"
 in="$2"
 icon="$3"
 callee="$4"
+callee_name="$5"
 
 if test "`uname`" != "Darwin" -a "$fake" -eq 0
 then
@@ -39,7 +40,7 @@ fi
 
 if test "${out}" = ""
 then
-	echo usage: `basename $0` '<bundle-out> <apple-script-in> [<icon> [<callee>]]' >&2
+	echo usage: `basename $0` '<bundle-out> <apple-script-in> [<icon> [<callee-in> [<callee-target-name]]]' >&2
 	exit 1
 fi
 
@@ -72,6 +73,6 @@ fi
 
 if test "${callee}" != ""
 then
-	cp "${callee}" "${out}/Contents/Resources/Scripts/"
+	cp "${callee}" "${out}/Contents/Resources/Scripts/${callee_name}"
 fi
 

@@ -102,11 +102,11 @@ StartupParameters.plist: startup-mac.plist
 	cp $(top_srcdir)/bin/startup-mac.plist $@
 
 E-MailRelay.app: startup-mac.as make-applet.sh startup-mac.sh
-	./make-applet.sh E-MailRelay.app $(top_srcdir)/bin/startup-mac.as $(top_srcdir)/src/gui/emailrelay-icon.icns startup-mac.sh
+	./make-applet.sh E-MailRelay.app $(top_srcdir)/bin/startup-mac.as $(top_srcdir)/src/gui/emailrelay-icon.icns startup-mac.sh emailrelay
 
 .PHONY: bundle
 bundle: startup-mac.as make-applet.sh startup-mac.sh
-	./make-applet.sh -f E-MailRelay.app $(top_srcdir)/bin/startup-mac.as $(top_srcdir)/src/gui/emailrelay-icon.png startup-mac.sh
+	./make-applet.sh -f E-MailRelay.app $(top_srcdir)/bin/startup-mac.as $(top_srcdir)/src/gui/emailrelay-icon.png startup-mac.sh emailrelay
 
 clean-local:
 	rm -rf E-MailRelay.app

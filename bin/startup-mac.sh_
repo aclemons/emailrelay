@@ -18,4 +18,6 @@
 #
 # TODO...
 #
-/Applications/E-MailRelay/emailrelay
+exe="/Applications/E-MailRelay/emailrelay"
+cfg="/Library/Preferences/E-MailRelay/emailrelay.conf"
+"${exe}" `grep '^[a-z]' "${cfg}" | sed 's/^/--/'` 2>&1 &
