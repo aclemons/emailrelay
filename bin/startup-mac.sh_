@@ -21,7 +21,8 @@
 # Called from the AppleScript script "startup-mac.as".
 #
 
-dir="`cd dirname \"$0\" && pwd`"
+dir="`dirname \"$0\"`"
+dir="`cd \"${dir}\" && pwd`"
 base="`echo \"${dir}\" | fgrep '/Applications/E-MailRelay/' | sed 's:/Applications/E-MailRelay/.*::'`"
 
 cfg="${base}/Library/Preferences/E-MailRelay/emailrelay.conf"
