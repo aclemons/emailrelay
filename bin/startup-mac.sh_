@@ -20,6 +20,11 @@
 #
 # Called from the AppleScript script "startup-mac.as".
 #
-exe="/Applications/E-MailRelay/emailrelay"
-cfg="/Library/Preferences/E-MailRelay/emailrelay.conf"
-"${exe}" `grep '^[a-z]' "${cfg}" | sed 's/^/--/'` 2>&1 &
+
+dir="`cd dirname \"$0\" && pwd`"
+base="`echo \"${dir}\" | fgrep '/Applications/E-MailRelay/' | sed 's:/Applications/E-MailRelay/.*::'`"
+
+cfg="${base}/Library/Preferences/E-MailRelay/emailrelay.conf"
+exe="${base}/Applications/E-MailRelay/emailrelay"
+
+"${exe}" --as-server `grep '^[a-z]' "${cfg}" | sed 's/^/--/'` 2>&1
