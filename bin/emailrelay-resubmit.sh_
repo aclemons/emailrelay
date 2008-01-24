@@ -45,11 +45,11 @@ fi
 
 # for each failed e-mail...
 #
-for file in ${store}/emailrelay.*.envelope.bad ""
+for file in "${store}"/emailrelay.*.envelope.bad ""
 do
 	if test -f "${file}"
 	then
-		failures="`fgrep MailRelay-Reason: < ${file} | wc -l`"
+		failures="`fgrep MailRelay-Reason: < \"${file}\" | wc -l`"
 		if test "${failures}" -lt "${retry_limit}"
 		then
 			good_file="`echo \"${file}\" | sed 's/\.bad$//'`"

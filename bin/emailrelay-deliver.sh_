@@ -45,11 +45,11 @@ fi
 
 # for each e-mail to a local recipient...
 #
-for file in ${store}/emailrelay.*.envelope.local ""
+for file in "${store}"/emailrelay.*.envelope.local ""
 do
 	if test -f "${file}"
 	then
-		content="`echo ${file} | sed 's/envelope/content/'`"
+		content="`echo \"${file}\" | sed 's/envelope/content/'`"
 
 		deliver_to="`fgrep X-MailRelay-To-Local ${file} | sed 's/X-MailRelay-To-Local: //' | tr -d '\015' | sed \"s/postmaster/${postmaster}/g\"`"
 		if test "${deliver_to}" = "" 
@@ -61,8 +61,8 @@ do
 		#
 		if test -f "${content}"
 		then
-			echo `basename $0`: delivering `basename ${content}` to ${deliver_to}
-			${procmail} -d ${deliver_to} < ${content}
+			echo `basename $0`: delivering `basename "${content}"` to ${deliver_to}
+			"${procmail}" -d "${deliver_to}" < "${content}"
 			rc=$?
 			if test "${rc}" -eq 0
 			then

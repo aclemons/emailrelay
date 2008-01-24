@@ -49,7 +49,7 @@ G::Path Dir::os_config() const
 {
 	std::string s( G_SYSCONFDIR ) ;
 	if( s.empty() )
-		s = "/etc" ;
+		s = "/Library/Preferences/E-MailRelay" ;
 	return s ;
 }
 
@@ -57,7 +57,7 @@ G::Path Dir::os_spool() const
 {
 	std::string spooldir( G_SPOOLDIR ) ;
 	if( spooldir.empty() )
-		spooldir = "/Library/E-MailRelay Spool" ;
+		spooldir = "/Library/Mail/Spool" ;
 	return spooldir ;
 }
 

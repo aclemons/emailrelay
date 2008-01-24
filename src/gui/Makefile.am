@@ -114,14 +114,14 @@ pack_SOURCES = pack.cpp
 pack_LDADD = $(top_builddir)/src/glib/libglib.a
 
 install-exec-hook:
-	@echo "#!/bin/sh" > $(DESTDIR)$(sbindir)/emailrelay-gui
-	@echo SPOOL_DIR=$(DESTDIR)$(e_spooldir) >> $(DESTDIR)$(sbindir)/emailrelay-gui
-	@echo CONFIG_DIR=$(DESTDIR)$(e_sysconfdir) >> $(DESTDIR)$(sbindir)/emailrelay-gui
-	@echo exec $(DESTDIR)$(sbindir)/emailrelay-gui.real \"$$\@\" >> $(DESTDIR)$(sbindir)/emailrelay-gui
-	@chmod +x $(DESTDIR)$(sbindir)/emailrelay-gui
+	@echo "#!/bin/sh" > "$(DESTDIR)$(sbindir)/emailrelay-gui"
+	@echo INSTALLED_SPOOL_DIR=\"$(DESTDIR)$(e_spooldir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
+	@echo INSTALLED_CONFIG_DIR=\"$(DESTDIR)$(e_sysconfdir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
+	@echo exec $(DESTDIR)$(sbindir)/emailrelay-gui.real \"$$\@\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
+	@chmod +x "$(DESTDIR)$(sbindir)/emailrelay-gui"
 
 uninstall-hook:
-	-rm $(DESTDIR)$(sbindir)/emailrelay-gui
+	-rm "$(DESTDIR)$(sbindir)/emailrelay-gui"
 
 else
 
@@ -134,14 +134,14 @@ endif
 .PHONY: setup
 setup: emailrelay-setup
 emailrelay-setup: pack emailrelay-gui.real
-	@chmod +x $(top_srcdir)/bin/make-setup.sh
-	$(top_srcdir)/bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ emailrelay-gui.real pack
+	@chmod +x "$(top_srcdir)/bin/make-setup.sh"
+	"$(top_srcdir)/bin/make-setup.sh" $(MAKE_SETUP_DEBUG) $@ emailrelay-gui.real pack
 	@chmod +x $@
 
 .PHONY: bundle
 bundle:
-	@chmod +x $(top_srcdir)/bin/make-bundle.sh
-	$(top_srcdir)/bin/make-bundle.sh "E-MailRelay Setup" emailrelay-gui.real $(top_srcdir)/src/gui/emailrelay-icon.icns
+	@chmod +x "$(top_srcdir)/bin/make-bundle.sh"
+	"$(top_srcdir)/bin/make-bundle.sh" "E-MailRelay Setup" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 
 .PHONY: desktop-bundle
 desktop-bundle: bundle

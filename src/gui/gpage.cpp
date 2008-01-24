@@ -107,7 +107,8 @@ void GPage::dumpItem( std::ostream & stream , const std::string & prefix , const
 	std::string k = key ;
 	G::Str::replaceAll( k , "-" , "_" ) ;
 	G::Str::toUpper( k ) ;
-	stream << prefix << k << "=" << value << eol ;
+	const char * qq = value.find(' ') == std::string::npos ? "" : "\"" ;
+	stream << prefix << k << "=" << qq << value << qq << eol ;
 }
 
 std::string GPage::value( bool b )

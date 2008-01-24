@@ -318,10 +318,10 @@ void CreateStateFile::run()
 	std::ofstream file( m_dst.str().c_str() ) ;
 	if( !isWindows() )
 		file << "#!/bin/sh" << std::endl ;
-	file << "SPOOL_DIR=" << m_line1 << std::endl ;
-	file << "CONFIG_DIR=" << m_line2 << std::endl ;
+	file << "INSTALLED_SPOOL_DIR=" << m_line1 << std::endl ;
+	file << "INSTALLED_CONFIG_DIR=" << m_line2 << std::endl ;
 	if( !m_line3.empty() ) 
-		file << "PID_DIR=" << m_line3 << std::endl ;
+		file << "INSTALLED_PID_DIR=" << m_line3 << std::endl ;
 	if( !isWindows() )
 		file << "exec " << m_exe << " \"$@\"" << std::endl ;
 	if( !file.good() ) throw std::runtime_error( std::string() + "cannot write to \"" + m_dst.str() + "\"" ) ;
@@ -630,7 +630,7 @@ void EditConfigFile::run()
 			G::Str::splitIntoTokens( *line_p , part , G::Str::ws()+"#" ) ;
 			if( part.size() && part[0] == (*map_p).first )
 			{
-				*line_p = (*map_p).first + " " + (*map_p).second ;
+				*line_p = (*map_p).first + " " + quote((*map_p).second) ;
 				found = true ;
 				break ;
 			}
@@ -646,7 +646,7 @@ void EditConfigFile::run()
 				(*map_p).first == "log" ;
 
 			if( !ignore )
-				line_list.push_back( (*map_p).first + " " + (*map_p).second ) ;
+				line_list.push_back( (*map_p).first + " " + quote((*map_p).second) ) ;
 		}
 	}
 
@@ -735,6 +735,9 @@ void InstallerImp::read( std::istream & ss )
 
 		std::string value = part.size() == 1U ? std::string() : line.substr(part[0].length()+1U) ;
 		value = G::Str::trimmed( value , G::Str::ws() ) ;
+		if( value.length() >= 2U && value.at(0U) == '"' && value.at(value.length()-1U) == '"' )
+			value = value.substr(1U,value.length()-2U) ;
+
 		std::string key = part[0] ;
 		G_DEBUG( "InstallerImp::read: \"" << key << "\" = \"" << value << "\"" ) ;
 		m_map.insert( Map::value_type(key,value) ) ;
