@@ -59,6 +59,11 @@ G::Path Dir::os_install() const
 	return special("programs") + "emailrelay" ;
 }
 
+G::Path Dir::os_gui( const G::Path & base )
+{
+	return base + "emailrelay-gui.exe" ;
+}
+
 G::Path Dir::os_config() const
 {
 	return special("programs") + "emailrelay" ; // was windows()

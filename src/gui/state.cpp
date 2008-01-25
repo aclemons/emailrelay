@@ -34,6 +34,25 @@ G::Path State::file( const std::string & argv0_in )
 	return G::Path( G::Path(argv0_in).dirname() , name ) ;
 }
 
+void State::write( std::ostream & stream , const std::string & contents , const G::Path & exe )
+{
+	stream << "#!/bin/sh\n" << contents ;
+	if( exe != G::Path() )
+		stream << "exec \"`dirname \\\"$0\\\"`/" << exe.basename() << "\" \"$@\"\n" ;
+}
+
+void State::write( std::ostream & stream , const Map & map , const G::Path & exe , const std::string & stop )
+{
+	stream << "#!/bin/sh\n" ;
+	for( Map::const_iterator p = map.begin() ; p != map.end() ; ++p )
+	{
+		if( stop.empty() || G::Str::lower((*p).first).find(G::Str::lower(stop)) == std::string::npos )
+			write( stream , (*p).first , (*p).second , "" , "\n" ) ;
+	}
+	if( exe != G::Path() )
+		stream << "exec \"`dirname \\\"$0\\\"`/" << exe.basename() << "\" \"$@\"\n" ;
+}
+
 void State::write( std::ostream & stream , const std::string & key , const std::string & value , 
 	const std::string & prefix , const std::string & eol )
 {

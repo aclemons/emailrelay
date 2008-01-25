@@ -28,13 +28,13 @@
 #include "state.h"
 #include <cstdlib> //getenv
 
-Dir::Dir( const std::string & argv0 , bool installed )
+Dir::Dir( const std::string & argv0 )
 {
 	G::Path exe_dir = G::Path(argv0).dirname() ; 
 	m_thisdir = ( exe_dir.isRelative() && !exe_dir.hasDriveLetter() ) ? ( cwd() + exe_dir.str() ) : exe_dir ;
 	m_thisexe = G::Path( m_thisdir , G::Path(argv0).basename() ) ;
 	m_tmp = m_thisdir ; // TODO -- check writable
-	m_install = installed ? m_thisdir : os_install() ;
+	m_install_default = os_install() ;
 	m_spool = os_spool() ;
 	m_config = os_config() ;
 	m_pid = os_pid() ;
@@ -50,25 +50,28 @@ Dir::~Dir()
 
 void Dir::read( const State & state )
 {
-	// these are presented by the gui...
-	m_spool = state.value( "installed-spool-dir" , m_spool ) ;
-	m_config = state.value( "installed-config-dir" , m_config ) ;
+	// these are presented by the gui -- they are normally present in the file
+	// because they are written by both "make install" and by the DirectoryPage class
+	m_spool = state.value( "dir-spool" , m_spool ) ;
+	m_config = state.value( "dir-config" , m_config ) ;
 
-	// these allow "make install" to take full control if it needs to -- probably not present
-	m_pid = state.value( "installed-pid-dir" , m_pid ) ;
-	m_boot = state.value( "installed-boot-dir" , m_boot ) ;
-	m_desktop = state.value( "installed-desktop-dir" , m_desktop ) ;
-	m_login = state.value( "installed-login-dir" , m_login ) ;
-	m_menu = state.value( "installed-menu-dir" , m_menu ) ;
-
-	// this is for completeness only -- should never be present in the state file
-	m_install = state.value( "installed-dir" , m_install ) ;
+	// these allow "make install" to take full control if it needs to -- probably 
+	// not present in the file
+	m_pid = state.value( "dir-pid" , m_pid ) ;
+	m_boot = state.value( "dir-boot" , m_boot ) ;
+	m_desktop = state.value( "dir-desktop" , m_desktop ) ;
+	m_login = state.value( "dir-login" , m_login ) ;
+	m_menu = state.value( "dir-menu" , m_menu ) ;
 }
 
-void Dir::write( std::ostream & stream ) const
+G::Path Dir::install() const
 {
-	State::write( stream , "installed-spool-dir" , m_spool.str() , "" , "\n" ) ;
-	State::write( stream , "installed-config-dir" , m_config.str() , "" , "\n" ) ;
+	return os_install() ;
+}
+
+G::Path Dir::gui( const G::Path & base )
+{
+	return os_gui( base ) ;
 }
 
 G::Path Dir::thisdir() const
@@ -109,11 +112,6 @@ G::Path Dir::pid() const
 G::Path Dir::config() const
 {
 	return m_config ;
-}
-
-G::Path Dir::install() const
-{
-	return m_install ;
 }
 
 G::Path Dir::spool() const

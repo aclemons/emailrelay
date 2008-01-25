@@ -48,6 +48,7 @@ public:
 	G_EXCEPTION( CannotMkdir , "cannot mkdir" ) ;
 	G_EXCEPTION( CannotChmod , "cannot chmod file" ) ;
 	G_EXCEPTION( CannotLink , "cannot create symlink" ) ;
+	G_EXCEPTION( CannotCreate , "cannot create empty file" ) ;
 	G_EXCEPTION( SizeOverflow , "file size overflow" ) ;
 	G_EXCEPTION( TimeError , "cannot get file modification time" ) ;
 	typedef DateTime::EpochTime time_type ;
@@ -128,6 +129,9 @@ public:
 		///< Because of portability and implementation difficulties
 		///< this does not return a definitive result so it should
 		///< only used for generating warnings on a false return.
+
+	static void create( const Path & ) ;
+		///< Creates an empty file. Throws on error.
 
 private:
 	friend class G::DirectoryIteratorImp ;

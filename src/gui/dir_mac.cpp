@@ -42,7 +42,12 @@ std::string Dir::dotexe()
 G::Path Dir::os_install() const
 {
 	std::string s( G_DESTDIR ) ;
-	return s.empty() ? (home()+"Desktop") : G::Path(s) ;
+	return s.empty() ? G::Path("/Applications/E-MailRelay") : G::Path(s) ;
+}
+
+G::Path Dir::os_gui( const G::Path & base )
+{
+	return base + "emailrelay-gui.real" ;
 }
 
 G::Path Dir::os_config() const
@@ -72,7 +77,7 @@ G::Path Dir::cwd()
 
 G::Path Dir::os_pid() const
 {
-	return "/var/run" ;
+	return ok("/var/run") ? "var/run" : "/tmp" ;
 }
 
 G::Path Dir::special( const std::string & type ) const
@@ -87,6 +92,15 @@ G::Path Dir::special( const std::string & type ) const
 G::Path Dir::os_boot() const
 {
 	return "/Library/StartupItems" ;
+}
+
+bool Dir::ok( const std::string & s )
+{
+	return 
+		!s.empty() && 
+		G::File::exists(G::Path(s)) && 
+		G::Directory(G::Path(s)).valid() && 
+		G::Directory(G::Path(s)).writeable() ;
 }
 
 /// \file dir_mac.cpp

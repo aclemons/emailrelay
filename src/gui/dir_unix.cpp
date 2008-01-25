@@ -79,6 +79,11 @@ G::Path Dir::os_install() const
 	return s ;
 }
 
+G::Path Dir::os_gui( const G::Path & base )
+{
+	return base + "sbin" + "emailrelay-gui.real" ;
+}
+
 G::Path Dir::os_config() const
 {
 	std::string s( G_SYSCONFDIR ) ;

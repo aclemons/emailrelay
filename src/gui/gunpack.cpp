@@ -301,25 +301,34 @@ void G::Unpack::unpack( std::ostream & output , const std::vector<char> & buffer
 
 void G::Unpack::unpackOriginal( const Path & dst )
 {
+	std::string reason = unpackOriginal( dst , NoThrow() ) ;
+	if( !reason.empty() )
+		throw PackingError( reason ) ;
+}
+
+std::string G::Unpack::unpackOriginal( const Path & dst , NoThrow )
+{
 	if( m_input == NULL || m_offset == 0 )
-		return ;
+		return std::string() ;
 
 	std::istream & input = *m_input ;
 	input.seekg( 0UL ) ;
 	if( !input.good() ) 
-		throw PackingError( "cannot open file for reading" ) ;
+		return "cannot open file for reading" ;
 
 	std::ofstream out( dst.str().c_str() , std::ios::binary | std::ios::out | std::ios::trunc ) ;
 	if( !out.good() ) 
-		throw PackingError( "cannot open file for reading: " + dst.str() ) ;
+		return std::string() + "cannot open file for reading: " + dst.str() ;
 
 	copy( input , out , m_offset ) ;
 	if( !input.good() )
-		throw PackingError( "cannot read file" ) ;
+		return "cannot read file" ;
 
 	out.flush() ;
 	if( !out.good() ) 
-		throw PackingError( "cannot write: " + dst.str() ) ;
+		return std::string() + "cannot write: " + dst.str() ;
+
+	return std::string() ;
 }
 
 void G::Unpack::copy( std::istream & in , std::ostream & out , std::streamsize size )

@@ -185,4 +185,12 @@ void G::File::mkdirs( const Path & path , int limit )
 		throw CannotMkdir(path.str()) ;
 }
 
+void G::File::create( const Path & path )
+{
+	std::ofstream f( path.str().c_str() ) ;
+	f.close() ;
+	if( !exists(path) ) // race
+		throw CannotCreate( path.str() ) ;
+}
+
 /// \file gfile.cpp

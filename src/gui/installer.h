@@ -34,7 +34,7 @@ class InstallerImp ;
 class Installer 
 {
 public:
-	explicit Installer( G::Path argv0 ) ;
+	Installer( G::Path argv0 , bool install_mode ) ;
 		///< Constructor. Initialise with start().
 
 	~Installer() ;
@@ -70,6 +70,7 @@ private:
 
 private:
 	G::Path m_argv0 ;
+	bool m_installing ;
 	InstallerImp * m_imp ;
 	std::string m_reason ;
 } ;

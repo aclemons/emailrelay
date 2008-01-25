@@ -99,20 +99,19 @@ struct ExtractOriginal : public ActionBase
 {
 	G::Unpack & m_unpack ;
 	G::Path m_dst ;
+	std::string m_ok ;
 	ExtractOriginal( G::Unpack & unpack , G::Path dst ) ;
+	virtual std::string ok() const ;
 	virtual void run() ;
 	virtual std::string text() const ;
 } ;
 
 struct CreateStateFile : public ActionBase
 {
-	G::Path m_dst ;
-	G::Path m_exe ;
-	std::string m_line1 ;
-	std::string m_line2 ;
-	std::string m_line3 ;
-	CreateStateFile( G::Path dir , std::string state_name , std::string exe_name ,
-		std::string line1 , std::string line2 , std::string line3 ) ;
+	G::Path m_state_path ;
+	G::Path m_gui ;
+	State::Map m_state_map ;
+	CreateStateFile( const G::Path & , const G::Path & , const State::Map & ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
 } ;
@@ -171,11 +170,13 @@ struct UpdateLink : public ActionBase
 struct UpdateBootLink : public ActionBase
 {
 	bool m_active ;
+	std::string m_ok ;
 	std::string m_init_d ;
 	LinkInfo m_target_link_info ;
 	UpdateBootLink( bool active , std::string init_d , LinkInfo target_link_info ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
+	virtual std::string ok() const ;
 } ;
 
 struct CreateConfigFile : public ActionBase
@@ -212,7 +213,7 @@ struct Action
 class InstallerImp : private Helper 
 {
 public:
-	InstallerImp( G::Path argv0 , std::istream & ) ;
+	InstallerImp( G::Path argv0 , bool installing , std::istream & ) ;
 	~InstallerImp() ;
 	bool next() ;
 	Action & current() ;
@@ -242,6 +243,8 @@ private:
 	void insert( ActionInterface * p ) ;
 
 private:
+	G::Path m_argv0 ;
+	bool m_installing ;
 	G::Unpack m_unpack ;
 	Map m_map ;
 	List m_list ;
@@ -293,8 +296,30 @@ ExtractOriginal::ExtractOriginal( G::Unpack & unpack , G::Path dst ) :
 
 void ExtractOriginal::run() 
 {
-	m_unpack.unpackOriginal( m_dst ) ;
-	G::File::chmodx( m_dst ) ;
+	if( m_unpack.names().empty() ) // keep going even if not packed
+	{
+		if( m_unpack.path() == m_dst )
+		{
+			m_ok = "nothing to do" ;
+		}
+		else
+		{
+			m_ok = "copied" ;
+			G::File::mkdirs( m_dst.dirname() ) ;
+			G::File::copy( m_unpack.path() , m_dst ) ;
+			G::File::chmodx( m_dst ) ;
+		}
+	}
+	else
+	{
+		m_unpack.unpackOriginal( m_dst ) ;
+		G::File::chmodx( m_dst ) ;
+	}
+}
+
+std::string ExtractOriginal::ok() const 
+{
+	return m_ok.empty() ? ActionBase::ok() : m_ok ;
 }
 
 std::string ExtractOriginal::text() const 
@@ -304,35 +329,27 @@ std::string ExtractOriginal::text() const
 
 // ==
 
-CreateStateFile::CreateStateFile( G::Path dir , std::string state_name , std::string exe_name ,
-	std::string line1 , std::string line2 , std::string line3 ) :
-		m_dst(G::Path(dir,state_name)) ,
-		m_exe(G::Path(dir,exe_name)) ,
-		m_line1(line1) ,
-		m_line2(line2) ,
-		m_line3(line3)
+CreateStateFile::CreateStateFile( const G::Path & state_path , const G::Path & gui , const State::Map & state_map ) :
+	m_state_path(state_path) ,
+	m_gui(gui) ,
+	m_state_map(state_map)
 {
 }
 
 void CreateStateFile::run() 
 {
-	std::ofstream file( m_dst.str().c_str() ) ;
-	if( !isWindows() )
-		file << "#!/bin/sh" << std::endl ;
-	file << "INSTALLED_SPOOL_DIR=" << m_line1 << std::endl ;
-	file << "INSTALLED_CONFIG_DIR=" << m_line2 << std::endl ;
-	if( !m_line3.empty() ) 
-		file << "INSTALLED_PID_DIR=" << m_line3 << std::endl ;
-	if( !isWindows() )
-		file << "exec " << m_exe << " \"$@\"" << std::endl ;
-	if( !file.good() ) throw std::runtime_error( std::string() + "cannot write to \"" + m_dst.str() + "\"" ) ;
-	file.close() ;
-	G::File::chmodx( m_dst ) ;
+	std::ofstream state_stream( m_state_path.str().c_str() ) ;
+	State::write( state_stream , m_state_map , m_gui , "account" ) ;
+	if( !state_stream.good() ) 
+		throw std::runtime_error( std::string() + "cannot write to \"" + m_state_path.str() + "\"" ) ;
+
+	state_stream.close() ;
+	G::File::chmodx( m_state_path ) ;
 }
 
 std::string CreateStateFile::text() const 
 { 
-	return std::string() + "creating state file [" + m_dst.str() + "]" ;
+	return std::string() + "creating state file [" + m_state_path.str() + "]" ;
 }
 
 // ==
@@ -547,15 +564,26 @@ std::string UpdateBootLink::text() const
 
 void UpdateBootLink::run()
 {
-	if( m_active )
+	if( m_init_d.empty() )
+	{
+		m_ok = "no access" ;
+	}
+	else if( m_active )
 	{
 		if( ! Boot::install( m_init_d , m_target_link_info.target , m_target_link_info.args ) )
 			throw std::runtime_error( "failed to create links" ) ;
+		m_ok = "installed" ;
 	}
 	else
 	{
 		Boot::uninstall( m_init_d , m_target_link_info.target , m_target_link_info.args ) ;
+		m_ok = "removed" ;
 	}
+}
+
+std::string UpdateBootLink::ok() const
+{
+	return m_ok.empty() ? ActionBase::ok() : m_ok ;
 }
 
 // ==
@@ -572,7 +600,7 @@ void CreateConfigFile::run()
 	if( G::File::exists(m_dst) )
 		m_ok = "exists" ;
 	else if( !G::File::exists(m_src) )
-		throw std::runtime_error( std::string() + "cannot find configuration template: \"" + m_src.str() + "\"" ) ;
+		G::File::create( m_dst ) ; // shouldnt get here if the template is in the payload
 	else
 		G::File::copy( m_src , m_dst ) ;
 }
@@ -705,7 +733,9 @@ void Action::run()
 
 // ==
 
-InstallerImp::InstallerImp( G::Path argv0 , std::istream & ss ) :
+InstallerImp::InstallerImp( G::Path argv0 , bool installing , std::istream & ss ) :
+	m_argv0(argv0) ,
+	m_installing(installing) ,
 	m_unpack(argv0,G::Unpack::NoThrow())
 {
 	read( ss ) ;
@@ -817,29 +847,18 @@ void InstallerImp::insertActions()
 		insert( new Extract(m_unpack,*p,path) ) ;
 	}
 
-	// extract the gui without its packed-file payload and write a state file
+	// extract the gui without its packed-file payload
 	//
-	bool is_setup = ! name_list.empty() ;
-	if( is_setup ) 
+	if( m_installing )
 	{
-		G::Path gui_dir = isWindows() ? value("dir-install") : (value("dir-install")+"/sbin") ; // TODO
-		std::string gui_name = isWindows() ? m_unpack.path().basename() : "emailrelay-gui.real" ; // TODO
-
-		// see also guimain.cpp ...
-		std::string::size_type pos = gui_name.find('.') ;
-		std::string state_name =
-			pos == std::string::npos ?
-				(gui_name + ".state") :
-				G::Str::head( gui_name , pos ) ;
-
-		insert( new ExtractOriginal(m_unpack,G::Path(gui_dir,gui_name)) ) ;
-		insert( new CreateStateFile(gui_dir,state_name,gui_name,
-			value("dir-spool"),value("dir-config"),std::string()) ) ;
+		G::Path gui = Dir::gui( value("dir-install") ) ;
+		insert( new ExtractOriginal(m_unpack,gui) ) ;
+		insert( new CreateStateFile(State::file(gui.str()),gui,m_map) ) ;
 	}
 
 	// copy dlls -- note that the dlls are locked if we are re-running in the target directory
 	//
-	if( is_setup && isWindows() )
+	if( m_installing && isWindows() )
 	{
 		if( G::File::exists("mingwm10.dll") )
 			insert( new Copy(value("dir-install"),"mingwm10.dll") ) ;
@@ -859,7 +878,10 @@ void InstallerImp::insertActions()
 		insert( new UpdateLink(yes(value("start-link-menu")),value("dir-menu"),working_dir,target_link_info) ) ;
 		insert( new UpdateLink(yes(value("start-at-login")),value("dir-login"),working_dir,target_link_info) ) ;
 	}
-	insert( new UpdateBootLink(yes(value("start-on-boot")),value("dir-boot"),target_link_info) ) ;
+	if( !value("dir-boot").empty() )
+	{
+		insert( new UpdateBootLink(yes(value("start-on-boot")),value("dir-boot"),target_link_info) ) ;
+	}
 	if( isWindows() )
 	{
 		insert( new UpdateLink(true,value("dir-install"),working_dir,target_link_info) ) ;
@@ -1069,8 +1091,9 @@ std::pair<std::string,InstallerImp::Map> InstallerImp::commandlineMap( bool shor
 
 // ==
 
-Installer::Installer( G::Path argv0 ) :
+Installer::Installer( G::Path argv0 , bool installing ) :
 	m_argv0(argv0) ,
+	m_installing(installing) ,
 	m_imp(NULL)
 {
 }
@@ -1083,7 +1106,7 @@ Installer::~Installer()
 void Installer::start( std::istream & s )
 {
 	delete m_imp ;
-	m_imp = new InstallerImp(m_argv0,s) ;
+	m_imp = new InstallerImp(m_argv0,m_installing,s) ;
 	m_reason.erase() ;
 }
 

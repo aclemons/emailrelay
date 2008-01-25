@@ -19,14 +19,14 @@
 //
 // This GUI program is primarily intended to help with initial 
 // installation and configuration, but it can also be used 
-// to reconfigure an existing installation (with certain 
-// limitations).
+// to reconfigure an existing installation.
 //
 // The program determines whether it is running as a self-extracting
 // installer by looking for packed files appended to the end of 
-// the executable. If there are packed files then the target 
-// directory paths are obtained from the GUI and the packed files 
-// are extracted into those directories. 
+// the executable (although command-line switches can be used
+// as an override for this test). If there are packed files then 
+// the target directory paths are obtained from the GUI and the 
+// packed files are extracted into those directories. 
 //
 // If there are no packed files then the assumption is that it
 // is being run after a successful installation, so the target 
@@ -35,15 +35,21 @@
 // tries to obtain these from a special "state" file located
 // in the same directory as the executable.
 //
-// In a unix-like installation the build and install steps are
-// done from the command-line using "make" and "make install". 
-// In this case the GUI is only expected to do post-installation 
-// configuration so there are no packed files appended to the
-// executable and the state file is created by "make install".
+// The state file represents the state of the GUI, including
+// the state of the widgets and the paths to the base directories.
+// It is read at startup and written as part of the final stage 
+// of the GUI workflow. If running in install mode the state
+// file is optional; if running in configuration mode the state
+// file is mandatory, but it only needs to contain two directory
+// paths (see Dir::read() and "make install").
 //
-// In a windows-like installation the state file is created
-// by the GUI at the same time as the packed files are extracted
-// into the target directories.
+// In a unix-like installation the build and install steps are normally
+// done from the command-line using "make" and "make install". In this
+// case the GUI is only expected to do post-installation configuration 
+// so there are no packed files appended to the executable and the 
+// initial state file is created by "make install". (It is possible 
+// to do a windows-like, self-extracting installation on unix-like 
+// operating systems, but not very likely in practice.)
 //
 // The name of the state file is the name of the GUI executable
 // without any extension; or if the GUI executable had no extension
@@ -54,20 +60,27 @@
 // simple shell script. This means that a unix-like "make install" 
 // can install the GUI executable as "emailrelay-gui.real" and the
 // state file called "emailrelay-gui" can double-up as a wrapper shell
-// script. Using a shell-script plus a ".real" binary is now common 
-// practice.
-//
-// Note that it is possible to do a windows-like, self-extracting
-// installation on unix-like operating systems.
+// script. Making the state file look like a shell script is
+// partly a cosmetic feature.
 //
 // The implementation of the GUI uses a set of dialog-box "pages"
 // with forward and back buttons. Each page writes its state as
-// "key:value" pairs into an text stream. After the last page has 
+// "key=value" pairs into an text stream. After the last page has 
 // been filled in the resulting configuration text is passed to 
 // the Installer class. This class interprets the configuration
 // and assembles a set of installation actions which are then
-// executed to effect the installation. (For debugging purposes
-// the "key:value" pairs can be wriiten to file using "--file".)
+// executed to effect the installation. Note that the Installer
+// only does that the configuration text tells it; it does
+// not have any intelligence of its own. In principle this allows
+// for a complete separation of the GUI and the installation process,
+// with a simple text file interface between them. (In practice
+// the text file would have to contain plaintext passwords, so
+// it is not a secure approach.)
+//
+// The contents of the state file is also based on the output of
+// configuration text from the GUI pages, but it has additional 
+// information from the "Dir" class and it does not contain any 
+// account information.
 //
 
 #include "gdef.h"
@@ -151,35 +164,32 @@ int main( int argc , char * argv [] )
 		bool cfg_as_mac = getopt.contains("mac") ;
 		bool cfg_install = getopt.contains("as-install") ;
 		bool cfg_configure = getopt.contains("as-configure") ;
+		G::Path state_path_in = cfg_read_file == G::Path() ? State::file(args.v(0)) : cfg_read_file ;
+		G::Path state_path_out = cfg_write_file == G::Path() ? State::file(args.v(0)) : cfg_write_file ;
 
 		try
 		{
 			// are we "setup" or "gui", ie. install-mode or configure-mode?
-			bool is_setup = ( cfg_install || G::Unpack::isPacked(args.v(0)) ) && !cfg_configure ;
-			bool is_installed = !is_setup ;
-			G_DEBUG( "main: packed files " << (is_setup?"":"not ") << "found" ) ;
+			bool is_installing = ( cfg_install || G::Unpack::isPacked(args.v(0)) ) && !cfg_configure ;
+			bool is_installed = !is_installing ;
+			G_DEBUG( "main: packed files " << (G::Unpack::isPacked(args.v(0))?"":"not ") << "found" ) ;
 
 			// read the state file
 			State::Map state_map ;
-			if( is_installed || cfg_read_file != G::Path() )
 			{
-				G::Path state_path = cfg_read_file == G::Path() ? State::file(args.v(0)) : cfg_read_file ;
-				G_DEBUG( "main: state file: " << state_path ) ;
-				std::ifstream state_stream( state_path.str().c_str() ) ;
-				if( !state_stream.good() )
-					throw std::runtime_error(std::string()+"cannot open state file: \""+state_path.str()+"\"") ;
+				G_DEBUG( "main: state file: " << state_path_in ) ;
+				std::ifstream state_stream( state_path_in.str().c_str() ) ;
+				if( !state_stream.good() && is_installed )
+					throw std::runtime_error(std::string()+"cannot open state file: \""+state_path_in.str()+"\"") ;
 				state_map = State::read( state_stream ) ;
-				if( !state_stream.eof() )
-					throw std::runtime_error(std::string()+"cannot read state file: \""+state_path.str()+"\"") ;
+				if( !state_stream.eof() && is_installed )
+					throw std::runtime_error(std::string()+"cannot read state file: \""+state_path_in.str()+"\"") ;
 			}
 			State state( state_map ) ;
 
 			// initialise the directory info object
-			Dir dir( args.v(0) , is_installed ) ;
-			if( is_installed || cfg_read_file != G::Path() )
-			{
-				dir.read( state ) ;
-			}
+			Dir dir( args.v(0) ) ;
+			dir.read( state ) ;
 
 			G_DEBUG( "main: Dir::install: " << dir.install() ) ;
 			G_DEBUG( "main: Dir::spool: " << dir.spool() ) ;
@@ -203,22 +213,11 @@ int main( int argc , char * argv [] )
 			if( ! cfg_test_page.empty() || test_mode ) 
 				GPage::setTestMode() ;
 
-			// prepare to write the state file
-			G::Path write_path = cfg_write_file == G::Path() ? State::file(args.v(0)) : cfg_write_file ;
-			std::string write_head ;
-			{
-				std::ostringstream ss ;
-				ss << "#!/bin/sh\n" ;
-				dir.write( ss ) ;
-				write_head = ss.str() ;
-			}
-			std::string write_tail = std::string() + "exec \"" + args.v(0) + "\" \"$@\"\n" ;
-
 			// create the dialog and all its pages
 			GDialog d ;
 			d.add( new TitlePage(d,state,"title","license","",false,false) , cfg_test_page ) ;
 			d.add( new LicensePage(d,state,"license","directory","",false,false,is_installed) , cfg_test_page ) ;
-			d.add( new DirectoryPage(d,state,"directory","dowhat","",false,false,dir,is_setup) , cfg_test_page ) ;
+			d.add( new DirectoryPage(d,state,"directory","dowhat","",false,false,dir,is_installing) , cfg_test_page ) ;
 			d.add( new DoWhatPage(d,state,"dowhat","pop","smtpserver",false,false) , cfg_test_page ) ;
 			d.add( new PopPage(d,state,"pop","popaccount","popaccounts",false,false) , cfg_test_page ) ;
 			d.add( new PopAccountPage(d,state,"popaccount","smtpserver","listening",false,false,is_installed) , 
@@ -230,8 +229,8 @@ int main( int argc , char * argv [] )
 			d.add( new LoggingPage(d,state,"logging","listening","",false,false) , cfg_test_page ) ;
 			d.add( new ListeningPage(d,state,"listening","startup","",false,false) , cfg_test_page ) ;
 			d.add( new StartupPage(d,state,"startup","ready","",false,false,dir,isMac()||cfg_as_mac) , cfg_test_page ) ;
-			d.add( new ReadyPage(d,state,"ready","progress","",true,false,is_setup) , cfg_test_page ) ;
-			d.add( new ProgressPage(d,state,"progress","","",true,true,args.v(0),write_path,write_head,write_tail) , 
+			d.add( new ReadyPage(d,state,"ready","progress","",true,false,is_installing) , cfg_test_page ) ;
+			d.add( new ProgressPage(d,state,"progress","","",true,true,args.v(0),state_path_out,is_installing) , 
 				cfg_test_page ) ;
 			d.add() ;
 

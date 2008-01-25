@@ -1177,13 +1177,13 @@ void ReadyPage::dump( std::ostream & s , const std::string & prefix , const std:
 // ==
 
 ProgressPage::ProgressPage( GDialog & dialog , const State & , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close , G::Path argv0 , 
-	G::Path state_path , const std::string & state_head , const std::string & state_tail ) :
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close , 
+	G::Path argv0 , G::Path state_path , bool installing ) :
 		GPage(dialog,name,next_1,next_2,finish,close) ,
+		m_argv0(argv0) ,
 		m_state_path(state_path) ,
-		m_state_head(state_head) ,
-		m_state_tail(state_tail) ,
-		m_installer(argv0)
+		m_installer(argv0,installing) ,
+		m_installing(installing)
 {
 	m_text_edit = new QTextEdit;
 	m_text_edit->setReadOnly(true) ;
@@ -1201,15 +1201,19 @@ void ProgressPage::onShow( bool back )
 {
 	if( ! back )
 	{
-		// dump page state into a state file -- see also Dir::read()
+		// dump page state into a state file -- note that this is not 
+		// necessarily the same state file as the installer creates --
+		// when installing we need to write (at least) two state files
 		if( ! m_state_path.str().empty() )
 		{
 			std::stringstream ss ;
 			dialog().dump( ss , "" , "\n" , false ) ;
 			std::ofstream state_stream( m_state_path.str().c_str() ) ;
-			state_stream << m_state_head << ss.str() << m_state_tail ;
+			State::write( state_stream , ss.str() , m_argv0 ) ;
 			if( !state_stream.good() )
 				throw std::runtime_error( std::string()+"cannot write state to \""+m_state_path.str()+"\"" ) ;
+			state_stream.close() ;
+			G::File::chmodx( m_state_path ) ;
 		}
 
 		// dump page state into a stringstream

@@ -117,8 +117,8 @@ pack_LDADD = $(top_builddir)/src/glib/libglib.a
 
 install-exec-hook:
 	@echo "#!/bin/sh" > "$(DESTDIR)$(sbindir)/emailrelay-gui"
-	@echo INSTALLED_SPOOL_DIR=\"$(DESTDIR)$(e_spooldir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
-	@echo INSTALLED_CONFIG_DIR=\"$(DESTDIR)$(e_sysconfdir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
+	@echo DIR_SPOOL=\"$(DESTDIR)$(e_spooldir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
+	@echo DIR_CONFIG=\"$(DESTDIR)$(e_sysconfdir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 	@echo exec $(DESTDIR)$(sbindir)/emailrelay-gui.real \"$$\@\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 	@chmod +x "$(DESTDIR)$(sbindir)/emailrelay-gui"
 

@@ -34,10 +34,18 @@ public:
 	typedef std::map<std::string,std::string> Map ;
 
 	static G::Path file( const std::string & argv0 ) ;
-		///< Returns the name of a state file.
+		///< Returns the name of the state file associated with the given gui executable.
 
 	static Map read( std::istream & ) ;
 		///< Reads from a state file.
+
+	static void write( std::ostream & , const std::string & contents , const G::Path & exe ) ;
+		///< Writes a complete state file.
+
+	static void write( std::ostream & , const Map & state_map , const G::Path & exe , const std::string & stop ) ;
+		///< Writes a complete state file. Suppresses
+		///< items where the key contains the given
+		///< stop word.
 
 	static void write( std::ostream & , const std::string & key , const std::string & value , 
 		const std::string & prefix , const std::string & eol ) ;

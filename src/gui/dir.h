@@ -27,25 +27,27 @@
 #include <iostream>
 
 /// \class Dir
-/// Provides file-system paths.
+/// Provides file-system paths. Note that some paths
+/// are used as defaults; their run-time values can vary.
 ///
 class Dir 
 {
 public:
-	Dir( const std::string & argv0 , bool installed ) ;
+	explicit Dir( const std::string & argv0 ) ;
 		///< Constructor.
 
 	void read( const State & ) ;
 		///< Reads from a state file.
 
-	void write( std::ostream & ) const ;
-		///< Writes to a state file.
-
 	~Dir() ;
 		///< Destructor.
 
 	G::Path install() const ;
-		///< Returns the installation path.
+		///< Returns the default install directory.
+
+	static G::Path gui( const G::Path & install ) ;
+		///< Returns the full path of the GUI program for 
+		///< a given install root.
 
 	G::Path home() const ;
 		///< Returns the user's home directory.
@@ -97,6 +99,7 @@ private:
 	static G::Path oneOf( std::string , std::string = std::string() , std::string = std::string() , 
 		std::string = std::string() , std::string = std::string() ) ;
 	G::Path os_install() const ;
+	static G::Path os_gui( const G::Path & ) ;
 	G::Path os_config() const ;
 	G::Path os_spool() const ;
 	G::Path os_login() const ;
@@ -106,7 +109,7 @@ private:
 	G::Path ntspecial( const std::string & key ) const ;
 
 private:
-	G::Path m_install ;
+	G::Path m_install_default ;
 	G::Path m_spool ;
 	G::Path m_config ;
 	G::Path m_login ;

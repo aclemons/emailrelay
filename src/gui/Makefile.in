@@ -592,8 +592,8 @@ uninstall-am: uninstall-sbinPROGRAMS
 
 @GUI_TRUE@install-exec-hook:
 @GUI_TRUE@	@echo "#!/bin/sh" > "$(DESTDIR)$(sbindir)/emailrelay-gui"
-@GUI_TRUE@	@echo INSTALLED_SPOOL_DIR=\"$(DESTDIR)$(e_spooldir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
-@GUI_TRUE@	@echo INSTALLED_CONFIG_DIR=\"$(DESTDIR)$(e_sysconfdir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
+@GUI_TRUE@	@echo DIR_SPOOL=\"$(DESTDIR)$(e_spooldir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
+@GUI_TRUE@	@echo DIR_CONFIG=\"$(DESTDIR)$(e_sysconfdir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 @GUI_TRUE@	@echo exec $(DESTDIR)$(sbindir)/emailrelay-gui.real \"$$\@\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 @GUI_TRUE@	@chmod +x "$(DESTDIR)$(sbindir)/emailrelay-gui"
 

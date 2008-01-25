@@ -111,6 +111,11 @@ public:
 
 	void unpackOriginal( const Path & dst ) ;
 		///< Copies the unpacked executable to the given path.
+		///< Does nothing if not packed. Throws on error.
+
+	std::string unpackOriginal( const Path & dst , NoThrow ) ;
+		///< Copies the unpacked executable to the given path.
+		///< Does nothing if not packed. Returns a reason string on error.
 
 private:
 	struct Entry 
