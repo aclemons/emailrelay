@@ -25,14 +25,14 @@
 #include "gstr.h"
 #include "gpath.h"
 #include "gdebug.h"
+#include "state.h"
 #include <cstdlib> //getenv
 
-Dir::Dir( const std::string & argv0 , bool installed ) :
-	m_argv0(argv0)
+Dir::Dir( const std::string & argv0 , bool installed )
 {
-	G::Path exe_dir = G::Path(m_argv0).dirname() ; 
+	G::Path exe_dir = G::Path(argv0).dirname() ; 
 	m_thisdir = ( exe_dir.isRelative() && !exe_dir.hasDriveLetter() ) ? ( cwd() + exe_dir.str() ) : exe_dir ;
-	m_thisexe = G::Path( m_thisdir , G::Path(m_argv0).basename() ) ;
+	m_thisexe = G::Path( m_thisdir , G::Path(argv0).basename() ) ;
 	m_tmp = m_thisdir ; // TODO -- check writable
 	m_install = installed ? m_thisdir : os_install() ;
 	m_spool = os_spool() ;
@@ -48,59 +48,27 @@ Dir::~Dir()
 {
 }
 
-void Dir::read( std::istream & file )
+void Dir::read( const State & state )
 {
-	G::Path dummy ;
-	bool plain = true ;
-
 	// these are presented by the gui...
-	read( m_spool , file , plain ) ;
-	read( m_config , file , plain ) ;
+	m_spool = state.value( "installed-spool-dir" , m_spool ) ;
+	m_config = state.value( "installed-config-dir" , m_config ) ;
 
-	// these allow "make install" to take full control if it needs to...
-	read( m_pid , file , plain ) ;
-	read( m_boot , file , plain ) ;
-	read( dummy , file , plain ) ; // was m_startup -- ignored
-	read( m_desktop , file , plain ) ;
-	read( m_login , file , plain ) ;
-	read( m_menu , file , plain ) ;
-	read( dummy , file , plain ) ; // was reskit -- ignored
+	// these allow "make install" to take full control if it needs to -- probably not present
+	m_pid = state.value( "installed-pid-dir" , m_pid ) ;
+	m_boot = state.value( "installed-boot-dir" , m_boot ) ;
+	m_desktop = state.value( "installed-desktop-dir" , m_desktop ) ;
+	m_login = state.value( "installed-login-dir" , m_login ) ;
+	m_menu = state.value( "installed-menu-dir" , m_menu ) ;
 
-	// this is for completeness only...
-	read( m_install , file , plain ) ;
+	// this is for completeness only -- should never be present in the state file
+	m_install = state.value( "installed-dir" , m_install ) ;
 }
 
-void Dir::read( G::Path & value , std::istream & file , bool & plain )
+void Dir::write( std::ostream & stream ) const
 {
-	// This supports two file formats: the old format is a simple text file
-	// with one value on each line and the new format uses hash for comment
-	// lines and values given as "key=value" (although the key is ignored 
-	// for now).
-
-	while( file.good() )
-	{
-		std::string line = G::Str::readLineFrom( file , "\n" ) ;
-		if( file.good() && !line.empty() ) 
-		{
-			G::Str::trim( line , G::Str::ws() ) ;
-			if( line.at(0U) == '#' || line.at(0U) == '@' )
-			{
-				if( plain )
-					G_DEBUG( "Dir::read: not a plain state file" ) ;
-				plain = false ;
-				continue ;
-			}
-			std::string::size_type pos = line.find( '=' ) ;
-			if( plain || pos != std::string::npos )
-			{
-				value = plain ? line : G::Str::tail(line,pos) ;
-				G_DEBUG( "Dir::read: state file value [" << value << "]" ) ;
-				break ;
-			}
-		}
-		if( plain )
-			break ;
-	}
+	State::write( stream , "installed-spool-dir" , m_spool.str() , "" , "\n" ) ;
+	State::write( stream , "installed-config-dir" , m_config.str() , "" , "\n" ) ;
 }
 
 G::Path Dir::thisdir() const

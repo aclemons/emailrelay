@@ -81,25 +81,27 @@ noinst_SCRIPTS = mock
 noinst_PROGRAMS = pack
 
 emailrelay_gui_real_SOURCES = \
+	$(MAC_SOURCES) \
+	boot.h \
+	dir.cpp \
+	dir.h \
 	gdialog.cpp \
 	gdialog.h \
 	glink.h \
 	gpage.cpp \
 	gpage.h \
-	gunpack.h \
+	guimain.cpp \
 	gunpack.cpp \
-	dir.cpp \
-	$(MAC_SOURCES) \
-	dir.h \
-	boot.h \
+	gunpack.h \
 	installer.cpp \
 	installer.h \
-	guimain.cpp \
 	legal.cpp \
 	legal.h \
 	pages.cpp \
 	pages.h \
 	qt.h \
+	state.cpp \
+	state.h \
 	unpack.c \
 	unpack.h
 

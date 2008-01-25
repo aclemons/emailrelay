@@ -36,6 +36,7 @@
 #include "glogoutput.h"
 #include "glog.h"
 #include "gexception.h"
+#include "state.h"
 #include "boot.h"
 #include "dir.h"
 #include "installer.h"
@@ -718,30 +719,7 @@ InstallerImp::~InstallerImp()
 
 void InstallerImp::read( std::istream & ss )
 {
-	std::string line ;
-	while( ss.good() )
-	{
-		G::Str::readLineFrom( ss , "\n" , line ) ;
-		if( line.empty() || line.find('#') == 0U || line.find_first_not_of(" \t\r") == std::string::npos )
-			continue ;
-
-		if( !ss )
-			break ;
-
-		G::StringArray part ;
-		G::Str::splitIntoTokens( line , part , " =\t" ) ;
-		if( part.size() == 0U )
-			continue ;
-
-		std::string value = part.size() == 1U ? std::string() : line.substr(part[0].length()+1U) ;
-		value = G::Str::trimmed( value , G::Str::ws() ) ;
-		if( value.length() >= 2U && value.at(0U) == '"' && value.at(value.length()-1U) == '"' )
-			value = value.substr(1U,value.length()-2U) ;
-
-		std::string key = part[0] ;
-		G_DEBUG( "InstallerImp::read: \"" << key << "\" = \"" << value << "\"" ) ;
-		m_map.insert( Map::value_type(key,value) ) ;
-	}
+	m_map = State::read( ss ) ;
 }
 
 bool InstallerImp::next()
@@ -1156,7 +1134,7 @@ void Installer::run()
 bool Installer::failed() const
 {
 	if( !done() )
-		throw std::runtime_error( "internal error" ) ;
+		throw std::runtime_error( "internal error: invalid state" ) ;
 	return !m_reason.empty() ;
 }
 

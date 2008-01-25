@@ -211,10 +211,11 @@ GPage & GDialog::previousPage( unsigned int distance )
 	return page(*p) ;
 }
 
-void GDialog::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
+void GDialog::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ,
+	bool with_passwords ) const
 {
 	for( History::const_iterator p = m_history.begin() ; p != m_history.end() ; ++p )
-		page(*p).dump( stream , prefix , eol ) ;
+		page(*p).dump( stream , prefix , eol , with_passwords ) ;
 }
 
 void GDialog::wait( bool wait_on )

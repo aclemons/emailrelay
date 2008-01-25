@@ -22,7 +22,9 @@
 #define G_GUI_DIR_H
 
 #include "gpath.h"
+#include "state.h"
 #include <string>
+#include <iostream>
 
 /// \class Dir
 /// Provides file-system paths.
@@ -33,8 +35,11 @@ public:
 	Dir( const std::string & argv0 , bool installed ) ;
 		///< Constructor.
 
-	void read( std::istream & ) ;
+	void read( const State & ) ;
 		///< Reads from a state file.
+
+	void write( std::ostream & ) const ;
+		///< Writes to a state file.
 
 	~Dir() ;
 		///< Destructor.
@@ -99,10 +104,8 @@ private:
 	G::Path os_boot() const ;
 	G::Path special( const std::string & key ) const ;
 	G::Path ntspecial( const std::string & key ) const ;
-	static void read( G::Path & , std::istream & , bool & ) ;
 
 private:
-	std::string m_argv0 ;
 	G::Path m_install ;
 	G::Path m_spool ;
 	G::Path m_config ;

@@ -48,13 +48,14 @@
 // The name of the state file is the name of the GUI executable
 // without any extension; or if the GUI executable had no extension
 // to begin with then it is the name of the GUI executable with
-// ".state" appended.
+// ".state" appended. 
 //
 // The format of the state file (since v1.8) allows it to be a 
 // simple shell script. This means that a unix-like "make install" 
 // can install the GUI executable as "emailrelay-gui.real" and the
-// state file "emailrelay-gui" can double-up as a wrapper
-// shell script.
+// state file called "emailrelay-gui" can double-up as a wrapper shell
+// script. Using a shell-script plus a ".real" binary is now common 
+// practice.
 //
 // Note that it is possible to do a windows-like, self-extracting
 // installation on unix-like operating systems.
@@ -124,9 +125,10 @@ int main( int argc , char * argv [] )
 			"d/debug/show debug messages if compiled-in/0//1|"
 			"i/as-install/install mode, as if payload present/0//1|"
 			"c/as-configure/configure mode, as if no payload present/0//1|"
+			"w/write/state file for writing/1/file/1|"
+			"r/read/state file for reading/1/file/1|"
 			// hidden...
 			"P/page/single page test/1/page-name/0|"
-			"f/file/write configuration to file/1/file/0|"
 			"m/mac/enable some mac-like runtime behaviour/0//0|"
 			"t/test/test-mode/0//0" ) ;
 		if( getopt.hasErrors() )
@@ -144,7 +146,8 @@ int main( int argc , char * argv [] )
 		// parse the commandline
 		bool test_mode = getopt.contains("test") ;
 		std::string cfg_test_page = getopt.contains("page") ? getopt.value("page") : std::string() ;
-		G::Path cfg_dump_file( getopt.contains("file") ? getopt.value("file") : std::string() ) ;
+		G::Path cfg_write_file( getopt.contains("write") ? getopt.value("write") : std::string() ) ;
+		G::Path cfg_read_file( getopt.contains("read") ? getopt.value("read") : std::string() ) ;
 		bool cfg_as_mac = getopt.contains("mac") ;
 		bool cfg_install = getopt.contains("as-install") ;
 		bool cfg_configure = getopt.contains("as-configure") ;
@@ -156,19 +159,26 @@ int main( int argc , char * argv [] )
 			bool is_installed = !is_setup ;
 			G_DEBUG( "main: packed files " << (is_setup?"":"not ") << "found" ) ;
 
-			Dir dir( args.v(0) , is_installed ) ;
-			if( is_installed )
+			// read the state file
+			State::Map state_map ;
+			if( is_installed || cfg_read_file != G::Path() )
 			{
-				// read base directories from the state file, typically written by "make install"
-				G::Path argv0( args.v(0) ) ;
-				std::string state_extension = argv0.basename().find('.') == std::string::npos ? ".state" : "" ;
-				argv0.removeExtension() ;
-				std::string state_name = argv0.basename() ;
-				state_name.append( state_extension ) ;
-				G::Path state_path = G::Path( G::Path(args.v(0)).dirname() , state_name ) ;
+				G::Path state_path = cfg_read_file == G::Path() ? State::file(args.v(0)) : cfg_read_file ;
 				G_DEBUG( "main: state file: " << state_path ) ;
-				std::ifstream dir_state( state_path.str().c_str() ) ;
-				dir.read( dir_state ) ;
+				std::ifstream state_stream( state_path.str().c_str() ) ;
+				if( !state_stream.good() )
+					throw std::runtime_error(std::string()+"cannot open state file: \""+state_path.str()+"\"") ;
+				state_map = State::read( state_stream ) ;
+				if( !state_stream.eof() )
+					throw std::runtime_error(std::string()+"cannot read state file: \""+state_path.str()+"\"") ;
+			}
+			State state( state_map ) ;
+
+			// initialise the directory info object
+			Dir dir( args.v(0) , is_installed ) ;
+			if( is_installed || cfg_read_file != G::Path() )
+			{
+				dir.read( state ) ;
 			}
 
 			G_DEBUG( "main: Dir::install: " << dir.install() ) ;
@@ -186,29 +196,43 @@ int main( int argc , char * argv [] )
 
 			// application translator
 			QTranslator translator;
-			translator.load(QString("emailrelay_install_")+QLocale::system().name());
+			translator.load(QString("emailrelay_")+QLocale::system().name());
 			app.installTranslator(&translator);
 
 			// initialise GPage
 			if( ! cfg_test_page.empty() || test_mode ) 
 				GPage::setTestMode() ;
 
+			// prepare to write the state file
+			G::Path write_path = cfg_write_file == G::Path() ? State::file(args.v(0)) : cfg_write_file ;
+			std::string write_head ;
+			{
+				std::ostringstream ss ;
+				ss << "#!/bin/sh\n" ;
+				dir.write( ss ) ;
+				write_head = ss.str() ;
+			}
+			std::string write_tail = std::string() + "exec \"" + args.v(0) + "\" \"$@\"\n" ;
+
 			// create the dialog and all its pages
 			GDialog d ;
-			d.add( new TitlePage(d,"title","license","",false,false) , cfg_test_page ) ;
-			d.add( new LicensePage(d,"license","directory","",false,false,is_installed) , cfg_test_page ) ;
-			d.add( new DirectoryPage(d,"directory","dowhat","",false,false,dir,is_setup) , cfg_test_page ) ;
-			d.add( new DoWhatPage(d,"dowhat","pop","smtpserver",false,false) , cfg_test_page ) ;
-			d.add( new PopPage(d,"pop","popaccount","popaccounts",false,false) , cfg_test_page ) ;
-			d.add( new PopAccountPage(d,"popaccount","smtpserver","listening",false,false) , cfg_test_page ) ;
-			d.add( new PopAccountsPage(d,"popaccounts","smtpserver","listening",false,false) , cfg_test_page ) ;
-			d.add( new SmtpServerPage(d,"smtpserver","smtpclient","",false,false) , cfg_test_page ) ;
-			d.add( new SmtpClientPage(d,"smtpclient","logging","",false,false) , cfg_test_page ) ;
-			d.add( new LoggingPage(d,"logging","listening","",false,false) , cfg_test_page ) ;
-			d.add( new ListeningPage(d,"listening","startup","",false,false) , cfg_test_page ) ;
-			d.add( new StartupPage(d,"startup","ready","",false,false,dir,isMac()||cfg_as_mac) , cfg_test_page ) ;
-			d.add( new ReadyPage(d,"ready","progress","",true,false,is_setup) , cfg_test_page ) ;
-			d.add( new ProgressPage(d,"progress","","",true,true,args.v(0),cfg_dump_file) , cfg_test_page ) ;
+			d.add( new TitlePage(d,state,"title","license","",false,false) , cfg_test_page ) ;
+			d.add( new LicensePage(d,state,"license","directory","",false,false,is_installed) , cfg_test_page ) ;
+			d.add( new DirectoryPage(d,state,"directory","dowhat","",false,false,dir,is_setup) , cfg_test_page ) ;
+			d.add( new DoWhatPage(d,state,"dowhat","pop","smtpserver",false,false) , cfg_test_page ) ;
+			d.add( new PopPage(d,state,"pop","popaccount","popaccounts",false,false) , cfg_test_page ) ;
+			d.add( new PopAccountPage(d,state,"popaccount","smtpserver","listening",false,false,is_installed) , 
+				cfg_test_page ) ;
+			d.add( new PopAccountsPage(d,state,"popaccounts","smtpserver","listening",false,false,is_installed) , 
+				cfg_test_page ) ;
+			d.add( new SmtpServerPage(d,state,"smtpserver","smtpclient","",false,false,is_installed) , cfg_test_page ) ;
+			d.add( new SmtpClientPage(d,state,"smtpclient","logging","",false,false,is_installed) , cfg_test_page ) ;
+			d.add( new LoggingPage(d,state,"logging","listening","",false,false) , cfg_test_page ) ;
+			d.add( new ListeningPage(d,state,"listening","startup","",false,false) , cfg_test_page ) ;
+			d.add( new StartupPage(d,state,"startup","ready","",false,false,dir,isMac()||cfg_as_mac) , cfg_test_page ) ;
+			d.add( new ReadyPage(d,state,"ready","progress","",true,false,is_setup) , cfg_test_page ) ;
+			d.add( new ProgressPage(d,state,"progress","","",true,true,args.v(0),write_path,write_head,write_tail) , 
+				cfg_test_page ) ;
 			d.add() ;
 
 			// check the test-page value

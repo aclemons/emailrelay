@@ -23,6 +23,7 @@
 #include "gstr.h"
 #include "gpage.h"
 #include "gdialog.h"
+#include "state.h"
 
 bool GPage::m_test_mode = false ;
 
@@ -90,7 +91,7 @@ QLabel * GPage::newTitle( QString s )
 	return label ;
 }
 
-void GPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ) const
+void GPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol , bool ) const
 {
 	stream << prefix << "# page: " << name() << eol ;
 }
@@ -104,11 +105,7 @@ void GPage::dumpItem( std::ostream & stream , const std::string & prefix , const
 void GPage::dumpItem( std::ostream & stream , const std::string & prefix , const std::string & key ,
 	const std::string & value , const std::string & eol ) const
 {
-	std::string k = key ;
-	G::Str::replaceAll( k , "-" , "_" ) ;
-	G::Str::toUpper( k ) ;
-	const char * qq = value.find(' ') == std::string::npos ? "" : "\"" ;
-	stream << prefix << k << "=" << qq << value << qq << eol ;
+	State::write( stream , key , value , prefix , eol ) ;
 }
 
 std::string GPage::value( bool b )

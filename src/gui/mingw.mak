@@ -54,6 +54,7 @@ mk_sources=\
 	moc_pages.cpp \
 	glink.cpp \
 	gunpack.cpp \
+	state.cpp \
 	unpack.c
 
 service_objects=../main/service_install.o ../main/service_remove.o

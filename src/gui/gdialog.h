@@ -70,8 +70,9 @@ public:
 	bool empty() const ;
 		///< Returns true if there are no pages add()ed.
 
-	void dump( std::ostream & , const std::string & prefix = std::string(), const std::string & eol = "\n" ) const;
-		///< Dumps the pages to a stream.
+	void dump( std::ostream & , const std::string & prefix = std::string() ,
+		const std::string & eol = "\n" , bool with_passwords = true ) const;
+			///< Dumps the pages to a stream.
 
 	void wait( bool ) ;
 		///< Disables all buttons.

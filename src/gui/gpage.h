@@ -75,7 +75,7 @@ public:
 		///< Returns true if the page is complete
 		///< and the 'next' button can be enabled.
 
-	virtual void dump( std::ostream & , const std::string & prefix , const std::string & eol ) const ;
+	virtual void dump( std::ostream & , const std::string & prefix , const std::string & eol , bool ) const ;
 		///< Dumps the page's state to the given
 		///< stream. Overrides should start by
 		///< calling this base-class implementation.

@@ -211,7 +211,7 @@ std::string G::GetOpt::usageSummaryPartTwo( Level level ) const
 			{
 				std::string vd = (*p).second.value_description ;
 				if( vd.empty() ) vd = "value" ;
-				ss << " <" << vd << ">" ;
+				ss << "=<" << vd << ">" ;
 			}
 			ss << "]" ;
 			sep = " " ;

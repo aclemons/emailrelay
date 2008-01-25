@@ -52,21 +52,21 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(noinst_PROGRAMS) $(sbin_PROGRAMS)
-am__emailrelay_gui_real_SOURCES_DIST = gdialog.cpp gdialog.h glink.h \
-	gpage.cpp gpage.h gunpack.h gunpack.cpp dir.cpp dir_unix.cpp \
-	boot_unix.cpp glink_unix.cpp dir_mac.cpp boot_mac.cpp \
-	glink_mac.cpp dir.h boot.h installer.cpp installer.h \
-	guimain.cpp legal.cpp legal.h pages.cpp pages.h qt.h unpack.c \
-	unpack.h
+am__emailrelay_gui_real_SOURCES_DIST = dir_unix.cpp boot_unix.cpp \
+	glink_unix.cpp dir_mac.cpp boot_mac.cpp glink_mac.cpp boot.h \
+	dir.cpp dir.h gdialog.cpp gdialog.h glink.h gpage.cpp gpage.h \
+	guimain.cpp gunpack.cpp gunpack.h installer.cpp installer.h \
+	legal.cpp legal.h pages.cpp pages.h qt.h state.cpp state.h \
+	unpack.c unpack.h
 @MAC_FALSE@am__objects_1 = dir_unix.$(OBJEXT) boot_unix.$(OBJEXT) \
 @MAC_FALSE@	glink_unix.$(OBJEXT)
 @MAC_TRUE@am__objects_1 = dir_mac.$(OBJEXT) boot_mac.$(OBJEXT) \
 @MAC_TRUE@	glink_mac.$(OBJEXT)
-@GUI_TRUE@am_emailrelay_gui_real_OBJECTS = gdialog.$(OBJEXT) \
-@GUI_TRUE@	gpage.$(OBJEXT) gunpack.$(OBJEXT) dir.$(OBJEXT) \
-@GUI_TRUE@	$(am__objects_1) installer.$(OBJEXT) \
-@GUI_TRUE@	guimain.$(OBJEXT) legal.$(OBJEXT) pages.$(OBJEXT) \
-@GUI_TRUE@	unpack.$(OBJEXT)
+@GUI_TRUE@am_emailrelay_gui_real_OBJECTS = $(am__objects_1) \
+@GUI_TRUE@	dir.$(OBJEXT) gdialog.$(OBJEXT) gpage.$(OBJEXT) \
+@GUI_TRUE@	guimain.$(OBJEXT) gunpack.$(OBJEXT) \
+@GUI_TRUE@	installer.$(OBJEXT) legal.$(OBJEXT) pages.$(OBJEXT) \
+@GUI_TRUE@	state.$(OBJEXT) unpack.$(OBJEXT)
 emailrelay_gui_real_OBJECTS = $(am_emailrelay_gui_real_OBJECTS)
 am__DEPENDENCIES_1 =
 am__pack_SOURCES_DIST = pack.cpp
@@ -246,25 +246,27 @@ EXTRA_DIST = \
 @GUI_TRUE@AM_CPPFLAGS = $(QT_CFLAGS)
 @GUI_TRUE@noinst_SCRIPTS = mock
 @GUI_TRUE@emailrelay_gui_real_SOURCES = \
+@GUI_TRUE@	$(MAC_SOURCES) \
+@GUI_TRUE@	boot.h \
+@GUI_TRUE@	dir.cpp \
+@GUI_TRUE@	dir.h \
 @GUI_TRUE@	gdialog.cpp \
 @GUI_TRUE@	gdialog.h \
 @GUI_TRUE@	glink.h \
 @GUI_TRUE@	gpage.cpp \
 @GUI_TRUE@	gpage.h \
-@GUI_TRUE@	gunpack.h \
+@GUI_TRUE@	guimain.cpp \
 @GUI_TRUE@	gunpack.cpp \
-@GUI_TRUE@	dir.cpp \
-@GUI_TRUE@	$(MAC_SOURCES) \
-@GUI_TRUE@	dir.h \
-@GUI_TRUE@	boot.h \
+@GUI_TRUE@	gunpack.h \
 @GUI_TRUE@	installer.cpp \
 @GUI_TRUE@	installer.h \
-@GUI_TRUE@	guimain.cpp \
 @GUI_TRUE@	legal.cpp \
 @GUI_TRUE@	legal.h \
 @GUI_TRUE@	pages.cpp \
 @GUI_TRUE@	pages.h \
 @GUI_TRUE@	qt.h \
+@GUI_TRUE@	state.cpp \
+@GUI_TRUE@	state.h \
 @GUI_TRUE@	unpack.c \
 @GUI_TRUE@	unpack.h
 
@@ -363,6 +365,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/legal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pages.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/state.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unpack.Po@am__quote@
 
 .c.o:
