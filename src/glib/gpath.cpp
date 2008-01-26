@@ -300,19 +300,21 @@ void G::Path::removeExtension()
 
 void G::Path::pathAppend( const std::string & tail )
 {
-	// if empty or root or just a drive letter...
-	if( m_str.size() == 0U || m_str == slashString() || 
-		( hasDriveLetter() && m_str == driveString() ) )
+	if( !tail.empty() )
 	{
-		; // no-op
+		// if empty or root or just a drive letter...
+		if( m_str.size() == 0U || m_str == slashString() || 
+			( hasDriveLetter() && m_str == driveString() ) )
+		{
+			; // no-op
+		}
+		else
+		{
+			m_str.append( slashString() ) ;
+		}
+		m_str.append( tail ) ;
+		normalise() ;
 	}
-	else
-	{
-		m_str.append( slashString() ) ;
-	}
-
-	m_str.append( tail ) ;
-	normalise() ;
 }
 
 std::string G::Path::extension() const
@@ -322,11 +324,22 @@ std::string G::Path::extension() const
 
 G::Path G::Path::join( const G::Path & p1 , const G::Path & p2 )
 {
-	G::Path result( p1 ) ;
-	Strings list = p2.split() ;
-	for( Strings::iterator p = list.begin() ; p != list.end() ; ++p )
-		result.pathAppend( *p ) ;
-	return result ;
+	if( p1 == Path() )
+	{
+		return p2 ;
+	}
+	else if( p2 == Path() )
+	{
+		return p1 ;
+	}
+	else
+	{
+		G::Path result( p1 ) ;
+		Strings list = p2.split() ;
+		for( Strings::iterator p = list.begin() ; p != list.end() ; ++p )
+			result.pathAppend( *p ) ;
+		return result ;
+	}
 }
 
 G::Strings G::Path::split( bool no_dot ) const

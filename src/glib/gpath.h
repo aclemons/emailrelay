@@ -122,8 +122,8 @@ public:
 		///< is added if necessary.
 
 	static G::Path join( const G::Path & p1 , const G::Path & p2 ) ;
-		///< Joins two paths together. The second should be a
-		///< relative path.
+		///< Joins two paths together. The second should normally be
+		///< a relative path, although absolute paths are allowed.
 
 	Strings split( bool no_dot = true ) const ;
 		///< Spits the path into a list of component parts.

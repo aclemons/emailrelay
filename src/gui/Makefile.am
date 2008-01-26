@@ -136,14 +136,12 @@ endif
 .PHONY: setup
 setup: emailrelay-setup
 emailrelay-setup: pack emailrelay-gui.real
-	@chmod +x "$(top_srcdir)/bin/make-setup.sh"
-	"$(top_srcdir)/bin/make-setup.sh" $(MAKE_SETUP_DEBUG) $@ emailrelay-gui.real pack
+	../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ emailrelay-gui.real pack
 	@chmod +x $@
 
 .PHONY: bundle
 bundle:
-	@chmod +x "$(top_srcdir)/bin/make-bundle.sh"
-	"$(top_srcdir)/bin/make-bundle.sh" "E-MailRelay Setup" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+	../bin/make-bundle.sh "E-MailRelay Setup" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 
 .PHONY: desktop-bundle
 desktop-bundle: bundle

@@ -21,6 +21,8 @@
 #include "gdef.h"
 #include "dir.h"
 #include "gpath.h"
+#include "gfile.h"
+#include "gdirectory.h"
 
 #ifndef G_SPOOLDIR
 	#define G_SPOOLDIR ""

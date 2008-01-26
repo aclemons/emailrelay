@@ -231,9 +231,26 @@ std::string DirectoryPage::nextPage()
 
 G::Path DirectoryPage::normalise( const G::Path & dir ) const
 {
-	// make relative paths relative to the home directory since
-	// gui users probably dont have a sense of the cwd
-	return dir.isRelative() && m_dir.home() != G::Path() ? (G::Path::join(m_dir.home(),dir)) : dir ;
+	// make relative paths relative to the home directory 
+	// since gui users wont have a sense of the cwd
+
+	G::Path result = dir ;
+	if( dir.isRelative() && m_dir.home() != G::Path() )
+	{
+		if( dir.str() == "~" )
+		{
+			result = m_dir.home() ;
+		}
+		else if( dir.str().at(0U) == '~' )
+		{
+			result = G::Path( m_dir.home() , dir.str().substr(1U) ) ;
+		}
+		else
+		{
+			result = G::Path::join( m_dir.home() , dir ) ;
+		}
+	}
+	return result ;
 }
 
 void DirectoryPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol , bool p ) const
@@ -1220,10 +1237,12 @@ void ProgressPage::onShow( bool back )
 		std::stringstream ss ;
 		dialog().dump( ss ) ;
 
-		// run the installer
+		// start running the installer
 		m_installer.start( ss ) ; // reads from istream
 		//std::istream iss(ss.rdbuf()) ; m_installer.start( iss ) ; // for gcc 2.95
-		dialog().wait( true ) ;
+		dialog().wait( true ) ; // disable buttons
+
+		// run a continuous zero-length timer that calls poke()
 		m_text = QString() ;
 		m_text_edit->setPlainText( m_text ) ;
 		m_timer = new QTimer( this ) ;
@@ -1251,6 +1270,8 @@ void ProgressPage::poke()
 			dialog().wait( false ) ;
 			m_timer->stop() ;
 			{ QTimer * p = m_timer ; m_timer = NULL ; delete p ; }
+			if( m_installer.failed() )
+				addLine( "** failed **" ) ;
 		}
 		emit pageUpdateSignal() ;
 	}
