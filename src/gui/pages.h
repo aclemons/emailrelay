@@ -320,7 +320,8 @@ class ProgressPage : public GPage
 {Q_OBJECT
 public:
 	ProgressPage( GDialog & dialog , const State & state , const std::string & name , const std::string & next_1 , 
-		const std::string & next_2 , bool finish , bool close , G::Path argv0 , G::Path state_path , bool install ) ;
+		const std::string & next_2 , bool finish , bool close , 
+		G::Path argv0 , G::Path payload , G::Path state_path , bool install ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;

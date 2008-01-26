@@ -97,10 +97,11 @@ struct CreateDirectory : public ActionBase
 
 struct ExtractOriginal : public ActionBase
 {
+	G::Path m_argv0 ;
 	G::Unpack & m_unpack ;
 	G::Path m_dst ;
 	std::string m_ok ;
-	ExtractOriginal( G::Unpack & unpack , G::Path dst ) ;
+	ExtractOriginal( G::Path argv0 , G::Unpack & unpack , G::Path dst ) ;
 	virtual std::string ok() const ;
 	virtual void run() ;
 	virtual std::string text() const ;
@@ -213,7 +214,7 @@ struct Action
 class InstallerImp : private Helper 
 {
 public:
-	InstallerImp( G::Path argv0 , bool installing , std::istream & ) ;
+	InstallerImp( G::Path argv0 , G::Path payload , bool installing , std::istream & ) ;
 	~InstallerImp() ;
 	bool next() ;
 	Action & current() ;
@@ -288,7 +289,8 @@ void CreateDirectory::run()
 
 // ==
 
-ExtractOriginal::ExtractOriginal( G::Unpack & unpack , G::Path dst ) :
+ExtractOriginal::ExtractOriginal( G::Path argv0 , G::Unpack & unpack , G::Path dst ) :
+	m_argv0(argv0) ,
 	m_unpack(unpack) ,
 	m_dst(dst)
 {
@@ -296,9 +298,9 @@ ExtractOriginal::ExtractOriginal( G::Unpack & unpack , G::Path dst ) :
 
 void ExtractOriginal::run() 
 {
-	if( m_unpack.names().empty() ) // keep going even if not packed
+	if( m_unpack.names().empty() ) // okay if not packed, just copy argv0
 	{
-		if( m_unpack.path() == m_dst )
+		if( m_argv0 == m_dst )
 		{
 			m_ok = "nothing to do" ;
 		}
@@ -306,7 +308,7 @@ void ExtractOriginal::run()
 		{
 			m_ok = "copied" ;
 			G::File::mkdirs( m_dst.dirname() ) ;
-			G::File::copy( m_unpack.path() , m_dst ) ;
+			G::File::copy( m_argv0 , m_dst ) ;
 			G::File::chmodx( m_dst ) ;
 		}
 	}
@@ -382,7 +384,7 @@ Extract::Extract( G::Unpack & unpack , std::string key , G::Path dst ) :
 void Extract::run()
 {
 	m_unpack.unpack( m_key , m_dst ) ;
-	if( m_dst.dirname().str().find("share/") != std::string::npos ) // ick
+	if( m_unpack.flags(m_key).find('x') != std::string::npos )
 		G::File::chmodx( m_dst ) ;
 }
 
@@ -733,10 +735,10 @@ void Action::run()
 
 // ==
 
-InstallerImp::InstallerImp( G::Path argv0 , bool installing , std::istream & ss ) :
+InstallerImp::InstallerImp( G::Path argv0 , G::Path payload , bool installing , std::istream & ss ) :
 	m_argv0(argv0) ,
 	m_installing(installing) ,
-	m_unpack(argv0,G::Unpack::NoThrow())
+	m_unpack(payload,G::Unpack::NoThrow())
 {
 	read( ss ) ;
 	insertActions() ;
@@ -812,9 +814,12 @@ void InstallerImp::insertActions()
 {
 	// create base directories
 	//
-	insert( new CreateDirectory("install",value("dir-install")) ) ;
+	if( m_installing )
+	{
+		insert( new CreateDirectory("install",value("dir-install")) ) ;
+		insert( new CreateDirectory("configuration",value("dir-config")) ) ;
+	}
 	insert( new CreateDirectory("spool",value("dir-spool")) ) ;
-	insert( new CreateDirectory("configuration",value("dir-config")) ) ;
 	insert( new CreateDirectory("pid",value("dir-pid")) ) ;
 
 	// bits and bobs
@@ -826,25 +831,28 @@ void InstallerImp::insertActions()
 
 	// extract packed files
 	//
-	G::Strings name_list = m_unpack.names() ;
-	std::set<std::string> dir_set ;
-	for( G::Strings::iterator p = name_list.begin() ; p != name_list.end() ; ++p )
+	if( m_installing )
 	{
-		std::string name = *p ;
-		std::string base = value("dir-install") ;
-		if( name.find("$etc") == 0U )
+		G::Strings name_list = m_unpack.names() ;
+		std::set<std::string> dir_set ;
+		for( G::Strings::iterator p = name_list.begin() ; p != name_list.end() ; ++p )
 		{
-			name = name.substr(4U) ;
-			base = value("dir-config") ;
-		}
+			std::string name = *p ;
+			std::string base = value("dir-install") ;
+			if( name.find("$etc") == 0U )
+			{
+				name = name.substr(4U) ;
+				base = value("dir-config") ;
+			}
 
-		G::Path path = G::Path::join( base , name ) ;
-		if( dir_set.find(path.dirname().str()) == dir_set.end() )
-		{
-			dir_set.insert( path.dirname().str() ) ;
-			insert( new CreateDirectory("target",path.dirname().str()) ) ;
+			G::Path path = G::Path::join( base , name ) ;
+			if( dir_set.find(path.dirname().str()) == dir_set.end() )
+			{
+				dir_set.insert( path.dirname().str() ) ;
+				insert( new CreateDirectory("target",path.dirname().str()) ) ;
+			}
+			insert( new Extract(m_unpack,*p,path) ) ;
 		}
-		insert( new Extract(m_unpack,*p,path) ) ;
 	}
 
 	// extract the gui without its packed-file payload
@@ -852,7 +860,7 @@ void InstallerImp::insertActions()
 	if( m_installing )
 	{
 		G::Path gui = Dir::gui( value("dir-install") ) ;
-		insert( new ExtractOriginal(m_unpack,gui) ) ;
+		insert( new ExtractOriginal(m_argv0,m_unpack,gui) ) ;
 		insert( new CreateStateFile(State::file(gui.str()),gui,m_map) ) ;
 	}
 
@@ -887,8 +895,7 @@ void InstallerImp::insertActions()
 		insert( new UpdateLink(true,value("dir-install"),working_dir,target_link_info) ) ;
 	}
 
-	// edit the boot-time config file -- the ".conf" file is created from the
-	// template if necessary
+	// create and edit the boot-time config file
 	//
 	if( !isWindows() )
 	{
@@ -1091,8 +1098,9 @@ std::pair<std::string,InstallerImp::Map> InstallerImp::commandlineMap( bool shor
 
 // ==
 
-Installer::Installer( G::Path argv0 , bool installing ) :
+Installer::Installer( G::Path argv0 , G::Path payload , bool installing ) :
 	m_argv0(argv0) ,
+	m_payload(payload) ,
 	m_installing(installing) ,
 	m_imp(NULL)
 {
@@ -1106,7 +1114,7 @@ Installer::~Installer()
 void Installer::start( std::istream & s )
 {
 	delete m_imp ;
-	m_imp = new InstallerImp(m_argv0,m_installing,s) ;
+	m_imp = new InstallerImp(m_argv0,m_payload,m_installing,s) ;
 	m_reason.erase() ;
 }
 

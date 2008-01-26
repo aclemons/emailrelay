@@ -1195,11 +1195,11 @@ void ReadyPage::dump( std::ostream & s , const std::string & prefix , const std:
 
 ProgressPage::ProgressPage( GDialog & dialog , const State & , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 , bool finish , bool close , 
-	G::Path argv0 , G::Path state_path , bool installing ) :
+	G::Path argv0 , G::Path payload , G::Path state_path , bool installing ) :
 		GPage(dialog,name,next_1,next_2,finish,close) ,
 		m_argv0(argv0) ,
 		m_state_path(state_path) ,
-		m_installer(argv0,installing) ,
+		m_installer(argv0,payload,installing) ,
 		m_installing(installing)
 {
 	m_text_edit = new QTextEdit;

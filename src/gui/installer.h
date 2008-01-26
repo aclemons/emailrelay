@@ -34,8 +34,10 @@ class InstallerImp ;
 class Installer 
 {
 public:
-	Installer( G::Path argv0 , bool install_mode ) ;
+	Installer( G::Path argv0 , G::Path payload , bool install_mode ) ;
 		///< Constructor. Initialise with start().
+		///< Normally the argv0 and payload paths
+		///< are the same.
 
 	~Installer() ;
 		///< Destructor.
@@ -70,6 +72,7 @@ private:
 
 private:
 	G::Path m_argv0 ;
+	G::Path m_payload ;
 	bool m_installing ;
 	InstallerImp * m_imp ;
 	std::string m_reason ;

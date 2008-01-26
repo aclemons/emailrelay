@@ -17,15 +17,15 @@
 //
 // guimain.cpp
 //
-// This GUI program is primarily intended to help with initial 
-// installation and configuration, but it can also be used 
-// to reconfigure an existing installation.
+// This GUI program is primarily intended to help with configuration
+// of an initial installation ("--as-install"), but it can also be 
+// used to reconfigure an existing installation ("--as-configure").
 //
-// The program determines whether it is running as a self-extracting
-// installer by looking for packed files appended to the end of 
-// the executable (although command-line switches can be used
-// as an override for this test). If there are packed files then 
-// the target directory paths are obtained from the GUI and the 
+// The program determines whether to run in install mode or configure
+// mode by looking for packed files appended to the end of the
+// executable, although the "--as-whatever" command-line switches 
+// can be used as an override for this test. In install mode the
+// target directory paths can be set from within the GUI and the 
 // packed files are extracted into those directories. 
 //
 // If there are no packed files then the assumption is that it
@@ -169,10 +169,20 @@ int main( int argc , char * argv [] )
 
 		try
 		{
+			// find the payload -- normally packed into the running executable
+			G::Path payload_1 = args.v(0) ;
+			G::Path payload_2 = G::Path( args.v(0) , "payload" ) ;
+			G::Path payload_3 = G::Path( args.v(0) , ".." , "payload" ) ;
+			G::Path payload = 
+				G::Unpack::isPacked(payload_1) ? payload_1 : (
+				G::Unpack::isPacked(payload_2) ? payload_2 : (
+				payload_3 ) ) ;
+			G_DEBUG( "main: packed files " << (G::Unpack::isPacked(payload)?"":"not ") 
+				<< "found (" << payload << ")" ) ;
+
 			// are we "setup" or "gui", ie. install-mode or configure-mode?
-			bool is_installing = ( cfg_install || G::Unpack::isPacked(args.v(0)) ) && !cfg_configure ;
+			bool is_installing = ( cfg_install || G::Unpack::isPacked(payload) ) && !cfg_configure ;
 			bool is_installed = !is_installing ;
-			G_DEBUG( "main: packed files " << (G::Unpack::isPacked(args.v(0))?"":"not ") << "found" ) ;
 
 			// read the state file
 			State::Map state_map ;
@@ -230,7 +240,7 @@ int main( int argc , char * argv [] )
 			d.add( new ListeningPage(d,state,"listening","startup","",false,false) , cfg_test_page ) ;
 			d.add( new StartupPage(d,state,"startup","ready","",false,false,dir,isMac()||cfg_as_mac) , cfg_test_page ) ;
 			d.add( new ReadyPage(d,state,"ready","progress","",true,false,is_installing) , cfg_test_page ) ;
-			d.add( new ProgressPage(d,state,"progress","","",true,true,args.v(0),state_path_out,is_installing) , 
+			d.add( new ProgressPage(d,state,"progress","","",true,true,args.v(0),payload,state_path_out,is_installing) , 
 				cfg_test_page ) ;
 			d.add() ;
 

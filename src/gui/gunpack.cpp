@@ -164,15 +164,16 @@ void G::Unpack::init()
 	for(;;)
 	{
 		std::string file_path ;
+		std::string flags ;
 		unsigned long file_size = 0UL ;
-		input >> file_size >> file_path ;
+		input >> file_size >> flags >> file_path ; // TODO -- support spaces in paths
 		G_DEBUG( "Unpack::unpack: [" << file_path << "] [" << file_size << "]" ) ;
 		if( file_size == 0U ) 
 		{
 			check( file_path == "end" , "invalid internal directory" ) ;
 			break ;
 		}
-		m_map.insert( Map::value_type(file_path,Entry(file_path,file_size,file_offset)) ) ;
+		m_map.insert( Map::value_type(file_path,Entry(file_path,file_size,file_offset,flags)) ) ;
 		file_offset += file_size ;
 		if( file_size > m_max_size )
 			m_max_size = file_size ;
@@ -205,6 +206,13 @@ G::Strings G::Unpack::names() const
 	for( Map::const_iterator p = m_map.begin() ; p != m_map.end() ; ++p )
 		result.push_back( (*p).first ) ;
 	return result ;
+}
+
+std::string G::Unpack::flags( const std::string & name ) const
+{
+	Map::const_iterator p = m_map.find(name) ;
+	if( p == m_map.end() ) throw NoSuchFile(name) ;
+	return (*p).second.flags ;
 }
 
 void G::Unpack::unpack( const Path & to_dir )

@@ -26,8 +26,12 @@
 // the stub program. The final twelve bytes of the output provide 
 // the offset of the table of contents. Each entry in the table 
 // of contents comprises: the compressed file size in decimal 
-// ascii, a space, the file name/path, a newline. The end of 
-// the table is marked by the entry "0 end\n".
+// ascii, a space, arbitrary flags, string, a space, the file 
+// name/path, a newline. The end of the table is marked by a 
+// (0,-,end) entry.
+//
+// Currently each file's flags are set to "x" if the file is
+// executable, or "-" otherwise.
 //
 // The packed files are compressed with zlib (unless using -p)
 // and then concatenated immediately following the table of 
@@ -83,6 +87,7 @@ struct File
 	char_t * m_data_in ;
 	unsigned long m_data_in_size ;
 	unsigned long m_data_out_size ;
+	std::string m_flags ;
 } ;
 
 unsigned long File::size( const std::string & path )
@@ -95,12 +100,19 @@ unsigned long File::size( const std::string & path )
 }
 
 File::File( bool plain , const std::string & path_in , const std::string & path_out , bool xtod ) : 
-	m_path_in(path_in) , m_path_out(path_out) , m_plain(plain) ,
-	m_data_out(0) , m_data_in(0) , m_data_in_size(0UL) , m_data_out_size(0UL)
+	m_path_in(path_in) , 
+	m_path_out(path_out) , 
+	m_plain(plain) ,
+	m_data_out(0) , 
+	m_data_in(0) , 
+	m_data_in_size(0UL) , 
+	m_data_out_size(0UL)
 {
 	unsigned long file_size = File::size( path_in ) ;
 	unsigned long buffer_size = xtod ? (file_size*2UL) : file_size ;
 	m_data_in = new char_t [buffer_size] ;
+
+	m_flags = G::File::executable(path_in) ? "x" : "-" ;
 
 	std::ifstream in( path_in.c_str() , std::ios::binary ) ;
 	check( in.good() , "cannot open input file" , path_in ) ;
@@ -271,8 +283,8 @@ int main( int argc , char * argv [] )
 			std::ofstream out( path_out.c_str() , std::ios::app | std::ios::binary ) ;
 			out << (plain?"0":"1") << '\0' ;
 			for( std::list<File*>::iterator p = list.begin() ; p != list.end() ; ++p )
-				out << (*p)->m_data_out_size << " " << (*p)->m_path_out << "\n" ;
-			out << "0 end\n" ;
+				out << (*p)->m_data_out_size << " " << (*p)->m_flags << " " << (*p)->m_path_out << "\n" ;
+			out << "0 - end\n" ;
 			out.flush() ;
 			check( out.good() , "write error" ) ;
 		}

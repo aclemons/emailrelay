@@ -43,8 +43,8 @@ namespace G
 /// The executable is expected to have the following
 /// data appended to it:
 /// * an is-compressed flag byte in ascii: '1' or '0'
-/// * one ignored byte
-/// * the directory of relative file paths and sizes
+/// * one space-or-newline byte
+/// * the directory of size-flags-path tuples, ending with a (0,-,end) tuple
 /// * the deflated files in order
 /// * the original file size in 12 bytes of space-padded decimal ascii
 ///
@@ -55,8 +55,8 @@ namespace G
 ///   #!/bin/sh
 ///   cat $1
 ///   echo 1
-///   ls -l *.z | awk '{printf("%s %s\n",$5,$8)}'
-///   echo 0 end
+///   ls -l *.z | awk '{printf("%s - %s\n",$5,$8)}'
+///   echo 0 - end
 ///   cat *.z
 ///   ls -l $1 | awk '{printf("%11d\n",$5)}'
 /// \endcode
@@ -106,6 +106,10 @@ public:
 		///< the packed name. Throws NoSuchFile if the
 		///< name is invalid.
 
+	std::string flags( const std::string & name ) const ;
+		///< Returns the flags associated with the given file.
+		///< The flags are not interpreted by this class.
+
 	Strings names() const ;
 		///< Returns the list of file names.
 
@@ -123,10 +127,12 @@ private:
 		std::string path ; 
 		unsigned long size ; 
 		unsigned long offset ; 
-		Entry( const std::string & path_ , unsigned long size_ , unsigned long offset_ ) :
+		std::string flags ;
+		Entry( const std::string & path_ , unsigned long size_ , unsigned long offset_ , const std::string & flags_ ) :
 			path(path_) ,
 			size(size_) ,
-			offset(offset_)
+			offset(offset_) ,
+			flags(flags_)
 		{
 		}
 	} ;

@@ -41,6 +41,7 @@ typedef struct Entry_tag
 	char * path ; 
 	unsigned long size ; 
 	unsigned long offset ; 
+	char * flags ; 
 } Entry ;
 typedef struct M_tag
 {
@@ -223,6 +224,7 @@ static void unpack_delete_( M * m )
 		{
 			Entry * temp = p ;
 			if( p->path ) free( p->path ) ;
+			if( p->flags ) free( p->flags ) ;
 			p = p->next ;
 			free( temp ) ;
 		}
@@ -259,6 +261,13 @@ static char * unpack_name_( const M * m , int n )
 	const Entry * p = unpack_entry( m , n ) ;
 	const char * name = p ? p->path : "" ;
 	return strdup_(name) ;
+}
+
+static char * unpack_flags_( const M * m , int n )
+{
+	const Entry * p = unpack_entry( m , n ) ;
+	const char * flags = p ? p->flags : "" ;
+	return strdup_(flags) ;
 }
 
 static unsigned long unpack_packed_size_( const M * m , int n )
@@ -336,13 +345,19 @@ static bool unpack_init( M * m )
 	file_offset = 0UL ;
 	for(;;)
 	{
+		char * file_flags = NULL ;
 		char * file_path = NULL ;
 		unsigned long file_size = 0UL ;
 		char big_buffer[10001] ;
 
-		rc = fscanf( m->input , "%lu" , &file_size ) ;
+		rc = fscanf( m->input , "%lu" , &file_size ) ; /* size */
 		check_that( rc == 1 , "table entry size error" ) ;
-		rc = fscanf( m->input , "%10000s" , big_buffer ) ; /* TODO */
+		rc = fscanf( m->input , "%10000s" , big_buffer ) ; /* flags */
+		check_that( rc == 1 , "table entry read error" ) ;
+		big_buffer[sizeof(big_buffer)-1] = '\0' ;
+		file_flags = strdup_(big_buffer) ;
+		check_that( file_flags != NULL , "out of memory" ) ;
+		rc = fscanf( m->input , "%10000s" , big_buffer ) ; /* path */
 		check_that( rc == 1 , "table entry read error" ) ;
 		big_buffer[sizeof(big_buffer)-1] = '\0' ;
 		file_path = strdup_(big_buffer) ;
@@ -352,6 +367,7 @@ static bool unpack_init( M * m )
 		{
 			check_that( strcmp(file_path,"end") == 0 , "invalid internal directory" ) ;
 			free( file_path ) ;
+			free( file_flags ) ;
 			break ;
 		}
 
@@ -362,6 +378,7 @@ static bool unpack_init( M * m )
 			entry->path = file_path ;
 			entry->size = file_size ;
 			entry->offset = file_offset ;
+			entry->flags = file_flags ;
 
 			if( tail == NULL )
 				m->map = entry ;
@@ -533,6 +550,11 @@ int unpack_count( const Unpack * p )
 char * unpack_name( const Unpack * p , int i )
 {
 	return unpack_name_( (const M*)p , i ) ;
+}
+
+char * unpack_flags( const Unpack * p , int i )
+{
+	return unpack_flags_( (const M*)p , i ) ;
 }
 
 void unpack_free( char * p )
