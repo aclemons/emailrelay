@@ -37,11 +37,11 @@ else
 FRAGMENTS_LDADD = 
 endif
 
-BUNDLE="E-MailRelay Start"
+BUNDLE=E-MailRelay-Start
 if MAC
 MAC_PROGS = emailrelay-start
 MAC_EXTRA_DIST =
-noinst_SCRIPTS = "$(BUNDLE).app"
+noinst_SCRIPTS = $(BUNDLE).app
 else
 MAC_PROGS =
 MAC_EXTRA_DIST = start.cpp
@@ -159,6 +159,9 @@ uninstall-local:
 
 clean-local:
 	rm -rf "$(BUNDLE).app"
+
+$(BUNDLE).app: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
+	../../bin/make-bundle.sh "$(BUNDLE)" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 
 .PHONY: bundle
 bundle: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)

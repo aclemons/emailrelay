@@ -246,13 +246,13 @@ top_srcdir = @top_srcdir@
 @SMALL_CONFIG_TRUE@CONFIG_SOURCES = commandline_simple.cpp
 @SMALL_FRAGMENTS_FALSE@FRAGMENTS_LDADD = 
 @SMALL_FRAGMENTS_TRUE@FRAGMENTS_LDADD = $(top_builddir)/src/fragments/libfragments.a
-BUNDLE = "E-MailRelay Start"
+BUNDLE = E-MailRelay-Start
 @MAC_FALSE@MAC_PROGS = 
 @MAC_TRUE@MAC_PROGS = emailrelay-start
 @MAC_FALSE@MAC_EXTRA_DIST = start.cpp
 @MAC_TRUE@MAC_EXTRA_DIST = 
 @MAC_FALSE@noinst_SCRIPTS = 
-@MAC_TRUE@noinst_SCRIPTS = "$(BUNDLE).app"
+@MAC_TRUE@noinst_SCRIPTS = $(BUNDLE).app
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS = -s
@@ -708,6 +708,9 @@ uninstall-local:
 
 clean-local:
 	rm -rf "$(BUNDLE).app"
+
+$(BUNDLE).app: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
+	../../bin/make-bundle.sh "$(BUNDLE)" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 
 .PHONY: bundle
 bundle: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
