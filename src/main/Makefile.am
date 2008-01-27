@@ -37,10 +37,15 @@ else
 FRAGMENTS_LDADD = 
 endif
 
+BUNDLE="E-MailRelay Start"
 if MAC
 MAC_PROGS = emailrelay-start
+MAC_EXTRA_DIST =
+noinst_SCRIPTS = "$(BUNDLE).app"
 else
 MAC_PROGS =
+MAC_EXTRA_DIST = start.cpp
+noinst_SCRIPTS =
 endif
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
@@ -49,6 +54,7 @@ AM_INSTALL_PROGRAM_FLAGS=-s
 EXTRA_DIST=\
 	$(ADMIN_EXTRA_DIST) \
 	$(CONFIG_EXTRA_DIST) \
+	$(MAC_EXTRA_DIST) \
 	common.dsp \
 	doxygen.cfg \
 	doxygen.h \
@@ -134,6 +140,9 @@ emailrelay_filter_copy_SOURCES = filter_copy.cpp filter.cpp filter.h legal.cpp l
 emailrelay_filter_copy_LDADD = \
 	$(COMMON_LDADD)
 
+emailrelay_start_SOURCES = start.cpp
+emailrelay_start_LDADD =
+
 install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS
 	-chgrp daemon $(DESTDIR)$(e_spooldir)
 	-chmod 775 $(DESTDIR)$(e_spooldir)
@@ -141,15 +150,17 @@ install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPR
 	-chmod g+s $(DESTDIR)$(sbindir)/emailrelay-submit
 
 install-exec-local:
+	-if test -d "$(BUNDLE).app" ; then cp -r "$(BUNDLE).app" $(DESTDIR)$(sbindir) ; fi
 
 uninstall-local:
-	-rmdir $(DESTDIR)$(e_spooldir) 2>/dev/null
-	-rmdir $(DESTDIR)$(e_libexecdir) 2>/dev/null
+	-rmdir "$(DESTDIR)$(e_spooldir)" 2>/dev/null
+	-rmdir "$(DESTDIR)$(e_libexecdir)" 2>/dev/null
+	-rm -rf "$(DESTDIR)$(sbindir)/$(BUNDLE).app"
 
-emailrelay_start_SOURCES = start.cpp
-emailrelay_start_LDADD =
+clean-local:
+	rm -rf "$(BUNDLE).app"
 
 .PHONY: bundle
 bundle: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
-	../../bin/make-bundle.sh -f "E-MailRelay Start" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+	../../bin/make-bundle.sh -f "$(BUNDLE)" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 

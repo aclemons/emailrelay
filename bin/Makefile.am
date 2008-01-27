@@ -17,12 +17,8 @@
 
 if MAC
 e_init_SCRIPTS = E-MailRelay StartupParameters.plist
-MAC_EXTRA_DIST = 
-MAC_NOINST = E-MailRelay.app
 else
 e_init_SCRIPTS = emailrelay
-MAC_EXTRA_DIST = 
-MAC_NOINST = 
 endif
 
 EXTRA_DIST = \
@@ -44,10 +40,7 @@ EXTRA_DIST = \
 	emailrelay-multicast.sh_ \
 	make-setup.sh_ \
 	make-bundle.sh_ \
-	make-applet.sh_ \
 	configure-mac.sh \
-	startup-mac.sh_ \
-	startup-mac.as \
 	startup-mac.plist \
 	fragment.pl_
 
@@ -60,7 +53,6 @@ work_scripts = \
 	txt2html.sh \
 	emailrelay.sh \
 	make-setup.sh \
-	make-applet.sh \
 	make-bundle.sh \
 	fragment.pl
 
@@ -68,7 +60,6 @@ noinst_SCRIPTS = \
 	emailrelay-runperl.js \
 	emailrelay-resubmit.js \
 	emailrelay-change-auth.js \
-	$(MAC_NOINST) \
 	$(work_scripts)
 
 e_examples_DATA = \
@@ -98,19 +89,6 @@ emailrelay: emailrelay.sh
 E-MailRelay: emailrelay.sh
 	cp emailrelay.sh $@
 
-StartupParameters.plist: startup-mac.plist
-	cp $(top_srcdir)/bin/startup-mac.plist $@
-
-E-MailRelay.app: startup-mac.as make-applet.sh startup-mac.sh
-	./make-applet.sh E-MailRelay.app $(top_srcdir)/bin/startup-mac.as $(top_srcdir)/src/gui/emailrelay-icon.icns startup-mac.sh emailrelay
-
-.PHONY: bundle
-bundle: startup-mac.as make-applet.sh startup-mac.sh
-	./make-applet.sh -f E-MailRelay.app $(top_srcdir)/bin/startup-mac.as $(top_srcdir)/src/gui/emailrelay-icon.png startup-mac.sh emailrelay
-
-clean-local:
-	rm -rf E-MailRelay.app
-
 install-data-local: install-e_examplesDATA install-e_initSCRIPTS
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-process.sh
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-notify.sh
@@ -118,9 +96,7 @@ install-data-local: install-e_examplesDATA install-e_initSCRIPTS
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-resubmit.sh
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-submit.sh
 	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-multicast.sh
-	cp -r E-MailRelay.app $(DESTDIR)${sbindir}
 
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_examplesdir) 2>/dev/null
-	-rm -rf $(DESTDIR)${sbindir}/E-MailRelay.app 2>/dev/null
 

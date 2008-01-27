@@ -18,6 +18,7 @@
 #
 
 
+
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -93,6 +94,7 @@ am_emailrelay_submit_OBJECTS = submit.$(OBJEXT) legal.$(OBJEXT)
 emailrelay_submit_OBJECTS = $(am_emailrelay_submit_OBJECTS)
 emailrelay_submit_DEPENDENCIES = $(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/gnet/libgnet.a $(am__DEPENDENCIES_2)
+SCRIPTS = $(noinst_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -244,14 +246,20 @@ top_srcdir = @top_srcdir@
 @SMALL_CONFIG_TRUE@CONFIG_SOURCES = commandline_simple.cpp
 @SMALL_FRAGMENTS_FALSE@FRAGMENTS_LDADD = 
 @SMALL_FRAGMENTS_TRUE@FRAGMENTS_LDADD = $(top_builddir)/src/fragments/libfragments.a
+BUNDLE = "E-MailRelay Start"
 @MAC_FALSE@MAC_PROGS = 
 @MAC_TRUE@MAC_PROGS = emailrelay-start
+@MAC_FALSE@MAC_EXTRA_DIST = start.cpp
+@MAC_TRUE@MAC_EXTRA_DIST = 
+@MAC_FALSE@noinst_SCRIPTS = 
+@MAC_TRUE@noinst_SCRIPTS = "$(BUNDLE).app"
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS = -s
 EXTRA_DIST = \
 	$(ADMIN_EXTRA_DIST) \
 	$(CONFIG_EXTRA_DIST) \
+	$(MAC_EXTRA_DIST) \
 	common.dsp \
 	doxygen.cfg \
 	doxygen.h \
@@ -575,7 +583,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) $(DATA)
+all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(DATA)
 installdirs:
 	for dir in "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_spooldir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
@@ -606,8 +614,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-e_libexecPROGRAMS clean-generic clean-sbinPROGRAMS \
-	mostlyclean-am
+clean-am: clean-e_libexecPROGRAMS clean-generic clean-local \
+	clean-sbinPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -667,16 +675,17 @@ uninstall-am: uninstall-e_libexecPROGRAMS uninstall-e_spoolDATA \
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean \
-	clean-e_libexecPROGRAMS clean-generic clean-sbinPROGRAMS ctags \
-	distclean distclean-compile distclean-generic distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-data-local \
-	install-dvi install-dvi-am install-e_libexecPROGRAMS \
-	install-e_spoolDATA install-exec install-exec-am \
-	install-exec-local install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-sbinPROGRAMS install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+	clean-e_libexecPROGRAMS clean-generic clean-local \
+	clean-sbinPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-data-local install-dvi install-dvi-am \
+	install-e_libexecPROGRAMS install-e_spoolDATA install-exec \
+	install-exec-am install-exec-local install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-sbinPROGRAMS install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-e_libexecPROGRAMS uninstall-e_spoolDATA \
@@ -690,14 +699,19 @@ install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPR
 	-chmod g+s $(DESTDIR)$(sbindir)/emailrelay-submit
 
 install-exec-local:
+	-if test -d "$(BUNDLE).app" ; then cp -r "$(BUNDLE).app" $(DESTDIR)$(sbindir) ; fi
 
 uninstall-local:
-	-rmdir $(DESTDIR)$(e_spooldir) 2>/dev/null
-	-rmdir $(DESTDIR)$(e_libexecdir) 2>/dev/null
+	-rmdir "$(DESTDIR)$(e_spooldir)" 2>/dev/null
+	-rmdir "$(DESTDIR)$(e_libexecdir)" 2>/dev/null
+	-rm -rf "$(DESTDIR)$(sbindir)/$(BUNDLE).app"
+
+clean-local:
+	rm -rf "$(BUNDLE).app"
 
 .PHONY: bundle
 bundle: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
-	../../bin/make-bundle.sh -f "E-MailRelay Start" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+	../../bin/make-bundle.sh -f "$(BUNDLE)" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
