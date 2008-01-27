@@ -20,7 +20,7 @@
 // A simple wrapper that runs the main emailrelay
 // binary with a command-line assembled from the
 // same configuration file as used by the boot-time 
-// startup script.
+// startup script. Always adds "--as-server".
 //
 // The motivation for this is that a c/c++ program
 // is easier to put into a Mac bundle than a shell
@@ -64,6 +64,8 @@ static std::string find( std::string argv0 , std::string name , bool more )
 	list.push_back( base + "/" + name ) ;
 	list.push_back( base + "/../" + name ) ;
 	list.push_back( base + "/../../" + name ) ;
+	list.push_back( base + "/../../../" + name ) ;
+	list.push_back( base + "/../../../../" + name ) ;
 	if( more )
 	{
 		list.push_back( base + "/../Resources/" + name ) ;
@@ -120,6 +122,8 @@ static std::string sanitised( std::string s )
 static std::list<std::string> read( std::string path )
 {
 	std::list<std::string> result ;
+	result.push_back( "--as-server" ) ;
+
 	std::ifstream s( path.c_str() ) ;
 	while( s.good() )
 	{
