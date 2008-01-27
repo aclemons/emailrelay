@@ -21,7 +21,7 @@
 # Builds a "setup" self-extracting archive derived from running 
 # "make install" into a temporary directory.
 #
-# usage: make-setup.sh [-d] <output> <stub> <pack-utility> <destdir> <installdir> <sysconfdir>
+# usage: make-setup.sh [-d] <output> <stub> <pack-utility> <destdir> [<sbindir> [<sysconfdir>]]
 #
 # Normally run by "make setup" in the "src/gui".
 #
@@ -40,8 +40,8 @@ setup="$1"
 stub="$2"
 pack="$3"
 destdir="$4"
-installdir="$5"
-sysconfdir="$6"
+sbindir="$5" ; if test -z "$sbindir" ; then installdir="__SBIN_DIR__" ; fi
+sysconfdir="$6" ; if test -z "$sysconfdir" ; then sysconfdir="__SYSCONF_DIR__" ; fi
 
 # define temporary directories and cleanup code
 tmp="/tmp/`basename $0 .sh`.$$.tmp"
@@ -83,11 +83,13 @@ Edit()
 {
 	sed 's: \./: :' | sed 's: etc/: \$etc/:' | sed 's: usr/: :'
 }
+echo `basename $0`: building a file list
 find $install -type f | Filter | grep -n . | sed 's/:/1 /' > $list
 ( cd $install && find . -type f ) | Filter | grep -n . | sed 's/:/2 /' | Edit >> $list
 sort -n $list | sed 's/^[0-9][0-9]* //' > $list.tmp && mv $list.tmp $list
 
 # create the packed file
+echo `basename $0`: packing
 PATH=".:$PATH"
 "$pack" -q -f "$list" "$setup" "$stub"
 
