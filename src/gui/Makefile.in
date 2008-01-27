@@ -614,10 +614,6 @@ emailrelay-setup: pack emailrelay-gui.real
 bundle:
 	../../bin/make-bundle.sh "E-MailRelay Setup" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 
-.PHONY: desktop-bundle
-desktop-bundle: bundle
-	cp -r "E-MailRelay Setup.app" ~/Desktop
-
 .PHONY: image
 image: bundle
 	hdiutil create -srcfolder "E-MailRelay Setup.app" "E-MailRelay.dmg" && hdiutil internet-enable -yes "E-MailRelay Setup.app"

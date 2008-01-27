@@ -39,6 +39,8 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
+#include <functional>
 #include <list>
 #include <cstdlib> // system()
 #include <fcntl.h>
@@ -60,13 +62,13 @@ static std::string find( std::string argv0 , std::string name , bool more )
 	std::list<std::string> list ;
 	list.push_back( base + "/" + name ) ;
 	list.push_back( base + "/../" + name ) ;
-	list.push_back( base + "/../Resources/" + name ) ;
 	list.push_back( base + "/../../" + name ) ;
 	if( more )
 	{
+		list.push_back( base + "/../Resources/" + name ) ;
 		list.push_back( base + "/../../etc/" + name ) ;
-		list.push_back( base + "/../../Library/Preferences/" + name ) ;
 		list.push_back( base + "/../../Library/Preferences/E-MailRelay/" + name ) ;
+		list.push_back( base + "/../../Library/Preferences/" + name ) ;
 	}
 	for( std::list<std::string>::iterator p = list.begin() ; p != list.end() ; ++p )
 	{
@@ -206,8 +208,7 @@ int main( int , char * argv [] )
 		if( exe.empty() )
 			throw std::runtime_error( std::string() + "no executable" ) ;
 
-		std::list<std::string> args = read( cfg ) ;
-		run( exe , args ) ;
+		run( exe , read(cfg) ) ;
 		return 0 ;
 	}
 	catch( std::exception & e )
@@ -217,7 +218,7 @@ int main( int , char * argv [] )
 		// dialog box for mac
 		std::stringstream ss ;
 		ss 
-			<< "osascript -e \""
+			<< "/usr/bin/osascript -e \""
 				<< "display dialog \\\"" << sanitised(e.what()) << "\\\" "
 				<< "with title \\\"Error\\\" buttons {\\\"Cancel\\\"}"
 			<< "\" 2>/dev/null" ;

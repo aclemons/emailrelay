@@ -150,6 +150,6 @@ emailrelay_start_SOURCES = start.cpp
 emailrelay_start_LDADD =
 
 .PHONY: bundle
-bundle: emailrelay-start $(sbin_PROGRAMS) (e_libexec_PROGRAMS)
+bundle: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
 	../../bin/make-bundle.sh -f "E-MailRelay Start" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 

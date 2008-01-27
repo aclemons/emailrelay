@@ -696,7 +696,7 @@ uninstall-local:
 	-rmdir $(DESTDIR)$(e_libexecdir) 2>/dev/null
 
 .PHONY: bundle
-bundle: emailrelay-start $(sbin_PROGRAMS) (e_libexec_PROGRAMS)
+bundle: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
 	../../bin/make-bundle.sh -f "E-MailRelay Start" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
