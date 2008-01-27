@@ -65,10 +65,10 @@ emailrelay_test_server_LDADD = \
 SUFFIXES = .pm .pl .pl_ .sh .sh_
 
 .pl_.pl:
-	cat $(top_srcdir)/test/$*.pl_ > $*.pl
-	chmod +x $*.pl
+	cat "$(top_srcdir)/test/$*.pl_" > "$*.pl"
+	chmod +x "$*.pl"
 
 .sh_.sh:
-	cat $(top_srcdir)/test/$*.sh_ > $*.sh
-	chmod +x $*.sh
+	cat "$(top_srcdir)/test/$*.sh_" > "$*.sh"
+	chmod +x "$*.sh"
 

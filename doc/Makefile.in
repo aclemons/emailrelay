@@ -425,13 +425,13 @@ uninstall-man: uninstall-man1
 
 
 .txt.html:
-	$(converter_html) -a "$(AWK)" $(top_srcdir)/doc/$*.txt $(stylesheet) > $*.html
+	$(converter_html) -a "$(AWK)" "$(top_srcdir)/doc/$*.txt" "$(stylesheet)" > "$*.html"
 
 .txt.mu:
-	$(converter_txt2mu) -a "$(AWK)" $(top_srcdir)/doc/$*.txt > $*.mu
+	$(converter_txt2mu) -a "$(AWK)" "$(top_srcdir)/doc/$*.txt" > "$*.mu"
 
 .mu.db:
-	$(converter_mu2docbook) -a "$(AWK)" -x < $(top_builddir)/doc/$*.mu > $*.db
+	$(converter_mu2docbook) -a "$(AWK)" -x < "$(top_builddir)/doc/$*.mu" > "$*.db"
 
 head.db: $(converter_mu2docbook)
 	$(converter_mu2docbook) -a "$(AWK)" --head "E-MailRelay" > head.db.tmp && mv -f head.db.tmp head.db
@@ -456,34 +456,34 @@ developer.html reference.html userguide.html: $(converter_html)
 developer.mu reference.mu userguide.mu: $(converter_txt2mu)
 
 readme.html: $(top_srcdir)/README $(converter_html)
-	$(converter_html) -a "$(AWK)" $(top_srcdir)/README $(stylesheet) > readme.html
+	$(converter_html) -a "$(AWK)" "$(top_srcdir)/README" "$(stylesheet)" > readme.html
 
 changelog.html: $(top_srcdir)/ChangeLog $(converter_html)
-	$(converter_html) -a "$(AWK)" $(top_srcdir)/ChangeLog $(stylesheet) > changelog.html
+	$(converter_html) -a "$(AWK)" "$(top_srcdir)/ChangeLog" "$(stylesheet)" > changelog.html
 
 emailrelay.1.gz : emailrelay.1
-	if test -n "$(GZIP)" ; then $(GZIP) -c $(top_srcdir)/doc/emailrelay.1 > emailrelay.1.gz ; fi
+	if test -n "$(GZIP)" ; then $(GZIP) -c "$(top_srcdir)/doc/emailrelay.1" > emailrelay.1.gz ; fi
 
 emailrelay-passwd.1.gz : emailrelay-passwd.1
-	if test -n "$(GZIP)" ; then $(GZIP) -c $(top_srcdir)/doc/emailrelay-passwd.1 > emailrelay-passwd.1.gz ; fi
+	if test -n "$(GZIP)" ; then $(GZIP) -c "$(top_srcdir)/doc/emailrelay-passwd.1" > emailrelay-passwd.1.gz ; fi
 
 emailrelay-submit.1.gz : emailrelay-submit.1
-	if test -n "$(GZIP)" ; then $(GZIP) -c $(top_srcdir)/doc/emailrelay-submit.1 > emailrelay-submit.1.gz ; fi
+	if test -n "$(GZIP)" ; then $(GZIP) -c "$(top_srcdir)/doc/emailrelay-submit.1" > emailrelay-submit.1.gz ; fi
 
 emailrelay-filter-copy.1.gz : emailrelay-filter-copy.1
-	if test -n "$(GZIP)" ; then $(GZIP) -c $(top_srcdir)/doc/emailrelay-filter-copy.1 > emailrelay-filter-copy.1.gz ; fi
+	if test -n "$(GZIP)" ; then $(GZIP) -c "$(top_srcdir)/doc/emailrelay-filter-copy.1" > emailrelay-filter-copy.1.gz ; fi
 
 emailrelay-poke.1.gz: emailrelay-poke.1
-	if test -n "$(GZIP)" ; then $(GZIP) -c $(top_srcdir)/doc/emailrelay-poke.1 > emailrelay-poke.1.gz ; fi
+	if test -n "$(GZIP)" ; then $(GZIP) -c "$(top_srcdir)/doc/emailrelay-poke.1" > emailrelay-poke.1.gz ; fi
 
 install-data-local: install-e_docDATA
-	$(mkinstalldirs) $(DESTDIR)$(e_docdir)/doxygen
-	if test "$(HAVE_DOXYGEN)" = "yes" ; then for file in doxygen/* ; do $(INSTALL) $$file $(DESTDIR)$(e_docdir)/$$file ; done ; fi
+	$(mkinstalldirs) "$(DESTDIR)$(e_docdir)/doxygen"
+	if test "$(HAVE_DOXYGEN)" = "yes" ; then for file in doxygen/* ; do $(INSTALL) "$$file" "$(DESTDIR)$(e_docdir)/$$file" ; done ; fi
 
 uninstall-local:
-	-rm -f $(DESTDIR)$(e_docdir)/doxygen/* 2>/dev/null
-	-rmdir $(DESTDIR)$(e_docdir)/doxygen 2>/dev/null
-	-rmdir $(DESTDIR)$(e_docdir) 2>/dev/null
+	-rm -f "$(DESTDIR)$(e_docdir)/doxygen"/* 2>/dev/null
+	-rmdir "$(DESTDIR)$(e_docdir)/doxygen" 2>/dev/null
+	-rmdir "$(DESTDIR)$(e_docdir)" 2>/dev/null
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

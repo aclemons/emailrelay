@@ -33,4 +33,5 @@ e_doc_DATA = NEWS README ChangeLog
 
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_docdir) 2>/dev/null
-	-for d in $(DESTDIR)$(e_sysconfdir) $(DESTDIR)$(e_libexecdir) $(DESTDIR)$(e_examplesdir) $(DESTDIR)$(e_spooldir) $(DESTDIR)$(e_initdir) $(DESTDIR)$(e_docdir) ; do if test "`basename \"$$d\"`" = "E-MailRelay" ; then rmdir "$$d" 2>/dev/null ; fi ; done
+	-for d in "$(DESTDIR)$(e_sysconfdir)" "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_spooldir)" "$(DESTDIR)$(e_initdir)" "$(DESTDIR)$(e_docdir)/man/man1" "$(DESTDIR)$(e_docdir)/man" "$(DESTDIR)$(e_docdir)" ; do if test "`basename \"$$d\"`" = "E-MailRelay" ; then rmdir "$$d" 2>/dev/null ; fi ; done
+

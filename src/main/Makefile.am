@@ -144,13 +144,13 @@ emailrelay_start_SOURCES = start.cpp
 emailrelay_start_LDADD =
 
 install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS
-	-chgrp daemon $(DESTDIR)$(e_spooldir)
-	-chmod 775 $(DESTDIR)$(e_spooldir)
-	-chgrp daemon $(DESTDIR)$(sbindir)/emailrelay-submit
-	-chmod g+s $(DESTDIR)$(sbindir)/emailrelay-submit
+	-chgrp daemon "$(DESTDIR)$(e_spooldir)"
+	-chmod 775 "$(DESTDIR)$(e_spooldir)"
+	-chgrp daemon "$(DESTDIR)$(sbindir)/emailrelay-submit"
+	-chmod g+s "$(DESTDIR)$(sbindir)/emailrelay-submit"
 
 install-exec-local:
-	-if test -d "$(BUNDLE).app" ; then cp -r "$(BUNDLE).app" $(DESTDIR)$(sbindir) ; fi
+	-if test -d "$(BUNDLE).app" ; then cp -R "$(BUNDLE).app" "$(DESTDIR)$(sbindir)" ; fi
 
 uninstall-local:
 	-rmdir "$(DESTDIR)$(e_spooldir)" 2>/dev/null

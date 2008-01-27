@@ -75,12 +75,12 @@ CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts) $(e_init_SCRIP
 SUFFIXES = .sh_ .sh
 
 .sh_.sh:
-	cat $(top_srcdir)/bin/$*.sh_ | sed "s%__SPOOL_DIR__%${e_spooldir}%g;s%__SBIN_DIR__%${sbindir}%g;s%__SYSCONF_DIR__%${e_sysconfdir}%g;"'s/\[:digit:\]/0-9/g;s/\[:space:\]/ \\t/g' > $*.tmp && mv $*.tmp $*.sh 
-	chmod ugo+x $*.sh
+	cat "$(top_srcdir)/bin/$*.sh_" | sed "s%__SPOOL_DIR__%${e_spooldir}%g;s%__SBIN_DIR__%${sbindir}%g;s%__SYSCONF_DIR__%${e_sysconfdir}%g;"'s/\[:digit:\]/0-9/g;s/\[:space:\]/ \\t/g' > "$*.tmp" && mv "$*.tmp" "$*.sh"
+	chmod ugo+x "$*.sh"
 
 .pl_.pl:
-	cp $(top_srcdir)/bin/$*.pl_ $*.pl
-	chmod ugo+x $*.pl
+	cp "$(top_srcdir)/bin/$*.pl_" "$*.pl"
+	chmod ugo+x "$*.pl"
 
 emailrelay: emailrelay.sh
 	cp emailrelay.sh emailrelay
@@ -90,13 +90,13 @@ E-MailRelay: emailrelay.sh
 	cp emailrelay.sh $@
 
 install-data-local: install-e_examplesDATA install-e_initSCRIPTS
-	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-process.sh
-	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-notify.sh
-	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-deliver.sh
-	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-resubmit.sh
-	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-submit.sh
-	chmod ugo+x $(DESTDIR)$(e_examplesdir)/emailrelay-multicast.sh
+	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-process.sh"
+	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-notify.sh"
+	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-deliver.sh"
+	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-resubmit.sh"
+	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-submit.sh"
+	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-multicast.sh"
 
 uninstall-local:
-	-rmdir $(DESTDIR)$(e_examplesdir) 2>/dev/null
+	-rmdir "$(DESTDIR)$(e_examplesdir)" 2>/dev/null
 
