@@ -73,6 +73,8 @@ static std::string find( std::string argv0 , std::string name , bool more )
 		list.push_back( base + "/../../../Library/Preferences/E-MailRelay/" + name ) ;
 		list.push_back( base + "/../../../../etc/" + name ) ;
 		list.push_back( base + "/../../../../Library/Preferences/E-MailRelay/" + name ) ;
+		list.push_back( base + "/../../../../../etc/" + name ) ;
+		list.push_back( base + "/../../../../../Library/Preferences/E-MailRelay/" + name ) ;
 	}
 	for( std::list<std::string>::iterator p = list.begin() ; p != list.end() ; ++p )
 	{
