@@ -18,12 +18,17 @@
 # Makefile.am
 #
 
+BUNDLE=E-Mailrelay-Configure
 if MAC
-MAC_EXTRA_DIST=dir_unix.cpp boot_unix.cpp glink_unix.cpp
-MAC_SOURCES=dir_mac.cpp boot_mac.cpp glink_mac.cpp
+MAC_EXTRA_DIST = dir_unix.cpp boot_unix.cpp glink_unix.cpp
+MAC_SOURCES = dir_mac.cpp boot_mac.cpp glink_mac.cpp
+MAC_NOINST = $(BUNDLE).app
+MAC_PROGS = emailrelay-start-gui
 else
-MAC_EXTRA_DIST=dir_mac.cpp boot_mac.cpp glink_mac.cpp
-MAC_SOURCES=dir_unix.cpp boot_unix.cpp glink_unix.cpp
+MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp guistart.cpp
+MAC_SOURCES = dir_unix.cpp boot_unix.cpp glink_unix.cpp
+MAC_PROGS =
+MAC_NOINST =
 endif
 
 EXTRA_DIST=\
@@ -76,8 +81,8 @@ INCLUDES=\
 
 AM_CPPFLAGS=$(QT_CFLAGS)
 
-sbin_PROGRAMS = emailrelay-gui.real
-noinst_SCRIPTS = mock
+sbin_PROGRAMS = emailrelay-gui.real $(MAC_PROGS)
+noinst_SCRIPTS = mock $(MAC_NOINST)
 noinst_PROGRAMS = pack
 
 emailrelay_gui_real_SOURCES = \
@@ -115,15 +120,23 @@ emailrelay_gui_real_LDADD = \
 pack_SOURCES = pack.cpp
 pack_LDADD = $(top_builddir)/src/glib/libglib.a
 
+emailrelay_start_gui_SOURCES = guistart.cpp
+emailrelay_start_gui_LDADD =
+
 install-exec-hook:
 	@echo "#!/bin/sh" > "$(DESTDIR)$(sbindir)/emailrelay-gui"
 	@echo DIR_SPOOL=\"$(DESTDIR)$(e_spooldir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 	@echo DIR_CONFIG=\"$(DESTDIR)$(e_sysconfdir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 	@echo exec $(DESTDIR)$(sbindir)/emailrelay-gui.real \"$$\@\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 	@chmod +x "$(DESTDIR)$(sbindir)/emailrelay-gui"
+	-if test -d "$(BUNDLE).app" ; then cp -R "$(BUNDLE).app" "$(DESTDIR)$(sbindir)" ; fi
 
 uninstall-hook:
 	-rm "$(DESTDIR)$(sbindir)/emailrelay-gui"
+	-rm -rf "$(DESTDIR)$(sbindir)/$(BUNDLE).app"
+
+clean-local:
+	rm -rf "$(BUNDLE).app"
 
 else
 
@@ -133,17 +146,20 @@ uninstall-hook:
 
 endif
 
+$(BUNDLE).app: emailrelay-start-gui
+	../../bin/make-bundle.sh "$(BUNDLE)" emailrelay-start-gui "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+
+.PHONY: bundle
+bundle: emailrelay-start-gui
+	../../bin/make-bundle.sh -f "$(BUNDLE)" emailrelay-start-gui "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+
 .PHONY: setup
 setup: emailrelay-setup
 emailrelay-setup: pack emailrelay-gui.real
 	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ emailrelay-gui.real pack
 	@chmod +x $@
 
-.PHONY: bundle
-bundle:
-	../../bin/make-bundle.sh "E-MailRelay Setup" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
-
 .PHONY: image
 image: bundle
-	hdiutil create -srcfolder "E-MailRelay Setup.app" "E-MailRelay.dmg" && hdiutil internet-enable -yes "E-MailRelay Setup.app"
+	hdiutil create -srcfolder "$(BUNDLE).app" "E-MailRelay.dmg" && hdiutil internet-enable -yes "$(BUNDLE).app"
 

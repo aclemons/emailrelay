@@ -37,7 +37,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-@GUI_TRUE@sbin_PROGRAMS = emailrelay-gui.real$(EXEEXT)
+@GUI_TRUE@sbin_PROGRAMS = emailrelay-gui.real$(EXEEXT) $(am__EXEEXT_1)
 @GUI_TRUE@noinst_PROGRAMS = pack$(EXEEXT)
 subdir = src/gui
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -49,6 +49,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
+@MAC_TRUE@am__EXEEXT_1 = emailrelay-start-gui$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(noinst_PROGRAMS) $(sbin_PROGRAMS)
@@ -69,6 +70,10 @@ am__emailrelay_gui_real_SOURCES_DIST = dir_unix.cpp boot_unix.cpp \
 @GUI_TRUE@	state.$(OBJEXT) unpack.$(OBJEXT)
 emailrelay_gui_real_OBJECTS = $(am_emailrelay_gui_real_OBJECTS)
 am__DEPENDENCIES_1 =
+am__emailrelay_start_gui_SOURCES_DIST = guistart.cpp
+@GUI_TRUE@am_emailrelay_start_gui_OBJECTS = guistart.$(OBJEXT)
+emailrelay_start_gui_OBJECTS = $(am_emailrelay_start_gui_OBJECTS)
+emailrelay_start_gui_DEPENDENCIES =
 am__pack_SOURCES_DIST = pack.cpp
 @GUI_TRUE@am_pack_OBJECTS = pack.$(OBJEXT)
 pack_OBJECTS = $(am_pack_OBJECTS)
@@ -86,8 +91,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(emailrelay_gui_real_SOURCES) $(pack_SOURCES)
+SOURCES = $(emailrelay_gui_real_SOURCES) \
+	$(emailrelay_start_gui_SOURCES) $(pack_SOURCES)
 DIST_SOURCES = $(am__emailrelay_gui_real_SOURCES_DIST) \
+	$(am__emailrelay_start_gui_SOURCES_DIST) \
 	$(am__pack_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
@@ -203,10 +210,15 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@MAC_FALSE@MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp
+BUNDLE = E-Mailrelay-Configure
+@MAC_FALSE@MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp guistart.cpp
 @MAC_TRUE@MAC_EXTRA_DIST = dir_unix.cpp boot_unix.cpp glink_unix.cpp
 @MAC_FALSE@MAC_SOURCES = dir_unix.cpp boot_unix.cpp glink_unix.cpp
 @MAC_TRUE@MAC_SOURCES = dir_mac.cpp boot_mac.cpp glink_mac.cpp
+@MAC_FALSE@MAC_NOINST = 
+@MAC_TRUE@MAC_NOINST = $(BUNDLE).app
+@MAC_FALSE@MAC_PROGS = 
+@MAC_TRUE@MAC_PROGS = emailrelay-start-gui
 EXTRA_DIST = \
 	emailrelay-icon.png \
 	gcominit.h \
@@ -244,7 +256,7 @@ EXTRA_DIST = \
 @GUI_TRUE@	-DG_DESTDIR=\"$(DESTDIR)\"
 
 @GUI_TRUE@AM_CPPFLAGS = $(QT_CFLAGS)
-@GUI_TRUE@noinst_SCRIPTS = mock
+@GUI_TRUE@noinst_SCRIPTS = mock $(MAC_NOINST)
 @GUI_TRUE@emailrelay_gui_real_SOURCES = \
 @GUI_TRUE@	$(MAC_SOURCES) \
 @GUI_TRUE@	boot.h \
@@ -278,6 +290,8 @@ EXTRA_DIST = \
 
 @GUI_TRUE@pack_SOURCES = pack.cpp
 @GUI_TRUE@pack_LDADD = $(top_builddir)/src/glib/libglib.a
+@GUI_TRUE@emailrelay_start_gui_SOURCES = guistart.cpp
+@GUI_TRUE@emailrelay_start_gui_LDADD = 
 all: all-am
 
 .SUFFIXES:
@@ -340,6 +354,9 @@ clean-sbinPROGRAMS:
 emailrelay-gui.real$(EXEEXT): $(emailrelay_gui_real_OBJECTS) $(emailrelay_gui_real_DEPENDENCIES) 
 	@rm -f emailrelay-gui.real$(EXEEXT)
 	$(CXXLINK) $(emailrelay_gui_real_OBJECTS) $(emailrelay_gui_real_LDADD) $(LIBS)
+emailrelay-start-gui$(EXEEXT): $(emailrelay_start_gui_OBJECTS) $(emailrelay_start_gui_DEPENDENCIES) 
+	@rm -f emailrelay-start-gui$(EXEEXT)
+	$(CXXLINK) $(emailrelay_start_gui_OBJECTS) $(emailrelay_start_gui_LDADD) $(LIBS)
 pack$(EXEEXT): $(pack_OBJECTS) $(pack_DEPENDENCIES) 
 	@rm -f pack$(EXEEXT)
 	$(CXXLINK) $(pack_OBJECTS) $(pack_LDADD) $(LIBS)
@@ -360,6 +377,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glink_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guimain.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guistart.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gunpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/installer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/legal.Po@am__quote@
@@ -502,10 +520,11 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+@GUI_FALSE@clean-local:
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS clean-sbinPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-local clean-noinstPROGRAMS \
+	clean-sbinPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -567,14 +586,14 @@ uninstall-am: uninstall-sbinPROGRAMS
 .MAKE: install-am install-exec-am install-strip uninstall-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS clean-sbinPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-exec-hook install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-sbinPROGRAMS install-strip installcheck \
+	clean-local clean-noinstPROGRAMS clean-sbinPROGRAMS ctags \
+	distclean distclean-compile distclean-generic distclean-tags \
+	distdir dvi dvi-am html html-am info info-am install \
+	install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-exec-hook \
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-sbinPROGRAMS install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
@@ -596,13 +615,25 @@ uninstall-am: uninstall-sbinPROGRAMS
 @GUI_TRUE@	@echo DIR_CONFIG=\"$(DESTDIR)$(e_sysconfdir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 @GUI_TRUE@	@echo exec $(DESTDIR)$(sbindir)/emailrelay-gui.real \"$$\@\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 @GUI_TRUE@	@chmod +x "$(DESTDIR)$(sbindir)/emailrelay-gui"
+@GUI_TRUE@	-if test -d "$(BUNDLE).app" ; then cp -R "$(BUNDLE).app" "$(DESTDIR)$(sbindir)" ; fi
 
 @GUI_TRUE@uninstall-hook:
 @GUI_TRUE@	-rm "$(DESTDIR)$(sbindir)/emailrelay-gui"
+@GUI_TRUE@	-rm -rf "$(DESTDIR)$(sbindir)/$(BUNDLE).app"
+
+@GUI_TRUE@clean-local:
+@GUI_TRUE@	rm -rf "$(BUNDLE).app"
 
 @GUI_FALSE@install-exec-hook:
 
 @GUI_FALSE@uninstall-hook:
+
+$(BUNDLE).app: emailrelay-start-gui
+	../../bin/make-bundle.sh "$(BUNDLE)" emailrelay-start-gui "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+
+.PHONY: bundle
+bundle: emailrelay-start-gui
+	../../bin/make-bundle.sh -f "$(BUNDLE)" emailrelay-start-gui "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 
 .PHONY: setup
 setup: emailrelay-setup
@@ -610,13 +641,9 @@ emailrelay-setup: pack emailrelay-gui.real
 	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ emailrelay-gui.real pack
 	@chmod +x $@
 
-.PHONY: bundle
-bundle:
-	../../bin/make-bundle.sh "E-MailRelay Setup" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
-
 .PHONY: image
 image: bundle
-	hdiutil create -srcfolder "E-MailRelay Setup.app" "E-MailRelay.dmg" && hdiutil internet-enable -yes "E-MailRelay Setup.app"
+	hdiutil create -srcfolder "$(BUNDLE).app" "E-MailRelay.dmg" && hdiutil internet-enable -yes "$(BUNDLE).app"
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

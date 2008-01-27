@@ -41,11 +41,11 @@ BUNDLE=E-MailRelay-Start
 if MAC
 MAC_PROGS = emailrelay-start
 MAC_EXTRA_DIST =
-noinst_SCRIPTS = $(BUNDLE).app
+MAC_NOINST = $(BUNDLE).app
 else
 MAC_PROGS =
 MAC_EXTRA_DIST = start.cpp
-noinst_SCRIPTS =
+MAC_NOINST =
 endif
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
@@ -94,6 +94,7 @@ INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(
 sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd $(MAC_PROGS)
 e_libexec_PROGRAMS = emailrelay-poke emailrelay-filter-copy
 e_spool_DATA = 
+noinst_SCRIPTS = $(MAC_NOINST)
 
 emailrelay_SOURCES = \
 	$(ADMIN_SOURCES) \

@@ -251,8 +251,8 @@ BUNDLE = E-MailRelay-Start
 @MAC_TRUE@MAC_PROGS = emailrelay-start
 @MAC_FALSE@MAC_EXTRA_DIST = start.cpp
 @MAC_TRUE@MAC_EXTRA_DIST = 
-@MAC_FALSE@noinst_SCRIPTS = 
-@MAC_TRUE@noinst_SCRIPTS = $(BUNDLE).app
+@MAC_FALSE@MAC_NOINST = 
+@MAC_TRUE@MAC_NOINST = $(BUNDLE).app
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS = -s
@@ -296,6 +296,7 @@ EXTRA_DIST = \
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\"
 e_spool_DATA = 
+noinst_SCRIPTS = $(MAC_NOINST)
 emailrelay_SOURCES = \
 	$(ADMIN_SOURCES) \
 	$(CONFIG_SOURCES) \
