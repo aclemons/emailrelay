@@ -39,6 +39,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <iterator>
 #include <algorithm>
 #include <functional>
 #include <list>
@@ -76,8 +77,14 @@ static std::string find( std::string argv0 , std::string name , bool more )
 	for( std::list<std::string>::iterator p = list.begin() ; p != list.end() ; ++p )
 	{
 		if( exists(*p) )
+		{
+			std::cout << "found [" << *p << "]" << std::endl ;
 			return *p ;
+		}
 	}
+	std::cout << "not found ...\n " ;
+	std::copy( list.begin() , list.end() , std::ostream_iterator<std::string>(std::cout,"\n ") ) ;
+	std::cout << "\n" ;
 	return std::string() ;
 }
 
