@@ -21,7 +21,7 @@
 # Builds a "setup" self-extracting archive derived from running 
 # "make install" into a temporary directory.
 #
-# usage: make-setup.sh [-d] <output> <stub> <pack-utility>
+# usage: make-setup.sh [-d] <output> <stub> <pack-utility> <destdir> <installdir> <sysconfdir>
 #
 # Normally run by "make setup" in the "src/gui".
 #
@@ -37,8 +37,11 @@
 # parse the command line
 debug="0" ; if test "$1" = "-d" ; then shift ; debug="1" ; fi
 setup="$1"
-gui="$2"
+stub="$2"
 pack="$3"
+destdir="$4"
+installdir="$5"
+sysconfdir="$6"
 
 # define temporary directories and cleanup code
 tmp="/tmp/`basename $0 .sh`.$$.tmp"
@@ -60,9 +63,9 @@ Fail()
 }
 
 # check the command-line
-if test "$setup" = "" -o ! -x "$gui" -o ! -x "$pack"
+if test "$setup" = "" -o ! -f "$stub" -o ! -x "$pack"
 then
-	echo usage: `basename $0` '<setup> <gui> <pack>' >&2
+	echo usage: `basename $0` '<setup> <stub> <pack>' >&2
 	exit 2
 fi
 
@@ -86,5 +89,5 @@ sort -n $list | sed 's/^[0-9][0-9]* //' > $list.tmp && mv $list.tmp $list
 
 # create the packed file
 PATH=".:$PATH"
-$pack -q -f "$list" $setup $gui
+"$pack" -q -f "$list" "$setup" "$stub"
 

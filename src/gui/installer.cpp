@@ -829,7 +829,8 @@ void InstallerImp::insertActions()
 	if( addIndirection(target_link_info) )
 		insert( new CreateBatchFile(target_link_info) ) ;
 
-	// extract packed files
+	// extract packed files -- extracts to "dir-install", except for paths 
+	// starting with "$etc" which are installed into "dir-config" -- see make-setup.sh
 	//
 	if( m_installing )
 	{

@@ -19,16 +19,20 @@
 #
 
 BUNDLE=E-Mailrelay-Configure
+SETUP_BUNDLE=E-Mailrelay-Install
+
 if MAC
 MAC_EXTRA_DIST = dir_unix.cpp boot_unix.cpp glink_unix.cpp
 MAC_SOURCES = dir_mac.cpp boot_mac.cpp glink_mac.cpp
 MAC_NOINST = $(BUNDLE).app
 MAC_PROGS = emailrelay-start-gui
+MAKE_SETUP_STUB = empty
 else
 MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp guistart.cpp
 MAC_SOURCES = dir_unix.cpp boot_unix.cpp glink_unix.cpp
 MAC_PROGS =
 MAC_NOINST =
+MAKE_SETUP_STUB = emailrelay-gui.real
 endif
 
 EXTRA_DIST=\
@@ -153,13 +157,26 @@ $(BUNDLE).app: emailrelay-start-gui
 bundle: emailrelay-start-gui
 	../../bin/make-bundle.sh -f "$(BUNDLE)" emailrelay-start-gui "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 
-.PHONY: setup
-setup: emailrelay-setup
-emailrelay-setup: pack emailrelay-gui.real
-	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ emailrelay-gui.real pack
+empty:
+	-@echo 'x' > empty
+
+emailrelay-setup: pack $(MAKE_SETUP_STUB)
+	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ $(MAKE_SETUP_STUB) pack "$(DESTDIR)" "$(sbindir)" "$(e_sysconfdir)"
 	@chmod +x $@
 
+payload: pack empty
+	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ empty pack "$(DESTDIR)" "$(sbindir)" "$(e_sysconfdir)"
+
+$(SETUP_BUNDLE).app: emailrelay-setup payload
+	../../bin/make-bundle.sh "$(SETUP_BUNDLE)" emailrelay-setup "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+	cp payload "$(SETUP_BUNDLE).app/Contents/"
+
+.PHONY: setup-bundle
+setup-bundle: emailrelay-setup payload
+	../../bin/make-bundle.sh -f "$(SETUP_BUNDLE)" emailrelay-setup "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+	cp payload "$(SETUP_BUNDLE).app/Contents/"
+
 .PHONY: image
-image: bundle
-	hdiutil create -srcfolder "$(BUNDLE).app" "E-MailRelay.dmg" && hdiutil internet-enable -yes "$(BUNDLE).app"
+image: $(SETUP_BUNDLE).app
+	hdiutil create -srcfolder "$(SETUP_BUNDLE).app" "E-MailRelay.dmg" && hdiutil internet-enable -yes "E-MailRelay.dmg"
 
