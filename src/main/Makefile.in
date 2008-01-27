@@ -35,7 +35,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 sbin_PROGRAMS = emailrelay$(EXEEXT) emailrelay-submit$(EXEEXT) \
-	emailrelay-passwd$(EXEEXT)
+	emailrelay-passwd$(EXEEXT) $(am__EXEEXT_1)
 e_libexec_PROGRAMS = emailrelay-poke$(EXEEXT) \
 	emailrelay-filter-copy$(EXEEXT)
 subdir = src/main
@@ -51,6 +51,7 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(sbindir)" \
 	"$(DESTDIR)$(e_spooldir)"
 e_libexecPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
+@MAC_TRUE@am__EXEEXT_1 = emailrelay-start$(EXEEXT)
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(e_libexec_PROGRAMS) $(sbin_PROGRAMS)
 am__emailrelay_SOURCES_DIST = admin_disabled.cpp admin_enabled.cpp \
@@ -85,6 +86,9 @@ emailrelay_passwd_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_emailrelay_poke_OBJECTS = poke.$(OBJEXT)
 emailrelay_poke_OBJECTS = $(am_emailrelay_poke_OBJECTS)
 emailrelay_poke_DEPENDENCIES =
+am_emailrelay_start_OBJECTS = start.$(OBJEXT)
+emailrelay_start_OBJECTS = $(am_emailrelay_start_OBJECTS)
+emailrelay_start_DEPENDENCIES =
 am_emailrelay_submit_OBJECTS = submit.$(OBJEXT) legal.$(OBJEXT)
 emailrelay_submit_OBJECTS = $(am_emailrelay_submit_OBJECTS)
 emailrelay_submit_DEPENDENCIES = $(top_builddir)/src/gsmtp/libgsmtp.a \
@@ -103,10 +107,11 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(emailrelay_SOURCES) $(emailrelay_filter_copy_SOURCES) \
 	$(emailrelay_passwd_SOURCES) $(emailrelay_poke_SOURCES) \
-	$(emailrelay_submit_SOURCES)
+	$(emailrelay_start_SOURCES) $(emailrelay_submit_SOURCES)
 DIST_SOURCES = $(am__emailrelay_SOURCES_DIST) \
 	$(emailrelay_filter_copy_SOURCES) $(emailrelay_passwd_SOURCES) \
-	$(emailrelay_poke_SOURCES) $(emailrelay_submit_SOURCES)
+	$(emailrelay_poke_SOURCES) $(emailrelay_start_SOURCES) \
+	$(emailrelay_submit_SOURCES)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -239,6 +244,8 @@ top_srcdir = @top_srcdir@
 @SMALL_CONFIG_TRUE@CONFIG_SOURCES = commandline_simple.cpp
 @SMALL_FRAGMENTS_FALSE@FRAGMENTS_LDADD = 
 @SMALL_FRAGMENTS_TRUE@FRAGMENTS_LDADD = $(top_builddir)/src/fragments/libfragments.a
+@MAC_FALSE@MAC_PROGS = 
+@MAC_TRUE@MAC_PROGS = emailrelay-start
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS = -s
@@ -325,6 +332,8 @@ emailrelay_filter_copy_SOURCES = filter_copy.cpp filter.cpp filter.h legal.cpp l
 emailrelay_filter_copy_LDADD = \
 	$(COMMON_LDADD)
 
+emailrelay_start_SOURCES = start.cpp
+emailrelay_start_LDADD = 
 all: all-am
 
 .SUFFIXES:
@@ -416,6 +425,9 @@ emailrelay-passwd$(EXEEXT): $(emailrelay_passwd_OBJECTS) $(emailrelay_passwd_DEP
 emailrelay-poke$(EXEEXT): $(emailrelay_poke_OBJECTS) $(emailrelay_poke_DEPENDENCIES) 
 	@rm -f emailrelay-poke$(EXEEXT)
 	$(LINK) $(emailrelay_poke_OBJECTS) $(emailrelay_poke_LDADD) $(LIBS)
+emailrelay-start$(EXEEXT): $(emailrelay_start_OBJECTS) $(emailrelay_start_DEPENDENCIES) 
+	@rm -f emailrelay-start$(EXEEXT)
+	$(CXXLINK) $(emailrelay_start_OBJECTS) $(emailrelay_start_LDADD) $(LIBS)
 emailrelay-submit$(EXEEXT): $(emailrelay_submit_OBJECTS) $(emailrelay_submit_DEPENDENCIES) 
 	@rm -f emailrelay-submit$(EXEEXT)
 	$(CXXLINK) $(emailrelay_submit_OBJECTS) $(emailrelay_submit_LDADD) $(LIBS)
@@ -439,6 +451,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/passwd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/poke.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/run.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/start.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/submit.Po@am__quote@
 
 .c.o:
@@ -681,6 +694,10 @@ install-exec-local:
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_spooldir) 2>/dev/null
 	-rmdir $(DESTDIR)$(e_libexecdir) 2>/dev/null
+
+.PHONY: bundle
+bundle: emailrelay-start $(sbin_PROGRAMS) (e_libexec_PROGRAMS)
+	../../bin/make-bundle.sh -f "E-MailRelay Start" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

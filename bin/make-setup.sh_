@@ -21,7 +21,7 @@
 # Builds a "setup" self-extracting archive derived from running 
 # "make install" into a temporary directory.
 #
-# usage: make-setup.sh [-d] <output> <gui> <pack>
+# usage: make-setup.sh [-d] <output> <stub> <pack-utility>
 #
 # Normally run by "make setup" in the "src/gui".
 #

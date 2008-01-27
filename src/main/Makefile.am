@@ -37,6 +37,12 @@ else
 FRAGMENTS_LDADD = 
 endif
 
+if MAC
+MAC_PROGS = emailrelay-start
+else
+MAC_PROGS =
+endif
+
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS=-s
 
@@ -79,7 +85,7 @@ EXTRA_DIST=\
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\"
 
-sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd
+sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd $(MAC_PROGS)
 e_libexec_PROGRAMS = emailrelay-poke emailrelay-filter-copy
 e_spool_DATA = 
 
@@ -139,4 +145,11 @@ install-exec-local:
 uninstall-local:
 	-rmdir $(DESTDIR)$(e_spooldir) 2>/dev/null
 	-rmdir $(DESTDIR)$(e_libexecdir) 2>/dev/null
+
+emailrelay_start_SOURCES = start.cpp
+emailrelay_start_LDADD =
+
+.PHONY: bundle
+bundle: emailrelay-start $(sbin_PROGRAMS) (e_libexec_PROGRAMS)
+	../../bin/make-bundle.sh -f "E-MailRelay Start" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 
