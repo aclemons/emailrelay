@@ -642,19 +642,19 @@ payload-stub:
 	-@echo '#!/bin/sh' > payload-stub
 	-@echo 'exit 1' >> payload-stub
 
-emailrelay-setup: pack $(MAKE_SETUP_STUB)
+emailrelay-setup: pack $(MAKE_SETUP_STUB) ../../bin/make-setup.sh
 	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ $(MAKE_SETUP_STUB) pack "$(DESTDIR)" "$(sbindir)" "$(e_sysconfdir)"
 	@chmod +x $@
 
-payload: pack payload-stub
+payload: pack payload-stub ../../bin/make-setup.sh
 	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ payload-stub pack "$(DESTDIR)" "$(sbindir)" "$(e_sysconfdir)"
 
-$(SETUP_BUNDLE).app: emailrelay-gui.real payload
+$(SETUP_BUNDLE).app: emailrelay-gui.real payload ../../bin/make-bundle.sh
 	../../bin/make-bundle.sh "$(SETUP_BUNDLE)" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 	cp payload "$(SETUP_BUNDLE).app/Contents/"
 
 .PHONY: setup-bundle
-setup-bundle: emailrelay-gui.real payload
+setup-bundle: emailrelay-gui.real payload ../../bin/make-bundle.sh
 	../../bin/make-bundle.sh -f "$(SETUP_BUNDLE)" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 	cp payload "$(SETUP_BUNDLE).app/Contents/"
 

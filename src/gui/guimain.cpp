@@ -171,8 +171,8 @@ int main( int argc , char * argv [] )
 		{
 			// find the payload -- normally packed into the running executable
 			G::Path payload_1 = args.v(0) ;
-			G::Path payload_2 = G::Path( args.v(0) , "payload" ) ;
-			G::Path payload_3 = G::Path( args.v(0) , ".." , "payload" ) ;
+			G::Path payload_2 = G::Path( args.v(0).dirname() , "payload" ) ;
+			G::Path payload_3 = G::Path( args.v(0).dirname() , ".." , "payload" ) ;
 			G::Path payload = 
 				G::Unpack::isPacked(payload_1) ? payload_1 : (
 				G::Unpack::isPacked(payload_2) ? payload_2 : (
@@ -240,7 +240,7 @@ int main( int argc , char * argv [] )
 			d.add( new ListeningPage(d,state,"listening","startup","",false,false) , cfg_test_page ) ;
 			d.add( new StartupPage(d,state,"startup","ready","",false,false,dir,isMac()||cfg_as_mac) , cfg_test_page ) ;
 			d.add( new ReadyPage(d,state,"ready","progress","",true,false,is_installing) , cfg_test_page ) ;
-			d.add( new ProgressPage(d,state,"progress","","",true,true,args.v(0),payload,state_path_out,is_installing) , 
+			d.add( new ProgressPage(d,state,"progress","","",true,true,args.v(0),payload,state_path_out,is_installing) ,
 				cfg_test_page ) ;
 			d.add() ;
 
