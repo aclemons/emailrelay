@@ -238,7 +238,6 @@ private:
 	void addSecret( G::StringMap & , const std::string & ) const ;
 	void addSecret( G::StringMap & , const std::string & , const std::string & , const std::string & ) const ;
 	LinkInfo targetLinkInfo() const ;
-	bool addIndirection( LinkInfo & link_info ) const ;
 	G::Strings commandlineArgs( bool short_ = false ) const ;
 	std::pair<std::string,Map> commandlineMap( bool short_ = false ) const ;
 	void insert( ActionInterface * p ) ;
@@ -272,10 +271,10 @@ std::string CreateDirectory::ok() const
 
 void CreateDirectory::run()
 {
-	G::Directory dir( m_path ) ;
+	G::Directory directory( m_path ) ;
 	if( G::File::exists(m_path) )
 	{
-		if( !dir.valid() )
+		if( !directory.valid() )
 			throw std::runtime_error( "directory path exists but not valid a directory" ) ;
 		m_ok = "exists" ;
 	}
@@ -283,7 +282,7 @@ void CreateDirectory::run()
 	{
 		G::File::mkdirs( m_path , 10 ) ;
 	}
-	if( !dir.writeable() )
+	if( !directory.writeable() )
 		throw std::runtime_error( "directory exists but is not writable" ) ;
 }
 
@@ -298,7 +297,8 @@ ExtractOriginal::ExtractOriginal( G::Path argv0 , G::Unpack & unpack , G::Path d
 
 void ExtractOriginal::run() 
 {
-	if( m_unpack.names().empty() ) // okay if not packed, just copy argv0
+	// okay if not packed or a separate payload, just copy argv0
+	if( m_unpack.names().empty() || m_unpack.path() != m_argv0 ) 
 	{
 		if( m_argv0 == m_dst )
 		{
@@ -822,15 +822,22 @@ void InstallerImp::insertActions()
 	insert( new CreateDirectory("spool",value("dir-spool")) ) ;
 	insert( new CreateDirectory("pid",value("dir-pid")) ) ;
 
-	// bits and bobs
+	// create secrets
 	//
 	insert( new CreateSecrets(value("dir-config"),"emailrelay.auth",secrets()) ) ;
-	LinkInfo target_link_info = targetLinkInfo() ;
-	if( addIndirection(target_link_info) )
-		insert( new CreateBatchFile(target_link_info) ) ;
 
-	// extract packed files -- extracts to "dir-install", except for paths 
-	// starting with "$etc" which are installed into "dir-config" -- see make-setup.sh
+	// create a startup link target
+	//
+	LinkInfo target_link_info = targetLinkInfo() ;
+	if( isWindows() )
+	{
+		target_link_info.target = G::Path( value("dir-install") , "emailrelay-start.bat" ) ;
+		target_link_info.args = G::Strings() ;
+		insert( new CreateBatchFile(target_link_info) ) ;
+	}
+
+	// extract packed files -- do substitution for "$install", "$etc"
+	// and "$init" -- see "make-setup.sh"
 	//
 	if( m_installing )
 	{
@@ -838,21 +845,42 @@ void InstallerImp::insertActions()
 		std::set<std::string> dir_set ;
 		for( G::Strings::iterator p = name_list.begin() ; p != name_list.end() ; ++p )
 		{
-			std::string name = *p ;
-			std::string base = value("dir-install") ;
-			if( name.find("$etc") == 0U )
+			const std::string & name = *p ;
+			G::Path path ;
 			{
-				name = name.substr(4U) ;
-				base = value("dir-config") ;
-			}
+				std::string sname = "/" + name ;
+				if( sname.find(Dir::boot(1).str()) == 0U )
+				{
+					// ("dir-boot" may not be writeable so bootcopy() allows us
+					// to squirrel the files away somewhere else where Boot::install() 
+					// can get at them)
 
-			G::Path path = G::Path::join( base , name ) ;
-			if( dir_set.find(path.dirname().str()) == dir_set.end() )
-			{
-				dir_set.insert( path.dirname().str() ) ;
-				insert( new CreateDirectory("target",path.dirname().str()) ) ;
+					G::Path dst_dir = Dir::bootcopy( value("dir-boot") , value("dir-install") ) ;
+					if( dst_dir != G::Path() )
+					{
+						path = G::Path::join( dst_dir , name.substr(Dir::boot(1).str().length()-1U) ) ;
+						if( m_unpack.flags(name).find('x') != std::string::npos ) 
+							target_link_info.target = path ; // eek!
+					}
+				}
+				else if( sname.find(Dir::config(1).str()) == 0U )
+				{
+					path = G::Path::join( value("dir-config"),name.substr(Dir::config(1).str().length()-1U) ) ;
+				}
+				else
+				{
+					path = G::Path::join( value("dir-install"),name.substr(Dir::install().str().length()-1U) ) ;
+				}
 			}
-			insert( new Extract(m_unpack,*p,path) ) ;
+			if( path != G::Path() )
+			{
+				if( dir_set.find(path.dirname().str()) == dir_set.end() )
+				{
+					dir_set.insert( path.dirname().str() ) ;
+					insert( new CreateDirectory("target",path.dirname().str()) ) ;
+				}
+				insert( new Extract(m_unpack,name,path) ) ;
+			}
 		}
 	}
 
@@ -877,7 +905,7 @@ void InstallerImp::insertActions()
 			insert( new Copy(value("dir-install"),"QtGui4.dll") ) ;
 	}
 
-	// create links
+	// create startup links
 	//
 	G::Path working_dir = value("dir-config") ;
 	const bool is_mac = yes(value("start-is-mac")) ;
@@ -953,7 +981,7 @@ void InstallerImp::addSecret( G::StringMap & map ,
 
 LinkInfo InstallerImp::targetLinkInfo() const
 {
-	G::Path target_exe( value("dir-install") , std::string() + "emailrelay" + exe() ) ;
+	G::Path target_exe = Dir::server( value("dir-install") ) ;
 	G::Strings args = commandlineArgs() ;
 
 	LinkInfo link_info ;
@@ -962,22 +990,6 @@ LinkInfo InstallerImp::targetLinkInfo() const
 	link_info.raw_target = target_exe ;
 	link_info.raw_args = args ;
 	return link_info ;
-}
-
-bool InstallerImp::addIndirection( LinkInfo & link_info ) const
-{
-	// create a batch script on windows -- (the service stuff requires a batch file)
-	bool use_batch_file = isWindows() ;
-	if( use_batch_file )
-	{
-		link_info.target = G::Path( value("dir-install") , "emailrelay-start.bat" ) ;
-		link_info.args = G::Strings() ;
-		return true ;
-	}
-	else
-	{
-		return false ;
-	}
 }
 
 G::Strings InstallerImp::commandlineArgs( bool short_ ) const

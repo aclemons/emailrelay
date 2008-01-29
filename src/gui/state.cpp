@@ -110,7 +110,7 @@ std::string State::value( const std::string & key , const std::string & default_
 	G::Str::toUpper( k ) ;
 
 	Map::const_iterator p = m_map.find( k ) ;
-	std::string result = p == m_map.end() ? default_ : (*p).second ;
+	std::string result = ( p == m_map.end() || (*p).second.empty() ) ? default_ : (*p).second ;
 	G_DEBUG( "State::value: [" << key << "]=\"" << result << "\"" ) ;
 	return result ;
 }

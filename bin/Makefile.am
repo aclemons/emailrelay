@@ -16,9 +16,11 @@
 #
 
 if MAC
-e_init_SCRIPTS = E-MailRelay StartupParameters.plist
+e_init_SCRIPTS = E-MailRelay 
+e_init_DATA = StartupParameters.plist
 else
 e_init_SCRIPTS = emailrelay
+e_init_DATA =
 endif
 
 EXTRA_DIST = \
@@ -88,6 +90,9 @@ emailrelay: emailrelay.sh
 
 E-MailRelay: emailrelay.sh
 	cp emailrelay.sh $@
+
+StartupParameters.plist: startup-mac.plist
+	cp $(top_srcdir)/bin/startup-mac.plist $@
 
 install-data-local: install-e_examplesDATA install-e_initSCRIPTS
 	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-process.sh"

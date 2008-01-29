@@ -635,6 +635,16 @@ dnl Sets directory paths taking account of "--enable-fhs".
 dnl
 AC_DEFUN([SET_DIRECTORIES],
 [
+	# the following are used in the makefiles:
+	# * sbindir
+	# * e_libexecdir
+	# * e_examplesdir
+	# * e_sysconfdir
+	# * mandir
+	# * e_docdir
+	# * e_spooldir
+	# * e_initdir
+
 	if test "$enable_fhs" = "yes"
 	then
 		prefix='/usr'
@@ -645,6 +655,33 @@ AC_DEFUN([SET_DIRECTORIES],
 		mandir="/usr/share/man"
 		datadir="/usr/share"
 		sysconfdir="/etc"
+	fi
+	if test "$e_libexecdir" = "" 
+	then 
+		if test "$enable_fhs" = "yes" 
+		then 
+			e_libexecdir="$libexecdir/$PACKAGE" 
+		else 
+			e_libexecdir="$libexecdir/$PACKAGE" 
+		fi
+	fi
+	if test "$e_examplesdir" = "" 
+	then 
+		if test "$enable_fhs" = "yes" 
+		then
+			e_examplesdir="$libexecdir/$PACKAGE/examples"
+		else 
+			e_examplesdir="$libexecdir/$PACKAGE/examples" 
+		fi
+	fi
+	if test "$e_sysconfdir" = "" 
+	then 
+		if test "$enable_fhs" = "yes" 
+		then 
+			e_sysconfdir="$sysconfdir"
+		else 
+			e_sysconfdir="$sysconfdir" 
+		fi
 	fi
 	if test "$e_docdir" = "" 
 	then 
@@ -659,15 +696,6 @@ AC_DEFUN([SET_DIRECTORIES],
 			fi
 		fi
 	fi
-	if test "$e_initdir" = "" 
-	then 
-		if test "$enable_fhs" = "yes" 
-		then 
-			e_initdir="/etc/init.d" 
-		else 
-			e_initdir="$libexecdir/$PACKAGE/init" 
-		fi
-	fi
 	if test "$e_spooldir" = "" 
 	then 
 		if test "$enable_fhs" = "yes" 
@@ -677,31 +705,13 @@ AC_DEFUN([SET_DIRECTORIES],
 			e_spooldir="$localstatedir/spool/$PACKAGE" 
 		fi
 	fi
-	if test "$e_examplesdir" = "" 
-	then 
-		if test "$enable_fhs" = "yes" 
-		then
-			e_examplesdir="$libexecdir/$PACKAGE/examples"
-		else 
-			e_examplesdir="$libexecdir/$PACKAGE/examples" 
-		fi
-	fi
-	if test "$e_libexecdir" = "" 
+	if test "$e_initdir" = "" 
 	then 
 		if test "$enable_fhs" = "yes" 
 		then 
-			e_libexecdir="$libexecdir/$PACKAGE" 
+			e_initdir="/etc/init.d" 
 		else 
-			e_libexecdir="$libexecdir/$PACKAGE" 
-		fi
-	fi
-	if test "$e_sysconfdir" = "" 
-	then 
-		if test "$enable_fhs" = "yes" 
-		then 
-			e_sysconfdir="$sysconfdir"
-		else 
-			e_sysconfdir="$sysconfdir" 
+			e_initdir="$libexecdir/$PACKAGE/init" 
 		fi
 	fi
 ])

@@ -21,11 +21,12 @@
 #include "gdef.h"
 #include "boot.h"
 #include "gpath.h"
+#include "gprocess.h"
 #include "gfile.h"
 #include "gdirectory.h"
 #include <stdexcept>
 
-bool Boot::able( G::Path dir , G::Path )
+bool Boot::able( G::Path dir )
 {
 	// nasty side-effect required because Library/StartupItems may not exist
 	if( dir != G::Path() )
@@ -39,35 +40,24 @@ bool Boot::able( G::Path dir , G::Path )
 
 bool Boot::install( G::Path dir_boot , G::Path target , G::Strings )
 {
-	bool ok =
-		G::File::mkdir( dir_boot + target.basename() , G::File::NoThrow() ) &&
-		G::File::copy( target , dir_boot + target.basename() + target.basename() , G::File::NoThrow() ) ;
-
-	G::Path plist_path = dir_boot + target.basename() + "StartupParameters.plist" ;
-	std::ofstream plist( plist_path.str().c_str() ) ;
-	plist <<
-		"{\n" 
-		"  Description = \"xxx\";\n"
-		"  Provides = (\"xxx\");\n"
-		"  Requires = (\"xxx\");\n"
-		"  Uses = (\"xxx\");\n"
-		"  OrderPreference = (\"xxx\");\n"
-		"  Messages = {\n"
-		"    restart = \"...\";\n"
-		"    start = \"...\";\n"
-		"    stop = \"...\";\n"
-		"}\n"
-	;
-	plist << std::flush ;
-	ok = plist.good() && ok ;
-	return ok ;
+	G::Path src_dir = target.dirname() ;
+	G::Path dst_dir = dir_boot + target.basename() ;
+	std::string plist = "StartupParameters.plist" ;
+	{
+		G::Process::Umask umask( G::Process::Umask::Readable ) ; // needed?
+		G::File::mkdirs( dst_dir , G::File::NoThrow() , 6 ) ;
+	}
+	return
+		G::File::copy( src_dir + target.basename() , dst_dir + target.basename() , G::File::NoThrow() ) &&
+		G::File::copy( src_dir + plist , dst_dir + plist , G::File::NoThrow() ) ;
 }
 
 bool Boot::uninstall( G::Path dir_boot , G::Path target , G::Strings )
 {
+	std::string plist = "StartupParameters.plist" ;
 	return
 		G::File::remove( dir_boot + target.basename() + target.basename() , G::File::NoThrow() ) &&
-		G::File::remove( dir_boot + target.basename() + "StartupParameters.plist" , G::File::NoThrow() ) &&
+		G::File::remove( dir_boot + target.basename() + plist , G::File::NoThrow() ) &&
 		G::File::remove( dir_boot + target.basename() , G::File::NoThrow() ) ;
 }
 

@@ -27,16 +27,29 @@
 #include <stdexcept>
 #include <unistd.h>
 
-#ifndef G_SPOOLDIR
-	#define G_SPOOLDIR ""
+#ifndef G_SBINDIR
+	#define G_SBINDIR ""
 #endif
-
+#ifndef G_LIBEXECDIR
+	#define G_LIBEXECDIR ""
+#endif
+#ifndef G_EXAMPLESDIR
+	#define G_EXAMPLESDIR ""
+#endif
 #ifndef G_SYSCONFDIR
 	#define G_SYSCONFDIR ""
 #endif
-
-#ifndef G_DESTDIR
-	#define G_DESTDIR ""
+#ifndef G_MANDIR
+	#define G_MANDIR ""
+#endif
+#ifndef G_DOCDIR
+	#define G_DOCDIR ""
+#endif
+#ifndef G_SPOOLDIR
+	#define G_SPOOLDIR ""
+#endif
+#ifndef G_INITDIR
+	#define G_INITDIR ""
 #endif
 
 namespace
@@ -71,25 +84,35 @@ std::string Dir::dotexe()
 	return std::string() ;
 }
 
-G::Path Dir::os_install() const
+G::Path Dir::os_install()
 {
-	std::string s( G_DESTDIR ) ;
-	if( s.empty() )
-		s = "/usr" ;
-	return s ;
+	// this is what to present to the user as the
+	// default base of the install
+
+	return "/usr" ;
 }
 
-G::Path Dir::os_gui( const G::Path & base )
+G::Path Dir::os_gui( const G::Path & install )
 {
-	return base + "sbin" + "emailrelay-gui.real" ;
+	return install + "sbin" + "emailrelay-gui.real" ; // should use G_SBINDIR
 }
 
-G::Path Dir::os_config() const
+G::Path Dir::os_server( const G::Path & install )
 {
-	std::string s( G_SYSCONFDIR ) ;
-	if( s.empty() )
-		s = "/etc" ;
-	return s ;
+	return install + "sbin" + "emailrelay" ; // should use G_SBINDIR
+}
+
+G::Path Dir::os_bootcopy( const G::Path & , const G::Path & install )
+{
+	return install + "sbin" + "emailrelay-init" ; // should use G_SBINDIR
+}
+
+G::Path Dir::os_config()
+{
+	std::string sysconfdir( G_SYSCONFDIR ) ;
+	if( sysconfdir.empty() )
+		sysconfdir = "/etc" ;
+	return sysconfdir ;
 }
 
 G::Path Dir::os_spool() const
@@ -114,7 +137,7 @@ G::Path Dir::os_pid() const
 	return oneOf( "/var/run" , "/tmp" ) ;
 }
 
-G::Path Dir::special( const std::string & type ) const
+G::Path Dir::special( const std::string & type )
 {
 	// see "http://standards.freedesktop.org"
 
@@ -133,9 +156,12 @@ G::Path Dir::special( const std::string & type ) const
 	return G::Path() ;
 }
 
-G::Path Dir::os_boot() const
+G::Path Dir::os_boot()
 {
-	return oneOf( "/etc/init.d" , "/Library/StartupItems" , "/sbin/init.d" ) ;
+	std::string s( G_INITDIR ) ;
+	if( !s.empty() )
+		return s ;
+	return "/etc/init.d" ;
 }
 
 bool Dir::ok( const std::string & s )

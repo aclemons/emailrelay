@@ -24,16 +24,29 @@
 #include "gfile.h"
 #include "gdirectory.h"
 
-#ifndef G_SPOOLDIR
-	#define G_SPOOLDIR ""
+#ifndef G_SBINDIR
+	#define G_SBINDIR ""
 #endif
-
+#ifndef G_LIBEXECDIR
+	#define G_LIBEXECDIR ""
+#endif
+#ifndef G_EXAMPLESDIR
+	#define G_EXAMPLESDIR ""
+#endif
 #ifndef G_SYSCONFDIR
 	#define G_SYSCONFDIR ""
 #endif
-
-#ifndef G_DESTDIR
-	#define G_DESTDIR ""
+#ifndef G_MANDIR
+	#define G_MANDIR ""
+#endif
+#ifndef G_DOCDIR
+	#define G_DOCDIR ""
+#endif
+#ifndef G_SPOOLDIR
+	#define G_SPOOLDIR ""
+#endif
+#ifndef G_INITDIR
+	#define G_INITDIR ""
 #endif
 
 std::string Dir::dotexe()
@@ -41,23 +54,33 @@ std::string Dir::dotexe()
 	return std::string() ;
 }
 
-G::Path Dir::os_install() const
+G::Path Dir::os_install()
 {
-	std::string s( G_DESTDIR ) ;
-	return s.empty() ? G::Path("/Applications/E-MailRelay") : G::Path(s) ;
+	// user expects to say "/Applications" or "~/Applications"
+	return "/Applications" ;
 }
 
-G::Path Dir::os_gui( const G::Path & base )
+G::Path Dir::os_gui( const G::Path & install )
 {
-	return base + "emailrelay-gui.real" ;
+	return install + "E-MailRelay" + "emailrelay-gui.real" ; // should use G_SBINDIR
 }
 
-G::Path Dir::os_config() const
+G::Path Dir::os_server( const G::Path & install )
 {
-	std::string s( G_SYSCONFDIR ) ;
-	if( s.empty() )
-		s = "/Library/Preferences/E-MailRelay" ;
-	return s ;
+	return install + "E-MailRelay" + "emailrelay" ; // should use G_SBINDIR
+}
+
+G::Path Dir::os_bootcopy( const G::Path & , const G::Path & install )
+{
+	return install + "E-MailRelay" + "StartupItems" ; // should use G_SBINDIR
+}
+
+G::Path Dir::os_config()
+{
+	std::string sysconfdir( G_SYSCONFDIR ) ;
+	if( sysconfdir.empty() )
+		sysconfdir = "/Library/Preferences/E-MailRelay" ;
+	return sysconfdir ;
 }
 
 G::Path Dir::os_spool() const
@@ -82,7 +105,7 @@ G::Path Dir::os_pid() const
 	return ok("/var/run") ? "var/run" : "/tmp" ;
 }
 
-G::Path Dir::special( const std::string & type ) const
+G::Path Dir::special( const std::string & type )
 {
 	if( type == "desktop" ) return home()+"Desktop" ;
 	if( type == "menu" ) return G::Path() ;
@@ -91,8 +114,11 @@ G::Path Dir::special( const std::string & type ) const
 	return G::Path() ;
 }
 
-G::Path Dir::os_boot() const
+G::Path Dir::os_boot()
 {
+	std::string s( G_INITDIR ) ;
+	if( !s.empty() )
+		return s ;
 	return "/Library/StartupItems" ;
 }
 

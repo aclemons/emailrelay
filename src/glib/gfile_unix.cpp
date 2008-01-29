@@ -19,6 +19,7 @@
 //
 	
 #include "gdef.h"
+#include "glimits.h"
 #include "gfile.h"
 #include "gprocess.h"
 #include "gdebug.h"
@@ -113,17 +114,27 @@ void G::File::link( const Path & target , const Path & new_link )
 	{
 		int error = G::Process::errno_() ; // keep first
 		std::ostringstream ss ;
-		ss << "(" << error << ")" ;
+		ss << "[" << new_link << "] -> [" << target << "] " "(" << error << ")" ;
 		throw CannotLink( ss.str() ) ;
 	}
 }
 
 bool G::File::link( const Path & target , const Path & new_link , const NoThrow & )
 {
-	if( exists(target) )
-		remove( target , NoThrow() ) ;
+	// optimisation
+	char buffer[limits::path] ;
+	int rc = ::readlink( new_link.str().c_str() , buffer , sizeof(buffer) ) ;
+	if( rc > 0 && rc != sizeof(buffer) )
+	{
+		std::string old_target( buffer , rc ) ;
+		if( target.str() == old_target )
+			return true ;
+	}
 
-	int rc = ::symlink( target.str().c_str() , new_link.str().c_str() ) ;
+	if( exists(new_link) )
+		remove( new_link , NoThrow() ) ;
+
+	rc = ::symlink( target.str().c_str() , new_link.str().c_str() ) ;
 	// dont put anything here
 	return rc == 0 ;
 }

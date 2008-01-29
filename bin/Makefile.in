@@ -45,7 +45,7 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(e_initdir)" \
-	"$(DESTDIR)$(e_examplesdir)"
+	"$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_initdir)"
 e_initSCRIPT_INSTALL = $(INSTALL_SCRIPT)
 SCRIPTS = $(e_init_SCRIPTS) $(noinst_SCRIPTS)
 SOURCES =
@@ -57,7 +57,8 @@ am__vpath_adj = case $$p in \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 e_examplesDATA_INSTALL = $(INSTALL_DATA)
-DATA = $(e_examples_DATA)
+e_initDATA_INSTALL = $(INSTALL_DATA)
+DATA = $(e_examples_DATA) $(e_init_DATA)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -171,7 +172,9 @@ target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @MAC_FALSE@e_init_SCRIPTS = emailrelay
-@MAC_TRUE@e_init_SCRIPTS = E-MailRelay StartupParameters.plist
+@MAC_TRUE@e_init_SCRIPTS = E-MailRelay 
+@MAC_FALSE@e_init_DATA = 
+@MAC_TRUE@e_init_DATA = StartupParameters.plist
 EXTRA_DIST = \
 	emailrelay.sh_ \
 	doxygen.sh_ \
@@ -292,6 +295,23 @@ uninstall-e_examplesDATA:
 	  echo " rm -f '$(DESTDIR)$(e_examplesdir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(e_examplesdir)/$$f"; \
 	done
+install-e_initDATA: $(e_init_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(e_initdir)" || $(MKDIR_P) "$(DESTDIR)$(e_initdir)"
+	@list='$(e_init_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(e_initDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(e_initdir)/$$f'"; \
+	  $(e_initDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(e_initdir)/$$f"; \
+	done
+
+uninstall-e_initDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(e_init_DATA)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(e_initdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(e_initdir)/$$f"; \
+	done
 tags: TAGS
 TAGS:
 
@@ -329,7 +349,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(SCRIPTS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(e_initdir)" "$(DESTDIR)$(e_examplesdir)"; do \
+	for dir in "$(DESTDIR)$(e_initdir)" "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_initdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -376,7 +396,7 @@ info: info-am
 info-am:
 
 install-data-am: install-data-local install-e_examplesDATA \
-	install-e_initSCRIPTS
+	install-e_initDATA install-e_initSCRIPTS
 
 install-dvi: install-dvi-am
 
@@ -410,8 +430,8 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-e_examplesDATA uninstall-e_initSCRIPTS \
-	uninstall-local
+uninstall-am: uninstall-e_examplesDATA uninstall-e_initDATA \
+	uninstall-e_initSCRIPTS uninstall-local
 
 .MAKE: install-am install-strip
 
@@ -419,15 +439,15 @@ uninstall-am: uninstall-e_examplesDATA uninstall-e_initSCRIPTS \
 	distclean-generic distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am \
 	install-data-local install-dvi install-dvi-am \
-	install-e_examplesDATA install-e_initSCRIPTS install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
-	pdf-am ps ps-am uninstall uninstall-am \
-	uninstall-e_examplesDATA uninstall-e_initSCRIPTS \
-	uninstall-local
+	install-e_examplesDATA install-e_initDATA \
+	install-e_initSCRIPTS install-exec install-exec-am \
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am uninstall \
+	uninstall-am uninstall-e_examplesDATA uninstall-e_initDATA \
+	uninstall-e_initSCRIPTS uninstall-local
 
 
 .sh_.sh:
@@ -444,6 +464,9 @@ emailrelay: emailrelay.sh
 
 E-MailRelay: emailrelay.sh
 	cp emailrelay.sh $@
+
+StartupParameters.plist: startup-mac.plist
+	cp $(top_srcdir)/bin/startup-mac.plist $@
 
 install-data-local: install-e_examplesDATA install-e_initSCRIPTS
 	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-process.sh"

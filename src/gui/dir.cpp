@@ -33,8 +33,6 @@ Dir::Dir( const std::string & argv0 )
 	G::Path exe_dir = G::Path(argv0).dirname() ; 
 	m_thisdir = ( exe_dir.isRelative() && !exe_dir.hasDriveLetter() ) ? ( cwd() + exe_dir.str() ) : exe_dir ;
 	m_thisexe = G::Path( m_thisdir , G::Path(argv0).basename() ) ;
-	m_tmp = m_thisdir ; // TODO -- check writable
-	m_install_default = os_install() ;
 	m_spool = os_spool() ;
 	m_config = os_config() ;
 	m_pid = os_pid() ;
@@ -64,7 +62,7 @@ void Dir::read( const State & state )
 	m_menu = state.value( "dir-menu" , m_menu ) ;
 }
 
-G::Path Dir::install() const
+G::Path Dir::install()
 {
 	return os_install() ;
 }
@@ -72,6 +70,11 @@ G::Path Dir::install() const
 G::Path Dir::gui( const G::Path & base )
 {
 	return os_gui( base ) ;
+}
+
+G::Path Dir::server( const G::Path & base )
+{
+	return os_server( base ) ;
 }
 
 G::Path Dir::thisdir() const
@@ -99,14 +102,14 @@ G::Path Dir::menu() const
 	return m_menu ;
 }
 
-G::Path Dir::tmp() const
-{
-	return m_tmp ;
-}
-
 G::Path Dir::pid() const
 {
 	return m_pid ;
+}
+
+G::Path Dir::config( int )
+{
+	return os_config() ;
 }
 
 G::Path Dir::config() const
@@ -119,9 +122,19 @@ G::Path Dir::spool() const
 	return m_spool ;
 }
 
+G::Path Dir::boot( int )
+{
+	return os_boot() ;
+}
+
 G::Path Dir::boot() const
 {
 	return m_boot ;
+}
+
+G::Path Dir::bootcopy( const G::Path & boot , const G::Path & install )
+{
+	return os_bootcopy( boot , install ) ;
 }
 
 std::string Dir::env( const std::string & key , const std::string & default_ )
@@ -136,7 +149,7 @@ G::Path Dir::envPath( const std::string & key , const G::Path & default_ )
 	return p == NULL ? default_ : G::Path(std::string(p)) ;
 }
 
-G::Path Dir::home() const
+G::Path Dir::home()
 {
 	return envPath( "HOME" , "~" ) ;
 }

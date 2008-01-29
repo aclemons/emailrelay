@@ -171,8 +171,8 @@ int main( int argc , char * argv [] )
 		{
 			// find the payload -- normally packed into the running executable
 			G::Path payload_1 = args.v(0) ;
-			G::Path payload_2 = G::Path( args.v(0).dirname() , "payload" ) ;
-			G::Path payload_3 = G::Path( args.v(0).dirname() , ".." , "payload" ) ;
+			G::Path payload_2 = G::Path( G::Path(args.v(0)).dirname() , "payload" ) ;
+			G::Path payload_3 = G::Path( G::Path(args.v(0)).dirname() , ".." , "payload" ) ;
 			G::Path payload = 
 				G::Unpack::isPacked(payload_1) ? payload_1 : (
 				G::Unpack::isPacked(payload_2) ? payload_2 : (
@@ -201,7 +201,7 @@ int main( int argc , char * argv [] )
 			Dir dir( args.v(0) ) ;
 			dir.read( state ) ;
 
-			G_DEBUG( "main: Dir::install: " << dir.install() ) ;
+			G_DEBUG( "main: Dir::install: " << Dir::install() ) ;
 			G_DEBUG( "main: Dir::spool: " << dir.spool() ) ;
 			G_DEBUG( "main: Dir::config: " << dir.config() ) ;
 			G_DEBUG( "main: Dir::boot: " << dir.boot() ) ;

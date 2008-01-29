@@ -212,12 +212,13 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 BUNDLE = E-Mailrelay-Configure
 SETUP_BUNDLE = E-Mailrelay-Install
+IMAGE = E-MailRelay.dmg
 @MAC_FALSE@MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp guistart.cpp
 @MAC_TRUE@MAC_EXTRA_DIST = dir_unix.cpp boot_unix.cpp glink_unix.cpp
 @MAC_FALSE@MAC_SOURCES = dir_unix.cpp boot_unix.cpp glink_unix.cpp
 @MAC_TRUE@MAC_SOURCES = dir_mac.cpp boot_mac.cpp glink_mac.cpp
 @MAC_FALSE@MAC_NOINST = 
-@MAC_TRUE@MAC_NOINST = $(BUNDLE).app $(SETUP_BUNDLE).app
+@MAC_TRUE@MAC_NOINST = $(BUNDLE).app
 @MAC_FALSE@MAC_PROGS = 
 @MAC_TRUE@MAC_PROGS = emailrelay-start-gui
 @MAC_FALSE@MAKE_SETUP_STUB = emailrelay-gui.real
@@ -253,10 +254,14 @@ EXTRA_DIST = \
 @GUI_TRUE@	-I$(top_srcdir)/src/gsmtp \
 @GUI_TRUE@	-I$(top_srcdir)/src/gpop \
 @GUI_TRUE@	-I$(top_srcdir)/src/main \
+@GUI_TRUE@	-DG_SBINDIR=\"$(sbindir)\" \
 @GUI_TRUE@	-DG_SPOOLDIR=\"$(e_spooldir)\" \
+@GUI_TRUE@	-DG_INITDIR=\"$(e_initdir)\" \
 @GUI_TRUE@	-DG_SYSCONFDIR=\"$(e_sysconfdir)\" \
 @GUI_TRUE@	-DG_LIBEXECDIR=\"$(e_libexecdir)\" \
-@GUI_TRUE@	-DG_DESTDIR=\"$(DESTDIR)\"
+@GUI_TRUE@	-DG_MANDIR=\"$(mandir)\" \
+@GUI_TRUE@	-DG_DOCDIR=\"$(e_docdir)\" \
+@GUI_TRUE@	-DG_EXAMPLESDIR=\"$(e_examplesdir)\"
 
 @GUI_TRUE@AM_CPPFLAGS = $(QT_CFLAGS)
 @GUI_TRUE@noinst_SCRIPTS = mock $(MAC_NOINST)
@@ -625,42 +630,45 @@ uninstall-am: uninstall-sbinPROGRAMS
 @GUI_TRUE@	-rm -rf "$(DESTDIR)$(sbindir)/$(BUNDLE).app"
 
 @GUI_TRUE@clean-local:
-@GUI_TRUE@	rm -rf "$(BUNDLE).app"
+@GUI_TRUE@	-rm -rf "$(BUNDLE).app"
+@GUI_TRUE@	-rm -rf "$(SETUP_BUNDLE).app"
+@GUI_TRUE@	-rm -f emailrelay-setup payload-stub payload
+@GUI_TRUE@	-rm -f "$(IMAGE)"
+@GUI_TRUE@	-rm -f "emailrelay-setup.state"
 
 @GUI_FALSE@install-exec-hook:
 
 @GUI_FALSE@uninstall-hook:
 
 $(BUNDLE).app: emailrelay-start-gui
-	../../bin/make-bundle.sh "$(BUNDLE)" emailrelay-start-gui "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+	../../bin/make-bundle.sh -f "$(BUNDLE)" emailrelay-start-gui "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 
 .PHONY: bundle
-bundle: emailrelay-start-gui
-	../../bin/make-bundle.sh -f "$(BUNDLE)" emailrelay-start-gui "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+bundle: $(BUNDLE).app
 
 payload-stub:
 	-@echo '#!/bin/sh' > payload-stub
-	-@echo 'exit 1' >> payload-stub
+	-@echo 'exit 23' >> payload-stub
 
 emailrelay-setup: pack $(MAKE_SETUP_STUB) ../../bin/make-setup.sh
-	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ $(MAKE_SETUP_STUB) pack "$(DESTDIR)" "$(sbindir)" "$(e_sysconfdir)"
+	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ $(MAKE_SETUP_STUB) pack "$(sbindir)" "$(e_sysconfdir)" "$(e_initdir)"
 	@chmod +x $@
 
 payload: pack payload-stub ../../bin/make-setup.sh
-	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ payload-stub pack "$(DESTDIR)" "$(sbindir)" "$(e_sysconfdir)"
+	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ payload-stub pack "$(sbindir)" "$(e_sysconfdir)" "$(e_initdir)"
 
 $(SETUP_BUNDLE).app: emailrelay-gui.real payload ../../bin/make-bundle.sh
-	../../bin/make-bundle.sh "$(SETUP_BUNDLE)" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
-	cp payload "$(SETUP_BUNDLE).app/Contents/"
-
-.PHONY: setup-bundle
-setup-bundle: emailrelay-gui.real payload ../../bin/make-bundle.sh
 	../../bin/make-bundle.sh -f "$(SETUP_BUNDLE)" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 	cp payload "$(SETUP_BUNDLE).app/Contents/"
 
+.PHONY: setup-bundle
+setup-bundle: $(SETUP_BUNDLE).app
+
+$(IMAGE): $(SETUP_BUNDLE).app
+	hdiutil create -srcfolder "$(SETUP_BUNDLE).app" "$(IMAGE)" && hdiutil internet-enable -yes "$(IMAGE)"
+
 .PHONY: image
-image: $(SETUP_BUNDLE).app
-	hdiutil create -srcfolder "$(SETUP_BUNDLE).app" "E-MailRelay.dmg" && hdiutil internet-enable -yes "E-MailRelay.dmg"
+image: $(IMAGE)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -54,7 +54,7 @@ std::string Dir::dotexe()
 	return ".exe" ;
 }
 
-G::Path Dir::os_install() const
+G::Path Dir::os_install()
 {
 	return special("programs") + "emailrelay" ;
 }
@@ -64,7 +64,12 @@ G::Path Dir::os_gui( const G::Path & base )
 	return base + "emailrelay-gui.exe" ;
 }
 
-G::Path Dir::os_config() const
+G::Path Dir::os_server( const G::Path & base )
+{
+	return base + "emailrelay.exe" ;
+}
+
+G::Path Dir::os_config()
 {
 	return special("programs") + "emailrelay" ; // was windows()
 }
@@ -79,7 +84,12 @@ G::Path Dir::os_pid() const
 	return special("programs") + "emailrelay" ; // was windows()
 }
 
-G::Path Dir::os_boot() const
+G::Path Dir::os_boot()
+{
+	return G::Path() ;
+}
+
+G::Path Dir::os_bootcopy( const G::Path & , const G::Path & )
 {
 	return G::Path() ;
 }
@@ -107,7 +117,7 @@ namespace
 	typedef HRESULT (*FnSpecial)( HWND , LPTSTR , int , BOOL ) ;
 }
 
-G::Path Dir::special( const std::string & type ) const
+G::Path Dir::special( const std::string & type )
 {
 	// use dynamic loading since NT does not have SHGetFolderPath()
 	static HMODULE h = LoadLibrary( "SHELL32.DLL" ) ;
@@ -135,7 +145,7 @@ G::Path Dir::special( const std::string & type ) const
 	}
 }
 
-G::Path Dir::ntspecial( const std::string & type ) const
+G::Path Dir::ntspecial( const std::string & type )
 {
 	std::string user = env("USERNAME") ;
 	G::Path user_profile = windows() + "Profiles" + user ;

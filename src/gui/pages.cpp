@@ -165,7 +165,7 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const State & state , const std
 
 	setFocusProxy( m_install_dir_edit_box ) ;
 
-	m_install_dir_edit_box->setText( QString(state.value("dir-install",m_dir.install().str()).c_str()) ) ;
+	m_install_dir_edit_box->setText( QString(state.value("dir-install",Dir::install().str()).c_str()) ) ;
 	m_spool_dir_edit_box->setText( QString(state.value("dir-spool",m_dir.spool().str()).c_str()) ) ;
 	m_config_dir_edit_box->setText( QString(state.value("dir-config",m_dir.config().str()).c_str()) ) ;
 
@@ -235,19 +235,19 @@ G::Path DirectoryPage::normalise( const G::Path & dir ) const
 	// since gui users wont have a sense of the cwd
 
 	G::Path result = dir ;
-	if( dir.isRelative() && m_dir.home() != G::Path() )
+	if( dir.isRelative() && Dir::home() != G::Path() )
 	{
 		if( dir.str() == "~" )
 		{
-			result = m_dir.home() ;
+			result = Dir::home() ;
 		}
 		else if( dir.str().at(0U) == '~' )
 		{
-			result = G::Path( m_dir.home() , dir.str().substr(1U) ) ;
+			result = G::Path( Dir::home() , dir.str().substr(1U) ) ;
 		}
 		else
 		{
-			result = G::Path::join( m_dir.home() , dir ) ;
+			result = G::Path::join( Dir::home() , dir ) ;
 		}
 	}
 	return result ;
@@ -264,7 +264,7 @@ void DirectoryPage::dump( std::ostream & stream , const std::string & prefix , c
 	dumpItem( stream , prefix , "dir-login" , m_dir.login() , eol ) ;
 	dumpItem( stream , prefix , "dir-menu" , m_dir.menu() , eol ) ;
 	dumpItem( stream , prefix , "dir-reskit" , std::string() , eol ) ;
-	dumpItem( stream , prefix , "dir-boot" , m_dir.boot() , eol ) ;
+	dumpItem( stream , prefix , "dir-boot" , Boot::able(m_dir.boot()) ? m_dir.boot() : G::Path() , eol ) ;
 }
 
 bool DirectoryPage::isComplete()
@@ -1105,10 +1105,13 @@ StartupPage::StartupPage( GDialog & dialog , const State & state , const std::st
 		m_add_menu_item_checkbox->setEnabled( false ) ;
 		m_add_desktop_item_checkbox->setEnabled( false ) ;
 	}
+	bool on_boot_able = Boot::able(dir.boot()) ;
+	m_on_boot_checkbox->setEnabled( on_boot_able ) ;
+
 	m_at_login_checkbox->setChecked( state.value("start-at-login",false) ) ;
 	m_add_menu_item_checkbox->setChecked( state.value("start-link-menu",!m_is_mac) ) ;
 	m_add_desktop_item_checkbox->setChecked( state.value("start-link-desktop",false) ) ;
-	m_on_boot_checkbox->setEnabled( state.value("start-on-boot",Boot::able(dir.boot(),"emailrelay")) ) ;
+	m_on_boot_checkbox->setChecked( on_boot_able && state.value("start-on-boot",false) ) ;
 
 	QGroupBox * auto_group = new QGroupBox(tr("Automatic")) ;
 	auto_group->setLayout( auto_layout ) ;
@@ -1220,17 +1223,21 @@ void ProgressPage::onShow( bool back )
 	{
 		// dump page state into a state file -- note that this is not 
 		// necessarily the same state file as the installer creates --
-		// when installing we need to write (at least) two state files
+		// when installing we need to write (at least) two state files --
+		// we ignore file creation errors when installing since the
+		// cwd directory could be read-only in some cases
+		//
 		if( ! m_state_path.str().empty() )
 		{
 			std::stringstream ss ;
 			dialog().dump( ss , "" , "\n" , false ) ;
 			std::ofstream state_stream( m_state_path.str().c_str() ) ;
 			State::write( state_stream , ss.str() , m_argv0 ) ;
-			if( !state_stream.good() )
+			if( !state_stream.good() && !m_installing )
 				throw std::runtime_error( std::string()+"cannot write state to \""+m_state_path.str()+"\"" ) ;
 			state_stream.close() ;
-			G::File::chmodx( m_state_path ) ;
+			if( G::File::exists(m_state_path) )
+				G::File::chmodx( m_state_path ) ;
 		}
 
 		// dump page state into a stringstream

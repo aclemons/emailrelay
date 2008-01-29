@@ -31,7 +31,7 @@
 class Boot 
 {
 public:
-	static bool able( G::Path dir_boot , G::Path target ) ;
+	static bool able( G::Path dir_boot ) ;
 		///< Returns true if the operating-system is supported
 		///< and the supplied boot-system directory is valid.
 		///< The parameter normally comes from Dir::boot().

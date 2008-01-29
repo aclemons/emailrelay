@@ -42,21 +42,41 @@ public:
 	~Dir() ;
 		///< Destructor.
 
-	G::Path install() const ;
-		///< Returns the default install directory.
+	static G::Path install() ;
+		///< Returns the default install directory. This
+		///< is what the user thinks of as the install 
+		///< point, and not strictly related to the 
+		///< "make install" process.
+
+	static G::Path config( int ) ;
+		///< Returns the default configuration directory path.
+
+	G::Path config() const ;
+		///< Returns the configuration directory path.
+
+	static G::Path boot( int ) ;
+		///< Returns the default boot-time autostart directory path.
+
+	G::Path boot() const ;
+		///< Returns the boot-time autostart directory path.
 
 	static G::Path gui( const G::Path & install ) ;
 		///< Returns the full path of the GUI program for 
 		///< a given install root.
 
-	G::Path home() const ;
+	static G::Path server( const G::Path & install ) ;
+		///< Returns the full path of the main server program for 
+		///< a given install root.
+
+	static G::Path bootcopy( const G::Path & boot , const G::Path & install ) ;
+		///< Returns a directory where boot() files can
+		///< be stored if boot() is not writeable.
+
+	static G::Path home() ;
 		///< Returns the user's home directory.
 
 	G::Path spool() const ;
 		///< Returns the spool directory path.
-
-	G::Path config() const ;
-		///< Returns the configuration directory path.
 
 	G::Path pid() const ;
 		///< Returns the directory for pid files.
@@ -70,19 +90,11 @@ public:
 	G::Path thisexe() const ;
 		///< Returns the argv0 path.
 
-	G::Path tmp() const ;
-		///< Returns a writable directory for temporary files.
-		///< Returns thisdir() as long as it is found to be a 
-		///< writeable directory.
-
 	G::Path desktop() const ;
 		///< Returns the desktop path.
 
 	G::Path login() const ;
 		///< Returns the login autostart directory path.
-
-	G::Path boot() const ;
-		///< Returns the boot-time autostart directory path.
 
 	G::Path menu() const ;
 		///< Returns the menu path.
@@ -98,25 +110,25 @@ private:
 	static bool ok( const std::string & ) ;
 	static G::Path oneOf( std::string , std::string = std::string() , std::string = std::string() , 
 		std::string = std::string() , std::string = std::string() ) ;
-	G::Path os_install() const ;
+	static G::Path os_install() ;
 	static G::Path os_gui( const G::Path & ) ;
-	G::Path os_config() const ;
+	static G::Path os_server( const G::Path & ) ;
+	static G::Path os_bootcopy( const G::Path & , const G::Path & ) ;
+	static G::Path os_boot() ;
+	static G::Path os_config() ;
+	static G::Path special( const std::string & key ) ;
+	static G::Path ntspecial( const std::string & key ) ;
 	G::Path os_spool() const ;
 	G::Path os_login() const ;
 	G::Path os_pid() const ;
-	G::Path os_boot() const ;
-	G::Path special( const std::string & key ) const ;
-	G::Path ntspecial( const std::string & key ) const ;
 
 private:
-	G::Path m_install_default ;
 	G::Path m_spool ;
 	G::Path m_config ;
 	G::Path m_login ;
 	G::Path m_pid ;
 	G::Path m_thisdir ;
 	G::Path m_thisexe ;
-	G::Path m_tmp ;
 	G::Path m_desktop ;
 	G::Path m_boot ;
 	G::Path m_menu ;
