@@ -97,7 +97,7 @@ install-data-local: install-e_docDATA
 	if test "$(HAVE_DOXYGEN)" = "yes" ; then for file in doxygen/* ; do $(INSTALL) "$$file" "$(DESTDIR)$(e_docdir)/$$file" ; done ; fi
 
 uninstall-local:
-	-rm -f "$(DESTDIR)$(e_docdir)/doxygen"/* 2>/dev/null
+	-find "$(DESTDIR)$(e_docdir)/doxygen" -type f | xargs rm -f
 	-rmdir "$(DESTDIR)$(e_docdir)/doxygen" 2>/dev/null
 	-rmdir "$(DESTDIR)$(e_docdir)" 2>/dev/null
 

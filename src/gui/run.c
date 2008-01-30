@@ -44,7 +44,7 @@
 #ifdef _WIN32
 static char gui_exe [] = "emailrelay-gui.exe" ;
 #else
-static char gui_exe [] = "emailrelay-gui" ;
+static char gui_exe [] = "emailrelay-gui.real" ;
 #endif
 static char gui_cfg [] = "emailrelay-gui.cfg" ;
 

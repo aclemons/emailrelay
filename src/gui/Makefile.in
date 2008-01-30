@@ -38,7 +38,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 @GUI_TRUE@sbin_PROGRAMS = emailrelay-gui.real$(EXEEXT) $(am__EXEEXT_1)
-@GUI_TRUE@noinst_PROGRAMS = pack$(EXEEXT)
+@GUI_TRUE@noinst_PROGRAMS = pack$(EXEEXT) unpack$(EXEEXT)
 subdir = src/gui
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -78,6 +78,10 @@ am__pack_SOURCES_DIST = pack.cpp
 @GUI_TRUE@am_pack_OBJECTS = pack.$(OBJEXT)
 pack_OBJECTS = $(am_pack_OBJECTS)
 @GUI_TRUE@pack_DEPENDENCIES = $(top_builddir)/src/glib/libglib.a
+am__unpack_SOURCES_DIST = unpackmain.c unpack.c
+@GUI_TRUE@am_unpack_OBJECTS = unpackmain.$(OBJEXT) unpack.$(OBJEXT)
+unpack_OBJECTS = $(am_unpack_OBJECTS)
+unpack_DEPENDENCIES =
 SCRIPTS = $(noinst_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -92,10 +96,11 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(emailrelay_gui_real_SOURCES) \
-	$(emailrelay_start_gui_SOURCES) $(pack_SOURCES)
+	$(emailrelay_start_gui_SOURCES) $(pack_SOURCES) \
+	$(unpack_SOURCES)
 DIST_SOURCES = $(am__emailrelay_gui_real_SOURCES_DIST) \
 	$(am__emailrelay_start_gui_SOURCES_DIST) \
-	$(am__pack_SOURCES_DIST)
+	$(am__pack_SOURCES_DIST) $(am__unpack_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -298,6 +303,8 @@ EXTRA_DIST = \
 
 @GUI_TRUE@pack_SOURCES = pack.cpp
 @GUI_TRUE@pack_LDADD = $(top_builddir)/src/glib/libglib.a
+@GUI_TRUE@unpack_SOURCES = unpackmain.c unpack.c
+@GUI_TRUE@unpack_LDADD = 
 @GUI_TRUE@emailrelay_start_gui_SOURCES = guistart.cpp
 @GUI_TRUE@emailrelay_start_gui_LDADD = 
 all: all-am
@@ -368,6 +375,9 @@ emailrelay-start-gui$(EXEEXT): $(emailrelay_start_gui_OBJECTS) $(emailrelay_star
 pack$(EXEEXT): $(pack_OBJECTS) $(pack_DEPENDENCIES) 
 	@rm -f pack$(EXEEXT)
 	$(CXXLINK) $(pack_OBJECTS) $(pack_LDADD) $(LIBS)
+unpack$(EXEEXT): $(unpack_OBJECTS) $(unpack_DEPENDENCIES) 
+	@rm -f unpack$(EXEEXT)
+	$(LINK) $(unpack_OBJECTS) $(unpack_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -393,6 +403,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pages.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/state.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unpack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unpackmain.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -664,7 +675,9 @@ $(SETUP_BUNDLE).app: emailrelay-gui.real payload ../../bin/make-bundle.sh
 .PHONY: setup-bundle
 setup-bundle: $(SETUP_BUNDLE).app
 
-$(IMAGE): $(SETUP_BUNDLE).app
+$(IMAGE): $(SETUP_BUNDLE).app unpack
+	-@rm -f "$(SETUP_BUNDLE).app/Contents/MacOS/$(SETUP_BUNDLE).state"
+	cp unpack "$(SETUP_BUNDLE).app/Contents/"
 	hdiutil create -srcfolder "$(SETUP_BUNDLE).app" "$(IMAGE)" && hdiutil internet-enable -yes "$(IMAGE)"
 
 .PHONY: image
