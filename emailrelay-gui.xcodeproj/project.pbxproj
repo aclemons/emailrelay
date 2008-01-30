@@ -7,11 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		EE486FEE0D3E3EA900AB4CC6 /* boot.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE486FC80D3E3EA900AB4CC6 /* boot.cpp */; };
 		EE486FEF0D3E3EA900AB4CC6 /* dir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE486FCA0D3E3EA900AB4CC6 /* dir.cpp */; };
-		EE486FF00D3E3EA900AB4CC6 /* dir_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE486FCC0D3E3EA900AB4CC6 /* dir_unix.cpp */; };
 		EE486FF20D3E3EA900AB4CC6 /* gdialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE486FD00D3E3EA900AB4CC6 /* gdialog.cpp */; };
-		EE486FF30D3E3EA900AB4CC6 /* glink.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE486FD20D3E3EA900AB4CC6 /* glink.cpp */; };
 		EE486FF40D3E3EA900AB4CC6 /* gpage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE486FD40D3E3EA900AB4CC6 /* gpage.cpp */; };
 		EE486FF50D3E3EA900AB4CC6 /* guimain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE486FD60D3E3EA900AB4CC6 /* guimain.cpp */; };
 		EE486FF60D3E3EA900AB4CC6 /* gunpack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE486FD70D3E3EA900AB4CC6 /* gunpack.cpp */; };
@@ -21,6 +18,13 @@
 		EE4870560D3E529100AB4CC6 /* moc_gdialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE4870530D3E529100AB4CC6 /* moc_gdialog.cpp */; };
 		EE4870570D3E529100AB4CC6 /* moc_gpage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE4870540D3E529100AB4CC6 /* moc_gpage.cpp */; };
 		EE4870580D3E529100AB4CC6 /* moc_pages.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE4870550D3E529100AB4CC6 /* moc_pages.cpp */; };
+		EEC342C10D50E0BD00DD9918 /* boot_mac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEC342BF0D50E0BD00DD9918 /* boot_mac.cpp */; };
+		EEC342C20D50E0BD00DD9918 /* dir_mac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEC342C00D50E0BD00DD9918 /* dir_mac.cpp */; };
+		EEC342C60D50E0D800DD9918 /* glink_mac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEC342C30D50E0D800DD9918 /* glink_mac.cpp */; };
+		EEC342C80D50E0D800DD9918 /* state.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEC342C50D50E0D800DD9918 /* state.cpp */; };
+		EEC342E80D50F68600DD9918 /* guistart.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEC342C40D50E0D800DD9918 /* guistart.cpp */; };
+		EEC342FA0D50F72800DD9918 /* unpackmain.c in Sources */ = {isa = PBXBuildFile; fileRef = EEC342F90D50F72800DD9918 /* unpackmain.c */; };
+		EEC342FC0D50F73900DD9918 /* unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = EE486FEC0D3E3EA900AB4CC6 /* unpack.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,30 +41,24 @@
 
 /* Begin PBXFileReference section */
 		8DD76F6C0486A84900D96B5E /* emailrelay-gui */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "emailrelay-gui"; sourceTree = BUILT_PRODUCTS_DIR; };
-		EE486FC80D3E3EA900AB4CC6 /* boot.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = boot.cpp; sourceTree = "<group>"; };
 		EE486FC90D3E3EA900AB4CC6 /* boot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = boot.h; sourceTree = "<group>"; };
 		EE486FCA0D3E3EA900AB4CC6 /* dir.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dir.cpp; sourceTree = "<group>"; };
 		EE486FCB0D3E3EA900AB4CC6 /* dir.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dir.h; sourceTree = "<group>"; };
 		EE486FCC0D3E3EA900AB4CC6 /* dir_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dir_unix.cpp; sourceTree = "<group>"; };
 		EE486FCD0D3E3EA900AB4CC6 /* dir_win32.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dir_win32.cpp; sourceTree = "<group>"; };
-		EE486FCE0D3E3EA900AB4CC6 /* emailrelay-icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "emailrelay-icon.png"; sourceTree = "<group>"; };
 		EE486FCF0D3E3EA900AB4CC6 /* gcominit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gcominit.h; sourceTree = "<group>"; };
 		EE486FD00D3E3EA900AB4CC6 /* gdialog.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gdialog.cpp; sourceTree = "<group>"; };
 		EE486FD10D3E3EA900AB4CC6 /* gdialog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gdialog.h; sourceTree = "<group>"; };
-		EE486FD20D3E3EA900AB4CC6 /* glink.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = glink.cpp; sourceTree = "<group>"; };
 		EE486FD30D3E3EA900AB4CC6 /* glink.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = glink.h; sourceTree = "<group>"; };
 		EE486FD40D3E3EA900AB4CC6 /* gpage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gpage.cpp; sourceTree = "<group>"; };
 		EE486FD50D3E3EA900AB4CC6 /* gpage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gpage.h; sourceTree = "<group>"; };
 		EE486FD60D3E3EA900AB4CC6 /* guimain.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = guimain.cpp; sourceTree = "<group>"; };
 		EE486FD70D3E3EA900AB4CC6 /* gunpack.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gunpack.cpp; sourceTree = "<group>"; };
 		EE486FD80D3E3EA900AB4CC6 /* gunpack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gunpack.h; sourceTree = "<group>"; };
-		EE486FD90D3E3EA900AB4CC6 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EE486FDA0D3E3EA900AB4CC6 /* installer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = installer.cpp; sourceTree = "<group>"; };
 		EE486FDB0D3E3EA900AB4CC6 /* installer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = installer.h; sourceTree = "<group>"; };
 		EE486FDC0D3E3EA900AB4CC6 /* legal.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = legal.cpp; sourceTree = "<group>"; };
 		EE486FDD0D3E3EA900AB4CC6 /* legal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = legal.h; sourceTree = "<group>"; };
-		EE486FDE0D3E3EA900AB4CC6 /* mac.mak */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = mac.mak; sourceTree = "<group>"; };
-		EE486FDF0D3E3EA900AB4CC6 /* make-setup.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "make-setup.sh"; sourceTree = "<group>"; };
 		EE486FE00D3E3EA900AB4CC6 /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
 		EE486FE10D3E3EA900AB4CC6 /* Makefile.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.in; sourceTree = "<group>"; };
 		EE486FE20D3E3EA900AB4CC6 /* mingw.mak */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = mingw.mak; sourceTree = "<group>"; };
@@ -78,10 +76,33 @@
 		EE4870530D3E529100AB4CC6 /* moc_gdialog.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_gdialog.cpp; path = src/gui/moc_gdialog.cpp; sourceTree = "<group>"; };
 		EE4870540D3E529100AB4CC6 /* moc_gpage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_gpage.cpp; path = src/gui/moc_gpage.cpp; sourceTree = "<group>"; };
 		EE4870550D3E529100AB4CC6 /* moc_pages.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_pages.cpp; path = src/gui/moc_pages.cpp; sourceTree = "<group>"; };
+		EEC342BF0D50E0BD00DD9918 /* boot_mac.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = boot_mac.cpp; sourceTree = "<group>"; };
+		EEC342C00D50E0BD00DD9918 /* dir_mac.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dir_mac.cpp; sourceTree = "<group>"; };
+		EEC342C30D50E0D800DD9918 /* glink_mac.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = glink_mac.cpp; sourceTree = "<group>"; };
+		EEC342C40D50E0D800DD9918 /* guistart.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = guistart.cpp; sourceTree = "<group>"; };
+		EEC342C50D50E0D800DD9918 /* state.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = state.cpp; sourceTree = "<group>"; };
+		EEC342CB0D50E1D500DD9918 /* state.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = state.h; sourceTree = "<group>"; };
+		EEC342DF0D50F62E00DD9918 /* emailrelay-start */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; name = "emailrelay-start"; path = "build/Release/emailrelay-start"; sourceTree = "<group>"; };
+		EEC342ED0D50F6B600DD9918 /* emailrelay-unpack */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; name = "emailrelay-unpack"; path = "build/Release/emailrelay-unpack"; sourceTree = "<group>"; };
+		EEC342F90D50F72800DD9918 /* unpackmain.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = unpackmain.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		8DD76F660486A84900D96B5E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EEC342DD0D50F62E00DD9918 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EEC342EB0D50F6B600DD9918 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -105,6 +126,8 @@
 			isa = PBXGroup;
 			children = (
 				8DD76F6C0486A84900D96B5E /* emailrelay-gui */,
+				EEC342DF0D50F62E00DD9918 /* emailrelay-start */,
+				EEC342ED0D50F6B600DD9918 /* emailrelay-unpack */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -112,30 +135,31 @@
 		EE486FC70D3E3EA900AB4CC6 /* gui */ = {
 			isa = PBXGroup;
 			children = (
-				EE486FC80D3E3EA900AB4CC6 /* boot.cpp */,
+				EEC342F90D50F72800DD9918 /* unpackmain.c */,
+				EEC342CB0D50E1D500DD9918 /* state.h */,
+				EEC342C30D50E0D800DD9918 /* glink_mac.cpp */,
+				EEC342C40D50E0D800DD9918 /* guistart.cpp */,
+				EEC342C50D50E0D800DD9918 /* state.cpp */,
+				EEC342BF0D50E0BD00DD9918 /* boot_mac.cpp */,
+				EEC342C00D50E0BD00DD9918 /* dir_mac.cpp */,
 				EE486FC90D3E3EA900AB4CC6 /* boot.h */,
 				EE486FCA0D3E3EA900AB4CC6 /* dir.cpp */,
 				EE486FCB0D3E3EA900AB4CC6 /* dir.h */,
 				EE486FCC0D3E3EA900AB4CC6 /* dir_unix.cpp */,
 				EE486FCD0D3E3EA900AB4CC6 /* dir_win32.cpp */,
-				EE486FCE0D3E3EA900AB4CC6 /* emailrelay-icon.png */,
 				EE486FCF0D3E3EA900AB4CC6 /* gcominit.h */,
 				EE486FD00D3E3EA900AB4CC6 /* gdialog.cpp */,
 				EE486FD10D3E3EA900AB4CC6 /* gdialog.h */,
-				EE486FD20D3E3EA900AB4CC6 /* glink.cpp */,
 				EE486FD30D3E3EA900AB4CC6 /* glink.h */,
 				EE486FD40D3E3EA900AB4CC6 /* gpage.cpp */,
 				EE486FD50D3E3EA900AB4CC6 /* gpage.h */,
 				EE486FD60D3E3EA900AB4CC6 /* guimain.cpp */,
 				EE486FD70D3E3EA900AB4CC6 /* gunpack.cpp */,
 				EE486FD80D3E3EA900AB4CC6 /* gunpack.h */,
-				EE486FD90D3E3EA900AB4CC6 /* Info.plist */,
 				EE486FDA0D3E3EA900AB4CC6 /* installer.cpp */,
 				EE486FDB0D3E3EA900AB4CC6 /* installer.h */,
 				EE486FDC0D3E3EA900AB4CC6 /* legal.cpp */,
 				EE486FDD0D3E3EA900AB4CC6 /* legal.h */,
-				EE486FDE0D3E3EA900AB4CC6 /* mac.mak */,
-				EE486FDF0D3E3EA900AB4CC6 /* make-setup.sh */,
 				EE486FE00D3E3EA900AB4CC6 /* Makefile.am */,
 				EE486FE10D3E3EA900AB4CC6 /* Makefile.in */,
 				EE486FE20D3E3EA900AB4CC6 /* mingw.mak */,
@@ -187,6 +211,38 @@
 			productReference = 8DD76F6C0486A84900D96B5E /* emailrelay-gui */;
 			productType = "com.apple.product-type.tool";
 		};
+		EEC342DE0D50F62E00DD9918 /* emailrelay-start */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EEC342E30D50F64F00DD9918 /* Build configuration list for PBXNativeTarget "emailrelay-start" */;
+			buildPhases = (
+				EEC342DC0D50F62E00DD9918 /* Sources */,
+				EEC342DD0D50F62E00DD9918 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "emailrelay-start";
+			productName = "emailrelay-start";
+			productReference = EEC342DF0D50F62E00DD9918 /* emailrelay-start */;
+			productType = "com.apple.product-type.tool";
+		};
+		EEC342EC0D50F6B600DD9918 /* emailrelay-unpack */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EEC342F60D50F6D600DD9918 /* Build configuration list for PBXNativeTarget "emailrelay-unpack" */;
+			buildPhases = (
+				EEC342EA0D50F6B600DD9918 /* Sources */,
+				EEC342EB0D50F6B600DD9918 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "emailrelay-unpack";
+			productName = "emailrelay-unpack";
+			productReference = EEC342ED0D50F6B600DD9918 /* emailrelay-unpack */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -200,6 +256,8 @@
 			projectRoot = "";
 			targets = (
 				8DD76F620486A84900D96B5E /* emailrelay-gui */,
+				EEC342DE0D50F62E00DD9918 /* emailrelay-start */,
+				EEC342EC0D50F6B600DD9918 /* emailrelay-unpack */,
 			);
 		};
 /* End PBXProject section */
@@ -232,11 +290,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EE486FEE0D3E3EA900AB4CC6 /* boot.cpp in Sources */,
 				EE486FEF0D3E3EA900AB4CC6 /* dir.cpp in Sources */,
-				EE486FF00D3E3EA900AB4CC6 /* dir_unix.cpp in Sources */,
 				EE486FF20D3E3EA900AB4CC6 /* gdialog.cpp in Sources */,
-				EE486FF30D3E3EA900AB4CC6 /* glink.cpp in Sources */,
 				EE486FF40D3E3EA900AB4CC6 /* gpage.cpp in Sources */,
 				EE486FF50D3E3EA900AB4CC6 /* guimain.cpp in Sources */,
 				EE486FF60D3E3EA900AB4CC6 /* gunpack.cpp in Sources */,
@@ -246,6 +301,27 @@
 				EE4870560D3E529100AB4CC6 /* moc_gdialog.cpp in Sources */,
 				EE4870570D3E529100AB4CC6 /* moc_gpage.cpp in Sources */,
 				EE4870580D3E529100AB4CC6 /* moc_pages.cpp in Sources */,
+				EEC342C10D50E0BD00DD9918 /* boot_mac.cpp in Sources */,
+				EEC342C20D50E0BD00DD9918 /* dir_mac.cpp in Sources */,
+				EEC342C60D50E0D800DD9918 /* glink_mac.cpp in Sources */,
+				EEC342C80D50E0D800DD9918 /* state.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EEC342DC0D50F62E00DD9918 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EEC342E80D50F68600DD9918 /* guistart.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EEC342EA0D50F6B600DD9918 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EEC342FA0D50F72800DD9918 /* unpackmain.c in Sources */,
+				EEC342FC0D50F73900DD9918 /* unpack.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -318,8 +394,6 @@
 				ARCHS = (
 					i386,
 					ppc,
-					ppc64,
-					x86_64,
 				);
 				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
 				GCC_FAST_OBJC_DISPATCH = NO;
@@ -345,6 +419,64 @@
 			};
 			name = Release;
 		};
+		EEC342E10D50F63100DD9918 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/bin;
+				PREBINDING = NO;
+				PRODUCT_NAME = "emailrelay-start";
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		EEC342E20D50F63100DD9918 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/bin;
+				PREBINDING = NO;
+				PRODUCT_NAME = "emailrelay-start";
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		EEC342EF0D50F6B800DD9918 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/bin;
+				PREBINDING = NO;
+				PRODUCT_NAME = "emailrelay-unpack";
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		EEC342F00D50F6B800DD9918 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/bin;
+				PREBINDING = NO;
+				PRODUCT_NAME = "emailrelay-unpack";
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -362,6 +494,24 @@
 			buildConfigurations = (
 				1DEB923608733DC60010E9CD /* Debug */,
 				1DEB923708733DC60010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EEC342E30D50F64F00DD9918 /* Build configuration list for PBXNativeTarget "emailrelay-start" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EEC342E10D50F63100DD9918 /* Debug */,
+				EEC342E20D50F63100DD9918 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EEC342F60D50F6D600DD9918 /* Build configuration list for PBXNativeTarget "emailrelay-unpack" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EEC342EF0D50F6B800DD9918 /* Debug */,
+				EEC342F00D50F6B800DD9918 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -26,7 +26,7 @@ if MAC
 MAC_EXTRA_DIST = dir_unix.cpp boot_unix.cpp glink_unix.cpp
 MAC_SOURCES = dir_mac.cpp boot_mac.cpp glink_mac.cpp
 MAC_NOINST = $(BUNDLE).app
-MAC_PROGS = emailrelay-start-gui
+MAC_PROGS = emailrelay-start-gui emailrelay-unpack
 MAKE_SETUP_STUB = payload-stub
 else
 MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp guistart.cpp
@@ -92,7 +92,7 @@ AM_CPPFLAGS=$(QT_CFLAGS)
 
 sbin_PROGRAMS = emailrelay-gui.real $(MAC_PROGS)
 noinst_SCRIPTS = mock $(MAC_NOINST)
-noinst_PROGRAMS = pack unpack
+noinst_PROGRAMS = pack emailrelay-unpack
 
 emailrelay_gui_real_SOURCES = \
 	$(MAC_SOURCES) \
@@ -129,8 +129,8 @@ emailrelay_gui_real_LDADD = \
 pack_SOURCES = pack.cpp
 pack_LDADD = $(top_builddir)/src/glib/libglib.a
 
-unpack_SOURCES = unpackmain.c unpack.c
-unpack_LDADD =
+emailrelay_unpack_SOURCES = unpackmain.c unpack.c
+emailrelay_unpack_LDADD =
 
 emailrelay_start_gui_SOURCES = guistart.cpp
 emailrelay_start_gui_LDADD =
@@ -186,9 +186,9 @@ $(SETUP_BUNDLE).app: emailrelay-gui.real payload ../../bin/make-bundle.sh
 .PHONY: setup-bundle
 setup-bundle: $(SETUP_BUNDLE).app
 
-$(IMAGE): $(SETUP_BUNDLE).app unpack
+$(IMAGE): $(SETUP_BUNDLE).app emailrelay-unpack
 	-@rm -f "$(SETUP_BUNDLE).app/Contents/MacOS/$(SETUP_BUNDLE).state"
-	cp unpack "$(SETUP_BUNDLE).app/Contents/"
+	cp emailrelay-unpack "$(SETUP_BUNDLE).app/Contents/"
 	hdiutil create -srcfolder "$(SETUP_BUNDLE).app" "$(IMAGE)" && hdiutil internet-enable -yes "$(IMAGE)"
 
 .PHONY: image
