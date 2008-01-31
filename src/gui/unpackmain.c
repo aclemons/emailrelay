@@ -55,7 +55,7 @@ int main( int argc , char * argv [] )
 	if( !ok )
 		fprintf( stderr , "%s: failed to unpack %s\n" , prefix , path ) ;
 
-	if( argv == 1 && !ok )
+	if( argc == 1 && !ok )
 	{
 		path = "payload" ;
 		ok = unpack( "payload" ) ;
