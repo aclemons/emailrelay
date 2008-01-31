@@ -1549,9 +1549,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EXECUTABLE_EXTENSION = .app;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_MODEL_TUNING = G5;
+				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = /usr/local/bin;
+				MACH_O_TYPE = mh_execute;
 				OTHER_LDFLAGS = (
 					"-lgsmtp",
 					"-lgpop",

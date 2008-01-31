@@ -44,19 +44,25 @@ static int unpack( const char * path )
 
 int main( int argc , char * argv [] )
 {
+	int ok = 0 ;
 	const char * prefix = argv[0] ;
 	const char * path = argc > 1 ? argv[1] : argv[0] ;
-	int ok = unpack( path ) ;
-	if( argv == 0 && !ok )
-		ok = unpack( "payload" ) ;
 
+	prefix = strrchr(prefix,'/') ? (strrchr(prefix,'/')+1) : prefix ;
+	prefix = strrchr(prefix,'\\') ? (strrchr(prefix,'\\')+1) : prefix ;
+
+	ok = unpack( path ) ;
 	if( !ok )
-	{
-		prefix = strrchr(prefix,'/') ? (strrchr(prefix,'/')+1) : prefix ;
-		prefix = strrchr(prefix,'\\') ? (strrchr(prefix,'\\')+1) : prefix ;
 		fprintf( stderr , "%s: failed to unpack %s\n" , prefix , path ) ;
+
+	if( argv == 1 && !ok )
+	{
+		path = "payload" ;
+		ok = unpack( "payload" ) ;
+		if( !ok )
+			fprintf( stderr , "%s: failed to unpack %s\n" , prefix , path ) ;
 	}
 
-	return 0 ;
+	return ok ? 0 : 1 ;
 }
 
