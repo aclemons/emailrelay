@@ -57,12 +57,18 @@ std::string GLinkImp::filename( const std::string & )
 
 void GLinkImp::saveAs( const G::Path & )
 {
+	// this is a nasty hack -- Mac's have both a start/stop
+	// script and a startup application bundle and here
+	// we need to convert one to the other
+	// 
+	G::Path start_app_path( m_target_path.dirname() , "../E-MailRelay-Start.app" ) ;
+
 	std::ostringstream ss ;
 	ss 
 		<< "/usr/bin/osascript "
 			<< "-e \"tell application \\\"System Events\\\"\" "
 			<< "-e \"make new login item at end of login items with properties {"
-				<< "path:\\\"" << m_target_path << "\\\","
+				<< "path:\\\"" << start_app_path << "\\\","
 				<< "hidden:true}\" "
 			<< "-e \"end tell\"" ;
 
