@@ -544,7 +544,7 @@ void UpdateLink::run()
 	}
 	else
 	{
-		G::File::remove( m_link_path , G::File::NoThrow() ) ;
+		GLink::remove( m_link_path ) ;
 	}
 }
 

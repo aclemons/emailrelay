@@ -1101,7 +1101,6 @@ StartupPage::StartupPage( GDialog & dialog , const State & state , const std::st
 
 	if( m_is_mac )
 	{
-		m_at_login_checkbox->setEnabled( false ) ;
 		m_add_menu_item_checkbox->setEnabled( false ) ;
 		m_add_desktop_item_checkbox->setEnabled( false ) ;
 	}

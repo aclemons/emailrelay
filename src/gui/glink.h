@@ -55,6 +55,9 @@ public:
 	~GLink() ;
 		///< Destructor.
 
+	static bool remove( const G::Path & ) ;
+		///< Removes a link.
+
 private:
 	GLink( const GLink & ) ;
 	void operator=( const GLink & ) ;

@@ -16,6 +16,9 @@ means that the "gnet" library has to be able to create GUI windows in order to
 process network events. The extra GUI and event classes are put into a separate
 library in the "src/win32" directory, using the namespace "GGui".
 
+There is also a separate configuration GUI program which uses the "glib" library
+together with TrollTech's Qt.
+
 Event model
 -----------
 The E-MailRelay server uses non-blocking socket i/o, with a select() event loop.
@@ -105,9 +108,12 @@ runs the wrapper starts the actual E-MailRelay server by looking for a batch
 file called "emailrelay-start.bat" in the same directory as service wrapper
 executable. It reads the contents of this batch file in order to construct the
 E-MailRelay command-line, adding "--no-daemon" and "--hidden" switches if they
-are not there already. The service name and display name can be put onto the
-wrapper's "--install" command-line, and it is the service name that is used to
-derive the name of the "start" batch file.
+are not there already. 
+
+The service name and display name can be added to the wrapper's "--install" 
+command-line, and it is the service name that is used to derive the name of the 
+"start" batch file. This allows more than one server to be run as services,
+using different server command-line switches on each one.
 
 Diagrams
 --------
@@ -149,8 +155,8 @@ helper. Refer to the comments in "src/gui/guimain.cpp" for more details.
 The code works exactly the same on Windows, Mac OS X and unix-like operating
 systems. However, on unix-like operating systems "make install", possibly run
 via some package manager, is the preferred way to install files so the "setup"
-is never normally built or distributed. On Mac OS X the default packing scheme 
-works well enough, but a "bundle" is more natural.
+program is never normally built or distributed. On Mac OS X the default packing
+scheme works well enough, but a Mac "bundle" is more natural.
 
 The user interface is structured as a "wizard" having a dialog box with the
 forward and back buttons at the bottom and a single Qt layout object for the
@@ -166,9 +172,9 @@ to display the progress of the installation each action object is run within a
 timer callback so that the Qt framework get a chance to update the GUI between
 each one.
 
-During development the user interface and the installer can be tested separately
-since the interface between them is a simple text stream containing key-value
-pairs.
+During development the user interface pages and the installer can be tested 
+separately since the interface between them is a simple text stream containing 
+key-value pairs.
 
 Source control
 --------------

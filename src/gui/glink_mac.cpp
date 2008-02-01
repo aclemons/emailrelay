@@ -37,20 +37,39 @@ public:
 private:
 	GLinkImp( const GLinkImp & ) ;
 	void operator=( const GLinkImp & ) ;
+
+private:
+	G::Path m_target_path ;
+	std::string m_name ;
 } ;
 
-GLinkImp::GLinkImp( const G::Path & target_path , const std::string & name , const std::string & description , 
-	const G::Path & working_dir , const std::string & args , const G::Path & icon_source , GLink::Show show )
+GLinkImp::GLinkImp( const G::Path & target_path , const std::string & name , const std::string & , 
+	const G::Path & , const std::string & , const G::Path & , GLink::Show ) :
+		m_target_path(target_path) ,
+		m_name(name)
 {
 }
 
-std::string GLinkImp::filename( const std::string & name )
+std::string GLinkImp::filename( const std::string & )
 {
 	return std::string() ;
 }
 
-void GLinkImp::saveAs( const G::Path & path )
+void GLinkImp::saveAs( const G::Path & )
 {
+	std::ostringstream ss ;
+	ss 
+		<< "/usr/bin/osascript "
+			<< "-e \"tell application \\\"System Events\\\"\" "
+			<< "-e \"make new login item at end of login items with properties {"
+				<< "path:\\\"" << m_target_path << "\\\","
+				<< "hidden:true}\" "
+			<< "-e \"end tell\"" ;
+
+// TODO
+std::cout << ss.str() << std::endl ;
+
+	system( ss.str().c_str() ) ;
 }
 
 // ==
@@ -74,6 +93,33 @@ void GLink::saveAs( const G::Path & link_path )
 GLink::~GLink()
 {
 	delete m_imp ;
+}
+
+bool GLink::remove( const G::Path & )
+{
+	std::ostringstream ss ;
+	ss 
+		<< "/usr/bin/osascript "
+			<< "-e \"tell application \\\"System Events\\\"\" "
+			<< "-e \"properties of every login item\" "
+			<< "-e \"end tell\" | "
+		<< "/usr/bin/sed 's/class:/%class:/g' | "
+		<< "/usr/bin/tr '%' '\\n' | "
+		<< "/usr/bin/grep -F 'class:' | "
+		<< "/usr/bin/grep -F -n E-MailRelay | "
+		<< "/usr/bin/sed 's/:.*//' | "
+		<< "/usr/bin/tail -1 | "
+		<< "/usr/bin/xargs -I __ " 
+			<< "/usr/bin/osascript "
+				<< "-e \"tell application \\\"System Events\\\"\" "
+				<< "-e \"delete login item __\" "
+				<< "-e \"end tell\"" ;
+
+// TODO
+std::cout << ss.str() << std::endl ;
+
+	system( ss.str().c_str() ) ;
+	return true ;
 }
 
 /// \file glink_mac.cpp
