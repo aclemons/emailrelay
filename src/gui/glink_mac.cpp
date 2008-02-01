@@ -57,11 +57,13 @@ std::string GLinkImp::filename( const std::string & )
 
 void GLinkImp::saveAs( const G::Path & )
 {
-	// this is a nasty hack -- Mac's have both a start/stop
-	// script and a startup application bundle and here
-	// we need to convert one to the other
+	// this is a nasty hack -- on a mac was have both a start/stop
+	// script and a startup application bundle and here we need
+	// to convert one to the other
 	// 
-	G::Path start_app_path( m_target_path.dirname() , "../E-MailRelay-Start.app" ) ;
+	G::Path start_app_path( m_target_path.dirname() , "E-MailRelay-Start.app" ) ;
+	if( !G::File::exists(start_app_path) )
+		start_app_path = G::Path( m_target_path.dirname() , "../E-MailRelay-Start.app" ) ;
 
 	std::ostringstream ss ;
 	ss 
@@ -71,9 +73,6 @@ void GLinkImp::saveAs( const G::Path & )
 				<< "path:\\\"" << start_app_path << "\\\","
 				<< "hidden:true}\" "
 			<< "-e \"end tell\"" ;
-
-// TODO
-std::cout << ss.str() << std::endl ;
 
 	system( ss.str().c_str() ) ;
 }
@@ -120,9 +119,6 @@ bool GLink::remove( const G::Path & )
 				<< "-e \"tell application \\\"System Events\\\"\" "
 				<< "-e \"delete login item __\" "
 				<< "-e \"end tell\"" ;
-
-// TODO
-std::cout << ss.str() << std::endl ;
 
 	system( ss.str().c_str() ) ;
 	return true ;

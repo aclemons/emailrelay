@@ -109,7 +109,7 @@ G::Path Dir::special( const std::string & type )
 {
 	if( type == "desktop" ) return home()+"Desktop" ;
 	if( type == "menu" ) return G::Path() ;
-	if( type == "login" ) return G::Path() ;
+	if( type == "login" ) return "Login-Items" ; // cosmetic
 	if( type == "programs" ) return G::Path() ;
 	return G::Path() ;
 }
