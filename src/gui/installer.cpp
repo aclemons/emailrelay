@@ -351,7 +351,7 @@ CopyFrameworks::CopyFrameworks( G::Path argv0 , G::Path dst ) :
 	m_argv0(argv0) ,
 	m_dst(dst)
 {
-	G::Path frameworks( m_argv0.dirname() , "Frameworks" ) ; // sic
+	G::Path frameworks( m_argv0.dirname() , "../Frameworks" ) ;
 	m_cmd = std::string() + "/bin/cp -f -R \"" + frameworks.str() + "\" \"" + m_dst.str() + "\"" ;
 	for( const char * p = "$\\()[]<>|!~*?&;" ; *p ; p++ ) // remove shell metacharacters except quotes
 		G::Str::replaceAll( m_cmd , std::string(1U,*p) , "_" ) ;
