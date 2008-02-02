@@ -18,8 +18,8 @@
 # Makefile.am
 #
 
-BUNDLE=E-Mailrelay-Configure
-SETUP_BUNDLE=E-Mailrelay-Install
+BUNDLE=E-MailRelay-Configure
+SETUP_BUNDLE=E-MailRelay-Install
 IMAGE=E-MailRelay.dmg
 
 if MAC
@@ -181,6 +181,9 @@ payload: pack payload-stub ../../bin/make-setup.sh
 
 $(SETUP_BUNDLE).app: emailrelay-gui.real payload ../../bin/make-bundle.sh
 	../../bin/make-bundle.sh -f "$(SETUP_BUNDLE)" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+	mv "$(SETUP_BUNDLE).app/Contents/MacOS/E-MailRelay-Install" "$(SETUP_BUNDLE).app/Contents/emailrelay-gui.real"
+	( cd "$(SETUP_BUNDLE).app/Contents/MacOS" && ln -s ../emailrelay-gui.real E-MailRelay-Install )
+	../../bin/make-qt-enabled.sh -f "$(SETUP_BUNDLE).app/Contents/emailrelay-gui.real" "Frameworks"
 	cp payload "$(SETUP_BUNDLE).app/Contents/"
 
 .PHONY: setup-bundle

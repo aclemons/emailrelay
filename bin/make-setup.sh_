@@ -18,8 +18,8 @@
 #
 # make-setup.sh
 #
-# Builds a "setup" self-extracting archive derived from running 
-# "make install" into a temporary directory.
+# Builds a "setup" self-extracting archive -- or a payload file for
+# one -- derived from running "make install" into a temporary directory.
 #
 # usage: make-setup.sh [-d] <output> <stub> <pack-utility> [<sbindir> [<sysconfdir> [<initdir>]]]
 #

@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gstr.h"
 #include "glink.h"
+#include "gfile.h"
 #include <string>
 #include <sstream>
 #include <fstream>

@@ -107,6 +107,19 @@ struct ExtractOriginal : public ActionBase
 	virtual std::string text() const ;
 } ;
 
+struct CopyFrameworks : public ActionBase
+{
+	G::Path m_argv0 ;
+	G::Path m_dst ;
+	std::string m_cmd ;
+	std::string m_ok ;
+	static bool active( G::Path argv0 ) ;
+	CopyFrameworks( G::Path argv0 , G::Path dst ) ;
+	virtual std::string ok() const ;
+	virtual void run() ;
+	virtual std::string text() const ;
+} ;
+
 struct CreateStateFile : public ActionBase
 {
 	G::Path m_state_path ;
@@ -331,6 +344,41 @@ std::string ExtractOriginal::text() const
 
 // ==
 
+bool CopyFrameworks::active( G::Path argv0 )
+{
+	return G::File::exists( G::Path(argv0.dirname(),"../Frameworks") ) ; // ie. mac bundle
+}
+
+CopyFrameworks::CopyFrameworks( G::Path argv0 , G::Path dst ) :
+	m_argv0(argv0) ,
+	m_dst(dst)
+{
+	G::Path frameworks( m_argv0.dirname() , "Frameworks" ) ; // sic
+	m_cmd = std::string() + "/usr/bin/cp -f -R " + frameworks.str() + " " + m_dst.str() ;
+	for( const char * p = "$\\\"\'()[]<>|!~*?&;" ; *p ; p++ ) // dont allow shell metacharacters to sneak in
+		G::Str::replaceAll( m_cmd , std::string(1U,*p) , "_" ) ;
+}
+
+void CopyFrameworks::run() 
+{
+	// k.i.s.s
+	int rc = system( m_cmd.c_str() ) ;
+	if( rc != 0 )
+		m_ok = "failed" ;
+}
+
+std::string CopyFrameworks::ok() const 
+{
+	return m_ok.empty() ? ActionBase::ok() : m_ok ;
+}
+
+std::string CopyFrameworks::text() const 
+{ 
+	return std::string() + "copying frameworks [" + m_cmd + "]" ; 
+}
+
+// ==
+
 CreateStateFile::CreateStateFile( const G::Path & state_path , const G::Path & gui , const State::Map & state_map ) :
 	m_state_path(state_path) ,
 	m_gui(gui) ,
@@ -527,7 +575,9 @@ UpdateLink::UpdateLink( bool active , std::string link_dir , G::Path working_dir
 
 std::string UpdateLink::text() const
 {
-	return std::string() + "updating link in [" + m_link_dir.str() + "]" ;
+	return m_link_dir.str().empty() ?
+		( std::string() + "updating startup link" ) :
+		( std::string() + "updating link in [" + m_link_dir.str() + "]" ) ;
 }
 
 void UpdateLink::run()
@@ -890,6 +940,8 @@ void InstallerImp::insertActions()
 	{
 		G::Path gui = Dir::gui( value("dir-install") ) ;
 		insert( new ExtractOriginal(m_argv0,m_unpack,gui) ) ;
+		if( CopyFrameworks::active(m_argv0) )
+			insert( new CopyFrameworks(m_argv0,gui.dirname()) ) ;
 		insert( new CreateStateFile(State::file(gui.str()),gui,m_map) ) ;
 	}
 

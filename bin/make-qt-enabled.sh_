@@ -1,0 +1,122 @@
+#!/bin/sh
+#
+# Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or 
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ===
+#
+# make-qt-enabled.sh
+#
+# Adds Qt frameworks to a Mac OS X application bundle. Called from make.
+#
+# usage: make-qt-enabled.sh [-f] <exe> <frameworks-sub-dir>
+#
+# eg. make-qt-enabled.sh Foo.app/Contents/MacOS ../Frameworks
+# eg. make-qt-enabled.sh foo.real Frameworks
+#
+# Silently does nothing on non-Mac systems.
+#
+# See "http://doc.trolltech.com/4.3/deployment-mac.html".
+#
+
+force="0" ; if test "$1" = "-f" ; then force="1" ; shift ; fi
+exe="$1"
+fdir="$2"
+
+echo="echo"
+do=""
+
+if test "`uname`" != "Darwin" -a "$force" -eq 0
+then
+	exit 0
+fi
+
+if test "$fdir" = ""
+then
+	fdir="../Frameworks"
+fi
+
+if test ! -x "$exe"
+then
+	echo `basename $0`: no such exe >&2
+	exit 1
+fi
+
+base="`dirname \"$1\"`"
+src="/Library/Frameworks"
+
+rm -rf "$base/$fdir" 2>/dev/null
+mkdir -p "$base/$fdir" 2>/dev/null
+
+$echo cp -f -R \"$src/QtCore.framework\" \"$base/$fdir\"
+$do cp -f -R "$src/QtCore.framework" "$base/$fdir"
+
+$echo cp -f -R \"$src/QtGui.framework\" \"$base/$fdir\"
+$do cp -f -R "$src/QtGui.framework" "$base/$fdir"
+
+Id()
+{
+	fk_="$1"
+	name_="$2"
+	if test "$name_" = "" ; then name_="`basename \"$fk_\" .framework`" ; fi
+	otool -D "$fk_/Versions/Current/$name_" | tail -1
+}
+
+SetId()
+{
+	base_="$1"
+	fdir_="$2"
+	id_="$3"
+	$echo install_name_tool -id \"@executable_path/$fdir_/$id_\" \"$base_/$fdir_/$id_\"
+	$do install_name_tool -id "@executable_path/$fdir_/$id_" "$base_/$fdir_/$id_"
+}
+
+Path()
+{
+	exe_="$1"
+	key_="$2"
+	otool -L "$exe_" | fgrep "$key_" | tr '\t' ' ' | sed 's/^ *//' | sed 's/ .*//'
+}
+
+SetPath()
+{
+	lib_or_exe_="$1"
+	fdir_="$2"
+	path_="$3"
+	if test "`echo \"$path_\" | fgrep @executable_path | wc -l`" -eq 0
+	then
+		$echo install_name_tool -change \"$path_\" \"@executable_path/$fdir_/$path_\" \"$lib_or_exe_\"
+		$do install_name_tool -change "$path_" "@executable_path/$fdir_/$path_" "$lib_or_exe_"
+	else
+		true
+	fi
+}
+
+id_core="`Id \"$base/$fdir/QtCore.framework\"`"
+id_gui="`Id \"$base/$fdir/QtGui.framework\"`"
+
+SetId "$base" "$fdir" "$id_core"
+SetId "$base" "$fdir" "$id_gui"
+
+core_lib="$base/$fdir/QtCore.framework/Versions/Current/QtCore"
+gui_lib="$base/$fdir/QtGui.framework/Versions/Current/QtGui"
+
+gui_path_in_exe="`Path \"$exe\" QtGui`"
+core_path_in_exe="`Path \"$exe\" QtCore`"
+core_path_in_gui="`Path \"$gui_lib\" QtCore`"
+
+SetPath "$exe" "$fdir" "$gui_path_in_exe" && \
+SetPath "$exe" "$fdir" "$core_path_in_exe" && \
+SetPath "$gui_lib" "$fdir" "$core_path_in_gui"
+

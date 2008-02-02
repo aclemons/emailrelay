@@ -41,6 +41,7 @@ EXTRA_DIST = \
 	emailrelay-submit.sh_ \
 	emailrelay-multicast.sh_ \
 	make-setup.sh_ \
+	make-qt-enabled.sh_ \
 	make-bundle.sh_ \
 	configure-mac.sh \
 	startup-mac.plist \
@@ -55,6 +56,7 @@ work_scripts = \
 	txt2html.sh \
 	emailrelay.sh \
 	make-setup.sh \
+	make-qt-enabled.sh \
 	make-bundle.sh \
 	fragment.pl
 
