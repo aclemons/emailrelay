@@ -112,10 +112,8 @@ struct CopyFrameworks : public ActionBase
 	G::Path m_argv0 ;
 	G::Path m_dst ;
 	std::string m_cmd ;
-	std::string m_ok ;
 	static bool active( G::Path argv0 ) ;
 	CopyFrameworks( G::Path argv0 , G::Path dst ) ;
-	virtual std::string ok() const ;
 	virtual void run() ;
 	virtual std::string text() const ;
 } ;
@@ -354,7 +352,7 @@ CopyFrameworks::CopyFrameworks( G::Path argv0 , G::Path dst ) :
 	m_dst(dst)
 {
 	G::Path frameworks( m_argv0.dirname() , "Frameworks" ) ; // sic
-	m_cmd = std::string() + "/usr/bin/cp -f -R " + frameworks.str() + " " + m_dst.str() ;
+	m_cmd = std::string() + "/bin/cp -f -R \"" + frameworks.str() + "\" \"" + m_dst.str() + "\"" ;
 	for( const char * p = "$\\\"\'()[]<>|!~*?&;" ; *p ; p++ ) // dont allow shell metacharacters to sneak in
 		G::Str::replaceAll( m_cmd , std::string(1U,*p) , "_" ) ;
 }
@@ -364,12 +362,7 @@ void CopyFrameworks::run()
 	// k.i.s.s
 	int rc = system( m_cmd.c_str() ) ;
 	if( rc != 0 )
-		m_ok = "failed" ;
-}
-
-std::string CopyFrameworks::ok() const 
-{
-	return m_ok.empty() ? ActionBase::ok() : m_ok ;
+		throw std::runtime_error( "failed" ) ;
 }
 
 std::string CopyFrameworks::text() const 
