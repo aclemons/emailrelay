@@ -78,7 +78,7 @@ static void remove( std::string & s , char c )
 
 static void sanitise( std::string & s )
 {
-	// remove all shell meta characters
+	// remove all shell meta characters, including quotes
 	for( const char * p = "$\\\"\'()[]<>|!~*?&;" ; *p ; p++ )
     	remove( s , *p ) ;
 }
