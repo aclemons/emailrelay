@@ -192,6 +192,18 @@ void GPop::StoreLock::lock( const std::string & user )
 	// build a read-only list of files (inc. file sizes)
 	{
 		DirectoryReader claim_reader ;
+// TODO
+{
+G::DirectoryList iter ;
+iter.readAll(m_dir);
+int i=0;
+while(iter.more())
+{
+bool b=G::Str::tailMatch(iter.fileName().str(),".envelope");
+G_LOG("GPop::StoreLock::lock: "<<i++<<": "<<iter.fileName()<<" "<<b) ;
+}
+system((std::string()+"ls -l "+m_dir.str()+" >&2").c_str());
+}
 		G::DirectoryList iter ;
 		iter.readType( m_dir , ".envelope" ) ;
 		while( iter.more() )

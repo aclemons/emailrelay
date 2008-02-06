@@ -386,7 +386,8 @@ sub testServerPop
 	Check::that( Port::isFree($server->smtpPort()) ) ;
 	Check::ok( $pop->open() , "cannot connect to pop port" ) ;
 	Check::ok( $pop->login( "me" , "secret" ) ) ;
-	Check::that( scalar($pop->list(1,10)) == ($message_count * 1001) , "invalid message list" ) ;
+	my @list = $pop->list(1,10) ;
+	Check::that( scalar(@list) == ($message_count * 1001) , "invalid message list (".scalar(@list).")" ) ;
 	Check::fileContains( $server->stderr() , "flow control asserted" , "edit the test to add more messages" ) ;
 
 	# tear down
@@ -490,7 +491,7 @@ sub testServerFlushNoServer
 	$c->doFlush() ;
 	my $line = $c->getline() ;
 	chomp $line ;
-	Check::match( $line , "^error: dns error: invalid hostname:" , "unexpected response" ) ;
+	Check::match( $line , "^error: dns error: invalid host name:" , "unexpected response" ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 1 ) ;
 
 	# tear down
@@ -579,7 +580,6 @@ sub testServerPolling
 
 	# test that the message gets forwarded
 	Check::ok( System::drain($server_1->spoolDir()) , "message not forwarded" ) ;
-	Check::fileContains( $server_1->stderr() , "info: polling" ) ;
 	Check::fileMatchCount( $spool_dir_1 ."/emailrelay.*.content", 0 ) ;
 	Check::fileMatchCount( $spool_dir_2 ."/emailrelay.*.content", 1 ) ;
 

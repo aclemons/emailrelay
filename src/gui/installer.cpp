@@ -116,6 +116,7 @@ struct CopyFrameworks : public ActionBase
 	CopyFrameworks( G::Path argv0 , G::Path dst ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
+	static std::string sanitised( std::string ) ;
 } ;
 
 struct CreateStateFile : public ActionBase
@@ -344,7 +345,16 @@ std::string ExtractOriginal::text() const
 
 bool CopyFrameworks::active( G::Path argv0 )
 {
+	// TODO -- move this test outside the installer code
 	return G::File::exists( G::Path(argv0.dirname(),"../Frameworks") ) ; // ie. mac bundle
+}
+
+std::string CopyFrameworks::sanitised( std::string s )
+{
+	// remove shell metacharacters
+	for( const char * p = "$\\\"'()[]<>|!~*?&;" ; *p ; p++ ) 
+		G::Str::replaceAll( s , std::string(1U,*p) , "_" ) ;
+	return s ;
 }
 
 CopyFrameworks::CopyFrameworks( G::Path argv0 , G::Path dst ) :
@@ -352,9 +362,7 @@ CopyFrameworks::CopyFrameworks( G::Path argv0 , G::Path dst ) :
 	m_dst(dst)
 {
 	G::Path frameworks( m_argv0.dirname() , "../Frameworks" ) ;
-	m_cmd = std::string() + "/bin/cp -f -R \"" + frameworks.str() + "\" \"" + m_dst.str() + "\"" ;
-	for( const char * p = "$\\()[]<>|!~*?&;" ; *p ; p++ ) // remove shell metacharacters except quotes
-		G::Str::replaceAll( m_cmd , std::string(1U,*p) , "_" ) ;
+	m_cmd = std::string() + "/bin/cp -fR \"" + sanitised(frameworks.str()) + "\" \"" + sanitised(m_dst.str()) + "\"" ;
 }
 
 void CopyFrameworks::run() 

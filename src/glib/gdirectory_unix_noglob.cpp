@@ -121,11 +121,6 @@ G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory & dir ) :
 {
 	m_d = ::opendir( dir.path().str().c_str() ) ;
 	m_error = m_d == NULL ;
-	if( !m_error )
-	{
-		m_dp = ::readdir( m_d ) ;
-		m_error = m_dp == NULL ;
-	}
 }
 
 bool G::DirectoryIteratorImp::error() const

@@ -109,16 +109,18 @@ void G::DirectoryList::readType( const G::Path & dir , const std::string & suffi
 
 bool G::DirectoryList::more()
 {
+	bool more = false ;
 	if( m_first )
 	{
 		m_first = false ;
-		return ! m_is_dir.empty() ;
+		more = ! m_is_dir.empty() ;
 	}
 	else
 	{
 		m_index++ ;
-		return m_index < m_is_dir.size() ;
+		more = m_index < m_is_dir.size() ;
 	}
+	return more ;
 }
 
 bool G::DirectoryList::isDir() const
