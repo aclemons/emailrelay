@@ -46,8 +46,8 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous ,
 		{
 			if( run.prepare() )
 			{
-				const bool visible = ! run.cfg().daemon() ;
-				app.init( run.cfg() ) ;
+				const bool visible = ! run.config().daemon() ;
+				app.init( run.config() ) ;
 				app.createWindow( show , visible ) ;
 				run.signal().connect( G::slot(app,&Main::WinApp::onRunEvent) ) ;
 				run.run() ;

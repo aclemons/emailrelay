@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "garg.h"
 #include "glimits.h"
+#include "gstr.h"
 #include "gdebug.h"
 
 std::string G::Arg::moduleName( HINSTANCE hinstance )

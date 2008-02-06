@@ -105,6 +105,10 @@ SOURCE=..\glib\garg.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\glib\ghostname_win32.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\glib\garg_win32.cpp
 # End Source File
 # Begin Source File
@@ -206,6 +210,14 @@ SOURCE=..\glib\gexecutable_win32.cpp
 # Begin Source File
 
 SOURCE=..\gsmtp\gexecutableprocessor.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gsmtp\gverifierstatus.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gsmtp\ginternalverifier.cpp
 # End Source File
 # Begin Source File
 
@@ -341,6 +353,10 @@ SOURCE=..\gpop\gpopstore.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\glib\gnewprocess_win32.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\glib\gprocess_win32.cpp
 # End Source File
 # Begin Source File
@@ -349,7 +365,7 @@ SOURCE=..\gsmtp\gprocessor.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gsmtp\gprocessorfactory.cpp
+SOURCE=..\gsmtp\gprocessorfactory_exec_enabled.cpp
 # End Source File
 # Begin Source File
 
@@ -373,7 +389,7 @@ SOURCE=..\win32\gpump_dialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gnet\grequest.cpp
+SOURCE=..\gnet\grequest_win32.cpp
 # End Source File
 # Begin Source File
 
@@ -409,7 +425,7 @@ SOURCE=..\win32\gscmap.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gsmtp\gsecrets.cpp
+SOURCE=..\gsmtp\gsecrets_full.cpp
 # End Source File
 # Begin Source File
 
@@ -501,7 +517,7 @@ SOURCE=..\gsmtp\gverifier.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gsmtp\gverifierfactory.cpp
+SOURCE=..\gsmtp\gverifierfactory_exec_enabled.cpp
 # End Source File
 # Begin Source File
 

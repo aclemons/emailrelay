@@ -81,8 +81,10 @@ private:
 
 private:
 	address_type m_inet ;
-	static const char m_port_separator = ':' ;
+	static char m_port_separator ;
 } ;
+
+char GNet::AddressImp::m_port_separator = ':' ;
 
 // ===
 

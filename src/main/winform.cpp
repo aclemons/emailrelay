@@ -97,12 +97,12 @@ std::string Main::WinForm::yn( bool b )
 	return b ? std::string("yes") : std::string("no") ;
 }
 
-std::string Main::WinForm::na() const
+std::string Main::WinForm::na()
 {
 	return "<none>" ;
 }
 
-std::string Main::WinForm::na( const std::string & s ) const
+std::string Main::WinForm::na( const std::string & s )
 {
 	return s.empty() ? na() : s ;
 }

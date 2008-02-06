@@ -20,7 +20,7 @@
 
 #include "gdef.h"
 #include "glimits.h"
-#include "gprocess.h"
+#include "gnewprocess.h"
 #include "gexception.h"
 #include "gstr.h"
 #include "glog.h"

@@ -31,6 +31,18 @@
 #include <utility>
 #include <cstdlib> // getenv
 
+namespace
+{
+	bool eqc( char c , std::pair<std::string,G::GetOpt::SwitchSpec> p ) 
+	{ 
+		return p.second.c == c ; 
+	}
+	bool eqn( std::string n , std::pair<std::string,G::GetOpt::SwitchSpec> p ) 
+	{ 
+		return p.second.name == n ; 
+	}
+}
+
 G::GetOpt::GetOpt( const Arg & args_in , const std::string & spec , 
 	char sep_major , char sep_minor , char escape ) :
 		m_args(args_in)
@@ -87,14 +99,14 @@ bool G::GetOpt::valued( const std::string & name ) const
 bool G::GetOpt::valued( char c ) const
 {
 	SwitchSpecMap::const_iterator p = 
-		std::find_if( m_spec_map.begin() , m_spec_map.end() , std::bind1st(std::ptr_fun(&SwitchSpec::eqc),c)) ;
+		std::find_if( m_spec_map.begin() , m_spec_map.end() , std::bind1st(std::ptr_fun(eqc),c)) ;
 	return p == m_spec_map.end() ? false : (*p).second.valued ;
 }
 
 char G::GetOpt::key( const std::string & name ) const
 {
 	SwitchSpecMap::const_iterator p = 
-		std::find_if( m_spec_map.begin() , m_spec_map.end() , std::bind1st(std::ptr_fun(&SwitchSpec::eqn),name)) ;
+		std::find_if( m_spec_map.begin() , m_spec_map.end() , std::bind1st(std::ptr_fun(eqn),name)) ;
 	return p == m_spec_map.end() ? '\0' : (*p).second.c ;
 }
 
@@ -486,7 +498,7 @@ void G::GetOpt::show( std::ostream & stream , std::string prefix ) const
 		std::string value = v.second ;
 
 		SwitchSpecMap::const_iterator q = std::find_if( m_spec_map.begin() , m_spec_map.end() , 
-			std::bind1st(std::ptr_fun(&SwitchSpec::eqc),c)) ;
+			std::bind1st(std::ptr_fun(eqc),c)) ;
 		std::string name = q == m_spec_map.end() ? std::string() : (*q).second.name ;
 
 		stream << prefix << "-" << c ;
@@ -531,7 +543,7 @@ bool G::GetOpt::valid( const std::string & name ) const
 
 bool G::GetOpt::valid( char c ) const
 {
-	return !! std::count_if( m_spec_map.begin() , m_spec_map.end() , std::bind1st(std::ptr_fun(&SwitchSpec::eqc),c)) ;
+	return !! std::count_if( m_spec_map.begin() , m_spec_map.end() , std::bind1st(std::ptr_fun(eqc),c)) ;
 }
 
 /// \file ggetopt.cpp

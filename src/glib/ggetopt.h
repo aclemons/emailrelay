@@ -47,6 +47,22 @@ public:
 		{ unsigned int level ; explicit Level(unsigned int l) : level(l) {} } ;
 	G_EXCEPTION( InvalidSpecification , "invalid options specification string" ) ;
 	typedef std::string::size_type size_type ;
+	/// A private implementation structure used by G::GetOpt.
+	struct SwitchSpec 
+	{ 
+		char c ; 
+		std::string name ; 
+		std::string description ; 
+		bool valued ; 
+		bool hidden ;
+		std::string value_description ;
+		unsigned int level ;
+		SwitchSpec(char c_,const std::string & name_,const std::string & description_,
+			bool v_,const std::string & vd_,unsigned int level_) :
+				c(c_) , name(name_) , description(description_) , 
+				valued(v_) , hidden(description_.empty()||level_==0U) ,
+				value_description(vd_) , level(level_) {}
+	} ;
 
 	GetOpt( const Arg & arg , const std::string & spec , 
 		char sep_major = '|' , char sep_minor = '/' , char escape = '\\' ) ;
@@ -151,24 +167,6 @@ public:
 		///< Precondition: contains(switch_letter)
 
 private:
-	/// A private implementation structure used by G::GetOpt.
-	struct SwitchSpec 
-	{ 
-		char c ; 
-		std::string name ; 
-		std::string description ; 
-		bool valued ; 
-		bool hidden ;
-		std::string value_description ;
-		unsigned int level ;
-		SwitchSpec(char c_,const std::string & name_,const std::string & description_,
-			bool v_,const std::string & vd_,unsigned int level_) :
-				c(c_) , name(name_) , description(description_) , 
-				valued(v_) , hidden(description_.empty()||level_==0U) ,
-				value_description(vd_) , level(level_) {}
-		static bool eqc( char c , std::pair<std::string,SwitchSpec> p ) { return p.second.c == c ; }
-		static bool eqn( std::string n , std::pair<std::string,SwitchSpec> p ) { return p.second.name == n ; }
-	} ;
 	typedef std::map<std::string,SwitchSpec> SwitchSpecMap ;
 	typedef std::pair<bool,std::string> Value ;
 	typedef std::map<char,Value> SwitchMap ;

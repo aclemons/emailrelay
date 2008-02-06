@@ -103,7 +103,6 @@ sub submit_line
 sub submit
 {
 	my ( $this , $to_fail ) = @_ ;
-	my $t = $this->t() ;
 	$this->submit_start() ;
 	$this->submit_line( "This is a test." ) ;
 	$this->submit_end( $to_fail ) ;

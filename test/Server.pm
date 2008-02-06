@@ -58,6 +58,7 @@ sub new
 		m_filter => System::tempfile("filter",$tmp_dir) ,
 		m_client_filter => System::tempfile("client-filter",$tmp_dir) ,
 		m_scanner => "net:localhost:$scanner_port" ,
+		m_max_size => 1000 ,
 	) ;
 	my $this = bless \%me , $classname ;
 	$this->_check() ;
@@ -86,6 +87,7 @@ sub user { return shift->{'m_user'} }
 sub command { return shift->{'m_full_command'} }
 sub filter { return shift->{'m_filter'} }
 sub clientFilter { return shift->{'m_client_filter'} }
+sub maxSize { return shift->{'m_max_size'} }
 sub rc { return shift->{'m_rc'} }
 
 sub _check
@@ -110,9 +112,9 @@ sub canRun
 {
 	my ( $this , $port_list_ref ) = @_ ;
 	my @port_list = defined($port_list_ref) ? @$port_list_ref : Port::list() ;
-	return 
-		Port::isFree($this->smtpPort(),@port_list) && 
-		Port::isFree($this->adminPort(),@port_list) && 
+	return
+		Port::isFree($this->smtpPort(),@port_list) &&
+		Port::isFree($this->adminPort(),@port_list) &&
 		Port::isFree($this->popPort(),@port_list) ;
 }
 
@@ -127,7 +129,7 @@ sub _switches
 {
 	my ( %sw ) = @_ ;
 
-	return 
+	return
 		"" .
 		( exists($sw{AsServer}) ? "--as-server " : "" ) .
 		( exists($sw{Log}) ? "--log " : "" ) .
@@ -157,6 +159,7 @@ sub _switches
 		( exists($sw{Scanner}) ? "--filter __SCANNER__ " : "" ) .
 		( exists($sw{DontServe}) ? "--dont-serve " : "" ) .
 		( exists($sw{ClientAuth}) ? "--client-auth __CLIENT_SECRETS__ " : "" ) .
+		( exists($sw{MaxSize}) ? "--max-size __MAX_SIZE__ " : "" ) .
 		"" ;
 }
 
@@ -179,6 +182,7 @@ sub _set_all
 	$command_tail = _set( $command_tail , "__CLIENT_FILTER__" , $this->clientFilter() ) ;
 	$command_tail = _set( $command_tail , "__SCANNER__" , $this->scannerAddress() ) ;
 	$command_tail = _set( $command_tail , "__CLIENT_SECRETS__" , $this->clientSecrets() ) ;
+	$command_tail = _set( $command_tail , "__MAX_SIZE__" , $this->maxSize() ) ;
 
 	my $valgrind = "" ;
 	return $valgrind . $this->exe() . " " .  $command_tail ;
@@ -273,6 +277,14 @@ sub cleanup
 	unlink( $this->clientSecrets() ) ;
 	unlink( $this->filter() ) ;
 	unlink( $this->clientFilter() ) ;
+}
+
+sub hasDebug
+{
+	my ( $this ) = @_ ;
+	my $exe = $this->exe() ;
+	my $rc = system( "strings \"$exe\" | fgrep -q 'G_TEST'" ) ;
+	return $rc == 0 ;
 }
 
 1 ;

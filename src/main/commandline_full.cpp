@@ -584,47 +584,47 @@ bool Main::CommandLine::hasSemanticError() const
 
 void Main::CommandLine::showHelp( bool error_stream ) const
 {
-	return m_imp->showHelp( error_stream ) ;
+	m_imp->showHelp( error_stream ) ;
 }
 
 void Main::CommandLine::showUsageErrors( bool error_stream ) const
 {
-	return m_imp->showUsageErrors( error_stream ) ;
+	m_imp->showUsageErrors( error_stream ) ;
 }
 
 void Main::CommandLine::showSemanticError( bool error_stream ) const
 {
-	return m_imp->showSemanticError( cfg() , error_stream ) ;
+	m_imp->showSemanticError( cfg() , error_stream ) ;
 }
 
 void Main::CommandLine::logSemanticWarnings() const
 {
-	return m_imp->logSemanticWarnings( cfg() ) ;
+	m_imp->logSemanticWarnings( cfg() ) ;
 }
 
 void Main::CommandLine::showArgcError( bool error_stream ) const
 {
-	return m_imp->showArgcError( error_stream ) ;
+	m_imp->showArgcError( error_stream ) ;
 }
 
 void Main::CommandLine::showNoop( bool error_stream ) const
 {
-	return m_imp->showNoop( error_stream ) ;
+	m_imp->showNoop( error_stream ) ;
 }
 
 void Main::CommandLine::showVersion( bool error_stream ) const
 {
-	return m_imp->showVersion( error_stream ) ;
+	m_imp->showVersion( error_stream ) ;
 }
 
 void Main::CommandLine::showBanner( bool error_stream , const std::string & s ) const
 {
-	return m_imp->showBanner( error_stream , s ) ;
+	m_imp->showBanner( error_stream , s ) ;
 }
 
 void Main::CommandLine::showCopyright( bool error_stream , const std::string & s ) const
 {
-	return m_imp->showCopyright( error_stream , s ) ;
+	m_imp->showCopyright( error_stream , s ) ;
 }
 
 unsigned int Main::CommandLine::value( const std::string & switch_ , unsigned int default_ ) const
