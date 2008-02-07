@@ -37,13 +37,15 @@ MAKE_SETUP_STUB = emailrelay-gui.real
 endif
 
 EXTRA_DIST=\
+	boot_win32.cpp \
+	dir_win32.cpp \
 	emailrelay-icon.png \
 	gcominit.h \
-	dir_win32.cpp \
+	glink_win32.cpp \
 	mingw.mak \
+	mock \
 	pack.cpp \
 	run.c \
-	mock \
 	$(MAC_EXTRA_DIST)
 
 if GUI

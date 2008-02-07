@@ -58,25 +58,25 @@
 		#endif
 
 		/* just in case, undefine if defined as zero in config.h */
-		#if ! USE_NO_ADMIN
+		#if defined(USE_NO_ADMIN) && 0 == USE_NO_ADMIN
 			#undef USE_NO_ADMIN
 		#endif
-		#if ! USE_NO_AUTH
+		#if defined(USE_NO_AUTH) && 0 == USE_NO_AUTH
 			#undef USE_NO_AUTH
 		#endif
-		#if ! USE_NO_EXEC
+		#if defined(USE_NO_EXEC) && 0 == USE_NO_EXEC
 			#undef USE_NO_EXEC
 		#endif
-		#if ! USE_NO_POP
+		#if defined(USE_NO_POP) && 0 == USE_NO_POP
 			#undef USE_NO_POP
 		#endif
-		#if ! USE_SMALL_CONFIG
+		#if defined(USE_SMALL_CONFIG) && 0 == USE_SMALL_CONFIG
 			#undef USE_SMALL_CONFIG
 		#endif
-		#if ! USE_SMALL_EXCEPTIONS
+		#if defined(USE_SMALL_EXCEPTIONS) && 0 == USE_SMALL_EXCEPTIONS
 			#undef USE_SMALL_EXCEPTIONS
 		#endif
-		#if ! USE_IPV6
+		#if defined(USE_IPV6) && 0 == USE_IPV6
 			#undef USE_IPV6
 		#endif
 
@@ -106,6 +106,19 @@
 	#endif
 	#if defined( __GNUC__ )
 		#define G_COMPILER_IS_GNU 1
+	#endif
+
+	/* Define extra microsoft header tweaks
+	 */
+	#ifdef G_WIN32_IE
+		#ifndef _WIN32_IE
+			#define _WIN32_IE 0x600
+		#endif
+	#endif
+	#ifdef G_WIN32_DCOM
+		#ifndef _WIN32_DCOM
+			#define _WIN32_DCOM
+		#endif
 	#endif
 
 	/* Include main o/s headers

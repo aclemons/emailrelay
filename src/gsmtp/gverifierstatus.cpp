@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// gverifierstatuc.cpp
+// gverifierstatus.cpp
 //
 
 #include "gdef.h"
@@ -57,7 +57,7 @@ GSmtp::VerifierStatus GSmtp::VerifierStatus::parse( const std::string & line , s
 		s.help = part[7U] ;
 		return s ;
 	}
-	catch( std::exception & e )
+	catch( std::exception & )
 	{
 		G_ERROR( "GSmtp::VerifierStatus::parse: invalid stringised status: [" << line << "]" ) ;
 		throw ;

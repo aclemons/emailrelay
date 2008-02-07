@@ -40,7 +40,7 @@ mk_zlib=$(mk_qt)/src/3rdparty/zlib
 endif
 
 mk_sources=\
-	boot.cpp \
+	boot_win32.cpp \
 	gdialog.cpp \
 	gpage.cpp \
 	dir.cpp \
@@ -52,7 +52,7 @@ mk_sources=\
 	moc_gdialog.cpp \
 	moc_gpage.cpp \
 	moc_pages.cpp \
-	glink.cpp \
+	glink_win32.cpp \
 	gunpack.cpp \
 	state.cpp \
 	unpack.c
@@ -88,6 +88,8 @@ syslibs=\
 	-luuid
 
 mk_defines_extra=\
+	-DG_WIN32_IE \
+	-DG_WIN32_DCOM \
 	-DQT_LARGEFILE_SUPPORT \
 	-DQT_GUI_LIB \
 	-DQT_CORE_LIB \

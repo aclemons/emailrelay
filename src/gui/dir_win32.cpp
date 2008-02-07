@@ -19,26 +19,20 @@
 //
 
 #include "gdef.h"
-#define _WIN32_IE 0x600
 #include <shlwapi.h>
 #include <shlobj.h>
+
 #ifndef SHGFP_TYPE_CURRENT
 #define SHGFP_TYPE_CURRENT 0
+#endif
+#ifndef CSIDL_PROGRAM_FILES
+#define CSIDL_PROGRAM_FILES 38
 #endif
 
 #include "dir.h"
 #include "gfile.h"
 #include "gpath.h"
 #include <stdexcept>
-#include <cstdlib> //getenv
-
-std::string Dir::env( const std::string & key , const std::string & default_ )
-{
-	const char * p = getenv( key.c_str() ) ;
-	if( p == NULL )
-		return default_ ;
-	return std::string(p) ;
-}
 
 G::Path Dir::windows()
 {
@@ -86,7 +80,9 @@ G::Path Dir::os_pid() const
 
 G::Path Dir::os_boot()
 {
-	return G::Path() ;
+	// empty implies no access (see call to Boot::able() in pages.cpp), 
+	// so the default has to be a bogus value
+	return "services" ; 
 }
 
 G::Path Dir::os_bootcopy( const G::Path & , const G::Path & )

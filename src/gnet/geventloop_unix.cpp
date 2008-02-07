@@ -292,10 +292,10 @@ void GNet::Select::runOnce()
 
 	if( G::Test::enabled("slow-event-loop") )
 	{
-		Timeval timeout ;
-		timeout.tv_sec = 0 ;
-		timeout.tv_usec = 100000 ;
-		::select( 0 , NULL , NULL , NULL , &timeout ) ;
+		Timeval timeout_slow ;
+		timeout_slow.tv_sec = 0 ;
+		timeout_slow.tv_usec = 100000 ;
+		::select( 0 , NULL , NULL , NULL , &timeout_slow ) ;
 	}
 }
 

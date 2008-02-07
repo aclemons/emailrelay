@@ -21,7 +21,8 @@
 #
 
 mk_sources=\
-	commandline.cpp \
+	admin_enabled.cpp \
+	commandline_full.cpp \
 	configuration.cpp \
 	legal.cpp \
 	news.cpp \

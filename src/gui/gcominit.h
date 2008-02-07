@@ -23,6 +23,7 @@
 
 #ifdef G_WIN32
 #include <windows.h>
+#include <objbase.h>
 struct GComInit
 {
 	GComInit() { CoInitializeEx(0,0) ; }

@@ -62,17 +62,14 @@ void GNet::TimerList::add( AbstractTimer & t )
 
 void GNet::TimerList::remove( AbstractTimer & t )
 {
-	bool removed = false ;
 	for( List::iterator p = m_list.begin() ; p != m_list.end() ; ++p )
 	{
 		if( *p == &t )
 		{
 			*p = NULL ;
-			removed = true ;
 			break ;
 		}
 	}
-	// could assert(removed) here
 }
 
 void GNet::TimerList::update( G::DateTime::EpochTime t_old )

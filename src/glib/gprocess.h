@@ -94,6 +94,10 @@ public:
 	static int errno_() ;
 		///< Returns the process's current 'errno' value.
 
+	static int errno_( int ) ;
+		///< Sets the process's 'errno' value. Returns the old
+		///< value. Used in signal handlers.
+
 	static std::string strerror( int errno_ ) ;
 		///< Translates an 'errno' value into a meaningful diagnostic string.
 

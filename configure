@@ -4392,12 +4392,11 @@ fi
 
 
 
-	COMPILER_VERSION=`$CXX --version 2>/dev/null | sed q | sed 's/[a-zA-Z][a-zA-Z]*[0-9]*//g' | sed 's/[^0-9 .]*//g;s/\./ /g;s/^ *//;s/ /./;s/ .*//;s/^/gcc/' | sed 's/gcc2.96/gcc2.95/'`
-	if test -z "${COMPILER_VERSION}"
-	then
-		COMPILER_VERSION=`$CXX -V 2>&1 | sed q | grep WorkShop | sed 's/[^0-9]*//;s/[ \.].*//;s/^/sunpro/'`
-	fi
+	COMPILER_VERSION_GCC=`$CXX --version 2>/dev/null | sed q | grep GCC | sed 's/[a-zA-Z][a-zA-Z]*[0-9]*//g' | sed 's/[^0-9 .]*//g;s/\./ /g;s/^ *//;s/ /./;s/ .*//;s/^/gcc/' | sed 's/gcc2.96/gcc2.95/'`
+	COMPILER_VERSION_SUNPRO=`$CXX -V 2>&1 | sed q | grep WorkShop | sed 's/[^0-9]*//;s/[ \.].*//;s/^/sunpro/'`
+	COMPILER_VERSION_ICC=`$CXX --version 2>&1 | sed q | grep ICC | sed 's/[^0-9]*//;s/[ \.].*//;s/^/icc/'`
 
+	COMPILER_VERSION="${COMPILER_VERSION_GCC}${COMPILER_VERSION_SUNPRO}${COMPILER_VERSION_ICC}"
 
 
 

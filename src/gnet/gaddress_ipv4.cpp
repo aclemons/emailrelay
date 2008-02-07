@@ -99,7 +99,7 @@ public:
 } ;
 
 // ===
-#pragma fragments
+//pragma fragments
 
 int GNet::AddressImp::family()
 {

@@ -279,7 +279,7 @@ double G::Str::toDouble( const std::string &s )
 	if( end == 0 || end[0] != '\0' )
 		throw InvalidFormat( s ) ;
 
-	if( result == HUGE_VAL || result == -1.0 * HUGE_VAL )
+	if( result == HUGE_VAL || result == -(HUGE_VAL) )
 	 	throw Overflow( s ) ;
 
 	return result ;

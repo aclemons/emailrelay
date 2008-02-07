@@ -23,10 +23,10 @@
 #
 # Starts a fragment at the start of a namespace or 
 # a method. Ends a fragment at a blank line following 
-# a closing brace in column one. If there is a
-# fragments pragma in the source file then it marks
-# the end of the common, unfragmented code (eg.
-# local declarations).
+# a closing brace in column one. If there is a comment
+# "//pragma fragments" in the source file then it marks
+# the end of the common, unfragmented code (eg. local 
+# declarations).
 #
 # usage: fragment.sh [-r] <dir-in> <dir-out>
 #
@@ -160,7 +160,7 @@ sub next_file_out
 sub is_pragma
 {
 	my ( $line ) = @_ ;
-	return $line =~ m/^ *#pragma *fragments/ ;
+	return $line =~ m:^ *//pragma *fragments: ;
 }
 
 sub has_pragma

@@ -89,7 +89,7 @@ private:
 /// independent means.
 ///
 #define G_LOG_OUTPUT( expr , severity ) do { G::Log(severity,__FILE__,__LINE__) << expr ; } while(0)
-#if defined(_DEBUG) && ! defined(G_NO_DEBUG) 
+#if defined(G_WITH_DEBUG) || ( defined(_DEBUG) && ! defined(G_NO_DEBUG) )
 #define G_DEBUG( expr ) G_LOG_OUTPUT( expr , G::Log::s_Debug )
 #else
 #define G_DEBUG( expr )

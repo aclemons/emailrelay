@@ -76,7 +76,7 @@ std::string G::Md5::xor_( const std::string & s1 , const std::string & s2 )
 	{
 		unsigned char c1 = static_cast<unsigned char>(*p1) ;
 		unsigned char c2 = static_cast<unsigned char>(*p2) ;
-		unsigned char c = c1 ^ c2 ;
+		unsigned char c = static_cast<unsigned char>( c1 ^ c2 ) ;
 		result.append( 1U , static_cast<char>(c) ) ;
 	}
 	return result ;

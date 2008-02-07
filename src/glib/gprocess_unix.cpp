@@ -110,6 +110,13 @@ int G::Process::errno_()
 	return errno ; // not ::errno or std::errno for gcc2.95
 }
 
+int G::Process::errno_( int e )
+{
+	int old = errno ;
+	errno = e ;
+	return old ;
+}
+
 std::string G::Process::strerror( int errno_ )
 {
 	char * p = ::strerror( errno_ ) ;

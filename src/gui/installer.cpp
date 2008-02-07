@@ -19,6 +19,7 @@
 //
 
 #include "gdef.h"
+#include "gcominit.h"
 #include "glog.h"
 #include "gstr.h"
 #include "gpath.h"
@@ -28,7 +29,6 @@
 #include "gstrings.h"
 #include "gdirectory.h"
 #include "gprocess.h"
-#include "gcominit.h"
 #include "glink.h"
 #include "garg.h"
 #include "gunpack.h"
@@ -46,6 +46,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <iterator>
 #include <utility>
 #include <map>
 #include <set>
@@ -610,9 +611,10 @@ UpdateBootLink::UpdateBootLink( bool active , std::string init_d , LinkInfo targ
 
 std::string UpdateBootLink::text() const
 {
-	return 
-		std::string() + "updating boot-time links for " +
-		"[" + G::Path(m_init_d,m_target_link_info.target.basename()).str() + "]" ;
+	std::string s = std::string() + "updating boot time links for [" + m_target_link_info.target.basename() + "]" ;
+	if( ! m_init_d.empty() )
+		s.append( std::string() + " in [" + m_init_d + "]" ) ;
+	return s ;
 }
 
 void UpdateBootLink::run()
@@ -742,10 +744,7 @@ void EditConfigFile::run()
 
 	// write
 	std::ofstream file_out( m_path.str().c_str() ) ;
-	for( List::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
-	{
-		file_out << *line_p << std::endl ;
-	}
+	std::copy( line_list.begin() , line_list.end() , std::ostream_iterator<std::string>(file_out) ) ;
 	if( !file_out.good() ) 
 		throw std::runtime_error( std::string() + "cannot write \"" + m_path.str() + "\"" ) ;
 }
@@ -781,7 +780,7 @@ std::string Action::ok() const
 
 void Action::run()
 {
-	return m_p->run() ;
+	m_p->run() ;
 }
 
 // ==
@@ -968,10 +967,7 @@ void InstallerImp::insertActions()
 		insert( new UpdateLink(yes(value("start-link-menu")),value("dir-menu"),working_dir,target_link_info) ) ;
 	}
 	insert( new UpdateLink(yes(value("start-at-login")),value("dir-login"),working_dir,target_link_info) ) ;
-	if( !value("dir-boot").empty() )
-	{
-		insert( new UpdateBootLink(yes(value("start-on-boot")),value("dir-boot"),target_link_info) ) ;
-	}
+	insert( new UpdateBootLink(yes(value("start-on-boot")),value("dir-boot"),target_link_info) ) ;
 	if( isWindows() )
 	{
 		insert( new UpdateLink(true,value("dir-install"),working_dir,target_link_info) ) ;

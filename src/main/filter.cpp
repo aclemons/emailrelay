@@ -94,8 +94,8 @@ bool filter_run( const std::string & content )
 		{
 			directory_count++ ;
 			G::Path target = G::Path( iter.filePath() , envelope_name ) ;
-			bool ok = G::File::copy( envelope_path , target , G::File::NoThrow() ) ;
-			if( !ok )
+			bool copied = G::File::copy( envelope_path , target , G::File::NoThrow() ) ;
+			if( !copied )
 				failures.push_back( iter.fileName().str() ) ;
 		}
 	}

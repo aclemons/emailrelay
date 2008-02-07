@@ -386,9 +386,6 @@ void Main::Run::doForwarding( GSmtp::MessageStore & store , const GSmtp::Secrets
 {
 	const Configuration & cfg = config() ;
 
-	GNet::Address local_address = cfg.clientInterface().length() ?
-		GNet::Address(cfg.clientInterface(),0U) : GNet::Address(0U) ;
-
 	GNet::ClientPtr<GSmtp::Client> client_ptr( new GSmtp::Client( 
 		GNet::ResolverInfo(cfg.serverAddress()) , secrets , clientConfig() ) ) ;
 
@@ -494,9 +491,6 @@ std::string Main::Run::doPoll()
 
 		if( ! m_store->empty() )
 		{
-			GNet::Address local_address = cfg.clientInterface().length() ?
-				GNet::Address(cfg.clientInterface(),0U) : GNet::Address(0U) ;
-
 			m_polling_client.reset( new GSmtp::Client( GNet::ResolverInfo(cfg.serverAddress()) ,
 				*m_client_secrets.get() , clientConfig() ) ) ;
 

@@ -115,6 +115,13 @@ int G::Process::errno_()
 	return errno ;
 }
 
+int G::Process::errno_( int e )
+{
+	int old = errno ;
+	errno = e ;
+	return old ;
+}
+
 std::string G::Process::strerror( int errno_ )
 {
 	std::ostringstream ss ;

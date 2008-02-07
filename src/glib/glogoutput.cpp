@@ -248,7 +248,7 @@ std::string G::LogOutput::itoa( int n_ )
 	bool zero = n == 0U ;
 	char * p = buffer + buffer_size - 1U ;
 	for( *p-- = '\0' ; n > 0U ; --p , n /= 10U )
-		*p = '0' + (n % 10U) ;
+		*p = static_cast<char>( '0' + (n % 10U) ) ;
 	return zero ? buffer : (p+1U) ;
 }
 

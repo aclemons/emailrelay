@@ -35,13 +35,13 @@ mk_sources=\
 	gnewmessage.cpp \
 	gnullprocessor.cpp \
 	gprocessor.cpp \
-	gprocessorfactory.cpp \
+	gprocessorfactory_exec_enabled.cpp \
 	gprotocolmessage.cpp \
 	gprotocolmessageforward.cpp \
 	gprotocolmessagestore.cpp \
 	grequestclient.cpp \
 	gsasl_native.cpp \
-	gsecrets.cpp \
+	gsecrets_full.cpp \
 	gserverprotocol.cpp \
 	gsmtpclient.cpp \
 	gsmtpserver.cpp \
@@ -50,7 +50,8 @@ mk_sources=\
 	gstoredfile.cpp \
 	gstoredmessage.cpp \
 	gverifier.cpp \
-	gverifierfactory.cpp
+	gverifierfactory_exec_enabled.cpp \
+	gverifierstatus.cpp
 
 mk_target=gsmtp.a
 

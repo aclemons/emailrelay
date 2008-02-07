@@ -167,8 +167,10 @@ void gcleanup_unix_handler_( int signum )
 	// call the registered handler(s) and then do the system default action
 	try
 	{
+		int e = G::Process::errno_() ;
 		G::CleanupImp::callHandlers() ;
 		G::CleanupImp::installDefault( signum ) ;
+		G::Process::errno_( e ) ;
 		::raise( signum ) ;
 	}
 	catch(...)

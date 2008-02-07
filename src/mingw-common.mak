@@ -77,7 +77,7 @@ endif
 
 mk_ar=ar rc
 mk_rc=$(mk_bin)windres
-mk_rm_f=rm -f
+mk_rm_f=del
 mk_objects_1=$(mk_sources:.cpp=.o)
 mk_objects=$(mk_objects_1:.c=.o)
 mk_cc=$(mk_bin)gcc
