@@ -20,11 +20,35 @@
 
 #include "gdef.h"
 #include "garg.h"
-#include "gdebug.h"
+#include "gstr.h"
+#include "glimits.h"
+#include <sstream>
+#include <sys/types.h> // pid_t
+#include <unistd.h> // getpid(), readlink()
 
-std::string G::Arg::moduleName( HINSTANCE )
+void G::Arg::setExe()
 {
-	return std::string() ;
+	// better than nothing?
+
+	char buffer[limits::path] = { '\0' } ;
+	int n = ::readlink( "/proc/self" , buffer , sizeof(buffer) ) ;
+	if( n > 0 )
+	{
+		std::ostringstream ss ; 
+		ss << ::getpid() ;
+		bool procfs = std::string(buffer,n) == ss.str() ;
+		if( procfs )
+		{
+			n = ::readlink( "/proc/self/exe" , buffer , sizeof(buffer) ) ;
+			if( n > 0 )
+				m_array[0] = std::string(buffer,n) ;
+		}
+	}
+	else
+	{
+		// could use getenv("_") on some systems, but 
+		// too unreliable in general
+	}
 }
 
 /// \file garg_unix.cpp

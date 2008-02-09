@@ -34,10 +34,12 @@ namespace G
 
 /// \class G::Arg
 /// A class which holds a represention of the
-/// argc/argv command line array. Also does simple command line 
-/// parsing, and, under Windows, command line splitting (the 
-/// single command line string is split into an argv[] array, 
-/// including argv[0]).
+/// argc/argv command line array. In some environments the 
+/// argv(0) path is fixed up so that it refers to the calling 
+/// executable regardless of what the exec()ing process 
+/// specified.
+///
+/// Also supports simple command line parsing.
 ///
 /// \see G::GetOpt
 ///
@@ -47,7 +49,8 @@ public:
 	typedef unsigned int size_type ;
 
 	Arg( int argc , char *argv[] ) ;
-		///< Constructor taking argc/argv.
+		///< Constructor taking argc/argv. Should not
+		///< be used in a shared object or dll.
 
 	Arg() ;
 		///< Default constructor for Windows. 
@@ -58,8 +61,6 @@ public:
 		///<
 		///< Parses the given command line, splitting
 		///< it up into an array of tokens.
-		///< The full exe name is automatically
-		///< added as the first token (cf. argv[0]).
 
 	void reparse( const std::string & command_line ) ;
 		///< Reinitialises the object with the given
@@ -81,7 +82,8 @@ public:
 
 	std::string prefix() const ;
 		///< Returns the basename of v(0) without
-		///< any extension.
+		///< any extension. Typically used in error
+		///< messages.
 
 	static const char * prefix( char * argv[] ) ; // throw()
 		///< An exception-free version of prefix() which can
@@ -116,6 +118,7 @@ private:
 	static std::string moduleName( HINSTANCE h ) ;
 	bool find( bool , const std::string & , size_type , size_type * ) const ;
 	void setPrefix() ;
+	void setExe() ;
 	static bool match( bool , const std::string & , const std::string & ) ;
 	void parseCore( const std::string & ) ;
 	static void protect( std::string & ) ;

@@ -892,13 +892,14 @@ void InstallerImp::insertActions()
 	if( m_installing )
 	{
 		G::Strings name_list = m_unpack.names() ;
+		G_DEBUG( "InstallerImp::insertActions: " << name_list.size() << " packed files to unpack" ) ;
 		std::set<std::string> dir_set ;
 		for( G::Strings::iterator p = name_list.begin() ; p != name_list.end() ; ++p )
 		{
 			const std::string & name = *p ;
 			G::Path path ;
 			{
-				std::string sname = "/" + name ;
+				std::string sname = std::string() + "/" + name ;
 				if( sname.find(Dir::boot(1).str()) == 0U )
 				{
 					// ("dir-boot" may not be writeable so bootcopy() allows us
@@ -906,6 +907,7 @@ void InstallerImp::insertActions()
 					// can get at them)
 
 					G::Path dst_dir = Dir::bootcopy( value("dir-boot") , value("dir-install") ) ;
+					G_DEBUG( "InstallerImp::insertActions: [" << name << "] boot-copy-> [" << dst_dir << "]" ) ;
 					if( dst_dir != G::Path() )
 					{
 						path = G::Path::join( dst_dir , name.substr(Dir::boot(1).str().length()-1U) ) ;
@@ -915,12 +917,17 @@ void InstallerImp::insertActions()
 				}
 				else if( sname.find(Dir::config(1).str()) == 0U )
 				{
-					path = G::Path::join( value("dir-config"),name.substr(Dir::config(1).str().length()-1U) ) ;
+					path = G::Path::join( value("dir-config") , name.substr(Dir::config(1).str().length()-1U) ) ;
+				}
+				else if( sname.find(Dir::install().str()) == 0U )
+				{
+					path = G::Path::join( value("dir-install") , name.substr(Dir::install().str().length()-1U) ) ;
 				}
 				else
 				{
-					path = G::Path::join( value("dir-install"),name.substr(Dir::install().str().length()-1U) ) ;
+					path = G::Path::join( value("dir-install") , name ) ;
 				}
+				G_DEBUG( "InstallerImp::insertActions: [" << name << "] -> [" << path << "]" ) ;
 			}
 			if( path != G::Path() )
 			{

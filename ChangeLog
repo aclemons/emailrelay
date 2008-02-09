@@ -4,7 +4,7 @@ E-MailRelay Change Log
 1.7 -> 1.8
 ----------
 * Speed optimisations (as identified by KCachegrind/valgrind in KDevelop).
-* Build-time size optimisations (eg. "./configure --disable-exec --enable-small-exceptions").
+* Build-time size optimisations (eg. "./configure --disable-exec --enable-small-exceptions ...").
 * Build-time options to reduce runtime library dependencies (eg. "./configure --disable-dns --disable-identity").
 * New switch to limit the size of submitted messages ("--max-size").
 * SMTP client protocol emits a RSET after a rejected recipient as a workround for broken server protocols.

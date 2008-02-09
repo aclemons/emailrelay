@@ -33,6 +33,7 @@ G::Arg::Arg( int argc , char *argv[] )
 	for( int i = 0 ; i < argc ; i++ )
 		m_array.push_back( argv[i] ) ;
 
+	setExe() ;
 	setPrefix() ;
 }
 
@@ -42,6 +43,8 @@ G::Arg::~Arg()
 
 G::Arg::Arg()
 {
+	setExe() ;
+	setPrefix() ;
 	// now use parse()
 }
 

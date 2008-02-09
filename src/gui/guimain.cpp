@@ -30,15 +30,17 @@
 //
 // If there are no packed files then the assumption is that it
 // is being run after a successful installation, so the target 
-// directory paths are greyed out in the GUI. However, it still 
-// needs to know what the installation directories were and it
-// tries to obtain these from a special "state" file located
+// directory paths are greyed out in the GUI. However, the code
+// still needs to know what the installation directories were and
+// it tries to obtain these from a special "state" file located
 // in the same directory as the executable.
 //
-// The state file represents the state of the GUI, including
-// the state of the widgets and the paths to the base directories.
-// It is read at startup and written as part of the final stage 
-// of the GUI workflow. If running in install mode the state
+// The state file contains the base installation directories as a 
+// minimum, but it also typically holds the complete state of the
+// GUI including the state of the widgets.
+//
+// The state file is read at startup and written as part of the final 
+// stage of the GUI workflow. If running in install mode the state
 // file is optional; if running in configuration mode the state
 // file is mandatory, but it only needs to contain two directory
 // paths (see Dir::read() and "make install").
@@ -60,27 +62,30 @@
 // simple shell script. This means that a unix-like "make install" 
 // can install the GUI executable as "emailrelay-gui.real" and the
 // state file called "emailrelay-gui" can double-up as a wrapper shell
-// script. Making the state file look like a shell script is
-// partly a cosmetic feature.
+// script. Making the state file also a shell script is so that
+// the two files in the relevant bin directory are both executable, 
+// in line with the FHS and user expectations.
 //
 // The implementation of the GUI uses a set of dialog-box "pages"
 // with forward and back buttons. Each page writes its state as
-// "key=value" pairs into an text stream. After the last page has 
-// been filled in the resulting configuration text is passed to 
-// the Installer class. This class interprets the configuration
-// and assembles a set of installation actions which are then
-// executed to effect the installation. Note that the Installer
-// only does that the configuration text tells it; it does
-// not have any intelligence of its own. In principle this allows
-// for a complete separation of the GUI and the installation process,
-// with a simple text file interface between them. (In practice
-// the text file would have to contain plaintext passwords, so
-// it is not a secure approach.)
+// "key=value" pairs into a configuration text stream. After the 
+// last page has been filled in the resulting configuration text 
+// is passed to the Installer class. This class interprets the 
+// configuration and assembles a set of installation actions 
+// (in the Command pattern) which are then executed to effect the
+// installation.
 //
-// The contents of the state file is also based on the output of
-// configuration text from the GUI pages, but it has additional 
-// information from the "Dir" class and it does not contain any 
-// account information.
+// Note that the Installer class only does what the configuration 
+// text tells it to do; it does not have any intelligence of its own. 
+// In principle this allows for a complete separation of the GUI 
+// and the installation process, with a simple text file interface 
+// between them. In practice the text file would have to contain 
+// plaintext passwords, so this is not a secure approach.
+//
+// The contents of the state file are also based on the output of
+// configuration text from the GUI pages, but the state file has 
+// additional information from the Dir class and it does not 
+// contain any account information.
 //
 
 #include "gdef.h"
@@ -119,7 +124,7 @@ static void error( const std::string & what )
 
 static bool isMac()
 {
-	// (a compile-time test is problably better than run-time)
+	// (a compile-time test is problably better than run-time here)
  #ifdef G_MAC
 	return true ;
  #else
@@ -180,7 +185,7 @@ int main( int argc , char * argv [] )
 			G_DEBUG( "main: packed files " << (G::Unpack::isPacked(payload)?"":"not ") 
 				<< "found (" << payload << ")" ) ;
 
-			// are we "setup" or "gui", ie. install-mode or configure-mode?
+			// are we install-mode or configure-mode?
 			bool is_installing = ( cfg_install || G::Unpack::isPacked(payload) ) && !cfg_configure ;
 			bool is_installed = !is_installing ;
 

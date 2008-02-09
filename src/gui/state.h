@@ -26,7 +26,8 @@
 #include <string>
 
 /// \class State
-/// Provides read-only access to the state file.
+/// Provides access to the state file. Non-static
+/// methods are read-only. Refer to comments in guimain.cpp.
 ///
 class State 
 {

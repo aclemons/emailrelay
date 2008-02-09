@@ -41,10 +41,15 @@ static bool exists( std::string path )
 	return 0 == ::stat( path.c_str() , &statbuf ) && S_ISREG(statbuf.st_mode) ;
 }
 
-static std::string find( std::string argv0 , std::string name )
+static std::string dirname( std::string path )
 {
-	std::string::size_type pos = argv0.find_last_of( "/\\" ) ; 
-	std::string base = pos == std::string::npos ? "." : argv0.substr(0U,pos) ;
+	std::string::size_type pos = path.find_last_of( "/\\" ) ; 
+	std::string base = pos == std::string::npos ? "." : path.substr(0U,pos) ;
+	return base ;
+}
+
+static std::string find( std::string base , std::string name )
+{
 	std::list<std::string> list ;
 	list.push_back( base + "/" + name ) ;
 	list.push_back( base + "/../" + name ) ;
@@ -93,7 +98,7 @@ int main( int , char * argv [] )
 {
 	try
 	{
-		std::string exe = find( argv[0] , "emailrelay-gui.real" ) ;
+		std::string exe = find( dirname(argv[0]) , "emailrelay-gui.real" ) ;
 		if( exe.empty() )
 			throw std::runtime_error( std::string() + "no executable" ) ;
 
