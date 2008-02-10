@@ -24,6 +24,7 @@
 #include "gexception.h"
 #include "gstr.h"
 #include "glog.h"
+#include <iostream>
 #include <sstream>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -85,12 +86,26 @@ bool G::Process::Id::operator==( const Id & rhs ) const
 
 void G::Process::closeFiles( bool keep_stderr )
 {
+	std::cout << std::flush ;
+	std::cerr << std::flush ;
+
 	const int n = g_sc_open_max ;
 	for( int fd = 0 ; fd < n ; fd++ )
 	{
 		if( !keep_stderr || fd != g_stderr_fileno )
 			::_close( fd ) ;
 	}
+
+	// reopen standard fds to prevent accidental use 
+	// of arbitrary files or sockets as standard
+	// streams
+	//
+	int fd0 = ::open( G::FileSystem::nullDevice() , O_RDONLY ) ;
+	int fd1 = ::open( G::FileSystem::nullDevice() , O_WRONLY ) ;
+	int fd2 = keep_stderr ? -1 : ::open( G::FileSystem::nullDevice() , O_WRONLY ) ;
+	if( fd0 == 0 ) ::fcntl( fd0 , F_SETFD , 0 ) ;
+	if( fd1 == 1 ) ::fcntl( fd1 , F_SETFD , 0 ) ;
+	if( fd2 == 2 ) ::fcntl( fd2 , F_SETFD , 0 ) ;
 }
 
 void G::Process::closeStderr()

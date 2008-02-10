@@ -129,7 +129,7 @@ GSmtp::SecretsImp::SecretsImp( const G::Path & path , bool auto_ , const std::st
 	G_DEBUG( "GSmtp::Secrets: " << m_debug_name << ": \"" << path << "\"" ) ;
 	m_valid = ! path.str().empty() ;
 	if( m_valid )
-		read(path) ;
+		read( path ) ;
 }
 
 bool GSmtp::SecretsImp::valid() const

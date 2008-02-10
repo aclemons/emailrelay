@@ -163,7 +163,18 @@ struct CreateBatchFile : public ActionBase
 {
 	LinkInfo m_link_info ;
 	std::string m_args ;
-	CreateBatchFile( LinkInfo ) ;
+	explicit CreateBatchFile( LinkInfo ) ;
+	virtual void run() ;
+	virtual std::string text() const ;
+} ;
+
+struct CreateLoggingBatchFile : public ActionBase
+{
+	G::Path m_bat ;
+	G::Path m_exe ;
+	G::Strings m_args ;
+	G::Path m_log ;
+	CreateLoggingBatchFile( G::Path bat , G::Path exe , G::Strings args , G::Path ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
 } ;
@@ -251,7 +262,7 @@ private:
 	void addSecret( G::StringMap & , const std::string & ) const ;
 	void addSecret( G::StringMap & , const std::string & , const std::string & , const std::string & ) const ;
 	LinkInfo targetLinkInfo() const ;
-	G::Strings commandlineArgs( bool short_ = false ) const ;
+	G::Strings commandlineArgs( bool short_ = false , bool disallow_close_stderr = false ) const ;
 	std::pair<std::string,Map> commandlineMap( bool short_ = false ) const ;
 	void insert( ActionInterface * p ) ;
 
@@ -557,6 +568,32 @@ void CreateBatchFile::run()
 	file.close() ;
 	if( !ok )
 		throw std::runtime_error(std::string()+"cannot create \""+m_link_info.target.str()+"\"") ;
+}
+
+// ==
+
+CreateLoggingBatchFile::CreateLoggingBatchFile( G::Path bat , G::Path exe , G::Strings args , G::Path log ) :
+	m_bat(bat) ,
+	m_exe(exe) ,
+	m_args(args) ,
+	m_log(log)
+{
+}
+
+std::string CreateLoggingBatchFile::text() const
+{
+	return std::string() + "creating batch file [" + m_bat.str() + "]" ;
+}
+
+void CreateLoggingBatchFile::run()
+{
+	std::ofstream file( m_bat.str().c_str() ) ;
+	bool ok = file.good() ;
+	file << quote(m_exe.str()) << " " << str(m_args) << " > " << quote(m_log.str()) << " 2>&1" << std::endl ;
+	ok = ok && file.good() ;
+	file.close() ;
+	if( !ok )
+		throw std::runtime_error(std::string()+"cannot create \""+m_bat.str()+"\"") ;
 }
 
 // ==
@@ -884,6 +921,10 @@ void InstallerImp::insertActions()
 		target_link_info.target = G::Path( value("dir-install") , "emailrelay-start.bat" ) ;
 		target_link_info.args = G::Strings() ;
 		insert( new CreateBatchFile(target_link_info) ) ;
+
+		insert( new CreateLoggingBatchFile( G::Path(value("dir-install"),"emailrelay-start-with-log-file.bat") ,
+			target_link_info.raw_target , commandlineArgs(false,true) ,
+			G::Path(value("dir-install"),"emailrelay-log.txt") ) ) ;
 	}
 
 	// extract packed files -- do substitution for "$install", "$etc"
@@ -1048,16 +1089,29 @@ LinkInfo InstallerImp::targetLinkInfo() const
 	return link_info ;
 }
 
-G::Strings InstallerImp::commandlineArgs( bool short_ ) const
+G::Strings InstallerImp::commandlineArgs( bool short_ , bool no_close_stderr ) const
 {
 	G::Strings result ;
 	std::pair<std::string,Map> pair = commandlineMap( short_ ) ;
-	for( Map::iterator p = pair.second.begin() ; p != pair.second.end() ; ++p )
+	Map & map = pair.second ;
+	for( Map::iterator p = map.begin() ; p != map.end() ; ++p )
 	{
 		std::string switch_ = (*p).first ;
 		std::string switch_arg = (*p).second ;
 		std::string dash = switch_.length() > 1U ? "--" : "-" ;
-		result.push_back( dash + switch_ ) ;
+		if( no_close_stderr && ( switch_ == "d" || switch_ == "as-server" ) )
+		{
+			result.push_back( short_ ? "-l" : "--log" ) ;
+		}
+		else if( no_close_stderr && ( switch_ == "y" || switch_ == "as-proxy" ) )
+		{
+			result.push_back( short_ ? "-m" : "--immediate" ) ;
+			result.push_back( short_ ? "-o" : "--forward-to" ) ;
+		}
+		else
+		{
+			result.push_back( dash + switch_ ) ;
+		}
 		if( ! switch_arg.empty() )
 		{
 			// (move this?)
@@ -1252,7 +1306,7 @@ std::string Helper::exe()
 
 bool Helper::isWindows()
 {
- #ifdef G_WIN32
+ #if defined(G_WIN32) || defined(G_AS_IF_WINDOWS)
 	return true ;
  #else
 	return false ;

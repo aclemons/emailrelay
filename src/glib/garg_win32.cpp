@@ -105,8 +105,8 @@ void G::Arg::dequote( StringArray & array )
 			std::string::size_type end = s.at(s.length()-1U) == qq ? (s.length()-1U) : std::string::npos ;
 			if( start != std::string::npos && end != std::string::npos && start != end )
 			{
+				s.erase( end , 1U ) ; // first!
 				s.erase( start , 1U ) ;
-				s.erase( end , 1U ) ;
 			}
 		}
 	}

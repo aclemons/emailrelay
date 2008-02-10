@@ -150,8 +150,8 @@ bool GSmtp::SaslServerImp::validate( const std::string & secret , const std::str
 	}
 	catch( std::exception & e )
 	{
-		G_IGNORE( e ) ;
-		G_DEBUG( "GSmtp::SaslServer: exception: " << e.what() ) ;
+		std::string what = e.what() ;
+		G_DEBUG( "GSmtp::SaslServer: exception: " << what ) ;
 	}
 	return ok ;
 }
@@ -166,8 +166,8 @@ std::string GSmtp::SaslServerImp::clientResponse( const std::string & secret ,
 	} 
 	catch( std::exception & e )
 	{ 
-		G_IGNORE( e ) ;
-		G_DEBUG( "GSmtp::SaslClient: " << e.what() ) ;
+		std::string what = e.what() ;
+		G_DEBUG( "GSmtp::SaslClient: " << what ) ;
 		error = true ; 
 	}
 	return std::string() ;

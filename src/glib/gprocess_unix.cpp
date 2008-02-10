@@ -25,6 +25,7 @@
 #include "gassert.h"
 #include "gfs.h"
 #include "glog.h"
+#include <iostream>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -78,6 +79,8 @@ void G::Process::closeFiles( bool keep_stderr )
 void G::Process::closeFiles( int keep )
 {
 	G_ASSERT( keep == -1 || keep >= STDERR_FILENO ) ;
+	std::cout << std::flush ;
+	std::cerr << std::flush ;
 
 	int n = 256U ;
 	long rc = ::sysconf( _SC_OPEN_MAX ) ;

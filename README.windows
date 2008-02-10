@@ -9,8 +9,8 @@ setup program is in a writeable directory with plenty of space on the disk
 because when you run it it will extract an installation GUI program plus
 dependent DLLs in into the same directory.
 
-The installation GUI program will take you through the installation options and
-then install the run-time files into your chosen directory.
+The installation GUI will take you through the installation options and then
+install the run-time files into your chosen directory.
 
 Manual installation
 -------------------
@@ -46,22 +46,23 @@ Note that the batch file and the main E-MailRelay executable must be in the same
 directory.
 
 If you need to run multiple E-MailRelay services then pass a unique service name
-on the "emailrelay-server --install <name>" command-line. This name is used to 
-derive the name of the "<name>-start.bat" batch file that contains the 
+on the "emailrelay-server --install <name>" command-line. This name is used to
+derive the name of the "<name>-start.bat" batch file that contains the
 E-MailRelay server's command-line switches so you will need to create this too.
 
 Diagnostics
 -----------
 E-MailRelay normally writes errors and warnings into the system event log, which
 you can view by running "eventvwr.exe". You can increase the verbosity by adding
-the "--verbose" switch to the E-MailRelay command-line.
+the "--verbose" switch to the E-MailRelay command-line, typically by editing the
+"emailrelay-start.bat" batch script.
 
 The E-MailRelay server also logs to the standard error stream, however the
 "--as-server" and "--as-proxy" switches implicitly incorporate "--close-stderr"
 so with these switches the standard error logging will stop soon after startup.
 
-To get continuous logging to a log file you should replace "--as-server" with 
-"--log" and "--as-proxy" with "--immediate --forward-to" and then use "2>" to 
+To get continuous logging to a log file you should replace "--as-server" with
+"--log" and "--as-proxy" with "--immediate --forward-to" and then use "2>" to
 redirect the standard error stream, eg:
 
 	"c:\program files\emailrelay\emailrelay.exe" --log -v -L ... > c:\temp.out 2>&1
