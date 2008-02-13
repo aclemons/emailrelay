@@ -61,11 +61,10 @@ EXTRA_DIST=\
 	emailrelay.dsp \
 	filter.dsp \
 	emailrelay.rc \
-	icon-32.ico \
+	icon1.ico \
 	icon2.ico \
 	icon3.ico \
 	icon4.ico \
-	icon5.ico \
 	messages.mc \
 	news.cpp \
 	news.h \
