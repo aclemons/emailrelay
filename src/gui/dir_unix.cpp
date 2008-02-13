@@ -99,7 +99,7 @@ G::Path Dir::os_gui( const G::Path & install )
 
 G::Path Dir::os_icon( const G::Path & install )
 {
-	return G::Path() ;
+	return install + "lib" + "emailrelay" + "emailrelay-icon.png" ; // should use G_LIBEXECDIR
 }
 
 G::Path Dir::os_server( const G::Path & install )

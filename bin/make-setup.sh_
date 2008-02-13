@@ -21,7 +21,7 @@
 # Builds a "setup" self-extracting archive -- or a payload file for
 # one -- derived from running "make install" into a temporary directory.
 #
-# usage: make-setup.sh [-d] <output> <stub> <pack-utility>
+# usage: make-setup.sh [-d] <output> <stub> <pack-utility> <icon>
 #
 # Normally run by "make setup" in the "src/gui".
 #
@@ -39,6 +39,7 @@ debug="0" ; if test "$1" = "-d" ; then shift ; debug="1" ; fi
 setup="$1"
 stub="$2"
 pack="$3"
+icon="$4"
 
 # define temporary directories and cleanup code
 tmp="/tmp/`basename $0 .sh`.$$.tmp"
@@ -70,6 +71,9 @@ fi
 echo `basename $0`: running make install into $install
 mkdir -p $install
 ( cd ../.. && make install HAVE_DOXYGEN=no DESTDIR=$install ) > /dev/null 2>&1
+
+# add in some extras
+cp "$icon" $install/usr/lib/emailrelay/
 
 # build a file list
 Filter()

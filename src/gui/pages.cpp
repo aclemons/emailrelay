@@ -256,9 +256,10 @@ G::Path DirectoryPage::normalise( const G::Path & dir ) const
 void DirectoryPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol , bool p ) const
 {
 	GPage::dump( stream , prefix , eol , p ) ;
-	dumpItem( stream , prefix , "dir-install" , normalise(value(m_install_dir_edit_box)) , eol ) ;
-	dumpItem( stream , prefix , "dir-spool" , normalise(value(m_spool_dir_edit_box)) , eol ) ;
-	dumpItem( stream , prefix , "dir-config" , normalise(value(m_config_dir_edit_box)) , eol ) ;
+	std::string ws = " " ;
+	dumpItem( stream , prefix , "dir-install" , normalise(G::Str::trimmed(value(m_install_dir_edit_box),ws)) , eol ) ;
+	dumpItem( stream , prefix , "dir-spool" , normalise(G::Str::trimmed(value(m_spool_dir_edit_box),ws)) , eol ) ;
+	dumpItem( stream , prefix , "dir-config" , normalise(G::Str::trimmed(value(m_config_dir_edit_box),ws)) , eol ) ;
 	dumpItem( stream , prefix , "dir-pid" , m_dir.pid() , eol ) ;
 	dumpItem( stream , prefix , "dir-desktop" , m_dir.desktop() , eol ) ;
 	dumpItem( stream , prefix , "dir-login" , m_dir.login() , eol ) ;

@@ -62,6 +62,7 @@ struct LinkInfo
 	G::Strings args ; // exe-or-wrapper args
 	G::Path raw_target ; // exe
 	G::Strings raw_args ; // exe args
+	G::Path icon ;
 } ;
 
 struct ActionInterface
@@ -185,7 +186,6 @@ struct UpdateLink : public ActionBase
 	G::Path m_link_dir ;
 	G::Path m_working_dir ;
 	LinkInfo m_target_link_info ;
-	G::Path m_icon_path ;
 	G::Path m_link_path ;
 	UpdateLink( bool active , std::string link_dir , G::Path working_dir , LinkInfo target_link_info ) ;
 	virtual void run() ;
@@ -602,12 +602,8 @@ UpdateLink::UpdateLink( bool active , std::string link_dir , G::Path working_dir
 	m_active(active) ,
 	m_link_dir(link_dir) ,
 	m_working_dir(working_dir) ,
-	m_target_link_info(target_link_info) ,
-	m_icon_path(target_link_info.target.dirname(),"emailrelay-icon.png")
+	m_target_link_info(target_link_info)
 {
-	if( isWindows() )
-		m_icon_path = target_link_info.raw_target ; // get the icon from the exe resource
-
 	std::string link_filename = GLink::filename( "E-MailRelay" ) ;
 	m_link_path = G::Path( m_link_dir , link_filename ) ;
 }
@@ -625,7 +621,7 @@ void UpdateLink::run()
 	if( m_active )
 	{
 		GLink link( m_target_link_info.target , "E-MailRelay" , "E-MailRelay server" , 
-			m_working_dir , m_target_link_info.args , m_icon_path , GLink::Show_Hide ) ;
+			m_working_dir , m_target_link_info.args , m_target_link_info.icon , GLink::Show_Hide ) ;
 
 		G::Process::Umask umask( G::Process::Umask::Tightest ) ;
 		G::File::mkdirs( m_link_dir , 10 ) ;
@@ -781,7 +777,7 @@ void EditConfigFile::run()
 
 	// write
 	std::ofstream file_out( m_path.str().c_str() ) ;
-	std::copy( line_list.begin() , line_list.end() , std::ostream_iterator<std::string>(file_out) ) ;
+	std::copy( line_list.begin() , line_list.end() , std::ostream_iterator<std::string>(file_out,"\n") ) ;
 	if( !file_out.good() ) 
 		throw std::runtime_error( std::string() + "cannot write \"" + m_path.str() + "\"" ) ;
 }
@@ -1079,6 +1075,7 @@ void InstallerImp::addSecret( G::StringMap & map ,
 LinkInfo InstallerImp::targetLinkInfo() const
 {
 	G::Path target_exe = Dir::server( value("dir-install") ) ;
+	G::Path icon = Dir::icon( value("dir-install") ) ;
 	G::Strings args = commandlineArgs() ;
 
 	LinkInfo link_info ;
@@ -1086,6 +1083,7 @@ LinkInfo InstallerImp::targetLinkInfo() const
 	link_info.args = args ;
 	link_info.raw_target = target_exe ;
 	link_info.raw_args = args ;
+	link_info.icon = icon ;
 	return link_info ;
 }
 

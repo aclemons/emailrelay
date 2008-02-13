@@ -72,6 +72,11 @@ G::Path Dir::gui( const G::Path & base )
 	return os_gui( base ) ;
 }
 
+G::Path Dir::icon( const G::Path & base )
+{
+	return os_icon( base ) ;
+}
+
 G::Path Dir::server( const G::Path & base )
 {
 	return os_server( base ) ;

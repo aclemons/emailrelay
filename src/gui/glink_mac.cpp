@@ -45,7 +45,7 @@ private:
 } ;
 
 GLinkImp::GLinkImp( const G::Path & target_path , const std::string & name , const std::string & , 
-	const G::Path & , const std::string & , const G::Path & , GLink::Show ) :
+	const G::Path & , const G::Strings & , const G::Path & , GLink::Show ) :
 		m_target_path(target_path) ,
 		m_name(name)
 {

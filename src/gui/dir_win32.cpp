@@ -60,7 +60,7 @@ G::Path Dir::os_gui( const G::Path & base )
 
 G::Path Dir::os_icon( const G::Path & base )
 {
-	return G::Path() ;
+	return os_server( base ) ; // icon is a resource in the exe
 }
 
 G::Path Dir::os_server( const G::Path & base )

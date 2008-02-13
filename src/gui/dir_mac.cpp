@@ -65,7 +65,7 @@ G::Path Dir::os_gui( const G::Path & install )
 	return install + "E-MailRelay" + "emailrelay-gui.real" ; // should use G_SBINDIR
 }
 
-G::Path Dir::os_icon( const G::Path & install )
+G::Path Dir::os_icon( const G::Path & )
 {
 	return G::Path() ;
 }
