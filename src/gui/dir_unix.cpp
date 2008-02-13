@@ -97,6 +97,11 @@ G::Path Dir::os_gui( const G::Path & install )
 	return install + "sbin" + "emailrelay-gui.real" ; // should use G_SBINDIR
 }
 
+G::Path Dir::os_icon( const G::Path & install )
+{
+	return G::Path() ;
+}
+
 G::Path Dir::os_server( const G::Path & install )
 {
 	return install + "sbin" + "emailrelay" ; // should use G_SBINDIR
@@ -104,7 +109,7 @@ G::Path Dir::os_server( const G::Path & install )
 
 G::Path Dir::os_bootcopy( const G::Path & , const G::Path & install )
 {
-	return install + "sbin" + "emailrelay-init" ; // should use G_SBINDIR
+	return G::Path() ;
 }
 
 G::Path Dir::os_config()

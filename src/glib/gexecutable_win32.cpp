@@ -33,10 +33,10 @@ void G::Executable::osAddWrapper()
 {
 	std::string windows ;
 	{
-    	char buffer[limits::path] = { '\0' } ;
-    	unsigned int n = sizeof(buffer) ;
-    	::GetWindowsDirectory( buffer , n-1U ) ;
-    	buffer[n-1U] = '\0' ;
+		char buffer[limits::path] = { '\0' } ;
+		unsigned int n = sizeof(buffer) ;
+		::GetWindowsDirectory( buffer , n-1U ) ;
+		buffer[n-1U] = '\0' ;
 		windows = std::string(buffer) ;
 	}
 

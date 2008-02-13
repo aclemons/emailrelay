@@ -85,7 +85,7 @@ public:
 		///< Returns the default secret for client-side
 		///< authentication.
 
-	virtual std::string secret(  const std::string & mechanism , const std::string & id ) const ;
+	virtual std::string secret( const std::string & mechanism , const std::string & id ) const ;
 		///< Final override from GSmtp::SaslServer::Secrets.
 		///<
 		///< Returns the given user's secret for server-side

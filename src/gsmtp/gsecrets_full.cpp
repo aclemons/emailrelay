@@ -46,7 +46,7 @@ public:
 	bool valid() const ;
 	std::string id( const std::string & mechanism ) const ;
 	std::string secret( const std::string & mechanism ) const ;
-	std::string secret(  const std::string & mechanism , const std::string & id ) const ;
+	std::string secret( const std::string & mechanism , const std::string & id ) const ;
 	std::string path() const ;
 	bool contains( const std::string & mechanism ) const ;
 
@@ -104,7 +104,7 @@ std::string GSmtp::Secrets::secret( const std::string & mechanism ) const
 	return m_imp->secret( mechanism ) ;
 }
 
-std::string GSmtp::Secrets::secret(  const std::string & mechanism , const std::string & id ) const
+std::string GSmtp::Secrets::secret( const std::string & mechanism , const std::string & id ) const
 {
 	return m_imp->secret( mechanism , id ) ;
 }
@@ -271,7 +271,7 @@ std::string GSmtp::SecretsImp::secret( const std::string & mechanism ) const
 		return G::Xtext::decode( (*p).second.substr((*p).second.find(" ")+1U) ) ;
 }
 
-std::string GSmtp::SecretsImp::secret(  const std::string & mechanism , const std::string & id ) const
+std::string GSmtp::SecretsImp::secret( const std::string & mechanism , const std::string & id ) const
 {
 	reread() ;
 	Map::const_iterator p = m_map.find( mechanism+":"+G::Xtext::encode(id) ) ;

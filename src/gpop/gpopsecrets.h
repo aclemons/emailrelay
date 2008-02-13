@@ -68,7 +68,7 @@ public:
 	virtual bool valid() const ;
 		///< Returns true. Final override from GSmtp::Valid virtual base class.
 
-	virtual std::string secret(  const std::string & mechanism , const std::string & id ) const ;
+	virtual std::string secret( const std::string & mechanism , const std::string & id ) const ;
 		///< Returns the given user's secret. Returns the
 		///< empty string if not a valid id.
 		///<

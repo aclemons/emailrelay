@@ -30,12 +30,12 @@
 
 std::string GSmtp::ProcessorFactory::check( const std::string & address )
 {
-	return FactoryParser::check( address  , "spam" ) ;
+	return FactoryParser::check( address , "spam" ) ;
 }
 
 GSmtp::Processor * GSmtp::ProcessorFactory::newProcessor( const std::string & address , unsigned int timeout )
 {
-	Pair p = FactoryParser::parse( address  , "spam" ) ;
+	Pair p = FactoryParser::parse( address , "spam" ) ;
 	if( p.first.empty() )
 	{
 		return new NullProcessor ;

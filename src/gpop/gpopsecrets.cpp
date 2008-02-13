@@ -32,7 +32,7 @@ class GPop::SecretsImp
 public:
 	explicit SecretsImp( const std::string & path ) ;
 	std::string path() const ;
-	std::string secret(  const std::string & mechanism , const std::string & id ) const ;
+	std::string secret( const std::string & mechanism , const std::string & id ) const ;
 	bool contains( const std::string & mechanism ) const ;
 	std::string m_path ;
 	GSmtp::Secrets m_secrets ;
@@ -86,7 +86,7 @@ std::string GPop::SecretsImp::path() const
 	return m_path ;
 }
 
-std::string GPop::SecretsImp::secret(  const std::string & mechanism , const std::string & id ) const
+std::string GPop::SecretsImp::secret( const std::string & mechanism , const std::string & id ) const
 {
 	return m_secrets.secret( mechanism , id ) ;
 }

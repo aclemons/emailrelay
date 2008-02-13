@@ -269,7 +269,7 @@ unsigned int G::Date::lastDay( unsigned int month , unsigned int year )
 
 bool G::Date::isLeapYear( unsigned int y )
 {
-    return y >= 1800U && ( y % 400U == 0U || ( y % 100U != 0U && y % 4U == 0U ) ) ;
+	return y >= 1800U && ( y % 400U == 0U || ( y % 100U != 0U && y % 4U == 0U ) ) ;
 }
 
 bool G::Date::operator==( const Date &other ) const

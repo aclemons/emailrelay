@@ -64,6 +64,10 @@ public:
 		///< Returns the full path of the GUI program for 
 		///< a given install root.
 
+	static G::Path icon( const G::Path & install ) ;
+		///< Returns the full path of the icon file for 
+		///< a given install root.
+
 	static G::Path server( const G::Path & install ) ;
 		///< Returns the full path of the main server program for 
 		///< a given install root.
@@ -112,6 +116,7 @@ private:
 		std::string = std::string() , std::string = std::string() ) ;
 	static G::Path os_install() ;
 	static G::Path os_gui( const G::Path & ) ;
+	static G::Path os_icon( const G::Path & ) ;
 	static G::Path os_server( const G::Path & ) ;
 	static G::Path os_bootcopy( const G::Path & , const G::Path & ) ;
 	static G::Path os_boot() ;

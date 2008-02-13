@@ -58,6 +58,11 @@ G::Path Dir::os_gui( const G::Path & base )
 	return base + "emailrelay-gui.exe" ;
 }
 
+G::Path Dir::os_icon( const G::Path & base )
+{
+	return G::Path() ;
+}
+
 G::Path Dir::os_server( const G::Path & base )
 {
 	return base + "emailrelay.exe" ;

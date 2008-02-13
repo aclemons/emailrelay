@@ -101,14 +101,14 @@ static void ltrim( std::string & s )
 
 static void remove( std::string & s , char c )
 {
-    s.erase( std::remove_if( s.begin() , s.end() , std::bind1st(std::equal_to<char>(),c) ) , s.end() ) ;
+	s.erase( std::remove_if( s.begin() , s.end() , std::bind1st(std::equal_to<char>(),c) ) , s.end() ) ;
 }
 
 static void sanitise( std::string & s )
 {
 	// remove all shell meta characters
 	for( const char * p = "$\\\"\'()[]<>|!~*?&;" ; *p ; p++ )
-    	remove( s , *p ) ;
+		remove( s , *p ) ;
 }
 
 static std::string sanitised( std::string s )
@@ -175,10 +175,10 @@ static void run( std::string exe , std::list<std::string> args )
 		::close( fds[0] ) ;
 		int fdout = fds[1] ;
 		::close( STDERR_FILENO ) ;
-        if( ::dup2(fdout,STDERR_FILENO) != STDERR_FILENO )
-            throw std::runtime_error( "cannot dup" ) ;
-        ::close( fdout ) ; // since dup()ed
-        ::fcntl( STDERR_FILENO , F_SETFD , 0 ) ; // no-close-on-exec
+		if( ::dup2(fdout,STDERR_FILENO) != STDERR_FILENO )
+			throw std::runtime_error( "cannot dup" ) ;
+		::close( fdout ) ; // since dup()ed
+		::fcntl( STDERR_FILENO , F_SETFD , 0 ) ; // no-close-on-exec
 		exec( exe , args ) ;
 		throw std::runtime_error( "cannot exec" ) ;
 	}

@@ -49,7 +49,7 @@ std::string GSmtp::Secrets::secret( const std::string & mechanism ) const
 	return std::string() ;
 }
 
-std::string GSmtp::Secrets::secret(  const std::string & mechanism , const std::string & id ) const
+std::string GSmtp::Secrets::secret( const std::string & mechanism , const std::string & id ) const
 {
 	return std::string() ;
 }

@@ -277,8 +277,8 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 	}
 
 	const bool forwarding =
-		m_getopt.contains("as-proxy") ||  // => immediate
-		m_getopt.contains("as-client") ||  // => forward
+		m_getopt.contains("as-proxy") || // => immediate
+		m_getopt.contains("as-client") || // => forward
 		m_getopt.contains("forward") || 
 		m_getopt.contains("immediate") || 
 		m_getopt.contains("poll") ;
@@ -453,7 +453,7 @@ void Main::CommandLineImp::showExtraHelp( bool e ) const
 			<< std::endl ;
 
 		show.s() 
-			<< "To forward stored mail to \"mail.myisp.net\"..."  << std::endl
+			<< "To forward stored mail to \"mail.myisp.net\"..." << std::endl
 			<< "   " << exe << " --as-client mail.myisp.net:smtp" << std::endl
 			<< std::endl ;
 

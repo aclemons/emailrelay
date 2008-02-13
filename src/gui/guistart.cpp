@@ -78,14 +78,14 @@ static void exec( std::string exe )
 
 static void remove( std::string & s , char c )
 {
-    s.erase( std::remove_if( s.begin() , s.end() , std::bind1st(std::equal_to<char>(),c) ) , s.end() ) ;
+	s.erase( std::remove_if( s.begin() , s.end() , std::bind1st(std::equal_to<char>(),c) ) , s.end() ) ;
 }
 
 static void sanitise( std::string & s )
 {
 	// remove all shell meta characters, including quotes
 	for( const char * p = "$\\\"\'()[]<>|!~*?&;" ; *p ; p++ )
-    	remove( s , *p ) ;
+		remove( s , *p ) ;
 }
 
 static std::string sanitised( std::string s )

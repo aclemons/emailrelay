@@ -140,7 +140,7 @@ G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory & dir , const std
 	Path wild_path( dir.path() , wildcard.empty() ? std::string("*") : wildcard ) ;
 
 	int flags = 0 | GLOB_ERR ;
-	int error  = ::glob( wild_path.str().c_str() , flags , gdirectory_unix_on_error_ , &m_glob ) ;
+	int error = ::glob( wild_path.str().c_str() , flags , gdirectory_unix_on_error_ , &m_glob ) ;
 	if( error || m_glob.gl_pathv == NULL )
 		m_error = true ;
 }
