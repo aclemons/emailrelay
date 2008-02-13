@@ -51,15 +51,15 @@ am__libglib_a_SOURCES_DIST = gnewprocess_unix_exec_disabled.cpp \
 	gnewprocess_unix_exec_enabled.cpp gstr.cpp gdate.cpp gfile.cpp \
 	gpath.cpp gfs_unix.cpp gexception.cpp glogoutput.cpp \
 	gidentity_disabled.cpp gidentity_unix.cpp \
-	gdirectory_unix_noglob.cpp gdirectory_unix_glob.cpp md5.cpp \
-	md5.h garg.cpp garg.h garg_unix.cpp gassert.h gconvert.h \
-	gcleanup.h gcleanup_unix.cpp gcounter.cpp gcounter.h gdaemon.h \
-	gdaemon_unix.cpp gdate.h gdatetime.cpp gdatetime.h \
-	gdatetime_unix.cpp gdebug.h gdef.h gdirectory.cpp gdirectory.h \
-	gdirectory_unix.cpp gexception.h gexecutable_unix.cpp \
-	gexecutable.cpp gexecutable.h gfile.h gfile_unix.cpp gfs.h \
-	ggetopt.h ggetopt.cpp ghostname_unix.cpp ghostname.h \
-	gidentity.h glimits.h glog.cpp glog.h glogoutput.h \
+	gdirectory_unix_noglob.cpp gdirectory_unix_glob.cpp \
+	garg_unix.cpp garg_mac.cpp md5.cpp md5.h garg.cpp garg.h \
+	gassert.h gconvert.h gcleanup.h gcleanup_unix.cpp gcounter.cpp \
+	gcounter.h gdaemon.h gdaemon_unix.cpp gdate.h gdatetime.cpp \
+	gdatetime.h gdatetime_unix.cpp gdebug.h gdef.h gdirectory.cpp \
+	gdirectory.h gdirectory_unix.cpp gexception.h \
+	gexecutable_unix.cpp gexecutable.cpp gexecutable.h gfile.h \
+	gfile_unix.cpp gfs.h ggetopt.h ggetopt.cpp ghostname_unix.cpp \
+	ghostname.h gidentity.h glimits.h glog.cpp glog.h glogoutput.h \
 	glogoutput_unix.cpp gnewprocess.h gmd5_native.cpp gmd5.h \
 	gmemory.h gnoncopyable.h gpath.h gpidfile.cpp gpidfile.h \
 	gprocess.h gprocess_unix.cpp groot.cpp groot.h gsetter.h \
@@ -76,10 +76,12 @@ am__libglib_a_SOURCES_DIST = gnewprocess_unix_exec_disabled.cpp \
 @IDENTITY_TRUE@am__objects_3 = gidentity_unix.$(OBJEXT)
 @GLOB_FALSE@am__objects_4 = gdirectory_unix_noglob.$(OBJEXT)
 @GLOB_TRUE@am__objects_4 = gdirectory_unix_glob.$(OBJEXT)
+@MAC_FALSE@am__objects_5 = garg_unix.$(OBJEXT)
+@MAC_TRUE@am__objects_5 = garg_mac.$(OBJEXT)
 am_libglib_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
-	$(am__objects_3) $(am__objects_4) md5.$(OBJEXT) garg.$(OBJEXT) \
-	garg_unix.$(OBJEXT) gcleanup_unix.$(OBJEXT) gcounter.$(OBJEXT) \
-	gdaemon_unix.$(OBJEXT) gdatetime.$(OBJEXT) \
+	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
+	md5.$(OBJEXT) garg.$(OBJEXT) gcleanup_unix.$(OBJEXT) \
+	gcounter.$(OBJEXT) gdaemon_unix.$(OBJEXT) gdatetime.$(OBJEXT) \
 	gdatetime_unix.$(OBJEXT) gdirectory.$(OBJEXT) \
 	gdirectory_unix.$(OBJEXT) gexecutable_unix.$(OBJEXT) \
 	gexecutable.$(OBJEXT) gfile_unix.$(OBJEXT) ggetopt.$(OBJEXT) \
@@ -219,6 +221,10 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION)
 noinst_LIBRARIES = libglib.a
+@MAC_FALSE@MAC_EXTRA_DIST = garg_mac.cpp
+@MAC_TRUE@MAC_EXTRA_DIST = garg_unix.cpp
+@MAC_FALSE@MAC_SOURCES = garg_unix.cpp
+@MAC_TRUE@MAC_SOURCES = garg_mac.cpp
 @EXEC_FALSE@EXEC_EXTRA_DIST = gnewprocess_unix_exec_enabled.cpp
 @EXEC_TRUE@EXEC_EXTRA_DIST = gnewprocess_unix_exec_disabled.cpp
 @EXEC_FALSE@EXEC_SOURCES = gnewprocess_unix_exec_disabled.cpp
@@ -240,6 +246,7 @@ EXTRA_DIST = \
 	$(FRAGMENTS_EXTRA_DIST) \
 	$(IDENTITY_EXTRA_DIST) \
 	$(GLOB_EXTRA_DIST) \
+	$(MAC_EXTRA_DIST) \
 	garg_win32.cpp \
 	gcleanup_win32.cpp \
 	gdaemon_win32.cpp \
@@ -260,11 +267,11 @@ libglib_a_SOURCES = \
 	$(FRAGMENTS_SOURCES) \
 	$(IDENTITY_SOURCES) \
 	$(GLOB_SOURCES) \
+	$(MAC_SOURCES) \
 	md5.cpp \
 	md5.h \
 	garg.cpp \
 	garg.h \
-	garg_unix.cpp \
 	gassert.h \
 	gconvert.h \
 	gcleanup.h \
@@ -374,6 +381,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garg_mac.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garg_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcleanup_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcounter.Po@am__quote@

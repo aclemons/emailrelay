@@ -44,7 +44,7 @@ namespace G
 /// data appended to it:
 /// * an is-compressed flag byte in ascii: '1' or '0'
 /// * one space-or-newline byte
-/// * the directory of size-flags-path tuples, ending with a (0,-,end) tuple
+/// * the directory of whitespace-separated (size,flags,path) tuples, ending with (0,-,end)
 /// * the deflated files in order
 /// * the original file size in 12 bytes of space-padded decimal ascii
 ///

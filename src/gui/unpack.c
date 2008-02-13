@@ -108,6 +108,15 @@ static char * strdup_( const char * src )
 	return dst ;
 }
 
+static void replace_all( char * p , size_t n , char c1 , char c2 )
+{
+	for( ; p && *p && n ; p++ , n-- )
+	{
+		if( *p == c1 )
+			*p = c2 ;
+	}
+}
+
 static char * first_slash( char * p )
 {
 	char * p1 = p ? strchr( p , '/' ) : NULL ;
@@ -360,6 +369,7 @@ static bool unpack_init( M * m )
 		rc = fscanf( m->input , "%10000s" , big_buffer ) ; /* path */
 		check_that( rc == 1 , "table entry read error" ) ;
 		big_buffer[sizeof(big_buffer)-1] = '\0' ;
+		replace_all( big_buffer , sizeof(big_buffer) , '\001' , ' ' ) ;
 		file_path = strdup_(big_buffer) ;
 		check_that( file_path != NULL , "out of memory" ) ;
 

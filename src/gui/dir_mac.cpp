@@ -79,7 +79,7 @@ G::Path Dir::os_config()
 {
 	std::string sysconfdir( G_SYSCONFDIR ) ;
 	if( sysconfdir.empty() )
-		sysconfdir = "/Library/Preferences/E-MailRelay" ;
+		sysconfdir = "/Applications/E-MailRelay" ; // "/Library/Preferences/E-MailRelay"?
 	return sysconfdir ;
 }
 

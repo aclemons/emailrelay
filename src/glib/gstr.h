@@ -205,6 +205,14 @@ public:
 		///< Returns a printable represention of the given input string.
 		///< Typically used to prevent escape sequences getting into log files.
 
+	static void escape( std::string & , const std::string & specials , char escape = '\\' ) ;
+		///< Prefixes each occurrence of one of the special characters
+		///< with the escape character.
+
+	static std::string escaped( const std::string & , const std::string & specials , char escape = '\\' ) ;
+		///< Prefixes each occurrence of one of the special characters
+		///< with the escape character.
+
 	static std::string readLineFrom( std::istream & stream , const std::string & eol = std::string() ) ;
 		///< Reads a line from the stream using the given line terminator.
 		///< The line terminator is not part of the returned string.

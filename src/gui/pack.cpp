@@ -283,7 +283,11 @@ int main( int argc , char * argv [] )
 			std::ofstream out( path_out.c_str() , std::ios::app | std::ios::binary ) ;
 			out << (plain?"0":"1") << '\0' ;
 			for( std::list<File*>::iterator p = list.begin() ; p != list.end() ; ++p )
-				out << (*p)->m_data_out_size << " " << (*p)->m_flags << " " << (*p)->m_path_out << "\n" ;
+			{
+				std::string path_out = (*p)->m_path_out ;
+				G::Str::replaceAll( path_out , " " , "\001" ) ;
+				out << (*p)->m_data_out_size << " " << (*p)->m_flags << " " << path_out << "\n" ;
+			}
 			out << "0 - end\n" ;
 			out.flush() ;
 			check( out.good() , "write error" ) ;

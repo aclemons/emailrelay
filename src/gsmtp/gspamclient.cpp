@@ -81,7 +81,7 @@ void GSmtp::SpamClient::request( const std::string & path )
 	m_in_lines = 0UL ;
 	m_in_size = 0UL ;
 
-	std::string username = "spam" ; // TODO
+	std::string username = "spam" ; // TODO -- configurable username in SPAMC protocol? environment variable?
 	m_header_out.push_back( std::string() + "PROCESS SPAMC/1.4" ) ;
 	m_header_out.push_back( std::string() + "User: " + username ) ;
 	m_header_out.push_back( std::string() + "Content-length: " + G::File::sizeString(m_path) ) ;

@@ -24,9 +24,7 @@
 //
 // The motivation for this is that a c/c++ program
 // is easier to put into a Mac bundle than a shell
-// script. Specifically, a Mac script has no easy
-// way of telling where it is running from so
-// it cannot find its target executable.
+// script. 
 //
 // Searches for the executable and the configuration 
 // file in various likely locations relative to argv0.

@@ -19,6 +19,14 @@ INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION)
 
 noinst_LIBRARIES = libglib.a
 
+if MAC
+MAC_EXTRA_DIST = garg_unix.cpp
+MAC_SOURCES = garg_mac.cpp
+else
+MAC_EXTRA_DIST = garg_mac.cpp
+MAC_SOURCES = garg_unix.cpp
+endif
+
 if EXEC
 EXEC_EXTRA_DIST = gnewprocess_unix_exec_disabled.cpp
 EXEC_SOURCES = gnewprocess_unix_exec_enabled.cpp
@@ -56,6 +64,7 @@ EXTRA_DIST=\
 	$(FRAGMENTS_EXTRA_DIST) \
 	$(IDENTITY_EXTRA_DIST) \
 	$(GLOB_EXTRA_DIST) \
+	$(MAC_EXTRA_DIST) \
 	garg_win32.cpp \
 	gcleanup_win32.cpp \
 	gdaemon_win32.cpp \
@@ -76,11 +85,11 @@ libglib_a_SOURCES = \
 	$(FRAGMENTS_SOURCES) \
 	$(IDENTITY_SOURCES) \
 	$(GLOB_SOURCES) \
+	$(MAC_SOURCES) \
 	md5.cpp \
 	md5.h \
 	garg.cpp \
 	garg.h \
-	garg_unix.cpp \
 	gassert.h \
 	gconvert.h \
 	gcleanup.h \

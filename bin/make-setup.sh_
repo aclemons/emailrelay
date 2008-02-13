@@ -21,7 +21,7 @@
 # Builds a "setup" self-extracting archive -- or a payload file for
 # one -- derived from running "make install" into a temporary directory.
 #
-# usage: make-setup.sh [-d] <output> <stub> <pack-utility> [<sbindir> [<sysconfdir> [<initdir>]]]
+# usage: make-setup.sh [-d] <output> <stub> <pack-utility>
 #
 # Normally run by "make setup" in the "src/gui".
 #
@@ -39,8 +39,6 @@ debug="0" ; if test "$1" = "-d" ; then shift ; debug="1" ; fi
 setup="$1"
 stub="$2"
 pack="$3"
-sbindir="$4" ; if test -z "$sbindir" ; then installdir="__SBIN_DIR__" ; fi
-sysconfdir="$5" ; if test -z "$sysconfdir" ; then sysconfdir="__SYSCONF_DIR__" ; fi
 
 # define temporary directories and cleanup code
 tmp="/tmp/`basename $0 .sh`.$$.tmp"

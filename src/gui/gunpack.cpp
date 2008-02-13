@@ -166,7 +166,8 @@ void G::Unpack::init()
 		std::string file_path ;
 		std::string flags ;
 		unsigned long file_size = 0UL ;
-		input >> file_size >> flags >> file_path ; // TODO -- support spaces in paths
+		input >> file_size >> flags >> file_path ; 
+		G::Str::replaceAll( file_path , std::string(1U,'\001') , " " ) ; // SOHs can be used for spaces in filenames
 		G_DEBUG( "Unpack::unpack: [" << file_path << "] [" << file_size << "]" ) ;
 		if( file_size == 0U ) 
 		{

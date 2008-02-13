@@ -30,6 +30,28 @@
 #include <string>
 #include <sstream>
 
+std::string G::Str::escaped( const std::string & s_in , const std::string & specials , char c_escape )
+{
+	std::string s( s_in ) ;
+	escape( s , specials , c_escape ) ;
+	return s ;
+}
+
+void G::Str::escape( std::string & s , const std::string & specials , char c_escape )
+{
+	size_type pos = 0U ;
+	for(;;)
+	{
+		pos = s.find_first_of( specials , pos ) ;
+		if( pos == std::string::npos )
+			break ;
+
+		s.insert( pos , 1U , c_escape ) ;
+		pos++ ;
+		pos++ ;
+	}
+}
+
 bool G::Str::replace( std::string & s , const std::string & from , const std::string & to , size_type * pos_p )
 {
 	if( from.length() == 0 )

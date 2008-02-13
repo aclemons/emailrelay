@@ -295,6 +295,11 @@ void GNet::Socket::shutdown( bool for_writing )
 	::shutdown( m_socket , for_writing ? 1 : 0 ) ;
 }
 
+int GNet::Socket::fd( Credentials ) const
+{
+	return static_cast<int>( m_socket ) ;
+}
+
 //==
 
 GNet::StreamSocket::StreamSocket() : 

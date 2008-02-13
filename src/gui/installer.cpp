@@ -625,7 +625,7 @@ void UpdateLink::run()
 	if( m_active )
 	{
 		GLink link( m_target_link_info.target , "E-MailRelay" , "E-MailRelay server" , 
-			m_working_dir , str(m_target_link_info.args) , m_icon_path , GLink::Show_Hide ) ;
+			m_working_dir , m_target_link_info.args , m_icon_path , GLink::Show_Hide ) ;
 
 		G::Process::Umask umask( G::Process::Umask::Tightest ) ;
 		G::File::mkdirs( m_link_dir , 10 ) ;

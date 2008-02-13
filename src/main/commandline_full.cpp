@@ -35,10 +35,13 @@ namespace Main
 	class Show ;
 }
 
+/// \class Main::CommandLineImp
+/// A private implementation class used by Main::CommandLine.
+/// 
 class Main::CommandLineImp 
 {
 public:
-	CommandLineImp( Main::Output & output , const G::Arg & arg , const std::string & spec , const std::string & version ) ;
+	CommandLineImp( Main::Output & , const G::Arg & arg , const std::string & spec , const std::string & version ) ;
 	bool contains( const std::string & switch_ ) const ;
 	std::string value( const std::string & switch_ ) const ;
 	unsigned int argc() const ;

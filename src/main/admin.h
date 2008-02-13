@@ -36,7 +36,7 @@ namespace Main
 	class Admin ;
 }
 
-/// \class Main::Run
+/// \class Main::Admin
 /// A factory class for creating GSmtp::AdminServer objects.
 ///
 class Main::Admin 

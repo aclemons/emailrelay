@@ -30,12 +30,11 @@
 namespace
 {
 	const size_t c_buffer_size = G::limits::net_buffer ;
-	class LocalSocket : public GNet::StreamSocket // TODO remove access hack
-	{
-		public: int fd() const { return m_socket ; }
-	} ;
 }
 
+/// \class GNet::SocketProtocolImp
+/// A private implementation class used by GNet::SocketProtocol.
+/// 
 class GNet::SocketProtocolImp 
 {
 private:
@@ -44,6 +43,7 @@ private:
 	EventHandler & m_handler ;
 	SocketProtocol::Sink & m_sink ;
 	StreamSocket & m_socket ;
+	const Socket::Credentials & m_credentials ;
 	std::string m_raw_residue ;
 	std::string m_ssl_send_data ;
 	bool m_failed ;
@@ -52,7 +52,7 @@ private:
 	State m_state ;
 
 public:
-	SocketProtocolImp( EventHandler & handler , SocketProtocol::Sink & sink , StreamSocket & socket ) ;
+	SocketProtocolImp( EventHandler & , SocketProtocol::Sink & , StreamSocket & , const Socket::Credentials & ) ;
 	~SocketProtocolImp() ;
 	void readEvent() ;
 	bool writeEvent() ;
@@ -82,10 +82,11 @@ private:
 } ;
 
 GNet::SocketProtocolImp::SocketProtocolImp( EventHandler & handler , 
-	SocketProtocol::Sink & sink , StreamSocket & socket ) :
+	SocketProtocol::Sink & sink , StreamSocket & socket , const Socket::Credentials & credentials ) :
 		m_handler(handler) ,
 		m_sink(sink) ,
 		m_socket(socket) ,
+		m_credentials(credentials) ,
 		m_failed(false) ,
 		m_n(0UL) ,
 		m_ssl(NULL) ,
@@ -199,8 +200,7 @@ void GNet::SocketProtocolImp::sslConnectImp()
 	G_DEBUG( "SocketProtocolImp::sslConnectImp" ) ;
 	G_ASSERT( m_ssl != NULL ) ;
 	G_ASSERT( m_state == State_connecting ) ;
-	LocalSocket & p = reinterpret_cast<LocalSocket&>(socket()) ;
-	GSsl::Protocol::Result rc = m_ssl->connect( p.fd() ) ;
+	GSsl::Protocol::Result rc = m_ssl->connect( m_socket.fd(m_credentials) ) ;
 	G_DEBUG( "SocketProtocolImp::sslConnectImp: result=" << GSsl::Protocol::str(rc) ) ;
 	if( rc == GSsl::Protocol::Result_error )
 	{
@@ -239,8 +239,7 @@ void GNet::SocketProtocolImp::sslAcceptImp()
 	G_DEBUG( "SocketProtocolImp::sslAcceptImp" ) ;
 	G_ASSERT( m_ssl != NULL ) ;
 	G_ASSERT( m_state == State_accepting ) ;
-	LocalSocket & p = reinterpret_cast<LocalSocket&>(socket()) ;
-	GSsl::Protocol::Result rc = m_ssl->accept( p.fd() ) ;
+	GSsl::Protocol::Result rc = m_ssl->accept( m_socket.fd(m_credentials) ) ;
 	G_DEBUG( "SocketProtocolImp::sslAcceptImp: result=" << GSsl::Protocol::str(rc) ) ;
 	if( rc == GSsl::Protocol::Result_error )
 	{
@@ -446,7 +445,7 @@ void GNet::SocketProtocolImp::logFlowControlReasserted()
 // 
 
 GNet::SocketProtocol::SocketProtocol( EventHandler & handler , Sink & sink , StreamSocket & socket ) :
-	m_imp( new SocketProtocolImp(handler,sink,socket) )
+	m_imp( new SocketProtocolImp(handler,sink,socket,Socket::Credentials("")) )
 {
 }
 
@@ -496,4 +495,3 @@ GNet::SocketProtocolSink::~SocketProtocolSink()
 {
 }
 
-/// \file gsocketprotocol.cpp

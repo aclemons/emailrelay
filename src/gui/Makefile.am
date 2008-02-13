@@ -175,7 +175,7 @@ payload-stub:
 	-@echo 'exit 23' >> payload-stub
 
 emailrelay-setup: pack $(MAKE_SETUP_STUB) ../../bin/make-setup.sh
-	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ $(MAKE_SETUP_STUB) pack "$(sbindir)" "$(e_sysconfdir)" "$(e_initdir)"
+	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ $(MAKE_SETUP_STUB) pack
 	@chmod +x $@
 
 payload: pack payload-stub ../../bin/make-setup.sh

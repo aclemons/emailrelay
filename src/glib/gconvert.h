@@ -31,7 +31,7 @@ namespace G
 
 G_EXCEPTION( ConvertOverflow , "arithmetic overflow" ) ;
 
-/// Template function: G::Convert
+/// 
 /// Does arithmetic conversions with
 /// overflow checking.
 /// \see boost::numeric_cast<>()

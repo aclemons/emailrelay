@@ -30,7 +30,7 @@ class GLinkImp
 {
 public:
 	GLinkImp( const G::Path & target_path , const std::string & name , const std::string & description , 
-		const G::Path & working_dir , const std::string & args , const G::Path & icon_source , 
+		const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , 
 		GLink::Show show ) ;
 	static std::string filename( const std::string & ) ;
 	void saveAs( const G::Path & ) ;
@@ -83,7 +83,7 @@ void GLinkImp::saveAs( const G::Path & )
 // ==
 
 GLink::GLink( const G::Path & target_path , const std::string & name , const std::string & description , 
-	const G::Path & working_dir , const std::string & args , const G::Path & icon_source , Show show ) :
+	const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , Show show ) :
 		m_imp( new GLinkImp(target_path,name,description,working_dir,args,icon_source,show) )
 {
 }

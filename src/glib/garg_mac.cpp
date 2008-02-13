@@ -14,24 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-///
-/// \file gsleep.h
-///
-
-#ifndef G_SLEEP_H
-#define G_SLEEP_H
+//
+// garg_mac.cpp
+//
 
 #include "gdef.h"
-#include <cstdlib>
+#include "garg.h"
+#include "gfile.h"
+#include <cstdlib> // std::getenv()
 
-/// 
-/// A sleep() function.
-///
-#ifdef G_WIN32
-inline void sleep( int s )
+void G::Arg::setExe()
 {
-	::Sleep( s * 1000 ) ;
+	const char * p = std::getenv( "_" ) ;
+	if( p != NULL && *p != '\0' && G::File::exists(p) )
+		m_array[0] = p ;
 }
-#endif
 
-#endif
+/// \file garg_mac.cpp

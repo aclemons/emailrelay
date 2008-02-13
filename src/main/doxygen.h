@@ -66,6 +66,19 @@ Key classes are:
 
  */
 
+/*! \namespace GSsl
+\short 
+TLS/SSL transport layer security classes.
+
+The GSsl namespace contains classes that implement the TLS/SSL
+security layer.
+
+Key classes are:
+- Protocol
+- Library
+
+ */
+
 /*! \namespace GSmtp
 \short 
 SMTP and message-store classes.
@@ -96,7 +109,6 @@ Key classes are:
 - EventLoop
 - MultiServer
 - Resolver
-- Sender
 - Server
 - Socket
 - Timer

@@ -31,8 +31,20 @@
 # is 3.4.6 rather than 3.3.3 because of compiler bugs in the c++
 # code generation.
 #
-# Note that unlike other toolchain build scripts the required source 
-# packages (linux, uclibc, etc) are not downloaded automatically.
+# Usage: make -f toolchain.mak
+#
+# Note that, unlike other toolchain build scripts, the required source 
+# packages (linux, uclibc, etc) are not downloaded automatically, so
+# the following package tarballs must be made available under the
+# 'tar-dir' directory (see below):
+#
+#  * uClibc-0.9.27.tar.bz2
+#  * uClibc++-0.2.2.tar.bz2
+#  * linux-2.4.20.tar.gz
+#  * binutils_2.18.orig.tar.gz
+#  * gcc-3.4.6.tar.bz2
+#  * gcc-core-3.4.6.tar.bz2
+#  * gcc-g++-3.4.6.tar.bz2
 #
 # Uses perl with the MIME::Base64 package to prepare patch files.
 #
@@ -108,7 +120,7 @@ linux_tar_dir = $(tar_dir)/linux
 TEE:=>
 TEEE:=2>&1
 
-# gnu sed, or write a wrapper that supports --in-place
+# gnu sed, or a wrapper that supports --in-place
 SED=sed
 
 mk_root = $(shell pwd)
@@ -185,7 +197,7 @@ $(binutils_files):
 	@echo ++ untaring binutils
 	@mkdir binutils 2>/dev/null || true
 	tar -C binutils -xzf $(binutils_tar_dir)/binutils_2.18.orig.tar.gz
-	zcat $(binutils_tar_dir)/binutils_2.18-0ubuntu3.diff.gz | ( cd binutils/binutils-2.18 && patch -p1 -s )
+	-zcat $(binutils_tar_dir)/binutils_2.18-0ubuntu3.diff.gz | ( cd binutils/binutils-2.18 && patch -p1 -s )
 	@rm -f $(binutils_config) 2>/dev/null || true
 	@touch $(binutils_files)
 

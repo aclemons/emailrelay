@@ -23,6 +23,7 @@
 
 #include "gpath.h"
 #include "gexception.h"
+#include "gstrings.h"
 #include <string>
 
 class GLinkImp ; 
@@ -39,7 +40,7 @@ public:
 	enum Show { Show_Default , Show_Hide } ;
 
 	GLink( const G::Path & target_path , const std::string & name , const std::string & description , 
-		const G::Path & working_dir , const std::string & args = std::string() , 
+		const G::Path & working_dir , const G::Strings & args = G::Strings() ,
 		const G::Path & icon_source = G::Path() , Show show = Show_Default ) ;
 			///< Constructor. Note that the path of the link itself
 			///< is specified in saveAs(), not the constructor.

@@ -24,10 +24,10 @@
 #include "gdef.h"
 #include <memory>
 
-/// Template function: operator<<=
-/// A portable fix for the problem of resetting an auto_ptr<> 
-/// portably. MSVC6.0 & GCC 2.91 do not have a reset() method, 
-/// and GCC 2.95 has a non-const assignment operators.
+/// 
+/// A portable fix for the problem of resetting an 
+/// auto_ptr<>. Some compilers do not have a reset() method, 
+/// and some have non-const assignment operators.
 ///
 /// Usage:
 /// \code
@@ -50,7 +50,7 @@ void operator<<=( std::auto_ptr<T> & ap , T * p )
 	ap = temp ;
 }
 
-/// Template function: operator<<=
+/// 
 /// A version for null-pointer constants.
 ///
 template <typename T>

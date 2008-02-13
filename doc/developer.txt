@@ -108,10 +108,10 @@ runs the wrapper starts the actual E-MailRelay server by looking for a batch
 file called "emailrelay-start.bat" in the same directory as service wrapper
 executable. It reads the contents of this batch file in order to construct the
 E-MailRelay command-line, adding "--no-daemon" and "--hidden" switches if they
-are not there already. 
+are not there already.
 
-The service name and display name can be added to the wrapper's "--install" 
-command-line, and it is the service name that is used to derive the name of the 
+The service name and display name can be added to the wrapper's "--install"
+command-line, and it is the service name that is used to derive the name of the
 "start" batch file. This allows more than one server to be run as services,
 using different server command-line switches on each one.
 
@@ -156,7 +156,9 @@ The code works exactly the same on Windows, Mac OS X and unix-like operating
 systems. However, on unix-like operating systems "make install", possibly run
 via some package manager, is the preferred way to install files so the "setup"
 program is never normally built or distributed. On Mac OS X the default packing
-scheme works well enough, but a Mac "bundle" is more natural.
+scheme works well enough, but there is also provision for having a separate
+payload file within the Mac bundle rather than appending the payload to the stub
+executable.
 
 The user interface is structured as a "wizard" having a dialog box with the
 forward and back buttons at the bottom and a single Qt layout object for the
@@ -172,8 +174,8 @@ to display the progress of the installation each action object is run within a
 timer callback so that the Qt framework get a chance to update the GUI between
 each one.
 
-During development the user interface pages and the installer can be tested 
-separately since the interface between them is a simple text stream containing 
+During development the user interface pages and the installer can be tested
+separately since the interface between them is a simple text stream containing
 key-value pairs.
 
 Source control
@@ -238,7 +240,7 @@ The choice is normally made by the makefile.
 Portability
 -----------
 The E-MailRelay code is written in ISO C++, although avoiding less-widely
-supported language features like "mutable", templated methods and "export".
+supported language features such as "mutable", templated methods and "export".
 
 The header files "gdef.h" in "src/glib", and "gnet.h" in "src/gnet" are intended
 to be used to fix up compiler portability issues such as missing standard types,
@@ -330,6 +332,10 @@ Gang-of-four Design Patterns (ISBN 0-201-63361-2):
 
   - GSmtp::ProtocolMessage
 
++ Command
+
+  - Installer
+
 Lakos' Large Scale C++ Software Design patterns (ISBN 0-201-63362-0):
 
 + Insulation; fully insulating concrete class (Meyer's Effective C++ Item 34, pimple pattern)
@@ -374,6 +380,10 @@ Other patterns:
 + Exception-safe assignment using swap
 
   - G::Slot0
+
++ Dependency injection
+
+  - GSmtp::Server::newProtocolMessage()
 
 Idioms
 ------
