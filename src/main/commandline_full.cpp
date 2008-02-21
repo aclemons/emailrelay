@@ -152,7 +152,7 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 		"F!pop-auth!defines the pop server secrets file (default is \"" << pop_auth << "\")!1!file!3|"
 		"G!pop-no-delete!disables message deletion via pop (requires --pop)!0!!3|"
 		"J!pop-by-name!modifies the pop spool directory according to the user name (requires --pop)!0!!3|"
-		"M!max-size!limits the size of submitted messages!1!bytes!3|"
+		"M!size!limits the size of submitted messages!1!bytes!3|"
 		;
 	return ss.str() ;
 }

@@ -285,7 +285,7 @@ bool Main::Configuration::withTerminate() const
 
 unsigned int Main::Configuration::maxSize() const
 {
-	return value( "max-size" , 0U ) ;
+	return value( "size" , 0U ) ;
 }
 
 std::string Main::Configuration::scannerAddress() const

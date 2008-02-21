@@ -765,6 +765,80 @@ sub testServerSizeLimit
 	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
+sub testClientContinuesIfNoSecrets
+{
+	# setup
+	my %server_args = (
+		Log => 1 ,
+		Port => 1 ,
+		SpoolDir => 1 ,
+		PidFile => 1 ,
+		Verbose => 1 ,
+		ServerSecrets => 1 ,
+	) ;
+	my %client_args = (
+		Log => 1 ,
+		SpoolDir => 1 ,
+		Verbose => 1 ,
+		Forward => 1 ,
+		ForwardTo => 1 ,
+		DontServe => 1 ,
+		NoDaemon => 1 ,
+	) ;
+	my $server = new Server() ;
+	my $client = new Server() ;
+	$client->set_dst( "localhost:".$server->smtpPort() ) ;
+	System::createFile( $server->serverSecrets() , "login server me secret" ) ;
+	System::submitSmallMessage( $client->spoolDir() ) ;
+	Check::ok( $server->run(\%server_args) ) ;
+
+	# test that the client gets as far as issuing the mail command
+	my $ok = $client->run( \%client_args ) ;
+	Check::ok( $ok ) ;
+	Check::fileContains( $client->stderr() , "MAIL FROM:" ) ;
+	Check::fileContains( $client->stderr() , "530 authentication required" ) ;
+
+	# tear down
+	$server->kill() ;
+	Check::notRunning( $server->pid() ) ;
+	Check::fileDeleted( $server->pidFile() , "pid file" ) ;
+	$server->cleanup() ;
+	$client->cleanup() ;
+	System::deleteSpoolDir( $server->spoolDir() ) ;
+	System::deleteSpoolDir( $client->spoolDir() ) ;
+}
+
+sub testClientSavesReasonCode
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		SpoolDir => 1 ,
+		Verbose => 1 ,
+		ForwardTo => 1 ,
+		Forward => 1 ,
+		DontServe => 1 ,
+		NoDaemon => 1 ,
+	) ;
+	my $server = new TestServer() ;
+	my $client = new Server() ;
+	$client->set_dst( "localhost:".$server->port() ) ;
+	$server->run( "--fail-at 1" ) ;
+	System::submitSmallMessage( $client->spoolDir() ) ;
+	System::submitSmallMessage( $client->spoolDir() ) ;
+
+	# test that the client runs but the failed message envelope has a reason code
+	Check::ok( $client->run(\%args) ) ;
+	Check::fileMatchCount( $client->spoolDir()."/emailrelay.*.content" , 1 ) ;
+	Check::fileMatchCount( $client->spoolDir()."/emailrelay.*.envelope*bad" , 1 ) ;
+	my @files = glob( $client->spoolDir()."/emailrelay*bad" ) ;
+	Check::fileContains( $files[0] , "X-MailRelay-ReasonCode: 452" ) ;
+
+	# tear down
+	$server->cleanup() ;
+	System::deleteSpoolDir( $client->spoolDir() , 1 ) ;
+}
+
 sub testFilter
 {
 	# setup

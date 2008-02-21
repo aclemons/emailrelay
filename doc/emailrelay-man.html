@@ -160,10 +160,6 @@ Writes log information on standard error and syslog.
 
 <DD>
 Adds a timestamp to the logging output.
-<DT><B>-M, --max-size </B><I>&lt;bytes&gt;</I>
-
-<DD>
-Limits the size of submitted messages.
 <DT><B>-t, --no-daemon </B>
 
 <DD>
@@ -228,6 +224,10 @@ Enables authentication of remote clients, using the given secrets file.
 
 <DD>
 Enables tls/ssl layer for smtp server using the given openssl certificate file (if openssl built in).
+<DT><B>-M, --size </B><I>&lt;bytes&gt;</I>
+
+<DD>
+Limits the size of submitted messages.
 <DT><B>-s, --spool-dir </B><I>&lt;dir&gt;</I>
 
 <DD>

@@ -6,14 +6,14 @@ E-MailRelay Change Log
 * Speed optimisations (as identified by KCachegrind/valgrind in KDevelop).
 * Build-time size optimisations (eg. "./configure --disable-exec --enable-small-exceptions ...").
 * Build-time options to reduce runtime library dependencies (eg. "./configure --disable-dns --disable-identity").
-* New switch to limit the size of submitted messages ("--max-size").
+* New switch to limit the size of submitted messages ("--size").
 * SMTP client protocol emits a RSET after a rejected recipient as a workround for broken server protocols.
 * SMTP client protocol continues if the server advertises AUTH but the client has no authentication secrets.
 * When a message cannot be forwarded the offending SMTP protocol response number, if any, is put in the envelope file.
 * A warning is printed if logging is requested but both stderr and syslog are disabled.
 * A cross-compiling toolchain builder script added for running on mips-based routers ("extra/mips").
 * New example scripts for SMTP multicasting and editing envelope files.
-* Improved native support for Mac OS X (10.5) with GUI installation from disk image.
+* Improved native support for Mac OS X (10.5) with graphical installation from disk image.
 * Compatibility with gcc 2.95 restored.
 
 1.6 -> 1.7

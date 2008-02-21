@@ -27,11 +27,10 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "icon0.ico"
-IDI_ICON2               ICON    DISCARDABLE     "icon1.ico"
-IDI_ICON3               ICON    DISCARDABLE     "icon2.ico"
-IDI_ICON4               ICON    DISCARDABLE     "icon3.ico"
-IDI_ICON5               ICON    DISCARDABLE     "icon4.ico"
+IDI_ICON1               ICON    DISCARDABLE     "icon1.ico"
+IDI_ICON2               ICON    DISCARDABLE     "icon2.ico"
+IDI_ICON3               ICON    DISCARDABLE     "icon3.ico"
+IDI_ICON4               ICON    DISCARDABLE     "icon4.ico"
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////

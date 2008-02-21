@@ -23,6 +23,7 @@
 #include "gprocess.h"
 #include "gexception.h"
 #include "gstr.h"
+#include "gfs.h"
 #include "glog.h"
 #include <iostream>
 #include <sstream>
@@ -103,9 +104,6 @@ void G::Process::closeFiles( bool keep_stderr )
 	int fd0 = ::open( G::FileSystem::nullDevice() , O_RDONLY ) ;
 	int fd1 = ::open( G::FileSystem::nullDevice() , O_WRONLY ) ;
 	int fd2 = keep_stderr ? -1 : ::open( G::FileSystem::nullDevice() , O_WRONLY ) ;
-	if( fd0 == 0 ) ::fcntl( fd0 , F_SETFD , 0 ) ;
-	if( fd1 == 1 ) ::fcntl( fd1 , F_SETFD , 0 ) ;
-	if( fd2 == 2 ) ::fcntl( fd2 , F_SETFD , 0 ) ;
 }
 
 void G::Process::closeStderr()

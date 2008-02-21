@@ -26,7 +26,10 @@
 
 void G::Arg::setExe()
 {
-	m_array[0] = moduleName( NULL ) ;
+	if( m_array.empty() )
+		m_array.push_back( moduleName(NULL) ) ;
+	else
+		m_array[0] = moduleName( NULL ) ;
 }
 
 std::string G::Arg::moduleName( HINSTANCE hinstance )
@@ -41,7 +44,7 @@ std::string G::Arg::moduleName( HINSTANCE hinstance )
 
 void G::Arg::parse( HINSTANCE hinstance , const std::string & command_line )
 {
-	m_array.erase() ;
+	m_array.clear() ;
 	m_array.push_back( moduleName(hinstance) ) ;
 	parseCore( command_line ) ;
 	setPrefix() ;

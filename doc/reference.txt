@@ -77,9 +77,6 @@ where <switch> is:
 # --log-time (-L)
   Adds a timestamp to the logging output.
 
-# --max-size (-M)
-  Limits the size of submitted messages.
-
 # --no-daemon (-t)
   Does not detach from the terminal.
 
@@ -127,6 +124,9 @@ where <switch> is:
 
 # --server-tls (-K)
   Enables tls/ssl layer for smtp server using the given openssl certificate file (if openssl built in).
+
+# --size (-M)
+  Limits the size of submitted messages.
 
 # --spool-dir (-s)
   Specifies the spool directory (default is "/var/spool/emailrelay").

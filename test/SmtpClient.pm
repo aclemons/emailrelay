@@ -63,6 +63,28 @@ sub port { return shift->{'m_port'} }
 sub server { return shift->{'m_server'} }
 sub t { return shift->{'m_t'} }
 
+sub ehlo
+{
+	my ( $this ) = @_ ;
+	my $t = $this->t() ;
+	$t->buffer_empty() ; # sync
+	$t->cmd( "ehlo here" ) ;
+}
+
+sub mail
+{
+	my ( $this , $to_fail ) = @_ ;
+	my $t = $this->t() ;
+	if( $to_fail )
+	{
+		$t->cmd( String => "mail from:<me\@here>" , Prompt => '/530 authentication required/' ) ;
+	}
+	else
+	{
+		$t->cmd( "mail from:<me\@here>" ) ;
+	}
+}
+
 sub submit_start
 {
 	my ( $this ) = @_ ;

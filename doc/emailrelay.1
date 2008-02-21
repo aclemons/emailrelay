@@ -121,9 +121,6 @@ Writes log information on standard error and syslog.
 .B \-L, --log-time 
 Adds a timestamp to the logging output.
 .TP
-.B \-M, --max-size \fI<bytes>\fR
-Limits the size of submitted messages.
-.TP
 .B \-t, --no-daemon 
 Does not detach from the terminal.
 .TP
@@ -171,6 +168,9 @@ Enables authentication of remote clients, using the given secrets file.
 .TP
 .B \-K, --server-tls \fI<pem-file>\fR
 Enables tls/ssl layer for smtp server using the given openssl certificate file (if openssl built in).
+.TP
+.B \-M, --size \fI<bytes>\fR
+Limits the size of submitted messages.
 .TP
 .B \-s, --spool-dir \fI<dir>\fR
 Specifies the spool directory (default is \fI/var/spool/emailrelay\fR).
