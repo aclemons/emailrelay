@@ -345,15 +345,23 @@ Another useful technique is to run E-MailRelay as an SMTP server but use the
 "--poll" switch so that the server process will also do periodic forwarding.
 With a short "--poll" period this behaves rather like a proxy, but the
 submitting client program does not have to wait for the message to be delivered
-to the remote server. To avoid the overhead of polling the spool directory
-continuously you can use get the "--filter" program to force the "--poll" timer
-to expire as each new message is received by using a special exit value of 103.
+to the remote server.
+
+In fact, using polling can be a good idea whenever you are using E-MailRelay in
+proxy mode. This is because some clients can time-out after submitting the body
+of a large message but before E-MailRelay has forwarded it and sent the
+acknowledgement back to the client. In theory the client should regard the
+message as unsent and keep it in some sort of "outbox" so that it can be
+retried. But if the client is less rigorous then the message gets orphened in
+the E-MailRelay spool directory and never forwarded. Polling can be used to make
+sure that these orphaned messages do get sent eventually, as long as some
+duplication can be tolerated.
 
 When using E-MailRelay as a POP server the "--pop-by-name" feature can be used
 to serve up different spooled messages according to the username that the client
 authenticated with: each user's messages are taken from their own sub-directory
 of the main spool directory. If messages are coming in over SMTP then you could
-install an SMTP "--filter" script to move each new message into the relevant 
+install an SMTP "--filter" script to move each new message into the relevant
 sub-directory based on the message addressing.
 
 For more ideas check out the "--client-filter" and "--poll" switches, and don't
@@ -427,7 +435,7 @@ The secrets file should contain one line of text something like this:
 
 	login client myname@gmail.com mypassword
 
-Refer to this file using "--client-auth" on the E-MailRelay command-line and
+Reference this file using "--client-auth" on the E-MailRelay command-line and
 also add in the "--client-tls" switch:
 
 	emailrelay --as-proxy smtp.gmail.com:587 --client-tls --client-auth /etc/emailrelay.auth ...

@@ -1140,6 +1140,12 @@ std::pair<std::string,InstallerImp::Map> InstallerImp::commandlineMap( bool shor
 		if( yes(value("forward-immediate")) )
 		{
 			out[short_?"m":"immediate"] ;
+
+			// poll even in proxy mode in case the client times out
+			// between the "." and the "OK" and leaves orphaned messages
+			// in the spool directory
+			//
+			out[short_?"O":"poll"] = "60" ; 
 		}
 		if( yes(value("forward-poll")) )
 		{
