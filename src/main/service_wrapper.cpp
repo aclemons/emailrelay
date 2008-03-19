@@ -144,11 +144,16 @@ int main( int argc , char * argv [] )
 		std::string arg1 = argc > 1 ? lowercase(std::string(argv[1])) : std::string() ;
 		std::string arg2 = argc > 2 ? std::string(argv[2]) : std::string("emailrelay") ;
 		std::string arg3 = argc > 3 ? std::string(argv[3]) : std::string("E-MailRelay") ;
+
+		bool help = arg1 == "--help" || arg1 == "/?" || arg1 == "-?" || arg1 == "-h" ;
 		bool install = arg1 == "--install" || arg1 == "-install" || arg1 == "/install" ;
 		bool remove = 
 			arg1 == "--remove" || arg1 == "-remove" || arg1 == "/remove" ||
 			arg1 == "--uninstall" || arg1 == "-uninstall" || arg1 == "/uninstall" ;
-		if( install )
+
+		if( help )
+			std::cout << "usage: " << argv[0] << " [--help|--install|--remove] [<name> [<display-name>]]" << std::endl ;
+		else if( install )
 			Service::install( arg2 , arg3 ) ;
 		else if( remove )
 			Service::remove( arg2 ) ;

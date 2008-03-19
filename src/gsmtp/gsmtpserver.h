@@ -139,6 +139,9 @@ public:
 	GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) ;
 		///< From MultiServer.
 
+	G::Signal2<std::string,std::string> & eventSignal() ;
+		///< Returns a signal that indicates that something has happened.
+
 private:
 	ProtocolMessage * newProtocolMessage() ;
 	ProtocolMessage * newProtocolMessageStore( std::auto_ptr<Processor> ) ;
@@ -161,6 +164,7 @@ private:
 	unsigned int m_verifier_timeout ;
 	bool m_anonymous ;
 	std::auto_ptr<ServerProtocol::Text> m_protocol_text ;
+	G::Signal2<std::string,std::string> m_event_signal ;
 } ;
 
 #endif

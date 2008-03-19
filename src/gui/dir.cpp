@@ -55,7 +55,7 @@ void Dir::read( const State & state )
 
 	// these allow "make install" to take full control if it needs to -- probably 
 	// not present in the file
-	m_pid = state.value( "dir-pid" , m_pid ) ;
+	m_pid = state.value( "dir-pid" , os_pid_default(m_pid,m_config) ) ;
 	m_boot = state.value( "dir-boot" , m_boot ) ;
 	m_desktop = state.value( "dir-desktop" , m_desktop ) ;
 	m_login = state.value( "dir-login" , m_login ) ;

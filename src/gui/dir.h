@@ -123,9 +123,10 @@ private:
 	static G::Path os_config() ;
 	static G::Path special( const std::string & key ) ;
 	static G::Path ntspecial( const std::string & key ) ;
+	static G::Path os_pid() ;
+	static G::Path os_pid_default( const G::Path & , const G::Path & ) ;
 	G::Path os_spool() const ;
 	G::Path os_login() const ;
-	G::Path os_pid() const ;
 
 private:
 	G::Path m_spool ;

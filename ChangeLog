@@ -7,6 +7,7 @@ E-MailRelay Change Log
 * Build-time size optimisations (eg. "./configure --disable-exec --enable-small-exceptions ...").
 * Build-time options to reduce runtime library dependencies (eg. "./configure --disable-dns --disable-identity").
 * New switch to limit the size of submitted messages ("--size").
+* New semantics for "--poll 0", providing a good alternative to "--immediate" when proxying.
 * SMTP client protocol emits a RSET after a rejected recipient as a workround for broken server protocols.
 * SMTP client protocol continues if the server advertises AUTH but the client has no authentication secrets.
 * When a message cannot be forwarded the offending SMTP protocol response number, if any, is put in the envelope file.

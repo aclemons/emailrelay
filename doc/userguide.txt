@@ -21,8 +21,8 @@ waits for incoming mail and stores anything it receives in a spool directory.
 As a forwarding agent E-MailRelay pulls messages out of the spool directory
 and passes them on to a remote server -- perhaps your ISP mail server.
 
-E-MailRelay can also run as a POP3 server so that e-mail front-end programs
-can read the spooled messages.
+E-MailRelay can also run as a POP3 server so that e-mail client programs can
+read the spooled messages.
 
 What it's not
 -------------
@@ -219,8 +219,8 @@ authentication. In this scheme you are required to conduct an authenticated POP
 or IMAP dialogue before you try to use SMTP. The POP/IMAP dialogue is done
 separately from the SMTP connection, but bear in mind that there might be a time
 limit so that your SMTP connection has to be made soon after the POP/IMAP
-authentication. You should be able to use an e-mail front-end program, or
-something like "fetchmail" to do the POP/IMAP authentication.
+authentication. You should be able to use an e-mail client program, or something
+like "fetchmail" to do the POP/IMAP authentication.
 
 If you can send mail messages sucessfully using telnet, then you should look at
 the E-MailRelay "--verbose" log output and compare what you do interactively
@@ -241,9 +241,9 @@ use a firewall in this scenario.
 
 Another option is to require all clients to authenticate by using the
 "--server-auth" switch. If you then need local clients, such as your own e-mail
-front-end, to connect without authentication then you must put those trusted IP
-addresses in the secrets file with an authentication mechanism of "NONE". Refer
-to the reference guide for more information.
+client program, to connect without authentication then you must put those
+trusted IP addresses in the secrets file with an authentication mechanism of
+"NONE". Refer to the reference guide for more information.
 
 Taking it one stage further, you may want to allow connections from the Internet
 without authentication but only allow them to send mail to local users. In other
@@ -257,9 +257,9 @@ details.
 
 Running as a POP server
 -----------------------
-E-MailRelay can run as a POP server so that e-mail front-end programs can
-retrieve messages from the spool directory directly (although it is not a good
-idea to run E-MailRelay as a POP server if also forwarding messages by SMTP).
+E-MailRelay can run as a POP server so that e-mail client programs can retrieve
+messages from the spool directory directly (although it is not a good idea to
+run E-MailRelay as a POP server if also forwarding messages by SMTP).
 
 To allow POP access to spooled messages use a command-line something like this:
 
@@ -327,6 +327,27 @@ failed e-mails to bounce back to your in-tray by running the
 "emailrelay-notify.sh" script periodically as "root", although this does require
 "procmail" to act as a delivery agent.
 
+Polling and timeouts
+--------------------
+In normal proxy mode, using "--immediate" or "--as-proxy", the E-MailRelay
+server will try forward each message as soon as it is received and only then
+will it acknowledge receipt of the message back to the submitting client. This
+has the advantage that any problems with the forwarding process can be reported
+back to the submitting client; any failures should be reported your e-mail
+client program and the failed messages should stay in its "outbox".
+
+However, some e-mail client programs are not always prepared to wait long enough
+for the message to be forwarded and this can result in problems with timeouts. A
+good fix for this is to use the "--poll" mechanism as a replacement for
+"--immediate" or "--as-proxy". In this way the submitting e-mail client program
+does not have to wait for the E-MailRelay server to forward the message and it
+should never time out.
+
+As a special case, a zero value for the timeout ("--poll 0") means that message
+forwarding is triggered as soon as the client has finished submitting messages.
+If you are having problems with client program timeouts you should try replacing
+"--immediate" with "--poll 0".
+
 Usage patterns
 --------------
 The simplest ways of using E-MailRelay for SMTP are as a proxy or as a
@@ -340,22 +361,6 @@ directory using the "emailrelay-submit" utility, and they can be moved out again
 at any time, as long as the envelope file is not locked (ie. with a special
 filename extension). Your "--filter" program can edit messages in any way you
 want, and it can even remove the current message from the spool directory.
-
-Another useful technique is to run E-MailRelay as an SMTP server but use the
-"--poll" switch so that the server process will also do periodic forwarding.
-With a short "--poll" period this behaves rather like a proxy, but the
-submitting client program does not have to wait for the message to be delivered
-to the remote server.
-
-In fact, using polling can be a good idea whenever you are using E-MailRelay in
-proxy mode. This is because some clients can time-out after submitting the body
-of a large message but before E-MailRelay has forwarded it and sent the
-acknowledgement back to the client. In theory the client should regard the
-message as unsent and keep it in some sort of "outbox" so that it can be
-retried. But if the client is less rigorous then the message gets orphened in
-the E-MailRelay spool directory and never forwarded. Polling can be used to make
-sure that these orphaned messages do get sent eventually, as long as some
-duplication can be tolerated.
 
 When using E-MailRelay as a POP server the "--pop-by-name" feature can be used
 to serve up different spooled messages according to the username that the client

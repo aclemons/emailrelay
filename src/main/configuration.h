@@ -37,8 +37,9 @@ namespace Main
 /// \class Main::Configuration
 /// An interface for returning application configuration
 /// information. This implementation is minimaly dependent on the
-/// command line in order to simplify moving to the windows registry 
-/// (for example) in the future.
+/// command line in order to simplify moving to (eg) the windows registry
+/// or a configuration file in the future.
+///
 /// \see CommandLine
 ///
 class Main::Configuration 
@@ -64,9 +65,6 @@ public:
 	bool closeStderr() const ;
 		///< Returns true if stderr should be closed.
 
-	bool immediate() const ;
-		///< Returns true if proxying.
-
 	bool log() const ;
 		///< Returns true if doing logging.
 
@@ -85,7 +83,7 @@ public:
 	bool daemon() const ;
 		///< Returns true if running as a daemon.
 
-	bool doForwarding() const ;
+	bool doForwardingOnStartup() const ;
 		///< Returns true if running as a client.
 
 	bool doServing() const ;
@@ -138,7 +136,7 @@ public:
 		///< Returns the path to a client-side pre-processor.
 
 	unsigned int filterTimeout() const ;
-		///< Returns the timeout for executing an ansynchronous 
+		///< Returns the timeout for executing an ansynchronous
 		///< filter() or clientFilter() program.
 
 	unsigned int icon() const ;
@@ -179,10 +177,27 @@ public:
 		///< Returns the path of an external address verifier program.
 
 	bool doPolling() const ;
-		///< Returns true if doing client polling.
+		///< Returns true if doing poll-based forwarding.
+
+	bool pollingLog() const ;
+		///< Returns true if polling activity should be logged.
 
 	unsigned int pollingTimeout() const ;
-		///< Returns the polling timeout.
+		///< Returns the timeout for periodic polling.
+
+	bool immediate() const ;
+		///< Returns true if forwarding should occur as soon as each
+		///< message body is received and before receipt is
+		///< acknowledged.
+
+	bool forwardingOnStore() const ;
+		///< Returns true if forwarding should occur as each message
+		///< is stored, after it is acknowledged. (This will result
+		///< in a complete client session per message.)
+
+	bool forwardingOnDisconnect() const ;
+		///< Returns true if forwarding should occur when the
+		///< submitter's network connection disconnects.
 
 	bool withTerminate() const ;
 		///< Returns true if the admin interface should support the

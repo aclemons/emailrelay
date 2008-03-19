@@ -73,7 +73,12 @@ mkdir -p $install
 ( cd ../.. && make install HAVE_DOXYGEN=no DESTDIR=$install ) > /dev/null 2>&1
 
 # add in some extras
-cp "$icon" $install/usr/lib/emailrelay/
+if test -d "$install/usr/lib/emailrelay/"
+then
+	cp "$icon" $install/usr/lib/emailrelay/
+else
+	cp "$icon" $install/Applications/E-MailRelay/
+fi
 
 # build a file list
 Filter()

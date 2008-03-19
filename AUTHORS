@@ -4,10 +4,13 @@ Graeme Walker <graeme_walker@users.sourceforge.net>
 
 Binary distributions
 --------------------
-Binary distributions of E-MailRelay may include code from:
+Binary distributions of E-MailRelay may include copyrighted code from:
 * OpenSSL Toolkit (http://www.openssl.org)
 * MinGW (http://www.mingw.org)
 * Trolltech Qt (http://trolltech.com)
+
+These are distributed under licenses compatible with the GPLv3. Please
+refer to their websites for further details.
 
 This product includes software developed by the OpenSSL Project
 for use in the OpenSSL Toolkit. (http://www.openssl.org/)

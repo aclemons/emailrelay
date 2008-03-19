@@ -105,9 +105,14 @@ G::Path Dir::cwd()
 	return G::Path( s ) ;
 }
 
-G::Path Dir::os_pid() const
+G::Path Dir::os_pid()
 {
 	return ok("/var/run") ? "var/run" : "/tmp" ;
+}
+
+G::Path Dir::os_pid_default( const G::Path & dir_pid , const G::Path & )
+{
+	return dir_pid ;
 }
 
 G::Path Dir::special( const std::string & type )

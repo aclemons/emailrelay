@@ -6,6 +6,25 @@
 	objectVersion = 44;
 	objects = {
 
+/* Begin PBXAggregateTarget section */
+		EE9918CC0D91760400FB06D5 /* all-targets */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = EE9918CF0D91762300FB06D5 /* Build configuration list for PBXAggregateTarget "all-targets" */;
+			buildPhases = (
+			);
+			dependencies = (
+				EE9918D10D91762800FB06D5 /* PBXTargetDependency */,
+				EE9918DD0D91762800FB06D5 /* PBXTargetDependency */,
+				EE9918DF0D91762800FB06D5 /* PBXTargetDependency */,
+				EE9918E10D91762800FB06D5 /* PBXTargetDependency */,
+				EE9918E30D91762800FB06D5 /* PBXTargetDependency */,
+				EE9918E50D91762800FB06D5 /* PBXTargetDependency */,
+			);
+			name = "all-targets";
+			productName = "all-targets";
+		};
+/* End PBXAggregateTarget section */
+
 /* Begin PBXBuildFile section */
 		EE303C5D0D326C9700D840F2 /* empty.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303AD50D326C9600D840F2 /* empty.cpp */; };
 		EE303D000D326C9700D840F2 /* admin_enabled.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C050D326C9600D840F2 /* admin_enabled.cpp */; };
@@ -116,7 +135,21 @@
 		EE303E440D329C4B00D840F2 /* gnetworkprocessor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303BA10D326C9600D840F2 /* gnetworkprocessor.cpp */; };
 		EE303E450D329C4E00D840F2 /* gsmtpserver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303BC40D326C9600D840F2 /* gsmtpserver.cpp */; };
 		EE303E460D329C5000D840F2 /* gserverprotocol.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303BBF0D326C9600D840F2 /* gserverprotocol.cpp */; };
-		EE303E520D329D9E00D840F2 /* gssl_none.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303BDA0D326C9600D840F2 /* gssl_none.cpp */; };
+		EE9918310D91664E00FB06D5 /* empty.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303AD50D326C9600D840F2 /* empty.cpp */; };
+		EE9918420D91670200FB06D5 /* filter_copy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C130D326C9600D840F2 /* filter_copy.cpp */; };
+		EE9918440D91673900FB06D5 /* filter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C100D326C9600D840F2 /* filter.cpp */; };
+		EE9918460D91675100FB06D5 /* legal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C190D326C9600D840F2 /* legal.cpp */; };
+		EE99184F0D91693000FB06D5 /* empty.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303AD50D326C9600D840F2 /* empty.cpp */; };
+		EE99185F0D91695000FB06D5 /* empty.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303AD50D326C9600D840F2 /* empty.cpp */; };
+		EE99186F0D91697900FB06D5 /* empty.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303AD50D326C9600D840F2 /* empty.cpp */; };
+		EE99187F0D91698A00FB06D5 /* empty.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303AD50D326C9600D840F2 /* empty.cpp */; };
+		EE99188D0D9169FE00FB06D5 /* start.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE99188B0D9169F700FB06D5 /* start.cpp */; };
+		EE99188F0D916A3600FB06D5 /* passwd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C250D326C9700D840F2 /* passwd.cpp */; };
+		EE9918900D916A4E00FB06D5 /* poke.c in Sources */ = {isa = PBXBuildFile; fileRef = EE303C270D326C9700D840F2 /* poke.c */; };
+		EE9918920D916A7400FB06D5 /* submit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C320D326C9700D840F2 /* submit.cpp */; };
+		EE9918940D916A8600FB06D5 /* legal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C190D326C9600D840F2 /* legal.cpp */; };
+		EE9918A50D916B1A00FB06D5 /* legal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C190D326C9600D840F2 /* legal.cpp */; };
+		EE9919380D91A4F500FB06D5 /* gssl_openssl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303BDB0D326C9600D840F2 /* gssl_openssl.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -155,10 +188,139 @@
 			remoteGlobalIDString = EE303E4E0D329D8F00D840F2;
 			remoteInfo = gssl;
 		};
+		EE9918270D91664E00FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE303D330D32714D00D840F2;
+			remoteInfo = glib;
+		};
+		EE99185D0D91695000FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE303D330D32714D00D840F2;
+			remoteInfo = glib;
+		};
+		EE99187D0D91698A00FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE303D330D32714D00D840F2;
+			remoteInfo = glib;
+		};
+		EE9918950D916AA200FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE303DE60D3298F600D840F2;
+			remoteInfo = gnet;
+		};
+		EE9918B10D91707300FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE303E220D329BFF00D840F2;
+			remoteInfo = gsmtp;
+		};
+		EE9918B30D91707900FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE303E4E0D329D8F00D840F2;
+			remoteInfo = gssl;
+		};
+		EE9918D00D91762800FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8DD76F620486A84900D96B5E;
+			remoteInfo = emailrelay;
+		};
+		EE9918DC0D91762800FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE9918250D91664E00FB06D5;
+			remoteInfo = "emailrelay-filter-copy";
+		};
+		EE9918DE0D91762800FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE99184B0D91693000FB06D5;
+			remoteInfo = "emailrelay-start";
+		};
+		EE9918E00D91762800FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE99185B0D91695000FB06D5;
+			remoteInfo = "emailrelay-passwd";
+		};
+		EE9918E20D91762800FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE99186B0D91697900FB06D5;
+			remoteInfo = "emailrelay-poke";
+		};
+		EE9918E40D91762800FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE99187B0D91698A00FB06D5;
+			remoteInfo = "emailrelay-submit";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		8DD76F690486A84900D96B5E /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		EE99183B0D91664E00FB06D5 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		EE9918540D91693000FB06D5 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		EE9918640D91695000FB06D5 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		EE9918740D91697900FB06D5 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		EE9918840D91698A00FB06D5 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 8;
 			dstPath = /usr/share/man/man1/;
@@ -583,6 +745,17 @@
 		EE303EBC0D366E5500D840F2 /* sequence-3.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "sequence-3.png"; sourceTree = "<group>"; };
 		EE303EBD0D366E5500D840F2 /* userguide.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = userguide.txt; sourceTree = "<group>"; };
 		EE303EBE0D366E5500D840F2 /* windows.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = windows.txt; sourceTree = "<group>"; };
+		EE99183F0D91664E00FB06D5 /* emailrelay-filter-copy */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "emailrelay-filter-copy"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE9918410D91664F00FB06D5 /* Info copy.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info copy.plist"; sourceTree = "<group>"; };
+		EE9918580D91693000FB06D5 /* emailrelay-start */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "emailrelay-start"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE99185A0D91693000FB06D5 /* Info copy 2.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info copy 2.plist"; sourceTree = "<group>"; };
+		EE9918680D91695000FB06D5 /* emailrelay-passwd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "emailrelay-passwd"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE99186A0D91695000FB06D5 /* Info copy 3.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info copy 3.plist"; sourceTree = "<group>"; };
+		EE9918780D91697900FB06D5 /* emailrelay-poke */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "emailrelay-poke"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE99187A0D91697900FB06D5 /* Info copy 4.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info copy 4.plist"; sourceTree = "<group>"; };
+		EE9918880D91698A00FB06D5 /* emailrelay-submit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "emailrelay-submit"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE99188A0D91698A00FB06D5 /* Info copy 5.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info copy 5.plist"; sourceTree = "<group>"; };
+		EE99188B0D9169F700FB06D5 /* start.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = start.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -628,6 +801,41 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EE99183A0D91664E00FB06D5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE9918530D91693000FB06D5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE9918630D91695000FB06D5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE9918730D91697900FB06D5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE9918830D91698A00FB06D5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -639,6 +847,11 @@
 				08FB7795FE84155DC02AAC07 /* Source */,
 				C6859E8C029090F304C91782 /* Documentation */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
+				EE9918410D91664F00FB06D5 /* Info copy.plist */,
+				EE99185A0D91693000FB06D5 /* Info copy 2.plist */,
+				EE99186A0D91695000FB06D5 /* Info copy 3.plist */,
+				EE99187A0D91697900FB06D5 /* Info copy 4.plist */,
+				EE99188A0D91698A00FB06D5 /* Info copy 5.plist */,
 			);
 			name = emailrelay;
 			sourceTree = "<group>";
@@ -659,6 +872,11 @@
 				EE303E120D329BAA00D840F2 /* libgpop.a */,
 				EE303E230D329BFF00D840F2 /* libgsmtp.a */,
 				EE303E4F0D329D8F00D840F2 /* libgssl.a */,
+				EE99183F0D91664E00FB06D5 /* emailrelay-filter-copy */,
+				EE9918580D91693000FB06D5 /* emailrelay-start */,
+				EE9918680D91695000FB06D5 /* emailrelay-passwd */,
+				EE9918780D91697900FB06D5 /* emailrelay-poke */,
+				EE9918880D91698A00FB06D5 /* emailrelay-submit */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1038,6 +1256,7 @@
 		EE303C020D326C9600D840F2 /* main */ = {
 			isa = PBXGroup;
 			children = (
+				EE99188B0D9169F700FB06D5 /* start.cpp */,
 				EE303C030D326C9600D840F2 /* admin.h */,
 				EE303C040D326C9600D840F2 /* admin_disabled.cpp */,
 				EE303C050D326C9600D840F2 /* admin_enabled.cpp */,
@@ -1312,6 +1531,102 @@
 			productReference = EE303E4F0D329D8F00D840F2 /* libgssl.a */;
 			productType = "com.apple.product-type.library.static";
 		};
+		EE9918250D91664E00FB06D5 /* emailrelay-filter-copy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EE99183C0D91664E00FB06D5 /* Build configuration list for PBXNativeTarget "emailrelay-filter-copy" */;
+			buildPhases = (
+				EE9918300D91664E00FB06D5 /* Sources */,
+				EE99183A0D91664E00FB06D5 /* Frameworks */,
+				EE99183B0D91664E00FB06D5 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EE9918260D91664E00FB06D5 /* PBXTargetDependency */,
+			);
+			name = "emailrelay-filter-copy";
+			productInstallPath = "$(HOME)/bin";
+			productName = emailrelay;
+			productReference = EE99183F0D91664E00FB06D5 /* emailrelay-filter-copy */;
+			productType = "com.apple.product-type.tool";
+		};
+		EE99184B0D91693000FB06D5 /* emailrelay-start */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EE9918550D91693000FB06D5 /* Build configuration list for PBXNativeTarget "emailrelay-start" */;
+			buildPhases = (
+				EE99184E0D91693000FB06D5 /* Sources */,
+				EE9918530D91693000FB06D5 /* Frameworks */,
+				EE9918540D91693000FB06D5 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "emailrelay-start";
+			productInstallPath = "$(HOME)/bin";
+			productName = emailrelay;
+			productReference = EE9918580D91693000FB06D5 /* emailrelay-start */;
+			productType = "com.apple.product-type.tool";
+		};
+		EE99185B0D91695000FB06D5 /* emailrelay-passwd */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EE9918650D91695000FB06D5 /* Build configuration list for PBXNativeTarget "emailrelay-passwd" */;
+			buildPhases = (
+				EE99185E0D91695000FB06D5 /* Sources */,
+				EE9918630D91695000FB06D5 /* Frameworks */,
+				EE9918640D91695000FB06D5 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EE99185C0D91695000FB06D5 /* PBXTargetDependency */,
+			);
+			name = "emailrelay-passwd";
+			productInstallPath = "$(HOME)/bin";
+			productName = emailrelay;
+			productReference = EE9918680D91695000FB06D5 /* emailrelay-passwd */;
+			productType = "com.apple.product-type.tool";
+		};
+		EE99186B0D91697900FB06D5 /* emailrelay-poke */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EE9918750D91697900FB06D5 /* Build configuration list for PBXNativeTarget "emailrelay-poke" */;
+			buildPhases = (
+				EE99186E0D91697900FB06D5 /* Sources */,
+				EE9918730D91697900FB06D5 /* Frameworks */,
+				EE9918740D91697900FB06D5 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "emailrelay-poke";
+			productInstallPath = "$(HOME)/bin";
+			productName = emailrelay;
+			productReference = EE9918780D91697900FB06D5 /* emailrelay-poke */;
+			productType = "com.apple.product-type.tool";
+		};
+		EE99187B0D91698A00FB06D5 /* emailrelay-submit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EE9918850D91698A00FB06D5 /* Build configuration list for PBXNativeTarget "emailrelay-submit" */;
+			buildPhases = (
+				EE99187E0D91698A00FB06D5 /* Sources */,
+				EE9918830D91698A00FB06D5 /* Frameworks */,
+				EE9918840D91698A00FB06D5 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EE99187C0D91698A00FB06D5 /* PBXTargetDependency */,
+				EE9918B40D91707900FB06D5 /* PBXTargetDependency */,
+				EE9918960D916AA200FB06D5 /* PBXTargetDependency */,
+				EE9918B20D91707300FB06D5 /* PBXTargetDependency */,
+			);
+			name = "emailrelay-submit";
+			productInstallPath = "$(HOME)/bin";
+			productName = emailrelay;
+			productReference = EE9918880D91698A00FB06D5 /* emailrelay-submit */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1330,6 +1645,12 @@
 				EE303E110D329BAA00D840F2 /* gpop */,
 				EE303E220D329BFF00D840F2 /* gsmtp */,
 				EE303E4E0D329D8F00D840F2 /* gssl */,
+				EE9918250D91664E00FB06D5 /* emailrelay-filter-copy */,
+				EE99184B0D91693000FB06D5 /* emailrelay-start */,
+				EE99185B0D91695000FB06D5 /* emailrelay-passwd */,
+				EE99186B0D91697900FB06D5 /* emailrelay-poke */,
+				EE99187B0D91698A00FB06D5 /* emailrelay-submit */,
+				EE9918CC0D91760400FB06D5 /* all-targets */,
 			);
 		};
 /* End PBXProject section */
@@ -1483,7 +1804,56 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EE303E520D329D9E00D840F2 /* gssl_none.cpp in Sources */,
+				EE9919380D91A4F500FB06D5 /* gssl_openssl.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE9918300D91664E00FB06D5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE9918310D91664E00FB06D5 /* empty.cpp in Sources */,
+				EE9918420D91670200FB06D5 /* filter_copy.cpp in Sources */,
+				EE9918440D91673900FB06D5 /* filter.cpp in Sources */,
+				EE9918460D91675100FB06D5 /* legal.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE99184E0D91693000FB06D5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE99184F0D91693000FB06D5 /* empty.cpp in Sources */,
+				EE99188D0D9169FE00FB06D5 /* start.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE99185E0D91695000FB06D5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE99185F0D91695000FB06D5 /* empty.cpp in Sources */,
+				EE99188F0D916A3600FB06D5 /* passwd.cpp in Sources */,
+				EE9918A50D916B1A00FB06D5 /* legal.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE99186E0D91697900FB06D5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE99186F0D91697900FB06D5 /* empty.cpp in Sources */,
+				EE9918900D916A4E00FB06D5 /* poke.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE99187E0D91698A00FB06D5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE99187F0D91698A00FB06D5 /* empty.cpp in Sources */,
+				EE9918920D916A7400FB06D5 /* submit.cpp in Sources */,
+				EE9918940D916A8600FB06D5 /* legal.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1515,6 +1885,66 @@
 			target = EE303E4E0D329D8F00D840F2 /* gssl */;
 			targetProxy = EE303E620D32A86200D840F2 /* PBXContainerItemProxy */;
 		};
+		EE9918260D91664E00FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE303D330D32714D00D840F2 /* glib */;
+			targetProxy = EE9918270D91664E00FB06D5 /* PBXContainerItemProxy */;
+		};
+		EE99185C0D91695000FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE303D330D32714D00D840F2 /* glib */;
+			targetProxy = EE99185D0D91695000FB06D5 /* PBXContainerItemProxy */;
+		};
+		EE99187C0D91698A00FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE303D330D32714D00D840F2 /* glib */;
+			targetProxy = EE99187D0D91698A00FB06D5 /* PBXContainerItemProxy */;
+		};
+		EE9918960D916AA200FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE303DE60D3298F600D840F2 /* gnet */;
+			targetProxy = EE9918950D916AA200FB06D5 /* PBXContainerItemProxy */;
+		};
+		EE9918B20D91707300FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE303E220D329BFF00D840F2 /* gsmtp */;
+			targetProxy = EE9918B10D91707300FB06D5 /* PBXContainerItemProxy */;
+		};
+		EE9918B40D91707900FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE303E4E0D329D8F00D840F2 /* gssl */;
+			targetProxy = EE9918B30D91707900FB06D5 /* PBXContainerItemProxy */;
+		};
+		EE9918D10D91762800FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8DD76F620486A84900D96B5E /* emailrelay */;
+			targetProxy = EE9918D00D91762800FB06D5 /* PBXContainerItemProxy */;
+		};
+		EE9918DD0D91762800FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE9918250D91664E00FB06D5 /* emailrelay-filter-copy */;
+			targetProxy = EE9918DC0D91762800FB06D5 /* PBXContainerItemProxy */;
+		};
+		EE9918DF0D91762800FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE99184B0D91693000FB06D5 /* emailrelay-start */;
+			targetProxy = EE9918DE0D91762800FB06D5 /* PBXContainerItemProxy */;
+		};
+		EE9918E10D91762800FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE99185B0D91695000FB06D5 /* emailrelay-passwd */;
+			targetProxy = EE9918E00D91762800FB06D5 /* PBXContainerItemProxy */;
+		};
+		EE9918E30D91762800FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE99186B0D91697900FB06D5 /* emailrelay-poke */;
+			targetProxy = EE9918E20D91762800FB06D5 /* PBXContainerItemProxy */;
+		};
+		EE9918E50D91762800FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE99187B0D91698A00FB06D5 /* emailrelay-submit */;
+			targetProxy = EE9918E40D91762800FB06D5 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -1529,6 +1959,8 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"_GLIBCXX_DEBUG=1",
 					"_GLIBCXX_DEBUG_PEDANTIC=1",
+					"G_SYSCONFDIR=\\\"/Applications/E-MailRelay\\\"",
+					"G_SPOOLDIR=\\\"/Library/Mail/Spool\\\"",
 					"G_UNIX=1",
 					"_DEBUG=1",
 				);
@@ -1539,6 +1971,8 @@
 					"-lgnet",
 					"-lgssl",
 					"-lglib",
+					"-lssl",
+					"-lcrypto",
 				);
 				PRODUCT_NAME = emailrelay;
 				ZERO_LINK = YES;
@@ -1561,6 +1995,8 @@
 					"-lgnet",
 					"-lgssl",
 					"-lglib",
+					"-lssl",
+					"-lcrypto",
 				);
 				PRODUCT_NAME = emailrelay;
 			};
@@ -1573,6 +2009,8 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"_DEBUG=1",
 					"G_UNIX=1",
+					"G_SYSCONFDIR=\\\"/Applications/E-MailRelay\\\"",
+					"G_SPOOLDIR=\\\"/Library/Mail/Spool\\\"",
 					"_GLIBCXX_DEBUG=1",
 					"_GLIBCXX_DEBUG_PEDANTIC=1",
 				);
@@ -1596,7 +2034,11 @@
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = src/glib/gdef.h;
-				GCC_PREPROCESSOR_DEFINITIONS = "G_UNIX=1";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"G_UNIX=1",
+					"G_SYSCONFDIR=\\\"/Applications/E-MailRelay\\\"",
+					"G_SPOOLDIR=\\\"/Library/Mail/Spool\\\"",
+				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
@@ -1752,6 +2194,232 @@
 			};
 			name = Release;
 		};
+		EE99183D0D91664E00FB06D5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_GLIBCXX_DEBUG=1",
+					"_GLIBCXX_DEBUG_PEDANTIC=1",
+					"G_SYSCONFDIR=\\\"/Applications/E-MailRelay\\\"",
+					"G_SPOOLDIR=\\\"/Library/Mail/Spool\\\"",
+					"G_UNIX=1",
+					"_DEBUG=1",
+				);
+				INFOPLIST_FILE = "/Users/graeme/build.xcode/emailrelay-1.8/Info copy.plist";
+				INSTALL_PATH = /usr/local/bin;
+				OTHER_LDFLAGS = "-lglib";
+				PRODUCT_NAME = "emailrelay-filter-copy";
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		EE99183E0D91664E00FB06D5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EXECUTABLE_EXTENSION = .app;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_MODEL_TUNING = G5;
+				INFOPLIST_FILE = "/Users/graeme/build.xcode/emailrelay-1.8/Info copy.plist";
+				INSTALL_PATH = /usr/local/bin;
+				MACH_O_TYPE = mh_execute;
+				OTHER_LDFLAGS = "-lglib";
+				PRODUCT_NAME = "emailrelay-filter-copy";
+			};
+			name = Release;
+		};
+		EE9918560D91693000FB06D5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_GLIBCXX_DEBUG=1",
+					"_GLIBCXX_DEBUG_PEDANTIC=1",
+					"G_SYSCONFDIR=\\\"/Applications/E-MailRelay\\\"",
+					"G_SPOOLDIR=\\\"/Library/Mail/Spool\\\"",
+					"G_UNIX=1",
+					"_DEBUG=1",
+				);
+				INFOPLIST_FILE = "/Users/graeme/build.xcode/emailrelay-1.8/Info copy 2.plist";
+				INSTALL_PATH = /usr/local/bin;
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "emailrelay-start";
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		EE9918570D91693000FB06D5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EXECUTABLE_EXTENSION = .app;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_MODEL_TUNING = G5;
+				INFOPLIST_FILE = "/Users/graeme/build.xcode/emailrelay-1.8/Info copy 2.plist";
+				INSTALL_PATH = /usr/local/bin;
+				MACH_O_TYPE = mh_execute;
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "emailrelay-start";
+			};
+			name = Release;
+		};
+		EE9918660D91695000FB06D5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_GLIBCXX_DEBUG=1",
+					"_GLIBCXX_DEBUG_PEDANTIC=1",
+					"G_SYSCONFDIR=\\\"/Applications/E-MailRelay\\\"",
+					"G_SPOOLDIR=\\\"/Library/Mail/Spool\\\"",
+					"G_UNIX=1",
+					"_DEBUG=1",
+				);
+				INFOPLIST_FILE = "/Users/graeme/build.xcode/emailrelay-1.8/Info copy 3.plist";
+				INSTALL_PATH = /usr/local/bin;
+				OTHER_LDFLAGS = "-lglib";
+				PRODUCT_NAME = "emailrelay-passwd";
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		EE9918670D91695000FB06D5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EXECUTABLE_EXTENSION = .app;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_MODEL_TUNING = G5;
+				INFOPLIST_FILE = "/Users/graeme/build.xcode/emailrelay-1.8/Info copy 3.plist";
+				INSTALL_PATH = /usr/local/bin;
+				MACH_O_TYPE = mh_execute;
+				OTHER_LDFLAGS = "-lglib";
+				PRODUCT_NAME = "emailrelay-passwd";
+			};
+			name = Release;
+		};
+		EE9918760D91697900FB06D5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_GLIBCXX_DEBUG=1",
+					"_GLIBCXX_DEBUG_PEDANTIC=1",
+					"G_SYSCONFDIR=\\\"/Applications/E-MailRelay\\\"",
+					"G_SPOOLDIR=\\\"/Library/Mail/Spool\\\"",
+					"G_UNIX=1",
+					"_DEBUG=1",
+				);
+				INFOPLIST_FILE = "/Users/graeme/build.xcode/emailrelay-1.8/Info copy 4.plist";
+				INSTALL_PATH = /usr/local/bin;
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "emailrelay-poke";
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		EE9918770D91697900FB06D5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EXECUTABLE_EXTENSION = .app;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_MODEL_TUNING = G5;
+				INFOPLIST_FILE = "/Users/graeme/build.xcode/emailrelay-1.8/Info copy 4.plist";
+				INSTALL_PATH = /usr/local/bin;
+				MACH_O_TYPE = mh_execute;
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "emailrelay-poke";
+			};
+			name = Release;
+		};
+		EE9918860D91698A00FB06D5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_GLIBCXX_DEBUG=1",
+					"_GLIBCXX_DEBUG_PEDANTIC=1",
+					"G_SYSCONFDIR=\\\"/Applications/E-MailRelay\\\"",
+					"G_SPOOLDIR=\\\"/Library/Mail/Spool\\\"",
+					"G_UNIX=1",
+					"_DEBUG=1",
+				);
+				INFOPLIST_FILE = "/Users/graeme/build.xcode/emailrelay-1.8/Info copy 5.plist";
+				INSTALL_PATH = /usr/local/bin;
+				OTHER_LDFLAGS = (
+					"-lgsmtp",
+					"-lgnet",
+					"-lgssl",
+					"-lglib",
+				);
+				PRODUCT_NAME = "emailrelay-submit";
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		EE9918870D91698A00FB06D5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EXECUTABLE_EXTENSION = .app;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_MODEL_TUNING = G5;
+				INFOPLIST_FILE = "/Users/graeme/build.xcode/emailrelay-1.8/Info copy 5.plist";
+				INSTALL_PATH = /usr/local/bin;
+				MACH_O_TYPE = mh_execute;
+				OTHER_LDFLAGS = (
+					"-lgsmtp",
+					"-lgnet",
+					"-lgssl",
+					"-lglib",
+				);
+				PRODUCT_NAME = "emailrelay-submit";
+			};
+			name = Release;
+		};
+		EE9918CD0D91760500FB06D5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = "all-targets";
+			};
+			name = Debug;
+		};
+		EE9918CE0D91760500FB06D5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				PRODUCT_NAME = "all-targets";
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1814,6 +2482,60 @@
 			buildConfigurations = (
 				EE303E500D329D9000D840F2 /* Debug */,
 				EE303E510D329D9000D840F2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EE99183C0D91664E00FB06D5 /* Build configuration list for PBXNativeTarget "emailrelay-filter-copy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE99183D0D91664E00FB06D5 /* Debug */,
+				EE99183E0D91664E00FB06D5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EE9918550D91693000FB06D5 /* Build configuration list for PBXNativeTarget "emailrelay-start" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE9918560D91693000FB06D5 /* Debug */,
+				EE9918570D91693000FB06D5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EE9918650D91695000FB06D5 /* Build configuration list for PBXNativeTarget "emailrelay-passwd" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE9918660D91695000FB06D5 /* Debug */,
+				EE9918670D91695000FB06D5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EE9918750D91697900FB06D5 /* Build configuration list for PBXNativeTarget "emailrelay-poke" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE9918760D91697900FB06D5 /* Debug */,
+				EE9918770D91697900FB06D5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EE9918850D91698A00FB06D5 /* Build configuration list for PBXNativeTarget "emailrelay-submit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE9918860D91698A00FB06D5 /* Debug */,
+				EE9918870D91698A00FB06D5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EE9918CF0D91762300FB06D5 /* Build configuration list for PBXAggregateTarget "all-targets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE9918CD0D91760500FB06D5 /* Debug */,
+				EE9918CE0D91760500FB06D5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

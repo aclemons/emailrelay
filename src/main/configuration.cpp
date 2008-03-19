@@ -103,13 +103,6 @@ bool Main::Configuration::closeStderr() const
 		contains("as-server") ;
 }
 
-bool Main::Configuration::immediate() const
-{
-	return
-		contains("immediate") ||
-		contains("as-proxy") ;
-}
-
 bool Main::Configuration::daemon() const
 {
 	return !contains("no-daemon") && !contains("as-client") ;
@@ -132,7 +125,7 @@ std::string Main::Configuration::serverAddress() const
 	return contains(key) ? value(key) : std::string() ;
 }
 
-bool Main::Configuration::doForwarding() const
+bool Main::Configuration::doForwardingOnStartup() const
 {
 	return contains("forward") || contains("as-client") ;
 }
@@ -142,14 +135,49 @@ bool Main::Configuration::doServing() const
 	return !contains("dont-serve") && !contains("as-client") ;
 }
 
+bool Main::Configuration::immediate() const
+{
+	return
+		contains("immediate") ||
+		contains("as-proxy") ;
+}
+
 bool Main::Configuration::doPolling() const
 {
-	return contains( "poll" ) ;
+	return contains("poll") && pollingTimeout() > 0U ;
 }
 
 unsigned int Main::Configuration::pollingTimeout() const
 {
 	return value( "poll" , 0U ) ;
+}
+
+bool Main::Configuration::pollingLog() const
+{
+	// dont log if polling very frequently
+	return doPolling() && pollingTimeout() > 60U ;
+}
+
+bool Main::Configuration::forwardingOnStore() const
+{
+	// this is not settable for now -- the 103 exit
+	// code has a similar effect -- see also comments below
+	return false ;
+}
+
+bool Main::Configuration::forwardingOnDisconnect() const
+{
+	// TODO -- it not completely logical to tie this in with
+	// polling, but it avoids the situation where messages can
+	// get missed if a polling run is already in progress when
+	// a forwarding-on-disconnect event occurs -- the
+	// scan of the spool directory is done at the start
+	// of the polling run -- the fix could be to allow 
+	// clients to run in parallel in the Run class, or
+	// have a method to force the client to rescan the
+	// directory before finishing
+
+	return contains("poll") && pollingTimeout() == 0U ; 
 }
 
 unsigned int Main::Configuration::promptTimeout() const

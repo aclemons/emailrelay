@@ -78,9 +78,14 @@ G::Path Dir::os_spool() const
 	return windows() + "spool" + "emailrelay" ;
 }
 
-G::Path Dir::os_pid() const
+G::Path Dir::os_pid()
 {
-	return special("programs") + "emailrelay" ; // was windows()
+	return G::Path() ; // rely on os_pid_default()
+}
+
+G::Path Dir::os_pid_default( const G::Path & , const G::Path & config )
+{
+	return config ; 
 }
 
 G::Path Dir::os_boot()

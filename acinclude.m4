@@ -579,7 +579,7 @@ AC_DEFUN([ENABLE_STATIC_LINKING],
 	if test "$enable_static_linking" = "yes"
 	then
 		STATIC_START="-Xlinker -Bstatic"
-		STATIC_END=""
+		STATIC_END="-Xlinker -Bdynamic -ldl"
 	else
 		STATIC_START=""
 		STATIC_END=""

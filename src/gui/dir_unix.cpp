@@ -107,7 +107,7 @@ G::Path Dir::os_server( const G::Path & install )
 	return install + "sbin" + "emailrelay" ; // should use G_SBINDIR
 }
 
-G::Path Dir::os_bootcopy( const G::Path & , const G::Path & install )
+G::Path Dir::os_bootcopy( const G::Path & , const G::Path & )
 {
 	return G::Path() ;
 }
@@ -137,9 +137,14 @@ G::Path Dir::cwd()
 	return G::Path( s ) ;
 }
 
-G::Path Dir::os_pid() const
+G::Path Dir::os_pid()
 {
 	return oneOf( "/var/run" , "/tmp" ) ;
+}
+
+G::Path Dir::os_pid_default( const G::Path & dir_pid , const G::Path & )
+{
+	return dir_pid ;
 }
 
 G::Path Dir::special( const std::string & type )

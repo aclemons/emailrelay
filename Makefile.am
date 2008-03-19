@@ -27,7 +27,7 @@ EXTRA_DIST = \
 	emailrelay-gui.xcodeproj/project.pbxproj \
 	emailrelay.xcodeproj/project.pbxproj 
 
-SUBDIRS = src bin lib etc doc test extra
+SUBDIRS = bin src lib etc doc test extra
 
 e_doc_DATA = NEWS README ChangeLog
 

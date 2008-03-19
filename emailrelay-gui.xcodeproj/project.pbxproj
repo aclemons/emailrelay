@@ -6,6 +6,22 @@
 	objectVersion = 44;
 	objects = {
 
+/* Begin PBXAggregateTarget section */
+		EE99190B0D9193D100FB06D5 /* all-targets */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = EE9919150D91940100FB06D5 /* Build configuration list for PBXAggregateTarget "all-targets" */;
+			buildPhases = (
+			);
+			dependencies = (
+				EE99190F0D9193DC00FB06D5 /* PBXTargetDependency */,
+				EE9919110D9193DC00FB06D5 /* PBXTargetDependency */,
+				EE9919130D9193DC00FB06D5 /* PBXTargetDependency */,
+			);
+			name = "all-targets";
+			productName = "all-targets";
+		};
+/* End PBXAggregateTarget section */
+
 /* Begin PBXBuildFile section */
 		EE486FEF0D3E3EA900AB4CC6 /* dir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE486FCA0D3E3EA900AB4CC6 /* dir.cpp */; };
 		EE486FF20D3E3EA900AB4CC6 /* gdialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE486FD00D3E3EA900AB4CC6 /* gdialog.cpp */; };
@@ -26,6 +42,30 @@
 		EEC342FA0D50F72800DD9918 /* unpackmain.c in Sources */ = {isa = PBXBuildFile; fileRef = EEC342F90D50F72800DD9918 /* unpackmain.c */; };
 		EEC342FC0D50F73900DD9918 /* unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = EE486FEC0D3E3EA900AB4CC6 /* unpack.c */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		EE99190E0D9193DC00FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8DD76F620486A84900D96B5E;
+			remoteInfo = "emailrelay-gui";
+		};
+		EE9919100D9193DC00FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EEC342DE0D50F62E00DD9918;
+			remoteInfo = "emailrelay-start";
+		};
+		EE9919120D9193DC00FB06D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EEC342EC0D50F6B600DD9918;
+			remoteInfo = "emailrelay-unpack";
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		8DD76F690486A84900D96B5E /* CopyFiles */ = {
@@ -82,8 +122,8 @@
 		EEC342C40D50E0D800DD9918 /* guistart.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = guistart.cpp; sourceTree = "<group>"; };
 		EEC342C50D50E0D800DD9918 /* state.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = state.cpp; sourceTree = "<group>"; };
 		EEC342CB0D50E1D500DD9918 /* state.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = state.h; sourceTree = "<group>"; };
-		EEC342DF0D50F62E00DD9918 /* emailrelay-start */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; name = "emailrelay-start"; path = "build/Release/emailrelay-start"; sourceTree = "<group>"; };
-		EEC342ED0D50F6B600DD9918 /* emailrelay-unpack */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; name = "emailrelay-unpack"; path = "build/Release/emailrelay-unpack"; sourceTree = "<group>"; };
+		EEC342DF0D50F62E00DD9918 /* emailrelay-start-gui */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "emailrelay-start-gui"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EEC342ED0D50F6B600DD9918 /* emailrelay-unpack */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "emailrelay-unpack"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEC342F90D50F72800DD9918 /* unpackmain.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = unpackmain.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -126,7 +166,7 @@
 			isa = PBXGroup;
 			children = (
 				8DD76F6C0486A84900D96B5E /* emailrelay-gui */,
-				EEC342DF0D50F62E00DD9918 /* emailrelay-start */,
+				EEC342DF0D50F62E00DD9918 /* emailrelay-start-gui */,
 				EEC342ED0D50F6B600DD9918 /* emailrelay-unpack */,
 			);
 			name = Products;
@@ -211,9 +251,9 @@
 			productReference = 8DD76F6C0486A84900D96B5E /* emailrelay-gui */;
 			productType = "com.apple.product-type.tool";
 		};
-		EEC342DE0D50F62E00DD9918 /* emailrelay-start */ = {
+		EEC342DE0D50F62E00DD9918 /* emailrelay-start-gui */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = EEC342E30D50F64F00DD9918 /* Build configuration list for PBXNativeTarget "emailrelay-start" */;
+			buildConfigurationList = EEC342E30D50F64F00DD9918 /* Build configuration list for PBXNativeTarget "emailrelay-start-gui" */;
 			buildPhases = (
 				EEC342DC0D50F62E00DD9918 /* Sources */,
 				EEC342DD0D50F62E00DD9918 /* Frameworks */,
@@ -222,9 +262,9 @@
 			);
 			dependencies = (
 			);
-			name = "emailrelay-start";
+			name = "emailrelay-start-gui";
 			productName = "emailrelay-start";
-			productReference = EEC342DF0D50F62E00DD9918 /* emailrelay-start */;
+			productReference = EEC342DF0D50F62E00DD9918 /* emailrelay-start-gui */;
 			productType = "com.apple.product-type.tool";
 		};
 		EEC342EC0D50F6B600DD9918 /* emailrelay-unpack */ = {
@@ -256,8 +296,9 @@
 			projectRoot = "";
 			targets = (
 				8DD76F620486A84900D96B5E /* emailrelay-gui */,
-				EEC342DE0D50F62E00DD9918 /* emailrelay-start */,
+				EEC342DE0D50F62E00DD9918 /* emailrelay-start-gui */,
 				EEC342EC0D50F6B600DD9918 /* emailrelay-unpack */,
+				EE99190B0D9193D100FB06D5 /* all-targets */,
 			);
 		};
 /* End PBXProject section */
@@ -327,6 +368,24 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		EE99190F0D9193DC00FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8DD76F620486A84900D96B5E /* emailrelay-gui */;
+			targetProxy = EE99190E0D9193DC00FB06D5 /* PBXContainerItemProxy */;
+		};
+		EE9919110D9193DC00FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EEC342DE0D50F62E00DD9918 /* emailrelay-start-gui */;
+			targetProxy = EE9919100D9193DC00FB06D5 /* PBXContainerItemProxy */;
+		};
+		EE9919130D9193DC00FB06D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EEC342EC0D50F6B600DD9918 /* emailrelay-unpack */;
+			targetProxy = EE9919120D9193DC00FB06D5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
 		1DEB923208733DC60010E9CD /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -352,7 +411,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_MODEL_TUNING = G5;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INSTALL_PATH = /usr/local/bin;
 				PRODUCT_NAME = "emailrelay-gui";
 			};
@@ -419,6 +480,27 @@
 			};
 			name = Release;
 		};
+		EE99190C0D9193D200FB06D5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = "all-targets";
+			};
+			name = Debug;
+		};
+		EE99190D0D9193D200FB06D5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				PRODUCT_NAME = "all-targets";
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
 		EEC342E10D50F63100DD9918 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -429,7 +511,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				INSTALL_PATH = /usr/local/bin;
 				PREBINDING = NO;
-				PRODUCT_NAME = "emailrelay-start";
+				PRODUCT_NAME = "emailrelay-start-gui";
 				ZERO_LINK = YES;
 			};
 			name = Debug;
@@ -443,7 +525,7 @@
 				GCC_MODEL_TUNING = G5;
 				INSTALL_PATH = /usr/local/bin;
 				PREBINDING = NO;
-				PRODUCT_NAME = "emailrelay-start";
+				PRODUCT_NAME = "emailrelay-start-gui";
 				ZERO_LINK = NO;
 			};
 			name = Release;
@@ -498,7 +580,16 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		EEC342E30D50F64F00DD9918 /* Build configuration list for PBXNativeTarget "emailrelay-start" */ = {
+		EE9919150D91940100FB06D5 /* Build configuration list for PBXAggregateTarget "all-targets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE99190C0D9193D200FB06D5 /* Debug */,
+				EE99190D0D9193D200FB06D5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EEC342E30D50F64F00DD9918 /* Build configuration list for PBXNativeTarget "emailrelay-start-gui" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EEC342E10D50F63100DD9918 /* Debug */,

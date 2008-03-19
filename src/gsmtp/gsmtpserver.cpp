@@ -98,6 +98,8 @@ void GSmtp::ServerPeer::onDelete( const std::string & reason )
 {
 	G_LOG_S( "GSmtp::ServerPeer: smtp connection closed: " << reason << (reason.empty()?"":": ")
 		<< peerAddress().second.displayString() ) ;
+
+	m_server.eventSignal().emit( "done" , reason ) ;
 }
 
 void GSmtp::ServerPeer::onSendComplete()
@@ -151,6 +153,11 @@ GSmtp::Server::~Server()
 {
 	// early cleanup -- not really required
 	serverCleanup() ; // base class
+}
+
+G::Signal2<std::string,std::string> & GSmtp::Server::eventSignal()
+{
+	return m_event_signal ;
 }
 
 void GSmtp::Server::report() const

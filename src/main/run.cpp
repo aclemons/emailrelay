@@ -63,22 +63,24 @@ Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string &
 	m_output(output) ,
 	m_switch_spec(switch_spec) ,
 	m_arg(arg) ,
-	m_polling_client_resolver_info(std::string(),std::string()) ,
+	m_client_resolver_info(std::string(),std::string()) ,
 	m_prepare_error(false)
 {
-	m_polling_client.doneSignal().connect( G::slot(*this,&Run::pollingClientDone) ) ;
-	m_polling_client.eventSignal().connect( G::slot(*this,&Run::clientEvent) ) ;
+	m_client.doneSignal().connect( G::slot(*this,&Run::pollingClientDone) ) ;
+	m_client.eventSignal().connect( G::slot(*this,&Run::clientEvent) ) ;
 }
 
 Main::Run::~Run()
 {
 	if( m_store.get() ) m_store->signal().disconnect() ;
-	m_polling_client.doneSignal().disconnect() ;
-	m_polling_client.eventSignal().disconnect() ;
+	if( m_smtp_server.get() ) m_smtp_server->eventSignal().disconnect() ;
+	m_client.doneSignal().disconnect() ;
+	m_client.eventSignal().disconnect() ;
 
 	// avoid 'still reachable' in valgrind leak checks
-	m_polling_client.reset() ;
+	m_client.reset() ;
 	m_poll_timer <<= 0 ;
+	m_forwarding_timer <<= 0 ;
 	m_admin_server <<= 0 ;
 	m_pop_secrets <<= 0 ;
 	m_client_secrets <<= 0 ;
@@ -305,12 +307,12 @@ void Main::Run::runCore()
 
 	// run as forwarding agent
 	//
-	if( cfg.doForwarding() )
+	if( cfg.doForwardingOnStartup() )
 	{
 		if( m_store->empty() )
 			cl().showNoop( true ) ;
 		else
-			doForwarding( *m_store.get() , *m_client_secrets.get() , *event_loop.get() ) ;
+			doForwardingOnStartup( *m_store.get() , *m_client_secrets.get() , *event_loop.get() ) ;
 	}
 
 	// run as storage daemon
@@ -328,10 +330,9 @@ void Main::Run::doServing( const GSmtp::Secrets & client_secrets ,
 	G::PidFile & pid_file , GNet::EventLoop & event_loop )
 {
 	const Configuration & cfg = config() ;
-	std::auto_ptr<GSmtp::Server> smtp_server ;
 	if( cfg.doSmtp() )
 	{
-		smtp_server <<= new GSmtp::Server( 
+		m_smtp_server <<= new GSmtp::Server( 
 			store , 
 			client_secrets ,
 			server_secrets , 
@@ -339,6 +340,8 @@ void Main::Run::doServing( const GSmtp::Secrets & client_secrets ,
 			cfg.immediate() ? cfg.serverAddress() : std::string() ,
 			cfg.connectionTimeout() ,
 			clientConfig() ) ;
+
+		m_smtp_server->eventSignal().connect( G::slot(*this,&Run::serverEvent) ) ;
 	}
 
  #ifndef USE_NO_POP
@@ -360,8 +363,13 @@ void Main::Run::doServing( const GSmtp::Secrets & client_secrets ,
 
 	if( cfg.doPolling() )
 	{
-		m_poll_timer <<= new GNet::Timer<Run>(*this,&Run::onPollTimeout,*this) ; // after GNet::TimerList constructed
+		m_poll_timer <<= new GNet::Timer<Run>(*this,&Run::onPollTimeout,*this) ;
 		m_poll_timer->startTimer( cfg.pollingTimeout() ) ;
+	}
+
+	if( cfg.forwardingOnStore() || cfg.forwardingOnDisconnect() )
+	{
+		m_forwarding_timer <<= new GNet::Timer<Run>(*this,&Run::onForwardingTimeout,*this) ;
 	}
 
 	{
@@ -372,16 +380,20 @@ void Main::Run::doServing( const GSmtp::Secrets & client_secrets ,
 	}
 
 	closeMoreFiles() ;
-	if( smtp_server.get() ) smtp_server->report() ;
+	if( m_smtp_server.get() ) m_smtp_server->report() ;
 	if( m_admin_server.get() ) Admin::report( *m_admin_server.get() ) ;
  #ifndef USE_NO_POP
 	if( pop_server.get() ) pop_server->report() ;
  #endif
+
 	event_loop.run() ;
+
+	if( m_smtp_server.get() ) m_smtp_server->eventSignal().disconnect() ;
+	m_smtp_server <<= 0 ;
 	m_admin_server <<= 0 ;
 }
 
-void Main::Run::doForwarding( GSmtp::MessageStore & store , const GSmtp::Secrets & secrets , 
+void Main::Run::doForwardingOnStartup( GSmtp::MessageStore & store , const GSmtp::Secrets & secrets , 
 	GNet::EventLoop & event_loop )
 {
 	const Configuration & cfg = config() ;
@@ -454,53 +466,62 @@ GSmtp::Client::Config Main::Run::clientConfig() const
 			cfg.connectionTimeout() ) ;
 }
 
-void Main::Run::onPollTimeout()
-{
-	G_DEBUG( "Main::Run::onPollTimeout" ) ;
-
-	m_poll_timer->startTimer( config().pollingTimeout() ) ;
-
-	if( m_polling_client.busy() )
-	{
-		G_LOG( "Main::Run::onTimeout: polling: still busy from last time" ) ;
-		emit( "poll" , "busy" , "" ) ;
-	}
-	else
-	{
-		emit( "poll" , "start" , "" ) ;
-		std::string error = doPoll() ;
-		emit( "poll" , "end" , error ) ;
-	}
-}
-
 void Main::Run::onException( std::exception & e )
 {
 	// gets here if onTimeout() throws
-	G_ERROR( "Main::Run::onException: exception while polling: " << e.what() ) ;
+	G_ERROR( "Main::Run::onException: exception while forwarding: " << e.what() ) ;
 }
 
-std::string Main::Run::doPoll()
+void Main::Run::onPollTimeout()
+{
+	G_DEBUG( "Main::Run::onPollTimeout" ) ;
+	m_poll_timer->startTimer( config().pollingTimeout() ) ;
+	doForwarding( "poll" ) ;
+}
+
+void Main::Run::onForwardingTimeout()
+{
+	G_DEBUG( "Main::Run::onForwardingTimeout" ) ;
+	doForwarding( "forward" ) ;
+}
+
+void Main::Run::doForwarding( const std::string & event_key )
+{
+	if( m_client.busy() )
+	{
+		G_DEBUG( "Main::Run::doForwarding: still busy from last time" ) ;
+		emit( event_key , "busy" , "" ) ;
+	}
+	else
+	{
+		emit( event_key , "start" , "" ) ;
+		std::string error = doForwardingCore() ;
+		emit( event_key , "end" , error ) ;
+	}
+}
+
+std::string Main::Run::doForwardingCore()
 {
 	try
 	{
 		const Configuration & cfg = config() ;
 
-		G_DEBUG( "Main::Run::doPoll: polling" ) ;
-		if( cfg.pollingTimeout() > 60U ) // avoid log spam
-			G_LOG( "Main::Run::doPoll: polling" ) ;
+		G_DEBUG( "Main::Run::doForwarding: polling" ) ;
+		if( cfg.pollingLog() )
+			G_LOG( "Main::Run::doForwarding: polling" ) ;
 
 		if( ! m_store->empty() )
 		{
-			m_polling_client.reset( new GSmtp::Client( GNet::ResolverInfo(cfg.serverAddress()) ,
+			m_client.reset( new GSmtp::Client( GNet::ResolverInfo(cfg.serverAddress()) ,
 				*m_client_secrets.get() , clientConfig() ) ) ;
 
-			m_polling_client->sendMessages( *m_store.get() ) ;
+			m_client->sendMessages( *m_store.get() ) ;
 		}
 		return std::string() ;
 	}
 	catch( std::exception & e )
 	{
-		G_ERROR( "Main::Run::doPoll: polling: " << e.what() ) ;
+		G_ERROR( "Main::Run::doForwarding: polling: " << e.what() ) ;
 		return e.what() ;
 	}
 }
@@ -539,14 +560,33 @@ void Main::Run::clientEvent( std::string s1 , std::string s2 )
 	emit( "client" , s1 , s2 ) ;
 }
 
+void Main::Run::serverEvent( std::string s1 , std::string )
+{
+	if( s1 == "done" && config().forwardingOnDisconnect() )
+	{
+		G_ASSERT( m_forwarding_timer.get() ) ;
+		m_forwarding_timer->cancelTimer() ;
+		m_forwarding_timer->startTimer( 0U ) ;
+	}
+}
+
 void Main::Run::raiseStoreEvent( bool repoll )
 {
 	emit( "store" , "update" , repoll ? std::string("poll") : std::string() ) ;
-	if( repoll && config().doPolling() )
+
+	const bool expiry_forced_by_filter = repoll ;
+	if( config().doPolling() && expiry_forced_by_filter )
 	{
-		G_LOG( "Main::Run::raiseStoreEvent: polling timeout forced" ) ;
+		G_ASSERT( m_poll_timer.get() ) ;
 		m_poll_timer->cancelTimer() ;
 		m_poll_timer->startTimer( 0U ) ;
+	}
+
+	if( config().forwardingOnStore() )
+	{
+		G_ASSERT( m_forwarding_timer.get() ) ;
+		m_forwarding_timer->cancelTimer() ;
+		m_forwarding_timer->startTimer( 0U ) ;
 	}
 }
 

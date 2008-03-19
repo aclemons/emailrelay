@@ -23,13 +23,13 @@ SETUP_BUNDLE=E-MailRelay-Install
 IMAGE=E-MailRelay.dmg
 
 if MAC
-MAC_EXTRA_DIST = dir_unix.cpp boot_unix.cpp glink_unix.cpp
+MAC_EXTRA_DIST = dir_unix.cpp boot_unix.cpp glink_unix.cpp emailrelay-icon.icns
 MAC_SOURCES = dir_mac.cpp boot_mac.cpp glink_mac.cpp
 MAC_NOINST = $(BUNDLE).app
 MAC_PROGS = emailrelay-start-gui emailrelay-unpack
 MAKE_SETUP_STUB = payload-stub
 else
-MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp guistart.cpp
+MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp guistart.cpp emailrelay-icon.icns
 MAC_SOURCES = dir_unix.cpp boot_unix.cpp glink_unix.cpp
 MAC_PROGS =
 MAC_NOINST =
@@ -179,7 +179,7 @@ emailrelay-setup: pack $(MAKE_SETUP_STUB) ../../bin/make-setup.sh
 	@chmod +x $@
 
 payload: pack payload-stub ../../bin/make-setup.sh
-	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ payload-stub pack "$(sbindir)" "$(e_sysconfdir)" "$(e_initdir)"
+	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ payload-stub pack "$(top_srcdir)/src/gui/emailrelay-icon.png"
 
 $(SETUP_BUNDLE).app: emailrelay-gui.real payload ../../bin/make-bundle.sh
 	../../bin/make-bundle.sh -f "$(SETUP_BUNDLE)" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
