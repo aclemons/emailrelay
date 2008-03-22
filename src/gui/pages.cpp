@@ -295,12 +295,15 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const State & state , const std::stri
 	QGroupBox * server_type_group = new QGroupBox(tr("Server")) ;
 	server_type_group->setLayout( server_type_box_layout ) ;
 
-	m_immediate_checkbox = new QRadioButton(tr("&After a message is received"));
+	m_immediate_checkbox = new QRadioButton(tr("&Synchronously"));
+	m_on_disconnect_checkbox = new QRadioButton(tr("When client &disconnects"));
 	m_periodically_checkbox = new QRadioButton(tr("&Check periodically"));
 	m_on_demand_checkbox = new QRadioButton(tr("&Only when triggered"));
 
 	if( state.value("forward-immediate",true) )
 		m_immediate_checkbox->setChecked(true) ;
+	else if( state.value("forward-on-disconnect",false) )
+		m_on_disconnect_checkbox->setChecked(true) ;
 	else if( state.value("forward-poll",false) )
 		m_periodically_checkbox->setChecked(true) ;
 	else
@@ -322,6 +325,7 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const State & state , const std::stri
 
 	QVBoxLayout * forwarding_box_layout = new QVBoxLayout ;
 	forwarding_box_layout->addWidget( m_immediate_checkbox ) ;
+	forwarding_box_layout->addWidget( m_on_disconnect_checkbox ) ;
 	{
 		QHBoxLayout * inner = new QHBoxLayout ;
 		inner->addWidget( m_periodically_checkbox ) ;
@@ -343,6 +347,7 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const State & state , const std::stri
 
 	connect( m_pop_checkbox , SIGNAL(toggled(bool)) , this , SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_smtp_checkbox , SIGNAL(toggled(bool)) , this , SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_on_disconnect_checkbox , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
 	connect( m_periodically_checkbox , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
 	connect( m_smtp_checkbox , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
 
@@ -375,6 +380,7 @@ void DoWhatPage::dump( std::ostream & stream , const std::string & prefix , cons
 	dumpItem( stream , prefix , "do-pop" , value(m_pop_checkbox) , eol ) ;
 	dumpItem( stream , prefix , "do-smtp" , value(m_smtp_checkbox) , eol ) ;
 	dumpItem( stream , prefix , "forward-immediate" , value(m_immediate_checkbox) , eol ) ;
+	dumpItem( stream , prefix , "forward-on-disconnect" , value(m_on_disconnect_checkbox) , eol ) ;
 	dumpItem( stream , prefix , "forward-poll" , value(m_periodically_checkbox) , eol ) ;
 	dumpItem( stream , prefix , "forward-poll-period" , value(m_period_combo) , eol ) ;
 }

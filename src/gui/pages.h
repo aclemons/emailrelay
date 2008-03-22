@@ -123,6 +123,7 @@ private:
 	QCheckBox * m_pop_checkbox ;
 	QCheckBox * m_smtp_checkbox ;
 	QRadioButton * m_immediate_checkbox ;
+	QRadioButton * m_on_disconnect_checkbox ;
 	QRadioButton * m_periodically_checkbox ;
 	QRadioButton * m_on_demand_checkbox ;
 	QComboBox * m_period_combo ;

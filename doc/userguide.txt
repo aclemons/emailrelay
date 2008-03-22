@@ -339,14 +339,11 @@ client program and the failed messages should stay in its "outbox".
 However, some e-mail client programs are not always prepared to wait long enough
 for the message to be forwarded and this can result in problems with timeouts. A
 good fix for this is to use the "--poll" mechanism as a replacement for
-"--immediate" or "--as-proxy". In this way the submitting e-mail client program
-does not have to wait for the E-MailRelay server to forward the message and it
-should never time out.
-
-As a special case, a zero value for the timeout ("--poll 0") means that message
-forwarding is triggered as soon as the client has finished submitting messages.
-If you are having problems with client program timeouts you should try replacing
-"--immediate" with "--poll 0".
+"--immediate"/"--as-proxy". In this way the submitting e-mail client program
+does not have to wait for the E-MailRelay server to forward each message and so
+it should not time out. If you have timeout problems try replacing "--immediate"
+with "--poll 0" so that forwarding is done as soon as the client has finished
+submitting messages.
 
 Usage patterns
 --------------

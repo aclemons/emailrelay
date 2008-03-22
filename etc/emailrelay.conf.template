@@ -32,8 +32,8 @@
 # Format: interface <ip-address>    
 # Description: Specifies an interface to listen on. The default is to listen
 # on all interfaces (INADDR_ANY). Using a specific interface can make it harder
-# for clients on other sub-networks to connect, so improving security. Up to
-# three interface addresses can be specified using comma separators.
+# for clients on other sub-networks to connect, so improving security. Multiple
+# interface addresses can be specified using comma separators.
 #
 #interface 192.168.0.10
 
@@ -66,6 +66,12 @@
 # to the remove SMTP server.
 #
 #client-auth /etc/emailrelay.auth
+
+# Name: client-tls
+# Format: client-tls
+# Description: Enables the tls/ssl layer when acting as an smtp client.
+#
+#client-tls                
 
 # Name: connection-timeout
 # Format: connection-timeout <time> 
@@ -117,7 +123,8 @@
 # Name: poll
 # Format: poll <period>             
 # Description: Enables polling of the spool directory for new messages with the 
-# specified period (in seconds). Requires --forward-to.
+# specified period (in seconds). A value of zero means that forwarding is done 
+# once the submitting client disconnects. Requires --forward-to.
 #
 #poll 120
 
