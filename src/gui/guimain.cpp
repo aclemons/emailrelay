@@ -210,7 +210,7 @@ int main( int argc , char * argv [] )
 			G_DEBUG( "main: Dir::spool: " << dir.spool() ) ;
 			G_DEBUG( "main: Dir::config: " << dir.config() ) ;
 			G_DEBUG( "main: Dir::boot: " << dir.boot() ) ;
-			G_DEBUG( "main: Dir::pid: " << dir.pid() ) ;
+			G_DEBUG( "main: Dir::pid: " << dir.pid(dir.config()) ) ;
 			G_DEBUG( "main: Dir::cwd: " << dir.cwd() ) ;
 			G_DEBUG( "main: Dir::thisdir: " << dir.thisdir() ) ;
 

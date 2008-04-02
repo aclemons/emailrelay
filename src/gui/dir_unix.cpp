@@ -142,9 +142,9 @@ G::Path Dir::os_pid()
 	return oneOf( "/var/run" , "/tmp" ) ;
 }
 
-G::Path Dir::os_pid_default( const G::Path & dir_pid , const G::Path & )
+G::Path Dir::os_pid( const G::Path & pid_dir , const G::Path & )
 {
-	return dir_pid ;
+	return pid_dir ;
 }
 
 G::Path Dir::special( const std::string & type )

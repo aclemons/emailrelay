@@ -80,12 +80,12 @@ G::Path Dir::os_spool() const
 
 G::Path Dir::os_pid()
 {
-	return G::Path() ; // rely on os_pid_default()
+	return G::Path() ;
 }
 
-G::Path Dir::os_pid_default( const G::Path & , const G::Path & config )
+G::Path Dir::os_pid( const G::Path & , const G::Path & config_dir )
 {
-	return config ; 
+	return config_dir ;
 }
 
 G::Path Dir::os_boot()

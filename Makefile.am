@@ -35,3 +35,24 @@ uninstall-local:
 	-rmdir $(DESTDIR)$(e_docdir) 2>/dev/null
 	-for d in "$(DESTDIR)$(e_sysconfdir)" "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_spooldir)" "$(DESTDIR)$(e_initdir)" "$(DESTDIR)$(e_docdir)/man/man1" "$(DESTDIR)$(e_docdir)/man" "$(DESTDIR)$(e_docdir)" ; do rmdir "$$d" 2>/dev/null ; done
 
+RPM_ROOT=/usr/src/rpm
+RPM=$(RPM_ROOT)/RPMS/i386/emailrelay-$(VERSION)-1.i386.rpm
+DEB=emailrelay_$(VERSION)-1_i386.deb
+TAR=emailrelay-$(VERSION).tar.gz
+.PHONY: rpm
+rpm: $(RPM)
+$(RPM): dist
+	-rm -rf $(RPM_ROOT)/BUILD/emailrelay-$(VERSION)
+	cp $(TAR) $(RPM_ROOT)/SOURCES/emailrelay-$(VERSION)-src.tar.gz
+	cp emailrelay.spec $(RPM_ROOT)/SPECS
+	chown root:root $(RPM_ROOT)/SPECS/emailrelay.spec
+	rpmbuild -ba $(RPM_ROOT)/SPECS/emailrelay.spec
+.PHONY: deb
+deb: $(DEB)
+$(DEB): $(RPM)
+	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$
+	alien --to-deb --generate --single --keep-version $(RPM)
+	sed -i 's/^Section:.*/Section: mail/' emailrelay-$(VERSION)/debian/control
+	sed -i 's/^Maintainer:.*/Maintainer: Graeme Walker <graeme_walker@users.sourceforge.net>/' emailrelay-$(VERSION)/debian/control
+	cd emailrelay-$(VERSION) && debian/rules binary
+

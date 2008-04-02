@@ -259,8 +259,9 @@ void DirectoryPage::dump( std::ostream & stream , const std::string & prefix , c
 	std::string ws = " " ;
 	dumpItem( stream , prefix , "dir-install" , normalise(G::Str::trimmed(value(m_install_dir_edit_box),ws)) , eol ) ;
 	dumpItem( stream , prefix , "dir-spool" , normalise(G::Str::trimmed(value(m_spool_dir_edit_box),ws)) , eol ) ;
-	dumpItem( stream , prefix , "dir-config" , normalise(G::Str::trimmed(value(m_config_dir_edit_box),ws)) , eol ) ;
-	dumpItem( stream , prefix , "dir-pid" , m_dir.pid() , eol ) ;
+	G::Path config_dir = normalise(G::Str::trimmed(value(m_config_dir_edit_box),ws)) ;
+	dumpItem( stream , prefix , "dir-config" , config_dir , eol ) ;
+	dumpItem( stream , prefix , "dir-pid" , m_dir.pid(config_dir) , eol ) ;
 	dumpItem( stream , prefix , "dir-desktop" , m_dir.desktop() , eol ) ;
 	dumpItem( stream , prefix , "dir-login" , m_dir.login() , eol ) ;
 	dumpItem( stream , prefix , "dir-menu" , m_dir.menu() , eol ) ;

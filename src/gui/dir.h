@@ -28,7 +28,8 @@
 
 /// \class Dir
 /// Provides file-system paths. Note that some paths
-/// are used as defaults; their run-time values can vary.
+/// returned by this interface are used as defaults; the run-time 
+/// values in client code can be something different.
 ///
 class Dir 
 {
@@ -82,7 +83,7 @@ public:
 	G::Path spool() const ;
 		///< Returns the spool directory path.
 
-	G::Path pid() const ;
+	G::Path pid( const G::Path & config_dir ) const ;
 		///< Returns the directory for pid files.
 
 	static G::Path cwd() ;
@@ -124,7 +125,7 @@ private:
 	static G::Path special( const std::string & key ) ;
 	static G::Path ntspecial( const std::string & key ) ;
 	static G::Path os_pid() ;
-	static G::Path os_pid_default( const G::Path & , const G::Path & ) ;
+	static G::Path os_pid( const G::Path & , const G::Path & ) ;
 	G::Path os_spool() const ;
 	G::Path os_login() const ;
 
