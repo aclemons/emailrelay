@@ -1,0 +1,35 @@
+E-MailRelay on Mac OS X
+=======================
+
+Building from source
+--------------------
+E-MailRelay can be built on a Mac as if it is a vanilla unix system; the
+standard "configure; make; sudo make install" procedure for building and
+installing from source should work well enough.
+
+For best results use the "bin/configure-mac.sh" script to run "configure" with
+directory paths that are more Mac-like (see below).
+
+The "make" step will only build executables for the native architecture. Xcode
+can be used to build universal binaries. Project files for xcode 3 are supplied.
+
+Directories
+-----------
+The preferred installation directories are:
+* "/Applications/E-MailRelay" for the application
+* "/Applications/E-MailRelay/Documentation" for the documentation
+* "/Applications/E-MailRelay" for the configuration (not "/Library/Preferences/E-MailRelay")
+* "/Library/Mail/Spool" for the spool directory
+* "/Library/StartupItems/E-MailRelay" for the boot-time startup script
+
+Installation can also be done into the User "domain", ie. under "~/Applications"
+and "~/Library" using "make install DESTDIR=~", although starting up at
+boot-time will not then work.
+
+Moving the system after installation, or installing to any other directories,
+is not guaranteed to work correctly.
+
+Binary distribution
+-------------------
+Graphical installation from the disk image has been developed using Mac OS X 
+10.5 ("Leopard"). Bug reports for other versions of OS X are welcome.
