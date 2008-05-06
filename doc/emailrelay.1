@@ -65,7 +65,7 @@ Disables the smtp vrfy command and sends less verbose smtp responses.
 Runs as a client, forwarding spooled mail to <host>: equivalent to \fI--log\fR \fI--no-syslog\fR \fI--no-daemon\fR \fI--dont-serve\fR \fI--forward\fR \fI--forward-to\fR.
 .TP
 .B \-y, --as-proxy \fI<host:port>\fR
-Runs as a proxy: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--immediate\fR \fI--forward-to\fR.
+Runs as a proxy: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--poll\fR=0 \fI--forward-to\fR.
 .TP
 .B \-d, --as-server 
 Runs as a server: equivalent to \fI--log\fR \fI--close-stderr\fR.

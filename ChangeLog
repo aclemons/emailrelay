@@ -1,6 +1,10 @@
 E-MailRelay Change Log
 ======================
 
+1.8 -> 1.8.1
+------------
+* Changed the meaning of "--as-proxy" from "--immediate ..." to "--poll 0 ...".
+
 1.7 -> 1.8
 ----------
 * Speed optimisations (as identified by KCachegrind/valgrind in KDevelop).

@@ -149,7 +149,7 @@ For more verbose logging add the "--verbose" switch. If this becomes difficult
 to read via the system log (especially on Windows) then try logging to the
 standard error stream and redirect that to a file. Bear in mind that you will
 need have to replace "--as-server" with "--log" and "--as-proxy" with
-"--immediate --forward-to" since the "--as-server" and "--as-proxy" switches
+"--poll 0 --forward-to" since the "--as-server" and "--as-proxy" switches
 implicitly close the standard error stream soon after startup.
 
 	emailrelay --log --verbose > emailrelay.log 2>&1
@@ -326,24 +326,6 @@ If you are using E-MailRelay to forward outgoing e-mails then you can also get
 failed e-mails to bounce back to your in-tray by running the
 "emailrelay-notify.sh" script periodically as "root", although this does require
 "procmail" to act as a delivery agent.
-
-Polling and timeouts
---------------------
-In normal proxy mode, using "--immediate" or "--as-proxy", the E-MailRelay
-server will try forward each message as soon as it is received and only then
-will it acknowledge receipt of the message back to the submitting client. This
-has the advantage that any problems with the forwarding process can be reported
-back to the submitting client; any failures should be reported your e-mail
-client program and the failed messages should stay in its "outbox".
-
-However, some e-mail client programs are not always prepared to wait long enough
-for the message to be forwarded and this can result in problems with timeouts. A
-good fix for this is to use the "--poll" mechanism as a replacement for
-"--immediate"/"--as-proxy". In this way the submitting e-mail client program
-does not have to wait for the E-MailRelay server to forward each message and so
-it should not time out. If you have timeout problems try replacing "--immediate"
-with "--poll 0" so that forwarding is done as soon as the client has finished
-submitting messages.
 
 Usage patterns
 --------------

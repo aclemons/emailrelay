@@ -68,7 +68,14 @@ cfg_file="__SYSCONF_DIR__/emailrelay.conf"
 
 # server configuration using the config file
 #
-start_switches="--as-server --pid-file ${pid_file} `cat \"${cfg_file}\" 2>/dev/null | egrep -v '^#|^ *$' | sed 's/^/--/'`"
+ConfigSwitches()
+{
+	cat "${cfg_file}" 2>/dev/null | egrep -v '^#|^ *$' | sed 's/^/--/'
+}
+StartSwitches()
+{
+	echo --as-server --pid-file \"${pid_file}\" `ConfigSwitches`
+}
 
 # functions...
 #
@@ -212,7 +219,7 @@ case "${1}" in
 
 	start)
 		shift
-		${style}_cmd_start "Starting E-MailRelay server" "${emailrelay}" ${start_switches} "$@"
+		eval ${style}_cmd_start \"Starting E-MailRelay server\" \"${emailrelay}\" `StartSwitches` "$@"
 		;;
 
 	stop)

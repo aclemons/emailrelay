@@ -107,7 +107,7 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 			"equivalent to \"--log --no-syslog --no-daemon --dont-serve --forward --forward-to\"!" 
 			"1!host:port!1|"
 		"d!as-server!runs as a server: equivalent to \"--log --close-stderr\"!0!!1|"
-		"y!as-proxy!runs as a proxy: equivalent to \"--log --close-stderr --immediate --forward-to\"!"
+		"y!as-proxy!runs as a proxy: equivalent to \"--log --close-stderr --poll=0 --forward-to\"!"
 			"1!host:port!1|"
 		"v!verbose!generates more verbose output (works with --help and --log)!0!!1|"
 		"h!help!displays help text and exits!0!!1|"
@@ -277,7 +277,7 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 	}
 
 	const bool forwarding =
-		m_getopt.contains("as-proxy") || // => immediate
+		m_getopt.contains("as-proxy") || // => poll
 		m_getopt.contains("as-client") || // => forward
 		m_getopt.contains("forward") || 
 		m_getopt.contains("immediate") || 
@@ -376,7 +376,7 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 		else if( m_getopt.contains("as-server") )
 			warning = warning + ": remove --as-server" ;
 		else if( m_getopt.contains("as-proxy" ) )
-			warning = warning + ": replace --as-proxy with --log --immediate --forward-to" ;
+			warning = warning + ": replace --as-proxy with --log --poll 0 --forward-to" ;
 	}
 
 	fatal = false ;

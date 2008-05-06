@@ -56,7 +56,7 @@
 
 std::string Main::Run::versionNumber()
 {
-	return "1.8" ;
+	return "1.8.1" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string & switch_spec ) :

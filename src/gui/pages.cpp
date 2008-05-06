@@ -301,9 +301,9 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const State & state , const std::stri
 	m_periodically_checkbox = new QRadioButton(tr("&Check periodically"));
 	m_on_demand_checkbox = new QRadioButton(tr("&Only when triggered"));
 
-	if( state.value("forward-immediate",true) )
+	if( state.value("forward-immediate",false) )
 		m_immediate_checkbox->setChecked(true) ;
-	else if( state.value("forward-on-disconnect",false) )
+	else if( state.value("forward-on-disconnect",true) )
 		m_on_disconnect_checkbox->setChecked(true) ;
 	else if( state.value("forward-poll",false) )
 		m_periodically_checkbox->setChecked(true) ;

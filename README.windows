@@ -46,7 +46,7 @@ Note that the batch file and the main E-MailRelay executable must be in the same
 directory.
 
 If you need to run multiple E-MailRelay services then pass a unique service name
-on the "emailrelay-server --install <name>" command-line. This name is used to
+on the "emailrelay-service --install <name>" command-line. This name is used to
 derive the name of the "<name>-start.bat" batch file that contains the
 E-MailRelay server's command-line switches so you will need to create this too.
 

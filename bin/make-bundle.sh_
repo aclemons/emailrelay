@@ -29,7 +29,7 @@ force="0" ; if test "$1" = "-f" ; then force="1" ; shift ; fi
 name="$1"
 exe="$2"
 icon="$3"
-version="$4" ; if test "${version}" = "" ; then version="1.8.0" ; fi
+version="$4" ; if test "${version}" = "" ; then version="1.8.1.0" ; fi
 
 if test "${name}" = ""
 then

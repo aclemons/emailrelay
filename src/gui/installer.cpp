@@ -1103,7 +1103,7 @@ G::Strings InstallerImp::commandlineArgs( bool short_ , bool no_close_stderr ) c
 		}
 		else if( no_close_stderr && ( switch_ == "y" || switch_ == "as-proxy" ) )
 		{
-			result.push_back( short_ ? "-m" : "--immediate" ) ;
+			result.push_back( short_ ? "-O" : "--poll" ) ; result.push_back( "0" ) ;
 			result.push_back( short_ ? "-o" : "--forward-to" ) ;
 		}
 		else

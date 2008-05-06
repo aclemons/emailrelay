@@ -21,7 +21,7 @@ where <switch> is:
   Runs as a client, forwarding spooled mail to <host>: equivalent to "--log --no-syslog --no-daemon --dont-serve --forward --forward-to".
 
 # --as-proxy (-y)
-  Runs as a proxy: equivalent to "--log --close-stderr --immediate --forward-to".
+  Runs as a proxy: equivalent to "--log --close-stderr --poll=0 --forward-to".
 
 # --as-server (-d)
   Runs as a server: equivalent to "--log --close-stderr".

@@ -137,9 +137,7 @@ bool Main::Configuration::doServing() const
 
 bool Main::Configuration::immediate() const
 {
-	return
-		contains("immediate") ||
-		contains("as-proxy") ;
+	return contains("immediate") ;
 }
 
 bool Main::Configuration::doPolling() const
@@ -167,17 +165,18 @@ bool Main::Configuration::forwardingOnStore() const
 
 bool Main::Configuration::forwardingOnDisconnect() const
 {
-	// TODO -- it not completely logical to tie this in with
-	// polling, but it avoids the situation where messages can
-	// get missed if a polling run is already in progress when
-	// a forwarding-on-disconnect event occurs -- the
-	// scan of the spool directory is done at the start
-	// of the polling run -- the fix could be to allow 
-	// clients to run in parallel in the Run class, or
-	// have a method to force the client to rescan the
-	// directory before finishing
+	// TODO -- it not completely logical to tie forwarding-on-disconnect
+	// in with polling, but it avoids the situation where messages can
+	// get missed if a polling run is already in progress when a
+	// forwarding-on-disconnect event occurs -- the scan of the spool 
+	// directory is done at the start of the polling run -- the fix 
+	// could be to allow clients to run in parallel in the Run class, 
+	// or have a method to force the client to rescan the directory 
+	// before finishing
 
-	return contains("poll") && pollingTimeout() == 0U ; 
+	return 
+		( contains("poll") && pollingTimeout() == 0U ) ||
+		contains("as-proxy") ;
 }
 
 unsigned int Main::Configuration::promptTimeout() const

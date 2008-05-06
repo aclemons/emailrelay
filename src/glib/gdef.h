@@ -44,7 +44,9 @@
 
 		#if HAVE_BUGGY_CTIME
 			#include <time.h>
-			#include <ctime>
+			#ifdef __cplusplus
+				#include <ctime>
+			#endif
 		#endif
 
 		#if ! HAVE_GMTIME_R || ! HAVE_LOCALTIME_R
