@@ -94,17 +94,17 @@ public:
 		///< that run() can be used to process one event at
 		///< a time for testing purposes).
 
-	virtual void addRead( Descriptor fd , EventHandler &handler ) = 0 ;
+	virtual void addRead( Descriptor fd , EventHandler & handler ) = 0 ;
 		///< Adds the given event source descriptor
 		///< and associated handler to the read list.
 		///< See also Socket::addReadHandler().
 
-	virtual void addWrite( Descriptor fd , EventHandler &handler ) = 0 ;
+	virtual void addWrite( Descriptor fd , EventHandler & handler ) = 0 ;
 		///< Adds the given event source descriptor
 		///< and associated handler to the write list.
 		///< See also Socket::addWriteHandler().
 
-	virtual void addException( Descriptor fd , EventHandler &handler ) = 0 ;
+	virtual void addException( Descriptor fd , EventHandler & handler ) = 0 ;
 		///< Adds the given event source descriptor
 		///< and associated handler to the exception list.
 		///< See also Socket::addExceptionHandler().

@@ -75,6 +75,9 @@ private:
 /// However, most operating systems implement their own name lookup cacheing,
 /// so this is not terribly useful in practice.
 ///
+/// The implementation uses the SocketProtocol class in order to support
+/// socket-level protocols, including TLS/SSL. See sslConnect().
+///
 class GNet::SimpleClient : public GNet::EventHandler , public GNet::Connection , public GNet::SocketProtocolSink 
 {
 public:

@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gssl.h"
+#include "gtest.h"
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
@@ -27,6 +28,7 @@
 #include <vector>
 #include <cassert>
 #include <iomanip>
+#include <fstream>
 #include <sstream>
 
 // debugging...
@@ -358,9 +360,9 @@ GSsl::ProtocolImp::ProtocolImp( const Context & c ) :
 		throw Error( "SSL_new" , ERR_get_error() ) ;
 }
 
-GSsl::ProtocolImp::ProtocolImp( const Context & c , LogFn log , bool hexdump ) :
+GSsl::ProtocolImp::ProtocolImp( const Context & c , LogFn log_fn , bool hexdump ) :
 	m_ssl(NULL) ,
-	m_log_fn(log) ,
+	m_log_fn(log_fn) ,
 	m_fd_set(false)
 {
 	m_ssl = SSL_new( c.p() ) ;
@@ -379,7 +381,7 @@ GSsl::ProtocolImp::~ProtocolImp()
 	SSL_free( m_ssl ) ;
 }
 
-void GSsl::ProtocolImp::loghex( void (*fn)(int,const std::string&) , int arg , 
+void GSsl::ProtocolImp::loghex( void (*log_fn)(int,const std::string&) , int arg , 
 	const char * prefix , const std::string & in )
 {
 	std::string line ;
@@ -400,12 +402,12 @@ void GSsl::ProtocolImp::loghex( void (*fn)(int,const std::string&) , int arg ,
 
 		if( i > 0 && ((i+1)%16) == 0 )
 		{
-			(*fn)( arg , std::string(prefix) + line ) ;
+			(*log_fn)( arg , std::string(prefix) + line ) ;
 			line.erase() ;
 		}
 	}
 	if( !line.empty() )
-		(*fn)( arg , std::string(prefix) + line ) ;
+		(*log_fn)( arg , std::string(prefix) + line ) ;
 }
 
 void GSsl::ProtocolImp::callback( int write , int v , int type , const void * buffer , size_t n , SSL * , void * p )
@@ -452,7 +454,7 @@ int GSsl::ProtocolImp::error( const char * op , int rc ) const
 			ee = ERR_get_error() ;
 			if( ee == 0 ) break ;
 			Error eee( op , ee ) ;
-			(*m_log_fn)( i , std::string() + eee.what() ) ;
+			(*m_log_fn)( 2 , std::string() + eee.what() ) ;
 		}
 	}
 
@@ -485,6 +487,13 @@ void GSsl::ProtocolImp::set( int fd )
 		int rc = SSL_set_fd( m_ssl , fd ) ;
 		if( rc == 0 )
 			throw Error( "SSL_set_fd" , ERR_get_error() ) ;
+
+		if( G::Test::enabled("log-ssl-bio") ) // log bio activity directly to stderr
+		{
+			BIO_set_callback( SSL_get_rbio(m_ssl) , BIO_debug_callback ) ;
+			BIO_set_callback( SSL_get_wbio(m_ssl) , BIO_debug_callback ) ;
+		}
+
 		m_fd_set = true ;
 	}
 }
@@ -534,13 +543,13 @@ GSsl::Protocol::Result GSsl::ProtocolImp::stop()
 GSsl::Protocol::Result GSsl::ProtocolImp::read( char * buffer , size_type buffer_size , ssize_type & read_size )
 {
 	read_size = 0 ;
+
 	clearErrors() ;
-	
 	int rc = SSL_read( m_ssl , buffer , buffer_size ) ;
 	if( rc > 0 )
 	{
 		read_size = static_cast<ssize_type>(rc) ;
-		return Protocol::Result_ok ;
+		return SSL_pending(m_ssl) ? Protocol::Result_more : Protocol::Result_ok ;
 	}
 	else if( rc == 0 )
 	{
@@ -575,6 +584,6 @@ GSsl::Protocol::Result GSsl::ProtocolImp::write( const char * buffer , size_type
 
 bool GSsl::Protocol::defaultHexdump()
 {
-	return false ; // perhaps G::Test::enabled() ?
+	return G::Test::enabled( "log-ssl-data" ) ;
 }
 

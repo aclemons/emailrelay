@@ -36,7 +36,7 @@ namespace GNet
 }
 
 /// \class GNet::Client
-/// A BufferedClient class that adds slot/signal signalling,
+/// A HeapClient class that adds slot/signal signalling,
 /// connection/response timeouts, and input line buffering.
 ///
 /// The following pure virtual functions must be implemented by

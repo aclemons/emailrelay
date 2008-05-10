@@ -50,6 +50,9 @@ private:
 	unsigned long m_n ;
 	GSsl::Protocol * m_ssl ;
 	State m_state ;
+	char m_read_buffer[c_buffer_size] ;
+	GSsl::Protocol::ssize_type m_read_buffer_size ;
+	GSsl::Protocol::ssize_type m_read_buffer_n ;
 
 public:
 	SocketProtocolImp( EventHandler & , SocketProtocol::Sink & , StreamSocket & , const Socket::Credentials & ) ;
@@ -90,7 +93,9 @@ GNet::SocketProtocolImp::SocketProtocolImp( EventHandler & handler ,
 		m_failed(false) ,
 		m_n(0UL) ,
 		m_ssl(NULL) ,
-		m_state(State_raw)
+		m_state(State_raw) ,
+		m_read_buffer_size(sizeof(m_read_buffer)) ,
+		m_read_buffer_n(0)
 {
 }
 
@@ -168,12 +173,14 @@ bool GNet::SocketProtocolImp::send( const std::string & data , std::string::size
 	return rc ;
 }
 
-void GNet::SocketProtocolImp::log( int level , const std::string & line )
+void GNet::SocketProtocolImp::log( int level , const std::string & log_line )
 {
-	if( level == 2 )
-		G_WARNING( "GNet::SocketProtocolImp::log: " << line ) ;
+	if( level == 0 )
+		G_DEBUG( "ssl: " << log_line ) ;
+	else if( level == 1 )
+		G_DEBUG( "SocketProtocolImp::log: " << log_line ) ;
 	else
-		G_DEBUG( "ssl: " << line ) ;
+		G_WARNING( "GNet::SocketProtocolImp::log: " << log_line ) ;
 }
 
 GSsl::Protocol * GNet::SocketProtocolImp::newProtocol()
@@ -304,30 +311,37 @@ void GNet::SocketProtocolImp::sslReadImp()
 	G_DEBUG( "SocketProtocolImp::sslReadImp" ) ;
 	G_ASSERT( m_state == State_idle ) ;
 	G_ASSERT( m_ssl != NULL ) ;
-	static char buffer[c_buffer_size] ;
-	GSsl::Protocol::ssize_type n = 0 ;
-	GSsl::Protocol::Result rc = m_ssl->read( buffer , sizeof(buffer) , n ) ;
-	G_DEBUG( "SocketProtocolImp::sslReadImp: result=" << GSsl::Protocol::str(rc) ) ;
-	if( rc == GSsl::Protocol::Result_error )
+	for( int sanity = 0 ; sanity < 1000 ; sanity++ )
 	{
-		socket().dropWriteHandler() ;
-		m_state = State_idle ;
-		throw SocketProtocol::ReadError( "ssl read" ) ;
-	}
-	else if( rc == GSsl::Protocol::Result_read )
-	{
-		socket().dropWriteHandler() ;
-	}
-	else if( rc == GSsl::Protocol::Result_write )
-	{
-		socket().addWriteHandler( m_handler ) ;
-	}
-	else
-	{
-		socket().dropWriteHandler() ;
-		m_state = State_idle ;
-		G_DEBUG( "SocketProtocolImp::sslReadImp: calling onData(): " << n ) ;
-		m_sink.onData( buffer , static_cast<std::string::size_type>(n) ) ;
+		GSsl::Protocol::Result rc = m_ssl->read( m_read_buffer , m_read_buffer_size , m_read_buffer_n ) ;
+		G_DEBUG( "SocketProtocolImp::sslReadImp: result=" << GSsl::Protocol::str(rc) ) ;
+		if( rc == GSsl::Protocol::Result_error )
+		{
+			socket().dropWriteHandler() ;
+			m_state = State_idle ;
+			throw SocketProtocol::ReadError( "ssl read" ) ;
+		}
+		else if( rc == GSsl::Protocol::Result_read )
+		{
+			socket().dropWriteHandler() ;
+		}
+		else if( rc == GSsl::Protocol::Result_write )
+		{
+			socket().addWriteHandler( m_handler ) ;
+		}
+		else // Result_ok, Result_more
+		{
+			socket().dropWriteHandler() ;
+			m_state = State_idle ;
+			GSsl::Protocol::ssize_type n = m_read_buffer_n ;
+			m_read_buffer_n = 0 ;
+			G_DEBUG( "SocketProtocolImp::sslReadImp: calling onData(): " << n ) ;
+			m_sink.onData( m_read_buffer , static_cast<std::string::size_type>(n) ) ;
+		}
+		if( rc == GSsl::Protocol::Result_more )
+			G_DEBUG( "SocketProtocolImp::sslReadImp: more available to read from the ssl layer without i/o" ) ;
+		else
+			break ;
 	}
 }
 

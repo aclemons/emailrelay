@@ -35,14 +35,20 @@ namespace GSsl
 
 /// \class GSsl::Protocol
 /// An SSL protocol class. The protocol object
-/// is tied to a particular socket file descriptor.
+/// is associated with a particular socket file descriptor
+/// by the connect() and accept() calls.
+///
+/// All logging is done inderectly through a logging function
+/// pointer; the first parameter is the logging level which
+/// is 0 for hex dump data, 1 for verbose debug messages and 
+/// 2 for more important errors and warnings.
 ///
 class GSsl::Protocol 
 {
 public:
 	typedef size_t size_type ;
 	typedef ssize_t ssize_type ;
-	enum Result { Result_ok , Result_read , Result_write , Result_error } ;
+	enum Result { Result_ok , Result_read , Result_write , Result_error , Result_more } ;
 	typedef void (*LogFn)( int , const std::string & ) ;
 
 	explicit Protocol( const Library & ) ;
@@ -64,10 +70,26 @@ public:
 		///< Initiates the protocol shutdown.
 
 	Result read( char * buffer , size_type buffer_size_in , ssize_type & data_size_out ) ;
-		///< Reads data into the supplied buffer.
+		///< Reads data into the supplied buffer. 
 		///<
-		///< Note that a retry will need the same buffer 
-		///< pointer value.
+		///< Returns Result_read if there is not enough transport data 
+		///< to complete the internal SSL data packet. In this case the 
+		///< file descriptor should remain in the select() read list and 
+		///< the Protocol::read() should be retried with the same parameters
+		///< when the file descriptor is ready to be read.
+		///<
+		///< Returns Result_write if the SSL layer has tried to write
+		///< to the file descriptor and had flow control asserted. In
+		///< this case the file descriptor should be added to the select()
+		///< write list and the Protocol::read() should be retried
+		///< with the same parameters when the file descriptor is
+		///< ready to be written.
+		///<
+		///< Returns Result_ok if the internal SSL data packet is complete
+		///< and it has been completely deposited in the supplied buffer.
+		///<
+		///< Returns Result_more if the internal SSL data packet is complete
+		///< and the supplied buffer was too small to take it all.
 
 	Result write( const char * buffer , size_type data_size_in , ssize_type & data_size_out ) ;
 		///< Writes data.

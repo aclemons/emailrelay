@@ -73,6 +73,15 @@
 #
 #client-tls                
 
+# Name: server-tls
+# Format: server-tls <open-ssl-pem-file>
+# Description: Enables the tls/ssl layer when acting as an smtp server.
+# Use the "openssl" utility to create and test a ".pem" certificate file.
+# Note that OpenSSL requires certificates to be installed in a trusted
+# directory, such as "/etc/ssl/certs". Use a full path to the certificate file.
+#
+#server-tls /etc/ssl/certs/emailrelay.pem
+
 # Name: connection-timeout
 # Format: connection-timeout <time> 
 # Description: Sets the timeout (in seconds) when connecting to a remote server. The default is 40.

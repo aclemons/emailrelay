@@ -26,6 +26,10 @@
 //    $ ( echo port=2525 ; echo user=root ; echo log ; echo verbose ) > emailrelay.cfg
 //    $ ./emailrelay emailrelay.cfg
 //
+// The motivation for this implementation is to reduce the size
+// of the application binary, so a lot of sanity checking is
+// left out -- caveat configurator.
+//
 
 #include "gdef.h"
 #include "gsmtp.h"
