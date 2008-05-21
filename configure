@@ -743,6 +743,8 @@ GLOB_TRUE
 GLOB_FALSE
 STATIC_START
 STATIC_END
+INSTALL_HOOK_TRUE
+INSTALL_HOOK_FALSE
 e_docdir
 e_initdir
 e_spooldir
@@ -1373,8 +1375,10 @@ Optional Features:
   --enable-mac            enable building for a mac os x target (default auto)
   --enable-static-linking prefer static linking for some libraries (default
                           no)
-  --enable-fhs            force FHS-compliant directories, ignoring --prefix
-                          etc (default no)
+  --enable-install-hook   enable fixing up the start/stop configuration file
+                          at install time (default yes)
+  --enable-fhs            force linux FHS-compliant directories, ignoring
+                          --prefix etc (default no)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -7551,6 +7555,22 @@ fi
 
 
 
+# Check whether --enable-install-hook was given.
+if test "${enable_install_hook+set}" = set; then
+  enableval=$enable_install_hook;
+fi
+
+
+	 if test x$enable_install_hook != xno; then
+  INSTALL_HOOK_TRUE=
+  INSTALL_HOOK_FALSE='#'
+else
+  INSTALL_HOOK_TRUE='#'
+  INSTALL_HOOK_FALSE=
+fi
+
+
+
 # Check whether --enable-fhs was given.
 if test "${enable_fhs+set}" = set; then
   enableval=$enable_fhs;
@@ -7646,7 +7666,7 @@ fi
 
 if test "$e_qtmoc" = "" ; then e_qtmoc="moc" ; fi
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile src/fragments/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile debian/Makefile src/fragments/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -7867,6 +7887,13 @@ if test -z "${GLOB_TRUE}" && test -z "${GLOB_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"GLOB\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"GLOB\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${INSTALL_HOOK_TRUE}" && test -z "${INSTALL_HOOK_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"INSTALL_HOOK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"INSTALL_HOOK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -8358,6 +8385,7 @@ do
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "extra/Makefile") CONFIG_FILES="$CONFIG_FILES extra/Makefile" ;;
     "extra/mips/Makefile") CONFIG_FILES="$CONFIG_FILES extra/mips/Makefile" ;;
+    "debian/Makefile") CONFIG_FILES="$CONFIG_FILES debian/Makefile" ;;
     "src/fragments/Makefile") CONFIG_FILES="$CONFIG_FILES src/fragments/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -8592,6 +8620,8 @@ GLOB_TRUE!$GLOB_TRUE$ac_delim
 GLOB_FALSE!$GLOB_FALSE$ac_delim
 STATIC_START!$STATIC_START$ac_delim
 STATIC_END!$STATIC_END$ac_delim
+INSTALL_HOOK_TRUE!$INSTALL_HOOK_TRUE$ac_delim
+INSTALL_HOOK_FALSE!$INSTALL_HOOK_FALSE$ac_delim
 e_docdir!$e_docdir$ac_delim
 e_initdir!$e_initdir$ac_delim
 e_spooldir!$e_spooldir$ac_delim
@@ -8603,7 +8633,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 42; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 44; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

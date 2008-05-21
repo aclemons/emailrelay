@@ -36,12 +36,12 @@
 # LSB comment block...
 #
 ### BEGIN INIT INFO
-# Provides:       emailrelay
-# Required-Start: $network
-# Required-Stop:  $network
-# Default-Start:  3 4 5
-# Default-Stop:   3 4 5
-# Description:    E-MailRelay SMTP proxy and store-and-forward MTA.
+# Provides:            emailrelay
+# Required-Start:      $network
+# Required-Stop:       $network
+# Default-Start:       3 4 5
+# Default-Stop:        0 1 2 6
+# Short-Description:   E-MailRelay SMTP proxy and store-and-forward MTA.
 ### END INIT INFO
 ##
 

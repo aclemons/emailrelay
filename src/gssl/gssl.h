@@ -78,12 +78,12 @@ public:
 		///< the Protocol::read() should be retried with the same parameters
 		///< when the file descriptor is ready to be read.
 		///<
-		///< Returns Result_write if the SSL layer has tried to write
-		///< to the file descriptor and had flow control asserted. In
-		///< this case the file descriptor should be added to the select()
-		///< write list and the Protocol::read() should be retried
-		///< with the same parameters when the file descriptor is
-		///< ready to be written.
+		///< Returns Result_write if the SSL layer tried to write to the
+		///< file descriptor and had flow control asserted. In this case
+		///< the file descriptor should be added to the select() write
+		///< list and the Protocol::read() should be retried with the
+		///< same parameters when the file descriptor is ready to be 
+		///< written.
 		///<
 		///< Returns Result_ok if the internal SSL data packet is complete
 		///< and it has been completely deposited in the supplied buffer.
@@ -94,20 +94,18 @@ public:
 	Result write( const char * buffer , size_type data_size_in , ssize_type & data_size_out ) ;
 		///< Writes data.
 		///<
-		///< Note that a retry will need the same buffer
-		///< pointer value.
+		///< Note that a retry will need the same buffer pointer value.
 
 	static std::string str( Result result ) ;
-		///< Converts a result enumeration into a 
-		///< printable string. Used in logging and 
-		///< diagnostics.
+		///< Converts a result enumeration into a printable string. 
+		///< Used in logging and diagnostics.
 
 	static bool defaultHexdump() ;
 		///< Returns a default value for the constructor parameter.
 
 private:
-	Protocol( const Protocol & ) ;
-	void operator=( const Protocol & ) ;
+	Protocol( const Protocol & ) ; // not implemented
+	void operator=( const Protocol & ) ; // not implemented
 
 private:
 	ProtocolImp * m_imp ;
@@ -141,8 +139,8 @@ public:
 		///< Returns a credit string.
 
 private:
-	Library( const Library & ) ;
-	void operator=( const Library & ) ;
+	Library( const Library & ) ; // not implemented
+	void operator=( const Library & ) ; // not implemented
 
 private:
 	friend class GSsl::Protocol ;

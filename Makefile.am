@@ -27,7 +27,7 @@ EXTRA_DIST = \
 	emailrelay-gui.xcodeproj/project.pbxproj \
 	emailrelay.xcodeproj/project.pbxproj 
 
-SUBDIRS = bin src lib etc doc test extra
+SUBDIRS = bin src lib etc doc debian test extra
 
 e_doc_DATA = NEWS README ChangeLog
 
@@ -39,20 +39,28 @@ RPM_ROOT=/usr/src/rpm
 RPM=$(RPM_ROOT)/RPMS/i386/emailrelay-$(VERSION)-1.i386.rpm
 DEB=emailrelay_$(VERSION)-1_i386.deb
 TAR=emailrelay-$(VERSION).tar.gz
+
 .PHONY: rpm
 rpm: $(RPM)
+
 $(RPM): dist
 	-rm -rf $(RPM_ROOT)/BUILD/emailrelay-$(VERSION)
 	cp $(TAR) $(RPM_ROOT)/SOURCES/emailrelay-$(VERSION)-src.tar.gz
 	cp emailrelay.spec $(RPM_ROOT)/SPECS
 	chown root:root $(RPM_ROOT)/SPECS/emailrelay.spec
 	rpmbuild -ba $(RPM_ROOT)/SPECS/emailrelay.spec
+
 .PHONY: deb
 deb: $(DEB)
+
 $(DEB): $(RPM)
 	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$
 	alien --to-deb --generate --single --keep-version $(RPM)
 	sed -i 's/^Section:.*/Section: mail/' emailrelay-$(VERSION)/debian/control
 	sed -i 's/^Maintainer:.*/Maintainer: Graeme Walker <graeme_walker@users.sourceforge.net>/' emailrelay-$(VERSION)/debian/control
+	chmod +x debian/pre* debian/post*
+	cp debian/* emailrelay-$(VERSION)/debian/
+	sed -i 's:dh_installchangelogs:dh_installchangelogs ; cp etc/init.d/emailrelay debian/emailrelay.init ; dh_installinit:' emailrelay-$(VERSION)/debian/rules
+	sed -i 's:dh_installdeb:dh_installdeb ; echo /etc/emailrelay.conf > debian/emailrelay/DEBIAN/conffiles:' emailrelay-$(VERSION)/debian/rules
 	cd emailrelay-$(VERSION) && debian/rules binary
 

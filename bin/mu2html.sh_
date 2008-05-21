@@ -265,11 +265,12 @@ Anchorise()
 
 if test "${title}" = ""
 then
-	tmp="`basename $0`.tmp"
-	${awk} '{print}' > ${tmp}
-	title="`${awk} '/^h1/ { sub(\"[^:]*:\",\"\") ; print ; exit }' ${tmp}`"
-	${awk} '{print}' ${tmp} | Main "${title}" "${stylesheet}" "${full}" | Anchorise
-	rm -f ${tmp}
+	tmp="/tmp/`basename $0`.$$.tmp"
+	${awk} '{print}' > "${tmp}"
+	touch "${tmp}"
+	title="`${awk} '/^h1/ { sub(\"[^:]*:\",\"\") ; print ; exit }' \"${tmp}\"`"
+	${awk} '{print}' "${tmp}" | Main "${title}" "${stylesheet}" "${full}" | Anchorise
+	rm -f "${tmp}"
 else
 	Main "${title}" "${stylesheet}" "${full}" | Anchorise
 fi

@@ -3,8 +3,9 @@ E-MailRelay Change Log
 
 1.8 -> 1.8.1
 ------------
-* Changed the meaning of "--as-proxy" from "--immediate ..." to "--poll 0 ...".
-* Fixed a data stalling bug when using using server-side SSL/TLS ("--server-tls").
+* Changed the definition of "--as-proxy" to use "--poll 0" rather than "--immediate" [bug-id 1961652].
+* Fixed stalling bug when using server-side TLS/SSL ("--server-tls") [bug-id 1961655].
+* Improved Debian packaging for Linux ("make deb").
 
 1.7 -> 1.8
 ----------

@@ -94,7 +94,7 @@ emailrelay-poke.1.gz: emailrelay-poke.1
 
 install-data-local: install-e_docDATA
 	$(mkinstalldirs) "$(DESTDIR)$(e_docdir)/doxygen"
-	if test "$(HAVE_DOXYGEN)" = "yes" ; then for file in doxygen/* ; do $(INSTALL) "$$file" "$(DESTDIR)$(e_docdir)/$$file" ; done ; fi
+	for file in doxygen/* ; do $(INSTALL) --mode=644 "$$file" "$(DESTDIR)$(e_docdir)/$$file" ; done
 
 uninstall-local:
 	-find "$(DESTDIR)$(e_docdir)/doxygen" -type f | xargs rm -f

@@ -19,6 +19,15 @@ EXTRA_DIST = emailrelay.conf.template
 
 e_sysconf_DATA = emailrelay.conf.template
 
+if INSTALL_HOOK
+
 install-data-hook:
 	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else cat "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" | sed "s:^#spool-dir /var/spool/emailrelay:spool-dir $(DESTDIR)$(e_spooldir):g" | sed 's:"/var/spool/emailrelay":"'"$(e_spooldir)"'":g' | sed "s:/etc:$(e_sysconfdir):g" | sed "s:/usr/local/bin:$(e_libexecdir):g" > "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
+
+else
+
+install-data-hook:
+	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
+
+endif
 

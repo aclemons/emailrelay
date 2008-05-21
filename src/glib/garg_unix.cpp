@@ -28,7 +28,7 @@
 
 void G::Arg::setExe()
 {
-	// better than nothing?
+	// a better-than-nothing implementation...
 
 	char buffer[limits::path] = { '\0' } ;
 	int n = ::readlink( "/proc/self" , buffer , sizeof(buffer) ) ;
@@ -46,8 +46,8 @@ void G::Arg::setExe()
 	}
 	else
 	{
-		// could use getenv("_") on some systems, but 
-		// too unreliable in general
+		// could use getenv("_") on some systems, but too 
+		// unreliable in general
 	}
 }
 

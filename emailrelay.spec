@@ -30,7 +30,7 @@ Distribution is under the GNU General Public License V3.
 %setup
 
 %build
-./configure --enable-fhs --disable-gui --without-man2html --without-doxygen --with-openssl --enable-static-linking
+./configure --enable-fhs --disable-gui --without-man2html --without-doxygen --with-openssl --enable-static-linking --disable-install-hook
 make
 
 %install
@@ -79,6 +79,8 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %doc /usr/share/doc/emailrelay/ChangeLog
 %doc /usr/share/doc/emailrelay/windows.txt
 /usr/share/doc/emailrelay/emailrelay-man.html
+%docdir /usr/share/doc/emailrelay/doxygen
+/usr/share/doc/emailrelay/doxygen/index.html
 %dir /usr/lib/emailrelay
 %dir /usr/lib/emailrelay/examples
 /usr/lib/emailrelay/examples/emailrelay-process.sh

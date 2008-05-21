@@ -34,12 +34,13 @@ namespace G
 
 /// \class G::Arg
 /// A class which holds a represention of the
-/// argc/argv command line array. In some environments the 
-/// argv(0) path is fixed up so that it refers to the calling 
-/// executable regardless of what the exec()ing process 
-/// specified.
+/// argc/argv command line array, and supports simple
+/// command-line parsing. 
 ///
-/// Also supports simple command line parsing.
+/// In some environments the argv(0) path is fixed up so 
+/// that it refers to the running executable, regardless of 
+/// what the parent process specified in the exec() call.
+/// Refer to the various implementations of G::Arg::setExe().
 ///
 /// \see G::GetOpt
 ///
@@ -82,8 +83,8 @@ public:
 
 	std::string prefix() const ;
 		///< Returns the basename of v(0) without
-		///< any extension. Typically used in error
-		///< messages.
+		///< any extension. Typically used as a
+		///< prefix in error messages.
 
 	static const char * prefix( char * argv[] ) ; // throw()
 		///< An exception-free version of prefix() which can

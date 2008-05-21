@@ -588,6 +588,17 @@ AC_DEFUN([ENABLE_STATIC_LINKING],
 	AC_SUBST(STATIC_END)
 ])
 
+dnl enable-install-hook
+dnl
+dnl The "--enable-install-hook" switch enables the editing
+dnl of "emailrelay.conf" with the correct install directories.
+dnl This should be disabled when building an rpm package.
+dnl
+AC_DEFUN([ENABLE_INSTALL_HOOK],
+[
+	AM_CONDITIONAL(INSTALL_HOOK,test x$enable_install_hook != xno)
+])
+
 dnl with-doxygen
 dnl
 dnl Sets HAVE_DOXYGEN in makefiles if doxygen is to be used.

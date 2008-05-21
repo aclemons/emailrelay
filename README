@@ -115,6 +115,7 @@ Versions of the code have also been built successfully on:
 * Linux 2.4.20 using gcc 3.4.6 on MIPS (mipsel)
 * Solaris 8 using gcc on Sparc hardware
 * Solaris 8 using WorkShop 5.0
+* Solaris 10
 * Windows NT 4.0 using MSVC 6.0
 * Windows NT 4.0 using Cygwin (DLL 1.3.22) and gcc 3.2
 * Windows NT 4.0 using MinGW 2.0.0 and gcc 3.2

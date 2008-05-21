@@ -194,12 +194,18 @@ AC_ARG_ENABLE(static-linking,AC_HELP_STRING([--enable-static-linking],[prefer st
 ENABLE_STATIC_LINKING
 
 dnl ===
+dnl "--enable-install-hook"
+dnl
+AC_ARG_ENABLE(install-hook,AC_HELP_STRING([--enable-install-hook],[enable fixing up the start/stop configuration file at install time (default yes)]))
+ENABLE_INSTALL_HOOK
+
+dnl ===
 dnl directory tweaking and "--enable-fhs" ...
 dnl
 dnl define e_ prefixed directory variables
 dnl
 dnl not AC_PREFIX_DEFAULT([/usr])
-AC_ARG_ENABLE(fhs,AC_HELP_STRING([--enable-fhs],[force FHS-compliant directories, ignoring --prefix etc (default no)]))
+AC_ARG_ENABLE(fhs,AC_HELP_STRING([--enable-fhs],[force linux FHS-compliant directories, ignoring --prefix etc (default no)]))
 SET_DIRECTORIES
 AC_SUBST(e_docdir)
 AC_SUBST(e_initdir)
@@ -213,5 +219,5 @@ if test "$e_qtmoc" = "" ; then e_qtmoc="moc" ; fi
 dnl ===
 dnl generate files...
 dnl
-AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile src/fragments/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile debian/Makefile src/fragments/Makefile)
 
