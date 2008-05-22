@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# preinst
+#
+
+spool="/var/spool/emailrelay"
+
+create_spool()
+{
+	test -d "$spool" || mkdir "$spool"
+	if ls -nd "$spool" | cut -d' ' --fields=3,4 | grep -q '^0 0$'
+	then
+		chgrp daemon "$spool" && chmod 775 "$spool"
+	fi
+}
+
+create_spool
+
+#DEBHELPER#
+

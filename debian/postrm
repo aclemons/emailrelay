@@ -1,0 +1,15 @@
+#!/bin/sh
+#
+# postrm
+#
+
+spool="/var/spool/emailrelay"
+
+rm -f /usr/share/doc/emailrelay/changelog.html || true
+if test "$1" = "purge"
+then
+	rmdir "$spool" || true
+fi
+
+#DEBHELPER#
+
