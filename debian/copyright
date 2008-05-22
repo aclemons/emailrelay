@@ -1,0 +1,19 @@
+Copyright
+=========
+Copyright (C) 2001-2008 Graeme Walker <graeme_walker@users.sourceforge.net>
+
+Refer to the file COPYING (included), /usr/share/common-licenses/GPL-3, or 
+<http://www.gnu.org/licenses/> for the terms of the GNU General Public License.
+
+Binary distributions
+--------------------
+Binary distributions of E-MailRelay may include copyrighted code from:
+* OpenSSL Toolkit (http://www.openssl.org)
+* MinGW (http://www.mingw.org)
+* Trolltech Qt (http://trolltech.com)
+
+These are distributed under licenses compatible with the GPLv3. Please
+refer to their websites for further details.
+
+This product includes software developed by the OpenSSL Project
+for use in the OpenSSL Toolkit. (http://www.openssl.org/)
