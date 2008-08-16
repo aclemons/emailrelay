@@ -25,6 +25,7 @@
 #include "run.h"
 #include "commandline.h"
 #include <exception>
+#include <cstdlib>
 
 /// \class App
 /// An implementation of the Main::Output abstract interface

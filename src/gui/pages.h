@@ -82,6 +82,7 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
 	virtual bool isComplete() ;
+	virtual std::string helpName() const ;
 
 private slots:
 	void browseInstall() ;
@@ -118,6 +119,7 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
 	virtual bool isComplete() ;
+	virtual std::string helpName() const ;
 
 private:
 	QCheckBox * m_pop_checkbox ;
@@ -142,6 +144,7 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
 	virtual bool isComplete() ;
+	virtual std::string helpName() const ;
 
 private slots:
 	void onToggle() ;
@@ -164,6 +167,7 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
 	virtual bool isComplete() ;
+	virtual std::string helpName() const ;
 
 private:
 	bool m_have_accounts ;
@@ -185,6 +189,7 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
 	virtual bool isComplete() ;
+	virtual std::string helpName() const ;
 
 private:
 	bool m_have_account ;
@@ -202,6 +207,7 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
 	virtual bool isComplete() ;
+	virtual std::string helpName() const ;
 
 private:
 	bool m_have_account ;
@@ -227,6 +233,7 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
 	virtual bool isComplete() ;
+	virtual std::string helpName() const ;
 
 private:
 	bool m_have_account ;
@@ -253,6 +260,7 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
 	virtual bool isComplete() ;
+	virtual std::string helpName() const ;
 
 private:
 	bool m_is_mac ;
@@ -271,6 +279,7 @@ public:
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual std::string helpName() const ;
 
 private:
 	QCheckBox * m_debug_checkbox ;
@@ -287,6 +296,7 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
 	virtual bool isComplete() ;
+	virtual std::string helpName() const ;
 
 private slots:
 	void onToggle() ;
@@ -307,6 +317,7 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
 	virtual void onShow( bool back ) ;
+	virtual std::string helpName() const ;
 
 private:
 	QString text() const ;
@@ -329,6 +340,7 @@ public:
 	virtual void onShow( bool back ) ;
 	virtual bool closeButton() const ;
 	virtual bool isComplete() ;
+	virtual std::string helpName() const ;
 
 private slots:
 	void poke() ;

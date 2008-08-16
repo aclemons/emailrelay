@@ -87,8 +87,9 @@ static void init( void )
 static void detach( void )
 {
   #ifndef G_WIN32
+	int rc ;
 	if( fork() ) exit( EXIT_SUCCESS ) ;
-	chdir( "/" ) ;
+	rc = chdir( "/" ) ;
 	setsid() ;
 	if( fork() ) exit( EXIT_SUCCESS ) ;
 	close( STDIN_FILENO ) ;
@@ -104,12 +105,13 @@ static void pidfile( void )
 	if( fd >= 0 )
 	{
 		char buffer[30] ;
+		ssize_t rc ;
 		char * p = buffer + sizeof(buffer) - 1 ;
 		pid_t pid = getpid() ;
 		for( *p = '\0' ; pid != 0 ; pid /= 10 )
 			*--p = '0' + (pid%10) ;
-		write( fd , p , strlen(p) ) ;
-		write( fd , "\n" , 1 ) ;
+		rc = write( fd , p , strlen(p) ) ;
+		rc += write( fd , "\n" , 1 ) ;
 		close( fd ) ;
 	}
   #endif
@@ -122,6 +124,7 @@ static BOOL poke( int argc , char * argv [] )
 	char buffer[160U] = "FLUSH" ;
 	struct sockaddr_in address ;
 	int fd , rc ;
+	ssize_t n ;
 
 	/* parse the command line -- port number */
 	if( argc > 1 ) 
@@ -176,10 +179,10 @@ static BOOL poke( int argc , char * argv [] )
 	close( fd ) ;
 
 	/* print the reply */
-	write( STDOUT_FILENO , buffer , rc ) ;
+	n = write( STDOUT_FILENO , buffer , rc ) ;
 	buffer[0U] = '\n' ;
 	buffer[1U] = '\0' ;
-	write( STDOUT_FILENO , buffer , strlen(buffer) ) ;
+	n += write( STDOUT_FILENO , buffer , strlen(buffer) ) ;
 
 	return TRUE ;
 }

@@ -174,7 +174,7 @@ bool G::Str::isUShort( const std::string & s )
 {
 	try
 	{
-		G_IGNORE toUShort(s) ;
+		G_IGNORE(unsigned short) toUShort(s) ;
 	}
 	catch( Overflow & )
 	{
@@ -191,7 +191,7 @@ bool G::Str::isUInt( const std::string & s )
 {
 	try
 	{
-		G_IGNORE toUInt(s) ;
+		G_IGNORE(unsigned int) toUInt(s) ;
 	}
 	catch( Overflow & )
 	{
@@ -208,7 +208,7 @@ bool G::Str::isULong( const std::string & s )
 {
 	try
 	{
-		G_IGNORE toULong(s) ;
+		G_IGNORE(unsigned long) toULong(s) ;
 	}
 	catch( Overflow & )
 	{

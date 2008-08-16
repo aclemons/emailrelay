@@ -54,6 +54,11 @@ public:
 	bool useFinishButton() const ;
 		///< Returns the ctor's finish_button parameter.
 
+	virtual std::string helpName() const ;
+		///< Returns this page's help-page name. Returns the 
+		///< empty string if the help button should be disabled. 
+		///< This default implementation returns the empty string.
+
 	virtual bool closeButton() const ;
 		///< Returns true if the page should have _only_ a close
 		///< button, typically if the last page.
@@ -95,7 +100,14 @@ private slots:
 		///< selection is changed.
 
 protected:
+	struct NameTip {} ;
+	struct PasswordTip {} ;
 	static QLabel * newTitle( QString ) ;
+	static void tip( QWidget * , const char * ) ;
+	static void tip( QWidget * , NameTip ) ;
+	static void tip( QWidget * , PasswordTip ) ;
+	static QString tip( const char * ) ;
+	static QString tip() ;
 	std::string next1() const ;
 	std::string next2() const ;
 	static std::string value( bool ) ;

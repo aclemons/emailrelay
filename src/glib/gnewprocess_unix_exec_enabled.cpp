@@ -252,7 +252,7 @@ int G::NewProcess::spawn( Identity nobody , const Path & exe , const Strings & a
 			if( fn != 0 )
 			{
 				std::string s = (*fn)(error) ;
-				::write( STDOUT_FILENO , s.c_str() , s.length() ) ;
+				G_IGNORE(ssize_t) ::write( STDOUT_FILENO , s.c_str() , s.length() ) ;
 			}
 		}
 		catch(...)

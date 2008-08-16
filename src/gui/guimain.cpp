@@ -23,13 +23,13 @@
 //
 // The program determines whether to run in install mode or configure
 // mode by looking for packed files appended to the end of the
-// executable, although the "--as-whatever" command-line switches 
+// executable, although the "--as-(whatever)" command-line switches 
 // can be used as an override for this test. In install mode the
 // target directory paths can be set from within the GUI and the 
 // packed files are extracted into those directories. 
 //
-// If there are no packed files then the assumption is that it
-// is being run after a successful installation, so the target 
+// If there are no packed files then the assumption is that we
+// are being run after a successful installation, so the target 
 // directory paths are greyed out in the GUI. However, the code
 // still needs to know what the installation directories were and
 // it tries to obtain these from a special "state" file located
@@ -56,7 +56,8 @@
 // The name of the state file is the name of the GUI executable
 // without any extension; or if the GUI executable had no extension
 // to begin with then it is the name of the GUI executable with
-// ".state" appended. 
+// ".state" appended (but refer to the next paragraph to see
+// why this is not used in practice).
 //
 // The format of the state file (since v1.8) allows it to be a 
 // simple shell script. This means that a unix-like "make install" 
@@ -83,9 +84,9 @@
 // plaintext passwords, so this is not a secure approach.
 //
 // The contents of the state file are also based on the output of
-// configuration text from the GUI pages, but the state file has 
-// additional information from the Dir class and it does not 
-// contain any account information.
+// configuration text from the GUI pages, but it also has additional
+// information from the Dir class and it does not contain any 
+// account information.
 //
 
 #include "gdef.h"
@@ -140,6 +141,7 @@ int main( int argc , char * argv [] )
 		G::Arg args( argc , argv ) ;
 		G::GetOpt getopt( args , 
 			"h/help/show this help text and exit/0//1|"
+			"H/with-help/show a help button/0//1|"
 			"d/debug/show debug messages if compiled-in/0//1|"
 			"i/as-install/install mode, as if payload present/0//1|"
 			"c/as-configure/configure mode, as if no payload present/0//1|"
@@ -163,6 +165,7 @@ int main( int argc , char * argv [] )
 
 		// parse the commandline
 		bool test_mode = getopt.contains("test") ;
+		bool with_help = getopt.contains("with-help") ;
 		std::string cfg_test_page = getopt.contains("page") ? getopt.value("page") : std::string() ;
 		G::Path cfg_write_file( getopt.contains("write") ? getopt.value("write") : std::string() ) ;
 		G::Path cfg_read_file( getopt.contains("read") ? getopt.value("read") : std::string() ) ;
@@ -229,7 +232,7 @@ int main( int argc , char * argv [] )
 				GPage::setTestMode() ;
 
 			// create the dialog and all its pages
-			GDialog d ;
+			GDialog d( with_help ) ;
 			d.add( new TitlePage(d,state,"title","license","",false,false) , cfg_test_page ) ;
 			d.add( new LicensePage(d,state,"license","directory","",false,false,is_installed) , cfg_test_page ) ;
 			d.add( new DirectoryPage(d,state,"directory","dowhat","",false,false,dir,is_installing) , cfg_test_page ) ;

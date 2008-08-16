@@ -54,6 +54,7 @@
 #include <exception>
 #include <iostream>
 #include <memory>
+#include <cstdlib>
 
 G_EXCEPTION( NoBody , "no body text" ) ;
 

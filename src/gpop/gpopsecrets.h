@@ -25,7 +25,7 @@
 #include "gpop.h"
 #include "gpath.h"
 #include "gexception.h"
-#include "gsasl.h"
+#include "gsaslserver.h"
 #include <iostream>
 #include <map>
 

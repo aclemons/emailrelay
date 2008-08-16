@@ -24,6 +24,7 @@
 #include <sstream>
 #include <string>
 #include <ctime>
+#include <cstdlib>
 
 // (note that the implementation here has to be reentrant and using only the standard runtime library)
 
@@ -223,7 +224,7 @@ void G::LogOutput::doAssertion( const char * file , int line , const std::string
 
 void G::LogOutput::halt()
 {
-	abort() ;
+	std::abort() ;
 }
 
 std::string G::LogOutput::levelString( Log::Severity s )

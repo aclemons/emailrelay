@@ -25,7 +25,7 @@
 #include "gnet.h"
 #include "gsmtp.h"
 #include "gmessagestore.h"
-#include "gsasl.h"
+#include "gsaslclient.h"
 #include "gsecrets.h"
 #include "gslot.h"
 #include "gstrings.h"

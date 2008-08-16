@@ -32,6 +32,7 @@
 #include "gtest.h"
 #include "gdebug.h"
 #include "glog.h"
+#include <cstdlib>
 
 namespace
 {

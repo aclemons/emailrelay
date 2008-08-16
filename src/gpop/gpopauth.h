@@ -33,8 +33,11 @@ namespace GPop
 }
 
 /// \class GPop::Auth
-/// An authenticator using GSmtp::SaslServer in its
-/// implementation.
+/// An authenticator interface for POP3
+/// sessions.
+///
+/// The implementation may use GSmtp::SaslServer.
+///
 /// \see GSmtp::SaslServer, RFC2222
 ///
 class GPop::Auth 

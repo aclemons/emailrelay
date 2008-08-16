@@ -412,7 +412,7 @@ E-MailRelay server.
 Google mail
 -----------
 To send mail via Google mail's SMTP gateway you will need to create a client
-secrets file containing your account details and enable TLS support in
+secrets file containing your account details and enable TLS/SSL support in
 E-MailRelay by using the "--client-tls" switch.
 
 The secrets file should contain one line of text something like this:

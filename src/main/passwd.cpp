@@ -31,6 +31,7 @@
 #include "gmd5.h"
 #include "legal.h"
 #include <iostream>
+#include <cstdlib>
 
 int main( int argc , char * argv [] )
 {

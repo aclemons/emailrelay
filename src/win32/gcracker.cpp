@@ -304,7 +304,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 			const bool left = !!( wparam & MK_LBUTTON ) ;
 			const bool middle = !!( wparam & MK_MBUTTON ) ;
 			const bool right = !!( wparam & MK_RBUTTON ) ;
-			G_IGNORE onMouseMove( x , y , shift , control , left , middle , right ) ;
+			onMouseMove( x , y , shift , control , left , middle , right ) ;
 			return 0 ;
 		}
 

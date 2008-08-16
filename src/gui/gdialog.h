@@ -37,6 +37,10 @@ class GDialog : public QDialog
 {Q_OBJECT
 public:
 	
+	explicit GDialog( bool with_help ) ;
+		///< Constructor. Use a sequence of add()s to initialise
+		///< ending with add(void).
+
 	explicit GDialog( QWidget * parent = NULL ) ;
 		///< Constructor. Use a sequence of add()s to initialise
 		///< ending with add(void).
@@ -78,12 +82,14 @@ public:
 		///< Disables all buttons.
 
 private slots:
-	void backButtonClicked();
-	void nextButtonClicked();
-	void finishButtonClicked();
-	void pageUpdated();
+	void helpButtonClicked() ;
+	void backButtonClicked() ;
+	void nextButtonClicked() ;
+	void finishButtonClicked() ;
+	void pageUpdated() ;
 
 private:
+	void init( bool ) ;
 	void setFirstPage( GPage & page ) ;
 	void switchPage( std::string new_page_name , std::string old_page_name = std::string() , bool back = false ) ;
 
@@ -91,14 +97,15 @@ private:
 	typedef std::list<std::string> History ;
 	typedef std::map<std::string,GPage*> Map ;
 	Map m_map ;
-	History m_history;
+	History m_history ;
 	bool m_first ;
-	QPushButton * m_cancel_button;
-	QPushButton * m_back_button;
-	QPushButton * m_next_button;
-	QPushButton * m_finish_button;
-	QHBoxLayout * m_button_layout;
-	QVBoxLayout * m_main_layout;
+	QPushButton * m_help_button ;
+	QPushButton * m_cancel_button ;
+	QPushButton * m_back_button ;
+	QPushButton * m_next_button ;
+	QPushButton * m_finish_button ;
+	QHBoxLayout * m_button_layout ;
+	QVBoxLayout * m_main_layout ;
 	bool m_waiting ;
 	bool m_back_state ;
 	bool m_next_state ;

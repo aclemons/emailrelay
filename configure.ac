@@ -17,7 +17,7 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([E-MailRelay],[1.8.1],,[emailrelay])
+AC_INIT([E-MailRelay],[1.9],,[emailrelay])
 AC_CONFIG_SRCDIR(src/gsmtp/gsmtp.h)
 AM_INIT_AUTOMAKE([no-define])
 AM_CONFIG_HEADER(config.h)
@@ -186,6 +186,12 @@ dnl "--with-glob"
 dnl
 AC_ARG_WITH(glob,AC_HELP_STRING([--with-glob],[use glob() for reading directories (default auto)]))
 WITH_GLOB
+
+dnl ===
+dnl "--with-pam"
+dnl
+AC_ARG_WITH(pam,AC_HELP_STRING([--with-pam],[use linux pam for authentication (default no)]))
+WITH_PAM
 
 dnl ===
 dnl "--enable-static-linking"

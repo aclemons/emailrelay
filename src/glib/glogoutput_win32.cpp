@@ -77,7 +77,7 @@ void G::LogOutput::rawOutput( G::Log::Severity severity , const std::string & me
 		}
 
 		const char * p[] = { message.c_str() , NULL } ;
-		G_IGNORE ::ReportEvent( m_handle, type, 0, id, NULL, 1, 0, p, NULL ) ;
+		G_IGNORE(BOOL) ::ReportEvent( m_handle, type, 0, id, NULL, 1, 0, p, NULL ) ;
 	}
 }
 

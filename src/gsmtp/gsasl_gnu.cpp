@@ -17,6 +17,6 @@
 
 // TODO ...
 
-// http://josefsson.org/gsasl
+// http://www.gnu.org/software/gsasl/
 
 /// \file gsasl_gnu.cpp

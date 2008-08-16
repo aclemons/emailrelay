@@ -199,3 +199,15 @@ $(IMAGE): $(SETUP_BUNDLE).app emailrelay-unpack
 .PHONY: image
 image: $(IMAGE)
 
+.PHONY: universal
+universal:
+	cp ../../build/Release/emailrelay ../main/emailrelay && touch ../main/emailrelay
+	cp ../../build/Release/emailrelay-filter-copy ../main/emailrelay-filter-copy && touch ../main/emailrelay-filter-copy
+	cp ../../build/Release/emailrelay-passwd ../main/emailrelay-passwd && touch ../main/emailrelay-passwd
+	cp ../../build/Release/emailrelay-poke ../main/emailrelay-poke && touch ../main/emailrelay-poke
+	cp ../../build/Release/emailrelay-start ../main/emailrelay-start && touch ../main/emailrelay-start
+	cp ../../build/Release/emailrelay-submit ../main/emailrelay-submit && touch ../main/emailrelay-submit
+	cp ../../build/Release/emailrelay-gui ../gui/emailrelay-gui.real && touch ../gui/emailrelay-gui.real
+	cp ../../build/Release/emailrelay-start-gui ../gui/emailrelay-start-gui && touch ../gui/emailrelay-start-gui
+	cp ../../build/Release/emailrelay-unpack ../gui/emailrelay-unpack && touch ../gui/emailrelay-unpack
+

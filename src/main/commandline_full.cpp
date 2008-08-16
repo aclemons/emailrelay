@@ -26,6 +26,7 @@
 #include "commandline.h"
 #include "gmessagestore.h"
 #include "gpopsecrets.h"
+#include "gsaslserver.h"
 #include "ggetopt.h"
 #include "gstr.h"
 #include "gdebug.h"
@@ -226,7 +227,6 @@ std::string Main::CommandLineImp::value( const std::string & name ) const
 std::string Main::CommandLineImp::semanticError( const Configuration & cfg , bool & fatal ) const
 {
 	fatal = true ;
-	std::string warning ;
 
 	if( 
 		( cfg.doAdmin() && cfg.adminPort() == cfg.port() ) ||
@@ -348,6 +348,12 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 		return "the --hidden switch requires --no-daemon or --as-client" ;
 	}
 
+	if( m_getopt.contains("server-auth") && 
+		GSmtp::SaslServer::requiresEncryption() && !m_getopt.contains("server-tls" ) )
+	{
+		return "--server-auth requires --server-tls when built with linux pam" ;
+	}
+
 	const bool no_syslog = 
 		m_getopt.contains("no-syslog") || 
 		m_getopt.contains("as-client") ;
@@ -367,7 +373,7 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 			( m_getopt.contains("as-server") ? "--as-server" :
 			"--as-proxy" ) ) ;
 
-		warning = "logging is enabled but it has nowhere to go because " +
+		std::string warning = "logging is enabled but it has nowhere to go because " +
 			close_stderr_switch + " closes the standard error stream soon after startup and " +
 			"output to the system log is disabled" ;
 
@@ -377,10 +383,13 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 			warning = warning + ": remove --as-server" ;
 		else if( m_getopt.contains("as-proxy" ) )
 			warning = warning + ": replace --as-proxy with --log --poll 0 --forward-to" ;
+
+		fatal = false ;
+		return warning ;
 	}
 
 	fatal = false ;
-	return warning ;
+	return std::string() ;
 }
 
 bool Main::CommandLineImp::hasSemanticError( const Configuration & cfg ) const

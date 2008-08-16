@@ -31,6 +31,8 @@
 /// returned by this interface are used as defaults; the run-time 
 /// values in client code can be something different.
 ///
+/// The implementations of this interface are highly platform-specific.
+///
 class Dir 
 {
 public:
@@ -76,6 +78,12 @@ public:
 	static G::Path bootcopy( const G::Path & boot , const G::Path & install ) ;
 		///< Returns a directory where boot() files can
 		///< be stored if boot() is not writeable.
+		///<
+		///< Copying the boot() files allows the install 
+		///< to complete without root privileges; the
+		///< user can fix up the boot process later
+		///< by installing the copies (especially on a
+		///< mac).
 
 	static G::Path home() ;
 		///< Returns the user's home directory.

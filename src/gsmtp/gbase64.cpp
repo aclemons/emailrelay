@@ -164,7 +164,7 @@ std::string GSmtp::Base64::decode( const std::string & s , bool & error )
 bool GSmtp::Base64::valid( const std::string & s )
 {
 	bool error = false ;
-	G_IGNORE decode( s , error ) ;
+	G_IGNORE(std::string) decode( s , error ) ;
 	return !error ;
 }
 

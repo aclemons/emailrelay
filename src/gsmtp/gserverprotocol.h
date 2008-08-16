@@ -27,7 +27,7 @@
 #include "gaddress.h"
 #include "gverifier.h"
 #include "gverifierstatus.h"
-#include "gsasl.h"
+#include "gsaslserver.h"
 #include "gsecrets.h"
 #include "gstatemachine.h"
 #include "gtimer.h"

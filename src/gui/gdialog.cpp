@@ -25,11 +25,40 @@
 #include <algorithm>
 #include <stdexcept>
 
+GDialog::GDialog( bool with_help ) :
+	QDialog(NULL) ,
+	m_first(true) ,
+	m_help_button(NULL) ,
+	m_cancel_button(NULL) ,
+	m_back_button(NULL) ,
+	m_next_button(NULL) ,
+	m_finish_button(NULL) ,
+	m_waiting(false)
+{
+	init( with_help ) ;
+}
+
 GDialog::GDialog( QWidget *parent ) : 
 	QDialog(parent) ,
 	m_first(true) ,
+	m_help_button(NULL) ,
+	m_cancel_button(NULL) ,
+	m_back_button(NULL) ,
+	m_next_button(NULL) ,
+	m_finish_button(NULL) ,
 	m_waiting(false)
 {
+	init( false ) ;
+}
+
+void GDialog::init( bool with_help )
+{
+	if( with_help )
+	{
+		m_help_button = new QPushButton(tr("&Help")) ;
+		connect( m_help_button, SIGNAL(clicked()) , this , SLOT(helpButtonClicked()) ) ;
+	}
+
 	m_cancel_button = new QPushButton(tr("Cancel")) ;
 	m_back_button = new QPushButton(tr("< &Back")) ;
 	m_next_button = new QPushButton(tr("Next >")) ;
@@ -41,6 +70,8 @@ GDialog::GDialog( QWidget *parent ) :
 	connect( m_finish_button, SIGNAL(clicked()) , this , SLOT(finishButtonClicked()) ) ;
 
 	m_button_layout = new QHBoxLayout ;
+	if( m_help_button != NULL )
+		m_button_layout->addWidget( m_help_button ) ;
 	m_button_layout->addStretch( 1 ) ;
 	m_button_layout->addWidget( m_cancel_button ) ;
 	m_button_layout->addWidget( m_back_button ) ;
@@ -97,6 +128,13 @@ void GDialog::setFirstPage( GPage & page )
 	switchPage( m_history.back() ) ;
 }
 
+void GDialog::helpButtonClicked()
+{
+	std::string base = "http://emailrelay.sourceforge.net/help/" ;
+	std::string url = base + page(currentPageName()).helpName() + ".html" ;
+	QDesktopServices::openUrl( QString(url.c_str()) ) ;
+}
+
 void GDialog::backButtonClicked()
 {
 	std::string old_page_name = m_history.back();
@@ -144,6 +182,8 @@ void GDialog::pageUpdated()
 		m_next_button->setEnabled(false) ;
 		m_finish_button->setText(tr("Close")) ;
 		m_finish_button->setEnabled(true) ;
+		if( m_help_button != NULL )
+			m_help_button->setEnabled(false) ;
 	}
 	else
 	{
@@ -163,6 +203,9 @@ void GDialog::pageUpdated()
 
 		active_button->setEnabled( active_state ) ;
 		inactive_button->setEnabled( false ) ;
+
+		if( m_help_button != NULL )
+			m_help_button->setEnabled(!current_page.helpName().empty()) ;
 	}
 }
 

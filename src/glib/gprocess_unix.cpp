@@ -26,6 +26,7 @@
 #include "gfs.h"
 #include "glog.h"
 #include <iostream>
+#include <cstring> // std::strerror()
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -122,7 +123,7 @@ int G::Process::errno_( int e )
 
 std::string G::Process::strerror( int errno_ )
 {
-	char * p = ::strerror( errno_ ) ;
+	char * p = std::strerror( errno_ ) ;
 	return std::string( p ? p : "" ) ;
 }
 
@@ -131,7 +132,7 @@ void G::Process::revokeExtraGroups()
 	if( Identity::real().isRoot() || Identity::effective() != Identity::real() )
 	{
 		gid_t dummy ;
-		G_IGNORE ::setgroups( 0U , &dummy ) ; // (only works for root, so ignore the return code)
+		G_IGNORE(int) ::setgroups( 0U , &dummy ) ; // (only works for root, so ignore the return code)
 	}
 }
 
@@ -271,7 +272,7 @@ G::Process::Umask::Umask( Mode mode ) :
 
 G::Process::Umask::~Umask()
 {
-	G_IGNORE ::umask( m_imp->m_old_mode ) ;
+	G_IGNORE(mode_t) ::umask( m_imp->m_old_mode ) ;
 	delete m_imp ;
 }
 

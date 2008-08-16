@@ -21,7 +21,8 @@
 #include "gdef.h"
 #include "gnet.h"
 #include "gsmtp.h"
-#include "gsasl.h"
+#include "gsaslserver.h"
+#include "gsaslclient.h"
 
 std::string GSmtp::SaslServer::mechanisms( char c ) const
 {

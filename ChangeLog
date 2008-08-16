@@ -1,6 +1,11 @@
 E-MailRelay Change Log
 ======================
 
+1.8.1 -> 1.9
+------------
+* Linux PAM support ("configure --with-pam").
+* Namespace fixes for compatibility with gcc 3.4.
+
 1.8 -> 1.8.1
 ------------
 * Changed the definition of "--as-proxy" to use "--poll 0" rather than "--immediate" [bug-id 1961652].

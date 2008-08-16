@@ -21,7 +21,7 @@
 #include "gdef.h"
 #include "gpop.h"
 #include "gpopauth.h"
-#include "gsasl.h"
+#include "gsaslserver.h"
 
 /// \class GPop::AuthImp
 /// A private pimple-pattern implementation class used by GPop::Auth.

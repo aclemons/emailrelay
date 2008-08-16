@@ -1,8 +1,13 @@
+emailrelay (1.9) unstable; urgency=low
+  * Linux PAM support ("configure --with-pam").
+  * Namespace fixes for compatibility with gcc 3.4.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sat, 16 Aug 2008 13:06:30 +0000
+
 emailrelay (1.8.1) unstable; urgency=low
   * Changed the definition of "--as-proxy" to use "--poll 0" rather than "--immediate" [bug-id 1961652].
   * Fixed stalling bug when using server-side TLS/SSL ("--server-tls") [bug-id 1961655].
   * Improved Debian packaging for Linux ("make deb").
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Wed, 21 May 2008 10:15:55 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Wed, 21 May 2008 00:00:00 +0000
 
 emailrelay (1.8) unstable; urgency=low
   * Speed optimisations (as identified by KCachegrind/valgrind in KDevelop).

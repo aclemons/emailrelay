@@ -209,7 +209,7 @@ void GSmtp::ServerProtocol::onTimeout()
 
 void GSmtp::ServerProtocol::onTimeoutException( std::exception & e )
 {
-	G_IGNORE e.what() ; // avoid unused parameter warning
+	G_IGNORE(std::string) e.what() ; // avoid unused parameter warning
 	G_DEBUG( "GSmtp::ServerProtocol::onTimeoutException: exception: " << e.what() ) ;
 	throw ;
 }
@@ -369,7 +369,14 @@ void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate 
 
 	G_DEBUG( "ServerProtocol::doAuth: [" << mechanism << "], [" << initial_response << "]" ) ;
 
-	if( m_authenticated )
+	bool sensitive = m_sasl.active() && SaslServer::requiresEncryption() && !m_secure ;
+	if( sensitive )
+	{
+		G_WARNING( "GSmtp::ServerProtocol: rejecting authentication attempt without encryption" ) ;
+		predicate = false ; // => idle
+		send( "504 Unsupported authentication mechanism" ) ;
+	}
+	else if( m_authenticated )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: too many AUTHs" ) ;
 		predicate = false ; // => idle
@@ -639,7 +646,9 @@ void GSmtp::ServerProtocol::sendNotImplemented()
 
 void GSmtp::ServerProtocol::sendAuthRequired()
 {
-	send( "530 authentication required" ) ;
+	bool sensitive = m_sasl.active() && SaslServer::requiresEncryption() && !m_secure ;
+	std::string more_help = sensitive ? ": use starttls" : "" ;
+	send( std::string() + "530 authentication required" + more_help ) ;
 }
 
 void GSmtp::ServerProtocol::sendNoRecipients()
@@ -700,13 +709,20 @@ void GSmtp::ServerProtocol::sendEhloReply()
 {
 	std::ostringstream ss ;
 		ss << "250-" << m_text.hello(m_peer_name) << crlf() ;
-	if( m_sasl.active() )
+
+	// dont advertise authentication if the sasl server implementation does not like plaintext dialogs
+	bool sensitive = m_sasl.active() && SaslServer::requiresEncryption() && !m_secure ;
+
+	if( m_sasl.active() && !sensitive )
 		ss << "250-AUTH " << m_sasl.mechanisms() << crlf() ;
+
 	if( m_with_ssl && !m_secure )
 		ss << "250-STARTTLS" << crlf() ;
+
 	if( m_with_vrfy )
 		ss << "250-VRFY" << crlf() ; // see RFC2821-3.5.2
-		ss << "250 8BITMIME" ;
+
+	ss << "250 8BITMIME" ;
 	send( ss.str() ) ;
 }
 

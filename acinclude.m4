@@ -639,6 +639,13 @@ AC_DEFUN([WITH_MAN2HTML],
 	AC_SUBST(HAVE_MAN2HTML)
 ])
 
+dnl with-pam
+dnl
+AC_DEFUN([WITH_PAM],
+[
+	AM_CONDITIONAL(PAM,test x$with_pam = xyes)
+])
+
 dnl set-directories
 dnl
 dnl Sets directory paths taking account of "--enable-fhs".

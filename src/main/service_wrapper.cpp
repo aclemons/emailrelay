@@ -131,6 +131,7 @@ private:
 	Handle statusHandle( std::string ) ;
 	void stopThread() ;
 	static void trim( std::string & ) ;
+	static std::string tolower( const std::string & ) ;
 private:
 	static Service * m_this ;
 } ;
@@ -361,6 +362,19 @@ void Service::trim( std::string & line )
 	}
 }
 
+std::string Service::tolower( const std::string & s_in )
+{
+	const std::string in = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" ;
+	const std::string out = "abcdefghijklmnopqrstuvwxyz" ;
+	std::string s = s_in ;
+	for( std::string::iterator p = s.begin() ; p != s.end() ; ++p )
+	{
+		if( in.find(*p) != std::string::npos )
+			*p = out.at( in.find(*p) ) ;
+	}
+	return s ;
+}
+
 std::string Service::commandline( std::string bat_path )
 {
 	G_DEBUG( "commandline: reading batch file: " << bat_path ) ;
@@ -370,8 +384,16 @@ std::string Service::commandline( std::string bat_path )
 			" (the service wrapper reads the command-line for the worker process from this file)" ) ;
 
 	std::string line ;
-	std::getline( stream , line ) ;
-	trim( line ) ;
+	while( stream.good() )
+	{
+		line.clear() ;
+		std::getline( stream , line ) ;
+		trim( line ) ;
+		if( line.empty() || tolower(line).find("@echo") == 0U || tolower(line).find("rem") == 0U )
+			;
+		else
+			break ;
+	}
 	if( line.empty() )
 		throw std::runtime_error( std::string() + "cannot read \"" + bat_path + "\"" ) ;
 

@@ -161,7 +161,7 @@ GSsl::LibraryImp::LibraryImp( const std::string & pem_file ) :
 	// status is checked via RAND_status() for the first time if [a] 
 	// socket is located at /var/run/edg-pool ..."
 	//
-	G_IGNORE RAND_status() ;
+	G_IGNORE(int) RAND_status() ;
 
 	m_context = new Context( pem_file ) ;
 }

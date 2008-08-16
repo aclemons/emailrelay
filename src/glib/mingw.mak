@@ -43,6 +43,8 @@ mk_sources=\
 	glogoutput_win32.cpp \
 	gmd5_native.cpp \
 	gpath.cpp \
+	gpam.cpp \
+	gpam_none.cpp \
 	gpidfile.cpp \
 	gprocess_win32.cpp \
 	gnewprocess_win32.cpp \

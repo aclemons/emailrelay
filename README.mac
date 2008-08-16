@@ -11,7 +11,8 @@ For best results use the "bin/configure-mac.sh" script to run "configure" with
 directory paths that are more Mac-like (see below).
 
 The "make" step will only build executables for the native architecture. Xcode
-can be used to build universal binaries. Project files for xcode 3 are supplied.
+can be used to build universal binaries, and project files for xcode 3 are
+supplied. See also "make universal" and "make image" in the "src/gui" directory.
 
 Directories
 -----------
@@ -31,5 +32,5 @@ is not guaranteed to work correctly.
 
 Binary distribution
 -------------------
-Graphical installation from the disk image has been developed using Mac OS X 
+Graphical installation from the disk image has been developed using Mac OS X
 10.5 ("Leopard"). Bug reports for other versions of OS X are welcome.

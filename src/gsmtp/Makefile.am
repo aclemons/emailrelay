@@ -26,11 +26,11 @@ ADMIN_SOURCES =
 endif
 
 if AUTH
-AUTH_EXTRA_DIST = gsasl_none.cpp gsecrets_none.cpp
-AUTH_SOURCES = gsasl_native.cpp gsecrets_full.cpp
+AUTH_EXTRA_DIST = gsaslserver_none.cpp gsaslclient_none.cpp gsecrets_none.cpp
+AUTH_SOURCES = gsaslserver_native.cpp gsaslclient_native.cpp gsecrets_full.cpp
 else
-AUTH_EXTRA_DIST = gsasl_native.cpp gsecrets_full.cpp
-AUTH_SOURCES = gsasl_none.cpp gsecrets_none.cpp
+AUTH_EXTRA_DIST = gsaslserver_native.cpp gsaslclient_native.cpp gsecrets_full.cpp
+AUTH_SOURCES = gsaslserver_none.cpp gsaslclient_none.cpp gsecrets_none.cpp
 endif
 
 EXEC_SOURCES_=\
@@ -63,7 +63,7 @@ EXTRA_DIST=\
 	$(ADMIN_EXTRA_DIST) \
 	$(EXEC_EXTRA_DIST) \
 	gmessagestore_win32.cpp \
-	gsasl_gnu.cpp \
+	gsaslserver_pam.cpp \
 	mingw.mak
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -DG_SPOOLDIR=\"$(e_spooldir)\"
@@ -103,6 +103,8 @@ libgsmtp_a_SOURCES = \
 	gprotocolmessagestore.cpp \
 	gprotocolmessagestore.h \
 	gsasl.h \
+	gsaslserver.h \
+	gsaslclient.h \
 	gsecrets.h \
 	gserverprotocol.cpp \
 	gserverprotocol.h \
@@ -115,6 +117,8 @@ libgsmtp_a_SOURCES = \
 	gstoredfile.h \
 	gstoredmessage.cpp \
 	gstoredmessage.h \
+	gvalid.h \
+	gvalid.cpp \
 	gverifier.cpp \
 	gverifier.h \
 	gverifierfactory.h \

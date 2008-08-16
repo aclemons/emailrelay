@@ -208,9 +208,9 @@
 	 * others complain when using a c-style cast...
 	 */
 	#if 1
-		#define G_IGNORE
+		#define G_IGNORE(type)
 	#else
-		#define G_IGNORE (void)
+		#define G_IGNORE(type) (void)
 	#endif
 
 	/* Use smaller buffers and limits if building with the uClibc run-time library.

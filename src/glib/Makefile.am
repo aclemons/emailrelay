@@ -19,6 +19,14 @@ INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION)
 
 noinst_LIBRARIES = libglib.a
 
+if PAM
+PAM_EXTRA_DIST = gpam_none.cpp
+PAM_SOURCES = gpam_linux.cpp gpam.cpp
+else
+PAM_EXTRA_DIST = gpam_linux.cpp gpam.cpp
+PAM_SOURCES = gpam_none.cpp
+endif
+
 if MAC
 MAC_EXTRA_DIST = garg_unix.cpp
 MAC_SOURCES = garg_mac.cpp
@@ -65,6 +73,7 @@ EXTRA_DIST=\
 	$(IDENTITY_EXTRA_DIST) \
 	$(GLOB_EXTRA_DIST) \
 	$(MAC_EXTRA_DIST) \
+	$(PAM_EXTRA_DIST) \
 	garg_win32.cpp \
 	gcleanup_win32.cpp \
 	gdaemon_win32.cpp \
@@ -86,6 +95,7 @@ libglib_a_SOURCES = \
 	$(IDENTITY_SOURCES) \
 	$(GLOB_SOURCES) \
 	$(MAC_SOURCES) \
+	$(PAM_SOURCES) \
 	md5.cpp \
 	md5.h \
 	garg.cpp \
@@ -129,6 +139,7 @@ libglib_a_SOURCES = \
 	gmd5.h \
 	gmemory.h \
 	gnoncopyable.h \
+	gpam.h \
 	gpath.h \
 	gpidfile.cpp \
 	gpidfile.h \

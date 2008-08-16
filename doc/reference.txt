@@ -552,6 +552,51 @@ from a particular IP address is allowed. This type of POP-before-SMTP
 authentication can be done outside the E-MailRelay system by POP/IMAP utilities
 such as "fetchmail".
 
+TLS/SSL
+-------
+E-MailRelay can use TLS/SSL to encrypt SMTP sessions. To enable TLS/SSL
+encryption when E-MailRelay is acting as an SMTP client use the "--client-tls"
+command-line switch, and to enable TLS/SSL when E-MailRelay is acting as an SMTP
+server use "--server-tls".
+
+The "--server-tls" switch requires the name of an X.509 certificate in the "PEM"
+format. This file must be in a directory that the OpenSSL library considers to
+be secure. On some systems this is "/etc/ssl/certs".
+
+Certificate files can be created with the "openssl" utility using the 
+"req -x509" sub-command. Refer to the OpenSSL documentation for the details.
+
+Linux PAM
+---------
+E-MailRelay has some support for using Linux Pluggable Authentication Modules
+(PAM) for authentication if built on Linux with the "--with-pam" configure
+option.
+
+PAM authentication is only used when a remote client connects to the E-MailRelay
+server over SMTP. It does not apply to E-MailRelay acting as either an SMTP
+client or a POP server.
+
+The "--server-auth" command-line switch is used to enable the SMTP AUTH extension
+in the normal way. The secrets file specified by the switch value is ignored, 
+although it does have to refer to an existing file so you should specify 
+something like "/dev/null".
+
+The PAM system must be configured with a service of "emailrelay". This normally
+involves creating a file "/etc/pam.d/emailrelay" containing somthing like the
+following:
+
+	auth requisite pam_unix.so nullok_secure
+	session required pam_permit.so
+	account required pam_permit.so
+	password required pam_deny.so
+
+With this configuration the E-MailRelay SMTP server will use normal linux
+account names and passwords to authenticate remote clients.
+
+Note that the SMTP protocol may pass plaintext passwords over the network, so as 
+a PAM-specific feature you must use the "--server-tls" command-line switch and 
+SMTP clients must establish a SSL/TLS session before authenticating.
+
 Pop server
 ----------
 E-MailRelay can be used as a POP3 server so that POP clients have access to
@@ -690,7 +735,7 @@ create messages that will trick a [..] recipient into believing that they came
 from somewhere else. [..] Real [..] security lies [..] in end-to-end methods
 [..] such as those which use digital signatures."
 
-The "Authentication" section below also relates to security.
+The "Authentication" section above also relates to security.
 
 Administration interface
 ------------------------

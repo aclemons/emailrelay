@@ -24,6 +24,7 @@
 #include "gdebug.h"
 #include "gassert.h"
 #include "glog.h"
+#include <cstring>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -53,7 +54,7 @@ bool GNet::Socket::setNonBlock()
 int GNet::Socket::reason()
 {
 	int r = errno ;
-	G_DEBUG( "GNet::Socket::reason: " << (r==EINPROGRESS?"":"error ") << r << ": " << ::strerror(r) ) ;
+	G_DEBUG( "GNet::Socket::reason: " << (r==EINPROGRESS?"":"error ") << r << ": " << std::strerror(r) ) ;
 	return r ;
 }
 

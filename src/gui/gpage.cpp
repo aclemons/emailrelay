@@ -50,6 +50,11 @@ const GDialog & GPage::dialog() const
 	return m_dialog ;
 }
 
+std::string GPage::helpName() const
+{
+	return std::string() ;
+}
+
 bool GPage::useFinishButton() const
 {
 	return m_finish_button ;
@@ -152,6 +157,32 @@ void GPage::mechanismUpdateSlot( const QString & m )
 		//QMessageBox::warning( NULL , title , "... ..." , QMessageBox::Ok , QMessageBox::NoButton , QMessageBox::NoButton ) ;
 		first = false ;
 	}
+}
+
+void GPage::tip( QWidget * w , const char * p )
+{
+	// see also QWidget::setWhatsThis()
+	w->setToolTip( tip(p) ) ;
+}
+
+void GPage::tip( QWidget * w , NameTip )
+{
+	w->setToolTip( tip() ) ;
+}
+
+void GPage::tip( QWidget * w , PasswordTip )
+{
+	w->setToolTip( tip() ) ;
+}
+
+QString GPage::tip( const char * p )
+{
+	return QString( p ) ;
+}
+
+QString GPage::tip()
+{
+	return QString( tr("See \"emailrelay.auth\"") ) ;
 }
 
 /// \file gpage.cpp

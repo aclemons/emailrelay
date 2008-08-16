@@ -23,7 +23,7 @@
 #include "gsmtp.h"
 #include "glocal.h"
 #include "gfile.h"
-#include "gsasl.h"
+#include "gsaslclient.h"
 #include "gbase64.h"
 #include "gstr.h"
 #include "gmemory.h"

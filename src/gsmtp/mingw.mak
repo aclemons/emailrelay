@@ -40,7 +40,8 @@ mk_sources=\
 	gprotocolmessageforward.cpp \
 	gprotocolmessagestore.cpp \
 	grequestclient.cpp \
-	gsasl_native.cpp \
+	gsaslclient_native.cpp \
+	gsaslserver_native.cpp \
 	gsecrets_full.cpp \
 	gserverprotocol.cpp \
 	gsmtpclient.cpp \
