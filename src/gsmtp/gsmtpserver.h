@@ -54,7 +54,7 @@ class GSmtp::ServerPeer : public GNet::BufferedServerPeer , private GSmtp::Serve
 {
 public:
 	ServerPeer( GNet::Server::PeerInfo , Server & server , std::auto_ptr<ProtocolMessage> pmessage , 
-		const Secrets & , const std::string & verifier_address , unsigned int verifier_timeout ,
+		const GAuth::Secrets & , const std::string & verifier_address , unsigned int verifier_timeout ,
 		std::auto_ptr<ServerProtocol::Text> ptext , ServerProtocol::Config ) ;
 			///< Constructor.
 
@@ -114,7 +114,7 @@ public:
 			const std::string & , unsigned int , const std::string & , unsigned int ) ;
 	} ;
 
-	Server( MessageStore & store , const Secrets & client_secrets , const Secrets & server_secrets ,
+	Server( MessageStore & store , const GAuth::Secrets & client_secrets , const GAuth::Secrets & server_secrets ,
 		Config server_config , std::string smtp_server_address , unsigned int smtp_connection_timeout ,
 		GSmtp::Client::Config client_config ) ;
 			///< Constructor. Listens on the given port number using 
@@ -156,10 +156,10 @@ private:
 	GSmtp::Client::Config m_client_config ;
 	std::string m_ident ;
 	bool m_allow_remote ;
-	const Secrets & m_server_secrets ;
+	const GAuth::Secrets & m_server_secrets ;
 	std::string m_smtp_server ;
 	unsigned int m_smtp_connection_timeout ;
-	const Secrets & m_client_secrets ;
+	const GAuth::Secrets & m_client_secrets ;
 	std::string m_verifier_address ;
 	unsigned int m_verifier_timeout ;
 	bool m_anonymous ;

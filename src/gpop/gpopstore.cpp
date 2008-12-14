@@ -109,7 +109,9 @@ void GPop::Store::checkPath( G::Path dir_path , bool by_name , bool allow_delete
 			{
 				n++ ;
 				if( !valid(iter.filePath(),allow_delete) )
+				{
 					; // no-op -- warning only
+				}
 			}
 		}
 		if( n == 0 )

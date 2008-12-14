@@ -34,7 +34,7 @@
 #include "glog.h"
 #include "gassert.h"
 
-GSmtp::ClientProtocol::ClientProtocol( Sender & sender , const Secrets & secrets , Config config ) :
+GSmtp::ClientProtocol::ClientProtocol( Sender & sender , const GAuth::Secrets & secrets , Config config ) :
 	m_sender(sender) ,
 	m_secrets(secrets) ,
 	m_thishost(config.thishost_name) ,
@@ -68,7 +68,7 @@ void GSmtp::ClientProtocol::start( const std::string & from , const G::Strings &
 	m_message_is_8bit = eight_bit ;
 	m_message_authentication = authentication ;
 	m_reply = Reply() ;
-	m_sasl <<= new SaslClient( m_secrets , server_name ) ;
+	m_sasl <<= new GAuth::SaslClient( m_secrets , server_name ) ;
 	m_done_signal.reset() ;
 
 	// (re)start the protocol
@@ -262,6 +262,7 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		{
 			std::string msg( "GSmtp::ClientProtocol::applyEvent: cannot do tls/ssl required by remote smtp server" );
 			if( !m_auth_mechanism.empty() ) msg.append( ": authentication will probably fail" ) ;
+			msg.append( ": try enabling client-tls" ) ;
 			G_WARNING( msg ) ;
 		}
 
@@ -280,7 +281,8 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		}
 		else if( m_server_has_auth && m_sasl->active() && m_auth_mechanism.empty() )
 		{
-			throw NoMechanism() ;
+			throw NoMechanism( std::string() + "add client secret for " +
+				G::Str::printable(G::Str::join(serverAuthMechanisms(reply),"/")) ) ;
 		}
 		else if( m_server_has_auth && m_sasl->active() )
 		{
@@ -311,12 +313,13 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		m_state = sSentTlsEhlo ;
 		sendEhlo() ;
 	}
-	else if( m_state == sAuth1 && reply.is(Reply::Challenge_334) && Base64::valid(reply.text()) )
+	else if( m_state == sAuth1 && reply.is(Reply::Challenge_334) && G::Base64::valid(reply.text()) )
 	{
 		bool done = true ;
 		bool error = false ;
 		bool sensitive = false ;
-		std::string rsp = m_sasl->response( m_auth_mechanism , Base64::decode(reply.text()) , done , error , sensitive);
+		std::string rsp = m_sasl->response( m_auth_mechanism , G::Base64::decode(reply.text()) , 
+			done , error , sensitive);
 		if( error )
 		{
 			m_state = sAuth2 ;
@@ -325,13 +328,14 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		else
 		{
 			m_state = done ? sAuth2 : m_state ;
-			send( Base64::encode(rsp,std::string()) , false , sensitive ) ;
+			send( G::Base64::encode(rsp,std::string()) , false , sensitive ) ;
 		}
 	}
 	else if( m_state == sAuth1 && reply.is(Reply::NotAuthenticated_535) )
 	{
 		if( m_must_authenticate )
-			throw AuthenticationError() ;
+			throw AuthenticationError( std::string() + 
+				"for \"" + G::Str::printable(m_secrets.id(m_auth_mechanism)) + "\" using " + m_auth_mechanism ) ;
 
 		m_state = sPreprocessing ;
 		startPreprocessing() ; // (continue without sucessful authentication)
@@ -341,7 +345,8 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		m_authenticated_with_server = reply.is(Reply::Authenticated_235) ;
 		if( !m_authenticated_with_server && m_must_authenticate )
 		{
-			throw AuthenticationError() ;
+			throw AuthenticationError( std::string() + 
+				"for \"" + G::Str::printable(m_secrets.id(m_auth_mechanism)) + "\" using " + m_auth_mechanism ) ;
 		}
 		else
 		{

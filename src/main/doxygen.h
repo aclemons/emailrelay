@@ -96,6 +96,21 @@ Key classes are:
 
  */
 
+/*! \namespace GAuth
+\short 
+SASL authentication classes.
+
+The GAuth namespace contains classes relating to SASL
+and PAM authentication.
+
+Key classes are:
+- SaslClient
+- SaslServer
+- SaslServerFactory
+- Secrets
+
+ */
+
 /*! \namespace GNet
 \short 
 Network classes.

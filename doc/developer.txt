@@ -3,12 +3,14 @@ E-MailRelay Internals
 
 Module structure
 ----------------
-There are four main C++ libraries in the E-MailRelay code: "glib" provides
-low-level classes for file-system abstraction, date and time representation,
-string utility functions, logging, command line parsing etc., "gnet" provides
-network classes using the Berkley socket and Winsock APIs, "gsmtp" contains SMTP
-and message-store classes, and "gpop" contains POP3 classes. All four libraries
-are portable between POSIX-like systems (eg. Linux) and Windows.
+The main C++ libraries in the E-MailRelay code are: "glib", providing low-level
+classes for file-system abstraction, date and time representation, string
+utility functions, logging, command line parsing etc.; "gssl", which is a thin
+abstraction over OpenSSL; "gnet", which provides network classes using the
+Berkley socket and Winsock APIs; "gauth", which implements various 
+authentication mechanisms; "gsmtp", containing SMTP and message-store classes;
+and "gpop", which contains POP3 classes. All of these libraries are portable
+between POSIX-like systems (eg. Linux) and Windows.
 
 Under Windows there is an additional library for event handling. Windows has
 historically built network event processing on top of the GUI event system which
@@ -200,6 +202,14 @@ Directory structure
 # src/gnet
 
   A network library using Berkley sockets or Winsock.
+
+# src/gssl
+
+  A library for using OpenSSL.
+
+# src/gauth
+
+  A library for SASL and PAM authentication.
 
 # src/gsmtp
 

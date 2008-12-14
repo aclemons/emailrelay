@@ -30,7 +30,7 @@ bool Main::Admin::enabled()
 
 std::auto_ptr<GSmtp::AdminServer> Main::Admin::newServer( const Configuration & , 
 	GSmtp::MessageStore & , const GSmtp::Client::Config & , 
-	const GSmtp::Secrets & , const std::string & )
+	const GAuth::Secrets & , const std::string & )
 {
 	throw std::runtime_error( "admin interface not supported: not enabled at build time" ) ;
 }

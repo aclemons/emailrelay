@@ -3,8 +3,10 @@ E-MailRelay Change Log
 
 1.8.1 -> 1.9
 ------------
-* Linux PAM support ("configure --with-pam").
-* Namespace fixes for compatibility with gcc 3.4.
+* TODO: POP must disallow authentication before STLS if using PAM
+* Added TLS for POP
+* Linux PAM support added ("configure --with-pam" and "--server-auth=/pam").
+* Fixed namespace problems for gcc 3.4.
 
 1.8 -> 1.8.1
 ------------

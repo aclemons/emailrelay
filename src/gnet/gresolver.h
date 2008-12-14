@@ -60,7 +60,7 @@ public:
 		///<
 		///< The input format should be:
 		///<	{<host-name>|<host-address>}:{<service-name>|<port-number>}
-		///<	where host-address := <n1>.<n2>.<n3>.<n4> for ipv4
+		///<	where host-address := <n-1>.<n-2>.<n-3>.<n-4> for ipv4
 
 	bool resolveReq( std::string name , bool udp = false ) ;
 		///< Initiates a name-to-address resolution. Returns

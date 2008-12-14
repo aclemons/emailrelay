@@ -18,6 +18,9 @@
 #
 # Scanner.pm
 #
+# A wrapper for running the "emailrelay-test-scanner"
+# program.
+#
 
 use strict ;
 use FileHandle ;

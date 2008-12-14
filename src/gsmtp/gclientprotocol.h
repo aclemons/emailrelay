@@ -161,7 +161,7 @@ class GSmtp::ClientProtocol : private GNet::AbstractTimer
 public:
 	G_EXCEPTION( NotReady , "not ready" ) ;
 	G_EXCEPTION( ResponseError , "protocol error: unexpected response" ) ;
-	G_EXCEPTION( NoMechanism , "cannot do authentication mandated by the remote smtp server" ) ;
+	G_EXCEPTION( NoMechanism , "cannot do authentication mandated by remote server" ) ;
 	G_EXCEPTION( AuthenticationRequired , "authentication required by the remote smtp server" ) ;
 	G_EXCEPTION( AuthenticationNotSupported , "authentication not supported by the remote smtp server" ) ;
 	G_EXCEPTION( AuthenticationError , "authentication error" ) ;
@@ -200,7 +200,7 @@ public:
 		Config( const std::string & , unsigned int , unsigned int , unsigned int , bool , bool ) ;
 	} ;
 
-	ClientProtocol( Sender & sender , const Secrets & secrets , Config config ) ;
+	ClientProtocol( Sender & sender , const GAuth::Secrets & secrets , Config config ) ;
 		///< Constructor. The 'sender' and 'secrets' references are kept.
 		///<
 		///< The Sender interface is used to send protocol messages to 
@@ -280,7 +280,7 @@ private:
 	enum State { sInit , sStarted , sServiceReady , sSentEhlo , sSentHelo , sAuth1 , sAuth2 , sSentMail , 
 		sPreprocessing , sSentRcpt , sSentData , sSentDataStub , sData , sSentDot , sStartTls , sSentTlsEhlo , sDone } ;
 	Sender & m_sender ;
-	const Secrets & m_secrets ;
+	const GAuth::Secrets & m_secrets ;
 	std::string m_thishost ;
 	State m_state ;
 	std::string m_from ;
@@ -295,7 +295,7 @@ private:
 	Reply m_reply ;
 	bool m_authenticated_with_server ;
 	std::string m_auth_mechanism ;
-	std::auto_ptr<SaslClient> m_sasl ;
+	std::auto_ptr<GAuth::SaslClient> m_sasl ;
 	bool m_must_authenticate ;
 	bool m_strict ;
 	bool m_warned ;

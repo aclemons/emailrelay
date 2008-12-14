@@ -34,8 +34,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-noinst_PROGRAMS = emailrelay-test-scanner$(EXEEXT) \
-	emailrelay-test-server$(EXEEXT)
+noinst_PROGRAMS = $(am__EXEEXT_1)
+TESTS = $(am__EXEEXT_2)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -46,6 +46,8 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
+@TESTING_TRUE@am__EXEEXT_1 = emailrelay-test-scanner$(EXEEXT) \
+@TESTING_TRUE@	emailrelay-test-server$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_emailrelay_test_scanner_OBJECTS =  \
 	emailrelay_test_scanner.$(OBJEXT)
@@ -80,6 +82,8 @@ DIST_SOURCES = $(emailrelay_test_scanner_SOURCES) \
 	$(emailrelay_test_server_SOURCES)
 ETAGS = etags
 CTAGS = ctags
+@TESTING_TRUE@am__EXEEXT_2 = emailrelay-test.sh \
+@TESTING_TRUE@	emailrelay-chain-test.sh
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -108,6 +112,7 @@ EXEEXT = @EXEEXT@
 FRAGMENTS_LIST = @FRAGMENTS_LIST@
 GREP = @GREP@
 GZIP = @GZIP@
+G_CAPABILITIES = @G_CAPABILITIES@
 HAVE_DOXYGEN = @HAVE_DOXYGEN@
 HAVE_MAN2HTML = @HAVE_MAN2HTML@
 INSTALL = @INSTALL@
@@ -131,6 +136,7 @@ PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PAM_LIBS = @PAM_LIBS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 QT_CFLAGS = @QT_CFLAGS@
@@ -194,7 +200,14 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @SMALL_FRAGMENTS_FALSE@FRAGMENTS_LDADD = 
 @SMALL_FRAGMENTS_TRUE@FRAGMENTS_LDADD = $(top_builddir)/src/fragments/libfragments.a
+@TESTING_FALSE@TESTING_FILES = 
+@TESTING_TRUE@TESTING_FILES = emailrelay-test.sh emailrelay-chain-test.sh
+@TESTING_FALSE@TESTING_EXTRA_DIST = 
+@TESTING_TRUE@TESTING_EXTRA_DIST = 
+@TESTING_FALSE@TESTING_HELPERS = 
+@TESTING_TRUE@TESTING_HELPERS = emailrelay-test-scanner emailrelay-test-server
 EXTRA_DIST = \
+	$(TESTING_EXTRA_DIST) \
 	emailrelay-test.pl_ \
 	emailrelay-test.sh_ \
 	emailrelay-chain-test.sh_ \
@@ -211,7 +224,6 @@ EXTRA_DIST = \
 	TestServer.pm
 
 noinst_SCRIPTS = emailrelay-test.sh emailrelay-test.pl emailrelay-chain-test.sh emailrelay-soak-test.sh
-TESTS = emailrelay-test.sh emailrelay-chain-test.sh
 CLEANFILES = $(noinst_SCRIPTS) $(noinst_PROGRAMS) .emailrelay-test-server.pid
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -DG_SPOOLDIR=\"$(e_spooldir)\"
 COMMON_LDADD = \

@@ -31,7 +31,7 @@ bool Main::Admin::enabled()
 
 std::auto_ptr<GSmtp::AdminServer> Main::Admin::newServer( const Configuration & cfg , 
 	GSmtp::MessageStore & store , const GSmtp::Client::Config & client_config , 
-	const GSmtp::Secrets & client_secrets , const std::string & version_number )
+	const GAuth::Secrets & client_secrets , const std::string & version_number )
 {
 		GNet::Address listening_address = 
 			cfg.firstListeningInterface().length() ? 

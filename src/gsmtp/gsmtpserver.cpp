@@ -72,7 +72,7 @@ std::string AnonymousText::received( const std::string & peer_name ) const
 // ===
 
 GSmtp::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info ,
-	Server & server , std::auto_ptr<ProtocolMessage> pmessage , const Secrets & server_secrets , 
+	Server & server , std::auto_ptr<ProtocolMessage> pmessage , const GAuth::Secrets & server_secrets , 
 	const std::string & verifier_address , unsigned int verifier_timeout ,
 	std::auto_ptr<ServerProtocol::Text> ptext ,
 	ServerProtocol::Config protocol_config ) :
@@ -129,9 +129,9 @@ void GSmtp::ServerPeer::protocolSend( const std::string & line , bool go_secure 
 
 // ===
 
-GSmtp::Server::Server( MessageStore & store , const Secrets & client_secrets , const Secrets & server_secrets ,
-	Config config , std::string smtp_server_address , unsigned int smtp_connection_timeout ,
-	GSmtp::Client::Config client_config ) :
+GSmtp::Server::Server( MessageStore & store , const GAuth::Secrets & client_secrets , 
+	const GAuth::Secrets & server_secrets , Config config , std::string smtp_server_address , 
+	unsigned int smtp_connection_timeout , GSmtp::Client::Config client_config ) :
 		GNet::MultiServer( GNet::MultiServer::addressList(config.interfaces,config.port) ) ,
 		m_store(store) ,
 		m_processor_address(config.processor_address) ,

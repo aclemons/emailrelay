@@ -25,7 +25,6 @@
 #include "admin.h"
 #include "gsmtpserver.h"
 #include "gsmtpclient.h"
-#include "gsasl.h"
 #include "gsecrets.h"
 #include "geventloop.h"
 #include "garg.h"
@@ -53,6 +52,15 @@
 #include <iostream>
 #include <exception>
 #include <utility>
+
+#ifndef G_CAPABILITIES
+	#define G_CAPABILITIES ""
+#endif
+
+std::string Main::Run::capabilities()
+{
+	return G_CAPABILITIES ;
+}
 
 std::string Main::Run::versionNumber()
 {
@@ -294,8 +302,8 @@ void Main::Run::runCore()
 
 	// authentication secrets
 	//
-	m_client_secrets <<= new GSmtp::Secrets( cfg.clientSecretsFile() , "client" ) ;
-	GSmtp::Secrets server_secrets( cfg.serverSecretsFile() , "server" ) ;
+	m_client_secrets <<= new GAuth::Secrets( cfg.clientSecretsFile() , "client" ) ;
+	GAuth::Secrets server_secrets( cfg.serverSecretsFile() , "server" ) ;
 	if( cfg.doPop() )
 		m_pop_secrets <<= new GPop::Secrets( cfg.popSecretsFile() ) ;
 
@@ -324,8 +332,8 @@ void Main::Run::runCore()
 	}
 }
 
-void Main::Run::doServing( const GSmtp::Secrets & client_secrets , 
-	GSmtp::MessageStore & store , const GSmtp::Secrets & server_secrets , 
+void Main::Run::doServing( const GAuth::Secrets & client_secrets , 
+	GSmtp::MessageStore & store , const GAuth::Secrets & server_secrets , 
 	GPop::Store & pop_store , const GPop::Secrets & pop_secrets ,
 	G::PidFile & pid_file , GNet::EventLoop & event_loop )
 {
@@ -396,7 +404,7 @@ void Main::Run::doServing( const GSmtp::Secrets & client_secrets ,
 	m_admin_server <<= 0 ;
 }
 
-void Main::Run::doForwardingOnStartup( GSmtp::MessageStore & store , const GSmtp::Secrets & secrets , 
+void Main::Run::doForwardingOnStartup( GSmtp::MessageStore & store , const GAuth::Secrets & secrets , 
 	GNet::EventLoop & event_loop )
 {
 	const Configuration & cfg = config() ;
@@ -534,7 +542,7 @@ const Main::CommandLine & Main::Run::cl() const
 	// lazy evaluation so that the constructor doesnt throw
 	if( m_cl.get() == NULL )
 	{
-		const_cast<Run*>(this)->m_cl <<= new CommandLine( m_output , m_arg , m_switch_spec , versionNumber() ) ;
+		const_cast<Run*>(this)->m_cl <<= new CommandLine( m_output , m_arg , m_switch_spec , versionNumber() , capabilities() ) ;
 		const_cast<Run*>(this)->m_cfg <<= new Configuration( cl().cfg() ) ;
 	}
 	return *m_cl.get() ;

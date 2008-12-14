@@ -21,7 +21,18 @@ else
 FRAGMENTS_LDADD =
 endif
 
+if TESTING
+TESTING_FILES = emailrelay-test.sh emailrelay-chain-test.sh
+TESTING_EXTRA_DIST =
+TESTING_HELPERS = emailrelay-test-scanner emailrelay-test-server
+else
+TESTING_FILES =
+TESTING_EXTRA_DIST =
+TESTING_HELPERS =
+endif
+
 EXTRA_DIST = \
+	$(TESTING_EXTRA_DIST) \
 	emailrelay-test.pl_ \
 	emailrelay-test.sh_ \
 	emailrelay-chain-test.sh_ \
@@ -38,8 +49,8 @@ EXTRA_DIST = \
 	TestServer.pm
 
 noinst_SCRIPTS = emailrelay-test.sh emailrelay-test.pl emailrelay-chain-test.sh emailrelay-soak-test.sh
-noinst_PROGRAMS = emailrelay-test-scanner emailrelay-test-server
-TESTS = emailrelay-test.sh emailrelay-chain-test.sh
+noinst_PROGRAMS = $(TESTING_HELPERS)
+TESTS = $(TESTING_FILES)
 CLEANFILES = $(noinst_SCRIPTS) $(noinst_PROGRAMS) .emailrelay-test-server.pid
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -DG_SPOOLDIR=\"$(e_spooldir)\"
 

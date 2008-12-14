@@ -259,7 +259,7 @@ void GSmtp::AdminServerPeer::list()
 // ===
 
 GSmtp::AdminServer::AdminServer( MessageStore & store , const GSmtp::Client::Config & client_config ,
-	const Secrets & secrets , const GNet::Address & listening_address , bool allow_remote , 
+	const GAuth::Secrets & secrets , const GNet::Address & listening_address , bool allow_remote , 
 	const GNet::Address & local_address , const std::string & remote_address , 
 	unsigned int connection_timeout , const G::StringMap & extra_commands , bool with_terminate ) :
 		GNet::MultiServer( GNet::MultiServer::addressList(listening_address) ) ,
@@ -332,7 +332,7 @@ GSmtp::MessageStore & GSmtp::AdminServer::store()
 	return m_store ;
 }
 
-const GSmtp::Secrets & GSmtp::AdminServer::secrets() const
+const GAuth::Secrets & GSmtp::AdminServer::secrets() const
 {
 	return m_secrets ;
 }

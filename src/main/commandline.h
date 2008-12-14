@@ -48,7 +48,7 @@ public:
 		///< Returns an o/s-specific G::GetOpt switch specification string.
 
 	CommandLine( Main::Output & output , const G::Arg & arg , const std::string & spec , 
-		const std::string & version ) ;
+		const std::string & version , const std::string & capabilities ) ;
 			///< Constructor.
 
 	~CommandLine() ;
@@ -116,6 +116,9 @@ public:
 
 	void showCopyright( bool error_stream = false , const std::string & = std::string() ) const ;
 		///< Writes a copyright message.
+
+	void showCapabilities( bool error_stream = false , const std::string & = std::string() ) const ;
+		///< Writes a capability line.
 
 private:
 	CommandLine( const CommandLine & ) ; // not implemented

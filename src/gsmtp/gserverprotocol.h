@@ -34,6 +34,7 @@
 #include "gexception.h"
 #include <map>
 #include <utility>
+#include <memory>
 
 /// \namespace GSmtp
 namespace GSmtp
@@ -84,7 +85,7 @@ public:
 	} ;
 
 	ServerProtocol( Sender & sender , Verifier & verifier , ProtocolMessage & pmessage ,
-		const Secrets & secrets , Text & text , GNet::Address peer_address , Config config ) ;
+		const GAuth::Secrets & secrets , Text & text , GNet::Address peer_address , Config config ) ;
 			///< Constructor. 
 			///<
 			///< The Verifier interface is used to verify recipient
@@ -179,6 +180,7 @@ private:
 	std::string commandWord( const std::string & line ) const ;
 	std::string commandLine( const std::string & line ) const ;
 	static const std::string & crlf() ;
+	bool sensitive() const ;
 	void reset() ;
 	void badClientEvent() ;
 	void processDone( bool , unsigned long , std::string ) ; // ProtocolMessage::doneSignal()
@@ -252,7 +254,7 @@ private:
 	std::string m_peer_name ;
 	bool m_authenticated ;
 	bool m_secure ;
-	SaslServer m_sasl ;
+	std::auto_ptr<GAuth::SaslServer> m_sasl ;
 	bool m_with_vrfy ;
 	bool m_with_ssl ;
 	std::string m_buffer ;

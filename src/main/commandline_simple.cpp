@@ -53,8 +53,9 @@ std::string Main::CommandLine::switchSpec( bool )
 	return std::string() ;
 }
 
-Main::CommandLine::CommandLine( Main::Output & , const G::Arg & arg , const std::string & , const std::string & ) :
-	m_imp(NULL)
+Main::CommandLine::CommandLine( Main::Output & , const G::Arg & arg , const std::string & , 
+	const std::string & , const std::string & ) :
+		m_imp(NULL)
 {
 	bool ok = false ;
 	if( arg.c() == 2U )

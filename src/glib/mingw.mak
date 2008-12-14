@@ -21,6 +21,7 @@
 mk_sources=\
 	garg.cpp \
 	garg_win32.cpp \
+	gbase64.cpp \
 	gcleanup_win32.cpp \
 	gcounter.cpp \
 	gdaemon_win32.cpp \

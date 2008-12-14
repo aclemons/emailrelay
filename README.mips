@@ -6,7 +6,8 @@ WHR-G54S, a makefile for building a cross-compiler toolchain is provided as
 
 The shell script "extra/mips/configure-mips.sh" can be used to run the main
 E-MailRelay "configure" script with all the size optimisations suitable for an
-embedded target system.
+embedded target system. Read the comments at the top of the "configure-mips.sh"
+script for the details.
 
 These build-time size optimisations yield the following approximate savings for
 the main executable:

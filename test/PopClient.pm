@@ -18,6 +18,8 @@
 #
 # PopClient.pm
 #
+# A network client for driving the pop interface.
+#
 
 use strict ;
 use FileHandle ;

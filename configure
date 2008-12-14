@@ -705,6 +705,7 @@ GZIP
 HAVE_DOXYGEN
 HAVE_MAN2HTML
 COMPILER_VERSION
+G_CAPABILITIES
 CPP
 EGREP
 PKG_CONFIG
@@ -736,11 +737,14 @@ PROXY_TRUE
 PROXY_FALSE
 MAC_TRUE
 MAC_FALSE
+TESTING_TRUE
+TESTING_FALSE
 SSL_LIBS
 OPENSSL_TRUE
 OPENSSL_FALSE
 GLOB_TRUE
 GLOB_FALSE
+PAM_LIBS
 PAM_TRUE
 PAM_FALSE
 STATIC_START
@@ -1375,6 +1379,7 @@ Optional Features:
                           (default no)
   --enable-proxy          enable proxying (default yes)
   --enable-mac            enable building for a mac os x target (default auto)
+  --enable-testing        enable make-check tests (default yes)
   --enable-static-linking prefer static linking for some libraries (default
                           no)
   --enable-install-hook   enable fixing up the start/stop configuration file
@@ -4407,6 +4412,12 @@ fi
 
 
 
+
+	G_CAPABILITIES="`echo \"$ac_configure_args\" | sed 's/-/_/g' | sed 's/[^_a-z]//g' | sed 's/^__//g'`"
+
+
+
+
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -7238,6 +7249,19 @@ if test "${enable_exec+set}" = set; then
 fi
 
 
+	if test x$enable_small_fragments = xyes -a x$aclocal_use_ipv6 = xyes
+	then
+		{ { echo "$as_me:$LINENO: error: cannot use --enable-small-fragments and --enable-ipv6" >&5
+echo "$as_me: error: cannot use --enable-small-fragments and --enable-ipv6" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+	if test x$enable_small_fragments = xyes -a x$MOC != x
+	then
+		{ { echo "$as_me:$LINENO: error: cannot use --enable-small-fragments and --enable-gui" >&5
+echo "$as_me: error: cannot use --enable-small-fragments and --enable-gui" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+
 	 if test x$enable_small_fragments = xyes; then
   SMALL_FRAGMENTS_TRUE=
   SMALL_FRAGMENTS_FALSE='#'
@@ -7323,6 +7347,22 @@ _ACEOF
 else
   MAC_TRUE='#'
   MAC_FALSE=
+fi
+
+
+
+# Check whether --enable-testing was given.
+if test "${enable_testing+set}" = set; then
+  enableval=$enable_testing;
+fi
+
+
+	 if test x$enable_testing != xno; then
+  TESTING_TRUE=
+  TESTING_FALSE='#'
+else
+  TESTING_TRUE='#'
+  TESTING_FALSE=
 fi
 
 
@@ -7547,6 +7587,11 @@ if test "${with_pam+set}" = set; then
 fi
 
 
+	if test "$with_pam" = "yes"
+	then
+		PAM_LIBS="-lpam"
+	fi
+
 	 if test x$with_pam = xyes; then
   PAM_TRUE=
   PAM_FALSE='#'
@@ -7686,7 +7731,7 @@ fi
 
 if test "$e_qtmoc" = "" ; then e_qtmoc="moc" ; fi
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile debian/Makefile src/fragments/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gauth/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile debian/Makefile src/fragments/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -7893,6 +7938,13 @@ if test -z "${MAC_TRUE}" && test -z "${MAC_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"MAC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"MAC\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${TESTING_TRUE}" && test -z "${TESTING_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"TESTING\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"TESTING\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -8398,6 +8450,7 @@ do
     "src/glib/Makefile") CONFIG_FILES="$CONFIG_FILES src/glib/Makefile" ;;
     "src/gssl/Makefile") CONFIG_FILES="$CONFIG_FILES src/gssl/Makefile" ;;
     "src/gnet/Makefile") CONFIG_FILES="$CONFIG_FILES src/gnet/Makefile" ;;
+    "src/gauth/Makefile") CONFIG_FILES="$CONFIG_FILES src/gauth/Makefile" ;;
     "src/gsmtp/Makefile") CONFIG_FILES="$CONFIG_FILES src/gsmtp/Makefile" ;;
     "src/gpop/Makefile") CONFIG_FILES="$CONFIG_FILES src/gpop/Makefile" ;;
     "src/main/Makefile") CONFIG_FILES="$CONFIG_FILES src/main/Makefile" ;;
@@ -8568,11 +8621,11 @@ GZIP!$GZIP$ac_delim
 HAVE_DOXYGEN!$HAVE_DOXYGEN$ac_delim
 HAVE_MAN2HTML!$HAVE_MAN2HTML$ac_delim
 COMPILER_VERSION!$COMPILER_VERSION$ac_delim
+G_CAPABILITIES!$G_CAPABILITIES$ac_delim
 CPP!$CPP$ac_delim
 EGREP!$EGREP$ac_delim
 PKG_CONFIG!$PKG_CONFIG$ac_delim
 QT_CFLAGS!$QT_CFLAGS$ac_delim
-QT_LIBS!$QT_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -8614,6 +8667,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+QT_LIBS!$QT_LIBS$ac_delim
 MOC!$MOC$ac_delim
 IPV6_TRUE!$IPV6_TRUE$ac_delim
 IPV6_FALSE!$IPV6_FALSE$ac_delim
@@ -8640,11 +8694,14 @@ PROXY_TRUE!$PROXY_TRUE$ac_delim
 PROXY_FALSE!$PROXY_FALSE$ac_delim
 MAC_TRUE!$MAC_TRUE$ac_delim
 MAC_FALSE!$MAC_FALSE$ac_delim
+TESTING_TRUE!$TESTING_TRUE$ac_delim
+TESTING_FALSE!$TESTING_FALSE$ac_delim
 SSL_LIBS!$SSL_LIBS$ac_delim
 OPENSSL_TRUE!$OPENSSL_TRUE$ac_delim
 OPENSSL_FALSE!$OPENSSL_FALSE$ac_delim
 GLOB_TRUE!$GLOB_TRUE$ac_delim
 GLOB_FALSE!$GLOB_FALSE$ac_delim
+PAM_LIBS!$PAM_LIBS$ac_delim
 PAM_TRUE!$PAM_TRUE$ac_delim
 PAM_FALSE!$PAM_FALSE$ac_delim
 STATIC_START!$STATIC_START$ac_delim
@@ -8662,7 +8719,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 46; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 50; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

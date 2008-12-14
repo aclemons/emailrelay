@@ -59,7 +59,7 @@ emailrelay.docbook: head.db tail.db userguide.db reference.db developer.db
 	cat head.db userguide.db reference.db developer.db tail.db > emailrelay.docbook
 
 .docbook: emailrelay.docbook
-	-xmlto -o docbook html emailrelay.docbook && touch .docbook && cp *.png docbook/
+	-xmlto -o docbook html emailrelay.docbook && touch .docbook && cp "$(top_srcdir)/doc/"*.png docbook/
 
 .dox:
 	$(run_doxygen) "$(HAVE_DOXYGEN)" "$(top_srcdir)" "$(top_builddir)" && touch .dox
@@ -94,7 +94,7 @@ emailrelay-poke.1.gz: emailrelay-poke.1
 
 install-data-local: install-e_docDATA
 	$(mkinstalldirs) "$(DESTDIR)$(e_docdir)/doxygen"
-	for file in doxygen/* ; do $(INSTALL) --mode=644 "$$file" "$(DESTDIR)$(e_docdir)/$$file" ; done
+	for file in doxygen/* ; do $(INSTALL) -m 644 "$$file" "$(DESTDIR)$(e_docdir)/$$file" ; done
 
 uninstall-local:
 	-find "$(DESTDIR)$(e_docdir)/doxygen" -type f | xargs rm -f

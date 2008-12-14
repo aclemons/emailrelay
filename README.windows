@@ -30,17 +30,17 @@ Move shortcuts to "Startup" folders as necessary.
 
 Running as a service
 --------------------
-To manually install E-MailRelay as a service so that it starts up automatically
-at boot-time you must first create a one-line batch file called
-"emailrelay-start.bat" in the main E-MailRelay directory containing
-the full E-MailRelay server command-line. Then run "emailrelay-service --install"
-to install the service.
+If you are installing manually you can set up E-MailRelay as a service so that 
+it starts up automatically at boot-time. You must first create a one-line batch 
+file called "emailrelay-start.bat" in the main E-MailRelay directory containing
+the full E-MailRelay server command-line. Then just run 
+"emailrelay-service --install" to install the service.
 
 When the E-MailRelay server is run in this way the "--no-daemon" and "--hidden"
 switches are added automatically to whatever is in the "emailrelay-start" batch
-file, so that there is no user interface. (The "--no-daemon" switch on Windows
-changes the interface from using the system-tray to using a normal window, and
-the "--hidden" switch suppresses the window and any message boxes.)
+file so that there is no user interface. (The "--no-daemon" switch changes the
+interface from using the system-tray to using a normal window, and the
+"--hidden" switch suppresses the window and any message boxes.)
 
 Note that the batch file and the main E-MailRelay executable must be in the same
 directory.
@@ -48,7 +48,8 @@ directory.
 If you need to run multiple E-MailRelay services then pass a unique service name
 on the "emailrelay-service --install <name>" command-line. This name is used to
 derive the name of the "<name>-start.bat" batch file that contains the
-E-MailRelay server's command-line switches so you will need to create this too.
+E-MailRelay server's command-line switches so you will need to create that
+first.
 
 Diagnostics
 -----------
@@ -66,6 +67,9 @@ To get continuous logging to a log file you should replace "--as-server" with
 redirect the standard error stream, eg:
 
 	"c:\program files\emailrelay\emailrelay.exe" --log -v -L ... > c:\temp.out 2>&1
+
+The setup program may have already created a suitable batch file, so check for
+that first and edit as necessary.
 
 Building from source
 --------------------

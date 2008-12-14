@@ -108,8 +108,8 @@ private:
 	Run( const Run & ) ; // not implemented
 	void operator=( const Run & ) ; // not implemented
 	void runCore() ;
-	void doForwardingOnStartup( GSmtp::MessageStore & , const GSmtp::Secrets & , GNet::EventLoop & ) ;
-	void doServing( const GSmtp::Secrets & , GSmtp::MessageStore & , const GSmtp::Secrets & , 
+	void doForwardingOnStartup( GSmtp::MessageStore & , const GAuth::Secrets & , GNet::EventLoop & ) ;
+	void doServing( const GAuth::Secrets & , GSmtp::MessageStore & , const GAuth::Secrets & , 
 		GPop::Store & , const GPop::Secrets & , G::PidFile & , GNet::EventLoop & ) ;
 	void closeFiles() ;
 	void closeMoreFiles() ;
@@ -135,6 +135,8 @@ private:
 	void checkScripts() const ;
 	void checkVerifierScript( const std::string & ) const ;
 	void checkProcessorScript( const std::string & ) const ;
+	std::string versionString() const ;
+	static std::string capabilities() ;
 
 private:
 	Output & m_output ;
@@ -145,7 +147,7 @@ private:
 	G::Arg m_arg ;
 	G::Signal3<std::string,std::string,std::string> m_signal ;
 	std::auto_ptr<GSmtp::FileStore> m_store ; // order dependency -- early
-	std::auto_ptr<GSmtp::Secrets> m_client_secrets ;
+	std::auto_ptr<GAuth::Secrets> m_client_secrets ;
 	std::auto_ptr<GPop::Secrets> m_pop_secrets ;
 	std::auto_ptr<GSmtp::AdminServer> m_admin_server ;
 	std::auto_ptr<GSmtp::Server> m_smtp_server ;

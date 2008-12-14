@@ -47,7 +47,7 @@ public:
 
 	static std::auto_ptr<GSmtp::AdminServer> newServer( const Configuration & , 
 		GSmtp::MessageStore & store , const GSmtp::Client::Config & , 
-		const GSmtp::Secrets & client_secrets , const std::string & version_number ) ;
+		const GAuth::Secrets & client_secrets , const std::string & version_number ) ;
 			///< A factory function for creating a new GSmtp::AdminServer
 			///< instance on the heap.
 

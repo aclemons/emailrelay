@@ -33,14 +33,23 @@
 #
 # eg: 
 #
+#  download the toolchain tarballs...
+#   $ wget .../linux-2.4.20.tar.gz
+#   $ wget .../binutils_2.18.orig.tar.gz
+#   $ wget .../gcc-3.4.6.tar.bz2
+#   $ wget .../gcc-core-3.4.6.tar.bz2
+#   $ wget .../gcc-g++-3.4.6.tar.bz2
+#   $ wget .../uClibc-0.9.27.tar.bz2
+#   $ wget .../uClibc++-0.2.2.tar.bz2
+#
 #  build the toolchain...
-#   $ cd ~/emailrelay-1.8/extra/mips
+#   $ cd ~/emailrelay-1.x/extra/mips
 #   $ vi toolchain.mak
 #   $ make -f toolchain.mak
 #
 #  build emailrelay...
-#   $ mkdir -p ~/emailrelay-1.8/mips
-#   $ cd ~/emailrelay-1.8/mips
+#   $ mkdir -p ~/emailrelay-1.x/mips
+#   $ cd ~/emailrelay-1.x/mips
 #   $ ../extra/mips/configure-mips.sh
 #   $ make
 #
@@ -103,7 +112,7 @@ then
 	cppflags="-I$TOOLCHAIN/uclibc/usr/uClibc++/include"
 	cxxflags="-Os"
 	ldflags="-L$TOOLCHAIN/uclibc/usr/uClibc++/lib -Xlinker --dynamic-linker=$UCLIBC -Xlinker -Map -Xlinker /tmp/map"
-	cfg="../configure" 
+	cfg="../../configure" 
 	args_="--host=mipsel-elf-linux-gnu --enable-fhs --disable-gui --without-glob --without-openssl"
 	args_="$args_ --without-doxygen --without-man2html"
 

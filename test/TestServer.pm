@@ -18,6 +18,8 @@
 #
 # TestServer.pm
 #
+# A wrapper for running the "emailrelay-test-server" program.
+#
 
 use strict ;
 use FileHandle ;

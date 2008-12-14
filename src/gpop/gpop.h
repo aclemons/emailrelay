@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gnet.h"
+#include "gauth.h"
 #include "glog.h"
 
 #ifndef G_SYSCONFDIR

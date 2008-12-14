@@ -35,7 +35,7 @@ public:
 	std::string secret( const std::string & mechanism , const std::string & id ) const ;
 	bool contains( const std::string & mechanism ) const ;
 	std::string m_path ;
-	GSmtp::Secrets m_secrets ;
+	GAuth::Secrets m_secrets ;
 } ;
 
 // ===
@@ -51,6 +51,11 @@ GPop::Secrets::~Secrets()
 }
 
 std::string GPop::Secrets::path() const
+{
+	return m_imp->path() ;
+}
+
+std::string GPop::Secrets::source() const
 {
 	return m_imp->path() ;
 }

@@ -53,14 +53,14 @@ am__libglib_a_SOURCES_DIST = gnewprocess_unix_exec_disabled.cpp \
 	gidentity_disabled.cpp gidentity_unix.cpp \
 	gdirectory_unix_noglob.cpp gdirectory_unix_glob.cpp \
 	garg_unix.cpp garg_mac.cpp gpam_none.cpp gpam_linux.cpp \
-	gpam.cpp md5.cpp md5.h garg.cpp garg.h gassert.h gconvert.h \
-	gcleanup.h gcleanup_unix.cpp gcounter.cpp gcounter.h gdaemon.h \
-	gdaemon_unix.cpp gdate.h gdatetime.cpp gdatetime.h \
-	gdatetime_unix.cpp gdebug.h gdef.h gdirectory.cpp gdirectory.h \
-	gdirectory_unix.cpp gexception.h gexecutable_unix.cpp \
-	gexecutable.cpp gexecutable.h gfile.h gfile_unix.cpp gfs.h \
-	ggetopt.h ggetopt.cpp ghostname_unix.cpp ghostname.h \
-	gidentity.h glimits.h glog.cpp glog.h glogoutput.h \
+	gpam.cpp md5.cpp md5.h garg.cpp garg.h gassert.h gbase64.cpp \
+	gbase64.h gconvert.h gcleanup.h gcleanup_unix.cpp gcounter.cpp \
+	gcounter.h gdaemon.h gdaemon_unix.cpp gdate.h gdatetime.cpp \
+	gdatetime.h gdatetime_unix.cpp gdebug.h gdef.h gdirectory.cpp \
+	gdirectory.h gdirectory_unix.cpp gexception.h \
+	gexecutable_unix.cpp gexecutable.cpp gexecutable.h gfile.h \
+	gfile_unix.cpp gfs.h ggetopt.h ggetopt.cpp ghostname_unix.cpp \
+	ghostname.h gidentity.h glimits.h glog.cpp glog.h glogoutput.h \
 	glogoutput_unix.cpp gnewprocess.h gmd5_native.cpp gmd5.h \
 	gmemory.h gnoncopyable.h gpam.h gpath.h gpidfile.cpp \
 	gpidfile.h gprocess.h gprocess_unix.cpp groot.cpp groot.h \
@@ -84,7 +84,7 @@ am__libglib_a_SOURCES_DIST = gnewprocess_unix_exec_disabled.cpp \
 am_libglib_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) md5.$(OBJEXT) garg.$(OBJEXT) \
-	gcleanup_unix.$(OBJEXT) gcounter.$(OBJEXT) \
+	gbase64.$(OBJEXT) gcleanup_unix.$(OBJEXT) gcounter.$(OBJEXT) \
 	gdaemon_unix.$(OBJEXT) gdatetime.$(OBJEXT) \
 	gdatetime_unix.$(OBJEXT) gdirectory.$(OBJEXT) \
 	gdirectory_unix.$(OBJEXT) gexecutable_unix.$(OBJEXT) \
@@ -139,6 +139,7 @@ EXEEXT = @EXEEXT@
 FRAGMENTS_LIST = @FRAGMENTS_LIST@
 GREP = @GREP@
 GZIP = @GZIP@
+G_CAPABILITIES = @G_CAPABILITIES@
 HAVE_DOXYGEN = @HAVE_DOXYGEN@
 HAVE_MAN2HTML = @HAVE_MAN2HTML@
 INSTALL = @INSTALL@
@@ -162,6 +163,7 @@ PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PAM_LIBS = @PAM_LIBS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 QT_CFLAGS = @QT_CFLAGS@
@@ -283,6 +285,8 @@ libglib_a_SOURCES = \
 	garg.cpp \
 	garg.h \
 	gassert.h \
+	gbase64.cpp \
+	gbase64.h \
 	gconvert.h \
 	gcleanup.h \
 	gcleanup_unix.cpp \
@@ -394,6 +398,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garg_mac.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garg_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbase64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcleanup_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcounter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdaemon_unix.Po@am__quote@

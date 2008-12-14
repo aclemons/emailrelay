@@ -292,6 +292,24 @@ message. One advantage of using a network pre-processor compared to running a
 program is that the E-MailRelay server is not blocked while the messages are
 being pre-processed.
 
+Forwarding
+----------
+Spooled messages can be forwarded at various times, depending on the
+command-line options:
+* when the program first starts up ("--as-client" or "--forward")
+* as each message is submitted, before receipt has been acknowledged ("--immediate")
+* as soon as the submitting client connection disconnects ("--poll=0")
+* periodically ("--poll=<seconds>")
+
+These modes of operation can be mixed, although more than one "--poll" switch is
+not allowed.
+
+When using "--as-client" the spooled messages begin to be forwarded as soon as
+the program starts up, and the program terminates once they have all been sent.
+
+A pending "--poll" timer can be forced to expire immediately if a "--filter"
+script exits with a special value of 103, as described above.
+
 Address verification
 --------------------
 By default the E-MailRelay server will accept all addresses for incoming e-mails
@@ -554,32 +572,29 @@ such as "fetchmail".
 
 TLS/SSL
 -------
-E-MailRelay can use TLS/SSL to encrypt SMTP sessions. To enable TLS/SSL
+E-MailRelay can use TLS/SSL to encrypt SMTP and POP3 sessions. To enable TLS/SSL
 encryption when E-MailRelay is acting as an SMTP client use the "--client-tls"
 command-line switch, and to enable TLS/SSL when E-MailRelay is acting as an SMTP
-server use "--server-tls".
+or POP3 server use "--server-tls".
 
 The "--server-tls" switch requires the name of an X.509 certificate in the "PEM"
 format. This file must be in a directory that the OpenSSL library considers to
 be secure. On some systems this is "/etc/ssl/certs".
 
-Certificate files can be created with the "openssl" utility using the 
+Certificate files can be created with the "openssl" utility using the
 "req -x509" sub-command. Refer to the OpenSSL documentation for the details.
 
 Linux PAM
 ---------
-E-MailRelay has some support for using Linux Pluggable Authentication Modules
-(PAM) for authentication if built on Linux with the "--with-pam" configure
-option.
+E-MailRelay supports the use of Linux Pluggable Authentication Modules (PAM) for
+authentication if built on Linux with the "--with-pam" configure option.
 
-PAM authentication is only used when a remote client connects to the E-MailRelay
-server over SMTP. It does not apply to E-MailRelay acting as either an SMTP
-client or a POP server.
+PAM authentication can be used to authenticate SMTP and POP3 sessions. It is not
+relevant to E-MailRelay acting as an SMTP client.
 
-The "--server-auth" command-line switch is used to enable the SMTP AUTH extension
-in the normal way. The secrets file specified by the switch value is ignored, 
-although it does have to refer to an existing file so you should specify 
-something like "/dev/null".
+Use "--server-auth=/pam" and/or "--pop-auth=/pam" on the command-line to enable 
+PAM authentication at run-time. The E-MailRelay server will then advertise an 
+SMTP authentication mechanism of PLAIN and do the actual authentication via PAM.
 
 The PAM system must be configured with a service of "emailrelay". This normally
 involves creating a file "/etc/pam.d/emailrelay" containing somthing like the
@@ -590,12 +605,12 @@ following:
 	account required pam_permit.so
 	password required pam_deny.so
 
-With this configuration the E-MailRelay SMTP server will use normal linux
-account names and passwords to authenticate remote clients.
+With this configuration the E-MailRelay server will use normal linux account 
+names and passwords to authenticate remote clients.
 
-Note that the SMTP protocol may pass plaintext passwords over the network, so as 
-a PAM-specific feature you must use the "--server-tls" command-line switch and 
-SMTP clients must establish a SSL/TLS session before authenticating.
+Note that the protocol may pass plaintext passwords over the network, so when 
+using PAM you are required to use the "--server-tls" command-line switch and 
+clients must establish a SSL/TLS session before authenticating.
 
 Pop server
 ----------

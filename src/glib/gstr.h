@@ -220,8 +220,8 @@ public:
 		///<
 		///< Note that alternatives in the standard library such as 
 		///< std::istream::getline() or std::getline(stream,string) 
-		///< in <string> are limited to a single character as the
-		///< terminator.
+		///< in the standard "string" header are limited to a single 
+		///< character as the terminator.
 		///<
 		///< The stream's fail bit is set if (1) an empty string was 
 		///< returned because the stream was already at eof or (2)

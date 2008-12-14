@@ -44,7 +44,9 @@ class GPop::Auth
 {
 public:
 	explicit Auth( const Secrets & ) ;
-		///< Constructor. Defaults to the APOP mechanism.
+		///< Constructor. Defaults to the APOP mechanism
+		///< so that challenge() returns the APOP initial
+		///< challege to go into the POP3 greeting.
 
 	~Auth() ;
 		///< Destructor.
@@ -53,24 +55,31 @@ public:
 		///< Returns true if the secrets are valid.
 
 	bool init( const std::string & mechanism ) ;
-		///< Initialises or reinitialises with
-		///< the specified mechanism. Returns
-		///< false if not a supported mechanism.
+		///< Initialises or reinitialises with the specified 
+		///< mechanism. Returns false if not a supported mechanism.
+		///< Updates the initial challenge() string as appropriate.
+
+	bool mustChallenge() const ;
+		///< Returns true if the init()ialised mechanism requires
+		///< an initial challenge. Returns false if (in effect)
+		///< the mechanism and the authetication can be supplied 
+		///< together.
 
 	std::string challenge() ;
 		///< Returns an initial challenge appropriate to
 		///< the current mechanism.
 
 	bool authenticated( const std::string & rsp1 , const std::string & rsp2 ) ;
-		///< Authenticates a one-step (APOP) or two-step (LOGIN)
-		///< challenge-response sequence.
+		///< Authenticates a one-step (APOP,PLAIN) or two-step (LOGIN)
+		///< challenge-response sequence. Both steps in a two-step
+		///< mechanism are done in one call to this method. The
+		///< second parameter use used only if the current
+		///< mechanism is a two-step mechanism. The second-step
+		///< challenge itself is not accessible, which only really 
+		///< makes sense for a LOGIN password prompt, since it is
+		///< a fixed string.
 		///<
 		///< Returns true if authenticated.
-		///<
-		///< The second parameter is used as the second response
-		///< in a two-step challenge. The challenge itself is
-		///< not accessible, which only really makes sense for a 
-		///< LOGIN password prompt.
 
 	std::string id() const ;
 		///< Returns the authenticated user id.

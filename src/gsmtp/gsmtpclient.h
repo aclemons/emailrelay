@@ -68,7 +68,7 @@ public:
 		Config( std::string , unsigned int , GNet::Address , ClientProtocol::Config , unsigned int ) ;
 	} ;
 
-	Client( const GNet::ResolverInfo & remote , const Secrets & secrets , Config config ) ;
+	Client( const GNet::ResolverInfo & remote , const GAuth::Secrets & secrets , Config config ) ;
 		///< Constructor. Starts connecting immediately.
 		///<
 		///< All Client instances must be on the heap since they 

@@ -123,7 +123,7 @@ public:
 		///< authentication information from the SMTP
 		///< AUTH command into individual messages.
 		///< It is the empty string for unauthenticated
-		///< clients. See also GSmtp::Sasl::id().
+		///< clients. See also GAuth::SaslServer::id().
 
 private:
 	void operator=( const ProtocolMessage & ) ; // not implemented

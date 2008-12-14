@@ -18,6 +18,8 @@
 #
 # AdminClient.pm
 #
+# A network client to drive the admin interface.
+#
 
 use strict ;
 use FileHandle ;

@@ -79,6 +79,15 @@ sub requireDebug
 	}
 }
 
+sub requirePop
+{
+	my ( $server ) = @_ ;
+	if( ! $server->canDo( "pop" , 1 ) )
+	{
+		die "skipped: not a pop build" ;
+	}
+}
+
 sub testServerShowsHelp
 {
 	# setup
@@ -381,6 +390,7 @@ sub testServerPop
 		Verbose => 1 ,
 	) ;
 	my $server = new Server() ;
+	requirePop( $server ) ;
 	System::createFile( $server->popSecrets() , "login server me secret" ) ;
 	$server->run( \%args ) ;
 	Check::running( $server->pid() , $server->message() ) ;
@@ -420,6 +430,7 @@ sub testServerPopList
 	requireDebug() ;
 	$main::ENV{'G_TEST'} = 'log-flow-control large-pop-list' ; # 1000 dummy messages for each real one
 	my $server = new Server() ;
+	requirePop( $server ) ;
 	System::createFile( $server->popSecrets() , "login server me secret" ) ;
 	$server->run( \%args ) ;
 	Check::running( $server->pid() , $server->message() ) ;
@@ -461,6 +472,7 @@ sub testServerPopDisconnect
 		Debug => 1 ,
 	) ;
 	my $server = new Server() ;
+	requirePop( $server ) ;
 	System::createFile( $server->popSecrets() , "login server me secret" ) ;
 	$server->run( \%args ) ;
 	Check::running( $server->pid() , $server->message() ) ;

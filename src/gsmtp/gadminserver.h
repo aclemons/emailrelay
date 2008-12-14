@@ -109,7 +109,7 @@ class GSmtp::AdminServer : public GNet::MultiServer
 {
 public:
 	AdminServer( MessageStore & store , const GSmtp::Client::Config & client_config ,
-		const Secrets & client_secrets , const GNet::Address & listening_address , bool allow_remote , 
+		const GAuth::Secrets & client_secrets , const GNet::Address & listening_address , bool allow_remote , 
 		const GNet::Address & local_address , const std::string & remote_address ,
 		unsigned int connection_timeout , const G::StringMap & extra_commands , bool with_terminate ) ;
 			///< Constructor. The 'store' and 'client-secrets' references
@@ -125,7 +125,7 @@ public:
 		///< Returns a reference to the message store, as
 		///< passed in to the constructor.
 
-	const Secrets & secrets() const ;
+	const GAuth::Secrets & secrets() const ;
 		///< Returns a reference to the secrets object, as
 		///< passed in to the constructor. Note that this is 
 		///< a "client-side" secrets file, used to authenticate
@@ -158,7 +158,7 @@ private:
 	PeerList m_peers ;
 	MessageStore & m_store ;
 	GSmtp::Client::Config m_client_config ;
-	const Secrets & m_secrets ;
+	const GAuth::Secrets & m_secrets ;
 	GNet::Address m_local_address ;
 	bool m_allow_remote ;
 	std::string m_remote_address ;

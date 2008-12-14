@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gpop.h"
 #include "gpopserver.h"
+#include "gssl.h"
 #include "gmemory.h"
 #include "glocal.h"
 #include "glog.h"
@@ -34,7 +35,7 @@ GPop::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info , Server & server
 		GNet::BufferedServerPeer(peer_info,crlf()) ,
 		m_server(server) ,
 		m_ptext(ptext) ,
-		m_protocol(*this,store,secrets,*m_ptext.get(),peer_info.m_address,protocol_config)
+		m_protocol(*this,*this,store,secrets,*m_ptext.get(),peer_info.m_address,protocol_config)
 {
 	G_LOG_S( "GPop::ServerPeer: pop connection from " << peer_info.m_address.displayString() ) ;
 	m_protocol.init() ;
@@ -50,10 +51,6 @@ void GPop::ServerPeer::onDelete( const std::string & reason )
 {
 	G_LOG_S( "GPop::ServerPeer: pop connection closed: " << reason << (reason.empty()?"":": ")
 		<< peerAddress().second.displayString() ) ;
-}
-
-void GPop::ServerPeer::onSecure()
-{
 }
 
 bool GPop::ServerPeer::onReceive( const std::string & line )
@@ -75,6 +72,24 @@ bool GPop::ServerPeer::protocolSend( const std::string & line , size_t offset )
 void GPop::ServerPeer::onSendComplete()
 {
 	m_protocol.resume() ; // calls back to protocolSend()
+}
+
+bool GPop::ServerPeer::securityEnabled() const
+{
+	GSsl::Library * ssl = GSsl::Library::instance() ;
+	bool enabled = ssl != NULL && ssl->enabled(true) ;
+	G_DEBUG( "ServerPeer::securityEnabled: ssl library " << (enabled?"enabled":"disabled") ) ;
+	return enabled ;
+}
+
+void GPop::ServerPeer::securityStart()
+{
+	sslAccept() ; // base class
+}
+
+void GPop::ServerPeer::onSecure()
+{
+	m_protocol.secure() ;
 }
 
 // ===

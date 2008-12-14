@@ -18,6 +18,8 @@
 #
 # System.pm
 #
+# Provides various o/s-y utilities.
+#
 
 use strict ;
 use FileHandle ;
@@ -29,6 +31,7 @@ our $bin_dir = ".." ;
 
 sub cwd
 {
+	# Returns the cwd.
 	my $s = `pwd` ; 
 	chomp $s ;
 	return $s ;
@@ -36,14 +39,17 @@ sub cwd
 
 sub tempfile
 {
-	my ( $key , $dir ) = @_ ;
-	$key = defined($key) ? $key : "" ;
+	# Creates a temporary file with a unique name, optionally
+	# using the given hint as part of the filename.
+	my ( $hint_key , $dir ) = @_ ;
+	$hint_key = defined($hint_key) ? $hint_key : "" ;
 	$dir = defined($dir) ? $dir : cwd() ;
-	return $dir . "/" . ".tmp.$key." . $$ . "." . rand() ;
+	return $dir . "/" . ".tmp.$hint_key." . $$ . "." . rand() ;
 }
 
 sub createFile
 {
+	# Creates a file, optionally containing one line of text.
 	my ( $path , $line ) = @_ ;
 	my $fh = new FileHandle( "> " . $path ) ;
 	if( defined($line) ) { print $fh $line , "\n" }
@@ -52,12 +58,15 @@ sub createFile
 
 sub createSmallMessageFile
 {
+	# Creates a small message file.
 	my ( $dir ) = @_ ;
 	return createMessageFile( $dir , 10 ) ;
 }
 
 sub createMessageFile
 {
+	# Creates a message file containing 'n' lines
+	# of gibberish text.
 	my ( $dir , $n ) = @_ ;
 	$n = defined($n) ? $n : 10 ;
 	my $path = tempfile("message",$dir) ;
@@ -75,6 +84,7 @@ sub createMessageFile
 
 sub createSpoolDir
 {
+	# Creates a spool directory with open permissions.
 	my ( $mode , $dir , $key ) = @_ ;
 	$mode = defined($mode) ? $mode : 0777 ;
 	$key = defined($key) ? $key : "spool" ;
@@ -88,6 +98,8 @@ sub createSpoolDir
 
 sub deleteSpoolDir
 {
+	# Deletes valid-looking message files from a spool 
+	# directory. Optionally deletes all files.
 	my ( $path , $all ) = @_ ;
 	$all = defined($all) ? $all : 0 ;
 	if( -d $path )
@@ -106,6 +118,8 @@ sub deleteSpoolDir
 
 sub match
 {
+	# Returns the name of the single file that matches
+	# the given filespec. Fails if not exactly one.
 	my ( $filespec ) = @_ ;
 	my $s = `ls $filespec` ;
 	chomp $s ;
@@ -116,15 +130,18 @@ sub match
 
 sub submitSmallMessage
 {
+	# Submits a small message using the "emailrelay-submit" utility.
 	my ( $spool_dir , $tmp_dir ) = @_ ;
 	submitMessage( $spool_dir , $tmp_dir , 10 ) ;
 }
 
 sub submitMessage
 {
+	# Submits a message of 'n' lines using the "emailrelay-submit" utility.
 	my ( $spool_dir , $tmp_dir , $n ) = @_ ;
 	my $path = createMessageFile($tmp_dir,$n) ;
-	my $rc = system( "$bin_dir/emailrelay-submit --from me\@here.local --spool-dir $spool_dir me\@there.local < $path" ) ;
+	my $rc = system( "$bin_dir/emailrelay-submit --from me\@here.local " .
+		"--spool-dir $spool_dir me\@there.local < $path" ) ;
 	Check::that( $rc == 0 , "failed to submit" ) ;
 	unlink $path ;
 }
@@ -140,36 +157,42 @@ sub _proc
 
 sub effectiveUser
 {
+	# Returns the calling process's effective user id.
 	my ( $pid ) = @_ ;
 	return _proc($pid,"Uid:",2) ;
 }
 
 sub effectiveGroup
 {
+	# Returns the calling process's effective group id.
 	my ( $pid ) = @_ ;
 	return _proc($pid,"Gid:",2) ;
 }
 
 sub realUser
 {
+	# Returns the calling process's real user id.
 	my ( $pid ) = @_ ;
 	return _proc($pid,"Uid:",1) ;
 }
 
 sub realGroup
 {
+	# Returns the calling process's group id.
 	my ( $pid ) = @_ ;
 	return _proc($pid,"Gid:",1) ;
 }
 
 sub savedUser
 {
+	# Returns the calling process's saved user id.
 	my ( $pid ) = @_ ;
 	return _proc($pid,"Uid:",3) ;
 }
 
 sub uid
 {
+	# Returns the user id for a given account.
 	my ( $name ) = @_ ;
 	my ($login_,$pass_,$uid_,$gid_) = getpwnam($name) ;
 	return $uid_ ;
@@ -177,6 +200,7 @@ sub uid
 
 sub gid
 {
+	# Returns the group id for a given account.
 	my ( $name ) = @_ ;
 	my ($login_,$pass_,$uid_,$gid_) = getpwnam($name) ;
 	return $gid_ ;
@@ -184,6 +208,7 @@ sub gid
 
 sub drain
 {
+	# Waits for files to disappear from a directory.
 	my ( $dir , $n , $sleep_time , $progress ) = @_ ;
 	$n = defined($n) ? $n : 10 ;
 	$sleep_time = defined($sleep_time) ? $sleep_time : 1 ;

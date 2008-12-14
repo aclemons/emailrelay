@@ -56,23 +56,19 @@ am__libgsmtp_a_SOURCES_DIST = gadminserver.cpp gadminserver.h \
 	gprocessorfactory_exec_enabled.cpp grequestclient.cpp \
 	grequestclient.h gspamclient.cpp gspamclient.h \
 	gspamprocessor.cpp gspamprocessor.h \
-	gverifierfactory_exec_enabled.cpp gsaslserver_none.cpp \
-	gsaslclient_none.cpp gsecrets_none.cpp gsaslserver_native.cpp \
-	gsaslclient_native.cpp gsecrets_full.cpp gbase64.cpp gbase64.h \
-	gclientprotocol.cpp gclientprotocol.h gfactoryparser.cpp \
-	gfactoryparser.h gfilestore.cpp gfilestore.h \
-	ginternalverifier.cpp ginternalverifier.h gmessagestore.cpp \
-	gmessagestore.h gmessagestore_unix.cpp gnullprocessor.cpp \
-	gnullprocessor.h gprocessorfactory.h gnewfile.cpp gnewfile.h \
-	gnewmessage.cpp gnewmessage.h gprocessor.cpp gprocessor.h \
-	gprotocolmessage.cpp gprotocolmessageforward.cpp \
-	gprotocolmessageforward.h gprotocolmessage.h \
-	gprotocolmessagestore.cpp gprotocolmessagestore.h gsasl.h \
-	gsaslserver.h gsaslclient.h gsecrets.h gserverprotocol.cpp \
-	gserverprotocol.h gsmtpclient.cpp gsmtpclient.h gsmtp.h \
-	gsmtpserver.cpp gsmtpserver.h gstoredfile.cpp gstoredfile.h \
-	gstoredmessage.cpp gstoredmessage.h gvalid.h gvalid.cpp \
-	gverifier.cpp gverifier.h gverifierfactory.h \
+	gverifierfactory_exec_enabled.cpp gclientprotocol.cpp \
+	gclientprotocol.h gfactoryparser.cpp gfactoryparser.h \
+	gfilestore.cpp gfilestore.h ginternalverifier.cpp \
+	ginternalverifier.h gmessagestore.cpp gmessagestore.h \
+	gmessagestore_unix.cpp gnullprocessor.cpp gnullprocessor.h \
+	gprocessorfactory.h gnewfile.cpp gnewfile.h gnewmessage.cpp \
+	gnewmessage.h gprocessor.cpp gprocessor.h gprotocolmessage.cpp \
+	gprotocolmessageforward.cpp gprotocolmessageforward.h \
+	gprotocolmessage.h gprotocolmessagestore.cpp \
+	gprotocolmessagestore.h gserverprotocol.cpp gserverprotocol.h \
+	gsmtpclient.cpp gsmtpclient.h gsmtp.h gsmtpserver.cpp \
+	gsmtpserver.h gstoredfile.cpp gstoredfile.h gstoredmessage.cpp \
+	gstoredmessage.h gverifier.cpp gverifier.h gverifierfactory.h \
 	gverifierstatus.cpp gverifierstatus.h
 am__objects_1 = gadminserver.$(OBJEXT)
 @ADMIN_TRUE@am__objects_2 = $(am__objects_1)
@@ -86,22 +82,17 @@ am__objects_3 = gexecutableprocessor.$(OBJEXT) \
 @EXEC_FALSE@am__objects_4 = gprocessorfactory_exec_disabled.$(OBJEXT) \
 @EXEC_FALSE@	gverifierfactory_exec_disabled.$(OBJEXT)
 @EXEC_TRUE@am__objects_4 = $(am__objects_3)
-@AUTH_FALSE@am__objects_5 = gsaslserver_none.$(OBJEXT) \
-@AUTH_FALSE@	gsaslclient_none.$(OBJEXT) gsecrets_none.$(OBJEXT)
-@AUTH_TRUE@am__objects_5 = gsaslserver_native.$(OBJEXT) \
-@AUTH_TRUE@	gsaslclient_native.$(OBJEXT) \
-@AUTH_TRUE@	gsecrets_full.$(OBJEXT)
 am_libgsmtp_a_OBJECTS = $(am__objects_2) $(am__objects_4) \
-	$(am__objects_5) gbase64.$(OBJEXT) gclientprotocol.$(OBJEXT) \
-	gfactoryparser.$(OBJEXT) gfilestore.$(OBJEXT) \
-	ginternalverifier.$(OBJEXT) gmessagestore.$(OBJEXT) \
-	gmessagestore_unix.$(OBJEXT) gnullprocessor.$(OBJEXT) \
-	gnewfile.$(OBJEXT) gnewmessage.$(OBJEXT) gprocessor.$(OBJEXT) \
+	gclientprotocol.$(OBJEXT) gfactoryparser.$(OBJEXT) \
+	gfilestore.$(OBJEXT) ginternalverifier.$(OBJEXT) \
+	gmessagestore.$(OBJEXT) gmessagestore_unix.$(OBJEXT) \
+	gnullprocessor.$(OBJEXT) gnewfile.$(OBJEXT) \
+	gnewmessage.$(OBJEXT) gprocessor.$(OBJEXT) \
 	gprotocolmessage.$(OBJEXT) gprotocolmessageforward.$(OBJEXT) \
 	gprotocolmessagestore.$(OBJEXT) gserverprotocol.$(OBJEXT) \
 	gsmtpclient.$(OBJEXT) gsmtpserver.$(OBJEXT) \
 	gstoredfile.$(OBJEXT) gstoredmessage.$(OBJEXT) \
-	gvalid.$(OBJEXT) gverifier.$(OBJEXT) gverifierstatus.$(OBJEXT)
+	gverifier.$(OBJEXT) gverifierstatus.$(OBJEXT)
 libgsmtp_a_OBJECTS = $(am_libgsmtp_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -147,6 +138,7 @@ EXEEXT = @EXEEXT@
 FRAGMENTS_LIST = @FRAGMENTS_LIST@
 GREP = @GREP@
 GZIP = @GZIP@
+G_CAPABILITIES = @G_CAPABILITIES@
 HAVE_DOXYGEN = @HAVE_DOXYGEN@
 HAVE_MAN2HTML = @HAVE_MAN2HTML@
 INSTALL = @INSTALL@
@@ -170,6 +162,7 @@ PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PAM_LIBS = @PAM_LIBS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 QT_CFLAGS = @QT_CFLAGS@
@@ -236,10 +229,6 @@ ADMIN_SOURCES_ = gadminserver.cpp gadminserver.h
 @ADMIN_TRUE@ADMIN_EXTRA_DIST = 
 @ADMIN_FALSE@ADMIN_SOURCES = 
 @ADMIN_TRUE@ADMIN_SOURCES = $(ADMIN_SOURCES_)
-@AUTH_FALSE@AUTH_EXTRA_DIST = gsaslserver_native.cpp gsaslclient_native.cpp gsecrets_full.cpp
-@AUTH_TRUE@AUTH_EXTRA_DIST = gsaslserver_none.cpp gsaslclient_none.cpp gsecrets_none.cpp
-@AUTH_FALSE@AUTH_SOURCES = gsaslserver_none.cpp gsaslclient_none.cpp gsecrets_none.cpp
-@AUTH_TRUE@AUTH_SOURCES = gsaslserver_native.cpp gsaslclient_native.cpp gsecrets_full.cpp
 EXEC_SOURCES_ = \
 	gexecutableprocessor.cpp \
 	gexecutableprocessor.h \
@@ -266,17 +255,13 @@ EXTRA_DIST = \
 	$(ADMIN_EXTRA_DIST) \
 	$(EXEC_EXTRA_DIST) \
 	gmessagestore_win32.cpp \
-	gsaslserver_pam.cpp \
 	mingw.mak
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -DG_SPOOLDIR=\"$(e_spooldir)\"
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gauth -DG_SPOOLDIR=\"$(e_spooldir)\"
 noinst_LIBRARIES = libgsmtp.a
 libgsmtp_a_SOURCES = \
 	$(ADMIN_SOURCES) \
 	$(EXEC_SOURCES) \
-	$(AUTH_SOURCES) \
-	gbase64.cpp \
-	gbase64.h \
 	gclientprotocol.cpp \
 	gclientprotocol.h \
 	gfactoryparser.cpp \
@@ -303,10 +288,6 @@ libgsmtp_a_SOURCES = \
 	gprotocolmessage.h \
 	gprotocolmessagestore.cpp \
 	gprotocolmessagestore.h \
-	gsasl.h \
-	gsaslserver.h \
-	gsaslclient.h \
-	gsecrets.h \
 	gserverprotocol.cpp \
 	gserverprotocol.h \
 	gsmtpclient.cpp \
@@ -318,8 +299,6 @@ libgsmtp_a_SOURCES = \
 	gstoredfile.h \
 	gstoredmessage.cpp \
 	gstoredmessage.h \
-	gvalid.h \
-	gvalid.cpp \
 	gverifier.cpp \
 	gverifier.h \
 	gverifierfactory.h \
@@ -374,7 +353,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gadminserver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbase64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gclientprotocol.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutableprocessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutableverifier.Po@am__quote@
@@ -395,12 +373,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessageforward.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessagestore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grequestclient.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsaslclient_native.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsaslclient_none.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsaslserver_native.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsaslserver_none.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsecrets_full.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsecrets_none.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gserverprotocol.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpserver.Po@am__quote@
@@ -408,7 +380,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gspamprocessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstoredfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstoredmessage.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gvalid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifierfactory_exec_disabled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifierfactory_exec_enabled.Po@am__quote@

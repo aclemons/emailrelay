@@ -18,6 +18,8 @@
 #
 # Port.pm
 #
+# A module for checking open ports.
+#
 
 use strict ;
 use FileHandle ;

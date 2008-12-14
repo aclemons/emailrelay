@@ -33,7 +33,7 @@
 GSmtp::ProtocolMessageForward::ProtocolMessageForward( MessageStore & store , 
 	std::auto_ptr<ProtocolMessage> pm ,
 	const GSmtp::Client::Config & client_config ,
-	const Secrets & client_secrets , const std::string & server ,
+	const GAuth::Secrets & client_secrets , const std::string & server ,
 	unsigned int connection_timeout ) :
 		m_store(store) ,
 		m_client_resolver_info(server) ,

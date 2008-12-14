@@ -78,13 +78,11 @@ private:
 	static bool validNumber( const std::string & s ) ;
 	void setHost( const hostent & h ) ;
 	static bool sameAddr( const ::in_addr & a , const ::in_addr & b ) ;
+	static char portSeparator() ;
 
 private:
 	address_type m_inet ;
-	static char m_port_separator ;
 } ;
-
-char GNet::AddressImp::m_port_separator = ':' ;
 
 // ===
 
@@ -179,7 +177,7 @@ GNet::AddressImp::AddressImp( const std::string & s , unsigned int port )
 	init() ;
 
 	std::string reason ;
-	if( ! setAddress( s + m_port_separator + "0" , reason ) )
+	if( ! setAddress( s + portSeparator() + "0" , reason ) )
 		throw Address::BadString( reason + ": " + s ) ;
 
 	setPort( port ) ;
@@ -199,7 +197,7 @@ bool GNet::AddressImp::setAddress( const std::string & display_string , std::str
 	if( !validString(display_string,&reason) )
 		return false ;
 
-	const std::string::size_type pos = display_string.rfind(m_port_separator) ;
+	const std::string::size_type pos = display_string.rfind(portSeparator()) ;
 	std::string host_part = display_string.substr(0U,pos) ;
 	std::string port_part = display_string.substr(pos+1U) ;
 
@@ -234,7 +232,7 @@ std::string GNet::AddressImp::displayString() const
 {
 	std::ostringstream ss ;
 	ss << hostString() ;
-	ss << m_port_separator << port() ;
+	ss << portSeparator() << port() ;
 	return ss.str() ;
 }
 
@@ -256,7 +254,7 @@ bool GNet::AddressImp::validString( const std::string & s , std::string * reason
 	if( reason_p == NULL ) reason_p = &buffer ;
 	std::string & reason = *reason_p ;
 
-	const std::string::size_type pos = s.rfind(m_port_separator) ;
+	const std::string::size_type pos = s.rfind(portSeparator()) ;
 	if( pos == std::string::npos )
 	{
 		reason = "no port separator" ;
@@ -353,6 +351,11 @@ void GNet::AddressImp::set( const sockaddr * general )
 	Sockaddr u ;
 	u.general = * general ;
 	m_inet = u.specific ;
+}
+
+char GNet::AddressImp::portSeparator()
+{
+	return ':' ;
 }
 
 // ===

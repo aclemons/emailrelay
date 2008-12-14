@@ -26,7 +26,6 @@
 #include "commandline.h"
 #include "gmessagestore.h"
 #include "gpopsecrets.h"
-#include "gsaslserver.h"
 #include "ggetopt.h"
 #include "gstr.h"
 #include "gdebug.h"
@@ -42,7 +41,8 @@ namespace Main
 class Main::CommandLineImp 
 {
 public:
-	CommandLineImp( Main::Output & , const G::Arg & arg , const std::string & spec , const std::string & version ) ;
+	CommandLineImp( Main::Output & , const G::Arg & arg , const std::string & spec , 
+		const std::string & version , const std::string & capabilities ) ;
 	bool contains( const std::string & switch_ ) const ;
 	std::string value( const std::string & switch_ ) const ;
 	unsigned int argc() const ;
@@ -57,6 +57,7 @@ public:
 	void showVersion( bool error_stream = false ) const ;
 	void showBanner( bool error_stream = false , const std::string & = std::string() ) const ;
 	void showCopyright( bool error_stream = false , const std::string & = std::string() ) const ;
+	void showCapabilities( bool error_stream = false , const std::string & = std::string() ) const ;
 	static std::string switchSpec( bool is_windows ) ;
 
 public:
@@ -72,6 +73,7 @@ public:
 private:
 	Output & m_output ;
 	std::string m_version ;
+	std::string m_capabilities ;
 	G::Arg m_arg ;
 	G::GetOpt m_getopt ;
 } ;
@@ -181,9 +183,10 @@ std::string Main::CommandLineImp::switchSpec_windows()
 }
 
 Main::CommandLineImp::CommandLineImp( Output & output , const G::Arg & arg , const std::string & spec ,
-	const std::string & version ) :
+	const std::string & version , const std::string & capabilities ) :
 		m_output(output) ,
 		m_version(version) ,
+		m_capabilities(capabilities) ,
 		m_arg(arg) ,
 		m_getopt(m_arg,spec,'|','!','^')
 {
@@ -348,11 +351,13 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 		return "the --hidden switch requires --no-daemon or --as-client" ;
 	}
 
-	if( m_getopt.contains("server-auth") && 
-		GSmtp::SaslServer::requiresEncryption() && !m_getopt.contains("server-tls" ) )
+	if( m_getopt.contains("server-auth") && m_getopt.value("server-auth") == "/pam" &&
+		!m_getopt.contains("server-tls" ) )
 	{
-		return "--server-auth requires --server-tls when built with linux pam" ;
+		return "--server-auth requires --server-tls when using pam" ;
 	}
+
+	// warnings...
 
 	const bool no_syslog = 
 		m_getopt.contains("no-syslog") || 
@@ -499,6 +504,15 @@ void Main::CommandLineImp::showCopyright( bool e , const std::string & final ) c
 	show.s() << Legal::copyright() << std::endl << final ;
 }
 
+void Main::CommandLineImp::showCapabilities( bool e , const std::string & final ) const
+{
+	if( !m_capabilities.empty() )
+	{
+		Show show( m_output , e ) ;
+		show.s() << "[" << m_capabilities << "]" << std::endl << final ;
+	}
+}
+
 void Main::CommandLineImp::showWarranty( bool e , const std::string & final ) const
 {
 	Show show( m_output , e ) ;
@@ -516,6 +530,8 @@ void Main::CommandLineImp::showVersion( bool e ) const
 	Show show( m_output , e ) ;
 	showBanner( e , "\n" ) ;
 	showCopyright( e , "\n" ) ;
+	if( contains("verbose") )
+		showCapabilities( e , "\n" ) ;
 	showCredit( e , "\n" ) ;
 	showWarranty( e ) ;
 }
@@ -554,8 +570,8 @@ std::string Main::CommandLine::switchSpec( bool is_windows )
 }
 
 Main::CommandLine::CommandLine( Main::Output & output , const G::Arg & arg , const std::string & spec , 
-	const std::string & version ) :
-		m_imp(new CommandLineImp(output,arg,spec,version))
+	const std::string & version , const std::string & capabilities ) :
+		m_imp(new CommandLineImp(output,arg,spec,version,capabilities))
 {
 }
 
@@ -637,6 +653,11 @@ void Main::CommandLine::showBanner( bool error_stream , const std::string & s ) 
 void Main::CommandLine::showCopyright( bool error_stream , const std::string & s ) const
 {
 	m_imp->showCopyright( error_stream , s ) ;
+}
+
+void Main::CommandLine::showCapabilities( bool error_stream , const std::string & s ) const
+{
+	m_imp->showCapabilities( error_stream , s ) ;
 }
 
 unsigned int Main::CommandLine::value( const std::string & switch_ , unsigned int default_ ) const

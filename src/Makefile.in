@@ -81,6 +81,7 @@ EXEEXT = @EXEEXT@
 FRAGMENTS_LIST = @FRAGMENTS_LIST@
 GREP = @GREP@
 GZIP = @GZIP@
+G_CAPABILITIES = @G_CAPABILITIES@
 HAVE_DOXYGEN = @HAVE_DOXYGEN@
 HAVE_MAN2HTML = @HAVE_MAN2HTML@
 INSTALL = @INSTALL@
@@ -104,6 +105,7 @@ PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PAM_LIBS = @PAM_LIBS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 QT_CFLAGS = @QT_CFLAGS@
@@ -169,7 +171,7 @@ top_srcdir = @top_srcdir@
 #
 #
 EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.dsw 
-SUBDIRS = glib gssl gnet gsmtp gpop fragments main win32 gui
+SUBDIRS = glib gssl gnet gauth gsmtp gpop fragments main win32 gui
 all: all-recursive
 
 .SUFFIXES:

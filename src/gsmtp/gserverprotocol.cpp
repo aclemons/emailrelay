@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gsmtp.h"
+#include "gsaslserverfactory.h"
 #include "gserverprotocol.h"
 #include "gbase64.h"
 #include "gssl.h"
@@ -32,7 +33,7 @@
 #include <string>
 
 GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , ProtocolMessage & pmessage ,
-	const Secrets & secrets , Text & text , GNet::Address peer_address , Config config ) :
+	const GAuth::Secrets & secrets , Text & text , GNet::Address peer_address , Config config ) :
 		m_sender(sender) ,
 		m_verifier(verifier) ,
 		m_pmessage(pmessage) ,
@@ -41,7 +42,7 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 		m_fsm(sStart,sEnd,s_Same,s_Any) ,
 		m_authenticated(false) ,
 		m_secure(false) ,
-		m_sasl(secrets,false,true) ,
+		m_sasl(GAuth::SaslServerFactory::newSaslServer(secrets,false,true)) ,
 		m_with_vrfy(config.with_vrfy) ,
 		m_preprocessor_timeout(config.preprocessor_timeout) ,
 		m_bad_client_count(0U) ,
@@ -85,7 +86,7 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 	m_fsm.addTransition( eEot         , sDiscarding , sIdle       , &GSmtp::ServerProtocol::doDiscarded ) ;
 
  #ifndef USE_NO_AUTH
-	if( m_sasl.active() )
+	if( m_sasl->active() )
 	{
 		m_fsm.addTransition( eAuth    , sIdle   , sAuth    , &GSmtp::ServerProtocol::doAuth , sIdle ) ;
 		m_fsm.addTransition( eAuthData, sAuth   , sAuth    , &GSmtp::ServerProtocol::doAuthData , sIdle ) ;
@@ -96,7 +97,7 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 	m_with_ssl = ssl != NULL && ssl->enabled(true) ;
 	if( m_with_ssl )
 	{
-		m_fsm.addTransition( eStartTls , sIdle , sStartingTls , &GSmtp::ServerProtocol::doStartTls ) ;
+		m_fsm.addTransition( eStartTls , sIdle , sStartingTls , &GSmtp::ServerProtocol::doStartTls , sIdle ) ;
 		m_fsm.addTransition( eSecure   , sStartingTls , sIdle , &GSmtp::ServerProtocol::doSecure ) ;
 	}
 }
@@ -125,9 +126,17 @@ void GSmtp::ServerProtocol::doSecure( const std::string & , bool & )
 	m_secure = true ;
 }
 
-void GSmtp::ServerProtocol::doStartTls( const std::string & , bool & )
+void GSmtp::ServerProtocol::doStartTls( const std::string & , bool & ok )
 {
-	send( "220 ready to start tls" , true ) ;
+	if( m_secure )
+	{
+		send( "503 command out of sequence" ) ;
+		ok = false ;
+	}
+	else
+	{
+		send( "220 ready to start tls" , true ) ;
+	}
 }
 
 void GSmtp::ServerProtocol::sendGreeting( const std::string & text )
@@ -185,7 +194,7 @@ void GSmtp::ServerProtocol::doEot( const std::string & line , bool & )
 		G_DEBUG( "GSmtp::ServerProtocol: starting preprocessor timer: " << m_preprocessor_timeout ) ;
 		startTimer( m_preprocessor_timeout ) ;
 	}
-	m_pmessage.process( m_sasl.id() , m_peer_address.displayString(false) ) ;
+	m_pmessage.process( m_sasl->id() , m_peer_address.displayString(false) ) ;
 }
 
 void GSmtp::ServerProtocol::processDone( bool success , unsigned long , std::string reason )
@@ -286,9 +295,9 @@ void GSmtp::ServerProtocol::doVrfy( const std::string & line , bool & predicate 
 
 void GSmtp::ServerProtocol::verify( const std::string & to , const std::string & from )
 {
-	std::string mechanism = m_sasl.active() ? m_sasl.mechanism() : std::string() ;
-	std::string id = m_sasl.active() ? m_sasl.id() : std::string() ;
-	if( m_sasl.active() && !m_authenticated )
+	std::string mechanism = m_sasl->active() ? m_sasl->mechanism() : std::string() ;
+	std::string id = m_sasl->active() ? m_sasl->id() : std::string() ;
+	if( m_sasl->active() && !m_authenticated )
 		mechanism = "NONE" ;
 	m_verifier.verify( to , from , m_peer_address , mechanism , id ) ;
 }
@@ -356,6 +365,12 @@ void GSmtp::ServerProtocol::doHelo( const std::string & line , bool & predicate 
 	}
 }
 
+bool GSmtp::ServerProtocol::sensitive() const
+{
+	// true if the sasl implementation is sensitive and so needs to be encrypted
+	return m_sasl->active() && m_sasl->requiresEncryption() && !m_secure ;
+}
+
 #ifndef USE_NO_AUTH
 void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate )
 {
@@ -369,8 +384,7 @@ void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate 
 
 	G_DEBUG( "ServerProtocol::doAuth: [" << mechanism << "], [" << initial_response << "]" ) ;
 
-	bool sensitive = m_sasl.active() && SaslServer::requiresEncryption() && !m_secure ;
-	if( sensitive )
+	if( sensitive() )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: rejecting authentication attempt without encryption" ) ;
 		predicate = false ; // => idle
@@ -382,13 +396,13 @@ void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate 
 		predicate = false ; // => idle
 		sendOutOfSequence(line) ; // see RFC2554 "Restrictions"
 	}
-	else if( ! m_sasl.init(mechanism) )
+	else if( ! m_sasl->init(mechanism) )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: request for unsupported AUTH mechanism: " << mechanism ) ;
 		predicate = false ; // => idle
 		send( "504 Unsupported authentication mechanism" ) ;
 	}
-	else if( got_initial_response && ! Base64::valid(initial_response) )
+	else if( got_initial_response && ! G::Base64::valid(initial_response) )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: invalid base64 encoding of AUTH parameter" ) ;
 		predicate = false ; // => idle
@@ -396,14 +410,14 @@ void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate 
 	}
 	else if( got_initial_response )
 	{
-		std::string s = initial_response == "=" ? std::string() : Base64::decode(initial_response) ;
+		std::string s = initial_response == "=" ? std::string() : G::Base64::decode(initial_response) ;
 		bool done = false ;
-		std::string next_challenge = m_sasl.apply( s , done ) ;
+		std::string next_challenge = m_sasl->apply( s , done ) ;
 		if( done )
 		{
 			predicate = false ; // => idle
-			m_authenticated = m_sasl.authenticated() ;
-			sendAuthDone( m_sasl.authenticated() ) ;
+			m_authenticated = m_sasl->authenticated() ;
+			sendAuthDone( m_sasl->authenticated() ) ;
 		}
 		else
 		{
@@ -412,7 +426,7 @@ void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate 
 	}
 	else
 	{
-		sendChallenge( m_sasl.initialChallenge() ) ;
+		sendChallenge( m_sasl->initialChallenge() ) ;
 	}
 }
 #endif
@@ -434,7 +448,7 @@ void GSmtp::ServerProtocol::doAuthData( const std::string & line , bool & predic
 		predicate = false ; // => idle
 		send( "501 authentication cancelled" ) ;
 	}
-	else if( ! Base64::valid(line) )
+	else if( ! G::Base64::valid(line) )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: invalid base64 encoding of authentication response" ) ;
 		predicate = false ; // => idle
@@ -443,12 +457,12 @@ void GSmtp::ServerProtocol::doAuthData( const std::string & line , bool & predic
 	else
 	{
 		bool done = false ;
-		std::string next_challenge = m_sasl.apply( Base64::decode(line) , done ) ;
+		std::string next_challenge = m_sasl->apply( G::Base64::decode(line) , done ) ;
 		if( done )
 		{
 			predicate = false ; // => idle
-			m_authenticated = m_sasl.authenticated() ;
-			sendAuthDone( m_sasl.authenticated() ) ;
+			m_authenticated = m_sasl->authenticated() ;
+			sendAuthDone( m_sasl->authenticated() ) ;
 		}
 		else
 		{
@@ -460,12 +474,12 @@ void GSmtp::ServerProtocol::doAuthData( const std::string & line , bool & predic
 
 void GSmtp::ServerProtocol::sendChallenge( const std::string & s )
 {
-	send( std::string("334 ") + Base64::encode(s,std::string()) ) ;
+	send( std::string("334 ") + G::Base64::encode(s,std::string()) ) ;
 }
 
 void GSmtp::ServerProtocol::doMail( const std::string & line , bool & predicate )
 {
-	if( m_sasl.active() && !m_sasl.trusted(m_peer_address) && !m_authenticated )
+	if( m_sasl->active() && !m_authenticated && ( !m_sasl->trusted(m_peer_address) || sensitive() ) )
 	{
 		predicate = false ;
 		sendAuthRequired() ;
@@ -609,7 +623,7 @@ GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( const std::str
 	if( command == "EXPN" ) return eExpn ;
 	if( command == "HELP" ) return eHelp ;
 	if( command == "STARTTLS" ) return eStartTls ;
-	if( m_sasl.active() && command == "AUTH" ) return eAuth ;
+	if( m_sasl->active() && command == "AUTH" ) return eAuth ;
 	return eUnknown ;
 }
 
@@ -646,8 +660,7 @@ void GSmtp::ServerProtocol::sendNotImplemented()
 
 void GSmtp::ServerProtocol::sendAuthRequired()
 {
-	bool sensitive = m_sasl.active() && SaslServer::requiresEncryption() && !m_secure ;
-	std::string more_help = sensitive ? ": use starttls" : "" ;
+	std::string more_help = sensitive() ? ": use starttls" : "" ;
 	send( std::string() + "530 authentication required" + more_help ) ;
 }
 
@@ -711,10 +724,8 @@ void GSmtp::ServerProtocol::sendEhloReply()
 		ss << "250-" << m_text.hello(m_peer_name) << crlf() ;
 
 	// dont advertise authentication if the sasl server implementation does not like plaintext dialogs
-	bool sensitive = m_sasl.active() && SaslServer::requiresEncryption() && !m_secure ;
-
-	if( m_sasl.active() && !sensitive )
-		ss << "250-AUTH " << m_sasl.mechanisms() << crlf() ;
+	if( m_sasl->active() && !sensitive() )
+		ss << "250-AUTH " << m_sasl->mechanisms() << crlf() ;
 
 	if( m_with_ssl && !m_secure )
 		ss << "250-STARTTLS" << crlf() ;

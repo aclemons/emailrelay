@@ -22,6 +22,9 @@
 #include "gpop.h"
 #include "gpopauth.h"
 #include "gsaslserver.h"
+#include "gsaslserverfactory.h"
+#include "gstr.h"
+#include "gmemory.h"
 
 /// \class GPop::AuthImp
 /// A private pimple-pattern implementation class used by GPop::Auth.
@@ -32,65 +35,70 @@ public:
 	bool valid() const ;
 	bool init( const std::string & mechanism ) ;
 	bool authenticated( const std::string & , const std::string & ) ;
+	bool mustChallenge() const ;
 	std::string challenge() ;
 	std::string id() const ;
 	std::string mechanisms() const ;
 
 private:
 	const Secrets & m_secrets ;
-	GSmtp::SaslServer m_sasl ;
+	std::auto_ptr<GAuth::SaslServer> m_sasl ;
 } ;
 
 // ==
 
 GPop::AuthImp::AuthImp( const Secrets & secrets ) :
 	m_secrets(secrets) ,
-	m_sasl(secrets,true,false) // dont advertise SASL LOGIN since we have USER/PASS
+	m_sasl(GAuth::SaslServerFactory::newSaslServer(secrets,true,false)) 
 {
-	m_sasl.init( "APOP" ) ; // for the initial challenge()
+	m_sasl->init( "APOP" ) ; // for the initial challenge()
 }
 
 bool GPop::AuthImp::valid() const
 {
-	return m_secrets.valid() && m_sasl.active() ;
+	return m_secrets.valid() && m_sasl->active() ;
 }
 
 bool GPop::AuthImp::init( const std::string & mechanism )
 {
 	G_DEBUG( "GPop::AuthImp::init: mechanism " << mechanism ) ;
-	return m_sasl.init(mechanism) ;
+	return m_sasl->init(mechanism) ;
 }
 
 bool GPop::AuthImp::authenticated( const std::string & p1 , const std::string & p2 )
 {
-	G_DEBUG( "GPop::AuthImp::authenticated: \"" << p1 << "\"" ) ;
 	bool done_1 = false ;
-	std::string challenge_1 = m_sasl.apply( p1 , done_1 ) ;
+	std::string challenge_1 = m_sasl->apply( p1 , done_1 ) ;
 	if( done_1 ) 
 	{
-		return challenge_1.empty() && m_sasl.authenticated() ;
+		return challenge_1.empty() && m_sasl->authenticated() ;
 	}
 	else
 	{
 		bool done_2 = false ;
-		std::string challenge_2 = m_sasl.apply( p2 , done_2 ) ;
-		return done_2 && challenge_2.empty() && m_sasl.authenticated() ;
+		std::string challenge_2 = m_sasl->apply( p2 , done_2 ) ;
+		return done_2 && challenge_2.empty() && m_sasl->authenticated() ;
 	}
+}
+
+bool GPop::AuthImp::mustChallenge() const
+{
+	return m_sasl->mustChallenge() ;
 }
 
 std::string GPop::AuthImp::challenge()
 {
-	return m_sasl.initialChallenge() ;
+	return m_sasl->initialChallenge() ;
 }
 
 std::string GPop::AuthImp::id() const
 {
-	return m_sasl.id() ;
+	return m_sasl->id() ;
 }
 
 std::string GPop::AuthImp::mechanisms() const
 {
-	return m_sasl.mechanisms() ;
+	return m_sasl->mechanisms() ;
 }
 
 // ==
@@ -118,6 +126,11 @@ bool GPop::Auth::init( const std::string & mechanism )
 bool GPop::Auth::authenticated( const std::string & p1 , const std::string & p2 )
 {
 	return m_imp->authenticated(p1,p2) ;
+}
+
+bool GPop::Auth::mustChallenge() const
+{
+	return m_imp->mustChallenge() ;
 }
 
 std::string GPop::Auth::challenge()

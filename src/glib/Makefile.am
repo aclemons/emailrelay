@@ -101,6 +101,8 @@ libglib_a_SOURCES = \
 	garg.cpp \
 	garg.h \
 	gassert.h \
+	gbase64.cpp \
+	gbase64.h \
 	gconvert.h \
 	gcleanup.h \
 	gcleanup_unix.cpp \

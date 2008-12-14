@@ -18,6 +18,8 @@
 #
 # Filter.pm
 #
+# Filter->create() creates a filter script.
+#
 
 use strict ;
 use FileHandle ;

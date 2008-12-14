@@ -39,7 +39,7 @@ const std::string & GSmtp::Client::crlf()
 	return s ;
 }
 
-GSmtp::Client::Client( const GNet::ResolverInfo & remote , const Secrets & secrets , Config config ) :
+GSmtp::Client::Client( const GNet::ResolverInfo & remote , const GAuth::Secrets & secrets , Config config ) :
 	GNet::Client(remote,config.connection_timeout,0U,crlf(),config.local_address,false) ,
 	m_store(NULL) ,
 	m_processor(ProcessorFactory::newProcessor(config.processor_address,config.processor_timeout)) ,

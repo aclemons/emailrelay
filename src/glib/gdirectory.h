@@ -109,9 +109,13 @@ class G::DirectoryIterator
 {
 public:
 	DirectoryIterator( const Directory & dir , const std::string & wc ) ;
-		///< Constructor taking a directory reference
-		///< and a wildcard specification. Iterates over 
-		///< all matching files in the directory.
+		///< Constructor taking a directory reference and
+		///< a wildcard specification. Iterates over all 
+		///< matching files in the directory.
+		///<
+		///< This constructor overload may not be implemented
+		///< on all platforms, so prefer DirectoryList::readType()
+		///< where possible.
 
 	explicit DirectoryIterator( const Directory & dir ) ;
 		///< Constructor taking a directory reference.
@@ -153,6 +157,8 @@ private:
 
 /// \class G::DirectoryList
 /// A Directory iterator that does all file i/o in one go.
+/// This is useful, compared to DirectoryIterator, while temporarily 
+/// adopting additional process privileges to read a directory.
 /// The implementation uses DirectoryIterator.
 ///
 class G::DirectoryList 
@@ -169,8 +175,8 @@ public:
 
 	void readType( const Path & dir , const std::string & suffix , unsigned int limit = 0U ) ;
 		///< An initialiser that is to be used after default 
-		///< construction. Reads all files that have the given suffix.
-		///< All file i/o is done in readAll()/readType().
+		///< construction. Reads all files that have the given 
+		///< suffix. All file i/o is done in readAll()/readType().
 
 	bool more() ;
 		///< Returns true if more and advances by one.

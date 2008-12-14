@@ -262,6 +262,8 @@ void GNet::Server::accept( PeerInfo & peer_info )
 		peer_info.m_socket = accept_pair.first ; // auto_ptr assignment
 		peer_info.m_address = accept_pair.second ;
 	}
+	if( G::Test::enabled("accept-throws") )
+		throw AcceptError() ;
 	if( peer_info.m_socket.get() == NULL )
 		throw AcceptError() ;
 }

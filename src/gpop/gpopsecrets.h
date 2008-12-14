@@ -23,9 +23,10 @@
 
 #include "gdef.h"
 #include "gpop.h"
+#include "gsecrets.h"
+#include "gsaslserver.h"
 #include "gpath.h"
 #include "gexception.h"
-#include "gsaslserver.h"
 #include <iostream>
 #include <map>
 
@@ -36,17 +37,11 @@ namespace GPop
 	class SecretsImp ;
 }
 
-/// \namespace GSmtp
-namespace GSmtp
-{
-	class Secrets ;
-}
-
 /// \class GPop::Secrets
 /// A simple interface to a store of secrets as used in
 /// authentication.
 ///
-class GPop::Secrets : public GSmtp::SaslServer::Secrets 
+class GPop::Secrets : public GAuth::SaslServer::Secrets 
 {
 public:
 	G_EXCEPTION( OpenError , "cannot open pop secrets file" ) ;
@@ -66,7 +61,13 @@ public:
 		///< Returns the storage path.
 
 	virtual bool valid() const ;
-		///< Returns true. Final override from GSmtp::Valid virtual base class.
+		///< Returns true. 
+		///< Final override from GSmtp::Valid virtual base class.
+
+	virtual std::string source() const ;
+		///< Returns the storage path, as passed in to the constructor.
+		///<
+		///< Final override from GAuth::SaslServer::Secrets.
 
 	virtual std::string secret( const std::string & mechanism , const std::string & id ) const ;
 		///< Returns the given user's secret. Returns the

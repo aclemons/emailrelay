@@ -18,6 +18,9 @@
 #
 # Check.pm
 #
+# Various assertion functions that all resolve
+# down to Check::that(ok,text).
+#
 
 use strict ;
 use Carp ;

@@ -18,25 +18,27 @@
 #
 # fragment.pl
 #
-# Splits a source file into small fragments so that
-# they can be compiled separately. 
+# Splits a source file into small fragments so that they can
+# be compiled separately. 
 #
-# Starts a fragment at the start of a namespace or 
-# a method. Ends a fragment at a blank line following 
-# a closing brace in column one. If there is a comment
-# "//pragma fragments" in the source file then it marks
-# the end of the common, unfragmented code (eg. local 
-# declarations).
+# Starts a fragment at the start of a namespace or a method.
+# Ends a fragment at a blank line following a closing brace 
+# in column one. If there is a comment "//pragma fragments" 
+# in the source file then it marks the end of the common, 
+# unfragmented code (eg. local declarations).
 #
-# usage: fragment.sh [-r] <dir-in> <dir-out>
+# usage: fragment.pl [-r] <dir-in> <dir-out>
+#          -r : recursive
 #
-# Pokes inside "Makefile.am" files to get a lists of files.
+# Looks inside "Makefile.am" files for a FRAGMENTS_EXTRA_DIST
+# definition to get a lists of files that should be fragmented.
 #
 # Logs all created files on stdout, suitable for backticks.
 #
 
 use strict ;
 use FileHandle ;
+use Cwd ;
 
 sub makefile_variable
 {
@@ -51,10 +53,6 @@ sub debug
 sub file_list_from_makefile
 {
 	my ( $dir_in ) = @_ ;
-	my $path = "$dir_in/Makefile.am" ;
-	debug( "makefile: $path" ) ;
-	my $f = new FileHandle( $path ) or return () ;
-	my %full_hash = () ;
 	while( <$f> )
 	{
 		my $line = $_ ;
@@ -116,7 +114,8 @@ sub mkdir_for
 	if( ! -d $dir_out )
 	{
 		debug( "mkdir [$dir_out]" ) ;
-		mkdir($dir_out) or die basename($0).": cannot create directory [$dir_out] ($!)" ;
+		mkdir($dir_out) or die basename($0).": cannot create directory [$dir_out] from [".Cwd::getcwd()."] ($!)" ;
+		chmod 0755 , $dir_out
 	}
 }
 
@@ -203,7 +202,8 @@ sub fragment
 			$state = 1 ;
 			my $file_out = next_file_out( $file_in , $dir_out ) ;
 			mkdir_for( $file_out ) ;
-			$output = new FileHandle( $file_out , ">" ) or die basename($0).": cannot create output file [$file_out]" ;
+			$output = new FileHandle( $file_out , ">" ) or 
+				die basename($0).": cannot create output file [$file_out] from ".Cwd::getcwd()." ($!)" ;
 			push @file_list , name_to_show($file_out) ;
 			print_banner( $output , $file_in , $file_out ) ;
 			print_header( $output , \@head ) ;

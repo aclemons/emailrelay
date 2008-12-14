@@ -42,7 +42,7 @@ E-MailRelay is designed to be policy-free, so that you can implement your own
 policies for message retries, bounces, local mailbox delivery, spam filtering
 etc. through external scripts.
 
-It has no dependencies on third-party libraries or run-time environments so it
+It has few dependencies on third-party libraries or run-time environments so it
 is easy to build and install, and the single-threaded, event-driven design with
 non-blocking i/o may provide better performance and resource usage than some of
 the alternatives.
@@ -412,7 +412,7 @@ E-MailRelay server.
 Google mail
 -----------
 To send mail via Google mail's SMTP gateway you will need to create a client
-secrets file containing your account details and enable TLS/SSL support in
+secrets file containing your account details and also enable TLS/SSL support in
 E-MailRelay by using the "--client-tls" switch.
 
 The secrets file should contain one line of text something like this:

@@ -18,6 +18,8 @@
 #
 # Server.pm
 #
+# Runs the emailrelay program as a server.
+#
 
 use strict ;
 use FileHandle ;
@@ -112,12 +114,25 @@ sub _pid
 
 sub canRun
 {
+	# Returns true if all the required ports are free.
 	my ( $this , $port_list_ref ) = @_ ;
 	my @port_list = defined($port_list_ref) ? @$port_list_ref : Port::list() ;
 	return
 		Port::isFree($this->smtpPort(),@port_list) &&
 		Port::isFree($this->adminPort(),@port_list) &&
 		Port::isFree($this->popPort(),@port_list) ;
+}
+
+sub canDo
+{
+	# Returns true if built with the relevant functionality.
+	my ( $this , $type , $default_ ) = @_ ;
+	local $/ ;
+	my $fh = new FileHandle( $this->exe() . " --version --verbose |" ) ;
+	my $output = <$fh> ;
+	my $has_enable = $output =~ m/\[.*enable_$type.*\]/m ;
+	my $has_disable = $output =~ m/\[.*disable_$type.*\]/m ;
+	return $has_enable ? 1 : ( $has_disable ? 0 : $default_ ) ;
 }
 
 sub _set
@@ -194,6 +209,7 @@ sub _set_all
 
 sub run
 {
+	# Starts the server and waits for a pid file to be created.
 	my ( $this , $switches_ref , $command_prefix , $command_suffix ) = @_ ;
 
 	$command_prefix = defined($command_prefix) ? $command_prefix : "" ;
@@ -226,7 +242,7 @@ sub run
 
 sub message
 {
-	# Returns the first warning or error from the server's log file
+	# Returns the first warning or error from the server's log file.
 	my ( $this ) = @_ ;
 	my $err = new FileHandle($this->stderr()) ;
 	while( <$err> )
@@ -243,6 +259,7 @@ sub message
 
 sub sleep_cs
 {
+	# Sleeps for a number of centiseconds.
 	my ( $cs ) = @_ ;
 	$cs = defined($cs) ? $cs : 1 ;
 	select( undef , undef , undef , 0.01 * $cs ) ;
@@ -250,7 +267,7 @@ sub sleep_cs
 
 sub wait
 {
-	# wait to die
+	# Waits to die :-<
 	my ( $this , $timeout_cs ) = @_ ;
 	for( my $i = 0 ; $i < $timeout_cs ; $i++ )
 	{
@@ -264,7 +281,7 @@ sub wait
 
 sub kill
 {
-	# kill and wait to die
+	# Kills the server and waits for it to die.
 	my ( $this , $signal , $timeout_cs ) = @_ ;
 	$signal = defined($signal) ? $signal : 15 ;
 	$timeout_cs = defined($timeout_cs) ? $timeout_cs : 100 ;
@@ -274,6 +291,7 @@ sub kill
 
 sub cleanup
 {
+	# Cleans up some files.
 	my ( $this ) = @_ ;
 	unlink( $this->stdout() ) ;
 	unlink( $this->stderr() ) ;
@@ -286,6 +304,8 @@ sub cleanup
 
 sub hasDebug
 {
+	# Returns true if the executable has debugging code 
+	# built in. (This could now use "--version --verbose".)
 	my ( $this ) = @_ ;
 	my $exe = $this->exe() ;
 	my $rc = system( "strings \"$exe\" | fgrep -q 'G_TEST'" ) ;

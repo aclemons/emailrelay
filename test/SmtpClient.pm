@@ -18,6 +18,8 @@
 #
 # SmtpClient.pm
 #
+# A network client for driving the smtp interface.
+#
 
 use strict ;
 use FileHandle ;
@@ -45,6 +47,7 @@ sub new
 
 sub open
 {
+	# Opens the connection.
 	my ( $this , $wait ) = @_ ;
 	my $wait = defined($wait) ? $wait : 1 ;
 	my $t = $this->t() ;
@@ -55,6 +58,7 @@ sub open
 
 sub close
 {
+	# Drops the connection.
 	my ( $this ) = @_ ;
 	$this->t()->close() ;
 }
@@ -65,6 +69,7 @@ sub t { return shift->{'m_t'} }
 
 sub ehlo
 {
+	# Says ehlo.
 	my ( $this ) = @_ ;
 	my $t = $this->t() ;
 	$t->buffer_empty() ; # sync
@@ -73,6 +78,8 @@ sub ehlo
 
 sub mail
 {
+	# Says mail-from. Can optionally be expected to fail
+	# with an authentication-require error message.
 	my ( $this , $to_fail ) = @_ ;
 	my $t = $this->t() ;
 	if( $to_fail )
@@ -87,6 +94,8 @@ sub mail
 
 sub submit_start
 {
+	# Starts message submission. See also
+	# submit_line() and submit_end().
 	my ( $this ) = @_ ;
 	my $t = $this->t() ;
 	$t->buffer_empty() ; # sync
@@ -102,6 +111,7 @@ sub submit_start
 
 sub submit_end
 {
+	# Ends message submission by sending a dot.
 	my ( $this , $to_fail ) = @_ ;
 	$to_fail = defined($to_fail) ? $to_fail : 0 ;
 	my $t = $this->t() ;
@@ -117,6 +127,7 @@ sub submit_end
 
 sub submit_line
 {
+	# Sends a line of a submitted message.
 	my ( $this , $line ) = @_ ;
 	my $t = $this->t() ;
 	$t->print( $line ) ;
@@ -124,6 +135,7 @@ sub submit_line
 
 sub submit
 {
+	# Submits a whole test message.
 	my ( $this , $to_fail ) = @_ ;
 	$this->submit_start() ;
 	$this->submit_line( "This is a test." ) ;
@@ -132,6 +144,7 @@ sub submit
 
 sub doBadHelo
 {
+	# Sends an invalid helo.
 	my ( $this ) = @_ ;
 	my $t = $this->t() ;
 	$t->cmd( String => "HELO" , Prompt => '/501 parameter [^\r\n]+/' , Errmode => 'return' ) ;
@@ -140,6 +153,7 @@ sub doBadHelo
 
 sub doBadCommand
 {
+	# Sends an invalid 'foo' command.
 	my ( $this ) = @_ ;
 	my $t = $this->t() ;
 	$t->cmd( String => "FOO" , Prompt => '/500 command [^\r\n]+/' , Errmode => 'return' ) ;

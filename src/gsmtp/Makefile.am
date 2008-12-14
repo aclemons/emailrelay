@@ -25,14 +25,6 @@ ADMIN_EXTRA_DIST = $(ADMIN_SOURCES_)
 ADMIN_SOURCES =
 endif
 
-if AUTH
-AUTH_EXTRA_DIST = gsaslserver_none.cpp gsaslclient_none.cpp gsecrets_none.cpp
-AUTH_SOURCES = gsaslserver_native.cpp gsaslclient_native.cpp gsecrets_full.cpp
-else
-AUTH_EXTRA_DIST = gsaslserver_native.cpp gsaslclient_native.cpp gsecrets_full.cpp
-AUTH_SOURCES = gsaslserver_none.cpp gsaslclient_none.cpp gsecrets_none.cpp
-endif
-
 EXEC_SOURCES_=\
 	gexecutableprocessor.cpp \
 	gexecutableprocessor.h \
@@ -63,19 +55,15 @@ EXTRA_DIST=\
 	$(ADMIN_EXTRA_DIST) \
 	$(EXEC_EXTRA_DIST) \
 	gmessagestore_win32.cpp \
-	gsaslserver_pam.cpp \
 	mingw.mak
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -DG_SPOOLDIR=\"$(e_spooldir)\"
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gauth -DG_SPOOLDIR=\"$(e_spooldir)\"
 
 noinst_LIBRARIES = libgsmtp.a
 
 libgsmtp_a_SOURCES = \
 	$(ADMIN_SOURCES) \
 	$(EXEC_SOURCES) \
-	$(AUTH_SOURCES) \
-	gbase64.cpp \
-	gbase64.h \
 	gclientprotocol.cpp \
 	gclientprotocol.h \
 	gfactoryparser.cpp \
@@ -102,10 +90,6 @@ libgsmtp_a_SOURCES = \
 	gprotocolmessage.h \
 	gprotocolmessagestore.cpp \
 	gprotocolmessagestore.h \
-	gsasl.h \
-	gsaslserver.h \
-	gsaslclient.h \
-	gsecrets.h \
 	gserverprotocol.cpp \
 	gserverprotocol.h \
 	gsmtpclient.cpp \
@@ -117,8 +101,6 @@ libgsmtp_a_SOURCES = \
 	gstoredfile.h \
 	gstoredmessage.cpp \
 	gstoredmessage.h \
-	gvalid.h \
-	gvalid.cpp \
 	gverifier.cpp \
 	gverifier.h \
 	gverifierfactory.h \

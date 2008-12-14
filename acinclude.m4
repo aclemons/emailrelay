@@ -189,6 +189,18 @@ AC_DEFUN([ACLOCAL_CHECK_BUGGY_CTIME],
 	fi
 ])
 
+dnl aclocal-capabilities
+dnl
+dnl Sets G_CAPABILITIES to represent the configure options.
+dnl
+AC_DEFUN([ACLOCAL_CAPABILITIES],
+[
+changequote(<<,>>)
+	G_CAPABILITIES="`echo \"$ac_configure_args\" | sed 's/-/_/g' | sed 's/[^_a-z]//g' | sed 's/^__//g'`"
+changequote([,])
+	AC_SUBST(G_CAPABILITIES)
+])
+
 dnl aclocal-compiler-version
 dnl
 dnl Sets COMPILER_VERSION in makefiles.
@@ -394,8 +406,8 @@ AC_DEFUN([ENABLE_IDENTITY],
 
 dnl enable-small-fragments
 dnl
-dnl The "--enable-small-fragments" sewitch compiles certain source files in 
-dnl lots of little pieces so the linker can throw away fragments that 
+dnl The "--enable-small-fragments" switch compiles certain source files
+dnl in lots of little pieces so the linker can throw away fragments that 
 dnl are not needed in the final executable.
 dnl
 dnl This requires perl on the path and probably messes up a lot of 
@@ -403,6 +415,15 @@ dnl autoconf/automake features, so only use if really necessary.
 dnl
 AC_DEFUN([ENABLE_SMALL_FRAGMENTS],
 [
+	if test x$enable_small_fragments = xyes -a x$aclocal_use_ipv6 = xyes
+	then
+		AC_MSG_ERROR([cannot use --enable-small-fragments and --enable-ipv6])
+	fi
+	if test x$enable_small_fragments = xyes -a x$MOC != x
+	then
+		AC_MSG_ERROR([cannot use --enable-small-fragments and --enable-gui])
+	fi
+
 	AM_CONDITIONAL(SMALL_FRAGMENTS,test x$enable_small_fragments = xyes)
 	if test x$enable_small_fragments = xyes
 	then
@@ -497,6 +518,15 @@ AC_DEFUN([ENABLE_MAC],
 		AC_DEFINE(G_MAC,1,[Define for a mac build])
 	fi
 	AM_CONDITIONAL(MAC,test x$enable_mac = xyes -o "`uname`" = "Darwin")
+])
+
+dnl enable-testing
+dnl
+dnl The "--disable-testing" switch turns off make-check tests.
+dnl
+AC_DEFUN([ENABLE_TESTING],
+[
+	AM_CONDITIONAL(TESTING,test x$enable_testing != xno)
 ])
 
 dnl with-openssl
@@ -643,6 +673,11 @@ dnl with-pam
 dnl
 AC_DEFUN([WITH_PAM],
 [
+	if test "$with_pam" = "yes"
+	then
+		PAM_LIBS="-lpam"
+	fi
+	AC_SUBST(PAM_LIBS)
 	AM_CONDITIONAL(PAM,test x$with_pam = xyes)
 ])
 

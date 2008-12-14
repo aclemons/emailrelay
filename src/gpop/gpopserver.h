@@ -47,7 +47,7 @@ namespace GPop
 /// Instances are created on the heap by Server (only).
 /// \see GPop::Server
 ///
-class GPop::ServerPeer : public GNet::BufferedServerPeer , private GPop::ServerProtocol::Sender 
+class GPop::ServerPeer : public GNet::BufferedServerPeer , private GPop::ServerProtocol::Sender , private GPop::ServerProtocol::Security 
 {
 public:
 	G_EXCEPTION( SendError , "network send error" ) ;
@@ -71,6 +71,12 @@ protected:
 
 	virtual void onSendComplete() ; 
 		///< Final override from GNet::BufferedServerPeer.
+
+	virtual bool securityEnabled() const ;
+		///< Final override from GPop::ServerProtocol::Security.
+
+	virtual void securityStart() ;
+		///< Final override from GPop::ServerProtocol::Security.
 
 private:
 	ServerPeer( const ServerPeer & ) ;

@@ -44,6 +44,11 @@ bool GPop::Secrets::valid() const
 	return false ;
 }
 
+std::string GPop::Secrets::source() const
+{
+	return std::string() ;
+}
+
 std::string GPop::Secrets::secret( const std::string & , const std::string & ) const
 {
 	return std::string() ;

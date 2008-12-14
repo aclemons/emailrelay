@@ -38,6 +38,7 @@ AC_CHECK_PROGS(GZIP,gzip)
 AC_CHECK_PROG(HAVE_DOXYGEN,doxygen,yes)
 AC_CHECK_PROG(HAVE_MAN2HTML,man2html,yes)
 ACLOCAL_COMPILER_VERSION
+ACLOCAL_CAPABILITIES
 
 dnl ===
 dnl check for libraries...
@@ -164,6 +165,12 @@ AC_ARG_ENABLE(mac,AC_HELP_STRING([--enable-mac],[enable building for a mac os x 
 ENABLE_MAC
 
 dnl ===
+dnl "--enable-testing"
+dnl
+AC_ARG_ENABLE(testing,AC_HELP_STRING([--enable-testing],[enable make-check tests (default yes)]))
+ENABLE_TESTING
+
+dnl ===
 dnl "--with-doxygen"
 dnl
 AC_ARG_WITH(doxygen,AC_HELP_STRING([--with-doxygen],[generate source code documentation with doxygen (default auto)]))
@@ -225,5 +232,5 @@ if test "$e_qtmoc" = "" ; then e_qtmoc="moc" ; fi
 dnl ===
 dnl generate files...
 dnl
-AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile debian/Makefile src/fragments/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gauth/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile debian/Makefile src/fragments/Makefile)
 

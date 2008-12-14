@@ -74,9 +74,17 @@ public:
 		bool dummy ;
 		Config() ;
 	} ;
+	/// An interface used by ServerProtocol to enable TLS.
+	class Security 
+	{
+		public: virtual bool securityEnabled() const = 0 ;
+		public: virtual void securityStart() = 0 ;
+		public: virtual ~Security() ;
+		private: void operator=( const Security & ) ; // not implemented
+	} ;
 
-	ServerProtocol( Sender & sender , Store & store , const Secrets & secrets , const Text & text , 
-		GNet::Address peer_address , Config config ) ;
+	ServerProtocol( Sender & sender , Security & security , Store & store , const Secrets & secrets , 
+		const Text & text , GNet::Address peer_address , Config config ) ;
 			///< Constructor. 
 			///<
 			///< The Sender interface is used to send protocol
@@ -103,6 +111,9 @@ public:
 		///< false from protocolSend() when blocked, and calls
 		///< resume() when unblocked.
 
+	void secure() ;
+		///< Called when the server connection becomes secure.
+
 private:
 	enum Event
 	{
@@ -122,6 +133,8 @@ private:
 		eTop ,
 		eUidl ,
 		eUser ,
+		eStls ,
+		eSecure ,
 		eUnknown
 	} ;
 	enum State
@@ -153,11 +166,13 @@ private:
 	void doApop( const std::string & line , bool & ) ;
 	void doTop( const std::string & line , bool & ) ;
 	void doCapa( const std::string & line , bool & ) ;
+	void doStls( const std::string & line , bool & ) ;
 	void doAuth( const std::string & line , bool & ) ;
 	void doAuthData( const std::string & line , bool & ) ;
 	void doUidl( const std::string & line , bool & ) ;
 	void sendInit() ;
 	void sendError() ;
+	void sendError( const std::string & ) ;
 	void sendOk() ;
 	static const std::string & crlf() ;
 	Event commandEvent( const std::string & ) const ;
@@ -170,10 +185,13 @@ private:
 	bool sendContentLine( std::string & , bool & ) ;
 	void send( std::string ) ;
 	void lockStore() ;
+	std::string mechanismsWithoutLogin() const ;
+	bool mechanismsIncludePlain() const ;
 
 private:
 	const Text & m_text ;
 	Sender & m_sender ;
+	Security & m_security ;
 	Store & m_store ;
 	StoreLock m_store_lock ;
 	const Secrets & m_secrets ;
@@ -184,6 +202,7 @@ private:
 	std::auto_ptr<std::istream> m_content ;
 	long m_body_limit ;
 	bool m_in_body ;
+	bool m_secure ;
 } ;
 
 /// \class GPop::ServerProtocolText

@@ -59,7 +59,7 @@ public:
 	ProtocolMessageForward( MessageStore & store , 
 		std::auto_ptr<ProtocolMessage> pm ,
 		const GSmtp::Client::Config & client_config ,
-		const Secrets & client_secrets , 
+		const GAuth::Secrets & client_secrets , 
 		const std::string & server_address , 
 		unsigned int connection_timeout ) ;
 			///< Constructor. The 'store' and 'client-secrets' references
@@ -117,7 +117,7 @@ private:
 	MessageStore & m_store ;
 	GNet::ResolverInfo m_client_resolver_info ;
 	Client::Config m_client_config ;
-	const Secrets & m_client_secrets ;
+	const GAuth::Secrets & m_client_secrets ;
 	std::auto_ptr<ProtocolMessage> m_pm ;
 	GNet::ClientPtr<GSmtp::Client> m_client ;
 	unsigned long m_id ;
