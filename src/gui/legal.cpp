@@ -36,7 +36,7 @@ QString Legal::text()
 		"<p>MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</p>"
 		"<p>GNU General Public License for more details.</p>"
 		"<p></p>"
-		"<p>Copyright (C) 2001-2008 Graeme Walker</p>"
+		"<p>Copyright (C) 2001-2009 Graeme Walker</p>"
 		"</center>" ) ;
 }
 
