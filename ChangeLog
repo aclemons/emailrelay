@@ -5,7 +5,7 @@ E-MailRelay Change Log
 ------------
 * TODO: POP must disallow authentication before STLS if using PAM
 * Added TLS for POP
-* Linux PAM support added ("configure --with-pam" and "--server-auth=/pam").
+* Added Linux PAM support ("configure --with-pam" and "--server-auth=/pam").
 * Fixed namespace problems for gcc 3.4.
 
 1.8 -> 1.8.1
