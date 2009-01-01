@@ -3,7 +3,7 @@ emailrelay (1.9) unstable; urgency=low
   * Added TLS for POP
   * Added Linux PAM support ("configure --with-pam" and "--server-auth=/pam").
   * Fixed namespace problems for gcc 3.4.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Thu, 01 Jan 2009 16:03:39 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Thu, 01 Jan 2009 18:55:05 +0000
 
 emailrelay (1.8.1) unstable; urgency=low
   * Changed the definition of "--as-proxy" to use "--poll 0" rather than "--immediate" [bug-id 1961652].
