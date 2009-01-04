@@ -45,7 +45,7 @@
 # If this test takes more a minute (without valgrind) then it 
 # has failed.
 #
-# usage: emailrelay-chain-test.sh [-v] [-f] [-d] [-n] [<exe-dir> [<content-file>]]
+# usage: emailrelay-chain-test.sh [-v] [-f] [-d] [-n] [-s] [<exe-dir> [<content-file>]]
 #	-v    use valgrind
 #	-f    use fetchmail
 #	-d    use --debug

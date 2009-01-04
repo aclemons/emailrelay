@@ -15,20 +15,33 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+SOURCES_PAM_AUTH_ = gsaslclient_native.cpp gsaslserverbasic_native.cpp gsaslserverfactory_pam.cpp gsecrets_pam.cpp gsaslserverpam.cpp gsecretsfile.cpp
+SOURCES_PAM_NOAUTH_ = gsaslclient_none.cpp gsaslserverbasic_none.cpp gsaslserverfactory_native.cpp gsecrets_none.cpp
+SOURCES_NOPAM_NOAUTH_ = gsaslclient_none.cpp gsaslserverbasic_none.cpp gsaslserverfactory_native.cpp gsecrets_none.cpp
+SOURCES_NOPAM_AUTH_ = gsaslclient_native.cpp gsaslserverbasic_native.cpp gsaslserverfactory_native.cpp gsecrets_full.cpp gsecretsfile.cpp
+EXTRA_DIST_PAM_AUTH_ = gsaslclient_none.cpp gsaslserverbasic_none.cpp gsaslserverfactory_native.cpp gsecrets_full.cpp gsecrets_none.cpp
+EXTRA_DIST_PAM_NOAUTH_ = gsaslclient_native.cpp gsaslserverbasic_native.cpp gsaslserverfactory_pam.cpp gsecrets_full.cpp gsecrets_pam.cpp gsaslserverpam.cpp gsecretsfile.cpp
+EXTRA_DIST_NOPAM_NOAUTH_ = gsaslclient_native.cpp gsaslserverbasic_native.cpp gsaslserverfactory_pam.cpp gsecrets_full.cpp gsecrets_pam.cpp gsaslserverpam.cpp gsecretsfile.cpp
+EXTRA_DIST_NOPAM_AUTH_ = gsaslclient_none.cpp gsaslserverbasic_none.cpp gsaslserverfactory_pam.cpp gsecrets_none.cpp gsecrets_pam.cpp gsaslserverpam.cpp
+
 if PAM
- EXTRA_DIST__ = gsaslserverfactory_native.cpp gsecrets_none.cpp
- SOURCES__ = gsaslserverfactory_pam.cpp gsaslserverpam.cpp gsecrets_pam.cpp
+ SOURCES_AUTH_ = $(SOURCES_PAM_AUTH_)
+ EXTRA_DIST_AUTH_ = $(EXTRA_DIST_PAM_AUTH_)
+ SOURCES_NOAUTH_ = $(SOURCES_PAM_NOAUTH_)
+ EXTRA_DIST_NOAUTH_ = $(EXTRA_DIST_PAM_NOAUTH_)
 else
- EXTRA_DIST__ = gsaslserverfactory_pam.cpp gsaslserverpam.cpp gsecrets_pam.cpp
- SOURCES__ = gsaslserverfactory_native.cpp gsecrets_none.cpp
+ SOURCES_AUTH_ = $(SOURCES_NOPAM_AUTH_)
+ EXTRA_DIST_AUTH_ = $(EXTRA_DIST_NOPAM_AUTH_)
+ SOURCES_NOAUTH_ = $(SOURCES_NOPAM_NOAUTH_)
+ EXTRA_DIST_NOAUTH_ = $(EXTRA_DIST_NOPAM_NOAUTH_)
 endif
 
 if AUTH
- EXTRA_DIST_ = $(EXTRA_DIST__) gsaslclient_none.cpp gsaslserverbasic_none.cpp gsecrets_full.cpp
- SOURCES_ = $(SOURCES__) gsaslclient_native.cpp gsaslserverbasic_native.cpp gsecretsfile.cpp
+ EXTRA_DIST_ = $(EXTRA_DIST_AUTH_)
+ SOURCES_ = $(SOURCES_AUTH_)
 else
- EXTRA_DIST_ = gsecretsfile.cpp gsecrets_pam.cpp gsaslserverfactory_pam.cpp gsaslserverpam.cpp gsecrets_full.cpp gsaslclient_native.cpp gsaslserverbasic_native.cpp 
- SOURCES_ = gsaslserverfactory_native.cpp gsecrets_none.cpp gsaslclient_none.cpp gsaslserverbasic_none.cpp
+ EXTRA_DIST_ = $(EXTRA_DIST_NOAUTH_)
+ SOURCES_ = $(EXTRA_DIST_NOAUTH_)
 endif
 
 EXTRA_DIST=mingw.mak $(EXTRA_DIST_)

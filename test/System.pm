@@ -51,9 +51,9 @@ sub createFile
 {
 	# Creates a file, optionally containing one line of text.
 	my ( $path , $line ) = @_ ;
-	my $fh = new FileHandle( "> " . $path ) ;
+	my $fh = new FileHandle( "> " . $path ) or die "cannot create [$path]" ;
 	if( defined($line) ) { print $fh $line , "\n" }
-	$fh->close() ;
+	$fh->close() or die "cannot write to [$path]" ;
 }
 
 sub createSmallMessageFile

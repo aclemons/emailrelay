@@ -47,26 +47,33 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libgauth_a_AR = $(AR) $(ARFLAGS)
 libgauth_a_LIBADD =
-am__libgauth_a_SOURCES_DIST = gsaslserverfactory_native.cpp \
-	gsecrets_none.cpp gsaslclient_none.cpp \
-	gsaslserverbasic_none.cpp gsaslserverfactory_pam.cpp \
-	gsaslserverpam.cpp gsecrets_pam.cpp gsaslclient_native.cpp \
-	gsaslserverbasic_native.cpp gsecretsfile.cpp gauth.h \
+am__libgauth_a_SOURCES_DIST = gsaslclient_native.cpp \
+	gsaslserverbasic_native.cpp gsaslserverfactory_pam.cpp \
+	gsecrets_full.cpp gsecrets_pam.cpp gsaslserverpam.cpp \
+	gsecretsfile.cpp gsaslserverfactory_native.cpp gauth.h \
 	gsaslclient.h gsaslserverbasic.h gsaslserverfactory.h \
 	gsaslserver.cpp gsaslserver.h gsaslserverpam.h gsecretsfile.h \
 	gsecrets.h gvalid.cpp gvalid.h
-@PAM_FALSE@am__objects_1 = gsaslserverfactory_native.$(OBJEXT) \
-@PAM_FALSE@	gsecrets_none.$(OBJEXT)
-@PAM_TRUE@am__objects_1 = gsaslserverfactory_pam.$(OBJEXT) \
-@PAM_TRUE@	gsaslserverpam.$(OBJEXT) gsecrets_pam.$(OBJEXT)
-@AUTH_FALSE@am__objects_2 = gsaslserverfactory_native.$(OBJEXT) \
-@AUTH_FALSE@	gsecrets_none.$(OBJEXT) gsaslclient_none.$(OBJEXT) \
-@AUTH_FALSE@	gsaslserverbasic_none.$(OBJEXT)
-@AUTH_TRUE@am__objects_2 = $(am__objects_1) \
-@AUTH_TRUE@	gsaslclient_native.$(OBJEXT) \
-@AUTH_TRUE@	gsaslserverbasic_native.$(OBJEXT) \
-@AUTH_TRUE@	gsecretsfile.$(OBJEXT)
-am_libgauth_a_OBJECTS = $(am__objects_2) gsaslserver.$(OBJEXT) \
+am__objects_1 = gsaslclient_native.$(OBJEXT) \
+	gsaslserverbasic_native.$(OBJEXT) \
+	gsaslserverfactory_pam.$(OBJEXT) gsecrets_full.$(OBJEXT) \
+	gsecrets_pam.$(OBJEXT) gsaslserverpam.$(OBJEXT) \
+	gsecretsfile.$(OBJEXT)
+@PAM_FALSE@am__objects_2 = $(am__objects_1)
+@PAM_TRUE@am__objects_2 = $(am__objects_1)
+am__objects_3 = gsaslclient_native.$(OBJEXT) \
+	gsaslserverbasic_native.$(OBJEXT) \
+	gsaslserverfactory_native.$(OBJEXT) gsecrets_full.$(OBJEXT) \
+	gsecretsfile.$(OBJEXT)
+am__objects_4 = gsaslclient_native.$(OBJEXT) \
+	gsaslserverbasic_native.$(OBJEXT) \
+	gsaslserverfactory_pam.$(OBJEXT) gsecrets_pam.$(OBJEXT) \
+	gsaslserverpam.$(OBJEXT) gsecretsfile.$(OBJEXT)
+@PAM_FALSE@am__objects_5 = $(am__objects_3)
+@PAM_TRUE@am__objects_5 = $(am__objects_4)
+@AUTH_FALSE@am__objects_6 = $(am__objects_2)
+@AUTH_TRUE@am__objects_6 = $(am__objects_5)
+am_libgauth_a_OBJECTS = $(am__objects_6) gsaslserver.$(OBJEXT) \
 	gvalid.$(OBJEXT)
 libgauth_a_OBJECTS = $(am_libgauth_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -199,14 +206,26 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@PAM_FALSE@EXTRA_DIST__ = gsaslserverfactory_pam.cpp gsaslserverpam.cpp gsecrets_pam.cpp
-@PAM_TRUE@EXTRA_DIST__ = gsaslserverfactory_native.cpp gsecrets_none.cpp
-@PAM_FALSE@SOURCES__ = gsaslserverfactory_native.cpp gsecrets_none.cpp
-@PAM_TRUE@SOURCES__ = gsaslserverfactory_pam.cpp gsaslserverpam.cpp gsecrets_pam.cpp
-@AUTH_FALSE@EXTRA_DIST_ = gsecretsfile.cpp gsecrets_pam.cpp gsaslserverfactory_pam.cpp gsaslserverpam.cpp gsecrets_full.cpp gsaslclient_native.cpp gsaslserverbasic_native.cpp 
-@AUTH_TRUE@EXTRA_DIST_ = $(EXTRA_DIST__) gsaslclient_none.cpp gsaslserverbasic_none.cpp gsecrets_full.cpp
-@AUTH_FALSE@SOURCES_ = gsaslserverfactory_native.cpp gsecrets_none.cpp gsaslclient_none.cpp gsaslserverbasic_none.cpp
-@AUTH_TRUE@SOURCES_ = $(SOURCES__) gsaslclient_native.cpp gsaslserverbasic_native.cpp gsecretsfile.cpp
+SOURCES_PAM_AUTH_ = gsaslclient_native.cpp gsaslserverbasic_native.cpp gsaslserverfactory_pam.cpp gsecrets_pam.cpp gsaslserverpam.cpp gsecretsfile.cpp
+SOURCES_PAM_NOAUTH_ = gsaslclient_none.cpp gsaslserverbasic_none.cpp gsaslserverfactory_native.cpp gsecrets_none.cpp
+SOURCES_NOPAM_NOAUTH_ = gsaslclient_none.cpp gsaslserverbasic_none.cpp gsaslserverfactory_native.cpp gsecrets_none.cpp
+SOURCES_NOPAM_AUTH_ = gsaslclient_native.cpp gsaslserverbasic_native.cpp gsaslserverfactory_native.cpp gsecrets_full.cpp gsecretsfile.cpp
+EXTRA_DIST_PAM_AUTH_ = gsaslclient_none.cpp gsaslserverbasic_none.cpp gsaslserverfactory_native.cpp gsecrets_full.cpp gsecrets_none.cpp
+EXTRA_DIST_PAM_NOAUTH_ = gsaslclient_native.cpp gsaslserverbasic_native.cpp gsaslserverfactory_pam.cpp gsecrets_full.cpp gsecrets_pam.cpp gsaslserverpam.cpp gsecretsfile.cpp
+EXTRA_DIST_NOPAM_NOAUTH_ = gsaslclient_native.cpp gsaslserverbasic_native.cpp gsaslserverfactory_pam.cpp gsecrets_full.cpp gsecrets_pam.cpp gsaslserverpam.cpp gsecretsfile.cpp
+EXTRA_DIST_NOPAM_AUTH_ = gsaslclient_none.cpp gsaslserverbasic_none.cpp gsaslserverfactory_pam.cpp gsecrets_none.cpp gsecrets_pam.cpp gsaslserverpam.cpp
+@PAM_FALSE@SOURCES_AUTH_ = $(SOURCES_NOPAM_AUTH_)
+@PAM_TRUE@SOURCES_AUTH_ = $(SOURCES_PAM_AUTH_)
+@PAM_FALSE@EXTRA_DIST_AUTH_ = $(EXTRA_DIST_NOPAM_AUTH_)
+@PAM_TRUE@EXTRA_DIST_AUTH_ = $(EXTRA_DIST_PAM_AUTH_)
+@PAM_FALSE@SOURCES_NOAUTH_ = $(SOURCES_NOPAM_NOAUTH_)
+@PAM_TRUE@SOURCES_NOAUTH_ = $(SOURCES_PAM_NOAUTH_)
+@PAM_FALSE@EXTRA_DIST_NOAUTH_ = $(EXTRA_DIST_NOPAM_NOAUTH_)
+@PAM_TRUE@EXTRA_DIST_NOAUTH_ = $(EXTRA_DIST_PAM_NOAUTH_)
+@AUTH_FALSE@EXTRA_DIST_ = $(EXTRA_DIST_NOAUTH_)
+@AUTH_TRUE@EXTRA_DIST_ = $(EXTRA_DIST_AUTH_)
+@AUTH_FALSE@SOURCES_ = $(EXTRA_DIST_NOAUTH_)
+@AUTH_TRUE@SOURCES_ = $(SOURCES_AUTH_)
 EXTRA_DIST = mingw.mak $(EXTRA_DIST_)
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -DG_SPOOLDIR=\"$(e_spooldir)\"
 noinst_LIBRARIES = libgauth.a
@@ -272,14 +291,12 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsaslclient_native.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsaslclient_none.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsaslserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsaslserverbasic_native.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsaslserverbasic_none.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsaslserverfactory_native.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsaslserverfactory_pam.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsaslserverpam.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsecrets_none.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsecrets_full.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsecrets_pam.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsecretsfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gvalid.Po@am__quote@

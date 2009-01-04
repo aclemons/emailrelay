@@ -89,6 +89,11 @@ public:
 		///< Returns a space-separated list of standard, supported
 		///< SASL mechanisms (so not including APOP).
 
+	bool sensitive() const ;
+		///< Returns true if the implementation requires
+		///< authentication to be restricted to encrypted
+		///< transports.
+
 private:
 	Auth( const Auth & ) ;
 	void operator=( const Auth & ) ;

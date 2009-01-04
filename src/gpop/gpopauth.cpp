@@ -39,6 +39,7 @@ public:
 	std::string challenge() ;
 	std::string id() const ;
 	std::string mechanisms() const ;
+	bool sensitive() const ;
 
 private:
 	const Secrets & m_secrets ;
@@ -101,6 +102,11 @@ std::string GPop::AuthImp::mechanisms() const
 	return m_sasl->mechanisms() ;
 }
 
+bool GPop::AuthImp::sensitive() const
+{
+	return m_sasl->requiresEncryption() ;
+}
+
 // ==
 
 GPop::Auth::Auth( const Secrets & secrets ) :
@@ -148,3 +154,7 @@ std::string GPop::Auth::mechanisms() const
 	return m_imp->mechanisms() ;
 }
 
+bool GPop::Auth::sensitive() const
+{
+	return m_imp->sensitive() ;
+}

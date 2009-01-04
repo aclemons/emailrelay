@@ -354,7 +354,13 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 	if( m_getopt.contains("server-auth") && m_getopt.value("server-auth") == "/pam" &&
 		!m_getopt.contains("server-tls" ) )
 	{
-		return "--server-auth requires --server-tls when using pam" ;
+		return "--server-auth using pam requires --server-tls" ;
+	}
+
+	if( m_getopt.contains("pop-auth") && m_getopt.value("pop-auth") == "/pam" &&
+		!m_getopt.contains("server-tls" ) )
+	{
+		return "--pop-auth using pam requires --server-tls" ;
 	}
 
 	// warnings...

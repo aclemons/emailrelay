@@ -392,6 +392,7 @@ void GPop::ServerProtocol::doNothing( const std::string & , bool & )
 void GPop::ServerProtocol::doAuth( const std::string & line , bool & ok )
 {
 	std::string mechanism = G::Str::upper( commandParameter(line) ) ;
+
 	if( mechanism.empty() )
 	{
 		// completely non-standard behaviour, but required by some clients
@@ -401,6 +402,13 @@ void GPop::ServerProtocol::doAuth( const std::string & line , bool & ok )
 		send( "+OK" ) ;
 		send( list ) ;
 		send( "." ) ;
+	}
+	else if( m_auth.sensitive() && ! m_secure )
+	{
+		// reject authentication over an unencrypted transport
+		// if authentication is sensitive
+		ok = false ;
+		sendError( "must use STLS before authentication" ) ;
 	}
 	else
 	{
