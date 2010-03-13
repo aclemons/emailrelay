@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -39,13 +39,21 @@ endif
 
 BUNDLE=E-MailRelay-Start
 if MAC
-MAC_PROGS = emailrelay-start
-MAC_EXTRA_DIST =
-MAC_NOINST = $(BUNDLE).app
+ MAC_PROGS = emailrelay-start
+ MAC_EXTRA_DIST =
+ MAC_NOINST = $(BUNDLE).app
 else
-MAC_PROGS =
-MAC_EXTRA_DIST = start.cpp
-MAC_NOINST =
+ MAC_PROGS =
+ MAC_EXTRA_DIST = start.cpp
+ MAC_NOINST =
+endif
+
+if PAM
+ PAM_EXTRA_DIST = 
+ PAM_DATA_ = emailrelay.pam
+else
+ PAM_EXTRA_DIST = emailrelay.pam
+ PAM_DATA_ =
 endif
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
@@ -55,6 +63,7 @@ EXTRA_DIST=\
 	$(ADMIN_EXTRA_DIST) \
 	$(CONFIG_EXTRA_DIST) \
 	$(MAC_EXTRA_DIST) \
+	$(PAM_EXTRA_DIST) \
 	common.dsp \
 	doxygen.cfg \
 	doxygen.h \
@@ -93,6 +102,7 @@ INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(
 sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd $(MAC_PROGS)
 e_libexec_PROGRAMS = emailrelay-poke emailrelay-filter-copy
 e_spool_DATA = 
+e_pam_DATA = $(PAM_DATA_)
 noinst_SCRIPTS = $(MAC_NOINST)
 
 emailrelay_SOURCES = \
@@ -145,11 +155,12 @@ emailrelay_filter_copy_LDADD = \
 emailrelay_start_SOURCES = start.cpp
 emailrelay_start_LDADD =
 
-install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS
+install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS install-e_pamDATA
 	-chgrp daemon "$(DESTDIR)$(e_spooldir)"
 	-chmod 775 "$(DESTDIR)$(e_spooldir)"
 	-chgrp daemon "$(DESTDIR)$(sbindir)/emailrelay-submit"
 	-chmod g+s "$(DESTDIR)$(sbindir)/emailrelay-submit"
+	-mv "$(DESTDIR)$(e_pamdir)/emailrelay.pam" "$(DESTDIR)$(e_pamdir)/emailrelay"
 
 install-exec-local:
 	-if test -d "$(BUNDLE).app" ; then cp -R "$(BUNDLE).app" "$(DESTDIR)$(sbindir)" ; fi
@@ -158,6 +169,7 @@ uninstall-local:
 	-rmdir "$(DESTDIR)$(e_spooldir)" 2>/dev/null
 	-rmdir "$(DESTDIR)$(e_libexecdir)" 2>/dev/null
 	-rm -rf "$(DESTDIR)$(sbindir)/$(BUNDLE).app"
+	-rm -f "$(DESTDIR)$(e_pamdir)/emailrelay" 2>/dev/null
 
 clean-local:
 	rm -rf "$(BUNDLE).app"

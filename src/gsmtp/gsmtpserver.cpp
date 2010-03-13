@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -65,8 +65,10 @@ std::string AnonymousText::hello( const std::string & ) const
 
 std::string AnonymousText::received( const std::string & peer_name ) const
 { 
-	return GSmtp::ServerProtocolText::receivedLine( peer_name , 
-		m_peer_address.displayString(false) , m_thishost ) ;
+	return 
+		m_thishost.length() ?
+			GSmtp::ServerProtocolText::receivedLine( peer_name , m_peer_address.displayString(false) , m_thishost ) :
+			std::string() ; // no Received line at all if no hostname
 }
 
 // ===

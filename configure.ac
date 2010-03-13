@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ AC_CONFIG_SRCDIR(src/gsmtp/gsmtp.h)
 AM_INIT_AUTOMAKE([no-define])
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
+AC_DISABLE_OPTION_CHECKING
 
 dnl ===
 dnl check for programs...
@@ -225,6 +226,7 @@ AC_SUBST(e_initdir)
 AC_SUBST(e_spooldir)
 AC_SUBST(e_examplesdir)
 AC_SUBST(e_libexecdir)
+AC_SUBST(e_pamdir)
 AC_SUBST(e_sysconfdir)
 AC_SUBST(e_qtmoc)
 if test "$e_qtmoc" = "" ; then e_qtmoc="moc" ; fi

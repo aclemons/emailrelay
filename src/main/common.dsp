@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "CommonRelease"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /W3 /GR /GX /O2 /I "../../lib/msvc6.0" /I "../gsmtp" /I "../gnet" /I "../gssl" /I "../glib" /I "../win32" /D "NDEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "G_WIN32" /YX"gdef.h" /FD /c
+# ADD CPP /nologo /W3 /GR /GX /O2 /I "../../lib/msvc6.0" /I "../gsmtp" /I "../gauth" /I "../gnet" /I "../gssl" /I "../glib" /I "../win32" /D "NDEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "G_WIN32" /YX"gdef.h" /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -64,7 +64,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "CommonDebug"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GR /GX /ZI /Od /I "../../lib/msvc6.0" /I "../gsmtp" /I "../gnet" /I "../gssl" /I "../glib" /I "../win32" /D "_DEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "G_WIN32" /YX"gdef.h" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GR /GX /ZI /Od /I "../../lib/msvc6.0" /I "../gsmtp" /I "../gauth" /I "../gnet" /I "../gssl" /I "../glib" /I "../win32" /D "_DEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "G_WIN32" /YX"gdef.h" /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -113,7 +113,7 @@ SOURCE=..\glib\garg_win32.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gsmtp\gbase64.cpp
+SOURCE=..\glib\gbase64.cpp
 # End Source File
 # Begin Source File
 
@@ -417,7 +417,31 @@ SOURCE=..\glib\groot.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gsmtp\gsasl_native.cpp
+SOURCE=..\gauth\gsaslclient_native.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gauth\gsaslserverbasic_native.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gauth\gsaslserver.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gauth\gsaslserverfactory_native.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gauth\gsecretsfile.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gauth\gsecrets_full.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\gauth\gvalid.cpp
 # End Source File
 # Begin Source File
 
@@ -425,7 +449,7 @@ SOURCE=..\win32\gscmap.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\gsmtp\gsecrets_full.cpp
+SOURCE=..\gauth\gsecrets_full.cpp
 # End Source File
 # Begin Source File
 

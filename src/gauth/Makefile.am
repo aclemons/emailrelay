@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -29,11 +29,13 @@ if PAM
  EXTRA_DIST_AUTH_ = $(EXTRA_DIST_PAM_AUTH_)
  SOURCES_NOAUTH_ = $(SOURCES_PAM_NOAUTH_)
  EXTRA_DIST_NOAUTH_ = $(EXTRA_DIST_PAM_NOAUTH_)
+ PAM_DATA_ = emailrelay
 else
  SOURCES_AUTH_ = $(SOURCES_NOPAM_AUTH_)
  EXTRA_DIST_AUTH_ = $(EXTRA_DIST_NOPAM_AUTH_)
  SOURCES_NOAUTH_ = $(SOURCES_NOPAM_NOAUTH_)
  EXTRA_DIST_NOAUTH_ = $(EXTRA_DIST_NOPAM_NOAUTH_)
+ PAM_DATA_ =
 endif
 
 if AUTH

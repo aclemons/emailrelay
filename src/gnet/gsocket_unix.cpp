@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,21 +32,21 @@
 
 bool GNet::Socket::valid( Descriptor s )
 {
-	return s >= 0 ;
+	return s.valid() ;
 }
 
 bool GNet::Socket::setNonBlock()
 {
 	G_ASSERT( valid() ) ;
 
-	int mode = ::fcntl( m_socket , F_GETFL ) ;
+	int mode = ::fcntl( m_socket.fd() , F_GETFL ) ;
 	if( mode < 0 )
 		return false ;
 
-	int rc = ::fcntl( m_socket , F_SETFL , mode | O_NONBLOCK ) ;
+	int rc = ::fcntl( m_socket.fd() , F_SETFL , mode | O_NONBLOCK ) ;
 	bool ok = rc >= 0 ;
 	if( ok )
-		G_ASSERT( ::fcntl(m_socket,F_GETFL) & O_NONBLOCK ) ;
+		G_ASSERT( ::fcntl(m_socket.fd(),F_GETFL) & O_NONBLOCK ) ;
 
 	return ok ;
 }
@@ -61,8 +61,8 @@ int GNet::Socket::reason()
 void GNet::Socket::doClose()
 {
 	G_ASSERT( valid() ) ;
-	::close( m_socket ) ;
-	m_socket = -1;
+	::close( m_socket.fd() ) ;
+	m_socket = Descriptor::invalid() ;
 }
 
 bool GNet::Socket::error( int rc )

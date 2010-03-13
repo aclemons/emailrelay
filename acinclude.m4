@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -19,16 +19,16 @@ dnl
 dnl Defines HAVE_SOCKLEN_T.
 dnl
 AC_DEFUN([ACLOCAL_TYPE_SOCKLEN_T],
-[AC_CACHE_CHECK([for socklen_t],[aclocal_type_socklen_t],
+[AC_CACHE_CHECK([for socklen_t],[aclocal_cv_type_socklen_t],
 [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 		[[#include <sys/types.h>
 #include <sys/socket.h>]],
 		[[socklen_t len = 42; return len;]])],
-		aclocal_type_socklen_t=yes,
-		aclocal_type_socklen_t=no )
+		aclocal_cv_type_socklen_t=yes,
+		aclocal_cv_type_socklen_t=no )
 ])
-	if test $aclocal_type_socklen_t = yes; then
+	if test $aclocal_cv_type_socklen_t = yes; then
 		AC_DEFINE(HAVE_SOCKLEN_T,1,[Define to 1 if socklen_t type definition in sys/socket.h])
 	else
 		AC_DEFINE(HAVE_SOCKLEN_T,0,[Define to 1 if socklen_t type definition in sys/socket.h])
@@ -40,7 +40,7 @@ dnl
 dnl Defines HAVE_IPV6.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_IPV6],
-[AC_CACHE_CHECK([for ipv6],[aclocal_ipv6],
+[AC_CACHE_CHECK([for ipv6],[aclocal_cv_ipv6],
 [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 		[[#include <sys/types.h>
@@ -48,10 +48,10 @@ AC_DEFUN([ACLOCAL_CHECK_IPV6],
 #include <netinet/in.h>
 #include <arpa/inet.h>]],
 		[[sockaddr_in6 * p = 0;]])],
-		aclocal_ipv6=yes ,
-		aclocal_ipv6=no )
+		aclocal_cv_ipv6=yes ,
+		aclocal_cv_ipv6=no )
 ])
-	if test $aclocal_ipv6 = yes; then
+	if test $aclocal_cv_ipv6 = yes; then
 		AC_DEFINE(HAVE_IPV6,1,[Define to 1 if ipv6 is available])
 	else
 		AC_DEFINE(HAVE_IPV6,0,[Define to 1 if ipv6 is available])
@@ -64,7 +64,7 @@ dnl Defines HAVE_GETIPNODEBYNAME if the ipv6 function
 dnl getipnodebyname() as per rfc2553 is available.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_GETIPNODEBYNAME],
-[AC_CACHE_CHECK([for getipnodebyname],[aclocal_getipnodebyname],
+[AC_CACHE_CHECK([for getipnodebyname],[aclocal_cv_getipnodebyname],
 [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 		[[#include <sys/types.h>
@@ -73,10 +73,10 @@ AC_DEFUN([ACLOCAL_CHECK_GETIPNODEBYNAME],
 #include <arpa/inet.h>
 #include <netdb.h>]],
 		[[int i=0; getipnodebyname("",AF_INET6,AI_DEFAULT,&i);]])],
-		aclocal_getipnodebyname=yes ,
-		aclocal_getipnodebyname=no )
+		aclocal_cv_getipnodebyname=yes ,
+		aclocal_cv_getipnodebyname=no )
 ])
-	if test $aclocal_getipnodebyname = yes; then
+	if test $aclocal_cv_getipnodebyname = yes; then
 		AC_DEFINE(HAVE_GETIPNODEBYNAME,1,[Define to 1 if getipnodebyname() is available])
 	else
 		AC_DEFINE(HAVE_GETIPNODEBYNAME,0,[Define to 1 if getipnodebyname() is available])
@@ -88,17 +88,17 @@ dnl
 dnl Defines HAVE_SIN6_LEN if sin6_len is in sockaddr_in6.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_SIN6_LEN],
-[AC_CACHE_CHECK([for sin6_len],[aclocal_sin6_len],
+[AC_CACHE_CHECK([for sin6_len],[aclocal_cv_sin6_len],
 [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 		[[#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>]],
 		[[struct sockaddr_in6 s; s.sin6_len = 1;]])],
-		aclocal_sin6_len=yes ,
-		aclocal_sin6_len=no )
+		aclocal_cv_sin6_len=yes ,
+		aclocal_cv_sin6_len=no )
 ])
-	if test $aclocal_sin6_len = yes; then
+	if test $aclocal_cv_sin6_len = yes; then
 		AC_DEFINE(HAVE_SIN6_LEN,1,[Define to 1 if sockaddr_in6 has a sin6_len member])
 	else
 		AC_DEFINE(HAVE_SIN6_LEN,0,[Define to 1 if sockaddr_in6 has a sin6_len member])
@@ -110,17 +110,17 @@ dnl
 dnl Defines HAVE_SETGROUPS.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_SETGROUPS],
-[AC_CACHE_CHECK([for setgroups],[aclocal_setgroups],
+[AC_CACHE_CHECK([for setgroups],[aclocal_cv_setgroups],
 [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 		[[#include <sys/types.h>
 #include <unistd.h>
 #include <grp.h>]],
 		[[setgroups(0,0) ;]])],
-		aclocal_setgroups=yes ,
-		aclocal_setgroups=no )
+		aclocal_cv_setgroups=yes ,
+		aclocal_cv_setgroups=no )
 ])
-	if test $aclocal_setgroups = yes; then
+	if test $aclocal_cv_setgroups = yes; then
 		AC_DEFINE(HAVE_SETGROUPS,1,[Define to 1 if setgroups is available])
 	else
 		AC_DEFINE(HAVE_SETGROUPS,0,[Define to 1 if setgroups is available])
@@ -132,15 +132,15 @@ dnl
 dnl Defines HAVE_GMTIME_R.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_GMTIME_R],
-[AC_CACHE_CHECK([for gmtime_r],[aclocal_gmtime_r],
+[AC_CACHE_CHECK([for gmtime_r],[aclocal_cv_gmtime_r],
 [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 		[[#include <time.h>]],
 		[[gmtime_r((time_t*)0,(struct tm*)0) ;]])],
-		aclocal_gmtime_r=yes ,
-		aclocal_gmtime_r=no )
+		aclocal_cv_gmtime_r=yes ,
+		aclocal_cv_gmtime_r=no )
 ])
-	if test $aclocal_gmtime_r = yes; then
+	if test $aclocal_cv_gmtime_r = yes; then
 		AC_DEFINE(HAVE_GMTIME_R,1,[Define to 1 if gmtime_r in time.h])
 	else
 		AC_DEFINE(HAVE_GMTIME_R,0,[Define to 1 if gmtime_r in time.h])
@@ -152,15 +152,15 @@ dnl
 dnl Defines HAVE_LOCALTIME_R.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_LOCALTIME_R],
-[AC_CACHE_CHECK([for localtime_r],[aclocal_localtime_r],
+[AC_CACHE_CHECK([for localtime_r],[aclocal_cv_localtime_r],
 [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 		[[#include <time.h>]],
 		[[localtime_r((time_t*)0,(struct tm*)0) ;]])],
-		aclocal_localtime_r=yes ,
-		aclocal_localtime_r=no )
+		aclocal_cv_localtime_r=yes ,
+		aclocal_cv_localtime_r=no )
 ])
-	if test $aclocal_localtime_r = yes; then
+	if test $aclocal_cv_localtime_r = yes; then
 		AC_DEFINE(HAVE_LOCALTIME_R,1,[Define to 1 if localtime_r in time.h])
 	else
 		AC_DEFINE(HAVE_LOCALTIME_R,0,[Define to 1 if localtime_r in time.h])
@@ -173,16 +173,16 @@ dnl Defines HAVE_BUGGY_CTIME if ctime + unistd.h doesnt compile.
 dnl Needed for old versions of sunpro. Remove soon.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_BUGGY_CTIME],
-[AC_CACHE_CHECK([for buggy ctime],[aclocal_buggy_ctime],
+[AC_CACHE_CHECK([for buggy ctime],[aclocal_cv_buggy_ctime],
 [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 		[[#include <ctime>
 #include <unistd.h>]],
 		[[ ]])] ,
-		aclocal_buggy_ctime=no ,
-		aclocal_buggy_ctime=yes )
+		aclocal_cv_buggy_ctime=no ,
+		aclocal_cv_buggy_ctime=yes )
 ])
-	if test $aclocal_buggy_ctime = yes; then
+	if test $aclocal_cv_buggy_ctime = yes; then
 		AC_DEFINE(HAVE_BUGGY_CTIME,1,[Define to 1 if <ctime> requires <time.h>])
 	else
 		AC_DEFINE(HAVE_BUGGY_CTIME,0,[Define to 1 if <ctime> requires <time.h>])
@@ -196,7 +196,7 @@ dnl
 AC_DEFUN([ACLOCAL_CAPABILITIES],
 [
 changequote(<<,>>)
-	G_CAPABILITIES="`echo \"$ac_configure_args\" | sed 's/-/_/g' | sed 's/[^_a-z]//g' | sed 's/^__//g'`"
+	G_CAPABILITIES="@@`echo \"$ac_configure_args\" | sed 's/-/_/g' | sed 's/[^_a-z]//g' | sed 's/^__//g'`@@"
 changequote([,])
 	AC_SUBST(G_CAPABILITIES)
 ])
@@ -536,15 +536,15 @@ dnl
 AC_DEFUN([WITH_OPENSSL],
 if test "$with_openssl" != "no"
 then
-[AC_CACHE_CHECK([for openssl],[aclocal_openssl],
+[AC_CACHE_CHECK([for openssl],[aclocal_cv_openssl],
 [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 		[[#include <openssl/ssl.h>]],
 		[[SSL_CTX * p = 0 ; return 1;]])],
-		aclocal_openssl=yes,
-		aclocal_openssl=no )
+		aclocal_cv_openssl=yes,
+		aclocal_cv_openssl=no )
 ])
-    if test "$aclocal_openssl" = "yes"
+    if test "$aclocal_cv_openssl" = "yes"
 	then
 		SSL_LIBS="-lssl -lcrypto"
 		aclocal_ssl="openssl"
@@ -571,15 +571,15 @@ dnl
 AC_DEFUN([WITH_GLOB],
 if test "$with_glob" != "no"
 then
-[AC_CACHE_CHECK([for glob],[aclocal_have_glob],
+[AC_CACHE_CHECK([for glob],[aclocal_cv_have_glob],
 [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 		[[#include <glob.h>]],
 		[[glob_t * p = 0 ; globfree(p) ; return 1;]])],
-		aclocal_have_glob=yes,
-		aclocal_have_glob=no )
+		aclocal_cv_have_glob=yes,
+		aclocal_cv_have_glob=no )
 ])
-    if test "$aclocal_have_glob" = "yes"
+    if test "$aclocal_cv_have_glob" = "yes"
 	then
 		aclocal_use_glob="yes"
 	else
@@ -590,7 +590,7 @@ then
 		aclocal_use_glob="no"
 	fi
 else
-    if test "$aclocal_have_glob" = "yes"
+    if test "$aclocal_cv_have_glob" = "yes"
 	then
 		AC_MSG_WARN([not using available glob()])
 	fi
@@ -755,6 +755,15 @@ AC_DEFUN([SET_DIRECTORIES],
 			e_spooldir="$localstatedir/spool/$PACKAGE"
 		else 
 			e_spooldir="$localstatedir/spool/$PACKAGE" 
+		fi
+	fi
+	if test "$e_pamdir" = "" 
+	then 
+		if test "$enable_fhs" = "yes" 
+		then 
+			e_pamdir="$sysconfdir/pam.d"
+		else 
+			e_pamdir="$sysconfdir/pam.d" 
 		fi
 	fi
 	if test "$e_initdir" = "" 

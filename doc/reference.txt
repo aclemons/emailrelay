@@ -162,6 +162,7 @@ by a process-id, timestamp and sequence number, followed by "envelope" or
 simple locking scheme.
 
 The envelope file suffixes are:
+
 * ".new" -- while the envelope is first being written
 * <none> -- while the message is spooled
 * ".busy" -- while the message is being forwarded
@@ -173,6 +174,25 @@ a "local" suffix.
 
 If a message cannot be forwarded the envelope file is given a "bad" suffix,
 and the failure reason is written into the file.
+
+Forwarding
+----------
+Spooled messages can be forwarded at various times, depending on the
+command-line options:
+
+* when E-MailRelay first starts up ("--as-client" or "--forward")
+* as each message is submitted, before receipt has been acknowledged ("--immediate")
+* as soon as the submitting client connection disconnects ("--poll=0")
+* periodically ("--poll=<seconds>")
+
+These modes of operation can be mixed, although more than one "--poll" switch is
+not allowed.
+
+When using "--as-client" the spooled messages begin to be forwarded as soon as
+the program starts up, and the program terminates once they have all been sent.
+
+A pending "--poll" timer can be forced to expire immediately if a "--filter"
+script exits with a special value of 103, as described above.
 
 Mail processing
 ---------------
@@ -275,6 +295,7 @@ disadvantage is that by then it is too late to notify the SMTP client of any
 processing failures, so in many applications using "--filter" is more useful.
 
 Bear in mind the following points when writing "--filter" programs:
+
 * The standard input and output are not used; the content filename is passed on the command line.
 * Programs run with a reduced set of environment variables.
 * The E-MailRelay process is completely blocked while the "--filter" program runs.
@@ -292,31 +313,235 @@ message. One advantage of using a network pre-processor compared to running a
 program is that the E-MailRelay server is not blocked while the messages are
 being pre-processed.
 
-Forwarding
+
+Authentication
+--------------
+E-MailRelay supports the SMTP "AUTH" extension, as defined in RFC2554, on both
+the server-side and client-side.
+
+The authentication mechanisms currently supported are:
+
+# "PLAIN"
+
+  Passwords are stored in clear-text, sent over the network in clear-text, and
+  are replayable. Defined in RFC2595.
+
+# "LOGIN"
+
+  Similar to "PLAIN". Officially obsolete although widely used.
+
+# "CRAM-MD5"
+
+  Passwords are not stored in clear-text, not sent over the network, and are
+  not replayable. Defined in RFC2195.
+
+Authentication is enabled with the "--client-auth" and "--server-auth"
+command-line switches. The switch parameter is the name of a secrets file,
+containing usernames and passwords:
+
+	emailrelay --as-server --server-auth /etc/emailrelay-clients.auth
+	emailrelay --as-client myisp.net:smtp --client-auth /etc/emailrelay-myisp.auth
+
+The secrets file has a line-based format: blank lines are ignored and the hash
+character (#) is used for comments.
+
+Lines have four white-space delimited fields:
+
+* "mechanism"
+* "client-or-server"
+* "userid"
+* "secret"
+
+The "mechanism" field must be "LOGIN", "APOP" or "CRAM-MD5" (case-insensitive);
+the "client-or-server" field must be "client" or "server"; the "userid" field is
+xtext-encoded user identifier; and the "secret" field is the xtext-encoded
+"LOGIN" password, or the "CRAM-MD5" digest key.
+
+The "xtext" encoding scheme is defined properly in RFC1891, but basically it
+says that non alphanumeric characters should be represented in hexadecimal as
+"+XX".
+
+The client-side secrets file specified with "--client-auth" is used when
+E-MailRelay acts as a client to talk to a remove server. The file should contain
+at least one "LOGIN client" or "CRAM-MD5 client" entry.
+
+A server-side secrets file specified with "--server-auth" is used when a remote
+client tries to authenticate with the E-MailRelay server. The file should
+normally contain several "LOGIN server" or "CRAM-MD5 server" entries, one for
+each client.
+
+The same secrets file may be specified for both "--client-auth" and
+"--server-auth" switches.
+
+The "CRAM-MD5" keys can be generated using the "emailrelay-passwd" utility.
+
+As an example, the following secrets file defines "jsmith" as the username to be
+used when E-MailRelay authenticates with a remote SMTP server, and defines two
+usernames ("user1" and "user2") which can be used by clients when they
+authenticate with the E-MailRelay server:
+
+	#
+	# emailrelay secrets file
+	#
+	LOGIN client jsmith my+20password
+	LOGIN server user1 secret
+	LOGIN server user2 e+3Dmc2
+
+A "CRAM-MD5" version would look like this:
+
+	#
+	# emailrelay secrets file
+	#
+	CRAM-MD5 client jsmith 688498119.2977922305.1278051807.3015243256.2216875978.2833592318.2902375592.3156808220
+	CRAM-MD5 server user1 4059553961.2316091643.3282746241.1444639637.3735501773.3404060330.2760590371.1201092398
+	CRAM-MD5 server user2 2798539199.3144534242.3784876256.2879973305.2327113479.216533878.2436460291.2361831919
+
+When using the "LOGIN" mechanism you have to store plaintext passwords in a
+file. This is a bad thing. You should at least make sure that the secrets file
+has tight permissions, and that the passwords in it are not also used for
+anything important.
+
+On the server side authentication is advertised by E-MailRealy in the response
+to the SMTP "EHLO" command if the "--server-auth" command-line switch is used.
+Authentication by the client is then mandatory unless the client's IP address is
+configured as a trusted address.
+
+Trusted IP addresses are configured with lines in the secrets file having "NONE"
+in the first field, "server" in the second field, a wildcarded IP address in
+the third field, and an arbitrary keyword in the fourth field. The keyword field
+is passed to any external address verifier program specified by the "--verifier"
+command-line switch; it is not used for any other purpose.
+
+For example, this secrets file allows any client connecting from the
+192.168.0.0/24 domain to connect without authentication desipte the
+"--server-auth" switch:
+
+	#
+	# emailrelay secrets file
+	#
+	NONE server 192.168.0.* localdomain
+	LOGIN server user1 secret
+	LOGIN server user2 e+3Dmc2
+
+On the client side authentication is performed when E-MailRelay has connected to
+a server which implements the AUTH extension with one of the supported
+mechanisms. If client authentication is enabled (with the "--client-auth"
+switch) but the remote server does not support the AUTH extension, or does not
+support the LOGIN or CRAM-MD5 mechanism, then E-MailRelay will log an error
+and not forward any messages.
+
+If E-MailRelay successfully authenticates with the remote server then the
+client's authentication name (if any) is passed as a parameter to the MAIL
+command when the message is forwarded. Some SMTP servers are reported to reject
+the message if the name on the MAIL command does not match the name used to
+authenticate with them. However, the name passed as a parameter to the MAIL
+command is stored in the message's envelope file, so a "--filter" script can be
+used to change this to match whatever the remote server expects. An example
+script is provided in the distribution.
+
+Note that some ISPs require separate POP/IMAP authentication before SMTP access
+from a particular IP address is allowed. This type of POP-before-SMTP
+authentication can be done outside the E-MailRelay system by POP/IMAP utilities
+such as "fetchmail".
+
+TLS/SSL
+-------
+E-MailRelay can use TLS/SSL to encrypt SMTP and POP3 sessions. To enable TLS/SSL
+encryption when E-MailRelay is acting as an SMTP client use the "--client-tls"
+command-line switch, and to enable TLS/SSL when E-MailRelay is acting as an SMTP
+or POP3 server use "--server-tls".
+
+The "--server-tls" switch requires the name of an X.509 certificate in the "PEM"
+format. This file must be in a directory that the OpenSSL library considers to
+be secure. On some systems this is "/etc/ssl/certs".
+
+Certificate files can be created with the "openssl" utility using the
+"req -x509" sub-command. Refer to the OpenSSL documentation for the details.
+
+Linux PAM
+---------
+E-MailRelay supports the use of Linux Pluggable Authentication Modules (PAM) for
+authentication if built on Linux with the "--with-pam" configure option.
+
+PAM authentication can be used to authenticate SMTP and POP3 sessions. It is not
+relevant to E-MailRelay acting as an SMTP client.
+
+Use "--server-auth=/pam" and/or "--pop-auth=/pam" on the command-line to enable
+PAM authentication at run-time. The E-MailRelay server will then advertise an
+SMTP authentication mechanism of PLAIN and do the actual authentication via PAM.
+
+The PAM system must be configured with a service of "emailrelay". This normally
+involves creating a file "/etc/pam.d/emailrelay" containing somthing like the
+following:
+
+	auth requisite pam_unix.so nullok_secure
+	session required pam_permit.so
+	account required pam_permit.so
+	password required pam_deny.so
+
+With this configuration the E-MailRelay server will use normal Linux account
+names and passwords to authenticate remote clients.
+
+The passwords for system accounts are usually very sensitive so E-MailRelay
+requires the "--server-tls" command-line switch when using PAM authentication,
+and clients are required to establish a TLS/SSL session before authenticating.
+
+Pop server
 ----------
-Spooled messages can be forwarded at various times, depending on the
-command-line options:
-* when the program first starts up ("--as-client" or "--forward")
-* as each message is submitted, before receipt has been acknowledged ("--immediate")
-* as soon as the submitting client connection disconnects ("--poll=0")
-* periodically ("--poll=<seconds>")
+E-MailRelay can be used as a POP3 server so that POP clients have access to
+spooled messages.
 
-These modes of operation can be mixed, although more than one "--poll" switch is
-not allowed.
+The following command-line switches are used:
 
-When using "--as-client" the spooled messages begin to be forwarded as soon as
-the program starts up, and the program terminates once they have all been sent.
+# --pop
 
-A pending "--poll" timer can be forced to expire immediately if a "--filter"
-script exits with a special value of 103, as described above.
+  Enables the POP3 server.
+
+# --pop-port <port>
+
+  Changes the POP3 listening port from its default of 110.
+
+# --pop-auth <path>
+
+  Changes the authentication secrets file. The default is typically
+  "/etc/emailrelay.auth".
+
+  The format of the authentication secrets file is the same as for
+  "--server-auth" and the same file can be used for both SMTP and POP3
+  authentication.
+
+  "APOP server" entries are used for "APOP" authentication, "LOGIN server"
+  entries are used for "USER/PASS" authentication, and "CRAM-MD5" entries are
+  used for "AUTH" authentication.
+
+  Note that the basic POP3 protocol defines only "APOP" and "USER/PASS"
+  authentication, so some POP client programs may not be able to cope with
+  CRAM-MD5 authentication using the POP3 "AUTH" extension.
+
+# --pop-by-name
+
+  Modifies the POP spool directory according to the name used by the client
+  to authenticate with the E-MailRelay server. The client name is used as a
+  sub-directory off the standard spool directory. So, for example, if a client
+  authenticates as "bob" then the POP3 server will serve messages from the "bob"
+  sub-directory, "/var/spool/emailrelay/bob".
+
+  If E-MailRelay finds only the envelope file in the sub-directory and not the
+  content file then it will look for the content file in the main spool
+  directory, eg. "/var/spool/emailrelay". This feature can be used to save
+  disk space if serving the same message to multiple POP clients.
+
+# --pop-no-delete
+
+  Disables message deletion: the POP3 DELE command will appear to succeed, but
+  no files will be deleted from the spool directory.
 
 Address verification
 --------------------
 By default the E-MailRelay server will accept all addresses for incoming e-mails
-as valid. However, this default behaviour can be modified by using an external
-verifier program, specified with the "--verifier" command-line switch, so that
-you get to choose which recipient addresses are accepted as valid and which are
-rejected.
+as valid. This default behaviour can be modified by using an external verifier
+program, specified with the "--verifier" command-line switch, so that you get to
+choose which recipient addresses are accepted as valid and which are rejected.
 
 The external verifier program is passed a command-line containing: (1) the full
 e-mail address as supplied by the remote client, (2) the user-name part of the
@@ -442,231 +667,9 @@ or "0|postmaster|Local Postmaster <postmaster@localhost>". The "inetd"
 super-server daemon would be a convenient way to connect up the pieces in this
 case.
 
-Authentication
---------------
-E-MailRelay supports the SMTP "AUTH" extension, as defined in RFC2554, on both
-the server-side and client-side.
-
-The authentication mechanisms currently supported are:
-# "PLAIN"
-
-  Passwords are stored in clear-text, sent over the network in clear-text, and
-  are replayable. Defined in RFC2595.
-
-# "LOGIN"
-
-  Similar to "PLAIN". Officially obsolete although widely used.
-
-# "CRAM-MD5" mechanism
-
-  Passwords are not stored in clear-text, not sent over the network, and are
-  not replayable. Defined in RFC2195.
-
-Authentication is enabled with the "--client-auth" and "--server-auth"
-command-line switches. The switch parameter is the name of a secrets file,
-containing usernames and passwords:
-
-	emailrelay --as-server --server-auth /etc/emailrelay-clients.auth
-	emailrelay --as-client myisp.net:smtp --client-auth /etc/emailrelay-myisp.auth
-
-The secrets file has a line-based format: blank lines are ignored and the hash
-character (#) is used for comments.
-
-Lines have four white-space delimited fields:
-* "mechanism"
-* "client-or-server"
-* "userid"
-* "secret"
-
-The "mechanism" field must be "LOGIN", "APOP" or "CRAM-MD5" (case-insensitive);
-the "client-or-server" field must be "client" or "server"; the "userid" field is
-xtext-encoded user identifier; and the "secret" field is the xtext-encoded
-"LOGIN" password, or the "CRAM-MD5" digest key.
-
-The "xtext" encoding scheme is defined properly in RFC1891, but basically it
-says that non alphanumeric characters should be represented in hexadecimal as
-"+XX".
-
-The client-side secrets file specified with "--client-auth" is used when
-E-MailRelay acts as a client to talk to a remove server. The file should contain
-at least one "LOGIN client" or "CRAM-MD5 client" entry.
-
-A server-side secrets file specified with "--server-auth" is used when a remote
-client tries to authenticate with the E-MailRelay server. The file should
-normally contain several "LOGIN server" or "CRAM-MD5 server" entries, one for
-each client.
-
-The same secrets file may be specified for both "--client-auth" and
-"--server-auth" switches.
-
-The "CRAM-MD5" keys can be generated using the "emailrelay-passwd" utility.
-
-As an example, the following secrets file defines "jsmith" as the username to be
-used when E-MailRelay authenticates with a remote SMTP server, and defines two
-usernames ("user1" and "user2") which can be used by clients when they
-authenticate with the E-MailRelay server:
-
-	#
-	# emailrelay secrets file
-	#
-	LOGIN client jsmith my+20password
-	LOGIN server user1 secret
-	LOGIN server user2 e+3Dmc2
-
-A "CRAM-MD5" version would look like this:
-
-	#
-	# emailrelay secrets file
-	#
-	CRAM-MD5 client jsmith 688498119.2977922305.1278051807.3015243256.2216875978.2833592318.2902375592.3156808220
-	CRAM-MD5 server user1 4059553961.2316091643.3282746241.1444639637.3735501773.3404060330.2760590371.1201092398
-	CRAM-MD5 server user2 2798539199.3144534242.3784876256.2879973305.2327113479.216533878.2436460291.2361831919
-
-When using the "LOGIN" mechanism you have to store plaintext passwords in a
-file. This is a bad thing. You should at least make sure that the secrets file
-has tight permissions, and that the passwords in it are not also used for
-anything important.
-
-On the server side authentication is advertised by E-MailRealy in the response
-to the SMTP "EHLO" command if the "--server-auth" command-line switch is used.
-Authentication by the client is then mandatory unless the client's IP address is
-configured as a trusted address.
-
-Trusted IP addresses are configured with lines in the secrets file having "NONE"
-in the first field, "server" in the second field, a wildcarded IP address in
-the third field, and an arbitrary keyword in the fourth field. The keyword field
-is passed to any external address verifier program specified by the "--verifier"
-command-line switch; it is not used for any other purpose.
-
-For example, this secrets file allows any client connecting from the
-192.168.0.0/24 domain to connect without authentication desipte the
-"--server-auth" switch:
-
-	#
-	# emailrelay secrets file
-	#
-	NONE server 192.168.0.* localdomain
-	LOGIN server user1 secret
-	LOGIN server user2 e+3Dmc2
-
-On the client side authentication is performed when E-MailRelay has connected to
-a server which implements the AUTH extension with one of the supported
-mechanisms. If client authentication is enabled (with the "--client-auth"
-switch) but the remote server does not support the AUTH extension, or does not
-support the LOGIN or CRAM-MD5 mechanism, then E-MailRelay will log an error
-and not forward any messages.
-
-If E-MailRelay successfully authenticates with the remote server then the
-client's authentication name (if any) is passed as a parameter to the MAIL
-command when the message is forwarded. Some SMTP servers are reported to reject
-the message if the name on the MAIL command does not match the name used to
-authenticate with them. However, the name passed as a parameter to the MAIL
-command is stored in the message's envelope file, so a "--filter" script can be
-used to change this to match whatever the remote server expects. An example
-script is provided in the distribution.
-
-Note that some ISPs require separate POP/IMAP authentication before SMTP access
-from a particular IP address is allowed. This type of POP-before-SMTP
-authentication can be done outside the E-MailRelay system by POP/IMAP utilities
-such as "fetchmail".
-
-TLS/SSL
--------
-E-MailRelay can use TLS/SSL to encrypt SMTP and POP3 sessions. To enable TLS/SSL
-encryption when E-MailRelay is acting as an SMTP client use the "--client-tls"
-command-line switch, and to enable TLS/SSL when E-MailRelay is acting as an SMTP
-or POP3 server use "--server-tls".
-
-The "--server-tls" switch requires the name of an X.509 certificate in the "PEM"
-format. This file must be in a directory that the OpenSSL library considers to
-be secure. On some systems this is "/etc/ssl/certs".
-
-Certificate files can be created with the "openssl" utility using the
-"req -x509" sub-command. Refer to the OpenSSL documentation for the details.
-
-Linux PAM
----------
-E-MailRelay supports the use of Linux Pluggable Authentication Modules (PAM) for
-authentication if built on Linux with the "--with-pam" configure option.
-
-PAM authentication can be used to authenticate SMTP and POP3 sessions. It is not
-relevant to E-MailRelay acting as an SMTP client.
-
-Use "--server-auth=/pam" and/or "--pop-auth=/pam" on the command-line to enable 
-PAM authentication at run-time. The E-MailRelay server will then advertise an 
-SMTP authentication mechanism of PLAIN and do the actual authentication via PAM.
-
-The PAM system must be configured with a service of "emailrelay". This normally
-involves creating a file "/etc/pam.d/emailrelay" containing somthing like the
-following:
-
-	auth requisite pam_unix.so nullok_secure
-	session required pam_permit.so
-	account required pam_permit.so
-	password required pam_deny.so
-
-With this configuration the E-MailRelay server will use normal linux account 
-names and passwords to authenticate remote clients.
-
-Note that the protocol may pass plaintext passwords over the network, so when 
-using PAM you are required to use the "--server-tls" command-line switch and 
-clients must establish a SSL/TLS session before authenticating.
-
-Pop server
-----------
-E-MailRelay can be used as a POP3 server so that POP clients have access to
-spooled messages.
-
-The following command-line switches are used:
-
-# --pop
-
-  Enables the POP3 server.
-
-# --pop-port <port>
-
-  Changes the POP3 listening port from its default of 110.
-
-# --pop-auth <path>
-
-  Changes the authentication secrets file. The default is typically
-  "/etc/emailrelay.auth".
-
-  The format of the authentication secrets file is the same as for
-  "--server-auth" and the same file can be used for both SMTP and POP3
-  authentication.
-
-  "APOP server" entries are used for "APOP" authentication, "LOGIN server"
-  entries are used for "USER/PASS" authentication, and "CRAM-MD5" entries are
-  used for "AUTH" authentication.
-
-  Note that the basic POP3 protocol defines only "APOP" and "USER/PASS"
-  authentication, so some POP client programs may not be able to cope with
-  CRAM-MD5 authentication using the POP3 "AUTH" extension.
-
-# --pop-by-name
-
-  Modifies the POP spool directory according to the name used by the client
-  to authenticate with the E-MailRelay server. The client name is used as a
-  sub-directory off the standard spool directory. So, for example, if a client
-  authenticates as "bob" then the POP3 server will serve messages from the "bob"
-  sub-directory, "/var/spool/emailrelay/bob".
-
-  If E-MailRelay finds only the envelope file in the sub-directory and not the
-  content file then it will look for the content file in the main spool
-  directory, eg. "/var/spool/emailrelay". This feature can be used to save
-  disk space if serving the same message to multiple POP clients.
-
-# --pop-no-delete
-
-  Disables message deletion: the POP3 DELE command will appear to succeed, but
-  no files will be deleted from the spool directory.
-
 Security issues
 ---------------
-A significant security concern is the use of external mail pre-processors and
-address verifiers (using the "--filter" and "--verifier" switches), and so the
-following precautions are taken:
+The following are some security issues that have been taken into consideration:
 
 # effective userid
 
@@ -682,17 +685,16 @@ following precautions are taken:
 
 # execution environment
 
-  The mail pre-processor runs with an almost empty set of environment variables
-  ("PATH" and "IFS"), and with no open file descriptors other than "stdin" and
-  "stderr" open onto "/dev/null", and "stdout" open onto a pipe.
+  The external pre-processor programs are run with an almost empty set of 
+  environment variables ("PATH" and "IFS"), and with no open file descriptors 
+  other than "stdin" and "stderr" open onto "/dev/null", and "stdout" open onto a 
+  pipe.
 
 # configuration
 
-  The mail pre-processor filename has to be configured using a full path, so
+  The mail pre-processor filenames have to be configured using a full path, so
   there is no dependence on the current working directory or the PATH
   environment variable.
-
-Some other points to note are:
 
 # umask
 
@@ -736,7 +738,7 @@ Some other points to note are:
   in the log.
 
   Passwords and message content are not logged (except if using the "--debug"
-  switch with debug logging support enabled at build time).
+  switch at run time with debug logging enabled at build time).
 
 # information leakage
 
@@ -750,7 +752,7 @@ create messages that will trick a [..] recipient into believing that they came
 from somewhere else. [..] Real [..] security lies [..] in end-to-end methods
 [..] such as those which use digital signatures."
 
-The "Authentication" section above also relates to security.
+The "Authentication" and "Linux PAM" sections above also relate to security.
 
 Administration interface
 ------------------------
@@ -778,6 +780,7 @@ Following a normal build from source, a "make install" puts files in the
 following locations:
 * /usr/local/etc/emailrelay.conf
 * /usr/local/etc/emailrelay.conf.template
+* /usr/local/etc/pam.d/emailrelay
 * /usr/local/libexec/emailrelay/emailrelay-filter-copy
 * /usr/local/libexec/emailrelay/emailrelay-poke
 * /usr/local/libexec/emailrelay/examples/*
@@ -800,6 +803,7 @@ To force FHS compliance you can use the "--enable-fhs" switch when running
 * /etc/emailrelay.conf
 * /etc/emailrelay.conf.template
 * /etc/init.d/emailrelay
+* /etc/pam.d/emailrelay
 * /usr/lib/emailrelay/emailrelay-filter-copy
 * /usr/lib/emailrelay/emailrelay-poke
 * /usr/lib/emailrelay/examples/*
@@ -823,6 +827,7 @@ the "configure" command-line:
 * e_examplesdir=<dir>
 * e_initdir=<dir>
 * e_spooldir=<dir>
+* e_pamdir=<dir>
 
 For example, running "./configure --prefix=/usr e_spooldir=/tmp/spool" will
 create the GNU-style directory structure under "/usr" rather than "/usr/local",
@@ -839,16 +844,7 @@ But note that this will not affect the default spool directory path built into
 the scripts and executables so the correct spool directory will have to be
 specified at run-time with the "--spool-dir" switch.
 
-If building the configuration GUI then you may need to set the "PKG_CONFIG_PATH"
-environment variable to point to the ".pc" files in the Qt "lib" directory and
-set the "e_qtmoc" configure variable to point to the Qt "moc" utility. You
-may also need to set the correct library directory for Qt if it is wrong in
-the ".pc" file by setting "LDFLAGS":
-
-	export QT=/usr/local/qt4
-	LDFLAGS=-L$QT/lib PKG_CONFIG_PATH=$QT/lib ./configure --enable-gui e_qtmoc="$QT/bin/moc"
 
 
 
-
-Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

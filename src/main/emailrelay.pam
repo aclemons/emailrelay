@@ -1,0 +1,4 @@
+auth requisite pam_unix.so nullok_secure
+session required pam_permit.so
+account required pam_permit.so
+password required pam_deny.so

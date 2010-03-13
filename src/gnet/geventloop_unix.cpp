@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -154,9 +154,9 @@ void GNet::FdSet::init( const EventHandlerList & list )
 		for( EventHandlerList::Iterator p = list.begin() ; p != end ; ++p )
 		{
 			Descriptor fd = EventHandlerList::fd( p ) ;
-			FD_SET( fd , &m_set_internal ) ;
-			if( (fd+1) > m_fdmax )
-				m_fdmax = (fd+1) ;
+			FD_SET( fd.fd() , &m_set_internal ) ;
+			if( (fd.fd()+1) > m_fdmax )
+				m_fdmax = (fd.fd()+1) ;
 		}
 		m_valid = true ;
 	}
@@ -177,7 +177,7 @@ void GNet::FdSet::raiseEvents( EventHandlerList & list , void (EventHandler::*me
 	for( EventHandlerList::Iterator p = list.begin() ; p != end ; ++p )
 	{
 		Descriptor fd = EventHandlerList::fd( p ) ;
-		if( FD_ISSET( fd , &m_set_external ) )
+		if( FD_ISSET( fd.fd() , &m_set_external ) )
 		{
 			EventHandler * h = EventHandlerList::handler( p ) ;
 			if( h != NULL )

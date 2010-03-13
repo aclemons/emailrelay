@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,12 +15,40 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file mock
+/// \file gnocheck.h
 ///
-#
-# mock
-#
-# A mock moc.
-#
-PATH="/bin:/usr/bin"
-touch "${3}"
+
+#ifndef G_NO_CHECK_H__
+#define G_NO_CHECK_H__
+
+#include "gdef.h"
+#include "gnoncopyable.h"
+
+/// \namespace G
+namespace G
+{
+	class NoCheck ;
+	class NoCheckImp ;
+}
+
+/// \class G::NoCheck
+/// A class which affects the run-time
+/// library's invalid-parameter checking behaviour
+/// while in scope.
+///
+class G::NoCheck : private G::noncopyable 
+{
+public:
+	NoCheck() ;
+		///< Default constructor. Turns off run-time 
+		///< library parameter checking.
+
+	~NoCheck() ;
+		///< Desctructor. Restores parameter checking.
+
+private:
+	NoCheckImp * m_imp ;
+} ;
+
+#endif
+

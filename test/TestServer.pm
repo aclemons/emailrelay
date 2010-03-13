@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,13 +69,14 @@ sub _check
 
 sub run
 {
-	my ( $this , $sw ) = @_ ;
+	my ( $this , $sw , $wait_cs ) = @_ ;
+	$wait_cs ||= 50 ;
 	my $log = $this->{'m_logfile'} ;
 
 	system( $this->exe() . " --port " . $this->port() . " $sw > $log 2>&1 &" ) ;
 
 	# wait for the pid file to be written
-	for( my $i = 0 ; $i < 50 ; $i++ )
+	for( my $i = 0 ; $i < $wait_cs ; $i++ )
 	{
 		select( undef , undef , undef , 0.01 ) ;
 		my $fh = new FileHandle( $this->{'m_pidfile'} ) ;

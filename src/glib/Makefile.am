@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -87,6 +87,7 @@ EXTRA_DIST=\
 	glogoutput_win32.cpp \
 	gprocess_win32.cpp \
 	gnewprocess_win32.cpp \
+	gnocheck_win32.cpp \
 	mingw.mak
 
 libglib_a_SOURCES = \
@@ -137,6 +138,8 @@ libglib_a_SOURCES = \
 	glogoutput.h \
 	glogoutput_unix.cpp \
 	gnewprocess.h \
+	gnocheck.h \
+	gnocheck_unix.cpp \
 	gmd5_native.cpp \
 	gmd5.h \
 	gmemory.h \

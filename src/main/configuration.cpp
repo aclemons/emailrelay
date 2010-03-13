@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -290,9 +290,9 @@ unsigned int Main::Configuration::connectionTimeout() const
 	return value( "connection-timeout" , 40U ) ;
 }
 
-std::string Main::Configuration::fqdn() const
+std::string Main::Configuration::fqdn( std::string default_ ) const
 {
-	return contains("domain") ? value("domain") : std::string() ;
+	return contains("domain") ? value("domain") : default_ ;
 }
 
 std::string Main::Configuration::nobody() const

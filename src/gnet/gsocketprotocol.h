@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,10 +36,20 @@ namespace GNet
 }
 
 /// \class GNet::SocketProtocol
-/// A class for doing read() and write() on
-/// a connected socket and installing and removing event 
-/// handlers as appropriate. This abstraction allows 
-/// for using SSL.
+/// An interface for implementing a low-level protocol layer
+/// by means of calling read() and write() on a connected non-blocking 
+/// socket and installing and removing event handlers as appropriate. 
+///
+/// In practice the only supported protocol is SSL and the implementation 
+/// delegates to GSsl::Protocol.
+///
+/// Provides send() to send data and onData() in a sink callback interface
+/// to receive data.
+///
+/// An SSL session can be established with sslConnect() or sslAccept() as
+/// long as the underlying GSsl::Protocol is sslCapable(). If no SSL 
+/// session is in effect then the protocol layer is transparent down 
+/// to the socket. 
 ///
 class GNet::SocketProtocol 
 {

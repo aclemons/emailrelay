@@ -42,11 +42,6 @@ E-MailRelay is designed to be policy-free, so that you can implement your own
 policies for message retries, bounces, local mailbox delivery, spam filtering
 etc. through external scripts.
 
-It has few dependencies on third-party libraries or run-time environments so it
-is easy to build and install, and the single-threaded, event-driven design with
-non-blocking i/o may provide better performance and resource usage than some of
-the alternatives.
-
 Typical applications of E-MailRelay include:
 * spam filtering and virus checking incoming mail
 * adding digital signatures or legal disclaimers to outgoing mail
@@ -54,6 +49,12 @@ Typical applications of E-MailRelay include:
 * adding authentication where the existing infrastructure does not support it
 * simple SMTP proxying on a firewall host or DMZ
 * SMTP to POP gateway
+
+The code has few dependencies on third-party libraries or run-time environments 
+so it is easy to build and install especially when targetting embedded systems.
+
+The single-threaded, event-driven design with non-blocking i/o may provide 
+better performance and resource usage than some of the alternatives.
 
 Running E-MailRelay
 -------------------
@@ -424,7 +425,13 @@ also add in the "--client-tls" switch:
 
 	emailrelay --as-proxy smtp.gmail.com:587 --client-tls --client-auth /etc/emailrelay.auth ...
 
+Configuration GUI
+-----------------
+E-MailRelay has a graphical configuration utility, "emailrelay-gui", that can
+help with simple setup and re-configuration. On some operating system it also
+serves as the installer.
 
 
 
-Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+
+Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,17 +23,51 @@
 
 #include "gdef.h"
 #include "gnet.h"
+#include <iostream>
 
 /// \namespace GNet
 namespace GNet
 {
-	typedef ::SOCKET Descriptor ; // (SOCKET is defined in gnet.h)
+	class Descriptor ;
+}
 
-	bool Descriptor__valid( Descriptor fd ) ;
-		///< Tests whether the given network descriptor is valid.
+/// \class GNet::Descriptor
+/// A network file descriptor.
+///
+class GNet::Descriptor 
+{
+public:
+	Descriptor() ;
+		///< Default constructor.
 
-	Descriptor Descriptor__invalid() ;
-		///< Returns an invalid network descriptor.
+	explicit Descriptor( SOCKET ) ;
+		///< Constructor.
+
+	bool valid() const ;
+		///< Returns true if the descriptor is valid.
+
+	static Descriptor invalid() ;
+		///< Returns an invalid descriptor.
+
+	SOCKET fd() const ;
+		///< Returns the low-level descriptor.
+
+	int operator<( const Descriptor & other ) const ;
+		///< Comparison operator.
+
+private:
+	SOCKET m_fd ;
+} ;
+
+/// \namespace GNet
+namespace GNet
+{
+	inline
+	std::ostream & operator<<( std::ostream & stream , const Descriptor & d )
+	{
+		stream << d.fd() ;
+		return stream ;
+	}
 }
 
 #endif

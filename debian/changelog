@@ -1,9 +1,13 @@
 emailrelay (1.9) unstable; urgency=low
-  * TODO: POP must disallow authentication before STLS if using PAM
-  * Added TLS for POP
-  * Added Linux PAM support ("configure --with-pam" and "--server-auth=/pam").
-  * Fixed namespace problems for gcc 3.4.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 04 Jan 2009 16:23:28 +0000
+  * Added TLS/SSL encryption for POP.
+  * Added Linux-PAM authentication ("configure --with-pam" and "--server-auth=/pam").
+  * No "Received" line if "--anonymous" and an empty "--domain" name.
+  * Simplified switch descriptions in the usage help, unless "--verbose".
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sat, 13 Mar 2010 18:00:11 +0000
+
+emailrelay (1.8.2) unstable; urgency=low
+  * Fix namespaces for gcc 3.4.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sat, 22 Aug 2009 00:00:00 +0000
 
 emailrelay (1.8.1) unstable; urgency=low
   * Changed the definition of "--as-proxy" to use "--poll 0" rather than "--immediate" [bug-id 1961652].

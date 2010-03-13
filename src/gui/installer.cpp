@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,6 +51,7 @@
 #include <map>
 #include <set>
 #include <list>
+#include <cstdlib>
 
 #ifdef CreateDirectory
 #undef CreateDirectory
@@ -380,7 +381,7 @@ CopyFrameworks::CopyFrameworks( G::Path argv0 , G::Path dst ) :
 void CopyFrameworks::run() 
 {
 	// k.i.s.s
-	int rc = system( m_cmd.c_str() ) ;
+	int rc = std::system( m_cmd.c_str() ) ;
 	if( rc != 0 )
 		throw std::runtime_error( "failed" ) ;
 }

@@ -71,6 +71,13 @@ redirect the standard error stream, eg:
 The setup program may have already created a suitable batch file, so check for
 that first and edit as necessary.
 
+Testing with telnet
+-------------------
+The main user guide describes how to use telnet to help diagnose problems. In 
+recent versions of Windows you have to enable telnet by selecting "Telnet Client" 
+from "Programs and Features"->"Turn Windows features on or off" in the control 
+panel.
+
 Building from source
 --------------------
 E-MailRelay can be compiled using Microsoft Visual Studio C++ (MSVC) 6 or MinGW,
@@ -83,4 +90,4 @@ MinGW please follow the guidelines in "mingw-common.mak" which is also in the
 
 
 
-Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

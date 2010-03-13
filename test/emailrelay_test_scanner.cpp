@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,8 +22,13 @@
 // usage: emailrelay-test-scanner [--log] [--debug] [--pid-file <pidfile>]
 //
 // Listens on port 10010. Each request is a filename and the
-// message file is treated as a mini script with commands of
-// "send [<string>]", "sleep [<time>]", "disconnect" and "terminate".
+// message file is treated as a mini script with commands of:
+//  * send [<string>]
+//  * sleep [<time>]
+//  * delete-content
+//  * delete-envelope
+//  * disconnect
+//  * terminate
 //
 
 #include "gdef.h"
@@ -35,6 +40,7 @@
 #include "gprocess.h"
 #include "gmemory.h"
 #include "garg.h"
+#include "gfile.h"
 #include "gsleep.h"
 #include "gdebug.h"
 #include <sstream>
@@ -118,6 +124,7 @@ bool Main::ScannerPeer::processFile( std::string path )
 		G_ERROR( "ScannerPeer::processFile: cannot read \"" << path << "\"" ) ;
 		return false ;
 	}
+	bool do_delete = false ;
 	while( file.good() )
 	{
 		std::string line = G::Str::readLineFrom( file , "\n" ) ;
@@ -130,6 +137,17 @@ bool Main::ScannerPeer::processFile( std::string path )
 			G_LOG_S( "ScannerPeer::processFile: response: \"" << G::Str::trimmed(line,"\n\r") << "\"" ) ;
 			socket().write( line.data() , line.length() ) ;
 			sent = true ;
+		}
+		if( line.find("delete-content") == 0U )
+		{
+			do_delete = true ;
+		}
+		if( line.find("delete-envelope") == 0U )
+		{
+			std::string envelope_path( path ) ;
+			G::Str::replace( envelope_path , ".content" , ".envelope.new" ) ;
+			G_LOG_S( "ScannerPeer::processFile: deleting envelope file [" << envelope_path << "]" ) ;
+			G::File::remove( envelope_path ) ;
 		}
 		if( line.find("sleep") == 0U )
 		{
@@ -155,6 +173,12 @@ bool Main::ScannerPeer::processFile( std::string path )
 			GNet::EventLoop::instance().quit() ;
 			return false ;
 		}
+	}
+	file.close() ;
+	if( do_delete )
+	{
+		G_LOG_S( "ScannerPeer::processFile: deleting content file [" << path << "]" ) ;
+		G::File::remove( path ) ;
 	}
 	if( !sent )
 	{

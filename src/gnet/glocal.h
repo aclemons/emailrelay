@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -77,6 +77,7 @@ public:
 private:
 	static std::string m_fqdn ;
 	static std::string m_fqdn_override ;
+	static bool m_fqdn_override_set ;
 	static Address m_canonical_address ;
 	static std::string fqdnImp() ;
 	static Address canonicalAddressImp() ;

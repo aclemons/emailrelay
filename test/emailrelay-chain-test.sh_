@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -307,23 +307,17 @@ EOF
 	chmod +x ${cfg_base_dir}/filter.sh
 }
 
-Wait()
-{
-	if test "${opt_use_valgrind}" -eq 1 
-	then 
-		sleep 30
-	else
-		sleep 1
-	fi
-}
-
 Sleep()
 {
 	if test "${opt_use_valgrind}" -eq 1 
 	then 
-		sleep 30 
+		sleep "$1"
+		sleep "$1"
+		sleep "$1"
+		sleep "$1"
+		sleep "$1"
 	else
-		sleep 5
+		sleep "$1"
 	fi
 }
 
@@ -342,14 +336,14 @@ Main()
 	RunServer 05 15 store-4 log-5 pid-5 "--poll 1 --forward-to localhost:${cfg_pp}06 --client-filter ${cfg_base_dir}/filter.sh"
 	RunServer 06 16 store-5 log-6 pid-6 "--filter ${cfg_base_dir}/filter.sh"
 
-	Wait
+	Sleep 1
 	RunClient localhost:${cfg_pp}01 store-1 log-c pid-c
 	RunPoke 12 log-p
 
 	success="0"
 	for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 	do
-		Sleep
+		Sleep 5
 		if TestDone store-5
 		then 
 			success="1"
@@ -361,7 +355,7 @@ Main()
 	then
 		success="0"
 		RunServer 07 17 store-6 log-7 pid-7
-		Wait
+		Sleep 1
 		RunFetchmail 86 07
 		if TestDone store-6
 		then

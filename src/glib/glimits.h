@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ public:
 	enum { net_hostname = 1024 } ;
 	enum { win32_subclass_limit = 80 } ;
 	enum { win32_classname_buffer = 256 } ;
+	enum { ssl_max_cache_entries = 10 } ; // libnss3 SSL_ConfigServerSessionIDCache()
  #else
 	enum { path = 256 } ;
 	enum { log = 120 } ;
@@ -58,6 +59,7 @@ public:
 	enum { net_hostname = 128 } ;
 	enum { win32_subclass_limit = 2 } ;
 	enum { win32_classname_buffer = 128 } ;
+	enum { ssl_max_cache_entries = 0 } ;
  #endif
 
 private:

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+   Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -47,7 +47,15 @@
  #include <io.h>
  #include <stdlib.h>
  #include <string.h>
+ #ifndef G_MINGW
+  typedef int ssize_t ;
+ #endif
+ #if defined(_MSC_VER) && _MSC_VER >= 800
+  #define strncat(a,b,c) strncat_s(a,c,b,_TRUNCATE)
+  #define strcat(a,b) strncat_s(a,sizeof(a),b,_TRUNCATE)
+ #endif
  #define write _write
+ #define close _close
  #define STDOUT_FILENO 1
  void sleep( unsigned int s ) { Sleep( s * 1000UL ) ; }
 #else

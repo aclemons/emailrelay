@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -72,8 +72,8 @@ G::DateTime::Offset G::DateTime::offset( EpochTime utc )
 
 	EpochTime local = epochTime(bdt_local) ;
 	bool ahead = local >= utc ; // ie. east-of
-	unsigned int n = ahead ? (local-utc) : (utc-local) ;
-	return Offset( ahead , n ) ;
+	EpochTime n = ahead ? (local-utc) : (utc-local) ;
+	return Offset( ahead , static_cast<unsigned int>(n) ) ;
 }
 
 std::string G::DateTime::offsetString( Offset offset )

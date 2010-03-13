@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -53,13 +53,17 @@ public:
 		char c ; 
 		std::string name ; 
 		std::string description ; 
+		std::string description_extra ; 
 		bool valued ; 
 		bool hidden ;
 		std::string value_description ;
 		unsigned int level ;
-		SwitchSpec(char c_,const std::string & name_,const std::string & description_,
-			bool v_,const std::string & vd_,unsigned int level_) :
+		SwitchSpec( char c_ , const std::string & name_ , 
+			const std::string & description_ ,
+			const std::string & description_extra_ ,
+			bool v_ , const std::string & vd_ , unsigned int level_ ) :
 				c(c_) , name(name_) , description(description_) , 
+				description_extra(description_extra_) ,
 				valued(v_) , hidden(description_.empty()||level_==0U) ,
 				value_description(vd_) , level(level_) {}
 	} ;
@@ -73,6 +77,7 @@ public:
 			///<    'single-character-switch-letter'
 			///<    'multi-character-switch-name'
 			///<    'switch-description'
+			///<    'switch-description-extra'
 			///<    'value-type' (0 is none, and 1 is a string)
 			///<    'value-description'
 			///<    'level'
@@ -113,14 +118,13 @@ public:
 
 	std::string usageHelp( Level level = levelDefault() ,
 		size_type tab_stop = tabDefault() , size_type wrap_width = wrapDefault() ,
-		bool level_exact = false ) const ;
+		bool level_exact = false , bool extra = true ) const ;
 			///< Returns a multi-line string giving help on each switch.
 
 	void showUsage( std::ostream & stream , const std::string & exe , 
 		const std::string & args , const std::string & introducer = introducerDefault() ,
-		Level level = levelDefault() ,
-		size_type tab_stop = tabDefault() , 
-		size_type wrap_width = wrapDefault() ) const ;
+		Level level = levelDefault() , size_type tab_stop = tabDefault() , 
+		size_type wrap_width = wrapDefault() , bool extra = true ) const ;
 			///< Streams out multi-line usage text using usageSummary() 
 			///< and usageHelp(). The 'args' parameter should represent
 			///< the non-switch arguments (with a leading space), like 
@@ -175,7 +179,8 @@ private:
 	GetOpt( const GetOpt & ) ;
 	void parseSpec( const std::string & spec , char , char , char ) ;
 	void addSpec( const std::string & , char c , const std::string & , 
-		const std::string & , bool , const std::string & , unsigned int ) ;
+		const std::string & , const std::string & , bool , 
+		const std::string & , unsigned int ) ;
 	size_type parseArgs( const Arg & args_in ) ;
 	bool isOldSwitch( const std::string & arg ) const ;
 	bool isNewSwitch( const std::string & arg ) const ;
@@ -196,7 +201,8 @@ private:
 	bool valid( char c ) const ;
 	std::string usageSummaryPartOne( Level ) const ;
 	std::string usageSummaryPartTwo( Level ) const ;
-	std::string usageHelpCore( const std::string & , Level , size_type , size_type , bool ) const ;
+	std::string usageHelpCore( const std::string & , Level , size_type , 
+		size_type , bool , bool ) const ;
 	static size_type widthLimit( size_type ) ;
 	static bool visible( SwitchSpecMap::const_iterator , Level , bool ) ;
 	static size_type eqPos( const std::string & ) ;

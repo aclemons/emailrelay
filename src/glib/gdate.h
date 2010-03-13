@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,10 +55,10 @@ public:
 		{ yyyy_mm_dd_slash , yyyy_mm_dd , mm_dd } ;
 
 	static int yearUpperLimit() ;
-		///< Returns the smallest supported year value.
+		///< Returns the largest supported year value.
 
 	static int yearLowerLimit() ;
-		///< Returns the largest supported year value.
+		///< Returns the smallest supported year value.
 
 	Date() ;
 		///< Default constructor the current date

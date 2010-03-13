@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -246,7 +246,9 @@ void Main::Run::runCore()
 
 	// fqdn override option
 	//
-	GNet::Local::fqdn( cfg.fqdn() ) ;
+	std::string nul( 1U , '\0' ) ;
+	if( cfg.fqdn(nul) != nul )
+		GNet::Local::fqdn( cfg.fqdn() ) ;
 
 	// tighten the umask
 	//
@@ -575,7 +577,7 @@ void Main::Run::serverEvent( std::string s1 , std::string )
 {
 	if( s1 == "done" && config().forwardingOnDisconnect() )
 	{
-		G_ASSERT( m_forwarding_timer.get() ) ;
+		G_ASSERT( m_forwarding_timer.get() != NULL ) ;
 		m_forwarding_timer->cancelTimer() ;
 		m_forwarding_timer->startTimer( 0U ) ;
 	}
@@ -588,14 +590,14 @@ void Main::Run::raiseStoreEvent( bool repoll )
 	const bool expiry_forced_by_filter = repoll ;
 	if( config().doPolling() && expiry_forced_by_filter )
 	{
-		G_ASSERT( m_poll_timer.get() ) ;
+		G_ASSERT( m_poll_timer.get() != NULL ) ;
 		m_poll_timer->cancelTimer() ;
 		m_poll_timer->startTimer( 0U ) ;
 	}
 
 	if( config().forwardingOnStore() )
 	{
-		G_ASSERT( m_forwarding_timer.get() ) ;
+		G_ASSERT( m_forwarding_timer.get() != NULL ) ;
 		m_forwarding_timer->cancelTimer() ;
 		m_forwarding_timer->startTimer( 0U ) ;
 	}

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -149,7 +149,7 @@ unsigned int GNet::TimerList::interval( bool & infinite ) const
 	else
 	{
 		G::DateTime::EpochTime now = G::DateTime::now() ;
-		return now >= then ? 0U : (then-now) ;
+		return now >= then ? 0U : static_cast<unsigned int>(then-now) ;
 	}
 }
 

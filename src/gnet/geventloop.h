@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,17 +37,15 @@ namespace GNet
 }
 
 /// \class GNet::EventLoop
-/// An abstract base class for a
-/// singleton which keeps track of open sockets and their
-/// associated handlers. Derived classes  are used to
-/// implement different event loops, such as ::select()
-/// or WinSock.
+/// An abstract base class for a singleton that keeps 
+/// track of open sockets and their associated handlers. Derived 
+/// classes are used to implement different event loops, such 
+/// as ::select() or WinSock.
 ///
-/// In practice sockets are added and removed from the 
-/// class by calling GNet::Socket::addReadHandler() etc rather 
-/// than EventLoop::addRead(). This is to improve the 
-/// encapsulation of the GNet::Descriptor data type within
-/// Socket.
+/// In practice sockets are added and removed from the class by 
+/// calling GNet::Socket::addReadHandler() etc rather than 
+/// EventLoop::addRead(). This is to improve the encapsulation 
+/// of the GNet::Descriptor data type within Socket.
 ///
 /// The class has a static member for finding an instance, 
 /// but instances are not created automatically.

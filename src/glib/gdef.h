@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -203,14 +203,16 @@
 		#pragma warning( disable : 4275 ) /* dll-interface stuff in <complex> */
 	#endif
 
-	/* A macro to explicitly ignore a function's return value.
-	 * Some compilers complain when return values are ignored, and
-	 * others complain when using a c-style cast...
+	/* Pull stuff into the std namespace
 	 */
-	#if 1
-		#define G_IGNORE(type)
-	#else
-		#define G_IGNORE(type) (void)
+	#ifdef __cplusplus
+		#if defined(G_COMPILER_IS_MICROSOFT)
+/// \namespace std
+		namespace std
+		{
+			using ::abort ;
+		}
+		#endif
 	#endif
 
 	/* Use smaller buffers and limits if building with the uClibc run-time library.
@@ -221,6 +223,21 @@
 		#ifndef G_NOT_SMALL
 			#define G_SMALL
 		#endif
+	#endif
+
+	/* A macro to explicitly ignore a function's return value.
+	 * Some compilers complain when return values are ignored, and
+	 * others complain when using a c-style cast...
+	 */
+	#if 1
+		#if defined(__cplusplus) && !defined(G_SMALL) && defined(G_COMPILER_IS_GNU) && __GNUC__ >= 4
+			template <typename T> struct g__ignore { void operator=( const T& ) {} } ;
+			#define G_IGNORE(type) g__ignore<type>()=
+		#else
+			#define G_IGNORE(type)
+		#endif
+	#else
+		#define G_IGNORE(type) (void)
 	#endif
 
 	/* Autoconf, part 2

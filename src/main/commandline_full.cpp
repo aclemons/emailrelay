@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -106,56 +106,57 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 	std::ostringstream ss ;
 	ss <<
 		(is_windows?switchSpec_windows():switchSpec_unix()) << "|"
-		"q!as-client!runs as a client, forwarding spooled mail to <host>: "
+		"q!as-client!runs as a client, forwarding all spooled mail to <host>!: "
 			"equivalent to \"--log --no-syslog --no-daemon --dont-serve --forward --forward-to\"!" 
 			"1!host:port!1|"
-		"d!as-server!runs as a server: equivalent to \"--log --close-stderr\"!0!!1|"
-		"y!as-proxy!runs as a proxy: equivalent to \"--log --close-stderr --poll=0 --forward-to\"!"
+		"d!as-server!runs as a server, storing mail in the spool directory!: equivalent to \"--log --close-stderr\"!0!!1|"
+		"y!as-proxy!runs as a proxy server, forwarding each mail immediately to <host>!"
+			": equivalent to \"--log --close-stderr --poll=0 --forward-to\"!"
 			"1!host:port!1|"
-		"v!verbose!generates more verbose output (works with --help and --log)!0!!1|"
-		"h!help!displays help text and exits!0!!1|"
+		"v!verbose!generates more verbose output! (works with --help and --log)!0!!1|"
+		"h!help!displays help text and exits!!0!!1|"
 		""
-		"p!port!specifies the smtp listening port number (default is 25)!1!port!2|"
-		"r!remote-clients!allows remote clients to connect!0!!2|"
-		"s!spool-dir!specifies the spool directory (default is \"" << dir << "\")!1!dir!2|"
-		"V!version!displays version information and exits!0!!2|"
+		"p!port!specifies the smtp listening port number (default is 25)!!1!port!2|"
+		"r!remote-clients!allows remote clients to connect!!0!!2|"
+		"s!spool-dir!specifies the spool directory (default is \"" << dir << "\")!!1!dir!2|"
+		"V!version!displays version information and exits!!0!!2|"
 		""
-		"j!client-tls!enables tls/ssl layer for smtp client (if openssl built in)!0!!3|"
-		"K!server-tls!enables tls/ssl layer for smtp server using the given openssl certificate file (which must be in the directory trusted by openssl)!1!pem-file!3|"
-		"g!debug!generates debug-level logging if compiled-in!0!!3|"
-		"C!client-auth!enables smtp authentication with the remote server, using the given secrets file!1!file!3|"
-		"L!log-time!adds a timestamp to the logging output!0!!3|"
-		"S!server-auth!enables authentication of remote clients, using the given secrets file!1!file!3|"
-		"e!close-stderr!closes the standard error stream soon after start-up!0!!3|"
-		"a!admin!enables the administration interface and specifies its listening port number!"
+		"j!client-tls!enables tls/ssl layer for smtp client! (if openssl built in)!0!!3|"
+		"K!server-tls!enables tls/ssl layer for smtp server using the given openssl certificate file! (which must be in the directory trusted by openssl)!1!pem-file!3|"
+		"g!debug!generates debug-level logging if compiled-in!!0!!3|"
+		"C!client-auth!enables smtp authentication with the remote server, using the given secrets file!!1!file!3|"
+		"L!log-time!adds a timestamp to the logging output!!0!!3|"
+		"S!server-auth!enables authentication of remote clients, using the given secrets file!!1!file!3|"
+		"e!close-stderr!closes the standard error stream soon after start-up!!0!!3|"
+		"a!admin!enables the administration interface and specifies its listening port number!!"
 			"1!admin-port!3|"
-		"x!dont-serve!disables acting as a server on any port (part of --as-client and usually used with --forward)!0!!3|"
-		"X!no-smtp!disables listening for smtp connections (usually used with --admin or --pop)!0!!3|"
-		"z!filter!specifies an external program to process messages as they are stored!1!program!3|"
-		"W!filter-timeout!sets the timeout (in seconds) for running the --filter processor (default is 300)!1!time!3|"
-		"w!prompt-timeout!sets the timeout (in seconds) for getting an initial prompt from the server (default is 20)!1!time!3|"
-		"D!domain!sets an override for the host's fully qualified domain name!1!fqdn!3|"
-		"f!forward!forwards stored mail on startup (requires --forward-to)!0!!3|"
-		"o!forward-to!specifies the remote smtp server (required by --forward, --poll, --immediate and --admin)!1!host:port!3|"
+		"x!dont-serve!disables acting as a server on any port! (part of --as-client and usually used with --forward)!0!!3|"
+		"X!no-smtp!disables listening for smtp connections! (usually used with --admin or --pop)!0!!3|"
+		"z!filter!specifies an external program to process messages as they are stored!!1!program!3|"
+		"W!filter-timeout!sets the timeout (in seconds) for running the --filter processor (default is 300)!!1!time!3|"
+		"w!prompt-timeout!sets the timeout (in seconds) for getting an initial prompt from the server (default is 20)!!1!time!3|"
+		"D!domain!sets an override for the host's fully qualified domain name!!1!fqdn!3|"
+		"f!forward!forwards stored mail on startup! (requires --forward-to)!0!!3|"
+		"o!forward-to!specifies the remote smtp server! (required by --forward, --poll, --immediate and --admin)!1!host:port!3|"
 		"T!response-timeout!sets the response timeout (in seconds) when talking to a remote server "
-			"(default is 1800)!1!time!3|"
+			"(default is 1800)!!1!time!3|"
 		"U!connection-timeout!sets the timeout (in seconds) when connecting to a remote server "
-			"(default is 40)!1!time!3|"
-		"m!immediate!enables immediate forwarding of messages as soon as they are received (requires --forward-to)!0!!3|"
-		"I!interface!defines the listening interface for incoming connections!1!ip-address!3|"
-		"i!pid-file!defines a file for storing the daemon process-id!1!pid-file!3|"
-		"O!poll!enables polling of the spool directory for messages to be forwarded with the specified period (requires --forward-to)!1!period!3|"
-		"P!postmaster!!0!!0|"
-		"Z!verifier!specifies an external program for address verification!1!program!3|"
-		"Y!client-filter!specifies an external program to process messages when they are forwarded!1!program!3|"
-		"Q!admin-terminate!enables the terminate command on the admin interface!0!!3|"
-		"A!anonymous!disables the smtp vrfy command and sends less verbose smtp responses!0!!3|"
-		"B!pop!enables the pop server!0!!3|"
-		"E!pop-port!specifies the pop listening port number (requires --pop) (default is 110)!1!port!3|"
-		"F!pop-auth!defines the pop server secrets file (default is \"" << pop_auth << "\")!1!file!3|"
-		"G!pop-no-delete!disables message deletion via pop (requires --pop)!0!!3|"
-		"J!pop-by-name!modifies the pop spool directory according to the user name (requires --pop)!0!!3|"
-		"M!size!limits the size of submitted messages!1!bytes!3|"
+			"(default is 40)!!1!time!3|"
+		"m!immediate!enables immediate forwarding of messages as soon as they are received! (requires --forward-to)!0!!3|"
+		"I!interface!defines the listening interface for incoming connections!!1!ip-address!3|"
+		"i!pid-file!defines a file for storing the daemon process-id!!1!pid-file!3|"
+		"O!poll!enables polling of the spool directory for messages to be forwarded with the specified period (zero means on client disconnection)! (requires --forward-to)!1!period!3|"
+		"P!postmaster!!!0!!0|"
+		"Z!verifier!specifies an external program for address verification!!1!program!3|"
+		"Y!client-filter!specifies an external program to process messages when they are forwarded!!1!program!3|"
+		"Q!admin-terminate!enables the terminate command on the admin interface!!0!!3|"
+		"A!anonymous!disables the smtp vrfy command and sends less verbose smtp responses!!0!!3|"
+		"B!pop!enables the pop server!!0!!3|"
+		"E!pop-port!specifies the pop listening port number (default is 110)! (requires --pop)!1!port!3|"
+		"F!pop-auth!defines the pop server secrets file (default is \"" << pop_auth << "\")!!1!file!3|"
+		"G!pop-no-delete!disables message deletion via pop! (requires --pop)!0!!3|"
+		"J!pop-by-name!modifies the pop spool directory according to the user name! (requires --pop)!0!!3|"
+		"M!size!limits the size of submitted messages!!1!bytes!3|"
 		;
 	return ss.str() ;
 }
@@ -163,23 +164,23 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 std::string Main::CommandLineImp::switchSpec_unix()
 {
 	return
-		"l!log!writes log information on standard error and syslog!0!!2|"
-		"t!no-daemon!does not detach from the terminal!0!!3|"
+		"l!log!writes log information on standard error and syslog!!0!!2|"
+		"t!no-daemon!does not detach from the terminal!!0!!3|"
 		"u!user!names the effective user to switch to if started as root "
-			"(default is \"daemon\")!1!username!3|"
-		"k!syslog!forces syslog output if logging is enabled (overrides --no-syslog)!0!!3|"
-		"n!no-syslog!disables syslog output (always overridden by --syslog)!0!!3" ;
+			"(default is \"daemon\")!!1!username!3|"
+		"k!syslog!forces syslog output if logging is enabled (overrides --no-syslog)!!0!!3|"
+		"n!no-syslog!disables syslog output (always overridden by --syslog)!!0!!3" ;
 }
 
 std::string Main::CommandLineImp::switchSpec_windows()
 {
 	return
-		"l!log!writes log information on standard error and event log!0!!2|"
-		"t!no-daemon!uses an ordinary window, not the system tray!0!!3|"
-		"k!syslog!forces system event log output if logging is enabled (overrides --no-syslog)!0!!3|"
-		"n!no-syslog!disables use of the system event log!0!!3|"
-		"c!icon!selects the application icon!1!0^|1^|2^|3!3|"
-		"H!hidden!hides the application window and suppresses message boxes (requires --no-daemon)!0!!3" ;
+		"l!log!writes log information on standard error and event log!!0!!2|"
+		"t!no-daemon!uses an ordinary window, not the system tray!!0!!3|"
+		"k!syslog!forces system event log output if logging is enabled (overrides --no-syslog)!!0!!3|"
+		"n!no-syslog!disables use of the system event log!!0!!3|"
+		"c!icon!selects the application icon!!1!0^|1^|2^|3!3|"
+		"H!hidden!hides the application window and suppresses message boxes (requires --no-daemon)!!0!!3" ;
 }
 
 Main::CommandLineImp::CommandLineImp( Output & output , const G::Arg & arg , const std::string & spec ,
@@ -214,7 +215,9 @@ void Main::CommandLineImp::showUsage( bool e ) const
 		introducer = std::string("abbreviated ") + introducer ;
 
 	std::string::size_type tab_stop = 34U ;
-	m_getopt.showUsage( show.s() , m_arg.prefix() , "" , introducer , level , tab_stop ) ;
+	bool extra = m_getopt.contains("verbose") ;
+	m_getopt.showUsage( show.s() , m_arg.prefix() , "" , introducer , level , tab_stop , 
+		G::GetOpt::wrapDefault() , extra ) ;
 }
 
 bool Main::CommandLineImp::contains( const std::string & name ) const

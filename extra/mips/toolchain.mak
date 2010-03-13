@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #  * linux 2.4.20
 #  * uclibc 0.9.27
 #  * uclibc++ 0.2.2
-#  * binutils 2.18-ubuntu
+#  * binutils 2.19.1-ubuntu
 #
 # These versions of linux and uclibc correspond to those pre-installed
 # on the Buffalo WHR-G54S router as of late 2007. The version of gcc
@@ -40,8 +40,8 @@
 #
 #  * uClibc-0.9.27.tar.bz2
 #  * uClibc++-0.2.2.tar.bz2
-#  * linux-2.4.20.tar.gz
-#  * binutils_2.18.orig.tar.gz
+#  * linux-2.4.20.tar.bz2
+#  * binutils_2.19.1.orig.tar.gz
 #  * gcc-3.4.6.tar.bz2
 #  * gcc-core-3.4.6.tar.bz2
 #  * gcc-g++-3.4.6.tar.bz2
@@ -142,7 +142,7 @@ gcc_2_config = gcc/build-2/Makefile
 gcc_2_make = gcc/build-2/.gcc_2_make.done
 gcc_2_install = gcc/2/.gcc_2_install.done
 
-binutils_files = binutils/binutils-2.18/README
+binutils_files = binutils/binutils-2.19.1/README
 binutils_config = binutils/build/Makefile
 binutils_make = binutils/build/.binutils_make.done
 binutils_install = binutils/.binutils_install.done
@@ -181,7 +181,7 @@ $(linux_files):
 	@echo
 	@echo ++ untaring linux
 	@mkdir linux 2>/dev/null || true
-	tar -C linux -xzf $(linux_tar_dir)/linux-2.4.20.tar.gz
+	tar -C linux -xjf $(linux_tar_dir)/linux-2.4.20.tar.bz2
 	@rm -f $(linux_config) 2>/dev/null || true
 	@touch $(linux_files)
 
@@ -196,8 +196,8 @@ $(binutils_files):
 	@echo
 	@echo ++ untaring binutils
 	@mkdir binutils 2>/dev/null || true
-	tar -C binutils -xzf $(binutils_tar_dir)/binutils_2.18.orig.tar.gz
-	-zcat $(binutils_tar_dir)/binutils_2.18-0ubuntu3.diff.gz | ( cd binutils/binutils-2.18 && patch -p1 -s )
+	tar -C binutils -xzf $(binutils_tar_dir)/binutils_2.19.1.orig.tar.gz
+	-zcat $(binutils_tar_dir)/binutils_2.19.1-0ubuntu3.diff.gz | ( cd binutils/binutils-2.19.1 && patch -p1 -s )
 	@rm -f $(binutils_config) 2>/dev/null || true
 	@touch $(binutils_files)
 
@@ -205,7 +205,7 @@ $(binutils_config): $(binutils_files)
 	@echo
 	@echo ++ configuring binutils
 	@if test -d binutils/build ; then : ; else mkdir binutils/build ; fi
-	@cd binutils/build && ../binutils-2.18/configure --prefix=`dirname \`pwd\`` --target=mipsel-elf-linux-gnu $(TEE) ../../binutils_config.out $(TEEE)
+	@cd binutils/build && ../binutils-2.19.1/configure --prefix=`dirname \`pwd\`` --target=mipsel-elf-linux-gnu --disable-werror $(TEE) ../../binutils_config.out $(TEEE)
 
 $(binutils_make): $(binutils_config)
 	@echo
@@ -229,7 +229,7 @@ $(binutils_for_target_config):
 	@echo
 	@echo ++ configuring binutils for target
 	@if test -d binutils/build-for-target ; then : ; else mkdir binutils/build-for-target ; fi
-	@cd binutils/build-for-target && PATH="`dirname \`pwd\``/bin:$$PATH" CC=`dirname \`pwd\``/../gcc/2/bin/gcc-mips ../binutils-2.18/configure --with-build-time-tools=`dirname \`pwd\``/bin --with-build-sysroot=`dirname \`pwd\``/../uclibc --target=mipsel-elf-linux-gnu --host=mipsel-elf-linux-gnu $(TEE) ../../binutils_for_target_config.out $(TEEE)
+	@cd binutils/build-for-target && PATH="`dirname \`pwd\``/bin:$$PATH" CC=`dirname \`pwd\``/../gcc/2/bin/gcc-mips ../binutils-2.19.1/configure --with-build-time-tools=`dirname \`pwd\``/bin --with-build-sysroot=`dirname \`pwd\``/../uclibc --target=mipsel-elf-linux-gnu --host=mipsel-elf-linux-gnu $(TEE) ../../binutils_for_target_config.out $(TEEE)
 	@$(SED) -e 's/^CFLAGS_FOR_BUILD *=.*/CFLAGS_FOR_BUILD = /' --in-place binutils/build-for-target/Makefile
 
 # ==
@@ -567,7 +567,7 @@ clean_binutils:
 	@rm $(binutils_make) 2>/dev/null || true
 	@rm $(binutils_install) 2>/dev/null || true
 	@rm $(binutils_for_target_make) 2>/dev/null || true
-	@rm -rf binutils/binutils-2.18
+	@rm -rf binutils/binutils-2.19.1
 	@rm -rf binutils/build
 	@rm -rf binutils/bin binutils/info binutils/lib binutils/man binutils/mips*-elf-linux-gnu binutils/share
 	@rm -rf binutils/build-for-target

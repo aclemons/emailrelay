@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,13 +42,18 @@ namespace GNet
 ///
 /// The Socket class encapsulates a non-blocking
 /// Unix socket file descriptor or a Windows 'SOCKET' handle. 
-/// The class hides all differences between BSD sockets and 
-/// Winsock.
 ///
 /// (Non-blocking network i/o is particularly appropriate for single-
 /// threaded server processes which manage multiple client connections.
 /// The main disagvantage is that flow control has to be managed 
 /// explicitly: see Socket::write() and Socket::eWouldBlock().)
+///
+/// Provides bind(), listen(), connect(), write(); derived classes 
+/// provide accept() and read(). Also interfaces to the event
+/// loop with addReadHandler() and addWriteHandler().
+///
+/// The raw file descriptor is only exposed to the SocketProtocol
+/// class (using the credentials pattern) and to the event loop.
 ///
 /// Exceptions are not used.
 ///
@@ -238,13 +243,9 @@ private:
 ///
 
 /// \class GNet::AcceptPair
-/// A class which behaves like std::pair<std::auto_ptr<StreamSocket>,Address>.
-///
-/// (The standard pair<> template cannot be used because gcc's auto_ptr<> has
-/// a non-const copy constructor and assignment operator -- the pair<> op=() 
-/// fails to compile because the rhs of the 'first' assignment is const, 
-/// not matching any op=() in auto_ptr<>. Note the use of const_cast<>() 
-/// in the implementation.)
+/// A class which is used to return a new()ed socket
+/// to calling code, together with associated information, and with 
+/// auto_ptr style transfer of ownership.
 ///
 class GNet::AcceptPair 
 {

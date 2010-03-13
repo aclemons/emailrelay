@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2009 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -660,6 +660,7 @@ sub testServerPollingOverlap
 	# setup
 	my %args = (
 		Log => 1 ,
+		LogTime => 1 ,
 		Port => 1 ,
 		Admin => 1 ,
 		SpoolDir => 1 ,
@@ -670,10 +671,7 @@ sub testServerPollingOverlap
 	) ;
 	my $spool_dir = System::createSpoolDir() ;
 	my $message_count = 1 ;
-	for( my $i = 0 ; $i < $message_count ; $i++ )
-	{
-		System::submitMessage( $spool_dir , undef , 1000 ) ;
-	}
+	System::submitMessages( $spool_dir , undef , $message_count , 10000 ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.content", $message_count ) ;
 	my $emailrelay = new Server(undef,undef,undef,$spool_dir) ;
 	my $test_server = new TestServer(10125) ;
@@ -684,7 +682,7 @@ sub testServerPollingOverlap
 	Check::running( $test_server->pid() ) ;
 
 	# test that overlapping poll cycles result in an appropriate log message
-	Check::ok( System::drain($emailrelay->spoolDir(),10) , "message not forwarded" ) ;
+	Check::ok( System::drain($emailrelay->spoolDir(),30) , "message not forwarded" ) ;
 	Check::fileContains( $emailrelay->stderr() , "info: polling: still busy from last time" ) ;
 
 	# tear down
