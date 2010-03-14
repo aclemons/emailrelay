@@ -30,7 +30,7 @@ bool GNet::Socket::valid( Descriptor s )
 {
 	// (beware loosing WSAGetLastError() information, so...)
 	// (put no debug here)
-	return Descriptor__valid( s ) ;
+	return s.valid() ;
 }
 
 int GNet::Socket::reason()

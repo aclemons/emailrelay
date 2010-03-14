@@ -6,7 +6,8 @@ E-MailRelay Change Log
 * Added TLS/SSL encryption for POP.
 * Added Linux-PAM authentication ("configure --with-pam" and "--server-auth=/pam").
 * No "Received" line if "--anonymous" and an empty "--domain" name.
-* Simplified switch descriptions in the usage help, unless "--verbose".
+* Shorter switch descriptions in the usage help unless "--verbose".
+* Windows MSVC project files for version 2008.
 
 1.8.1 -> 1.8.2
 --------------

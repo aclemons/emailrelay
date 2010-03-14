@@ -288,11 +288,8 @@ EXTRA_DIST = \
 	$(CONFIG_EXTRA_DIST) \
 	$(MAC_EXTRA_DIST) \
 	$(PAM_EXTRA_DIST) \
-	common.dsp \
 	doxygen.cfg \
 	doxygen.h \
-	emailrelay.dsp \
-	filter.dsp \
 	emailrelay.rc \
 	icon1.ico \
 	icon2.ico \
@@ -301,16 +298,12 @@ EXTRA_DIST = \
 	messages.mc \
 	news.cpp \
 	news.h \
-	passwd.dsp \
-	poke.dsp \
 	resource.h \
-	service.dsp \
 	service_install.cpp \
 	service_install.h \
 	service_remove.cpp \
 	service_remove.h \
 	service_wrapper.cpp \
-	submit.dsp \
 	winapp.cpp \
 	winapp.h \
 	winform.cpp \

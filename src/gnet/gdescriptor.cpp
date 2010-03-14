@@ -37,7 +37,7 @@ SOCKET GNet::Descriptor::fd() const
 	return m_fd ;
 }
 
-int GNet::Descriptor::operator<( const Descriptor & other ) const
+bool GNet::Descriptor::operator<( const Descriptor & other ) const
 {
 	return m_fd < other.m_fd ;
 }

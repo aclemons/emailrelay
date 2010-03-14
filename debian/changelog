@@ -2,8 +2,9 @@ emailrelay (1.9) unstable; urgency=low
   * Added TLS/SSL encryption for POP.
   * Added Linux-PAM authentication ("configure --with-pam" and "--server-auth=/pam").
   * No "Received" line if "--anonymous" and an empty "--domain" name.
-  * Simplified switch descriptions in the usage help, unless "--verbose".
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sat, 13 Mar 2010 18:00:11 +0000
+  * Shorter switch descriptions in the usage help unless "--verbose".
+  * Windows MSVC project files for version 2008.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 14 Mar 2010 23:07:30 +0000
 
 emailrelay (1.8.2) unstable; urgency=low
   * Fix namespaces for gcc 3.4.

@@ -309,7 +309,7 @@ void GNet::Winsock::update( Descriptor fd )
 	G_ASSERT( m_success ) ;
 	G_ASSERT( m_hwnd != 0 ) ;
 	G_ASSERT( m_msg != 0 ) ;
-	::WSAAsyncSelect( fd , m_hwnd , m_msg , desiredEvents(fd) ) ;
+	::WSAAsyncSelect( fd.fd() , m_hwnd , m_msg , desiredEvents(fd) ) ;
 }
 
 long GNet::Winsock::desiredEvents( Descriptor fd )
@@ -345,7 +345,7 @@ void GNet::Winsock::onMessage( WPARAM wparam , LPARAM lparam )
 
 	if( event & READ_EVENTS )
 	{
-		EventHandler *handler = findHandler( m_read_list , fd ) ;
+		EventHandler *handler = findHandler( m_read_list , Descriptor(fd) ) ;
 		if( handler )
 		{
 			try
@@ -360,7 +360,7 @@ void GNet::Winsock::onMessage( WPARAM wparam , LPARAM lparam )
 	} 
 	else if( event & WRITE_EVENTS )
 	{
-		EventHandler *handler = findHandler( m_write_list , fd ) ;
+		EventHandler *handler = findHandler( m_write_list , Descriptor(fd) ) ;
 		if( handler )
 		{
 			try
@@ -375,7 +375,7 @@ void GNet::Winsock::onMessage( WPARAM wparam , LPARAM lparam )
 	} 
 	else if( event & EXCEPTION_EVENTS )
 	{
-		EventHandler *handler = findHandler( m_exception_list , fd ) ;
+		EventHandler *handler = findHandler( m_exception_list , Descriptor(fd) ) ;
 		if( handler )
 		{
 			try

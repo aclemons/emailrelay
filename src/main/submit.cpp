@@ -136,10 +136,10 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 static void run( const G::Arg & arg )
 {
 	G::GetOpt opt( arg , 
-		"v/verbose/prints the path of the created content file/0//1|"
-		"s/spool-dir/specifies the spool directory/1/dir/1|"
-		"f/from/sets the envelope sender/1/name/1|"
-		"h/help/shows this help/0//1" ) ;
+		"v/verbose/prints the path of the created content file//0//1|"
+		"s/spool-dir/specifies the spool directory//1/dir/1|"
+		"f/from/sets the envelope sender//1/name/1|"
+		"h/help/shows this help//0//1" ) ;
 
 	if( opt.hasErrors() )
 	{

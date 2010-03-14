@@ -52,7 +52,7 @@ public:
 	SOCKET fd() const ;
 		///< Returns the low-level descriptor.
 
-	int operator<( const Descriptor & other ) const ;
+	bool operator<( const Descriptor & other ) const ;
 		///< Comparison operator.
 
 private:

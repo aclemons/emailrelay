@@ -30,10 +30,10 @@ Move shortcuts to "Startup" folders as necessary.
 
 Running as a service
 --------------------
-If you are installing manually you can set up E-MailRelay as a service so that 
-it starts up automatically at boot-time. You must first create a one-line batch 
+If you are installing manually you can set up E-MailRelay as a service so that
+it starts up automatically at boot-time. You must first create a one-line batch
 file called "emailrelay-start.bat" in the main E-MailRelay directory containing
-the full E-MailRelay server command-line. Then just run 
+the full E-MailRelay server command-line. Then just run
 "emailrelay-service --install" to install the service.
 
 When the E-MailRelay server is run in this way the "--no-daemon" and "--hidden"
@@ -73,17 +73,17 @@ that first and edit as necessary.
 
 Testing with telnet
 -------------------
-The main user guide describes how to use telnet to help diagnose problems. In 
-recent versions of Windows you have to enable telnet by selecting "Telnet Client" 
-from "Programs and Features"->"Turn Windows features on or off" in the control 
+The main user guide describes how to use telnet to help diagnose problems. In
+recent versions of Windows you have to enable telnet by selecting "Telnet Client"
+from "Programs and Features"->"Turn Windows features on or off" in the control
 panel.
 
 Building from source
 --------------------
-E-MailRelay can be compiled using Microsoft Visual Studio C++ (MSVC) 6 or MinGW,
-although the installation/configuration GUI can only be built with MinGW because
-of its dependence on Qt.
+E-MailRelay can be compiled using Microsoft Visual Studio C++ (MSVC) 2008 or
+MinGW, although the installation/configuration GUI can only be built with MinGW
+because of its dependence on Qt.
 
-There is a Visual Studio workspace file for MSVC 6 in the "src" directory. For
+There is a Visual Studio "solution" for MSVC 2008 in the "src" directory. For
 MinGW please follow the guidelines in "mingw-common.mak" which is also in the
 "src" directory.
