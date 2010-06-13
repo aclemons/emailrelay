@@ -41,7 +41,7 @@
 //  * certificate
 //     $ openssl req -x509 -nodes -days 365 -subj "/C=US/ST=Oregon/L=Portland/CN=eight.local" 
 //           -newkey rsa:1024 -keyout test.cert  -out test.cert
-//     $ cp $name /etc/ssl/certs/
+//     $ cp test.cert /etc/ssl/certs/
 //     $ cd /etc/ssl/certs && ln -s `openssl x509 -noout -hash -in test.cert`.0
 //  * openssl server (without smtp)
 //     $ openssl s_server -accept 10025 -cert /etc/ssl/certs/test.pem -debug -msg -tls1

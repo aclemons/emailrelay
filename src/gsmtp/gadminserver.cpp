@@ -259,10 +259,10 @@ void GSmtp::AdminServerPeer::list()
 // ===
 
 GSmtp::AdminServer::AdminServer( MessageStore & store , const GSmtp::Client::Config & client_config ,
-	const GAuth::Secrets & secrets , const GNet::Address & listening_address , bool allow_remote , 
-	const GNet::Address & local_address , const std::string & remote_address , 
+	const GAuth::Secrets & secrets , const GNet::MultiServer::AddressList & listening_addresses , 
+	bool allow_remote , const GNet::Address & local_address , const std::string & remote_address , 
 	unsigned int connection_timeout , const G::StringMap & extra_commands , bool with_terminate ) :
-		GNet::MultiServer( GNet::MultiServer::addressList(listening_address) ) ,
+		GNet::MultiServer( listening_addresses ) ,
 		m_store(store) ,
 		m_client_config(client_config) ,
 		m_secrets(secrets) ,
@@ -273,7 +273,6 @@ GSmtp::AdminServer::AdminServer( MessageStore & store , const GSmtp::Client::Con
 		m_extra_commands(extra_commands) ,
 		m_with_terminate(with_terminate)
 {
-	G_DEBUG( "GSmtp::AdminServer: administrative interface listening on " << listening_address.displayString() ) ;
 }
 
 GSmtp::AdminServer::~AdminServer()

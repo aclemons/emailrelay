@@ -33,30 +33,25 @@ std::auto_ptr<GSmtp::AdminServer> Main::Admin::newServer( const Configuration & 
 	GSmtp::MessageStore & store , const GSmtp::Client::Config & client_config , 
 	const GAuth::Secrets & client_secrets , const std::string & version_number )
 {
-		GNet::Address listening_address = 
-			cfg.firstListeningInterface().length() ? 
-				GNet::Address(cfg.firstListeningInterface(),cfg.adminPort()) :
-				GNet::Address(cfg.adminPort()) ;
+	GNet::Address local_address = 
+		cfg.clientInterface().length() ? 
+			GNet::Address(cfg.clientInterface(),0U) :
+			GNet::Address(0U) ;
 
-		GNet::Address local_address = 
-			cfg.clientInterface().length() ? 
-				GNet::Address(cfg.clientInterface(),0U) :
-				GNet::Address(0U) ;
-
-		G::StringMap extra_commands_map ;
-		extra_commands_map.insert( std::make_pair(std::string("version"),version_number) ) ;
-		extra_commands_map.insert( std::make_pair(std::string("warranty"),
-			Legal::warranty(std::string(),std::string(1U,'\n'))) ) ;
-		extra_commands_map.insert( std::make_pair(std::string("credit"),
-			GSsl::Library::credit(std::string(),std::string(1U,'\n'),std::string())) ) ;
-		extra_commands_map.insert( std::make_pair(std::string("copyright"),Legal::copyright()) ) ;
+	G::StringMap extra_commands_map ;
+	extra_commands_map.insert( std::make_pair(std::string("version"),version_number) ) ;
+	extra_commands_map.insert( std::make_pair(std::string("warranty"),
+		Legal::warranty(std::string(),std::string(1U,'\n'))) ) ;
+	extra_commands_map.insert( std::make_pair(std::string("credit"),
+		GSsl::Library::credit(std::string(),std::string(1U,'\n'),std::string())) ) ;
+	extra_commands_map.insert( std::make_pair(std::string("copyright"),Legal::copyright()) ) ;
 
 	std::auto_ptr<GSmtp::AdminServer> server ;
 	server <<= new GSmtp::AdminServer( 
 			store , 
 			client_config ,
 			client_secrets , 
-			listening_address ,
+			GNet::MultiServer::addressList( cfg.listeningInterfaces("admin") , cfg.adminPort() ) ,
 			cfg.allowRemoteClients() , 
 			local_address ,
 			cfg.serverAddress() ,

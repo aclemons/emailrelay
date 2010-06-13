@@ -26,7 +26,7 @@
 // the stub program. The final twelve bytes of the output provide 
 // the offset of the table of contents. Each entry in the table 
 // of contents comprises: the compressed file size in decimal 
-// ascii, a space, arbitrary flags, string, a space, the file 
+// ascii, a space, arbitrary flags string, a space, the file 
 // name/path, a newline. The end of the table is marked by a 
 // (0,-,end) entry.
 //
@@ -37,12 +37,17 @@
 // and then concatenated immediately following the table of 
 // contents.
 //
-// The "--dir" switch introduces a set of input files which
-// are to be unpacked into the specified output directory.
+// Input files are specified in pairs: the input file to be packed
+// and the final output path when unpacked. The "--dir" switch 
+// introduces a set of input files which are all to be unpacked 
+// into the same output directory.
 //
 // The "--opt" switch indicates that all subsequent files
 // are optional; if they do not exist then they are silently
 // ignored.
+//
+// All file contents are read into memory before they are
+// packed into the output.
 //
 
 #include "gdef.h"

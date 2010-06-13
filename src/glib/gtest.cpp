@@ -25,15 +25,11 @@
 #include <cstdlib> // getenv
 #include <set>
 
-bool G::Test::enabled( const std::string & name )
+#if defined(_DEBUG)
+bool G::Test::enabled( const char * name )
 {
-	bool result = false ;
-
- #ifdef _DEBUG
 	static const char * p = std::getenv("G_TEST") ;
-	result = p ? ( std::string(p).find(name) != std::string::npos ) : false ; // (could do better)
- #endif
-
+	bool result = p ? ( std::string(p).find(name) != std::string::npos ) : false ; // (could do better)
 	if( result )
 	{
 		static std::set<std::string> warned ;
@@ -45,5 +41,5 @@ bool G::Test::enabled( const std::string & name )
 	}
 	return result ;
 }
-
+#endif
 /// \file gtest.cpp

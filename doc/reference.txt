@@ -192,7 +192,7 @@ When using "--as-client" the spooled messages begin to be forwarded as soon as
 the program starts up, and the program terminates once they have all been sent.
 
 A pending "--poll" timer can be forced to expire immediately if a "--filter"
-script exits with a special value of 103, as described above.
+script exits with a special value of 103, as described below.
 
 Mail processing
 ---------------
@@ -456,7 +456,12 @@ format. This file must be in a directory that the OpenSSL library considers to
 be secure. On some systems this is "/etc/ssl/certs".
 
 Certificate files can be created with the "openssl" utility using the
-"req -x509" sub-command. Refer to the OpenSSL documentation for the details.
+"req -x509" sub-command. Refer to the OpenSSL documentation for the full details
+but something like this might work for testing purposes:
+
+	$ cd /etc/ssl/certs
+	$ openssl req -x509 -nodes -days 365 -subj "/O=`uname -n`/CN=$USER" -newkey rsa:1024 -keyout emailrelay.pem  -out emailrelay.pem
+	$ ln -s emailrelay.pem `openssl x509 -noout -hash -in emailrelay.pem`.0
 
 Linux PAM
 ---------
@@ -517,6 +522,14 @@ The following command-line switches are used:
   Note that the basic POP3 protocol defines only "APOP" and "USER/PASS"
   authentication, so some POP client programs may not be able to cope with
   CRAM-MD5 authentication using the POP3 "AUTH" extension.
+
+  The CRAM-MD5 authentication mechanism will only be advertised to clients
+  if there are CRAM-MD5 entries in the secrets file.
+
+  On Linux a special value of "/pam" can be used to enable authentication using
+  the PAM infrastructure rather than a secrets file. In this case only the PLAIN
+  authentication mechanism will be advertised to the client but transport level
+  encryption using TLS/SSL will be mandatory.
 
 # --pop-by-name
 
@@ -671,7 +684,7 @@ Security issues
 ---------------
 The following are some security issues that have been taken into consideration:
 
-# effective userid
+# Effective userid
 
   Suid privileges are revoked at start-up, switching the effective
   userid/groupid to be the real userid/groupid values. If started as "root"
@@ -683,44 +696,44 @@ The following are some security issues that have been taken into consideration:
   groupid, so that new files have group ownership corresponding to the
   "daemon" user.
 
-# execution environment
+# Execution environment
 
-  The external pre-processor programs are run with an almost empty set of 
-  environment variables ("PATH" and "IFS"), and with no open file descriptors 
-  other than "stdin" and "stderr" open onto "/dev/null", and "stdout" open onto a 
+  The external pre-processor programs are run with an almost empty set of
+  environment variables ("PATH" and "IFS"), and with no open file descriptors
+  other than "stdin" and "stderr" open onto "/dev/null", and "stdout" open onto a
   pipe.
 
-# configuration
+# Configuration
 
   The mail pre-processor filenames have to be configured using a full path, so
   there is no dependence on the current working directory or the PATH
   environment variable.
 
-# umask
+# Umask
 
   The program runs for most of the time with a "umask" of 177, switching to 117
   when creating spool files.
 
-# buffer overflow
+# Buffer overflow
 
   Strings are dynamically allocated, so buffer overflow/truncation issues are
   avoided.
 
-# remote clients
+# Remote clients
 
   By default connections will be rejected if they come from remote machines.
 
-# remote configuration
+# Remote configuration
 
   No configuration parameters can be changed through the administrative
   interface.
 
-# use of exec() and system()
+# Use of exec() and system()
 
   No exec(), system() or popen() calls are used other than execve() to spawn the
   mail pre-processor and/or address verifier.
 
-# file permissions
+# File permissions
 
   After a normal installation the spool directory is has ownership of
   "root.daemon" with permissions of "-rwxrwxr-x" and messages files are created
@@ -732,7 +745,7 @@ The following are some security issues that have been taken into consideration:
   spool directory, and the files created end up owned by the submitter but with
   group ownership of "daemon".
 
-# logging
+# Logging
 
   Logging output is conditioned so that ANSI escape sequences cannot appear
   in the log.
@@ -740,10 +753,15 @@ The following are some security issues that have been taken into consideration:
   Passwords and message content are not logged (except if using the "--debug"
   switch at run time with debug logging enabled at build time).
 
-# information leakage
+# Information leakage
 
-  The "--anonymous" switch can be used to slightly reduce the amount of information
-  released to remote clients.
+  The "--anonymous" switch can be used to reduce the amount of information
+  released to remote clients, especially with an empty "--domain".
+
+# Mandatory encryption
+
+  When using Linux PAM for authentication all clients are required to use
+  TLS/SSL encryption.
 
 Security issues which relate to the SMTP protocol itself are beyond the scope of
 this document, but RFC2821 makes the following observation: "SMTP mail is

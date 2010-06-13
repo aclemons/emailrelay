@@ -28,9 +28,7 @@
 namespace G
 {
 	std::string hostname() ;
-		/// \code
-		///<< Returns the hostname.
-		/// \endcode
+		///< Returns the hostname.
 }
 
 #endif

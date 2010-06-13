@@ -51,13 +51,8 @@ public:
 	unsigned int port() const ;
 		///< Returns the main listening port number.
 
-	G::Strings listeningInterfaces() const ;
+	G::Strings listeningInterfaces( const std::string & protocol = std::string() ) const ;
 		///< Returns the listening interface(s).
-		///< Returns a single empty string if no
-		///< special interfaces are defined.
-
-	std::string firstListeningInterface() const ;
-		///< A convenience method returning the first listeningInterface().
 
 	std::string clientInterface() const ;
 		///< Returns the sending interface.

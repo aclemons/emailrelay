@@ -109,8 +109,8 @@ class GSmtp::AdminServer : public GNet::MultiServer
 {
 public:
 	AdminServer( MessageStore & store , const GSmtp::Client::Config & client_config ,
-		const GAuth::Secrets & client_secrets , const GNet::Address & listening_address , bool allow_remote , 
-		const GNet::Address & local_address , const std::string & remote_address ,
+		const GAuth::Secrets & client_secrets , const GNet::MultiServer::AddressList & listening_addresses , 
+		bool allow_remote , const GNet::Address & local_address , const std::string & remote_address ,
 		unsigned int connection_timeout , const G::StringMap & extra_commands , bool with_terminate ) ;
 			///< Constructor. The 'store' and 'client-secrets' references
 			///< are kept.

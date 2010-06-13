@@ -26,14 +26,9 @@
 #  * uclibc++ 0.2.2
 #  * binutils 2.19.1-ubuntu
 #
-# These versions of linux and uclibc correspond to those pre-installed
-# on the Buffalo WHR-G54S router as of late 2007. The version of gcc
-# is 3.4.6 rather than 3.3.3 because of compiler bugs in the c++
-# code generation.
-#
 # Usage: make -f toolchain.mak
 #
-# Note that, unlike other toolchain build scripts, the required source 
+# Note that, unlike some other toolchain build scripts, the required source 
 # packages (linux, uclibc, etc) are not downloaded automatically, so
 # the following package tarballs must be made available under the
 # 'tar-dir' directory (see below):
@@ -46,16 +41,22 @@
 #  * gcc-core-3.4.6.tar.bz2
 #  * gcc-g++-3.4.6.tar.bz2
 #
+# These versions of linux and uclibc correspond to those pre-installed
+# on the Buffalo WHR-G54S router as of late 2007. The version of gcc
+# is 3.4.6 rather than 3.3.3 because of compiler bugs in the c++
+# code generation.
+#
 # Uses perl with the MIME::Base64 package to prepare patch files.
 #
 # The final cross-compiler ends up in "gcc/2/bin", with a gcc wrapper 
 # script for using uclibc++ in "uclibc/usr/uClibc++/bin".
 #
 # In addition to the cross-compiler there are various bits and bobs
-# which are built to run on the target machine:
+# that run on the target machine:
+#  * uclibc shared libraries in "uclibc/lib"
 #  * uclibc utilities in "uclibc/*/utils"
 #  * binutils under "binutils/build-for-target"
-#  * simple hello-world test programs in the cwd
+#  * simple hello-world test programs ("test-*") in the base directory
 #
 # This makefile works by defining the following top-level build tasks:
 #  1. binutils
@@ -94,6 +95,11 @@
 # if build trees are deleted they will get rebuilt from source, if 
 # install trees are deleted they will get reinstalled, etc.
 #
+# If there are build errors first look at the latest ".out" file in 
+# the top level directory. Then cd down to the relevant build 
+# directory and run the appropriate make command by hand (possibly
+# using "make.sh").
+#
 # Deleting directory trees is the preferred way to trigger rebuilds,
 # but there are also a set of pseudo-targets defined to help with 
 # debugging this makefile.
@@ -107,20 +113,16 @@
 # Bzipped source tar files for the various packages must be made 
 # available in the directories configured below...
 #
-#####
+#===
 # configure these...
 tar_dir = /usr/share/data/packages
 binutils_tar_dir = $(tar_dir)/development/binutils
 gcc_tar_dir = $(tar_dir)/development/gcc
 uclibc_tar_dir = $(tar_dir)/development/uclibc
 linux_tar_dir = $(tar_dir)/linux
-#####
+#---
 
-# define TEE=|tee for more verbosity, but note that the pipe messes up the exit codes
-TEE:=>
-TEEE:=2>&1
-
-# gnu sed, or a wrapper that supports --in-place
+# gnu sed, or a wrapper that supports "--in-place"
 SED=sed
 
 mk_root = $(shell pwd)
@@ -131,6 +133,7 @@ gcc_configure_4 = --with-ld=$(mk_root)/binutils/mipsel-elf-linux-gnu/bin/ld
 gcc_configure = $(gcc_configure_1) $(gcc_configure_2) $(gcc_configure_3) $(gcc_configure_4) 
 gcc_1_configure = $(gcc_configure) --disable-threads --enable-languages=c --without-headers --with-newlib
 gcc_2_configure = $(gcc_configure) --enable-languages=c,c++ --enable-sjlj-exceptions --enable-threads=posix --with-sysroot=$(mk_root)/uclibc 
+check = .check.done
 
 gcc_files = gcc/gcc-3.4.6/README
 gcc_diff = gcc-3.4.6.diff
@@ -173,7 +176,18 @@ tests = $(test_c_for_target) $(test_cpp_for_target) $(test_cpp_for_target_static
 
 .PHONY: all
 
-all: $(uclibc_for_target) $(binutils_for_target_make) $(tests) $(uclibcpp_install) configure-mips.sh
+all: $(check) $(uclibc_for_target) $(binutils_for_target_make) $(tests) $(uclibcpp_install) configure-mips.sh
+
+$(check):
+	@echo
+	@echo ++ checking for tarballs
+	@test -f $(linux_tar_dir)/linux-2.4.20.tar.bz2 || ( echo no linux - please download it && false )
+	@test -f $(binutils_tar_dir)/binutils_2.19.1.orig.tar.gz || ( echo no binutils - please download it && false )
+	@test -f $(gcc_tar_dir)/gcc-3.4.6.tar.bz2 || ( echo no gcc - please download it && false )
+	@test -f $(gcc_tar_dir)/gcc-core-3.4.6.tar.bz2 || ( echo no gcc-core - please download it && false )
+	@test -f $(gcc_tar_dir)/gcc-g++-3.4.6.tar.bz2 || ( echo no gcc-g++ - please download it && false )
+	@test -f $(uclibc_tar_dir)/uClibc-0.9.27.tar.bz2 || ( echo no uclibc - please download it && false )
+	@touch $(check)
 
 # ==
 
@@ -188,7 +202,7 @@ $(linux_files):
 $(linux_config): $(linux_files)
 	@echo
 	@echo ++ configuring linux
-	@cd linux/linux-2.4.20 && make oldconfig ARCH=mips $(TEE) ../../linux_config.out $(TEEE)
+	@cd linux/linux-2.4.20 && make oldconfig ARCH=mips > ../../linux_config.out 2>&1
 
 # ==
 
@@ -205,31 +219,31 @@ $(binutils_config): $(binutils_files)
 	@echo
 	@echo ++ configuring binutils
 	@if test -d binutils/build ; then : ; else mkdir binutils/build ; fi
-	@cd binutils/build && ../binutils-2.19.1/configure --prefix=`dirname \`pwd\`` --target=mipsel-elf-linux-gnu --disable-werror $(TEE) ../../binutils_config.out $(TEEE)
+	@cd binutils/build && ../binutils-2.19.1/configure --prefix=`dirname \`pwd\`` --target=mipsel-elf-linux-gnu --disable-werror > ../../binutils_config.out 2>&1
 
 $(binutils_make): $(binutils_config)
 	@echo
 	@echo ++ building binutils
-	@cd binutils/build && make $(TEE) ../../binutils_make.out $(TEEE)
+	@cd binutils/build && make > ../../binutils_make.out 2>&1
 	@touch $(binutils_make)
 
 $(binutils_install): $(binutils_make)
 	@echo
 	@echo ++ installing binutils
-	@cd binutils/build && make install $(TEE) ../../binutils_install.out $(TEEE)
+	@cd binutils/build && make install > ../../binutils_install.out 2>&1
 	@touch $(binutils_install)
 
 $(binutils_for_target_make): $(binutils_make) $(gcc_2_install) $(binutils_for_target_config)
 	@echo
 	@echo ++ building binutils for target
-	@cd binutils/build-for-target && PATH="`dirname \`pwd\``/bin:$$PATH" CC=`dirname \`pwd\``/../gcc/2/bin/gcc-mips make LDFLAGS="-Xlinker --dynamic-linker=/lib/ld-uClibc.so.0" $(TEE) ../../binutils_for_target_make.out $(TEEE)
+	@cd binutils/build-for-target && PATH="`dirname \`pwd\``/bin:$$PATH" CC=`dirname \`pwd\``/../gcc/2/bin/gcc-mips make LDFLAGS="-Xlinker --dynamic-linker=/lib/ld-uClibc.so.0" > ../../binutils_for_target_make.out 2>&1
 	@touch $(binutils_for_target_make)
 
 $(binutils_for_target_config):
 	@echo
 	@echo ++ configuring binutils for target
 	@if test -d binutils/build-for-target ; then : ; else mkdir binutils/build-for-target ; fi
-	@cd binutils/build-for-target && PATH="`dirname \`pwd\``/bin:$$PATH" CC=`dirname \`pwd\``/../gcc/2/bin/gcc-mips ../binutils-2.19.1/configure --with-build-time-tools=`dirname \`pwd\``/bin --with-build-sysroot=`dirname \`pwd\``/../uclibc --target=mipsel-elf-linux-gnu --host=mipsel-elf-linux-gnu $(TEE) ../../binutils_for_target_config.out $(TEEE)
+	@cd binutils/build-for-target && PATH="`dirname \`pwd\``/bin:$$PATH" CC=`dirname \`pwd\``/../gcc/2/bin/gcc-mips ../binutils-2.19.1/configure --with-build-time-tools=`dirname \`pwd\``/bin --with-build-sysroot=`dirname \`pwd\``/../uclibc --target=mipsel-elf-linux-gnu --host=mipsel-elf-linux-gnu > ../../binutils_for_target_config.out 2>&1
 	@$(SED) -e 's/^CFLAGS_FOR_BUILD *=.*/CFLAGS_FOR_BUILD = /' --in-place binutils/build-for-target/Makefile
 
 # ==
@@ -244,8 +258,10 @@ $(uclibc_files):
 $(uclibc_config): $(uclibc_files) $(linux_config) $(gcc_1_install)
 	@echo
 	@echo ++ configuring uclibc
-	@$(SED) -e 's/\( *\)default TARGET_i386/\1default TARGET_mips/' --in-place=.orig uclibc/uClibc-0.9.27/extra/Configs/Config.in
-	@cd uclibc/uClibc-0.9.27 && make defconfig $(TEE) ../../uclibc_config.out $(TEEE)
+	@touch uclibc/uClibc-0.9.27/.config
+	@$(SED) -e 's/\( *\)default TARGET_i386/\1default TARGET_mips/' --in-place=.orig uclibc/uClibc-0.9.27/extra/Configs/Config.in # 0.9.27
+	@cd uclibc/uClibc-0.9.27 && make ARCH=mips defconfig > ../../uclibc_config.out 2>&1 # ARCH= for >0.9.27
+	@$(SED) -e 's:^KERNEL_HEADERS=.*:KERNEL_HEADERS="'"`pwd`/linux/linux-2.4.20/include"'":' --in-place uclibc/uClibc-0.9.27/.config # for >0.9.27
 	@$(SED) -e 's:^KERNEL_SOURCE=.*:KERNEL_SOURCE="'"`pwd`/linux/linux-2.4.20"'":' --in-place uclibc/uClibc-0.9.27/.config
 	@$(SED) -e 's:^SHARED_LIB_LOADER_PREFIX=.*:SHARED_LIB_LOADER_PREFIX="'"/lib"'":' --in-place uclibc/uClibc-0.9.27/.config
 	@$(SED) -e 's:^RUNTIME_PREFIX=.*:RUNTIME_PREFIX="'"`pwd`/uclibc"'":' --in-place uclibc/uClibc-0.9.27/.config
@@ -278,20 +294,20 @@ $(uclibc_make): $(uclibc_config) $(uclibc_patch)
 	@echo
 	@echo ++ building uclibc
 	@cd uclibc/uClibc-0.9.27 && echo PATH=\"`pwd`/../../binutils/bin:$$PATH\" make CROSS=mipsel-elf-linux-gnu- CC=`pwd`/../../gcc/1/bin/gcc-mips \"$$\@\" > make.sh # for convenience
-	@cd uclibc/uClibc-0.9.27 && PATH="`pwd`/../../binutils/bin:$$PATH" make CROSS=mipsel-elf-linux-gnu- CC=`pwd`/../../gcc/1/bin/gcc-mips $(TEE) ../../uclibc_make.out $(TEEE)
+	@cd uclibc/uClibc-0.9.27 && PATH="`pwd`/../../binutils/bin:$$PATH" make CROSS=mipsel-elf-linux-gnu- CC=`pwd`/../../gcc/1/bin/gcc-mips > ../../uclibc_make.out 2>&1
 	@touch $(uclibc_make)
 
 $(uclibc_install): $(uclibc_make)
 	@echo
 	@echo ++ installing uclibc
-	@cd uclibc/uClibc-0.9.27 && PATH="`pwd`/../../binutils/bin:$$PATH" make CROSS=mipsel-elf-linux-gnu- CC=`pwd`/../../gcc/1/bin/gcc-mips install $(TEE) ../../uclibc_install.out $(TEEE)
+	@cd uclibc/uClibc-0.9.27 && PATH="`pwd`/../../binutils/bin:$$PATH" make CROSS=mipsel-elf-linux-gnu- CC=`pwd`/../../gcc/1/bin/gcc-mips install > ../../uclibc_install.out 2>&1
 	@touch $(uclibc_install)
 
 $(uclibc_for_target): $(gcc_2_install) $(uclibc_make)
 	@echo
 	@echo ++ building uclibc utils
 	@cd uclibc/uClibc-0.9.27/utils && PATH="`pwd`/../../../binutils/bin:$$PATH" make CROSS=mipsel-elf-linux-gnu- CC=`pwd`/../../../gcc/2/bin/gcc-mips clean > /dev/null
-	@cd uclibc/uClibc-0.9.27/utils && PATH="`pwd`/../../../binutils/bin:$$PATH" make CROSS=mipsel-elf-linux-gnu- CC=`pwd`/../../../gcc/2/bin/gcc-mips CFLAGS="-static" RUNTIME_PREFIX=/ $(TEE) ../../../uclibc_for_target_make.out $(TEEE)
+	@cd uclibc/uClibc-0.9.27/utils && PATH="`pwd`/../../../binutils/bin:$$PATH" make CROSS=mipsel-elf-linux-gnu- CC=`pwd`/../../../gcc/2/bin/gcc-mips CFLAGS="-static" RUNTIME_PREFIX=/ > ../../../uclibc_for_target_make.out 2>&1
 	@touch $(uclibc_for_target)
 
 # ==
@@ -312,7 +328,8 @@ $(uclibcpp_patch): $(uclibcpp_files)
 $(uclibcpp_config): $(uclibcpp_patch) $(uclibc_config)
 	@echo
 	@echo ++ configuring uclibc++
-	@cd uclibc/uClibc++-0.2.2 && make defconfig $(TEE) ../../uclibcpp_config.out $(TEEE)
+	@touch uclibc/uClibc++-0.2.2/.config
+	@cd uclibc/uClibc++-0.2.2 && make defconfig > ../../uclibcpp_config.out 2>&1
 	@$(SED) 's:.*UCLIBCXX_HAS_LONG_DOUBLE.*:# UCLIBCXX_HAS_LONG_DOUBLE is not set:' --in-place uclibc/uClibc++-0.2.2/.config
 	@$(SED) 's:.*UCLIBCXX_HAS_TLS.*:# UCLIBCXX_HAS_TLS is not set:' --in-place uclibc/uClibc++-0.2.2/.config
 	@$(SED) 's:.*UCLIBCXX_HAS_LFS.*:# UCLIBCXX_HAS_LFS is not set:' --in-place uclibc/uClibc++-0.2.2/.config
@@ -322,13 +339,13 @@ $(uclibcpp_make): $(uclibcpp_config) $(gcc_2_install)
 	@echo
 	@echo ++ building uclibc++
 	@cd uclibc/uClibc++-0.2.2 && echo PATH="$(mk_root)/binutils/bin:$$PATH" make CROSS=mipsel-elf-linux-gnu- CXX=$(mk_root)/gcc/2/bin/g++-mips CC=$(mk_root)/gcc/2/bin/gcc-mips LIBS=\"-lc -Bstatic -ldl_pic\" \"$$\@\" > make.sh
-	@cd uclibc/uClibc++-0.2.2 && PATH="$(mk_root)/binutils/bin:$$PATH" make CROSS=mipsel-elf-linux-gnu- CXX=$(mk_root)/gcc/2/bin/g++-mips CC=$(mk_root)/gcc/2/bin/gcc-mips LIBS="-lc -Bstatic -ldl_pic" $(TEE) ../../uclibcpp_make.out $(TEEE)
+	@cd uclibc/uClibc++-0.2.2 && PATH="$(mk_root)/binutils/bin:$$PATH" make CROSS=mipsel-elf-linux-gnu- CXX=$(mk_root)/gcc/2/bin/g++-mips CC=$(mk_root)/gcc/2/bin/gcc-mips LIBS="-lc -Bstatic -ldl_pic" > ../../uclibcpp_make.out 2>&1
 	@touch $(uclibcpp_make)
 
 $(uclibcpp_install): $(uclibcpp_make) $(uclibc_config)
 	@echo
 	@echo ++ installing uclibc++
-	@cd uclibc/uClibc++-0.2.2 && PATH="`pwd`/../../binutils/bin:$$PATH" make CROSS=mipsel-elf-linux-gnu- CC=`pwd`/../../gcc/2/bin/gcc-mips DESTDIR=$(mk_root)/uclibc install $(TEE) ../../uclibcpp_install.out $(TEEE)
+	@cd uclibc/uClibc++-0.2.2 && PATH="`pwd`/../../binutils/bin:$$PATH" make CROSS=mipsel-elf-linux-gnu- CC=`pwd`/../../gcc/2/bin/gcc-mips DESTDIR=$(mk_root)/uclibc install > ../../uclibcpp_install.out 2>&1
 	@touch $(uclibcpp_install)
 
 # ==
@@ -353,23 +370,25 @@ $(gcc_1_config): $(gcc_patch) $(binutils_install)
 	@echo ++ configuring gcc 1
 	@if test -d gcc/build-1 ; then : ; else mkdir gcc/build-1 ; fi
 	@echo configure --prefix=$(mk_root)/gcc/1 $(gcc_1_configure)
-	@cd gcc/build-1 && ../gcc-3.4.6/configure --prefix=$(mk_root)/gcc/1 $(gcc_1_configure) $(TEE) ../../gcc_1_config.out $(TEEE)
+	@cd gcc/build-1 && ../gcc-3.4.6/configure --prefix=$(mk_root)/gcc/1 $(gcc_1_configure) > ../../gcc_1_config.out 2>&1
 
 $(gcc_1_make): $(gcc_1_config)
 	@echo
 	@echo ++ building gcc 1
-	@for f in binutils/mips*/bin/* ; do ( cd gcc/build-1 && ln -fs ../../$$f `basename $$f`-mips ) ; done
+	@mkdir -p gcc/build-1/mips
+	@for f in binutils/mips*/bin/* ; do ( cd gcc/build-1/mips && ln -fs ../../../$$f `basename $$f`-mips ) ; done
 	@mkdir -p gcc/build-1/gcc
-	@touch gcc/build-1/gcc/crti.o
-	@touch gcc/build-1/gcc/crtn.o
-	@touch gcc/build-1/gcc/libc.a
-	@cd gcc/build-1 && PATH="`pwd`:$$PATH" make $(TEE) ../../gcc_1_make.out $(TEEE)
+	@echo '' | gcc/build-1/mips/as-mips -o gcc/build-1/gcc/crti.o
+	@echo '' | gcc/build-1/mips/as-mips -o gcc/build-1/gcc/crtn.o
+	@rm -f gcc/build-1/gcc/libc.a
+	@gcc/build-1/mips/ar-mips -q gcc/build-1/gcc/libc.a >/dev/null
+	@cd gcc/build-1 && PATH="`pwd`/mips:$$PATH" make > ../../gcc_1_make.out 2>&1
 	@touch $(gcc_1_make)
 
 $(gcc_1_install): $(gcc_1_make)
 	@echo
 	@echo ++ installing gcc 1
-	@cd gcc/build-1 && PATH="`pwd`:$$PATH" make install $(TEE) ../../gcc_1_install.out $(TEEE)
+	@cd gcc/build-1 && PATH="`pwd`/mips:$$PATH" make install > ../../gcc_1_install.out 2>&1
 	@if test -f gcc/1/bin/mipsel-elf-linux-gnu-gcc -a ! -h gcc/1/bin/gcc-mips ; then ( cd gcc/1/bin && ln -s mipsel-elf-linux-gnu-gcc gcc-mips ) ; fi # for gcc-3.3.x
 	@touch $(gcc_1_install)
 
@@ -378,19 +397,20 @@ $(gcc_2_config): $(gcc_1_install) $(uclibc_install)
 	@echo ++ configuring gcc 2
 	@if test -d gcc/build-2 ; then : ; else mkdir gcc/build-2 ; fi
 	@echo configure --prefix=$(mk_root)/gcc/2 $(gcc_2_configure)
-	@cd gcc/build-2 && CXXFLAGS=-g ../gcc-3.4.6/configure --prefix=$(mk_root)/gcc/2 $(gcc_2_configure) $(TEE) ../../gcc_2_config.out $(TEEE)
+	@cd gcc/build-2 && CXXFLAGS=-g ../gcc-3.4.6/configure --prefix=$(mk_root)/gcc/2 $(gcc_2_configure) > ../../gcc_2_config.out 2>&1
 
 $(gcc_2_make): $(gcc_2_config)
 	@echo
 	@echo ++ building gcc 2
-	@for f in binutils/mips*/bin/* ; do ( cd gcc/build-2 && ln -fs ../../$$f `basename $$f`-mips ) ; done
-	@cd gcc/build-2 && PATH="`pwd`:$$PATH" make $(TEE) ../../gcc_2_make.out $(TEEE)
+	@mkdir -p gcc/build-2/mips
+	@for f in binutils/mips*/bin/* ; do ( cd gcc/build-2/mips && ln -fs ../../../$$f `basename $$f`-mips ) ; done
+	@cd gcc/build-2 && PATH="`pwd`/mips:$$PATH" make > ../../gcc_2_make.out 2>&1
 	@touch $(gcc_2_make)
 
 $(gcc_2_install): $(gcc_2_make)
 	@echo
 	@echo ++ installing gcc 2
-	@cd gcc/build-2 && PATH="`pwd`:$$PATH" make install $(TEE) ../../gcc_2_install.out $(TEEE)
+	@cd gcc/build-2 && PATH="`pwd`/mips:$$PATH" make install > ../../gcc_2_install.out 2>&1
 	@if test -f gcc/2/bin/mipsel-elf-linux-gnu-gcc -a ! -h gcc/2/bin/gcc-mips ; then ( cd gcc/2/bin && ln -s mipsel-elf-linux-gnu-gcc gcc-mips ) ; fi # for gcc-3.3.x
 	@if test -f gcc/2/bin/mipsel-elf-linux-gnu-g++ -a ! -h gcc/2/bin/g++-mips ; then ( cd gcc/2/bin && ln -s mipsel-elf-linux-gnu-g++ g++-mips ) ; fi # for gcc-3.3.x
 	@touch $(gcc_2_install)
@@ -519,6 +539,25 @@ gcc-346.diff.tmp:
 	@echo K2V4dGVybiAiQyIgaW50IGZpbml0ZWYoZmxvYXQgeCkgeyB1bmlvbiB7dV9pbnQzMl90IGx2YWw7 >> $@
 	@echo ZmxvYXQgZnZhbDt9IHo7ei5mdmFsPXg7cmV0dXJuICgoei5sdmFsJjB4N2Y4MDAwMDApIT0weDdm >> $@
 	@echo ODAwMDAwKTt9IC8qIGdodyBHSFcgKi8K >> $@
+	@:
+	@: # fix open() calls in case using gcc4 to building gcc stage 1
+	@:
+	@echo ZGlmZiAtTmF1ciBvbGQvZ2NjL2NvbGxlY3QyLmMgbmV3L2djYy9jb2xsZWN0Mi5jCg== >> $@
+	@echo LS0tIG9sZC9nY2MvY29sbGVjdDIuYyAgMjAwNS0wMS0xMCAxNToyNToyMy4wMDAwMDAwMDAgKzAw >> $@
+	@echo MDAK >> $@
+	@echo KysrIG5ldy9nY2MvY29sbGVjdDIuYyAgMjAxMC0wNS0xNSAyMjo0NDo0Ni4wMDAwMDAwMDAgKzAx >> $@
+	@echo MDAK >> $@
+	@echo QEAgLTE1MzQsNyArMTUzNCw3IEBACg== >> $@
+	@echo ICAgaWYgKHJlZGlyKQo= >> $@
+	@echo ICAgICB7Cg== >> $@
+	@echo ICAgICAgIC8qIE9wZW4gcmVzcG9uc2UgZmlsZS4gICovCg== >> $@
+	@echo LSAgICAgIHJlZGlyX2hhbmRsZSA9IG9wZW4gKHJlZGlyLCBPX1dST05MWSB8IE9fVFJVTkMgfCBP >> $@
+	@echo X0NSRUFUKTsK >> $@
+	@echo KyAgICAgIHJlZGlyX2hhbmRsZSA9IG9wZW4gKHJlZGlyLCBPX1dST05MWSB8IE9fVFJVTkMgfCBP >> $@
+	@echo X0NSRUFULCAwNzc3KTsK >> $@
+	@echo IAo= >> $@
+	@echo ICAgICAgIC8qIER1cGxpY2F0ZSB0aGUgc3Rkb3V0IGFuZCBzdGRlcnIgZmlsZSBoYW5kbGVzCg== >> $@
+	@echo ICAgICAgICAgc28gdGhleSBjYW4gYmUgcmVzdG9yZWQgbGF0ZXIuICAqLwo= >> $@
 
 # ==
 
@@ -599,10 +638,13 @@ clean:
 	@if test -d linux ; then rmdir linux ; fi
 	@if test -d uclibc ; then rmdir uclibc ; fi
 	@if test -d gcc ; then rmdir gcc ; fi
+	@rm -f test-c test-c++ test-c++-s test-c++-u
+	@rm -f test.c test.cpp
 
 .PHONY: done
 
 done:
+	touch $(check) || true
 	touch $(linux_files) || true
 	touch $(linux_config) || true
 	touch $(gcc_files) || true
@@ -627,6 +669,7 @@ done:
 	touch $(binutils_for_target_make) || true
 	touch $(uclibc_for_target) || true
 
+.PHONY: check
 .PHONY: gcc_files
 .PHONY: gcc_diff
 .PHONY: gcc_patch
@@ -656,6 +699,7 @@ done:
 .PHONY: uclibcpp_make
 .PHONY: uclibcpp_install
 
+check: $(check)
 gcc_files: $(gcc_files)
 gcc_diff: $(gcc_diff)
 gcc_patch: $(gcc_patch)

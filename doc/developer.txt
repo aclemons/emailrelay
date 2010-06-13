@@ -233,7 +233,7 @@ Directory structure
 
 # lib
 
-  Parent directory for ISO C++ fixups for various compilers.
+  Parent directory for ISO C++ fixups for various older compilers.
 
 # test
 

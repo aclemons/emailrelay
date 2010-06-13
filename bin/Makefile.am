@@ -26,6 +26,7 @@ endif
 EXTRA_DIST = \
 	emailrelay.sh_ \
 	doxygen.sh_ \
+	doxygen_fixup.pl_ \
 	txt2html.sh_ \
 	txt2mu.sh_ \
 	mu2html.sh_ \
@@ -49,6 +50,7 @@ EXTRA_DIST = \
 
 work_scripts = \
 	doxygen.sh \
+	doxygen_fixup.pl \
 	txt2mu.sh \
 	mu2html.sh \
 	mu2docbook.sh \
@@ -76,7 +78,7 @@ e_examples_DATA = \
 
 CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts) $(e_init_SCRIPTS)
 
-SUFFIXES = .sh_ .sh
+SUFFIXES = .sh_ .sh .pl_ .pl
 
 .sh_.sh:
 	cat "$(top_srcdir)/bin/$*.sh_" | sed "s%__SPOOL_DIR__%${e_spooldir}%g;s%__SBIN_DIR__%${sbindir}%g;s%__SYSCONF_DIR__%${e_sysconfdir}%g;"'s/\[:digit:\]/0-9/g;s/\[:space:\]/ \\t/g' > "$*.tmp" && mv "$*.tmp" "$*.sh"

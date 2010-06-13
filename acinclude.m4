@@ -196,7 +196,7 @@ dnl
 AC_DEFUN([ACLOCAL_CAPABILITIES],
 [
 changequote(<<,>>)
-	G_CAPABILITIES="@@`echo \"$ac_configure_args\" | sed 's/-/_/g' | sed 's/[^_a-z]//g' | sed 's/^__//g'`@@"
+	G_CAPABILITIES="@@`echo \"$ac_configure_args\" | sed 's/-/_/g' | sed 's/[^_a-z0-9]//g' | sed 's/^__//g'`@@"
 changequote([,])
 	AC_SUBST(G_CAPABILITIES)
 ])
@@ -478,7 +478,7 @@ AC_DEFUN([ENABLE_IPV6],
 [
 	if test "$enable_ipv6" = "yes"
 	then
-		if test "$aclocal_ipv6" != "yes"
+		if test "$aclocal_cv_ipv6" != "yes"
 		then
 			AC_MSG_WARN([ignoring --enable-ipv6])
 			aclocal_use_ipv6="no"

@@ -21,9 +21,9 @@ noinst_LIBRARIES = libglib.a
 
 if PAM
 PAM_EXTRA_DIST = gpam_none.cpp
-PAM_SOURCES = gpam_linux.cpp gpam.cpp
+PAM_SOURCES = gpam_linux.cpp
 else
-PAM_EXTRA_DIST = gpam_linux.cpp gpam.cpp
+PAM_EXTRA_DIST = gpam_linux.cpp
 PAM_SOURCES = gpam_none.cpp
 endif
 
@@ -104,7 +104,6 @@ libglib_a_SOURCES = \
 	gassert.h \
 	gbase64.cpp \
 	gbase64.h \
-	gconvert.h \
 	gcleanup.h \
 	gcleanup_unix.cpp \
 	gcounter.cpp \
@@ -145,6 +144,7 @@ libglib_a_SOURCES = \
 	gmemory.h \
 	gnoncopyable.h \
 	gpam.h \
+	gpam.cpp \
 	gpath.h \
 	gpidfile.cpp \
 	gpidfile.h \

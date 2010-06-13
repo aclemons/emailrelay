@@ -30,12 +30,12 @@ top_builddir="$3"
 
 if test "$HAVE_DOXYGEN" = "yes"
 then 
-	cat "${top_srcdir}/src/main/doxygen.cfg" | \
+	cat "${top_srcdir}/doc/doxygen.cfg" | \
 	sed "s:__TOP_SRC__:${top_srcdir}:g" | \
 	sed "s:__TOP_BUILD__:${top_builddir}:g" | \
 	doxygen -
 else 
 	mkdir doxygen 2>/dev/null
-	cp -f "${top_srcdir}/doc/doxygen_missing.html" doxygen/index.html
+	cp -f "${top_srcdir}/doc/doxygen-missing.html" doxygen/index.html
 fi
 

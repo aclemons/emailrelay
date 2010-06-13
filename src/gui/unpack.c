@@ -17,6 +17,8 @@
 
 /*
 	unpack.c
+
+	See unpack.h.
 */
 
 #include "gdef.h"
@@ -102,6 +104,7 @@ static bool unpack_init( M * m ) ;
 
 static char * strdup_( const char * src )
 {
+	/* a strdup() where the source string pointer can be null */
 	char * dst = src ? malloc(strlen(src)+1) : NULL ;
 	if( dst && src )
 		strcpy( dst , src ) ;
@@ -110,6 +113,7 @@ static char * strdup_( const char * src )
 
 static void replace_all( char * p , size_t n , char c1 , char c2 )
 {
+	/* replaces all c1 with c2 in the first n characters of p */
 	for( ; p && *p && n ; p++ , n-- )
 	{
 		if( *p == c1 )
@@ -119,6 +123,7 @@ static void replace_all( char * p , size_t n , char c1 , char c2 )
 
 static char * first_slash( char * p )
 {
+	/* returns a pointer to the first slash or backslash in p */
 	char * p1 = p ? strchr( p , '/' ) : NULL ;
 	char * p2 = p ? strchr( p , '\\' ) : NULL ;
 	return ( p1 && p2 ) ? ( p1 > p2 ? p1 : p2 ) : ( p1 ? p1 : p2 ) ;
@@ -126,6 +131,7 @@ static char * first_slash( char * p )
 
 static char * last_slash( char * p )
 {
+	/* returns a pointer to the last slash or backslash in p */
 	char * p1 = p ? strrchr( p , '/' ) : NULL ;
 	char * p2 = p ? strrchr( p , '\\' ) : NULL ;
 	return ( p1 && p2 ) ? ( p1 > p2 ? p1 : p2 ) : ( p1 ? p1 : p2 ) ;
@@ -133,16 +139,19 @@ static char * last_slash( char * p )
 
 static char * after( char * p )
 {
+	/* returns the next position after p, or null if p is null */
 	return p ? (p+1) : p ;
 }
 
 static bool is_slash( const char * p )
 {
+	/* returns true if the character at p is a slash or backslash */
 	return p && ( *p == '/' || *p == '\\' ) ;
 }
 
 static char * chomp( char * path )
 {
+	/* trucates the path by inserting a null so as to remove the last part */
 	char * nul ;
 	bool windows_has_drive = strlen(path) > 2U && path[1] == ':' ;
 	bool windows_is_unc = strlen(path) > 2U && is_slash(path+0) && is_slash(path+1) ;
@@ -157,6 +166,7 @@ static char * chomp( char * path )
 
 static bool unchomp( char * p , const char * ref )
 {
+	/* reverses a chomp() by reinsering the nulled-out character based on the reference copy */
 	if( p == NULL || ref == NULL || strlen(p) == strlen(ref) )
 	{
 		return false ;
@@ -171,13 +181,16 @@ static bool unchomp( char * p , const char * ref )
 
 static bool mkdir_for( const char * path_in )
 {
+	/* creates all the directories for the given file path */
 	bool ok = true ;
 	char * path = strdup_( path_in ) ;
 	if( path && chomp(path) )
 	{
 		char * dir = strdup_( path ) ;
 		char * p = NULL ;
+		/* chomp bits off until there is nothing left */
 		while( ( p = chomp(path) ) ) ;
+		/* unchomp them and mkdir each one */
 		do
 		{
 			ok = ( 0 == access(path,F_OK) ) || ( 0 == os_mkdir(path,0777) ) ;
@@ -191,11 +204,13 @@ static bool mkdir_for( const char * path_in )
 
 static Bytef * zptr( char * p )
 {
+	/* does a cast */
 	return (Bytef*)p ;
 }
 
 static M * unpack_new_( const char * path , Fn fn )
 {
+	/* private implementation of the constructor */
 	M * m ;
 	if( path == NULL ) return NULL ;
 
@@ -222,6 +237,7 @@ static M * unpack_new_( const char * path , Fn fn )
 
 static void unpack_delete_( M * m )
 {
+	/* private implementation of the destructor */
 	if( !m ) return ;
 	if( m->path ) free( m->path ) ;
 	if( m->input ) fclose( m->input ) ;
@@ -243,6 +259,7 @@ static void unpack_delete_( M * m )
 
 static int unpack_count_( const M * m )
 {
+	/* private implementation of unpack_count() */
 	int n = 0 ;
 	const Entry * p = NULL ;
 	if( m == NULL ) return 0 ;
@@ -253,6 +270,7 @@ static int unpack_count_( const M * m )
 
 static const Entry * unpack_entry( const M * m , int n )
 {
+	/* returns a pointer to the nth entry */
 	const Entry * p = NULL ;
 	if( m != NULL && n >= 0 ) 
 	{
@@ -267,6 +285,7 @@ static const Entry * unpack_entry( const M * m , int n )
 
 static char * unpack_name_( const M * m , int n )
 {
+	/* private implementation of unpack_name() */
 	const Entry * p = unpack_entry( m , n ) ;
 	const char * name = p ? p->path : "" ;
 	return strdup_(name) ;
@@ -274,6 +293,7 @@ static char * unpack_name_( const M * m , int n )
 
 static char * unpack_flags_( const M * m , int n )
 {
+	/* private implementation of unpack_flags() */
 	const Entry * p = unpack_entry( m , n ) ;
 	const char * flags = p ? p->flags : "" ;
 	return strdup_(flags) ;
@@ -281,12 +301,14 @@ static char * unpack_flags_( const M * m , int n )
 
 static unsigned long unpack_packed_size_( const M * m , int n )
 {
+	/* private implementation of unpack_packed_size() */
 	const Entry * p = unpack_entry( m , n ) ;
 	return p ? p->size : 0UL ;
 }
 
 static unsigned long file_size( const char * path )
 {
+	/* returns the size of the filesystem file or zero on error */
 	static struct stat zero ;
 	struct stat buf = zero ;
 	int rc ;
@@ -298,12 +320,14 @@ static unsigned long file_size( const char * path )
 
 static void check_m( M * m , bool ok , const char * message )
 {
+	/* checks a condidion and emits a message if false */
 	if( !ok )
 		if( m && m->fn ) (*(m->fn))(message) ;
 }
 
 static bool unpack_init( M * m )
 {
+	/* initialises a new M structure reading the table of contents and returning false on error */
 	unsigned long exe_size = 0UL ;
 	unsigned long exe_offset = 0UL ;
 	unsigned long file_offset = 0UL ;
@@ -314,7 +338,7 @@ static bool unpack_init( M * m )
 	if( m == NULL ) 
 		return false ;
 
-	/* check the file exists */
+	/* check the file exists and can be opened for reading */
 	m->input = fopen( m->path , r ) ;
 	check_that( m->input != NULL , "open error" ) ;
 	fclose( m->input ) ;
@@ -346,11 +370,11 @@ static bool unpack_init( M * m )
 	m->compressed = c == '1' ;
 	check_that( !m->compressed || have_zlib() , "cannot decompress: not built with zlib" ) ;
 
-	/* seek to the directory */
+	/* seek to the table of contents */
 	rc = fseek( m->input , exe_offset + 2UL , SEEK_SET ) ;
 	check_that( !feof(m->input) && !ferror(m->input) , "table seek error" ) ;
 
-	/* read the directory */
+	/* read the table of contents */
 	file_offset = 0UL ;
 	for(;;)
 	{
@@ -375,7 +399,7 @@ static bool unpack_init( M * m )
 
 		if( file_size == 0U ) 
 		{
-			check_that( strcmp(file_path,"end") == 0 , "invalid internal directory" ) ;
+			check_that( strcmp(file_path,"end") == 0 , "invalid internal table of contents" ) ;
 			free( file_path ) ;
 			free( file_flags ) ;
 			break ;
@@ -417,6 +441,7 @@ static bool unpack_init( M * m )
 
 static bool unpack_imp( M * m , const char * base_dir , const Entry * entry )
 {
+	/* unpacks one file from its table of contents entry */
 	int rc = 0 ;
 	FILE * output = NULL ;
 
@@ -516,6 +541,7 @@ static bool unpack_imp( M * m , const char * base_dir , const Entry * entry )
 
 static bool unpack_all_( M * m , const char * base_dir )
 {
+	/* private implementation of unpack_all() */
 	const Entry * p = NULL ;
 	if( m == NULL ) return false ;
 	for( p = m->map ; p != NULL ; p = p->next )
@@ -529,6 +555,7 @@ static bool unpack_all_( M * m , const char * base_dir )
 
 static bool unpack_file_( M * m , const char * base_dir , const char * name )
 {
+	/* private implementation of unpack_file() */
 	const Entry * p = NULL ;
 	bool ok = false ;
 	if( m == NULL ) return false ;

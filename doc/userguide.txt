@@ -38,6 +38,12 @@ Why use it?
 E-MailRelay is a simple tool that does SMTP. For simple tasks it is likely
 to be easier to understand and configure than a more general purpose MTA.
 
+The code has few dependencies on third-party libraries or run-time environments 
+so it is easy to build and install especially when targetting embedded systems.
+
+The single-threaded, event-driven design with non-blocking i/o may provide 
+better performance and resource usage than some of the alternatives.
+
 E-MailRelay is designed to be policy-free, so that you can implement your own
 policies for message retries, bounces, local mailbox delivery, spam filtering
 etc. through external scripts.
@@ -49,12 +55,6 @@ Typical applications of E-MailRelay include:
 * adding authentication where the existing infrastructure does not support it
 * simple SMTP proxying on a firewall host or DMZ
 * SMTP to POP gateway
-
-The code has few dependencies on third-party libraries or run-time environments 
-so it is easy to build and install especially when targetting embedded systems.
-
-The single-threaded, event-driven design with non-blocking i/o may provide 
-better performance and resource usage than some of the alternatives.
 
 Running E-MailRelay
 -------------------

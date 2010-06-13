@@ -39,6 +39,7 @@ GSmtp::ClientProtocol::ClientProtocol( Sender & sender , const GAuth::Secrets & 
 	m_secrets(secrets) ,
 	m_thishost(config.thishost_name) ,
 	m_state(sInit) ,
+	m_to_size(0U) ,
 	m_to_accepted(0U) ,
 	m_server_has_auth(false) ,
 	m_server_has_8bitmime(false) ,
@@ -46,6 +47,7 @@ GSmtp::ClientProtocol::ClientProtocol( Sender & sender , const GAuth::Secrets & 
 	m_message_is_8bit(false) ,
 	m_authenticated_with_server(false) ,
 	m_must_authenticate(config.must_authenticate) ,
+	m_must_accept_all_recipients(config.must_accept_all_recipients) ,
 	m_strict(config.eight_bit_strict) ,
 	m_warned(false) ,
 	m_response_timeout(config.response_timeout) ,
@@ -62,6 +64,7 @@ void GSmtp::ClientProtocol::start( const std::string & from , const G::Strings &
 
 	// reinitialise for the new message & server
 	m_to = to ;
+	m_to_size = to.size() ;
 	m_to_accepted = 0U ;
 	m_from = from ;
 	m_content = content ;
@@ -375,22 +378,35 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		m_state = sSentRcpt ;
 		send( std::string("RCPT TO:<") + to + std::string(">") ) ;
 	}
-	else if( m_state == sSentRcpt && reply.positive() && m_to.size() != 0U )
+	else if( m_state == sSentRcpt && m_to.size() != 0U )
 	{
+		if( reply.positive() ) 
+			m_to_accepted++ ;
+		else
+			G_WARNING( "GSmtp::ClientProtocol: recipient rejected" ) ;
+
 		std::string to = m_to.front() ;
 		m_to.pop_front() ;
 
 		send( std::string("RCPT TO:<") + to + std::string(">") ) ;
 	}
-	else if( m_state == sSentRcpt && reply.positive() )
-	{
-		m_state = sSentData ;
-		send( std::string("DATA") ) ;
-	}
 	else if( m_state == sSentRcpt )
 	{
-		m_state = sSentDataStub ;
-		send( std::string("RSET") ) ;
+		if( reply.positive() ) 
+			m_to_accepted++ ;
+		else
+			G_WARNING( "GSmtp::ClientProtocol: recipient rejected" ) ;
+
+		if( ( m_must_accept_all_recipients && m_to_accepted != m_to_size ) || m_to_accepted == 0U )
+		{
+			m_state = sSentDataStub ;
+			send( std::string("RSET") ) ;
+		}
+		else
+		{
+			m_state = sSentData ;
+			send( std::string("DATA") ) ;
+		}
 	}
 	else if( m_state == sSentData && reply.is(Reply::OkForData_354) )
 	{
@@ -410,7 +426,8 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	{
 		m_state = sDone ;
 		protocol_done = true ;
-		raiseDoneSignal( "all recipients rejected" , reply.value() ) ;
+		std::string how_many = m_must_accept_all_recipients ? std::string("one or more") : std::string("all") ;
+		raiseDoneSignal( how_many + " recipients rejected" , reply.value() ) ;
 	}
 	else if( m_state == sSentDot )
 	{
@@ -718,13 +735,14 @@ GSmtp::ClientProtocol::Sender::~Sender()
 // ===
 
 GSmtp::ClientProtocol::Config::Config( const std::string & name , 
-	unsigned int a , unsigned int b , unsigned int c , bool b1 , bool b2 ) :
+	unsigned int a , unsigned int b , unsigned int c , bool b1 , bool b2 , bool b3 ) :
 		thishost_name(name) ,
 		response_timeout(a) ,
 		ready_timeout(b) ,
 		preprocessor_timeout(c) ,
 		must_authenticate(b1) ,
-		eight_bit_strict(b2)
+		must_accept_all_recipients(b2) ,
+		eight_bit_strict(b3)
 {
 }
 

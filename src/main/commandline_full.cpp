@@ -143,7 +143,7 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 		"U!connection-timeout!sets the timeout (in seconds) when connecting to a remote server "
 			"(default is 40)!!1!time!3|"
 		"m!immediate!enables immediate forwarding of messages as soon as they are received! (requires --forward-to)!0!!3|"
-		"I!interface!defines the listening interface for incoming connections!!1!ip-address!3|"
+		"I!interface!defines the listening interface(s) for incoming connections!!1!ip-list!3|"
 		"i!pid-file!defines a file for storing the daemon process-id!!1!pid-file!3|"
 		"O!poll!enables polling of the spool directory for messages to be forwarded with the specified period (zero means on client disconnection)! (requires --forward-to)!1!period!3|"
 		"P!postmaster!!!0!!0|"

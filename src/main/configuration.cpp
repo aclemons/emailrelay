@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gsmtp.h"
+#include "gstr.h"
 #include "configuration.h"
 #include "commandline.h"
 #include "gmessagestore.h"
@@ -68,26 +69,25 @@ unsigned int Main::Configuration::port() const
 	return value( "port" , 25U ) ;
 }
 
-G::Strings Main::Configuration::listeningInterfaces() const
+G::Strings Main::Configuration::listeningInterfaces( const std::string & protocol ) const
 {
+	// allow eg. "127.0.0.1,smtp=192.168.1.1,admin=10.0.0.1"
 	G::Strings result = m_cl.value( "interface" , ",/" ) ;
-	if( result.empty() )
+	for( G::Strings::iterator p = result.begin() ; p != result.end() ; )
 	{
-		result.push_back( std::string() ) ;
+		if( protocol.empty() || protocol == G::Str::head( *p , (*p).find('=') , protocol ) )
+			*p++ = G::Str::tail( *p , (*p).find('=') , *p ) ;
+		else
+			p = result.erase( p ) ;
 	}
 	return result ;
 }
 
-std::string Main::Configuration::firstListeningInterface() const
-{
-	G::Strings s = listeningInterfaces() ;
-	return s.size() ? s.front() : std::string() ;
-}
-
 std::string Main::Configuration::clientInterface() const
 {
-	// TODO -- separate switch ?
-	return firstListeningInterface() ;
+	// arbitrarily use the first listening address
+	G::Strings s = listeningInterfaces() ;
+	return s.size() ? s.front() : std::string() ;
 }
 
 unsigned int Main::Configuration::adminPort() const

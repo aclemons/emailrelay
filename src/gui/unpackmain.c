@@ -20,7 +20,7 @@
 
 	A utility that unpacks the given packed file.
 	If no file is specified then it tries argv[0]
-	and then "payload".
+	(ie. unpacking from itself) and then "payload".
 
 */
 

@@ -64,7 +64,6 @@ EXTRA_DIST=\
 	$(CONFIG_EXTRA_DIST) \
 	$(MAC_EXTRA_DIST) \
 	$(PAM_EXTRA_DIST) \
-	doxygen.cfg \
 	doxygen.h \
 	emailrelay.rc \
 	icon1.ico \

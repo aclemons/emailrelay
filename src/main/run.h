@@ -128,7 +128,7 @@ private:
 	void doForwarding( const std::string & ) ;
 	std::string doForwardingCore() ;
 	void checkPorts() const ;
-	static void checkPort( const std::string & , unsigned int ) ;
+	static void checkPort( bool , const std::string & , unsigned int ) ;
 	GSmtp::Client::Config clientConfig() const ;
 	GSmtp::Server::Config serverConfig() const ;
 	GPop::Server::Config popConfig() const ;

@@ -196,8 +196,9 @@ public:
 		unsigned int ready_timeout ;
 		unsigned int preprocessor_timeout ;
 		bool must_authenticate ;
+		bool must_accept_all_recipients ;
 		bool eight_bit_strict ;
-		Config( const std::string & , unsigned int , unsigned int , unsigned int , bool , bool ) ;
+		Config( const std::string & , unsigned int , unsigned int , unsigned int , bool , bool , bool ) ;
 	} ;
 
 	ClientProtocol( Sender & sender , const GAuth::Secrets & secrets , Config config ) ;
@@ -285,6 +286,7 @@ private:
 	State m_state ;
 	std::string m_from ;
 	G::Strings m_to ;
+	size_t m_to_size ;
 	size_t m_to_accepted ;
 	std::auto_ptr<std::istream> m_content ;
 	bool m_server_has_auth ;
@@ -297,6 +299,7 @@ private:
 	std::string m_auth_mechanism ;
 	std::auto_ptr<GAuth::SaslClient> m_sasl ;
 	bool m_must_authenticate ;
+	bool m_must_accept_all_recipients ;
 	bool m_strict ;
 	bool m_warned ;
 	unsigned int m_response_timeout ;

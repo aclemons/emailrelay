@@ -69,7 +69,6 @@ private:
 	void operator=( const SocketProtocolImp & ) ;
 	static GSsl::Protocol * newProtocol() ;
 	static void log( int level , const std::string & line ) ;
-	StreamSocket & socket() ;
 	bool failed() const ;
 	bool rawSendImp( const std::string & , std::string::size_type , std::string & ) ;
 	void rawReadEvent() ;
@@ -102,11 +101,6 @@ GNet::SocketProtocolImp::SocketProtocolImp( EventHandler & handler ,
 GNet::SocketProtocolImp::~SocketProtocolImp()
 {
 	delete m_ssl ;
-}
-
-GNet::StreamSocket & GNet::SocketProtocolImp::socket()
-{
-	return m_socket ;
 }
 
 void GNet::SocketProtocolImp::readEvent()
@@ -211,21 +205,21 @@ void GNet::SocketProtocolImp::sslConnectImp()
 	G_DEBUG( "SocketProtocolImp::sslConnectImp: result=" << GSsl::Protocol::str(rc) ) ;
 	if( rc == GSsl::Protocol::Result_error )
 	{
-		socket().dropWriteHandler() ;
+		m_socket.dropWriteHandler() ;
 		m_state = State_raw ;
 		throw SocketProtocol::ReadError( "ssl connect" ) ;
 	}
 	else if( rc == GSsl::Protocol::Result_read )
 	{
-		socket().dropWriteHandler() ;
+		m_socket.dropWriteHandler() ;
 	}
 	else if( rc == GSsl::Protocol::Result_write )
 	{
-		socket().addWriteHandler( m_handler ) ;
+		m_socket.addWriteHandler( m_handler ) ;
 	}
 	else
 	{
-		socket().dropWriteHandler() ;
+		m_socket.dropWriteHandler() ;
 		m_state = State_idle ;
 		G_DEBUG( "SocketProtocolImp::sslConnectImp: calling onSecure" ) ;
 		m_sink.onSecure() ;
@@ -250,21 +244,21 @@ void GNet::SocketProtocolImp::sslAcceptImp()
 	G_DEBUG( "SocketProtocolImp::sslAcceptImp: result=" << GSsl::Protocol::str(rc) ) ;
 	if( rc == GSsl::Protocol::Result_error )
 	{
-		socket().dropWriteHandler() ;
+		m_socket.dropWriteHandler() ;
 		m_state = State_raw ;
 		throw SocketProtocol::ReadError( "ssl accept" ) ;
 	}
 	else if( rc == GSsl::Protocol::Result_read )
 	{
-		socket().dropWriteHandler() ;
+		m_socket.dropWriteHandler() ;
 	}
 	else if( rc == GSsl::Protocol::Result_write )
 	{
-		socket().addWriteHandler( m_handler ) ;
+		m_socket.addWriteHandler( m_handler ) ;
 	}
 	else
 	{
-		socket().dropWriteHandler() ;
+		m_socket.dropWriteHandler() ;
 		m_state = State_idle ;
 		G_DEBUG( "SocketProtocolImp::sslAcceptImp: calling onSecure" ) ;
 		m_sink.onSecure() ;
@@ -284,21 +278,21 @@ bool GNet::SocketProtocolImp::sslSendImp()
 	GSsl::Protocol::Result result = m_ssl->write( m_ssl_send_data.data() , m_ssl_send_data.size() , n ) ;
 	if( result == GSsl::Protocol::Result_error )
 	{
-		socket().dropWriteHandler() ;
+		m_socket.dropWriteHandler() ;
 		m_state = State_idle ;
 		throw SocketProtocol::SendError( "ssl write" ) ;
 	}
 	else if( result == GSsl::Protocol::Result_read )
 	{
-		socket().dropWriteHandler() ;
+		m_socket.dropWriteHandler() ;
 	}
 	else if( result == GSsl::Protocol::Result_write )
 	{
-		socket().addWriteHandler( m_handler ) ;
+		m_socket.addWriteHandler( m_handler ) ;
 	}
 	else
 	{
-		socket().dropWriteHandler() ;
+		m_socket.dropWriteHandler() ;
 		rc = n == static_cast<GSsl::Protocol::ssize_type>(m_ssl_send_data.size()) ;
 		m_ssl_send_data.erase( 0U , n ) ;
 		m_state = State_idle ;
@@ -317,21 +311,21 @@ void GNet::SocketProtocolImp::sslReadImp()
 		G_DEBUG( "SocketProtocolImp::sslReadImp: result=" << GSsl::Protocol::str(rc) ) ;
 		if( rc == GSsl::Protocol::Result_error )
 		{
-			socket().dropWriteHandler() ;
+			m_socket.dropWriteHandler() ;
 			m_state = State_idle ;
 			throw SocketProtocol::ReadError( "ssl read" ) ;
 		}
 		else if( rc == GSsl::Protocol::Result_read )
 		{
-			socket().dropWriteHandler() ;
+			m_socket.dropWriteHandler() ;
 		}
 		else if( rc == GSsl::Protocol::Result_write )
 		{
-			socket().addWriteHandler( m_handler ) ;
+			m_socket.addWriteHandler( m_handler ) ;
 		}
 		else // Result_ok, Result_more
 		{
-			socket().dropWriteHandler() ;
+			m_socket.dropWriteHandler() ;
 			m_state = State_idle ;
 			GSsl::Protocol::ssize_type n = m_read_buffer_n ;
 			m_read_buffer_n = 0 ;
@@ -347,12 +341,11 @@ void GNet::SocketProtocolImp::sslReadImp()
 
 void GNet::SocketProtocolImp::rawReadEvent()
 {
-	char buffer[c_buffer_size] ;
-	buffer[0] = '\0' ;
+	char buffer[c_buffer_size] = { '\0' } ;
 	const size_t buffer_size = G::Test::enabled("small-client-input-buffer") ? 3 : sizeof(buffer) ;
-	ssize_t rc = socket().read( buffer , buffer_size ) ;
+	const ssize_t rc = m_socket.read( buffer , buffer_size ) ;
 
-	if( rc == 0 || ( rc == -1 && !socket().eWouldBlock() ) )
+	if( rc == 0 || ( rc == -1 && !m_socket.eWouldBlock() ) )
 	{
 		throw SocketProtocol::ReadError() ;
 	}
@@ -374,7 +367,7 @@ bool GNet::SocketProtocolImp::rawSend( const std::string & data , std::string::s
 		throw SocketProtocol::SendError() ;
 	if( !all_sent )
 	{
-		socket().addWriteHandler( m_handler ) ;
+		m_socket.addWriteHandler( m_handler ) ;
 		logFlowControlAsserted() ;
 	}
 	return all_sent ;
@@ -382,14 +375,14 @@ bool GNet::SocketProtocolImp::rawSend( const std::string & data , std::string::s
 
 bool GNet::SocketProtocolImp::rawWriteEvent()
 {
-	socket().dropWriteHandler() ;
+	m_socket.dropWriteHandler() ;
 	logFlowControlReleased() ;
 	bool all_sent = rawSendImp( m_raw_residue , 0 , m_raw_residue ) ;
 	if( !all_sent && failed() )
 		throw SocketProtocol::SendError() ;
 	if( !all_sent )
 	{
-		socket().addWriteHandler( m_handler ) ;
+		m_socket.addWriteHandler( m_handler ) ;
 		logFlowControlReasserted() ;
 	}
 	return all_sent ;
@@ -401,8 +394,8 @@ bool GNet::SocketProtocolImp::rawSendImp( const std::string & data , std::string
 	if( data.length() <= offset )
 		return true ; // nothing to do
 
-	ssize_t rc = socket().write( data.data()+offset , data.length()-offset ) ;
-	if( rc < 0 && ! socket().eWouldBlock() )
+	ssize_t rc = m_socket.write( data.data()+offset , data.length()-offset ) ;
+	if( rc < 0 && ! m_socket.eWouldBlock() )
 	{
 		// fatal error, eg. disconnection
 		m_failed = true ;
@@ -439,21 +432,21 @@ void GNet::SocketProtocolImp::logFlowControlAsserted()
 {
 	const bool log = G::Test::enabled("log-flow-control") ;
 	if( log )
-		G_LOG( "GNet::SocketProtocolImp::send: @" << socket().asString() << ": flow control asserted" ) ;
+		G_LOG( "GNet::SocketProtocolImp::send: @" << m_socket.asString() << ": flow control asserted" ) ;
 }
 
 void GNet::SocketProtocolImp::logFlowControlReleased()
 {
 	const bool log = G::Test::enabled("log-flow-control") ;
 	if( log )
-		G_LOG( "GNet::SocketProtocolImp::send: @" << socket().asString() << ": flow control released" ) ;
+		G_LOG( "GNet::SocketProtocolImp::send: @" << m_socket.asString() << ": flow control released" ) ;
 }
 
 void GNet::SocketProtocolImp::logFlowControlReasserted()
 {
 	const bool log = G::Test::enabled("log-flow-control") ;
 	if( log )
-		G_LOG( "GNet::SocketProtocolImp::send: @" << socket().asString() << ": flow control reasserted" ) ;
+		G_LOG( "GNet::SocketProtocolImp::send: @" << m_socket.asString() << ": flow control reasserted" ) ;
 }
 
 // 

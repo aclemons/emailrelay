@@ -19,6 +19,7 @@
 //
 
 #include "gdef.h"
+#include "gnet.h"
 #include "gssl.h"
 #include "gsmtp.h"
 #include "run.h"
@@ -32,6 +33,7 @@
 #include "gpidfile.h"
 #include "gfilestore.h"
 #include "gnewfile.h"
+#include "gmultiserver.h"
 #include "gadminserver.h"
 #include "gpopserver.h"
 #include "gprocessorfactory.h"
@@ -211,13 +213,16 @@ void Main::Run::run()
 }
 
 #ifndef USE_SMALL_CONFIG
-void Main::Run::checkPort( const std::string & interface_ , unsigned int port )
+void Main::Run::checkPort( bool check , const std::string & interface_ , unsigned int port )
 {
-	GNet::Address address = 
-		interface_.length() ?
-			GNet::Address(interface_,port) :
-			GNet::Address(port) ;
-	GNet::Server::canBind( address , true ) ;
+	if( check )
+	{
+		GNet::Address address = 
+			interface_.length() ?
+				GNet::Address(interface_,port) :
+				GNet::Address(port) ;
+		GNet::Server::canBind( address , true ) ;
+	}
 }
 #endif
 
@@ -225,17 +230,22 @@ void Main::Run::checkPorts() const
 {
  #ifndef USE_SMALL_CONFIG
 	const Configuration & cfg = config() ;
-	G::Strings interfaces = cfg.listeningInterfaces() ;
-	for( G::Strings::iterator p = interfaces.begin() ; p != interfaces.end() ; ++p )
+	if( cfg.doServing() )
 	{
-		if( cfg.doServing() && cfg.doSmtp() )
-			checkPort( *p , cfg.port() ) ;
+		G::Strings smtp_interfaces = cfg.listeningInterfaces("smtp") ;
+		checkPort( cfg.doSmtp() && smtp_interfaces.empty() , std::string() , cfg.port() ) ;
+		for( G::Strings::iterator p = smtp_interfaces.begin() ; p != smtp_interfaces.end() ; ++p )
+			checkPort( cfg.doSmtp() , *p , cfg.port() ) ;
 
-		if( cfg.doServing() && cfg.doPop() )
-			checkPort( *p , cfg.popPort() ) ;
+		G::Strings pop_interfaces = cfg.listeningInterfaces("pop") ;
+		checkPort( cfg.doPop() && pop_interfaces.empty() , std::string() , cfg.popPort() ) ;
+		for( G::Strings::iterator p = pop_interfaces.begin() ; p != pop_interfaces.end() ; ++p )
+				checkPort( cfg.doPop() , *p , cfg.popPort() ) ;
 
-		if( cfg.doServing() && cfg.doAdmin() )
-			checkPort( *p , cfg.adminPort() ) ;
+		G::Strings admin_interfaces = cfg.listeningInterfaces("admin") ;
+		checkPort( cfg.doAdmin() && admin_interfaces.empty() , std::string() , cfg.adminPort() ) ;
+		for( G::Strings::iterator p = admin_interfaces.begin() ; p != admin_interfaces.end() ; ++p )
+			checkPort( cfg.doAdmin() , *p , cfg.adminPort() ) ;
 	}
  #endif
 }
@@ -426,22 +436,11 @@ void Main::Run::doForwardingOnStartup( GSmtp::MessageStore & store , const GAuth
 GSmtp::Server::Config Main::Run::serverConfig() const
 {
 	const Configuration & cfg = config() ;
-
-	GSmtp::Server::AddressList interfaces ;
-	{
-		G::Strings list = cfg.listeningInterfaces() ;
-		for( G::Strings::iterator p = list.begin() ; p != list.end() ; ++p )
-		{
-			if( (*p).length() )
-				interfaces.push_back( GNet::Address(*p,cfg.port()) ) ;
-		}
-	}
-
 	return
 		GSmtp::Server::Config(
 			cfg.allowRemoteClients() , 
 			cfg.port() , 
-			interfaces ,
+			GNet::MultiServer::addressList( cfg.listeningInterfaces("smtp") , cfg.port() ) ,
 			smtpIdent() , 
 			cfg.anonymous() ,
 			cfg.filter() ,
@@ -454,7 +453,7 @@ GSmtp::Server::Config Main::Run::serverConfig() const
 GPop::Server::Config Main::Run::popConfig() const
 {
 	const Configuration & cfg = config() ;
-	return GPop::Server::Config( cfg.allowRemoteClients() , cfg.popPort() , cfg.listeningInterfaces() ) ;
+	return GPop::Server::Config( cfg.allowRemoteClients() , cfg.popPort() , cfg.listeningInterfaces("pop") ) ;
 }
 #endif
 
@@ -475,6 +474,7 @@ GSmtp::Client::Config Main::Run::clientConfig() const
 				cfg.promptTimeout() , // waiting for "service ready"
 				cfg.filterTimeout() ,
 				true , // (must-authenticate)
+				true , // (must-accept-all-recipients)
 				false ) , // (eight-bit-strict)
 			cfg.connectionTimeout() ) ;
 }
@@ -502,7 +502,7 @@ void Main::Run::doForwarding( const std::string & event_key )
 {
 	if( m_client.busy() )
 	{
-		G_DEBUG( "Main::Run::doForwarding: still busy from last time" ) ;
+		G_LOG( "Main::Run::doForwarding: " << event_key << ": still busy from last time" ) ;
 		emit( event_key , "busy" , "" ) ;
 	}
 	else

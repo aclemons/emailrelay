@@ -20,10 +20,10 @@
 #
 # Tests the E-MailRelay system.
 #
-# This script should be run as root. It will not work on Windows, 
+# This script is best run as root. It will not work on Windows, 
 # and some tests will probably only work on Linux. Also, some 
-# parameters may need tweaking depending on the performance of 
-# the machine. In other words, don't expect too much.
+# parameters might need tweaking depending on the performance of 
+# the machine. YMMV.
 #
 # usage: emailrelay-test.pl [-d <bin-dir>] [-k]
 #
@@ -96,7 +96,7 @@ sub testServerShowsHelp
 	) ;
 	my $server = new Server() ;
 
-	# test
+	# test help output
 	Check::ok( $server->run(\%args) , "failed to run" , $server->message() , $server->command() ) ;
 	Check::that( $server->rc() == 0 , "non-zero exit" ) ;
 	Check::fileNotEmpty( $server->stdout() ) ;
@@ -178,7 +178,8 @@ sub testSubmit
 	my $path = System::createSmallMessageFile() ;
 
 	# test that the submit utility works
-	my $rc = system( "$bin_dir/emailrelay-submit --from me\@here.local --spool-dir $spool_dir me\@there.local < $path" ) ;
+	my $rc = system( "$bin_dir/emailrelay-submit --from me\@here.local " .
+		"--spool-dir $spool_dir me\@there.local < $path" ) ;
 	Check::that( $rc == 0 , "failed to submit" ) ;
 	Check::fileMatchCount( $spool_dir."/emailrelay.*.content" , 1 ) ;
 	Check::fileMatchCount( $spool_dir."/emailrelay.*.envelope" , 1 ) ;
@@ -676,14 +677,14 @@ sub testServerPollingOverlap
 	my $emailrelay = new Server(undef,undef,undef,$spool_dir) ;
 	my $test_server = new TestServer(10125) ;
 	$emailrelay->set_dst("localhost:".$test_server->port()) ;
-	$emailrelay->run(\%args) ;
 	$test_server->run("--slow") ;
+	$emailrelay->run(\%args) ;
 	Check::running( $emailrelay->pid() , $emailrelay->message() ) ;
 	Check::running( $test_server->pid() ) ;
 
-	# test that overlapping poll cycles result in an appropriate log message
+	# test that rapid polling and slow forwarding results in a still-busy log message
 	Check::ok( System::drain($emailrelay->spoolDir(),30) , "message not forwarded" ) ;
-	Check::fileContains( $emailrelay->stderr() , "info: polling: still busy from last time" ) ;
+	Check::fileContains( $emailrelay->stderr() , "still busy from last time" ) ;
 
 	# tear down
 	$emailrelay->kill() ;
@@ -711,7 +712,7 @@ sub testServerWithBadClient
 	Check::ok( $server->run(\%args) ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 
-	# test that the server drops the connection if we use the wrong client protocol
+	# test that the server drops the connection if we mess up the client protocol
 	my $c = new SmtpClient( $server->smtpPort() ) ;
 	Check::ok( $c->open() ) ;
 	$c->doBadHelo() ;
@@ -1340,7 +1341,7 @@ sub testClientGivenUnknownMechanisms
 	# test that protocol fails and the messages remain spooled
 	$emailrelay->run( \%args ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 2 ) ;
-	Check::fileContains( $emailrelay->stderr() , "cannot do authentication mandated by the remote smtp server" ) ;
+	Check::fileContains( $emailrelay->stderr() , "cannot do authentication mandated by remote server" ) ;
 
 	# tear down
 	$emailrelay->cleanup() ;

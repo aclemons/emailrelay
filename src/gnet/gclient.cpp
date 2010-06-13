@@ -98,8 +98,9 @@ G::Signal0 & GNet::Client::connectedSignal()
 
 void GNet::Client::onData( const char * p , SimpleClient::size_type n )
 {
-	bool first = true ;
 	m_line_buffer.add(p,n) ; 
+
+	bool first = true ;
 	while( m_line_buffer.more() )
 	{
 		if( first && m_response_timeout != 0U )
