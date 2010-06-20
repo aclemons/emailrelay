@@ -62,13 +62,13 @@ Enables the terminate command on the admin interface.
 Disables the smtp vrfy command and sends less verbose smtp responses.
 .TP
 .B \-q, --as-client \fI<host:port>\fR
-Runs as a client, forwarding spooled mail to <host>: equivalent to \fI--log\fR \fI--no-syslog\fR \fI--no-daemon\fR \fI--dont-serve\fR \fI--forward\fR \fI--forward-to\fR.
+Runs as a client, forwarding all spooled mail to <host>: equivalent to \fI--log\fR \fI--no-syslog\fR \fI--no-daemon\fR \fI--dont-serve\fR \fI--forward\fR \fI--forward-to\fR.
 .TP
 .B \-y, --as-proxy \fI<host:port>\fR
-Runs as a proxy: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--poll\fR=0 \fI--forward-to\fR.
+Runs as a proxy server, forwarding each mail immediately to <host>: equivalent to \fI--log\fR \fI--close-stderr\fR \fI--poll\fR=0 \fI--forward-to\fR.
 .TP
 .B \-d, --as-server 
-Runs as a server: equivalent to \fI--log\fR \fI--close-stderr\fR.
+Runs as a server, storing mail in the spool directory: equivalent to \fI--log\fR \fI--close-stderr\fR.
 .TP
 .B \-C, --client-auth \fI<file>\fR
 Enables smtp authentication with the remote server, using the given secrets file.
@@ -112,8 +112,8 @@ Displays help text and exits.
 .B \-m, --immediate 
 Enables immediate forwarding of messages as soon as they are received (requires \fI--forward-to\fR).
 .TP
-.B \-I, --interface \fI<ip-address>\fR
-Defines the listening interface for incoming connections.
+.B \-I, --interface \fI<ip-list>\fR
+Defines the listening interface(s) for incoming connections.
 .TP
 .B \-l, --log 
 Writes log information on standard error and syslog.
@@ -134,7 +134,7 @@ Disables syslog output (always overridden by \fI--syslog\fR).
 Defines a file for storing the daemon process-id.
 .TP
 .B \-O, --poll \fI<period>\fR
-Enables polling of the spool directory for messages to be forwarded with the specified period (requires \fI--forward-to\fR).
+Enables polling of the spool directory for messages to be forwarded with the specified period (zero means on client disconnection) (requires \fI--forward-to\fR).
 .TP
 .B \-B, --pop 
 Enables the pop server.
@@ -149,13 +149,13 @@ Modifies the pop spool directory according to the user name (requires \fI--pop\f
 Disables message deletion via pop (requires \fI--pop\fR).
 .TP
 .B \-E, --pop-port \fI<port>\fR
-Specifies the pop listening port number (requires \fI--pop\fR).
+Specifies the pop listening port number (default is 110) (requires \fI--pop\fR).
 .TP
 .B \-p, --port \fI<port>\fR
-Specifies the smtp listening port number.
+Specifies the smtp listening port number (default is 25).
 .TP
 .B \-w, --prompt-timeout \fI<time>\fR
-Sets the timeout (in seconds) for getting an initial prompt from the server.
+Sets the timeout (in seconds) for getting an initial prompt from the server (default is 20).
 .TP
 .B \-r, --remote-clients 
 Allows remote clients to connect.
@@ -167,7 +167,7 @@ Sets the response timeout (in seconds) when talking to a remote server (default 
 Enables authentication of remote clients, using the given secrets file.
 .TP
 .B \-K, --server-tls \fI<pem-file>\fR
-Enables tls/ssl layer for smtp server using the given openssl certificate file (if openssl built in).
+Enables tls/ssl layer for smtp server using the given openssl certificate file (which must be in the directory trusted by openssl).
 .TP
 .B \-M, --size \fI<bytes>\fR
 Limits the size of submitted messages.

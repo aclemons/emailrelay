@@ -206,6 +206,10 @@ bool Peer::onReceive( const std::string & line )
 		m_in_auth_2 = false ;
 		tx( m_config.m_auth_ok ? "235 authentication ok\r\n" : "535 authentication failed\r\n" ) ;
 	}
+	else if( G::Str::upper(line).find("RCPT TO:<REJECTME") == 0U )
+	{
+		tx( "550 invalid recipient\r\n" ) ;
+	}
 	else if( !m_in_data )
 	{
 		tx( "250 OK\r\n" ) ;

@@ -72,7 +72,7 @@ public:
 		char sep_major = '|' , char sep_minor = '/' , char escape = '\\' ) ;
 			///< Constructor taking a Arg reference and a 
 			///< specification string. Uses specifications like 
-			///< "p/port/defines the port number/1/port/1|v/verbose/shows more logging/0//1".
+			///< "p/port/defines the port number//1/port/1|v/verbose/shows more logging//0//1".
 			///< made up of the following parts:
 			///<    'single-character-switch-letter'
 			///<    'multi-character-switch-name'

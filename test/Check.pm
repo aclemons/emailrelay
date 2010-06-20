@@ -91,10 +91,8 @@ sub fileDeleted
 sub fileMatchCount
 {
 	my ( $expr , $count , $more ) = @_ ;
-	my $output = `ls $expr 2>/dev/null` ;
-	chomp $output ;
-	my @lines = split("\n",$output) ;
-	Check::that( scalar(@lines) == $count , "unexpected number of matching files" , $more ) ;
+	my @files = System::glob_( $expr ) ;
+	Check::that( scalar(@files) == $count , "unexpected number of matching files" , $more ) ;
 }
 
 sub fileOwner
@@ -133,6 +131,16 @@ sub fileLineCount
 		if( !defined($string) || $line =~ m/$string/ ) { $n++ }
 	}
 	Check::that( $n == $count , "invalid matching line count" , $path , $n."!=".$count , $more ) ;
+}
+
+sub allFilesContain
+{
+	my ( $glob , $string , $more ) = @_ ;
+	my @files = System::glob_( $glob ) ;
+	for my $file ( @files )
+	{
+		fileContains( $file , $string , $more ) ;
+	}
 }
 
 sub fileContains

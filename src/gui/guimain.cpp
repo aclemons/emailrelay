@@ -140,17 +140,17 @@ int main( int argc , char * argv [] )
 		QApplication app( argc , argv ) ;
 		G::Arg args( argc , argv ) ;
 		G::GetOpt getopt( args , 
-			"h/help/show this help text and exit/0//1|"
-			"H/with-help/show a help button/0//1|"
-			"d/debug/show debug messages if compiled-in/0//1|"
-			"i/as-install/install mode, as if payload present/0//1|"
-			"c/as-configure/configure mode, as if no payload present/0//1|"
-			"w/write/state file for writing/1/file/1|"
-			"r/read/state file for reading/1/file/1|"
+			"h/help/show this help text and exit//0//1|"
+			"H/with-help/show a help button//0//1|"
+			"d/debug/show debug messages if compiled-in//0//1|"
+			"i/as-install/install mode, as if payload present//0//1|"
+			"c/as-configure/configure mode, as if no payload present//0//1|"
+			"w/write/state file for writing//1/file/1|"
+			"r/read/state file for reading//1/file/1|"
 			// hidden...
-			"P/page/single page test/1/page-name/0|"
-			"m/mac/enable some mac-like runtime behaviour/0//0|"
-			"t/test/test-mode/0//0" ) ;
+			"P/page/single page test//1/page-name/0|"
+			"m/mac/enable some mac-like runtime behaviour//0//0|"
+			"t/test/test-mode//0//0" ) ;
 		if( getopt.hasErrors() )
 		{
 			getopt.showErrors( std::cerr ) ;

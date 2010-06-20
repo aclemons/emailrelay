@@ -83,15 +83,15 @@ Disables the smtp vrfy command and sends less verbose smtp responses.
 <DT><B>-q, --as-client </B><I>&lt;host:port&gt;</I>
 
 <DD>
-Runs as a client, forwarding spooled mail to &lt;host&gt;: equivalent to <I>--log</I> <I>--no-syslog</I> <I>--no-daemon</I> <I>--dont-serve</I> <I>--forward</I> <I>--forward-to</I>.
+Runs as a client, forwarding all spooled mail to &lt;host&gt;: equivalent to <I>--log</I> <I>--no-syslog</I> <I>--no-daemon</I> <I>--dont-serve</I> <I>--forward</I> <I>--forward-to</I>.
 <DT><B>-y, --as-proxy </B><I>&lt;host:port&gt;</I>
 
 <DD>
-Runs as a proxy: equivalent to <I>--log</I> <I>--close-stderr</I> <I>--poll</I>=0 <I>--forward-to</I>.
+Runs as a proxy server, forwarding each mail immediately to &lt;host&gt;: equivalent to <I>--log</I> <I>--close-stderr</I> <I>--poll</I>=0 <I>--forward-to</I>.
 <DT><B>-d, --as-server </B>
 
 <DD>
-Runs as a server: equivalent to <I>--log</I> <I>--close-stderr</I>.
+Runs as a server, storing mail in the spool directory: equivalent to <I>--log</I> <I>--close-stderr</I>.
 <DT><B>-C, --client-auth </B><I>&lt;file&gt;</I>
 
 <DD>
@@ -148,10 +148,10 @@ Displays help text and exits.
 
 <DD>
 Enables immediate forwarding of messages as soon as they are received (requires <I>--forward-to</I>).
-<DT><B>-I, --interface </B><I>&lt;ip-address&gt;</I>
+<DT><B>-I, --interface </B><I>&lt;ip-list&gt;</I>
 
 <DD>
-Defines the listening interface for incoming connections.
+Defines the listening interface(s) for incoming connections.
 <DT><B>-l, --log </B>
 
 <DD>
@@ -179,7 +179,7 @@ Defines a file for storing the daemon process-id.
 <DT><B>-O, --poll </B><I>&lt;period&gt;</I>
 
 <DD>
-Enables polling of the spool directory for messages to be forwarded with the specified period (requires <I>--forward-to</I>).
+Enables polling of the spool directory for messages to be forwarded with the specified period (zero means on client disconnection) (requires <I>--forward-to</I>).
 <DT><B>-B, --pop </B>
 
 <DD>
@@ -199,15 +199,15 @@ Disables message deletion via pop (requires <I>--pop</I>).
 <DT><B>-E, --pop-port </B><I>&lt;port&gt;</I>
 
 <DD>
-Specifies the pop listening port number (requires <I>--pop</I>).
+Specifies the pop listening port number (default is 110) (requires <I>--pop</I>).
 <DT><B>-p, --port </B><I>&lt;port&gt;</I>
 
 <DD>
-Specifies the smtp listening port number.
+Specifies the smtp listening port number (default is 25).
 <DT><B>-w, --prompt-timeout </B><I>&lt;time&gt;</I>
 
 <DD>
-Sets the timeout (in seconds) for getting an initial prompt from the server.
+Sets the timeout (in seconds) for getting an initial prompt from the server (default is 20).
 <DT><B>-r, --remote-clients </B>
 
 <DD>
@@ -223,7 +223,7 @@ Enables authentication of remote clients, using the given secrets file.
 <DT><B>-K, --server-tls </B><I>&lt;pem-file&gt;</I>
 
 <DD>
-Enables tls/ssl layer for smtp server using the given openssl certificate file (if openssl built in).
+Enables tls/ssl layer for smtp server using the given openssl certificate file (which must be in the directory trusted by openssl).
 <DT><B>-M, --size </B><I>&lt;bytes&gt;</I>
 
 <DD>

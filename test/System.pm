@@ -116,6 +116,16 @@ sub deleteSpoolDir
 	}
 }
 
+sub glob_
+{
+	# Returns the file paths that match the given glob expression.
+	my ( $expr ) = @_ ;
+	my $output = `ls $expr 2>/dev/null` ;
+	chomp $output ;
+	my @files = split("\n",$output) ;
+	return @files ;
+}
+
 sub match
 {
 	# Returns the name of the single file that matches
@@ -123,25 +133,26 @@ sub match
 	my ( $filespec ) = @_ ;
 	my $s = `ls $filespec` ;
 	chomp $s ;
-	my @lines = split( "\n" , $s ) ;
-	Check::that( @lines == 0 || @lines == 1 , "too many matching files" , $filespec ) ;
-	return @lines[0] ;
+	my @files = split( "\n" , $s ) ;
+	Check::that( @files == 0 || @files == 1 , "too many matching files" , $filespec ) ;
+	return @files[0] ;
 }
 
 sub submitSmallMessage
 {
 	# Submits a small message using the "emailrelay-submit" utility.
-	my ( $spool_dir , $tmp_dir ) = @_ ;
-	submitMessage( $spool_dir , $tmp_dir , 10 ) ;
+	my ( $spool_dir , $tmp_dir , @to ) = @_ ;
+	submitMessage( $spool_dir , $tmp_dir , 10 , @to ) ;
 }
 
 sub submitMessage
 {
 	# Submits a message of 'n' lines using the "emailrelay-submit" utility.
-	my ( $spool_dir , $tmp_dir , $n ) = @_ ;
+	my ( $spool_dir , $tmp_dir , $n , @to ) = @_ ;
+	push @to , "me\@there.local" if( scalar(@to) == 0 ) ;
 	my $path = createMessageFile($tmp_dir,$n) ;
 	my $rc = system( "$bin_dir/emailrelay-submit --from me\@here.local " .
-		"--spool-dir $spool_dir me\@there.local < $path" ) ;
+		"--spool-dir $spool_dir " . join(" ",@to) . " < $path" ) ;
 	Check::that( $rc == 0 , "failed to submit" ) ;
 	unlink $path ;
 }

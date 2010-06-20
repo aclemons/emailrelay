@@ -18,13 +18,13 @@ where <switch> is:
   Disables the smtp vrfy command and sends less verbose smtp responses.
 
 # --as-client (-q)
-  Runs as a client, forwarding spooled mail to <host>: equivalent to "--log --no-syslog --no-daemon --dont-serve --forward --forward-to".
+  Runs as a client, forwarding all spooled mail to <host>: equivalent to "--log --no-syslog --no-daemon --dont-serve --forward --forward-to".
 
 # --as-proxy (-y)
-  Runs as a proxy: equivalent to "--log --close-stderr --poll=0 --forward-to".
+  Runs as a proxy server, forwarding each mail immediately to <host>: equivalent to "--log --close-stderr --poll=0 --forward-to".
 
 # --as-server (-d)
-  Runs as a server: equivalent to "--log --close-stderr".
+  Runs as a server, storing mail in the spool directory: equivalent to "--log --close-stderr".
 
 # --client-auth (-C)
   Enables smtp authentication with the remote server, using the given secrets file.
@@ -69,7 +69,7 @@ where <switch> is:
   Enables immediate forwarding of messages as soon as they are received (requires --forward-to).
 
 # --interface (-I)
-  Defines the listening interface for incoming connections.
+  Defines the listening interface(s) for incoming connections.
 
 # --log (-l)
   Writes log information on standard error and syslog.
@@ -90,7 +90,7 @@ where <switch> is:
   Defines a file for storing the daemon process-id.
 
 # --poll (-O)
-  Enables polling of the spool directory for messages to be forwarded with the specified period (requires --forward-to).
+  Enables polling of the spool directory for messages to be forwarded with the specified period (zero means on client disconnection) (requires --forward-to).
 
 # --pop (-B)
   Enables the pop server.
@@ -105,13 +105,13 @@ where <switch> is:
   Disables message deletion via pop (requires --pop).
 
 # --pop-port (-E)
-  Specifies the pop listening port number (requires --pop).
+  Specifies the pop listening port number (default is 110) (requires --pop).
 
 # --port (-p)
-  Specifies the smtp listening port number.
+  Specifies the smtp listening port number (default is 25).
 
 # --prompt-timeout (-w)
-  Sets the timeout (in seconds) for getting an initial prompt from the server.
+  Sets the timeout (in seconds) for getting an initial prompt from the server (default is 20).
 
 # --remote-clients (-r)
   Allows remote clients to connect.
@@ -123,7 +123,7 @@ where <switch> is:
   Enables authentication of remote clients, using the given secrets file.
 
 # --server-tls (-K)
-  Enables tls/ssl layer for smtp server using the given openssl certificate file (if openssl built in).
+  Enables tls/ssl layer for smtp server using the given openssl certificate file (which must be in the directory trusted by openssl).
 
 # --size (-M)
   Limits the size of submitted messages.
@@ -193,6 +193,10 @@ the program starts up, and the program terminates once they have all been sent.
 
 A pending "--poll" timer can be forced to expire immediately if a "--filter"
 script exits with a special value of 103, as described below.
+
+All receipent addresses must be accepted by the remote server when E-MailRelay
+forwards a message. If any recipient is rejected then the message will be left
+in the spool directory with a ".bad" suffix on the envelope file.
 
 Mail processing
 ---------------

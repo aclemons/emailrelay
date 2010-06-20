@@ -25,7 +25,9 @@
 # parameters might need tweaking depending on the performance of 
 # the machine. YMMV.
 #
-# usage: emailrelay-test.pl [-d <bin-dir>] [-k]
+# usage: emailrelay-test.pl [-d <bin-dir>] [-k] [<test-name> ...]
+#      -d  - directory containing emailrelay binary
+#      -k  - keep going after a failed test
 #
 # Ubuntu package required: libnet-telnet-perl
 #
@@ -1409,6 +1411,42 @@ sub testClientMessageFailure
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.content", 2 ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope.bad", 2 ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 0 ) ;
+
+	# tear down
+	$emailrelay->cleanup() ;
+	$test_server->cleanup() ;
+	System::deleteSpoolDir( $spool_dir , 1 ) ;
+}
+
+sub testClientInvalidRecipients
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		SpoolDir => 1 ,
+		Forward => 1 ,
+		ForwardTo => 1 ,
+		DontServe => 1 ,
+		NoDaemon => 1 ,
+	) ;
+	my $spool_dir = System::createSpoolDir() ;
+	my $test_server = new TestServer() ;
+	$test_server->run() ;
+	System::submitSmallMessage( $spool_dir , undef , "acceptme\@there.com" ) ;
+	System::submitSmallMessage( $spool_dir , undef , "acceptme1\@there.com" , "acceptme2\@there.com" ) ;
+	System::submitSmallMessage( $spool_dir , undef , "acceptme\@there.com" , "rejectme\@there.com" ) ;
+	System::submitSmallMessage( $spool_dir , undef , "rejectme\@there.com" ) ;
+	System::submitSmallMessage( $spool_dir , undef , "rejectme1\@there.com" , "rejectme2\@there.com" ) ;
+	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 5 ) ;
+	my $emailrelay = new Server( undef , undef , undef , $spool_dir ) ;
+	$emailrelay->set_dst( "localhost:".$test_server->port() ) ;
+
+	# test that the three "rejectme" messages out of five are left as ".bad"
+	$emailrelay->run( \%args ) ;
+	Check::fileMatchCount( $spool_dir ."/emailrelay.*.content", 3 ) ;
+	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope.bad", 3 ) ;
+	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 0 ) ;
+	Check::allFilesContain( $spool_dir ."/emailrelay.*.envelope.bad" , "one or more recipients rejected" ) ;
 
 	# tear down
 	$emailrelay->cleanup() ;
