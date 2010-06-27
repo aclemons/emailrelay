@@ -119,8 +119,8 @@ sub mkdir_for
 	{
 		debug( "mkdir [$dir_out]" ) ;
 		mkdir($dir_out) or die basename($0).": cannot create directory [$dir_out] from [".Cwd::getcwd()."] ($!)" ;
-		chmod 0755 , $dir_out
 	}
+	chmod 0755 , $dir_out ;
 }
 
 sub print_banner

@@ -50,7 +50,8 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 @TESTING_TRUE@am__EXEEXT_1 = emailrelay-test-scanner$(EXEEXT) \
-@TESTING_TRUE@	emailrelay-test-server$(EXEEXT)
+@TESTING_TRUE@	emailrelay-test-server$(EXEEXT) \
+@TESTING_TRUE@	emailrelay-test-verifier$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_emailrelay_test_scanner_OBJECTS =  \
 	emailrelay_test_scanner.$(OBJEXT)
@@ -70,6 +71,14 @@ emailrelay_test_server_DEPENDENCIES =  \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_3)
+am_emailrelay_test_verifier_OBJECTS =  \
+	emailrelay_test_verifier.$(OBJEXT)
+emailrelay_test_verifier_OBJECTS =  \
+	$(am_emailrelay_test_verifier_OBJECTS)
+emailrelay_test_verifier_DEPENDENCIES =  \
+	$(top_builddir)/src/gnet/libgnet.a \
+	$(top_builddir)/src/gssl/libgssl.a $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
 SCRIPTS = $(noinst_SCRIPTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -81,9 +90,11 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(emailrelay_test_scanner_SOURCES) \
-	$(emailrelay_test_server_SOURCES)
+	$(emailrelay_test_server_SOURCES) \
+	$(emailrelay_test_verifier_SOURCES)
 DIST_SOURCES = $(emailrelay_test_scanner_SOURCES) \
-	$(emailrelay_test_server_SOURCES)
+	$(emailrelay_test_server_SOURCES) \
+	$(emailrelay_test_verifier_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -143,6 +154,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PAM_INCLUDE = @PAM_INCLUDE@
 PAM_LIBS = @PAM_LIBS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
@@ -214,7 +226,7 @@ top_srcdir = @top_srcdir@
 @TESTING_FALSE@TESTING_EXTRA_DIST = 
 @TESTING_TRUE@TESTING_EXTRA_DIST = 
 @TESTING_FALSE@TESTING_HELPERS = 
-@TESTING_TRUE@TESTING_HELPERS = emailrelay-test-scanner emailrelay-test-server
+@TESTING_TRUE@TESTING_HELPERS = emailrelay-test-scanner emailrelay-test-server emailrelay-test-verifier
 EXTRA_DIST = \
 	$(TESTING_EXTRA_DIST) \
 	emailrelay-test.pl_ \
@@ -224,13 +236,15 @@ EXTRA_DIST = \
 	AdminClient.pm \
 	Check.pm \
 	Filter.pm \
+	Helper.pm \
 	PopClient.pm \
 	Port.pm \
 	Scanner.pm \
 	Server.pm \
 	SmtpClient.pm \
 	System.pm \
-	TestServer.pm
+	TestServer.pm \
+	Verifier.pm
 
 noinst_SCRIPTS = emailrelay-test.sh emailrelay-test.pl emailrelay-chain-test.sh emailrelay-soak-test.sh
 CLEANFILES = $(noinst_SCRIPTS) $(noinst_PROGRAMS) .emailrelay-test-server.pid
@@ -249,6 +263,13 @@ emailrelay_test_scanner_LDADD = \
 
 emailrelay_test_server_SOURCES = emailrelay_test_server.cpp
 emailrelay_test_server_LDADD = \
+	$(top_builddir)/src/gnet/libgnet.a \
+	$(top_builddir)/src/gssl/libgssl.a \
+	$(COMMON_LDADD) \
+	$(SSL_LIBS)
+
+emailrelay_test_verifier_SOURCES = emailrelay_test_verifier.cpp
+emailrelay_test_verifier_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(COMMON_LDADD) \
@@ -298,6 +319,9 @@ emailrelay-test-scanner$(EXEEXT): $(emailrelay_test_scanner_OBJECTS) $(emailrela
 emailrelay-test-server$(EXEEXT): $(emailrelay_test_server_OBJECTS) $(emailrelay_test_server_DEPENDENCIES) 
 	@rm -f emailrelay-test-server$(EXEEXT)
 	$(CXXLINK) $(emailrelay_test_server_OBJECTS) $(emailrelay_test_server_LDADD) $(LIBS)
+emailrelay-test-verifier$(EXEEXT): $(emailrelay_test_verifier_OBJECTS) $(emailrelay_test_verifier_DEPENDENCIES) 
+	@rm -f emailrelay-test-verifier$(EXEEXT)
+	$(CXXLINK) $(emailrelay_test_verifier_OBJECTS) $(emailrelay_test_verifier_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -307,6 +331,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_server.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_verifier.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

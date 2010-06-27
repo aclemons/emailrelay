@@ -6,7 +6,7 @@ emailrelay (1.9) unstable; urgency=low
   * Shorter switch descriptions in the usage help unless "--verbose".
   * Error text for "all recipients rejected" is now "one or more receipients rejected".
   * Windows project files for MSVC 2008.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 20 Jun 2010 16:28:37 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 27 Jun 2010 16:13:38 +0000
 
 emailrelay (1.8.2) unstable; urgency=low
   * Fix namespaces for gcc 3.4.

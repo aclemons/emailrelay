@@ -80,9 +80,9 @@ sub mail
 {
 	# Says mail-from. Can optionally be expected to fail
 	# with an authentication-require error message.
-	my ( $this , $to_fail ) = @_ ;
+	my ( $this , $expect_mail_from_to_fail ) = @_ ;
 	my $t = $this->t() ;
-	if( $to_fail )
+	if( $expect_mail_from_to_fail )
 	{
 		$t->cmd( String => "mail from:<me\@here>" , Prompt => '/530 authentication required/' ) ;
 	}
@@ -96,26 +96,35 @@ sub submit_start
 {
 	# Starts message submission. See also
 	# submit_line() and submit_end().
-	my ( $this ) = @_ ;
+	my ( $this , $to , $expect_rcpt_to_to_fail ) = @_ ;
+	$to ||= "you\@there" ;
+	$expect_rcpt_to_to_fail ||= 0 ;
 	my $t = $this->t() ;
 	$t->buffer_empty() ; # sync
 	$t->cmd( "ehlo here" ) ;
 	$t->cmd( "mail from:<me\@here>" ) ;
-	$t->cmd( "rcpt to:<you\@there>" ) ;
-	$t->cmd( String => "data" , Prompt => '/354 [^\r\n]+/' ) ;
-	$t->print( "From: me\@here" ) ;
-	$t->print( "To: you\@there" ) ;
-	$t->print( "Subject: test message" ) ;
-	$t->print( "" ) ;
+	if( $expect_rcpt_to_to_fail )
+	{
+		$t->cmd( String => "rcpt to:<$to>" , Prompt => '/550 [^\r\n]+/' ) ;
+	}
+	else
+	{
+		$t->cmd( "rcpt to:<$to>" ) ;
+		$t->cmd( String => "data" , Prompt => '/354 [^\r\n]+/' ) ;
+		$t->print( "From: me\@here" ) ;
+		$t->print( "To: you\@there" ) ;
+		$t->print( "Subject: test message" ) ;
+		$t->print( "" ) ;
+	}
 }
 
 sub submit_end
 {
 	# Ends message submission by sending a dot.
-	my ( $this , $to_fail ) = @_ ;
-	$to_fail = defined($to_fail) ? $to_fail : 0 ;
+	my ( $this , $expect_dot_to_fail ) = @_ ;
+	$expect_dot_to_fail ||= 0 ;
 	my $t = $this->t() ;
-	if( $to_fail )
+	if( $expect_dot_to_fail )
 	{
 		$t->cmd( String => "." , Prompt => '/452 [^\r\n]+/' ) ;
 	}
@@ -136,10 +145,10 @@ sub submit_line
 sub submit
 {
 	# Submits a whole test message.
-	my ( $this , $to_fail ) = @_ ;
+	my ( $this , $expect_dot_to_fail ) = @_ ;
 	$this->submit_start() ;
 	$this->submit_line( "This is a test." ) ;
-	$this->submit_end( $to_fail ) ;
+	$this->submit_end( $expect_dot_to_fail ) ;
 }
 
 sub doBadHelo

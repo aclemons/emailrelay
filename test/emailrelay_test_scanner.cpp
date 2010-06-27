@@ -213,9 +213,8 @@ GNet::ServerPeer * Main::Scanner::newPeer( GNet::Server::PeerInfo info )
 
 // ===
 
-static int run()
+static int run( unsigned int port )
 {
-	unsigned int port = 10010 ;
 	std::auto_ptr<GNet::EventLoop> loop( GNet::EventLoop::create() ) ;
 	GNet::TimerList timer_list ;
 	Main::Scanner scanner( port ) ;
@@ -230,6 +229,7 @@ int main( int argc , char * argv [] )
 		G::Arg arg( argc , argv ) ;
 		bool log = arg.remove("--log") ;
 		bool debug = arg.remove("--debug") ;
+		unsigned int port = arg.index("--port",1U) ? G::Str::toUInt(arg.v(arg.index("--port",1U)+1U)) : 10020U ;
 		std::string pid_file = arg.index("--pid-file",1U) ? arg.v(arg.index("--pid-file",1U)+1U) : std::string() ;
 
 		if( !pid_file.empty() )
@@ -239,7 +239,7 @@ int main( int argc , char * argv [] )
 		}
 
 		G::LogOutput log_output( log , debug ) ;
-		int rc = run() ;
+		int rc = run( port ) ;
 		std::cout << "done" << std::endl ;
 		return rc ;
 	}

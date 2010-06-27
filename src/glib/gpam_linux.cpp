@@ -34,7 +34,8 @@
 #include <sys/time.h>
 extern "C" 
 { 
-#include <security/pam_appl.h> 
+// in '/usr/include/security' or '/usr/include/pam'
+#include <pam_appl.h> 
 }
 
 namespace

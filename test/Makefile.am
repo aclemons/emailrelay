@@ -24,7 +24,7 @@ endif
 if TESTING
 TESTING_FILES = emailrelay-test.sh emailrelay-chain-test.sh
 TESTING_EXTRA_DIST =
-TESTING_HELPERS = emailrelay-test-scanner emailrelay-test-server
+TESTING_HELPERS = emailrelay-test-scanner emailrelay-test-server emailrelay-test-verifier
 else
 TESTING_FILES =
 TESTING_EXTRA_DIST =
@@ -40,13 +40,15 @@ EXTRA_DIST = \
 	AdminClient.pm \
 	Check.pm \
 	Filter.pm \
+	Helper.pm \
 	PopClient.pm \
 	Port.pm \
 	Scanner.pm \
 	Server.pm \
 	SmtpClient.pm \
 	System.pm \
-	TestServer.pm
+	TestServer.pm \
+	Verifier.pm
 
 noinst_SCRIPTS = emailrelay-test.sh emailrelay-test.pl emailrelay-chain-test.sh emailrelay-soak-test.sh
 noinst_PROGRAMS = $(TESTING_HELPERS)
@@ -68,6 +70,13 @@ emailrelay_test_scanner_LDADD = \
 
 emailrelay_test_server_SOURCES = emailrelay_test_server.cpp
 emailrelay_test_server_LDADD = \
+	$(top_builddir)/src/gnet/libgnet.a \
+	$(top_builddir)/src/gssl/libgssl.a \
+	$(COMMON_LDADD) \
+	$(SSL_LIBS)
+
+emailrelay_test_verifier_SOURCES = emailrelay_test_verifier.cpp
+emailrelay_test_verifier_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(COMMON_LDADD) \

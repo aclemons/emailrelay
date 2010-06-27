@@ -488,8 +488,8 @@ following:
 	account required pam_permit.so
 	password required pam_deny.so
 
-With this configuration the E-MailRelay server will use normal Linux account
-names and passwords to authenticate remote clients.
+With this configuration the E-MailRelay server will use normal unix system 
+account names and passwords to authenticate remote clients.
 
 The passwords for system accounts are usually very sensitive so E-MailRelay
 requires the "--server-tls" command-line switch when using PAM authentication,
@@ -520,20 +520,20 @@ The following command-line switches are used:
   authentication.
 
   "APOP server" entries are used for "APOP" authentication, "LOGIN server"
-  entries are used for "USER/PASS" authentication, and "CRAM-MD5" entries are
-  used for "AUTH" authentication.
+  entries are used for "USER/PASS" authentication, and "CRAM-MD5 server" entries 
+  are used for "AUTH" authentication.
 
   Note that the basic POP3 protocol defines only "APOP" and "USER/PASS"
   authentication, so some POP client programs may not be able to cope with
   CRAM-MD5 authentication using the POP3 "AUTH" extension.
 
   The CRAM-MD5 authentication mechanism will only be advertised to clients
-  if there are CRAM-MD5 entries in the secrets file.
+  if there are "CRAM-MD5 server" entries in the secrets file.
 
-  On Linux a special value of "/pam" can be used to enable authentication using
-  the PAM infrastructure rather than a secrets file. In this case only the PLAIN
-  authentication mechanism will be advertised to the client but transport level
-  encryption using TLS/SSL will be mandatory.
+  If E-MailRelay was built with PAM support then a special value of "/pam" can be 
+  used to enable authentication using the PAM infrastructure rather than a secrets
+  file. In this case only the PLAIN authentication mechanism will be advertised to
+  the client but transport level encryption using TLS/SSL will be mandatory.
 
 # --pop-by-name
 
@@ -560,27 +560,26 @@ as valid. This default behaviour can be modified by using an external verifier
 program, specified with the "--verifier" command-line switch, so that you get to
 choose which recipient addresses are accepted as valid and which are rejected.
 
-The external verifier program is passed a command-line containing: (1) the full
-e-mail address as supplied by the remote client, (2) the user-name part of the
-address in upper-case, (3) the host-name part in upper-case, (4) the local
-host's fully qualified domain name in upper-case, (5) the "MAIL" command's
-"FROM:" address as supplied by the client or the empty string in the case of the
-"VRFY" command, (6) the IP address of the client connection, (7) the
-authentication mechanism used by the client ("NONE" if trusted), and (8) either
-the authentication name or the fourth field from authentication secrets file if
-a trusted IP address.
+Your verifier script is passed a command-line containing: (1) the full e-mail
+address as supplied by the remote client, (2) the user-name part of the address
+in upper-case, (3) the host-name part in upper-case, (4) the local host's fully
+qualified domain name in upper-case, (5) the "MAIL" command's "FROM:" address as
+ supplied by the client or the empty string in the case of the "VRFY" command,
+(6) the IP address of the client connection, (7) the authentication mechanism
+used by the client ("NONE" if trusted), and (8) either the authentication name
+or the fourth field from authentication secrets file if a trusted IP address.
 
 So, for example, a verifier script called "myverifier" might be run with the
 following command-line:
 
 	myverifier me@myhost.mydomain ME MYHOST.MYDOMAIN MYHOST.MYDOMAIN bob@other.net 192.168.0.1 LOGIN bob
 
-The verifier program is expected to generate two lines of output on the standard
+The verifier script is expected to generate two lines of output on the standard
 output stream and then terminate with a specific exit code.
 
-For valid non-local addresses the first line of output is ignored, the second
-line should be copied from the first command-line argument, and the exit
-value should be one.
+For valid addresses the first line of output is ignored, the second line should
+be copied from the first command-line argument, and the exit value should be
+one.
 
 	#!/bin/sh
 	# address verifier -- accept all (252)
@@ -588,10 +587,10 @@ value should be one.
 	echo $1
 	exit 1
 
-For valid local addresses, where messages are to be delivered to a local
-mailbox, the verifier is expected to write two lines to the standard output --
-the full name associated with the mailbox, and the canonical mailbox name -- and
-then exit with a value of zero.
+If the address is valid but it should be delivered to a local mailbox rather
+than forwarded then the verifier script should write two lines to the standard
+output -- the full name associated with the mailbox, and the canonical mailbox
+name -- and then exit with a value of zero.
 
 	#!/bin/sh
 	# address verifier -- accept as local (250)
@@ -599,13 +598,12 @@ then exit with a value of zero.
 	echo postmaster
 	exit 0
 
-(In practice local delivery just means that the message files in the spool
-directory are copied and given a ".local" filename suffix.)
+For E-MailRelay local delivery just means that the message file in the spool
+directory is given a ".local" filename suffix. This can be used to create a
+separate channel for adminstrative messages such as delivery reports.
 
-For invalid addresses the exit value should be greater than one, and anything
-written to the standard output is taken as the failure reason. (Only the few
-few thousand characters are read from the verifier's standard output stream; any
-more is thrown away.)
+For invalid addresses the exit value should be non-zero and anything written to
+the standard output is taken as the reason for the failure.
 
 	#!/bin/sh
 	# address verifier -- reject as invalid (550)
@@ -619,14 +617,15 @@ To indicate a temporary failure this can be changed to an exit code of 3.
 	echo address unavailable: $1
 	exit 3
 
-If the exit code is 100 then the connection is aborted immediately.
+If the verifier exit code is 100 then the connection is aborted immediately,
+which may be useful in limiting the impact of denial of service attacks:
 
 	#!/bin/sh
 	# address verifier -- abort
 	exit 100
 
-In this more complete example all addresses are accepted as long as they contain
-an "at" character:
+In this more complete example the verifier script accepts all addresses as valid
+as long as they contain an "at" character:
 
 	#!/bin/sh
 	# address verifier -- accept only if containing an at sign
@@ -637,7 +636,7 @@ an "at" character:
 	exit 1 # accept
 
 As another example, this verifier script accepts all recipient addresses by
-default, but rejects remote addresses if the client has bypassed authentication
+default but rejects remote addresses if the client has bypassed authentication
 by connecting on a trusted IP address:
 
 	#!/bin/sh
@@ -656,7 +655,7 @@ by connecting on a trusted IP address:
 	echo "${address}"
 	exit 1 # accept the recipient address
 
-or in JavaScript for Windows:
+or written in JavaScript for Windows:
 
 	// verifier.js
 	var address = WScript.Arguments(0) ;
@@ -675,14 +674,14 @@ or in JavaScript for Windows:
 If this verifier script is used with a suitable "--server-auth" file then it can
 be used to prevent open relay without restricting authenticated clients.
 
-If the "--verifier" switch parameter is of the form "net:<address>:<port>" then
-the E-MailRelay server connects to the specified verifier daemon over the
-network and sends verifier requests as lines with pipe-delimited fields. The
-expected response is another pipe-delimited line containing the same information
-as returned by verifier scripts but in reverse, such as "3|address unavailable"
-or "0|postmaster|Local Postmaster <postmaster@localhost>". The "inetd"
-super-server daemon would be a convenient way to connect up the pieces in this
-case.
+It is also possible to verify addresses in a separate daemon process by using a
+"--verifier" switch of the form "net:<address>:<port>". In this case E-MailRelay
+will connect to the specified verifier daemon over the network and send address
+verification requests as lines with pipe-delimited fields. The expected response
+is another pipe-delimited line containing the same information as returned by
+verifier scripts but in reverse, such as "3|address unavailable" or
+"0|postmaster|Local Postmaster <postmaster@localhost>". The "inetd" super-server
+daemon would be a convenient way to connect up the pieces in this case.
 
 Security issues
 ---------------

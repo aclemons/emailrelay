@@ -15,7 +15,7 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION)
+INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) $(PAM_INCLUDE)
 
 noinst_LIBRARIES = libglib.a
 

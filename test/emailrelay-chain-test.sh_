@@ -83,8 +83,8 @@ cfg_null_filter="/bin/touch" ; test -f ${cfg_null_filter} || cfg_null_filter="/u
 cfg_pp="201" # port-prefix
 cfg_base_dir="/tmp/`basename $0`.$$.tmp"
 cfg_summary_log="/tmp/`basename $0`.out"
-cfg_sw_valgrind="--log-file=${cfg_base_dir}/valgrind --trace-children=yes --num-callers=40 --leak-check=yes --track-fds=yes --time-stamp=yes"
-cfg_run="" ; test "${opt_use_valgrind}" -eq 0 || cfg_run="valgrind ${cfg_sw_valgrind}"
+cfg_sw_valgrind="--trace-children=yes --num-callers=40 --leak-check=yes --track-fds=yes --time-stamp=yes --log-file=${cfg_base_dir}/valgrind-"
+cfg_run="env IGNOREME=" ; test "${opt_use_valgrind}" -eq 0 || cfg_run="valgrind ${cfg_sw_valgrind}"
 
 Init()
 {
@@ -127,7 +127,7 @@ Cleanup()
 		grep "." ${cfg_base_dir}/log-? >> "${cfg_summary_log}"
 		if test "${opt_use_valgrind}" -eq 1
 		then
-			grep "." ${cfg_base_dir}/valgrind.* >> "${cfg_summary_log}"
+			grep "." ${cfg_base_dir}/valgrind* >> "${cfg_summary_log}"
 		fi
 		ls -lR ${cfg_base_dir} >> "${cfg_summary_log}"
 		if test "${opt_no_cleanup}" -eq 0
@@ -159,7 +159,7 @@ RunServer()
 	pop_port_="`expr ${port_} + 80`"
 
 	mkdir -p ${cfg_base_dir}/${spool_}
-	${cfg_run} ${cfg_main_exe} ${cfg_sw_extra} ${cfg_sw_debug} \
+	${cfg_run}-server-${port_} ${cfg_main_exe} ${cfg_sw_extra} ${cfg_sw_debug} \
 		--log --verbose --no-syslog \
 		--port ${cfg_pp}${port_} \
 		--spool-dir ${cfg_base_dir}/${spool_} \
@@ -178,7 +178,7 @@ RunClient()
 	log_="${3}"
 	pidfile_="${4}"
 
-	${cfg_run} ${cfg_main_exe} ${cfg_sw_extra} ${cfg_sw_debug} \
+	${cfg_run}-client ${cfg_main_exe} ${cfg_sw_extra} ${cfg_sw_debug} \
 		--forward --no-daemon --dont-serve --log --verbose --no-syslog \
 		--pid-file ${cfg_base_dir}/${pidfile_} \
 		--forward-to ${to_} \

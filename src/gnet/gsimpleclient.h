@@ -64,8 +64,8 @@ private:
 
 /// \class GNet::SimpleClient
 /// A class for making an outgoing connection to a remote server. 
-/// The class handles name-to-address resolution and connection issues, it reads 
-/// incoming data and it manages flow-control when sending.
+/// The class handles name-to-address resolution, it deals with connection issues, 
+/// it reads incoming data, and it manages flow-control when sending.
 ///
 /// Name-to-address lookup is performed if the supplied ResolverInfo object
 /// does not contain an address. This can be done synchronously or asynchronously.

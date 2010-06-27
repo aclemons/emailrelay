@@ -669,6 +669,21 @@ AC_DEFUN([WITH_MAN2HTML],
 	AC_SUBST(HAVE_MAN2HTML)
 ])
 
+dnl aclocal-pam-headers-in-pam
+dnl
+dnl Defines aclocal_cv_pam_headers_in_pam if PAM headers are in /usr/include/pam.
+dnl
+AC_DEFUN([ACLOCAL_PAM_HEADERS_IN_PAM],
+[AC_CACHE_CHECK([for pam headers in /usr/include/pam],[aclocal_cv_pam_headers_in_pam],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[[#include <pam/pam_appl.h>]],
+		[[ ]])] ,
+		aclocal_cv_pam_headers_in_pam=yes ,
+		aclocal_cv_pam_headers_in_pam=no )
+])
+])
+
 dnl with-pam
 dnl
 AC_DEFUN([WITH_PAM],
@@ -676,8 +691,15 @@ AC_DEFUN([WITH_PAM],
 	if test "$with_pam" = "yes"
 	then
 		PAM_LIBS="-lpam"
+		if test "$aclocal_cv_pam_headers_in_pam" = "yes"
+		then
+			PAM_INCLUDE="-I/usr/include/pam"
+		else
+			PAM_INCLUDE="-I/usr/include/security"
+		fi
 	fi
 	AC_SUBST(PAM_LIBS)
+	AC_SUBST(PAM_INCLUDE)
 	AM_CONDITIONAL(PAM,test x$with_pam = xyes)
 ])
 
@@ -692,6 +714,7 @@ AC_DEFUN([SET_DIRECTORIES],
 	# * e_libexecdir
 	# * e_examplesdir
 	# * e_sysconfdir
+	# * e_pamdir
 	# * mandir
 	# * e_docdir
 	# * e_spooldir

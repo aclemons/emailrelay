@@ -53,7 +53,7 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(sbindir)" \
-	"$(DESTDIR)$(e_pamdir)" "$(DESTDIR)$(e_spooldir)"
+	"$(DESTDIR)$(e_spooldir)"
 @MAC_TRUE@am__EXEEXT_1 = emailrelay-start$(EXEEXT)
 PROGRAMS = $(e_libexec_PROGRAMS) $(sbin_PROGRAMS)
 am__emailrelay_SOURCES_DIST = admin_disabled.cpp admin_enabled.cpp \
@@ -139,7 +139,7 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-DATA = $(e_pam_DATA) $(e_spool_DATA)
+DATA = $(e_spool_DATA)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -195,6 +195,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PAM_INCLUDE = @PAM_INCLUDE@
 PAM_LIBS = @PAM_LIBS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
@@ -276,10 +277,6 @@ BUNDLE = E-MailRelay-Start
 @MAC_TRUE@MAC_EXTRA_DIST = 
 @MAC_FALSE@MAC_NOINST = 
 @MAC_TRUE@MAC_NOINST = $(BUNDLE).app
-@PAM_FALSE@PAM_EXTRA_DIST = emailrelay.pam
-@PAM_TRUE@PAM_EXTRA_DIST = 
-@PAM_FALSE@PAM_DATA_ = 
-@PAM_TRUE@PAM_DATA_ = emailrelay.pam
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS = -s
@@ -287,7 +284,6 @@ EXTRA_DIST = \
 	$(ADMIN_EXTRA_DIST) \
 	$(CONFIG_EXTRA_DIST) \
 	$(MAC_EXTRA_DIST) \
-	$(PAM_EXTRA_DIST) \
 	doxygen.h \
 	emailrelay.rc \
 	icon1.ico \
@@ -315,7 +311,6 @@ EXTRA_DIST = \
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gauth -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_CAPABILITIES=\"$(G_CAPABILITIES)\"
 e_spool_DATA = 
-e_pam_DATA = $(PAM_DATA_)
 noinst_SCRIPTS = $(MAC_NOINST)
 emailrelay_SOURCES = \
 	$(ADMIN_SOURCES) \
@@ -541,26 +536,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-install-e_pamDATA: $(e_pam_DATA)
-	@$(NORMAL_INSTALL)
-	test -z "$(e_pamdir)" || $(MKDIR_P) "$(DESTDIR)$(e_pamdir)"
-	@list='$(e_pam_DATA)'; test -n "$(e_pamdir)" || list=; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(e_pamdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(e_pamdir)" || exit $$?; \
-	done
-
-uninstall-e_pamDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(e_pam_DATA)'; test -n "$(e_pamdir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	test -n "$$files" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(e_pamdir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(e_pamdir)" && rm -f $$files
 install-e_spoolDATA: $(e_spool_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(e_spooldir)" || $(MKDIR_P) "$(DESTDIR)$(e_spooldir)"
@@ -668,7 +643,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_pamdir)" "$(DESTDIR)$(e_spooldir)"; do \
+	for dir in "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_spooldir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -719,8 +694,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-data-local install-e_pamDATA \
-	install-e_spoolDATA
+install-data-am: install-data-local install-e_spoolDATA
 
 install-dvi: install-dvi-am
 
@@ -766,8 +740,8 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-e_libexecPROGRAMS uninstall-e_pamDATA \
-	uninstall-e_spoolDATA uninstall-local uninstall-sbinPROGRAMS
+uninstall-am: uninstall-e_libexecPROGRAMS uninstall-e_spoolDATA \
+	uninstall-local uninstall-sbinPROGRAMS
 
 .MAKE: install-am install-strip
 
@@ -777,24 +751,23 @@ uninstall-am: uninstall-e_libexecPROGRAMS uninstall-e_pamDATA \
 	distclean-generic distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
 	install-data-am install-data-local install-dvi install-dvi-am \
-	install-e_libexecPROGRAMS install-e_pamDATA \
-	install-e_spoolDATA install-exec install-exec-am \
-	install-exec-local install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-sbinPROGRAMS install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+	install-e_libexecPROGRAMS install-e_spoolDATA install-exec \
+	install-exec-am install-exec-local install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-sbinPROGRAMS install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-e_libexecPROGRAMS uninstall-e_pamDATA \
-	uninstall-e_spoolDATA uninstall-local uninstall-sbinPROGRAMS
+	uninstall-am uninstall-e_libexecPROGRAMS uninstall-e_spoolDATA \
+	uninstall-local uninstall-sbinPROGRAMS
 
 
-install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS install-e_pamDATA
+install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS 
 	-chgrp daemon "$(DESTDIR)$(e_spooldir)"
 	-chmod 775 "$(DESTDIR)$(e_spooldir)"
 	-chgrp daemon "$(DESTDIR)$(sbindir)/emailrelay-submit"
 	-chmod g+s "$(DESTDIR)$(sbindir)/emailrelay-submit"
-	-mv "$(DESTDIR)$(e_pamdir)/emailrelay.pam" "$(DESTDIR)$(e_pamdir)/emailrelay"
 
 install-exec-local:
 	-if test -d "$(BUNDLE).app" ; then cp -R "$(BUNDLE).app" "$(DESTDIR)$(sbindir)" ; fi
@@ -803,7 +776,6 @@ uninstall-local:
 	-rmdir "$(DESTDIR)$(e_spooldir)" 2>/dev/null
 	-rmdir "$(DESTDIR)$(e_libexecdir)" 2>/dev/null
 	-rm -rf "$(DESTDIR)$(sbindir)/$(BUNDLE).app"
-	-rm -f "$(DESTDIR)$(e_pamdir)/emailrelay" 2>/dev/null
 
 clean-local:
 	rm -rf "$(BUNDLE).app"

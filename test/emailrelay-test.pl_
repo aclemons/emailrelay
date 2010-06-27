@@ -46,6 +46,7 @@ use PopClient ;
 use Check ;
 use System ;
 use Scanner ;
+use Verifier ;
 use Filter ;
 use Getopt::Std ;
 
@@ -1160,6 +1161,80 @@ sub testScannerTimeout
 	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
+sub testNetworkVerifierPass
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		Port => 1 ,
+		SpoolDir => 1 ,
+		PidFile => 1 ,
+		Verifier => 1 ,
+		Verbose => 1 ,
+	) ;
+	my $server = new Server() ;
+	my $verifier = new Verifier() ;
+	Check::ok( $server->run(\%args) , $server->message() ) ;
+	Check::running( $server->pid() , $server->message() ) ;
+	$verifier->run() ;
+	my $c = new SmtpClient( $server->smtpPort() ) ;
+	Check::ok( $c->open() ) ;
+
+	# test that the verifier is used
+	$c->submit_start( "OK\@here" ) ; # the test verifier interprets this string
+	$c->submit_line( "just testing" ) ;
+	$c->submit_end() ;
+	Check::fileContains( $verifier->log() , "sending valid" ) ;
+	Check::fileDoesNotContain( $server->stderr() , "message processing failed:" ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 1 ) ;
+
+	# tear down
+	$server->kill() ;
+	$verifier->kill() ;
+	Check::notRunning( $server->pid() ) ;
+	Check::fileDeleted( $server->pidFile() , "pid file" ) ;
+	Check::notRunning( $verifier->pid() ) ;
+	$server->cleanup() ;
+	$verifier->cleanup() ;
+	System::deleteSpoolDir( $server->spoolDir() ) ;
+}
+
+sub testNetworkVerifierFail
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		Port => 1 ,
+		SpoolDir => 1 ,
+		PidFile => 1 ,
+		Verifier => 1 ,
+		Verbose => 1 ,
+	) ;
+	my $server = new Server() ;
+	my $verifier = new Verifier() ;
+	Check::ok( $server->run(\%args) , $server->message() ) ;
+	Check::running( $server->pid() , $server->message() ) ;
+	$verifier->run() ;
+	my $c = new SmtpClient( $server->smtpPort() ) ;
+	Check::ok( $c->open() ) ;
+
+	# test that the verifier can reject
+	$c->submit_start( "fail\@here" , 1 ) ; # the test verifier interprets this string
+	Check::fileContains( $verifier->log() , "sending error" ) ;
+	Check::fileContains( $server->stderr() , "mailbox unavailable" ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 0 ) ;
+
+	# tear down
+	$server->kill() ;
+	$verifier->kill() ;
+	Check::notRunning( $server->pid() ) ;
+	Check::fileDeleted( $server->pidFile() , "pid file" ) ;
+	Check::notRunning( $verifier->pid() ) ;
+	$server->cleanup() ;
+	$verifier->cleanup() ;
+	System::deleteSpoolDir( $server->spoolDir() ) ;
+}
+
 sub testProxyConnectsOnce
 {
 	# setup
@@ -1519,7 +1594,7 @@ if( !$run_all_ok )
 
 sub cleanup
 {
-	for my $pid ( @Server::pid_list , @Scanner::pid_list , @TestServer::pid_list )
+	for my $pid ( @Server::pid_list , @Helper::pid_list , @TestServer::pid_list )
 	{
 		if( defined($pid) && $pid > 0 )
 		{

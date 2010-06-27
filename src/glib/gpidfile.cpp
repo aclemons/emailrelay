@@ -60,7 +60,7 @@ void G::PidFile::create( const Path & pid_file )
 		file << pid.str() << std::endl ;
 		if( !file.good() )
 			throw Error(std::string("cannot create file: ")+pid_file.str()) ;
-		Cleanup::add( cleanup , (new std::string(pid_file.str()))->c_str() ) ; // (leaks)
+		Cleanup::add( cleanup , (new std::string(pid_file.str()))->c_str() ) ; // (leak)
 	}
 }
 

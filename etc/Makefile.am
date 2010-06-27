@@ -15,9 +15,15 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-EXTRA_DIST = emailrelay.conf.template
+if PAM
+ PAM_DATA_ = emailrelay
+else
+ PAM_DATA_ =
+endif
 
 e_sysconf_DATA = emailrelay.conf.template
+e_pam_DATA = $(PAM_DATA_)
+EXTRA_DIST = emailrelay.conf.template emailrelay
 
 if INSTALL_HOOK
 

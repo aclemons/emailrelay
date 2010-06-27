@@ -24,6 +24,7 @@
 use strict ;
 use FileHandle ;
 use Scanner ;
+use Verifier ;
 use System ;
 
 package Server ;
@@ -39,6 +40,7 @@ sub new
 	$pop_port = defined($pop_port) ? $pop_port : 10110 ;
 	$admin_port = defined($admin_port) ? $admin_port : 10026 ;
 	my $scanner_port = Scanner::port() ;
+	my $verifier_port = Verifier::port() ;
 
 	my %me = (
 		m_exe => "$bin_dir/emailrelay" ,
@@ -61,6 +63,7 @@ sub new
 		m_filter => System::tempfile("filter",$tmp_dir) ,
 		m_client_filter => System::tempfile("client-filter",$tmp_dir) ,
 		m_scanner => "net:localhost:$scanner_port" ,
+		m_verifier => "net:localhost:$verifier_port" ,
 		m_max_size => 1000 ,
 	) ;
 	my $this = bless \%me , $classname ;
@@ -73,6 +76,7 @@ sub set_exe { $_[0]->{'m_exe'} = $_[1] }
 sub smtpPort { return shift->{'m_smtp_port'} }
 sub adminPort { return shift->{'m_admin_port'} }
 sub scannerAddress { return shift->{'m_scanner'} }
+sub verifierAddress { return shift->{'m_verifier'} }
 sub popPort { return shift->{'m_pop_port'} }
 sub popSecrets { return shift->{'m_pop_secrets'} }
 sub clientSecrets { return shift->{'m_client_secrets'} }
@@ -174,6 +178,7 @@ sub _switches
 		( exists($sw{ClientFilter}) ? "--client-filter __CLIENT_FILTER__ " : "" ) .
 		( exists($sw{Immediate}) ? "--immediate " : "" ) .
 		( exists($sw{Scanner}) ? "--filter __SCANNER__ " : "" ) .
+		( exists($sw{Verifier}) ? "--verifier __VERIFIER__ " : "" ) .
 		( exists($sw{DontServe}) ? "--dont-serve " : "" ) .
 		( exists($sw{ClientAuth}) ? "--client-auth __CLIENT_SECRETS__ " : "" ) .
 		( exists($sw{MaxSize}) ? "--size __MAX_SIZE__ " : "" ) .
@@ -199,6 +204,7 @@ sub _set_all
 	$command_tail = _set( $command_tail , "__FILTER__" , $this->filter() ) ;
 	$command_tail = _set( $command_tail , "__CLIENT_FILTER__" , $this->clientFilter() ) ;
 	$command_tail = _set( $command_tail , "__SCANNER__" , $this->scannerAddress() ) ;
+	$command_tail = _set( $command_tail , "__VERIFIER__" , $this->verifierAddress() ) ;
 	$command_tail = _set( $command_tail , "__CLIENT_SECRETS__" , $this->clientSecrets() ) ;
 	$command_tail = _set( $command_tail , "__MAX_SIZE__" , $this->maxSize() ) ;
 	$command_tail = _set( $command_tail , "__SERVER_SECRETS__" , $this->serverSecrets() ) ;
