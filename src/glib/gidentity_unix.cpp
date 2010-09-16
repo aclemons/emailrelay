@@ -22,8 +22,11 @@
 
 #include "gdef.h"
 #include "gidentity.h"
+#include "glimits.h"
 #include <sstream>
-#include <pwd.h> // getpwnam()
+#include <vector>
+#include <pwd.h> // getpwnam_r()
+#include <unistd.h> // sysconf()
 
 G::Identity::Identity() :
 	m_uid(static_cast<uid_t>(-1)) ,
@@ -37,8 +40,16 @@ G::Identity::Identity( const std::string & name ) :
 	m_gid(static_cast<gid_t>(-1)) ,
 	m_h(0)
 {
-	::passwd * pw = ::getpwnam( name.c_str() ) ; // (no leak here, the rtl maintains a structure on the heap)
-	if( pw == NULL )
+	typedef ::passwd Pwd ;
+
+	long size = ::sysconf( _SC_GETPW_R_SIZE_MAX ) ;
+	if( size < limits::get_pwnam_r_buffer ) size = limits::get_pwnam_r_buffer ;
+	std::vector<char> buffer( static_cast<std::vector<char>::size_type>(size) ) ;
+
+	Pwd pwd ;
+	Pwd * result_p = NULL ;
+	int rc = ::getpwnam_r( name.c_str() , &pwd , &buffer[0] , size , &result_p ) ;
+	if( rc != 0 || result_p == NULL )
 	{
 		if( name == "root" ) // in case no /etc/passwd
 		{
@@ -52,8 +63,8 @@ G::Identity::Identity( const std::string & name ) :
 	}
 	else
 	{
-		m_uid = pw->pw_uid ;
-		m_gid = pw->pw_gid ;
+		m_uid = result_p->pw_uid ;
+		m_gid = result_p->pw_gid ;
 	}
 }
 

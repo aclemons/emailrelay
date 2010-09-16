@@ -43,6 +43,7 @@ public:
 	enum { log = 1000 } ; // log line limit
 	enum { file_buffer = 102400 } ; // cf. BUFSIZ
 	enum { pipe_buffer = 4096 } ; // one-off read from a pipe
+	enum { get_pwnam_r_buffer = 200 } ; // approx line length in /etc/passwd
 	enum { net_buffer = 20000 } ; // best if bigger than the TLS maximum block size of 16k
 	enum { net_line_limit = 1000000 } ; // denial of service limit
 	enum { net_hostname = 1024 } ;
@@ -54,6 +55,7 @@ public:
 	enum { log = 120 } ;
 	enum { file_buffer = 128 } ;
 	enum { pipe_buffer = 128 } ;
+	enum { get_pwnam_r_buffer = 1024 } ; // if no sysconf() value
 	enum { net_buffer = 512 } ;
 	enum { net_line_limit = 2000 } ;
 	enum { net_hostname = 128 } ;

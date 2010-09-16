@@ -37,6 +37,7 @@ EXTRA_DIST = \
 	emailrelay-test.sh_ \
 	emailrelay-chain-test.sh_ \
 	emailrelay-soak-test.sh_ \
+	emailrelay-loop-test.sh_ \
 	AdminClient.pm \
 	Check.pm \
 	Filter.pm \
@@ -50,7 +51,7 @@ EXTRA_DIST = \
 	TestServer.pm \
 	Verifier.pm
 
-noinst_SCRIPTS = emailrelay-test.sh emailrelay-test.pl emailrelay-chain-test.sh emailrelay-soak-test.sh
+noinst_SCRIPTS = emailrelay-test.sh emailrelay-test.pl emailrelay-chain-test.sh emailrelay-soak-test.sh emailrelay-loop-test.sh
 noinst_PROGRAMS = $(TESTING_HELPERS)
 TESTS = $(TESTING_FILES)
 CLEANFILES = $(noinst_SCRIPTS) $(noinst_PROGRAMS) .emailrelay-test-server.pid

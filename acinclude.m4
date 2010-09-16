@@ -127,7 +127,30 @@ AC_DEFUN([ACLOCAL_CHECK_SETGROUPS],
 	fi
 ])
 
-dnl gmtime_r
+dnl aclocal-check-getpwnam-r
+dnl
+dnl Defines HAVE_GETPWNAM_R.
+dnl
+AC_DEFUN([ACLOCAL_CHECK_GETPWNAM_R],
+[AC_CACHE_CHECK([for getpwnam_r],[aclocal_cv_getpwnam_r],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[[#include <sys/types.h>
+		#include <pwd.h>]],
+		[[char c;
+		struct passwd *r;
+		getpwnam_r("",r,&c,0,&r) ;]])],
+		aclocal_cv_getpwnam_r=yes ,
+		aclocal_cv_getpwnam_r=no )
+])
+	if test $aclocal_cv_getpwnam_r = yes; then
+		AC_DEFINE(HAVE_GETPWNAM_R,1,[Define to 1 if getpwnam_r in pwd.h])
+	else
+		AC_DEFINE(HAVE_GETPWNAM_R,0,[Define to 1 if getpwnam_r in pwd.h])
+	fi
+])
+
+dnl aclocal-check-gmtime-r
 dnl
 dnl Defines HAVE_GMTIME_R.
 dnl

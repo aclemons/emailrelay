@@ -16,6 +16,9 @@
 /* Define to 1 if getipnodebyname() is available */
 #undef HAVE_GETIPNODEBYNAME
 
+/* Define to 1 if getpwnam_r in pwd.h */
+#undef HAVE_GETPWNAM_R
+
 /* Define to 1 if you have the `glob' function. */
 #undef HAVE_GLOB
 

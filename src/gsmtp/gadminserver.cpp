@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gnet.h"
+#include "gprocess.h"
 #include "geventloop.h"
 #include "gsmtp.h"
 #include "gadminserver.h"
@@ -112,6 +113,11 @@ bool GSmtp::AdminServerPeer::onReceive( const std::string & line )
 		list() ;
 		prompt() ;
 	}
+	else if( is(line,"pid") )
+	{
+		pid() ;
+		prompt() ;
+	}
 	else if( is(line,"quit") )
 	{
 		doDelete() ;
@@ -171,6 +177,7 @@ void GSmtp::AdminServerPeer::help()
 	commands.push_back( "info" ) ;
 	commands.push_back( "list" ) ;
 	commands.push_back( "notify" ) ;
+	commands.push_back( "pid" ) ;
 	commands.push_back( "quit" ) ;
 	if( m_with_terminate ) commands.push_back( "terminate" ) ;
 	G::Strings extras = G::Str::keys( m_extra_commands ) ;
@@ -236,6 +243,11 @@ void GSmtp::AdminServerPeer::info()
 	{
 		sendLine( "no info" ) ;
 	}
+}
+
+void GSmtp::AdminServerPeer::pid()
+{
+	sendLine( G::Process::Id().str() ) ;
 }
 
 void GSmtp::AdminServerPeer::list()

@@ -233,7 +233,7 @@ bool GNet::SimpleClient::startConnecting()
 			int port = getRandomPort() ;
 			m_local_address.setPort( port ) ;
 			G_DEBUG( "GNet::SimpleClient::startConnecting: trying to bind " << m_local_address.displayString() ) ;
-			status = localBind(m_local_address) ? Success : Retry ;
+			status = localBind( m_local_address ) ? Success : Retry ;
 			if( status == Retry )
 				continue ;
 
@@ -242,9 +242,14 @@ bool GNet::SimpleClient::startConnecting()
 				break ;
 		}
 	}
-	else
+	else if( m_local_address == Address(0U) )
 	{
 		status = connectCore( m_remote.address() , &error ) ;
+	}
+	else
+	{
+		if( localBind( m_local_address ) )
+			status = connectCore( m_remote.address() , &error ) ;
 	}
 
 	// deal with immediate connection (typically if connecting locally)
@@ -260,7 +265,8 @@ bool GNet::SimpleClient::localBind( Address local_address )
 {
 	G::Root claim_root ;
 	bool bound = socket().bind(local_address) ;
-	G_DEBUG( "GNet::SimpleClient::bind: bound local address " << local_address.displayString() ) ;
+	if( bound )
+		G_DEBUG( "GNet::SimpleClient::bind: bound local address " << local_address.displayString() ) ;
 	return bound ;
 }
 

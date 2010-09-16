@@ -23,14 +23,16 @@
 #
 # It starts two servers, with a proxy fronting onto one
 # of them, then in a loop it creates a large message file
-# and runs a client to forward it to the proxy and the
-# naked server in turn.
+# and runs a client to forward it to both the proxy and 
+# the naked server. The main loop can be stopped by
+# creating a ".stop" file.
 #
-# Use 'ps' to check for large leaks.
+# Run 'ps' manually to check for large leaks.
 #
 # Files are created under a sub-directory of /tmp.
 #
 # usage: emailrelay-soak-test.sh [-v] [<exe>]
+#        -v  - use valgrind
 #
 # (As a side-effect it does "killall emailrelay".)
 #

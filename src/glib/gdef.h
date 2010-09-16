@@ -49,6 +49,13 @@
 			#endif
 		#endif
 
+		#if ! HAVE_GETPWNAM_R
+			#ifdef __cplusplus
+				#include <sys/types.h>
+				#include <pwd.h>
+			#endif
+		#endif
+
 		#if ! HAVE_GMTIME_R || ! HAVE_LOCALTIME_R
 			#ifdef __cplusplus
 				#include <ctime>
@@ -243,6 +250,26 @@
 	/* Autoconf, part 2
 	 */
 	#if defined( HAVE_CONFIG_H )
+		#if ! HAVE_GETPWNAM_R
+			#ifdef __cplusplus
+				inline int getpwnam_r( const char * name , struct passwd * pwd ,
+					char * buf , size_t buflen , struct passwd ** result )
+				{
+					struct passwd * p = ::getpwnam( name ) ;
+					if( p ) 
+					{
+						*pwd = *p ; // let the string pointers dangle into the library storage
+						*result = pwd ;
+						return 0 ;
+					}
+					else
+					{
+						*result = NULL ;
+						return 0 ; // or errno
+					}
+				}
+			#endif
+		#endif
 		#if ! HAVE_GMTIME_R
 			#ifdef __cplusplus
 				inline std::tm * gmtime_r( const std::time_t * tp , std::tm * tm_p ) 

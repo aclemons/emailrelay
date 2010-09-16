@@ -99,6 +99,10 @@ public:
 	ResolverInfo resolverInfo() const ;
 		///< Returns the current or last client's ResolverInfo.
 
+	void cleanupForExit() ;
+		///< Can be called on program termination, when there may
+		///< be no TimerList, in order to delete the client directly.
+
 private:
 	ClientPtr( const ClientPtr & ) ; // not implemented
 	void operator=( const ClientPtr & ) ; // not implemented
@@ -145,6 +149,18 @@ ClientPtr<TClient>::~ClientPtr()
 	{
 		disconnectSignals() ;
 		m_p->doDelete(std::string()) ;
+	}
+}
+
+template <typename TClient>
+void ClientPtr<TClient>::cleanupForExit()
+{
+	if( m_p != NULL )
+	{
+		disconnectSignals() ;
+		TClient * p = m_p ;
+		m_p = NULL ;
+		p->doDeleteForExit() ;
 	}
 }
 

@@ -51,7 +51,7 @@ public:
 		///< Default constructor.
 
 	~TimerList() ;
-		///< Destructor. Any expired timers are have their timeouts
+		///< Destructor. Any expired timers have their timeouts
 		///< called.
 
 	void add( AbstractTimer & ) ;

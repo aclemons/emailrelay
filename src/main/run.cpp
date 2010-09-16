@@ -87,8 +87,11 @@ Main::Run::~Run()
 	m_client.doneSignal().disconnect() ;
 	m_client.eventSignal().disconnect() ;
 
-	// avoid 'still reachable' in valgrind leak checks
-	m_client.reset() ;
+	// do explicit cleanup here to improve the signal to noise ratio
+	// in valgrind leak checks -- but note that there is no TimerList
+	// instance when this destuctor runs so any zero-length cleanup 
+	// timers will not fire
+	m_client.cleanupForExit() ;
 	m_poll_timer <<= 0 ;
 	m_forwarding_timer <<= 0 ;
 	m_admin_server <<= 0 ;

@@ -64,6 +64,11 @@ public:
 	virtual void onException( std::exception & ) ; 
 		///< Final override from GNet::EventHandler.
 
+	void doDeleteForExit() ;
+		///< A destructor method that may be called at program 
+		///< termination when the normal doDelete() mechanism has
+		///< become unusable.
+
 protected:
 	virtual ~HeapClient() ;
 		///< Destructor.

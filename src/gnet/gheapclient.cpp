@@ -54,6 +54,11 @@ void GNet::HeapClient::onDeletionTimeout()
 	}
 }
 
+void GNet::HeapClient::doDeleteForExit()
+{
+	delete this ;
+}
+
 void GNet::HeapClient::doDelete( const std::string & reason )
 {
 	m_connect_timer.cancelTimer() ;

@@ -84,6 +84,7 @@ private:
 	void help() ;
 	void info() ;
 	void list() ;
+	void pid() ;
 	void sendLine( std::string ) ;
 	void warranty() ;
 	void version() ;

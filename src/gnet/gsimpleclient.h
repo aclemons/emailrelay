@@ -89,17 +89,20 @@ public:
 	typedef std::string::size_type size_type ;
 
 	SimpleClient( const ResolverInfo & remote_info ,
-		const Address & local_interface = Address(0U) , bool privileged = false ,
+		const Address & local_address = Address(0U) , 
+		bool privileged = false ,
 		bool sync_dns = synchronousDnsDefault() ) ;
 			///< Constructor.
 			///<
-			///< The socket is bound with the given local address, but with an 
-			///< arbitrary port number -- the supplied port number is ignored. 
-			///< The local address defaults to the INADDR_ANY address.
+			///< If the 'privileged' parameter is true then the
+			///< given 'local_address' is used to bind the local 
+			///< socket once its port number has been overwritten 
+			///< with a privileged port number (ie. < 1024) 
+			///< selected at random.
 			///<
-			///< If the 'privileged' parameter is true then the local socket
-			///< is bound with a privileged port number (ie. < 1024), selected 
-			///< at random.
+			///< Otherwise, if the given 'local_address' is 
+			///< not the default value then it is used to bind 
+			///< the local socket.
 
 	void connect() ;
 		///< Initates a connection to the remote server. 
