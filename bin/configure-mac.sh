@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #   $ cd src/emailrelay-1.99
 #   $ mkdir build
 #   $ cd build
-#   $ sh ../bin/configure-mac.sh_
+#   $ sh ../bin/configure-mac.sh
 #   $ make
 #
 # After configuring with these switches the installation can be done

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,9 +45,7 @@ void G::Daemon::detach()
 
 void G::Daemon::setsid()
 {
-	pid_t session_id = ::setsid() ;
-	if( session_id == -1 )
-		; // no-op
+	G_IGNORE(pid_t) ::setsid() ;
 }
 
 /// \file gdaemon_unix.cpp

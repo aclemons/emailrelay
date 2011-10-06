@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ namespace
 	}
 	inline unsigned int unhex( char c )
 	{
-		return (c >= '0' && c <= '9') ? (c-'0') : (10U+(c-'A')) ;
+		return (c >= '0' && c <= '9') ? (0U+(c-'0')) : (10U+(c-'A')) ;
 	}
 }
 

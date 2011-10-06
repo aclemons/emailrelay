@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,16 +24,16 @@
 std::string Main::News::text( const std::string & eol )
 {
 
-// sell-by 2011/1/1
+// sell-by 2014/1/1
 const G::DateTime::EpochTime _2008 = 1199145600U ;
 const G::DateTime::EpochTime year = 60U * 60U * 24U * 365U ;
-if( G::DateTime::now() > (_2008+year+year+year) ) return std::string() ;
+if( G::DateTime::now() > (_2008+(year*6U)) ) return std::string() ;
 
 return std::string() +
 
 "Free software is a matter of liberty, not price. To understand " +
 "the concept, you should think of \"free\" as in \"free speech,\" " +
-"not as in \"free beer\". Windows is not free, even if you stole it, " +
+"not as in \"free beer\". Windows is not free, even if you did not pay for it, " +
 "because it limits your freedoms; check out the Free Software Foundation " +
 "website http://www.fsf.org for more information about software freedom. " +
 "E-MailRelay was developed on Linux, which is a free, secure and easy-to-use " +

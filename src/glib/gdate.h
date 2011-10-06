@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ public:
 		///< Returns the smallest supported year value.
 
 	Date() ;
-		///< Default constructor the current date
+		///< Default constructor for the current date
 		///< in the UTC timezone.
 
 	explicit Date( const LocalTime & ) ;
@@ -105,7 +105,6 @@ public:
 
 	std::string monthName( bool brief = false ) const ;
 		///< Returns the month as a string (in english).
-		///< (Was monthString().)
 
 	std::string mm() const ;
 		///< Returns the month as a two-digit decimal string.

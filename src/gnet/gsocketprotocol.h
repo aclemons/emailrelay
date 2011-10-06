@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,14 +40,14 @@ namespace GNet
 /// by means of calling read() and write() on a connected non-blocking 
 /// socket and installing and removing event handlers as appropriate. 
 ///
-/// In practice the only supported protocol is SSL and the implementation 
+/// In practice the only supported protocol is TLS/SSL and the implementation 
 /// delegates to GSsl::Protocol.
 ///
 /// Provides send() to send data and onData() in a sink callback interface
 /// to receive data.
 ///
-/// An SSL session can be established with sslConnect() or sslAccept() as
-/// long as the underlying GSsl::Protocol is sslCapable(). If no SSL 
+/// A TLS/SSL session can be established with sslConnect() or sslAccept() as
+/// long as the underlying GSsl::Protocol is sslCapable(). If no TLS/SSL
 /// session is in effect then the protocol layer is transparent down 
 /// to the socket. 
 ///
@@ -80,16 +80,16 @@ public:
 		///< Throws SendError on error.
 
 	static bool sslCapable() ;
-		///< Returns true if the implementation supports SSL.
+		///< Returns true if the implementation supports TLS/SSL.
 
 	void sslConnect() ;
-		///< Initiates the SSL protocol.
+		///< Initiates the TLS/SSL protocol.
 
 	void sslAccept() ;
-		///< Accepts the SSL protocol.
+		///< Accepts the TLS/SSL protocol.
 
 	bool sslEnabled() const ;
-		///< Returns true if SSL is active.
+		///< Returns true if TLS/SSL is active.
 
 private:
 	SocketProtocol( const SocketProtocol & ) ;

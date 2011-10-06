@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -216,12 +216,11 @@ AC_ARG_ENABLE(install-hook,AC_HELP_STRING([--enable-install-hook],[enable fixing
 ENABLE_INSTALL_HOOK
 
 dnl ===
-dnl directory tweaking and "--enable-fhs" ...
+dnl directory tweaking ...
 dnl
 dnl define e_ prefixed directory variables
 dnl
 dnl not AC_PREFIX_DEFAULT([/usr])
-AC_ARG_ENABLE(fhs,AC_HELP_STRING([--enable-fhs],[force linux FHS-compliant directories, ignoring --prefix etc (default no)]))
 SET_DIRECTORIES
 AC_SUBST(e_docdir)
 AC_SUBST(e_initdir)

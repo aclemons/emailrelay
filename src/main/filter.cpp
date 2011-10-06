@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,8 +42,10 @@ void filter_help( const std::string & prefix )
 	std::cout 
 		<< "usage: " << prefix << " <emailrelay-content-file>" << std::endl
 		<< std::endl
-		<< "Copies the corresponding envelope file into " << std::endl
-		<< "subdirectories of the spool directory." << std::endl
+		<< "Copies the corresponding emailrelay envelope file into all " << std::endl
+		<< "subdirectories of the spool directory. Exits with a " << std::endl
+		<< "value of 100 if copied once or more. Intended for use " << std::endl
+		<< "with \"emailrelay --pop-by-name\"." << std::endl
 		<< std::endl
 		<< Main::Legal::warranty(std::string(),"\n") << std::endl
 		<< Main::Legal::copyright() << std::endl ;

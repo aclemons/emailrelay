@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -87,9 +87,10 @@ protected:
 
 	virtual bool onReceive( const std::string & ) = 0 ;
 		///< Called when a complete line is received from the peer.
-		///< The implementation should return false if no more 
-		///< lines should be delivered, if for example the
-		///< object has deleted itself.
+		///< The implementation should return false if it needs
+		///< to stop further onReceive() calls being generated 
+		///< from data already received and buffered, if for 
+		///< example the object has just deleted itself.
 
 	void clearInput() ;
 		///< Clears any pending input from the server.

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,14 +33,13 @@ namespace G
 }
 
 /// \class G::Arg
-/// A class which holds a represention of the
-/// argc/argv command line array, and supports simple
-/// command-line parsing. 
+/// A class which holds a represention of the argc/argv 
+/// command line array, and supports simple command-line parsing. 
 ///
-/// In some environments the argv(0) path is fixed up so 
-/// that it refers to the running executable, regardless of 
-/// what the parent process specified in the exec() call.
-/// Refer to the various implementations of G::Arg::setExe().
+/// In some environments the argv(0) path is fixed up so that it 
+/// refers to the running executable, regardless of what the parent 
+/// process specified in the exec() call. Refer to the various 
+/// implementations of G::Arg::setExe().
 ///
 /// \see G::GetOpt
 ///
@@ -50,41 +49,38 @@ public:
 	typedef unsigned int size_type ;
 
 	Arg( int argc , char *argv[] ) ;
-		///< Constructor taking argc/argv. Should not
-		///< be used in a shared object or dll.
+		///< Constructor taking argc/argv. Should not be used in 
+		///< a shared object or dll.
 
 	Arg() ;
-		///< Default constructor for Windows. 
-		///< Initialise (once) with parse().
+		///< Default constructor for Windows. Initialise (once) 
+		///< with parse().
 
 	void parse( HINSTANCE hinstance , const std::string & command_line ) ;
 		///< Windows only.
 		///<
-		///< Parses the given command line, splitting
-		///< it up into an array of tokens.
+		///< Parses the given command line, splitting it up into 
+		///< an array of tokens.
 
 	void reparse( const std::string & command_line ) ;
-		///< Reinitialises the object with the given
-		///< command-line. The command-line should not
-		///< contain the program name: the v(0) value 
-		///< and prefix() are unchanged.
+		///< Reinitialises the object with the given command-line. 
+		///< The command-line should not contain the program 
+		///< name: the v(0) value and prefix() are unchanged.
 
 	~Arg() ;
 		///< Destructor.
 
 	size_type c() const ;
-		///< Returns the number of tokens in the
-		///< command line, including the program
-		///< name.
+		///< Returns the number of tokens in the command line, 
+		///< including the program name.
 
 	std::string v( size_type i ) const ;
 		///< Returns the i'th argument.
 		///< Precondition: i < c()
 
 	std::string prefix() const ;
-		///< Returns the basename of v(0) without
-		///< any extension. Typically used as a
-		///< prefix in error messages.
+		///< Returns the basename of v(0) without any extension. 
+		///< Typically used as a prefix in error messages.
 
 	static const char * prefix( char * argv[] ) ; // throw()
 		///< An exception-free version of prefix() which can
@@ -92,10 +88,10 @@ public:
 		///< block.
 
 	bool contains( const std::string & sw , size_type sw_args = 0U , bool case_sensitive = true ) const ;
-		///< Returns true if the command line
-		///< contains the given switch with enough
-		///< command line arguments left to satisfy 
-		///< the given number of switch arguments.
+		///< Returns true if the command line contains the 
+		///< given switch with enough command line arguments 
+		///< left to satisfy the given number of switch 
+		///< arguments.
 
 	size_type index( const std::string & sw , size_type sw_args = 0U ) const ;
 		///< Returns the index of the given switch.
@@ -106,8 +102,8 @@ public:
 		///< Returns false if the switch does not exist.
 
 	void removeAt( size_type sw_index , size_type sw_args = 0U ) ;
-		///< Removes the given argument and the
-		///< following 'sw_args' ones.
+		///< Removes the given argument and the following 
+		///< 'sw_args' ones.
 
 	Arg & operator=( const Arg & ) ;
 		///< Assignment operator.

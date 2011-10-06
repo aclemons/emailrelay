@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -183,7 +183,7 @@ void GDialog::pageUpdated()
 		m_finish_button->setText(tr("Close")) ;
 		m_finish_button->setEnabled(true) ;
 		if( m_help_button != NULL )
-			m_help_button->setEnabled(false) ;
+			m_help_button->setEnabled(!current_page.helpName().empty()) ;
 	}
 	else
 	{

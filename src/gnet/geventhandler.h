@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ public:
 		///< EventHandler objects or timer objects that are 
 		///< sub-objects of other EventHandler objects will 
 		///< normally have their implementation of 
-		///< onException() or onTimerException() delgate
+		///< onException() or onTimeoutException() delgate
 		///< to the outer object's onException().
 
 private:

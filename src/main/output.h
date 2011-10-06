@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,8 +31,9 @@ namespace Main
 }
 
 /// \class Main::Output
-/// An abstract interface for generating output.
-/// The implementation is controlled from main()/WinMain().
+/// An abstract interface for generating output
+/// on a command-line or a GUI. The appropriate implementation is
+/// selected from main() or WinMain().
 ///
 class Main::Output 
 {

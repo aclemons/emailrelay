@@ -150,7 +150,7 @@ For more verbose logging add the "--verbose" switch. If this becomes difficult
 to read via the system log (especially on Windows) then try logging to the
 standard error stream and redirect that to a file. Bear in mind that you will
 need have to replace "--as-server" with "--log" and "--as-proxy" with
-"--poll 0 --forward-to" since the "--as-server" and "--as-proxy" switches
+"--poll=0 --forward-to" since the "--as-server" and "--as-proxy" switches
 implicitly close the standard error stream soon after startup.
 
 	emailrelay --log --verbose > emailrelay.log 2>&1
@@ -264,7 +264,7 @@ run E-MailRelay as a POP server if also forwarding messages by SMTP).
 
 To allow POP access to spooled messages use a command-line something like this:
 
-	emailrelay --as-server --pop --pop-auth /etc/emailrelay.auth
+	emailrelay --as-server --pop --pop-auth=/etc/emailrelay.auth
 
 You will need to create the authentication secrets file ("/etc/emailrelay.auth"
 in this example) containing usernames and passwords. A simple example would look
@@ -297,7 +297,7 @@ edit "ip-up" itself.
 The simplest approach for editing "ip-up" is to look for a "sendmail -q" line.
 If you find "sendmail -q" then it should be sufficient to replace it with this:
 
-	emailrelay --as-client <myisp>:smtp
+	emailrelay --as-client=<myisp>:smtp
 
 where you substitute your ISP's SMTP server address for <myisp>.
 
@@ -305,7 +305,7 @@ Or if your "ip-up" calls out to "ip-up.local" then create a two-line
 "/etc/ppp/ip-up.local" script like this:
 
 	#!/bin/sh
-	exec /usr/local/sbin/emailrelay --as-client <myisp>:smtp
+	exec /usr/local/sbin/emailrelay --as-client=<myisp>:smtp
 
 If you create "ip-up.local" yourself remember to make it executable.
 
@@ -362,11 +362,11 @@ to mark or reject potential spam.
 To get E-MailRelay to reject spam outright you can just use "spamassassin -e" as
 your E-MailRelay "--filter" program:
 
-	emailrelay --as-server --filter "/usr/bin/spamassassin --exit-code"
+	emailrelay --as-server --filter="/usr/bin/spamassassin --exit-code"
 
 Or on Windows:
 
-	emailrelay --as-server --filter "c:/Program\ Files/perl/site/bin/spamassassin.bat --exit-code"
+	emailrelay --as-server --filter="c:/Program\ Files/perl/site/bin/spamassassin.bat --exit-code"
 
 To get spam messages identified by SpamAssassin but still pass through the
 E-MailRelay system you will have to have a small "--filter" script to collect
@@ -393,8 +393,8 @@ You could also consider doing spam filtering off-line, completely independent
 of any SMTP activity, by having two E-MailRelay processes chained together
 working off two spool directories:
 
-	emailrelay --as-server --spool-dir /tmp/spool-in --poll 1 --forward-to localhost:10025
-	emailrelay --as-server --spool-dir /tmp/spool-out --port 10025 --filter /tmp/myspamfilter
+	emailrelay --as-server --spool-dir=/tmp/spool-in --poll=1 --forward-to=localhost:10025
+	emailrelay --as-server --spool-dir=/tmp/spool-out --port=10025 --filter=/tmp/myspamfilter
 
 Here the first E-MailRelay server accepts incoming mail straight into its spool
 directory and it uses a "--poll" timer to independently forward spooled messages
@@ -405,7 +405,7 @@ There is also an experimental mechanism where E-MailRelay can talk direcly to
 the SpamassAssin "spamd" network deamon using a special form of the "--filter"
 switch:
 
-	emailrelay --as-server --filter spam:localhost:783
+	emailrelay --as-server --filter=spam:localhost:783
 
 This might be useful if spam filtering is creating a bottleneck in the
 E-MailRelay server.
@@ -423,7 +423,7 @@ The secrets file should contain one line of text something like this:
 Reference this file using "--client-auth" on the E-MailRelay command-line and
 also add in the "--client-tls" switch:
 
-	emailrelay --as-proxy smtp.gmail.com:587 --client-tls --client-auth /etc/emailrelay.auth ...
+	emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=/etc/emailrelay.auth ...
 
 Configuration GUI
 -----------------
@@ -434,4 +434,4 @@ serves as the installer.
 
 
 
-Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

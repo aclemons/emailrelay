@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -141,7 +141,7 @@ int main( int argc , char * argv [] )
 		G::Arg args( argc , argv ) ;
 		G::GetOpt getopt( args , 
 			"h/help/show this help text and exit//0//1|"
-			"H/with-help/show a help button//0//1|"
+			"N/no-help/dont show a help button//0//1|"
 			"d/debug/show debug messages if compiled-in//0//1|"
 			"i/as-install/install mode, as if payload present//0//1|"
 			"c/as-configure/configure mode, as if no payload present//0//1|"
@@ -165,7 +165,7 @@ int main( int argc , char * argv [] )
 
 		// parse the commandline
 		bool test_mode = getopt.contains("test") ;
-		bool with_help = getopt.contains("with-help") ;
+		bool with_help = !getopt.contains("no-help") ;
 		std::string cfg_test_page = getopt.contains("page") ? getopt.value("page") : std::string() ;
 		G::Path cfg_write_file( getopt.contains("write") ? getopt.value("write") : std::string() ) ;
 		G::Path cfg_read_file( getopt.contains("read") ? getopt.value("read") : std::string() ) ;

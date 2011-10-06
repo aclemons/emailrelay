@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -99,7 +99,10 @@ size_t G::Base64::index( char c , bool & error )
 {
 	const char * p = std::strchr( character_map , c ) ;
 	error = error || !c || !p ;
-	return p ? (p-character_map) : 0U ;
+	if( p == NULL ) 
+		return 0U ;
+	else
+		return p - character_map ;
 }
 
 size_t G::Base64::accumulate_6( g_uint32_t & n , char c_in , int & n_out , bool & error )

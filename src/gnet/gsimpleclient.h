@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -107,8 +107,11 @@ public:
 	void connect() ;
 		///< Initates a connection to the remote server. 
 		///<
-		///< This default implementation throws on error, and may call 
-		///< onConnect() before returning.
+		///< This default implementation throws on error, and may 
+		///< call onConnect() synchronously before returning. To 
+		///< ensure onConnect() is always called asynchronously 
+		///< it can be a good idea to call connect() from a 
+		///< zero-length timer (as HeapClient does).
 
 	bool connected() const ;
 		///< Returns true if connected to the peer.

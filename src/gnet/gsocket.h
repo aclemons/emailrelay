@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -96,18 +96,15 @@ public:
 		///< sockets.
 
 	bool canBindHint( const Address & address ) ;
-		///< Returns true if the socket can probably be 
-		///< bound with the given address. Some
-		///< implementations will always return
-		///< true. This method should be used on a 
-		///< temporary socket of the correct dynamic 
-		///< type since this socket may become
-		///< unusable.
+		///< Returns true if the socket can probably be bound 
+		///< with the given address. Some implementations will 
+		///< always return true. This method should be used on 
+		///< a temporary socket of the correct dynamic type 
+		///< since this socket may become unusable.
 
 	bool connect( const Address & addr , bool *done = NULL ) ;
-		///< Initiates a connection to (or association 
-		///< with) the given address. Returns false on 
-		///< error.
+		///< Initiates a connection to (or association with) 
+		///< the given address. Returns false on error.
 		///<
 		///< If successful, a 'done' flag is returned by 
 		///< reference indicating whether the connect completed 
@@ -157,34 +154,32 @@ public:
 
 	bool eMsgSize() ;
 		///< Returns true if the previous socket operation
-		///< failed with the EMSGSIZE error status.
-		///< When writing to a datagram socket this
-		///< indicates that the message was too big
-		///< to send atomically.
+		///< failed with the EMSGSIZE error status. When 
+		///< writing to a datagram socket this indicates that 
+		///< the message was too big to send atomically.
 
 	void addReadHandler( EventHandler & handler ) ;
-		///< Adds this socket to the event source list
-		///< so that the given handler receives read
-		///< events.
+		///< Adds this socket to the event source list so that 
+		///< the given handler receives read events.
 
 	void dropReadHandler();
 		///< Reverses addReadHandler().
 
 	void addWriteHandler( EventHandler & handler ) ;
-		///< Adds this socket to the event source list
-		///< so that the given handler receives write
-		///< events when flow control is released.
-		///< (Not used for datagram sockets.)
+		///< Adds this socket to the event source list so that 
+		///< the given handler receives write events when flow 
+		///< control is released. (Not used for datagram 
+		///< sockets.)
 
 	void dropWriteHandler() ;
 		///< Reverses addWriteHandler().
 
 	void addExceptionHandler( EventHandler & handler );
-		///< Adds this socket to the event source list
-		///< so that the given handler receives exception
-		///< events. An exception event should
-		///< be treated as a disconnection event.
-		///< (Not used for datagram sockets.)
+		///< Adds this socket to the event source list so that 
+		///< the given handler receives exception events. 
+		///< A TCP exception event should be treated as a 
+		///< disconnection event. (Not used for datagram 
+		///< sockets.)
 
 	void dropExceptionHandler() ;
 		///< Reverses addExceptionHandler().
@@ -206,8 +201,8 @@ public:
 
 protected:
 	Socket( int domain , int type , int protocol ) ;
-		///< Constructor used by derived classes.
-		///< Opens the socket using ::socket().
+		///< Constructor used by derived classes. Opens the 
+		///< socket using ::socket().
 
 	explicit Socket( Descriptor s ) ;
 		///< Constructor which creates a socket object from 

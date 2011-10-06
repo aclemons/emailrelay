@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -290,7 +290,9 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const State & state , const std::stri
 		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_pop_checkbox = new QCheckBox(tr("&POP3 server"));
+	tip( m_pop_checkbox , "Allow clients to see spooled messages using POP" ) ;
 	m_smtp_checkbox = new QCheckBox(tr("&SMTP server"));
+	tip( m_smtp_checkbox , "Allow clients to submit new messages using SMTP" ) ;
 
 	m_smtp_checkbox->setChecked( state.value("do-smtp",true) ) ;
 	m_pop_checkbox->setChecked( state.value("do-pop",testMode()) ) ;
@@ -346,7 +348,7 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const State & state , const std::stri
 	}
 	forwarding_box_layout->addWidget( m_on_demand_checkbox ) ;
 
-	m_forwarding_group = new QGroupBox(tr("SMTP forwarding")) ;
+	m_forwarding_group = new QGroupBox(tr("Mail forwarding")) ;
 	m_forwarding_group->setLayout( forwarding_box_layout ) ;
 
 	QVBoxLayout *layout = new QVBoxLayout;

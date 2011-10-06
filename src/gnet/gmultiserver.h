@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ private:
 /// \class GNet::MultiServerPtr
 /// A private implementation class used by
 /// GNet::MultiServer. The implementation is unusual
-/// in that only has proper value semantics if the
+/// in that it only has proper value semantics if the
 /// contained pointer is null; it is used in a way 
 /// that makes allowances for that restriction.
 ///

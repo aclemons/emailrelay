@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -15,21 +15,43 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-stylesheet=emailrelay.css
 txt_files=developer.txt reference.txt userguide.txt windows.txt 
 man_files_in=emailrelay.1 emailrelay-passwd.1 emailrelay-poke.1 emailrelay-submit.1 emailrelay-filter-copy.1
 man_files_out=emailrelay.1.gz emailrelay-passwd.1.gz emailrelay-poke.1.gz emailrelay-submit.1.gz emailrelay-filter-copy.1.gz
-html_files_in=doxygen-header.html emailrelay-doxygen.css doxygen-missing.html doxygen.cfg
-html_files_thru=index.html emailrelay-man.html $(stylesheet)
+html_files_in=doxygen-header.html doxygen-missing.html doxygen.cfg
+html_files_thru=index.html emailrelay-man.html
 html_files_out=readme.html developer.html reference.html userguide.html windows.html changelog.html
 docbook_files_out=emailrelay.docbook
-png_files=gsmtp-classes.png gnet-classes.png sequence-3.png gnet-client.png gsmtp-serverprotocol.png auth.png
+css_files_in=\
+	emailrelay.css_ \
+	emailrelay-doxygen.css_
+css_files_out=\
+	emailrelay.css \
+	emailrelay-doxygen.css
+png_files_thru=\
+	valid-html401.png \
+	diagram-1.png \
+	diagram-2.png
+png_files_in=\
+	gsmtp-classes.png_ \
+	gnet-classes.png_ \
+	sequence-3.png_ \
+	gnet-client.png_ \
+	gsmtp-serverprotocol.png_ \
+	auth.png_
+png_files_out=\
+	gsmtp-classes.png \
+	gnet-classes.png \
+	sequence-3.png \
+	gnet-client.png \
+	gsmtp-serverprotocol.png \
+	auth.png
 
-EXTRA_DIST = $(man_files_in) $(txt_files) $(html_files_in) $(html_files_thru) $(png_files)
+EXTRA_DIST = $(man_files_in) $(txt_files) $(html_files_in) $(css_files_in) $(png_files_in) $(png_files_thru) $(html_files_thru)
 noinst_SCRIPTS = .dox .docbook
 man1_MANS = $(man_files_in)
-e_doc_DATA = $(txt_files) $(html_files_out) $(html_files_thru) $(png_files) $(docbook_files_out)
-CLEANFILES = $(noinst_SCRIPTS) $(man_files_out) $(html_files_out) $(docbook_files_out) doxygen/* *.db *.mu docbook/*
+e_doc_DATA = $(txt_files) $(html_files_out) $(html_files_thru) $(css_files_out) $(png_files_out) $(png_files_thru) $(docbook_files_out)
+CLEANFILES = $(noinst_SCRIPTS) $(man_files_out) $(html_files_out) $(docbook_files_out) $(png_files_out) $(css_files_out) Doxyfile *.db *.mu doxygen/* docbook/*
 
 SUFFIXES = .txt .html .db .mu
 
@@ -50,6 +72,12 @@ run_doxygen_fixup=$(top_builddir)/bin/doxygen_fixup.pl
 .mu.db:
 	$(converter_mu2docbook) -a "$(AWK)" -x < "$(top_builddir)/doc/$*.mu" > "$*.db"
 
+.css_.css:
+	cp "$(top_srcdir)/doc/$*.css_" $*.css
+
+.png_.png:
+	cp "$(top_srcdir)/doc/$*.png_" $*.png
+
 head.db: $(converter_mu2docbook)
 	$(converter_mu2docbook) -a "$(AWK)" --head "E-MailRelay" > head.db.tmp && mv -f head.db.tmp head.db
 
@@ -63,8 +91,8 @@ emailrelay.docbook: head.db tail.db userguide.db reference.db developer.db
 	-xmlto -o docbook html emailrelay.docbook && touch .docbook && cp "$(top_srcdir)/doc/"*.png docbook/
 
 .dox:
-	$(run_doxygen) "$(HAVE_DOXYGEN)" "$(top_srcdir)" "$(top_builddir)" && touch .dox
-	-$(run_doxygen_fixup) "$(top_srcdir)/doc/doxygen" && cp "$(top_srcdir)/doc/emailrelay-doxygen.css" "$(top_srcdir)/doc/doxygen/"
+	$(run_doxygen) "$(HAVE_DOXYGEN)" "$(top_srcdir)" "$(top_builddir)" Doxyfile && touch .dox
+	-$(run_doxygen_fixup) "$(top_builddir)/doc/doxygen"
 
 emailrelay-man.html: emailrelay.1
 	if test "$(HAVE_MAN2HTML)" = "yes" ; then man2html -r -L. emailrelay.1 < /dev/null > emailrelay-man.html.tmp && mv emailrelay-man.html.tmp emailrelay-man.html ; grep -v '^Content-type:' < emailrelay-man.html | grep -v '^Time:' > emailrelay-man.html.tmp ; mv emailrelay-man.html.tmp emailrelay-man.html ; fi

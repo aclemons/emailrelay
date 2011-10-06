@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -219,7 +219,7 @@ dnl
 AC_DEFUN([ACLOCAL_CAPABILITIES],
 [
 changequote(<<,>>)
-	G_CAPABILITIES="@@`echo \"$ac_configure_args\" | sed 's/-/_/g' | sed 's/[^_a-z0-9]//g' | sed 's/^__//g'`@@"
+	G_CAPABILITIES="@@`echo \"$ac_configure_args\" | sed 's/ /:/g' | sed 's/[^_a-z0-9/=:-]//g'`@@"
 changequote([,])
 	AC_SUBST(G_CAPABILITIES)
 ])
@@ -728,7 +728,7 @@ AC_DEFUN([WITH_PAM],
 
 dnl set-directories
 dnl
-dnl Sets directory paths taking account of "--enable-fhs".
+dnl Sets directory paths.
 dnl
 AC_DEFUN([SET_DIRECTORIES],
 [
@@ -743,83 +743,37 @@ AC_DEFUN([SET_DIRECTORIES],
 	# * e_spooldir
 	# * e_initdir
 
-	if test "$enable_fhs" = "yes"
-	then
-		prefix='/usr'
-		exec_prefix='/usr'
-		sbindir="/usr/sbin"
-		libexecdir="/usr/lib"
-		localstatedir="/var"
-		mandir="/usr/share/man"
-		datadir="/usr/share"
-		sysconfdir="/etc"
-	fi
 	if test "$e_libexecdir" = "" 
 	then 
-		if test "$enable_fhs" = "yes" 
-		then 
-			e_libexecdir="$libexecdir/$PACKAGE" 
-		else 
-			e_libexecdir="$libexecdir/$PACKAGE" 
-		fi
+		e_libexecdir="$libexecdir/$PACKAGE" 
 	fi
 	if test "$e_examplesdir" = "" 
 	then 
-		if test "$enable_fhs" = "yes" 
-		then
-			e_examplesdir="$libexecdir/$PACKAGE/examples"
-		else 
-			e_examplesdir="$libexecdir/$PACKAGE/examples" 
-		fi
+		e_examplesdir="$libexecdir/$PACKAGE/examples" 
 	fi
 	if test "$e_sysconfdir" = "" 
 	then 
-		if test "$enable_fhs" = "yes" 
-		then 
-			e_sysconfdir="$sysconfdir"
-		else 
-			e_sysconfdir="$sysconfdir" 
-		fi
+		e_sysconfdir="$sysconfdir" 
 	fi
 	if test "$e_docdir" = "" 
 	then 
-		if test "$enable_fhs" = "yes" 
-		then 
-			e_docdir="$datadir/doc/$PACKAGE" 
-		else 
-			e_docdir="$docdir"
-			if test "$e_docdir" = ""
-			then
-				e_docdir="$datadir/$PACKAGE/doc" 
-			fi
+		e_docdir="$docdir"
+		if test "$e_docdir" = ""
+		then
+			e_docdir="$datadir/$PACKAGE/doc" 
 		fi
 	fi
 	if test "$e_spooldir" = "" 
 	then 
-		if test "$enable_fhs" = "yes" 
-		then 
-			e_spooldir="$localstatedir/spool/$PACKAGE"
-		else 
-			e_spooldir="$localstatedir/spool/$PACKAGE" 
-		fi
+		e_spooldir="$localstatedir/spool/$PACKAGE" 
 	fi
 	if test "$e_pamdir" = "" 
 	then 
-		if test "$enable_fhs" = "yes" 
-		then 
-			e_pamdir="$sysconfdir/pam.d"
-		else 
-			e_pamdir="$sysconfdir/pam.d" 
-		fi
+		e_pamdir="$sysconfdir/pam.d" 
 	fi
 	if test "$e_initdir" = "" 
 	then 
-		if test "$enable_fhs" = "yes" 
-		then 
-			e_initdir="/etc/init.d" 
-		else 
-			e_initdir="$libexecdir/$PACKAGE/init" 
-		fi
+		e_initdir="$libexecdir/$PACKAGE/init" 
 	fi
 ])
 

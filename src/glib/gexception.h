@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,7 +33,13 @@ namespace G
 
 /// \class G::Exception
 /// A general-purpose exception class derived from std::exception
-/// and containing a std::string.
+/// and containing a std::string. Provides constructors that simplify the
+/// assembly of multi-part error messages.
+///
+/// Usage:
+/// \code
+///	throw G::Exception( "initialisation error" , "no such file" , path ) ;
+/// \endcode
 ///
 class G::Exception : public std::exception 
 {
@@ -88,4 +94,3 @@ public:
 #endif
 
 #endif
-

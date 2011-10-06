@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ public:
 
 	virtual bool closeButton() const ;
 		///< Returns true if the page should have _only_ a close
-		///< button, typically if the last page.
+		///< (and maybe help) button, typically if the last page.
 		///<
 		///< This default implementation returns the constructor
 		///< parameter.

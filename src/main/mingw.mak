@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ mk_sources=\
 	winmain.cpp \
 	winmenu.cpp
 
-libs=../gpop/gpop.a ../gsmtp/gsmtp.a ../gnet/gnet.a ../gssl/gssl.a ../win32/gwin32.a ../glib/glib.a $(mk_ssl_libs)
+libs=../gpop/gpop.a ../gsmtp/gsmtp.a ../gnet/gnet.a ../gauth/gauth.a ../gssl/gssl.a ../win32/gwin32.a ../glib/glib.a $(mk_ssl_libs)
 syslibs=-lgdi32 -lwsock32
 rc=emailrelay.rc
 fake_mc=mingw32-mc.exe

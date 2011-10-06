@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -522,7 +522,7 @@ void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std
 	if( pre_erase )
 		line.erase() ;
 
-	// this is a special optimisation for a two-character terminator with a one-character initial string ;-)
+	// this is a special speed optimisation for a two-character terminator with a one-character initial string ;-)
 	if( eol.length() == 2U && eol[0] != eol[1] && line.length() == 1U )
 	{
 		// Save the initial character, use std::getline() for speed (terminating

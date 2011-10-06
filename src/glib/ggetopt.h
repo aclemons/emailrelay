@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,6 +37,15 @@ namespace G
 
 /// \class G::GetOpt
 /// A command line switch parser.
+///
+/// Usage:
+/// \code
+///		G::Arg arg( argc , argv ) ;
+///		G::GetOpt opt( arg , "e/extra/does something/extra/1/arg/1" ) ;
+///		if( opt.hasErrors() ) opt.showErrors( std::cerr ) ;
+///		if( opt.contains("extra") ) do_extra( opt.value("extra") ) ;
+/// \endcode
+///
 /// \see G::Arg
 ///
 class G::GetOpt 
@@ -82,10 +91,10 @@ public:
 			///<    'value-description'
 			///<    'level'
 			///<
+			///< By convention mainstream switches should have 
+			///< a level of 1, and obscure ones level 2 and above.
 			///< If the switch-description field is empty or
 			///< if the level is zero then the switch is hidden.
-			///< By convention main-stream switches should have 
-			///< a level of 1, and obscure ones level 2 and above.
 
 	Arg args() const ;
 		///< Returns all the non-switch command-line arguments.

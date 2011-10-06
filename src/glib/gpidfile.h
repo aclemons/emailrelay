@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2010 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,7 +36,21 @@ namespace G
 }
 
 /// \class G::PidFile
-/// A class for creating pid files.
+/// A class for creating pid files. Works 
+/// with G::Root and G::Daemon so that the pid file can 
+/// get created very late in a daemon startup sequence. 
+/// Installs a signal handler so that the pid file gets
+/// deleted on process termination.
+///
+/// Usage:
+/// \code
+/// G::PidFile pid_file ;
+/// if( !path.empty() ) pid_file.init(path) ;
+/// G::Root::init("nobody") ;
+/// if( daemon ) G::Daemon::detach( pid_file ) ;
+/// { G::Root claim_root ; pid_file.commit() ; }
+/// \endcode
+///
 /// \see G::Daemon
 ///
 class G::PidFile 
