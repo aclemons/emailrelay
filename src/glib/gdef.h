@@ -161,16 +161,6 @@
 		#endif
 	#endif
 
-	/* Define Windows-style types under unix
-	 */
-	#if ! defined( G_WINDOWS )
-		typedef unsigned char BOOL ;
-		typedef unsigned int HWND ;
-		typedef unsigned int HINSTANCE ;
-		typedef unsigned int HANDLE ;
-		typedef wchar_t TCHAR ;
-	#endif
-
 	/* Include commonly-used system headers (good for pre-compilation)
 	 */
 	#ifdef __cplusplus
@@ -181,6 +171,18 @@
 		#include <memory>
 		#include <sstream>
 		#include <string>
+	#else
+		#include <stddef.h>
+	#endif
+
+	/* Define Windows-style types under unix
+	 */
+	#if ! defined( G_WINDOWS )
+		typedef unsigned char BOOL ;
+		typedef unsigned int HWND ;
+		typedef unsigned int HINSTANCE ;
+		typedef unsigned int HANDLE ;
+		typedef wchar_t TCHAR ;
 	#endif
 
 	/* Define fixed-size types
