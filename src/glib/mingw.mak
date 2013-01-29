@@ -1,9 +1,9 @@
 #
-## Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation, either version 3 of the License, or 
+## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
 ## 
 ## This program is distributed in the hope that it will be useful,
@@ -23,13 +23,16 @@ mk_sources=\
 	garg_win32.cpp \
 	gbase64.cpp \
 	gcleanup_win32.cpp \
+	gconvert.cpp \
+	gconvert_win32.cpp \
 	gcounter.cpp \
 	gdaemon_win32.cpp \
 	gdate.cpp \
 	gdatetime.cpp \
-	gdatetime_win32.cpp \
+	gdatetime_unix.cpp \
 	gdirectory.cpp \
 	gdirectory_win32.cpp \
+	genvironment_unix.cpp \
 	gexception.cpp \
 	gexecutable.cpp \
 	gexecutable_win32.cpp \
@@ -49,10 +52,11 @@ mk_sources=\
 	gpidfile.cpp \
 	gprocess_win32.cpp \
 	gnewprocess_win32.cpp \
-	gnocheck_win32.cpp \
+	gnocheck_unix.cpp \
 	groot.cpp \
 	gslot.cpp \
 	gstr.cpp \
+	gstrings.cpp \
 	gtest.cpp \
 	gtime.cpp \
 	gxtext.cpp \

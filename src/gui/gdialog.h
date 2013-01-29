@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -21,6 +21,7 @@
 #ifndef G_DIALOG_H
 #define G_DIALOG_H
 
+#include "gdef.h"
 #include "qt.h"
 #include "gpage.h"
 #include <list>
@@ -74,9 +75,11 @@ public:
 	bool empty() const ;
 		///< Returns true if there are no pages add()ed.
 
-	void dump( std::ostream & , const std::string & prefix = std::string() ,
-		const std::string & eol = "\n" , bool with_passwords = true ) const;
-			///< Dumps the pages to a stream.
+	void dumpStateVariables( std::ostream & ) const ;
+		///< Dump the widget state from all the pages.
+
+	void dumpInstallVariables( std::ostream & ) const ;
+		///< Dump the install variables from all the pages.
 
 	void wait( bool ) ;
 		///< Disables all buttons.
@@ -90,6 +93,7 @@ private slots:
 
 private:
 	void init( bool ) ;
+	void dump( std::ostream & , bool for_install ) const ;
 	void setFirstPage( GPage & page ) ;
 	void switchPage( std::string new_page_name , std::string old_page_name = std::string() , bool back = false ) ;
 

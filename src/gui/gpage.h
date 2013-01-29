@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -21,6 +21,7 @@
 #ifndef G_PAGE_H
 #define G_PAGE_H
 
+#include "gdef.h"
 #include "qt.h"
 #include "gstrings.h"
 #include "gpath.h"
@@ -80,7 +81,7 @@ public:
 		///< Returns true if the page is complete
 		///< and the 'next' button can be enabled.
 
-	virtual void dump( std::ostream & , const std::string & prefix , const std::string & eol , bool ) const ;
+	virtual void dump( std::ostream & , bool for_install ) const ;
 		///< Dumps the page's state to the given
 		///< stream. Overrides should start by
 		///< calling this base-class implementation.
@@ -115,10 +116,12 @@ protected:
 	static std::string value( const QLineEdit * ) ;
 	static std::string value( const QComboBox * ) ;
 	bool testMode() const ;
-	void dumpItem( std::ostream & , const std::string & prefix , const std::string & key ,
-		const std::string & value , const std::string & eol ) const ;
-	void dumpItem( std::ostream & , const std::string & prefix , const std::string & key ,
-		const G::Path & value , const std::string & eol ) const ;
+	void dumpItem( std::ostream & , bool , const std::string & , const std::string & ) const ;
+	void dumpItem( std::ostream & , bool , const std::string & , const G::Path & value ) const ;
+	static QString qstr( const std::string & ansi ) ;
+
+private:
+	static std::string stdstr( const QString & ) ;
 
 private:
 	GDialog & m_dialog ;

@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -49,8 +49,9 @@ md5::digest::state_type md5::digest::state() const
 {
 	big_t mask = ~0 ;
 	small_t thirty_two = 32U ;
-	if( sizeof(mask) > thirty_two ) mask <<= thirty_two ; // ignore warnings here
-	state_type result = { a & mask , b & mask , c & mask , d & mask } ;
+	small_t sizeof_thirty_two_bits = 4U ; // 4x8=32
+	if( sizeof(mask) > sizeof_thirty_two_bits ) mask <<= thirty_two ; // ignore warnings here
+	state_type result = { a & ~mask , b & ~mask , c & ~mask , d & ~mask } ;
 	return result ;
 }
 

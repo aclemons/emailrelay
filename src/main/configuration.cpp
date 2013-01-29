@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -72,7 +72,12 @@ unsigned int Main::Configuration::port() const
 G::Strings Main::Configuration::listeningInterfaces( const std::string & protocol ) const
 {
 	// allow eg. "127.0.0.1,smtp=192.168.1.1,admin=10.0.0.1"
+
+	// prepare the naive result by splitting the user's string by comma or slash separators 
 	G::Strings result = m_cl.value( "interface" , ",/" ) ;
+
+	// then weed out the ones that dont match the required protocol, removing the 
+	// "protocol=" prefix at the same time to leave just the required list of addresses
 	for( G::Strings::iterator p = result.begin() ; p != result.end() ; )
 	{
 		if( protocol.empty() || protocol == G::Str::head( *p , (*p).find('=') , protocol ) )
@@ -80,6 +85,7 @@ G::Strings Main::Configuration::listeningInterfaces( const std::string & protoco
 		else
 			p = result.erase( p ) ;
 	}
+
 	return result ;
 }
 
@@ -338,6 +344,11 @@ bool Main::Configuration::anonymous() const
 unsigned int Main::Configuration::filterTimeout() const
 {
 	return value( "filter-timeout" , 5U * 60U ) ;
+}
+
+bool Main::Configuration::peerLookup() const 
+{
+	return contains( "peer-lookup" ) ;
 }
 
 bool Main::Configuration::contains( const char * s ) const

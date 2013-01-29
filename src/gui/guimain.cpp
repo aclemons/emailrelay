@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -17,76 +17,65 @@
 //
 // guimain.cpp
 //
-// This GUI program is primarily intended to help with configuration
-// of an initial installation ("--as-install"), but it can also be 
-// used to reconfigure an existing installation ("--as-configure").
+// Modes
+// -----
+// This GUI program is primarily intended to help with configuration of an
+// initial installation ("--as-install"), but it can also be used to reconfigure
+// an existing installation ("--as-configure").
 //
-// The program determines whether to run in install mode or configure
-// mode by looking for packed files appended to the end of the
-// executable, although the "--as-(whatever)" command-line switches 
-// can be used as an override for this test. In install mode the
-// target directory paths can be set from within the GUI and the 
-// packed files are extracted into those directories. 
+// The program determines whether to run in install mode or configure mode by
+// looking for packed files appended to the end of the executable, although the
+// "--as-(whatever)" command-line switches can be used as an override for this
+// test.
 //
-// If there are no packed files then the assumption is that we
-// are being run after a successful installation, so the target 
-// directory paths are greyed out in the GUI. However, the code
-// still needs to know what the installation directories were and
-// it tries to obtain these from a special "state" file located
-// in the same directory as the executable.
+// In a unix-like installation the install steps are normally done from the
+// command-line using "make install", so the GUI is only expected to
+// run in configuration mode.
 //
-// The state file contains the base installation directories as a 
-// minimum, but it also typically holds the complete state of the
-// GUI including the state of the widgets.
+// Pointer variables
+// -----------------
+// In install mode the target directory paths can be set from within the
+// GUI and the packed files are extracted into those directories. In
+// configuration mode the assumption is that installation is complete so the
+// target directory paths are greyed out in the GUI. However, the code still
+// needs to know what the installation directories were (especially for the
+// main config file) and it tries to obtain these from a special read-only
+// "pointer" file located in the same directory as the executable.
 //
-// The state file is read at startup and written as part of the final 
-// stage of the GUI workflow. If running in install mode the state
-// file is optional; if running in configuration mode the state
-// file is mandatory, but it only needs to contain two directory
-// paths (see Dir::read() and "make install").
+// The name of the pointer file is the name of the GUI executable without any
+// extension; or if the GUI executable had no extension to begin with then it is
+// the name of the GUI executable with ".cfg" appended.
 //
-// In a unix-like installation the build and install steps are normally
-// done from the command-line using "make" and "make install". In this
-// case the GUI is only expected to do post-installation configuration 
-// so there are no packed files appended to the executable and the 
-// initial state file is created by "make install". (It is possible 
-// to do a windows-like, self-extracting installation on unix-like 
-// operating systems, but not very likely in practice.)
+// In a unix-like installation it is the "make install" step that creates the
+// pointer file containing variables pointing to the installation directories,
+// but it also cunningly formats it as a shell script so that running the
+// pointer file ("emailrelay-gui") actually runs the GUI ("emailrelay-gui.real").
 //
-// The name of the state file is the name of the GUI executable
-// without any extension; or if the GUI executable had no extension
-// to begin with then it is the name of the GUI executable with
-// ".state" appended (but refer to the next paragraph to see
-// why this is not used in practice).
+// State variables
+// ---------------
+// The GUI uses "state" variables to record the state of its widgets etc. so
+// that it can be easily re-run. Rather than have a separate file for these
+// state variables they are just stored in the main configuration file with
+// a "gui-" prefix.
 //
-// The format of the state file (since v1.8) allows it to be a 
-// simple shell script. This means that a unix-like "make install" 
-// can install the GUI executable as "emailrelay-gui.real" and the
-// state file called "emailrelay-gui" can double-up as a wrapper shell
-// script. Making the state file also a shell script is so that
-// the two files in the relevant bin directory are both executable, 
-// in line with the FHS and user expectations.
+// The GUI state variables are read initially at startup and then written out
+// as part of the final stage of the GUI workflow.
 //
-// The implementation of the GUI uses a set of dialog-box "pages"
-// with forward and back buttons. Each page writes its state as
-// "key=value" pairs into a configuration text stream. After the 
-// last page has been filled in the resulting configuration text 
-// is passed to the Installer class. This class interprets the 
-// configuration and assembles a set of installation actions 
-// (in the Command pattern) which are then executed to effect the
-// installation.
+// Install variables
+// -----------------
+// The Installer class operates according to a set of install variables so that
+// it is largeley independent of the GUI. The install variables are emited by
+// GUI pages into a stringstream, and the contents of the stringstream are
+// interpreted by the Installer.
 //
-// Note that the Installer class only does what the configuration 
-// text tells it to do; it does not have any intelligence of its own. 
-// In principle this allows for a complete separation of the GUI 
-// and the installation process, with a simple text file interface 
-// between them. In practice the text file would have to contain 
-// plaintext passwords, so this is not a secure approach.
-//
-// The contents of the state file are also based on the output of
-// configuration text from the GUI pages, but it also has additional
-// information from the Dir class and it does not contain any 
-// account information.
+// Implementation
+// --------------
+// The implementation of the GUI uses a set of dialog-box "pages" with forward
+// and back buttons. Each page writes its state as install variables into a
+// text stream. After the last page has been filled in the resulting install
+// text is passed to the Installer class. This class interprets assembles a set
+// of installation actions (in the Command pattern) which are then executed to
+// effect the installation.
 //
 
 #include "gdef.h"
@@ -94,8 +83,13 @@
 #include "gunpack.h"
 #include "gdialog.h"
 #include "gfile.h"
+#include "mapfile.h"
+#include "state.h"
+#include "pointer.h"
+#include "gdirectory.h"
 #include "dir.h"
 #include "pages.h"
+#include "boot.h"
 #include "glogoutput.h"
 #include "ggetopt.h"
 #include "garg.h"
@@ -105,22 +99,29 @@
 #include <iostream>
 #include <stdexcept>
 
-static int width() 
-{ 
-	return 500 ; 
+static int width()
+{
+	return 500 ;
 }
 
-static int height() 
-{ 
-	return 500 ; 
+static int height()
+{
+	return 500 ;
 }
 
 static void error( const std::string & what )
 {
 	QString title(QMessageBox::tr("E-MailRelay")) ;
-	QMessageBox::critical( NULL , title , 
+	QMessageBox::critical( NULL , title ,
 		QMessageBox::tr("Failed with the following exception: %1").arg(what.c_str()) ,
 		QMessageBox::Abort , QMessageBox::NoButton , QMessageBox::NoButton ) ;
+}
+
+static void info( const std::string & text )
+{
+	QString title(QMessageBox::tr("E-MailRelay")) ;
+	QMessageBox::information( NULL , title , QString::fromLatin1(text.c_str()) ,
+		QMessageBox::Ok , QMessageBox::NoButton , QMessageBox::NoButton ) ;
 }
 
 static bool isMac()
@@ -133,89 +134,172 @@ static bool isMac()
  #endif
 }
 
+static void debug( const std::string & prefix , const G::StringMap & map )
+{
+	if( map.empty() )
+	{
+		G_DEBUG( prefix << ": (empty)" ) ;
+	}
+	else
+	{
+		for( G::StringMap::const_iterator p = map.begin() ; p != map.end() ; ++p )
+		{
+			G_DEBUG( prefix << ": " << (*p).first << "=[" << (*p).second << "]" ) ;
+		}
+	}
+}
+
+class Application : public QApplication 
+{
+public:
+	Application( int argc , char * argv [] ) ;
+	virtual bool notify( QObject * p1 , QEvent * p2 ) ;
+} ;
+Application::Application( int argc , char * argv [] ) :
+	QApplication(argc,argv)
+{
+}
+bool Application::notify( QObject * p1 , QEvent * p2 )
+{
+	try
+	{
+		return QApplication::notify( p1 , p2 ) ;
+	}
+	catch( std::exception & e )
+	{
+		G_ERROR( "exception: " << e.what() ) ;
+		std::cerr << "exception: " << e.what() << std::endl ;
+		error( e.what() ) ;
+		std::string message = G::Str::wrap( e.what() , "" , "" , 40 ) ;
+		qCritical( "exception: %s" , message.c_str() ) ;
+		exit( 3 ) ;
+	}
+	return false ;
+}
+
 int main( int argc , char * argv [] )
 {
 	try
 	{
-		QApplication app( argc , argv ) ;
+		Application app( argc , argv ) ;
 		G::Arg args( argc , argv ) ;
-		G::GetOpt getopt( args , 
+		G::GetOpt getopt( args ,
 			"h/help/show this help text and exit//0//1|"
 			"N/no-help/dont show a help button//0//1|"
-			"d/debug/show debug messages if compiled-in//0//1|"
 			"i/as-install/install mode, as if payload present//0//1|"
 			"c/as-configure/configure mode, as if no payload present//0//1|"
-			"w/write/state file for writing//1/file/1|"
-			"r/read/state file for reading//1/file/1|"
+			"w/write/configuration file for writing//1/file/1|"
+			"r/read/configuration file for reading//1/file/1|"
+			"p/pointer/directory pointer file//1/file/1|"
+			"l/log/output log messages//0//1|"
+			"d/debug/output debug log messages/ if compiled in/0//0|"
+			"s/syslog/copy log messages to the system log//0//1|"
 			// hidden...
 			"P/page/single page test//1/page-name/0|"
 			"m/mac/enable some mac-like runtime behaviour//0//0|"
 			"t/test/test-mode//0//0" ) ;
 		if( getopt.hasErrors() )
 		{
-			getopt.showErrors( std::cerr ) ;
+			std::ostringstream ss ;
+			getopt.showErrors( ss ) ;
+			error( ss.str() ) ;
 			return 2 ;
 		}
 		if( getopt.contains("help") )
 		{
-			getopt.showUsage( std::cout , " [<qt4-switches>]" , false ) ;
+			std::ostringstream ss ;
+			getopt.showUsage( ss , " [<qt4-options>]" , false ) ;
+			info( ss.str() ) ;
 			return 0 ;
 		}
-		G::LogOutput log_ouptut( getopt.contains("debug") ) ;
+		G::LogOutput log_ouptut( 
+			"emailrelay-gui" ,
+			getopt.contains("log") , // output
+			getopt.contains("log") , // with-logging
+			getopt.contains("log") , // with-verbose-logging
+			getopt.contains("debug") , // with-debug
+			true , // with-level
+			false , // with-timestamp
+			false , // strip-context
+			getopt.contains("syslog") // use-syslog
+		) ;
+		G_LOG( "main: start: " << argv[0] ) ;
 
 		// parse the commandline
 		bool test_mode = getopt.contains("test") ;
 		bool with_help = !getopt.contains("no-help") ;
 		std::string cfg_test_page = getopt.contains("page") ? getopt.value("page") : std::string() ;
-		G::Path cfg_write_file( getopt.contains("write") ? getopt.value("write") : std::string() ) ;
 		G::Path cfg_read_file( getopt.contains("read") ? getopt.value("read") : std::string() ) ;
+		G::Path cfg_write_file( getopt.contains("write") ? getopt.value("write") : std::string() ) ;
+		G::Path cfg_pointer_file( getopt.contains("pointer") ? getopt.value("pointer") : std::string() ) ;
 		bool cfg_as_mac = getopt.contains("mac") ;
 		bool cfg_install = getopt.contains("as-install") ;
 		bool cfg_configure = getopt.contains("as-configure") ;
-		G::Path state_path_in = cfg_read_file == G::Path() ? State::file(args.v(0)) : cfg_read_file ;
-		G::Path state_path_out = cfg_write_file == G::Path() ? State::file(args.v(0)) : cfg_write_file ;
 
 		try
 		{
-			// find the payload -- normally packed into the running executable
+			// find the payload -- packed into the running executable or a separate file called "payload"
 			G::Path payload_1 = args.v(0) ;
 			G::Path payload_2 = G::Path( G::Path(args.v(0)).dirname() , "payload" ) ;
 			G::Path payload_3 = G::Path( G::Path(args.v(0)).dirname() , ".." , "payload" ) ;
-			G::Path payload = 
+			G::Path payload =
 				G::Unpack::isPacked(payload_1) ? payload_1 : (
 				G::Unpack::isPacked(payload_2) ? payload_2 : (
 				payload_3 ) ) ;
-			G_DEBUG( "main: packed files " << (G::Unpack::isPacked(payload)?"":"not ") 
+			G_DEBUG( "main: packed files " << (G::Unpack::isPacked(payload)?"":"not ")
 				<< "found (" << payload << ")" ) ;
 
 			// are we install-mode or configure-mode?
 			bool is_installing = ( cfg_install || G::Unpack::isPacked(payload) ) && !cfg_configure ;
 			bool is_installed = !is_installing ;
 
-			// read the state file
-			State::Map state_map ;
+			// set up a directory pointer map - start with o/s defaults and then override from the file
+			G::StringMap dir_map ;
+			dir_map["dir-spool"] = Dir::spool().str() ; // should be overridden by pointer file
+			dir_map["dir-config"] = Dir::config().str() ; // should be overridden by pointer file
+			dir_map["dir-install"] = Dir::install().str() ;
+			dir_map["dir-boot"] = Dir::boot().str() ;
+			dir_map["dir-desktop"] = Dir::desktop().str() ;
+			dir_map["dir-login"] = Dir::login().str() ;
+			dir_map["dir-menu"] = Dir::menu().str() ;
+			debug( "default directory" , dir_map ) ;
 			{
-				G_DEBUG( "main: state file: " << state_path_in ) ;
-				std::ifstream state_stream( state_path_in.str().c_str() ) ;
-				if( !state_stream.good() && is_installed )
-					throw std::runtime_error(std::string()+"cannot open state file: \""+state_path_in.str()+"\"") ;
-				state_map = State::read( state_stream ) ;
-				if( !state_stream.eof() && is_installed )
-					throw std::runtime_error(std::string()+"cannot read state file: \""+state_path_in.str()+"\"") ;
+				G::Path pointer_file_in = cfg_pointer_file == G::Path() ? Pointer::file(args.v(0)) : cfg_pointer_file ;
+				G_DEBUG( "main: pointer file: " << pointer_file_in ) ;
+				std::ifstream pointer_stream( pointer_file_in.str().c_str() ) ;
+				if( !pointer_stream.good() && is_installed )
+					throw std::runtime_error(std::string()+"cannot open file \""+pointer_file_in.str()+"\" to read the spool and config directory names; try creating the file with DIR_SPOOL=... and DIR_CONFIG=... lines" ) ;
+				Pointer::read( dir_map , pointer_stream ) ;
+				if( !pointer_stream.eof() && is_installed )
+					throw std::runtime_error(std::string()+"cannot read pointer file \""+pointer_file_in.str()+"\"") ;
 			}
-			State state( state_map ) ;
+			if( dir_map.find("dir-pid") == dir_map.end() )
+				dir_map["dir-pid"] = Dir::pid(dir_map["dir-config"]).str() ;
+			debug( "directory" , dir_map ) ;
+			bool start_on_boot_able = Boot::able( dir_map["dir-boot"] ) ;
 
-			// initialise the directory info object
-			Dir dir( args.v(0) ) ;
-			dir.read( state ) ;
+			// prepare paths to the main config file
+			G::Path config_file_in = cfg_read_file == G::Path() ?
+				G::Path::join( dir_map["dir-config"] , "emailrelay.conf" ) :
+				cfg_read_file ;
+			G::Path config_file_out = cfg_write_file == G::Path() ?
+				G::Path::join( dir_map["dir-config"] , "emailrelay.conf" ) :
+				cfg_write_file ;
 
-			G_DEBUG( "main: Dir::install: " << Dir::install() ) ;
-			G_DEBUG( "main: Dir::spool: " << dir.spool() ) ;
-			G_DEBUG( "main: Dir::config: " << dir.config() ) ;
-			G_DEBUG( "main: Dir::boot: " << dir.boot() ) ;
-			G_DEBUG( "main: Dir::pid: " << dir.pid(dir.config()) ) ;
-			G_DEBUG( "main: Dir::cwd: " << dir.cwd() ) ;
-			G_DEBUG( "main: Dir::thisdir: " << dir.thisdir() ) ;
+			// read the config file
+			G::StringMap config_file_map ;
+			{
+				G_DEBUG( "main: read config file: " << config_file_in ) ;
+				bool strict = false ; // allow config file to be missing (esp. on windows)
+				std::ifstream state_stream( config_file_in.str().c_str() ) ;
+				if( !state_stream.good() && is_installed && strict )
+					throw std::runtime_error(std::string()+"cannot open config file: \""+config_file_in.str()+"\"") ;
+				config_file_map = MapFile::read( state_stream ) ;
+				if( !state_stream.eof() && is_installed && strict )
+					throw std::runtime_error(std::string()+"cannot read config file: \""+config_file_in.str()+"\"") ;
+			}
+			debug( "config" , config_file_map ) ;
+			State state( config_file_map , dir_map ) ;
 
 			// default translator
 			QTranslator qt_translator;
@@ -228,27 +312,41 @@ int main( int argc , char * argv [] )
 			app.installTranslator(&translator);
 
 			// initialise GPage
-			if( ! cfg_test_page.empty() || test_mode ) 
+			if( ! cfg_test_page.empty() || test_mode )
 				GPage::setTestMode() ;
+
+			// check the config file will be writeable by ProgressPage
+			if( !config_file_out.str().empty() && !is_installing &&
+				!G::Directory(config_file_out.dirname()).valid(true) )
+			{
+				std::ostringstream ss ;
+				ss << "config file \"" << config_file_out.str() << "\" is not writable" ;
+				if( !getopt.contains("write") )
+					ss
+						<< ": try \"" << args.prefix() << " --write <config-file>\" "
+						<<  "specifying a writable filesystem path; then add "
+						<< "\"--read <config-file>\" when re-running" ;
+				throw std::runtime_error( ss.str() ) ;
+			}
 
 			// create the dialog and all its pages
 			GDialog d( with_help ) ;
 			d.add( new TitlePage(d,state,"title","license","",false,false) , cfg_test_page ) ;
 			d.add( new LicensePage(d,state,"license","directory","",false,false,is_installed) , cfg_test_page ) ;
-			d.add( new DirectoryPage(d,state,"directory","dowhat","",false,false,dir,is_installing) , cfg_test_page ) ;
+			d.add( new DirectoryPage(d,state,"directory","dowhat","",false,false,is_installing) , cfg_test_page ) ;
 			d.add( new DoWhatPage(d,state,"dowhat","pop","smtpserver",false,false) , cfg_test_page ) ;
 			d.add( new PopPage(d,state,"pop","popaccount","popaccounts",false,false) , cfg_test_page ) ;
-			d.add( new PopAccountPage(d,state,"popaccount","smtpserver","listening",false,false,is_installed) , 
+			d.add( new PopAccountPage(d,state,"popaccount","smtpserver","listening",false,false,is_installed) ,
 				cfg_test_page ) ;
-			d.add( new PopAccountsPage(d,state,"popaccounts","smtpserver","listening",false,false,is_installed) , 
+			d.add( new PopAccountsPage(d,state,"popaccounts","smtpserver","listening",false,false,is_installed) ,
 				cfg_test_page ) ;
 			d.add( new SmtpServerPage(d,state,"smtpserver","smtpclient","",false,false,is_installed) , cfg_test_page ) ;
 			d.add( new SmtpClientPage(d,state,"smtpclient","logging","",false,false,is_installed) , cfg_test_page ) ;
 			d.add( new LoggingPage(d,state,"logging","listening","",false,false) , cfg_test_page ) ;
 			d.add( new ListeningPage(d,state,"listening","startup","",false,false) , cfg_test_page ) ;
-			d.add( new StartupPage(d,state,"startup","ready","",false,false,dir,isMac()||cfg_as_mac) , cfg_test_page ) ;
+			d.add( new StartupPage(d,state,"startup","ready","",false,false,start_on_boot_able,isMac()||cfg_as_mac) , cfg_test_page ) ;
 			d.add( new ReadyPage(d,state,"ready","progress","",true,false,is_installing) , cfg_test_page ) ;
-			d.add( new ProgressPage(d,state,"progress","","",true,true,args.v(0),payload,state_path_out,is_installing) ,
+			d.add( new ProgressPage(d,state,"progress","","",true,true,args.v(0),payload,config_file_out,is_installing),
 				cfg_test_page ) ;
 			d.add() ;
 

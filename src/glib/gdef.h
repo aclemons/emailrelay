@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -124,11 +124,6 @@
 			#define _WIN32_IE 0x600
 		#endif
 	#endif
-	#ifdef G_WIN32_DCOM
-		#ifndef _WIN32_DCOM
-			#define _WIN32_DCOM
-		#endif
-	#endif
 
 	/* Include main o/s headers
 	 */
@@ -138,8 +133,24 @@
 		#include <shellapi.h>
 		#include <sys/stat.h>
 		#include <unistd.h>
+		#include <sched.h>
+		#ifdef __cplusplus
+			#include <ctime>
+		#endif
 	#elif defined( G_WINDOWS )
-		#include <windows.h>
+		#if defined( G_WINSOCK2 )
+			/* tunnel the library name through to the linker */
+			#pragma comment( lib , "Ws2_32.lib" )
+			/* prevent windows.h including old winsock headers */
+			#ifndef WIN32_LEAN_AND_MEAN
+			#define WIN32_LEAN_AND_MEAN
+			#endif
+			#include <windows.h>
+			#include <winsock2.h>
+			#include <ws2tcpip.h>
+		#else
+			#include <windows.h>
+		#endif
 		#include <shellapi.h>
 		#include <direct.h>
 	#else
@@ -150,13 +161,14 @@
 		#endif
 	#endif
 
-	/* Define Windows-style types (only used for unimplemented declarations under unix)
+	/* Define Windows-style types under unix
 	 */
 	#if ! defined( G_WINDOWS )
 		typedef unsigned char BOOL ;
 		typedef unsigned int HWND ;
 		typedef unsigned int HINSTANCE ;
 		typedef unsigned int HANDLE ;
+		typedef wchar_t TCHAR ;
 	#endif
 
 	/* Include commonly-used system headers (good for pre-compilation)
@@ -173,14 +185,18 @@
 
 	/* Define fixed-size types
 	 */
-	typedef unsigned long g_uint32_t ;
-	typedef unsigned short g_uint16_t ;
-	typedef long g_int32_t ;
-	typedef short g_int16_t ;
-
-	/* Define short-name types
-	 */
-	typedef unsigned char uchar_t ;
+	#if defined( G_WINDOWS )
+		typedef UINT32 g_uint32_t ;
+		typedef UINT16 g_uint16_t ;
+		typedef INT32 g_int32_t ;
+		typedef INT16 g_int16_t ;
+	#else
+		#include <stdint.h>
+		typedef uint32_t g_uint32_t ;
+		typedef uint16_t g_uint16_t ;
+		typedef int32_t g_int32_t ;
+		typedef int16_t g_int16_t ;
+	#endif
 
 	/* Define missing standard types
 	 */
@@ -188,8 +204,7 @@
 		typedef int uid_t ;
 		typedef int gid_t ;
 		#if ! defined( G_MINGW )
-			typedef int ssize_t ;
-			typedef unsigned int pid_t ;
+			typedef SSIZE_T ssize_t ;
 		#endif
 	#endif
 
@@ -251,52 +266,73 @@
 	 */
 	#if defined( HAVE_CONFIG_H )
 		#if ! HAVE_GETPWNAM_R
-			#ifdef __cplusplus
-				inline int getpwnam_r( const char * name , struct passwd * pwd ,
-					char * buf , size_t buflen , struct passwd ** result )
-				{
-					struct passwd * p = ::getpwnam( name ) ;
-					if( p ) 
-					{
-						*pwd = *p ; // let the string pointers dangle into the library storage
-						*result = pwd ;
-						return 0 ;
-					}
-					else
-					{
-						*result = NULL ;
-						return 0 ; // or errno
-					}
-				}
-			#endif
+			#define G_DEF_GETPWNAM_R_INLINE 1
 		#endif
 		#if ! HAVE_GMTIME_R
-			#ifdef __cplusplus
-				inline std::tm * gmtime_r( const std::time_t * tp , std::tm * tm_p ) 
-				{
-					* tm_p = * std::gmtime( tp ) ;
-					return tm_p ;
-				}
-			#endif
+			#define G_DEF_GMTIME_R_INLINE 1
 		#endif
 		#if ! HAVE_LOCALTIME_R
-			#ifdef __cplusplus
-				inline std::tm * localtime_r( const std::time_t * tp , std::tm * tm_p ) 
-				{
-					* tm_p = * std::localtime( tp ) ;
-					return tm_p ;
-				}
-			#endif
+			#define G_DEF_LOCALTIME_R_INLINE 1
 		#endif
 		#if HAVE_SETGROUPS
 			#include <grp.h>
 		#else
-			#ifdef __cplusplus
-				inline int setgroups( size_t , const gid_t * )
+			#define G_DEF_SETGROUPS_INLINE 1
+		#endif
+	#else
+		#if defined(G_MINGW)
+			#define G_DEF_GMTIME_R_INLINE 1
+			#define G_DEF_LOCALTIME_R_INLINE 1
+		#endif
+	#endif
+
+	#if defined(G_DEF_GETPWNAM_R_INLINE)
+		#ifdef __cplusplus
+			inline int getpwnam_r( const char * name , struct passwd * pwd ,
+				char * buf , size_t buflen , struct passwd ** result )
+			{
+				struct passwd * p = ::getpwnam( name ) ;
+				if( p ) 
 				{
+					*pwd = *p ; // let the string pointers dangle into the library storage
+					*result = pwd ;
 					return 0 ;
 				}
+				else
+				{
+					*result = NULL ;
+					return 0 ; // or errno
+				}
+			}
 			#endif
+	#endif
+
+	#if defined(G_DEF_GMTIME_R_INLINE)
+		#ifdef __cplusplus
+			inline struct std::tm * gmtime_r( const std::time_t * tp , struct std::tm * tm_p ) 
+			{
+				* tm_p = * std::gmtime( tp ) ;
+				return tm_p ;
+			}
+		#endif
+	#endif
+
+	#if defined(G_DEF_LOCALTIME_R_INLINE)
+		#ifdef __cplusplus
+			inline struct std::tm * localtime_r( const std::time_t * tp , struct std::tm * tm_p ) 
+			{
+				* tm_p = * std::localtime( tp ) ;
+				return tm_p ;
+			}
+		#endif
+	#endif
+
+	#if defined(G_DEF_SETGROUPS_INLINE)
+		#ifdef __cplusplus
+			inline int setgroups( size_t , const gid_t * )
+			{
+				return 0 ;
+			}
 		#endif
 	#endif
 

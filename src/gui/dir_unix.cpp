@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -30,8 +30,8 @@
 #ifndef G_SBINDIR
 	#define G_SBINDIR ""
 #endif
-#ifndef G_LIBEXECDIR
-	#define G_LIBEXECDIR ""
+#ifndef G_ICONDIR
+	#define G_ICONDIR ""
 #endif
 #ifndef G_EXAMPLESDIR
 	#define G_EXAMPLESDIR ""
@@ -56,9 +56,9 @@ namespace
 {
 	G::Path kde( const std::string & key , const G::Path & default_ )
 	{
-		std::string exe = "/usr/bin/kde-config" ; // TODO ?
+		std::string exe = "/usr/bin/kde4-config" ;
 		G::Strings args ;
-		args.push_back( "kde-config" ) ;
+		args.push_back( "kde4-config" ) ;
 		args.push_back( "--userpath" ) ;
 		args.push_back( key ) ;
 
@@ -99,7 +99,11 @@ G::Path Dir::os_gui( const G::Path & install )
 
 G::Path Dir::os_icon( const G::Path & install )
 {
-	return install + "lib" + "emailrelay" + "emailrelay-icon.png" ; // should use G_LIBEXECDIR
+	std::string icon_dir( G_ICONDIR ) ;
+	return
+		icon_dir.empty() ?
+			install + "share" + "emailrelay" + "emailrelay-icon.png" :
+			G::Path(icon_dir) + "emailrelay-icon.png" ;
 }
 
 G::Path Dir::os_server( const G::Path & install )
@@ -120,7 +124,7 @@ G::Path Dir::os_config()
 	return sysconfdir ;
 }
 
-G::Path Dir::os_spool() const
+G::Path Dir::os_spool()
 {
 	std::string spooldir( G_SPOOLDIR ) ;
 	if( spooldir.empty() )
@@ -137,14 +141,9 @@ G::Path Dir::cwd()
 	return G::Path( s ) ;
 }
 
-G::Path Dir::os_pid()
+G::Path Dir::os_pid( const G::Path & )
 {
 	return oneOf( "/var/run" , "/tmp" ) ;
-}
-
-G::Path Dir::os_pid( const G::Path & pid_dir , const G::Path & )
-{
-	return pid_dir ;
 }
 
 G::Path Dir::special( const std::string & type )
@@ -176,10 +175,10 @@ G::Path Dir::os_boot()
 
 bool Dir::ok( const std::string & s )
 {
-	return 
-		!s.empty() && 
-		G::File::exists(G::Path(s)) && 
-		G::Directory(G::Path(s)).valid() && 
+	return
+		!s.empty() &&
+		G::File::exists(G::Path(s)) &&
+		G::Directory(G::Path(s)).valid() &&
 		G::Directory(G::Path(s)).writeable() ;
 }
 
@@ -191,6 +190,11 @@ G::Path Dir::oneOf( std::string d1 , std::string d2 , std::string d3 , std::stri
 	if( ok(d4) ) return G::Path(d4) ;
 	if( ok(d5) ) return G::Path(d5) ;
 	return G::Path() ;
+}
+
+G::Path Dir::home()
+{
+	return envPath( "HOME" , "~" ) ;
 }
 
 /// \file dir_unix.cpp

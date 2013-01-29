@@ -1,10 +1,10 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or 
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 # 
 # This program is distributed in the hope that it will be useful,
@@ -18,8 +18,8 @@
 #
 # configure-mips.sh
 #
-# Runs the emailrelay "configure" script for a size-optimised mips build 
-# using uclibc.
+# Runs the emailrelay "configure" script for a size-optimised, cross-compiled
+# MIPS build using uclibc.
 #
 # The toolchain is expected to have been built by "extra/mips/toolchain.mak".
 #
@@ -102,9 +102,8 @@ then
 	proxy=${12-disable}
 	small_config=${a8}
 	small_exceptions=${a9}
-	small_fragments=${a10}
 	args="--$debug-debug --$exec-exec --$auth-auth --$admin-admin --$identity-identity --$pop-pop --$dns-dns"
-	args="$args --$a8-small-config --$a9-small-exceptions --$a10-small-fragments --$verbose-verbose --$proxy-proxy"
+	args="$args --$a8-small-config --$a9-small-exceptions --$verbose-verbose --$proxy-proxy"
 	
 	# prepare the configure command-line parts
 	cxx="$TOOLCHAIN/uclibc/usr/uClibc++/bin/g++-uc"
@@ -180,7 +179,7 @@ then
 		my @part = split( /\s+/ , `ls -l emailrelay-$i` ) ;
 		$size{$i} = $part[4] ;
 	}
-	my @vv = qw/disable-debug disable-exec disable-auth disable-admin disable-identity disable-pop disable-dns enable-small-config enable-small-exceptions enable-small-fragments disable-verbose disable-proxy/ ;
+	my @vv = qw/disable-debug disable-exec disable-auth disable-admin disable-identity disable-pop disable-dns enable-small-config enable-small-exceptions disable-verbose disable-proxy/ ;
 	my $previous ;
 	for $i ( sort keys %size )
 	{

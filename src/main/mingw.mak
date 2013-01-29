@@ -1,9 +1,9 @@
 #
-## Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation, either version 3 of the License, or 
+## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
 ## 
 ## This program is distributed in the hope that it will be useful,
@@ -34,9 +34,9 @@ mk_sources=\
 	winmenu.cpp
 
 libs=../gpop/gpop.a ../gsmtp/gsmtp.a ../gnet/gnet.a ../gauth/gauth.a ../gssl/gssl.a ../win32/gwin32.a ../glib/glib.a $(mk_ssl_libs)
-syslibs=-lgdi32 -lwsock32
+syslibs=-lgdi32 -lws2_32 -ladvapi32
 rc=emailrelay.rc
-fake_mc=mingw32-mc.exe
+fake_mc=fakemc.exe
 mc_output=MSG00001.bin messages.rc
 mk_exe_main=emailrelay.exe
 mk_exe_filter_copy=emailrelay-filter-copy.exe
@@ -68,11 +68,12 @@ $(mk_exe_submit): submit.o legal.o
 $(mk_exe_service): service_install.o service_remove.o service_wrapper.o
 	$(mk_link) $(mk_link_flags) -o $@ service_install.o service_remove.o service_wrapper.o $(syslibs)
 
-$(fake_mc): mingw.o
+$(fake_mc): fakemc.o
 	$(mk_link) $(mk_link_flags) -o $@ $<
 
 $(mc_output): $(fake_mc) messages.mc
 	$(fake_mc) messages.mc
 
 $(res): $(rc) $(mc_output)
+	$(mk_rc) --include-dir . -i $(rc) -o $@
 

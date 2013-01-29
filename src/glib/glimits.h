@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -47,6 +47,7 @@ public:
 	enum { net_buffer = 20000 } ; // best if bigger than the TLS maximum block size of 16k
 	enum { net_line_limit = 1000000 } ; // denial of service limit
 	enum { net_hostname = 1024 } ;
+	enum { net_listen_queue = 3 } ;
 	enum { win32_subclass_limit = 80 } ;
 	enum { win32_classname_buffer = 256 } ;
 	enum { ssl_max_cache_entries = 10 } ; // libnss3 SSL_ConfigServerSessionIDCache()
@@ -59,6 +60,7 @@ public:
 	enum { net_buffer = 512 } ;
 	enum { net_line_limit = 2000 } ;
 	enum { net_hostname = 128 } ;
+	enum { net_listen_queue = 20 } ;
 	enum { win32_subclass_limit = 2 } ;
 	enum { win32_classname_buffer = 128 } ;
 	enum { ssl_max_cache_entries = 0 } ;

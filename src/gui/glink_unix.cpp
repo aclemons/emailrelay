@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -29,9 +29,9 @@
 class GLinkImp 
 {
 public:
-	GLinkImp( const G::Path & target_path , const std::string & name , const std::string & description , 
-		const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , 
-		GLink::Show show ) ;
+	GLinkImp( const G::Path & target_path , const std::string & name , const std::string & description ,
+		const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , GLink::Show show ,
+		const std::string & c1 , const std::string & c2 , const std::string & c3 ) ;
 	static std::string filename( const std::string & ) ;
 	void saveAs( const G::Path & ) ;
 
@@ -50,17 +50,24 @@ private:
 	G::Strings m_args ;
 	G::Path m_icon_source ;
 	bool m_terminal ;
+	std::string m_c1 ;
+	std::string m_c2 ;
+	std::string m_c3 ;
 } ;
 
-GLinkImp::GLinkImp( const G::Path & target_path , const std::string & name , const std::string & description , 
-	const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , GLink::Show show ) :
+GLinkImp::GLinkImp( const G::Path & target_path , const std::string & name , const std::string & description ,
+	const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , GLink::Show show ,
+	const std::string & c1 , const std::string & c2 , const std::string & c3 ) :
 		m_target_path(target_path) ,
 		m_name(name) ,
 		m_description(description) ,
 		m_working_dir(working_dir) ,
 		m_args(args) ,
 		m_icon_source(icon_source) ,
-		m_terminal(show==GLink::Show_Default)
+		m_terminal(show==GLink::Show_Default) ,
+		m_c1(c1) ,
+		m_c2(c2) ,
+		m_c3(c3)
 {
 }
 
@@ -77,10 +84,15 @@ void GLinkImp::saveAs( const G::Path & path )
 
 	const char * eol = "\n" ;
 	std::ofstream file( path.str().c_str() ) ;
+
+	if( !m_c1.empty() ) file << "# " << m_c1 << eol ;
+	if( !m_c2.empty() ) file << "# " << m_c2 << eol ;
+	if( !m_c3.empty() ) file << "# " << m_c3 << eol ;
+
 	file << "[Desktop Entry]" << eol ;
 	file << "Type=Application" << eol ;
 	file << "Version=1.0" << eol ;
-	file << "Encoding=UTF-8" << eol ;
+	//file << "Encoding=UTF-8" << eol ;
 	file << "StartupNotify=false" << eol ;
 
 	file << "Exec=" << quote(escape(m_target_path.str())) << " " << escapeAndQuote(m_args) << eol ;
@@ -96,21 +108,23 @@ void GLinkImp::saveAs( const G::Path & path )
 	file.flush() ;
 	if( !file.good() )
 		throw GLink::SaveError(path.str()) ;
+
+	G::File::chmodx( path , G::File::NoThrow() ) ;
 }
 
 std::string GLinkImp::escape( const std::string & s_in )
 {
 	// <citation version="1.0">
-	// Note that the general escape rule for values of type string states that 
-	// the backslash character can be escaped as ("\\") as well and that this 
-	// escape rule is applied before the quoting rule. As such, to unambiguously 
-	// represent a literal backslash character in a quoted argument in a desktop 
-	// entry file requires the use of four successive backslash characters ("\\\\"). 
-	// Likewise, a literal dollar sign in a quoted argument in a desktop entry file 
+	// Note that the general escape rule for values of type string states that
+	// the backslash character can be escaped as ("\\") as well and that this
+	// escape rule is applied before the quoting rule. As such, to unambiguously
+	// represent a literal backslash character in a quoted argument in a desktop
+	// entry file requires the use of four successive backslash characters ("\\\\").
+	// Likewise, a literal dollar sign in a quoted argument in a desktop entry file
 	// is unambiguously represented with ("\\$").
 	// [...]
-	// A number of special field codes have been defined [...]. Field codes consist 
-	// of the percentage character ("%") followed by an alpha character. Literal 
+	// A number of special field codes have been defined [...]. Field codes consist
+	// of the percentage character ("%") followed by an alpha character. Literal
 	// percentage characters must be escaped as %%.
 	// </citation>
 
@@ -120,21 +134,21 @@ std::string GLinkImp::escape( const std::string & s_in )
 std::string GLinkImp::quote( const std::string & s_in )
 {
 	// <citation version="1.0">
-	// If an argument contains a reserved character the argument must be quoted. 
+	// If an argument contains a reserved character the argument must be quoted.
 	// [...]
-	// Reserved characters are space (" "), tab, newline, double quote, single quote ("'"), 
-	// backslash character ("\"), greater-than sign (">"), less-than sign ("<"), tilde ("~"), 
-	// vertical bar ("|"), ampersand ("&"), semicolon (";"), dollar sign ("$"), asterisk ("*"), 
-	// question mark ("?"), hash mark ("#"), parenthesis ("(") and (")") and 
+	// Reserved characters are space (" "), tab, newline, double quote, single quote ("'"),
+	// backslash character ("\"), greater-than sign (">"), less-than sign ("<"), tilde ("~"),
+	// vertical bar ("|"), ampersand ("&"), semicolon (";"), dollar sign ("$"), asterisk ("*"),
+	// question mark ("?"), hash mark ("#"), parenthesis ("(") and (")") and
 	// backtick character ("`").
 	// </citation>
 
 	if( s_in.find_first_of(" \t\n\"'\\><~|&;$*?#()`") != std::string::npos )
 	{
 		// <citation version="1.0">
-		// Quoting must be done by enclosing the argument between double quotes and escaping 
-		// the double quote character, backtick character ("`"), dollar sign ("$") and backslash 
-		// character ("\") by preceding it with an additional backslash character. 
+		// Quoting must be done by enclosing the argument between double quotes and escaping
+		// the double quote character, backtick character ("`"), dollar sign ("$") and backslash
+		// character ("\") by preceding it with an additional backslash character.
 		// </citation>
 
 		return std::string(1U,'\"') + G::Str::escaped(s_in,"\"`$\\") + std::string(1U,'\"') ;
@@ -159,9 +173,10 @@ std::string GLinkImp::escapeAndQuote( const G::Strings & args )
 
 // ==
 
-GLink::GLink( const G::Path & target_path , const std::string & name , const std::string & description , 
-	const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , Show show ) :
-		m_imp( new GLinkImp(target_path,name,description,working_dir,args,icon_source,show) )
+GLink::GLink( const G::Path & target_path , const std::string & name , const std::string & description ,
+	const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , Show show ,
+	const std::string & c1 , const std::string & c2 , const std::string & c3 ) :
+		m_imp( new GLinkImp(target_path,name,description,working_dir,args,icon_source,show,c1,c2,c3) )
 {
 }
 

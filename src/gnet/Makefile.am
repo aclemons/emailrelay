@@ -1,9 +1,9 @@
 #
-## Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation, either version 3 of the License, or 
+## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
 ## 
 ## This program is distributed in the hope that it will be useful,
@@ -23,23 +23,16 @@ DNS_EXTRA_DIST = gresolver_unix.cpp gresolver_ip.cpp glocal_unix.cpp
 DNS_SOURCES = gresolver_dns_disabled.cpp glocal_dns_disabled.cpp
 endif
 
-if SMALL_FRAGMENTS
-FRAGMENTS_EXTRA_DIST = gmonitor.cpp gaddress_ipv4.cpp gaddress_ip.cpp
-FRAGMENTS_SOURCES =
-else
-FRAGMENTS_EXTRA_DIST = gaddress_ipv4.cpp
-FRAGMENTS_SOURCES = gmonitor.cpp gaddress_ip.cpp
-endif
-
 EXTRA_DIST=\
 	$(DNS_EXTRA_DIST) \
-	$(FRAGMENTS_EXTRA_DIST) \
+	gaddress_ipv4.cpp \
 	gaddress_ipv6.cpp \
-	gresolver_ipv4.cpp \
-	gresolver_ipv6.cpp \
+	gconnectiontable_win32.cpp \
     gdescriptor_win32.cpp \
     geventloop_win32.cpp \
     glocal_win32.cpp \
+	gresolver_ipv4.cpp \
+	gresolver_ipv6.cpp \
     grequest_win32.cpp \
     gresolver_win32.cpp \
     gsimpleclient_win32.cpp \
@@ -51,7 +44,8 @@ noinst_LIBRARIES = libgnet.a
 
 libgnet_a_SOURCES = \
 	$(DNS_SOURCES) \
-	$(FRAGMENTS_SOURCES) \
+	gmonitor.cpp \
+	gaddress_ip.cpp \
 	gaddress.h \
 	gbufferedserverpeer.cpp \
 	gbufferedserverpeer.h \
@@ -60,6 +54,8 @@ libgnet_a_SOURCES = \
 	gclient.h \
 	gconnection.cpp \
 	gconnection.h \
+	gconnectiontable.h \
+	gconnectiontable_unix.cpp \
 	gdescriptor.cpp \
 	gdescriptor.h \
 	gdescriptor_unix.cpp \

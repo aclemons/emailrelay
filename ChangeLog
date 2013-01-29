@@ -4,14 +4,15 @@ E-MailRelay Change Log
 1.8.2 -> 1.9
 ------------
 * Added TLS/SSL encryption for POP.
-* Added Linux-PAM authentication ("configure --with-pam" and "--server-auth=/pam").
-* Protocol-specific "--interface" qualifiers, eg. "--interface smtp=127.0.0.1,pop=192.168.1.1"
-* Fix for binding the client port with the first-listed interface address.
+* Added Linux-PAM authentication ("configure --with-pam" and then "--server-auth=/pam").
+* Optional protocol-specific "--interface" qualifiers, eg. "--interface smtp=127.0.0.1,pop=192.168.1.1"
+* Bind the outgoing client connection with the first-listed "--interface" address.
 * No "Received" line added if "--anonymous" and an empty "--domain" name.
-* Shorter switch descriptions in the usage help unless "--verbose".
-* Error text for "all recipients rejected" is now "one or more receipients rejected".
-* Windows project files for MSVC 2008.
-* Removed "--enable-fhs" option for "configure".
+* Shorter descriptions in the usage help unless "--verbose".
+* Error text for "all recipients rejected" is now more accurately "one or more recipients rejected".
+* Windows project files for MSVC 2008 included.
+* Removed "--enable-fhs" option for "configure" (see INSTALL for equivalent usage).
+* Fix for MD5 code in 64-bit builds.
 
 1.8.1 -> 1.8.2
 --------------

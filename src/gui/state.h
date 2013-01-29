@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -21,38 +21,20 @@
 #ifndef G_GUI_STATE_H
 #define G_GUI_STATE_H
 
+#include "gdef.h"
 #include "gpath.h"
 #include <map>
 #include <string>
 
 /// \class State
-/// Provides access to the state file. Non-static
-/// methods are read-only. Refer to comments in guimain.cpp.
+/// Provides access to state variables.
 ///
 class State 
 {
 public:
 	typedef std::map<std::string,std::string> Map ;
 
-	static G::Path file( const std::string & argv0 ) ;
-		///< Returns the name of the state file associated with the given gui executable.
-
-	static Map read( std::istream & ) ;
-		///< Reads from a state file.
-
-	static void write( std::ostream & , const std::string & contents , const G::Path & exe ) ;
-		///< Writes a complete state file.
-
-	static void write( std::ostream & , const Map & state_map , const G::Path & exe , const std::string & stop ) ;
-		///< Writes a complete state file. Suppresses
-		///< items where the key contains the given
-		///< stop word.
-
-	static void write( std::ostream & , const std::string & key , const std::string & value , 
-		const std::string & prefix , const std::string & eol ) ;
-			///< Writes a value to the state file.
-
-	explicit State( const Map & ) ;
+	State( const Map & , const Map & ) ;
 		///< Constructor.
 
 	G::Path value( const std::string & key , const G::Path & default_ ) const ;
@@ -72,7 +54,7 @@ private:
 	void operator=( const State & ) ;
 
 private:
-	const Map & m_map ;
+	Map m_map ;
 } ;
 
 #endif

@@ -1,8 +1,8 @@
-.\" Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+.\" Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 .\" 
 .\" This program is free software: you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
-.\" the Free Software Foundation, either version 3 of the License, or 
+.\" the Free Software Foundation, either version 3 of the License, or
 .\" (at your option) any later version.
 .\" 
 .\" This program is distributed in the hope that it will be useful,
@@ -86,7 +86,7 @@ Closes the standard error stream soon after start-up.
 Sets the timeout (in seconds) when connecting to a remote server (default is 40).
 .TP
 .B \-g, --debug 
-Generates debug-level logging if compiled-in.
+Generates debug-level logging if built in.
 .TP
 .B \-D, --domain \fI<fqdn>\fR
 Sets an override for the host's fully qualified domain name.
@@ -113,10 +113,10 @@ Displays help text and exits.
 Enables immediate forwarding of messages as soon as they are received (requires \fI--forward-to\fR).
 .TP
 .B \-I, --interface \fI<ip-list>\fR
-Defines the listening interface(s) for incoming connections.
+Defines the listening interface(s) for incoming connections (comma-separated list with optional smtp=,pop=,admin= qualifiers).
 .TP
 .B \-l, --log 
-Writes log information on standard error and syslog.
+Writes log information on standard error and syslog (but see \fI--close-stderr\fR and \fI--no-syslog\fR).
 .TP
 .B \-L, --log-time 
 Adds a timestamp to the logging output.
@@ -143,7 +143,7 @@ Enables the pop server.
 Defines the pop server secrets file (default is \fI/etc/emailrelay.auth\fR).
 .TP
 .B \-J, --pop-by-name 
-Modifies the pop spool directory according to the user name (requires \fI--pop\fR).
+Modifies the pop spool directory according to the pop user name (requires \fI--pop\fR).
 .TP
 .B \-G, --pop-no-delete 
 Disables message deletion via pop (requires \fI--pop\fR).

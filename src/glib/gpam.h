@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -35,7 +35,13 @@ namespace G
 
 /// \class G::Pam
 /// A thin abstract interface to the system PAM library.
-/// Derived classes should implement converse() and delay().
+///
+/// Derived classes should implement converse() to supply passwords
+/// etc. and delay() to implement anti-brute-force delays. 
+///
+/// As per the PAM model the user code should authenticate(), 
+/// then checkAccount(), then establishCredentials() and finally 
+/// openSession().
 ///
 /// Usage:
 /// \code

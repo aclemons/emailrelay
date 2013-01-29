@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gwindow.h"
+#include "gconvert.h"
 #include "gdebug.h"
 #include "glog.h"
 
@@ -50,9 +51,12 @@ bool GGui::Window::registerWindowClass( const std::string & class_name ,
 {
 	G_DEBUG( "GGui::Window::registerWindowClass: \"" << class_name << "\"" ) ;
 
-	const char * menu_name = menu_resource_id ? MAKEINTRESOURCE(menu_resource_id) : NULL ;
+	const wchar_t * menu_name = menu_resource_id ? MAKEINTRESOURCE(menu_resource_id) : NULL ;
 
-	WNDCLASS c ;
+	std::wstring wide_class_name ;
+	G::Convert::convert( wide_class_name , class_name ) ;
+
+	WNDCLASSW c ;
 	c.style = style ;
 	c.lpfnWndProc = gwindow_wndproc_export ;
 	c.cbClsExtra = 4 ; // reserved
@@ -62,9 +66,9 @@ bool GGui::Window::registerWindowClass( const std::string & class_name ,
 	c.hCursor = cursor ;
 	c.hbrBackground = background ;
 	c.lpszMenuName = menu_name ;
-	c.lpszClassName = class_name.c_str() ;
+	c.lpszClassName = wide_class_name.c_str() ;
 
-	return ::RegisterClass( &c ) != 0 ;
+	return ::RegisterClassW( &c ) != 0 ;
 }
 
 bool GGui::Window::create( const std::string & class_name ,
@@ -83,7 +87,7 @@ bool GGui::Window::create( const std::string & class_name ,
 	}
 
 	void *vp = reinterpret_cast<void*>(this) ;
-	m_hwnd = ::CreateWindowEx( extended_style , class_name.c_str() , title.c_str() ,
+	m_hwnd = ::CreateWindowExA( extended_style , class_name.c_str() , title.c_str() ,
 		style , x , y , dx , dy , parent , menu , hinstance , vp ) ;
 
 	G_DEBUG( "GGui::Window::create: handle " << m_hwnd ) ;
@@ -101,22 +105,6 @@ void GGui::Window::show( int style )
 	G_ASSERT( m_hwnd != NULL ) ;
 	::ShowWindow( m_hwnd , style ) ;
 }
-
-#if 0
-void GGui::Window::setGlobal()
-{
-	G_ASSERT( m_hwnd != NULL ) ;
-	G_ASSERT( sizeof(LONG) >= sizeof(HWND) ) ;
-	LONG cl = reinterpret_cast<LONG>(m_hwnd) ;
-	::SetClassLong( m_hwnd , 0 , cl ) ;
-}
-HWND GGui::Window::getGlobal() const
-{
-	G_ASSERT( m_hwnd != NULL ) ;
-	LONG cl = ::GetClassLong( m_hwnd , 0 ) ; 
-	return reinterpret_cast<HWND>(cl) ;
-}
-#endif
 
 void GGui::Window::invalidate( bool erase )
 {

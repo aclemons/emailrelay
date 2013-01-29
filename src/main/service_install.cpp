@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -79,7 +79,7 @@ static Result install( std::string commandline , std::string name , std::string 
 		return Result(true,e) ;
 	}
 
-	SC_HANDLE hservice = CreateService( hmanager , name.c_str() , display_name.c_str() ,
+	SC_HANDLE hservice = CreateServiceA( hmanager , name.c_str() , display_name.c_str() ,
 		SERVICE_ALL_ACCESS , SERVICE_WIN32_OWN_PROCESS , SERVICE_AUTO_START , SERVICE_ERROR_NORMAL ,
 		commandline.c_str() , 
 		NULL , NULL , NULL , NULL , NULL ) ;

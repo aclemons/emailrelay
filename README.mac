@@ -3,34 +3,28 @@ E-MailRelay on Mac OS X
 
 Building from source
 --------------------
-E-MailRelay can be built on a Mac as if it is a vanilla unix system; the
-standard "configure; make; sudo make install" procedure for building and
-installing from source should work well enough.
+E-MailRelay can be built from source on Mac OS X using the standard
+"configure; make; sudo make install" procedure, although for best results you
+should use the "bin/configure-mac.sh" script to run "configure" with directory
+paths that are more Mac-like (see below).
 
-For best results use the "bin/configure-mac.sh" script to run "configure" with
-directory paths that are more Mac-like (see below).
+The "make image" command in the "src/gui" directory can be used to build a
+self-extracting disk image for the native architecture. Project files fox Xcode
+are also provided to help with building universal binaries.
 
-The "make" step will only build executables for the native architecture. Xcode
-can be used to build universal binaries, and project files for xcode 3 are
-supplied. See also "make universal" and "make image" in the "src/gui" directory.
+Refer to "doc/developer.txt" for more information on Mac packaging.
 
 Directories
 -----------
-The preferred installation directories are:
+The preferred installation directories specified by "bin/configure-mac.sh" are:
 * "/Applications/E-MailRelay" for the application
 * "/Applications/E-MailRelay/Documentation" for the documentation
 * "/Applications/E-MailRelay" for the configuration (not "/Library/Preferences/E-MailRelay")
 * "/Library/Mail/Spool" for the spool directory
 * "/Library/StartupItems/E-MailRelay" for the boot-time startup script
 
-Installation can also be done into the User "domain", ie. under "~/Applications"
-and "~/Library" using "make install DESTDIR=~", although starting up at
-boot-time will not then work.
-
-Moving the system after installation, or installing to any other directories,
-is not guaranteed to work correctly.
-
-Binary distribution
--------------------
-Graphical installation from the disk image has been developed using Mac OS X
-10.5 ("Leopard"). Bug reports for other versions of OS X are welcome.
+Moving the system after installation is not guaranteed to work perfectly
+so it is best run configure with the correct directories to start with.
+However, a disk image built with the standard directories should work
+reasonably well when installed into the "User" domain with 
+"make DESTDIR=~ install".

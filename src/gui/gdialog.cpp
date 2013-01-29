@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -38,7 +38,7 @@ GDialog::GDialog( bool with_help ) :
 	init( with_help ) ;
 }
 
-GDialog::GDialog( QWidget *parent ) : 
+GDialog::GDialog( QWidget *parent ) :
 	QDialog(parent) ,
 	m_first(true) ,
 	m_help_button(NULL) ,
@@ -171,7 +171,7 @@ void GDialog::pageUpdated()
 	G_DEBUG( "GDialog::pageUpdated: \"" << current_page_name << "\" page updated" ) ;
 
 	GPage & current_page = page(current_page_name) ;
-	if( m_waiting ) 
+	if( m_waiting )
 	{
 		; // no-op
 	}
@@ -254,11 +254,20 @@ GPage & GDialog::previousPage( unsigned int distance )
 	return page(*p) ;
 }
 
-void GDialog::dump( std::ostream & stream , const std::string & prefix , const std::string & eol ,
-	bool with_passwords ) const
+void GDialog::dumpStateVariables( std::ostream & stream ) const
+{
+	dump( stream , false ) ;
+}
+
+void GDialog::dumpInstallVariables( std::ostream & stream ) const
+{
+	dump( stream , true ) ;
+}
+
+void GDialog::dump( std::ostream & stream , bool for_install ) const
 {
 	for( History::const_iterator p = m_history.begin() ; p != m_history.end() ; ++p )
-		page(*p).dump( stream , prefix , eol , with_passwords ) ;
+		page(*p).dump( stream , for_install ) ;
 }
 
 void GDialog::wait( bool wait_on )

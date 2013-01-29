@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -122,7 +122,8 @@ private:
 	void readEnd( std::istream & stream ) ;
 	void readReasons( std::istream & stream ) ;
 	void readAuthentication( std::istream & stream ) ;
-	void readClientIp( std::istream & stream ) ;
+	void readClientSocketAddress( std::istream & stream ) ;
+	void readClientSocketName( std::istream & stream ) ;
 	void readEnvelopeCore( bool ) ;
 	static void addReason( const G::Path & path , const std::string & , int ) ;
 	static G::Path badPath( G::Path ) ;
@@ -140,7 +141,8 @@ private:
 	bool m_eight_bit ;
 	std::string m_authentication ;
 	std::string m_format ;
-	std::string m_client_ip ;
+	std::string m_client_socket_address ;
+	std::string m_client_socket_name ;
 	size_t m_errors ;
 	bool m_locked ;
 } ;

@@ -7,7 +7,7 @@ The main C++ libraries in the E-MailRelay code are: "glib", providing low-level
 classes for file-system abstraction, date and time representation, string
 utility functions, logging, command line parsing etc.; "gssl", which is a thin
 abstraction over OpenSSL; "gnet", which provides network classes using the
-Berkley socket and Winsock APIs; "gauth", which implements various 
+Berkley socket and Winsock APIs; "gauth", which implements various
 authentication mechanisms; "gsmtp", containing SMTP and message-store classes;
 and "gpop", which contains POP3 classes. All of these libraries are portable
 between POSIX-like systems (eg. Linux) and Windows.
@@ -27,6 +27,11 @@ The E-MailRelay server uses non-blocking socket i/o, with a select() event loop.
 This event model means that the server can handle multiple clients
 simultaneously from a single thread and the only significant blocking occurs
 when external programs are executed (see "--filter" and "--verifier").
+
+In some ways this makes the implementation more complicated than the equivalent
+multi-threaded approach since (for example) it is not possible to wait for a
+complete line of input to be received from a remote SMTP client because there
+might be other connection that need servicing.
 
 See *C10K Problem* [http://www.kegel.com/c10k.html] for a discussion of
 different network event models.
@@ -130,37 +135,15 @@ State transition diagrams:
 Sequence diagrams:
 * *Proxy mode forwarding* [sequence-3.png]
 
-Configuration GUI
------------------
-The optional configuration GUI program "emailrelay-gui" uses TrollTech Qt v4
-for its user interface components. The GUI can run as a stand-alone
-configuration helper or as part of a self-extracting installation program called
-"emailrelay-setup".
-
-The packing scheme used to assemble a self-extracting archive is a simple
-concatenation of the "stub" executable followed by a table of contents for the
-payload files, followed by the payload files themselves (possibly compressed by
-"zlib"), and ending with an twelve-byte ascii representation of the offset of
-the table of contents.
-
-On Windows there are two levels of packing: the "setup" program has a stub
-executable written in "C" that prints an "extracting..." message to the standard
-output, with a payload comprising another packed executable and a small number of
-"C++" runtime library files. The inner packed executable has the emailrelay GUI
-program as its stub and all the other installable files, including the main
-emailrelay executable, as its payload.
-
-When the GUI runs it checks whether it has a payload of packed files. If it
-has then it runs as an installer; if it does not then it runs as a configuration
-helper. Refer to the comments in "src/gui/guimain.cpp" for more details.
-
-The code works exactly the same on Windows, Mac OS X and unix-like operating
-systems. However, on unix-like operating systems "make install", possibly run
-via some package manager, is the preferred way to install files so the "setup"
-program is never normally built or distributed. On Mac OS X the default packing
-scheme works well enough, but there is also provision for having a separate
-payload file within the Mac bundle rather than appending the payload to the stub
-executable.
+E-MailRelay GUI
+---------------
+The optional GUI program "emailrelay-gui" uses TrollTech Qt v4 for its user
+interface components. The GUI can run as a stand-alone configuration helper
+("--as-configure") or as part of a self-extracting installation
+("--as-install"). When it runs it checks whether it has a payload of packed
+files. If it has then it runs as an installer; if it does not then it runs as a
+configuration helper. Refer to the comments in "src/gui/guimain.cpp" for more
+details.
 
 The user interface is structured as a "wizard" having a dialog box with the
 forward and back buttons at the bottom and a single Qt layout object for the
@@ -173,12 +156,129 @@ key-value pairs into a stringstream (see "src/gui/pages.cpp"). These key-value
 pairs are processed by an installer class into a list of action objects (in the
 "Command" design pattern) and then the action objects are run in turn. In order
 to display the progress of the installation each action object is run within a
-timer callback so that the Qt framework get a chance to update the GUI between
+timer callback so that the Qt framework gets a chance to update the GUI between
 each one.
 
 During development the user interface pages and the installer can be tested
 separately since the interface between them is a simple text stream containing
 key-value pairs.
+
+When run in "--as-configure" mode the GUI normally ends up simply editing
+the "emailrelay.conf" file and/or the "emailrelay.auth" secrets file.
+
+When run in "--as-install" mode the GUI expects to unpack all the E-MailRelay
+files from a "payload" archive into target directories.
+
+The packing scheme used for a payload archive is a simple concatenation of the
+"stub" executable followed by a table of contents for the payload files,
+followed by the payload files themselves (possibly compressed by "zlib"), and
+ending with an twelve-byte ascii representation of the offset of the table of
+contents.
+
+The payload may be appended to the GUI executable to make a self-extracting
+installer, usually then called "emailrelay-setup".
+
+However, on Windows two levels of packing are required: the "emailrelay-setup"
+program has a stub executable written in "C" that prints an "extracting..."
+message to the standard output, with a payload comprising another packed
+executable and a small number of "C++" runtime library files. The inner packed
+executable has the emailrelay GUI program as its stub and all the other
+installable files, including the main emailrelay executable, as its payload.
+
+On unix-like operating systems it is more natural to use some sort of package
+derived from the "make install" process rather than an installer program, so
+"emailrelay-setup" ia typically never built.
+
+On Mac OS X the payload is better stored in the installer's application
+bundle rather than simply appended to the binary. This is desribed in the next
+section.
+
+Windows build
+-------------
+On Windows E-MailRelay can be built using MinGW or Visual Studio. Makefiles and
+Visual Studio 2008 (MSVC 9) project files are provided in the "src" directory.
+
+For a MinGW build of the E-MailRelay server without TLS/SSL support it should
+be sufficient to run make from the "src" directory:
+	C:\emailrelay\src> PATH=c:\mingw\bin;%PATH%
+	C:\emailrelay\src> mingw32-make -f mingw.mak
+
+To add TLS/SSL support first install MinGW's MSYS subsystem and ActiveState
+perl. Unpack the OpenSSL tarball and built it with:
+
+	C:\openssl> PATH=c:\perl\bin;c:\mingw\msys\1.0\bin;c:\mingw\bin;%PATH%
+	C:\openssl> perl Configure mingw
+	C:\openssl> make
+
+Then edit the E-MailRelay "src/mingw-common.mak" file to enable openssl and run
+"mingw32-make" as above.
+
+If building the E-MailRelay GUI (using Qt) then a MinGW build is recommended.
+Start by building Qt static libraries from scratch using the following Qt
+"configure" options:
+	-release
+	-opensource
+	-static
+	-no-stl
+	-qt-zlib
+	-no-libmng
+	-no-libjpeg
+	-no-dsp
+	-no-incredibuild-xge
+	-no-mmx
+	-no-3dnow
+	-no-sse
+	-no-sse2
+	-openssl
+	-no-dbus
+	-no-openssl
+	-no-phonon
+	-no-phonon-backend
+	-no-multimedia
+	-no-audio-backend
+	-no-webkit
+	-no-script
+	-no-scripttools
+	-qt-style-windows
+	-qt-style-windowsxp
+	-qt-style-windowsvista
+
+Make a note of the compiler switches used when building one of the Qt examples
+and replicate them in "src/gui/mingw.mak":
+
+	c:\qt\examples\widgets\groupbox> del tmp\obj\release_static\main.o
+	c:\qt\examples\widgets\groupbox> mingw32-make
+
+Then enable the GUI build in "src/mingw-common.mak" and run "mingw32-make" as
+before.
+
+Mac OS X packaging
+------------------
+On Mac OS X the standard "configure ; make ; make install" procedure works best
+if the "configure" script is given Mac-like directories on its command-line. The
+script "bin/configure-mac.sh" can be used to do this.
+
+The "make" step in "src/main" on Mac OS X additionally builds a simple wrapper
+program "emailrelay-start" from "start.cpp" that runs the E-MailRelay server
+using a command-line assembled from the "emailrelay.conf" file. This is then
+used from the "E-MailRelay-Start" application bundle to provide a Mac-friendly
+way of running the server.
+
+Similary the "make" in "src/gui" builds a wrapper program "emailrelay-start-gui"
+from "guistart.cpp" that runs "emailrelay-gui.real" and this is used from the
+"E-MailRelay-Configure" application bundle.
+
+The self-extracting installer scheme (described above) does work on Mac OS X,
+but it is more sensible to use a Mac application bundle (E-MailRelay-Install) to
+hold the payload and then wrap the whold thing up in a ".dmg" disk image. The
+GUI code supports this by looking for a separate file called "payload" and using
+that in preference to any payload archive it finds appended to its own executbale.
+
+The format of the "payload" file in the application bundle is the same as is used
+in a self-extracting installer.
+
+The makefile in the "src/gui" directory provides the "image" target to create
+the E-MailRelay-Install application bundle and the disk image.
 
 Source control
 --------------
@@ -287,10 +387,7 @@ script. These include the following:
 * Debug-level logging ("--enable-debug")
 * IPv6 (Linux only) ("--enable-ipv6")
 * Configuration GUI ("--enable-gui")
-
-The "--enable-fhs" switch alters the compiled-in default directories to conform
-to the Linux File Hierarchy Standard (FHS). This is recommended for most modern
-Linux distributions.
+* PAM support ("--with-pam")
 
 Some functionality can be disabled at compile-time in order to reduce the size
 of the executable, typically when building for embedded systems:
@@ -402,4 +499,4 @@ to reassign a std::auto_ptr<> since reset() is not always available.
 
 
 
-Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

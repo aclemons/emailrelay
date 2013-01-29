@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -112,18 +112,19 @@ public:
 	virtual std::string from() const = 0 ;
 		///< Returns the setFrom() string.
 
-	virtual void process( const std::string & authenticated_client_id , const std::string & peer_ip_address ) = 0 ;
-		///< Starts asynchronous processing of the 
-		///< message. Once processing is complete the
-		///< message state is cleared and the doneSignal()
-		///< is raised. The signal may be raised before 
-		///< process() returns.
-		///<
-		///< The client-id parameter is used to propogate
-		///< authentication information from the SMTP
-		///< AUTH command into individual messages.
-		///< It is the empty string for unauthenticated
-		///< clients. See also GAuth::SaslServer::id().
+	virtual void process( const std::string & authenticated_client_id , const std::string & peer_socket_address ,
+		const std::string & peer_socket_name ) = 0 ;
+			///< Starts asynchronous processing of the 
+			///< message. Once processing is complete the
+			///< message state is cleared and the doneSignal()
+			///< is raised. The signal may be raised before 
+			///< process() returns.
+			///<
+			///< The client-id parameter is used to propogate
+			///< authentication information from the SMTP
+			///< AUTH command into individual messages.
+			///< It is the empty string for unauthenticated
+			///< clients. See also GAuth::SaslServer::id().
 
 private:
 	void operator=( const ProtocolMessage & ) ; // not implemented

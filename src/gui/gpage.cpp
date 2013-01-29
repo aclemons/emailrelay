@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -23,13 +23,14 @@
 #include "gstr.h"
 #include "gpage.h"
 #include "gdialog.h"
-#include "state.h"
+#include "mapfile.h"
+#include "glog.h"
 
 bool GPage::m_test_mode = false ;
 
-GPage::GPage( GDialog & dialog , const std::string & name , const std::string & next_1 , 
-	const std::string & next_2 , bool finish_button , bool close_button ) : 
-		QWidget(&dialog) , 
+GPage::GPage( GDialog & dialog , const std::string & name , const std::string & next_1 ,
+	const std::string & next_2 , bool finish_button , bool close_button ) :
+		QWidget(&dialog) ,
 		m_dialog(dialog) ,
 		m_name(name) ,
 		m_next_1(next_1) ,
@@ -70,12 +71,12 @@ bool GPage::isComplete()
 	return true ;
 }
 
-std::string GPage::name() const 
+std::string GPage::name() const
 {
 	return m_name ;
 }
 
-std::string GPage::next1() const 
+std::string GPage::next1() const
 {
 	return m_next_1 ;
 }
@@ -96,21 +97,21 @@ QLabel * GPage::newTitle( QString s )
 	return label ;
 }
 
-void GPage::dump( std::ostream & stream , const std::string & prefix , const std::string & eol , bool ) const
+void GPage::dump( std::ostream & stream , bool ) const
 {
-	stream << prefix << "# page: " << name() << eol ;
+	G_DEBUG( "GPage::dump: page: " << name() ) ;
+	stream << "# page: " << name() << "\n" ;
 }
 
-void GPage::dumpItem( std::ostream & stream , const std::string & prefix , const std::string & key ,
-	const G::Path & value , const std::string & eol ) const
+void GPage::dumpItem( std::ostream & stream , bool for_install , const std::string & key , const G::Path & value ) const
 {
-	dumpItem( stream , prefix , key , value.str() , eol ) ;
+	dumpItem( stream , for_install , key , value.str() ) ;
 }
 
-void GPage::dumpItem( std::ostream & stream , const std::string & prefix , const std::string & key ,
-	const std::string & value , const std::string & eol ) const
+void GPage::dumpItem( std::ostream & stream , bool , const std::string & key , const std::string & value ) const
 {
-	State::write( stream , key , value , prefix , eol ) ;
+	G_DEBUG( "GPage::dumpItem: [" << key << "]=[" << value << "]" ) ;
+	MapFile::writeItem( stream , "gui-" + key , value ) ;
 }
 
 std::string GPage::value( bool b )
@@ -123,14 +124,25 @@ std::string GPage::value( const QAbstractButton * p )
 	return p->isChecked() ? "y" : "n" ;
 }
 
+std::string GPage::stdstr( const QString & s )
+{
+	QByteArray a = s.toLocal8Bit() ;
+	return std::string( a.constData() , a.length() ) ;
+}
+
+QString GPage::qstr( const std::string & s )
+{
+	return QString::fromLocal8Bit( s.data() , s.size() ) ;
+}
+
 std::string GPage::value( const QLineEdit * p )
 {
-	return p->text().toStdString() ;
+	return stdstr(p->text()) ;
 }
 
 std::string GPage::value( const QComboBox * p )
 {
-	return p->currentText().toStdString() ;
+	return stdstr(p->currentText()) ;
 }
 
 void GPage::setTestMode()

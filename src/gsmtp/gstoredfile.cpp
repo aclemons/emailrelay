@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -100,7 +100,9 @@ void GSmtp::StoredFile::readEnvelopeCore( bool check )
 	readFrom( stream ) ;
 	readToList( stream ) ;
 	readAuthentication( stream ) ;
-	readClientIp( stream ) ;
+	readClientSocketAddress( stream ) ;
+	if( m_format == FileStore::format() )
+		readClientSocketName( stream ) ;
 	readEnd( stream ) ;
 
 	if( check && m_to_remote.size() == 0U )
@@ -116,7 +118,7 @@ void GSmtp::StoredFile::readFormat( std::istream & stream )
 {
 	std::string format_line = getline(stream) ;
 	m_format = value(format_line,"Format") ;
-	if( m_format != FileStore::format() )
+	if( ! FileStore::knownFormat(m_format) )
 		throw InvalidFormat( m_format ) ;
 }
 
@@ -165,9 +167,14 @@ void GSmtp::StoredFile::readAuthentication( std::istream & stream )
 	m_authentication = G::Xtext::decode(value(getline(stream),"Authentication")) ;
 }
 
-void GSmtp::StoredFile::readClientIp( std::istream & stream )
+void GSmtp::StoredFile::readClientSocketAddress( std::istream & stream )
 {
-	m_client_ip = value(getline(stream),"Client") ;
+	m_client_socket_address = value(getline(stream),"Client") ;
+}
+
+void GSmtp::StoredFile::readClientSocketName( std::istream & stream )
+{
+	m_client_socket_name = G::Xtext::decode(value(getline(stream),"ClientName")) ;
 }
 
 void GSmtp::StoredFile::readEnd( std::istream & stream )

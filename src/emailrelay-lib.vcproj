@@ -18,8 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			>
 			<Tool
@@ -80,8 +80,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			>
 			<Tool
@@ -200,6 +200,10 @@
 			</File>
 			<File
 				RelativePath=".\gnet\gconnection.h"
+				>
+			</File>
+			<File
+				RelativePath=".\gnet\gconnectiontable.h"
 				>
 			</File>
 			<File
@@ -655,10 +659,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\fragments\empty.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\gnet\gaddress_ipv4.cpp"
 				>
 			</File>
@@ -707,7 +707,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\gnet\gconnectiontable_win32.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\win32\gcontrol.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\glib\gconvert.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\glib\gconvert_win32.cpp"
 				>
 			</File>
 			<File
@@ -756,6 +768,10 @@
 			</File>
 			<File
 				RelativePath=".\glib\gdirectory_win32.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\glib\genvironment_win32.cpp"
 				>
 			</File>
 			<File

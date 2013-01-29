@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -32,6 +32,7 @@
 #include "gmessagestore.h"
 #include "gserverprotocol.h"
 #include "gprotocolmessage.h"
+#include "gconnectiontable.h"
 #include "gexception.h"
 #include <string>
 #include <sstream>
@@ -110,8 +111,10 @@ public:
 		std::string verifier_address ;
 		unsigned int verifier_timeout ;
 		///<
+		bool use_connection_table ;
+		///<
 		Config( bool , unsigned int , const AddressList & , const std::string & , bool ,
-			const std::string & , unsigned int , const std::string & , unsigned int ) ;
+			const std::string & , unsigned int , const std::string & , unsigned int , bool ) ;
 	} ;
 
 	Server( MessageStore & store , const GAuth::Secrets & client_secrets , const GAuth::Secrets & server_secrets ,
@@ -165,6 +168,7 @@ private:
 	bool m_anonymous ;
 	std::auto_ptr<ServerProtocol::Text> m_protocol_text ;
 	G::Signal2<std::string,std::string> m_event_signal ;
+	std::auto_ptr<GNet::ConnectionTable> m_connection_table ;
 } ;
 
 #endif

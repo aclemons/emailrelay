@@ -19,7 +19,6 @@ the main executable:
 * "--disable-debug" 67k
 * "--disable-admin" 63k
 * "--enable-small-exceptions" 46k
-* "--enable-small-fragments" 32k
 * "--disable-proxy" 30k
 * "--disable-dns" 26k
 * "--disable-verbose" 15k

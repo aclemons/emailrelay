@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -85,7 +85,8 @@ public:
 	} ;
 
 	ServerProtocol( Sender & sender , Verifier & verifier , ProtocolMessage & pmessage ,
-		const GAuth::Secrets & secrets , Text & text , GNet::Address peer_address , Config config ) ;
+		const GAuth::Secrets & secrets , Text & text , GNet::Address peer_address , 
+		const std::string & peer_socket_name , Config config ) ;
 			///< Constructor. 
 			///<
 			///< The Verifier interface is used to verify recipient
@@ -250,8 +251,9 @@ private:
 	ProtocolMessage & m_pmessage ;
 	Text & m_text ;
 	GNet::Address m_peer_address ;
+	std::string m_peer_socket_name ;
 	Fsm m_fsm ;
-	std::string m_peer_name ;
+	std::string m_smtp_peer_name ;
 	bool m_authenticated ;
 	bool m_secure ;
 	std::auto_ptr<GAuth::SaslServer> m_sasl ;

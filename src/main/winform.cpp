@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -107,8 +107,9 @@ std::string Main::WinForm::na( const std::string & s )
 	return s.empty() ? na() : s ;
 }
 
-std::string Main::WinForm::any( const std::string & s )
+std::string Main::WinForm::any( const G::Strings & ss )
 {
+	std::string s = ss.empty() ? std::string() : *ss.begin() ;
 	return s.empty() ? std::string("<any>") : s ;
 }
 
@@ -117,10 +118,12 @@ std::string Main::WinForm::str( const Configuration & c , const std::string & p 
 	std::ostringstream ss ;
 	ss
 		<< p << "allow remote clients? " << yn(c.allowRemoteClients()) << eol
-		<< p << "listening interface: " << (c.doServing()&&c.doSmtp()?any(c.firstListeningInterface()):na()) << eol
 		<< p << "smtp listening port: " << (c.doServing()&&c.doSmtp()?G::Str::fromUInt(c.port()):na()) << eol
+		<< p << "smtp listening interface: " << (c.doServing()&&c.doSmtp()?any(c.listeningInterfaces("smtp")):na()) << eol
 		<< p << "pop listening port: " << (c.doServing()&&c.doPop()?G::Str::fromUInt(c.popPort()):na()) << eol
+		<< p << "pop listening interface: " << (c.doServing()&&c.doPop()?any(c.listeningInterfaces("pop")):na()) << eol
 		<< p << "admin listening port: " << (c.doAdmin()?G::Str::fromUInt(c.adminPort()):na()) << eol
+		<< p << "admin listening interface: " << (c.doAdmin()?any(c.listeningInterfaces("admin")):na()) << eol
 		<< p << "forward-to address: " << (c.serverAddress().length()?c.serverAddress():na()) << eol
 		<< p << "spool directory: " << c.spoolDir() << eol
 		<< p << "smtp client secrets file: " << na(c.clientSecretsFile()) << eol

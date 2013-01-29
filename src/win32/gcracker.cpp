@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -188,12 +188,12 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 		{
 			G_DEBUG( "Cracker::onDrop" ) ;
 			HDROP hdrop = reinterpret_cast<HDROP>(wparam) ;
-			int count = ::DragQueryFile( hdrop , 0xFFFFFFFF , NULL , 0 ) ;
+			int count = ::DragQueryFileA( hdrop , 0xFFFFFFFF , NULL , 0 ) ;
 			G::Strings list ;
 			for( int i = 0 ; i < count ; i++ )
 			{
 				static char buffer[G::limits::path] ;
-				if( ::DragQueryFile( hdrop , i , buffer , sizeof(buffer) ) < sizeof(buffer) )
+				if( ::DragQueryFileA( hdrop , i , buffer , sizeof(buffer) ) < sizeof(buffer) )
 				{
 					G_DEBUG( "Cracker::onDrop: \"" << buffer << "\"" ) ;
 					list.push_back( std::string(buffer) ) ; 

@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -284,8 +284,8 @@ std::string G::Pipe::read( bool do_throw )
 
 HANDLE G::NewProcessImp::createProcess( const std::string & exe , const std::string & command_line , HANDLE hstdout )
 {
-	static STARTUPINFO zero_start ;
-	STARTUPINFO start(zero_start) ;
+	static STARTUPINFOA zero_start ;
+	STARTUPINFOA start(zero_start) ;
 	start.cb = sizeof(start) ;
 	start.dwFlags = STARTF_USESTDHANDLES ;
 	start.hStdInput = HNULL ;
@@ -295,13 +295,13 @@ HANDLE G::NewProcessImp::createProcess( const std::string & exe , const std::str
 	BOOL inherit = TRUE ;
 	DWORD flags = CREATE_NO_WINDOW ;
 	LPVOID env = NULL ;
-	LPCTSTR cwd = NULL ;
+	LPCSTR cwd = NULL ;
 	PROCESS_INFORMATION info ;
 	SECURITY_ATTRIBUTES * process_attributes = NULL ;
 	SECURITY_ATTRIBUTES * thread_attributes = NULL ;
 	char * command_line_p = const_cast<char*>(command_line.c_str()) ;
 
-	BOOL rc = ::CreateProcess( exe.c_str() , command_line_p ,
+	BOOL rc = ::CreateProcessA( exe.c_str() , command_line_p ,
 		process_attributes , thread_attributes , inherit ,
 		flags , env , cwd , &start , &info ) ;
 

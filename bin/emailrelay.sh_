@@ -1,10 +1,10 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or 
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 # 
 # This program is distributed in the hope that it will be useful,
@@ -39,8 +39,8 @@
 # Provides:            emailrelay
 # Required-Start:      $network
 # Required-Stop:       $network
-# Default-Start:       3 4 5
-# Default-Stop:        0 1 2 6
+# Default-Start:       2 3 4 5
+# Default-Stop:        0 1 6
 # Short-Description:   E-MailRelay SMTP proxy and store-and-forward MTA.
 ### END INIT INFO
 ##
@@ -65,12 +65,17 @@ pid_file="${var_run}/emailrelay.pid"
 PATH="${PATH}:/sbin:/bin:/usr/bin"
 ECHO="echo" ; if test -x /bin/echo ; then ECHO="/bin/echo" ; fi
 cfg_file="__SYSCONF_DIR__/emailrelay.conf"
+cfg_file_template="__SYSCONF_DIR__/emailrelay.conf.template"
+if test -f "$cfg_file_template" -a ! -f "$cfg_file"
+then
+	cp -p "$cfg_file_template" "$cfg_file"
+fi
 
 # server configuration using the config file
 #
 ConfigSwitches()
 {
-	cat "${cfg_file}" 2>/dev/null | egrep -v '^#|^ *$' | sed 's/^/--/'
+	cat "${cfg_file}" 2>/dev/null | egrep -v '^#|^gui-|^ *$' | sed 's/^/--/'
 }
 StartSwitches()
 {

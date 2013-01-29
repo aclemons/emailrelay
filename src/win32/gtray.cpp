@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -39,7 +39,7 @@ GGui::Tray::Tray( unsigned int icon_id , const WindowBase & window ,
 	std::strncpy( p , tip.c_str() , n ) ;
 	p[n-1U] = '\0' ;
 
-	bool ok = !! ::Shell_NotifyIcon( NIM_ADD , &m_info ) ;
+	bool ok = !! ::Shell_NotifyIconA( NIM_ADD , &m_info ) ;
 	if( !ok )
 		throw Error() ;
 }
@@ -49,7 +49,7 @@ GGui::Tray::~Tray()
 	m_info.uFlags = 0 ;
 	m_info.uCallbackMessage = 0 ;
 	m_info.hIcon = 0 ;
-	bool ok = !! ::Shell_NotifyIcon( NIM_DELETE , &m_info ) ;
+	bool ok = !! ::Shell_NotifyIconA( NIM_DELETE , &m_info ) ;
 }
 
 /// \file gtray.cpp

@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -449,7 +449,8 @@ GSmtp::Server::Config Main::Run::serverConfig() const
 			cfg.filter() ,
 			cfg.filterTimeout() ,
 			cfg.verifier() ,
-			cfg.filterTimeout() ) ; // verifier timeout
+			cfg.filterTimeout() , // verifier timeout - re-use filter timeout value
+			cfg.peerLookup() ) ; // use connection table to get username of local peers
 }
 
 #ifndef USE_NO_POP

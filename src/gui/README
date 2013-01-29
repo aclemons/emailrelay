@@ -3,20 +3,11 @@ E-MailRelay GUI
 
 Overview
 --------
-Typically on Unix the GUI is used for configuration. It is installed as a shell 
-script wrapper that defines the install directories, and a ".real" binary that 
-is executed by the wrapper.
+The E-MailRelay GUI can act as an installer for self-extracting pacakges or as a
+configuration utility.
 
-Typically on Windows the GUI is a self-extracting installer, with the complete 
-distribution packed into the one executable. Once it extracts itself into a 
-temporary directory the GUI runs as an installer, requiring the user to specify 
-a target directory to install into and then copying and configuring into that 
-location. 
-
-The GUI running as an installer also installs itself so that it can be re-run
-as a configuration utility.
-
-Refer to the comments in guimain.cpp for more information.
+For more information refer to the developer document (doc/developer.txt) and 
+comments in guimain.cpp.
 
 Building
 --------

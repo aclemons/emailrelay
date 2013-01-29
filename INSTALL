@@ -1,34 +1,39 @@
 Introduction
 ============
 
-   With the exception of this introduction section this document contains generic 
-installation instructions for doing a GNU-style
-"./configure; make; sudo make install" installation from source under Linux,
-FreeBSD etc. Windows specific installation instructions are in a separate 
-document, "doc/windows.txt".
+   This document is the standard one for doing a GNU-style build and
+install, except for this introduction, which is specific to E-MailRelay.
 
-   The E-MailRelay "configure" script provides a few extra confiruation switches, 
-which are shown in the output of "./configure --help". One of these is
-"--enable-fhs", which sets the default directories to comply with the File 
-Hierarchy Standard.
+As usual, you should use "./configure; make; sudo make install" to
+install from source under most operating systems (as described below),
+but for Windows you should refer to a separate document,
+"doc/windows.txt".
 
-   There are also a set of variables which can be defined on the "configure" 
-command line for controlling all the installation directories in more detail, 
-augmenting the standard command-line switches like "--sbindir" and 
-"--libexecdir". For more information refer to the E-MailRelay reference document
-under "Files and directories".
+   The E-MailRelay "configure" script provides some extra configuration 
+switches, as shown in the output of "./configure --help". Some of these 
+are used to control all the installation directories in addition to
+the more standard ones like "--sbindir" and "--libexecdir". 
 
-   If compiling with something other than "gcc" then check for any 
+For example, this configure command will result in installation 
+directories that are close to the Linux File Hieriarchy Standard (FHS):
+
+	./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d
+
+For more information refer to the E-MailRelay reference document under 
+the "Files and directories" heading.
+
+   If compiling with something other than "gcc" then check for any
 compiler-specific help in the relevant "lib/<compiler>" directory.
 
-   If you want to install a package rather than running "make install" you could 
-try building an RPM pacakge with "rpmbuild" using the RPM spec file provided in 
-the distribution, and if necessary then making a ".deb" package from that using
-"alien".
+   If you want to install via a package rather than installing with 
+"make install" you could try building an RPM pacakge with "make rpm"
+or a Debian package with "make deb", although there are lots of moving
+parts here, so it may not be easy to get working.
 
-   Finally, you could try running the configuration GUI program "emailrelay-gui"
-(if available) after doing the installation to help with the initial 
-configuration.
+   You may also find the E-MailRelay configuration GUI program 
+"emailrelay-gui" useful to help with with the initial configuration, 
+if it is available.
+
 
 Basic Installation
 ==================

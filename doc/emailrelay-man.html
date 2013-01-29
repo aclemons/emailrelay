@@ -115,7 +115,7 @@ Sets the timeout (in seconds) when connecting to a remote server (default is 40)
 <DT><B>-g, --debug </B>
 
 <DD>
-Generates debug-level logging if compiled-in.
+Generates debug-level logging if built in.
 <DT><B>-D, --domain </B><I>&lt;fqdn&gt;</I>
 
 <DD>
@@ -151,11 +151,11 @@ Enables immediate forwarding of messages as soon as they are received (requires 
 <DT><B>-I, --interface </B><I>&lt;ip-list&gt;</I>
 
 <DD>
-Defines the listening interface(s) for incoming connections.
+Defines the listening interface(s) for incoming connections (comma-separated list with optional smtp=,pop=,admin= qualifiers).
 <DT><B>-l, --log </B>
 
 <DD>
-Writes log information on standard error and syslog.
+Writes log information on standard error and syslog (but see <I>--close-stderr</I> and <I>--no-syslog</I>).
 <DT><B>-L, --log-time </B>
 
 <DD>
@@ -191,7 +191,7 @@ Defines the pop server secrets file (default is <I>/etc/emailrelay.auth</I>).
 <DT><B>-J, --pop-by-name </B>
 
 <DD>
-Modifies the pop spool directory according to the user name (requires <I>--pop</I>).
+Modifies the pop spool directory according to the pop user name (requires <I>--pop</I>).
 <DT><B>-G, --pop-no-delete </B>
 
 <DD>
@@ -392,4 +392,4 @@ This document was created by
 using the manual pages.<BR>
 </BODY>
 </HTML>
-<!-- Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

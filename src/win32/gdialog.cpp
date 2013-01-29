@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -56,7 +56,7 @@ GGui::Dialog::Dialog( const ApplicationBase & app , bool top_level ) :
 void GGui::Dialog::privateInit( HWND hwnd )
 {
 	setHandle( hwnd ) ;
-	::SetWindowText( handle() , m_title.c_str() ) ;
+	::SetWindowTextA( handle() , m_title.c_str() ) ;
 }
 
 GGui::Dialog::~Dialog()
@@ -280,23 +280,43 @@ void GGui::Dialog::onCommand( UINT id )
 
 bool GGui::Dialog::run( int resource_id )
 {
-	return run( MAKEINTRESOURCE(resource_id) ) ;
+	return runStart() && runCore( MAKEINTRESOURCE(resource_id) ) ;
 }
 
 bool GGui::Dialog::run( const char * f_name )
-{		
+{
+	return runStart() && runCore( f_name ) ;
+}
+
+bool GGui::Dialog::runStart()
+{
 	G_DEBUG( "GGui::Dialog::run" ) ;
-	
 	if( handle() != NULL )
 	{
 		G_DEBUG( "GGui::Dialog::run: already running" ) ;
 		return false ;
 	}
+	return true ;
+}
 
+bool GGui::Dialog::runCore( const char * f_name )
+{
 	m_modal = true ;
-	int rc = ::DialogBoxParam( m_hinstance , f_name ,
+	int rc = ::DialogBoxParamA( m_hinstance , f_name ,
 		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
-		
+	return runEnd( rc ) ;
+}
+
+bool GGui::Dialog::runCore( const wchar_t * f_name )
+{
+	m_modal = true ;
+	int rc = ::DialogBoxParamW( m_hinstance , f_name ,
+		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
+	return runEnd( rc ) ;
+}
+
+bool GGui::Dialog::runEnd( int rc )
+{
 	if( rc == -1 )
 	{
 		int error = ::GetLastError() ;
@@ -309,29 +329,37 @@ bool GGui::Dialog::run( const char * f_name )
 		G_DEBUG( "GGui::Dialog::run: dialog creation aborted" ) ;
 		return false ;
 	}
-
 	return true ;
 }
 
 bool GGui::Dialog::runModeless( int resource_id , bool visible )
 {
-	return runModeless( MAKEINTRESOURCE(resource_id) , visible ) ;
+	return runStart() && runModelessCore( MAKEINTRESOURCE(resource_id) , visible ) ;
 }
 
 bool GGui::Dialog::runModeless( const char * f_name , bool visible )
 {		
-	G_DEBUG( "GGui::Dialog::runModeless" ) ;
+	return runStart() && runModelessCore( f_name , visible ) ;
+}
 
-	if( handle() != NULL )
-	{
-		G_DEBUG( "GGui::Dialog::runModeless: already running" ) ;
-		return false ;
-	}
-
+bool GGui::Dialog::runModelessCore( const char * f_name , bool visible )
+{
 	m_modal = false ;
-	HWND hwnd = ::CreateDialogParam( m_hinstance , f_name ,
+	HWND hwnd = ::CreateDialogParamA( m_hinstance , f_name ,
 		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
-		
+	return runModelessEnd( hwnd , visible ) ;
+}
+
+bool GGui::Dialog::runModelessCore( const wchar_t * f_name , bool visible )
+{
+	m_modal = false ;
+	HWND hwnd = ::CreateDialogParamW( m_hinstance , f_name ,
+		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
+	return runModelessEnd( hwnd , visible ) ;
+}
+
+bool GGui::Dialog::runModelessEnd( HWND hwnd , bool visible )
+{
 	if( hwnd == NULL )
 	{
 		G_DEBUG( "GGui::Dialog::runModless: cannot create dialog box" ) ;
@@ -368,14 +396,14 @@ bool GGui::Dialog::registerNewClass( HICON hicon , const std::string & new_class
 
 	// get our class info
 	//
-	WNDCLASS class_info ;
-	::GetClassInfo( hinstance , old_class_name.c_str() , &class_info ) ;
+	WNDCLASSA class_info ;
+	::GetClassInfoA( hinstance , old_class_name.c_str() , &class_info ) ;
 
 	// register a new class
 	//
 	class_info.hIcon = hicon ;
 	class_info.lpszClassName = new_class_name.c_str() ;
-	ATOM rc = ::RegisterClass( &class_info ) ;
+	ATOM rc = ::RegisterClassA( &class_info ) ;
 
 	return rc != 0 ;
 }

@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -25,11 +25,11 @@
 #include "ggetopt.h"
 #include "gassert.h"
 #include "gdebug.h"
+#include "genvironment.h"
 #include <sstream>
 #include <algorithm>
 #include <functional>
 #include <utility>
-#include <cstdlib> // getenv
 
 namespace
 {
@@ -113,8 +113,8 @@ char G::GetOpt::key( const std::string & name ) const
 G::GetOpt::size_type G::GetOpt::wrapDefault()
 {
 	unsigned int result = 79U ;
-	const char * p = std::getenv("COLUMNS") ;
-	if( p != NULL )
+	std::string p = G::Environment::get("COLUMNS",std::string()) ;
+	if( !p.empty() )
 	{
 		try { result = G::Str::toUInt(p) ; } catch(std::exception&) {}
 	}
@@ -388,14 +388,14 @@ void G::GetOpt::errorNoValue( const std::string & name )
 
 void G::GetOpt::errorUnknownSwitch( char c )
 {
-	std::string e("invalid switch: -") ;
+	std::string e("invalid option: -") ;
 	e.append( 1U , c ) ;
 	m_errors.push_back( e ) ;
 }
 
 void G::GetOpt::errorUnknownSwitch( const std::string & name )
 {
-	std::string e("invalid switch: --") ;
+	std::string e("invalid option: --") ;
 	e.append( name ) ;
 	m_errors.push_back( e ) ;
 }

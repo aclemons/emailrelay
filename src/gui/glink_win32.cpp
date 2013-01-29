@@ -1,9 +1,25 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// ===
+//
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -19,6 +35,7 @@
 //
 
 #include "gdef.h"
+#include "gconvert.h"
 #include "glink.h"
 #include "gstr.h"
 #include "gfile.h"
@@ -46,29 +63,23 @@ struct GComPtr
 struct bstr
 {
 	private: BSTR m_p ;
-	public: explicit bstr( const std::string & s ) 
-	{ 
-		int n = MultiByteToWideChar( CP_ACP , 0 , s.c_str() , -1 , NULL , 0 ) ;
-		if( n == 0 ) throw std::runtime_error("string conversion error") ;
-		OLECHAR * p = new OLECHAR[n*2+10] ;
-		n = MultiByteToWideChar( CP_ACP , 0 , s.c_str() , -1 , p , n ) ;
-		if( n == 0 ) { delete [] p ; throw std::runtime_error("string conversion error") ; }
-		m_p = SysAllocString( p ) ;
-		delete [] p ;
+	public: explicit bstr( const std::string & s )
+	{
+		std::wstring ws ;
+		G::Convert::convert( ws , s ) ;
+		m_p = SysAllocString( ws.c_str() ) ;
 	}
 	public: ~bstr() { SysFreeString(m_p) ; }
 	public: BSTR p() { return m_p ; }
 	private: bstr( const bstr & ) ;
 	private: void operator=( const bstr & ) ;
-	
 } ;
 
-class GLinkImp 
+class GLinkImp  
 {
 public:
-	GLinkImp( const G::Path & target_path , const std::string & name , const std::string & description , 
-		const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , 
-		GLink::Show show ) ;
+	GLinkImp( const G::Path & target_path , const std::string & name , const std::string & description ,
+		const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , GLink::Show show ) ;
 	static std::string filename( const std::string & ) ;
 	void saveAs( const G::Path & link_path ) ;
 
@@ -90,7 +101,7 @@ private:
 	GComPtr<IPersistFile> m_ipf ;
 } ;
 
-GLinkImp::GLinkImp( const G::Path & target_path , const std::string & , const std::string & description , 
+GLinkImp::GLinkImp( const G::Path & target_path , const std::string & , const std::string & description ,
 	const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , GLink::Show show_enum )
 {
 	createInstance() ;
@@ -133,19 +144,25 @@ void GLinkImp::qi()
 
 void GLinkImp::setTargetPath( const G::Path & target_path )
 {
-	HRESULT hr = m_ilink.get()->SetPath( target_path.str().c_str() ) ;
+	std::basic_string<TCHAR> arg ;
+	G::Convert::convert( arg , target_path.str() ) ;
+	HRESULT hr = m_ilink.get()->SetPath( arg.c_str() ) ;
 	check( hr , "SetPath" ) ;
 }
 
 void GLinkImp::setWorkingDir( const G::Path & working_dir )
 {
-	HRESULT hr = m_ilink.get()->SetWorkingDirectory( working_dir.str().c_str() ) ;
+	std::basic_string<TCHAR> arg ;
+	G::Convert::convert( arg , working_dir.str() ) ;
+	HRESULT hr = m_ilink.get()->SetWorkingDirectory( arg.c_str() ) ;
 	check( hr , "SetWorkingDirectory" ) ;
 }
 
 void GLinkImp::setDescription( const std::string & s )
 {
-	HRESULT hr = m_ilink.get()->SetDescription( s.c_str() ) ;
+	std::basic_string<TCHAR> arg ;
+	G::Convert::convert( arg , s ) ;
+	HRESULT hr = m_ilink.get()->SetDescription( arg.c_str() ) ;
 	check( hr , "SetDescription" ) ;
 }
 
@@ -166,13 +183,17 @@ void GLinkImp::setArgs( const G::Strings & args )
 		sep = " " ;
 	}
 
-	HRESULT hr = m_ilink.get()->SetArguments( ss.str().c_str() ) ;
+	std::basic_string<TCHAR> arg ;
+	G::Convert::convert( arg , ss.str() ) ;
+	HRESULT hr = m_ilink.get()->SetArguments( arg.c_str() ) ;
 	check( hr , "SetArguments" ) ;
 }
 
 void GLinkImp::setIcon( const G::Path & icon_source )
 {
-	HRESULT hr = m_ilink.get()->SetIconLocation( icon_source.str().c_str() , 0U ) ;
+	std::basic_string<TCHAR> arg ;
+	G::Convert::convert( arg , icon_source.str() ) ;
+	HRESULT hr = m_ilink.get()->SetIconLocation( arg.c_str() , 0U ) ;
 	check( hr , "SetIconLocation" ) ;
 }
 
@@ -190,8 +211,9 @@ void GLinkImp::saveAs( const G::Path & link_path )
 
 // ==
 
-GLink::GLink( const G::Path & target_path , const std::string & name , const std::string & description , 
-	const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , Show show ) :
+GLink::GLink( const G::Path & target_path , const std::string & name , const std::string & description ,
+	const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , Show show ,
+	const std::string & , const std::string & , const std::string & ) :
 		m_imp( new GLinkImp(target_path,name,description,working_dir,args,icon_source,show) )
 {
 }

@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -16,6 +16,8 @@
 // ===
 //
 // gpam_linux.cpp
+//
+// See: http://www.linux-pam.org/Linux-PAM-html/
 //
 
 #include "gdef.h"
@@ -69,6 +71,7 @@ private:
 public:
 	Pam & m_pam ;
 	int m_magic ;
+	mutable int m_rc ; // required for pam_end()
 	Handle m_hpam ;
 	Conversation m_conv ;
 	bool m_silent ;
@@ -99,25 +102,25 @@ private:
 G::PamImp::PamImp( G::Pam & pam , const std::string & application , const std::string & user , bool silent ) :
 	m_pam(pam) ,
 	m_magic(MAGIC) ,
+	m_rc(PAM_SUCCESS) ,
 	m_silent(silent)
 {
 	G_DEBUG( "G::PamImp::ctor: [" << application << "] [" << user << "]" ) ;
 
 	m_conv.conv = converse ;
 	m_conv.appdata_ptr = this ;
-	int rc = ::pam_start( application.c_str() , user.c_str() , &m_conv , &m_hpam ) ;
-	if( rc != PAM_SUCCESS )
+	m_rc = ::pam_start( application.c_str() , user.c_str() , &m_conv , &m_hpam ) ;
+	if( m_rc != PAM_SUCCESS )
 	{
-		::pam_end( m_hpam , rc ) ;
-		throw Error( "pam_start" , rc ) ;
+		throw Error( "pam_start" , m_rc ) ;
 	}
 
 	// (linux-specific)
-	rc = ::pam_set_item( m_hpam , PAM_FAIL_DELAY , reinterpret_cast<const void*>(delay) ) ;
-	if( rc != PAM_SUCCESS )
+	m_rc = ::pam_set_item( m_hpam , PAM_FAIL_DELAY , reinterpret_cast<const void*>(delay) ) ;
+	if( m_rc != PAM_SUCCESS )
 	{
-		::pam_end( m_hpam , PAM_SUCCESS ) ;
-		throw Error( "pam_set_item" , rc , ::pam_strerror(hpam(),rc) ) ;
+		::pam_end( m_hpam , m_rc ) ;
+		throw Error( "pam_set_item" , m_rc , ::pam_strerror(hpam(),m_rc) ) ;
 	}
 }
 
@@ -126,7 +129,7 @@ G::PamImp::~PamImp()
 	try
 	{
 		G_DEBUG( "G::PamImp::dtor" ) ;
-		::pam_end( m_hpam , PAM_SUCCESS ) ;
+		::pam_end( m_hpam , m_rc ) ;
 		m_magic = 0 ;
 	}
 	catch(...)
@@ -159,19 +162,19 @@ bool G::PamImp::authenticate( bool require_token )
 	int flags = 0 ;
 	if( silent() ) flags |= PAM_SILENT ;
 	if( require_token ) flags |= PAM_DISALLOW_NULL_AUTHTOK ;
-	int rc = ::pam_authenticate( hpam() , flags ) ;
-	if( rc == PAM_INCOMPLETE )
+	m_rc = ::pam_authenticate( hpam() , flags ) ;
+	if( m_rc == PAM_INCOMPLETE )
 		return false ;
 
-	check( "pam_authenticate" , rc ) ;
+	check( "pam_authenticate" , m_rc ) ;
 	return true ;
 }
 
 std::string G::PamImp::name() const
 {
 	const void * vp = NULL ;
-	int rc = ::pam_get_item( hpam() , PAM_USER , &vp ) ;
-	check( "pam_get_item" , rc ) ;
+	m_rc = ::pam_get_item( hpam() , PAM_USER , &vp ) ;
+	check( "pam_get_item" , m_rc ) ;
 	const char * cp = reinterpret_cast<const char*>(vp) ;
 	return std::string( cp ? cp : "" ) ;
 }
@@ -181,8 +184,8 @@ void G::PamImp::setCredentials( int flag )
 	int flags = 0 ;
 	flags |= flag ;
 	if( silent() ) flags |= PAM_SILENT ;
-	int rc = ::pam_setcred( hpam() , flags ) ;
-	check( "pam_setcred" , rc ) ;
+	m_rc = ::pam_setcred( hpam() , flags ) ;
+	check( "pam_setcred" , m_rc ) ;
 }
 
 void G::PamImp::checkAccount( bool require_token )
@@ -190,8 +193,8 @@ void G::PamImp::checkAccount( bool require_token )
 	int flags = 0 ;
 	if( silent() ) flags |= PAM_SILENT ;
 	if( require_token ) flags |= PAM_DISALLOW_NULL_AUTHTOK ;
-	int rc = ::pam_acct_mgmt( hpam() , flags ) ;
-	check( "pam_acct_mgmt" , rc ) ;
+	m_rc = ::pam_acct_mgmt( hpam() , flags ) ;
+	check( "pam_acct_mgmt" , m_rc ) ;
 }
 
 void G::PamImp::release( struct pam_response * rsp , int n )
@@ -254,32 +257,21 @@ int G::PamImp::converse( int n , const struct pam_message ** in , struct pam_res
 
 		// fill in the response from the c++ container
 		//
-		bool complete = true ;
 		for( int i = 0 ; i < n ; i++ )
 		{
 			rsp[i].resp_retcode = 0 ;
 			if( array[i].out_defined )
 			{
-				rsp[i].resp = strdup_( array[i].out.c_str() ) ;
+				char * out = strdup_( array[i].out.c_str() ) ;
+				if( out == NULL )
+					throw std::bad_alloc() ;
+				rsp[i].resp = out ;
 			}
-			else if( array[i].in_type == decodeStyle(PAM_PROMPT_ECHO_OFF) || 
-				array[i].in_type == decodeStyle(PAM_PROMPT_ECHO_ON) )
-			{
-					complete = false ;
-			}
-		}
-
-		// undocumented requirement of linux-pam...
-		//
-		if( !complete )
-		{
-			release( rsp , n ) ;
-			rsp = NULL ;
 		}
 
 		*out = rsp ;
-		G_DEBUG( "G::Pam::converse: complete=" << complete ) ;
-		return complete ? PAM_SUCCESS : PAM_CONV_AGAIN ;
+		G_DEBUG( "G::Pam::converse: complete" ) ;
+		return PAM_SUCCESS ;
 	}
 	catch(...) // c callback
 	{
@@ -314,16 +306,16 @@ void G::PamImp::openSession()
 {
 	int flags = 0 ;
 	if( silent() ) flags |= PAM_SILENT ;
-	int rc = ::pam_open_session( hpam() , flags ) ;
-	check( "pam_open_session" , rc ) ;
+	m_rc = ::pam_open_session( hpam() , flags ) ;
+	check( "pam_open_session" , m_rc ) ;
 }
 
 void G::PamImp::closeSession()
 {
 	int flags = 0 ;
 	if( silent() ) flags |= PAM_SILENT ;
-	int rc = ::pam_close_session( hpam() , flags ) ;
-	check( "pam_close_session" , rc ) ;
+	m_rc = ::pam_close_session( hpam() , flags ) ;
+	check( "pam_close_session" , m_rc ) ;
 }
 
 bool G::PamImp::success( int rc )

@@ -1,10 +1,10 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or 
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 # 
 # This program is distributed in the hope that it will be useful,
@@ -21,8 +21,9 @@
 # Makes a Mac OS X application bundle. Called from make.
 #
 # usage: make-bundle.sh [-f] <name> <exe> <icon> [<version>]
+#         -f : force running on non-Mac systems
 #
-# Silently does nothing on non-Mac systems.
+# Silently does nothing on non-Mac systems (unless forced).
 #
 
 force="0" ; if test "$1" = "-f" ; then force="1" ; shift ; fi
@@ -62,6 +63,7 @@ dir="${name}.app/Contents"
 mkdir -p "${dir}/MacOS" 2>/dev/null
 mkdir -p "${dir}/Resources" 2>/dev/null
 
+# hard-link the binary and copy the icon
 ln -f "${exe}" "${dir}/MacOS/${name}"
 cp "${icon}" "${dir}/Resources/${name}.icns"
 

@@ -4,8 +4,8 @@ E-MailRelay User Guide
 What is it?
 -----------
 E-MailRelay is a simple store-and-forward message transfer agent and proxy
-server. It runs on Unix-like operating systems (including Linux), and on
-Windows.
+server. It runs on Unix-like operating systems (including Linux and Mac OS X),
+and on Windows.
 
 When used as proxy server the E-MailRelay program ("emailrelay") runs in the
 background and accepts e-mail from local e-mail client programs (KMail, Outlook
@@ -26,8 +26,9 @@ read the spooled messages.
 
 What it's not
 -------------
-E-MailRelay is not a routing MTA. It forwards e-mail to a pre-configured SMTP
-server, regardless of any message addressing or DNS redirects.
+E-MailRelay does not do routing of individual messages; it is not a routing MTA.
+It forwards all e-mail messages to a pre-configured SMTP server, regardless of
+any message addressing or DNS redirects.
 
 E-MailRelay is not a delivery agent. Some programs like "fetchmail" send
 locally-addressed e-mail to the local SMTP server in order to deliver them to
@@ -38,10 +39,10 @@ Why use it?
 E-MailRelay is a simple tool that does SMTP. For simple tasks it is likely
 to be easier to understand and configure than a more general purpose MTA.
 
-The code has few dependencies on third-party libraries or run-time environments 
+The code has few dependencies on third-party libraries or run-time environments
 so it is easy to build and install especially when targetting embedded systems.
 
-The single-threaded, event-driven design with non-blocking i/o may provide 
+The single-threaded, event-driven design with non-blocking i/o may provide
 better performance and resource usage than some of the alternatives.
 
 E-MailRelay is designed to be policy-free, so that you can implement your own
@@ -58,35 +59,35 @@ Typical applications of E-MailRelay include:
 
 Running E-MailRelay
 -------------------
-To use E-MailRelay in store-and-forward mode use the "--as-server" switch to 
+To use E-MailRelay in store-and-forward mode use the "--as-server" switch to
 start the storage daemon in the background, and then trigger delivery of spooled
 messages by running with the "--as-client" switch and the address of the target
 host.
 
-For example, to start a storage daemon listening on port 10025 use a command like
-this:
+For example, to start a storage daemon listening on port 10025 use a command
+like this:
 
 	emailrelay --as-server --port 10025 --spool-dir /tmp
 
 And then to forward the spooled mail to "smarthost" run something like this:
 
-	emailrelay --as-client smarthost:smtp --spool-dir /tmp
+	emailrelay --as-client smarthost:25 --spool-dir /tmp
 
 To get behaviour more like a proxy you can add the "--poll" switch so that
-messages are forwarded continuously rather than on-demand. This example starts a 
+messages are forwarded continuously rather than on-demand. This example starts a
 store-and-forward server that forwards spooled-up e-mail every hour:
 
-	emailrelay --as-server --poll 3600 --forward-to smarthost:smtp
+	emailrelay --as-server --poll 3600 --forward-to smarthost:25
 
-For a proxy server that forwards each message as it is being received, without 
+For a proxy server that forwards each message as it is being received, without
 any delay, you can use the "--as-proxy" mode:
 
-	emailrelay --as-proxy smarthost:smtp
+	emailrelay --as-proxy smarthost:25
 
 If you want to edit or filter e-mail as it passes through the proxy then specify
 your pre-processor program with the "--filter" switch, something like this:
 
-	emailrelay --as-proxy smarthost:smtp --filter /usr/local/bin/addsig
+	emailrelay --as-proxy smarthost:25 --filter /usr/local/bin/addsig
 
 To run E-MailRelay as a POP server without SMTP use "--pop" and "--no-smtp":
 
@@ -95,9 +96,9 @@ To run E-MailRelay as a POP server without SMTP use "--pop" and "--no-smtp":
 The "emailrelay-submit" utility can be used to put messages straight into the
 spool directory so that the POP clients can fetch them.
 
-Note that by default E-MailRelay will always reject connections from remote 
+Note that by default E-MailRelay will always reject connections from remote
 machines. To allow connections from anywhere use the "--remote-clients" switch,
-but please consider the implications if your machine is connected to the 
+but please consider the implications if your machine is connected to the
 internet.
 
 For more information on the command-line options refer to the reference guide
@@ -273,11 +274,15 @@ like this:
 	APOP server user1 password1
 	APOP server user2 password2
 
-If you need to serve up messages to more than one POP client consider using the
-"--pop-by-name" option with a "--filter" script that moves messages into the
-appropriate sub-directory. The "emailrelay-filter-copy" program is designed
-to be used in this way: when a message is received over SMTP it copies it
-into all available sub-directories for collection by multiple POP clients.
+It can sometimes be useful to serve up the same e-mail messages to multiple POP
+clients. For example, you might use several e-mail clients on your local network
+and you would like to see your mail on all of them equally. The "--pop-by-name"
+option is intended to be used in this scenario; each e-mail client sees its own
+copy of the e-mail messages, stored in its own sub-directory of the main spool
+directory. The name of the sub-directory is simply the name that the client uses
+to authenticate with the E-MailRelay server. You just need to create the
+sub-directory for each client and then specify "emailrelay-filter-copy"
+as the "--filter" program.
 
 Refer to the reference guide for more information.
 
@@ -332,9 +337,9 @@ Usage patterns
 --------------
 The simplest ways of using E-MailRelay for SMTP are as a proxy or as a
 store-and-forward MTA, but many other configurations are possible. For example,
-multiple E-MailRelay servers can run in parallel sharing the same spool directory,
-or they can be chained in series to that e-mail messages get transferred
-from one to the next.
+multiple E-MailRelay servers can run in parallel sharing the same spool
+directory, or they can be chained in series to that e-mail messages get
+transferred from one to the next.
 
 Remember that messages can be introduced directly into the E-MailRelay spool
 directory using the "emailrelay-submit" utility, and they can be moved out again
@@ -434,4 +439,4 @@ serves as the installer.
 
 
 
-Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

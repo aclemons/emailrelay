@@ -1,9 +1,9 @@
 #
-## Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation, either version 3 of the License, or 
+## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
 ## 
 ## This program is distributed in the hope that it will be useful,
@@ -29,12 +29,6 @@ CONFIG_SOURCES = commandline_simple.cpp
 else
 CONFIG_EXTRA_DIST = commandline_simple.cpp
 CONFIG_SOURCES = commandline_full.cpp
-endif
-
-if SMALL_FRAGMENTS
-FRAGMENTS_LDADD = $(top_builddir)/src/fragments/libfragments.a
-else
-FRAGMENTS_LDADD = 
 endif
 
 BUNDLE=E-MailRelay-Start
@@ -77,7 +71,7 @@ EXTRA_DIST=\
 	winmain.cpp \
 	winmenu.cpp \
 	winmenu.h \
-	mingw.c \
+	fakemc.c \
 	mingw.mak
 
 INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gauth -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_CAPABILITIES=\"$(G_CAPABILITIES)\"
@@ -103,9 +97,7 @@ emailrelay_SOURCES = \
 	run.h
 
 COMMON_LDADD = \
-	$(FRAGMENTS_LDADD) \
-	$(top_builddir)/src/glib/libglib.a \
-	$(FRAGMENTS_LDADD)
+	$(top_builddir)/src/glib/libglib.a
 
 emailrelay_LDADD = \
 	$(top_builddir)/src/gpop/libgpop.a \

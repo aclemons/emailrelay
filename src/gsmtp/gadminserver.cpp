@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -274,7 +274,7 @@ GSmtp::AdminServer::AdminServer( MessageStore & store , const GSmtp::Client::Con
 	const GAuth::Secrets & secrets , const GNet::MultiServer::AddressList & listening_addresses , 
 	bool allow_remote , const GNet::Address & local_address , const std::string & remote_address , 
 	unsigned int connection_timeout , const G::StringMap & extra_commands , bool with_terminate ) :
-		GNet::MultiServer( listening_addresses ) ,
+		GNet::MultiServer( listening_addresses , false ) ,
 		m_store(store) ,
 		m_client_config(client_config) ,
 		m_secrets(secrets) ,

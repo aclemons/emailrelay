@@ -46,7 +46,7 @@ Note that the batch file and the main E-MailRelay executable must be in the same
 directory.
 
 If you need to run multiple E-MailRelay services then pass a unique service name
-and display name on the "emailrelay-service --install <name> <display-name>" 
+and display name on the "emailrelay-service --install <name> <display-name>"
 command-line.
 
 The service name you give is used to derive the name of the "<name>-start.bat"
@@ -64,9 +64,12 @@ For example:
 Diagnostics
 -----------
 E-MailRelay normally writes errors and warnings into the system event log, which
-you can view by running "eventvwr.exe". You can increase the verbosity by adding
-the "--verbose" switch to the E-MailRelay command-line, typically by editing the
-"emailrelay-start.bat" batch script.
+you can view by running "eventvwr.exe" and looking under "Windows Logs" and then
+"Application".
+
+You can increase the verbosity of the logging by adding the "--verbose" switch
+to the E-MailRelay command-line, typically by editing the "emailrelay-start.bat"
+batch script.
 
 The E-MailRelay server also logs to the standard error stream. However, the
 "--as-server" and "--as-proxy" switches implicitly incorporate "--close-stderr"
@@ -90,10 +93,12 @@ panel.
 
 Building from source
 --------------------
-E-MailRelay can be compiled using Microsoft Visual Studio C++ (MSVC) 2008 or
-MinGW, although the installation/configuration GUI can only be built with MinGW
-because of its dependence on Qt.
+E-MailRelay can be compiled using various versions of Microsoft Visual Studio
+C++ (MSVC) or MinGW.
 
-There is a Visual Studio "solution" for MSVC 2008 in the "src" directory. For
-MinGW please follow the guidelines in "mingw-common.mak" which is also in the
-"src" directory.
+A Visual Studio "solution" for MSVC 2008 is provided in the "src" directory to
+build the main E-MailRelay executable. However, it will not build the
+installation/configuration GUI.
+
+For a complete build that includes the Qt-based E-MailRelay GUI use MinGW by
+following the instructions in "src/mingw-common.mak" and "doc/developer.txt".

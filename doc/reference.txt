@@ -42,7 +42,7 @@ where <switch> is:
   Sets the timeout (in seconds) when connecting to a remote server (default is 40).
 
 # --debug (-g)
-  Generates debug-level logging if compiled-in.
+  Generates debug-level logging if built in.
 
 # --domain (-D)
   Sets an override for the host's fully qualified domain name.
@@ -69,10 +69,10 @@ where <switch> is:
   Enables immediate forwarding of messages as soon as they are received (requires --forward-to).
 
 # --interface (-I)
-  Defines the listening interface(s) for incoming connections.
+  Defines the listening interface(s) for incoming connections (comma-separated list with optional smtp=,pop=,admin= qualifiers).
 
 # --log (-l)
-  Writes log information on standard error and syslog.
+  Writes log information on standard error and syslog (but see --close-stderr and --no-syslog).
 
 # --log-time (-L)
   Adds a timestamp to the logging output.
@@ -99,7 +99,7 @@ where <switch> is:
   Defines the pop server secrets file (default is "/etc/emailrelay.auth").
 
 # --pop-by-name (-J)
-  Modifies the pop spool directory according to the user name (requires --pop).
+  Modifies the pop spool directory according to the pop user name (requires --pop).
 
 # --pop-no-delete (-G)
   Disables message deletion via pop (requires --pop).
@@ -157,7 +157,7 @@ file contains parameters relevant to the SMTP dialogue, and the content file
 contains the RFC822 headers and body text.
 
 The filenames used in the message store have a prefix of "emailrelay", followed
-by a process-id, timestamp and sequence number, followed by "envelope" or
+by a process-id, timestamp and sequence number, and then "envelope" or
 "content". The envelope files then have an additional suffix to implement a
 simple locking scheme.
 
@@ -169,10 +169,7 @@ The envelope file suffixes are:
 * ".bad" -- if the message cannot be forwarded
 * ".local" -- for copies of the envelope file for delivery to local recipients
 
-Copies of the content file for delivery to local recipients will also have
-a "local" suffix.
-
-If a message cannot be forwarded the envelope file is given a "bad" suffix,
+If a message cannot be forwarded the envelope file is given a ".bad" suffix,
 and the failure reason is written into the file.
 
 Forwarding
@@ -302,20 +299,19 @@ Bear in mind the following points when writing "--filter" programs:
 
 * The standard input and output are not used; the content filename is passed on the command line.
 * Programs run with a reduced set of environment variables.
-* The E-MailRelay process is completely blocked while the "--filter" program runs.
+* The E-MailRelay process is completely blocked while the "--filter" program runs so it should be fast.
 * E-MailRelay files use CR-LF line terminators, as required by the RFCs.
 * Envelope files will have a file extension of ".new" or ".busy" when the program runs.
 * Windows scripts may need to be run via "cscript" or a batch file wrapper.
 
-It is also possible to do message pre-processing in a separate server process by
-using "net:<address>:<port>" as the "--filter" or "--client-filter" switch
-parameter. E-MailRelay connects to this address and then uses a simple
-line-based dialog as each e-mail message is processed where it sends the
-full path of the message content file in one line and expects the remote process
-to respond with an "ok" line if the message is to be accepted or an error
-message. One advantage of using a network pre-processor compared to running a
-program is that the E-MailRelay server is not blocked while the messages are
-being pre-processed.
+It is also possible to do message pre-processing in a separate process by using
+"net:<address>:<port>" as the "--filter" or "--client-filter" switch parameter.
+E-MailRelay connects to this address and then uses a simple line-based dialog as
+each e-mail message is processed where it sends the full path of the message
+content file in one line and expects the remote process to respond with an "ok"
+line if the message is to be accepted or an error message. One advantage of
+using a network pre-processor compared to running a program is that the
+E-MailRelay server is not blocked while the messages are being pre-processed.
 
 Authentication
 --------------
@@ -399,10 +395,9 @@ A "CRAM-MD5" version would look like this:
 	CRAM-MD5 server user1 4059553961.2316091643.3282746241.1444639637.3735501773.3404060330.2760590371.1201092398
 	CRAM-MD5 server user2 2798539199.3144534242.3784876256.2879973305.2327113479.216533878.2436460291.2361831919
 
-When using the "LOGIN" mechanism you have to store plaintext passwords in a
-file. This is a bad thing. You should at least make sure that the secrets file
-has tight permissions, and that the passwords in it are not also used for
-anything important.
+When using the "LOGIN" mechanism you have to store plaintext passwords in the
+secrets file, so you should make sure that the secrets file has tight
+permissions and the passwords in it are not also used for anything important.
 
 On the server side authentication is advertised by E-MailRealy in the response
 to the SMTP "EHLO" command if the "--server-auth" command-line switch is used.
@@ -454,6 +449,11 @@ encryption when E-MailRelay is acting as an SMTP client use the "--client-tls"
 command-line switch, and to enable TLS/SSL when E-MailRelay is acting as an SMTP
 or POP3 server use "--server-tls".
 
+Note that this is not the same as running the whole SMTP or POP3 dialog over
+a connection tunnel already encrypted with TLS/SSL; when using the E-MailRelay
+TLS/SSL options the connection starts out un-encrypted and the use of encryption
+is negotiated using extensions of the SMTP/POP3 protocols (ie. "STARTTLS").
+
 The "--server-tls" switch requires the name of an X.509 certificate in the "PEM"
 format. This file must be in a directory that the OpenSSL library considers to
 be secure. On some systems this is "/etc/ssl/certs".
@@ -468,19 +468,21 @@ but something like this might work for testing purposes:
 
 Linux PAM
 ---------
-E-MailRelay supports the use of Linux Pluggable Authentication Modules (PAM) for
-authentication if built on Linux with the "--with-pam" configure option.
+E-MailRelay supports the use of Linux PAM (Pluggable Authentication Modules) for
+authentication if it has been built on Linux with the "--with-pam" configure
+option.
 
-PAM authentication can be used to authenticate SMTP and POP3 sessions. It is not
-relevant to E-MailRelay acting as an SMTP client.
+PAM authentication is used by E-MailRelay to authenticate SMTP and POP3 sessions
+from clients, so it is not relevant to E-MailRelay when acting just as a simple
+SMTP client.
 
 Use "--server-auth=/pam" and/or "--pop-auth=/pam" on the command-line to enable
 PAM authentication at run-time. The E-MailRelay server will then advertise an
 SMTP authentication mechanism of PLAIN and do the actual authentication via PAM.
 
-The PAM system must be configured with a service of "emailrelay". This normally
-involves creating a file "/etc/pam.d/emailrelay" containing somthing like the
-following:
+The PAM system itself must be configured with a service of "emailrelay". This
+normally involves creating a file "/etc/pam.d/emailrelay" containing somthing
+like the following:
 
 	auth requisite pam_unix.so nullok_secure
 	session required pam_permit.so
@@ -529,10 +531,11 @@ The following command-line switches are used:
   The CRAM-MD5 authentication mechanism will only be advertised to clients
   if there are "CRAM-MD5 server" entries in the secrets file.
 
-  If E-MailRelay was built with PAM support then a special value of "/pam" can be
-  used to enable authentication using the PAM infrastructure rather than a secrets
-  file. In this case only the PLAIN authentication mechanism will be advertised to
-  the client but transport level encryption using TLS/SSL will be mandatory.
+  If E-MailRelay was built with PAM support then a special value of "/pam" can
+  be used to enable authentication using the PAM infrastructure rather than a
+  secrets file. In this case only the PLAIN authentication mechanism will be
+  advertised to the client but transport level encryption using TLS/SSL will be
+  mandatory.
 
 # --pop-by-name
 
@@ -564,7 +567,7 @@ Your verifier script is passed a command-line containing: (1) the full e-mail
 address as supplied by the remote client, (2) the user-name part of the address
 in upper-case, (3) the host-name part in upper-case, (4) the local host's fully
 qualified domain name in upper-case, (5) the "MAIL" command's "FROM:" address as
- supplied by the client or the empty string in the case of the "VRFY" command,
+supplied by the client or the empty string in the case of the "VRFY" command,
 (6) the IP address of the client connection, (7) the authentication mechanism
 used by the client ("NONE" if trusted), and (8) either the authentication name
 or the fourth field from authentication secrets file if a trusted IP address.
@@ -719,8 +722,8 @@ The following are some security issues that have been taken into consideration:
 
 # Buffer overflow
 
-  Strings are dynamically allocated, so buffer overflow/truncation issues are
-  avoided.
+  Strings are dynamically allocated in c++, so buffer overflow/truncation issues
+  are avoided.
 
 # Remote clients
 
@@ -820,6 +823,7 @@ For finer control of the directory structure the following can be specified on
 the "configure" command-line:
 * --mandir=<dir>
 * --sbindir=<dir>
+* --datadir=<dir>
 * e_libexecdir=<dir>
 * e_sysconfdir=<dir>
 * e_docdir=<dir>
@@ -827,6 +831,7 @@ the "configure" command-line:
 * e_initdir=<dir>
 * e_spooldir=<dir>
 * e_pamdir=<dir>
+* e_icondir=<dir>
 
 For example, running "./configure --prefix=/usr e_spooldir=/tmp/spool" will
 install to a directory structure under "/usr" rather than "/usr/local",
@@ -836,15 +841,15 @@ and create the E-MailRelay spool directory as "/tmp/spool" rather than
 For a directory structure conforming more closely to the FHS use this configure
 command:
 
-	./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc
+	./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_init_dir=/etc/init.d
 
-As usual, it is possible to change the installation root directory using
-"make install DESTDIR=<root>" or "DESTDIR=<root> make -e install". However, this
-will not affect the default spool directory path built into the scripts and
-executables so the correct spool directory will have to be specified at run-time
-with the "--spool-dir" switch.
-
-
+As usual, it is possible to change the installation root directory after
+building by using "make DESTDIR=<root> install" or
+"DESTDIR=<root> make -e install". However, this will not affect the default
+spool directory path built into the scripts and executables so the correct spool
+directory will have to be specified at run-time with the "--spool-dir" switch.
 
 
-Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+
+
+Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.

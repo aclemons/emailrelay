@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -17,9 +17,12 @@
 //
 // guistart.cpp
 //
-// A simple wrapper that runs the "emailrelay-gui.real"
-// binary. Searches for the executable in various likely 
-// locations relative to argv0.
+// A simple wrapper for Mac OS X that runs the "emailrelay-gui.real"
+// binary. Searches for the executable in various likely locations
+// relative to argv0. Errors are reported using an osascript dialog
+// box.
+//
+// See also main/start.cpp.
 //
 
 #include "gdef.h"
@@ -43,7 +46,7 @@ static bool exists( std::string path )
 
 static std::string dirname( std::string path )
 {
-	std::string::size_type pos = path.find_last_of( "/\\" ) ; 
+	std::string::size_type pos = path.find_last_of( "/\\" ) ;
 	std::string base = pos == std::string::npos ? "." : path.substr(0U,pos) ;
 	return base ;
 }
@@ -111,7 +114,7 @@ int main( int , char * argv [] )
 
 		// dialog box for mac
 		std::stringstream ss ;
-		ss 
+		ss
 			<< "/usr/bin/osascript -e \""
 				<< "display dialog \\\"" << sanitised(e.what()) << "\\\" "
 				<< "with title \\\"Error\\\" buttons {\\\"Cancel\\\"}"

@@ -9,6 +9,7 @@ rm -f /usr/share/doc/emailrelay/changelog.html || true
 if test "$1" = "purge"
 then
 	rmdir "$spool" || true
+	rm /etc/emailrelay.conf || true
 fi
 
 #DEBHELPER#

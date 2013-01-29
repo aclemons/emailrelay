@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -101,6 +101,7 @@ private:
 
 std::string Main::CommandLineImp::switchSpec( bool is_windows )
 {
+	// single-character options unused: b N (and digits etc)
 	std::string dir = GSmtp::MessageStore::defaultDirectory().str() ;
 	std::string pop_auth = GPop::Secrets::defaultPath() ;
 	std::ostringstream ss ;
@@ -123,7 +124,7 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 		""
 		"j!client-tls!enables tls/ssl layer for smtp client! (if openssl built in)!0!!3|"
 		"K!server-tls!enables tls/ssl layer for smtp server using the given openssl certificate file! (which must be in the directory trusted by openssl)!1!pem-file!3|"
-		"g!debug!generates debug-level logging if compiled-in!!0!!3|"
+		"g!debug!generates debug-level logging if built in!!0!!3|"
 		"C!client-auth!enables smtp authentication with the remote server, using the given secrets file!!1!file!3|"
 		"L!log-time!adds a timestamp to the logging output!!0!!3|"
 		"S!server-auth!enables authentication of remote clients, using the given secrets file!!1!file!3|"
@@ -143,7 +144,7 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 		"U!connection-timeout!sets the timeout (in seconds) when connecting to a remote server "
 			"(default is 40)!!1!time!3|"
 		"m!immediate!enables immediate forwarding of messages as soon as they are received! (requires --forward-to)!0!!3|"
-		"I!interface!defines the listening interface(s) for incoming connections!!1!ip-list!3|"
+		"I!interface!defines the listening interface(s) for incoming connections! (comma-separated list with optional smtp=,pop=,admin= qualifiers)!1!ip-list!3|"
 		"i!pid-file!defines a file for storing the daemon process-id!!1!pid-file!3|"
 		"O!poll!enables polling of the spool directory for messages to be forwarded with the specified period (zero means on client disconnection)! (requires --forward-to)!1!period!3|"
 		"P!postmaster!!!0!!0|"
@@ -155,7 +156,7 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 		"E!pop-port!specifies the pop listening port number (default is 110)! (requires --pop)!1!port!3|"
 		"F!pop-auth!defines the pop server secrets file (default is \"" << pop_auth << "\")!!1!file!3|"
 		"G!pop-no-delete!disables message deletion via pop! (requires --pop)!0!!3|"
-		"J!pop-by-name!modifies the pop spool directory according to the user name! (requires --pop)!0!!3|"
+		"J!pop-by-name!modifies the pop spool directory according to the pop user name! (requires --pop)!0!!3|"
 		"M!size!limits the size of submitted messages!!1!bytes!3|"
 		;
 	return ss.str() ;
@@ -164,7 +165,7 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 std::string Main::CommandLineImp::switchSpec_unix()
 {
 	return
-		"l!log!writes log information on standard error and syslog!!0!!2|"
+		"l!log!writes log information on standard error and syslog! (but see --close-stderr and --no-syslog)!0!!2|"
 		"t!no-daemon!does not detach from the terminal!!0!!3|"
 		"u!user!names the effective user to switch to if started as root "
 			"(default is \"daemon\")!!1!username!3|"
@@ -175,12 +176,13 @@ std::string Main::CommandLineImp::switchSpec_unix()
 std::string Main::CommandLineImp::switchSpec_windows()
 {
 	return
-		"l!log!writes log information on standard error and event log!!0!!2|"
+		"l!log!writes log information on standard error and event log! (but see --close-stderr and --no-syslog)!0!!2|"
 		"t!no-daemon!uses an ordinary window, not the system tray!!0!!3|"
 		"k!syslog!forces system event log output if logging is enabled (overrides --no-syslog)!!0!!3|"
 		"n!no-syslog!disables use of the system event log!!0!!3|"
 		"c!icon!selects the application icon!!1!0^|1^|2^|3!3|"
-		"H!hidden!hides the application window and suppresses message boxes (requires --no-daemon)!!0!!3" ;
+		"H!hidden!hides the application window and suppresses message boxes (requires --no-daemon)!!0!!3|"
+		"R!peer-lookup!lookup the account names of local peers!!0!!3" ;
 }
 
 Main::CommandLineImp::CommandLineImp( Output & output , const G::Arg & arg , const std::string & spec ,

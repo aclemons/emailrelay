@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -201,6 +201,9 @@ public:
 	static std::string toPrintableAscii( const std::string & in , char escape = '\\' ) ;
 		///< Returns a 7-bit printable representation of the given input string.
 
+	static std::string toPrintableAscii( const std::wstring & in , wchar_t escape = L'\\' ) ;
+		///< Returns a 7-bit printable representation of the given wide input string.
+
 	static std::string printable( const std::string & in , char escape = '\\' ) ;
 		///< Returns a printable represention of the given input string.
 		///< Typically used to prevent escape sequences getting into log files.
@@ -250,7 +253,7 @@ public:
 
 	static void splitIntoTokens( const std::string & in , Strings & out , const std::string & ws ) ;
 		///< Splits the string into 'ws'-delimited tokens. The 
-		///< behaviour is like ::strtok() in that adjacent delimiters
+		///< behaviour is like strtok() in that adjacent delimiters
 		///< count as one and leading and trailing delimiters are ignored.
 		///< Ths output array is cleared first.
 

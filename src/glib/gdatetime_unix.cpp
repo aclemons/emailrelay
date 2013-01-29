@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -23,12 +23,12 @@
 
 std::tm * G::DateTime::gmtime_r( const std::time_t * t , std::tm * p )
 {
-	return ::gmtime_r(t,p) ;
+	return ::gmtime_r(t,p) ; // see gdef.h
 }
 
 std::tm * G::DateTime::localtime_r( const std::time_t * t , std::tm * p )
 {
-	return ::localtime_r(t,p) ;
+	return ::localtime_r(t,p) ; // see gdef.h
 }
 
 /// \file gdatetime_unix.cpp

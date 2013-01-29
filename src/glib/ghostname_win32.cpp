@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "glimits.h"
 #include "ghostname.h"
+#include "genvironment.h"
 #include "gstr.h"
 
 std::string G::hostname()
@@ -33,8 +34,8 @@ std::string G::hostname()
 	}
 	else
 	{
-		const char * p = std::getenv( "COMPUTERNAME" ) ;
-		return G::Str::toPrintableAscii( std::string(p?p:"") , '_' ) ;
+		return G::Str::toPrintableAscii( 
+			G::Environment::get("COMPUTERNAME",std::string()) , '_' ) ;
 	}
 }
 

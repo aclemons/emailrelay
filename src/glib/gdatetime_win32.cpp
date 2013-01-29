@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -20,16 +20,22 @@
 
 #include "gdef.h"
 #include "gdatetime.h"
+#include <stdexcept>
+#include <time.h> // gmtime_s()
 
 struct std::tm * G::DateTime::gmtime_r( const time_t * t , struct std::tm * p )
 {
-	*p = *(std::gmtime(t)) ;
+	errno_t rc = gmtime_s( p , t ) ;
+	if( rc )
+		throw std::runtime_error( "gmtime_s error" ) ;
 	return p ;
 }
 
 struct std::tm * G::DateTime::localtime_r( const time_t * t , struct std::tm * p )
 {
-	*p = *(std::localtime(t)) ;
+	errno_t rc = localtime_s( p , t ) ;
+	if( rc )
+		throw std::runtime_error( "localtime_s error" ) ;
 	return p ;
 }
 

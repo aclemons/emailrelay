@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -19,35 +19,30 @@
 //
 // Creates a self-extracting archive.
 //
-// usage: 
+// usage:
 //  pack [-apq] [-f <list-file>] <output> <stub> <in> <out> [<in> <out> ...] [--dir] [<file> ... [--opt] ...]
 //
-// The table of contents is stored in the output file after
-// the stub program. The final twelve bytes of the output provide 
-// the offset of the table of contents. Each entry in the table 
-// of contents comprises: the compressed file size in decimal 
-// ascii, a space, arbitrary flags string, a space, the file 
-// name/path, a newline. The end of the table is marked by a 
-// (0,-,end) entry.
+// The table of contents is stored in the output file after the stub program.
+// The final twelve bytes of the output provide the offset of the table of
+// contents. Each entry in the table of contents comprises: the compressed file
+// size in decimal ascii, a space, arbitrary flags string, a space, the file
+// name/path, a newline. The end of the table is marked by a (0,-,end) entry.
 //
-// Currently each file's flags are set to "x" if the file is
-// executable, or "-" otherwise.
+// Currently each file's flags are set to "x" if the file is executable, or "-"
+// otherwise.
 //
-// The packed files are compressed with zlib (unless using -p)
-// and then concatenated immediately following the table of 
-// contents.
+// The packed files are compressed with zlib (unless using -p) and then
+// concatenated immediately following the table of contents.
 //
-// Input files are specified in pairs: the input file to be packed
-// and the final output path when unpacked. The "--dir" switch 
-// introduces a set of input files which are all to be unpacked 
-// into the same output directory.
+// Input files are specified in pairs: the input file to be packed and the final
+// output path when unpacked. The "--dir" switch introduces a set of input files
+// which are all to be unpacked into the same output directory.
 //
-// The "--opt" switch indicates that all subsequent files
-// are optional; if they do not exist then they are silently
-// ignored.
+// The "--opt" switch indicates that all subsequent files are optional; if they
+// do not exist then they are silently ignored.
 //
-// All file contents are read into memory before they are
-// packed into the output.
+// All file contents are read into memory before they are packed into the
+// output.
 //
 
 #include "gdef.h"
@@ -104,13 +99,13 @@ unsigned long File::size( const std::string & path )
 	return n ;
 }
 
-File::File( bool plain , const std::string & path_in , const std::string & path_out , bool xtod ) : 
-	m_path_in(path_in) , 
-	m_path_out(path_out) , 
+File::File( bool plain , const std::string & path_in , const std::string & path_out , bool xtod ) :
+	m_path_in(path_in) ,
+	m_path_out(path_out) ,
 	m_plain(plain) ,
-	m_data_out(0) , 
-	m_data_in(0) , 
-	m_data_in_size(0UL) , 
+	m_data_out(0) ,
+	m_data_in(0) ,
+	m_data_in_size(0UL) ,
 	m_data_out_size(0UL)
 {
 	unsigned long file_size = File::size( path_in ) ;
@@ -168,11 +163,11 @@ void File::append( const std::string & path , unsigned long final_size )
 	check( out.good() , "write error" ) ;
 }
 
-File::~File() 
-{ 
+File::~File()
+{
 	if( m_data_out != m_data_in )
-		delete [] m_data_out ; 
-	delete [] m_data_in ; 
+		delete [] m_data_out ;
+	delete [] m_data_in ;
 }
 
 typedef std::vector<std::pair<std::string,std::string> > StringPairs ;
@@ -194,7 +189,7 @@ int main( int argc , char * argv [] )
 			list_file = arg.v( arg.index("-f",1U)+1U ) ;
 			arg.remove( "-f" , 1U ) ;
 		}
-		const char * usage = 
+		const char * usage =
 			"usage: pack [-apq] [-f <list-file>] <output> <stub> <payload-in> <payload-out> [<payload-in> ...]" ;
 		check( arg.c() >= 3 , usage ) ;
 		path_out = arg.v(1) ;
@@ -214,7 +209,7 @@ int main( int argc , char * argv [] )
 			if( arg.v(i) == "--dir" )
 			{
 				dir_mode = true ;
-				dir = arg.v(i+1) ; 
+				dir = arg.v(i+1) ;
 				i++ ;
 			}
 			else if( arg.v(i) == "--opt" )
@@ -224,8 +219,8 @@ int main( int argc , char * argv [] )
 			else if( dir_mode )
 			{
 				// in dir mode take each parameter as an input path to be output
-				// to the specified directory -- if also in opt mode and there 
-				// is still a wildcard in the name then the shell could not find 
+				// to the specified directory -- if also in opt mode and there
+				// is still a wildcard in the name then the shell could not find
 				// a match so silently ignore it
 
 				if( !opt_mode || arg.v(i).find('*') == std::string::npos )
@@ -275,8 +270,8 @@ int main( int argc , char * argv [] )
 			file->compress() ;
 			if( !quiet )
 			{
-				std::cout 
-					<< "pack: compression: " << file->m_path_in << ": " 
+				std::cout
+					<< "pack: compression: " << file->m_path_in << ": "
 					<< file->m_data_in_size << " -> " << file->m_data_out_size << std::endl ;
 			}
 		}

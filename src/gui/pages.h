@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -21,10 +21,11 @@
 #ifndef G_PAGES_H
 #define G_PAGES_H
 
+#include "gdef.h"
 #include "qt.h"
 #include "installer.h"
-#include "dir.h"
 #include "gpath.h"
+#include "gstrings.h"
 #include "gdialog.h"
 #include "gpage.h"
 #include "state.h"
@@ -50,7 +51,7 @@ public:
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 
 private:
 	QLabel * m_label ;
@@ -64,7 +65,7 @@ public:
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool accepted ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 	virtual bool isComplete() ;
 
 private:
@@ -75,12 +76,12 @@ private:
 class DirectoryPage : public GPage 
 {Q_OBJECT
 public:
-	DirectoryPage( GDialog & dialog , const State & state , const std::string & name ,
+	DirectoryPage( GDialog & dialog , const State & , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
-		const Dir & dir , bool installing ) ;
+		bool installing ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 	virtual bool isComplete() ;
 	virtual std::string helpName() const ;
 
@@ -94,7 +95,6 @@ private:
 	G::Path normalise( const G::Path & ) const ;
 
 private:
-	const Dir & m_dir ;
 	bool m_installing ;
 	QLabel * m_install_dir_title ;
 	QLabel * m_install_dir_label ;
@@ -108,6 +108,11 @@ private:
 	QLabel * m_config_dir_label ;
 	QLineEdit * m_config_dir_edit_box ;
 	QPushButton * m_config_dir_browse_button ;
+	std::string m_pid_dir ;
+	std::string m_boot_dir ;
+	std::string m_desktop_dir ;
+	std::string m_menu_dir ;
+	std::string m_login_dir ;
 } ;
 
 class DoWhatPage : public GPage 
@@ -117,7 +122,7 @@ public:
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 	virtual bool isComplete() ;
 	virtual std::string helpName() const ;
 
@@ -142,7 +147,7 @@ public:
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 	virtual bool isComplete() ;
 	virtual std::string helpName() const ;
 
@@ -165,7 +170,7 @@ public:
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_accounts ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 	virtual bool isComplete() ;
 	virtual std::string helpName() const ;
 
@@ -187,7 +192,7 @@ public:
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_account ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 	virtual bool isComplete() ;
 	virtual std::string helpName() const ;
 
@@ -205,7 +210,7 @@ public:
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_account ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 	virtual bool isComplete() ;
 	virtual std::string helpName() const ;
 
@@ -231,7 +236,7 @@ public:
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_account ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 	virtual bool isComplete() ;
 	virtual std::string helpName() const ;
 
@@ -254,11 +259,11 @@ class StartupPage : public GPage
 {
 public:
 	StartupPage( GDialog & dialog , const State & state , const std::string & name ,
-		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
-		const Dir & dir , bool is_mac ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , 
+		bool start_on_boot_able , bool is_mac ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 	virtual bool isComplete() ;
 	virtual std::string helpName() const ;
 
@@ -278,7 +283,7 @@ public:
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 	virtual std::string helpName() const ;
 
 private:
@@ -294,7 +299,7 @@ public:
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 	virtual bool isComplete() ;
 	virtual std::string helpName() const ;
 
@@ -315,7 +320,7 @@ public:
 		const std::string & next_2 , bool finish , bool close , bool installing ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 	virtual void onShow( bool back ) ;
 	virtual std::string helpName() const ;
 
@@ -336,7 +341,7 @@ public:
 		G::Path argv0 , G::Path payload , G::Path state_path , bool install ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 	virtual void onShow( bool back ) ;
 	virtual bool closeButton() const ;
 	virtual bool isComplete() ;
@@ -364,7 +369,7 @@ public:
 	EndPage_( GDialog & dialog , const State & state , const std::string & name ) ;
 
 	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , const std::string & , const std::string & , bool ) const ;
+	virtual void dump( std::ostream & , bool ) const ;
 } ;
 
 #endif

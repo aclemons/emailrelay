@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -191,6 +191,13 @@ private:
 	static Dialog * from_long( LONG l ) ;
 	static LPARAM to_lparam( Dialog * p ) ;
 	static DLGPROC dlgproc_export_fn() ;
+	bool runStart() ;
+	bool runCore( const char * ) ;
+	bool runCore( const wchar_t * ) ;
+	bool runEnd( int ) ;
+	bool runModelessCore( const char * , bool ) ;
+	bool runModelessCore( const wchar_t * , bool ) ;
+	bool runModelessEnd( HWND , bool ) ;
 	Dialog( const Dialog &other ) ; // not implemented
 	void operator=( const Dialog &other ) ; // not implemented
 

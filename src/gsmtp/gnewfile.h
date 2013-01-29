@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -58,14 +58,15 @@ public:
 	virtual bool addText( const std::string & line ) ;
 		///< Final override from GSmtp::NewMessage.
 
-	virtual std::string prepare( const std::string & auth_id , const std::string & client_ip ) ;
-		///< Final override from GSmtp::NewMessage.
-		///<
-		///< The implementation flushes and closes the
-		///< content stream, creates a new envelope
-		///< file (".new"), and does any local 'delivery'
-		///< by creating ".local" copies. The path
-		///< to the content file is returned.
+	virtual std::string prepare( const std::string & auth_id , const std::string & peer_socket_address ,
+		const std::string & peer_socket_name ) ;
+			///< Final override from GSmtp::NewMessage.
+			///<
+			///< The implementation flushes and closes the
+			///< content stream, creates a new envelope
+			///< file (".new"), and does any local 'delivery'
+			///< by creating ".local" copies. The path
+			///< to the content file is returned.
 
 	virtual void commit() ;
 		///< Final override from GSmtp::NewMessage.
@@ -104,9 +105,11 @@ private:
 	void deleteEnvelope() ;
 	static bool isEightBit( const std::string & line ) ;
 	const std::string & crlf() const ;
-	bool saveEnvelope( const std::string & auth_id , const std::string & client_ip ) const ;
+	bool saveEnvelope( const std::string & auth_id , const std::string & peer_socket_address ,
+		const std::string & peer_socket_name ) const ;
 	void writeEnvelope( std::ostream & , const std::string & where , 
-		const std::string & auth_id , const std::string & client_ip ) const ;
+		const std::string & auth_id , const std::string & peer_socket_address ,
+		const std::string & peer_socket_name ) const ;
 	void deliver( const G::Strings & , const G::Path & , const G::Path & , const G::Path & ) ;
 } ;
 

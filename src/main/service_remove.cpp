@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -27,7 +27,7 @@
 std::string service_remove( const std::string & name )
 {
 	SC_HANDLE hmanager = OpenSCManager( NULL , NULL , SC_MANAGER_ALL_ACCESS ) ;
-	SC_HANDLE hservice = hmanager ? OpenService( hmanager , name.c_str() , DELETE | SERVICE_STOP ) : 0 ;
+	SC_HANDLE hservice = hmanager ? OpenServiceA( hmanager , name.c_str() , DELETE | SERVICE_STOP ) : 0 ;
 
 	// stop it
 	SERVICE_STATUS status ;

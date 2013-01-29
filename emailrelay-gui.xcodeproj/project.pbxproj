@@ -34,6 +34,9 @@
 		EE4870560D3E529100AB4CC6 /* moc_gdialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE4870530D3E529100AB4CC6 /* moc_gdialog.cpp */; };
 		EE4870570D3E529100AB4CC6 /* moc_gpage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE4870540D3E529100AB4CC6 /* moc_gpage.cpp */; };
 		EE4870580D3E529100AB4CC6 /* moc_pages.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE4870550D3E529100AB4CC6 /* moc_pages.cpp */; };
+		EEBDCC1216A6040100BDFB44 /* mapfile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEBDCC0A16A6040100BDFB44 /* mapfile.cpp */; };
+		EEBDCC1316A6040100BDFB44 /* pointer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEBDCC0C16A6040100BDFB44 /* pointer.cpp */; };
+		EEBDCC1816A604AD00BDFB44 /* gstrings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEBDCC1716A604AD00BDFB44 /* gstrings.cpp */; };
 		EEC342C10D50E0BD00DD9918 /* boot_mac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEC342BF0D50E0BD00DD9918 /* boot_mac.cpp */; };
 		EEC342C20D50E0BD00DD9918 /* dir_mac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEC342C00D50E0BD00DD9918 /* dir_mac.cpp */; };
 		EEC342C60D50E0D800DD9918 /* glink_mac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEC342C30D50E0D800DD9918 /* glink_mac.cpp */; };
@@ -108,14 +111,22 @@
 		EE486FE60D3E3EA900AB4CC6 /* pages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pages.h; sourceTree = "<group>"; };
 		EE486FE70D3E3EA900AB4CC6 /* qt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = qt.h; sourceTree = "<group>"; };
 		EE486FE80D3E3EA900AB4CC6 /* run.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = run.c; sourceTree = "<group>"; };
-		EE486FE90D3E3EA900AB4CC6 /* service_install.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = service_install.cpp; sourceTree = "<group>"; };
-		EE486FEA0D3E3EA900AB4CC6 /* service_install.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = service_install.h; sourceTree = "<group>"; };
-		EE486FEB0D3E3EA900AB4CC6 /* service_wrapper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = service_wrapper.cpp; sourceTree = "<group>"; };
 		EE486FEC0D3E3EA900AB4CC6 /* unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = unpack.c; sourceTree = "<group>"; };
 		EE486FED0D3E3EA900AB4CC6 /* unpack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = unpack.h; sourceTree = "<group>"; };
 		EE4870530D3E529100AB4CC6 /* moc_gdialog.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_gdialog.cpp; path = src/gui/moc_gdialog.cpp; sourceTree = "<group>"; };
 		EE4870540D3E529100AB4CC6 /* moc_gpage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_gpage.cpp; path = src/gui/moc_gpage.cpp; sourceTree = "<group>"; };
 		EE4870550D3E529100AB4CC6 /* moc_pages.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = moc_pages.cpp; path = src/gui/moc_pages.cpp; sourceTree = "<group>"; };
+		EEBDCC0416A6040100BDFB44 /* boot_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = boot_unix.cpp; sourceTree = "<group>"; };
+		EEBDCC0516A6040100BDFB44 /* boot_win32.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = boot_win32.cpp; sourceTree = "<group>"; };
+		EEBDCC0616A6040100BDFB44 /* emailrelay-icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "emailrelay-icon.icns"; sourceTree = "<group>"; };
+		EEBDCC0716A6040100BDFB44 /* emailrelay-icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "emailrelay-icon.png"; sourceTree = "<group>"; };
+		EEBDCC0816A6040100BDFB44 /* glink_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = glink_unix.cpp; sourceTree = "<group>"; };
+		EEBDCC0916A6040100BDFB44 /* glink_win32.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = glink_win32.cpp; sourceTree = "<group>"; };
+		EEBDCC0A16A6040100BDFB44 /* mapfile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mapfile.cpp; sourceTree = "<group>"; };
+		EEBDCC0B16A6040100BDFB44 /* mapfile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mapfile.h; sourceTree = "<group>"; };
+		EEBDCC0C16A6040100BDFB44 /* pointer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pointer.cpp; sourceTree = "<group>"; };
+		EEBDCC0D16A6040100BDFB44 /* pointer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pointer.h; sourceTree = "<group>"; };
+		EEBDCC1716A604AD00BDFB44 /* gstrings.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gstrings.cpp; path = src/glib/gstrings.cpp; sourceTree = SOURCE_ROOT; };
 		EEC342BF0D50E0BD00DD9918 /* boot_mac.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = boot_mac.cpp; sourceTree = "<group>"; };
 		EEC342C00D50E0BD00DD9918 /* dir_mac.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dir_mac.cpp; sourceTree = "<group>"; };
 		EEC342C30D50E0D800DD9918 /* glink_mac.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = glink_mac.cpp; sourceTree = "<group>"; };
@@ -175,6 +186,17 @@
 		EE486FC70D3E3EA900AB4CC6 /* gui */ = {
 			isa = PBXGroup;
 			children = (
+				EEBDCC1716A604AD00BDFB44 /* gstrings.cpp */,
+				EEBDCC0416A6040100BDFB44 /* boot_unix.cpp */,
+				EEBDCC0516A6040100BDFB44 /* boot_win32.cpp */,
+				EEBDCC0616A6040100BDFB44 /* emailrelay-icon.icns */,
+				EEBDCC0716A6040100BDFB44 /* emailrelay-icon.png */,
+				EEBDCC0816A6040100BDFB44 /* glink_unix.cpp */,
+				EEBDCC0916A6040100BDFB44 /* glink_win32.cpp */,
+				EEBDCC0A16A6040100BDFB44 /* mapfile.cpp */,
+				EEBDCC0B16A6040100BDFB44 /* mapfile.h */,
+				EEBDCC0C16A6040100BDFB44 /* pointer.cpp */,
+				EEBDCC0D16A6040100BDFB44 /* pointer.h */,
 				EEC342F90D50F72800DD9918 /* unpackmain.c */,
 				EEC342CB0D50E1D500DD9918 /* state.h */,
 				EEC342C30D50E0D800DD9918 /* glink_mac.cpp */,
@@ -209,9 +231,6 @@
 				EE486FE60D3E3EA900AB4CC6 /* pages.h */,
 				EE486FE70D3E3EA900AB4CC6 /* qt.h */,
 				EE486FE80D3E3EA900AB4CC6 /* run.c */,
-				EE486FE90D3E3EA900AB4CC6 /* service_install.cpp */,
-				EE486FEA0D3E3EA900AB4CC6 /* service_install.h */,
-				EE486FEB0D3E3EA900AB4CC6 /* service_wrapper.cpp */,
 				EE486FEC0D3E3EA900AB4CC6 /* unpack.c */,
 				EE486FED0D3E3EA900AB4CC6 /* unpack.h */,
 			);
@@ -346,6 +365,9 @@
 				EEC342C20D50E0BD00DD9918 /* dir_mac.cpp in Sources */,
 				EEC342C60D50E0D800DD9918 /* glink_mac.cpp in Sources */,
 				EEC342C80D50E0D800DD9918 /* state.cpp in Sources */,
+				EEBDCC1216A6040100BDFB44 /* mapfile.cpp in Sources */,
+				EEBDCC1316A6040100BDFB44 /* pointer.cpp in Sources */,
+				EEBDCC1816A604AD00BDFB44 /* gstrings.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

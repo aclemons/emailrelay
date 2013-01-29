@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -42,7 +42,7 @@ namespace GNet
 class GNet::MultiServerImp : public GNet::Server 
 {
 public:
-	MultiServerImp( MultiServer & ms , const Address & ) ;
+	MultiServerImp( MultiServer & ms , const Address & , ConnectionTable * ) ;
 		///< Constructor.
 
 	void cleanup() ;
@@ -62,7 +62,7 @@ private:
 /// GNet::MultiServer. The implementation is unusual
 /// in that it only has proper value semantics if the
 /// contained pointer is null; it is used in a way 
-/// that makes allowances for that restriction.
+/// that makes allowances for that.
 ///
 class GNet::MultiServerPtr 
 {
@@ -125,9 +125,13 @@ public:
 		///< interfaces is empty then a single 'any' address
 		///< is returned.
 
-	explicit MultiServer( const AddressList & address_list ) ;
+	MultiServer( const AddressList & address_list , bool use_connection_table ) ;
 		///< Constructor. The server listens on on the
 		///< specific (local) interfaces.
+		///<
+		///< If use_connection_table is true then there
+		///< may be extra information available in the
+		///< Server::PeerInfo structures.
 		///< 
 		///< Precondition: ! address_list.empty()
 
@@ -163,10 +167,11 @@ protected:
 private:
 	MultiServer( const MultiServer & ) ; // not implemented
 	void operator=( const MultiServer & ) ; // not implemented
-	void init( const Address & ) ;
+	void init( const Address & , ConnectionTable * ) ;
 
 private:
 	typedef std::list<MultiServerPtr> List ;
+	std::auto_ptr<GNet::ConnectionTable> m_connection_table ;
 	List m_server_list ;
 } ;
 

@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -19,6 +19,7 @@
 //
 
 #include "gdef.h"
+#include "gconvert.h"
 #include <shlwapi.h>
 #include <shlobj.h>
 
@@ -36,11 +37,11 @@
 
 G::Path Dir::windows()
 {
-	char buffer[MAX_PATH+20U] = { '\0' } ;
-	unsigned int n = sizeof(buffer) ;
-	::GetWindowsDirectory( buffer , n-1U ) ;
-	buffer[n-1U] = '\0' ;
-	return G::Path(buffer) ;
+	char buffer[MAX_PATH] = { 0 } ;
+	unsigned int n = ::GetWindowsDirectoryA( buffer , MAX_PATH ) ;
+	if( n == 0 || n > MAX_PATH )
+		throw std::runtime_error( "cannot determine the windows directory" ) ;
+	return G::Path( std::string(buffer,n) ) ;
 }
 
 std::string Dir::dotexe()
@@ -70,29 +71,24 @@ G::Path Dir::os_server( const G::Path & base )
 
 G::Path Dir::os_config()
 {
-	return special("programs") + "emailrelay" ; // was windows()
+	return special("programs") + "emailrelay" ;
 }
 
-G::Path Dir::os_spool() const
+G::Path Dir::os_spool()
 {
 	return windows() + "spool" + "emailrelay" ;
 }
 
-G::Path Dir::os_pid()
-{
-	return G::Path() ;
-}
-
-G::Path Dir::os_pid( const G::Path & , const G::Path & config_dir )
+G::Path Dir::os_pid( const G::Path & config_dir )
 {
 	return config_dir ;
 }
 
 G::Path Dir::os_boot()
 {
-	// empty implies no access (see call to Boot::able() in pages.cpp), 
+	// empty implies no access (see call to Boot::able() in pages.cpp),
 	// so the default has to be a bogus value
-	return "services" ; 
+	return "services" ;
 }
 
 G::Path Dir::os_bootcopy( const G::Path & , const G::Path & )
@@ -102,11 +98,15 @@ G::Path Dir::os_bootcopy( const G::Path & , const G::Path & )
 
 G::Path Dir::cwd()
 {
-	char buffer[10000] = { '\0' } ;
-	unsigned long n = ::GetCurrentDirectory( sizeof(buffer)-1U , buffer ) ;
-	buffer[sizeof(buffer)-1U] = '\0' ;
-	std::string s = n ? std::string(buffer) : std::string(".") ;
-	return G::Path( s ) ;
+	DWORD n = ::GetCurrentDirectoryA( 0 , NULL ) ;
+	char * buffer = new char [n+2U] ;
+	buffer[0] = '\0' ;
+	n = ::GetCurrentDirectoryA( n+1U , buffer ) ;
+	std::string dir( buffer , n ) ;
+	delete [] buffer ;
+	if( n == 0U )
+		throw std::runtime_error( "cannot determine the current working directory" ) ;
+	return G::Path( dir ) ;
 }
 
 namespace
@@ -119,64 +119,28 @@ namespace
 		throw std::runtime_error("internal error") ;
 		return 0 ;
 	}
-	typedef HRESULT (*FnBasic)( HWND , int , HANDLE , DWORD , LPTSTR ) ;
-	typedef HRESULT (*FnSpecial)( HWND , LPTSTR , int , BOOL ) ;
 }
 
 G::Path Dir::special( const std::string & type )
 {
-	// use dynamic loading since NT does not have SHGetFolderPath()
-	static HMODULE h = LoadLibrary( "SHELL32.DLL" ) ;
-	FARPROC fp_basic = h ? GetProcAddress( h , "SHGetFolderPathA" ) : NULL ;
-	FARPROC fp_special = h ? GetProcAddress( h , "SHGetSpecialFolderPathA" ) : NULL ;
-	if( fp_basic == NULL || fp_special == NULL )
-		return ntspecial( type ) ;
-	FnBasic fn_basic = reinterpret_cast<FnBasic>(fp_basic) ;
-	FnSpecial fn_special = reinterpret_cast<FnSpecial>(fp_special) ;
-
 	if( type == "programs" )
 	{
-		char buffer[MAX_PATH] = { '\0' } ;
-		bool ok = S_OK == (*fn_basic)( NULL , CSIDL_PROGRAM_FILES , NULL , SHGFP_TYPE_CURRENT , buffer ) ;
-		buffer[sizeof(buffer)-1U] = '\0' ;
-		return ok ? G::Path(std::string(buffer)) : G::Path("c:/program files") ;
+		char buffer[MAX_PATH] = { 0 } ;
+		bool ok = S_OK == ::SHGetFolderPathA( NULL , CSIDL_PROGRAM_FILES , NULL , SHGFP_TYPE_CURRENT , buffer ) ;
+		return ok ? G::Path(buffer) : G::Path("c:/program files") ;
 	}
 	else
 	{
-		char buffer[MAX_PATH] = { '\0' } ;
-		bool ok = NOERROR == (*fn_special)( NULL , buffer , special_id(type) , FALSE ) ;
-		buffer[sizeof(buffer)-1U] = '\0' ;
-		ok = buffer[0] != '\0' ; // (the return value seems to lie)
-		return ok ? G::Path(std::string(buffer)) : windows() ;
+		char buffer[MAX_PATH] = { 0 } ;
+		bool ok = TRUE == ::SHGetSpecialFolderPathA( NULL , buffer , special_id(type) , FALSE ) ;
+		std::string result = ok ? std::string(buffer) : std::string() ;
+		return result.empty() ? windows() : G::Path(result) ;
 	}
 }
 
-G::Path Dir::ntspecial( const std::string & type )
+G::Path Dir::home()
 {
-	std::string user = env("USERNAME") ;
-	G::Path user_profile = windows() + "Profiles" + user ;
-	G::Path common_profile = windows() + "Profiles" + "All Users" ;
-
-	if( type == "desktop" ) 
-	{
-		return user_profile + "Desktop" ;
-	}
-	if( type == "menu" ) 
-	{
-		return user_profile + "Start Menu" + "Programs" ;
-	}
-	if( type == "login" ) 
-	{
-		return user_profile + "Start Menu" + "Programs" + "Startup" ;
-	}
-	if( type == "programs" )
-	{
-		G::Path p = env("ProgramFiles") ; // doesnt work on nt :-(
-		if( p.str().empty() )
-			p = "c:/program files" ;
-		return p ;
-	}
-	return G::Path() ;
+	return envPath( "USERPROFILE" , envPath( "HOME" , desktop() ) ) ;
 }
 
 /// \file dir_win32.cpp

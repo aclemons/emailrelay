@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -33,12 +33,14 @@
 #include <string>
 
 GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , ProtocolMessage & pmessage ,
-	const GAuth::Secrets & secrets , Text & text , GNet::Address peer_address , Config config ) :
+	const GAuth::Secrets & secrets , Text & text , GNet::Address peer_address , 
+	const std::string & peer_socket_name , Config config ) :
 		m_sender(sender) ,
 		m_verifier(verifier) ,
 		m_pmessage(pmessage) ,
 		m_text(text) ,
 		m_peer_address(peer_address) ,
+		m_peer_socket_name(peer_socket_name) ,
 		m_fsm(sStart,sEnd,s_Same,s_Any) ,
 		m_authenticated(false) ,
 		m_secure(false) ,
@@ -194,7 +196,7 @@ void GSmtp::ServerProtocol::doEot( const std::string & line , bool & )
 		G_DEBUG( "GSmtp::ServerProtocol: starting preprocessor timer: " << m_preprocessor_timeout ) ;
 		startTimer( m_preprocessor_timeout ) ;
 	}
-	m_pmessage.process( m_sasl->id() , m_peer_address.displayString(false) ) ;
+	m_pmessage.process( m_sasl->id() , m_peer_address.displayString(false) , m_peer_socket_name ) ;
 }
 
 void GSmtp::ServerProtocol::processDone( bool success , unsigned long , std::string reason )
@@ -335,15 +337,15 @@ std::string GSmtp::ServerProtocol::parseToParameter( const std::string & line ) 
 
 void GSmtp::ServerProtocol::doEhlo( const std::string & line , bool & predicate )
 {
-	std::string peer_name = parsePeerName( line ) ;
-	if( peer_name.empty() )
+	std::string smtp_peer_name = parsePeerName( line ) ;
+	if( smtp_peer_name.empty() )
 	{
 		predicate = false ;
 		sendMissingParameter() ;
 	}
 	else
 	{
-		m_peer_name = peer_name ;
+		m_smtp_peer_name = smtp_peer_name ;
 		reset() ;
 		sendEhloReply() ;
 	}
@@ -351,15 +353,15 @@ void GSmtp::ServerProtocol::doEhlo( const std::string & line , bool & predicate 
 
 void GSmtp::ServerProtocol::doHelo( const std::string & line , bool & predicate )
 {
-	std::string peer_name = parsePeerName( line ) ;
-	if( peer_name.empty() )
+	std::string smtp_peer_name = parsePeerName( line ) ;
+	if( smtp_peer_name.empty() )
 	{
 		predicate = false ;
 		sendMissingParameter() ;
 	}
 	else
 	{
-		m_peer_name = peer_name ;
+		m_smtp_peer_name = smtp_peer_name ;
 		reset() ;
 		sendHeloReply() ;
 	}
@@ -562,7 +564,7 @@ void GSmtp::ServerProtocol::doNoRecipients( const std::string & , bool & )
 
 void GSmtp::ServerProtocol::doData( const std::string & , bool & )
 {
-	std::string received_line = m_text.received(m_peer_name) ;
+	std::string received_line = m_text.received(m_smtp_peer_name) ;
 	if( received_line.length() )
 		m_pmessage.addReceived( received_line ) ;
 
@@ -721,7 +723,7 @@ void GSmtp::ServerProtocol::sendBadTo( const std::string & text , bool temporary
 void GSmtp::ServerProtocol::sendEhloReply()
 {
 	std::ostringstream ss ;
-		ss << "250-" << m_text.hello(m_peer_name) << crlf() ;
+		ss << "250-" << m_text.hello(m_smtp_peer_name) << crlf() ;
 
 	// dont advertise authentication if the sasl server implementation does not like plaintext dialogs
 	if( m_sasl->active() && !sensitive() )
@@ -807,9 +809,9 @@ std::string GSmtp::ServerProtocol::parsePeerName( const std::string & line ) con
 	if( pos == std::string::npos ) 
 		return std::string() ;
 
-	std::string peer_name = line.substr( pos + 1U ) ;
-	G::Str::trim( peer_name , " \t" ) ;
-	return peer_name ;
+	std::string smtp_peer_name = line.substr( pos + 1U ) ;
+	G::Str::trim( smtp_peer_name , " \t" ) ;
+	return smtp_peer_name ;
 }
 
 void GSmtp::ServerProtocol::badClientEvent()
@@ -843,12 +845,12 @@ std::string GSmtp::ServerProtocolText::hello( const std::string & ) const
 	return m_thishost + " says hello" ;
 }
 
-std::string GSmtp::ServerProtocolText::received( const std::string & peer_name ) const
+std::string GSmtp::ServerProtocolText::received( const std::string & smtp_peer_name ) const
 {
-	return receivedLine( peer_name , m_peer_address.displayString(false) , m_thishost ) ;
+	return receivedLine( smtp_peer_name , m_peer_address.displayString(false) , m_thishost ) ;
 }
 
-std::string GSmtp::ServerProtocolText::receivedLine( const std::string & peer_name , 
+std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_peer_name , 
 	const std::string & peer_address , const std::string & thishost )
 {
 	const G::DateTime::EpochTime t = G::DateTime::now() ;
@@ -859,7 +861,7 @@ std::string GSmtp::ServerProtocolText::receivedLine( const std::string & peer_na
 
 	std::ostringstream ss ;
 	ss 
-		<< "Received: FROM " << peer_name << " ([" << peer_address << "]) BY " << thishost << " WITH ESMTP ; "
+		<< "Received: FROM " << smtp_peer_name << " ([" << peer_address << "]) BY " << thishost << " WITH ESMTP ; "
 		<< date.weekdayName(true) << ", "
 		<< date.monthday() << " " 
 		<< date.monthName(true) << " "

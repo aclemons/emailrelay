@@ -1,9 +1,9 @@
 #
-## Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation, either version 3 of the License, or 
+## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
 ## 
 ## This program is distributed in the hope that it will be useful,
@@ -49,6 +49,8 @@ mk_sources=\
 	installer.cpp \
 	legal.cpp \
 	pages.cpp \
+	pointer.cpp \
+	mapfile.cpp \
 	moc_gdialog.cpp \
 	moc_gpage.cpp \
 	moc_pages.cpp \
@@ -60,59 +62,47 @@ mk_sources=\
 service_objects=../main/service_install.o ../main/service_remove.o
 
 gui_syslibs=\
+	-lmingw32 \
 	-lqtmain \
-	-lQtCore4 \
-	-lQtGui4 \
+	-lQtGui \
+	-lQtCore
+
+syslibs=\
 	-ladvapi32 \
 	-lcomdlg32 \
 	-lgdi32 \
 	-limm32 \
 	-lkernel32 \
-	-lmingw32 \
 	-lmsimg32 \
 	-lole32 \
 	-loleaut32 \
 	-lshell32 \
 	-luser32 \
 	-luuid \
-	-lwinmm \
 	-lwinspool \
+	-lwinmm \
 	-lws2_32
 
-syslibs=\
-	-lkernel32 \
-	-luser32 \
-	-lgdi32 \
-	-lole32 \
-	-loleaut32 \
-	-luuid
-
 mk_defines_extra=\
-	-DG_WIN32_IE \
-	-DG_WIN32_DCOM \
 	-DQT_LARGEFILE_SUPPORT \
-	-DQT_GUI_LIB \
-	-DQT_CORE_LIB \
 	-DQT_THREAD_SUPPORT \
-	-DQT_NEEDS_QMAIN \
+	-DG_WIN32_IE \
 	-DHAVE_ZLIB_H=1
 
+mk_defines_debug_extra=\
+	-DQT_DEBUG
+
 mk_defines_release_extra=\
+	-DG_WITH_DEBUG \
 	-DQT_NO_DEBUG
 
 mk_ccc_flags_extra=\
-	-frtti \
-	-fexceptions
+	-fno-keep-inline-dllexport
 
 mk_link_flags_extra=\
-	-L$(mk_qt)/lib \
-	-mthreads \
-	-Wl,-enable-stdcall-fixup \
-	-Wl,-enable-auto-import \
-	-Wl,-enable-runtime-pseudo-reloc \
-	-static \
 	-Wl,-s \
-	-Wl,-subsystem,windows
+	-Wl,-subsystem,windows \
+	-L$(mk_qt)/lib
 
 mk_link_flags_simple=\
 	$(mk_link_flags_common) \
@@ -131,13 +121,16 @@ mk_includes_extra=-I$(mk_qt)/include -I$(mk_qt)/include/QtCore -I$(mk_qt)/includ
 mk_dll_qt_1=QtCore4.dll
 mk_dll_qt_2=QtGui4.dll
 mk_dll_mingw=mingwm10.dll
+rc=emailrelay-gui.rc
+res=emailrelay-gui.o
+mc_output=../main/MSG00001.bin ../main/messages.rc
 
 all: $(mk_exe_gui) $(mk_exe_pack) $(mk_exe_setup)
 
 include ../mingw-common.mak
 
-$(mk_exe_gui): $(mk_objects) $(libs) $(service_objects)
-	$(mk_link) $(mk_link_flags) -o $(mk_exe_gui) $(mk_objects) $(service_objects) $(libs) $(gui_syslibs) $(gui_syslibs)
+$(mk_exe_gui): $(res) $(mk_objects) $(libs) $(service_objects)
+	$(mk_link) $(mk_link_flags) -o $(mk_exe_gui) $(res) $(mk_objects) $(service_objects) $(libs) $(gui_syslibs) $(syslibs)
 
 $(mk_exe_pack): pack.o
 	$(mk_link) $(mk_link_flags_simple) -o $(mk_exe_pack) pack.o $(glib) $(zlib)
@@ -146,7 +139,7 @@ $(mk_exe_run): run.o unpack.o $(zlib)
 	$(mk_link) $(mk_link_flags_simple) -o $(mk_exe_run) run.o unpack.o $(zlib)
 
 $(mk_exe_gui_tmp): $(mk_exe_gui) $(mk_exe_pack)
-	./$(mk_exe_pack) -a $(mk_exe_gui_tmp) $(mk_exe_gui) ../../README readme.txt ../../COPYING copying.txt ../../ChangeLog changelog.txt ../../AUTHORS authors.txt ../../doc/doxygen_missing.html doc/doxygen/index.html --dir "" ../main/emailrelay-service.exe ../main/emailrelay.exe ../main/emailrelay-submit.exe ../main/emailrelay-filter-copy.exe ../main/emailrelay-poke.exe ../main/emailrelay-passwd.exe --dir "doc" ../../doc/*.png ../../doc/*.txt ../../doc/emailrelay.css --opt ../../doc/*.html
+	./$(mk_exe_pack) -a $(mk_exe_gui_tmp) $(mk_exe_gui) ../../README readme.txt ../../COPYING copying.txt ../../ChangeLog changelog.txt ../../AUTHORS authors.txt ../../doc/doxygen-missing.html doc/doxygen/index.html --dir "" ../main/emailrelay-service.exe ../main/emailrelay.exe ../main/emailrelay-submit.exe ../main/emailrelay-filter-copy.exe ../main/emailrelay-poke.exe ../main/emailrelay-passwd.exe --dir "doc" ../../doc/*.png ../../doc/*.txt ../../doc/emailrelay.css --opt ../../doc/*.html
 
 ../../doc/userguide.html:
 	-@echo ..
@@ -165,8 +158,12 @@ moc_gpage.cpp: gpage.h
 moc_pages.cpp: pages.h
 	$(mk_qt)/bin/moc $< -o $@
 
+$(res): $(rc) $(mc_output)
+	$(mk_rc) --include-dir . --include-dir ../main -i $(rc) -o $@
+
 clean::
 	$(mk_rm_f) moc_gdialog.cpp moc_gpage.cpp moc_pages.cpp
 	$(mk_rm_f) $(mk_exe_gui) $(mk_exe_pack) $(mk_exe_run) $(mk_exe_gui_tmp) $(mk_exe_setup) 
 	$(mk_rm_f) $(mk_dll_qt_1) $(mk_dll_qt_2) $(mk_dll_mingw)
+	$(mk_rm_f) $(res)
 

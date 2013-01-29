@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -22,6 +22,7 @@
 #define WIN_FORM_H
 
 #include "gdef.h"
+#include "gstrings.h"
 #include "gdialog.h"
 #include "gcontrol.h"
 #include "configuration.h"
@@ -52,7 +53,7 @@ private:
 	static std::string yn( bool b ) ;
 	static std::string na() ;
 	static std::string na( const std::string & s ) ;
-	static std::string any( const std::string & s ) ;
+	static std::string any( const G::Strings & s ) ;
 
 private:
 	WinApp & m_app ;

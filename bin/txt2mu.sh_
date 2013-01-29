@@ -1,10 +1,10 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or 
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 # 
 # This program is distributed in the hope that it will be useful,
@@ -28,7 +28,7 @@
 # usage: txt2mu.sh [-a <awk-binary>] [-t] [<input-file>]
 #
 
-awk="gawk"
+awk=`( gawk 'END {print "gawk"}' ; nawk 'END {print "nawk"}' ; echo awk ) 2>/dev/null < /dev/null | head -1`
 if test "${1}" = "-a"
 then
 	shift
@@ -74,23 +74,23 @@ Main()
 	function process( line , next_ )
 	{
 		tab = "	"
-		is_blank = match( line , "^[[:space:]]*$" )
-		is_heading = match( next_ , "^==*[[:space:]]*$" )
-		is_footer = match( line , "^____*[[:space:]]*$" )
-		is_sub_heading = match( next_ , "^--*[[:space:]]*$" )
+		is_blank = match( line , "^[\t ]*$" )
+		is_heading = match( next_ , "^==*[\t ]*$" )
+		is_footer = match( line , "^____*[\t ]*$" )
+		is_sub_heading = match( next_ , "^--*[\t ]*$" )
 		is_item = match( line , "^\\* " ) 
 		is_item_name = match( line , "^\\# " ) 
 		is_item_detail = match( line , "^  [^- ]" )
-		is_item_numbered = match( line , "^\\([[:digit:]][[:digit:]]*\\)" )
-		is_heading_line = match( line , "^==*[[:space:]]*$" )
-		is_sub_heading_line = match( line , "^--*[[:space:]]*$" )
-		is_image = match( line , "^[[:space:]]*<<.*>>[[:space:]]*$" )
+		is_item_numbered = match( line , "^\\([0123456789][0123456789]*\\)" )
+		is_heading_line = match( line , "^==*[\t ]*$" )
+		is_sub_heading_line = match( line , "^--*[\t ]*$" )
+		is_image = match( line , "^[\t ]*<<.*>>[\t ]*$" )
 
 		if( text_mode )
 		{
 			is_citation = match( line , "^" tab "[^" tab "]" )
 			is_author = match( line , "^" tab tab )
-			is_html = match( line , "^<.*>[[:space:]]*$" )
+			is_html = match( line , "^<.*>[\t ]*$" )
 			is_code = 0
 			is_item_outer = 0
 			is_item_inner = 0
@@ -116,8 +116,8 @@ Main()
 		}
 		else if( is_image )
 		{
-			sub( "^[[:space:]]*<<" , "" , line )
-			sub( ">>[[:space:]]*$" , "" , line )
+			sub( "^[\t ]*<<" , "" , line )
+			sub( ">>[\t ]*$" , "" , line )
 			tagOutputRaw( line , "image" )
 		}
 		else if( is_html )
@@ -155,7 +155,7 @@ Main()
 		}
 		else if( is_item_numbered )
 		{
-			gsub( "^\\([[:digit:]][[:digit:]]*\\) " , "" , line )
+			gsub( "^\\([0123456789][0123456789]*\\) " , "" , line )
 			tagOutput( line , "item-numbered" )
 		}
 		else if( is_citation )
@@ -264,7 +264,7 @@ Compress()
 	function process( previous , line , next_ )
 	{
 		re_blank = "^blank:"
-		re_heading = "^h[[:digit:]][:,]"
+		re_heading = "^h[0123456789][:,]"
 		re_detail = "^item-detail:"
 		re_pre_start = "^code,1[:,]"
 

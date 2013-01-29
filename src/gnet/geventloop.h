@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -40,7 +40,7 @@ namespace GNet
 /// An abstract base class for a singleton that keeps 
 /// track of open sockets and their associated handlers. Derived 
 /// classes are used to implement different event loops, such 
-/// as ::select() or WinSock.
+/// as select() or WinSock.
 ///
 /// In practice sockets are added and removed from the class by 
 /// calling GNet::Socket::addReadHandler() etc rather than 

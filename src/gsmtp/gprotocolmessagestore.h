@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -75,8 +75,9 @@ public:
 	virtual std::string from() const ;
 		///< Final override from GSmtp::ProtocolMessage.
 
-	virtual void process( const std::string & auth_id , const std::string & client_ip ) ;
-		///< Final override from GSmtp::ProtocolMessage.
+	virtual void process( const std::string & auth_id , const std::string & peer_socket_address ,
+		const std::string & peer_socket_name ) ;
+			///< Final override from GSmtp::ProtocolMessage.
 
 private:
 	void operator=( const ProtocolMessageStore & ) ; // not implemented

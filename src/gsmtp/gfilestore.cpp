@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -114,7 +114,12 @@ std::string GSmtp::FileStore::x()
 
 std::string GSmtp::FileStore::format()
 {
-	return "#2821.3" ;
+	return "#2821.4" ; // new for 1.9
+}
+
+bool GSmtp::FileStore::knownFormat( const std::string & format )
+{
+	return format == "#2821.3" || format == "#2821.4" ;
 }
 
 void GSmtp::FileStore::checkPath( const G::Path & directory_path )

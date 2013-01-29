@@ -1,9 +1,9 @@
 #
-## Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation, either version 3 of the License, or 
+## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
 ## 
 ## This program is distributed in the hope that it will be useful,
@@ -62,9 +62,10 @@ converter_expand=$(top_builddir)/bin/expand.sh
 converter_mu2docbook=$(top_builddir)/bin/mu2docbook.sh
 run_doxygen=$(top_builddir)/bin/doxygen.sh
 run_doxygen_fixup=$(top_builddir)/bin/doxygen_fixup.pl
+css=emailrelay.css
 
 .txt.html:
-	$(converter_html) -a "$(AWK)" "$(top_srcdir)/doc/$*.txt" "$(stylesheet)" > "$*.html"
+	$(converter_html) -a "$(AWK)" "$(top_srcdir)/doc/$*.txt" "$(css)" > "$*.html"
 
 .txt.mu:
 	$(converter_txt2mu) -a "$(AWK)" "$(top_srcdir)/doc/$*.txt" > "$*.mu"
@@ -93,6 +94,7 @@ emailrelay.docbook: head.db tail.db userguide.db reference.db developer.db
 .dox:
 	$(run_doxygen) "$(HAVE_DOXYGEN)" "$(top_srcdir)" "$(top_builddir)" Doxyfile && touch .dox
 	-$(run_doxygen_fixup) "$(top_builddir)/doc/doxygen"
+	-cp "$(top_srcdir)/doc/emailrelay-doxygen.css_" "$(top_builddir)/doc/doxygen/emailrelay-doxygen.css"
 
 emailrelay-man.html: emailrelay.1
 	if test "$(HAVE_MAN2HTML)" = "yes" ; then man2html -r -L. emailrelay.1 < /dev/null > emailrelay-man.html.tmp && mv emailrelay-man.html.tmp emailrelay-man.html ; grep -v '^Content-type:' < emailrelay-man.html | grep -v '^Time:' > emailrelay-man.html.tmp ; mv emailrelay-man.html.tmp emailrelay-man.html ; fi
@@ -102,10 +104,10 @@ developer.html reference.html userguide.html: $(converter_html)
 developer.mu reference.mu userguide.mu: $(converter_txt2mu)
 
 readme.html: $(top_srcdir)/README $(converter_html)
-	$(converter_html) -a "$(AWK)" "$(top_srcdir)/README" "$(stylesheet)" > readme.html
+	$(converter_html) -a "$(AWK)" "$(top_srcdir)/README" "$(css)" > readme.html
 
 changelog.html: $(top_srcdir)/ChangeLog $(converter_html)
-	$(converter_html) -a "$(AWK)" "$(top_srcdir)/ChangeLog" "$(stylesheet)" > changelog.html
+	$(converter_html) -a "$(AWK)" "$(top_srcdir)/ChangeLog" "$(css)" > changelog.html
 
 emailrelay.1.gz : emailrelay.1
 	if test -n "$(GZIP)" ; then $(GZIP) -c "$(top_srcdir)/doc/emailrelay.1" > emailrelay.1.gz ; fi

@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -254,7 +254,7 @@ void Main::WinApp::setStatus( const std::string & s1 , const std::string & s2 )
 	std::string message( title() ) ;
 	if( !s1.empty() ) message.append( std::string(": ")+s1 ) ;
 	if( !s2.empty() ) message.append( std::string(": ")+s2 ) ;
-	::SetWindowText( handle() , message.c_str() ) ;
+	::SetWindowTextA( handle() , message.c_str() ) ;
 }
 
 void Main::WinApp::output( const std::string & text , bool )

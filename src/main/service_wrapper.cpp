@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -177,7 +177,7 @@ void WINAPI ServiceMain( DWORD argc , LPTSTR * argv )
 {
 	try
 	{
-		std::string service_name = argc > 0 ? std::string(argv[0]) : std::string() ;
+		std::wstring service_name = argc > 0 ? std::string(argv[0]) : std::string() ;
 		G_DEBUG( "ServiceMain: " << service_name ) ;
 		Service * service = Service::instance() ;
 		if( service != NULL )
@@ -479,7 +479,8 @@ void Service::start()
 	G_DEBUG( "Service::start" ) ;
 	{
 		Service service ;
-		static SERVICE_TABLE_ENTRY table [] = { { "" , ServiceMain } , { NULL , NULL } } ;
+		static char empty[] = "" ;
+		static SERVICE_TABLE_ENTRY table [] = { { empty , ServiceMain } , { NULL , NULL } } ;
 		bool ok = !! StartServiceCtrlDispatcher( table ) ; // this doesn't return until the service is stopped
 		if( !ok )
 		{

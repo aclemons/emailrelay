@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -36,8 +36,9 @@
 #include "glogoutput.h"
 #include "glog.h"
 #include "gexception.h"
-#include "state.h"
+#include "pointer.h"
 #include "boot.h"
+#include "mapfile.h"
 #include "dir.h"
 #include "installer.h"
 #include <exception>
@@ -122,12 +123,12 @@ struct CopyFrameworks : public ActionBase
 	static std::string sanitised( std::string ) ;
 } ;
 
-struct CreateStateFile : public ActionBase
+struct CreatePointerFile : public ActionBase
 {
-	G::Path m_state_path ;
+	G::Path m_pointer_path ;
 	G::Path m_gui ;
-	State::Map m_state_map ;
-	CreateStateFile( const G::Path & , const G::Path & , const State::Map & ) ;
+	G::StringMap m_map ;
+	CreatePointerFile( const G::Path & , const G::Path & , const G::StringMap & ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
 } ;
@@ -183,12 +184,13 @@ struct CreateLoggingBatchFile : public ActionBase
 
 struct UpdateLink : public ActionBase
 {
+	G::Path m_argv0 ;
 	bool m_active ;
 	G::Path m_link_dir ;
 	G::Path m_working_dir ;
 	LinkInfo m_target_link_info ;
 	G::Path m_link_path ;
-	UpdateLink( bool active , std::string link_dir , G::Path working_dir , LinkInfo target_link_info ) ;
+	UpdateLink( G::Path argv0 , bool active , std::string link_dir , G::Path working_dir , LinkInfo target_link_info ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
 } ;
@@ -218,7 +220,7 @@ struct CreateConfigFile : public ActionBase
 
 struct EditConfigFile : public ActionBase
 {
-	typedef std::map<std::string,std::string> Map ;
+	typedef G::StringMap Map ;
 	typedef std::list<std::string> List ;
 	G::Path m_path ;
 	Map m_map ;
@@ -245,7 +247,7 @@ public:
 	Action & current() ;
 
 private:
-	typedef std::map<std::string,std::string> Map ;
+	typedef G::StringMap Map ;
 	typedef std::list<Action> List ;
 
 private:
@@ -253,7 +255,6 @@ private:
 	void operator=( const InstallerImp & ) ;
 	void read( std::istream & ) ;
 	void insertActions() ;
-	static std::string normalised( const std::string & ) ;
 	std::string value( const std::string & key ) const ;
 	std::string value( const std::string & key , const std::string & default_ ) const ;
 	bool exists( const std::string & key ) const ;
@@ -320,10 +321,10 @@ ExtractOriginal::ExtractOriginal( G::Path argv0 , G::Unpack & unpack , G::Path d
 {
 }
 
-void ExtractOriginal::run() 
+void ExtractOriginal::run()
 {
 	// okay if not packed or a separate payload, just copy argv0
-	if( m_unpack.names().empty() || m_unpack.path() != m_argv0 ) 
+	if( m_unpack.names().empty() || m_unpack.path() != m_argv0 )
 	{
 		if( m_argv0 == m_dst )
 		{
@@ -344,14 +345,14 @@ void ExtractOriginal::run()
 	}
 }
 
-std::string ExtractOriginal::ok() const 
+std::string ExtractOriginal::ok() const
 {
 	return m_ok.empty() ? ActionBase::ok() : m_ok ;
 }
 
-std::string ExtractOriginal::text() const 
-{ 
-	return std::string() + "creating [" + m_dst.str() + "]" ; 
+std::string ExtractOriginal::text() const
+{
+	return std::string() + "creating [" + m_dst.str() + "]" ;
 }
 
 // ==
@@ -365,7 +366,7 @@ bool CopyFrameworks::active( G::Path argv0 )
 std::string CopyFrameworks::sanitised( std::string s )
 {
 	// remove shell metacharacters
-	for( const char * p = "$\\\"'()[]<>|!~*?&;" ; *p ; p++ ) 
+	for( const char * p = "$\\\"'()[]<>|!~*?&;" ; *p ; p++ )
 		G::Str::replaceAll( s , std::string(1U,*p) , "_" ) ;
 	return s ;
 }
@@ -378,7 +379,7 @@ CopyFrameworks::CopyFrameworks( G::Path argv0 , G::Path dst ) :
 	m_cmd = std::string() + "/bin/cp -fR \"" + sanitised(frameworks.str()) + "\" \"" + sanitised(m_dst.str()) + "\"" ;
 }
 
-void CopyFrameworks::run() 
+void CopyFrameworks::run()
 {
 	// k.i.s.s
 	int rc = std::system( m_cmd.c_str() ) ;
@@ -386,34 +387,34 @@ void CopyFrameworks::run()
 		throw std::runtime_error( "failed" ) ;
 }
 
-std::string CopyFrameworks::text() const 
-{ 
-	return std::string() + "copying frameworks [" + m_cmd + "]" ; 
+std::string CopyFrameworks::text() const
+{
+	return std::string() + "copying frameworks [" + m_cmd + "]" ;
 }
 
 // ==
 
-CreateStateFile::CreateStateFile( const G::Path & state_path , const G::Path & gui , const State::Map & state_map ) :
-	m_state_path(state_path) ,
+CreatePointerFile::CreatePointerFile( const G::Path & pointer_path , const G::Path & gui , const G::StringMap & map ) :
+	m_pointer_path(pointer_path) ,
 	m_gui(gui) ,
-	m_state_map(state_map)
+	m_map(map)
 {
 }
 
-void CreateStateFile::run() 
+void CreatePointerFile::run()
 {
-	std::ofstream state_stream( m_state_path.str().c_str() ) ;
-	State::write( state_stream , m_state_map , m_gui , "account" ) ;
-	if( !state_stream.good() ) 
-		throw std::runtime_error( std::string() + "cannot write to \"" + m_state_path.str() + "\"" ) ;
+	std::ofstream stream( m_pointer_path.str().c_str() ) ;
+	Pointer::write( stream , m_map , m_gui ) ;
+	if( !stream.good() )
+		throw std::runtime_error( std::string() + "cannot write to \"" + m_pointer_path.str() + "\"" ) ;
 
-	state_stream.close() ;
-	G::File::chmodx( m_state_path ) ;
+	stream.close() ;
+	G::File::chmodx( m_pointer_path ) ;
 }
 
-std::string CreateStateFile::text() const 
-{ 
-	return std::string() + "creating state file [" + m_state_path.str() + "]" ;
+std::string CreatePointerFile::text() const
+{
+	return std::string() + "creating pointer file [" + m_pointer_path.str() + "]" ;
 }
 
 // ==
@@ -457,7 +458,7 @@ std::string Extract::text() const
 
 // ==
 
-CreateSecrets::CreateSecrets( const std::string & config_dir , const std::string & filename , 
+CreateSecrets::CreateSecrets( const std::string & config_dir , const std::string & filename ,
 	G::StringMap content ) :
 		m_path(config_dir,filename) ,
 		m_content(content)
@@ -503,7 +504,7 @@ void CreateSecrets::run()
 		line_list.push_back( std::string() + "# " + m_path.basename() ) ;
 		line_list.push_back( "#" ) ;
 		line_list.push_back( "# <mechanism> {server|client} <name> <secret>" ) ;
-		line_list.push_back( "# mechanism := CRAM-MD5 | LOGIN | APOP | NONE" ) ;
+		line_list.push_back( "#   mechanism = { CRAM-MD5 | LOGIN | APOP | NONE }" ) ;
 		line_list.push_back( "#" ) ;
 	}
 
@@ -599,11 +600,13 @@ void CreateLoggingBatchFile::run()
 
 // ==
 
-UpdateLink::UpdateLink( bool active , std::string link_dir , G::Path working_dir , LinkInfo target_link_info ) :
-	m_active(active) ,
-	m_link_dir(link_dir) ,
-	m_working_dir(working_dir) ,
-	m_target_link_info(target_link_info)
+UpdateLink::UpdateLink( G::Path argv0 , bool active , std::string link_dir , G::Path working_dir ,
+	LinkInfo target_link_info ) :
+		m_argv0(argv0) ,
+		m_active(active) ,
+		m_link_dir(link_dir) ,
+		m_working_dir(working_dir) ,
+		m_target_link_info(target_link_info)
 {
 	std::string link_filename = GLink::filename( "E-MailRelay" ) ;
 	m_link_path = G::Path( m_link_dir , link_filename ) ;
@@ -621,8 +624,12 @@ void UpdateLink::run()
 	new GComInit ; // (leak ok)
 	if( m_active )
 	{
-		GLink link( m_target_link_info.target , "E-MailRelay" , "E-MailRelay server" , 
-			m_working_dir , m_target_link_info.args , m_target_link_info.icon , GLink::Show_Hide ) ;
+		GLink link( m_target_link_info.target , "E-MailRelay" ,
+			"Starts the E-MailRelay server in the background" ,
+			m_working_dir , m_target_link_info.args ,
+			m_target_link_info.icon , GLink::Show_Hide ,
+			"E-MailRelay" ,
+			std::string() + "Generated by the E-MailRelay configuration GUI (" + m_argv0.str() + ")" ) ;
 
 		G::Process::Umask umask( G::Process::Umask::Tightest ) ;
 		G::File::mkdirs( m_link_dir , 10 ) ;
@@ -677,7 +684,7 @@ std::string UpdateBootLink::ok() const
 
 // ==
 
-CreateConfigFile::CreateConfigFile( std::string dst_dir , std::string dst_name , 
+CreateConfigFile::CreateConfigFile( std::string dst_dir , std::string dst_name ,
 	std::string src_dir , std::string src_name ) :
 		m_src(G::Path(src_dir,src_name)) ,
 		m_dst(G::Path(dst_dir,dst_name))
@@ -714,73 +721,16 @@ EditConfigFile::EditConfigFile( std::string dir , std::string name , const Map &
 
 void EditConfigFile::run()
 {
-	// read
-	List line_list ;
-	{
-		std::ifstream file_in( m_path.str().c_str() ) ;
-		if( !file_in.good() ) throw std::runtime_error( std::string() + "cannot read \"" + m_path.str() + "\"" ) ;
-		while( file_in.good() )
-		{
-			std::string line = G::Str::readLineFrom( file_in , "\n" ) ;
-			if( !file_in ) break ;
-			line_list.push_back( line ) ;
-		}
-	}
+	const bool do_backup = true ;
 
-	// comment-out everything
-	for( List::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
-	{
-		std::string line = *line_p ;
-		if( !line.empty() && line.at(0U) != '#' )
-		{
-			line = std::string(1U,'#') + line ;
-			*line_p = line ;
-		}
-	}
+	// use a stop list for things which the init.d script does for itself
+	G::StringMap stop_list ;
+	stop_list["syslog"] = "" ;
+	stop_list["close-stderr"] = "" ;
+	stop_list["pid-file"] = "" ;
+	stop_list["log"] = "" ;
 
-	// un-comment-out (or add) values from the map
-	for( Map::const_iterator map_p = m_map.begin() ; map_p != m_map.end() ; ++map_p )
-	{
-		bool found = false ;
-		for( List::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p ) // k.i.s.s
-		{
-			G::StringArray part ;
-			G::Str::splitIntoTokens( *line_p , part , G::Str::ws()+"#" ) ;
-			if( part.size() && part[0] == (*map_p).first )
-			{
-				*line_p = (*map_p).first + " " + quote((*map_p).second) ;
-				found = true ;
-				break ;
-			}
-		}
-
-		if( !found )
-		{
-			// dont add things that the init.d script takes care of
-			const bool ignore = 
-				(*map_p).first == "syslog" ||
-				(*map_p).first == "close-stderr" ||
-				(*map_p).first == "pid-file" ||
-				(*map_p).first == "log" ;
-
-			if( !ignore )
-				line_list.push_back( (*map_p).first + " " + quote((*map_p).second) ) ;
-		}
-	}
-
-	// TODO -- "--syslog" and "--no-syslog" interaction
-
-	// make a backup -- ignore errors for now
-	G::DateTime::BrokenDownTime now = G::DateTime::local( G::DateTime::now() ) ;
-	std::string timestamp = G::Date(now).string(G::Date::yyyy_mm_dd) + G::Time(now).hhmmss() ;
-	G::Path backup( m_path.dirname() , m_path.basename() + "." + timestamp ) ;
-	G::File::copy( m_path , backup , G::File::NoThrow() ) ;
-
-	// write
-	std::ofstream file_out( m_path.str().c_str() ) ;
-	std::copy( line_list.begin() , line_list.end() , std::ostream_iterator<std::string>(file_out,"\n") ) ;
-	if( !file_out.good() ) 
-		throw std::runtime_error( std::string() + "cannot write \"" + m_path.str() + "\"" ) ;
+	MapFile::edit( m_path , m_map , "gui-" , false , stop_list , do_backup ) ;
 }
 
 std::string EditConfigFile::text() const
@@ -835,7 +785,8 @@ InstallerImp::~InstallerImp()
 
 void InstallerImp::read( std::istream & ss )
 {
-	m_map = State::read( ss ) ;
+	// read install variables
+	m_map = MapFile::read( ss ) ;
 }
 
 bool InstallerImp::next()
@@ -852,31 +803,21 @@ Action & InstallerImp::current()
 	return *m_p ;
 }
 
-std::string InstallerImp::normalised( const std::string & key )
-{
-	std::string k = key ;
-	G::Str::replaceAll( k , "-" , "_" ) ;
-	G::Str::toUpper( k ) ;
-	return k ;
-}
-
 std::string InstallerImp::value( const std::string & key , const std::string & default_ ) const
 {
-	Map::const_iterator p = m_map.find(normalised(key)) ;
-	return p == m_map.end() ? default_ : (*p).second ;
+	G::StringMapReader map( m_map ) ;
+	return map.at( "gui-" + key , default_ ) ;
 }
 
 std::string InstallerImp::value( const std::string & key ) const
 {
-	Map::const_iterator p = m_map.find(normalised(key)) ;
-	if( p == m_map.end() )
-		throw std::runtime_error( std::string() + "no such value: " + key ) ;
-	return (*p).second ;
+	G::StringMapReader map( m_map ) ;
+	return map.at( "gui-" + key ) ;
 }
 
 bool InstallerImp::exists( const std::string & key ) const
 {
-	return m_map.find(normalised(key)) != m_map.end() ;
+	return m_map.find("gui-"+key) != m_map.end() ;
 }
 
 bool InstallerImp::yes( const std::string & value )
@@ -938,24 +879,24 @@ void InstallerImp::insertActions()
 			G::Path path ;
 			{
 				std::string sname = std::string() + "/" + name ;
-				if( sname.find(Dir::boot(1).str()) == 0U )
+				if( sname.find(Dir::boot().str()) == 0U )
 				{
 					// ("dir-boot" may not be writeable so bootcopy() allows us
-					// to squirrel the files away somewhere else where Boot::install() 
+					// to squirrel the files away somewhere else where Boot::install()
 					// can get at them)
 
 					G::Path dst_dir = Dir::bootcopy( value("dir-boot") , value("dir-install") ) ;
 					G_DEBUG( "InstallerImp::insertActions: [" << name << "] boot-copy-> [" << dst_dir << "]" ) ;
 					if( dst_dir != G::Path() )
 					{
-						path = G::Path::join( dst_dir , name.substr(Dir::boot(1).str().length()-1U) ) ;
-						if( m_unpack.flags(name).find('x') != std::string::npos ) 
+						path = G::Path::join( dst_dir , name.substr(Dir::boot().str().length()-1U) ) ;
+						if( m_unpack.flags(name).find('x') != std::string::npos )
 							target_link_info.target = path ; // eek!
 					}
 				}
-				else if( sname.find(Dir::config(1).str()) == 0U )
+				else if( sname.find(Dir::config().str()) == 0U )
 				{
-					path = G::Path::join( value("dir-config") , name.substr(Dir::config(1).str().length()-1U) ) ;
+					path = G::Path::join( value("dir-config") , name.substr(Dir::config().str().length()-1U) ) ;
 				}
 				else if( sname.find(Dir::install().str()) == 0U )
 				{
@@ -987,7 +928,7 @@ void InstallerImp::insertActions()
 		insert( new ExtractOriginal(m_argv0,m_unpack,gui) ) ;
 		if( CopyFrameworks::active(m_argv0) )
 			insert( new CopyFrameworks(m_argv0,gui.dirname()) ) ;
-		insert( new CreateStateFile(State::file(gui.str()),gui,m_map) ) ;
+		insert( new CreatePointerFile(Pointer::file(gui.str()),gui,m_map) ) ;
 	}
 
 	// copy dlls -- note that the dlls are locked if we are re-running in the target directory
@@ -1008,14 +949,14 @@ void InstallerImp::insertActions()
 	const bool is_mac = yes(value("start-is-mac")) ;
 	if( !is_mac )
 	{
-		insert( new UpdateLink(yes(value("start-link-desktop")),value("dir-desktop"),working_dir,target_link_info) ) ;
-		insert( new UpdateLink(yes(value("start-link-menu")),value("dir-menu"),working_dir,target_link_info) ) ;
+		insert( new UpdateLink(m_argv0,yes(value("start-link-desktop")),value("dir-desktop"),working_dir,target_link_info) ) ;
+		insert( new UpdateLink(m_argv0,yes(value("start-link-menu")),value("dir-menu"),working_dir,target_link_info) ) ;
 	}
-	insert( new UpdateLink(yes(value("start-at-login")),value("dir-login"),working_dir,target_link_info) ) ;
+	insert( new UpdateLink(m_argv0,yes(value("start-at-login")),value("dir-login"),working_dir,target_link_info) ) ;
 	insert( new UpdateBootLink(yes(value("start-on-boot")),value("dir-boot"),target_link_info) ) ;
 	if( isWindows() )
 	{
-		insert( new UpdateLink(true,value("dir-install"),working_dir,target_link_info) ) ;
+		insert( new UpdateLink(m_argv0,true,value("dir-install"),working_dir,target_link_info) ) ;
 	}
 
 	// create and edit the boot-time config file
@@ -1114,7 +1055,7 @@ G::Strings InstallerImp::commandlineArgs( bool short_ , bool no_close_stderr ) c
 		if( ! switch_arg.empty() )
 		{
 			// (move this?)
-			bool is_commandline = 
+			bool is_commandline =
 				result.back() == "--filter" || result.back() == "-z" ||
 				result.back() == "--client-filter" || result.back() == "-Y" ||
 				result.back() == "--verifier" || result.back() == "-Z" ;
@@ -1152,7 +1093,7 @@ std::pair<std::string,InstallerImp::Map> InstallerImp::commandlineMap( bool shor
 				out[short_?"O":"poll"] = "60" ;
 			else if( value("forward-poll-period") == "second" )
 				out[short_?"O":"poll"] = "1" ;
-			else 
+			else
 				out[short_?"O":"poll"] = "3600" ;
 		}
 		if( value("smtp-server-port") != "25" )
@@ -1249,7 +1190,7 @@ bool Installer::next()
 	bool more = false ;
 	if( m_imp != NULL )
 		more = m_imp->next() ;
-	if( !more ) 
+	if( !more )
 		cleanup() ;
 	return more ;
 }

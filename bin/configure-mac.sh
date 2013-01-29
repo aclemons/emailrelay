@@ -1,10 +1,10 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or 
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 # 
 # This program is distributed in the hope that it will be useful,
@@ -49,7 +49,9 @@ ${configure} \
 	e_examplesdir="${app}/Documentation/examples" \
 	e_sysconfdir="${app}" \
 	--mandir="${app}/Documentation/man" \
+	e_icondir="${app}" \
 	e_docdir="${app}/Documentation" \
 	e_spooldir="${lib}/Mail/Spool" \
+	e_pamdir="/etc/pam.d" \
 	e_initdir="${lib}/StartupItems/E-MailRelay"
 

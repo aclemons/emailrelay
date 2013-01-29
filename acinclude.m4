@@ -1,8 +1,8 @@
-dnl Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
-dnl the Free Software Foundation, either version 3 of the License, or 
+dnl the Free Software Foundation, either version 3 of the License, or
 dnl (at your option) any later version.
 dnl 
 dnl This program is distributed in the hope that it will be useful,
@@ -219,7 +219,7 @@ dnl
 AC_DEFUN([ACLOCAL_CAPABILITIES],
 [
 changequote(<<,>>)
-	G_CAPABILITIES="@@`echo \"$ac_configure_args\" | sed 's/ /:/g' | sed 's/[^_a-z0-9/=:-]//g'`@@"
+	G_CAPABILITIES="@@`echo \"$ac_configure_args\" | sed 's/ /:/g' | sed 's/[^_A-Za-z0-9/=:]//g'`@@"
 changequote([,])
 	AC_SUBST(G_CAPABILITIES)
 ])
@@ -427,38 +427,6 @@ AC_DEFUN([ENABLE_IDENTITY],
 	AM_CONDITIONAL(IDENTITY,test x$enable_identity != xno)
 ])
 
-dnl enable-small-fragments
-dnl
-dnl The "--enable-small-fragments" switch compiles certain source files
-dnl in lots of little pieces so the linker can throw away fragments that 
-dnl are not needed in the final executable.
-dnl
-dnl This requires perl on the path and probably messes up a lot of 
-dnl autoconf/automake features, so only use if really necessary.
-dnl
-AC_DEFUN([ENABLE_SMALL_FRAGMENTS],
-[
-	if test x$enable_small_fragments = xyes -a x$aclocal_use_ipv6 = xyes
-	then
-		AC_MSG_ERROR([cannot use --enable-small-fragments and --enable-ipv6])
-	fi
-	if test x$enable_small_fragments = xyes -a x$MOC != x
-	then
-		AC_MSG_ERROR([cannot use --enable-small-fragments and --enable-gui])
-	fi
-
-	AM_CONDITIONAL(SMALL_FRAGMENTS,test x$enable_small_fragments = xyes)
-	if test x$enable_small_fragments = xyes
-	then
-		AC_MSG_NOTICE([creating source file fragments])
-		FRAGMENTS_LIST="`perl $srcdir/bin/fragment.pl_ -r $srcdir/src $srcdir/src/fragments`"
-		for fragment in $FRAGMENTS_LIST "" ; do if test "$fragment" != "" ; then
-			AC_MSG_NOTICE([creating source file fragment for $fragment])
-		fi ; done
-	fi
-	AC_SUBST(FRAGMENTS_LIST)
-])
-
 dnl enable-small-config
 dnl
 dnl The "--enable-small-config" switch replaces the complex command-line 
@@ -645,7 +613,7 @@ dnl enable-install-hook
 dnl
 dnl The "--enable-install-hook" switch enables the editing
 dnl of "emailrelay.conf" with the correct install directories.
-dnl This should be disabled when building an rpm package.
+dnl This should be disabled when building a package.
 dnl
 AC_DEFUN([ENABLE_INSTALL_HOOK],
 [
@@ -692,11 +660,11 @@ AC_DEFUN([WITH_MAN2HTML],
 	AC_SUBST(HAVE_MAN2HTML)
 ])
 
-dnl aclocal-pam-headers-in-pam
+dnl aclocal-check-pam-headers
 dnl
 dnl Defines aclocal_cv_pam_headers_in_pam if PAM headers are in /usr/include/pam.
 dnl
-AC_DEFUN([ACLOCAL_PAM_HEADERS_IN_PAM],
+AC_DEFUN([ACLOCAL_CHECK_PAM_HEADERS],
 [AC_CACHE_CHECK([for pam headers in /usr/include/pam],[aclocal_cv_pam_headers_in_pam],
 [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
@@ -707,12 +675,47 @@ AC_DEFUN([ACLOCAL_PAM_HEADERS_IN_PAM],
 ])
 ])
 
+dnl aclocal-check-pam
+dnl
+dnl Check for pam availability.
+dnl
+AC_DEFUN([ACLOCAL_CHECK_PAM],
+[AC_CACHE_CHECK([for linux pam],[aclocal_cv_pam_compiles],
+[
+	if test "$aclocal_cv_pam_headers_in_pam" = "yes"
+	then
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+			[[#include <pam/pam_appl.h>]],
+			[[int rc = pam_start("","",(const struct pam_conv*)0,(pam_handle_t**)0)]])] ,
+		aclocal_cv_pam_compiles=yes ,
+		aclocal_cv_pam_compiles=no )
+	else
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+			[[#include <security/pam_appl.h>]],
+			[[int rc = pam_start("","",(const struct pam_conv*)0,(pam_handle_t**)0)]])] ,
+		aclocal_cv_pam_compiles=yes ,
+		aclocal_cv_pam_compiles=no )
+	fi
+])
+])
+
 dnl with-pam
 dnl
 AC_DEFUN([WITH_PAM],
 [
-	if test "$with_pam" = "yes"
+	aclocal_cv_use_pam="$with_pam"
+	if test "$aclocal_cv_use_pam" = ""
 	then
+		aclocal_cv_use_pam="$aclocal_cv_pam_compiles"
+	fi
+
+	if test "$aclocal_cv_use_pam" = "yes"
+	then
+		if test "$aclocal_cv_pam_compiles" = "no"
+		then
+			AC_MSG_WARN([forcing use of pam even though it does not seem to compile])
+		fi
+
 		PAM_LIBS="-lpam"
 		if test "$aclocal_cv_pam_headers_in_pam" = "yes"
 		then
@@ -723,7 +726,7 @@ AC_DEFUN([WITH_PAM],
 	fi
 	AC_SUBST(PAM_LIBS)
 	AC_SUBST(PAM_INCLUDE)
-	AM_CONDITIONAL(PAM,test x$with_pam = xyes)
+	AM_CONDITIONAL(PAM,test x$aclocal_cv_use_pam = xyes)
 ])
 
 dnl set-directories
@@ -742,6 +745,7 @@ AC_DEFUN([SET_DIRECTORIES],
 	# * e_docdir
 	# * e_spooldir
 	# * e_initdir
+	# * e_icondir
 
 	if test "$e_libexecdir" = "" 
 	then 
@@ -774,6 +778,10 @@ AC_DEFUN([SET_DIRECTORIES],
 	if test "$e_initdir" = "" 
 	then 
 		e_initdir="$libexecdir/$PACKAGE/init" 
+	fi
+	if test "$e_icondir" = "" 
+	then 
+		e_icondir="$datadir/$PACKAGE"
 	fi
 ])
 

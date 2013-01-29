@@ -1,9 +1,9 @@
 #
-## Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation, either version 3 of the License, or 
+## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
 ## 
 ## This program is distributed in the hope that it will be useful,
@@ -19,7 +19,7 @@
 #
 
 BUNDLE=E-MailRelay-Configure
-SETUP_BUNDLE=E-MailRelay-Install
+INSTALL_BUNDLE=E-MailRelay-Install
 IMAGE=E-MailRelay.dmg
 
 if MAC
@@ -39,7 +39,6 @@ endif
 EXTRA_DIST=\
 	boot_win32.cpp \
 	dir_win32.cpp \
-	emailrelay-icon.png \
 	gcominit.h \
 	glink_win32.cpp \
 	mingw.mak \
@@ -47,7 +46,12 @@ EXTRA_DIST=\
 	pack.cpp \
 	run.c \
 	README \
+	emailrelay-icon.png \
+	emailrelay-gui.rc \
 	$(MAC_EXTRA_DIST)
+
+e_icon_DATA=\
+	emailrelay-icon.png
 
 if GUI
 
@@ -86,6 +90,7 @@ INCLUDES=\
 	-DG_SPOOLDIR=\"$(e_spooldir)\" \
 	-DG_INITDIR=\"$(e_initdir)\" \
 	-DG_SYSCONFDIR=\"$(e_sysconfdir)\" \
+	-DG_ICONDIR=\"$(e_icondir)\" \
 	-DG_LIBEXECDIR=\"$(e_libexecdir)\" \
 	-DG_MANDIR=\"$(mandir)\" \
 	-DG_DOCDIR=\"$(e_docdir)\" \
@@ -114,8 +119,12 @@ emailrelay_gui_real_SOURCES = \
 	installer.h \
 	legal.cpp \
 	legal.h \
+	mapfile.cpp \
+	mapfile.h \
 	pages.cpp \
 	pages.h \
+	pointer.cpp \
+	pointer.h \
 	qt.h \
 	state.cpp \
 	state.h \
@@ -152,7 +161,7 @@ uninstall-hook:
 
 clean-local:
 	-rm -rf "$(BUNDLE).app"
-	-rm -rf "$(SETUP_BUNDLE).app"
+	-rm -rf "$(INSTALL_BUNDLE).app"
 	-rm -f emailrelay-setup payload-stub payload
 	-rm -f "$(IMAGE)"
 	-rm -f "emailrelay-setup.state"
@@ -164,6 +173,11 @@ install-exec-hook:
 uninstall-hook:
 
 endif
+
+install-data-local: install-e_iconDATA
+
+uninstall-local:
+	-rmdir "$(DESTDIR)$(e_icondir)" 2>/dev/null
 
 $(BUNDLE).app: emailrelay-start-gui
 	../../bin/make-bundle.sh -f "$(BUNDLE)" emailrelay-start-gui "$(top_srcdir)/src/gui/emailrelay-icon.icns"
@@ -182,20 +196,20 @@ emailrelay-setup: pack $(MAKE_SETUP_STUB) ../../bin/make-setup.sh
 payload: pack payload-stub ../../bin/make-setup.sh
 	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ payload-stub pack "$(top_srcdir)/src/gui/emailrelay-icon.png"
 
-$(SETUP_BUNDLE).app: emailrelay-gui.real payload ../../bin/make-bundle.sh
-	../../bin/make-bundle.sh -f "$(SETUP_BUNDLE)" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
-	mv "$(SETUP_BUNDLE).app/Contents/MacOS/E-MailRelay-Install" "$(SETUP_BUNDLE).app/Contents/emailrelay-gui.real"
-	( cd "$(SETUP_BUNDLE).app/Contents/MacOS" && ln -s ../emailrelay-gui.real E-MailRelay-Install )
-	../../bin/make-qt-enabled.sh -f "$(SETUP_BUNDLE).app/Contents/emailrelay-gui.real" "Frameworks"
-	cp payload "$(SETUP_BUNDLE).app/Contents/"
+$(INSTALL_BUNDLE).app: emailrelay-gui.real payload ../../bin/make-bundle.sh
+	../../bin/make-bundle.sh -f "$(INSTALL_BUNDLE)" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+	mv "$(INSTALL_BUNDLE).app/Contents/MacOS/E-MailRelay-Install" "$(INSTALL_BUNDLE).app/Contents/emailrelay-gui.real"
+	( cd "$(INSTALL_BUNDLE).app/Contents/MacOS" && ln -s ../emailrelay-gui.real E-MailRelay-Install )
+	../../bin/make-qt-enabled.sh -f "$(INSTALL_BUNDLE).app/Contents/emailrelay-gui.real" "Frameworks"
+	cp payload "$(INSTALL_BUNDLE).app/Contents/"
 
 .PHONY: setup-bundle
-setup-bundle: $(SETUP_BUNDLE).app
+setup-bundle: $(INSTALL_BUNDLE).app
 
-$(IMAGE): $(SETUP_BUNDLE).app emailrelay-unpack
-	-@rm -f "$(SETUP_BUNDLE).app/Contents/MacOS/$(SETUP_BUNDLE).state"
-	cp emailrelay-unpack "$(SETUP_BUNDLE).app/Contents/"
-	hdiutil create -srcfolder "$(SETUP_BUNDLE).app" "$(IMAGE)" && hdiutil internet-enable -yes "$(IMAGE)"
+$(IMAGE): $(INSTALL_BUNDLE).app emailrelay-unpack
+	-@rm -f "$(INSTALL_BUNDLE).app/Contents/MacOS/$(INSTALL_BUNDLE).state"
+	cp emailrelay-unpack "$(INSTALL_BUNDLE).app/Contents/"
+	hdiutil create -srcfolder "$(INSTALL_BUNDLE).app" "$(IMAGE)" && hdiutil internet-enable -yes "$(IMAGE)"
 
 .PHONY: image
 image: $(IMAGE)

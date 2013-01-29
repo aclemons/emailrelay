@@ -1,3 +1,4 @@
+# emailrelay pam configuration
 auth requisite pam_unix.so nullok_secure
 session required pam_permit.so
 account required pam_permit.so

@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -77,7 +77,8 @@ public:
 
 	bool send( const std::string & data , std::string::size_type offset = 0U ) ;
 		///< Sends data. Returns false if flow control asserted.
-		///< Throws SendError on error.
+		///< Returns true if the data passed in (taking the offset
+		///< into account) is empty. Throws SendError on error.
 
 	static bool sslCapable() ;
 		///< Returns true if the implementation supports TLS/SSL.

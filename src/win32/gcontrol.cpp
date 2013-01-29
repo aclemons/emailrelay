@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -253,14 +253,14 @@ GGui::EditBox::~EditBox()
 void GGui::EditBox::set( const std::string & text )
 {
 	NoRedraw no_redraw( *this ) ;
-	::SetWindowText( handle() , text.c_str() ) ;
+	::SetWindowTextA( handle() , text.c_str() ) ;
 }
 
 void GGui::EditBox::set( const G::Strings & list )
 {
 	if( list.size() == 0U )
 	{
-		::SetWindowText( handle() , "" ) ;
+		::SetWindowTextA( handle() , "" ) ;
 	}
 	else
 	{
@@ -275,7 +275,7 @@ void GGui::EditBox::set( const G::Strings & list )
 			total.append( *iter ) ;
 		}
 
-		::SetWindowText( handle() , total.c_str() ) ;
+		::SetWindowTextA( handle() , total.c_str() ) ;
 		G_ASSERT( lines() >= list.size() ) ;
 	}
 }
@@ -323,7 +323,7 @@ std::string GGui::EditBox::get() const
 	int length = ::GetWindowTextLength( handle() ) ;
 	char *buffer = new char[length+2] ;
 	G_ASSERT( buffer != NULL ) ;
-	::GetWindowText( handle() , buffer , length+1 ) ;
+	::GetWindowTextA( handle() , buffer , length+1 ) ;
 	buffer[length+1] = '\0' ;
 	std::string s( buffer ) ;
 	delete [] buffer ;

@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -221,6 +221,11 @@ public:
 
 	unsigned int maxSize() const ;
 		///< Returns the maximum size of submitted messages, or zero.
+
+	bool peerLookup() const ;
+		///< Returns true if there should be some attempt to 
+		///< look up the userid of SMTP peers connected from the
+		///< the local machine.
 
 private:
 	bool contains( const char * ) const ;

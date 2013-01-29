@@ -1,8 +1,8 @@
-dnl Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
-dnl the Free Software Foundation, either version 3 of the License, or 
+dnl the Free Software Foundation, either version 3 of the License, or
 dnl (at your option) any later version.
 dnl 
 dnl This program is distributed in the hope that it will be useful,
@@ -65,7 +65,8 @@ ACLOCAL_CHECK_IPV6
 ACLOCAL_CHECK_GETIPNODEBYNAME
 ACLOCAL_CHECK_SIN6_LEN
 ACLOCAL_CHECK_BUGGY_CTIME
-ACLOCAL_PAM_HEADERS_IN_PAM
+ACLOCAL_CHECK_PAM_HEADERS
+ACLOCAL_CHECK_PAM
 ACLOCAL_CHECK_GETPWNAM_R
 ACLOCAL_CHECK_GMTIME_R
 ACLOCAL_CHECK_LOCALTIME_R
@@ -144,12 +145,6 @@ AC_ARG_ENABLE(exec,AC_HELP_STRING([--enable-small-config],[enable simplified con
 ENABLE_SMALL_CONFIG
 
 dnl ===
-dnl "--enable-small-fragments"
-dnl
-AC_ARG_ENABLE(exec,AC_HELP_STRING([--enable-small-fragments],[enable fragmented object files for smaller binaries (default no)]))
-ENABLE_SMALL_FRAGMENTS
-
-dnl ===
 dnl "--enable-small-exceptions"
 dnl
 AC_ARG_ENABLE(small_exceptions,AC_HELP_STRING([--enable-small-exceptions],[optimise exception classes for smaller binaries (default no)]))
@@ -200,7 +195,7 @@ WITH_GLOB
 dnl ===
 dnl "--with-pam"
 dnl
-AC_ARG_WITH(pam,AC_HELP_STRING([--with-pam],[use linux pam for authentication (default no)]))
+AC_ARG_WITH(pam,AC_HELP_STRING([--with-pam],[use linux pam for authentication (default auto)]))
 WITH_PAM
 
 dnl ===
@@ -224,6 +219,7 @@ dnl not AC_PREFIX_DEFAULT([/usr])
 SET_DIRECTORIES
 AC_SUBST(e_docdir)
 AC_SUBST(e_initdir)
+AC_SUBST(e_icondir)
 AC_SUBST(e_spooldir)
 AC_SUBST(e_examplesdir)
 AC_SUBST(e_libexecdir)
@@ -235,5 +231,5 @@ if test "$e_qtmoc" = "" ; then e_qtmoc="moc" ; fi
 dnl ===
 dnl generate files...
 dnl
-AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gauth/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile debian/Makefile src/fragments/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gauth/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile debian/Makefile)
 

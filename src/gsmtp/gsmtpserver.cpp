@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -84,9 +84,10 @@ GSmtp::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info ,
 		m_pmessage( pmessage ) ,
 		m_ptext( ptext ) ,
 		m_protocol( *this , *m_verifier.get() , *m_pmessage.get() , server_secrets , *m_ptext.get() ,
-			peer_info.m_address , protocol_config )
+			peer_info.m_address , peer_info.m_name , protocol_config )
 {
-	G_LOG_S( "GSmtp::ServerPeer: smtp connection from " << peer_info.m_address.displayString() ) ;
+	G_LOG_S( "GSmtp::ServerPeer: smtp connection from " << peer_info.m_address.displayString() 
+		<< (peer_info.m_name.empty()?"":" ") << peer_info.m_name ) ;
 	m_protocol.init() ;
 }
 
@@ -134,7 +135,7 @@ void GSmtp::ServerPeer::protocolSend( const std::string & line , bool go_secure 
 GSmtp::Server::Server( MessageStore & store , const GAuth::Secrets & client_secrets , 
 	const GAuth::Secrets & server_secrets , Config config , std::string smtp_server_address , 
 	unsigned int smtp_connection_timeout , GSmtp::Client::Config client_config ) :
-		GNet::MultiServer( GNet::MultiServer::addressList(config.interfaces,config.port) ) ,
+		GNet::MultiServer( GNet::MultiServer::addressList(config.interfaces,config.port) , config.use_connection_table ) ,
 		m_store(store) ,
 		m_processor_address(config.processor_address) ,
 		m_processor_timeout(config.processor_timeout) ,
@@ -217,11 +218,8 @@ GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessageForward( std::auto_ptr
 GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessage()
 {
 	// dependency injection...
-
 	std::auto_ptr<Processor> store_processor( ProcessorFactory::newProcessor(m_processor_address,m_processor_timeout) );
-
 	std::auto_ptr<ProtocolMessage> pmstore( newProtocolMessageStore(store_processor) ) ;
-
 	const bool do_forward = ! m_smtp_server.empty() ;
 	if( do_forward )
 	{
@@ -241,7 +239,8 @@ GSmtp::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const A
 	const std::string & processor_address_ , 
 	unsigned int processor_timeout_ ,
 	const std::string & verifier_address_ , 
-	unsigned int verifier_timeout_ ) :
+	unsigned int verifier_timeout_ ,
+	bool use_connection_table_ ) :
 		allow_remote(allow_remote_) ,
 		port(port_) ,
 		interfaces(interfaces_) ,
@@ -250,7 +249,8 @@ GSmtp::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const A
 		processor_address(processor_address_) ,
 		processor_timeout(processor_timeout_) ,
 		verifier_address(verifier_address_) ,
-		verifier_timeout(verifier_timeout_)
+		verifier_timeout(verifier_timeout_) ,
+		use_connection_table(use_connection_table_)
 {
 }
 

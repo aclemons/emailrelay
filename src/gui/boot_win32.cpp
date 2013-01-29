@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2001-2011 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or 
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
 // This program is distributed in the hope that it will be useful,
@@ -36,9 +36,9 @@ bool Boot::able( G::Path )
 
 bool Boot::install( G::Path , G::Path target , G::Strings )
 {
-	// the supplied 'target' is actually a batch file containing the full 
+	// the supplied 'target' is actually a batch file containing the full
 	// command-line for the server process (see installer.cpp) -- the
-	// service wrapper knows where to look for the batch file and how to 
+	// service wrapper knows where to look for the batch file and how to
 	// read it to get the full server process command-line
 
 	std::string path = G::Path(target.dirname(),"emailrelay-service.exe").str() ;
