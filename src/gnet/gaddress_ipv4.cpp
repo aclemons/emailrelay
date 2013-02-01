@@ -81,7 +81,7 @@ private:
 	static char portSeparator() ;
 
 private:
-	address_type m_inet ;
+	Sockaddr m_inet ;
 } ;
 
 // ===
@@ -97,7 +97,6 @@ public:
 } ;
 
 // ===
-//pragma fragments
 
 int GNet::AddressImp::family()
 {
@@ -107,29 +106,29 @@ int GNet::AddressImp::family()
 void GNet::AddressImp::init()
 {
 	static address_type zero ;
-	m_inet = zero ;
-	m_inet.sin_family = family() ;
-	m_inet.sin_port = 0 ;
+	m_inet.specific = zero ;
+	m_inet.specific.sin_family = family() ;
+	m_inet.specific.sin_port = 0 ;
 }
 
 GNet::AddressImp::AddressImp( unsigned int port )
 {
 	init() ;
-	m_inet.sin_addr.s_addr = htonl(INADDR_ANY);
+	m_inet.specific.sin_addr.s_addr = htonl(INADDR_ANY);
 	setPort( port ) ;
 }
 
 GNet::AddressImp::AddressImp( unsigned int port , Address::Localhost )
 {
 	init() ;
-	m_inet.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	m_inet.specific.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	setPort( port ) ;
 }
 
 GNet::AddressImp::AddressImp( unsigned int port , Address::Broadcast )
 {
 	init() ;
-	m_inet.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+	m_inet.specific.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 	setPort( port ) ;
 }
 
@@ -144,14 +143,14 @@ GNet::AddressImp::AddressImp( const hostent & h , const servent & s )
 {
 	init() ;
 	setHost( h ) ;
-	m_inet.sin_port = s.s_port ;
+	m_inet.specific.sin_port = s.s_port ;
 }
 
 GNet::AddressImp::AddressImp( const servent & s )
 {
 	init() ;
-	m_inet.sin_addr.s_addr = htonl(INADDR_ANY);
-	m_inet.sin_port = s.s_port ;
+	m_inet.specific.sin_addr.s_addr = htonl(INADDR_ANY);
+	m_inet.specific.sin_port = s.s_port ;
 }
 
 GNet::AddressImp::AddressImp( const sockaddr * addr , size_t len )
@@ -201,8 +200,8 @@ bool GNet::AddressImp::setAddress( const std::string & display_string , std::str
 	std::string host_part = display_string.substr(0U,pos) ;
 	std::string port_part = display_string.substr(pos+1U) ;
 
-	m_inet.sin_family = family() ;
-	m_inet.sin_addr.s_addr = ::inet_addr( host_part.c_str() ) ;
+	m_inet.specific.sin_family = family() ;
+	m_inet.specific.sin_addr.s_addr = ::inet_addr( host_part.c_str() ) ;
 	setPort( G::Str::toUInt(port_part) ) ;
 
 	G_ASSERT( displayString() == display_string ) ;
@@ -215,7 +214,7 @@ void GNet::AddressImp::setPort( unsigned int port )
 		throw Address::Error( "invalid port number" ) ;
 
 	const g_port_t in_port = static_cast<g_port_t>(port) ;
-	m_inet.sin_port = htons( in_port ) ;
+	m_inet.specific.sin_port = htons( in_port ) ;
 }
 
 void GNet::AddressImp::setHost( const hostent & h )
@@ -225,7 +224,7 @@ void GNet::AddressImp::setHost( const hostent & h )
 
 	const char * first = h.h_addr_list[0U] ;
 	const in_addr * raw = reinterpret_cast<const in_addr*>(first) ;
-	m_inet.sin_addr = *raw ;
+	m_inet.specific.sin_addr = *raw ;
 }
 
 std::string GNet::AddressImp::displayString() const
@@ -239,7 +238,7 @@ std::string GNet::AddressImp::displayString() const
 std::string GNet::AddressImp::hostString() const
 {
 	std::ostringstream ss ;
-	ss << ::inet_ntoa(m_inet.sin_addr) ;
+	ss << ::inet_ntoa(m_inet.specific.sin_addr) ;
 	return ss.str() ;
 }
 
@@ -312,18 +311,18 @@ bool GNet::AddressImp::validPart( const std::string & s )
 bool GNet::AddressImp::same( const AddressImp & other ) const
 {
 	return
-		m_inet.sin_family == other.m_inet.sin_family &&
-		m_inet.sin_family == family() &&
-		sameAddr( m_inet.sin_addr , other.m_inet.sin_addr ) &&
-		m_inet.sin_port == other.m_inet.sin_port ;
+		m_inet.specific.sin_family == other.m_inet.specific.sin_family &&
+		m_inet.specific.sin_family == family() &&
+		sameAddr( m_inet.specific.sin_addr , other.m_inet.specific.sin_addr ) &&
+		m_inet.specific.sin_port == other.m_inet.specific.sin_port ;
 }
 
 bool GNet::AddressImp::sameHost( const AddressImp & other ) const
 {
 	return
-		m_inet.sin_family == other.m_inet.sin_family &&
-		m_inet.sin_family == family() &&
-		sameAddr( m_inet.sin_addr , other.m_inet.sin_addr ) ;
+		m_inet.specific.sin_family == other.m_inet.specific.sin_family &&
+		m_inet.specific.sin_family == family() &&
+		sameAddr( m_inet.specific.sin_addr , other.m_inet.specific.sin_addr ) ;
 }
 
 bool GNet::AddressImp::sameAddr( const ::in_addr & a , const ::in_addr & b )
@@ -333,24 +332,22 @@ bool GNet::AddressImp::sameAddr( const ::in_addr & a , const ::in_addr & b )
 
 unsigned int GNet::AddressImp::port() const
 {
-	return ntohs( m_inet.sin_port ) ;
+	return ntohs( m_inet.specific.sin_port ) ;
 }
 
 const sockaddr * GNet::AddressImp::raw() const
 {
-	return reinterpret_cast<const sockaddr*>(&m_inet) ;
+	return & m_inet.general ;
 }
 
 sockaddr * GNet::AddressImp::raw()
 {
-	return reinterpret_cast<sockaddr*>(&m_inet) ;
+	return & m_inet.general ;
 }
 
 void GNet::AddressImp::set( const sockaddr * general )
 {
-	Sockaddr u ;
-	u.general = * general ;
-	m_inet = u.specific ;
+	m_inet.general = *general ;
 }
 
 char GNet::AddressImp::portSeparator()

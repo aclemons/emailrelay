@@ -9,7 +9,7 @@ emailrelay (1.9) unstable; urgency=low
   * Windows project files for MSVC 2008 included.
   * Removed "--enable-fhs" option for "configure" (see INSTALL for equivalent usage).
   * Fix for MD5 code in 64-bit builds.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Tue, 29 Jan 2013 00:33:50 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Tue, 29 Jan 2013 16:18:48 +0000
 
 emailrelay (1.8.2) unstable; urgency=low
   * Fix namespaces for gcc 3.4.

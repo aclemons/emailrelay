@@ -110,17 +110,17 @@ Windows service
 ---------------
 To get E-MailRelay to run as a Windows service there is a service wrapper
 program called "emailrelay-service.exe". This program registers itself as
-a service when run with the "--install" commandline switch. When the service
+a service when run with the "--install" commandline option. When the service
 runs the wrapper starts the actual E-MailRelay server by looking for a batch
 file called "emailrelay-start.bat" in the same directory as service wrapper
 executable. It reads the contents of this batch file in order to construct the
-E-MailRelay command-line, adding "--no-daemon" and "--hidden" switches if they
+E-MailRelay command-line, adding "--no-daemon" and "--hidden" options if they
 are not there already.
 
 The service name and display name can be added to the wrapper's "--install"
 command-line, and it is the service name that is used to derive the name of the
 "start" batch file. This allows more than one server to be run as services,
-using different server command-line switches on each one.
+using different server command-line options on each one.
 
 Diagrams
 --------
@@ -243,7 +243,7 @@ Start by building Qt static libraries from scratch using the following Qt
 	-qt-style-windowsxp
 	-qt-style-windowsvista
 
-Make a note of the compiler switches used when building one of the Qt examples
+Make a note of the compiler options used when building one of the Qt examples
 and replicate them in "src/gui/mingw.mak":
 
 	c:\qt\examples\widgets\groupbox> del tmp\obj\release_static\main.o
@@ -381,7 +381,7 @@ these cases there are three source files per header. For example, "gsocket.cpp",
 
 Compile-time features
 ---------------------
-Compile-time features can be selected with switches passed to the "configure"
+Compile-time features can be selected with options passed to the "configure"
 script. These include the following:
 
 * Debug-level logging ("--enable-debug")
@@ -397,12 +397,12 @@ of the executable, typically when building for embedded systems:
 * Disable administration interface, "--disable-admin"
 * Disable execution of external programs, "--disable-exec"
 
-The "--enable-small-config" switch can be used to change the command-line
+The "--enable-small-config" option can be used to change the command-line
 parsing code to use a configuration file instead, resulting in a smaller
 executable. This also removes a lot of the configuration checking code, so it is
 not recommended unless size is critical. (The format of the configuration file
-is similar to the command-line using the long-form switches without the
-double-dash and using '=' to separate the switch from the switch value.)
+is similar to the command-line using the long-form options without the
+double-dash and using '=' to separate the option from the option value.)
 
 Use "./configure --help" to see a complete list of options and refer to
 "acinclude.m4" for more detailed comments.

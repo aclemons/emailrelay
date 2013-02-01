@@ -105,7 +105,7 @@ ENABLE_VERBOSE
 dnl ===
 dnl "--enable-pop"
 dnl
-AC_ARG_ENABLE(pop,AC_HELP_STRING([--enable-pop],[enable pop3 protocol (default yes)]))
+AC_ARG_ENABLE(pop,AC_HELP_STRING([--enable-pop],[enable pop3 server protocol (default yes)]))
 ENABLE_POP
 
 dnl ===

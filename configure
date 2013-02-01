@@ -1420,7 +1420,7 @@ Optional Features:
   --enable-gui            enable configuration gui (requires Qt4) (default
                           auto)
   --enable-verbose        enable verbose logging (default yes)
-  --enable-pop            enable pop3 protocol (default yes)
+  --enable-pop            enable pop3 server protocol (default yes)
   --enable-exec           enable running of external programs (disable-exec
                           requires disable-gui) (default yes)
   --enable-admin          enable admin interface (default yes)

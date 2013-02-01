@@ -182,7 +182,7 @@ std::string Main::CommandLineImp::switchSpec_windows()
 		"n!no-syslog!disables use of the system event log!!0!!3|"
 		"c!icon!selects the application icon!!1!0^|1^|2^|3!3|"
 		"H!hidden!hides the application window and suppresses message boxes (requires --no-daemon)!!0!!3|"
-		"R!peer-lookup!lookup the account names of local peers!!0!!3" ;
+		"R!peer-lookup!lookup the account names of local peers! to put in the envelope files!0!!3" ;
 }
 
 Main::CommandLineImp::CommandLineImp( Output & output , const G::Arg & arg , const std::string & spec ,

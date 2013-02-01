@@ -37,10 +37,10 @@ the full E-MailRelay server command-line. Then just run
 "emailrelay-service --install" to install the service.
 
 When the E-MailRelay server is run in this way the "--no-daemon" and "--hidden"
-switches are added automatically to whatever is in the "emailrelay-start" batch
-file so that there is no user interface. (The "--no-daemon" switch changes the
+options are added automatically to whatever is in the "emailrelay-start" batch
+file so that there is no user interface. (The "--no-daemon" option changes the
 interface from using the system-tray to using a normal window, and the
-"--hidden" switch suppresses the window and any message boxes.)
+"--hidden" option suppresses the window and any message boxes.)
 
 Note that the batch file and the main E-MailRelay executable must be in the same
 directory.
@@ -50,7 +50,7 @@ and display name on the "emailrelay-service --install <name> <display-name>"
 command-line.
 
 The service name you give is used to derive the name of the "<name>-start.bat"
-batch file that contains the E-MailRelay server's command-line switches, so you
+batch file that contains the E-MailRelay server's command-line options, so you
 will need to create that first.
 
 For example:
@@ -67,13 +67,13 @@ E-MailRelay normally writes errors and warnings into the system event log, which
 you can view by running "eventvwr.exe" and looking under "Windows Logs" and then
 "Application".
 
-You can increase the verbosity of the logging by adding the "--verbose" switch
+You can increase the verbosity of the logging by adding the "--verbose" option
 to the E-MailRelay command-line, typically by editing the "emailrelay-start.bat"
 batch script.
 
 The E-MailRelay server also logs to the standard error stream. However, the
-"--as-server" and "--as-proxy" switches implicitly incorporate "--close-stderr"
-so with these switches the standard error logging will stop soon after startup.
+"--as-server" and "--as-proxy" options implicitly incorporate "--close-stderr"
+so with these options the standard error logging will stop soon after startup.
 
 To get continuous logging to a log file you should replace "--as-server" with
 "--log" and "--as-proxy" with "--poll 0 --forward-to" and then use "2>" to

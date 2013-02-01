@@ -5,9 +5,9 @@ Command line usage
 ------------------
 The "emailrelay" program supports the following command-line usage:
 
-	emailrelay [<switch> [<switch> ...]]
+	emailrelay [<option> [<option> ...]]
 
-where <switch> is:
+where <option> is:
 # --admin (-a)
   Enables the administration interface and specifies its listening port number.
 
@@ -182,7 +182,7 @@ command-line options:
 * as soon as the submitting client connection disconnects ("--poll=0")
 * periodically ("--poll=<seconds>")
 
-These modes of operation can be mixed, although more than one "--poll" switch is
+These modes of operation can be mixed, although more than one "--poll" option is
 not allowed.
 
 When using "--as-client" the spooled messages begin to be forwarded as soon as
@@ -197,11 +197,11 @@ left in the spool directory with a ".bad" suffix on the envelope file.
 
 Mail processing
 ---------------
-The "--filter" command-line switch allows you to specify a mail pre-processor
+The "--filter" command-line option allows you to specify a mail pre-processor
 program which operates on mail messages as they pass through the E-MailRelay
 system. The mail pre-processor program is run as soon as the mail message has
 been stored in the spool directory, with the full path of the content file
-added onto the end of the given command line.
+added onto the end of the given command-line.
 
 For example, the following command will start a proxy server on port 10025
 which processes mail using the specified filter program, and then forwards the
@@ -230,7 +230,7 @@ message use an exit code of 100.
 If the pre-processor program creates completely new messages in the spool
 directory then they may not be processed immediately, or they may be completely
 ignored. To get E-MailRelay to pick up any new messages you create in the spool
-directory use the "--poll" switch, or run "emailrelay --as-client" from within
+directory use the "--poll" option, or run "emailrelay --as-client" from within
 the pre-processor program.
 
 As an example of a simple pre-processor this shell script examines the sending
@@ -279,7 +279,7 @@ For Windows this example can be rewritten in JavaScript:
 	WScript.Quit( 0 ) ;
 
 Windows pre-processor programs written in JavaScript can be run using
-"cscript", with an E-MailRelay "--filter" switch something like this:
+"cscript", with an E-MailRelay "--filter" option something like this:
 
 	--filter="c:/windows/system32/cscript.exe //nologo c:/program\ files/emailrelay/filter.js"
 
@@ -290,14 +290,14 @@ in the distribution ("emailrelay-process.sh") that does rot-13 masking of
 messages.  This script also does some simple MIME encoding, so that the masked
 message appears as an attachment within a plaintext bearer message.
 
-E-MailRelay also has a "--client-filter" switch that enables pre-processing of
+E-MailRelay also has a "--client-filter" option that enables pre-processing of
 messages just before they are forwarded, rather then after they are stored. The
 disadvantage is that by then it is too late to notify the SMTP client of any
 processing failures, so in many applications using "--filter" is more useful.
 
 Bear in mind the following points when writing "--filter" programs:
 
-* The standard input and output are not used; the content filename is passed on the command line.
+* The standard input and output are not used; the content filename is passed on the command-line.
 * Programs run with a reduced set of environment variables.
 * The E-MailRelay process is completely blocked while the "--filter" program runs so it should be fast.
 * E-MailRelay files use CR-LF line terminators, as required by the RFCs.
@@ -305,7 +305,7 @@ Bear in mind the following points when writing "--filter" programs:
 * Windows scripts may need to be run via "cscript" or a batch file wrapper.
 
 It is also possible to do message pre-processing in a separate process by using
-"net:<address>:<port>" as the "--filter" or "--client-filter" switch parameter.
+"net:<address>:<port>" as the "--filter" or "--client-filter" option parameter.
 E-MailRelay connects to this address and then uses a simple line-based dialog as
 each e-mail message is processed where it sends the full path of the message
 content file in one line and expects the remote process to respond with an "ok"
@@ -335,7 +335,7 @@ The authentication mechanisms currently supported are:
   not replayable. Defined in RFC2195.
 
 Authentication is enabled with the "--client-auth" and "--server-auth"
-command-line switches. The switch parameter is the name of a secrets file,
+command-line options and the option's parameter is the name of a secrets file,
 containing usernames and passwords:
 
 	emailrelay --as-server --server-auth=/etc/emailrelay-clients.auth
@@ -370,7 +370,7 @@ normally contain several "LOGIN server" or "CRAM-MD5 server" entries, one for
 each client.
 
 The same secrets file may be specified for both "--client-auth" and
-"--server-auth" switches.
+"--server-auth" options.
 
 The "CRAM-MD5" keys can be generated using the "emailrelay-passwd" utility.
 
@@ -400,7 +400,7 @@ secrets file, so you should make sure that the secrets file has tight
 permissions and the passwords in it are not also used for anything important.
 
 On the server side authentication is advertised by E-MailRealy in the response
-to the SMTP "EHLO" command if the "--server-auth" command-line switch is used.
+to the SMTP "EHLO" command if the "--server-auth" command-line option is used.
 Authentication by the client is then mandatory unless the client's IP address is
 configured as a trusted address.
 
@@ -408,11 +408,14 @@ Trusted IP addresses are configured with lines in the secrets file having "NONE"
 in the first field, "server" in the second field, a wildcarded IP address in
 the third field, and an arbitrary keyword in the fourth field. The keyword field
 is passed to any external address verifier program specified by the "--verifier"
-command-line switch; it is not used for any other purpose.
+command-line option; it is not used for any other purpose. Wildcarded IPv4
+addresses can use a format like 192.168.0.0/24 or 192.168.0.*; wildcarded IPv6
+addresses must have the full set of 32 lowercase hex digits followed by the CIDR
+netmask.
 
 For example, this secrets file allows any client connecting from the
 192.168.0.0/24 domain to connect without authentication desipte the
-"--server-auth" switch:
+"--server-auth" option:
 
 	#
 	# emailrelay secrets file
@@ -424,7 +427,7 @@ For example, this secrets file allows any client connecting from the
 On the client side authentication is performed when E-MailRelay has connected to
 a server which implements the AUTH extension with one of the supported
 mechanisms. If client authentication is enabled (with the "--client-auth"
-switch) but the remote server does not support the AUTH extension, or does not
+option) but the remote server does not support the AUTH extension, or does not
 support the LOGIN or CRAM-MD5 mechanism, then E-MailRelay will log an error
 and not forward any messages.
 
@@ -446,7 +449,7 @@ TLS/SSL
 -------
 E-MailRelay can use TLS/SSL to encrypt SMTP and POP3 sessions. To enable TLS/SSL
 encryption when E-MailRelay is acting as an SMTP client use the "--client-tls"
-command-line switch, and to enable TLS/SSL when E-MailRelay is acting as an SMTP
+command-line option, and to enable TLS/SSL when E-MailRelay is acting as an SMTP
 or POP3 server use "--server-tls".
 
 Note that this is not the same as running the whole SMTP or POP3 dialog over
@@ -454,7 +457,7 @@ a connection tunnel already encrypted with TLS/SSL; when using the E-MailRelay
 TLS/SSL options the connection starts out un-encrypted and the use of encryption
 is negotiated using extensions of the SMTP/POP3 protocols (ie. "STARTTLS").
 
-The "--server-tls" switch requires the name of an X.509 certificate in the "PEM"
+The "--server-tls" option requires the name of an X.509 certificate in the "PEM"
 format. This file must be in a directory that the OpenSSL library considers to
 be secure. On some systems this is "/etc/ssl/certs".
 
@@ -493,7 +496,7 @@ With this configuration the E-MailRelay server will use normal unix system
 account names and passwords to authenticate remote clients.
 
 The passwords for system accounts are usually very sensitive so E-MailRelay
-requires the "--server-tls" command-line switch when using PAM authentication,
+requires the "--server-tls" command-line option when using PAM authentication,
 and clients are required to establish a TLS/SSL session before authenticating.
 
 Pop server
@@ -501,7 +504,7 @@ Pop server
 E-MailRelay can be used as a POP3 server so that POP clients have access to
 spooled messages.
 
-The following command-line switches are used:
+The following command-line options are used:
 
 # --pop
 
@@ -559,7 +562,7 @@ Address verification
 --------------------
 By default the E-MailRelay server will accept all recipient addresses for
 incoming e-mails as valid. This default behaviour can be modified by using an
-external verifier program, specified with the "--verifier" command-line switch,
+external verifier program, specified with the "--verifier" command-line option,
 so that you get to choose which recipient addresses are accepted as valid and
 which are rejected.
 
@@ -678,7 +681,7 @@ If this verifier script is used with a suitable "--server-auth" file then it can
 be used to prevent open relay without restricting authenticated clients.
 
 It is also possible to verify addresses in a separate daemon process by using a
-"--verifier" switch of the form "net:<address>:<port>". In this case E-MailRelay
+"--verifier" option of the form "net:<address>:<port>". In this case E-MailRelay
 will connect to the specified verifier daemon over the network and send address
 verification requests as lines with pipe-delimited fields. The expected response
 is another pipe-delimited line containing the same information as returned by
@@ -757,11 +760,11 @@ The following are some security issues that have been taken into consideration:
   in the log.
 
   Passwords and message content are not logged (except if using the "--debug"
-  switch at run time with debug logging enabled at build time).
+  option at run time with debug logging enabled at build time).
 
 # Information leakage
 
-  The "--anonymous" switch can be used to reduce the amount of information
+  The "--anonymous" option can be used to reduce the amount of information
   released to remote clients, especially with an empty "--domain".
 
 # Mandatory encryption
@@ -780,7 +783,7 @@ The "Authentication" and "Linux PAM" sections above also relate to security.
 
 Administration interface
 ------------------------
-If enabled with the "--admin" command line switch, the E-MailRelay server will
+If enabled with the "--admin" command-line option, the E-MailRelay server will
 provide a network interface for performing administration tasks. This is a
 simple command-line interface which is compatible with "telnet":
 
@@ -847,7 +850,7 @@ As usual, it is possible to change the installation root directory after
 building by using "make DESTDIR=<root> install" or
 "DESTDIR=<root> make -e install". However, this will not affect the default
 spool directory path built into the scripts and executables so the correct spool
-directory will have to be specified at run-time with the "--spool-dir" switch.
+directory will have to be specified at run-time with the "--spool-dir" option.
 
 
 

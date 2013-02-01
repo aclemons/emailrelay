@@ -83,8 +83,10 @@ void MapFile::read( G::StringMap & map , std::istream & ss , bool underscore_to_
 		if( to_lower )
 			G::Str::toLower( key ) ;
 		G_DEBUG( "MapFile::read: " << key << "=[" << G::Str::printable(value) << "]" ) ;
-
+// TODO
+#ifdef G_WINDOWS
 		G::Convert::convert( value , G::Convert::utf8(value) , G::Convert::ThrowOnError() ) ;
+#endif
 		map[key] = value ;
 	}
 	G_DEBUG( "MapFile::read: end" ) ;
@@ -93,9 +95,13 @@ void MapFile::read( G::StringMap & map , std::istream & ss , bool underscore_to_
 void MapFile::writeItem( std::ostream & stream , const std::string & key , const std::string & value )
 {
 	const char * qq = value.find(' ') == std::string::npos ? "" : "\"" ;
+// TODO
+#ifdef G_WINDOWS
 	G::Convert::utf8 utf8_value ;
 	G::Convert::convert( utf8_value , value ) ;
-	stream << key << "=" << qq << utf8_value.s << qq << "\n" ;
+	value = utf8_value.s ;
+#endif
+	stream << key << "=" << qq << value << qq << "\n" ;
 }
 
 std::string MapFile::quote( const std::string & s )

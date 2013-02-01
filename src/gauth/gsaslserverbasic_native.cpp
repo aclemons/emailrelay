@@ -158,21 +158,22 @@ bool GAuth::SaslServerBasicImp::trusted( GNet::Address address ) const
 	G::Strings wc = address.wildcards() ;
 	for( G::Strings::iterator p = wc.begin() ; p != wc.end() ; ++p )
 	{
-		if( trustedCore(address.displayString(false),*p) )
+		if( trustedCore(*p,address.displayString(false)) )
 			return true ;
 	}
 	return false ;
 }
 
-bool GAuth::SaslServerBasicImp::trustedCore( const std::string & full , const std::string & key ) const
+bool GAuth::SaslServerBasicImp::trustedCore( const std::string & secrets_key , 
+	const std::string & address_to_log ) const
 {
-	G_DEBUG( "GAuth::SaslServerBasicImp::trustedCore: \"" << full << "\", \"" << key << "\"" ) ;
-	std::string secret = m_secrets.secret("NONE",key) ;
+	G_DEBUG( "GAuth::SaslServerBasicImp::trustedCore: \"" << secrets_key << "\", \"" << address_to_log << "\"" ) ;
+	std::string secret = m_secrets.secret("NONE",secrets_key) ;
 	bool trusted = ! secret.empty() ;
 	if( trusted ) 
 	{
-		G_LOG( "GAuth::SaslServer::trusted: trusting \"" << full << "\" "
-			<< "(matched on NONE/server/" << key << "/" << secret << ")" ) ;
+		G_LOG( "GAuth::SaslServer::trusted: trusting \"" << address_to_log << "\" "
+			<< "(matched on NONE/server/" << secrets_key << ")" ) ;
 		const_cast<SaslServerBasicImp*>(this)->m_trustee = secret ;
 	}
 	return trusted ;
