@@ -64,6 +64,11 @@ bool Main::Configuration::logTimestamp() const
 	return contains( "log-time" ) ;
 }
 
+std::string Main::Configuration::logFile() const
+{
+	return contains("log-file") ? value("log-file") : std::string() ;
+}
+
 unsigned int Main::Configuration::port() const
 {
 	return value( "port" , 25U ) ;
@@ -252,8 +257,7 @@ std::string Main::Configuration::clientFilter() const
 
 unsigned int Main::Configuration::icon() const
 {
-	unsigned int n = value( "icon" , 0U ) ;
-	return n % 4U ;
+	return 0U ; // no longer used
 }
 
 bool Main::Configuration::hidden() const

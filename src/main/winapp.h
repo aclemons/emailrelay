@@ -37,10 +37,14 @@ namespace Main
 }
 
 /// \class Main::WinApp
-/// An application class instantiated in WinMain()
-/// and containing a Main::WinForm object. WinMain() sets up 
-/// slot/signal links from Main::Run to Main::WinApp. Derives
-/// from Main::Output so that Main::CommandLine can call
+/// An application class instantiated in WinMain() and containing a 
+/// Main::WinForm object. 
+///
+/// WinMain() sets up slot/signal links from Main::Run to Main::WinApp so that 
+/// the Main::Run class can emit() progress events like "connecting to ..." and
+/// the Main::WinApp class will display them (in the title bar, for instance).
+///
+/// The class derives from Main::Output so that Main::CommandLine can call
 /// output() to throw up message boxes.
 ///
 class Main::WinApp : public GGui::ApplicationBase , public Main::Output 
@@ -103,7 +107,6 @@ private:
 	std::auto_ptr<Main::Configuration> m_cfg ;
 	bool m_quit ;
 	bool m_use_tray ;
-	unsigned int m_icon ;
 	bool m_hidden ;
 } ;
 

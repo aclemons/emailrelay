@@ -20,9 +20,12 @@
 
 #include "gdef.h"
 #include "gwindow.h"
+#include "gpump.h"
 #include "gconvert.h"
 #include "gdebug.h"
 #include "glog.h"
+
+extern "C" LRESULT CALLBACK gwindow_wndproc_export( HWND , UINT , WPARAM , LPARAM ) ;
 
 GGui::Window::Window( HWND hwnd ) :
 	Cracker(hwnd)
@@ -34,29 +37,19 @@ GGui::Window::~Window()
 {
 }
 
-extern "C" LRESULT CALLBACK gwindow_wndproc_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
-{
-	return GGui::Window::wndProc( hwnd , message , wparam , lparam ) ;
-}
-
-WNDPROC GGui::Window::windowProcedure()
-{
-	return gwindow_wndproc_export ;
-}
-
-bool GGui::Window::registerWindowClass( const std::string & class_name ,
+bool GGui::Window::registerWindowClass( const std::string & class_name_in ,
 	HINSTANCE hinstance , UINT style ,
 	HICON icon , HCURSOR cursor ,
 	HBRUSH background , UINT menu_resource_id )
 {
-	G_DEBUG( "GGui::Window::registerWindowClass: \"" << class_name << "\"" ) ;
+	G_DEBUG( "GGui::Window::registerWindowClass: \"" << class_name_in << "\"" ) ;
 
-	const wchar_t * menu_name = menu_resource_id ? MAKEINTRESOURCE(menu_resource_id) : NULL ;
+	LPTSTR menu_name = menu_resource_id ? MAKEINTRESOURCE(menu_resource_id) : 0 ;
 
-	std::wstring wide_class_name ;
-	G::Convert::convert( wide_class_name , class_name ) ;
+	std::basic_string<TCHAR> class_name ;
+	G::Convert::convert( class_name , class_name_in ) ;
 
-	WNDCLASSW c ;
+	WNDCLASS c ;
 	c.style = style ;
 	c.lpfnWndProc = gwindow_wndproc_export ;
 	c.cbClsExtra = 4 ; // reserved
@@ -66,9 +59,9 @@ bool GGui::Window::registerWindowClass( const std::string & class_name ,
 	c.hCursor = cursor ;
 	c.hbrBackground = background ;
 	c.lpszMenuName = menu_name ;
-	c.lpszClassName = wide_class_name.c_str() ;
+	c.lpszClassName = class_name.c_str() ;
 
-	return ::RegisterClassW( &c ) != 0 ;
+	return ::RegisterClass( &c ) != 0 ;
 }
 
 bool GGui::Window::create( const std::string & class_name ,
@@ -119,31 +112,89 @@ GGui::Window * GGui::Window::instance( HWND hwnd )
 	return reinterpret_cast<Window*>(vp) ;
 }
 
+extern "C" LRESULT CALLBACK gwindow_wndproc_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
+{
+	try
+	{
+		return GGui::Window::wndProc( hwnd , message , wparam , lparam ) ;
+	}
+	catch( std::exception & e )
+	{
+		// never gets here
+		G_DEBUG( "gwindow_wndproc_export: exception absorbed: " << e.what() ) ;
+		return 0 ;
+	}
+}
+
+bool GGui::Window::wndProcException() const
+{
+	return !m_reason.empty() ;
+}
+
+std::string GGui::Window::wndProcExceptionString()
+{
+	std::string reason = m_reason ;
+	m_reason.clear() ;
+	return reason ;
+}
+
+WNDPROC GGui::Window::windowProcedure()
+{
+	return gwindow_wndproc_export ;
+}
+
 LRESULT GGui::Window::wndProc( HWND hwnd , UINT msg , WPARAM wparam , LPARAM lparam )
 {
+	Window * window = msg == WM_CREATE ? NULL : GGui::Window::instance( hwnd ) ;
+	LRESULT result = msg == WM_CREATE ? -1 : 0 ;
+	try
+	{
+		result = wndProcCore( window , hwnd , msg , wparam , lparam ) ;
+	}
+	catch( std::exception & e )
+	{
+		G_DEBUG( "GGui::Window::wndProc: exception from window message handler being passed back: " << e.what() ) ;
+		if( window != NULL )
+		{
+			try
+			{
+				window->onException( e ) ; // overridable - posts wm_quit by default
+			}
+			catch( std::exception & e )
+			{
+				// exception from exception handler - save it for wndProcException()
+				window->m_reason = e.what() ;
+			}
+		}
+	}
+	return result ;
+}
+
+LRESULT GGui::Window::wndProcCore( Window * window , HWND hwnd , UINT msg , WPARAM wparam , LPARAM lparam )
+{
+	LRESULT result = 0 ;
 	if( msg == WM_CREATE )
 	{
-		G_DEBUG( "GGui::Window::wndProc: WM_CREATE: " << hwnd ) ;
+		G_DEBUG( "GGui::Window::wndProc: WM_CREATE: hwnd " << hwnd ) ;
 		CREATESTRUCT *cs = reinterpret_cast<CREATESTRUCT *>(lparam) ;
-		Window *window = reinterpret_cast<Window *>(cs->lpCreateParams) ;
+		window = reinterpret_cast<Window *>(cs->lpCreateParams) ;
 		G_ASSERT( window != NULL ) ;
-		G_DEBUG( "GGui::Window::wndProc: WM_CREATE: this = " << window ) ;
+		G_DEBUG( "GGui::Window::wndProc: WM_CREATE: ptr " << window ) ;
 		void * vp = reinterpret_cast<void*>(window) ;
 		LONG wl = reinterpret_cast<LONG>(vp) ;
 		::SetWindowLong( hwnd , 0 , wl ) ;
 		window->setHandle( hwnd ) ;
-		return window->onCreateCore() ? 0 : -1 ;
+		result = window->onCreate() ? 0 : -1 ;
 	}
 	else
 	{
-		Window *window = Window::instance( hwnd ) ;
-		// G_ASSERT( window != NULL ) ;
-		if( window == NULL )
-			return ::DefWindowProc(hwnd,msg,wparam,lparam) ;
-
-		G_ASSERT( hwnd == window->handle() ) ;
-		return window->wndProc( msg , wparam , lparam ) ;
+		bool call_default = window == NULL ;
+		if( window != NULL )
+			result = window->crack( msg , wparam , lparam , call_default ) ;
+		if( call_default )
+			result = ::DefWindowProc( hwnd , msg , wparam , lparam ) ;
 	}
+	return result ;
 }
 
 LRESULT GGui::Window::sendUserString( HWND hwnd , const char * string )
@@ -160,43 +211,6 @@ LRESULT GGui::Window::onUserOther( WPARAM , LPARAM lparam )
 LRESULT GGui::Window::onUserString( const char * )
 {
 	return 0 ;
-}
-
-LRESULT GGui::Window::wndProc( unsigned message , WPARAM wparam , LPARAM lparam )
-{
-	bool defolt ;
-	LRESULT rc = wndProcCore( message , wparam , lparam , defolt ) ;
-	if( defolt )
-		return ::DefWindowProc( m_hwnd , message , wparam , lparam ) ;
-	else
-		return rc ;
-}
-
-LRESULT GGui::Window::wndProcCore( unsigned msg , WPARAM wparam , LPARAM lparam ,
-	bool & defolt )
-{
-	try
-	{
-		return crack( msg , wparam , lparam , defolt ) ;
-	}
-	catch( std::exception & e )
-	{
-		onException( e ) ;
-		return 0 ;
-	}
-}
-
-bool GGui::Window::onCreateCore()
-{
-	try
-	{
-		return onCreate() ;
-	}
-	catch( std::exception & e )
-	{
-		onException( e ) ;
-		return false ;
-	}
 }
 
 void GGui::Window::destroy()
@@ -294,10 +308,9 @@ void GGui::Window::resize( Size new_size , bool repaint )
 
 void GGui::Window::onException( std::exception & e )
 {
-	// it is not clear that it is safe to throw out of a
-	// window procedure, but it seems to work okay in practice
-	//
-	throw ;
+	// overridable - default implementation...
+	G_DEBUG( "GGui::Window::onException: quitting event loop: hwnd " << m_hwnd << ": " << e.what() ) ;
+	Pump::quit( e.what() ) ;
 }
 
 /// \file gwindow.cpp

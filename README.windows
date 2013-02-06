@@ -1,6 +1,15 @@
 E-MailRelay Windows
 ===================
 
+Command-line options
+--------------------
+There are some differences in the command-line options when running the
+E-MailRelay server on Windows. These include:
+* The "--syslog" option refers to the Windows Event Log (eventvwr.exe).
+* The "--no-daemon" option is used to disable the icon in the system tray.
+* The "--hidden" option hides all windows and suppresses message boxes (requires "--no-deamon").
+* The "--peer-lookup" option can be used to add extra information to envelope files for local clients.
+
 Setup program
 -------------
 Installing E-MailRelay on Windows should be straightforward if you have
@@ -16,22 +25,22 @@ Manual installation
 -------------------
 In summary, the manual installation process for Windows for when you do not have
 the self-extracting setup program, is as follows:
-* Create a new program directory "Program Files\emailrelay"
+* Create a new program directory "c:\Program Files\emailrelay"
 * Unzip into "Program Files\emailrelay"
-* Create a new spool directory "<windir>\spool\emailrelay"
+* Create a new spool directory "c:\windows\spool\emailrelay"
 * Create a new text file, eg. "c:\emailrelay.auth", to contain account details
 * Add your ISP account details to "emailrelay.auth" with a line like "login client myaccount mypassword"
 * Drag "emailrelay.exe" onto the desktop to create a shortcut for the server.
+* Add "--as-server --verbose" to the server shortcut properties in the "target" box.
 * Drag again to create a shortcut for the forwarding client.
-* Add "--as-server --verbose" to the server shortcut properties.
-* Add "--as-client myisp.net:smtp --hidden --client-auth c:/emailrelay.auth" to the client shortcut.
+* Add "--as-client myisp.net:smtp --hidden --client-auth c:\emailrelay.auth" to the client shortcut.
 
 Move shortcuts to "Startup" folders as necessary.
 
 Running as a service
 --------------------
 If you are installing manually you can set up E-MailRelay as a service so that
-it starts up automatically at boot-time. You must first create a one-line batch
+it starts up automatically at boot-time. You must first have a one-line batch
 file called "emailrelay-start.bat" in the main E-MailRelay directory containing
 the full E-MailRelay server command-line. Then just run
 "emailrelay-service --install" to install the service.
@@ -43,7 +52,9 @@ interface from using the system-tray to using a normal window, and the
 "--hidden" option suppresses the window and any message boxes.)
 
 Note that the batch file and the main E-MailRelay executable must be in the same
-directory.
+directory; the service wrapper reads the batch file in order to assemble the
+correct command-line for running the E-MailRelay server, so it needs to know
+where to find it.
 
 If you need to run multiple E-MailRelay services then pass a unique service name
 and display name on the "emailrelay-service --install <name> <display-name>"
@@ -63,26 +74,22 @@ For example:
 
 Diagnostics
 -----------
-E-MailRelay normally writes errors and warnings into the system event log, which
-you can view by running "eventvwr.exe" and looking under "Windows Logs" and then
-"Application".
+E-MailRelay normally writes errors and warnings into the Windows Event Log,
+which you can view by running "eventvwr.exe" or going to
+"ControlPanel"->"AdministrativeTools"->"EventViewer"; from there look under
+"Windows Logs" and "Application".
 
 You can increase the verbosity of the logging by adding the "--verbose" option
 to the E-MailRelay command-line, typically by editing the "emailrelay-start.bat"
 batch script.
 
-The E-MailRelay server also logs to the standard error stream. However, the
-"--as-server" and "--as-proxy" options implicitly incorporate "--close-stderr"
-so with these options the standard error logging will stop soon after startup.
+The E-MailRelay server also logs to the standard error stream but on Windows
+the standard error stream often goes nowhere. So to get continuous logging to a
+log file you should add something like "--log-file c:/temp/emailrelay.out"
+to the E-MailRelay server command-line.
 
-To get continuous logging to a log file you should replace "--as-server" with
-"--log" and "--as-proxy" with "--poll 0 --forward-to" and then use "2>" to
-redirect the standard error stream, eg:
-
-	"c:\program files\emailrelay\emailrelay.exe" --log -v -L ... > c:\temp.out 2>&1
-
-The setup program may have already created a suitable batch file, so check for
-that first and edit as necessary.
+The setup program may have already created a suitable batch file containing
+the "--log-file" option, so check for that first and edit as necessary.
 
 Testing with telnet
 -------------------
@@ -97,8 +104,8 @@ E-MailRelay can be compiled using various versions of Microsoft Visual Studio
 C++ (MSVC) or MinGW.
 
 A Visual Studio "solution" for MSVC 2008 is provided in the "src" directory to
-build the main E-MailRelay executable. However, it will not build the
-installation/configuration GUI.
+build the main E-MailRelay executable, although it does not include a project
+for the Qt-based installation/configuration GUI.
 
-For a complete build that includes the Qt-based E-MailRelay GUI use MinGW by
-following the instructions in "src/mingw-common.mak" and "doc/developer.txt".
+For a complete build that includes the E-MailRelay GUI use MinGW, following the
+instructions in "src/mingw-common.mak" and "doc/developer.txt".

@@ -170,7 +170,7 @@ bool Main::ScannerPeer::processFile( std::string path )
 		}
 		if( line.find("terminate") == 0U )
 		{
-			GNet::EventLoop::instance().quit() ;
+			GNet::EventLoop::instance().quit("terminate") ;
 			return false ;
 		}
 	}

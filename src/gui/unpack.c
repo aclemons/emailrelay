@@ -151,7 +151,7 @@ static bool is_slash( const char * p )
 
 static char * chomp( char * path )
 {
-	/* trucates the path by inserting a null so as to remove the last part */
+	/* truncates the path by inserting a null so as to remove the last part */
 	char * nul ;
 	bool windows_has_drive = strlen(path) > 2U && path[1] == ':' ;
 	bool windows_is_unc = strlen(path) > 2U && is_slash(path+0) && is_slash(path+1) ;

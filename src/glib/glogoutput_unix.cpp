@@ -48,13 +48,13 @@ namespace
 	}
 }
 
-void G::LogOutput::rawOutput( G::Log::Severity severity , const std::string & message )
+void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity , const std::string & message )
 {
 	if( severity != G::Log::s_Debug && m_syslog )
 	{
 		::syslog( mode(m_facility,severity) , "%s" , message.c_str() ) ;
 	}
-	std::cerr << message << std::endl ;
+	std_err << message << std::endl ;
 }
 
 void G::LogOutput::init()

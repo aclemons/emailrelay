@@ -59,10 +59,12 @@ To run E-MailRelay as a POP server without SMTP use "--pop" and "--no-smtp":
 The "emailrelay-submit" utility can be used to put messages straight into the
 spool directory so that the POP clients can fetch them.
 
-Note that by default E-MailRelay will always reject connections from remote
-machines. To allow connections from anywhere use the "--remote-clients" option,
-but please consider the implications if your machine is connected to the
-internet.
+By default E-MailRelay will always reject connections from remote machines. To
+allow connections from anywhere use the "--remote-clients" option, but please
+check your firewall settings to make sure this cannot be exploited by spammers.
+
+On Windows add "--hidden" to suppress message boxes and also add "--no-daemon"
+if running as a service.
 
 For more information on the command-line options refer to the reference guide
 or run:

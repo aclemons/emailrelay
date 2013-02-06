@@ -50,9 +50,16 @@ class GNet::ResolverImp : public GNet::SimpleClient
 {
 public:
 	ResolverImp( EventHandler & event_handler , Resolver & resolver , unsigned int port ) ;
+		// Constructor.
+
 	virtual ~ResolverImp() ;
+		// Destructor.
+
 	bool resolveReq( std::string host_part, std::string service_part , bool udp ) ;
+		// Issues a resolve request for the given host and service names.
+
 	bool busy() const ;
+		// Returns true if resolving is currently in progress.
 
 protected:
 	virtual void onConnect() ;

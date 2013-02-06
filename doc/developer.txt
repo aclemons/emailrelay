@@ -204,8 +204,7 @@ be sufficient to run make from the "src" directory:
 	C:\emailrelay\src> mingw32-make -f mingw.mak
 
 To add TLS/SSL support first install MinGW's MSYS subsystem and ActiveState
-perl. Unpack the OpenSSL tarball and built it with:
-
+perl. Unpack the OpenSSL tarball and build it as follows:
 	C:\openssl> PATH=c:\perl\bin;c:\mingw\msys\1.0\bin;c:\mingw\bin;%PATH%
 	C:\openssl> perl Configure mingw
 	C:\openssl> make
@@ -243,14 +242,12 @@ Start by building Qt static libraries from scratch using the following Qt
 	-qt-style-windowsxp
 	-qt-style-windowsvista
 
-Make a note of the compiler options used when building one of the Qt examples
-and replicate them in "src/gui/mingw.mak":
-
+Make a note of the compiler options used when building one of the Qt examples:
 	c:\qt\examples\widgets\groupbox> del tmp\obj\release_static\main.o
 	c:\qt\examples\widgets\groupbox> mingw32-make
 
-Then enable the GUI build in "src/mingw-common.mak" and run "mingw32-make" as
-before.
+Edit "src/gui/mingw.mak" to replicate those compiler options and enable the GUI
+build. Then run "mingw32-make -f mingw.mak" as before.
 
 Mac OS X packaging
 ------------------
@@ -272,7 +269,7 @@ The self-extracting installer scheme (described above) does work on Mac OS X,
 but it is more sensible to use a Mac application bundle (E-MailRelay-Install) to
 hold the payload and then wrap the whold thing up in a ".dmg" disk image. The
 GUI code supports this by looking for a separate file called "payload" and using
-that in preference to any payload archive it finds appended to its own executbale.
+that in preference to any payload archive it finds appended to its own executable.
 
 The format of the "payload" file in the application bundle is the same as is used
 in a self-extracting installer.

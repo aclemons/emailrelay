@@ -127,32 +127,26 @@
 
 	/* Include main o/s headers
 	 */
-	#if defined( G_WINDOWS ) && defined( G_MINGW )
-		#define __USE_W32_SOCKETS
+	#if defined( G_WINDOWS )
+		#if defined( GMINGW )
+			#define __USE_W32_SOCKETS
+		#endif
+		#ifndef WIN32_LEAN_AND_MEAN
+		#define WIN32_LEAN_AND_MEAN
+		#endif
 		#include <windows.h>
-		#include <shellapi.h>
-		#include <sys/stat.h>
-		#include <unistd.h>
-		#include <sched.h>
-		#ifdef __cplusplus
-			#include <ctime>
-		#endif
-	#elif defined( G_WINDOWS )
-		#if defined( G_WINSOCK2 )
-			/* tunnel the library name through to the linker */
-			#pragma comment( lib , "Ws2_32.lib" )
-			/* prevent windows.h including old winsock headers */
-			#ifndef WIN32_LEAN_AND_MEAN
-			#define WIN32_LEAN_AND_MEAN
-			#endif
-			#include <windows.h>
-			#include <winsock2.h>
-			#include <ws2tcpip.h>
-		#else
-			#include <windows.h>
-		#endif
+		#include <winsock2.h>
+		#include <ws2tcpip.h>
 		#include <shellapi.h>
 		#include <direct.h>
+		#if defined( G_MINGW )
+			#include <sys/stat.h>
+			#include <unistd.h>
+			#include <sched.h>
+			#ifdef __cplusplus
+				#include <ctime>
+			#endif
+		#endif
 	#else
 		#include <unistd.h>
 		#include <sys/stat.h>
@@ -207,6 +201,7 @@
 		typedef int gid_t ;
 		#if ! defined( G_MINGW )
 			typedef SSIZE_T ssize_t ;
+			typedef unsigned int pid_t ;
 		#endif
 	#endif
 

@@ -86,7 +86,7 @@ std::auto_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
 			return std::auto_ptr<StoredMessage>( m.release() ) ;
 
 		if( m_lock )
-			m->fail( reason , 0 ) ; // TODO
+			m->fail( reason , 0 ) ;
 		else
 			G_WARNING( "GSmtp::MessageStore: ignoring \"" << m_iter.filePath() << "\": " << reason ) ;
 	}

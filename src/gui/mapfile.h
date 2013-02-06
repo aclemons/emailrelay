@@ -47,7 +47,8 @@ public:
 
 	static void edit( const G::Path & path , const G::StringMap & map , 
 		const std::string & section_prefix , bool in_section_predicate ,
-		const G::StringMap & stop_list , bool make_backup ) ;
+		const G::StringMap & stop_list , bool make_backup , bool allow_read_error ,
+		bool allow_write_error ) ;
 			///< Edits a file, or a section of it, so that it ends up
 			///< containing the map values, excluding any values that
 			///< also appear in the stop-list.
@@ -57,11 +58,11 @@ private:
 	typedef std::list<std::string> List ;
 	static std::string quote( const std::string & ) ;
 	static G::StringMap purge( const G::StringMap & map_in , const G::StringMap & stop_list ) ;
-	static List lines( const G::Path & ) ;
+	static List lines( const G::Path & , bool ) ;
 	static void commentOut( List & , const std::string & section_prefix , bool in_section_predicate ) ;
 	static void replace( List & , const G::StringMap & ) ;
 	static void backup( const G::Path & ) ;
-	static void save( const G::Path & , List & ) ;
+	static void save( const G::Path & , List & , bool ) ;
 } ;
 
 #endif

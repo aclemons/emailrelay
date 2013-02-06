@@ -62,7 +62,7 @@ G::Signal1<std::string> & GSmtp::Client::messageDoneSignal()
 	return m_message_done_signal ;
 }
 
-void GSmtp::Client::sendMessages( MessageStore & store )
+void GSmtp::Client::sendMessagesFrom( MessageStore & store )
 {
 	G_ASSERT( !store.empty() ) ;
 	G_ASSERT( !connected() ) ; // ie. immediately after construction
@@ -118,7 +118,7 @@ void GSmtp::Client::onConnect()
 		m_iter = m_store->iterator(true) ;
 		if( !sendNext() )
 		{
-			G_DEBUG( "GSmtp::Client::protocolDone: deleting" ) ;
+			G_DEBUG( "GSmtp::Client::onConnect: deleting" ) ;
 			doDelete( std::string() ) ;
 		}
 	}

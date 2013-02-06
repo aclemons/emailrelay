@@ -83,7 +83,7 @@ void MapFile::read( G::StringMap & map , std::istream & ss , bool underscore_to_
 		if( to_lower )
 			G::Str::toLower( key ) ;
 		G_DEBUG( "MapFile::read: " << key << "=[" << G::Str::printable(value) << "]" ) ;
-// TODO
+// TODO - ifdef
 #ifdef G_WINDOWS
 		G::Convert::convert( value , G::Convert::utf8(value) , G::Convert::ThrowOnError() ) ;
 #endif
@@ -95,13 +95,14 @@ void MapFile::read( G::StringMap & map , std::istream & ss , bool underscore_to_
 void MapFile::writeItem( std::ostream & stream , const std::string & key , const std::string & value )
 {
 	const char * qq = value.find(' ') == std::string::npos ? "" : "\"" ;
-// TODO
+// TODO - ifdef
 #ifdef G_WINDOWS
 	G::Convert::utf8 utf8_value ;
 	G::Convert::convert( utf8_value , value ) ;
-	value = utf8_value.s ;
-#endif
+	stream << key << "=" << qq << utf8_value.s << qq << "\n" ;
+#else
 	stream << key << "=" << qq << value << qq << "\n" ;
+#endif
 }
 
 std::string MapFile::quote( const std::string & s )
@@ -110,15 +111,16 @@ std::string MapFile::quote( const std::string & s )
 }
 
 void MapFile::edit( const G::Path & path , const G::StringMap & map_in , const std::string & section_prefix ,
-	bool in_section_predicate , const G::StringMap & stop_list , bool make_backup )
+	bool in_section_predicate , const G::StringMap & stop_list , bool make_backup , bool allow_read_error ,
+	bool allow_write_error )
 {
 	typedef std::list<std::string> List ;
 	G::StringMap map = purge( map_in , stop_list ) ;
-	List lines = MapFile::lines( path ) ;
+	List lines = MapFile::lines( path , allow_read_error ) ;
 	commentOut( lines , section_prefix , in_section_predicate ) ;
 	replace( lines , map ) ;
 	if( make_backup ) backup( path ) ;
-	save( path , lines ) ;
+	save( path , lines , allow_write_error ) ;
 }
 
 G::StringMap MapFile::purge( const G::StringMap & map_in , const G::StringMap & stop_list )
@@ -132,11 +134,12 @@ G::StringMap MapFile::purge( const G::StringMap & map_in , const G::StringMap & 
 	return result ;
 }
 
-MapFile::List MapFile::lines( const G::Path & path )
+MapFile::List MapFile::lines( const G::Path & path , bool allow_read_error )
 {
 	List line_list ;
 	std::ifstream file_in( path.str().c_str() ) ;
-	if( !file_in.good() ) throw std::runtime_error( std::string() + "cannot read \"" + path.str() + "\"" ) ;
+	if( !file_in.good() && !allow_read_error )
+		throw std::runtime_error( std::string() + "cannot read \"" + path.str() + "\"" ) ;
 	while( file_in.good() )
 	{
 		std::string line = G::Str::readLineFrom( file_in , "\n" ) ;
@@ -197,11 +200,11 @@ void MapFile::backup( const G::Path & path )
 	G::File::copy( path , backup , G::File::NoThrow() ) ;
 }
 
-void MapFile::save( const G::Path & path , List & line_list )
+void MapFile::save( const G::Path & path , List & line_list , bool allow_write_error )
 {
 	std::ofstream file_out( path.str().c_str() ) ;
 	std::copy( line_list.begin() , line_list.end() , std::ostream_iterator<std::string>(file_out,"\n") ) ;
-	if( !file_out.good() )
+	if( !file_out.good() && !allow_write_error )
 		throw std::runtime_error( std::string() + "cannot write \"" + path.str() + "\"" ) ;
 }
 

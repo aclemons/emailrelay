@@ -63,9 +63,12 @@ private:
 } ;
 
 /// \class GNet::SimpleClient
-/// A class for making an outgoing connection to a remote server. 
-/// The class handles name-to-address resolution, it deals with connection issues, 
-/// it reads incoming data, and it manages flow-control when sending.
+/// A class for making an outgoing connection to a remote server, with
+/// support for socket-level protocols such as TLS/SSL. 
+///
+/// The class handles name-to-address resolution, deals with connection issues, 
+/// reads incoming data, and manages flow-control when sending. The implementation 
+/// uses the SocketProtocol class in order to do TLS/SSL; see sslConnect().
 ///
 /// Name-to-address lookup is performed if the supplied ResolverInfo object
 /// does not contain an address. This can be done synchronously or asynchronously.
@@ -74,9 +77,6 @@ private:
 /// host/service in order to implement name lookup cacheing (see GNet::ClientPtr).
 /// However, most operating systems implement their own name lookup cacheing,
 /// so this is not terribly useful in practice.
-///
-/// The implementation uses the SocketProtocol class in order to support
-/// socket-level protocols, including TLS/SSL. See sslConnect().
 ///
 class GNet::SimpleClient : public GNet::EventHandler , public GNet::Connection , public GNet::SocketProtocolSink 
 {

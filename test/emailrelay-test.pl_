@@ -819,7 +819,7 @@ sub testClientContinuesIfNoSecrets
 	$server->cleanup() ;
 	$client->cleanup() ;
 	System::deleteSpoolDir( $server->spoolDir() ) ;
-	System::deleteSpoolDir( $client->spoolDir() ) ;
+	System::deleteSpoolDir( $client->spoolDir() , 1 ) ;
 }
 
 sub testClientSavesReasonCode
@@ -1415,15 +1415,16 @@ sub testClientGivenUnknownMechanisms
 	System::createFile( $emailrelay->clientSecrets() , "login client me secret" ) ;
 	$emailrelay->set_dst( "localhost:".$test_server->port() ) ;
 
-	# test that protocol fails and the messages remain spooled
+	# test that protocol fails and one message fails (change for 1.9)
 	$emailrelay->run( \%args ) ;
-	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 2 ) ;
-	Check::fileContains( $emailrelay->stderr() , "cannot do authentication mandated by remote server" ) ;
+	Check::fileContains( $emailrelay->stderr() , "cannot do authentication mandated by " ) ;
+	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 1 ) ;
+	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope.bad", 1 ) ;
 
 	# tear down
 	$emailrelay->cleanup() ;
 	$test_server->cleanup() ;
-	System::deleteSpoolDir( $spool_dir ) ;
+	System::deleteSpoolDir( $spool_dir , 1 ) ;
 }
 
 sub testClientAuthenticationFailure
@@ -1448,15 +1449,16 @@ sub testClientAuthenticationFailure
 	System::createFile( $emailrelay->clientSecrets() , "login client me secret" ) ;
 	$emailrelay->set_dst( "localhost:".$test_server->port() ) ;
 
-	# test that protocol fails and the messages remain spooled
+	# test that protocol fails and one message fails (1.9)
 	$emailrelay->run( \%args ) ;
-	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 2 ) ;
 	Check::fileContains( $emailrelay->stderr() , "authentication error" ) ;
+	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 1 ) ;
+	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope.bad", 1 ) ;
 
 	# tear down
 	$emailrelay->cleanup() ;
 	$test_server->cleanup() ;
-	System::deleteSpoolDir( $spool_dir ) ;
+	System::deleteSpoolDir( $spool_dir , 1 ) ;
 }
 
 sub testClientMessageFailure

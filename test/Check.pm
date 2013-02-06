@@ -92,7 +92,8 @@ sub fileMatchCount
 {
 	my ( $expr , $count , $more ) = @_ ;
 	my @files = System::glob_( $expr ) ;
-	Check::that( scalar(@files) == $count , "unexpected number of matching files" , $more ) ;
+	my $n = scalar(@files) ;
+	Check::that( $n == $count , "unexpected number of matching files ($n != $count)" , $more ) ;
 }
 
 sub fileOwner

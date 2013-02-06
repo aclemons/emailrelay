@@ -108,7 +108,7 @@ protected:
 		///< Final override from GNet::HeapClient.
 
 	virtual void onSendImp() ; 
-		///< Final override from GNet::BufferedClient.
+		///< Final override from GNet::SimpleClient.
 
 private:
 	Client( const Client& ) ; // not implemented

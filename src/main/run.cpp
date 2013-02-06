@@ -82,24 +82,33 @@ Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string &
 
 Main::Run::~Run()
 {
-	if( m_store.get() ) m_store->signal().disconnect() ;
-	if( m_smtp_server.get() ) m_smtp_server->eventSignal().disconnect() ;
-	m_client.doneSignal().disconnect() ;
-	m_client.eventSignal().disconnect() ;
+	try
+	{
+		if( m_store.get() ) m_store->signal().disconnect() ;
+		if( m_smtp_server.get() ) m_smtp_server->eventSignal().disconnect() ;
+		m_client.doneSignal().disconnect() ;
+		m_client.eventSignal().disconnect() ;
 
-	// do explicit cleanup here to improve the signal to noise ratio
-	// in valgrind leak checks -- but note that there is no TimerList
-	// instance when this destuctor runs so any zero-length cleanup 
-	// timers will not fire
-	m_client.cleanupForExit() ;
-	m_poll_timer <<= 0 ;
-	m_forwarding_timer <<= 0 ;
-	m_admin_server <<= 0 ;
-	m_pop_secrets <<= 0 ;
-	m_client_secrets <<= 0 ;
-	m_store <<= 0 ;
-	m_log_output <<= 0 ;
-	m_cl <<= 0 ;
+		// there are no EventLoop or TimerList instances when this 
+		// destuctor runs so delete the client with ..ForExit()
+		m_client.cleanupForExit() ;
+
+		// call some more destructors early (in the correct order) 
+		// within the scope of the catch
+		m_forwarding_timer <<= 0 ;
+		m_poll_timer <<= 0 ;
+		m_smtp_server <<= 0 ;
+		m_admin_server <<= 0 ;
+		m_pop_secrets <<= 0 ;
+		m_client_secrets <<= 0 ;
+		m_store <<= 0 ;
+		m_cfg <<= 0 ;
+		m_cl <<= 0 ;
+		m_log_output <<= 0 ;
+	}
+	catch(...)
+	{
+	}
 }
 
 bool Main::Run::prepareError() const
@@ -185,6 +194,7 @@ bool Main::Run::prepare()
 		cfg.logTimestamp() , // with-timestamp
 		!cfg.debug() , // strip-context
 		cfg.useSyslog() , // use-syslog
+		cfg.logFile() , // stderr-replacement
 		G::LogOutput::Mail // facility 
 	) ;
 
@@ -194,25 +204,6 @@ bool Main::Run::prepare()
  #endif
 
 	return true ;
-}
-
-void Main::Run::run()
-{
-	try
-	{
-		runCore() ;
-		G_LOG( "Main::Run::run: done" ) ;
-	}
-	catch( std::exception & e )
-	{
-		G_ERROR( "Main::Run::run: " << e.what() ) ;
-		throw ;
-	}
-	catch(...)
-	{
-		G_ERROR( "Main::Run::run: unknown exception" ) ;
-		throw ;
-	}
 }
 
 #ifndef USE_SMALL_CONFIG
@@ -251,6 +242,25 @@ void Main::Run::checkPorts() const
 			checkPort( cfg.doAdmin() , *p , cfg.adminPort() ) ;
 	}
  #endif
+}
+
+void Main::Run::run()
+{
+	try
+	{
+		runCore() ;
+		G_LOG( "Main::Run::run: done" ) ;
+	}
+	catch( std::exception & e )
+	{
+		G_ERROR( "Main::Run::run: " << e.what() ) ;
+		throw ;
+	}
+	catch(...)
+	{
+		G_ERROR( "Main::Run::run: unknown exception" ) ;
+		throw ;
+	}
 }
 
 void Main::Run::runCore()
@@ -427,13 +437,18 @@ void Main::Run::doForwardingOnStartup( GSmtp::MessageStore & store , const GAuth
 	GNet::ClientPtr<GSmtp::Client> client_ptr( new GSmtp::Client( 
 		GNet::ResolverInfo(cfg.serverAddress()) , secrets , clientConfig() ) ) ;
 
-	client_ptr->sendMessages( store ) ;
+	client_ptr->sendMessagesFrom( store ) ; // once connected
 
+	// quit() the event loop when all done
 	client_ptr.doneSignal().connect( G::slot(*this,&Run::forwardingClientDone) ) ;
+
+	// emit progress events
 	client_ptr.eventSignal().connect( G::slot(*this,&Run::clientEvent) ) ;
 
 	closeMoreFiles() ;
-	event_loop.run() ;
+	std::string quit_reason = event_loop.run() ;
+	if( !quit_reason.empty() )
+		cl().showError( quit_reason ) ;
 }
 
 GSmtp::Server::Config Main::Run::serverConfig() const
@@ -532,7 +547,7 @@ std::string Main::Run::doForwardingCore()
 			m_client.reset( new GSmtp::Client( GNet::ResolverInfo(cfg.serverAddress()) ,
 				*m_client_secrets.get() , clientConfig() ) ) ;
 
-			m_client->sendMessages( *m_store.get() ) ;
+			m_client->sendMessagesFrom( *m_store.get() ) ; // once connected
 		}
 		return std::string() ;
 	}
@@ -557,10 +572,7 @@ const Main::CommandLine & Main::Run::cl() const
 void Main::Run::forwardingClientDone( std::string reason , bool )
 {
 	G_DEBUG( "Main::Run::forwardingClientDone: \"" << reason << "\"" ) ;
-	if( ! reason.empty() )
-		throw G::Exception( reason ) ;
-	else
-		GNet::EventLoop::instance().quit() ;
+	GNet::EventLoop::instance().quit( reason ) ;
 }
 
 void Main::Run::pollingClientDone( std::string reason , bool )

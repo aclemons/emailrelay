@@ -34,10 +34,19 @@ class GNet::ResolverImp : public GGui::WindowHidden
 {
 public:
 	ResolverImp( Resolver & resolver , EventHandler * ) ;
-	bool valid() ;
+		// Constructor.
+
 	virtual ~ResolverImp() ;
+		// Destructor.
+
+	bool valid() ;
+		// Returns true if the object is valid.
+
 	bool resolveReq( std::string host_part, std::string service_part , bool udp ) ;
+		// Issues a resolve request for the given host and service names.
+
 	bool busy() const ;
+		// Returns true if resolving is currently in progress.
 
 private:
 	void operator=( const ResolverImp & ) ; // not implemented

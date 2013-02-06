@@ -96,6 +96,7 @@ void GNet::AbstractTimer::doTimeout()
 	}
 	catch( std::exception & e ) // strategy
 	{
+		G_DEBUG( "GNet::AbstractTimer::doTimeout: exception from timeout handler being passed back: " << e.what() ) ;
 		onTimeoutException( e ) ;
 	}
 }

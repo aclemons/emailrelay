@@ -65,6 +65,11 @@ sub _check
 	{
 		die "port " . $this->port() . " not free" ;
 	}
+	unlink( $this->{m_pidfile} ) if -f $this->{m_pidfile} ;
+	if( -f $this->{m_pidfile} )
+	{
+		die "cannot remove old pidfile [".$this->{m_pidfile}."]" ;
+	}
 }
 
 sub run

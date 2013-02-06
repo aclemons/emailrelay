@@ -23,6 +23,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		EE1753D616B882A100575457 /* genvironment_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE1753D516B882A100575457 /* genvironment_unix.cpp */; };
 		EE486FEF0D3E3EA900AB4CC6 /* dir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE486FCA0D3E3EA900AB4CC6 /* dir.cpp */; };
 		EE486FF20D3E3EA900AB4CC6 /* gdialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE486FD00D3E3EA900AB4CC6 /* gdialog.cpp */; };
 		EE486FF40D3E3EA900AB4CC6 /* gpage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE486FD40D3E3EA900AB4CC6 /* gpage.cpp */; };
@@ -84,6 +85,7 @@
 
 /* Begin PBXFileReference section */
 		8DD76F6C0486A84900D96B5E /* emailrelay-gui */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "emailrelay-gui"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE1753D516B882A100575457 /* genvironment_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = genvironment_unix.cpp; path = src/glib/genvironment_unix.cpp; sourceTree = SOURCE_ROOT; };
 		EE486FC90D3E3EA900AB4CC6 /* boot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = boot.h; sourceTree = "<group>"; };
 		EE486FCA0D3E3EA900AB4CC6 /* dir.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dir.cpp; sourceTree = "<group>"; };
 		EE486FCB0D3E3EA900AB4CC6 /* dir.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dir.h; sourceTree = "<group>"; };
@@ -186,6 +188,7 @@
 		EE486FC70D3E3EA900AB4CC6 /* gui */ = {
 			isa = PBXGroup;
 			children = (
+				EE1753D516B882A100575457 /* genvironment_unix.cpp */,
 				EEBDCC1716A604AD00BDFB44 /* gstrings.cpp */,
 				EEBDCC0416A6040100BDFB44 /* boot_unix.cpp */,
 				EEBDCC0516A6040100BDFB44 /* boot_win32.cpp */,
@@ -368,6 +371,7 @@
 				EEBDCC1216A6040100BDFB44 /* mapfile.cpp in Sources */,
 				EEBDCC1316A6040100BDFB44 /* pointer.cpp in Sources */,
 				EEBDCC1816A604AD00BDFB44 /* gstrings.cpp in Sources */,
+				EE1753D616B882A100575457 /* genvironment_unix.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

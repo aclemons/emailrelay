@@ -22,6 +22,7 @@
 #define G_PUMP_H
 
 #include "gdef.h"
+#include <string>
 
 /// \namespace GGui
 namespace GGui
@@ -30,27 +31,26 @@ namespace GGui
 }
 
 /// \class GGui::Pump
-///
-/// A static class which implements a 
-/// Windows message pump. Uses GGui::Dialog::dialogMessage() 
-/// in its implementation in order to support modeless
-/// dialog boxes.
+/// A static class which implements a Windows message pump. 
+/// Uses GGui::Dialog::dialogMessage() in its implementation in order to 
+/// support modeless dialog boxes.
 ///
 /// \see GGui::Cracker, GGui::Dialog, GGui::ApplicationInstance
 ///
 class GGui::Pump 
 {
 public:
-	static void run() ;
+	static std::string run() ;
 		///< GetMessage()/DispatchMessage() message pump.
-		///< Typically called from WinMain().
+		///< Typically called from WinMain(). Returns a
+		///< reason string if quit() was called.
 
-	static void run( HWND idle_window , unsigned int idle_message ) ;
+	static std::string run( HWND idle_window , unsigned int idle_message ) ;
 		///< An overload which sends idle messages once
 		///< the message queue is empty. If the idle message 
 		///< handler returns 1 then the message is sent again.
 
-	static void quit() ;
+	static void quit( std::string reason = std::string() ) ;
 		///< Causes run() to return (once the call stack
 		///< has unwound). Use this in preference to
 		///< ::PostQuitMessage().
@@ -60,7 +60,7 @@ private:
 	Pump() ; // not implemented
 	static bool empty() ;
 	static bool sendIdle( HWND , unsigned int ) ;
-	static void runCore( bool , HWND , unsigned int ) ;
+	static std::string runCore( bool , HWND , unsigned int ) ;
 } ;
 
 #endif

@@ -63,6 +63,9 @@ public:
 	bool log() const ;
 		///< Returns true if doing logging.
 
+	std::string logFile() const ;
+		///< Returns the path of a stderr replacement for logging.
+
 	bool verbose() const ;
 		///< Returns true if doing verbose logging.
 

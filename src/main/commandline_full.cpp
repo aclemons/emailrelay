@@ -54,6 +54,7 @@ public:
 	void logSemanticWarnings( const Configuration & cfg ) const ;
 	void showArgcError( bool error_stream ) const ;
 	void showNoop( bool error_stream = false ) const ;
+	void showError( std::string reason , bool error_stream = true ) const ;
 	void showVersion( bool error_stream = false ) const ;
 	void showBanner( bool error_stream = false , const std::string & = std::string() ) const ;
 	void showCopyright( bool error_stream = false , const std::string & = std::string() ) const ;
@@ -101,7 +102,7 @@ private:
 
 std::string Main::CommandLineImp::switchSpec( bool is_windows )
 {
-	// single-character options unused: b N (and digits etc)
+	// single-character options unused: b (and digits etc)
 	std::string dir = GSmtp::MessageStore::defaultDirectory().str() ;
 	std::string pop_auth = GPop::Secrets::defaultPath() ;
 	std::ostringstream ss ;
@@ -127,6 +128,7 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 		"g!debug!generates debug-level logging if built in!!0!!3|"
 		"C!client-auth!enables smtp authentication with the remote server, using the given secrets file!!1!file!3|"
 		"L!log-time!adds a timestamp to the logging output!!0!!3|"
+		"N!log-file!log to file instead of stderr!!1!file!3|"
 		"S!server-auth!enables authentication of remote clients, using the given secrets file!!1!file!3|"
 		"e!close-stderr!closes the standard error stream soon after start-up!!0!!3|"
 		"a!admin!enables the administration interface and specifies its listening port number!!"
@@ -180,7 +182,7 @@ std::string Main::CommandLineImp::switchSpec_windows()
 		"t!no-daemon!uses an ordinary window, not the system tray!!0!!3|"
 		"k!syslog!forces system event log output if logging is enabled (overrides --no-syslog)!!0!!3|"
 		"n!no-syslog!disables use of the system event log!!0!!3|"
-		"c!icon!selects the application icon!!1!0^|1^|2^|3!3|"
+		"c!icon!does nothing!!1!0^|1^|2^|3!0|"
 		"H!hidden!hides the application window and suppresses message boxes (requires --no-daemon)!!0!!3|"
 		"R!peer-lookup!lookup the account names of local peers! to put in the envelope files!0!!3" ;
 }
@@ -502,6 +504,12 @@ void Main::CommandLineImp::showNoop( bool e ) const
 	show.s() << m_arg.prefix() << ": no messages to send" << std::endl ;
 }
 
+void Main::CommandLineImp::showError( std::string reason , bool e ) const
+{
+	Show show( m_output , e ) ;
+	show.s() << m_arg.prefix() << ": " << reason << std::endl ;
+}
+
 void Main::CommandLineImp::showBanner( bool e , const std::string & final ) const
 {
 	Show show( m_output , e ) ;
@@ -649,6 +657,11 @@ void Main::CommandLine::showArgcError( bool error_stream ) const
 void Main::CommandLine::showNoop( bool error_stream ) const
 {
 	m_imp->showNoop( error_stream ) ;
+}
+
+void Main::CommandLine::showError( const std::string & reason , bool error_stream ) const
+{
+	m_imp->showError( reason , error_stream ) ;
 }
 
 void Main::CommandLine::showVersion( bool error_stream ) const

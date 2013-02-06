@@ -75,7 +75,6 @@ Main::WinApp::WinApp( HINSTANCE h , HINSTANCE p , const char * name ) :
 	GGui::ApplicationBase( h , p , name ) ,
 	m_use_tray(false) ,
 	m_quit(false) ,
-	m_icon(0U) ,
 	m_hidden(false)
 {
 }
@@ -93,7 +92,6 @@ void Main::WinApp::init( const Configuration & cfg )
 {
 	m_use_tray = cfg.daemon() ;
 	m_cfg <<= new Configuration(cfg) ;
-	m_icon = m_cfg->icon() % 4U ;
 	m_hidden = m_hidden || m_cfg->hidden() ;
 }
 
@@ -127,10 +125,7 @@ DWORD Main::WinApp::windowStyle() const
 UINT Main::WinApp::resource() const
 {
 	// (resource() provides the combined menu and icon id, but we have no menus)
-	if( m_icon == 0U ) return IDI_ICON1 ;
-	if( m_icon == 1U ) return IDI_ICON2 ;
-	if( m_icon == 2U ) return IDI_ICON3 ;
-	G_ASSERT( m_icon == 3U ) ; return IDI_ICON4 ;
+	return IDI_ICON1 ;
 }
 
 bool Main::WinApp::onCreate()
@@ -213,7 +208,8 @@ bool Main::WinApp::confirm()
 {
 	// (also called from winform)
 	G_ASSERT( ! m_hidden ) ;
-	return messageBoxQuery("Really quit?") ;
+	const bool nanny = false ;
+	return nanny ? messageBoxQuery("Really quit?") : true ;
 }
 
 void Main::WinApp::doClose()

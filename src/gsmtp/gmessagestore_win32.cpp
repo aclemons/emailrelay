@@ -31,6 +31,7 @@ G::Path GSmtp::MessageStore::defaultDirectory()
 		buffer[0] = '\0' ;
 
 	G::Path path( buffer ) ;
+	//path.pathAppend( "system32" ) ; // leave out for backwards compatibility
 	path.pathAppend( "spool" ) ;
 	path.pathAppend( "emailrelay" ) ;
 	return path ;

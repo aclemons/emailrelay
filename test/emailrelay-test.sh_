@@ -20,7 +20,7 @@
 #
 # Tests the E-MailRelay system using perl.
 #
-# usage: emailrelay-test.sh
+# usage: emailrelay-test.sh [<perl-script-options>] [<test-name> ...]
 #
 
 # test for perl
@@ -40,4 +40,5 @@ rc=$?
 
 echo `basename $0`: done: $rc
 rm -rf .tmp.*
+rm -f .emailrelay-test-server.pid
 exit $rc

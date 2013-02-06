@@ -79,8 +79,8 @@ mk_ccc_flags_debug=-g $(mk_ccc_flags_debug_extra)
 mk_cc_flags_common=-mthreads
 mk_cc_flags_release=-O $(mk_cc_flags_release_extra)
 mk_cc_flags_debug=-g $(mk_cc_flags_debug_extra)
-mk_link_flags_common=
-mk_link_flags_release=-s -static -mthreads $(mk_link_flags_release_extra)
+mk_link_flags_common=-mthreads
+mk_link_flags_release=-s -static $(mk_link_flags_release_extra)
 mk_link_flags_debug=-g $(mk_link_flags_debug_extra)
 mk_defines_common=-DG_WIN32 -DG_MINGW -DUNICODE -D_UNICODE
 mk_defines_release=$(mk_defines_common) $(mk_defines_release_extra)
@@ -89,6 +89,7 @@ mk_includes_common=-I../glib -I../gssl -I../gnet -I../gauth -I../gsmtp -I../gpop
 mk_includes_release=$(mk_includes_release_extra)
 mk_includes_debug=$(mk_includes_debug_extra)
 
+# choose debug or release build in this section...
 mk_includes=$(mk_includes_common) $(mk_includes_release) $(mk_includes_extra)
 mk_defines=$(mk_defines_release) $(mk_defines_extra)
 mk_cpp_flags=$(mk_defines) $(mk_includes) $(mk_cpp_flags_extra)

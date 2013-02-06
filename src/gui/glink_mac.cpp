@@ -57,11 +57,12 @@ std::string GLinkImp::filename( const std::string & )
 
 void GLinkImp::saveAs( const G::Path & )
 {
-	// TODO -- fix this is a nasty hack -- on a mac was have both
-	// a start/stop script and a startup application bundle and here
-	// we need to convert one to the other -- maybe expose the
-	// installer's LinkInfo structure at this interface and add
-	// a third section to it
+	// TODO -- hardcoded Start.app name
+	//
+	// we have both a start/stop script and a startup application bundle 
+	// and here we need to convert one to the other -- should maybe expose 
+	// the installer's LinkInfo structure at this interface and add a 
+	// third section to it
 	//
 	G::Path start_app_path( m_target_path.dirname() , "E-MailRelay-Start.app" ) ;
 	if( !G::File::exists(start_app_path) )

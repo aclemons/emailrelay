@@ -258,9 +258,9 @@ int main( int argc , char * argv [] )
 		{
 			while( true )
 			{
-				if( loop->quit() )
+				loop->quit("x") ;
+				if( loop->run() != "x" )
 					break ;
-				loop->run() ;
 				struct timeval t ;
 				t.tv_sec = 0 ;
 				t.tv_usec = 100000 ;

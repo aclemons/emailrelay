@@ -529,7 +529,7 @@ std::string G::Str::toPrintableAscii( const std::wstring & in , wchar_t escape )
 {
 	std::string result ;
 	result.reserve( in.length() * 3U ) ;
-	std::for_each( in.begin() , in.end() , PrintableAppender<wchar_t,unsigned wchar_t>(result,escape,false) ) ;
+	std::for_each( in.begin() , in.end() , PrintableAppender<wchar_t,unsigned long>(result,escape,false) ) ;
 	return result ;
 }
 

@@ -565,7 +565,7 @@ void CreateBatchFile::run()
 {
 	std::ofstream file( m_link_info.target.str().c_str() ) ;
 	bool ok = file.good() ;
-	file << quote(m_link_info.raw_target.str()) << " " << str(m_link_info.raw_args) << std::endl ;
+	file << "start \"emailrelay\" " << quote(m_link_info.raw_target.str()) << " " << str(m_link_info.raw_args) << std::endl ;
 	ok = ok && file.good() ;
 	file.close() ;
 	if( !ok )
@@ -591,7 +591,9 @@ void CreateLoggingBatchFile::run()
 {
 	std::ofstream file( m_bat.str().c_str() ) ;
 	bool ok = file.good() ;
-	file << quote(m_exe.str()) << " " << str(m_args) << " > " << quote(m_log.str()) << " 2>&1" << std::endl ;
+	std::string log_file = quote( m_log.str() ) ;
+	G::Str::replaceAll( log_file , "%" , "%%" ) ;
+	file << "start \"emailrelay\" " << quote(m_exe.str()) << " " << str(m_args) << " --log-time --log-file=" << log_file << std::endl ;
 	ok = ok && file.good() ;
 	file.close() ;
 	if( !ok )
@@ -730,7 +732,7 @@ void EditConfigFile::run()
 	stop_list["pid-file"] = "" ;
 	stop_list["log"] = "" ;
 
-	MapFile::edit( m_path , m_map , "gui-" , false , stop_list , do_backup ) ;
+	MapFile::edit( m_path , m_map , "gui-" , false , stop_list , do_backup , false , false ) ;
 }
 
 std::string EditConfigFile::text() const
@@ -862,7 +864,7 @@ void InstallerImp::insertActions()
 
 		insert( new CreateLoggingBatchFile( G::Path(value("dir-install"),"emailrelay-start-with-log-file.bat") ,
 			target_link_info.raw_target , commandlineArgs(false,true) ,
-			G::Path(value("dir-install"),"emailrelay-log.txt") ) ) ;
+			G::Path(value("dir-install"),"emailrelay-%d.txt") ) ) ;
 	}
 
 	// extract packed files -- do substitution for "$install", "$etc"

@@ -34,6 +34,7 @@
 //
 
 #include "glimits.h"
+#include "gconvert.h"
 #include "service_install.h"
 #include "service_remove.h"
 #include <windows.h>
@@ -58,7 +59,11 @@ unsigned int cfg_overall_timeout_ms()
 
 static void log( std::string s )
 {
-	// add code here for debugging
+	// add this for debugging
+ #if 0
+	static std::ofstream f( "c:\\temp\\temp.out" ) ;
+	f << s << std::endl ;
+ #endif
 }
 
 struct Error : public std::runtime_error
@@ -111,6 +116,7 @@ private:
 	DWORD m_thread_id ;
 	HANDLE m_thread_exit ;
 public:
+	typedef std::basic_string<TCHAR> tstring ;
 	static void install( const std::string & name , const std::string & display_name ) ;
 	static void remove( const std::string & name ) ;
 	static void start() ;
@@ -177,11 +183,16 @@ void WINAPI ServiceMain( DWORD argc , LPTSTR * argv )
 {
 	try
 	{
-		std::wstring service_name = argc > 0 ? std::string(argv[0]) : std::string() ;
-		G_DEBUG( "ServiceMain: " << service_name ) ;
+		Service::tstring service_name ;
+		if( argc > 0 )
+			service_name = Service::tstring(argv[0]) ;
+
+		std::string sname ;
+		G::Convert::convert( sname , service_name , G::Convert::ThrowOnError("converting service name") ) ;
+
 		Service * service = Service::instance() ;
 		if( service != NULL )
-			service->init( service_name ) ;
+			service->init( sname ) ;
 	}
 	catch( std::exception & e )
 	{
@@ -246,10 +257,12 @@ void Service::install( const std::string & service_name , const std::string & di
 	std::cout << "installing service \"" << service_name << "\": [" << command_line << "]" << std::endl ;
 
 	// check that we will be able to read the batch file at service run-time
-	std::string server_command_line = Service::commandline( Service::bat(service_name) ) ;
+	std::string batch_file = Service::bat( service_name ) ;
+	std::string server_command_line = Service::commandline( batch_file ) ;
 
 	// create the service
-	std::string reason = service_install( command_line , service_name , display_name ) ;
+	std::string description = display_name + " service (reads " + batch_file + " at service start time)" ;
+	std::string reason = service_install( command_line , service_name , display_name , description ) ;
 	if( !reason.empty() )
 		throw std::runtime_error( reason ) ;
 }
@@ -334,10 +347,9 @@ void Service::stopThread()
 std::string Service::exe()
 {
 	HINSTANCE hinstance = 0 ;
-	char buffer[G::limits::path] ;
-	size_t size = sizeof(buffer) ;
-	*buffer = '\0' ;
-	::GetModuleFileName( hinstance , buffer , size-1U ) ;
+	char buffer[G::limits::path] = { 0 } ;
+	size_t size = G::limits::path ;
+	::GetModuleFileNameA( hinstance , buffer , size-1U ) ;
 	buffer[size-1U] = '\0' ;
 	return std::string(buffer) ;
 }
@@ -381,7 +393,7 @@ std::string Service::commandline( std::string bat_path )
 	std::ifstream stream( bat_path.c_str() ) ;
 	if( ! stream.good() )
 		throw std::runtime_error( std::string() + "cannot open \"" + bat_path + "\"" +
-			" (the service wrapper reads the command-line for the worker process from this file)" ) ;
+			" (the service wrapper reads the command-line for the server process from this file)" ) ;
 
 	std::string line ;
 	while( stream.good() )
@@ -400,7 +412,24 @@ std::string Service::commandline( std::string bat_path )
 	std::string next_line ;
 	trim( next_line ) ;
 	if( ! next_line.empty() )
-		throw std::runtime_error( std::string() + "too many lines in the batch file \"" + bat_path + "\"" ) ;
+		throw std::runtime_error( std::string() + "too many lines in the batch file \"" + bat_path + "\"; expecting only one line after initial \"@echo\" and \"rem\" lines" ) ;
+
+	// the "start" command gets confused if its first parameter is
+	// the quoted executable path - so require the quoted window title 
+	// to appear first - (could do better parsing)
+	std::string start_prefix = "start \"emailrelay\" " ;
+	if( line.find(start_prefix) == 0U ) ;
+	{
+		line.replace( 0U , start_prefix.length() , "" ) ;
+		trim( line ) ;
+	}
+
+	// batch files require percent characters to be doubled up
+	{
+		std::string::size_type pos = line.rfind( "%%" ) ;
+		if( pos != std::string::npos )
+			line.replace( pos , 2U , "%" ) ;
+	}
 
 	if( line.find("--hidden") == std::string::npos )
 		line.append( " --hidden" ) ;
@@ -479,7 +508,7 @@ void Service::start()
 	G_DEBUG( "Service::start" ) ;
 	{
 		Service service ;
-		static char empty[] = "" ;
+		static TCHAR empty[] = { 0 } ;
 		static SERVICE_TABLE_ENTRY table [] = { { empty , ServiceMain } , { NULL , NULL } } ;
 		bool ok = !! StartServiceCtrlDispatcher( table ) ; // this doesn't return until the service is stopped
 		if( !ok )
@@ -493,7 +522,7 @@ void Service::start()
 
 Service::Handle Service::statusHandle( std::string service_name )
 {
-	Handle h = RegisterServiceCtrlHandler( service_name.c_str() , Handler ) ;
+	Handle h = RegisterServiceCtrlHandlerA( service_name.c_str() , Handler ) ;
 	if( h == 0 )
 	{
 		DWORD e = GetLastError() ;
@@ -541,20 +570,20 @@ Child::Child( std::string command_line ) :
 {
 	G_DEBUG( "Child::ctor: spawning [" << command_line << "]" ) ;
 
-	static STARTUPINFO zero_start ;
-	STARTUPINFO start(zero_start) ;
+	static STARTUPINFOA zero_start ;
+	STARTUPINFOA start(zero_start) ;
 	start.cb = sizeof(start) ;
 
 	BOOL inherit = FALSE ;
 	DWORD flags = CREATE_NO_WINDOW ;
 	LPVOID env = NULL ;
-	LPCTSTR cwd = NULL ;
+	LPCSTR cwd = NULL ;
 	PROCESS_INFORMATION info ;
 	SECURITY_ATTRIBUTES * process_attributes = NULL ;
 	SECURITY_ATTRIBUTES * thread_attributes = NULL ;
 	char * command_line_p = const_cast<char*>(command_line.c_str()) ;
 
-	BOOL rc = ::CreateProcess( NULL , command_line_p ,
+	BOOL rc = ::CreateProcessA( NULL , command_line_p ,
 		process_attributes , thread_attributes , inherit ,
 		flags , env , cwd , &start , &info ) ;
 

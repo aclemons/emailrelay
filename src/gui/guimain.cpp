@@ -268,7 +268,7 @@ int main( int argc , char * argv [] )
 				G_DEBUG( "main: pointer file: " << pointer_file_in ) ;
 				std::ifstream pointer_stream( pointer_file_in.str().c_str() ) ;
 				if( !pointer_stream.good() && is_installed )
-					throw std::runtime_error(std::string()+"cannot open file \""+pointer_file_in.str()+"\" to read the spool and config directory names; try creating the file with DIR_SPOOL=... and DIR_CONFIG=... lines" ) ;
+					throw std::runtime_error(std::string()+"cannot open file \""+pointer_file_in.str()+"\" to read the spool and config directory names; this should have been created at install-time; try re-creating the file with DIR_SPOOL=... and DIR_CONFIG=... lines pointing to the relevant install directories, or use --as-install to re-install" ) ;
 				Pointer::read( dir_map , pointer_stream ) ;
 				if( !pointer_stream.eof() && is_installed )
 					throw std::runtime_error(std::string()+"cannot read pointer file \""+pointer_file_in.str()+"\"") ;
@@ -294,9 +294,12 @@ int main( int argc , char * argv [] )
 				std::ifstream state_stream( config_file_in.str().c_str() ) ;
 				if( !state_stream.good() && is_installed && strict )
 					throw std::runtime_error(std::string()+"cannot open config file: \""+config_file_in.str()+"\"") ;
-				config_file_map = MapFile::read( state_stream ) ;
-				if( !state_stream.eof() && is_installed && strict )
-					throw std::runtime_error(std::string()+"cannot read config file: \""+config_file_in.str()+"\"") ;
+				if( state_stream.good() )
+				{
+					config_file_map = MapFile::read( state_stream ) ;
+					if( !state_stream.eof() && is_installed && strict )
+						throw std::runtime_error(std::string()+"cannot read config file: \""+config_file_in.str()+"\"") ;
+				}
 			}
 			debug( "config" , config_file_map ) ;
 			State state( config_file_map , dir_map ) ;

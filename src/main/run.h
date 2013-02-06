@@ -141,9 +141,9 @@ private:
 private:
 	Output & m_output ;
 	std::string m_switch_spec ;
+	std::auto_ptr<G::LogOutput> m_log_output ;
 	std::auto_ptr<CommandLine> m_cl ;
 	std::auto_ptr<Configuration> m_cfg ;
-	std::auto_ptr<G::LogOutput> m_log_output ;
 	G::Arg m_arg ;
 	G::Signal3<std::string,std::string,std::string> m_signal ;
 	std::auto_ptr<GSmtp::FileStore> m_store ; // order dependency -- early

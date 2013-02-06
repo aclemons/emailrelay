@@ -11,7 +11,11 @@ E-MailRelay Change Log
 * Shorter descriptions in the usage help unless "--verbose".
 * Error text for "all recipients rejected" is now more accurately "one or more recipients rejected".
 * Windows project files for MSVC 2008 included.
+* Removed support for Windows NT and Windows 9x.
+* Removed Windows "--icon" option.
 * Removed "--enable-fhs" option for "configure" (see INSTALL for equivalent usage).
+* Added "--log-file" option to redirect stderr.
+* Added Windows "--peer-lookup" option.
 * Fix for MD5 code in 64-bit builds.
 
 1.8.1 -> 1.8.2

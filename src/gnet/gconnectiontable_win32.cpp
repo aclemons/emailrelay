@@ -48,10 +48,10 @@
 	enum MIB_TCP_STATE { MIB_TCP_STATE_ESTAB = 5 } ;
 	typedef DWORD WINAPI (*GetTcpTable2Fn)( PMIB_TCPTABLE2 pTcpTable , PDWORD pwdSize , BOOL bOrder ) ;
 	typedef BOOL WINAPI (*ConvertSidToStringSidAFn)( PSID , LPSTR * ) ;
-	extern "C" {
-		DWORD WINAPI GetTcpTable2( PMIB_TCPTABLE2 pTcpTable , PDWORD pwdSize , BOOL bOrder ) ;
-		BOOL WINAPI ConvertSidToStringSidA( PSID , LPSTR * ) ;
-	}
+#else
+	#include <iphlpapi.h>
+	typedef DWORD (WINAPI *GetTcpTable2Fn)( PMIB_TCPTABLE2 pTcpTable , PDWORD pwdSize , BOOL bOrder ) ;
+	typedef BOOL (WINAPI *ConvertSidToStringSidAFn)( PSID , LPSTR * ) ;
 #endif
 
 class GNet::ConnectionTableImp 
@@ -159,8 +159,8 @@ GNet::ConnectionTable::Connection GNet::ConnectionTableImp::find( GNet::Address 
 			remotePort = u_remote.specific.sin_port ;
 		}
 		G_DEBUG( "GNet::ConnectionTable::find: this connection: "
-			<< localAddr << ":" << ntohs(localPort) << " "
-			<< remoteAddr << ":" << ntohs(remotePort) ) ;
+			<< localAddr << ":" << ntohs(static_cast<g_uint16_t>(localPort)) << " "
+			<< remoteAddr << ":" << ntohs(static_cast<g_uint16_t>(remotePort)) ) ;
 	}
 	if( localAddr == 0 && remoteAddr == 0 )
 		return invalid_connection ;
@@ -190,8 +190,8 @@ GNet::ConnectionTable::Connection GNet::ConnectionTableImp::find( GNet::Address 
 					if( match )
 						pid = row->dwOwningPid ;
 					G_DEBUG( "GNet::ConnectionTable::find: " << row->dwState << " " 
-						<< row->dwLocalAddr << ":" << ntohs(row->dwLocalPort) << " "
-						<< row->dwRemoteAddr << ":" << ntohs(row->dwRemotePort) << " " 
+						<< row->dwLocalAddr << ":" << ntohs(static_cast<g_uint16_t>(row->dwLocalPort)) << " "
+						<< row->dwRemoteAddr << ":" << ntohs(static_cast<g_uint16_t>(row->dwRemotePort)) << " " 
 						<< row->dwOwningPid << (match?" <<==":"") ) ;
 				}
 			}
@@ -281,7 +281,8 @@ GNet::ConnectionTable::Connection GNet::ConnectionTableImp::find( GNet::Address 
 	Connection connection ;
 	connection.m_valid = true ;
 	connection.m_peer_name = peer_name ;
-	G_LOG( "GNet::ConnectionTable::find: peer on port " << ntohs(remotePort) << " is local: pid " << pid << ": user " << peer_name ) ;
+	G_LOG( "GNet::ConnectionTable::find: peer on port " << ntohs(static_cast<g_uint16_t>(remotePort)) << " is local: "
+		"pid " << pid << ": user " << peer_name ) ;
 	return connection ;
 }
 

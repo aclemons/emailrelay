@@ -35,6 +35,8 @@ namespace GNet
 
 /// \class GNet::ConnectionTable
 /// A class for getting more information about a connection.
+/// This is not implemented on all platforms. Currently the only extra
+/// information provided is the process-id of a local peer.
 ///
 class GNet::ConnectionTable 
 {

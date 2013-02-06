@@ -118,9 +118,16 @@ mk_exe_setup=emailrelay-setup.exe
 mk_exe_pack=pack.exe
 mk_exe_run=run.exe
 mk_includes_extra=-I$(mk_qt)/include -I$(mk_qt)/include/QtCore -I$(mk_qt)/include/QtGui -I$(mk_zlib) -I../main
+
+# runtime library dlls
 mk_dll_qt_1=QtCore4.dll
 mk_dll_qt_2=QtGui4.dll
 mk_dll_mingw=mingwm10.dll
+mk_pack_dll_qt_1=$(mk_qt)/bin/$(mk_dll_qt_1) $(mk_dll_qt_1)
+mk_pack_dll_qt_2=$(mk_qt)/bin/$(mk_dll_qt_2) $(mk_dll_qt_2)
+mk_pack_dll_mingw=$(mk_mingw)/$(mk_dll_mingw) $(mk_dll_mingw)
+mk_pack_dlls=$(mk_pack_dll_qt_1) $(mk_pack_dll_qt_2) $(mk_pack_dll_mingw)
+
 rc=emailrelay-gui.rc
 res=emailrelay-gui.o
 mc_output=../main/MSG00001.bin ../main/messages.rc
@@ -146,8 +153,11 @@ $(mk_exe_gui_tmp): $(mk_exe_gui) $(mk_exe_pack)
 	-@echo warning: incomplete html documentation in the setup exe: add to doc directory
 	-@echo ..
 
-$(mk_exe_setup): $(mk_exe_pack) $(mk_exe_gui_tmp) $(mk_exe_run) ../../doc/userguide.html
-	./$(mk_exe_pack) $(mk_exe_setup) $(mk_exe_run) $(mk_qt)/bin/$(mk_dll_qt_1) $(mk_dll_qt_1) $(mk_qt)/bin/$(mk_dll_qt_2) $(mk_dll_qt_2) $(mk_mingw)/$(mk_dll_mingw) $(mk_dll_mingw) $(mk_exe_gui_tmp) $(mk_exe_gui)
+## double-pack if necessary to include the runtime library dlls - not necessary if statically linked
+##$(mk_exe_setup): $(mk_exe_pack) $(mk_exe_gui_tmp) $(mk_exe_run) ../../doc/userguide.html
+##	./$(mk_exe_pack) $(mk_exe_setup) $(mk_exe_run) $(mk_pack_dlls) $(mk_exe_gui_tmp) $(mk_exe_gui)
+$(mk_exe_setup): $(mk_exe_gui_tmp)
+	cmd /c copy $(mk_exe_gui_tmp) $(mk_exe_setup)
 
 moc_gdialog.cpp: gdialog.h
 	$(mk_qt)/bin/moc $< -o $@

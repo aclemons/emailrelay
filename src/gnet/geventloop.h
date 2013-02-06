@@ -37,18 +37,16 @@ namespace GNet
 }
 
 /// \class GNet::EventLoop
-/// An abstract base class for a singleton that keeps 
-/// track of open sockets and their associated handlers. Derived 
-/// classes are used to implement different event loops, such 
-/// as select() or WinSock.
+/// An abstract base class for a singleton that keeps track of open
+/// sockets and their associated handlers. Derived classes are used to
+/// implement different event loops, such as select() or WinSock.
 ///
-/// In practice sockets are added and removed from the class by 
-/// calling GNet::Socket::addReadHandler() etc rather than 
-/// EventLoop::addRead(). This is to improve the encapsulation 
-/// of the GNet::Descriptor data type within Socket.
+/// In practice sockets are added and removed from the class by calling
+/// GNet::Socket::addReadHandler() etc rather than EventLoop::addRead(). This is
+/// to improve the encapsulation of the GNet::Descriptor data type within Socket.
 ///
-/// The class has a static member for finding an instance, 
-/// but instances are not created automatically.
+/// The class has a static member for finding an instance, but instances are not
+/// created automatically.
 ///
 class GNet::EventLoop 
 {
@@ -61,7 +59,7 @@ protected:
 
 public:
 	static EventLoop * create() ;
-		///< A factory method which creates an instance 
+		///< A factory method which creates an instance
 		///< of a derived class on the heap.
 
 	static EventLoop & instance() ;
@@ -79,18 +77,18 @@ public:
 	virtual bool init() = 0 ;
 		///< Initialises the object.
 
-	virtual void run() = 0 ;
-		///< Runs the main event loop.
+	virtual std::string run() = 0 ;
+		///< Runs the main event loop. Returns a quit() reason,
+		///< if any.
 
 	virtual bool running() const = 0 ;
 		///< Returns true if called from within run().
 
-	virtual bool quit() = 0 ;
+	virtual void quit( std::string reason ) = 0 ;
 		///< Causes run() to return (once the call stack
-		///< has unwound). Returns true, or on some platforms
-		///< the previous state of the quit flag. (This means
-		///< that run() can be used to process one event at
-		///< a time for testing purposes).
+		///< has unwound). If there are multiple quit()s
+		///< before run() returns then the latest reason
+		///< is used.
 
 	virtual void addRead( Descriptor fd , EventHandler & handler ) = 0 ;
 		///< Adds the given event source descriptor
@@ -123,15 +121,15 @@ public:
 		///< See also Socket::dropExceptionHandler().
 
 	virtual void setTimeout( G::DateTime::EpochTime t , bool & empty_implementation_hint ) = 0 ;
-		///< Used by GNet::TimerList. Sets the time at which 
-		///< TimerList::doTimeouts() is to be called. 
+		///< Used by GNet::TimerList. Sets the time at which
+		///< TimerList::doTimeouts() is to be called.
 		///< A parameter of zero is used to cancel the
-		///< timer. 
+		///< timer.
 		///<
-		///< Some concrete implementations of this 
+		///< Some concrete implementations of this
 		///< interface may use TimerList::interval()
 		///< rather than setTimeout()/doTimeouts().
-		///< Empty implementations should set the 
+		///< Empty implementations should set the
 		///< hint value to true as an optimisation.
 
 private:

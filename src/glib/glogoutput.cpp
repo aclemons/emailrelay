@@ -25,12 +25,13 @@
 #include <string>
 #include <ctime>
 #include <cstdlib>
+#include <fstream>
 
 // (note that the implementation here has to be reentrant and using only the standard runtime library)
 
 G::LogOutput::LogOutput( const std::string & prefix , bool enabled , bool summary_log , 
 	bool verbose_log , bool debug , bool level , bool timestamp , bool strip ,
-	bool use_syslog , SyslogFacility syslog_facility ) :
+	bool use_syslog , const std::string & stderr_replacement , SyslogFacility syslog_facility ) :
 		m_prefix(prefix) ,
 		m_enabled(enabled) ,
 		m_summary_log(summary_log) ,
@@ -39,6 +40,7 @@ G::LogOutput::LogOutput( const std::string & prefix , bool enabled , bool summar
 		m_level(level) ,
 		m_strip(strip) ,
 		m_syslog(use_syslog) ,
+		m_std_err(err(stderr_replacement)) ,
 		m_facility(syslog_facility) ,
 		m_time(0) ,
 		m_timestamp(timestamp) ,
@@ -58,6 +60,7 @@ G::LogOutput::LogOutput( bool enabled_and_summary , bool verbose_and_debug ) :
 	m_level(false) ,
 	m_strip(false) ,
 	m_syslog(false) ,
+	m_std_err(std::cerr) ,
 	m_facility(User) ,
 	m_time(0) ,
 	m_timestamp(false) ,
@@ -67,6 +70,24 @@ G::LogOutput::LogOutput( bool enabled_and_summary , bool verbose_and_debug ) :
 	if( pthis() == NULL )
 		pthis() = this ;
 	init() ;
+}
+
+std::ostream & G::LogOutput::err( std::string path )
+{
+	if( !path.empty() )
+	{
+		std::string::size_type pos = path.find("%d") ;
+		if( pos != std::string::npos )
+			path.replace( pos , 2U , dateString() ) ;
+
+		static std::ofstream file( path.c_str() , std::ios_base::out | std::ios_base::app ) ; 
+		// ignore errors
+		return file ;
+	}
+	else
+	{
+		return std::cerr ;
+	}
 }
 
 G::LogOutput::~LogOutput()
@@ -120,32 +141,22 @@ void G::LogOutput::doOutput( Log::Severity severity , const char * file , int li
 
 		// add the preamble to tbe buffer
 		std::string::size_type text_pos = 0U ;
-		if( severity == Log::s_Debug )
+		if( m_prefix.length() )
 		{
-			buffer.append( fileAndLine(file,line) ) ;
+			buffer.append( m_prefix ) ;
+			buffer.append( ": " ) ;
 		}
-		else
+		if( m_timestamp )
+			buffer.append( timestampString() ) ;
+		if( m_level )
+			buffer.append( levelString(severity) ) ;
+		if( m_strip )
 		{
-			if( m_prefix.length() )
-			{
-				buffer.append( m_prefix ) ;
-				buffer.append( ": " ) ;
-			}
-
-			if( m_timestamp )
-				buffer.append( timestampString() ) ;
-
-			if( m_level )
-				buffer.append( levelString(severity) ) ;
-
-			if( m_strip )
-			{
-				text_pos = text.find(' ') ;
-				if( text_pos == std::string::npos || (text_pos+1U) == text.length() )
-					text_pos = 0U ;
-				else
-					text_pos++ ;
-			}
+			text_pos = text.find(' ') ;
+			if( text_pos == std::string::npos || (text_pos+1U) == text.length() )
+				text_pos = 0U ;
+			else
+				text_pos++ ;
 		}
 
 		// add the text to the buffer, with a sanity limit
@@ -161,7 +172,7 @@ void G::LogOutput::doOutput( Log::Severity severity , const char * file , int li
 			buffer[buffer.find('\033')] = '.' ;
 
 		// do the actual output in an o/s-specific manner
-		rawOutput( severity , buffer ) ;
+		rawOutput( m_std_err , severity , buffer ) ;
 	}
 }
 
@@ -183,6 +194,16 @@ std::string G::LogOutput::timestampString()
 		m_time_buffer[sizeof(m_time_buffer)-1U] = '\0' ;
 	}
 	return std::string(m_time_buffer) ;
+}
+
+std::string G::LogOutput::dateString()
+{
+	std::time_t now = std::time(NULL) ;
+	struct std::tm * tm_p = std::localtime( &now ) ; // see also gdef.h
+	char buffer[10] = { 0 } ;
+	std::strftime( buffer , sizeof(buffer)-1U , "%Y" "%m" "%d" , tm_p ) ;
+	buffer[sizeof(buffer)-1U] = '\0' ;
+	return std::string( buffer ) ;
 }
 
 std::string G::LogOutput::fileAndLine( const char * file , int line )
@@ -219,7 +240,8 @@ void G::LogOutput::doAssertion( const char * file , int line , const std::string
 	// method since all code in this class is re-entrant
 	onAssert() ;
 
-	rawOutput( Log::s_Assertion , std::string() + "Assertion error: " + fileAndLine(file,line) + test_string ) ;
+	rawOutput( m_std_err , Log::s_Assertion , 
+		std::string() + "Assertion error: " + fileAndLine(file,line) + test_string ) ;
 }
 
 void G::LogOutput::halt()

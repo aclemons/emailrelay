@@ -25,12 +25,12 @@
 #if 0
 std::wstring G::Convert::widen( const std::string & s , bool utf8 )
 {
-	// TODO -- mbstowcs()
+	// TODO -- implement with mbstowcs() and libiconv
 	return std::wstring() ;
 }
 std::string G::Convert::narrow( const std::wstring & s , bool utf8 )
 {
-	// TODO -- wcstomcs()
+	// TODO -- implement with wcstomcs() and libiconv
 	return std::string() ;
 }
 #endif

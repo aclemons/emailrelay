@@ -44,8 +44,9 @@ public:
 
 	LogOutput( const std::string & prefix , bool output , bool with_logging , 
 		bool with_verbose_logging , bool with_debug , bool with_level ,
-		bool with_timestamp , bool strip_context ,
-		bool use_syslog , SyslogFacility syslog_facility = User ) ;
+		bool with_timestamp , bool strip_context , bool use_syslog , 
+		const std::string & stderr_replacement = std::string() ,
+		SyslogFacility syslog_facility = User ) ;
 			///< Constructor. If there is no LogOutput object, or if 'output' 
 			///< is false, then there is no output of any sort. Otherwise at 
 			///< least warning and error messages are generated.
@@ -65,7 +66,7 @@ public:
 	virtual ~LogOutput() ;
 		///< Destructor.
 
-	virtual void rawOutput( G::Log::Severity , const std::string & ) ;
+	virtual void rawOutput( std::ostream & , G::Log::Severity , const std::string & ) ;
 		///< Overridable. Used to do the final message 
 		///< output (with OutputDebugString() or stderr).
 		
@@ -96,6 +97,7 @@ private:
 	void init() ;
 	void cleanup() ;
 	std::string timestampString() ;
+	static std::string dateString() ;
 	void doOutput( G::Log::Severity , const std::string & ) ;
 	void doOutput( G::Log::Severity s , const char * , int , const std::string & ) ;
 	void doAssertion( const char * , int , const std::string & ) ;
@@ -104,6 +106,7 @@ private:
 	static std::string fileAndLine( const char * , int ) ;
 	static void halt() ;
 	static LogOutput * & pthis() ;
+	static std::ostream & err( std::string ) ;
 
 private:
 	std::string m_prefix ;
@@ -114,6 +117,7 @@ private:
 	bool m_level ;
 	bool m_strip ;
 	bool m_syslog ;
+	std::ostream & m_std_err ;
 	SyslogFacility m_facility ;
 	time_t m_time ;
 	char m_time_buffer[40U] ;

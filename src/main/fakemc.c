@@ -77,8 +77,8 @@ int main( int argc , char * argv [] )
 	{
 		fprintf( fp_bin , "%c" , (char)(bin[i]) ) ;
 	}
-	fprintf( fp_rc , "LANGUAGE 0x9,0x1\n" ) ;
-	fprintf( fp_rc , "1 11 \"MSG00001.bin\"\n" ) ;
+	fprintf( fp_rc , "%s\n" , "LANGUAGE 0x9,0x1" ) ;
+	fprintf( fp_rc , "%s\n" , "1 11 \"MSG00001.bin\"" ) ;
 	fclose( fp_rc ) ;
 	fclose( fp_bin ) ;
 	return 0 ;

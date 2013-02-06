@@ -175,6 +175,10 @@ void Main::CommandLine::showNoop( bool ) const
 {
 }
 
+void Main::CommandLine::showError( std::string , bool ) const
+{
+}
+
 void Main::CommandLine::showVersion( bool ) const
 {
 }

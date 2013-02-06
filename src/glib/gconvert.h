@@ -57,35 +57,35 @@ public:
 	} ;
 
 	static void convert( utf8 & utf_out , const std::string & in_ ) ;
-		///< Converts between string types.
+		///< Converts between string types/encodings.
 
 	static void convert( utf8 & utf_out , const utf8 & in_ ) ;
-		///< Converts between string types.
+		///< Converts between string types/encodings.
 
 	static void convert( utf8 & utf_out , const std::wstring & in_ ) ;
-		///< Converts between string types.
+		///< Converts between string types/encodings.
 
 	static void convert( std::string & ansi_out , const std::string & in_ ) ;
-		///< Converts between string types.
+		///< Converts between string types/encodings.
 
 	static void convert( std::string & ansi_out , const std::string & in_ , 
 		const ThrowOnError & just_for_tchar_overloading ) ;
-			///< Converts between string types.
+			///< Converts between string types/encodings.
 
 	static void convert( std::string & ansi_out , const utf8 & in_ , const ThrowOnError & ) ;
-		///< Converts between string types.
+		///< Converts between string types/encodings.
 
 	static void convert( std::string & ansi_out , const std::wstring & in_ , const ThrowOnError & ) ;
-		///< Converts between string types.
+		///< Converts between string types/encodings.
 
 	static void convert( std::wstring & out_ , const std::string & in_ ) ;
-		///< Converts between string types.
+		///< Converts between string types/encodings.
 
 	static void convert( std::wstring & out_ , const utf8 & in_ ) ;
-		///< Converts between string types.
+		///< Converts between string types/encodings.
 
 	static void convert( std::wstring & out_ , const std::wstring & in_ ) ;
-		///< Converts between string types.
+		///< Converts between string types/encodings.
 
 private:
 	static std::string narrow( const std::wstring & s , bool is_utf8 , const std::string & = std::string() ) ;

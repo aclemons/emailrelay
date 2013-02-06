@@ -133,7 +133,7 @@ void GAuth::PamImp::apply( const std::string & pwd )
 
 void GAuth::PamImp::delay( unsigned int )
 {
-	// TODO
+	// TODO - pam delay - probably not possible with non-blocking i/o
 }
 
 // ==

@@ -34,6 +34,7 @@ mk_sources=\
 	winmenu.cpp
 
 libs=../gpop/gpop.a ../gsmtp/gsmtp.a ../gnet/gnet.a ../gauth/gauth.a ../gssl/gssl.a ../win32/gwin32.a ../glib/glib.a $(mk_ssl_libs)
+glib=../glib/glib.a
 syslibs=-lgdi32 -lws2_32 -ladvapi32
 rc=emailrelay.rc
 fake_mc=fakemc.exe
@@ -51,7 +52,7 @@ all: $(mk_exe_main) $(mk_exe_filter_copy) $(mk_exe_poke) $(mk_exe_passwd) $(mk_e
 include ../mingw-common.mak
 
 $(mk_exe_main): $(mk_objects) $(res) $(libs)
-	$(mk_link) $(mk_link_flags) -o $(mk_exe_main) $(mk_objects) $(res) $(libs) $(syslibs)
+	$(mk_link) $(mk_link_flags) -mwindows -o $(mk_exe_main) $(mk_objects) $(res) $(libs) $(syslibs)
 
 $(mk_exe_filter_copy): filter_copy.o legal.o filter.o
 	$(mk_link) $(mk_link_flags) -o $@ filter_copy.o legal.o filter.o $(libs) $(syslibs)
@@ -66,7 +67,7 @@ $(mk_exe_submit): submit.o legal.o
 	$(mk_link) $(mk_link_flags) -o $@ submit.o legal.o $(libs) $(syslibs)
 
 $(mk_exe_service): service_install.o service_remove.o service_wrapper.o
-	$(mk_link) $(mk_link_flags) -o $@ service_install.o service_remove.o service_wrapper.o $(syslibs)
+	$(mk_link) $(mk_link_flags) -o $@ service_install.o service_remove.o service_wrapper.o $(glib) $(syslibs)
 
 $(fake_mc): fakemc.o
 	$(mk_link) $(mk_link_flags) -o $@ $<

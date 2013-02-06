@@ -24,7 +24,7 @@
 #   $ cd src/emailrelay-1.99
 #   $ mkdir build
 #   $ cd build
-#   $ sh ../bin/configure-fhs.sh_
+#   $ sh ../bin/configure-fhs.sh
 #   $ make 
 #   $ sudo make install
 #
@@ -38,4 +38,4 @@ ${configure} \
 	--localstatedir=/var \
 	--libexecdir=/usr/lib \
 	--sysconfdir=/etc \
-	e_initdir=/etc/init.d
+	e_initdir=/etc/init.d "$@"

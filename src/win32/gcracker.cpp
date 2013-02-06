@@ -76,14 +76,14 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 		
 		case WM_DESTROY:
 		{
-			G_DEBUG( "Cracker::onDestroy" ) ;
+			G_DEBUG( "Cracker::onDestroy: hwnd " << m_hwnd ) ;
 			onDestroy() ;
 			return 0 ;
 		}
 
 		case WM_NCDESTROY:
 		{
-			G_DEBUG( "Cracker::onNcDestroy" ) ;
+			G_DEBUG( "Cracker::onNcDestroy: hwnd " << m_hwnd ) ;
 			onNcDestroy() ;
 			return 0 ;
 		}

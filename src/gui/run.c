@@ -42,11 +42,11 @@
 #include <sys/stat.h>
 
 #ifdef _WIN32
-static char gui_exe [] = "emailrelay-gui.exe" ;
+static const char gui_exe [] = "emailrelay-gui.exe" ;
 #else
-static char gui_exe [] = "emailrelay-gui.real" ;
+static const char gui_exe [] = "emailrelay-gui.real" ;
 #endif
-static char gui_cfg [] = "emailrelay-gui.cfg" ;
+static const char gui_cfg [] = "emailrelay-gui.cfg" ;
 
 static void split( char * buffer , char * argv [] ) ;
 static int unpack( const char * path ) ;
@@ -55,7 +55,7 @@ static int unpack( const char * path ) ;
 #include <windows.h>
 static void on_error( const char * p )
 {
-	MessageBox( NULL , p , "error" , MB_OK ) ;
+	MessageBoxA( NULL , p , "error" , MB_OK ) ;
         exit( 1 ) ;
 }
 static void chmodx( const char * p )
@@ -118,7 +118,7 @@ int main( int argc_in , char * argv_in [] )
 	int ok = 0 ;
 	const char * this_exe = argv_in[0] ;
 	static char buffer[BUFFER_SIZE+1] = { '\0' } ;
-	char * argv [ARGV_SIZE+1] = { gui_exe , NULL } ;
+	const char * argv [ARGV_SIZE+1] = { gui_exe , NULL } ;
 	const char * prefix = argv_in[0] ;
 	prefix = strrchr(prefix,'/') ? (strrchr(prefix,'/')+1) : prefix ;
 	prefix = strrchr(prefix,'\\') ? (strrchr(prefix,'\\')+1) : prefix ;

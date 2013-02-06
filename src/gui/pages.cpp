@@ -1328,13 +1328,14 @@ void ProgressPage::onShow( bool back )
 {
 	if( ! back )
 	{
-		// store the gui state variables in the config file
+		// store the gui state variables in a state file (possibly the config file)
 		if( ! m_state_path.str().empty() )
 		{
 			std::stringstream ss ;
 			dialog().dumpStateVariables( ss ) ;
 			G::StringMap map = MapFile::read( ss ) ;
-			MapFile::edit( m_state_path , map , "gui-" , true , G::StringMap() , false ) ;
+			G::File::mkdirs( m_state_path.dirname() , G::File::NoThrow() , 10U ) ;
+			MapFile::edit( m_state_path , map , "gui-" , true , G::StringMap() , false , true , true ) ;
 		}
 
 		// dump install variables into a stringstream

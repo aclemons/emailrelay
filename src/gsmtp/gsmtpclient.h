@@ -74,15 +74,17 @@ public:
 		///< All Client instances must be on the heap since they 
 		///< delete themselves after raising the done signal.
 
-	void sendMessages( MessageStore & store ) ;
+	void sendMessagesFrom( MessageStore & store ) ;
 		///< Sends all messages from the given message store once 
-		///< connected and deletes itself when done. This must be 
-		///< used immediately after construction with a non-empty 
-		///< message store.
+		///< connected. This must be used immediately after 
+		///< construction with a non-empty message store.
+		///<
+		///< Once all messages have been sent the client will delete
+		///< itself (see HeapClient).
 		///<
 		///< The base class doneSignal() can be used as an indication
-		///< that all messages have been sent and the object has
-		///< deleted itself.
+		///< that all messages have been sent and the object is about
+		///< to delete itself.
 
 	void sendMessage( std::auto_ptr<StoredMessage> message ) ;
 		///< Starts sending the given message. Cannot be called

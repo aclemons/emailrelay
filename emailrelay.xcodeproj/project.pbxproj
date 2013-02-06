@@ -26,6 +26,8 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		EE1753B016B850C600575457 /* gconnectiontable_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE1753AF16B850C600575457 /* gconnectiontable_unix.cpp */; };
+		EE1753BC16B852AD00575457 /* genvironment_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE1753BB16B852AD00575457 /* genvironment_unix.cpp */; };
 		EE303D000D326C9700D840F2 /* admin_enabled.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C050D326C9600D840F2 /* admin_enabled.cpp */; };
 		EE303D010D326C9700D840F2 /* commandline_full.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C070D326C9600D840F2 /* commandline_full.cpp */; };
 		EE303D030D326C9700D840F2 /* configuration.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C0A0D326C9600D840F2 /* configuration.cpp */; };
@@ -463,6 +465,10 @@
 
 /* Begin PBXFileReference section */
 		8DD76F6C0486A84900D96B5E /* emailrelay */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = emailrelay; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE1753AE16B850C600575457 /* gconnectiontable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gconnectiontable.h; sourceTree = "<group>"; };
+		EE1753AF16B850C600575457 /* gconnectiontable_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gconnectiontable_unix.cpp; sourceTree = "<group>"; };
+		EE1753BA16B852AD00575457 /* genvironment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = genvironment.h; sourceTree = "<group>"; };
+		EE1753BB16B852AD00575457 /* genvironment_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = genvironment_unix.cpp; sourceTree = "<group>"; };
 		EE303AD90D326C9600D840F2 /* garg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = garg.cpp; sourceTree = "<group>"; };
 		EE303ADA0D326C9600D840F2 /* garg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = garg.h; sourceTree = "<group>"; };
 		EE303ADB0D326C9600D840F2 /* garg_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = garg_unix.cpp; sourceTree = "<group>"; };
@@ -1019,6 +1025,8 @@
 		EE303AD80D326C9600D840F2 /* glib */ = {
 			isa = PBXGroup;
 			children = (
+				EE1753BA16B852AD00575457 /* genvironment.h */,
+				EE1753BB16B852AD00575457 /* genvironment_unix.cpp */,
 				EE89C06516A5B7A4006CBE2E /* gbase64.cpp */,
 				EE89C06616A5B7A4006CBE2E /* gbase64.h */,
 				EE89C06716A5B7A4006CBE2E /* gnocheck.h */,
@@ -1130,6 +1138,8 @@
 		EE303B370D326C9600D840F2 /* gnet */ = {
 			isa = PBXGroup;
 			children = (
+				EE1753AE16B850C600575457 /* gconnectiontable.h */,
+				EE1753AF16B850C600575457 /* gconnectiontable_unix.cpp */,
 				EE89C0B916A5D306006CBE2E /* gdescriptor.cpp */,
 				EE303B380D326C9600D840F2 /* gaddress.h */,
 				EE303B390D326C9600D840F2 /* gaddress_ip.cpp */,
@@ -1844,6 +1854,8 @@
 				EE89C0B416A5D1F0006CBE2E /* gtimer.cpp in Sources */,
 				EE89C0B516A5D1F2006CBE2E /* gtimerlist.cpp in Sources */,
 				EE89C0BA16A5D306006CBE2E /* gdescriptor.cpp in Sources */,
+				EE1753B016B850C600575457 /* gconnectiontable_unix.cpp in Sources */,
+				EE1753BC16B852AD00575457 /* genvironment_unix.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

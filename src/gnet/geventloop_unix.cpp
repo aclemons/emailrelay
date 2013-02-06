@@ -71,9 +71,9 @@ public:
 	Select() ;
 	virtual ~Select() ;
 	virtual bool init() ;
-	virtual void run() ;
+	virtual std::string run() ;
 	virtual bool running() const ;
-	virtual bool quit() ;
+	virtual void quit( std::string ) ;
 	virtual void addRead( Descriptor fd , EventHandler &handler ) ;
 	virtual void addWrite( Descriptor fd , EventHandler &handler ) ;
 	virtual void addException( Descriptor fd , EventHandler &handler ) ;
@@ -87,6 +87,7 @@ private:
 
 private:
 	bool m_quit ;
+	std::string m_quit_reason ;
 	bool m_running ;
 	EventHandlerList m_read_list ;
 	FdSet m_read_set ;
@@ -192,7 +193,7 @@ void GNet::FdSet::raiseEvent( EventHandler * h , void (EventHandler::*method)() 
 	{
 		(h->*method)() ;
 	}
-	catch( std::exception & e ) // strategy
+	catch( std::exception & e )
 	{
 		h->onException( e ) ;
 	}
@@ -226,14 +227,17 @@ bool GNet::Select::init()
 	return true ;
 }
 
-void GNet::Select::run()
+std::string GNet::Select::run()
 {
 	G::Setter setter( m_running ) ;
 	do
 	{
 		runOnce() ;
 	} while( !m_quit ) ;
+	std::string quit_reason = m_quit_reason ;
+	m_quit_reason.clear() ;
 	m_quit = false ;
+	return quit_reason ;
 }
 
 bool GNet::Select::running() const
@@ -241,11 +245,10 @@ bool GNet::Select::running() const
 	return m_running ;
 }
 
-bool GNet::Select::quit()
+void GNet::Select::quit( std::string reason )
 {
-	bool q = m_quit ;
 	m_quit = true ;
-	return q ;
+	m_quit_reason = reason ;
 }
 
 void GNet::Select::runOnce()

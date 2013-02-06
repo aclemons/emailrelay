@@ -43,7 +43,9 @@ bool Boot::install( G::Path , G::Path target , G::Strings )
 
 	std::string path = G::Path(target.dirname(),"emailrelay-service.exe").str() ;
 	std::string commandline = path.find(" ") != std::string::npos ? ( std::string() + "\"" + path + "\"" ) : path ;
-	std::string reason = service_install( commandline , "emailrelay" , "E-MailRelay" ) ;
+	std::string display_name = "E-MailRelay" ;
+	std::string description = display_name + " service (reads " + target.str() + " at service start time)" ;
+	std::string reason = service_install( commandline , "emailrelay" , display_name , description ) ;
 	if( !reason.empty() )
 		throw std::runtime_error( reason ) ;
 	return true ;

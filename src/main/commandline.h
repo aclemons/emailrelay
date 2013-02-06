@@ -108,6 +108,9 @@ public:
 	void showNoop( bool error_stream = false ) const ;
 		///< Writes a nothing-to-do message.
 
+	void showError( const std::string & reason , bool error_stream = true ) const ;
+		///< Writes a failed message.
+
 	void showVersion( bool error_stream = false ) const ;
 		///< Writes the version number.
 

@@ -126,7 +126,7 @@ bool GSmtp::AdminServerPeer::onReceive( const std::string & line )
 	else if( is(line,"terminate") && m_with_terminate )
 	{
 		if( GNet::EventLoop::exists() )
-			GNet::EventLoop::instance().quit() ;
+			GNet::EventLoop::instance().quit("admin terminate request") ;
 	}
 	else if( find(line,m_extra_commands).first )
 	{
@@ -208,7 +208,7 @@ bool GSmtp::AdminServerPeer::flush()
 	else
 	{
 		m_client.reset( new Client(GNet::ResolverInfo(m_remote_address),m_server.secrets(),m_server.clientConfig()) ) ;
-		m_client->sendMessages( m_server.store() ) ;
+		m_client->sendMessagesFrom( m_server.store() ) ; // once connected
 	}
 	return do_prompt ;
 }

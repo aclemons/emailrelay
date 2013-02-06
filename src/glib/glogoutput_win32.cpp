@@ -37,11 +37,11 @@ void G::LogOutput::cleanup()
 		::DeregisterEventSource( m_handle ) ;
 }
 
-void G::LogOutput::rawOutput( G::Log::Severity severity , const std::string & message )
+void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity , const std::string & message )
 {
 	// standard error
 	//
-	std::cerr << message << std::endl ;
+	std_err << message << std::endl ;
 
 	// debugger
 	//

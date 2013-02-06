@@ -23,6 +23,9 @@
 # usage: emailrelay-loop-test.sh [-v] [<exe>]
 #        -v  - use valgrind
 #
+# To get a good valgrind report make use of the admin interface to 'terminate' 
+# the server cleanly. The admin port is recorded in the ".info" file.
+#
 
 # configure
 thisdir="`cd \`dirname $0\` ; pwd`"

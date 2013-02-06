@@ -33,21 +33,23 @@ namespace GNet
 }
 
 /// \class GNet::HeapClient
-/// A SimpleClient class for objects that manage their own
-/// lifetime on the heap. Note that this class automatically starts 
-/// connecting after construction using a zero-length timer, so
-/// there is no need to call the base class's connect() method.
-/// The doDelete() method starts another zero-length timer in
-/// order to delete the instance once the stack has unwound.
+/// A SimpleClient class for client objects that manage their own
+/// lifetime on the heap. 
 ///
-/// Note that most errors and exceptions result in HeapClient objects 
-/// deleting themselves. This is similar to the way the ServerPeer 
-/// class works on the server side. Exceptions thrown out of event
-/// loop callbacks result in the relevant HeapClient object deleting 
-/// itself. This means that the connection gets destroyed without 
-/// terminating the application. However, if a second nested exception
-/// is thrown out of (eg.) onDelete() then the event loop will 
-/// terminate.
+/// HeapClients are instantiated on the heap and should be deleted by calling
+/// their doDelete() method. The doDelete() implementation starts a zero-length 
+/// timer which does "delete this" when it expires, so it is safe to call 
+/// doDelete() from within event callbacks.
+///
+/// This class automatically starts connecting after construction using a 
+/// zero-length timer, so there is no need to call the base class's connect() 
+/// method.
+///
+/// When the event loop delivers an event callback to a HeapClient and the
+/// HeapClient throws a std::exception back up to the event loop the event loop
+/// calls the HeapClient again via onException() causing the HeapClient to
+/// self-destruct. As a result, the client code can just throw an exception 
+/// to terminate the connection and delete itself.
 ///
 class GNet::HeapClient : public GNet::SimpleClient 
 {
@@ -59,7 +61,7 @@ public:
 			///< Initiates the connection via a zero-length timer.
 
 	void doDelete( const std::string & reason ) ;
-		///< Calls onDelete() and then does "delete this".
+		///< Calls onDelete() and then does a delayed "delete this".
 
 	virtual void onException( std::exception & ) ; 
 		///< Final override from GNet::EventHandler.

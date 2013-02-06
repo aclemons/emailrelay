@@ -23,6 +23,7 @@
 
 #include <string>
 
-std::string service_install( std::string commandline , std::string name , std::string display_name ) ;
+std::string service_install( std::string commandline , std::string name , std::string display_name ,
+	std::string description ) ;
 
 #endif

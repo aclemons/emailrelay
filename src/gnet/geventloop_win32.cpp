@@ -40,76 +40,49 @@ namespace GNet
 } ;
 
 /// \class GNet::Winsock
-/// A concrete implementation of GNet::EventLoop
-///  using the WinSock system.
+/// A concrete implementation of GNet::EventLoop using WinSock.
 /// 
-///  Note that WinSock events are delivered as messages to the 
-///  application's main message queue, and these messages have 
-///  to be passed on the the WinSock layer.
+///  Note that WinSock events are delivered as messages to the application's 
+///  main message queue, and these messages have to be passed on the the WinSock 
+///  layer.
 /// 
 class GNet::Winsock : public GNet::EventLoop 
 {
 public:
 	Winsock() ;
-		// Default constructor. Initialise with load() (optional)
-		// and then either init() or attach().
-
-	bool load( const char * dllpath ) ;
-		// Loads the given WinSock DLL. Must be the first
-		// method called after construction.
-		// Returns false on error.
+		// Default constructor. Initialise with either init().
 
 	virtual bool init() ;
-		// Override from EventLoop. Initialses the
-		// WinSock library, passing it the handle
-		// of an internally-created hidden window.
+		// Override from EventLoop. Initialses the WinSock library,
+		// passing it the handle of an internally-created hidden window.
 		// Returns false on error.
-		//
-		// Use either init() for an internally-created
-		// window, or attach().
-
-	bool attach( HWND hwnd , unsigned int msg , unsigned int timer_id = 0U ) ;
-		// Initialises the WinSock library, passing
-		// it the specified window handle and
-		// message number. WinSock events are sent
-		// to that window. Returns false on error.
-		//
-		// For simple, synchronous programs
-		// the window handle may be zero.
-		//
-		// Use either init() or attach().
-		//
-		// See also onMessage() and onTimer().
 
 	std::string reason() const ;
-		// Returns the reason for initialisation
-		// failure.
+		// Returns the reason for initialisation failure.
 
 	std::string id() const ;
-		// Returns the WinSock implementation's
-		// identification string. Returns the
-		// zero length string on error.
+		// Returns the WinSock implementation's identification string. 
+		// Returns the zero length string on error.
 
 	virtual ~Winsock() ;
-		// Destructor. Releases the WinSock resources
-		// if this is the last Winsock object.
+		// Destructor. Releases the WinSock resources if this is the last 
+		// Winsock object.
 
 	void onMessage( WPARAM wparam , LPARAM lparam ) ;
-		// To be called when the attach()ed window
-		// receives a message with a message-id
-		// equal to attach() 'msg' parameter.
+		// To be called when the window receives a winsock message.
 
 	void onTimer() ;
-		// To be called when the attach()ed window
-		// receives a WM_TIMER message.
+		// To be called when the hidden window receives a WM_TIMER message.
 
-	virtual void run() ;
-		// Override from EventLoop. Calls GGui::Pump::run().
+	virtual std::string run() ;
+		// Override from EventLoop. Calls GGui::Pump::run(). Returns
+		// the quit reason if quit() was called. Throws a runtime_error 
+		// if the hidden window's wndproc (nearly) threw an exception.
 
 	virtual bool running() const ;
 		// Override from EventLoop. Returns true if in run().
 
-	virtual bool quit() ;
+	virtual void quit( std::string ) ;
 		// Override from EventLoop. Calls GGui::Pump::quit().
 
 protected:
@@ -124,17 +97,18 @@ protected:
 private:
 	Winsock( const Winsock & other ) ;
 	void operator=( const Winsock & other ) ;
-	EventHandler *findHandler( EventHandlerList & list , Descriptor fd ) ;
+	bool attach( HWND hwnd , unsigned int msg , unsigned int timer_id = 0U ) ;
+	EventHandler * findHandler( EventHandlerList & list , Descriptor fd ) ;
 	void update( Descriptor fd ) ;
 	long desiredEvents( Descriptor fd ) ;
 
 private:
 	bool m_running ;
-	GGui::WindowBase * m_window ;
+	GGui::Window * m_window ;
+	HWND m_hwnd ;
 	bool m_success ;
 	std::string m_reason ;
 	std::string m_id ;
-	HWND m_hwnd ;
 	unsigned m_msg ;
 	EventHandlerList m_read_list ;
 	EventHandlerList m_write_list ;
@@ -202,32 +176,25 @@ std::string GNet::Winsock::id() const
 	return m_id ;
 }
 
-bool GNet::Winsock::load( const char * )
-{
-	; // not implemented
-	return true ;
-}
-
 bool GNet::Winsock::init()
 {
 	HINSTANCE hinstance = GGui::ApplicationInstance::hinstance() ;
 	m_window = new WinsockWindow( *this , hinstance ) ;
-	if( m_window->handle() == 0 )
+	m_hwnd = m_window->handle() ;
+	m_msg = GGui::Cracker::wm_winsock() ;
+	m_timer_id = 1U ;
+	if( m_hwnd == 0 )
 	{
 		G_WARNING( "GNet::Winsock::init: cannot create hidden window" ) ;
 		return false ;
 	}
-	return attach( m_window->handle() , GGui::Cracker::wm_winsock() , 1U ) ;
+	return attach( m_hwnd , m_msg , m_timer_id ) ;
 }
 
 bool GNet::Winsock::attach( HWND hwnd , unsigned msg , unsigned int timer_id )
 {
-	m_hwnd = hwnd ;
-	m_msg = msg ;
-	m_timer_id = timer_id ;
-
 	WSADATA info ;
-	WORD version = MAKEWORD( 1 , 1 ) ;
+	WORD version = MAKEWORD( 2 , 2 ) ;
 	int rc = ::WSAStartup( version , &info ) ;
 	if( rc != 0 )
 	{
@@ -235,8 +202,8 @@ bool GNet::Winsock::attach( HWND hwnd , unsigned msg , unsigned int timer_id )
 		return false ;
 	}
 
-	if( LOBYTE( info.wVersion ) != 1 ||
-		HIBYTE( info.wVersion ) != 1 )
+	if( LOBYTE( info.wVersion ) != 2 ||
+		HIBYTE( info.wVersion ) != 2 )
 	{
 		m_reason = "incompatible winsock version" ;
 		::WSACleanup() ;
@@ -256,7 +223,8 @@ std::string GNet::Winsock::reason() const
 
 GNet::Winsock::~Winsock()
 {
-	if( m_success )
+	bool strict = false ; // leave winsock library initialised
+	if( m_success && strict )
 		::WSACleanup() ;
 	delete m_window ;
 }
@@ -340,50 +308,52 @@ void GNet::Winsock::onMessage( WPARAM wparam , LPARAM lparam )
 	int err = WSAGETSELECTERROR( lparam ) ;
 
 	G_DEBUG( "GNet::Winsock::processMessage: winsock select message: "
-		<< "w=" << wparam << " l=" << lparam 
-		<< " fd=" << fd << " evt=" << event << " err=" << err ) ;
+		<< "fd=" << fd << " evt=" << event << " err=" << err ) ;
 
 	if( event & READ_EVENTS )
 	{
-		EventHandler *handler = findHandler( m_read_list , Descriptor(fd) ) ;
+		EventHandler * handler = findHandler( m_read_list , Descriptor(fd) ) ;
 		if( handler )
 		{
 			try
 			{
 				handler->readEvent();
 			}
-			catch( std::exception & e ) // strategy
+			catch( std::exception & e )
 			{
+				G_DEBUG( "GNet::Winsock::onMessage: read-event handler exception being passed back: " << e.what() ) ;
 				handler->onException( e ) ;
 			}
 		}
 	} 
 	else if( event & WRITE_EVENTS )
 	{
-		EventHandler *handler = findHandler( m_write_list , Descriptor(fd) ) ;
+		EventHandler * handler = findHandler( m_write_list , Descriptor(fd) ) ;
 		if( handler )
 		{
 			try
 			{
 				handler->writeEvent();
 			}
-			catch( std::exception & e ) // strategy
+			catch( std::exception & e )
 			{
+				G_DEBUG( "GNet::Winsock::onMessage: write-event handler exception being passed back: " << e.what() ) ;
 				handler->onException( e ) ;
 			}
 		}
 	} 
 	else if( event & EXCEPTION_EVENTS )
 	{
-		EventHandler *handler = findHandler( m_exception_list , Descriptor(fd) ) ;
+		EventHandler * handler = findHandler( m_exception_list , Descriptor(fd) ) ;
 		if( handler )
 		{
 			try
 			{
 				handler->exceptionEvent();
 			}
-			catch( std::exception & e ) // strategy
+			catch( std::exception & e )
 			{
+				G_DEBUG( "GNet::Winsock::onMessage: exn-event handler exception being passed back: " << e.what() ) ;
 				handler->onException( e ) ;
 			}
 		}
@@ -428,20 +398,23 @@ void GNet::Winsock::setTimeout( G::DateTime::EpochTime t , bool & )
 	}
 }
 
-void GNet::Winsock::run()
+std::string GNet::Winsock::run()
 {
 	G::Setter setter( m_running ) ;
-	GGui::Pump::run() ;
+	std::string quit_reason = GGui::Pump::run() ;
+	if( m_window->wndProcException() )
+		throw std::runtime_error( m_window->wndProcExceptionString() ) ;
+	return quit_reason ;
 }
+
 
 bool GNet::Winsock::running() const
 {
 	return m_running ;
 }
 
-bool GNet::Winsock::quit()
+void GNet::Winsock::quit( std::string reason )
 {
-	GGui::Pump::quit() ;
-	return false ;
+	GGui::Pump::quit( reason ) ;
 }
 

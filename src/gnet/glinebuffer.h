@@ -34,9 +34,9 @@ namespace GNet
 }
 
 /// \class GNet::LineBuffer
-/// A class which does line buffering. Raw
-/// data is added, and newline-delimited lines are
-/// extracted.
+/// A class which does line buffering. Raw data is added, and 
+/// newline-delimited lines are extracted.
+///
 /// Usage:
 /// \code
 /// {
