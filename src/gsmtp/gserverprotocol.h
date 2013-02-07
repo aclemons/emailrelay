@@ -70,8 +70,8 @@ public:
 	class Text 
 	{
 		public: virtual std::string greeting() const = 0 ;
-		public: virtual std::string hello( const std::string & peer_name ) const = 0 ;
-		public: virtual std::string received( const std::string & peer_name ) const = 0 ;
+		public: virtual std::string hello( const std::string & smtp_peer_name ) const = 0 ;
+		public: virtual std::string received( const std::string & smtp_peer_name ) const = 0 ;
 		public: virtual ~Text() ;
 		private: void operator=( const Text & ) ; // not implemented
 	} ;
@@ -274,26 +274,31 @@ class GSmtp::ServerProtocolText : public GSmtp::ServerProtocol::Text
 {
 public:
 	ServerProtocolText( const std::string & ident , const std::string & thishost ,
-		const GNet::Address & peer_address ) ;
+		const GNet::Address & peer_address , const std::string & peer_socket_name ) ;
 			///< Constructor.
 
 	virtual std::string greeting() const ;
 		///< Final override from GSmtp::ServerProtocol::Text.
 
-	virtual std::string hello( const std::string & peer_name_from_helo ) const ;
+	virtual std::string hello( const std::string & smtp_peer_name_from_helo ) const ;
 		///< Final override from GSmtp::ServerProtocol::Text.
 
-	virtual std::string received( const std::string & peer_name_from_helo ) const ;
+	virtual std::string received( const std::string & smtp_peer_name_from_helo ) const ;
 		///< Final override from GSmtp::ServerProtocol::Text.
 
-	static std::string receivedLine( const std::string & peer_name_from_helo , const std::string & peer_address , 
+	static std::string receivedLine( const std::string & smtp_peer_name_from_helo , 
+		const std::string & peer_address , const std::string & peer_socket_name , 
 		const std::string & thishost ) ;
 			///< Returns a standard "Received:" line.
+
+private:
+	static std::string shortened( std::string , std::string ) ;
 
 private:
 	std::string m_ident ;
 	std::string m_thishost ;
 	GNet::Address m_peer_address ;
+	std::string m_peer_socket_name ;
 } ;
 
 #endif

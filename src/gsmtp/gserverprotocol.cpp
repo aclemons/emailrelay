@@ -828,10 +828,11 @@ void GSmtp::ServerProtocol::badClientEvent()
 // ===
 
 GSmtp::ServerProtocolText::ServerProtocolText( const std::string & ident , const std::string & thishost ,
-	const GNet::Address & peer_address ) :
+	const GNet::Address & peer_address , const std::string & peer_socket_name ) :
 		m_ident(ident) ,
 		m_thishost(thishost) ,
-		m_peer_address(peer_address)
+		m_peer_address(peer_address) ,
+		m_peer_socket_name(peer_socket_name)
 {
 }
 
@@ -847,11 +848,20 @@ std::string GSmtp::ServerProtocolText::hello( const std::string & ) const
 
 std::string GSmtp::ServerProtocolText::received( const std::string & smtp_peer_name ) const
 {
-	return receivedLine( smtp_peer_name , m_peer_address.displayString(false) , m_thishost ) ;
+	return receivedLine( smtp_peer_name , m_peer_address.displayString(false) , m_peer_socket_name , m_thishost ) ;
+}
+
+std::string GSmtp::ServerProtocolText::shortened( std::string prefix , std::string s )
+{
+	std::string::size_type pos = s.find_last_of( "=\\" ) ;
+	return
+		s.empty() || pos == std::string::npos || (pos+1U) == s.length() ?
+			std::string() :
+			( prefix + s.substr(pos+1U) ) ;
 }
 
 std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_peer_name , 
-	const std::string & peer_address , const std::string & thishost )
+	const std::string & peer_address , const std::string & peer_socket_name , const std::string & thishost )
 {
 	const G::DateTime::EpochTime t = G::DateTime::now() ;
 	const G::DateTime::BrokenDownTime tm = G::DateTime::local(t) ;
@@ -861,7 +871,11 @@ std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_pe
 
 	std::ostringstream ss ;
 	ss 
-		<< "Received: FROM " << smtp_peer_name << " ([" << peer_address << "]) BY " << thishost << " WITH ESMTP ; "
+		<< "Received: from " << smtp_peer_name 
+		<< " ("
+			<< "[" << peer_address << "]"
+			<< shortened( "," , peer_socket_name )
+		<< ") by " << thishost << " with ESMTP ; "
 		<< date.weekdayName(true) << ", "
 		<< date.monthday() << " " 
 		<< date.monthName(true) << " "

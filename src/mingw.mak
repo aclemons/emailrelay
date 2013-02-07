@@ -15,7 +15,7 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # see mingw-common.mak for help
-				mk_target=nothing
+mk_target=nothing
 include mingw-common.mak
 all: _all
 clean:: _clean

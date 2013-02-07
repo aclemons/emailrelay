@@ -38,18 +38,20 @@ namespace
 {
 	struct AnonymousText : public GSmtp::ServerProtocol::Text
 	{
-		AnonymousText( const std::string & thishost , const GNet::Address & peer_address ) ;
+		AnonymousText( const std::string & thishost , const GNet::Address & peer_address , const std::string & peer_socket_name ) ;
 		virtual std::string greeting() const ;
 		virtual std::string hello( const std::string & peer_name ) const ;
-		virtual std::string received( const std::string & peer_name ) const ;
+		virtual std::string received( const std::string & smtp_peer_name ) const ;
 		std::string m_thishost ;
 		GNet::Address m_peer_address ;
+		std::string m_peer_socket_name ;
 	} ;
 }
 
-AnonymousText::AnonymousText( const std::string & thishost , const GNet::Address & peer_address ) :
+AnonymousText::AnonymousText( const std::string & thishost , const GNet::Address & peer_address , const std::string & peer_socket_name ) :
 	m_thishost(thishost) ,
-	m_peer_address(peer_address)
+	m_peer_address(peer_address) ,
+	m_peer_socket_name(peer_socket_name)
 {
 }
 
@@ -63,11 +65,11 @@ std::string AnonymousText::hello( const std::string & ) const
 	return "hello" ; 
 }
 
-std::string AnonymousText::received( const std::string & peer_name ) const
+std::string AnonymousText::received( const std::string & smtp_peer_name ) const
 { 
 	return 
 		m_thishost.length() ?
-			GSmtp::ServerProtocolText::receivedLine( peer_name , m_peer_address.displayString(false) , m_thishost ) :
+			GSmtp::ServerProtocolText::receivedLine( smtp_peer_name , m_peer_address.displayString(false) , m_peer_socket_name , m_thishost ) :
 			std::string() ; // no Received line at all if no hostname
 }
 
@@ -179,7 +181,7 @@ GNet::ServerPeer * GSmtp::Server::newPeer( GNet::Server::PeerInfo peer_info )
 			return NULL ;
 		}
 
-		std::auto_ptr<ServerProtocol::Text> ptext( newProtocolText(m_anonymous,peer_info.m_address) ) ;
+		std::auto_ptr<ServerProtocol::Text> ptext( newProtocolText(m_anonymous,peer_info.m_address,peer_info.m_name) ) ;
 		std::auto_ptr<ProtocolMessage> pmessage( newProtocolMessage() ) ;
 		return new ServerPeer( peer_info , *this , pmessage , m_server_secrets , 
 			m_verifier_address , m_verifier_timeout ,
@@ -192,12 +194,12 @@ GNet::ServerPeer * GSmtp::Server::newPeer( GNet::Server::PeerInfo peer_info )
 	}
 }
 
-GSmtp::ServerProtocol::Text * GSmtp::Server::newProtocolText( bool anonymous , GNet::Address peer_address ) const
+GSmtp::ServerProtocol::Text * GSmtp::Server::newProtocolText( bool anonymous , GNet::Address peer_address , const std::string & peer_socket_name ) const
 {
 	if( anonymous )
-		return new AnonymousText( GNet::Local::fqdn() , peer_address ) ;
+		return new AnonymousText( GNet::Local::fqdn() , peer_address , peer_socket_name ) ;
 	else
-		return new ServerProtocolText( m_ident , GNet::Local::fqdn() , peer_address ) ;
+		return new ServerProtocolText( m_ident , GNet::Local::fqdn() , peer_address , peer_socket_name ) ;
 }
 
 GSmtp::ProtocolMessage * GSmtp::Server::newProtocolMessageStore( std::auto_ptr<Processor> processor )

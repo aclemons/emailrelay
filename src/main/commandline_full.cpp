@@ -128,7 +128,6 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 		"g!debug!generates debug-level logging if built in!!0!!3|"
 		"C!client-auth!enables smtp authentication with the remote server, using the given secrets file!!1!file!3|"
 		"L!log-time!adds a timestamp to the logging output!!0!!3|"
-		"N!log-file!log to file instead of stderr!!1!file!3|"
 		"S!server-auth!enables authentication of remote clients, using the given secrets file!!1!file!3|"
 		"e!close-stderr!closes the standard error stream soon after start-up!!0!!3|"
 		"a!admin!enables the administration interface and specifies its listening port number!!"
@@ -178,7 +177,8 @@ std::string Main::CommandLineImp::switchSpec_unix()
 std::string Main::CommandLineImp::switchSpec_windows()
 {
 	return
-		"l!log!writes log information on standard error and event log! (but see --close-stderr and --no-syslog)!0!!2|"
+		"l!log!writes log information on stderr and to the event log! (but see --log-file and --no-syslog)!0!!2|"
+		"N!log-file!log to file instead of stderr!!1!file!3|"
 		"t!no-daemon!uses an ordinary window, not the system tray!!0!!3|"
 		"k!syslog!forces system event log output if logging is enabled (overrides --no-syslog)!!0!!3|"
 		"n!no-syslog!disables use of the system event log!!0!!3|"

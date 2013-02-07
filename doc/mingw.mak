@@ -14,21 +14,23 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-#
-# mingw.mak
-#
-# See ../mingw-common.mak for help.
-#
 
-mk_sources=
+.SUFFIXES: .css_ .css .png_ .png
 
-png_in=foo.png_
-png_out=$(png_in:.png_=.png)
+.css_.css:
+	cmd /c copy $*.css_ $*.css
 
-all: $(png_out)
+.png_.png:
+	cmd /c copy $*.png_ $*.png
 
-include ../mingw-common.mak
+all: emailrelay.css emailrelay-doxygen.css gsmtp-classes.png gnet-classes.png sequence-3.png gnet-client.png gsmtp-serverprotocol.png auth.png
 
-$(png_out): $(png_in)
-	copy ...
+#emailrelay.css: emailrelay.css_
+#emailrelay-doxygen.css: emailrelay-doxygen.css_
+#gsmtp-classes.png: gsmtp-classes.png_
+#gnet-classes.png: gnet-classes.png_
+#sequence-3.png: sequence-3.png_
+#gnet-client.png: gnet-client.png_
+#gsmtp-serverprotocol.png: gsmtp-serverprotocol.png_
+#auth.png: auth.png_
 

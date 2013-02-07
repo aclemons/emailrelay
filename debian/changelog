@@ -10,10 +10,10 @@ emailrelay (1.9) unstable; urgency=low
   * Removed support for Windows NT and Windows 9x.
   * Removed Windows "--icon" option.
   * Removed "--enable-fhs" option for "configure" (see INSTALL for equivalent usage).
-  * Added "--log-file" option to redirect stderr.
+  * Added "--log-file" option to redirect stderr on Windows.
   * Added Windows "--peer-lookup" option.
   * Fix for MD5 code in 64-bit builds.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Wed,  6 Feb 2013 21:24:20 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Thu,  7 Feb 2013 01:15:26 +0000
 
 emailrelay (1.8.2) unstable; urgency=low
   * Fix namespaces for gcc 3.4.

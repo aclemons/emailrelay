@@ -145,8 +145,12 @@ $(mk_exe_pack): pack.o
 $(mk_exe_run): run.o unpack.o $(zlib)
 	$(mk_link) $(mk_link_flags_simple) -o $(mk_exe_run) run.o unpack.o $(zlib)
 
-$(mk_exe_gui_tmp): $(mk_exe_gui) $(mk_exe_pack)
-	./$(mk_exe_pack) -a $(mk_exe_gui_tmp) $(mk_exe_gui) ../../README readme.txt ../../COPYING copying.txt ../../ChangeLog changelog.txt ../../AUTHORS authors.txt ../../doc/doxygen-missing.html doc/doxygen/index.html --dir "" ../main/emailrelay-service.exe ../main/emailrelay.exe ../main/emailrelay-submit.exe ../main/emailrelay-filter-copy.exe ../main/emailrelay-poke.exe ../main/emailrelay-passwd.exe --dir "doc" ../../doc/*.png ../../doc/*.txt ../../doc/emailrelay.css --opt ../../doc/*.html
+css=../../doc/emailrelay.css
+$(css): ../../doc/emailrelay.css_
+	cmd /c copy ..\..\doc\emailrelay.css_ ..\..\doc\emailrelay.css
+
+$(mk_exe_gui_tmp): $(mk_exe_gui) $(mk_exe_pack) $(css)
+	./$(mk_exe_pack) -a $(mk_exe_gui_tmp) $(mk_exe_gui) ../../README readme.txt ../../COPYING copying.txt ../../ChangeLog changelog.txt ../../AUTHORS authors.txt ../../doc/doxygen-missing.html doc/doxygen/index.html --dir "" ../main/emailrelay-service.exe ../main/emailrelay.exe ../main/emailrelay-submit.exe ../main/emailrelay-filter-copy.exe ../main/emailrelay-poke.exe ../main/emailrelay-passwd.exe --dir "doc" ../../doc/*.png ../../doc/*.txt $(css) --opt ../../doc/*.html
 
 ../../doc/userguide.html:
 	-@echo ..

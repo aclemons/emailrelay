@@ -14,7 +14,7 @@ E-MailRelay Change Log
 * Removed support for Windows NT and Windows 9x.
 * Removed Windows "--icon" option.
 * Removed "--enable-fhs" option for "configure" (see INSTALL for equivalent usage).
-* Added "--log-file" option to redirect stderr.
+* Added "--log-file" option to redirect stderr on Windows.
 * Added Windows "--peer-lookup" option.
 * Fix for MD5 code in 64-bit builds.
 
