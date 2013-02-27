@@ -439,7 +439,7 @@ void Main::Run::doForwardingOnStartup( GSmtp::MessageStore & store , const GAuth
 
 	client_ptr->sendMessagesFrom( store ) ; // once connected
 
-	// quit() the event loop when all done
+	// quit() the event loop when all done so that run() returns
 	client_ptr.doneSignal().connect( G::slot(*this,&Run::forwardingClientDone) ) ;
 
 	// emit progress events
@@ -484,9 +484,7 @@ GSmtp::Client::Config Main::Run::clientConfig() const
 		GSmtp::Client::Config(
 			cfg.clientFilter() ,
 			cfg.filterTimeout() ,
-			cfg.clientInterface().length() ?
-				GNet::Address(cfg.clientInterface(),0U) : 
-				GNet::Address(0U) ,
+			clientBindAddress(cfg.clientInterface()) ,
 			GSmtp::ClientProtocol::Config(
 				GNet::Local::fqdn() ,
 				cfg.responseTimeout() , 
@@ -496,6 +494,15 @@ GSmtp::Client::Config Main::Run::clientConfig() const
 				true , // (must-accept-all-recipients)
 				false ) , // (eight-bit-strict)
 			cfg.connectionTimeout() ) ;
+}
+
+GNet::Address Main::Run::clientBindAddress( const std::string & s )
+{
+	return s.empty() ?
+			GNet::Address(0U) : (
+				GNet::Address::validString( s ) ?
+					GNet::Address( s ) :
+					GNet::Address( s , 0U ) ) ;
 }
 
 void Main::Run::onException( std::exception & e )

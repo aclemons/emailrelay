@@ -18,15 +18,10 @@
 #
 # emailrelay-submit.sh
 #
-# An example wrapper script for the "emailrelay-submit" utility 
-# that adds the capability of copying messages into multiple 
-# subdirectories based on the message content. This script 
-# should be used as a replacement for the "emailrelay-submit"
-# utility so it reads the message content from the standard 
-# input. All output goes to a log file. 
-# 
-# Typically called by fetchmail as the local delivery agent 
-# with an emailrelay pop server running in "pop-by-name" mode.
+# An example script that deposits e-mail messages into sub-directories
+# of the main E-MailRelay spool directory depending on the "To:"
+# address. This could be used with an E-MailRelay POP server running
+# with the "pop-by-name" option so that messages get routed appropriately.
 #
 # usage: emailrelay-submit.sh
 #

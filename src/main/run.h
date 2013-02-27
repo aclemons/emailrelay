@@ -131,6 +131,7 @@ private:
 	static void checkPort( bool , const std::string & , unsigned int ) ;
 	GSmtp::Client::Config clientConfig() const ;
 	GSmtp::Server::Config serverConfig() const ;
+	static GNet::Address clientBindAddress( const std::string & ) ;
 	GPop::Server::Config popConfig() const ;
 	void checkScripts() const ;
 	void checkVerifierScript( const std::string & ) const ;

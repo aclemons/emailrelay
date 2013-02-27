@@ -38,7 +38,8 @@ EXTRA_DIST = \
 	emailrelay-process.sh_ \
 	emailrelay-runperl.js \
 	emailrelay-resubmit.js \
-	emailrelay-change-auth.js \
+	emailrelay-edit-content.js \
+	emailrelay-edit-envelope.js \
 	emailrelay-submit.sh_ \
 	emailrelay-multicast.sh_ \
 	make-setup.sh_ \
@@ -63,7 +64,8 @@ work_scripts = \
 noinst_SCRIPTS = \
 	emailrelay-runperl.js \
 	emailrelay-resubmit.js \
-	emailrelay-change-auth.js \
+	emailrelay-edit-content.js \
+	emailrelay-edit-envelope.js \
 	$(work_scripts)
 
 e_examples_DATA = \

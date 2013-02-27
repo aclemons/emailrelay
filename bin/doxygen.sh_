@@ -18,8 +18,7 @@
 #
 # doxygen.sh
 #
-# Used by doc/Makefile to run doxygen with a bit of 
-# config-file pre-processing.
+# Used by doc/Makefile to run doxygen with a bit of config-file pre-processing.
 #
 # usage: doxygen <have-doxygen> <top-srcdir> <top-builddir> [<doxyfile-out>]
 #

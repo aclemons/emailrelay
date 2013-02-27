@@ -20,6 +20,8 @@
 
 #include "gdef.h"
 #include "gnet.h"
+#include "gtest.h"
+#include "gsleep.h"
 #include "gassert.h"
 #include "gsocket.h"
 #include "gcleanup.h"
@@ -135,6 +137,10 @@ bool GNet::Socket::connect( const Address & address , bool *done )
 	if( error(rc) )
 	{
 		m_reason = reason() ;
+
+		if( G::Test::enabled( "slow-connect" ) )
+			sleep( 1 ) ;
+
 		if( eInProgress() )
 		{
 			G_DEBUG( "GNet::Socket::connect: connection in progress" ) ;

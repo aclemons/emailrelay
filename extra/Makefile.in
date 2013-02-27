@@ -208,7 +208,7 @@ top_srcdir = @top_srcdir@
 #
 #
 EXTRA_DIST = 
-SUBDIRS = mips
+SUBDIRS = 
 all: all-recursive
 
 .SUFFIXES:

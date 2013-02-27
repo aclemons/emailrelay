@@ -18,21 +18,21 @@ emailrelay - e-mail transfer agent and proxy
 [OPTIONS]
 <P>
 
-<B>emailrelay </B>
+<B>emailrelay</B>
 
 --as-server
 <P>
 
 <B>emailrelay</B>
 
---as-client 
+--as-client
 <I>server-address</I>
 
 <P>
 
 <B>emailrelay</B>
 
---as-proxy 
+--as-proxy
 <I>server-address</I>
 
 <A NAME="lbAD">&nbsp;</A>
@@ -41,18 +41,18 @@ emailrelay - e-mail transfer agent and proxy
 <I>emailrelay</I>
 
 is a simple SMTP proxy and store-and-forward message transfer agent.
-It does store-and-forward mail relay to a fixed next-hop server, without 
-any routing. 
+It does store-and-forward mail relay to a fixed next-hop server, without
+any routing.
 <P>
 
-It runs in two main modes: a storage daemon 
+It runs in two main modes: a storage daemon
 (<I>--as-server</I>)
 
-and a forwarding 
-agent 
+and a forwarding
+agent
 (<I>--as-client</I>).
 
-The storage daemon is an SMTP server which stores e-mail 
+The storage daemon is an SMTP server which stores e-mail
 messages in a local spool directory. The forwarding agent acts as an
 SMTP client sending the spooled e-mail messages on to the next
 SMTP server in the chain.

@@ -15,7 +15,7 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-txt_files=developer.txt reference.txt userguide.txt windows.txt 
+txt_files=developer.txt reference.txt userguide.txt windows.txt
 man_files_in=emailrelay.1 emailrelay-passwd.1 emailrelay-poke.1 emailrelay-submit.1 emailrelay-filter-copy.1
 man_files_out=emailrelay.1.gz emailrelay-passwd.1.gz emailrelay-poke.1.gz emailrelay-submit.1.gz emailrelay-filter-copy.1.gz
 html_files_in=doxygen-header.html doxygen-missing.html doxygen.cfg

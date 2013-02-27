@@ -18,15 +18,14 @@
 # 
 # emailrelay-notify.sh
 #
-# Looks for failed mail in the E-MailRelay spool directory, and sends failure 
+# Looks for failed mail in the E-MailRelay spool directory and sends failure 
 # notification messages using 'procmail'.
 #
 # usage: emailrelay-notify.sh [<spool-dir>]
 #
-# Notification of failed e-mail by means of e-mail messages is a
-# requirement imposed by the SMTP specification. However, a simpler 
-# approach might be more appropriate -- for example, a line like this in
-# a ".profile" script:
+# Notification of failed e-mail by means of e-mail messages is a requirement 
+# imposed by the SMTP specification. However, a simpler approach might be more 
+# appropriate -- for example, a line like this in a ".profile" script:
 #
 #   if test -f /var/spool/emailrelay/*.envelope.bad ; then echo Failed mail >&2 ; fi
 #

@@ -36,8 +36,7 @@
         <p class="p-toc"><a class="a-toc" href="developer.html#SH_1_12">Source file names</a></p>
         <p class="p-toc"><a class="a-toc" href="developer.html#SH_1_13">Portability</a></p>
         <p class="p-toc"><a class="a-toc" href="developer.html#SH_1_14">Compile-time features</a></p>
-        <p class="p-toc"><a class="a-toc" href="developer.html#SH_1_15">Patterns</a></p>
-        <p class="p-toc"><a class="a-toc" href="developer.html#SH_1_16">Idioms</a></p>
+        <p class="p-toc"><a class="a-toc" href="developer.html#SH_1_15">Idioms</a></p>
    <h3 class="h3-toc"><a class="a-toc" href="doxygen/index.html">Source code</a></h3>
    <h3 class="h3-toc"><a class="a-toc" href="emailrelay-man.html">Man page</a></h3>
    <h3 class="h3-toc"><a class="a-toc" href="changelog.html">Change log</a></h3>
@@ -55,15 +54,13 @@
     </p>
 
     <p>
-     E-MailRelay uses the same non-blocking i/o model as Squid
-     Because of its functional simplicity E-MailRelay is easy to configure, often
-     only requiring the address of the target SMTP server to be put on the command
-     line.
+     E-MailRelay can also run as a POP3 server. Messages received over SMTP can be
+     automatically dropped into several independent POP3 mailboxes.
     </p>
 
     <p>
-     E-MailRelay can also run as a POP3 server. Messages received over SMTP can be
-     automatically dropped into several independent POP3 mailboxes.
+     E-MailRelay uses the same non-blocking i/o model as Squid and Nginx giving
+     excellent scalability and resource usage.
     </p>
 
     <p>
@@ -74,25 +71,25 @@
     <p>
       E-MailRelay can be downloaded from
       <a class="a-href" href="https://sourceforge.net/project/showfiles.php?group_id=32691">SourceForge</a>.
-      Linux, Mac and Unix users should build from source if possible using the usual 
+      Linux, Mac and Unix users should build from source if possible using the usual
       "./configure ; make ; make ; sudo make install" incantation and Windows users should
       use the self-extracting installer.
     </p>
     <p>
-      To run the program as a proxy use the "--as-proxy" command-line switch followed by the
+      To run the program as a proxy use the "--as-proxy" command-line option followed by the
       address of the target SMTP server. If you want to edit or filter e-mail as it passes
-      through the proxy then specify your filter program with the "--filter" switch.
+      through the proxy then specify your filter program with the "--filter" option.
     </p>
     <img src="diagram-2.png" alt="proxy diagram">
     <p>
-      To run the program as a store-and-forward MTA use the "--as-server" switch to start
+      To run the program as a store-and-forward MTA use the "--as-server" option to start
       the storage daemon, and then use "--as-client" followed by the address of the target
       SMTP server to trigger forwarding of spooled mail.
     </p>
     <img src="diagram-1.png" alt="client/server diagram">
     <p>
-      For more information refer to the 
-      <a class="a-href" href="userguide.html">user guide</a> and 
+      For more information refer to the
+      <a class="a-href" href="userguide.html">user guide</a> and
       <a class="a-href" href="reference.html">reference</a> document.
     </p>
   </div>

@@ -72,10 +72,6 @@ bool GSmtp::ExecutableProcessor::process( const std::string & path )
 	// set special-repoll and special-cancelled flags
 	m_repoll = is_special && ((exit_code-100)&2) != 0 ;
 	m_cancelled = is_special && ((exit_code-100)&1) == 0 ;
-	if( m_cancelled )
-	{
-		G_LOG( "GSmtp::ExecutableProcessor: message abandoned by the pre-processor" ) ;
-	}
 
 	// treat special as ok, except for special-cancelled
 	m_ok = is_zero || ( is_special && !m_cancelled ) ;

@@ -17,18 +17,18 @@
 //
 // emailrelay-resubmit.js
 //
-// Looks for all failed e-mails in the E-MailRelay spool directory 
-// and resubmits them. However, if an e-mail has been retried five 
-// times already then it is not submitted again.
+// A utility script for Windows that looks for all failed e-mails in the 
+// E-MailRelay spool directory and resubmits them. However, if an e-mail has 
+// been retried five times already then it is not submitted again.
 //
 // usage: cscript //nologo emailrelay-resubmit.js [<spool-dir>]
 //
 
 // configuration
 //
-var cfg_store = "__SPOOL_DIR__" ;
+var cfg_store = "c:/windows/spool/emailrelay" ;
 var cfg_retry_limit = 5 ;
-var cfg_debug = true ;
+var cfg_debug = false ;
 
 // parse the command line
 //

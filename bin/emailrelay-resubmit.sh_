@@ -18,11 +18,13 @@
 #
 # emailrelay-resubmit.sh
 #
-# Looks for all failed e-mails in the E-MailRelay spool directory 
-# and resubmits them. However, if an e-mail has been retried five 
-# times already then it is not resubmitted again.
+# Looks for all failed e-mails in the E-MailRelay spool directory and resubmits 
+# them. However, if an e-mail has been retried five times already then it is not
+# resubmitted again.
 #
 # usage: emailrelay-resubmit.sh [<spool-dir>]
+#
+# See also emailrelay-resubmit.js for Windows.
 #
 
 store="__SPOOL_DIR__"

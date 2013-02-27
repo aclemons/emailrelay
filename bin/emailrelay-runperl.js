@@ -18,10 +18,11 @@
 // emailrelay-runperl.js
 //
 // An example "--filter" script for Windows that runs a perl script
-// to process the message content via its standard input and standard 
-// output.
+// to process e-mails.
 //
-// The name of the perl script is hard-coded below: edit as necessary.
+// The perl script is expected to read the e-mail content on its
+// standard input and write it out again on standard output, with
+// a zero exit code on success (like spamassassin, for example).
 //
 // The E-MailRelay command-line should look something like this:
 //
@@ -29,55 +30,67 @@
 //
 // Note the backslash to escape the space in the path.
 //
-// The implementation of this JavaScript makes use of "CMD.EXE", which may be 
-// not be available on some versions of Windows.
-//
-// Edit the next two lines as necessary, but avoid spaces in paths:
-var cfg_perl="perl -S -T -w"
-var cfg_perl_script="spamassassin"
 
-// parse our command line
-var args = WScript.Arguments
-var filename = args(0)
-
-// prepare a command using CMD.EXE to do file redirection
-var cmd_in = "\"" + filename + "\""
-var cmd_out = "\"" + filename + ".tmp\""
-var cmd_err = "\"" + filename + ".err\""
-var cmd_perl = "cmd /c " + cfg_perl + " " + cfg_perl_script
-var cmd = cmd_perl + " < " + cmd_in + " > " + cmd_out + " 2> " + cmd_err
-
-// run the command
-var sh = WScript.CreateObject("WScript.Shell")
-var rc = sh.Run( cmd , 0 , true )
-
-// check the file redirection
-var fs = WScript.CreateObject("Scripting.FileSystemObject")
-if( !fs.FileExists(filename+".tmp") || !fs.FileExists(filename+".err") )
+var rc = 1 ;
+try
 {
-	WScript.Echo("<<file redirection error>>")
-	WScript.Quit( 2 )
-}
+	// configuration -- edit these lines as necessary, but avoid spaces in paths
+	var cfg_perl = "perl -S -T -w" ;
+	var cfg_perl_script = "spamassassin" ;
 
-// success or failure
-if( rc == 0 )
-{
-	fs.DeleteFile( filename )
-	fs.MoveFile( filename + ".tmp" , filename )
-	fs.DeleteFile( filename + ".err" )
-	WScript.Quit( 0 )
-}
-else
-{
-	fs.DeleteFile( filename + ".tmp" )
-	var error = fs.OpenTextFile( filename + ".err" , 1 )
-	if( ! error.AtEndOfStream )
+	// parse our command line
+	var args = WScript.Arguments ;
+	var filename = args(0) ;
+
+	// prepare a perl commandline with quotes and redirection etc
+	var cmd_in = "\"" + filename + "\"" ;
+	var cmd_out = "\"" + filename + ".tmp\"" ;
+	var cmd_err = "\"" + filename + ".err\"" ;
+	var cmd_perl = "cmd /c " + cfg_perl + " " + cfg_perl_script ;
+	var cmd = cmd_perl + " < " + cmd_in + " > " + cmd_out + " 2> " + cmd_err ;
+
+	// run the perl command
+	var sh = WScript.CreateObject("WScript.Shell") ;
+	rc = sh.Run( cmd , 0 , true ) ;
+
+	// check the file redirection worked
+	var fs = WScript.CreateObject("Scripting.FileSystemObject") ;
+	if( !fs.FileExists(filename+".tmp") || !fs.FileExists(filename+".err") )
 	{
-		var reason = error.ReadLine()
-		WScript.Echo( "<<" + reason + ">>" )
+		throw "file redirection error" ;
 	}
-	error.Close()
-	fs.DeleteFile( filename + ".err" )
-	WScript.Quit( rc )
+
+	// check for perl script errors
+	if( rc != 0 )
+	{
+		// read one line of the perl script's standard error
+		var reason = "non-zero exit" ;
+		var errorstream = fs.OpenTextFile( filename + ".err" , 1 )
+		if( ! errorstream.AtEndOfStream )
+			reason = errorstream.ReadLine() ;
+		errorstream.Close() ;
+		
+		// clean up
+		fs.DeleteFile( filename + ".err" ) ;
+		fs.DeleteFile( filename + ".tmp" ) ;
+
+		throw reason ;
+	}
+
+	// clean up
+	fs.DeleteFile( filename ) ;
+	fs.DeleteFile( filename + ".err" ) ;
+
+	// install the perl script output as the new content file
+	fs.MoveFile( filename + ".tmp" , filename ) ;
+
+	// successful exit
+	WScript.Quit( 0 ) ;
+}
+catch( e ) 
+{
+	// report errors using the special <<...>> markers
+	WScript.Echo( "<<" + e + ">>" ) ;
+	WScript.Quit( rc ) ;
 }
 

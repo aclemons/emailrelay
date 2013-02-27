@@ -853,11 +853,12 @@ std::string GSmtp::ServerProtocolText::received( const std::string & smtp_peer_n
 
 std::string GSmtp::ServerProtocolText::shortened( std::string prefix , std::string s )
 {
+	// strip off the windows sid and ad domain
 	std::string::size_type pos = s.find_last_of( "=\\" ) ;
 	return
 		s.empty() || pos == std::string::npos || (pos+1U) == s.length() ?
 			std::string() :
-			( prefix + s.substr(pos+1U) ) ;
+			( prefix + G::Str::printable(s.substr(pos+1U),'^') ) ;
 }
 
 std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_peer_name , 

@@ -18,22 +18,17 @@
 /*
    poke.c
  
-   This is a small program that connects to the
-   specified port on the local machine, sends
-   a fixed string, and prints out the first
-   bit of what it gets sent back.
+   This is a small program that connects to the specified port on the local 
+   machine, sends a fixed string, and prints out the first bit of what it 
+   gets sent back.
 
-   In daemon mode it detaches from the terminal,
-   writes a pid-file, and then sends the fixed string 
-   periodically, discarding any responses.
+   In daemon mode it detaches from the terminal, writes a pid-file, and then 
+   sends the fixed string periodically, discarding any responses.
    
-   Its purpose is to provide a low-overhead
-   mechanism for stimulating the E-MailRelay
-   daemon to send its queued-up messages to
-   the remote smtp server.
+   Its purpose is to provide a low-overhead mechanism for stimulating the 
+   E-MailRelay daemon to send its queued-up messages to the remote smtp server.
 
-   If there is an error no output is generated,
-   but the exit code is non-zero.
+   If there is an error no output is generated, but the exit code is non-zero.
 
    usage: poke [-d] [<port> [<send-string>]]
 
@@ -95,9 +90,8 @@ static void init( void )
 static void detach( void )
 {
   #ifndef G_WIN32
-	int rc ;
 	if( fork() ) exit( EXIT_SUCCESS ) ;
-	rc = chdir( "/" ) ;
+	chdir( "/" ) ;
 	setsid() ;
 	if( fork() ) exit( EXIT_SUCCESS ) ;
 	close( STDIN_FILENO ) ;
@@ -130,7 +124,10 @@ static BOOL poke( int argc , char * argv [] )
 	const char * const host = "127.0.0.1" ;
 	unsigned short port = 10025U ; /* --admin port */
 	char buffer[160U] = "FLUSH" ;
-	struct sockaddr_in address ;
+	union {
+		struct sockaddr_in specific ;
+		struct sockaddr generic ;
+	} address ;
 	int fd , rc ;
 	ssize_t n ;
 
@@ -156,13 +153,13 @@ static BOOL poke( int argc , char * argv [] )
 	}
 
 	/* prepare the address */
-	memset( &address , 0 , sizeof(address) ) ;
-	address.sin_family = AF_INET ;
-	address.sin_port = htons( port ) ;
-	address.sin_addr.s_addr = inet_addr( host ) ;
+	memset( &address , 0 , sizeof(address.specific) ) ;
+	address.specific.sin_family = AF_INET ;
+	address.specific.sin_port = htons( port ) ;
+	address.specific.sin_addr.s_addr = inet_addr( host ) ;
 
 	/* connect */
-	rc = connect( fd , (const struct sockaddr*)&address , sizeof(address) ) ;
+	rc = connect( fd , &address.generic , sizeof(address.generic) ) ;
 	if( rc < 0 ) 
 	{
 		close( fd ) ;

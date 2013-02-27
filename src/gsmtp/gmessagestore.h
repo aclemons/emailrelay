@@ -61,13 +61,14 @@ public:
 	/// An iterator class for GSmtp::MessageStore.
 	class Iterator 
 	{
-		public: std::auto_ptr<StoredMessage> next() ;
-		private: IteratorImp * m_imp ;
 		public: Iterator() ;
 		public: explicit Iterator( IteratorImp * ) ;
 		public: ~Iterator() ;
 		public: Iterator( const Iterator & ) ;
 		public: Iterator & operator=( const Iterator & ) ;
+		public: std::auto_ptr<StoredMessage> next() ;
+		public: void last() ;
+		private: IteratorImp * m_imp ;
 	} ;
 
 	static G::Path defaultDirectory() ;

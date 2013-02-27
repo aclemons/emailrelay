@@ -223,7 +223,7 @@ in between is taken as a failure reason, and passed back to the SMTP client.
 
 The pre-processor program can edit any part of the message's envelope file or
 content file: E-MailRelay remembers nothing about the message while the
-pre-processor is running, except the filename. But if the message is deleted
+pre-processor is running except the filename. But if the message is deleted
 by the pre-processor then E-MailRelay may be upset, so to avoid the error
 message use an exit code of 100.
 
@@ -285,15 +285,17 @@ Windows pre-processor programs written in JavaScript can be run using
 
 Note how the space character in "program files" is escaped with a backslash.
 
-As an example of more complex processing there is a "--filter" script included
-in the distribution ("emailrelay-process.sh") that does rot-13 masking of
-messages.  This script also does some simple MIME encoding, so that the masked
-message appears as an attachment within a plaintext bearer message.
+Example "--filter" scripts are included in the distribution, including
+"emailrelay-process.sh" which does rot-13 masking of messages. This script also
+does some simple MIME encoding, so that the masked message appears as an
+attachment within a plaintext bearer message.
 
 E-MailRelay also has a "--client-filter" option that enables pre-processing of
 messages just before they are forwarded, rather then after they are stored. The
-disadvantage is that by then it is too late to notify the SMTP client of any
-processing failures, so in many applications using "--filter" is more useful.
+disadvantage is that by then it is too late to notify the submitting SMTP client
+of any processing failures, so in many applications using "--filter" is more 
+useful. The special exit code of 100 can be used to ignore the current message,
+and 102 to stop looking for spooled messages after processing the current one.
 
 Bear in mind the following points when writing "--filter" programs:
 

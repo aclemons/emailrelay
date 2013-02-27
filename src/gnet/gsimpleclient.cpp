@@ -273,7 +273,7 @@ bool GNet::SimpleClient::localBind( Address local_address )
 GNet::SimpleClient::ConnectStatus GNet::SimpleClient::connectCore( Address remote_address , std::string *error_p )
 {
 	G_ASSERT( error_p != NULL ) ;
-	std::string &error = *error_p ;
+	std::string & error = *error_p ;
 
 	// initiate the connection
 	//

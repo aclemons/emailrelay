@@ -16,13 +16,11 @@ messages as they pass through. When running as a store-and-forward MTA incoming
 messages are stored in a local spool directory, and then forwarded to the next
 SMTP server on request.
 
-E-MailRelay uses the same non-blocking i/o model as Squid
-Because of its functional simplicity E-MailRelay is easy to configure, often
-only requiring the address of the target SMTP server to be put on the command
-line.
-
 E-MailRelay can also run as a POP3 server. Messages received over SMTP can be
 automatically dropped into several independent POP3 mailboxes.
+
+E-MailRelay uses the same non-blocking i/o model as Squid and Nginx giving
+excellent scalability and resource usage.
 
 C++ source code is available for Linux, FreeBSD, MacOS X etc, and Windows.
 Distribution is under the GNU General Public License V3.

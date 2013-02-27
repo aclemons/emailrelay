@@ -18,11 +18,16 @@
 #
 # emailrelay-deliver.sh
 #
-# Looks for local mail in the E-MailRelay spool directory, and delivers 
-# it using 'procmail'.
+# Looks for local mail in the E-MailRelay spool directory and delivers is using
+# 'procmail'.
 #
 # usage: emailrelay-deliver.sh [<spool-dir>]
 #
+# This illustrates how delivery to local "postmaster" mailboxes could be done,
+# although it is not likely to be a useful feature for a typical mail relay 
+# setup.
+#
+
 
 store="__SPOOL_DIR__"
 postmaster="root"

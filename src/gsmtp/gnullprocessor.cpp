@@ -22,8 +22,22 @@
 #include "gsmtp.h"
 #include "gnullprocessor.h"
 
-GSmtp::NullProcessor::NullProcessor()
+GSmtp::NullProcessor::NullProcessor() :
+	m_cancelled(false) ,
+	m_repoll(false) ,
+	m_ok(true)
 {
+}
+
+GSmtp::NullProcessor::NullProcessor( unsigned int exit_code ) :
+	m_cancelled(false) ,
+	m_repoll(false) ,
+	m_ok(false)
+{
+	bool is_special = exit_code >= 100U && exit_code <= 107U ;
+	m_repoll = is_special && ((exit_code-100U)&2U) != 0U ;
+	m_cancelled = is_special && ((exit_code-100U)&1U) == 0U ;
+	m_ok = exit_code == 0 || ( is_special && !m_cancelled ) ;
 }
 
 GSmtp::NullProcessor::~NullProcessor()
@@ -32,17 +46,17 @@ GSmtp::NullProcessor::~NullProcessor()
 
 bool GSmtp::NullProcessor::cancelled() const
 {
-	return false ;
+	return m_cancelled ;
 }
 
 bool GSmtp::NullProcessor::repoll() const
 {
-	return false ;
+	return m_repoll ;
 }
 
 std::string GSmtp::NullProcessor::text() const
 {
-	return std::string() ;
+	return m_ok ? std::string() : std::string("error") ;
 }
 
 G::Signal1<bool> & GSmtp::NullProcessor::doneSignal()
@@ -56,7 +70,7 @@ void GSmtp::NullProcessor::abort()
 
 void GSmtp::NullProcessor::start( const std::string & )
 {
-	m_done_signal.emit( true ) ;
+	m_done_signal.emit( m_ok ) ;
 }
 
 /// \file gnullprocessor.cpp

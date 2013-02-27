@@ -715,7 +715,7 @@ void G::Str::splitIntoTokens( const std::string & in , Strings & out , const std
 {
 	splitIntoTokens_( in , out , ws ) ;
 }
-void G::Str::splitIntoTokens( const std::string &in , StringArray &out , const std::string & ws )
+void G::Str::splitIntoTokens( const std::string & in , StringArray & out , const std::string & ws )
 {
 	splitIntoTokens_( in , out , ws ) ;
 }
@@ -836,7 +836,7 @@ std::string G::Str::head( const std::string & in , std::string::size_type pos , 
 	return
 		pos == std::string::npos ?
 			default_ :
-			( pos == 0U ? std::string() : in.substr(0U,pos) ) ;
+			( pos == 0U ? std::string() : ( (pos+1U) >= in.length() ? in : in.substr(0U,pos) ) ) ;
 }
 
 std::string G::Str::tail( const std::string & in , std::string::size_type pos , const std::string & default_ )

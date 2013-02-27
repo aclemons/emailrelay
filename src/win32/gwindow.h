@@ -116,7 +116,7 @@ public:
 		///< Maps from a window handle to a Window object. The handle 
 		///< must be that of a Window window.
 
-	static LRESULT sendUserString( HWND hwnd , const char *string ) ;
+	static LRESULT sendUserString( HWND hwnd , const char * string ) ;
 		///< Sends a string to a specified window. The other window 
 		///< will receive a onUserString() message.
 

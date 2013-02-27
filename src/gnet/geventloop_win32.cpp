@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gnet.h"
+#include "gstr.h"
 #include "gevent.h"
 #include "gpump.h"
 #include "gappinst.h"
@@ -54,7 +55,8 @@ public:
 
 	virtual bool init() ;
 		// Override from EventLoop. Initialses the WinSock library,
-		// passing it the handle of an internally-created hidden window.
+		// and creates an internal hidden window. The window is used
+		// as a conduit for select events and timer events.
 		// Returns false on error.
 
 	std::string reason() const ;
@@ -97,7 +99,7 @@ protected:
 private:
 	Winsock( const Winsock & other ) ;
 	void operator=( const Winsock & other ) ;
-	bool attach( HWND hwnd , unsigned int msg , unsigned int timer_id = 0U ) ;
+	bool attach( unsigned int msg , unsigned int timer_id = 0U ) ;
 	EventHandler * findHandler( EventHandlerList & list , Descriptor fd ) ;
 	void update( Descriptor fd ) ;
 	long desiredEvents( Descriptor fd ) ;
@@ -188,10 +190,10 @@ bool GNet::Winsock::init()
 		G_WARNING( "GNet::Winsock::init: cannot create hidden window" ) ;
 		return false ;
 	}
-	return attach( m_hwnd , m_msg , m_timer_id ) ;
+	return attach( m_msg , m_timer_id ) ;
 }
 
-bool GNet::Winsock::attach( HWND hwnd , unsigned msg , unsigned int timer_id )
+bool GNet::Winsock::attach( unsigned msg , unsigned int timer_id )
 {
 	WSADATA info ;
 	WORD version = MAKEWORD( 2 , 2 ) ;
@@ -211,7 +213,7 @@ bool GNet::Winsock::attach( HWND hwnd , unsigned msg , unsigned int timer_id )
 	}
 
 	m_id = info.szDescription ;
-	G_DEBUG( "GNet::Winsock::attach: winsock \"" << m_id << "\"" ) ;
+	G_DEBUG( "GNet::Winsock::attach: winsock \"" << G::Str::printable(m_id) << "\"" ) ;
 	m_success = true ;
 	return true ;
 }
@@ -229,19 +231,19 @@ GNet::Winsock::~Winsock()
 	delete m_window ;
 }
 
-void GNet::Winsock::addRead( Descriptor fd , EventHandler &handler )
+void GNet::Winsock::addRead( Descriptor fd , EventHandler & handler )
 {
 	m_read_list.add( fd , &handler ) ;
 	update( fd ) ;
 }
 
-void GNet::Winsock::addWrite( Descriptor fd , EventHandler &handler )
+void GNet::Winsock::addWrite( Descriptor fd , EventHandler & handler )
 {
 	m_write_list.add( fd , &handler ) ;
 	update( fd ) ;
 }
 
-void GNet::Winsock::addException( Descriptor fd , EventHandler &handler )
+void GNet::Winsock::addException( Descriptor fd , EventHandler & handler )
 {
 	m_exception_list.add( fd , &handler ) ;
 	update( fd ) ;
@@ -296,7 +298,7 @@ long GNet::Winsock::desiredEvents( Descriptor fd )
 	return mask ;
 }
 
-GNet::EventHandler * GNet::Winsock::findHandler( EventHandlerList &list , Descriptor fd )
+GNet::EventHandler * GNet::Winsock::findHandler( EventHandlerList & list , Descriptor fd )
 {
 	return list.find( fd ) ;
 }
@@ -310,6 +312,22 @@ void GNet::Winsock::onMessage( WPARAM wparam , LPARAM lparam )
 	G_DEBUG( "GNet::Winsock::processMessage: winsock select message: "
 		<< "fd=" << fd << " evt=" << event << " err=" << err ) ;
 
+	if( event & WRITE_EVENTS ) // first in case just connect()ed
+	{
+		EventHandler * handler = findHandler( m_write_list , Descriptor(fd) ) ;
+		if( handler )
+		{
+			try
+			{
+				handler->writeEvent();
+			}
+			catch( std::exception & e )
+			{
+				G_DEBUG( "GNet::Winsock::onMessage: write-event handler exception being passed back: " << e.what() ) ;
+				handler->onException( e ) ;
+			}
+		}
+	} 
 	if( event & READ_EVENTS )
 	{
 		EventHandler * handler = findHandler( m_read_list , Descriptor(fd) ) ;
@@ -326,23 +344,7 @@ void GNet::Winsock::onMessage( WPARAM wparam , LPARAM lparam )
 			}
 		}
 	} 
-	else if( event & WRITE_EVENTS )
-	{
-		EventHandler * handler = findHandler( m_write_list , Descriptor(fd) ) ;
-		if( handler )
-		{
-			try
-			{
-				handler->writeEvent();
-			}
-			catch( std::exception & e )
-			{
-				G_DEBUG( "GNet::Winsock::onMessage: write-event handler exception being passed back: " << e.what() ) ;
-				handler->onException( e ) ;
-			}
-		}
-	} 
-	else if( event & EXCEPTION_EVENTS )
+	if( event & EXCEPTION_EVENTS )
 	{
 		EventHandler * handler = findHandler( m_exception_list , Descriptor(fd) ) ;
 		if( handler )
@@ -358,13 +360,10 @@ void GNet::Winsock::onMessage( WPARAM wparam , LPARAM lparam )
 			}
 		}
 	} 
-	else if( err )
+	if( err )
 	{
-		G_DEBUG( "GNet::Winsock::processMessage: winsock select error: " << err ) ;
-	}
-	else
-	{
-		G_DEBUG( "GNet::Winsock::processMessage: unwanted winsock event: " << event ) ;
+		// only 'network down' for FD_READ/FD_WRITE
+		G_WARNING( "GNet::Winsock::processMessage: winsock select error: " << err ) ;
 	}
 }
 
@@ -406,7 +405,6 @@ std::string GNet::Winsock::run()
 		throw std::runtime_error( m_window->wndProcExceptionString() ) ;
 	return quit_reason ;
 }
-
 
 bool GNet::Winsock::running() const
 {

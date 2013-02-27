@@ -97,12 +97,23 @@ void GSmtp::Client::preprocessorStart()
 void GSmtp::Client::preprocessorDone( bool ok )
 {
 	G_ASSERT( m_message.get() != NULL ) ;
-	if( ok && m_message.get() != NULL )
+
+	// (different cancelled/repoll semantics on the client-side)
+	bool ignore_this = !ok && m_processor->cancelled() && !m_processor->repoll() ;
+	bool break_after = !ok && m_processor->cancelled() && m_processor->repoll() ;
+
+	if( ok || break_after )
+		m_message->sync() ; // re-read it after the preprocessing
+
+	if( break_after )
 	{
-		m_message->sync() ;
+		G_DEBUG( "GSmtp::Client::preprocessorDone: making this the last message" ) ;
+		m_iter.last() ; // so next next() returns nothing
 	}
-	std::string reason = m_processor->text() ;
-	m_protocol.preprocessorDone( ok ? std::string() : reason ) ;
+
+	// pass the event on to the protocol
+	m_protocol.preprocessorDone( ok || break_after ,
+		ok || ignore_this || break_after ? std::string() : m_processor->text() ) ;
 }
 
 void GSmtp::Client::onSecure()
@@ -170,7 +181,8 @@ void GSmtp::Client::protocolDone( std::string reason , int reason_code )
 
 	if( reason.empty() )
 	{
-		messageDestroy() ;
+		if( reason_code != 1 ) // TODO magic number
+			messageDestroy() ;
 	}
 	else
 	{

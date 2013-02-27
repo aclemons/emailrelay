@@ -47,7 +47,6 @@ dnl
 AC_LANG_C
 AC_SEARCH_LIBS(gethostbyname,nsl)
 AC_SEARCH_LIBS(connect,socket)
-AC_SEARCH_LIBS(compress2,z)
 
 dnl ===
 dnl check for header files, functions and typedefs...
@@ -231,5 +230,5 @@ if test "$e_qtmoc" = "" ; then e_qtmoc="moc" ; fi
 dnl ===
 dnl generate files...
 dnl
-AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gauth/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile extra/mips/Makefile debian/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gauth/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/win32/Makefile src/gui/Makefile lib/Makefile lib/gcc2.95/Makefile lib/msvc6.0/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile extra/Makefile debian/Makefile)
 

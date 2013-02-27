@@ -357,9 +357,9 @@ e_icon_DATA = \
 @GUI_TRUE@	$(QT_LIBS)
 
 @GUI_TRUE@pack_SOURCES = pack.cpp
-@GUI_TRUE@pack_LDADD = $(top_builddir)/src/glib/libglib.a
+@GUI_TRUE@pack_LDADD = $(top_builddir)/src/glib/libglib.a -lz
 @GUI_TRUE@emailrelay_unpack_SOURCES = unpackmain.c unpack.c
-@GUI_TRUE@emailrelay_unpack_LDADD = 
+@GUI_TRUE@emailrelay_unpack_LDADD = -lz
 @GUI_TRUE@emailrelay_start_gui_SOURCES = guistart.cpp
 @GUI_TRUE@emailrelay_start_gui_LDADD = 
 all: all-am

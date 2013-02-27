@@ -42,6 +42,10 @@ std::pair<std::string,std::string> GSmtp::FactoryParser::parse( const std::strin
 	{
 		return std::make_pair( std::string("file") , G::Str::tail(address,address.find(":")) ) ;
 	}
+	else if( address.find("exit:") == 0U )
+	{
+		return std::make_pair( std::string("exit") , G::Str::tail(address,address.find(":")) ) ;
+	}
 	else if( address.empty() )
 	{
 		return std::make_pair( std::string() , std::string() ) ;
@@ -72,6 +76,13 @@ std::string GSmtp::FactoryParser::check( const std::string & address , const std
 			return "probably not executable" ;
 		else if( ! exe.exe().isAbsolute() )
 			return "not an absolute path" ;
+		else
+			return std::string() ;
+	}
+	else if( p.first == "exit" )
+	{
+		if( !G::Str::isUInt(p.second) )
+			return "not a numeric exit code" ;
 		else
 			return std::string() ;
 	}

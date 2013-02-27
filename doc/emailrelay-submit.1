@@ -17,21 +17,21 @@
 emailrelay-submit \- a submission utility for E-MailRelay
 .SH SYNOPSIS
 .B emailrelay-submit
-[--help] [--verbose] [--spool-dir 
-.IR spool-directory ] 
+[--help] [--verbose] [--spool-dir
+.IR spool-directory ]
 [--from
 .IR from-address ]
-.I to-address 
+.I to-address
 .RI [ to-address \ ...]
 .SH DESCRIPTION
 .I emailrelay-submit
 is a utility which reads an RFC822 e-mail message from the standard
-input, with SMTP envelope recipient addresses passed on the 
-command-line, and writes it into the 
-.B E-MailRelay 
+input, with SMTP envelope recipient addresses passed on the
+command-line, and writes it into the
+.B E-MailRelay
 spool directory.
 .LP
-The verbose switch causes the path of the new content file
+The verbose option causes the path of the new content file
 to be printed.
 .SH SEE ALSO
 .BR emailrelay (1),

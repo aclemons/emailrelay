@@ -260,7 +260,7 @@ EXTRA_DIST = \
 	emailrelay.spec \
 	ChangeLog \
 	README.windows \
-	README.mips \
+	README.embedded \
 	README.mac \
 	LICENSE \
 	bootstrap \
@@ -269,7 +269,7 @@ EXTRA_DIST = \
 	emailrelay.xcodeproj/project.pbxproj 
 
 SUBDIRS = bin src lib etc doc debian test extra
-e_doc_DATA = COPYING AUTHORS INSTALL NEWS README README.windows README.mac ChangeLog
+e_doc_DATA = COPYING AUTHORS INSTALL NEWS README README.windows README.mac README.embedded ChangeLog
 RPM = $(RPM_ROOT)/RPMS/$(RPM_ARCH)/emailrelay-$(VERSION)-1.$(RPM_ARCH).rpm
 DEB = emailrelay_$(VERSION)-1_$(RPM_ARCH).deb
 TAR = emailrelay-$(VERSION).tar.gz

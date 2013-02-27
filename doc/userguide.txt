@@ -8,9 +8,9 @@ server. It runs on Unix-like operating systems (including Linux and Mac OS X),
 and on Windows.
 
 When used as proxy server the E-MailRelay program ("emailrelay") runs in the
-background and accepts e-mail from local e-mail client programs (KMail, Outlook
-etc.) or from the outside world, using the SMTP protocol. As soon as an e-mail
-message is received it is forwarded on to the next SMTP server for onward
+background and accepts e-mail from local e-mail client programs (Thunderbird,
+Outlook etc.) or from the outside world, using the SMTP protocol. As soon as an
+e-mail message is received it is forwarded on to the next SMTP server for onward
 delivery. This becomes more useful when you add in your own message processing:
 as each message is received it can be passed one of your programs for editing,
 filtering, encrypting etc.
@@ -40,7 +40,7 @@ E-MailRelay is a simple tool that does SMTP. For simple tasks it is likely
 to be easier to understand and configure than a more general purpose MTA.
 
 The code has few dependencies on third-party libraries or run-time environments
-so it is easy to build and install especially when targetting embedded systems.
+so it is easy to build and install especially when targeting embedded systems.
 
 The single-threaded, event-driven design with non-blocking i/o may provide
 better performance and resource usage than some of the alternatives.
@@ -52,10 +52,11 @@ etc. through external scripts.
 Typical applications of E-MailRelay include:
 * spam filtering and virus checking incoming mail
 * adding digital signatures or legal disclaimers to outgoing mail
-* doing store-and-forward for outgoing mail across a dial-up Internet connection
-* adding authentication where the existing infrastructure does not support it
-* simple SMTP proxying on a firewall host or DMZ
-* SMTP to POP gateway
+* store-and-forward for outgoing mail across an intermittent Internet connection
+* adding authentication and encryption where the existing infrastructure does not support it
+* taking messages in with SMTP and serving them to local POP clients
+* giving multiple POP clients independent copies of incoming e-mail
+* SMTP proxying by running the proxy server on the firewall host
 
 Running E-MailRelay
 -------------------
@@ -129,148 +130,70 @@ your own shortcuts to the E-MailRelay executable and add and remove command-line
 options using the shortcut properties tab.
 
 If you are using authentication then you will have to create the text files
-containing your authentication secrets (passwords and password hashes). The
-"--server-auth", "--client-auth" and "--pop-auth" command-line options are used
-to point to these files.
+containing your authentication secrets (account names, passwords and password
+hashes). The "--server-auth", "--client-auth" and "--pop-auth" command-line
+options are used to point to these files.
 
 There is also a graphical configuration program called "emailrelay-gui" that
 may be available to help with configuring the system. This is intended to be
 used once at installation time (and it is the basis of the self-extracting
 installer on Windows) but it may also be used to do some simple reconfiguration
-of an alreay-installed system.
+of an alreay-installed system. It takes you through a sequence of configuration
+pages and then on the last page creates or updates the configuration files, ie.
+the authentication secrets file and on Unix the configuration file
+"emailrelay.conf" used by the "init.d" system, or on Windows the startup batch
+file "emailrelay-start.bat".
 
 Logging
 -------
 If the "--log" option is used then E-MailRelay program issues warnings and error
-messages to the "syslog" system using the "LOG_MAIL" facility. Under Windows it
-writes to the "Application" event log.
+messages to the "syslog" system on Unix or to the Event Viewer's Application log
+on Windows.
 
-The "syslog" system is configured through the "/etc/syslog.conf" file (try
-"man syslog.conf"), and in most cases you will find that "LOG_MAIL" warnings and
-errors are directed to an appropriate log file (perhaps "/var/log/messages").
+On Unix systems you can also redirect the standard error stream to a file,
+although you should note that the "--as-server" and "--as-proxy" options
+implicitly close the standard error stream soon after startup, so you should
+replace them with their equivalent options without the "--close-stderr" part.
 
-For more verbose logging add the "--verbose" option. If this becomes difficult
-to read via the system log (especially on Windows) then try logging to the
-standard error stream and redirect that to a file. Bear in mind that you will
-need have to replace "--as-server" with "--log" and "--as-proxy" with
-"--poll=0 --forward-to" since the "--as-server" and "--as-proxy" options
-implicitly close the standard error stream soon after startup.
+On Windows you can log to a file by adding the "--log-file" option to the
+command-line in the startup batch file. The installation process creates a
+second startup batch file that makes use of this option, so check for that first.
 
-	emailrelay --log --verbose > emailrelay.log 2>&1
-
-Troubleshooting
----------------
-A useful technique for troubleshooting SMTP problems is to telnet into the
-remote server and drive the SMTP protocol manually. Telnet can be told to
-connect to the remote SMTP port by putting the port number (25) on the command
-line after the remote hostname, for example: "telnet smtp.myisp.net 25".
-
-Once connected you should get a startup banner from the server, which may tell
-you what server software you have connected to. From there you should type
-something like "EHLO myhost.mydomain". The response to the EHLO command should
-contain a list of SMTP extensions which the server software supports. If this
-includes the AUTH extension then the set of supported authentication mechanisms
-(such as LOGIN, CRAM-MD5 etc.) will be listed on the same line.
-
-After the EHLO response you should type "MAIL FROM:<myhost.mydomain>", retaining
-the angle brackets but substituting your own address. If this is accepted then
-enter a "RCPT TO:<me@myhost.mydomain>" command to say where the e-mail is going.
-(Again, retain the angle brackets but substitute an appropriate address.)
-
-After one or more "RCPT TO" commands you should enter the "DATA" command,
-followed by the message content. The message content should include an RFC822
-header, followed by a blank line, followed by the message text. For testing
-purposes you might get away without having any header/body structure at all, but
-to do things properly you should have at least a "To:" line, a "From:" line and
-a "Subject:" line in the header.
-
-At the end of the message text type a "." on a line of its own. At that point
-the message should get dispatched, and eventually end up in your in-box in the
-usual way (assuming you put your own address in the "RCPT TO" command).
-
-The following is an example SMTP dialogue, with ">>" and "<<" marks added to
-show what was typed and what was received:
-	>> telnet smtp.myisp.net 25
-	<< Trying 12.34.56.78...
-	<< Connected to smtp.myisp.net.
-	<< Escape character is '^]'.
-	<< 220 mail12.myisp.net ESMTP Exim 3.13 #0 Sat, 17 Nov 2001 16:22:39 +0000
-	>> EHLO myhost.myisp.net
-	<< 250-mail12.myisp.net Hello modem-185.myisp.net [12.34.56.78]
-	<< 250-SIZE 104857600
-	<< 250-PIPELINING
-	<< 250 HELP
-	>> MAIL FROM:<me@myhost.myisp.net>
-	<< 250 <me@myhost.myisp.net> is syntactically correct
-	>> RCPT TO:<me@myhost.myisp.net>
-	<< 250 <me@myhost.myisp.net> verified
-	>> DATA
-	<< 354 Enter message, ending with "." on a line by itself
-	>> To: me@myhost.myisp.net
-	>> From: me@myhost.myisp.net
-	>> Subject: test
-	>>
-	>> Test message.
-	>> .
-	<< 250 OK id=1658Fp-0000Il-00
-	>> QUIT
-	<< 221 mail12.myisp.net closing connection
-	<< Connection closed by foreign host.
-
-If you get some sort of "access denied" errors when talking to a server which
-does not support the AUTH extension, then your ISP may be using POP-before-SMTP
-authentication. In this scheme you are required to conduct an authenticated POP
-or IMAP dialogue before you try to use SMTP. The POP/IMAP dialogue is done
-separately from the SMTP connection, but bear in mind that there might be a time
-limit so that your SMTP connection has to be made soon after the POP/IMAP
-authentication. You should be able to use an e-mail client program, or something
-like "fetchmail" to do the POP/IMAP authentication.
-
-If you can send mail messages sucessfully using telnet, then you should look at
-the E-MailRelay "--verbose" log output and compare what you do interactively
-with what the program does.
+For more verbose logging add the "--verbose" option to the command-line.
 
 Preventing open mail relay
 --------------------------
 If you are running E-MailRelay as a server with a permanent connection to the
 Internet it is important to prevent open mail relay because this can be
-exploited by spammers. By default open mail relaying is not possible because
-E-MailRelay does not accept IP connections from remote clients. However, if you
-use the "--remote-clients" option then you need to be more careful.
+exploited by spammers and get you into trouble with your ISP. By default open
+mail relaying is not possible because E-MailRelay does not accept IP connections
+from remote clients. However, if you use the "--remote-clients" option then you
+need to be more careful.
 
 If the only required access to the E-MailRelay server is from a local network
-and not from the Internet then you can use the "--interface" option to listen
-for incoming connections only on the local network interface. You should also
-use a firewall in this scenario.
+and not from the Internet then just set up your firewall to block incoming
+connections on port 25 (SMTP) and 110 (POP) and also use the "--interface"
+option on the E-MailRelay command-line so that it only listens for incoming
+connections on the local network.
 
-Another option is to require all clients to authenticate by using the
-"--server-auth" option. If you then need local clients, such as your own e-mail
-client program, to connect without authentication then you must put those
-trusted IP addresses in the secrets file with an authentication mechanism of
-"NONE". Refer to the reference guide for more information.
-
-Taking it one stage further, you may want to allow connections from the Internet
-without authentication but only allow them to send mail to local users. In other
-words you want to allow anyone to deliver e-mail to your system but not allow
-them to spam someone else. You can do this by requiring authentication with the
-"--server-auth" option, then exempt everyone from mandatory authentication with
-"NONE server *.*.*.* x" line in the secrets file, and finally have an address
-verifier script ("--verifier") which rejects remote recipient addresses if the
-client has not authenticated. Again, refer to the reference guide for further
-details.
+If you do need to accept connections from the Internet then you should require
+all clients to authenticate themselves by using the "--server-auth" option on
+the E-MailRelay command-line. However, if want local clients running on your
+internal network to be able to bypass this authentication then you can put those
+trusted IP addresses in the E-MailRelay secrets file with an authentication
+mechanism of "NONE". Refer to the reference guide for more information.
 
 Running as a POP server
 -----------------------
 E-MailRelay can run as a POP server so that e-mail client programs can retrieve
-messages from the spool directory directly (although it is not a good idea to
-run E-MailRelay as a POP server if also forwarding messages by SMTP).
+messages from the E-MailRelay spool directory directly.
 
 To allow POP access to spooled messages use a command-line something like this:
 
 	emailrelay --as-server --pop --pop-auth=/etc/emailrelay.auth
 
-You will need to create the authentication secrets file ("/etc/emailrelay.auth"
-in this example) containing usernames and passwords. A simple example would look
+You will need to create the authentication secrets file ("emailrelay.auth" in
+this example) containing usernames and passwords. A simple example would look
 like this:
 
 	APOP server user1 password1
@@ -290,9 +213,9 @@ Refer to the reference guide for more information.
 
 Triggering delivery over dial-up
 --------------------------------
-If you are using E-MailRelay to store and forward e-mail over a dial-up link to
-the Internet, then you will need to set things up so that the dialler tells
-E-MailRelay when to start forwarding.
+If you are using E-MailRelay on Unix to store and forward e-mail over a dial-up
+link to the Internet, then you will need to set things up so that the dialler
+tells E-MailRelay when to start forwarding.
 
 In most Unix-like systems a "ppp" daemon calls the script "/etc/ppp/ip-up" when
 it has successfully established a dial-up link to your ISP. This script will
@@ -326,19 +249,14 @@ You should check for ".bad" envelope files in the E-MailRelay spool directory
 from time to time.
 
 If you want failed e-mails to be retried a few times you can run the
-"emailrelay-resubmit.sh" script periodically, perhaps from "cron". This script
-simply removes the ".bad" suffix from files in the spool directory, as long as
-they have not been retried too many times already.
-
-If you are using E-MailRelay to forward outgoing e-mails then you can also get
-failed e-mails to bounce back to your in-tray by running the
-"emailrelay-notify.sh" script periodically as "root", although this does require
-"procmail" to act as a delivery agent.
+"emailrelay-resubmit" script periodically. This script simply removes the ".bad"
+suffix from files in the spool directory, as long as they have not been retried
+too many times already.
 
 Usage patterns
 --------------
-The simplest ways of using E-MailRelay for SMTP are as a proxy or as a
-store-and-forward MTA, but many other configurations are possible. For example,
+The simplest ways of using E-MailRelay for SMTP are as a proxy or for
+store-and-forward, but many other configurations are possible. For example,
 multiple E-MailRelay servers can run in parallel sharing the same spool
 directory, or they can be chained in series to that e-mail messages get
 transferred from one to the next.
@@ -380,42 +298,20 @@ E-MailRelay system you will have to have a small "--filter" script to collect
 the output from the "spamassassin" program and write it back into the
 E-MailRelay content file.
 
-Your "--filter" shell script could look something like this:
+On Unix your "--filter" shell script could look something like this:
 
 	#!/bin/sh
 	spamassassin "$1" > "$1.tmp"
 	mv "$1.tmp" "$1"
 	exit 0
 
-Or an equivalent batch script on Windows:
+On Windows an equivalent batch script would be:
 
 	c:\Program Files\perl\site\bin\spamassassin.bat %1 > %1.tmp
 	ren %1.tmp %1
 	exit 0
 
-You may need to set the "--filter-timeout" option to control how long
-E-MailRelay waits for the spam analysis to complete.
-
-You could also consider doing spam filtering off-line, completely independent
-of any SMTP activity, by having two E-MailRelay processes chained together
-working off two spool directories:
-
-	emailrelay --as-server --spool-dir=/tmp/spool-in --poll=1 --forward-to=localhost:10025
-	emailrelay --as-server --spool-dir=/tmp/spool-out --port=10025 --filter=/tmp/myspamfilter
-
-Here the first E-MailRelay server accepts incoming mail straight into its spool
-directory and it uses a "--poll" timer to independently forward spooled messages
-to the second server running on port 10025. The second server runs the spam
-filter as each message is received.
-
-There is also an experimental mechanism where E-MailRelay can talk direcly to
-the SpamassAssin "spamd" network deamon using a special form of the "--filter"
-option:
-
-	emailrelay --as-server --filter=spam:localhost:783
-
-This might be useful if spam filtering is creating a bottleneck in the
-E-MailRelay server.
+Or you could adapt the "emailrelay-runperl.js" example script.
 
 Google mail
 -----------
@@ -431,12 +327,6 @@ Reference this file using "--client-auth" on the E-MailRelay command-line and
 also add in the "--client-tls" option:
 
 	emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=/etc/emailrelay.auth ...
-
-Configuration GUI
------------------
-E-MailRelay has a graphical configuration utility, "emailrelay-gui", that can
-help with simple setup and re-configuration. On some operating system it also
-serves as the installer.
 
 
 

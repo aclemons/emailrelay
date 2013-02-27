@@ -6,10 +6,11 @@ E-MailRelay Change Log
 * Added TLS/SSL encryption for POP.
 * Added Linux-PAM authentication ("configure --with-pam" and then "--server-auth=/pam").
 * Optional protocol-specific "--interface" qualifiers, eg. "--interface smtp=127.0.0.1,pop=192.168.1.1"
-* Bind the outgoing client connection with the first-listed "--interface" address.
+* Bind the outgoing client connection with the first "--interface" or "--interface client=..." address.
 * No "Received" line added if "--anonymous" and an empty "--domain" name.
-* Shorter descriptions in the usage help unless "--verbose".
 * Error text for "all recipients rejected" is now more accurately "one or more recipients rejected".
+* New behaviour for "--client-filter" exit values of 100 and over.
+* Shorter descriptions in the usage help unless "--verbose".
 * Windows project files for MSVC 2008 included.
 * Removed support for Windows NT and Windows 9x.
 * Removed Windows "--icon" option.

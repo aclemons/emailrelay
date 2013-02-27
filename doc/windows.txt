@@ -5,7 +5,7 @@ Command-line options
 --------------------
 There are some differences in the command-line options when running the
 E-MailRelay server on Windows. These include:
-* The "--syslog" option refers to the Windows Event Log (eventvwr.exe).
+* The "--syslog" option refers to the Windows Event Viewer's Application log.
 * The "--no-daemon" option is used to disable the icon in the system tray.
 * The "--hidden" option hides all windows and suppresses message boxes (requires "--no-deamon").
 * The "--peer-lookup" option can be used to add extra information to envelope files for local clients.
@@ -82,21 +82,6 @@ which you can view by running "eventvwr.exe" or going to
 You can increase the verbosity of the logging by adding the "--verbose" option
 to the E-MailRelay command-line, typically by editing the "emailrelay-start.bat"
 batch script.
-
-The E-MailRelay server also logs to the standard error stream but on Windows
-the standard error stream often goes nowhere. So to get continuous logging to a
-log file you should add something like "--log-file c:/temp/emailrelay.out"
-to the E-MailRelay server command-line.
-
-The setup program may have already created a suitable batch file containing
-the "--log-file" option, so check for that first and edit as necessary.
-
-Testing with telnet
--------------------
-The main user guide describes how to use telnet to help diagnose problems. In
-recent versions of Windows you have to enable telnet by selecting "Telnet Client"
-from "Programs and Features"->"Turn Windows features on or off" in the control
-panel.
 
 Building from source
 --------------------

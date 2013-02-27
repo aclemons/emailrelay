@@ -35,7 +35,7 @@ std::string GSmtp::VerifierFactory::check( const std::string & address )
 GSmtp::Verifier * GSmtp::VerifierFactory::newVerifier( const std::string & address , unsigned int timeout )
 {
 	Pair p = FactoryParser::parse( address , "net" ) ;
-	if( p.first.empty() )
+	if( p.first.empty() || p.first == "exit" )
 	{
 		return new InternalVerifier ;
 	}

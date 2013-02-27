@@ -9,29 +9,29 @@ install from source under most operating systems (as described below),
 but for Windows you should refer to a separate document,
 "doc/windows.txt".
 
-   The E-MailRelay "configure" script provides some extra configuration 
-switches, as shown in the output of "./configure --help". Some of these 
+   The E-MailRelay "configure" script provides some extra configuration
+options, as shown in the output of "./configure --help". Some of these
 are used to control all the installation directories in addition to
-the more standard ones like "--sbindir" and "--libexecdir". 
+the more standard ones like "--sbindir" and "--libexecdir".
 
-For example, this configure command will result in installation 
+For example, this configure command will result in installation
 directories that are close to the Linux File Hieriarchy Standard (FHS):
 
 	./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d
 
-For more information refer to the E-MailRelay reference document under 
+For more information refer to the E-MailRelay reference document under
 the "Files and directories" heading.
 
    If compiling with something other than "gcc" then check for any
 compiler-specific help in the relevant "lib/<compiler>" directory.
 
-   If you want to install via a package rather than installing with 
+   If you want to install via a package rather than installing with
 "make install" you could try building an RPM pacakge with "make rpm"
 or a Debian package with "make deb", although there are lots of moving
 parts here, so it may not be easy to get working.
 
-   You may also find the E-MailRelay configuration GUI program 
-"emailrelay-gui" useful to help with with the initial configuration, 
+   You may also find the E-MailRelay configuration GUI program
+"emailrelay-gui" useful to help with with the initial configuration,
 if it is available.
 
 

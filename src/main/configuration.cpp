@@ -81,8 +81,9 @@ G::Strings Main::Configuration::listeningInterfaces( const std::string & protoco
 	// prepare the naive result by splitting the user's string by comma or slash separators 
 	G::Strings result = m_cl.value( "interface" , ",/" ) ;
 
-	// then weed out the ones that dont match the required protocol, removing the 
-	// "protocol=" prefix at the same time to leave just the required list of addresses
+	// then weed out the ones that have an explicit protocol name that doesnt match the 
+	// required protocol, removing the "protocol=" prefix at the same time to leave just 
+	// the required list of addresses
 	for( G::Strings::iterator p = result.begin() ; p != result.end() ; )
 	{
 		if( protocol.empty() || protocol == G::Str::head( *p , (*p).find('=') , protocol ) )
@@ -96,9 +97,24 @@ G::Strings Main::Configuration::listeningInterfaces( const std::string & protoco
 
 std::string Main::Configuration::clientInterface() const
 {
-	// arbitrarily use the first listening address
-	G::Strings s = listeningInterfaces() ;
-	return s.size() ? s.front() : std::string() ;
+	G::Strings result = m_cl.value( "interface" , ",/" ) ;
+	// look for first "client=" value
+	{
+		for( G::Strings::iterator p = result.begin() ; p != result.end() ; ++p )
+		{
+			if( (*p).find("client=") == 0U )
+				return G::Str::tail( *p , (*p).find('=') , *p ) ;
+		}
+	}
+	// or use the first unqalified value
+	{
+		for( G::Strings::iterator p = result.begin() ; p != result.end() ; ++p )
+		{
+			if( (*p).find('=') == std::string::npos )
+				return *p ;
+		}
+	}
+	return std::string() ;
 }
 
 unsigned int Main::Configuration::adminPort() const

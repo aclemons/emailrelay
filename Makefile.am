@@ -19,7 +19,7 @@ EXTRA_DIST = \
 	emailrelay.spec \
 	ChangeLog \
 	README.windows \
-	README.mips \
+	README.embedded \
 	README.mac \
 	LICENSE \
 	bootstrap \
@@ -29,7 +29,7 @@ EXTRA_DIST = \
 
 SUBDIRS = bin src lib etc doc debian test extra
 
-e_doc_DATA = COPYING AUTHORS INSTALL NEWS README README.windows README.mac ChangeLog
+e_doc_DATA = COPYING AUTHORS INSTALL NEWS README README.windows README.mac README.embedded ChangeLog
 
 uninstall-local:
 	-for try in 1 2 3 4 ; do echo "$(DESTDIR)$(e_pamdir)" "$(DESTDIR)$(e_initdir)" "$(DESTDIR)$(e_sysconfdir)" "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(e_spooldir)" "$(DESTDIR)$(e_docdir)" "$(DESTDIR)$(pkgdatadir)" | tr ' ' '\n' | grep -i "mailrelay" | while read d ; do rmdir "$$d" 2>/dev/null ; done ; done

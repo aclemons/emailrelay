@@ -27,7 +27,7 @@
 #
 # Silently does nothing on non-Mac systems.
 #
-# See "http://doc.trolltech.com/4.3/deployment-mac.html".
+# See "http://qt-project.org/doc/qt-4.8/deployment-mac.html".
 #
 
 force="0" ; if test "$1" = "-f" ; then force="1" ; shift ; fi

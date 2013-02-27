@@ -68,6 +68,7 @@ public:
 	{
 		Internal_2xx = 222 ,
 		Internal_2yy = 223 ,
+		Internal_2zz = 224 ,
 		ServiceReady_220 = 220 ,
 		Ok_250 = 250 ,
 		Authenticated_235 = 235 ,
@@ -216,7 +217,9 @@ public:
 	G::Signal2<std::string,int> & doneSignal() ;
 		///< Returns a signal that is raised once the protocol has
 		///< finished with a given message. The first signal parameter
-		///< is the empty string, or a non-empty reason on error.
+		///< is the empty string on success or a non-empty reason 
+		///< string. The second parameter is a reason code, typically 
+		///< the SMTP error value (but see preprocessorDone()).
 
 	G::Signal0 & preprocessorSignal() ;
 		///< Returns a signal that is raised when the protocol
@@ -239,10 +242,12 @@ public:
 		///< To be called when a blocked connection becomes unblocked.
 		///< See ClientProtocol::Sender::protocolSend().
 
-	void preprocessorDone( const std::string & reason ) ;
+	void preprocessorDone( bool ok , const std::string & reason ) ;
 		///< To be called when the Preprocessor interface has done
-		///< its thing. The reason string should be empty
-		///< on success.
+		///< its thing. If not ok with an empty reason then the 
+		///< current message is just abandoned, resulting in a
+		///< done signal with an empty reason string and a 
+		///< reason code of 1.
 
 	void secure() ;
 		///< To be called when the secure socket protocol
@@ -261,7 +266,10 @@ protected:
 		///< Final override from GNet::AbstractTimer.
 
 private:
-	bool send( const std::string & , bool eot = false , bool sensitive = false ) ;
+	void send( const char * ) ;
+	void send( const char * , const std::string & ) ;
+	void send( const char * , const std::string & , const char * ) ;
+	bool send( const std::string & , bool eot , bool sensitive = false ) ;
 	bool sendLine( std::string & ) ;
 	size_t sendLines() ;
 	void sendEhlo() ;

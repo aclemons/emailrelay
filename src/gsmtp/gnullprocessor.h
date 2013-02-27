@@ -41,6 +41,11 @@ public:
 	NullProcessor() ;
 		///< Constructor.
 
+	explicit NullProcessor( unsigned int exit_code ) ;
+		///< Constructor for a processor that behaves like an
+		///< executable that always exits with the given 
+		///< exit code.
+
 	virtual ~NullProcessor() ;
 		///< Destructor.
 
@@ -68,6 +73,9 @@ private:
 
 private:
 	G::Signal1<bool> m_done_signal ;
+	bool m_cancelled ;
+	bool m_repoll ;
+	bool m_ok ;
 } ;
 
 #endif

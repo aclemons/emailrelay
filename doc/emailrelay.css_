@@ -6,7 +6,7 @@
 	emailrelay.css
 */
 
-body 
+body
 {
 	font-family: verdana, arial, helvetica, sans-serif ;
 
@@ -33,7 +33,7 @@ h1
 	color: #09c ;
 }
 
-div.Header h1 
+div.Header h1
 {
 	margin: 0px ;
 }
@@ -100,7 +100,7 @@ h2
 	color: #09c ;
 }
 
-p 
+p
 {
 	font-family: verdana, arial, helvetica, sans-serif ;
 	text-align: justify ;
@@ -143,7 +143,7 @@ a.a-toc
 	margin: 0px ;
 }
 
-a.a-toc:hover 
+a.a-toc:hover
 {
 	color: #09c ;
 	background-color: #ccc ;
@@ -156,7 +156,7 @@ a.a-toc-expander
 	font-size: smaller ;
 }
 
-a.a-toc-expander:hover 
+a.a-toc-expander:hover
 {
 	color: #09c ;
 	background-color: #ccc ;
@@ -173,17 +173,17 @@ a.a-href
 	font-weight: bold ;
 }
 
-a.a-href:link 
+a.a-href:link
 {
 	color: #09c ;
 }
 
-a.a-href:visited 
+a.a-href:visited
 {
 	color: #07a ;
 }
 
-a.a-href:hover 
+a.a-href:hover
 {
 	color: #09c ;
 	background-color: #ddd ;

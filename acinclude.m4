@@ -256,7 +256,7 @@ dnl The PKG_CHECK_MODULES macro is used to modify CFLAGS etc.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_QT4],
 [
-	PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes],[AC_MSG_RESULT([no])])
+	PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes])
 
 	MOC="${e_qtmoc}"
 	AC_PATH_PROG(MOC,moc)

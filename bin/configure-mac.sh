@@ -27,7 +27,7 @@
 #   $ sh ../bin/configure-mac.sh
 #   $ make
 #
-# After configuring with these switches the installation can be done
+# After configuring with this script the installation can be done
 # with "make install" for a system-wide installation, or with 
 # "make install DESTDIR=~" for a private installation.
 #
@@ -53,5 +53,5 @@ ${configure} \
 	e_docdir="${app}/Documentation" \
 	e_spooldir="${lib}/Mail/Spool" \
 	e_pamdir="/etc/pam.d" \
-	e_initdir="${lib}/StartupItems/E-MailRelay"
+	e_initdir="${lib}/StartupItems/E-MailRelay" "$@"
 

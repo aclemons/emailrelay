@@ -139,10 +139,10 @@ emailrelay_gui_real_LDADD = \
 	$(QT_LIBS)
 
 pack_SOURCES = pack.cpp
-pack_LDADD = $(top_builddir)/src/glib/libglib.a
+pack_LDADD = $(top_builddir)/src/glib/libglib.a -lz
 
 emailrelay_unpack_SOURCES = unpackmain.c unpack.c
-emailrelay_unpack_LDADD =
+emailrelay_unpack_LDADD = -lz
 
 emailrelay_start_gui_SOURCES = guistart.cpp
 emailrelay_start_gui_LDADD =

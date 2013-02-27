@@ -21,15 +21,12 @@
 # A shell-script wrapper for E-MailRelay designed for use in the SysV-init 
 # system (/etc/init.d).
 #
-# Additional command-line switches for the emailrelay daemon are sourced 
-# from the file "/etc/emailrelay.conf" if it exists. Uncommented lines in this 
+# Additional command-line options for the emailrelay daemon are sourced from
+# the file "/etc/emailrelay.conf" if it exists. Uncommented lines in this 
 # file have "--" prepended to them and then they are pasted onto the command 
 # line.
 #
 # usage: emailrelay { start | stop | restart | force-reload | status }
-#
-# See also: LSB, start_daemon (lsb), startproc (suse), install_initd (lsb), 
-#           insserv (suse), /usr/share/doc/initscripts*/sysvinitfiles (redhat)
 #
 
 ##
@@ -73,13 +70,13 @@ fi
 
 # server configuration using the config file
 #
-ConfigSwitches()
+ConfigOptions()
 {
 	cat "${cfg_file}" 2>/dev/null | egrep -v '^#|^gui-|^ *$' | sed 's/^/--/'
 }
-StartSwitches()
+StartOptions()
 {
-	echo --as-server --pid-file \"${pid_file}\" `ConfigSwitches`
+	echo --as-server --pid-file \"${pid_file}\" `ConfigOptions`
 }
 
 # functions...
@@ -224,7 +221,7 @@ case "${1}" in
 
 	start)
 		shift
-		eval ${style}_cmd_start \"Starting E-MailRelay server\" \"${emailrelay}\" `StartSwitches` "$@"
+		eval ${style}_cmd_start \"Starting E-MailRelay server\" \"${emailrelay}\" `StartOptions` "$@"
 		;;
 
 	stop)

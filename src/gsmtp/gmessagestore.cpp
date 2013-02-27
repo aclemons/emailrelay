@@ -93,4 +93,11 @@ GSmtp::MessageStore::Iterator & GSmtp::MessageStore::Iterator::operator=( const 
 	return *this ;
 }
 
+void GSmtp::MessageStore::Iterator::last()
+{
+	IteratorImp * imp = m_imp ;
+	m_imp = NULL ;
+	delete imp ;
+}
+
 /// \file gmessagestore.cpp

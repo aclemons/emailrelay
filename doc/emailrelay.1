@@ -19,34 +19,34 @@ emailrelay \- e-mail transfer agent and proxy
 .B emailrelay
 [OPTIONS]
 .LP
-.B emailrelay 
+.B emailrelay
 --as-server
 .LP
 .B emailrelay
---as-client 
+--as-client
 .I server-address
 .LP
 .B emailrelay
---as-proxy 
+--as-proxy
 .I server-address
 .SH DESCRIPTION
 .I emailrelay
 is a simple SMTP proxy and store-and-forward message transfer agent.
-It does store-and-forward mail relay to a fixed next-hop server, without 
-any routing. 
+It does store-and-forward mail relay to a fixed next-hop server, without
+any routing.
 .LP
-It runs in two main modes: a storage daemon 
-.RI ( --as-server ) 
-and a forwarding 
-agent 
-.RI ( --as-client ). 
-The storage daemon is an SMTP server which stores e-mail 
+It runs in two main modes: a storage daemon
+.RI ( --as-server )
+and a forwarding
+agent
+.RI ( --as-client ).
+The storage daemon is an SMTP server which stores e-mail
 messages in a local spool directory. The forwarding agent acts as an
 SMTP client sending the spooled e-mail messages on to the next
 SMTP server in the chain.
 .LP
 It can also run in a third mode, as a proxy server
-.RI ( --as-proxy ). 
+.RI ( --as-proxy ).
 In this mode all messages are forwarded immediately to the next-hop
 server. Messages are only fully accepted from the sender once they
 have been successfully delivered to the next-hop server.
