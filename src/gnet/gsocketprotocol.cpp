@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "glimits.h"
 #include "gnet.h"
+#include "gtimer.h"
 #include "gssl.h"
 #include "gsocketprotocol.h"
 #include "gtest.h"
@@ -43,6 +44,7 @@ private:
 	EventHandler & m_handler ;
 	SocketProtocol::Sink & m_sink ;
 	StreamSocket & m_socket ;
+	unsigned int m_secure_connection_timeout ;
 	const Socket::Credentials & m_credentials ;
 	std::string m_raw_residue ;
 	std::string m_ssl_send_data ;
@@ -51,11 +53,13 @@ private:
 	GSsl::Protocol * m_ssl ;
 	State m_state ;
 	char m_read_buffer[c_buffer_size] ;
-	GSsl::Protocol::ssize_type m_read_buffer_size ;
+	GSsl::Protocol::size_type m_read_buffer_size ;
 	GSsl::Protocol::ssize_type m_read_buffer_n ;
+	Timer<SocketProtocolImp> m_secure_connection_timer ;
 
 public:
-	SocketProtocolImp( EventHandler & , SocketProtocol::Sink & , StreamSocket & , const Socket::Credentials & ) ;
+	SocketProtocolImp( EventHandler & , SocketProtocol::Sink & , StreamSocket & , 
+		unsigned int secure_connection_timeout , const Socket::Credentials & ) ;
 	~SocketProtocolImp() ;
 	void readEvent() ;
 	bool writeEvent() ;
@@ -81,26 +85,36 @@ private:
 	void logFlowControlReleased() ;
 	void logFlowControlAsserted() ;
 	void logFlowControlReasserted() ;
+	void onSecureConnectionTimeout() ;
 } ;
 
 GNet::SocketProtocolImp::SocketProtocolImp( EventHandler & handler , 
-	SocketProtocol::Sink & sink , StreamSocket & socket , const Socket::Credentials & credentials ) :
+	SocketProtocol::Sink & sink , StreamSocket & socket , 
+	unsigned int secure_connection_timeout , const Socket::Credentials & credentials ) :
 		m_handler(handler) ,
 		m_sink(sink) ,
 		m_socket(socket) ,
+		m_secure_connection_timeout(secure_connection_timeout) ,
 		m_credentials(credentials) ,
 		m_failed(false) ,
 		m_n(0UL) ,
 		m_ssl(NULL) ,
 		m_state(State_raw) ,
 		m_read_buffer_size(sizeof(m_read_buffer)) ,
-		m_read_buffer_n(0)
+		m_read_buffer_n(0) ,
+		m_secure_connection_timer(*this,&SocketProtocolImp::onSecureConnectionTimeout,handler)
 {
 }
 
 GNet::SocketProtocolImp::~SocketProtocolImp()
 {
 	delete m_ssl ;
+}
+
+void GNet::SocketProtocolImp::onSecureConnectionTimeout()
+{
+	G_DEBUG( "GNet::SocketProtocolImp::onSecureConnectionTimeout: timed out" ) ;
+	throw SocketProtocol::SecureConnectionTimeout() ;
 }
 
 void GNet::SocketProtocolImp::readEvent()
@@ -128,6 +142,8 @@ bool GNet::SocketProtocolImp::writeEvent()
 		sslConnectImp() ;
 	else if( m_state == State_accepting )
 		sslAcceptImp() ;
+	else if( m_state == State_idle )
+		sslReadImp() ;
 	else
 		sslSendImp() ;
 	return rc ;
@@ -193,6 +209,8 @@ void GNet::SocketProtocolImp::sslConnect()
 
 	m_ssl = newProtocol() ;
 	m_state = State_connecting ;
+	if( m_secure_connection_timeout != 0U )
+		m_secure_connection_timer.startTimer( m_secure_connection_timeout ) ;
 	sslConnectImp() ;
 }
 
@@ -221,6 +239,8 @@ void GNet::SocketProtocolImp::sslConnectImp()
 	{
 		m_socket.dropWriteHandler() ;
 		m_state = State_idle ;
+		if( m_secure_connection_timeout != 0U )
+			m_secure_connection_timer.cancelTimer() ;
 		G_DEBUG( "SocketProtocolImp::sslConnectImp: calling onSecure" ) ;
 		m_sink.onSecure() ;
 	}
@@ -293,8 +313,10 @@ bool GNet::SocketProtocolImp::sslSendImp()
 	else
 	{
 		m_socket.dropWriteHandler() ;
-		rc = n == static_cast<GSsl::Protocol::ssize_type>(m_ssl_send_data.size()) ;
-		m_ssl_send_data.erase( 0U , n ) ;
+		if( n < 0 ) throw SocketProtocol::SendError( "ssl arithmetic underflow" ) ;
+		std::string::size_type un = static_cast<std::string::size_type>(n) ;
+		rc = un == m_ssl_send_data.size() ;
+		m_ssl_send_data.erase( 0U , un ) ;
 		m_state = State_idle ;
 	}
 	return rc ;
@@ -451,8 +473,9 @@ void GNet::SocketProtocolImp::logFlowControlReasserted()
 
 // 
 
-GNet::SocketProtocol::SocketProtocol( EventHandler & handler , Sink & sink , StreamSocket & socket ) :
-	m_imp( new SocketProtocolImp(handler,sink,socket,Socket::Credentials("")) )
+GNet::SocketProtocol::SocketProtocol( EventHandler & handler , Sink & sink , StreamSocket & socket ,
+	unsigned int secure_connection_timeout ) :
+		m_imp( new SocketProtocolImp(handler,sink,socket,secure_connection_timeout,Socket::Credentials("")) )
 {
 }
 

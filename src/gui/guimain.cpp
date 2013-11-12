@@ -64,7 +64,7 @@
 // Install variables
 // -----------------
 // The Installer class operates according to a set of install variables so that
-// it is largeley independent of the GUI. The install variables are emited by
+// it is largely independent of the GUI. The install variables are emited by
 // GUI pages into a stringstream, and the contents of the stringstream are
 // interpreted by the Installer.
 //
@@ -98,6 +98,12 @@
 #include <string>
 #include <iostream>
 #include <stdexcept>
+
+#if defined(QT_VERSION) && QT_VERSION >= 0x050000
+#ifdef G_WINDOWS
+Q_IMPORT_PLUGIN(windows)
+#endif
+#endif
 
 static int width()
 {
@@ -136,6 +142,7 @@ static bool isMac()
 
 static void debug( const std::string & prefix , const G::StringMap & map )
 {
+	G_IGNORE_PARAMETER(std::string,prefix) ;
 	if( map.empty() )
 	{
 		G_DEBUG( prefix << ": (empty)" ) ;

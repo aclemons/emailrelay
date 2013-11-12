@@ -36,7 +36,7 @@ std::wstring G::Convert::widen( const std::string & s , bool is_utf8 , const std
 	if( ! s.empty() ) 
 	{
 		DWORD flags = MB_ERR_INVALID_CHARS ;
-		int n = MultiByteToWideChar( codepage , flags , s.c_str() , s.size() , NULL , 0 ) ;
+		int n = MultiByteToWideChar( codepage , flags , s.c_str() , static_cast<int>(s.size()) , NULL , 0 ) ;
 		if( n == 0 ) 
 		{
 			DWORD e = ::GetLastError() ;
@@ -44,7 +44,7 @@ std::wstring G::Convert::widen( const std::string & s , bool is_utf8 , const std
 		}
 
 		wchar_t * buffer = new wchar_t[n] ;
-		n = MultiByteToWideChar( codepage , flags , s.c_str() , s.size() , buffer , n ) ;
+		n = MultiByteToWideChar( codepage , flags , s.c_str() , static_cast<int>(s.size()) , buffer , n ) ;
 		if( n == 0 ) 
 		{ 
 			DWORD e = ::GetLastError() ;
@@ -63,13 +63,13 @@ std::string G::Convert::narrow( const std::wstring & s , bool is_utf8 , const st
 	std::string result ;
 	if( ! s.empty() )
 	{
-#ifdef G_MINGW
+#if defined(G_MINGW) || defined(G_COMPILER_IS_OLD)
 		DWORD flags = 0 ;
 #else
 		DWORD flags = is_utf8 ? WC_ERR_INVALID_CHARS : 0 ;
 #endif
 		BOOL defaulted = FALSE ;
-		int n = WideCharToMultiByte( codepage , flags , s.c_str() , s.size() , NULL , 0 , 
+		int n = WideCharToMultiByte( codepage , flags , s.c_str() , static_cast<int>(s.size()) , NULL , 0 , 
 			NULL , is_utf8 ? NULL : &defaulted ) ;
 		if( n == 0 || defaulted )
 		{
@@ -78,7 +78,7 @@ std::string G::Convert::narrow( const std::wstring & s , bool is_utf8 , const st
 		}
 
 		char * buffer = new char[n] ;
-		n = WideCharToMultiByte( codepage , flags , s.c_str() , s.size() , buffer , n , 
+		n = WideCharToMultiByte( codepage , flags , s.c_str() , static_cast<int>(s.size()) , buffer , n , 
 			NULL , is_utf8 ? NULL : &defaulted ) ;
 		if( n == 0 || defaulted )
 		{ 

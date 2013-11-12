@@ -79,7 +79,7 @@ void GGui::Dialog::cleanup()
 		G_DEBUG( "GGui::Dialog::cleanup" ) ;
 
 		// reset the object pointer
-		::SetWindowLong( handle() , DWL_USER , LPARAM(0) ) ;
+		::SetWindowLongPtr( handle() , DWLP_USER , LPARAM(0) ) ;
 
 		// remove from the modal list
 		G_ASSERT( (find(handle())!=m_list.end()) == !m_modal ) ;
@@ -103,7 +103,7 @@ void GGui::Dialog::setFocus( int control )
 	}
 }
 
-LRESULT GGui::Dialog::sendMessage( int control , unsigned message , WPARAM wparam , LPARAM lparam ) const
+LRESULT GGui::Dialog::sendMessage( int control , unsigned int message , WPARAM wparam , LPARAM lparam ) const
 {
 	HWND hwnd_control = ::GetDlgItem( handle() , control ) ;
 	return ::SendMessage( hwnd_control , message , wparam , lparam ) ;
@@ -114,7 +114,7 @@ BOOL GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lp
 	if( message == WM_INITDIALOG )
 	{
 		Dialog * dialog = from_lparam( lparam ) ;
-		::SetWindowLong( hwnd , DWL_USER , to_lparam(dialog) ) ;
+		::SetWindowLongPtr( hwnd , DWLP_USER , to_lparam(dialog) ) ;
 		dialog->privateInit( hwnd ) ;
 		G_DEBUG( "GGui::Dialog::dlgProc: WM_INITDIALOG" ) ;
 		if( !dialog->onInit() )
@@ -135,7 +135,7 @@ BOOL GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lp
 	}
 	else
 	{
-		Dialog * dialog = from_long( ::GetWindowLong(hwnd,DWL_USER) ) ;
+		Dialog * dialog = from_long_ptr( ::GetWindowLongPtr(hwnd,DWLP_USER) ) ;
 		if( dialog != NULL )
 			return dialog->dlgProc( message , wparam , lparam ) ;
 		else
@@ -153,7 +153,7 @@ BOOL GGui::Dialog::dlgProc( UINT message , WPARAM wparam , LPARAM lparam )
 			HWND hwnd_scrollbar = reinterpret_cast<HWND>(HIWORD(lparam)) ; // may be zero
 			if( wparam == SB_THUMBPOSITION || wparam == SB_THUMBTRACK )
 			{
-				unsigned position = LOWORD(lparam) ;
+				unsigned int position = LOWORD(lparam) ;
 				onScrollPosition( hwnd_scrollbar , position ) ;
 			}
 			else
@@ -167,7 +167,8 @@ BOOL GGui::Dialog::dlgProc( UINT message , WPARAM wparam , LPARAM lparam )
 		
 		case WM_COMMAND:
 		{
-			onCommand( wparam ) ;
+			G_ASSERT( wparam == static_cast<WPARAM>(static_cast<UINT>(wparam)) ) ;
+			onCommand( static_cast<UINT>(wparam) ) ;
 			return 1 ;
 		}
 
@@ -302,16 +303,18 @@ bool GGui::Dialog::runStart()
 bool GGui::Dialog::runCore( const char * f_name )
 {
 	m_modal = true ;
-	int rc = ::DialogBoxParamA( m_hinstance , f_name ,
+	INT_PTR end_dialog_value = ::DialogBoxParamA( m_hinstance , f_name ,
 		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
+	int rc = static_cast<int>(end_dialog_value) ;
 	return runEnd( rc ) ;
 }
 
 bool GGui::Dialog::runCore( const wchar_t * f_name )
 {
 	m_modal = true ;
-	int rc = ::DialogBoxParamW( m_hinstance , f_name ,
+	INT_PTR end_dialog_value = ::DialogBoxParamW( m_hinstance , f_name ,
 		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
+	int rc = static_cast<int>(end_dialog_value) ;
 	return runEnd( rc ) ;
 }
 
@@ -319,7 +322,7 @@ bool GGui::Dialog::runEnd( int rc )
 {
 	if( rc == -1 )
 	{
-		int error = ::GetLastError() ;
+		DWORD error = ::GetLastError() ;
 		G_DEBUG( "GGui::Dialog::run: cannot create dialog box: " << error ) ;
 		return false ;
 	}
@@ -418,7 +421,7 @@ bool GGui::Dialog::onInit()
 	return true ; 
 }
 
-void GGui::Dialog::onScrollPosition( HWND , unsigned )
+void GGui::Dialog::onScrollPosition( HWND , unsigned int )
 {
 }
 
@@ -426,7 +429,7 @@ void GGui::Dialog::onScroll( HWND , bool )
 {
 }
 
-void GGui::Dialog::onScrollMessage( unsigned , WPARAM , LPARAM ) 
+void GGui::Dialog::onScrollMessage( unsigned int , WPARAM , LPARAM ) 
 {
 }
 
@@ -446,14 +449,14 @@ GGui::Dialog * GGui::Dialog::from_lparam( LPARAM lparam )
 	return reinterpret_cast<Dialog*>( reinterpret_cast<void*>(lparam) ) ;
 }
 
-GGui::Dialog * GGui::Dialog::from_long( LONG l )
+GGui::Dialog * GGui::Dialog::from_long_ptr( LONG_PTR p )
 {
-	return reinterpret_cast<Dialog*>( reinterpret_cast<void*>(l) ) ;
+	return static_cast<Dialog*>( reinterpret_cast<void*>(p) ) ;
 }
 
 LPARAM GGui::Dialog::to_lparam( Dialog * p )
 {
-	return reinterpret_cast<LPARAM>( reinterpret_cast<void*>(p) ) ;
+	return reinterpret_cast<LPARAM>( static_cast<void*>(p) ) ;
 }
 
 DLGPROC GGui::Dialog::dlgproc_export_fn()

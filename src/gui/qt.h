@@ -22,5 +22,6 @@
 #include <QtGui/QtGui>
 #if defined(QT_VERSION) && QT_VERSION >= 0x050000
 #include <QtWidgets/QtWidgets>
+#include <QtCore/QtPlugins>
 #endif
 

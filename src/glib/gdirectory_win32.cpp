@@ -36,7 +36,7 @@ bool G::Directory::valid( bool for_creation ) const
 	DWORD attributes = ::GetFileAttributesA( m_path.str().c_str() ) ;
 	if( attributes == 0xFFFFFFFF )
 	{
-		G_IGNORE(DWORD) ::GetLastError() ;
+		G_IGNORE_RETURN(DWORD) ::GetLastError() ;
 		return false ;
 	}
 	return ( attributes & FILE_ATTRIBUTE_DIRECTORY ) != 0 ;

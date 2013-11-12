@@ -64,14 +64,16 @@ G::Date::Date( int year , G::Date::Month month , int day_of_month )
 {
 	G_ASSERT( year >= yearLowerLimit() ) ;
 	G_ASSERT( year <= yearUpperLimit() ) ;
+	m_year = year ;
+
 	G_ASSERT( day_of_month > 0 ) ;
 	G_ASSERT( day_of_month < 32 ) ;
+	m_day = day_of_month ;
+
 	G_ASSERT( month >= 1 ) ;
 	G_ASSERT( month <= 12 ) ;
-
-	m_year = year ;
 	m_month = month ;
-	m_day = day_of_month ;
+
 	m_weekday_set = false ;
 }
 
@@ -101,7 +103,7 @@ std::string G::Date::string( Format format ) const
 	}
 	else
 	{
-		G_ASSERT( !"enum error" ) ;
+		G_ASSERT( "enum error" == 0 ) ;
 	}
 	return ss.str() ;
 }
@@ -197,13 +199,13 @@ std::string G::Date::yyyy() const
 G::Date & G::Date::operator++()
 {
 	++m_day ;
-	if( m_day == (lastDay(m_month,m_year)+1U) )
+	if( m_day == (lastDay(m_month,m_year)+1) )
 	{
-		m_day = 1U ;
+		m_day = 1 ;
 		++m_month ;
-		if( m_month == 13U )
+		if( m_month == 13 )
 		{
-			m_month = 1U ;
+			m_month = 1 ;
 			++m_year ;
 		}
 	}
@@ -219,12 +221,12 @@ G::Date & G::Date::operator++()
 
 G::Date & G::Date::operator--()
 {
-	if( m_day == 1U )
+	if( m_day == 1 )
 	{
-		if( m_month == 1U )
+		if( m_month == 1 )
 		{
 			m_year-- ;
-			m_month = 12U ;
+			m_month = 12 ;
 		}
 		else
 		{
@@ -247,29 +249,29 @@ G::Date & G::Date::operator--()
 	return *this ;
 }
 
-unsigned int G::Date::lastDay( unsigned int month , unsigned int year )
+int G::Date::lastDay( int month , int year )
 {
-	unsigned int end = 30U ;
-	if( month == 1U || 
-		month == 3U || 
-		month == 5U || 
-		month == 7U ||
-		month == 8U || 
-		month == 10U || 
-		month == 12U )
+	int end = 30 ;
+	if( month == 1 || 
+		month == 3 || 
+		month == 5 || 
+		month == 7 ||
+		month == 8 || 
+		month == 10 || 
+		month == 12 )
 	{
-		end = 31U ;
+		end = 31 ;
 	}
-	else if( month == 2U )
+	else if( month == 2 )
 	{
-		end = isLeapYear(year) ? 29U : 28U ;
+		end = isLeapYear(year) ? 29 : 28 ;
 	}
 	return end ;
 }
 
-bool G::Date::isLeapYear( unsigned int y )
+bool G::Date::isLeapYear( int y )
 {
-	return y >= 1800U && ( y % 400U == 0U || ( y % 100U != 0U && y % 4U == 0U ) ) ;
+	return y >= 1800 && ( y % 400 == 0 || ( y % 100 != 0 && y % 4 == 0 ) ) ;
 }
 
 bool G::Date::operator==( const Date &other ) const

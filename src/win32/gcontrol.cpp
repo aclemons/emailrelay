@@ -29,9 +29,9 @@
 LRESULT CALLBACK gcontrol_wndproc_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam ) ;
 
 GGui::Control::Control( Dialog &dialog , int id ) :
+	m_valid(true) ,
 	m_dialog(dialog) ,
 	m_id(id) ,
-	m_valid(true) ,
 	m_hwnd(0) ,
 	m_no_redraw_count(0)
 {
@@ -59,7 +59,7 @@ int GGui::Control::id() const
 	return m_id ;
 }
 
-LRESULT GGui::Control::sendMessage( unsigned message , WPARAM wparam , LPARAM lparam ) const
+LRESULT GGui::Control::sendMessage( unsigned int message , WPARAM wparam , LPARAM lparam ) const
 {
 	return m_dialog.sendMessage( m_id , message , wparam , lparam ) ;
 }
@@ -85,14 +85,14 @@ bool GGui::Control::subClass()
 {
 	G_ASSERT( handle() != 0 ) ;
 
-	SubClassMap::Proc old = reinterpret_cast<SubClassMap::Proc>( ::GetWindowLong( handle() , GWL_WNDPROC ) ) ;
+	SubClassMap::Proc old = reinterpret_cast<SubClassMap::Proc>( ::GetWindowLongPtr( handle() , GWLP_WNDPROC ) ) ;
 
 	m_dialog.map().add( handle() , old , static_cast<void*>(this) ) ;
-	::SetWindowLong( handle() , GWL_WNDPROC, reinterpret_cast<DWORD>(gcontrol_wndproc_export) ) ;
+	::SetWindowLongPtr( handle() , GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(gcontrol_wndproc_export) ) ;
 	return true ;
 }
 
-LRESULT GGui::Control::wndProc( unsigned message , WPARAM wparam , LPARAM lparam , WNDPROC super_class )
+LRESULT GGui::Control::wndProc( unsigned int message , WPARAM wparam , LPARAM lparam , WNDPROC super_class )
 {
 	bool forward = true ;
 	LRESULT result = onMessage( message , wparam , lparam , super_class , forward ) ;
@@ -103,7 +103,7 @@ LRESULT GGui::Control::wndProc( unsigned message , WPARAM wparam , LPARAM lparam
 		return result ;
 }
 
-LRESULT GGui::Control::onMessage( unsigned , WPARAM , LPARAM , WNDPROC , bool &forward )
+LRESULT GGui::Control::onMessage( unsigned int , WPARAM , LPARAM , WNDPROC , bool &forward )
 {
 	forward = true ;
 	return 0 ;
@@ -122,7 +122,7 @@ LRESULT CALLBACK gcontrol_wndproc_export( HWND hwnd , UINT message , WPARAM wpar
 	}
 
 	// find the dialog box object
-	GGui::Dialog *dialog = reinterpret_cast<GGui::Dialog*>( ::GetWindowLong( hwnd_dialog , DWL_USER ) ) ;
+	GGui::Dialog *dialog = reinterpret_cast<GGui::Dialog*>( ::GetWindowLongPtr( hwnd_dialog , DWLP_USER ) ) ;
 	if( dialog == NULL )
 	{
 		G_ASSERT( false ) ;
@@ -133,7 +133,7 @@ LRESULT CALLBACK gcontrol_wndproc_export( HWND hwnd , UINT message , WPARAM wpar
 	// find the control object and the super-class window procedure
 	void * context = NULL ;
 	GGui::SubClassMap::Proc super_class = reinterpret_cast<GGui::SubClassMap::Proc>(dialog->map().find(hwnd,&context)) ;
-	GGui::Control * control = reinterpret_cast<GGui::Control*>(context) ;
+	GGui::Control * control = static_cast<GGui::Control*>(context) ;
 	G_ASSERT( control != NULL ) ;
 	G_ASSERT( control->handle() == hwnd ) ;
 	G_ASSERT( control->id() == ::GetDlgCtrlID(hwnd) ) ;
@@ -204,14 +204,14 @@ int GGui::ListBox::getSelection()
 
 void GGui::ListBox::setSelection( int index )
 {
-	sendMessage( LB_SETCURSEL , (WPARAM)index ) ;
+	sendMessage( LB_SETCURSEL , static_cast<WPARAM>(index) ) ;
 }
 
 std::string GGui::ListBox::getItem( int index ) const
 {
 	G_ASSERT( index >= 0 ) ;
 
-	LRESULT rc = sendMessage( LB_GETTEXTLEN , (WPARAM)index ) ;
+	LRESULT rc = sendMessage( LB_GETTEXTLEN , static_cast<WPARAM>(index) ) ;
 	if( rc == LB_ERR || rc > 0xfff0 )
 		return std::string() ;
 
@@ -221,13 +221,13 @@ std::string GGui::ListBox::getItem( int index ) const
 		return std::string() ;
 
 	buffer[0] = '\0' ;
-	sendMessage( LB_GETTEXT , (WPARAM)index , (LPARAM)(LPCSTR)buffer ) ;
+	sendMessage( LB_GETTEXT , static_cast<WPARAM>(index) , reinterpret_cast<LPARAM>(static_cast<LPCSTR>(buffer)) ) ;
 	std::string s( buffer ) ;
 	delete [] buffer ;
 	return s ;
 }
 
-unsigned GGui::ListBox::entries() const
+unsigned int GGui::ListBox::entries() const
 {
 	LRESULT entries = sendMessage( LB_GETCOUNT , 0 , 0 ) ;
 	if( entries == LB_ERR )
@@ -235,7 +235,8 @@ unsigned GGui::ListBox::entries() const
 		G_DEBUG( "GGui::ListBox::entries: listbox getcount error" ) ;
 		entries = 0 ;
 	}
-	return entries ;
+	G_ASSERT( entries == static_cast<LRESULT>(static_cast<unsigned int>(entries)) ) ;
+	return static_cast<unsigned int>(entries) ;
 }
 
 // ===
@@ -280,7 +281,7 @@ void GGui::EditBox::set( const G::Strings & list )
 	}
 }
 
-unsigned GGui::EditBox::lines()
+unsigned int GGui::EditBox::lines()
 {
 	// handle an empty control since em_getlinecount returns one
 	int length = ::GetWindowTextLength( handle() ) ;
@@ -288,17 +289,17 @@ unsigned GGui::EditBox::lines()
 		return 0 ;
 
 	LRESULT lines = sendMessage( EM_GETLINECOUNT ) ;
-	G_ASSERT( lines == (LRESULT)(unsigned)lines ) ;
 	G_DEBUG( "GGui::EditBox::lines: " << lines ) ;
-	return lines ;
+	G_ASSERT( lines == static_cast<LRESULT>(static_cast<unsigned int>(lines)) ) ;
+	return static_cast<unsigned int>(lines) ;
 }
 
-unsigned GGui::EditBox::linesInWindow()
+unsigned int GGui::EditBox::linesInWindow()
 {
-	unsigned text_height = characterHeight() ;
-	unsigned window_height = windowHeight() ;
+	unsigned int text_height = characterHeight() ;
+	unsigned int window_height = windowHeight() ;
 	G_ASSERT( text_height != 0 ) ;
-	unsigned result = window_height / text_height ;
+	unsigned int result = window_height / text_height ;
 	G_DEBUG( "GGui::EditBox::linesInWindow: " << result ) ;
 	return result ;
 }
@@ -330,16 +331,17 @@ std::string GGui::EditBox::get() const
 	return s ;
 }
 
-unsigned GGui::EditBox::scrollPosition()
+unsigned int GGui::EditBox::scrollPosition()
 {
-	unsigned position = sendMessage( EM_GETFIRSTVISIBLELINE ) ;
+	LRESULT position = sendMessage( EM_GETFIRSTVISIBLELINE ) ;
 	G_DEBUG( "GGui::EditBox::scrollPosition: " << position ) ;
-	return position ;
+	G_ASSERT( position == static_cast<LRESULT>(static_cast<unsigned int>(position)) ) ;
+	return static_cast<unsigned int>(position) ;
 }
 
-unsigned GGui::EditBox::scrollRange()
+unsigned int GGui::EditBox::scrollRange()
 {
-	unsigned range = lines() ; 
+	unsigned int range = lines() ; 
 	if( range <= 1 )
 		range = 1 ;
 	else
@@ -350,25 +352,25 @@ unsigned GGui::EditBox::scrollRange()
 	return range ;
 }
 
-unsigned GGui::EditBox::characterHeight() 
+unsigned int GGui::EditBox::characterHeight() 
 {
 	if( m_character_height == 0 )
 	{
 		DeviceContext dc( handle() ) ;
 		TEXTMETRIC tm ;
 		::GetTextMetrics( dc() , &tm ) ;
-		m_character_height = (unsigned)( tm.tmHeight + tm.tmExternalLeading ) ;
+		m_character_height = static_cast<unsigned int>( tm.tmHeight + tm.tmExternalLeading ) ;
 		G_ASSERT( m_character_height != 0 ) ;
 	}
 	return m_character_height ;
 }
 
-unsigned GGui::EditBox::windowHeight()
+unsigned int GGui::EditBox::windowHeight()
 {
 	RECT rect ;
 	::GetWindowRect( handle() , &rect ) ;
 	G_ASSERT( rect.bottom >= rect.top ) ;
-	return (unsigned)( rect.bottom - rect.top ) ;
+	return static_cast<unsigned int>( rect.bottom - rect.top ) ;
 }
 
 // ===

@@ -76,7 +76,7 @@ G::Path Dir::os_config()
 
 G::Path Dir::os_spool()
 {
-	return windows() + "spool" + "emailrelay" ;
+	return windows() + "system32" + "spool" + "emailrelay" ;
 }
 
 G::Path Dir::os_pid( const G::Path & config_dir )

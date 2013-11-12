@@ -25,6 +25,7 @@
 #include "gexception.h"
 #include "gstrings.h"
 #include <string>
+#include <sstream>
 #include <iostream>
 #include <list>
 #include <vector>
@@ -312,4 +313,3 @@ private:
 } ;
 
 #endif
-

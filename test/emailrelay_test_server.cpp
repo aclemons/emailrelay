@@ -241,7 +241,7 @@ int main( int argc , char * argv [] )
 		bool tls = arg.remove( "--tls" ) ;
 		bool quiet = arg.remove( "--quiet" ) ;
 		int fail_at = arg.contains("--fail-at",1U) ? G::Str::toInt(arg.v(arg.index("--fail-at",1U)+1U)) : -1 ;
-		int port = arg.contains("--port",1U) ? G::Str::toInt(arg.v(arg.index("--port",1U)+1U)) : 10025 ;
+		unsigned int port = arg.contains("--port",1U) ? G::Str::toUInt(arg.v(arg.index("--port",1U)+1U)) : 10025U ;
 
 		std::string pid_file_name = std::string(".") + G::Path(arg.v(0)).basename() + ".pid" ;
 		{

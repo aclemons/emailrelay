@@ -101,6 +101,10 @@ sub rc { return shift->{'m_rc'} }
 sub _check
 {
 	my ( $this ) = @_ ;
+	if( -x ($this->exe().".exe") )
+	{
+		$this->{'m_exe'} .= ".exe" ;
+	}
 	if( ! -x $this->exe() )
 	{
 		die "invalid server executable [".$this->exe()."]" ;

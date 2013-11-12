@@ -30,7 +30,8 @@ GGui::ApplicationInstance::ApplicationInstance( HINSTANCE h )
 
 void GGui::ApplicationInstance::hinstance( HINSTANCE h )
 {
-	m_hinstance = h ;
+	if( h )
+		m_hinstance = h ;
 }
 
 HINSTANCE GGui::ApplicationInstance::hinstance()
@@ -38,4 +39,8 @@ HINSTANCE GGui::ApplicationInstance::hinstance()
 	return m_hinstance ;
 }
 
+extern "C" void ggui_applicationinstance( HINSTANCE h )
+{
+	GGui::ApplicationInstance::hinstance( h ) ;
+}
 /// \file gappinst.cpp

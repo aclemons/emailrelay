@@ -45,7 +45,7 @@ public:
 		const std::string & version , const std::string & capabilities ) ;
 	bool contains( const std::string & switch_ ) const ;
 	std::string value( const std::string & switch_ ) const ;
-	unsigned int argc() const ;
+	G::Arg::size_type argc() const ;
 	bool hasUsageErrors() const ;
 	bool hasSemanticError( const Configuration & ) const ;
 	void showHelp( bool error_stream ) const ;
@@ -102,7 +102,7 @@ private:
 
 std::string Main::CommandLineImp::switchSpec( bool is_windows )
 {
-	// single-character options unused: b (and digits etc)
+	// single-character options unused: digits only
 	std::string dir = GSmtp::MessageStore::defaultDirectory().str() ;
 	std::string pop_auth = GPop::Secrets::defaultPath() ;
 	std::ostringstream ss ;
@@ -123,8 +123,9 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 		"s!spool-dir!specifies the spool directory (default is \"" << dir << "\")!!1!dir!2|"
 		"V!version!displays version information and exits!!0!!2|"
 		""
-		"j!client-tls!enables tls/ssl layer for smtp client! (if openssl built in)!0!!3|"
-		"K!server-tls!enables tls/ssl layer for smtp server using the given openssl certificate file! (which must be in the directory trusted by openssl)!1!pem-file!3|"
+		"j!client-tls!enables negotiated tls/ssl for smtp client! (if openssl built in)!0!!3|"
+		"b!client-tls-connection!enables smtp over tls/ssl for smtp client! (if openssl built in)!0!!3|"
+		"K!server-tls!enables negotiated tls/ssl for smtp server using the given openssl certificate file! (which must be in the directory trusted by openssl)!1!pem-file!3|"
 		"g!debug!generates debug-level logging if built in!!0!!3|"
 		"C!client-auth!enables smtp authentication with the remote server, using the given secrets file!!1!file!3|"
 		"L!log-time!adds a timestamp to the logging output!!0!!3|"
@@ -197,7 +198,7 @@ Main::CommandLineImp::CommandLineImp( Output & output , const G::Arg & arg , con
 {
 }
 
-unsigned int Main::CommandLineImp::argc() const
+G::Arg::size_type Main::CommandLineImp::argc() const
 {
 	return m_getopt.args().c() ;
 }
@@ -614,7 +615,7 @@ std::string Main::CommandLine::value( const std::string & switch_ ) const
 	return m_imp->value( switch_ ) ;
 }
 
-unsigned int Main::CommandLine::argc() const
+G::Arg::size_type Main::CommandLine::argc() const
 {
 	return m_imp->argc() ;
 }

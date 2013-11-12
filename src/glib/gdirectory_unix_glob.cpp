@@ -122,10 +122,14 @@ G::DirectoryIterator::~DirectoryIterator()
 
 // ===
 
-extern "C" int gdirectory_unix_on_error_( const char * , int )
+extern "C"
 {
-	const int abort = 1 ;
-	return abort ;
+	int gdirectory_unix_on_error_( const char * , int ) ;
+	int gdirectory_unix_on_error_( const char * , int )
+	{
+		const int abort = 1 ;
+		return abort ;
+	}
 }
 
 G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory & dir , const std::string & wildcard ) :

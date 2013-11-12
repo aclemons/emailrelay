@@ -73,8 +73,8 @@ bool Main::Box::run()
 
 Main::WinApp::WinApp( HINSTANCE h , HINSTANCE p , const char * name ) :
 	GGui::ApplicationBase( h , p , name ) ,
-	m_use_tray(false) ,
 	m_quit(false) ,
+	m_use_tray(false) ,
 	m_hidden(false)
 {
 }

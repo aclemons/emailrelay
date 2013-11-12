@@ -28,7 +28,7 @@
 GSmtp::RequestClient::RequestClient( const std::string & key , const std::string & ok , const std::string & eol ,
 	const GNet::ResolverInfo & resolver_info ,
 	unsigned int connect_timeout , unsigned int response_timeout ) :
-		GNet::Client(resolver_info,connect_timeout,response_timeout,eol) ,
+		GNet::Client(resolver_info,connect_timeout,response_timeout,0U,eol) ,
 		m_key(key) ,
 		m_ok(ok) ,
 		m_eol(eol) ,

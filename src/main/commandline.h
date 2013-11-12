@@ -81,7 +81,7 @@ public:
 	G::Strings value( const char * switch_ , const char * separators ) const ;
 		///< Returns the given switch's list-of-string value.
 
-	unsigned int argc() const ;
+	G::Arg::size_type argc() const ;
 		///< Returns the number of non-switch arguments on the command line.
 
 	bool hasUsageErrors() const ;

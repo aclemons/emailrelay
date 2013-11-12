@@ -94,7 +94,7 @@ private:
 	static int converse( int n , const struct pam_message ** in , struct pam_response ** out , void * vp ) ;
 	static void delay( int , unsigned , void * ) ;
 	static std::string decodeStyle( int pam_style ) ;
-	static void release( struct pam_response * , int ) ;
+	static void release( struct pam_response * , size_t ) ;
 } ;
 
 // ==
@@ -197,11 +197,11 @@ void G::PamImp::checkAccount( bool require_token )
 	check( "pam_acct_mgmt" , m_rc ) ;
 }
 
-void G::PamImp::release( struct pam_response * rsp , int n )
+void G::PamImp::release( struct pam_response * rsp , size_t n )
 {
 	if( rsp != NULL )
 	{
-		for( int i = 0 ; i < n ; i++ )
+		for( size_t i = 0U ; i < n ; i++ )
 		{
 			if( rsp[i].resp != NULL )
 				std::free( rsp[i].resp ) ;
@@ -210,10 +210,11 @@ void G::PamImp::release( struct pam_response * rsp , int n )
 	std::free( rsp ) ;
 }
 
-int G::PamImp::converse( int n , const struct pam_message ** in , struct pam_response ** out , void * vp )
+int G::PamImp::converse( int n_in , const struct pam_message ** in , struct pam_response ** out , void * vp )
 {
-	G_ASSERT( n > 0 ) ;
+	G_ASSERT( n_in > 0 ) ;
 	G_ASSERT( out != NULL ) ;
+	size_t n = n_in < 0 ? size_t(0U) : static_cast<size_t>(n_in) ;
 	*out = NULL ;
 	struct pam_response * rsp = NULL ;
 	try
@@ -229,7 +230,7 @@ int G::PamImp::converse( int n , const struct pam_message ** in , struct pam_res
 		// an array of structures (rtfm)...	
 		//
 		ItemArray array( n ) ;
-		for( int i = 0 ; i < n ; i++ )
+		for( size_t i = 0U ; i < n ; i++ )
 		{
 			std::string & s1 = const_cast<std::string&>(array[i].in_type) ; 
 			s1 = decodeStyle( in[i]->msg_style ) ;
@@ -252,20 +253,20 @@ int G::PamImp::converse( int n , const struct pam_message ** in , struct pam_res
 		rsp = reinterpret_cast<struct pam_response*>( std::malloc(n*sizeof(struct pam_response)) ) ;
 		if( rsp == NULL )
 			throw std::bad_alloc() ;
-		for( int j = 0 ; j < n ; j++ )
+		for( size_t j = 0U ; j < n ; j++ )
 			rsp[j].resp = NULL ;
 
 		// fill in the response from the c++ container
 		//
-		for( int i = 0 ; i < n ; i++ )
+		for( size_t i = 0U ; i < n ; i++ )
 		{
 			rsp[i].resp_retcode = 0 ;
 			if( array[i].out_defined )
 			{
-				char * out = strdup_( array[i].out.c_str() ) ;
-				if( out == NULL )
+				char * response = strdup_( array[i].out.c_str() ) ;
+				if( response == NULL )
 					throw std::bad_alloc() ;
-				rsp[i].resp = out ;
+				rsp[i].resp = response ;
 			}
 		}
 

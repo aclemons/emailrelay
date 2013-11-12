@@ -49,7 +49,7 @@ std::string GNet::Local::fqdnImp()
 	std::string::size_type pos = result.find( '.' ) ;
 	if( pos == std::string::npos )
 	{
-		G_WARNING( "GNet::Local: no valid domain in \"" << result << "\": defaulting to \".local\"" ) ;
+		G_WARNING( "GNet::Local: no domain name in \"" << result << "\": defaulting to \".local\"" ) ;
 		result.append( ".local" ) ;
 	}
 

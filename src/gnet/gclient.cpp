@@ -23,9 +23,10 @@
 #include "gclient.h"
 
 GNet::Client::Client( const ResolverInfo & remote_info , unsigned int connection_timeout ,
-	unsigned int response_timeout , const std::string & eol , const Address & local_interface , 
+	unsigned int response_timeout , unsigned int secure_connection_timeout ,
+	const std::string & eol , const Address & local_interface , 
 	bool privileged , bool sync_dns ) :
-		HeapClient(remote_info,local_interface,privileged,sync_dns) ,
+		HeapClient(remote_info,local_interface,privileged,sync_dns,secure_connection_timeout) ,
 		m_done_signal(true) ,
 		m_connected_signal(true) ,
 		m_connection_timeout(connection_timeout) ,
@@ -94,6 +95,11 @@ G::Signal2<std::string,std::string> & GNet::Client::eventSignal()
 G::Signal0 & GNet::Client::connectedSignal()
 {
 	return m_connected_signal ;
+}
+
+G::Signal0 & GNet::Client::secureSignal()
+{
+	return m_secure_signal ;
 }
 
 void GNet::Client::onData( const char * p , SimpleClient::size_type n )

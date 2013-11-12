@@ -20,9 +20,9 @@
 # See ../mingw-common.mak for help.
 #
 # External definitions ...
-# - "mk_qt" pointing to the Qt4 directory
-# - "mk_zlib" pointing to the directory containing the zlib library (optional)
-# - "mk_mingw" pointing to the MinGW bin directory (optional)
+# - "mk_qt" pointing to the Qt5 directory (eg. "c:/qt/qt5.1.1/5.1.1/mingw48_32")
+# - "mk_zlib" pointing to the directory containing the zlib library
+# - "mk_mingw" pointing to the MinGW bin directory
 #
 
 .PHONY: all
@@ -31,12 +31,18 @@ ifeq ("$(mk_qt)","")
 mk_qt=c:/qt
 endif
 
-ifeq ("$(mk_mingw)","")
-mk_mingw=$(mk_qt)/bin
+ifeq ("$(mk_zlib)","")
+zlib_include=/c/zlib
+zlib_lib=/c/zlib/libz.a
+else
+zlib_include=$(mk_zlib)
+zlib_lib=$(mk_zlib)/libz.a
 endif
 
-ifeq ("$(mk_zlib)","")
-mk_zlib=$(mk_qt)/src/3rdparty/zlib
+ifeq ("$(mk_mingw)","")
+mk_mingw_bin=c:/mingw/bin
+else
+mk_mingw_bin=$(mk_mingw)/bin
 endif
 
 mk_sources=\
@@ -55,6 +61,7 @@ mk_sources=\
 	moc_gpage.cpp \
 	moc_pages.cpp \
 	glink_win32.cpp \
+	gregister_win32.cpp \
 	gunpack.cpp \
 	state.cpp \
 	unpack.c
@@ -64,8 +71,9 @@ service_objects=../main/service_install.o ../main/service_remove.o
 gui_syslibs=\
 	-lmingw32 \
 	-lqtmain \
-	-lQtGui \
-	-lQtCore
+	-lQt5Gui \
+	-lQt5Widgets \
+	-lQt5Core
 
 syslibs=\
 	-ladvapi32 \
@@ -84,6 +92,7 @@ syslibs=\
 	-lws2_32
 
 mk_defines_extra=\
+	-DQT_NO_OPENGL \
 	-DQT_LARGEFILE_SUPPORT \
 	-DQT_THREAD_SUPPORT \
 	-DG_WIN32_IE \
@@ -108,7 +117,6 @@ mk_link_flags_simple=\
 	$(mk_link_flags_common) \
 	$(mk_link_flags_release)
 
-zlib=$(mk_zlib)/libz.a
 glib=../glib/glib.a
 libs=$(glib) $(qt_libs_release)
 
@@ -117,16 +125,16 @@ mk_exe_gui_tmp=emailrelay-gui-tmp.exe
 mk_exe_setup=emailrelay-setup.exe
 mk_exe_pack=pack.exe
 mk_exe_run=run.exe
-mk_includes_extra=-I$(mk_qt)/include -I$(mk_qt)/include/QtCore -I$(mk_qt)/include/QtGui -I$(mk_zlib) -I../main
+mk_includes_extra=-I$(zlib_include) -I$(mk_qt)/include -I$(mk_qt)/include/QtCore -I$(mk_qt)/include/QtGui -I../main
 
 # runtime library dlls
-mk_dll_qt_1=QtCore4.dll
-mk_dll_qt_2=QtGui4.dll
-mk_dll_mingw=mingwm10.dll
-mk_pack_dll_qt_1=$(mk_qt)/bin/$(mk_dll_qt_1) $(mk_dll_qt_1)
-mk_pack_dll_qt_2=$(mk_qt)/bin/$(mk_dll_qt_2) $(mk_dll_qt_2)
-mk_pack_dll_mingw=$(mk_mingw)/$(mk_dll_mingw) $(mk_dll_mingw)
-mk_pack_dlls=$(mk_pack_dll_qt_1) $(mk_pack_dll_qt_2) $(mk_pack_dll_mingw)
+mk_dll_qt_1=Qt5Core.dll
+mk_dll_qt_2=Qt5Gui.dll
+mk_dll_mingw_1=mingwm10.dll
+mk_pack_dlls=\
+	$(mk_qt)/bin/$(mk_dll_qt_1) $(mk_dll_qt_1) \
+	$(mk_qt)/bin/$(mk_dll_qt_2) $(mk_dll_qt_2) \
+	$(mk_mingw_bin)/$(mk_dll_mingw_1) $(mk_dll_mingw_1)
 
 rc=emailrelay-gui.rc
 res=emailrelay-gui.o
@@ -137,17 +145,17 @@ all: $(mk_exe_gui) $(mk_exe_pack) $(mk_exe_setup)
 include ../mingw-common.mak
 
 $(mk_exe_gui): $(res) $(mk_objects) $(libs) $(service_objects)
-	$(mk_link) $(mk_link_flags) -o $(mk_exe_gui) $(res) $(mk_objects) $(service_objects) $(libs) $(gui_syslibs) $(syslibs)
+	$(mk_link) $(mk_link_flags) -o $(mk_exe_gui) $(res) $(mk_objects) $(service_objects) $(libs) $(gui_syslibs) $(syslibs) $(zlib_lib)
 
 $(mk_exe_pack): pack.o
-	$(mk_link) $(mk_link_flags_simple) -o $(mk_exe_pack) pack.o $(glib) $(zlib)
+	$(mk_link) $(mk_link_flags_simple) -o $(mk_exe_pack) pack.o $(glib) $(zlib_lib)
 
-$(mk_exe_run): run.o unpack.o $(zlib)
-	$(mk_link) $(mk_link_flags_simple) -o $(mk_exe_run) run.o unpack.o $(zlib)
+$(mk_exe_run): run.o unpack.o
+	$(mk_link) $(mk_link_flags_simple) -o $(mk_exe_run) run.o unpack.o $(zlib_lib)
 
 css=../../doc/emailrelay.css
 $(css): ../../doc/emailrelay.css_
-	cmd /c copy ..\..\doc\emailrelay.css_ ..\..\doc\emailrelay.css
+	cp ../../doc/emailrelay.css_ ../../doc/emailrelay.css
 
 examples=../../bin/emailrelay-edit-content.js ../../bin/emailrelay-edit-envelope.js ../../bin/emailrelay-resubmit.js ../../bin/emailrelay-runperl.js
 
@@ -163,7 +171,7 @@ $(mk_exe_gui_tmp): $(mk_exe_gui) $(mk_exe_pack) $(css)
 ##$(mk_exe_setup): $(mk_exe_pack) $(mk_exe_gui_tmp) $(mk_exe_run) ../../doc/userguide.html
 ##	./$(mk_exe_pack) $(mk_exe_setup) $(mk_exe_run) $(mk_pack_dlls) $(mk_exe_gui_tmp) $(mk_exe_gui)
 $(mk_exe_setup): $(mk_exe_gui_tmp)
-	cmd /c copy $(mk_exe_gui_tmp) $(mk_exe_setup)
+	cp $(mk_exe_gui_tmp) $(mk_exe_setup)
 
 moc_gdialog.cpp: gdialog.h
 	$(mk_qt)/bin/moc $< -o $@

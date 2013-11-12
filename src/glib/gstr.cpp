@@ -174,7 +174,7 @@ bool G::Str::isUShort( const std::string & s )
 {
 	try
 	{
-		G_IGNORE(unsigned short) toUShort(s) ;
+		G_IGNORE_RETURN(unsigned short) toUShort(s) ;
 	}
 	catch( Overflow & )
 	{
@@ -191,7 +191,7 @@ bool G::Str::isUInt( const std::string & s )
 {
 	try
 	{
-		G_IGNORE(unsigned int) toUInt(s) ;
+		G_IGNORE_RETURN(unsigned int) toUInt(s) ;
 	}
 	catch( Overflow & )
 	{
@@ -208,7 +208,7 @@ bool G::Str::isULong( const std::string & s )
 {
 	try
 	{
-		G_IGNORE(unsigned long) toULong(s) ;
+		G_IGNORE_RETURN(unsigned long) toULong(s) ;
 	}
 	catch( Overflow & )
 	{
@@ -362,7 +362,7 @@ unsigned int G::Str::toUInt( const std::string &s , bool limited )
 unsigned long G::Str::toULong( const std::string &s , bool limited )
 {
 	char * end = NULL ;
-	unsigned long result = ::strtoul( s.c_str(), &end, 10 ) ; 
+	unsigned long result = ::strtoul( s.c_str() , &end , 10 ) ; 
 
 	if( end == 0 || end[0] != '\0' )
 		throw InvalidFormat( s ) ;

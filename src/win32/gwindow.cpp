@@ -134,7 +134,7 @@ bool GGui::Window::wndProcException() const
 std::string GGui::Window::wndProcExceptionString()
 {
 	std::string reason = m_reason ;
-	m_reason.clear() ;
+	m_reason.resize(0) ;
 	return reason ;
 }
 

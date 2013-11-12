@@ -46,7 +46,7 @@ namespace G
 class G::Arg 
 {
 public:
-	typedef unsigned int size_type ;
+	typedef size_t size_type ;
 
 	Arg( int argc , char *argv[] ) ;
 		///< Constructor taking argc/argv. Should not be used in 

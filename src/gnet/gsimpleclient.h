@@ -64,7 +64,7 @@ private:
 
 /// \class GNet::SimpleClient
 /// A class for making an outgoing connection to a remote server, with
-/// support for socket-level protocols such as TLS/SSL. 
+/// support for socket-level protocols such as TLS/SSL and SOCKS 4a.
 ///
 /// The class handles name-to-address resolution, deals with connection issues, 
 /// reads incoming data, and manages flow-control when sending. The implementation 
@@ -82,16 +82,18 @@ class GNet::SimpleClient : public GNet::EventHandler , public GNet::Connection ,
 {
 public:
 	enum ConnectStatus { Success , Failure , Retry , ImmediateSuccess } ;
-    enum State { Idle , Resolving , Connecting , Connected } ;
+    enum State { Idle , Resolving , Connecting , Connected , Socksing } ;
 	G_EXCEPTION( DnsError , "dns error" ) ;
 	G_EXCEPTION( ConnectError , "connect failure" ) ;
+	G_EXCEPTION( SocksError , "socks error" ) ;
 	G_EXCEPTION( NotConnected , "socket not connected" ) ;
 	typedef std::string::size_type size_type ;
 
 	SimpleClient( const ResolverInfo & remote_info ,
 		const Address & local_address = Address(0U) , 
 		bool privileged = false ,
-		bool sync_dns = synchronousDnsDefault() ) ;
+		bool sync_dns = synchronousDnsDefault() ,
+		unsigned int secure_connection_timeout = 0U ) ;
 			///< Constructor.
 			///<
 			///< If the 'privileged' parameter is true then the
@@ -198,12 +200,14 @@ private:
 	SimpleClient( const SimpleClient& ) ; // not implemented
 	void operator=( const SimpleClient& ) ; // not implemented
 	void close() ;
-	static int getRandomPort() ;
+	static unsigned int getRandomPort() ;
 	bool startConnecting() ;
 	bool localBind( Address ) ;
 	ConnectStatus connectCore( Address remote_address , std::string *error_p ) ;
 	void setState( State ) ;
 	void immediateConnection() ;
+	void sendSocksRequest() ;
+	bool readSocksResponse() ;
 	void logFlowControlAsserted() const ;
 	void logFlowControlReleased() const ;
 
@@ -216,6 +220,7 @@ private:
 	bool m_privileged ;
 	State m_state ;
 	bool m_sync_dns ;
+	unsigned int m_secure_connection_timeout ;
 } ;
 
 #endif

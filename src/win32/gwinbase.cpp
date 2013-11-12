@@ -103,7 +103,7 @@ std::string GGui::WindowBase::windowClass() const
 
 HINSTANCE GGui::WindowBase::windowInstanceHandle() const
 {
-	return reinterpret_cast<HINSTANCE>(::GetWindowLong(m_hwnd,GWL_HINSTANCE)) ;
+	return reinterpret_cast<HINSTANCE>(::GetWindowLongPtr(m_hwnd,GWLP_HINSTANCE)) ;
 }
 
 /// \file gwinbase.cpp

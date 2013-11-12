@@ -633,7 +633,7 @@ GSmtp::ClientProtocolReply::ClientProtocolReply( const std::string & line ) :
 	{
 		m_valid = true ;
 		m_complete = line.length() == 3U || line.at(3U) == ' ' ;
-		m_value = G::Str::toUInt( line.substr(0U,3U) ) ;
+		m_value = G::Str::toInt( line.substr(0U,3U) ) ;
 		if( line.length() > 4U )
 		{
 			m_text = line.substr(4U) ;
@@ -686,17 +686,17 @@ bool GSmtp::ClientProtocolReply::incomplete() const
 
 bool GSmtp::ClientProtocolReply::positive() const
 {
-	return m_valid && m_value < 400U ;
+	return m_valid && m_value < 400 ;
 }
 
-unsigned int GSmtp::ClientProtocolReply::value() const
+int GSmtp::ClientProtocolReply::value() const
 {
 	return m_valid ? m_value : 0 ;
 }
 
 bool GSmtp::ClientProtocolReply::is( Value v ) const
 {
-	return value() == static_cast<unsigned int>( v ) ;
+	return value() == v ;
 }
 
 std::string GSmtp::ClientProtocolReply::errorText() const
@@ -732,14 +732,15 @@ bool GSmtp::ClientProtocolReply::is_digit( char c )
 
 GSmtp::ClientProtocolReply::Type GSmtp::ClientProtocolReply::type() const
 {
-	G_ASSERT( m_valid && (m_value/100U) >= 1U && (m_value/100U) <= 5U ) ;
-	return static_cast<Type>( m_value / 100U ) ;
+	G_ASSERT( m_valid && (m_value/100) >= 1 && (m_value/100) <= 5 ) ;
+	return static_cast<Type>( m_value / 100 ) ;
 }
 
 GSmtp::ClientProtocolReply::SubType GSmtp::ClientProtocolReply::subType() const
 {
-	unsigned int n = ( m_value / 10U ) % 10U ;
-	if( n < 4U )
+	G_ASSERT( m_valid && m_value >= 0 ) ;
+	int n = ( m_value / 10 ) % 10 ;
+	if( n < 4 )
 		return static_cast<SubType>( n ) ;
 	else
 		return Invalid_SubType ;

@@ -29,8 +29,8 @@
 GGui::ApplicationBase::ApplicationBase( HINSTANCE current , HINSTANCE previous , 
 	const std::string & name ) :
 		ApplicationInstance(current) ,
-		m_previous(previous) ,
-		m_name(name)
+		m_name(name) ,
+		m_previous(previous)
 {
 }
 

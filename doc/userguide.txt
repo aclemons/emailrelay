@@ -140,9 +140,8 @@ used once at installation time (and it is the basis of the self-extracting
 installer on Windows) but it may also be used to do some simple reconfiguration
 of an alreay-installed system. It takes you through a sequence of configuration
 pages and then on the last page creates or updates the configuration files, ie.
-the authentication secrets file and on Unix the configuration file
-"emailrelay.conf" used by the "init.d" system, or on Windows the startup batch
-file "emailrelay-start.bat".
+the authentication secrets file and the configuration file "emailrelay.conf"
+or "emailrelay-start.bat".
 
 Logging
 -------
@@ -157,7 +156,7 @@ replace them with their equivalent options without the "--close-stderr" part.
 
 On Windows you can log to a file by adding the "--log-file" option to the
 command-line in the startup batch file. The installation process creates a
-second startup batch file that makes use of this option, so check for that first.
+second startup batch file that contains this option, so check for that first.
 
 For more verbose logging add the "--verbose" option to the command-line.
 
@@ -172,13 +171,13 @@ need to be more careful.
 
 If the only required access to the E-MailRelay server is from a local network
 and not from the Internet then just set up your firewall to block incoming
-connections on port 25 (SMTP) and 110 (POP) and also use the "--interface"
+connections on ports 25 (SMTP) and 110 (POP) and also use the "--interface"
 option on the E-MailRelay command-line so that it only listens for incoming
 connections on the local network.
 
 If you do need to accept connections from the Internet then you should require
 all clients to authenticate themselves by using the "--server-auth" option on
-the E-MailRelay command-line. However, if want local clients running on your
+the E-MailRelay command-line. If you also want local clients running on your
 internal network to be able to bypass this authentication then you can put those
 trusted IP addresses in the E-MailRelay secrets file with an authentication
 mechanism of "NONE". Refer to the reference guide for more information.
@@ -213,31 +212,22 @@ Refer to the reference guide for more information.
 
 Triggering delivery over dial-up
 --------------------------------
-If you are using E-MailRelay on Unix to store and forward e-mail over a dial-up
-link to the Internet, then you will need to set things up so that the dialler
-tells E-MailRelay when to start forwarding.
+If you are using E-MailRelay on Unix to store and forward e-mail over an
+intermittent link to Internet such as dial-up or wireless networking, then you
+might need to set things up so that the network tells E-MailRelay when to start
+forwarding e-mail.
 
-In most Unix-like systems a "ppp" daemon calls the script "/etc/ppp/ip-up" when
-it has successfully established a dial-up link to your ISP. This script will
-probably set up IP routes, update the DNS configuration, initialise a firewall,
-run "fetchmail" and "sendmail", etc. It may also call out to another script,
-"ip-up.local" which is available for you to put stuff into without having to
-edit "ip-up" itself.
+On Linux systems you should find that there are special directories where you
+can install your own hook scripts that are called whenever a dial-up or wireless
+network connection is established. For dial-up this might be "/etc/ppp/ip-up.d",
+and for wireless "/etc/network/if-up.d".
 
-The simplest approach for editing "ip-up" is to look for a "sendmail -q" line.
-If you find "sendmail -q" then it should be sufficient to replace it with this:
-
-	emailrelay --as-client=<myisp>:smtp
-
-where you substitute your ISP's SMTP server address for <myisp>.
-
-Or if your "ip-up" calls out to "ip-up.local" then create a two-line
-"/etc/ppp/ip-up.local" script like this:
+Just create a two-line script like this in the relevant directory:
 
 	#!/bin/sh
-	exec /usr/local/sbin/emailrelay --as-client=<myisp>:smtp
+	exec /usr/local/sbin/emailrelay --as-client=myisp.net:smtp
 
-If you create "ip-up.local" yourself remember to make it executable.
+and make it executable using "chmod +x".
 
 Notification of failed e-mails
 ------------------------------
@@ -327,6 +317,17 @@ Reference this file using "--client-auth" on the E-MailRelay command-line and
 also add in the "--client-tls" option:
 
 	emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=/etc/emailrelay.auth ...
+
+Connection tunnelling
+---------------------
+E-MailRelay can send mail out via a SOCKS v4 proxy, which makes it easy to route
+your mail through an encrypted tunnel using "ssh -N -D" or via the Tor
+anonymising network.
+
+For example, this will run an E-MailRelay proxy on port 1025 that routes via a
+local tor server on port 9050 to the mail server at example.com:
+
+	emailrelay --port 1025 --as-proxy=example.com:25@localhost:9050 --domain=anonymous.org --connection-timeout=300
 
 
 

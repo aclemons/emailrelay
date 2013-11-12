@@ -20,18 +20,27 @@
 # See ../mingw-common.mak for help.
 #
 
-mk_sources=\
+console_sources=\
 	admin_enabled.cpp \
 	commandline_full.cpp \
 	configuration.cpp \
 	legal.cpp \
 	news.cpp \
 	output.cpp \
-	run.cpp \
+	run.cpp
+
+console_objects=$(console_sources:.cpp=.o)
+
+window_sources=\
 	winapp.cpp \
 	winform.cpp \
 	winmain.cpp \
 	winmenu.cpp
+
+window_objects=$(window_sources:.cpp=.o)
+
+main_objects=$(console_objects) $(window_objects)
+test_objects=$(console_objects) main.o
 
 libs=../gpop/gpop.a ../gsmtp/gsmtp.a ../gnet/gnet.a ../gauth/gauth.a ../gssl/gssl.a ../win32/gwin32.a ../glib/glib.a $(mk_ssl_libs)
 glib=../glib/glib.a
@@ -40,6 +49,7 @@ rc=emailrelay.rc
 fake_mc=fakemc.exe
 mc_output=MSG00001.bin messages.rc
 mk_exe_main=emailrelay.exe
+mk_exe_test=emailrelay-test.exe
 mk_exe_filter_copy=emailrelay-filter-copy.exe
 mk_exe_poke=emailrelay-poke.exe
 mk_exe_passwd=emailrelay-passwd.exe
@@ -47,12 +57,15 @@ mk_exe_submit=emailrelay-submit.exe
 mk_exe_service=emailrelay-service.exe
 res=$(rc:.rc=.o)
 
-all: $(mk_exe_main) $(mk_exe_filter_copy) $(mk_exe_poke) $(mk_exe_passwd) $(mk_exe_submit) $(mk_exe_service)
+all: $(mk_exe_main) $(mk_exe_filter_copy) $(mk_exe_poke) $(mk_exe_passwd) $(mk_exe_submit) $(mk_exe_service) $(mk_exe_test)
 
 include ../mingw-common.mak
 
-$(mk_exe_main): $(mk_objects) $(res) $(libs)
-	$(mk_link) $(mk_link_flags) -mwindows -o $(mk_exe_main) $(mk_objects) $(res) $(libs) $(syslibs)
+$(mk_exe_main): $(main_objects) $(res) $(libs)
+	$(mk_link) $(mk_link_flags) -mwindows -o $(mk_exe_main) $(main_objects) $(res) $(libs) $(syslibs)
+
+$(mk_exe_test): $(test_objects) $(res) $(libs)
+	$(mk_link) $(mk_link_flags) -o $(mk_exe_test) $(test_objects) $(libs) $(syslibs)
 
 $(mk_exe_filter_copy): filter_copy.o legal.o filter.o
 	$(mk_link) $(mk_link_flags) -o $@ filter_copy.o legal.o filter.o $(libs) $(syslibs)

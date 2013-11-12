@@ -103,7 +103,11 @@ Specifies an external program to process messages when they are forwarded.
 <DT><B>-j, --client-tls </B>
 
 <DD>
-Enables tls/ssl layer for smtp client (if openssl built in).
+Enables negotiated tls/ssl for smtp client (if openssl built in).
+<DT><B>-b, --client-tls-connection </B>
+
+<DD>
+Enables smtp over tls/ssl for smtp client (if openssl built in).
 <DT><B>-e, --close-stderr </B>
 
 <DD>
@@ -223,7 +227,7 @@ Enables authentication of remote clients, using the given secrets file.
 <DT><B>-K, --server-tls </B><I>&lt;pem-file&gt;</I>
 
 <DD>
-Enables tls/ssl layer for smtp server using the given openssl certificate file (which must be in the directory trusted by openssl).
+Enables negotiated tls/ssl for smtp server using the given openssl certificate file (which must be in the directory trusted by openssl).
 <DT><B>-M, --size </B><I>&lt;bytes&gt;</I>
 
 <DD>

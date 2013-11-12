@@ -23,6 +23,7 @@
 #include "gdef.h"
 #include "gidentity.h"
 #include "glimits.h"
+#include "gassert.h"
 #include <sstream>
 #include <vector>
 #include <pwd.h> // getpwnam_r()
@@ -42,13 +43,27 @@ G::Identity::Identity( const std::string & name ) :
 {
 	typedef ::passwd Pwd ;
 
-	long size = ::sysconf( _SC_GETPW_R_SIZE_MAX ) ;
-	if( size < limits::get_pwnam_r_buffer ) size = limits::get_pwnam_r_buffer ;
-	std::vector<char> buffer( static_cast<std::vector<char>::size_type>(size) ) ;
+	size_t buffer_size = 0 ;
+	{
+		long n = ::sysconf( _SC_GETPW_R_SIZE_MAX ) ;
+		if( n < limits::get_pwnam_r_buffer )
+		{
+			buffer_size = limits::get_pwnam_r_buffer ;
+		}
+		else 
+		{
+			G_ASSERT( n > 0 ) ;
+			unsigned long un = static_cast<unsigned long>(n) ;
+			const size_t size_max = (size_t)-1 ;
+			buffer_size = un > size_max ? size_max : static_cast<size_t>(un) ;
+		}
+	}
+
+	std::vector<char> buffer( buffer_size ) ;
 
 	Pwd pwd ;
 	Pwd * result_p = NULL ;
-	int rc = ::getpwnam_r( name.c_str() , &pwd , &buffer[0] , size , &result_p ) ;
+	int rc = ::getpwnam_r( name.c_str() , &pwd , &buffer[0] , buffer_size , &result_p ) ;
 	if( rc != 0 || result_p == NULL )
 	{
 		if( name == "root" ) // in case no /etc/passwd

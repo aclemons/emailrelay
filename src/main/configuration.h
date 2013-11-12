@@ -149,6 +149,9 @@ public:
 	unsigned int connectionTimeout() const ;
 		///< Returns the client-side connection timeout value.
 
+	unsigned int secureConnectionTimeout() const ;
+		///< Returns the timeout for establishing a secure connection.
+
 	unsigned int promptTimeout() const ;
 		///< Returns the timeout for getting a prompt from the SMTP server.
 
@@ -217,6 +220,10 @@ public:
 	bool clientTls() const ;
 		///< Returns true if the client protocol should take
 		///< account of the server's tls capability.
+
+	bool clientOverTls() const ;
+		///< Returns true if using the SMTP over TLS (vs. negotiated 
+		///< TLS using STARTTLS).
 
 	std::string serverTlsFile() const ;
 		///< Returns the tls certificate file if the server

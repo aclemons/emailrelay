@@ -52,7 +52,8 @@ class GNet::Client : public GNet::HeapClient
 {
 public:
 	explicit Client( const ResolverInfo & remote_info , unsigned int connection_timeout = 0U ,
-		unsigned int response_timeout = 0U , const std::string & eol = std::string("\n") ,
+		unsigned int response_timeout = 0U , unsigned int secure_connection_timeout = 0U ,
+		const std::string & eol = std::string("\n") ,
 		const Address & local_interface = Address(0U) , bool privileged = false , 
 		bool sync_dns = synchronousDnsDefault() ) ;
 			///< Constructor.
@@ -120,6 +121,7 @@ private:
 	G::Signal2<std::string,bool> m_done_signal ;
 	G::Signal2<std::string,std::string> m_event_signal ;
 	G::Signal0 m_connected_signal ;
+	G::Signal0 m_secure_signal ;
 	unsigned int m_connection_timeout ;
 	unsigned int m_response_timeout ;
 	GNet::Timer<Client> m_connection_timer ;

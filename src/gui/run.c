@@ -48,7 +48,7 @@ static const char gui_exe [] = "emailrelay-gui.real" ;
 #endif
 static const char gui_cfg [] = "emailrelay-gui.cfg" ;
 
-static void split( char * buffer , char * argv [] ) ;
+static void split( char * buffer , const char * argv [] ) ;
 static int unpack( const char * path ) ;
 
 #ifdef _WIN32
@@ -56,7 +56,7 @@ static int unpack( const char * path ) ;
 static void on_error( const char * p )
 {
 	MessageBoxA( NULL , p , "error" , MB_OK ) ;
-        exit( 1 ) ;
+	exit( 1 ) ;
 }
 static void chmodx( const char * p )
 {
@@ -171,7 +171,7 @@ int main( int argc_in , char * argv_in [] )
 	return 1 ;
 }
 
-static void split( char * buffer , char * argv [] )
+static void split( char * buffer , const char * argv [] )
 {
 	int argc = 1 ;
 	int in_quote = 0 ;

@@ -292,7 +292,7 @@ std::string G::GetOpt::usageHelpCore( const std::string & prefix , Level level ,
 
 G::GetOpt::size_type G::GetOpt::parseArgs( const Arg & args_in )
 {
-	size_type i = 1U ;
+	G::Arg::size_type i = 1U ;
 	for( ; i < args_in.c() ; i++ )
 	{
 		const std::string & arg = args_in.v(i) ;

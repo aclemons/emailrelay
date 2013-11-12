@@ -62,17 +62,17 @@ G::Time::Time( G::DateTime::EpochTime t , const LocalTime & )
 	m_ss = tm.tm_sec ;
 }
 
-unsigned int G::Time::hours() const
+int G::Time::hours() const
 {
 	return m_hh ;
 }
 
-unsigned int G::Time::minutes() const
+int G::Time::minutes() const
 {
 	return m_mm ;
 }
 
-unsigned int G::Time::seconds() const
+int G::Time::seconds() const
 {
 	return m_ss ;
 }
@@ -81,7 +81,7 @@ std::string G::Time::hhmmss( const char * sep ) const
 {
 	if( sep == NULL ) sep = "" ;
 	std::ostringstream ss ;
-	ss << (m_hh/10U) << (m_hh%10U) << sep << (m_mm/10U) << (m_mm%10U) << sep << (m_ss/10U) << (m_ss%10U) ;
+	ss << (m_hh/10) << (m_hh%10) << sep << (m_mm/10) << (m_mm%10) << sep << (m_ss/10) << (m_ss%10) ;
 	return ss.str() ;
 }
 
@@ -89,14 +89,14 @@ std::string G::Time::hhmm( const char * sep ) const
 {
 	if( sep == NULL ) sep = "" ;
 	std::ostringstream ss ;
-	ss << (m_hh/10U) << (m_hh%10U) << sep << (m_mm/10U) << (m_mm%10U) ;
+	ss << (m_hh/10) << (m_hh%10) << sep << (m_mm/10) << (m_mm%10) ;
 	return ss.str() ;
 }
 
 std::string G::Time::ss() const
 {
 	std::ostringstream ss ;
-	ss << (m_ss/10U) << (m_ss%10U) ;
+	ss << (m_ss/10) << (m_ss%10) ;
 	return ss.str() ;
 }
 

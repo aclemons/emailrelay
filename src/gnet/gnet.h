@@ -35,8 +35,7 @@
 #else
 	typedef int socklen_t ;
 #endif
-
-typedef unsigned short g_port_t ; // ('in_port_t' is not defined on many systems)
+typedef g_uint16_t g_port_t ; // 'in_port_t' not always available
 
 #ifndef INADDR_NONE
 #define INADDR_NONE 0xffffffff // (should be in netinet/in.h)

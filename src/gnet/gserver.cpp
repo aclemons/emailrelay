@@ -33,7 +33,7 @@
 GNet::ServerPeer::ServerPeer( Server::PeerInfo peer_info ) :
 	m_address(peer_info.m_address) ,
 	m_socket(peer_info.m_socket) ,
-	m_sp(*this,*this,*m_socket.get()) ,
+	m_sp(*this,*this,*m_socket.get(),0U) ,
 	m_handle(peer_info.m_handle) ,
 	m_delete_timer(*this,&ServerPeer::onTimeout,*this)
 {

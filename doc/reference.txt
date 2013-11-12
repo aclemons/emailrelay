@@ -33,7 +33,10 @@ where <option> is:
   Specifies an external program to process messages when they are forwarded.
 
 # --client-tls (-j)
-  Enables tls/ssl layer for smtp client (if openssl built in).
+  Enables negotiated tls/ssl for smtp client (if openssl built in).
+
+# --client-tls-connection (-b)
+  Enables smtp over tls/ssl for smtp client (if openssl built in).
 
 # --close-stderr (-e)
   Closes the standard error stream soon after start-up.
@@ -123,7 +126,7 @@ where <option> is:
   Enables authentication of remote clients, using the given secrets file.
 
 # --server-tls (-K)
-  Enables tls/ssl layer for smtp server using the given openssl certificate file (which must be in the directory trusted by openssl).
+  Enables negotiated tls/ssl for smtp server using the given openssl certificate file (which must be in the directory trusted by openssl).
 
 # --size (-M)
   Limits the size of submitted messages.
@@ -181,6 +184,7 @@ command-line options:
 * as each message is submitted, just before receipt is acknowledged ("--immediate")
 * as soon as the submitting client connection disconnects ("--poll=0")
 * periodically ("--poll=<seconds>")
+* on demand using the administration interface's "flush" command ("--admin=<port>")
 
 These modes of operation can be mixed, although more than one "--poll" option is
 not allowed.
@@ -293,7 +297,7 @@ attachment within a plaintext bearer message.
 E-MailRelay also has a "--client-filter" option that enables pre-processing of
 messages just before they are forwarded, rather then after they are stored. The
 disadvantage is that by then it is too late to notify the submitting SMTP client
-of any processing failures, so in many applications using "--filter" is more 
+of any processing failures, so in many applications using "--filter" is more
 useful. The special exit code of 100 can be used to ignore the current message,
 and 102 to stop looking for spooled messages after processing the current one.
 
@@ -359,8 +363,8 @@ xtext-encoded user identifier; and the "secret" field is the xtext-encoded
 "LOGIN" password, or the "CRAM-MD5" digest key.
 
 The "xtext" encoding scheme is defined properly in RFC1891, but basically it
-says that non alphanumeric characters should be represented in hexadecimal as
-"+XX".
+says that non alphanumeric characters, space, "+" and "=" should be represented
+in hexadecimal ascii as "+XX".
 
 The client-side secrets file specified with "--client-auth" is used when
 E-MailRelay acts as a client to talk to a remove server. The file should contain
@@ -449,15 +453,12 @@ such as "fetchmail".
 
 TLS/SSL
 -------
-E-MailRelay can use TLS/SSL to encrypt SMTP and POP3 sessions. To enable TLS/SSL
-encryption when E-MailRelay is acting as an SMTP client use the "--client-tls"
-command-line option, and to enable TLS/SSL when E-MailRelay is acting as an SMTP
-or POP3 server use "--server-tls".
-
-Note that this is not the same as running the whole SMTP or POP3 dialog over
-a connection tunnel already encrypted with TLS/SSL; when using the E-MailRelay
-TLS/SSL options the connection starts out un-encrypted and the use of encryption
-is negotiated using extensions of the SMTP/POP3 protocols (ie. "STARTTLS").
+E-MailRelay can use negotiated TLS/SSL to encrypt SMTP and POP3 sessions: to
+enable TLS/SSL encryption when E-MailRelay is acting as an SMTP client use the
+"--client-tls" command-line option, and to enable TLS/SSL when E-MailRelay is
+acting as an SMTP or POP3 server use "--server-tls". The connections start off
+as unencrypted and use the STARTTLS command to negotiate TSL/SSL encryption
+before any plaintext passwords are exchanged.
 
 The "--server-tls" option requires the name of an X.509 certificate in the "PEM"
 format. This file must be in a directory that the OpenSSL library considers to
@@ -470,6 +471,11 @@ but something like this might work for testing purposes:
 	$ cd /etc/ssl/certs
 	$ openssl req -x509 -nodes -days 365 -subj "/O=`uname -n`/CN=$USER" -newkey rsa:1024 -keyout emailrelay.pem  -out emailrelay.pem
 	$ ln -s emailrelay.pem `openssl x509 -noout -hash -in emailrelay.pem`.0
+
+E-MailRelay can also make outgoing SMTP connections using TLS/SSL encryption
+where the whole SMTP dialog is encrypted from the start, without a negotiation
+step ("--client-tls-connection"). This is sometimes called secure SMTP (ssmpt),
+typically using port number 465.
 
 Linux PAM
 ---------
@@ -500,6 +506,20 @@ account names and passwords to authenticate remote clients.
 The passwords for system accounts are usually very sensitive so E-MailRelay
 requires the "--server-tls" command-line option when using PAM authentication,
 and clients are required to establish a TLS/SSL session before authenticating.
+
+SOCKS
+-----
+E-MailRelay can use a SOCKS 4a proxy for establishing outgoing SMTP connections
+if the SOCKS proxy address is appended to the SMTP server's address separated by
+"@".
+
+For example, this could be used to send e-mails via the Tor network, assuming
+there is a local Tor server listening on port 9050:
+
+	emailrelay --forward-to myisp.net:smtp@localhost:9050 ...
+
+In this example the target SMTP server will receive a connection from the Tor
+exit node rather than from E-MailRelay directly.
 
 Pop server
 ----------

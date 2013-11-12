@@ -418,7 +418,7 @@ std::string Service::commandline( std::string bat_path )
 	// the quoted executable path - so require the quoted window title 
 	// to appear first - (could do better parsing)
 	std::string start_prefix = "start \"emailrelay\" " ;
-	if( line.find(start_prefix) == 0U ) ;
+	if( line.find(start_prefix) == 0U )
 	{
 		line.replace( 0U , start_prefix.length() , "" ) ;
 		trim( line ) ;

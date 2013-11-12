@@ -22,6 +22,7 @@
 #include "glogoutput.h"
 #include "glimits.h"
 #include "genvironment.h"
+#include <time.h> // localtime_s
 
 static HANDLE source() ;
 
@@ -80,7 +81,7 @@ void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity
 		}
 
 		const char * p[] = { message.c_str() , NULL } ;
-		G_IGNORE(BOOL) ::ReportEventA( m_handle, type, 0, id, NULL, 1, 0, p, NULL ) ;
+		G_IGNORE_RETURN(BOOL) ::ReportEventA( m_handle, type, 0, id, NULL, 1, 0, p, NULL ) ;
 	}
 }
 
@@ -156,4 +157,9 @@ static HANDLE source()
 	return ::RegisterEventSourceA( NULL , exe_name.c_str() ) ;
 }
 
+void G::LogOutput::getLocalTime( time_t epoch_time , struct std::tm * broken_down_time_p )
+{
+	errno_t rc = localtime_s( broken_down_time_p , &epoch_time ) ;
+	// ignore errors - it's just logging
+}
 /// \file glogoutput_win32.cpp

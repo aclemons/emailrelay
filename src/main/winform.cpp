@@ -32,8 +32,8 @@
 Main::WinForm::WinForm( WinApp & app , const Main::Configuration & cfg , bool confirm ) :
 	GGui::Dialog(app) ,
 	m_app(app) ,
-	m_cfg(cfg) ,
 	m_edit_box(*this,IDC_EDIT1) ,
+	m_cfg(cfg) ,
 	m_confirm(confirm)
 {
 }

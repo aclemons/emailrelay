@@ -87,8 +87,8 @@ std::string GAuth::SaslClientImp::digest( const std::string & secret , const std
 GAuth::SaslClient::SaslClient( const SaslClient::Secrets & secrets , const std::string & server_name ) :
 	m_imp(new SaslClientImp(secrets) )
 {
+	G_IGNORE_PARAMETER(std::string,server_name) ;
 	G_DEBUG( "GAuth::SaslClient::ctor: server-name=\"" << server_name << "\", active=" << active() ) ;
-	G_IGNORE(std::string::size_type) server_name.length() ; // pacify compiler
 }
 
 GAuth::SaslClient::~SaslClient()

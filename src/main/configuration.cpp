@@ -291,6 +291,11 @@ bool Main::Configuration::clientTls() const
 	return contains( "client-tls" ) ;
 }
 
+bool Main::Configuration::clientOverTls() const
+{
+	return contains( "client-tls-connection" ) ;
+}
+
 std::string Main::Configuration::serverTlsFile() const
 {
 	return contains("server-tls") ? value("server-tls") : std::string() ;
@@ -314,6 +319,11 @@ unsigned int Main::Configuration::responseTimeout() const
 unsigned int Main::Configuration::connectionTimeout() const
 {
 	return value( "connection-timeout" , 40U ) ;
+}
+
+unsigned int Main::Configuration::secureConnectionTimeout() const
+{
+	return connectionTimeout() ;
 }
 
 std::string Main::Configuration::fqdn( std::string default_ ) const

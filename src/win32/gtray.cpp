@@ -50,6 +50,7 @@ GGui::Tray::~Tray()
 	m_info.uCallbackMessage = 0 ;
 	m_info.hIcon = 0 ;
 	bool ok = !! ::Shell_NotifyIconA( NIM_DELETE , &m_info ) ;
+	ok = !!ok ;
 }
 
 /// \file gtray.cpp

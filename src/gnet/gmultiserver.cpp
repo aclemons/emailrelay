@@ -23,6 +23,7 @@
 #include "gmultiserver.h"
 #include "glog.h"
 #include "gassert.h"
+#include "gmemory.h"
 #include <list>
 #include <algorithm> // std::swap<>()
 
@@ -81,7 +82,7 @@ GNet::MultiServer::AddressList GNet::MultiServer::addressList( const G::Strings 
 GNet::MultiServer::MultiServer( const AddressList & address_list , bool use_connection_table )
 {
 	if( use_connection_table )
-		m_connection_table.reset( new GNet::ConnectionTable ) ;
+		m_connection_table <<= new GNet::ConnectionTable ;
 
 	G_ASSERT( ! address_list.empty() ) ;
 	for( AddressList::const_iterator p = address_list.begin() ; p != address_list.end() ; ++p )

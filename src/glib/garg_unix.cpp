@@ -31,17 +31,21 @@ void G::Arg::setExe()
 	// a better-than-nothing implementation...
 
 	char buffer[limits::path] = { '\0' } ;
-	int n = ::readlink( "/proc/self" , buffer , sizeof(buffer) ) ;
+	ssize_t n = ::readlink( "/proc/self" , buffer , sizeof(buffer) ) ;
 	if( n > 0 )
 	{
+		size_t un = static_cast<size_t>(n) ;
 		std::ostringstream ss ; 
 		ss << ::getpid() ;
-		bool procfs = std::string(buffer,n) == ss.str() ;
+		bool procfs = std::string(buffer,un) == ss.str() ;
 		if( procfs )
 		{
 			n = ::readlink( "/proc/self/exe" , buffer , sizeof(buffer) ) ;
 			if( n > 0 )
-				m_array[0] = std::string(buffer,n) ;
+			{
+				un = static_cast<size_t>(n) ;
+				m_array[0] = std::string(buffer,un) ;
+			}
 		}
 	}
 	else

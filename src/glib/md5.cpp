@@ -37,20 +37,24 @@ md5::digest::digest()
 	init() ;
 }
 
-md5::digest::digest( state_type d ) :
-	a(d.a) ,
-	b(d.b) ,
-	c(d.c) ,
-	d(d.d)
+md5::digest::digest( state_type d_in ) :
+	a(d_in.a) ,
+	b(d_in.b) ,
+	c(d_in.c) ,
+	d(d_in.d)
 {
 }
 
 md5::digest::state_type md5::digest::state() const
 {
-	big_t mask = ~0 ;
+	big_t mask = 0 ;
 	small_t thirty_two = 32U ;
 	small_t sizeof_thirty_two_bits = 4U ; // 4x8=32
-	if( sizeof(mask) > sizeof_thirty_two_bits ) mask <<= thirty_two ; // ignore warnings here
+	if( sizeof(mask) > sizeof_thirty_two_bits ) 
+	{
+		mask = ~0U ;
+		mask <<= thirty_two ; // ignore warnings here
+	}
 	state_type result = { a & ~mask , b & ~mask , c & ~mask , d & ~mask } ;
 	return result ;
 }
@@ -61,8 +65,8 @@ md5::digest::digest( const md5::string_type & s )
 	small_t n = block::blocks( s.length() ) ;
 	for( small_t i = 0U ; i < n ; ++i )
 	{
-		block b( s , i , block::end(s.length()) ) ;
-		add( b ) ;
+		block blk( s , i , block::end(s.length()) ) ;
+		add( blk ) ;
 	}
 }
 
@@ -94,38 +98,38 @@ void md5::digest::add( const digest & other )
 
 void md5::digest::round1( const block & m )
 {
-	digest & d = *this ;
-	d(m,F,ABCD, 0, 7, 1); d(m,F,DABC, 1,12, 2); d(m,F,CDAB, 2,17, 3); d(m,F,BCDA, 3,22, 4);
-	d(m,F,ABCD, 4, 7, 5); d(m,F,DABC, 5,12, 6); d(m,F,CDAB, 6,17, 7); d(m,F,BCDA, 7,22, 8);
-	d(m,F,ABCD, 8, 7, 9); d(m,F,DABC, 9,12,10); d(m,F,CDAB,10,17,11); d(m,F,BCDA,11,22,12);
-	d(m,F,ABCD,12, 7,13); d(m,F,DABC,13,12,14); d(m,F,CDAB,14,17,15); d(m,F,BCDA,15,22,16);
+	digest & r = *this ;
+	r(m,F,ABCD, 0, 7, 1); r(m,F,DABC, 1,12, 2); r(m,F,CDAB, 2,17, 3); r(m,F,BCDA, 3,22, 4);
+	r(m,F,ABCD, 4, 7, 5); r(m,F,DABC, 5,12, 6); r(m,F,CDAB, 6,17, 7); r(m,F,BCDA, 7,22, 8);
+	r(m,F,ABCD, 8, 7, 9); r(m,F,DABC, 9,12,10); r(m,F,CDAB,10,17,11); r(m,F,BCDA,11,22,12);
+	r(m,F,ABCD,12, 7,13); r(m,F,DABC,13,12,14); r(m,F,CDAB,14,17,15); r(m,F,BCDA,15,22,16);
 }
 
 void md5::digest::round2( const block & m )
 {
-	digest & d = *this ;
-	d(m,G,ABCD, 1, 5,17); d(m,G,DABC, 6, 9,18); d(m,G,CDAB,11,14,19); d(m,G,BCDA, 0,20,20);
-	d(m,G,ABCD, 5, 5,21); d(m,G,DABC,10, 9,22); d(m,G,CDAB,15,14,23); d(m,G,BCDA, 4,20,24);
-	d(m,G,ABCD, 9, 5,25); d(m,G,DABC,14, 9,26); d(m,G,CDAB, 3,14,27); d(m,G,BCDA, 8,20,28);
-	d(m,G,ABCD,13, 5,29); d(m,G,DABC, 2, 9,30); d(m,G,CDAB, 7,14,31); d(m,G,BCDA,12,20,32);
+	digest & r = *this ;
+	r(m,G,ABCD, 1, 5,17); r(m,G,DABC, 6, 9,18); r(m,G,CDAB,11,14,19); r(m,G,BCDA, 0,20,20);
+	r(m,G,ABCD, 5, 5,21); r(m,G,DABC,10, 9,22); r(m,G,CDAB,15,14,23); r(m,G,BCDA, 4,20,24);
+	r(m,G,ABCD, 9, 5,25); r(m,G,DABC,14, 9,26); r(m,G,CDAB, 3,14,27); r(m,G,BCDA, 8,20,28);
+	r(m,G,ABCD,13, 5,29); r(m,G,DABC, 2, 9,30); r(m,G,CDAB, 7,14,31); r(m,G,BCDA,12,20,32);
 }
 
 void md5::digest::round3( const block & m )
 {
-	digest & d = *this ;
-	d(m,H,ABCD, 5, 4,33); d(m,H,DABC, 8,11,34); d(m,H,CDAB,11,16,35); d(m,H,BCDA,14,23,36);
-	d(m,H,ABCD, 1, 4,37); d(m,H,DABC, 4,11,38); d(m,H,CDAB, 7,16,39); d(m,H,BCDA,10,23,40);
-	d(m,H,ABCD,13, 4,41); d(m,H,DABC, 0,11,42); d(m,H,CDAB, 3,16,43); d(m,H,BCDA, 6,23,44);
-	d(m,H,ABCD, 9, 4,45); d(m,H,DABC,12,11,46); d(m,H,CDAB,15,16,47); d(m,H,BCDA, 2,23,48);
+	digest & r = *this ;
+	r(m,H,ABCD, 5, 4,33); r(m,H,DABC, 8,11,34); r(m,H,CDAB,11,16,35); r(m,H,BCDA,14,23,36);
+	r(m,H,ABCD, 1, 4,37); r(m,H,DABC, 4,11,38); r(m,H,CDAB, 7,16,39); r(m,H,BCDA,10,23,40);
+	r(m,H,ABCD,13, 4,41); r(m,H,DABC, 0,11,42); r(m,H,CDAB, 3,16,43); r(m,H,BCDA, 6,23,44);
+	r(m,H,ABCD, 9, 4,45); r(m,H,DABC,12,11,46); r(m,H,CDAB,15,16,47); r(m,H,BCDA, 2,23,48);
 }
 
 void md5::digest::round4( const block & m )
 {
-	digest & d = *this ;
-	d(m,I,ABCD, 0, 6,49); d(m,I,DABC, 7,10,50); d(m,I,CDAB,14,15,51); d(m,I,BCDA, 5,21,52);
-	d(m,I,ABCD,12, 6,53); d(m,I,DABC, 3,10,54); d(m,I,CDAB,10,15,55); d(m,I,BCDA, 1,21,56);
-	d(m,I,ABCD, 8, 6,57); d(m,I,DABC,15,10,58); d(m,I,CDAB, 6,15,59); d(m,I,BCDA,13,21,60);
-	d(m,I,ABCD, 4, 6,61); d(m,I,DABC,11,10,62); d(m,I,CDAB, 2,15,63); d(m,I,BCDA, 9,21,64);
+	digest & r = *this ;
+	r(m,I,ABCD, 0, 6,49); r(m,I,DABC, 7,10,50); r(m,I,CDAB,14,15,51); r(m,I,BCDA, 5,21,52);
+	r(m,I,ABCD,12, 6,53); r(m,I,DABC, 3,10,54); r(m,I,CDAB,10,15,55); r(m,I,BCDA, 1,21,56);
+	r(m,I,ABCD, 8, 6,57); r(m,I,DABC,15,10,58); r(m,I,CDAB, 6,15,59); r(m,I,BCDA,13,21,60);
+	r(m,I,ABCD, 4, 6,61); r(m,I,DABC,11,10,62); r(m,I,CDAB, 2,15,63); r(m,I,BCDA, 9,21,64);
 }
 
 void md5::digest::operator()( const block & m , aux_fn_t aux , Permutation p , small_t k , small_t s , small_t i )

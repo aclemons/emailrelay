@@ -40,10 +40,12 @@ const std::string & GSmtp::Client::crlf()
 }
 
 GSmtp::Client::Client( const GNet::ResolverInfo & remote , const GAuth::Secrets & secrets , Config config ) :
-	GNet::Client(remote,config.connection_timeout,0U,crlf(),config.local_address,false) ,
+	GNet::Client(remote,config.connection_timeout,0U, // the protocol does the response timeout-ing
+		config.secure_connection_timeout,crlf(),config.local_address,false) ,
 	m_store(NULL) ,
 	m_processor(ProcessorFactory::newProcessor(config.processor_address,config.processor_timeout)) ,
-	m_protocol(*this,secrets,config.client_protocol_config)
+	m_protocol(*this,secrets,config.client_protocol_config) ,
+	m_secure_tunnel(config.secure_tunnel)
 {
 	m_protocol.doneSignal().connect( G::slot(*this,&Client::protocolDone) ) ;
 	m_protocol.preprocessorSignal().connect( G::slot(*this,&Client::preprocessorStart) ) ;
@@ -119,10 +121,29 @@ void GSmtp::Client::preprocessorDone( bool ok )
 void GSmtp::Client::onSecure()
 {
 	G_LOG( "GSmtp::Client::onSecure: tls/ssl protocol established with " << peerAddress().second.displayString() ) ;
-	m_protocol.secure() ;
+	if( m_secure_tunnel )
+	{
+		doOnConnect() ;
+	}
+	else
+	{
+		m_protocol.secure() ;
+	}
 }
 
 void GSmtp::Client::onConnect()
+{
+	if( m_secure_tunnel )
+	{
+		sslConnect() ;
+	}
+	else
+	{
+		doOnConnect() ;
+	}
+}
+
+void GSmtp::Client::doOnConnect()
 {
 	if( m_store != NULL )
 	{
@@ -248,12 +269,15 @@ void GSmtp::Client::onSendComplete()
 // ==
 
 GSmtp::Client::Config::Config( std::string processor_address_ , unsigned int processor_timeout_ , 
-	GNet::Address address , ClientProtocol::Config protocol_config , unsigned int connection_timeout_ ) :
+	GNet::Address address , ClientProtocol::Config protocol_config , unsigned int connection_timeout_ ,
+	unsigned int secure_connection_timeout_ , bool secure_tunnel_ ) :
 		processor_address(processor_address_) ,
 		processor_timeout(processor_timeout_) ,
 		local_address(address) ,
 		client_protocol_config(protocol_config) ,
-		connection_timeout(connection_timeout_)
+		connection_timeout(connection_timeout_) ,
+		secure_connection_timeout(secure_connection_timeout_) ,
+		secure_tunnel(secure_tunnel_)
 {
 }
 

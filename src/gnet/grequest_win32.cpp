@@ -28,9 +28,9 @@
 
 GNet::Request::Request( bool host ) :
 	m_magic(magic) ,
-	m_host(host) ,
-	m_handle(0) ,
 	m_error(0) ,
+	m_handle(0) ,
+	m_host(host) ,
 	m_done(false) ,
 	m_numeric(false) ,
 	m_address(Address::invalidAddress())

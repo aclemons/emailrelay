@@ -125,11 +125,11 @@ private:
 
 private:
 	friend class Control::NoRedraw ;
-	unsigned m_no_redraw_count ;
 	bool m_valid ;
 	Dialog & m_dialog ;
 	int m_id ;
 	HWND m_hwnd ;
+	unsigned m_no_redraw_count ;
 } ;
 
 /// \class GGui::ListBox

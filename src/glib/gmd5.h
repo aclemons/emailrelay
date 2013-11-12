@@ -38,6 +38,7 @@ class G::Md5
 {
 public:
 	G_EXCEPTION( InvalidMaskedKey , "invalid md5 key" ) ;
+	G_EXCEPTION( Error , "internal md5 error" ) ;
 	/// An overload discriminator for G::Md5::hmac()
 	struct Masked  
 		{} ;

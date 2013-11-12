@@ -252,7 +252,8 @@ int G::NewProcess::spawn( Identity nobody , const Path & exe , const Strings & a
 			if( fn != 0 )
 			{
 				std::string s = (*fn)(error) ;
-				G_IGNORE(ssize_t) ::write( STDOUT_FILENO , s.c_str() , s.length() ) ;
+				ssize_t rc = ::write( STDOUT_FILENO , s.c_str() , s.length() ) ;
+				G_IGNORE_VARIABLE(rc) ;
 			}
 		}
 		catch(...)
@@ -347,8 +348,9 @@ void G::Pipe::dup()
 std::string G::Pipe::read()
 {
 	char buffer[limits::pipe_buffer] ;
-	int rc = m_fd == -1 ? 0 : ::read( m_fd , buffer , sizeof(buffer) ) ;
+	ssize_t rc = m_fd == -1 ? 0 : ::read( m_fd , buffer , sizeof(buffer) ) ;
 	if( rc < 0 ) throw Error("read") ;
-	return std::string(buffer,rc) ;
+    const size_t buffer_size = static_cast<size_t>(rc) ;
+    return std::string(buffer,buffer_size) ;
 }
 

@@ -28,7 +28,7 @@
 
 GSmtp::SpamClient::SpamClient( const GNet::ResolverInfo & resolver_info ,
 	unsigned int connect_timeout , unsigned int response_timeout ) :
-		GNet::Client(resolver_info,connect_timeout,response_timeout,"\n") ,
+		GNet::Client(resolver_info,connect_timeout,response_timeout,0U,"\n") ,
 		m_in_size(0UL) ,
 		m_in_lines(0UL) ,
 		m_out_size(0UL) ,

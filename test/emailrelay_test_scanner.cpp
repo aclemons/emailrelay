@@ -151,10 +151,10 @@ bool Main::ScannerPeer::processFile( std::string path )
 		}
 		if( line.find("sleep") == 0U )
 		{
-			int sleep_time = 4 ;
+			unsigned int sleep_time = 4U ;
 			try
 			{
-				sleep_time = G::Str::toInt(G::Str::trimmed(line,"slep \t\r\n")) ;
+				sleep_time = G::Str::toUInt(G::Str::trimmed(line,"slep \t\r\n")) ;
 			}
 			catch( std::exception & )
 			{
@@ -165,7 +165,7 @@ bool Main::ScannerPeer::processFile( std::string path )
 		if( line.find("disconnect") == 0U )
 		{
 			if( sent )
-				::sleep( 1 ) ; // allow the data to get down the pipe
+				::sleep( 1U ) ; // allow the data to get down the pipe
 			return false ;
 		}
 		if( line.find("terminate") == 0U )

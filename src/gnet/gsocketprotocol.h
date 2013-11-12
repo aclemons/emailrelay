@@ -57,8 +57,9 @@ public:
 	typedef SocketProtocolSink Sink ;
 	G_EXCEPTION_CLASS( ReadError , "read error: disconnected" ) ;
 	G_EXCEPTION( SendError , "peer disconnected" ) ;
+	G_EXCEPTION( SecureConnectionTimeout , "secure connection timeout" ) ;
 
-	SocketProtocol( EventHandler & , Sink & , StreamSocket & ) ;
+	SocketProtocol( EventHandler & , Sink & , StreamSocket & , unsigned int secure_connection_timeout ) ;
 		///< Constructor. The references are kept.
 
 	~SocketProtocol() ;

@@ -90,44 +90,37 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 
 		case WM_CTLCOLORMSGBOX:
 		{
-			return reinterpret_cast<LRESULT>( onControlColour( reinterpret_cast<HDC>(wparam) , 
-				reinterpret_cast<HWND>(lparam) , CTLCOLOR_MSGBOX ) ) ;
+			return onControlColour_( wparam , lparam , CTLCOLOR_MSGBOX ) ;
 		}
 
 		case WM_CTLCOLORDLG:
 		{
-			return reinterpret_cast<LRESULT>( onControlColour( reinterpret_cast<HDC>(wparam) , 
-				reinterpret_cast<HWND>(lparam) , CTLCOLOR_DLG ) ) ;
+			return onControlColour_( wparam , lparam , CTLCOLOR_DLG ) ;
 		}
 
 		case WM_CTLCOLOREDIT:
 		{
-			return reinterpret_cast<LRESULT>( onControlColour( reinterpret_cast<HDC>(wparam) , 
-				reinterpret_cast<HWND>(lparam) , CTLCOLOR_EDIT ) ) ;
+			return onControlColour_( wparam , lparam , CTLCOLOR_EDIT ) ;
 		}
 
 		case WM_CTLCOLORLISTBOX:
 		{
-			return reinterpret_cast<LRESULT>( onControlColour( reinterpret_cast<HDC>(wparam) , 
-				reinterpret_cast<HWND>(lparam) , CTLCOLOR_LISTBOX ) ) ;
+			return onControlColour_( wparam , lparam , CTLCOLOR_LISTBOX ) ;
 		}
 
 		case WM_CTLCOLORBTN:
 		{
-			return reinterpret_cast<LRESULT>( onControlColour( reinterpret_cast<HDC>(wparam) , 
-				reinterpret_cast<HWND>(lparam) , CTLCOLOR_BTN ) ) ;
+			return onControlColour_( wparam , lparam , CTLCOLOR_BTN ) ;
 		}
 
 		case WM_CTLCOLORSCROLLBAR:
 		{
-			return reinterpret_cast<LRESULT>( onControlColour( reinterpret_cast<HDC>(wparam) , 
-				reinterpret_cast<HWND>(lparam) , CTLCOLOR_SCROLLBAR ) ) ;
+			return onControlColour_( wparam , lparam , CTLCOLOR_SCROLLBAR ) ;
 		}
 
 		case WM_CTLCOLORSTATIC:
 		{
-			return reinterpret_cast<LRESULT>( onControlColour( reinterpret_cast<HDC>(wparam) , 
-				reinterpret_cast<HWND>(lparam) , CTLCOLOR_STATIC ) ) ;
+			return onControlColour_( wparam , lparam , CTLCOLOR_STATIC ) ;
 		}
 
 		case WM_SYSCOLORCHANGE:
@@ -155,23 +148,22 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 		
 		case WM_KILLFOCUS:
 		{
-			// wparam, not lparam -- the Win3.x help file seems 
-			// to have a typo -- comfirmed by Broland's windowsx.h
-			HWND hwnd_other = reinterpret_cast<HWND>( wparam ) ; // sic
+			// wparam, not lparam
+			HWND hwnd_other = hwnd_from( wparam ) ;
 			onLooseFocus( hwnd_other ) ;
 			return 0 ;
 		}
 
 		case WM_SETFOCUS:
 		{
-			HWND hwnd_other = reinterpret_cast<HWND>( wparam ) ;
+			HWND hwnd_other = hwnd_from( wparam ) ;
 			onGetFocus( hwnd_other ) ;
 			return 0 ;
 		}
 		
 		case WM_CHAR:
 		{
-			unsigned repeat_count = static_cast<unsigned int>(LOWORD(lparam)) ;
+			unsigned int repeat_count = static_cast<unsigned int>(LOWORD(lparam)) ;
 			WORD vkey = static_cast<WORD>(wparam) ;
 			onChar( vkey , repeat_count ) ;
 			return 0 ;
@@ -180,14 +172,14 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 		case WM_ERASEBKGND:
 		{
 			G_DEBUG( "Cracker::onEraseBackground" ) ;
-			HDC hdc = reinterpret_cast<HDC>(wparam) ;
+			HDC hdc = hdc_from( wparam ) ;
 			return onEraseBackground( hdc ) ;
 		}
 
 		case WM_DROPFILES:
 		{
 			G_DEBUG( "Cracker::onDrop" ) ;
-			HDROP hdrop = reinterpret_cast<HDROP>(wparam) ;
+			HDROP hdrop = hdrop_from( wparam ) ;
 			int count = ::DragQueryFileA( hdrop , 0xFFFFFFFF , NULL , 0 ) ;
 			G::Strings list ;
 			for( int i = 0 ; i < count ; i++ )
@@ -235,7 +227,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 			if( type == menu || type == accelerator )
 			{
 				G_DEBUG( "Cracker::onMenuCommand" ) ;
-				onMenuCommand( wparam ) ;
+				onMenuCommand( static_cast<UINT>(wparam) ) ;
 			}
 
 			else
@@ -252,9 +244,9 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 		
 		case WM_LBUTTONDBLCLK:
 		{
-			const unsigned x = LOWORD(lparam) ;
-			const unsigned y = HIWORD(lparam) ;
-			const unsigned keys = wparam ;
+			const unsigned int x = LOWORD(lparam) ;
+			const unsigned int y = HIWORD(lparam) ;
+			const unsigned int keys = static_cast<unsigned int>(wparam) ;
 			onDoubleClick( x , y , keys ) ;
 			return 0 ;
 		}
@@ -297,8 +289,8 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 
 		case WM_MOUSEMOVE:
 		{
-			const unsigned x = LOWORD(lparam) ;
-			const unsigned y = HIWORD(lparam) ;
+			const unsigned int x = LOWORD(lparam) ;
+			const unsigned int y = HIWORD(lparam) ;
 			const bool shift = !!( wparam & MK_SHIFT ) ;
 			const bool control = !!( wparam & MK_CONTROL ) ;
 			const bool left = !!( wparam & MK_LBUTTON ) ;
@@ -362,13 +354,13 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 
 		case WM_TIMER:
 		{
-			onTimer( wparam ) ;
+			onTimer( static_cast<unsigned int>(wparam) ) ;
 			return 0 ;
 		}
 
 		case WM_INITMENUPOPUP:
 		{
-			onInitMenuPopup( reinterpret_cast<HMENU>(wparam) , 
+			onInitMenuPopup( hmenu_from(wparam) , 
 				static_cast<unsigned int>(LOWORD(lparam)) , !!HIWORD(lparam) ) ;
 			return 0 ;
 		}
@@ -381,7 +373,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 
 		case WM_PALETTECHANGED:
 		{
-			HWND hwnd_other = reinterpret_cast<HWND>(wparam) ;
+			HWND hwnd_other = hwnd_from( wparam ) ;
 			if( m_hwnd != hwnd_other )
 				onPaletteChange() ;
 			return 0 ;
@@ -420,6 +412,12 @@ unsigned int GGui::Cracker::wm_winsock()
 unsigned int GGui::Cracker::wm_user_other()
 {
 	return WM_USER+123U ;
+}
+
+LRESULT GGui::Cracker::onControlColour_( WPARAM wparam , LPARAM lparam , WORD id )
+{
+	return reinterpret_cast<LRESULT>( onControlColour( reinterpret_cast<HDC>(wparam) , 
+		reinterpret_cast<HWND>(lparam) , id ) ) ;
 }
 
 // trivial default implementations of virtual functions...
@@ -478,7 +476,7 @@ bool GGui::Cracker::onDrop( const G::Strings & )
 	return false ; 
 }
 
-void GGui::Cracker::onSize( SizeType , unsigned , unsigned )
+void GGui::Cracker::onSize( SizeType , unsigned int , unsigned int )
 {
 }
 
@@ -494,7 +492,7 @@ void GGui::Cracker::onLooseFocus( HWND )
 {
 }
 
-void GGui::Cracker::onChar( WORD , unsigned )
+void GGui::Cracker::onChar( WORD , unsigned int )
 {
 }
 
@@ -502,7 +500,7 @@ void GGui::Cracker::onDimension( int & , int & )
 {
 }
 
-void GGui::Cracker::onDoubleClick( unsigned , unsigned , unsigned )
+void GGui::Cracker::onDoubleClick( unsigned int , unsigned int , unsigned int )
 {
 }
 
@@ -522,17 +520,18 @@ void GGui::Cracker::onTrayRightMouseButtonUp()
 {
 }
 
-void GGui::Cracker::onTimer( unsigned )
+void GGui::Cracker::onTimer( unsigned int )
 {
 }
 
-void GGui::Cracker::onInitMenuPopup( HMENU , unsigned , bool )
+void GGui::Cracker::onInitMenuPopup( HMENU , unsigned int , bool )
 {
 }
 
 bool GGui::Cracker::onIdle() 
 { 
-	return false ; 
+	const bool keep_calling_on_idle = false ;
+	return keep_calling_on_idle ;
 }
 
 LRESULT GGui::Cracker::onUser( WPARAM , LPARAM ) 
@@ -551,7 +550,7 @@ bool GGui::Cracker::onEraseBackground( HDC hdc )
 	return !! ::DefWindowProc( m_hwnd , WM_ERASEBKGND , wparam , 0L ) ;
 }
 
-void GGui::Cracker::onMouseMove( unsigned x , unsigned y , 
+void GGui::Cracker::onMouseMove( unsigned int x , unsigned int y , 
 	bool shift_key_down , bool control_key_down ,
 	bool left_button_down , bool middle_button_down ,
 	bool right_button_down )
@@ -622,4 +621,23 @@ LRESULT GGui::Cracker::doMouseButton( Fn fn , MouseButton button ,
 	return 0 ;
 }
 
+HWND GGui::Cracker::hwnd_from( WPARAM wparam )
+{
+	return reinterpret_cast<HWND>(wparam) ;
+}
+
+HDC GGui::Cracker::hdc_from( WPARAM wparam )
+{
+	return reinterpret_cast<HDC>(wparam) ;
+}
+
+HDROP GGui::Cracker::hdrop_from( WPARAM wparam )
+{
+	return reinterpret_cast<HDROP>(wparam) ;
+}
+
+HMENU GGui::Cracker::hmenu_from( WPARAM wparam )
+{
+	return reinterpret_cast<HMENU>(wparam) ;
+}
 /// \file gcracker.cpp

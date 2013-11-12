@@ -24,8 +24,9 @@
 #include "gdebug.h"
 
 GNet::HeapClient::HeapClient( const ResolverInfo & remote_info ,
-	const Address & local_interface , bool privileged , bool sync_dns ) :
-		SimpleClient(remote_info,local_interface,privileged,sync_dns) ,
+	const Address & local_interface , bool privileged , bool sync_dns ,
+	unsigned int secure_connection_timeout ) :
+		SimpleClient(remote_info,local_interface,privileged,sync_dns,secure_connection_timeout) ,
 		m_connect_timer(*this,&HeapClient::onConnectionTimeout,*this) ,
 		m_delete_timer(*this,&HeapClient::onDeletionTimeout,*this)
 {

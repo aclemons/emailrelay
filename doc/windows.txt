@@ -76,19 +76,25 @@ Diagnostics
 -----------
 E-MailRelay normally writes errors and warnings into the Windows Event Log,
 which you can view by running "eventvwr.exe" or going to
-"ControlPanel"->"AdministrativeTools"->"EventViewer"; from there look under
-"Windows Logs" and "Application".
+"ControlPanel"->"SystemAndSecurity"->"AdministrativeTools"->"EventViewer"; from
+there look under "Windows Logs" and "Application".
 
 You can increase the verbosity of the logging by adding the "--verbose" option
 to the E-MailRelay command-line, typically by editing the "emailrelay-start.bat"
 batch script.
+
+Telnet
+------
+If you want to test E-MailRelay using telnet (as described elsewhere) then you
+might need to enable the Windows telnet client using
+"ControlPanel"->"ProgramsAndFeatures"->"TurnWindowsFeaturesOnAndOff".
 
 Building from source
 --------------------
 E-MailRelay can be compiled using various versions of Microsoft Visual Studio
 C++ (MSVC) or MinGW.
 
-A Visual Studio "solution" for MSVC 2008 is provided in the "src" directory to
+A Visual Studio "solution" for MSVC 2012 is provided in the "src" directory to
 build the main E-MailRelay executable, although it does not include a project
 for the Qt-based installation/configuration GUI.
 

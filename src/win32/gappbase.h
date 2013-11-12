@@ -73,7 +73,7 @@ public:
 		///< window, etc. Should be called from WinMain().
 
 	void run( bool with_idle = true ) ;
-		///< GetMessage()/DispatchMessage() message pump.
+		///< Runs the GetMessage()/DispatchMessage() message pump.
 		///< This should be called from WinMain().
 
 	void close() const ;

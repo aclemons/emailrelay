@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gssl.h"
 #include "gtest.h"
+#include "gexception.h"
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
@@ -79,9 +80,10 @@ private:
 class GSsl::LibraryImp 
 {
 public:
-	explicit LibraryImp( const std::string & pem_file = std::string() ) ;
+	typedef Library::LogFn LogFn ;
+	explicit LibraryImp( const std::string & pem_file = std::string() , LogFn log_fn = NULL ) ;
 	~LibraryImp() ;
-	Context & ctx() ;
+	Context & ctx() const ;
 	std::string pem() const ;
 
 private:
@@ -105,7 +107,7 @@ public:
 	typedef Protocol::ssize_type ssize_type ;
 
 	ProtocolImp( const Context & c ) ;
-	ProtocolImp( const Context & c , LogFn log , bool hexdump ) ;
+	ProtocolImp( const Context & c , LogFn log ) ;
 	~ProtocolImp() ;
 	Result connect( int ) ;
 	Result accept( int ) ;
@@ -122,8 +124,6 @@ private:
 	Result accept() ;
 	static Result convert( int ) ;
 	static unsigned long getError() ;
-	static void loghex( void (*fn)(int,const std::string&) , int , const char * , const std::string & ) ;
-	static void callback( int , int , int , const void * , size_t , SSL * , void * p ) ;
 	static void clearErrors() ;
 
 private:
@@ -149,19 +149,19 @@ private:
 
 //
 
-GSsl::LibraryImp::LibraryImp( const std::string & pem_file ) :
+GSsl::LibraryImp::LibraryImp( const std::string & pem_file , LogFn ) :
 	m_context(NULL) ,
 	m_pem_file(pem_file)
 {
 	SSL_load_error_strings() ;
 	SSL_library_init() ;
 
-	// we probably don't need entropy but make a token effort to find 
-	// some: "openssl automatically queries EGD when [...] the 
-	// status is checked via RAND_status() for the first time if [a] 
+	// we probably don't need extra entropy but make a token effort to 
+	// find some - quote: "openssl automatically queries EGD when [...]
+	// the status is checked via RAND_status() for the first time if [a] 
 	// socket is located at /var/run/edg-pool ..."
 	//
-	G_IGNORE(int) RAND_status() ;
+	G_IGNORE_RETURN(int) RAND_status() ;
 
 	m_context = new Context( pem_file ) ;
 }
@@ -173,7 +173,7 @@ GSsl::LibraryImp::~LibraryImp()
 	RAND_cleanup() ;
 }
 
-GSsl::Context & GSsl::LibraryImp::ctx()
+GSsl::Context & GSsl::LibraryImp::ctx() const
 {
 	return *m_context ;
 }
@@ -195,13 +195,13 @@ GSsl::Library::Library() :
 	m_imp = new LibraryImp ;
 }
 
-GSsl::Library::Library( bool active , const std::string & pem_file ) :
+GSsl::Library::Library( bool active , const std::string & pem_file , LogFn log_fn ) :
 	m_imp(NULL)
 {
 	if( m_this == NULL )
 		m_this = this ;
 	if( active )
-		m_imp = new LibraryImp( pem_file ) ;
+		m_imp = new LibraryImp( pem_file , log_fn ) ;
 }
 
 GSsl::Library::~Library()
@@ -219,6 +219,13 @@ GSsl::Library * GSsl::Library::instance()
 bool GSsl::Library::enabled( bool for_server ) const
 {
 	return m_imp != NULL && ( !for_server || !m_imp->pem().empty() ) ;
+}
+
+const GSsl::LibraryImp & GSsl::Library::imp() const
+{
+	if( m_imp == NULL )
+		throw G::Exception( "internal error: no ssl library instance" ) ;
+	return *m_imp ;
 }
 
 std::string GSsl::Library::credit( const std::string & prefix , const std::string & eol , const std::string & final )
@@ -298,13 +305,13 @@ const char * GSsl::Error::what() const throw ()
 // 
 
 GSsl::Protocol::Protocol( const Library & library ) :
-	m_imp( new ProtocolImp(library.m_imp->ctx()) )
+	m_imp( new ProtocolImp(library.imp().ctx()) )
 {
 }
 
 
-GSsl::Protocol::Protocol( const Library & library , LogFn log , bool hexdump ) :
-	m_imp( new ProtocolImp(library.m_imp->ctx(),log,hexdump) )
+GSsl::Protocol::Protocol( const Library & library , LogFn log_fn ) :
+	m_imp( new ProtocolImp(library.imp().ctx(),log_fn) )
 {
 }
 
@@ -360,7 +367,7 @@ GSsl::ProtocolImp::ProtocolImp( const Context & c ) :
 		throw Error( "SSL_new" , ERR_get_error() ) ;
 }
 
-GSsl::ProtocolImp::ProtocolImp( const Context & c , LogFn log_fn , bool hexdump ) :
+GSsl::ProtocolImp::ProtocolImp( const Context & c , LogFn log_fn ) :
 	m_ssl(NULL) ,
 	m_log_fn(log_fn) ,
 	m_fd_set(false)
@@ -368,69 +375,11 @@ GSsl::ProtocolImp::ProtocolImp( const Context & c , LogFn log_fn , bool hexdump 
 	m_ssl = SSL_new( c.p() ) ;
 	if( m_ssl == NULL )
 		throw Error( "SSL_new" , ERR_get_error() ) ;
-
-	if( hexdump )
-	{
-		SSL_set_msg_callback( m_ssl , callback ) ;
-		SSL_set_msg_callback_arg( m_ssl , this ) ;
-	}
 }
 
 GSsl::ProtocolImp::~ProtocolImp()
 {
 	SSL_free( m_ssl ) ;
-}
-
-void GSsl::ProtocolImp::loghex( void (*log_fn)(int,const std::string&) , int arg , 
-	const char * prefix , const std::string & in )
-{
-	std::string line ;
-	unsigned int i = 0 ;
-	for( std::string::const_iterator p = in.begin() ; p != in.end() ; ++p , i++ )
-	{
-		std::ostringstream ss ;
-		if( line.empty() )
-		{
-			ss.width(6) ;
-			ss.fill('0') ;
-			ss << std::hex << i << ": " ;
-		}
-		ss.width(2) ;
-		ss.fill('0') ;
-		ss << std::hex << (static_cast<unsigned int>(*p) & 0xff) << " " ;
-		line.append( ss.str() ) ;
-
-		if( i > 0 && ((i+1)%16) == 0 )
-		{
-			(*log_fn)( arg , std::string(prefix) + line ) ;
-			line.erase() ;
-		}
-	}
-	if( !line.empty() )
-		(*log_fn)( arg , std::string(prefix) + line ) ;
-}
-
-void GSsl::ProtocolImp::callback( int write , int v , int type , const void * buffer , size_t n , SSL * , void * p )
-{
-	ProtocolImp * This = reinterpret_cast<ProtocolImp*>(p) ;
-	if( This->m_log_fn != NULL ) 
-	{
-		// build the whole pdu, including the header
-		unsigned int version_ = static_cast<unsigned int>(v) ;
-		unsigned int version_lo = version_ & 0xff ;
-		unsigned int version_hi = ( version_ >> 8 ) & 0xff ;
-		unsigned int n_ = static_cast<unsigned int>(n) ;
-		unsigned int length_lo = n_ & 0xff ;
-		unsigned int length_hi = ( n_ >> 8 ) & 0xff ;
-		std::string data( 1U , static_cast<char>(type) ) ;
-		data.append( 1U , static_cast<char>(version_hi) ) ;
-		data.append( 1U , static_cast<char>(version_lo) ) ;
-		data.append( 1U , static_cast<char>(length_hi) ) ;
-		data.append( 1U , static_cast<char>(length_lo) ) ;
-		data.append( std::string(reinterpret_cast<const char*>(buffer),n) ) ;
-
-		loghex( This->m_log_fn , 0 , write?"ssl-tx>>: ":"ssl-rx<<: " , data ) ;
-	}
 }
 
 void GSsl::ProtocolImp::clearErrors()
@@ -540,11 +489,12 @@ GSsl::Protocol::Result GSsl::ProtocolImp::stop()
 	return rc == 1 ? Protocol::Result_ok : Protocol::Result_error ; // since quiet shutdown
 }
 
-GSsl::Protocol::Result GSsl::ProtocolImp::read( char * buffer , size_type buffer_size , ssize_type & read_size )
+GSsl::Protocol::Result GSsl::ProtocolImp::read( char * buffer , size_type buffer_size_in , ssize_type & read_size )
 {
 	read_size = 0 ;
 
 	clearErrors() ;
+	int buffer_size = static_cast<int>(buffer_size_in) ;
 	int rc = SSL_read( m_ssl , buffer , buffer_size ) ;
 	if( rc > 0 )
 	{
@@ -566,7 +516,8 @@ GSsl::Protocol::Result GSsl::ProtocolImp::write( const char * buffer , size_type
 	size_out = 0 ;
 
 	clearErrors() ;
-	int rc = SSL_write( m_ssl , buffer , size_in ) ;
+	int size = static_cast<int>(size_in) ;
+	int rc = SSL_write( m_ssl , buffer , size ) ;
 	if( rc > 0 )
 	{
 		size_out = static_cast<ssize_type>(rc) ;

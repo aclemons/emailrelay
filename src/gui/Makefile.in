@@ -58,15 +58,16 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_icondir)"
 PROGRAMS = $(noinst_PROGRAMS) $(sbin_PROGRAMS)
 am__emailrelay_gui_real_SOURCES_DIST = dir_unix.cpp boot_unix.cpp \
-	glink_unix.cpp dir_mac.cpp boot_mac.cpp glink_mac.cpp boot.h \
-	dir.cpp dir.h gdialog.cpp gdialog.h glink.h gpage.cpp gpage.h \
+	glink_unix.cpp gregister_unix.cpp dir_mac.cpp boot_mac.cpp \
+	glink_mac.cpp gregister_mac.cpp boot.h dir.cpp dir.h \
+	gdialog.cpp gdialog.h glink.h gregister.h gpage.cpp gpage.h \
 	guimain.cpp gunpack.cpp gunpack.h installer.cpp installer.h \
 	legal.cpp legal.h mapfile.cpp mapfile.h pages.cpp pages.h \
 	pointer.cpp pointer.h qt.h state.cpp state.h unpack.c unpack.h
 @MAC_FALSE@am__objects_1 = dir_unix.$(OBJEXT) boot_unix.$(OBJEXT) \
-@MAC_FALSE@	glink_unix.$(OBJEXT)
+@MAC_FALSE@	glink_unix.$(OBJEXT) gregister_unix.$(OBJEXT)
 @MAC_TRUE@am__objects_1 = dir_mac.$(OBJEXT) boot_mac.$(OBJEXT) \
-@MAC_TRUE@	glink_mac.$(OBJEXT)
+@MAC_TRUE@	glink_mac.$(OBJEXT) gregister_mac.$(OBJEXT)
 @GUI_TRUE@am_emailrelay_gui_real_OBJECTS = $(am__objects_1) \
 @GUI_TRUE@	dir.$(OBJEXT) gdialog.$(OBJEXT) gpage.$(OBJEXT) \
 @GUI_TRUE@	guimain.$(OBJEXT) gunpack.$(OBJEXT) \
@@ -261,10 +262,10 @@ top_srcdir = @top_srcdir@
 BUNDLE = E-MailRelay-Configure
 INSTALL_BUNDLE = E-MailRelay-Install
 IMAGE = E-MailRelay.dmg
-@MAC_FALSE@MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp guistart.cpp emailrelay-icon.icns
-@MAC_TRUE@MAC_EXTRA_DIST = dir_unix.cpp boot_unix.cpp glink_unix.cpp emailrelay-icon.icns
-@MAC_FALSE@MAC_SOURCES = dir_unix.cpp boot_unix.cpp glink_unix.cpp
-@MAC_TRUE@MAC_SOURCES = dir_mac.cpp boot_mac.cpp glink_mac.cpp
+@MAC_FALSE@MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp glink_win32.cpp gregister_mac.cpp gregister_win32.cpp guistart.cpp emailrelay-icon.icns
+@MAC_TRUE@MAC_EXTRA_DIST = dir_unix.cpp boot_unix.cpp glink_unix.cpp glink_win32.cpp gregister_unix.cpp gregister_win32.cpp emailrelay-icon.icns
+@MAC_FALSE@MAC_SOURCES = dir_unix.cpp boot_unix.cpp glink_unix.cpp gregister_unix.cpp
+@MAC_TRUE@MAC_SOURCES = dir_mac.cpp boot_mac.cpp glink_mac.cpp gregister_mac.cpp
 @MAC_FALSE@MAC_NOINST = 
 @MAC_TRUE@MAC_NOINST = $(BUNDLE).app
 @MAC_FALSE@MAC_PROGS = 
@@ -329,6 +330,7 @@ e_icon_DATA = \
 @GUI_TRUE@	gdialog.cpp \
 @GUI_TRUE@	gdialog.h \
 @GUI_TRUE@	glink.h \
+@GUI_TRUE@	gregister.h \
 @GUI_TRUE@	gpage.cpp \
 @GUI_TRUE@	gpage.h \
 @GUI_TRUE@	guimain.cpp \
@@ -464,6 +466,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glink_mac.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glink_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpage.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gregister_mac.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gregister_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guimain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guistart.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gunpack.Po@am__quote@

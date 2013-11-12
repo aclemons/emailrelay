@@ -228,18 +228,18 @@ void Main::Run::checkPorts() const
 	{
 		G::Strings smtp_interfaces = cfg.listeningInterfaces("smtp") ;
 		checkPort( cfg.doSmtp() && smtp_interfaces.empty() , std::string() , cfg.port() ) ;
-		for( G::Strings::iterator p = smtp_interfaces.begin() ; p != smtp_interfaces.end() ; ++p )
-			checkPort( cfg.doSmtp() , *p , cfg.port() ) ;
+		for( G::Strings::iterator p1 = smtp_interfaces.begin() ; p1 != smtp_interfaces.end() ; ++p1 )
+			checkPort( cfg.doSmtp() , *p1 , cfg.port() ) ;
 
 		G::Strings pop_interfaces = cfg.listeningInterfaces("pop") ;
 		checkPort( cfg.doPop() && pop_interfaces.empty() , std::string() , cfg.popPort() ) ;
-		for( G::Strings::iterator p = pop_interfaces.begin() ; p != pop_interfaces.end() ; ++p )
-				checkPort( cfg.doPop() , *p , cfg.popPort() ) ;
+		for( G::Strings::iterator p2 = pop_interfaces.begin() ; p2 != pop_interfaces.end() ; ++p2 )
+				checkPort( cfg.doPop() , *p2 , cfg.popPort() ) ;
 
 		G::Strings admin_interfaces = cfg.listeningInterfaces("admin") ;
 		checkPort( cfg.doAdmin() && admin_interfaces.empty() , std::string() , cfg.adminPort() ) ;
-		for( G::Strings::iterator p = admin_interfaces.begin() ; p != admin_interfaces.end() ; ++p )
-			checkPort( cfg.doAdmin() , *p , cfg.adminPort() ) ;
+		for( G::Strings::iterator p3 = admin_interfaces.begin() ; p3 != admin_interfaces.end() ; ++p3 )
+			checkPort( cfg.doAdmin() , *p3 , cfg.adminPort() ) ;
 	}
  #endif
 }
@@ -309,10 +309,10 @@ void Main::Run::runCore()
 
 	// ssl library singleton
 	//
-	bool ssl_active = cfg.clientTls() || !cfg.serverTlsFile().empty() ;
+	bool ssl_active = cfg.clientTls() || cfg.clientOverTls() || !cfg.serverTlsFile().empty() ;
 	GSsl::Library ssl( ssl_active , cfg.serverTlsFile() ) ;
 	if( ssl_active && !ssl.enabled() )
-		throw G::Exception( "cannot do tls/ssl: openssl not built in" ) ;
+		throw G::Exception( "cannot do tls/ssl: openssl not built in: remove tls options from the command-line or rebuild the emailrelay executable with openssl" ) ;
 
 	// network monitor singleton
 	//
@@ -493,7 +493,9 @@ GSmtp::Client::Config Main::Run::clientConfig() const
 				true , // (must-authenticate)
 				true , // (must-accept-all-recipients)
 				false ) , // (eight-bit-strict)
-			cfg.connectionTimeout() ) ;
+			cfg.connectionTimeout() ,
+			cfg.secureConnectionTimeout() ,
+			cfg.clientOverTls() ) ;
 }
 
 GNet::Address Main::Run::clientBindAddress( const std::string & s )

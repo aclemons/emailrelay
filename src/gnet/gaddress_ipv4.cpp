@@ -71,7 +71,7 @@ public:
 
 private:
 	void init() ;
-	static int family() ;
+	static unsigned short family() ;
 	void set( const sockaddr * general ) ;
 	bool setAddress( const std::string & display_string , std::string & reason ) ;
 	static bool validPart( const std::string & s ) ;
@@ -101,7 +101,7 @@ public:
 
 // ===
 
-int GNet::AddressImp::family()
+unsigned short GNet::AddressImp::family()
 {
 	return AF_INET ;
 }

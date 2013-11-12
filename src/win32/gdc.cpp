@@ -29,8 +29,8 @@ GGui::DeviceContext::DeviceContext( HWND hwnd ) :
 }
 
 GGui::DeviceContext::DeviceContext( HDC hdc ) : 
-	m_hwnd(0) ,
 	m_hdc(hdc) ,
+	m_hwnd(0) ,
 	m_do_release(false) // ignored
 { 
 }

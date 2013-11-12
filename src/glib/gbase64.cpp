@@ -102,7 +102,7 @@ size_t G::Base64::index( char c , bool & error )
 	if( p == NULL ) 
 		return 0U ;
 	else
-		return p - character_map ;
+		return static_cast<size_t>( p - character_map ) ;
 }
 
 size_t G::Base64::accumulate_6( g_uint32_t & n , char c_in , int & n_out , bool & error )
@@ -166,7 +166,7 @@ std::string G::Base64::decode( const std::string & s , bool & error )
 bool G::Base64::valid( const std::string & s )
 {
 	bool error = false ;
-	G_IGNORE(std::string) decode( s , error ) ;
+	G_IGNORE_RETURN(std::string) decode( s , error ) ;
 	return !error ;
 }
 

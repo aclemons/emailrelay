@@ -1,20 +1,24 @@
 emailrelay (1.9) unstable; urgency=low
-  * Added TLS/SSL encryption for POP.
+  * Added TLS/SSL for POP.
   * Added Linux-PAM authentication ("configure --with-pam" and then "--server-auth=/pam").
-  * Optional protocol-specific "--interface" qualifiers, eg. "--interface smtp=127.0.0.1,pop=192.168.1.1"
-  * Bind the outgoing client connection with the first "--interface" or "--interface client=..." address.
+  * Optional protocol-specific "--interface" qualifiers, eg. "--interface smtp=127.0.0.1,pop=192.168.1.1".
+  * Outgoing client connection bound with the first "--interface" or "--interface client=..." address.
+  * Support for SMTP over TLS/SSL on outgoing client connection ("--client-tls-connection") (cf. STARTTLS)
+  * Support for SOCKS 4a on outgoing client connection, eg. "--forward-to example.com:25@127.0.0.1:9050".
   * No "Received" line added if "--anonymous" and an empty "--domain" name.
   * Error text for "all recipients rejected" is now more accurately "one or more recipients rejected".
   * New behaviour for "--client-filter" exit values of 100 and over.
   * Shorter descriptions in the usage help unless "--verbose".
-  * Windows project files for MSVC 2008 included.
+  * New default spool directory on windows under "system32".
+  * Windows project files for MSVC 2012 included.
   * Removed support for Windows NT and Windows 9x.
+  * Better support for Windows Vista and Windows 7.
   * Removed Windows "--icon" option.
-  * Removed "--enable-fhs" option for "configure" (see INSTALL for equivalent usage).
+  * Removed "--enable-fhs" option for "configure" (see INSTALL document for equivalent usage).
   * Added "--log-file" option to redirect stderr on Windows.
   * Added Windows "--peer-lookup" option.
   * Fix for MD5 code in 64-bit builds.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Wed, 27 Feb 2013 12:26:31 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Tue, 12 Nov 2013 04:38:59 +0000
 
 emailrelay (1.8.2) unstable; urgency=low
   * Fix namespaces for gcc 3.4.

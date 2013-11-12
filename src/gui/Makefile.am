@@ -23,14 +23,14 @@ INSTALL_BUNDLE=E-MailRelay-Install
 IMAGE=E-MailRelay.dmg
 
 if MAC
-MAC_EXTRA_DIST = dir_unix.cpp boot_unix.cpp glink_unix.cpp emailrelay-icon.icns
-MAC_SOURCES = dir_mac.cpp boot_mac.cpp glink_mac.cpp
+MAC_EXTRA_DIST = dir_unix.cpp boot_unix.cpp glink_unix.cpp glink_win32.cpp gregister_unix.cpp gregister_win32.cpp emailrelay-icon.icns
+MAC_SOURCES = dir_mac.cpp boot_mac.cpp glink_mac.cpp gregister_mac.cpp
 MAC_NOINST = $(BUNDLE).app
 MAC_PROGS = emailrelay-start-gui emailrelay-unpack
 MAKE_SETUP_STUB = payload-stub
 else
-MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp guistart.cpp emailrelay-icon.icns
-MAC_SOURCES = dir_unix.cpp boot_unix.cpp glink_unix.cpp
+MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp glink_win32.cpp gregister_mac.cpp gregister_win32.cpp guistart.cpp emailrelay-icon.icns
+MAC_SOURCES = dir_unix.cpp boot_unix.cpp glink_unix.cpp gregister_unix.cpp
 MAC_PROGS =
 MAC_NOINST =
 MAKE_SETUP_STUB = emailrelay-gui.real
@@ -110,6 +110,7 @@ emailrelay_gui_real_SOURCES = \
 	gdialog.cpp \
 	gdialog.h \
 	glink.h \
+	gregister.h \
 	gpage.cpp \
 	gpage.h \
 	guimain.cpp \

@@ -23,6 +23,11 @@
 
 #include "gdef.h"
 
+#ifndef __cplusplus
+void ggui_applicationinstance( HINSTANCE h ) ;
+#else
+extern "C" void ggui_applicationinstance( HINSTANCE h ) ;
+
 /// \namespace GGui
 namespace GGui
 {
@@ -69,5 +74,7 @@ public:
 private:
 	static HINSTANCE m_hinstance ;
 } ;
+
+#endif
 
 #endif

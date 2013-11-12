@@ -302,7 +302,9 @@ std::string GAuth::SaslServerBasic::apply( const std::string & response , bool &
 	}
 
 	if( ! done )
+	{
 		G_DEBUG( "GAuth::SaslServerBasic::apply: challenge \"" << next_challenge << "\"" ) ;
+	}
 
 	return next_challenge ;
 }

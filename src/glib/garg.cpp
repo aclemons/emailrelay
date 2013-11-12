@@ -113,7 +113,8 @@ void G::Arg::removeAt( size_type sw_index , size_type sw_args )
 	G_ASSERT( sw_index > 0U && sw_index < m_array.size() ) ;
 	if( sw_index > 0U && sw_index < m_array.size() )
 	{
-		StringArray::iterator p = m_array.begin() + sw_index ;
+		StringArray::iterator p = m_array.begin() ; 
+		for( size_type i = 0U ; i < sw_index ; i++ ) ++p ; // (rather than cast)
 		p = m_array.erase( p ) ;
 		for( size_type i = 0U ; i < sw_args && p != m_array.end() ; i++ )
 			p = m_array.erase( p ) ;

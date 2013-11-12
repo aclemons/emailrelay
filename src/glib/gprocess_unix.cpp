@@ -27,12 +27,8 @@
 #include "glog.h"
 #include <iostream>
 #include <cstring> // std::strerror()
+#include <fcntl.h>
 #include <errno.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <fcntl.h> // open()
-#include <unistd.h> // setuid() etc
 #include <algorithm> // std::swap()
 
 namespace
@@ -132,7 +128,7 @@ void G::Process::revokeExtraGroups()
 	if( Identity::real().isRoot() || Identity::effective() != Identity::real() )
 	{
 		gid_t dummy ;
-		G_IGNORE(int) ::setgroups( 0U , &dummy ) ; // (only works for root, so ignore the return code)
+		G_IGNORE_RETURN(int) ::setgroups( 0U , &dummy ) ; // (only works for root, so ignore the return code)
 	}
 }
 
@@ -272,7 +268,7 @@ G::Process::Umask::Umask( Mode mode ) :
 
 G::Process::Umask::~Umask()
 {
-	G_IGNORE(mode_t) ::umask( m_imp->m_old_mode ) ;
+	G_IGNORE_RETURN(mode_t) ::umask( m_imp->m_old_mode ) ;
 	delete m_imp ;
 }
 

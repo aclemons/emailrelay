@@ -20,9 +20,28 @@
 
 #include "gdef.h"
 #include "gnet.h"
+#include "gstr.h"
 #include "gresolverinfo.h"
 #include "gresolver.h"
 #include "gassert.h"
+
+std::string GNet::ResolverInfo::sockless( const std::string & s )
+{
+	// "far-host:far-port@sockserver-host:sockserver-port"
+	return G::Str::tail( s , s.find('@') , s ) ;
+}
+
+bool GNet::ResolverInfo::socked( const std::string & s , std::string & far_host , unsigned int & far_port )
+{
+	std::string::size_type pos = s.find('@') ;
+	if( pos != std::string::npos )
+	{
+		std::string ss = G::Str::head( s , pos ) ;
+		far_host = G::Str::head( ss , ss.rfind(':') ) ;
+		far_port = G::Str::toUInt( G::Str::tail( ss , ss.rfind(':') ) ) ;
+	}
+	return pos != std::string::npos ;
+}
 
 std::string GNet::ResolverInfo::part( const std::string & s , bool first )
 {
@@ -34,21 +53,15 @@ std::string GNet::ResolverInfo::part( const std::string & s , bool first )
 }
 
 GNet::ResolverInfo::ResolverInfo( const std::string & host_and_service ) :
-	m_host(part(host_and_service,true)) ,
-	m_service(part(host_and_service,false)) ,
+	m_host(part(sockless(host_and_service),true)) ,
+	m_service(part(sockless(host_and_service),false)) ,
 	m_address_valid(false) ,
 	m_address(Address::invalidAddress()) ,
-	m_update_time(0U)
+	m_update_time(0U) ,
+	m_socks(false) ,
+	m_socks_far_port(0U)
 {
-}
-
-GNet::ResolverInfo::ResolverInfo( const char * host_and_service ) :
-	m_host(part(host_and_service,true)) ,
-	m_service(part(host_and_service,false)) ,
-	m_address_valid(false) ,
-	m_address(Address::invalidAddress()) ,
-	m_update_time(0U)
-{
+	m_socks = socked( host_and_service , m_socks_far_host , m_socks_far_port ) ;
 }
 
 GNet::ResolverInfo::ResolverInfo( const std::string & host , const std::string & service ) :
@@ -56,7 +69,9 @@ GNet::ResolverInfo::ResolverInfo( const std::string & host , const std::string &
 	m_service(service) ,
 	m_address_valid(false) ,
 	m_address(Address::invalidAddress()) ,
-	m_update_time(0U)
+	m_update_time(0U) ,
+	m_socks(false) ,
+	m_socks_far_port(0U)
 {
 }
 
@@ -118,6 +133,21 @@ std::string GNet::ResolverInfo::displayString( bool simple ) const
 G::DateTime::EpochTime GNet::ResolverInfo::updateTime() const
 {
 	return m_update_time ;
+}
+
+bool GNet::ResolverInfo::socks() const
+{
+	return m_socks ;
+}
+
+unsigned int GNet::ResolverInfo::socksFarPort() const
+{
+	return m_socks_far_port ;
+}
+
+std::string GNet::ResolverInfo::socksFarHost() const
+{
+	return m_socks_far_host ;
 }
 
 /// \file gresolverinfo.cpp

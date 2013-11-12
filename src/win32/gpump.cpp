@@ -70,7 +70,7 @@ std::string GGui::Pump::runCore( bool send_idle_messages , HWND hwnd_idle , unsi
 		}
 	}
 	std::string reason = quit_reason ;
-	quit_reason.clear() ;
+	quit_reason.resize(0) ;
 	return reason ;
 }
 

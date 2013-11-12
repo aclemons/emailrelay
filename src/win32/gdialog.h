@@ -188,7 +188,7 @@ private:
 	DialogList::iterator find( HWND h ) ;
 	BOOL onControlColour_( WPARAM wparam , LPARAM lparam , WORD type ) ;
 	static Dialog * from_lparam( LPARAM lparam ) ;
-	static Dialog * from_long( LONG l ) ;
+	static Dialog * from_long_ptr( LONG_PTR l ) ;
 	static LPARAM to_lparam( Dialog * p ) ;
 	static DLGPROC dlgproc_export_fn() ;
 	bool runStart() ;

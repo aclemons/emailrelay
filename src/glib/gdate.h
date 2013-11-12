@@ -130,13 +130,13 @@ public:
 
 private:
 	void init( const G::DateTime::BrokenDownTime & ) ;
-	static unsigned int lastDay( unsigned int month , unsigned int year ) ;
-	static bool isLeapYear( unsigned int y ) ;
+	static int lastDay( int month , int year ) ;
+	static bool isLeapYear( int y ) ;
 
 private:
-	unsigned int m_day ;
-	unsigned int m_month ;
-	unsigned int m_year ;
+	int m_day ;
+	int m_month ;
+	int m_year ;
 	bool m_weekday_set ;
 	Weekday m_weekday ;
 } ;

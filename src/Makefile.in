@@ -207,7 +207,7 @@ top_srcdir = @top_srcdir@
 
 #
 #
-EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.sln emailrelay.vcproj emailrelay-lib.vcproj fakemc.vcproj
+EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.sln emailrelay.vcxproj emailrelay-lib.vcxproj fakemc.vcxproj
 SUBDIRS = glib gssl gnet gauth gsmtp gpop main win32 gui
 all: all-recursive
 

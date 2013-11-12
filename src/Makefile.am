@@ -14,5 +14,5 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.sln emailrelay.vcproj emailrelay-lib.vcproj fakemc.vcproj
+EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.sln emailrelay.vcxproj emailrelay-lib.vcxproj fakemc.vcxproj
 SUBDIRS = glib gssl gnet gauth gsmtp gpop main win32 gui

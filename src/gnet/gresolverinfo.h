@@ -56,9 +56,6 @@ public:
 	ResolverInfo( const std::string & host_and_service ) ;
 		///< Implicit constructor. Throws if an invalid format.
 
-	ResolverInfo( const char * host_and_service ) ;
-		///< Implicit constructor. Throws if an invalid format.
-
 	std::string host() const ;
 		///< Returns the remote host name, as passed in to the constructor.
 
@@ -90,8 +87,19 @@ public:
 		///< Returns the time of the last update(). Used in cacheing.
 		///< Returns zero if not update()d.
 
+	bool socks() const ;
+		///< Returns true if using socks.
+
+	unsigned int socksFarPort() const ;
+		///< Returns the port number for the socks far server.
+
+	std::string socksFarHost() const ;
+		///< Returns the port for the socks far server.
+
 private:
 	static std::string part( const std::string & , bool ) ;
+	static bool socked( const std::string & , std::string & , unsigned int & ) ;
+	static std::string sockless( const std::string & ) ;
 
 private:
 	std::string m_host ;
@@ -100,6 +108,9 @@ private:
 	Address m_address ;
 	std::string m_canonical_name ;
 	G::DateTime::EpochTime m_update_time ;
+	bool m_socks ;
+	std::string m_socks_far_host ;
+	unsigned int m_socks_far_port ;
 } ;
 
 #endif

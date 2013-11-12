@@ -182,21 +182,21 @@ void GNet::Socket::setNoLinger()
 	options.l_onoff = 0 ;
 	options.l_linger = 0 ;
 	socklen_t sizeof_options = sizeof(options) ;
-	G_IGNORE(int) ::setsockopt( m_socket.fd() , SOL_SOCKET ,
+	G_IGNORE_RETURN(int) ::setsockopt( m_socket.fd() , SOL_SOCKET ,
 		SO_LINGER , reinterpret_cast<char*>(&options) , sizeof_options ) ;
 }
 
 void GNet::Socket::setKeepAlive()
 {
 	int keep_alive = 1 ;
-	G_IGNORE(int) ::setsockopt( m_socket.fd() , SOL_SOCKET , 
+	G_IGNORE_RETURN(int) ::setsockopt( m_socket.fd() , SOL_SOCKET , 
 		SO_KEEPALIVE , reinterpret_cast<char*>(&keep_alive) , sizeof(keep_alive) ) ;
 }
 
 void GNet::Socket::setReuse()
 {
 	int on = 1 ;
-	G_IGNORE(int) ::setsockopt( m_socket.fd() , SOL_SOCKET ,
+	G_IGNORE_RETURN(int) ::setsockopt( m_socket.fd() , SOL_SOCKET ,
 		SO_REUSEADDR , reinterpret_cast<char*>(&on) , sizeof(on) ) ;
 }
 

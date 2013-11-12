@@ -77,7 +77,10 @@ Enables smtp authentication with the remote server, using the given secrets file
 Specifies an external program to process messages when they are forwarded.
 .TP
 .B \-j, --client-tls 
-Enables tls/ssl layer for smtp client (if openssl built in).
+Enables negotiated tls/ssl for smtp client (if openssl built in).
+.TP
+.B \-b, --client-tls-connection 
+Enables smtp over tls/ssl for smtp client (if openssl built in).
 .TP
 .B \-e, --close-stderr 
 Closes the standard error stream soon after start-up.
@@ -167,7 +170,7 @@ Sets the response timeout (in seconds) when talking to a remote server (default 
 Enables authentication of remote clients, using the given secrets file.
 .TP
 .B \-K, --server-tls \fI<pem-file>\fR
-Enables tls/ssl layer for smtp server using the given openssl certificate file (which must be in the directory trusted by openssl).
+Enables negotiated tls/ssl for smtp server using the given openssl certificate file (which must be in the directory trusted by openssl).
 .TP
 .B \-M, --size \fI<bytes>\fR
 Limits the size of submitted messages.

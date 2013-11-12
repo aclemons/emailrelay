@@ -66,6 +66,7 @@ public:
 	class Credentials 
 	{ 
 		friend class SocketProtocol ;
+		friend class SocketProtocolTest ;
 		Credentials( const char * ) {}
 	} ;
 

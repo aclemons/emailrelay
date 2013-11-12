@@ -54,14 +54,16 @@ G::DateTime::EpochTime G::DateTime::epochTime( const BrokenDownTime & bdt_in )
 
 G::DateTime::BrokenDownTime G::DateTime::utc( EpochTime epoch_time )
 {
-	BrokenDownTime result ;
+	static BrokenDownTime zero ;
+	BrokenDownTime result = zero ;
 	G::DateTime::gmtime_r( &epoch_time , &result ) ;
 	return result ;
 }
 
 G::DateTime::BrokenDownTime G::DateTime::local( EpochTime epoch_time )
 {
-	BrokenDownTime bdt_local ;
+	static BrokenDownTime zero ;
+	BrokenDownTime bdt_local = zero ;
 	G::DateTime::localtime_r( &epoch_time , &bdt_local ) ;
 	return bdt_local ;
 }

@@ -135,8 +135,8 @@ private:
 // ===
 
 GNet::WinsockWindow::WinsockWindow( Winsock & ws , HINSTANCE hinstance ) :
-	m_ws(ws) ,
-	GGui::WindowHidden(hinstance)
+	GGui::WindowHidden(hinstance) ,
+	m_ws(ws)
 {
 }
 
@@ -163,8 +163,8 @@ GNet::EventLoop * GNet::EventLoop::create()
 GNet::Winsock::Winsock() :
 	m_running(false) ,
 	m_window(NULL) ,
-	m_success(false) ,
 	m_hwnd(0) ,
+	m_success(false) ,
 	m_msg(0) ,
 	m_read_list("read") ,
 	m_write_list("write") ,
@@ -305,7 +305,8 @@ GNet::EventHandler * GNet::Winsock::findHandler( EventHandlerList & list , Descr
 
 void GNet::Winsock::onMessage( WPARAM wparam , LPARAM lparam )
 {
-	int fd = wparam ;
+	G_ASSERT( wparam == static_cast<WPARAM>(static_cast<int>(wparam)) ) ;
+	int fd = static_cast<int>(wparam) ;
 	int event = WSAGETSELECTEVENT( lparam ) ;
 	int err = WSAGETSELECTERROR( lparam ) ;
 
@@ -385,8 +386,8 @@ void GNet::Winsock::setTimeout( G::DateTime::EpochTime t , bool & )
 		ms *= 1000UL ;
 		G_DEBUG( "GNet::Winsock::setTimeout: SetTimer(): " << ms << "ms" ) ;
 		::KillTimer( m_hwnd , m_timer_id ) ;
-		unsigned int rc = ::SetTimer( m_hwnd , m_timer_id , ms , NULL ) ;
-		if( rc == 0U )
+		INT_PTR rc = ::SetTimer( m_hwnd , m_timer_id , ms , NULL ) ;
+		if( rc == 0 )
 			throw G::Exception( "GNet::Winsock: SetTimer() failure" ) ;
 		G_ASSERT( rc == m_timer_id ) ;
 	}

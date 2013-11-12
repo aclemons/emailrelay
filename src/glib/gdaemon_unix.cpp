@@ -37,7 +37,7 @@ void G::Daemon::detach()
 		::_exit( 0 ) ;
 
 	setsid() ;
-	G_IGNORE(bool) Process::cd( "/" , Process::NoThrow() ) ;
+	G_IGNORE_RETURN(bool) Process::cd( "/" , Process::NoThrow() ) ;
 
 	if( NewProcess::fork() == NewProcess::Parent )
 		::_exit( 0 ) ;
@@ -45,7 +45,7 @@ void G::Daemon::detach()
 
 void G::Daemon::setsid()
 {
-	G_IGNORE(pid_t) ::setsid() ;
+	G_IGNORE_RETURN(pid_t) ::setsid() ;
 }
 
 /// \file gdaemon_unix.cpp

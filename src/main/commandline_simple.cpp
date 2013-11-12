@@ -136,7 +136,7 @@ G::Strings Main::CommandLine::value( const std::string & s , const std::string &
 	return result ;
 }
 
-unsigned int Main::CommandLine::argc() const
+G::Arg::size_type Main::CommandLine::argc() const
 {
 	return 1U ;
 }

@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "glog.h"
 #include <string>
+#include <ctime>
 
 /// \namespace G
 namespace G
@@ -106,7 +107,8 @@ private:
 	static std::string fileAndLine( const char * , int ) ;
 	static void halt() ;
 	static LogOutput * & pthis() ;
-	static std::ostream & err( std::string ) ;
+	static std::ostream & err( const std::string & ) ;
+	static void getLocalTime( time_t , struct std::tm * ) ; // dont make logging dependent on G::DateTime
 
 private:
 	std::string m_prefix ;

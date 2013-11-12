@@ -72,10 +72,11 @@ G::LogOutput::LogOutput( bool enabled_and_summary , bool verbose_and_debug ) :
 	init() ;
 }
 
-std::ostream & G::LogOutput::err( std::string path )
+std::ostream & G::LogOutput::err( const std::string & path_in )
 {
-	if( !path.empty() )
+	if( !path_in.empty() )
 	{
+		std::string path = path_in ;
 		std::string::size_type pos = path.find("%d") ;
 		if( pos != std::string::npos )
 			path.replace( pos , 2U , dateString() ) ;
@@ -121,7 +122,7 @@ void G::LogOutput::output( Log::Severity severity , const char * file , int line
 		instance()->doOutput( severity , file , line , text ) ;
 }
 
-void G::LogOutput::doOutput( Log::Severity severity , const char * file , int line , const std::string & text )
+void G::LogOutput::doOutput( Log::Severity severity , const char * /* file */ , int /* line */ , const std::string & text )
 {
 	// decide what to do
 	bool do_output = m_enabled ;
@@ -188,9 +189,11 @@ std::string G::LogOutput::timestampString()
 	if( m_time == 0 || m_time != now )
 	{
 		m_time = now ;
-		struct std::tm * tm_p = std::localtime( &m_time ) ; // see also gdef.h
+		static struct std::tm zero_broken_down_time ;
+		struct std::tm broken_down_time = zero_broken_down_time ;
+		getLocalTime( m_time , &broken_down_time ) ;
 		m_time_buffer[0] = '\0' ;
-		std::strftime( m_time_buffer , sizeof(m_time_buffer)-1U , "%Y" "%m" "%d." "%H" "%M" "%S: " , tm_p ) ;
+		std::strftime( m_time_buffer, sizeof(m_time_buffer)-1U, "%Y" "%m" "%d." "%H" "%M" "%S: ", &broken_down_time ) ;
 		m_time_buffer[sizeof(m_time_buffer)-1U] = '\0' ;
 	}
 	return std::string(m_time_buffer) ;
@@ -198,10 +201,11 @@ std::string G::LogOutput::timestampString()
 
 std::string G::LogOutput::dateString()
 {
-	std::time_t now = std::time(NULL) ;
-	struct std::tm * tm_p = std::localtime( &now ) ; // see also gdef.h
+	static struct std::tm zero_broken_down_time ;
+	struct std::tm broken_down_time = zero_broken_down_time ;
+	getLocalTime( std::time(NULL) , &broken_down_time ) ;
 	char buffer[10] = { 0 } ;
-	std::strftime( buffer , sizeof(buffer)-1U , "%Y" "%m" "%d" , tm_p ) ;
+	std::strftime( buffer , sizeof(buffer)-1U , "%Y" "%m" "%d" , &broken_down_time ) ;
 	buffer[sizeof(buffer)-1U] = '\0' ;
 	return std::string( buffer ) ;
 }

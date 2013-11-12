@@ -7,10 +7,17 @@
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 #pragma code_page(1252)
 
+#ifdef USE_ICON_DIR
+IDI_ICON1               ICON    DISCARDABLE     "icon/emailrelay-icon.ico"
+IDI_ICON2               ICON    DISCARDABLE     "icon/icon2.ico"
+IDI_ICON3               ICON    DISCARDABLE     "icon/icon3.ico"
+IDI_ICON4               ICON    DISCARDABLE     "icon/icon4.ico"
+#else
 IDI_ICON1               ICON    DISCARDABLE     "icon1.ico"
 IDI_ICON2               ICON    DISCARDABLE     "icon2.ico"
 IDI_ICON3               ICON    DISCARDABLE     "icon3.ico"
 IDI_ICON4               ICON    DISCARDABLE     "icon4.ico"
+#endif
 
 IDR_MENU1 MENU DISCARDABLE 
 BEGIN

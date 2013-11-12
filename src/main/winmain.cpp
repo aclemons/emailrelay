@@ -28,8 +28,7 @@
 #include "run.h"
 #include <clocale>
 
-int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , 
-	LPSTR command_line , int show )
+int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_line , int show )
 {
 	try
 	{

@@ -56,7 +56,8 @@ class GNet::HeapClient : public GNet::SimpleClient
 public:
 	explicit HeapClient( const ResolverInfo & remote_info ,
 		const Address & local_interface = Address(0U) , bool privileged = false ,
-		bool sync_dns = synchronousDnsDefault() ) ;
+		bool sync_dns = synchronousDnsDefault() ,
+		unsigned int secure_connection_timeout = 0U ) ;
 			///< Constructor. All instances must be on the heap.
 			///< Initiates the connection via a zero-length timer.
 

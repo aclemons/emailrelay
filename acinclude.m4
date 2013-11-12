@@ -252,11 +252,12 @@ dnl In the implementation remember that AC_PATH_PROG does
 dnl nothing if the variable is already defined, and that
 dnl it does an internal AC_SUBST.
 dnl
-dnl The PKG_CHECK_MODULES macro is used to modify CFLAGS etc.
+dnl The PKG_CHECK_MODULES macro is used to set QT_LIBS
+dnl and QT_CFLAGS according to pkg-config.
 dnl
 AC_DEFUN([ACLOCAL_CHECK_QT4],
 [
-	PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes])
+	PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes],[qt4=no])
 
 	MOC="${e_qtmoc}"
 	AC_PATH_PROG(MOC,moc)

@@ -30,6 +30,7 @@
 #include "gdirectory.h"
 #include "gprocess.h"
 #include "glink.h"
+#include "gregister.h"
 #include "garg.h"
 #include "gunpack.h"
 #include "ggetopt.h"
@@ -205,6 +206,15 @@ struct UpdateBootLink : public ActionBase
 	virtual void run() ;
 	virtual std::string text() const ;
 	virtual std::string ok() const ;
+} ;
+
+struct RegisterAsEventSource : public ActionBase
+{
+	std::string m_dir ;
+	std::string m_basename ;
+	RegisterAsEventSource( const std::string & dir , const std::string & basename ) ;
+	virtual void run() ;
+	virtual std::string text() const ;
 } ;
 
 struct CreateConfigFile : public ActionBase
@@ -686,6 +696,24 @@ std::string UpdateBootLink::ok() const
 
 // ==
 
+RegisterAsEventSource::RegisterAsEventSource( const std::string & dir , const std::string & basename ) :
+	m_dir(dir) ,
+	m_basename(basename)
+{
+}
+
+void RegisterAsEventSource::run()
+{
+	GRegister::server( G::Path(m_dir,m_basename) ) ;
+}
+
+std::string RegisterAsEventSource::text() const
+{
+	return std::string() + "registering [" + G::Path(m_dir,m_basename).str() + "] to use the event log" ;
+}
+
+// ==
+
 CreateConfigFile::CreateConfigFile( std::string dst_dir , std::string dst_name ,
 	std::string src_dir , std::string src_name ) :
 		m_src(G::Path(src_dir,src_name)) ,
@@ -943,6 +971,15 @@ void InstallerImp::insertActions()
 			insert( new Copy(value("dir-install"),"QtCore4.dll") ) ;
 		if( G::File::exists("QtGui4.dll") )
 			insert( new Copy(value("dir-install"),"QtGui4.dll") ) ;
+	}
+
+	// register for using the windows event log - doing it here, hopefully as 
+	// an Administrator, has a chance of avoiding the Windows 7 VirtualStore 
+	// nonesense - see also glogoutput_win32.cpp
+	//
+	if( m_installing && isWindows() )
+	{
+		insert( new RegisterAsEventSource(value("dir-install"),"emailrelay") ) ;
 	}
 
 	// create startup links

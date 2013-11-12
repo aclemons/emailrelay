@@ -65,13 +65,12 @@ am__libglib_a_SOURCES_DIST = gnewprocess_unix_exec_disabled.cpp \
 	gfile.cpp gfile_unix.cpp gfs.h gfs_unix.cpp ggetopt.h \
 	ggetopt.cpp ghostname_unix.cpp ghostname.h gidentity.h \
 	glimits.h glog.cpp glog.h glogoutput.h glogoutput.cpp \
-	glogoutput_unix.cpp gnewprocess.h gnocheck.h gnocheck_unix.cpp \
-	gmd5_native.cpp gmd5.h gmemory.h gnoncopyable.h gpam.h \
-	gpam.cpp gpath.h gpath.cpp gpidfile.cpp gpidfile.h gprocess.h \
-	gprocess_unix.cpp groot.cpp groot.h gsetter.h gsignalsafe.h \
-	gsleep.h gslot.cpp gslot.h gstatemachine.h gstr.cpp gstr.h \
-	gstrings.cpp gstrings.h gtest.cpp gtest.h gtime.cpp gtime.h \
-	gxtext.cpp gxtext.h
+	glogoutput_unix.cpp gnewprocess.h gmd5_native.cpp gmd5.h \
+	gmemory.h gnoncopyable.h gpam.h gpam.cpp gpath.h gpath.cpp \
+	gpidfile.cpp gpidfile.h gprocess.h gprocess_unix.cpp groot.cpp \
+	groot.h gsetter.h gsignalsafe.h gsleep.h gslot.cpp gslot.h \
+	gstatemachine.h gstr.cpp gstr.h gstrings.cpp gstrings.h \
+	gtest.cpp gtest.h gtime.cpp gtime.h gxtext.cpp gxtext.h
 @EXEC_FALSE@am__objects_1 = gnewprocess_unix_exec_disabled.$(OBJEXT)
 @EXEC_TRUE@am__objects_1 = gnewprocess_unix_exec_enabled.$(OBJEXT)
 @IDENTITY_FALSE@am__objects_2 = gidentity_disabled.$(OBJEXT)
@@ -94,11 +93,10 @@ am_libglib_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	gexecutable.$(OBJEXT) gfile.$(OBJEXT) gfile_unix.$(OBJEXT) \
 	gfs_unix.$(OBJEXT) ggetopt.$(OBJEXT) ghostname_unix.$(OBJEXT) \
 	glog.$(OBJEXT) glogoutput.$(OBJEXT) glogoutput_unix.$(OBJEXT) \
-	gnocheck_unix.$(OBJEXT) gmd5_native.$(OBJEXT) gpam.$(OBJEXT) \
-	gpath.$(OBJEXT) gpidfile.$(OBJEXT) gprocess_unix.$(OBJEXT) \
-	groot.$(OBJEXT) gslot.$(OBJEXT) gstr.$(OBJEXT) \
-	gstrings.$(OBJEXT) gtest.$(OBJEXT) gtime.$(OBJEXT) \
-	gxtext.$(OBJEXT)
+	gmd5_native.$(OBJEXT) gpam.$(OBJEXT) gpath.$(OBJEXT) \
+	gpidfile.$(OBJEXT) gprocess_unix.$(OBJEXT) groot.$(OBJEXT) \
+	gslot.$(OBJEXT) gstr.$(OBJEXT) gstrings.$(OBJEXT) \
+	gtest.$(OBJEXT) gtime.$(OBJEXT) gxtext.$(OBJEXT)
 libglib_a_OBJECTS = $(am_libglib_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -281,7 +279,6 @@ EXTRA_DIST = \
 	glogoutput_win32.cpp \
 	gprocess_win32.cpp \
 	gnewprocess_win32.cpp \
-	gnocheck_win32.cpp \
 	mingw.mak
 
 libglib_a_SOURCES = \
@@ -341,8 +338,6 @@ libglib_a_SOURCES = \
 	glogoutput.cpp \
 	glogoutput_unix.cpp \
 	gnewprocess.h \
-	gnocheck.h \
-	gnocheck_unix.cpp \
 	gmd5_native.cpp \
 	gmd5.h \
 	gmemory.h \
@@ -455,7 +450,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmd5_native.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewprocess_unix_exec_disabled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewprocess_unix_exec_enabled.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnocheck_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpam.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpam_linux.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpam_none.Po@am__quote@

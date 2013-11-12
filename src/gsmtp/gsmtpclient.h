@@ -65,7 +65,9 @@ public:
 		GNet::Address local_address ;
 		ClientProtocol::Config client_protocol_config ;
 		unsigned int connection_timeout ;
-		Config( std::string , unsigned int , GNet::Address , ClientProtocol::Config , unsigned int ) ;
+		unsigned int secure_connection_timeout ;
+		bool secure_tunnel ;
+		Config( std::string , unsigned int , GNet::Address , ClientProtocol::Config , unsigned int , unsigned int , bool ) ;
 	} ;
 
 	Client( const GNet::ResolverInfo & remote , const GAuth::Secrets & secrets , Config config ) ;
@@ -130,6 +132,7 @@ private:
 	void start( StoredMessage & ) ;
 	void messageFail( const std::string & , int = 0 ) ;
 	void messageDestroy() ;
+	void doOnConnect() ;
 
 private:
 	MessageStore * m_store ;
@@ -137,6 +140,7 @@ private:
 	std::auto_ptr<StoredMessage> m_message ;
 	MessageStore::Iterator m_iter ;
 	ClientProtocol m_protocol ;
+	bool m_secure_tunnel ;
 	G::Signal1<std::string> m_message_done_signal ;
 } ;
 

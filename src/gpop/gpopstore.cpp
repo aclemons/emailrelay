@@ -206,8 +206,8 @@ void GPop::StoreLock::lock( const std::string & user )
 	if( G::Test::enabled("large-pop-list") )
 	{
 		// create a larger list
-		unsigned int limit = m_initial.size() * 1000U ;
-		for( unsigned int i = 0U ; i < limit ; i++ )
+		size_t limit = m_initial.size() * 1000U ;
+		for( size_t i = 0U ; i < limit ; i++ )
 		{
 			std::ostringstream ss ;
 			ss << "dummy." << i << ".content" ;

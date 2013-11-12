@@ -54,7 +54,7 @@ public:
 	Cracker & operator=( const Cracker & other ) ;
 		///< Assignment operator.
 
-	LRESULT crack( unsigned msg , WPARAM w , LPARAM l , bool &defolt ) ;
+	LRESULT crack( unsigned int msg , WPARAM w , LPARAM l , bool &defolt ) ;
 		///< Cracks the given message, calling
 		///< virtual functions as appropriate.
 		///< If the message is not processed
@@ -161,7 +161,7 @@ protected:
 		///< is ignored. See also: DragAcceptFiles().
 
 	enum SizeType { maximised , minimised , restored } ;
-	virtual void onSize( SizeType type , unsigned dx , unsigned dy ) ;
+	virtual void onSize( SizeType type , unsigned int dx , unsigned int dy ) ;
 		///< Overridable. Called on receipt of
 		///< a WM_SIZE message.
 
@@ -181,7 +181,7 @@ protected:
 		///< call to ::SetFocus(), passing focus on to
 		///< some more appropriate window.
 
-	virtual void onChar( WORD vkey , unsigned repeat_count ) ; 
+	virtual void onChar( WORD vkey , unsigned int repeat_count ) ; 
 		///< Overridable. Called on receipt of
 		///< a WM_CHAR message.
 
@@ -189,7 +189,7 @@ protected:
 		///< Overridable. Called on receipt of
 		///< a WM_MINMAXINFO message.
 
-	virtual void onDoubleClick( unsigned x , unsigned y , unsigned keys ) ;
+	virtual void onDoubleClick( unsigned int x , unsigned int y , unsigned int keys ) ;
 		///< Overridable. Called when the left mouse
 		///< button is double clicked (but depending
 		///< on the window class-style).
@@ -218,7 +218,7 @@ protected:
 		///< system-tray icon.
 		///< See also: GGui::Tray
 
-	virtual void onTimer( unsigned id ) ;
+	virtual void onTimer( unsigned int id ) ;
 		///< Overridable. Called on receipt of a WM_TIMER
 		///< message.
 
@@ -234,12 +234,12 @@ protected:
 		///< Overridable. Called on receipt of a wm_winsock()
 		///< message.
 
-	virtual void onInitMenuPopup( HMENU hmenu , unsigned position , bool system_menu ) ;
+	virtual void onInitMenuPopup( HMENU hmenu , unsigned int position , bool system_menu ) ;
 		///< Overridable. Called just before a popup menu
 		///< is displayed. Overrides will normally enable
 		///< and/or grey out menu items as appropriate.
 
-	virtual void onMouseMove( unsigned x , unsigned y , 
+	virtual void onMouseMove( unsigned int x , unsigned int y , 
 		bool shift_key_down , bool control_key_down ,
 		bool left_button_down , bool middle_button_down ,
 		bool right_button_down ) ;
@@ -313,6 +313,11 @@ protected:
 private:
 	typedef void (Cracker::*Fn)(int,int,bool,bool) ;
 	LRESULT doMouseButton( Fn fn , MouseButton , MouseButtonDirection , unsigned int , WPARAM , LPARAM ) ;
+	LRESULT onControlColour_( WPARAM hDC , LPARAM hWndControl , WORD type ) ;
+	static HWND hwnd_from( WPARAM ) ;
+	static HDC hdc_from( WPARAM ) ;
+	static HDROP hdrop_from( WPARAM ) ;
+	static HMENU hmenu_from( WPARAM ) ;
 } ;
 
 #endif

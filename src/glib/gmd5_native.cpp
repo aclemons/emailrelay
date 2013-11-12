@@ -24,6 +24,7 @@
 #include "gstrings.h"
 #include "gassert.h"
 #include "md5.h"
+#include <sstream>
 
 namespace
 {
@@ -48,18 +49,46 @@ namespace
 	{
 		G_ASSERT( context.state().s.length() == 0U ) ;
 		G_ASSERT( context.state().n == 64U ) ; // ie. magic number below
-		return 
-			G::Str::fromULong( context.state().d.a ) + "." +
-			G::Str::fromULong( context.state().d.b ) + "." +
-			G::Str::fromULong( context.state().d.c ) + "." +
-			G::Str::fromULong( context.state().d.d ) ;
+		std::ostringstream ss ;
+		ss <<
+			context.state().d.a << "." <<
+			context.state().d.b << "." <<
+			context.state().d.c << "." <<
+			context.state().d.d ;
+		return ss.str() ;
+	}
+	big_t toUnsigned( const std::string & s , bool limited = true )
+	{
+		// big_t can be bigger than unsigned long but long long might not
+		// be supported by the compiler, so do it oldschool
+		if( s.empty() ) throw G::Md5::Error( s ) ;
+		big_t result = 0U ;
+		for( std::string::const_iterator p = s.begin() ; p != s.end() ; ++p )
+		{
+			result *= 10U ;
+			unsigned int n = 
+				( *p == '0' ) ? 0U : (
+				( *p == '1' ) ? 1U : (
+				( *p == '2' ) ? 2U : (
+				( *p == '3' ) ? 3U : (
+				( *p == '4' ) ? 4U : (
+				( *p == '5' ) ? 5U : (
+				( *p == '6' ) ? 6U : (
+				( *p == '7' ) ? 7U : (
+				( *p == '8' ) ? 8U : (
+				( *p == '9' ) ? 9U : 10U ))))))))) ;
+			if( n == 10U ) throw G::Md5::Error( s ) ;
+			if( limited && (result+n) < result ) throw G::Md5::Error( s ) ;
+			result += n ;
+		}
+		return result ;
 	}
 	void readIn( md5_state_t & context , G::Strings & s )
 	{
-		big_t a = G::Str::toULong(s.front()) ; s.pop_front() ;
-		big_t b = G::Str::toULong(s.front()) ; s.pop_front() ;
-		big_t c = G::Str::toULong(s.front()) ; s.pop_front() ;
-		big_t d = G::Str::toULong(s.front()) ; s.pop_front() ;
+		big_t a = toUnsigned( s.front() ) ; s.pop_front() ;
+		big_t b = toUnsigned( s.front() ) ; s.pop_front() ;
+		big_t c = toUnsigned( s.front() ) ; s.pop_front() ;
+		big_t d = toUnsigned( s.front() ) ; s.pop_front() ;
 		state_type state = { a , b , c , d } ;
 		md5::small_t magic_number = 64U ;
 		context = md5_state_t( state , magic_number ) ;

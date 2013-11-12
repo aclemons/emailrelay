@@ -45,7 +45,7 @@
  #ifndef G_MINGW
   typedef int ssize_t ;
  #endif
- #if defined(_MSC_VER) && _MSC_VER >= 800
+ #if defined(_MSC_VER) && _MSC_VER > 1200
   #define strncat(a,b,c) strncat_s(a,c,b,_TRUNCATE)
   #define strcat(a,b) strncat_s(a,sizeof(a),b,_TRUNCATE)
  #endif
@@ -91,7 +91,7 @@ static void detach( void )
 {
   #ifndef G_WIN32
 	if( fork() ) exit( EXIT_SUCCESS ) ;
-	chdir( "/" ) ;
+	int rc = chdir( "/" ) ; (void) rc ;
 	setsid() ;
 	if( fork() ) exit( EXIT_SUCCESS ) ;
 	close( STDIN_FILENO ) ;
@@ -134,7 +134,7 @@ static BOOL poke( int argc , char * argv [] )
 	/* parse the command line -- port number */
 	if( argc > 1 ) 
 	{
-		port = atoi(argv[1]) ;
+		port = (unsigned short)atoi(argv[1]) ;
 	}
 
 	/* parse the command line -- send string */
@@ -167,16 +167,16 @@ static BOOL poke( int argc , char * argv [] )
 	}
 
 	/* send the string */
-	rc = send( fd , buffer , strlen(buffer) , 0 ) ;
-	if( rc != (int)strlen(buffer) ) 
+	n = send( fd , buffer , strlen(buffer) , 0 ) ;
+	if( n < 0 || (size_t)n != strlen(buffer) ) 
 	{
 		close( fd ) ;
 		return FALSE ;
 	}
 
 	/* read the reply */
-	rc = recv( fd , buffer , sizeof(buffer)-1U , 0 ) ;
-	if( rc <= 0 ) 
+	n = recv( fd , buffer , sizeof(buffer)-1U , 0 ) ;
+	if( n <= 0 ) 
 	{
 		close( fd ) ;
 		return FALSE ;
@@ -184,7 +184,7 @@ static BOOL poke( int argc , char * argv [] )
 	close( fd ) ;
 
 	/* print the reply */
-	n = write( STDOUT_FILENO , buffer , rc ) ;
+	n = write( STDOUT_FILENO , buffer , (size_t)n ) ;
 	buffer[0U] = '\n' ;
 	buffer[1U] = '\0' ;
 	n += write( STDOUT_FILENO , buffer , strlen(buffer) ) ;

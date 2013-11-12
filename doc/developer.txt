@@ -196,58 +196,94 @@ section.
 Windows build
 -------------
 On Windows E-MailRelay can be built using MinGW or Visual Studio. Makefiles and
-Visual Studio 2008 (MSVC 9) project files are provided in the "src" directory.
+Visual Studio 2012 project files are provided in the "src" directory.
 
 For a MinGW build of the E-MailRelay server without TLS/SSL support it should
 be sufficient to run make from the "src" directory:
+
 	C:\emailrelay\src> PATH=c:\mingw\bin;%PATH%
 	C:\emailrelay\src> mingw32-make -f mingw.mak
 
-To add TLS/SSL support first install MinGW's MSYS subsystem and ActiveState
-perl. Unpack the OpenSSL tarball and build it as follows:
+To add TLS/SSL support first install ActiveState perl and make sure that your
+MinGW installation contains the MSYS subsystem. Unpack the OpenSSL tarball and
+build it as follows:
+
 	C:\openssl> PATH=c:\perl\bin;c:\mingw\msys\1.0\bin;c:\mingw\bin;%PATH%
-	C:\openssl> perl Configure mingw
-	C:\openssl> make
+	C:\openssl> bash -l
+	$ ./config
+	$ mingw32-make
 
 Then edit the E-MailRelay "src/mingw-common.mak" file to enable openssl and run
 "mingw32-make" as above.
 
-If building the E-MailRelay GUI (using Qt) then a MinGW build is recommended.
-Start by building Qt static libraries from scratch using the following Qt
-"configure" options:
-	-release
-	-opensource
+If building the E-MailRelay GUI then it is best to use MinGW with Qt 5 static
+libraries. Start by installing zlib source (eg. to c:/zlib) and then build Qt
+using the following "configure" options:
+
+	-prefix /c/qt/qt5-static
+	-I c:/zlib
+	-L c:/zlib
 	-static
-	-no-stl
-	-qt-zlib
-	-no-libmng
-	-no-libjpeg
-	-no-dsp
-	-no-incredibuild-xge
-	-no-mmx
-	-no-3dnow
-	-no-sse
+	-release
+	-force-debug-info
+	-separate-debug-info
+	-opensource
+	-confirm-license
+	-no-c++11
+	-fully-process
+	-no-largefile
+	-accessibility
+	-no-sql-sqlite
+	-no-sql-sqlite2
+	-no-javascript-jit
+	-no-qml-debug
+	-platform win32-g++
 	-no-sse2
-	-openssl
-	-no-dbus
+	-no-sse3
+	-no-ssse3
+	-no-sse4.1
+	-no-sse4.2
+	-no-avx
+	-no-avx2
+	-no-neon
+	-no-mips_dsp
+	-no-mips_dspr2
+	-no-pkg-config
+	-system-zlib
+	-no-gif
+	-qt-libpng
+	-no-libjpeg
 	-no-openssl
-	-no-phonon
-	-no-phonon-backend
-	-no-multimedia
-	-no-audio-backend
-	-no-webkit
-	-no-script
-	-no-scripttools
-	-qt-style-windows
-	-qt-style-windowsxp
-	-qt-style-windowsvista
+	-qt-pcre
+	-qt-xcb
+	-qt-xkbcommon
+	-gui
+	-widgets
+	-no-rpath
+	-no-optimized-qmake
+	-no-nis
+	-no-cups
+	-no-iconv
+	-no-icu
+	-strip
+	-no-pch
+	-no-dbus
+	-no-xcb
+	-no-eglfs
+	-no-directfb
+	-no-linuxfb
+	-no-kms
+	-no-opengl
+	-no-system-proxies
+	-no-glib
 
-Make a note of the compiler options used when building one of the Qt examples:
-	c:\qt\examples\widgets\groupbox> del tmp\obj\release_static\main.o
-	c:\qt\examples\widgets\groupbox> mingw32-make
+Start the Qt build by running "mingw32-make" from the "qtbase" directory and
+finish off with "mingw32-make install".
 
-Edit "src/gui/mingw.mak" to replicate those compiler options and enable the GUI
-build. Then run "mingw32-make -f mingw.mak" as before.
+Edit the E-MailRelay GUI makefile "src/gui/mingw.mak" so that the E-MailRelay
+build uses similar compiler options to the Qt examples and then then build with:
+
+	$ mingw32-make -f mingw.mak mk_qt=/c/qt5-static mk_zlib=/c/zlib
 
 Mac OS X packaging
 ------------------
@@ -282,7 +318,7 @@ Source control
 The source code is stored in the SourceForge "svn" repository. A working
 copy can be checked out as follows:
 
-	$ svn co https://emailrelay.svn.sourceforge.net/svnroot/emailrelay
+	$ svn co https://svn.code.sf.net/p/emailrelay/code/trunk
 
 Directory structure
 -------------------

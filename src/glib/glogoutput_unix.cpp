@@ -69,4 +69,9 @@ void G::LogOutput::cleanup()
 		::closelog() ;
 }
 
+void G::LogOutput::getLocalTime( time_t epoch_time , struct std::tm * broken_down_time_p )
+{
+	localtime_r( &epoch_time , broken_down_time_p ) ; // see gdef.h
+}
+
 /// \file glogoutput_unix.cpp

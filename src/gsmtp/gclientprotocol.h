@@ -112,7 +112,7 @@ public:
 	bool is( Value v ) const ;
 		///< Returns true if the reply value is 'v'.
 
-	unsigned int value() const ;
+	int value() const ;
 		///< Returns the numeric value of the reply.
 
 	std::string text() const ;
@@ -145,7 +145,7 @@ private:
 private:
 	bool m_complete ;
 	bool m_valid ;
-	unsigned int m_value ;
+	int m_value ;
 	std::string m_text ;
 } ;
 
