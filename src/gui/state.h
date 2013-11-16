@@ -34,7 +34,7 @@ class State
 public:
 	typedef std::map<std::string,std::string> Map ;
 
-	State( const Map & , const Map & ) ;
+	State( const Map & config_map , const Map & dir_map ) ;
 		///< Constructor.
 
 	G::Path value( const std::string & key , const G::Path & default_ ) const ;

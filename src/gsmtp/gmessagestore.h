@@ -109,9 +109,15 @@ public:
 		///< then some stored messages may be marked as bad, 
 		///< or deleted (if they have no recipients).
 
+	virtual Iterator failures() = 0 ;
+		///< Returns an iterator for failed messages.
+
 	virtual void repoll() = 0 ;
 		///< Ensures that the next updated() signal() has
 		///< its parameter set to true.
+
+	virtual void unfailAll() = 0 ;
+		///< Causes messages marked as failed to be unmarked.
 
 	virtual void updated() = 0 ;
 		///< Called by associated classes to indicate that the

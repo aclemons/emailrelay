@@ -159,10 +159,10 @@ static void debug( const std::string & prefix , const G::StringMap & map )
 class Application : public QApplication 
 {
 public:
-	Application( int argc , char * argv [] ) ;
+	Application( int & argc , char * argv [] ) ;
 	virtual bool notify( QObject * p1 , QEvent * p2 ) ;
 } ;
-Application::Application( int argc , char * argv [] ) :
+Application::Application( int & argc , char * argv [] ) :
 	QApplication(argc,argv)
 {
 }

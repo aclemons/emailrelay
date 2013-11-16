@@ -310,7 +310,7 @@ void Main::Run::runCore()
 	// ssl library singleton
 	//
 	bool ssl_active = cfg.clientTls() || cfg.clientOverTls() || !cfg.serverTlsFile().empty() ;
-	GSsl::Library ssl( ssl_active , cfg.serverTlsFile() ) ;
+	GSsl::Library ssl( ssl_active , cfg.serverTlsFile() , cfg.tlsConfig() ) ;
 	if( ssl_active && !ssl.enabled() )
 		throw G::Exception( "cannot do tls/ssl: openssl not built in: remove tls options from the command-line or rebuild the emailrelay executable with openssl" ) ;
 

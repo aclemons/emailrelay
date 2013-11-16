@@ -96,6 +96,9 @@ public:
 	virtual void fail( const std::string & reason , int reason_code ) ;
 		///< Final override from GSmtp::StoredMessage.
 
+	virtual void unfail() ;
+		///< Final override from GSmtp::StoredMessage.
+
 	virtual std::auto_ptr<std::istream> extractContentStream() ;
 		///< Final override from GSmtp::StoredMessage.
 

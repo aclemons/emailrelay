@@ -225,6 +225,9 @@ public:
 		///< Returns true if using the SMTP over TLS (vs. negotiated 
 		///< TLS using STARTTLS).
 
+	unsigned int tlsConfig() const ;
+		///< Returns TLS configuration flags.
+
 	std::string serverTlsFile() const ;
 		///< Returns the tls certificate file if the server
 		///< should support tls.

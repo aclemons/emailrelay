@@ -83,7 +83,9 @@ private:
 	bool flush() ;
 	void help() ;
 	void info() ;
-	void list() ;
+	MessageStore::Iterator spooled() ;
+	MessageStore::Iterator failures() ;
+	void list( MessageStore::Iterator ) ;
 	void pid() ;
 	void sendLine( std::string ) ;
 	void warranty() ;
@@ -91,6 +93,7 @@ private:
 	void copyright() ;
 	static const std::string & crlf() ;
 	void prompt() ;
+	void unfailAll() ;
 
 private:
 	GNet::LineBuffer m_buffer ;

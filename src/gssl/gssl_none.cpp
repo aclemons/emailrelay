@@ -29,7 +29,7 @@ GSsl::Library::Library()
 		m_this = this ;
 }
 
-GSsl::Library::Library( bool , const std::string & , LogFn )
+GSsl::Library::Library( bool , const std::string & , unsigned int , LogFn )
 {
 	if( m_this == NULL )
 		m_this = this ;

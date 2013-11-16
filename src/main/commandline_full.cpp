@@ -102,7 +102,7 @@ private:
 
 std::string Main::CommandLineImp::switchSpec( bool is_windows )
 {
-	// single-character options unused: digits only
+	// single-character options unused: 123456789
 	std::string dir = GSmtp::MessageStore::defaultDirectory().str() ;
 	std::string pop_auth = GPop::Secrets::defaultPath() ;
 	std::ostringstream ss ;
@@ -126,6 +126,7 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 		"j!client-tls!enables negotiated tls/ssl for smtp client! (if openssl built in)!0!!3|"
 		"b!client-tls-connection!enables smtp over tls/ssl for smtp client! (if openssl built in)!0!!3|"
 		"K!server-tls!enables negotiated tls/ssl for smtp server using the given openssl certificate file! (which must be in the directory trusted by openssl)!1!pem-file!3|"
+		"0!tls-config!sets tls configuration flags! (eg. 2 for SSLv2 support)!1!flags!3|"
 		"g!debug!generates debug-level logging if built in!!0!!3|"
 		"C!client-auth!enables smtp authentication with the remote server, using the given secrets file!!1!file!3|"
 		"L!log-time!adds a timestamp to the logging output!!0!!3|"

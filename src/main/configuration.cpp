@@ -296,6 +296,11 @@ bool Main::Configuration::clientOverTls() const
 	return contains( "client-tls-connection" ) ;
 }
 
+unsigned int Main::Configuration::tlsConfig() const
+{
+	return value( "tls-config" , 0U ) ;
+}
+
 std::string Main::Configuration::serverTlsFile() const
 {
 	return contains("server-tls") ? value("server-tls") : std::string() ;

@@ -110,7 +110,17 @@ bool GSmtp::AdminServerPeer::onReceive( const std::string & line )
 	}
 	else if( is(line,"list") )
 	{
-		list() ;
+		list(spooled()) ;
+		prompt() ;
+	}
+	else if( is(line,"failures") )
+	{
+		list(failures()) ;
+		prompt() ;
+	}
+	else if( is(line,"unfail-all") )
+	{
+		unfailAll() ;
 		prompt() ;
 	}
 	else if( is(line,"pid") )
@@ -176,6 +186,8 @@ void GSmtp::AdminServerPeer::help()
 	commands.push_back( "help" ) ;
 	commands.push_back( "info" ) ;
 	commands.push_back( "list" ) ;
+	commands.push_back( "failures" ) ;
+	commands.push_back( "unfail-all" ) ;
 	commands.push_back( "notify" ) ;
 	commands.push_back( "pid" ) ;
 	commands.push_back( "quit" ) ;
@@ -250,10 +262,19 @@ void GSmtp::AdminServerPeer::pid()
 	sendLine( G::Process::Id().str() ) ;
 }
 
-void GSmtp::AdminServerPeer::list()
+GSmtp::MessageStore::Iterator GSmtp::AdminServerPeer::spooled()
+{
+	return m_server.store().iterator(false) ;
+}
+
+GSmtp::MessageStore::Iterator GSmtp::AdminServerPeer::failures()
+{
+	return m_server.store().failures() ;
+}
+
+void GSmtp::AdminServerPeer::list( MessageStore::Iterator iter )
 {
 	std::ostringstream ss ;
-	MessageStore::Iterator iter( m_server.store().iterator(false) ) ;
 	for(;;)
 	{
 		std::auto_ptr<StoredMessage> message( iter.next() ) ;
@@ -266,6 +287,11 @@ void GSmtp::AdminServerPeer::list()
 		sendLine( "<none>" ) ;
 	else
 		send( ss.str() ) ;
+}
+
+void GSmtp::AdminServerPeer::unfailAll()
+{
+	return m_server.store().unfailAll() ;
 }
 
 // ===

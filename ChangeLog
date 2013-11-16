@@ -9,11 +9,13 @@ E-MailRelay Change Log
 * Outgoing client connection bound with the first "--interface" or "--interface client=..." address.
 * Support for SMTP over TLS/SSL on outgoing client connection ("--client-tls-connection") (cf. STARTTLS)
 * Support for SOCKS 4a on outgoing client connection, eg. "--forward-to example.com:25@127.0.0.1:9050".
+* TLS configuration options like "--tls-config=2" for SSLv2/3 fallback.
 * No "Received" line added if "--anonymous" and an empty "--domain" name.
 * Error text for "all recipients rejected" is now more accurately "one or more recipients rejected".
 * New behaviour for "--client-filter" exit values of 100 and over.
+* New commands on the admin interface, "failures" and "unfail-all".
 * Shorter descriptions in the usage help unless "--verbose".
-* New default spool directory on windows under "system32".
+* New default spool directory location on windows, now under "system32".
 * Windows project files for MSVC 2012 included.
 * Removed support for Windows NT and Windows 9x.
 * Better support for Windows Vista and Windows 7.

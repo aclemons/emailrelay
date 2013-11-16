@@ -60,7 +60,7 @@ namespace GSsl
 class GSsl::Context 
 {
 public:
-	explicit Context( const std::string & pem_file = std::string() ) ;
+	explicit Context( const std::string & pem_file = std::string() , unsigned int flags = 0U ) ;
 	~Context() ;
 	SSL_CTX * p() const ;
 
@@ -81,7 +81,7 @@ class GSsl::LibraryImp
 {
 public:
 	typedef Library::LogFn LogFn ;
-	explicit LibraryImp( const std::string & pem_file = std::string() , LogFn log_fn = NULL ) ;
+	explicit LibraryImp( const std::string & pem_file = std::string(), unsigned int flags = 0U, LogFn log_fn = NULL ) ;
 	~LibraryImp() ;
 	Context & ctx() const ;
 	std::string pem() const ;
@@ -149,7 +149,7 @@ private:
 
 //
 
-GSsl::LibraryImp::LibraryImp( const std::string & pem_file , LogFn ) :
+GSsl::LibraryImp::LibraryImp( const std::string & pem_file , unsigned int flags , LogFn ) :
 	m_context(NULL) ,
 	m_pem_file(pem_file)
 {
@@ -163,7 +163,7 @@ GSsl::LibraryImp::LibraryImp( const std::string & pem_file , LogFn ) :
 	//
 	G_IGNORE_RETURN(int) RAND_status() ;
 
-	m_context = new Context( pem_file ) ;
+	m_context = new Context( pem_file , flags ) ;
 }
 
 GSsl::LibraryImp::~LibraryImp()
@@ -195,13 +195,13 @@ GSsl::Library::Library() :
 	m_imp = new LibraryImp ;
 }
 
-GSsl::Library::Library( bool active , const std::string & pem_file , LogFn log_fn ) :
+GSsl::Library::Library( bool active , const std::string & pem_file , unsigned int flags , LogFn log_fn ) :
 	m_imp(NULL)
 {
 	if( m_this == NULL )
 		m_this = this ;
 	if( active )
-		m_imp = new LibraryImp( pem_file , log_fn ) ;
+		m_imp = new LibraryImp( pem_file , flags , log_fn ) ;
 }
 
 GSsl::Library::~Library()
@@ -240,9 +240,15 @@ std::string GSsl::Library::credit( const std::string & prefix , const std::strin
 
 //
 
-GSsl::Context::Context( const std::string & pem_file )
+GSsl::Context::Context( const std::string & pem_file , unsigned int flags )
 {
-	m_ssl_ctx = SSL_CTX_new(TLSv1_method()) ;
+	if( flags == 2U )
+		m_ssl_ctx = SSL_CTX_new(SSLv23_method()) ;
+	else if( flags == 3U )
+		m_ssl_ctx = SSL_CTX_new(SSLv3_method()) ;
+	else
+		m_ssl_ctx = SSL_CTX_new(TLSv1_method()) ;
+
 	if( m_ssl_ctx == NULL )
 		throw Error( "SSL_CTX_new" , ERR_get_error() ) ;
 

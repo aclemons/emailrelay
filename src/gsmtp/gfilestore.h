@@ -103,6 +103,9 @@ public:
 	virtual MessageStore::Iterator iterator( bool lock ) ;
 		///< Final override from GSmtp::MessageStore.
 
+	virtual MessageStore::Iterator failures() ;
+		///< Final override from GSmtp::MessageStore.
+
 	virtual std::auto_ptr<NewMessage> newMessage( const std::string & from ) ;
 		///< Final override from GSmtp::MessageStore.
 
@@ -118,6 +121,9 @@ public:
 		///< recognised and supported for reading.
 
 	virtual void repoll() ;
+		///< Final override from GSmtp::MessageStore.
+
+	virtual void unfailAll() ;
 		///< Final override from GSmtp::MessageStore.
 
 	virtual void updated() ;

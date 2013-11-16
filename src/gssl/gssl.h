@@ -149,10 +149,12 @@ public:
 		///< Constructor. Initialises the underlying ssl library
 		///< for use as a client.
 
-	Library( bool active , const std::string & pem_file , LogFn = NULL ) ;
+	Library( bool active , const std::string & pem_file , unsigned int flags , LogFn = NULL ) ;
 		///< Constructor. Initialises the underlying ssl library
 		///< or not (if the first parameter is false). The pem 
-		///< file is required if acting as a server.
+		///< file is required if acting as a server. The flags
+		///< should default to zero; their meaning are opaque at 
+		///< this interface.
 
 	~Library() ;
 		///< Destructor. Cleans up the underlying ssl library.

@@ -253,10 +253,13 @@ const std::string & GSmtp::StoredFile::crlf()
 
 bool GSmtp::StoredFile::lock()
 {
-	FileWriter claim_writer ;
 	const G::Path src = m_envelope_path ;
 	const G::Path dst( src.str() + ".busy" ) ;
-	bool ok = G::File::rename( src , dst , G::File::NoThrow() ) ;
+	bool ok = false ;
+	{
+		FileWriter claim_writer ;
+		ok = G::File::rename( src , dst , G::File::NoThrow() ) ;
+	}
 	if( ok ) 
 	{
 		G_LOG( "GSmtp::StoredMessage: locking file \"" << src.basename() << "\"" ) ;
@@ -273,8 +276,10 @@ void GSmtp::StoredFile::unlock()
 	if( m_locked )
 	{
 		G_LOG( "GSmtp::StoredMessage: unlocking file \"" << m_envelope_path.basename() << "\"" ) ;
-		FileWriter claim_writer ;
-		G::File::rename( m_envelope_path , m_old_envelope_path ) ;
+		{
+			FileWriter claim_writer ;
+			G::File::rename( m_envelope_path , m_old_envelope_path ) ;
+		}
 		m_envelope_path = m_old_envelope_path ;
 		m_locked = false ;
 		m_store.updated() ;
@@ -294,6 +299,32 @@ void GSmtp::StoredFile::fail( const std::string & reason , int reason_code )
 
 		FileWriter claim_writer ;
 		G::File::rename( m_envelope_path , bad_path , G::File::NoThrow() ) ;
+	}
+}
+
+void GSmtp::StoredFile::unfail()
+{
+	G_DEBUG( "GSmtp::StoredMessage: unfailing file: " << m_envelope_path ) ;
+	if( m_envelope_path.extension() == "bad" )
+	{
+		G::Path dst = m_envelope_path ;
+		dst.removeExtension() ;
+		bool ok = false ;
+		{
+			FileWriter claim_writer ;
+			ok = G::File::rename( m_envelope_path , dst , G::File::NoThrow() ) ;
+		}
+		if( ok )
+		{
+			G_LOG( "GSmtp::StoredMessage: unfailed file: "
+				<< "\"" << m_envelope_path.basename() << "\" -> "
+				<< "\"" << dst.basename() << "\"" ) ;
+			m_envelope_path = dst ;
+		}
+		else
+		{
+			G_WARNING( "GSmtp::StoredMessage: failed to unfail file: \"" << m_envelope_path << "\"" ) ;
+		}
 	}
 }
 
@@ -342,8 +373,8 @@ std::auto_ptr<std::istream> GSmtp::StoredFile::extractContentStream()
 
 G::Path GSmtp::StoredFile::contentPath() const
 {
-	std::string e( ".envelope" ) ;
 	std::string s = m_envelope_path.str() ;
+	std::string e( ".envelope" ) ; // also works for ".envelope.bad" etc.
 	size_t pos = s.rfind( e ) ;
 	if( pos == std::string::npos ) throw InvalidFilename(s) ;
 	s.erase( pos ) ;
