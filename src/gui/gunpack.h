@@ -38,7 +38,7 @@ namespace G
 }
 
 /// \class G::Unpack
-/// A class for self-extracting executables.
+/// A class for unpacking self-extracting executables.
 ///
 /// The executable is expected to have the following
 /// data appended to it:

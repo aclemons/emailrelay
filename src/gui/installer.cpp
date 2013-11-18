@@ -684,8 +684,8 @@ void UpdateBootLink::run()
 	}
 	else
 	{
-		Boot::uninstall( m_init_d , m_target_link_info.target , m_target_link_info.args ) ;
-		m_ok = "removed" ;
+		bool removed = Boot::uninstall( m_init_d , m_target_link_info.target , m_target_link_info.args ) ;
+		m_ok = removed ? "removed" : "not installed" ;
 	}
 }
 
@@ -733,7 +733,7 @@ void CreateConfigFile::run()
 
 std::string CreateConfigFile::text() const
 {
-	return std::string() + "creating config file \"" + m_dst.str() + "\"" ;
+	return std::string() + "creating config file [" + m_dst.str() + "]" ;
 }
 
 std::string CreateConfigFile::ok() const
@@ -765,7 +765,7 @@ void EditConfigFile::run()
 
 std::string EditConfigFile::text() const
 {
-	return std::string() + "editing config file \"" + m_path.str() + "\"" ;
+	return std::string() + "editing config file [" + m_path.str() + "]" ;
 }
 
 // ==

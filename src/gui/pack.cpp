@@ -39,7 +39,7 @@
 // which are all to be unpacked into the same output directory.
 //
 // The "--opt" switch indicates that all subsequent files are optional; if they
-// do not exist then they are silently ignored.
+// do not exist then the names are silently ignored.
 //
 // All file contents are read into memory before they are packed into the
 // output.
