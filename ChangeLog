@@ -3,13 +3,13 @@ E-MailRelay Change Log
 
 1.8.2 -> 1.9
 ------------
-* Added TLS/SSL for POP.
+* Added negotiated TLS/SSL for POP (ie. "STLS").
 * Added Linux-PAM authentication ("configure --with-pam" and then "--server-auth=/pam").
 * Optional protocol-specific "--interface" qualifiers, eg. "--interface smtp=127.0.0.1,pop=192.168.1.1".
 * Outgoing client connection bound with the first "--interface" or "--interface client=..." address.
-* Support for SMTP over TLS/SSL on outgoing client connection ("--client-tls-connection") (cf. STARTTLS)
+* Support for SMTP-over-TLS on outgoing client connection ("--client-tls-connection") (cf. "STARTTLS")
 * Support for SOCKS 4a on outgoing client connection, eg. "--forward-to example.com:25@127.0.0.1:9050".
-* TLS configuration options like "--tls-config=2" for SSLv2/3 fallback.
+* TLS configuration options ("--tls-config=...") for SSLv2/3 fallback etc.
 * No "Received" line added if "--anonymous" and an empty "--domain" name.
 * Error text for "all recipients rejected" is now more accurately "one or more recipients rejected".
 * New behaviour for "--client-filter" exit values of 100 and over.

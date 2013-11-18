@@ -28,14 +28,21 @@ package Filter ;
 
 sub create
 {
-	my ( $path , @lines ) = @_ ;
+	my ( $path , $lines_spec ) = @_ ;
 	my $file = new FileHandle( "> $path" ) ;
-	print $file "#!/bin/sh\n" ;
-	for my $line ( @lines )
+	if( System::unix() )
 	{
-		print $file $line , "\n" ;
+		print $file "#!/bin/sh\n" ;
+		for my $line ( @{$lines_spec->{unix}} )
+		{
+			print $file $line , "\n" ;
+		}
+		system( "chmod +x $path" ) ;
 	}
-	system( "chmod +x $path" ) ;
+	else
+	{
+		# TODO
+	}
 }
 
 1 ;

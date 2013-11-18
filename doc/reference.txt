@@ -137,6 +137,9 @@ where <option> is:
 # --syslog (-k)
   Forces syslog output if logging is enabled (overrides --no-syslog).
 
+# --tls-config (-0)
+  Sets tls configuration flags (eg. 2 for SSLv2 support).
+
 # --user (-u)
   Names the effective user to switch to if started as root (default is "daemon").
 
@@ -530,7 +533,8 @@ The following command-line options are used:
 
 # --pop
 
-  Enables the POP3 server.
+  Enables the POP3 server. Negotiated TLS/SSL (using "STLS") will be enabled if 
+  the "--client-tls" or "--server-tls" options are also given.
 
 # --pop-port=<port>
 

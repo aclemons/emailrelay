@@ -69,13 +69,26 @@
 
 # Name: client-tls
 # Format: client-tls
-# Description: Enables the tls/ssl layer when acting as an smtp client.
+# Description: Enables negotiated TLS encryption (STARTTLS) when acting as an smtp client.
 #
 #client-tls
 
+# Name: client-tls-connection
+# Format: client-tls-connection
+# Description: Enables SMTP-over-TLS when acting as an smtp client.
+#
+#client-tls-connection
+
+# Name: tls-config
+# Format: tls-config <flags>
+# Description: Modifies the TLS layer configuration. For OpenSSL a value of 3 enables SSLv3
+# and 2 enables SSLv2/3.
+#
+#tls-config=2
+
 # Name: server-tls
 # Format: server-tls <open-ssl-pem-file>
-# Description: Enables the tls/ssl layer when acting as an smtp server.
+# Description: Enables negotiated TLS encryption (STARTTLS) when acting as an smtp server.
 # Use the "openssl" utility to create and test a ".pem" certificate file.
 # Note that OpenSSL requires certificates to be installed in a trusted
 # directory, such as "/etc/ssl/certs". Use a full path to the certificate file.

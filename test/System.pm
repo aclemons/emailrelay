@@ -23,18 +23,18 @@
 
 use strict ;
 use FileHandle ;
+use File::Glob ;
+use Cwd ;
 use Check ;
 
 package System ;
 
 our $bin_dir = ".." ;
 
-sub cwd
+sub unix
 {
-	# Returns the cwd.
-	my $s = `pwd` ; 
-	chomp $s ;
-	return $s ;
+	# Returns true if running on a unix-like system.
+	return $^O eq 'linux' ; # TODO
 }
 
 sub tempfile
@@ -43,7 +43,7 @@ sub tempfile
 	# using the given hint as part of the filename.
 	my ( $hint_key , $dir ) = @_ ;
 	$hint_key = defined($hint_key) ? $hint_key : "" ;
-	$dir = defined($dir) ? $dir : cwd() ;
+	$dir = defined($dir) ? $dir : Cwd::cwd() ;
 	return $dir . "/" . ".tmp.$hint_key." . $$ . "." . rand() ;
 }
 
@@ -96,6 +96,19 @@ sub createSpoolDir
 	return $path ;
 }
 
+sub _deleteFiles
+{
+	my ( $dir , $tail ) = @_ ;
+	for my $path ( glob_( "$dir/*$tail" ) )
+	{
+		if( -f $path && $path =~ m/${tail}$/ ) # sanity check
+		{
+			my $ok = unlink $path ;
+			Check::that( $ok , "cannot delete file" , $path ) ;
+		}
+	}
+}
+
 sub deleteSpoolDir
 {
 	# Deletes valid-looking message files from a spool 
@@ -104,15 +117,15 @@ sub deleteSpoolDir
 	$all = defined($all) ? $all : 0 ;
 	if( -d $path )
 	{
-		system( "cd $path ; ls -1 | grep 'content\$' | xargs -r rm 2>/dev/null" ) ;
-		system( "cd $path ; ls -1 | grep 'envelope\$' | xargs -r rm 2>/dev/null" ) ;
+		_deleteFiles( $path , "content" ) ;
+		_deleteFiles( $path , "envelope" ) ;
 		if( $all )
 		{
-			system( "cd $path ; ls -1 | grep 'envelope.bad\$' | xargs -r rm 2>/dev/null" ) ;
-			system( "cd $path ; ls -1 | grep 'envelope.busy\$' | xargs -r rm 2>/dev/null" ) ;
-			system( "cd $path ; ls -1 | grep 'envelope.new\$' | xargs -r rm 2>/dev/null" ) ;
+			_deleteFiles( $path , "envelope.bad" ) ;
+			_deleteFiles( $path , "envelope.busy" ) ;
+			_deleteFiles( $path , "envelope.new" ) ;
 		}
-		system( "rmdir $path" ) ;
+		rmdir( $path ) ;
 	}
 }
 
@@ -120,9 +133,7 @@ sub glob_
 {
 	# Returns the file paths that match the given glob expression.
 	my ( $expr ) = @_ ;
-	my $output = `ls $expr 2>/dev/null` ;
-	chomp $output ;
-	my @files = split("\n",$output) ;
+	my @files = File::Glob::bsd_glob( $expr ) ;
 	return @files ;
 }
 
@@ -131,9 +142,7 @@ sub match
 	# Returns the name of the single file that matches
 	# the given filespec. Fails if not exactly one.
 	my ( $filespec ) = @_ ;
-	my $s = `ls $filespec` ;
-	chomp $s ;
-	my @files = split( "\n" , $s ) ;
+	my @files = glob_( $filespec ) ;
 	Check::that( @files == 0 || @files == 1 , "too many matching files" , $filespec ) ;
 	return @files[0] ;
 }
@@ -236,12 +245,32 @@ sub drain
 	$progress = defined($progress) ? $progress : 1 ;
 	for( my $i = 0 ; $i < $n ; $i++ )
 	{
-		my @list = `ls -1 $dir 2>/dev/null` ;
+		my @list = glob_( "$dir/*" ) ;
 		print "." if( $progress ) ;
 		if( scalar(@list) == 0 ) { return 1 }
 		sleep( $sleep_time ) ;
 	}
 	return 0 ;
+}
+
+sub processIsRunning
+{
+	my ( $pid ) = @_ ;
+	if( unix() )
+	{
+		return kill 0 , $pid ;
+	}
+	else
+	{
+		# windows
+		my $fh = new FileHandle( "tasklist /FI \"PID eq $pid\" /FO csv /NH |" ) or die "tasklist error" ;
+		while(<$fh>)
+		{
+			chomp( my $line = $_ ) ;
+			my ( $f_name , $f_pid ) = split( "," , $line ) ;
+			return ( $f_pid eq "\"$pid\"" ? 1 : 0 ) ;
+		}
+	}
 }
 
 1 ;

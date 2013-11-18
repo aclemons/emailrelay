@@ -242,9 +242,9 @@ std::string GSsl::Library::credit( const std::string & prefix , const std::strin
 
 GSsl::Context::Context( const std::string & pem_file , unsigned int flags )
 {
-	if( flags == 2U )
+	if( (flags&3U) == 2U )
 		m_ssl_ctx = SSL_CTX_new(SSLv23_method()) ;
-	else if( flags == 3U )
+	else if( (flags&3U) == 3U )
 		m_ssl_ctx = SSL_CTX_new(SSLv3_method()) ;
 	else
 		m_ssl_ctx = SSL_CTX_new(TLSv1_method()) ;

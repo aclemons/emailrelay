@@ -34,7 +34,9 @@
 # See also: man Net::Telnet
 #
 
+
 use strict ;
+die "emailrelay-test.pl: dont use msys perl" if $^O eq "msys" ;
 use Carp ;
 use FileHandle ;
 use Server ;
@@ -60,12 +62,22 @@ sub opt_keep_going { return exists $opts{'k'} }
 
 my $bin_dir = opt_bin_dir("../src/main") ;
 $Server::bin_dir = $bin_dir ;
+$Server::exe_name = System::unix() ? "emailrelay" : "emailrelay.exe" ;
 $System::bin_dir = $bin_dir ;
 
 my $run_all_ok = 1 ;
 
+sub requireUnix
+{
+	if( ! System::unix() )
+	{
+		die "skipped: not unix" ;
+	}
+}
+
 sub requireRoot
 {
+	# (typically called after requireUnix())
 	my $id = `id -u` ;
 	if( $id != 0 )
 	{
@@ -97,6 +109,7 @@ sub testServerShowsHelp
 	my %args = (
 		Help => 1 ,
 	) ;
+	requireUnix() ; # could do better
 	my $server = new Server() ;
 
 	# test help output
@@ -118,6 +131,7 @@ sub testServerStartsAndStops
 		PidFile => 1 ,
 		SpoolDir => 1 ,
 	) ;
+	requireUnix() ;
 	my $server = new Server() ;
 	Check::that( $server->canRun() , "cannot run: port(s) already open" ) ;
 
@@ -181,8 +195,8 @@ sub testSubmit
 	my $path = System::createSmallMessageFile() ;
 
 	# test that the submit utility works
-	my $rc = system( "$bin_dir/emailrelay-submit --from me\@here.local " .
-		"--spool-dir $spool_dir me\@there.local < $path" ) ;
+	my $cmd = "$bin_dir/emailrelay-submit --from me\@here.local --spool-dir $spool_dir me\@there.local < $path" ;
+	my $rc = system( $cmd ) ;
 	Check::that( $rc == 0 , "failed to submit" ) ;
 	Check::fileMatchCount( $spool_dir."/emailrelay.*.content" , 1 ) ;
 	Check::fileMatchCount( $spool_dir."/emailrelay.*.envelope" , 1 ) ;
@@ -206,6 +220,7 @@ sub testPasswd
 sub testSubmitPermissions
 {
 	# setup -- group-suid-daemon exe, group-daemon directory (requires world execute on all directories up to /)
+	requireUnix() ;
 	requireRoot() ;
 	my $exe = System::tempfile("submit","/tmp") ;
 	my $rc = system( "cp $bin_dir/emailrelay-submit $exe" ) ;
@@ -251,6 +266,7 @@ sub testServerIdentityRunningAsRoot
 		SpoolDir => 1 ,
 		User => 1 ,
 	) ;
+	requireUnix() ;
 	requireRoot() ;
 	my $server = new Server() ;
 	$server->run( \%args , "sudo " ) ;
@@ -279,6 +295,7 @@ sub testServerIdentityRunningSuidRoot
 		SpoolDir => 1 ,
 		User => 1 ,
 	) ;
+	requireUnix() ;
 	requireRoot() ;
 	my $server = new Server() ;
 	my $exe = System::tempfile("emailrelay") ;
@@ -354,6 +371,7 @@ sub testServerPermissions
 		Verbose => 1 ,
 		#Debug => 1 ,
 	) ;
+	requireUnix() ;
 	requireRoot() ;
 	my $server = new Server() ;
 	$server->run( \%args , "sudo " ) ;
@@ -444,7 +462,7 @@ sub testServerPopList
 	system( "chmod 700 ".$server->spoolDir() ) ;
 	system( "cd ".$server->spoolDir()."; ls -1 | xargs -r chmod 600" ) ;
 
-	# test that the pop client can log in and get a message list and that flow control was excercised
+	# test that the pop client can log in and get a message list and that flow control was exercised
 	Check::that( Port::isFree($server->smtpPort()) ) ;
 	Check::ok( $pop->open() , "cannot connect to pop port" ) ;
 	Check::ok( $pop->login( "me" , "secret" ) ) ;
@@ -865,10 +883,15 @@ sub testFilter
 	) ;
 	my $server = new Server() ;
 	my $outputfile = System::tempfile("output","/tmp") ; # writeable by daemon
-	Filter::create( $server->filter() , 
-		"echo \"\$\@\" | sed 's/^/arg: /' > $outputfile" ,
-		"env | sed 's/^/env: /' >> $outputfile" , 
-		"exit 0" ) ;
+	Filter::create( $server->filter() , {
+			unix => [
+				"echo \"\$\@\" | sed 's/^/arg: /' > $outputfile" ,
+				"env | sed 's/^/env: /' >> $outputfile" , 
+				"exit 0" ,
+			] ,
+			win32 => [
+			] ,
+		} ) ;
 	Check::ok( $server->run(\%args) ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	my $c = new SmtpClient( $server->smtpPort() ) ;
@@ -901,14 +924,20 @@ sub testFilterIdentity
 		PidFile => 1 ,
 		Filter => 1 ,
 	) ;
+	requireUnix() ;
 	requireRoot() ;
 	my $server = new Server() ;
 	Check::ok( $server->run(\%args) ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	my $outputfile = System::tempfile("output","/tmp") ;
-	Filter::create( $server->filter() , 
-		"cat /proc/self/status | fgrep id: | sed 's/^/proc: /' > $outputfile" , 
-		"exit 0" ) ;
+	Filter::create( $server->filter() , {
+			unix => [
+				"cat /proc/self/status | fgrep id: | sed 's/^/proc: /' > $outputfile" , 
+				"exit 0" ,
+			] ,
+			win32 => [
+			] ,
+		} ) ;
 	my $c = new SmtpClient( $server->smtpPort() ) ;
 	Check::ok( $c->open() ) ;
 
@@ -939,7 +968,16 @@ sub testFilterFailure
 	my $server = new Server() ;
 	Check::ok( $server->run(\%args) ) ;
 	Check::running( $server->pid() , $server->message() ) ;
-	Filter::create( $server->filter() , "echo aaa" , "echo '<<foo bar>> yy'" , "echo zzz" , "exit 3" ) ;
+	Filter::create( $server->filter() , {
+			unix => [
+				"echo aaa" , 
+				"echo '<<foo bar>> yy'" , 
+				"echo zzz" , 
+				"exit 3" ,
+			] ,
+			win32 => [
+			] ,
+		} ) ;
 	my $c = new SmtpClient( $server->smtpPort() ) ;
 	Check::ok( $c->open() ) ;
 
@@ -992,7 +1030,14 @@ sub _testFilterWithFileDeletion
 	Check::ok( $server_2->run(\%args) ) ;
 	Check::running( $server_1->pid() , $server_1->message() ) ;
 	Check::running( $server_2->pid() , $server_2->message() ) ;
-	Filter::create( $server_1->filter() , 'rm `dirname $1`/emailrelay.*' , "exit $exit_code" ) ;
+	Filter::create( $server_1->filter() , {
+			unix => [
+				'rm `dirname $1`/emailrelay.*' , 
+				"exit $exit_code" ,
+			] ,
+			win32 => [
+			] ,
+		} ) ;
 	my $c = new SmtpClient( $server_1->smtpPort() ) ;
 	Check::ok( $c->open() ) ;
 
@@ -1029,7 +1074,14 @@ sub testFilterPollTimeout
 	$server->set_pollTimeout(999) ;
 	Check::ok( $server->run(\%args) , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
-	Filter::create( $server->filter() , "exit 103" ) ;
+	Filter::create( $server->filter() , {
+			unix => [
+				"exit 103" ,
+			] ,
+			win32 => [
+				"exit 103" ,
+			] ,
+		} ) ;
 	my $c = new SmtpClient( $server->smtpPort() ) ;
 	Check::ok( $c->open() ) ;
 
@@ -1321,10 +1373,15 @@ sub testClientFilterPass
 	Check::running( $server_2->pid() , $server_2->message() ) ;
 	$server_1->set_dst("localhost:".$server_2->smtpPort()) ;
 	my $outputfile = System::tempfile("output","/tmp") ;
-	Filter::create( $server_1->clientFilter() , 
-		"echo \"\$\@\" | sed 's/^/arg: /' > $outputfile" ,
-		"env | sed 's/^/env: /' >> $outputfile" , 
-		"exit 0" ) ;
+	Filter::create( $server_1->clientFilter() , {
+			unix => [
+				"echo \"\$\@\" | sed 's/^/arg: /' > $outputfile" ,
+				"env | sed 's/^/env: /' >> $outputfile" , 
+				"exit 0" ,
+			] ,
+			win32 => [
+			] ,
+		} ) ;
 	Check::ok( $server_1->run(\%args) ) ;
 
 	# test that the client filter runs and the messages are forwarded
@@ -1374,7 +1431,15 @@ sub testClientFilterBlock
 	Check::running( $server_2->pid() , $server_2->message() ) ;
 	$server_1->set_dst("localhost:".$server_2->smtpPort()) ;
 	my $outputfile = System::tempfile("output","/tmp") ;
-	Filter::create( $server_1->clientFilter() , "echo '<<foo bar>>sldkfj'" , "echo a > $outputfile" , "exit 13" ) ;
+	Filter::create( $server_1->clientFilter() , {
+			unix => [
+				"echo '<<foo bar>>sldkfj'" , 
+				"echo a > $outputfile" , 
+				"exit 13" ,
+			] ,
+			win32 => [
+			] ,
+		} ) ;
 	Check::ok( $server_1->run(\%args) ) ;
 
 	# test that the client filter runs and the messages are failed

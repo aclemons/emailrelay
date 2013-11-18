@@ -46,7 +46,7 @@ sub fileEmpty
 {
 	my ( $path , $more ) = @_ ;
 	my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,$atime,$mtime,$ctime,$blksize,$blocks) = stat($path);
-	Check::that( -f $path && $size == 0 , "file not empty" , $path , $more ) ;
+	Check::that( -f $path && $size == 0 , "file missing or not empty" , $path , $more ) ;
 }
 
 sub fileExists
@@ -65,14 +65,14 @@ sub fileNotEmpty
 sub running
 {
 	my ( $pid , $more ) = @_ ;
-	my $n = defined($pid) ? kill(0,$pid) : -1 ;
+	my $n = defined($pid) ? System::processIsRunning($pid) : -1 ;
 	Check::that( $n == 1 , "process not running" , $pid , $more ) ;
 }
 
 sub notRunning
 {
 	my ( $pid , $more ) = @_ ;
-	my $n = kill 0 , $pid ;
+	my $n = System::processIsRunning($pid) ;
 	Check::that( $n == 0 , "process still running" , $pid , $more ) ;
 }
 

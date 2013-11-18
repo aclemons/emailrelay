@@ -242,7 +242,8 @@ EXTRA_DIST = \
 	SmtpClient.pm \
 	System.pm \
 	TestServer.pm \
-	Verifier.pm
+	Verifier.pm \
+	mingw.mak
 
 noinst_SCRIPTS = emailrelay-test.sh emailrelay-test.pl emailrelay-chain-test.sh emailrelay-soak-test.sh emailrelay-loop-test.sh
 CLEANFILES = $(noinst_SCRIPTS) $(noinst_PROGRAMS) .emailrelay-test-server.pid

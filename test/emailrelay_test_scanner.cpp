@@ -21,8 +21,8 @@
 //
 // usage: emailrelay-test-scanner [--log] [--debug] [--pid-file <pidfile>]
 //
-// Listens on port 10010. Each request is a filename and the
-// message file is treated as a mini script with commands of:
+// Listens on port 10020 by default. Each request is a filename and the message
+// file is treated as a mini script with commands of:
 //  * send [<string>]
 //  * sleep [<time>]
 //  * delete-content

@@ -99,9 +99,14 @@
 #include <iostream>
 #include <stdexcept>
 
-#if defined(QT_VERSION) && QT_VERSION >= 0x050000
 #ifdef G_WINDOWS
+#if defined(QT_VERSION) && QT_VERSION >= 0x050000
+#if G_QT_STATIC
+Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
+#else
 Q_IMPORT_PLUGIN(windows)
+Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
+#endif
 #endif
 #endif
 

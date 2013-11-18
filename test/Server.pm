@@ -31,6 +31,7 @@ package Server ;
 
 our @pid_list = () ;
 our $bin_dir = ".." ;
+our $exe_name = "emailrelay" ;
 
 sub new
 {
@@ -43,7 +44,7 @@ sub new
 	my $verifier_port = Verifier::port() ;
 
 	my %me = (
-		m_exe => "$bin_dir/emailrelay" ,
+		m_exe => "$bin_dir/$exe_name" ,
 		m_smtp_port => $smtp_port ,
 		m_pop_port => $pop_port ,
 		m_admin_port => $admin_port ,
@@ -224,6 +225,12 @@ sub run
 
 	$command_prefix = defined($command_prefix) ? $command_prefix : "" ;
 	$command_suffix = defined($command_suffix) ? $command_suffix : "" ;
+
+	if( ! System::unix() )
+	{
+		$command_prefix = "cmd /c \"start /D. $command_prefix" ;
+		$command_suffix = "$command_suffix \"" ;
+	}
 
 	my $command_switches = $this->_set_all(_switches(%$switches_ref)) ;
 	my $redirection = " >" . $this->stdout() . " 2>" . $this->stderr() ;

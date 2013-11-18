@@ -33,6 +33,7 @@
 #include "dir.h"
 #include "gfile.h"
 #include "gpath.h"
+#include "glog.h"
 #include <stdexcept>
 
 G::Path Dir::windows()
@@ -134,7 +135,8 @@ G::Path Dir::special( const std::string & type )
 		char buffer[MAX_PATH] = { 0 } ;
 		bool ok = TRUE == ::SHGetSpecialFolderPathA( NULL , buffer , special_id(type) , FALSE ) ;
 		std::string result = ok ? std::string(buffer) : std::string() ;
-		return result.empty() ? windows() : G::Path(result) ;
+		G::Path default_ = envPath("USERPROFILE",envPath("HOME")) ;
+		return result.empty() ? default_ : G::Path(result) ;
 	}
 }
 
