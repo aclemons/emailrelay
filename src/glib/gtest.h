@@ -37,8 +37,11 @@ namespace G
 class G::Test 
 {
 public:
+	static bool enabled() ;
+		///< Returns true if test features are enabled.
+
 	static bool enabled( const char * name ) ;
-		///< Returns true if the specified test feature should be enabled.
+		///< Returns true if the specified test feature is enabled.
 } ;
 
 #if ! defined(_DEBUG)

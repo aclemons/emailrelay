@@ -52,20 +52,21 @@ G::LogOutput::LogOutput( const std::string & prefix , bool enabled , bool summar
 	init() ;
 }
 
-G::LogOutput::LogOutput( bool enabled_and_summary , bool verbose_and_debug ) :
-	m_enabled(enabled_and_summary) ,
-	m_summary_log(enabled_and_summary) ,
-	m_verbose_log(verbose_and_debug) ,
-	m_debug(verbose_and_debug) ,
-	m_level(false) ,
-	m_strip(false) ,
-	m_syslog(false) ,
-	m_std_err(std::cerr) ,
-	m_facility(User) ,
-	m_time(0) ,
-	m_timestamp(false) ,
-	m_handle(0) ,
-	m_handle_set(false)
+G::LogOutput::LogOutput( bool enabled_and_summary , bool verbose_and_debug ,
+	const std::string & stderr_replacement ) :
+		m_enabled(enabled_and_summary) ,
+		m_summary_log(enabled_and_summary) ,
+		m_verbose_log(verbose_and_debug) ,
+		m_debug(verbose_and_debug) ,
+		m_level(false) ,
+		m_strip(false) ,
+		m_syslog(false) ,
+		m_std_err(err(stderr_replacement)) ,
+		m_facility(User) ,
+		m_time(0) ,
+		m_timestamp(false) ,
+		m_handle(0) ,
+		m_handle_set(false)
 {
 	if( pthis() == NULL )
 		pthis() = this ;

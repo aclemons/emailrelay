@@ -41,7 +41,10 @@ sub create
 	}
 	else
 	{
-		# TODO
+		for my $line ( @{$lines_spec->{win32}} )
+		{
+			print $file $line , "\n" ;
+		}
 	}
 }
 

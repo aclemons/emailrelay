@@ -30,11 +30,92 @@ use Check ;
 package System ;
 
 our $bin_dir = ".." ;
+our $verbose = 0 ;
+
+sub log_
+{
+	print STDERR "++++ ",join(" ",@_),"\n" if $verbose ;
+}
+
+sub linux
+{
+	# Returns true if running on linux.
+	return $^O eq 'linux' ;
+}
 
 sub unix
 {
 	# Returns true if running on a unix-like system.
-	return $^O eq 'linux' ; # TODO
+	return $^O eq 'linux' || $^O eq 'darwin' ; # TODO bsds
+}
+
+sub mac
+{
+	return $^O eq 'darwin' ;
+}
+
+sub _dot_exe
+{
+	return unix() ? "" : ".exe" ;
+}
+
+sub path
+{
+	return join( "/" , @_ ) ;
+}
+
+sub weirdpath
+{
+	my $p = path( @_ ) ;
+	if( !unix() ) { $p =~ s:/:\\:g }
+	return $p ;
+}
+
+sub exe
+{
+	return path( @_ ) . _dot_exe() ;
+}
+
+sub chmod_r
+{
+	my ( $dir , $chmod_arg_dir , $chmod_arg_file ) = @_ ;
+	$chmod_arg_dir ||= "700" ;
+	$chmod_arg_file ||= "600" ;
+	if( unix() )
+	{
+		my $xargs = mac() ? "xargs" : "xargs -r" ;
+		system( "chmod $chmod_arg_dir " . $dir ) ;
+		system( "cd $dir ; ls -1 | $xargs chmod $chmod_arg_file" ) ;
+	}
+}
+
+sub commandline
+{
+	my ( $command , $args_in ) = @_ ;
+
+	$args_in ||= {} ;
+	my %args = %$args_in ;
+	if(!exists($args{background})) {$args{background} = 0}
+	if(!defined($args{stdout})) {$args{stdout} = ""}
+	if(!defined($args{stderr})) {$args{stderr} = ""}
+	if(!defined($args{prefix})) {$args{prefix} = ""} # eg. "sudo -c bin"
+	if(!defined($args{gtest})) {$args{gtest} = ""}
+
+	my $stderr = $args{stderr} ;
+	if( $args{stdout} ne "" && $args{stdout} eq $args{stderr} )
+	{
+		$stderr = "&1" ;
+	}
+
+	return
+		( System::unix() ? "" : "cmd /c \"" ) .
+		( System::unix() || $args{gtest} eq "" ? "" : "set G_TEST=$args{gtest} && " ) .
+		( $args{background} && !System::unix() ? "start /D. " : "" ) .
+		$args{prefix} . $command . " " .
+		( $args{stdout} ? ">$args{stdout} " : "" ) .
+		( $args{stderr} && System::unix() ? "2>$stderr " : "" ) .
+		( System::unix() ? "" : "\"" ) .
+		( System::unix() && $args{background} ? "&" : "" ) ;
 }
 
 sub tempfile
@@ -52,7 +133,7 @@ sub createFile
 	# Creates a file, optionally containing one line of text.
 	my ( $path , $line ) = @_ ;
 	my $fh = new FileHandle( "> " . $path ) or die "cannot create [$path]" ;
-	if( defined($line) ) { print $fh $line , "\n" }
+	if( defined($line) ) { print $fh $line , unix() ? "\n" : "\r\n" }
 	$fh->close() or die "cannot write to [$path]" ;
 }
 
@@ -160,7 +241,7 @@ sub submitMessage
 	my ( $spool_dir , $tmp_dir , $n , @to ) = @_ ;
 	push @to , "me\@there.local" if( scalar(@to) == 0 ) ;
 	my $path = createMessageFile($tmp_dir,$n) ;
-	my $rc = system( "$bin_dir/emailrelay-submit --from me\@here.local " .
+	my $rc = system( weirdpath(exe($bin_dir,"emailrelay-submit")) . " --from me\@here.local " .
 		"--spool-dir $spool_dir " . join(" ",@to) . " < $path" ) ;
 	Check::that( $rc == 0 , "failed to submit" ) ;
 	unlink $path ;
@@ -179,6 +260,7 @@ sub submitMessages
 sub _proc
 {
 	my ( $pid , $re , $field ) = @_ ;
+	# TODO - non-linux *nixes
 	my $s = `cat /proc/$pid/status | fgrep $re | head -1` ;
 	chomp $s ;
 	my @part = split( /\s+/ , $s ) ;
@@ -241,6 +323,7 @@ sub drain
 	# Waits for files to disappear from a directory.
 	my ( $dir , $n , $sleep_time , $progress ) = @_ ;
 	$n = defined($n) ? $n : 10 ;
+	$n *= 5 if !unix() ;
 	$sleep_time = defined($sleep_time) ? $sleep_time : 1 ;
 	$progress = defined($progress) ? $progress : 1 ;
 	for( my $i = 0 ; $i < $n ; $i++ )
@@ -253,6 +336,47 @@ sub drain
 	return 0 ;
 }
 
+sub sleep_cs
+{
+	my ( $cs ) = @_ ;
+	$cs = defined($cs) ? $cs : 1 ;
+	select( undef , undef , undef , 0.01 * $cs ) ;
+}
+
+sub kill
+{
+	my ( $pid , $timeout_cs ) = @_ ;
+	$timeout_cs = defined($timeout_cs) ? $timeout_cs : 100 ;
+	return if( !defined($pid) || $pid <= 0 ) ;
+	if( unix() )
+	{
+		kill( 15 , $pid ) ;
+		sleep_cs( $timeout_cs ) ;
+		kill( 9 , $pid ) ;
+	}
+	else
+	{
+		kill( 15 , $pid ) ;
+		sleep_cs( $timeout_cs ) ;
+		system( "taskkill /PID $pid >NUL 2>&1" ) ;
+		sleep_cs( $timeout_cs ) ;
+		system( "taskkill /F /PID $pid >NUL 2>&1" ) ;
+	}
+}
+
+sub wait
+{
+	my ( $pid , $timeout_cs ) = @_ ;
+	for( my $i = 0 ; $i < $timeout_cs ; $i++ )
+	{
+		sleep_cs() ;
+		if( System::processIsRunning($pid) )
+		{
+			next
+		}
+	}
+}
+
 sub processIsRunning
 {
 	my ( $pid ) = @_ ;
@@ -262,15 +386,46 @@ sub processIsRunning
 	}
 	else
 	{
-		# windows
-		my $fh = new FileHandle( "tasklist /FI \"PID eq $pid\" /FO csv /NH |" ) or die "tasklist error" ;
+		if( defined($pid) && $pid > 0 )
+		{
+			my $fh = new FileHandle( "tasklist /FI \"PID eq $pid\" /FO csv /NH |" ) or 
+				die "tasklist error" ;
+			while(<$fh>)
+			{
+				chomp( my $line = $_ ) ;
+				my ( $f_name , $f_pid ) = split( "," , $line ) ;
+				return ( $f_pid eq "\"$pid\"" ? 1 : 0 ) ;
+			}
+		}
+		return 0 ;
+	}
+}
+
+sub killall
+{
+	my ( $match ) = @_ ;
+	if( System::unix() )
+	{
+		# TODO
+	}
+	else
+	{
+		my $fh = new FileHandle( "tasklist /NH /FO csv |" ) or die ;
 		while(<$fh>)
 		{
 			chomp( my $line = $_ ) ;
-			my ( $f_name , $f_pid ) = split( "," , $line ) ;
-			return ( $f_pid eq "\"$pid\"" ? 1 : 0 ) ;
+			next if $line eq "" ;
+			$line =~ s:["]::g ;
+			my ( $name , $pid ) = split( "," , $line ) ;
+			if( $name =~ m/^$match/ )
+			{
+				log_( "killing pid $pid ($name)" ) ;
+				system( "taskkill /F /PID $pid" ) ;
+			}
 		}
 	}
+
+
 }
 
 1 ;

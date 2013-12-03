@@ -15,12 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// gconnectiontable_win32.cc
+// gconnectionlookup_win32.cc
 //
 
 #include "gdef.h"
 #include "gnet.h"
-#include "gconnectiontable.h"
+#include "gconnectionlookup.h"
 #include "gsocket.h"
 #include "glog.h"
 
@@ -54,11 +54,11 @@
 	typedef BOOL (WINAPI *ConvertSidToStringSidAFn)( PSID , LPSTR * ) ;
 #endif
 
-class GNet::ConnectionTableImp 
+class GNet::ConnectionLookupImp 
 {
 public:
-	typedef GNet::ConnectionTable::Connection Connection ;
-	ConnectionTableImp() ;
+	typedef GNet::ConnectionLookup::Connection Connection ;
+	ConnectionLookupImp() ;
 	Connection find( GNet::Address local , GNet::Address peer ) ;
 	std::pair<std::string,std::string> lookup( PSID ) ;
 
@@ -69,36 +69,36 @@ private:
 
 // ==
 
-bool GNet::ConnectionTable::Connection::valid() const 
+bool GNet::ConnectionLookup::Connection::valid() const 
 {
 	return m_valid ;
 }
 
-std::string GNet::ConnectionTable::Connection::peerName() const
+std::string GNet::ConnectionLookup::Connection::peerName() const
 {
 	return m_peer_name ;
 }
 
 // ==
 
-GNet::ConnectionTable::ConnectionTable() :
-	m_imp(new ConnectionTableImp)
+GNet::ConnectionLookup::ConnectionLookup() :
+	m_imp(new ConnectionLookupImp)
 {
 }
 
-GNet::ConnectionTable::~ConnectionTable()
+GNet::ConnectionLookup::~ConnectionLookup()
 {
 	delete m_imp ;
 }
 
-GNet::ConnectionTable::Connection GNet::ConnectionTable::find( GNet::Address local , GNet::Address peer )
+GNet::ConnectionLookup::Connection GNet::ConnectionLookup::find( GNet::Address local , GNet::Address peer )
 {
 	return m_imp->find( local , peer ) ;
 }
 
 // ==
 
-GNet::ConnectionTableImp::ConnectionTableImp() :
+GNet::ConnectionLookupImp::ConnectionLookupImp() :
 	m_GetTcpTable2(0) ,
 	m_ConvertSidToStringSidA(0)
 {
@@ -106,13 +106,13 @@ GNet::ConnectionTableImp::ConnectionTableImp() :
 		HMODULE h = LoadLibraryA( "iphlpapi.dll" ) ;
 		if( h == NULL )
 		{
-			G_WARNING( "GNet::ConnectionTable::find: iphelper load library failed" ) ;
+			G_WARNING( "GNet::ConnectionLookup::find: iphelper load library failed" ) ;
 		}
 		else
 		{
 			m_GetTcpTable2 = reinterpret_cast<GetTcpTable2Fn>( GetProcAddress( h , "GetTcpTable2" ) ) ;
 			if( m_GetTcpTable2 == 0 )
-				G_WARNING( "GNet::ConnectionTable::find: no GetTcpTable2()" ) ;
+				G_WARNING( "GNet::ConnectionLookup::find: no GetTcpTable2()" ) ;
 			FreeLibrary( h ) ;
 		}
 	}
@@ -121,19 +121,19 @@ GNet::ConnectionTableImp::ConnectionTableImp() :
 		HMODULE h = LoadLibraryA( "advapi32.dll" ) ;
 		if( h == NULL )
 		{
-			G_WARNING( "GNet::ConnectionTable::find: advapi load library failed" ) ;
+			G_WARNING( "GNet::ConnectionLookup::find: advapi load library failed" ) ;
 		}
 		else
 		{
 			m_ConvertSidToStringSidA = reinterpret_cast<ConvertSidToStringSidAFn>( GetProcAddress( h , "ConvertSidToStringSidA" ) ) ;
 			if( m_ConvertSidToStringSidA == 0 )
-				G_WARNING( "GNet::ConnectionTable::find: no ConvertSidToStringSidA()" ) ;
+				G_WARNING( "GNet::ConnectionLookup::find: no ConvertSidToStringSidA()" ) ;
 			FreeLibrary( h ) ;
 		}
 	}
 }
 
-GNet::ConnectionTable::Connection GNet::ConnectionTableImp::find( GNet::Address local , GNet::Address peer )
+GNet::ConnectionLookup::Connection GNet::ConnectionLookupImp::find( GNet::Address local , GNet::Address peer )
 {
 	Connection invalid_connection ;
 	invalid_connection.m_valid = false ;
@@ -158,7 +158,7 @@ GNet::ConnectionTable::Connection GNet::ConnectionTableImp::find( GNet::Address 
 			remoteAddr = u_remote.specific.sin_addr.s_addr ;
 			remotePort = u_remote.specific.sin_port ;
 		}
-		G_DEBUG( "GNet::ConnectionTable::find: this connection: "
+		G_DEBUG( "GNet::ConnectionLookup::find: this connection: "
 			<< localAddr << ":" << ntohs(static_cast<g_uint16_t>(localPort)) << " "
 			<< remoteAddr << ":" << ntohs(static_cast<g_uint16_t>(remotePort)) ) ;
 	}
@@ -179,7 +179,7 @@ GNet::ConnectionTable::Connection GNet::ConnectionTableImp::find( GNet::Address 
 			DWORD rc = (*m_GetTcpTable2)( table , &n , FALSE ) ;
 			if( rc == NO_ERROR )
 			{
-				G_DEBUG( "GNet::ConnectionTable::find: " << table->dwNumEntries ) ;
+				G_DEBUG( "GNet::ConnectionLookup::find: " << table->dwNumEntries ) ;
 				for( DWORD i = 0 ; i < table->dwNumEntries ; i++ )
 				{
 					MIB_TCPROW2 * row = table->table + i ;
@@ -189,7 +189,7 @@ GNet::ConnectionTable::Connection GNet::ConnectionTableImp::find( GNet::Address 
 						row->dwLocalPort == remotePort ;
 					if( match )
 						pid = row->dwOwningPid ;
-					G_DEBUG( "GNet::ConnectionTable::find: " << row->dwState << " " 
+					G_DEBUG( "GNet::ConnectionLookup::find: " << row->dwState << " " 
 						<< row->dwLocalAddr << ":" << ntohs(static_cast<g_uint16_t>(row->dwLocalPort)) << " "
 						<< row->dwRemoteAddr << ":" << ntohs(static_cast<g_uint16_t>(row->dwRemotePort)) << " " 
 						<< row->dwOwningPid << (match?" <<==":"") ) ;
@@ -199,12 +199,12 @@ GNet::ConnectionTable::Connection GNet::ConnectionTableImp::find( GNet::Address 
 		}
 		else
 		{
-			G_DEBUG( "GNet::ConnectionTable::find: " << rc << " " << n ) ;
+			G_DEBUG( "GNet::ConnectionLookup::find: " << rc << " " << n ) ;
 		}
 	}
 	if( pid == 0 )
 	{
-		G_DEBUG( "GNet::ConnectionTable::find: no matching connection" ) ;
+		G_DEBUG( "GNet::ConnectionLookup::find: no matching connection" ) ;
 		return invalid_connection ;
 	}
 
@@ -217,11 +217,11 @@ GNet::ConnectionTable::Connection GNet::ConnectionTableImp::find( GNet::Address 
 			hprocess = OpenProcess( READ_CONTROL | PROCESS_QUERY_INFORMATION , FALSE , pid ) ;
 			if( hprocess == 0 )
 			{
-				G_DEBUG( "GNet::ConnectionTable::find: cannot get process handle for pid " << pid ) ;
+				G_DEBUG( "GNet::ConnectionLookup::find: cannot get process handle for pid " << pid ) ;
 			}
 			else if( 0 == OpenProcessToken( hprocess , TOKEN_QUERY , &access_token ) )
 			{
-				G_DEBUG( "GNet::ConnectionTable::find: cannot get access token for pid " << pid ) ;
+				G_DEBUG( "GNet::ConnectionLookup::find: cannot get access token for pid " << pid ) ;
 			}
 		}
 
@@ -232,7 +232,7 @@ GNet::ConnectionTable::Connection GNet::ConnectionTableImp::find( GNet::Address 
 			if( n == 0 )
 			{
 				DWORD e = GetLastError() ;
-				G_DEBUG( "GNet::ConnectionTable::find: cannot get token information for pid " << pid << " (" << e << ")" ) ;
+				G_DEBUG( "GNet::ConnectionLookup::find: cannot get token information for pid " << pid << " (" << e << ")" ) ;
 			}
 			else
 			{
@@ -241,7 +241,7 @@ GNet::ConnectionTable::Connection GNet::ConnectionTableImp::find( GNet::Address 
 				if( 0 == GetTokenInformation( access_token , TokenUser , info , n , &n ) )
 				{
 					DWORD e = GetLastError() ;
-					G_DEBUG( "GNet::ConnectionTable::find: cannot get token information for pid " << pid << " (" << e << ")" ) ;
+					G_DEBUG( "GNet::ConnectionLookup::find: cannot get token information for pid " << pid << " (" << e << ")" ) ;
 				}
 				else
 				{
@@ -281,12 +281,12 @@ GNet::ConnectionTable::Connection GNet::ConnectionTableImp::find( GNet::Address 
 	Connection connection ;
 	connection.m_valid = true ;
 	connection.m_peer_name = peer_name ;
-	G_LOG( "GNet::ConnectionTable::find: peer on port " << ntohs(static_cast<g_uint16_t>(remotePort)) << " is local: "
+	G_LOG( "GNet::ConnectionLookup::find: peer on port " << ntohs(static_cast<g_uint16_t>(remotePort)) << " is local: "
 		"pid " << pid << ": user " << peer_name ) ;
 	return connection ;
 }
 
-std::pair<std::string,std::string> GNet::ConnectionTableImp::lookup( PSID psid )
+std::pair<std::string,std::string> GNet::ConnectionLookupImp::lookup( PSID psid )
 {
 	std::string domain ;
 	std::string name ;
@@ -311,4 +311,4 @@ std::pair<std::string,std::string> GNet::ConnectionTableImp::lookup( PSID psid )
 	return std::make_pair( domain , name ) ;
 }
 
-/// \file gconnectiontable_win32.cpp
+/// \file gconnectionlookup_win32.cpp

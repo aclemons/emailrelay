@@ -242,6 +242,38 @@ changequote([,])
 	AC_SUBST(COMPILER_VERSION)
 ])
 
+dnl aclocal-check-zlib
+dnl
+dnl Defines HAVE_ZLIB in code and ZLIB_LIBS in makefiles
+dnl if zlib is available and enabled.
+dnl
+AC_DEFUN([WITH_ZLIB],
+if test "$with_zlib" != "no"
+then
+[AC_CACHE_CHECK([for zlib],[aclocal_cv_zlib],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[[#include <zlib.h>]])],
+		aclocal_cv_zlib=yes,
+		aclocal_cv_zlib=no )
+])
+    if test "$aclocal_cv_zlib" = "yes"
+	then
+		ZLIB_LIBS="-lz"
+		AC_DEFINE(HAVE_ZLIB,1,[Define to enable use of zlib])
+	else
+		if test "$with_zlib" = "yes"
+		then
+			AC_MSG_WARN([ignoring --with-zlib, check config.log and try setting CFLAGS])
+		fi
+		ZLIB_LIBS=""
+	fi
+else
+	ZLIB_LIBS=""
+fi
+AC_SUBST(ZLIB_LIBS)
+])
+
 dnl aclocal-check-qt4
 dnl
 dnl Sets the $MOC variable and MOC in makefiles to the moc
@@ -515,6 +547,7 @@ AC_DEFUN([ENABLE_MAC],
 dnl enable-testing
 dnl
 dnl The "--disable-testing" switch turns off make-check tests.
+dnl Eg. "make distcheck DISTCHECK_CONFIGURE_FLAGS=--disable-testing".
 dnl
 AC_DEFUN([ENABLE_TESTING],
 [
@@ -593,15 +626,18 @@ AM_CONDITIONAL(GLOB,test x$aclocal_use_glob = xyes)
 
 dnl enable-static-linking
 dnl
-dnl The "--enable-static-linking" makes a half-hearted
-dnl attempt at static linking. Only applicable to gcc.
+dnl The "--enable-static-linking" makes a half-hearted attempt
+dnl at static linking. Only applicable to gcc. 
+dnl
+dnl Note that statically-linked openssl may require a statically 
+dnl linked zlib so try using "SSL_LIBS=-lssl -lcrypto -lz".
 dnl
 AC_DEFUN([ENABLE_STATIC_LINKING],
 [
 	if test "$enable_static_linking" = "yes"
 	then
 		STATIC_START="-Xlinker -Bstatic"
-		STATIC_END="-Xlinker -Bdynamic -ldl"
+		STATIC_END="${ZLIB_LIBS} -Xlinker -Bdynamic -ldl"
 	else
 		STATIC_START=""
 		STATIC_END=""

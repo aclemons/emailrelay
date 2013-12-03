@@ -101,10 +101,7 @@
 
 #ifdef G_WINDOWS
 #if defined(QT_VERSION) && QT_VERSION >= 0x050000
-#if G_QT_STATIC
-Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
-#else
-Q_IMPORT_PLUGIN(windows)
+#ifdef G_QT_STATIC
 Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
 #endif
 #endif
@@ -200,6 +197,7 @@ int main( int argc , char * argv [] )
 			"N/no-help/dont show a help button//0//1|"
 			"i/as-install/install mode, as if payload present//0//1|"
 			"c/as-configure/configure mode, as if no payload present//0//1|"
+			"x/extract/extract files only//0//1|"
 			"w/write/configuration file for writing//1/file/1|"
 			"r/read/configuration file for reading//1/file/1|"
 			"p/pointer/directory pointer file//1/file/1|"
@@ -209,7 +207,7 @@ int main( int argc , char * argv [] )
 			// hidden...
 			"P/page/single page test//1/page-name/0|"
 			"m/mac/enable some mac-like runtime behaviour//0//0|"
-			"t/test/test-mode//0//0" ) ;
+			"t/test/test-mode 1 or 2//1/test-type/0" ) ;
 		if( getopt.hasErrors() )
 		{
 			std::ostringstream ss ;
@@ -238,7 +236,7 @@ int main( int argc , char * argv [] )
 		G_LOG( "main: start: " << argv[0] ) ;
 
 		// parse the commandline
-		bool test_mode = getopt.contains("test") ;
+		int test_mode = G::Str::toInt(getopt.contains("test")?getopt.value("test"):std::string(1U,'0')) ;
 		bool with_help = !getopt.contains("no-help") ;
 		std::string cfg_test_page = getopt.contains("page") ? getopt.value("page") : std::string() ;
 		G::Path cfg_read_file( getopt.contains("read") ? getopt.value("read") : std::string() ) ;
@@ -247,6 +245,7 @@ int main( int argc , char * argv [] )
 		bool cfg_as_mac = getopt.contains("mac") ;
 		bool cfg_install = getopt.contains("as-install") ;
 		bool cfg_configure = getopt.contains("as-configure") ;
+		bool cfg_extract = getopt.contains("extract") ;
 
 		try
 		{
@@ -258,12 +257,35 @@ int main( int argc , char * argv [] )
 				G::Unpack::isPacked(payload_1) ? payload_1 : (
 				G::Unpack::isPacked(payload_2) ? payload_2 : (
 				payload_3 ) ) ;
-			G_DEBUG( "main: packed files " << (G::Unpack::isPacked(payload)?"":"not ")
-				<< "found (" << payload << ")" ) ;
+			bool is_packed = G::Unpack::isPacked( payload ) ;
+			int packed_file_count = G::Unpack::fileCount(payload) ;
+			if( is_packed )
+				G_LOG( "main: found " << packed_file_count << " packed files in " << payload ) ;
+			else
+				G_DEBUG( "main: no payload (" << payload_1 << "," << payload_2 << "," << payload_3 << ")" ) ;
+			if( packed_file_count == 0 )
+				is_packed = false ;
+
+			// unpack only if requested
+			if( cfg_extract )
+			{
+				if( packed_file_count == 0 )
+					throw std::runtime_error(std::string()+"there is nothing to extract") ;
+				G::Unpack package( payload ) ;
+				package.unpack( G::Path(args.v(0)).dirname() ) ;
+				return 0 ;
+			}
 
 			// are we install-mode or configure-mode?
-			bool is_installing = ( cfg_install || G::Unpack::isPacked(payload) ) && !cfg_configure ;
-			bool is_installed = !is_installing ;
+			if( cfg_install && !is_packed )
+				throw std::runtime_error(std::string()+"cannot find a valid payload to install; "
+					"try moving a suitable payload file into the same directory as this executable, "
+					"or remove --as-install to run in configuration mode" ) ;
+			if( cfg_install && cfg_configure )
+				throw std::runtime_error(std::string()+"usage error; "
+					"you cannot use both --as-install and --as-configure" ) ;
+			bool is_installing = ( cfg_install || is_packed ) && !cfg_configure ;
+			bool is_installed = !is_installing ; // presumably
 
 			// set up a directory pointer map - start with o/s defaults and then override from the file
 			G::StringMap dir_map ;
@@ -298,7 +320,8 @@ int main( int argc , char * argv [] )
 				G::Path::join( dir_map["dir-config"] , "emailrelay.conf" ) :
 				cfg_write_file ;
 
-			// read the config file
+			// read the installed config file - allow for re-installing with
+			// preservation of some of the existing config
 			G::StringMap config_file_map ;
 			{
 				G_DEBUG( "main: read config file: " << config_file_in ) ;
@@ -328,7 +351,7 @@ int main( int argc , char * argv [] )
 
 			// initialise GPage
 			if( ! cfg_test_page.empty() || test_mode )
-				GPage::setTestMode() ;
+				GPage::setTestMode( test_mode ) ;
 
 			// check the config file will be writeable by ProgressPage
 			if( !config_file_out.str().empty() && !is_installing &&

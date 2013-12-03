@@ -4,6 +4,7 @@ E-MailRelay Change Log
 1.8.2 -> 1.9
 ------------
 * Added negotiated TLS/SSL for POP (ie. "STLS").
+* The first two fields in the secrets files are reordered (with backwards compatibility).
 * Added Linux-PAM authentication ("configure --with-pam" and then "--server-auth=/pam").
 * Optional protocol-specific "--interface" qualifiers, eg. "--interface smtp=127.0.0.1,pop=192.168.1.1".
 * Outgoing client connection bound with the first "--interface" or "--interface client=..." address.
@@ -21,7 +22,7 @@ E-MailRelay Change Log
 * Better support for Windows Vista and Windows 7.
 * Removed Windows "--icon" option.
 * Removed "--enable-fhs" option for "configure" (see INSTALL document for equivalent usage).
-* Added "--log-file" option to redirect stderr on Windows.
+* Added "--log-file" option to redirect stderr.
 * Added Windows "--peer-lookup" option.
 * Fix for MD5 code in 64-bit builds.
 

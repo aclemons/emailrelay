@@ -47,6 +47,10 @@ public:
 		///< Returns the connection's peer address.
 		///< Pair.first is false if none.
 
+	virtual std::string peerCertificate() const = 0 ;
+		///< Returns the connection peer's TLS certificate.
+		///< Returns the empty string if none.
+
 	virtual ~Connection() ;
 		///< Destructor.
 

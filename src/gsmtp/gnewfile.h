@@ -59,7 +59,7 @@ public:
 		///< Final override from GSmtp::NewMessage.
 
 	virtual std::string prepare( const std::string & auth_id , const std::string & peer_socket_address ,
-		const std::string & peer_socket_name ) ;
+		const std::string & peer_socket_name , const std::string & peer_certificate ) ;
 			///< Final override from GSmtp::NewMessage.
 			///<
 			///< The implementation flushes and closes the
@@ -106,10 +106,10 @@ private:
 	static bool isEightBit( const std::string & line ) ;
 	const std::string & crlf() const ;
 	bool saveEnvelope( const std::string & auth_id , const std::string & peer_socket_address ,
-		const std::string & peer_socket_name ) const ;
+		const std::string & peer_socket_name , const std::string & peer_certificate ) const ;
 	void writeEnvelope( std::ostream & , const std::string & where , 
 		const std::string & auth_id , const std::string & peer_socket_address ,
-		const std::string & peer_socket_name ) const ;
+		const std::string & peer_socket_name , const std::string & peer_certificate ) const ;
 	void deliver( const G::Strings & , const G::Path & , const G::Path & , const G::Path & ) ;
 } ;
 

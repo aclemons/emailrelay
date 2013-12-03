@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gssl.h"
+#include <utility>
 
 GSsl::Library * GSsl::Library::m_this = NULL ;
 
@@ -100,10 +101,9 @@ GSsl::Protocol::Result GSsl::Protocol::write( const char * , size_type , ssize_t
 	return Result_error ;
 }
 
-bool GSsl::Protocol::defaultHexdump()
+std::pair<std::string,bool> GSsl::Protocol::peerCertificate( int format )
 {
-	return false ;
+	return std::make_pair( std::string() , false ) ;
 }
-
 
 /// \file gssl_none.cpp

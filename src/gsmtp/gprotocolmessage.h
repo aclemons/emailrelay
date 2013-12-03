@@ -113,14 +113,14 @@ public:
 		///< Returns the setFrom() string.
 
 	virtual void process( const std::string & authenticated_client_id , const std::string & peer_socket_address ,
-		const std::string & peer_socket_name ) = 0 ;
+		const std::string & peer_socket_name , const std::string & peer_certificate ) = 0 ;
 			///< Starts asynchronous processing of the 
 			///< message. Once processing is complete the
 			///< message state is cleared and the doneSignal()
 			///< is raised. The signal may be raised before 
 			///< process() returns.
 			///<
-			///< The client-id parameter is used to propogate
+			///< The client-id parameter is used to propagate
 			///< authentication information from the SMTP
 			///< AUTH command into individual messages.
 			///< It is the empty string for unauthenticated

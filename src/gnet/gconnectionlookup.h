@@ -15,11 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gconnectiontable.h
+/// \file gconnectionlookup.h
 ///
 
-#ifndef G_CONNECTION_TABLE_H 
-#define G_CONNECTION_TABLE_H 
+#ifndef G_CONNECTION_LOOKUP_H
+#define G_CONNECTION_LOOKUP_H
 
 #include "gdef.h"
 #include "gnet.h"
@@ -29,19 +29,20 @@
 /// \namespace GNet
 namespace GNet
 {
-	class ConnectionTable ;
-	class ConnectionTableImp ;
+	class ConnectionLookup ;
+	class ConnectionLookupImp ;
 }
 
-/// \class GNet::ConnectionTable
-/// A class for getting more information about a connection.
-/// This is not implemented on all platforms. Currently the only extra
-/// information provided is the process-id of a local peer.
+/// \class GNet::ConnectionLookup
+/// A class for getting more information about a connection
+/// from the operating system. This is not implemented on all platforms.
+/// Currently the only extra information provided is the process-id of a
+/// local peer.
 ///
-class GNet::ConnectionTable 
+class GNet::ConnectionLookup 
 {
 public:
-	/// Holds information provided by GNet::ConnectionTable::find().
+	/// Holds information provided by GNet::ConnectionLookup::find().
 	struct Connection 
 	{
 		bool valid() const ;
@@ -50,22 +51,23 @@ public:
 		bool m_valid ;
 	} ;
 
-	ConnectionTable() ;
+	ConnectionLookup() ;
 		///< Constructor.
 
-	~ConnectionTable() ;
+	~ConnectionLookup() ;
 		///< Destructor.
 
 	Connection find( Address local , Address peer ) ;
-		///< Looks up the connection. Returns an invalid
+		///< Looks up the connection and returns the matching
+		///< Connection structure. Returns an in-valid()
 		///< Connection on error.
 
 private:
-	ConnectionTable( const ConnectionTable & ) ;
-	void operator=( const ConnectionTable & ) ;
+	ConnectionLookup( const ConnectionLookup & ) ;
+	void operator=( const ConnectionLookup & ) ;
 
 private:
-	ConnectionTableImp * m_imp ;
+	ConnectionLookupImp * m_imp ;
 } ;
 
 #endif

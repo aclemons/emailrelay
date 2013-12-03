@@ -34,7 +34,7 @@ sub new
 	my $server = defined($server) ? $server : "localhost" ;
 	my $port = defined($port) ? $port : 10025 ;
 
-	my $t = new Net::Telnet( Timeout=>3 , Prompt=>'/250 [^\r\n]+/' ) ;
+	my $t = new Net::Telnet( Timeout=>15 , Prompt=>'/250 [^\r\n]+/' ) ;
 	$t->binmode(0) ; # convert to '\r\n' on output
 
 	my %me = (

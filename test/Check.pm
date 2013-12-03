@@ -45,8 +45,11 @@ sub ok
 sub fileEmpty
 {
 	my ( $path , $more ) = @_ ;
-	my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,$atime,$mtime,$ctime,$blksize,$blocks) = stat($path);
-	Check::that( -f $path && $size == 0 , "file missing or not empty" , $path , $more ) ;
+	if( -f $path )
+	{
+		my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,$atime,$mtime,$ctime,$blksize,$blocks) = stat($path);
+		Check::that( $size == 0 , "file not empty" , $path , $more ) ;
+	}
 }
 
 sub fileExists
@@ -120,9 +123,9 @@ sub fileMode
 	Check::that( $mode == $mode_ , "unexpected file permissions" , $path , $mode."!=".$mode_ , $more ) ;
 }
 
-sub fileLineCount
+sub _fileLineCount
 {
-	my ( $path , $count , $string , $more ) = @_ ;
+	my ( $path , $string ) = @_ ;
 	my $f = new FileHandle( $path ) ;
 	my $n = 0 ;
 	while( <$f> )
@@ -131,7 +134,21 @@ sub fileLineCount
 		chomp $line ;
 		if( !defined($string) || $line =~ m/$string/ ) { $n++ }
 	}
+	return $n ;
+}
+
+sub fileLineCount
+{
+	my ( $path , $count , $string , $more ) = @_ ;
+	my $n = _fileLineCount( $path , $string ) ;
 	Check::that( $n == $count , "invalid matching line count" , $path , $n."!=".$count , $more ) ;
+}
+
+sub fileLineCountLessThan
+{
+	my ( $path , $count , $string , $more ) = @_ ;
+	my $n = _fileLineCount( $path , $string ) ;
+	Check::that( $n < $count , "invalid matching line count" , $path , $n."!<".$count , $more ) ;
 }
 
 sub allFilesContain

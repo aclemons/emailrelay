@@ -71,7 +71,7 @@ protected:
 	virtual void onDelete( const std::string & ) ; 
 		///< Final override from GNet::ServerPeer.
 
-	virtual void onSecure() ;
+	virtual void onSecure( const std::string & ) ;
 		///< Final override from GNet::SocketProtocolSink.
 
 private:

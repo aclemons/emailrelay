@@ -195,8 +195,8 @@ You will need to create the authentication secrets file ("emailrelay.auth" in
 this example) containing usernames and passwords. A simple example would look
 like this:
 
-	APOP server user1 password1
-	APOP server user2 password2
+	server APOP user1 password1
+	server APOP user2 password2
 
 It can sometimes be useful to serve up the same e-mail messages to multiple POP
 clients. For example, you might use several e-mail clients on your local network

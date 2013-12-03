@@ -15,40 +15,39 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// gnocheck_win32.cpp
+// gconnectionlookup_unix.cc
 //
 
 #include "gdef.h"
-#include "gnocheck.h"
-#include <cstdlib>
-#include <crtdbg.h>
+#include "gnet.h"
+#include "gconnectionlookup.h"
 
-class G::NoCheckImp 
+bool GNet::ConnectionLookup::Connection::valid() const 
 {
-public:
-	_invalid_parameter_handler m_h ;
-	int m_mode ;
-} ;
-
-namespace
-{
-	void local_handler( const wchar_t * , const wchar_t * , const wchar_t * , unsigned int , uintptr_t )
-	{
-	}
+	return false ;
 }
 
-G::NoCheck::NoCheck() :
-	m_imp(new NoCheckImp)
+std::string GNet::ConnectionLookup::Connection::peerName() const
 {
-	m_imp->m_h = _set_invalid_parameter_handler( local_handler ) ;
-	m_imp->m_mode = _CrtSetReportMode( _CRT_ASSERT , 0 ) ;
+	return std::string() ;
 }
 
-G::NoCheck::~NoCheck()
+// ==
+
+GNet::ConnectionLookup::ConnectionLookup() :
+	m_imp(NULL)
 {
-	_set_invalid_parameter_handler( m_imp->m_h ) ;
-	_CrtSetReportMode( _CRT_ASSERT , m_imp->m_mode ) ;
-	delete m_imp ;
 }
 
-/// \file gnocheck_win32.cpp
+GNet::ConnectionLookup::~ConnectionLookup()
+{
+}
+
+GNet::ConnectionLookup::Connection GNet::ConnectionLookup::find( GNet::Address , GNet::Address )
+{
+	// not implemented
+	Connection invalid_connection ;
+	invalid_connection.m_valid = false ;
+	return invalid_connection ;
+}
+/// \file gconnectionlookup_unix.cpp

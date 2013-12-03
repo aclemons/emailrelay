@@ -23,7 +23,7 @@ mk_sources=\
 	gbufferedserverpeer.cpp \
 	gclient.cpp \
 	gconnection.cpp \
-	gconnectiontable_win32.cpp \
+	gconnectionlookup_win32.cpp \
 	gdescriptor.cpp \
 	gdescriptor_win32.cpp \
 	geventhandler.cpp \

@@ -47,7 +47,7 @@ png_files_out=\
 	gsmtp-serverprotocol.png \
 	auth.png
 
-EXTRA_DIST = $(man_files_in) $(txt_files) $(html_files_in) $(css_files_in) $(png_files_in) $(png_files_thru) $(html_files_thru)
+EXTRA_DIST = $(man_files_in) $(txt_files) $(html_files_in) $(css_files_in) $(png_files_in) $(png_files_thru) $(html_files_thru) mingw.mak
 noinst_SCRIPTS = .dox .docbook
 man1_MANS = $(man_files_in)
 e_doc_DATA = $(txt_files) $(html_files_out) $(html_files_thru) $(css_files_out) $(png_files_out) $(png_files_thru) $(docbook_files_out)
@@ -88,7 +88,7 @@ tail.db: $(converter_mu2docbook)
 emailrelay.docbook: head.db tail.db userguide.db reference.db developer.db
 	cat head.db userguide.db reference.db developer.db tail.db > emailrelay.docbook
 
-.docbook: emailrelay.docbook
+.docbook: emailrelay.docbook $(png_files_out)
 	-xmlto -o docbook html emailrelay.docbook && touch .docbook && cp "$(top_srcdir)/doc/"*.png docbook/
 
 .dox:

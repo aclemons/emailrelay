@@ -46,7 +46,7 @@ public:
 		///< Adds a line of content. Returns false on overflow.
 
 	virtual std::string prepare( const std::string & auth_id , const std::string & peer_socket_address ,
-		const std::string & peer_socket_name ) = 0 ;
+		const std::string & peer_socket_name , const std::string & peer_certificate ) = 0 ;
 			///< Prepares to store the message in the message store.
 			///< Returns the location of the pre-commit()ed message.
 

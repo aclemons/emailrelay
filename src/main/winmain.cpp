@@ -58,7 +58,7 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_lin
 			return 1 ;
 		}
 
-		return 0 ;
+		return app.exitCode() ;
 	}
 	catch(...)
 	{

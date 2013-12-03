@@ -21,9 +21,11 @@
 #include "gdef.h"
 #include "glimits.h"
 #include "gnet.h"
+#include "gmonitor.h"
 #include "gtimer.h"
 #include "gssl.h"
 #include "gsocketprotocol.h"
+#include "gstr.h"
 #include "gtest.h"
 #include "gassert.h"
 #include "glog.h"
@@ -56,6 +58,7 @@ private:
 	GSsl::Protocol::size_type m_read_buffer_size ;
 	GSsl::Protocol::ssize_type m_read_buffer_n ;
 	Timer<SocketProtocolImp> m_secure_connection_timer ;
+	std::string m_peer_certificate ;
 
 public:
 	SocketProtocolImp( EventHandler & , SocketProtocol::Sink & , StreamSocket & , 
@@ -67,6 +70,7 @@ public:
 	void sslConnect() ;
 	void sslAccept() ;
 	bool sslEnabled() const ;
+	std::string peerCertificate() const ;
 
 private:
 	SocketProtocolImp( const SocketProtocolImp & ) ;
@@ -82,6 +86,8 @@ private:
 	bool sslSendImp() ;
 	void sslConnectImp() ;
 	void sslAcceptImp() ;
+	void logSecure( const std::string & ) const ;
+	void logCertificate( const std::string & , const std::string & ) const ;
 	void logFlowControlReleased() ;
 	void logFlowControlAsserted() ;
 	void logFlowControlReasserted() ;
@@ -241,8 +247,10 @@ void GNet::SocketProtocolImp::sslConnectImp()
 		m_state = State_idle ;
 		if( m_secure_connection_timeout != 0U )
 			m_secure_connection_timer.cancelTimer() ;
-		G_DEBUG( "SocketProtocolImp::sslConnectImp: calling onSecure" ) ;
-		m_sink.onSecure() ;
+		m_peer_certificate = m_ssl->peerCertificate().first ;
+		logSecure( m_peer_certificate ) ;
+		G_DEBUG( "SocketProtocolImp::sslConnectImp: calling onSecure: " << G::Str::printable(m_peer_certificate) ) ;
+		m_sink.onSecure( m_peer_certificate ) ;
 	}
 }
 
@@ -280,8 +288,10 @@ void GNet::SocketProtocolImp::sslAcceptImp()
 	{
 		m_socket.dropWriteHandler() ;
 		m_state = State_idle ;
-		G_DEBUG( "SocketProtocolImp::sslAcceptImp: calling onSecure" ) ;
-		m_sink.onSecure() ;
+		m_peer_certificate = m_ssl->peerCertificate().first ;
+		logSecure( m_peer_certificate ) ;
+		G_DEBUG( "SocketProtocolImp::sslAcceptImp: calling onSecure: " << G::Str::printable(m_peer_certificate) ) ;
+		m_sink.onSecure( m_peer_certificate ) ;
 	}
 }
 
@@ -450,6 +460,32 @@ bool GNet::SocketProtocolImp::failed() const
 	return m_failed ;
 }
 
+void GNet::SocketProtocolImp::logSecure( const std::string & certificate ) const
+{
+	std::pair<std::string,bool> rc( std::string() , false ) ;
+	if( GNet::Monitor::instance() )
+		rc = GNet::Monitor::instance()->findCertificate( certificate ) ;
+	if( rc.second ) // is new
+		logCertificate( rc.first , certificate ) ;
+
+	G_LOG( "GNet::SocketProtocolImp: tls/ssl protocol established with " 
+		<< m_socket.getPeerAddress().second.displayString() 
+		<< (rc.first.empty()?"":" certificate ") << rc.first ) ;
+}
+
+void GNet::SocketProtocolImp::logCertificate( const std::string & certid , const std::string & certificate ) const
+{
+	G::Strings lines ;
+	G::Str::splitIntoFields( certificate , lines , "\n" ) ;
+	for( G::Strings::iterator line_p = lines.begin() ; line_p != lines.end() ; ++line_p )
+	{
+		if( !(*line_p).empty() )
+		{
+			G_LOG( "GNet::SocketProtocolImp: certificate " << certid << ": " << *line_p ) ;
+		}
+	}
+}
+
 void GNet::SocketProtocolImp::logFlowControlAsserted()
 {
 	const bool log = G::Test::enabled("log-flow-control") ;
@@ -469,6 +505,11 @@ void GNet::SocketProtocolImp::logFlowControlReasserted()
 	const bool log = G::Test::enabled("log-flow-control") ;
 	if( log )
 		G_LOG( "GNet::SocketProtocolImp::send: @" << m_socket.asString() << ": flow control reasserted" ) ;
+}
+
+std::string GNet::SocketProtocolImp::peerCertificate() const
+{
+	return m_peer_certificate ;
 }
 
 // 
@@ -517,6 +558,11 @@ void GNet::SocketProtocol::sslAccept()
 bool GNet::SocketProtocol::sslEnabled() const
 {
 	return m_imp->sslEnabled() ;
+}
+
+std::string GNet::SocketProtocol::peerCertificate() const
+{
+	return m_imp->peerCertificate() ;
 }
 
 //

@@ -42,13 +42,13 @@ GNet::ServerPeer::ServerPeer( Server::PeerInfo peer_info ) :
 
 	m_socket->addReadHandler( *this ) ;
 	m_socket->addExceptionHandler( *this ) ;
-	if( Monitor::instance() ) Monitor::instance()->add(*this) ;
+	if( Monitor::instance() ) Monitor::instance()->addServerPeer(*this) ;
 }
 
 GNet::ServerPeer::~ServerPeer()
 {
 	G_DEBUG( "GNet::ServerPeer::dtor: [" << this << "]: fd " << logId() ) ;
-	if( Monitor::instance() ) Monitor::instance()->remove(*this) ;
+	if( Monitor::instance() ) Monitor::instance()->removeServerPeer(*this) ;
 	m_handle->reset() ;
 	m_socket->dropReadHandler() ;
 }
@@ -97,6 +97,11 @@ std::pair<bool,GNet::Address> GNet::ServerPeer::peerAddress() const
 	return std::pair<bool,Address>( true , m_address ) ;
 }
 
+std::string GNet::ServerPeer::peerCertificate() const
+{
+	return m_sp.peerCertificate() ;
+}
+
 void GNet::ServerPeer::onTimeout()
 {
 	doDeleteThis(1) ;
@@ -128,20 +133,20 @@ void GNet::ServerPeer::writeEvent()
 
 // ===
 
-GNet::Server::Server( unsigned int listening_port , ConnectionTable * connection_table ) :
-	m_connection_table(connection_table)
+GNet::Server::Server( unsigned int listening_port , ConnectionLookup * connection_lookup ) :
+	m_connection_lookup(connection_lookup)
 {
 	init( listening_port ) ;
 }
 
-GNet::Server::Server( const Address & listening_address , ConnectionTable * connection_table ) :
-	m_connection_table(connection_table)
+GNet::Server::Server( const Address & listening_address , ConnectionLookup * connection_lookup ) :
+	m_connection_lookup(connection_lookup)
 {
 	init( listening_address ) ;
 }
 
 GNet::Server::Server() :
-	m_connection_table(NULL) ,
+	m_connection_lookup(NULL) ,
 	m_cleaned_up(false)
 {
 }
@@ -274,12 +279,12 @@ void GNet::Server::accept( PeerInfo & peer_info )
 		throw AcceptError() ;
 
 	// optionally enrich the peer info
-	if( m_connection_table != NULL )
+	if( m_connection_lookup != NULL )
 	{
 		std::pair<bool,Address> local = peer_info.m_socket->getLocalAddress() ;
 		if( local.first )
 		{
-			ConnectionTable::Connection c = m_connection_table->find( local.second , peer_info.m_address ) ;
+			ConnectionLookup::Connection c = m_connection_lookup->find( local.second , peer_info.m_address ) ;
 			if( c.valid() )
 				peer_info.m_name = c.peerName() ;
 		}

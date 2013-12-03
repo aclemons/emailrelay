@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gnet.h"
 #include "gserver.h"
+#include "gconnectionlookup.h"
 #include <list>
 #include <utility> // std::pair<>
 
@@ -42,7 +43,7 @@ namespace GNet
 class GNet::MultiServerImp : public GNet::Server 
 {
 public:
-	MultiServerImp( MultiServer & ms , const Address & , ConnectionTable * ) ;
+	MultiServerImp( MultiServer & ms , const Address & , ConnectionLookup * ) ;
 		///< Constructor.
 
 	void cleanup() ;
@@ -125,11 +126,11 @@ public:
 		///< interfaces is empty then a single 'any' address
 		///< is returned.
 
-	MultiServer( const AddressList & address_list , bool use_connection_table ) ;
+	MultiServer( const AddressList & address_list , bool use_connection_lookup ) ;
 		///< Constructor. The server listens on on the
 		///< specific (local) interfaces.
 		///<
-		///< If use_connection_table is true then there
+		///< If use_connection_lookup is true then there
 		///< may be extra information available in the
 		///< Server::PeerInfo structures.
 		///< 
@@ -167,11 +168,11 @@ protected:
 private:
 	MultiServer( const MultiServer & ) ; // not implemented
 	void operator=( const MultiServer & ) ; // not implemented
-	void init( const Address & , ConnectionTable * ) ;
+	void init( const Address & , ConnectionLookup * ) ;
 
 private:
 	typedef std::list<MultiServerPtr> List ;
-	std::auto_ptr<GNet::ConnectionTable> m_connection_table ;
+	std::auto_ptr<GNet::ConnectionLookup> m_connection_lookup ;
 	List m_server_list ;
 } ;
 

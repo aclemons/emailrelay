@@ -6,5 +6,5 @@ OpenWRT
 The OpenWRT system provides an excellent framework for cross-compiling
 E-MailRelay to run on embedded systems.
 
-An OpenWRT Makefile for E-MailRelay can be found in the "extra/openwrt"
-directory.
+An OpenWRT Makefile for E-MailRelay can be found in the "extra/openwrt" 
+directory. Install it in the OpenWrt tree as package/emailrelay/Makefile.

@@ -118,9 +118,8 @@ void GSmtp::Client::preprocessorDone( bool ok )
 		ok || ignore_this || break_after ? std::string() : m_processor->text() ) ;
 }
 
-void GSmtp::Client::onSecure()
+void GSmtp::Client::onSecure( const std::string & certificate )
 {
-	G_LOG( "GSmtp::Client::onSecure: tls/ssl protocol established with " << peerAddress().second.displayString() ) ;
 	if( m_secure_tunnel )
 	{
 		doOnConnect() ;
@@ -128,6 +127,25 @@ void GSmtp::Client::onSecure()
 	else
 	{
 		m_protocol.secure() ;
+	}
+}
+
+void GSmtp::Client::logCertificate( const std::string & certificate )
+{
+	if( !certificate.empty() )
+	{
+		static std::string previous ;
+		if( certificate != previous )
+		{
+			previous = certificate ;
+			G::Strings lines ;
+			G::Str::splitIntoFields( certificate , lines , "\n" ) ;
+			for( G::Strings::iterator p = lines.begin() ; p != lines.end() ; ++p )
+			{
+				if( !(*p).empty() )
+					G_LOG( "GSmtp::Client: certificate: " << (*p) ) ;
+			}
+		}
 	}
 }
 

@@ -99,7 +99,8 @@ void GDialog::add( GPage * page )
 
 void GDialog::add()
 {
-	pageUpdated() ;
+	if( !empty() )
+		pageUpdated() ;
 }
 
 bool GDialog::empty() const

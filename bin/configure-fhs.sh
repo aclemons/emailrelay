@@ -31,10 +31,11 @@
 
 configure="./configure"
 if test ! -f "${configure}" ; then configure="../configure" ; fi
+if test ! -f "${configure}" ; then configure="../../configure" ; fi
 chmod +x "${configure}" 2> /dev/null
 
 ${configure} \
-    --prefix=/usr \
+	--prefix=/usr \
 	--localstatedir=/var \
 	--libexecdir=/usr/lib \
 	--sysconfdir=/etc \

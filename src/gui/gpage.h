@@ -86,8 +86,11 @@ public:
 		///< stream. Overrides should start by
 		///< calling this base-class implementation.
 
-	static void setTestMode() ;
-		///< Sets a test-mode.
+	static void setTestMode( int ) ;
+		///< Sets a test-mode. Typically this causes widgets
+		///< to be initialised in a way that helps with testing,
+		///< such as avoiding unnecessary clicks and visiting
+		///< every page.
 
 signals:
 	void pageUpdateSignal() ;
@@ -116,6 +119,7 @@ protected:
 	static std::string value( const QLineEdit * ) ;
 	static std::string value( const QComboBox * ) ;
 	bool testMode() const ;
+	int testModeValue() const ;
 	void dumpItem( std::ostream & , bool , const std::string & , const std::string & ) const ;
 	void dumpItem( std::ostream & , bool , const std::string & , const G::Path & value ) const ;
 	static QString qstr( const std::string & ansi ) ;
@@ -130,7 +134,7 @@ private:
 	std::string m_next_2 ;
 	bool m_finish_button ;
 	bool m_close_button ;
-	static bool m_test_mode ;
+	static int m_test_mode ;
 } ;
 
 #endif

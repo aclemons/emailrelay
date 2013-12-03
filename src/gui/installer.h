@@ -36,9 +36,8 @@ class Installer
 {
 public:
 	Installer( G::Path argv0 , G::Path payload , bool install_mode ) ;
-		///< Constructor. Initialise with start().
-		///< Normally the argv0 and payload paths
-		///< are the same.
+		///< Constructor. Initialise with start(). The argv0 and 
+		///< payload paths can be the same.
 
 	~Installer() ;
 		///< Destructor.

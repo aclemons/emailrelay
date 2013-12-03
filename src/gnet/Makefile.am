@@ -27,7 +27,7 @@ EXTRA_DIST=\
 	$(DNS_EXTRA_DIST) \
 	gaddress_ipv4.cpp \
 	gaddress_ipv6.cpp \
-	gconnectiontable_win32.cpp \
+	gconnectionlookup_win32.cpp \
     gdescriptor_win32.cpp \
     geventloop_win32.cpp \
     glocal_win32.cpp \
@@ -54,8 +54,8 @@ libgnet_a_SOURCES = \
 	gclient.h \
 	gconnection.cpp \
 	gconnection.h \
-	gconnectiontable.h \
-	gconnectiontable_unix.cpp \
+	gconnectionlookup.h \
+	gconnectionlookup_unix.cpp \
 	gdescriptor.cpp \
 	gdescriptor.h \
 	gdescriptor_unix.cpp \

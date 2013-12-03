@@ -24,10 +24,10 @@
 #include "gdef.h"
 #include "gslot.h"
 #include "gnet.h"
+#include "gconnection.h"
 #include "gnoncopyable.h"
-#include "gclient.h"
-#include "gserver.h"
 #include <iostream>
+#include <utility>
 
 /// \namespace GNet
 namespace GNet
@@ -52,31 +52,35 @@ public:
 	static Monitor * instance() ;
 		///< Returns the singleton pointer. Returns null if none.
 
-	void add( const SimpleClient & client ) ;
-		///< Adds a client.
+	void addClient( const Connection & simple_client ) ;
+		///< Adds a client connection.
 
-	void remove( const SimpleClient & client ) ;
-		///< Removes a client.
+	void removeClient( const Connection & simple_client ) ;
+		///< Removes a client connection.
 
-	void add( const ServerPeer & peer ) ;
-		///< Adds a server peer.
+	void addServerPeer( const Connection & server_peer ) ;
+		///< Adds a server connection.
 
-	void remove( const ServerPeer & peer ) ;
-		///< Removes a server peer.
+	void removeServerPeer( const Connection & server_peer ) ;
+		///< Removes a server connection.
 
-	void report( std::ostream & stream , 
-		const std::string & line_prefix = std::string() , 
-		const std::string & eol = std::string("\n") ) ;
+	void report( std::ostream & stream ,
+		const std::string & line_prefix = std::string() ,
+		const std::string & eol = std::string("\n") ) const ;
 			///< Reports itself onto a stream.
+
+	std::pair<std::string,bool> findCertificate( const std::string & certificate ) ;
+		///< Returns a short id for the given certificate and a boolean
+		///< flag to indicate if it is a new certificate id that has 
+		///< not been returned before.
 
 	G::Signal2<std::string,std::string> & signal() ;
 		///< Provides a callback signal which can be connect()ed
 		///< to a slot.
 		///<
-		///< The signal emits events with two
-		///< string parameters: the first
-		///< is "in" or "out", and the second
-		///< is "start" or "stop".
+		///< The signal emits events with two string parameters: 
+		///< the first is "in" or "out", and the second is 
+		///< "start" or "stop".
 
 private:
 	static Monitor * & pthis() ;

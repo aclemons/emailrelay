@@ -82,7 +82,7 @@ void GSmtp::AdminServerPeer::onDelete( const std::string & reason )
 		<< peerAddress().second.displayString() ) ;
 }
 
-void GSmtp::AdminServerPeer::onSecure()
+void GSmtp::AdminServerPeer::onSecure( const std::string & )
 {
 }
 

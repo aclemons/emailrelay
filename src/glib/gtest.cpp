@@ -42,4 +42,13 @@ bool G::Test::enabled( const char * name )
 	return result ;
 }
 #endif
+
+bool G::Test::enabled()
+{
+#if defined(_DEBUG)
+	return true ;
+#else
+	return false ;
+#endif
+}
 /// \file gtest.cpp

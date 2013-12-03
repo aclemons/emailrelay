@@ -23,6 +23,7 @@
 #include "gstr.h"
 #include "gconvert.h"
 #include "gpath.h"
+#include "gprocess.h"
 #include "gdatetime.h"
 #include "gdate.h"
 #include "gtime.h"
@@ -197,6 +198,7 @@ void MapFile::backup( const G::Path & path )
 	G::DateTime::BrokenDownTime now = G::DateTime::local( G::DateTime::now() ) ;
 	std::string timestamp = G::Date(now).string(G::Date::yyyy_mm_dd) + G::Time(now).hhmmss() ;
 	G::Path backup( path.dirname() , path.basename() + "." + timestamp ) ;
+	G::Process::Umask umask( G::Process::Umask::Tightest ) ;
 	G::File::copy( path , backup , G::File::NoThrow() ) ;
 }
 

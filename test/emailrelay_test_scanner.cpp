@@ -19,7 +19,7 @@
 //
 // A dummy network processor for testing "emailrelay --filter net:<host>:<port>".
 //
-// usage: emailrelay-test-scanner [--log] [--debug] [--pid-file <pidfile>]
+// usage: emailrelay-test-scanner [--log] [--log-file <file>] [--debug] [--pid-file <pidfile>]
 //
 // Listens on port 10020 by default. Each request is a filename and the message
 // file is treated as a mini script with commands of:
@@ -60,7 +60,7 @@ public:
 private:	
 	virtual void onDelete( const std::string & ) ;
 	virtual void onData( const char * , GNet::ServerPeer::size_type ) ;
-	virtual void onSecure() ;
+	virtual void onSecure( const std::string & ) ;
 	virtual void onSendComplete() ;
 	void process() ;
 	bool processFile( std::string ) ;
@@ -79,7 +79,7 @@ void Main::ScannerPeer::onDelete( const std::string & )
 	G_LOG_S( "ScannerPeer::onDelete: disconnected" ) ;
 }
 
-void Main::ScannerPeer::onSecure()
+void Main::ScannerPeer::onSecure( const std::string & )
 {
 }
 
@@ -216,6 +216,7 @@ GNet::ServerPeer * Main::Scanner::newPeer( GNet::Server::PeerInfo info )
 static int run( unsigned int port )
 {
 	std::auto_ptr<GNet::EventLoop> loop( GNet::EventLoop::create() ) ;
+	loop->init() ;
 	GNet::TimerList timer_list ;
 	Main::Scanner scanner( port ) ;
 	loop->run() ;
@@ -229,6 +230,7 @@ int main( int argc , char * argv [] )
 		G::Arg arg( argc , argv ) ;
 		bool log = arg.remove("--log") ;
 		bool debug = arg.remove("--debug") ;
+		std::string log_file = arg.index("--log-file",1U) ? arg.v(arg.index("--log-file",1U)+1U) : std::string() ;
 		unsigned int port = arg.index("--port",1U) ? G::Str::toUInt(arg.v(arg.index("--port",1U)+1U)) : 10020U ;
 		std::string pid_file = arg.index("--pid-file",1U) ? arg.v(arg.index("--pid-file",1U)+1U) : std::string() ;
 
@@ -238,7 +240,7 @@ int main( int argc , char * argv [] )
 			file << G::Process::Id().str() << std::endl ;
 		}
 
-		G::LogOutput log_output( log , debug ) ;
+		G::LogOutput log_output( log , debug , log_file ) ;
 		int rc = run( port ) ;
 		std::cout << "done" << std::endl ;
 		return rc ;

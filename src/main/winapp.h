@@ -61,11 +61,14 @@ public:
 	void init( const Main::Configuration & cfg ) ;
 		///< Initialises the object after construction.
 
+	int exitCode() const ;
+		///< Returns an exit code.
+
 	void disableOutput() ;
 		///< Disables subsequent calls to output().
 
-	void output( const std::string & message , bool error ) ;
-		///< Puts up a message box. See Main::Output.
+	virtual void output( const std::string & message , bool error ) ;
+		///< Puts up a message box. Override from Main::Output.
 
 	void onError( const std::string & message ) ;
 		///< To be called when WinMain() catches an exception.
@@ -108,6 +111,7 @@ private:
 	bool m_quit ;
 	bool m_use_tray ;
 	bool m_hidden ;
+	int m_exit_code ;
 } ;
 
 #endif

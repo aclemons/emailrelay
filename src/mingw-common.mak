@@ -44,7 +44,7 @@
 mk_ssl=none
 ##
 ## "mk_openssl" points to the openssl directory (for openssl build)
-mk_openssl=c:/openssl-1.0.1c
+mk_openssl=c:/openssl-1.0.1e
 ##
 ## "mk_gui" is set to "gui" to enable the GUI build, or "none"
 mk_gui=none
@@ -58,12 +58,21 @@ mk_zlib=$(mk_qt)/src/3rdparty/zlib
 ## "mk_mingw" points to a directory containing the mingw runtime dll (for gui build)
 mk_mingw=$(mk_qt)/bin
 ##
+## choose debug or release build ...
+mk_includes=$(mk_includes_common) $(mk_includes_release) $(mk_includes_extra)
+mk_defines=$(mk_defines_release) $(mk_defines_extra)
+mk_cpp_flags=$(mk_defines) $(mk_includes) $(mk_cpp_flags_extra)
+mk_cc_flags=$(mk_cc_flags_common) $(mk_cc_flags_release) $(mk_cc_flags_extra)
+mk_ccc_flags=$(mk_ccc_flags_common) $(mk_ccc_flags_release) $(mk_ccc_flags_extra)
+mk_link_flags=$(mk_link_flags_common) $(mk_link_flags_release) $(mk_link_flags_extra)
+##
 ###
 
 ifeq ("$(mk_ssl)","openssl")
 mk_ssl_libs=$(mk_openssl)/libssl.a $(mk_openssl)/libcrypto.a
 endif
 
+mk_src_dir=..
 mk_ar=ar rc
 mk_rc=$(mk_bin)windres
 mk_rm_f=rm -f
@@ -85,17 +94,9 @@ mk_link_flags_debug=-g $(mk_link_flags_debug_extra)
 mk_defines_common=-DG_WIN32 -DG_MINGW -DUNICODE -D_UNICODE
 mk_defines_release=$(mk_defines_common) $(mk_defines_release_extra)
 mk_defines_debug=$(mk_defines_common) -D_DEBUG $(mk_defines_debug_extra)
-mk_includes_common=-I../glib -I../gssl -I../gnet -I../gauth -I../gsmtp -I../gpop -I../win32
+mk_includes_common=-I$(mk_src_dir)/glib -I$(mk_src_dir)/gssl -I$(mk_src_dir)/gnet -I$(mk_src_dir)/gauth -I$(mk_src_dir)/gsmtp -I$(mk_src_dir)/gpop -I$(mk_src_dir)/win32
 mk_includes_release=$(mk_includes_release_extra)
 mk_includes_debug=$(mk_includes_debug_extra)
-
-# choose debug or release build in this section...
-mk_includes=$(mk_includes_common) $(mk_includes_release) $(mk_includes_extra)
-mk_defines=$(mk_defines_release) $(mk_defines_extra)
-mk_cpp_flags=$(mk_defines) $(mk_includes) $(mk_cpp_flags_extra)
-mk_cc_flags=$(mk_cc_flags_common) $(mk_cc_flags_release) $(mk_cc_flags_extra)
-mk_ccc_flags=$(mk_ccc_flags_common) $(mk_ccc_flags_release) $(mk_ccc_flags_extra)
-mk_link_flags=$(mk_link_flags_common) $(mk_link_flags_release) $(mk_link_flags_extra)
 
 .SUFFIXES: .rc .i
 .PHONY: clean _clean _all

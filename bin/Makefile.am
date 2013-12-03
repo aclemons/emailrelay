@@ -45,6 +45,8 @@ EXTRA_DIST = \
 	make-setup.sh_ \
 	make-qt-enabled.sh_ \
 	make-bundle.sh_ \
+	configure-dev.sh \
+	configure-fhs.sh \
 	configure-mac.sh \
 	startup-mac.plist
 

@@ -114,7 +114,7 @@ public:
 		///< The string is expected to be CR-LF terminated.
 		///< Throws ProtocolDone at the end of the protocol.
 
-	void secure() ;
+	void secure( const std::string & certificate ) ;
 		///< To be called when the transport protocol goes 
 		///< into secure mode.
 
@@ -256,6 +256,7 @@ private:
 	std::string m_smtp_peer_name ;
 	bool m_authenticated ;
 	bool m_secure ;
+	std::string m_certificate ;
 	std::auto_ptr<GAuth::SaslServer> m_sasl ;
 	bool m_with_vrfy ;
 	bool m_with_ssl ;

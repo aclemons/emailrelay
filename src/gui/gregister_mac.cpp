@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// gregister_unix.cpp
+// gregister_mac.cpp
 //
 
 #include "gdef.h"

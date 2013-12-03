@@ -20,14 +20,9 @@
 
 #include "gdef.h"
 #include "garg.h"
-#include "gfile.h"
-#include "genvironment.h"
 
 void G::Arg::setExe()
 {
-	std::string p = G::Environment::get( "_" , std::string() ) ;
-	if( !p.empty() && G::File::exists(p) )
-		m_array[0] = p ;
 }
 
 /// \file garg_mac.cpp

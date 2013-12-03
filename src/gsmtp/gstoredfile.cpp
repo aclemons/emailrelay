@@ -102,7 +102,10 @@ void GSmtp::StoredFile::readEnvelopeCore( bool check )
 	readAuthentication( stream ) ;
 	readClientSocketAddress( stream ) ;
 	if( m_format == FileStore::format() )
+	{
 		readClientSocketName( stream ) ;
+		readClientCertificate( stream ) ;
+	}
 	readEnd( stream ) ;
 
 	if( check && m_to_remote.size() == 0U )
@@ -175,6 +178,11 @@ void GSmtp::StoredFile::readClientSocketAddress( std::istream & stream )
 void GSmtp::StoredFile::readClientSocketName( std::istream & stream )
 {
 	m_client_socket_name = G::Xtext::decode(value(getline(stream),"ClientName")) ;
+}
+
+void GSmtp::StoredFile::readClientCertificate( std::istream & stream )
+{
+	m_client_certificate = G::Xtext::decode(value(getline(stream),"ClientCertificate")) ;
 }
 
 void GSmtp::StoredFile::readEnd( std::istream & stream )
@@ -345,14 +353,19 @@ G::Path GSmtp::StoredFile::badPath( G::Path busy_path )
 
 void GSmtp::StoredFile::destroy()
 {
-	FileWriter claim_writer ;
 	G_LOG( "GSmtp::StoredMessage: deleting file: \"" << m_envelope_path.basename() << "\"" ) ;
-	G::File::remove( m_envelope_path , G::File::NoThrow() ) ;
+	{
+		FileWriter claim_writer ;
+		G::File::remove( m_envelope_path , G::File::NoThrow() ) ;
+	}
 
 	G::Path content_path = contentPath() ;
 	G_LOG( "GSmtp::StoredMessage: deleting file: \"" << content_path.basename() << "\"" ) ;
 	m_content <<= 0 ; // close it first (but not much good if it's been extracted already)
-	G::File::remove( content_path , G::File::NoThrow() ) ;
+	{
+		FileWriter claim_writer ;
+		G::File::remove( content_path , G::File::NoThrow() ) ;
+	}
 }
 
 const std::string & GSmtp::StoredFile::from() const 

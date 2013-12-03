@@ -24,11 +24,11 @@
 #
 
 # test for perl
-perl -e "use Carp; use FileHandle; use Getopt::Std; use Net::Telnet; use List::Util; exit(99);" 2>/dev/null
+perl -e "use Carp; use FileHandle; use Getopt::Std; use Net::Telnet; exit(99);" 2>/dev/null
 rc=$?
 if test $rc -ne 99
 then
-	echo `basename $0`: no perl or missing perl modules: for ubuntu try installing libnet-telnet-perl >&2
+	echo `basename $0`: no perl or missing perl modules: for ubuntu try installing libnet-telnet-perl or use cpan to install Net::Telnet >&2
 	echo `basename $0`: succeeding trivially >&2
 	exit 0
 fi

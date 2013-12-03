@@ -145,6 +145,7 @@ STATIC_END = @STATIC_END@
 STATIC_START = @STATIC_START@
 STRIP = @STRIP@
 VERSION = @VERSION@
+ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -199,8 +200,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @PAM_FALSE@e_pam_DATA = 
 @PAM_TRUE@e_pam_DATA = emailrelay
-EXTRA_DIST = emailrelay.conf.template emailrelay.pam
-e_sysconf_DATA = emailrelay.conf.template
+EXTRA_DIST = emailrelay.conf.template emailrelay.auth.template emailrelay.pam
+e_sysconf_DATA = emailrelay.conf.template emailrelay.auth.template
 all: all-am
 
 .SUFFIXES:
@@ -344,8 +345,6 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@INSTALL_HOOK_FALSE@install-data-hook:
-@INSTALL_HOOK_FALSE@uninstall-hook:
 clean: clean-am
 
 clean-am: clean-generic clean-local mostlyclean-am
@@ -436,14 +435,22 @@ emailrelay: emailrelay.pam
 clean-local:
 	-rm -f emailrelay 2>/dev/null
 
-# if there is no .conf file then create it from the .conf.template
-# with directory edits - dont use this when running configure
-# for building a .deb or .rpm package
+# create the .conf file from .conf.template with directory edits - dont 
+# use this when running configure for building a .deb or .rpm package
 @INSTALL_HOOK_TRUE@install-data-hook:
 @INSTALL_HOOK_TRUE@	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else cat "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" | sed "s:^#spool-dir .*:spool-dir $(e_spooldir):g" | sed 's:"/var/spool/emailrelay":"'"$(e_spooldir)"'":g' | sed "s:/etc:$(e_sysconfdir):g" | sed "s:/usr/local/bin:$(e_libexecdir):g" > "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; sum < "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" | sed 's/^/# Checksum: /' >> "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
 
+# remove the .conf file if it has not been editied
 @INSTALL_HOOK_TRUE@uninstall-hook:
 @INSTALL_HOOK_TRUE@	-if grep -q "Checksum: `grep -v Checksum: $(DESTDIR)$(e_sysconfdir)/emailrelay.conf | sum`" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
+
+# if there is no .conf file then copy it from .conf.template
+@INSTALL_HOOK_FALSE@install-data-hook:
+@INSTALL_HOOK_FALSE@	test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" || cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf"
+
+# remove the .conf file - the .conf.template has been deleted when this runs
+@INSTALL_HOOK_FALSE@uninstall-hook:
+@INSTALL_HOOK_FALSE@	-rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf"
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

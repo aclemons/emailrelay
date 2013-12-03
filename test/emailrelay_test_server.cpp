@@ -70,7 +70,7 @@ public:
 	virtual void onDelete( const std::string & ) ;
 	virtual void onSendComplete() ;
 	virtual bool onReceive( const std::string & ) ;
-	virtual void onSecure() ;
+	virtual void onSecure( const std::string & ) ;
 	void tx( const std::string & ) ;
 	Config m_config ;
 	bool m_in_data ;
@@ -121,7 +121,7 @@ void Peer::onSendComplete()
 {
 }
 
-void Peer::onSecure()
+void Peer::onSecure( const std::string & )
 {
 }
 
@@ -243,7 +243,8 @@ int main( int argc , char * argv [] )
 		int fail_at = arg.contains("--fail-at",1U) ? G::Str::toInt(arg.v(arg.index("--fail-at",1U)+1U)) : -1 ;
 		unsigned int port = arg.contains("--port",1U) ? G::Str::toUInt(arg.v(arg.index("--port",1U)+1U)) : 10025U ;
 
-		std::string pid_file_name = std::string(".") + G::Path(arg.v(0)).basename() + ".pid" ;
+		G::Path argv0 = G::Path(arg.v(0)).basename() ; argv0.removeExtension() ;
+		std::string pid_file_name = std::string(".") + argv0.str() + ".pid" ;
 		{
 			std::ofstream pid_file( pid_file_name.c_str() ) ;
 			pid_file << G::Process::Id().str() << std::endl ;
@@ -251,6 +252,7 @@ int main( int argc , char * argv [] )
 
 		G::LogOutput log( "" , !quiet , !quiet , false , false , true , false , true , false ) ;
 		GNet::EventLoop * loop = GNet::EventLoop::create() ;
+		loop->init();
 		GNet::TimerList timer_list ;
 		Server server( Config(port,auth_foo_bar,auth_login,auth_plain,auth_ok,fail_at,tls,quiet) ) ;
 

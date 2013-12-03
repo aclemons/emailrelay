@@ -17,6 +17,42 @@
 #
 # Makefile.am
 #
+# Builds emailrelay-gui.real and a no-install "pack" utility (amoungst
+# other things).
+#
+# The following additional targets can be used for packaging:
+#
+# payload
+#
+#	Builds the payload file ("payload") by pack-ing the all stuff that
+#	needs to be installed. The emailrelay-gui.real installer looks for
+#	this if it does not have its own payload packed on the end.
+#
+#	The stuff to be installed comes from running "make install" into
+#	a temporary directory. Use "make MAKE_SETUP_DEBUG=-d payload" to
+#	stop the temporary directory getting cleaned up.
+#
+# emailrelay-setup
+#
+#	Builds a self-extracting setup program ("emailrelay-setup") from
+#	emailrelay-gui.real with the payload stuff packed on the end.
+#
+# univeral (pseudo-target) [Mac]
+#
+#	Overwrites makefile-built binaries with out-of-tree ones. Typically
+#	used on Mac OS X after doing an xcode build of universal binaries.
+#
+# setup-bundle (pseudo-target) [Mac]
+#
+#	Assembles the install bundle ("E-MailRelay-Install.app/"). Calls
+#	bin/make-bundle.sh to create the directory structure and the
+#	plist file.
+#
+# image (pseudo-target) [Mac]
+#
+#	Builds the installation disk image ("E-MailRelay.dmg") from the install
+#	bundle ("E-MailRelay-Install.app/") using hdiutil.
+#
 
 BUNDLE=E-MailRelay-Configure
 INSTALL_BUNDLE=E-MailRelay-Install
@@ -27,9 +63,9 @@ MAC_EXTRA_DIST = dir_unix.cpp boot_unix.cpp glink_unix.cpp glink_win32.cpp gregi
 MAC_SOURCES = dir_mac.cpp boot_mac.cpp glink_mac.cpp gregister_mac.cpp
 MAC_NOINST = $(BUNDLE).app
 MAC_PROGS = emailrelay-start-gui emailrelay-unpack
-MAKE_SETUP_STUB = payload-stub
+MAKE_SETUP_STUB = NONE
 else
-MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp glink_win32.cpp gregister_mac.cpp gregister_win32.cpp guistart.cpp emailrelay-icon.icns
+MAC_EXTRA_DIST = dir_mac.cpp boot_mac.cpp glink_mac.cpp glink_win32.cpp gregister_mac.cpp gregister_win32.cpp guistart.c emailrelay-icon.icns
 MAC_SOURCES = dir_unix.cpp boot_unix.cpp glink_unix.cpp gregister_unix.cpp
 MAC_PROGS =
 MAC_NOINST =
@@ -44,7 +80,6 @@ EXTRA_DIST=\
 	mingw.mak \
 	mock \
 	pack.cpp \
-	run.c \
 	README \
 	emailrelay-icon.png \
 	emailrelay-gui.rc \
@@ -140,12 +175,12 @@ emailrelay_gui_real_LDADD = \
 	$(QT_LIBS)
 
 pack_SOURCES = pack.cpp
-pack_LDADD = $(top_builddir)/src/glib/libglib.a -lz
+pack_LDADD = $(top_builddir)/src/glib/libglib.a $(ZLIB_LIBS)
 
 emailrelay_unpack_SOURCES = unpackmain.c unpack.c
-emailrelay_unpack_LDADD = -lz
+emailrelay_unpack_LDADD = $(ZLIB_LIBS)
 
-emailrelay_start_gui_SOURCES = guistart.cpp
+emailrelay_start_gui_SOURCES = guistart.c unpack.c
 emailrelay_start_gui_LDADD =
 
 install-exec-hook:
@@ -163,7 +198,7 @@ uninstall-hook:
 clean-local:
 	-rm -rf "$(BUNDLE).app"
 	-rm -rf "$(INSTALL_BUNDLE).app"
-	-rm -f emailrelay-setup payload-stub payload
+	-rm -f emailrelay-setup payload
 	-rm -f "$(IMAGE)"
 	-rm -f "emailrelay-setup.state"
 
@@ -186,16 +221,12 @@ $(BUNDLE).app: emailrelay-start-gui
 .PHONY: bundle
 bundle: $(BUNDLE).app
 
-payload-stub:
-	-@echo '#!/bin/sh' > payload-stub
-	-@echo 'exit 23' >> payload-stub
-
 emailrelay-setup: pack $(MAKE_SETUP_STUB) ../../bin/make-setup.sh
 	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ $(MAKE_SETUP_STUB) pack "$(top_srcdir)/src/gui/emailrelay-icon.png"
 	@chmod +x $@
 
-payload: pack payload-stub ../../bin/make-setup.sh
-	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ payload-stub pack "$(top_srcdir)/src/gui/emailrelay-icon.png"
+payload: pack ../../bin/make-setup.sh
+	../../bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ NONE pack "$(top_srcdir)/src/gui/emailrelay-icon.png"
 
 $(INSTALL_BUNDLE).app: emailrelay-gui.real payload ../../bin/make-bundle.sh
 	../../bin/make-bundle.sh -f "$(INSTALL_BUNDLE)" emailrelay-gui.real "$(top_srcdir)/src/gui/emailrelay-icon.icns"

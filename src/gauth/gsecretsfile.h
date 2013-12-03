@@ -52,7 +52,7 @@ public:
 	bool contains( const std::string & mechanism ) const ;
 
 private:
-	void process( std::string mechanism , std::string side , std::string id , std::string secret ) ;
+	bool process( std::string side , std::string mechanism , std::string id , std::string secret ) ;
 	void read( const G::Path & ) ;
 	unsigned int read( std::istream & ) ;
 	void reread() const ;

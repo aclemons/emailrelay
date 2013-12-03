@@ -2,7 +2,17 @@
 # OpenWRT Makefile for E-MailRelay.
 #
 # Install this as "package/emailrelay/Makefile"; then run "makemenu config" 
-# and select "Network->emailrelay".
+# and select "Network->emailrelay". Running "make" should then download
+# the E-MailRelay source code from sourceforge and build it.
+#
+# To use a local tarball rather than downloading from sourceforge edit the 
+# PKG_SOURCE and PKD_SOURCE_URL values below.
+#
+# To get a better idea of the build process try this:
+#   $ cd <openwrt>
+#   $ rm -rf tmp
+#	$ scripts/feeds install emailrelay
+#	$ make package/emailrelay/compile V=s CONFIG_PACKAGE_emailrelay=y
 #
 # Note that the "configure" options below are chosen to build a small binary
 # so some significant functionality is disabled.
@@ -28,7 +38,7 @@ define Package/emailrelay
 	CATEGORY:=Network
 	TITLE:=SMTP/POP3 store-and-forward server
 	URL:=http://emailrelay.sourceforge.net
-	DEPENDS:=uclibcxx
+	DEPENDS:=+uclibcxx
 endef
 
 define Package/emailrelay/description
@@ -37,10 +47,11 @@ endef
 
 define Build/Configure
 	$(call Build/Configure/Default, \
-		--disable-gui  \
-		--without-glob  \
+		--disable-gui \
+		--without-glob \
 		--without-openssl \
-    	--without-doxygen  \
+		--without-zlib \
+		--without-doxygen \
 		--without-man2html \
 		--without-pam \
 		--disable-exec \

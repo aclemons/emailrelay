@@ -83,7 +83,7 @@
     <ClInclude Include="gsmtp\gclientprotocol.h" />
     <ClInclude Include="gnet\gclientptr.h" />
     <ClInclude Include="gnet\gconnection.h" />
-    <ClInclude Include="gnet\gconnectiontable.h" />
+    <ClInclude Include="gnet\gconnectionlookup.h" />
     <ClInclude Include="win32\gcontrol.h" />
     <ClInclude Include="glib\gconvert.h" />
     <ClInclude Include="glib\gcounter.h" />
@@ -129,7 +129,6 @@
     <ClInclude Include="gsmtp\gnewfile.h" />
     <ClInclude Include="gsmtp\gnewmessage.h" />
     <ClInclude Include="glib\gnewprocess.h" />
-    <ClInclude Include="glib\gnocheck.h" />
     <ClInclude Include="glib\gnoncopyable.h" />
     <ClInclude Include="gsmtp\gnullprocessor.h" />
     <ClInclude Include="glib\gpath.h" />
@@ -208,7 +207,7 @@
     <ClCompile Include="gnet\gclient.cpp" />
     <ClCompile Include="gsmtp\gclientprotocol.cpp" />
     <ClCompile Include="gnet\gconnection.cpp" />
-    <ClCompile Include="gnet\gconnectiontable_win32.cpp" />
+    <ClCompile Include="gnet\gconnectionlookup_win32.cpp" />
     <ClCompile Include="win32\gcontrol.cpp" />
     <ClCompile Include="glib\gconvert.cpp" />
     <ClCompile Include="glib\gconvert_win32.cpp" />
@@ -259,7 +258,6 @@
     <ClCompile Include="gsmtp\gnewfile.cpp" />
     <ClCompile Include="gsmtp\gnewmessage.cpp" />
     <ClCompile Include="glib\gnewprocess_win32.cpp" />
-    <ClCompile Include="glib\gnocheck_win32.cpp" />
     <ClCompile Include="gsmtp\gnullprocessor.cpp" />
     <ClCompile Include="glib\gpam_none.cpp" />
     <ClCompile Include="glib\gpath.cpp" />

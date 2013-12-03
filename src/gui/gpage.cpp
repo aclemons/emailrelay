@@ -26,7 +26,7 @@
 #include "mapfile.h"
 #include "glog.h"
 
-bool GPage::m_test_mode = false ;
+int GPage::m_test_mode = 0 ;
 
 GPage::GPage( GDialog & dialog , const std::string & name , const std::string & next_1 ,
 	const std::string & next_2 , bool finish_button , bool close_button ) :
@@ -145,12 +145,17 @@ std::string GPage::value( const QComboBox * p )
 	return stdstr(p->currentText()) ;
 }
 
-void GPage::setTestMode()
+void GPage::setTestMode( int test_mode )
 {
-	m_test_mode = true ;
+	m_test_mode = test_mode ;
 }
 
 bool GPage::testMode() const
+{
+	return m_test_mode != 0 ;
+}
+
+int GPage::testModeValue() const
 {
 	return m_test_mode ;
 }

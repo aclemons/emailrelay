@@ -89,7 +89,7 @@ void GSmtp::RequestClient::onDeleteImp( const std::string & reason , bool b )
 	Base::onDeleteImp( reason , b ) ; // use typedef because of ms compiler bug
 }
 
-void GSmtp::RequestClient::onSecure()
+void GSmtp::RequestClient::onSecure( const std::string & )
 {
 }
 

@@ -21,8 +21,8 @@ else
  e_pam_DATA = 
 endif
 
-EXTRA_DIST = emailrelay.conf.template emailrelay.pam
-e_sysconf_DATA = emailrelay.conf.template
+EXTRA_DIST = emailrelay.conf.template emailrelay.auth.template emailrelay.pam
+e_sysconf_DATA = emailrelay.conf.template emailrelay.auth.template
 
 emailrelay: emailrelay.pam
 	cp $(top_srcdir)/etc/emailrelay.pam $@
@@ -32,13 +32,23 @@ clean-local:
 
 if INSTALL_HOOK
 
-# if there is no .conf file then create it from the .conf.template
-# with directory edits - dont use this when running configure
-# for building a .deb or .rpm package
+# create the .conf file from .conf.template with directory edits - dont 
+# use this when running configure for building a .deb or .rpm package
 install-data-hook:
 	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else cat "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" | sed "s:^#spool-dir .*:spool-dir $(e_spooldir):g" | sed 's:"/var/spool/emailrelay":"'"$(e_spooldir)"'":g' | sed "s:/etc:$(e_sysconfdir):g" | sed "s:/usr/local/bin:$(e_libexecdir):g" > "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; sum < "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" | sed 's/^/# Checksum: /' >> "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
 
+# remove the .conf file if it has not been editied
 uninstall-hook:
 	-if grep -q "Checksum: `grep -v Checksum: $(DESTDIR)$(e_sysconfdir)/emailrelay.conf | sum`" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
+
+else
+
+# if there is no .conf file then copy it from .conf.template
+install-data-hook:
+	test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" || cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf"
+
+# remove the .conf file - the .conf.template has been deleted when this runs
+uninstall-hook:
+	-rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf"
 
 endif

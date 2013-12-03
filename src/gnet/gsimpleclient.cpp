@@ -55,12 +55,12 @@ GNet::SimpleClient::SimpleClient( const ResolverInfo & remote ,
 		m_secure_connection_timeout(secure_connection_timeout)
 {
 	G_DEBUG( "SimpleClient::ctor" ) ;
-	if( Monitor::instance() ) Monitor::instance()->add( *this ) ;
+	if( Monitor::instance() ) Monitor::instance()->addClient( *this ) ;
 }
 
 GNet::SimpleClient::~SimpleClient()
 {
-	if( Monitor::instance() ) Monitor::instance()->remove( *this ) ;
+	if( Monitor::instance() ) Monitor::instance()->removeClient( *this ) ;
 	close() ;
 }
 
@@ -383,6 +383,11 @@ std::pair<bool,GNet::Address> GNet::SimpleClient::peerAddress() const
 		m_s.get() != NULL ?
 			socket().getPeerAddress() :
 			std::make_pair(false,GNet::Address::invalidAddress()) ;
+}
+
+std::string GNet::SimpleClient::peerCertificate() const
+{
+	return m_sp->peerCertificate() ;
 }
 
 void GNet::SimpleClient::sslConnect()

@@ -283,7 +283,7 @@ finish off with "mingw32-make install".
 Edit the E-MailRelay GUI makefile "src/gui/mingw.mak" so that the E-MailRelay
 build uses similar compiler options to the Qt examples and then then build with:
 
-	$ mingw32-make -f mingw.mak mk_qt=/c/qt5-static mk_zlib=/c/zlib
+	$ mingw32-make -f mingw.mak
 
 Mac OS X packaging
 ------------------

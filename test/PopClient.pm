@@ -33,10 +33,11 @@ sub new
 
 	my $server = defined($server) ? $server : "localhost" ;
 	my $port = defined($port) ? $port : 10110 ;
+	my $timeout = 5 ;
 
-	my $t = new Net::Telnet( Timeout=>3 , Prompt=>'/\+OK[^\r\n]*/' ) ;
+	my $t = new Net::Telnet( Timeout=>$timeout , Prompt=>'/\+OK[^\r\n]*/' ) ;
 	$t->binmode(0) ; # convert to '\r\n' on output
-	$t->max_buffer_length(1000000*10) ; # allow for long message listings
+	#$t->max_buffer_length(1000000*10) ; # allow for long message listings
 
 	my %me = (
 		m_port => $port ,
@@ -71,12 +72,34 @@ sub login
 
 sub list
 {
-	my ( $this , $sleep , $timeout ) = @_ ;
+	my ( $this , $read_slowly , $timeout ) = @_ ;
 	my $t = $this->t() ;
 	$t->cmd( "list" ) ;
-	sleep($sleep) if defined($sleep) ; # helps test flow control
-	my ($s1,$s2) = $t->waitfor( Match => '/\./' , Timeout => $timeout ) ;
-	my @list = split("\n",$s1) ;
+	my $result = "" ;
+	if( $read_slowly )
+	{
+		while(1)
+		{
+			my ($s1,$s2) = $t->waitfor( Match => '/[ \.]/' , Timeout => $timeout ) ;
+			if( $s2 eq " " )
+			{
+				System::sleep_cs( 1 ) ;
+				$result .= $s1 ;
+				$result .= $s2 ;
+			}
+			else
+			{
+				$result .= $s1 ;
+				last ;
+			}
+		}
+	}
+	else
+	{
+		my ($s1,$s2) = $t->waitfor( Match => '/\./' , Timeout => $timeout ) ;
+		$result = $s1 ;
+	}
+	my @list = split("\n",$result) ;
 	if( scalar(@list) && $list[0] eq "" )
 	{
 		shift @list ;

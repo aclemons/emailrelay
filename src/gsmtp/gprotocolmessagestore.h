@@ -76,7 +76,7 @@ public:
 		///< Final override from GSmtp::ProtocolMessage.
 
 	virtual void process( const std::string & auth_id , const std::string & peer_socket_address ,
-		const std::string & peer_socket_name ) ;
+		const std::string & peer_socket_name , const std::string & peer_certificate ) ;
 			///< Final override from GSmtp::ProtocolMessage.
 
 private:

@@ -91,7 +91,7 @@ static void detach( void )
 {
   #ifndef G_WIN32
 	if( fork() ) exit( EXIT_SUCCESS ) ;
-	int rc = chdir( "/" ) ; (void) rc ;
+	{ int rc = chdir( "/" ) ; (void) rc ; }
 	setsid() ;
 	if( fork() ) exit( EXIT_SUCCESS ) ;
 	close( STDIN_FILENO ) ;

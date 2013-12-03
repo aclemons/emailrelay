@@ -27,7 +27,7 @@
 #include "gsocketprotocol.h"
 #include "gtimer.h"
 #include "gconnection.h"
-#include "gconnectiontable.h"
+#include "gconnectionlookup.h"
 #include "gevent.h"
 #include <utility>
 #include <list>
@@ -102,11 +102,11 @@ public:
 		///< bound. Throws CannotBind if the address cannot 
 		///< be bound and 'do_throw' is true.
 
-	explicit Server( unsigned int listening_port , ConnectionTable * = NULL ) ;
+	explicit Server( unsigned int listening_port , ConnectionLookup * = NULL ) ;
 		///< Constructor taking a port number. The server
 		///< listens on all local interfaces.
 
-	explicit Server( const Address & listening_address , ConnectionTable * = NULL ) ;
+	explicit Server( const Address & listening_address , ConnectionLookup * = NULL ) ;
 		///< Constructor. The server listens only on the
 		///< specific (local) interface.
 
@@ -176,7 +176,7 @@ private:
 private:
 	typedef std::list<ServerPeerHandle> PeerList ;
 	std::auto_ptr<StreamSocket> m_socket ;
-	ConnectionTable * m_connection_table ;
+	ConnectionLookup * m_connection_lookup ;
 	PeerList m_peer_list ;
 	bool m_cleaned_up ;
 } ;
@@ -214,6 +214,10 @@ public:
 
 	virtual std::pair<bool,Address> peerAddress() const ;
 		///< Returns the peer address.
+		///< Final override from GNet::Connection.
+
+	virtual std::string peerCertificate() const ;
+		///< Returns the peer's TLS certificate.
 		///< Final override from GNet::Connection.
 
 	virtual void readEvent() ; 

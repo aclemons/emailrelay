@@ -27,7 +27,7 @@ std::string G::Environment::get( const std::string & name , const std::string & 
 {
 	size_t n = 0U ;
 	errno_t rc = ::getenv_s( &n , NULL , 0U , name.c_str() ) ;
-	if( rc != 0 || n == 0U )
+	if( n == 0U ) // rc will be ERANGE if the environment variable exists
 		return default_ ;
 
 	std::vector<char> buffer( n ) ;

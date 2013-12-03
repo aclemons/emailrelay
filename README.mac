@@ -25,6 +25,6 @@ The preferred installation directories specified by "bin/configure-mac.sh" are:
 
 Moving the system after installation is not guaranteed to work perfectly
 so it is best run configure with the correct directories to start with.
-Having saif that, a disk image built with the standard directories should work
+Having said that, a disk image built with the standard directories should work
 reasonably well when installed to the "User" domain with
 "make DESTDIR=~ install".

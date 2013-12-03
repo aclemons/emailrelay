@@ -20,39 +20,9 @@
 
 #include "gdef.h"
 #include "garg.h"
-#include "gstr.h"
-#include "glimits.h"
-#include <sstream>
-#include <sys/types.h> // pid_t
-#include <unistd.h> // getpid(), readlink()
 
 void G::Arg::setExe()
 {
-	// a better-than-nothing implementation...
-
-	char buffer[limits::path] = { '\0' } ;
-	ssize_t n = ::readlink( "/proc/self" , buffer , sizeof(buffer) ) ;
-	if( n > 0 )
-	{
-		size_t un = static_cast<size_t>(n) ;
-		std::ostringstream ss ; 
-		ss << ::getpid() ;
-		bool procfs = std::string(buffer,un) == ss.str() ;
-		if( procfs )
-		{
-			n = ::readlink( "/proc/self/exe" , buffer , sizeof(buffer) ) ;
-			if( n > 0 )
-			{
-				un = static_cast<size_t>(n) ;
-				m_array[0] = std::string(buffer,un) ;
-			}
-		}
-	}
-	else
-	{
-		// could use getenv("_") on some systems, but too 
-		// unreliable in general
-	}
 }
 
 /// \file garg_unix.cpp

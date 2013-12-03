@@ -25,6 +25,7 @@
 #include "glog.h"
 #include "gstr.h"
 #include "gmemory.h"
+#include "gtest.h"
 #include "gcontrol.h"
 #include "gdialog.h"
 #include "gassert.h"
@@ -75,7 +76,8 @@ Main::WinApp::WinApp( HINSTANCE h , HINSTANCE p , const char * name ) :
 	GGui::ApplicationBase( h , p , name ) ,
 	m_quit(false) ,
 	m_use_tray(false) ,
-	m_hidden(false)
+	m_hidden(false) ,
+	m_exit_code(0)
 {
 }
 
@@ -93,6 +95,11 @@ void Main::WinApp::init( const Configuration & cfg )
 	m_use_tray = cfg.daemon() ;
 	m_cfg <<= new Configuration(cfg) ;
 	m_hidden = m_hidden || m_cfg->hidden() ;
+}
+
+int Main::WinApp::exitCode() const
+{
+	return G::Test::enabled("special-exit-code") ? 23 : m_exit_code ;
 }
 
 void Main::WinApp::onDimension( int & dx , int & dy )
@@ -276,6 +283,7 @@ void Main::WinApp::onError( const std::string & text )
 {
 	// called from WinMain(), possibly before init()
 	output( text , true ) ;
+	m_exit_code = 1 ;
 }
 
 /// \file winapp.cpp

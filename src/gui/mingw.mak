@@ -19,31 +19,21 @@
 #
 # See ../mingw-common.mak for help.
 #
-# External definitions ...
-# - "mk_qt" pointing to the Qt5 directory (eg. "c:/qt/qt5.1.1/5.1.1/mingw48_32")
+# Definitions from mingw-common.mak ...
+# - "mk_qt" pointing to the Qt directory (eg. "c:/qt/qt5.1.1/5.1.1/mingw48_32")
 # - "mk_zlib" pointing to the directory containing the zlib library
-# - "mk_mingw" pointing to the MinGW bin directory
+# - "mk_mingw" pointing to the MinGW directory
+#
+# External configuration options...
+# - set "cfg_dynamic" to "1" for dynamic linking
+# - set "cfg_qt_version" to "4" for qt4 (untested)
+# - set "cfg_packaging_outer" to "packed", "iexpress" or "none"
+# - set "cfg_packaging_inner" to "directory", "packed" or "payload"
+#
+# Use "make ... setup" to build the release package.
 #
 
 .PHONY: all
-
-ifeq ("$(mk_qt)","")
-mk_qt=c:/qt
-endif
-
-ifeq ("$(mk_zlib)","")
-zlib_include=/c/zlib
-zlib_lib=/c/zlib/libz.a
-else
-zlib_include=$(mk_zlib)
-zlib_lib=$(mk_zlib)/libz.a
-endif
-
-ifeq ("$(mk_mingw)","")
-mk_mingw_bin=c:/mingw/bin
-else
-mk_mingw_bin=$(mk_mingw)/bin
-endif
 
 mk_sources=\
 	boot_win32.cpp \
@@ -66,14 +56,44 @@ mk_sources=\
 	state.cpp \
 	unpack.c
 
+zlib_include=$(mk_zlib)
+zlib_lib=$(mk_zlib)/libz.a
+mingw_bin=$(mk_mingw)/bin
+
 service_objects=../main/service_install.o ../main/service_remove.o
 
+ifeq ("$(cfg_packaging_outer)","")
+cfg_packaging_outer=none
+endif
+
+ifeq ("$(cfg_packaging_inner)","")
+cfg_packaging_inner=directory
+endif
+
+ifeq ("$(mk_qt_version)","4")
 gui_syslibs=\
 	-lmingw32 \
 	-lqtmain \
-	-lQt5Gui \
+	-lQtCore4 \
+	-lQtGui4
+else
+ifeq ("$(cfg_dynamic)","1")
+gui_syslibs=\
+	-lmingw32 \
 	-lQt5Widgets \
-	-lQt5Core
+	-lQt5Gui \
+	-lQt5Core \
+	-lqtmain
+else
+gui_syslibs=\
+	-lmingw32 \
+	-lqwindows \
+	-lQt5Widgets \
+	-lQt5Gui \
+	-lQt5Core \
+	-lqtmain
+endif
+endif
 
 syslibs=\
 	-ladvapi32 \
@@ -91,7 +111,14 @@ syslibs=\
 	-lwinmm \
 	-lws2_32
 
+ifeq ("$(cfg_dynamic)","1")
+defines_static=
+else
+defines_static=-DG_QT_STATIC
+endif
+
 mk_defines_extra=\
+	$(defines_static) \
 	-DQT_NO_OPENGL \
 	-DQT_LARGEFILE_SUPPORT \
 	-DQT_THREAD_SUPPORT \
@@ -111,7 +138,8 @@ mk_ccc_flags_extra=\
 mk_link_flags_extra=\
 	-Wl,-s \
 	-Wl,-subsystem,windows \
-	-L$(mk_qt)/lib
+	-L$(mk_qt)/lib \
+	-L$(mk_qt)/plugins/platforms
 
 mk_link_flags_simple=\
 	$(mk_link_flags_common) \
@@ -120,38 +148,145 @@ mk_link_flags_simple=\
 glib=../glib/glib.a
 libs=$(glib) $(qt_libs_release)
 
-mk_exe_gui=emailrelay-gui.exe
-mk_exe_gui_tmp=emailrelay-gui-tmp.exe
-mk_exe_setup=emailrelay-setup.exe
-mk_exe_pack=pack.exe
-mk_exe_run=run.exe
+out_dir=emailrelay-1.9
+exe_gui=emailrelay-gui.exe
+exe_gui_packed=emailrelay-gui-tmp.exe
+exe_setup_outer=emailrelay-1.9-setup.exe
+setup_inner=emailrelay-setup
+exe_setup_inner=$(setup_inner).exe
+inner_manifest=$(setup_inner).exe.manifest
+exe_pack=pack.exe
+exe_start=emailrelay-start-gui.exe
 mk_includes_extra=-I$(zlib_include) -I$(mk_qt)/include -I$(mk_qt)/include/QtCore -I$(mk_qt)/include/QtGui -I../main
-
-# runtime library dlls
-mk_dll_qt_1=Qt5Core.dll
-mk_dll_qt_2=Qt5Gui.dll
-mk_dll_mingw_1=mingwm10.dll
-mk_pack_dlls=\
-	$(mk_qt)/bin/$(mk_dll_qt_1) $(mk_dll_qt_1) \
-	$(mk_qt)/bin/$(mk_dll_qt_2) $(mk_dll_qt_2) \
-	$(mk_mingw_bin)/$(mk_dll_mingw_1) $(mk_dll_mingw_1)
 
 rc=emailrelay-gui.rc
 res=emailrelay-gui.o
 mc_output=../main/MSG00001.bin ../main/messages.rc
 
-all: $(mk_exe_gui) $(mk_exe_pack) $(mk_exe_setup)
+# define extra library dlls to pack if not statically linked
+ifeq ("$(cfg_dynamic)","1")
+ifeq ("$(cfg_qt_version)","4")
+qt_bin_dlls=\
+	QtCore4.dll \
+	Qt5Gui4.dll \
+	mingwm10.dll
+qt_plugins_dlls=
+pack_dlls_1=$(mk_qt)/bin/QtCore4.dll QtCore4.dll
+pack_dlls_2=$(mk_qt)/bin/QtGui4.dll Qt5Gui4.dll
+pack_dlls_3=$(mingw_bin)/mingwm10.dll mingwm10.dll
+else
+qt_bin_dlls=\
+	icudt51.dll \
+	icuin51.dll \
+	icuuc51.dll \
+	libgcc_s_dw2-1.dll \
+	libstdc++-6.dll \
+	libwinpthread-1.dll \
+	Qt5Core.dll \
+	Qt5Gui.dll \
+	Qt5Widgets.dll
+qt_plugins_dlls=\
+	qwindows.dll
+pack_dlls_0=$(mk_qt)/bin/icudt51.dll icudt51.dll
+pack_dlls_1=$(mk_qt)/bin/icuin51.dll icuin51.dll
+pack_dlls_2=$(mk_qt)/bin/icuuc51.dll icuuc51.dll
+pack_dlls_3=$(mk_qt)/bin/libgcc_s_dw2-1.dll libgcc_s_dw2-1.dll
+pack_dlls_4=$(mk_qt)/bin/libstdc++-6.dll libstdc++-6.dll
+pack_dlls_5=$(mk_qt)/bin/libwinpthread-1.dll libwinpthread-1.dll
+pack_dlls_6=$(mk_qt)/bin/Qt5Core.dll Qt5Core.dll
+pack_dlls_7=$(mk_qt)/bin/Qt5Gui.dll Qt5Gui.dll
+pack_dlls_8=$(mk_qt)/bin/Qt5Widgets.dll Qt5Widgets.dll
+pack_dlls_9=$(mk_qt)/plugins/platforms/qwindows.dll qwindows.dll
+endif
+endif
+pack_dlls=\
+	$(pack_dlls_0) $(pack_dlls_1) $(pack_dlls_2) $(pack_dlls_3) $(pack_dlls_4) \
+	$(pack_dlls_5) $(pack_dlls_6) $(pack_dlls_7) $(pack_dlls_8) $(pack_dlls_9)
+
+all: $(exe_gui) $(exe_pack) 
+
+.PHONY: setup
+setup: $(exe_setup_outer)
 
 include ../mingw-common.mak
 
-$(mk_exe_gui): $(res) $(mk_objects) $(libs) $(service_objects)
-	$(mk_link) $(mk_link_flags) -o $(mk_exe_gui) $(res) $(mk_objects) $(service_objects) $(libs) $(gui_syslibs) $(syslibs) $(zlib_lib)
+# outer packaging = "none" 
+#
+# The outer package is a simple copy of the inner gui, which should 
+# be packed and statically-linked.
+#
+ifeq ("$(cfg_packaging_outer)","none")
+ifeq ("$(cfg_packaging_inner)","directory")
+$(exe_setup_outer): $(out_dir)/readme.txt
+	-@echo ..
+	-@echo .. now zip up the $(out_dir) directory into emailrelay-1.9.zip
+	-@echo .. right click on the directory and send-to compressed folder
+	-@echo ..
+else
+$(exe_setup_outer): $(exe_gui_packed)
+	cp $(exe_gui_packed) $(exe_setup_outer)
+endif
+endif
 
-$(mk_exe_pack): pack.o
-	$(mk_link) $(mk_link_flags_simple) -o $(mk_exe_pack) pack.o $(glib) $(zlib_lib)
+# outer packaging = "packed"
+#
+# The outer package is the inner packed gui, or the unpacked gui 
+# and its payload file, together with runtime dlls.
+#
+ifeq ("$(cfg_packaging_outer)","packed")
+ifeq ("$(cfg_packaging_inner)","packed")
+$(exe_setup_outer): $(exe_pack) $(exe_gui_packed) $(exe_start)
+	./$(exe_pack) $(exe_setup_outer) $(exe_start) $(pack_dlls) $(exe_gui_packed) $(exe_gui)
+else
+$(exe_setup_outer): $(exe_pack) $(exe_gui) payload $(exe_start)
+	./$(exe_pack) $(exe_setup_outer) $(exe_start) $(pack_dlls) $(exe_gui) $(exe_gui) payload payload
+endif
+endif
 
-$(mk_exe_run): run.o unpack.o
-	$(mk_link) $(mk_link_flags_simple) -o $(mk_exe_run) run.o unpack.o $(zlib_lib)
+# outer packaging = "iexpress"
+#
+# The outer package is the self-extracting executable containing the
+# inner packed gui, or the unpacked gui and its payload file, together
+# with runtime dlls.
+#
+ifeq ("$(cfg_packaging_outer)","iexpress")
+ifeq ("$(cfg_packaging_inner)","packed")
+$(exe_setup_outer): $(exe_pack) $(exe_gui_packed)
+	cp $(exe_gui_packed) $(exe_setup_inner)
+	./$(exe_pack) -x $(exe_setup_outer) $(exe_setup_inner) $(pack_dlls) $(exe_setup_inner) $(exe_setup_inner) $(inner_manifest) $(inner_manifest)
+else
+$(exe_setup_outer): $(exe_pack) $(exe_gui) payload $(inner_manifest)
+	cp $(exe_gui) $(exe_setup_inner)
+	./$(exe_pack) -x $(exe_setup_outer) $(exe_setup_inner) $(pack_dlls) $(exe_setup_inner) $(exe_setup_inner) payload payload $(inner_manifest) $(inner_manifest)
+endif
+endif
+
+.PHONY: manifest
+manifest: $(inner_manifest)
+
+$(inner_manifest): mingw.mak
+	echo "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?>" > $(inner_manifest)
+	echo "<assembly xmlns=\"urn:schemas-microsoft-com:asm.v1\" manifestVersion=\"1.0\">" >> $(inner_manifest)
+	echo "<assemblyIdentity version=\"1.0.0.0\" processorArchitecture=\"X86\" name=\"$(setup_inner)\" type=\"win32\" />" >> $(inner_manifest)
+	echo "<description>E-MailRelay setup</description>" >> $(inner_manifest)
+	echo "<trustInfo xmlns=\"urn:schemas-microsoft-com:asm.v2\">" >> $(inner_manifest)
+	echo "<security>" >> $(inner_manifest)
+	echo "<requestedPrivileges>" >> $(inner_manifest)
+	echo "<requestedExecutionLevel level=\"requireAdministrator\" uiAccess=\"false\" />" >> $(inner_manifest)
+	echo "</requestedPrivileges>" >> $(inner_manifest)
+	echo "</security>" >> $(inner_manifest)
+	echo "</trustInfo>" >> $(inner_manifest)
+	echo "</assembly>" >> $(inner_manifest)
+	unix2dos $(inner_manifest)
+
+$(exe_gui): $(res) $(mk_objects) $(libs) $(service_objects)
+	$(mk_link) $(mk_link_flags) -o $(exe_gui) $(res) $(mk_objects) $(service_objects) $(libs) $(gui_syslibs) $(syslibs) $(zlib_lib)
+
+$(exe_pack): pack.o
+	$(mk_link) $(mk_link_flags_simple) -o $(exe_pack) pack.o $(glib) $(zlib_lib)
+
+$(exe_start): guistart.o unpack.o
+	$(mk_link) $(mk_link_flags_simple) -o $(exe_start) guistart.o unpack.o $(zlib_lib)
 
 css=../../doc/emailrelay.css
 $(css): ../../doc/emailrelay.css_
@@ -159,19 +294,33 @@ $(css): ../../doc/emailrelay.css_
 
 examples=../../bin/emailrelay-edit-content.js ../../bin/emailrelay-edit-envelope.js ../../bin/emailrelay-resubmit.js ../../bin/emailrelay-runperl.js
 
-$(mk_exe_gui_tmp): $(mk_exe_gui) $(mk_exe_pack) $(css)
-	./$(mk_exe_pack) -a $(mk_exe_gui_tmp) $(mk_exe_gui) ../../README readme.txt ../../COPYING copying.txt ../../ChangeLog changelog.txt ../../AUTHORS authors.txt ../../doc/doxygen-missing.html doc/doxygen/index.html --dir "" ../main/emailrelay-service.exe ../main/emailrelay.exe ../main/emailrelay-submit.exe ../main/emailrelay-filter-copy.exe ../main/emailrelay-poke.exe ../main/emailrelay-passwd.exe --dir examples $(examples) --dir "doc" ../../doc/*.png ../../doc/*.txt $(css) --opt ../../doc/*.html
-
 ../../doc/userguide.html:
 	-@echo ..
-	-@echo warning: incomplete html documentation in the setup exe: add to doc directory
+	-@echo warning: incomplete documentation: add html files from a linux build to the doc directory
 	-@echo ..
 
-## double-pack if necessary to include the runtime library dlls - not necessary if statically linked
-##$(mk_exe_setup): $(mk_exe_pack) $(mk_exe_gui_tmp) $(mk_exe_run) ../../doc/userguide.html
-##	./$(mk_exe_pack) $(mk_exe_setup) $(mk_exe_run) $(mk_pack_dlls) $(mk_exe_gui_tmp) $(mk_exe_gui)
-$(mk_exe_setup): $(mk_exe_gui_tmp)
-	cp $(mk_exe_gui_tmp) $(mk_exe_setup)
+# inner packaging = "packed"
+#
+# Create a packed gui executable.
+#
+$(exe_gui_packed): $(exe_gui) $(exe_pack) $(css) ../../doc/userguide.html
+	./$(exe_pack) -a $(exe_gui_packed) $(exe_gui) ../../README readme.txt ../../COPYING copying.txt ../../ChangeLog changelog.txt ../../AUTHORS authors.txt ../../doc/doxygen-missing.html doc/doxygen/index.html --dir "" ../main/emailrelay-service.exe ../main/emailrelay.exe ../main/emailrelay-submit.exe ../main/emailrelay-filter-copy.exe ../main/emailrelay-poke.exe ../main/emailrelay-passwd.exe --dir examples $(examples) --dir "doc" ../../doc/*.png ../../doc/*.txt $(css) --opt ../../doc/*.html
+
+# inner packaging = "payload"
+#
+# Pack into a payload file.
+#
+payload: $(css) ../../doc/userguide.html
+	./$(exe_pack) -a payload NONE ../../README readme.txt ../../COPYING copying.txt ../../ChangeLog changelog.txt ../../AUTHORS authors.txt ../../doc/doxygen-missing.html doc/doxygen/index.html --dir "" ../main/emailrelay-service.exe ../main/emailrelay.exe ../main/emailrelay-submit.exe ../main/emailrelay-filter-copy.exe ../main/emailrelay-poke.exe ../main/emailrelay-passwd.exe --dir examples $(examples) --dir "doc" ../../doc/*.png ../../doc/*.txt $(css) --opt ../../doc/*.html
+
+# inner packaging = "directory"
+#
+# Pack into the <out-dir> directory. Include a payload file for the unpacked gui
+# to work with. Change the name of the gui to "emailrelay-setup.exe" and include
+# a manifest for UAC.
+#
+$(out_dir)/readme.txt: $(css) ../../doc/userguide.html payload $(exe_gui) $(inner_manifest)
+	./$(exe_pack) -p -a -d $(out_dir) NONE payload payload $(exe_gui) emailrelay-setup.exe $(inner_manifest) $(inner_manifest) ../../README readme.txt ../../COPYING copying.txt ../../ChangeLog changelog.txt ../../AUTHORS authors.txt ../../doc/doxygen-missing.html doc/doxygen/index.html --dir "" ../main/emailrelay-service.exe ../main/emailrelay.exe ../main/emailrelay-submit.exe ../main/emailrelay-filter-copy.exe ../main/emailrelay-poke.exe ../main/emailrelay-passwd.exe --dir examples $(examples) --dir "doc" ../../doc/*.png ../../doc/*.txt $(css) --opt ../../doc/*.html
 
 moc_gdialog.cpp: gdialog.h
 	$(mk_qt)/bin/moc $< -o $@
@@ -187,7 +336,7 @@ $(res): $(rc) $(mc_output)
 
 clean::
 	$(mk_rm_f) moc_gdialog.cpp moc_gpage.cpp moc_pages.cpp
-	$(mk_rm_f) $(mk_exe_gui) $(mk_exe_pack) $(mk_exe_run) $(mk_exe_gui_tmp) $(mk_exe_setup) 
-	$(mk_rm_f) $(mk_dll_qt_1) $(mk_dll_qt_2) $(mk_dll_mingw)
+	$(mk_rm_f) $(exe_gui) $(exe_pack) $(exe_start) $(exe_gui_packed) $(exe_setup_outer) $(exe_setup_inner)
+	$(mk_rm_f) *.dll
 	$(mk_rm_f) $(res)
 

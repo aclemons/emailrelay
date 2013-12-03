@@ -29,7 +29,7 @@ Distribution is under the GNU General Public License V3.
 %setup
 
 %build
-./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d --disable-gui --without-man2html --without-doxygen --with-openssl --enable-static-linking --disable-install-hook
+./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d --disable-gui --without-man2html --without-doxygen --with-openssl --with-zlib --enable-static-linking --disable-install-hook
 make
 
 %install
@@ -50,6 +50,7 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %config /etc/emailrelay.conf
 %config /etc/pam.d/emailrelay
 /etc/emailrelay.conf.template
+/etc/emailrelay.auth.template
 /etc/init.d/emailrelay
 /usr/share/man/man1/emailrelay.1.gz
 /usr/share/man/man1/emailrelay-filter-copy.1.gz
@@ -61,6 +62,7 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %doc /usr/share/doc/emailrelay/INSTALL
 /usr/share/doc/emailrelay/README.mac
 /usr/share/doc/emailrelay/README.windows
+/usr/share/doc/emailrelay/README.embedded
 /usr/share/doc/emailrelay/diagram-1.png
 /usr/share/doc/emailrelay/diagram-2.png
 /usr/share/doc/emailrelay/emailrelay-doxygen.css

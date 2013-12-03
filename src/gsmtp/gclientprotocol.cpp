@@ -298,7 +298,7 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		}
 		else if( m_server_has_auth && m_sasl->active() && m_auth_mechanism.empty() )
 		{
-			throw NoMechanism( std::string() + "add client secret for " +
+			throw NoMechanism( std::string() + "add a client secret with mechanism " +
 				G::Str::printable(G::Str::join(serverAuthMechanisms(reply),"/")) ) ;
 		}
 		else if( m_server_has_auth && m_sasl->active() )

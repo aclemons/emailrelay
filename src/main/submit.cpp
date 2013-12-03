@@ -128,7 +128,7 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 	//
 	GNet::Address ip = GNet::Local::localhostAddress() ;
 	std::string auth_id = std::string() ;
-	std::string new_path = msg->prepare( auth_id , ip.hostString() , std::string() ) ;
+	std::string new_path = msg->prepare( auth_id , ip.hostString() , std::string() , std::string() ) ;
 	msg->commit() ;
 	return new_path ;
 }
@@ -162,9 +162,6 @@ static void run( const G::Arg & arg )
 	}
 	else
 	{
-		std::auto_ptr<GNet::EventLoop> event_loop( GNet::EventLoop::create() ) ;
-		event_loop->init() ;
-
 		G::Path spool_dir = GSmtp::MessageStore::defaultDirectory() ;
 		if( opt.contains("spool-dir") )
 			spool_dir = opt.value("spool-dir") ;

@@ -22,7 +22,6 @@
 #include "glimits.h"
 #include "gprocess.h"
 #include "gexception.h"
-#include "gnocheck.h"
 #include "gstr.h"
 #include "gfs.h"
 #include "glog.h"

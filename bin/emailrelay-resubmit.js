@@ -44,7 +44,7 @@ function debug( line )
 {
 	if( cfg_debug )
 	{
-		WScript.Echo( "debug: " + line ) ;
+		WScript.StdOut.WriteLine( "debug: " + line ) ;
 	}
 }
 
@@ -53,7 +53,7 @@ function debug( line )
 var fso = WScript.CreateObject( "Scripting.FileSystemObject" ) ;
 if( ! fso.FolderExists( cfg_store ) )
 {
-	WScript.Echo( "invalid spool directory: \"" + cfg_store + "\"" ) ;
+	WScript.StdOut.WriteLine( "invalid spool directory: \"" + cfg_store + "\"" ) ;
 	WScript.Quit( 1 ) ;
 }
 

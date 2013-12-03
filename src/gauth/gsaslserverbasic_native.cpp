@@ -285,7 +285,7 @@ std::string GAuth::SaslServerBasic::apply( const std::string & response , bool &
 	else if( m_imp->m_first ) // LOGIN username
 	{
 		G_ASSERT( m_imp->m_mechanism == "LOGIN" ) ;
-		G_DEBUG( "GAuth::SaslServerBasic::apply: response: \"" << response << "\"" ) ;
+		G_DEBUG( "GAuth::SaslServerBasic::apply: response: \"" << G::Str::printable(response) << "\"" ) ;
 		m_imp->m_first = false ;
 		m_imp->m_id = response ;
 		if( !m_imp->m_id.empty() )

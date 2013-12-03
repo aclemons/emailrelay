@@ -115,17 +115,18 @@ GSmtp::ServerProtocol::~ServerProtocol()
 	m_verifier.doneSignal().disconnect() ;
 }
 
-void GSmtp::ServerProtocol::secure()
+void GSmtp::ServerProtocol::secure( const std::string & certificate )
 {
-	State new_state = m_fsm.apply( *this , eSecure , std::string() ) ;
+	State new_state = m_fsm.apply( *this , eSecure , certificate ) ;
 	if( new_state == s_Any )
 		throw ProtocolDone( "protocol error" ) ;
 }
 
-void GSmtp::ServerProtocol::doSecure( const std::string & , bool & )
+void GSmtp::ServerProtocol::doSecure( const std::string & certificate , bool & )
 {
 	G_DEBUG( "GSmtp::ServerProtocol::doSecure" ) ;
 	m_secure = true ;
+	m_certificate = certificate ;
 }
 
 void GSmtp::ServerProtocol::doStartTls( const std::string & , bool & ok )
@@ -196,7 +197,7 @@ void GSmtp::ServerProtocol::doEot( const std::string & line , bool & )
 		G_DEBUG( "GSmtp::ServerProtocol: starting preprocessor timer: " << m_preprocessor_timeout ) ;
 		startTimer( m_preprocessor_timeout ) ;
 	}
-	m_pmessage.process( m_sasl->id() , m_peer_address.displayString(false) , m_peer_socket_name ) ;
+	m_pmessage.process( m_sasl->id() , m_peer_address.displayString(false) , m_peer_socket_name , m_certificate ) ;
 }
 
 void GSmtp::ServerProtocol::processDone( bool success , unsigned long , std::string reason )

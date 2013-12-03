@@ -26,7 +26,8 @@
 #include "gexception.h"
 #include "gassert.h"
 #include "gdebug.h"
-#include <algorithm> // std::swap<>()
+#include <algorithm> // std::swap
+#include <utility> // std::swap
 #include <climits>
 #include <sys/types.h>
 #include <vector>

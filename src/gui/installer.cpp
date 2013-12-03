@@ -507,13 +507,40 @@ void CreateSecrets::run()
 		}
 	}
 
+	// impose the new field order - remove this eventually
+	{
+		G::Strings result ;
+		for( G::Strings::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
+		{
+			typedef std::string::size_type pos_t ;
+			const pos_t npos = std::string::npos ;
+			std::string line = *line_p ;
+			pos_t pos1 = line.find_first_not_of(G::Str::ws()) ;
+			pos_t pos2 = pos1 == npos ? npos : line.find_first_of(G::Str::ws(),pos1) ;
+			pos_t pos3 = pos2 == npos ? npos : line.find_first_not_of(G::Str::ws(),pos2) ;
+			pos_t pos4 = pos3 == npos ? npos : line.find_first_of(G::Str::ws(),pos3) ;
+			if( pos4 != npos )
+			{
+				std::string f1 = G::Str::lower(line.substr(pos1,pos2-pos1)) ;
+				std::string f2 = G::Str::lower(line.substr(pos3,pos4-pos3)) ;
+				if( ( f1 == "apop" || f1 == "cram-md5" || f1 == "none" || f1 == "login" || f1 == "plain" ) &&
+					( f2 == "server" || f2 == "client" ) )
+				{
+					line.replace( pos1 , pos4-pos1 , line.substr(pos3,pos4-pos3)+" "+line.substr(pos1,pos2-pos1) ) ;
+				}
+			}
+			result.push_back( line ) ;
+		}
+		line_list = result ;
+	}
+
 	// write a header if none
 	if( line_list.empty() )
 	{
 		line_list.push_back( "#" ) ;
 		line_list.push_back( std::string() + "# " + m_path.basename() ) ;
 		line_list.push_back( "#" ) ;
-		line_list.push_back( "# <mechanism> {server|client} <name> <secret>" ) ;
+		line_list.push_back( "# {server|client} <mechanism> <name> <secret>" ) ;
 		line_list.push_back( "#   mechanism = { CRAM-MD5 | LOGIN | APOP | NONE }" ) ;
 		line_list.push_back( "#" ) ;
 	}
@@ -522,7 +549,7 @@ void CreateSecrets::run()
 	for( G::StringMap::iterator map_p = m_content.begin() ; map_p != m_content.end() ; ++map_p )
 	{
 		bool replaced = false ;
-		for( G::Strings::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p ) // k.i.s.s
+		for( G::Strings::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
 		{
 			if( match( *line_p , (*map_p).first ) )
 			{
@@ -543,6 +570,7 @@ void CreateSecrets::run()
 		G::DateTime::BrokenDownTime now = G::DateTime::local( G::DateTime::now() ) ;
 		std::string timestamp = G::Date(now).string(G::Date::yyyy_mm_dd) + G::Time(now).hhmmss() ;
 		G::Path backup( m_path.dirname() , m_path.basename() + "." + timestamp ) ;
+		G::Process::Umask umask( G::Process::Umask::Tightest ) ;
 		G::File::copy( m_path , backup , G::File::NoThrow() ) ;
 	}
 
@@ -1036,7 +1064,7 @@ void InstallerImp::addSecret( G::StringMap & map , const std::string & k ) const
 {
 	if( exists(k) && !value(k).empty() )
 	{
-		std::string head = std::string() + "NONE server " + value(k) ;
+		std::string head = std::string() + "server NONE " + value(k) ;
 		std::string tail = std::string() + " " + "trusted" ;
 		map[head] = head + tail ;
 	}
@@ -1047,7 +1075,7 @@ void InstallerImp::addSecret( G::StringMap & map ,
 {
 	if( exists(k2+"-name") && !value(k2+"-name").empty() )
 	{
-		std::string head = value(k1) + " " + side + " " + value(k2+"-name") ;
+		std::string head = side + " " + value(k1) + " " + value(k2+"-name") ;
 		std::string tail = std::string() + " " + value(k2+"-password") ;
 		map[head] = head + tail ;
 	}

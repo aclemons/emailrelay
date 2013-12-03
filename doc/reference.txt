@@ -288,7 +288,7 @@ For Windows this example can be rewritten in JavaScript:
 Windows pre-processor programs written in JavaScript can be run using
 "cscript", with an E-MailRelay "--filter" option something like this:
 
-	--filter="c:/windows/system32/cscript.exe //nologo c:/program\ files/emailrelay/filter.js"
+	--filter="c:/program\ files/emailrelay/filter.js"
 
 Note how the space character in "program files" is escaped with a backslash.
 
@@ -355,15 +355,16 @@ character (#) is used for comments.
 
 Lines have four white-space delimited fields:
 
-* "mechanism"
 * "client-or-server"
+* "mechanism"
 * "userid"
 * "secret"
 
 The "mechanism" field must be "LOGIN", "APOP" or "CRAM-MD5" (case-insensitive);
-the "client-or-server" field must be "client" or "server"; the "userid" field is
-xtext-encoded user identifier; and the "secret" field is the xtext-encoded
-"LOGIN" password, or the "CRAM-MD5" digest key.
+the "client-or-server" field must be "client" or "server" (also
+case-insensitive); the "userid" field is xtext-encoded user identifier; and the
+"secret" field is the xtext-encoded "LOGIN" password, or the "CRAM-MD5" digest
+key.
 
 The "xtext" encoding scheme is defined properly in RFC1891, but basically it
 says that non alphanumeric characters, space, "+" and "=" should be represented
@@ -371,11 +372,11 @@ in hexadecimal ascii as "+XX".
 
 The client-side secrets file specified with "--client-auth" is used when
 E-MailRelay acts as a client to talk to a remove server. The file should contain
-at least one "LOGIN client" or "CRAM-MD5 client" entry.
+at least one "client LOGIN" or "client CRAM-MD5" entry.
 
 A server-side secrets file specified with "--server-auth" is used when a remote
 client tries to authenticate with the E-MailRelay server. The file should
-normally contain several "LOGIN server" or "CRAM-MD5 server" entries, one for
+normally contain several "server LOGIN" or "server CRAM-MD5" entries, one for
 each client.
 
 The same secrets file may be specified for both "--client-auth" and
@@ -391,18 +392,18 @@ authenticate with the E-MailRelay server:
 	#
 	# emailrelay secrets file
 	#
-	LOGIN client jsmith my+20password
-	LOGIN server user1 secret
-	LOGIN server user2 e+3Dmc2
+	client LOGIN jsmith my+20password
+	server LOGIN user1 secret
+	server LOGIN user2 e+3Dmc2
 
 A "CRAM-MD5" version would look like this:
 
 	#
 	# emailrelay secrets file
 	#
-	CRAM-MD5 client jsmith 688498119.2977922305.1278051807.3015243256.2216875978.2833592318.2902375592.3156808220
-	CRAM-MD5 server user1 4059553961.2316091643.3282746241.1444639637.3735501773.3404060330.2760590371.1201092398
-	CRAM-MD5 server user2 2798539199.3144534242.3784876256.2879973305.2327113479.216533878.2436460291.2361831919
+	client CRAM-MD5 jsmith 688498119.2977922305.1278051807.3015243256.2216875978.2833592318.2902375592.3156808220
+	server CRAM-MD5 user1 4059553961.2316091643.3282746241.1444639637.3735501773.3404060330.2760590371.1201092398
+	server CRAM-MD5 user2 2798539199.3144534242.3784876256.2879973305.2327113479.216533878.2436460291.2361831919
 
 When using the "LOGIN" mechanism you have to store plaintext passwords in the
 secrets file, so you should make sure that the secrets file has tight
@@ -429,9 +430,9 @@ For example, this secrets file allows any client connecting from the
 	#
 	# emailrelay secrets file
 	#
-	NONE server 192.168.0.* localdomain
-	LOGIN server user1 secret
-	LOGIN server user2 e+3Dmc2
+	server NONE 192.168.0.* localdomain
+	server LOGIN user1 secret
+	server LOGIN user2 e+3Dmc2
 
 On the client side authentication is performed when E-MailRelay has connected to
 a server which implements the AUTH extension with one of the supported
@@ -477,8 +478,17 @@ but something like this might work for testing purposes:
 
 E-MailRelay can also make outgoing SMTP connections using TLS/SSL encryption
 where the whole SMTP dialog is encrypted from the start, without a negotiation
-step ("--client-tls-connection"). This is sometimes called secure SMTP (ssmpt),
-typically using port number 465.
+step ("--client-tls-connection"). This is sometimes called SMTP-over-TLS or
+secure SMTP (ssmtp) and it is normally used with port number 465.
+
+The behaviour of the TLS/SSL layer can be tweaked by using "--tls-config" option
+with a special number that is the sum of the following:
+* 2 - allow SSL v2 or later
+* 3 - allow SSL v3 or later
+* 4 - ask for peer certificates but just log them
+* 8 - ask for peer certificates and verify them
+
+These values are subject to change in each release.
 
 Linux PAM
 ---------
@@ -533,7 +543,7 @@ The following command-line options are used:
 
 # --pop
 
-  Enables the POP3 server. Negotiated TLS/SSL (using "STLS") will be enabled if 
+  Enables the POP3 server. Negotiated TLS/SSL (using "STLS") will be enabled if
   the "--client-tls" or "--server-tls" options are also given.
 
 # --pop-port=<port>
@@ -549,8 +559,8 @@ The following command-line options are used:
   "--server-auth" and the same file can be used for both SMTP and POP3
   authentication.
 
-  "APOP server" entries are used for "APOP" authentication, "LOGIN server"
-  entries are used for "USER/PASS" authentication, and "CRAM-MD5 server" entries
+  "server APOP" entries are used for "APOP" authentication, "server LOGIN"
+  entries are used for "USER/PASS" authentication, and "server CRAM-MD5" entries
   are used for "AUTH" authentication.
 
   Note that the basic POP3 protocol defines only "APOP" and "USER/PASS"
@@ -558,7 +568,7 @@ The following command-line options are used:
   CRAM-MD5 authentication using the POP3 "AUTH" extension.
 
   The CRAM-MD5 authentication mechanism will only be advertised to clients
-  if there are "CRAM-MD5 server" entries in the secrets file.
+  if there are "server CRAM-MD5" entries in the secrets file.
 
   If E-MailRelay was built with PAM support then a special value of "/pam" can
   be used to enable authentication using the PAM infrastructure rather than a
@@ -696,11 +706,11 @@ or written in JavaScript for Windows:
 	var auth_mechanism = WScript.Arguments(6) ;
 	if( ( auth_mechanism == "NONE" || auth_mechanism == "" ) && host != local_domain )
 	{
-		WScript.Echo( "cannot relay without authentication" ) ;
+		WScript.Stdout.WriteLine( "cannot relay without authentication" ) ;
 		WScript.Quit( 2 ) ;
 	}
-	WScript.Echo( "" ) ;
-	WScript.Echo( address ) ;
+	WScript.Stdout.WriteLine( "" ) ;
+	WScript.Stdout.WriteLine( address ) ;
 	WScript.Quit( 1 ) ;
 
 If this verifier script is used with a suitable "--server-auth" file then it can

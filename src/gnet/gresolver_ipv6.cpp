@@ -58,7 +58,7 @@ std::string GNet::Resolver::resolveHost( const std::string & host_name , unsigne
 			result.update( Address(*host,port) , std::string(h_name?h_name:"") ) ;
 			::freehostent( host ) ;
 		}
-		return host == NULL ? ( std::string("invalid host name: \"") + host_name + "\"" ) : std::string() ;
+		return host == NULL ? ( std::string("no such host: \"") + host_name + "\"" ) : std::string() ;
 	}
 	catch(...) // rethrown
 	{
@@ -82,7 +82,7 @@ std::string GNet::Resolver::resolveHost( const std::string & host_name , unsigne
 	{
 		result.update( Address(*host,port) , std::string(host->h_name) ) ;
 	}
-	return host == NULL ? ( std::string("invalid host name: \"") + host_name + "\"" ) : std::string() ;
+	return host == NULL ? ( std::string("no such host: \"") + host_name + "\"" ) : std::string() ;
 }
 
 #endif

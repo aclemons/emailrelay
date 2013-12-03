@@ -31,7 +31,7 @@ package Server ;
 
 our @pid_list = () ;
 our $bin_dir = ".." ;
-our $exe_name = "emailrelay" ;
+my $exe_name = "emailrelay" ;
 
 sub new
 {
@@ -44,13 +44,14 @@ sub new
 	my $verifier_port = Verifier::port() ;
 
 	my %me = (
-		m_exe => "$bin_dir/$exe_name" ,
+		m_exe => System::exe( $bin_dir , $exe_name ) ,
 		m_smtp_port => $smtp_port ,
 		m_pop_port => $pop_port ,
 		m_admin_port => $admin_port ,
 		m_rc => undef ,
 		m_stdout => System::tempfile("stdout",$tmp_dir) ,
 		m_stderr => System::tempfile("stderr",$tmp_dir) ,
+		m_log_file => undef ,
 		m_pidfile => System::tempfile("pidfile",$tmp_dir) ,
 		m_pid => undef ,
 		m_pop_secrets => System::tempfile("pop.auth",$tmp_dir) ,
@@ -61,12 +62,13 @@ sub new
 		m_spool_dir => (defined($spool_dir)?$spool_dir:System::createSpoolDir(undef,$tmp_dir)) ,
 		m_user => "nobody" ,
 		m_full_command => undef ,
-		m_filter => System::tempfile("filter",$tmp_dir) ,
-		m_client_filter => System::tempfile("client-filter",$tmp_dir) ,
+		m_filter => System::tempfile("filter",$tmp_dir) . ( System::unix() ? "" : ".js" ) ,
+		m_client_filter => System::tempfile("client-filter",$tmp_dir) . ( System::unix() ? "" : ".js" ) ,
 		m_scanner => "net:localhost:$scanner_port" ,
 		m_verifier => "net:localhost:$verifier_port" ,
 		m_max_size => 1000 ,
 	) ;
+	$me{m_log_file} = $me{m_stderr} if !System::unix() ;
 	my $this = bless \%me , $classname ;
 	$this->_check() ;
 	return $this ;
@@ -98,14 +100,11 @@ sub filter { return shift->{'m_filter'} }
 sub clientFilter { return shift->{'m_client_filter'} }
 sub maxSize { return shift->{'m_max_size'} }
 sub rc { return shift->{'m_rc'} }
+sub logFile { return shift->{'m_log_file'} }
 
 sub _check
 {
 	my ( $this ) = @_ ;
-	if( -x ($this->exe().".exe") )
-	{
-		$this->{'m_exe'} .= ".exe" ;
-	}
 	if( ! -x $this->exe() )
 	{
 		die "invalid server executable [".$this->exe()."]" ;
@@ -136,6 +135,7 @@ sub canDo
 {
 	# Returns true if built with the relevant functionality.
 	my ( $this , $type , $default_ ) = @_ ;
+	return 1 if !System::unix() ;
 	local $/ ;
 	my $fh = new FileHandle( $this->exe() . " --version --verbose |" ) ;
 	my $output = <$fh> ;
@@ -175,7 +175,9 @@ sub _switches
 		( exists($sw{ForwardTo}) ? "--forward-to __FORWARD_TO__ " : "" ) .
 		( exists($sw{User}) ? "--user __USER__ " : "" ) .
 		( exists($sw{Debug}) ? "--debug " : "" ) .
+		( !System::unix() && exists($sw{Log}) ? "--log-file __LOG_FILE__ " : "" ) .
 		( exists($sw{NoDaemon}) ? "--no-daemon " : "" ) .
+		( exists($sw{Hidden}) && !System::unix() ? "--hidden " : "" ) .
 		( exists($sw{NoSmtp}) ? "--no-smtp " : "" ) .
 		( exists($sw{Poll}) ? "--poll __POLL_TIMEOUT__ " : "" ) .
 		( exists($sw{Filter}) ? "--filter __FILTER__ " : "" ) .
@@ -203,6 +205,7 @@ sub _set_all
 	$command_tail = _set( $command_tail , "__POP_SECRETS__" , $this->popSecrets() ) ;
 	$command_tail = _set( $command_tail , "__PID_FILE__" , $this->pidFile() ) ;
 	$command_tail = _set( $command_tail , "__FORWARD_TO__" , $this->dst() ) ;
+	$command_tail = _set( $command_tail , "__LOG_FILE__" , $this->logFile() ) ;
 	$command_tail = _set( $command_tail , "__SPOOL_DIR__" , $this->spoolDir() ) ;
 	$command_tail = _set( $command_tail , "__USER__" , $this->user() ) ;
 	$command_tail = _set( $command_tail , "__POLL_TIMEOUT__" , $this->pollTimeout() ) ;
@@ -221,23 +224,25 @@ sub _set_all
 sub run
 {
 	# Starts the server and waits for a pid file to be created.
-	my ( $this , $switches_ref , $command_prefix , $command_suffix ) = @_ ;
+	my ( $this , $switches_ref , $sudo_prefix , $gtest , $background ) = @_ ;
 
-	$command_prefix = defined($command_prefix) ? $command_prefix : "" ;
-	$command_suffix = defined($command_suffix) ? $command_suffix : "" ;
+	if(!defined($background)) { $background = System::unix() ? 0 : 1 }
 
-	if( ! System::unix() )
-	{
-		$command_prefix = "cmd /c \"start /D. $command_prefix" ;
-		$command_suffix = "$command_suffix \"" ;
-	}
+	my $command_with_switches = $this->_set_all(_switches(%$switches_ref)) ;
 
-	my $command_switches = $this->_set_all(_switches(%$switches_ref)) ;
-	my $redirection = " >" . $this->stdout() . " 2>" . $this->stderr() ;
-	my $full = $command_prefix . $command_switches . $redirection . $command_suffix ;
+	my $full = System::commandline( $command_with_switches , {
+			background => $background ,
+			stdout => $this->stdout() ,
+			stderr => $this->stderr() ,
+			prefix => $sudo_prefix ,
+			gtest => $gtest ,
+		} ) ;
 
 	$this->{'m_full_command'} = $full ;
+	System::log_( "[$full]" ) ;
+	if( defined($gtest) ) { $main::ENV{G_TEST} = $gtest }
 	my $rc = system( $full ) ;
+	if( defined($gtest) ) { $main::ENV{G_TEST} = "xx" }
 
 	my $ok = $rc >= 0 && ($rc & 127) == 0 ;
 	$this->{'m_rc'} = $rc ;
@@ -284,26 +289,17 @@ sub sleep_cs
 
 sub wait
 {
-	# Waits to die :-<
+	# Waits to die
 	my ( $this , $timeout_cs ) = @_ ;
-	for( my $i = 0 ; $i < $timeout_cs ; $i++ )
-	{
-		sleep_cs() ;
-		if( kill(0,$this->pid()) == 0 )
-		{
-			next
-		}
-	}
+	System::wait( $this->pid() , $timeout_cs ) ;
 }
 
 sub kill
 {
 	# Kills the server and waits for it to die.
-	my ( $this , $signal , $timeout_cs ) = @_ ;
-	$signal = defined($signal) ? $signal : 15 ;
-	$timeout_cs = defined($timeout_cs) ? $timeout_cs : 100 ;
-	kill( $signal , $this->pid() ) ;
-	$this->wait( $timeout_cs ) ;
+	my ( $this , $signal__not_used , $timeout_cs ) = @_ ;
+	System::kill( $this->pid() , $timeout_cs ) ;
+	System::wait( $this->pid() , $timeout_cs ) ;
 }
 
 sub cleanup
@@ -322,11 +318,23 @@ sub cleanup
 sub hasDebug
 {
 	# Returns true if the executable has debugging code 
-	# built in. (This could now use "--version --verbose".)
+	# and extra test features built in.
+
 	my ( $this ) = @_ ;
 	my $exe = $this->exe() ;
-	my $rc = system( "strings \"$exe\" | fgrep -q 'G_TEST'" ) ;
-	return $rc == 0 ;
+	if( System::unix() )
+	{
+		my $rc = system( "strings \"$exe\" | fgrep -q 'G_TEST'" ) ;
+		return $rc == 0 ;
+	}
+	else
+	{
+		$exe = System::weirdpath( $exe ) ;
+		$main::ENV{G_TEST} = "special-exit-code" ;
+		my $rc = system( "$exe --version --verbose --hidden" ) ;
+		$main::ENV{G_TEST} = "xx" ;
+		return ( ( $rc >> 8 ) & 255 ) == 23 ;
+	}
 }
 
 1 ;

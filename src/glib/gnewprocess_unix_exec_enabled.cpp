@@ -33,6 +33,7 @@
 #include <fcntl.h> // open()
 #include <unistd.h> // setuid() etc
 #include <algorithm> // std::swap()
+#include <utility> // std::swap()
 #include <iostream>
 
 namespace

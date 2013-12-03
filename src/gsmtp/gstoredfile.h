@@ -127,6 +127,7 @@ private:
 	void readAuthentication( std::istream & stream ) ;
 	void readClientSocketAddress( std::istream & stream ) ;
 	void readClientSocketName( std::istream & stream ) ;
+	void readClientCertificate( std::istream & stream ) ;
 	void readEnvelopeCore( bool ) ;
 	static void addReason( const G::Path & path , const std::string & , int ) ;
 	static G::Path badPath( G::Path ) ;
@@ -146,6 +147,7 @@ private:
 	std::string m_format ;
 	std::string m_client_socket_address ;
 	std::string m_client_socket_name ;
+	std::string m_client_certificate ;
 	size_t m_errors ;
 	bool m_locked ;
 } ;

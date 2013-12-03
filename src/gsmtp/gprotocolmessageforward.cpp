@@ -105,10 +105,10 @@ std::string GSmtp::ProtocolMessageForward::from() const
 }
 
 void GSmtp::ProtocolMessageForward::process( const std::string & auth_id , const std::string & peer_socket_address ,
-	const std::string & peer_socket_name )
+	const std::string & peer_socket_name , const std::string & peer_certificate )
 {
 	m_done_signal.reset() ; // one-shot reset
-	m_pm->process( auth_id , peer_socket_address , peer_socket_name ) ;
+	m_pm->process( auth_id , peer_socket_address , peer_socket_name , peer_certificate ) ;
 }
 
 void GSmtp::ProtocolMessageForward::processDone( bool success , unsigned long id , std::string reason )

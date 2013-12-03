@@ -66,7 +66,7 @@ protected:
 	virtual bool onReceive( const std::string & ) ; 
 		///< Final override from GNet::BufferedServerPeer.
 
-	virtual void onSecure() ;
+	virtual void onSecure( const std::string & ) ;
 		///< Final override from GNet::SocketProtocolSink.
 
 	virtual void onSendComplete() ; 

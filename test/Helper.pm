@@ -24,6 +24,7 @@
 
 use strict ;
 use FileHandle ;
+use System ;
 
 package Helper ;
 
@@ -53,7 +54,7 @@ sub port
 	return $this->{'m_port'} ;
 }
 
-sub log
+sub logfile
 {
 	my ( $this ) = @_ ;
 	return $this->{'m_logfile'} ;
@@ -62,9 +63,9 @@ sub log
 sub _check
 {
 	my ( $this ) = @_ ;
-	my $name = $this->{m_name} ;
 	if( ! -x $this->exe() )
 	{
+		my $name = $this->{m_name} ;
 		die "no $name executable [".$this->exe()."]" ;
 	}
 }
@@ -72,7 +73,7 @@ sub _check
 sub exe
 {
 	my ( $this ) = @_ ;
-	return join( "/" , $bin_dir , $this->{m_exe_name} ) ;
+	return System::exe( $bin_dir , $this->{m_exe_name} ) ;
 }
 
 sub run
@@ -82,10 +83,13 @@ sub run
 	my $pidfile = $this->{'m_pidfile'} ;
 	my $logfile = $this->{'m_logfile'} ;
 	my $exe = $this->exe() ;
-	system( "$exe --port $port --log --debug --pid-file $pidfile > $logfile 2>&1 &" ) ;
+	my $cmd = System::weirdpath($exe) . " --port $port --log --log-file $logfile --debug --pid-file $pidfile" ;
+	my $full = System::commandline( $cmd , { background => 1 } ) ;
+	System::log_( "[$full]" ) ;
+	system( $full ) ;
 	for( my $i = 0 ; $i < 200 ; $i++ )
 	{
-		select( undef , undef , undef , 0.02 ) ;
+		System::sleep_cs( 2 ) ;
 		if( -f $pidfile ) { next }
 	}
 	my $f = new FileHandle("< $pidfile") ;
@@ -100,35 +104,12 @@ sub pid
 	return $this->{'m_pid'} ;
 }
 
-sub _sleep_cs
-{
-	my ( $cs ) = @_ ;
-	$cs = defined($cs) ? $cs : 1 ;
-	select( undef , undef , undef , 0.01 * $cs ) ;
-}
-
-sub _wait
-{
-	# wait to die
-	my ( $this , $timeout_cs ) = @_ ;
-	for( my $i = 0 ; $i < $timeout_cs ; $i++ )
-	{
-		_sleep_cs() ;
-		if( kill(0,$this->pid()) == 0 )
-		{
-			next
-		}
-	}
-}
-
 sub kill
 {
 	# kill and wait to die
-	my ( $this , $signal , $timeout_cs ) = @_ ;
-	$signal = defined($signal) ? $signal : 15 ;
-	$timeout_cs = defined($timeout_cs) ? $timeout_cs : 100 ;
-	kill( $signal , $this->pid() ) ;
-	$this->_wait( $timeout_cs ) ;
+	my ( $this , $signal__not_used , $timeout_cs ) = @_ ;
+	System::kill( $this->pid() , $timeout_cs ) ;
+	System::wait( $this->pid() , $timeout_cs ) ;
 }
 
 sub cleanup

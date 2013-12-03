@@ -33,7 +33,8 @@
 #include <set>
 #include <fstream>
 #include <string>
-#include <utility> // std::pair
+#include <algorithm> // std::swap
+#include <utility> // std::swap, std::pair
 #include <sstream>
 
 GAuth::SecretsFile::SecretsFile( const G::Path & path , bool auto_ , const std::string & debug_name ,
@@ -64,7 +65,6 @@ void GAuth::SecretsFile::reread() const
 
 void GAuth::SecretsFile::reread( int )
 {
-	G_DEBUG( "GAuth::SecretsFile::reread" ) ;
 	if( m_auto )
 	{
 		G::DateTime::EpochTime now = G::DateTime::now() ;
@@ -77,7 +77,7 @@ void GAuth::SecretsFile::reread( int )
 			if( t != m_file_time )
 			{
 				G_LOG_S( "GAuth::Secrets: re-reading secrets file: " << m_path ) ;
-				(void) read( m_path ) ;
+				read( m_path ) ;
 			}
 		}
 	}
@@ -120,12 +120,11 @@ unsigned int GAuth::SecretsFile::read( std::istream & file )
 		if( !file ) 
 			break ;
 
-		const std::string ws = " \t" ;
-		G::Str::trim( line , ws ) ;
+		G::Str::trim( line , G::Str::ws() ) ;
 		if( !line.empty() && line.at(0U) != '#' )
 		{
 			G::StringArray word_array ;
-			G::Str::splitIntoTokens( line , word_array , ws ) ;
+			G::Str::splitIntoTokens( line , word_array , " \t" ) ;
 			if( word_array.size() > 4U )
 			{
 				G_WARNING( "GAuth::SecretsFile::read: ignoring extra fields on line " 
@@ -133,8 +132,10 @@ unsigned int GAuth::SecretsFile::read( std::istream & file )
 			}
 			if( word_array.size() >= 4U )
 			{
-				process( word_array[0U] , word_array[1U] , word_array[2U] , word_array[3U] ) ;
-				count++ ;
+				bool processed = process( word_array[0U] , word_array[1U] , word_array[2U] , word_array[3U] ) ;
+				G_DEBUG( "GAuth::SecretsFile::read: line #" << line_number << (processed?" used":" ignored") ) ;
+				if( processed )
+					count++ ;
 			}
 			else
 			{
@@ -146,23 +147,35 @@ unsigned int GAuth::SecretsFile::read( std::istream & file )
 	return count ;
 }
 
-void GAuth::SecretsFile::process( std::string mechanism , std::string side , std::string id , std::string secret )
+bool GAuth::SecretsFile::process( std::string side , std::string mechanism , std::string id , std::string secret )
 {
 	G::Str::toUpper( mechanism ) ;
-	if( side.at(0U) == m_server_type.at(0U) )
+	G::Str::toUpper( side ) ;
+
+	// allow columns 1 and 2 to switch around
+	if( mechanism == G::Str::upper(m_server_type) || mechanism == "CLIENT" )
+		std::swap( mechanism , side ) ;
+
+	if( side == G::Str::upper(m_server_type) )
 	{
 		// server-side
 		std::string key = mechanism + ":" + id ;
 		std::string value = secret ;
 		m_map.insert( std::make_pair(key,value) ) ;
 		m_set.insert( mechanism ) ;
+		return true ;
 	}
-	else if( side.at(0U) == 'c' || side.at(0U) == 'C' )
+	else if( side == "CLIENT" )
 	{
 		// client-side -- no userid in the key since only one secret
 		std::string key = mechanism + " client" ;
 		std::string value = id + " " + secret ;
 		m_map.insert( std::make_pair(key,value) ) ;
+		return true ;
+	}
+	else
+	{
+		return false ;
 	}
 }
 

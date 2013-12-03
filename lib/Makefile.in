@@ -155,6 +155,7 @@ STATIC_END = @STATIC_END@
 STATIC_START = @STATIC_START@
 STRIP = @STRIP@
 VERSION = @VERSION@
+ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@

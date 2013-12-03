@@ -32,7 +32,7 @@
 #include "gmessagestore.h"
 #include "gserverprotocol.h"
 #include "gprotocolmessage.h"
-#include "gconnectiontable.h"
+#include "gconnectionlookup.h"
 #include "gexception.h"
 #include <string>
 #include <sstream>
@@ -69,7 +69,7 @@ protected:
 	virtual bool onReceive( const std::string & line ) ; 
 		///< Final override from GNet::BufferedServerPeer.
 
-	virtual void onSecure() ;
+	virtual void onSecure( const std::string & ) ;
 		///< Final override from GNet::SocketProtocolSink.
 
 private:
@@ -111,7 +111,7 @@ public:
 		std::string verifier_address ;
 		unsigned int verifier_timeout ;
 		///<
-		bool use_connection_table ;
+		bool use_connection_lookup ;
 		///<
 		Config( bool , unsigned int , const AddressList & , const std::string & , bool ,
 			const std::string & , unsigned int , const std::string & , unsigned int , bool ) ;
@@ -168,7 +168,7 @@ private:
 	bool m_anonymous ;
 	std::auto_ptr<ServerProtocol::Text> m_protocol_text ;
 	G::Signal2<std::string,std::string> m_event_signal ;
-	std::auto_ptr<GNet::ConnectionTable> m_connection_table ;
+	std::auto_ptr<GNet::ConnectionLookup> m_connection_lookup ;
 } ;
 
 #endif

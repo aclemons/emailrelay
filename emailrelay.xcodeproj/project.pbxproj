@@ -26,7 +26,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		EE1753B016B850C600575457 /* gconnectiontable_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE1753AF16B850C600575457 /* gconnectiontable_unix.cpp */; };
+		EE1753B016B850C600575457 /* gconnectionlookup_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE1753AF16B850C600575457 /* gconnectionlookup_unix.cpp */; };
 		EE1753BC16B852AD00575457 /* genvironment_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE1753BB16B852AD00575457 /* genvironment_unix.cpp */; };
 		EE303D000D326C9700D840F2 /* admin_enabled.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C050D326C9600D840F2 /* admin_enabled.cpp */; };
 		EE303D010D326C9700D840F2 /* commandline_full.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303C070D326C9600D840F2 /* commandline_full.cpp */; };
@@ -143,7 +143,6 @@
 		EE89C05E16A5B5EB006CBE2E /* gvalid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE89C05016A5B5EB006CBE2E /* gvalid.cpp */; };
 		EE89C06416A5B722006CBE2E /* garg_mac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE89C06316A5B722006CBE2E /* garg_mac.cpp */; };
 		EE89C06F16A5B7A4006CBE2E /* gbase64.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE89C06516A5B7A4006CBE2E /* gbase64.cpp */; };
-		EE89C07016A5B7A4006CBE2E /* gnocheck_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE89C06816A5B7A4006CBE2E /* gnocheck_unix.cpp */; };
 		EE89C07216A5B7A4006CBE2E /* gpam.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE89C06A16A5B7A4006CBE2E /* gpam.cpp */; };
 		EE89C07316A5B7A4006CBE2E /* gpam_linux.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE89C06C16A5B7A4006CBE2E /* gpam_linux.cpp */; settings = {COMPILER_FLAGS = "-I/usr/include/pam"; }; };
 		EE89C07516A5B7A4006CBE2E /* gstrings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE89C06E16A5B7A4006CBE2E /* gstrings.cpp */; };
@@ -231,7 +230,6 @@
 		EE89C0D616A5E696006CBE2E /* glogoutput_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303B100D326C9600D840F2 /* glogoutput_unix.cpp */; };
 		EE89C0D716A5E698006CBE2E /* gmd5_native.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303B130D326C9600D840F2 /* gmd5_native.cpp */; };
 		EE89C0D816A5E6A0006CBE2E /* gnewprocess_unix_exec_enabled.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303B170D326C9600D840F2 /* gnewprocess_unix_exec_enabled.cpp */; };
-		EE89C0D916A5E6A5006CBE2E /* gnocheck_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE89C06816A5B7A4006CBE2E /* gnocheck_unix.cpp */; };
 		EE89C0DA16A5E6A6006CBE2E /* gpam.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE89C06A16A5B7A4006CBE2E /* gpam.cpp */; };
 		EE89C0DB16A5E6A7006CBE2E /* gpam_linux.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE89C06C16A5B7A4006CBE2E /* gpam_linux.cpp */; settings = {COMPILER_FLAGS = "-I/usr/include/pam"; }; };
 		EE89C0DC16A5E6AC006CBE2E /* gpath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE303B1A0D326C9600D840F2 /* gpath.cpp */; };
@@ -465,8 +463,8 @@
 
 /* Begin PBXFileReference section */
 		8DD76F6C0486A84900D96B5E /* emailrelay */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = emailrelay; sourceTree = BUILT_PRODUCTS_DIR; };
-		EE1753AE16B850C600575457 /* gconnectiontable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gconnectiontable.h; sourceTree = "<group>"; };
-		EE1753AF16B850C600575457 /* gconnectiontable_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gconnectiontable_unix.cpp; sourceTree = "<group>"; };
+		EE1753AE16B850C600575457 /* gconnectionlookup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gconnectionlookup.h; sourceTree = "<group>"; };
+		EE1753AF16B850C600575457 /* gconnectionlookup_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gconnectionlookup_unix.cpp; sourceTree = "<group>"; };
 		EE1753BA16B852AD00575457 /* genvironment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = genvironment.h; sourceTree = "<group>"; };
 		EE1753BB16B852AD00575457 /* genvironment_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = genvironment_unix.cpp; sourceTree = "<group>"; };
 		EE303AD90D326C9600D840F2 /* garg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = garg.cpp; sourceTree = "<group>"; };
@@ -864,9 +862,6 @@
 		EE89C06316A5B722006CBE2E /* garg_mac.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = garg_mac.cpp; sourceTree = "<group>"; };
 		EE89C06516A5B7A4006CBE2E /* gbase64.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gbase64.cpp; sourceTree = "<group>"; };
 		EE89C06616A5B7A4006CBE2E /* gbase64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gbase64.h; sourceTree = "<group>"; };
-		EE89C06716A5B7A4006CBE2E /* gnocheck.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gnocheck.h; sourceTree = "<group>"; };
-		EE89C06816A5B7A4006CBE2E /* gnocheck_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gnocheck_unix.cpp; sourceTree = "<group>"; };
-		EE89C06916A5B7A4006CBE2E /* gnocheck_win32.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gnocheck_win32.cpp; sourceTree = "<group>"; };
 		EE89C06A16A5B7A4006CBE2E /* gpam.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gpam.cpp; sourceTree = "<group>"; };
 		EE89C06B16A5B7A4006CBE2E /* gpam.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gpam.h; sourceTree = "<group>"; };
 		EE89C06C16A5B7A4006CBE2E /* gpam_linux.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gpam_linux.cpp; sourceTree = "<group>"; };
@@ -1029,9 +1024,6 @@
 				EE1753BB16B852AD00575457 /* genvironment_unix.cpp */,
 				EE89C06516A5B7A4006CBE2E /* gbase64.cpp */,
 				EE89C06616A5B7A4006CBE2E /* gbase64.h */,
-				EE89C06716A5B7A4006CBE2E /* gnocheck.h */,
-				EE89C06816A5B7A4006CBE2E /* gnocheck_unix.cpp */,
-				EE89C06916A5B7A4006CBE2E /* gnocheck_win32.cpp */,
 				EE89C06A16A5B7A4006CBE2E /* gpam.cpp */,
 				EE89C06B16A5B7A4006CBE2E /* gpam.h */,
 				EE89C06C16A5B7A4006CBE2E /* gpam_linux.cpp */,
@@ -1138,8 +1130,8 @@
 		EE303B370D326C9600D840F2 /* gnet */ = {
 			isa = PBXGroup;
 			children = (
-				EE1753AE16B850C600575457 /* gconnectiontable.h */,
-				EE1753AF16B850C600575457 /* gconnectiontable_unix.cpp */,
+				EE1753AE16B850C600575457 /* gconnectionlookup.h */,
+				EE1753AF16B850C600575457 /* gconnectionlookup_unix.cpp */,
 				EE89C0B916A5D306006CBE2E /* gdescriptor.cpp */,
 				EE303B380D326C9600D840F2 /* gaddress.h */,
 				EE303B390D326C9600D840F2 /* gaddress_ip.cpp */,
@@ -1792,7 +1784,6 @@
 				EE89C05E16A5B5EB006CBE2E /* gvalid.cpp in Sources */,
 				EE89C06416A5B722006CBE2E /* garg_mac.cpp in Sources */,
 				EE89C06F16A5B7A4006CBE2E /* gbase64.cpp in Sources */,
-				EE89C07016A5B7A4006CBE2E /* gnocheck_unix.cpp in Sources */,
 				EE89C07216A5B7A4006CBE2E /* gpam.cpp in Sources */,
 				EE89C07316A5B7A4006CBE2E /* gpam_linux.cpp in Sources */,
 				EE89C07516A5B7A4006CBE2E /* gstrings.cpp in Sources */,
@@ -1854,7 +1845,7 @@
 				EE89C0B416A5D1F0006CBE2E /* gtimer.cpp in Sources */,
 				EE89C0B516A5D1F2006CBE2E /* gtimerlist.cpp in Sources */,
 				EE89C0BA16A5D306006CBE2E /* gdescriptor.cpp in Sources */,
-				EE1753B016B850C600575457 /* gconnectiontable_unix.cpp in Sources */,
+				EE1753B016B850C600575457 /* gconnectionlookup_unix.cpp in Sources */,
 				EE1753BC16B852AD00575457 /* genvironment_unix.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2059,7 +2050,6 @@
 				EE89C0D616A5E696006CBE2E /* glogoutput_unix.cpp in Sources */,
 				EE89C0D716A5E698006CBE2E /* gmd5_native.cpp in Sources */,
 				EE89C0D816A5E6A0006CBE2E /* gnewprocess_unix_exec_enabled.cpp in Sources */,
-				EE89C0D916A5E6A5006CBE2E /* gnocheck_unix.cpp in Sources */,
 				EE89C0DA16A5E6A6006CBE2E /* gpam.cpp in Sources */,
 				EE89C0DB16A5E6A7006CBE2E /* gpam_linux.cpp in Sources */,
 				EE89C0DC16A5E6AC006CBE2E /* gpath.cpp in Sources */,

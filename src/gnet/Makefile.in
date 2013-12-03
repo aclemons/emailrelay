@@ -55,7 +55,7 @@ am__libgnet_a_SOURCES_DIST = gresolver_dns_disabled.cpp \
 	glocal_unix.cpp gmonitor.cpp gaddress_ip.cpp gaddress.h \
 	gbufferedserverpeer.cpp gbufferedserverpeer.h gclientptr.h \
 	gclient.cpp gclient.h gconnection.cpp gconnection.h \
-	gconnectiontable.h gconnectiontable_unix.cpp gdescriptor.cpp \
+	gconnectionlookup.h gconnectionlookup_unix.cpp gdescriptor.cpp \
 	gdescriptor.h gdescriptor_unix.cpp gevent.h geventhandler.cpp \
 	geventhandler.h geventloop.cpp geventloop.h \
 	geventloop_unix.cpp gheapclient.cpp gheapclient.h \
@@ -73,7 +73,7 @@ am__libgnet_a_SOURCES_DIST = gresolver_dns_disabled.cpp \
 am_libgnet_a_OBJECTS = $(am__objects_1) gmonitor.$(OBJEXT) \
 	gaddress_ip.$(OBJEXT) gbufferedserverpeer.$(OBJEXT) \
 	gclient.$(OBJEXT) gconnection.$(OBJEXT) \
-	gconnectiontable_unix.$(OBJEXT) gdescriptor.$(OBJEXT) \
+	gconnectionlookup_unix.$(OBJEXT) gdescriptor.$(OBJEXT) \
 	gdescriptor_unix.$(OBJEXT) geventhandler.$(OBJEXT) \
 	geventloop.$(OBJEXT) geventloop_unix.$(OBJEXT) \
 	gheapclient.$(OBJEXT) glinebuffer.$(OBJEXT) glocal.$(OBJEXT) \
@@ -169,6 +169,7 @@ STATIC_END = @STATIC_END@
 STATIC_START = @STATIC_START@
 STRIP = @STRIP@
 VERSION = @VERSION@
+ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -229,7 +230,7 @@ EXTRA_DIST = \
 	$(DNS_EXTRA_DIST) \
 	gaddress_ipv4.cpp \
 	gaddress_ipv6.cpp \
-	gconnectiontable_win32.cpp \
+	gconnectionlookup_win32.cpp \
     gdescriptor_win32.cpp \
     geventloop_win32.cpp \
     glocal_win32.cpp \
@@ -255,8 +256,8 @@ libgnet_a_SOURCES = \
 	gclient.h \
 	gconnection.cpp \
 	gconnection.h \
-	gconnectiontable.h \
-	gconnectiontable_unix.cpp \
+	gconnectionlookup.h \
+	gconnectionlookup_unix.cpp \
 	gdescriptor.cpp \
 	gdescriptor.h \
 	gdescriptor_unix.cpp \
@@ -348,7 +349,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbufferedserverpeer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconnection.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconnectiontable_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconnectionlookup_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdescriptor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdescriptor_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventhandler.Po@am__quote@

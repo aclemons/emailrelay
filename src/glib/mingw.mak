@@ -52,7 +52,6 @@ mk_sources=\
 	gpidfile.cpp \
 	gprocess_win32.cpp \
 	gnewprocess_win32.cpp \
-	gnocheck_unix.cpp \
 	groot.cpp \
 	gslot.cpp \
 	gstr.cpp \

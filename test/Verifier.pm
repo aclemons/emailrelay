@@ -34,7 +34,7 @@ sub new
 }
 
 sub port { return 11012 }
-sub log { return shift->{h}->log(@_) }
+sub logfile { return shift->{h}->logfile(@_) }
 sub exe { return shift->{h}->exe(@_) }
 sub run { return shift->{h}->run(@_) }
 sub pid { return shift->{h}->pid(@_) }

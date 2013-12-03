@@ -27,6 +27,7 @@
 #include "gmessagestore.h"
 #include "gpopsecrets.h"
 #include "ggetopt.h"
+#include "gtest.h"
 #include "gstr.h"
 #include "gdebug.h"
 
@@ -64,6 +65,7 @@ public:
 public:
 	void showWarranty( bool error_stream = false , const std::string & = std::string() ) const ;
 	void showCredit( bool error_stream = false , const std::string & = std::string() ) const ;
+	void showTestFeatures( bool error_stream = false , const std::string & = std::string() ) const ;
 	void showShortHelp( bool error_stream ) const ;
 	std::string semanticError( const Configuration & , bool & ) const ;
 	void showUsage( bool e ) const ;
@@ -102,7 +104,7 @@ private:
 
 std::string Main::CommandLineImp::switchSpec( bool is_windows )
 {
-	// single-character options unused: 123456789
+	// single-character options unused: 012345678
 	std::string dir = GSmtp::MessageStore::defaultDirectory().str() ;
 	std::string pop_auth = GPop::Secrets::defaultPath() ;
 	std::ostringstream ss ;
@@ -126,10 +128,11 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 		"j!client-tls!enables negotiated tls/ssl for smtp client! (if openssl built in)!0!!3|"
 		"b!client-tls-connection!enables smtp over tls/ssl for smtp client! (if openssl built in)!0!!3|"
 		"K!server-tls!enables negotiated tls/ssl for smtp server using the given openssl certificate file! (which must be in the directory trusted by openssl)!1!pem-file!3|"
-		"0!tls-config!sets tls configuration flags! (eg. 2 for SSLv2/3 support)!1!flags!3|"
+		"9!tls-config!sets tls configuration flags! (eg. 2 for SSLv2/3 support)!1!flags!3|"
 		"g!debug!generates debug-level logging if built in!!0!!3|"
 		"C!client-auth!enables smtp authentication with the remote server, using the given secrets file!!1!file!3|"
 		"L!log-time!adds a timestamp to the logging output!!0!!3|"
+		"N!log-file!log to file instead of stderr! (%d replaced by the date)!1!file!3|"
 		"S!server-auth!enables authentication of remote clients, using the given secrets file!!1!file!3|"
 		"e!close-stderr!closes the standard error stream soon after start-up!!0!!3|"
 		"a!admin!enables the administration interface and specifies its listening port number!!"
@@ -179,8 +182,7 @@ std::string Main::CommandLineImp::switchSpec_unix()
 std::string Main::CommandLineImp::switchSpec_windows()
 {
 	return
-		"l!log!writes log information on stderr and to the event log! (but see --log-file and --no-syslog)!0!!2|"
-		"N!log-file!log to file instead of stderr!!1!file!3|"
+		"l!log!writes log information on stderr and to the event log! (but see --close-stderr and --no-syslog)!0!!2|"
 		"t!no-daemon!uses an ordinary window, not the system tray!!0!!3|"
 		"k!syslog!forces system event log output if logging is enabled (overrides --no-syslog)!!0!!3|"
 		"n!no-syslog!disables use of the system event log!!0!!3|"
@@ -530,7 +532,7 @@ void Main::CommandLineImp::showCapabilities( bool e , const std::string & final 
 	if( !m_capabilities.empty() )
 	{
 		Show show( m_output , e ) ;
-		show.s() << "[" << m_capabilities << "]" << std::endl << final ;
+		show.s() << "Build configuration [" << m_capabilities << "]" << std::endl << final ;
 	}
 }
 
@@ -546,13 +548,22 @@ void Main::CommandLineImp::showCredit( bool e , const std::string & final ) cons
 	show.s() << GSsl::Library::credit("","\n",final) ;
 }
 
+void Main::CommandLineImp::showTestFeatures( bool e , const std::string & final ) const
+{
+	Show show( m_output , e ) ;
+	show.s() << "Test features " << (G::Test::enabled()?"enabled":"disabled") << std::endl << final ;
+}
+
 void Main::CommandLineImp::showVersion( bool e ) const
 {
 	Show show( m_output , e ) ;
 	showBanner( e , "\n" ) ;
 	showCopyright( e , "\n" ) ;
 	if( contains("verbose") )
+	{
 		showCapabilities( e , "\n" ) ;
+		showTestFeatures( e , "\n" ) ;
+	}
 	showCredit( e , "\n" ) ;
 	showWarranty( e ) ;
 }

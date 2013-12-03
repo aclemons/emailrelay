@@ -87,7 +87,7 @@ void GPop::ServerPeer::securityStart()
 	sslAccept() ; // base class
 }
 
-void GPop::ServerPeer::onSecure()
+void GPop::ServerPeer::onSecure( const std::string & certificate )
 {
 	m_protocol.secure() ;
 }

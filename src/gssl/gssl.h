@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include <string>
+#include <utility>
 
 /// \namespace GSsl
 namespace GSsl
@@ -34,9 +35,9 @@ namespace GSsl
 }
 
 /// \class GSsl::Protocol
-/// An SSL protocol class. The protocol object
-/// is associated with a particular socket file descriptor
-/// by the connect() and accept() calls.
+/// An SSL protocol class. The protocol object is
+/// associated with a particular socket file descriptor by the 
+/// connect() and accept() calls.
 ///
 /// The protocol is half-duplex in the sense that it is not 
 /// possible to read() data while a write() is incomplete. 
@@ -49,9 +50,10 @@ namespace GSsl
 /// the writing state by a call to Protocol::write().
 ///
 /// All logging is done indirectly through a logging function
-/// pointer; the first parameter is the logging level which
-/// is 0 for hex dump data, 1 for verbose debug messages and 
-/// 2 for more important errors and warnings.
+/// pointer; the first parameter is the logging level which is
+/// 0 for hex dump data, 1 for verbose debug messages and 2 for
+/// more important errors and warnings. Some implemetations
+/// do not log anything useful.
 ///
 class GSsl::Protocol 
 {
@@ -126,8 +128,10 @@ public:
 		///< Converts a result enumeration into a printable string. 
 		///< Used in logging and diagnostics.
 
-	static bool defaultHexdump() ;
-		///< Returns a default value for the constructor parameter.
+	std::pair<std::string,bool> peerCertificate( int format = 0 ) ;
+		///< Returns the peer certificate and a verified flag.
+		///< The default format of the certificate is printable 
+		///< with embedded newlines but otherwise unspecified.
 
 private:
 	Protocol( const Protocol & ) ; // not implemented
@@ -143,7 +147,7 @@ private:
 class GSsl::Library 
 {
 public:
-	typedef void (*LogFn)( int , const std::string & ) ;
+	typedef Protocol::LogFn LogFn ;
 
 	Library() ;
 		///< Constructor. Initialises the underlying ssl library

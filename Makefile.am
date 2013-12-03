@@ -14,6 +14,17 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+#
+# Top-level makefile
+#
+# Additional pseudo-targets for packaging:
+#	* rpm - builds an rpm package using rpmbuild
+#	* deb - converts the rpm to a deb package using alien.
+#
+# When running "make distcheck" consider doing this to avoid
+# a lengthy testing stage:
+#	$ make distcheck DISTCHECK_CONFIGURE_FLAGS=--disable-testing
+#
 
 EXTRA_DIST = \
 	emailrelay.spec \
@@ -48,7 +59,7 @@ $(RPM): dist
 	-rm -rf $(RPM_ROOT)/BUILD/emailrelay-$(VERSION)
 	-mkdir -p $(RPM_ROOT)/BUILD $(RPM_ROOT)/SOURCES $(RPM_ROOT)/SPECS 2>/dev/null
 	cp $(TAR) $(RPM_ROOT)/SOURCES/emailrelay-$(VERSION)-src.tar.gz
-	cp emailrelay.spec $(RPM_ROOT)/SPECS/
+	cp $(top_srcdir)/emailrelay.spec $(RPM_ROOT)/SPECS/
 	chown root:root $(RPM_ROOT)/SPECS/emailrelay.spec
 	rpmbuild -ba $(RPM_ROOT)/SPECS/emailrelay.spec
 
@@ -60,8 +71,8 @@ $(DEB): $(RPM)
 	alien --to-deb --generate --single --keep-version $(RPM)
 	sed -i 's/^Section:.*/Section: mail/' emailrelay-$(VERSION)/debian/control
 	sed -i 's/^Maintainer:.*/Maintainer: Graeme Walker <graeme_walker@users.sourceforge.net>/' emailrelay-$(VERSION)/debian/control
-	chmod +x debian/pre* debian/post*
-	cp debian/* emailrelay-$(VERSION)/debian/
+	chmod +x $(top_srcdir)/debian/pre* $(top_srcdir)/debian/post*
+	cp $(top_srcdir)/debian/* emailrelay-$(VERSION)/debian/
 	sed -i 's:dh_installchangelogs:dh_installchangelogs ; cp etc/init.d/emailrelay debian/emailrelay.init ; dh_installinit:' emailrelay-$(VERSION)/debian/rules
 	sed -i 's:dh_installdeb:dh_installdeb ; echo /etc/emailrelay.conf > debian/emailrelay/DEBIAN/conffiles:' emailrelay-$(VERSION)/debian/rules
 	cd emailrelay-$(VERSION) && debian/rules binary

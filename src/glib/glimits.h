@@ -48,6 +48,7 @@ public:
 	enum { net_line_limit = 1000000 } ; // denial of service limit
 	enum { net_hostname = 1024 } ;
 	enum { net_listen_queue = 3 } ;
+	enum { net_certificate_cache_size = 50 } ;
 	enum { win32_subclass_limit = 80 } ;
 	enum { win32_classname_buffer = 256 } ;
 	enum { ssl_max_cache_entries = 10 } ; // libnss3 SSL_ConfigServerSessionIDCache()
@@ -61,6 +62,7 @@ public:
 	enum { net_line_limit = 2000 } ;
 	enum { net_hostname = 128 } ;
 	enum { net_listen_queue = 20 } ;
+	enum { net_certificate_cache_size = 2 } ;
 	enum { win32_subclass_limit = 2 } ;
 	enum { win32_classname_buffer = 128 } ;
 	enum { ssl_max_cache_entries = 0 } ;

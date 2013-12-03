@@ -626,6 +626,7 @@ GLOB_TRUE
 OPENSSL_FALSE
 OPENSSL_TRUE
 SSL_LIBS
+ZLIB_LIBS
 TESTING_FALSE
 TESTING_TRUE
 MAC_FALSE
@@ -769,6 +770,7 @@ enable_small_exceptions
 enable_proxy
 enable_mac
 enable_testing
+with_zlib
 with_doxygen
 with_man2html
 with_openssl
@@ -1444,12 +1446,13 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-zlib             use zlib for compressed installation packages
+                          (default auto)
   --with-doxygen          generate source code documentation with doxygen
                           (default auto)
   --with-man2html         convert man pages to html using man2html (default
                           auto)
-  --with-openssl          use openssl for smtp client tls extension (default
-                          auto)
+  --with-openssl          use openssl for tls/ssl encryption (default auto)
   --with-glob             use glob() for reading directories (default auto)
   --with-pam              use linux pam for authentication (default auto)
 
@@ -5267,18 +5270,6 @@ fi
 
 done
 
-for ac_header in zlib.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_zlib_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_ZLIB_H 1
-_ACEOF
-
-fi
-
-done
-
 for ac_func in glob
 do :
   ac_fn_c_check_func "$LINENO" "glob" "ac_cv_func_glob"
@@ -6435,6 +6426,61 @@ fi
 
 
 
+# Check whether --with-zlib was given.
+if test "${with_zlib+set}" = set; then :
+  withval=$with_zlib;
+fi
+
+if test "$with_zlib" != "no"
+then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for zlib" >&5
+$as_echo_n "checking for zlib... " >&6; }
+if ${aclocal_cv_zlib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <zlib.h>
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  aclocal_cv_zlib=yes
+else
+  aclocal_cv_zlib=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $aclocal_cv_zlib" >&5
+$as_echo "$aclocal_cv_zlib" >&6; }
+    if test "$aclocal_cv_zlib" = "yes"
+	then
+		ZLIB_LIBS="-lz"
+
+$as_echo "#define HAVE_ZLIB 1" >>confdefs.h
+
+	else
+		if test "$with_zlib" = "yes"
+		then
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ignoring --with-zlib, check config.log and try setting CFLAGS" >&5
+$as_echo "$as_me: WARNING: ignoring --with-zlib, check config.log and try setting CFLAGS" >&2;}
+		fi
+		ZLIB_LIBS=""
+	fi
+else
+	ZLIB_LIBS=""
+fi
+
+
+
+
 # Check whether --with-doxygen was given.
 if test "${with_doxygen+set}" = set; then :
   withval=$with_doxygen;
@@ -6649,7 +6695,7 @@ fi
 	if test "$enable_static_linking" = "yes"
 	then
 		STATIC_START="-Xlinker -Bstatic"
-		STATIC_END="-Xlinker -Bdynamic -ldl"
+		STATIC_END="${ZLIB_LIBS} -Xlinker -Bdynamic -ldl"
 	else
 		STATIC_START=""
 		STATIC_END=""

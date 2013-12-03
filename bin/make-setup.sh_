@@ -21,7 +21,7 @@
 # Builds a "setup" self-extracting archive -- or a payload file for
 # one -- derived from running "make install" into a temporary directory.
 #
-# usage: make-setup.sh [-d] <output> <stub> <pack-utility> <icon>
+# usage: make-setup.sh [-d] <output> {<stub>|NONE} <pack-utility> <icon>
 #
 # Normally run by "make setup" in the "src/gui".
 #
@@ -61,18 +61,25 @@ Fail()
 }
 
 # check the command-line
-if test "$setup" = "" -o ! -f "$stub" -o ! -x "$pack"
+if test "$setup" = "" -o \( "$stub" != "NONE" -a ! -f "$stub" \) -o ! -x "$pack"
 then
 	echo usage: `basename $0` '<setup> <stub> <pack>' >&2
 	exit 2
 fi
 
-# run "make install"
+# run "make install" 
 echo `basename $0`: running make install into $install
 mkdir -p $install
 ( cd ../.. && make install HAVE_DOXYGEN=no DESTDIR=$install ) > /dev/null 2>&1
 
-# add in some extras
+# check the "./configure" directories were sane (see bin/configure-fhs.sh)
+if test ! -d "$install/usr/lib/emailrelay" -a ! -d "$install/Applications/E-MailRelay"
+then
+	echo `basename $0`: cannot see expected directories in the install tree >&2
+	exit 1
+fi
+
+# add some extras into the install
 if test -d "$install/usr/lib/emailrelay/"
 then
 	cp "$icon" $install/usr/lib/emailrelay/
@@ -94,8 +101,8 @@ find $install -type f | Filter | grep -n . | sed 's/:/1 /' > $list
 ( cd $install && find . -type f ) | Filter | grep -n . | sed 's/:/2 /' | Edit >> $list
 sort -n $list | sed 's/^[0-9][0-9]* //' > $list.tmp && mv $list.tmp $list
 
-# create the packed file
+# create the packed file - dont bother compressing any more (-p)
 echo `basename $0`: packing
 PATH=".:$PATH"
-"$pack" -q -f "$list" "$setup" "$stub"
+"$pack" -p -q -f "$list" "$setup" "$stub"
 

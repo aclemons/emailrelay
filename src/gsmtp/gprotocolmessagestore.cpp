@@ -115,7 +115,7 @@ std::string GSmtp::ProtocolMessageStore::from() const
 }
 
 void GSmtp::ProtocolMessageStore::process( const std::string & auth_id , const std::string & peer_socket_address ,
-	const std::string & peer_socket_name )
+	const std::string & peer_socket_name , const std::string & peer_certificate )
 {
 	try
 	{
@@ -125,7 +125,7 @@ void GSmtp::ProtocolMessageStore::process( const std::string & auth_id , const s
 			throw G::Exception( "internal error" ) ; // never gets here
 
 		// write ".new" envelope
-		std::string message_location = m_msg->prepare( auth_id , peer_socket_address , peer_socket_name ) ; 
+		std::string message_location = m_msg->prepare( auth_id , peer_socket_address , peer_socket_name , peer_certificate ) ; 
 
 		// start preprocessing
 		m_processor->start( message_location ) ;

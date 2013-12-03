@@ -119,10 +119,9 @@ bool GSmtp::ServerPeer::onReceive( const std::string & line )
 	return true ;
 }
 
-void GSmtp::ServerPeer::onSecure()
+void GSmtp::ServerPeer::onSecure( const std::string & certificate )
 {
-	G_LOG( "GSmtp::ServerPeer::onSecure: tls/ssl protocol established with " << peerAddress().second.displayString() ) ;
-	m_protocol.secure() ;
+	m_protocol.secure( certificate ) ;
 }
 
 void GSmtp::ServerPeer::protocolSend( const std::string & line , bool go_secure )
@@ -137,7 +136,7 @@ void GSmtp::ServerPeer::protocolSend( const std::string & line , bool go_secure 
 GSmtp::Server::Server( MessageStore & store , const GAuth::Secrets & client_secrets , 
 	const GAuth::Secrets & server_secrets , Config config , std::string smtp_server_address , 
 	unsigned int smtp_connection_timeout , GSmtp::Client::Config client_config ) :
-		GNet::MultiServer( GNet::MultiServer::addressList(config.interfaces,config.port) , config.use_connection_table ) ,
+		GNet::MultiServer( GNet::MultiServer::addressList(config.interfaces,config.port) , config.use_connection_lookup ) ,
 		m_store(store) ,
 		m_processor_address(config.processor_address) ,
 		m_processor_timeout(config.processor_timeout) ,
@@ -242,7 +241,7 @@ GSmtp::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const A
 	unsigned int processor_timeout_ ,
 	const std::string & verifier_address_ , 
 	unsigned int verifier_timeout_ ,
-	bool use_connection_table_ ) :
+	bool use_connection_lookup_ ) :
 		allow_remote(allow_remote_) ,
 		port(port_) ,
 		interfaces(interfaces_) ,
@@ -252,7 +251,7 @@ GSmtp::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const A
 		processor_timeout(processor_timeout_) ,
 		verifier_address(verifier_address_) ,
 		verifier_timeout(verifier_timeout_) ,
-		use_connection_table(use_connection_table_)
+		use_connection_lookup(use_connection_lookup_)
 {
 }
 

@@ -40,7 +40,7 @@ sub new
 
 	my %me = (
 		m_port => $port ,
-		m_exe => "$bin_dir/emailrelay-test-server" ,
+		m_exe => System::exe( $bin_dir , "emailrelay-test-server" ) ,
 		m_logfile => "$bin_dir/.tmp.emailrelay-test-server.out" ,
 		m_pidfile => "$bin_dir/.emailrelay-test-server.pid" ,
 		m_pid => undef ,
@@ -78,7 +78,9 @@ sub run
 	$wait_cs ||= 50 ;
 	my $log = $this->{'m_logfile'} ;
 
-	system( $this->exe() . " --port " . $this->port() . " $sw > $log 2>&1 &" ) ;
+	my $cmd = System::weirdpath($this->exe()) . " --port " . $this->port() . " $sw" ;
+	my $full_cmd = System::commandline( $cmd , { stdout => $log , stderr => $log , background => 1 } ) ;
+	system( $full_cmd ) ;
 
 	# wait for the pid file to be written
 	for( my $i = 0 ; $i < $wait_cs ; $i++ )
@@ -96,7 +98,7 @@ sub run
 		}
 	}
 
-	return kill( 0 , $this->{'m_pid'} ) != 0 ;
+	return System::processIsRunning( $this->{'m_pid'} ) ;
 }
 
 sub kill
@@ -104,8 +106,8 @@ sub kill
 	my ( $this ) = @_ ;
 	if( defined($this->pid()) )
 	{
-		kill( 15 , $this->pid() ) ;
-		select( undef , undef , undef , 0.1 ) ;
+		System::kill( $this->pid() ) ;
+		System::sleep_cs( 10 ) ;
 	}
 }
 

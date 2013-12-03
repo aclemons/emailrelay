@@ -60,9 +60,10 @@ public:
 			///< More than one LogOutput object may be created, but only
 			///< the first one controls output.
 
-	explicit LogOutput( bool output_with_logging , bool verbose_and_debug = true ) ;
-		///< Constructor for test programs. Only generates output if the 
-		///< first parameter is true. Never uses syslog.
+	explicit LogOutput( bool output_with_logging , bool verbose_and_debug = true ,
+		const std::string & stderr_replacement = std::string() ) ;
+			///< Constructor for test programs. Only generates output if the 
+			///< first parameter is true. Never uses syslog.
 
 	virtual ~LogOutput() ;
 		///< Destructor.

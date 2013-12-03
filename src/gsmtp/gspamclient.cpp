@@ -169,7 +169,7 @@ void GSmtp::SpamClient::turnRound()
 	m_out_lines = 0UL ;
 }
 
-void GSmtp::SpamClient::onSecure()
+void GSmtp::SpamClient::onSecure( const std::string & )
 {
 }
 

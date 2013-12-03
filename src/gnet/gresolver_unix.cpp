@@ -65,7 +65,7 @@ protected:
 	virtual void onConnect() ;
 	virtual void onSendComplete() ;
 	virtual void onData( const char * , std::string::size_type ) ;
-	virtual void onSecure() ;
+	virtual void onSecure( const std::string & ) ;
 	virtual void onException( std::exception & ) ;
 
 private:
@@ -124,7 +124,7 @@ void GNet::ResolverImp::onSendComplete()
 {
 }
 
-void GNet::ResolverImp::onSecure()
+void GNet::ResolverImp::onSecure( const std::string & )
 {
 }
 

@@ -25,7 +25,8 @@
 #include "gassert.h"
 #include "gmemory.h"
 #include <list>
-#include <algorithm> // std::swap<>()
+#include <algorithm> // std::swap
+#include <utility> // std::swap
 
 bool GNet::MultiServer::canBind( const AddressList & address_list , bool do_throw )
 {
@@ -79,15 +80,15 @@ GNet::MultiServer::AddressList GNet::MultiServer::addressList( const G::Strings 
 	return result ;
 }
 
-GNet::MultiServer::MultiServer( const AddressList & address_list , bool use_connection_table )
+GNet::MultiServer::MultiServer( const AddressList & address_list , bool use_connection_lookup )
 {
-	if( use_connection_table )
-		m_connection_table <<= new GNet::ConnectionTable ;
+	if( use_connection_lookup )
+		m_connection_lookup <<= new GNet::ConnectionLookup ;
 
 	G_ASSERT( ! address_list.empty() ) ;
 	for( AddressList::const_iterator p = address_list.begin() ; p != address_list.end() ; ++p )
 	{
-		init( *p , m_connection_table.get() ) ;
+		init( *p , m_connection_lookup.get() ) ;
 	}
 }
 
@@ -104,10 +105,10 @@ void GNet::MultiServer::init( const AddressList & address_list )
 	}
 }
 
-void GNet::MultiServer::init( const Address & address , ConnectionTable * connection_table )
+void GNet::MultiServer::init( const Address & address , ConnectionLookup * connection_lookup )
 {
 	// note that the Ptr class does not have proper value semantics...
-	MultiServerPtr ptr( new MultiServerImp(*this,address,connection_table) ) ;
+	MultiServerPtr ptr( new MultiServerImp(*this,address,connection_lookup) ) ;
 	m_server_list.push_back( MultiServerPtr() ) ; // copy a null pointer into the list
 	m_server_list.back().swap( ptr ) ;
 }
@@ -158,8 +159,8 @@ std::pair<bool,GNet::Address> GNet::MultiServer::firstAddress() const
 // ==
 
 GNet::MultiServerImp::MultiServerImp( MultiServer & ms , const Address & address , 
-	ConnectionTable * connection_table ) : 
-		Server(address,connection_table) ,
+	ConnectionLookup * connection_lookup ) : 
+		Server(address,connection_lookup) ,
 		m_ms(ms)
 {
 }

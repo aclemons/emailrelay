@@ -93,6 +93,10 @@ public:
 	bool sslEnabled() const ;
 		///< Returns true if TLS/SSL is active.
 
+	std::string peerCertificate() const ;
+		///< Returns the peer's TLS/SSL certificate
+		///< or the empty string.
+
 private:
 	SocketProtocol( const SocketProtocol & ) ;
 	void operator=( const SocketProtocol & ) ;
@@ -117,7 +121,7 @@ protected:
 	virtual void onData( const char * , std::string::size_type ) = 0 ;
 		///< Called when data is read from the socket.
 
-	virtual void onSecure() = 0 ;
+	virtual void onSecure( const std::string & peer_certificate ) = 0 ;
 		///< Called once the secure socket protocol has
 		///< been successfully negotiated.
 } ;

@@ -26,7 +26,8 @@
 #include "gassert.h"
 #include "gdebug.h"
 #include <climits>
-#include <algorithm> // std::swap<>()
+#include <algorithm> // std::swap
+#include <utility> // std::swap
 #include <sys/types.h>
 
 /// \class GNet::AddressImp

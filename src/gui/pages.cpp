@@ -303,7 +303,7 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const State & state , const std::stri
 	tip( m_smtp_checkbox , "Allow clients to submit new messages using SMTP" ) ;
 
 	m_smtp_checkbox->setChecked( state.value("do-smtp",true) ) ;
-	m_pop_checkbox->setChecked( state.value("do-pop",testMode()) ) ;
+	m_pop_checkbox->setChecked( testMode() || state.value("do-pop",false) ) ;
 
 	QVBoxLayout * server_type_box_layout = new QVBoxLayout ;
 	server_type_box_layout->addWidget( m_pop_checkbox ) ;
@@ -383,7 +383,7 @@ void DoWhatPage::onToggle()
 
 std::string DoWhatPage::nextPage()
 {
-	// sneaky feature...
+	// sneaky feature - see PopAccountsPage::nextPage()
 	if( dialog().currentPageName() != name() )
 	{
 		return m_smtp_checkbox->isChecked() ? next2() : std::string() ;
@@ -453,9 +453,9 @@ PopPage::PopPage( GDialog & dialog , const State & state , const std::string & n
 	radio_layout->addWidget( m_pop_by_name , 2 , 0 ) ;
 	radio_layout->addWidget( m_auto_copy_checkbox , 2 , 1 ) ;
 
-	if( state.value("pop-simple",true) )
+	if( testModeValue() == 1 || state.value("pop-simple",true) )
 		m_one->setChecked( true ) ;
-	else if( state.value("pop-shared",false) )
+	else if( testModeValue() == 2 || state.value("pop-shared",false) )
 		m_shared->setChecked( true ) ;
 	else if( state.value("pop-by-name",false) )
 		m_pop_by_name->setChecked( true ) ;
@@ -600,8 +600,8 @@ std::string PopAccountsPage::nextPage()
 {
 	// only the dowhat page knows whether we should do smtp -- a special	
 	// feature of the dowhat page's nextPage() is that if it detects
-	// that it is not the current page then it will give us an empty string
-	// if no smtp is required
+	// that it is not the current page (ie. if it's called from here)
+	// then it will give us an empty string if no smtp is required
 
 	return
 		dialog().previousPage(2U).nextPage().empty() ?
@@ -1341,6 +1341,11 @@ void ProgressPage::onShow( bool back )
 		// dump install variables into a stringstream
 		std::stringstream ss ;
 		dialog().dumpInstallVariables( ss ) ;
+		if( testMode() )
+		{
+			std::ofstream f( "installer.txt" ) ;
+			f << ss.str() ;
+		}
 
 		// start running the installer
 		m_installer.start( ss ) ; // reads from istream

@@ -85,7 +85,7 @@ protected:
 	virtual void onDeleteImp( const std::string & , bool ) ;
 		///< Final override from GNet::Client.
 
-	virtual void onSecure() ;
+	virtual void onSecure( const std::string & ) ;
 		///< Final override from GNet::SocketProtocolSink.
 
 private:

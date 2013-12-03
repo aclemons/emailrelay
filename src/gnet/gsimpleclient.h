@@ -128,6 +128,10 @@ public:
 		///< address. Pair.first is false on error.
 		///< Final override from GNet::Connection.
 
+	virtual std::string peerCertificate() const ;
+		///< Returns the peer's TLS certificate.
+		///< Final override from GNet::Connection.
+
 	ResolverInfo resolverInfo() const ;
 		///< Returns a ResolverInfo structure containing the
 		///< result of host() and service() name lookup if 

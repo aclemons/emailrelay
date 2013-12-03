@@ -24,16 +24,16 @@ libs=../src/gpop/gpop.a ../src/gsmtp/gsmtp.a ../src/gnet/gnet.a ../src/gauth/gau
 glib=../src/glib/glib.a
 syslibs=-lgdi32 -lws2_32 -ladvapi32
 
-all: emailrelay_test_server emailrelay_test_scanner emailrelay_test_verifier
+all: emailrelay-test-server emailrelay-test-scanner emailrelay-test-verifier
 
 include ../src/mingw-common.mak
 mk_src_dir=../src
 
-emailrelay_test_server: emailrelay_test_server.o $(libs)
-	$(mk_link) $(mk_link_flags) -o emailrelay_test_server emailrelay_test_server.o $(libs) $(syslibs)
+emailrelay-test-server: emailrelay_test_server.o $(libs)
+	$(mk_link) $(mk_link_flags) -o emailrelay-test-server emailrelay_test_server.o $(libs) $(syslibs)
 
-emailrelay_test_scanner: emailrelay_test_scanner.o $(libs)
-	$(mk_link) $(mk_link_flags) -o emailrelay_test_scanner emailrelay_test_scanner.o $(libs) $(syslibs)
+emailrelay-test-scanner: emailrelay_test_scanner.o $(libs)
+	$(mk_link) $(mk_link_flags) -o emailrelay-test-scanner emailrelay_test_scanner.o $(libs) $(syslibs)
 
-emailrelay_test_verifier: emailrelay_test_verifier.o $(libs)
-	$(mk_link) $(mk_link_flags) -o emailrelay_test_verifier emailrelay_test_verifier.o $(libs) $(syslibs)
+emailrelay-test-verifier: emailrelay_test_verifier.o $(libs)
+	$(mk_link) $(mk_link_flags) -o emailrelay-test-verifier emailrelay_test_verifier.o $(libs) $(syslibs)

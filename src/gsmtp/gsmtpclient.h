@@ -119,7 +119,7 @@ protected:
 	virtual void onSendComplete() ; 
 		///< Final override from GNet::BufferedClient.
 
-	virtual void onSecure() ;
+	virtual void onSecure( const std::string & ) ;
 		///< Final override from GNet::SocketProtocol.
 
 private:
@@ -133,6 +133,7 @@ private:
 	void messageFail( const std::string & , int = 0 ) ;
 	void messageDestroy() ;
 	void doOnConnect() ;
+	void logCertificate( const std::string & ) ;
 
 private:
 	MessageStore * m_store ;

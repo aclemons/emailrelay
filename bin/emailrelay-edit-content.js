@@ -63,6 +63,6 @@ try
 catch( e ) 
 {
 	// report errors using the special <<...>> markers
-	WScript.Echo( "<<" + e + ">>" ) ;
+	WScript.StdOut.WriteLine( "<<" + e + ">>" ) ;
 	WScript.Quit( 1 ) ;
 }
