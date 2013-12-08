@@ -27,6 +27,11 @@
 #include <stdexcept>
 #include <unistd.h>
 
+// these directories from the makefile could be used in preference 
+// to the installer's runtime base directory on the assumption that 
+// on unix we always install using "make install" and only ever 
+// run the installer to reconfigure
+// 
 #ifndef G_SBINDIR
 	#define G_SBINDIR ""
 #endif
@@ -94,21 +99,17 @@ G::Path Dir::os_install()
 
 G::Path Dir::os_gui( const G::Path & install )
 {
-	return install + "sbin" + "emailrelay-gui.real" ; // should use G_SBINDIR
+	return install + "sbin" + "emailrelay-gui.real" ; // or G_SBINDIR
 }
 
 G::Path Dir::os_icon( const G::Path & install )
 {
-	std::string icon_dir( G_ICONDIR ) ;
-	return
-		icon_dir.empty() ?
-			install + "share" + "emailrelay" + "emailrelay-icon.png" :
-			G::Path(icon_dir) + "emailrelay-icon.png" ;
+	return install + "share" + "emailrelay" + "emailrelay-icon.png" ; // or G_ICONDIR
 }
 
 G::Path Dir::os_server( const G::Path & install )
 {
-	return install + "sbin" + "emailrelay" ; // should use G_SBINDIR
+	return install + "sbin" + "emailrelay" ; // or G_SBINDIR
 }
 
 G::Path Dir::os_bootcopy( const G::Path & , const G::Path & )

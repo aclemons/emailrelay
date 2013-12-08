@@ -15,15 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
+#!/usr/bin/perl -w
 #
 # emailrelay-test.pl
 #
 # Tests the E-MailRelay system.
 #
-# This script is best run as root. It will not work on Windows, 
-# and some tests will probably only work on Linux. Also, some 
-# parameters might need tweaking depending on the performance of 
-# the machine. YMMV.
+# This script is best run as root. Some parameters might need tweaking 
+# depending on the speed of the machine.
 #
 # usage: emailrelay-test.pl [-d <bin-dir>] [-k] [-v] [<test-name> ...]
 #      -d  - directory containing emailrelay binary
@@ -70,14 +69,6 @@ $System::verbose = 1 if exists $opts{'v'} ;
 
 my $run_all_ok = 1 ;
 
-sub requireLinux
-{
-	if( ! System::linux() )
-	{
-		die "skipped: not linux" ;
-	}
-}
-
 sub requireUnix
 {
 	if( ! System::unix() )
@@ -113,6 +104,27 @@ sub requirePop
 		die "skipped: not a pop build" ;
 	}
 }
+
+sub requireTestAccount
+{
+	die "skipped: no non-root test account" if( getTestAccount() eq "root" ) ;
+}
+
+sub getTestAccount
+{
+	if( System::mac() )
+	{
+		my $user = $ENV{LOGNAME} ;
+		$user = $ENV{SUDO_USER} if( $user eq "root" ) ;
+		return $user ;
+	}
+	else
+	{
+		return "bin" ;
+	}
+}
+
+# ===
 
 sub testServerShowsHelp
 {
@@ -236,6 +248,7 @@ sub testSubmitPermissions
 	# setup -- group-suid-daemon exe, group-daemon directory (requires world execute on all directories up to /)
 	requireUnix() ;
 	requireRoot() ;
+	requireTestAccount() ;
 	my $exe = System::tempfile("submit","/tmp") ;
 	my $rc = system( "cp $bin_dir/emailrelay-submit $exe" ) ;
 	$rc += system( "chown daemon:daemon $exe" ) ;
@@ -252,8 +265,8 @@ sub testSubmitPermissions
 
 	# test that group-suid-daemon submit executable creates files correctly
 	my $cmd = "$exe --from me\@here.local --spool-dir $spool_dir me\@there.local" ;
-	my $someuser = System::mac() ? $ENV{USER} : "bin" ;
-	my $rc = system( "cat $path | su $someuser -c \"$cmd\"" ) ;
+	my $someuser = getTestAccount() ;
+	$rc = system( "cat $path | su -m $someuser -c \"$cmd\"" ) ;
 	Check::that( $rc == 0 , "failed to submit" ) ;
 	Check::fileMatchCount( $spool_dir."/emailrelay.*.content" , 1 ) ;
 	Check::fileMatchCount( $spool_dir."/emailrelay.*.envelope" , 1 ) ;
@@ -281,17 +294,17 @@ sub testServerIdentityRunningAsRoot
 		SpoolDir => 1 ,
 		User => 1 ,
 	) ;
-	requireLinux() ;
+	requireUnix() ;
 	requireRoot() ;
 	my $server = new Server() ;
 	$server->run( \%args , "sudo " ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 
 	# test that the effective id comes from --user
-	Check::that( System::realUser($server->pid()) == System::uid("root") , "wrong real user" ) ;
-	Check::that( System::realGroup($server->pid()) == System::gid("root") , "wrong real group" );
-	Check::that( System::effectiveUser($server->pid()) == System::uid($server->user()) , "wrong effective user" ) ;
-	Check::that( System::effectiveGroup($server->pid()) == System::gid($server->user()) , "wrong effective group" );
+	Check::processRealUser( $server->pid() , "root" ) ;
+	Check::processRealGroup( $server->pid() , "root" ) ;
+	Check::processEffectiveUser( $server->pid() , $server->user() ) ;
+	Check::processEffectiveGroup( $server->pid() , $server->user() ) ;
 
 	# tear down
 	$server->kill() ;
@@ -310,7 +323,7 @@ sub testServerIdentityRunningSuidRoot
 		SpoolDir => 1 ,
 		User => 1 ,
 	) ;
-	requireLinux() ;
+	requireUnix() ;
 	requireRoot() ;
 	my $server = new Server() ;
 	my $exe = System::tempfile("emailrelay") ;
@@ -320,14 +333,14 @@ sub testServerIdentityRunningSuidRoot
 	$rc += system( "sudo chmod u+s $exe" ) ;
 	Check::that( $rc == 0 ) ;
 	$server->set_exe( $exe ) ;
-	my $someuser = System::mac() ? $ENV{USER} : "bin" ;
+	my $someuser = getTestAccount() ;
 	$server->run( \%args , "sudo -u $someuser " ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 
 	# test that the effective id is the real id ($someuser) and not root or --user
-	Check::that( System::realUser($server->pid()) == System::uid($someuser) , "wrong real user" ) ;
-	Check::that( System::effectiveUser($server->pid()) == System::uid($someuser) , "wrong effective user" ) ;
-	Check::that( System::savedUser($server->pid()) == System::uid("root") , "wrong saved user" ) ;
+	Check::processRealUser( $server->pid() , $someuser ) ;
+	Check::processEffectiveUser( $server->pid() , $someuser ) ;
+	Check::processSavedUser( $server->pid() , "root" ) ;
 
 	# tear down
 	$server->kill() ;
@@ -390,6 +403,12 @@ sub testServerPermissions
 	requireUnix() ;
 	requireRoot() ;
 	my $server = new Server() ;
+	# for bsd/mac the file group is inherited from the directory - also assume the 
+	# group name is the same as the user name
+	my $rc = 0 ;
+	$rc = system( "chgrp ".$server->user()." ".$server->spoolDir() ) if ( System::bsd() || System::mac() ) ;
+	$rc += system( "chmod 770 ".$server->spoolDir() ) if ( System::bsd() || System::mac() ) ;
+	Check::that( $rc == 0 , "chgrp/chmod of spool directory failed" ) ;
 	$server->run( \%args , "sudo " ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	my $client = new SmtpClient( $server->smtpPort() ) ;
@@ -397,8 +416,8 @@ sub testServerPermissions
 	$client->submit() ;
 
 	# test permissions of created files
-	Check::fileOwner( $server->pidFile() == "root" ) ;
-	Check::fileGroup( $server->pidFile() == $server->user() ) ;
+	Check::fileOwner( $server->pidFile() , "root" ) ;
+	Check::fileGroup( $server->pidFile() , $server->user() ) unless ( System::bsd() || System::mac() ) ;
 	Check::fileOwner( System::match($server->spoolDir()."/emailrelay.*.content") , "root" ) ;
 	Check::fileGroup( System::match($server->spoolDir()."/emailrelay.*.content") , $server->user() ) ;
 	Check::fileMode( System::match($server->spoolDir()."/emailrelay.*.content") , 0660 ) ;
@@ -451,7 +470,7 @@ sub testServerPop
 	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
-sub testServerPopList
+sub disabled_testServerPopList
 {
 	# setup
 	my %args = (
@@ -465,8 +484,7 @@ sub testServerPopList
 		Verbose => 1 ,
 	) ;
 	requireDebug() ;
-
-	my $bufferbloat = !System::unix() ;
+	my $bufferbloat = !System::linux() ; # cannot check flow control on bufferbloated systems
 
 	my $server = new Server() ;
 	requirePop( $server ) ;
@@ -474,7 +492,7 @@ sub testServerPopList
 	$server->run( \%args , undef , "log-flow-control_large-pop-list" ) ; # G_TEST
 	Check::running( $server->pid() , $server->message() ) ;
 	my $pop = new PopClient( $server->popPort() ) ;
-	my $message_count = $bufferbloat ? 3 : 40 ; # enough to trigger flow control (?)
+	my $message_count = 40 ; # enough to trigger flow control? - tweak this
 	for( my $i = 0 ; $i < $message_count ; $i++ ) { System::submitSmallMessage($server->spoolDir()) }
 	System::chmod_r( $server->spoolDir() , "700" , "600" ) ;
 
@@ -662,6 +680,7 @@ sub testServerPolling
 		PidFile => 1 ,
 		Verbose => 1 ,
 		Poll => 1 ,
+		ConnectionTimeout => 1 ,
 	) ;
 	my $spool_dir_1 = System::createSpoolDir(undef,undef,"spool-1") ;
 	my $spool_dir_2 = System::createSpoolDir(undef,undef,"spool-2") ;
@@ -953,6 +972,7 @@ sub testFilterIdentity
 		SpoolDir => 1 ,
 		PidFile => 1 ,
 		Filter => 1 ,
+		User => 1 ,
 	) ;
 	requireUnix() ;
 	requireRoot() ;
@@ -962,7 +982,7 @@ sub testFilterIdentity
 	my $outputfile = System::tempfile("output","/tmp") ;
 	Filter::create( $server->filter() , {
 			unix => [
-				"cat /proc/self/status | fgrep id: | sed 's/^/proc: /' > $outputfile" , 
+				'ps -p $$'." -o uid,ruid | sed 's/  */ /g' | sed 's/^ *//' > $outputfile" , 
 				"exit 0" ,
 			] ,
 			win32 => [
@@ -975,7 +995,9 @@ sub testFilterIdentity
 	# test that the filter is executed with the correct identity
 	$c->submit() ;
 	Check::that( -f $outputfile , "filter did not create an output file" ) ;
-	Check::fileContains( $outputfile , "proc: Uid:\t1\t1" , "filter not run as uid 1" ) ;
+	my $uid1 = System::uid( $server->user() ) ;
+	my $uid2 = $uid1 - 4294967296 ; # negative ids on mac
+	Check::fileContainsEither( $outputfile , "$uid1 $uid1" , "$uid2 $uid2" , "filter not run as uid $uid1" ) ;
 
 	# tear down
 	unlink( $outputfile ) ;
@@ -1151,7 +1173,7 @@ sub testScannerPass
 		Verbose => 1 ,
 	) ;
 	my $server = new Server() ;
-	my $scanner = new Scanner() ;
+	my $scanner = new Scanner( $server->scannerPort() ) ;
 	Check::ok( $server->run(\%args) , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	$scanner->run() ;
@@ -1190,7 +1212,7 @@ sub testScannerBlock
 		Verbose => 1 ,
 	) ;
 	my $server = new Server() ;
-	my $scanner = new Scanner() ;
+	my $scanner = new Scanner( $server->scannerPort() ) ;
 	Check::ok( $server->run(\%args) , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	$scanner->run() ;
@@ -1228,7 +1250,7 @@ sub testScannerTimeout
 		FilterTimeout => 1 ,
 	) ;
 	my $server = new Server() ;
-	my $scanner = new Scanner() ;
+	my $scanner = new Scanner( $server->scannerPort() ) ;
 	Check::ok( $server->run(\%args) , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	$scanner->run() ;
@@ -1266,7 +1288,7 @@ sub testNetworkVerifierPass
 		Verbose => 1 ,
 	) ;
 	my $server = new Server() ;
-	my $verifier = new Verifier() ;
+	my $verifier = new Verifier( $server->verifierPort() ) ;
 	Check::ok( $server->run(\%args) , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	$verifier->run() ;
@@ -1304,7 +1326,7 @@ sub testNetworkVerifierFail
 		Verbose => 1 ,
 	) ;
 	my $server = new Server() ;
-	my $verifier = new Verifier() ;
+	my $verifier = new Verifier( $server->verifierPort() ) ;
 	Check::ok( $server->run(\%args) , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	$verifier->run() ;
@@ -1663,13 +1685,6 @@ sub testClientInvalidRecipients
 sub run
 {
 	my ( $name ) = @_ ;
-	my %map = () ;
-	for my $arg ( @ARGV ) { $map{$arg} = 1 }
-	if( scalar(@ARGV) && !exists $map{$name} )
-	{
-		print "(skipping $name)\n" ;
-		return ;
-	}
 	print "running $name ... " ;
 	eval $name."()";
 	my $error = $@ ;
@@ -1686,7 +1701,7 @@ sub run
 			$run_all_ok = 0 ;
 			if( ! opt_keep_going )
 			{
-				last ;
+				return 0 ;
 			}
 		}
 	}
@@ -1694,6 +1709,7 @@ sub run
 	{
 		print "ok\n" ;
 	}
+	return 1 ;
 }
 
 # introspection
@@ -1705,7 +1721,7 @@ while( <$f> )
 	if( $line =~ m/^sub test/ )
 	{
 		my @line_part = split( /\s+/ , $line ) ;
-		push @tests , @line_part[1] ;
+		push @tests , $line_part[1] ;
 	}
 }
 
@@ -1715,9 +1731,32 @@ if( !System::unix() )
 	System::killall( "emailrelay-*" ) ;
 }
 
+my %run_tests = () ;
+my %skip_tests = () ;
+my $run_tests = 0 ;
+for my $arg ( @ARGV ) 
+{ 
+	if( $arg =~ m/^-/ )
+	{
+		$skip_tests{substr($arg,1)} = 1 ;
+	}
+	else
+	{
+		$arg =~ s/^\+// ;
+		$run_tests{$arg} = 1 ;
+		$run_tests++ ;
+	}
+}
 for my $test ( @tests )
 {
-	run( $test ) ;
+	if( ( $run_tests && !exists $run_tests{$test} ) || $skip_tests{$test} )
+	{
+		print "(skipping $test)\n" ;
+	}
+	else
+	{
+		last if !run( $test ) ;
+	}
 }
 
 if( !$run_all_ok )

@@ -13,6 +13,21 @@ dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program.  If not, see <http://www.gnu.org/licenses/>.
 dnl ===
+dnl Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl 
+dnl This program is free software: you can redistribute it and/or modify
+dnl it under the terms of the GNU General Public License as published by
+dnl the Free Software Foundation, either version 3 of the License, or
+dnl (at your option) any later version.
+dnl 
+dnl This program is distributed in the hope that it will be useful,
+dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl GNU General Public License for more details.
+dnl 
+dnl You should have received a copy of the GNU General Public License
+dnl along with this program.  If not, see <http://www.gnu.org/licenses/>.
+dnl ===
 
 dnl aclocal-type-socketlen-t
 dnl
@@ -264,7 +279,7 @@ then
 	else
 		if test "$with_zlib" = "yes"
 		then
-			AC_MSG_WARN([ignoring --with-zlib, check config.log and try setting CFLAGS])
+			AC_MSG_WARN([ignoring --with-zlib: check config.log and try setting CFLAGS])
 		fi
 		ZLIB_LIBS=""
 	fi
@@ -306,6 +321,11 @@ AC_DEFUN([ACLOCAL_CHECK_QT4],
 			aclocal_moc=""
 		fi
 	fi
+
+	if test "$qt4" = no -a "$e_qtmoc" = ""
+	then
+		aclocal_moc=""
+	fi
 ])
 
 dnl enable-gui
@@ -322,7 +342,7 @@ AC_DEFUN([ENABLE_GUI],
 	else
 		if test "$enable_gui" = "yes" -a "$aclocal_moc" = ""
 		then
-			AC_MSG_WARN([ignoring --enable-gui, set e_qtmoc to a Qt4 moc program to override])
+			AC_MSG_WARN([ignoring --enable-gui: set e_qtmoc, QT_LIBS and QT_CFLAGS to override])
 		fi
 		MOC="$aclocal_moc"
 	fi
@@ -576,7 +596,7 @@ then
 	else
 		if test "$with_openssl" = "yes"
 		then
-			AC_MSG_WARN([ignoring --with-openssl, check config.log and try setting CFLAGS])
+			AC_MSG_WARN([ignoring --with-openssl: check config.log and try setting CFLAGS])
 		fi
 		SSL_LIBS=""
 		aclocal_ssl="none"
@@ -627,10 +647,9 @@ AM_CONDITIONAL(GLOB,test x$aclocal_use_glob = xyes)
 dnl enable-static-linking
 dnl
 dnl The "--enable-static-linking" makes a half-hearted attempt
-dnl at static linking. Only applicable to gcc. 
-dnl
-dnl Note that statically-linked openssl may require a statically 
-dnl linked zlib so try using "SSL_LIBS=-lssl -lcrypto -lz".
+dnl at static linking. Only applicable to gcc. Note that statically 
+dnl linked openssl may require a statically linked zlib so try 
+dnl using "SSL_LIBS=-lssl -lcrypto -lz".
 dnl
 AC_DEFUN([ENABLE_STATIC_LINKING],
 [

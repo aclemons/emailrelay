@@ -23,7 +23,7 @@
 //  pack [-xapqd] [-f <list-file>] <output> {<stub>|NONE} <in> <out> [<in> <out> ...] [--dir] [<file> ... [--opt] ...]
 //          -x : use iexpress (windows)
 //          -d : pack into a simple directory tree
-//          -a : convert all "*.txt" <out> files to CRLF
+//          -a : convert all "*.txt"/"*.js" <out> files to CRLF
 //          -p : plain storage with no compression
 //          -q : quiet operation
 //
@@ -352,7 +352,9 @@ void pack( const std::string & path_out , const std::string & path_stub , const 
 	std::list<File*> list ;
 	for( StringPairs::const_iterator p = file_list.begin() ; p != file_list.end() ; ++p )
 	{
-		bool is_txt = G::Path((*p).second).extension() == "txt" ;
+		bool is_txt = 
+			G::Path((*p).second).extension() == "txt" ||
+			G::Path((*p).second).extension() == "js" ;
 		File * file = new File( (*p).first , (*p).second , cfg_auto_xtod && is_txt ) ;
 		list.push_back( file ) ;
 		if( !cfg_plain )

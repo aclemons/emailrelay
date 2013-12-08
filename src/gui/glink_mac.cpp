@@ -25,6 +25,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <stdlib.h> // system()
 
 class GLinkImp 
 {
@@ -77,7 +78,8 @@ void GLinkImp::saveAs( const G::Path & )
 				<< "hidden:true}\" "
 			<< "-e \"end tell\"" ;
 
-	system( ss.str().c_str() ) ;
+	int rc = system( ss.str().c_str() ) ;
+	G_IGNORE_VARIABLE( rc ) ;
 }
 
 // ==
@@ -124,7 +126,8 @@ bool GLink::remove( const G::Path & )
 				<< "-e \"delete login item __\" "
 				<< "-e \"end tell\"" ;
 
-	system( ss.str().c_str() ) ;
+	int rc = system( ss.str().c_str() ) ;
+	G_IGNORE_VARIABLE( rc ) ;
 	return true ;
 }
 

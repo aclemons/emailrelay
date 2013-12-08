@@ -12,12 +12,15 @@ E-MailRelay server on Windows. These include:
 
 Setup program
 -------------
-Installing E-MailRelay on Windows should be straightforward if you have the 
-setup program "emailrelay-setup.exe" and its associated "payload" data file. 
-Run this as an administrator if you are going to be installing into 
-sensitive directories like "Program Files".
+Installing E-MailRelay on Windows should be straightforward if you have the
+setup program "emailrelay-setup.exe" and its associated "payload" data file.
 
-The setup GUI will take you through the installation options and then install 
+Run "emailrelay-setup.exe" as an administrator if you are going to be installing
+into sensitive directories like "Program Files". If you don't want to run it as
+an administrator then you will have to rename it to (eg.) "emailrelay-gui.exe"
+to avoid triggering the UAC mechanism.
+
+The setup GUI will take you through the installation options and then install
 the run-time files into your chosen locations.
 
 Manual installation

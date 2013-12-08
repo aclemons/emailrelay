@@ -108,7 +108,7 @@ sub kill
 {
 	# kill and wait to die
 	my ( $this , $signal__not_used , $timeout_cs ) = @_ ;
-	System::kill( $this->pid() , $timeout_cs ) ;
+	System::kill_( $this->pid() , $timeout_cs ) ;
 	System::wait( $this->pid() , $timeout_cs ) ;
 }
 

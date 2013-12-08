@@ -116,12 +116,14 @@ G::PamImp::PamImp( G::Pam & pam , const std::string & application , const std::s
 	}
 
 	// (linux-specific)
+ #ifdef PAM_FAIL_DELAY
 	m_rc = ::pam_set_item( m_hpam , PAM_FAIL_DELAY , reinterpret_cast<const void*>(delay) ) ;
 	if( m_rc != PAM_SUCCESS )
 	{
 		::pam_end( m_hpam , m_rc ) ;
 		throw Error( "pam_set_item" , m_rc , ::pam_strerror(hpam(),m_rc) ) ;
 	}
+ #endif
 }
 
 G::PamImp::~PamImp()
@@ -163,8 +165,10 @@ bool G::PamImp::authenticate( bool require_token )
 	if( silent() ) flags |= PAM_SILENT ;
 	if( require_token ) flags |= PAM_DISALLOW_NULL_AUTHTOK ;
 	m_rc = ::pam_authenticate( hpam() , flags ) ;
+ #ifdef PAM_INCOMPLETE
 	if( m_rc == PAM_INCOMPLETE )
 		return false ;
+ #endif
 
 	check( "pam_authenticate" , m_rc ) ;
 	return true ;
@@ -215,6 +219,21 @@ int G::PamImp::converse( int n_in , const struct pam_message ** in , struct pam_
 	G_ASSERT( n_in > 0 ) ;
 	G_ASSERT( out != NULL ) ;
 	size_t n = n_in < 0 ? size_t(0U) : static_cast<size_t>(n_in) ;
+
+	// pam_conv(3) on linux points out that the pam interface is under-speficied, and on some 
+	// systems, possibly including solaris, the "in" pointer is interpreted differently - this 
+	// is only a problem for n greater than one, so warn about it at run-time
+	//
+	if( n > 1U )
+	{
+		static bool warned = false ;
+		if( !warned )
+		{
+			G_WARNING( "PamImp::converse: received a complex pam converse() structure: proceed with caution" ) ;
+			warned = true ;
+		}
+	}
+
 	*out = NULL ;
 	struct pam_response * rsp = NULL ;
 	try
@@ -223,11 +242,9 @@ int G::PamImp::converse( int n_in , const struct pam_message ** in , struct pam_
 		PamImp * This = reinterpret_cast<PamImp*>(vp) ;
 		G_ASSERT( This->m_magic == MAGIC ) ;
 
-		// convert the c items into a c++ container
-		//
-		// this follows the linux convention of an argv-style pointer to
-		// an array of pointers, rather than a pointer to a pointer to
-		// an array of structures (rtfm)...	
+		// convert the c items into a c++ container -- treat
+		// "in" as a pointer to a contiguous array of pointers
+		// (see linux man pam_conv)
 		//
 		ItemArray array( n ) ;
 		for( size_t i = 0U ; i < n ; i++ )
@@ -244,11 +261,10 @@ int G::PamImp::converse( int n_in , const struct pam_message ** in , struct pam_
 		// do the conversation
 		//
 		This->m_pam.converse( array ) ;
+		G_ASSERT( array.size() == n ) ;
 
-		// allocate the response
-		//
-		// note that out is a pointer to a pointer to a contiguous 
-		// array, not a pointer to an array of pointers
+		// allocate the response - treat "out" as a pointer to a pointer 
+		// to a contiguous array of structures (see linux man pam_conv)
 		//
 		rsp = reinterpret_cast<struct pam_response*>( std::malloc(n*sizeof(struct pam_response)) ) ;
 		if( rsp == NULL )

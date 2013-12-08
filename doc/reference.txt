@@ -482,23 +482,20 @@ step ("--client-tls-connection"). This is sometimes called SMTP-over-TLS or
 secure SMTP (ssmtp) and it is normally used with port number 465.
 
 The behaviour of the TLS/SSL layer can be tweaked by using "--tls-config" option
-with a special number that is the sum of the following:
+with a special number that is made up of the following:
 * 2 - allow SSL v2 or later
 * 3 - allow SSL v3 or later
 * 4 - ask for peer certificates but just log them
 * 8 - ask for peer certificates and verify them
 
-These values are subject to change in each release.
+PAM Authentication
+------------------
+E-MailRelay supports the use of PAM (Pluggable Authentication Modules) for
+authentication if it has been built with the "--with-pam" configure option.
 
-Linux PAM
----------
-E-MailRelay supports the use of Linux PAM (Pluggable Authentication Modules) for
-authentication if it has been built on Linux with the "--with-pam" configure
-option.
-
-PAM authentication is used by E-MailRelay to authenticate SMTP and POP3 sessions
-from clients, so it is not relevant to E-MailRelay when acting just as a simple
-SMTP client.
+PAM authentication can be used by E-MailRelay to authenticate SMTP and POP3
+sessions coming in from remote clients; it cannot be used by E-MailRelay to
+supply passwords when acting as an SMTP client.
 
 Use "--server-auth=/pam" and/or "--pop-auth=/pam" on the command-line to enable
 PAM authentication at run-time. The E-MailRelay server will then advertise an
@@ -514,7 +511,9 @@ like the following:
 	password required pam_deny.so
 
 With this configuration the E-MailRelay server will use normal unix system
-account names and passwords to authenticate remote clients.
+account names and passwords to authenticate remote clients, but note that on
+some systems this will require special permissioning to allow the E-MailRelay
+server to read the shadow password database.
 
 The passwords for system accounts are usually very sensitive so E-MailRelay
 requires the "--server-tls" command-line option when using PAM authentication,

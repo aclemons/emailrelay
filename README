@@ -92,7 +92,7 @@ Recent releases were developed on Ubuntu Linux 12.04 using:
 * autoconf 2.68
 
 and on Windows 7 using:
-* MSVC 2008
+* MSVC 2012
 * MinGW 20120426
 * OpenSSL 1.0.1c
 
@@ -108,7 +108,7 @@ and on Windows 98 using:
 Versions of the code have also been built successfully on:
 * MacOS X 10.3.9
 * MacOS X 10.5.1 using gcc 4.0.1 on G4 PPC hardware
-* FreeBSD on Intel hardware
+* FreeBSD 9.2 on Intel hardware
 * Linux on Alpha hardware (Debian 2.2)
 * Linux on Sparc hardware
 * Linux on ARM 11 (Raspberry Pi) hardware

@@ -320,7 +320,7 @@ payload: $(css) ../../doc/userguide.html
 # a manifest for UAC.
 #
 $(out_dir)/readme.txt: $(css) ../../doc/userguide.html payload $(exe_gui) $(inner_manifest)
-	./$(exe_pack) -p -a -d $(out_dir) NONE payload payload $(exe_gui) emailrelay-setup.exe $(inner_manifest) $(inner_manifest) ../../README readme.txt ../../COPYING copying.txt ../../ChangeLog changelog.txt ../../AUTHORS authors.txt ../../doc/doxygen-missing.html doc/doxygen/index.html --dir "" ../main/emailrelay-service.exe ../main/emailrelay.exe ../main/emailrelay-submit.exe ../main/emailrelay-filter-copy.exe ../main/emailrelay-poke.exe ../main/emailrelay-passwd.exe --dir examples $(examples) --dir "doc" ../../doc/*.png ../../doc/*.txt $(css) --opt ../../doc/*.html
+	./$(exe_pack) -p -a -d $(out_dir) NONE payload payload $(exe_gui) emailrelay-setup.exe $(inner_manifest) $(inner_manifest) ../../README readme.txt ../../doc/windows.txt readme-windows.txt ../../COPYING copying.txt ../../ChangeLog changelog.txt ../../AUTHORS authors.txt ../../doc/doxygen-missing.html doc/doxygen/index.html --dir "" ../main/emailrelay-service.exe ../main/emailrelay.exe ../main/emailrelay-submit.exe ../main/emailrelay-filter-copy.exe ../main/emailrelay-poke.exe ../main/emailrelay-passwd.exe --dir examples $(examples) --dir "doc" ../../doc/*.png ../../doc/*.txt $(css) --opt ../../doc/*.html
 
 moc_gdialog.cpp: gdialog.h
 	$(mk_qt)/bin/moc $< -o $@

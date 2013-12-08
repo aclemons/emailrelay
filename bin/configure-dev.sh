@@ -59,6 +59,8 @@ args()
 	echo \
 	--enable-debug \
 	--prefix=$HOME/tmp/usr \
+	--exec-prefix=$HOME/tmp/usr \
+	--datadir=$HOME/tmp/usr/share \
 	--localstatedir=$HOME/tmp/var \
 	--libexecdir=$HOME/tmp/usr/lib \
 	--sysconfdir=$HOME/etc \

@@ -31,8 +31,8 @@ sub new
 {
 	my ( $classname , $port , $server ) = @_ ;
 
-	my $server = defined($server) ? $server : "localhost" ;
-	my $port = defined($port) ? $port : 10026 ;
+	$server = defined($server) ? $server : "localhost" ;
+	$port = defined($port) ? $port : 10026 ;
 
 	my $t = new Net::Telnet( Timeout=>3 , Prompt=>"/E-MailRelay> /" ) ;
 	$t->max_buffer_length(1000000*10) ;

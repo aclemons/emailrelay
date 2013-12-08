@@ -34,7 +34,9 @@ namespace G
 /// \class G::Root
 /// A class which acquires the process's
 /// special privileges on construction and releases
-/// them on destruction.
+/// them on destruction. Despite the name of the class
+/// the special privileges are not necessarily root
+/// privileges.
 ///
 /// If instances are nested then the inner instances
 /// have no effect.

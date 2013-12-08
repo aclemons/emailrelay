@@ -28,7 +28,8 @@ package Port ;
 
 sub list
 {
-	my $f = new FileHandle( "netstat -ant |" ) ;
+	my $netstat = ( System::mac() || System::bsd() ) ? "netstat -an -f inet" : "netstat -ant" ;
+	my $f = new FileHandle( "$netstat |" ) ;
 	my $nr = 1 ;
 	my @ports = () ;
 	for( ; <$f> ; $nr++ )
@@ -38,8 +39,8 @@ sub list
 		{
 			my @line_part = split( /\s+/ , $line ) ;
 			my $address = $line_part[3] ;
-			( my $port = $address ) =~ s/.*:// ;
-			if( $line_part[5] eq "LISTEN" )
+			my ( $port ) = ( $address =~ m/([0-9]+)$/ ) ;
+			if( defined($line_part[5]) && $line_part[5] eq "LISTEN" )
 			{
 				push @ports , $port ;
 			}

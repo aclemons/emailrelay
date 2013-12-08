@@ -31,8 +31,8 @@ sub new
 {
 	my ( $classname , $port , $server ) = @_ ;
 
-	my $server = defined($server) ? $server : "localhost" ;
-	my $port = defined($port) ? $port : 10025 ;
+	$server = defined($server) ? $server : "localhost" ;
+	$port = defined($port) ? $port : 10025 ;
 
 	my $t = new Net::Telnet( Timeout=>15 , Prompt=>'/250 [^\r\n]+/' ) ;
 	$t->binmode(0) ; # convert to '\r\n' on output
@@ -49,7 +49,7 @@ sub open
 {
 	# Opens the connection.
 	my ( $this , $wait ) = @_ ;
-	my $wait = defined($wait) ? $wait : 1 ;
+	$wait = defined($wait) ? $wait : 1 ;
 	my $t = $this->t() ;
 	my $ok = $t->open( Host=>$this->server() , Port=>$this->port() ) ;
 	my ($s1,$s2) = $t->waitfor( '/220 [^\r\n]+/' ) if $wait ;

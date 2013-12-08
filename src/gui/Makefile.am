@@ -104,13 +104,13 @@ MOC_OBJECTS=\
 	moc_pages.o
 
 moc_gdialog.cpp: $(srcdir)/gdialog.h $(mock)
-	$(MOC) $< -o $@
+	$(MOC) $(srcdir)/gdialog.h -o $@
 
 moc_gpage.cpp: $(srcdir)/gpage.h $(mock)
-	$(MOC) $< -o $@
+	$(MOC) $(srcdir)/gpage.h -o $@
 
 moc_pages.cpp: $(srcdir)/pages.h $(mock)
-	$(MOC) $< -o $@
+	$(MOC) $(srcdir)/pages.h -o $@
 
 CLEANFILES = $(MOC_OUTPUT) $(mock)
 
@@ -185,6 +185,7 @@ emailrelay_start_gui_LDADD =
 
 install-exec-hook:
 	@echo "#!/bin/sh" > "$(DESTDIR)$(sbindir)/emailrelay-gui"
+	@echo DIR_INSTALL=\"$(DESTDIR)/usr\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 	@echo DIR_SPOOL=\"$(DESTDIR)$(e_spooldir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 	@echo DIR_CONFIG=\"$(DESTDIR)$(e_sysconfdir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 	@echo exec $(DESTDIR)$(sbindir)/emailrelay-gui.real \"$$\@\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"

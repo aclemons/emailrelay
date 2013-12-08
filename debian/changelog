@@ -21,7 +21,7 @@ emailrelay (1.9) unstable; urgency=low
   * Added "--log-file" option to redirect stderr.
   * Added Windows "--peer-lookup" option.
   * Fix for MD5 code in 64-bit builds.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Tue,  3 Dec 2013 01:30:40 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun,  8 Dec 2013 00:43:49 +0000
 
 emailrelay (1.8.2) unstable; urgency=low
   * Fix namespaces for gcc 3.4.

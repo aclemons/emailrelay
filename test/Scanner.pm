@@ -29,11 +29,11 @@ package Scanner ;
 
 sub new
 {
-	my $classname = shift ;
-	return bless { h => new Helper( "scanner" , port() ) } , $classname ;
+	my ( $classname , $port ) = @_ ;
+	return bless { h => new Helper( "scanner" , $port ) } , $classname ;
 }
 
-sub port { return 11011 }
+sub port { return shift->{h}->port(@_) }
 sub logfile { return shift->{h}->logfile(@_) }
 sub exe { return shift->{h}->exe(@_) }
 sub run { return shift->{h}->run(@_) }

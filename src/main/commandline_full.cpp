@@ -256,12 +256,12 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 		m_getopt.contains("pop-by-name") ||
 		m_getopt.contains("pop-no-delete") ) )
 	{
-		return "pop switches require --pop" ;
+		return "pop options require --pop" ;
 	}
 
 	if( cfg.withTerminate() && !cfg.doAdmin() )
 	{
-		return "the --admin-terminate switch requires --admin" ;
+		return "the --admin-terminate option requires --admin" ;
 	}
 
 	if( cfg.daemon() && cfg.spoolDir().isRelative() )
@@ -287,7 +287,7 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 		m_getopt.contains("poll") || 
 		m_getopt.contains("immediate") ) )
 	{
-		return "the --forward, --immediate and --poll switches require --forward-to" ;
+		return "the --forward, --immediate and --poll options require --forward-to" ;
 	}
 
 	const bool forwarding =
@@ -299,7 +299,7 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 
 	if( m_getopt.contains("client-filter") && ! forwarding )
 	{
-		return "the --client-filter switch requires --as-proxy, --as-client, --poll, --immediate or --forward" ;
+		return "the --client-filter option requires --as-proxy, --as-client, --poll, --immediate or --forward" ;
 	}
 
 	const bool not_serving = m_getopt.contains("dont-serve") || m_getopt.contains("as-client") ;
@@ -307,34 +307,34 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 	if( not_serving ) // ie. if not serving admin, smtp or pop
 	{
 		if( m_getopt.contains("filter") )
-			return "the --filter switch cannot be used with --as-client or --dont-serve" ;
+			return "the --filter option cannot be used with --as-client or --dont-serve" ;
 
 		if( m_getopt.contains("port") )
-			return "the --port switch cannot be used with --as-client or --dont-serve" ;
+			return "the --port option cannot be used with --as-client or --dont-serve" ;
 
 		if( m_getopt.contains("server-auth") )
-			return "the --server-auth switch cannot be used with --as-client or --dont-serve" ;
+			return "the --server-auth option cannot be used with --as-client or --dont-serve" ;
 
 		if( m_getopt.contains("pop") )
-			return "the --pop switch cannot be used with --as-client or --dont-serve" ;
+			return "the --pop option cannot be used with --as-client or --dont-serve" ;
 
 		if( m_getopt.contains("admin") )
-			return "the --admin switch cannot be used with --as-client or --dont-serve" ;
+			return "the --admin option cannot be used with --as-client or --dont-serve" ;
 
 		if( m_getopt.contains("poll") )
-			return "the --poll switch cannot be used with --as-client or --dont-serve" ;
+			return "the --poll option cannot be used with --as-client or --dont-serve" ;
 	}
 
 	if( m_getopt.contains("no-smtp") ) // ie. if not serving smtp
 	{
 		if( m_getopt.contains("filter") )
-			return "the --filter switch cannot be used with --no-smtp" ;
+			return "the --filter option cannot be used with --no-smtp" ;
 
 		if( m_getopt.contains("port") )
-			return "the --port switch cannot be used with --no-smtp" ;
+			return "the --port option cannot be used with --no-smtp" ;
 
 		if( m_getopt.contains("server-auth") )
-			return "the --server-auth switch cannot be used with --no-smtp" ;
+			return "the --server-auth option cannot be used with --no-smtp" ;
 	}
 
 	const bool log =
@@ -345,12 +345,12 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 
 	if( m_getopt.contains("verbose") && ! ( m_getopt.contains("help") || log ) )
 	{
-		return "the --verbose switch must be used with --log, --help, --as-client, --as-server or --as-proxy" ;
+		return "the --verbose option must be used with --log, --help, --as-client, --as-server or --as-proxy" ;
 	}
 
 	if( m_getopt.contains("debug") && !log )
 	{
-		return "the --debug switch requires --log, --as-client, --as-server or --as-proxy" ;
+		return "the --debug option requires --log, --as-client, --as-server or --as-proxy" ;
 	}
 
 	const bool no_daemon =
@@ -359,7 +359,12 @@ std::string Main::CommandLineImp::semanticError( const Configuration & cfg , boo
 
 	if( m_getopt.contains("hidden") && ! no_daemon ) // (win32)
 	{
-		return "the --hidden switch requires --no-daemon or --as-client" ;
+		return "the --hidden option requires --no-daemon or --as-client" ;
+	}
+
+	if( m_getopt.contains("client-tls") && m_getopt.contains("client-tls-connection") )
+	{
+		return "the --client-tls and --client-tls-connection options cannot be used together" ;
 	}
 
 	if( m_getopt.contains("server-auth") && m_getopt.value("server-auth") == "/pam" &&

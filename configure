@@ -5965,6 +5965,11 @@ $as_echo "no" >&6; }
 		fi
 	fi
 
+	if test "$qt4" = no -a "$e_qtmoc" = ""
+	then
+		aclocal_moc=""
+	fi
+
 
 
 
@@ -6147,8 +6152,8 @@ fi
 	else
 		if test "$enable_gui" = "yes" -a "$aclocal_moc" = ""
 		then
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ignoring --enable-gui, set e_qtmoc to a Qt4 moc program to override" >&5
-$as_echo "$as_me: WARNING: ignoring --enable-gui, set e_qtmoc to a Qt4 moc program to override" >&2;}
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ignoring --enable-gui: set e_qtmoc, QT_LIBS and QT_CFLAGS to override" >&5
+$as_echo "$as_me: WARNING: ignoring --enable-gui: set e_qtmoc, QT_LIBS and QT_CFLAGS to override" >&2;}
 		fi
 		MOC="$aclocal_moc"
 	fi
@@ -6469,8 +6474,8 @@ $as_echo "#define HAVE_ZLIB 1" >>confdefs.h
 	else
 		if test "$with_zlib" = "yes"
 		then
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ignoring --with-zlib, check config.log and try setting CFLAGS" >&5
-$as_echo "$as_me: WARNING: ignoring --with-zlib, check config.log and try setting CFLAGS" >&2;}
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ignoring --with-zlib: check config.log and try setting CFLAGS" >&5
+$as_echo "$as_me: WARNING: ignoring --with-zlib: check config.log and try setting CFLAGS" >&2;}
 		fi
 		ZLIB_LIBS=""
 	fi
@@ -6560,8 +6565,8 @@ $as_echo "$aclocal_cv_openssl" >&6; }
 	else
 		if test "$with_openssl" = "yes"
 		then
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ignoring --with-openssl, check config.log and try setting CFLAGS" >&5
-$as_echo "$as_me: WARNING: ignoring --with-openssl, check config.log and try setting CFLAGS" >&2;}
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ignoring --with-openssl: check config.log and try setting CFLAGS" >&5
+$as_echo "$as_me: WARNING: ignoring --with-openssl: check config.log and try setting CFLAGS" >&2;}
 		fi
 		SSL_LIBS=""
 		aclocal_ssl="none"

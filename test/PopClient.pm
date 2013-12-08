@@ -31,9 +31,9 @@ sub new
 {
 	my ( $classname , $port , $server ) = @_ ;
 
-	my $server = defined($server) ? $server : "localhost" ;
-	my $port = defined($port) ? $port : 10110 ;
-	my $timeout = 5 ;
+	$server = defined($server) ? $server : "localhost" ;
+	$port = defined($port) ? $port : 10110 ;
+	my $timeout = 10 ;
 
 	my $t = new Net::Telnet( Timeout=>$timeout , Prompt=>'/\+OK[^\r\n]*/' ) ;
 	$t->binmode(0) ; # convert to '\r\n' on output
@@ -50,7 +50,7 @@ sub new
 sub open
 {
 	my ( $this , $wait ) = @_ ;
-	my $wait = defined($wait) ? $wait : 1 ;
+	$wait = defined($wait) ? $wait : 1 ;
 	my $t = $this->t() ;
 	my $ok = $t->open( Host=>$this->server() , Port=>$this->port() ) ;
 	my ($s1,$s2) = $t->waitfor( '/\+OK[^\r\n]*/' ) if $wait ;
@@ -83,6 +83,7 @@ sub list
 			my ($s1,$s2) = $t->waitfor( Match => '/[ \.]/' , Timeout => $timeout ) ;
 			if( $s2 eq " " )
 			{
+				#print STDERR "++++ [$s1]\n" ;
 				System::sleep_cs( 1 ) ;
 				$result .= $s1 ;
 				$result .= $s2 ;
@@ -97,6 +98,7 @@ sub list
 	else
 	{
 		my ($s1,$s2) = $t->waitfor( Match => '/\./' , Timeout => $timeout ) ;
+		#print STDERR "++++ [$s1]\n" ;
 		$result = $s1 ;
 	}
 	my @list = split("\n",$result) ;

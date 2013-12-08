@@ -36,6 +36,8 @@ chmod +x "${configure}" 2> /dev/null
 
 ${configure} \
 	--prefix=/usr \
+	--exec-prefix=/usr \
+	--datadir=/usr/share \
 	--localstatedir=/var \
 	--libexecdir=/usr/lib \
 	--sysconfdir=/etc \

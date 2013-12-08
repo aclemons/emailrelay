@@ -778,16 +778,17 @@ uninstall-am: uninstall-e_iconDATA uninstall-local \
 
 
 @GUI_TRUE@moc_gdialog.cpp: $(srcdir)/gdialog.h $(mock)
-@GUI_TRUE@	$(MOC) $< -o $@
+@GUI_TRUE@	$(MOC) $(srcdir)/gdialog.h -o $@
 
 @GUI_TRUE@moc_gpage.cpp: $(srcdir)/gpage.h $(mock)
-@GUI_TRUE@	$(MOC) $< -o $@
+@GUI_TRUE@	$(MOC) $(srcdir)/gpage.h -o $@
 
 @GUI_TRUE@moc_pages.cpp: $(srcdir)/pages.h $(mock)
-@GUI_TRUE@	$(MOC) $< -o $@
+@GUI_TRUE@	$(MOC) $(srcdir)/pages.h -o $@
 
 @GUI_TRUE@install-exec-hook:
 @GUI_TRUE@	@echo "#!/bin/sh" > "$(DESTDIR)$(sbindir)/emailrelay-gui"
+@GUI_TRUE@	@echo DIR_INSTALL=\"$(DESTDIR)/usr\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 @GUI_TRUE@	@echo DIR_SPOOL=\"$(DESTDIR)$(e_spooldir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 @GUI_TRUE@	@echo DIR_CONFIG=\"$(DESTDIR)$(e_sysconfdir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 @GUI_TRUE@	@echo exec $(DESTDIR)$(sbindir)/emailrelay-gui.real \"$$\@\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"

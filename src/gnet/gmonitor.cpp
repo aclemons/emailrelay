@@ -216,9 +216,12 @@ std::pair<std::string,bool> GNet::MonitorImp::findCertificate( const std::string
 	Certificates::iterator p = std::find_if( m_certificates.begin() , m_certificates.end() , CertificateMatch(certificate) ) ;
 	if( p != m_certificates.end() )
 	{
+		CertificateInfo tmp = *p ;
 		result.first = G::Str::fromInt( (*p).id ) ;
 		result.second = false ;
-		std::swap( *p , m_certificates.back() ) ;
+		p = std::remove_if( m_certificates.begin() , m_certificates.end() , CertificateMatch(certificate) ) ;
+		G_ASSERT( p != m_certificates.end() ) ;
+		*p = tmp ;
 	}
 	else
 	{
@@ -227,7 +230,7 @@ std::pair<std::string,bool> GNet::MonitorImp::findCertificate( const std::string
 			m_certificates.pop_front() ;
 		int id = ++m_id_generator ;
 		m_certificates.push_back( CertificateInfo(certificate,id) ) ;
-		result.first = G::Str::fromInt(id) ;
+		result.first = G::Str::fromInt( id ) ;
 		result.second = true ;
 	}
 	return result ;

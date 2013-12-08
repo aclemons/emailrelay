@@ -37,21 +37,24 @@ sub log_
 	print STDERR "++++ ",join(" ",@_),"\n" if $verbose ;
 }
 
-sub linux
+sub bsd
 {
-	# Returns true if running on linux.
-	return $^O eq 'linux' ;
-}
-
-sub unix
-{
-	# Returns true if running on a unix-like system.
-	return $^O eq 'linux' || $^O eq 'darwin' ; # TODO bsds
+	return $^O =~ m/bsd$/ ; # not mac
 }
 
 sub mac
 {
 	return $^O eq 'darwin' ;
+}
+
+sub linux
+{
+	return $^O eq 'linux' ;
+}
+
+sub unix
+{
+	return bsd() || mac() || linux() ; # TODO more
 }
 
 sub _dot_exe
@@ -225,7 +228,7 @@ sub match
 	my ( $filespec ) = @_ ;
 	my @files = glob_( $filespec ) ;
 	Check::that( @files == 0 || @files == 1 , "too many matching files" , $filespec ) ;
-	return @files[0] ;
+	return $files[0] ;
 }
 
 sub submitSmallMessage
@@ -257,49 +260,71 @@ sub submitMessages
 	}
 }
 
-sub _proc
+sub _old_status
 {
-	my ( $pid , $re , $field ) = @_ ;
-	# TODO - non-linux *nixes
-	my $s = `cat /proc/$pid/status | fgrep $re | head -1` ;
-	chomp $s ;
-	my @part = split( /\s+/ , $s ) ;
+	my ( $pid , $key , $field ) = @_ ;
+	# linux-specific
+	my $line = `cat /proc/$pid/status | fgrep $key: | head -1` ;
+	chomp $line ;
+	my @part = split( /\s+/ , $line ) ;
 	return $part[$field] ;
+}
+
+sub _status
+{
+	my ( $pid , $key , $field ) = @_ ;
+	my $cmd = "ps -p $pid -o pid,ruid,uid,svuid,gid,rgid,svgid" ;
+	my $fh = new FileHandle( "$cmd |" ) ;
+	my $header = <$fh> ;
+	chomp( my $line = <$fh> ) ;
+	$line =~ s/^\s+// ;
+	my ($pid_ignore,$ruid,$uid,$svuid,$gid,$rgid,$svgid) = split( /\s+/ , $line ) ;
+	my $result = undef ;
+	$result = $ruid if( $key eq "Uid" && $field == 1 ) ; # real
+	$result = $uid if( $key eq "Uid" && $field == 2 ) ; # effective
+	$result = $svuid if( $key eq "Uid" && $field == 3 ) ; # saved
+	$result = $rgid if( $key eq "Gid" && $field == 1 ) ; # real
+	$result = $gid if( $key eq "Gid" && $field == 2 ) ; # effective
+	if( $result < 0 && ( mac() || bsd() ) )
+	{
+		$result += 4294967296 ;
+	}
+	return $result ;
 }
 
 sub effectiveUser
 {
 	# Returns the calling process's effective user id.
 	my ( $pid ) = @_ ;
-	return _proc($pid,"Uid:",2) ;
+	return _status($pid,"Uid",2) ;
 }
 
 sub effectiveGroup
 {
 	# Returns the calling process's effective group id.
 	my ( $pid ) = @_ ;
-	return _proc($pid,"Gid:",2) ;
+	return _status($pid,"Gid",2) ;
 }
 
 sub realUser
 {
 	# Returns the calling process's real user id.
 	my ( $pid ) = @_ ;
-	return _proc($pid,"Uid:",1) ;
+	return _status($pid,"Uid",1) ;
 }
 
 sub realGroup
 {
 	# Returns the calling process's group id.
 	my ( $pid ) = @_ ;
-	return _proc($pid,"Gid:",1) ;
+	return _status($pid,"Gid",1) ;
 }
 
 sub savedUser
 {
 	# Returns the calling process's saved user id.
 	my ( $pid ) = @_ ;
-	return _proc($pid,"Uid:",3) ;
+	return _status($pid,"Uid",3) ;
 }
 
 sub uid
@@ -343,7 +368,7 @@ sub sleep_cs
 	select( undef , undef , undef , 0.01 * $cs ) ;
 }
 
-sub kill
+sub kill_
 {
 	my ( $pid , $timeout_cs ) = @_ ;
 	$timeout_cs = defined($timeout_cs) ? $timeout_cs : 100 ;
@@ -367,6 +392,7 @@ sub kill
 sub wait
 {
 	my ( $pid , $timeout_cs ) = @_ ;
+	$timeout_cs = defined($timeout_cs) ? $timeout_cs : 100 ;
 	for( my $i = 0 ; $i < $timeout_cs ; $i++ )
 	{
 		sleep_cs() ;
@@ -382,7 +408,8 @@ sub processIsRunning
 	my ( $pid ) = @_ ;
 	if( unix() )
 	{
-		return kill 0 , $pid ;
+		my $rc = kill 0 , $pid ;
+		return defined($rc) ? $rc : 0 ;
 	}
 	else
 	{
@@ -424,8 +451,13 @@ sub killall
 			}
 		}
 	}
+}
 
-
+my $port_generator = 10000 ;
+sub nextPort
+{
+	$port_generator++ ;
+	return $port_generator ;
 }
 
 1 ;

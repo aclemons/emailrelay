@@ -46,6 +46,7 @@ chmod +x "${configure}" 2> /dev/null
 ${configure} \
 	--enable-mac \
 	--sbindir="${app}" \
+	e_qtmoc=/usr/bin/moc \
 	e_libexecdir="${app}" \
 	e_examplesdir="${app}/Documentation/examples" \
 	e_sysconfdir="${app}" \

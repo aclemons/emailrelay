@@ -37,11 +37,11 @@ sub new
 {
 	my ( $classname , $smtp_port , $pop_port , $admin_port , $spool_dir , $tmp_dir ) = @_ ;
 
-	$smtp_port = defined($smtp_port) ? $smtp_port : 10025 ;
-	$pop_port = defined($pop_port) ? $pop_port : 10110 ;
-	$admin_port = defined($admin_port) ? $admin_port : 10026 ;
-	my $scanner_port = Scanner::port() ;
-	my $verifier_port = Verifier::port() ;
+	$smtp_port = defined($smtp_port) ? $smtp_port : System::nextPort() ;
+	$pop_port = defined($pop_port) ? $pop_port : System::nextPort() ;
+	$admin_port = defined($admin_port) ? $admin_port : System::nextPort() ;
+	my $scanner_port = System::nextPort() ;
+	my $verifier_port = System::nextPort() ;
 
 	my %me = (
 		m_exe => System::exe( $bin_dir , $exe_name ) ,
@@ -64,8 +64,8 @@ sub new
 		m_full_command => undef ,
 		m_filter => System::tempfile("filter",$tmp_dir) . ( System::unix() ? "" : ".js" ) ,
 		m_client_filter => System::tempfile("client-filter",$tmp_dir) . ( System::unix() ? "" : ".js" ) ,
-		m_scanner => "net:localhost:$scanner_port" ,
-		m_verifier => "net:localhost:$verifier_port" ,
+		m_scanner_port => $scanner_port ,
+		m_verifier_port => $verifier_port ,
 		m_max_size => 1000 ,
 	) ;
 	$me{m_log_file} = $me{m_stderr} if !System::unix() ;
@@ -78,8 +78,10 @@ sub exe { return shift->{'m_exe'} }
 sub set_exe { $_[0]->{'m_exe'} = $_[1] }
 sub smtpPort { return shift->{'m_smtp_port'} }
 sub adminPort { return shift->{'m_admin_port'} }
-sub scannerAddress { return shift->{'m_scanner'} }
-sub verifierAddress { return shift->{'m_verifier'} }
+sub scannerPort { return shift->{'m_scanner_port'} }
+sub scannerAddress { return "net:localhost:" . shift->{'m_scanner_port'} }
+sub verifierPort { return shift->{'m_verifier_port'} }
+sub verifierAddress { return "net:localhost:" . shift->{'m_verifier_port'} }
 sub popPort { return shift->{'m_pop_port'} }
 sub popSecrets { return shift->{'m_pop_secrets'} }
 sub clientSecrets { return shift->{'m_client_secrets'} }
@@ -114,8 +116,9 @@ sub _check
 sub _pid
 {
 	my ( $this ) = @_ ;
-	my $f = new FileHandle( $this->pidFile() ) ;
-	my $line = <$f> ;
+	my $fh = new FileHandle( $this->pidFile() ) ;
+	return undef if !$fh ;
+	my $line = <$fh> ;
 	chomp $line ;
 	return $line ;
 }
@@ -182,6 +185,7 @@ sub _switches
 		( exists($sw{Poll}) ? "--poll __POLL_TIMEOUT__ " : "" ) .
 		( exists($sw{Filter}) ? "--filter __FILTER__ " : "" ) .
 		( exists($sw{FilterTimeout}) ? "--filter-timeout 1 " : "" ) .
+		( exists($sw{ConnectionTimeout}) ? "--connection-timeout 1 " : "" ) .
 		( exists($sw{ClientFilter}) ? "--client-filter __CLIENT_FILTER__ " : "" ) .
 		( exists($sw{Immediate}) ? "--immediate " : "" ) .
 		( exists($sw{Scanner}) ? "--filter __SCANNER__ " : "" ) .
@@ -298,7 +302,7 @@ sub kill
 {
 	# Kills the server and waits for it to die.
 	my ( $this , $signal__not_used , $timeout_cs ) = @_ ;
-	System::kill( $this->pid() , $timeout_cs ) ;
+	System::kill_( $this->pid() , $timeout_cs ) ;
 	System::wait( $this->pid() , $timeout_cs ) ;
 }
 

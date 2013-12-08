@@ -769,6 +769,7 @@ uninstall-am: uninstall-e_libexecPROGRAMS uninstall-e_spoolDATA \
 
 
 install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS 
+	-mkdir -p "$(DESTDIR)$(e_spooldir)"
 	-chgrp daemon "$(DESTDIR)$(e_spooldir)"
 	-chmod 775 "$(DESTDIR)$(e_spooldir)"
 	-chgrp daemon "$(DESTDIR)$(sbindir)/emailrelay-submit"

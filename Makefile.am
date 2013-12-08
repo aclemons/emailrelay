@@ -33,6 +33,7 @@ EXTRA_DIST = \
 	README.embedded \
 	README.mac \
 	LICENSE \
+	VERSION \
 	bootstrap \
 	autogen.sh \
 	emailrelay-gui.xcodeproj/project.pbxproj \

@@ -104,7 +104,7 @@ sub fileOwner
 	my ( $path , $name , $more ) = @_ ;
 	my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,$atime,$mtime,$ctime,$blksize,$blocks) = stat($path);
 	my $expected = System::uid($name) ;
-	Check::that( $uid == $expected , "unexpected file owner" , $path , $uid."!=".$expected , $more ) ;
+	Check::that( $uid == $expected , "unexpected file owner" , $path , "$uid!=$expected($name)" , $more ) ;
 }
 
 sub fileGroup
@@ -112,7 +112,7 @@ sub fileGroup
 	my ( $path , $name , $more ) = @_ ;
 	my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,$atime,$mtime,$ctime,$blksize,$blocks) = stat($path);
 	my $expected = System::gid($name) ;
-	Check::that( $gid == $expected , "unexpected file group" , $path , $gid."!=".$expected , $more ) ;
+	Check::that( $gid == $expected , "unexpected file group" , $path , "$gid!=$expected($name)" , $more ) ;
 }
 
 sub fileMode
@@ -121,6 +121,46 @@ sub fileMode
 	my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,$atime,$mtime,$ctime,$blksize,$blocks) = stat($path);
 	$mode &= 0777 ;
 	Check::that( $mode == $mode_ , "unexpected file permissions" , $path , $mode."!=".$mode_ , $more ) ;
+}
+
+sub processRealUser
+{
+	my ( $pid , $name ) = @_ ;
+	my $actual = System::realUser($pid) ;
+	my $expected = System::uid($name) ;
+	Check::that( $actual == $expected , "wrong real user: [$actual]!=[$expected]" ) ;
+}
+
+sub processEffectiveUser
+{
+	my ( $pid , $name ) = @_ ;
+	my $actual = System::effectiveUser($pid) ;
+	my $expected = System::uid($name) ;
+	Check::that( $actual == $expected , "wrong real user: [$actual]!=[$expected]" ) ;
+}
+
+sub processSavedUser
+{
+	my ( $pid , $name ) = @_ ;
+	my $actual = System::savedUser($pid) ;
+	my $expected = System::uid($name) ;
+	Check::that( $actual == $expected , "wrong real user: [$actual]!=[$expected]" ) ;
+}
+
+sub processRealGroup
+{
+	my ( $pid , $name ) = @_ ;
+	my $actual = System::realGroup($pid) ;
+	my $expected = System::gid($name) ;
+	Check::that( $actual == $expected , "wrong real group: [$actual]!=[$expected]" ) ;
+}
+
+sub processEffectiveGroup
+{
+	my ( $pid , $name ) = @_ ;
+	my $actual = System::effectiveGroup($pid) ;
+	my $expected = System::gid($name) ;
+	Check::that( $actual == $expected , "wrong real group: [$actual]!=[$expected]" ) ;
 }
 
 sub _fileLineCount
@@ -173,6 +213,21 @@ sub fileContains
 		if( !defined($string) || $line =~ m/$string/ ) { $n++ }
 	}
 	Check::that( $n > 0 , "file does not contain expected string" , $path , "[$string]" , $more ) ;
+}
+
+sub fileContainsEither
+{
+	my ( $path , $string1 , $string2 , $more ) = @_ ;
+	my $f = new FileHandle( $path ) ;
+	my $n = 0 ;
+	while( <$f> )
+	{
+		my $line = $_ ;
+		chomp $line ;
+		if( $line =~ m/$string1/ ) { $n++ }
+		if( $line =~ m/$string2/ ) { $n++ }
+	}
+	Check::that( $n > 0 , "file does not contain one of strings" , $path , "[$string1] [$string2]" , $more ) ;
 }
 
 sub fileDoesNotContain

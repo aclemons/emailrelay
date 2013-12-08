@@ -45,12 +45,13 @@
 # If this test takes more a minute (without valgrind) then it 
 # has failed.
 #
-# usage: emailrelay-chain-test.sh [-v] [-f] [-d] [-n] [-s] [<exe-dir> [<content-file>]]
+# usage: emailrelay-chain-test.sh [-v] [-f] [-d] [-n] [-s] [-a <awk>] [<exe-dir> [<content-file>]]
 #	-v    use valgrind
 #	-f    use fetchmail
 #	-d    use --debug
 #	-n    no cleanup
 #	-s    smaller content
+#	-a    use awk
 #
 
 # parse the command line
@@ -60,13 +61,15 @@ opt_use_fetchmail="0"
 opt_smaller="0"
 opt_debug="0"
 opt_no_cleanup="0"
-while getopts 'vfdns' opt ; do
+opt_awk="awk"
+while getopts 'vfdnsa:' opt ; do
 	case "$opt" in 
 		v) opt_use_valgrind="1" ;;
 		f) opt_use_fetchmail="1" ;;
 		s) opt_smaller="1" ;;
 		d) opt_debug="1" ;;
 		n) opt_no_cleanup="1" ;;
+		a) opt_awk="$OPTARG" ;;
 	esac
 done
 shift `expr $OPTIND - 1`
@@ -159,6 +162,9 @@ RunServer()
 	pop_port_="`expr ${port_} + 80`"
 
 	mkdir -p ${cfg_base_dir}/${spool_}
+	chgrp daemon ${cfg_base_dir}/${spool_} 2>/dev/null
+	chmod 775 ${cfg_base_dir}/${spool_}
+
 	${cfg_run}-server-${port_} ${cfg_main_exe} ${cfg_sw_extra} ${cfg_sw_debug} \
 		--log --verbose --no-syslog \
 		--port ${cfg_pp}${port_} \
@@ -237,7 +243,7 @@ Envelope()
 
 CrLf()
 {
-	sed 's/$/£/' | tr '£' '\r'
+	$opt_awk '{printf("%s\r\n",$0)}'
 }
 
 TestDone()
@@ -262,6 +268,9 @@ ReportResults()
 CreateMessages()
 {
 	mkdir -p ${cfg_base_dir}/store-1
+	chgrp daemon ${cfg_base_dir}/store-1 2>/dev/null
+	chmod 775 ${cfg_base_dir}/store-1
+
 	Content | CrLf > ${cfg_base_dir}/store-1/emailrelay.0.1.content
 	Envelope | CrLf > ${cfg_base_dir}/store-1/emailrelay.0.1.envelope
 	Content | CrLf > ${cfg_base_dir}/store-1/emailrelay.0.2.content

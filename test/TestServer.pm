@@ -75,6 +75,7 @@ sub _check
 sub run
 {
 	my ( $this , $sw , $wait_cs ) = @_ ;
+	$sw = "" if !defined($sw) ;
 	$wait_cs ||= 50 ;
 	my $log = $this->{'m_logfile'} ;
 
@@ -87,6 +88,7 @@ sub run
 	{
 		select( undef , undef , undef , 0.01 ) ;
 		my $fh = new FileHandle( $this->{'m_pidfile'} ) ;
+		next if !$fh ;
 		my $line = <$fh> ;
 		chomp $line ;
 		if( $line > 0 )
@@ -106,7 +108,7 @@ sub kill
 	my ( $this ) = @_ ;
 	if( defined($this->pid()) )
 	{
-		System::kill( $this->pid() ) ;
+		System::kill_( $this->pid() ) ;
 		System::sleep_cs( 10 ) ;
 	}
 }
