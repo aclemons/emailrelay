@@ -124,7 +124,8 @@ public:
 		///< might change the list.
 
 	void unlock() ; 
-		///< Called at the end of an iteration.
+		///< Called at the end of an iteration, calling
+		///< collectGarbage() if necessary.
 
 	Iterator begin() const ;
 		///< Returns a forward iterator.
@@ -140,10 +141,12 @@ public:
 		///< if the fd has been remove()d but the
 		///< list is still lock()ed.
 
+	void collectGarbage() ;
+		// Collects garbage resulting from remove()s.
+
 private:
 	EventHandlerList( const EventHandlerList & ) ;
 	void operator=( const EventHandlerList & ) ;
-	void collectGarbage() ;
 
 private:
 	std::string m_type ;

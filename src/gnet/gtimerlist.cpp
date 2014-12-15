@@ -182,9 +182,8 @@ void GNet::TimerList::doTimeouts()
 			}
 		}
 	}
-
-	// deal with any change in the soonest() time
-	update() ;
+	collectGarbage() ;
+	update() ; // deal with any change in the soonest() time
 }
 
 void GNet::TimerList::collectGarbage()

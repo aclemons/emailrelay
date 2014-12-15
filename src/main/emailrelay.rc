@@ -69,14 +69,14 @@ BEGIN
             VALUE "Comments", "GPL v3 license\0"
             VALUE "CompanyName", " \0"
             VALUE "FileDescription", "E-MailRelay Application\0"
-            VALUE "FileVersion", "1, 9, 0, 0\0"
+            VALUE "FileVersion", "1, 9, 2, 0\0"
             VALUE "InternalName", "emailrelay\0"
             VALUE "LegalCopyright", "Copyright © Graeme Walker, 2002-2013\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "emailrelay.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "E-MailRelay\0"
-            VALUE "ProductVersion", "1, 9, 0, 0\0"
+            VALUE "ProductVersion", "1, 9, 2, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END

@@ -148,10 +148,10 @@ mk_link_flags_simple=\
 glib=../glib/glib.a
 libs=$(glib) $(qt_libs_release)
 
-out_dir=emailrelay-1.9
+out_dir=emailrelay-1.9.2
 exe_gui=emailrelay-gui.exe
 exe_gui_packed=emailrelay-gui-tmp.exe
-exe_setup_outer=emailrelay-1.9-setup.exe
+exe_setup_outer=emailrelay-1.9.2-setup.exe
 setup_inner=emailrelay-setup
 exe_setup_inner=$(setup_inner).exe
 inner_manifest=$(setup_inner).exe.manifest
@@ -219,7 +219,7 @@ ifeq ("$(cfg_packaging_outer)","none")
 ifeq ("$(cfg_packaging_inner)","directory")
 $(exe_setup_outer): $(out_dir)/readme.txt
 	-@echo ..
-	-@echo .. now zip up the $(out_dir) directory into emailrelay-1.9.zip
+	-@echo .. now zip up the $(out_dir) directory into emailrelay-1.9.2.zip
 	-@echo .. right click on the directory and send-to compressed folder
 	-@echo ..
 else

@@ -366,6 +366,9 @@ void GNet::Winsock::onMessage( WPARAM wparam , LPARAM lparam )
 		// only 'network down' for FD_READ/FD_WRITE
 		G_WARNING( "GNet::Winsock::processMessage: winsock select error: " << err ) ;
 	}
+	m_read_list.collectGarbage() ;
+	m_write_list.collectGarbage() ;
+	m_exception_list.collectGarbage() ;
 }
 
 void GNet::Winsock::onTimer()
