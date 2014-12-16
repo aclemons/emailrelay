@@ -1,11 +1,11 @@
 Summary: Simple e-mail message transfer agent and proxy using SMTP
 Name: emailrelay
-Version: 1.9
+Version: 1.9.2
 Release: 1
 License: GPL3
 Group: System Environment/Daemons
 URL: http://emailrelay.sourceforge.net/
-Source: http://sourceforge.net/sourceforge/emailrelay/emailrelay-1.9-src.tar.gz
+Source: http://sourceforge.net/sourceforge/emailrelay/emailrelay-1.9.2-src.tar.gz
 BuildRoot: /tmp/emailrelay-install
 
 %description
@@ -29,7 +29,7 @@ Distribution is under the GNU General Public License V3.
 %setup
 
 %build
-./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d --disable-gui --without-man2html --without-doxygen --with-openssl --with-zlib --enable-static-linking --disable-install-hook
+./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d e_pamdir=/etc/pam.d --disable-gui --without-man2html --without-doxygen --with-openssl --with-zlib --with-pam --disable-install-hook
 make
 
 %install
@@ -49,6 +49,8 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 
 %config /etc/emailrelay.conf
 %config /etc/pam.d/emailrelay
+%dir /var/spool/emailrelay
+%attr(2775, -, daemon) /var/spool/emailrelay
 /etc/emailrelay.conf.template
 /etc/emailrelay.auth.template
 /etc/init.d/emailrelay
@@ -102,6 +104,7 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /usr/lib/emailrelay/emailrelay-poke
 /usr/lib/emailrelay/emailrelay-filter-copy
 /usr/sbin/emailrelay-submit
+%attr(2755, -, daemon) /usr/sbin/emailrelay-submit
 /usr/sbin/emailrelay
 /usr/sbin/emailrelay-passwd
 /usr/share/emailrelay/emailrelay-icon.png

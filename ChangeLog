@@ -1,6 +1,16 @@
 E-MailRelay Change Log
 ======================
 
+1.9.1 -> 1.9.2
+--------------
+* Fixed memory leak in event loop garbage collection.
+* Tweaked rpm spec file.
+
+1.9 -> 1.9.1
+------------
+* Updated OpenSSL from 1.0.1e to 1.0.1g in the Windows build.
+
+
 1.8.2 -> 1.9
 ------------
 * Added negotiated TLS/SSL for POP (ie. "STLS").
