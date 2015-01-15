@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,10 +37,10 @@
 #include <utility> // std::swap, std::pair
 #include <sstream>
 
-GAuth::SecretsFile::SecretsFile( const G::Path & path , bool auto_ , const std::string & debug_name ,
+GAuth::SecretsFile::SecretsFile( const G::Path & path , bool auto_reread , const std::string & debug_name ,
 	const std::string & server_type ) :
 		m_path(path) ,
-		m_auto(auto_) ,
+		m_auto(auto_reread) ,
 		m_debug_name(debug_name) ,
 		m_server_type(server_type) ,
 		m_file_time(0) ,
@@ -85,6 +85,7 @@ void GAuth::SecretsFile::reread( int )
 
 void GAuth::SecretsFile::read( const G::Path & path )
 {
+	// open the file
 	std::auto_ptr<std::ifstream> file ;
 	{
 		G::Root claim_root ;
@@ -98,11 +99,30 @@ void GAuth::SecretsFile::read( const G::Path & path )
 	}
 	m_file_time = readFileTime( path ) ;
 
+	// read the file
 	m_map.clear() ;
 	m_set.clear() ;
-	unsigned int count = read( *file.get() ) ;
-	count++ ; // avoid 'unused' warning
-	G_DEBUG( "GAuth::SecretsFile::read: processed " << (count-1) << " records" ) ;
+	m_warnings.clear() ;
+	read( *file.get() ) ;
+
+	// show the results
+	for( Map::iterator p = m_map.begin() ; p != m_map.end() ; ++p )
+	{
+		G_DEBUG( "GAuth::SecretsFile::read: key=[" << (*p).first << "] value=[" << (*p).second << "]" ) ;
+	}
+
+	// show warnings
+	G_DEBUG( "GAuth::SecretsFile::read: processed " << m_map.size() << " records" ) ;
+	if( m_warnings.size() )
+	{
+		std::string prefix = path.basename() ;
+		G_WARNING( "GAuth::SecretsFile::read: problems reading client & " << m_server_type << " entries from " 
+			<< m_debug_name << " secrets file [" << path.str() << "]..." ) ;
+		for( Warnings::iterator p = m_warnings.begin() ; p != m_warnings.end() ; ++p )
+		{
+			G_WARNING( "GAuth::SecretsFile::read: " << prefix << "(" << (*p).first << "): " << (*p).second ) ;
+		}
+	}
 }
 
 G::DateTime::EpochTime GAuth::SecretsFile::readFileTime( const G::Path & path )
@@ -111,9 +131,8 @@ G::DateTime::EpochTime GAuth::SecretsFile::readFileTime( const G::Path & path )
 	return G::File::time( path ) ;
 }
 
-unsigned int GAuth::SecretsFile::read( std::istream & file )
+void GAuth::SecretsFile::read( std::istream & file )
 {
-	unsigned int count = 0U ;
 	for( unsigned int line_number = 1U ; file.good() ; ++line_number )
 	{
 		std::string line = G::Str::readLineFrom( file ) ;
@@ -127,55 +146,51 @@ unsigned int GAuth::SecretsFile::read( std::istream & file )
 			G::Str::splitIntoTokens( line , word_array , " \t" ) ;
 			if( word_array.size() > 4U )
 			{
-				G_WARNING( "GAuth::SecretsFile::read: ignoring extra fields on line " 
-					<< line_number << " of secrets file" ) ;
+				m_warnings.push_back( Warnings::value_type(line_number,"ignored extra fields") ) ;
 			}
 			if( word_array.size() >= 4U )
 			{
-				bool processed = process( word_array[0U] , word_array[1U] , word_array[2U] , word_array[3U] ) ;
-				G_DEBUG( "GAuth::SecretsFile::read: line #" << line_number << (processed?" used":" ignored") ) ;
-				if( processed )
-					count++ ;
+				std::string dupe_key = process( word_array[0U] , word_array[1U] , word_array[2U] , word_array[3U] ) ;
+				if( !dupe_key.empty() )
+					m_warnings.push_back( Warnings::value_type(line_number,"line ignored: duplicate key [" + dupe_key + "]") ) ;
 			}
 			else
 			{
-				G_WARNING( "GAuth::SecretsFile::read: ignoring line " 
-					<< line_number << " of secrets file: too few fields" ) ;
+				m_warnings.push_back( Warnings::value_type(line_number,"line ignored: too few fields") ) ;
 			}
 		}
 	}
-	return count ;
 }
 
-bool GAuth::SecretsFile::process( std::string side , std::string mechanism , std::string id , std::string secret )
+std::string GAuth::SecretsFile::process( std::string side , std::string mechanism , std::string id , std::string secret )
 {
-	G::Str::toUpper( mechanism ) ;
-	G::Str::toUpper( side ) ;
+	G::Str::toLower( mechanism ) ;
+	G::Str::toLower( side ) ;
 
 	// allow columns 1 and 2 to switch around
-	if( mechanism == G::Str::upper(m_server_type) || mechanism == "CLIENT" )
+	if( mechanism == G::Str::lower(m_server_type) || mechanism == "client" )
 		std::swap( mechanism , side ) ;
 
-	if( side == G::Str::upper(m_server_type) )
+	G_DEBUG( "GAuth::SecretsFile::process: side=[" << side << "] mechanism=[" << mechanism << "] id=[" << id << "] secret=[" << secret << "]" ) ;
+
+	if( side == G::Str::lower(m_server_type) )
 	{
 		// server-side
-		std::string key = mechanism + ":" + id ;
+		std::string key = serverKey( id , mechanism ) ;
 		std::string value = secret ;
-		m_map.insert( std::make_pair(key,value) ) ;
 		m_set.insert( mechanism ) ;
-		return true ;
+		return m_map.insert(std::make_pair(key,value)).second ? std::string() : key ;
 	}
-	else if( side == "CLIENT" )
+	else if( side == "client" )
 	{
 		// client-side -- no userid in the key since only one secret
-		std::string key = mechanism + " client" ;
+		std::string key = clientKey( mechanism ) ;
 		std::string value = id + " " + secret ;
-		m_map.insert( std::make_pair(key,value) ) ;
-		return true ;
+		return m_map.insert(std::make_pair(key,value)).second ? std::string() : key ;
 	}
 	else
 	{
-		return false ;
+		return std::string() ; // not what we're looking for
 	}
 }
 
@@ -183,31 +198,40 @@ GAuth::SecretsFile::~SecretsFile()
 {
 }
 
+std::string GAuth::SecretsFile::serverKey( const std::string & id , const std::string & mechanism )
+{
+	return "server:" + G::Str::lower(mechanism) + ":" + id ;
+}
+
+std::string GAuth::SecretsFile::clientKey( const std::string & mechanism )
+{
+	return "client:" + G::Str::lower(mechanism) ;
+}
+
 std::string GAuth::SecretsFile::id( const std::string & mechanism ) const
 {
 	reread() ;
-	Map::const_iterator p = m_map.find( mechanism+" client" ) ;
-	std::string result ;
-	if( p != m_map.end() && (*p).second.find(" ") != std::string::npos )
-		result = G::Xtext::decode( (*p).second.substr(0U,(*p).second.find(" ")) ) ;
-	G_DEBUG( "GAuth::Secrets::id: " << m_debug_name << ": \"" << mechanism << "\"" ) ;
-	return result ;
+	Map::const_iterator p = m_map.find( clientKey(mechanism) ) ;
+	if( p == m_map.end() || (*p).second.find(" ") == std::string::npos )
+		return std::string() ;
+	else
+		return G::Xtext::decode( (*p).second.substr(0U,(*p).second.find(" ")) ) ; // head
 }
 
 std::string GAuth::SecretsFile::secret( const std::string & mechanism ) const
 {
 	reread() ;
-	Map::const_iterator p = m_map.find( mechanism+" client" ) ;
+	Map::const_iterator p = m_map.find( clientKey(mechanism) ) ;
 	if( p == m_map.end() || (*p).second.find(" ") == std::string::npos )
 		return std::string() ;
 	else
-		return G::Xtext::decode( (*p).second.substr((*p).second.find(" ")+1U) ) ;
+		return G::Xtext::decode( (*p).second.substr((*p).second.find(" ")+1U) ) ; // tail
 }
 
-std::string GAuth::SecretsFile::secret( const std::string & mechanism , const std::string & id ) const
+std::string GAuth::SecretsFile::secret( const std::string & mechanism , const std::string & raw_id ) const
 {
 	reread() ;
-	Map::const_iterator p = m_map.find( mechanism+":"+G::Xtext::encode(id) ) ;
+	Map::const_iterator p = m_map.find( serverKey(G::Xtext::encode(raw_id),mechanism) ) ;
 	if( p == m_map.end() )
 		return std::string() ;
 	else

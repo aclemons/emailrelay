@@ -3,8 +3,9 @@ E-MailRelay Change Log
 
 1.9.1 -> 1.9.2
 --------------
-* Fixed memory leak in event loop garbage collection.
-* Tweaked rpm spec file.
+* Fixed memory leak in event-loop garbage collection.
+* Warning emitted if there is more than one client authentication secret [request #10].
+* RPM spec file improvements.
 
 1.9 -> 1.9.1
 ------------
