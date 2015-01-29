@@ -5,6 +5,7 @@ E-MailRelay Change Log
 --------------
 * Fixed memory leak in event-loop garbage collection.
 * Warning emitted if there is more than one client authentication secret [request #10].
+* New "--client-interface" option.
 * RPM spec file improvements.
 
 1.9 -> 1.9.1

@@ -95,20 +95,40 @@ G::Strings Main::Configuration::listeningInterfaces( const std::string & protoco
 	return result ;
 }
 
+// TODO - remove
+void Main::Configuration::checkClientInterface() const
+{
+	if( m_cl.contains("interface") && ! m_cl.contains("client-interface") )
+	{
+		G::Strings list = m_cl.value( "interface" , ",/" ) ;
+		bool explicit_ = false ;
+		for( G::Strings::iterator p = list.begin() ; p != list.end() ; ++p )
+			explicit_ = explicit_ || (*p).find("client=") == 0U ;
+		if( !explicit_ )
+			G_WARNING( "Main::Configuration::checkClientInterface: "
+				"using first \"--interface\" address to bind outgoing client connections: "
+				"try using \"--client-interface\" instead" ) ;
+	}
+}
+
 std::string Main::Configuration::clientInterface() const
 {
-	G::Strings result = m_cl.value( "interface" , ",/" ) ;
+	if( m_cl.contains("client-interface") )
+		return m_cl.value( "client-interface" ) ;
+
+	G::Strings list = m_cl.value( "interface" , ",/" ) ;
 	// look for first "client=" value
 	{
-		for( G::Strings::iterator p = result.begin() ; p != result.end() ; ++p )
+		for( G::Strings::iterator p = list.begin() ; p != list.end() ; ++p )
 		{
 			if( (*p).find("client=") == 0U )
 				return G::Str::tail( *p , (*p).find('=') , *p ) ;
 		}
 	}
-	// or use the first unqalified value
+	// or use the first unqalified value 
+	// TODO remove
 	{
-		for( G::Strings::iterator p = result.begin() ; p != result.end() ; ++p )
+		for( G::Strings::iterator p = list.begin() ; p != list.end() ; ++p )
 		{
 			if( (*p).find('=') == std::string::npos )
 				return *p ;

@@ -54,6 +54,10 @@ public:
 	G::Strings listeningInterfaces( const std::string & protocol = std::string() ) const ;
 		///< Returns the listening interface(s).
 
+	void checkClientInterface() const ;
+		///< Issues a warning if taking the client address from an unqualified list.
+		///< TODO remove
+
 	std::string clientInterface() const ;
 		///< Returns the sending interface.
 

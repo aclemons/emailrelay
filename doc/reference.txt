@@ -32,6 +32,9 @@ where <option> is:
 # --client-filter (-Y)
   Specifies an external program to process messages when they are forwarded.
 
+# --client-interface (-6)
+  Defines the local interface for outgoing client connections.
+
 # --client-tls (-j)
   Enables negotiated tls/ssl for smtp client (if openssl built in).
 
@@ -414,8 +417,8 @@ to the SMTP "EHLO" command if the "--server-auth" command-line option is used.
 Authentication by the client is then mandatory unless the client's IP address is
 configured as a trusted address.
 
-Trusted IP addresses are configured with lines in the secrets file having "NONE"
-in the first field, "server" in the second field, a wildcarded IP address in
+Trusted IP addresses are configured with lines in the secrets file having "server"
+in the first field, "NONE" in the second field, a wildcarded IP address in
 the third field, and an arbitrary keyword in the fourth field. The keyword field
 is passed to any external address verifier program specified by the "--verifier"
 command-line option; it is not used for any other purpose. Wildcarded IPv4

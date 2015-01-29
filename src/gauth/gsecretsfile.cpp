@@ -178,7 +178,7 @@ std::string GAuth::SecretsFile::process( std::string side , std::string mechanis
 		// server-side
 		std::string key = serverKey( id , mechanism ) ;
 		std::string value = secret ;
-		m_set.insert( mechanism ) ;
+		m_set.insert( G::Str::upper(mechanism) ) ;
 		return m_map.insert(std::make_pair(key,value)).second ? std::string() : key ;
 	}
 	else if( side == "client" )

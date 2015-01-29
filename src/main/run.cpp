@@ -203,6 +203,8 @@ bool Main::Run::prepare()
 	cl().logSemanticWarnings() ;
  #endif
 
+	cfg.checkClientInterface() ; // TODO remove
+
 	return true ;
 }
 

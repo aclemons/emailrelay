@@ -250,7 +250,7 @@ std::string GSmtp::StoredFile::value( const std::string & s , const std::string 
 			throw MessageStore::FormatError(key) ;
 	}
 
-	return s.substr(pos+2U) ;
+	return G::Str::trimmed( G::Str::tail(s,pos,std::string()) , G::Str::ws() ) ;
 }
 
 const std::string & GSmtp::StoredFile::crlf()
