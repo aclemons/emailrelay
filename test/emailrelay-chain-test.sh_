@@ -78,7 +78,7 @@ opt_exe_dir="${1}"
 # configuration
 #
 cfg_sw_debug="" ; test "${opt_debug}" -eq 0 || cfg_sw_debug="--debug"
-cfg_sw_extra="" ; test "${opt_use_valgrind}" -eq 0 || cfg_sw_extra="--no-daemon"
+cfg_sw_extra="--domain test.local" ; test "${opt_use_valgrind}" -eq 0 || cfg_sw_extra="--domain test.local --no-daemon"
 cfg_exe_dir="../src/main" ; test -z "${opt_exe_dir}" || cfg_exe_dir="${opt_exe_dir}"
 cfg_main_exe="${cfg_exe_dir}/emailrelay"
 cfg_poke_exe="${cfg_exe_dir}/emailrelay-poke"

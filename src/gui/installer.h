@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,21 +23,21 @@
 
 #include "gdef.h"
 #include "gpath.h"
+#include "gmapfile.h"
 #include <string>
 
-class InstallerImp ; 
+class InstallerImp ;
 
 /// \class Installer
 /// A class that interprets a set of install variables
 /// dump()ed out by the GPage class and then executes a series of 
 /// installation tasks using an iteration interface.
 ///
-class Installer 
+class Installer
 {
 public:
-	Installer( G::Path argv0 , G::Path payload , bool install_mode ) ;
-		///< Constructor. Initialise with start(). The argv0 and 
-		///< payload paths can be the same.
+	Installer( bool install_mode , bool is_windows , const G::Path & payload ) ;
+		///< Constructor. Initialise with start().
 
 	~Installer() ;
 		///< Destructor.
@@ -46,8 +46,7 @@ public:
 		///< Initialisation.
 
 	bool next() ;
-		///< Iterator. Returns true if there is something
-		///< to run().
+		///< Iterator. Returns true if there is something to run().
 
 	std::string beforeText() ;
 		///< Returns the current task description.
@@ -65,15 +64,18 @@ public:
 		///< Returns true if done() and failed.
 		///< Precondition: done()
 
+	std::string reason() const ;
+		///< Returns the failed() reason.
+
 private:
 	Installer( const Installer & ) ;
 	void operator=( const Installer & ) ;
 	void cleanup( const std::string & = std::string() ) ;
 
 private:
-	G::Path m_argv0 ;
-	G::Path m_payload ;
 	bool m_installing ;
+	bool m_is_windows ;
+	G::Path m_payload ;
 	InstallerImp * m_imp ;
 	std::string m_reason ;
 } ;

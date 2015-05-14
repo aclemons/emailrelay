@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,39 +24,39 @@
 #include "gfile.h"
 #include "gdirectory.h"
 
-bool Boot::able( G::Path dir )
+// TODO - other init systems
+
+bool Boot::able( const G::Path & dir )
 {
 	return
 		dir != G::Path() &&
-		G::File::exists( dir+".."+"rc3.d" ) &&
 		G::Directory(dir).valid(true) &&
 		G::Directory(dir).writeable() ; // (creates a probe file)
 }
 
-bool Boot::install( G::Path dir_boot , G::Path target , G::Strings )
+bool Boot::install( const G::Path & dir_boot , const std::string & name , const G::Path & startstop_src , const G::Path & )
 {
-	std::string name = std::string() + "S50" + target.basename() ;
-	std::string to_relative = std::string() + "../" + dir_boot.basename() + "/" + target.basename() ;
+	G::Path startstop_dst = dir_boot + name ;
+	//if( !G::File::exists(startstop_dst) ) // moot
+	G::File::copy( startstop_src , startstop_dst , G::File::NoThrow() ) ;
 
-	// 'target' is our squirrelled away copy of the start/stop script -- see Dir::bootcopy()
-	G::Path to_absolute = dir_boot + "/" + target.basename() ;
-	if( !G::File::exists(to_absolute) )
-		G::File::copy( target , to_absolute , G::File::NoThrow() ) ;
-
-	bool ok0 = G::File::link( to_relative , dir_boot+".."+"rc2.d"+name , G::File::NoThrow() ) ;
-	bool ok1 = G::File::link( to_relative , dir_boot+".."+"rc3.d"+name , G::File::NoThrow() ) ;
-	bool ok2 = G::File::link( to_relative , dir_boot+".."+"rc4.d"+name , G::File::NoThrow() ) ;
-	bool ok3 = G::File::link( to_relative , dir_boot+".."+"rc5.d"+name , G::File::NoThrow() ) ;
+	std::string symlink = "../" + dir_boot.basename() + "/" + name ;
+	std::string linkname = "S50" + name ;
+	bool ok0 = G::File::link( symlink , dir_boot+".."+"rc2.d"+linkname , G::File::NoThrow() ) ;
+	bool ok1 = G::File::link( symlink , dir_boot+".."+"rc3.d"+linkname , G::File::NoThrow() ) ;
+	bool ok2 = G::File::link( symlink , dir_boot+".."+"rc4.d"+linkname , G::File::NoThrow() ) ;
+	bool ok3 = G::File::link( symlink , dir_boot+".."+"rc5.d"+linkname , G::File::NoThrow() ) ;
 	return ok0 && ok1 && ok2 && ok3 ;
 }
 
-bool Boot::uninstall( G::Path dir_boot , G::Path target , G::Strings )
+bool Boot::uninstall( const G::Path & dir_boot , const std::string & name , const G::Path & )
 {
-	std::string name = std::string() + "S50" + target.basename() ;
-	bool ok0 = G::File::remove( dir_boot+".."+"rc2.d"+name , G::File::NoThrow() ) ;
-	bool ok1 = G::File::remove( dir_boot+".."+"rc3.d"+name , G::File::NoThrow() ) ;
-	bool ok2 = G::File::remove( dir_boot+".."+"rc4.d"+name , G::File::NoThrow() ) ;
-	bool ok3 = G::File::remove( dir_boot+".."+"rc5.d"+name , G::File::NoThrow() ) ;
+	std::string symlink = "../" + dir_boot.basename() + "/" + name ;
+	std::string linkname = "S50" + name ;
+	bool ok0 = G::File::remove( dir_boot+".."+"rc2.d"+linkname , G::File::NoThrow() ) ;
+	bool ok1 = G::File::remove( dir_boot+".."+"rc3.d"+linkname , G::File::NoThrow() ) ;
+	bool ok2 = G::File::remove( dir_boot+".."+"rc4.d"+linkname , G::File::NoThrow() ) ;
+	bool ok3 = G::File::remove( dir_boot+".."+"rc5.d"+linkname , G::File::NoThrow() ) ;
 	return ok0 && ok1 && ok2 && ok3 ;
 }
 

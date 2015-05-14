@@ -168,7 +168,7 @@ bool Main::Run::prepare()
 		m_prepare_error = false ;
 		return false ;
 	}
-	else if( cl().argc() > 1U )
+	else if( cl().argc() > 2U )
 	{
 		cl().showArgcError( true ) ;
 		m_prepare_error = true ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,13 +27,13 @@
 #include "gstrings.h"
 #include <string>
 
-class GLinkImp ; 
+class GLinkImp ;
 
 /// \class GLink
 /// A class for creating desktop links (aka "shortcuts") and 
 /// application menu items.
 ///
-class GLink 
+class GLink
 {
 public:
 	G_EXCEPTION( SaveError , "error saving desktop or menu link" ) ;
@@ -41,7 +41,7 @@ public:
 	enum Show { Show_Default , Show_Hide } ;
 
 	GLink( const G::Path & target_path , const std::string & name , const std::string & description , 
-		const G::Path & working_dir , const G::Strings & args = G::Strings() ,
+		const G::Path & working_dir , const G::StringArray & args = G::StringArray() ,
 		const G::Path & icon_source = G::Path() , Show show = Show_Default ,
 		const std::string & internal_comment_1 = std::string() ,
 		const std::string & internal_comment_2 = std::string() ,
@@ -61,7 +61,7 @@ public:
 		///< Destructor.
 
 	static bool remove( const G::Path & ) ;
-		///< Removes a link.
+		///< Removes a link. Returns true if removed.
 
 private:
 	GLink( const GLink & ) ;

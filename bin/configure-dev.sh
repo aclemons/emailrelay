@@ -40,7 +40,7 @@ gnu()
 llvm()
 {
 	w_on="-Wall -Wextra -Weverything -pedantic"
-	w_off="-Wno-weak-vtables -Wno-padded -Wno-exit-time-destructors -Wno-missing-noreturn -Wno-global-constructors"
+	w_off="-Wno-documentation -Wno-weak-vtables -Wno-padded -Wno-exit-time-destructors -Wno-missing-noreturn -Wno-global-constructors"
 	#sanity="-fsanitize=address -fsanitize=init-order -fsanitize=integer -fsanitize=undefined -fsanitize=dataflow"
 	env \
 		CC=clang \

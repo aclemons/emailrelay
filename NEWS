@@ -1,1 +1,8 @@
-no news is good news
+News
+====
+The 1.9.2 release fixes a resource leak that can cause significantly degraded 
+performance in long-lived processes.
+
+It also adds a "--client-interface" option to begin to resolve the mis-feature 
+where the first "--interface" address may be used to bind the local socket on
+outgoing client connections.

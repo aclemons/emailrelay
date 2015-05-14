@@ -24,14 +24,12 @@
 #include "gresolver.h"
 #include "glog.h"
 
-GNet::Address GNet::Local::canonicalAddressImp()
+GNet::Address GNet::Local::canonicalAddressImp( const GNet::Address & default_ )
 {
 	ResolverInfo info( hostname() , "0" ) ;
 	std::string error = Resolver::resolve( info ) ;
 	if( !error.empty() )
-	{
-		throw Error( std::string() + "resolve: " + error ) ;
-	}
+		return default_ ;
 	return info.address() ;
 }
 
@@ -40,18 +38,12 @@ std::string GNet::Local::fqdnImp()
 	ResolverInfo info( hostname() , "0" ) ;
 	std::string error = Resolver::resolve( info ) ;
 	if( !error.empty() )
-	{
-		throw Error( std::string() + "resolve: " + error ) ;
-	}
-
+		return hostname() + ".local" ;
 	std::string result = info.name() ;
 
 	std::string::size_type pos = result.find( '.' ) ;
 	if( pos == std::string::npos )
-	{
-		G_WARNING( "GNet::Local: no domain name in \"" << result << "\": defaulting to \".local\"" ) ;
 		result.append( ".local" ) ;
-	}
 
 	return result ;
 }

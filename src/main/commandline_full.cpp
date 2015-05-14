@@ -62,7 +62,8 @@ public:
 	void showCapabilities( bool error_stream = false , const std::string & = std::string() ) const ;
 	static std::string switchSpec( bool is_windows ) ;
 
-public:
+private:
+	void readFile( std::istream & f , G::StringArray & args ) ;
 	void showWarranty( bool error_stream = false , const std::string & = std::string() ) const ;
 	void showCredit( bool error_stream = false , const std::string & = std::string() ) const ;
 	void showTestFeatures( bool error_stream = false , const std::string & = std::string() ) const ;
@@ -150,7 +151,7 @@ std::string Main::CommandLineImp::switchSpec( bool is_windows )
 		"U!connection-timeout!sets the timeout (in seconds) when connecting to a remote server "
 			"(default is 40)!!1!time!3|"
 		"m!immediate!enables immediate forwarding of messages as soon as they are received! (requires --forward-to)!0!!3|"
-		"I!interface!defines the listening interface(s) for incoming connections! (comma-separated list with optional smtp=,pop=,admin= qualifiers)!1!ip-list!3|"
+		"I!interface!defines the listening interface(s) for incoming connections! (comma-separated list with optional smtp=,pop=,admin= qualifiers)!2!ip-list!3|"
 		"6!client-interface!defines the local interface for outgoing client connections!!1!ip!3|"
 		"i!pid-file!defines a file for storing the daemon process-id!!1!pid-file!3|"
 		"O!poll!enables polling of the spool directory for messages to be forwarded with the specified period (zero means on client disconnection)! (requires --forward-to)!1!period!3|"
@@ -198,7 +199,7 @@ Main::CommandLineImp::CommandLineImp( Output & output , const G::Arg & arg , con
 		m_version(version) ,
 		m_capabilities(capabilities) ,
 		m_arg(arg) ,
-		m_getopt(m_arg,spec,'|','!','^')
+		m_getopt(m_arg,spec)
 {
 }
 
@@ -216,17 +217,17 @@ void Main::CommandLineImp::showUsage( bool e ) const
 {
 	Show show( m_output , e ) ;
 
-	G::GetOpt::Level level = G::GetOpt::Level(2U) ;
-	std::string introducer = G::GetOpt::introducerDefault() ;
+	G::Options::Level level = G::Options::Level(2U) ;
+	std::string introducer = G::Options::introducerDefault() ;
 	if( m_getopt.contains("verbose") )
-		level = G::GetOpt::levelDefault() ;
+		level = G::Options::levelDefault() ;
 	else
 		introducer = std::string("abbreviated ") + introducer ;
 
 	std::string::size_type tab_stop = 34U ;
 	bool extra = m_getopt.contains("verbose") ;
-	m_getopt.showUsage( show.s() , m_arg.prefix() , "" , introducer , level , tab_stop , 
-		G::GetOpt::wrapDefault() , extra ) ;
+	m_getopt.options().showUsage( show.s() , m_arg.prefix() , "" , introducer , level , tab_stop , 
+		G::Options::wrapDefault() , extra ) ;
 }
 
 bool Main::CommandLineImp::contains( const std::string & name ) const

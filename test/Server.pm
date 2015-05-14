@@ -159,7 +159,7 @@ sub _switches
 	my ( %sw ) = @_ ;
 
 	return
-		"" .
+		"--domain test.local " .
 		( exists($sw{AsServer}) ? "--as-server " : "" ) .
 		( exists($sw{Log}) ? "--log " : "" ) .
 		( exists($sw{LogTime}) ? "--log-time " : "" ) .

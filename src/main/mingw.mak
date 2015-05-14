@@ -89,5 +89,6 @@ $(mc_output): $(fake_mc) messages.mc
 	$(fake_mc) messages.mc
 
 $(res): $(rc) $(mc_output)
+	../../bin/make-manifest.sh_ asInvoker > emailrelay.manifest
 	$(mk_rc) --include-dir . -i $(rc) -o $@
 

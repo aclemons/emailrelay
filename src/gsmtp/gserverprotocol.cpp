@@ -565,7 +565,7 @@ void GSmtp::ServerProtocol::doNoRecipients( const std::string & , bool & )
 
 void GSmtp::ServerProtocol::doData( const std::string & , bool & )
 {
-	std::string received_line = m_text.received(m_smtp_peer_name) ;
+	std::string received_line = m_text.received( m_smtp_peer_name , m_authenticated , m_secure ) ;
 	if( received_line.length() )
 		m_pmessage.addReceived( received_line ) ;
 
@@ -847,9 +847,11 @@ std::string GSmtp::ServerProtocolText::hello( const std::string & ) const
 	return m_thishost + " says hello" ;
 }
 
-std::string GSmtp::ServerProtocolText::received( const std::string & smtp_peer_name ) const
+std::string GSmtp::ServerProtocolText::received( const std::string & smtp_peer_name ,
+	bool authenticated , bool secure ) const
 {
-	return receivedLine( smtp_peer_name , m_peer_address.displayString(false) , m_peer_socket_name , m_thishost ) ;
+	return receivedLine( smtp_peer_name , m_peer_address.displayString(false) , m_peer_socket_name , m_thishost ,
+		authenticated , secure ) ;
 }
 
 std::string GSmtp::ServerProtocolText::shortened( std::string prefix , std::string s )
@@ -863,13 +865,15 @@ std::string GSmtp::ServerProtocolText::shortened( std::string prefix , std::stri
 }
 
 std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_peer_name , 
-	const std::string & peer_address , const std::string & peer_socket_name , const std::string & thishost )
+	const std::string & peer_address , const std::string & peer_socket_name , const std::string & thishost ,
+	bool authenticated , bool secure )
 {
 	const G::DateTime::EpochTime t = G::DateTime::now() ;
 	const G::DateTime::BrokenDownTime tm = G::DateTime::local(t) ;
 	const std::string zone = G::DateTime::offsetString(G::DateTime::offset(t)) ;
 	const G::Date date( tm ) ;
 	const G::Time time( tm ) ;
+	const std::string esmtp = std::string("ESMTP") + (secure?"S":"") + (authenticated?"A":"") ; // rfc 3848
 
 	std::ostringstream ss ;
 	ss 
@@ -877,7 +881,7 @@ std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_pe
 		<< " ("
 			<< "[" << peer_address << "]"
 			<< shortened( "," , peer_socket_name )
-		<< ") by " << thishost << " with ESMTP ; "
+		<< ") by " << thishost << " with " << esmtp << " ; "
 		<< date.weekdayName(true) << ", "
 		<< date.monthday() << " " 
 		<< date.monthName(true) << " "

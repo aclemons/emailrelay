@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 #include <iostream>
 #include <list>
 #include <vector>
+#include <set>
 
 /// \namespace G
 namespace G
@@ -39,11 +40,12 @@ namespace G
 /// \class G::Str
 /// A static class which provides string helper functions.
 ///
-class G::Str 
+class G::Str
 {
 public:
 	G_EXCEPTION_CLASS( Overflow , "conversion error: over/underflow" ) ;
 	G_EXCEPTION_CLASS( InvalidFormat, "conversion error: invalid format" ) ;
+	G_EXCEPTION_CLASS( NotEmpty, "internal error: string container not empty" ) ;
 	typedef std::string::size_type size_type ;
 
 	static bool replace( std::string & s , 
@@ -281,31 +283,49 @@ public:
 			///< Overload for vector<string>.
 
 	static std::string join( const Strings & strings , const std::string & sep ) ;
-		///< Concatenates a set of strings.
+		///< Concatenates a list of strings.
 
 	static std::string join( const StringArray & strings , const std::string & sep ) ;
+		///< Concatenates an array of strings.
+
+	static std::string join( const std::set<std::string> & strings , const std::string & sep ) ;
 		///< Concatenates a set of strings.
 
 	static Strings keys( const StringMap & string_map ) ;
+		///< Extracts the keys from a map of strings.
+
+	static std::set<std::string> keySet( const StringMap & string_map ) ;
 		///< Extracts the keys from a map of strings.
 
 	static std::string head( const std::string & in , std::string::size_type pos , 
 		const std::string & default_ = std::string() ) ;
 			///< Returns the first part of the string up to just before the given position.
 			///< The character at pos is not returned. Returns the supplied default 
-			///< if pos is npos.
+			///< if pos is npos. Returns the whole string if pos is off the end.
 
 	static std::string tail( const std::string & in , std::string::size_type pos , 
 		const std::string & default_ = std::string() ) ;
 			///< Returns the last part of the string after the given position.
 			///< The character at pos is not returned. Returns the supplied default 
-			///< if pos is npos.
+			///< if pos is npos. Returns the empty string if pos if off the end.
 
 	static bool tailMatch( const std::string & in , const std::string & ending ) ;
 		///< Returns true if the given string has the given ending.
 
 	static std::string ws() ;
 		///< A convenience function returning standard whitespace characters.
+
+	static std::string positive() ;
+		///< Returns a default positive string. See isPositive().
+
+	static std::string negative() ;
+		///< Returns a default negative string. See isNegative().
+
+	static bool isPositive( const std::string & ) ;
+		///< Returns true if the string has a positive meaning, such as "1", "true", "yes".
+
+	static bool isNegative( const std::string & ) ;
+		///< Returns true if the string has a negative meaning, such as "0", "false", "no".
 
 private:
 	static void readLineFromImp( std::istream & , const std::string & , std::string & ) ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,19 +28,23 @@
 /// \class Boot
 /// Provides support for installing as a boot-time service.
 ///
-class Boot 
+class Boot
 {
 public:
-	static bool able( G::Path dir_boot ) ;
-		///< Returns true if the operating-system is supported
-		///< and the supplied boot-system directory is valid.
-		///< The parameter normally comes from Dir::boot().
+	static bool able( const G::Path & dir_boot ) ;
+		///< Returns true if the operating-system is supported and the supplied 
+		///< boot-system directory is valid. The parameter normally comes 
+		///< from Dir::boot().
 
-	static bool install( G::Path dir_boot , G::Path target , G::Strings args ) ;
-		///< Installs the target as a boot-time service.
+	static bool install( const G::Path & dir_boot , const std::string & name , 
+		const G::Path & path_1 , const G::Path & path_2 ) ;
+			///< Installs the target as a boot-time service. For Windows path_1 is 
+			///< the batch file and path_2 is the service wrapper. For Unix path_1 
+			///< is the startstop script and path_2 is the server executable.
 
-	static bool uninstall( G::Path dir_boot , G::Path target , G::Strings args ) ;
-		///< Uninstalls the target as a boot-time service.
+	static bool uninstall( const G::Path & dir_boot , const std::string & name , 
+		const G::Path & exe ) ;
+			///< Uninstalls the target as a boot-time service.
 
 private:
 	Boot() ;

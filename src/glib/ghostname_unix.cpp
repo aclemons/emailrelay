@@ -21,11 +21,15 @@
 #include "gdef.h"
 #include "ghostname.h"
 #include "gstr.h"
+#include "gtest.h"
 #include "genvironment.h"
 #include <sys/utsname.h>
 
 std::string G::hostname()
 {
+	if( Test::enabled("dummy-hostname") ) 
+		return "dummyhost" ;
+
 	struct utsname info ;
 	int rc = ::uname( &info ) ;
 	if( rc == -1 ) 

@@ -3,15 +3,20 @@ E-MailRelay Change Log
 
 1.9.1 -> 1.9.2
 --------------
-* Fixed memory leak in event-loop garbage collection.
-* Warning emitted if there is more than one client authentication secret [request #10].
-* New "--client-interface" option.
-* RPM spec file improvements.
+* Fixed a memory leak in event-loop garbage collection.
+* A local hostname that fails to resolve is not an error.
+* A warning is emitted if there is more than one client authentication secret.
+* Multiple "--interface" options are allowed on the command-line.
+* Added a new "--client-interface" option.
+* The "Received" line is formatted as per RFC 3848 ("with ESMTPSA").
+* Heap storage is used for some buffers previously on the stack.
+* The Windows service wrapper can use a configuration file to locate the startup batch file.
+* Simplified the implementation of the configuration/installation GUI.
+* Improved the RPM spec file.
 
 1.9 -> 1.9.1
 ------------
 * Updated OpenSSL from 1.0.1e to 1.0.1g in the Windows build.
-
 
 1.8.2 -> 1.9
 ------------

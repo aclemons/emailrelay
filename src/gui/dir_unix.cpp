@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,11 +21,13 @@
 #include "gdef.h"
 #include "dir.h"
 #include "gpath.h"
+#include "gstr.h"
 #include "gdirectory.h"
 #include "gnewprocess.h"
 #include "gfile.h"
 #include <stdexcept>
 #include <unistd.h>
+#include <stdlib.h> // realpath(), free()
 
 // these directories from the makefile could be used in preference 
 // to the installer's runtime base directory on the assumption that 
@@ -59,34 +61,45 @@
 
 namespace
 {
+	std::string run( const std::string & exe , const std::string & arg_1 = std::string() ,
+		const std::string & arg_2 = std::string() ,
+		const std::string & arg_3 = std::string() ,
+		const std::string & arg_4 = std::string() )
+	{
+		//G::StringArray args ;
+		G::Strings args ;
+		if( !arg_1.empty() ) args.push_back( arg_1 ) ;
+		if( !arg_2.empty() ) args.push_back( arg_2 ) ;
+		if( !arg_3.empty() ) args.push_back( arg_3 ) ;
+		if( !arg_4.empty() ) args.push_back( arg_4 ) ;
+		G::NewProcess::ChildProcess child = G::NewProcess::spawn( exe , args ) ;
+        child.wait() ;
+		//G::NewProcess child( exe , args ) ;
+		//child.wait().run() ;
+		return child.read() ;
+	}
+
 	G::Path kde( const std::string & key , const G::Path & default_ )
 	{
-		std::string exe = "/usr/bin/kde4-config" ;
-		G::Strings args ;
-		args.push_back( "kde4-config" ) ;
-		args.push_back( "--userpath" ) ;
-		args.push_back( key ) ;
-
-		G::NewProcess::ChildProcess child = G::NewProcess::spawn( exe , args ) ;
-		child.wait() ;
-		std::string s = child.read() ;
-		return s.empty() ? default_ : G::Path(s) ;
+		G::Path result = run( "/usr/bin/kde4-config" , "kde4-config" , "--userpath" , key ) ;
+		return result == G::Path() ? default_ : result ;
 	}
 
-	G::Path kdeDesktop( const G::Path & default_ = G::Path() )
+	G::Path xdg( const std::string & key , const G::Path & default_ )
 	{
-		return kde( "desktop" , default_ ) ;
+		G::Path result = run( "/usr/dir/xdg-user-dir" , "xdg-user-dir" , key ) ;
+		return result == G::Path() ? default_ : result ;
+	}
+
+	G::Path queryDesktop( const G::Path & default_ = G::Path() )
+	{
+		return kde( "desktop" , xdg("DESKTOP",default_) ) ;
 	}
 	
-	G::Path kdeAutostart( const G::Path & default_ = G::Path() )
+	G::Path queryAutostart( const G::Path & default_ = G::Path() )
 	{
 		return kde( "autostart" , default_ ) ;
 	}
-}
-
-std::string Dir::dotexe()
-{
-	return std::string() ;
 }
 
 G::Path Dir::os_install()
@@ -95,26 +108,6 @@ G::Path Dir::os_install()
 	// default base of the install
 
 	return "/usr" ;
-}
-
-G::Path Dir::os_gui( const G::Path & install )
-{
-	return install + "sbin" + "emailrelay-gui.real" ; // or G_SBINDIR
-}
-
-G::Path Dir::os_icon( const G::Path & install )
-{
-	return install + "share" + "emailrelay" + "emailrelay-icon.png" ; // or G_ICONDIR
-}
-
-G::Path Dir::os_server( const G::Path & install )
-{
-	return install + "sbin" + "emailrelay" ; // or G_SBINDIR
-}
-
-G::Path Dir::os_bootcopy( const G::Path & , const G::Path & )
-{
-	return G::Path() ;
 }
 
 G::Path Dir::os_config()
@@ -133,15 +126,6 @@ G::Path Dir::os_spool()
 	return spooldir ;
 }
 
-G::Path Dir::cwd()
-{
-	char buffer[10000] = { '\0' } ;
-	const char * p = getcwd( buffer , sizeof(buffer)-1U ) ;
-	buffer[sizeof(buffer)-1U] = '\0' ;
-	std::string s = p ? std::string(buffer) : std::string(".") ;
-	return G::Path( s ) ;
-}
-
 G::Path Dir::os_pid( const G::Path & )
 {
 	return oneOf( "/var/run" , "/tmp" ) ;
@@ -151,12 +135,9 @@ G::Path Dir::special( const std::string & type )
 {
 	// see "http://standards.freedesktop.org"
 
-	G::Path data_home = envPath( "XDG_DATA_HOME" , home() + ".local" + "share" ) ;
-	G::Path config_home = envPath( "XDG_CONFIG_HOME" , home() + ".config" ) ;
-
-	G::Path desktop = kdeDesktop( home() + "Desktop" ) ;
-	G::Path menu = data_home + "applications" ;
-	G::Path login = kdeAutostart( config_home + "autostart" ) ;
+	G::Path desktop = queryDesktop( home()+"Desktop" ) ; // see also "xdg-desktop-icon install"
+	G::Path menu = envPath("XDG_DATA_HOME",home()+".local"+"share") + "applications" ; // see also "xdg-desktop-menu install"
+	G::Path login = queryAutostart() ; // default was envPath("XDG_CONFIG_HOME",home()+".config")+"autostart"
 	G::Path programs = "/usr/bin" ;
 
 	if( type == "desktop" ) return desktop ;
@@ -196,6 +177,18 @@ G::Path Dir::oneOf( std::string d1 , std::string d2 , std::string d3 , std::stri
 G::Path Dir::home()
 {
 	return envPath( "HOME" , "~" ) ;
+}
+
+G::Path Dir::os_absolute( const G::Path & dir )
+{
+	G::Path result = dir ;
+	if( dir != G::Path() )
+	{
+		char * p = ::realpath( dir.str().c_str() , NULL ) ; // assume POSIX.1-2008 behaviour
+		if( p && *p ) result = G::Path(std::string(p)) ;
+		if( p ) ::free( p ) ;
+	}
+	return result ;
 }
 
 /// \file dir_unix.cpp

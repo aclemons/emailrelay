@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,43 +30,36 @@
 #include "gdirectory.h"
 #include "gprocess.h"
 #include "glink.h"
+#include "gbatchfile.h"
 #include "gregister.h"
-#include "garg.h"
-#include "gunpack.h"
-#include "ggetopt.h"
 #include "glogoutput.h"
 #include "glog.h"
 #include "gexception.h"
-#include "pointer.h"
+#include "gnewprocess.h"
+#include "gmapfile.h"
 #include "boot.h"
-#include "mapfile.h"
-#include "dir.h"
+#include "serverconfiguration.h"
 #include "installer.h"
+#include "service_install.h"
+#include "service_remove.h"
 #include <exception>
 #include <iostream>
 #include <stdexcept>
 #include <fstream>
 #include <string>
-#include <sstream>
-#include <iterator>
-#include <utility>
-#include <map>
-#include <set>
 #include <list>
 #include <cstdlib>
 
 #ifdef CreateDirectory
 #undef CreateDirectory
 #endif
+#ifdef CopyFile
+#undef CopyFile
+#endif
 
-struct LinkInfo
-{
-	G::Path target ; // exe-or-wrapper
-	G::Strings args ; // exe-or-wrapper args
-	G::Path raw_target ; // exe
-	G::Strings raw_args ; // exe args
-	G::Path icon ;
-} ;
+#ifdef G_GUI_DIR_H
+#error do not use dir.h from installer.cpp
+#endif
 
 struct ActionInterface
 {
@@ -79,10 +72,11 @@ struct ActionInterface
 struct Helper
 {
 	static bool isWindows() ;
-	static std::string exe() ;
-	static std::string quote( std::string , bool = false ) ;
-	static std::string str( const G::Strings & list ) ;
+	static std::string quote( std::string ) ;
+	static std::string str( const G::StringArray & list ) ;
+	static bool m_is_windows ;
 } ;
+bool Helper::m_is_windows = false ;
 
 struct ActionBase : public ActionInterface , protected Helper
 {
@@ -100,64 +94,56 @@ struct CreateDirectory : public ActionBase
 	virtual void run() ;
 } ;
 
-struct ExtractOriginal : public ActionBase
-{
-	G::Path m_argv0 ;
-	G::Unpack & m_unpack ;
-	G::Path m_dst ;
-	std::string m_ok ;
-	ExtractOriginal( G::Path argv0 , G::Unpack & unpack , G::Path dst ) ;
-	virtual std::string ok() const ;
-	virtual void run() ;
-	virtual std::string text() const ;
-} ;
-
-struct CopyFrameworks : public ActionBase
-{
-	G::Path m_argv0 ;
-	G::Path m_dst ;
-	std::string m_cmd ;
-	static bool active( G::Path argv0 ) ;
-	CopyFrameworks( G::Path argv0 , G::Path dst ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
-	static std::string sanitised( std::string ) ;
-} ;
-
 struct CreatePointerFile : public ActionBase
 {
-	G::Path m_pointer_path ;
-	G::Path m_gui ;
-	G::StringMap m_map ;
-	CreatePointerFile( const G::Path & , const G::Path & , const G::StringMap & ) ;
+	G::Path m_pointer_file ;
+	G::Path m_gui_exe ;
+	G::Path m_dir_config ;
+	G::Path m_dir_install ;
+	CreatePointerFile( const G::Path & pointer_file , const G::Path & gui_exe , const G::Path & dir_config , const G::Path & dir_install ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
+	virtual std::string ok() const ;
 } ;
 
-struct Copy : public ActionBase
+struct CopyFile : public ActionBase
 {
-	G::Path m_dst_dir ;
 	G::Path m_src ;
-	Copy( std::string install_dir , std::string name , std::string sub_dir = std::string() ) ;
+	G::Path m_dst ;
+	std::string m_flags ;
+	CopyFile( G::Path src , G::Path dst , std::string flags ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
 } ;
 
-struct Extract : public ActionBase
+struct CopyTree : public ActionBase
 {
-	G::Unpack & m_unpack ;
-	std::string m_key ;
+	G::Path m_src ;
 	G::Path m_dst ;
-	Extract( G::Unpack & unpack , std::string key , G::Path dst ) ;
+	CopyTree( G::Path src , G::Path dst ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
+	void add( int depth , G::Path , G::Path ) const ;
+} ;
+
+struct FileGroup : public ActionBase
+{
+	std::string m_path ;
+	std::string m_tail ;
+	std::string m_ok ;
+	FileGroup( const std::string & , const std::string & ) ;
+	void exec( const std::string & , const std::string & ) ;
+	virtual void run() ;
+	virtual std::string text() const ;
+	virtual std::string ok() const ;
 } ;
 
 struct CreateSecrets : public ActionBase
 {
 	G::Path m_path ;
+	G::Path m_template ;
 	G::StringMap m_content ;
-	CreateSecrets( const std::string & config_dir , const std::string & filename , G::StringMap content ) ;
+	CreateSecrets( const std::string & config_dir , const std::string & filename , G::Path template_ , G::StringMap content ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
 	static bool match( std::string , std::string ) ;
@@ -165,44 +151,52 @@ struct CreateSecrets : public ActionBase
 
 struct CreateBatchFile : public ActionBase
 {
-	LinkInfo m_link_info ;
-	std::string m_args ;
-	explicit CreateBatchFile( LinkInfo ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
-} ;
-
-struct CreateLoggingBatchFile : public ActionBase
-{
 	G::Path m_bat ;
 	G::Path m_exe ;
-	G::Strings m_args ;
-	G::Path m_log ;
-	CreateLoggingBatchFile( G::Path bat , G::Path exe , G::Strings args , G::Path ) ;
+	G::StringArray m_args ;
+	G::Path m_log_file ;
+	CreateBatchFile( const G::Path & bat , const G::Path & exe , const G::StringArray & args , const G::Path & = G::Path() ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
 } ;
 
 struct UpdateLink : public ActionBase
 {
-	G::Path m_argv0 ;
 	bool m_active ;
 	G::Path m_link_dir ;
 	G::Path m_working_dir ;
-	LinkInfo m_target_link_info ;
+	G::Path m_target ;
+	G::StringArray m_args ;
+	G::Path m_icon ;
 	G::Path m_link_path ;
-	UpdateLink( G::Path argv0 , bool active , std::string link_dir , G::Path working_dir , LinkInfo target_link_info ) ;
+	std::string m_ok ;
+	UpdateLink( bool active , G::Path link_dir , G::Path working_dir , G::Path target , const G::StringArray & args , G::Path icon ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
+	virtual std::string ok() const ;
 } ;
 
 struct UpdateBootLink : public ActionBase
 {
 	bool m_active ;
 	std::string m_ok ;
-	std::string m_init_d ;
-	LinkInfo m_target_link_info ;
-	UpdateBootLink( bool active , std::string init_d , LinkInfo target_link_info ) ;
+	G::Path m_dir_boot ;
+	std::string m_name ;
+	G::Path m_startstop_src ;
+	G::Path m_exe ;
+	UpdateBootLink( bool active , G::Path dir_boot , std::string , G::Path startstop_src , G::Path exe ) ;
+	virtual void run() ;
+	virtual std::string text() const ;
+	virtual std::string ok() const ;
+} ;
+
+struct InstallService : public ActionBase
+{
+	bool m_active ;
+	std::string m_ok ;
+	G::Path m_bat ;
+	G::Path m_service_wrapper ;
+	InstallService( bool active , G::Path bat , G::Path wrapper ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
 	virtual std::string ok() const ;
@@ -210,9 +204,8 @@ struct UpdateBootLink : public ActionBase
 
 struct RegisterAsEventSource : public ActionBase
 {
-	std::string m_dir ;
-	std::string m_basename ;
-	RegisterAsEventSource( const std::string & dir , const std::string & basename ) ;
+	G::Path m_exe ;
+	RegisterAsEventSource( G::Path ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
 } ;
@@ -220,9 +213,9 @@ struct RegisterAsEventSource : public ActionBase
 struct CreateConfigFile : public ActionBase
 {
 	std::string m_ok ;
-	G::Path m_src ;
+	G::Path m_template ;
 	G::Path m_dst ;
-	CreateConfigFile( std::string dir , std::string dst_name , std::string src_dir , std::string src_name ) ;
+	CreateConfigFile( G::Path dst_dir , std::string dst_name , G::Path template_ ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
 	virtual std::string ok() const ;
@@ -230,11 +223,10 @@ struct CreateConfigFile : public ActionBase
 
 struct EditConfigFile : public ActionBase
 {
-	typedef G::StringMap Map ;
-	typedef std::list<std::string> List ;
 	G::Path m_path ;
-	Map m_map ;
-	EditConfigFile( std::string dir , std::string name , const Map & map ) ;
+	G::MapFile m_server_config ;
+	bool m_do_backup ;
+	EditConfigFile( G::Path dir , std::string name , const G::MapFile & server_config , bool ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
 } ;
@@ -248,41 +240,38 @@ struct Action
 	void run() ;
 } ;
 
-class InstallerImp : private Helper 
+class InstallerImp : private Helper
 {
 public:
-	InstallerImp( G::Path argv0 , G::Path payload , bool installing , std::istream & ) ;
+	InstallerImp( bool installing , bool is_windows , const G::Path & payload_path , std::istream & ) ;
 	~InstallerImp() ;
 	bool next() ;
 	Action & current() ;
 
 private:
-	typedef G::StringMap Map ;
-	typedef std::list<Action> List ;
-
-private:
 	InstallerImp( const InstallerImp & ) ;
 	void operator=( const InstallerImp & ) ;
-	void read( std::istream & ) ;
 	void insertActions() ;
-	std::string value( const std::string & key ) const ;
-	std::string value( const std::string & key , const std::string & default_ ) const ;
+	std::string pvalue( const std::string & key , const std::string & default_ ) const ;
+	std::string pvalue( const std::string & key ) const ;
+	std::string ivalue( const std::string & key ) const ;
 	bool exists( const std::string & key ) const ;
 	static bool yes( const std::string & ) ;
 	static bool no( const std::string & ) ;
 	G::StringMap secrets() const ;
 	void addSecret( G::StringMap & , const std::string & ) const ;
 	void addSecret( G::StringMap & , const std::string & , const std::string & , const std::string & ) const ;
-	LinkInfo targetLinkInfo() const ;
-	G::Strings commandlineArgs( bool short_ = false , bool disallow_close_stderr = false ) const ;
-	std::pair<std::string,Map> commandlineMap( bool short_ = false ) const ;
 	void insert( ActionInterface * p ) ;
+	bool isWindows() const ;
 
 private:
-	G::Path m_argv0 ;
+	typedef std::list<Action> List ;
 	bool m_installing ;
-	G::Unpack m_unpack ;
-	Map m_map ;
+	bool m_is_windows ;
+	G::MapFile m_installer_config ;
+	G::Path m_payload ;
+	G::MapFile m_pages_output ;
+	G::MapFile m_var ;
 	List m_list ;
 	List::iterator m_p ;
 } ;
@@ -307,170 +296,210 @@ std::string CreateDirectory::ok() const
 
 void CreateDirectory::run()
 {
-	G::Directory directory( m_path ) ;
-	if( G::File::exists(m_path) )
+	if( m_path == G::Path() )
 	{
-		if( !directory.valid() )
-			throw std::runtime_error( "directory path exists but not valid a directory" ) ;
-		m_ok = "exists" ;
+		m_ok = "nothing to do" ;
 	}
 	else
 	{
-		G::File::mkdirs( m_path , 10 ) ;
-	}
-	if( !directory.writeable() )
-		throw std::runtime_error( "directory exists but is not writable" ) ;
-}
-
-// ==
-
-ExtractOriginal::ExtractOriginal( G::Path argv0 , G::Unpack & unpack , G::Path dst ) :
-	m_argv0(argv0) ,
-	m_unpack(unpack) ,
-	m_dst(dst)
-{
-}
-
-void ExtractOriginal::run()
-{
-	// okay if not packed or a separate payload, just copy argv0
-	if( m_unpack.names().empty() || m_unpack.path() != m_argv0 )
-	{
-		if( m_argv0 == m_dst )
+		G::Directory directory( m_path ) ;
+		if( G::File::exists(m_path) )
 		{
-			m_ok = "nothing to do" ;
+			if( !directory.valid() )
+				throw std::runtime_error( "directory path exists but not valid a directory" ) ;
+			m_ok = "exists" ;
 		}
 		else
 		{
-			m_ok = "copied" ;
-			G::File::mkdirs( m_dst.dirname() ) ;
-			G::File::copy( m_argv0 , m_dst ) ;
-			G::File::chmodx( m_dst ) ;
+			G::File::mkdirs( m_path , 10 ) ;
 		}
+		if( !directory.writeable() )
+			throw std::runtime_error( "directory exists but is not writable" ) ;
 	}
-	else
-	{
-		m_unpack.unpackOriginal( m_dst ) ;
-		G::File::chmodx( m_dst ) ;
-	}
-}
-
-std::string ExtractOriginal::ok() const
-{
-	return m_ok.empty() ? ActionBase::ok() : m_ok ;
-}
-
-std::string ExtractOriginal::text() const
-{
-	return std::string() + "creating [" + m_dst.str() + "]" ;
 }
 
 // ==
 
-bool CopyFrameworks::active( G::Path argv0 )
-{
-	// TODO -- move this test outside the installer code
-	return G::File::exists( G::Path(argv0.dirname(),"../Frameworks") ) ; // ie. mac bundle
-}
-
-std::string CopyFrameworks::sanitised( std::string s )
-{
-	// remove shell metacharacters
-	for( const char * p = "$\\\"'()[]<>|!~*?&;" ; *p ; p++ )
-		G::Str::replaceAll( s , std::string(1U,*p) , "_" ) ;
-	return s ;
-}
-
-CopyFrameworks::CopyFrameworks( G::Path argv0 , G::Path dst ) :
-	m_argv0(argv0) ,
-	m_dst(dst)
-{
-	G::Path frameworks( m_argv0.dirname() , "../Frameworks" ) ;
-	m_cmd = std::string() + "/bin/cp -fR \"" + sanitised(frameworks.str()) + "\" \"" + sanitised(m_dst.str()) + "\"" ;
-}
-
-void CopyFrameworks::run()
-{
-	// k.i.s.s
-	int rc = std::system( m_cmd.c_str() ) ;
-	if( rc != 0 )
-		throw std::runtime_error( "failed" ) ;
-}
-
-std::string CopyFrameworks::text() const
-{
-	return std::string() + "copying frameworks [" + m_cmd + "]" ;
-}
-
-// ==
-
-CreatePointerFile::CreatePointerFile( const G::Path & pointer_path , const G::Path & gui , const G::StringMap & map ) :
-	m_pointer_path(pointer_path) ,
-	m_gui(gui) ,
-	m_map(map)
+CreatePointerFile::CreatePointerFile( const G::Path & pointer_file , const G::Path & gui_exe , 
+	const G::Path & dir_config , const G::Path & dir_install ) :
+		m_pointer_file(pointer_file) ,
+		m_gui_exe(gui_exe) ,
+		m_dir_config(dir_config) ,
+		m_dir_install(dir_install)
 {
 }
 
 void CreatePointerFile::run()
 {
-	std::ofstream stream( m_pointer_path.str().c_str() ) ;
-	Pointer::write( stream , m_map , m_gui ) ;
-	if( !stream.good() )
-		throw std::runtime_error( std::string() + "cannot write to \"" + m_pointer_path.str() + "\"" ) ;
+	if( m_pointer_file == G::Path() )
+		return ;
 
+	// create the directory -- probably unnecessary
+	if( !G::File::isDirectory(m_pointer_file.dirname()) )
+		G::File::mkdirs( m_pointer_file.dirname() , G::File::NoThrow() ) ; 
+
+	// create the file
+	std::ofstream stream( m_pointer_file.str().c_str() ) ;
+
+	// add the exec preamble
+	if( !isWindows() )
+	{
+		stream << "#!/bin/sh\n" ;
+		if( m_gui_exe != G::Path() )
+			stream << "exec \"`dirname \\\"$0\\\"`/" << m_gui_exe.basename() << "\" \"$@\"\n" ;
+	}
+
+	// write the pointer variable(s)
+	G::MapFile::writeItem( stream , "dir-config" , m_dir_config.str() ) ;
+	G::MapFile::writeItem( stream , "dir-install" , m_dir_install.str() ) ;
+
+	// close the file
+	if( !stream.good() )
+		throw std::runtime_error( std::string() + "cannot write to \"" + m_pointer_file.str() + "\"" ) ;
 	stream.close() ;
-	G::File::chmodx( m_pointer_path ) ;
+
+	// make both files executable
+	if( !isWindows() )
+	{
+		G::File::chmodx( m_pointer_file ) ;
+		G::File::chmodx( m_gui_exe ) ; // hopefully redundant
+	}
 }
 
 std::string CreatePointerFile::text() const
 {
-	return std::string() + "creating pointer file [" + m_pointer_path.str() + "]" ;
+	return m_pointer_file == G::Path() ?
+		std::string("creating pointer file") :
+		( "creating pointer file [" + m_pointer_file.str() + "]" ) ;
+}
+
+std::string CreatePointerFile::ok() const
+{
+	return m_pointer_file == G::Path() ? std::string("nothing to do") : ActionBase::ok() ;
 }
 
 // ==
 
-Copy::Copy( std::string install_dir , std::string name , std::string sub_dir ) :
-	m_dst_dir(sub_dir.empty()?install_dir:G::Path(install_dir,sub_dir)) ,
-	m_src(name)
+CopyFile::CopyFile( G::Path src , G::Path dst , std::string flags ) :
+	m_src(src) ,
+	m_dst(dst) ,
+	m_flags(flags)
 {
 }
 
-void Copy::run()
+void CopyFile::run()
 {
-	G::File::copy( m_src , G::Path(m_dst_dir,m_src.basename()) ) ;
+	G_LOG( "CopyTree::run: copy file [" << m_src << "] -> [" << m_dst << "]" ) ;
+	G::File::mkdirs( m_dst.dirname() , G::File::NoThrow() , 8 ) ;
+	G::File::copy( m_src , m_dst ) ;
+
+	if( m_flags.find("x") != std::string::npos ||
+		G::File::executable(m_src) ||
+		m_dst.extension() == "sh" || m_dst.extension() == "bat" ||
+		m_dst.extension() == "exe" || m_dst.extension() == "pl" )
+			G::File::chmodx( m_dst ) ;
 }
 
-std::string Copy::text() const
+std::string CopyFile::text() const
 {
-	return std::string() + "copying [" + m_src.basename() + "] -> [" + m_dst_dir.str() + "]" ;
+	return "copying [" + m_dst.basename() + "] -> [" + m_dst.dirname().str() + "]" ;
 }
 
 // ==
 
-Extract::Extract( G::Unpack & unpack , std::string key , G::Path dst ) :
-	m_unpack(unpack) ,
-	m_key(key) ,
+CopyTree::CopyTree( G::Path src , G::Path dst ) :
+	m_src(src) ,
 	m_dst(dst)
 {
 }
 
-void Extract::run()
+void CopyTree::add( int depth , G::Path src_dir , G::Path dst_dir ) const
 {
-	m_unpack.unpack( m_key , m_dst ) ;
-	if( m_unpack.flags(m_key).find('x') != std::string::npos )
-		G::File::chmodx( m_dst ) ;
+	if( depth > 10 ) return ;
+	G::File::mkdir( dst_dir , G::File::NoThrow() ) ;
+	G::DirectoryIterator iter( (G::Directory(src_dir)) ) ;
+	while( iter.more() )
+	{
+		if( iter.isDir() )
+		{
+			add( depth+1 , iter.filePath() , dst_dir+iter.fileName().str() ) ; // recurse
+		}
+		else
+		{
+			G::Path src = iter.filePath() ;
+			G::Path dst = dst_dir + iter.fileName().str() ;
+			G_LOG( "CopyTree::add: copy file [" << src << "] -> [" << dst << "]" ) ;
+			G::File::copy( src , dst ) ;
+			if( G::File::executable(src) ||
+				dst.extension() == "sh" || dst.extension() == "bat" ||
+				dst.extension() == "exe" || dst.extension() == "pl" )
+					G::File::chmodx( dst ) ;
+		}
+	}
 }
 
-std::string Extract::text() const
+void CopyTree::run()
 {
-	return "extracting [" + m_dst.basename() + "] to [" + m_dst.dirname().str() + "]" ;
+	G_LOG( "CopyTree::run: copy tree [" << m_src << "] -> [" << m_dst << "]" ) ;
+	G::StringArray list ;
+	add( 0 , m_src , m_dst ) ;
+}
+
+std::string CopyTree::text() const
+{
+	G::Path src_etc = m_src + "..." ;
+	return "copying [" + src_etc.str() + "] -> [" + m_dst.str() + "]" ;
+}
+
+// ==
+
+FileGroup::FileGroup( const std::string & path , const std::string & tail ) :
+	m_path(path) ,
+	m_tail(tail)
+{
+}
+
+void FileGroup::run()
+{
+	G::StringArray parts ;
+	G::Str::splitIntoTokens( m_tail , parts , G::Str::ws() ) ;
+	if( parts.size() > 0U && !parts.at(0U).empty() ) exec( "/bin/chgrp" , parts.at(0U) + " " + m_path ) ;
+	if( parts.size() > 1U ) exec( "/bin/chmod" , parts.at(1U) + " " + m_path ) ;
+	if( parts.size() > 2U ) exec( "/bin/chmod" , parts.at(2U) + " " + m_path ) ;
+}
+
+void FileGroup::exec( const std::string & exe , const std::string & tail )
+{
+	G_LOG( "FileGroup::exec: [" << exe << "] [" << tail << "]" ) ;
+
+	G::Strings args ; G::Str::splitIntoTokens( tail , args , G::Str::ws() ) ;
+	G::NewProcess::ChildProcess child = G::NewProcess::spawn( exe , args ) ;
+	int rc = child.wait() ;
+
+	//G::StringArray args ; G::Str::splitIntoTokens( tail , args , G::Str::ws() ) ;
+	//G::NewProcess child( exe , args ) ;
+	//int rc = child.wait().run().get() ;
+
+	if( rc != 0 )
+		m_ok = "failed" ;
+}
+
+std::string FileGroup::text() const
+{
+	return "setting group permissions [" + m_path + " " + m_tail + "]" ;
+}
+
+std::string FileGroup::ok() const
+{
+	return m_ok.empty() ? ActionBase::ok() : m_ok ;
 }
 
 // ==
 
 CreateSecrets::CreateSecrets( const std::string & config_dir , const std::string & filename ,
-	G::StringMap content ) :
+	G::Path template_ , G::StringMap content ) :
 		m_path(config_dir,filename) ,
+		m_template(template_) ,
 		m_content(content)
 {
 }
@@ -482,6 +511,7 @@ std::string CreateSecrets::text() const
 
 bool CreateSecrets::match( std::string p1 , std::string p2 )
 {
+	// true if p1 starts with p2
 	G::Str::replaceAll( p1 , "\t" , " " ) ;
 	while( G::Str::replaceAll( p1 , "  " , " " ) ) ;
 	G::Str::trimLeft( p1 , G::Str::ws() ) ;
@@ -495,7 +525,7 @@ void CreateSecrets::run()
 	bool file_exists = G::File::exists(m_path) ;
 
 	// read the old file
-	G::Strings line_list ;
+	G::StringArray line_list ;
 	if( file_exists )
 	{
 		std::ifstream file( m_path.str().c_str() ) ;
@@ -509,8 +539,8 @@ void CreateSecrets::run()
 
 	// impose the new field order - remove this eventually
 	{
-		G::Strings result ;
-		for( G::Strings::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
+		G::StringArray result ;
+		for( G::StringArray::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
 		{
 			typedef std::string::size_type pos_t ;
 			const pos_t npos = std::string::npos ;
@@ -537,19 +567,32 @@ void CreateSecrets::run()
 	// write a header if none
 	if( line_list.empty() )
 	{
-		line_list.push_back( "#" ) ;
-		line_list.push_back( std::string() + "# " + m_path.basename() ) ;
-		line_list.push_back( "#" ) ;
-		line_list.push_back( "# {server|client} <mechanism> <name> <secret>" ) ;
-		line_list.push_back( "#   mechanism = { CRAM-MD5 | LOGIN | APOP | NONE }" ) ;
-		line_list.push_back( "#" ) ;
+		if( m_template != G::Path() && G::File::exists(m_template) )
+		{
+			std::ifstream file( m_template.str().c_str() ) ;
+			while( file.good() )
+			{
+				std::string line = G::Str::readLineFrom( file , "\n" ) ;
+				if( !file ) break ;
+				line_list.push_back( line ) ;
+			}
+		}
+		if( line_list.empty() )
+		{
+			line_list.push_back( "#" ) ;
+			line_list.push_back( std::string() + "# " + m_path.basename() ) ;
+			line_list.push_back( "#" ) ;
+			line_list.push_back( "# {server|client} <mechanism> <name> <secret>" ) ;
+			line_list.push_back( "#   mechanism = { CRAM-MD5 | LOGIN | APOP | NONE }" ) ;
+			line_list.push_back( "#" ) ;
+		}
 	}
 
 	// assemble the new file
 	for( G::StringMap::iterator map_p = m_content.begin() ; map_p != m_content.end() ; ++map_p )
 	{
 		bool replaced = false ;
-		for( G::Strings::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
+		for( G::StringArray::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
 		{
 			if( match( *line_p , (*map_p).first ) )
 			{
@@ -569,15 +612,15 @@ void CreateSecrets::run()
 	{
 		G::DateTime::BrokenDownTime now = G::DateTime::local( G::DateTime::now() ) ;
 		std::string timestamp = G::Date(now).string(G::Date::yyyy_mm_dd) + G::Time(now).hhmmss() ;
-		G::Path backup( m_path.dirname() , m_path.basename() + "." + timestamp ) ;
+		G::Path backup_path( m_path.dirname() , m_path.basename() + "." + timestamp ) ;
 		G::Process::Umask umask( G::Process::Umask::Tightest ) ;
-		G::File::copy( m_path , backup , G::File::NoThrow() ) ;
+		G::File::copy( m_path , backup_path , G::File::NoThrow() ) ;
 	}
 
 	// write the new file
 	std::ofstream file( m_path.str().c_str() ) ;
 	bool ok = file.good() ;
-	for( G::Strings::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
+	for( G::StringArray::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
 	{
 		file << *line_p << std::endl ;
 	}
@@ -589,64 +632,45 @@ void CreateSecrets::run()
 
 // ==
 
-CreateBatchFile::CreateBatchFile( LinkInfo link_info ) :
-	m_link_info(link_info)
+CreateBatchFile::CreateBatchFile( const G::Path & bat , const G::Path & exe , const G::StringArray & args , const G::Path & log_file ) :
+	m_bat(bat) ,
+	m_exe(exe) ,
+	m_args(args) ,
+	m_log_file(log_file)
 {
 }
 
 std::string CreateBatchFile::text() const
 {
-	return std::string() + "creating batch file [" + m_link_info.target.str() + "]" ;
+	return std::string() + "creating batch file [" + m_bat.str() + "]" ;
 }
 
 void CreateBatchFile::run()
 {
-	std::ofstream file( m_link_info.target.str().c_str() ) ;
-	bool ok = file.good() ;
-	file << "start \"emailrelay\" " << quote(m_link_info.raw_target.str()) << " " << str(m_link_info.raw_args) << std::endl ;
-	ok = ok && file.good() ;
-	file.close() ;
-	if( !ok )
-		throw std::runtime_error(std::string()+"cannot create \""+m_link_info.target.str()+"\"") ;
+	G::StringArray all_args = m_args ;
+	all_args.insert( all_args.begin() , m_exe.str() ) ;
+
+	if( m_log_file != G::Path() )
+	{
+		std::string log_file = quote( m_log_file.str() ) ;
+		G::Str::replaceAll( log_file , "%" , "%%" ) ;
+		all_args.push_back( "--log-time" ) ;
+		all_args.push_back( "--log-file=" + log_file ) ;
+	}
+
+	G::BatchFile::write( m_bat , all_args , "emailrelay" ) ;
 }
 
 // ==
 
-CreateLoggingBatchFile::CreateLoggingBatchFile( G::Path bat , G::Path exe , G::Strings args , G::Path log ) :
-	m_bat(bat) ,
-	m_exe(exe) ,
-	m_args(args) ,
-	m_log(log)
-{
-}
-
-std::string CreateLoggingBatchFile::text() const
-{
-	return std::string() + "creating batch file [" + m_bat.str() + "]" ;
-}
-
-void CreateLoggingBatchFile::run()
-{
-	std::ofstream file( m_bat.str().c_str() ) ;
-	bool ok = file.good() ;
-	std::string log_file = quote( m_log.str() ) ;
-	G::Str::replaceAll( log_file , "%" , "%%" ) ;
-	file << "start \"emailrelay\" " << quote(m_exe.str()) << " " << str(m_args) << " --log-time --log-file=" << log_file << std::endl ;
-	ok = ok && file.good() ;
-	file.close() ;
-	if( !ok )
-		throw std::runtime_error(std::string()+"cannot create \""+m_bat.str()+"\"") ;
-}
-
-// ==
-
-UpdateLink::UpdateLink( G::Path argv0 , bool active , std::string link_dir , G::Path working_dir ,
-	LinkInfo target_link_info ) :
-		m_argv0(argv0) ,
+UpdateLink::UpdateLink( bool active , G::Path link_dir , G::Path working_dir ,
+	G::Path target , const G::StringArray & args , G::Path icon ) :
 		m_active(active) ,
 		m_link_dir(link_dir) ,
 		m_working_dir(working_dir) ,
-		m_target_link_info(target_link_info)
+		m_target(target) ,
+		m_args(args) ,
+		m_icon(icon)
 {
 	std::string link_filename = GLink::filename( "E-MailRelay" ) ;
 	m_link_path = G::Path( m_link_dir , link_filename ) ;
@@ -664,55 +688,94 @@ void UpdateLink::run()
 	new GComInit ; // (leak ok)
 	if( m_active )
 	{
-		GLink link( m_target_link_info.target , "E-MailRelay" ,
-			"Starts the E-MailRelay server in the background" ,
-			m_working_dir , m_target_link_info.args ,
-			m_target_link_info.icon , GLink::Show_Hide ,
-			"E-MailRelay" ,
-			std::string() + "Generated by the E-MailRelay configuration GUI (" + m_argv0.str() + ")" ) ;
+		GLink link( m_target , "E-MailRelay" , "Starts the E-MailRelay server in the background" ,
+			m_working_dir , m_args , m_icon , GLink::Show_Hide ,
+			"E-MailRelay" , "Generated by the E-MailRelay configuration GUI" ) ;
 
-		G::Process::Umask umask( G::Process::Umask::Tightest ) ;
+		//G::Process::Umask umask( G::Process::Umask::Tightest ) ;
 		G::File::mkdirs( m_link_dir , 10 ) ;
 		link.saveAs( m_link_path ) ;
 	}
 	else
 	{
-		GLink::remove( m_link_path ) ;
+		m_ok = GLink::remove( m_link_path ) ? "removed" : "nothing to do" ;
 	}
+}
+
+std::string UpdateLink::ok() const
+{
+	return m_ok.empty() ? ActionBase::ok() : m_ok ;
 }
 
 // ==
 
-UpdateBootLink::UpdateBootLink( bool active , std::string init_d , LinkInfo target_link_info ) :
+InstallService::InstallService( bool active , G::Path bat , G::Path service_wrapper ) :
 	m_active(active) ,
-	m_init_d(init_d) ,
-	m_target_link_info(target_link_info)
+	m_bat(bat) ,
+	m_service_wrapper(service_wrapper)
+{
+}
+
+void InstallService::run()
+{
+	std::string service_name = "emailrelay" ;
+	if( m_bat == G::Path() || m_service_wrapper == G::Path() )
+	{
+		m_ok = "nothing to do" ;
+	}
+	else if( m_active )
+	{
+		bool ok = Boot::install( G::Path() , "emailrelay" , m_bat , m_service_wrapper ) ;
+		m_ok = ok ? "installed" : "failed" ;
+	}
+	else
+	{
+		bool ok = Boot::uninstall( G::Path() , "emailrelay" , G::Path() ) ;
+		m_ok = ok ? "uninstalled" : "nothing to do" ;
+	}
+}
+
+std::string InstallService::text() const
+{
+	return std::string(m_active?"":"un") + "installing service" ;
+}
+
+std::string InstallService::ok() const
+{
+	return m_ok.empty() ? ActionBase::ok() : m_ok ;
+}
+
+// ==
+
+UpdateBootLink::UpdateBootLink( bool active , G::Path dir_boot , std::string name , G::Path startstop_src , G::Path exe ) :
+	m_active(active) ,
+	m_dir_boot(dir_boot) ,
+	m_name(name) ,
+	m_startstop_src(startstop_src) ,
+	m_exe(exe)
 {
 }
 
 std::string UpdateBootLink::text() const
 {
-	std::string s = std::string() + "updating boot time links for [" + m_target_link_info.target.basename() + "]" ;
-	if( ! m_init_d.empty() )
-		s.append( std::string() + " in [" + m_init_d + "]" ) ;
-	return s ;
+	return std::string() + "updating boot configuration [" + (m_dir_boot+m_name).str() + "]" ;
 }
 
 void UpdateBootLink::run()
 {
-	if( m_init_d.empty() )
+	if( m_dir_boot == G::Path() || m_startstop_src == G::Path() || m_exe == G::Path() )
 	{
-		m_ok = "no access" ;
+		m_ok = "nothing to do" ;
 	}
 	else if( m_active )
 	{
-		if( ! Boot::install( m_init_d , m_target_link_info.target , m_target_link_info.args ) )
+		if( ! Boot::install( m_dir_boot , m_name , m_startstop_src , m_exe ) )
 			throw std::runtime_error( "failed to create links" ) ;
 		m_ok = "installed" ;
 	}
 	else
 	{
-		bool removed = Boot::uninstall( m_init_d , m_target_link_info.target , m_target_link_info.args ) ;
+		bool removed = Boot::uninstall( m_dir_boot , m_name , m_exe ) ;
 		m_ok = removed ? "removed" : "not installed" ;
 	}
 }
@@ -724,28 +787,27 @@ std::string UpdateBootLink::ok() const
 
 // ==
 
-RegisterAsEventSource::RegisterAsEventSource( const std::string & dir , const std::string & basename ) :
-	m_dir(dir) ,
-	m_basename(basename)
+RegisterAsEventSource::RegisterAsEventSource( G::Path exe ) :
+	m_exe(exe)
 {
 }
 
 void RegisterAsEventSource::run()
 {
-	GRegister::server( G::Path(m_dir,m_basename) ) ;
+	if( m_exe != G::Path() )
+		GRegister::server( m_exe ) ;
 }
 
 std::string RegisterAsEventSource::text() const
 {
-	return std::string() + "registering [" + G::Path(m_dir,m_basename).str() + "] to use the event log" ;
+	return std::string() + "registering [" + m_exe.str() + "]" ;
 }
 
 // ==
 
-CreateConfigFile::CreateConfigFile( std::string dst_dir , std::string dst_name ,
-	std::string src_dir , std::string src_name ) :
-		m_src(G::Path(src_dir,src_name)) ,
-		m_dst(G::Path(dst_dir,dst_name))
+CreateConfigFile::CreateConfigFile( G::Path dst_dir , std::string dst_name , G::Path template_ ) :
+	m_template(template_) ,
+	m_dst(dst_dir+dst_name)
 {
 }
 
@@ -753,10 +815,10 @@ void CreateConfigFile::run()
 {
 	if( G::File::exists(m_dst) )
 		m_ok = "exists" ;
-	else if( !G::File::exists(m_src) )
-		G::File::create( m_dst ) ; // shouldnt get here if the template is in the payload
+	else if( !G::File::exists(m_template) )
+		G::File::create( m_dst ) ;
 	else
-		G::File::copy( m_src , m_dst ) ;
+		G::File::copy( m_template , m_dst ) ;
 }
 
 std::string CreateConfigFile::text() const
@@ -771,24 +833,16 @@ std::string CreateConfigFile::ok() const
 
 // ==
 
-EditConfigFile::EditConfigFile( std::string dir , std::string name , const Map & map ) :
-	m_path(G::Path(dir,name)) ,
-	m_map(map)
+EditConfigFile::EditConfigFile( G::Path dir , std::string name , const G::MapFile & server_config , bool do_backup ) :
+	m_path(dir+name) ,
+	m_server_config(server_config) ,
+	m_do_backup(do_backup)
 {
 }
 
 void EditConfigFile::run()
 {
-	const bool do_backup = true ;
-
-	// use a stop list for things which the init.d script does for itself
-	G::StringMap stop_list ;
-	stop_list["syslog"] = "" ;
-	stop_list["close-stderr"] = "" ;
-	stop_list["pid-file"] = "" ;
-	stop_list["log"] = "" ;
-
-	MapFile::edit( m_path , m_map , "gui-" , false , stop_list , do_backup , false , false ) ;
+	m_server_config.editInto( m_path , m_do_backup , false , false ) ;
 }
 
 std::string EditConfigFile::text() const
@@ -827,12 +881,35 @@ void Action::run()
 
 // ==
 
-InstallerImp::InstallerImp( G::Path argv0 , G::Path payload , bool installing , std::istream & ss ) :
-	m_argv0(argv0) ,
+InstallerImp::InstallerImp( bool installing , bool is_windows , const G::Path & payload , std::istream & ss ) :
 	m_installing(installing) ,
-	m_unpack(payload,G::Unpack::NoThrow())
+	m_is_windows(is_windows) ,
+	m_payload(payload) ,
+	m_pages_output(ss)
 {
-	read( ss ) ;
+	Helper::m_is_windows = is_windows ;
+
+	// define o/s-specific paths
+	m_installer_config.add( "-authtemplate" , isWindows() ? "" : "%payload%/etc/emailrelay.auth.template" ) ;
+	m_installer_config.add( "-conftemplate" , isWindows() ? "" : "%payload%/etc/emailrelay.conf.template" ) ;
+	m_installer_config.add( "-bat" , isWindows() ? "%dir-config%/emailrelay-start.bat" : "" ) ; // not dir-install -- see guimain
+	m_installer_config.add( "-bat2" , isWindows() ? "%dir-config%/emailrelay-start-with-log-file.bat" : "" ) ;
+	m_installer_config.add( "-exe" , isWindows() ? "%dir-install%/emailrelay.exe" : "%dir-install%/sbin/emailrelay" ) ;
+	m_installer_config.add( "-gui" , isWindows() ? "%dir-install%/emailrelay-gui.exe" : "%dir-install%/sbin/emailrelay-gui.real" ) ;
+	m_installer_config.add( "-icon" , isWindows()?"%dir-install%/emailrelay.exe":"%dir-install%/lib/emailrelay/emailrelay-icon.png");
+	m_installer_config.add( "-pointer" , isWindows() ? "%dir-install%/emailrelay-gui.cfg" : "%dir-install%/sbin/emailrelay-gui" ) ;
+	m_installer_config.add( "-startstop" , isWindows() ? "" : "%dir-install%/lib/emailrelay/emailrelay-startstop.sh" ) ;
+	m_installer_config.add( "-servicewrapper" , isWindows() ? "%dir-install%/emailrelay-service.exe" : "" ) ;
+	m_installer_config.add( "-copyfilter" , 
+		isWindows() ? "%dir-install%/emailrelay-copy-filter.exe" : "%dir-install%/lib/emailrelay/emailrelay-copy-filter" ) ;
+
+	// define substitution variables
+	m_var.add( "dir-install" , pvalue("dir-install") ) ;
+	m_var.add( "dir-config" , pvalue("dir-config") ) ;
+	m_var.add( "dir-run" , pvalue("dir-run") ) ;
+	m_var.add( "dir-spool" , pvalue("dir-spool") ) ;
+	m_var.add( "payload" , m_payload.str() ) ;
+
 	insertActions() ;
 	m_p = m_list.end() ; // sic
 }
@@ -841,10 +918,9 @@ InstallerImp::~InstallerImp()
 {
 }
 
-void InstallerImp::read( std::istream & ss )
+bool InstallerImp::isWindows() const
 {
-	// read install variables
-	m_map = MapFile::read( ss ) ;
+	return m_is_windows ;
 }
 
 bool InstallerImp::next()
@@ -861,26 +937,29 @@ Action & InstallerImp::current()
 	return *m_p ;
 }
 
-std::string InstallerImp::value( const std::string & key , const std::string & default_ ) const
+std::string InstallerImp::pvalue( const std::string & key , const std::string & default_ ) const
 {
-	G::StringMapReader map( m_map ) ;
-	return map.at( "gui-" + key , default_ ) ;
+	return m_var.expand( m_pages_output.value( key , default_ ) ) ;
 }
 
-std::string InstallerImp::value( const std::string & key ) const
+std::string InstallerImp::pvalue( const std::string & key ) const
 {
-	G::StringMapReader map( m_map ) ;
-	return map.at( "gui-" + key ) ;
+	return m_var.expand( m_pages_output.value( key ) ) ;
+}
+
+std::string InstallerImp::ivalue( const std::string & key ) const
+{
+	return m_var.expand( m_installer_config.value( key ) ) ;
 }
 
 bool InstallerImp::exists( const std::string & key ) const
 {
-	return m_map.find("gui-"+key) != m_map.end() ;
+	return m_pages_output.contains( key ) ;
 }
 
 bool InstallerImp::yes( const std::string & value )
 {
-	return value.find_first_of("yY") == 0U ;
+	return G::Str::isPositive(value) ;
 }
 
 bool InstallerImp::no( const std::string & value )
@@ -899,106 +978,83 @@ void InstallerImp::insertActions()
 	//
 	if( m_installing )
 	{
-		insert( new CreateDirectory("install",value("dir-install")) ) ;
-		insert( new CreateDirectory("configuration",value("dir-config")) ) ;
+		insert( new CreateDirectory("install",pvalue("dir-install")) ) ;
+		insert( new CreateDirectory("configuration",pvalue("dir-config")) ) ;
 	}
-	insert( new CreateDirectory("spool",value("dir-spool")) ) ;
-	insert( new CreateDirectory("pid",value("dir-pid")) ) ;
+	insert( new CreateDirectory("spool",pvalue("dir-spool")) ) ;
+	insert( new CreateDirectory("runtime",pvalue("dir-run")) ) ;
 
-	// create secrets
+	// process the payload -- see "make-setup.sh" -- the payload is a directory
+	// including a config file ("payload.cfg") like this:
 	//
-	insert( new CreateSecrets(value("dir-config"),"emailrelay.auth",secrets()) ) ;
-
-	// create a startup link target
-	//
-	LinkInfo target_link_info = targetLinkInfo() ;
-	if( isWindows() )
-	{
-		target_link_info.target = G::Path( value("dir-install") , "emailrelay-start.bat" ) ;
-		target_link_info.args = G::Strings() ;
-		insert( new CreateBatchFile(target_link_info) ) ;
-
-		insert( new CreateLoggingBatchFile( G::Path(value("dir-install"),"emailrelay-start-with-log-file.bat") ,
-			target_link_info.raw_target , commandlineArgs(false,true) ,
-			G::Path(value("dir-install"),"emailrelay-%d.txt") ) ) ;
-	}
-
-	// extract packed files -- do substitution for "$install", "$etc"
-	// and "$init" -- see "make-setup.sh"
+	//   pkgdir/filename= %dir-install%/bin/filename +x
+	//   pkgdir/subdir/= %dir-install%/subdir/
+	//   +%dir-install%/foo group daemon 775 g+s
 	//
 	if( m_installing )
 	{
-		G::Strings name_list = m_unpack.names() ;
-		G_DEBUG( "InstallerImp::insertActions: " << name_list.size() << " packed files to unpack" ) ;
-		std::set<std::string> dir_set ;
-		for( G::Strings::iterator p = name_list.begin() ; p != name_list.end() ; ++p )
-		{
-			const std::string & name = *p ;
-			G::Path path ;
-			{
-				std::string sname = std::string() + "/" + name ;
-				if( sname.find(Dir::boot().str()) == 0U )
-				{
-					// ("dir-boot" may not be writeable so bootcopy() allows us
-					// to squirrel the files away somewhere else where Boot::install()
-					// can get at them)
+		// read the contents
+		G::MapFile payload_map( m_payload + "payload.cfg" ) ;
 
-					G::Path dst_dir = Dir::bootcopy( value("dir-boot") , value("dir-install") ) ;
-					G_DEBUG( "InstallerImp::insertActions: [" << name << "] boot-copy-> [" << dst_dir << "]" ) ;
-					if( dst_dir != G::Path() )
-					{
-						path = G::Path::join( dst_dir , name.substr(Dir::boot().str().length()-1U) ) ;
-						if( m_unpack.flags(name).find('x') != std::string::npos )
-							target_link_info.target = path ; // eek!
-					}
-				}
-				else if( sname.find(Dir::config().str()) == 0U )
-				{
-					path = G::Path::join( value("dir-config") , name.substr(Dir::config().str().length()-1U) ) ;
-				}
-				else if( sname.find(Dir::install().str()) == 0U )
-				{
-					path = G::Path::join( value("dir-install") , name.substr(Dir::install().str().length()-1U) ) ;
-				}
-				else
-				{
-					path = G::Path::join( value("dir-install") , name ) ;
-				}
-				G_DEBUG( "InstallerImp::insertActions: [" << name << "] -> [" << path << "]" ) ;
-			}
-			if( path != G::Path() )
-			{
-				if( dir_set.find(path.dirname().str()) == dir_set.end() )
-				{
-					dir_set.insert( path.dirname().str() ) ;
-					insert( new CreateDirectory("target",path.dirname().str()) ) ;
-				}
-				insert( new Extract(m_unpack,name,path) ) ;
-			}
+		// insert the file copy tasks
+		for( G::StringArray::const_iterator p = payload_map.keys().begin() ; p != payload_map.keys().end() ; ++p )
+		{
+			const std::string & key = *p ;
+			const std::string & value = payload_map.value( key ) ;
+			if( key.find("+") == 0U && key.length() > 1U && value.find("group ") == 0U && value.length() > 6U )
+				insert( new FileGroup(m_var.expand(key.substr(1U)),value.substr(6U)) ) ;
+			if( key.find_first_of("-+=") == 0U ) 
+				continue ;
+
+			std::string dst = m_var.expand( value ) ;
+			bool is_directory_tree = key.size() && key.at(key.size()-1U) == '/' ;
+
+			// allow for flags such as "+x" decorating the destination
+			std::string::size_type flags_pos = dst.find_last_of("+") ;
+			std::string flags = G::Str::tail( dst , flags_pos , std::string() ) ;
+			dst = G::Str::trimmed( G::Str::head( dst , flags_pos , dst ) , G::Str::ws() ) ;
+
+			G::Path src = m_payload + key ;
+			if( is_directory_tree )
+				insert( new CopyTree(src,dst) ) ;
+			else
+				insert( new CopyFile(src,dst,flags) ) ;
 		}
 	}
 
-	// extract the gui without its packed-file payload
+	// create secrets
+	//
+	G::Path authtemplate_src = m_installing ? ivalue( "-authtemplate" ) : std::string() ;
+	insert( new CreateSecrets(pvalue("dir-config"),"emailrelay.auth",authtemplate_src,secrets()) ) ;
+
+	// create a startup batch file
+	//
+	if( isWindows() )
+	{
+		G::Path copy_filter = ivalue("-copyfilter") ;
+		G::Path exe = ivalue("-exe") ;
+		{
+			G::Path bat = ivalue("-bat") ;
+			G::StringArray args = ServerConfiguration::fromPages(m_pages_output,copy_filter).args() ;
+			insert( new CreateBatchFile(bat,exe,args) ) ;
+		}
+		{
+			G::Path bat = ivalue("-bat2") ;
+			G::StringArray args = ServerConfiguration::fromPages(m_pages_output,copy_filter).args(true) ;
+			G::Path log_file = G::Path(pvalue("dir-run")) + "emailrelay-%d.txt" ;
+			insert( new CreateBatchFile(bat,exe,args,log_file) ) ;
+		}
+	}
+
+	// create the pointer file so that the gui program can be used to re-configure
 	//
 	if( m_installing )
 	{
-		G::Path gui = Dir::gui( value("dir-install") ) ;
-		insert( new ExtractOriginal(m_argv0,m_unpack,gui) ) ;
-		if( CopyFrameworks::active(m_argv0) )
-			insert( new CopyFrameworks(m_argv0,gui.dirname()) ) ;
-		insert( new CreatePointerFile(Pointer::file(gui.str()),gui,m_map) ) ;
-	}
-
-	// copy dlls -- note that the dlls are locked if we are re-running in the target directory
-	//
-	if( m_installing && isWindows() )
-	{
-		if( G::File::exists("mingwm10.dll") )
-			insert( new Copy(value("dir-install"),"mingwm10.dll") ) ;
-		if( G::File::exists("QtCore4.dll") )
-			insert( new Copy(value("dir-install"),"QtCore4.dll") ) ;
-		if( G::File::exists("QtGui4.dll") )
-			insert( new Copy(value("dir-install"),"QtGui4.dll") ) ;
+		G::Path pointer_file = ivalue( "-pointer" ) ;
+		G::Path gui_exe = ivalue( "-gui" ) ;
+		G::Path dir_config = pvalue( "dir-config" ) ;
+		G::Path dir_install = pvalue( "dir-install" ) ;
+		insert( new CreatePointerFile(pointer_file,gui_exe,dir_config,dir_install) ) ;
 	}
 
 	// register for using the windows event log - doing it here, hopefully as 
@@ -1007,54 +1063,75 @@ void InstallerImp::insertActions()
 	//
 	if( m_installing && isWindows() )
 	{
-		insert( new RegisterAsEventSource(value("dir-install"),"emailrelay") ) ;
+		insert( new RegisterAsEventSource(ivalue("-exe")) ) ;
 	}
 
-	// create startup links
+	// create startup links and startup config
 	//
-	G::Path working_dir = value("dir-config") ;
-	const bool is_mac = yes(value("start-is-mac")) ;
-	if( !is_mac )
 	{
-		insert( new UpdateLink(m_argv0,yes(value("start-link-desktop")),value("dir-desktop"),working_dir,target_link_info) ) ;
-		insert( new UpdateLink(m_argv0,yes(value("start-link-menu")),value("dir-menu"),working_dir,target_link_info) ) ;
-	}
-	insert( new UpdateLink(m_argv0,yes(value("start-at-login")),value("dir-login"),working_dir,target_link_info) ) ;
-	insert( new UpdateBootLink(yes(value("start-on-boot")),value("dir-boot"),target_link_info) ) ;
-	if( isWindows() )
-	{
-		insert( new UpdateLink(m_argv0,true,value("dir-install"),working_dir,target_link_info) ) ;
-	}
+		G::Path server_exe = ivalue("-exe") ; // or possibly ServerConfiguration::exe()
+		G::Path working_dir = pvalue("dir-config") ;
+		G::Path dir_config = pvalue( "dir-config" ) ;
+		G::Path dir_install = pvalue( "dir-install" ) ;
 
-	// create and edit the boot-time config file
-	//
-	if( !isWindows() )
-	{
-		insert( new CreateConfigFile(value("dir-config"),"emailrelay.conf",
-			value("dir-config"),"emailrelay.conf.template") ) ;
-		insert( new EditConfigFile(value("dir-config"),"emailrelay.conf",commandlineMap().second) ) ;
+		bool do_desktop = yes(pvalue("start-link-desktop")) && !yes(pvalue("start-is-mac")) ;
+		bool do_menu = yes(pvalue("start-link-menu")) && !yes(pvalue("start-is-mac")) ;
+		bool do_login = yes(pvalue("start-at-login")) ;
+		bool do_boot = yes(pvalue("start-on-boot")) ;
+
+		G::Path dir_desktop = pvalue( "dir-desktop" ) ;
+		G::Path dir_menu = pvalue( "dir-menu" ) ;
+		G::Path dir_login = pvalue( "dir-login" ) ;
+		G::Path dir_boot = pvalue( "dir-boot" ) ;
+
+		G::Path bat = ivalue( "-bat" ) ;
+		G::Path copy_filter = ivalue("-copyfilter") ;
+		G::Path target = isWindows() ? bat : server_exe ;
+		G::StringArray args = isWindows() ? G::StringArray() : ServerConfiguration::fromPages(m_pages_output,copy_filter).args() ;
+		G::Path icon = ivalue( "-icon" ) ;
+
+		insert( new UpdateLink(do_desktop,dir_desktop,working_dir,target,args,icon) ) ;
+		insert( new UpdateLink(do_menu,dir_menu,working_dir,target,args,icon) ) ;
+		insert( new UpdateLink(do_login,dir_login,working_dir,target,args,icon) ) ;
+
+		if( isWindows() )
+		{
+			insert( new UpdateLink(true,dir_install,working_dir,target,args,icon) ) ;
+
+			G::Path service_wrapper = ivalue( "-servicewrapper" ) ;
+			insert( new InstallService(do_boot,bat,service_wrapper) ) ;
+		}
+		else
+		{
+			// install the startstop script and its config file
+			G::Path conftemplate_src = m_installing ? ivalue( "-conftemplate" ) : std::string() ;
+			G::MapFile server_config = ServerConfiguration::fromPages(m_pages_output,copy_filter).map() ;
+			insert( new UpdateBootLink(do_boot,dir_boot,"emailrelay",ivalue("-startstop"),server_exe) ) ;
+			insert( new CreateConfigFile(dir_config,"emailrelay.conf",conftemplate_src) ) ;
+			insert( new EditConfigFile(dir_config,"emailrelay.conf",server_config,!m_installing) ) ;
+		}
 	}
 }
 
 G::StringMap InstallerImp::secrets() const
 {
 	G::StringMap map ;
-	if( yes(value("do-pop")) )
+	if( yes(pvalue("do-pop")) )
 	{
-		std::string mechanism = value("pop-auth-mechanism") ;
+		std::string mechanism = pvalue("pop-auth-mechanism") ;
 		addSecret( map , "server" , "pop-auth-mechanism" , "pop-account-1" ) ;
 		addSecret( map , "server" , "pop-auth-mechanism" , "pop-account-2" ) ;
 		addSecret( map , "server" , "pop-auth-mechanism" , "pop-account-3" ) ;
 	}
-	if( yes(value("do-smtp")) && yes(value("smtp-server-auth")) )
+	if( yes(pvalue("do-smtp")) && yes(pvalue("smtp-server-auth")) )
 	{
-		std::string mechanism = value("smtp-server-auth-mechanism") ;
+		std::string mechanism = pvalue("smtp-server-auth-mechanism") ;
 		addSecret( map , "server" , "smtp-server-auth-mechanism" , "smtp-server-account" ) ;
 		addSecret( map , "smtp-server-trust" ) ;
 	}
-	if( yes(value("do-smtp")) && yes(value("smtp-client-auth")) )
+	if( yes(pvalue("do-smtp")) && yes(pvalue("smtp-client-auth")) )
 	{
-		std::string mechanism = value("smtp-client-auth-mechanism") ;
+		std::string mechanism = pvalue("smtp-client-auth-mechanism") ;
 		addSecret( map , "client" , "smtp-client-auth-mechanism" , "smtp-client-account" ) ;
 	}
 	return map ;
@@ -1062,180 +1139,40 @@ G::StringMap InstallerImp::secrets() const
 
 void InstallerImp::addSecret( G::StringMap & map , const std::string & k ) const
 {
-	if( exists(k) && !value(k).empty() )
+	if( exists(k) && !pvalue(k).empty() )
 	{
-		std::string head = std::string() + "server NONE " + value(k) ;
-		std::string tail = std::string() + " " + "trusted" ;
-		map[head] = head + tail ;
+		std::string head = "server NONE " + pvalue(k) ;
+		std::string tail = "trusted" ;
+		map[head] = head + " " + tail ;
 	}
 }
 
 void InstallerImp::addSecret( G::StringMap & map ,
 	const std::string & side , const std::string & k1 , const std::string & k2 ) const
 {
-	if( exists(k2+"-name") && !value(k2+"-name").empty() )
+	if( exists(k2+"-name") && !pvalue(k2+"-name").empty() )
 	{
-		std::string head = side + " " + value(k1) + " " + value(k2+"-name") ;
-		std::string tail = std::string() + " " + value(k2+"-password") ;
-		map[head] = head + tail ;
-	}
-}
-
-LinkInfo InstallerImp::targetLinkInfo() const
-{
-	G::Path target_exe = Dir::server( value("dir-install") ) ;
-	G::Path icon = Dir::icon( value("dir-install") ) ;
-	G::Strings args = commandlineArgs() ;
-
-	LinkInfo link_info ;
-	link_info.target = target_exe ;
-	link_info.args = args ;
-	link_info.raw_target = target_exe ;
-	link_info.raw_args = args ;
-	link_info.icon = icon ;
-	return link_info ;
-}
-
-G::Strings InstallerImp::commandlineArgs( bool short_ , bool no_close_stderr ) const
-{
-	G::Strings result ;
-	std::pair<std::string,Map> pair = commandlineMap( short_ ) ;
-	Map & map = pair.second ;
-	for( Map::iterator p = map.begin() ; p != map.end() ; ++p )
-	{
-		std::string switch_ = (*p).first ;
-		std::string switch_arg = (*p).second ;
-		std::string dash = switch_.length() > 1U ? "--" : "-" ;
-		if( no_close_stderr && ( switch_ == "d" || switch_ == "as-server" ) )
+		if( side == "server" )
 		{
-			result.push_back( short_ ? "-l" : "--log" ) ;
-		}
-		else if( no_close_stderr && ( switch_ == "y" || switch_ == "as-proxy" ) )
-		{
-			result.push_back( short_ ? "-O" : "--poll" ) ; result.push_back( "0" ) ;
-			result.push_back( short_ ? "-o" : "--forward-to" ) ;
+			std::string head = side + " " + pvalue(k1) + " " + pvalue(k2+"-name") ; // eg. "server plain joe"
+			std::string tail = pvalue(k2+"-password") ; // eg. "secret"
+			map[head] = head + " " + tail ;
 		}
 		else
 		{
-			result.push_back( dash + switch_ ) ;
-		}
-		if( ! switch_arg.empty() )
-		{
-			// (move this?)
-			bool is_commandline =
-				result.back() == "--filter" || result.back() == "-z" ||
-				result.back() == "--client-filter" || result.back() == "-Y" ||
-				result.back() == "--verifier" || result.back() == "-Z" ;
-
-			result.push_back( quote(switch_arg,is_commandline) ) ;
+			std::string head = side + " " + pvalue(k1) ; // eg. "client plain"
+			std::string tail = pvalue(k2+"-name") + " " + pvalue(k2+"-password") ; // eg. "joe secret"
+			map[head] = head + " " + tail ;
 		}
 	}
-	return result ;
-}
-
-std::pair<std::string,InstallerImp::Map> InstallerImp::commandlineMap( bool short_ ) const
-{
-	std::string auth = G::Path(value("dir-config"),"emailrelay.auth").str() ;
-
-	Map out ;
-	std::string path = G::Path(value("dir-install"),"emailrelay").str() ;
-	out[short_?"s":"spool-dir"] = value("dir-spool") ;
-	out[short_?"l":"log"] ;
-	out[short_?"e":"close-stderr"] ;
-	out[short_?"r":"remote-clients"] ;
-	out[short_?"i":"pid-file"] = G::Path(value("dir-pid"),"emailrelay.pid").str() ;
-	if( yes(value("do-smtp")) )
-	{
-		if( yes(value("forward-immediate")) )
-		{
-			out[short_?"m":"immediate"] ;
-		}
-		else if( yes(value("forward-on-disconnect")) )
-		{
-			out[short_?"O":"poll"] = "0" ;
-		}
-		if( yes(value("forward-poll")) )
-		{
-			if( value("forward-poll-period") == "minute" )
-				out[short_?"O":"poll"] = "60" ;
-			else if( value("forward-poll-period") == "second" )
-				out[short_?"O":"poll"] = "1" ;
-			else
-				out[short_?"O":"poll"] = "3600" ;
-		}
-		if( value("smtp-server-port") != "25" )
-		{
-			out[short_?"p":"port"] = value("smtp-server-port") ;
-		}
-		if( yes(value("smtp-server-auth")) )
-		{
-			out[short_?"S":"server-auth"] = auth ;
-		}
-		out[short_?"o":"forward-to"] = value("smtp-client-host") + ":" + value("smtp-client-port") ;
-		if( yes(value("smtp-client-tls")) )
-		{
-			out[short_?"j":"client-tls"] ;
-		}
-		if( yes(value("smtp-client-auth")) )
-		{
-			out[short_?"C":"client-auth"] = auth ;
-		}
-	}
-	else
-	{
-		out[short_?"X":"no-smtp"] ;
-	}
-	if( yes(value("do-pop")) )
-	{
-		out[short_?"B":"pop"] ;
-		if( value("pop-port") != "110" )
-		{
-			out[short_?"E":"pop-port"] = value("pop-port") ;
-		}
-		if( yes(value("pop-shared-no-delete")) )
-		{
-			out[short_?"G":"pop-no-delete"] ;
-		}
-		if( yes(value("pop-by-name")) )
-		{
-			out[short_?"J":"pop-by-name"] ;
-		}
-		if( yes(value("pop-by-name-auto-copy")) )
-		{
-			std::string filter = std::string() + "emailrelay-filter-copy" + exe() ;
-			out[short_?"z":"filter"] = G::Path(value("dir-install"),filter).str() ;
-		}
-		out[short_?"F":"pop-auth"] = auth ;
-	}
-	if( yes(value("logging-verbose")) )
-	{
-		out[short_?"v":"verbose"] ;
-	}
-	if( yes(value("logging-debug")) )
-	{
-		out[short_?"d":"debug"] ;
-	}
-	if( yes(value("logging-syslog")) )
-	{
-		out[short_?"k":"syslog"] ;
-	}
-	if( yes(value("listening-remote")) )
-	{
-		out[short_?"r":"remote-clients"] ;
-	}
-	if( no(value("listening-all")) && !value("listening-interface").empty() )
-	{
-		out[short_?"I":"interface"] = value("listening-interface") ;
-	}
-	return std::make_pair(path,out) ;
 }
 
 // ==
 
-Installer::Installer( G::Path argv0 , G::Path payload , bool installing ) :
-	m_argv0(argv0) ,
-	m_payload(payload) ,
+Installer::Installer( bool installing , bool is_windows , const G::Path & payload ) :
 	m_installing(installing) ,
+	m_is_windows(is_windows) ,
+	m_payload(payload) ,
 	m_imp(NULL)
 {
 }
@@ -1248,7 +1185,7 @@ Installer::~Installer()
 void Installer::start( std::istream & s )
 {
 	delete m_imp ;
-	m_imp = new InstallerImp(m_argv0,m_payload,m_installing,s) ;
+	m_imp = new InstallerImp( m_installing , m_is_windows , m_payload , s ) ;
 	m_reason.erase() ;
 }
 
@@ -1303,6 +1240,11 @@ bool Installer::failed() const
 	return !m_reason.empty() ;
 }
 
+std::string Installer::reason() const
+{
+	return m_reason ;
+}
+
 bool Installer::done() const
 {
 	return m_imp == NULL ;
@@ -1310,32 +1252,18 @@ bool Installer::done() const
 
 // ==
 
-std::string Helper::exe()
-{
-	return Dir::dotexe() ;
-}
-
 bool Helper::isWindows()
 {
- #if defined(G_WIN32) || defined(G_AS_IF_WINDOWS)
-	return true ;
- #else
-	return false ;
- #endif
+	return m_is_windows ;
 }
 
-std::string Helper::quote( std::string s , bool escape_spaces )
+std::string Helper::quote( std::string s )
 {
-	if( escape_spaces )
-	{
-		G::Str::replaceAll( s , " " , "\\ " ) ;
-	}
 	return s.find_first_of(" \t") == std::string::npos ? s : (std::string()+"\""+s+"\"") ;
 }
 
-std::string Helper::str( const G::Strings & list )
+std::string Helper::str( const G::StringArray & list )
 {
 	return G::Str::join( list , " " ) ;
 }
 
-/// \file installer.cpp

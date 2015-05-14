@@ -289,74 +289,70 @@ fi
 AC_SUBST(ZLIB_LIBS)
 ])
 
-dnl aclocal-check-qt4
+dnl aclocal-check-qt
 dnl
-dnl Sets the $MOC variable and MOC in makefiles to the moc
-dnl path if qt4 is found. Also sets the $aclocal_moc
-dnl variable to the same value if the moc is from qt4.
+dnl Checks for Qt by searching for the moc tool.
+dnl Sets the QT_MOC variable accordingly.
 dnl
-dnl In the implementation remember that AC_PATH_PROG does
-dnl nothing if the variable is already defined, and that
-dnl it does an internal AC_SUBST.
-dnl
-dnl The PKG_CHECK_MODULES macro is used to set QT_LIBS
-dnl and QT_CFLAGS according to pkg-config.
-dnl
-AC_DEFUN([ACLOCAL_CHECK_QT4],
+AC_DEFUN([ACLOCAL_CHECK_QT],
 [
-	PKG_CHECK_MODULES(QT,QtGui >= 4.0.1,[qt4=yes],[qt4=no])
-
-	MOC="${e_qtmoc}"
-	AC_PATH_PROG(MOC,moc)
-
-	if test "$MOC" != ""
+	if test "$QT_MOC" = ""
 	then
-		AC_MSG_CHECKING([moc is for qt 4])
-		if test x$GREP = x ; then GREP=grep ; fi
-		if test -x "$MOC" -a "`$MOC -v 2>&1 | $GREP 'Qt 4'`" != "" ; then
-			AC_MSG_RESULT([yes])
-			aclocal_moc="$MOC"
-		else
-			AC_MSG_RESULT([no])
-			aclocal_moc=""
-		fi
-	fi
-
-	if test "$qt4" = no -a "$e_qtmoc" = ""
-	then
-		aclocal_moc=""
+		AC_PATH_PROG(QT_MOC,moc)
 	fi
 ])
 
 dnl enable-gui
 dnl
-dnl Sets QT_LIBS, MOC and "if GUI" in makefiles if a GUI build is required.
-dnl
-dnl Requires ACLOCAL_CHECK_QT4 to have been run first.
+dnl Sets QT_LIBS, QT_CFLAGS, QT_MOC and "if GUI" in makefiles as necessary.
+dnl Assumes ACLOCAL_CHECK_QT has been run first.
 dnl
 AC_DEFUN([ENABLE_GUI],
 [
 	if test "$enable_gui" = "no"
 	then
-		MOC=""
+		QT_CFLAGS=""
+		QT_LIBS=""
+		QT_MOC=""
 	else
-		if test "$enable_gui" = "yes" -a "$aclocal_moc" = ""
+		if test "$enable_gui" = "yes" -a "$QT_MOC" = ""
 		then
-			AC_MSG_WARN([ignoring --enable-gui: set e_qtmoc, QT_LIBS and QT_CFLAGS to override])
+			QT_MOC="moc"
 		fi
-		MOC="$aclocal_moc"
+		if test "$QT_LIBS" = "" -a "$QT_CFLAGS" = ""
+		then
+			if test "`uname`" = "Darwin" 
+			then
+				QT_DIR="/usr/local"
+				if test -f "$QT_MOC"
+				then
+					QT_DIR="`cd \`dirname \"$QT_MOC\"\`/.. && pwd`"
+				fi
+				QT_LIBS="-F $QT_DIR/lib -framework QtWidgets -framework QtGui -framework QtCore"
+				QT_CFLAGS="-F $QT_DIR/lib"
+			else
+				QT_LIBS="`pkg-config Qt5Widgets 2>/dev/null`"
+				if test "$QT_LIBS" = "" ; then QT_LIBS="`pkg-config QtGui 2>/dev/null`" ; fi
+				if test "$QT_LIBS" = "" ; then QT_LIBS="-lQt5Widgets -lQt5Gui -lQt5Core" ; fi
+				QT_CFLAGS="`pkg-config Qt5Widgets --cflags 2>/dev/null`"
+				if test "$QT_CFLAGS" = "" ; then QT_CFLAGS="`pkg-config QtGui --cflags 2>/dev/null`" ; fi
+				QT_CFLAGS="-fPIC $QT_CFLAGS"
+			fi
+		fi
+		if test "$QT_MOC" != ""
+		then
+			AC_MSG_NOTICE([QT_MOC: $QT_MOC])
+			AC_MSG_NOTICE([QT_LIBS: $QT_LIBS])
+			AC_MSG_NOTICE([QT_CFLAGS: $QT_CFLAGS])
+		fi
 	fi
 
-	if test "`uname`" = "Darwin" -a "$QT_LIBS" = ""
-	then
-		QT_LIBS="-framework QtGui -framework QtCore"
-	fi
-
+	AC_SUBST(QT_CFLAGS)
 	AC_SUBST(QT_LIBS)
-	AC_SUBST(MOC)
-	AM_CONDITIONAL(GUI,test x$MOC != x )
+	AC_SUBST(QT_MOC)
+	AM_CONDITIONAL(GUI,test x$QT_MOC != x )
 
-	if test x$enable_exec = xno -a x$MOC != x
+	if test x$enable_exec = xno -a x$QT_MOC != x
 	then
 		AC_MSG_ERROR([using --disable-exec requires --disable-gui])
 	fi

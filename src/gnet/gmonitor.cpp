@@ -35,7 +35,7 @@
 class GNet::MonitorImp 
 {
 public:
-	explicit MonitorImp( Monitor & monitor ) ;
+	MonitorImp() ;
 	void add( const Connection & , bool is_client ) ;
 	void remove( const Connection & , bool is_client ) ;
 	void report( std::ostream & s , const std::string & px , const std::string & eol ) const ;
@@ -72,7 +72,7 @@ private:
 	unsigned long m_server_peer_removes ;
 } ;
 
-GNet::MonitorImp::MonitorImp( Monitor & monitor ) :
+GNet::MonitorImp::MonitorImp() :
 	m_id_generator(0) ,
 	m_client_adds(0UL) ,
 	m_client_removes(0UL) ,
@@ -90,7 +90,7 @@ GNet::Monitor * & GNet::Monitor::pthis()
 }
 
 GNet::Monitor::Monitor() :
-	m_imp( new MonitorImp(*this) )
+	m_imp( new MonitorImp )
 {
 	G_ASSERT( pthis() == NULL ) ;
 	pthis() = this ;

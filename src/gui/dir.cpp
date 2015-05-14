@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,38 +24,11 @@
 #include "dir.h"
 #include "gstr.h"
 #include "gpath.h"
-#include "gdebug.h"
 #include "genvironment.h"
 
 G::Path Dir::install()
 {
 	return os_install() ;
-}
-
-G::Path Dir::gui( const G::Path & base )
-{
-	return os_gui( base ) ;
-}
-
-G::Path Dir::icon( const G::Path & base )
-{
-	return os_icon( base ) ;
-}
-
-G::Path Dir::server( const G::Path & base )
-{
-	return os_server( base ) ;
-}
-
-G::Path Dir::thisdir( const std::string & argv0 , const G::Path & cwd_ )
-{
-	G::Path exe_dir = G::Path(argv0).dirname() ;
-	return ( exe_dir.isRelative() && !exe_dir.hasDriveLetter() ) ? ( cwd_ + exe_dir.str() ) : exe_dir ;
-}
-
-G::Path Dir::thisexe( const std::string & argv0 , const G::Path & cwd_ )
-{
-	return G::Path( thisdir(argv0,cwd_) , G::Path(argv0).basename() ) ;
 }
 
 G::Path Dir::desktop()
@@ -93,19 +66,14 @@ G::Path Dir::boot()
 	return os_boot() ;
 }
 
-G::Path Dir::bootcopy( const G::Path & boot , const G::Path & install )
-{
-	return os_bootcopy( boot , install ) ;
-}
-
-std::string Dir::env( const std::string & key , const std::string & default_ )
-{
-	return G::Environment::get( key , default_ ) ;
-}
-
 G::Path Dir::envPath( const std::string & key , const G::Path & default_ )
 {
 	return G::Path( G::Environment::get( key , default_.str() ) ) ;
+}
+
+G::Path Dir::absolute( const G::Path & path )
+{
+	return os_absolute( path ) ;
 }
 
 /// \file dir.cpp

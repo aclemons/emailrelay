@@ -31,11 +31,11 @@ CONFIG_EXTRA_DIST = commandline_simple.cpp
 CONFIG_SOURCES = commandline_full.cpp
 endif
 
-BUNDLE=E-MailRelay-Start
+START_BUNDLE=E-MailRelay-Start
 if MAC
  MAC_PROGS = emailrelay-start
  MAC_EXTRA_DIST =
- MAC_NOINST = $(BUNDLE).app
+ MAC_NOINST = $(START_BUNDLE).app
 else
  MAC_PROGS =
  MAC_EXTRA_DIST = start.cpp
@@ -55,6 +55,7 @@ EXTRA_DIST=\
 	icon2.ico \
 	icon3.ico \
 	icon4.ico \
+	icon5.ico \
 	messages.mc \
 	news.cpp \
 	news.h \
@@ -74,7 +75,7 @@ EXTRA_DIST=\
 	fakemc.c \
 	mingw.mak
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gauth -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_CAPABILITIES=\"$(G_CAPABILITIES)\"
+AM_CPPFLAGS = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gauth -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_CAPABILITIES=\"$(G_CAPABILITIES)\"
 
 sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd $(MAC_PROGS)
 e_libexec_PROGRAMS = emailrelay-poke emailrelay-filter-copy
@@ -134,24 +135,26 @@ install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPR
 	-chgrp daemon "$(DESTDIR)$(e_spooldir)"
 	-chmod 775 "$(DESTDIR)$(e_spooldir)"
 	-chmod g+s "$(DESTDIR)$(e_spooldir)"
+	-mkdir -p "$(DESTDIR)$(sbindir)" 2>/dev/null
 	-chgrp daemon "$(DESTDIR)$(sbindir)/emailrelay-submit"
 	-chmod g+s "$(DESTDIR)$(sbindir)/emailrelay-submit"
 
 install-exec-local:
-	-if test -d "$(BUNDLE).app" ; then cp -R "$(BUNDLE).app" "$(DESTDIR)$(sbindir)" ; fi
+	-mkdir -p "$(DESTDIR)$(sbindir)" 2>/dev/null
+	-if test -d "$(START_BUNDLE).app" ; then cp -R "$(START_BUNDLE).app" "$(DESTDIR)$(sbindir)/" ; fi
 
 uninstall-local:
 	-rmdir "$(DESTDIR)$(e_spooldir)" 2>/dev/null
 	-rmdir "$(DESTDIR)$(e_libexecdir)" 2>/dev/null
-	-rm -rf "$(DESTDIR)$(sbindir)/$(BUNDLE).app"
+	-rm -rf "$(DESTDIR)$(sbindir)/$(START_BUNDLE).app"
 
 clean-local:
-	rm -rf "$(BUNDLE).app"
+	rm -rf "$(START_BUNDLE).app"
 
-$(BUNDLE).app: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
-	../../bin/make-bundle.sh "$(BUNDLE)" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+$(START_BUNDLE).app: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
+	../../bin/make-bundle.sh "$(START_BUNDLE)" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 
 .PHONY: bundle
 bundle: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
-	../../bin/make-bundle.sh -f "$(BUNDLE)" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+	../../bin/make-bundle.sh -f "$(START_BUNDLE)" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 

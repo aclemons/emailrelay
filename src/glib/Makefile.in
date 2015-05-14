@@ -104,20 +104,22 @@ am__libglib_a_SOURCES_DIST = gnewprocess_unix_exec_disabled.cpp \
 	gidentity_unix.cpp gdirectory_unix_noglob.cpp \
 	gdirectory_unix_glob.cpp garg_unix.cpp garg_mac.cpp \
 	gpam_none.cpp gpam_linux.cpp md5.cpp md5.h garg.cpp garg.h \
-	gassert.h gbase64.cpp gbase64.h gcleanup.h gcleanup_unix.cpp \
-	gconvert.h gconvert.cpp gconvert_unix.cpp gcounter.cpp \
-	gcounter.h gdaemon.h gdaemon_unix.cpp gdate.h gdate.cpp \
-	gdatetime.cpp gdatetime.h gdatetime_unix.cpp gdebug.h gdef.h \
-	gdirectory.cpp gdirectory.h gdirectory_unix.cpp genvironment.h \
-	genvironment_unix.cpp gexception.h gexception.cpp \
-	gexecutable_unix.cpp gexecutable.cpp gexecutable.h gfile.h \
-	gfile.cpp gfile_unix.cpp gfs.h gfs_unix.cpp ggetopt.h \
-	ggetopt.cpp ghostname_unix.cpp ghostname.h gidentity.h \
-	glimits.h glog.cpp glog.h glogoutput.h glogoutput.cpp \
-	glogoutput_unix.cpp gnewprocess.h gmd5_native.cpp gmd5.h \
-	gmemory.h gnoncopyable.h gpam.h gpam.cpp gpath.h gpath.cpp \
-	gpidfile.cpp gpidfile.h gprocess.h gprocess_unix.cpp groot.cpp \
-	groot.h gsetter.h gsignalsafe.h gsleep.h gslot.cpp gslot.h \
+	gassert.h gbase64.cpp gbase64.h gbatchfile.cpp gbatchfile.h \
+	gcleanup.h gcleanup_unix.cpp gconvert.h gconvert.cpp \
+	gconvert_unix.cpp gcounter.cpp gcounter.h gdaemon.h \
+	gdaemon_unix.cpp gdate.h gdate.cpp gdatetime.cpp gdatetime.h \
+	gdatetime_unix.cpp gdebug.h gdef.h gdirectory.cpp gdirectory.h \
+	gdirectory_unix.cpp genvironment.h genvironment_unix.cpp \
+	gexception.h gexception.cpp gexecutable_unix.cpp \
+	gexecutable.cpp gexecutable.h gfile.h gfile.cpp gfile_unix.cpp \
+	gfs.h gfs_unix.cpp ggetopt.h ggetopt.cpp ghostname_unix.cpp \
+	ghostname.h gidentity.h glimits.h glog.cpp glog.h glogoutput.h \
+	glogoutput.cpp glogoutput_unix.cpp gnewprocess.h gmapfile.h \
+	gmapfile.cpp gmd5_native.cpp gmd5.h gmemory.h gnoncopyable.h \
+	goptions.h goptions.cpp goptionparser.h goptionparser.cpp \
+	goptionvalue.h gpam.h gpam.cpp gpath.h gpath.cpp gpidfile.cpp \
+	gpidfile.h gprocess.h gprocess_unix.cpp groot.cpp groot.h \
+	gsetter.h gsignalsafe.h gsleep.h gslot.cpp gslot.h \
 	gstatemachine.h gstr.cpp gstr.h gstrings.cpp gstrings.h \
 	gtest.cpp gtest.h gtime.cpp gtime.h gxtext.cpp gxtext.h
 @EXEC_FALSE@am__objects_1 = gnewprocess_unix_exec_disabled.$(OBJEXT)
@@ -133,8 +135,8 @@ am__libglib_a_SOURCES_DIST = gnewprocess_unix_exec_disabled.cpp \
 am_libglib_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	md5.$(OBJEXT) garg.$(OBJEXT) gbase64.$(OBJEXT) \
-	gcleanup_unix.$(OBJEXT) gconvert.$(OBJEXT) \
-	gconvert_unix.$(OBJEXT) gcounter.$(OBJEXT) \
+	gbatchfile.$(OBJEXT) gcleanup_unix.$(OBJEXT) \
+	gconvert.$(OBJEXT) gconvert_unix.$(OBJEXT) gcounter.$(OBJEXT) \
 	gdaemon_unix.$(OBJEXT) gdate.$(OBJEXT) gdatetime.$(OBJEXT) \
 	gdatetime_unix.$(OBJEXT) gdirectory.$(OBJEXT) \
 	gdirectory_unix.$(OBJEXT) genvironment_unix.$(OBJEXT) \
@@ -142,7 +144,8 @@ am_libglib_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	gexecutable.$(OBJEXT) gfile.$(OBJEXT) gfile_unix.$(OBJEXT) \
 	gfs_unix.$(OBJEXT) ggetopt.$(OBJEXT) ghostname_unix.$(OBJEXT) \
 	glog.$(OBJEXT) glogoutput.$(OBJEXT) glogoutput_unix.$(OBJEXT) \
-	gmd5_native.$(OBJEXT) gpam.$(OBJEXT) gpath.$(OBJEXT) \
+	gmapfile.$(OBJEXT) gmd5_native.$(OBJEXT) goptions.$(OBJEXT) \
+	goptionparser.$(OBJEXT) gpam.$(OBJEXT) gpath.$(OBJEXT) \
 	gpidfile.$(OBJEXT) gprocess_unix.$(OBJEXT) groot.$(OBJEXT) \
 	gslot.$(OBJEXT) gstr.$(OBJEXT) gstrings.$(OBJEXT) \
 	gtest.$(OBJEXT) gtime.$(OBJEXT) gxtext.$(OBJEXT)
@@ -258,7 +261,6 @@ MAINT = @MAINT@
 MAKE = @MAKE@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
-MOC = @MOC@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -275,6 +277,7 @@ PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
+QT_MOC = @QT_MOC@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -308,7 +311,6 @@ e_icondir = @e_icondir@
 e_initdir = @e_initdir@
 e_libexecdir = @e_libexecdir@
 e_pamdir = @e_pamdir@
-e_qtmoc = @e_qtmoc@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
@@ -336,7 +338,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) $(PAM_INCLUDE)
+AM_CPPFLAGS = -I$(top_srcdir)/lib/$(COMPILER_VERSION) $(PAM_INCLUDE)
 noinst_LIBRARIES = libglib.a
 @PAM_FALSE@PAM_EXTRA_DIST = gpam_linux.cpp
 @PAM_TRUE@PAM_EXTRA_DIST = gpam_none.cpp
@@ -396,6 +398,8 @@ libglib_a_SOURCES = \
 	gassert.h \
 	gbase64.cpp \
 	gbase64.h \
+	gbatchfile.cpp \
+	gbatchfile.h \
 	gcleanup.h \
 	gcleanup_unix.cpp \
 	gconvert.h \
@@ -439,10 +443,17 @@ libglib_a_SOURCES = \
 	glogoutput.cpp \
 	glogoutput_unix.cpp \
 	gnewprocess.h \
+	gmapfile.h \
+	gmapfile.cpp \
 	gmd5_native.cpp \
 	gmd5.h \
 	gmemory.h \
 	gnoncopyable.h \
+	goptions.h \
+	goptions.cpp \
+	goptionparser.h \
+	goptionparser.cpp \
+	goptionvalue.h \
 	gpam.h \
 	gpam.cpp \
 	gpath.h \
@@ -523,6 +534,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garg_mac.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garg_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbase64.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbatchfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcleanup_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconvert.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconvert_unix.Po@am__quote@
@@ -549,9 +561,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glogoutput.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glogoutput_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmapfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmd5_native.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewprocess_unix_exec_disabled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewprocess_unix_exec_enabled.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/goptionparser.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/goptions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpam.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpam_linux.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpam_none.Po@am__quote@

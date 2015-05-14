@@ -71,7 +71,7 @@ public:
 	{
 		public: virtual std::string greeting() const = 0 ;
 		public: virtual std::string hello( const std::string & smtp_peer_name ) const = 0 ;
-		public: virtual std::string received( const std::string & smtp_peer_name ) const = 0 ;
+		public: virtual std::string received( const std::string & smtp_peer_name , bool a , bool s ) const = 0 ;
 		public: virtual ~Text() ;
 		private: void operator=( const Text & ) ; // not implemented
 	} ;
@@ -284,12 +284,13 @@ public:
 	virtual std::string hello( const std::string & smtp_peer_name_from_helo ) const ;
 		///< Final override from GSmtp::ServerProtocol::Text.
 
-	virtual std::string received( const std::string & smtp_peer_name_from_helo ) const ;
-		///< Final override from GSmtp::ServerProtocol::Text.
+	virtual std::string received( const std::string & smtp_peer_name_from_helo , 
+		bool authenticated , bool secure ) const ;
+			///< Final override from GSmtp::ServerProtocol::Text.
 
 	static std::string receivedLine( const std::string & smtp_peer_name_from_helo , 
 		const std::string & peer_address , const std::string & peer_socket_name , 
-		const std::string & thishost ) ;
+		const std::string & thishost , bool authenticated , bool secure ) ;
 			///< Returns a standard "Received:" line.
 
 private:

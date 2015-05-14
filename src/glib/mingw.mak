@@ -22,6 +22,7 @@ mk_sources=\
 	garg.cpp \
 	garg_win32.cpp \
 	gbase64.cpp \
+	gbatchfile.cpp \
 	gcleanup_win32.cpp \
 	gconvert.cpp \
 	gconvert_win32.cpp \
@@ -45,7 +46,10 @@ mk_sources=\
 	glog.cpp \
 	glogoutput.cpp \
 	glogoutput_win32.cpp \
+	gmapfile.cpp \
 	gmd5_native.cpp \
+	goptionparser.cpp \
+	goptions.cpp \
 	gpath.cpp \
 	gpam.cpp \
 	gpam_none.cpp \

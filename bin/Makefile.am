@@ -42,9 +42,11 @@ EXTRA_DIST = \
 	emailrelay-edit-envelope.js \
 	emailrelay-submit.sh_ \
 	emailrelay-multicast.sh_ \
-	make-setup.sh_ \
-	make-qt-enabled.sh_ \
 	make-bundle.sh_ \
+	make-manifest.sh_ \
+	make-qt-enabled.sh_ \
+	make-qt-enabled.pl_ \
+	make-setup.sh_ \
 	configure-dev.sh \
 	configure-fhs.sh \
 	configure-mac.sh \
@@ -59,9 +61,11 @@ work_scripts = \
 	expand.sh \
 	txt2html.sh \
 	emailrelay.sh \
-	make-setup.sh \
+	make-bundle.sh \
+	make-manifest.sh \
 	make-qt-enabled.sh \
-	make-bundle.sh
+	make-qt-enabled.pl \
+	make-setup.sh
 
 noinst_SCRIPTS = \
 	emailrelay-runperl.js \
@@ -78,7 +82,7 @@ e_examples_DATA = \
 	emailrelay-submit.sh \
 	emailrelay-multicast.sh
 
-CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts)
+CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts) $(e_init_DATA)
 
 SUFFIXES = .sh_ .sh .pl_ .pl
 
@@ -110,4 +114,5 @@ install-data-local: install-e_examplesDATA install-e_initSCRIPTS
 
 uninstall-local:
 	-rmdir "$(DESTDIR)$(e_examplesdir)" 2>/dev/null
+	-rm -f "StartupParameters.plist" 2>/dev/null
 

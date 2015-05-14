@@ -47,6 +47,12 @@ bool G::File::exists( const char * path , bool & enoent )
 	}
 }
 
+bool G::File::isDirectory( const Path & path )
+{
+	struct stat statbuf ;
+	return 0 == ::stat( path.str().c_str() , &statbuf ) && (statbuf.st_mode & S_IFDIR) ;
+}
+
 bool G::File::executable( const Path & path )
 {
 	struct stat statbuf ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,12 +21,13 @@
 #include "gdef.h"
 #include "boot.h"
 #include "gpath.h"
+#include "gmapfile.h"
 #include "gfile.h"
 #include "service_install.h"
 #include "service_remove.h"
 #include <stdexcept>
 
-bool Boot::able( G::Path )
+bool Boot::able( const G::Path & )
 {
 	SC_HANDLE hmanager = OpenSCManager( NULL , NULL , SC_MANAGER_ALL_ACCESS ) ;
 	bool ok = hmanager != 0 ;
@@ -34,26 +35,40 @@ bool Boot::able( G::Path )
 	return ok ;
 }
 
-bool Boot::install( G::Path , G::Path target , G::Strings )
+bool Boot::install( const G::Path & , const std::string & name , const G::Path & bat , const G::Path & wrapper_exe )
 {
-	// the supplied 'target' is actually a batch file containing the full
-	// command-line for the server process (see installer.cpp) -- the
-	// service wrapper knows where to look for the batch file and how to
-	// read it to get the full server process command-line
+	// the 'bat' path is the batch file containing the full command-line 
+	// for the server process -- the service wrapper knows how to read it 
+	// at service start time to assemble the full server command-line -- the
+	// batch file must be located in a directory given by a configuration
+	// file having the same name as the wrapper but with ".exe" replaced
+	// by ".cfg" -- for backwards compatibility it can also be located
+	// in the same directory as the wrapper
 
-	std::string path = G::Path(target.dirname(),"emailrelay-service.exe").str() ;
-	std::string commandline = path.find(" ") != std::string::npos ? ( std::string() + "\"" + path + "\"" ) : path ;
+	// install the service
+	std::string qwrapper = wrapper_exe.str().find(" ") != std::string::npos ? 
+		( std::string() + "\"" + wrapper_exe.str() + "\"" ) : wrapper_exe.str() ;
 	std::string display_name = "E-MailRelay" ;
-	std::string description = display_name + " service (reads " + target.str() + " at service start time)" ;
-	std::string reason = service_install( commandline , "emailrelay" , display_name , description ) ;
+	std::string description = display_name + " service (reads " + bat.str() + " at service start time)" ;
+	std::string reason = ::service_install( qwrapper , name , display_name , description ) ;
 	if( !reason.empty() )
 		throw std::runtime_error( reason ) ;
+
+	// create the config file
+	G::Path config_file = wrapper_exe ;
+	config_file.removeExtension() ;
+	std::ofstream file( (config_file.str()+".cfg").c_str() , std::ios_base::out | std::ios_base::trunc ) ;
+	G::MapFile::writeItem( file , "dir-config" , bat.dirname().str() ) ;
+	file.close() ;
+	if( file.fail() )
+		throw std::runtime_error( "failed to create service wrapper configuration file " + config_file.str() ) ;
+
 	return true ;
 }
 
-bool Boot::uninstall( G::Path , G::Path , G::Strings )
+bool Boot::uninstall( const G::Path & , const std::string & name , const G::Path & )
 {
-	return service_remove("emailrelay").empty() ;
+	return ::service_remove(name).empty() ;
 }
 
 /// \file boot_win32.cpp

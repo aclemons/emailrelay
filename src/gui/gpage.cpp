@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 #include "gstr.h"
 #include "gpage.h"
 #include "gdialog.h"
-#include "mapfile.h"
+#include "gmapfile.h"
 #include "glog.h"
 
 int GPage::m_test_mode = 0 ;
@@ -110,8 +110,7 @@ void GPage::dumpItem( std::ostream & stream , bool for_install , const std::stri
 
 void GPage::dumpItem( std::ostream & stream , bool , const std::string & key , const std::string & value ) const
 {
-	G_DEBUG( "GPage::dumpItem: [" << key << "]=[" << value << "]" ) ;
-	MapFile::writeItem( stream , "gui-" + key , value ) ;
+	G::MapFile::writeItem( stream , key , value ) ;
 }
 
 std::string GPage::value( bool b )

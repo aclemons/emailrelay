@@ -27,7 +27,7 @@ EXTRA_DIST=\
     $(OPENSSL_EXTRA_DIST) \
     mingw.mak
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib 
+AM_CPPFLAGS = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib 
 noinst_LIBRARIES = libgssl.a
 
 libgssl_a_SOURCES = \

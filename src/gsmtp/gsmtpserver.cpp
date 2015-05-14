@@ -41,7 +41,7 @@ namespace
 		AnonymousText( const std::string & thishost , const GNet::Address & peer_address , const std::string & peer_socket_name ) ;
 		virtual std::string greeting() const ;
 		virtual std::string hello( const std::string & peer_name ) const ;
-		virtual std::string received( const std::string & smtp_peer_name ) const ;
+		virtual std::string received( const std::string & smtp_peer_name , bool , bool ) const ;
 		std::string m_thishost ;
 		GNet::Address m_peer_address ;
 		std::string m_peer_socket_name ;
@@ -65,11 +65,12 @@ std::string AnonymousText::hello( const std::string & ) const
 	return "hello" ; 
 }
 
-std::string AnonymousText::received( const std::string & smtp_peer_name ) const
+std::string AnonymousText::received( const std::string & smtp_peer_name , bool authenticated , bool secure ) const
 { 
 	return 
 		m_thishost.length() ?
-			GSmtp::ServerProtocolText::receivedLine( smtp_peer_name , m_peer_address.displayString(false) , m_peer_socket_name , m_thishost ) :
+			GSmtp::ServerProtocolText::receivedLine( smtp_peer_name , m_peer_address.displayString(false) , 
+				m_peer_socket_name , m_thishost , authenticated , secure ) :
 			std::string() ; // no Received line at all if no hostname
 }
 

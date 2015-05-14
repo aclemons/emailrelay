@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,10 +55,11 @@ void G::PidFile::create( const Path & pid_file )
 		G_DEBUG( "G::PidFile::create: \"" << pid_file << "\"" ) ;
 
 		Process::Umask umask(Process::Umask::Readable) ;
-		std::ofstream file( pid_file.str().c_str() ) ;
+		std::ofstream file( pid_file.str().c_str() , std::ios_base::out | std::ios_base::trunc ) ;
 		Process::Id pid ;
 		file << pid.str() << std::endl ;
-		if( !file.good() )
+		file.close() ;
+		if( file.fail() )
 			throw Error(std::string("cannot create file: ")+pid_file.str()) ;
 		Cleanup::add( cleanup , (new std::string(pid_file.str()))->c_str() ) ; // (leak)
 	}

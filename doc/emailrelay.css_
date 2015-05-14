@@ -27,6 +27,11 @@ div.Header
 	width: 100% ;
 }
 
+title
+{
+	color: #09c ;
+}
+
 h1
 {
 	text-align: center ;

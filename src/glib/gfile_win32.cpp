@@ -80,6 +80,12 @@ bool G::File::exists( const char * path , bool & enoent )
 	return ok ;
 }
 
+bool G::File::isDirectory( const Path & path )
+{
+	struct _stat statbuf ;
+	return 0 == ::_stat( path.str().c_str() , &statbuf ) && (statbuf.st_mode & S_IFDIR) ;
+}
+
 G::File::time_type G::File::time( const Path & path )
 {
 	struct _stat statbuf ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,9 +23,13 @@
 // usage: service_wrapper [ { --remove [<service-name>] | --install [<service-name> [<service-display-name>]] } ]
 //
 // The service wrapper looks for a one-line batch file called 
-// "<name>-start.bat" in the same directory as itself which it then 
-// reads to get the full command-line for the forked process. It
-// adds "--no-daemon" and "--hidden" for good measure.
+// "<name>-start.bat", which it then reads to get the full command-line 
+// for the forked process. It adds "--no-daemon" and "--hidden" for good 
+// measure.
+//
+// By default the "<name>-start.bat" file must be in the same directory
+// as this service wrapper, but if there is a file "<service-wrapper>.cfg"
+// then its "dir-config" entry is used as the batch file directory.
 //
 // After the process is forked the service wrapper waits for a bit and 
 // then checks that it is running. It does this twice. If the forked 
@@ -33,17 +37,21 @@
 // considered not to have started.
 //
 
+#include "gdef.h"
 #include "glimits.h"
 #include "gconvert.h"
+#include "gbatchfile.h"
+#include "gmapfile.h"
+#include "garg.h"
 #include "service_install.h"
 #include "service_remove.h"
-#include <windows.h>
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
 #include <map>
 #include <string>
+#include <vector>
 
 #define G_DEBUG( expr ) do { std::ostringstream ss ; ss << expr ; log( ss.str() ) ; } while(0)
 
@@ -103,7 +111,7 @@ struct Child
 	void close() ;
 } ;
 
-class Service 
+class Service
 {
 private:
 	typedef SERVICE_STATUS_HANDLE Handle ;
@@ -127,17 +135,18 @@ public:
 	bool valid() const ;
 	void onEvent( DWORD ) ;
 	void runThread() ;
-	static std::string exe() ;
-	static std::string bat( const std::string & service_name ) ;
-	static std::string commandline( std::string bat_path ) ;
+	static std::string thisExe() ;
+	static G::Path configFile() ;
+	static G::Path bat( const std::string & service_name ) ;
+	static std::string commandline( const G::Path & bat_path ) ;
+
 private:
 	Service( const Service & ) ;
 	void operator=( const Service & ) ;
 	void setStatus( DWORD ) ;
 	Handle statusHandle( std::string ) ;
 	void stopThread() ;
-	static void trim( std::string & ) ;
-	static std::string tolower( const std::string & ) ;
+
 private:
 	static Service * m_this ;
 } ;
@@ -251,17 +260,17 @@ Service * Service::m_this = NULL ;
 void Service::install( const std::string & service_name , const std::string & display_name )
 {
 	// prepare the service-wrapper commandline
-	std::string this_exe = Service::exe() ;
+	std::string this_exe = Service::thisExe() ;
 	std::string command_line = this_exe.find(" ") == std::string::npos ? 
 		this_exe : ( std::string("\"")+this_exe+"\"") ;
 	std::cout << "installing service \"" << service_name << "\": [" << command_line << "]" << std::endl ;
 
 	// check that we will be able to read the batch file at service run-time
-	std::string batch_file = Service::bat( service_name ) ;
+	G::Path batch_file = Service::bat( service_name ) ;
 	std::string server_command_line = Service::commandline( batch_file ) ;
 
 	// create the service
-	std::string description = display_name + " service (reads " + batch_file + " at service start time)" ;
+	std::string description = display_name + " service (reads " + batch_file.str() + " at service start time)" ;
 	std::string reason = service_install( command_line , service_name , display_name , description ) ;
 	if( !reason.empty() )
 		throw std::runtime_error( reason ) ;
@@ -344,92 +353,49 @@ void Service::stopThread()
 		SetEvent( m_thread_exit ) ;
 }
 
-std::string Service::exe()
+std::string Service::thisExe()
 {
+	G::Arg arg ;
 	HINSTANCE hinstance = 0 ;
-	char buffer[G::limits::path] = { 0 } ;
-	size_t size = G::limits::path ;
-	::GetModuleFileNameA( hinstance , buffer , size-1U ) ;
-	buffer[size-1U] = '\0' ;
-	return std::string(buffer) ;
+	arg.parse( hinstance , std::string() ) ;
+	return arg.v(0U) ;
 }
 
-std::string Service::bat( const std::string & prefix )
+G::Path Service::configFile( const std::string & exe )
 {
-	std::string this_exe = exe() ;
-	std::string::size_type pos = this_exe.find_last_of( "\\/" ) ;
-	std::string this_dir = pos == std::string::npos ? ".\\" : this_exe.substr(0U,pos+1U) ;
-	std::string bat = this_dir + prefix + "-start.bat" ;
-	return bat ;
+	G::Path p = exe ;
+	p.removeExtension() ;
+	return G::Path( p.str() + ".cfg" ) ;
 }
 
-void Service::trim( std::string & line )
+G::Path Service::bat( const std::string & prefix )
 {
-	if( !line.empty() )
-	{
-		std::string::size_type start = line.find_first_not_of(" \t\r\n") ;
-		std::string::size_type end = line.find_last_not_of(" \t\r\n") ;
-		if( end != std::string::npos ) ++end ;
-		line = start == end ? std::string() : line.substr(start,end-start) ;
-	}
+	std::string filename = prefix + "-start.bat" ;
+	G::Path this_exe = thisExe() ;
+
+	G::MapFile config_map ;
+	G::Path config_file = configFile( this_exe ) ;
+	if( G::File::exists(config_file) )
+		config_map = G::MapFile( config_file ) ;
+
+	G::Path dir = config_map.contains("dir-config") ? 
+		G::Path(config_map.value("dir-config")) : this_exe.dirname() ;
+
+	return dir + filename ;
 }
 
-std::string Service::tolower( const std::string & s_in )
-{
-	const std::string in = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" ;
-	const std::string out = "abcdefghijklmnopqrstuvwxyz" ;
-	std::string s = s_in ;
-	for( std::string::iterator p = s.begin() ; p != s.end() ; ++p )
-	{
-		if( in.find(*p) != std::string::npos )
-			*p = out.at( in.find(*p) ) ;
-	}
-	return s ;
-}
-
-std::string Service::commandline( std::string bat_path )
+std::string Service::commandline( const G::Path & bat_path )
 {
 	G_DEBUG( "commandline: reading batch file: " << bat_path ) ;
-	std::ifstream stream( bat_path.c_str() ) ;
-	if( ! stream.good() )
-		throw std::runtime_error( std::string() + "cannot open \"" + bat_path + "\"" +
-			" (the service wrapper reads the command-line for the server process from this file)" ) ;
 
-	std::string line ;
-	while( stream.good() )
 	{
-		line.clear() ;
-		std::getline( stream , line ) ;
-		trim( line ) ;
-		if( line.empty() || tolower(line).find("@echo") == 0U || tolower(line).find("rem") == 0U )
-			;
-		else
-			break ;
-	}
-	if( line.empty() )
-		throw std::runtime_error( std::string() + "cannot read \"" + bat_path + "\"" ) ;
-
-	std::string next_line ;
-	trim( next_line ) ;
-	if( ! next_line.empty() )
-		throw std::runtime_error( std::string() + "too many lines in the batch file \"" + bat_path + "\"; expecting only one line after initial \"@echo\" and \"rem\" lines" ) ;
-
-	// the "start" command gets confused if its first parameter is
-	// the quoted executable path - so require the quoted window title 
-	// to appear first - (could do better parsing)
-	std::string start_prefix = "start \"emailrelay\" " ;
-	if( line.find(start_prefix) == 0U )
-	{
-		line.replace( 0U , start_prefix.length() , "" ) ;
-		trim( line ) ;
+		std::ifstream stream( bat_path.str().c_str() ) ;
+		if( ! stream.good() )
+			throw std::runtime_error( std::string() + "cannot open \"" + bat_path.str() + "\"" +
+				" (the service wrapper reads the command-line for the server process from this file)" ) ;
 	}
 
-	// batch files require percent characters to be doubled up
-	{
-		std::string::size_type pos = line.rfind( "%%" ) ;
-		if( pos != std::string::npos )
-			line.replace( pos , 2U , "%" ) ;
-	}
+	std::string line = G::BatchFile(bat_path).line() ;
 
 	if( line.find("--hidden") == std::string::npos )
 		line.append( " --hidden" ) ;

@@ -1,0 +1,243 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ===
+#
+# make-qt-enabled.pl
+#
+# Adds Qt frameworks to an application bundle. Called from from the makefile 
+# via "make-qt-enabled.sh" with an exe of eg. "Foo.app/Contents/MacOS/Foo".
+#
+# usage: make-qt-enabled.pl <moc> <macos-exe> <frameworks-subdir>
+#
+# See "http://qt-project.org/doc/qt-4.8/deployment-mac.html".
+#
+
+use strict ;
+use File::Basename ;
+use FileHandle ;
+
+( scalar(@ARGV) == 3 || scalar(@ARGV) == 2 ) or die "usage" ;
+my $moc = $ARGV[0] ;
+my $exe = $ARGV[1] ;
+my $fdir= $ARGV[2] || "Frameworks" ;
+-x "$exe" or die "invalid exe [$exe]" ;
+basename(dirname($exe)) eq "MacOS" or die "invalid exe path [$exe]" ;
+my $cbase = dirname(dirname($exe)) ; # Contents
+my $fsrc = dirname($moc)."/../lib" ;
+-d $fsrc or die "invalid framework src [$fsrc]" ;
+my $psrc = dirname($moc)."/../plugins" ;
+-d $psrc or die "invalid plugin src [$psrc]" ;
+
+my @plugins = "$psrc/platforms/libqcocoa.dylib" ;
+
+sub log_
+{
+	my $line = join(" ",map {"[$_]"} @_) ;
+	## print STDERR "+++ $line\n" ;
+}
+
+sub touch_
+{
+	my ( $path ) = @_ ;
+	my $fh = new FileHandle( $path , "w" ) ;
+	$fh->close() if $fh ;
+}
+
+sub system_
+{
+	my ( $cmd ) = @_ ;
+	log_( $cmd ) ;
+	return system( $cmd ) ;
+}
+
+sub Clean
+{
+	my ( $dir ) = @_ ;
+	$dir or die "no dir" ;
+	die "root" if $dir eq "/" ;
+	system_( "rm -rf \"$dir\" 2>/dev/null" ) ;
+	system_( "mkdir -p \"$dir\" 2>/dev/null" ) ;
+}
+
+sub CopyTree
+{
+	my ( $src , $dst ) = @_ ;
+	my $cmd = "cp -f -R \"$src\" \"$dst\"" ;
+	system_( $cmd ) == 0 or die "cp failed" ;
+}
+
+sub CopyFramework
+{
+	my ( $name , $fsrc , $cbase , $f ) = @_ ;
+	CopyTree( "$fsrc/$name.framework" , "$cbase/$f" ) ;
+}
+
+sub fpath
+{
+	# returns the framework path in the bundle
+	my ( $cbase , $fdir , $fname ) = @_ ;
+	return "$cbase/$fdir/$fname.framework/Versions/Current/$fname" ;
+}
+
+sub GetId
+{
+	my ( $object ) = @_ ;
+	my $cmd = "otool -D \"$object\"" ;
+	log_( $cmd ) ;
+	my $fh = new FileHandle( "$cmd |" ) or die "otool -D failed" ;
+	my $last_line ;
+	while(<$fh>) { chomp( $last_line = $_ ) }
+	log_( "GetId object=[$object] id=[$last_line]" ) ;
+	return $last_line ;
+}
+
+sub SetId
+{
+	my ( $object , $id ) = @_ ;
+	my $cmd = "install_name_tool -id \"$id\" \"$object\"" ;
+	log_( "SetId object=[$object] id=[$id]" ) ;
+	system_( $cmd ) == 0 or die "install_name_tool -id failed" ;
+}
+
+sub GetReferenceId
+{
+	my ( $object , $fname , $strict ) = @_ ;
+	log_( "GetReferenceId object=[$object] fname=[$fname]" ) ;
+	my $cmd = "otool -L \"$object\"" ;
+	log_( $cmd ) ;
+	my $fh = new FileHandle( "$cmd |" ) or die "otool -L failed" ;
+	my $id ;
+	while(<$fh>)
+	{
+		chomp( my $line = $_ ) ;
+		if( $line =~ m/$fname/ )
+		{
+			$line =~ s/^\s+// ;
+			$line =~ s/\s*$// ;
+			my @words = split( /\s+/ , $line ) ;
+			$id = $words[0] ;
+			#log_( "++ id=[$id]" ) ;
+		}
+	}
+	if( $strict && !$id )
+	{
+		die "no match for [$fname] in output from \"otool -L\"" ;
+	}
+	log_( "GetReferenceId object=[$object] fname=[$fname] id=[$id]" ) if $id ;
+	return $id ;
+}
+
+sub SetReferenceId
+{
+	my ( $object , $old , $new ) = @_ ;
+	if( $old eq $new )
+	{
+		log_( "SetReferenceId: object [$object] already done [$old]" ) ;
+	}
+	else
+	{
+		log_( "SetReferenceId: object=[$object]" ) ;
+		log_( "SetReferenceId: ++ old=[$old]" ) ;
+		log_( "SetReferenceId: ++ new=[$new]" ) ;
+		my $cmd = "install_name_tool -change \"$old\" \"$new\" \"$object\"" ;
+		system_( $cmd ) == 0 or die "install_name_tool -change failed" ;
+	}
+}
+
+sub NewId
+{
+	my ( $fdir , $id , $fname ) = @_ ;
+	( my $tail = $id ) =~ s:.*/$fname.framework:$fname.framework: ;
+	return "\@executable_path/$fdir/$tail" ; # no ".." here
+}
+
+sub Frameworks
+{
+	my ( @objects ) = @_ ;
+	my @result = () ;
+	for my $object ( @objects )
+	{
+		my $cmd = "otool -L \"$object\"" ;
+		log_( $cmd ) ;
+		my $fh = new FileHandle( "$cmd |" ) or die "otool -L failed" ;
+		my $id ;
+		while(<$fh>)
+		{
+			chomp( my $line = $_ ) ;
+			my ( $fname ) = ( $line =~ m:/(Qt\w+).framework/: ) ;
+			push @result , $fname if defined($fname) ;
+		}
+	}
+	log_( @result ) ;
+	return @result ;
+}
+
+# get a list of qt frameworks that the exe and plugins use
+my %frameworks = map { ($_,1) } Frameworks($exe,@plugins) ;
+log_( "frameworks: " , keys %frameworks ) ;
+
+# copy stuff into the bundle
+Clean( "$cbase/$fdir" ) ;
+for my $fname ( keys %frameworks )
+{
+	CopyFramework( $fname , $fsrc , $cbase , $fdir ) ;
+}
+for my $ppath ( @plugins )
+{
+	system_( "mkdir -p \"$cbase/plugins/platforms\"" ) == 0 or die "mkdir failed" ;
+	system_( "cp \"$ppath\" \"$cbase/plugins/platforms/\"" ) == 0 or die "plugin copy failed" ;
+}
+
+# update runpaths
+for my $fname ( keys %frameworks )
+{
+	# update frameworks' own id 
+	my $new_id ;
+	{
+		my $id = GetId( fpath($cbase,$fdir,$fname) ) ;
+		$new_id = NewId( $fdir , $id , $fname ) ;
+		SetId( fpath($cbase,$fdir,$fname) , $new_id ) ;
+	}
+
+	# update the exe's reference to this framework
+	{
+		my $id_in_exe = GetReferenceId( $exe , $fname ) ;
+		SetReferenceId( $exe , $id_in_exe , $new_id ) if $id_in_exe ;
+	}
+
+	# update the plugins' references to this framework
+	for my $psrc_ppath ( @plugins )
+	{
+		my $ppath = "$cbase/plugins/platforms/" . basename($psrc_ppath) ;
+		my $id_in_plugin = GetReferenceId( $ppath , $fname ) ;
+		SetReferenceId( $ppath , $id_in_plugin , $new_id ) if $id_in_plugin ;
+	}
+
+	# update other frameworks' references to this framework
+	for my $other ( keys %frameworks )
+	{
+		next if $other eq $fname ;
+		my $fpath_other = fpath( $cbase , $fdir , $other ) ;
+		my $id_in_other = GetReferenceId( $fpath_other , $fname ) ;
+		SetReferenceId( $fpath_other , $id_in_other , $new_id ) if $id_in_other ;
+	}
+}
+
+# disable the plugin search - the plugins with the correct runpaths are in the bundle
+touch_( "$cbase/qt.conf" ) ;
+touch_( "$cbase/Resources/qt.conf" ) ;
+

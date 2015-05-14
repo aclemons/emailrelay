@@ -7,7 +7,7 @@ Binary distributions
 Binary distributions of E-MailRelay may include copyrighted code from:
 * OpenSSL Toolkit (http://www.openssl.org)
 * MinGW (http://www.mingw.org)
-* Trolltech Qt (http://trolltech.com)
+* Qt Project (http://qt-project.org)
 
 These are distributed under licenses compatible with the GPLv3. Please
 refer to their websites for further details.

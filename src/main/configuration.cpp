@@ -87,9 +87,14 @@ G::Strings Main::Configuration::listeningInterfaces( const std::string & protoco
 	for( G::Strings::iterator p = result.begin() ; p != result.end() ; )
 	{
 		if( protocol.empty() || protocol == G::Str::head( *p , (*p).find('=') , protocol ) )
-			*p++ = G::Str::tail( *p , (*p).find('=') , *p ) ;
+		{
+			*p = G::Str::tail( *p , (*p).find('=') , *p ) ;
+			p++ ;
+		}
 		else
+		{
 			p = result.erase( p ) ;
+		}
 	}
 
 	return result ;
@@ -107,7 +112,7 @@ void Main::Configuration::checkClientInterface() const
 		if( !explicit_ )
 			G_WARNING( "Main::Configuration::checkClientInterface: "
 				"using first \"--interface\" address to bind outgoing client connections: "
-				"try using \"--client-interface\" instead" ) ;
+				"add \"--client-interface=0.0.0.0\" to disable explicit binding" ) ;
 	}
 }
 

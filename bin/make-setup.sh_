@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,91 +18,109 @@
 #
 # make-setup.sh
 #
-# Builds a "setup" self-extracting archive -- or a payload file for
-# one -- derived from running "make install" into a temporary directory.
+# Builds a payload tree by running "make install" into it and adding
+# a config file. The payload is processed by the gui installer.
 #
-# usage: make-setup.sh [-d] <output> {<stub>|NONE} <pack-utility> <icon>
+# usage: make-setup.sh [-w] [-d] <payload> <icon>
+#           -w : windows
+#           -d : debug
 #
 # Normally run by "make setup" in the "src/gui".
 #
-# The packed files are those that appear under "/usr", which 
-# matches the default installation directory presented in the 
-# gui (see Dir::os_install()).
-#
-# There is only one level of packing, so the gui executable 
-# should be statically linked or repacked with its shared 
-# libraries if targeting other machines.
-#
 
 # parse the command line
+windows="0" ; if test "$1" = "-w" ; then shift ; windows="1" ; fi
 debug="0" ; if test "$1" = "-d" ; then shift ; debug="1" ; fi
-setup="$1"
-stub="$2"
-pack="$3"
-icon="$4"
-
-# define temporary directories and cleanup code
-tmp="/tmp/`basename $0 .sh`.$$.tmp"
-install="$tmp/install"
-list="$tmp/list"
-trap Cleanup 0 
-trap Fail 1 2 3 13 15
-Cleanup()
-{
-	if test "$debug" -eq 0
-	then
-		rm -rf "$tmp"
-	fi
-}
-Fail()
-{
-	Cleanup
-	exit 1
-}
+payload="$1"
+icon="$2"
 
 # check the command-line
-if test "$setup" = "" -o \( "$stub" != "NONE" -a ! -f "$stub" \) -o ! -x "$pack"
+if test "$payload" = ""
 then
-	echo usage: `basename $0` '<setup> <stub> <pack>' >&2
+	echo usage: `basename $0` '<payload> [<icon>]' >&2
 	exit 2
 fi
-
-# run "make install" 
-echo `basename $0`: running make install into $install
-mkdir -p $install
-( cd ../.. && make install HAVE_DOXYGEN=no DESTDIR=$install ) > /dev/null 2>&1
-
-# check the "./configure" directories were sane (see bin/configure-fhs.sh)
-if test ! -d "$install/usr/lib/emailrelay" -a ! -d "$install/Applications/E-MailRelay"
+if test ! -d "$payload" -o -f "$payload/*"
 then
-	echo `basename $0`: cannot see expected directories in the install tree >&2
+	echo error: payload "[$payload]" is not an empty directory >&2
 	exit 1
 fi
 
-# add some extras into the install
-if test -d "$install/usr/lib/emailrelay/"
+CopyTo()
+{
+	# windows...
+	dst="$1"
+	test -d $dst || mkdir $dst
+	test -d $dst/doc || mkdir $dst/doc
+	test -d $dst/doc/doxygen || mkdir $dst/doc/doxygen
+	test -d $dst/examples || mkdir $dst/examples
+	cp ../../README $dst/readme.txt 
+	cp ../../COPYING $dst/copying.txt 
+	cp ../../ChangeLog $dst/changelog.txt 
+	cp ../../AUTHORS $dst/authors.txt 
+	cp ../../doc/doxygen-missing.html $dst/doc/doxygen/index.html 
+	cp ../main/emailrelay-service.exe $dst/
+	cp ../main/emailrelay.exe $dst/
+	cp ../main/emailrelay-submit.exe $dst/
+	cp ../main/emailrelay-filter-copy.exe $dst/
+	cp ../main/emailrelay-poke.exe $dst/
+	cp ../main/emailrelay-passwd.exe $dst/
+	cp ../../doc/*.png $dst/doc/
+	cp ../../doc/*.txt $dst/doc/
+	cp ../../doc/*.html $dst/doc/
+	cp ../../doc/emailrelay.css_ $dst/doc/emailrelay.css
+	cp ../../bin/emailrelay-edit-content.js $dst/examples/
+	cp ../../bin/emailrelay-edit-envelope.js $dst/examples/
+	cp ../../bin/emailrelay-resubmit.js $dst/examples/
+	cp ../../bin/emailrelay-runperl.js $dst/examples/
+}
+
+if test "$windows" -eq 1
 then
-	cp "$icon" $install/usr/lib/emailrelay/
+
+	# create the simple distribution
+	base="$payload/.."
+	CopyTo $base
+	cp emailrelay-gui.exe $base
+
+	# create the payload for the gui installer
+	cfg="$payload/payload.cfg"
+	mkdir $payload/files
+	CopyTo $payload/files
+	cp emailrelay-gui.exe $payload/emailrelay-setup.exe
+	echo '#' > $cfg
+	echo files/= %dir-install%/ >> $cfg
+	echo emailrelay-setup.exe= %dir-install%/emailrelay-gui.exe >> $cfg
+
 else
-	cp "$icon" $install/Applications/E-MailRelay/
+
+	# run "make install" into the payload directory
+	echo `basename $0`: running make install into $payload
+	payload_path="`cd $payload && pwd`"
+	( cd ../.. && make install HAVE_DOXYGEN=no DESTDIR=$payload_path ) > /dev/null 2>&1
+	rm -rf $payload/usr/share/doc/emailrelay/doxygen
+
+	# check the "./configure" was done by "bin/configure-fhs.sh" (even on a mac)
+	if test ! -d "$payload/usr/lib/emailrelay"
+	then
+		echo `basename $0`: cannot see expected directories: configure with \"bin/configure-fhs.sh\" >&2
+		exit 1
+	fi
+
+	# add the icon
+	cp "$icon" $payload/usr/lib/emailrelay/ 2>/dev/null
+
+	# create the payload config file
+	cat <<EOF >$payload/payload.cfg
+	etc/emailrelay.conf=%dir-config%/emailrelay.conf
+	etc/emailrelay.conf.template=%dir-config%/emailrelay.conf.template
+	etc/emailrelay.auth.template=%dir-config%/emailrelay.auth.template
+	etc/init.d/emailrelay=%dir-install%/lib/emailrelay/emailrelay-startstop.sh
+	usr/lib/=%dir-install%/lib/
+	usr/share/=%dir-install%/share/
+	usr/sbin/=%dir-install%/sbin/
+	+%dir-spool% group daemon 770 g+s
+	+%dir-install%/sbin/emailrelay-submit group daemon 775 g+s
+	EOF
+
 fi
-
-# build a file list
-Filter()
-{
-	fgrep -v /doxygen/ | fgrep -v /emailrelay-gui
-}
-Edit()
-{
-	sed 's: \./: :'
-}
-echo `basename $0`: building a file list
-find $install -type f | Filter | grep -n . | sed 's/:/1 /' > $list
-( cd $install && find . -type f ) | Filter | grep -n . | sed 's/:/2 /' | Edit >> $list
-sort -n $list | sed 's/^[0-9][0-9]* //' > $list.tmp && mv $list.tmp $list
-
-# create the packed file - dont bother compressing any more (-p)
-echo `basename $0`: packing
-PATH=".:$PATH"
-"$pack" -p -q -f "$list" "$setup" "$stub"
-

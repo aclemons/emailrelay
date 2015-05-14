@@ -50,7 +50,7 @@ noinst_SCRIPTS = emailrelay-test.sh emailrelay-test.pl emailrelay-chain-test.sh 
 noinst_PROGRAMS = $(TESTING_HELPERS)
 TESTS = $(TESTING_FILES)
 CLEANFILES = $(noinst_SCRIPTS) $(noinst_PROGRAMS) .emailrelay-test-server.pid
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -DG_SPOOLDIR=\"$(e_spooldir)\"
+AM_CPPFLAGS = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -DG_SPOOLDIR=\"$(e_spooldir)\"
 
 COMMON_LDADD = \
 	$(top_builddir)/src/glib/libglib.a

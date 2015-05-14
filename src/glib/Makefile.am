@@ -15,7 +15,7 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) $(PAM_INCLUDE)
+AM_CPPFLAGS = -I$(top_srcdir)/lib/$(COMPILER_VERSION) $(PAM_INCLUDE)
 
 noinst_LIBRARIES = libglib.a
 
@@ -98,6 +98,8 @@ libglib_a_SOURCES = \
 	gassert.h \
 	gbase64.cpp \
 	gbase64.h \
+	gbatchfile.cpp \
+	gbatchfile.h \
 	gcleanup.h \
 	gcleanup_unix.cpp \
 	gconvert.h \
@@ -141,10 +143,17 @@ libglib_a_SOURCES = \
 	glogoutput.cpp \
 	glogoutput_unix.cpp \
 	gnewprocess.h \
+	gmapfile.h \
+	gmapfile.cpp \
 	gmd5_native.cpp \
 	gmd5.h \
 	gmemory.h \
 	gnoncopyable.h \
+	goptions.h \
+	goptions.cpp \
+	goptionparser.h \
+	goptionparser.cpp \
+	goptionvalue.h \
 	gpam.h \
 	gpam.cpp \
 	gpath.h \

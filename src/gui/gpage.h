@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,15 +27,15 @@
 #include "gpath.h"
 #include <string>
 
-class GDialog ; 
-class QAbstractButton ; 
-class QLineEdit ; 
-class QComboBox ; 
+class GDialog ;
+class QAbstractButton ;
+class QLineEdit ;
+class QComboBox ;
 
 /// \class GPage
 /// A page widget that can be installed in a GDialog.
 ///
-class GPage : public QWidget 
+class GPage : public QWidget
 {Q_OBJECT
 protected:
 	GPage( GDialog & , const std::string & name , const std::string & next_1 , 
@@ -82,9 +82,9 @@ public:
 		///< and the 'next' button can be enabled.
 
 	virtual void dump( std::ostream & , bool for_install ) const ;
-		///< Dumps the page's state to the given
-		///< stream. Overrides should start by
-		///< calling this base-class implementation.
+		///< Dumps the page's state to the given stream. 
+		///< Overrides should start by calling this base-class 
+		///< implementation.
 
 	static void setTestMode( int ) ;
 		///< Sets a test-mode. Typically this causes widgets

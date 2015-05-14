@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,35 +49,10 @@
 	#define G_INITDIR ""
 #endif
 
-std::string Dir::dotexe()
-{
-	return std::string() ;
-}
-
 G::Path Dir::os_install()
 {
 	// user expects to say "/Applications" or "~/Applications"
 	return "/Applications" ;
-}
-
-G::Path Dir::os_gui( const G::Path & install )
-{
-	return install + "E-MailRelay" + "emailrelay-gui.real" ; // should use G_SBINDIR
-}
-
-G::Path Dir::os_icon( const G::Path & )
-{
-	return G::Path() ;
-}
-
-G::Path Dir::os_server( const G::Path & install )
-{
-	return install + "E-MailRelay" + "emailrelay" ; // should use G_SBINDIR
-}
-
-G::Path Dir::os_bootcopy( const G::Path & , const G::Path & install )
-{
-	return install + "E-MailRelay" + "StartupItems" ; // should use G_SBINDIR
 }
 
 G::Path Dir::os_config()
@@ -94,15 +69,6 @@ G::Path Dir::os_spool()
 	if( spooldir.empty() )
 		spooldir = "/Library/Mail/Spool" ;
 	return spooldir ;
-}
-
-G::Path Dir::cwd()
-{
-	char buffer[10000] = { '\0' } ;
-	const char * p = getcwd( buffer , sizeof(buffer)-1U ) ;
-	buffer[sizeof(buffer)-1U] = '\0' ;
-	std::string s = p ? std::string(buffer) : std::string(".") ;
-	return G::Path( s ) ;
 }
 
 G::Path Dir::os_pid( const G::Path & )
@@ -139,6 +105,18 @@ bool Dir::ok( const std::string & s )
 G::Path Dir::home()
 {
 	return envPath( "HOME" , "~" ) ;
+}
+
+G::Path Dir::os_absolute( const G::Path & dir )
+{
+	G::Path result = dir ;
+	if( dir != G::Path() )
+	{
+		char * p = ::realpath( dir.str().c_str() , NULL ) ; // assume POSIX.1-2008 behaviour
+		if( p && *p ) result = G::Path(std::string(p)) ;
+		if( p ) ::free( p ) ;
+	}
+	return result ;
 }
 
 /// \file dir_mac.cpp

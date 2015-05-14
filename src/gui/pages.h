@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,32 +22,32 @@
 #define G_PAGES_H
 
 #include "gdef.h"
-#include "qt.h"
-#include "installer.h"
+#include "gmapfile.h"
 #include "gpath.h"
 #include "gstrings.h"
+#include "qt.h"
 #include "gdialog.h"
 #include "gpage.h"
-#include "state.h"
+#include "installer.h"
 
-class QCheckBox; 
-class QComboBox; 
-class QRadioButton; 
-class QGroupBox; 
-class QTextEdit; 
-class QLabel; 
-class QLineEdit; 
-class QPushButton; 
-class DetailsPage; 
-class EvaluatePage; 
-class FinishPage; 
-class RegisterPage; 
-class TitlePage; 
+class QCheckBox;
+class QComboBox;
+class QRadioButton;
+class QGroupBox;
+class QTextEdit;
+class QLabel;
+class QLineEdit;
+class QPushButton;
+class DetailsPage;
+class EvaluatePage;
+class FinishPage;
+class RegisterPage;
+class TitlePage;
 
-class TitlePage : public GPage 
+class TitlePage : public GPage
 {
 public:
-	TitlePage( GDialog & dialog , const State & state , const std::string & name , 
+	TitlePage( GDialog & dialog , const G::MapFile & config , const std::string & name , 
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
@@ -58,10 +58,10 @@ private:
 	QLabel * m_credit ;
 };
 
-class LicensePage : public GPage 
+class LicensePage : public GPage
 {
 public:
-	LicensePage( GDialog & dialog , const State & state , const std::string & name ,
+	LicensePage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool accepted ) ;
 
 	virtual std::string nextPage() ;
@@ -73,10 +73,10 @@ private:
 	QCheckBox * m_agree_checkbox ;
 };
 
-class DirectoryPage : public GPage 
+class DirectoryPage : public GPage
 {Q_OBJECT
 public:
-	DirectoryPage( GDialog & dialog , const State & , const std::string & name ,
+	DirectoryPage( GDialog & dialog , const G::MapFile & , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
 		bool installing ) ;
 
@@ -89,6 +89,7 @@ private slots:
 	void browseInstall() ;
 	void browseSpool() ;
 	void browseConfig() ;
+	void browseRuntime() ;
 
 private:
 	QString browse( QString ) ;
@@ -108,17 +109,16 @@ private:
 	QLabel * m_config_dir_label ;
 	QLineEdit * m_config_dir_edit_box ;
 	QPushButton * m_config_dir_browse_button ;
-	std::string m_pid_dir ;
-	std::string m_boot_dir ;
-	std::string m_desktop_dir ;
-	std::string m_menu_dir ;
-	std::string m_login_dir ;
+	QLabel * m_runtime_dir_title ;
+	QLabel * m_runtime_dir_label ;
+	QLineEdit * m_runtime_dir_edit_box ;
+	QPushButton * m_runtime_dir_browse_button ;
 } ;
 
-class DoWhatPage : public GPage 
+class DoWhatPage : public GPage
 {Q_OBJECT
 public:
-	DoWhatPage( GDialog & dialog , const State & state , const std::string & name ,
+	DoWhatPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
@@ -140,10 +140,10 @@ private slots:
 	void onToggle() ;
 } ;
 
-class PopPage : public GPage 
+class PopPage : public GPage
 {Q_OBJECT
 public:
-	explicit PopPage( GDialog & dialog , const State & state , const std::string & name ,
+	explicit PopPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
@@ -163,10 +163,10 @@ private:
 	QCheckBox * m_auto_copy_checkbox ;
 } ;
 
-class PopAccountsPage : public GPage 
+class PopAccountsPage : public GPage
 {
 public:
-	explicit PopAccountsPage( GDialog & dialog , const State & state , const std::string & name ,
+	explicit PopAccountsPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_accounts ) ;
 
 	virtual std::string nextPage() ;
@@ -185,10 +185,10 @@ private:
 	QLineEdit * m_pwd_3 ;
 } ;
 
-class PopAccountPage : public GPage 
+class PopAccountPage : public GPage
 {
 public:
-	explicit PopAccountPage( GDialog & dialog , const State & state , const std::string & name ,
+	explicit PopAccountPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_account ) ;
 
 	virtual std::string nextPage() ;
@@ -203,10 +203,10 @@ private:
 	QLineEdit * m_pwd_1 ;
 } ;
 
-class SmtpServerPage : public GPage 
+class SmtpServerPage : public GPage
 {Q_OBJECT
 public:
-	SmtpServerPage( GDialog & dialog , const State & state , const std::string & name ,
+	SmtpServerPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_account ) ;
 
 	virtual std::string nextPage() ;
@@ -229,10 +229,10 @@ private slots:
 	void onToggle() ;
 } ;
 
-class SmtpClientPage : public GPage 
+class SmtpClientPage : public GPage
 {Q_OBJECT
 public:
-	SmtpClientPage( GDialog & dialog , const State & state , const std::string & name ,
+	SmtpClientPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_account ) ;
 
 	virtual std::string nextPage() ;
@@ -255,10 +255,10 @@ private slots:
 	void onToggle() ;
 } ;
 
-class StartupPage : public GPage 
+class StartupPage : public GPage
 {
 public:
-	StartupPage( GDialog & dialog , const State & state , const std::string & name ,
+	StartupPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , 
 		bool start_on_boot_able , bool is_mac ) ;
 
@@ -276,10 +276,10 @@ private:
 	QCheckBox * m_verbose_checkbox ;
 } ;
 
-class LoggingPage : public GPage 
+class LoggingPage : public GPage
 {
 public:
-	LoggingPage( GDialog & dialog , const State & state , const std::string & name ,
+	LoggingPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
@@ -292,10 +292,10 @@ private:
 	QCheckBox * m_syslog_checkbox ;
 } ;
 
-class ListeningPage : public GPage 
+class ListeningPage : public GPage
 {Q_OBJECT
 public:
-	ListeningPage( GDialog & dialog , const State & state , const std::string & name ,
+	ListeningPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
@@ -313,10 +313,10 @@ private:
 	QLineEdit * m_listening_interface ;
 } ;
 
-class ReadyPage : public GPage 
+class ReadyPage : public GPage
 {
 public:
-	ReadyPage( GDialog & dialog , const State & state , const std::string & name , const std::string & next_1 , 
+	ReadyPage( GDialog & dialog , const G::MapFile & config , const std::string & name , const std::string & next_1 , 
 		const std::string & next_2 , bool finish , bool close , bool installing ) ;
 
 	virtual std::string nextPage() ;
@@ -333,12 +333,11 @@ private:
 	bool m_installing ;
 } ;
 
-class ProgressPage : public GPage 
+class ProgressPage : public GPage
 {Q_OBJECT
 public:
-	ProgressPage( GDialog & dialog , const State & state , const std::string & name , const std::string & next_1 , 
-		const std::string & next_2 , bool finish , bool close , 
-		G::Path argv0 , G::Path payload , G::Path state_path , bool install ) ;
+	ProgressPage( GDialog & dialog , const G::MapFile & config , const std::string & name , const std::string & next_1 , 
+		const std::string & next_2 , bool finish , bool close , Installer & ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;
@@ -355,18 +354,17 @@ private:
 
 private:
 	G::Path m_argv0 ;
-	G::Path m_state_path ;
 	QTextEdit * m_text_edit ;
 	QTimer * m_timer ;
-	Installer m_installer ;
+	Installer & m_installer ;
 	bool m_installing ;
 	QString m_text ;
 } ;
 
-class EndPage_ : public GPage 
+class EndPage_ : public GPage
 {
 public:
-	EndPage_( GDialog & dialog , const State & state , const std::string & name ) ;
+	EndPage_( GDialog & dialog , const G::MapFile & config , const std::string & name ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;

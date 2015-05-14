@@ -88,3 +88,5 @@ END
 
 #include <messages.rc>
 
+1 RT_MANIFEST "emailrelay.manifest"
+

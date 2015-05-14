@@ -19,7 +19,7 @@ process network events. The extra GUI and event classes are put into a separate
 library in the "src/win32" directory, using the namespace "GGui".
 
 There is also a separate configuration GUI program which uses the "glib" library
-together with TrollTech's Qt.
+together with Qt Project's Qt library.
 
 Event model
 -----------
@@ -31,7 +31,7 @@ when external programs are executed (see "--filter" and "--verifier").
 In some ways this makes the implementation more complicated than the equivalent
 multi-threaded approach since (for example) it is not possible to wait for a
 complete line of input to be received from a remote SMTP client because there
-might be other connection that need servicing.
+might be other connections that need servicing.
 
 See *C10K Problem* [http://www.kegel.com/c10k.html] for a discussion of
 different network event models.
@@ -137,8 +137,8 @@ Sequence diagrams:
 
 E-MailRelay GUI
 ---------------
-The optional GUI program "emailrelay-gui" uses TrollTech Qt v4 for its user
-interface components. The GUI can run as a stand-alone configuration helper
+The optional GUI program "emailrelay-gui" uses Qt v5 for its user interface
+components. The GUI can run as a stand-alone configuration helper
 ("--as-configure") or as part of a self-extracting installation
 ("--as-install"). When it runs it checks whether it has a payload of packed
 files. If it has then it runs as an installer; if it does not then it runs as a
@@ -164,34 +164,11 @@ separately since the interface between them is a simple text stream containing
 key-value pairs.
 
 When run in "--as-configure" mode the GUI normally ends up simply editing
-the "emailrelay.conf" file and/or the "emailrelay.auth" secrets file.
+the "emailrelay.conf" file ("emailrelay-start.bat" on windows) and/or the 
+"emailrelay.auth" secrets file.
 
 When run in "--as-install" mode the GUI expects to unpack all the E-MailRelay
-files from a "payload" archive into target directories.
-
-The packing scheme used for a payload archive is a simple concatenation of the
-"stub" executable followed by a table of contents for the payload files,
-followed by the payload files themselves (possibly compressed by "zlib"), and
-ending with an twelve-byte ascii representation of the offset of the table of
-contents.
-
-The payload may be appended to the GUI executable to make a self-extracting
-installer, usually then called "emailrelay-setup".
-
-However, on Windows two levels of packing are required: the "emailrelay-setup"
-program has a stub executable written in "C" that prints an "extracting..."
-message to the standard output, with a payload comprising another packed
-executable and a small number of "C++" runtime library files. The inner packed
-executable has the emailrelay GUI program as its stub and all the other
-installable files, including the main emailrelay executable, as its payload.
-
-On unix-like operating systems it is more natural to use some sort of package
-derived from the "make install" process rather than an installer program, so
-"emailrelay-setup" ia typically never built.
-
-On Mac OS X the payload is better stored in the installer's application
-bundle rather than simply appended to the binary. This is desribed in the next
-section.
+files from a "payload" into target directories.
 
 Windows build
 -------------
@@ -374,29 +351,21 @@ Directory structure
 
 Source file names
 -----------------
-Generally the source file names are follow the name of the principal class,
+Generally the source file names follow the name of the principal class,
 (often including the namespace) but all in lowercase. Any underscores in the
-name indicate a choice of implementation, so class "G::Foo" might have two
+filename indicate a choice of implementation, so class "G::Foo" might have two
 implementations in the files "gfoo_main.cpp" and "gfoo_alternate.cpp".
 The choice is normally made by the makefile.
 
 Portability
 -----------
-The E-MailRelay code is written in ISO C++, although avoiding less-widely
-supported language features such as "mutable", templated methods and "export".
+The E-MailRelay code is written in 1998 ISO C++.
 
 The header files "gdef.h" in "src/glib", and "gnet.h" in "src/gnet" are intended
 to be used to fix up compiler portability issues such as missing standard types,
 non-standard system headers etc. Conditional compilation directives ("#if"
 etc.) are confined to these headers as far as possible in order to improve
 readability.
-
-Deficiencies in the standard headers files provided by older compilers are fixed
-up by files in the "lib" directory tree. For example, the msvc6.0 compiler
-sometimes does not put its names into the "std" namespace, even though the
-std-namespace headers are used. This can be worked round by additional "using"
-declarations in the "lib/msvc6.0" headers.  These work-rounds are kept out of
-the "src" tree because they are not necessary for more modern compilers.
 
 Windows/unix portability is generally addressed by providing a common class
 declaration with two implementations. Where necessary a "pimple" (or "Bridge")

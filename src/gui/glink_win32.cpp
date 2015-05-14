@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -59,11 +59,11 @@ struct bstr
 	private: void operator=( const bstr & ) ;
 } ;
 
-class GLinkImp  
+class GLinkImp 
 {
 public:
 	GLinkImp( const G::Path & target_path , const std::string & name , const std::string & description ,
-		const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , GLink::Show show ) ;
+		const G::Path & working_dir , const G::StringArray & args , const G::Path & icon_source , GLink::Show show ) ;
 	static std::string filename( const std::string & ) ;
 	void saveAs( const G::Path & link_path ) ;
 
@@ -76,7 +76,7 @@ private:
 	void setTargetPath( const G::Path & ) ;
 	void setDescription( const std::string & s ) ;
 	void setWorkingDir( const G::Path & ) ;
-	void setArgs( const G::Strings & ) ;
+	void setArgs( const G::StringArray & ) ;
 	void setIcon( const G::Path & ) ;
 	void setShow( int ) ;
 
@@ -86,7 +86,7 @@ private:
 } ;
 
 GLinkImp::GLinkImp( const G::Path & target_path , const std::string & , const std::string & description ,
-	const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , GLink::Show show_enum )
+	const G::Path & working_dir , const G::StringArray & args , const G::Path & icon_source , GLink::Show show_enum )
 {
 	createInstance() ;
 	setTargetPath( target_path ) ;
@@ -150,11 +150,11 @@ void GLinkImp::setDescription( const std::string & s )
 	check( hr , "SetDescription" ) ;
 }
 
-void GLinkImp::setArgs( const G::Strings & args )
+void GLinkImp::setArgs( const G::StringArray & args )
 {
 	std::ostringstream ss ;
 	const char * sep = "" ;
-	for( G::Strings::const_iterator p = args.begin() ; p != args.end() ; ++p )
+	for( G::StringArray::const_iterator p = args.begin() ; p != args.end() ; ++p )
 	{
 		std::string s = *p ;
 		const char * qq = "" ;
@@ -196,7 +196,7 @@ void GLinkImp::saveAs( const G::Path & link_path )
 // ==
 
 GLink::GLink( const G::Path & target_path , const std::string & name , const std::string & description ,
-	const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , Show show ,
+	const G::Path & working_dir , const G::StringArray & args , const G::Path & icon_source , Show show ,
 	const std::string & , const std::string & , const std::string & ) :
 		m_imp( new GLinkImp(target_path,name,description,working_dir,args,icon_source,show) )
 {

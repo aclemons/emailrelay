@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -84,16 +84,14 @@ std::string G::File::copy( const Path & from , const Path & to , int )
 
 	out << in.rdbuf() ;
 
-	if( in.fail() || in.bad() )
+	if( in.fail() )
 		return "read error" ;
-
-	if( !out.good() )
-		return "write error" ;
 
 	in.close() ;
 	out.close() ;
-	if( sizeString(from) != sizeString(to) )
-		return "file size mismatch" ;
+
+	if( out.fail() )
+		return "write error" ;
 
 	return std::string() ;
 }
@@ -169,13 +167,39 @@ void G::File::chmodx( const Path & path )
 bool G::File::mkdirs( const Path & path , const NoThrow & , int limit )
 {
 	// (recursive)
+
 	G_DEBUG( "File::mkdirs: " << path ) ;
-	if( limit == 0 ) return false ;
-	if( exists(path) ) return true ;
-	if( path.str().empty() ) return true ;
-	if( ! mkdirs( path.dirname() , NoThrow() , limit-1 ) ) return false ;
+	if( limit == 0 ) 
+		return false ;
+
+	// use a trial mkdir() on the way down because of the
+	// windows virtual store mis-feature
+	const bool mkdir_trial = true ; 
+	if( mkdir_trial )
+	{
+		if( mkdir(path,NoThrow()) ) 
+		{ 
+			G_DEBUG( "File::mkdirs: mkdir(" << path << ") -> ok" ) ;
+			chmodx( path , NoThrow() ) ; 
+			return true ; 
+		}
+	}
+
+	if( exists(path) ) 
+		return true ;
+
+	if( path.str().empty() ) 
+		return true ;
+
+	if( ! mkdirs( path.dirname() , NoThrow() , limit-1 ) ) // (recursion)
+		return false ;
+
+	G_DEBUG( "File::mkdirs: mkdir(" << path << ")" ) ;
 	bool ok = mkdir( path , NoThrow() ) ;
-	if( ok ) chmodx( path , NoThrow() ) ;
+	if( ok ) 
+		chmodx( path , NoThrow() ) ;
+
+	G_DEBUG( "File::mkdirs: mkdir(" << path << ") -> " << (ok?"ok":"failed") ) ;
 	return ok ;
 }
 
@@ -187,7 +211,7 @@ void G::File::mkdirs( const Path & path , int limit )
 
 void G::File::create( const Path & path )
 {
-	std::ofstream f( path.str().c_str() ) ;
+	std::ofstream f( path.str().c_str() , std::ios_base::out | std::ios_base::app ) ;
 	f.close() ;
 	if( !exists(path) ) // race
 		throw CannotCreate( path.str() ) ;

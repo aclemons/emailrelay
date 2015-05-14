@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,90 +30,55 @@
 /// Provides default file-system paths. The implementations 
 /// of this interface are highly platform-specific.
 ///
-class Dir 
+class Dir
 {
 public:
 
 	static G::Path install() ;
-		///< Returns the default install directory. This is what the user 
-		///< thinks of as the install point, and not strictly related to the 
-		///< "make install" process.
+		///< Returns the default install directory, eg. "/usr".
 
 	static G::Path config() ;
-		///< Returns the configuration directory path.
-
-	static G::Path boot() ;
-		///< Returns the default boot-time autostart directory path.
-
-	static G::Path gui( const G::Path & install ) ;
-		///< Returns the full path of the GUI program for 
-		///< a given install root.
-
-	static G::Path icon( const G::Path & install ) ;
-		///< Returns the full path of the icon file for 
-		///< a given install root.
-
-	static G::Path server( const G::Path & install ) ;
-		///< Returns the full path of the main server program for 
-		///< a given install root.
-
-	static G::Path bootcopy( const G::Path & boot , const G::Path & install ) ;
-		///< Returns a directory where boot() files can be stored if boot() is 
-		///< not writeable.
-		///<
-		///< Copying the boot() files allows the install to complete without 
-		///< root privileges; the user can fix up the boot process later
-		///< by installing the copies (especially on a mac).
-
-	static G::Path home() ;
-		///< Returns the user's home directory.
+		///< Returns the configuration directory path, eg. "/etc".
 
 	static G::Path spool() ;
-		///< Returns the spool directory path.
+		///< Returns the spool directory path, eg. "/var/spool".
+
+	static G::Path boot() ;
+		///< Returns the default boot-time autostart directory path, "/etc/init.d".
+
+	static G::Path home() ;
+		///< Returns the user's home directory, eg. "/home/username".
 
 	static G::Path pid( const G::Path & config_dir ) ;
-		///< Returns the directory for pid files.
-
-	static G::Path cwd() ;
-		///< Returns the current working directory.
-
-	static G::Path thisdir( const std::string & argv0 , const G::Path & initial_cwd ) ;
-		///< Returns the argv0 directory as an absolute path.
-
-	static G::Path thisexe( const std::string & argv0 , const G::Path & initial_cwd ) ;
-		///< Returns the argv0 path.
+		///< Returns the directory for pid files, eg. "/var/run".
 
 	static G::Path desktop() ;
-		///< Returns the desktop path.
+		///< Returns the desktop path, eg. "/home/username/Desktop".
 
 	static G::Path login() ;
-		///< Returns the login autostart directory path.
+		///< Returns the login autostart directory path, eg. "/home/username/AutoStart".
 
 	static G::Path menu() ;
-		///< Returns the menu path.
+		///< Returns the menu path, eg. "/home/username/.local/share/applications".
 
-	static std::string dotexe() ;
-		///< Returns ".exe" or not.
+	static G::Path absolute( const G::Path & dir ) ;
+		///< A convenience method that tries to convert the given directory path
+		///< into a canonicalised absolute path.
 
 private:
 	Dir() ;
 	static G::Path windows() ;
-	static std::string env( const std::string & , const std::string & = std::string() ) ;
 	static G::Path envPath( const std::string & , const G::Path & = G::Path() ) ;
 	static bool ok( const std::string & ) ;
 	static G::Path oneOf( std::string , std::string = std::string() , std::string = std::string() , 
 		std::string = std::string() , std::string = std::string() ) ;
 	static G::Path os_install() ;
-	static G::Path os_gui( const G::Path & ) ;
-	static G::Path os_icon( const G::Path & ) ;
-	static G::Path os_server( const G::Path & ) ;
-	static G::Path os_bootcopy( const G::Path & , const G::Path & ) ;
 	static G::Path os_boot() ;
 	static G::Path os_config() ;
 	static G::Path special( const std::string & key ) ;
 	static G::Path os_pid( const G::Path & ) ;
 	static G::Path os_spool() ;
+	static G::Path os_absolute( const G::Path & ) ;
 } ;
 
 #endif
-

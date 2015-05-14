@@ -37,7 +37,6 @@
 #include "gdef.h"
 #include "gnet.h"
 #include "gsmtp.h"
-#include "glocal.h"
 #include "gaddress.h"
 #include "geventloop.h"
 #include "garg.h"
@@ -126,7 +125,7 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 
 	// commit the file
 	//
-	GNet::Address ip = GNet::Local::localhostAddress() ;
+	GNet::Address ip = GNet::Address::localhost( 0U ) ;
 	std::string auth_id = std::string() ;
 	std::string new_path = msg->prepare( auth_id , ip.hostString() , std::string() , std::string() ) ;
 	msg->commit() ;
@@ -136,10 +135,10 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 static void run( const G::Arg & arg )
 {
 	G::GetOpt opt( arg , 
-		"v/verbose/prints the path of the created content file//0//1|"
-		"s/spool-dir/specifies the spool directory//1/dir/1|"
-		"f/from/sets the envelope sender//1/name/1|"
-		"h/help/shows this help//0//1" ) ;
+		"v!verbose!prints the path of the created content file!!0!!1|"
+		"s!spool-dir!specifies the spool directory!!1!dir!1|"
+		"f!from!sets the envelope sender!!1!name!1|"
+		"h!help!shows this help!!0!!1" ) ;
 
 	if( opt.hasErrors() )
 	{
@@ -148,7 +147,7 @@ static void run( const G::Arg & arg )
 	else if( opt.contains("help") )
 	{
 		std::ostream & stream = std::cerr ;
-		opt.showUsage( stream , arg.prefix() , std::string() + " <to-address> [<to-address> ...]" ) ;
+		opt.options().showUsage( stream , arg.prefix() , std::string() + " <to-address> [<to-address> ...]" ) ;
 		stream
 			<< std::endl
 			<< Main::Legal::warranty("","\n")
@@ -158,7 +157,7 @@ static void run( const G::Arg & arg )
 	}
 	else if( opt.args().c() == 1U )
 	{
-		std::cerr << opt.usageSummary( arg.prefix() , " <to-address> [<to-address> ...]" ) ;
+		std::cerr << opt.options().usageSummary( arg.prefix() , " <to-address> [<to-address> ...]" ) ;
 	}
 	else
 	{

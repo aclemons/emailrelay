@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -126,7 +126,7 @@ void G::Str::trimRight( std::string & s , const std::string & ws , size_type lim
 		n = limit >= s.length() ? std::string::npos : (s.length()-limit-1U) ;
 	if( n == std::string::npos )
 		s = std::string() ;
-	else if( n != 0U )
+	else if( (n+1U) != s.length() )
 		s.resize( n+1U ) ;
 }
 
@@ -278,19 +278,9 @@ std::string G::Str::fromUShort( unsigned short us )
 bool G::Str::toBool( const std::string & s )
 {
 	std::string str = lower( s ) ;
-	if( str == "true" )
-	{
-		return true ;
-	}
-	else if( str == "false" )
-	{
-		return false ;
-	}
-	else
-	{
+	if( str != "true" && str != "false" )
 		throw InvalidFormat( s ) ;
-		return false ; // never gets here -- the return pacifies some compilers
-	}
+	return str == "true" ;
 }
 
 double G::Str::toDouble( const std::string &s )
@@ -301,7 +291,7 @@ double G::Str::toDouble( const std::string &s )
 	if( end == 0 || end[0] != '\0' )
 		throw InvalidFormat( s ) ;
 
-	if( result == HUGE_VAL || result == -(HUGE_VAL) )
+	if( result == HUGE_VAL || result == -(HUGE_VAL) ) // exact comparisons are correct here
 	 	throw Overflow( s ) ;
 
 	return result ;
@@ -321,7 +311,7 @@ int G::Str::toInt( const std::string &s )
 long G::Str::toLong( const std::string &s )
 {
 	char * end = NULL ;
-	long result = ::strtol( s.c_str(), &end, 0 ) ; 
+	long result = ::strtol( s.c_str(), &end, 10 ) ; // was radix 0
 
 	if( end == 0 || end[0] != '\0' )
 		throw InvalidFormat( s ) ;
@@ -810,6 +800,13 @@ std::string G::Str::join( const StringArray & strings , const std::string & sep 
 	std::for_each( strings.begin() , strings.end() , Joiner<std::string>(result,sep,first) ) ; 
 	return result ;
 }
+std::string G::Str::join( const std::set<std::string> & strings , const std::string & sep )
+{
+	std::string result ;
+	bool first = true ;
+	std::for_each( strings.begin() , strings.end() , Joiner<std::string>(result,sep,first) ) ; 
+	return result ;
+}
 
 namespace
 {
@@ -823,6 +820,12 @@ G::Strings G::Str::keys( const StringMap & map )
 {
 	Strings result ;
 	std::transform( map.begin() , map.end() , std::back_inserter(result) , Firster<StringMap::value_type>() ) ;
+	return result ;
+}
+std::set<std::string> G::Str::keySet( const StringMap & map )
+{
+	std::set<std::string> result ;
+	std::transform( map.begin() , map.end() , std::inserter(result,result.end()) , Firster<StringMap::value_type>() ) ;
 	return result ;
 }
 
@@ -854,6 +857,28 @@ bool G::Str::tailMatch( const std::string & in , const std::string & ending )
 		( in.length() >= ending.length() && 
 			in.substr( in.length() - ending.length() ) == ending ) ;
 			// 0 == in.compare( in.length() - ending.length() , ending.length() , ending ) // faster, but not gcc2.95
+}
+
+std::string G::Str::positive()
+{
+	return "yes" ;
+}
+
+std::string G::Str::negative()
+{
+	return "no" ;
+}
+
+bool G::Str::isPositive( const std::string & s_in )
+{
+	std::string s = trimmed( lower(s_in) , ws() ) ;
+	return !s.empty() && ( s == "y" || s == "yes" || s == "t" || s == "true" || s == "1" || s == "on" ) ;
+}
+
+bool G::Str::isNegative( const std::string & s_in )
+{
+	std::string s = trimmed( lower(s_in) , ws() ) ;
+	return !s.empty() && ( s == "n" || s == "no" || s == "f" || s == "false" || s == "0" || s == "off" ) ;
 }
 
 /// \file gstr.cpp

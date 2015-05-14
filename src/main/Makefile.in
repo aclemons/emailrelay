@@ -284,7 +284,6 @@ MAINT = @MAINT@
 MAKE = @MAKE@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
-MOC = @MOC@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -301,6 +300,7 @@ PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
+QT_MOC = @QT_MOC@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -334,7 +334,6 @@ e_icondir = @e_icondir@
 e_initdir = @e_initdir@
 e_libexecdir = @e_libexecdir@
 e_pamdir = @e_pamdir@
-e_qtmoc = @e_qtmoc@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
@@ -370,13 +369,13 @@ top_srcdir = @top_srcdir@
 @SMALL_CONFIG_TRUE@CONFIG_EXTRA_DIST = commandline_full.cpp
 @SMALL_CONFIG_FALSE@CONFIG_SOURCES = commandline_full.cpp
 @SMALL_CONFIG_TRUE@CONFIG_SOURCES = commandline_simple.cpp
-BUNDLE = E-MailRelay-Start
+START_BUNDLE = E-MailRelay-Start
 @MAC_FALSE@MAC_PROGS = 
 @MAC_TRUE@MAC_PROGS = emailrelay-start
 @MAC_FALSE@MAC_EXTRA_DIST = start.cpp
 @MAC_TRUE@MAC_EXTRA_DIST = 
 @MAC_FALSE@MAC_NOINST = 
-@MAC_TRUE@MAC_NOINST = $(BUNDLE).app
+@MAC_TRUE@MAC_NOINST = $(START_BUNDLE).app
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS = -s
@@ -390,6 +389,7 @@ EXTRA_DIST = \
 	icon2.ico \
 	icon3.ico \
 	icon4.ico \
+	icon5.ico \
 	messages.mc \
 	news.cpp \
 	news.h \
@@ -409,7 +409,7 @@ EXTRA_DIST = \
 	fakemc.c \
 	mingw.mak
 
-INCLUDES = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gauth -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_CAPABILITIES=\"$(G_CAPABILITIES)\"
+AM_CPPFLAGS = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gauth -I$(top_srcdir)/src/gsmtp -I$(top_srcdir)/src/gpop -DG_SPOOLDIR=\"$(e_spooldir)\" -DG_CAPABILITIES=\"$(G_CAPABILITIES)\"
 e_spool_DATA = 
 noinst_SCRIPTS = $(MAC_NOINST)
 emailrelay_SOURCES = \
@@ -887,26 +887,29 @@ install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPR
 	-mkdir -p "$(DESTDIR)$(e_spooldir)"
 	-chgrp daemon "$(DESTDIR)$(e_spooldir)"
 	-chmod 775 "$(DESTDIR)$(e_spooldir)"
+	-chmod g+s "$(DESTDIR)$(e_spooldir)"
+	-mkdir -p "$(DESTDIR)$(sbindir)" 2>/dev/null
 	-chgrp daemon "$(DESTDIR)$(sbindir)/emailrelay-submit"
 	-chmod g+s "$(DESTDIR)$(sbindir)/emailrelay-submit"
 
 install-exec-local:
-	-if test -d "$(BUNDLE).app" ; then cp -R "$(BUNDLE).app" "$(DESTDIR)$(sbindir)" ; fi
+	-mkdir -p "$(DESTDIR)$(sbindir)" 2>/dev/null
+	-if test -d "$(START_BUNDLE).app" ; then cp -R "$(START_BUNDLE).app" "$(DESTDIR)$(sbindir)/" ; fi
 
 uninstall-local:
 	-rmdir "$(DESTDIR)$(e_spooldir)" 2>/dev/null
 	-rmdir "$(DESTDIR)$(e_libexecdir)" 2>/dev/null
-	-rm -rf "$(DESTDIR)$(sbindir)/$(BUNDLE).app"
+	-rm -rf "$(DESTDIR)$(sbindir)/$(START_BUNDLE).app"
 
 clean-local:
-	rm -rf "$(BUNDLE).app"
+	rm -rf "$(START_BUNDLE).app"
 
-$(BUNDLE).app: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
-	../../bin/make-bundle.sh "$(BUNDLE)" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+$(START_BUNDLE).app: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
+	../../bin/make-bundle.sh "$(START_BUNDLE)" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 
 .PHONY: bundle
 bundle: emailrelay-start $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
-	../../bin/make-bundle.sh -f "$(BUNDLE)" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
+	../../bin/make-bundle.sh -f "$(START_BUNDLE)" emailrelay-start "$(top_srcdir)/src/gui/emailrelay-icon.icns"
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

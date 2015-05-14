@@ -44,16 +44,13 @@
 mk_ssl=none
 ##
 ## "mk_openssl" points to the openssl directory (for openssl build)
-mk_openssl=c:/openssl-1.0.1e
+mk_openssl=c:/openssl-1.0.1g
 ##
 ## "mk_gui" is set to "gui" to enable the GUI build, or "none"
 mk_gui=none
 ##
 ## "mk_qt" points to the Qt installation directory (for gui build)
 mk_qt=c:/qt
-##
-## "mk_zlib" points to the zlib directory (for gui build)
-mk_zlib=$(mk_qt)/src/3rdparty/zlib
 ##
 ## "mk_mingw" points to a directory containing the mingw runtime dll (for gui build)
 mk_mingw=$(mk_qt)/bin
@@ -123,7 +120,7 @@ _all:
 	cd win32 && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) && cd ..
 	cd main && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) && cd ..
 ifeq ("$(mk_gui)","gui")
-	cd gui && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) mk_zlib=$(mk_zlib) mk_mingw=$(mk_mingw) && cd ..
+	cd gui && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) mk_mingw=$(mk_mingw) && cd ..
 endif
 
 _clean:
@@ -136,7 +133,7 @@ _clean:
 	cd win32 && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
 	cd main && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) clean && cd ..
 ifeq ("$(mk_gui)","gui")
-	cd gui && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) mk_zlib=$(mk_zlib) mk_mingw=$(mk_mingw) clean && cd ..
+	cd gui && $(MAKE) -f mingw.mak mk_bin=$(mk_bin) mk_qt=$(mk_qt) mk_mingw=$(mk_mingw) clean && cd ..
 endif
 
 clean::

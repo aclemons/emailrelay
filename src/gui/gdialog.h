@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,15 +26,15 @@
 #include "gpage.h"
 #include <list>
 #include <map>
-class QHBoxLayout; 
-class QPushButton; 
-class QVBoxLayout; 
-class GPage ; 
+class QHBoxLayout;
+class QPushButton;
+class QVBoxLayout;
+class GPage ;
 
 /// \class GDialog
 /// The main forward-back dialog box.
 ///
-class GDialog : public QDialog 
+class GDialog : public QDialog
 {Q_OBJECT
 public:
 	

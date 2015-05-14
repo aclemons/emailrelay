@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,12 +21,10 @@
 #include "gdef.h"
 #include "boot.h"
 #include "gpath.h"
-#include "gprocess.h"
 #include "gfile.h"
 #include "gdirectory.h"
-#include <stdexcept>
 
-bool Boot::able( G::Path dir )
+bool Boot::able( const G::Path & dir )
 {
 	// nasty side-effect required because Library/StartupItems may not exist
 	if( dir != G::Path() )
@@ -38,27 +36,21 @@ bool Boot::able( G::Path dir )
 		G::Directory(dir).writeable() ; // (creates a probe file)
 }
 
-bool Boot::install( G::Path dir_boot , G::Path target , G::Strings )
+bool Boot::install( const G::Path & dir_boot , const std::string & , const G::Path & , const G::Path & exe )
 {
-	G::Path src_dir = target.dirname() ;
-	G::Path dst_dir = dir_boot + target.basename() ;
-	std::string plist = "StartupParameters.plist" ;
-	{
-		G::Process::Umask umask( G::Process::Umask::Readable ) ; // needed?
-		G::File::mkdirs( dst_dir , G::File::NoThrow() , 6 ) ;
-	}
+	G::Path plist_src = exe.dirname() + "StartupParameters.plist" ;
+	G::File::mkdirs( dir_boot + exe.basename() , G::File::NoThrow() , 6 ) ;
 	return
-		G::File::copy( src_dir + target.basename() , dst_dir + target.basename() , G::File::NoThrow() ) &&
-		G::File::copy( src_dir + plist , dst_dir + plist , G::File::NoThrow() ) ;
+		G::File::copy( exe , dir_boot + exe.basename() + exe.basename() , G::File::NoThrow() ) &&
+		G::File::copy( plist_src , dir_boot + exe.basename() + plist_src.basename() , G::File::NoThrow() ) ;
 }
 
-bool Boot::uninstall( G::Path dir_boot , G::Path target , G::Strings )
+bool Boot::uninstall( const G::Path & dir_boot , const std::string & , const G::Path & exe )
 {
-	std::string plist = "StartupParameters.plist" ;
 	return
-		G::File::remove( dir_boot + target.basename() + target.basename() , G::File::NoThrow() ) &&
-		G::File::remove( dir_boot + target.basename() + plist , G::File::NoThrow() ) &&
-		G::File::remove( dir_boot + target.basename() , G::File::NoThrow() ) ;
+		G::File::remove( dir_boot + exe.basename() + exe.basename() , G::File::NoThrow() ) &&
+		G::File::remove( dir_boot + exe.basename() + "StartupParameters.plist" , G::File::NoThrow() ) &&
+		G::File::remove( dir_boot + exe.basename() , G::File::NoThrow() ) ;
 }
 
 /// \file boot_mac.cpp

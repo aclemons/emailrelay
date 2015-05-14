@@ -147,14 +147,14 @@ GNet::AddressImp::AddressImp( const hostent & h , const servent & s )
 {
 	init() ;
 	setHost( h ) ;
-	m_inet.specific.sin_port = s.s_port ;
+	m_inet.specific.sin_port = s.s_port ; // conversion warnings if system headers are inconsistent
 }
 
 GNet::AddressImp::AddressImp( const servent & s )
 {
 	init() ;
 	m_inet.specific.sin_addr.s_addr = htonl(INADDR_ANY);
-	m_inet.specific.sin_port = s.s_port ;
+	m_inet.specific.sin_port = s.s_port ; // conversion warnings if system headers are inconsistent
 }
 
 GNet::AddressImp::AddressImp( const sockaddr * addr , size_t len )

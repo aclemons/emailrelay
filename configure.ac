@@ -69,7 +69,7 @@ ACLOCAL_CHECK_GETPWNAM_R
 ACLOCAL_CHECK_GMTIME_R
 ACLOCAL_CHECK_LOCALTIME_R
 ACLOCAL_CHECK_SETGROUPS
-ACLOCAL_CHECK_QT4
+ACLOCAL_CHECK_QT
 
 dnl ===
 dnl initialise aclocal/pkg.m4...
@@ -229,8 +229,6 @@ AC_SUBST(e_examplesdir)
 AC_SUBST(e_libexecdir)
 AC_SUBST(e_pamdir)
 AC_SUBST(e_sysconfdir)
-AC_SUBST(e_qtmoc)
-if test "$e_qtmoc" = "" ; then e_qtmoc="moc" ; fi
 
 dnl ===
 dnl generate files...

@@ -118,7 +118,7 @@ void GSmtp::Client::preprocessorDone( bool ok )
 		ok || ignore_this || break_after ? std::string() : m_processor->text() ) ;
 }
 
-void GSmtp::Client::onSecure( const std::string & certificate )
+void GSmtp::Client::onSecure( const std::string & /*certificate*/ )
 {
 	if( m_secure_tunnel )
 	{

@@ -105,6 +105,10 @@ public:
 		///< Returns true if the file (directory, link, device etc.)
 		///< exists. Returns false on error.
 
+	static bool isDirectory( const Path & path ) ;
+		///< Returns true if the path exists() and is a directory.
+		///< Symlinks are followed.
+
 	static time_type time( const Path & file ) ;
 		///< Returns the file's timestamp.
 

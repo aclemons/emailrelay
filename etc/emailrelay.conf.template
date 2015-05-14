@@ -30,12 +30,19 @@
 
 # Name: interface
 # Format: interface <ip-address>
-# Description: Specifies an interface to listen on. The default is to listen
-# on all interfaces (INADDR_ANY). Using a specific interface can make it harder
-# for clients on other sub-networks to connect, so improving security. Multiple
-# interface addresses can be specified using comma separators.
+# Description: Specifies an address to listen on. The default is to listen
+# on all interfaces (INADDR_ANY). Using a specific interface address can make it
+# harder for clients on other sub-networks to connect, so improving security.
+# Multiple interface addresses can be specified using comma separators.
 #
 #interface 192.168.0.10
+
+# Name: client-interface
+# Format: client-interface <ip-address>
+# Description: Specifies an address to bind the local end of outgoing client
+# connections.
+#
+#client-interface 0.0.0.0
 
 # Name: filter
 # Format: filter <program>

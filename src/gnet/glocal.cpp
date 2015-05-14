@@ -28,40 +28,25 @@
 std::string GNet::Local::m_fqdn ;
 std::string GNet::Local::m_fqdn_override ;
 bool GNet::Local::m_fqdn_override_set = false ;
-GNet::Address GNet::Local::m_canonical_address(1U) ;
+GNet::Address GNet::Local::m_canonical_address( 0U ) ;
+bool GNet::Local::m_canonical_address_set = false ;
+bool GNet::Local::m_canonical_address_valid = false ;
 
 std::string GNet::Local::hostname()
 {
 	std::string name = G::hostname() ;
-	if( name.empty() )
-		throw Error("hostname") ;
-	return name ;
+	return name.empty() ? std::string("localhost") : name ;
 }
 
 GNet::Address GNet::Local::canonicalAddress()
 {
-	if( m_canonical_address.port() == 1U )
+	if( !m_canonical_address_set )
 	{
-		m_canonical_address = canonicalAddressImp() ;
-		G_ASSERT( m_canonical_address.port() != 1U ) ;
+		m_canonical_address = canonicalAddressImp( GNet::Address(1U) ) ;
+		m_canonical_address_valid = m_canonical_address.port() != 1U ;
+		m_canonical_address_set = true ;
 	}
 	return m_canonical_address ;
-}
-
-std::string GNet::Local::domainname()
-{
-	std::string full = fqdn() ;
-	std::string::size_type pos = full.rfind( '.' ) ;
-	if( pos == std::string::npos )
-		throw Error( std::string() + "invalid fqdn: no dot in \"" + full + "\"" ) ;
-
-	G_DEBUG( "GNet::Local::domainname: \"" << full.substr(pos+1U) << "\"" ) ;
-	return full.substr( pos+1U ) ;
-}
-
-GNet::Address GNet::Local::localhostAddress()
-{
-	return Address::localhost( 0U ) ;
 }
 
 std::string GNet::Local::fqdn()
@@ -87,7 +72,10 @@ bool GNet::Local::isLocal( const Address & address )
 
 bool GNet::Local::isLocal( const Address & address , std::string & reason )
 {
-	return address.isLocal(reason,canonicalAddress()) ;
+	Address canonical_address = canonicalAddress() ;
+	return m_canonical_address_valid ?
+		address.isLocal( reason , canonical_address ) :
+		address.isLocal( reason ) ;
 }
 
 /// \file glocal.cpp

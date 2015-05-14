@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,11 +26,11 @@
 #include <sstream>
 #include <fstream>
 
-class GLinkImp 
+class GLinkImp
 {
 public:
 	GLinkImp( const G::Path & target_path , const std::string & name , const std::string & description ,
-		const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , GLink::Show show ,
+		const G::Path & working_dir , const G::StringArray & args , const G::Path & icon_source , GLink::Show show ,
 		const std::string & c1 , const std::string & c2 , const std::string & c3 ) ;
 	static std::string filename( const std::string & ) ;
 	void saveAs( const G::Path & ) ;
@@ -40,14 +40,14 @@ private:
 	void operator=( const GLinkImp & ) ;
 	static std::string quote( const std::string & ) ;
 	static std::string escape( const std::string & ) ;
-	static std::string escapeAndQuote( const G::Strings & ) ;
+	static std::string escapeAndQuote( const G::StringArray & ) ;
 
 private:
 	G::Path m_target_path ;
 	std::string m_name ;
 	std::string m_description ;
 	G::Path m_working_dir ;
-	G::Strings m_args ;
+	G::StringArray m_args ;
 	G::Path m_icon_source ;
 	bool m_terminal ;
 	std::string m_c1 ;
@@ -56,7 +56,7 @@ private:
 } ;
 
 GLinkImp::GLinkImp( const G::Path & target_path , const std::string & name , const std::string & description ,
-	const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , GLink::Show show ,
+	const G::Path & working_dir , const G::StringArray & args , const G::Path & icon_source , GLink::Show show ,
 	const std::string & c1 , const std::string & c2 , const std::string & c3 ) :
 		m_target_path(target_path) ,
 		m_name(name) ,
@@ -81,6 +81,8 @@ std::string GLinkImp::filename( const std::string & name )
 void GLinkImp::saveAs( const G::Path & path )
 {
 	// see "http://standards.freedesktop.org"
+
+	// TODO maybe use "xdg-desktop-menu"/"xdg-desktop-icon"
 
 	const char * eol = "\n" ;
 	std::ofstream file( path.str().c_str() ) ;
@@ -159,11 +161,11 @@ std::string GLinkImp::quote( const std::string & s_in )
 	}
 }
 
-std::string GLinkImp::escapeAndQuote( const G::Strings & args )
+std::string GLinkImp::escapeAndQuote( const G::StringArray & args )
 {
 	std::ostringstream ss ;
 	const char * sep = "" ;
-	for( G::Strings::const_iterator p = args.begin() ; p != args.end() ; ++p )
+	for( G::StringArray::const_iterator p = args.begin() ; p != args.end() ; ++p )
 	{
 		ss << sep << quote(escape(*p)) ;
 		sep = " " ;
@@ -174,7 +176,7 @@ std::string GLinkImp::escapeAndQuote( const G::Strings & args )
 // ==
 
 GLink::GLink( const G::Path & target_path , const std::string & name , const std::string & description ,
-	const G::Path & working_dir , const G::Strings & args , const G::Path & icon_source , Show show ,
+	const G::Path & working_dir , const G::StringArray & args , const G::Path & icon_source , Show show ,
 	const std::string & c1 , const std::string & c2 , const std::string & c3 ) :
 		m_imp( new GLinkImp(target_path,name,description,working_dir,args,icon_source,show,c1,c2,c3) )
 {

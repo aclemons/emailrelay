@@ -23,12 +23,12 @@
 #include "gresolver.h"
 #include "glog.h"
 
-GNet::Address GNet::Local::canonicalAddressImp()
+GNet::Address GNet::Local::canonicalAddressImp( const GNet::Address & default_ )
 {
 	ResolverInfo info( hostname() , "0" ) ;
 	std::string error = Resolver::resolve( info ) ;
 	if( !error.empty() )
-		throw Error(error) ;
+		return default_ ;
 	return info.address() ;
 }
 
@@ -37,7 +37,7 @@ std::string GNet::Local::fqdnImp()
 	ResolverInfo info( hostname() , "0" ) ;
 	std::string error = Resolver::resolve( info ) ;
 	if( !error.empty() )
-		throw Error(error) ;
+		return hostname() + ".local" ;
 	G_DEBUG( "GNet::Local::fqdnImp: \"" << info.name() << "\"" ) ;
 	return info.name() ;
 }

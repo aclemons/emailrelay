@@ -39,36 +39,18 @@ namespace GNet
 class GNet::Local 
 {
 public:
-	G_EXCEPTION( Error , "local domainname/hostname error" ) ;
-
-	static std::string hostname() ;
-		///< Returns the hostname. 
-		///<
-		///< On unix systems this ususally comes from uname().
-
-	static Address canonicalAddress() ;
-		///< Returns the canonical address associated with hostname().
-
 	static std::string fqdn() ;
 		///< Returns the fully-qualified-domain-name.
 		///<
 		///< This is typically implemented by doing a DNS lookup on 
-		///< hostname(), but it is overridable by calling fdqn(string).
-
-	static std::string domainname() ;
-		///< Returns the fqdn()'s domainname. Throws if the fqdn() does 
-		///< not contain a domain part.
+		///< hostname() with a default of "<hostname>.local", but it 
+		///< is overridable by calling fdqn(string).
 
 	static void fqdn( const std::string & fqdn_override ) ;
-		///< Sets the fqdn() (and therefore domainname()) override.
-
-	static Address localhostAddress() ;
-		///< A convenience function that returns the "127.0.0.1:0" address.
+		///< Sets the fqdn() override.
 
 	static bool isLocal( const Address & ) ;
 		///< Returns true if the given address appears to be local. 
-		///< A simple implementation may compare the given address with 
-		///< localhostAddress() and canonicalAddress().
 
 	static bool isLocal( const Address & , std::string & reason ) ;
 		///< An override that returns a helpful message by reference
@@ -79,10 +61,15 @@ private:
 	static std::string m_fqdn_override ;
 	static bool m_fqdn_override_set ;
 	static Address m_canonical_address ;
+	static bool m_canonical_address_set ;
+	static bool m_canonical_address_valid ;
+
+private:
+	static std::string hostname() ;
 	static std::string fqdnImp() ;
-	static Address canonicalAddressImp() ;
+	static Address canonicalAddress() ;
+	static Address canonicalAddressImp( const Address & ) ;
 	Local() ;
 } ;
 
 #endif
-
