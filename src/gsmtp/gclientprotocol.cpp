@@ -303,8 +303,22 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		}
 		else if( m_server_has_auth && m_sasl->active() )
 		{
-			m_state = sAuth1 ;
-			send( "AUTH " , m_auth_mechanism ) ;
+			bool done = true ;
+			bool error = false ;
+			bool sensitive = false ;
+			std::string rsp = m_sasl->initial_response( m_auth_mechanism ,
+				done , error , sensitive ) ;
+
+			if( error )
+			{
+				m_state = sAuth2 ;
+				send( "*" ) ; // ie. cancel authentication
+			}
+			else
+			{
+				m_state = done ? sAuth2 : sAuth1 ;
+				send( rsp , false , sensitive ) ;
+			}
 		}
 		else if( !m_server_has_auth && m_sasl->active() && m_must_authenticate )
 		{

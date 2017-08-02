@@ -101,6 +101,33 @@ bool GAuth::SaslClient::active() const
 	return m_imp->m_secrets.valid() ;
 }
 
+std::string GAuth::SaslClient::initial_response( const std::string & mechanism , bool & done ,
+	bool & error , bool & sensitive ) const
+{
+	done = false ;
+	error = false ;
+	sensitive = false ;
+
+	std::string auth("AUTH") ;
+	std::string sep(" ") ;
+
+	std::string rsp ;
+	if( mechanism == "XOAUTH2" )
+	{
+		std::string secret = m_imp->m_secrets.secret(mechanism) ;
+		rsp = auth + sep + mechanism + sep + secret ;
+		error = secret.empty() ;
+		done = true ;
+		sensitive = true ;
+	}
+	else
+	{
+		rsp = auth + sep + mechanism ;
+	}
+
+	return rsp ;
+}
+
 std::string GAuth::SaslClient::response( const std::string & mechanism , const std::string & challenge , 
 	bool & done , bool & error , bool & sensitive ) const
 {
@@ -175,6 +202,7 @@ std::string GAuth::SaslClient::preferred( const G::Strings & mechanism_list ) co
 
 	const std::string login( "LOGIN" ) ;
 	const std::string plain( "PLAIN" ) ;
+	const std::string xoauth2( "XOAUTH2" ) ;
 	const std::string cram( "CRAM-MD5" ) ;
 
 	// create a them set
@@ -186,15 +214,17 @@ std::string GAuth::SaslClient::preferred( const G::Strings & mechanism_list ) co
 	std::set<std::string> us ;
 	if( !m_imp->m_secrets.id(login).empty() ) us.insert(login) ;
 	if( !m_imp->m_secrets.id(plain).empty() ) us.insert(plain) ;
+	if( !m_imp->m_secrets.id(xoauth2).empty() ) us.insert(xoauth2) ;
 	if( !m_imp->m_secrets.id(cram).empty() ) us.insert(cram) ;
 
 	// get the intersection
 	std::set<std::string> both ;
 	std::set_intersection( them.begin() , them.end() , us.begin() , us.end() , std::inserter(both,both.end()) ) ;
 
-	// preferred order: cram, plain, login
+	// preferred order: cram, xoauth2, plain, login
 	std::string m ;
 	if( m.empty() && both.find(cram) != both.end() ) m = cram ;
+	if( m.empty() && both.find(xoauth2) != both.end() ) m = xoauth2 ;
 	if( m.empty() && both.find(plain) != both.end() ) m = plain ;
 	if( m.empty() && both.find(login) != both.end() ) m = login ;
 	G_DEBUG( "GAuth::SaslClient::preferred: we prefer \"" << m << "\"" ) ;

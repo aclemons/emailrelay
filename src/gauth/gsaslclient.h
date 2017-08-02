@@ -67,6 +67,11 @@ public:
 		///< Returns true if the constructor's secrets object
 		///< is valid.
 
+	std::string initial_response( const std::string & mechanism ,
+		bool & done , bool & error , bool & sensitive ) const ;
+			///< Returns an initial_response for authentication.
+			///< Returns various boolean flags by reference.
+
 	std::string response( const std::string & mechanism , const std::string & challenge , 
 		bool & done , bool & error , bool & sensitive ) const ;
 			///< Returns a response to the given challenge.
