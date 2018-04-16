@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,15 +18,13 @@
 /// \file glinebuffer.h
 ///
 
-#ifndef G_LINE_BUFFER_H
-#define G_LINE_BUFFER_H
+#ifndef G_NET_LINE_BUFFER__H
+#define G_NET_LINE_BUFFER__H
 
 #include "gdef.h"
-#include "gnet.h"
 #include "gexception.h"
 #include <string>
 
-/// \namespace GNet
 namespace GNet
 {
 	class LineBuffer ;
@@ -34,8 +32,8 @@ namespace GNet
 }
 
 /// \class GNet::LineBuffer
-/// A class which does line buffering. Raw data is added, and 
-/// newline-delimited lines are extracted.
+/// A class which does line buffering. Raw data is added, and newline-delimited
+/// lines are extracted via an iterator.
 ///
 /// Usage:
 /// \code
@@ -44,18 +42,25 @@ namespace GNet
 ///   buffer.add("abc") ;
 ///   buffer.add("def\nABC\nDE") ;
 ///   buffer.add("F\n") ;
-///   while( buffer.more() )
-///     cout << buffer.line() << endl ;
+///   GNet::LineBufferIterator iter( buffer ) ;
+///   while( iter.more() )
+///     cout << iter.line() << endl ;
 /// }
 /// \endcode
 ///
-class GNet::LineBuffer 
+class GNet::LineBuffer
 {
 public:
-	G_EXCEPTION( Overflow , "line buffer overflow: maximum input line length exceeded" ) ;
+	G_EXCEPTION( Error , "line buffer error" ) ;
 
-	explicit LineBuffer( const std::string & eol = std::string("\n") , bool do_throw_on_overflow = false ) ;
-		///< Constructor.
+	LineBuffer() ;
+		///< Default constructor for a line buffer that auto-detects either
+		///< CR or CR-LF line endings based on the first line.
+
+	explicit LineBuffer( const std::string & eol , bool do_throw_on_overflow = false ) ;
+		///< Constructor. The default is to not throw on overflow because
+		///< the very large overflow limit is only intended to be protection
+		///< against a rogue client or a denial-of-service attack.
 
 	void add( const std::string & segment ) ;
 		///< Adds a data segment.
@@ -63,53 +68,37 @@ public:
 	void add( const char * p , std::string::size_type n ) ;
 		///< Adds a data segment.
 
-	bool more() const ;
-		///< Returns true if there are complete 
-		///< line(s) to be extracted.
+	const std::string & eol() const ;
+		///< Returns the line-ending.
 
-	const std::string & current() const ;
-		///< Returns the current line, without extracting 
-		///< it. The line terminator is not included.
-		///<
-		///< Precondition: more()
-
-	void discard() ;
-		///< Discards the current line.
-		///<
-		///< Precondition: more()
-
-	std::string line() ;
-		///< Extracts a line and returns it as a string. 
-		///< The line terminator is not included.
+	void expect( size_t n ) ;
+		///< The next 'n' bytes added and/or extracted are treated as a
+		///< complete line. This is useful for binary chunks of known
+		///< size surrounded by text, as in http.
 
 private:
 	friend class LineBufferIterator ;
 	LineBuffer( const LineBuffer & ) ;
 	void operator=( const LineBuffer & ) ;
-	void fix( std::string::size_type ) ;
-	void check( std::string::size_type ) ;
-	void lock() ;
-	void unlock( std::string::size_type ) ;
+	size_t lock( LineBufferIterator * ) ;
+	void unlock( LineBufferIterator * , size_t , size_t ) ;
+	bool check( size_t ) const ;
+	void detect() ;
 
 private:
-	static unsigned long m_limit ;
+	LineBufferIterator * m_iterator ;
+	bool m_auto ;
 	std::string m_eol ;
-	std::string::size_type m_eol_length ;
+	bool m_throw_on_overflow ;
 	std::string m_store ;
-	std::string::size_type m_p ;
-	bool m_current_valid ; // mutable
-	std::string m_current ; // mutable
-	bool m_throw ;
-	bool m_locked ;
+	size_t m_expect ;
 } ;
 
 /// \class GNet::LineBufferIterator
-/// An iterator class for GNet::LineBuffer.
-/// Use of this class is optional but it may provide
-/// some performance improvement. You are not allowed to add()
-/// more data to the underlying line buffer while iterating.
+/// An iterator class for GNet::LineBuffer that extracts complete lines.
+/// Iteration and add()ing should not be mixed.
 ///
-class GNet::LineBufferIterator 
+class GNet::LineBufferIterator
 {
 public:
 	explicit LineBufferIterator( LineBuffer & ) ;
@@ -118,37 +107,36 @@ public:
 	~LineBufferIterator() ;
 		///< Destructor.
 
-	bool more() const ;
+	bool more() ;
 		///< Returns true if there is a line() to be had.
 
-	const std::string & line() ;
-		///< Returns the current line and increments the iterator.
+	const std::string & line() const ;
+		///< Returns the current line.
+		///< Precondition: more()
+
+	std::string::const_iterator begin() const ;
+		///< Returns a begin iterator for the current line.
+		///< Precondition: more()
+
+	std::string::const_iterator end() const ;
+		///< Returns an end iterator for the current line.
 		///< Precondition: more()
 
 private:
-	LineBufferIterator( const LineBufferIterator & ) ; // not implemented
-	void operator=( const LineBufferIterator & ) ; // not implemented
+	friend class LineBuffer ;
+	LineBufferIterator( const LineBufferIterator & ) ;
+	void operator=( const LineBufferIterator & ) ;
+	void expect( size_t ) ;
 
 private:
-	LineBuffer & m_b ;
-	std::string::size_type m_n ;
-	std::string::size_type m_store_length ;
+	LineBuffer & m_buffer ;
+	size_t m_expect ;
+	std::string::size_type m_pos ;
+	std::string::size_type m_eol_size ;
+	std::string::const_iterator m_line_begin ;
+	std::string::const_iterator m_line_end ;
+	mutable std::string m_line ;
+	mutable bool m_line_valid ;
 } ;
 
-inline
-GNet::LineBufferIterator::LineBufferIterator( LineBuffer & b ) :
-	m_b(b) ,
-	m_n(0U) ,
-	m_store_length(b.m_store.length())
-{
-	m_b.lock() ;
-}
-
-inline
-GNet::LineBufferIterator::~LineBufferIterator()
-{
-	m_b.unlock( m_n ) ;
-}
-
 #endif
-

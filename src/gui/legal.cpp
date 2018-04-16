@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -36,21 +36,23 @@ QString Legal::text()
 		"<p>MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</p>"
 		"<p>GNU General Public License for more details.</p>"
 		"<p></p>"
-		"<p>Copyright (C) 2001-2013 Graeme Walker</p>"
+		"<p>Copyright (C) 2001-2018 Graeme Walker</p>"
 		"</center>" ) ;
 }
 
 QString Legal::credit()
 {
-	// we should ise GSsl::Library::credit() here but that
-	// creates dependency problems so just reproduce it
-	// here, even if openssl is not linked in
-
-	return QString(
-		"<center>"
-		"<p>This product includes software developed by the OpenSSL Project</p>"
-        "<p>for use in the OpenSSL Toolkit (http://www.openssl.org/)</p>"
-		"</center>" ) ;
+	// we should ise GSsl::Library::credit() here but that creates
+	// dependency problems so use a complile-time switch instead
+	#if GCONFIG_HAVE_OPENSSL
+		return QString(
+			"<center>"
+			"<p>This product includes software developed by the OpenSSL Project</p>"
+        	"<p>for use in the OpenSSL Toolkit (http://www.openssl.org/)</p>"
+			"</center>" ) ;
+	#else
+		return QString() ;
+	#endif
 }
 
 QString Legal::license()

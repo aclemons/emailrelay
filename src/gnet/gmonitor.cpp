@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -19,10 +19,10 @@
 //
 
 #include "gdef.h"
-#include "gnet.h"
 #include "glimits.h"
 #include "gmonitor.h"
 #include "gstr.h"
+#include "gstrings.h"
 #include "gassert.h"
 #include <map>
 #include <deque>
@@ -30,17 +30,25 @@
 #include <utility> // std::swap
 
 /// \class GNet::MonitorImp
-/// A pimple pattern implementation class for GNet::Monitor.
-/// 
-class GNet::MonitorImp 
+/// A pimple-pattern implementation class for GNet::Monitor.
+///
+class GNet::MonitorImp
 {
 public:
-	MonitorImp() ;
+	explicit MonitorImp( Monitor & monitor ) ;
 	void add( const Connection & , bool is_client ) ;
 	void remove( const Connection & , bool is_client ) ;
 	void report( std::ostream & s , const std::string & px , const std::string & eol ) const ;
+	void report( G::StringArray & ) const ;
 	std::string certificateId( const std::string & certificiate ) ;
 	std::pair<std::string,bool> findCertificate( const std::string & certificate ) ;
+
+private:
+	static std::string join( const std::string & , const std::string & ) ;
+	static void add( G::StringArray & , const std::string & , unsigned int , const std::string & ,
+		unsigned int , const std::string & ) ;
+	static void add( G::StringArray & , const std::string & , const std::string & , const std::string & ,
+		const std::string & , const std::string & ) ;
 
 private:
 	struct ConnectionInfo
@@ -72,7 +80,7 @@ private:
 	unsigned long m_server_peer_removes ;
 } ;
 
-GNet::MonitorImp::MonitorImp() :
+GNet::MonitorImp::MonitorImp( Monitor & ) :
 	m_id_generator(0) ,
 	m_client_adds(0UL) ,
 	m_client_removes(0UL) ,
@@ -85,21 +93,21 @@ GNet::MonitorImp::MonitorImp() :
 
 GNet::Monitor * & GNet::Monitor::pthis()
 {
-	static GNet::Monitor * p = NULL ;
+	static GNet::Monitor * p = nullptr ;
 	return p ;
 }
 
 GNet::Monitor::Monitor() :
-	m_imp( new MonitorImp )
+	m_imp( new MonitorImp(*this) )
 {
-	G_ASSERT( pthis() == NULL ) ;
+	G_ASSERT( pthis() == nullptr ) ;
 	pthis() = this ;
 }
 
 GNet::Monitor::~Monitor()
 {
 	delete m_imp ;
-	pthis() = NULL ;
+	pthis() = nullptr ;
 }
 
 GNet::Monitor * GNet::Monitor::instance()
@@ -107,7 +115,7 @@ GNet::Monitor * GNet::Monitor::instance()
 	return pthis() ;
 }
 
-G::Signal2<std::string,std::string> & GNet::Monitor::signal()
+G::Slot::Signal2<std::string,std::string> & GNet::Monitor::signal()
 {
 	return m_signal ;
 }
@@ -147,6 +155,11 @@ void GNet::Monitor::report( std::ostream & s , const std::string & px , const st
 	m_imp->report( s , px , eol ) ;
 }
 
+void GNet::Monitor::report( G::StringArray & out ) const
+{
+	m_imp->report( out ) ;
+}
+
 // ==
 
 void GNet::MonitorImp::add( const Connection & connection , bool is_client )
@@ -184,8 +197,8 @@ void GNet::MonitorImp::report( std::ostream & s , const std::string & px , const
 			{
 				s << px
 					<< "OUT: "
-					<< (*p).first->localAddress().second.displayString() << " -> " 
-					<< (*p).first->peerAddress().second.displayString() << eol ;
+					<< (*p).first->localAddress().second.displayString() << " -> "
+					<< (*p).first->connectionState() << eol ;
 			}
 		}
 	}
@@ -199,11 +212,52 @@ void GNet::MonitorImp::report( std::ostream & s , const std::string & px , const
 			{
 				s << px
 					<< "IN: "
-					<< (*p).first->localAddress().second.displayString() << " <- " 
+					<< (*p).first->localAddress().second.displayString() << " <- "
 					<< (*p).first->peerAddress().second.displayString() << eol ;
 			}
 		}
 	}
+}
+
+void GNet::MonitorImp::report( G::StringArray & out ) const
+{
+	add( out , "Outgoing connections" , m_client_adds , "started" , m_client_removes , "finished" ) ;
+	add( out , "Incoming connections" , m_server_peer_adds , "started" , m_server_peer_removes , "finished" ) ;
+	for( ConnectionMap::const_iterator p = m_connections.begin() ; p != m_connections.end() ; ++p )
+	{
+		if( (*p).second.is_client )
+		{
+			add( out , "Outgoing connection" , (*p).first->localAddress().second.displayString() , "-->" ,
+				(*p).first->connectionState() , "" ) ;
+		}
+	}
+	for( ConnectionMap::const_iterator p = m_connections.begin() ; p != m_connections.end() ; ++p )
+	{
+		if( !(*p).second.is_client )
+			add( out , "Incoming connection" , (*p).first->localAddress().second.displayString() , "<--" ,
+				(*p).first->peerAddress().second.displayString() , "" ) ;
+	}
+}
+
+void GNet::MonitorImp::add( G::StringArray & out , const std::string & key ,
+	unsigned int value_1 , const std::string & suffix_1 ,
+	unsigned int value_2 , const std::string & suffix_2 )
+{
+	add( out , key , G::Str::fromUInt(value_1) , suffix_1 , G::Str::fromUInt(value_2) , suffix_2 ) ;
+}
+
+std::string GNet::MonitorImp::join( const std::string & s1 , const std::string & s2 )
+{
+	return s2.empty() ? s1 : ( s1 + " " + s2 ) ;
+}
+
+void GNet::MonitorImp::add( G::StringArray & out , const std::string & key ,
+	const std::string & value_1 , const std::string & suffix_1 ,
+	const std::string & value_2 , const std::string & suffix_2 )
+{
+	out.push_back( key ) ;
+	out.push_back( join(value_1,suffix_1) ) ;
+	out.push_back( join(value_2,suffix_2) ) ;
 }
 
 std::pair<std::string,bool> GNet::MonitorImp::findCertificate( const std::string & certificate )
@@ -213,15 +267,16 @@ std::pair<std::string,bool> GNet::MonitorImp::findCertificate( const std::string
 		return result ;
 
 	// lru cache
-	Certificates::iterator p = std::find_if( m_certificates.begin() , m_certificates.end() , CertificateMatch(certificate) ) ;
-	if( p != m_certificates.end() )
+	Certificates::iterator const end = m_certificates.end() ;
+	Certificates::iterator p = std::find_if( m_certificates.begin() , end , CertificateMatch(certificate) ) ;
+	if( p != end )
 	{
 		CertificateInfo tmp = *p ;
 		result.first = G::Str::fromInt( (*p).id ) ;
 		result.second = false ;
-		p = std::remove_if( m_certificates.begin() , m_certificates.end() , CertificateMatch(certificate) ) ;
-		G_ASSERT( p != m_certificates.end() ) ;
-		*p = tmp ;
+		p = std::remove_if( m_certificates.begin() , end , CertificateMatch(certificate) ) ;
+		G_ASSERT( p != end ) ;
+		*p = tmp ; // (remove_if() doesnt remove; it moves the item to the end and returns its iterator)
 	}
 	else
 	{

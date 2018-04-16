@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -27,7 +27,6 @@
 #include <string>
 #include <iostream>
 
-/// \namespace G
 namespace G
 {
 	class Identity ;
@@ -35,10 +34,12 @@ namespace G
 }
 
 /// \class G::Identity
-/// A very low-level interface to getpwnam() and the get/set/e/uid/gid functions.
+/// A combination of user-id and group-id, with a very low-level interface
+/// to the get/set/e/uid/gid functions. Uses getpwnam() to do username
+/// lookups.
 /// \see G::Process, G::Root
 ///
-class G::Identity  
+class G::Identity
 {
 public:
 	G_EXCEPTION( NoSuchUser , "no such user" ) ;
@@ -60,6 +61,10 @@ public:
 
 	static Identity invalid() ;
 		///< Returns an invalid identity.
+
+	static Identity invalid( SignalSafe ) ;
+		///< Returns an invalid identity, with a
+		///< signal-safe guarantee.
 
 	bool isRoot() const ;
 		///< Returns true if the userid is zero.
@@ -95,6 +100,7 @@ public:
 
 private:
 	Identity() ; // no throw
+	explicit Identity( SignalSafe ) ; // no throw
 
 private:
 	uid_t m_uid ;
@@ -103,10 +109,10 @@ private:
 } ;
 
 /// \class G::IdentityUser
-/// A convenience class which, when used as a private base,
-/// can improve readability when calling Identity 'set' methods.
+/// A convenience class which, when used as a private base, can improve
+/// readability when calling Identity 'set' methods.
 ///
-class G::IdentityUser 
+class G::IdentityUser
 {
 protected:
 	static void setRealUserTo( Identity , bool do_throw = true ) ;
@@ -131,7 +137,6 @@ private:
 	IdentityUser() ; // not implemented
 } ;
 
-/// \namespace G
 namespace G
 {
 	inline

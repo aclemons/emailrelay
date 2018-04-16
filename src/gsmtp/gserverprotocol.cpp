@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -21,9 +21,10 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gsaslserverfactory.h"
+#include "gsocketprotocol.h"
 #include "gserverprotocol.h"
+#include "gxtext.h"
 #include "gbase64.h"
-#include "gssl.h"
 #include "gdate.h"
 #include "gtime.h"
 #include "gdatetime.h"
@@ -32,27 +33,26 @@
 #include "gassert.h"
 #include <string>
 
-GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , ProtocolMessage & pmessage ,
-	const GAuth::Secrets & secrets , Text & text , GNet::Address peer_address , 
-	const std::string & peer_socket_name , Config config ) :
+GSmtp::ServerProtocol::ServerProtocol( GNet::ExceptionHandler & eh , Sender & sender ,
+	Verifier & verifier , ProtocolMessage & pmessage , const GAuth::Secrets & secrets , Text & text ,
+	GNet::Address peer_address , Config config ) :
+		GNet::TimerBase(eh) ,
 		m_sender(sender) ,
 		m_verifier(verifier) ,
-		m_pmessage(pmessage) ,
 		m_text(text) ,
-		m_peer_address(peer_address) ,
-		m_peer_socket_name(peer_socket_name) ,
+		m_message(pmessage) ,
+		m_sasl(GAuth::SaslServerFactory::newSaslServer(secrets,false/*apop*/)) ,
+		m_config(config) ,
 		m_fsm(sStart,sEnd,s_Same,s_Any) ,
-		m_authenticated(false) ,
+		m_with_starttls(false) ,
+		m_peer_address(peer_address) ,
 		m_secure(false) ,
-		m_sasl(GAuth::SaslServerFactory::newSaslServer(secrets,false,true)) ,
-		m_with_vrfy(config.with_vrfy) ,
-		m_preprocessor_timeout(config.preprocessor_timeout) ,
 		m_bad_client_count(0U) ,
 		m_bad_client_limit(8U) ,
-		m_disconnect_on_overflow(config.disconnect_on_overflow)
+		m_session_authenticated(false)
 {
-	m_pmessage.doneSignal().connect( G::slot(*this,&ServerProtocol::processDone) ) ;
-	verifier.doneSignal().connect( G::slot(*this,&ServerProtocol::verifyDone) ) ;
+	m_message.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::processDone) ) ;
+	verifier.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::verifyDone) ) ;
 
 	// (dont send anything to the peer from this ctor -- the Sender object is not fuly constructed)
 
@@ -87,17 +87,14 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier , P
 	m_fsm.addTransition( eContent     , sDiscarding , sDiscarding , &GSmtp::ServerProtocol::doDiscard ) ;
 	m_fsm.addTransition( eEot         , sDiscarding , sIdle       , &GSmtp::ServerProtocol::doDiscarded ) ;
 
- #ifndef USE_NO_AUTH
 	if( m_sasl->active() )
 	{
 		m_fsm.addTransition( eAuth    , sIdle   , sAuth    , &GSmtp::ServerProtocol::doAuth , sIdle ) ;
 		m_fsm.addTransition( eAuthData, sAuth   , sAuth    , &GSmtp::ServerProtocol::doAuthData , sIdle ) ;
 	}
- #endif
 
-	GSsl::Library * ssl = GSsl::Library::instance() ;
-	m_with_ssl = ssl != NULL && ssl->enabled(true) ;
-	if( m_with_ssl )
+	m_with_starttls = GNet::SocketProtocol::secureAcceptCapable() && m_config.advertise_tls_if_possible ;
+	if( m_with_starttls )
 	{
 		m_fsm.addTransition( eStartTls , sIdle , sStartingTls , &GSmtp::ServerProtocol::doStartTls , sIdle ) ;
 		m_fsm.addTransition( eSecure   , sStartingTls , sIdle , &GSmtp::ServerProtocol::doSecure ) ;
@@ -111,7 +108,7 @@ void GSmtp::ServerProtocol::init()
 
 GSmtp::ServerProtocol::~ServerProtocol()
 {
-	m_pmessage.doneSignal().disconnect() ;
+	m_message.doneSignal().disconnect() ;
 	m_verifier.doneSignal().disconnect() ;
 }
 
@@ -179,12 +176,12 @@ void GSmtp::ServerProtocol::apply( const std::string & line )
 
 void GSmtp::ServerProtocol::doContent( const std::string & line , bool & ok )
 {
-	if( isEscaped(line) ) 
-		ok = m_pmessage.addText( line.substr(1U) ) ; // temporary string constructed, but rare
+	if( isEscaped(line) )
+		ok = m_message.addText( line.substr(1U) ) ; // temporary string constructed, but rare
 	else
-		ok = m_pmessage.addText( line ) ;
+		ok = m_message.addText( line ) ;
 
-	if( !ok && m_disconnect_on_overflow )
+	if( !ok && m_config.disconnect_on_overflow )
 		sendTooBig( true ) ;
 }
 
@@ -192,12 +189,12 @@ void GSmtp::ServerProtocol::doEot( const std::string & line , bool & )
 {
 	G_LOG( "GSmtp::ServerProtocol: rx<<: [message content not logged]" ) ;
 	G_LOG( "GSmtp::ServerProtocol: rx<<: \"" << G::Str::printable(line) << "\"" ) ;
-	if( m_preprocessor_timeout != 0U ) 
+	if( m_config.filter_timeout != 0U )
 	{
-		G_DEBUG( "GSmtp::ServerProtocol: starting preprocessor timer: " << m_preprocessor_timeout ) ;
-		startTimer( m_preprocessor_timeout ) ;
+		G_DEBUG( "GSmtp::ServerProtocol: starting filter timer: " << m_config.filter_timeout ) ;
+		startTimer( m_config.filter_timeout ) ;
 	}
-	m_pmessage.process( m_sasl->id() , m_peer_address.displayString(false) , m_peer_socket_name , m_certificate ) ;
+	m_message.process( m_sasl->id() , m_peer_address.hostPartString() , m_certificate ) ;
 }
 
 void GSmtp::ServerProtocol::processDone( bool success , unsigned long , std::string reason )
@@ -219,13 +216,6 @@ void GSmtp::ServerProtocol::onTimeout()
 		throw ProtocolDone( "protocol error" ) ;
 }
 
-void GSmtp::ServerProtocol::onTimeoutException( std::exception & e )
-{
-	G_IGNORE_PARAMETER(std::exception,e) ;
-	G_DEBUG( "GSmtp::ServerProtocol::onTimeoutException: exception: " << e.what() ) ;
-	throw ;
-}
-
 void GSmtp::ServerProtocol::doComplete( const std::string & reason , bool & )
 {
 	reset() ;
@@ -241,7 +231,7 @@ void GSmtp::ServerProtocol::doQuit( const std::string & , bool & )
 
 void GSmtp::ServerProtocol::doDiscard( const std::string & , bool & )
 {
-	if( m_disconnect_on_overflow )
+	if( m_config.disconnect_on_overflow )
 	{
 		reset() ;
 		sendClosing() ; // never deletes this
@@ -276,7 +266,7 @@ void GSmtp::ServerProtocol::doHelp( const std::string & , bool & )
 
 void GSmtp::ServerProtocol::doVrfy( const std::string & line , bool & predicate )
 {
-	if( m_with_vrfy )
+	if( m_config.with_vrfy )
 	{
 		std::string to = parseToParameter( line ) ;
 		if( to.empty() )
@@ -300,13 +290,16 @@ void GSmtp::ServerProtocol::verify( const std::string & to , const std::string &
 {
 	std::string mechanism = m_sasl->active() ? m_sasl->mechanism() : std::string() ;
 	std::string id = m_sasl->active() ? m_sasl->id() : std::string() ;
-	if( m_sasl->active() && !m_authenticated )
+	if( m_sasl->active() && !m_session_authenticated )
 		mechanism = "NONE" ;
 	m_verifier.verify( to , from , m_peer_address , mechanism , id ) ;
 }
 
 void GSmtp::ServerProtocol::verifyDone( std::string mbox , VerifierStatus status )
 {
+	if( status.abort )
+		throw ProtocolDone( "verifier abort" ) ;
+
 	State new_state = m_fsm.apply( *this , eVrfyReply , status.str(mbox) ) ;
 	if( new_state == s_Any )
 		throw ProtocolDone( "protocol error" ) ;
@@ -323,7 +316,7 @@ void GSmtp::ServerProtocol::doVrfyReply( const std::string & line , bool & )
 		sendWillAccept( mbox ) ; // 252
 	else
 		sendNotVerified( mbox , rc.temporary ) ; // 550 or 450
-} 
+}
 
 std::string GSmtp::ServerProtocol::parseToParameter( const std::string & line ) const
 {
@@ -346,7 +339,8 @@ void GSmtp::ServerProtocol::doEhlo( const std::string & line , bool & predicate 
 	}
 	else
 	{
-		m_smtp_peer_name = smtp_peer_name ;
+		m_session_peer_name = smtp_peer_name ;
+		m_session_authenticated = false ;
 		reset() ;
 		sendEhloReply() ;
 	}
@@ -362,19 +356,19 @@ void GSmtp::ServerProtocol::doHelo( const std::string & line , bool & predicate 
 	}
 	else
 	{
-		m_smtp_peer_name = smtp_peer_name ;
+		m_session_peer_name = smtp_peer_name ;
 		reset() ;
 		sendHeloReply() ;
 	}
 }
 
-bool GSmtp::ServerProtocol::sensitive() const
+bool GSmtp::ServerProtocol::authenticationRequiresEncryption() const
 {
-	// true if the sasl implementation is sensitive and so needs to be encrypted
-	return m_sasl->active() && m_sasl->requiresEncryption() && !m_secure ;
+	bool encryption_required_by_user = m_config.authentication_requires_encryption ;
+	bool encryption_required_by_sasl = m_sasl->active() && m_sasl->requiresEncryption() ;
+	return encryption_required_by_user || encryption_required_by_sasl ;
 }
 
-#ifndef USE_NO_AUTH
 void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate )
 {
 	G::StringArray word_array ;
@@ -387,21 +381,21 @@ void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate 
 
 	G_DEBUG( "ServerProtocol::doAuth: [" << mechanism << "], [" << initial_response << "]" ) ;
 
-	if( sensitive() )
+	if( !m_secure && authenticationRequiresEncryption() )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: rejecting authentication attempt without encryption" ) ;
 		predicate = false ; // => idle
-		send( "504 Unsupported authentication mechanism" ) ;
+		send( "504 Unsupported authentication mechanism" ) ; // since none until encryption
 	}
-	else if( m_authenticated )
+	else if( m_session_authenticated )
 	{
-		G_WARNING( "GSmtp::ServerProtocol: too many AUTHs" ) ;
+		G_WARNING( "GSmtp::ServerProtocol: too many AUTH requests" ) ;
 		predicate = false ; // => idle
-		sendOutOfSequence(line) ; // see RFC2554 "Restrictions"
+		sendOutOfSequence(line) ; // see RFC-2554 "Restrictions"
 	}
 	else if( ! m_sasl->init(mechanism) )
 	{
-		G_WARNING( "GSmtp::ServerProtocol: request for unsupported AUTH mechanism: " << mechanism ) ;
+		G_WARNING( "GSmtp::ServerProtocol: request for unsupported server AUTH mechanism: " << mechanism ) ;
 		predicate = false ; // => idle
 		send( "504 Unsupported authentication mechanism" ) ;
 	}
@@ -419,7 +413,7 @@ void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate 
 		if( done )
 		{
 			predicate = false ; // => idle
-			m_authenticated = m_sasl->authenticated() ;
+			m_session_authenticated = m_sasl->authenticated() ;
 			sendAuthDone( m_sasl->authenticated() ) ;
 		}
 		else
@@ -432,7 +426,6 @@ void GSmtp::ServerProtocol::doAuth( const std::string & line , bool & predicate 
 		sendChallenge( m_sasl->initialChallenge() ) ;
 	}
 }
-#endif
 
 void GSmtp::ServerProtocol::sendAuthDone( bool ok )
 {
@@ -442,7 +435,6 @@ void GSmtp::ServerProtocol::sendAuthDone( bool ok )
 		send( "535 Authentication failed" ) ;
 }
 
-#ifndef USE_NO_AUTH
 void GSmtp::ServerProtocol::doAuthData( const std::string & line , bool & predicate )
 {
 	G_LOG( "GSmtp::ServerProtocol: rx<<: [authentication response not logged]" ) ;
@@ -464,7 +456,7 @@ void GSmtp::ServerProtocol::doAuthData( const std::string & line , bool & predic
 		if( done )
 		{
 			predicate = false ; // => idle
-			m_authenticated = m_sasl->authenticated() ;
+			m_session_authenticated = m_sasl->authenticated() ;
 			sendAuthDone( m_sasl->authenticated() ) ;
 		}
 		else
@@ -473,25 +465,29 @@ void GSmtp::ServerProtocol::doAuthData( const std::string & line , bool & predic
 		}
 	}
 }
-#endif
 
-void GSmtp::ServerProtocol::sendChallenge( const std::string & s )
+void GSmtp::ServerProtocol::sendChallenge( const std::string & challenge )
 {
-	send( std::string("334 ") + G::Base64::encode(s,std::string()) ) ;
+	send( std::string("334 ") + G::Base64::encode(challenge,std::string()) ) ;
 }
 
 void GSmtp::ServerProtocol::doMail( const std::string & line , bool & predicate )
 {
-	if( m_sasl->active() && !m_authenticated && ( !m_sasl->trusted(m_peer_address) || sensitive() ) )
+	if( !m_session_authenticated && m_sasl->active() && !m_sasl->trusted(m_peer_address) )
 	{
 		predicate = false ;
 		sendAuthRequired() ;
 	}
+	else if( !m_secure && m_config.mail_requires_encryption )
+	{
+		predicate = false ;
+		sendEncryptionRequired() ;
+	}
 	else
 	{
-		m_pmessage.clear() ;
+		m_message.clear() ;
 		std::pair<std::string,std::string> from_pair = parseFrom( line ) ;
-		bool ok = from_pair.second.empty() && m_pmessage.setFrom( from_pair.first ) ;
+		bool ok = from_pair.second.empty() && m_message.setFrom( from_pair.first , parseFromAuth(line) ) ;
 		predicate = ok ;
 		if( ok )
 		{
@@ -512,7 +508,7 @@ void GSmtp::ServerProtocol::doRcpt( const std::string & line , bool & predicate 
 
 	if( ok )
 	{
-		verify( to_pair.first , m_pmessage.from() ) ;
+		verify( to_pair.first , m_message.from() ) ;
 	}
 	else
 	{
@@ -526,7 +522,7 @@ void GSmtp::ServerProtocol::doVrfyToReply( const std::string & line , bool & pre
 	std::string to ;
 	VerifierStatus status = VerifierStatus::parse( line , to ) ;
 
-	bool ok = m_pmessage.addTo( to , status ) ;
+	bool ok = m_message.addTo( to , status ) ;
 	if( ok )
 	{
 		sendRcptReply() ;
@@ -545,16 +541,16 @@ void GSmtp::ServerProtocol::doUnknown( const std::string & line , bool & )
 
 void GSmtp::ServerProtocol::reset()
 {
+	// cancel the current message transaction -- ehlo/quit session unaffected
 	cancelTimer() ;
-	m_pmessage.clear() ;
-	m_verifier.reset() ;
-	m_bad_client_count = 0U ;
+	m_message.clear() ;
+	m_verifier.cancel() ;
 }
 
 void GSmtp::ServerProtocol::doRset( const std::string & , bool & )
 {
 	reset() ;
-	m_pmessage.reset() ;
+	m_message.reset() ;
 	sendRsetReply() ;
 }
 
@@ -565,9 +561,9 @@ void GSmtp::ServerProtocol::doNoRecipients( const std::string & , bool & )
 
 void GSmtp::ServerProtocol::doData( const std::string & , bool & )
 {
-	std::string received_line = m_text.received( m_smtp_peer_name , m_authenticated , m_secure ) ;
+	std::string received_line = m_text.received( m_session_peer_name , m_session_authenticated , m_secure ) ;
 	if( received_line.length() )
-		m_pmessage.addReceived( received_line ) ;
+		m_message.addReceived( received_line ) ;
 
 	sendDataReply() ;
 }
@@ -663,8 +659,13 @@ void GSmtp::ServerProtocol::sendNotImplemented()
 
 void GSmtp::ServerProtocol::sendAuthRequired()
 {
-	std::string more_help = sensitive() ? ": use starttls" : "" ;
+	std::string more_help = authenticationRequiresEncryption() && !m_secure ? ": use starttls" : "" ;
 	send( std::string() + "530 authentication required" + more_help ) ;
+}
+
+void GSmtp::ServerProtocol::sendEncryptionRequired()
+{
+	send( std::string() + "530 encryption required: use starttls" ) ;
 }
 
 void GSmtp::ServerProtocol::sendNoRecipients()
@@ -718,23 +719,22 @@ void GSmtp::ServerProtocol::sendBadFrom( std::string reason )
 
 void GSmtp::ServerProtocol::sendBadTo( const std::string & text , bool temporary )
 {
-	send( std::string() + (temporary?"450":"550") + " mailbox unavailable: " + text ) ;
+	send( std::string() + (temporary?"450":"550") + " mailbox unavailable" + std::string(text.empty()?"":": ") + text ) ;
 }
 
 void GSmtp::ServerProtocol::sendEhloReply()
 {
 	std::ostringstream ss ;
-		ss << "250-" << m_text.hello(m_smtp_peer_name) << crlf() ;
+		ss << "250-" << m_text.hello(m_session_peer_name) << crlf() ;
 
-	// dont advertise authentication if the sasl server implementation does not like plaintext dialogs
-	if( m_sasl->active() && !sensitive() )
+	if( m_sasl->active() && !( authenticationRequiresEncryption() && !m_secure ) )
 		ss << "250-AUTH " << m_sasl->mechanisms() << crlf() ;
 
-	if( m_with_ssl && !m_secure )
+	if( m_with_starttls && !m_secure )
 		ss << "250-STARTTLS" << crlf() ;
 
-	if( m_with_vrfy )
-		ss << "250-VRFY" << crlf() ; // see RFC2821-3.5.2
+	if( m_config.with_vrfy )
+		ss << "250-VRFY" << crlf() ; // see RFC-2821 3.5.2
 
 	ss << "250 8BITMIME" ;
 	send( ss.str() ) ;
@@ -763,6 +763,28 @@ void GSmtp::ServerProtocol::send( std::string line , bool go_secure )
 	m_sender.protocolSend( line , go_secure ) ;
 }
 
+std::string GSmtp::ServerProtocol::parseFromAuth( const std::string & line ) const
+{
+	std::string result ;
+	size_t end = line.find( '>' ) ;
+	if( end != std::string::npos )
+	{
+		G::StringArray parameters = G::Str::splitIntoTokens( line.substr(end) , " " ) ;
+		for( G::StringArray::iterator p = parameters.begin() ; p != parameters.end() ; ++p )
+		{
+			size_t pos = (*p).find("AUTH=") ;
+			if( pos != std::string::npos && (*p).length() > 5U )
+			{
+				result = (*p).substr(5U) ; // xtext or "<>"
+				if( result.length() != 2U || result != "<>" )
+					result = G::Xtext::encode( G::Xtext::decode(result) ) ; // ensure valid xtext
+				break ;
+			}
+		}
+	}
+	return result ;
+}
+
 std::pair<std::string,std::string> GSmtp::ServerProtocol::parseFrom( const std::string & line ) const
 {
 	// eg. MAIL FROM:<me@localhost>
@@ -771,7 +793,7 @@ std::pair<std::string,std::string> GSmtp::ServerProtocol::parseFrom( const std::
 
 std::pair<std::string,std::string> GSmtp::ServerProtocol::parseTo( const std::string & line ) const
 {
-	// eg. RCPT TO:<@first.co.uk,@second.co.uk:you@final.co.uk>
+	// eg. RCPT TO:<@first.net,@second.net:you@last.net>
 	// eg. RCPT TO:<Postmaster>
 	return parse( line ) ;
 }
@@ -807,7 +829,7 @@ std::pair<std::string,std::string> GSmtp::ServerProtocol::parse( const std::stri
 std::string GSmtp::ServerProtocol::parsePeerName( const std::string & line ) const
 {
 	size_t pos = line.find_first_of( " \t" ) ;
-	if( pos == std::string::npos ) 
+	if( pos == std::string::npos )
 		return std::string() ;
 
 	std::string smtp_peer_name = line.substr( pos + 1U ) ;
@@ -828,18 +850,17 @@ void GSmtp::ServerProtocol::badClientEvent()
 
 // ===
 
-GSmtp::ServerProtocolText::ServerProtocolText( const std::string & ident , const std::string & thishost ,
-	const GNet::Address & peer_address , const std::string & peer_socket_name ) :
-		m_ident(ident) ,
+GSmtp::ServerProtocolText::ServerProtocolText( const std::string & code_ident , const std::string & thishost ,
+	const GNet::Address & peer_address ) :
+		m_code_ident(code_ident) ,
 		m_thishost(thishost) ,
-		m_peer_address(peer_address) ,
-		m_peer_socket_name(peer_socket_name)
+		m_peer_address(peer_address)
 {
 }
 
 std::string GSmtp::ServerProtocolText::greeting() const
 {
-	return m_thishost + " -- " + m_ident + " -- Service ready" ;
+	return m_thishost + " -- " + m_code_ident + " -- Service ready" ;
 }
 
 std::string GSmtp::ServerProtocolText::hello( const std::string & ) const
@@ -850,25 +871,14 @@ std::string GSmtp::ServerProtocolText::hello( const std::string & ) const
 std::string GSmtp::ServerProtocolText::received( const std::string & smtp_peer_name ,
 	bool authenticated , bool secure ) const
 {
-	return receivedLine( smtp_peer_name , m_peer_address.displayString(false) , m_peer_socket_name , m_thishost ,
-		authenticated , secure ) ;
+	return receivedLine( smtp_peer_name , m_peer_address.hostPartString() , m_thishost , authenticated , secure ) ;
 }
 
-std::string GSmtp::ServerProtocolText::shortened( std::string prefix , std::string s )
-{
-	// strip off the windows sid and ad domain
-	std::string::size_type pos = s.find_last_of( "=\\" ) ;
-	return
-		s.empty() || pos == std::string::npos || (pos+1U) == s.length() ?
-			std::string() :
-			( prefix + G::Str::printable(s.substr(pos+1U),'^') ) ;
-}
-
-std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_peer_name , 
-	const std::string & peer_address , const std::string & peer_socket_name , const std::string & thishost ,
+std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_peer_name ,
+	const std::string & peer_address , const std::string & thishost ,
 	bool authenticated , bool secure )
 {
-	const G::DateTime::EpochTime t = G::DateTime::now() ;
+	const G::EpochTime t = G::DateTime::now() ;
 	const G::DateTime::BrokenDownTime tm = G::DateTime::local(t) ;
 	const std::string zone = G::DateTime::offsetString(G::DateTime::offset(t)) ;
 	const G::Date date( tm ) ;
@@ -876,14 +886,13 @@ std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_pe
 	const std::string esmtp = std::string("ESMTP") + (secure?"S":"") + (authenticated?"A":"") ; // rfc 3848
 
 	std::ostringstream ss ;
-	ss 
-		<< "Received: from " << smtp_peer_name 
+	ss
+		<< "Received: from " << smtp_peer_name
 		<< " ("
 			<< "[" << peer_address << "]"
-			<< shortened( "," , peer_socket_name )
 		<< ") by " << thishost << " with " << esmtp << " ; "
 		<< date.weekdayName(true) << ", "
-		<< date.monthday() << " " 
+		<< date.monthday() << " "
 		<< date.monthName(true) << " "
 		<< date.yyyy() << " "
 		<< time.hhmmss(":") << " "
@@ -905,10 +914,15 @@ GSmtp::ServerProtocol::Sender::~Sender()
 
 // ===
 
-GSmtp::ServerProtocol::Config::Config( bool b , unsigned int i ) :
-	with_vrfy(b) ,
-	preprocessor_timeout(i) ,
-	disconnect_on_overflow(true) // (too harsh?)
+GSmtp::ServerProtocol::Config::Config( bool with_vrfy_ , unsigned int filter_timeout_ ,
+	bool authentication_requires_encryption_ , bool mail_requires_encryption_ ,
+	bool advertise_tls_if_possible_ ) :
+		with_vrfy(with_vrfy_) ,
+		filter_timeout(filter_timeout_) ,
+		authentication_requires_encryption(authentication_requires_encryption_) ,
+		mail_requires_encryption(mail_requires_encryption_) ,
+		disconnect_on_overflow(true) , // (too harsh?)
+		advertise_tls_if_possible(advertise_tls_if_possible_)
 {
 }
 

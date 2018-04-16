@@ -1,11 +1,44 @@
 
-#include "winuser.h"
+#include "windows.h"
 
 LANGUAGE 0x9,0x1
-1 11 MSG00001.bin
+1 11 "MSG00001.bin"
 
-IDI_ICON1 ICON DISCARDABLE "icon1.ico"
+IDI_ICON1 ICON DISCARDABLE "emailrelay-icon.ico"
 
-/* (beware generating a resource type of "RT_MANIFEST" rather than MAKEINTRESOURCE(24)) */
-1 RT_MANIFEST "emailrelay-gui.manifest"
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 2, 0, 0, 0
+ PRODUCTVERSION 2, 0, 0, 0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x10004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080904b0"
+        BEGIN
+            VALUE "Comments", "GPL v3 license"
+            VALUE "CompanyName", " "
+            VALUE "FileDescription", "E-MailRelay GUI Application"
+            VALUE "FileVersion", "2, 0, 0, 0"
+            VALUE "InternalName", "emailrelay"
+            VALUE "LegalCopyright", "Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>"
+            VALUE "OriginalFilename", "emailrelay-gui.exe"
+            VALUE "ProductName", "E-MailRelay"
+            VALUE "ProductVersion", "2, 0, 0, 0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x809, 1200
+    END
+END
 
+/* this for mingw... */
+/* 1 RT_MANIFEST "emailrelay-gui.exe.manifest" */

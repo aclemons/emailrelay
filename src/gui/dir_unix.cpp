@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -25,38 +25,38 @@
 #include "gdirectory.h"
 #include "gnewprocess.h"
 #include "gfile.h"
+#include "gmacros.h"
 #include <stdexcept>
 #include <unistd.h>
-#include <stdlib.h> // realpath(), free()
 
-// these directories from the makefile could be used in preference 
-// to the installer's runtime base directory on the assumption that 
-// on unix we always install using "make install" and only ever 
+// these directories from the makefile could be used in preference
+// to the installer's runtime base directory on the assumption that
+// on unix we always install using "make install" and only ever
 // run the installer to reconfigure
-// 
+//
 #ifndef G_SBINDIR
-	#define G_SBINDIR ""
+	#define G_SBINDIR
 #endif
 #ifndef G_ICONDIR
-	#define G_ICONDIR ""
+	#define G_ICONDIR
 #endif
 #ifndef G_EXAMPLESDIR
-	#define G_EXAMPLESDIR ""
+	#define G_EXAMPLESDIR
 #endif
 #ifndef G_SYSCONFDIR
-	#define G_SYSCONFDIR ""
+	#define G_SYSCONFDIR
 #endif
 #ifndef G_MANDIR
-	#define G_MANDIR ""
+	#define G_MANDIR
 #endif
 #ifndef G_DOCDIR
-	#define G_DOCDIR ""
+	#define G_DOCDIR
 #endif
 #ifndef G_SPOOLDIR
-	#define G_SPOOLDIR ""
+	#define G_SPOOLDIR
 #endif
 #ifndef G_INITDIR
-	#define G_INITDIR ""
+	#define G_INITDIR
 #endif
 
 namespace
@@ -66,17 +66,26 @@ namespace
 		const std::string & arg_3 = std::string() ,
 		const std::string & arg_4 = std::string() )
 	{
-		//G::StringArray args ;
+#ifdef G_NEW_PROCESS_WITH_WAIT_FUTURE
+		G::StringArray args ;
+		if( !arg_1.empty() ) args.push_back( arg_1 ) ;
+		if( !arg_2.empty() ) args.push_back( arg_2 ) ;
+		if( !arg_3.empty() ) args.push_back( arg_3 ) ;
+		if( !arg_4.empty() ) args.push_back( arg_4 ) ;
+		G::NewProcess child( exe , args ) ;
+		child.wait().run() ;
+		return child.wait().output() ;
+#else
+		// backwards compatibility -- delete soon
 		G::Strings args ;
 		if( !arg_1.empty() ) args.push_back( arg_1 ) ;
 		if( !arg_2.empty() ) args.push_back( arg_2 ) ;
 		if( !arg_3.empty() ) args.push_back( arg_3 ) ;
 		if( !arg_4.empty() ) args.push_back( arg_4 ) ;
 		G::NewProcess::ChildProcess child = G::NewProcess::spawn( exe , args ) ;
-        child.wait() ;
-		//G::NewProcess child( exe , args ) ;
-		//child.wait().run() ;
+		child.wait() ;
 		return child.read() ;
+#endif
 	}
 
 	G::Path kde( const std::string & key , const G::Path & default_ )
@@ -95,7 +104,7 @@ namespace
 	{
 		return kde( "desktop" , xdg("DESKTOP",default_) ) ;
 	}
-	
+
 	G::Path queryAutostart( const G::Path & default_ = G::Path() )
 	{
 		return kde( "autostart" , default_ ) ;
@@ -112,7 +121,7 @@ G::Path Dir::os_install()
 
 G::Path Dir::os_config()
 {
-	std::string sysconfdir( G_SYSCONFDIR ) ;
+	std::string sysconfdir( G_STR(G_SYSCONFDIR) ) ;
 	if( sysconfdir.empty() )
 		sysconfdir = "/etc" ;
 	return sysconfdir ;
@@ -120,7 +129,7 @@ G::Path Dir::os_config()
 
 G::Path Dir::os_spool()
 {
-	std::string spooldir( G_SPOOLDIR ) ;
+	std::string spooldir( G_STR(G_SPOOLDIR) ) ;
 	if( spooldir.empty() )
 		spooldir = "/var/spool/emailrelay" ;
 	return spooldir ;
@@ -149,7 +158,7 @@ G::Path Dir::special( const std::string & type )
 
 G::Path Dir::os_boot()
 {
-	std::string s( G_INITDIR ) ;
+	std::string s( G_STR(G_INITDIR) ) ;
 	if( !s.empty() )
 		return s ;
 	return "/etc/init.d" ;
@@ -178,17 +187,4 @@ G::Path Dir::home()
 {
 	return envPath( "HOME" , "~" ) ;
 }
-
-G::Path Dir::os_absolute( const G::Path & dir )
-{
-	G::Path result = dir ;
-	if( dir != G::Path() )
-	{
-		char * p = ::realpath( dir.str().c_str() , NULL ) ; // assume POSIX.1-2008 behaviour
-		if( p && *p ) result = G::Path(std::string(p)) ;
-		if( p ) ::free( p ) ;
-	}
-	return result ;
-}
-
 /// \file dir_unix.cpp

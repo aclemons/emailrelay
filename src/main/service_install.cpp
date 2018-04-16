@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -70,10 +70,10 @@ namespace
 	} ;
 }
 
-static Result install( std::string commandline , std::string name , std::string display_name , 
+static Result install( std::string commandline , std::string name , std::string display_name ,
 	std::string description )
 {
-	SC_HANDLE hmanager = OpenSCManager( NULL , NULL , SC_MANAGER_ALL_ACCESS ) ;
+	SC_HANDLE hmanager = OpenSCManager( nullptr , nullptr , SC_MANAGER_ALL_ACCESS ) ;
 	if( hmanager == 0 )
 	{
 		DWORD e = GetLastError() ;
@@ -82,8 +82,8 @@ static Result install( std::string commandline , std::string name , std::string 
 
 	SC_HANDLE hservice = CreateServiceA( hmanager , name.c_str() , display_name.c_str() ,
 		SERVICE_ALL_ACCESS , SERVICE_WIN32_OWN_PROCESS , SERVICE_AUTO_START , SERVICE_ERROR_NORMAL ,
-		commandline.c_str() , 
-		NULL , NULL , NULL , NULL , NULL ) ;
+		commandline.c_str() ,
+		nullptr , nullptr , nullptr , nullptr , nullptr ) ;
 
 	if( hservice == 0 )
 	{

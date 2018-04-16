@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -39,7 +39,7 @@ G_EXCEPTION( FilterError , "filter error" ) ;
 
 void filter_help( const std::string & prefix )
 {
-	std::cout 
+	std::cout
 		<< "usage: " << prefix << " <emailrelay-content-file>" << std::endl
 		<< std::endl
 		<< "Copies the corresponding emailrelay envelope file into all " << std::endl
@@ -98,7 +98,7 @@ bool filter_run( const std::string & content )
 			G::Path target = G::Path( iter.filePath() , envelope_name ) ;
 			bool copied = G::File::copy( envelope_path , target , G::File::NoThrow() ) ;
 			if( !copied )
-				failures.push_back( iter.fileName().str() ) ;
+				failures.push_back( iter.fileName() ) ;
 		}
 	}
 

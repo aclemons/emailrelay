@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -22,11 +22,9 @@
 #define G_REQUEST_H
 
 #include "gdef.h"
-#include "gnet.h"
 #include "gaddress.h"
 #include "gwindow.h"
 
-/// \namespace GNet
 namespace GNet
 {
 	class Request ;
@@ -35,11 +33,10 @@ namespace GNet
 }
 
 /// \class GNet::Request
-/// A base class for making
-/// asynchronous DNS requests under Windows.
+/// A base class for making asynchronous DNS requests under Windows.
 /// \see WSAAsyncGetHostByName()
 ///
-class GNet::Request 
+class GNet::Request
 {
 protected:
 	enum { magic = 968 } ;
@@ -54,7 +51,7 @@ protected:
 
 protected:
 	explicit Request( bool host ) ;
-		///< Constructor. Derived class constructors 
+		///< Constructor. Derived class constructors
 		///< should issue the appropriate WSAAsync..()
 		///< request, with m_buffer[] given as the
 		///< result buffer.
@@ -87,7 +84,7 @@ private:
 /// \class GNet::HostRequest
 /// A derivation of GNet::Request used for hostname lookup requests.
 ///
-class GNet::HostRequest : public GNet::Request 
+class GNet::HostRequest : public Request
 {
 public:
 	HostRequest( std::string host_name , HWND hwnd , unsigned msg ) ;
@@ -109,10 +106,10 @@ private:
 /// \class GNet::ServiceRequest
 /// A derivation of GNet::Request used for service (port) lookup requests.
 ///
-class GNet::ServiceRequest : public GNet::Request 
+class GNet::ServiceRequest : public Request
 {
 public:
-	ServiceRequest( std::string service_name , bool udp , 
+	ServiceRequest( std::string service_name , bool udp ,
 		HWND hwnd , unsigned msg ) ;
 			///< Constructor.
 

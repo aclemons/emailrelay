@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -24,14 +24,15 @@
 #include "gdef.h"
 #include "goptions.h"
 #include "goptionvalue.h"
+#include "goptionparser.h"
 #include "garg.h"
+#include "gpath.h"
 #include "gstrings.h"
 #include "gexception.h"
 #include <string>
 #include <list>
 #include <map>
 
-/// \namespace G
 namespace G
 {
 	class GetOpt ;
@@ -45,7 +46,7 @@ namespace G
 ///		G::Arg arg( argc , argv ) ;
 ///		G::GetOpt opt( arg , "e!extra!does something! extra!1!something!1" "|" "h!help!shows help!!0!!1" ) ;
 ///		if( opt.hasErrors() ) { opt.showErrors( std::cerr ) ; exit( 2 ) ; }
-///		if( opt.contains("help") ) { opt.options().showUsage( std::cout , "" , " [<more>]" ) ; exit( 0 ) ; }
+///		if( opt.contains("help") ) { opt.options().showUsage( std::cout , arg.prefix() , " [<more>]" ) ; exit( 0 ) ; }
 ///		run( opt.args() , opt.contains("extra") ? opt.value("extra") : std::string() ) ;
 /// \endcode
 ///
@@ -74,11 +75,18 @@ public:
 		///< command-line argument (zero-based but allowing for the program
 		///< name in argv0). The n'th argument is then removed. Does nothing
 		///< if the n'th argument does not exists or if it is empty. Throws
-		///< if the file is specified but cannot be opened. Parsing errors 
+		///< if the file is specified but cannot be opened. Parsing errors
 		///< are added to errorList().
 
+	void addOptionsFromFile( const Path & file ) ;
+		///< Adds options from the given config file. Throws if the file
+		///< cannot be opened. Parsing errors are added to errorList().
+
 	const Options & options() const ;
-		///< Returns a reference to the internal option specification object.
+		///< Returns a reference to the option specification sub-object.
+
+	const OptionMap & map() const ;
+		///< Returns a reference to the OptionMap sub-object.
 
 	Arg args() const ;
 		///< Returns all the non-option command-line arguments.
@@ -99,31 +107,38 @@ public:
 		///< An overload which has a sensible prefix.
 
 	bool contains( char option_letter ) const ;
-		///< Returns true if the command line contains the given short-form option.
+		///< Returns true if the command line contains the option identified by its
+		///< short-form letter.
 
 	bool contains( const std::string & option_name ) const ;
-		///< Returns true if the command line contains the given long-form option.
+		///< Returns true if the command line contains the option identified by its
+		///< long-form name.
 
-	std::string value( const std::string & option_name ) const ;
-		///< Returns the value related to the given valued option.
-		///< Precondition: contains(option_name)
+	size_t count( const std::string & option_name ) const ;
+		///< Returns the number of times the option was supplied.
 
-	std::string value( char option_letter ) const ;
-		///< Returns the value related to the given valued option.
+	std::string value( const std::string & option_name , const std::string & default_ = std::string() ) const ;
+		///< Returns the value related to the option identified by its long-form name.
+		///< Returns a string that is a comma-separated list if multi-valued.
+
+	std::string value( char option_letter , const std::string & default_ = std::string() ) const ;
+		///< Returns the value related to the option identified by its short-form letter.
+		///< Returns a string that is a comma-separated list if multi-valued.
 		///< Precondition: contains(option_letter)
+
 
 private:
 	void operator=( const GetOpt & ) ;
 	GetOpt( const GetOpt & ) ;
 	void parseArgs( Arg & ) ;
-	StringArray readFile( std::istream & f , const StringArray & stop ) ;
+	StringArray optionsFromFile( const G::Path & ) const ;
 
 private:
-	typedef std::map<std::string,OptionValue> OptionValueMap ;
 	Options m_spec ;
 	Arg m_args ;
-	OptionValueMap m_map ;
+	OptionMap m_map ;
 	StringArray m_errors ;
+	OptionParser m_parser ; // order dependency -- last
 } ;
 
 #endif

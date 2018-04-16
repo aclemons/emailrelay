@@ -1,16 +1,16 @@
 #
-## Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-## 
+## Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
-## 
+##
 ## This program is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-## 
+##
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -28,23 +28,29 @@
 
 EXTRA_DIST = \
 	emailrelay.spec \
+	configure.sh \
 	ChangeLog \
-	README.windows \
-	README.embedded \
-	README.mac \
 	LICENSE \
 	VERSION \
+	README.md \
+	README.rst \
 	bootstrap \
 	autogen.sh \
-	emailrelay-gui.xcodeproj/project.pbxproj \
-	emailrelay.xcodeproj/project.pbxproj 
+	winbuild.bat \
+	winbuild.pl \
+	winbuild.pm \
+	winbuild-parser.pm \
+	runperl.bat
 
-SUBDIRS = bin src lib etc doc debian test extra
+SUBDIRS = bin src etc doc debian test m4
 
-e_doc_DATA = COPYING AUTHORS INSTALL NEWS README README.windows README.mac README.embedded ChangeLog
+# work-round PKG_CHECK_MODULES if no pkg-config
+ACLOCAL_AMFLAGS = -I m4
+
+e_doc_DATA = COPYING AUTHORS INSTALL NEWS README ChangeLog
 
 uninstall-local:
-	-for try in 1 2 3 4 ; do echo "$(DESTDIR)$(e_pamdir)" "$(DESTDIR)$(e_initdir)" "$(DESTDIR)$(e_sysconfdir)" "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(e_spooldir)" "$(DESTDIR)$(e_docdir)" "$(DESTDIR)$(pkgdatadir)" | tr ' ' '\n' | grep -i "mailrelay" | while read d ; do rmdir "$$d" 2>/dev/null ; done ; done
+	-for try in 1 2 3 4 ; do echo "$(e_pamdir)" "$(e_initdir)" "$(e_sysconfdir)" "$(e_examplesdir)" "$(e_libexecdir)" "$(e_spooldir)" "$(e_docdir)" "$(pkgdatadir)" | tr ' ' '\n' | grep "emailrelay$" | while read d ; do rmdir "$(DESTDIR)/$$d" 2>/dev/null ; done ; done
 
 RPM_ROOT ?= ${HOME}/rpmbuild
 #RPM_ARCH ?= $(shell arch)
@@ -62,13 +68,15 @@ $(RPM): dist
 	cp $(TAR) $(RPM_ROOT)/SOURCES/emailrelay-$(VERSION)-src.tar.gz
 	cp $(top_srcdir)/emailrelay.spec $(RPM_ROOT)/SPECS/
 	chown root:root $(RPM_ROOT)/SPECS/emailrelay.spec
+	-rm -f $(RPM) || true
 	rpmbuild -ba $(RPM_ROOT)/SPECS/emailrelay.spec
+	test -f $(RPM)
 
 .PHONY: deb
 deb: $(DEB)
 
 $(DEB): $(RPM)
-	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$$$
+	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$$$ || true
 	alien --to-deb --generate --single --keep-version $(RPM)
 	sed -i 's/^Section:.*/Section: mail/' emailrelay-$(VERSION)/debian/control
 	sed -i 's/^Maintainer:.*/Maintainer: Graeme Walker <graeme_walker@users.sourceforge.net>/' emailrelay-$(VERSION)/debian/control

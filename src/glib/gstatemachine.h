@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -25,22 +25,21 @@
 #include "gexception.h"
 #include <map>
 
-/// \namespace G
 namespace G
 {
 
 G_EXCEPTION_CLASS( StateMachine_Error , "invalid state machine transition" ) ;
 
 /// \class StateMachine
-/// A finite state machine class template. 
+/// A finite state machine class template.
 ///
-/// The finite state machine has a persistant 'state'. When an 'event' is 
+/// The finite state machine has a persistant 'state'. When an 'event' is
 /// apply()d to the state machine, it undergoes a state 'transition'
 /// and then calls the associated 'action' method.
 ///
-/// Any action method can return a boolean predicate value which is used to select 
-/// between two transitions -- the 'normal' transition if the predicate is 
-/// true, and an 'alternative' transition if false.
+/// Any action method can return a boolean predicate value which is used to
+/// select between two transitions -- the 'normal' transition if the predicate
+/// is true, and an 'alternative' transition if false.
 ///
 /// Transition states can be implemented by having the relevant action
 /// method call apply() on the state-machine. The state machine's state
@@ -51,27 +50,27 @@ G_EXCEPTION_CLASS( StateMachine_Error , "invalid state machine transition" ) ;
 ///
 /// Default transitions for a given state are not supported directly. But
 /// note that protocol errors do not invalidate the state machine and
-/// do not result in a change of state. This means that client code can 
-/// achieve the effect of default transitions by handling protocol errors 
+/// do not result in a change of state. This means that client code can
+/// achieve the effect of default transitions by handling protocol errors
 /// for that state in a special manner.
-/// 
+///
 /// Special states 'same' and 'any' can be defined to simplify the
 /// definition of state transitions. A transition with a 'source'
 /// state of 'any' will match any state. This is typically used
-/// for error events or timeouts. A transition with a 'destination' 
+/// for error events or timeouts. A transition with a 'destination'
 /// state of 'same' will not result in a state change. This is
 /// sometimes used when handling predicates -- the predicate can
 /// be used to control whether the state changes, or stays the
-/// same. The 'any' state is also used as a return value from 
+/// same. The 'any' state is also used as a return value from
 /// apply() to signal a protocol error.
 ///
-/// If the 'any' state is numerically the largest then it can be used 
+/// If the 'any' state is numerically the largest then it can be used
 /// to identify a default transition for the given event; transitions
 /// identified by an exact match with the current state will be
 /// chosen in preference to the 'any' transition.
 ///
 /// The 'end' state is special in that predicates are ignored for
-/// transitions which have 'end' as their 'normal' destintation 
+/// transitions which have 'end' as their 'normal' destintation
 /// state. This is because of a special implementation feature
 /// which allows the state machine object to be deleted within the
 /// action method which causes a transition to the 'end' state.
@@ -91,8 +90,8 @@ G_EXCEPTION_CLASS( StateMachine_Error , "invalid state machine transition" ) ;
 ///   void doBar( const std::string & , bool & ) { delete this ; }
 ///   Event decode( const std::string & ) const ;
 /// public:
-///   Protocol() : m_fsm(sFoo,sBar,s_Same,s_Any) 
-///   { 
+///   Protocol() : m_fsm(sFoo,sBar,s_Same,s_Any)
+///   {
 ///      m_fsm.addTransition(eFoo,sFoo,sBar,&Protocol::doFoo) ;
 ///      m_fsm.addTransition(eBar,sBar,sEnd,&Protocol::doBar) ;
 ///   }
@@ -106,7 +105,7 @@ G_EXCEPTION_CLASS( StateMachine_Error , "invalid state machine transition" ) ;
 /// \endcode
 ///
 template <typename T, typename State, typename Event, typename Arg = std::string>
-class StateMachine 
+class StateMachine
 {
 public:
 	typedef void (T::*Action)(const Arg &, bool &) ;
@@ -127,8 +126,8 @@ public:
 	State apply( T & t , Event event , const Arg & arg ) ;
 		///< Applies an event. Calls the appropriate action method
 		///< on object "t" and changes state. The state change
-		///< takes into account the predicate returned by the 
-		///< action method. 
+		///< takes into account the predicate returned by the
+		///< action method.
 		///<
 		///< If the event is valid then the new state is returned.
 		///< If the event results in a protocol error the StateMachine's
@@ -147,13 +146,12 @@ public:
 		///< Sets the current state. Returns the old state.
 
 private:
-	/// A private structure used by G::StateMachine<>.
-	struct Transition 
-	{ 
-		State from ; 
-		State to ; 
+	struct Transition /// A private structure used by G::StateMachine<>.
+	{
+		State from ;
+		State to ;
 		State alt ; // alternate "to" state if predicate false
-		Action action ; 
+		Action action ;
 		Transition(State s1,State s2,Action a,State s3) :
 			from(s1) , to(s2) , alt(s3) , action(a) {}
 	} ;

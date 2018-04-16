@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -23,8 +23,6 @@
 #include "glimits.h"
 #include "genvironment.h"
 #include <time.h> // localtime_s
-
-static HANDLE source() ;
 
 static bool simple( const std::string & dir )
 {
@@ -50,6 +48,7 @@ void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity
 	if( debugger )
 	{
 		::OutputDebugStringA( message.c_str() ) ;
+		::OutputDebugStringA( "\r\n" ) ;
 	}
 
 	// file
@@ -81,85 +80,82 @@ void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity
 		}
 
 		const char * p[] = { message.c_str() , NULL } ;
-		G_IGNORE_RETURN(BOOL) ::ReportEventA( m_handle, type, 0, id, NULL, 1, 0, p, NULL ) ;
+		BOOL rc = ::ReportEventA( m_handle, type, 0, id, NULL, 1, 0, p, NULL ) ; G_IGNORE_VARIABLE(rc) ;
+	}
+}
+
+namespace
+{
+	std::string thisExe()
+	{
+		HINSTANCE hinstance = 0 ;
+		std::vector<char> buffer( G::limits::path , '\0' ) ;
+		DWORD size = static_cast<DWORD>(buffer.size()) ;
+		DWORD rc = ::GetModuleFileNameA( hinstance , &buffer[0] , size-1U ) ;
+		if( rc != 0UL && (rc+1U) != size )
+		{
+			buffer[size-1U] = '\0' ;
+			return std::string(&buffer[0]) ;
+		}
+		else
+		{
+			return std::string() ;
+		}
+	}
+
+	std::string basename( std::string s )
+	{
+		std::string::size_type pos1 = s.find_last_of( "\\" ) ;
+		if( pos1 != std::string::npos )
+			s = s.substr( pos1+1U ) ;
+		std::string::size_type pos2 = s.find_last_of( "." ) ;
+		if( pos2 != std::string::npos )
+			s.resize( pos2 ) ;
+		return s ;
 	}
 }
 
 void G::LogOutput::init()
 {
-	m_handle = ::source() ;
+	if( m_syslog )
+	{
+		std::string this_exe = thisExe() ;
+		std::string this_name = basename( this_exe ) ;
+		G::LogOutput::register_( this_exe ) ;
+		m_handle = ::RegisterEventSourceA( NULL , this_name.c_str() ) ;
+	}
 }
 
-static HANDLE source()
+void G::LogOutput::register_( const std::string & exe_path )
 {
-	// get our executable path
-	std::string exe_path ;
-	{
-		HINSTANCE hinstance = 0 ;
-		char buffer[G::limits::path] ;
-		size_t size = sizeof(buffer) ;
-		*buffer = '\0' ;
-		::GetModuleFileNameA( hinstance , buffer , size-1U ) ;
-		buffer[size-1U] = '\0' ;
-		exe_path = std::string(buffer) ;
-	}
+	std::string reg_path =
+		"SYSTEM\\CurrentControlSet\\services\\eventlog\\Application\\" +
+		basename(exe_path) ;
 
-	// parse out our executable basename
-	std::string exe_name = exe_path ;
-	{
-		std::string::size_type pos1 = exe_name.find_last_of( "\\" ) ;
-		if( pos1 != std::string::npos )
-			exe_name = exe_name.substr( pos1+1U ) ;
-		std::string::size_type pos2 = exe_name.find_last_of( "." ) ;
-		if( pos2 != std::string::npos )
-			exe_name.resize( pos2 ) ;
-	}
-
-	// build a registry path for our executable
-	//
-	std::string reg_path_prefix( "SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\" ) ;
-	std::string reg_path = reg_path_prefix + exe_name ;
-
-	// create a registry entry
-	//
 	HKEY key = 0 ;
-	::RegCreateKeyA( HKEY_LOCAL_MACHINE , reg_path.c_str() , &key ) ;
-	bool ok = key != 0 ;
-
-	// add our executable path
-	if( ok )
+	LONG e = ::RegCreateKeyA( HKEY_LOCAL_MACHINE , reg_path.c_str() , &key ) ;
+	if( e == ERROR_SUCCESS && key != 0 )
 	{
-		ok = ! ::RegSetValueExA( key , "EventMessageFile" , 0 , REG_EXPAND_SZ ,
-			reinterpret_cast<const BYTE*>(exe_path.c_str()) , exe_path.length()+1U ) ;
+		DWORD one = 1 ;
+		DWORD types = EVENTLOG_INFORMATION_TYPE | EVENTLOG_WARNING_TYPE | EVENTLOG_ERROR_TYPE ;
+		! ::RegSetValueExA( key , "EventMessageFile" , 0 , REG_SZ ,
+			reinterpret_cast<const BYTE*>(exe_path.c_str()) ,
+			static_cast<DWORD>(exe_path.length())+1U ) &&
+		! ::RegSetValueExA( key , "CategoryCount" , 0 , REG_DWORD ,
+			reinterpret_cast<const BYTE*>(&one) , sizeof(one) ) &&
+		! ::RegSetValueExA( key , "CategoryMessageFile" , 0 , REG_SZ ,
+			reinterpret_cast<const BYTE*>(exe_path.c_str()) ,
+			static_cast<DWORD>(exe_path.length())+1U ) &&
+		! ::RegSetValueExA( key , "TypesSupported" , 0 , REG_DWORD ,
+			reinterpret_cast<const BYTE*>(&types) , sizeof(types) ) ;
 	}
-
-	// add our message types
-	if( ok )
-	{
-		DWORD value = 
-			EVENTLOG_INFORMATION_TYPE | 
-			EVENTLOG_WARNING_TYPE |
-			EVENTLOG_ERROR_TYPE ;
-
-		ok = ! ::RegSetValueExA( key , "TypesSupported" , 0 , REG_DWORD ,
-			reinterpret_cast<const BYTE*>(&value) , sizeof(value) ) ;
-	}
-
-	// close the registry
-	//
 	if( key != 0 )
 		::RegCloseKey( key ) ;
-
-	// if we failed to get access to the registry we can still write
-	// to the event log but the associated text will be messed up,
-	// so ignore 'ok' here
-	//
-	return ::RegisterEventSourceA( NULL , exe_name.c_str() ) ;
 }
 
 void G::LogOutput::getLocalTime( time_t epoch_time , struct std::tm * broken_down_time_p )
 {
 	errno_t rc = localtime_s( broken_down_time_p , &epoch_time ) ;
-	// ignore errors - it's just logging
+	G_IGNORE_VARIABLE( rc ) ; // ignore errors - it's just for logging
 }
 /// \file glogoutput_win32.cpp

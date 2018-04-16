@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -25,7 +25,6 @@
 #include "gpop.h"
 #include "gpopsecrets.h"
 
-/// \namespace GPop
 namespace GPop
 {
 	class Auth ;
@@ -33,20 +32,17 @@ namespace GPop
 }
 
 /// \class GPop::Auth
-/// An authenticator interface for POP3
-/// sessions.
+/// An authenticator interface for POP3 sessions that is a very
+/// thin veneer over GSmtp::SaslServer.
+/// \see RFC-2222
 ///
-/// The implementation may use GSmtp::SaslServer.
-///
-/// \see GSmtp::SaslServer, RFC2222
-///
-class GPop::Auth 
+class GPop::Auth
 {
 public:
 	explicit Auth( const Secrets & ) ;
-		///< Constructor. Defaults to the APOP mechanism
-		///< so that challenge() returns the APOP initial
-		///< challege to go into the POP3 greeting.
+		///< Constructor. Defaults to the APOP mechanism so that
+		///< challenge() returns the APOP initial challege to go
+		///< into the POP3 greeting.
 
 	~Auth() ;
 		///< Destructor.
@@ -55,14 +51,14 @@ public:
 		///< Returns true if the secrets are valid.
 
 	bool init( const std::string & mechanism ) ;
-		///< Initialises or reinitialises with the specified 
+		///< Initialises or reinitialises with the specified
 		///< mechanism. Returns false if not a supported mechanism.
 		///< Updates the initial challenge() string as appropriate.
 
 	bool mustChallenge() const ;
 		///< Returns true if the init()ialised mechanism requires
 		///< an initial challenge. Returns false if (in effect)
-		///< the mechanism and the authetication can be supplied 
+		///< the mechanism and the authetication can be supplied
 		///< together.
 
 	std::string challenge() ;
@@ -75,7 +71,7 @@ public:
 		///< mechanism are done in one call to this method. The
 		///< second parameter use used only if the current
 		///< mechanism is a two-step mechanism. The second-step
-		///< challenge itself is not accessible, which only really 
+		///< challenge itself is not accessible, which only really
 		///< makes sense for a LOGIN password prompt, since it is
 		///< a fixed string.
 		///<

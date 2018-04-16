@@ -1,69 +1,59 @@
 /*
-   Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-   
+   Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /*
    poke.c
- 
-   This is a small program that connects to the specified port on the local 
-   machine, sends a fixed string, and prints out the first bit of what it 
+
+   This is a small program that connects to the specified port on the local
+   machine, sends a fixed string, and prints out the first bit of what it
    gets sent back.
 
-   In daemon mode it detaches from the terminal, writes a pid-file, and then 
+   In daemon mode it detaches from the terminal, writes a pid-file, and then
    sends the fixed string periodically, discarding any responses.
-   
-   Its purpose is to provide a low-overhead mechanism for stimulating the 
+
+   Its purpose is to provide a low-overhead mechanism for stimulating the
    E-MailRelay daemon to send its queued-up messages to the remote smtp server.
 
    If there is an error no output is generated, but the exit code is non-zero.
 
    usage: poke [-d] [<port> [<send-string>]]
 
-*/  
+*/
 
-#if defined(G_WINDOWS) || defined(G_WIN32) || defined(_WIN32) || defined(WIN32)
- #ifndef G_WIN32
-  #define G_WIN32
- #endif
- #include <windows.h>
- #include <io.h>
- #include <stdlib.h>
- #include <string.h>
- #ifndef G_MINGW
-  typedef int ssize_t ;
- #endif
- #if defined(_MSC_VER) && _MSC_VER > 1200
-  #define strncat(a,b,c) strncat_s(a,c,b,_TRUNCATE)
-  #define strcat(a,b) strncat_s(a,sizeof(a),b,_TRUNCATE)
- #endif
- #define write _write
- #define close _close
- #define STDOUT_FILENO 1
- void sleep( unsigned int s ) { Sleep( s * 1000UL ) ; }
+#include "gdef.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#ifdef G_UNIX
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+typedef int socket_t ;
 #else
- #include <unistd.h>
- #include <sys/socket.h>
- #include <netinet/in.h>
- #include <netdb.h>
- #include <arpa/inet.h>
- #include <sys/types.h>
- #include <sys/stat.h>
- #include <fcntl.h>
- #include <stdlib.h>
- #include <string.h>
+#include <io.h>
+#ifndef STDIN_FILENO
+#define STDIN_FILENO 0
+#define STDOUT_FILENO 1
+#define STDERR_FILENO 2
+#endif
+#define sleep( x ) Sleep( (x) * 1000 )
+typedef SOCKET socket_t ;
 #endif
 
 #ifndef TRUE
@@ -76,7 +66,23 @@
  #define BOOL int
 #endif
 
-#include <stdio.h>
+static ssize_t write_( socket_t fd , const void * p , size_t n )
+{
+ #ifdef G_WIN32
+	return _write( (int)fd , p , (unsigned int)n ) ;
+ #else
+	return write( fd , p , n ) ;
+ #endif
+}
+
+static void close_( socket_t fd )
+{
+ #ifdef G_WIN32
+	_close( (int)fd ) ;
+ #else
+	close( fd ) ;
+ #endif
+}
 
 static void init( void )
 {
@@ -112,8 +118,8 @@ static void pidfile( void )
 		pid_t pid = getpid() ;
 		for( *p = '\0' ; pid != 0 ; pid /= 10 )
 			*--p = '0' + (pid%10) ;
-		rc = write( fd , p , strlen(p) ) ;
-		rc += write( fd , "\n" , 1 ) ;
+		rc = write_( fd , p , strlen(p) ) ;
+		rc += write_( fd , "\n" , 1 ) ;
 		close( fd ) ;
 	}
   #endif
@@ -128,11 +134,12 @@ static BOOL poke( int argc , char * argv [] )
 		struct sockaddr_in specific ;
 		struct sockaddr generic ;
 	} address ;
-	int fd , rc ;
+	socket_t fd ;
+	int rc ;
 	ssize_t n ;
 
 	/* parse the command line -- port number */
-	if( argc > 1 ) 
+	if( argc > 1 )
 	{
 		port = (unsigned short)atoi(argv[1]) ;
 	}
@@ -141,13 +148,21 @@ static BOOL poke( int argc , char * argv [] )
 	if( argc > 2 )
 	{
 		buffer[0] = '\0' ;
-		strncat( buffer , argv[2] , sizeof(buffer)-5U ) ;
+		#ifdef G_WIN32
+			strncat_s( buffer , sizeof(buffer) , argv[2] , _TRUNCATE ) ;
+		#else
+			strncat( buffer , argv[2] , sizeof(buffer)-5U ) ;
+		#endif
 	}
-	strcat( buffer , "\015\012" ) ;
+	#ifdef G_WIN32
+		strcat_s( buffer , sizeof(buffer) , "\015\012" ) ;
+	#else
+		strcat( buffer , "\015\012" ) ;
+	#endif
 
 	/* open the socket */
 	fd = socket( AF_INET , SOCK_STREAM , 0 ) ;
-	if( fd < 0 ) 
+	if( fd < 0 )
 	{
 		return FALSE ;
 	}
@@ -156,38 +171,39 @@ static BOOL poke( int argc , char * argv [] )
 	memset( &address , 0 , sizeof(address.specific) ) ;
 	address.specific.sin_family = AF_INET ;
 	address.specific.sin_port = htons( port ) ;
-	address.specific.sin_addr.s_addr = inet_addr( host ) ;
+	if( 1 != inet_pton( AF_INET , host , &address.specific.sin_addr ) )
+		return FALSE ;
 
 	/* connect */
-	rc = connect( fd , &address.generic , sizeof(address.generic) ) ;
-	if( rc < 0 ) 
+	rc = connect( fd , &address.generic , (socklen_t)(sizeof(address.generic)) ) ;
+	if( rc < 0 )
 	{
-		close( fd ) ;
+		close_( fd ) ;
 		return FALSE ;
 	}
 
 	/* send the string */
-	n = send( fd , buffer , strlen(buffer) , 0 ) ;
-	if( n < 0 || (size_t)n != strlen(buffer) ) 
+	n = send( fd , buffer , (socklen_t)strlen(buffer) , 0 ) ;
+	if( n < 0 || (size_t)n != strlen(buffer) )
 	{
-		close( fd ) ;
+		close_( fd ) ;
 		return FALSE ;
 	}
 
 	/* read the reply */
-	n = recv( fd , buffer , sizeof(buffer)-1U , 0 ) ;
-	if( n <= 0 ) 
+	n = recv( fd , buffer , (socklen_t)(sizeof(buffer)-1U) , 0 ) ;
+	if( n <= 0 )
 	{
-		close( fd ) ;
+		close_( fd ) ;
 		return FALSE ;
 	}
-	close( fd ) ;
+	close_( fd ) ;
 
 	/* print the reply */
-	n = write( STDOUT_FILENO , buffer , (size_t)n ) ;
+	n = write_( STDOUT_FILENO , buffer , (size_t)n ) ;
 	buffer[0U] = '\n' ;
 	buffer[1U] = '\0' ;
-	n += write( STDOUT_FILENO , buffer , strlen(buffer) ) ;
+	n += write_( STDOUT_FILENO , buffer , strlen(buffer) ) ;
 
 	return TRUE ;
 }
@@ -221,4 +237,3 @@ int main( int argc , char * argv [] )
 		return poke( argc , argv ) ? EXIT_SUCCESS : EXIT_FAILURE ;
 	}
 }
-

@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -20,22 +20,20 @@
 
 #include "gdef.h"
 #include "gdirectory.h"
-#include "gfs.h"
+#include "gfile.h"
+#include "gpath.h"
 #include "gstr.h"
+#include "gassert.h"
 #include "glog.h"
+#include <algorithm> // std::sort
+#include <functional> // std::ptr_fun
+#include <iterator> // std::distance
 
 G::Directory::Directory() :
 	m_path(".")
 {
 }
 
-G::Directory G::Directory::root()
-{
-	std::string s ;
-	s.append( 1U , G::FileSystem::slash() ) ;
-	return Directory( s ) ;
-}
-		
 G::Directory::Directory( const char * path ) :
 	m_path(path)
 {
@@ -50,7 +48,7 @@ G::Directory::Directory( const Path & path ) :
 	m_path(path)
 {
 }
-		
+
 G::Directory::~Directory()
 {
 }
@@ -79,6 +77,14 @@ G::DirectoryList::DirectoryList() :
 {
 }
 
+void G::DirectoryList::readAll( const G::Path & dir , std::vector<G::DirectoryList::Item> & out , bool sorted )
+{
+	DirectoryList list ;
+	list.readAll( dir ) ;
+	if( sorted ) list.sort() ;
+	list.m_list.swap( out ) ;
+}
+
 void G::DirectoryList::readAll( const G::Path & dir )
 {
 	readType( dir , std::string() ) ;
@@ -86,22 +92,23 @@ void G::DirectoryList::readAll( const G::Path & dir )
 
 void G::DirectoryList::readType( const G::Path & dir , const std::string & suffix , unsigned int limit )
 {
-	// we do our own filename matching here so as to reduce
-	// our dependency on the glob()bing DirectoryIterator
-
+	// we do our own filename matching here so as to
+	// reduce our dependency on glob()
 	Directory directory( dir ) ;
 	DirectoryIterator iter( directory ) ;
 	for( unsigned int i = 0U ; iter.more() && !iter.error() ; ++i )
 	{
-		if( suffix.empty() || Str::tailMatch(iter.fileName().str(),suffix) )
+		if( suffix.empty() || Str::tailMatch(iter.fileName(),suffix) )
 		{
-			if( limit == 0U || m_path.size() < limit )
+			if( limit == 0U || m_list.size() < limit )
 			{
-				m_is_dir.push_back( iter.isDir() ) ;
-				m_path.push_back( iter.filePath() ) ;
-				m_name.push_back( iter.fileName() ) ;
+				Item item ;
+				item.m_is_dir = iter.isDir() ;
+				item.m_path = iter.filePath() ;
+				item.m_name = iter.fileName() ;
+				m_list.push_back( item ) ;
 			}
-			if( m_path.size() == limit )
+			if( m_list.size() == limit )
 				break ;
 		}
 	}
@@ -113,29 +120,39 @@ bool G::DirectoryList::more()
 	if( m_first )
 	{
 		m_first = false ;
-		more = ! m_is_dir.empty() ;
+		more = ! m_list.empty() ;
 	}
 	else
 	{
 		m_index++ ;
-		more = m_index < m_is_dir.size() ;
+		more = m_index < m_list.size() ;
 	}
 	return more ;
 }
 
 bool G::DirectoryList::isDir() const
 {
-	return !! m_is_dir[m_index] ;
+	return m_list.at(m_index).m_is_dir ;
 }
 
 G::Path G::DirectoryList::filePath() const
 {
-	return m_path[m_index] ;
+	return m_list.at(m_index).m_path ;
 }
 
-G::Path G::DirectoryList::fileName() const
+std::string G::DirectoryList::fileName() const
 {
-	return m_name[m_index] ;
+	return m_list.at(m_index).m_name ;
+}
+
+bool G::DirectoryList::compare( const Item & a , const Item & b )
+{
+	return a.m_name.compare( b.m_name ) < 0 ;
+}
+
+void G::DirectoryList::sort()
+{
+	std::sort( m_list.begin() , m_list.end() , std::ptr_fun(compare) ) ;
 }
 
 /// \file gdirectory.cpp

@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // goptions.cpp
-//	
+//
 
 #include "gdef.h"
 #include "gstrings.h"
@@ -25,67 +25,15 @@
 #include "goptions.h"
 #include "genvironment.h"
 #include <algorithm>
-#include <map>
 
-namespace G
+G::Options::Options()
 {
-	struct Option ;
 }
 
-struct G::Option // A private implementation structure used by G::Options.
-{ 
-	char c ; 
-	std::string name ; 
-	std::string description ; 
-	std::string description_extra ; 
-	unsigned int value_multiplicity ; // 0,1,2
-	bool hidden ;
-	std::string value_description ;
-	unsigned int level ;
-
-	Option( char c_ , const std::string & name_ , const std::string & description_ ,
-		const std::string & description_extra_ , unsigned int value_multiplicity_ , 
-		const std::string & vd_ , unsigned int level_ ) :
-			c(c_) , 
-			name(name_) , 
-			description(description_) , 
-			description_extra(description_extra_) ,
-			value_multiplicity(value_multiplicity_) , 
-			hidden(description_.empty()||level_==0U) ,
-			value_description(vd_) , 
-			level(level_) 
-	{
-	}
-} ;
-
-class G::OptionsImp
+G::Options::Options( const std::string & spec , char sep_major , char sep_minor , char escape )
 {
-public:
-	typedef std::map<std::string,Option> Map ;
-	Map m_map ;
-} ;
-
-// ==
-
-G::Options::Options( const std::string & spec , char sep_major , char sep_minor , char escape ) :
-	m_spec(spec) ,
-	m_imp(new OptionsImp)
-{
-	try
-	{
-		parseSpec( m_spec , sep_major , sep_minor , escape ) ;
-		std::sort( m_names.begin() , m_names.end() ) ;
-	}
-	catch(...)
-	{
-		delete m_imp ;
-		throw ;
-	}
-}
-
-G::Options::~Options()
-{
-	delete m_imp ;
+	parseSpec( spec , sep_major , sep_minor , escape ) ;
+	std::sort( m_names.begin() , m_names.end() ) ;
 }
 
 void G::Options::parseSpec( const std::string & spec , char sep_major , char sep_minor , char escape )
@@ -126,7 +74,7 @@ void G::Options::addSpec( const std::string & name , char c ,
 	const std::string & description , const std::string & description_extra ,
 	unsigned int value_multiplicity , const std::string & value_description , unsigned int level )
 {
-	std::pair<OptionsImp::Map::iterator,bool> rc = m_imp->m_map.insert( std::make_pair( name ,
+	std::pair<Map::iterator,bool> rc = m_map.insert( std::make_pair( name ,
 		Option(c,name,description,description_extra,value_multiplicity,value_description,level) ) ) ;
 	if( ! rc.second )
 		throw InvalidSpecification("duplication") ;
@@ -140,8 +88,8 @@ bool G::Options::valued( char c ) const
 
 bool G::Options::valued( const std::string & name ) const
 {
-	OptionsImp::Map::const_iterator p = m_imp->m_map.find( name ) ;
-	return p == m_imp->m_map.end() ? false : ( (*p).second.value_multiplicity > 0U ) ;
+	Map::const_iterator p = m_map.find( name ) ;
+	return p == m_map.end() ? false : ( (*p).second.value_multiplicity > 0U ) ;
 }
 
 bool G::Options::unvalued( const std::string & name ) const
@@ -156,14 +104,14 @@ bool G::Options::multivalued( char c ) const
 
 bool G::Options::multivalued( const std::string & name ) const
 {
-	OptionsImp::Map::const_iterator p = m_imp->m_map.find( name ) ;
-	return p == m_imp->m_map.end() ? false : ( (*p).second.value_multiplicity > 1U ) ;
+	Map::const_iterator p = m_map.find( name ) ;
+	return p == m_map.end() ? false : ( (*p).second.value_multiplicity > 1U ) ;
 }
 
 bool G::Options::visible( const std::string & name , Level level , bool exact ) const
 {
-	OptionsImp::Map::const_iterator p = m_imp->m_map.find( name ) ;
-	if( p == m_imp->m_map.end() ) return false ;
+	Map::const_iterator p = m_map.find( name ) ;
+	if( p == m_map.end() ) return false ;
 	return
 		exact ?
 			( !(*p).second.hidden && (*p).second.level == level.level ) :
@@ -172,12 +120,12 @@ bool G::Options::visible( const std::string & name , Level level , bool exact ) 
 
 bool G::Options::valid( const std::string & name ) const
 {
-	return m_imp->m_map.find(name) != m_imp->m_map.end() ;
+	return m_map.find(name) != m_map.end() ;
 }
 
 std::string G::Options::lookup( char c ) const
 {
-	for( OptionsImp::Map::const_iterator p = m_imp->m_map.begin() ; c != '\0' && p != m_imp->m_map.end() ; ++p )
+	for( Map::const_iterator p = m_map.begin() ; c != '\0' && p != m_map.end() ; ++p )
 	{
 		if( (*p).second.c == c )
 			return (*p).second.name ;
@@ -192,7 +140,7 @@ const G::StringArray & G::Options::names() const
 
 // --
 
-size_t G::Options::wrapDefault()
+size_t G::Options::widthDefault()
 {
 	unsigned int result = 79U ;
 	std::string p = G::Environment::get("COLUMNS",std::string()) ;
@@ -203,9 +151,14 @@ size_t G::Options::wrapDefault()
 	return result ;
 }
 
-size_t G::Options::tabDefault()
+size_t G::Options::widthFloor( size_t w )
 {
-	return 30U ;
+	return (w != 0U && w < 50U) ? 50U : w ;
+}
+
+G::Options::Layout G::Options::layoutDefault()
+{
+	return Layout( 30U ) ;
 }
 
 std::string G::Options::introducerDefault()
@@ -218,11 +171,6 @@ G::Options::Level G::Options::levelDefault()
 	return Level(99U) ;
 }
 
-size_t G::Options::widthLimit( size_t w )
-{
-	return (w != 0U && w < 50U) ? 50U : w ;
-}
-
 std::string G::Options::usageSummaryPartOne( Level level ) const
 {
 	// summarise the single-character switches, excluding those which take a value
@@ -230,7 +178,7 @@ std::string G::Options::usageSummaryPartOne( Level level ) const
 	bool first = true ;
 	for( StringArray::const_iterator name_p = m_names.begin() ; name_p != m_names.end() ; ++name_p )
 	{
-		OptionsImp::Map::const_iterator spec_p = m_imp->m_map.find( *name_p ) ;
+		Map::const_iterator spec_p = m_map.find( *name_p ) ;
 		if( (*spec_p).second.c != '\0' && !valued(*name_p) && visible(*name_p,level,false) )
 		{
 			if( first )
@@ -253,7 +201,7 @@ std::string G::Options::usageSummaryPartTwo( Level level ) const
 	{
 		if( visible(*name_p,level,false) )
 		{
-			OptionsImp::Map::const_iterator spec_p = m_imp->m_map.find( *name_p ) ;
+			Map::const_iterator spec_p = m_map.find( *name_p ) ;
 			ss << sep << "[" ;
 			if( (*spec_p).second.name.length() )
 			{
@@ -277,21 +225,21 @@ std::string G::Options::usageSummaryPartTwo( Level level ) const
 	return ss.str() ;
 }
 
-std::string G::Options::usageHelp( Level level , size_t tab_stop , size_t width ,
-	bool exact , bool extra ) const
+std::string G::Options::usageHelp( Level level , Layout layout , bool exact , bool extra ) const
 {
-	return usageHelpCore( "  " , level , tab_stop , widthLimit(width) , exact , extra ) ;
+	layout.width = widthFloor( layout.width ) ;
+	return usageHelpCore( "  " , level , layout , exact , extra ) ;
 }
 
 std::string G::Options::usageHelpCore( const std::string & prefix , Level level ,
-	size_t tab_stop , size_t width , bool exact , bool extra ) const
+	Layout layout , bool exact , bool extra ) const
 {
 	std::string result ;
 	for( StringArray::const_iterator name_p = m_names.begin() ; name_p != m_names.end() ; ++name_p )
 	{
 		if( visible(*name_p,level,exact) )
 		{
-			OptionsImp::Map::const_iterator spec_p = m_imp->m_map.find( *name_p ) ;
+			Map::const_iterator spec_p = m_map.find( *name_p ) ;
 			std::string line( prefix ) ;
 			if( (*spec_p).second.c != '\0' )
 			{
@@ -316,19 +264,19 @@ std::string G::Options::usageHelpCore( const std::string & prefix , Level level 
 			}
 			line.append( 1U , ' ' ) ;
 
-			if( tab_stop == 0U )
-				line.append( ": " ) ;
-			else if( line.length() < tab_stop )
-				line.append( tab_stop-line.length() , ' ' ) ;
+			if( !layout.separator.empty() )
+				line.append( layout.separator ) ;
+			else if( line.length() < layout.column )
+				line.append( layout.column-line.length() , ' ' ) ;
 
 			line.append( (*spec_p).second.description ) ;
 			if( extra )
 				line.append( (*spec_p).second.description_extra ) ;
 
-			if( width )
+			if( layout.width )
 			{
-				std::string indent( tab_stop , ' ' ) ;
-				line = G::Str::wrap( line , "" , indent , width ) ;
+				std::string indent = layout.indent.empty() ? std::string(layout.column,' ') : layout.indent ;
+				line = G::Str::wrap( line , "" , indent , layout.width ) ;
 			}
 			else
 			{
@@ -342,21 +290,35 @@ std::string G::Options::usageHelpCore( const std::string & prefix , Level level 
 }
 
 void G::Options::showUsage( std::ostream & stream , const std::string & exe , const std::string & args ,
-	const std::string & introducer , Level level , size_t tab_stop , size_t width , bool extra ) const
+	const std::string & introducer , Level level , Layout layout , bool extra ) const
 {
 	stream
-		<< usageSummary(exe,args,introducer,level,width) << std::endl
-		<< usageHelp(level,tab_stop,width,false,extra) ;
+		<< usageSummary(exe,args,introducer,level,layout.width) << std::endl
+		<< usageHelp(level,layout,false,extra) ;
 }
 
 std::string G::Options::usageSummary( const std::string & exe , const std::string & args ,
 	const std::string & introducer , Level level , size_t width ) const
 {
-	if( exe.empty() ) 
-		throw std::runtime_error( "G::Options::usageSummary: invalid usage" ) ; // TODO remove
+	std::string s = introducer + exe + " " + usageSummaryPartOne(level) + usageSummaryPartTwo(level) + (args.empty()||args.at(0U)==' '?"":" ") + args ;
+	std::string indent( 2U , ' ' ) ; // or from OptionsLayout ?
+	return width == 0U ? s : G::Str::wrap( s , "" , indent , widthFloor(width) ) ;
+}
 
-	std::string s = introducer + exe + " " + usageSummaryPartOne(level) + usageSummaryPartTwo(level) + args ;
-	return width == 0U ? s : G::Str::wrap( s , "" , "  " , widthLimit(width) ) ;
+// ==
+
+G::Options::Option::Option( char c_ , const std::string & name_ , const std::string & description_ ,
+	const std::string & description_extra_ , unsigned int value_multiplicity_ ,
+	const std::string & vd_ , unsigned int level_ ) :
+		c(c_) ,
+		name(name_) ,
+		description(description_) ,
+		description_extra(description_extra_) ,
+		value_multiplicity(value_multiplicity_) ,
+		hidden(description_.empty()||level_==0U) ,
+		value_description(vd_) ,
+		level(level_)
+{
 }
 
 /// \file goptions.cpp

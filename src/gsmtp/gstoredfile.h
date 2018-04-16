@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -32,7 +32,6 @@
 #include <iostream>
 #include <memory>
 
-/// \namespace GSmtp
 namespace GSmtp
 {
 	class StoredFile ;
@@ -42,16 +41,12 @@ namespace GSmtp
 /// A concete derived class implementing the
 /// StoredMessage interface.
 ///
-class GSmtp::StoredFile : public GSmtp::StoredMessage 
+class GSmtp::StoredFile : public StoredMessage
 {
 public:
-	G_EXCEPTION( InvalidFormat , "invalid format field in envelope" ) ;
-	G_EXCEPTION( NoEnd , "invalid envelope file: misplaced end marker" ) ;
-	G_EXCEPTION( InvalidTo , "invalid 'to' line in envelope file" ) ;
-	G_EXCEPTION( NoRecipients , "no remote recipients" ) ;
-	G_EXCEPTION( OpenError , "cannot open the envelope" ) ;
-	G_EXCEPTION( StreamError , "envelope reading/parsing error" ) ;
-	G_EXCEPTION( InvalidFilename , "invalid filename" ) ;
+	G_EXCEPTION( FormatError , "invalid envelope file" ) ;
+	G_EXCEPTION( FilenameError , "invalid envelope filename" ) ;
+	G_EXCEPTION( ReadError , "cannot read envelope file" ) ;
 
 	StoredFile( FileStore & store , const G::Path & envelope_path ) ;
 		///< Constructor.
@@ -72,55 +67,64 @@ public:
 		///< Opens the content file. Returns false on error.
 		///< Used by FileStore and FileIterator.
 
-	virtual std::string name() const ;
-		///< Final override from GSmtp::StoredMessage.
+	virtual std::string name() const override ;
+		///< Override from GSmtp::StoredMessage.
 
-	virtual std::string location() const ;
-		///< Final override from GSmtp::StoredMessage.
+	virtual std::string location() const override ;
+		///< Override from GSmtp::StoredMessage.
 
-	virtual bool eightBit() const ;
-		///< Final override from GSmtp::StoredMessage.
+	virtual bool eightBit() const override ;
+		///< Override from GSmtp::StoredMessage.
 
-	virtual const std::string & from() const ;
-		///< Final override from GSmtp::StoredMessage.
+	virtual const std::string & from() const override ;
+		///< Override from GSmtp::StoredMessage.
 
-	virtual const G::Strings & to() const ;
-		///< Final override from GSmtp::StoredMessage.
+	virtual const G::StringArray & to() const override ;
+		///< Override from GSmtp::StoredMessage.
 
-	virtual std::string authentication() const ;
-		///< Final override from GSmtp::StoredMessage.
+	virtual std::string authentication() const override ;
+		///< Override from GSmtp::StoredMessage.
 
-	virtual void destroy() ;
-		///< Final override from GSmtp::StoredMessage.
+	virtual std::string fromAuthIn() const override ;
+		///< Override from GSmtp::StoredMessage.
 
-	virtual void fail( const std::string & reason , int reason_code ) ;
-		///< Final override from GSmtp::StoredMessage.
+	virtual std::string fromAuthOut() const override ;
+		///< Override from GSmtp::StoredMessage.
 
-	virtual void unfail() ;
-		///< Final override from GSmtp::StoredMessage.
+	virtual void destroy() override ;
+		///< Override from GSmtp::StoredMessage.
 
-	virtual std::auto_ptr<std::istream> extractContentStream() ;
-		///< Final override from GSmtp::StoredMessage.
+	virtual void fail( const std::string & reason , int reason_code ) override ;
+		///< Override from GSmtp::StoredMessage.
 
-	virtual size_t remoteRecipientCount() const ;
-		///< Final override from GSmtp::StoredMessage.
+	virtual void unfail() override ;
+		///< Override from GSmtp::StoredMessage.
 
-	virtual size_t errorCount() const ;
-		///< Final override from GSmtp::StoredMessage.
+	virtual unique_ptr<std::istream> extractContentStream() override ;
+		///< Override from GSmtp::StoredMessage.
 
-	virtual void sync() ;
-		///< Final override from GSmtp::StoredMessage.
+	virtual size_t remoteRecipientCount() const override ;
+		///< Override from GSmtp::StoredMessage.
+
+	virtual size_t errorCount() const override ;
+		///< Override from GSmtp::StoredMessage.
+
+	virtual void sync( bool ) override ;
+		///< Override from GSmtp::StoredMessage.
 
 private:
 	StoredFile( const StoredFile & ) ; // not implemented
 	void operator=( const StoredFile & ) ; // not implemented
-	static const std::string & crlf() ;
-	std::string getline( std::istream & stream ) const ;
-	std::string value( const std::string & s , const std::string & k = std::string() ) const ;
+	const std::string & eol() const ;
 	G::Path contentPath() const ;
+	std::string readLine( std::istream & ) ;
+	std::string readValue( std::istream & , const std::string & key ) ;
+	std::string value( const std::string & ) const ;
 	void readFormat( std::istream & stream ) ;
 	void readFlag( std::istream & stream ) ;
 	void readFrom( std::istream & stream ) ;
+	void readFromAuthIn( std::istream & stream ) ;
+	void readFromAuthOut( std::istream & stream ) ;
 	void readToList( std::istream & stream ) ;
 	void readEnd( std::istream & stream ) ;
 	void readReasons( std::istream & stream ) ;
@@ -129,19 +133,21 @@ private:
 	void readClientSocketName( std::istream & stream ) ;
 	void readClientCertificate( std::istream & stream ) ;
 	void readEnvelopeCore( bool ) ;
-	static void addReason( const G::Path & path , const std::string & , int ) ;
+	void addReason( const G::Path & path , const std::string & , int ) const ;
 	static G::Path badPath( G::Path ) ;
 	void unlock() ;
 
 private:
 	FileStore & m_store ;
-	G::Strings m_to_local ;
-	G::Strings m_to_remote ;
+	G::StringArray m_to_local ;
+	G::StringArray m_to_remote ;
 	std::string m_from ;
+	std::string m_from_auth_in ;
+	std::string m_from_auth_out ;
 	G::Path m_envelope_path ;
 	G::Path m_old_envelope_path ;
 	std::string m_name ;
-	std::auto_ptr<std::istream> m_content ;
+	unique_ptr<std::istream> m_content ;
 	bool m_eight_bit ;
 	std::string m_authentication ;
 	std::string m_format ;
@@ -150,6 +156,7 @@ private:
 	std::string m_client_certificate ;
 	size_t m_errors ;
 	bool m_locked ;
+	bool m_crlf ;
 } ;
 
 #endif

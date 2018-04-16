@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -24,13 +24,13 @@
 #include "gdef.h"
 #include "gpop.h"
 #include "gsecrets.h"
-#include "gsaslserver.h"
+#include "gsaslserversecrets.h"
 #include "gpath.h"
 #include "gexception.h"
 #include <iostream>
+#include <utility>
 #include <map>
 
-/// \namespace GPop
 namespace GPop
 {
 	class Secrets ;
@@ -38,10 +38,9 @@ namespace GPop
 }
 
 /// \class GPop::Secrets
-/// A simple interface to a store of secrets as used in
-/// authentication.
+/// A simple interface to a store of secrets as used in authentication.
 ///
-class GPop::Secrets : public GAuth::SaslServer::Secrets 
+class GPop::Secrets : public GAuth::SaslServerSecrets
 {
 public:
 	G_EXCEPTION( OpenError , "cannot open pop secrets file" ) ;
@@ -60,23 +59,20 @@ public:
 	std::string path() const ;
 		///< Returns the storage path.
 
-	virtual bool valid() const ;
-		///< Returns true. 
-		///< Final override from GSmtp::Valid virtual base class.
+	virtual bool valid() const override ;
+		///< Override from GSmtp::Valid virtual base class.
 
-	virtual std::string source() const ;
-		///< Returns the storage path, as passed in to the constructor.
-		///<
-		///< Final override from GAuth::SaslServer::Secrets.
+	virtual std::string source() const override ;
+		///< Override from GAuth::SaslServerSecrets.
 
-	virtual std::string secret( const std::string & mechanism , const std::string & id ) const ;
-		///< Returns the given user's secret. Returns the
-		///< empty string if not a valid id.
-		///<
-		///< Final override from GSmtp::SaslServer::Secrets.
+	virtual GAuth::Secret serverSecret( const std::string & encoding_type , const std::string & id ) const override ;
+		///< Override from GSmtp::SaslServer::Secrets.
+
+	virtual std::pair<std::string,std::string> serverTrust( const std::string & ) const override ;
+		///< Override from GSmtp::SaslServer::Secrets.
 
 	bool contains( const std::string & mechanism ) const ;
-		///< Returns true if there is one or more secrets 
+		///< Returns true if there is one or more secrets
 		///< using the given mechanism.
 
 private:

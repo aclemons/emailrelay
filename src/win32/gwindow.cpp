@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -35,6 +35,8 @@ GGui::Window::Window( HWND hwnd ) :
 
 GGui::Window::~Window()
 {
+	if( handle() )
+		::SetWindowLong( handle() , 0 , 0 ) ;
 }
 
 bool GGui::Window::registerWindowClass( const std::string & class_name_in ,
@@ -52,8 +54,8 @@ bool GGui::Window::registerWindowClass( const std::string & class_name_in ,
 	WNDCLASS c ;
 	c.style = style ;
 	c.lpfnWndProc = gwindow_wndproc_export ;
-	c.cbClsExtra = 4 ; // reserved
-	c.cbWndExtra = 4 ; // for pointer to Window
+	c.cbClsExtra = 8 ; // reserved
+	c.cbWndExtra = 8 ; // for pointer to Window
 	c.hInstance = hinstance ;
 	c.hIcon = icon ;
 	c.hCursor = cursor ;
@@ -66,10 +68,10 @@ bool GGui::Window::registerWindowClass( const std::string & class_name_in ,
 
 bool GGui::Window::create( const std::string & class_name ,
 	const std::string & title , DWORD style ,
-	int x , int y , int dx , int dy , 
+	int x , int y , int dx , int dy ,
 	HWND parent , HMENU menu , HINSTANCE hinstance )
 {
-	G_ASSERT( m_hwnd == NULL ) ;
+	G_ASSERT( handle() == NULL ) ;
 	G_DEBUG( "GGui::Window::create: \"" << class_name << "\", \"" << title << "\"" ) ;
 
 	DWORD extended_style = 0 ;
@@ -80,34 +82,35 @@ bool GGui::Window::create( const std::string & class_name ,
 	}
 
 	void *vp = reinterpret_cast<void*>(this) ;
-	m_hwnd = ::CreateWindowExA( extended_style , class_name.c_str() , title.c_str() ,
+	HWND hwnd = ::CreateWindowExA( extended_style , class_name.c_str() , title.c_str() ,
 		style , x , y , dx , dy , parent , menu , hinstance , vp ) ;
+	setHandle( hwnd ) ; // GGui::WindowBase
 
-	G_DEBUG( "GGui::Window::create: handle " << m_hwnd ) ;
-	return m_hwnd != NULL ;
+	G_DEBUG( "GGui::Window::create: handle " << handle() ) ;
+	return handle() != NULL ;
 }
 
 void GGui::Window::update()
 {
-	G_ASSERT( m_hwnd != NULL ) ;
-	::UpdateWindow( m_hwnd ) ;
+	G_ASSERT( handle() != NULL ) ;
+	::UpdateWindow( handle() ) ;
 }
 
 void GGui::Window::show( int style )
 {
-	G_ASSERT( m_hwnd != NULL ) ;
-	::ShowWindow( m_hwnd , style ) ;
+	G_ASSERT( handle() != NULL ) ;
+	::ShowWindow( handle() , style ) ;
 }
 
 void GGui::Window::invalidate( bool erase )
 {
-	::InvalidateRect( m_hwnd , NULL , erase ) ;
+	::InvalidateRect( handle() , NULL , erase ) ;
 }
 
 GGui::Window * GGui::Window::instance( HWND hwnd )
 {
 	G_ASSERT( hwnd != NULL ) ;
-	LONG wl = ::GetWindowLong( hwnd , 0 ) ;
+	LONG_PTR wl = ::GetWindowLongPtr( hwnd , 0 ) ;
 	void * vp = reinterpret_cast<void*>(wl) ;
 	return reinterpret_cast<Window*>(vp) ;
 }
@@ -121,7 +124,7 @@ extern "C" LRESULT CALLBACK gwindow_wndproc_export( HWND hwnd , UINT message , W
 	catch( std::exception & e )
 	{
 		// never gets here
-		G_DEBUG( "gwindow_wndproc_export: exception absorbed: " << e.what() ) ;
+		G_DEBUG( "gwindow_wndproc_export: exception absorbed: " << e.what() ) ; G_IGNORE_VARIABLE( e ) ;
 		return 0 ;
 	}
 }
@@ -145,7 +148,10 @@ WNDPROC GGui::Window::windowProcedure()
 
 LRESULT GGui::Window::wndProc( HWND hwnd , UINT msg , WPARAM wparam , LPARAM lparam )
 {
-	Window * window = msg == WM_CREATE ? NULL : GGui::Window::instance( hwnd ) ;
+	Window * window = msg == WM_CREATE ?
+		instance( reinterpret_cast<CREATESTRUCT*>(lparam) ) :
+		instance( hwnd ) ;
+
 	LRESULT result = msg == WM_CREATE ? -1 : 0 ;
 	try
 	{
@@ -153,12 +159,17 @@ LRESULT GGui::Window::wndProc( HWND hwnd , UINT msg , WPARAM wparam , LPARAM lpa
 	}
 	catch( std::exception & e )
 	{
-		G_DEBUG( "GGui::Window::wndProc: exception from window message handler being passed back: " << e.what() ) ;
-		if( window != NULL )
+		G_DEBUG( "GGui::Window::wndProc: exception from window message handler: " << e.what() ) ;
+		if( msg == WM_CREATE )
+		{
+			G_ERROR( "GGui::Window::wndProc: exception from window creation message handler: " << e.what() ) ;
+			window->m_reason = e.what() ;
+		}
+		else if( msg != WM_NCDESTROY )
 		{
 			try
 			{
-				window->onException( e ) ; // overridable - posts wm_quit by default
+				window->onWindowException( e ) ; // overridable - posts wm_quit by default
 			}
 			catch( std::exception & e )
 			{
@@ -170,19 +181,23 @@ LRESULT GGui::Window::wndProc( HWND hwnd , UINT msg , WPARAM wparam , LPARAM lpa
 	return result ;
 }
 
+GGui::Window * GGui::Window::instance( CREATESTRUCT * cs )
+{
+	G_ASSERT( cs != NULL ) ;
+	return reinterpret_cast<Window*>(cs->lpCreateParams) ;
+}
+
 LRESULT GGui::Window::wndProcCore( Window * window , HWND hwnd , UINT msg , WPARAM wparam , LPARAM lparam )
 {
 	LRESULT result = 0 ;
 	if( msg == WM_CREATE )
 	{
-		G_DEBUG( "GGui::Window::wndProc: WM_CREATE: hwnd " << hwnd ) ;
-		CREATESTRUCT *cs = reinterpret_cast<CREATESTRUCT *>(lparam) ;
-		window = reinterpret_cast<Window *>(cs->lpCreateParams) ;
 		G_ASSERT( window != NULL ) ;
 		G_DEBUG( "GGui::Window::wndProc: WM_CREATE: ptr " << window ) ;
+		G_DEBUG( "GGui::Window::wndProc: WM_CREATE: hwnd " << hwnd ) ;
 		void * vp = reinterpret_cast<void*>(window) ;
-		LONG wl = reinterpret_cast<LONG>(vp) ;
-		::SetWindowLong( hwnd , 0 , wl ) ;
+		LONG_PTR wl = reinterpret_cast<LONG_PTR>(vp) ;
+		::SetWindowLongPtr( hwnd , 0 , wl ) ;
 		window->setHandle( hwnd ) ;
 		result = window->onCreate() ? 0 : -1 ;
 	}
@@ -225,7 +240,7 @@ DWORD GGui::Window::windowStyleMain()
 
 DWORD GGui::Window::windowStylePopup()
 {
-	return 
+	return
 		WS_THICKFRAME |
 		WS_POPUP |
 		WS_SYSMENU |
@@ -245,8 +260,8 @@ DWORD GGui::Window::windowStyleHidden()
 
 UINT GGui::Window::classStyle( bool redraw )
 {
-	return 
-		redraw ? 
+	return
+		redraw ?
 			(CS_DBLCLKS | CS_HREDRAW | CS_VREDRAW) :
 			(CS_DBLCLKS) ;
 }
@@ -286,13 +301,13 @@ GGui::Size GGui::Window::borderSize( bool has_menu )
 
 void GGui::Window::resize( Size new_size , bool repaint )
 {
-	// note that GetWindowRect() returns coordinates relative to the 
-	// top left corner of the screen -- MoveWindow() takes coordinates 
-	// relative to the screen for top-level windows, but relative to 
+	// note that GetWindowRect() returns coordinates relative to the
+	// top left corner of the screen -- MoveWindow() takes coordinates
+	// relative to the screen for top-level windows, but relative to
 	// the parent window for child windows
 
 	RECT rect ;
-	if( ::GetWindowRect( m_hwnd , &rect ) )
+	if( ::GetWindowRect( handle() , &rect ) )
 	{
 		HWND parent = ::GetParent( handle() ) ;
 		const bool child_window = parent != 0 ;
@@ -306,10 +321,10 @@ void GGui::Window::resize( Size new_size , bool repaint )
 	}
 }
 
-void GGui::Window::onException( std::exception & e )
+void GGui::Window::onWindowException( std::exception & e )
 {
 	// overridable - default implementation...
-	G_DEBUG( "GGui::Window::onException: quitting event loop: hwnd " << m_hwnd << ": " << e.what() ) ;
+	G_DEBUG( "GGui::Window::onWindowException: quitting event loop: hwnd " << handle() << ": " << e.what() ) ;
 	Pump::quit( e.what() ) ;
 }
 

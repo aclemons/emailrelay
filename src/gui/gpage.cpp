@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -131,7 +131,7 @@ std::string GPage::stdstr( const QString & s )
 
 QString GPage::qstr( const std::string & s )
 {
-	return QString::fromLocal8Bit( s.data() , s.size() ) ;
+	return QString::fromLocal8Bit( s.data() , static_cast<int>(s.size()) ) ;
 }
 
 std::string GPage::value( const QLineEdit * p )
@@ -164,15 +164,9 @@ void GPage::onShow( bool )
 	// no-op
 }
 
-void GPage::mechanismUpdateSlot( const QString & m )
+G::Executable GPage::launchCommand() const
 {
-	static bool first = true ;
-	if( first && m != "CRAM-MD5" )
-	{
-		//QString title(QMessageBox::tr("E-MailRelay")) ;
-		//QMessageBox::warning( NULL , title , "... ..." , QMessageBox::Ok , QMessageBox::NoButton , QMessageBox::NoButton ) ;
-		first = false ;
-	}
+	return G::Executable() ;
 }
 
 void GPage::tip( QWidget * w , const char * p )
@@ -198,7 +192,7 @@ QString GPage::tip( const char * p )
 
 QString GPage::tip()
 {
-	return QString( tr("Username or password added to the \"emailrelay.auth\" secrets file") ) ;
+	return QString( tr("Username or password added to the secrets file") ) ;
 }
 
 /// \file gpage.cpp

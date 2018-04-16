@@ -1,0 +1,159 @@
+#!/bin/sh
+#
+# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ===
+#
+# emailrelay
+#
+# A shell-script wrapper for E-MailRelay for use in the SysV-init system.
+#
+# Additional command-line options for the emailrelay daemon are sourced from
+# the file "/etc/emailrelay.conf" if it exists. Uncommented lines in the config
+# file have "--" prepended to them and then they are pasted onto the command
+# line.
+#
+# usage: emailrelay { start | stop | restart | force-reload | status }
+#
+# See also: install_initd, remove_initd
+#
+### BEGIN INIT INFO
+# Provides:            emailrelay
+# Required-Start:      $local_fs $network $syslog
+# Required-Stop:       $local_fs $network $syslog
+# Default-Start:       2 3 4 5
+# Default-Stop:        0 1 6
+# Short-Description:   E-MailRelay store-and-forward MTA.
+### END INIT INFO
+##
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+NAME=emailrelay
+DESC=$NAME
+CONFIG=__SYSCONF_DIR__/emailrelay.conf
+RUNDIR=/var/run/$NAME
+PIDFILE=$RUNDIR/$NAME.pid
+GROUP=daemon
+DAEMON=/usr/sbin/$NAME
+SUBMIT=/usr/sbin/$NAME-submit
+
+test -f /etc/default/$NAME && . /etc/default/$NAME
+test -f /etc/rc.conf.d/$NAME && . /etc/rc.conf.d/$NAME
+test -f /etc/default/rcS && . /etc/default/rcS
+
+log_success_msg() {
+	echo "$@"
+}
+log_failure_msg() {
+	echo "$@"
+}
+log_warning_msg() {
+	echo "$@"
+}
+start_daemon() {
+	if test "`cat \"$2\" 2>/dev/null`" -gt 0 2>/dev/null && kill -0 "`cat \"$2\"`"
+	then
+		: # running already
+	else
+		shift ; shift ; shift
+		"$@"
+	fi
+}
+killproc() {
+	shift
+	kill `cat "$1" 2>/dev/null` 2>/dev/null
+}
+pidofproc() {
+	shift
+	kill -0 `cat "$1" 2>/dev/null` 2>/dev/null
+}
+log_daemon_msg() {
+	log_success_msg "$@"
+}
+log_progress_msg() {
+	:;
+}
+log_end_msg() {
+	if test "$1" -eq 0 ; then log_success_msg "...ok" ; else log_failure_msg "...failed!" ; fi
+}
+test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
+
+if test ! -f "$CONFIG" -a -f "$CONFIG.template"
+then
+	cp -p "$CONFIG.template" "$CONFIG"
+fi
+
+case "$1" in
+
+	restart|force-reload)
+		$0 stop
+		$0 start
+	;;
+
+	*start)
+		log_daemon_msg "Starting $DESC"
+		log_progress_msg "$NAME"
+		start_daemon -p "$PIDFILE" -- "$DAEMON" --syslog --pid-file "$PIDFILE" "$CONFIG"
+		log_end_msg $?
+		;;
+
+	stop)
+		log_daemon_msg "Stopping $DESC"
+		log_progress_msg "$NAME"
+		killproc -p "$PIDFILE" "$DAEMON"
+		log_end_msg $?
+		;;
+
+	try-restart|reload|force-reload)
+		echo `basename $0`: $1 not implemented >&2
+		exit 3
+		;;
+
+	status)
+		if pidofproc -p "$PIDFILE" "$DAEMON" >/dev/null
+		then
+			log_success_msg "$NAME is running"
+			true
+		else
+			log_failure_msg "$NAME is not running"
+			false
+		fi
+		;;
+
+	setup)
+		test -d "$RUNDIR" || mkdir -p "$RUNDIR" 2>/dev/null
+		chgrp "$GROUP" "$RUNDIR"
+		chmod 770 "$RUNDIR"
+
+		test -d "$SPOOLDIR" || mkdir -p "$SPOOLDIR" 2>/dev/null
+		chgrp "$GROUP" "$SPOOLDIR"
+		chmod 775 "$SPOOLDIR"
+		chmod g+s "$SPOOLDIR"
+
+		chmod 550 "$DAEMON"
+		chgrp "$GROUP" "$DAEMON"
+		chmod g+s "$DAEMON"
+
+		chmod 555 "$SUBMIT"
+		chgrp "$GROUP" "$SUBMIT"
+		chmod g+s "$SUBMIT"
+		;;
+
+	*)
+		echo usage: `basename $0` "{start|stop|restart|status}" >&2
+		exit 2
+		;;
+
+esac

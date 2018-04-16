@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -19,7 +19,6 @@
 //
 
 #include "gdef.h"
-#include "gauth.h"
 #include "gsecretsfile.h"
 #include "gsecrets.h"
 #include "groot.h"
@@ -28,7 +27,6 @@
 #include "gdatetime.h"
 #include "gfile.h"
 #include "gassert.h"
-#include "gmemory.h"
 #include <map>
 #include <set>
 #include <fstream>
@@ -53,6 +51,10 @@ GAuth::SecretsFile::SecretsFile( const G::Path & path , bool auto_reread , const
 		read( path ) ;
 }
 
+GAuth::SecretsFile::~SecretsFile()
+{
+}
+
 bool GAuth::SecretsFile::valid() const
 {
 	return m_valid ;
@@ -67,12 +69,12 @@ void GAuth::SecretsFile::reread( int )
 {
 	if( m_auto )
 	{
-		G::DateTime::EpochTime now = G::DateTime::now() ;
+		G::EpochTime now = G::DateTime::now() ;
 		G_DEBUG( "GAuth::SecretsFile::reread: file time checked at " << m_check_time << ": now " << now ) ;
 		if( now != m_check_time ) // at most once a second
 		{
 			m_check_time = now ;
-			G::DateTime::EpochTime t = readFileTime( m_path ) ;
+			G::EpochTime t = readFileTime( m_path ) ;
 			G_DEBUG( "GAuth::SecretsFile::reread: current file time " << t << ": saved file time " << m_file_time ) ;
 			if( t != m_file_time )
 			{
@@ -86,10 +88,10 @@ void GAuth::SecretsFile::reread( int )
 void GAuth::SecretsFile::read( const G::Path & path )
 {
 	// open the file
-	std::auto_ptr<std::ifstream> file ;
+	unique_ptr<std::ifstream> file ;
 	{
 		G::Root claim_root ;
-		file <<= new std::ifstream( path.str().c_str() ) ;
+		file.reset( new std::ifstream( path.str().c_str() ) ) ;
 	}
 	if( !file->good() )
 	{
@@ -101,23 +103,17 @@ void GAuth::SecretsFile::read( const G::Path & path )
 
 	// read the file
 	m_map.clear() ;
-	m_set.clear() ;
+	m_types.clear() ;
 	m_warnings.clear() ;
 	read( *file.get() ) ;
-
-	// show the results
-	for( Map::iterator p = m_map.begin() ; p != m_map.end() ; ++p )
-	{
-		G_DEBUG( "GAuth::SecretsFile::read: key=[" << (*p).first << "] value=[" << (*p).second << "]" ) ;
-	}
 
 	// show warnings
 	G_DEBUG( "GAuth::SecretsFile::read: processed " << m_map.size() << " records" ) ;
 	if( m_warnings.size() )
 	{
 		std::string prefix = path.basename() ;
-		G_WARNING( "GAuth::SecretsFile::read: problems reading client & " << m_server_type << " entries from " 
-			<< m_debug_name << " secrets file [" << path.str() << "]..." ) ;
+		G_WARNING( "GAuth::SecretsFile::read: problems reading " << m_debug_name
+			<< " secrets file [" << path.str() << "]..." ) ;
 		for( Warnings::iterator p = m_warnings.begin() ; p != m_warnings.end() ; ++p )
 		{
 			G_WARNING( "GAuth::SecretsFile::read: " << prefix << "(" << (*p).first << "): " << (*p).second ) ;
@@ -125,7 +121,7 @@ void GAuth::SecretsFile::read( const G::Path & path )
 	}
 }
 
-G::DateTime::EpochTime GAuth::SecretsFile::readFileTime( const G::Path & path )
+G::EpochTime GAuth::SecretsFile::readFileTime( const G::Path & path )
 {
 	G::Root claim_root ;
 	return G::File::time( path ) ;
@@ -136,7 +132,7 @@ void GAuth::SecretsFile::read( std::istream & file )
 	for( unsigned int line_number = 1U ; file.good() ; ++line_number )
 	{
 		std::string line = G::Str::readLineFrom( file ) ;
-		if( !file ) 
+		if( !file )
 			break ;
 
 		G::Str::trim( line , G::Str::ws() ) ;
@@ -144,98 +140,135 @@ void GAuth::SecretsFile::read( std::istream & file )
 		{
 			G::StringArray word_array ;
 			G::Str::splitIntoTokens( line , word_array , " \t" ) ;
-			if( word_array.size() > 4U )
-			{
-				m_warnings.push_back( Warnings::value_type(line_number,"ignored extra fields") ) ;
-			}
 			if( word_array.size() >= 4U )
 			{
-				std::string dupe_key = process( word_array[0U] , word_array[1U] , word_array[2U] , word_array[3U] ) ;
-				if( !dupe_key.empty() )
-					m_warnings.push_back( Warnings::value_type(line_number,"line ignored: duplicate key [" + dupe_key + "]") ) ;
+				// 0=<client-server> 1=<encoding-type> 2=<userid-or-ipaddress> 3=<secret-or-verifier-hint>
+				process( line_number , word_array[0U] , word_array[1U] , word_array[2U] , word_array[3U] ) ;
 			}
 			else
 			{
-				m_warnings.push_back( Warnings::value_type(line_number,"line ignored: too few fields") ) ;
+				warning( line_number , "line ignored: too few fields" , "" ) ;
 			}
 		}
 	}
 }
 
-std::string GAuth::SecretsFile::process( std::string side , std::string mechanism , std::string id , std::string secret )
+void GAuth::SecretsFile::process( unsigned int line_number , std::string side ,
+	std::string encoding_type , std::string id , std::string secret )
 {
-	G::Str::toLower( mechanism ) ;
+	G_ASSERT( !side.empty() && !encoding_type.empty() && !id.empty() && !secret.empty() ) ;
+	G::Str::toLower( encoding_type ) ;
 	G::Str::toLower( side ) ;
 
-	// allow columns 1 and 2 to switch around
-	if( mechanism == G::Str::lower(m_server_type) || mechanism == "client" )
-		std::swap( mechanism , side ) ;
-
-	G_DEBUG( "GAuth::SecretsFile::process: side=[" << side << "] mechanism=[" << mechanism << "] id=[" << id << "] secret=[" << secret << "]" ) ;
+	// allow columns 1 and 2 to switch around - TODO remove backwards compatibility
+	if( encoding_type == G::Str::lower(m_server_type) || encoding_type == "client" )
+		std::swap( encoding_type , side ) ;
 
 	if( side == G::Str::lower(m_server_type) )
 	{
 		// server-side
-		std::string key = serverKey( id , mechanism ) ;
-		std::string value = secret ;
-		m_set.insert( G::Str::upper(mechanism) ) ;
-		return m_map.insert(std::make_pair(key,value)).second ? std::string() : key ;
+		std::string key = serverKey( encoding_type , id ) ;
+		Value value( secret , line_number ) ;
+		bool inserted = m_map.insert(std::make_pair(key,value)).second ;
+		if( inserted )
+			m_types.insert( canonical(encoding_type) ) ;
+		else
+			warning( line_number , "line ignored: duplicate key" , key ) ;
 	}
 	else if( side == "client" )
 	{
-		// client-side -- no userid in the key since only one secret
-		std::string key = clientKey( mechanism ) ;
-		std::string value = id + " " + secret ;
-		return m_map.insert(std::make_pair(key,value)).second ? std::string() : key ;
+		// client-side
+		std::string key = clientKey( encoding_type ) ; // not including user id
+		Value value( id + " " + secret , line_number ) ;
+		bool inserted = m_map.insert(std::make_pair(key,value)).second ;
+		if( !inserted )
+			warning( line_number , "line ignored: duplicate key" , key ) ;
 	}
 	else
 	{
-		return std::string() ; // not what we're looking for
+		G_DEBUG( "GAuth::SecretsFile::process: ignoring line number " << line_number << ": not 'client' or '" << m_server_type << "'" ) ;
 	}
 }
 
-GAuth::SecretsFile::~SecretsFile()
+void GAuth::SecretsFile::warning( unsigned int line_number , const std::string & message , const std::string & more )
 {
+	m_warnings.push_back( Warnings::value_type(line_number,message+(more.empty()?std::string():": ")+more) ) ;
 }
 
-std::string GAuth::SecretsFile::serverKey( const std::string & id , const std::string & mechanism )
+std::string GAuth::SecretsFile::canonical( const std::string & encoding_type )
 {
-	return "server:" + G::Str::lower(mechanism) + ":" + id ;
+	std::string type = G::Str::lower( encoding_type ) ;
+	if( type == "cram-md5" ) type = "md5" ;
+	if( type == "apop" ) type = "md5" ;
+	if( type == "login" ) type = "plain" ;
+	return type ;
 }
 
-std::string GAuth::SecretsFile::clientKey( const std::string & mechanism )
+std::string GAuth::SecretsFile::serverKey( std::string encoding_type , const std::string & id )
 {
-	return "client:" + G::Str::lower(mechanism) ;
+	// eg. key -> value
+	// "server plain bob" -> "e+3Dmc2"
+	// "server md5 bob" -> "xbase64x=="
+	// "server none 192.168.0.0/24" -> "trustee"
+	// "server none ::1/128" -> "trustee"
+	return "server " + canonical(encoding_type) + " " + id ;
 }
 
-std::string GAuth::SecretsFile::id( const std::string & mechanism ) const
+std::string GAuth::SecretsFile::clientKey( std::string encoding_type )
+{
+	// eg. key -> value...
+	// "client plain" -> "alice secret+21"
+	// "client md5" -> "alice xbase64x=="
+	return "client " + canonical(encoding_type) ;
+}
+
+GAuth::Secret GAuth::SecretsFile::clientSecret( const std::string & encoding_type ) const
 {
 	reread() ;
-	Map::const_iterator p = m_map.find( clientKey(mechanism) ) ;
-	if( p == m_map.end() || (*p).second.find(" ") == std::string::npos )
-		return std::string() ;
-	else
-		return G::Xtext::decode( (*p).second.substr(0U,(*p).second.find(" ")) ) ; // head
-}
 
-std::string GAuth::SecretsFile::secret( const std::string & mechanism ) const
-{
-	reread() ;
-	Map::const_iterator p = m_map.find( clientKey(mechanism) ) ;
-	if( p == m_map.end() || (*p).second.find(" ") == std::string::npos )
-		return std::string() ;
-	else
-		return G::Xtext::decode( (*p).second.substr((*p).second.find(" ")+1U) ) ; // tail
-}
-
-std::string GAuth::SecretsFile::secret( const std::string & mechanism , const std::string & raw_id ) const
-{
-	reread() ;
-	Map::const_iterator p = m_map.find( serverKey(G::Xtext::encode(raw_id),mechanism) ) ;
+	Map::const_iterator p = m_map.find( clientKey(encoding_type) ) ;
 	if( p == m_map.end() )
-		return std::string() ;
+	{
+		return Secret::none() ;
+	}
 	else
-		return G::Xtext::decode( (*p).second ) ;
+	{
+		std::string id = G::Xtext::decode( G::Str::head( (*p).second.s , " " ) ) ;
+		std::string str_secret = G::Str::tail( (*p).second.s , " " ) ;
+		return Secret( str_secret , canonical(encoding_type) , id , context((*p).second.n) ) ;
+	}
+}
+
+GAuth::Secret GAuth::SecretsFile::serverSecret( const std::string & encoding_type , const std::string & id ) const
+{
+	if( id.empty() )
+		return Secret::none() ;
+
+	reread() ;
+
+	Map::const_iterator p = m_map.find( serverKey(encoding_type,G::Xtext::encode(id)) ) ;
+	if( p == m_map.end() )
+	{
+		return Secret::none( id ) ;
+	}
+	else
+	{
+		return Secret( (*p).second.s , canonical(encoding_type) , id , context((*p).second.n) ) ;
+	}
+}
+
+std::pair<std::string,std::string> GAuth::SecretsFile::serverTrust( const std::string & address_range ) const
+{
+	std::pair<std::string,std::string> result ;
+	std::string encoding_type = "none" ;
+	std::string id = address_range ; // the address-range lives in the id field
+	Map::const_iterator p = m_map.find( serverKey(encoding_type,G::Xtext::encode(id)) ) ;
+	if( p != m_map.end() )
+	{
+		result.first = (*p).second.s ; // the trustee name lives in the shared-secret field
+		result.second = context( (*p).second.n ) ;
+	}
+	return result ;
 }
 
 std::string GAuth::SecretsFile::path() const
@@ -243,9 +276,13 @@ std::string GAuth::SecretsFile::path() const
 	return m_path.str() ;
 }
 
-bool GAuth::SecretsFile::contains( const std::string & mechanism ) const
+bool GAuth::SecretsFile::contains( const std::string & encoding_type ) const
 {
-	return m_set.find(mechanism) != m_set.end() ;
+	return m_types.find(canonical(encoding_type)) != m_types.end() ;
 }
 
+std::string GAuth::SecretsFile::context( unsigned int line_number )
+{
+	return " from line " + G::Str::fromUInt(line_number) ;
+}
 /// \file gsecretsfile.cpp

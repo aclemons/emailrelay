@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -20,32 +20,44 @@
 
 #include "gdef.h"
 #include "garg.h"
+#include "gprocess.h"
 #include "gpath.h"
 #include "gstr.h"
 #include "gdebug.h"
 #include "gassert.h"
 #include <cstring>
 
+bool G::Arg::m_first = true ;
+std::string G::Arg::m_v0 ;
+std::string G::Arg::m_cwd ;
+
 G::Arg::Arg( int argc , char *argv[] )
 {
 	G_ASSERT( argc > 0 ) ;
-	G_ASSERT( argv != NULL ) ;
+	G_ASSERT( argv != nullptr ) ;
 	for( int i = 0 ; i < argc ; i++ )
 		m_array.push_back( argv[i] ) ;
 
-	setExe() ;
-	setPrefix() ;
+	if( m_first )
+	{
+		m_v0 = std::string( argv[0] ) ;
+		m_cwd = Process::cwd(true/*nothrow*/) ; // don't throw yet - we may "cd /" to deamonise
+		m_first = false ;
+	}
 }
 
-G::Arg::Arg( const std::vector<std::string> & args ) :
+G::Arg::Arg( const StringArray & args ) :
 	m_array(args)
 {
-	setExe() ;
-	setPrefix() ;
+}
+
+G::Arg::Arg( const Arg & other ) :
+	m_array(other.m_array)
+{
 }
 
 G::Arg::~Arg()
-{ 
+{
 }
 
 G::Arg::Arg()
@@ -53,10 +65,11 @@ G::Arg::Arg()
 	// now use parse()
 }
 
-G::Arg::Arg( const Arg & other ) :
-	m_array(other.m_array) ,
-	m_prefix(other.m_prefix)
+void G::Arg::parse( HINSTANCE , const std::string & command_line_tail )
 {
+	m_array.clear() ;
+	m_array.push_back( Process::exe() ) ;
+	parseCore( command_line_tail ) ;
 }
 
 void G::Arg::parse( const std::string & command_line )
@@ -64,7 +77,6 @@ void G::Arg::parse( const std::string & command_line )
 	G_ASSERT( !command_line.empty() ) ;
 	m_array.clear() ;
 	parseCore( command_line ) ;
-	setPrefix() ;
 }
 
 void G::Arg::reparse( const std::string & command_line_tail )
@@ -73,32 +85,29 @@ void G::Arg::reparse( const std::string & command_line_tail )
 	parseCore( command_line_tail ) ;
 }
 
+std::string G::Arg::v0()
+{
+	return m_v0 ;
+}
+
 G::Arg & G::Arg::operator=( const Arg & rhs )
 {
-	if( this != &rhs )
-	{
-		m_array = rhs.m_array ;
-		m_prefix = rhs.m_prefix ;
-	}
+	Arg tmp( rhs ) ;
+	m_array.swap( tmp.m_array ) ;
 	return *this ;
 }
 
-void G::Arg::setPrefix()
+G::StringArray G::Arg::array( unsigned int shift ) const
 {
-	G_ASSERT( m_array.size() > 0U ) ;
-	Path path( m_array.at(0U) ) ;
-	path.removeExtension() ;
-	m_prefix = path.basename() ;
-}
-
-G::StringArray G::Arg::array() const
-{
-	return m_array ;
+	G::StringArray result = m_array ;
+	while( !result.empty() && shift-- )
+		result.erase( result.begin() ) ;
+	return result ;
 }
 
 bool G::Arg::contains( const std::string & option , size_type option_args , bool cs ) const
 {
-	return find( cs , option , option_args , NULL ) ;
+	return find( cs , option , option_args , nullptr ) ;
 }
 
 bool G::Arg::find( bool cs , const std::string & option , size_type option_args , size_type * index_p ) const
@@ -107,7 +116,7 @@ bool G::Arg::find( bool cs , const std::string & option , size_type option_args 
 	{
 		if( match(cs,option,m_array[i]) && (i+option_args) < m_array.size() )
 		{
-			if( index_p != NULL )
+			if( index_p != nullptr )
 				*index_p = i ;
 			return true ;
 		}
@@ -117,10 +126,7 @@ bool G::Arg::find( bool cs , const std::string & option , size_type option_args 
 
 bool G::Arg::match( bool cs , const std::string & s1 , const std::string & s2 )
 {
-	return
-		cs ?
-			s1 == s2 :
-			Str::upper(s1) == Str::upper(s2) ;
+	return cs ? (s1==s2) : (Str::upper(s1)==Str::upper(s2)) ;
 }
 
 bool G::Arg::remove( const std::string & option , size_type option_args )
@@ -137,7 +143,7 @@ void G::Arg::removeAt( size_type option_index , size_type option_args )
 	G_ASSERT( option_index > 0U && option_index < m_array.size() ) ;
 	if( option_index > 0U && option_index < m_array.size() )
 	{
-		StringArray::iterator p = m_array.begin() ; 
+		StringArray::iterator p = m_array.begin() ;
 		for( size_type i = 0U ; i < option_index ; i++ ) ++p ; // (rather than cast)
 		p = m_array.erase( p ) ;
 		for( size_type i = 0U ; i < option_args && p != m_array.end() ; i++ )
@@ -165,10 +171,12 @@ std::string G::Arg::v( size_type i ) const
 
 std::string G::Arg::prefix() const
 {
-	return m_prefix ;
+	G_ASSERT( m_array.size() > 0U ) ;
+	Path path( m_array.at(0U) ) ;
+	return path.withoutExtension().basename() ;
 }
 
-const char * G::Arg::prefix( char * argv [] ) // throw()
+const char * G::Arg::prefix( char * argv [] ) // noexcept
 {
 	const char * exe = argv[0] ;
 	const char * p1 = std::strrchr( exe , '/' ) ;
@@ -191,7 +199,7 @@ void G::Arg::protect( std::string & s )
 {
 	// replace all quoted spaces with a replacement
 	// (could do better: escaped quotes, tabs, single quotes)
-	G_DEBUG( "G::Arg::protect: before: " << Str::printable(s) ) ;
+	//G_DEBUG( "G::Arg::protect: before: " << Str::printable(s) ) ;
 	bool in_quote = false ;
 	const char quote = '"' ;
 	const char space = ' ' ;
@@ -201,7 +209,7 @@ void G::Arg::protect( std::string & s )
 		if( s.at(pos) == quote ) in_quote = ! in_quote ;
 		if( in_quote && s.at(pos) == space ) s[pos] = replacement ;
 	}
-	G_DEBUG( "G::Arg::protect: after: " << Str::printable(s) ) ;
+	//G_DEBUG( "G::Arg::protect: after: " << Str::printable(s) ) ;
 }
 
 void G::Arg::unprotect( StringArray & array )
@@ -234,6 +242,32 @@ void G::Arg::dequote( StringArray & array )
 				s.erase( start , 1U ) ;
 			}
 		}
+	}
+}
+
+std::string G::Arg::exe( bool do_throw )
+{
+	std::string procfs = Process::exe() ;
+	if( procfs.empty() && ( m_v0.empty() || ( m_cwd.empty() && Path(m_v0).isRelative() ) ) )
+	{
+		if( do_throw )
+		{
+			throw G::Exception( "cannot determine the absolute path of the current executable" ,
+				G::is_windows() ? "" : "try mounting procfs" ) ;
+		}
+		return std::string() ;
+	}
+	else if( procfs.empty() && G::Path(m_v0).isRelative() )
+	{
+		return Path::join(m_cwd,m_v0).collapsed().str() ;
+	}
+	else if( procfs.empty() )
+	{
+		return m_v0 ;
+	}
+	else
+	{
+		return procfs ;
 	}
 }
 

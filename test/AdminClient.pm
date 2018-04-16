@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-# 
+# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
@@ -19,6 +19,14 @@
 # AdminClient.pm
 #
 # A network client to drive the admin interface.
+#
+# Synopsis:
+#
+#	my $ac = new AdminClient(10026,"localhost") ;
+#	$ac->open() ;
+#	$ac->doFlush() ; my $line = $ac->getline() ;
+#	my @list = $ac->doList() ;
+#	$ac->doTerminate() ;
 #
 
 use strict ;
@@ -56,10 +64,16 @@ sub server { return shift->{m_server} }
 sub doHelp { shift->{'m_t'}->cmd("help") }
 sub doTerminate { shift->{'m_t'}->print("terminate") }
 sub doFlush { shift->{'m_t'}->print("flush") }
-sub getline { return shift->{'m_t'}->getline() }
 
-sub doList 
-{ 
+sub getline
+{
+	my ( $this , $timeout ) = @_ ;
+	my @args = defined($timeout) ? (Timeout=>$timeout) : () ;
+	return $this->{'m_t'}->getline( @args ) ;
+}
+
+sub doList
+{
 	my ( $this ) = @_ ;
 	$this->{'m_t'}->buffer_empty() ; # just in case
 	my @output = $this->{'m_t'}->cmd("list") ;

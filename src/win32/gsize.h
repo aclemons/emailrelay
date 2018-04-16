@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -24,7 +24,6 @@
 #include "gdef.h"
 #include <iostream>
 
-/// \namespace GGui
 namespace GGui
 {
 	class Size ;
@@ -34,7 +33,7 @@ namespace GGui
 /// A structure representing the size of a rectangle (typically
 /// a GUI window).
 ///
-class GGui::Size 
+class GGui::Size
 {
 public:
 	unsigned long dx ;
@@ -44,14 +43,14 @@ public:
 	void streamOut( std::ostream & ) const ;
 } ;
 
-inline 
+inline
 GGui::Size::Size() :
 	dx(0) ,
 	dy(0)
 {
 }
 
-inline 
+inline
 GGui::Size::Size( unsigned long dx_ , unsigned long dy_ ) :
 	dx(dx_) ,
 	dy(dy_)
@@ -64,7 +63,6 @@ void GGui::Size::streamOut( std::ostream & s ) const
 	s << "(" << dx << "," << dy << ")" ;
 }
 
-/// \namespace GGui
 namespace GGui
 {
 	inline

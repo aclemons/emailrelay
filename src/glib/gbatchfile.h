@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gbatchfile.h
 ///
 
-#ifndef G_BATCH_FILE_H__
-#define G_BATCH_FILE_H__
+#ifndef G_BATCH_FILE_H
+#define G_BATCH_FILE_H
 
 #include "gdef.h"
 #include "gpath.h"
@@ -29,7 +29,6 @@
 #include <string>
 #include <vector>
 
-/// \namespace G
 namespace G
 {
 	class BatchFile ;
@@ -43,8 +42,7 @@ class G::BatchFile
 {
 public:
 	G_EXCEPTION( Error , "batch file error" ) ;
-	/// Overload discriminator for G::BatchFile.
-	struct NoThrow 
+	struct NoThrow /// Overload discriminator for G::BatchFile.
 		{} ;
 
 	explicit BatchFile( const G::Path & ) ;
@@ -68,7 +66,7 @@ public:
 		///< Returns the startup command-line broken up into de-quoted pieces.
 		///< The first item in the list will be the executable.
 
-	static void write( const G::Path & , const StringArray & args , 
+	static void write( const G::Path & , const StringArray & args ,
 		const std::string & start_window_name = std::string() ) ;
 			///< Writes a startup batch file, including a "start" prefix.
 			///< If the "start" window name is not supplied then it is

@@ -1,23 +1,23 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
 /// \file gfile.h
 ///
-	
+
 #ifndef G_FILE_H
 #define G_FILE_H
 
@@ -27,7 +27,6 @@
 #include "gdatetime.h"
 #include <cstdio> // std::remove()
 
-/// \namespace G
 namespace G
 {
 	class File ;
@@ -38,10 +37,10 @@ namespace G
 /// A simple static class for dealing with files.
 /// \see G::Path, G::FileSystem, G::Directory
 ///
-class G::File 
+class G::File
 {
 public:
-	G_EXCEPTION( StatError , "cannot stat() file" ) ;
+	G_EXCEPTION( StatError , "cannot access file" ) ;
 	G_EXCEPTION( CannotRemove , "cannot delete file" ) ;
 	G_EXCEPTION( CannotRename , "cannot rename file" ) ;
 	G_EXCEPTION( CannotCopy , "cannot copy file" ) ;
@@ -51,9 +50,7 @@ public:
 	G_EXCEPTION( CannotCreate , "cannot create empty file" ) ;
 	G_EXCEPTION( SizeOverflow , "file size overflow" ) ;
 	G_EXCEPTION( TimeError , "cannot get file modification time" ) ;
-	typedef DateTime::EpochTime time_type ;
-	/// An overload discriminator class for File methods.
-	class NoThrow 
+	class NoThrow /// An overload discriminator class for File methods.
 		{} ;
 
 	static bool remove( const Path & path , const NoThrow & ) ;
@@ -65,8 +62,10 @@ public:
 	static bool rename( const Path & from , const Path & to , const NoThrow & ) ;
 		///< Renames the file. Returns false on error.
 
-	static void rename( const Path & from , const Path & to ) ;
-		///< Renames the file.
+	static void rename( const Path & from , const Path & to , bool ignore_missing = false ) ;
+		///< Renames the file. Throws on error, but optionally
+		///< ignores errors caused by a missing 'from' file or
+		///< missing 'to' directory component.
 
 	static bool copy( const Path & from , const Path & to , const NoThrow & ) ;
 		///< Copies a file. Returns false on error.
@@ -74,7 +73,7 @@ public:
 	static void copy( const Path & from , const Path & to ) ;
 		///< Copies a file.
 
-	static void copy( std::istream & from , std::ostream & to , 
+	static void copy( std::istream & from , std::ostream & to ,
 		std::streamsize limit = 0U , std::string::size_type block = 0U ) ;
 			///< Copies a stream with an optional size limit.
 
@@ -97,24 +96,24 @@ public:
 		///< Returns the empty string on error.
 
 	static bool exists( const Path & file ) ;
-		///< Returns true if the file (directory, link, device etc.)
-		///< exists. Throws an exception if permission denied
-		///< or too many symlinks etc.
+		///< Returns true if the file (directory, device etc.)
+		///< exists. Symlinks are followed. Throws an exception
+		///< if permission denied or too many symlinks etc.
 
 	static bool exists( const Path & file , const NoThrow & ) ;
-		///< Returns true if the file (directory, link, device etc.)
-		///< exists. Returns false on error.
+		///< Returns true if the file (directory, device etc.)
+		///< exists. Symlinks are followed. Returns false on error.
 
 	static bool isDirectory( const Path & path ) ;
 		///< Returns true if the path exists() and is a directory.
 		///< Symlinks are followed.
 
-	static time_type time( const Path & file ) ;
+	static EpochTime time( const Path & file ) ;
 		///< Returns the file's timestamp.
 
-	static time_type time( const Path & file , const NoThrow & ) ;
-		///< Returns the file's timestamp. Returns zero on
-		///< error.
+	static EpochTime time( const Path & file , const NoThrow & ) ;
+		///< Returns the file's timestamp. Returns EpochTime(0)
+		///< on error.
 
 	static void chmodx( const Path & file ) ;
 		///< Makes the file executable.
@@ -142,8 +141,11 @@ private:
 	static std::string copy( const Path & , const Path & , int ) ;
 	static std::string sizeString( g_uint32_t hi , g_uint32_t lo ) ; // win32
 	static bool exists( const Path & , bool , bool ) ;
-	static bool exists( const char * , bool & ) ; // o/s-specific
+	static bool exists( const char * , bool & , bool & ) ; // o/s-specific
+	static bool rename( const char * from , const char * to , bool & enoent ) ;
 	static bool chmodx( const Path & file , bool ) ;
+	static int link( const char * , const char * ) ;
+	static bool linked( const Path & , const Path & ) ;
 } ;
 
 #endif

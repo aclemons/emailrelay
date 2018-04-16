@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,7 +18,7 @@
 // submit.cpp
 //
 // A utility which creates an email message in the E-MailRelay spool
-// directory. 
+// directory.
 //
 // It works a bit like sendmail...
 // * envelope recipient addresses are taken from the command-line
@@ -35,13 +35,14 @@
 //
 
 #include "gdef.h"
-#include "gnet.h"
 #include "gsmtp.h"
+#include "glocal.h"
 #include "gaddress.h"
 #include "geventloop.h"
 #include "garg.h"
 #include "gstrings.h"
 #include "gstr.h"
+#include "gxtext.h"
 #include "ggetopt.h"
 #include "gpath.h"
 #include "gverifier.h"
@@ -57,14 +58,15 @@
 
 G_EXCEPTION( NoBody , "no body text" ) ;
 
-static std::string process( const G::Path & spool_dir , std::istream & stream , 
-	const G::Strings & to_list , std::string from , G::Strings header )
+static std::string process( const G::Path & spool_dir , std::istream & stream ,
+	const G::StringArray & to_list , std::string from , std::string from_auth_in ,
+	std::string from_auth_out , G::StringArray header )
 {
 	// look for a "From:" line in the header if not on the command-line
 	//
 	if( from.empty() )
 	{
-		for( G::Strings::const_iterator header_p = header.begin() ; header_p != header.end() ; ++header_p )
+		for( G::StringArray::const_iterator header_p = header.begin() ; header_p != header.end() ; ++header_p )
 		{
 			const std::string & line = *header_p ;
 			if( line.find("From: ") == 0U )
@@ -84,11 +86,11 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 	// create the output file
 	//
 	GSmtp::FileStore store( spool_dir ) ;
-	std::auto_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from ) ;
+	unique_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from , from_auth_in , from_auth_out ) ;
 
 	// add "To:" lines to the envelope
 	//
-	for( G::Strings::const_iterator to_p = to_list.begin() ; to_p != to_list.end() ; ++to_p )
+	for( G::StringArray::const_iterator to_p = to_list.begin() ; to_p != to_list.end() ; ++to_p )
 	{
 		std::string to = *to_p ;
 		G::Str::trim( to , " \t\r\n" ) ;
@@ -99,9 +101,9 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 	// stream out the header
 	{
 		bool has_from = false ;
-		for( G::Strings::const_iterator header_p = header.begin() ; header_p != header.end() ; ++header_p )
+		for( G::StringArray::const_iterator header_p = header.begin() ; header_p != header.end() ; ++header_p )
 		{
-			if( (*header_p).find("From: ") == 0U ) 
+			if( (*header_p).find("From: ") == 0U )
 				has_from = true ;
 
 			msg->addText( *header_p ) ;
@@ -125,29 +127,34 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 
 	// commit the file
 	//
-	GNet::Address ip = GNet::Address::localhost( 0U ) ;
+	GNet::Address ip = GNet::Address::loopback( GNet::Address::Family::ipv4() ) ;
 	std::string auth_id = std::string() ;
-	std::string new_path = msg->prepare( auth_id , ip.hostString() , std::string() , std::string() ) ;
+	std::string new_path = msg->prepare( auth_id , ip.hostPartString() , std::string() ) ;
 	msg->commit() ;
 	return new_path ;
 }
 
 static void run( const G::Arg & arg )
 {
-	G::GetOpt opt( arg , 
+	G::GetOpt opt( arg ,
 		"v!verbose!prints the path of the created content file!!0!!1|"
 		"s!spool-dir!specifies the spool directory!!1!dir!1|"
 		"f!from!sets the envelope sender!!1!name!1|"
+		"a!auth!sets the envelope authentication value!!1!name!2|"
+		"i!from-auth-in!sets the envelope from-auth-in value!!1!name!2|"
+		"o!from-auth-out!sets the envelope from-auth-out value!!1!name!2|"
 		"h!help!shows this help!!0!!1" ) ;
 
 	if( opt.hasErrors() )
 	{
-		opt.showErrors( std::cerr , arg.prefix() ) ;
+		opt.showErrors( std::cerr ) ;
 	}
 	else if( opt.contains("help") )
 	{
 		std::ostream & stream = std::cerr ;
-		opt.options().showUsage( stream , arg.prefix() , std::string() + " <to-address> [<to-address> ...]" ) ;
+		opt.options().showUsage( stream , arg.prefix() , " <to-address> [<to-address> ...]" ,
+			opt.contains("verbose") ? G::Options::introducerDefault() : ("abbreviated "+G::Options::introducerDefault()) ,
+			opt.contains("verbose") ? G::Options::levelDefault() : G::Options::Level(1U) ) ;
 		stream
 			<< std::endl
 			<< Main::Legal::warranty("","\n")
@@ -169,7 +176,7 @@ static void run( const G::Arg & arg )
 		if( opt.contains("from") )
 			from = opt.value("from") ;
 
-		G::Strings to_list ;
+		G::StringArray to_list ;
 		G::Arg a = opt.args() ;
 		for( unsigned int i = 1U ; i < a.c() ; i++ )
 		{
@@ -183,7 +190,7 @@ static void run( const G::Arg & arg )
 		}
 
 		std::istream & stream = std::cin ;
-		G::Strings header ;
+		G::StringArray header ;
 		while( stream.good() )
 		{
 			std::string line = G::Str::readLineFrom( stream ) ;
@@ -193,9 +200,17 @@ static void run( const G::Arg & arg )
 			if( !stream || line.empty() )
 				break ;
 			header.push_back( line ) ;
-		} 
+		}
 
-		std::string new_path = process( spool_dir , stream , to_list , from , header ) ;
+		std::string from_auth_in = opt.contains("from-auth-in") ?
+			( opt.value("from-auth-in","").empty() ? std::string("<>") : G::Xtext::encode(opt.value("from-auth-in","")) ) :
+			std::string() ;
+
+		std::string from_auth_out = opt.contains("from-auth-out") ?
+			( opt.value("from-auth-out","").empty() ? std::string("<>") : G::Xtext::encode(opt.value("from-auth-out","")) ) :
+			std::string() ;
+
+		std::string new_path = process( spool_dir , stream , to_list , from , from_auth_in , from_auth_out , header ) ;
 		if( opt.contains("verbose") )
 			std::cout << new_path << std::endl ;
 	}

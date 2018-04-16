@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -81,9 +81,8 @@ void GGui::Dialog::cleanup()
 		// reset the object pointer
 		::SetWindowLongPtr( handle() , DWLP_USER , LPARAM(0) ) ;
 
-		// remove from the modal list
-		G_ASSERT( (find(handle())!=m_list.end()) == !m_modal ) ;
-		if( !m_modal )
+		// remove from the modeless list
+		if( !m_modal && find(handle()) != m_list.end() )
 		{
 			G_DEBUG( "GGui::Dialog::dlgProc: removing modeless dialog box window " << handle() ) ;
 			m_list.erase( find(handle()) ) ;
@@ -122,7 +121,7 @@ BOOL GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lp
 			dialog->privateEnd( 0 ) ;
 			return 0 ;
 		}
-		
+
 		// add to the static list of modeless dialogs
 		if( !dialog->m_modal )
 		{
@@ -164,12 +163,20 @@ BOOL GGui::Dialog::dlgProc( UINT message , WPARAM wparam , LPARAM lparam )
 			onScrollMessage( message , wparam , lparam ) ;
 			return 0 ;
 		}
-		
+
 		case WM_COMMAND:
 		{
-			G_ASSERT( wparam == static_cast<WPARAM>(static_cast<UINT>(wparam)) ) ;
-			onCommand( static_cast<UINT>(wparam) ) ;
+			WORD hi_word = HIWORD( wparam ) ;
+			WORD lo_word = LOWORD( wparam ) ; // IDOK, IDCANCEL, ...
+			if( hi_word == 0 )
+				onCommand( static_cast<unsigned int>(lo_word) ) ; // TODO add parameters
 			return 1 ;
+		}
+
+		case WM_NOTIFY:
+		{
+			// TODO control messages
+			return 0 ;
 		}
 
 		case WM_CTLCOLORDLG:
@@ -231,7 +238,7 @@ BOOL GGui::Dialog::dlgProc( UINT message , WPARAM wparam , LPARAM lparam )
 		{
 			G_DEBUG( "GGui::Dialog::dlgProc: WM_NCDESTROY" ) ;
 			cleanup() ;
-			onNcDestroy() ; // override could do "delete this"
+			onNcDestroy() ; // an override could do "delete this"
 			return 1 ;
 		}
 	}
@@ -258,7 +265,7 @@ void GGui::Dialog::end()
 
 void GGui::Dialog::privateEnd( int i )
 {
-	if( handle() != NULL ) 
+	if( handle() != NULL )
 	{
 		G_DEBUG( "GGui::Dialog::privateEnd: " << i ) ;
 		if( m_modal )
@@ -341,7 +348,7 @@ bool GGui::Dialog::runModeless( int resource_id , bool visible )
 }
 
 bool GGui::Dialog::runModeless( const char * f_name , bool visible )
-{		
+{
 	return runStart() && runModelessCore( f_name , visible ) ;
 }
 
@@ -370,14 +377,14 @@ bool GGui::Dialog::runModelessEnd( HWND hwnd , bool visible )
 	}
 	G_DEBUG( "GGui::Dialog::runModeless: hwnd " << hwnd ) ;
 	G_ASSERT( hwnd == handle() ) ;
-	
+
 	if( visible )
 		::ShowWindow( hwnd , SW_SHOW ) ; // in case not WS_VISIBLE style
 
 	return true ;
 }
 
-bool GGui::Dialog::dialogMessage( MSG &msg )
+bool GGui::Dialog::dialogMessage( MSG & msg )
 {
 	for( GGui::DialogList::iterator p = m_list.begin() ; p != m_list.end() ; ++p )
 	{
@@ -385,7 +392,7 @@ bool GGui::Dialog::dialogMessage( MSG &msg )
 			return true ;
 	}
 	return false ;
-} 
+}
 
 GGui::SubClassMap & GGui::Dialog::map()
 {
@@ -411,14 +418,14 @@ bool GGui::Dialog::registerNewClass( HICON hicon , const std::string & new_class
 	return rc != 0 ;
 }
 
-bool GGui::Dialog::privateFocusSet() const 
-{ 
-	return m_focus_set ; 
+bool GGui::Dialog::privateFocusSet() const
+{
+	return m_focus_set ;
 }
 
-bool GGui::Dialog::onInit() 
-{ 
-	return true ; 
+bool GGui::Dialog::onInit()
+{
+	return true ;
 }
 
 void GGui::Dialog::onScrollPosition( HWND , unsigned int )
@@ -429,19 +436,18 @@ void GGui::Dialog::onScroll( HWND , bool )
 {
 }
 
-void GGui::Dialog::onScrollMessage( unsigned int , WPARAM , LPARAM ) 
+void GGui::Dialog::onScrollMessage( unsigned int , WPARAM , LPARAM )
 {
 }
 
-bool GGui::Dialog::isValid() 
-{ 
-	return m_magic == Magic ; 
+bool GGui::Dialog::isValid()
+{
+	return m_magic == Magic ;
 }
 
 BOOL GGui::Dialog::onControlColour_( WPARAM wparam , LPARAM lparam , WORD type )
 {
-	return reinterpret_cast<BOOL>( 
-		onControlColour( reinterpret_cast<HDC>(wparam) , reinterpret_cast<HWND>(lparam) , type ) ) ;
+	return 0 != onControlColour( reinterpret_cast<HDC>(wparam) , reinterpret_cast<HWND>(lparam) , type ) ;
 }
 
 GGui::Dialog * GGui::Dialog::from_lparam( LPARAM lparam )

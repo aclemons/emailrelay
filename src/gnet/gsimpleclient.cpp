@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -19,7 +19,6 @@
 //
 
 #include "gdef.h"
-#include "gnet.h"
 #include "gaddress.h"
 #include "gsocket.h"
 #include "gdatetime.h"
@@ -36,23 +35,23 @@
 
 namespace
 {
-	const int c_retries = 10 ; // number of retries when using a privileged local port number
-	const int c_port_start = 512 ;
-	const int c_port_end = 1024 ;
 	const char * c_cannot_connect_to = "cannot connect to " ;
 }
 
 // ==
 
-GNet::SimpleClient::SimpleClient( const ResolverInfo & remote ,
-	const Address & local_address , bool privileged , bool sync_dns ,
-	unsigned int secure_connection_timeout ) :
-		m_remote(remote) ,
+GNet::SimpleClient::SimpleClient( ExceptionHandler & eh ,
+	const Location & remote , bool bind_local_address , const Address & local_address ,
+	bool sync_dns , unsigned int secure_connection_timeout ) :
+		m_eh(eh) ,
+		m_resolver(*this,eh) ,
+		m_remote_location(remote) ,
+		m_bind_local_address(bind_local_address) ,
 		m_local_address(local_address) ,
-		m_privileged(privileged) ,
 		m_state(Idle) ,
 		m_sync_dns(sync_dns) ,
-		m_secure_connection_timeout(secure_connection_timeout)
+		m_secure_connection_timeout(secure_connection_timeout) ,
+		m_on_connect_timer(*this,&GNet::SimpleClient::onConnectTimer,eh)
 {
 	G_DEBUG( "SimpleClient::ctor" ) ;
 	if( Monitor::instance() ) Monitor::instance()->addClient( *this ) ;
@@ -66,290 +65,194 @@ GNet::SimpleClient::~SimpleClient()
 
 std::string GNet::SimpleClient::logId() const
 {
-	std::string s = m_remote.displayString(true) ;
-	if( m_s.get() != NULL )
-		s.append( std::string() + "@" + m_s->asString() ) ; // cf. ServerPeer::logId()
+	std::string s = m_remote_location.displayString() ;
+	if( m_socket.get() != nullptr )
+		s.append( std::string() + "@" + m_socket->asString() ) ; // cf. ServerPeer::logId()
 	return s ;
 }
 
-GNet::ResolverInfo GNet::SimpleClient::resolverInfo() const
+GNet::Location GNet::SimpleClient::remoteLocation() const
 {
-	return m_remote ;
+	return m_remote_location ;
 }
 
-void GNet::SimpleClient::updateResolverInfo( const ResolverInfo & update )
+void GNet::SimpleClient::updateLocation( const Location & update )
 {
-	if( m_remote.host() == update.host() && m_remote.service() == update.service() && update.hasAddress() )
+	if( m_remote_location.host() == update.host() && m_remote_location.service() == update.service() && update.resolved() )
 	{
-		G_DEBUG( "GNet::SimpleClient::updateResolverInfo: reusing dns lookup for " << update.displayString() ) ;
-		m_remote = update ;
+		G_DEBUG( "GNet::SimpleClient::updateLocation: reusing dns lookup for " << update.displayString() ) ;
+		m_remote_location = update ;
 	}
 }
 
 GNet::StreamSocket & GNet::SimpleClient::socket()
 {
-	if( m_s.get() == NULL )
+	if( m_socket.get() == nullptr )
 		throw NotConnected() ;
-	return *m_s.get() ;
+	return *m_socket.get() ;
 }
 
 const GNet::StreamSocket & GNet::SimpleClient::socket() const
 {
-	if( m_s.get() == NULL )
+	if( m_socket.get() == nullptr )
 		throw NotConnected() ;
-	return *m_s.get() ;
+	return *m_socket.get() ;
 }
 
 void GNet::SimpleClient::connect()
 {
-	G_DEBUG( "GNet::SimpleClient::connect: [" << m_remote.str() << "]" ) ;
+	G_DEBUG( "GNet::SimpleClient::connect: [" << m_remote_location.displayString() << "]" ) ;
 	if( m_state != Idle )
-	{
-		G_WARNING( "SimpleClient::connect: invalid state" ) ;
-		return ;
-	}
+		throw ConnectError( "wrong state" ) ;
 
-	if( m_remote.hasAddress() )
+	m_remote_location.resolveTrivially() ; // if host:service is already address:port
+	if( m_remote_location.resolved() )
 	{
-		bool immediate = startConnecting() ;
-		if( immediate )
-		{
-			immediateConnection() ; // calls onConnect()
-		}
-		else
-		{
-			setState( Connecting ) ;
-		}
+		setState( Connecting ) ;
+		startConnecting() ;
 	}
-	else if( m_sync_dns )
+	else if( m_sync_dns || !Resolver::async() )
 	{
-		std::string error = Resolver::resolve( m_remote ) ;
+		std::string error = Resolver::resolve( m_remote_location ) ;
 		if( !error.empty() )
-		{
 			throw DnsError( error ) ;
-		}
-		bool immediate = startConnecting() ;
-		if( immediate )
-		{
-			immediateConnection() ; // calls onConnect()
-		}
-		else
-		{
-			setState( Connecting ) ;
-		}
+
+		setState( Connecting ) ;
+		startConnecting() ;
 	}
 	else
 	{
-		if( m_resolver.get() == NULL )
-			m_resolver <<= new ClientResolver( *this ) ;
-		if( !m_resolver->resolveReq( m_remote.str() ) )
-			throw DnsError( m_remote.str() ) ;
 		setState( Resolving ) ;
+		m_resolver.start( m_remote_location ) ;
 	}
 }
 
-void GNet::SimpleClient::immediateConnection()
+void GNet::SimpleClient::onResolved( std::string error , Location location )
 {
-	G_DEBUG( "GNet::SimpleClient::connect: immediate connection" ) ;
-	socket().addReadHandler( *this ) ;
-	socket().addExceptionHandler( *this ) ;
-	setState( Connected ) ;
-	onConnectImp() ; // from within connect()
-	onConnect() ; // from within connect()
+	if( !error.empty() )
+		throw DnsError( error ) ;
+
+	G_DEBUG( "GNet::SimpleClient::onResolved: " << location.displayString() ) ;
+	m_remote_location.update( location.address() , location.name() ) ;
+	setState( Connecting ) ;
+	startConnecting() ;
 }
 
-bool GNet::SimpleClient::canRetry( const std::string & error )
+void GNet::SimpleClient::startConnecting()
 {
-	return error.find( c_cannot_connect_to ) == 0U ;
-}
-
-unsigned int GNet::SimpleClient::getRandomPort() 
-{
-	static bool first = true ;
-	if( first )
-	{
-		std::srand( static_cast<unsigned int>(G::DateTime::now()) ) ;
-		first = false ;
-	}
-
-	int r = std::rand() ;
-	if( r < 0 ) r = -r ;
-	r = c_port_start + ( r % (c_port_end - c_port_start) ) ;
-	G_ASSERT( r > 0 ) ;
-	return static_cast<unsigned int>(r) ;
-}
-
-void GNet::SimpleClient::close()
-{
-	m_sp <<= 0 ;
-	m_s <<= 0 ;
-}
-
-bool GNet::SimpleClient::connected() const
-{
-	return m_state == Connected ;
-}
-
-void GNet::SimpleClient::resolveCon( bool success , const Address & address , std::string name_or_reason )
-{
-	if( success )
-	{
-		G_DEBUG( "GNet::SimpleClient::resolveCon: " << address.displayString() ) ;
-		std::string peer_name = name_or_reason ;
-		m_remote.update( address , peer_name ) ;
-		bool immediate = startConnecting() ;
-		setState( immediate ? Connected : Connecting ) ;
-	}
-	else
-	{
-		throw DnsError( name_or_reason ) ;
-	}
-}
-
-bool GNet::SimpleClient::startConnecting()
-{
-	G_DEBUG( "GNet::SimpleClient::startConnecting: " << m_remote.displayString() ) ;
+	G_DEBUG( "GNet::SimpleClient::startConnecting: local: " << m_local_address.displayString() ) ;
+	G_DEBUG( "GNet::SimpleClient::startConnecting: remote: " << m_remote_location.displayString() ) ;
+	if( G::Test::enabled("client-slow-connect") )
+		setState( Testing ) ;
 
 	// create and open a socket
 	//
-	m_s <<= new StreamSocket( m_remote.address() ) ;
-	if( !socket().valid() )
-		throw ConnectError( "cannot open socket" ) ;
+	m_socket.reset( new StreamSocket(m_remote_location.address().domain()) ) ;
+	socket().addWriteHandler( *this , m_eh ) ;
 
 	// create a socket protocol object
 	//
-	m_sp <<= new SocketProtocol( *this , *this , *m_s.get() , m_secure_connection_timeout ) ;
+	m_sp.reset( new SocketProtocol(*this,m_eh,*this,*m_socket.get(),m_secure_connection_timeout) ) ;
 
-	// specifiy this as a 'write' event handler for the socket
-	// (before the connect() in case it is reentrant)
+	// bind a local address to the socket (throws on failure)
 	//
-	socket().addWriteHandler( *this ) ;
+	if( m_bind_local_address )
+		bindLocalAddress( m_local_address ) ;
 
-	// bind a local address to the socket and connect
+	// start connecting
 	//
-	ConnectStatus status = Failure ;
-	std::string error ;
-	if( m_privileged )
-	{
-		for( int i = 0 ; i < c_retries ; i++ )
-		{
-			unsigned int port = getRandomPort() ;
-			m_local_address.setPort( port ) ;
-			G_DEBUG( "GNet::SimpleClient::startConnecting: trying to bind " << m_local_address.displayString() ) ;
-			status = localBind( m_local_address ) ? Success : Retry ;
-			if( status == Retry )
-				continue ;
-
-			status = connectCore( m_remote.address() , &error ) ;
-			if( status != Retry )
-				break ;
-		}
-	}
-	else if( m_local_address == Address(0U) )
-	{
-		status = connectCore( m_remote.address() , &error ) ;
-	}
-	else
-	{
-		if( localBind( m_local_address ) )
-			status = connectCore( m_remote.address() , &error ) ;
-	}
+	bool immediate = false ;
+	if( !socket().connect( m_remote_location.address() , &immediate ) )
+		throw ConnectError( c_cannot_connect_to + m_remote_location.address().displayString() ) ;
 
 	// deal with immediate connection (typically if connecting locally)
 	//
-	bool immediate = status == ImmediateSuccess ;
-	if( status != Success )
+	if( immediate )
 	{
 		socket().dropWriteHandler() ;
+		m_on_connect_timer.startTimer( 0U ) ; // -> onConnectTimer()
 	}
-	if( immediate && m_remote.socks() )
-	{
-		immediate = false ;
-		socket().addReadHandler( *this ) ;
-		socket().addExceptionHandler( *this ) ;
-		setState( Socksing ) ;
-		sendSocksRequest() ;
-	}
-
-	return immediate ;
 }
 
-bool GNet::SimpleClient::localBind( Address local_address )
+void GNet::SimpleClient::onConnectTimer()
 {
-	G::Root claim_root ;
-	bool bound = socket().bind(local_address) ;
-	if( bound )
-	{
-		G_DEBUG( "GNet::SimpleClient::bind: bound local address " << local_address.displayString() ) ;
-	}
-	return bound ;
-}
-
-GNet::SimpleClient::ConnectStatus GNet::SimpleClient::connectCore( Address remote_address , std::string *error_p )
-{
-	G_ASSERT( error_p != NULL ) ;
-	std::string & error = *error_p ;
-
-	// initiate the connection
-	//
-	bool immediate = false ;
-	if( !socket().connect( remote_address , &immediate ) )
-	{
-		G_DEBUG( "GNet::SimpleClient::connectCore: immediate failure" ) ;
-		error = c_cannot_connect_to + remote_address.displayString() ; // see canRetry()
-
-		// we should return Failure here, but Microsoft's stack
-		// will happily bind the same local address more than once,
-		// so it is the connect that fails, not the bind, if
-		// the port was already in use
-		//
-		return Retry ;
-	}
-	else 
-	{
-		return immediate ? ImmediateSuccess : Success ;
-	}
+	G_DEBUG( "GNet::SimpleClient::onConnectTimer: immediate connection" ) ;
+	onWriteable() ;
 }
 
 void GNet::SimpleClient::writeEvent()
 {
 	G_DEBUG( "GNet::SimpleClient::writeEvent" ) ;
+	onWriteable() ;
+}
 
+void GNet::SimpleClient::onWriteable()
+{
 	if( m_state == Connected )
 	{
 		if( m_sp->writeEvent() )
 			onSendComplete() ;
 	}
-	else if( m_state == Connecting && socket().hasPeer() )
+	else if( m_state == Testing )
 	{
-		socket().addReadHandler( *this ) ;
-		socket().addExceptionHandler( *this ) ;
 		socket().dropWriteHandler() ;
-
-		if( m_remote.socks() )
+		setState( Connecting ) ;
+		m_on_connect_timer.startTimer( 2U , 100000U ) ; // -> onConnectTimer()
+	}
+	else if( m_state == Connecting && socket().hasPeer() && m_remote_location.socks() )
+	{
+		setState( Socksing ) ;
+		m_socks.reset( new Socks(m_remote_location) ) ;
+		if( m_socks->send( socket() ) )
 		{
-			setState( Socksing ) ;
-			sendSocksRequest() ;
+			socket().addOobHandler( *this , m_eh ) ;
+			socket().dropWriteHandler() ;
+			socket().addReadHandler( *this , m_eh ) ; // wait for the socks response
 		}
 		else
 		{
+			socket().addOobHandler( *this , m_eh ) ;
+			socket().addWriteHandler( *this , m_eh ) ;
+			socket().dropReadHandler() ;
+		}
+	}
+	else if( m_state == Connecting && socket().hasPeer() )
+	{
+		socket().dropWriteHandler() ;
+		socket().addReadHandler( *this , m_eh ) ;
+		socket().addOobHandler( *this , m_eh ) ;
+
+		setState( Connected ) ;
+		onConnectImp() ;
+		onConnect() ;
+	}
+	else if( m_state == Connecting )
+	{
+		socket().dropWriteHandler() ;
+		throw ConnectError( c_cannot_connect_to + m_remote_location.address().displayString() ) ;
+	}
+	else if( m_state == Socksing )
+	{
+		G_ASSERT( m_socks.get() != nullptr ) ;
+		if( m_socks->send( socket() ) )
+		{
+			socket().dropWriteHandler() ;
+			socket().addReadHandler( *this , m_eh ) ;
+
 			setState( Connected ) ;
 			onConnectImp() ;
 			onConnect() ;
 		}
 	}
-	else if( m_state == Connecting )
-	{
-		throw G::Exception( c_cannot_connect_to + m_remote.address().displayString() ) ; // see canRetry()
-	}
 }
 
 void GNet::SimpleClient::readEvent()
 {
-	G_ASSERT( m_sp.get() != NULL ) ;
+	G_ASSERT( m_sp.get() != nullptr ) ;
 	if( m_state == Socksing )
 	{
-		bool complete = readSocksResponse() ;
+		G_ASSERT( m_socks.get() != nullptr ) ;
+		bool complete = m_socks->read( socket() ) ;
 		if( complete )
 		{
 			setState( Connected ) ;
@@ -359,9 +262,37 @@ void GNet::SimpleClient::readEvent()
 	}
 	else
 	{
-		if( m_sp.get() != NULL )
+		if( m_sp.get() != nullptr )
 			m_sp->readEvent() ;
 	}
+}
+
+bool GNet::SimpleClient::connectError( const std::string & error )
+{
+	return error.find( c_cannot_connect_to ) == 0U ;
+}
+
+void GNet::SimpleClient::close()
+{
+	m_sp.reset() ;
+	m_socket.reset() ;
+}
+
+bool GNet::SimpleClient::connected() const
+{
+	return m_state == Connected ;
+}
+
+void GNet::SimpleClient::bindLocalAddress( const Address & local_address )
+{
+	{
+		G::Root claim_root ;
+		socket().bind( local_address ) ;
+	}
+
+	if( local_address.isLoopback() && !m_remote_location.address().isLoopback() )
+		G_WARNING_ONCE( "GNet::SimpleClient::bindLocalAddress: binding the loopback address for "
+			"outgoing connections may result in connection failures" ) ;
 }
 
 void GNet::SimpleClient::setState( State new_state )
@@ -371,18 +302,31 @@ void GNet::SimpleClient::setState( State new_state )
 
 std::pair<bool,GNet::Address> GNet::SimpleClient::localAddress() const
 {
-	return 
-		m_s.get() != NULL ?
+	return
+		m_socket.get() != nullptr ?
 			socket().getLocalAddress() :
-			std::make_pair(false,GNet::Address::invalidAddress()) ;
+			std::make_pair(false,GNet::Address::defaultAddress()) ;
 }
 
 std::pair<bool,GNet::Address> GNet::SimpleClient::peerAddress() const
 {
-	return 
-		m_s.get() != NULL ?
+	return
+		m_socket.get() != nullptr ?
 			socket().getPeerAddress() :
-			std::make_pair(false,GNet::Address::invalidAddress()) ;
+			std::make_pair(false,GNet::Address::defaultAddress()) ;
+}
+
+std::string GNet::SimpleClient::connectionState() const
+{
+	std::pair<bool,Address> pair =
+		m_socket.get() != nullptr ?
+			socket().getPeerAddress() :
+			std::make_pair(false,GNet::Address::defaultAddress()) ;
+
+	return
+		pair.first ?
+			pair.second.displayString() :
+			("("+m_remote_location.displayString()+")") ;
 }
 
 std::string GNet::SimpleClient::peerCertificate() const
@@ -390,11 +334,11 @@ std::string GNet::SimpleClient::peerCertificate() const
 	return m_sp->peerCertificate() ;
 }
 
-void GNet::SimpleClient::sslConnect()
+void GNet::SimpleClient::secureConnect()
 {
-	if( m_sp.get() == NULL )
-		throw NotConnected( "for ssl-connect" ) ;
-	m_sp->sslConnect() ;
+	if( m_sp.get() == nullptr )
+		throw NotConnected( "for secure-connect" ) ;
+	m_sp->secureConnect() ;
 }
 
 void GNet::SimpleClient::onConnectImp()
@@ -412,58 +356,11 @@ void GNet::SimpleClient::onSendImp()
 {
 }
 
-void GNet::SimpleClient::sendSocksRequest()
+bool GNet::SimpleClient::synchronousDnsDefault()
 {
-	unsigned int far_port = m_remote.socksFarPort() ;
-	if( !Address::validPort(far_port) ) throw SocksError("invalid port") ;
-	g_port_t far_port_n = htons( static_cast<g_port_t>(far_port) ) ;
-	g_port_t far_port_lo = far_port_n & 0xffU ;
-	g_port_t far_port_hi = (far_port_n>>8) & 0xffU ;
-
-	std::string userid ; // TODO - socks userid
-	std::string data ;
-	data.append( 1U , 4 ) ; // version 4
-	data.append( 1U , 1 ) ; // connect request
-	data.append( 1U , static_cast<char>(far_port_lo) ) ;
-	data.append( 1U , static_cast<char>(far_port_hi) ) ;
-	data.append( 1U , 0 ) ;
-	data.append( 1U , 0 ) ;
-	data.append( 1U , 0 ) ;
-	data.append( 1U , 1 ) ;
-	data.append( userid ) ;
-	data.append( 1U , 0 ) ; // NUL
-	data.append( m_remote.socksFarHost() ) ;
-	data.append( 1U , 0 ) ; // NUL
-	GNet::Socket::ssize_type n = socket().write( data.data() , data.size() ) ;
-	if( static_cast<std::string::size_type>(n) != data.size() ) // TODO - socks flow control
-		throw SocksError( "request not sent" ) ;
-}
-
-bool GNet::SimpleClient::readSocksResponse()
-{
-	char buffer[8] ;
-	GNet::Socket::ssize_type rc = socket().read( buffer , sizeof(buffer) ) ;
-	if( rc == 0 || ( rc == -1 && !socket().eWouldBlock() ) ) throw SocksError( "read error" ) ;
-	else if( rc == -1 ) return false ; // go again
-	if( rc != 8 ) throw SocksError( "incomplete response" ) ; // TODO - socks response reassembly
-	if( buffer[0] != 0 ) throw SocksError( "invalid response" ) ;
-	if( buffer[1] != 'Z' ) throw SocksError( "request rejected" ) ;
-	G_LOG( "GNet::SimpleClient::readSocksResponse: " << logId() << ": socks connection completed" ) ;
-	return true ;
-}
-
-// ===
-
-GNet::ClientResolver::ClientResolver( SimpleClient & client ) :
-	Resolver(client) ,
-	m_client(client)
-{
-}
-
-void GNet::ClientResolver::resolveCon( bool success , const Address &address , 
-	std::string reason )
-{
-	m_client.resolveCon( success , address , reason ) ;
+	if( G::Test::enabled("client-dns-asynchronous") ) return false ;
+	if( G::Test::enabled("client-dns-synchronous") ) return true ;
+	return false ; // default to async, but G::thread might run synchronously as a build-time option
 }
 
 /// \file gsimpleclient.cpp

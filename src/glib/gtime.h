@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -26,7 +26,6 @@
 #include "gdatetime.h"
 #include <ctime>
 
-/// \namespace G
 namespace G
 {
 	class Time ;
@@ -36,27 +35,26 @@ namespace G
 /// A simple time-of-day (hh/mm/ss) class.
 /// \see G::Date, G::DateTime
 ///
-class G::Time 
+class G::Time
 {
 public:
-	/// An overload discriminator class for Time constructors.
-	class LocalTime 
+	class LocalTime /// An overload discriminator class for Time constructors.
 		{} ;
 
 	Time() ;
-		///< Constructor, using UTC, for now.
+		///< Constructor for the current time, using UTC.
 
 	explicit Time( const G::DateTime::BrokenDownTime & tm ) ;
 		///< Constructor for the given broken-down time.
 
-	explicit Time( G::DateTime::EpochTime t ) ;
-		///< Constructor, using UTC, for the given epoch time.
+	explicit Time( G::EpochTime t ) ;
+		///< Constructor for the given epoch time, using UTC.
 
-	Time( G::DateTime::EpochTime t , const LocalTime & ) ;
-		///< Constructor, using the local timezone, for the given epoch time.
+	Time( G::EpochTime t , const LocalTime & ) ;
+		///< Constructor for the given epoch time, using the local timezone.
 
 	explicit Time( const LocalTime & ) ;
-		///< Localtime constructor for now.
+		///< Constructor for the current time, using the local timezone.
 
 	int hours() const ;
 		///< Returns the hours (0 <= h < 24).
@@ -65,16 +63,16 @@ public:
 		///< Returns the minutes (0 <= m < 60).
 
 	int seconds() const ;
-		///< Returns the seconds (0 <= s <= 61 [sic]).
+		///< Returns the seconds (0 <= s <= 61).
 
-	std::string hhmmss( const char * sep = NULL ) const ;
-		///< Returns a hhmmss string.
+	std::string hhmmss( const char * sep = nullptr ) const ;
+		///< Returns the hhmmss string.
 
-	std::string hhmm( const char * sep = NULL ) const ;
-		///< Returns a hhmm string.
+	std::string hhmm( const char * sep = nullptr ) const ;
+		///< Returns the hhmm string.
 
 	std::string ss() const ;
-		///< Returns the seconds as a two-digit decimal seconds.
+		///< Returns the seconds as a two-digit decimal string.
 
 private:
 	int m_hh ;

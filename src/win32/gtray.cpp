@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -26,19 +26,20 @@
 GGui::Tray::Tray( unsigned int icon_id , const WindowBase & window ,
 	const std::string & tip , unsigned int message )
 {
+	static NOTIFYICONDATA m_info_zero ;
+	m_info = m_info_zero ;
 	m_info.cbSize = sizeof(m_info) ;
 	m_info.hWnd = window.handle() ;
 	m_info.uID = message ;
 	m_info.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP ;
 	m_info.uCallbackMessage = message ;
 	m_info.hIcon = ::LoadIcon( ApplicationInstance::hinstance() , MAKEINTRESOURCE(icon_id)) ;
+	if( m_info.hIcon == NULL )
+		throw IconError() ;
 
-	char * p = m_info.szTip ;
-	const size_t n = sizeof(m_info.szTip) ;
+	// TODO new data members for Windows 2000
 
-	std::strncpy( p , tip.c_str() , n ) ;
-	p[n-1U] = '\0' ;
-
+	strncpy_s( m_info.szTip , sizeof(m_info.szTip) , tip.c_str() , _TRUNCATE ) ;
 	bool ok = !! ::Shell_NotifyIconA( NIM_ADD , &m_info ) ;
 	if( !ok )
 		throw Error() ;

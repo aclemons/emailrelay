@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -35,7 +35,7 @@ GGui::Cracker::~Cracker()
 {
 }
 
-GGui::Cracker::Cracker( const Cracker & other ) : 
+GGui::Cracker::Cracker( const Cracker & other ) :
 	WindowBase(other)
 {
 }
@@ -46,7 +46,7 @@ GGui::Cracker & GGui::Cracker::operator=( const Cracker & other )
 	return *this ;
 }
 
-LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , 
+LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 	LPARAM lparam , bool &defolt )
 {
 	defolt = false ;
@@ -59,31 +59,31 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 			if( ! done )
 			{
 				PAINTSTRUCT ps ;
-				HDC dc = ::BeginPaint( m_hwnd , &ps ) ;
+				HDC dc = ::BeginPaint( handle() , &ps ) ;
 				onPaint( dc ) ;
-				::EndPaint( m_hwnd , &ps ) ;
+				::EndPaint( handle() , &ps ) ;
 			}
 			return 0 ;
 		}
-		
+
 		case WM_CLOSE:
 		{
 			G_DEBUG( "Cracker::onClose" ) ;
 			if( onClose() )
-				::PostMessage( m_hwnd , WM_DESTROY , 0 , 0 ) ;
+				::PostMessage( handle() , WM_DESTROY , 0 , 0 ) ;
 			return 0 ;
 		}
-		
+
 		case WM_DESTROY:
 		{
-			G_DEBUG( "Cracker::onDestroy: hwnd " << m_hwnd ) ;
+			G_DEBUG( "Cracker::onDestroy: hwnd " << handle() ) ;
 			onDestroy() ;
 			return 0 ;
 		}
 
 		case WM_NCDESTROY:
 		{
-			G_DEBUG( "Cracker::onNcDestroy: hwnd " << m_hwnd ) ;
+			G_DEBUG( "Cracker::onNcDestroy: hwnd " << handle() ) ;
 			onNcDestroy() ;
 			return 0 ;
 		}
@@ -145,7 +145,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 				defolt = true ;
 			return 0 ;
 		}
-		
+
 		case WM_KILLFOCUS:
 		{
 			// wparam, not lparam
@@ -160,7 +160,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 			onGetFocus( hwnd_other ) ;
 			return 0 ;
 		}
-		
+
 		case WM_CHAR:
 		{
 			unsigned int repeat_count = static_cast<unsigned int>(LOWORD(lparam)) ;
@@ -168,7 +168,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 			onChar( vkey , repeat_count ) ;
 			return 0 ;
 		}
-		
+
 		case WM_ERASEBKGND:
 		{
 			G_DEBUG( "Cracker::onEraseBackground" ) ;
@@ -181,20 +181,22 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 			G_DEBUG( "Cracker::onDrop" ) ;
 			HDROP hdrop = hdrop_from( wparam ) ;
 			int count = ::DragQueryFileA( hdrop , 0xFFFFFFFF , NULL , 0 ) ;
-			G::Strings list ;
+			G::StringArray list ;
 			for( int i = 0 ; i < count ; i++ )
 			{
 				static char buffer[G::limits::path] ;
+				buffer[0] = '\0' ;
 				if( ::DragQueryFileA( hdrop , i , buffer , sizeof(buffer) ) < sizeof(buffer) )
 				{
+					buffer[sizeof(buffer)-1U] = '\0' ;
 					G_DEBUG( "Cracker::onDrop: \"" << buffer << "\"" ) ;
-					list.push_back( std::string(buffer) ) ; 
+					list.push_back( std::string(buffer) ) ;
 				}
 			}
 			::DragFinish( hdrop ) ;
 			return !onDrop( list ) ;
 		}
-		
+
 		case WM_SIZE:
 		{
 			SizeType type = restored ;
@@ -204,20 +206,20 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 				case SIZE_MINIMIZED: type = minimised ; break ;
 				case SIZE_RESTORED: type = restored ; break ;
 				case SIZE_MAXHIDE:
-				case SIZE_MAXSHOW: 
+				case SIZE_MAXSHOW:
 				default:
-					return ::DefWindowProc( m_hwnd , message , wparam , lparam ) ;
+					return ::DefWindowProc( handle() , message , wparam , lparam ) ;
 			}
 			onSize( type , LOWORD(lparam) , HIWORD(lparam) ) ;
 			return 0 ;
 		}
-		
+
 		case WM_MOVE:
 		{
 			onMove( static_cast<int>(LOWORD(lparam)) , static_cast<int>(HIWORD(lparam)) ) ;
 			return 0 ;
 		}
-				
+
 		case WM_COMMAND:
 		{
 			UINT type = GET_WM_COMMAND_CMD( wparam , lparam ) ;
@@ -238,10 +240,10 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 				G_DEBUG( "Cracker::onControlCommand" ) ;
 				onControlCommand( window , message , id ) ;
 			}
-			
+
 			return 0 ;
 		}
-		
+
 		case WM_LBUTTONDBLCLK:
 		{
 			const unsigned int x = LOWORD(lparam) ;
@@ -253,19 +255,19 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 
 		case WM_LBUTTONDOWN:
 		{
-			return doMouseButton( &Cracker::onLeftMouseButtonDown , Mouse_Left , 
+			return doMouseButton( &Cracker::onLeftMouseButtonDown , Mouse_Left ,
 				Mouse_Down , message , wparam , lparam ) ;
 		}
 
 		case WM_LBUTTONUP:
 		{
-			return doMouseButton( &Cracker::onLeftMouseButtonUp , Mouse_Left , 
+			return doMouseButton( &Cracker::onLeftMouseButtonUp , Mouse_Left ,
 				Mouse_Up , message , wparam , lparam ) ;
 		}
 
 		case WM_MBUTTONDOWN:
 		{
-			return doMouseButton( &Cracker::onMiddleMouseButtonDown , Mouse_Middle , 
+			return doMouseButton( &Cracker::onMiddleMouseButtonDown , Mouse_Middle ,
 				Mouse_Down , message , wparam , lparam ) ;
 		}
 
@@ -277,13 +279,13 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 
 		case WM_RBUTTONDOWN:
 		{
-			return doMouseButton( &Cracker::onRightMouseButtonDown , Mouse_Right , 
+			return doMouseButton( &Cracker::onRightMouseButtonDown , Mouse_Right ,
 				Mouse_Down , message , wparam , lparam ) ;
 		}
 
 		case WM_RBUTTONUP:
 		{
-			return doMouseButton( &Cracker::onRightMouseButtonUp , Mouse_Right , 
+			return doMouseButton( &Cracker::onRightMouseButtonUp , Mouse_Right ,
 				Mouse_Up , message , wparam , lparam ) ;
 		}
 
@@ -360,7 +362,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 
 		case WM_INITMENUPOPUP:
 		{
-			onInitMenuPopup( hmenu_from(wparam) , 
+			onInitMenuPopup( hmenu_from(wparam) ,
 				static_cast<unsigned int>(LOWORD(lparam)) , !!HIWORD(lparam) ) ;
 			return 0 ;
 		}
@@ -374,7 +376,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 		case WM_PALETTECHANGED:
 		{
 			HWND hwnd_other = hwnd_from( wparam ) ;
-			if( m_hwnd != hwnd_other )
+			if( handle() != hwnd_other )
 				onPaletteChange() ;
 			return 0 ;
 		}
@@ -416,15 +418,15 @@ unsigned int GGui::Cracker::wm_user_other()
 
 LRESULT GGui::Cracker::onControlColour_( WPARAM wparam , LPARAM lparam , WORD id )
 {
-	return reinterpret_cast<LRESULT>( onControlColour( reinterpret_cast<HDC>(wparam) , 
+	return reinterpret_cast<LRESULT>( onControlColour( reinterpret_cast<HDC>(wparam) ,
 		reinterpret_cast<HWND>(lparam) , id ) ) ;
 }
 
 // trivial default implementations of virtual functions...
 
-HBRUSH GGui::Cracker::onControlColour( HDC , HWND , WORD ) 
-{ 
-	return 0 ; 
+HBRUSH GGui::Cracker::onControlColour( HDC , HWND , WORD )
+{
+	return 0 ;
 }
 
 void GGui::Cracker::onSysColourChange()
@@ -436,23 +438,23 @@ bool GGui::Cracker::onSysCommand( SysCommand )
 	return false ;
 }
 
-bool GGui::Cracker::onCreate() 
-{ 
-	return true ; 
+bool GGui::Cracker::onCreate()
+{
+	return true ;
 }
 
-bool GGui::Cracker::onPaintMessage() 
-{ 
-	return false ; 
+bool GGui::Cracker::onPaintMessage()
+{
+	return false ;
 }
 
 void GGui::Cracker::onPaint( HDC )
 {
 }
 
-bool GGui::Cracker::onClose() 
-{ 
-	return true ; 
+bool GGui::Cracker::onClose()
+{
+	return true ;
 }
 
 void GGui::Cracker::onDestroy()
@@ -471,9 +473,9 @@ void GGui::Cracker::onControlCommand( HWND , UINT , UINT )
 {
 }
 
-bool GGui::Cracker::onDrop( const G::Strings & ) 
-{ 
-	return false ; 
+bool GGui::Cracker::onDrop( const G::StringArray & )
+{
+	return false ;
 }
 
 void GGui::Cracker::onSize( SizeType , unsigned int , unsigned int )
@@ -528,29 +530,29 @@ void GGui::Cracker::onInitMenuPopup( HMENU , unsigned int , bool )
 {
 }
 
-bool GGui::Cracker::onIdle() 
-{ 
+bool GGui::Cracker::onIdle()
+{
 	const bool keep_calling_on_idle = false ;
 	return keep_calling_on_idle ;
 }
 
-LRESULT GGui::Cracker::onUser( WPARAM , LPARAM ) 
-{ 
-	return 0 ; 
+LRESULT GGui::Cracker::onUser( WPARAM , LPARAM )
+{
+	return 0 ;
 }
 
-LRESULT GGui::Cracker::onUserOther( WPARAM , LPARAM ) 
-{ 
-	return 0 ; 
+LRESULT GGui::Cracker::onUserOther( WPARAM , LPARAM )
+{
+	return 0 ;
 }
 
 bool GGui::Cracker::onEraseBackground( HDC hdc )
 {
 	WPARAM wparam = reinterpret_cast<WPARAM>(hdc) ;
-	return !! ::DefWindowProc( m_hwnd , WM_ERASEBKGND , wparam , 0L ) ;
+	return !! ::DefWindowProc( handle() , WM_ERASEBKGND , wparam , 0L ) ;
 }
 
-void GGui::Cracker::onMouseMove( unsigned int x , unsigned int y , 
+void GGui::Cracker::onMouseMove( unsigned int x , unsigned int y ,
 	bool shift_key_down , bool control_key_down ,
 	bool left_button_down , bool middle_button_down ,
 	bool right_button_down )
@@ -562,38 +564,38 @@ void GGui::Cracker::onMouseButton( MouseButton , MouseButtonDirection ,
 {
 }
 
-void GGui::Cracker::onLeftMouseButtonDown( int x , int y , 
+void GGui::Cracker::onLeftMouseButtonDown( int x , int y ,
 	bool shift_key_down , bool control_key_down )
 {
 }
 
-void GGui::Cracker::onLeftMouseButtonUp( int x , int y , 
+void GGui::Cracker::onLeftMouseButtonUp( int x , int y ,
 	bool shift_key_down , bool control_key_down )
 {
 }
 
-void GGui::Cracker::onMiddleMouseButtonDown( int x , int y , 
+void GGui::Cracker::onMiddleMouseButtonDown( int x , int y ,
 	bool shift_key_down , bool control_key_down )
 {
 }
 
-void GGui::Cracker::onMiddleMouseButtonUp( int x , int y , 
+void GGui::Cracker::onMiddleMouseButtonUp( int x , int y ,
 	bool shift_key_down , bool control_key_down )
 {
 }
 
-void GGui::Cracker::onRightMouseButtonDown( int x , int y , 
+void GGui::Cracker::onRightMouseButtonDown( int x , int y ,
 	bool shift_key_down , bool control_key_down )
 {
 }
 
-void GGui::Cracker::onRightMouseButtonUp( int x , int y , 
+void GGui::Cracker::onRightMouseButtonUp( int x , int y ,
 	bool shift_key_down , bool control_key_down )
 {
 }
 
-bool GGui::Cracker::onPalette() 
-{ 
+bool GGui::Cracker::onPalette()
+{
 	return false ;
 }
 
@@ -605,8 +607,8 @@ void GGui::Cracker::onWinsock( WPARAM , LPARAM )
 {
 }
 
-LRESULT GGui::Cracker::doMouseButton( Fn fn , MouseButton button , 
-	MouseButtonDirection  direction , unsigned int , 
+LRESULT GGui::Cracker::doMouseButton( Fn fn , MouseButton button ,
+	MouseButtonDirection  direction , unsigned int ,
 	WPARAM wparam , LPARAM lparam )
 {
 	const int x = static_cast<int>(LOWORD(lparam)) ;

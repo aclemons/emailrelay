@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -19,12 +19,11 @@
 //
 
 #include "gdef.h"
-#include "gnet.h"
-#include "gauth.h"
 #include "gpam.h"
 #include "gsaslserverpam.h"
 #include "gexception.h"
 #include "gstr.h"
+#include "gdebug.h"
 
 namespace GAuth
 {
@@ -32,12 +31,36 @@ namespace GAuth
 	class SaslServerPamImp ;
 }
 
+/// \class GAuth::SaslServerPamImp
+/// A private implementation class used by GAuth::SaslServerPam.
+///
+class GAuth::SaslServerPamImp
+{
+public:
+	SaslServerPamImp( bool valid , bool allow_apop ) ;
+	virtual ~SaslServerPamImp() ;
+	bool active() const ;
+	bool init( const std::string & mechanism ) ;
+	std::string apply( const std::string & pwd , bool & done ) ;
+	std::string id() const ;
+	bool authenticated() const ;
+
+private:
+	SaslServerPamImp( const SaslServerPamImp & ) ;
+	void operator=( const SaslServerPamImp & ) ;
+
+private:
+	bool m_active ;
+	bool m_allow_apop ;
+	PamImp * m_pam ;
+} ;
+
 /// \class GAuth::PamImp
-/// A private implementation of the G::Pam interface used
-///  by GAuth::SaslServerPamImp, which is itself a private implementation
-///  class used by GAuth::SaslServerPam.
-/// 
-class GAuth::PamImp : public G::Pam 
+/// A private implementation of the G::Pam interface used by
+/// GAuth::SaslServerPamImp, which is itself a private implementation
+/// class used by GAuth::SaslServerPam.
+///
+class GAuth::PamImp : public G::Pam
 {
 public:
 	typedef GAuth::PamImp::ItemArray ItemArray ;
@@ -50,8 +73,8 @@ public:
 	std::string id() const ;
 
 protected:
-	virtual void converse( ItemArray & ) ;
-	virtual void delay( unsigned int usec ) ;
+	virtual void converse( ItemArray & ) override ;
+	virtual void delay( unsigned int usec ) override ;
 
 private:
 	PamImp( const PamImp & ) ;
@@ -63,32 +86,6 @@ private:
 	std::string m_pwd ;
 } ;
 
-// ==
-
-/// \class GAuth::SaslServerPamImp
-/// A private implementation class 
-///  used by GAuth::SaslServerPam.
-/// 
-class GAuth::SaslServerPamImp 
-{
-public:
-	explicit SaslServerPamImp( bool valid ) ;
-	virtual ~SaslServerPamImp() ;
-	bool active() const ;
-	std::string apply( const std::string & pwd , bool & done ) ;
-	std::string id() const ;
-	bool authenticated() const ;
-
-private:
-	SaslServerPamImp( const SaslServerPamImp & ) ;
-	void operator=( const SaslServerPamImp & ) ;
-
-private:
-	bool m_active ;
-	PamImp * m_pam ;
-} ;
-
-// ==
 
 GAuth::PamImp::PamImp( const std::string & app , const std::string & id ) :
 	G::Pam(app,id,true) ,
@@ -133,14 +130,18 @@ void GAuth::PamImp::apply( const std::string & pwd )
 
 void GAuth::PamImp::delay( unsigned int )
 {
-	// TODO - pam delay - probably not possible with non-blocking i/o
+	// TODO asynchronous implementation of pam delay callback
+	// ... but that would require the SaslServer interface be made asynchronous
+	// so the result of the apply() (ie. the next challenge) gets delivered
+	// via a callback -- the complexity trade-off is not compelling
 }
 
 // ==
 
-GAuth::SaslServerPamImp::SaslServerPamImp( bool active ) :
+GAuth::SaslServerPamImp::SaslServerPamImp( bool active , bool allow_apop ) :
 	m_active(active) ,
-	m_pam(NULL)
+	m_allow_apop(allow_apop) ,
+	m_pam(nullptr)
 {
 }
 
@@ -152,6 +153,13 @@ GAuth::SaslServerPamImp::~SaslServerPamImp()
 bool GAuth::SaslServerPamImp::active() const
 {
 	return m_active ;
+}
+
+bool GAuth::SaslServerPamImp::init( const std::string & mechanism )
+{
+	return
+		G::Str::upper(mechanism) == "PLAIN" ||
+		( m_allow_apop && G::Str::upper(mechanism) == "APOP" ) ;
 }
 
 std::string GAuth::SaslServerPamImp::id() const
@@ -168,24 +176,24 @@ std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool 
 	std::string pwd = G::Str::tail( s , s.find(sep) , std::string() ) ;
 
 	delete m_pam ;
-	m_pam = NULL ;
+	m_pam = nullptr ;
 	m_pam = new PamImp( "emailrelay" , id ) ;
 
 	try
 	{
 		m_pam->apply( pwd ) ;
 	}
-	catch( G::Pam::Error & e )
+	catch( G::PamError & e )
 	{
 		G_WARNING( "GAuth::SaslServer::apply: " << e.what() ) ;
 		delete m_pam ;
-		m_pam = NULL ;
+		m_pam = nullptr ;
 	}
 	catch( PamImp::NoPrompt & e )
 	{
 		G_WARNING( "GAuth::SaslServer::apply: pam error: " << e.what() ) ;
 		delete m_pam ;
-		m_pam = NULL ;
+		m_pam = nullptr ;
 	}
 
 	done = true ; // (only single challenge-response supported)
@@ -194,8 +202,8 @@ std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool 
 
 // ==
 
-GAuth::SaslServerPam::SaslServerPam( const Secrets & secrets , bool , bool ) :
-	m_imp(new SaslServerPamImp(secrets.valid()))
+GAuth::SaslServerPam::SaslServerPam( const SaslServerSecrets & secrets , bool allow_apop ) :
+	m_imp(new SaslServerPamImp(secrets.valid(),allow_apop))
 {
 }
 
@@ -214,7 +222,7 @@ std::string GAuth::SaslServerPam::mechanism() const
 	return "PLAIN" ;
 }
 
-bool GAuth::SaslServerPam::trusted( GNet::Address ) const
+bool GAuth::SaslServerPam::trusted( const GNet::Address & ) const
 {
 	return false ;
 }
@@ -231,7 +239,7 @@ bool GAuth::SaslServerPam::mustChallenge() const
 
 bool GAuth::SaslServerPam::init( const std::string & mechanism )
 {
-	return mechanism == "PLAIN" ;
+	return m_imp->init( mechanism ) ;
 }
 
 std::string GAuth::SaslServerPam::initialChallenge() const

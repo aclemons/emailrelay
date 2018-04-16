@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -19,16 +19,16 @@
 //
 // A dummy smtp server for testing purposes.
 //
-// usage: emailrelay-test-server [--quiet] [--tls] [--auth-foo-bar] [--auth-login] [--auth-plain] 
-//        [--auth-ok] [--slow] [--fail-at <n>] [--port <port>]
+// usage: emailrelay-test-server [--quiet] [--tls] [--auth-foo-bar] [--auth-login] [--auth-plain]
+//        [--auth-ok] [--slow] [--fail-at <n>] [--ipv6] [--port <port>]
 //
 
 #include "gdef.h"
-#include "gnet.h"
 #include "geventloop.h"
 #include "gtimerlist.h"
 #include "gstr.h"
 #include "garg.h"
+#include "ggetopt.h"
 #include "gpath.h"
 #include "gserver.h"
 #include "gbufferedserverpeer.h"
@@ -42,6 +42,7 @@
 
 struct Config
 {
+	bool m_ipv6 ;
 	unsigned int m_port ;
 	bool m_auth_foo_bar ;
 	bool m_auth_login ;
@@ -50,20 +51,22 @@ struct Config
 	int m_fail_at ;
 	bool m_tls ;
 	bool m_quiet ;
-	Config( unsigned int port , bool auth_foo_bar , bool auth_login , bool auth_plain , bool auth_ok , int fail_at , bool tls , bool quiet ) : 
-		m_port(port) ,
-		m_auth_foo_bar(auth_foo_bar) ,
-		m_auth_login(auth_login) ,
-		m_auth_plain(auth_plain) ,
-		m_auth_ok(auth_ok) ,
-		m_fail_at(fail_at) ,
-		m_tls(tls) ,
-		m_quiet(quiet)
+	Config( bool ipv6 , unsigned int port , bool auth_foo_bar , bool auth_login , bool auth_plain ,
+		bool auth_ok , int fail_at , bool tls , bool quiet ) :
+			m_ipv6(ipv6) ,
+			m_port(port) ,
+			m_auth_foo_bar(auth_foo_bar) ,
+			m_auth_login(auth_login) ,
+			m_auth_plain(auth_plain) ,
+			m_auth_ok(auth_ok) ,
+			m_fail_at(fail_at) ,
+			m_tls(tls) ,
+			m_quiet(quiet)
 	{
 	}
 } ;
 
-class Peer : public GNet::BufferedServerPeer 
+class Peer : public GNet::BufferedServerPeer
 {
 public:
 	Peer( GNet::Server::PeerInfo , Config ) ;
@@ -79,16 +82,16 @@ public:
 	int m_message ;
 } ;
 
-class Server : public GNet::Server 
+class Server : public GNet::Server
 {
 public:
-	explicit Server( Config c ) ;
-	virtual GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) ;
+	Server( GNet::ExceptionHandler & , Config c ) ;
+	virtual GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) override ;
 	Config m_config ;
 } ;
 
-Server::Server( Config config ) : 
-	GNet::Server(config.m_port) ,
+Server::Server( GNet::ExceptionHandler & eh , Config config ) :
+	GNet::Server(eh,GNet::Address(config.m_ipv6?GNet::Address::Family::ipv6():GNet::Address::Family::ipv4(),config.m_port)) ,
 	m_config(config)
 {
 }
@@ -166,34 +169,35 @@ bool Peer::onReceive( const std::string & line )
 	}
 	else if( G::Str::upper(line) == "STARTTLS" )
 	{
-		; // no response (tbc?)
+		; // no starttls response -- could do better
 	}
 	else if( G::Str::upper(line) == "QUIT" )
 	{
 		doDelete() ;
 	}
-	else if( G::Str::trimmed(G::Str::upper(line),G::Str::ws()) == "AUTH PLAIN" ) 
+	else if( G::Str::trimmed(G::Str::upper(line),G::Str::ws()) == "AUTH PLAIN" )
 	{
-		// got auth command on its own, without credentials
+		// got "auth plain" command on its own, without credentials
 		m_in_auth_2 = true ;
 		tx( "334\r\n" ) ;
 	}
 	else if( G::Str::upper(line).find("AUTH") == 0U && G::Str::upper(line).find("PLAIN") != std::string::npos )
 	{
-		// got auth command with credentials
+		// got "auth plain" command with credentials
 		tx( m_config.m_auth_ok ? "235 authentication ok\r\n" : "535 authentication failed\r\n" ) ;
 	}
 	else if( G::Str::upper(line).find("AUTH") == 0U && G::Str::upper(line).find("LOGIN") != std::string::npos )
 	{
+		// got "auth login"
 		m_in_auth_1 = true ;
-		tx( "334 VXNlcm5hbWU6\r\n" ) ;
+		tx( "334 VXNlcm5hbWU6\r\n" ) ; // "Username:"
 	}
 	else if( m_in_auth_1 )
 	{
 		m_in_auth_1 = false ;
 		if( m_config.m_auth_ok )
 		{
-			tx( "334 UGFzc3dvcmQ6\r\n" ) ;
+			tx( "334 UGFzc3dvcmQ6\r\n" ) ; // "Password:"
 			m_in_auth_2 = true ;
 		}
 		else
@@ -233,45 +237,76 @@ int main( int argc , char * argv [] )
 	try
 	{
 		G::Arg arg( argc , argv ) ;
-		bool auth_foo_bar = arg.remove( "--auth-foo-bar" ) ;
-		bool auth_login = arg.remove( "--auth-login" ) ;
-		bool auth_plain = arg.remove( "--auth-plain" ) ;
-		bool auth_ok = arg.remove( "--auth-ok" ) ;
-		bool slow = arg.remove( "--slow" ) ;
-		bool tls = arg.remove( "--tls" ) ;
-		bool quiet = arg.remove( "--quiet" ) ;
-		int fail_at = arg.contains("--fail-at",1U) ? G::Str::toInt(arg.v(arg.index("--fail-at",1U)+1U)) : -1 ;
-		unsigned int port = arg.contains("--port",1U) ? G::Str::toUInt(arg.v(arg.index("--port",1U)+1U)) : 10025U ;
+		G::GetOpt opt( arg ,
+			"h!help!show help!!0!!1" "|"
+			"b!auth-foo-bar!enable mechanisms foo and bar!!0!!1" "|"
+			"l!auth-login!enable mechanism login!!0!!1" "|"
+			"p!auth-plain!enable mechanism plain!!0!!1" "|"
+			"o!auth-ok!successful authentication!!0!!1" "|"
+			"s!slow!slow responses!!0!!1" "|"
+			"t!tls!enable tls!!0!!1" "|"
+			"q!quiet!less logging!!0!!1" "|"
+			"f!fail-at!fail the n'th message! (zero-based index)!1!n!1" "|"
+			"P!port!port number!!1!port!1" "|"
+			"f!pid-file!pid file!!1!path!1" "|"
+			"6!ipv6!use ipv6!!0!!1" "|"
+		) ;
+		if( opt.hasErrors() )
+		{
+			opt.showErrors(std::cerr) ;
+			return 2 ;
+		}
+		if( opt.contains("help") )
+		{
+			opt.options().showUsage( std::cout , arg.prefix() ) ;
+			return 0 ;
+		}
 
-		G::Path argv0 = G::Path(arg.v(0)).basename() ; argv0.removeExtension() ;
-		std::string pid_file_name = std::string(".") + argv0.str() + ".pid" ;
+		bool auth_foo_bar = opt.contains( "auth-foo-bar" ) ;
+		bool auth_login = opt.contains( "auth-login" ) ;
+		bool auth_plain = opt.contains( "auth-plain" ) ;
+		bool auth_ok = opt.contains( "auth-ok" ) ;
+		bool slow = opt.contains( "slow" ) ;
+		bool tls = opt.contains( "tls" ) ;
+		bool quiet = opt.contains( "quiet" ) ;
+		int fail_at = opt.contains("fail-at") ? G::Str::toInt(opt.value("fail-at")) : -1 ;
+		bool ipv6 = opt.contains("ipv6") ;
+		unsigned int port = opt.contains("port") ? G::Str::toUInt(opt.value("port")) : 10025U ;
+
+		G::Path argv0 = G::Path(arg.v(0)).withoutExtension().basename() ;
+		std::string pid_file_name = opt.value( "pid-file" , "."+argv0.str()+".pid" ) ;
+
+		G::LogOutput log( "" , !quiet , !quiet , false , false , true , false , true , false ) ;
+		G_LOG_S( "pid=[" << G::Process::Id() << "]" ) ;
+		G_LOG_S( "pidfile=[" << pid_file_name << "]" ) ;
+		G_LOG_S( "port=[" << port << "]" ) ;
+		G_LOG_S( "fail-at=[" << fail_at << "]" ) ;
+
 		{
 			std::ofstream pid_file( pid_file_name.c_str() ) ;
 			pid_file << G::Process::Id().str() << std::endl ;
 		}
 
-		G::LogOutput log( "" , !quiet , !quiet , false , false , true , false , true , false ) ;
-		GNet::EventLoop * loop = GNet::EventLoop::create() ;
-		loop->init();
+		GNet::EventLoop * event_loop = GNet::EventLoop::create() ;
 		GNet::TimerList timer_list ;
-		Server server( Config(port,auth_foo_bar,auth_login,auth_plain,auth_ok,fail_at,tls,quiet) ) ;
+		Server server( *event_loop , Config(ipv6,port,auth_foo_bar,auth_login,auth_plain,auth_ok,fail_at,tls,quiet) ) ;
 
 		if( slow )
 		{
 			while( true )
 			{
-				loop->quit("x") ;
-				if( loop->run() != "x" )
+				event_loop->quit("x") ;
+				if( event_loop->run() != "x" )
 					break ;
 				struct timeval t ;
 				t.tv_sec = 0 ;
 				t.tv_usec = 100000 ;
-				::select( 0 , NULL , NULL , NULL , &t ) ;
+				::select( 0 , nullptr , nullptr , nullptr , &t ) ;
 			}
 		}
 		else
 		{
-			loop->run() ;
+			event_loop->run() ;
 		}
 
 		return 0 ;

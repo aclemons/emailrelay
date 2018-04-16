@@ -4,15 +4,17 @@ E-MailRelay Windows
 Setup program
 -------------
 Installing E-MailRelay on Windows should be straightforward if you have the
-setup program "emailrelay-setup.exe" and its associated "payload" data file.
+setup program "emailrelay-setup.exe" and its associated "payload" files.
 
 Run "emailrelay-setup.exe" as an administrator if you are going to be installing
-into sensitive directories like "Program Files". If you don't want to run it as
-an administrator then you will have to rename it to (eg.) "emailrelay-gui.exe"
-to avoid triggering the UAC mechanism.
+into protected directories like "Program Files".
 
 The setup GUI will take you through the installation options and then install
 the run-time files into your chosen locations.
+
+If anything goes wrong with the installation process then you can still just
+run the main E-MailRelay executable straight out of the distribution zip file.
+Follow the "Manual installation" section below for more help.
 
 Running the program
 -------------------
@@ -23,32 +25,32 @@ system tray.
 
 Configuration
 -------------
-E-MailRelay is configured though command-line options like "--verbose" or 
-"--spool-dir=c:\temp" in the "emailrelay-startup.bat" batch file. 
+E-MailRelay is configured though command-line options like "--verbose" or
+"--spool-dir=c:/temp" in the "emailrelay-startup.bat" batch file.
 
-The options are all documented in the reference document, although there are 
+These options are all documented in the reference document, although there are
 some Windows-specific variations:
 * The "--syslog" option refers to the Windows Event Viewer's Application log.
 * The "--no-daemon" option is used to disable the icon in the system tray.
-* The "--hidden" option hides all windows and suppresses message boxes (requires "--no-deamon").
+* The "--hidden" option with "--no-daemon" hides all windows and suppresses message boxes.
 
-Account information can be configured by editing the E-MailRelay "secrets" file. 
+Account information can be configured by editing the E-MailRelay "secrets" file.
 Look for the "--client-auth" or "--server-auth" options in the startup batch
 file to find out where this is.
 
 Manual installation
 -------------------
-In summary, the manual installation process for Windows for when you do not have
-the self-extracting setup program, is as follows:
-* Create a new program directory "c:\emailrelay"
-* Copy the packaged files into "c:\emailrelay"
-* Create a new spool directory "c:\emailrelay\spool"
-* Create a new text file, eg. "c:\emailrelay\emailrelay-auth.txt", to contain account details
+The manual installation process for when you do not have the self-extracting
+setup program, goes something like this:
+* Create a new program directory "c:\Program Files\E-MailRelay"
+* Copy the packaged files into "c:\Program Files\E-MailRelay"
+* Create a new spool directory "c:\ProgramData\E-MailRelay\spool"
+* Create a new text file, eg. "c:\ProgramData\E-MailRelay\emailrelay-auth.txt", to contain account details
 * Add your account details to "emailrelay-auth.txt" with a line like "client login myaccount mypassword"
 * Drag "emailrelay.exe" onto the desktop to create a shortcut for the server.
 * Add "--as-server --verbose" to the server shortcut properties in the "target" box.
 * Drag again to create a shortcut for the forwarding client.
-* Add "--as-client myisp.net:smtp --hidden --client-auth c:\emailrelay\emailrelay-auth.txt" to the client shortcut.
+* Add "--as-client myisp.net:smtp --hidden --client-auth c:\ProgramData\E-MailRelay\emailrelay-auth.txt" to the client shortcut.
 
 Copy the shortcuts to "Start Menu" and "Startup" folders as necessary.
 
@@ -56,25 +58,32 @@ Running as a service
 --------------------
 If you are installing manually you can set up E-MailRelay as a service so that
 it starts up automatically at boot-time. You must first have a one-line batch
-file called "emailrelay-start.bat" in the main E-MailRelay directory containing
-the full E-MailRelay server command-line. Then just run
-"emailrelay-service --install" to install the service.
+file called "emailrelay-start.bat" that contains all the command-line options
+for running the E-MailRelay server, and you must have a simple configuration
+file called "emailrelay-service.cfg" that points to it. The configuration file
+must be in the same directory as the "emailrelay-service.exe" executable.
 
-When the E-MailRelay server is run in this way the "--no-daemon" and "--hidden"
-options are added automatically to whatever is in the "emailrelay-start" batch
-file to ensure that there is no user interface. (The "--no-daemon" option 
-changes the interface from using the system-tray to using a normal window, and 
-the "--hidden" option suppresses the window and any message boxes.)
+The batch file should contain a single line, like this:
 
-Note that the batch file and the main E-MailRelay executable must be in the same
-directory; the service wrapper reads the batch file in order to assemble the
-correct command-line for running the E-MailRelay server, so it needs to know
-where to find it.
+	start "emailrelay" "C:\Program Files\E-MailRelay\emailrelay.exe" --forward-to smtp.example.com:25 ...
 
-If you need to run multiple E-MailRelay services then pass a unique service 
+There is no need to use "--no-daemon" and "--hidden"; these are added
+automatically.
+
+The contents of the configuration file can be a single line like this:
+
+	dir-config="C:\ProgramData\E-MailRelay"
+
+Then just run "emailrelay-service --install" from an Administrator command
+prompt to install the service.
+
+Every time the service starts it reads the configuration file and the startup
+batch file in order to run the E-MailRelelay program.
+
+If you need to run multiple E-MailRelay services then put a unique service
 name and display name on the "emailrelay-service --install <name> <display-name>"
-command-line. The service name you give is used to derive the name of the 
-"<name>-start.bat" batch file that contains the E-MailRelay server's 
+command-line. The service name you give is used to derive the name of the
+"<name>-start.bat" batch file that contains the E-MailRelay server's
 command-line options, so you will need to create that first.
 
 Uninstall
@@ -82,11 +91,11 @@ Uninstall
 To uninstall:
 * Stop the program and/or the service ("ControlPanel"->"SystemAndSecurity"->"AdministrativeTools"->"Services").
 * Uninstall the service, if installed ("emailrelay-service --remove").
-* Delete the spool directory.
-* Delete the files from the installation directory.
-* Delete any desktop shortcuts (eg. "%USERPROFILE%\Desktop\emailrelay.lnk").
-* Delete any start menu shortcuts (eg. "%APPDATA%\Microsoft\Windows\Start Menu\Programs\emailrelay.lnk").
-* Delete any auto-start shortcuts (eg. "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\emailrelay.lnk").
+* Delete the files from the E-MailRelay "program files" folder (eg. "C:\Program Files\E-MailRelay").
+* Delete the files from the E-MailRelay "program data" folder (eg. "C:\ProgramData\E-MailRelay").
+* Delete any desktop shortcuts (eg. "%USERPROFILE%\Desktop\E-MailRelay.lnk").
+* Delete any start menu shortcuts (eg. "%APPDATA%\Microsoft\Windows\Start Menu\Programs\E-MailRelay.lnk").
+* Delete any auto-start shortcuts (eg. "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\E-MailRelay.lnk").
 * Clean up the registry under "HKLM\System\CurrentControlSet\Services\EventLog\Application\emailrelay".
 
 Diagnostics
@@ -100,24 +109,27 @@ You can increase the verbosity of the logging by adding the "--verbose" option
 to the E-MailRelay command-line, typically by editing the "emailrelay-start.bat"
 batch script.
 
+The Windows Event Log is a bit clunky, so consider using daily log files by
+using the E-MailRelay "--log-file" option with the special "%d" date
+placeholder. Then turn off the event-log logging with "--no-syslog".
+
 Telnet
 ------
 If you want to test E-MailRelay using telnet (as described elsewhere) then you
 might need to enable the Windows telnet client using
-"ControlPanel"->"ProgramsAndFeatures"->"TurnWindowsFeaturesOnAndOff".
+"ControlPanel"->"Programs"->"TurnWindowsFeaturesOnAndOff".
 
 Building from source
 --------------------
-E-MailRelay can be compiled on Windows using Microsoft Visual Studio C++ (MSVC),
-MinGW or mingw-w64.
-
-A Visual Studio "solution" for MSVC 2012 is provided in the "src" directory to
-build the main E-MailRelay executable, although it does not include a project
-for the Qt-based installation/configuration GUI.
-
-For a complete build that includes the E-MailRelay GUI use MinGW, following the
-instructions in "src/mingw-common.mak" and "doc/developer.txt".
+E-MailRelay can be compiled on Windows using Microsoft Visual Studio C++ (MSVC)
+or mingw-w64. For MSVC builds there is a perl script ("winbuild") that creates
+"cmake" files from the autotools makefiles, runs "cmake" to create the MSVC
+project files and then runs "msbuild" to compile E-MailRelay. If perl, cmake,
+MSVC, Qt and mbedTLS source are installed in the right way then the
+"winbuild.bat" batch file should be able to do a complete MSVC release build
+in one go.
 
 
 
-Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved.
+_____________________________________
+Copyright (C) 2001-2018 Graeme Walker

@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -32,13 +32,11 @@
 //
 
 #include "gdef.h"
-#include "gnet.h"
 #include "gserver.h"
 #include "glinebuffer.h"
 #include "gstr.h"
 #include "gevent.h"
 #include "gprocess.h"
-#include "gmemory.h"
 #include "garg.h"
 #include "gfile.h"
 #include "gsleep.h"
@@ -53,11 +51,11 @@ namespace Main
 	class Scanner ;
 }
 
-class Main::ScannerPeer : public GNet::ServerPeer 
+class Main::ScannerPeer : public GNet::ServerPeer
 {
 public:
 	explicit ScannerPeer( GNet::Server::PeerInfo info ) ;
-private:	
+private:
 	virtual void onDelete( const std::string & ) ;
 	virtual void onData( const char * , GNet::ServerPeer::size_type ) ;
 	virtual void onSecure( const std::string & ) ;
@@ -96,9 +94,10 @@ void Main::ScannerPeer::onSendComplete()
 
 void Main::ScannerPeer::process()
 {
-	if( m_buffer.more() )
+	GNet::LineBufferIterator iter( m_buffer ) ;
+	if( iter.more() )
 	{
-		std::string s = m_buffer.line() ;
+		std::string s = iter.line() ;
 		if( !s.empty() )
 		{
 			std::string path( s ) ;
@@ -193,16 +192,16 @@ bool Main::ScannerPeer::processFile( std::string path )
 
 /// \class Main::Scanner
 /// A GNet::Server class used by the scanner utility.
-/// 
-class Main::Scanner : public GNet::Server 
+///
+class Main::Scanner : public GNet::Server
 {
 public:
-	Scanner( unsigned int port ) ;
-	virtual GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) ;
+	Scanner( GNet::ExceptionHandler & , unsigned int port ) ;
+	virtual GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) override ;
 } ;
 
-Main::Scanner::Scanner( unsigned int port ) :
-	GNet::Server( port )
+Main::Scanner::Scanner( GNet::ExceptionHandler & eh , unsigned int port ) :
+	GNet::Server( eh , GNet::Address(GNet::Address::Family::ipv4(),port) )
 {
 }
 
@@ -215,11 +214,10 @@ GNet::ServerPeer * Main::Scanner::newPeer( GNet::Server::PeerInfo info )
 
 static int run( unsigned int port )
 {
-	std::auto_ptr<GNet::EventLoop> loop( GNet::EventLoop::create() ) ;
-	loop->init() ;
+	unique_ptr<GNet::EventLoop> event_loop( GNet::EventLoop::create() ) ;
 	GNet::TimerList timer_list ;
-	Main::Scanner scanner( port ) ;
-	loop->run() ;
+	Main::Scanner scanner( *event_loop.get() , port ) ;
+	event_loop->run() ;
 	return 0 ;
 }
 

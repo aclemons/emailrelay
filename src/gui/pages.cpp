@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -30,6 +30,8 @@
 #include "gprocess.h"
 #include "gidentity.h"
 #include "gmd5.h"
+#include "ghash.h"
+#include "gbase64.h"
 #include "gxtext.h"
 #include "gdebug.h"
 #include <stdexcept>
@@ -37,17 +39,26 @@
 
 namespace
 {
-	std::string encrypt( const std::string & pwd , const std::string & mechanism )
+	std::string encode( const std::string & pwd , const std::string & mechanism )
 	{
-		return mechanism == "CRAM-MD5" ? G::Md5::mask(pwd) : G::Xtext::encode(pwd) ;
+		return
+			mechanism == "CRAM-MD5" ?
+				G::Base64::encode( "MD5:" + G::Hash::mask(G::Md5::predigest,G::Md5::digest2,G::Md5::blocksize(),pwd) ) :
+				G::Xtext::encode(pwd) ;
+	}
+	std::string encode( const std::string & id )
+	{
+		return G::Xtext::encode( id ) ;
 	}
 }
 
 // ==
 
 TitlePage::TitlePage( GDialog & dialog , const G::MapFile & , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) :
-		GPage(dialog,name,next_1,next_2,finish,close)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
+	const Installer & installer ) :
+		GPage(dialog,name,next_1,next_2,finish,close) ,
+		m_installer(installer)
 {
 	m_label = new QLabel( Legal::text() ) ;
 	m_credit = new QLabel( Legal::credit() ) ;
@@ -67,6 +78,11 @@ std::string TitlePage::nextPage()
 void TitlePage::dump( std::ostream & stream , bool for_install ) const
 {
 	GPage::dump( stream , for_install ) ;
+}
+
+G::Executable TitlePage::launchCommand() const
+{
+	return m_installer.launchCommand() ;
 }
 
 // ==
@@ -116,9 +132,10 @@ bool LicensePage::isComplete()
 
 DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
-	bool installing ) :
+	bool installing , bool is_mac ) :
 		GPage(dialog,name,next_1,next_2,finish,close) ,
-		m_installing(installing)
+		m_installing(installing) ,
+		m_is_mac(is_mac)
 {
 	m_install_dir_label = new QLabel(tr("&Directory:")) ;
 	m_install_dir_edit_box = new QLineEdit ;
@@ -168,6 +185,7 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , con
 
 	m_runtime_dir_label = new QLabel(tr("Dire&ctory:")) ;
 	m_runtime_dir_edit_box = new QLineEdit ;
+	tip( m_runtime_dir_edit_box , "--pid-file" ) ;
 	m_runtime_dir_label->setBuddy(m_runtime_dir_edit_box) ;
 	m_runtime_dir_browse_button = new QPushButton(tr("B&rowse")) ;
 
@@ -213,7 +231,7 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , con
 	connect( m_install_dir_browse_button , SIGNAL(clicked()) , this , SLOT(browseInstall()) ) ;
 	connect( m_spool_dir_browse_button , SIGNAL(clicked()) , this , SLOT(browseSpool()) ) ;
 	connect( m_config_dir_browse_button , SIGNAL(clicked()) , this , SLOT(browseConfig()) ) ;
-	connect( m_runtime_dir_browse_button , SIGNAL(clicked()) , this , SLOT(browseRun()) ) ;
+	connect( m_runtime_dir_browse_button , SIGNAL(clicked()) , this , SLOT(browseRuntime()) ) ;
 
 	connect( m_install_dir_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()));
 	connect( m_spool_dir_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()));
@@ -261,8 +279,8 @@ std::string DirectoryPage::nextPage()
 
 G::Path DirectoryPage::normalise( const G::Path & dir ) const
 {
-	// make relative paths relative to the home directory
-	// since gui users wont have a sense of the cwd
+	// make relative paths relative to the home directory, or
+	// leave them as relative to the bundle contents on mac
 
 	G::Path result = dir ;
 	if( dir.isRelative() && Dir::home() != G::Path() )
@@ -275,7 +293,7 @@ G::Path DirectoryPage::normalise( const G::Path & dir ) const
 		{
 			result = G::Path( Dir::home() , dir.str().substr(1U) ) ;
 		}
-		else
+		else if( !m_is_mac )
 		{
 			result = G::Path::join( Dir::home() , dir ) ;
 		}
@@ -336,7 +354,7 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const G::MapFile & config , const std
 	m_immediate_checkbox = new QRadioButton(tr("&Synchronously"));
 	tip( m_immediate_checkbox , "--immediate" ) ;
 	m_on_disconnect_checkbox = new QRadioButton(tr("When client &disconnects"));
-	tip( m_on_disconnect_checkbox , "--poll 0" ) ;
+	tip( m_on_disconnect_checkbox , "--forward-on-disconnect" ) ;
 	m_periodically_checkbox = new QRadioButton(tr("&Check periodically"));
 	tip( m_periodically_checkbox , "--poll" ) ;
 	m_on_demand_checkbox = new QRadioButton(tr("&Only when triggered"));
@@ -404,7 +422,7 @@ void DoWhatPage::onToggle()
 
 std::string DoWhatPage::nextPage()
 {
-	// sneaky feature - see PopAccountsPage::nextPage()
+	// sneaky feature - see PopPage::nextPage()
 	if( dialog().currentPageName() != name() )
 		return m_smtp_checkbox->isChecked() ? next2() : std::string() ;
 
@@ -440,8 +458,10 @@ std::string DoWhatPage::helpName() const
 // ==
 
 PopPage::PopPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) :
-		GPage(dialog,name,next_1,next_2,finish,close)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
+	bool have_accounts ) :
+		GPage(dialog,name,next_1,next_2,finish,close) ,
+		m_have_accounts(have_accounts)
 {
 	QLabel * port_label = new QLabel( tr("P&ort:") ) ;
 	m_port_edit_box = new QLineEdit( qstr(config.value("pop-port","110")) ) ;
@@ -465,12 +485,12 @@ PopPage::PopPage( GDialog & dialog , const G::MapFile & config , const std::stri
 	m_auto_copy_checkbox = new QCheckBox( tr("Copy SMTP messages to all") ) ;
 	tip( m_auto_copy_checkbox , "--filter=emailrelay-filter-copy" ) ;
 
-	QGridLayout * radio_layout = new QGridLayout ;
-	radio_layout->addWidget( m_one , 0 , 0 ) ;
-	radio_layout->addWidget( m_shared , 1 , 0 ) ;
-	radio_layout->addWidget( m_no_delete_checkbox , 1 , 1 ) ;
-	radio_layout->addWidget( m_pop_by_name , 2 , 0 ) ;
-	radio_layout->addWidget( m_auto_copy_checkbox , 2 , 1 ) ;
+	QGridLayout * type_layout = new QGridLayout ;
+	type_layout->addWidget( m_one , 0 , 0 ) ;
+	type_layout->addWidget( m_shared , 1 , 0 ) ;
+	type_layout->addWidget( m_no_delete_checkbox , 1 , 1 ) ;
+	type_layout->addWidget( m_pop_by_name , 2 , 0 ) ;
+	type_layout->addWidget( m_auto_copy_checkbox , 2 , 1 ) ;
 
 	bool pop_by_name = config.booleanValue("pop-by-name",false) ;
 	bool pop_no_delete = config.booleanValue("pop-no-delete",false) ;
@@ -490,76 +510,10 @@ PopPage::PopPage( GDialog & dialog , const G::MapFile & config , const std::stri
 		m_one->setChecked( true ) ;
 	}
 
-	QGroupBox * accounts_group = new QGroupBox(tr("Client accounts")) ;
-	accounts_group->setLayout( radio_layout ) ;
+	QGroupBox * type_group = new QGroupBox(tr("Client accounts")) ;
+	type_group->setLayout( type_layout ) ;
 
-	QVBoxLayout *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("POP server"))) ;
-	layout->addWidget( server_group ) ;
-	layout->addWidget( accounts_group ) ;
-	layout->addStretch() ;
-	setLayout( layout ) ;
-
-	connect( m_port_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
-	connect( m_one , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
-	connect( m_shared , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
-	connect( m_pop_by_name , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
-
-	onToggle() ;
-}
-
-std::string PopPage::nextPage()
-{
-	return
-		m_one->isChecked() ?
-			next1() :
-			next2() ;
-}
-
-void PopPage::dump( std::ostream & stream , bool for_install ) const
-{
-	GPage::dump( stream , for_install ) ;
-	dumpItem( stream , for_install , "pop-port" , value(m_port_edit_box) ) ;
-	dumpItem( stream , for_install , "pop-simple" , value(m_one) ) ;
-	dumpItem( stream , for_install , "pop-shared" , value(m_shared) ) ;
-	dumpItem( stream , for_install , "pop-shared-no-delete" , value(m_no_delete_checkbox) ) ;
-	dumpItem( stream , for_install , "pop-by-name" , value(m_pop_by_name) ) ;
-	dumpItem( stream , for_install , "pop-by-name-auto-copy" , value(m_auto_copy_checkbox) ) ;
-}
-
-bool PopPage::isComplete()
-{
-	return ! m_port_edit_box->text().isEmpty() ;
-}
-
-void PopPage::onToggle()
-{
-	m_no_delete_checkbox->setEnabled( m_shared->isChecked() ) ;
-	m_auto_copy_checkbox->setEnabled( m_pop_by_name->isChecked() ) ;
-}
-
-std::string PopPage::helpName() const
-{
-	return name() ;
-}
-
-// ==
-
-PopAccountsPage::PopAccountsPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_accounts ) :
-		GPage(dialog,name,next_1,next_2,finish,close) ,
-		m_have_accounts(have_accounts)
-{
-	m_mechanism_combo = new QComboBox ;
-	m_mechanism_combo->addItem( tr("APOP") ) ;
-	m_mechanism_combo->addItem( tr("CRAM-MD5") ) ;
-	m_mechanism_combo->addItem( tr("LOGIN") ) ;
-	m_mechanism_combo->setCurrentIndex( 1 ) ;
-	m_mechanism_combo->setEditable( false ) ;
-	QLabel * mechanism_label = new QLabel( tr("Authentication &mechanism") ) ;
-	mechanism_label->setBuddy( m_mechanism_combo ) ;
-
-	QGridLayout * account_layout = new QGridLayout ;
+	QGridLayout * accounts_layout = new QGridLayout ;
 	QLabel * name_label = new QLabel(tr("Name:")) ;
 	QLabel * pwd_label = new QLabel(tr("Password:")) ;
 	m_name_1 = new QLineEdit ;
@@ -577,14 +531,14 @@ PopAccountsPage::PopAccountsPage( GDialog & dialog , const G::MapFile & config ,
 	m_pwd_3 = new QLineEdit ;
 	tip( m_pwd_3 , PasswordTip() ) ;
 	m_pwd_3->setEchoMode( QLineEdit::Password ) ;
-	account_layout->addWidget( name_label , 0 , 0 ) ;
-	account_layout->addWidget( pwd_label , 0 , 1 ) ;
-	account_layout->addWidget( m_name_1 , 1 , 0 ) ;
-	account_layout->addWidget( m_pwd_1 , 1 , 1 ) ;
-	account_layout->addWidget( m_name_2 , 2 , 0 ) ;
-	account_layout->addWidget( m_pwd_2 , 2 , 1 ) ;
-	account_layout->addWidget( m_name_3 , 3 , 0 ) ;
-	account_layout->addWidget( m_pwd_3 , 3 , 1 ) ;
+	accounts_layout->addWidget( name_label , 0 , 0 ) ;
+	accounts_layout->addWidget( pwd_label , 0 , 1 ) ;
+	accounts_layout->addWidget( m_name_1 , 1 , 0 ) ;
+	accounts_layout->addWidget( m_pwd_1 , 1 , 1 ) ;
+	accounts_layout->addWidget( m_name_2 , 2 , 0 ) ;
+	accounts_layout->addWidget( m_pwd_2 , 2 , 1 ) ;
+	accounts_layout->addWidget( m_name_3 , 3 , 0 ) ;
+	accounts_layout->addWidget( m_pwd_3 , 3 , 1 ) ;
 
 	if( testMode() )
 	{
@@ -592,161 +546,89 @@ PopAccountsPage::PopAccountsPage( GDialog & dialog , const G::MapFile & config ,
 		m_pwd_1->setText("secret") ;
 	}
 
-	QGroupBox * account_group =
+	QGroupBox * accounts_group =
 		m_have_accounts ?
 			new QGroupBox(tr("New Accounts")) :
 			new QGroupBox(tr("Accounts")) ;
-	account_group->setLayout( account_layout ) ;
+	accounts_group->setLayout( accounts_layout ) ;
 
 	QVBoxLayout *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("POP accounts"))) ;
-	{
-		QHBoxLayout * inner = new QHBoxLayout ;
-		inner->addWidget( mechanism_label ) ;
-		inner->addWidget( m_mechanism_combo ) ;
-		layout->addLayout( inner ) ;
-	}
-	layout->addWidget( account_group ) ;
+	layout->addWidget(newTitle(tr("POP server"))) ;
+	layout->addWidget( server_group ) ;
+	layout->addWidget( type_group ) ;
+	layout->addWidget( accounts_group ) ;
 	layout->addStretch() ;
 	setLayout( layout ) ;
 
-	connect( m_mechanism_combo , SIGNAL(currentIndexChanged(QString)), this, SLOT(mechanismUpdateSlot(QString)) ) ;
+	connect( m_port_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_one , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
+	connect( m_shared , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
+	connect( m_pop_by_name , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
+
 	connect( m_name_1 , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_pwd_1 , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_name_2 , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_pwd_2 , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_name_3 , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_pwd_3 , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
+
+	onToggle() ;
 }
 
-std::string PopAccountsPage::nextPage()
+std::string PopPage::nextPage()
 {
-	// only the dowhat page knows whether we should do smtp -- a special	
-	// feature of the dowhat page's nextPage() is that if it detects
-	// that it is not the current page (ie. if it's called from here)
-	// then it will give us an empty string if no smtp is required
+	// the next page is normally the smtp page but only the dowhat page
+	// knows whether we should do smtp -- a special	feature of the dowhat
+	// page's nextPage() is that if it detects that it is not the current
+	// page (ie. if it's called from here) then it will give us an empty
+	// string if no smtp page is required
 
 	return
-		dialog().previousPage(2U).nextPage().empty() ?
+		dialog().previousPage(1U).nextPage().empty() ?
 			next2() :
 			next1() ;
 }
 
-void PopAccountsPage::dump( std::ostream & stream , bool for_install ) const
+void PopPage::dump( std::ostream & stream , bool for_install ) const
 {
 	GPage::dump( stream , for_install ) ;
-	dumpItem( stream , for_install , "pop-auth-mechanism" , value(m_mechanism_combo) ) ;
+	dumpItem( stream , for_install , "pop-port" , value(m_port_edit_box) ) ;
+	dumpItem( stream , for_install , "pop-simple" , value(m_one) ) ;
+	dumpItem( stream , for_install , "pop-shared" , value(m_shared) ) ;
+	dumpItem( stream , for_install , "pop-shared-no-delete" , value(m_no_delete_checkbox) ) ;
+	dumpItem( stream , for_install , "pop-by-name" , value(m_pop_by_name) ) ;
+	dumpItem( stream , for_install , "pop-by-name-auto-copy" , value(m_auto_copy_checkbox) ) ;
+
+	std::string mechanism( "plain" ) ;
+	dumpItem( stream , for_install , "pop-auth-mechanism" , mechanism ) ;
 	if( for_install )
 	{
-		dumpItem( stream , for_install , "pop-account-1-name" , value(m_name_1) ) ;
-		dumpItem( stream , for_install , "pop-account-1-password" , encrypt(value(m_pwd_1),value(m_mechanism_combo)) );
-		dumpItem( stream , for_install , "pop-account-2-name" , value(m_name_2) ) ;
-		dumpItem( stream , for_install , "pop-account-2-password" , encrypt(value(m_pwd_2),value(m_mechanism_combo)) );
-		dumpItem( stream , for_install , "pop-account-3-name" , value(m_name_3) ) ;
-		dumpItem( stream , for_install , "pop-account-3-password" , encrypt(value(m_pwd_3),value(m_mechanism_combo)) );
+		dumpItem( stream , for_install , "pop-account-1-name" , encode(value(m_name_1)) ) ;
+		dumpItem( stream , for_install , "pop-account-1-password" , encode(value(m_pwd_1),mechanism) ) ;
+		dumpItem( stream , for_install , "pop-account-2-name" , encode(value(m_name_2)) ) ;
+		dumpItem( stream , for_install , "pop-account-2-password" , encode(value(m_pwd_2),mechanism) ) ;
+		dumpItem( stream , for_install , "pop-account-3-name" , encode(value(m_name_3)) ) ;
+		dumpItem( stream , for_install , "pop-account-3-password" , encode(value(m_pwd_3),mechanism) ) ;
 	}
 }
 
-bool PopAccountsPage::isComplete()
+bool PopPage::isComplete()
 {
 	return
-		m_have_accounts ||
-		( !m_name_1->text().isEmpty() && !m_pwd_1->text().isEmpty() ) ||
-		( !m_name_2->text().isEmpty() && !m_pwd_2->text().isEmpty() ) ||
-		( !m_name_3->text().isEmpty() && !m_pwd_3->text().isEmpty() ) ;
+		! m_port_edit_box->text().isEmpty() && (
+			m_have_accounts ||
+			( !m_name_1->text().isEmpty() && !m_pwd_1->text().isEmpty() ) ||
+			( !m_name_2->text().isEmpty() && !m_pwd_2->text().isEmpty() ) ||
+			( !m_name_3->text().isEmpty() && !m_pwd_3->text().isEmpty() ) ) ;
 }
 
-std::string PopAccountsPage::helpName() const
+void PopPage::onToggle()
 {
-	return name() ;
+	m_no_delete_checkbox->setEnabled( m_shared->isChecked() ) ;
+	m_auto_copy_checkbox->setEnabled( m_pop_by_name->isChecked() ) ;
 }
 
-// ==
-
-PopAccountPage::PopAccountPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_account ) :
-		GPage(dialog,name,next_1,next_2,finish,close) ,
-		m_have_account(have_account)
-{
-	m_mechanism_combo = new QComboBox ;
-	m_mechanism_combo->addItem( tr("APOP") ) ;
-	m_mechanism_combo->addItem( tr("CRAM-MD5") ) ;
-	m_mechanism_combo->addItem( tr("LOGIN") ) ;
-	m_mechanism_combo->setCurrentIndex( 1 ) ;
-	m_mechanism_combo->setEditable( false ) ;
-	QLabel * mechanism_label = new QLabel( tr("Authentication &mechanism") ) ;
-	mechanism_label->setBuddy( m_mechanism_combo ) ;
-
-	QGridLayout * account_layout = new QGridLayout ;
-	QLabel * name_label = new QLabel(tr("Name:")) ;
-	QLabel * pwd_label = new QLabel(tr("Password:")) ;
-	m_name_1 = new QLineEdit ;
-	tip( m_name_1 , NameTip() ) ;
-	m_pwd_1 = new QLineEdit ;
-	tip( m_pwd_1 , PasswordTip() ) ;
-	m_pwd_1->setEchoMode( QLineEdit::Password ) ;
-	account_layout->addWidget( name_label , 0 , 0 ) ;
-	account_layout->addWidget( m_name_1 , 0 , 1 ) ;
-	account_layout->addWidget( pwd_label , 1 , 0 ) ;
-	account_layout->addWidget( m_pwd_1 , 1 , 1 ) ;
-
-	if( testMode() )
-	{
-		m_name_1->setText("me") ;
-		m_pwd_1->setText("secret") ;
-	}
-
-	QGroupBox * account_group =
-		m_have_account ?
-			new QGroupBox(tr("New Account")) :
-			new QGroupBox(tr("Account")) ;
-	account_group->setLayout( account_layout ) ;
-
-	QVBoxLayout *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("POP account"))) ;
-	{
-		QHBoxLayout * inner = new QHBoxLayout ;
-		inner->addWidget( mechanism_label ) ;
-		inner->addWidget( m_mechanism_combo ) ;
-		layout->addLayout( inner ) ;
-	}
-	layout->addWidget( account_group ) ;
-	layout->addStretch() ;
-	setLayout( layout ) ;
-
-	connect( m_mechanism_combo , SIGNAL(currentIndexChanged(QString)), this, SLOT(mechanismUpdateSlot(QString)) ) ;
-	connect( m_name_1 , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
-	connect( m_pwd_1 , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
-}
-
-std::string PopAccountPage::nextPage()
-{
-	// (see above)
-	return
-		dialog().previousPage(2U).nextPage().empty() ?
-			next2() :
-			next1() ;
-}
-
-void PopAccountPage::dump( std::ostream & stream , bool for_install ) const
-{
-	GPage::dump( stream , for_install ) ;
-	dumpItem( stream , for_install , "pop-auth-mechanism" , value(m_mechanism_combo) ) ;
-	if( for_install )
-	{
-		dumpItem( stream , for_install , "pop-account-1-name" , value(m_name_1) ) ;
-		dumpItem( stream , for_install , "pop-account-1-password" , encrypt(value(m_pwd_1),value(m_mechanism_combo)) ) ;
-	}
-}
-
-bool PopAccountPage::isComplete()
-{
-	return
-		m_have_account ||
-		( !m_name_1->text().isEmpty() && !m_pwd_1->text().isEmpty() ) ;
-}
-
-std::string PopAccountPage::helpName() const
+std::string PopPage::helpName() const
 {
 	return name() ;
 }
@@ -776,17 +658,11 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , c
 	tip( m_auth_checkbox , "--server-auth" ) ;
 	m_auth_checkbox->setChecked( config.booleanValue("server-auth",false) ) ;
 
-	m_mechanism_combo = new QComboBox ;
-	m_mechanism_combo->addItem( tr("CRAM-MD5") ) ;
-	m_mechanism_combo->addItem( tr("LOGIN") ) ;
-	m_mechanism_combo->setCurrentIndex( 0 ) ;
-	m_mechanism_combo->setEditable( false ) ;
-	QLabel * mechanism_label = new QLabel( tr("Authentication &mechanism") ) ;
-	mechanism_label->setBuddy( m_mechanism_combo ) ;
+	QVBoxLayout * auth_layout = new QVBoxLayout ;
+	auth_layout->addWidget( m_auth_checkbox ) ;
 
-	QHBoxLayout * mechanism_layout = new QHBoxLayout ;
-	mechanism_layout->addWidget( mechanism_label ) ;
-	mechanism_layout->addWidget( m_mechanism_combo ) ;
+	QGroupBox * auth_group = new QGroupBox( tr("Authentication") ) ;
+	auth_group->setLayout( auth_layout ) ;
 
 	//
 
@@ -832,28 +708,63 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , c
 	trust_layout->addWidget( m_trust_address ) ;
 	m_trust_group->setLayout( trust_layout ) ;
 	m_trust_address->setText( qstr(testMode()?"192.168.1.*":"") ) ;
-	
+
+	//
+
+	QGroupBox * tls_group = new QGroupBox(tr("TLS/SSL encryption")) ;
+
+	m_tls_checkbox = new QCheckBox( tr("&Offer TLS/SSL encryption") ) ;
+	tip( m_tls_checkbox , "--server-tls" ) ;
+	m_tls_certificate_label = new QLabel(tr("&Certificate:")) ;
+	tip( m_tls_certificate_label , "private key and X.509 certificate" ) ;
+	m_tls_certificate_edit_box = new QLineEdit ;
+	m_tls_certificate_label->setBuddy( m_tls_certificate_edit_box ) ;
+	m_tls_browse_button = new QPushButton(tr("B&rowse")) ;
+	QVBoxLayout * tls_layout = new QVBoxLayout ;
+	QHBoxLayout * tls_inner_layout = new QHBoxLayout ;
+	tls_inner_layout->addWidget( m_tls_certificate_label ) ;
+	tls_inner_layout->addWidget( m_tls_certificate_edit_box ) ;
+	tls_inner_layout->addWidget( m_tls_browse_button ) ;
+	tls_layout->addWidget( m_tls_checkbox ) ;
+	tls_layout->addLayout( tls_inner_layout ) ;
+	tls_group->setLayout( tls_layout ) ;
+
 	//
 
 	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("SMTP server"))) ;
 	layout->addWidget( server_group ) ;
-	layout->addWidget( m_auth_checkbox ) ;
-	layout->addLayout( mechanism_layout ) ;
+	layout->addWidget( auth_group ) ;
 	layout->addWidget( m_account_group ) ;
 	layout->addWidget( m_trust_group ) ;
+	layout->addWidget( tls_group ) ;
 	layout->addStretch() ;
 	setLayout( layout ) ;
 
-	connect( m_mechanism_combo , SIGNAL(currentIndexChanged(QString)), this, SLOT(mechanismUpdateSlot(QString)) ) ;
 	connect( m_port_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_account_name , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_tls_certificate_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_account_pwd , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_trust_address , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_auth_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_tls_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_auth_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
+	connect( m_tls_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
+	connect( m_tls_browse_button , SIGNAL(clicked()) , this , SLOT(browseCertificate()) ) ;
 
 	onToggle() ;
+}
+
+void SmtpServerPage::browseCertificate()
+{
+	QString s = browse( m_tls_certificate_edit_box->text() ) ;
+	if( ! s.isEmpty() )
+		m_tls_certificate_edit_box->setText( s ) ;
+}
+
+QString SmtpServerPage::browse( QString /*ignored*/ )
+{
+	return QFileDialog::getOpenFileName( this ) ;
 }
 
 std::string SmtpServerPage::nextPage()
@@ -863,34 +774,44 @@ std::string SmtpServerPage::nextPage()
 
 void SmtpServerPage::dump( std::ostream & stream , bool for_install ) const
 {
+	std::string mechanism = "plain" ; // was value(m_mechanism_combo)
 	GPage::dump( stream , for_install ) ;
 	dumpItem( stream , for_install , "smtp-server-port" , value(m_port_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-server-auth" , value(m_auth_checkbox) ) ;
-	dumpItem( stream , for_install , "smtp-server-auth-mechanism" , value(m_mechanism_combo) ) ;
+	dumpItem( stream , for_install , "smtp-server-auth-mechanism" , mechanism ) ;
 	if( for_install )
 	{
-		dumpItem( stream , for_install , "smtp-server-account-name" , value(m_account_name) ) ;
-		dumpItem( stream , for_install , "smtp-server-account-password" ,
-			encrypt(value(m_account_pwd),value(m_mechanism_combo)) ) ;
+		dumpItem( stream , for_install , "smtp-server-account-name" , encode(value(m_account_name)) ) ;
+		dumpItem( stream , for_install , "smtp-server-account-password" , encode(value(m_account_pwd),mechanism) ) ;
 	}
 	dumpItem( stream , for_install , "smtp-server-trust" , value(m_trust_address) ) ;
+	dumpItem( stream , for_install , "smtp-server-tls" , value(m_tls_checkbox) ) ;
+	dumpItem( stream , for_install , "smtp-server-tls-certificate" , m_tls_checkbox->isChecked() ? G::Path(value(m_tls_certificate_edit_box)) : G::Path() ) ;
 }
 
 void SmtpServerPage::onToggle()
 {
 	m_account_group->setEnabled( m_auth_checkbox->isChecked() ) ;
-	m_mechanism_combo->setEnabled( m_auth_checkbox->isChecked() ) ;
 	m_trust_group->setEnabled( m_auth_checkbox->isChecked() ) ;
+	m_tls_certificate_label->setEnabled( m_tls_checkbox->isChecked() ) ;
+	m_tls_certificate_edit_box->setEnabled( m_tls_checkbox->isChecked() ) ;
+	m_tls_browse_button->setEnabled( m_tls_checkbox->isChecked() ) ;
 }
 
 bool SmtpServerPage::isComplete()
 {
 	return
-		! m_port_edit_box->text().isEmpty() && (
-		m_have_account ||
-		!m_auth_checkbox->isChecked() || (
-			! m_account_name->text().isEmpty() &&
-			! m_account_pwd->text().isEmpty() ) ) ;
+		! m_port_edit_box->text().isEmpty() &&
+		(
+			!m_tls_checkbox->isChecked() ||
+			!m_tls_certificate_edit_box->text().isEmpty()
+		) &&
+		(
+			m_have_account ||
+			!m_auth_checkbox->isChecked() || (
+				! m_account_name->text().isEmpty() &&
+				! m_account_pwd->text().isEmpty() )
+		) ;
 }
 
 std::string SmtpServerPage::helpName() const
@@ -931,21 +852,34 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const G::MapFile & config , c
 	QGroupBox * server_group = new QGroupBox(tr("Remote server")) ;
 	server_group->setLayout( server_layout ) ;
 
-	m_tls_checkbox = new QCheckBox( tr("&Allow TLS/SSL encryption") ) ;
-	m_tls_checkbox->setChecked( config.booleanValue("client-tls",true) ) ;
-	tip( m_tls_checkbox , "--client-tls" ) ;
+	m_tls_checkbox = new QCheckBox( tr("&Use TLS/SSL encryption") ) ;
+	const bool config_tls = config.booleanValue( "client-tls" , false ) ;
+	const bool config_tls_connection = config.booleanValue( "client-tls-connection" , false ) ;
+	m_tls_checkbox->setChecked( config_tls || config_tls_connection ) ;
+	m_tls_starttls = new QRadioButton( tr("&STARTTLS")) ;
+	m_tls_starttls->setChecked( !config_tls_connection ) ;
+	tip( m_tls_starttls , "--client-tls" ) ;
+	m_tls_tunnel = new QRadioButton( tr("&Tunnel (ssmtp)") ) ;
+	m_tls_tunnel->setChecked( config_tls_connection ) ;
+	tip( m_tls_tunnel , "--client-tls-connection" ) ;
+
+	QHBoxLayout * tls_layout = new QHBoxLayout ;
+	tls_layout->addWidget( m_tls_checkbox ) ;
+	tls_layout->addWidget( m_tls_starttls ) ;
+	tls_layout->addWidget( m_tls_tunnel ) ;
+
+	QGroupBox * tls_group = new QGroupBox(tr("TLS/SSL encryption")) ;
+	tls_group->setLayout( tls_layout ) ;
 
 	m_auth_checkbox = new QCheckBox( tr("&Supply authentication") ) ;
 	m_auth_checkbox->setChecked( config.booleanValue("client-auth",false) ) ;
 	tip( m_auth_checkbox , "--client-auth" ) ;
 
-	m_mechanism_combo = new QComboBox ;
-	m_mechanism_combo->addItem( tr("CRAM-MD5") ) ;
-	m_mechanism_combo->addItem( tr("LOGIN") ) ;
-	m_mechanism_combo->setCurrentIndex( 0 ) ;
-	m_mechanism_combo->setEditable( false ) ;
-	QLabel * mechanism_label = new QLabel( tr("Authentication &mechanism") ) ;
-	mechanism_label->setBuddy( m_mechanism_combo ) ;
+	QVBoxLayout * auth_layout = new QVBoxLayout ;
+	auth_layout->addWidget( m_auth_checkbox ) ;
+
+	QGroupBox * auth_group = new QGroupBox(tr("Authentication")) ;
+	auth_group->setLayout( auth_layout ) ;
 
 	QLabel * account_name_label = new QLabel(tr("&Name:")) ;
 	m_account_name = new QLineEdit ;
@@ -980,24 +914,22 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const G::MapFile & config , c
 	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("SMTP client"))) ;
 	layout->addWidget( server_group ) ;
-	layout->addWidget( m_tls_checkbox ) ;
-	layout->addWidget( m_auth_checkbox ) ;
-	{
-		QHBoxLayout * inner = new QHBoxLayout ;
-		inner->addWidget( mechanism_label ) ;
-		inner->addWidget( m_mechanism_combo ) ;
-		layout->addLayout( inner ) ;
-	}
+	layout->addWidget( auth_group ) ;
 	layout->addWidget( m_account_group ) ;
+	layout->addWidget( tls_group ) ;
 	layout->addStretch() ;
 	setLayout( layout ) ;
 
-	connect( m_mechanism_combo , SIGNAL(currentIndexChanged(QString)), this, SLOT(mechanismUpdateSlot(QString)) ) ;
 	connect( m_port_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_server_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_account_name , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_account_pwd , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_tls_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_tls_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
+	connect( m_tls_starttls , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_tls_starttls , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
+	connect( m_tls_tunnel , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_tls_tunnel , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
 	connect( m_auth_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_auth_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
 
@@ -1007,7 +939,8 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const G::MapFile & config , c
 void SmtpClientPage::onToggle()
 {
 	m_account_group->setEnabled( m_auth_checkbox->isChecked() ) ;
-	m_mechanism_combo->setEnabled( m_auth_checkbox->isChecked() ) ;
+	m_tls_starttls->setEnabled( m_tls_checkbox->isChecked() ) ;
+	m_tls_tunnel->setEnabled( m_tls_checkbox->isChecked() ) ;
 }
 
 std::string SmtpClientPage::nextPage()
@@ -1018,16 +951,16 @@ std::string SmtpClientPage::nextPage()
 void SmtpClientPage::dump( std::ostream & stream , bool for_install ) const
 {
 	GPage::dump( stream , for_install ) ;
+	std::string mechanism = "plain" ; // was value(m_mechanism_combo)
 	dumpItem( stream , for_install , "smtp-client-host" , value(m_server_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-client-port" , value(m_port_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-client-tls" , value(m_tls_checkbox) ) ;
 	dumpItem( stream , for_install , "smtp-client-auth" , value(m_auth_checkbox) ) ;
-	dumpItem( stream , for_install , "smtp-client-auth-mechanism" , value(m_mechanism_combo) ) ;
+	dumpItem( stream , for_install , "smtp-client-auth-mechanism" , mechanism ) ;
 	if( for_install )
 	{
-		dumpItem( stream , for_install , "smtp-client-account-name" , value(m_account_name) ) ;
-		dumpItem( stream , for_install , "smtp-client-account-password" ,
-			encrypt(value(m_account_pwd),value(m_mechanism_combo)) ) ;
+		dumpItem( stream , for_install , "smtp-client-account-name" , encode(value(m_account_name)) ) ;
+		dumpItem( stream , for_install , "smtp-client-account-password" , encode(value(m_account_pwd),mechanism) ) ;
 	}
 }
 
@@ -1375,11 +1308,16 @@ void ProgressPage::onShow( bool back )
 	}
 }
 
+G::Executable ProgressPage::launchCommand() const
+{
+	return m_installer.launchCommand() ;
+}
+
 void ProgressPage::poke()
 {
 	try
 	{
-		if( m_timer == NULL )
+		if( m_timer == nullptr )
 			throw std::runtime_error("internal error: no timer") ;
 
 		bool more = m_installer.next() ;
@@ -1393,7 +1331,7 @@ void ProgressPage::poke()
 		{
 			dialog().wait( false ) ;
 			m_timer->stop() ;
-			{ QTimer * p = m_timer ; m_timer = NULL ; delete p ; }
+			{ QTimer * p = m_timer ; m_timer = nullptr ; delete p ; }
 			if( m_installer.failed() )
 				addLine( "** failed **" ) ;
 			else

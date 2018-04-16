@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -30,7 +30,6 @@
 #include <set>
 #include <list>
 
-/// \namespace GPop
 namespace GPop
 {
 	class Store ;
@@ -39,11 +38,11 @@ namespace GPop
 }
 
 /// \class GPop::Store
-/// A message store. Unlike the SMTP message store the
-/// POP message store allows content files to be in the envelope file's
-/// parent directory.
+/// A message store. Unlike the SMTP message store the POP message
+/// store allows content files to be in the envelope file's parent
+/// directory.
 ///
-class GPop::Store 
+class GPop::Store
 {
 public:
 	G_EXCEPTION( InvalidDirectory , "invalid spool directory" ) ;
@@ -77,7 +76,7 @@ private:
 /// Represents a file in the GPop::Store.
 /// \see GPop::StoreLock
 ///
-class GPop::StoreLockEntry  
+class GPop::StoreLockEntry
 {
 public:
 	int id ;
@@ -96,7 +95,7 @@ public:
 /// Represents an exclusive lock on the message store.
 /// \see RFC-1939
 ///
-class GPop::StoreLock 
+class GPop::StoreLock
 {
 public:
 	G_EXCEPTION( CannotDelete , "cannot delete message file" ) ;
@@ -141,7 +140,7 @@ public:
 	List list( int id = -1 ) const ;
 		///< Lists messages in the store.
 
-	std::auto_ptr<std::istream> get( int id ) const ;
+	unique_ptr<std::istream> get( int id ) const ;
 		///< Retrieves the message content.
 
 	void remove( int ) ;
@@ -158,8 +157,7 @@ public:
 		///< Postcondition: !locked()
 
 private:
-	/// A private implementation class used by GPop::StoreLock.
-	struct File 
+	struct File /// A private implementation class used by GPop::StoreLock.
 	{
 		std::string name ; // content name
 		StoreLockEntry::Size size ;

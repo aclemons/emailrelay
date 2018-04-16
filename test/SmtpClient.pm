@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-# 
+# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
@@ -19,6 +19,15 @@
 # SmtpClient.pm
 #
 # A network client for driving the smtp interface.
+#
+# Synopsis:
+#
+#	my $sc = new SmtpClient( 10025 , "localhost" ) ;
+#	$sc->open() ;
+#	$sc->submit_start() ; # ehlo, mail-from, rcpt-to, headers
+#	$sc->submit_line("testing 123") ;
+#	$sc->submit_end() ;
+#	$sc->close() ;
 #
 
 use strict ;
@@ -145,10 +154,11 @@ sub submit_line
 sub submit
 {
 	# Submits a whole test message.
-	my ( $this , $expect_dot_to_fail ) = @_ ;
+	my ( $this , $expect_dot_to_fail , $no_wait ) = @_ ;
 	$this->submit_start() ;
 	$this->submit_line( "This is a test." ) ;
-	$this->submit_end( $expect_dot_to_fail ) ;
+	if( $no_wait ) { $this->t()->print( "." ) }
+	else { $this->submit_end( $expect_dot_to_fail ) }
 }
 
 sub doBadHelo
