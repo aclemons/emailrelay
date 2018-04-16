@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -26,7 +26,7 @@
 #include "gdebug.h"
 #include "glog.h"
 
-GGui::ApplicationBase::ApplicationBase( HINSTANCE current , HINSTANCE previous , 
+GGui::ApplicationBase::ApplicationBase( HINSTANCE current , HINSTANCE previous ,
 	const std::string & name ) :
 		ApplicationInstance(current) ,
 		m_name(name) ,
@@ -38,7 +38,7 @@ GGui::ApplicationBase::~ApplicationBase()
 {
 }
 
-void GGui::ApplicationBase::createWindow( int show_style , bool do_show )
+std::string GGui::ApplicationBase::createWindow( int show_style , bool do_show , int dx , int dy , bool no_throw )
 {
 	G_DEBUG( "GGui::ApplicationBase::createWindow" ) ;
 
@@ -49,14 +49,19 @@ void GGui::ApplicationBase::createWindow( int show_style , bool do_show )
 	}
 
 	// create the main window
+	dx = dx ? dx : CW_USEDEFAULT ;
+	dy = dy ? dy : CW_USEDEFAULT ;
 	if( !create( className() , title() , windowStyle() ,
 			CW_USEDEFAULT , CW_USEDEFAULT , // position (x,y)
-			CW_USEDEFAULT , CW_USEDEFAULT , // size
+			dx , dy , // size
 			NULL , // parent window
 			NULL , // menu handle: NULL => use class's menu
 			hinstance() ) )
 	{
-		throw CreateError() ;
+		if( no_throw )
+			return wndProcExceptionString() ;
+		else
+			throw CreateError( wndProcExceptionString() ) ;
 	}
 
 	if( do_show )
@@ -64,6 +69,7 @@ void GGui::ApplicationBase::createWindow( int show_style , bool do_show )
 		show( show_style ) ;
 		update() ;
 	}
+	return std::string() ;
 }
 
 bool GGui::ApplicationBase::firstInstance() const
@@ -112,34 +118,34 @@ void GGui::ApplicationBase::onDestroy()
 	GGui::Pump::quit() ;
 }
 
-std::string GGui::ApplicationBase::title() const 
-{ 
+std::string GGui::ApplicationBase::title() const
+{
 	return m_name ;
 }
 
-std::string GGui::ApplicationBase::className() const 
-{ 
+std::string GGui::ApplicationBase::className() const
+{
 	return m_name ;
 }
 
-HBRUSH GGui::ApplicationBase::backgroundBrush() 
-{ 
-	return GGui::Window::classBrush() ; 
+HBRUSH GGui::ApplicationBase::backgroundBrush()
+{
+	return GGui::Window::classBrush() ;
 }
 
-DWORD GGui::ApplicationBase::windowStyle() const 
-{ 
-	return GGui::Window::windowStyleMain() ; 
+DWORD GGui::ApplicationBase::windowStyle() const
+{
+	return GGui::Window::windowStyleMain() ;
 }
 
-DWORD GGui::ApplicationBase::classStyle() const 
-{ 
-	return GGui::Window::classStyle() ; 
+DWORD GGui::ApplicationBase::classStyle() const
+{
+	return GGui::Window::classStyle() ;
 }
 
-UINT GGui::ApplicationBase::resource() const 
-{ 
-	return 0 ; 
+UINT GGui::ApplicationBase::resource() const
+{
+	return 0 ;
 }
 
 void GGui::ApplicationBase::beep() const

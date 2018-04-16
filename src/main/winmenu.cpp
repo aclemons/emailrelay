@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -26,7 +26,7 @@ Main::WinMenu::WinMenu( unsigned int id )
 {
 	HINSTANCE hinstance = GGui::ApplicationInstance::hinstance() ;
 	m_hmenu = ::LoadMenu( hinstance , MAKEINTRESOURCE(id) ) ;
-	if( m_hmenu == NULL )
+	if( m_hmenu == nullptr )
 		throw Error() ;
 }
 
@@ -45,7 +45,7 @@ int Main::WinMenu::popup( const GGui::WindowBase & w , bool with_open , bool wit
 	m_hmenu_popup = ::GetSubMenu( m_hmenu , 0 ) ;
 
 	// make the "open" menu item bold
-	// 
+	//
 	::SetMenuDefaultItem( m_hmenu_popup , open_pos , TRUE ) ;
 
 	// optionally grey-out menu items
@@ -57,14 +57,14 @@ int Main::WinMenu::popup( const GGui::WindowBase & w , bool with_open , bool wit
 
 	// display the menu
 	//
-	BOOL rc = ::TrackPopupMenuEx( m_hmenu_popup , 
-		TPM_RETURNCMD , p.x , p.y , w.handle() , NULL ) ;
+	BOOL rc = ::TrackPopupMenuEx( m_hmenu_popup ,
+		TPM_RETURNCMD , p.x , p.y , w.handle() , nullptr ) ;
 	return static_cast<int>(rc) ; // BOOL->int!, only in Microsoft wonderland
 }
 
 Main::WinMenu::~WinMenu()
 {
-	if( m_hmenu != NULL )
+	if( m_hmenu != nullptr )
 		::DestroyMenu( m_hmenu ) ;
 }
 

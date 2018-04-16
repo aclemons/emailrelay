@@ -1,8 +1,13 @@
 News
-====
-The 1.9.2 release fixes a resource leak that can cause significantly degraded 
-performance in long-lived processes.
+----
+E-MailRelay Version 2 is a major release, with more complete support for IPv6
+and TLS, a reworked Windows core, and non-blocking execution of external filters
+and address verifiers.
 
-It also adds a "--client-interface" option to begin to resolve the mis-feature 
-where the first "--interface" address may be used to bind the local socket on
-outgoing client connections.
+There are some breaks in compatibility with earlier versions; in particular:
+* the TLS command-line options have changed significantly
+* the address verifier command-line parameters are simpler
+* the format of the secrets file has changed, although the old format is still accepted
+* the reserved exit codes from filters are handled differently
+* the admin command-line is a bit different
+

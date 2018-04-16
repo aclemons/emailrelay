@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -37,48 +37,77 @@ namespace G
 }
 
 /// \class G::CleanupImp
-/// A private implementation class used by G::Cleanup.
-/// 
-class G::CleanupImp 
+/// A pimple-pattern implementation class used by G::Cleanup.
+///
+class G::CleanupImp
 {
 public:
 	static void add( void (*fn)(SignalSafe,const char*) , const char * ) ;
+		// Adds a cleanup function.
+
+	static void installDefault( const SignalSafe & , int ) ;
+		// Installs the SIG_DFL signal handler for the given signal.
+
 	static void installDefault( int ) ;
-	static void callHandlers() ;
-	static void ignore( int ) ;
+		// Installs the SIG_DFL signal handler for the given signal.
+
+	static void installIgnore( int ) ;
+		// Installs the SIG_IGN signal handler for the given signal.
+
+	static void callHandlers( SignalSafe ) ;
+		// Calls all the cleanup functions.
+
+	static void atexit( bool active ) ;
+		// Registers callHandlers() with atexit(3) if the active parameter is true.
 
 private:
-	static void init() ;
-	static void install( int , Handler ) ;
-	static void installHandler( int ) ;
-	static bool ignored( int ) ;
-
-private:
-	/// A private linked-list structure used by G::CleanupImp.
-	struct Link 
+	struct Link /// A private linked-list structure used by G::CleanupImp.
 	{
 		void (*fn)(SignalSafe,const char*) ;
 		const char * arg ;
 		Link * next ;
 	} ;
+	struct BlockSignals /// A private implementation class that temporarily blocks signals.
+	{
+		BlockSignals() ;
+		~BlockSignals() ;
+	} ;
+
+private:
+	static void init() ;
+	static void install( int , Handler , bool ) ;
+	static void installHandler( int ) ;
+	static bool ignored( int ) ;
+	static void atexitHandler() ;
+	static Link * new_link_ignore_leak() ;
+
+private:
 	static Link * m_head ;
 	static Link * m_tail ;
+	static bool m_atexit_active ;
+	static bool m_atexit_installed ;
 } ;
 
-G::CleanupImp::Link * G::CleanupImp::m_head = NULL ;
-G::CleanupImp::Link * G::CleanupImp::m_tail = NULL ;
+G::CleanupImp::Link * G::CleanupImp::m_head = nullptr ;
+G::CleanupImp::Link * G::CleanupImp::m_tail = nullptr ;
+bool G::CleanupImp::m_atexit_installed = false ;
+bool G::CleanupImp::m_atexit_active = false ;
 
 // ===
 
 void G::Cleanup::init()
 {
-	CleanupImp::ignore( SIGPIPE ) ;
+	CleanupImp::installIgnore( SIGPIPE ) ;
 }
 
 void G::Cleanup::add( void (*fn)(SignalSafe,const char*) , const char * arg )
 {
-	if( arg != NULL )
-		CleanupImp::add( fn , arg ) ;
+	CleanupImp::add( fn , arg ) ; // was if(arg!=nullptr)
+}
+
+void G::Cleanup::atexit( bool active )
+{
+	CleanupImp::atexit( active ) ;
 }
 
 // ===
@@ -88,7 +117,7 @@ void G::CleanupImp::init()
 	// install our meta-handler for signals that normally terminate the process,
 	// except for sigpipe which we ignore
 	//
-	ignore( SIGPIPE ) ;
+	installIgnore( SIGPIPE ) ;
 	installHandler( SIGTERM ) ;
 	installHandler( SIGINT ) ;
 	installHandler( SIGHUP ) ;
@@ -99,16 +128,23 @@ void G::CleanupImp::init()
 
 void G::CleanupImp::add( void (*fn)(SignalSafe,const char*) , const char * arg )
 {
-	Link * p = new Link ;
+	Link * p = new_link_ignore_leak() ;
 	p->fn = fn ;
 	p->arg = arg ;
-	p->next = NULL ;
+	p->next = nullptr ;
 
-	// (this bit should be protected from signals)
-	if( m_head == NULL ) init() ;
-	if( m_tail != NULL ) m_tail->next = p ;
+	// (all the signal-handling code treats the m_head/m_tail
+	// list as immutable, so there are no locking issues here)
+
+	if( m_head == nullptr ) init() ;
+	if( m_tail != nullptr ) m_tail->next = p ;
 	m_tail = p ;
-	if( m_head == NULL ) m_head = p ;
+	if( m_head == nullptr ) m_head = p ;
+}
+
+G::CleanupImp::Link * G::CleanupImp::new_link_ignore_leak()
+{
+	return new Link ;
 }
 
 void G::CleanupImp::installHandler( int signum )
@@ -116,49 +152,73 @@ void G::CleanupImp::installHandler( int signum )
 	if( ignored(signum) )
 		G_DEBUG( "G::CleanupImp::installHandler: signal " << signum << " is ignored" ) ;
 	else
-		install( signum , gcleanup_unix_handler_ ) ;
-}
-
-void G::CleanupImp::installDefault( int signum )
-{
-	install( signum , NULL ) ;
+		install( signum , gcleanup_unix_handler_ , true ) ;
 }
 
 bool G::CleanupImp::ignored( int signum )
 {
 	static struct sigaction zero_action ;
 	struct sigaction action( zero_action ) ;
-	if( ::sigaction( signum , NULL , &action ) )
+	if( ::sigaction( signum , nullptr , &action ) )
 		throw Cleanup::Error( "sigaction" ) ;
 	return action.sa_handler == SIG_IGN ;
 }
 
-void G::CleanupImp::install( int signum , Handler fn )
+void G::CleanupImp::installDefault( int signum )
+{
+	install( signum , SIG_DFL , true ) ;
+}
+
+void G::CleanupImp::installDefault( const G::SignalSafe & , int signum )
+{
+	install( signum , SIG_DFL , false ) ;
+}
+
+void G::CleanupImp::installIgnore( int signum )
+{
+	install( signum , SIG_IGN , true ) ;
+}
+
+void G::CleanupImp::install( int signum , Handler fn , bool do_throw )
 {
 	// install the given handler, or the system default if null
 	static struct sigaction zero_action ;
 	struct sigaction action( zero_action ) ;
-	action.sa_handler = fn ? fn : SIG_DFL ;
-	if( ::sigaction( signum , &action , NULL ) && fn != NULL )
+	action.sa_handler = fn ;
+	if( ::sigaction( signum , &action , nullptr ) && do_throw )
 		throw Cleanup::Error( "sigaction" ) ;
 }
 
-void G::CleanupImp::ignore( int signum )
+void G::CleanupImp::atexit( bool active )
 {
-	static struct sigaction zero_action ;
-	struct sigaction action( zero_action ) ;
-	action.sa_handler = SIG_IGN ;
-	if( ::sigaction( signum , &action , NULL ) )
-		throw Cleanup::Error( "sigaction" ) ;
-}
-
-void G::CleanupImp::callHandlers()
-{
-	G::Root claim_root ;
-	for( const Link * p = m_head ; p != NULL ; p = p->next )
+	if( active && !m_atexit_installed )
 	{
-		(*(p->fn))(SignalSafe(),p->arg) ;
+		m_atexit_installed = true ;
+		::atexit( atexitHandler ) ;
 	}
+	m_atexit_active = active ;
+}
+
+void G::CleanupImp::atexitHandler()
+{
+	if( m_atexit_active )
+		callHandlers( SignalSafe() ) ;
+}
+
+void G::CleanupImp::callHandlers( SignalSafe )
+{
+	Identity identity = Root::start( SignalSafe() ) ;
+	for( const Link * p = m_head ; p != nullptr ; p = p->next )
+	{
+		try
+		{
+			(*(p->fn))(SignalSafe(),p->arg) ;
+		}
+		catch(...)
+		{
+		}
+	}
+	Root::stop( SignalSafe() , identity ) ;
 }
 
 extern "C"
@@ -167,10 +227,10 @@ void gcleanup_unix_handler_( int signum )
 	// call the registered handler(s) and then do the system default action
 	try
 	{
-		int e = G::Process::errno_() ;
-		G::CleanupImp::callHandlers() ;
-		G::CleanupImp::installDefault( signum ) ;
-		G::Process::errno_( e ) ;
+		int e = G::Process::errno_( G::SignalSafe() ) ;
+		G::CleanupImp::callHandlers( G::SignalSafe() ) ;
+		G::CleanupImp::installDefault( G::SignalSafe() , signum ) ;
+		G::Process::errno_( G::SignalSafe() , e ) ;
 		::raise( signum ) ;
 	}
 	catch(...)

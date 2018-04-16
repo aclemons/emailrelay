@@ -1,39 +1,39 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
 // service_wrapper.cpp
 //
-// A service wrapper program. On service startup a pre-configured process 
+// A service wrapper program. On service startup a pre-configured process
 // is forked; on sutdown the forked process is terminated.
 //
 // usage: service_wrapper [ { --remove [<service-name>] | --install [<service-name> [<service-display-name>]] } ]
 //
-// The service wrapper looks for a one-line batch file called 
-// "<name>-start.bat", which it then reads to get the full command-line 
-// for the forked process. It adds "--no-daemon" and "--hidden" for good 
+// The service wrapper looks for a one-line batch file called
+// "<name>-start.bat", which it then reads to get the full command-line
+// for the forked process. It adds "--no-daemon" and "--hidden" for good
 // measure.
 //
 // By default the "<name>-start.bat" file must be in the same directory
 // as this service wrapper, but if there is a file "<service-wrapper>.cfg"
 // then its "dir-config" entry is used as the batch file directory.
 //
-// After the process is forked the service wrapper waits for a bit and 
-// then checks that it is running. It does this twice. If the forked 
-// process is not running on the second check then the service is 
+// After the process is forked the service wrapper waits for a bit and
+// then checks that it is running. It does this twice. If the forked
+// process is not running on the second check then the service is
 // considered not to have started.
 //
 
@@ -43,6 +43,7 @@
 #include "gbatchfile.h"
 #include "gmapfile.h"
 #include "garg.h"
+#include "gfile.h"
 #include "service_install.h"
 #include "service_remove.h"
 #include <sstream>
@@ -136,7 +137,7 @@ public:
 	void onEvent( DWORD ) ;
 	void runThread() ;
 	static std::string thisExe() ;
-	static G::Path configFile() ;
+	static G::Path configFile( G::Path ) ;
 	static G::Path bat( const std::string & service_name ) ;
 	static std::string commandline( const G::Path & bat_path ) ;
 
@@ -163,12 +164,12 @@ int main( int argc , char * argv [] )
 
 		bool help = arg1 == "--help" || arg1 == "/?" || arg1 == "-?" || arg1 == "-h" ;
 		bool install = arg1 == "--install" || arg1 == "-install" || arg1 == "/install" ;
-		bool remove = 
+		bool remove =
 			arg1 == "--remove" || arg1 == "-remove" || arg1 == "/remove" ||
 			arg1 == "--uninstall" || arg1 == "-uninstall" || arg1 == "/uninstall" ;
 
 		if( help )
-			std::cout << "usage: " << argv[0] << " [--help|--install|--remove] [<name> [<display-name>]]" << std::endl ;
+			std::cout << "usage: " << argv[0] << " [{--help|--install|--remove}] [<name> [<display-name>]]" << std::endl ;
 		else if( install )
 			Service::install( arg2 , arg3 ) ;
 		else if( remove )
@@ -200,7 +201,7 @@ void WINAPI ServiceMain( DWORD argc , LPTSTR * argv )
 		G::Convert::convert( sname , service_name , G::Convert::ThrowOnError("converting service name") ) ;
 
 		Service * service = Service::instance() ;
-		if( service != NULL )
+		if( service != nullptr )
 			service->init( sname ) ;
 	}
 	catch( std::exception & e )
@@ -220,7 +221,7 @@ void WINAPI Handler( DWORD control )
 	{
 		G_DEBUG( "Handler: " << control ) ;
 		Service * service = Service::instance() ;
-		if( service == NULL ) throw Error("Handler",ERROR_INVALID_HANDLE) ;
+		if( service == nullptr ) throw Error("Handler",ERROR_INVALID_HANDLE) ;
 		service->onEvent( control ) ;
 	}
 	catch( std::exception & e )
@@ -240,8 +241,18 @@ DWORD WINAPI RunThread( LPVOID arg )
 	{
 		G_DEBUG( "RunThread: start" ) ;
 		Service * service = reinterpret_cast<Service*>(arg) ;
-		bool valid = service != NULL ;
-		try { valid = service->valid() ; } catch(...) { valid = false ; }
+		bool valid = service != nullptr ;
+		if( valid )
+		{
+			try
+			{
+				valid = service->valid() ;
+			}
+			catch(...)
+			{
+				valid = false ;
+			}
+		}
 		service->runThread() ;
 		G_DEBUG( "RunThread: done" ) ;
 		return 0 ;
@@ -255,13 +266,13 @@ DWORD WINAPI RunThread( LPVOID arg )
 
 // ==
 
-Service * Service::m_this = NULL ;
+Service * Service::m_this = nullptr ;
 
 void Service::install( const std::string & service_name , const std::string & display_name )
 {
 	// prepare the service-wrapper commandline
 	std::string this_exe = Service::thisExe() ;
-	std::string command_line = this_exe.find(" ") == std::string::npos ? 
+	std::string command_line = this_exe.find(" ") == std::string::npos ?
 		this_exe : ( std::string("\"")+this_exe+"\"") ;
 	std::cout << "installing service \"" << service_name << "\": [" << command_line << "]" << std::endl ;
 
@@ -302,8 +313,8 @@ void Service::init( std::string name )
 		m_hservice = statusHandle( name ) ;
 		setStatus( SERVICE_START_PENDING ) ;
 		m_child = Child( commandline(bat(name)) ) ;
-		m_thread_exit = CreateEvent( NULL , FALSE , FALSE , NULL ) ;
-		m_hthread = CreateThread( NULL , 0 , RunThread , this , 0 , &m_thread_id ) ;
+		m_thread_exit = CreateEvent( nullptr , FALSE , FALSE , nullptr ) ;
+		m_hthread = CreateThread( nullptr , 0 , RunThread , this , 0 , &m_thread_id ) ;
 		G_DEBUG( "Service::init: done" ) ;
 	}
 	catch( std::exception & e )
@@ -330,7 +341,7 @@ Service::~Service()
 	try { setStatus(SERVICE_STOPPED) ; } catch(...) {}
 	stopThread() ;
 	m_magic = 0 ;
-	m_this = NULL ;
+	m_this = nullptr ;
 	G_DEBUG( "Service::dtor: done" ) ;
 }
 
@@ -339,7 +350,7 @@ Service * Service::instance()
 	Service * service = m_this ;
 	bool valid = false ;
 	try { valid = service && service->valid() ; } catch(...) {}
-	return valid ? service : NULL ;
+	return valid ? service : nullptr ;
 }
 
 bool Service::valid() const
@@ -349,7 +360,7 @@ bool Service::valid() const
 
 void Service::stopThread()
 {
-	if( m_thread_exit ) 
+	if( m_thread_exit )
 		SetEvent( m_thread_exit ) ;
 }
 
@@ -361,11 +372,9 @@ std::string Service::thisExe()
 	return arg.v(0U) ;
 }
 
-G::Path Service::configFile( const std::string & exe )
+G::Path Service::configFile( G::Path p )
 {
-	G::Path p = exe ;
-	p.removeExtension() ;
-	return G::Path( p.str() + ".cfg" ) ;
+	return p.dirname() + (p.withoutExtension().basename()+".cfg") ;
 }
 
 G::Path Service::bat( const std::string & prefix )
@@ -378,7 +387,7 @@ G::Path Service::bat( const std::string & prefix )
 	if( G::File::exists(config_file) )
 		config_map = G::MapFile( config_file ) ;
 
-	G::Path dir = config_map.contains("dir-config") ? 
+	G::Path dir = config_map.contains("dir-config") ?
 		G::Path(config_map.value("dir-config")) : this_exe.dirname() ;
 
 	return dir + filename ;
@@ -409,13 +418,13 @@ std::string Service::commandline( const G::Path & bat_path )
 
 void Service::onEvent( DWORD event )
 {
-	if( event == SERVICE_CONTROL_STOP ) 
+	if( event == SERVICE_CONTROL_STOP )
 	{
 		G_DEBUG( "Service::onEvent: stop" ) ;
 		m_child.kill() ;
 		setStatus( SERVICE_STOPPED ) ;
 	}
-	else if( event == SERVICE_CONTROL_INTERROGATE ) 
+	else if( event == SERVICE_CONTROL_INTERROGATE )
 	{
 		G_DEBUG( "Service::onEvent: interrogate" ) ;
 	}
@@ -428,7 +437,7 @@ void Service::onEvent( DWORD event )
 
 void Service::runThread()
 {
-	if( m_magic != Magic || m_thread_exit == NULL )
+	if( m_magic != Magic || m_thread_exit == nullptr )
 	{
 		G_DEBUG( "Service::runThread: internal error" ) ;
 		return ;
@@ -464,7 +473,7 @@ void Service::runThread()
 	}
 
 	HANDLE h = m_thread_exit ;
-	m_thread_exit = NULL ;
+	m_thread_exit = nullptr ;
 	CloseHandle( h ) ;
 	G_DEBUG( "Service::runThread: done" ) ;
 }
@@ -475,7 +484,7 @@ void Service::start()
 	{
 		Service service ;
 		static TCHAR empty[] = { 0 } ;
-		static SERVICE_TABLE_ENTRY table [] = { { empty , ServiceMain } , { NULL , NULL } } ;
+		static SERVICE_TABLE_ENTRY table [] = { { empty , ServiceMain } , { nullptr , nullptr } } ;
 		bool ok = !! StartServiceCtrlDispatcher( table ) ; // this doesn't return until the service is stopped
 		if( !ok )
 		{
@@ -542,14 +551,14 @@ Child::Child( std::string command_line ) :
 
 	BOOL inherit = FALSE ;
 	DWORD flags = CREATE_NO_WINDOW ;
-	LPVOID env = NULL ;
-	LPCSTR cwd = NULL ;
+	LPVOID env = nullptr ;
+	LPCSTR cwd = nullptr ;
 	PROCESS_INFORMATION info ;
-	SECURITY_ATTRIBUTES * process_attributes = NULL ;
-	SECURITY_ATTRIBUTES * thread_attributes = NULL ;
+	SECURITY_ATTRIBUTES * process_attributes = nullptr ;
+	SECURITY_ATTRIBUTES * thread_attributes = nullptr ;
 	char * command_line_p = const_cast<char*>(command_line.c_str()) ;
 
-	BOOL rc = ::CreateProcessA( NULL , command_line_p ,
+	BOOL rc = ::CreateProcessA( nullptr , command_line_p ,
 		process_attributes , thread_attributes , inherit ,
 		flags , env , cwd , &start , &info ) ;
 

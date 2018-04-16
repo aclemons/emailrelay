@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,16 +18,16 @@
 /// \file gresolver.h
 ///
 
-#ifndef G_RESOLVER_H
-#define G_RESOLVER_H
+#ifndef G_NET_RESOLVER__H
+#define G_NET_RESOLVER__H
 
 #include "gdef.h"
-#include "gnet.h"
-#include "gresolverinfo.h"
+#include "glocation.h"
 #include "geventhandler.h"
+#include "gexception.h"
 #include "gaddress.h"
+#include <vector>
 
-/// \namespace GNet
 namespace GNet
 {
 	class Resolver ;
@@ -35,76 +35,64 @@ namespace GNet
 }
 
 /// \class GNet::Resolver
-/// A class for asynchronous TCP name-to-address 
-/// resolution. (The motivation for a fully asynchronous 
-/// interface is so that GUIs and single-threaded servers
-/// are not blocked during DNS lookup. However, simple
-/// clients, especially those without a GUI, can reasonably
-/// use synchronous lookup.)
+/// A class for synchronous or asynchronous network name to address resolution.
+/// The implementation uses getaddrinfo() at its core, with std::thread used for
+/// asynchronous resolve requests, and with hooks into the GNet::EventLoop.
 ///
-class GNet::Resolver 
+class GNet::Resolver
 {
 public:
-	explicit Resolver( EventHandler & ) ;
-		///< Constructor taking an event handler reference.
-		///< The supplied event handler's onException() method
-		///< is called if an exception is thrown out of (eg.)
-		///< resolveCon().
+	typedef std::vector<Address> AddressList ;
+	G_EXCEPTION( Error , "asynchronous resolver error" ) ;
+	G_EXCEPTION( BusyError , "asynchronous resolver still busy" ) ;
+	struct Callback /// An interface used for GNet::Resolver callbacks.
+	{
+		virtual ~Callback() ;
+		virtual void onResolved( std::string error , Location ) = 0 ;
+			///< Called on completion of GNet::Resolver name resolution.
+	} ;
 
-	virtual ~Resolver() ;
-		///< Virtual destructor.
+	Resolver( Callback & , ExceptionHandler & ) ;
+		///< Constructor taking a callback interface reference.
+		///< The exception handler's onException() method is called if
+		///< an exception is thrown out of Callback::onResolved().
 
-	static bool parse( const std::string & in , std::string & host_or_address , std::string & service_or_port ) ;
-		///< Parses a string that contains a hostname or ip address plus a 
-		///< server name or port number. Returns false if not valid.
-		///<
-		///< The input format should be:
-		///<	{<host-name>|<host-address>}:{<service-name>|<port-number>}
-		///<	where host-address := <n-1>.<n-2>.<n-3>.<n-4> for ipv4
+	~Resolver() ;
+		///< Destructor. The results of any pending asynchronous resolve
+		///< request are discarded asynchronously, although in extreme
+		///< cases this destructor may block doing a thread join.
 
-	bool resolveReq( std::string name , bool udp = false ) ;
-		///< Initiates a name-to-address resolution. Returns
-		///< false on error, in which case a confirmation will 
-		///< not be generated.
-		///<
-		///< Postcondition: state == resolving (returns true)
-		///< Postcondition: state == idle (returns false)
+	void start( const Location & ) ;
+		///< Starts asynchronous name-to-address resolution.
+		///< Precondition: async() && !busy()
 
-	bool resolveReq( std::string host_name, std::string service_name , bool udp = false ) ;
-		///< Alternative form of ResolveReq(std::string,bool) with 
-		///< separate hostname and service name parameters.
-		///< A zero-length host_name defaults to "0.0.0.0". A 
-		///< zero-length service name defaults to "0".
+	static std::string resolve( Location & ) ;
+		///< Does synchronous name resolution. Fills in the name
+		///< and address fields of the supplied Location structure.
+		///< The returned error string is zero length on success.
 
-	virtual void resolveCon( bool success, const Address & address ,
-		std::string fqdn_or_failure_reason ) ;
-			///< Called when the resolution process is complete.
-			///< Overridable. This default implementation does nothing.
-			///< This function is never called from within resolveReq().
-			///<
-			///< Precondition: state == resolving
-			///< Postcondition: state == idle
+	static AddressList resolve( const std::string & host , const std::string & service , int family = AF_UNSPEC , bool dgram = false ) ;
+		///< Does synchronous name resolution returning a list
+		///< of addresses. Errors are not reported. The empty
+		///< list is returned on error.
+
+	static bool async() ;
+		///< Returns true if the resolver supports asynchronous operation.
+		///< If it doesnt then start() will always throw.
 
 	bool busy() const ;
 		///< Returns true if there is a pending resolve request.
-		///<
-		///< Postcondition: state == resolving <= returns true
-		///< Postcondition: state == idle <= returns false
-
-	static std::string resolve( ResolverInfo & host_and_service , bool udp = false ) ;
-		///< Does syncronous name resolution. Fills in the
-		///< name and address fields of the supplied ResolverInfo 
-		///< structure. The returned error string is zero length 
-		///< on success. Not implemented on all platforms.
 
 private:
 	void operator=( const Resolver & ) ; // not implemented
 	Resolver( const Resolver & ) ; // not implemented
-	static unsigned int resolveService( const std::string & , bool , std::string & ) ;
-	static std::string resolveHost( const std::string & host_name , unsigned int , ResolverInfo & ) ;
+	friend class GNet::ResolverImp ;
+	void done( std::string , Location ) ;
 
 private:
-	ResolverImp *m_imp ;
+	Callback & m_callback ;
+	ExceptionHandler & m_eh ;
+	unique_ptr<ResolverImp> m_imp ;
 } ;
 
 #endif

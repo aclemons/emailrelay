@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "serverconfiguration.h"
+#include "options.h"
 #include "gbatchfile.h"
 #include "gfile.h"
 #include "goptionparser.h"
@@ -37,7 +38,7 @@ ServerConfiguration::ServerConfiguration( const G::Path & config_file ) :
 G::MapFile ServerConfiguration::read( const G::Path & config_file )
 {
 	G::MapFile config ;
-	if( !G::File::exists(config_file) ) 
+	if( !G::File::exists(config_file) )
 	{
 		; // leave it empty
 	}
@@ -47,16 +48,21 @@ G::MapFile ServerConfiguration::read( const G::Path & config_file )
 		G::BatchFile batch_file( config_file , G::BatchFile::NoThrow() ) ;
 		G::StringArray const args = batch_file.args() ;
 		if( args.size() != 0U )
-			config = G::OptionParser::parse( spec() , args , 1U , true ) ;
+		{
+			G::OptionMap option_map ;
+			G::Options options( spec() ) ;
+			G::OptionParser parser( options , option_map ) ;
+			parser.parse( args , 1U ) ; // ignore errors
+			config = G::MapFile( option_map , G::Str::positive() ) ;
+		}
 	}
 	else
 	{
-		// TODO maybe push through OptionParser to eliminate cruft
 		config = G::MapFile( config_file ) ;
 	}
 
-	// normalise
-	std::string const yes = "yes" ;
+	// normalise by expanding "--as-whatever" etc.
+	std::string const yes = G::Str::positive() ;
 	if( config.contains("as-client") )
 	{
 		config.add( "log" , yes ) ;
@@ -71,7 +77,7 @@ G::MapFile ServerConfiguration::read( const G::Path & config_file )
 	{
 		config.add( "log" , yes ) ;
 		config.add( "close-stderr" , yes ) ;
-		config.add( "poll" , "0" ) ; // TODO "forward-on-disconnect"
+		config.add( "forward-on-disconnect" , yes ) ; // was poll 0
 		config.add( "forward-to" , config.value("as-proxy") ) ;
 		config.remove( "as-proxy" ) ;
 	}
@@ -98,69 +104,14 @@ std::string ServerConfiguration::quote( std::string s , bool escape_spaces )
 
 std::string ServerConfiguration::spec()
 {
-	// TODO refactor wrt. src/main
-	return
-		"l!log!...!!0!!2|"
-		"t!no-daemon!...!!0!!3|"
-		"k!syslog!...!!0!!3|"
-		"n!no-syslog!...!!0!!3|"
-		"c!icon!...!!1!0123!0|"
-		"H!hidden!...!!0!!3|"
-		"R!peer-lookup!...!!0!!3|"
-		"q!as-client!...!!1!host:port!1|"
-		"d!as-server!...!!0!!1|"
-		"y!as-proxy!...!!1!host:port!1|"
-		"v!verbose!...!!0!!1|"
-		"h!help!...!!0!!1|"
-		"p!port!...!!1!port!2|"
-		"r!remote-clients!...!!0!!2|"
-		"s!spool-dir!...!!1!dir!2|"
-		"V!version!...!!0!!2|"
-		"j!client-tls!...!!0!!3|"
-		"b!client-tls-connection!...!!0!!3|"
-		"K!server-tls!...!!1!pem-file!3|"
-		"9!tls-config!...!!1!flags!3|"
-		"g!debug!...!!0!!3|"
-		"C!client-auth!...!!1!file!3|"
-		"L!log-time!...!!0!!3|"
-		"N!log-file!...!!1!file!3|"
-		"S!server-auth!...!!1!file!3|"
-		"e!close-stderr!...!!0!!3|"
-		"a!admin!...!!1!admin-port!3|"
-		"x!dont-serve!...!!0!!3|"
-		"X!no-smtp!...!!0!!3|"
-		"z!filter!...!!1!program!3|"
-		"W!filter-timeout!...!!1!time!3|"
-		"w!prompt-timeout!...!!1!time!3|"
-		"D!domain!...!!1!fqdn!3|"
-		"f!forward!...!!0!!3|"
-		"o!forward-to!...!!1!host:port!3|"
-		"T!response-timeout!...!!1!time!3|"
-		"U!connection-timeout!...!!1!time!3|"
-		"m!immediate!...!!0!!3|"
-		"I!interface!...!!2!ip-list!3|"
-		"6!client-interface!...!!1!ip!3|"
-		"i!pid-file!...!!1!pid-file!3|"
-		"O!poll!...!!1!period!3|"
-		"P!postmaster!...!!0!!0|"
-		"Z!verifier!...!!1!program!3|"
-		"Y!client-filter!...!!1!program!3|"
-		"Q!admin-terminate!...!!0!!3|"
-		"A!anonymous!...!!0!!3|"
-		"B!pop!...!!0!!3|"
-		"E!pop-port!...!!1!port!3|"
-		"F!pop-auth!...!!1!file!3|"
-		"G!pop-no-delete!...!!0!!3|"
-		"J!pop-by-name!...!!0!!3|"
-		"M!size!...!!1!bytes!3"
-	;
+	return Main::Options::spec( G::is_windows() ) ;
 }
 
 std::string ServerConfiguration::exe( const G::Path & config_file )
 {
 	return
-		G::File::exists(config_file) && 
-		config_file.extension() == "bat" && 
+		G::File::exists(config_file) &&
+		config_file.extension() == "bat" &&
 		!G::BatchFile(config_file,G::BatchFile::NoThrow()).args().empty() ?
 			G::BatchFile(config_file,G::BatchFile::NoThrow()).args().at(0U) :
 			std::string() ;
@@ -208,7 +159,7 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages , c
 		}
 		else if( pages.booleanValue("forward-on-disconnect",true) )
 		{
-			out["poll"] = "0" ; // TODO "forward-on-disconnect"
+			out["forward-on-disconnect"] ; // was poll 0
 		}
 		if( pages.booleanValue("forward-poll",true) )
 		{
@@ -226,6 +177,11 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages , c
 		if( pages.booleanValue("smtp-server-auth",true) )
 		{
 			out["server-auth"] = auth ;
+		}
+		if( pages.booleanValue("smtp-server-tls",false) )
+		{
+			out["server-tls"] ;
+			out["server-tls-certificate"] = pages.value("smtp-server-tls-certificate") ;
 		}
 		out["forward-to"] = pages.value("smtp-client-host") + ":" + pages.value("smtp-client-port") ;
 		if( pages.booleanValue("smtp-client-tls",true) )
@@ -281,7 +237,7 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages , c
 	if( !pages.booleanValue("listening-all",true) && !pages.value("listening-interface").empty() )
 	{
 		out["interface"] = pages.value("listening-interface") ;
-		out["client-interface"] = "0.0.0.0" ; // TODO ipv6 & separate widget
+		out["client-interface"] = "0.0.0.0" ;
 	}
 
 	ServerConfiguration result ;

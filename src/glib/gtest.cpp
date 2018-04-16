@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -25,11 +25,24 @@
 #include <string>
 #include <set>
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) || defined(G_TEST_ENABLED)
+namespace
+{
+	bool done = false ;
+	std::string spec ;
+}
+void G::Test::set( const std::string & s )
+{
+	done = true ;
+	spec = s ;
+}
 bool G::Test::enabled( const char * name )
 {
-	static std::string p = G::Environment::get("G_TEST",std::string()) ;
-	bool result = p.empty() ? false : ( p.find(name) != std::string::npos ) ; // (could do better)
+	if( !done )
+		spec = G::Environment::get("G_TEST",std::string()) ;
+	done = true ;
+
+	bool result = spec.empty() ? false : ( spec.find(name) != std::string::npos ) ;
 	if( result )
 	{
 		static std::set<std::string> warned ;
@@ -41,14 +54,17 @@ bool G::Test::enabled( const char * name )
 	}
 	return result ;
 }
-#endif
-
 bool G::Test::enabled()
 {
-#if defined(_DEBUG)
 	return true ;
-#else
-	return false ;
-#endif
 }
+#else
+void G::Test::set( const std::string & )
+{
+}
+bool G::Test::enabled()
+{
+	return false ;
+}
+#endif
 /// \file gtest.cpp

@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -20,53 +20,231 @@
 
 #include "gdef.h"
 #include "gresolver.h"
+#include "gresolverfuture.h"
+#include "geventloop.h"
+#include "gtimer.h"
+#include "gfutureevent.h"
+#include "gtest.h"
 #include "gstr.h"
 #include "gdebug.h"
-#include "glog.h"
 
-std::string GNet::Resolver::resolve( ResolverInfo & in , bool udp )
+/// \class GNet::ResolverImp
+/// A private "pimple" implementation class used by GNet::Resolver to do
+/// asynchronous name resolution. The implementation contains a worker
+/// thread using the future/promise pattern.
+///
+class GNet::ResolverImp : private FutureEventHandler
 {
-	// service
+public:
+	ResolverImp( Resolver & , ExceptionHandler & , const Location & ) ;
+		// Constructor.
 
-	unsigned int port = 0U ;
-	std::string service_name = in.service() ;
-	if( !service_name.empty() && G::Str::isNumeric(service_name) )
+	virtual ~ResolverImp() ;
+		// Destructor. The destructor will block if the worker thread is
+		// still busy.
+
+	void doDelete() ;
+		// Schedules a 'delete this'. The callback is disarmed.
+
+	static void start( ResolverImp * , FutureEvent::handle_type ) ;
+		// Static worker-thread function to do name resolution. Calls
+		// ResolverFuture::run() to do the work and then FutureEvent::send()
+		// to signal the main thread. The event plumbing then results in a
+		// call to Resolver::done() on the main thread.
+
+	static size_t count() ;
+		// Returns the number of objects.
+
+private:
+	ResolverImp( const ResolverImp & ) ;
+	void operator=( const ResolverImp & ) ;
+	virtual void onFutureEvent() override ; // GNet::FutureEventHandler
+	void onTimeout() ;
+
+private:
+	typedef ResolverFuture::Pair Pair ;
+	Resolver * m_resolver ;
+	unique_ptr<FutureEvent> m_future_event ;
+	Timer<ResolverImp> m_timer ;
+	Location m_location ;
+	ResolverFuture m_future ;
+	G::threading::thread_type m_thread ;
+	bool m_busy ;
+	static size_t m_instance_count ;
+} ;
+
+size_t GNet::ResolverImp::m_instance_count = 0U ;
+
+GNet::ResolverImp::ResolverImp( Resolver & resolver , ExceptionHandler & eh , const Location & location ) :
+	m_resolver(&resolver) ,
+	m_future_event(new FutureEvent(*this,eh)) ,
+	m_timer(*this,&ResolverImp::onTimeout,eh) ,
+	m_location(location) ,
+	m_future(location.host(),location.service(),location.family(),location.dgram(),true) ,
+	m_thread(ResolverImp::start,this,m_future_event->handle()) ,
+	m_busy(true)
+{
+	m_instance_count++ ;
+}
+
+GNet::ResolverImp::~ResolverImp()
+{
+	m_timer.cancelTimer() ;
+	if( m_thread.joinable() )
 	{
-		if( ! G::Str::isUInt(service_name) )
-			return "silly port number" ;
+		G_WARNING( "ResolverImp::dtor: waiting for getaddrinfo thread to complete" ) ;
+		m_thread.join() ;
+	}
+	m_instance_count-- ;
+}
 
-		port = G::Str::toUInt(service_name) ;
-		if( ! Address::validPort(port) )
-			return "invalid port number" ;
+size_t GNet::ResolverImp::count()
+{
+	return m_instance_count ;
+}
+
+void GNet::ResolverImp::start( ResolverImp * This , FutureEvent::handle_type handle )
+{
+	// thread function, spawned from ctor and join()ed from dtor
+	try
+	{
+		This->m_future.run() ;
+		FutureEvent::send( handle ) ;
+	}
+	catch(...) // worker thread outer function
+	{
+		FutureEvent::send( handle ) ; // nothrow
+	}
+}
+
+void GNet::ResolverImp::onFutureEvent()
+{
+	G_DEBUG( "GNet::ResolverImp::onFutureEvent: future event: ptr=" << m_resolver ) ;
+	G_ASSERT( m_busy ) ; if( !m_busy ) return ;
+	G_ASSERT( m_resolver != nullptr ) ; if( m_resolver == nullptr ) return ;
+
+	m_thread.join() ; // worker thread is finishing, so no delay here
+	m_busy = false ;
+	Resolver * resolver = m_resolver ;
+	m_resolver = nullptr ;
+	m_timer.startTimer( 0U ) ;
+
+	Pair result = m_future.get() ;
+	if( !m_future.error() )
+		m_location.update( result.first , result.second ) ;
+
+	G_DEBUG( "GNet::ResolverImp::onFutureEvent: [" << m_future.reason() << "][" << m_location.displayString() << "]" ) ;
+	resolver->done( m_future.reason() , m_location ) ;
+}
+
+void GNet::ResolverImp::doDelete()
+{
+	m_resolver = nullptr ;
+	m_timer.startTimer( 0U ) ;
+}
+
+void GNet::ResolverImp::onTimeout()
+{
+	if( m_busy )
+		m_timer.startTimer( 1U ) ;
+	else
+		delete this ;
+}
+
+// ==
+
+GNet::Resolver::Resolver( Resolver::Callback & callback , ExceptionHandler & eh ) :
+	m_callback(callback) ,
+	m_eh(eh)
+{
+	// lazy imp construction
+}
+
+GNet::Resolver::~Resolver()
+{
+	const size_t sanity_limit = 50U ;
+	if( m_imp.get() != nullptr && ResolverImp::count() < sanity_limit )
+	{
+		// release the imp to an independent lifetime until its getaddrinfo() completes
+		G_DEBUG( "GNet::Resolver::dtor: releasing still-busy thread: " << ResolverImp::count() ) ;
+		m_imp->doDelete() ;
+		m_imp.release() ;
+	}
+}
+
+std::string GNet::Resolver::resolve( Location & location )
+{
+	// synchronous resolve
+	typedef ResolverFuture::Pair Pair ;
+	G_DEBUG( "GNet::Resolver::resolve: resolve request [" << location.displayString() << "] (" << location.family() << ")" ) ;
+	ResolverFuture future( location.host() , location.service() , location.family() , location.dgram() ) ;
+	future.run() ; // blocks until complete
+	Pair result = future.get() ;
+	if( future.error() )
+	{
+		G_DEBUG( "GNet::Resolver::resolve: resolve error [" << future.reason() << "]" ) ;
+		return future.reason() ;
 	}
 	else
 	{
-		std::string error ;
-		port = resolveService( in.service() , udp , error ) ;
-		if( !error.empty() )
-			return error ;
+		G_DEBUG( "GNet::Resolver::resolve: resolve result [" << result.first.displayString() << "][" << result.second << "]" ) ;
+		location.update( result.first , result.second ) ;
+		return std::string() ;
 	}
-
-	// host
-
-	ResolverInfo result( in ) ; // copy to ensure atomic update
-	std::string host_error = resolveHost( in.host() , port , result ) ;
-	if( !host_error.empty() )
-		return host_error ;
-
-	in = result ;
-	return std::string() ;
 }
 
-bool GNet::Resolver::parse( const std::string & s , std::string & host , std::string & service )
+GNet::Resolver::AddressList GNet::Resolver::resolve( const std::string & host , const std::string & service , int family , bool dgram )
 {
-	std::string::size_type pos = s.rfind( ':' ) ;
-	if( pos == std::string::npos || pos == 0U || (pos+1U) == s.length() )
-		return false ;
-
-	host = s.substr(0U,pos) ;
-	service = s.substr(pos+1U) ;
-	return true ;
+	// synchronous resolve
+	G_DEBUG( "GNet::Resolver::resolve: resolve-request [" << host << "/" << service << "/" << (family==AF_UNSPEC?"ip":(family==AF_INET?"ipv4":"ipv6")) << "]" ) ;
+	ResolverFuture future( host , service , family , dgram ) ;
+	future.run() ;
+	AddressList list ;
+	future.get( list ) ;
+	G_DEBUG( "GNet::Resolver::resolve: resolve result: list of " << list.size() ) ;
+	return list ;
 }
 
-/// \file gresolver.cpp
+void GNet::Resolver::start( const Location & location )
+{
+	// asynchronous resolve
+	if( !EventLoop::instance().running() ) throw Error("no event loop") ;
+	if( busy() ) throw BusyError() ;
+	G_DEBUG( "GNet::Resolver::start: resolve start [" << location.displayString() << "]" ) ;
+	m_imp.reset( new ResolverImp(*this,m_eh,location) ) ;
+}
+
+void GNet::Resolver::done( std::string error , Location location )
+{
+	// callback from the event loop after worker thread is done
+	G_DEBUG( "GNet::Resolver::done: resolve done: error=[" << error << "] location=[" << location.displayString() << "]" ) ;
+	m_imp.reset() ;
+	m_callback.onResolved( error , location ) ;
+}
+
+bool GNet::Resolver::busy() const
+{
+	return m_imp.get() != nullptr ;
+}
+
+bool GNet::Resolver::async()
+{
+	static bool threading_works = G::threading::works() ;
+	if( threading_works )
+	{
+		return EventLoop::instance().running() ;
+	}
+	else
+	{
+		//G_WARNING_ONCE( "GNet::Resolver::async: multi-threading not built-in: using synchronous domain name lookup");
+		G_DEBUG( "GNet::Resolver::async: multi-threading not built-in: using synchronous domain name lookup");
+		return false ;
+	}
+}
+
+// ==
+
+GNet::Resolver::Callback::~Callback()
+{
+}
+

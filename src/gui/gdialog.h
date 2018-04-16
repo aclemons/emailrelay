@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -23,7 +23,9 @@
 
 #include "gdef.h"
 #include "qt.h"
+#include "launcher.h"
 #include "gpage.h"
+#include "gpath.h"
 #include <list>
 #include <map>
 class QHBoxLayout;
@@ -37,12 +39,8 @@ class GPage ;
 class GDialog : public QDialog
 {Q_OBJECT
 public:
-	
-	explicit GDialog( bool with_help ) ;
-		///< Constructor. Use a sequence of add()s to initialise
-		///< ending with add(void).
 
-	explicit GDialog( QWidget * parent = NULL ) ;
+	GDialog( bool with_help , bool with_launch , G::Path virgin_flag_file ) ;
 		///< Constructor. Use a sequence of add()s to initialise
 		///< ending with add(void).
 
@@ -86,16 +84,18 @@ public:
 
 private slots:
 	void helpButtonClicked() ;
+	void launchButtonClicked() ;
 	void backButtonClicked() ;
 	void nextButtonClicked() ;
 	void finishButtonClicked() ;
 	void pageUpdated() ;
 
 private:
-	void init( bool ) ;
+	void init( bool , bool ) ;
 	void dump( std::ostream & , bool for_install ) const ;
-	void setFirstPage( GPage & page ) ;
+	void setFirstPage( GPage & ) ;
 	void switchPage( std::string new_page_name , std::string old_page_name = std::string() , bool back = false ) ;
+	void updateLaunchButton( GPage & ) ;
 
 private:
 	typedef std::list<std::string> History ;
@@ -104,6 +104,7 @@ private:
 	History m_history ;
 	bool m_first ;
 	QPushButton * m_help_button ;
+	QPushButton * m_launch_button ;
 	QPushButton * m_cancel_button ;
 	QPushButton * m_back_button ;
 	QPushButton * m_next_button ;
@@ -114,6 +115,8 @@ private:
 	bool m_back_state ;
 	bool m_next_state ;
 	bool m_finish_state ;
-};
+	G::Path m_virgin_flag_file ;
+	std::auto_ptr<Launcher> m_launcher ;
+} ;
 
 #endif

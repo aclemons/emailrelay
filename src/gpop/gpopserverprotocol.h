@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -28,11 +28,9 @@
 #include "gpopsecrets.h"
 #include "gpopstore.h"
 #include "gpopauth.h"
-#include "gmemory.h"
 #include "gtimer.h"
 #include "gexception.h"
 
-/// \namespace GPop
 namespace GPop
 {
 	class ServerProtocol ;
@@ -44,22 +42,20 @@ namespace GPop
 ///
 /// Uses the ServerProtocol::Sender as its "sideways"
 /// interface to talk back to the client.
-/// 
-/// \see RFC1939
 ///
-class GPop::ServerProtocol 
+/// \see RFC-1939
+///
+class GPop::ServerProtocol
 {
 public:
 	G_EXCEPTION( ProtocolDone , "pop protocol done" ) ;
-	/// An interface used by ServerProtocol to send protocol replies.
-	class Sender 
+	class Sender /// An interface used by ServerProtocol to send protocol replies.
 	{
 		public: virtual bool protocolSend( const std::string & s , size_t offset ) = 0 ;
 		public: virtual ~Sender() ;
 		private: void operator=( const Sender & ) ; // not implemented
 	} ;
-	/// An interface used by ServerProtocol to provide response text strings.
-	class Text 
+	class Text /// An interface used by ServerProtocol to provide response text strings.
 	{
 		public: virtual std::string greeting() const = 0 ;
 		public: virtual std::string quit() const = 0 ;
@@ -68,14 +64,12 @@ public:
 		public: virtual ~Text() ;
 		private: void operator=( const Text & ) ; // not implemented
 	} ;
-	/// A structure containing configuration parameters for ServerProtocol. NOT USED.
-	struct Config 
+	struct Config /// A structure containing configuration parameters for ServerProtocol. NOT USED.
 	{
 		bool dummy ;
 		Config() ;
 	} ;
-	/// An interface used by ServerProtocol to enable TLS.
-	class Security 
+	class Security /// An interface used by ServerProtocol to enable TLS.
 	{
 		public: virtual bool securityEnabled() const = 0 ;
 		public: virtual void securityStart() = 0 ;
@@ -83,9 +77,9 @@ public:
 		private: void operator=( const Security & ) ; // not implemented
 	} ;
 
-	ServerProtocol( Sender & sender , Security & security , Store & store , const Secrets & secrets , 
+	ServerProtocol( Sender & sender , Security & security , Store & store , const Secrets & secrets ,
 		const Text & text , GNet::Address peer_address , Config config ) ;
-			///< Constructor. 
+			///< Constructor.
 			///<
 			///< The Sender interface is used to send protocol
 			///< replies back to the client.
@@ -199,32 +193,31 @@ private:
 	GNet::Address m_peer_address ;
 	Fsm m_fsm ;
 	std::string m_user ;
-	std::auto_ptr<std::istream> m_content ;
+	unique_ptr<std::istream> m_content ;
 	long m_body_limit ;
 	bool m_in_body ;
 	bool m_secure ;
 } ;
 
 /// \class GPop::ServerProtocolText
-/// A default implementation for the 
-/// ServerProtocol::Text interface.
+/// A default implementation for the ServerProtocol::Text interface.
 ///
-class GPop::ServerProtocolText : public GPop::ServerProtocol::Text 
+class GPop::ServerProtocolText : public ServerProtocol::Text
 {
 public:
 	explicit ServerProtocolText( GNet::Address peer ) ;
 		///< Constructor.
 
-	virtual std::string greeting() const ;
+	virtual std::string greeting() const override ;
 		///< Final override from GPop::ServerProtocol::Text.
 
-	virtual std::string quit() const ;
+	virtual std::string quit() const override ;
 		///< Final override from GPop::ServerProtocol::Text.
 
-	virtual std::string capa() const ;
+	virtual std::string capa() const override ;
 		///< Final override from GPop::ServerProtocol::Text.
 
-	virtual std::string user( const std::string & id ) const ;
+	virtual std::string user( const std::string & id ) const override ;
 		///< Final override from GPop::ServerProtocol::Text.
 } ;
 

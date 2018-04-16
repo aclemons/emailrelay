@@ -1,20 +1,20 @@
-.\" Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-.\" 
+.\" Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+.\"
 .\" This program is free software: you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
 .\" the Free Software Foundation, either version 3 of the License, or
 .\" (at your option) any later version.
-.\" 
+.\"
 .\" This program is distributed in the hope that it will be useful,
 .\" but WITHOUT ANY WARRANTY; without even the implied warranty of
 .\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 .\" GNU General Public License for more details.
-.\" 
+.\"
 .\" You should have received a copy of the GNU General Public License
 .\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .TH EMAILRELAY-PASSWD 1 local
 .SH NAME
-emailrelay-passwd \- a password encoding utility for E-MailRelay
+emailrelay-passwd \- a password encoding utility for emailrelay
 .SH SYNOPSIS
 .B emailrelay-passwd
 .SH DESCRIPTION
@@ -35,17 +35,17 @@ this:
 .br
 #
 .br
-server cram-md5 bob 1465267825.1002706143.2005162520.2739353706.4126076156.3423185672.2674269368.3056934447
+server md5 alice Oqng9/H7wAyKgbuqw5VzG1bNO6feqtblyiNEi6QuN5dH
 .br
-server cram-md5 alice 4039336516.3719314525.4148590512.4209236927.1897255360.1012201638.2279588408.1076355329
+server md5 bob Ot6SDdGj23eWjdEuKICgN8Nj9z/Vx9IV3ISz9VvmnaUB
 .br
 .SH SEE ALSO
 .BR emailrelay (1),
 .BR emailrelay-submit (1),
 .BR emailrelay-poke (1)
 .br
-.B RFC2104
+.B RFC-2104
 .br
-.B RFC2195
+.B RFC-2195
 .SH AUTHOR
 Graeme Walker, mailto:graeme_walker@users.sourceforge.net

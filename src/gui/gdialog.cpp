@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -21,42 +21,38 @@
 #include "gdef.h"
 #include "qt.h"
 #include "gdialog.h"
+#include "gfile.h"
 #include "gdebug.h"
 #include <algorithm>
 #include <stdexcept>
 
-GDialog::GDialog( bool with_help ) :
-	QDialog(NULL) ,
+GDialog::GDialog( bool with_help , bool with_launch , G::Path virgin_flag_file ) :
+	QDialog(nullptr) ,
 	m_first(true) ,
-	m_help_button(NULL) ,
-	m_cancel_button(NULL) ,
-	m_back_button(NULL) ,
-	m_next_button(NULL) ,
-	m_finish_button(NULL) ,
-	m_waiting(false)
+	m_help_button(nullptr) ,
+	m_launch_button(nullptr) ,
+	m_cancel_button(nullptr) ,
+	m_back_button(nullptr) ,
+	m_next_button(nullptr) ,
+	m_finish_button(nullptr) ,
+	m_waiting(false) ,
+	m_virgin_flag_file(virgin_flag_file)
 {
-	init( with_help ) ;
+	init( with_help , with_launch ) ;
 }
 
-GDialog::GDialog( QWidget *parent ) :
-	QDialog(parent) ,
-	m_first(true) ,
-	m_help_button(NULL) ,
-	m_cancel_button(NULL) ,
-	m_back_button(NULL) ,
-	m_next_button(NULL) ,
-	m_finish_button(NULL) ,
-	m_waiting(false)
-{
-	init( false ) ;
-}
-
-void GDialog::init( bool with_help )
+void GDialog::init( bool with_help , bool with_launch )
 {
 	if( with_help )
 	{
 		m_help_button = new QPushButton(tr("&Help")) ;
 		connect( m_help_button, SIGNAL(clicked()) , this , SLOT(helpButtonClicked()) ) ;
+	}
+
+	if( with_launch )
+	{
+		m_launch_button = new QPushButton(tr("&Launch")) ;
+		connect( m_launch_button , SIGNAL(clicked()) , this , SLOT(launchButtonClicked()) ) ;
 	}
 
 	m_cancel_button = new QPushButton(tr("Cancel")) ;
@@ -70,8 +66,10 @@ void GDialog::init( bool with_help )
 	connect( m_finish_button, SIGNAL(clicked()) , this , SLOT(finishButtonClicked()) ) ;
 
 	m_button_layout = new QHBoxLayout ;
-	if( m_help_button != NULL )
+	if( m_help_button != nullptr )
 		m_button_layout->addWidget( m_help_button ) ;
+	if( m_launch_button != nullptr )
+		m_button_layout->addWidget( m_launch_button ) ;
 	m_button_layout->addStretch( 1 ) ;
 	m_button_layout->addWidget( m_cancel_button ) ;
 	m_button_layout->addWidget( m_back_button ) ;
@@ -136,6 +134,15 @@ void GDialog::helpButtonClicked()
 	QDesktopServices::openUrl( QString(url.c_str()) ) ;
 }
 
+void GDialog::launchButtonClicked()
+{
+	G::Executable command = page(currentPageName()).launchCommand() ;
+	if( !command.exe().str().empty() )
+	{
+		m_launcher.reset( new Launcher( *this , command ) ) ;
+	}
+}
+
 void GDialog::backButtonClicked()
 {
 	std::string old_page_name = m_history.back();
@@ -172,6 +179,7 @@ void GDialog::pageUpdated()
 	G_DEBUG( "GDialog::pageUpdated: \"" << current_page_name << "\" page updated" ) ;
 
 	GPage & current_page = page(current_page_name) ;
+	updateLaunchButton( current_page ) ;
 	if( m_waiting )
 	{
 		; // no-op
@@ -183,8 +191,10 @@ void GDialog::pageUpdated()
 		m_next_button->setEnabled(false) ;
 		m_finish_button->setText(tr("Close")) ;
 		m_finish_button->setEnabled(true) ;
-		if( m_help_button != NULL )
+		if( m_help_button != nullptr )
 			m_help_button->setEnabled(!current_page.helpName().empty()) ;
+		if( m_virgin_flag_file != G::Path() )
+			G::File::remove( m_virgin_flag_file , G::File::NoThrow() ) ;
 	}
 	else
 	{
@@ -205,7 +215,7 @@ void GDialog::pageUpdated()
 		active_button->setEnabled( active_state ) ;
 		inactive_button->setEnabled( false ) ;
 
-		if( m_help_button != NULL )
+		if( m_help_button != nullptr )
 			m_help_button->setEnabled(!current_page.helpName().empty()) ;
 	}
 }
@@ -224,16 +234,28 @@ void GDialog::switchPage( std::string new_page_name , std::string old_page_name 
 
 	// show and connect the new page
 	//
-	GPage & newPage = page(new_page_name) ;
-	m_main_layout->insertWidget(0, &newPage);
-	newPage.onShow( back ) ; // GPage method
-	newPage.show() ;
-	newPage.setFocus() ;
-	connect(&newPage, SIGNAL(pageUpdateSignal()), this, SLOT(pageUpdated())) ;
+	GPage & new_page = page(new_page_name) ;
+	m_main_layout->insertWidget(0, &new_page);
+	new_page.onShow( back ) ; // GPage method
+	new_page.show() ;
+	new_page.setFocus() ;
+	connect(&new_page, SIGNAL(pageUpdateSignal()), this, SLOT(pageUpdated())) ;
 
 	// modify the next and finish buttons according to the page state
 	//
 	pageUpdated() ;
+}
+
+void GDialog::updateLaunchButton( GPage & page )
+{
+	if( m_launch_button != nullptr )
+	{
+		G::Executable launch_command = page.launchCommand() ;
+		bool enabled = launch_command.exe() != G::Path() ;
+		if( m_virgin_flag_file != G::Path() && G::File::exists(m_virgin_flag_file) )
+			enabled = false ; // grey it out first time round
+		m_launch_button->setEnabled( enabled ) ;
+	}
 }
 
 bool GDialog::historyContains( const std::string & name ) const

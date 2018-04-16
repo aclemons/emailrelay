@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-# 
+# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
@@ -20,22 +20,32 @@
 #
 # Runs the emailrelay program as a server.
 #
+# Synopsis:
+#
+#	$Server::bin_dir = "." ;
+#	my $server = new Server( 10025 , 10101 , 10026 , "/var/tmp" , "/tmp" ) ;
+#	$server->run( { AsServer => 1 , ForwardTo => "localhost:10020" ... } ) ;
+#	open $server->logFile() ... ;
+#	$server->kill() ;
+#	$server->cleanup() ;
+#	kill 15 , @Server::pid_list ;
+#
 
 use strict ;
 use FileHandle ;
-use Scanner ;
-use Verifier ;
 use System ;
 
 package Server ;
 
 our @pid_list = () ;
 our $bin_dir = ".." ;
+our $localhost = "127.0.0.1" ;
+our $tls_config = "x" ;
 my $exe_name = "emailrelay" ;
 
 sub new
 {
-	my ( $classname , $smtp_port , $pop_port , $admin_port , $spool_dir , $tmp_dir ) = @_ ;
+	my ( $classname , $smtp_port , $pop_port , $admin_port , $spool_dir , $tmp_dir , $tls_certificate , $tls_verify ) = @_ ;
 
 	$smtp_port = defined($smtp_port) ? $smtp_port : System::nextPort() ;
 	$pop_port = defined($pop_port) ? $pop_port : System::nextPort() ;
@@ -57,8 +67,11 @@ sub new
 		m_pop_secrets => System::tempfile("pop.auth",$tmp_dir) ,
 		m_client_secrets => System::tempfile("client.auth",$tmp_dir) ,
 		m_server_secrets => System::tempfile("server.auth",$tmp_dir) ,
+		m_tls_certificate => $tls_certificate ,
+		m_tls_verify => $tls_verify ,
+		m_tls_config => $tls_config ,
 		m_poll_timeout => 1 ,
-		m_dst => "dummy:25" ,
+		m_dst => "dummy3450930958349:25" ,
 		m_spool_dir => (defined($spool_dir)?$spool_dir:System::createSpoolDir(undef,$tmp_dir)) ,
 		m_user => "nobody" ,
 		m_full_command => undef ,
@@ -79,13 +92,16 @@ sub set_exe { $_[0]->{'m_exe'} = $_[1] }
 sub smtpPort { return shift->{'m_smtp_port'} }
 sub adminPort { return shift->{'m_admin_port'} }
 sub scannerPort { return shift->{'m_scanner_port'} }
-sub scannerAddress { return "net:localhost:" . shift->{'m_scanner_port'} }
+sub scannerAddress { return "net:$localhost:" . shift->{'m_scanner_port'} }
 sub verifierPort { return shift->{'m_verifier_port'} }
-sub verifierAddress { return "net:localhost:" . shift->{'m_verifier_port'} }
+sub verifierAddress { return "net:$localhost:" . shift->{'m_verifier_port'} }
 sub popPort { return shift->{'m_pop_port'} }
 sub popSecrets { return shift->{'m_pop_secrets'} }
 sub clientSecrets { return shift->{'m_client_secrets'} }
 sub serverSecrets { return shift->{'m_server_secrets'} }
+sub tlsCertificate { return shift->{'m_tls_certificate'} }
+sub tlsVerify { return shift->{'m_tls_verify'} }
+sub tlsConfig { return shift->{'m_tls_config'} }
 sub pollTimeout { return shift->{'m_poll_timeout'} }
 sub set_pollTimeout { $_[0]->{'m_poll_timeout'} = $_[1] }
 sub stdout { return shift->{'m_stdout'} }
@@ -123,30 +139,6 @@ sub _pid
 	return $line ;
 }
 
-sub canRun
-{
-	# Returns true if all the required ports are free.
-	my ( $this , $port_list_ref ) = @_ ;
-	my @port_list = defined($port_list_ref) ? @$port_list_ref : Port::list() ;
-	return
-		Port::isFree($this->smtpPort(),@port_list) &&
-		Port::isFree($this->adminPort(),@port_list) &&
-		Port::isFree($this->popPort(),@port_list) ;
-}
-
-sub canDo
-{
-	# Returns true if built with the relevant functionality.
-	my ( $this , $type , $default_ ) = @_ ;
-	return 1 if !System::unix() ;
-	local $/ ;
-	my $fh = new FileHandle( $this->exe() . " --version --verbose |" ) ;
-	my $output = <$fh> ;
-	my $has_enable = $output =~ m/\[.*enable_$type.*\]/m ;
-	my $has_disable = $output =~ m/\[.*disable_$type.*\]/m ;
-	return $has_enable ? 1 : ( $has_disable ? 0 : $default_ ) ;
-}
-
 sub _set
 {
 	my ( $s , $var , $value ) = @_ ;
@@ -159,10 +151,9 @@ sub _switches
 	my ( %sw ) = @_ ;
 
 	return
-		"--domain test.local " .
+		"" .
 		( exists($sw{AsServer}) ? "--as-server " : "" ) .
-		( exists($sw{Log}) ? "--log " : "" ) .
-		( exists($sw{LogTime}) ? "--log-time " : "" ) .
+		( exists($sw{Log}) ? "--log --log-time " : "" ) .
 		( exists($sw{Port}) ? "--port __SMTP_PORT__ " : "" ) .
 		( exists($sw{Admin}) ? "--admin __ADMIN_PORT__ " : "" ) .
 		( exists($sw{Pop}) ? "--pop " : "" ) .
@@ -189,11 +180,21 @@ sub _switches
 		( exists($sw{ClientFilter}) ? "--client-filter __CLIENT_FILTER__ " : "" ) .
 		( exists($sw{Immediate}) ? "--immediate " : "" ) .
 		( exists($sw{Scanner}) ? "--filter __SCANNER__ " : "" ) .
-		( exists($sw{Verifier}) ? "--verifier __VERIFIER__ " : "" ) .
+		( exists($sw{Verifier}) ? "--address-verifier __VERIFIER__ " : "" ) .
 		( exists($sw{DontServe}) ? "--dont-serve " : "" ) .
 		( exists($sw{ClientAuth}) ? "--client-auth __CLIENT_SECRETS__ " : "" ) .
 		( exists($sw{MaxSize}) ? "--size __MAX_SIZE__ " : "" ) .
 		( exists($sw{ServerSecrets}) ? "--server-auth __SERVER_SECRETS__ " : "" ) .
+		( exists($sw{Domain}) ? "--domain test.localnet " : "" ) .
+		( exists($sw{ServerTls}) ? "--server-tls " : "" ) .
+		( exists($sw{ServerTlsRequired}) ? "--server-tls-required " : "" ) .
+		( exists($sw{ClientTls}) ? "--client-tls " : "" ) .
+		( exists($sw{ClientTlsConnection}) ? "--client-tls-connection " : "" ) .
+		( exists($sw{ServerTlsCertificate}) ? "--server-tls-certificate __TLS_CERTIFICATE__ " : "" ) .
+		( (exists($sw{ServerTlsVerify}) && $sw{ServerTlsVerify}) ? "--server-tls-verify __TLS_VERIFY__ " : "" ) .
+		( exists($sw{ClientTlsCertificate}) ? "--client-tls-certificate __TLS_CERTIFICATE__ " : "" ) .
+		( (exists($sw{ClientTlsVerify}) && $sw{ClientTlsVerify}) ? "--client-tls-verify __TLS_VERIFY__ " : "" ) .
+		( exists($sw{TlsConfig}) ? "--tls-config __TLS_CONFIG__ " : "" ) .
 		"" ;
 }
 
@@ -220,8 +221,11 @@ sub _set_all
 	$command_tail = _set( $command_tail , "__CLIENT_SECRETS__" , $this->clientSecrets() ) ;
 	$command_tail = _set( $command_tail , "__MAX_SIZE__" , $this->maxSize() ) ;
 	$command_tail = _set( $command_tail , "__SERVER_SECRETS__" , $this->serverSecrets() ) ;
+	$command_tail = _set( $command_tail , "__TLS_CERTIFICATE__" , $this->tlsCertificate() ) ;
+	$command_tail = _set( $command_tail , "__TLS_VERIFY__" , $this->tlsVerify() ) ;
+	$command_tail = _set( $command_tail , "__TLS_CONFIG__" , $this->tlsConfig() ) ;
 
-	my $valgrind = "" ;
+	my $valgrind = "" ; # "valgrind " ;
 	return $valgrind . $this->exe() . " " .  $command_tail ;
 }
 
@@ -243,26 +247,32 @@ sub run
 		} ) ;
 
 	$this->{'m_full_command'} = $full ;
-	System::log_( "[$full]" ) ;
+	System::log_( "running [$full]" ) ;
 	if( defined($gtest) ) { $main::ENV{G_TEST} = $gtest }
 	my $rc = system( $full ) ;
 	if( defined($gtest) ) { $main::ENV{G_TEST} = "xx" }
 
 	my $ok = $rc >= 0 && ($rc & 127) == 0 ;
 	$this->{'m_rc'} = $rc ;
-	if( $ok && defined($switches_ref->{PidFile}) )
+
+	# read the pid from the pid-file
+	if( defined($switches_ref->{PidFile}) )
 	{
 		# wait for the pid file to be written
-		for( my $i = 0 ; $i < 200 ; $i++ )
+		my $t_start = time() ;
+		for( my $i = 0 ; $i < 1000 ; $i++ )
 		{
 			sleep_cs() ;
-			if( -f $this->pidFile() ) { next }
+			if( -f $this->pidFile() ) { last }
 		}
+		my $t_end = time() ;
+		System::log_( "no pid file created in ".($t_end-$t_start)."s" ) if( ! -f $this->pidFile() ) ;
 		my $pid = $this->_pid() ;
 		$ok = defined($pid) ;
 		$this->{'m_pid'} = $pid ;
+		push @pid_list , $this->{'m_pid'} if $ok ;
 	}
-	push @pid_list , $this->{'m_pid'} ;
+
 	return $ok ;
 }
 
@@ -293,9 +303,9 @@ sub sleep_cs
 
 sub wait
 {
-	# Waits to die
-	my ( $this , $timeout_cs ) = @_ ;
-	System::wait( $this->pid() , $timeout_cs ) ;
+	# Waits for the server to die
+	my ( $this ) = @_ ;
+	System::waitpid( $this->pid() ) ;
 }
 
 sub kill
@@ -303,25 +313,25 @@ sub kill
 	# Kills the server and waits for it to die.
 	my ( $this , $signal__not_used , $timeout_cs ) = @_ ;
 	System::kill_( $this->pid() , $timeout_cs ) ;
-	System::wait( $this->pid() , $timeout_cs ) ;
 }
 
 sub cleanup
 {
 	# Cleans up some files.
 	my ( $this ) = @_ ;
-	unlink( $this->stdout() ) ;
-	unlink( $this->stderr() ) ;
-	unlink( $this->popSecrets() ) ;
-	unlink( $this->clientSecrets() ) ;
-	unlink( $this->serverSecrets() ) ;
-	unlink( $this->filter() ) ;
-	unlink( $this->clientFilter() ) ;
+	System::unlink( $this->stdout() ) ;
+	System::unlink( $this->stderr() ) ;
+	System::unlink( $this->popSecrets() ) ;
+	System::unlink( $this->clientSecrets() ) ;
+	System::unlink( $this->serverSecrets() ) ;
+	System::unlink( $this->filter() ) ;
+	System::unlink( $this->clientFilter() ) ;
+	# System::unlink( $this->tlsCertificate() ) ; # done in Openssl::cleanup()
 }
 
 sub hasDebug
 {
-	# Returns true if the executable has debugging code 
+	# Returns true if the executable has debugging code
 	# and extra test features built in.
 
 	my ( $this ) = @_ ;
@@ -333,11 +343,29 @@ sub hasDebug
 	}
 	else
 	{
-		$exe = System::weirdpath( $exe ) ;
+		$exe = System::mangledpath( $exe ) ;
 		$main::ENV{G_TEST} = "special-exit-code" ;
 		my $rc = system( "$exe --version --verbose --hidden" ) ;
 		$main::ENV{G_TEST} = "xx" ;
-		return ( ( $rc >> 8 ) & 255 ) == 23 ;
+		my $exit = ( ( $rc >> 8 ) & 255 ) ;
+		return $exit == 23 || $exit == 25 ;
+	}
+}
+
+sub hasThreads
+{
+	# Returns true if the executable has multi-threading support.
+
+	my ( $this ) = @_ ;
+	if( System::unix() )
+	{
+		my $exe = $this->exe() ;
+		my $rc = system( "$exe --version --verbose | grep -qi threading.enabled" ) ;
+		return $rc == 0 ;
+	}
+	else
+	{
+		return 1 ; # assume msvc build
 	}
 }
 

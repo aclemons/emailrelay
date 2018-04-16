@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -32,11 +32,6 @@ GGui::WindowBase::WindowBase( HWND hwnd ) :
 
 GGui::WindowBase::~WindowBase()
 {
-}
-
-HWND GGui::WindowBase::handle() const
-{
-	return m_hwnd ;
 }
 
 GGui::WindowBase & GGui::WindowBase::operator=( const WindowBase & other )
@@ -94,7 +89,7 @@ std::string GGui::WindowBase::windowClass() const
 
 	if( (std::strlen(buffer)+1U) == sizeof(buffer) )
 	{
-		G_WARNING( "GGui::WindowBase::windowClass: possible truncation: " 
+		G_WARNING( "GGui::WindowBase::windowClass: possible truncation: "
 			<< "\"" << buffer << "\"" ) ;
 	}
 

@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-# 
+# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
@@ -31,15 +31,17 @@ package System ;
 
 our $bin_dir = ".." ;
 our $verbose = 0 ;
+our $keep = 0 ;
+our $ages = 30 ;
 
 sub log_
 {
-	print STDERR "++++ ",join(" ",@_),"\n" if $verbose ;
+	print STDERR join(" ",@_),"\n" if $verbose ;
 }
 
 sub bsd
 {
-	return $^O =~ m/bsd$/ ; # not mac
+	return $^O =~ m/bsd$/ ; # false for mac
 }
 
 sub mac
@@ -54,7 +56,31 @@ sub linux
 
 sub unix
 {
-	return bsd() || mac() || linux() ; # TODO more
+	return bsd() || mac() || linux() ;
+}
+
+sub windows
+{
+	return !unix() && ( $^O eq "MSWin32" ) ; # disallow msys elsewhere
+}
+
+sub unlink
+{
+	my ( $path ) = @_ ;
+	my $pidfile = ( $path =~ m/\.pid$/ ) ;
+	my $keep_this = $keep && !$pidfile ;
+	if( -f $path )
+	{
+		if( $keep_this )
+		{
+			log_( "not deleting [$path]" ) ;
+		}
+		else
+		{
+			log_( "deleting [$path]" ) ;
+			CORE::unlink( $path ) or warn "failed to delete [$path]: $!" ;
+		}
+	}
 }
 
 sub _dot_exe
@@ -67,7 +93,7 @@ sub path
 	return join( "/" , @_ ) ;
 }
 
-sub weirdpath
+sub mangledpath
 {
 	my $p = path( @_ ) ;
 	if( !unix() ) { $p =~ s:/:\\:g }
@@ -121,14 +147,18 @@ sub commandline
 		( System::unix() && $args{background} ? "&" : "" ) ;
 }
 
+my $_generator = 0 ;
 sub tempfile
 {
-	# Creates a temporary file with a unique name, optionally
-	# using the given hint as part of the filename.
-	my ( $hint_key , $dir ) = @_ ;
-	$hint_key = defined($hint_key) ? $hint_key : "" ;
+	# Returns the path of a temporary file with a unique name, optionally
+	# using the given name as the suffix.
+	my ( $name , $dir ) = @_ ;
+	$name = defined($name) ? $name : "tmp" ;
 	$dir = defined($dir) ? $dir : Cwd::cwd() ;
-	return $dir . "/" . ".tmp.$hint_key." . $$ . "." . rand() ;
+	#my $rnd = int(1000*rand()) ; # pid is not very unique on windows
+	my $script_pid = $$ ;
+	$_generator++ ;
+	return "$dir/.tmp.$script_pid.$_generator.$name" ;
 }
 
 sub createFile
@@ -138,6 +168,88 @@ sub createFile
 	my $fh = new FileHandle( "> " . $path ) or die "cannot create [$path]" ;
 	if( defined($line) ) { print $fh $line , unix() ? "\n" : "\r\n" }
 	$fh->close() or die "cannot write to [$path]" ;
+}
+
+sub waitForFile
+{
+	my ( $file , $more ) = @_ ;
+	my $t = time() ;
+	while( time() < ($t+$ages) )
+	{
+		return if -f $file ;
+		sleep_cs( 5 ) ;
+	}
+	Check::that( undef , "timed out waiting for file [$file]" , $more ) ;
+}
+
+sub waitForFiles
+{
+	my ( $glob , $count , $more ) = @_ ;
+	my $t = time() ;
+	while( time() < ($t+$ages) )
+	{
+		return if( scalar(glob_($glob)) == $count ) ;
+		sleep_cs( 5 ) ;
+	}
+	Check::that( undef , "timed out waiting for $count files [$glob]" , $more ) ;
+}
+
+sub waitForFileLine
+{
+	my ( $file , $string , $more ) = @_ ;
+	my $t = time() ;
+	while( time() < ($t+$ages) )
+	{
+		my $match = 0 ;
+		my $fh = new FileHandle( $file , "r" ) ;
+		if( $fh )
+		{
+			while(<$fh>)
+			{
+				chomp( my $line = $_ ) ;
+				$match = 1 if( $line =~ m/$string/ ) ;
+			}
+			$fh->close() ;
+		}
+		last if $match ;
+		sleep_cs( 20 ) ;
+	}
+	Check::fileContains( $file , $string , $more ) ;
+}
+
+sub waitForPid
+{
+	my ( $pidfile ) = @_ ;
+	my $pid = undef ;
+	my $t = time() ;
+	while( time() < ($t+$ages) )
+	{
+		my $fh = new FileHandle( $pidfile , "r" ) ;
+		if( $fh )
+		{
+			my $line = <$fh> ;
+			chomp( $line ) ;
+			$pid = $line ;
+			$fh->close() ;
+		}
+		last if $pid ;
+		sleep_cs( 20 ) ;
+	}
+	Check::numeric( $pid , "no pid from pidfile [$pidfile]" ) ;
+	return $pid ;
+}
+
+sub waitpid
+{
+	my ( $pid ) = @_ ;
+	die if( !defined($pid) || $pid < 0 ) ;
+	my $t = time() ;
+	while( time() < ($t+$ages) )
+	{
+		return if !processIsRunning($pid) ;
+		sleep_cs( 50 ) ;
+	}
+	die "process [$pid] has not terminated"
 }
 
 sub createSmallMessageFile
@@ -187,7 +299,7 @@ sub _deleteFiles
 	{
 		if( -f $path && $path =~ m/${tail}$/ ) # sanity check
 		{
-			my $ok = unlink $path ;
+			my $ok = CORE::unlink( $path ) ; # not System::unlink
 			Check::that( $ok , "cannot delete file" , $path ) ;
 		}
 	}
@@ -195,7 +307,7 @@ sub _deleteFiles
 
 sub deleteSpoolDir
 {
-	# Deletes valid-looking message files from a spool 
+	# Deletes valid-looking message files from a spool
 	# directory. Optionally deletes all files.
 	my ( $path , $all ) = @_ ;
 	$all = defined($all) ? $all : 0 ;
@@ -233,21 +345,21 @@ sub match
 
 sub submitSmallMessage
 {
-	# Submits a small message using the "emailrelay-submit" utility.
+	# Submits a small message.
 	my ( $spool_dir , $tmp_dir , @to ) = @_ ;
 	submitMessage( $spool_dir , $tmp_dir , 10 , @to ) ;
 }
 
 sub submitMessage
 {
-	# Submits a message of 'n' lines using the "emailrelay-submit" utility.
+	# Submits a message of 'n' lines.
 	my ( $spool_dir , $tmp_dir , $n , @to ) = @_ ;
-	push @to , "me\@there.local" if( scalar(@to) == 0 ) ;
+	push @to , "me\@there.localnet" if( scalar(@to) == 0 ) ;
 	my $path = createMessageFile($tmp_dir,$n) ;
-	my $rc = system( weirdpath(exe($bin_dir,"emailrelay-submit")) . " --from me\@here.local " .
+	my $rc = system( mangledpath(exe($bin_dir,"emailrelay-submit")) . " --from me\@here.localnet " .
 		"--spool-dir $spool_dir " . join(" ",@to) . " < $path" ) ;
 	Check::that( $rc == 0 , "failed to submit" ) ;
-	unlink $path ;
+	System::unlink( $path ) ;
 }
 
 sub submitMessages
@@ -377,28 +489,22 @@ sub kill_
 	{
 		kill( 15 , $pid ) ;
 		sleep_cs( $timeout_cs ) ;
-		kill( 9 , $pid ) ;
+		if( processIsRunning($pid) )
+		{
+			log_( "killing pid [$pid]" ) ;
+			kill( 9 , $pid ) ;
+		}
 	}
 	else
 	{
+		log_( "killing pid [$pid]" ) ;
 		kill( 15 , $pid ) ;
-		sleep_cs( $timeout_cs ) ;
-		system( "taskkill /PID $pid >NUL 2>&1" ) ;
-		sleep_cs( $timeout_cs ) ;
-		system( "taskkill /F /PID $pid >NUL 2>&1" ) ;
-	}
-}
-
-sub wait
-{
-	my ( $pid , $timeout_cs ) = @_ ;
-	$timeout_cs = defined($timeout_cs) ? $timeout_cs : 100 ;
-	for( my $i = 0 ; $i < $timeout_cs ; $i++ )
-	{
-		sleep_cs() ;
-		if( System::processIsRunning($pid) )
+		my $try = 0 ;
+		while( processIsRunning($pid) )
 		{
-			next
+			if( $try++ > 0 ) { log_( "still killing pid [$pid]" ) }
+			system( "taskkill /T /F /PID $pid >NUL 2>&1" ) ;
+			sleep_cs( $timeout_cs ) ;
 		}
 	}
 }
@@ -408,14 +514,17 @@ sub processIsRunning
 	my ( $pid ) = @_ ;
 	if( unix() )
 	{
-		my $rc = kill 0 , $pid ;
-		return defined($rc) ? $rc : 0 ;
+		if( defined($pid) )
+		{
+			my $rc = kill 0 , $pid ;
+			return defined($rc) ? $rc : 0 ;
+		}
 	}
 	else
 	{
 		if( defined($pid) && $pid > 0 )
 		{
-			my $fh = new FileHandle( "tasklist /FI \"PID eq $pid\" /FO csv /NH |" ) or 
+			my $fh = new FileHandle( "tasklist /FI \"PID eq $pid\" /FO csv /NH |" ) or
 				die "tasklist error" ;
 			while(<$fh>)
 			{
@@ -428,36 +537,31 @@ sub processIsRunning
 	}
 }
 
-sub killall
+my $_port = 10000 ;
+sub nextPort
 {
-	my ( $match ) = @_ ;
-	if( System::unix() )
+	my $file = ".tmp.port" ;
+	if( -f $file )
 	{
-		# TODO
-	}
-	else
-	{
-		my $fh = new FileHandle( "tasklist /NH /FO csv |" ) or die ;
-		while(<$fh>)
+		my $fh = new FileHandle( $file , "r" ) ;
+		if( chomp( my $line = <$fh> ) )
 		{
-			chomp( my $line = $_ ) ;
-			next if $line eq "" ;
-			$line =~ s:["]::g ;
-			my ( $name , $pid ) = split( "," , $line ) ;
-			if( $name =~ m/^$match/ )
+			if( $line && ($line+0) >= 10000 )
 			{
-				log_( "killing pid $pid ($name)" ) ;
-				system( "taskkill /F /PID $pid" ) ;
+				$_port = $line + 0 ;
 			}
 		}
 	}
-}
 
-my $port_generator = 10000 ;
-sub nextPort
-{
-	$port_generator++ ;
-	return $port_generator ;
+	$_port++ ;
+	$_port = 10000 if( $_port > 32000 ) ;
+
+	{
+		my $fh = new FileHandle( $file , "w" ) ;
+		print $fh $_port , "\n" if $fh ;
+	}
+
+	return $_port ;
 }
 
 1 ;

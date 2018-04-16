@@ -1,25 +1,35 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-# 
+# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
 #
 # Helper.pm
 #
-# A wrapper for running test helper programs
-# such as "emailrelay-test-scanner".
+# A wrapper for running test helper programs such as
+# "emailrelay-test-scanner".
+#
+# Synopsis:
+#
+#	$Helper::bin_dir = "." ;
+#	my $helper = new Helper( "emailrelay-test-scanner" ) ;
+#	$helper->run() ;
+#	$helper->kill() ;
+#	open $helper->logfile() ;
+#	$helper->cleanup() ;
+#	kill 15 , @Helper::pid_list() ;
 #
 
 use strict ;
@@ -33,15 +43,20 @@ our $bin_dir = "." ;
 
 sub new
 {
-	my ( $classname , $name , $port ) = @_ ;
-	$name ||= "scanner" ;
+	my ( $classname , $exe , $port ) = @_ ;
+
+	die if !defined($exe) ;
 	$port ||= 10010 ;
+
+	( my $short_name = $exe ) =~ s/emailrelay-test-// ;
+	$short_name =~ s/\.[a-z]*$// ;
+
 	my $this = bless {
-		m_name => $name ,
-		m_exe_name => "emailrelay-test-$name" ,
+		m_short_name => $short_name ,
+		m_exe_name => $exe ,
 		m_port => $port ,
-		m_logfile => ".tmp.$name.out.$$" ,
-		m_pidfile => ".tmp.$name.pid.$$" ,
+		m_logfile => ".tmp.$short_name.out.$$" ,
+		m_pidfile => ".tmp.$short_name.pid.$$" ,
 		m_pid => undef ,
 	} , $classname ;
 	$this->_check() ;
@@ -65,7 +80,7 @@ sub _check
 	my ( $this ) = @_ ;
 	if( ! -x $this->exe() )
 	{
-		my $name = $this->{m_name} ;
+		my $name = $this->{m_short_name} ;
 		die "no $name executable [".$this->exe()."]" ;
 	}
 }
@@ -83,7 +98,7 @@ sub run
 	my $pidfile = $this->{'m_pidfile'} ;
 	my $logfile = $this->{'m_logfile'} ;
 	my $exe = $this->exe() ;
-	my $cmd = System::weirdpath($exe) . " --port $port --log --log-file $logfile --debug --pid-file $pidfile" ;
+	my $cmd = System::mangledpath($exe) . " --port $port --log --log-file $logfile --debug --pid-file $pidfile" ;
 	my $full = System::commandline( $cmd , { background => 1 } ) ;
 	System::log_( "[$full]" ) ;
 	system( $full ) ;
@@ -109,14 +124,14 @@ sub kill
 	# kill and wait to die
 	my ( $this , $signal__not_used , $timeout_cs ) = @_ ;
 	System::kill_( $this->pid() , $timeout_cs ) ;
-	System::wait( $this->pid() , $timeout_cs ) ;
+	System::waitpid( $this->pid() ) ;
 }
 
 sub cleanup
 {
 	my ( $this ) = @_ ;
-	unlink( $this->{'m_pidfile'} ) ;
-	unlink( $this->{'m_logfile'} ) ;
+	System::unlink( $this->{'m_pidfile'} ) ;
+	System::unlink( $this->{'m_logfile'} ) ;
 }
 
 1 ;

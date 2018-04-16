@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -26,33 +26,61 @@
 #include <string>
 #include <iostream>
 
-/// \namespace G
 namespace G
 {
 	class Path ;
+	class PathImp ;
 }
 
 /// \class G::Path
-/// A Path object represents a file system path.
-/// The class is concerned with path syntax, not file system i/o.
-/// This class is necessary because of the mess Microsoft made
-/// with drive letters (like having a cwd associated with each
-/// drive).
+/// A Path object represents a file system path. The class is concerned with
+/// path syntax, not file system i/o.
 ///
-/// \see G::File, G::Directory, G::FileSystem
+/// A full path is made up of a root, a set of directories, and a filename. The
+/// posix root is just a forward slash, but on Windows the root can be complex,
+/// possibly including non-splitting separator characters. The filename may have
+/// an extension part, which is to the right of the right-most dot.
 ///
-class G::Path 
+/// The path separator is used between directories and filename, but only
+/// between the root and the first directory if the root does not itself end in
+/// a separator character.
+///
+/// A windows drive-letter root may end with a separator character or not; if
+/// there is no separator character at the end of the drive-letter root then
+/// the path is relative to the drive's current working directory.
+///
+/// Path components of "." are ignored by simple(), basename(), and dirname().
+/// Path components of ".." are retained but can be eliminated if they are
+/// collapsed(). Path components of "." are eliminated by split(), except
+/// in the degenerate case.
+///
+/// This class is agnostic on the choice of utf8 or eight-bit characters since
+/// the delimiters are all seven-bit ascii. On Windows it might make sense to
+/// obtain paths from the win32 api as multi-byte and convert immediately to
+/// utf8 before wrapping in G::Path.
+///
+/// Both posix and windows behaviours are available at run-time; the default
+/// behaviour is the native behaviour, but this can be overridden, typically
+/// for testing purposes.
+///
+/// The posix path separator character is the forward-slash; on Windows it is a
+/// back-slash, but with all forward-slashes converted to back-slashes
+/// immediately on input.
+///
+/// \see G::File, G::Directory
+///
+class G::Path
 {
 public:
 	Path() ;
-		///< Default constructor. Creates
-		///< a zero-length path.
+		///< Default constructor for a zero-length path.
+		///< Postcondition: str().empty()
 
 	Path( const std::string & path ) ;
-		///< Implicit constructor.
+		///< Implicit constructor from a string.
 
 	Path( const char * path ) ;
-		///< Implicit constructor.
+		///< Implicit constructor from a c-style string.
 
 	Path( const Path & path , const std::string & tail ) ;
 		///< Constructor with an implicit pathAppend().
@@ -66,43 +94,37 @@ public:
 	~Path() ;
 		///< Destructor.
 
-	bool simple() const ;
-		///< Returns true if the path is just a file/directory name without
-		///< any separators. Note that if the path is simple() then dirname()
-		///< will return the empty string.
-
 	std::string str() const ;
 		///< Returns the path string.
 
+	bool simple() const ;
+		///< Returns true if the path has a single component (ignoring "." parts),
+		///< ie. the dirname() is empty.
+
 	std::string basename() const ;
-		///< Returns the path, excluding drive/directory parts.
-		///< Does nothing with the extension (cf. basename(1)).
+		///< Returns the rightmost part of the path, ignoring "." parts.
+		///< For a directory path this may be "..", but see also collapsed().
 
 	Path dirname() const ;
-		///< Returns the drive/directory parts of the path. If this path is
-		///< the top of the tree then the null path is returned.
-		///<
-		///< eg. "c:foo\bar.exe" -> "c:foo"
-		///< eg. "c:\foo\bar.exe" -> "c:\foo"
-		///< eg. "c:bar.exe" -> "c:"
-		///< eg. "c:\file" -> "c:\"                              .
-		///< eg. "c:\" -> ""
-		///< eg. "c:" -> ""
-		///< eg. "\foo\bar.exe" -> "\foo"
-		///< eg. "\" -> ""
-		///< eg. "foo\bar\bletch" -> "foo\bar"
-		///< eg. "foo\bar" -> "foo"
-		///< eg. "bar.exe" -> ""
-		///< eg. "\\machine\drive\dir\file.cc" -> "\\machine\drive\dir"
-		///< eg. "\\machine\drive\file" -> "\\machine\drive"
-		///< eg. "\\machine\drive" -> ""
+		///< Returns the path without the rightmost part, ignoring "." parts.
+		///< For simple() paths the empty path is returned.
 
 	std::string extension() const ;
-		///< Returns the path's filename extension. Returns the 
-		///< zero-length string if there is none.
+		///< Returns the path's basename extension, ie. anything
+		///< after the rightmost dot. Returns the zero-length
+		///< string if there is none.
 
-	void removeExtension() ;
-		///< Modifies the path by removing any extension.
+	Path withExtension( const std::string & ext ) const ;
+		///< Returns the path with the new basename extension.
+		///< Any previous extension is replaced. The extension
+		///< should not normally have a leading dot and it
+		///< should not be the empty string.
+
+	Path withoutExtension() const ;
+		///< Returns a path without the basename extension, if any.
+		///< As a special case, a basename() that starts with a dot
+		///< is replaced by a single dot. Prefer withExtension()
+		///< where appropriate to avoid this.
 
 	bool isAbsolute() const ;
 		///< Returns !isRelative().
@@ -110,25 +132,41 @@ public:
 	bool isRelative() const ;
 		///< Returns true if the path is a relative path.
 
-	bool hasDriveLetter() const ;
-		///< Returns true if the path has a leading drive letter
-		///< (and the operating system uses drive letters).
+	void pathAppend( const std::string & tail ) ;
+		///< Appends a filename or a relative path to this path.
+
+	StringArray split() const ;
+		///< Spits the path into a list of component parts (ignoring "." parts
+		///< unless the whole path is ".").
+
+	static Path join( const StringArray & parts ) ;
+		///< Builds a path from a set of parts. Note that part boundaries
+		///< are not necessarily preserved once they have been join()ed
+		///< into a path.
+
+	static Path join( const Path & p1 , const Path & p2 ) ;
+		///< Joins two paths together. The second should be a relative path.
+
+	static Path difference( const Path & p1 , const Path & p2 ) ;
+		///< Returns the relative path from p1 to p2. Returns the empty
+		///< path if p2 is not under p1. Returns "." if p1 and p2 are the
+		///< same. Input paths are collapsed(). Empty input paths are
+		///< treated as ".".
+
+	Path collapsed() const ;
+		///< Returns the path with "foo/.." and "." parts removed, so far
+		///< as is possible without changing the meaning of the path.
+		///< Parts like "../foo" at the beginning of the path, or immediately
+		///< following the root, are not removed.
+
+	static Path nullDevice() ;
+		///< Returns the path of the "/dev/null" special file, or equivalent.
+
+	void swap( Path & other ) ;
+		///< Swaps this with other.
 
 	Path & operator=( const Path & other ) ;
 		///< Assignment operator.
-
-	void pathAppend( const std::string & tail ) ;
-		///< Appends a filename to the path. A path separator
-		///< is added if necessary.
-
-	static G::Path join( const G::Path & p1 , const G::Path & p2 ) ;
-		///< Joins two paths together. The second should normally be
-		///< a relative path, although absolute paths are allowed.
-
-	Strings split( bool no_dot = true ) const ;
-		///< Spits the path into a list of component parts.
-		///< Eliminates "/./" parts if the optional parameter
-		///< is true.
 
 	bool operator==( const Path & path ) const ;
 		///< Comparison operator.
@@ -136,26 +174,24 @@ public:
 	bool operator!=( const Path & path ) const ;
 		///< Comparison operator.
 
-private:
-	void set( const std::string & path ) ;
-	void normalise() ;
-	void clear() ;
-	static std::string slashString() ;
-	static std::string doubleSlashString() ;
-	std::string driveString() const ;
-	std::string::size_type slashAt() const ;
-	bool hasNoSlash() const ;
-	std::string withoutTail() const ;
-	bool hasNetworkDrive() const ;
-	std::string dirnameImp() const ;
+	static void setPosixStyle() ;
+		///< Sets posix mode for testing purposes.
+
+	static void setWindowsStyle() ;
+		///< Sets windows mode for testing purposes.
+
+	static bool less( const Path & a , const Path & b ) ;
+		///< Compares two paths, with simple eight-bit lexicographical
+		///< comparisons of each path component. This is slightly different
+		///< from a lexicographical comparison of the compete strings
+		///< (eg. "a/b" compared to "a./b"), and it is not suitable for
+		///< utf8 paths.
 
 private:
+	friend class G::PathImp ;
 	std::string m_str ;
-	std::string m_extension ;
-	std::string::size_type m_dot ;
 } ;
 
-/// \namespace G
 namespace G
 {
 	inline
@@ -174,9 +210,13 @@ namespace G
 	inline
 	Path operator+( const Path & p , const std::string & str )
 	{
-		Path result( p ) ;
-		result.pathAppend( str ) ;
-		return result ;
+		return Path( p , str ) ;
+	}
+
+	inline
+	void swap( Path & p1 , Path & p2 )
+	{
+		p1.swap( p2 ) ;
 	}
 }
 

@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file glink.h
 ///
 
-#ifndef G_LINK_H__
-#define G_LINK_H__
+#ifndef G_LINK_H
+#define G_LINK_H
 
 #include "gdef.h"
 #include "gpath.h"
@@ -30,7 +30,7 @@
 class GLinkImp ;
 
 /// \class GLink
-/// A class for creating desktop links (aka "shortcuts") and 
+/// A class for creating desktop links (aka "shortcuts") and
 /// application menu items.
 ///
 class GLink
@@ -40,7 +40,7 @@ public:
 
 	enum Show { Show_Default , Show_Hide } ;
 
-	GLink( const G::Path & target_path , const std::string & name , const std::string & description , 
+	GLink( const G::Path & target_path , const std::string & name , const std::string & description ,
 		const G::Path & working_dir , const G::StringArray & args = G::StringArray() ,
 		const G::Path & icon_source = G::Path() , Show show = Show_Default ,
 		const std::string & internal_comment_1 = std::string() ,

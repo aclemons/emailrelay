@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -40,12 +40,12 @@ G::Date::Date()
 	init( G::DateTime::utc(G::DateTime::now()) ) ;
 }
 
-G::Date::Date( G::DateTime::EpochTime t )
+G::Date::Date( G::EpochTime t )
 {
 	init( G::DateTime::utc(t) ) ;
 }
 
-G::Date::Date( G::DateTime::EpochTime t , const LocalTime & )
+G::Date::Date( G::EpochTime t , const LocalTime & )
 {
 	init( G::DateTime::local(t) ) ;
 }
@@ -116,14 +116,14 @@ int G::Date::monthday() const
 std::string G::Date::dd() const
 {
 	std::ostringstream ss ;
-	ss << std::setw(2) << std::setfill('0') << m_day ; 
+	ss << std::setw(2) << std::setfill('0') << m_day ;
 	return ss.str() ;
 }
 
 std::string G::Date::mm() const
 {
 	std::ostringstream ss ;
-	ss << std::setw(2) << std::setfill('0') << m_month ; 
+	ss << std::setw(2) << std::setfill('0') << m_month ;
 	return ss.str() ;
 }
 
@@ -192,7 +192,7 @@ int G::Date::year() const
 std::string G::Date::yyyy() const
 {
 	std::ostringstream ss ;
-	ss << std::setw(4) << std::setfill('0') << m_year ; 
+	ss << std::setw(4) << std::setfill('0') << m_year ;
 	return ss.str() ;
 }
 
@@ -252,12 +252,12 @@ G::Date & G::Date::operator--()
 int G::Date::lastDay( int month , int year )
 {
 	int end = 30 ;
-	if( month == 1 || 
-		month == 3 || 
-		month == 5 || 
+	if( month == 1 ||
+		month == 3 ||
+		month == 5 ||
 		month == 7 ||
-		month == 8 || 
-		month == 10 || 
+		month == 8 ||
+		month == 10 ||
 		month == 12 )
 	{
 		end = 31 ;

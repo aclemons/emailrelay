@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,17 +18,14 @@
 /// \file gmultiserver.h
 ///
 
-#ifndef G_MULTI_SERVER_H 
-#define G_MULTI_SERVER_H
+#ifndef G_NET_MULTI_SERVER__H
+#define G_NET_MULTI_SERVER__H
 
 #include "gdef.h"
-#include "gnet.h"
 #include "gserver.h"
-#include "gconnectionlookup.h"
-#include <list>
+#include <vector>
 #include <utility> // std::pair<>
 
-/// \namespace GNet
 namespace GNet
 {
 	class MultiServer ;
@@ -37,40 +34,35 @@ namespace GNet
 }
 
 /// \class GNet::MultiServerImp
-/// A private implementation class used by
-/// GNet::MultiServer.
+/// A private implementation class used by GNet::MultiServer.
 ///
-class GNet::MultiServerImp : public GNet::Server 
+class GNet::MultiServerImp : public GNet::Server
 {
 public:
-	MultiServerImp( MultiServer & ms , const Address & , ConnectionLookup * ) ;
+	MultiServerImp( MultiServer & , ExceptionHandler & , const Address & ) ;
 		///< Constructor.
 
 	void cleanup() ;
 		///< Does cleanup.
 
-protected:
-	virtual ServerPeer * newPeer( PeerInfo ) ;
-		///< Server peer factory method.
-		///< Final override from GNet::Server.
+private:
+	virtual ServerPeer * newPeer( PeerInfo ) override ;
 
 private:
 	MultiServer & m_ms ;
 } ;
 
 /// \class GNet::MultiServerPtr
-/// A private implementation class used by
-/// GNet::MultiServer. The implementation is unusual
-/// in that it only has proper value semantics if the
-/// contained pointer is null; it is used in a way 
-/// that makes allowances for that.
+/// A private implementation class used by GNet::MultiServer.
+/// The implementation is unusual in that it only has proper value semantics
+/// if the contained pointer is null.
 ///
-class GNet::MultiServerPtr 
+class GNet::MultiServerPtr
 {
 public:
 	typedef GNet::MultiServerImp ServerImp ;
 
-	explicit MultiServerPtr( ServerImp * = NULL ) ;
+	explicit MultiServerPtr( ServerImp * = nullptr ) ;
 		///< Constructor.
 
 	~MultiServerPtr() ;
@@ -88,7 +80,7 @@ public:
 	MultiServerPtr( const MultiServerPtr & ) ;
 		///< Copy constructor.
 
-	void operator=( const MultiServerPtr & ) ; 
+	void operator=( const MultiServerPtr & ) ;
 		///< Assignment operator.
 
 private:
@@ -96,52 +88,33 @@ private:
 } ;
 
 /// \class GNet::MultiServer
-/// A server that listens on more than one interface using
-/// a facade pattern to multiple Server instances.
+/// A server that listens on more than one interface using a facade
+/// pattern to multiple GNet::Server instances.
 ///
-class GNet::MultiServer 
+class GNet::MultiServer
 {
 public:
-	typedef std::list<Address> AddressList ;
+	typedef std::vector<Address> AddressList ;
 	typedef Server::PeerInfo PeerInfo ;
 
-	static bool canBind( const AddressList & listening_address_list , bool do_throw ) ;
-		///< Checks that the specified addresses can be
-		///< bound. Throws CannotBind if an address cannot 
-		///< be bound and 'do_throw' is true.
+	struct ServerInfo /// A structure used in GNet::MultiServer::newPeer().
+	{
+		Address m_address ; ///< The server address that the peer connected to.
+		ServerInfo() ;
+	} ;
 
-	static AddressList addressList( const Address & ) ;
-		///< A trivial convenience fuction that returns the given 
-		///< addresses as a single-element list.
-
-	static AddressList addressList( const AddressList & , unsigned int port ) ;
-		///< Returns the given list of addresses with the port set
-		///< correctly. If the given list is empty then a single
-		///< 'any' address is returned.
-
-	static AddressList addressList( const G::Strings & , unsigned int port ) ;
-		///< A convenience function that returns a list of
-		///< listening addresses given a list of listening
-		///< interfaces and a port number. If the list of
-		///< interfaces is empty then a single 'any' address
-		///< is returned.
-
-	MultiServer( const AddressList & address_list , bool use_connection_lookup ) ;
+	MultiServer( ExceptionHandler & , const AddressList & address_list ) ;
 		///< Constructor. The server listens on on the
 		///< specific (local) interfaces.
 		///<
-		///< If use_connection_lookup is true then there
-		///< may be extra information available in the
-		///< Server::PeerInfo structures.
-		///< 
 		///< Precondition: ! address_list.empty()
 
-	MultiServer() ;
+	explicit MultiServer( ExceptionHandler & ) ;
 		///< Default constructor. Initialise with init().
 
 	void init( const AddressList & address_list ) ;
 		///< Initilisation after default construction.
-		///< 
+		///<
 		///< Precondition: ! address_list.empty()
 
 	virtual ~MultiServer() ;
@@ -151,9 +124,30 @@ public:
 		///< Returns the first listening address. The boolean
 		///< value is false if none.
 
-	virtual ServerPeer * newPeer( PeerInfo ) = 0 ;
-		///< A factory method which new()s a ServerPeer-derived 
+	virtual ServerPeer * newPeer( PeerInfo , ServerInfo ) = 0 ;
+		///< A factory method which new()s a ServerPeer-derived
 		///< object. See Server for the details.
+
+	static bool canBind( const AddressList & listening_address_list , bool do_throw ) ;
+		///< Checks that the specified addresses can be
+		///< bound. Throws CannotBind if an address cannot
+		///< be bound and 'do_throw' is true.
+
+	static AddressList addressList( const Address & ) ;
+		///< A trivial convenience fuction that returns the given
+		///< address as a single-element list.
+
+	static AddressList addressList( const AddressList & , unsigned int port ) ;
+		///< Returns the given list of addresses with the port set
+		///< correctly. If the given list is empty then a single
+		///< 'any' address is returned.
+
+	static AddressList addressList( const G::StringArray & , unsigned int port ) ;
+		///< A convenience function that returns a list of
+		///< listening addresses given a list of listening
+		///< interfaces and a port number. If the list of
+		///< interfaces is empty then a single 'any' address
+		///< is returned.
 
 protected:
 	void serverCleanup() ;
@@ -168,11 +162,11 @@ protected:
 private:
 	MultiServer( const MultiServer & ) ; // not implemented
 	void operator=( const MultiServer & ) ; // not implemented
-	void init( const Address & , ConnectionLookup * ) ;
+	void init( const Address & ) ;
 
 private:
 	typedef std::list<MultiServerPtr> List ;
-	std::auto_ptr<GNet::ConnectionLookup> m_connection_lookup ;
+	ExceptionHandler & m_eh ;
 	List m_server_list ;
 } ;
 

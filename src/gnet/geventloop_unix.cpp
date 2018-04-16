@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -19,71 +19,73 @@
 //
 
 #include "gdef.h"
-#include "gnet.h"
-#include "gnoncopyable.h"
 #include "gevent.h"
+#include "geventhandlerlist.h"
 #include "gexception.h"
 #include "gstr.h"
-#include "gsetter.h"
+#include "gfile.h"
 #include "gtimer.h"
 #include "gtest.h"
 #include "gdebug.h"
+#include <sstream>
 #include <sys/types.h>
 #include <sys/time.h>
-
-typedef struct timeval Timeval ; // std:: ??
+#include <errno.h>
 
 namespace GNet
 {
-	class Select ;
-	class Lock ;
+	class EventLoopImp ;
 	class FdSet ;
 }
 
 /// \class GNet::FdSet
-/// An "fd_set" wrapper type.
-/// 
-class GNet::FdSet 
+/// An "fd_set" wrapper class used by GNet::EventLoopImp.
+///
+class GNet::FdSet
 {
 public:
 	FdSet() ;
 	void init( const EventHandlerList & ) ;
 	void raiseEvents( EventHandlerList & , void (EventHandler::*method)() ) ;
-	void raiseEvent( EventHandler * , void (EventHandler::*method)() ) ;
 	void invalidate() ;
 	int fdmax( int = 0 ) const ;
 	fd_set * operator()() ;
+
 private:
 	bool m_valid ;
 	int m_fdmax ;
-	fd_set m_set_internal ;
-	fd_set m_set_external ;
+	fd_set m_set_internal ; // set from EventHandlerList
+	fd_set m_set_external ; // passed to select() and modified by it
 } ;
- 
-/// \class GNet::Select
-/// A concrete implementation of GNet::EventLoop using
-///  select() in the implementation.
-/// 
-class GNet::Select : public GNet::EventLoop , public G::noncopyable 
+
+/// \class GNet::EventLoopImp
+/// A concrete implementation of GNet::EventLoop using select() in its
+/// implementation.
+///
+class GNet::EventLoopImp : public EventLoop
 {
 public:
 	G_EXCEPTION( Error , "select() error" ) ;
-	Select() ;
-	virtual ~Select() ;
-	virtual bool init() ;
-	virtual std::string run() ;
-	virtual bool running() const ;
-	virtual void quit( std::string ) ;
-	virtual void addRead( Descriptor fd , EventHandler &handler ) ;
-	virtual void addWrite( Descriptor fd , EventHandler &handler ) ;
-	virtual void addException( Descriptor fd , EventHandler &handler ) ;
-	virtual void dropRead( Descriptor fd ) ;
-	virtual void dropWrite( Descriptor fd ) ;
-	virtual void dropException( Descriptor fd ) ;
+	EventLoopImp() ;
+	virtual ~EventLoopImp() ;
+	virtual std::string run() override ;
+	virtual bool running() const override ;
+	virtual void quit( std::string ) override ;
+	virtual void quit( const G::SignalSafe & ) override ;
+	virtual void addRead( Descriptor fd , EventHandler & , ExceptionHandler & ) override ;
+	virtual void addWrite( Descriptor fd , EventHandler & , ExceptionHandler & ) override ;
+	virtual void addOob( Descriptor fd , EventHandler & , ExceptionHandler & ) override ;
+	virtual void dropRead( Descriptor fd ) override ;
+	virtual void dropWrite( Descriptor fd ) override ;
+	virtual void dropOob( Descriptor fd ) override ;
+	virtual std::string report() const override ;
+	virtual void setTimeout( G::EpochTime t ) override ;
+	virtual void disarm( ExceptionHandler * ) override ;
 
 private:
+	EventLoopImp( const EventLoopImp & ) ;
+	void operator=( const EventLoopImp & ) ;
 	void runOnce() ;
-	virtual void setTimeout( G::DateTime::EpochTime t , bool & ) ;
 
 private:
 	bool m_quit ;
@@ -93,44 +95,15 @@ private:
 	FdSet m_read_set ;
 	EventHandlerList m_write_list ;
 	FdSet m_write_set ;
-	EventHandlerList m_exception_list ;
-	FdSet m_exception_set ;
+	EventHandlerList m_oob_list ;
+	FdSet m_oob_set ;
 } ;
-
-/// \class GNet::Lock
-/// A private implementation class used by GNet::Select to
-///  lock data structures in the face of reentrancy.
-/// 
-class GNet::Lock 
-{
-public:
-	EventHandlerList & m_list ;
-	explicit Lock( EventHandlerList & list ) ;
-	~Lock() ;
-
-private:
-	Lock( const Lock & ) ; // not implemented
-	void operator=( const Lock & ) ; // not implemented
-} ;
-
-// ===
-
-GNet::Lock::Lock( EventHandlerList & list ) : 
-	m_list(list) 
-{ 
-	m_list.lock() ; 
-}
-
-GNet::Lock::~Lock() 
-{ 
-	m_list.unlock() ; 
-}
 
 // ===
 
 GNet::FdSet::FdSet() :
 	m_valid(false) ,
-	m_fdmax(1)
+	m_fdmax(0)
 {
 }
 
@@ -146,22 +119,31 @@ void GNet::FdSet::invalidate()
 
 void GNet::FdSet::init( const EventHandlerList & list )
 {
+	// if the internal set has been inivalidate()d then re-initialise
+	// it from the event-handler-list -- then copy the internal list
+	// to the external list -- the external list is passed to select()
+	// and modified by it -- this might look klunky but it is well
+	// optimised on the high frequency code paths and it keeps the
+	// choice of select()/fd_set hidden from client code
+	//
 	if( !m_valid )
 	{
 		// copy the event-handler-list into the internal fd-set
-		m_fdmax = 1 ;
+		m_fdmax = 0 ;
 		FD_ZERO( &m_set_internal ) ;
 		const EventHandlerList::Iterator end = list.end() ;
 		for( EventHandlerList::Iterator p = list.begin() ; p != end ; ++p )
 		{
-			Descriptor fd = EventHandlerList::fd( p ) ;
+			Descriptor fd = p.fd() ;
+			G_ASSERT( fd.valid() && fd.fd() >= 0 ) ;
+			if( fd.fd() < 0 ) continue ;
 			FD_SET( fd.fd() , &m_set_internal ) ;
 			if( (fd.fd()+1) > m_fdmax )
 				m_fdmax = (fd.fd()+1) ;
 		}
 		m_valid = true ;
 	}
-	m_set_external = m_set_internal ; // hopefully fast, depending on the definition of fd_set
+	m_set_external = m_set_internal ; // fast structure copy
 }
 
 int GNet::FdSet::fdmax( int n ) const
@@ -173,29 +155,15 @@ void GNet::FdSet::raiseEvents( EventHandlerList & list , void (EventHandler::*me
 {
 	// call the event-handler for fds in fd-set which are ISSET()
 
-	GNet::Lock lock( list ) ; // since event handlers may change the list while we iterate
+	EventHandlerList::Lock lock( list ) ; // since event handlers may change the list while we iterate
 	const EventHandlerList::Iterator end = list.end() ;
 	for( EventHandlerList::Iterator p = list.begin() ; p != end ; ++p )
 	{
-		Descriptor fd = EventHandlerList::fd( p ) ;
-		if( FD_ISSET( fd.fd() , &m_set_external ) )
+		Descriptor fd = p.fd() ;
+		if( fd.fd() >= 0 && FD_ISSET( fd.fd() , &m_set_external ) )
 		{
-			EventHandler * h = EventHandlerList::handler( p ) ;
-			if( h != NULL )
-				raiseEvent( h , method ) ;
+			p.raiseEvent( method ) ;
 		}
-	}
-}
-
-void GNet::FdSet::raiseEvent( EventHandler * h , void (EventHandler::*method)() )
-{
-	try
-	{
-		(h->*method)() ;
-	}
-	catch( std::exception & e )
-	{
-		h->onException( e ) ;
 	}
 }
 
@@ -203,33 +171,27 @@ void GNet::FdSet::raiseEvent( EventHandler * h , void (EventHandler::*method)() 
 
 GNet::EventLoop * GNet::EventLoop::create()
 {
-	// factory-method pattern
-	return new Select ;
+	return new EventLoopImp ;
 }
 
 // ===
 
-GNet::Select::Select() :
+GNet::EventLoopImp::EventLoopImp() :
 	m_quit(false) ,
 	m_running(false) ,
 	m_read_list("read") ,
 	m_write_list("write") ,
-	m_exception_list("exception")
+	m_oob_list("oob")
 {
 }
 
-GNet::Select::~Select()
+GNet::EventLoopImp::~EventLoopImp()
 {
 }
 
-bool GNet::Select::init()
+std::string GNet::EventLoopImp::run()
 {
-	return true ;
-}
-
-std::string GNet::Select::run()
-{
-	G::Setter setter( m_running ) ;
+	EventLoop::Running running( m_running ) ;
 	do
 	{
 		runOnce() ;
@@ -240,57 +202,85 @@ std::string GNet::Select::run()
 	return quit_reason ;
 }
 
-bool GNet::Select::running() const
+bool GNet::EventLoopImp::running() const
 {
 	return m_running ;
 }
 
-void GNet::Select::quit( std::string reason )
+void GNet::EventLoopImp::quit( std::string reason )
 {
 	m_quit = true ;
 	m_quit_reason = reason ;
 }
 
-void GNet::Select::runOnce()
+void GNet::EventLoopImp::quit( const G::SignalSafe & )
+{
+	m_quit = true ;
+}
+
+void GNet::EventLoopImp::runOnce()
 {
 	// build fd-sets from handler lists
 	//
 	m_read_set.init( m_read_list ) ;
 	m_write_set.init( m_write_list ) ;
-	m_exception_set.init( m_exception_list ) ;
-	int n = m_read_set.fdmax( m_write_set.fdmax(m_exception_set.fdmax()) ) ;
+	m_oob_set.init( m_oob_list ) ;
+	int n = m_read_set.fdmax( m_write_set.fdmax(m_oob_set.fdmax()) ) ;
 
 	// get a timeout interval() from TimerList
 	//
+	typedef struct timeval Timeval ;
 	Timeval timeout ;
-	Timeval * timeout_p = NULL ;
-	if( TimerList::instance(TimerList::NoThrow()) != NULL )
+	Timeval * timeout_p = nullptr ;
+	bool timeout_immediate = false ;
+	if( TimerList::instance(TimerList::NoThrow()) != nullptr )
 	{
-		bool infinite = false ;
-		timeout.tv_sec = TimerList::instance().interval( infinite ) ;
-		timeout.tv_usec = 0 ; // micro seconds
-		timeout_p = infinite ? NULL : &timeout ;
+		bool timeout_infinite = false ;
+		G::EpochTime interval = TimerList::instance().interval( timeout_infinite ) ;
+		timeout_immediate = !timeout_infinite && interval.s == 0 && interval.us == 0U ;
+		timeout.tv_sec = interval.s ;
+		timeout.tv_usec = interval.us ;
+		timeout_p = timeout_infinite ? nullptr : &timeout ;
+	}
+
+	if( G::Test::enabled("event-loop-quitfile") ) // esp. for profiling
+	{
+		if( G::File::remove(".quit",G::File::NoThrow()) )
+			m_quit = true ;
+		if( timeout_p == nullptr || timeout.tv_sec > 0 )
+		{
+			timeout.tv_sec = 0 ;
+			timeout.tv_usec = 999999 ;
+		}
+		timeout_p = &timeout ;
 	}
 
 	// do the select()
 	//
-	int rc = ::select( n , m_read_set() , m_write_set() , m_exception_set() , timeout_p ) ;
+	int rc = ::select( n , m_read_set() , m_write_set() , m_oob_set() , timeout_p ) ;
 	if( rc < 0 )
-		throw Error() ;
-
-	// call the event handlers
-	//
-	if( rc == 0 || ( timeout_p != NULL && timeout_p->tv_sec == 0 ) )
 	{
-		G_DEBUG( "GNet::Select::runOnce: select() timeout" ) ;
+		int e = errno ;
+		if( e != EINTR ) // eg. when profiling
+			throw Error( G::Str::fromInt(e) ) ;
+	}
+
+	// call the timeout handlers
+	//
+	if( rc == 0 || timeout_immediate )
+	{
+		//G_DEBUG( "GNet::EventLoopImp::runOnce: select() timeout" ) ;
 		TimerList::instance().doTimeouts() ;
 	}
+
+	// call the fd event handlers
+	//
 	if( rc > 0 )
 	{
-		G_DEBUG( "GNet::Select::runOnce: detected event(s) on " << rc << " fd(s)" ) ;
-		m_read_set.raiseEvents( m_read_list , & EventHandler::readEvent ) ;
-		m_write_set.raiseEvents( m_write_list , & EventHandler::writeEvent ) ;
-		m_exception_set.raiseEvents( m_exception_list , & EventHandler::exceptionEvent ) ;
+		//G_DEBUG( "GNet::EventLoopImp::runOnce: detected event(s) on " << rc << " fd(s)" ) ;
+		m_read_set.raiseEvents( m_read_list , &EventHandler::readEvent ) ;
+		m_write_set.raiseEvents( m_write_list , &EventHandler::writeEvent ) ;
+		m_oob_set.raiseEvents( m_oob_list , &EventHandler::oobEvent ) ;
 	}
 
 	if( G::Test::enabled("slow-event-loop") )
@@ -298,49 +288,60 @@ void GNet::Select::runOnce()
 		Timeval timeout_slow ;
 		timeout_slow.tv_sec = 0 ;
 		timeout_slow.tv_usec = 100000 ;
-		::select( 0 , NULL , NULL , NULL , &timeout_slow ) ;
+		::select( 0 , nullptr , nullptr , nullptr , &timeout_slow ) ;
 	}
 }
 
-void GNet::Select::addRead( Descriptor fd , EventHandler & handler )
+void GNet::EventLoopImp::addRead( Descriptor fd , EventHandler & handler , ExceptionHandler & eh )
 {
-	m_read_list.add( fd , & handler ) ;
+	m_read_list.add( fd , &handler , &eh ) ;
 	m_read_set.invalidate() ;
 }
 
-void GNet::Select::addWrite( Descriptor fd , EventHandler & handler )
+void GNet::EventLoopImp::addWrite( Descriptor fd , EventHandler & handler , ExceptionHandler & eh )
 {
-	m_write_list.add( fd , & handler ) ;
+	m_write_list.add( fd , &handler , &eh ) ;
 	m_write_set.invalidate() ;
 }
 
-void GNet::Select::addException( Descriptor fd , EventHandler & handler )
+void GNet::EventLoopImp::addOob( Descriptor fd , EventHandler & handler , ExceptionHandler & eh )
 {
-	m_exception_list.add( fd , & handler ) ;
-	m_exception_set.invalidate() ;
+	m_oob_list.add( fd , &handler , &eh ) ;
+	m_oob_set.invalidate() ;
 }
 
-void GNet::Select::dropRead( Descriptor fd )
+void GNet::EventLoopImp::dropRead( Descriptor fd )
 {
 	m_read_list.remove( fd ) ;
 	m_read_set.invalidate() ;
 }
 
-void GNet::Select::dropWrite( Descriptor fd )
+void GNet::EventLoopImp::dropWrite( Descriptor fd )
 {
 	m_write_list.remove( fd ) ;
 	m_write_set.invalidate() ;
 }
 
-void GNet::Select::dropException( Descriptor fd )
+void GNet::EventLoopImp::dropOob( Descriptor fd )
 {
-	m_exception_list.remove( fd ) ;
-	m_exception_set.invalidate() ;
+	m_oob_list.remove( fd ) ;
+	m_oob_set.invalidate() ;
 }
 
-void GNet::Select::setTimeout( G::DateTime::EpochTime , bool & empty_hint )
+void GNet::EventLoopImp::disarm( ExceptionHandler * p )
+{
+	m_read_list.disarm( p ) ;
+	m_write_list.disarm( p ) ;
+	m_oob_list.disarm( p ) ;
+}
+
+void GNet::EventLoopImp::setTimeout( G::EpochTime )
 {
 	// does nothing -- interval() in runOnce() suffices
-	empty_hint = true ;
+}
+
+std::string GNet::EventLoopImp::report() const
+{
+	return std::string() ;
 }
 

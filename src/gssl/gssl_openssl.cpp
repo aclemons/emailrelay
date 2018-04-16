@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -20,513 +20,521 @@
 
 #include "gdef.h"
 #include "gssl.h"
+#include "gssl_openssl.h"
 #include "gtest.h"
 #include "gstr.h"
 #include "gpath.h"
+#include "gprocess.h"
+#include "gfile.h"
+#include "groot.h"
 #include "gexception.h"
-#include "glog.h"
+#include "gdebug.h"
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
+#include <openssl/engine.h>
+#include <openssl/conf.h>
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
 #include <exception>
+#include <functional>
 #include <vector>
-#include <cassert>
+#include <map>
 #include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <utility>
+#include <algorithm>
 
-// debugging...
-//  * network logging
-//     $ sudo tcpdump -s 0 -n -i eth0 -X tcp port 587
-//  * emailrelay smtp proxy to gmail
-//     $ emailrelay --forward-to smtp.gmail.com:587 ...
-//  * openssl smtp client to gmail
-//     $ openssl s_client -tls1 -msg -debug -starttls smtp -crlf -connect smtp.gmail.com:587
-//  * certificate
-//     $ openssl req -x509 -nodes -days 365 -subj "/C=US/ST=Oregon/L=Portland/CN=eight.local" 
-//           -newkey rsa:1024 -keyout test.cert  -out test.cert
-//     $ cp test.cert /etc/ssl/certs/
-//     $ cd /etc/ssl/certs && ln -s `openssl x509 -noout -hash -in test.cert`.0
-//  * openssl server (without smtp)
-//     $ openssl s_server -accept 10025 -cert /etc/ssl/certs/test.pem -debug -msg -tls1
-//
-
-namespace GSsl
-{
-	class Context ;
-	class Error ;
-	class Certificate ;
-}
-
-/// \class GSsl::Context
-/// An openssl context wrapper.
-/// 
-class GSsl::Context 
-{
-public:
-	explicit Context( const std::string & pem_file = std::string() , unsigned int flags = 0U ) ;
-	~Context() ;
-	SSL_CTX * p() const ;
-
-private:
-	Context( const Context & ) ;
-	void operator=( const Context & ) ;
-	void init( const std::string & pem_file ) ;
-	static void check( int , const char * ) ;
-
-private:
-	SSL_CTX * m_ssl_ctx ;
-} ;
-
-/// \class GSsl::Certificate
-/// An openssl X509 RAII class.
-/// 
-class GSsl::Certificate 
-{
-public:
-	explicit Certificate( X509* ) ;
-	~Certificate() ;
-	std::string str() const ;
-
-private:
-	Certificate( const Certificate & ) ;
-	void operator=( const Certificate & ) ;
-
-private:
-	X509 * m_p ;
-} ;
-
-/// \class GSsl::LibraryImp
-/// A private pimple class used by GSsl::Library.
-/// 
-class GSsl::LibraryImp 
-{
-public:
-	typedef Library::LogFn LogFn ;
-	explicit LibraryImp( const std::string & pem_file = std::string(), unsigned int flags = 0U, LogFn log_fn = NULL ) ;
-	~LibraryImp() ;
-	Context & ctx() const ;
-	std::string pem() const ;
-	LogFn logFn() const ;
-	unsigned int flags() const ;
-
-private:
-	LibraryImp( const LibraryImp & ) ;
-	void operator=( const LibraryImp & ) ;
-
-private:
-	Context * m_context ;
-	std::string m_pem_file ;
-	unsigned int m_flags ;
-	LogFn m_log_fn ;
-} ;
-
-/// \class GSsl::ProtocolImp
-/// A private pimple class used by GSsl::Protocol.
-/// 
-class GSsl::ProtocolImp 
-{
-public:
-	typedef Protocol::Result Result ;
-	typedef Protocol::LogFn LogFn ;
-	typedef Protocol::size_type size_type ;
-	typedef Protocol::ssize_type ssize_type ;
-
-	explicit ProtocolImp( const Context & c , unsigned int flags ) ;
-	ProtocolImp( const Context & c , unsigned int flags , LogFn log ) ;
-	~ProtocolImp() ;
-	Result connect( int ) ;
-	Result accept( int ) ;
-	Result stop() ;
-	Result read( char * buffer , size_type buffer_size , ssize_type & read_size ) ;
-	Result write( const char * buffer , size_type size_in , ssize_type & size_out ) ;
-	std::pair<std::string,bool> peerCertificate() ;
-
-private:
-	ProtocolImp( const ProtocolImp & ) ;
-	void operator=( const ProtocolImp & ) ;
-	int error( const char * , int ) const ;
-	void set( int ) ;
-	Result connect() ;
-	Result accept() ;
-	static Result convert( int ) ;
-	static void clearErrors() ;
-
-private:
-	SSL * m_ssl ;
-	unsigned int m_flags ;
-	LogFn m_log_fn ;
-	bool m_fd_set ;
-} ;
-
-/// \class GSsl::Error
-/// A private exception class used by ssl classes.
-/// 
-class GSsl::Error : public std::exception 
-{
-public:
-	explicit Error( const std::string & ) ;
-	Error( const std::string & , unsigned long ) ;
-	virtual ~Error() throw() ;
-	virtual const char * what() const throw() ;
-
-private:
-	std::string m_what ;
-} ;
-
-//
-
-GSsl::LibraryImp::LibraryImp( const std::string & pem_file , unsigned int flags , LogFn log_fn ) :
-	m_context(NULL) ,
-	m_pem_file(pem_file) ,
-	m_flags(flags) ,
-	m_log_fn(log_fn)
+GSsl::OpenSSL::LibraryImp::LibraryImp( const std::string & library_config , Library::LogFn log_fn , bool verbose ) :
+	m_library_config(library_config) ,
+	m_evp_ctx(nullptr) ,
+	m_log_fn(log_fn) ,
+	m_verbose(verbose)
 {
 	SSL_load_error_strings() ;
 	SSL_library_init() ;
+	int rc = RAND_status() ; G_IGNORE_VARIABLE(rc) ;
+	OpenSSL_add_all_digests() ;
 
-	// we probably don't need extra entropy but make a token effort to 
-	// find some - quote: "openssl automatically queries EGD when [...]
-	// the status is checked via RAND_status() for the first time if [a] 
-	// socket is located at /var/run/edg-pool ..."
-	//
-	G_IGNORE_RETURN(int) RAND_status() ;
-
-	m_context = new Context( pem_file , flags ) ;
+	// allocate a slot for a pointer from SSL to ProtocolImp
+	m_index = SSL_get_ex_new_index( 0 , nullptr , nullptr , nullptr , nullptr ) ;
+	if( m_index < 0 )
+	{
+		cleanup() ;
+		throw Error( "SSL_get_ex_new_index" , 0 ) ;
+	}
 }
 
-GSsl::LibraryImp::~LibraryImp()
+GSsl::OpenSSL::LibraryImp::~LibraryImp()
 {
-	delete m_context ;
+	cleanup() ;
+}
+
+void GSsl::OpenSSL::LibraryImp::cleanup()
+{
+	// ffs...
 	ERR_free_strings() ;
 	RAND_cleanup() ;
+	CRYPTO_cleanup_all_ex_data();
 }
 
-unsigned int GSsl::LibraryImp::flags() const
+std::string GSsl::OpenSSL::LibraryImp::sid()
 {
-	return m_flags ;
+	return G::Str::printable( SSLeay_version(SSLEAY_VERSION) ) ;
 }
 
-GSsl::Library::LogFn GSsl::LibraryImp::logFn() const
+std::string GSsl::OpenSSL::LibraryImp::id() const
 {
-	return m_log_fn ;
+	return sid() ;
 }
 
-GSsl::Context & GSsl::LibraryImp::ctx() const
-{
-	return *m_context ;
-}
-
-std::string GSsl::LibraryImp::pem() const
-{
-	return m_pem_file ;
-}
-
-//
-
-GSsl::Library * GSsl::Library::m_this = NULL ;
-
-GSsl::Library::Library() :
-	m_imp(NULL)
-{
-	if( m_this == NULL )
-		m_this = this ;
-	m_imp = new LibraryImp ;
-}
-
-GSsl::Library::Library( bool active , const std::string & pem_file , unsigned int flags , LogFn log_fn ) :
-	m_imp(NULL)
-{
-	if( m_this == NULL )
-		m_this = this ;
-	if( active )
-		m_imp = new LibraryImp( pem_file , flags , log_fn ) ;
-}
-
-GSsl::Library::~Library()
-{
-	delete m_imp ;
-	if( m_this == NULL )
-		m_this = NULL ;
-}
-
-GSsl::Library * GSsl::Library::instance()
-{
-	return m_this ;
-}
-
-bool GSsl::Library::enabled( bool for_server ) const
-{
-	return m_imp != NULL && ( !for_server || !m_imp->pem().empty() ) ;
-}
-
-const GSsl::LibraryImp & GSsl::Library::imp() const
-{
-	if( m_imp == NULL )
-		throw G::Exception( "internal error: no ssl library instance" ) ;
-	return *m_imp ;
-}
-
-std::string GSsl::Library::credit( const std::string & prefix , const std::string & eol , const std::string & final )
+std::string GSsl::OpenSSL::LibraryImp::credit( const std::string & prefix , const std::string & eol , const std::string & eot )
 {
 	std::ostringstream ss ;
 	ss
 		<< prefix << "This product includes software developed by the OpenSSL Project" << eol
 		<< prefix << "for use in the OpenSSL Toolkit (http://www.openssl.org/)" << eol
-		<< final ;
+		<< eot ;
 	return ss.str() ;
 }
 
-//
-
-namespace
+void GSsl::OpenSSL::LibraryImp::addProfile( const std::string & profile_name , bool is_server_profile ,
+	const std::string & key_file , const std::string & cert_file , const std::string & ca_file ,
+	const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
+	const std::string & profile_config )
 {
-	int verify_callback_always_pass( int , X509_STORE_CTX * )
-	{
-		return 1 ;
-	}
+	shared_ptr<ProfileImp> profile_ptr(
+		new ProfileImp(*this,is_server_profile,key_file,cert_file,ca_file,
+			default_peer_certificate_name,default_peer_host_name,m_library_config,profile_config) ) ;
+	m_profile_map.insert( Map::value_type(profile_name,profile_ptr) ) ;
 }
 
-GSsl::Context::Context( const std::string & pem_file , unsigned int flags )
+bool GSsl::OpenSSL::LibraryImp::hasProfile( const std::string & profile_name ) const
 {
-	if( (flags&3U) == 2U )
-		m_ssl_ctx = SSL_CTX_new(SSLv23_method()) ;
-	else if( (flags&3U) == 3U )
-		m_ssl_ctx = SSL_CTX_new(SSLv3_method()) ;
-	else
-		m_ssl_ctx = SSL_CTX_new(TLSv1_method()) ;
+	Map::const_iterator p = m_profile_map.find( profile_name ) ;
+	return p != m_profile_map.end() ;
+}
 
-	if( m_ssl_ctx == NULL )
+const GSsl::Profile & GSsl::OpenSSL::LibraryImp::profile( const std::string & profile_name ) const
+{
+	Map::const_iterator p = m_profile_map.find( profile_name ) ;
+	if( p == m_profile_map.end() ) throw Error( "no such profile: [" + profile_name + "]" ) ;
+	return *(*p).second.get() ;
+}
+
+GSsl::Library::LogFn GSsl::OpenSSL::LibraryImp::log() const
+{
+	return m_log_fn ;
+}
+
+bool GSsl::OpenSSL::LibraryImp::verbose() const
+{
+	return m_verbose ;
+}
+
+int GSsl::OpenSSL::LibraryImp::index() const
+{
+	return m_index ;
+}
+
+G::StringArray GSsl::OpenSSL::LibraryImp::digesters( bool require_state ) const
+{
+	G::StringArray result ;
+	if( require_state )
+	{
+		; // state() not implemented for any
+	}
+	else
+	{
+		result.push_back( "SHA512" ) ;
+		result.push_back( "SHA256" ) ;
+		result.push_back( "SHA1" ) ;
+		result.push_back( "MD5" ) ;
+	}
+	return result ;
+}
+
+GSsl::Digester GSsl::OpenSSL::LibraryImp::digester( const std::string & hash_type , const std::string & state ) const
+{
+	return Digester( new OpenSSL::DigesterImp(hash_type,state) ) ;
+}
+
+GSsl::OpenSSL::DigesterImp::DigesterImp( const std::string & hash_type , const std::string & state ) :
+	m_evp_ctx(EVP_MD_CTX_create())
+{
+	const EVP_MD * md = EVP_get_digestbyname( hash_type.c_str() ) ;
+	if( md == nullptr )
+		throw Error( "unsupported hash function name: [" + hash_type + "]" ) ;
+
+	m_block_size = static_cast<size_t>( EVP_MD_block_size(md) ) ;
+	m_value_size = static_cast<size_t>( EVP_MD_size(md) ) ;
+	m_state_size = 0U ; // not implemented
+
+	if( m_state_size == 0U && !state.empty() )
+		throw Error( "hash state resoration not implemented for " + hash_type ) ;
+
+	EVP_DigestInit_ex( m_evp_ctx , md , 0/*engine*/ ) ;
+}
+
+GSsl::OpenSSL::DigesterImp::~DigesterImp()
+{
+	EVP_MD_CTX_destroy( m_evp_ctx ) ;
+}
+
+size_t GSsl::OpenSSL::DigesterImp::blocksize() const
+{
+	return m_block_size ;
+}
+
+size_t GSsl::OpenSSL::DigesterImp::valuesize() const
+{
+	return m_value_size ;
+}
+
+size_t GSsl::OpenSSL::DigesterImp::statesize() const
+{
+	return m_state_size ; // zero when not implemented
+}
+
+std::string GSsl::OpenSSL::DigesterImp::state()
+{
+	return std::string() ; // not implemented
+}
+
+void GSsl::OpenSSL::DigesterImp::add( const std::string & data )
+{
+	EVP_DigestUpdate( m_evp_ctx , data.data() , data.size() ) ;
+}
+
+std::string GSsl::OpenSSL::DigesterImp::value()
+{
+	std::vector<unsigned char> output( EVP_MAX_MD_SIZE ) ;
+	unsigned int output_size = 0 ;
+	EVP_DigestFinal_ex( m_evp_ctx , &output[0] , &output_size ) ;
+	return std::string( reinterpret_cast<char*>(&output[0]) , static_cast<size_t>(output_size) ) ;
+}
+
+// ==
+
+GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_server_profile ,
+	const std::string & key_file , const std::string & cert_file , const std::string & ca_path ,
+	const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
+	const std::string & library_config , const std::string & profile_config ) :
+		m_library_imp(library_imp) ,
+		m_default_peer_certificate_name(default_peer_certificate_name) ,
+		m_default_peer_host_name(default_peer_host_name) ,
+		m_ssl_ctx(nullptr,std::ptr_fun(deleter))
+{
+	std::string extra_config = G::Str::join( "," , library_config , profile_config ) ;
+	if( !extra_config.empty() )
+	{
+		if( G::Str::isUInt(extra_config) ) // TODO remove backwards compatibility
+		{
+			unsigned int flags = G::Str::toUInt( extra_config ) ;
+
+			if( (flags&3U) == 2U )
+				m_ssl_ctx.reset( SSL_CTX_new(SSLv23_method()) ) ;
+
+#if GCONFIG_HAVE_OPENSSL_SSLv3_METHOD
+			if( (flags&3U) == 3U )
+				m_ssl_ctx.reset( SSL_CTX_new(SSLv3_method()) ) ;
+#endif
+
+			if( flags & 12U )
+				throw Error( "tls configuration flags 4 and 8 are no longer supported: "
+					"specify a ca certificate list to enable verification" ) ;
+		}
+
+		// openssl :-<
+
+		if( false )
+			{;}
+
+#if GCONFIG_HAVE_OPENSSL_SSLv23_METHOD
+		else if( extra_config.find("sslv23") == 0U )
+			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? SSLv23_server_method() : SSLv23_client_method()) ) ;
+#endif
+
+#if GCONFIG_HAVE_OPENSSL_SSLv3_METHOD
+		else if( extra_config.find("sslv3") == 0U )
+			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? SSLv3_server_method() : SSLv3_client_method()) ) ;
+#endif
+
+#if GCONFIG_HAVE_OPENSSL_TLSv1_METHOD
+		else if( extra_config.find("tlsv1.0") == 0U )
+			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? TLSv1_server_method() : TLSv1_client_method()) ) ;
+#endif
+
+#if GCONFIG_HAVE_OPENSSL_TLSv1_1_METHOD
+		else if( extra_config.find("tlsv1.1") == 0U )
+			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? TLSv1_1_server_method() : TLSv1_1_client_method()) ) ;
+#endif
+
+#if GCONFIG_HAVE_OPENSSL_TLSv1_2_METHOD
+		else if( extra_config.find("tlsv1.2") == 0U )
+			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? TLSv1_2_server_method() : TLSv1_2_client_method()) ) ;
+#endif
+
+		else
+#if GCONFIG_HAVE_OPENSSL_TLS_METHOD
+			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? TLS_server_method() : TLS_client_method()) ) ;
+#else
+			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? TLSv1_server_method() : TLSv1_client_method()) ) ;
+#endif
+
+	}
+
+	if( m_ssl_ctx.get() == nullptr )
+		m_ssl_ctx.reset( SSL_CTX_new(TLSv1_method()) ) ;
+
+	if( m_ssl_ctx.get() == nullptr )
 		throw Error( "SSL_CTX_new" , ERR_get_error() ) ;
 
-	if( flags&4U )
+	if( !key_file.empty() )
 	{
-		// ask for certificates but dont actually verify them
-		SSL_CTX_set_verify( m_ssl_ctx , SSL_VERIFY_PEER , verify_callback_always_pass ) ;
-	}
-	if( (flags&8U) && !pem_file.empty() )
-	{
-		// ask for certificates and make sure they verify
-		SSL_CTX_set_verify( m_ssl_ctx , SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT , NULL ) ;
-		check( SSL_CTX_load_verify_locations( m_ssl_ctx , NULL , 
-			G::Path(pem_file).dirname().str().c_str() ) , "load_verify_locations" ) ;
+		G::Root claim_root ;
+		if( !G::File::exists(key_file) )
+			G_WARNING( "GSsl::Profile: cannot open ssl key file: " + key_file ) ;
+
+		check( SSL_CTX_use_PrivateKey_file(m_ssl_ctx.get(),key_file.c_str(),SSL_FILETYPE_PEM) ,
+			"use_PrivateKey_file" , key_file ) ;
 	}
 
-	init( pem_file ) ;
-}
-
-GSsl::Context::~Context()
-{
-	SSL_CTX_free( m_ssl_ctx ) ;
-}
-
-SSL_CTX * GSsl::Context::p() const
-{
-	return m_ssl_ctx ;
-}
-
-void GSsl::Context::init( const std::string & pem_file )
-{
-	G_DEBUG( "GSsl::Context::init: [" << pem_file << "]" ) ;
-	SSL_CTX_set_quiet_shutdown( m_ssl_ctx , 1 ) ;
-	if( !pem_file.empty() )
+	if( !cert_file.empty() )
 	{
-		check( SSL_CTX_use_certificate_chain_file(m_ssl_ctx,pem_file.c_str()) , "use_certificate_chain_file" ) ;
-		check( SSL_CTX_use_RSAPrivateKey_file(m_ssl_ctx,pem_file.c_str(),SSL_FILETYPE_PEM) , "use_RSAPrivateKey_file" );
-		check( SSL_CTX_set_cipher_list(m_ssl_ctx,"DEFAULT") , "set_cipher_list" ) ;
+		G::Root claim_root ;
+		if( !G::File::exists(cert_file) )
+			G_WARNING( "GSsl::Profile: cannot open ssl certificate file: " + cert_file ) ;
+
+		check( SSL_CTX_use_certificate_chain_file(m_ssl_ctx.get(),cert_file.c_str()) ,
+			"use_certificate_chain_file" , cert_file ) ;
+	}
+
+	if( ca_path.empty() )
+	{
+		// ask for peer certificates but dont actually verify them - just log them - we
+		// don't use set_client_CA_list() so we allow the client to not send a certificate
+		SSL_CTX_set_verify( m_ssl_ctx.get() , SSL_VERIFY_PEER , verifyPass ) ;
+	}
+	else if( ca_path == "<none>" )
+	{
+		// dont ask for client certificates (server-side)
+		SSL_CTX_set_verify( m_ssl_ctx.get() , SSL_VERIFY_NONE , nullptr ) ;
+	}
+	else if( ca_path == "<default>" )
+	{
+		// ask for certificates, make sure they verify against the default ca database, and check the name in the certificate
+		bool no_verify = extra_config.find("noverify") != std::string::npos ;
+		SSL_CTX_set_verify( m_ssl_ctx.get() , no_verify ? SSL_VERIFY_NONE : (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT) , verifyPeerName ) ;
+		check( SSL_CTX_set_default_verify_paths( m_ssl_ctx.get() ) , "set_default_verify_paths" ) ;
+	}
+	else
+	{
+		// ask for certificates, make sure they verify against the given ca database, and check the name in the certificate
+		bool no_verify = extra_config.find("noverify") != std::string::npos ;
+		bool ca_path_is_dir = G::File::isDirectory( ca_path ) ;
+		const char * ca_file_p = ca_path_is_dir ? nullptr : ca_path.c_str() ;
+		const char * ca_dir_p = ca_path_is_dir ? ca_path.c_str() : nullptr ;
+		SSL_CTX_set_verify( m_ssl_ctx.get() , no_verify ? SSL_VERIFY_NONE : (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT) , verifyPeerName ) ;
+		check( SSL_CTX_load_verify_locations( m_ssl_ctx.get() , ca_file_p , ca_dir_p ) , "load_verify_locations" , ca_path ) ;
+	}
+
+	SSL_CTX_set_quiet_shutdown( m_ssl_ctx.get() , 1 ) ;
+	SSL_CTX_set_cipher_list( m_ssl_ctx.get() , "DEFAULT" ) ;
+	SSL_CTX_set_session_cache_mode( m_ssl_ctx.get() , SSL_SESS_CACHE_OFF ) ;
+	if( is_server_profile )
+	{
+		static std::string x = "GSsl.OpenSSL." + G::Path(G::Process::exe()).basename() ;
+		SSL_CTX_set_session_id_context( m_ssl_ctx.get() , reinterpret_cast<const unsigned char *>(x.data()) , x.size() ) ;
 	}
 }
 
-void GSsl::Context::check( int rc , const char * op )
+GSsl::OpenSSL::ProfileImp::~ProfileImp()
+{
+}
+
+void GSsl::OpenSSL::ProfileImp::deleter( SSL_CTX * p )
+{
+	if( p != nullptr )
+		SSL_CTX_free( p ) ;
+}
+
+GSsl::ProtocolImpBase * GSsl::OpenSSL::ProfileImp::newProtocol( const std::string & peer_certificate_name ,
+	const std::string & peer_host_name ) const
+{
+	return
+		new OpenSSL::ProtocolImp( *this ,
+			peer_certificate_name.empty()?defaultPeerCertificateName():peer_certificate_name ,
+			peer_host_name.empty()?defaultPeerHostName():peer_host_name ) ;
+}
+
+SSL_CTX * GSsl::OpenSSL::ProfileImp::p() const
+{
+	return const_cast<SSL_CTX*>( m_ssl_ctx.get() ) ;
+}
+
+const GSsl::OpenSSL::LibraryImp & GSsl::OpenSSL::ProfileImp::lib() const
+{
+	return m_library_imp ;
+}
+
+const std::string & GSsl::OpenSSL::ProfileImp::defaultPeerCertificateName() const
+{
+	return m_default_peer_certificate_name ;
+}
+
+const std::string & GSsl::OpenSSL::ProfileImp::defaultPeerHostName() const
+{
+	return m_default_peer_host_name ;
+}
+
+void GSsl::OpenSSL::ProfileImp::check( int rc , const std::string & fnname_tail , const std::string & file )
 {
 	if( rc != 1 )
-		throw Error( std::string() + "SSL_CTX_" + op ) ;
+	{
+		std::string fnname = "SSL_CTX_" + fnname_tail ;
+		throw Error( fnname , rc , file ) ;
+	}
 }
 
-//
-
-GSsl::Error::Error( const std::string & s ) :
-	m_what(std::string()+"ssl error: "+s)
+int GSsl::OpenSSL::ProfileImp::verifyPass( int ok , X509_STORE_CTX * )
 {
+	return 1 ;
 }
 
-GSsl::Error::Error( const std::string & s , unsigned long e ) :
-	m_what(std::string()+"ssl error: "+s)
+int GSsl::OpenSSL::ProfileImp::verifyPeerName( int ok , X509_STORE_CTX * ctx )
 {
-	std::vector<char> v( 300 ) ;
-	ERR_error_string_n( e , &v[0] , v.size() ) ;
-	std::string reason( &v[0] , v.size() ) ;
-	reason = std::string( reason.c_str() ) ; // no nuls
-	m_what.append( std::string() + ": [" + reason + "]" ) ;
+	try
+	{
+		if( ok && X509_STORE_CTX_get_error_depth(ctx) == 0 )
+		{
+			using namespace GSsl ;
+			SSL * ssl = reinterpret_cast<SSL*>( X509_STORE_CTX_get_ex_data( ctx , SSL_get_ex_data_X509_STORE_CTX_idx() ) ) ; if(ssl==nullptr) throw 1 ;
+			OpenSSL::LibraryImp & library = dynamic_cast<OpenSSL::LibraryImp&>( Library::impstance() ) ;
+			OpenSSL::ProtocolImp * protocol = reinterpret_cast<OpenSSL::ProtocolImp*>( SSL_get_ex_data(ssl,library.index()) ) ; if(protocol==nullptr) throw 1 ;
+			std::string required_peer_certificate_name = protocol->requiredPeerCertificateName() ;
+			if( !required_peer_certificate_name.empty() )
+			{
+				X509 * cert = X509_STORE_CTX_get_current_cert( ctx ) ;
+				std::string subject = name(X509_get_subject_name(cert)) ;
+				G::StringArray subject_parts = G::Str::splitIntoTokens( subject , "/" ) ;
+				bool found = std::find( subject_parts.begin() , subject_parts.end() , "CN="+required_peer_certificate_name ) != subject_parts.end() ;
+				library.log()( 2 , "certificate-subject=[" + subject + "] required-peer-name=[" + required_peer_certificate_name + "] ok=" + (found?"1":"0") ) ;
+				if( !found )
+				{
+					ok = 0 ;
+				}
+			}
+		}
+		return ok ;
+	}
+	catch(...) // callback from c code
+	{
+		return 0 ;
+	}
 }
 
-GSsl::Error::~Error() throw ()
+std::string GSsl::OpenSSL::ProfileImp::name( X509_NAME * x509_name )
 {
+	if( x509_name == nullptr ) return std::string() ;
+	std::vector<char> buffer( 2048U ) ; // 200 in openssl code
+	X509_NAME_oneline( x509_name , &buffer[0] , buffer.size() ) ;
+	buffer.back() = '\0' ;
+	return G::Str::printable( std::string(&buffer[0]) ) ;
 }
 
-const char * GSsl::Error::what() const throw ()
+// ==
+
+GSsl::OpenSSL::ProtocolImp::ProtocolImp( const ProfileImp & profile , const std::string & required_peer_certificate_name ,
+	const std::string & target_peer_host_name ) :
+		m_profile(profile) ,
+		m_ssl(nullptr,std::ptr_fun(deleter)) ,
+		m_log_fn(profile.lib().log()) ,
+		m_verbose(profile.lib().verbose()) ,
+		m_fd_set(false) ,
+		m_required_peer_certificate_name(required_peer_certificate_name) ,
+		m_verified(false)
 {
-	return m_what.c_str() ;
-}
-
-// 
-
-GSsl::Protocol::Protocol( const Library & library ) :
-	m_imp( new ProtocolImp(library.imp().ctx(),library.imp().flags(),library.imp().logFn()) )
-{
-}
-
-GSsl::Protocol::Protocol( const Library & library , LogFn log_fn ) :
-	m_imp( new ProtocolImp(library.imp().ctx(),library.imp().flags(),log_fn) )
-{
-}
-
-GSsl::Protocol::~Protocol()
-{
-	delete m_imp ;
-}
-
-std::pair<std::string,bool> GSsl::Protocol::peerCertificate( int )
-{
-	return m_imp->peerCertificate() ;
-}
-
-std::string GSsl::Protocol::str( Protocol::Result result )
-{
-	if( result == Result_ok ) return "Result_ok" ;
-	if( result == Result_read ) return "Result_read" ;
-	if( result == Result_write ) return "Result_write" ;
-	if( result == Result_error ) return "Result_error" ;
-	return "Result_undefined" ;
-}
-
-GSsl::Protocol::Result GSsl::Protocol::connect( int fd )
-{
-	return m_imp->connect( fd ) ;
-}
-
-GSsl::Protocol::Result GSsl::Protocol::accept( int fd )
-{
-	return m_imp->accept( fd ) ;
-}
-
-GSsl::Protocol::Result GSsl::Protocol::stop()
-{
-	return m_imp->stop() ;
-}
-
-GSsl::Protocol::Result GSsl::Protocol::read( char * buffer , size_type buffer_size_in , ssize_type & data_size_out )
-{
-	return m_imp->read( buffer , buffer_size_in , data_size_out ) ;
-}
-
-GSsl::Protocol::Result GSsl::Protocol::write( const char * buffer , size_type data_size_in , 
-	ssize_type & data_size_out )
-{
-	return m_imp->write( buffer , data_size_in , data_size_out ) ;
-}
-
-//
-
-GSsl::ProtocolImp::ProtocolImp( const Context & c , unsigned int flags ) :
-	m_ssl(NULL) ,
-	m_flags(flags) ,
-	m_log_fn(NULL) ,
-	m_fd_set(false)
-{
-	m_ssl = SSL_new( c.p() ) ;
-	if( m_ssl == NULL )
+	m_ssl.reset( SSL_new(profile.p()) ) ;
+	if( m_ssl.get() == nullptr )
 		throw Error( "SSL_new" , ERR_get_error() ) ;
+
+	// TODO feature test for SSL_set_tlsext_host_name() ?
+	if( !target_peer_host_name.empty() )
+		SSL_set_tlsext_host_name( m_ssl.get() , target_peer_host_name.c_str() ) ;
+
+	// store a pointer from SSL to ProtocolImp
+	SSL_set_ex_data( m_ssl.get() , profile.lib().index() , this ) ;
 }
 
-GSsl::ProtocolImp::ProtocolImp( const Context & c , unsigned int flags , LogFn log_fn ) :
-	m_ssl(NULL) ,
-	m_flags(flags) ,
-	m_log_fn(log_fn) ,
-	m_fd_set(false)
+GSsl::OpenSSL::ProtocolImp::~ProtocolImp()
 {
-	m_ssl = SSL_new( c.p() ) ;
-	if( m_ssl == NULL )
-		throw Error( "SSL_new" , ERR_get_error() ) ;
 }
 
-GSsl::ProtocolImp::~ProtocolImp()
+void GSsl::OpenSSL::ProtocolImp::deleter( SSL * p )
 {
-	SSL_free( m_ssl ) ;
+	if( p != nullptr )
+		SSL_free( p ) ;
 }
 
-void GSsl::ProtocolImp::clearErrors()
+void GSsl::OpenSSL::ProtocolImp::clearErrors()
 {
 	for( int i = 0 ; ERR_get_error() && i < 10000 ; i++ )
 		;
 }
 
-int GSsl::ProtocolImp::error( const char * op , int rc ) const
+int GSsl::OpenSSL::ProtocolImp::error( const char * op , int rc ) const
 {
-	int e = SSL_get_error( m_ssl , rc ) ;
-
-	if( m_log_fn != NULL )
-	{
-		std::ostringstream ss ;
-		ss << "ssl error: " << op << ": rc=" << rc << ": error " << e << " => " << Protocol::str(convert(e)) ;
-		(*m_log_fn)( 1 , ss.str() ) ;
-		unsigned long ee = 0 ;
-		for( int i = 2 ; i < 10000 ; i++ )
-		{
-			ee = ERR_get_error() ;
-			if( ee == 0 ) break ;
-			Error eee( op , ee ) ;
-			(*m_log_fn)( 2 , std::string() + eee.what() ) ;
-		}
-	}
-
+	int e = SSL_get_error( m_ssl.get() , rc ) ;
+	logErrors( op , rc , e , Protocol::str(convert(e)) ) ;
 	return e ;
 }
 
-GSsl::Protocol::Result GSsl::ProtocolImp::convert( int e )
+GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::convert( int e )
 {
 	if( e == SSL_ERROR_WANT_READ ) return Protocol::Result_read ;
 	if( e == SSL_ERROR_WANT_WRITE ) return Protocol::Result_write ;
 	return Protocol::Result_error ;
 }
 
-GSsl::Protocol::Result GSsl::ProtocolImp::connect( int fd )
+GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::connect( G::ReadWrite & io )
 {
-	set( fd ) ;
+	set( io.fd() ) ;
 	return connect() ;
 }
 
-GSsl::Protocol::Result GSsl::ProtocolImp::accept( int fd )
+GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::accept( G::ReadWrite & io )
 {
-	set( fd ) ;
+	set( io.fd() ) ;
 	return accept() ;
 }
 
-void GSsl::ProtocolImp::set( int fd )
+void GSsl::OpenSSL::ProtocolImp::set( int fd )
 {
 	if( !m_fd_set )
 	{
-		int rc = SSL_set_fd( m_ssl , fd ) ;
+		int rc = SSL_set_fd( m_ssl.get() , fd ) ;
 		if( rc == 0 )
 			throw Error( "SSL_set_fd" , ERR_get_error() ) ;
 
-		if( G::Test::enabled("log-ssl-bio") ) // log bio activity directly to stderr
+		if( G::Test::enabled("log-openssl-bio") ) // log bio activity directly to stderr
 		{
-			BIO_set_callback( SSL_get_rbio(m_ssl) , BIO_debug_callback ) ;
-			BIO_set_callback( SSL_get_wbio(m_ssl) , BIO_debug_callback ) ;
+			BIO_set_callback( SSL_get_rbio(m_ssl.get()) , BIO_debug_callback ) ;
+			BIO_set_callback( SSL_get_wbio(m_ssl.get()) , BIO_debug_callback ) ;
 		}
 
 		m_fd_set = true ;
 	}
 }
 
-GSsl::Protocol::Result GSsl::ProtocolImp::connect()
+GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::connect()
 {
 	clearErrors() ;
-	int rc = SSL_connect( m_ssl ) ;
+	int rc = SSL_connect( m_ssl.get() ) ;
 	if( rc >= 1 )
 	{
+		saveResult() ;
 		return Protocol::Result_ok ;
 	}
 	else if( rc == 0 )
@@ -539,12 +547,13 @@ GSsl::Protocol::Result GSsl::ProtocolImp::connect()
 	}
 }
 
-GSsl::Protocol::Result GSsl::ProtocolImp::accept()
+GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::accept()
 {
 	clearErrors() ;
-	int rc = SSL_accept( m_ssl ) ;
+	int rc = SSL_accept( m_ssl.get() ) ;
 	if( rc >= 1 )
 	{
+		saveResult() ;
 		return Protocol::Result_ok ;
 	}
 	else if( rc == 0 )
@@ -557,41 +566,47 @@ GSsl::Protocol::Result GSsl::ProtocolImp::accept()
 	}
 }
 
-GSsl::Protocol::Result GSsl::ProtocolImp::stop()
+void GSsl::OpenSSL::ProtocolImp::saveResult()
 {
-	int rc = SSL_shutdown( m_ssl ) ;
+	m_peer_certificate = Certificate(SSL_get_peer_certificate(m_ssl.get()),true).str() ;
+	m_peer_certificate_chain = CertificateChain(SSL_get_peer_cert_chain(m_ssl.get())).str() ;
+	m_verified = !m_peer_certificate.empty() && SSL_get_verify_result(m_ssl.get()) == X509_V_OK ;
+}
+
+GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::stop()
+{
+	int rc = SSL_shutdown( m_ssl.get() ) ;
 	return rc == 1 ? Protocol::Result_ok : Protocol::Result_error ; // since quiet shutdown
 }
 
-GSsl::Protocol::Result GSsl::ProtocolImp::read( char * buffer , size_type buffer_size_in , ssize_type & read_size )
+GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::read( char * buffer , size_type buffer_size_in , ssize_type & read_size )
 {
 	read_size = 0 ;
 
 	clearErrors() ;
 	int buffer_size = static_cast<int>(buffer_size_in) ;
-	int rc = SSL_read( m_ssl , buffer , buffer_size ) ;
+	int rc = SSL_read( m_ssl.get() , buffer , buffer_size ) ;
 	if( rc > 0 )
 	{
 		read_size = static_cast<ssize_type>(rc) ;
-		return SSL_pending(m_ssl) ? Protocol::Result_more : Protocol::Result_ok ;
+		return SSL_pending(m_ssl.get()) ? Protocol::Result_more : Protocol::Result_ok ;
 	}
 	else if( rc == 0 )
 	{
 		return convert(error("SSL_read",rc)) ;
 	}
-	else // rc < 0 
+	else // rc < 0
 	{
 		return convert(error("SSL_read",rc)) ;
 	}
 }
 
-GSsl::Protocol::Result GSsl::ProtocolImp::write( const char * buffer , size_type size_in , ssize_type & size_out )
+GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::write( const char * buffer , size_type size_in , ssize_type & size_out )
 {
 	size_out = 0 ;
-
 	clearErrors() ;
 	int size = static_cast<int>(size_in) ;
-	int rc = SSL_write( m_ssl , buffer , size ) ;
+	int rc = SSL_write( m_ssl.get() , buffer , size ) ;
 	if( rc > 0 )
 	{
 		size_out = static_cast<ssize_type>(rc) ;
@@ -607,44 +622,125 @@ GSsl::Protocol::Result GSsl::ProtocolImp::write( const char * buffer , size_type
 	}
 }
 
-std::pair<std::string,bool> GSsl::ProtocolImp::peerCertificate()
+std::string GSsl::OpenSSL::ProtocolImp::peerCertificate() const
 {
-	std::pair<std::string,bool> result ;
-	result.first = Certificate(SSL_get_peer_certificate(m_ssl)).str() ;
-	result.second = false ; // since we return a bogus result from our callback
-	return result ;
+	return m_peer_certificate ;
+}
+
+std::string GSsl::OpenSSL::ProtocolImp::peerCertificateChain() const
+{
+	return m_peer_certificate_chain ;
+}
+
+bool GSsl::OpenSSL::ProtocolImp::verified() const
+{
+	return m_verified ;
+}
+
+void GSsl::OpenSSL::ProtocolImp::logErrors( const std::string & op , int rc , int e , const std::string & strerr ) const
+{
+	if( m_log_fn != nullptr )
+	{
+		if( m_verbose )
+		{
+			std::ostringstream ss ;
+			ss << op << ": rc=" << rc << ": error " << e << " => " << strerr ;
+			(*m_log_fn)( 1 , ss.str() ) ; // 1 => verbose-debug
+		}
+
+		unsigned long ee = 0 ;
+		for( int i = 2 ; i < 10000 ; i++ )
+		{
+			ee = ERR_get_error() ;
+			if( ee == 0 ) break ;
+			Error eee( op , ee ) ;
+			(*m_log_fn)( 3 , std::string() + eee.what() ) ; // 3 => errors-and-warnings
+		}
+	}
+}
+
+std::string GSsl::OpenSSL::ProtocolImp::requiredPeerCertificateName() const
+{
+	return m_required_peer_certificate_name ;
 }
 
 // ==
 
-GSsl::Certificate::Certificate( X509 * p ) :
-	m_p(p)
+GSsl::OpenSSL::Error::Error( const std::string & s ) :
+	m_what( "tls error: " + s )
 {
 }
 
-GSsl::Certificate::~Certificate()
+GSsl::OpenSSL::Error::Error( const std::string & fnname , unsigned long e ) :
+	m_what( "tls error: " + fnname + "(): [" + text(e) + "]" )
 {
-	if( m_p != NULL )
-		X509_free( m_p ) ;
 }
 
-std::string GSsl::Certificate::str() const
+GSsl::OpenSSL::Error::Error( const std::string & fnname , unsigned long e , const std::string & file ) :
+	m_what( "tls error: " + fnname + "(): [" + text(e) + "]: file=[" + file + "]" )
 {
-	if( m_p == NULL ) return std::string() ;
+}
+
+GSsl::OpenSSL::Error::~Error() throw ()
+{
+}
+
+const char * GSsl::OpenSSL::Error::what() const throw ()
+{
+	return m_what.c_str() ;
+}
+
+std::string GSsl::OpenSSL::Error::text( unsigned long e )
+{
+	std::vector<char> v( 300 ) ;
+	ERR_error_string_n( e , &v[0] , v.size() ) ;
+	std::string s( &v[0] , v.size() ) ;
+	return std::string( s.c_str() ) ; // no nuls
+}
+
+// ==
+
+GSsl::OpenSSL::CertificateChain::CertificateChain( STACK_OF(X509) * chain )
+{
+	for( int i = 0 ; chain != nullptr && i < chain->stack.num ; i++ )
+	{
+		void * p = chain->stack.data[i] ; if( p == nullptr ) break ;
+		X509 * x509 = reinterpret_cast<X509*>(p) ;
+		m_str.append( Certificate(x509,false).str() ) ;
+	}
+}
+
+std::string GSsl::OpenSSL::CertificateChain::str() const
+{
+	return m_str ;
+}
+
+// ==
+
+GSsl::OpenSSL::Certificate::Certificate( X509 * x509 , bool do_free )
+{
+	if( x509 == nullptr ) return ;
 	BIO * bio = BIO_new( BIO_s_mem() ) ;
-	int rc = PEM_write_bio_X509( bio , m_p ) ;
-	if( !rc ) return std::string() ;
-	BUF_MEM * mem = NULL ;
+	int rc = PEM_write_bio_X509( bio , x509 ) ;
+	if( !rc ) return ;
+	BUF_MEM * mem = nullptr ;
 	BIO_get_mem_ptr( bio , &mem ) ;
 	size_t n = mem ? static_cast<size_t>(mem->length) : 0U ;
-	const char * p = mem ? mem->data : NULL ;
+	const char * p = mem ? mem->data : nullptr ;
 	std::string data = p&&n ? std::string(p,n) : std::string() ;
 	BIO_free( bio ) ;
+	if( do_free ) X509_free( x509 ) ;
 
 	// sanitise to be strictly printable with embedded newlines
 	std::string result = G::Str::printable( data , '\0' ) ;
 	G::Str::replaceAll( result , std::string(1U,'\0')+"n" , "\n" ) ;
 	G::Str::replaceAll( result , std::string(1U,'\0') , "\\" ) ;
-	return result ;
+	m_str = result ;
 }
 
+std::string GSsl::OpenSSL::Certificate::str() const
+{
+	return m_str ;
+}
+
+/// \file gssl_openssl.cpp

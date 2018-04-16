@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -47,15 +47,18 @@ class TitlePage;
 class TitlePage : public GPage
 {
 public:
-	TitlePage( GDialog & dialog , const G::MapFile & config , const std::string & name , 
-		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
+	TitlePage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
+		const Installer & ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;
+	virtual G::Executable launchCommand() const ;
 
 private:
 	QLabel * m_label ;
 	QLabel * m_credit ;
+	const Installer & m_installer ;
 };
 
 class LicensePage : public GPage
@@ -78,7 +81,7 @@ class DirectoryPage : public GPage
 public:
 	DirectoryPage( GDialog & dialog , const G::MapFile & , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
-		bool installing ) ;
+		bool installing , bool is_mac ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;
@@ -113,6 +116,7 @@ private:
 	QLabel * m_runtime_dir_label ;
 	QLineEdit * m_runtime_dir_edit_box ;
 	QPushButton * m_runtime_dir_browse_button ;
+	bool m_is_mac ;
 } ;
 
 class DoWhatPage : public GPage
@@ -144,7 +148,8 @@ class PopPage : public GPage
 {Q_OBJECT
 public:
 	explicit PopPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
+		bool have_accounts ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;
@@ -161,46 +166,13 @@ private:
 	QRadioButton * m_pop_by_name ;
 	QCheckBox * m_no_delete_checkbox ;
 	QCheckBox * m_auto_copy_checkbox ;
-} ;
-
-class PopAccountsPage : public GPage
-{
-public:
-	explicit PopAccountsPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_accounts ) ;
-
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual bool isComplete() ;
-	virtual std::string helpName() const ;
-
-private:
 	bool m_have_accounts ;
-	QComboBox * m_mechanism_combo ;
 	QLineEdit * m_name_1 ;
 	QLineEdit * m_pwd_1 ;
 	QLineEdit * m_name_2 ;
 	QLineEdit * m_pwd_2 ;
 	QLineEdit * m_name_3 ;
 	QLineEdit * m_pwd_3 ;
-} ;
-
-class PopAccountPage : public GPage
-{
-public:
-	explicit PopAccountPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_account ) ;
-
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual bool isComplete() ;
-	virtual std::string helpName() const ;
-
-private:
-	bool m_have_account ;
-	QComboBox * m_mechanism_combo ;
-	QLineEdit * m_name_1 ;
-	QLineEdit * m_pwd_1 ;
 } ;
 
 class SmtpServerPage : public GPage
@@ -213,20 +185,26 @@ public:
 	virtual void dump( std::ostream & , bool ) const ;
 	virtual bool isComplete() ;
 	virtual std::string helpName() const ;
+	QString browse( QString ) ;
 
 private:
 	bool m_have_account ;
 	QLineEdit * m_port_edit_box ;
 	QCheckBox * m_auth_checkbox ;
-	QComboBox * m_mechanism_combo ;
 	QGroupBox * m_account_group ;
 	QLineEdit * m_account_name ;
 	QLineEdit * m_account_pwd ;
 	QLineEdit * m_trust_address ;
 	QGroupBox * m_trust_group ;
+	QCheckBox * m_tls_checkbox ;
+	QPushButton * m_tls_browse_button ;
+	QLabel * m_tls_certificate_label ;
+	QLineEdit * m_tls_certificate_edit_box ;
+	QHBoxLayout * m_tls_inner_layout ;
 
 private slots:
 	void onToggle() ;
+	void browseCertificate() ;
 } ;
 
 class SmtpClientPage : public GPage
@@ -246,7 +224,8 @@ private:
 	QLineEdit * m_port_edit_box ;
 	QCheckBox * m_tls_checkbox ;
 	QCheckBox * m_auth_checkbox ;
-	QComboBox * m_mechanism_combo ;
+	QRadioButton * m_tls_starttls ;
+	QRadioButton * m_tls_tunnel ;
 	QGroupBox * m_account_group ;
 	QLineEdit * m_account_name ;
 	QLineEdit * m_account_pwd ;
@@ -259,7 +238,7 @@ class StartupPage : public GPage
 {
 public:
 	StartupPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , 
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
 		bool start_on_boot_able , bool is_mac ) ;
 
 	virtual std::string nextPage() ;
@@ -273,7 +252,6 @@ private:
 	QCheckBox * m_at_login_checkbox ;
 	QCheckBox * m_add_menu_item_checkbox ;
 	QCheckBox * m_add_desktop_item_checkbox ;
-	QCheckBox * m_verbose_checkbox ;
 } ;
 
 class LoggingPage : public GPage
@@ -287,8 +265,8 @@ public:
 	virtual std::string helpName() const ;
 
 private:
-	QCheckBox * m_debug_checkbox ;
 	QCheckBox * m_verbose_checkbox ;
+	QCheckBox * m_debug_checkbox ;
 	QCheckBox * m_syslog_checkbox ;
 } ;
 
@@ -316,7 +294,7 @@ private:
 class ReadyPage : public GPage
 {
 public:
-	ReadyPage( GDialog & dialog , const G::MapFile & config , const std::string & name , const std::string & next_1 , 
+	ReadyPage( GDialog & dialog , const G::MapFile & config , const std::string & name , const std::string & next_1 ,
 		const std::string & next_2 , bool finish , bool close , bool installing ) ;
 
 	virtual std::string nextPage() ;
@@ -336,12 +314,13 @@ private:
 class ProgressPage : public GPage
 {Q_OBJECT
 public:
-	ProgressPage( GDialog & dialog , const G::MapFile & config , const std::string & name , const std::string & next_1 , 
+	ProgressPage( GDialog & dialog , const G::MapFile & config , const std::string & name , const std::string & next_1 ,
 		const std::string & next_2 , bool finish , bool close , Installer & ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;
 	virtual void onShow( bool back ) ;
+	virtual G::Executable launchCommand() const ;
 	virtual bool closeButton() const ;
 	virtual bool isComplete() ;
 	virtual std::string helpName() const ;

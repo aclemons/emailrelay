@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -24,7 +24,6 @@
 #include "gstr.h"
 #include "gfile.h"
 #include "gdirectory.h"
-#include "gmemory.h"
 #include "gtest.h"
 #include "groot.h"
 #include "gassert.h"
@@ -40,17 +39,17 @@ namespace GPop
 
 /// \class GPop::FileReader
 /// A trivial class which is used like G::Root by GPop::Store for reading files.
-///  The implementation does nothing because files in the pop store are group-readable.
-/// 
+/// The implementation does nothing because files in the pop store are group-readable.
+///
 struct GPop::FileReader
 {
 	FileReader() {}
 } ;
 
 /// \class GPop::DirectoryReader
-/// A trivial class which is used like G::Root by GPop::Store for reading 
-///  directory listings.
-/// 
+/// A trivial class which is used like G::Root by GPop::Store for reading
+/// directory listings.
+///
 struct GPop::DirectoryReader : private G::Root
 {
 	DirectoryReader() {}
@@ -58,9 +57,10 @@ struct GPop::DirectoryReader : private G::Root
 
 /// \class GPop::FileDeleter
 /// A trivial specialisation of G::Root used by GPop::Store for deleting files.
-///  The specialisation is not really necessary because the pop store directory is group-writeable.
-/// 
-struct GPop::FileDeleter : private G::Root 
+/// The specialisation is not really necessary because the pop store directory
+/// is group-writeable.
+///
+struct GPop::FileDeleter : private G::Root
 {
 } ;
 
@@ -170,7 +170,7 @@ bool GPop::StoreLock::File::operator<( const File & rhs ) const
 
 GPop::StoreLock::Size GPop::StoreLock::File::toSize( const std::string & s )
 {
-	return G::Str::toULong( s , true ) ;
+	return G::Str::toULong( s , G::Str::Limited() ) ;
 }
 
 // ===
@@ -184,7 +184,7 @@ void GPop::StoreLock::lock( const std::string & user )
 {
 	G_ASSERT( ! locked() ) ;
 	G_ASSERT( ! user.empty() ) ;
-	G_ASSERT( m_store != NULL ) ;
+	G_ASSERT( m_store != nullptr ) ;
 
 	m_user = user ;
 	m_dir = m_store->dir() ;
@@ -198,7 +198,7 @@ void GPop::StoreLock::lock( const std::string & user )
 		iter.readType( m_dir , ".envelope" ) ;
 		while( iter.more() )
 		{
-			File file( contentPath(iter.fileName().str()) ) ;
+			File file( contentPath(iter.fileName()) ) ;
 			m_initial.insert( file ) ;
 		}
 	}
@@ -223,17 +223,17 @@ void GPop::StoreLock::lock( const std::string & user )
 
 bool GPop::StoreLock::locked() const
 {
-	return m_store != NULL && ! m_user.empty() ;
+	return m_store != nullptr && ! m_user.empty() ;
 }
 
-GPop::StoreLock::~StoreLock() 
-{ 
+GPop::StoreLock::~StoreLock()
+{
 }
 
 GPop::StoreLock::Size GPop::StoreLock::messageCount() const
 {
 	G_ASSERT( locked() ) ;
-	return m_current.size() ;
+	return static_cast<Size>(m_current.size()) ;
 }
 
 GPop::StoreLock::Size GPop::StoreLock::totalByteCount() const
@@ -297,23 +297,23 @@ GPop::StoreLock::List GPop::StoreLock::list( int id ) const
 	return list ;
 }
 
-std::auto_ptr<std::istream> GPop::StoreLock::get( int id ) const
+unique_ptr<std::istream> GPop::StoreLock::get( int id ) const
 {
 	G_ASSERT( locked() ) ;
 	G_ASSERT( valid(id) ) ;
 
 	G_DEBUG( "GPop::StoreLock::get: " << id << ": " << path(id) ) ;
 
-	std::auto_ptr<std::ifstream> file ;
+	unique_ptr<std::ifstream> file ;
 	{
 		FileReader claim_reader ;
-		file <<= new std::ifstream( path(id).str().c_str() , std::ios_base::binary | std::ios_base::in ) ;
+		file.reset( new std::ifstream( path(id).str().c_str() , std::ios_base::binary | std::ios_base::in ) ) ;
 	}
 
 	if( ! file->good() )
 		throw CannotRead( path(id).str() ) ;
 
-	return std::auto_ptr<std::istream>( file.release() ) ;
+	return unique_ptr<std::istream>( file.release() ) ;
 }
 
 void GPop::StoreLock::remove( int id )
@@ -336,10 +336,10 @@ void GPop::StoreLock::commit()
 	if( m_store )
 	{
 		Store * store = m_store ;
-		m_store = NULL ;
+		m_store = nullptr ;
 		doCommit( *store ) ;
 	}
-	m_store = NULL ;
+	m_store = nullptr ;
 }
 
 void GPop::StoreLock::doCommit( Store & store ) const

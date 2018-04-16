@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -19,13 +19,14 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "garg.h"
 #include "gslot.h"
 #include "gexception.h"
 #include "winapp.h"
 #include "commandline.h"
+#include "options.h"
 #include "run.h"
+#include "resource.h"
 #include <clocale>
 
 int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_line , int show )
@@ -36,19 +37,20 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_lin
 
 		G::Arg arg ;
 		arg.parse( hinstance , command_line ) ;
-		Main::WinApp app( hinstance , previous , "E-MailRelay" ) ;
-		Main::Run run( app , arg , Main::CommandLine::switchSpec(true) ) ;
-		if( run.hidden() )
-			app.disableOutput() ;
 
+		Main::WinApp app( hinstance , previous , "E-MailRelay" ) ;
+		Main::Run run( app , arg , Main::Options::spec(true) ) ;
 		try
 		{
-			if( run.prepare() )
+			run.configure() ;
+			if( run.hidden() )
+				app.disableOutput() ;
+
+			if( run.runnable() )
 			{
-				const bool visible = ! run.config().daemon() ;
-				app.init( run.config() ) ;
-				app.createWindow( show , visible ) ;
-				run.signal().connect( G::slot(app,&Main::WinApp::onRunEvent) ) ;
+				app.init( run.configuration() ) ;
+				app.createWindow( show , false ) ; // invisible main window
+				run.signal().connect( G::Slot::slot(app,&Main::WinApp::onRunEvent) ) ;
 				run.run() ;
 			}
 		}
@@ -66,6 +68,5 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_lin
 	}
 	return 1 ;
 }
-
 
 /// \file winmain.cpp

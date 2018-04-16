@@ -1,17 +1,49 @@
 E-MailRelay Change Log
 ======================
 
+1.9.2 -> 2.0
+------------
+* Improved IPv6 support, with IPv4 and IPv6 used independently at run-time (see "--interface").
+* Server process is not blocked during "--filter" or "--address-verifier" execution (if multi-threaded).
+* Support for the "mbedTLS" TLS library as an alternative to OpenSSL ("configure --with-mbedtls").
+* TLS server certificates specified with new "--server-tls-certificate" option, not "--server-tls".
+* TLS servers enable client certificate verification with "--server-tls-verify", not "--tls-config".
+* TLS clients can verify server certificates with "--client-tls-verify" and "--client-tls-verify-name".
+* The "--tls-config" option works differently.
+* New "--client-tls-server-name" option for server name identification (SNI).
+* New "--client-tls-required" option to force client connections to use TLS.
+* New "--server-tls-required" option added to force remote SMTP clients to use STARTTLS.
+* New "--forward-on-disconnect" option replaces "--poll=0".
+* The "--anonymous" option now suppresses the "Received" line, whatever the "--domain".
+* The second field in the secrets file indicates the password encoding, not AUTH mechanism.
+* The "--verifier" options is now "--address-verifier" with simplified command-line parameters.
+* Command-line file paths can use "@app" as a prefix to be relative to the executable directory.
+* Command-line file paths can be relative to the startup cwd even when daemonised.
+* Filter exit codes of 101, 102 and 104 to 115 are interpreted differently.
+* Forwarding events are queued up if the forwarding client is still busy from last time.
+* The bind address for outgoing connections is no longer taken from first unqualified "--interface" address [bug-id #27].
+* Line-feed line endings are allowed in the SMTP server protocol, with a warning.
+* The SMTP client protocol can try more than one authentication mechanism.
+* The Windows commdlg list-view widget is used for the server status pages.
+* The Windows connection-lookup feature is withdrawn ("--peer-lookup").
+* Several build-time configure options like "--disable-pop" are withdrawn.
+* Support for old versions of Windows is dropped.
+* Support for old compilers is dropped (eg. gcc 2.95).
+
 1.9.1 -> 1.9.2
 --------------
-* Fixed a memory leak in event-loop garbage collection.
+* Fixed a leak in the event-loop garbage collection.
 * A local hostname that fails to resolve is not an error.
 * A warning is emitted if there is more than one client authentication secret.
-* Multiple "--interface" options are allowed on the command-line.
+* Multiple "--interface" options are allowed separately on the command-line.
 * Added a new "--client-interface" option.
 * The "Received" line is formatted as per RFC 3848 ("with ESMTPSA").
-* Heap storage is used for some buffers previously on the stack.
+* The LOGIN and PLAIN mechanisms in the secrets file are now equivalent.
 * The Windows service wrapper can use a configuration file to locate the startup batch file.
-* Simplified the implementation of the configuration/installation GUI.
+* Simplified the implementation of the GUI installation program.
+* Reworded the "read error: disconnected" log message.
+* Less verbose logging of "no more messages to send".
+* Qt4 or Qt5 selected by the "configure" script.
 * Improved the RPM spec file.
 
 1.9 -> 1.9.1
@@ -22,7 +54,7 @@ E-MailRelay Change Log
 ------------
 * Added negotiated TLS/SSL for POP (ie. "STLS").
 * The first two fields in the secrets files are reordered (with backwards compatibility).
-* Added Linux-PAM authentication ("configure --with-pam" and then "--server-auth=/pam").
+* Added Linux PAM authentication ("configure --with-pam" and then "--server-auth=/pam").
 * Optional protocol-specific "--interface" qualifiers, eg. "--interface smtp=127.0.0.1,pop=192.168.1.1".
 * Outgoing client connection bound with the first "--interface" or "--interface client=..." address.
 * Support for SMTP-over-TLS on outgoing client connection ("--client-tls-connection") (cf. "STARTTLS")

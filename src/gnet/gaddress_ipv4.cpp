@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -19,598 +19,151 @@
 //
 
 #include "gdef.h"
-#include "gnet.h"
 #include "gaddress.h"
-#include "gstrings.h"
-#include "gstr.h"
-#include "gassert.h"
-#include "gdebug.h"
-#include <climits>
-#include <algorithm> // std::swap
-#include <utility> // std::swap
-#include <sys/types.h>
+#include "gaddress4.h"
+#include <algorithm>
+#include <cstring>
 
-/// \class GNet::AddressImp
-/// A pimple-pattern implementation class for GNet::Address.
-/// 
-class GNet::AddressImp 
+namespace
 {
-public:
-	typedef sockaddr general_type ;
-	typedef sockaddr_in address_type ;
-	typedef sockaddr storage_type ;
-	/// Used by GNet::AddressImp to cast between sockaddr and sockaddr_in.
-	union Sockaddr 
-		{ address_type specific ; general_type general ; storage_type storage ; } ;
-
-	explicit AddressImp( unsigned int port ) ; // (not in_port_t -- see validPort(), setPort() etc)
-	explicit AddressImp( const servent & s ) ;
-	explicit AddressImp( const std::string & s ) ;
-	AddressImp( const std::string & s , unsigned int port ) ;
-	AddressImp( unsigned int port , Address::Localhost ) ;
-	AddressImp( unsigned int port , Address::Broadcast ) ;
-	AddressImp( const hostent & h , unsigned int port ) ;
-	AddressImp( const hostent & h , const servent & s ) ;
-	AddressImp( const sockaddr * addr , size_t len ) ;
-	AddressImp( const AddressImp & other ) ;
-
-	const sockaddr * raw() const ;
-	sockaddr * raw() ;
-
-	unsigned int port() const ;
-	void setPort( unsigned int port ) ;
-
-	static bool validString( const std::string & s , std::string * reason_p = NULL ) ;
-	static bool validPort( unsigned int port ) ;
-
-	bool same( const AddressImp & other ) const ;
-	bool sameHost( const AddressImp & other ) const ;
-	static G::Strings wildcards( const std::string & display_string ) ;
-
-	std::string displayString() const ;
-	std::string hostString() const ;
-
-private:
-	void init() ;
-	static unsigned short family() ;
-	void set( const sockaddr * general ) ;
-	bool setAddress( const std::string & display_string , std::string & reason ) ;
-	static bool validPart( const std::string & s ) ;
-	static bool validPortNumber( const std::string & s ) ;
-	static bool validNumber( const std::string & s ) ;
-	void setHost( const hostent & h ) ;
-	static bool sameAddr( const ::in_addr & a , const ::in_addr & b ) ;
-	static char portSeparator() ;
-	static void add( G::Strings & , const std::string & , unsigned int , const char * ) ;
-	static void add( G::Strings & , const std::string & , const char * ) ;
-
-private:
-	Sockaddr m_inet ;
-} ;
-
-// ===
-
-/// \class GNet::AddressStorageImp
-/// A pimple-pattern implementation class for GNet::AddressStorage.
-/// 
-class GNet::AddressStorageImp 
-{
-public:
-	AddressImp::Sockaddr u ;
-	socklen_t n ;
-} ;
-
-// ===
-
-unsigned short GNet::AddressImp::family()
-{
-	return AF_INET ;
-}
-
-void GNet::AddressImp::init()
-{
-	static address_type zero ;
-	m_inet.specific = zero ;
-	m_inet.specific.sin_family = family() ;
-	m_inet.specific.sin_port = 0 ;
-}
-
-GNet::AddressImp::AddressImp( unsigned int port )
-{
-	init() ;
-	m_inet.specific.sin_addr.s_addr = htonl(INADDR_ANY);
-	setPort( port ) ;
-}
-
-GNet::AddressImp::AddressImp( unsigned int port , Address::Localhost )
-{
-	init() ;
-	m_inet.specific.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	setPort( port ) ;
-}
-
-GNet::AddressImp::AddressImp( unsigned int port , Address::Broadcast )
-{
-	init() ;
-	m_inet.specific.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-	setPort( port ) ;
-}
-
-GNet::AddressImp::AddressImp( const hostent & h , unsigned int port )
-{
-	init() ;
-	setHost( h ) ;
-	setPort( port ) ;
-}
-
-GNet::AddressImp::AddressImp( const hostent & h , const servent & s )
-{
-	init() ;
-	setHost( h ) ;
-	m_inet.specific.sin_port = s.s_port ; // conversion warnings if system headers are inconsistent
-}
-
-GNet::AddressImp::AddressImp( const servent & s )
-{
-	init() ;
-	m_inet.specific.sin_addr.s_addr = htonl(INADDR_ANY);
-	m_inet.specific.sin_port = s.s_port ; // conversion warnings if system headers are inconsistent
-}
-
-GNet::AddressImp::AddressImp( const sockaddr * addr , size_t len )
-{
-	init() ;
-
-	if( addr == NULL )
-		throw Address::Error() ;
-
-	if( addr->sa_family != family() || len != sizeof(address_type) )
-		throw Address::BadFamily() ;
-
-	set( addr ) ;
-}
-
-GNet::AddressImp::AddressImp( const AddressImp & other )
-{
-	m_inet = other.m_inet ;
-}
-
-GNet::AddressImp::AddressImp( const std::string & s , unsigned int port )
-{
-	init() ;
-
-	std::string reason ;
-	if( ! setAddress( s + portSeparator() + "0" , reason ) )
-		throw Address::BadString( reason + ": " + s ) ;
-
-	setPort( port ) ;
-}
-
-GNet::AddressImp::AddressImp( const std::string & s )
-{
-	init() ;
-
-	std::string reason ;
-	if( ! setAddress( s , reason ) )
-		throw Address::BadString( reason + ": " + s ) ;
-}
-
-bool GNet::AddressImp::setAddress( const std::string & display_string , std::string & reason )
-{
-	if( !validString(display_string,&reason) )
-		return false ;
-
-	const std::string::size_type pos = display_string.rfind(portSeparator()) ;
-	std::string host_part = display_string.substr(0U,pos) ;
-	std::string port_part = display_string.substr(pos+1U) ;
-
-	m_inet.specific.sin_family = family() ;
-	m_inet.specific.sin_addr.s_addr = ::inet_addr( host_part.c_str() ) ;
-	setPort( G::Str::toUInt(port_part) ) ;
-
-	G_ASSERT( displayString() == display_string ) ;
-	return true ;
-}
-
-void GNet::AddressImp::setPort( unsigned int port )
-{
-	if( ! validPort(port) )
-		throw Address::Error( "invalid port number" ) ;
-
-	const g_port_t in_port = static_cast<g_port_t>(port) ;
-	m_inet.specific.sin_port = htons( in_port ) ;
-}
-
-void GNet::AddressImp::setHost( const hostent & h )
-{
-	if( h.h_addrtype != family() || h.h_addr_list[0] == NULL )
-		throw Address::BadFamily() ;
-
-	const char * first = h.h_addr_list[0U] ;
-	const in_addr * raw = reinterpret_cast<const in_addr*>(first) ;
-	m_inet.specific.sin_addr = *raw ;
-}
-
-std::string GNet::AddressImp::displayString() const
-{
-	std::ostringstream ss ;
-	ss << hostString() ;
-	ss << portSeparator() << port() ;
-	return ss.str() ;
-}
-
-std::string GNet::AddressImp::hostString() const
-{
-	std::ostringstream ss ;
-	ss << ::inet_ntoa(m_inet.specific.sin_addr) ;
-	return ss.str() ;
-}
-
-bool GNet::AddressImp::validPort( unsigned int port )
-{
-	return port <= 0xFFFFU ; // port numbers are now explicitly 16 bits, not short ints
-}
-
-bool GNet::AddressImp::validString( const std::string & s , std::string * reason_p )
-{
-	std::string buffer ;
-	if( reason_p == NULL ) reason_p = &buffer ;
-	std::string & reason = *reason_p ;
-
-	const std::string::size_type pos = s.rfind(portSeparator()) ;
-	if( pos == std::string::npos )
+	void check( GNet::Address::Family f )
 	{
-		reason = "no port separator" ;
-		return false ;
+		if( !GNet::Address::supports(f) )
+			throw GNet::Address::BadFamily() ;
 	}
-
-	std::string port_part = s.substr(pos+1U) ;
-	if( !validPortNumber(port_part) )
-	{
-		reason = std::string() + "invalid port number: [" + port_part + "]" ;
-		return false ;
-	}
-
-	std::string host_part = s.substr(0U,pos) ;
-
-	// (could test the string by passing it
-	// to inet_addr() here, but the man page points
-	// out that the error return value is not
-	// definitive)
-
-	G::Strings parts ;
-	G::Str::splitIntoFields( host_part , parts , "." ) ;
-	if( parts.size() != 4U )
-	{
-		reason = "invalid number of dotted parts" ;
-		return false ;
-	}
-
-	G::Strings::iterator p = parts.begin() ;
-	reason = "invalid dotted part" ;
-	if( ! validPart(*p) ) return false ; p++ ;
-	if( ! validPart(*p) ) return false ; p++ ;
-	if( ! validPart(*p) ) return false ; p++ ;
-	if( ! validPart(*p) ) return false ;
-
-	reason = "" ;
-	return true ;
 }
 
-bool GNet::AddressImp::validPortNumber( const std::string & s )
+bool GNet::Address::supports( Family f )
 {
-	return validNumber(s) && G::Str::isUInt(s) && validPort(G::Str::toUInt(s)) ;
+	return f == Family::ipv4() ;
 }
 
-bool GNet::AddressImp::validNumber( const std::string & s )
+GNet::Address GNet::Address::defaultAddress()
 {
-	return s.length() != 0U && G::Str::isNumeric(s) ;
+	return Address( Family::ipv4() , 0U ) ;
 }
 
-bool GNet::AddressImp::validPart( const std::string & s )
+GNet::Address::Address( Family f , unsigned int port ) :
+	m_4imp( new Address4(port) )
 {
-	return validNumber(s) && G::Str::toUInt(s,true) <= 255U ;
-}
-
-bool GNet::AddressImp::same( const AddressImp & other ) const
-{
-	return
-		m_inet.specific.sin_family == other.m_inet.specific.sin_family &&
-		m_inet.specific.sin_family == family() &&
-		sameAddr( m_inet.specific.sin_addr , other.m_inet.specific.sin_addr ) &&
-		m_inet.specific.sin_port == other.m_inet.specific.sin_port ;
-}
-
-bool GNet::AddressImp::sameHost( const AddressImp & other ) const
-{
-	return
-		m_inet.specific.sin_family == other.m_inet.specific.sin_family &&
-		m_inet.specific.sin_family == family() &&
-		sameAddr( m_inet.specific.sin_addr , other.m_inet.specific.sin_addr ) ;
-}
-
-bool GNet::AddressImp::sameAddr( const ::in_addr & a , const ::in_addr & b )
-{
-	return a.s_addr == b.s_addr ;
-}
-
-unsigned int GNet::AddressImp::port() const
-{
-	return ntohs( m_inet.specific.sin_port ) ;
-}
-
-const sockaddr * GNet::AddressImp::raw() const
-{
-	return & m_inet.general ;
-}
-
-sockaddr * GNet::AddressImp::raw()
-{
-	return & m_inet.general ;
-}
-
-void GNet::AddressImp::set( const sockaddr * general )
-{
-	m_inet.general = *general ;
-}
-
-char GNet::AddressImp::portSeparator()
-{
-	return ':' ;
-}
-
-G::Strings GNet::AddressImp::wildcards( const std::string & display_string )
-{
-	G::Strings result ;
-	result.push_back( display_string ) ;
-
-	G::StringArray part ;
-	G::Str::splitIntoFields( display_string , part , "." ) ;
-
-	G_ASSERT( part.size() == 4U ) ;
-	if( part.size() != 4U || 
-		!G::Str::isUInt(part[0]) ||
-		!G::Str::isUInt(part[1]) ||
-		!G::Str::isUInt(part[2]) ||
-		!G::Str::isUInt(part[3]) )
-	{
-		return result ;
-	}
-
-	unsigned int n0 = G::Str::toUInt(part[0]) ;
-	unsigned int n1 = G::Str::toUInt(part[1]) ;
-	unsigned int n2 = G::Str::toUInt(part[2]) ;
-	unsigned int n3 = G::Str::toUInt(part[3]) ;
-
-	std::string part_0_1_2 = part[0] ;
-	part_0_1_2.append( 1U , '.' ) ;
-	part_0_1_2.append( part[1] ) ;
-	part_0_1_2.append( 1U , '.' ) ;
-	part_0_1_2.append( part[2] ) ;
-	part_0_1_2.append( 1U , '.' ) ;
-
-	std::string part_0_1 = part[0] ;
-	part_0_1.append( 1U , '.' ) ;
-	part_0_1.append( part[1] ) ;
-	part_0_1.append( 1U , '.' ) ;
-
-	std::string part_0 = part[0] ;
-	part_0.append( 1U , '.' ) ;
-
-	const std::string empty ;
-
-	add( result , part_0_1_2 , n3 & 0xff , "/32" ) ;
-	add( result , part_0_1_2 , n3 & 0xfe , "/31" ) ;
-	add( result , part_0_1_2 , n3 & 0xfc , "/30" ) ;
-	add( result , part_0_1_2 , n3 & 0xf8 , "/29" ) ;
-	add( result , part_0_1_2 , n3 & 0xf0 , "/28" ) ;
-	add( result , part_0_1_2 , n3 & 0xe0 , "/27" ) ;
-	add( result , part_0_1_2 , n3 & 0xc0 , "/26" ) ;
-	add( result , part_0_1_2 , n3 & 0x80 , "/25" ) ;
-	add( result , part_0_1_2 , 0 , "/24" ) ;
-	add( result , part_0_1_2 , "*" ) ;
-	add( result , part_0_1 , n2 & 0xfe , ".0/23" ) ;
-	add( result , part_0_1 , n2 & 0xfc , ".0/22" ) ;
-	add( result , part_0_1 , n2 & 0xfc , ".0/21" ) ;
-	add( result , part_0_1 , n2 & 0xf8 , ".0/20" ) ;
-	add( result , part_0_1 , n2 & 0xf0 , ".0/19" ) ;
-	add( result , part_0_1 , n2 & 0xe0 , ".0/18" ) ;
-	add( result , part_0_1 , n2 & 0xc0 , ".0/17" ) ;
-	add( result , part_0_1 , 0 , ".0/16" ) ;
-	add( result , part_0_1 , "*.*" ) ;
-	add( result , part_0 , n1 & 0xfe , ".0.0/15" ) ;
-	add( result , part_0 , n1 & 0xfc , ".0.0/14" ) ;
-	add( result , part_0 , n1 & 0xf8 , ".0.0/13" ) ;
-	add( result , part_0 , n1 & 0xf0 , ".0.0/12" ) ;
-	add( result , part_0 , n1 & 0xe0 , ".0.0/11" ) ;
-	add( result , part_0 , n1 & 0xc0 , ".0.0/10" ) ;
-	add( result , part_0 , n1 & 0x80 , ".0.0/9" ) ;
-	add( result , part_0 , 0 , ".0.0/8" ) ;
-	add( result , part_0 , "*.*.*" ) ;
-	add( result , empty , n0 & 0xfe , ".0.0.0/7" ) ;
-	add( result , empty , n0 & 0xfc , ".0.0.0/6" ) ;
-	add( result , empty , n0 & 0xf8 , ".0.0.0/5" ) ;
-	add( result , empty , n0 & 0xf0 , ".0.0.0/4" ) ;
-	add( result , empty , n0 & 0xe0 , ".0.0.0/3" ) ;
-	add( result , empty , n0 & 0xc0 , ".0.0.0/2" ) ;
-	add( result , empty , n0 & 0x80 , ".0.0.0/1" ) ;
-	add( result , empty , 0 , ".0.0.0/0" ) ;
-	add( result , empty , "*.*.*.*" ) ;
-
-	return result ;
-}
-
-void GNet::AddressImp::add( G::Strings & result , const std::string & head , unsigned int n , const char * tail )
-{
-	std::string s = head ;
-	s.append( G::Str::fromUInt( n ) ) ;
-	s.append( tail ) ;
-	result.push_back( s ) ;
-}
-
-void GNet::AddressImp::add( G::Strings & result , const std::string & head , const char * tail )
-{
-	result.push_back( head + tail ) ;
-}
-
-// ===
-
-GNet::Address GNet::Address::invalidAddress()
-{
-	return Address( 0U ) ;
-}
-
-GNet::Address GNet::Address::localhost( unsigned int port )
-{
-	return Address( port , Localhost() ) ;
-}
-
-GNet::Address GNet::Address::broadcastAddress( unsigned int port )
-{
-	return Address( port , Broadcast() ) ;
-}
-
-GNet::Address::Address( unsigned int port ) :
-	m_imp( new AddressImp(port) )
-{
-}
-
-GNet::Address::Address( unsigned int port , Localhost dummy ) :
-	m_imp( new AddressImp(port,dummy) )
-{
-}
-
-GNet::Address::Address( unsigned int port , Broadcast dummy ) :
-	m_imp( new AddressImp(port,dummy) )
-{
-}
-
-GNet::Address::Address( const hostent & h , unsigned int port ) :
-	m_imp( new AddressImp(h,port) )
-{
-}
-
-GNet::Address::Address( const hostent & h , const servent & s ) :
-	m_imp( new AddressImp(h,s) )
-{
-}
-
-GNet::Address::Address( const servent & s ) :
-	m_imp( new AddressImp(s) )
-{
+	check( f ) ;
 }
 
 GNet::Address::Address( const AddressStorage & storage ) :
-	m_imp( new AddressImp(storage.p(),storage.n()) )
+	m_4imp( new Address4(storage.p(),storage.n()) )
 {
 }
 
 GNet::Address::Address( const sockaddr * addr , socklen_t len ) :
-	m_imp( new AddressImp(addr,len) )
+	m_4imp( new Address4(addr,len) )
 {
 }
 
 GNet::Address::Address( const std::string & s ) :
-	m_imp( new AddressImp(s) )
+	m_4imp( new Address4(s) )
 {
 }
 
 GNet::Address::Address( const std::string & s , unsigned int port ) :
-	m_imp( new AddressImp(s,port) )
+	m_4imp( new Address4(s,port) )
 {
 }
 
 GNet::Address::Address( const Address & other ) :
-	m_imp( new AddressImp(*other.m_imp) )
+	m_4imp( new Address4(*other.m_4imp) )
 {
+}
+
+GNet::Address::Address( Family f , unsigned int port , int loopback_overload ) :
+	m_4imp( new Address4(port,loopback_overload) )
+{
+	check( f ) ;
+}
+
+GNet::Address GNet::Address::loopback( Family f , unsigned int port )
+{
+	return Address( f , port , 1 ) ;
 }
 
 void GNet::Address::operator=( const Address & addr )
 {
 	Address temp( addr ) ;
-	std::swap( m_imp , temp.m_imp ) ;
+	std::swap( m_4imp , temp.m_4imp ) ;
 }
 
 GNet::Address::~Address()
 {
-	delete m_imp ;
+	delete m_4imp ;
 }
 
 void GNet::Address::setPort( unsigned int port )
 {
-	m_imp->setPort( port ) ;
+	m_4imp->setPort( port ) ;
 }
 
-bool GNet::Address::operator==( const Address & other ) const
+bool GNet::Address::isLoopback() const
 {
-	return m_imp->same(*other.m_imp) ;
+	return m_4imp->isLoopback() ;
 }
 
 bool GNet::Address::isLocal( std::string & reason ) const
 {
-	if( sameHost(localhost()) )
-		return true ;
-
-	std::ostringstream ss ;
-	ss << displayString(false) << " is not " << localhost().displayString(false) ;
-	reason = ss.str() ;
-
-	return false ;
+	return m_4imp->isLocal( reason ) ;
 }
 
-bool GNet::Address::isLocal( std::string & reason , const Address & local_hint ) const
+bool GNet::Address::operator==( const Address & other ) const
 {
-	if( sameHost(localhost()) || sameHost(local_hint) )
-		return true ;
-
-	std::ostringstream ss ;
-	ss 
-		<< displayString(false) << " is not one of " 
-		<< localhost().displayString(false) << "," 
-		<< local_hint.displayString(false) ; 
-	reason = ss.str() ;
-
-	return false ;
+	return m_4imp->same(*other.m_4imp) ;
 }
 
-bool GNet::Address::sameHost( const Address & other ) const
+bool GNet::Address::operator!=( const Address & other ) const
 {
-	return m_imp->sameHost(*other.m_imp) ;
+	return !( *this == other ) ;
 }
 
-std::string GNet::Address::displayString( bool with_port , bool ) const
+bool GNet::Address::sameHostPart( const Address & other ) const
 {
-	return with_port ? m_imp->displayString() : m_imp->hostString() ;
+	return m_4imp->sameHostPart(*other.m_4imp) ;
 }
 
-std::string GNet::Address::hostString() const
+std::string GNet::Address::displayString() const
 {
-	return m_imp->hostString() ;
+	return m_4imp->displayString() ;
+}
+
+std::string GNet::Address::hostPartString() const
+{
+	return m_4imp->hostPartString() ;
 }
 
 bool GNet::Address::validString( const std::string & s , std::string * reason_p )
 {
-	return AddressImp::validString( s , reason_p ) ;
+	return Address4::validString( s , reason_p ) ;
+}
+
+bool GNet::Address::validStrings( const std::string & s1 , const std::string & s2 , std::string * reason_p )
+{
+	return Address4::validStrings( s1 , s2 , reason_p ) ;
 }
 
 sockaddr * GNet::Address::address()
 {
-	return m_imp->raw() ;
+	return m_4imp->address() ;
 }
 
 const sockaddr * GNet::Address::address() const
 {
-	return m_imp->raw() ;
+	return m_4imp->address() ;
 }
 
 socklen_t GNet::Address::length() const
 {
-	return sizeof(AddressImp::address_type) ;
+	return Address4::length() ;
 }
 
 unsigned int GNet::Address::port() const
 {
-	return m_imp->port() ;
+	return m_4imp->port() ;
 }
 
 unsigned long GNet::Address::scopeId( unsigned long default_ ) const
@@ -620,30 +173,47 @@ unsigned long GNet::Address::scopeId( unsigned long default_ ) const
 
 bool GNet::Address::validPort( unsigned int port )
 {
-	return AddressImp::validPort( port ) ;
+	return Address4::validPort( port ) ;
 }
 
-int GNet::Address::defaultDomain()
+bool GNet::Address::validData( const sockaddr * addr , socklen_t len )
 {
-	return PF_INET ;
+	return Address4::validData( addr , len ) ;
 }
 
 int GNet::Address::domain() const
 {
-	return defaultDomain() ;
+	return Address4::domain() ;
 }
 
-G::Strings GNet::Address::wildcards() const
+GNet::Address::Family GNet::Address::family() const
 {
-	return AddressImp::wildcards( displayString(false) ) ;
+	return Family::ipv4() ;
 }
 
-// ===
+G::StringArray GNet::Address::wildcards() const
+{
+	return m_4imp->wildcards() ;
+}
+
+// ==
+
+/// \class GNet::AddressStorageImp
+/// A pimple-pattern implementation class used by GNet::AddressStorage.
+///
+class GNet::AddressStorageImp
+{
+public:
+	Address4::union_type u ;
+	socklen_t n ;
+} ;
+
+// ==
 
 GNet::AddressStorage::AddressStorage() :
-	m_imp( new AddressStorageImp )
+	m_imp(new AddressStorageImp)
 {
-	m_imp->n = sizeof(AddressImp::Sockaddr) ;
+	m_imp->n = sizeof(Address4::union_type) ;
 }
 
 GNet::AddressStorage::~AddressStorage()
@@ -670,4 +240,50 @@ socklen_t GNet::AddressStorage::n() const
 {
 	return m_imp->n ;
 }
+
+// ==
+
+#if ! GCONFIG_HAVE_INET_PTON
+// fallback implementation for inet_pton() -- see gdef.h
+int GNet::inet_pton_imp( int f , const char * p , void * result )
+{
+	if( p == nullptr || result == nullptr )
+	{
+		return 0 ; // just in case
+	}
+	else if( f == AF_INET )
+	{
+		static sockaddr_in sa_zero ;
+		sockaddr_in sa = sa_zero ;
+		sa.sin_family = AF_INET ;
+		sa.sin_addr.s_addr = inet_addr( p ) ;
+		*reinterpret_cast<struct in_addr*>(result) = sa.sin_addr ;
+		return 1 ;
+	}
+	else
+	{
+		return -1 ;
+	}
+}
+#endif
+
+#if ! GCONFIG_HAVE_INET_NTOP
+// fallback implementation for inet_ntop() -- see gdef.h
+const char * GNet::inet_ntop_imp( int f , void * ap , char * buffer , size_t n )
+{
+	if( f == AF_INET )
+	{
+		std::ostringstream ss ;
+		struct in_addr a = *reinterpret_cast<struct in_addr*>(ap) ;
+		ss << inet_ntoa( a ) ; // ignore warnings - this is not used if inet_ntop is available
+		if( n <= ss.str().length() ) return nullptr ;
+		std::strncpy( buffer , ss.str().c_str() , n ) ;
+		return buffer ;
+	}
+	else
+	{
+		return nullptr ;
+	}
+}
+#endif
 

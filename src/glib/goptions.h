@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,48 +18,71 @@
 /// \file goptions.h
 ///
 
-#ifndef G_OPTIONS_H__
-#define G_OPTIONS_H__
+#ifndef G_OPTIONS_H
+#define G_OPTIONS_H
 
 #include "gdef.h"
 #include "gstrings.h"
 #include "gexception.h"
 #include <string>
+#include <map>
 
-/// \namespace G
 namespace G
 {
 	class Options ;
-	class OptionsImp ;
+	class OptionsLevel ;
+	class OptionsLayout ;
 }
 
+/// \class G::OptionsLevel
+/// Used by G::Options for extra type safety.
+///
+class G::OptionsLevel
+{
+public:
+	unsigned int level ;
+	explicit OptionsLevel( unsigned int ) ;
+} ;
+
+/// \class G::OptionsLayout
+/// Describes the layout for G::Options output.
+///
+class G::OptionsLayout
+{
+public:
+	std::string separator ; ///< separator between columns for two-column output
+	std::string indent ; ///< indent for wrapped lines in two-column output
+	size_t column ; ///< left hand column width if no separator defined
+	size_t width ; ///< overall width for wrapping, or zero for no newlines
+	explicit OptionsLayout( size_t column ) ;
+	OptionsLayout( size_t column , size_t width ) ;
+} ;
+
 /// \class G::Options
-/// A class to represent allowed command-line options and to
-/// provide command-line usage text.
+/// A class to represent allowed command-line options and to provide command-line
+/// usage text.
 ///
 class G::Options
 {
 public:
-	/// Used by G::Options for extra type safety.
-	struct Level 
-		{ unsigned int level ; explicit Level(unsigned int l) : level(l) {} } ;
+	typedef OptionsLevel Level ;
+	typedef OptionsLayout Layout ;
 	G_EXCEPTION( InvalidSpecification , "invalid options specification string" ) ;
 
 	explicit Options( const std::string & spec , char sep_major = '|' , char sep_minor = '!' , char escape = '^' ) ;
 		///< Constructor taking a specification string.
 		///<
 		///< Uses specifications like "p!port!defines the port number!!1!port!1|v!verbose!shows more logging!!0!!1"
-		///< made up of (1) a single-character-option-letter, (2) a multi-character-option-name
-		///< (3) an option-description, (4) option-description-extra text, (5) a 'value-type' 
-		///< (0 is for unvalued, 1 for a string value, and 2 for a comma-separated list),
-		///< (6) a value-description, and (7) a level enumeration.
+		///< made up of (1) an optional single-character-option-letter, (2) a multi-character-option-name
+		///< (3) an option-description, (4) optional option-description-extra text, (5) a value-type
+		///< (with 0 for unvalued, 1 for a string value, and 2 for a comma-separated list (possibly
+		///< multiple times)) or (6) a value-description (unless unvalued), and (7) a level enumeration.
 		///<
-		///< By convention mainstream options should have a level of 1, and obscure 
-		///< ones level 2 and above. If the option-description field is empty or if
-		///< the level is zero then the option is hidden.
+		///< By convention mainstream options should have a level of 1, and obscure ones level 2 and above.
+		///< If the option-description field is empty or if the level is zero then the option is hidden.
 
-	~Options() ;
-		///< Destructor.
+	Options() ;
+		///< Default constructor for no options.
 
 	const StringArray & names() const ;
 		///< Returns the sorted list of long-form option names.
@@ -80,7 +103,7 @@ public:
 		///< Returns false if not valid().
 
 	bool valued( const std::string & ) const ;
-		///< Returns true if the long-form option name is valid.
+		///< Returns true if the long-form option name is valued.
 		///< Returns false if not valid().
 
 	bool multivalued( char ) const ;
@@ -95,11 +118,12 @@ public:
 		///< Returns true if the given option name is valid and
 		///< takes no value. Returns false if not valid().
 
-	static size_t wrapDefault() ;
-		///< Returns a default word-wrapping width.
+	static size_t widthDefault() ;
+		///< Returns a default, non-zero word-wrapping width, reflecting
+		///< the size of the standard output where possible.
 
-	static size_t tabDefault() ;
-		///< Returns a default tab-stop.
+	static Layout layoutDefault() ;
+		///< Returns a default column layout.
 
 	static Level levelDefault() ;
 		///< Returns the default level.
@@ -107,47 +131,74 @@ public:
 	static std::string introducerDefault() ;
 		///< Returns the string "usage: ".
 
-	std::string usageSummary( const std::string & exe , const std::string & args , 
+	std::string usageSummary( const std::string & exe , const std::string & args ,
 		const std::string & introducer = introducerDefault() ,
-		Level level = levelDefault() , size_t wrap_width = wrapDefault() ) const ;
-			/// \code
-			///<< Returns a one-line (or line-wrapped) usage summary, as
-			///<< "usage: <exe> <options> <args>"
-			/// \endcode
+		Level level = levelDefault() , size_t wrap_width = widthDefault() ) const ;
+			///< Returns a one-line (or line-wrapped) usage summary, as
+			///< "usage: <exe> <options> <args>"
 
 	std::string usageHelp( Level level = levelDefault() ,
-		size_t tab_stop = tabDefault() , size_t wrap_width = wrapDefault() ,
-		bool level_exact = false , bool extra = true ) const ;
-			/// \code
-			///<< Returns a multi-line string giving help on each option.
-			/// \endcode
+		Layout layout = layoutDefault() , bool level_exact = false , bool extra = true ) const ;
+			///< Returns a multi-line string giving help on each option.
 
-	void showUsage( std::ostream & stream , const std::string & exe = std::string() , 
+	void showUsage( std::ostream & stream , const std::string & exe ,
 		const std::string & args = std::string() , const std::string & introducer = introducerDefault() ,
-		Level level = levelDefault() , size_t tab_stop = tabDefault() , 
-		size_t wrap_width = wrapDefault() , bool extra = true ) const ;
-			/// \code
-			///<< Streams out multi-line usage text using usageSummary() 
-			///<< and usageHelp(). The 'args' parameter should represent
-			///<< the non-option arguments (with a leading space), like 
-			///<< " <foo> [<bar>]".
-			/// \endcode
+		Level level = levelDefault() , Layout layout = layoutDefault() ,
+		bool extra = true ) const ;
+			///< Streams out multi-line usage text using usageSummary() and
+			///< usageHelp(). The 'args' parameter should represent the non-option
+			///< arguments (with a leading space), like " <foo> [<bar>]".
 
 private:
-	void operator=( const Options & ) ;
-	Options( const Options & ) ;
+	struct Option
+	{
+		char c ;
+		std::string name ;
+		std::string description ;
+		std::string description_extra ;
+		unsigned int value_multiplicity ; // 0,1,2 (unvalued, single-valued, multi-valued)
+		bool hidden ;
+		std::string value_description ;
+		unsigned int level ;
+
+		Option( char c_ , const std::string & name_ , const std::string & description_ ,
+			const std::string & description_extra_ , unsigned int value_multiplicity_ ,
+			const std::string & vd_ , unsigned int level_ ) ;
+	} ;
+
+private:
 	void parseSpec( const std::string & spec , char , char , char ) ;
-	void addSpec( const std::string & , char c , const std::string & , const std::string & , 
+	void addSpec( const std::string & , char c , const std::string & , const std::string & ,
 		unsigned int , const std::string & , unsigned int ) ;
-	static size_t widthLimit( size_t w ) ;
+	static size_t widthFloor( size_t w ) ;
 	std::string usageSummaryPartOne( Level ) const ;
 	std::string usageSummaryPartTwo( Level ) const ;
-	std::string usageHelpCore( const std::string & , Level , size_t , size_t , bool , bool ) const ;
+	std::string usageHelpCore( const std::string & , Level , Layout , bool , bool ) const ;
 
 private:
-	std::string m_spec ;
+	typedef std::map<std::string,Option> Map ;
 	StringArray m_names ;
-	OptionsImp * m_imp ;
+	Map m_map ;
 } ;
+
+inline
+G::OptionsLevel::OptionsLevel( unsigned int l ) :
+	level(l)
+{
+}
+
+inline
+G::OptionsLayout::OptionsLayout( size_t column_ ) :
+	column(column_) ,
+	width(G::Options::widthDefault())
+{
+}
+
+inline
+G::OptionsLayout::OptionsLayout( size_t column_ , size_t width_ ) :
+	column(column_) ,
+	width(width_)
+{
+}
 
 #endif

@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -19,14 +19,13 @@
 //
 
 #include "gdef.h"
-#include "gnet.h"
 #include "gclient.h"
 
-GNet::Client::Client( const ResolverInfo & remote_info , unsigned int connection_timeout ,
+GNet::Client::Client( const Location & remote_info , unsigned int connection_timeout ,
 	unsigned int response_timeout , unsigned int secure_connection_timeout ,
-	const std::string & eol , const Address & local_interface , 
-	bool privileged , bool sync_dns ) :
-		HeapClient(remote_info,local_interface,privileged,sync_dns,secure_connection_timeout) ,
+	const std::string & eol , bool bind_local_address , const Address & local_address ,
+	bool sync_dns ) :
+		HeapClient(remote_info,bind_local_address,local_address,sync_dns,secure_connection_timeout) ,
 		m_done_signal(true) ,
 		m_connected_signal(true) ,
 		m_connection_timeout(connection_timeout) ,
@@ -45,7 +44,7 @@ GNet::Client::~Client()
 
 void GNet::Client::onConnecting()
 {
-	m_event_signal.emit( "connecting" , resolverInfo().displayString() ) ;
+	m_event_signal.emit( "connecting" , remoteLocation().displayString() ) ;
 }
 
 void GNet::Client::onConnectImp()
@@ -54,16 +53,15 @@ void GNet::Client::onConnectImp()
 		m_connection_timer.cancelTimer() ;
 
 	m_connected_signal.emit() ;
-
-	m_event_signal.emit( "connected" , resolverInfo().address().displayString() + " " + resolverInfo().name() ) ;
+	m_event_signal.emit( "connected" , remoteLocation().address().displayString() + " " + remoteLocation().name() ) ;
 }
 
-void GNet::Client::onDeleteImp( const std::string & reason , bool retry )
+void GNet::Client::onDeleteImp( const std::string & reason )
 {
 	m_connection_timer.cancelTimer() ;
 	m_response_timer.cancelTimer() ;
 	m_event_signal.emit( reason.empty() ? "done" : "failed" , reason ) ;
-	m_done_signal.emit( reason , retry ) ;
+	m_done_signal.emit( reason ) ;
 }
 
 void GNet::Client::onSendImp()
@@ -82,38 +80,32 @@ void GNet::Client::onResponseTimeout()
 	doDelete( "response timeout" ) ;
 }
 
-G::Signal2<std::string,bool> & GNet::Client::doneSignal()
+G::Slot::Signal1<std::string> & GNet::Client::doneSignal()
 {
 	return m_done_signal ;
 }
 
-G::Signal2<std::string,std::string> & GNet::Client::eventSignal()
+G::Slot::Signal2<std::string,std::string> & GNet::Client::eventSignal()
 {
 	return m_event_signal ;
 }
 
-G::Signal0 & GNet::Client::connectedSignal()
+G::Slot::Signal0 & GNet::Client::connectedSignal()
 {
 	return m_connected_signal ;
 }
 
-G::Signal0 & GNet::Client::secureSignal()
-{
-	return m_secure_signal ;
-}
-
 void GNet::Client::onData( const char * p , SimpleClient::size_type n )
 {
-	m_line_buffer.add(p,n) ; 
+	m_line_buffer.add(p,n) ;
 
-	bool first = true ;
-	while( m_line_buffer.more() )
+	LineBufferIterator iter( m_line_buffer ) ;
+	for( bool first = true ; iter.more() ; first = false )
 	{
 		if( first && m_response_timeout != 0U )
 			m_response_timer.cancelTimer() ;
-		first = false ;
 
-		bool ok = onReceive( m_line_buffer.line() ) ;
+		bool ok = onReceive( iter.line() ) ;
 		if( !ok )
 			break ;
 	}
@@ -121,8 +113,9 @@ void GNet::Client::onData( const char * p , SimpleClient::size_type n )
 
 void GNet::Client::clearInput()
 {
-	while( m_line_buffer.more() )
-		m_line_buffer.discard() ;
+	LineBufferIterator iter( m_line_buffer ) ;
+	while( iter.more() )
+		; // no-op to discard each line
 }
 
 /// \file gclient.cpp

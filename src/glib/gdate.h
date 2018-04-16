@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -27,7 +27,6 @@
 #include <ctime>
 #include <string>
 
-/// \namespace G
 namespace G
 {
 	class Date ;
@@ -37,18 +36,17 @@ namespace G
 /// A date (dd/mm/yyyy) class.
 /// \see G::Time, G::DateTime
 ///
-class G::Date 
+class G::Date
 {
 public:
-	/// An overload discriminator class for Date constructors.
-	class LocalTime 
+	class LocalTime /// An overload discriminator class for Date constructors.
 		{} ;
 
-	enum Weekday 
+	enum Weekday
 		{ sunday, monday, tuesday, wednesday, thursday, friday, saturday } ;
 
-	enum Month 
-		{ january = 1 , february , march , april , may , june , july , 
+	enum Month
+		{ january = 1 , february , march , april , may , june , july ,
 		august , september , october , november , december } ;
 
 	enum Format
@@ -71,11 +69,11 @@ public:
 	Date( const G::DateTime::BrokenDownTime & tm ) ;
 		///< Constructor for the specified date.
 
-	explicit Date( G::DateTime::EpochTime t ) ;
+	explicit Date( G::EpochTime t ) ;
 		///< Constructor for the date in the UTC
 		///< timezone as at the given epoch time.
 
-	Date( G::DateTime::EpochTime t , const LocalTime & ) ;
+	Date( G::EpochTime t , const LocalTime & ) ;
 		///< Constructor for the date in the local
 		///< timezone as at the given epoch time.
 
@@ -89,16 +87,14 @@ public:
 		///< Returns the day of the week.
 
 	std::string weekdayName( bool brief = false ) const ;
-		///< Returns an english string representation of 
+		///< Returns an english string representation of
 		///< the day of the week.
-		///< (Was weekdayString().)
 
 	int monthday() const ;
 		///< Returns the day of the month.
 
 	std::string dd() const ;
 		///< Returns the day of the month as a two-digit decimal string.
-		///< (Was monthdayString().)
 
 	Month month() const ;
 		///< Returns the month.
@@ -114,7 +110,6 @@ public:
 
 	std::string yyyy() const ;
 		///< Returns the year as a four-digit decimal string.
-		///< (Was yearString().)
 
 	Date & operator++() ;
 		///< Increments the date by one day.

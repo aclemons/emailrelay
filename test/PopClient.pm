@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-# 
+# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
@@ -19,6 +19,14 @@
 # PopClient.pm
 #
 # A network client for driving the pop interface.
+#
+# Synopsis:
+#
+#	my $pc = new PopClient( 10101 , "localhost" ) ;
+#	$pc->open() ;
+#	$pc->login("me","secret") ;
+#	my @list = $pc->list() ;
+#	$pc->disconnect() ;
 #
 
 use strict ;
@@ -83,7 +91,7 @@ sub list
 			my ($s1,$s2) = $t->waitfor( Match => '/[ \.]/' , Timeout => $timeout ) ;
 			if( $s2 eq " " )
 			{
-				#print STDERR "++++ [$s1]\n" ;
+				#print STDERR "++ [$s1]\n" ;
 				System::sleep_cs( 1 ) ;
 				$result .= $s1 ;
 				$result .= $s2 ;
@@ -98,7 +106,7 @@ sub list
 	else
 	{
 		my ($s1,$s2) = $t->waitfor( Match => '/\./' , Timeout => $timeout ) ;
-		#print STDERR "++++ [$s1]\n" ;
+		#print STDERR "++ [$s1]\n" ;
 		$result = $s1 ;
 	}
 	my @list = split("\n",$result) ;

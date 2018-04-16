@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -23,7 +23,7 @@
 #include "gdebug.h"
 #include "glog.h"
 
-GGui::SubClassMap::SubClassMap() : 
+GGui::SubClassMap::SubClassMap() :
 	m_high_water(0U)
 {
 }
@@ -58,7 +58,7 @@ GGui::SubClassMap::Proc GGui::SubClassMap::find( HWND hwnd , void **context_p )
 {
 	if( context_p != NULL )
 		*context_p  = NULL ;
-		
+
 	for( unsigned i = 0 ; i < m_high_water ; i++ )
 	{
 		if( m_list[i].hwnd == hwnd )
@@ -82,8 +82,7 @@ void GGui::SubClassMap::remove( HWND hwnd )
 		{
 			m_list[i].hwnd = 0 ;
 			count++ ;
-			if( count > 1U )
-				G_ASSERT( !"GGui::SubClassMap::remove: duplicate" ) ;
+			G_ASSERT( count <= 1U || !"GGui::SubClassMap::remove: duplicate" ) ;
 		}
 	}
 	if( count == 0U )

@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -25,6 +25,7 @@
 #include "qt.h"
 #include "gstrings.h"
 #include "gpath.h"
+#include "gexecutable.h"
 #include <string>
 
 class GDialog ;
@@ -38,7 +39,7 @@ class QComboBox ;
 class GPage : public QWidget
 {Q_OBJECT
 protected:
-	GPage( GDialog & , const std::string & name , const std::string & next_1 , 
+	GPage( GDialog & , const std::string & name , const std::string & next_1 ,
 		const std::string & next_2 , bool finish_button , bool close_button ) ;
 			///< Constructor.
 
@@ -56,8 +57,8 @@ public:
 		///< Returns the ctor's finish_button parameter.
 
 	virtual std::string helpName() const ;
-		///< Returns this page's help-page name. Returns the 
-		///< empty string if the help button should be disabled. 
+		///< Returns this page's help-page name. Returns the
+		///< empty string if the help button should be disabled.
 		///< This default implementation returns the empty string.
 
 	virtual bool closeButton() const ;
@@ -71,6 +72,10 @@ public:
 		///< Called as this page becomes visible as a result
 		///< of the previous page's 'next' button being clicked.
 
+	virtual G::Executable launchCommand() const ;
+		///< Called when the launch button is clicked. Returns a valid
+		///< launch command or a default-constructed object.
+
 	virtual std::string nextPage() = 0 ;
 		///< Returns the name of the next page.
 		///< Returns the empty string if last.
@@ -82,8 +87,8 @@ public:
 		///< and the 'next' button can be enabled.
 
 	virtual void dump( std::ostream & , bool for_install ) const ;
-		///< Dumps the page's state to the given stream. 
-		///< Overrides should start by calling this base-class 
+		///< Dumps the page's state to the given stream.
+		///< Overrides should start by calling this base-class
 		///< implementation.
 
 	static void setTestMode( int ) ;
@@ -95,13 +100,8 @@ public:
 signals:
 	void pageUpdateSignal() ;
 		///< Emitted when the page's state changes.
-		///< This allows the dialog box to update its 
+		///< This allows the dialog box to update its
 		///< buttons according to the page's new state.
-
-private slots:
-	void mechanismUpdateSlot( const QString & ) ;
-		///< Emitted when an encryption mechanism combo box
-		///< selection is changed.
 
 protected:
 	struct NameTip {} ;

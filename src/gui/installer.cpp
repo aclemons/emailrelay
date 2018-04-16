@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2015 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -31,9 +31,8 @@
 #include "gprocess.h"
 #include "glink.h"
 #include "gbatchfile.h"
-#include "gregister.h"
-#include "glogoutput.h"
 #include "glog.h"
+#include "glogoutput.h"
 #include "gexception.h"
 #include "gnewprocess.h"
 #include "gmapfile.h"
@@ -72,11 +71,14 @@ struct ActionInterface
 struct Helper
 {
 	static bool isWindows() ;
+	static bool isMac() ;
 	static std::string quote( std::string ) ;
 	static std::string str( const G::StringArray & list ) ;
 	static bool m_is_windows ;
+	static bool m_is_mac ;
 } ;
 bool Helper::m_is_windows = false ;
+bool Helper::m_is_mac = false ;
 
 struct ActionBase : public ActionInterface , protected Helper
 {
@@ -243,10 +245,11 @@ struct Action
 class InstallerImp : private Helper
 {
 public:
-	InstallerImp( bool installing , bool is_windows , const G::Path & payload_path , std::istream & ) ;
+	InstallerImp( bool installing , bool is_windows , bool is_mac , const G::Path & payload_path , std::istream & ) ;
 	~InstallerImp() ;
 	bool next() ;
 	Action & current() ;
+	G::Executable launchCommand() const ;
 
 private:
 	InstallerImp( const InstallerImp & ) ;
@@ -258,7 +261,7 @@ private:
 	bool exists( const std::string & key ) const ;
 	static bool yes( const std::string & ) ;
 	static bool no( const std::string & ) ;
-	G::StringMap secrets() const ;
+	G::StringMap allSecrets() const ;
 	void addSecret( G::StringMap & , const std::string & ) const ;
 	void addSecret( G::StringMap & , const std::string & , const std::string & , const std::string & ) const ;
 	void insert( ActionInterface * p ) ;
@@ -268,6 +271,7 @@ private:
 	typedef std::list<Action> List ;
 	bool m_installing ;
 	bool m_is_windows ;
+	bool m_is_mac ;
 	G::MapFile m_installer_config ;
 	G::Path m_payload ;
 	G::MapFile m_pages_output ;
@@ -320,7 +324,7 @@ void CreateDirectory::run()
 
 // ==
 
-CreatePointerFile::CreatePointerFile( const G::Path & pointer_file , const G::Path & gui_exe , 
+CreatePointerFile::CreatePointerFile( const G::Path & pointer_file , const G::Path & gui_exe ,
 	const G::Path & dir_config , const G::Path & dir_install ) :
 		m_pointer_file(pointer_file) ,
 		m_gui_exe(gui_exe) ,
@@ -336,7 +340,7 @@ void CreatePointerFile::run()
 
 	// create the directory -- probably unnecessary
 	if( !G::File::isDirectory(m_pointer_file.dirname()) )
-		G::File::mkdirs( m_pointer_file.dirname() , G::File::NoThrow() ) ; 
+		G::File::mkdirs( m_pointer_file.dirname() , G::File::NoThrow() ) ;
 
 	// create the file
 	std::ofstream stream( m_pointer_file.str().c_str() ) ;
@@ -355,7 +359,7 @@ void CreatePointerFile::run()
 
 	// close the file
 	if( !stream.good() )
-		throw std::runtime_error( std::string() + "cannot write to \"" + m_pointer_file.str() + "\"" ) ;
+		throw std::runtime_error( std::string() + "cannot write to \"" + m_pointer_file.basename() + "\"" ) ;
 	stream.close() ;
 
 	// make both files executable
@@ -389,7 +393,7 @@ CopyFile::CopyFile( G::Path src , G::Path dst , std::string flags ) :
 
 void CopyFile::run()
 {
-	G_LOG( "CopyTree::run: copy file [" << m_src << "] -> [" << m_dst << "]" ) ;
+	G_LOG( "CopyFile::run: copy file [" << m_src << "] -> [" << m_dst << "]" ) ;
 	G::File::mkdirs( m_dst.dirname() , G::File::NoThrow() , 8 ) ;
 	G::File::copy( m_src , m_dst ) ;
 
@@ -417,18 +421,21 @@ void CopyTree::add( int depth , G::Path src_dir , G::Path dst_dir ) const
 {
 	if( depth > 10 ) return ;
 	G::File::mkdir( dst_dir , G::File::NoThrow() ) ;
-	G::DirectoryIterator iter( (G::Directory(src_dir)) ) ;
+	G_LOG( "CopyTree::add: scanning [" << src_dir << "]" ) ;
+	G::Directory d( src_dir ) ;
+	G::DirectoryIterator iter( d ) ;
 	while( iter.more() )
 	{
 		if( iter.isDir() )
 		{
-			add( depth+1 , iter.filePath() , dst_dir+iter.fileName().str() ) ; // recurse
+			G_LOG( "CopyTree::add: recursion: [" << iter.filePath() << "] [" << dst_dir << "] [" << iter.fileName() << "]" ) ;
+			add( depth+1 , iter.filePath() , dst_dir+iter.fileName() ) ; // recurse
 		}
 		else
 		{
 			G::Path src = iter.filePath() ;
-			G::Path dst = dst_dir + iter.fileName().str() ;
-			G_LOG( "CopyTree::add: copy file [" << src << "] -> [" << dst << "]" ) ;
+			G::Path dst = dst_dir + iter.fileName() ;
+			G_LOG( "CopyTree::add: depth=" << depth << ": copy file [" << src << "] -> [" << dst << "]" ) ;
 			G::File::copy( src , dst ) ;
 			if( G::File::executable(src) ||
 				dst.extension() == "sh" || dst.extension() == "bat" ||
@@ -441,7 +448,6 @@ void CopyTree::add( int depth , G::Path src_dir , G::Path dst_dir ) const
 void CopyTree::run()
 {
 	G_LOG( "CopyTree::run: copy tree [" << m_src << "] -> [" << m_dst << "]" ) ;
-	G::StringArray list ;
 	add( 0 , m_src , m_dst ) ;
 }
 
@@ -472,13 +478,16 @@ void FileGroup::exec( const std::string & exe , const std::string & tail )
 {
 	G_LOG( "FileGroup::exec: [" << exe << "] [" << tail << "]" ) ;
 
+#ifdef G_NEW_PROCESS_WITH_WAIT_FUTURE
+	G::StringArray args ; G::Str::splitIntoTokens( tail , args , G::Str::ws() ) ;
+	G::NewProcess child( exe , args ) ;
+	int rc = child.wait().run().get() ;
+#else
+	// backwards compatibility -- delete soon
 	G::Strings args ; G::Str::splitIntoTokens( tail , args , G::Str::ws() ) ;
 	G::NewProcess::ChildProcess child = G::NewProcess::spawn( exe , args ) ;
 	int rc = child.wait() ;
-
-	//G::StringArray args ; G::Str::splitIntoTokens( tail , args , G::Str::ws() ) ;
-	//G::NewProcess child( exe , args ) ;
-	//int rc = child.wait().run().get() ;
+#endif
 
 	if( rc != 0 )
 		m_ok = "failed" ;
@@ -561,7 +570,7 @@ void CreateSecrets::run()
 			}
 			result.push_back( line ) ;
 		}
-		line_list = result ;
+		line_list.swap( result ) ;
 	}
 
 	// write a header if none
@@ -582,8 +591,11 @@ void CreateSecrets::run()
 			line_list.push_back( "#" ) ;
 			line_list.push_back( std::string() + "# " + m_path.basename() ) ;
 			line_list.push_back( "#" ) ;
-			line_list.push_back( "# {server|client} <mechanism> <name> <secret>" ) ;
-			line_list.push_back( "#   mechanism = { CRAM-MD5 | LOGIN | APOP | NONE }" ) ;
+			line_list.push_back( "# client plain <name> <password>" ) ;
+			line_list.push_back( "# client md5 <name> <password-hash>" ) ;
+			line_list.push_back( "# server plain <name> <password>" ) ;
+			line_list.push_back( "# server md5 <name> <password-hash>" ) ;
+			line_list.push_back( "# server none <address-range> <verifier-keyword>" ) ;
 			line_list.push_back( "#" ) ;
 		}
 	}
@@ -627,7 +639,7 @@ void CreateSecrets::run()
 	ok = ok && file.good() ;
 	file.close() ;
 	if( !ok )
-			throw std::runtime_error(std::string()+"cannot create \""+m_path.str()+"\"") ;
+		throw std::runtime_error(std::string()+"cannot create \""+m_path.basename()+"\"") ;
 }
 
 // ==
@@ -730,7 +742,7 @@ void InstallService::run()
 	}
 	else
 	{
-		bool ok = Boot::uninstall( G::Path() , "emailrelay" , G::Path() ) ;
+		bool ok = Boot::uninstall( G::Path() , "emailrelay" , m_bat , m_service_wrapper ) ;
 		m_ok = ok ? "uninstalled" : "nothing to do" ;
 	}
 }
@@ -775,8 +787,8 @@ void UpdateBootLink::run()
 	}
 	else
 	{
-		bool removed = Boot::uninstall( m_dir_boot , m_name , m_exe ) ;
-		m_ok = removed ? "removed" : "not installed" ;
+		bool removed = Boot::uninstall( m_dir_boot , m_name , m_startstop_src , m_exe ) ;
+		m_ok = removed ? "removed" : "nothing to remove" ;
 	}
 }
 
@@ -795,7 +807,7 @@ RegisterAsEventSource::RegisterAsEventSource( G::Path exe ) :
 void RegisterAsEventSource::run()
 {
 	if( m_exe != G::Path() )
-		GRegister::server( m_exe ) ;
+		G::LogOutput::register_( m_exe.str() ) ;
 }
 
 std::string RegisterAsEventSource::text() const
@@ -815,10 +827,10 @@ void CreateConfigFile::run()
 {
 	if( G::File::exists(m_dst) )
 		m_ok = "exists" ;
-	else if( !G::File::exists(m_template) )
-		G::File::create( m_dst ) ;
-	else
+	else if( G::File::exists(m_template) )
 		G::File::copy( m_template , m_dst ) ;
+	else
+		G::File::create( m_dst ) ;
 }
 
 std::string CreateConfigFile::text() const
@@ -881,29 +893,31 @@ void Action::run()
 
 // ==
 
-InstallerImp::InstallerImp( bool installing , bool is_windows , const G::Path & payload , std::istream & ss ) :
+InstallerImp::InstallerImp( bool installing , bool is_windows , bool is_mac , const G::Path & payload , std::istream & ss ) :
 	m_installing(installing) ,
 	m_is_windows(is_windows) ,
+	m_is_mac(is_mac) ,
 	m_payload(payload) ,
 	m_pages_output(ss)
 {
 	Helper::m_is_windows = is_windows ;
+	Helper::m_is_mac = is_mac ;
 
-	// define o/s-specific paths
+	// define ivalue o/s-specific paths
 	m_installer_config.add( "-authtemplate" , isWindows() ? "" : "%payload%/etc/emailrelay.auth.template" ) ;
 	m_installer_config.add( "-conftemplate" , isWindows() ? "" : "%payload%/etc/emailrelay.conf.template" ) ;
 	m_installer_config.add( "-bat" , isWindows() ? "%dir-config%/emailrelay-start.bat" : "" ) ; // not dir-install -- see guimain
 	m_installer_config.add( "-bat2" , isWindows() ? "%dir-config%/emailrelay-start-with-log-file.bat" : "" ) ;
-	m_installer_config.add( "-exe" , isWindows() ? "%dir-install%/emailrelay.exe" : "%dir-install%/sbin/emailrelay" ) ;
+	m_installer_config.add( "-exe" , isWindows() ? "%dir-install%/emailrelay.exe" : ( isMac() ? "%dir-install%/E-MailRelay.app/Contents/MacOS/emailrelay" : "%dir-install%/sbin/emailrelay" ) ) ;
 	m_installer_config.add( "-gui" , isWindows() ? "%dir-install%/emailrelay-gui.exe" : "%dir-install%/sbin/emailrelay-gui.real" ) ;
 	m_installer_config.add( "-icon" , isWindows()?"%dir-install%/emailrelay.exe":"%dir-install%/lib/emailrelay/emailrelay-icon.png");
 	m_installer_config.add( "-pointer" , isWindows() ? "%dir-install%/emailrelay-gui.cfg" : "%dir-install%/sbin/emailrelay-gui" ) ;
 	m_installer_config.add( "-startstop" , isWindows() ? "" : "%dir-install%/lib/emailrelay/emailrelay-startstop.sh" ) ;
 	m_installer_config.add( "-servicewrapper" , isWindows() ? "%dir-install%/emailrelay-service.exe" : "" ) ;
-	m_installer_config.add( "-copyfilter" , 
+	m_installer_config.add( "-copyfilter" ,
 		isWindows() ? "%dir-install%/emailrelay-copy-filter.exe" : "%dir-install%/lib/emailrelay/emailrelay-copy-filter" ) ;
 
-	// define substitution variables
+	// define some substitution variables (used for expansion of pvalues, ivalues and payload.cfg)
 	m_var.add( "dir-install" , pvalue("dir-install") ) ;
 	m_var.add( "dir-config" , pvalue("dir-config") ) ;
 	m_var.add( "dir-run" , pvalue("dir-run") ) ;
@@ -916,6 +930,21 @@ InstallerImp::InstallerImp( bool installing , bool is_windows , const G::Path & 
 
 InstallerImp::~InstallerImp()
 {
+}
+
+G::Executable InstallerImp::launchCommand() const
+{
+	if( isWindows() )
+	{
+		return G::Executable( ivalue("-bat") , G::StringArray() ) ;
+	}
+	else
+	{
+		G::Path copy_filter = ivalue("-copyfilter") ;
+		G::Path target = ivalue("-exe") ;
+		ServerConfiguration sc = ServerConfiguration::fromPages( m_pages_output , copy_filter ) ;
+		return G::Executable( target , sc.args() ) ;
+	}
 }
 
 bool InstallerImp::isWindows() const
@@ -1003,7 +1032,7 @@ void InstallerImp::insertActions()
 			const std::string & value = payload_map.value( key ) ;
 			if( key.find("+") == 0U && key.length() > 1U && value.find("group ") == 0U && value.length() > 6U )
 				insert( new FileGroup(m_var.expand(key.substr(1U)),value.substr(6U)) ) ;
-			if( key.find_first_of("-+=") == 0U ) 
+			if( key.find_first_of("-+=") == 0U )
 				continue ;
 
 			std::string dst = m_var.expand( value ) ;
@@ -1025,7 +1054,7 @@ void InstallerImp::insertActions()
 	// create secrets
 	//
 	G::Path authtemplate_src = m_installing ? ivalue( "-authtemplate" ) : std::string() ;
-	insert( new CreateSecrets(pvalue("dir-config"),"emailrelay.auth",authtemplate_src,secrets()) ) ;
+	insert( new CreateSecrets(pvalue("dir-config"),"emailrelay.auth",authtemplate_src,allSecrets()) ) ;
 
 	// create a startup batch file
 	//
@@ -1057,9 +1086,8 @@ void InstallerImp::insertActions()
 		insert( new CreatePointerFile(pointer_file,gui_exe,dir_config,dir_install) ) ;
 	}
 
-	// register for using the windows event log - doing it here, hopefully as 
-	// an Administrator, has a chance of avoiding the Windows 7 VirtualStore 
-	// nonesense - see also glogoutput_win32.cpp
+	// register for using the windows event log - doing it here since the server
+	// will not have administrator privilege
 	//
 	if( m_installing && isWindows() )
 	{
@@ -1069,7 +1097,7 @@ void InstallerImp::insertActions()
 	// create startup links and startup config
 	//
 	{
-		G::Path server_exe = ivalue("-exe") ; // or possibly ServerConfiguration::exe()
+		G::Path server_exe = ivalue("-exe") ;
 		G::Path working_dir = pvalue("dir-config") ;
 		G::Path dir_config = pvalue( "dir-config" ) ;
 		G::Path dir_install = pvalue( "dir-install" ) ;
@@ -1113,7 +1141,7 @@ void InstallerImp::insertActions()
 	}
 }
 
-G::StringMap InstallerImp::secrets() const
+G::StringMap InstallerImp::allSecrets() const
 {
 	G::StringMap map ;
 	if( yes(pvalue("do-pop")) )
@@ -1141,7 +1169,7 @@ void InstallerImp::addSecret( G::StringMap & map , const std::string & k ) const
 {
 	if( exists(k) && !pvalue(k).empty() )
 	{
-		std::string head = "server NONE " + pvalue(k) ;
+		std::string head = "server none " + pvalue(k) ;
 		std::string tail = "trusted" ;
 		map[head] = head + " " + tail ;
 	}
@@ -1169,11 +1197,12 @@ void InstallerImp::addSecret( G::StringMap & map ,
 
 // ==
 
-Installer::Installer( bool installing , bool is_windows , const G::Path & payload ) :
+Installer::Installer( bool installing , bool is_windows , bool is_mac , const G::Path & payload ) :
 	m_installing(installing) ,
 	m_is_windows(is_windows) ,
+	m_is_mac(is_mac&&!is_windows) ,
 	m_payload(payload) ,
-	m_imp(NULL)
+	m_imp(nullptr)
 {
 }
 
@@ -1185,14 +1214,15 @@ Installer::~Installer()
 void Installer::start( std::istream & s )
 {
 	delete m_imp ;
-	m_imp = new InstallerImp( m_installing , m_is_windows , m_payload , s ) ;
+	m_imp = new InstallerImp( m_installing , m_is_windows , m_is_mac , m_payload , s ) ;
+	m_launch_command = m_imp->launchCommand() ;
 	m_reason.erase() ;
 }
 
 bool Installer::next()
 {
 	bool more = false ;
-	if( m_imp != NULL )
+	if( m_imp != nullptr )
 		more = m_imp->next() ;
 	if( !more )
 		cleanup() ;
@@ -1207,7 +1237,7 @@ void Installer::cleanup( const std::string & reason )
 		m_reason = reason ;
 	}
 	InstallerImp * imp = m_imp ;
-	m_imp = NULL ;
+	m_imp = nullptr ;
 	delete imp ;
 }
 
@@ -1247,7 +1277,12 @@ std::string Installer::reason() const
 
 bool Installer::done() const
 {
-	return m_imp == NULL ;
+	return m_imp == nullptr ;
+}
+
+G::Executable Installer::launchCommand() const
+{
+	return m_launch_command ;
 }
 
 // ==
@@ -1257,6 +1292,11 @@ bool Helper::isWindows()
 	return m_is_windows ;
 }
 
+bool Helper::isMac()
+{
+	return m_is_mac ;
+}
+
 std::string Helper::quote( std::string s )
 {
 	return s.find_first_of(" \t") == std::string::npos ? s : (std::string()+"\""+s+"\"") ;
@@ -1264,6 +1304,7 @@ std::string Helper::quote( std::string s )
 
 std::string Helper::str( const G::StringArray & list )
 {
-	return G::Str::join( list , " " ) ;
+	return G::Str::join( " " , list ) ;
 }
 
+/// \file installer.cpp

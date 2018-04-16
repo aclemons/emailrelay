@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2013 Graeme Walker <graeme_walker@users.sourceforge.net>
-// 
+// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -22,7 +22,6 @@
 #include "gsmtp.h"
 #include "gmessagestore.h"
 #include "gnewfile.h"
-#include "gmemory.h"
 #include "gprocess.h"
 #include "gstrings.h"
 #include "groot.h"
@@ -36,14 +35,18 @@
 #include <iostream>
 #include <fstream>
 
-GSmtp::NewFile::NewFile( const std::string & from , FileStore & store , unsigned long max_size ) :
-	m_store(store) ,
-	m_from(from) ,
-	m_committed(false) ,
-	m_eight_bit(false) ,
-	m_saved(false) ,
-	m_size(0UL) ,
-	m_max_size(max_size)
+GSmtp::NewFile::NewFile( FileStore & store , const std::string & from ,
+	const std::string & from_auth_in , const std::string & from_auth_out ,
+	size_t max_size ) :
+		m_store(store) ,
+		m_from(from) ,
+		m_from_auth_in(from_auth_in) ,
+		m_from_auth_out(from_auth_out) ,
+		m_committed(false) ,
+		m_eight_bit(false) ,
+		m_saved(false) ,
+		m_size(0UL) ,
+		m_max_size(max_size)
 {
 	// ask the store for a unique id
 	//
@@ -53,8 +56,8 @@ GSmtp::NewFile::NewFile( const std::string & from , FileStore & store , unsigned
 	//
 	m_content_path = m_store.contentPath( m_seq ) ;
 	G_LOG( "GSmtp::NewMessage: content file: " << m_content_path ) ;
-	std::auto_ptr<std::ostream> content_stream = m_store.stream( m_content_path ) ;
-	m_content = content_stream ;
+	unique_ptr<std::ostream> content_stream = m_store.stream( m_content_path ) ;
+	m_content.reset( content_stream.release() ) ;
 }
 
 GSmtp::NewFile::~NewFile()
@@ -80,8 +83,8 @@ void GSmtp::NewFile::cleanup()
 	}
 }
 
-std::string GSmtp::NewFile::prepare( const std::string & auth_id , const std::string & peer_socket_address , 
-	const std::string & peer_socket_name , const std::string & peer_certificate )
+std::string GSmtp::NewFile::prepare( const std::string & session_auth_id , const std::string & peer_socket_address ,
+	const std::string & peer_certificate )
 {
 	// flush and close the content file
 	//
@@ -91,8 +94,8 @@ std::string GSmtp::NewFile::prepare( const std::string & auth_id , const std::st
 	//
 	m_envelope_path_0 = m_store.envelopeWorkingPath( m_seq ) ;
 	m_envelope_path_1 = m_store.envelopePath( m_seq ) ;
-	if( ! saveEnvelope( auth_id , peer_socket_address , peer_socket_name , peer_certificate ) )
-		throw GSmtp::MessageStore::StorageError( std::string() + "cannot write " + m_envelope_path_0.str() ) ;
+	if( ! saveEnvelope( session_auth_id , peer_socket_address , peer_certificate ) )
+		throw FileError( "cannot write envelope file " + m_envelope_path_0.str() ) ;
 
 	// deliver to local mailboxes
 	//
@@ -109,7 +112,7 @@ void GSmtp::NewFile::commit()
 	bool ok = commitEnvelope() ;
 	m_committed = true ;
 	if( !ok )
-		throw GSmtp::MessageStore::StorageError( std::string() + "cannot rename to " + m_envelope_path_1.str() ) ;
+		throw FileError( "cannot rename envelope file to " + m_envelope_path_1.str() ) ;
 }
 
 void GSmtp::NewFile::addTo( const std::string & to , bool local )
@@ -122,7 +125,7 @@ void GSmtp::NewFile::addTo( const std::string & to , bool local )
 
 bool GSmtp::NewFile::addText( const std::string & line )
 {
-	m_size += ( line.size() + 2U ) ;
+	m_size += static_cast<unsigned long>( line.size() + 2U ) ;
 	if( ! m_eight_bit )
 		m_eight_bit = isEightBit( line ) ;
 
@@ -132,16 +135,16 @@ bool GSmtp::NewFile::addText( const std::string & line )
 
 void GSmtp::NewFile::flushContent()
 {
-	G_ASSERT( m_content.get() != NULL ) ;
+	G_ASSERT( m_content.get() != nullptr ) ;
 	m_content->flush() ;
 	if( ! m_content->good() )
-		throw GSmtp::MessageStore::WriteError( m_content_path.str() ) ;
-	m_content <<= 0 ;
+		throw FileError( "cannot write content file " + m_content_path.str() ) ;
+	m_content.reset() ;
 }
 
 void GSmtp::NewFile::discardContent()
 {
-	m_content <<= 0 ;
+	m_content.reset() ;
 }
 
 void GSmtp::NewFile::deleteContent()
@@ -172,12 +175,12 @@ bool GSmtp::NewFile::isEightBit( const std::string & line )
 	return std::find_if( line.begin() , line.end() , EightBit() ) != line.end() ;
 }
 
-bool GSmtp::NewFile::saveEnvelope( const std::string & auth_id , const std::string & peer_socket_address ,
-	const std::string & peer_socket_name , const std::string & peer_certificate ) const
+bool GSmtp::NewFile::saveEnvelope( const std::string & session_auth_id , const std::string & peer_socket_address ,
+	const std::string & peer_certificate ) const
 {
-	std::auto_ptr<std::ostream> envelope_stream = m_store.stream( m_envelope_path_0 ) ;
-	writeEnvelope( *(envelope_stream.get()) , m_envelope_path_0.str() , 
-		auth_id , peer_socket_address , peer_socket_name , peer_certificate ) ;
+	unique_ptr<std::ostream> envelope_stream = m_store.stream( m_envelope_path_0 ) ;
+	writeEnvelope( *(envelope_stream.get()) , m_envelope_path_0.str() ,
+		session_auth_id , peer_socket_address , peer_certificate ) ;
 	bool ok = envelope_stream->good() ;
 	return ok ;
 }
@@ -189,14 +192,14 @@ bool GSmtp::NewFile::commitEnvelope()
 	return m_saved ;
 }
 
-void GSmtp::NewFile::deliver( const G::Strings & /*to*/ , 
+void GSmtp::NewFile::deliver( const G::StringArray & /*to*/ ,
 	const G::Path & content_path , const G::Path & envelope_path_now ,
 	const G::Path & envelope_path_later )
 {
-	// could shell out to "procmail" or "deliver" here, but keep it 
+	// could shell out to "procmail" or "deliver" here, but keep it
 	// simple and within the scope -- just copy into ".local" files
 
-	G_LOG_S( "GSmtp::NewMessage: copying message for local recipient(s): " 
+	G_LOG_S( "GSmtp::NewMessage: copying message for local recipient(s): "
 		<< content_path.basename() << ".local" ) ;
 
 	FileWriter claim_writer ;
@@ -204,14 +207,16 @@ void GSmtp::NewFile::deliver( const G::Strings & /*to*/ ,
 	G::File::copy( envelope_path_now.str() , envelope_path_later.str()+".local" ) ;
 }
 
-void GSmtp::NewFile::writeEnvelope( std::ostream & stream , const std::string & where , 
-	const std::string & auth_id , const std::string & peer_socket_address ,
-	const std::string & peer_socket_name , const std::string & peer_certificate_in ) const
+void GSmtp::NewFile::writeEnvelope( std::ostream & stream , const std::string & where ,
+	const std::string & session_auth_id , const std::string & peer_socket_address ,
+	const std::string & peer_certificate_in ) const
 {
 	G_LOG( "GSmtp::NewMessage: envelope file: " << where ) ;
 
 	std::string peer_certificate = peer_certificate_in ;
-	G::Str::replaceAll( peer_certificate , "\n" , "" ) ;
+	G::Str::trim( peer_certificate , G::Str::ws() ) ;
+	G::Str::replaceAll( peer_certificate , "\r" , "" ) ;
+	G::Str::replaceAll( peer_certificate , "\n" , crlf() + " " ) ; // RFC-2822 folding
 
 	const std::string x( m_store.x() ) ;
 
@@ -220,21 +225,30 @@ void GSmtp::NewFile::writeEnvelope( std::ostream & stream , const std::string & 
 	stream << x << "From: " << m_from << crlf() ;
 	stream << x << "ToCount: " << (m_to_local.size()+m_to_remote.size()) << crlf() ;
 	{
-		G::Strings::const_iterator to_p = m_to_local.begin() ;
+		G::StringArray::const_iterator to_p = m_to_local.begin() ;
 		for( ; to_p != m_to_local.end() ; ++to_p )
 			stream << x << "To-Local: " << *to_p << crlf() ;
 	}
 	{
-		G::Strings::const_iterator to_p = m_to_remote.begin() ;
+		G::StringArray::const_iterator to_p = m_to_remote.begin() ;
 		for( ; to_p != m_to_remote.end() ; ++to_p )
 			stream << x << "To-Remote: " << *to_p << crlf() ;
 	}
-	stream << x << "Authentication: " << G::Xtext::encode(auth_id) << crlf() ;
+	stream << x << "Authentication: " << G::Xtext::encode(session_auth_id) << crlf() ;
 	stream << x << "Client: " << peer_socket_address << crlf() ;
-	stream << x << "ClientName: " << G::Xtext::encode(peer_socket_name) << crlf() ;
 	stream << x << "ClientCertificate: " << peer_certificate << crlf() ;
+	stream << x << "MailFromAuthIn: " << xnormalise(m_from_auth_in) << crlf() ;
+	stream << x << "MailFromAuthOut: " << xnormalise(m_from_auth_out) << crlf() ;
 	stream << x << "End: 1" << crlf() ;
 	stream.flush() ;
+}
+
+std::string GSmtp::NewFile::xnormalise( const std::string & s )
+{
+	if( s.empty() || ( s.size() == 1U && s.at(0) == '+' ) )
+		return s ;
+	else
+		return G::Xtext::encode(G::Xtext::decode(s)) ;
 }
 
 const std::string & GSmtp::NewFile::crlf() const
