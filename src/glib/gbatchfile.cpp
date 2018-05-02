@@ -129,8 +129,8 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 		}
 	}
 
-	// percent characters are doubled up in batch files -- here just
-	// undouble the last one -- TODO rationale
+	// percent characters are doubled up in batch files -- here
+	// just undouble the last one
 	{
 		std::string::size_type pos = line.rfind( "%%" ) ;
 		if( pos != std::string::npos )

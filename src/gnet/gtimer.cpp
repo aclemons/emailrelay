@@ -44,6 +44,8 @@ GNet::TimerBase::~TimerBase()
 
 bool GNet::TimerBase::immediate() const
 {
+	// use a magic number for zero-length timers so that
+	// calls to now() can be optimised out
 	return m_time.s == 1 ;
 }
 

@@ -16,8 +16,6 @@
 
 #
 #
-
-
 VPATH = @srcdir@
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
@@ -80,24 +78,24 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-noinst_PROGRAMS = $(am__EXEEXT_1)
-TESTS = $(am__EXEEXT_2)
+check_PROGRAMS = $(am__EXEEXT_2)
+TESTS = $(am__EXEEXT_3)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp $(top_srcdir)/test-driver
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/pkg.m4 \
+	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h
+CONFIG_HEADER = $(top_builddir)/gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-@TESTING_TRUE@am__EXEEXT_1 = emailrelay-test-scanner$(EXEEXT) \
-@TESTING_TRUE@	emailrelay-test-server$(EXEEXT) \
-@TESTING_TRUE@	emailrelay-test-verifier$(EXEEXT)
-PROGRAMS = $(noinst_PROGRAMS)
+am__EXEEXT_1 = emailrelay-test-scanner$(EXEEXT) \
+	emailrelay-test-server$(EXEEXT) \
+	emailrelay-test-verifier$(EXEEXT)
+@GCONFIG_TESTING_TRUE@am__EXEEXT_2 = $(am__EXEEXT_1)
 am_emailrelay_test_scanner_OBJECTS =  \
 	emailrelay_test_scanner.$(OBJEXT)
 emailrelay_test_scanner_OBJECTS =  \
@@ -105,23 +103,25 @@ emailrelay_test_scanner_OBJECTS =  \
 am__DEPENDENCIES_1 =
 emailrelay_test_scanner_DEPENDENCIES =  \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gssl/libgssl.a $(COMMON_LDADD) \
-	$(am__DEPENDENCIES_1)
+	$(top_builddir)/src/gssl/libgssl.a \
+	$(top_builddir)/src/win32/libextra.a $(COMMON_LDADD) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_emailrelay_test_server_OBJECTS = emailrelay_test_server.$(OBJEXT)
 emailrelay_test_server_OBJECTS = $(am_emailrelay_test_server_OBJECTS)
 emailrelay_test_server_DEPENDENCIES =  \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gssl/libgssl.a $(COMMON_LDADD) \
-	$(am__DEPENDENCIES_1)
+	$(top_builddir)/src/gssl/libgssl.a \
+	$(top_builddir)/src/win32/libextra.a $(COMMON_LDADD) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_emailrelay_test_verifier_OBJECTS =  \
 	emailrelay_test_verifier.$(OBJEXT)
 emailrelay_test_verifier_OBJECTS =  \
 	$(am_emailrelay_test_verifier_OBJECTS)
 emailrelay_test_verifier_DEPENDENCIES =  \
 	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gssl/libgssl.a $(COMMON_LDADD) \
-	$(am__DEPENDENCIES_1)
-SCRIPTS = $(noinst_SCRIPTS)
+	$(top_builddir)/src/gssl/libgssl.a \
+	$(top_builddir)/src/win32/libextra.a $(COMMON_LDADD) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -157,11 +157,27 @@ SOURCES = $(emailrelay_test_scanner_SOURCES) \
 DIST_SOURCES = $(emailrelay_test_scanner_SOURCES) \
 	$(emailrelay_test_server_SOURCES) \
 	$(emailrelay_test_verifier_SOURCES)
+RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
+	ctags-recursive dvi-recursive html-recursive info-recursive \
+	install-data-recursive install-dvi-recursive \
+	install-exec-recursive install-html-recursive \
+	install-info-recursive install-pdf-recursive \
+	install-ps-recursive install-recursive installcheck-recursive \
+	installdirs-recursive pdf-recursive ps-recursive \
+	tags-recursive uninstall-recursive
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
+  distclean-recursive maintainer-clean-recursive
+am__recursive_targets = \
+  $(RECURSIVE_TARGETS) \
+  $(RECURSIVE_CLEAN_TARGETS) \
+  $(am__extra_recursive_targets)
+AM_RECURSIVE_TARGETS = $(am__recursive_targets:-recursive=) TAGS CTAGS \
+	check recheck distdir
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -364,9 +380,7 @@ am__set_TESTS_bases = \
   bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
   bases=`echo $$bases`
 RECHECK_LOGS = $(TEST_LOGS)
-AM_RECURSIVE_TARGETS = check recheck
-@TESTING_TRUE@am__EXEEXT_2 = emailrelay-test.sh \
-@TESTING_TRUE@	emailrelay-chain-test.sh
+@GCONFIG_TESTING_TRUE@am__EXEEXT_3 = $(scripts_run)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
 LOG_DRIVER = $(SHELL) $(top_srcdir)/test-driver
@@ -387,7 +401,33 @@ TEST_LOGS = $(am__test_logs2:.test.log=.log)
 TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/test-driver
 TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 	$(TEST_LOG_FLAGS)
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+am__relativize = \
+  dir0=`pwd`; \
+  sed_first='s,^\([^/]*\)/.*$$,\1,'; \
+  sed_rest='s,^[^/]*/*,,'; \
+  sed_last='s,^.*/\([^/]*\)$$,\1,'; \
+  sed_butlast='s,/*[^/]*$$,,'; \
+  while test -n "$$dir1"; do \
+    first=`echo "$$dir1" | sed -e "$$sed_first"`; \
+    if test "$$first" != "."; then \
+      if test "$$first" = ".."; then \
+        dir2=`echo "$$dir0" | sed -e "$$sed_last"`/"$$dir2"; \
+        dir0=`echo "$$dir0" | sed -e "$$sed_butlast"`; \
+      else \
+        first2=`echo "$$dir2" | sed -e "$$sed_first"`; \
+        if test "$$first2" = "$$first"; then \
+          dir2=`echo "$$dir2" | sed -e "$$sed_rest"`; \
+        else \
+          dir2="../$$dir2"; \
+        fi; \
+        dir0="$$dir0"/"$$first"; \
+      fi; \
+    fi; \
+    dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
+  done; \
+  reldir="$$dir2"
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
@@ -399,8 +439,6 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-COMPILER_VERSION = @COMPILER_VERSION@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
@@ -411,13 +449,20 @@ DEPDIR = @DEPDIR@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
-EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+GCONFIG_CONFIGURATION = @GCONFIG_CONFIGURATION@
+GCONFIG_HAVE_DOXYGEN = @GCONFIG_HAVE_DOXYGEN@
+GCONFIG_HAVE_MAN2HTML = @GCONFIG_HAVE_MAN2HTML@
+GCONFIG_QT_CFLAGS = @GCONFIG_QT_CFLAGS@
+GCONFIG_QT_LIBS = @GCONFIG_QT_LIBS@
+GCONFIG_QT_MOC = @GCONFIG_QT_MOC@
+GCONFIG_STATIC_END = @GCONFIG_STATIC_END@
+GCONFIG_STATIC_START = @GCONFIG_STATIC_START@
+GCONFIG_TLS_LIBS = @GCONFIG_TLS_LIBS@
+GCONFIG_WINDMC = @GCONFIG_WINDMC@
+GCONFIG_WINDRES = @GCONFIG_WINDRES@
 GREP = @GREP@
 GZIP = @GZIP@
-G_CAPABILITIES = @G_CAPABILITIES@
-HAVE_DOXYGEN = @HAVE_DOXYGEN@
-HAVE_MAN2HTML = @HAVE_MAN2HTML@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -439,8 +484,6 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
-PAM_INCLUDE = @PAM_INCLUDE@
-PAM_LIBS = @PAM_LIBS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
@@ -449,14 +492,11 @@ QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 QT_MOC = @QT_MOC@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SSL_LIBS = @SSL_LIBS@
-STATIC_END = @STATIC_END@
-STATIC_START = @STATIC_START@
 STRIP = @STRIP@
 VERSION = @VERSION@
-ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -508,23 +548,35 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@TESTING_FALSE@TESTING_FILES = 
-@TESTING_TRUE@TESTING_FILES = emailrelay-test.sh emailrelay-chain-test.sh
-@TESTING_FALSE@TESTING_EXTRA_DIST = 
-@TESTING_TRUE@TESTING_EXTRA_DIST = 
-@TESTING_FALSE@TESTING_HELPERS = 
-@TESTING_TRUE@TESTING_HELPERS = emailrelay-test-scanner emailrelay-test-server emailrelay-test-verifier
-EXTRA_DIST = \
-	$(TESTING_EXTRA_DIST) \
-	emailrelay-test.pl_ \
-	emailrelay-test.sh_ \
-	emailrelay-chain-test.sh_ \
-	emailrelay-soak-test.sh_ \
-	emailrelay-loop-test.sh_ \
+helper_programs = \
+	emailrelay-test-scanner \
+	emailrelay-test-server \
+	emailrelay-test-verifier
+
+helper_sources = \
+	emailrelay_test_scanner.cpp \
+	emailrelay_test_server.cpp \
+	emailrelay_test_verifier.cpp
+
+other_scripts = \
+	emailrelay-test.pl \
+	emailrelay-soak-test.sh \
+	emailrelay-loop-test.sh
+
+scripts_in = \
+	emailrelay-test.sh \
+	emailrelay-chain-test.sh
+
+scripts_run = \
+	emailrelay-test \
+	emailrelay-chain-test
+
+modules = \
 	AdminClient.pm \
 	Check.pm \
 	Filter.pm \
 	Helper.pm \
+	Openssl.pm \
 	PopClient.pm \
 	Port.pm \
 	Scanner.pm \
@@ -532,41 +584,67 @@ EXTRA_DIST = \
 	SmtpClient.pm \
 	System.pm \
 	TestServer.pm \
-	Verifier.pm \
-	mingw.mak
+	Verifier.pm
 
-noinst_SCRIPTS = emailrelay-test.sh emailrelay-test.pl emailrelay-chain-test.sh emailrelay-soak-test.sh emailrelay-loop-test.sh
-CLEANFILES = $(noinst_SCRIPTS) $(noinst_PROGRAMS) .emailrelay-test-server.pid
-AM_CPPFLAGS = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -DG_SPOOLDIR=\"$(e_spooldir)\"
+@GCONFIG_TESTING_FALSE@TESTING_FILES_IN = 
+@GCONFIG_TESTING_TRUE@TESTING_FILES_IN = $(scripts_in)
+@GCONFIG_TESTING_FALSE@TESTING_EXTRA_DIST = $(helper_sources)
+@GCONFIG_TESTING_TRUE@TESTING_EXTRA_DIST = 
+@GCONFIG_TESTING_FALSE@TESTING_FILES = 
+@GCONFIG_TESTING_TRUE@TESTING_FILES = $(scripts_run)
+@GCONFIG_TESTING_FALSE@TESTING_HELPERS = 
+@GCONFIG_TESTING_TRUE@TESTING_HELPERS = $(helper_programs)
+EXTRA_DIST = \
+	$(TESTING_EXTRA_DIST) \
+	$(scripts_in) \
+	$(other_scripts) \
+	$(modules)
+
+SUBDIRS = certificates
+check_SCRIPTS = $(TESTING_FILES)
+CLEANFILES = $(check_SCRIPTS) .emailrelay-test-server.pid
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/src/glib \
+	-I$(top_srcdir)/src/gssl \
+	-I$(top_srcdir)/src/gnet \
+	-D "G_SPOOLDIR=$(e_spooldir)"
+
 COMMON_LDADD = \
 	$(top_builddir)/src/glib/libglib.a
 
+@GCONFIG_WINDOWS_FALSE@SYS_LIBS = 
+@GCONFIG_WINDOWS_TRUE@SYS_LIBS = -lws2_32 -lcomctl32
 emailrelay_test_scanner_SOURCES = emailrelay_test_scanner.cpp
 emailrelay_test_scanner_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
+	$(top_builddir)/src/win32/libextra.a \
 	$(COMMON_LDADD) \
-	$(SSL_LIBS)
+	$(GCONFIG_TLS_LIBS) \
+	$(SYS_LIBS)
 
 emailrelay_test_server_SOURCES = emailrelay_test_server.cpp
 emailrelay_test_server_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
+	$(top_builddir)/src/win32/libextra.a \
 	$(COMMON_LDADD) \
-	$(SSL_LIBS)
+	$(GCONFIG_TLS_LIBS) \
+	$(SYS_LIBS)
 
 emailrelay_test_verifier_SOURCES = emailrelay_test_verifier.cpp
 emailrelay_test_verifier_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
+	$(top_builddir)/src/win32/libextra.a \
 	$(COMMON_LDADD) \
-	$(SSL_LIBS)
+	$(GCONFIG_TLS_LIBS) \
+	$(SYS_LIBS)
 
-SUFFIXES = .pm .pl .pl_ .sh .sh_
-all: all-am
+all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .pm .pl .pl_ .sh .sh_ .cpp .log .o .obj .test .test$(EXEEXT) .trs
+.SUFFIXES: .cpp .log .o .obj .test .test$(EXEEXT) .trs
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -598,8 +676,8 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 
-clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+clean-checkPROGRAMS:
+	-test -z "$(check_PROGRAMS)" || rm -f $(check_PROGRAMS)
 
 emailrelay-test-scanner$(EXEEXT): $(emailrelay_test_scanner_OBJECTS) $(emailrelay_test_scanner_DEPENDENCIES) $(EXTRA_emailrelay_test_scanner_DEPENDENCIES) 
 	@rm -f emailrelay-test-scanner$(EXEEXT)
@@ -637,14 +715,61 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
+# This directory's subdirectories are mostly independent; you can cd
+# into them and run 'make' without going through this Makefile.
+# To change the values of 'make' variables: instead of editing Makefiles,
+# (1) if the variable is set in 'config.status', edit 'config.status'
+#     (which will cause the Makefiles to be regenerated when you run 'make');
+# (2) otherwise, pass the desired values on the 'make' command line.
+$(am__recursive_targets):
+	@fail=; \
+	if $(am__make_keepgoing); then \
+	  failcom='fail=yes'; \
+	else \
+	  failcom='exit 1'; \
+	fi; \
+	dot_seen=no; \
+	target=`echo $@ | sed s/-recursive//`; \
+	case "$@" in \
+	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
+	  *) list='$(SUBDIRS)' ;; \
+	esac; \
+	for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    dot_seen=yes; \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  || eval $$failcom; \
+	done; \
+	if test "$$dot_seen" = "no"; then \
+	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
+	fi; test -z "$$fail"
+
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
-tags: tags-am
+tags: tags-recursive
 TAGS: tags
 
 tags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
 	set x; \
 	here=`pwd`; \
+	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
+	  include_option=--etags-include; \
+	  empty_fix=.; \
+	else \
+	  include_option=--include; \
+	  empty_fix=; \
+	fi; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test ! -f $$subdir/TAGS || \
+	      set "$$@" "$$include_option=$$here/$$subdir/TAGS"; \
+	  fi; \
+	done; \
 	$(am__define_uniq_tagged_files); \
 	shift; \
 	if test -z "$(ETAGS_ARGS)$$*$$unique"; then :; else \
@@ -657,7 +782,7 @@ tags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
 	      $$unique; \
 	  fi; \
 	fi
-ctags: ctags-am
+ctags: ctags-recursive
 
 CTAGS: ctags
 ctags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
@@ -670,7 +795,7 @@ GTAGS:
 	here=`$(am__cd) $(top_builddir) && pwd` \
 	  && $(am__cd) $(top_srcdir) \
 	  && gtags -i $(GTAGS_ARGS) "$$here"
-cscopelist: cscopelist-am
+cscopelist: cscopelist-recursive
 
 cscopelist-am: $(am__tagged_files)
 	list='$(am__tagged_files)'; \
@@ -819,7 +944,7 @@ check-TESTS:
 	log_list=`echo $$log_list`; trs_list=`echo $$trs_list`; \
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$log_list"; \
 	exit $$?;
-recheck: all 
+recheck: all $(check_PROGRAMS) $(check_SCRIPTS)
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 	@set +e; $(am__set_TESTS_bases); \
 	bases=`for i in $$bases; do echo $$i; done \
@@ -830,16 +955,16 @@ recheck: all
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
-emailrelay-test.sh.log: emailrelay-test.sh
-	@p='emailrelay-test.sh'; \
-	b='emailrelay-test.sh'; \
+emailrelay-test.log: emailrelay-test
+	@p='emailrelay-test'; \
+	b='emailrelay-test'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-emailrelay-chain-test.sh.log: emailrelay-chain-test.sh
-	@p='emailrelay-chain-test.sh'; \
-	b='emailrelay-chain-test.sh'; \
+emailrelay-chain-test.log: emailrelay-chain-test
+	@p='emailrelay-chain-test'; \
+	b='emailrelay-chain-test'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -889,20 +1014,47 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
+	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    $(am__make_dryrun) \
+	      || test -d "$(distdir)/$$subdir" \
+	      || $(MKDIR_P) "$(distdir)/$$subdir" \
+	      || exit 1; \
+	    dir1=$$subdir; dir2="$(distdir)/$$subdir"; \
+	    $(am__relativize); \
+	    new_distdir=$$reldir; \
+	    dir1=$$subdir; dir2="$(top_distdir)"; \
+	    $(am__relativize); \
+	    new_top_distdir=$$reldir; \
+	    echo " (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir="$$new_top_distdir" distdir="$$new_distdir" \\"; \
+	    echo "     am__remove_distdir=: am__skip_length_check=: am__skip_mode_fix=: distdir)"; \
+	    ($(am__cd) $$subdir && \
+	      $(MAKE) $(AM_MAKEFLAGS) \
+	        top_distdir="$$new_top_distdir" \
+	        distdir="$$new_distdir" \
+		am__remove_distdir=: \
+		am__skip_length_check=: \
+		am__skip_mode_fix=: \
+	        distdir) \
+	      || exit 1; \
+	  fi; \
+	done
 check-am: all-am
+	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS) $(check_SCRIPTS)
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
-check: check-am
-all-am: Makefile $(PROGRAMS) $(SCRIPTS)
-installdirs:
-install: install-am
-install-exec: install-exec-am
-install-data: install-data-am
-uninstall: uninstall-am
+check: check-recursive
+all-am: Makefile
+installdirs: installdirs-recursive
+installdirs-am:
+install: install-recursive
+install-exec: install-exec-recursive
+install-data: install-data-recursive
+uninstall: uninstall-recursive
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-am
+installcheck: installcheck-recursive
 install-strip:
 	if test -z '$(STRIP)'; then \
 	  $(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
@@ -928,98 +1080,99 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-am
+clean: clean-recursive
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-checkPROGRAMS clean-generic mostlyclean-am
 
-distclean: distclean-am
+distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
 
-dvi: dvi-am
+dvi: dvi-recursive
 
 dvi-am:
 
-html: html-am
+html: html-recursive
 
 html-am:
 
-info: info-am
+info: info-recursive
 
 info-am:
 
 install-data-am:
 
-install-dvi: install-dvi-am
+install-dvi: install-dvi-recursive
 
 install-dvi-am:
 
 install-exec-am:
 
-install-html: install-html-am
+install-html: install-html-recursive
 
 install-html-am:
 
-install-info: install-info-am
+install-info: install-info-recursive
 
 install-info-am:
 
 install-man:
 
-install-pdf: install-pdf-am
+install-pdf: install-pdf-recursive
 
 install-pdf-am:
 
-install-ps: install-ps-am
+install-ps: install-ps-recursive
 
 install-ps-am:
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-am
+maintainer-clean: maintainer-clean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-am
+mostlyclean: mostlyclean-recursive
 
 mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-pdf: pdf-am
+pdf: pdf-recursive
 
 pdf-am:
 
-ps: ps-am
+ps: ps-recursive
 
 ps-am:
 
 uninstall-am:
 
-.MAKE: check-am install-am install-strip
+.MAKE: $(am__recursive_targets) check-am install-am install-strip
 
-.PHONY: CTAGS GTAGS TAGS all all-am check check-TESTS check-am clean \
-	clean-generic clean-noinstPROGRAMS cscopelist-am ctags \
-	ctags-am distclean distclean-compile distclean-generic \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	recheck tags tags-am uninstall uninstall-am
+.PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am check \
+	check-TESTS check-am clean clean-checkPROGRAMS clean-generic \
+	cscopelist-am ctags ctags-am distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am recheck tags tags-am \
+	uninstall uninstall-am
 
 
-.pl_.pl:
-	cat "$(top_srcdir)/test/$*.pl_" > "$*.pl"
-	chmod +x "$*.pl"
+emailrelay-test: emailrelay-test.sh
+	cp $(srcdir)/emailrelay-test.sh emailrelay-test
+	chmod +x emailrelay-test
 
-.sh_.sh:
-	cat "$(top_srcdir)/test/$*.sh_" > "$*.sh"
-	chmod +x "$*.sh"
+emailrelay-chain-test: emailrelay-chain-test.sh
+	cp $(srcdir)/emailrelay-chain-test.sh emailrelay-chain-test
+	chmod +x emailrelay-chain-test
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

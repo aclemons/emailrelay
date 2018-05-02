@@ -37,6 +37,7 @@
 #include "gnewprocess.h"
 #include "gmapfile.h"
 #include "boot.h"
+#include "access.h"
 #include "serverconfiguration.h"
 #include "installer.h"
 #include "service_install.h"
@@ -90,7 +91,8 @@ struct CreateDirectory : public ActionBase
 	std::string m_display_name ;
 	std::string m_ok ;
 	G::Path m_path ;
-	CreateDirectory( std::string display_name , std::string path , std::string sub_path = std::string() ) ;
+	bool m_tight_permissions ;
+	CreateDirectory( std::string display_name , std::string path , bool tight_permissions = false ) ;
 	virtual std::string text() const ;
 	virtual std::string ok() const ;
 	virtual void run() ;
@@ -282,9 +284,10 @@ private:
 
 // ==
 
-CreateDirectory::CreateDirectory( std::string display_name , std::string path , std::string sub_path ) :
+CreateDirectory::CreateDirectory( std::string display_name , std::string path , bool tight_permissions ) :
 	m_display_name(display_name) ,
-	m_path(sub_path.empty()?path:G::Path::join(path,sub_path))
+	m_path(path) ,
+	m_tight_permissions(tight_permissions)
 {
 }
 
@@ -317,6 +320,7 @@ void CreateDirectory::run()
 		{
 			G::File::mkdirs( m_path , 10 ) ;
 		}
+		Access::modify( m_path , m_tight_permissions ) ;
 		if( !directory.writeable() )
 			throw std::runtime_error( "directory exists but is not writable" ) ;
 	}
@@ -1007,7 +1011,7 @@ void InstallerImp::insertActions()
 	//
 	if( m_installing )
 	{
-		insert( new CreateDirectory("install",pvalue("dir-install")) ) ;
+		insert( new CreateDirectory("install",pvalue("dir-install"),true) ) ;
 		insert( new CreateDirectory("configuration",pvalue("dir-config")) ) ;
 	}
 	insert( new CreateDirectory("spool",pvalue("dir-spool")) ) ;

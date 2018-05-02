@@ -89,7 +89,7 @@ G::MapFile ServerConfiguration::read( const G::Path & config_file )
 	}
 	if( config.booleanValue("syslog",false) )
 	{
-		config.add( "no-syslog" , "no" ) ;
+		config.add( "no-syslog" , G::Str::negative() ) ;
 	}
 
 	return config ;
@@ -134,6 +134,7 @@ G::StringArray ServerConfiguration::args( bool no_close_stderr ) const
 			bool option_arg_is_commandline =
 				result.back() == "--filter" || result.back() == "-z" ||
 				result.back() == "--client-filter" || result.back() == "-Y" ||
+				result.back() == "--address-verifier" ||
 				result.back() == "--verifier" || result.back() == "-Z" ;
 			result.push_back( quote(option_arg,option_arg_is_commandline) ) ;
 		}

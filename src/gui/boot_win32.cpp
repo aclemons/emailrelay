@@ -82,4 +82,9 @@ bool Boot::uninstall( const G::Path & , const std::string & name , const G::Path
 	return ::service_remove(name).empty() ;
 }
 
+bool Boot::installed( const G::Path & , const std::string & name )
+{
+	return ::service_installed( name ) ;
+}
+
 /// \file boot_win32.cpp

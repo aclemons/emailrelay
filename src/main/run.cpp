@@ -61,7 +61,12 @@
 
 std::string Main::Run::buildConfiguration()
 {
-	return G_STR(GCONFIG_CONFIGURATION) ;
+	std::string result = G_STR(GCONFIG_CONFIGURATION) ;
+	if( result == "windows" )
+	{
+		result.append( sizeof(void*) == 8 ? " 64-bit" : " 32-bit" ) ;
+	}
+	return result ;
 }
 
 std::string Main::Run::versionNumber()
@@ -74,7 +79,7 @@ Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string &
 	m_eh_throw(true) ,
 	m_eh_nothrow(false) ,
 	m_option_spec(option_spec) ,
-	m_arg(arg) ,
+	m_arg(Configuration::backwardsCompatibilityFixup(arg)) ,
 	m_forwarding_pending(false) ,
 	m_quit_when_sent(false)
 {
@@ -152,25 +157,14 @@ bool Main::Run::runnable()
 		return false ;
 	}
 
-	m_log_output.reset( new G::LogOutput( m_arg.prefix() ,
-		configuration().log() , // output
-		configuration().log() , // with-logging
-		configuration().verbose() , // with-verbose-logging
-		configuration().debug() , // with-debug
-		true , // with-level
-		configuration().logTimestamp() , // with-timestamp
-		!configuration().debug() , // strip-context
-		configuration().useSyslog() , // use-syslog
-		configuration().logFile().str() , // stderr-replacement
-		G::LogOutput::Mail // facility
-	) ) ;
-
-	commandline().logSemanticWarnings( configuration().semanticWarnings() ) ;
+	if( m_output.simpleOutput() && !configuration().semanticWarnings().empty() )
+	{
+		commandline().showSemanticWarnings( configuration().semanticWarnings() ) ;
+	}
 
 	if( commandline().map().contains("test") )
 	{
 		G::Test::set( commandline().map().value("test") ) ;
-		G::LogOutput::groups( commandline().map().value("test") ) ;
 	}
 
 	return true ;
@@ -191,13 +185,37 @@ void Main::Run::run()
 	//
 	G::Process::Umask::set( G::Process::Umask::Tightest ) ;
 
-	// close inherited file descriptors to avoid locking file
-	// systems when running as a daemon -- this has to be done
-	// early, before opening any sockets or message-store streams
+	// close inherited file descriptors to avoid locking file systems
+	// when running as a daemon -- this has to be done early, before
+	// opening any sockets or message-store streams
 	//
 	if( configuration().daemon() )
 	{
 		closeFiles() ;
+	}
+
+	// open log file and/or syslog after closeFiles()
+	//
+	m_log_output.reset( new G::LogOutput( m_arg.prefix() ,
+		configuration().log() , // output
+		configuration().log() , // with-logging
+		configuration().verbose() , // with-verbose-logging
+		configuration().debug() , // with-debug
+		true , // with-level
+		configuration().logTimestamp() , // with-timestamp
+		!configuration().debug() , // strip-context
+		configuration().useSyslog() , // use-syslog
+		configuration().logFile().str() , // stderr-replacement
+		G::LogOutput::Mail // facility
+	) ) ;
+	if( commandline().map().contains("test") )
+		G::LogOutput::groups( commandline().map().value("test") ) ;
+
+	// log command-line warnings
+	//
+	if( !m_output.simpleOutput() )
+	{
+		commandline().logSemanticWarnings( configuration().semanticWarnings() ) ;
 	}
 
 	// release root privileges and extra group memberships
@@ -230,7 +248,7 @@ void Main::Run::run()
 		configuration().clientOverTls() ||
 		configuration().serverTls() ;
 
-	bool prefer_tls = // authentication can use hash functions from tls library
+	bool prefer_tls = // secrets might need hash functions from tls library
 		configuration().clientSecretsFile() != G::Path() ||
 		configuration().serverSecretsFile() != G::Path() ||
 		configuration().popSecretsFile() != G::Path() ;
@@ -289,6 +307,7 @@ void Main::Run::run()
 	bool serving = do_smtp || do_pop || do_admin ;
 	bool admin_forwarding = do_admin && !configuration().serverAddress().empty() ;
 	bool forwarding = configuration().forwardOnStartup() || configuration().doPolling() || admin_forwarding ;
+	bool report_finished = configuration().forwardOnStartup() && !serving && m_output.simpleOutput() ;
 	m_quit_when_sent =
 		!serving &&
 		configuration().forwardOnStartup() &&
@@ -368,6 +387,9 @@ void Main::Run::run()
 		std::string quit_reason = m_event_loop->run() ;
 		if( !quit_reason.empty() )
 			throw std::runtime_error( quit_reason ) ;
+
+		if( report_finished )
+			commandline().showFinished() ;
 	}
 }
 

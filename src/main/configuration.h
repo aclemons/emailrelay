@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gsmtp.h"
+#include "garg.h"
 #include "goptions.h"
 #include "goptionmap.h"
 #include "gpath.h"
@@ -52,12 +53,16 @@ public:
 		///< value, and the base-dir path is used turn relative paths
 		///< into absolute ones.
 
+	static G::Arg backwardsCompatibilityFixup( const G::Arg & ) ;
+		///< Modifies the command-line for backwards-compatibility with
+		///< earlier releases.
+
 	std::string semanticError() const ;
 		///< Returns a non-empty string if there is a fatal semantic conflict
 		///< in the configuration.
 
-	std::string semanticWarnings() const ;
-		///< Returns a non-empty string if there is a non-fatal semantic conflict
+	G::StringArray semanticWarnings() const ;
+		///< Returns a non-empty array if there are non-fatal semantic conflicts
 		///< in the configuration.
 
 	G::StringArray display() const ;
@@ -280,6 +285,7 @@ private:
 	bool pathlike( const std::string & ) const ;
 	bool compoundy( const std::string & ) const ;
 	bool compound( const std::string & ) const ;
+	G::StringArray semantics( bool ) const ;
 
 private:
 	G::Options m_options ;

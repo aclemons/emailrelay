@@ -187,11 +187,12 @@ private:
 	bool authenticationRequiresEncryption() const ;
 	void reset() ;
 	void badClientEvent() ;
-	void processDone( bool , unsigned long , std::string ) ; // ProtocolMessage::doneSignal()
+	void processDone( bool , unsigned long , std::string , std::string ) ; // ProtocolMessage::doneSignal()
 	void prepareDone( bool , bool , std::string ) ;
 	bool isEndOfText( const std::string & ) const ;
 	bool isEscaped( const std::string & ) const ;
 	void doNoop( const std::string & , bool & ) ;
+	void doIgnore( const std::string & , bool & ) ;
 	void doNothing( const std::string & , bool & ) ;
 	void doDiscarded( const std::string & , bool & ) ;
 	void doDiscard( const std::string & , bool & ) ;

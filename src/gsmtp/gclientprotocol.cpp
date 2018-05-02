@@ -79,29 +79,9 @@ void GSmtp::ClientProtocol::start( const std::string & from , const G::StringArr
 	m_message_mail_from_auth = mail_from_auth ; // MAIL..AUTH=
 	m_reply = Reply() ;
 
-
 	// (re)start the protocol
 	m_done_signal.reset() ;
 	applyEvent( Reply() , true ) ;
-}
-
-void GSmtp::ClientProtocol::filterDone( bool ok , const std::string & reason )
-{
-	if( ok )
-	{
-		// filter response event to continue with this message
-		applyEvent( Reply::ok(Reply::Internal_filter_ok) ) ;
-	}
-	else if( reason.empty() )
-	{
-		// filter response event to abandon this message (done-code -1)
-		applyEvent( Reply::ok(Reply::Internal_filter_abandon) ) ;
-	}
-	else
-	{
-		// filter response event to fail this message (done-code -2)
-		applyEvent( Reply::error(Reply::Internal_filter_error,reason) ) ;
-	}
 }
 
 void GSmtp::ClientProtocol::secure()
@@ -185,7 +165,7 @@ void GSmtp::ClientProtocol::sendMail()
 	if( dodgy && m_strict )
 	{
 		m_state = sDone ;
-		raiseDoneSignal( "cannot send 8-bit message to 7-bit server" , 0 , true/*warn*/ ) ;
+		raiseDoneSignal( 0 , "failed" , "cannot send 8-bit message to 7-bit server" ) ;
 	}
 	else
 	{
@@ -224,14 +204,6 @@ void GSmtp::ClientProtocol::sendMailCore()
 		mail_from_tail.append( " AUTH=<>" ) ;
 	}
 	send( "MAIL FROM:<" , mail_from_tail ) ;
-}
-
-void GSmtp::ClientProtocol::startFiltering()
-{
-	G_ASSERT( m_state == sFiltering ) ;
-	if( m_filter_timeout != 0U )
-		startTimer( m_filter_timeout ) ;
-	m_filter_signal.emit() ;
 }
 
 bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_event )
@@ -430,19 +402,19 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	{
 		m_state = sDone ;
 		protocol_done = true ;
-		raiseDoneSignal( std::string() , -1 ) ;
+		raiseDoneSignal( -1 , std::string() ) ;
 	}
 	else if( m_state == sFiltering && reply.is(Reply::Internal_filter_error) )
 	{
 		m_state = sDone ;
 		protocol_done = true ;
-		raiseDoneSignal( reply.errorText() , -2 ) ;
+		raiseDoneSignal( -2 , reply.errorText() , reply.errorReason() ) ;
 	}
 	else if( m_state == sFiltering )
 	{
 		m_state = sDone ;
 		protocol_done = true ;
-		raiseDoneSignal( reply.errorText() , reply.value() ) ;
+		raiseDoneSignal( reply.value() , reply.errorText() ) ;
 	}
 	else if( m_state == sSentMail && reply.is(Reply::Ok_250) )
 	{
@@ -496,13 +468,13 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		m_state = sDone ;
 		protocol_done = true ;
 		std::string how_many = m_must_accept_all_recipients ? std::string("one or more") : std::string("all") ;
-		raiseDoneSignal( how_many + " recipients rejected" , reply.value() ) ;
+		raiseDoneSignal( reply.value() , how_many + " recipients rejected" ) ;
 	}
 	else if( m_state == sSentDot )
 	{
 		m_state = sDone ;
 		protocol_done = true ;
-		raiseDoneSignal( reply.errorText() , reply.value() ) ;
+		raiseDoneSignal( reply.value() , reply.errorText() ) ;
 	}
 	else if( is_start_event )
 	{
@@ -553,13 +525,41 @@ G::StringArray GSmtp::ClientProtocol::serverAuthMechanisms( const ClientProtocol
 	return result ;
 }
 
-void GSmtp::ClientProtocol::raiseDoneSignal( const std::string & reason , int reason_code , bool warn )
+void GSmtp::ClientProtocol::startFiltering()
 {
-	if( ! reason.empty() && warn )
-		G_WARNING( "GSmtp::ClientProtocol: smtp client protocol: " << reason ) ;
+	G_ASSERT( m_state == sFiltering ) ;
+	if( m_filter_timeout != 0U )
+		startTimer( m_filter_timeout ) ; // cancelled in applyEvent()
+	m_filter_signal.emit() ;
+}
+
+void GSmtp::ClientProtocol::filterDone( bool ok , const std::string & response , const std::string & reason )
+{
+	if( ok )
+	{
+		// apply filter response event to continue with this message
+		applyEvent( Reply::ok(Reply::Internal_filter_ok) ) ;
+	}
+	else if( response.empty() )
+	{
+		// apply filter response event to abandon this message (done-code -1)
+		applyEvent( Reply::ok(Reply::Internal_filter_abandon) ) ;
+	}
+	else
+	{
+		// apply filter response event to fail this message (done-code -2)
+		applyEvent( Reply::error(Reply::Internal_filter_error,response,reason) ) ;
+	}
+}
+
+void GSmtp::ClientProtocol::raiseDoneSignal( int response_code , const std::string & response , const std::string & reason )
+{
+	if( ! response.empty() && response_code == 0 )
+		G_WARNING( "GSmtp::ClientProtocol: smtp client protocol: " << response ) ;
+
 	cancelTimer() ;
 	m_content.reset() ;
-	m_done_signal.emit( reason , reason_code ) ;
+	m_done_signal.emit( response_code , response , reason ) ;
 }
 
 bool GSmtp::ClientProtocol::endOfContent() const
@@ -651,7 +651,7 @@ const std::string & GSmtp::ClientProtocol::lf()
 	return s ;
 }
 
-G::Slot::Signal2<std::string,int> & GSmtp::ClientProtocol::doneSignal()
+G::Slot::Signal3<int,std::string,std::string> & GSmtp::ClientProtocol::doneSignal()
 {
 	return m_done_signal ;
 }
@@ -701,17 +701,12 @@ GSmtp::ClientProtocolReply GSmtp::ClientProtocolReply::ok( Value v , const std::
 	return reply ;
 }
 
-GSmtp::ClientProtocolReply GSmtp::ClientProtocolReply::error( Value v , const std::string & reason )
+GSmtp::ClientProtocolReply GSmtp::ClientProtocolReply::error( Value v , const std::string & response , const std::string & reason )
 {
-	ClientProtocolReply reply( std::string("500 ")+G::Str::printable(reason) ) ;
-	reply.m_value = v ;
-	G_ASSERT( !reply.positive() ) ; if( reply.positive() ) reply.m_value = 500 ;
+	ClientProtocolReply reply( std::string("500 ")+G::Str::printable(response) ) ;
+	reply.m_value = ( v >= 500 && v < 600 ) ? v : 500 ;
+	reply.m_reason = reason ;
 	return reply ;
-}
-
-GSmtp::ClientProtocolReply GSmtp::ClientProtocolReply::error( const std::string & reason )
-{
-	return ClientProtocolReply( std::string("500 ")+G::Str::printable(reason) ) ;
 }
 
 bool GSmtp::ClientProtocolReply::validFormat() const
@@ -743,6 +738,11 @@ std::string GSmtp::ClientProtocolReply::errorText() const
 {
 	const bool positive_completion = type() == PositiveCompletion ;
 	return positive_completion ? std::string() : ( m_text.empty() ? std::string("error") : m_text ) ;
+}
+
+std::string GSmtp::ClientProtocolReply::errorReason() const
+{
+	return m_reason ;
 }
 
 std::string GSmtp::ClientProtocolReply::text() const

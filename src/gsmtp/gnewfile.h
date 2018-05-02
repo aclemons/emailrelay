@@ -42,7 +42,7 @@ namespace GSmtp
 class GSmtp::NewFile : public NewMessage
 {
 public:
-	G_EXCEPTION( InvalidPath , "invalid path -- must be absolute" ) ;
+	G_EXCEPTION( InvalidPath , "invalid path: must be absolute" ) ;
 	G_EXCEPTION( FileError , "message store error" ) ;
 
 	NewFile( FileStore & store , const std::string & from , const std::string & from_auth_in ,
@@ -69,7 +69,7 @@ public:
 			///< by creating ".local" copies. The path
 			///< to the content file is returned.
 
-	virtual void commit() override ;
+	virtual void commit( bool strict ) override ;
 		///< Override from GSmtp::NewMessage.
 		///<
 		///< The implementation renames the ".new"

@@ -24,6 +24,8 @@
 #include <string>
 
 std::string service_install( std::string commandline , std::string name , std::string display_name ,
-	std::string description ) ;
+	std::string description , bool autostart = true ) ;
+
+bool service_installed( std::string name ) ;
 
 #endif

@@ -14,22 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gdescriptor.cpp
-//
+///
+/// \file access.h
+///
+
+#ifndef G_INSTALLER_ACCESS_H
+#define G_INSTALLER_ACCESS_H
 
 #include "gdef.h"
-#include "gdescriptor.h"
+#include "gpath.h"
+#include "gexception.h"
+#include "gstrings.h"
+#include <string>
 
-GNet::Descriptor::Descriptor( SOCKET fd , HANDLE h ) :
-	m_fd(fd) ,
-	m_handle(h)
+/// \class Access
+/// A static class for modifying file-system permissions.
+///
+class Access
 {
-}
+public:
+	static bool modify( const G::Path & , bool ) ;
+		///< Modifies the permissions on the given path in
+		///< some undefined way. Returns false on error.
 
-GNet::Descriptor GNet::Descriptor::invalid()
-{
-	return Descriptor() ;
-}
+private:
+	Access( const Access & ) ;
+	void operator=( const Access & ) ;
+} ;
 
-/// \file gdescriptor.cpp
+#endif

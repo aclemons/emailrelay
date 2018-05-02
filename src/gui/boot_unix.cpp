@@ -60,4 +60,9 @@ bool Boot::uninstall( const G::Path & dir_boot , const std::string & name , cons
 	return ok0 && ok1 && ok2 && ok3 ;
 }
 
+bool Boot::installed( const G::Path & dir_boot , const std::string & name )
+{
+	return G::File::exists( dir_boot.dirname() + "rc2.d" + ( "S50" + name ) , G::File::NoThrow() ) ;
+}
+
 /// \file boot_unix.cpp

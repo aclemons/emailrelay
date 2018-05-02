@@ -26,6 +26,7 @@
 #  winbuild::default_touchfile(...) ;
 #  winbuild::find_cmake(...) ;
 #  winbuild::find_msbuild(...) ;
+#  winbuild::find_qt(...) ;
 #  winbuild::spit_out_batch_files(...) ;
 #  winbuild::clean_cmake_files(...) ;
 #  winbuild::clean_cmake_cache_files(...) ;
@@ -40,6 +41,7 @@
 #
 
 use strict ;
+use Cwd ;
 use FileHandle ;
 use File::Basename ;
 use File::Find ;
@@ -63,7 +65,7 @@ sub find_cmake
 		"$ENV{ProgramFiles}/cmake/bin" ,
 	) ;
 	my @list = grep { -f $_ } map { "$_/cmake.exe" } grep { $_ } @dirs ;
-	return scalar(@list) ? $list[0] : undef ;
+	return scalar(@list) ? Cwd::realpath($list[0]) : undef ;
 }
 
 sub find_msbuild
@@ -80,7 +82,29 @@ sub find_msbuild
 		print "msbuild-search=[$base]\n" ;
 		File::Find::find( sub { push @list , $File::Find::name if lc($_) eq "msbuild.exe" } , $base ) ;
 	}
-	return scalar(@list) ? $list[0] : undef ;
+	return scalar(@list) ? Cwd::realpath($list[0]) : undef ;
+}
+
+sub find_qt
+{
+	my ( @bases ) = @_ ;
+	my %map = (
+		x86 => [ "qt/5*/msvc*/lib/cmake/qt5" , qr;/msvc\d\d\d\d/; ] ,
+		x64 => [ "qt/5*/msvc*_64/lib/cmake/qt5" , qr;.; ] ,
+	) ;
+	my %result = () ;
+	for my $arch ( keys %map )
+	{
+		my $glob = @{$map{$arch}}[0] ;
+		my $re = @{$map{$arch}}[1] ;
+		my @list = () ;
+		for my $base ( @bases )
+		{
+			push @list , grep { -d $_ && $_ =~ m/$re/ } glob( "$base/$glob" ) ;
+		}
+		$result{$arch} = scalar(@list) ? $list[0] : undef ;
+	}
+	return \%result ;
 }
 
 sub spit_out_batch_files
@@ -100,15 +124,27 @@ sub spit_out_batch_files
 
 sub clean_cmake_files
 {
+	my ( $base_dir ) = @_ ;
+	$base_dir ||= "." ;
 	my @list = () ;
-	File::Find::find( sub { push @list , $File::Find::name if $_ eq "CMakeLists.txt" } , "." ) ;
+	File::Find::find( sub { push @list , $File::Find::name if $_ eq "CMakeLists.txt" } , $base_dir ) ;
 	unlink @list ;
 }
 
 sub clean_cmake_cache_files
 {
-	-d "CMakeFiles" && ( deltree("CMakeFiles") ) ;
-	-f "CMakeCache.txt" && ( unlink "CMakeCache.txt" or die ) ;
+	my ( $base_dir ) = @_ ;
+	$base_dir ||= "." ;
+	{
+		my @list = () ;
+		File::Find::find( sub { push @list , $File::Find::name if $_ eq "CMakeFiles" } , $base_dir ) ;
+		map { deltree($_) } @list ;
+	}
+	{
+		my @list = () ;
+		File::Find::find( sub { push @list , $File::Find::name if $_ eq "CMakeCache.txt" } , $base_dir ) ;
+		map { unlink $_ or die } @list ;
+	}
 }
 
 sub deltree
@@ -128,11 +164,13 @@ sub deltree
 
 sub run_msbuild
 {
-	my ( $msbuild , $project , $confname , $target ) = @_ ;
+	my ( $msbuild , $project , $arch , $confname , $target ) = @_ ;
+	$arch ||= "x64" ;
 	$confname ||= "Release" ;
-	my @msbuild_args = ( "/fileLogger" , "$project.sln" ) ;
-	if( $target ) { push @msbuild_args , "/t:$target" }
-	if( $project ) { push @msbuild_args , "/p:Configuration=$confname" }
+	my $build_dir = $arch ;
+	my @msbuild_args = ( "/fileLogger" , "$build_dir/$project.sln" ) ;
+	push @msbuild_args , "/t:$target" if $target ;
+	push @msbuild_args , "/p:Configuration=$confname" ;
 	if( $^O eq "linux" ) { $msbuild = ("make") ; @msbuild_args = ( $target ) }
 	my $rc = system( $msbuild , @msbuild_args ) ;
 	print "msbuild-exit=[$rc]\n" ;
@@ -168,8 +206,8 @@ sub read_makefiles_imp
 
 sub cache_value
 {
-	my ( $re ) = @_ ;
-	my $fh = new FileHandle( "CMakeCache.txt" , "r" ) or die "error: cannot open cmake cache file\n" ;
+	my ( $arch , $re ) = @_ ;
+	my $fh = new FileHandle( "$arch/CMakeCache.txt" , "r" ) or die "error: cannot open cmake cache file\n" ;
 	my $value ;
 	while(<$fh>)
 	{
@@ -186,7 +224,8 @@ sub cache_value
 
 sub find_msvc_base
 {
-	my $msvc_linker = _cache_value_msvc_linker() ;
+	my ( $arch ) = @_ ;
+	my $msvc_linker = _cache_value_msvc_linker( $arch ) ;
 	my $dir = File::Basename::dirname( $msvc_linker ) ;
 	my ( $base ) = ( $dir =~ m:(.*/vc)/.*:i ) ; # could to better
 	$base or die "error: install: cannot determine the msvc base directory from [$msvc_linker]\n" ;
@@ -195,7 +234,8 @@ sub find_msvc_base
 
 sub _cache_value_msvc_linker
 {
-	my $msvc_linker = cache_value( qr/^CMAKE_LINKER:[A-Z]+=(.*)/ ) ;
+	my ( $arch ) = @_ ;
+	my $msvc_linker = cache_value( $arch , qr/^CMAKE_LINKER:[A-Z]+=(.*)/ ) ;
 	$msvc_linker or die "error: install: cannot read linker path from CMakeCache.txt\n" ;
 	return $msvc_linker ;
 }

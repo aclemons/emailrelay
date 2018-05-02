@@ -11,9 +11,9 @@ E-MailRelay does three things: it stores any incoming e-mail messages that
 it receives, it forwards e-mail messages on to another remote e-mail server,
 and it serves up stored e-mail messages to local e-mail reader programs. More
 technically, it acts as a [SMTP][] storage daemon, a SMTP forwarding agent, and
-a [POP][] server.
+a POP3 server.
 
-Whenever an e-mail messages is received it can be passed through a user-defined
+Whenever an e-mail message is received it can be passed through a user-defined
 program, such as a spam filter, which can drop, re-address or edit messages as
 they pass through.
 
@@ -63,7 +63,7 @@ program with the `--filter` option, something like this:
 
         emailrelay --as-proxy smtp.example.com:25 --filter addsig.js
 
-To run E-MailRelay as a POP server without SMTP use `--pop` and `--no-smtp`:
+To run E-MailRelay as a [POP][] server without SMTP use `--pop` and `--no-smtp`:
 
         emailrelay --pop --no-smtp --log --close-stderr
 
@@ -85,7 +85,7 @@ The following documentation is provided:
 
 * README \-\- this document
 * COPYING \-\- the GNU General Public License
-* INSTALL \-\- build & install instructions (including the GNU text)
+* INSTALL \-\- generic build & install instructions
 * AUTHORS \-\- authors, credits and additional copyrights
 * userguide.txt \-\- user guide
 * reference.txt \-\- reference document

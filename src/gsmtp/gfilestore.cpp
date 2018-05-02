@@ -321,7 +321,7 @@ void GSmtp::FileStore::createTestMessage()
 	for( int i = 0 ; i < 1000 ; i++ )
 		f.addText( std::string(998U,'a'+(i%26)) ) ;
 	f.prepare( "test" , "127.0.0.1:999" , std::string() ) ;
-	f.commit() ;
+	f.commit( true ) ;
 }
 
 void GSmtp::FileStore::clearAll()

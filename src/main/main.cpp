@@ -42,6 +42,7 @@ class Main::App : public Main::Output
 {
 	virtual void output( const std::string & text , bool e ) override ;
 	virtual G::Options::Layout layout() const override ;
+	virtual bool simpleOutput() const override ;
 } ;
 
 void Main::App::output( const std::string & text , bool e )
@@ -53,6 +54,11 @@ void Main::App::output( const std::string & text , bool e )
 G::Options::Layout Main::App::layout() const
 {
 	return G::Options::Layout( 38U ) ;
+}
+
+bool Main::App::simpleOutput() const
+{
+	return true ;
 }
 
 int main( int argc , char * argv [] )

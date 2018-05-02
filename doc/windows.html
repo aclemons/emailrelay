@@ -34,7 +34,7 @@
     <p>
      After a successful installation you should see E-MailRelay listed in the Windows
      Start Menu. This will run the <em class="quote">emailrelay-start.bat</em> batch file to start
-     the E-MailRelay server, and you should see an icon appear in the Windows
+     the E-MailRelay server, and you should then see an icon appear in the Windows
      system tray.
     </p>
    <h2><a class="a-header" name="SH_1_3">Configuration</a></h2> <!-- index:2:SH:1:3:Configuration -->
@@ -68,11 +68,11 @@
      <li>Copy the packaged files into <em class="quote">c:\Program Files\E-MailRelay</em></li>
      <li>Create a new spool directory <em class="quote">c:\ProgramData\E-MailRelay\spool</em></li>
      <li>Create a new text file, eg. <em class="quote">c:\ProgramData\E-MailRelay\emailrelay-auth.txt</em>, to contain account details</li>
-     <li>Add your account details to <em class="quote">emailrelay-auth.txt</em> with a line like <em class="quote">client login myaccount mypassword</em></li>
-     <li>Drag <em class="quote">emailrelay.exe</em> onto the desktop to create a shortcut for the server.</li>
+     <li>Add your account details to <em class="quote">emailrelay-auth.txt</em> with a line like <em class="quote">client plain myaccount mypassword</em></li>
+     <li>Right-drag <em class="quote">emailrelay.exe</em> onto the desktop to create a shortcut for the server.</li>
      <li>Add <em class="quote">--as-server --verbose</em> to the server shortcut properties in the <em class="quote">target</em> box.</li>
-     <li>Drag again to create a shortcut for the forwarding client.</li>
-     <li>Add <em class="quote">--as-client myisp.net:smtp --hidden --client-auth c:\ProgramData\E-MailRelay\emailrelay-auth.txt</em> to the client shortcut.</li>
+     <li>Right-drag again to create a shortcut to do the forwarding.</li>
+     <li>Add <em class="quote">--as-client myisp.net:smtp --client-auth c:\ProgramData\E-MailRelay\emailrelay-auth.txt</em> to the client shortcut.</li>
     </ul>
 
     <p>
@@ -159,11 +159,26 @@
      using the E-MailRelay <em class="quote">--log-file</em> option with the special <em class="quote">%d</em> date
      placeholder. Then turn off the event-log logging with <em class="quote">--no-syslog</em>.
     </p>
-   <h2><a class="a-header" name="SH_1_8">Telnet</a></h2> <!-- index:2:SH:1:8:Telnet -->
+   <h2><a class="a-header" name="SH_1_8">Testing with telnet</a></h2> <!-- index:2:SH:1:8:Testing with telnet -->
     <p>
-     If you want to test E-MailRelay using telnet (as described elsewhere) then you
-     might need to enable the Windows telnet client using
+     The <em class="quote">telnet</em> program can be used for testing an E-MailRelay server. You should
+     start by enabling the Windows telnet client using
      <em class="quote">ControlPanel</em>-&gt;<em class="quote">Programs</em>-&gt;<em class="quote">TurnWindowsFeaturesOnAndOff</em>.
+    </p>
+
+    <p>
+     Then run telnet from a command prompt, using <em class="quote">localhost</em> and the E-MailRelay
+     port number as command-line parameters:
+    </p>
+
+      <div class="div-pre">
+       <pre>telnet localhost 25
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     This should show a greeting from the E-MailRelay server and then you can
+     start typing SMTP commands like <em class="quote">EHLO</em>, <em class="quote">MAIL FROM:&lt;..&gt;</em>, <em class="quote">RCPT TO:&lt;...&gt;</em>
+     and <em class="quote">DATA</em>.
     </p>
    <h2><a class="a-header" name="SH_1_9">Building from source</a></h2> <!-- index:2:SH:1:9:Building from source -->
     <p>

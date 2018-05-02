@@ -20,7 +20,7 @@ Running the program
 -------------------
 After a successful installation you should see E-MailRelay listed in the Windows
 Start Menu. This will run the `emailrelay-start.bat` batch file to start
-the E-MailRelay server, and you should see an icon appear in the Windows
+the E-MailRelay server, and you should then see an icon appear in the Windows
 system tray.
 
 Configuration
@@ -48,11 +48,11 @@ setup program, goes something like this:
 * Copy the packaged files into `c:\Program Files\E-MailRelay`
 * Create a new spool directory `c:\ProgramData\E-MailRelay\spool`
 * Create a new text file, eg. `c:\ProgramData\E-MailRelay\emailrelay-auth.txt`, to contain account details
-* Add your account details to `emailrelay-auth.txt` with a line like `client login myaccount mypassword`
-* Drag `emailrelay.exe` onto the desktop to create a shortcut for the server.
+* Add your account details to `emailrelay-auth.txt` with a line like `client plain myaccount mypassword`
+* Right-drag `emailrelay.exe` onto the desktop to create a shortcut for the server.
 * Add `--as-server --verbose` to the server shortcut properties in the `target` box.
-* Drag again to create a shortcut for the forwarding client.
-* Add `--as-client myisp.net:smtp --hidden --client-auth c:\ProgramData\E-MailRelay\emailrelay-auth.txt` to the client shortcut.
+* Right-drag again to create a shortcut to do the forwarding.
+* Add `--as-client myisp.net:smtp --client-auth c:\ProgramData\E-MailRelay\emailrelay-auth.txt` to the client shortcut.
 
 Copy the shortcuts to `Start Menu` and `Startup` folders as necessary.
 
@@ -116,11 +116,20 @@ The Windows Event Log is a bit clunky, so consider using daily log files by
 using the E-MailRelay `--log-file` option with the special `%d` date
 placeholder. Then turn off the event-log logging with `--no-syslog`.
 
-Telnet
-------
-If you want to test E-MailRelay using telnet (as described elsewhere) then you
-might need to enable the Windows telnet client using
+Testing with telnet
+-------------------
+The `telnet` program can be used for testing an E-MailRelay server. You should
+start by enabling the Windows telnet client using
 `ControlPanel`->`Programs`->`TurnWindowsFeaturesOnAndOff`.
+
+Then run telnet from a command prompt, using `localhost` and the E-MailRelay
+port number as command-line parameters:
+
+        telnet localhost 25
+
+This should show a greeting from the E-MailRelay server and then you can
+start typing [SMTP][] commands like `EHLO`, `MAIL FROM:<..>`, `RCPT TO:<...>`
+and `DATA`.
 
 Building from source
 --------------------
@@ -133,6 +142,9 @@ MSVC, Qt and mbedTLS source are installed in the right way then the
 in one go.
 
 
+
+
+[SMTP]: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 
 _____________________________________
 Copyright (C) 2001-2018 Graeme Walker

@@ -9,8 +9,8 @@
 #     $ emailrelay --as-server --server-auth=/etc/emailrelay.auth
 #     $ emailrelay --pop --no-smtp --pop-auth=/etc/emailrelay.auth
 #
-# Each line in this file has four or five space-separated fields in one
-# of the following forms:
+# Each line in this file has four space-separated fields in one of the
+# following forms:
 #
 #     client {plain|md5} <id> <password>
 #     server {plain|md5} <id> <password>
@@ -39,5 +39,5 @@
 # "password" fields should encoded using the RFC-1891 "xtext" encoding scheme
 # so that they are representing as hexadecimal ascii as "+XX".
 #
-# The "none" rows are to allow trusted IP addresses to bypass authentication.
+# The "none" rows allow trusted IP addresses to bypass authentication.
 #

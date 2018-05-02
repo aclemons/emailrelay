@@ -107,11 +107,11 @@ std::string GSmtp::NewFile::prepare( const std::string & session_auth_id , const
 	return m_content_path.str() ;
 }
 
-void GSmtp::NewFile::commit()
+void GSmtp::NewFile::commit( bool strict )
 {
-	bool ok = commitEnvelope() ;
 	m_committed = true ;
-	if( !ok )
+	bool ok = commitEnvelope() ;
+	if( !ok && strict )
 		throw FileError( "cannot rename envelope file to " + m_envelope_path_1.str() ) ;
 }
 
@@ -245,10 +245,7 @@ void GSmtp::NewFile::writeEnvelope( std::ostream & stream , const std::string & 
 
 std::string GSmtp::NewFile::xnormalise( const std::string & s )
 {
-	if( s.empty() || ( s.size() == 1U && s.at(0) == '+' ) )
-		return s ;
-	else
-		return G::Xtext::encode(G::Xtext::decode(s)) ;
+	return G::Xtext::encode(G::Xtext::decode(s)) ;
 }
 
 const std::string & GSmtp::NewFile::crlf() const

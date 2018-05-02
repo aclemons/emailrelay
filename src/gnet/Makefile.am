@@ -45,7 +45,6 @@ libgnet_a_SOURCES = \
 	gclientptr.h \
 	gconnection.cpp \
 	gconnection.h \
-	gdescriptor.cpp \
 	gdescriptor.h \
 	gdescriptor_win32.cpp \
 	gevent.h \
@@ -127,7 +126,6 @@ libgnet_a_SOURCES = \
 	gclient.h \
 	gconnection.cpp \
 	gconnection.h \
-	gdescriptor.cpp \
 	gdescriptor.h \
 	gdescriptor_unix.cpp \
 	gevent.h \

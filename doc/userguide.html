@@ -21,11 +21,11 @@
      it receives, it forwards e-mail messages on to another remote e-mail server,
      and it serves up stored e-mail messages to local e-mail reader programs. More
      technically, it acts as a SMTP storage daemon, a SMTP forwarding agent, and
-     a POP server.
+     a POP3 server.
     </p>
 
     <p>
-     Whenever an e-mail messages is received it can be passed through a user-defined
+     Whenever an e-mail message is received it can be passed through a user-defined
      program, such as a spam filter, which can drop, re-address or edit messages as
      they pass through.
     </p>
@@ -70,11 +70,6 @@
     <p>
      The code has few dependencies on third-party libraries or run-time environments
      so it is easy to build and install.
-    </p>
-
-    <p>
-     The event-driven design with non-blocking i/o may provide better performance
-     and resource usage than some of the alternatives.
     </p>
 
     <p>
@@ -215,17 +210,9 @@
     </p>
    <h2><a class="a-header" name="SH_1_6">Logging</a></h2> <!-- index:2:SH:1:6:Logging -->
     <p>
-     If the <em class="quote">--log</em> option is used then E-MailRelay program issues warnings and error
-     messages to the <em class="quote">syslog</em> system on Unix or to the Event Viewer's Application log
-     on Windows.
-    </p>
-
-    <p>
-     The <em class="quote">--log</em> option also enables logging to the standard error stream, although
-     you should note that the <em class="quote">--as-server</em> and <em class="quote">--as-proxy</em> options implicitly close
-     the standard error stream soon after startup. To keep the standard error stream
-     open replace <em class="quote">--as-server</em> and <em class="quote">--as-proxy</em> with their equivalent expansions,
-     but without <em class="quote">--close-stderr</em>.
+     If the <em class="quote">--log</em> option is used then E-MailRelay program sends warnings and error
+     messages to its standard error stream, and to the <em class="quote">syslog</em> system on Unix or
+     to the Event Viewer on Windows.
     </p>
 
     <p>
@@ -355,8 +342,8 @@ exec /usr/local/sbin/emailrelay --as-client=smtp.example.com:smtp
     </p>
    <h2><a class="a-header" name="SH_1_11">Usage patterns</a></h2> <!-- index:2:SH:1:11:Usage patterns -->
     <p>
-     The simplest ways of using E-MailRelay for SMTP are as a proxy or for
-     store-and-forward, but many other configurations are possible. For example,
+     The simplest ways of using E-MailRelay for SMTP are to run it as a proxy or to
+     do store-and-forward, but many other configurations are possible. For example,
      multiple E-MailRelay servers can run in parallel sharing the same spool
      directory, or they can be chained in series to that e-mail messages get
      transferred from one to the next.
@@ -372,11 +359,10 @@ exec /usr/local/sbin/emailrelay --as-client=smtp.example.com:smtp
 
     <p>
      When using E-MailRelay as a POP server the <em class="quote">--pop-by-name</em> feature can be used
-     to serve up different spooled messages according to the username that the client
-     authenticated with: each user's messages are taken from their own sub-directory
-     of the main spool directory. If messages are coming in over SMTP then you could
-     install an SMTP <em class="quote">--filter</em> script to move each new message into the relevant
-     sub-directory based on the message addressing.
+     to serve up different spooled messages according to the username that the
+     client authenticated with. Rather than use <em class="quote">emailrelay-filter-copy</em> to
+     distribute incoming e-mail messages into all subdirectories you could use a
+     custom script to do it based on the message addressing.
     </p>
 
     <p>
@@ -385,7 +371,24 @@ exec /usr/local/sbin/emailrelay --as-client=smtp.example.com:smtp
      to receive notification of message arrival or force message forwarding at any
      time.
     </p>
-   <h2><a class="a-header" name="SH_1_12">SpamAssassin</a></h2> <!-- index:2:SH:1:12:SpamAssassin -->
+   <h2><a class="a-header" name="SH_1_12">Rate limiting</a></h2> <!-- index:2:SH:1:12:Rate limiting -->
+    <p>
+     If you need to slow the rate at which e-mails are forwarded you can use a
+     <em class="quote">--client-filter</em> program to introduce a delay. On Windows this JavaScript
+     program would give you a delay of a minute:
+    </p>
+
+      <div class="div-pre">
+       <pre>WScript.Sleep( 60000 ) ;
+WScript.Quit( 0 ) ;
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     However, this can cause timeouts at the server, so a better approach is to use
+     <em class="quote">--client-filter exit:102</em> so that only one e-mail message is forwarded on each
+     polling cycle, and then use <em class="quote">--poll 60</em> to limit it to one e-mail per minute.
+    </p>
+   <h2><a class="a-header" name="SH_1_13">SpamAssassin</a></h2> <!-- index:2:SH:1:13:SpamAssassin -->
     <p>
      The E-MailRelay server can use <a class="a-href" href="http://spamassassin.apache.org">SpamAssassin</a>
      to mark or reject potential spam.
@@ -440,7 +443,7 @@ exit 0
      E-MailRelay can also talk to a SpamAssassin <em class="quote">spamd</em> daemon over the network
      by using <em class="quote">--filter spam:localhost:783</em>.
     </p>
-   <h2><a class="a-header" name="SH_1_13">Google mail</a></h2> <!-- index:2:SH:1:13:Google mail -->
+   <h2><a class="a-header" name="SH_1_14">Google mail</a></h2> <!-- index:2:SH:1:14:Google mail -->
     <p>
      To send mail via Google mail's SMTP gateway you will need to create a client
      secrets file containing your account details and also enable TLS support in
@@ -456,20 +459,20 @@ exit 0
 </pre>
       </div><!-- div-pre -->
     <p>
-     If your password contains weird characters (including spaces and plus signs)
-     then you will need to replace those characters with their ascii value,
-     something like <em class="quote">+20</em> or <em class="quote">+2B</em>.
+     If your password contains a space, equals or plus sign, or any control
+     character then you will need to replace those characters with their
+     corresponding hexadecimal ascii value, something like <em class="quote">+20</em> or <em class="quote">+2B</em>.
     </p>
 
     <p>
-     Reference you secrets file by using <em class="quote">--client-auth</em> on the E-MailRelay
-     command-line and also add in the <em class="quote">--client-tls</em> option:
+     Refer to your secrets file by using <em class="quote">--client-auth</em> on the E-MailRelay
+     command-line, and also add in the <em class="quote">--client-tls</em> option:
     </p>
 
       <div class="div-pre">
        <pre>emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=/etc/emailrelay.auth ...</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_14">Connection tunnelling</a></h2> <!-- index:2:SH:1:14:Connection tunnelling -->
+   <h2><a class="a-header" name="SH_1_15">Connection tunnelling</a></h2> <!-- index:2:SH:1:15:Connection tunnelling -->
     <p>
      E-MailRelay can send mail out via a SOCKS v4 proxy, which makes it easy to route
      your mail through an encrypted tunnel using <em class="quote">ssh -N -D</em> or via the Tor

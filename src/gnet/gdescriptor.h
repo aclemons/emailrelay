@@ -74,6 +74,13 @@ private:
 } ;
 
 inline
+GNet::Descriptor::Descriptor( SOCKET fd , HANDLE h ) :
+	m_fd(fd) ,
+	m_handle(h)
+{
+}
+
+inline
 SOCKET GNet::Descriptor::fd() const
 {
 	return m_fd ;
@@ -95,6 +102,12 @@ inline
 bool GNet::Descriptor::operator<( const Descriptor & other ) const
 {
 	return m_fd == other.m_fd ? ( m_handle < other.m_handle ) : ( m_fd < other.m_fd ) ;
+}
+
+inline
+GNet::Descriptor GNet::Descriptor::invalid()
+{
+	return Descriptor() ;
 }
 
 namespace GNet

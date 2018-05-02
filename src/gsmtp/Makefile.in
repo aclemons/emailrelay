@@ -83,12 +83,12 @@ subdir = src/gsmtp
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/pkg.m4 \
+	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h
+CONFIG_HEADER = $(top_builddir)/gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
@@ -100,47 +100,41 @@ am__v_AR_1 =
 libgsmtp_a_AR = $(AR) $(ARFLAGS)
 libgsmtp_a_LIBADD =
 am__libgsmtp_a_SOURCES_DIST = gadminserver.cpp gadminserver.h \
-	gprocessorfactory_exec_disabled.cpp \
-	gverifierfactory_exec_disabled.cpp gexecutableprocessor.cpp \
-	gexecutableprocessor.h gexecutableverifier.cpp \
-	gexecutableverifier.h gnetworkprocessor.cpp \
-	gnetworkprocessor.h gnetworkverifier.cpp gnetworkverifier.h \
-	gprocessorfactory_exec_enabled.cpp grequestclient.cpp \
-	grequestclient.h gspamclient.cpp gspamclient.h \
-	gspamprocessor.cpp gspamprocessor.h \
-	gverifierfactory_exec_enabled.cpp gclientprotocol.cpp \
-	gclientprotocol.h gfactoryparser.cpp gfactoryparser.h \
-	gfilestore.cpp gfilestore.h ginternalverifier.cpp \
-	ginternalverifier.h gmessagestore.cpp gmessagestore.h \
-	gmessagestore_unix.cpp gnullprocessor.cpp gnullprocessor.h \
-	gprocessorfactory.h gnewfile.cpp gnewfile.h gnewmessage.cpp \
-	gnewmessage.h gprocessor.cpp gprocessor.h gprotocolmessage.cpp \
-	gprotocolmessageforward.cpp gprotocolmessageforward.h \
-	gprotocolmessage.h gprotocolmessagestore.cpp \
-	gprotocolmessagestore.h gserverprotocol.cpp gserverprotocol.h \
-	gsmtpclient.cpp gsmtpclient.h gsmtp.h gsmtpserver.cpp \
-	gsmtpserver.h gstoredfile.cpp gstoredfile.h gstoredmessage.cpp \
+	gexecutablefilter.cpp gexecutablefilter.h \
+	gexecutableverifier.cpp gexecutableverifier.h \
+	gnetworkfilter.cpp gnetworkfilter.h gnetworkverifier.cpp \
+	gnetworkverifier.h gfilterfactory.cpp grequestclient.cpp \
+	grequestclient.h gspamclient.cpp gspamclient.h gspamfilter.cpp \
+	gspamfilter.h gverifierfactory.cpp gmessagestore_unix.cpp \
+	gmessagestore_win32.cpp gclientprotocol.cpp gclientprotocol.h \
+	gfactoryparser.cpp gfactoryparser.h gfilestore.cpp \
+	gfilestore.h ginternalverifier.cpp ginternalverifier.h \
+	gmessagestore.cpp gmessagestore.h gnullfilter.cpp \
+	gnullfilter.h gfilterfactory.h gnewfile.cpp gnewfile.h \
+	gnewmessage.cpp gnewmessage.h gfilter.cpp gfilter.h \
+	gprotocolmessage.cpp gprotocolmessageforward.cpp \
+	gprotocolmessageforward.h gprotocolmessage.h \
+	gprotocolmessagestore.cpp gprotocolmessagestore.h \
+	gserverprotocol.cpp gserverprotocol.h gsmtpclient.cpp \
+	gsmtpclient.h gsmtp.h gsmtpserver.cpp gsmtpserver.h \
+	gstoredfile.cpp gstoredfile.h gstoredmessage.cpp \
 	gstoredmessage.h gverifier.cpp gverifier.h gverifierfactory.h \
 	gverifierstatus.cpp gverifierstatus.h
 am__objects_1 = gadminserver.$(OBJEXT)
-@ADMIN_TRUE@am__objects_2 = $(am__objects_1)
-am__objects_3 = gexecutableprocessor.$(OBJEXT) \
-	gexecutableverifier.$(OBJEXT) gnetworkprocessor.$(OBJEXT) \
-	gnetworkverifier.$(OBJEXT) \
-	gprocessorfactory_exec_enabled.$(OBJEXT) \
+am__objects_2 = gexecutablefilter.$(OBJEXT) \
+	gexecutableverifier.$(OBJEXT) gnetworkfilter.$(OBJEXT) \
+	gnetworkverifier.$(OBJEXT) gfilterfactory.$(OBJEXT) \
 	grequestclient.$(OBJEXT) gspamclient.$(OBJEXT) \
-	gspamprocessor.$(OBJEXT) \
-	gverifierfactory_exec_enabled.$(OBJEXT)
-@EXEC_FALSE@am__objects_4 = gprocessorfactory_exec_disabled.$(OBJEXT) \
-@EXEC_FALSE@	gverifierfactory_exec_disabled.$(OBJEXT)
-@EXEC_TRUE@am__objects_4 = $(am__objects_3)
-am_libgsmtp_a_OBJECTS = $(am__objects_2) $(am__objects_4) \
-	gclientprotocol.$(OBJEXT) gfactoryparser.$(OBJEXT) \
-	gfilestore.$(OBJEXT) ginternalverifier.$(OBJEXT) \
-	gmessagestore.$(OBJEXT) gmessagestore_unix.$(OBJEXT) \
-	gnullprocessor.$(OBJEXT) gnewfile.$(OBJEXT) \
-	gnewmessage.$(OBJEXT) gprocessor.$(OBJEXT) \
-	gprotocolmessage.$(OBJEXT) gprotocolmessageforward.$(OBJEXT) \
+	gspamfilter.$(OBJEXT) gverifierfactory.$(OBJEXT)
+@GCONFIG_WINDOWS_FALSE@am__objects_3 = gmessagestore_unix.$(OBJEXT)
+@GCONFIG_WINDOWS_TRUE@am__objects_3 = gmessagestore_win32.$(OBJEXT)
+am_libgsmtp_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
+	$(am__objects_3) gclientprotocol.$(OBJEXT) \
+	gfactoryparser.$(OBJEXT) gfilestore.$(OBJEXT) \
+	ginternalverifier.$(OBJEXT) gmessagestore.$(OBJEXT) \
+	gnullfilter.$(OBJEXT) gnewfile.$(OBJEXT) gnewmessage.$(OBJEXT) \
+	gfilter.$(OBJEXT) gprotocolmessage.$(OBJEXT) \
+	gprotocolmessageforward.$(OBJEXT) \
 	gprotocolmessagestore.$(OBJEXT) gserverprotocol.$(OBJEXT) \
 	gsmtpclient.$(OBJEXT) gsmtpserver.$(OBJEXT) \
 	gstoredfile.$(OBJEXT) gstoredmessage.$(OBJEXT) \
@@ -225,8 +219,6 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-COMPILER_VERSION = @COMPILER_VERSION@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
@@ -237,13 +229,20 @@ DEPDIR = @DEPDIR@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
-EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+GCONFIG_CONFIGURATION = @GCONFIG_CONFIGURATION@
+GCONFIG_HAVE_DOXYGEN = @GCONFIG_HAVE_DOXYGEN@
+GCONFIG_HAVE_MAN2HTML = @GCONFIG_HAVE_MAN2HTML@
+GCONFIG_QT_CFLAGS = @GCONFIG_QT_CFLAGS@
+GCONFIG_QT_LIBS = @GCONFIG_QT_LIBS@
+GCONFIG_QT_MOC = @GCONFIG_QT_MOC@
+GCONFIG_STATIC_END = @GCONFIG_STATIC_END@
+GCONFIG_STATIC_START = @GCONFIG_STATIC_START@
+GCONFIG_TLS_LIBS = @GCONFIG_TLS_LIBS@
+GCONFIG_WINDMC = @GCONFIG_WINDMC@
+GCONFIG_WINDRES = @GCONFIG_WINDRES@
 GREP = @GREP@
 GZIP = @GZIP@
-G_CAPABILITIES = @G_CAPABILITIES@
-HAVE_DOXYGEN = @HAVE_DOXYGEN@
-HAVE_MAN2HTML = @HAVE_MAN2HTML@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -265,8 +264,6 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
-PAM_INCLUDE = @PAM_INCLUDE@
-PAM_LIBS = @PAM_LIBS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
@@ -275,14 +272,11 @@ QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 QT_MOC = @QT_MOC@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SSL_LIBS = @SSL_LIBS@
-STATIC_END = @STATIC_END@
-STATIC_START = @STATIC_START@
 STRIP = @STRIP@
 VERSION = @VERSION@
-ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -334,44 +328,46 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-ADMIN_SOURCES_ = gadminserver.cpp gadminserver.h
-@ADMIN_FALSE@ADMIN_EXTRA_DIST = $(ADMIN_SOURCES_)
-@ADMIN_TRUE@ADMIN_EXTRA_DIST = 
-@ADMIN_FALSE@ADMIN_SOURCES = 
-@ADMIN_TRUE@ADMIN_SOURCES = $(ADMIN_SOURCES_)
-EXEC_SOURCES_ = \
-	gexecutableprocessor.cpp \
-	gexecutableprocessor.h \
+@GCONFIG_WINDOWS_FALSE@OS_SOURCES = gmessagestore_unix.cpp
+@GCONFIG_WINDOWS_TRUE@OS_SOURCES = gmessagestore_win32.cpp
+@GCONFIG_WINDOWS_FALSE@OS_SOURCES_EXTRA_DIST = gmessagestore_win32.cpp
+@GCONFIG_WINDOWS_TRUE@OS_SOURCES_EXTRA_DIST = gmessagestore_unix.cpp
+ADMIN_SOURCES = gadminserver.cpp gadminserver.h
+ADMIN_EXTRA_DIST = 
+EXEC_SOURCES = \
+	gexecutablefilter.cpp \
+	gexecutablefilter.h \
 	gexecutableverifier.cpp \
 	gexecutableverifier.h \
-	gnetworkprocessor.cpp \
-	gnetworkprocessor.h \
+	gnetworkfilter.cpp \
+	gnetworkfilter.h \
 	gnetworkverifier.cpp \
 	gnetworkverifier.h \
-	gprocessorfactory_exec_enabled.cpp \
+	gfilterfactory.cpp \
 	grequestclient.cpp \
 	grequestclient.h \
 	gspamclient.cpp \
 	gspamclient.h \
-	gspamprocessor.cpp \
-	gspamprocessor.h \
-	gverifierfactory_exec_enabled.cpp
+	gspamfilter.cpp \
+	gspamfilter.h \
+	gverifierfactory.cpp
 
-@EXEC_FALSE@EXEC_EXTRA_DIST = $(EXEC_SOURCES_)
-@EXEC_TRUE@EXEC_EXTRA_DIST = gprocessorfactory_exec_disabled.cpp gverifierfactory_exec_disabled.cpp
-@EXEC_FALSE@EXEC_SOURCES = gprocessorfactory_exec_disabled.cpp gverifierfactory_exec_disabled.cpp
-@EXEC_TRUE@EXEC_SOURCES = $(EXEC_SOURCES_)
 EXTRA_DIST = \
 	$(ADMIN_EXTRA_DIST) \
-	$(EXEC_EXTRA_DIST) \
-	gmessagestore_win32.cpp \
-	mingw.mak
+	$(OS_SOURCES_EXTRA_DIST)
 
-AM_CPPFLAGS = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/gnet -I$(top_srcdir)/src/gauth -DG_SPOOLDIR=\"$(e_spooldir)\"
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/src/glib \
+	-I$(top_srcdir)/src/gssl \
+	-I$(top_srcdir)/src/gnet \
+	-I$(top_srcdir)/src/gauth \
+	-D "G_SPOOLDIR=$(e_spooldir)"
+
 noinst_LIBRARIES = libgsmtp.a
 libgsmtp_a_SOURCES = \
 	$(ADMIN_SOURCES) \
 	$(EXEC_SOURCES) \
+	$(OS_SOURCES) \
 	gclientprotocol.cpp \
 	gclientprotocol.h \
 	gfactoryparser.cpp \
@@ -382,16 +378,15 @@ libgsmtp_a_SOURCES = \
 	ginternalverifier.h \
 	gmessagestore.cpp \
 	gmessagestore.h \
-	gmessagestore_unix.cpp \
-	gnullprocessor.cpp \
-	gnullprocessor.h \
-	gprocessorfactory.h \
+	gnullfilter.cpp \
+	gnullfilter.h \
+	gfilterfactory.h \
 	gnewfile.cpp \
 	gnewfile.h \
 	gnewmessage.cpp \
 	gnewmessage.h \
-	gprocessor.cpp \
-	gprocessor.h \
+	gfilter.cpp \
+	gfilter.h \
 	gprotocolmessage.cpp \
 	gprotocolmessageforward.cpp \
 	gprotocolmessageforward.h \
@@ -466,21 +461,21 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gadminserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gclientprotocol.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutableprocessor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutablefilter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutableverifier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfactoryparser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilestore.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilterfactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ginternalverifier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnetworkprocessor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore_win32.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnetworkfilter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnetworkverifier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewmessage.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnullprocessor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprocessor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprocessorfactory_exec_disabled.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprocessorfactory_exec_enabled.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnullfilter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessageforward.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessagestore.Po@am__quote@
@@ -489,12 +484,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gspamclient.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gspamprocessor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gspamfilter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstoredfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstoredmessage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifier.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifierfactory_exec_disabled.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifierfactory_exec_enabled.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifierfactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifierstatus.Po@am__quote@
 
 .cpp.o:

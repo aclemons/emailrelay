@@ -43,9 +43,9 @@ namespace GNet
 /// once the iteration is complete.
 ///
 /// If an event handler is added to the list while the list is being
-/// iterated over then it is added to a pending-list until the iteration
-/// is complete. The pending list is added to the main list by
-/// unlock() once the iteration is complete.
+/// iterated over then it is added to a pending-list. The pending
+/// list is added to the main list by unlock() once the iteration
+/// is complete.
 ///
 /// Each event handler can also have an associated exception handler,
 /// typically a more long-lived object that has the event handler as
@@ -55,10 +55,10 @@ namespace GNet
 /// destructor uses the disarm() mechanism.
 ///
 /// Note that the Descriptor class is actually in two parts for Windows:
-/// a socket handle (file descriptor) and an event-object handle. This
-/// EventHandlerList is keyed by the full Descriptor object rather than
-/// just the socket handle and this allows it to contain event-objects
-/// that are not sockets. See GNet::FutureEvent.
+/// a socket handle (file descriptor) and an event-object handle. The
+/// event handler list is keyed by the full Descriptor object rather than
+/// just the socket handle and this allows it to contain event-handling
+/// objects that are not sockets. See GNet::FutureEvent.
 ///
 class GNet::EventHandlerList
 {

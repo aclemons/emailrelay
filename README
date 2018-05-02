@@ -11,13 +11,11 @@ E-MailRelay does three things: it stores any incoming e-mail messages that
 it receives, it forwards e-mail messages on to another remote e-mail server,
 and it serves up stored e-mail messages to local e-mail reader programs. More
 technically, it acts as a SMTP storage daemon, a SMTP forwarding agent, and
-a POP server.
+a POP3 server.
 
-Whenever an e-mail messages is received it can be passed through a user-defined
+Whenever an e-mail message is received it can be passed through a user-defined
 program, such as a spam filter, which can drop, re-address or edit messages as
 they pass through.
-
-<<whatisit.png>>
 
 E-MailRelay uses the same non-blocking i/o model as Squid and nginx giving
 excellent scalability and resource usage.
@@ -31,8 +29,6 @@ To use E-MailRelay in store-and-forward mode use the "--as-server" option to
 start the storage daemon in the background, and then do delivery of spooled
 messages by running with the "--as-client" option.
 
-<<serverclient.png>>
-
 For example, to start a storage daemon listening on port 587 use a command
 like this:
 
@@ -45,8 +41,6 @@ like this:
 
 To get behaviour more like a proxy you can add the "--poll" and "--forward-to"
 options so that messages are forwarded continuously rather than on-demand.
-
-<<forwardto.png>>
 
 This example starts a store-and-forward server that forwards spooled-up e-mail
 every minute:
@@ -84,7 +78,7 @@ Documentation
 The following documentation is provided:
 * README -- this document
 * COPYING -- the GNU General Public License
-* INSTALL -- build & install instructions (including the GNU text)
+* INSTALL -- generic build & install instructions
 * AUTHORS -- authors, credits and additional copyrights
 * userguide.txt -- user guide
 * reference.txt -- reference document

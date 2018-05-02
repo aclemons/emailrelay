@@ -21,7 +21,7 @@ txt_files_install=\
 	reference.txt reference.md reference.rst \
 	userguide.txt userguide.md userguide.rst \
 	windows.txt windows.md windows.rst \
-	changelog.md \
+	changelog.txt changelog.md changelog.rst \
 	doxygen.cfg.in \
 	index.rst conf.py
 

@@ -66,7 +66,7 @@ public:
 	virtual ~ProtocolMessageForward() ;
 		///< Destructor.
 
-	virtual G::Slot::Signal3<bool,unsigned long,std::string> & doneSignal() override ;
+	virtual G::Slot::Signal4<bool,unsigned long,std::string,std::string> & doneSignal() override ;
 		///< Override from GSmtp::ProtocolMessage.
 
 	virtual void reset() override ;
@@ -95,13 +95,13 @@ public:
 			///< Override from GSmtp::ProtocolMessage.
 
 protected:
-	G::Slot::Signal3<bool,unsigned long,std::string> & storageDoneSignal() ;
+	G::Slot::Signal4<bool,unsigned long,std::string,std::string> & storageDoneSignal() ;
 		///< Returns the signal which is used to signal that the storage
 		///< is complete. Derived classes can use this to
 		///< intercept the storage-done signal emit()ed by
 		///< the ProtocolMessageStore object.
 
-	void processDone( bool , unsigned long , std::string ) ;
+	void processDone( bool , unsigned long , std::string , std::string ) ;
 		///< Called by derived classes that have intercepted
 		///< the storageDoneSignal() when their own post-storage
 		///< processing is complete.
@@ -110,7 +110,7 @@ private:
 	void operator=( const ProtocolMessageForward & ) ; // not implemented
 	void clientDone( std::string ) ; // GNet::Client::doneSignal()
 	void messageDone( std::string ) ; // GSmtp::Client::messageDoneSignal()
-	bool forward( unsigned long , bool & , std::string * ) ;
+	std::string forward( unsigned long , bool & ) ;
 
 private:
 	MessageStore & m_store ;
@@ -120,7 +120,7 @@ private:
 	unique_ptr<ProtocolMessage> m_pm ;
 	GNet::ClientPtr<GSmtp::Client> m_client ;
 	unsigned long m_id ;
-	G::Slot::Signal3<bool,unsigned long,std::string> m_done_signal ;
+	G::Slot::Signal4<bool,unsigned long,std::string,std::string> m_done_signal ;
 } ;
 
 #endif

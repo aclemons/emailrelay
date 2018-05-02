@@ -95,6 +95,7 @@ public:
 	Error( const std::string & , unsigned long , const std::string & path ) ;
 	virtual ~Error() g__noexcept ;
 	virtual const char * what() const g__noexcept override ;
+	static void clearErrors() ;
 
 private:
 	static std::string text( unsigned long ) ;

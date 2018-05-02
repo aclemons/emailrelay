@@ -29,8 +29,8 @@
     </p>
 
     <p>
-     Also at that time multi-threading support in C++ libraries was poor, so up
-     until version 2.0 there has been no reliance on any multi-threading libraries.
+     In those early years multi-threading support in C++ libraries was poor, so up
+     until version 2.0 the code was single-threaded throughout.
     </p>
    <h2><a class="a-header" name="SH_1_3">Portability</a></h2> <!-- index:2:SH:1:3:Portability -->
     <p>
@@ -50,7 +50,7 @@
      declaration with two implementations. The implementations are put into separate
      source files with a <em class="quote">_unix</em> or <em class="quote">_win32</em> suffix, and if necessary a 'pimple' (or
      'Bridge') pattern is used to keep the o/s-specific details out of the header.
-     If only small parts of the implementation are o/s-specific then there might be
+     If only small parts of the implementation are o/s-specific then there can be
      three source files per header. For example, <em class="quote">gsocket.cpp</em>, <em class="quote">gsocket_win32.cpp</em>
      and <em class="quote">gsocket_unix.cpp</em> in the <em class="quote">src/gnet</em> directory.
     </p>
@@ -193,8 +193,8 @@
 
     <p>
      This leads to a programming model where key objects are instantiated on the
-     heap and the objects delete themselves when they receive certain events from the
-     event loop. In the <em class="quote">GNet</em> library it is the <em class="quote">ServerPeer</em> and <em class="quote">HeapClient</em>
+     heap and these objects delete themselves when they receive certain events from
+     the event loop. In the <em class="quote">GNet</em> library it is the <em class="quote">ServerPeer</em> and <em class="quote">HeapClient</em>
      classes that do this lifetime management; instances of these classes delete
      themselves when the associated network connection goes away and they
      implement the <em class="quote">ExceptionHandler</em> interface so that they schedule their own
@@ -211,7 +211,7 @@
     <p>
      Multi-threading can be used as a build-time option to make DNS lookup and the
      execution of helper programs asynchronous; if std::thread is available then it
-     is used in a future/promise pattern to wrap up <em class="quote">getaddrinfo()</em> and <em class="quote">waitfor()</em>
+     is used in a future/promise pattern to wrap up <em class="quote">getaddrinfo()</em> and <em class="quote">waitpid()</em>
      system calls. The shared state comprises only the parameters and return results
      from these system calls, and synchronisation back to the main thread uses the
      event loop (see <em class="quote">GNet::FutureEvent</em>).
@@ -219,12 +219,9 @@
    <h2><a class="a-header" name="SH_1_9">E-MailRelay GUI</a></h2> <!-- index:2:SH:1:9:E-MailRelay GUI -->
     <p>
      The optional GUI program <em class="quote">emailrelay-gui</em> uses the Qt toolkit for its user
-     interface components. The GUI can run as a stand-alone configuration helper
-     (<em class="quote">--as-configure</em>) or as part of a self-extracting installation
-     (<em class="quote">--as-install</em>). When it runs it checks whether it has a payload of files
-     to install. If it has then it runs as an installer; if it does not then it runs
-     as a configuration helper. Refer to the comments in <em class="quote">src/gui/guimain.cpp</em> for
-     more details.
+     interface components. The GUI can run as an installer or as a configuration
+     helper, depending on whether it can find an installation <em class="quote">payload</em>. Refer to
+     the comments in <em class="quote">src/gui/guimain.cpp</em> for more details.
     </p>
 
     <p>
@@ -245,16 +242,17 @@
     </p>
 
     <p>
-     When run in <em class="quote">--as-configure</em> mode the GUI normally ends up simply editing
-     the <em class="quote">emailrelay.conf</em> file (or <em class="quote">emailrelay-start.bat</em> on Windows) and/or the
+     When run in configure mode the GUI normally ends up simply editing the
+     <em class="quote">emailrelay.conf</em> file (or <em class="quote">emailrelay-start.bat</em> on Windows) and/or the
      <em class="quote">emailrelay.auth</em> secrets file.
     </p>
 
     <p>
-     When run in <em class="quote">--as-install</em> mode the GUI expects to unpack all the E-MailRelay
-     files from a <em class="quote">payload</em> into target directories. Previously the payload was a
-     single archive file appended to the executable, but it is now simple directory
-     tree. On Mac OS X this is stored as a resource within the application bundle.
+     When run in install mode the GUI expects to unpack all the E-MailRelay files
+     from the payload into target directories. (The payload used to be a single
+     archive file appended to the executable, but it is now simple directory
+     tree that lives alongside the GUI exectuable or inside the Mac application
+     bundle.)
     </p>
    <h2><a class="a-header" name="SH_1_10">Windows packaging</a></h2> <!-- index:2:SH:1:10:Windows packaging -->
     <p>

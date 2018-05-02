@@ -71,6 +71,7 @@ public:
 		int exec_error_exit , const std::string & exec_error_format ,
 		std::string (*exec_error_format_fn)(std::string,int) ) ;
 
+	int id() const ;
 	static std::pair<bool,pid_t> fork() ;
 	NewProcessWaitFuture & wait() ;
 	int run( const G::Path & , const StringArray & , bool clean_env , bool strict ) ;
@@ -82,6 +83,7 @@ private:
 	Pipe m_pipe ;
 	NewProcessWaitFuture m_wait_future ;
 	pid_t m_child_pid ;
+	bool m_killed ;
 
 private:
 	NewProcessImp( const NewProcessImp & ) ;
@@ -115,6 +117,11 @@ std::pair<bool,pid_t> G::NewProcess::fork()
 	return NewProcessImp::fork() ;
 }
 
+int G::NewProcess::id() const
+{
+	return m_imp->id() ;
+}
+
 void G::NewProcess::kill()
 {
 	m_imp->kill() ;
@@ -128,7 +135,8 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args ,
 	int exec_error_exit , const std::string & exec_error_format ,
 	std::string (*exec_error_format_fn)(std::string,int) ) :
 		m_wait_future(0) ,
-		m_child_pid(-1)
+		m_child_pid(-1) ,
+		m_killed(false)
 {
 	// impose sanity
 	G_ASSERT( stdxxx == -1 || stdxxx == 1 || stdxxx == 2 ) ;
@@ -163,6 +171,9 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args ,
 			// restore SIGPIPE handling so that writing to
 			// the closed pipe should terminate the child
 			::signal( SIGPIPE , SIG_DFL ) ;
+
+			// start a new process group
+			::setpgrp() ; // feature-tested -- see gdef.h
 
 			// exec -- doesnt normally return from run()
 			int e = run( exe , args , clean_env , strict_path ) ;
@@ -245,6 +256,11 @@ int G::NewProcessImp::run( const G::Path & exe , const StringArray & args , bool
 	return e ;
 }
 
+int G::NewProcessImp::id() const
+{
+	return static_cast<int>(m_child_pid) ;
+}
+
 G::NewProcessWaitFuture & G::NewProcessImp::wait()
 {
 	return m_wait_future ;
@@ -252,10 +268,12 @@ G::NewProcessWaitFuture & G::NewProcessImp::wait()
 
 void G::NewProcessImp::kill()
 {
-	if( m_child_pid != -1 )
+	G_DEBUG( "G::NewProcessImp::kill: killing process group " << m_child_pid ) ;
+	if( !m_killed && m_child_pid != -1 )
 	{
-		::kill( m_child_pid , SIGTERM ) ;
-		m_child_pid = -1 ;
+		// kill the group so the pipe is closed in all processes and the read returns zero
+		::kill( -m_child_pid , SIGTERM ) ;
+		m_killed = true ;
 	}
 }
 
@@ -346,7 +364,7 @@ G::NewProcessWaitFuture::NewProcessWaitFuture( pid_t pid , int fd ) :
 
 G::NewProcessWaitFuture & G::NewProcessWaitFuture::run()
 {
-	// (worker thread - keep it simple)
+	// (worker thread - keep it simple - read then wait)
 	{
 		char more[64] ;
 		char * p = &m_buffer[0] ;

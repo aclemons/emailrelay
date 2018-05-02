@@ -427,6 +427,78 @@ Slot3<P1,P2,P3> slot( T & object , void (T::*fn)(P1,P2,P3) )
 	return Slot3<P1,P2,P3>( new SlotImp3<T,P1,P2,P3>(object,fn) , SlotCallback3<T,P1,P2,P3>::callback ) ;
 }
 
+//
+
+/// \class G::Slot::SlotImp4
+/// A slot implementation class for four-parameter callbacks.
+///
+template <typename T, typename P1, typename P2, typename P3, typename P4>
+class SlotImp4 : public SlotImpBase
+{
+private:
+	T & m_object ;
+	void (T::*m_fn)( P1 , P2 , P3 , P4 ) ;
+public:
+	SlotImp4( T & object , void (T::*fn)(P1,P2,P3,P4) ) : m_object(object) , m_fn(fn) {}
+	void callback( P1 p1 , P2 p2 , P3 p3 , P4 p4 ) { (m_object.*m_fn)(p1,p2,p3,p4) ; }
+} ;
+
+/// \class G::Slot::SlotCallback4
+/// Provides a function to down-cast from SlotImpBase to SlotImp3.
+///
+template <typename T, typename P1 , typename P2, typename P3, typename P4>
+class SlotCallback4
+{
+public:
+	static void callback( SlotImpBase * imp , P1 p1 , P2 p2 , P3 p3 , P4 p4 )
+		{ static_cast<SlotImp4<T,P1,P2,P3,P4>*>(imp)->callback( p1 , p2 , p3 , p4 ) ; }
+} ;
+
+/// \class G::Slot::Slot4
+/// A slot class for four-parameter callbacks.
+///
+template <typename P1, typename P2, typename P3, typename P4>
+class Slot4
+{
+private:
+	SlotImpBase * m_imp ;
+	void (*m_callback_fn)( SlotImpBase * , P1 , P2 , P3 , P4 ) ;
+public:
+	Slot4() : m_imp(0) , m_callback_fn(0) {}
+	Slot4( SlotImpBase * imp , void (*op)(SlotImpBase*,P1,P2,P3,P4) ) : m_imp(imp) , m_callback_fn(op) {}
+	~Slot4() { if( m_imp ) m_imp->down() ; }
+	void callback( P1 p1 , P2 p2 , P3 p3 , P4 p4 ) { if( m_imp ) (*m_callback_fn)( m_imp , p1 , p2 , p3 , p4 ) ; }
+	Slot4( const Slot4<P1,P2,P3,P4> & other ) : m_imp(other.m_imp) , m_callback_fn(other.m_callback_fn) { if(m_imp) m_imp->up() ; }
+	void swap( Slot4<P1,P2,P3,P4> & rhs ) { using std::swap ; swap(m_imp,rhs.m_imp) ; swap(m_callback_fn,rhs.m_callback_fn) ; }
+	void operator=( const Slot4<P1,P2,P3,P4> & rhs ) { Slot4 tmp(rhs) ; swap(tmp) ; }
+	const SlotImpBase * base() const { return m_imp ; }
+} ;
+
+/// \class G::Slot::Signal4
+/// A signal class for four-parameter callbacks.
+///
+template <typename P1, typename P2, typename P3, typename P4>
+class Signal4 : public noncopyable
+{
+private:
+	bool m_emitted ;
+	bool m_once ;
+	Slot4<P1,P2,P3,P4> m_slot ;
+public:
+	explicit Signal4( bool once = false ) : m_emitted(false) , m_once(once) {}
+	void emit( P1 p1 , P2 p2 , P3 p3 , P4 p4 ) { if(!m_once||!m_emitted) { m_emitted = true ; m_slot.callback( p1 , p2 , p3 , p4 ) ; }}
+	void connect( Slot4<P1,P2,P3,P4> slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
+	void disconnect() { m_slot = Slot4<P1,P2,P3,P4>() ; }
+	void reset() { m_emitted = false ; }
+} ;
+
+/// A slot factory function overloaded for a four-parameter callback.
+template <typename T, typename P1, typename P2, typename P3, typename P4>
+Slot4<P1,P2,P3,P4> slot( T & object , void (T::*fn)(P1,P2,P3,P4) )
+{
+	return Slot4<P1,P2,P3,P4>( new SlotImp4<T,P1,P2,P3,P4>(object,fn) , SlotCallback4<T,P1,P2,P3,P4>::callback ) ;
+}
+
 }
 }
 

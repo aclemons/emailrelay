@@ -42,6 +42,7 @@ GSmtp::SpamClient::SpamClient( const GNet::Location & location ,
 
 GSmtp::SpamClient::~SpamClient()
 {
+	G_DEBUG( "GSmtp::SpamClient::dtor: busy=" << m_busy ) ;
 }
 
 void GSmtp::SpamClient::username( const std::string & username )
@@ -56,7 +57,7 @@ bool GSmtp::SpamClient::busy() const
 
 void GSmtp::SpamClient::request( const std::string & path )
 {
-	G_DEBUG( "GSmtp::SpamClient::request: \"" << path << "\"" ) ;
+	G_DEBUG( "GSmtp::SpamClient::request: path=" << path ) ;
 	if( m_busy )
 		throw Error( "protocol error" ) ;
 	m_busy = true ;
@@ -66,11 +67,12 @@ void GSmtp::SpamClient::request( const std::string & path )
 
 void GSmtp::SpamClient::onTimeout()
 {
+	G_DEBUG( "GSmtp::SpamClient::onTimeout: connected=" << connected() ) ;
 	if( connected() )
 		start() ;
 }
 
-void GSmtp::SpamClient::onDelete( const std::string & )
+void GSmtp::SpamClient::onDelete( const std::string & reason )
 {
 }
 

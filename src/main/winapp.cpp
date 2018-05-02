@@ -117,10 +117,6 @@ int Main::WinApp::exitCode() const
 	return G::Test::enabled("special-exit-code") ? (G::threading::works()?23:25) : m_exit_code ;
 }
 
-void Main::WinApp::onDimension( int & , int & )
-{
-}
-
 void Main::WinApp::hide()
 {
 	show( SW_HIDE ) ;
@@ -166,11 +162,12 @@ void Main::WinApp::onTrayDoubleClick()
 	::PostMessage( handle() , wm_user() , 0 , static_cast<LPARAM>(IDM_OPEN) ) ;
 }
 
-LRESULT Main::WinApp::onUserOther( WPARAM , LPARAM )
+LRESULT Main::WinApp::onUserOther( WPARAM , LPARAM lparam )
 {
-	G_DEBUG( "Main::WinApp::onUserOther" ) ;
-	m_form->close() ;
-	//m_form.reset() ;
+	G_DEBUG( "Main::WinApp::onUserOther: hwnd=" << reinterpret_cast<HWND>(lparam) << " form=" << (m_form.get()?m_form->handle():HWND(0)) ) ;
+	HWND hwnd = reinterpret_cast<HWND>( lparam ) ;
+	if( m_form.get() != nullptr && hwnd == m_form->handle() ) // just in case delayed in the queue
+		m_form->close() ;
 	return 0L ;
 }
 
@@ -190,7 +187,6 @@ void Main::WinApp::doOpen()
 		m_form.reset( new WinForm( *this , *m_cfg.get() , /*confirm=*/!m_use_tray ) ) ;
 	}
 
-	resize( externalSize() ) ; // no-op in itself, but uses onDimension()
 	show() ;
 }
 
@@ -264,6 +260,11 @@ G::Options::Layout Main::WinApp::layout() const
 	layout.indent = "\t\t" ;
 	layout.width = 100U ;
 	return layout ;
+}
+
+bool Main::WinApp::simpleOutput() const
+{
+	return false ;
 }
 
 void Main::WinApp::output( const std::string & text , bool )

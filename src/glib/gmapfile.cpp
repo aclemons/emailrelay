@@ -83,7 +83,7 @@ void G::MapFile::readFrom( const G::Path & path , bool utf8 )
 {
 	std::ifstream stream( path.str().c_str() ) ;
 	if( !stream.good() )
-		throw std::runtime_error( std::string() + "cannot open \"" + path.str() + "\"" ) ;
+		throw ReadError( path.str() ) ;
 	G_LOG( "MapFile::read: reading [" << path.str() << "]" ) ;
 	readFrom( stream , utf8 ) ;
 }
@@ -194,7 +194,7 @@ G::MapFile::List G::MapFile::read( const G::Path & path , bool allow_read_error 
 	List line_list ;
 	std::ifstream file_in( path.str().c_str() ) ;
 	if( !file_in.good() && !allow_read_error )
-		throw std::runtime_error( std::string() + "cannot read \"" + path.str() + "\"" ) ;
+		throw ReadError( path.str() ) ;
 	while( file_in.good() )
 	{
 		std::string line = Str::readLineFrom( file_in , "\n" ) ;
@@ -260,7 +260,7 @@ void G::MapFile::save( const G::Path & path , List & line_list , bool allow_writ
 	std::copy( line_list.begin() , line_list.end() , std::ostream_iterator<std::string>(file_out,"\n") ) ;
 	file_out.close() ;
 	if( file_out.fail() && !allow_write_error )
-		throw std::runtime_error( std::string() + "cannot write \"" + path.str() + "\"" ) ;
+		throw WriteError( path.str() ) ;
 }
 
 std::string G::MapFile::value( const std::string & key , const std::string & default_ ) const
@@ -278,7 +278,7 @@ std::string G::MapFile::value( const std::string & key , const char * default_ )
 std::string G::MapFile::mandatoryValue( const std::string & key ) const
 {
 	if( m_map.find(key) == m_map.end() )
-		throw std::runtime_error( std::string() + "cannot find config item \"" + key + "\"" ) ;
+		throw Missing( key ) ;
 	return value( key ) ;
 }
 

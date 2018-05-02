@@ -33,30 +33,24 @@ try
 	var config_file = fs.FileExists(config_file_1) ? config_file_1 : config_file_2 ;
 	if( !fs.FileExists(config_file) )
 		throw "No installation config file [" + config_file_1 + "] or [" + config_file_2 + "]" ;
+	var dir_install = fs.GetParentFolderName( config_file ) ;
 
 	// read and parse the config file
-	var dir_install = "" ;
 	var dir_config = "" ;
 	{
 		var f = fs.OpenTextFile( config_file ) ;
 		var config_text = f.ReadAll() ;
 		f.Close() ;
 
-		var re_install = new RegExp( "^dir.install=([ \\S]*)" , "m" ) ;
 		var re_config = new RegExp( "^dir.config=([ \\S]*)" , "m" ) ;
 		var re_dequote = new RegExp( "\"?([^\"]*)" ) ;
-
-		config_text.match( re_install ) ;
-		dir_install = RegExp.lastParen ;
-		dir_install.match( re_dequote ) ;
-		dir_install = RegExp.lastParen ;
 
 		config_text.match( re_config ) ;
 		dir_config = RegExp.lastParen ;
 		dir_config.match( re_dequote ) ;
 		dir_config = RegExp.lastParen ;
 	}
-	if( dir_install == "" || dir_config == "" )
+	if( !dir_config )
 		throw "Cannot parse the config file [" + config_file + "]" ;
 
 	// check for the startup batch file containing the server configuration
@@ -70,24 +64,35 @@ try
 		throw "No service wrapper [" + service_wrapper + "]" ;
 
 	var ok = shell.Popup( "About to run [" + service_wrapper + " --install]" , 0 , title , 1 ) ;
-	if( ok == 1 )
+	if( ok === 1 )
 	{
 		// do the service wrapper installation
 		var exec = shell.exec( "cmd.exe /c \"" + service_wrapper + "\" --install" ) ;
 		//var exec = shell.exec( service_wrapper + " --install" ) ;
-		var text = exec.StdOut.ReadAll() ;
-		var errors = exec.StdErr.ReadAll() ;
-		var success = ( errors == "" ) && ( exec.StatusCode == 0 ) ;
-		if( success )
-			text += " (success)" ;
-		else
-			text += ( "\n" + errors ) ;
-		shell.Popup( text , 0 , title , success ? 0 : 16 ) ;
+		while( exec.Status === 0 )
+		{
+			WScript.Sleep( 100 ) ;
+		}
+
+		// report the results
+		var stdout_text = exec.StdOut.ReadAll() ;
+		var stderr_text = exec.StdErr.ReadAll() ;
+		var success = !stderr_text && ( exec.ExitCode === 0 ) ;
+		var text = (success?"Service installed":"Service installation failed") + ": " +
+			"exit " + exec.ExitCode + "\n" +
+			stdout_text + "\n" +
+			stderr_text ;
+		var topmost = 262144 ;
+		var foreground = 65536 ;
+		var icon_info = 0 ;
+		var icon_hand = 16 ;
+		var icon_question = 1 ;
+		shell.Popup( text , 0 , title , topmost+foreground+(success?icon_info:icon_hand) ) ;
 
 		// optionally open the services control panel
 		if( success )
 		{
-			if( 1 == shell.Popup( "Open the services control panel?" , 0 , title , 1 ) )
+			if( 1 === shell.Popup( "Open the services control panel?" , 0 , title , topmost+foreground+icon_question ) )
 				shell.exec( "cmd.exe /c %windir%\\system32\\services.msc" ) ;
 		}
 	}

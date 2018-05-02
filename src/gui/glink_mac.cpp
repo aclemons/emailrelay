@@ -106,6 +106,11 @@ GLink::~GLink()
 	delete m_imp ;
 }
 
+bool GLink::exists( const G::Path & path )
+{
+	return G::File::exists( path.dirname()+"E-MailRelay-Start.app" , G::File::NoThrow() ) ; // not tested
+}
+
 bool GLink::remove( const G::Path & )
 {
 	std::ostringstream ss ;

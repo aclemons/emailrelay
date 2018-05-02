@@ -78,7 +78,7 @@ sub unlink
 		else
 		{
 			log_( "deleting [$path]" ) ;
-			CORE::unlink( $path ) or warn "failed to delete [$path]: $!" ;
+			CORE::unlink( $path ) or warn "warning: failed to delete [$path]: $!" ;
 		}
 	}
 }
@@ -170,51 +170,41 @@ sub createFile
 	$fh->close() or die "cannot write to [$path]" ;
 }
 
-sub waitForFile
+sub waitFor
 {
-	my ( $file , $more ) = @_ ;
+	my ( $fn , $what , $more ) = @_ ;
 	my $t = time() ;
 	while( time() < ($t+$ages) )
 	{
-		return if -f $file ;
+		return if &{$fn}() ;
 		sleep_cs( 5 ) ;
 	}
-	Check::that( undef , "timed out waiting for file [$file]" , $more ) ;
-}
-
-sub waitForFiles
-{
-	my ( $glob , $count , $more ) = @_ ;
-	my $t = time() ;
-	while( time() < ($t+$ages) )
-	{
-		return if( scalar(glob_($glob)) == $count ) ;
-		sleep_cs( 5 ) ;
-	}
-	Check::that( undef , "timed out waiting for $count files [$glob]" , $more ) ;
+	Check::that( undef , "timed out waiting for $what" , $more ) ;
 }
 
 sub waitForFileLine
 {
 	my ( $file , $string , $more ) = @_ ;
-	my $t = time() ;
-	while( time() < ($t+$ages) )
-	{
-		my $match = 0 ;
-		my $fh = new FileHandle( $file , "r" ) ;
-		if( $fh )
+	waitFor( sub {
+		my $fh = new FileHandle($file) ;
+		while(<$fh>)
 		{
-			while(<$fh>)
-			{
-				chomp( my $line = $_ ) ;
-				$match = 1 if( $line =~ m/$string/ ) ;
-			}
-			$fh->close() ;
+			chomp( my $line = $_ ) ;
+			return 1 if( $line =~ m/$string/ )
 		}
-		last if $match ;
-		sleep_cs( 20 ) ;
-	}
-	Check::fileContains( $file , $string , $more ) ;
+	} , "file [$file] containing [$string]" , $more ) ;
+}
+
+sub waitForFile
+{
+	my ( $file , $more ) = @_ ;
+	waitFor( sub { -f $file } , "file [$file]" , $more ) ;
+}
+
+sub waitForFiles
+{
+	my ( $glob , $count , $more ) = @_ ;
+	waitFor( sub { scalar(glob_($glob)) == $count } , "$count files [$glob]" , $more ) ;
 }
 
 sub waitForPid
@@ -222,7 +212,7 @@ sub waitForPid
 	my ( $pidfile ) = @_ ;
 	my $pid = undef ;
 	my $t = time() ;
-	while( time() < ($t+$ages) )
+	while( time() < ($t+$ages) ) # todo use waitFor()
 	{
 		my $fh = new FileHandle( $pidfile , "r" ) ;
 		if( $fh )

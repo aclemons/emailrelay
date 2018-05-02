@@ -74,7 +74,7 @@ namespace
 		if( type == "desktop" ) return CSIDL_DESKTOPDIRECTORY ; // "c:/documents and settings/<username>/desktop"
 		if( type == "menu" ) return CSIDL_PROGRAMS ; // "c:/documents and settings/<username>/start menu/programs"
 		if( type == "login" ) return CSIDL_STARTUP ; // "c:/documents and settings/<username>/start menu/programs/startup"
-		if( type == "programs" ) return CSIDL_PROGRAM_FILES ; // "c:/program files"
+		if( type == "programs" ) return sizeof(void*) == 4 ? CSIDL_PROGRAM_FILESX86 : CSIDL_PROGRAM_FILES ; // "c:/program files"
 		if( type == "data" ) return CSIDL_COMMON_APPDATA ; // "c:/programdata"
 		throw std::runtime_error("internal error") ;
 		return 0 ;

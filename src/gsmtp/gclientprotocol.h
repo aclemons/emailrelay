@@ -88,11 +88,8 @@ public:
 	static ClientProtocolReply ok( Value , const std::string & = std::string() ) ;
 		///< Factory function for an ok reply with a specific 2xx value.
 
-	static ClientProtocolReply error( Value , const std::string & reason ) ;
+	static ClientProtocolReply error( Value , const std::string & response , const std::string & error_reason ) ;
 		///< Factory function for an error reply with a specific 5xx value.
-
-	static ClientProtocolReply error( const std::string & reason ) ;
-		///< Factory function for a generalised 500 error reply.
 
 	explicit ClientProtocolReply( const std::string & line = std::string() ) ;
 		///< Constructor for one line of text.
@@ -118,18 +115,19 @@ public:
 		///< Returns the numeric value of the reply.
 
 	std::string text() const ;
-		///< Returns the complete text of the reply,
-		///< excluding the numeric part, and with
-		///< embedded newlines.
+		///< Returns the text of the reply, excluding the numeric part,
+		///< and with embedded newlines.
 
 	std::string errorText() const ;
-		///< Returns the text() string but with the guarantee
-		///< that the returned string is empty if and only
-		///< if the reply value is exactly 250.
+		///< Returns the text() string, plus any error reason, but with
+		///< the guarantee that the returned string is empty if and only
+		///< if the reply value is 2xx.
+
+	std::string errorReason() const ;
+		///< Returns an error reason string, as passed to error().
 
 	bool textContains( std::string s ) const ;
-		///< Returns true if the text() contains
-		///< the given substring.
+		///< Returns true if the text() contains the given substring.
 
 	std::string textLine( const std::string & prefix ) const ;
 		///< Returns a line of text() which starts with
@@ -149,6 +147,7 @@ private:
 	bool m_valid ;
 	int m_value ;
 	std::string m_text ;
+	std::string m_reason ; // additional error reason
 } ;
 
 /// \class GSmtp::ClientProtocol
@@ -205,13 +204,13 @@ public:
 			///< Constructor. The Sender interface is used to send protocol
 			///< messages to the peer. The references are kept.
 
-	G::Slot::Signal2<std::string,int> & doneSignal() ;
-		///< Returns a signal that is raised once the protocol has
-		///< finished with a given message. The first signal parameter
-		///< is the empty string on success or a non-empty reason
-		///< string. The second parameter is a reason code, typically
-		///< the SMTP error value, but -1 or -2 for a filtering
-		///< failure.
+	G::Slot::Signal3<int,std::string,std::string> & doneSignal() ;
+		///< Returns a signal that is raised once the protocol has finished
+		///< with a given message. The first signal parameter is the SMTP response
+		///< value, or 0 for an internal error, or -1 for filter-abandon, or -2
+		///< for a filter-fail. The second parameter is the empty string on success
+		///< or a non-empty response string. The third parameter contains
+		///< any additional error reason text.
 
 	G::Slot::Signal0 & filterSignal() ;
 		///< Returns a signal that is raised when the protocol
@@ -229,11 +228,11 @@ public:
 		///< To be called when a blocked connection becomes unblocked.
 		///< See ClientProtocol::Sender::protocolSend().
 
-	void filterDone( bool ok , const std::string & reason ) ;
+	void filterDone( bool ok , const std::string & response , const std::string & reason ) ;
 		///< To be called when the Filter interface has done its thing.
 		///< If ok then the message processing continues; if not ok
 		///< then the message processing fails with a done signal
-		///< reason code of -1 if the reason is empty, or -2.
+		///< code of -1 if the response is empty, or -2.
 
 	void secure() ;
 		///< To be called when the secure socket protocol has been
@@ -264,7 +263,7 @@ private:
 	static const std::string & lf() ;
 	bool applyEvent( const Reply & event , bool is_start_event = false ) ;
 	static bool parseReply( Reply & , const std::string & , std::string & ) ;
-	void raiseDoneSignal( const std::string & , int , bool warn = false ) ;
+	void raiseDoneSignal( int , const std::string & , const std::string & = std::string() ) ;
 	bool serverAuth( const ClientProtocolReply & reply ) const ;
 	G::StringArray serverAuthMechanisms( const ClientProtocolReply & reply ) const ;
 	void startFiltering() ;
@@ -321,7 +320,7 @@ private:
 	unsigned int m_response_timeout ;
 	unsigned int m_ready_timeout ;
 	unsigned int m_filter_timeout ;
-	G::Slot::Signal2<std::string,int> m_done_signal ;
+	G::Slot::Signal3<int,std::string,std::string> m_done_signal ;
 	G::Slot::Signal0 m_filter_signal ;
 } ;
 

@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gspamfilter.h"
+#include "gstr.h"
 #include "glog.h"
 
 GSmtp::SpamFilter::SpamFilter( GNet::ExceptionHandler & exception_handler ,
@@ -52,6 +53,7 @@ bool GSmtp::SpamFilter::simple() const
 
 void GSmtp::SpamFilter::start( const std::string & path )
 {
+	// the spam client can do more than one request, but it is simpler to start fresh
 	m_client.reset( new SpamClient(m_location,m_connection_timeout,m_response_timeout) ) ;
 
 	m_text.erase() ;
@@ -63,55 +65,59 @@ void GSmtp::SpamFilter::clientEvent( std::string s1 , std::string s2 )
 	G_DEBUG( "GSmtp::SpamFilter::clientEvent: [" << s1 << "] [" << s2 << "]" ) ;
 	if( s1 == "spam" )
 	{
-		m_text = s2.empty() ? std::string() : ("spam: "+s2) ;
-		emit( s2.empty() ) ;
+		m_text = s2.empty() ? std::string() : ("spam: "+G::Str::printable(s2)) ;
+		emit( m_text.empty() ) ;
 	}
 	else if( s1 == "failed" )
 	{
-		m_text = s2 ;
-		emit( s2.empty() ) ;
+		m_text = G::Str::printable(s2) ;
+		emit( m_text.empty() ) ;
 	}
 }
 
-void GSmtp::SpamFilter::emit( bool b )
+void GSmtp::SpamFilter::emit( bool ok )
 {
 	try
 	{
-		m_done_signal.emit( b ) ;
-		m_client.reset() ;
+		m_done_signal.emit( ok ? 0 : 2 ) ;
 	}
 	catch( std::exception & e )
 	{
-		m_client.reset() ;
 		m_exception_handler.onException( e ) ;
 	}
 }
 
-bool GSmtp::SpamFilter::specialCancelled() const
+bool GSmtp::SpamFilter::special() const
 {
 	return false ;
 }
 
-bool GSmtp::SpamFilter::specialOther() const
+std::string GSmtp::SpamFilter::response() const
 {
-	return false ;
+	return m_text.empty() ? std::string() : std::string("rejected") ;
 }
 
-std::string GSmtp::SpamFilter::text() const
+std::string GSmtp::SpamFilter::reason() const
 {
 	return m_text ;
 }
 
-G::Slot::Signal1<bool> & GSmtp::SpamFilter::doneSignal()
+G::Slot::Signal1<int> & GSmtp::SpamFilter::doneSignal()
 {
 	return m_done_signal ;
 }
 
 void GSmtp::SpamFilter::cancel()
 {
+	G_DEBUG( "GSmtp::SpamFilter::cancel: cancelled" ) ;
 	m_text.erase() ;
 	if( m_client.get() != nullptr && m_client->busy() )
 		m_client.reset() ;
+}
+
+bool GSmtp::SpamFilter::abandoned() const
+{
+	return false ;
 }
 
 /// \file gspamfilter.cpp

@@ -104,6 +104,9 @@ public:
 		///< Returns true if the file (directory, device etc.)
 		///< exists. Symlinks are followed. Returns false on error.
 
+	static bool isLink( const Path & path ) ;
+		///< Returns true if the path is an existing symlink.
+
 	static bool isDirectory( const Path & path ) ;
 		///< Returns true if the path exists() and is a directory.
 		///< Symlinks are followed.

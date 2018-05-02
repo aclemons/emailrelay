@@ -13,18 +13,19 @@ E-MailRelay Change Log
 * The `--tls-config` option works differently.
 * New `--client-tls-server-name` option for server name identification (SNI).
 * New `--client-tls-required` option to force client connections to use TLS.
-* New `--server-tls-required` option added to force remote [SMTP][] clients to use STARTTLS.
+* New `--server-tls-required` option to force remote [SMTP][] clients to use STARTTLS.
 * New `--forward-on-disconnect` option replaces `--poll=0`.
 * The `--anonymous` option now suppresses the `Received` line, whatever the `--domain`.
 * The second field in the secrets file indicates the password encoding, not AUTH mechanism.
 * The `--verifier` options is now `--address-verifier` with simplified command-line parameters.
 * Command-line file paths can use `@app` as a prefix to be relative to the executable directory.
 * Command-line file paths can be relative to the startup cwd even when daemonised.
-* Filter exit codes of 101, 102 and 104 to 115 are interpreted differently.
+* Filter exit codes between 104 and 107 are interpreted differently.
+* Message rejection reasons passed back to the submitting SMTP client are much less verbose.
 * Forwarding events are queued up if the forwarding client is still busy from last time.
 * The bind address for outgoing connections is no longer taken from first unqualified `--interface` address [bug-id #27].
 * Line-feed line endings are allowed in the SMTP server protocol, with a warning.
-* The SMTP client protocol can try more than one authentication mechanism.
+* The SMTP client protocol tries more than one authentication mechanism.
 * The Windows commdlg list-view widget is used for the server status pages.
 * The Windows connection-lookup feature is withdrawn (`--peer-lookup`).
 * Several build-time configure options like `--disable-pop` are withdrawn.

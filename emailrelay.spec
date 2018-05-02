@@ -17,13 +17,11 @@ E-MailRelay does three things: it stores any incoming e-mail messages that
 it receives, it forwards e-mail messages on to another remote e-mail server,
 and it serves up stored e-mail messages to local e-mail reader programs. More
 technically, it acts as a SMTP storage daemon, a SMTP forwarding agent, and
-a POP server.
+a POP3 server.
 
-Whenever an e-mail messages is received it can be passed through a user-defined
+Whenever an e-mail message is received it can be passed through a user-defined
 program, such as a spam filter, which can drop, re-address or edit messages as
 they pass through.
-
-<<whatisit.png>>
 
 E-MailRelay uses the same non-blocking i/o model as Squid and nginx giving
 excellent scalability and resource usage.
@@ -80,6 +78,8 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %doc /usr/share/doc/emailrelay/authentication.png
 %doc /usr/share/doc/emailrelay/changelog.html
 %doc /usr/share/doc/emailrelay/changelog.md
+%doc /usr/share/doc/emailrelay/changelog.rst
+%doc /usr/share/doc/emailrelay/changelog.txt
 %doc /usr/share/doc/emailrelay/conf.py
 %doc /usr/share/doc/emailrelay/developer.html
 %doc /usr/share/doc/emailrelay/developer.md

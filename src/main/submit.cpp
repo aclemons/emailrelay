@@ -73,6 +73,8 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 			{
 				from = line.substr(5U) ;
 				G::Str::trim( from , " \t\r\n" ) ;
+				G::Str::replaceAll( from , "\r" , "" ) ;
+				G::Str::replaceAll( from , std::string(1U,'\0') , "" ) ;
 			}
 		}
 	}
@@ -87,6 +89,17 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 	//
 	GSmtp::FileStore store( spool_dir ) ;
 	unique_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from , from_auth_in , from_auth_out ) ;
+
+	// read and stream out the content
+	//
+	while( stream.good() )
+	{
+		std::string line = G::Str::readLineFrom( stream ) ;
+		G::Str::trimRight( line , "\r" , 1U ) ;
+		if( !stream || line == "." )
+			break ;
+		msg->addText( line ) ;
+	}
 
 	// add "To:" lines to the envelope
 	//
@@ -115,22 +128,12 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 		msg->addText( std::string() ) ;
 	}
 
-	// read and stream out the content
-	while( stream.good() )
-	{
-		std::string line = G::Str::readLineFrom( stream ) ;
-		G::Str::trimRight( line , "\r" , 1U ) ;
-		if( !stream || line == "." )
-			break ;
-		msg->addText( line ) ;
-	}
-
 	// commit the file
 	//
 	GNet::Address ip = GNet::Address::loopback( GNet::Address::Family::ipv4() ) ;
 	std::string auth_id = std::string() ;
 	std::string new_path = msg->prepare( auth_id , ip.hostPartString() , std::string() ) ;
-	msg->commit() ;
+	msg->commit( true ) ;
 	return new_path ;
 }
 

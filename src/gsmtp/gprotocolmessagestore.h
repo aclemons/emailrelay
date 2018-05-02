@@ -50,7 +50,7 @@ public:
 	virtual ~ProtocolMessageStore() ;
 		///< Destructor.
 
-	virtual G::Slot::Signal3<bool,unsigned long,std::string> & doneSignal() override ;
+	virtual G::Slot::Signal4<bool,unsigned long,std::string,std::string> & doneSignal() override ;
 		///< Override from GSmtp::ProtocolMessage.
 
 	virtual void reset() override ;
@@ -80,14 +80,14 @@ public:
 
 private:
 	void operator=( const ProtocolMessageStore & ) ; // not implemented
-	void filterDone( bool ) ;
+	void filterDone( int ) ;
 
 private:
 	MessageStore & m_store ;
 	unique_ptr<Filter> m_filter ;
 	unique_ptr<NewMessage> m_new_msg ;
 	std::string m_from ;
-	G::Slot::Signal3<bool,unsigned long,std::string> m_done_signal ;
+	G::Slot::Signal4<bool,unsigned long,std::string,std::string> m_done_signal ;
 } ;
 
 #endif

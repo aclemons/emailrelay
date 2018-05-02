@@ -83,6 +83,7 @@ MISC_EXTRA_DIST = \
 	doxygen.h \
 	emailrelay.rc \
 	emailrelay.exe.manifest \
+	emailrelay-service.exe.manifest \
 	fakemc.c \
 	messages.mc \
 	resource.h

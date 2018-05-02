@@ -879,20 +879,35 @@ G::StringArray G::Str::splitIntoTokens( const std::string & in , const std::stri
 namespace
 {
 	template <typename T>
-	void splitIntoFields_( const std::string & in_in , T & out , const std::string & ws ,
-		char escape , bool discard_bogus )
+	void splitIntoFields_( const std::string & in , T & out , const std::string & ws )
 	{
-		typedef G::Str::size_type size_type ;
+		if( in.length() )
+		{
+			size_t start = 0U ;
+			size_t pos = 0U ;
+			for(;;)
+			{
+				if( pos >= in.length() ) break ;
+				pos = in.find_first_of( ws , pos ) ;
+				if( pos == std::string::npos ) break ;
+				out.push_back( in.substr(start,pos-start) ) ;
+				pos++ ;
+				start = pos ;
+			}
+			out.push_back( in.substr(start,pos-start) ) ;
+		}
+	}
+	template <typename T>
+	void splitIntoFields_( const std::string & in_in , T & out , const std::string & ws ,
+		char escape , bool remove_escapes )
+	{
 		std::string ews( ws ) ; // escape+whitespace
-		if( escape != '\0' )
-			ews.append( 1U , escape ) ;
-
+		if( escape != '\0' ) ews.append( 1U , escape ) ;
 		if( in_in.length() )
 		{
 			std::string in = in_in ;
-			size_type start = 0U ;
-			size_type last_pos = in.length() - 1U ;
-			size_type pos = 0U ;
+			size_t start = 0U ;
+			size_t pos = 0U ;
 			for(;;)
 			{
 				if( pos >= in.length() ) break ;
@@ -900,8 +915,7 @@ namespace
 				if( pos == std::string::npos ) break ;
 				if( in.at(pos) == escape )
 				{
-					const bool valid = pos != last_pos && in.find(ews,pos+1U) == (pos+1U) ;
-					if( valid || discard_bogus )
+					if( remove_escapes )
 						in.erase( pos , 1U ) ;
 					else
 						pos++ ;
@@ -919,14 +933,14 @@ namespace
 	}
 }
 void G::Str::splitIntoFields( const std::string & in , StringArray & out , const std::string & ws ,
-	char escape , bool discard_bogus )
+	char escape , bool remove_escapes )
 {
-	splitIntoFields_( in , out , ws , escape , discard_bogus ) ;
+	splitIntoFields_( in , out , ws , escape , remove_escapes ) ;
 }
 G::StringArray G::Str::splitIntoFields( const std::string & in , const std::string & ws )
 {
 	G::StringArray out ;
-	splitIntoFields_( in , out , ws , '\0' , true ) ;
+	splitIntoFields_( in , out , ws ) ;
 	return out ;
 }
 

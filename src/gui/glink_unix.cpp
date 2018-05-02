@@ -197,6 +197,11 @@ GLink::~GLink()
 	delete m_imp ;
 }
 
+bool GLink::exists( const G::Path & path )
+{
+	return G::File::isLink( path ) ;
+}
+
 bool GLink::remove( const G::Path & link_path )
 {
 	return G::File::remove( link_path , G::File::NoThrow() ) ;

@@ -46,6 +46,9 @@ public:
 		const G::Path & path_1 , const G::Path & path_2 ) ;
 			///< Uninstalls the target as a boot-time service.
 
+	static bool installed( const G::Path & dir_boot , const std::string & name ) ;
+		///< Returns true if currently installed.
+
 private:
 	Boot() ;
 } ;

@@ -24,27 +24,17 @@
 #include "gstr.h"
 
 GSmtp::NullFilter::NullFilter( GNet::ExceptionHandler & eh , bool server_side ) :
-	m_server_side(server_side) ,
-	m_exit_code(0) ,
-	m_special_cancelled(false) ,
-	m_special_other(false) ,
-	m_ok(true) ,
-	m_timer(*this,&NullFilter::onDoneTimeout,eh)
+	m_exit(0,server_side) ,
+	m_id("none") ,
+	m_timer(*this,&NullFilter::onTimeout,eh)
 {
 }
 
 GSmtp::NullFilter::NullFilter( GNet::ExceptionHandler & eh , bool server_side , unsigned int exit_code ) :
-	m_server_side(server_side) ,
-	m_exit_code(exit_code) ,
-	m_special_cancelled(false) ,
-	m_special_other(false) ,
-	m_ok(false) ,
-	m_timer(*this,&NullFilter::onDoneTimeout,eh)
+	m_exit(exit_code,server_side) ,
+	m_id("exit:"+G::Str::fromUInt(exit_code)) ,
+	m_timer(*this,&NullFilter::onTimeout,eh)
 {
-	Exit exit( exit_code , server_side ) ;
-	m_ok = exit.ok ;
-	m_special_cancelled = exit.cancelled ;
-	m_special_other = exit.other ;
 }
 
 GSmtp::NullFilter::~NullFilter()
@@ -53,7 +43,7 @@ GSmtp::NullFilter::~NullFilter()
 
 std::string GSmtp::NullFilter::id() const
 {
-	return m_exit_code == 0 ? "null" : ( "exit:" + G::Str::fromUInt(m_exit_code) ) ;
+	return m_id ;
 }
 
 bool GSmtp::NullFilter::simple() const
@@ -61,22 +51,22 @@ bool GSmtp::NullFilter::simple() const
 	return true ;
 }
 
-bool GSmtp::NullFilter::specialCancelled() const
+bool GSmtp::NullFilter::special() const
 {
-	return m_special_cancelled ;
+	return m_exit.special ;
 }
 
-bool GSmtp::NullFilter::specialOther() const
+std::string GSmtp::NullFilter::response() const
 {
-	return m_special_other ;
+	return ( m_exit.ok() || m_exit.abandon() ) ? std::string() : std::string("rejected") ;
 }
 
-std::string GSmtp::NullFilter::text() const
+std::string GSmtp::NullFilter::reason() const
 {
-	return m_ok ? std::string() : std::string("error") ;
+	return ( m_exit.ok() || m_exit.abandon() ) ? std::string() : m_id ;
 }
 
-G::Slot::Signal1<bool> & GSmtp::NullFilter::doneSignal()
+G::Slot::Signal1<int> & GSmtp::NullFilter::doneSignal()
 {
 	return m_done_signal ;
 }
@@ -90,9 +80,14 @@ void GSmtp::NullFilter::start( const std::string & )
 	m_timer.startTimer( 0U ) ;
 }
 
-void GSmtp::NullFilter::onDoneTimeout()
+void GSmtp::NullFilter::onTimeout()
 {
-	m_done_signal.emit( m_ok ) ;
+	m_done_signal.emit( m_exit.result ) ;
+}
+
+bool GSmtp::NullFilter::abandoned() const
+{
+	return m_exit.abandon() ;
 }
 
 /// \file gnullfilter.cpp

@@ -64,7 +64,7 @@ public:
 
 	void stop() ;
 		///< Attempts to kill the spawned process and waits for it
-		///< to terminate.
+		///< to terminate. No task-done callback will be triggered.
 
 private:
 	Task( const Task & ) ;

@@ -111,6 +111,7 @@
 #include "goptionparser.h"
 #include "installer.h"
 #include "dir.h"
+#include "glink.h"
 #include "pages.h"
 #include "boot.h"
 #include "serverconfiguration.h"
@@ -140,7 +141,7 @@ static int width()
 
 static int height()
 {
-	return 550 ;
+	return 480 ;
 }
 
 static void error( const std::string & what )
@@ -362,6 +363,16 @@ int main( int argc , char * argv [] )
 			pages_config.add( "=dir-config" , dir_config.str() ) ;
 			pages_config.add( "=dir-install" , dir_install.str() ) ;
 			pages_config.add( "=dir-run" , dir_run.str() ) ;
+
+			// set widget states based on the current file-system state
+			if( configure_mode )
+			{
+				std::string fname = GLink::filename( "E-MailRelay" ) ;
+				pages_config.add( "start-on-boot" , Boot::installed(Dir::boot(),"emailrelay") ? "y" : "n" ) ;
+				pages_config.add( "start-link-desktop" , GLink::exists(Dir::desktop()+fname) ? "y" : "n" ) ;
+				pages_config.add( "start-link-menu" , GLink::exists(Dir::menu()+fname) ? "y" : "n" ) ;
+				pages_config.add( "start-at-login" , GLink::exists(Dir::login()+fname) ? "y" : "n" ) ;
+			}
 
 			// check the config file (or windows batch file) will be writeable
 			if( configure_mode )

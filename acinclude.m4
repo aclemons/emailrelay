@@ -820,6 +820,29 @@ AC_DEFUN([GCONFIG_FN_SETGROUPS],
 	fi
 ])
 
+dnl GCONFIG_FN_SETPGRP_BSD
+dnl ----------------------
+dnl Tests for the bsd two-parameter form of setpgrp().
+dnl
+AC_DEFUN([GCONFIG_FN_SETPGRP_BSD],
+[AC_CACHE_CHECK([for bsd setpgrp],[gconfig_cv_setpgrp_bsd],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <sys/types.h>]
+			[#include <unistd.h>]
+		],
+		[[setpgrp(0,0)]])],
+		gconfig_cv_setpgrp_bsd=yes ,
+		gconfig_cv_setpgrp_bsd=no )
+])
+	if test "$gconfig_cv_setpgrp_bsd" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_SETPGRP_BSD,1,[Define true if setpgrp has two parameters])
+	else
+		AC_DEFINE(GCONFIG_HAVE_SETPGRP_BSD,0,[Define true if setpgrp has two parameters])
+	fi
+])
+
 dnl GCONFIG_FN_GETPWNAM
 dnl -------------------
 dnl Tests for getpwnam().
