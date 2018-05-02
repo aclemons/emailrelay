@@ -20,18 +20,19 @@
      <li>The <em class="quote">--tls-config</em> option works differently.</li>
      <li>New <em class="quote">--client-tls-server-name</em> option for server name identification (SNI).</li>
      <li>New <em class="quote">--client-tls-required</em> option to force client connections to use TLS.</li>
-     <li>New <em class="quote">--server-tls-required</em> option added to force remote SMTP clients to use STARTTLS.</li>
+     <li>New <em class="quote">--server-tls-required</em> option to force remote SMTP clients to use STARTTLS.</li>
      <li>New <em class="quote">--forward-on-disconnect</em> option replaces <em class="quote">--poll=0</em>.</li>
      <li>The <em class="quote">--anonymous</em> option now suppresses the <em class="quote">Received</em> line, whatever the <em class="quote">--domain</em>.</li>
      <li>The second field in the secrets file indicates the password encoding, not AUTH mechanism.</li>
      <li>The <em class="quote">--verifier</em> options is now <em class="quote">--address-verifier</em> with simplified command-line parameters.</li>
      <li>Command-line file paths can use <em class="quote">@app</em> as a prefix to be relative to the executable directory.</li>
      <li>Command-line file paths can be relative to the startup cwd even when daemonised.</li>
-     <li>Filter exit codes of 101, 102 and 104 to 115 are interpreted differently.</li>
+     <li>Filter exit codes between 104 and 107 are interpreted differently.</li>
+     <li>Message rejection reasons passed back to the submitting SMTP client are much less verbose.</li>
      <li>Forwarding events are queued up if the forwarding client is still busy from last time.</li>
      <li>The bind address for outgoing connections is no longer taken from first unqualified <em class="quote">--interface</em> address [bug-id #27].</li>
      <li>Line-feed line endings are allowed in the SMTP server protocol, with a warning.</li>
-     <li>The SMTP client protocol can try more than one authentication mechanism.</li>
+     <li>The SMTP client protocol tries more than one authentication mechanism.</li>
      <li>The Windows commdlg list-view widget is used for the server status pages.</li>
      <li>The Windows connection-lookup feature is withdrawn (<em class="quote">--peer-lookup</em>).</li>
      <li>Several build-time configure options like <em class="quote">--disable-pop</em> are withdrawn.</li>

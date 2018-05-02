@@ -78,12 +78,12 @@ POST_UNINSTALL = :
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/pkg.m4 \
+	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h
+CONFIG_HEADER = $(top_builddir)/gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_P = $(am__v_P_@AM_V@)
@@ -178,8 +178,6 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-COMPILER_VERSION = @COMPILER_VERSION@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
@@ -190,13 +188,20 @@ DEPDIR = @DEPDIR@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
-EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+GCONFIG_CONFIGURATION = @GCONFIG_CONFIGURATION@
+GCONFIG_HAVE_DOXYGEN = @GCONFIG_HAVE_DOXYGEN@
+GCONFIG_HAVE_MAN2HTML = @GCONFIG_HAVE_MAN2HTML@
+GCONFIG_QT_CFLAGS = @GCONFIG_QT_CFLAGS@
+GCONFIG_QT_LIBS = @GCONFIG_QT_LIBS@
+GCONFIG_QT_MOC = @GCONFIG_QT_MOC@
+GCONFIG_STATIC_END = @GCONFIG_STATIC_END@
+GCONFIG_STATIC_START = @GCONFIG_STATIC_START@
+GCONFIG_TLS_LIBS = @GCONFIG_TLS_LIBS@
+GCONFIG_WINDMC = @GCONFIG_WINDMC@
+GCONFIG_WINDRES = @GCONFIG_WINDRES@
 GREP = @GREP@
 GZIP = @GZIP@
-G_CAPABILITIES = @G_CAPABILITIES@
-HAVE_DOXYGEN = @HAVE_DOXYGEN@
-HAVE_MAN2HTML = @HAVE_MAN2HTML@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -218,8 +223,6 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
-PAM_INCLUDE = @PAM_INCLUDE@
-PAM_LIBS = @PAM_LIBS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
@@ -228,14 +231,11 @@ QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 QT_MOC = @QT_MOC@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SSL_LIBS = @SSL_LIBS@
-STATIC_END = @STATIC_END@
-STATIC_START = @STATIC_START@
 STRIP = @STRIP@
 VERSION = @VERSION@
-ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -290,8 +290,7 @@ top_srcdir = @top_srcdir@
 
 #
 #
-EXTRA_DIST = mingw.mak mingw-common.mak emailrelay.sln emailrelay.vcxproj emailrelay-lib.vcxproj fakemc.vcxproj
-SUBDIRS = glib gssl gnet gauth gsmtp gpop main win32 gui
+SUBDIRS = glib gssl gnet gauth gsmtp gpop win32 main gui
 all: all-recursive
 
 .SUFFIXES:

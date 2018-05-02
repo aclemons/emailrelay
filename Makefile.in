@@ -94,17 +94,16 @@ subdir = .
 DIST_COMMON = INSTALL NEWS README AUTHORS ChangeLog \
 	$(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
-	$(srcdir)/config.h.in COPYING compile depcomp install-sh \
-	missing
+	$(srcdir)/gconfig_defs.h.in COPYING compile install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/pkg.m4 \
+	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = config.h
+CONFIG_HEADER = gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_P = $(am__v_P_@AM_V@)
@@ -172,7 +171,7 @@ am__recursive_targets = \
 AM_RECURSIVE_TARGETS = $(am__recursive_targets:-recursive=) TAGS CTAGS \
 	cscope distdir dist dist-all distcheck
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) \
-	$(LISP)config.h.in
+	$(LISP)gconfig_defs.h.in
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
 # *not* preserved.
@@ -246,8 +245,6 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-COMPILER_VERSION = @COMPILER_VERSION@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
@@ -258,13 +255,20 @@ DEPDIR = @DEPDIR@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
-EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+GCONFIG_CONFIGURATION = @GCONFIG_CONFIGURATION@
+GCONFIG_HAVE_DOXYGEN = @GCONFIG_HAVE_DOXYGEN@
+GCONFIG_HAVE_MAN2HTML = @GCONFIG_HAVE_MAN2HTML@
+GCONFIG_QT_CFLAGS = @GCONFIG_QT_CFLAGS@
+GCONFIG_QT_LIBS = @GCONFIG_QT_LIBS@
+GCONFIG_QT_MOC = @GCONFIG_QT_MOC@
+GCONFIG_STATIC_END = @GCONFIG_STATIC_END@
+GCONFIG_STATIC_START = @GCONFIG_STATIC_START@
+GCONFIG_TLS_LIBS = @GCONFIG_TLS_LIBS@
+GCONFIG_WINDMC = @GCONFIG_WINDMC@
+GCONFIG_WINDRES = @GCONFIG_WINDRES@
 GREP = @GREP@
 GZIP = @GZIP@
-G_CAPABILITIES = @G_CAPABILITIES@
-HAVE_DOXYGEN = @HAVE_DOXYGEN@
-HAVE_MAN2HTML = @HAVE_MAN2HTML@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -286,8 +290,6 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
-PAM_INCLUDE = @PAM_INCLUDE@
-PAM_LIBS = @PAM_LIBS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
@@ -296,14 +298,11 @@ QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 QT_MOC = @QT_MOC@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SSL_LIBS = @SSL_LIBS@
-STATIC_END = @STATIC_END@
-STATIC_START = @STATIC_START@
 STRIP = @STRIP@
 VERSION = @VERSION@
-ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -357,23 +356,29 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 EXTRA_DIST = \
 	emailrelay.spec \
+	configure.sh \
 	ChangeLog \
-	README.windows \
-	README.embedded \
-	README.mac \
 	LICENSE \
 	VERSION \
+	README.md \
+	README.rst \
 	bootstrap \
 	autogen.sh \
-	emailrelay-gui.xcodeproj/project.pbxproj \
-	emailrelay.xcodeproj/project.pbxproj 
+	winbuild.bat \
+	winbuild.pl \
+	winbuild.pm \
+	winbuild-parser.pm \
+	runperl.bat
 
-SUBDIRS = bin src lib etc doc debian test extra
-e_doc_DATA = COPYING AUTHORS INSTALL NEWS README README.windows README.mac README.embedded ChangeLog
+SUBDIRS = bin src etc doc debian test m4
+
+# work-round PKG_CHECK_MODULES if no pkg-config
+ACLOCAL_AMFLAGS = -I m4
+e_doc_DATA = COPYING AUTHORS INSTALL NEWS README ChangeLog
 RPM = $(RPM_ROOT)/RPMS/$(RPM_ARCH)/emailrelay-$(VERSION)-1.$(RPM_ARCH).rpm
 DEB = emailrelay_$(VERSION)-1_$(RPM_ARCH).deb
 TAR = emailrelay-$(VERSION).tar.gz
-all: config.h
+all: gconfig_defs.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
@@ -412,20 +417,20 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 $(am__aclocal_m4_deps):
 
-config.h: stamp-h1
+gconfig_defs.h: stamp-h1
 	@test -f $@ || rm -f stamp-h1
 	@test -f $@ || $(MAKE) $(AM_MAKEFLAGS) stamp-h1
 
-stamp-h1: $(srcdir)/config.h.in $(top_builddir)/config.status
+stamp-h1: $(srcdir)/gconfig_defs.h.in $(top_builddir)/config.status
 	@rm -f stamp-h1
-	cd $(top_builddir) && $(SHELL) ./config.status config.h
-$(srcdir)/config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps) 
+	cd $(top_builddir) && $(SHELL) ./config.status gconfig_defs.h
+$(srcdir)/gconfig_defs.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps) 
 	($(am__cd) $(top_srcdir) && $(AUTOHEADER))
 	rm -f stamp-h1
 	touch $@
 
 distclean-hdr:
-	-rm -f config.h stamp-h1
+	-rm -f gconfig_defs.h stamp-h1
 install-e_docDATA: $(e_doc_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(e_doc_DATA)'; test -n "$(e_docdir)" || list=; \
@@ -744,7 +749,7 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(DATA) config.h
+all-am: Makefile $(DATA) gconfig_defs.h
 installdirs: installdirs-recursive
 installdirs-am:
 	for dir in "$(DESTDIR)$(e_docdir)"; do \
@@ -870,7 +875,7 @@ uninstall-am: uninstall-e_docDATA uninstall-local
 
 
 uninstall-local:
-	-for try in 1 2 3 4 ; do echo "$(DESTDIR)$(e_pamdir)" "$(DESTDIR)$(e_initdir)" "$(DESTDIR)$(e_sysconfdir)" "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(e_spooldir)" "$(DESTDIR)$(e_docdir)" "$(DESTDIR)$(pkgdatadir)" | tr ' ' '\n' | grep -i "mailrelay" | while read d ; do rmdir "$$d" 2>/dev/null ; done ; done
+	-for try in 1 2 3 4 ; do echo "$(e_pamdir)" "$(e_initdir)" "$(e_sysconfdir)" "$(e_examplesdir)" "$(e_libexecdir)" "$(e_spooldir)" "$(e_docdir)" "$(pkgdatadir)" | tr ' ' '\n' | grep "emailrelay$" | while read d ; do rmdir "$(DESTDIR)/$$d" 2>/dev/null ; done ; done
 
 RPM_ROOT ?= ${HOME}/rpmbuild
 #RPM_ARCH ?= $(shell arch)
@@ -885,13 +890,15 @@ $(RPM): dist
 	cp $(TAR) $(RPM_ROOT)/SOURCES/emailrelay-$(VERSION)-src.tar.gz
 	cp $(top_srcdir)/emailrelay.spec $(RPM_ROOT)/SPECS/
 	chown root:root $(RPM_ROOT)/SPECS/emailrelay.spec
+	-rm -f $(RPM) || true
 	rpmbuild -ba $(RPM_ROOT)/SPECS/emailrelay.spec
+	test -f $(RPM)
 
 .PHONY: deb
 deb: $(DEB)
 
 $(DEB): $(RPM)
-	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$$$
+	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$$$ || true
 	alien --to-deb --generate --single --keep-version $(RPM)
 	sed -i 's/^Section:.*/Section: mail/' emailrelay-$(VERSION)/debian/control
 	sed -i 's/^Maintainer:.*/Maintainer: Graeme Walker <graeme_walker@users.sourceforge.net>/' emailrelay-$(VERSION)/debian/control

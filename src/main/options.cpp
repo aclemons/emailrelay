@@ -220,11 +220,10 @@ std::string Main::Options::spec( bool is_windows )
 		"N!log-file!log to file instead of stderr! (with '%d' replaced by the current date)!1!file!3|"
 			//example: /var/log/emailrelay-%d
 			//example: C:/ProgramData/E-MailRelay/log-%d.txt
-			// Redirects standard-error logging to the specified file, but note
-			// that standard error stream logging might be disabled by --close-stderr,
-			// --as-server and --as-proxy. The filename can include "%d" to get daily
-			// log files; the "%d" is replaced by the current date in the local
-			// timezone using a "YYYYMMDD" format.
+			// Redirects standard-error logging to the specified file. Logging to
+			// the log file is not affected by --close-stderr. The filename can
+			// include "%d" to get daily log files; the "%d" is replaced by the
+			// current date in the local timezone using a "YYYYMMDD" format.
 
 		"S!server-auth!enables authentication of remote SMTP clients, using the given server secrets file!!1!file!3|"
 			//example: /etc/private/emailrelay.auth
@@ -355,7 +354,7 @@ std::string Main::Options::spec( bool is_windows )
 			// Causes forwarding of spooled mail messages to happen at regular intervals
 			// (with the time given in seconds).
 
-		"R!address-verifier!specifies an external program for address verification!!1!program!3|"
+		"!address-verifier!specifies an external program for address verification!!1!program!3|"
 			//example: /usr/local/sbin/emailrelay-verifier.sh
 			//example: C:/ProgramData/E-MailRelay/verifier.js
 			// Runs the specified external program to verify a message recipent's e-mail

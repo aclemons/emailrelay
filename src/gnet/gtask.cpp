@@ -80,8 +80,9 @@ GNet::TaskImp::~TaskImp()
 	if( m_thread.joinable() )
 	{
 		m_process.kill() ;
-		G_DEBUG( "TaskImp::dtor: waiting for waitfor() thread " << m_thread.get_id() << " to complete" ) ;
+		G_WARNING( "TaskImp::dtor: blocked waiting for process " << m_process.id() << " to terminate" ) ;
 		m_thread.join() ;
+		G_LOG( "TaskImp::dtor: process " << m_process.id() << " terminated" ) ;
 	}
 }
 
@@ -102,6 +103,7 @@ void GNet::TaskImp::onFutureEvent()
 {
 	G_DEBUG( "GNet::TaskImp::onFutureEvent: future event" ) ;
 	m_thread.join() ;
+	G_DEBUG( "GNet::TaskImp::onFutureEvent: thread joined" ) ;
 
 	int exit_code = m_process.wait().get() ;
 	G_DEBUG( "GNet::TaskImp::onFutureEvent: exit code " << exit_code ) ;

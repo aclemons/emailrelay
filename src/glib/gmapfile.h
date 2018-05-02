@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gpath.h"
 #include "gstrings.h"
+#include "gexception.h"
 #include "goptions.h"
 #include "goptionvalue.h"
 #include "goptionmap.h"
@@ -45,6 +46,10 @@ namespace G
 class G::MapFile
 {
 public:
+	G_EXCEPTION( ReadError , "cannot open map file" ) ;
+	G_EXCEPTION( WriteError , "cannot write map file" ) ;
+	G_EXCEPTION( Missing , "cannot find map file item" ) ;
+
 	MapFile() ;
 		///< Constructor for an empty map.
 

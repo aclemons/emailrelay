@@ -60,8 +60,11 @@ public:
 	~GLink() ;
 		///< Destructor.
 
-	static bool remove( const G::Path & ) ;
+	static bool remove( const G::Path & link_path ) ;
 		///< Removes a link. Returns true if removed.
+
+	static bool exists( const G::Path & link_path ) ;
+		///< Returns true if the link exists.
 
 private:
 	GLink( const GLink & ) ;

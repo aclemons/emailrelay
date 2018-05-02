@@ -39,7 +39,7 @@ try
 	{
 		var line = in_.ReadLine() ;
 		out_.WriteLine( line ) ;
-		if( line == "" )
+		if( line === "" )
 			break ;
 	}
 

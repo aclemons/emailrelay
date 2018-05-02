@@ -31,9 +31,9 @@ namespace Main
 }
 
 /// \class Main::Output
-/// An abstract interface for generating output
-/// on a command-line or a GUI. The appropriate implementation is
-/// selected from main() or WinMain().
+/// An abstract interface for generating output on a command-line
+/// or a GUI. The appropriate implementation is selected from
+/// main() or WinMain().
 ///
 class Main::Output
 {
@@ -44,6 +44,10 @@ public:
 	virtual G::Options::Layout layout() const = 0 ;
 		///< Returns a layout definition for G::Options.
 
+	virtual bool simpleOutput() const = 0 ;
+		///< Returns true if the output is just sent to stdout;
+		///< returns false for a fancy gui message box.
+
 	virtual ~Output() ;
 		///< Destructor.
 
@@ -52,4 +56,3 @@ private:
 } ;
 
 #endif
-

@@ -83,12 +83,12 @@ POST_UNINSTALL = :
 subdir = bin
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/pkg.m4 \
+	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h
+CONFIG_HEADER = $(top_builddir)/gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -118,9 +118,9 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(e_initdir)" \
+am__installdirs = "$(DESTDIR)$(e_examplesdir)" \
 	"$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_initdir)"
-SCRIPTS = $(e_init_SCRIPTS) $(noinst_SCRIPTS)
+SCRIPTS = $(e_examples_SCRIPTS) $(noinst_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -154,8 +154,6 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-COMPILER_VERSION = @COMPILER_VERSION@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
@@ -166,13 +164,20 @@ DEPDIR = @DEPDIR@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
-EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+GCONFIG_CONFIGURATION = @GCONFIG_CONFIGURATION@
+GCONFIG_HAVE_DOXYGEN = @GCONFIG_HAVE_DOXYGEN@
+GCONFIG_HAVE_MAN2HTML = @GCONFIG_HAVE_MAN2HTML@
+GCONFIG_QT_CFLAGS = @GCONFIG_QT_CFLAGS@
+GCONFIG_QT_LIBS = @GCONFIG_QT_LIBS@
+GCONFIG_QT_MOC = @GCONFIG_QT_MOC@
+GCONFIG_STATIC_END = @GCONFIG_STATIC_END@
+GCONFIG_STATIC_START = @GCONFIG_STATIC_START@
+GCONFIG_TLS_LIBS = @GCONFIG_TLS_LIBS@
+GCONFIG_WINDMC = @GCONFIG_WINDMC@
+GCONFIG_WINDRES = @GCONFIG_WINDRES@
 GREP = @GREP@
 GZIP = @GZIP@
-G_CAPABILITIES = @G_CAPABILITIES@
-HAVE_DOXYGEN = @HAVE_DOXYGEN@
-HAVE_MAN2HTML = @HAVE_MAN2HTML@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -194,8 +199,6 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
-PAM_INCLUDE = @PAM_INCLUDE@
-PAM_LIBS = @PAM_LIBS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
@@ -204,14 +207,11 @@ QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 QT_MOC = @QT_MOC@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SSL_LIBS = @SSL_LIBS@
-STATIC_END = @STATIC_END@
-STATIC_START = @STATIC_START@
 STRIP = @STRIP@
 VERSION = @VERSION@
-ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -263,75 +263,66 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@MAC_FALSE@e_init_SCRIPTS = emailrelay
-@MAC_TRUE@e_init_SCRIPTS = E-MailRelay 
-@MAC_FALSE@e_init_DATA = 
-@MAC_TRUE@e_init_DATA = StartupParameters.plist
-EXTRA_DIST = \
-	emailrelay.sh_ \
-	doxygen.sh_ \
-	doxygen_fixup.pl_ \
-	txt2html.sh_ \
-	txt2mu.sh_ \
-	mu2html.sh_ \
-	mu2docbook.sh_ \
-	expand.sh_ \
-	emailrelay-notify.sh_ \
-	emailrelay-resubmit.sh_ \
-	emailrelay-deliver.sh_ \
-	emailrelay-process.sh_ \
-	emailrelay-runperl.js \
-	emailrelay-resubmit.js \
-	emailrelay-edit-content.js \
-	emailrelay-edit-envelope.js \
-	emailrelay-submit.sh_ \
-	emailrelay-multicast.sh_ \
-	make-bundle.sh_ \
-	make-manifest.sh_ \
-	make-qt-enabled.sh_ \
-	make-qt-enabled.pl_ \
-	make-setup.sh_ \
-	configure-dev.sh \
-	configure-fhs.sh \
-	configure-mac.sh \
-	startup-mac.plist
+example_scripts = \
+	emailrelay-multicast.sh \
+	emailrelay-process.sh \
+	emailrelay-sendmail.pl
+
+example_scripts_in = \
+	emailrelay-deliver.sh.in \
+	emailrelay-notify.sh.in \
+	emailrelay-resubmit.sh.in \
+	emailrelay-submit.sh.in \
+	emailrelay.sh.in
+
+example_scripts_out = \
+	emailrelay-deliver.sh \
+	emailrelay-notify.sh \
+	emailrelay-resubmit.sh \
+	emailrelay-submit.sh \
+	emailrelay
+
+init_scripts = \
+	emailrelay
 
 work_scripts = \
 	doxygen.sh \
-	doxygen_fixup.pl \
-	txt2mu.sh \
-	mu2html.sh \
-	mu2docbook.sh \
-	expand.sh \
-	txt2html.sh \
-	emailrelay.sh \
-	make-bundle.sh \
 	make-manifest.sh \
-	make-qt-enabled.sh \
-	make-qt-enabled.pl \
 	make-setup.sh
 
-noinst_SCRIPTS = \
-	emailrelay-runperl.js \
-	emailrelay-resubmit.js \
+js_scripts = \
 	emailrelay-edit-content.js \
 	emailrelay-edit-envelope.js \
-	$(work_scripts)
+	emailrelay-resubmit.js \
+	emailrelay-runperl.js \
+	emailrelay-service-install.js
+
+EXTRA_DIST = \
+	$(example_scripts) \
+	$(example_scripts_in) \
+	$(work_scripts) \
+	$(js_scripts)
+
+noinst_SCRIPTS = \
+	$(work_scripts) \
+	$(js_scripts)
 
 e_examples_DATA = \
-	emailrelay-process.sh \
-	emailrelay-notify.sh \
-	emailrelay-deliver.sh \
-	emailrelay-resubmit.sh \
-	emailrelay-submit.sh \
-	emailrelay-multicast.sh
+	$(example_scripts)
 
-CLEANFILES = $(e_init_SCRIPTS) $(e_examples_DATA) $(work_scripts) $(e_init_DATA)
-SUFFIXES = .sh_ .sh .pl_ .pl
+e_examples_SCRIPTS = \
+	$(example_scripts_out)
+
+e_init_DATA = \
+	$(init_scripts)
+
+CLEANFILES = \
+	$(example_scripts_out)
+
+do_sed = sed -e "s%__SPOOL_DIR__%${e_spooldir}%g" -e "s%__SBIN_DIR__%${sbindir}%g" -e "s%__SYSCONF_DIR__%${e_sysconfdir}%g"
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .sh_ .sh .pl_ .pl
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -362,12 +353,12 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-install-e_initSCRIPTS: $(e_init_SCRIPTS)
+install-e_examplesSCRIPTS: $(e_examples_SCRIPTS)
 	@$(NORMAL_INSTALL)
-	@list='$(e_init_SCRIPTS)'; test -n "$(e_initdir)" || list=; \
+	@list='$(e_examples_SCRIPTS)'; test -n "$(e_examplesdir)" || list=; \
 	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(e_initdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(e_initdir)" || exit 1; \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(e_examplesdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(e_examplesdir)" || exit 1; \
 	fi; \
 	for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
@@ -386,17 +377,17 @@ install-e_initSCRIPTS: $(e_init_SCRIPTS)
 	while read type dir files; do \
 	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
 	     test -z "$$files" || { \
-	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(e_initdir)$$dir'"; \
-	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(e_initdir)$$dir" || exit $$?; \
+	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(e_examplesdir)$$dir'"; \
+	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(e_examplesdir)$$dir" || exit $$?; \
 	     } \
 	; done
 
-uninstall-e_initSCRIPTS:
+uninstall-e_examplesSCRIPTS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(e_init_SCRIPTS)'; test -n "$(e_initdir)" || exit 0; \
+	@list='$(e_examples_SCRIPTS)'; test -n "$(e_examplesdir)" || exit 0; \
 	files=`for p in $$list; do echo "$$p"; done | \
 	       sed -e 's,.*/,,;$(transform)'`; \
-	dir='$(DESTDIR)$(e_initdir)'; $(am__uninstall_files_from_dir)
+	dir='$(DESTDIR)$(e_examplesdir)'; $(am__uninstall_files_from_dir)
 install-e_examplesDATA: $(e_examples_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(e_examples_DATA)'; test -n "$(e_examplesdir)" || list=; \
@@ -480,7 +471,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(SCRIPTS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(e_initdir)" "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_initdir)"; do \
+	for dir in "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_initdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -534,8 +525,8 @@ info: info-am
 
 info-am:
 
-install-data-am: install-data-local install-e_examplesDATA \
-	install-e_initDATA install-e_initSCRIPTS
+install-data-am: install-e_examplesDATA install-e_examplesSCRIPTS \
+	install-e_initDATA
 
 install-dvi: install-dvi-am
 
@@ -579,55 +570,45 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-e_examplesDATA uninstall-e_initDATA \
-	uninstall-e_initSCRIPTS uninstall-local
+uninstall-am: uninstall-e_examplesDATA uninstall-e_examplesSCRIPTS \
+	uninstall-e_initDATA
 
 .MAKE: install-am install-strip
 
 .PHONY: all all-am check check-am clean clean-generic cscopelist-am \
 	ctags-am distclean distclean-generic distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
-	install-data-am install-data-local install-dvi install-dvi-am \
-	install-e_examplesDATA install-e_initDATA \
-	install-e_initSCRIPTS install-exec install-exec-am \
-	install-html install-html-am install-info install-info-am \
-	install-man install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags-am \
-	uninstall uninstall-am uninstall-e_examplesDATA \
-	uninstall-e_initDATA uninstall-e_initSCRIPTS uninstall-local
+	install-data-am install-dvi install-dvi-am \
+	install-e_examplesDATA install-e_examplesSCRIPTS \
+	install-e_initDATA install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-generic pdf pdf-am ps ps-am tags-am uninstall \
+	uninstall-am uninstall-e_examplesDATA \
+	uninstall-e_examplesSCRIPTS uninstall-e_initDATA
 
 
-.sh_.sh:
-	cat "$(top_srcdir)/bin/$*.sh_" | sed "s%__SPOOL_DIR__%${e_spooldir}%g;s%__SBIN_DIR__%${sbindir}%g;s%__SYSCONF_DIR__%${e_sysconfdir}%g;"'s/\[:digit:\]/0-9/g;s/\[:space:\]/ \\t/g' > "$*.tmp" && mv "$*.tmp" "$*.sh"
-	chmod ugo+x "$*.sh"
+emailrelay-deliver.sh: emailrelay-deliver.sh.in
+	$(do_sed) < $(srcdir)/emailrelay-deliver.sh.in > emailrelay-deliver.sh
+	chmod +x emailrelay-deliver.sh
 
-.pl_.pl:
-	cp "$(top_srcdir)/bin/$*.pl_" "$*.pl"
-	chmod ugo+x "$*.pl"
+emailrelay-notify.sh: emailrelay-notify.sh.in
+	$(do_sed) < $(srcdir)/emailrelay-notify.sh.in > emailrelay-notify.sh
+	chmod +x emailrelay-notify.sh
 
-emailrelay: emailrelay.sh
-	cp emailrelay.sh emailrelay
-	chmod ugo+x emailrelay
+emailrelay-resubmit.sh: emailrelay-resubmit.sh.in
+	$(do_sed) < $(srcdir)/emailrelay-resubmit.sh.in > emailrelay-resubmit.sh
+	chmod +x emailrelay-resubmit.sh
 
-E-MailRelay: emailrelay.sh
-	cp emailrelay.sh $@
+emailrelay-submit.sh: emailrelay-submit.sh.in
+	$(do_sed) < $(srcdir)/emailrelay-submit.sh.in > emailrelay-submit.sh
+	chmod +x emailrelay-submit.sh
 
-StartupParameters.plist: startup-mac.plist
-	cp $(top_srcdir)/bin/startup-mac.plist $@
-
-install-data-local: install-e_examplesDATA install-e_initSCRIPTS
-	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-process.sh"
-	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-notify.sh"
-	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-deliver.sh"
-	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-resubmit.sh"
-	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-submit.sh"
-	chmod ugo+x "$(DESTDIR)$(e_examplesdir)/emailrelay-multicast.sh"
-
-uninstall-local:
-	-rmdir "$(DESTDIR)$(e_examplesdir)" 2>/dev/null
-	-rm -f "StartupParameters.plist" 2>/dev/null
+emailrelay: emailrelay.sh.in
+	$(do_sed) < $(srcdir)/emailrelay.sh.in > emailrelay
+	chmod +x emailrelay
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

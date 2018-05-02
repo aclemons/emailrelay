@@ -46,7 +46,6 @@ js_scripts = \
 	emailrelay-edit-content.js \
 	emailrelay-edit-envelope.js \
 	emailrelay-resubmit.js \
-	emailrelay-runperl.js \
 	emailrelay-service-install.js
 
 

@@ -117,9 +117,13 @@ std::string GSsl::MbedTls::LibraryImp::id() const
 	return sid() ;
 }
 
-std::string GSsl::MbedTls::LibraryImp::credit( const std::string & , const std::string & , const std::string & )
+std::string GSsl::MbedTls::LibraryImp::credit( const std::string & prefix , const std::string & eol , const std::string & eot )
 {
-	return std::string() ;
+	std::ostringstream ss ;
+	ss
+		<< prefix << "mbed TLS: Copy" << "right (C) 2006-2016, ARM Limited" << eol
+		<< eot ;
+	return ss.str() ;
 }
 
 G::StringArray GSsl::MbedTls::LibraryImp::digesters( bool ) const

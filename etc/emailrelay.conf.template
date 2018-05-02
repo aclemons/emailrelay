@@ -287,11 +287,10 @@
 
 # Name: log-file
 # Format: log-file <file>
-# Description: Redirects standard-error logging to the specified file, but
-# note	that standard error stream logging might be disabled by
-# "--close-stderr", "--as-server" and "--as-proxy". The filename can include
-# "%d" to get daily log files; the "%d" is replaced by the current date in
-# the local timezone using a "YYYYMMDD" format.
+# Description: Redirects standard-error logging to the specified file.
+# Logging to the log file is not affected by "--close-stderr". The filename
+# can  include "%d" to get daily log files; the "%d" is replaced by the
+# current date in the local timezone using a "YYYYMMDD" format.
 #
 #log-file /var/log/emailrelay-%d
 

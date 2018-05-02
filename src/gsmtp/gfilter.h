@@ -35,19 +35,15 @@ namespace GSmtp
 /// The interface is asynchronous, using a slot/signal completion
 /// callback.
 ///
-/// \code
-/// Foo::filter()
-/// {
-///   m_filter->start( message_file ) ;
-/// }
-/// void Foo::filterDone( bool ok )
-/// {
-///   if( ok ) { ... }
-///   else if( m_filter->specialCancelled() ) { ... }
-///   else { handleError(m_filter->text()) ; }
-///   if( m_filter->specialOther() ) { ... }
-/// }
-/// \endcode
+/// Filters return a tri-state value (ok, abandon, fail) and
+/// a 'special' flag which is interpreted as 're-scan' for
+/// server filters and 'stop-scanning' for client filters.
+///
+/// The abandon state is treated more like success on the
+/// server side but more like failure on the client side.
+///
+/// The fail state has an associated public response (eg.
+/// "rejected") and a more expansive private reason.
 ///
 class GSmtp::Filter
 {
@@ -68,37 +64,48 @@ public:
 		///< incomplete filtering is cancel()ed. Asynchronous completion
 		///< is indicated by a doneSignal().
 
-	virtual G::Slot::Signal1<bool> & doneSignal() = 0 ;
+	virtual G::Slot::Signal1<int> & doneSignal() = 0 ;
 		///< Returns a signal which is raised once start() has completed
-		///< or failed. The signal parameter is a simple boolean success
-		///< flag but additional information is availble from text()
-		///< and specialWhatever().
+		///< or failed. The signal parameter is ok=0, abandon=1, fail=2.
 
 	virtual void cancel() = 0 ;
 		///< Aborts any incomplete filtering.
 
-	virtual std::string text() const = 0 ;
-		///< Returns a non-empty reason string if the filter failed.
+	virtual bool abandoned() const = 0 ;
+		///< Returns true if the filter result was 'abandoned'.
 
-	virtual bool specialCancelled() const = 0 ;
-		///< Returns true if the filter failed and further processesing
-		///< of the current message should be cancelled. Further
-		///< processing includes failing of the message. This is useful
-		///< if the filter has deleted the message, for example.
+	virtual std::string response() const = 0 ;
+		///< Returns a non-empty response string iff the filter failed,
+		///< or an empty response if successful or abandoned.
 
-	virtual bool specialOther() const = 0 ;
+	virtual std::string reason() const = 0 ;
+		///< Returns a non-empty reason string iff the filter failed,
+		///< or an empty reason if successful or abandoned.
+
+	virtual bool special() const = 0 ;
 		///< Returns true if the filter indicated special handling is
-		///< required. What "special handling" means will depend on the
-		///< context, esp. client vs. server side. This indicator should
-		///< be considered to be orthogonal to success-or-failure.
+		///< required.
+
+	std::string str( bool server_side ) const ;
+		///< Returns a diagnostic string for logging.
+
+public:
+	enum Result // Filter tri-state result value.
+	{
+		f_ok = 0 ,
+		f_abandon = 1 ,
+		f_fail = 2
+	} ;
 
 protected:
 	struct Exit /// Interprets an executable filter's exit code.
 	{
-		Exit( int , bool ) ;
-		bool ok ;
-		bool cancelled ;
-		bool other ;
+		Exit( int exit_code , bool server_side ) ;
+		bool ok() const ;
+		bool abandon() const ;
+		bool fail() const ;
+		int result ; // enum
+		bool special ;
 	} ;
 
 private:

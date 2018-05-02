@@ -47,7 +47,11 @@ GSmtp::StoredFile::~StoredFile()
 {
 	try
 	{
-		unlock() ;
+		if( m_locked )
+		{
+			FileWriter claim_writer ;
+			G::File::rename( m_envelope_path , m_old_envelope_path , G::File::NoThrow() ) ;
+		}
 	}
 	catch(...) // dtor
 	{

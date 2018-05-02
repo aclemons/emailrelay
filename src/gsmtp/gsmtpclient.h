@@ -47,9 +47,8 @@ namespace GSmtp
 }
 
 /// \class GSmtp::Client
-/// A class which acts as an SMTP client, extracting
-/// messages from a message store and forwarding them to
-/// a remote SMTP server.
+/// A class which acts as an SMTP client, extracting messages from a
+/// message store and forwarding them to a remote SMTP server.
 ///
 class GSmtp::Client : public GNet::Client , private ClientProtocol::Sender
 {
@@ -130,12 +129,12 @@ protected:
 
 private:
 	virtual bool protocolSend( const std::string & , size_t , bool ) override ; // override from private base class
-	void protocolDone( std::string , int ) ; // see ClientProtocol::doneSignal()
+	void protocolDone( int , std::string , std::string ) ; // see ClientProtocol::doneSignal()
 	void filterStart() ;
-	void filterDone( bool ) ;
+	void filterDone( int ) ;
 	bool sendNext() ;
 	void start( StoredMessage & ) ;
-	void messageFail( const std::string & , int = 0 ) ;
+	void messageFail( int = 0 , const std::string & = std::string() ) ;
 	void messageDestroy() ;
 	void doOnConnect() ;
 	void logCertificate( const std::string & ) ;

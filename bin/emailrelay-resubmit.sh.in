@@ -34,12 +34,12 @@ retry_limit="5"
 #
 if test $# -ge 1
 then
-	store="${1}"
+	store="$1"
 fi
 
 # check the spool directory is valid
 #
-if test \! -d "${store}"
+if test \! -d "$store"
 then
 	echo `basename $0`: invalid spool directory >&2
 	exit 1
@@ -47,15 +47,15 @@ fi
 
 # for each failed e-mail...
 #
-for file in "${store}"/emailrelay.*.envelope.bad ""
+ls -1 "$store/emailrelay.*.envelope.bad" | while read file
 do
-	if test -f "${file}"
+	if test -f "$file"
 	then
 		failures="`fgrep MailRelay-Reason: < \"${file}\" | wc -l`"
-		if test "${failures}" -lt "${retry_limit}"
+		if test "$failures" -lt "$retry_limit"
 		then
 			good_file="`echo \"${file}\" | sed 's/\.bad$//'`"
-			mv -f "${file}" "${good_file}"
+			mv -f "$file" "$good_file"
 		fi
 	fi
 done

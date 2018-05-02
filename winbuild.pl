@@ -59,6 +59,7 @@ my $version = "2.0" ;
 my $cmake = winbuild::find_cmake() ;
 my $msbuild = winbuild::find_msbuild() ;
 my $touchfile = winbuild::default_touchfile($0) ;
+my $qt_dirs = winbuild::find_qt("c:/","c:/data") ; # eg. {x86=>"c:/data/qt/5.10/msvc2015/lib/cmake/qt5",x64=>...}
 
 die "error: cannot find cmake.exe\n" if !$cmake ;
 die "error: cannot find msbuild.exe\n" if !$msbuild ;
@@ -111,10 +112,9 @@ my %vars = (
 print "cmake=[$cmake]\n" ;
 print "msbuild=[$msbuild]\n" ;
 
-my $have_clean_mbedtls = ( -d "../mbedtls" && ! -f "../mbedtls/mbed TLS.sln" ) ;
 my $need_mbedtls = ( $switches{GCONFIG_TLS_USE_MBEDTLS} || $switches{GCONFIG_TLS_USE_BOTH} ) ;
 my @default_parts =
-	( $have_clean_mbedtls && $need_mbedtls ) ?
+	$need_mbedtls ?
 		qw( batchfiles generate mbedtls cmake msbuild ) :
 		qw( batchfiles generate cmake msbuild ) ;
 
@@ -131,51 +131,59 @@ for my $part ( @run_parts )
 	}
 	elsif( $part eq "mbedtls" )
 	{
-		build_mbedtls( $cmake , $msbuild ) ;
+		build_mbedtls( $cmake , $msbuild , "Release" ) ;
+		build_mbedtls( $cmake , $msbuild , "Debug" ) ;
 	}
 	elsif( $part eq "cmake" )
 	{
-		run_cmake( $cmake ) ;
+		run_cmake( $cmake , "x64" ) ;
+		run_cmake( $cmake , "x86" ) ;
 	}
 	elsif( $part eq "msbuild" )
 	{
-		winbuild::run_msbuild( $msbuild , $project ) ;
+		winbuild::run_msbuild( $msbuild , $project , "x64" ) ;
+		winbuild::run_msbuild( $msbuild , $project , "x86" ) ;
 	}
 	elsif( $part eq "debug-build" )
 	{
-		clean_test_files() ;
-		winbuild::clean_cmake_cache_files() ; # because mbedtls find_library()
-
-		run_generate( $project , \%switches , \%vars ) ;
-		run_cmake( $cmake , "Debug" ) ;
-		winbuild::run_msbuild( $msbuild , $project , "Debug" ) ;
+		# debug builds use the release build of mbedtls because the
+		# mbedtls find_library() bakes the mbedtls library paths
+		# into the cmake cache file - this results in warnings about
+		# mismatched run-time libraries
+		winbuild::run_msbuild( $msbuild , $project , "x64" , "Debug" ) ;
 	}
 	elsif( $part eq "clean" )
 	{
 		clean_test_files() ;
-		winbuild::run_msbuild( $msbuild , $project , "Debug" , "Clean" ) ;
-		winbuild::run_msbuild( $msbuild , $project , "Release" , "Clean" ) ;
+		winbuild::run_msbuild( $msbuild , $project , "x64" , "Debug" , "Clean" ) ;
+		winbuild::run_msbuild( $msbuild , $project , "x64" , "Release" , "Clean" ) ;
+		winbuild::run_msbuild( $msbuild , $project , "x86" , "Debug" , "Clean" ) ;
+		winbuild::run_msbuild( $msbuild , $project , "x86" , "Release" , "Clean" ) ;
 	}
 	elsif( $part eq "vclean" )
 	{
 		clean_test_files() ;
 		winbuild::clean_cmake_files() ;
 		winbuild::clean_cmake_cache_files() ;
-		winbuild::run_msbuild( $msbuild , $project , "Debug" , "Clean" ) ;
-		winbuild::run_msbuild( $msbuild , $project , "Release" , "Clean" ) ;
-		winbuild::deltree( "install.dir" ) ;
+		winbuild::run_msbuild( $msbuild , $project , "x64" , "Debug" , "Clean" ) ;
+		winbuild::run_msbuild( $msbuild , $project , "x64" , "Release" , "Clean" ) ;
+		winbuild::run_msbuild( $msbuild , $project , "x86" , "Debug" , "Clean" ) ;
+		winbuild::run_msbuild( $msbuild , $project , "x86" , "Release" , "Clean" ) ;
+		winbuild::deltree( "install.x64" ) ;
+		winbuild::deltree( "install.x86" ) ;
 	}
 	elsif( $part eq "install" )
 	{
-		install( $switches{GCONFIG_GUI} ) ;
+		install( "x64" , $switches{GCONFIG_GUI} ) ;
+		install( "x86" , $switches{GCONFIG_GUI} ) ;
 	}
 	elsif( $part eq "debug-test" )
 	{
-		run_tests( "src/main/Debug" , "test/Debug" ) ;
+		run_tests( "x64/src/main/Debug" , "x64/test/Debug" ) ;
 	}
 	elsif( $part eq "test" )
 	{
-		run_tests( "src/main/Release" , "test/Release" ) ;
+		run_tests( "x64/src/main/Release" , "x64/test/Release" ) ;
 	}
 }
 winbuild::create_touchfile( $touchfile ) ;
@@ -203,10 +211,11 @@ sub create_cmake_file
 		print $fh "project($project)\n" ;
 		if( $switches{GCONFIG_GUI} )
 		{
-			print $fh "find_package(Qt5OpenGL REQUIRED)\n" ;
-			print $fh "find_package(Qt5Widgets REQUIRED)\n" ;
-			print $fh "find_package(Qt5Gui REQUIRED)\n" ;
-			print $fh "find_package(Qt5Core REQUIRED)\n" ;
+			print $fh "find_package(Qt5 CONFIG REQUIRED Widgets Gui Core OpenGL)\n" ;
+			#print $fh "find_package(Qt5OpenGL REQUIRED)\n" ;
+			#print $fh "find_package(Qt5Widgets REQUIRED)\n" ;
+			#print $fh "find_package(Qt5Gui REQUIRED)\n" ;
+			#print $fh "find_package(Qt5Core REQUIRED)\n" ;
 		}
 		if( $switches{GCONFIG_TLS_USE_MBEDTLS} || $switches{GCONFIG_TLS_USE_BOTH} )
 		{
@@ -219,6 +228,34 @@ sub create_cmake_file
 	{
 		print $fh "set(CMAKE_AUTOMOC ON)\n" ;
 		print $fh "set(CMAKE_INCLUDE_CURRENT_DIR ON)\n" ;
+	}
+
+	# force static or dynamic linking of the c++ runtime by
+	# switching between /MD and /MT -- keep the gui dynamically
+	# linked to avoid separate runtime states in Qt and
+	# non-Qt code
+	#
+	my $dynamic_runtime = ( $m->path() =~ m/gui/ ) ;
+	{
+		print $fh '# choose dynamic or static linking of the c++ runtime' , "\n" ;
+		print $fh 'set(CompilerFlags' , "\n" ;
+        print $fh '    CMAKE_CXX_FLAGS' , "\n" ;
+        print $fh '    CMAKE_CXX_FLAGS_DEBUG' , "\n" ;
+        print $fh '    CMAKE_CXX_FLAGS_RELEASE' , "\n" ;
+        print $fh '    CMAKE_C_FLAGS' , "\n" ;
+        print $fh '    CMAKE_C_FLAGS_DEBUG' , "\n" ;
+        print $fh '    CMAKE_C_FLAGS_RELEASE' , "\n" ;
+        print $fh ')' , "\n" ;
+		print $fh 'foreach(CompilerFlag ${CompilerFlags})' , "\n" ;
+		if( $dynamic_runtime )
+		{
+  			print $fh '    string(REPLACE "/MT" "/MD" ${CompilerFlag} "${${CompilerFlag}}")' , "\n" ;
+		}
+		else
+		{
+  			print $fh '    string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")' , "\n" ;
+		}
+		print $fh 'endforeach()' , "\n" ;
 	}
 
 	print $fh "\n" ;
@@ -242,6 +279,7 @@ sub create_cmake_file
 		print $fh "target_compile_definitions($library_key PUBLIC $definitions)\n" ;
 	}
 
+	my $tls_libs_fixed ;
 	my @programs = $m->programs() ;
 	for my $program ( @programs )
 	{
@@ -253,7 +291,17 @@ sub create_cmake_file
 		if( ( $our_libs =~ m/gssl/ ) &&
 			( $switches->{GCONFIG_TLS_USE_MBEDTLS} || $switches->{GCONFIG_TLS_USE_BOTH} ) )
 		{
-			$tls_libs = '${MBEDTLS_LIBRARIES}' ;
+			if( ! $tls_libs_fixed )
+			{
+  				print $fh '    string(REPLACE "/Release" "/Debug" MBEDTLS_LIBRARY_DEBUG "${MBEDTLS_LIBRARY}")' , "\n" ;
+  				print $fh '    string(REPLACE "/Release" "/Debug" MBEDX509_LIBRARY_DEBUG "${MBEDX509_LIBRARY}")' , "\n" ;
+  				print $fh '    string(REPLACE "/Release" "/Debug" MBEDCRYPTO_LIBRARY_DEBUG "${MBEDCRYPTO_LIBRARY}")' , "\n" ;
+				$tls_libs_fixed = 1 ;
+			}
+			$tls_libs =
+				'optimized ${MBEDTLS_LIBRARY} debug ${MBEDTLS_LIBRARY_DEBUG} ' .
+				'optimized ${MBEDX509_LIBRARY} debug ${MBEDX509_LIBRARY_DEBUG} ' .
+				'optimized ${MBEDCRYPTO_LIBRARY} debug ${MBEDCRYPTO_LIBRARY_DEBUG}' ;
 		}
 
 		my $qt_includes = ( $m->path() =~ m/gui/ ) ? "Qt5::Widgets Qt5::Gui Qt5::Core" : "" ;
@@ -268,6 +316,10 @@ sub create_cmake_file
 		{
 			$resources = "messages.mc emailrelay.rc emailrelay.exe.manifest" ;
 			$resource_includes = "icon" ;
+		}
+		if( $program eq "emailrelay-service" )
+		{
+			$resources = "emailrelay-service.exe.manifest" ;
 		}
 		if( $program =~ m/emailrelay.gui/ )
 		{
@@ -287,7 +339,7 @@ sub create_cmake_file
 		print $fh "target_link_libraries($program_key $program_libs)\n" ;
 		if( $resources =~ /messages.mc/ )
 		{
-			print $fh 'add_custom_command(TARGET '."$program_key".' PRE_BUILD COMMAND "${CMAKE_MC_COMPILER}" messages.mc VERBATIM)' , "\n" ;
+			print $fh 'add_custom_command(TARGET '."$program_key".' PRE_BUILD COMMAND "${CMAKE_MC_COMPILER}" "${CMAKE_CURRENT_SOURCE_DIR}/messages.mc" VERBATIM)' , "\n" ;
 		}
 		if( $resources =~ m/manifest/ )
 		{
@@ -345,15 +397,30 @@ sub run_generate
 
 sub run_cmake
 {
-	my ( $cmake , $mbedtls_confname ) = @_ ;
-	$mbedtls_confname ||= "Release" ;
-	my @cmake_args = ( "-A" , "x64" , "-T" , "host=x64" , "." ) ; @cmake_args = ( "." ) if $^O eq "linux" ;
-	unshift @cmake_args , "-DCMAKE_MODULE_PATH:FILEPATH=." ; # so cmake can find FindMbedTLS.cmake
-	unshift @cmake_args , "-DCMAKE_INCLUDE_PATH:FILEPATH=../mbedtls/include" ; # used by find_path() in FindMbedTLS.cmake
-	unshift @cmake_args , "-DCMAKE_LIBRARY_PATH:FILEPATH=../mbedtls/library/$mbedtls_confname" ; # used by find_library() in FindMbedTLS.cmake
-	unshift @cmake_args , "-DCMAKE_MC_COMPILER:FILEPATH=mc" ;
-	unshift @cmake_args , "-DCMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/make" if $^O eq "linux" ;
-	my $rc = system( $cmake , @cmake_args ) ;
+	my ( $cmake , $arch ) = @_ ;
+	$arch ||= "x64" ;
+
+	# (only full paths work here)
+	my $mbed_dir = Cwd::realpath( "../mbedtls" ) ;
+	my $mbed_include_dir = "$mbed_dir/include" ;
+	my $mbed_lib_dir = "$mbed_dir/$arch/library/Release" ; # fixed up to Debug elsewhere
+	my $module_path = Cwd::realpath( "." ) ;
+
+	my @args = $arch eq "x86" ? () : ( "-A" , $arch ) ;
+	unshift @args , "-DCMAKE_MODULE_PATH:FILEPATH=$module_path" ; # so cmake can find FindMbedTLS.cmake
+	unshift @args , "-DCMAKE_INCLUDE_PATH:FILEPATH=$mbed_include_dir" ; # used by find_path() in FindMbedTLS.cmake
+	unshift @args , "-DCMAKE_LIBRARY_PATH:FILEPATH=$mbed_lib_dir" ; # used by find_library() in FindMbedTLS.cmake
+	unshift @args , "-DQt5_DIR:FILEPATH=$$qt_dirs{$arch}" ;
+	unshift @args , "-DCMAKE_MC_COMPILER:FILEPATH=mc" ;
+
+	my $build_dir = $arch ;
+	mkdir $build_dir ;
+	my $base_dir = getcwd() or die ;
+	chdir $build_dir or die ;
+	print "cmake: cwd=[".getcwd()."] exe=[$cmake] args=[".join("][",@args)."][..]\n" ;
+	my $rc = system( $cmake , ( @args , ".." ) ) ;
+	chdir $base_dir or die ;
+
 	print "cmake-exit=[$rc]\n" ;
 	die unless $rc == 0 ;
 }
@@ -370,64 +437,101 @@ sub create_gconfig_header
 
 sub build_mbedtls
 {
-	my ( $cmake , $msbuild ) = @_ ;
+	my ( $cmake , $msbuild , $confname ) = @_ ;
+	$confname ||= "Release" ;
 
-	my $dir = "../mbedtls" ; # could do better
-	my $old_dir = getcwd() ;
-	chdir $dir or die ;
+	my $mbed_dir = "../mbedtls" ; # could do better
+	my $base_dir = getcwd() ;
 
+	my $map = {
+		x86 => [] ,
+		x64 => [ "-A" , "x64" ] ,
+	} ;
+
+	for my $arch ( keys %$map )
 	{
-		my @cmake_args = ( "-A" , "x64" , "-T" , "host=x64" , "." ) ; @cmake_args = ( "." ) if $^O eq "linux" ;
-		unshift @cmake_args , "-DCMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/make" if $^O eq "linux" ;
-		my $rc = system( $cmake , @cmake_args ) ;
-		print "mbedtls-cmake-exit=[$rc]\n" ;
-		die unless $rc == 0 ;
-	}
+		mkdir "$mbed_dir/$arch" ;
+		chdir "$mbed_dir/$arch" or die ;
 
-	for my $confname ( "Release" , "Debug" )
-	{
-		my $project = "mbed tls" ;
-		my @msbuild_args = ( "/fileLogger" , "/p:Configuration=$confname" , "\"$project.sln\"" ) ;
-		if( $^O eq "linux" ) { $msbuild = ("make") ; @msbuild_args = () }
-		my $rc = system( $msbuild , @msbuild_args ) ;
-		print "mbedtls-msbuild-exit=[$rc]\n" ;
-		die unless $rc == 0 ;
-	}
+		my @args = (
+			"-DCMAKE_C_FLAGS_DEBUG=/MTd" ,
+			"-DCMAKE_C_FLAGS_RELEASE=/MT" ,
+			@{$map->{$arch}}
+		) ;
 
-	chdir $old_dir or die ;
+		my $mbed_project = "mbed TLS" ;
+		my $cmake_output_file = "$mbed_project.sln" ;
+		if( ! -f $cmake_output_file )
+		{
+			print "mbedtls-cmake: cwd=[".getcwd()."] exe=[$cmake] args=[".join("][",@args)."][..]\n" ;
+			my $rc = system( $cmake , @args , ".." ) ;
+			print "mbedtls-cmake: [$arch]: exit=[$rc]\n" ;
+			die unless $rc == 0 ;
+		}
+
+		my $build_output_file = "library/$confname/mbedtls.lib" ;
+		if( ! -f $build_output_file )
+		{
+			my @msbuild_args = ( "/fileLogger" , "/p:Configuration=$confname" , "\"$mbed_project.sln\"" ) ;
+			my $rc = system( $msbuild , @msbuild_args ) ;
+			print "mbedtls-msbuild: [$arch][$confname]: exit=[$rc]\n" ;
+			die unless $rc == 0 ;
+		}
+
+		chdir $base_dir or die ;
+	}
 }
 
 sub install
 {
-	my ( $with_gui ) = @_ ;
+	my ( $arch , $with_gui ) = @_ ;
 
-	my $install = "install.dir" ; # beware of text file "INSTALL"
+	my $install = "install.$arch" ; # beware of text file "INSTALL"
 
-	install_core( "$install" ) ;
-	install_copy( "src/gui/Release/emailrelay-gui.exe" , "$install/emailrelay-setup.exe" ) if $with_gui ;
+	my $msvc_base = winbuild::find_msvc_base( $arch ) ;
+	print "msvc-base=[$msvc_base]\n" ;
+
+	install_core( $arch , $install ) ;
+	install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/emailrelay-setup.exe" ) if $with_gui ;
 
 	if( $with_gui )
 	{
 		install_mkdir( "$install/payload" ) ;
 		install_payload_cfg( "$install/payload/payload.cfg" ) ;
-		install_core( "$install/payload/files" ) ;
-		install_copy( "src/gui/Release/emailrelay-gui.exe" , "$install/payload/files" ) ;
-
-		install_gui_dependencies(
+		install_core( $arch , "$install/payload/files" ) ;
+		install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/payload/files" ) ;
+		install_gui_dependencies( $msvc_base , $arch ,
 			{ exe => "$install/emailrelay-setup.exe" } ,
 			{ exe => "$install/payload/files/emailrelay-gui.exe" } ) ;
 	}
-	print "distribution in [$install]\n" ;
+
+	install_runtime_dependencies( $msvc_base , $arch , $install ) ;
+	install_runtime_dependencies( $msvc_base , $arch , "$install/payload/files" ) ;
+
+	print "$arch distribution in [$install]\n" ;
+}
+
+sub install_runtime_dependencies
+{
+	my ( $msvc_base , $arch , $dst_dir ) = @_ ;
+	my @dll_list = ( "vcruntime140.dll" , "msvcp140.dll" ) ;
+	my $locale = "en" ;
+	for my $dll ( @dll_list )
+	{
+		my $src = "$msvc_base/redist/$arch/Microsoft.VC140.CRT/$dll" ; # todo use File::Find (not glob!)
+		my $dst = "$dst_dir/$dll" ;
+		if( ! -f $dst )
+		{
+			copy( $src , $dst ) or die "error: install: failed to copy [$src] to [$dst]\n" ;
+		}
+	}
 }
 
 sub install_gui_dependencies
 {
-	my ( @tasks ) = @_ ;
+	my ( $msvc_base , $arch , @tasks ) = @_ ;
 
-	my $msvc_base = winbuild::find_msvc_base() ;
-	print "msvc-base=[$msvc_base]\n" ;
-
-	my $qt_bin = find_qt_bin() ;
+	my $qt_bin = find_qt_bin( $arch ) ;
 	print "qt-bin=[$qt_bin]\n" ;
 
 	$ENV{VCINSTALLDIR} = $msvc_base ;
@@ -444,7 +548,8 @@ sub install_gui_dependencies
 
 sub find_qt_bin
 {
-	my $qt_core = cache_value_qt_core() ;
+	my ( $arch ) = @_ ;
+	my $qt_core = cache_value_qt_core( $arch ) ;
 	my $dir = $qt_core ;
 	for( 1..10 )
 	{
@@ -457,7 +562,8 @@ sub find_qt_bin
 
 sub cache_value_qt_core
 {
-	my $qt5_core_dir = winbuild::cache_value( qr/^Qt5Core_DIR:[A-Z]+=(.*)/ ) ;
+	my ( $arch ) = @_ ;
+	my $qt5_core_dir = winbuild::cache_value( $arch , qr/^Qt5Core_DIR:[A-Z]+=(.*)/ ) ;
 	$qt5_core_dir or die "error: install: cannot read qt path from CMakeCache.txt\n" ;
 	return $qt5_core_dir ;
 }
@@ -472,7 +578,7 @@ sub install_payload_cfg
 
 sub install_core
 {
-	my ( $root ) = @_ ;
+	my ( $arch , $root ) = @_ ;
 
 	install_mkdir( $root ) ;
 
@@ -490,20 +596,21 @@ sub install_core
 		LICENSE license.txt
 		ChangeLog changelog.txt
 		doc/doxygen-missing.html doc/doxygen/index.html
-		src/main/Release/emailrelay-service.exe .
-		src/main/Release/emailrelay.exe .
-		src/main/Release/emailrelay-submit.exe .
-		src/main/Release/emailrelay-filter-copy.exe .
-		src/main/Release/emailrelay-poke.exe .
-		src/main/Release/emailrelay-passwd.exe .
-		src/main/Release/emailrelay-textmode.exe .
+		__arch__/src/main/Release/emailrelay-service.exe .
+		__arch__/src/main/Release/emailrelay.exe .
+		__arch__/src/main/Release/emailrelay-submit.exe .
+		__arch__/src/main/Release/emailrelay-filter-copy.exe .
+		__arch__/src/main/Release/emailrelay-poke.exe .
+		__arch__/src/main/Release/emailrelay-passwd.exe .
+		__arch__/src/main/Release/emailrelay-textmode.exe .
 		bin/emailrelay-service-install.js .
 		bin/emailrelay-edit-content.js examples
 		bin/emailrelay-edit-envelope.js examples
 		bin/emailrelay-resubmit.js examples
-		bin/emailrelay-runperl.js examples
-		doc/*.png doc
-		doc/*.png_ doc
+		doc/authentication.png doc
+		doc/forwardto.png doc
+		doc/whatisit.png doc
+		doc/serverclient.png doc
     	doc/*.html doc
     	doc/developer.txt doc
     	doc/reference.txt doc
@@ -515,6 +622,7 @@ sub install_core
 	while( my ($src,$dst) = each %copy )
 	{
 		$dst = "" if $dst eq "." ;
+		$src =~ s:__arch__:$arch:g ;
 		map { install_copy( $_ , "$root/$dst" ) } glob( $src ) ;
 	}
 	winbuild::fixup( $root ,
@@ -532,7 +640,14 @@ sub install_core
 sub install_copy
 {
 	my ( $src , $dst ) = @_ ;
-	if( ( ! -d $dst && $dst =~ m/txt$/ ) || ( -d $dst && $src =~ m/txt$/ ) )
+
+	my $convert = undef ;
+	for my $ext ( "txt" , "js" )
+	{
+		$convert = 1 if( ( ! -d $dst && $dst =~ m/$ext$/ ) || ( -d $dst && $src =~ m/$ext$/ ) ) ;
+	}
+
+	if( $convert )
 	{
 		if( -d $dst ) { $dst = "$dst/".basename($src) }
 		my $fh_in = new FileHandle( $src , "r" ) ;

@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gnetworkfilter.h"
+#include "gstr.h"
 #include "glog.h"
 
 GSmtp::NetworkFilter::NetworkFilter( GNet::ExceptionHandler & exception_handler ,
@@ -69,7 +70,7 @@ void GSmtp::NetworkFilter::clientEvent( std::string s1 , std::string s2 )
 		m_text = s2 ;
 		try
 		{
-			m_done_signal.emit( s2.empty() ) ;
+			m_done_signal.emit( m_text.empty() ? 0 : 2 ) ;
 		}
 		catch( std::exception & e )
 		{
@@ -78,22 +79,23 @@ void GSmtp::NetworkFilter::clientEvent( std::string s1 , std::string s2 )
 	}
 }
 
-bool GSmtp::NetworkFilter::specialCancelled() const
+bool GSmtp::NetworkFilter::special() const
 {
 	return false ;
 }
 
-bool GSmtp::NetworkFilter::specialOther() const
+std::string GSmtp::NetworkFilter::response() const
 {
-	return false ;
+	// allow "<response><tab><reason>"
+	return G::Str::printable( G::Str::head( m_text , "\t" , false ) ) ;
 }
 
-std::string GSmtp::NetworkFilter::text() const
+std::string GSmtp::NetworkFilter::reason() const
 {
-	return m_text ;
+	return G::Str::printable( G::Str::tail( m_text , "\t" , false ) ) ;
 }
 
-G::Slot::Signal1<bool> & GSmtp::NetworkFilter::doneSignal()
+G::Slot::Signal1<int> & GSmtp::NetworkFilter::doneSignal()
 {
 	return m_done_signal ;
 }
@@ -104,4 +106,8 @@ void GSmtp::NetworkFilter::cancel()
 	m_text.erase() ;
 }
 
+bool GSmtp::NetworkFilter::abandoned() const
+{
+	return false ;
+}
 /// \file gnetworkfilter.cpp

@@ -89,7 +89,6 @@ void Main::WinForm::onInit( HWND hdialog , const std::string & title )
 
 void Main::WinForm::onDestroy( HWND )
 {
-	GGui::Pump::quit() ;
 }
 
 void Main::WinForm::setStatus( const std::string & category , const std::string & s1 , const std::string & s2 )
@@ -121,7 +120,7 @@ void Main::WinForm::setStatus( const std::string & category , const std::string 
 	}
 
 	// update the gui
-	if( m_status_view.get() )
+	if( !m_closed && m_status_view.get() )
 	{
 		G::StringArray status_data ;
 		status_data.reserve( 20U ) ;

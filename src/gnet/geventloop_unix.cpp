@@ -283,7 +283,7 @@ void GNet::EventLoopImp::runOnce()
 		m_oob_set.raiseEvents( m_oob_list , &EventHandler::oobEvent ) ;
 	}
 
-	if( G::Test::enabled("slow-event-loop") )
+	if( G::Test::enabled("event-loop-slow") )
 	{
 		Timeval timeout_slow ;
 		timeout_slow.tv_sec = 0 ;

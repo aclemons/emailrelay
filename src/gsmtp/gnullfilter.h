@@ -55,7 +55,7 @@ public:
 	virtual bool simple() const override ;
 		///< Override from from GSmtp::Filter.
 
-	virtual G::Slot::Signal1<bool> & doneSignal() override ;
+	virtual G::Slot::Signal1<int> & doneSignal() override ;
 		///< Override from from GSmtp::Filter.
 
 	virtual void start( const std::string & path ) override ;
@@ -64,27 +64,27 @@ public:
 	virtual void cancel() override ;
 		///< Override from from GSmtp::Filter.
 
-	virtual std::string text() const override ;
+	virtual bool abandoned() const override ;
 		///< Override from from GSmtp::Filter.
 
-	virtual bool specialCancelled() const override ;
+	virtual std::string response() const override ;
 		///< Override from from GSmtp::Filter.
 
-	virtual bool specialOther() const override ;
+	virtual std::string reason() const override ;
+		///< Override from from GSmtp::Filter.
+
+	virtual bool special() const override ;
 		///< Override from from GSmtp::Filter.
 
 private:
 	NullFilter( const NullFilter & ) ; // not implemented
 	void operator=( const NullFilter & ) ; // not implemented
-	void onDoneTimeout() ;
+	void onTimeout() ;
 
 private:
-	G::Slot::Signal1<bool> m_done_signal ;
-	bool m_server_side ;
-	unsigned int m_exit_code ;
-	bool m_special_cancelled ;
-	bool m_special_other ;
-	bool m_ok ;
+	G::Slot::Signal1<int> m_done_signal ;
+	Filter::Exit m_exit ;
+	std::string m_id ;
 	GNet::Timer<NullFilter> m_timer ;
 } ;
 

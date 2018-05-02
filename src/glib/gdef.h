@@ -221,6 +221,13 @@
 	#if !defined(GCONFIG_HAVE_NDIR_H)
 		#define GCONFIG_HAVE_NDIR_H 0
 	#endif
+	#if !defined(GCONFIG_HAVE_SETPGRP_BSD)
+		#if defined(G_UNIX_LINUX)
+			#define GCONFIG_HAVE_SETPGRP_BSD 0
+		#else
+			#define GCONFIG_HAVE_SETPGRP_BSD 1
+		#endif
+	#endif
 	#if !defined(GCONFIG_HAVE_SETGROUPS)
 		#ifdef G_UNIX
 			#define GCONFIG_HAVE_SETGROUPS 1
@@ -1234,6 +1241,15 @@
 			{
 				errno = ENOSYS ;
 				return (void*)(-1) ;
+			}
+		#endif
+	#endif
+
+	#if GCONFIG_HAVE_SETPGRP_BSD && defined(G_UNIX)
+		#ifdef __cplusplus
+			inline int setpgrp()
+			{
+				return ::setpgrp( 0 , 0 ) ;
 			}
 		#endif
 	#endif

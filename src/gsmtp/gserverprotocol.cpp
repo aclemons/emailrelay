@@ -57,6 +57,7 @@ GSmtp::ServerProtocol::ServerProtocol( GNet::ExceptionHandler & eh , Sender & se
 	// (dont send anything to the peer from this ctor -- the Sender object is not fuly constructed)
 
 	m_fsm.addTransition( eQuit        , s_Any       , sEnd        , &GSmtp::ServerProtocol::doQuit ) ;
+	m_fsm.addTransition( eUnknown     , sProcessing , s_Same      , &GSmtp::ServerProtocol::doIgnore ) ;
 	m_fsm.addTransition( eUnknown     , s_Any       , s_Same      , &GSmtp::ServerProtocol::doUnknown ) ;
 	m_fsm.addTransition( eRset        , sStart      , s_Same      , &GSmtp::ServerProtocol::doNoop ) ;
 	m_fsm.addTransition( eRset        , s_Any       , sIdle       , &GSmtp::ServerProtocol::doRset ) ;
@@ -197,13 +198,14 @@ void GSmtp::ServerProtocol::doEot( const std::string & line , bool & )
 	m_message.process( m_sasl->id() , m_peer_address.hostPartString() , m_certificate ) ;
 }
 
-void GSmtp::ServerProtocol::processDone( bool success , unsigned long , std::string reason )
+void GSmtp::ServerProtocol::processDone( bool success , unsigned long id , std::string response , std::string reason )
 {
-	G_DEBUG( "GSmtp::ServerProtocol::processDone: " << success << ", \"" << reason << "\"" ) ;
+	G_IGNORE_PARAMETER( unsigned long , id ) ;
+	G_IGNORE_PARAMETER( std::string , reason ) ;
+	G_DEBUG( "GSmtp::ServerProtocol::processDone: " << (success?1:0) << " " << id << " [" << response << "] [" << reason << "]" ) ;
+	G_ASSERT( success == response.empty() ) ;
 
-	reason = success ? std::string() : ( reason.empty() ? std::string("error") : reason ) ; // just in case
-
-	State new_state = m_fsm.apply( *this , eDone , reason ) ;
+	State new_state = m_fsm.apply( *this , eDone , response ) ;
 	if( new_state == s_Any )
 		throw ProtocolDone( "protocol error" ) ;
 }
@@ -211,7 +213,7 @@ void GSmtp::ServerProtocol::processDone( bool success , unsigned long , std::str
 void GSmtp::ServerProtocol::onTimeout()
 {
 	G_WARNING( "GSmtp::ServerProtocol::onTimeout: message processing timed out" ) ;
-	State new_state = m_fsm.apply( *this , eTimeout , "message processing timed out" ) ;
+	State new_state = m_fsm.apply( *this , eTimeout , "timed out" ) ;
 	if( new_state == s_Any )
 		throw ProtocolDone( "protocol error" ) ;
 }
@@ -237,6 +239,10 @@ void GSmtp::ServerProtocol::doDiscard( const std::string & , bool & )
 		sendClosing() ; // never deletes this
 		throw ProtocolDone() ;
 	}
+}
+
+void GSmtp::ServerProtocol::doIgnore( const std::string & , bool & )
+{
 }
 
 void GSmtp::ServerProtocol::doNoop( const std::string & , bool & )
@@ -698,7 +704,7 @@ void GSmtp::ServerProtocol::sendCompletionReply( bool ok , const std::string & r
 	if( ok )
 		sendOk() ;
 	else
-		send( std::string("452 message processing failed: ") + reason ) ;
+		send( "452 " + reason ) ;
 }
 
 void GSmtp::ServerProtocol::sendRcptReply()
@@ -772,12 +778,10 @@ std::string GSmtp::ServerProtocol::parseFromAuth( const std::string & line ) con
 		G::StringArray parameters = G::Str::splitIntoTokens( line.substr(end) , " " ) ;
 		for( G::StringArray::iterator p = parameters.begin() ; p != parameters.end() ; ++p )
 		{
-			size_t pos = (*p).find("AUTH=") ;
-			if( pos != std::string::npos && (*p).length() > 5U )
+			size_t pos = G::Str::upper(*p).find("AUTH=") ;
+			if( pos == 0U && (*p).length() > 5U )
 			{
-				result = (*p).substr(5U) ; // xtext or "<>"
-				if( result.length() != 2U || result != "<>" )
-					result = G::Xtext::encode( G::Xtext::decode(result) ) ; // ensure valid xtext
+				result = G::Xtext::encode( G::Xtext::decode( (*p).substr(5U) ) ) ; // ensure valid xtext
 				break ;
 			}
 		}
@@ -883,7 +887,7 @@ std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_pe
 	const std::string zone = G::DateTime::offsetString(G::DateTime::offset(t)) ;
 	const G::Date date( tm ) ;
 	const G::Time time( tm ) ;
-	const std::string esmtp = std::string("ESMTP") + (secure?"S":"") + (authenticated?"A":"") ; // rfc 3848
+	const std::string esmtp = std::string("ESMTP") + (secure?"S":"") + (authenticated?"A":"") ; // RFC-3848
 
 	std::ostringstream ss ;
 	ss

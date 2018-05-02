@@ -395,11 +395,11 @@ sub testServerSmtpSubmit
 	# setup
 	my %args = (
 		AsServer => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		PidFile => 1 ,
 		SpoolDir => 1 ,
-		Verbose => 1 ,
 		Debug => 1 ,
 	) ;
 	my $server = new Server() ;
@@ -432,12 +432,12 @@ sub testServerPermissions
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Port => 1 ,
 		PidFile => 1 ,
 		SpoolDir => 1 ,
 		User => 1 ,
 		Domain => 1 ,
-		Verbose => 1 ,
 		#Debug => 1 ,
 	) ;
 	requireUnix() ;
@@ -480,10 +480,10 @@ sub testServerPop
 		PopPort => 1 ,
 		NoSmtp => 1 ,
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		PidFile => 1 ,
 		SpoolDir => 1 ,
-		Verbose => 1 ,
 	) ;
 	my $server = new Server() ;
 	System::createFile( $server->popSecrets() , "server login me secret" ) ;
@@ -514,10 +514,10 @@ sub disabled_testServerPopList
 		PopPort => 1 ,
 		NoSmtp => 1 ,
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		PidFile => 1 ,
 		SpoolDir => 1 ,
-		Verbose => 1 ,
 	) ;
 	requireDebug() ;
 	my $bufferbloat = !System::linux() ; # cannot check flow control on bufferbloated systems
@@ -555,10 +555,10 @@ sub testServerPopDisconnect
 		PopPort => 1 ,
 		NoSmtp => 1 ,
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		PidFile => 1 ,
 		SpoolDir => 1 ,
-		Verbose => 1 ,
 		Debug => 1 ,
 	) ;
 	my $server = new Server() ;
@@ -704,13 +704,13 @@ sub testServerPolling
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		Admin => 1 ,
 		SpoolDir => 1 ,
 		ForwardTo => 1 ,
 		PidFile => 1 ,
-		Verbose => 1 ,
 		Poll => 1 ,
 		ConnectionTimeout => 1 ,
 	) ;
@@ -741,55 +741,17 @@ sub testServerPolling
 	System::deleteSpoolDir($spool_dir_2) ;
 }
 
-sub __withdrawn__testServerPollingOverlap # log message no longer emitted
-{
-	# setup
-	my %args = (
-		Log => 1 ,
-		Domain => 1 ,
-		Port => 1 ,
-		Admin => 1 ,
-		SpoolDir => 1 ,
-		ForwardTo => 1 ,
-		PidFile => 1 ,
-		Verbose => 1 ,
-		Poll => 1 ,
-	) ;
-	my $spool_dir = System::createSpoolDir() ;
-	my $message_count = 1 ;
-	System::submitMessages( $spool_dir , undef , $message_count , 10000 ) ;
-	Check::fileMatchCount( $spool_dir ."/emailrelay.*.content", $message_count ) ;
-	my $server = new Server(undef,undef,undef,$spool_dir) ;
-	my $test_server = new TestServer( System::nextPort() ) ;
-	$server->set_dst("$localhost:".$test_server->port()) ;
-	$test_server->run("--slow") ;
-	$server->run(\%args) ;
-	Check::running( $server->pid() , $server->message() ) ;
-	Check::running( $test_server->pid() ) ;
-
-	# test that rapid polling and slow forwarding results in a still-busy log message
-	Check::ok( System::drain($server->spoolDir(),30) , "message not forwarded" ) ;
-	Check::fileContains( $server->stderr() , "still busy from last time" ) ;
-
-	# tear down
-	$server->kill() ;
-	$test_server->kill() ;
-	$server->cleanup() ;
-	$test_server->cleanup() ;
-	System::deleteSpoolDir($spool_dir) ;
-}
-
 sub testServerWithBadClient
 {
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		Admin => 1 ,
 		SpoolDir => 1 ,
 		PidFile => 1 ,
-		Verbose => 1 ,
 	) ;
 	my $server = new Server() ;
 	Check::ok( $server->run(\%args) ) ;
@@ -823,12 +785,12 @@ sub testServerSizeLimit
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		SpoolDir => 1 ,
 		PidFile => 1 ,
 		MaxSize => 1 ,
-		Verbose => 1 ,
 	) ;
 	my $server = new Server() ;
 	Check::ok( $server->run(\%args) ) ;
@@ -862,11 +824,11 @@ sub testClientContinuesIfNoSecrets
 	# setup
 	my %server_args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		SpoolDir => 1 ,
 		PidFile => 1 ,
-		Verbose => 1 ,
 		ServerSecrets => 1 ,
 	) ;
 	my %client_args = (
@@ -908,9 +870,9 @@ sub testClientSavesReasonCode
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		SpoolDir => 1 ,
-		Verbose => 1 ,
 		ForwardTo => 1 ,
 		Forward => 1 ,
 		DontServe => 1 ,
@@ -943,6 +905,7 @@ sub testFilter
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		SpoolDir => 1 ,
@@ -990,6 +953,7 @@ sub testFilterIdentity
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		SpoolDir => 1 ,
@@ -1034,6 +998,7 @@ sub testFilterFailure
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		SpoolDir => 1 ,
@@ -1064,7 +1029,7 @@ sub testFilterFailure
 	$c->submit( 1 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 0 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope*" , 0 ) ;
-	Check::fileContains( $server->stderr() , "error storing message: .foo bar." ) ;
+	Check::fileContains( $server->stderr() , "rejected by filter: .foo bar." ) ;
 
 	# tear down
 	$server->kill() ;
@@ -1089,12 +1054,12 @@ sub _testFilterWithFileDeletion
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		SpoolDir => 1 ,
 		PidFile => 1 ,
 		Filter => 1 ,
-		Verbose => 1 ,
 		ForwardTo => 1 ,
 		Immediate => 1 ,
 	) ;
@@ -1141,14 +1106,13 @@ sub testFilterPollTimeout
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		SpoolDir => 1 ,
 		PidFile => 1 ,
 		Filter => 1 ,
-		Poll => 1 ,
 		ForwardTo => 1 ,
-		Verbose => 1 ,
 	) ;
 	my $server = new Server() ;
 	Filter::create( $server->filter() , {
@@ -1159,13 +1123,12 @@ sub testFilterPollTimeout
 				"WScript.Quit(103) ;" ,
 			] ,
 		} ) ;
-	$server->set_pollTimeout(999) ;
 	Check::ok( $server->run(\%args) , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	my $c = new SmtpClient( $server->smtpPort() , $localhost ) ;
 	Check::ok( $c->open() ) ;
 
-	# test that the poll timer is triggered
+	# test that the rescan is triggered
 	$c->submit() ;
 	System::waitForFileLine( $server->stderr() , "forwarding: .rescan" , "no rescan message in the log file" ) ;
 
@@ -1180,6 +1143,7 @@ sub testFilterParallelism
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		SpoolDir => 1 ,
@@ -1187,7 +1151,6 @@ sub testFilterParallelism
 		Filter => 1 ,
 		Poll => 1 ,
 		ForwardTo => 1 ,
-		Verbose => 1 ,
 	) ;
 	requireThreads() ;
 	my $server = new Server() ;
@@ -1227,12 +1190,12 @@ sub testScannerPass
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		SpoolDir => 1 ,
 		PidFile => 1 ,
 		Scanner => 1 ,
-		Verbose => 1 ,
 	) ;
 	my $server = new Server() ;
 	my $scanner = new Scanner( $server->scannerPort() ) ;
@@ -1248,7 +1211,7 @@ sub testScannerPass
 	$c->submit_end() ;
 	Check::fileContains( $scanner->logfile() , "new connection from" ) ;
 	Check::fileContains( $scanner->logfile() , "send ok" ) ;
-	Check::fileDoesNotContain( $server->stderr() , "message processing failed:" ) ;
+	Check::fileDoesNotContain( $server->stderr() , "452 " ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 1 ) ;
 
 	# tear down
@@ -1264,12 +1227,13 @@ sub testScannerBlock
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		SpoolDir => 1 ,
 		PidFile => 1 ,
 		Scanner => 1 ,
-		Verbose => 1 ,
+Debug => 1 ,
 	) ;
 	my $server = new Server() ;
 	my $scanner = new Scanner( $server->scannerPort() ) ;
@@ -1283,8 +1247,8 @@ sub testScannerBlock
 	$c->submit_start() ;
 	$c->submit_line( "send foobar" ) ; # (the test scanner treats the message body as a script)
 	$c->submit_end( 1 ) ; # 1 <= expect the "." command to fail
-	Check::fileContains( $server->stderr() , "error storing message: .foobar" ) ;
-	Check::fileContains( $server->stderr() , "message processing failed: rejected" ) ;
+	Check::fileContains( $server->stderr() , "rejected by filter: .foobar" ) ;
+	Check::fileContains( $server->stderr() , "452 foobar" ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 0 ) ;
 
 	# tear down
@@ -1300,12 +1264,12 @@ sub testScannerTimeout
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		SpoolDir => 1 ,
 		PidFile => 1 ,
 		Scanner => 1 ,
-		Verbose => 1 ,
 		FilterTimeout => 1 ,
 	) ;
 	my $server = new Server() ;
@@ -1321,8 +1285,8 @@ sub testScannerTimeout
 	$c->submit_line( "sleep 3" ) ;
 	$c->submit_line( "send foobar" ) ;
 	$c->submit_end( 1 ) ;
-	Check::fileDoesNotContain( $server->stderr() , "message processing failed: foobar" ) ;
-	Check::fileContains( $server->stderr() , "message processing failed:.*time.*out" ) ;
+	Check::fileDoesNotContain( $server->stderr() , "452 foobar" ) ;
+	Check::fileContains( $server->stderr() , "452 .*time.*out" ) ;
 
 	# tear down
 	$server->kill() ;
@@ -1337,12 +1301,12 @@ sub testNetworkVerifierPass
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		SpoolDir => 1 ,
 		PidFile => 1 ,
 		Verifier => 1 ,
-		Verbose => 1 ,
 	) ;
 	my $server = new Server() ;
 	my $verifier = new Verifier( $server->verifierPort() ) ;
@@ -1357,7 +1321,7 @@ sub testNetworkVerifierPass
 	$c->submit_line( "just testing" ) ;
 	$c->submit_end() ;
 	Check::fileContains( $verifier->logfile() , "sending valid" ) ;
-	Check::fileDoesNotContain( $server->stderr() , "message processing failed:" ) ;
+	Check::fileDoesNotContain( $server->stderr() , "452 " ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 1 ) ;
 
 	# tear down
@@ -1373,12 +1337,12 @@ sub testNetworkVerifierFail
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		SpoolDir => 1 ,
 		PidFile => 1 ,
 		Verifier => 1 ,
-		Verbose => 1 ,
 	) ;
 	my $server = new Server() ;
 	my $verifier = new Verifier( $server->verifierPort() ) ;
@@ -1407,6 +1371,7 @@ sub testProxyConnectsOnce
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		Port => 1 ,
 		Admin => 1 ,
@@ -1506,8 +1471,8 @@ sub testClientFilterPass
 
 	# test that the client filter runs and the messages are forwarded
 	System::waitForFiles( $spool_dir_2 ."/emailrelay.*" , 4 ) ;
+	System::waitForFiles( $spool_dir_1 . "/emailrelay.*" , 0 ) ;
 	Check::fileExists( $outputfile , "no output file generated by the client filter" ) ;
-	Check::fileMatchCount( $spool_dir_1 ."/emailrelay.*", 0 ) ;
 	Check::fileMatchCount( $spool_dir_2 ."/emailrelay.*.envelope", 2 ) ;
 	Check::fileMatchCount( $spool_dir_2 ."/emailrelay.*.content", 2 ) ;
 
@@ -1526,6 +1491,7 @@ sub testClientFilterBlock
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		SpoolDir => 1 ,
 		Forward => 1 ,
@@ -1592,6 +1558,7 @@ sub testClientGivenUnknownMechanisms
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		SpoolDir => 1 ,
 		Forward => 1 ,
@@ -1611,7 +1578,7 @@ sub testClientGivenUnknownMechanisms
 	System::createFile( $emailrelay->clientSecrets() , "client login me secret" ) ;
 	$emailrelay->set_dst( "$localhost:".$test_server->port() ) ;
 
-	# test that protocol fails and one message fails (change for 1.9)
+	# test that protocol fails and one message fails
 	Check::ok( $emailrelay->run( \%args ) ) ;
 	System::waitForFileLine( $emailrelay->stderr() , "cannot do authentication mandated by " ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 1 ) ;
@@ -1628,6 +1595,7 @@ sub testClientAuthenticationFailure
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		SpoolDir => 1 ,
 		Forward => 1 ,
@@ -1647,11 +1615,11 @@ sub testClientAuthenticationFailure
 	System::createFile( $emailrelay->clientSecrets() , "client login me secret" ) ;
 	$emailrelay->set_dst( "$localhost:".$test_server->port() ) ;
 
-	# test that protocol fails and one message fails (1.9)
+	# test that protocol fails and one message fails
 	Check::ok( $emailrelay->run( \%args ) ) ;
 	System::waitForFileLine( $emailrelay->stderr() , "authentication failed" ) ;
+	System::waitForFiles( $spool_dir ."/emailrelay.*.envelope.bad", 1 ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 1 ) ;
-	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope.bad", 1 ) ;
 
 	# tear down
 	$emailrelay->cleanup() ;
@@ -1665,6 +1633,7 @@ sub testClientMessageFailure
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		SpoolDir => 1 ,
 		Forward => 1 ,
@@ -1702,6 +1671,7 @@ sub testClientInvalidRecipients
 	# setup
 	my %args = (
 		Log => 1 ,
+		Verbose => 1 ,
 		Domain => 1 ,
 		SpoolDir => 1 ,
 		Forward => 1 ,
@@ -1794,12 +1764,12 @@ sub _testTlsServer
 		sub { Server::sleep_cs(100) ; $admin_client->doTerminate() } ) ;
 	if( $expect_failure )
 	{
+		System::waitForFileLine( $server_log , "tls error" ) ;
 		Check::fileDoesNotContain( $server_log , "tls.*established" ) ;
-		Check::fileContains( $server_log , "tls error" ) ;
 	}
 	else
 	{
-		Check::fileContains( $server_log , "tls.*established" ) ;
+		System::waitForFileLine( $server_log , "tls.*established" ) ;
 		Check::fileContains( $client_log , "Session-ID" ) ;
 	}
 
@@ -2045,35 +2015,37 @@ sub _testTls
 	if( $special == 1 )
 	{
 		System::waitForFiles( $server->spoolDir()."/emailrelay.*.envelope" , 1 ) ;
-		Check::fileDoesNotContain( $client_log , "tls.*established" ) ;
-		Check::fileDoesNotContain( $client_log , "tls error" ) ;
+		System::waitForFileLine( $server_log , "envelope file:" ) ;
 		Check::fileDoesNotContain( $server_log , "tls.*established" ) ;
 		Check::fileDoesNotContain( $server_log , "tls error" ) ;
+		Check::fileDoesNotContain( $client_log , "tls.*established" ) ;
+		Check::fileDoesNotContain( $client_log , "tls error" ) ;
 	}
 	elsif( $special == 2 )
 	{
 		System::waitForFiles( $client->spoolDir()."/emailrelay.*.envelope.bad" , 1 ) ;
-		Check::fileDoesNotContain( $client_log , "tls.*established" ) ;
-		Check::fileDoesNotContain( $client_log , "tls error" ) ;
+		System::waitForFileLine( $server_log , "encryption required" ) ;
 		Check::fileDoesNotContain( $server_log , "tls.*established" ) ;
 		Check::fileDoesNotContain( $server_log , "tls error" ) ;
+		Check::fileDoesNotContain( $client_log , "tls.*established" ) ;
+		Check::fileDoesNotContain( $client_log , "tls error" ) ;
 	}
 	elsif( $expect_failure )
 	{
 		System::waitForFiles( $client->spoolDir()."/emailrelay.*.envelope.bad" , 1 ) ;
+		System::waitForFileLine( $client_log , "tls error" ) ;
 		Check::fileDoesNotContain( $client_log , "tls.*established" ) ;
-		Check::fileContains( $client_log , "tls error" ) ;
+		System::waitForFileLine( $server_log , "tls error" ) ;
 		Check::fileDoesNotContain( $server_log , "tls.*established" ) ;
-		Check::fileContains( $server_log , "tls error" ) ;
 	}
 	else
 	{
 		System::waitForFiles( $server->spoolDir()."/emailrelay.*.envelope" , 1 ) ;
-		Check::fileContains( $client_log , "tls.*established" ) ;
+		System::waitForFileLine( $client_log , "tls.*established" ) ;
 		Check::fileDoesNotContain( $client_log , "tls error" ) ;
-		Check::fileContains( $server_log , "tls.*established" ) ;
-		Check::fileDoesNotContain( $server_log , "tls error" ) ;
 		Check::fileContains( $client_log , "BEGIN CERT" ) ;
+		System::waitForFileLine( $server_log , "tls.*established" ) ;
+		Check::fileDoesNotContain( $server_log , "tls error" ) ;
 	}
 
 	# tear down

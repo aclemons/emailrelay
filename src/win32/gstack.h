@@ -52,8 +52,9 @@ public:
 } ;
 
 /// \class GGui::Stack
-/// A property sheet class that manages a set of property sheet pages.
-/// Each property sheet page is a dialog box.
+/// A property sheet class that manages a set of property sheet pages,
+/// with a 'close' button and a disabled 'cancel' button. Each property
+/// sheet page is a dialog box.
 ///
 class GGui::Stack : public WindowBase
 {
@@ -67,8 +68,11 @@ public:
 		///< Creates a property sheet page and adds it to
 		///< to the internal list.
 
-	void create( HWND parent , const std::string & title , int idi , unsigned int notify_message = 0U ) ;
-		///< Creates the property sheet containing all the added pages.
+	void create( HWND parent , const std::string & title , int idi ,
+		unsigned int notify_message_id = 0U ) ;
+			///< Creates the property sheet containing all the added pages.
+			///< If the notify message id is non-zero then the parent window
+			///< will receive a posted message when the stack completes.
 
 	virtual ~Stack() ;
 		///< Destructor.

@@ -62,7 +62,7 @@ GSsl::OpenSSL::LibraryImp::LibraryImp( const std::string & library_config , Libr
 	if( m_index < 0 )
 	{
 		cleanup() ;
-		throw Error( "SSL_get_ex_new_index" , 0 ) ;
+		throw Error( "SSL_get_ex_new_index" ) ;
 	}
 }
 
@@ -394,7 +394,7 @@ void GSsl::OpenSSL::ProfileImp::check( int rc , const std::string & fnname_tail 
 	if( rc != 1 )
 	{
 		std::string fnname = "SSL_CTX_" + fnname_tail ;
-		throw Error( fnname , rc , file ) ;
+		throw Error( fnname , ERR_get_error() , file ) ;
 	}
 }
 
@@ -480,8 +480,9 @@ void GSsl::OpenSSL::ProtocolImp::deleter( SSL * p )
 
 void GSsl::OpenSSL::ProtocolImp::clearErrors()
 {
-	for( int i = 0 ; ERR_get_error() && i < 10000 ; i++ )
-		;
+	// "The current thread's error queue must be empty before [SSL_connect,SSL_accept,SSL_read,SSL_write] "
+	// "is attempted, or SSL_get_error() will not work reliably."
+	Error::clearErrors() ;
 }
 
 int GSsl::OpenSSL::ProtocolImp::error( const char * op , int rc ) const
@@ -674,11 +675,19 @@ GSsl::OpenSSL::Error::Error( const std::string & s ) :
 GSsl::OpenSSL::Error::Error( const std::string & fnname , unsigned long e ) :
 	m_what( "tls error: " + fnname + "(): [" + text(e) + "]" )
 {
+	clearErrors() ;
 }
 
 GSsl::OpenSSL::Error::Error( const std::string & fnname , unsigned long e , const std::string & file ) :
 	m_what( "tls error: " + fnname + "(): [" + text(e) + "]: file=[" + file + "]" )
 {
+	clearErrors() ;
+}
+
+void GSsl::OpenSSL::Error::clearErrors()
+{
+	for( int i = 0 ; ERR_get_error() && i < 10000 ; i++ )
+		{;}
 }
 
 GSsl::OpenSSL::Error::~Error() throw ()

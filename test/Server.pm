@@ -132,7 +132,7 @@ sub _check
 sub _pid
 {
 	my ( $this ) = @_ ;
-	my $fh = new FileHandle( $this->pidFile() ) ;
+	my $fh = new FileHandle( $this->pidFile() , "r" ) ;
 	return undef if !$fh ;
 	my $line = <$fh> ;
 	chomp $line ;
@@ -225,7 +225,7 @@ sub _set_all
 	$command_tail = _set( $command_tail , "__TLS_VERIFY__" , $this->tlsVerify() ) ;
 	$command_tail = _set( $command_tail , "__TLS_CONFIG__" , $this->tlsConfig() ) ;
 
-	my $valgrind = "" ; # "valgrind " ;
+	my $valgrind = "" ; # "valgrind "
 	return $valgrind . $this->exe() . " " .  $command_tail ;
 }
 
@@ -263,12 +263,12 @@ sub run
 		for( my $i = 0 ; $i < 1000 ; $i++ )
 		{
 			sleep_cs() ;
-			if( -f $this->pidFile() ) { last }
+			if( -f $this->pidFile() ) { sleep_cs() ; last }
 		}
 		my $t_end = time() ;
 		System::log_( "no pid file created in ".($t_end-$t_start)."s" ) if( ! -f $this->pidFile() ) ;
 		my $pid = $this->_pid() ;
-		$ok = defined($pid) ;
+		$ok = defined($pid) && $pid > 0 ;
 		$this->{'m_pid'} = $pid ;
 		push @pid_list , $this->{'m_pid'} if $ok ;
 	}

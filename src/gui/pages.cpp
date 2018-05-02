@@ -357,8 +357,8 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const G::MapFile & config , const std
 	tip( m_on_disconnect_checkbox , "--forward-on-disconnect" ) ;
 	m_periodically_checkbox = new QRadioButton(tr("&Check periodically"));
 	tip( m_periodically_checkbox , "--poll" ) ;
-	m_on_demand_checkbox = new QRadioButton(tr("&Only when triggered"));
-	tip( m_on_demand_checkbox , "--admin" ) ;
+	m_on_demand_checkbox = new QRadioButton(tr("&Only on demand"));
+	tip( m_on_demand_checkbox , "emailrelay --as-client" ) ;
 
 	if( config.booleanValue("immediate",false) )
 		m_immediate_checkbox->setChecked(true) ;
@@ -656,7 +656,7 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , c
 
 	m_auth_checkbox = new QCheckBox( tr("&Require authentication") ) ;
 	tip( m_auth_checkbox , "--server-auth" ) ;
-	m_auth_checkbox->setChecked( config.booleanValue("server-auth",false) ) ;
+	m_auth_checkbox->setChecked( config.contains("server-auth") ) ;
 
 	QVBoxLayout * auth_layout = new QVBoxLayout ;
 	auth_layout->addWidget( m_auth_checkbox ) ;
@@ -716,8 +716,9 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , c
 	m_tls_checkbox = new QCheckBox( tr("&Offer TLS/SSL encryption") ) ;
 	tip( m_tls_checkbox , "--server-tls" ) ;
 	m_tls_certificate_label = new QLabel(tr("&Certificate:")) ;
-	tip( m_tls_certificate_label , "private key and X.509 certificate" ) ;
+	tip( m_tls_certificate_label , "--server-tls-certificate" ) ;
 	m_tls_certificate_edit_box = new QLineEdit ;
+	tip( m_tls_certificate_edit_box , "private key and X.509 certificate" ) ;
 	m_tls_certificate_label->setBuddy( m_tls_certificate_edit_box ) ;
 	m_tls_browse_button = new QPushButton(tr("B&rowse")) ;
 	QVBoxLayout * tls_layout = new QVBoxLayout ;
@@ -872,7 +873,7 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const G::MapFile & config , c
 	tls_group->setLayout( tls_layout ) ;
 
 	m_auth_checkbox = new QCheckBox( tr("&Supply authentication") ) ;
-	m_auth_checkbox->setChecked( config.booleanValue("client-auth",false) ) ;
+	m_auth_checkbox->setChecked( config.contains("client-auth") ) ;
 	tip( m_auth_checkbox , "--client-auth" ) ;
 
 	QVBoxLayout * auth_layout = new QVBoxLayout ;

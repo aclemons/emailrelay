@@ -12,9 +12,9 @@ E-MailRelay does three things: it stores any incoming e-mail messages that
 it receives, it forwards e-mail messages on to another remote e-mail server,
 and it serves up stored e-mail messages to local e-mail reader programs. More
 technically, it acts as a SMTP_ storage daemon, a SMTP forwarding agent, and
-a POP_ server.
+a POP3 server.
 
-Whenever an e-mail messages is received it can be passed through a user-defined
+Whenever an e-mail message is received it can be passed through a user-defined
 program, such as a spam filter, which can drop, re-address or edit messages as
 they pass through.
 
@@ -45,15 +45,12 @@ Typical applications of E-MailRelay include:
 * adding digital signatures or legal disclaimers to outgoing mail
 * store-and-forward for outgoing mail across an intermittent internet connection
 * adding authentication and encryption where the existing infrastructure does not support it
-* taking messages in with SMTP and serving them to local POP clients
+* taking messages in with SMTP and serving them to local POP_ clients
 * giving multiple POP clients independent copies of incoming e-mail
 * SMTP proxying by running as a proxy server on a firewall machine
 
 The code has few dependencies on third-party libraries or run-time environments
 so it is easy to build and install.
-
-The event-driven design with non-blocking i/o may provide better performance
-and resource usage than some of the alternatives.
 
 E-MailRelay is designed to be policy-free, so that you can implement your own
 policies for message retries, bounces, local mailbox delivery, spam filtering
@@ -166,15 +163,9 @@ or *emailrelay-start.bat*.
 
 Logging
 =======
-If the *--log* option is used then E-MailRelay program issues warnings and error
-messages to the *syslog* system on Unix or to the Event Viewer's Application log
-on Windows.
-
-The *--log* option also enables logging to the standard error stream, although
-you should note that the *--as-server* and *--as-proxy* options implicitly close
-the standard error stream soon after startup. To keep the standard error stream
-open replace *--as-server* and *--as-proxy* with their equivalent expansions,
-but without *--close-stderr*.
+If the *--log* option is used then E-MailRelay program sends warnings and error
+messages to its standard error stream, and to the *syslog* system on Unix or
+to the Event Viewer on Windows.
 
 The standard error stream logging can be redirected to a file by using the
 *--log-file* option, and daily log files can be created by using *%d* in the
@@ -276,8 +267,8 @@ too many times already.
 
 Usage patterns
 ==============
-The simplest ways of using E-MailRelay for SMTP are as a proxy or for
-store-and-forward, but many other configurations are possible. For example,
+The simplest ways of using E-MailRelay for SMTP are to run it as a proxy or to
+do store-and-forward, but many other configurations are possible. For example,
 multiple E-MailRelay servers can run in parallel sharing the same spool
 directory, or they can be chained in series to that e-mail messages get
 transferred from one to the next.
@@ -289,16 +280,30 @@ filename extension). Your *--filter* program can edit messages in any way you
 want, and it can even delete the current message from the spool directory.
 
 When using E-MailRelay as a POP server the *--pop-by-name* feature can be used
-to serve up different spooled messages according to the username that the client
-authenticated with: each user's messages are taken from their own sub-directory
-of the main spool directory. If messages are coming in over SMTP then you could
-install an SMTP *--filter* script to move each new message into the relevant
-sub-directory based on the message addressing.
+to serve up different spooled messages according to the username that the
+client authenticated with. Rather than use *emailrelay-filter-copy* to
+distribute incoming e-mail messages into all subdirectories you could use a
+custom script to do it based on the message addressing.
 
 For more ideas check out the *--client-filter* and *--poll* options, and don't
 overlook the administration and control interface (\ *--admin*\ ) which you can use
 to receive notification of message arrival or force message forwarding at any
 time.
+
+Rate limiting
+=============
+If you need to slow the rate at which e-mails are forwarded you can use a
+*--client-filter* program to introduce a delay. On Windows this JavaScript
+program would give you a delay of a minute:
+
+::
+
+    WScript.Sleep( 60000 ) ;
+    WScript.Quit( 0 ) ;
+
+However, this can cause timeouts at the server, so a better approach is to use
+*--client-filter exit:102* so that only one e-mail message is forwarded on each
+polling cycle, and then use *--poll 60* to limit it to one e-mail per minute.
 
 SpamAssassin
 ============
@@ -355,12 +360,12 @@ The secrets file should contain one line of text something like this:
 
     client plain myname@gmail.com my+20password
 
-If your password contains weird characters (including spaces and plus signs)
-then you will need to replace those characters with their ascii value,
-something like *+20* or *+2B*.
+If your password contains a space, equals or plus sign, or any control
+character then you will need to replace those characters with their
+corresponding hexadecimal ascii value, something like *+20* or *+2B*.
 
-Reference you secrets file by using *--client-auth* on the E-MailRelay
-command-line and also add in the *--client-tls* option:
+Refer to your secrets file by using *--client-auth* on the E-MailRelay
+command-line, and also add in the *--client-tls* option:
 
 ::
 

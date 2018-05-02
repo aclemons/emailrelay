@@ -83,12 +83,12 @@ subdir = src/gssl
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/pkg.m4 \
+	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h
+CONFIG_HEADER = $(top_builddir)/gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
@@ -99,9 +99,21 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libgssl_a_AR = $(AR) $(ARFLAGS)
 libgssl_a_LIBADD =
-am__libgssl_a_SOURCES_DIST = gssl_none.cpp gssl_openssl.cpp gssl.h
-@OPENSSL_FALSE@am__objects_1 = gssl_none.$(OBJEXT)
-@OPENSSL_TRUE@am__objects_1 = gssl_openssl.$(OBJEXT)
+am__libgssl_a_SOURCES_DIST = gssl.h gssl.cpp gssl_openssl.cpp \
+	gssl_openssl.h gssl_mbedtls.cpp gssl_mbedtls.h \
+	gssl_use_both.cpp gssl_use_mbedtls.cpp gssl_none.cpp \
+	gssl_use_openssl.cpp
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@@GCONFIG_TLS_USE_NONE_FALSE@@GCONFIG_TLS_USE_OPENSSL_TRUE@am__objects_1 = gssl.$(OBJEXT) \
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@@GCONFIG_TLS_USE_NONE_FALSE@@GCONFIG_TLS_USE_OPENSSL_TRUE@	gssl_openssl.$(OBJEXT) \
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@@GCONFIG_TLS_USE_NONE_FALSE@@GCONFIG_TLS_USE_OPENSSL_TRUE@	gssl_use_openssl.$(OBJEXT)
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@@GCONFIG_TLS_USE_NONE_TRUE@am__objects_1 = gssl_none.$(OBJEXT)
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@am__objects_1 = gssl.$(OBJEXT) \
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@	gssl_mbedtls.$(OBJEXT) \
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@	gssl_use_mbedtls.$(OBJEXT)
+@GCONFIG_TLS_USE_BOTH_TRUE@am__objects_1 = gssl.$(OBJEXT) \
+@GCONFIG_TLS_USE_BOTH_TRUE@	gssl_openssl.$(OBJEXT) \
+@GCONFIG_TLS_USE_BOTH_TRUE@	gssl_mbedtls.$(OBJEXT) \
+@GCONFIG_TLS_USE_BOTH_TRUE@	gssl_use_both.$(OBJEXT)
 am_libgssl_a_OBJECTS = $(am__objects_1)
 libgssl_a_OBJECTS = $(am_libgssl_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -183,8 +195,6 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-COMPILER_VERSION = @COMPILER_VERSION@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
@@ -195,13 +205,20 @@ DEPDIR = @DEPDIR@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
-EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+GCONFIG_CONFIGURATION = @GCONFIG_CONFIGURATION@
+GCONFIG_HAVE_DOXYGEN = @GCONFIG_HAVE_DOXYGEN@
+GCONFIG_HAVE_MAN2HTML = @GCONFIG_HAVE_MAN2HTML@
+GCONFIG_QT_CFLAGS = @GCONFIG_QT_CFLAGS@
+GCONFIG_QT_LIBS = @GCONFIG_QT_LIBS@
+GCONFIG_QT_MOC = @GCONFIG_QT_MOC@
+GCONFIG_STATIC_END = @GCONFIG_STATIC_END@
+GCONFIG_STATIC_START = @GCONFIG_STATIC_START@
+GCONFIG_TLS_LIBS = @GCONFIG_TLS_LIBS@
+GCONFIG_WINDMC = @GCONFIG_WINDMC@
+GCONFIG_WINDRES = @GCONFIG_WINDRES@
 GREP = @GREP@
 GZIP = @GZIP@
-G_CAPABILITIES = @G_CAPABILITIES@
-HAVE_DOXYGEN = @HAVE_DOXYGEN@
-HAVE_MAN2HTML = @HAVE_MAN2HTML@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -223,8 +240,6 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
-PAM_INCLUDE = @PAM_INCLUDE@
-PAM_LIBS = @PAM_LIBS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
@@ -233,14 +248,11 @@ QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 QT_MOC = @QT_MOC@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SSL_LIBS = @SSL_LIBS@
-STATIC_END = @STATIC_END@
-STATIC_START = @STATIC_START@
 STRIP = @STRIP@
 VERSION = @VERSION@
-ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -292,20 +304,18 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@OPENSSL_FALSE@OPENSSL_EXTRA_DIST = gssl_openssl.cpp
-@OPENSSL_TRUE@OPENSSL_EXTRA_DIST = gssl_none.cpp
-@OPENSSL_FALSE@OPENSSL_SOURCES = gssl_none.cpp
-@OPENSSL_TRUE@OPENSSL_SOURCES = gssl_openssl.cpp
-EXTRA_DIST = \
-    $(OPENSSL_EXTRA_DIST) \
-    mingw.mak
-
-AM_CPPFLAGS = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib 
+@GCONFIG_TLS_USE_BOTH_TRUE@SSL_EXTRA_DIST = gssl_none.cpp gssl_use_openssl.cpp gssl_use_mbedtls.cpp
+@GCONFIG_TLS_USE_MBEDTLS_TRUE@SSL_EXTRA_DIST = gssl_none.cpp gssl_openssl.cpp gssl_openssl.h gssl_use_openssl.cpp gssl_use_both.cpp
+@GCONFIG_TLS_USE_NONE_TRUE@SSL_EXTRA_DIST = gssl.cpp gssl_openssl.cpp gssl_openssl.h gssl_mbedtls.cpp gssl_mbedtls.h gssl_use_both.cpp gssl_use_openssl.cpp gssl_use_mbedtls.cpp
+@GCONFIG_TLS_USE_OPENSSL_TRUE@SSL_EXTRA_DIST = gssl_none.cpp gssl_mbedtls.cpp gssl_mbedtls.h gssl_use_mbedtls.cpp gssl_use_both.cpp
+@GCONFIG_TLS_USE_BOTH_TRUE@SSL_SOURCES = gssl.h gssl.cpp gssl_openssl.cpp gssl_openssl.h gssl_mbedtls.cpp gssl_mbedtls.h gssl_use_both.cpp
+@GCONFIG_TLS_USE_MBEDTLS_TRUE@SSL_SOURCES = gssl.h gssl.cpp gssl_mbedtls.cpp gssl_mbedtls.h gssl_use_mbedtls.cpp
+@GCONFIG_TLS_USE_NONE_TRUE@SSL_SOURCES = gssl.h gssl_none.cpp
+@GCONFIG_TLS_USE_OPENSSL_TRUE@SSL_SOURCES = gssl.h gssl.cpp gssl_openssl.cpp gssl_openssl.h gssl_use_openssl.cpp
+EXTRA_DIST = $(SSL_EXTRA_DIST)
+AM_CPPFLAGS = -I$(top_srcdir)/src/glib
 noinst_LIBRARIES = libgssl.a
-libgssl_a_SOURCES = \
-	$(OPENSSL_SOURCES) \
-	gssl.h
-
+libgssl_a_SOURCES = $(SSL_SOURCES)
 all: all-am
 
 .SUFFIXES:
@@ -355,8 +365,13 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_mbedtls.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_none.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_openssl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_use_both.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_use_mbedtls.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_use_openssl.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

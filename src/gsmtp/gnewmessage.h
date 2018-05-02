@@ -50,8 +50,10 @@ public:
 			///< Prepares to store the message in the message store.
 			///< Returns the location of the pre-commit()ed message.
 
-	virtual void commit() = 0 ;
-		///< Commits the prepare()d message to the store.
+	virtual void commit( bool strict ) = 0 ;
+		///< Commits the prepare()d message to the store. Errors are
+		///< ignored (eg. missing files) if the 'strict' parameter
+		///< is false.
 
 	virtual unsigned long id() const = 0 ;
 		///< Returns the message's unique non-zero identifier.

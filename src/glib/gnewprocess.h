@@ -109,6 +109,9 @@ public:
 		///< Destructor. Kills the spawned process if the WaitFuture has
 		///< not been resolved.
 
+	int id() const ;
+		///< Returns the process id.
+
 	NewProcessWaitFuture & wait() ;
 		///< Returns a reference to the WaitFuture sub-object so that the caller
 		///< can wait for the child process to exit.

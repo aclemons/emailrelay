@@ -25,6 +25,7 @@
 #include "gpump.h"
 #include "gexception.h"
 #include "gtimer.h"
+#include "gtest.h"
 #include "gassert.h"
 #include "gdebug.h"
 #include "glog.h"
@@ -50,6 +51,10 @@ namespace
 	const long READ_EVENTS = (FD_READ | FD_ACCEPT | FD_OOB) ;
 	const long WRITE_EVENTS = (FD_WRITE) ; // no need for "FD_CONNECT"
 	const long EXCEPTION_EVENTS = (FD_CLOSE) ;
+	int isActive( HANDLE h )
+	{
+		return WAIT_OBJECT_0 == WaitForSingleObject( h , 0 ) ? 1 : 0 ;
+	}
 }
 
 class GNet::EventLoopImp : public EventLoop
@@ -95,7 +100,6 @@ private:
 	void addHandles( EventHandlerList & ) ;
 	long desiredEvents( Descriptor ) ;
 	void onEventHandleEvent( size_t ) ;
-	void moveHandleToLast( size_t ) ;
 
 private:
 	typedef std::vector<HANDLE> Handles ;
@@ -107,6 +111,7 @@ private:
 	EventHandlerList m_read_list ;
 	EventHandlerList m_write_list ;
 	EventHandlerList m_oob_list ;
+	std::vector<int> m_active ;
 	Handles m_handles ;
 	Sockets m_sockets ;
 } ;
@@ -157,8 +162,12 @@ std::string GNet::EventLoopImp::run()
 			{
 				G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::run: event: socket etc" ) ;
 				size_t index = static_cast<size_t>(rc-WAIT_OBJECT_0) ;
-				onEventHandleEvent( index ) ;
-				moveHandleToLast( index ) ;
+				std::transform( m_handles.begin()+index , m_handles.end() , m_active.begin()+index , isActive ) ;
+				for( ; index < handles_n ; index++ )
+				{
+					if( m_active[index] )
+						onEventHandleEvent( index ) ;
+				}
 			}
 			else if( rc == (WAIT_OBJECT_0+handles_n) ) // window message
 			{
@@ -192,8 +201,12 @@ void GNet::EventLoopImp::onEventHandleEvent( size_t handle_index )
 	if( fdd.fd() == INVALID_SOCKET ) // future event
 	{
 		G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::onEventHandleEvent: event on non-socket handle" ) ;
-		EventHandlerList::Lock lock( m_read_list ) ;
-		m_read_list.find(fdd).raiseEvent( &EventHandler::readEvent ) ;
+		GNet::EventHandlerList::Iterator p = m_read_list.find( fdd ) ;
+		if( p != m_read_list.end() ) // the FutureEvent may have disappeared and invalidated the handle
+		{
+			::ResetEvent( fdd.h() ) ; // manual-reset event-object, similar to a socket handle
+			p.raiseEvent( &EventHandler::readEvent ) ;
+		}
 	}
 	else
 	{
@@ -203,35 +216,21 @@ void GNet::EventLoopImp::onEventHandleEvent( size_t handle_index )
 			throw Error( "wsa-enum-network-events failed" ) ;
 
 		long event = events_info.lNetworkEvents ;
-		G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::onEventHandleEvent: network events: " << fdd << ": " << std::hex << event ) ;
+		G_DEBUG_GROUP( "event" ,
+			"GNet::EventLoopImp::onEventHandleEvent: network events: " << fdd << ": " << std::hex << event ) ;
+
 		if( event & WRITE_EVENTS )
 		{
-			EventHandlerList::Lock lock( m_write_list ) ;
 			m_write_list.find(fdd).raiseEvent( &EventHandler::writeEvent ) ;
 		}
 		if( event & READ_EVENTS )
 		{
-			EventHandlerList::Lock lock( m_read_list ) ;
 			m_read_list.find(fdd).raiseEvent( &EventHandler::readEvent ) ;
 		}
 		if( event & EXCEPTION_EVENTS )
 		{
-			EventHandlerList::Lock lock( m_oob_list ) ;
 			m_oob_list.find(fdd).raiseEvent( &EventHandler::oobEvent ) ;
 		}
-	}
-}
-
-void GNet::EventLoopImp::moveHandleToLast( size_t index )
-{
-	G_ASSERT( m_handles.size() == m_sockets.size() ) ;
-	size_t n = m_handles.size() ;
-	if( n >= 2U && (index+1U) < n )
-	{
-		Handles::iterator p = m_handles.begin() + index ;
-		std::rotate( p , p+1 , m_handles.end() ) ;
-		Sockets::iterator pp = m_sockets.begin() + index ;
-		std::rotate( pp , pp+1 , m_sockets.end() ) ;
 	}
 }
 
@@ -291,6 +290,7 @@ void GNet::EventLoopImp::updateHandles()
 	addHandles( m_read_list ) ;
 	addHandles( m_write_list ) ;
 	addHandles( m_oob_list ) ;
+	m_active.resize( m_handles.size() ) ;
 }
 
 void GNet::EventLoopImp::addHandles( EventHandlerList & list )

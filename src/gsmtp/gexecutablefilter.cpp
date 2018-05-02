@@ -26,15 +26,14 @@
 #include "gexecutablefilter.h"
 #include "gstr.h"
 #include "groot.h"
-#include "glog.h"
+#include "gdebug.h"
 
 GSmtp::ExecutableFilter::ExecutableFilter( GNet::ExceptionHandler & eh ,
 	bool server_side , const std::string & path ) :
 		m_server_side(server_side) ,
+		m_prefix(server_side?"filter":"client filter") ,
+		m_exit(0,server_side) ,
 		m_path(path) ,
-		m_ok(true) ,
-		m_special_cancelled(false) ,
-		m_special_other(false) ,
 		m_task(*this,eh,"<<exec error: __strerror__>>",G::Root::nobody())
 {
 }
@@ -53,21 +52,27 @@ std::string GSmtp::ExecutableFilter::id() const
 	return m_path.str() ;
 }
 
-bool GSmtp::ExecutableFilter::specialCancelled() const
+bool GSmtp::ExecutableFilter::special() const
 {
-	return m_special_cancelled ;
+	return m_exit.special ;
 }
 
-bool GSmtp::ExecutableFilter::specialOther() const
+std::string GSmtp::ExecutableFilter::response() const
 {
-	return m_special_other ;
+	G_ASSERT( m_exit.ok() || m_exit.abandon() || !m_response.empty() ) ;
+	if( m_exit.ok() || m_exit.abandon() )
+		return std::string() ;
+	else
+		return m_response ;
 }
 
-std::string GSmtp::ExecutableFilter::text() const
+std::string GSmtp::ExecutableFilter::reason() const
 {
-	if( m_ok ) return std::string() ;
-	const std::string default_ = "pre-processing failed" ;
-	return m_text.empty() ? default_ : m_text ;
+	G_ASSERT( m_exit.ok() || m_exit.abandon() || !m_reason.empty() ) ;
+	if( m_exit.ok() || m_exit.abandon() )
+		return std::string() ;
+	else
+		return m_reason ;
 }
 
 void GSmtp::ExecutableFilter::start( const std::string & message_file )
@@ -75,31 +80,37 @@ void GSmtp::ExecutableFilter::start( const std::string & message_file )
 	// run the program
 	G::Executable commandline( m_path.str() ) ;
 	commandline.add( G::Path(message_file).str() ) ;
-	G_LOG( "GSmtp::ExecutableFilter::start: running " << commandline.displayString() ) ;
+	G_LOG( "GSmtp::ExecutableFilter::start: " << m_prefix << ": running " << commandline.displayString() ) ;
 	m_task.start( commandline ) ;
 }
 
 void GSmtp::ExecutableFilter::onTaskDone( int exit_code , const std::string & output )
 {
 	// search the output for diagnostics
-	m_text = parseOutput( output ) ;
-	G_LOG( "GSmtp::ExecutableFilter::preprocess: exit status " << exit_code << " (\"" << m_text << "\")" ) ;
+	std::pair<std::string,std::string> pair = parseOutput( output , "rejected" ) ;
+	m_response = pair.first ;
+	m_reason = pair.second ;
 
-	// interpret the exit code
-	Exit exit( exit_code , m_server_side ) ;
-	m_ok = exit.ok ;
-	m_special_cancelled = exit.cancelled ;
-	m_special_other = exit.other ;
-	if( !m_ok )
+	m_exit = Exit( exit_code , m_server_side ) ;
+	if( !m_exit.ok() )
 	{
-		G_WARNING( "GSmtp::ExecutableFilter::preprocess: pre-processing failed: exit code " << exit_code ) ;
+		G_WARNING( "GSmtp::ExecutableFilter::onTaskDone: " << m_prefix << " failed: "
+			<< "exit code " << exit_code << " [" << m_response << "]" ) ;
+	}
+	else
+	{
+		if( output.find("<<exec error: ") == 0U )
+			m_response = "rejected" ;
+
+		G_LOG( "GSmtp::ExecutableFilter::onTaskDone: " << m_prefix << " exit code " << exit_code << " "
+			<< "[" << m_response << "] [" << m_reason << "]" ) ;
 	}
 
 	// callback
-	m_done_signal.emit( m_ok ) ;
+	m_done_signal.emit( m_exit.result ) ;
 }
 
-std::string GSmtp::ExecutableFilter::parseOutput( std::string s ) const
+std::pair<std::string,std::string> GSmtp::ExecutableFilter::parseOutput( std::string s , const std::string & default_ ) const
 {
 	G_DEBUG( "GSmtp::ExecutableFilter::parseOutput: in: \"" << G::Str::printable(s) << "\"" ) ;
 
@@ -108,12 +119,12 @@ std::string GSmtp::ExecutableFilter::parseOutput( std::string s ) const
 	const std::string start_2("[[") ;
 	const std::string end_2("]]") ;
 
-	std::string result ;
+	G::StringArray lines ;
 	while( G::Str::replaceAll( s , "\r\n" , "\n" ) ) ;
 	G::Str::replaceAll( s , "\r" , "\n" ) ;
-	G::StringArray lines ;
 	G::Str::splitIntoFields( s , lines , "\n" ) ;
-	for( G::StringArray::iterator p = lines.begin() ; p != lines.end() ; ++p )
+
+	for( G::StringArray::iterator p = lines.begin() ; p != lines.end() ; )
 	{
 		std::string line = *p ;
 		size_t pos_start = line.find(start_1) ;
@@ -125,15 +136,22 @@ std::string GSmtp::ExecutableFilter::parseOutput( std::string s ) const
 		}
 		if( pos_start == 0U && pos_end != std::string::npos )
 		{
-			result = G::Str::printable(line.substr(2U,pos_end-2U)) ;
-			break ;
+			*p++ = G::Str::printable(line.substr(2U,pos_end-2U)) ;
+		}
+		else
+		{
+			p = lines.erase( p ) ;
 		}
 	}
-	G_DEBUG( "GSmtp::ExecutableFilter::parseOutput: out: \"" << G::Str::printable(result) << "\"" ) ;
-	return result ;
+
+	G_DEBUG( "GSmtp::ExecutableFilter::parseOutput: out: [" << G::Str::join("|",lines) << "]" ) ;
+
+	std::string response = ( !lines.empty() && !lines.at(0U).empty() ) ? lines.at(0U) : default_ ;
+	std::string reason = ( lines.size() > 1U && !lines.at(1U).empty() ) ? lines.at(1U) : response ;
+	return std::make_pair( response , reason ) ;
 }
 
-G::Slot::Signal1<bool> & GSmtp::ExecutableFilter::doneSignal()
+G::Slot::Signal1<int> & GSmtp::ExecutableFilter::doneSignal()
 {
 	return m_done_signal ;
 }
@@ -141,6 +159,11 @@ G::Slot::Signal1<bool> & GSmtp::ExecutableFilter::doneSignal()
 void GSmtp::ExecutableFilter::cancel()
 {
 	m_task.stop() ;
+}
+
+bool GSmtp::ExecutableFilter::abandoned() const
+{
+	return m_exit.abandon() ;
 }
 
 /// \file gexecutablefilter.cpp

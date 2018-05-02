@@ -29,6 +29,49 @@
 #include "gstrings.h"
 #include "gdebug.h"
 
+namespace
+{
+	bool fixed_up = false ;
+}
+
+G::Arg Main::Configuration::backwardsCompatibilityFixup( const G::Arg & arg )
+{
+	// TODO remove backwards compatibility
+	bool has_server_tls = false ;
+	bool has_server_tls_certificate = false ;
+	for( size_t i = 1U ; i < arg.c() ; i++ )
+	{
+		if( arg.v(i) == "--server-tls" || arg.v(i) == "-K" || arg.v(i).find("--server-tls=") == 0U )
+			has_server_tls = true ;
+		if( arg.v(i) == "--server-tls-certificate" || arg.v(i).find("--server-tls-certificate=") == 0U )
+			has_server_tls_certificate = true ;
+	}
+	if( has_server_tls && !has_server_tls_certificate )
+	{
+		for( size_t i = 1U ; i < arg.c() ; i++ )
+		{
+			if( ( ( arg.v(i) == "-K" && (i+1U) < arg.c() ) ||
+				( arg.v(i) == "--server-tls" && (i+1U) < arg.c() ) ) &&
+				( !arg.v(i+1U).empty() && arg.v(i+1U).at(0U) != '-' ) )
+			{
+				G::StringArray args = arg.array() ;
+				args.insert( args.begin()+i+1 , "--server-tls-certificate" ) ;
+				fixed_up = true ;
+				return G::Arg( args ) ;
+			}
+			else if( arg.v(i).find("--server-tls=") == 0U && (i+1U) < arg.c() )
+			{
+				G::StringArray args = arg.array() ;
+				args.insert( args.begin()+i , "--server-tls" ) ;
+				G::Str::replace( args[i+1U] , "server-tls" , "server-tls-certificate" ) ;
+				fixed_up = true ;
+				return G::Arg( args ) ;
+			}
+		}
+	}
+	return arg ;
+}
+
 Main::Configuration::Configuration( const G::Options & options , const G::OptionMap & map ,
 	const G::Path & app_dir , const G::Path & base_dir ) :
 		m_options(options) ,
@@ -406,30 +449,28 @@ unsigned int Main::Configuration::filterTimeout() const
 	return G::Str::toUInt( m_map.value( "filter-timeout" , "300" ) ) ;
 }
 
-std::string Main::Configuration::semanticWarnings() const
+G::StringArray Main::Configuration::semanticWarnings() const
 {
-	bool fatal = true ;
-	std::string s = semanticError( fatal ) ;
-	return fatal ? std::string() : s ;
+	return semantics( false ) ;
 }
 
 std::string Main::Configuration::semanticError() const
 {
-	bool fatal = true ;
-	std::string s = semanticError( fatal ) ;
-	return fatal ? s : std::string() ;
+	G::StringArray errors = semantics( true ) ;
+	return errors.empty() ? std::string() : errors.at(0U) ;
 }
 
-std::string Main::Configuration::semanticError( bool & fatal ) const
+G::StringArray Main::Configuration::semantics( bool want_errors ) const
 {
-	fatal = true ;
+	G::StringArray errors ;
+	G::StringArray warnings ;
 
 	if(
 		( m_map.contains("admin") && adminPort() == port() ) ||
 		( m_map.contains("pop") && popPort() == port() ) ||
 		( m_map.contains("pop") && m_map.contains("admin") && popPort() == adminPort() ) )
 	{
-		return "the listening ports must be different" ;
+		errors.push_back( "the listening ports must be different" ) ;
 	}
 
 	if( ! m_map.contains("pop") && (
@@ -438,17 +479,17 @@ std::string Main::Configuration::semanticError( bool & fatal ) const
 		m_map.contains("pop-by-name") ||
 		m_map.contains("pop-no-delete") ) )
 	{
-		return "pop options require --pop" ;
+		errors.push_back( "pop options require --pop" ) ;
 	}
 
 	if( m_map.contains("admin-terminate") && !m_map.contains("admin") )
 	{
-		return "the --admin-terminate option requires --admin" ;
+		errors.push_back( "the --admin-terminate option requires --admin" ) ;
 	}
 
 	if( daemon() && spoolDir().isRelative() )
 	{
-		return "in daemon mode the spool-dir must be an absolute path" ;
+		errors.push_back( "in daemon mode the spool-dir must be an absolute path" ) ;
 	}
 
 	if( daemon() && (
@@ -457,12 +498,12 @@ std::string Main::Configuration::semanticError( bool & fatal ) const
 		( m_map.contains("pop-auth") && ( popSecretsFile() == G::Path() || popSecretsFile().isRelative() ) ) ) )
 	{
 		// (never gets here)
-		return "in daemon mode the authorisation secrets file(s) must be absolute paths" ;
+		errors.push_back( "in daemon mode the authorisation secrets file(s) must be absolute paths" ) ;
 	}
 
 	if( m_map.contains("forward-to") && ( m_map.contains("as-proxy") || m_map.contains("as-client") ) )
 	{
-		return "--forward-to cannot be used with --as-client or --as-proxy" ;
+		errors.push_back( "--forward-to cannot be used with --as-client or --as-proxy" ) ;
 	}
 
 	const bool have_forward_to =
@@ -482,7 +523,7 @@ std::string Main::Configuration::semanticError( bool & fatal ) const
 		for( const char ** p = need_forward_to ; *p ; p++ )
 		{
 			if( m_map.contains(*p) && !have_forward_to )
-				return std::string(*p) + " requires --forward-to" ;
+				errors.push_back( "--" + std::string(*p) + " requires --forward-to" ) ;
 		}
 	}
 
@@ -495,7 +536,9 @@ std::string Main::Configuration::semanticError( bool & fatal ) const
 
 	if( m_map.contains("forward-to") && !forwarding )
 	{
-		return "--forward-to requires --admin, --forward, --forward-on-disconnect, --immediate, or --poll" ;
+		// ignore this -- we want the configuration gui to be able to set the
+		// forwarding address even if it's not used and we might need it for
+		// filter exit code 103 (rescan)
 	}
 
 	const bool not_serving = m_map.contains("dont-serve") || m_map.contains("as-client") ;
@@ -503,34 +546,34 @@ std::string Main::Configuration::semanticError( bool & fatal ) const
 	if( not_serving ) // ie. if not serving admin, smtp or pop
 	{
 		if( m_map.contains("filter") )
-			return "the --filter option cannot be used with --as-client or --dont-serve" ;
+			errors.push_back( "the --filter option cannot be used with --as-client or --dont-serve" ) ;
 
 		if( m_map.contains("port") )
-			return "the --port option cannot be used with --as-client or --dont-serve" ;
+			errors.push_back( "the --port option cannot be used with --as-client or --dont-serve" ) ;
 
 		if( m_map.contains("server-auth") )
-			return "the --server-auth option cannot be used with --as-client or --dont-serve" ;
+			errors.push_back( "the --server-auth option cannot be used with --as-client or --dont-serve" ) ;
 
 		if( m_map.contains("pop") )
-			return "the --pop option cannot be used with --as-client or --dont-serve" ;
+			errors.push_back( "the --pop option cannot be used with --as-client or --dont-serve" ) ;
 
 		if( m_map.contains("admin") )
-			return "the --admin option cannot be used with --as-client or --dont-serve" ;
+			errors.push_back( "the --admin option cannot be used with --as-client or --dont-serve" ) ;
 
 		if( m_map.contains("poll") )
-			return "the --poll option cannot be used with --as-client or --dont-serve" ;
+			errors.push_back( "the --poll option cannot be used with --as-client or --dont-serve" ) ;
 	}
 
 	if( m_map.contains("no-smtp") ) // ie. if not serving smtp
 	{
 		if( m_map.contains("filter") )
-			return "the --filter option cannot be used with --no-smtp" ;
+			errors.push_back( "the --filter option cannot be used with --no-smtp" ) ;
 
 		if( m_map.contains("port") )
-			return "the --port option cannot be used with --no-smtp" ;
+			errors.push_back( "the --port option cannot be used with --no-smtp" ) ;
 
 		if( m_map.contains("server-auth") )
-			return "the --server-auth option cannot be used with --no-smtp" ;
+			errors.push_back( "the --server-auth option cannot be used with --no-smtp" ) ;
 	}
 
 	const bool contains_log =
@@ -541,12 +584,13 @@ std::string Main::Configuration::semanticError( bool & fatal ) const
 
 	if( m_map.contains("verbose") && ! ( m_map.contains("help") || contains_log ) )
 	{
-		return "the --verbose option must be used with --log, --help, --as-client, --as-server or --as-proxy" ;
+		errors.push_back( "the --verbose option must be used with --log, --help, "
+			"--as-client, --as-server or --as-proxy" ) ;
 	}
 
 	if( m_map.contains("debug") && !contains_log )
 	{
-		return "the --debug option requires --log, --as-client, --as-server or --as-proxy" ;
+		errors.push_back( "the --debug option requires --log, --as-client, --as-server or --as-proxy" ) ;
 	}
 
 	const bool no_daemon =
@@ -555,53 +599,60 @@ std::string Main::Configuration::semanticError( bool & fatal ) const
 
 	if( m_map.contains("hidden") && ! no_daemon ) // (win32)
 	{
-		return "the --hidden option requires --no-daemon or --as-client" ;
+		errors.push_back( "the --hidden option requires --no-daemon or --as-client" ) ;
 	}
 
 	if( m_map.contains("client-tls") && m_map.contains("client-tls-connection") )
 	{
-		return "the --client-tls and --client-tls-connection options cannot be used together" ;
+		errors.push_back( "the --client-tls and --client-tls-connection options cannot be used together" ) ;
 	}
 
 	if( m_map.contains("server-tls") && !m_map.contains("server-tls-certificate") )
 	{
-		return "the --server-tls option requires --server-tls-certificate" ;
+		errors.push_back( "the --server-tls option requires --server-tls-certificate" ) ;
 	}
 
-	if( ( m_map.contains("server-tls-certificate") || m_map.contains("server-tls-verify") ) && !m_map.contains("server-tls") )
+	if( ( m_map.contains("server-tls-certificate") || m_map.contains("server-tls-verify") ) &&
+		!m_map.contains("server-tls") )
 	{
-		return "the --server-tls-... options require --server-tls" ;
+		errors.push_back( "the --server-tls-... options require --server-tls" ) ;
 	}
 
-	if( ( m_map.contains("client-tls-certificate") || m_map.contains("client-tls-verify") || m_map.contains("client-tls-required") ) &&
+	if( ( m_map.contains("client-tls-certificate") || m_map.contains("client-tls-verify") ||
+		m_map.contains("client-tls-required") ) &&
 		!( m_map.contains("client-tls") || m_map.contains("client-tls-connection") ) )
 	{
-		return "the --client-tls- options require --client-tls or --client-tls-connection" ;
+		errors.push_back( "the --client-tls- options require --client-tls or --client-tls-connection" ) ;
 	}
 
 	if( m_map.contains("client-tls-verify-name") && !m_map.contains("client-tls-verify") )
 	{
-		return "the --client-tls-verify-name options requires --client-tls-verify" ;
+		errors.push_back( "the --client-tls-verify-name options requires --client-tls-verify" ) ;
 	}
 
 	if( m_map.contains("server-auth") && m_map.value("server-auth") == "/pam" && !m_map.contains("server-tls" ) )
 	{
-		return "--server-auth using pam requires --server-tls" ;
+		errors.push_back( "--server-auth using pam requires --server-tls" ) ;
 	}
 
 	if( m_map.contains("server-tls-required") && !m_map.contains("server-tls") )
 	{
-		return "--server-tls-required requires --server-tls" ;
+		errors.push_back( "--server-tls-required requires --server-tls" ) ;
 	}
 
 	if( m_map.contains("pop-auth") && m_map.value("pop-auth") == "/pam" && !m_map.contains("server-tls" ) )
 	{
-		return "--pop-auth using pam requires --server-tls" ;
+		errors.push_back( "--pop-auth using pam requires --server-tls" ) ;
 	}
 
 	if( m_map.contains("interface") && m_map.value("interface").find("client=") != std::string::npos )
 	{
-		return "using --interface with client= is no longer supported: use --client-interface instead" ;
+		errors.push_back( "using --interface with client= is no longer supported: use --client-interface instead" ) ;
+	}
+
+	if( m_map.contains("verifier") && m_map.contains("address-verifier") )
+	{
+		errors.push_back( "use --address-verifier, not --verifier" ) ;
 	}
 
 	// warnings...
@@ -618,42 +669,51 @@ std::string Main::Configuration::semanticError( bool & fatal ) const
 		m_map.contains("as-server") ||
 		m_map.contains("as-proxy") ;
 
-	if( contains_log && close_stderr && !syslog ) // ie. logging to nowhere
+	if( contains_log && close_stderr && ( m_map.contains("log-file") || !syslog ) ) // ie. logging to nowhere
 	{
 		std::string close_stderr_option =
 			( m_map.contains("close-stderr") ? "--close-stderr" :
 			( m_map.contains("as-server") ? "--as-server" :
 			"--as-proxy" ) ) ;
 
-		std::string warning = "logging is enabled but it has nowhere to go because " +
-			close_stderr_option + " closes the standard error stream soon after startup and " +
-			"output to the system log is disabled" ;
+		std::string warning = close_stderr_option + " closes the "
+			"standard error stream soon after startup " ;
 
-		if( m_map.contains("as-server") && !m_map.contains("log") )
-			warning = warning + ": replace --as-server with --log" ;
-		else if( m_map.contains("as-server") )
-			warning = warning + ": remove --as-server" ;
-		else if( m_map.contains("as-proxy" ) )
-			warning = warning + ": replace --as-proxy with --log --forward-on-disconnect --forward-to" ;
+		if( m_map.contains("log-file") )
+			warning.append( "so --log-file will not be used" ) ;
+		else
+			warning.append( "and the system log is not used" ) ;
 
-		fatal = false ;
-		return warning ;
+		const bool help = false ; // moot
+		if( help )
+		{
+			if( m_map.contains("as-server") && !m_map.contains("log") )
+				warning = warning + ": replace --as-server with --log" ;
+			else if( m_map.contains("as-server") )
+				warning = warning + ": remove --as-server" ;
+			else if( m_map.contains("as-proxy" ) )
+				warning = warning + ": replace --as-proxy with --log --forward-on-disconnect --forward-to" ;
+		}
+
+		warnings.push_back( warning ) ;
 	}
 
 	if( m_map.contains("poll") && G::Str::toUInt(m_map.value("poll","1")) == 0U )
 	{
-		fatal = false ;
-		return "use of --poll=0 is deprecated; replace with --forward-on-disconnect" ;
+		warnings.push_back( "use of --poll=0 is deprecated; replace with --forward-on-disconnect" ) ;
 	}
 
 	if( m_map.contains("verifier") ) // backwards compatibility
 	{
-		fatal = m_map.contains("address-verifier") ;
-		return "use of --verifier is deprecated; replace with --address-verifier and rtfm" ;
+		warnings.push_back( "use of --verifier is deprecated; replace with --address-verifier and rtfm" ) ;
 	}
 
-	fatal = false ;
-	return std::string() ;
+	if( fixed_up )
+	{
+		warnings.push_back( "use of --server-tls with a filename is deprecated; use --server-tls-certificate" ) ;
+	}
+
+	return want_errors ? errors : warnings ;
 }
 
 G::Path Main::Configuration::pathValue( const std::string & option_name ) const
@@ -744,6 +804,12 @@ G::StringArray Main::Configuration::display() const
 				result.push_back( forwardOnDisconnect()?yes:no ) ;
 			else if( name == "forward-to" )
 				result.push_back( serverAddress() ) ;
+			else if( name == "port" )
+				result.push_back( (doSmtp()&&doServing()) ? G::Str::fromUInt(port()) : std::string() ) ;
+			else if( name == "pop-port" )
+				result.push_back( (doPop()&&doServing()) ? G::Str::fromUInt(popPort()) : std::string() ) ;
+			else if( name == "address-verifier" ) // TODO remove backwards compatibility
+				result.push_back( verifier().str() ) ;
 			else if( m_options.multivalued(name) )
 				result.push_back( m_map.value(name) ) ;
 			else if( m_options.valued(name) && pathlike(name) )

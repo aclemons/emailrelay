@@ -82,15 +82,19 @@ public:
 	void kill() ;
 		// Tries to kill the spawned process.
 
+	int id() const ;
+		// Returns the process id.
+
 private:
 	void operator=( const NewProcessImp & ) ;
 	NewProcessImp( const NewProcessImp & ) ;
 	static std::string commandLine( const std::string & exe , const StringArray & args ) ;
-	static HANDLE createProcess( const std::string & exe , const std::string & command_line ,
+	static std::pair<HANDLE,DWORD> createProcess( const std::string & exe , const std::string & command_line ,
 		HANDLE hstdout , int capture_stdxxx ) ;
 
 private:
 	HANDLE m_hprocess ;
+	DWORD m_pid ;
 	bool m_killed ;
 	Pipe m_pipe ;
 	NewProcessWaitFuture m_wait_future ;
@@ -117,6 +121,11 @@ G::NewProcessWaitFuture & G::NewProcess::wait()
 	return m_imp->wait() ;
 }
 
+int G::NewProcess::id() const
+{
+	return m_imp->id() ;
+}
+
 void G::NewProcess::kill()
 {
 	m_imp->kill() ;
@@ -132,7 +141,9 @@ G::NewProcessImp::NewProcessImp( const Path & exe_path , const StringArray & arg
 	G_DEBUG( "G::NewProcess::spawn: running [" << exe_path << "]: [" << Str::join("],[",args) << "]" ) ;
 
 	std::string command_line = commandLine( exe_path.str() , args ) ;
-	m_hprocess = createProcess( exe_path.str() , command_line , m_pipe.hwrite() , capture_stdxxx ) ;
+	std::pair<HANDLE,DWORD> pair = createProcess( exe_path.str() , command_line , m_pipe.hwrite() , capture_stdxxx ) ;
+	m_hprocess = pair.first ;
+	m_pid = pair.second ;
 
 	m_pipe.close() ; // close write end, now used by child process
 	m_wait_future = NewProcessWaitFuture( m_hprocess , m_pipe.hread() , 0 ) ;
@@ -156,7 +167,12 @@ G::NewProcessWaitFuture & G::NewProcessImp::wait()
 	return m_wait_future ;
 }
 
-HANDLE G::NewProcessImp::createProcess( const std::string & exe , const std::string & command_line ,
+int G::NewProcessImp::id() const
+{
+	return static_cast<int>(m_pid) ;
+}
+
+std::pair<HANDLE,DWORD> G::NewProcessImp::createProcess( const std::string & exe , const std::string & command_line ,
 	HANDLE hout , int capture_stdxxx )
 {
 	// redirect stdout or stderr onto the read end of our pipe
@@ -197,7 +213,7 @@ HANDLE G::NewProcessImp::createProcess( const std::string & exe , const std::str
 	G_DEBUG( "G::NewProcessImp::createProcess: thread-id=" << info.dwThreadId ) ;
 
 	::CloseHandle( info.hThread ) ;
-	return info.hProcess ;
+	return std::make_pair( info.hProcess , info.dwProcessId ) ;
 }
 
 std::string G::NewProcessImp::commandLine( const std::string & exe , const StringArray & args )

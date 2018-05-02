@@ -28,6 +28,7 @@
 #include "geventhandler.h"
 #include "gfutureevent.h"
 #include "gtask.h"
+#include <utility>
 
 namespace GSmtp
 {
@@ -52,7 +53,7 @@ public:
 	virtual bool simple() const override ;
 		///< Override from from GSmtp::Filter.
 
-	virtual G::Slot::Signal1<bool> & doneSignal() override ;
+	virtual G::Slot::Signal1<int> & doneSignal() override ;
 		///< Override from from GSmtp::Filter.
 
 	virtual void start( const std::string & path ) override ;
@@ -61,31 +62,32 @@ public:
 	virtual void cancel() override ;
 		///< Override from from GSmtp::Filter.
 
-	virtual std::string text() const override ;
-		///< Override from from GSmtp::Filter.
-		///<
-		///< Returns any "<<text>>" or "[[text]]" output by the executable.
-
-	virtual bool specialCancelled() const override ;
+	virtual bool abandoned() const override ;
 		///< Override from from GSmtp::Filter.
 
-	virtual bool specialOther() const override ;
+	virtual std::string response() const override ;
+		///< Override from from GSmtp::Filter.
+
+	virtual std::string reason() const override ;
+		///< Override from from GSmtp::Filter.
+
+	virtual bool special() const override ;
 		///< Override from from GSmtp::Filter.
 
 private:
 	ExecutableFilter( const ExecutableFilter & ) ; // not implemented
 	void operator=( const ExecutableFilter & ) ; // not implemented
-	std::string parseOutput( std::string ) const ;
+	std::pair<std::string,std::string> parseOutput( std::string , const std::string & ) const ;
 	virtual void onTaskDone( int , const std::string & ) override ; // override from GNet::TaskCallback
 
 private:
-	G::Slot::Signal1<bool> m_done_signal ;
+	G::Slot::Signal1<int> m_done_signal ;
 	bool m_server_side ;
+	std::string m_prefix ;
+	Exit m_exit ;
 	G::Path m_path ;
-	std::string m_text ;
-	bool m_ok ;
-	bool m_special_cancelled ;
-	bool m_special_other ;
+	std::string m_response ;
+	std::string m_reason ;
 	GNet::Task m_task ;
 } ;
 

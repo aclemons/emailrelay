@@ -104,7 +104,6 @@ bool GSmtp::RequestClient::onReceive( const std::string & line )
 	{
 		m_request.erase() ;
 		std::string scan_result = result(line) ; // empty string if scanned okay
-		scan_result = G::Str::printable( scan_result ) ; // paranoia
 		eventSignal().emit( m_key , scan_result ) ;
 	}
 	return true ;

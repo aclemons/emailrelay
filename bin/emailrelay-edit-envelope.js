@@ -20,9 +20,13 @@
 // An example "--filter" script for Windows that edits the message's envelope
 // file.
 //
-// In this example the "Authentication" field in the envelope file is modified.
-// This field is used as the AUTH parameter when the emailrelay server forwards
-// the message to the downstream server.
+// In this example the "MailFromAuthOut" field in the envelope file is
+// modified; this is used as the MAIL FROM AUTH parameter when the emailrelay
+// server forwards the message to the downstream server. In principle
+// (RFC-2554) when relaying the outgoing MAIL FROM AUTH value should be the
+// same as the incoming value iff the submitting client was authenticated
+// and trusted; or it can be the the submitting client's authentication id
+// if there was no incoming value; or it can be "<>".
 //
 try
 {
@@ -38,12 +42,25 @@ try
 	var txt = ts.ReadAll() ;
 	ts.Close() ;
 
-	// configuration -- this is what we are putting into the envelope file
-	var auth = "secret" ;
+	// read the incoming values
+	var re_auth_in = new RegExp( "^X-MailRelay-MailFromAuthIn: *(\\S*)" , "m" ) ;
+	txt.match( re_auth_in ) ;
+	var auth_in = RegExp.lastParen ;
+	var re_authentication = new RegExp( "^X-MailRelay-Authentication: *(\\S*)" , "m" ) ;
+	txt.match( re_authentication ) ;
+	var authentication = RegExp.lastParen ;
 
-	// make the change
-	var re = new RegExp( "X-MailRelay-Authentication: *\\w*" ) ;
-	txt = txt.replace( re , "X-MailRelay-Authentication: " + auth ) ;
+	// choose the auth-out value
+	var auth_out = "<>" ;
+	if( authentication )
+	{
+		function xtext( x ) { return x } // todo
+		auth_out = auth_in ? auth_in : xtext(authentication) ;
+	}
+
+	// set the auth-out
+	var re = new RegExp( "X-MailRelay-MailFromAuthOut: *\\S*" ) ;
+	txt = txt.replace( re , "X-MailRelay-MailFromAuthOut: " + auth_out ) ;
 
 	// write the envelope file back out
 	ts = fs.OpenTextFile( envelope , 2 , false ) ;

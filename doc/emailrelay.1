@@ -52,7 +52,7 @@ client is connected and forwarded as soon as the client
 disconnects.
 .SH OPTIONS
 .TP
-.B \-R, --address-verifier \fI<program>\fR
+.B --address-verifier \fI<program>\fR
 Runs the specified external program to verify a message recipent's e-mail address. A network verifier can be specified as \fInet:<transport-address>\fR.
 .TP
 .B \-a, --admin \fI<admin-port>\fR
@@ -149,7 +149,7 @@ Specifies the IP network addresses used to bind listening ports. By  default lis
 Enables logging to the standard error stream and to the syslog. The  \fI--close-stderr\fR and \fI--no-syslog\fR options can be used to disable output to  standard error stream and the syslog separately. Note that \fI--as-server\fR,  \fI--as-client\fR and \fI--as-proxy\fR imply \fI--log\fR, and \fI--as-server\fR and \fI--as-proxy\fR  also imply \fI--close-stderr\fR.
 .TP
 .B \-N, --log-file \fI<file>\fR
-Redirects standard-error logging to the specified file, but note  that standard error stream logging might be disabled by \fI--close-stderr\fR, \fI--as-server\fR and \fI--as-proxy\fR. The filename can include \fI%d\fR to get daily log files; the \fI%d\fR is replaced by the current date in the local timezone using a \fIYYYYMMDD\fR format.
+Redirects standard-error logging to the specified file. Logging to the log file is not affected by \fI--close-stderr\fR. The filename can  include \fI%d\fR to get daily log files; the \fI%d\fR is replaced by the  current date in the local timezone using a \fIYYYYMMDD\fR format.
 .TP
 .B \-L, --log-time
 Adds a timestamp to the logging output using the local timezone.

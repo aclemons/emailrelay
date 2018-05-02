@@ -59,7 +59,6 @@ G::Slot::Signal1<std::string> & GSmtp::Client::messageDoneSignal()
 
 void GSmtp::Client::sendMessagesFrom( MessageStore & store )
 {
-	G_ASSERT( !store.empty() ) ;
 	G_ASSERT( !connected() ) ; // ie. immediately after construction
 	m_store = &store ;
 }
@@ -87,7 +86,7 @@ void GSmtp::Client::filterStart()
 	G_ASSERT( m_message.get() != nullptr ) ;
 	if( m_message.get() )
 	{
-		if( m_filter->id() != "null" )
+		if( m_filter->id() != "none" )
 		{
 			G_LOG( "GSmtp::Client::filterStart: client filter: [" << m_filter->id() << "]" ) ;
 		}
@@ -95,13 +94,14 @@ void GSmtp::Client::filterStart()
 	}
 }
 
-void GSmtp::Client::filterDone( bool ok )
+void GSmtp::Client::filterDone( int filter_result )
 {
 	G_ASSERT( m_message.get() != nullptr ) ;
 
-	// interpret the filter result -- note different semantics wrt. server-side
-	bool ignore_this = !ok && m_filter->specialCancelled() ;
-	bool break_after = m_filter->specialOther() ;
+	const bool ok = filter_result == 0 ;
+	const bool abandon = filter_result == 1 ;
+	const bool stop_scanning = m_filter->special() ;
+	G_ASSERT( m_filter->reason().empty() == (ok || abandon) ) ;
 
 	if( ok )
 	{
@@ -109,30 +109,29 @@ void GSmtp::Client::filterDone( bool ok )
 		m_message->sync( !m_filter->simple() ) ;
 	}
 
-	if( break_after )
+	if( stop_scanning )
 	{
 		G_DEBUG( "GSmtp::Client::filterDone: making this the last message" ) ;
 		m_iter.last() ; // so next next() returns nothing
 	}
 
-	if( m_filter->id() != "null" )
+	if( m_filter->id() != "none" )
 	{
-		G_LOG( "GSmtp::Client::filterDone: client filter: ok=" << ok << " "
-			<< "ignore=" << ignore_this << " break=" << break_after << " text=[" << G::Str::printable(m_filter->text()) << "]" ) ;
+		G_LOG( "GSmtp::Client::filterDone: client filter done: " << m_filter->str(false) ) ;
 	}
 
-	// pass the event on to the protocol
+	// pass the event on to the client protocol
 	if( ok )
 	{
-		m_protocol.filterDone( true , std::string() ) ;
+		m_protocol.filterDone( true , std::string() , std::string() ) ;
 	}
-	else if( ignore_this )
+	else if( abandon )
 	{
-		m_protocol.filterDone( false , std::string() ) ; // protocolDone(-1)
+		m_protocol.filterDone( false , std::string() , std::string() ) ; // protocolDone(-1)
 	}
 	else
 	{
-		m_protocol.filterDone( false , m_filter->text() ) ; // protocolDone(-2)
+		m_protocol.filterDone( false , m_filter->response() , m_filter->reason() ) ; // protocolDone(-2)
 	}
 }
 
@@ -182,6 +181,7 @@ void GSmtp::Client::onConnect()
 
 void GSmtp::Client::doOnConnect()
 {
+	G_LOG_S( "GSmtp::Client::doOnConnect: smtp connection to " << peerAddress().second.displayString() ) ;
 	if( m_store != nullptr )
 	{
 		// initialise the message iterator
@@ -191,7 +191,7 @@ void GSmtp::Client::doOnConnect()
 		bool started = sendNext() ;
 		if( !started )
 		{
-			G_DEBUG( "GSmtp::Client::onConnect: deleting" ) ;
+			G_DEBUG( "GSmtp::Client::doOnConnect: deleting" ) ;
 			doDelete( std::string() ) ;
 		}
 	}
@@ -212,7 +212,7 @@ bool GSmtp::Client::sendNext()
 		if( message.get() == nullptr )
 		{
 			if( m_message_count != 0U )
-				G_LOG_S( "GSmtp::Client: no more messages to send" ) ;
+				G_LOG( "GSmtp::Client: no more messages to send" ) ;
 			m_message_count = 0U ;
 			return false ;
 		}
@@ -233,24 +233,24 @@ void GSmtp::Client::start( StoredMessage & message )
 		unique_ptr<std::istream>(message.extractContentStream()) ) ;
 }
 
-void GSmtp::Client::protocolDone( std::string reason , int reason_code )
+void GSmtp::Client::protocolDone( int response_code , std::string response , std::string reason )
 {
-	G_DEBUG( "GSmtp::Client::protocolDone: \"" << reason << "\"" ) ;
-	if( ! reason.empty() )
-		reason = "smtp client failure: " + reason ;
+	G_DEBUG( "GSmtp::Client::protocolDone: \"" << response << "\"" ) ;
+	if( ! response.empty() )
+		response = "smtp client failure: " + response ;
 
-	if( reason_code == -1 )
+	if( response_code == -1 )
 	{
-		// we called protocol.filterDone(false,""), so ignore
+		// we called protocol.filterDone(false,""), so abandon
 		// this message if eg. already deleted
 	}
-	else if( reason_code == -2 )
+	else if( response_code == -2 )
 	{
 		// we called protocol.filterDone(false,"..."), so fail this
 		// message (550 => "action not taken, eg. for policy reasons")
-		messageFail( reason , 550 ) ;
+		messageFail( 550 , reason.empty() ? response : reason ) ;
 	}
-	else if( reason.empty() )
+	else if( response.empty() )
 	{
 		// forwarded ok, so delete our copy
 		messageDestroy() ;
@@ -259,7 +259,7 @@ void GSmtp::Client::protocolDone( std::string reason , int reason_code )
 	{
 		// eg. rejected by the server, so fail the message
 		m_filter->cancel() ;
-		messageFail( reason , reason_code ) ;
+		messageFail( response_code , reason.empty() ? response : reason ) ;
 	}
 
 	if( m_store != nullptr )
@@ -272,7 +272,7 @@ void GSmtp::Client::protocolDone( std::string reason , int reason_code )
 	}
 	else
 	{
-		messageDoneSignal().emit( reason ) ;
+		messageDoneSignal().emit( response ) ;
 	}
 }
 
@@ -285,11 +285,11 @@ void GSmtp::Client::messageDestroy()
 	}
 }
 
-void GSmtp::Client::messageFail( const std::string & reason , int reason_code )
+void GSmtp::Client::messageFail( int response_code , const std::string & reason )
 {
 	if( m_message.get() != nullptr )
 	{
-		m_message->fail( reason , reason_code ) ;
+		m_message->fail( reason , response_code ) ;
 		m_message.reset() ;
 	}
 }
@@ -307,7 +307,7 @@ void GSmtp::Client::onDelete( const std::string & error )
 	if( ! error.empty() )
 	{
 		G_LOG( "GSmtp::Client: smtp client error: \"" << error << "\"" ) ; // was warning
-		messageFail( error , 0 ) ; // if not already failed or destroyed
+		messageFail( 0 , error ) ; // if not already failed or destroyed
 	}
 	m_message.reset() ;
 }

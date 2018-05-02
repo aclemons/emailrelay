@@ -68,7 +68,7 @@ disconnects.
 <H2>OPTIONS</H2>
 
 <DL COMPACT>
-<DT><B>-R, --address-verifier </B><I>&lt;program&gt;</I>
+<DT><B>--address-verifier </B><I>&lt;program&gt;</I>
 
 <DD>
 Runs the specified external program to verify a message recipent's e-mail address. A network verifier can be specified as <I>net:&lt;transport-address&gt;</I>.
@@ -199,7 +199,7 @@ Enables logging to the standard error stream and to the syslog. The  <I>--close-
 <DT><B>-N, --log-file </B><I>&lt;file&gt;</I>
 
 <DD>
-Redirects standard-error logging to the specified file, but note  that standard error stream logging might be disabled by <I>--close-stderr</I>, <I>--as-server</I> and <I>--as-proxy</I>. The filename can include <I>%d</I> to get daily log files; the <I>%d</I> is replaced by the current date in the local timezone using a <I>YYYYMMDD</I> format.
+Redirects standard-error logging to the specified file. Logging to the log file is not affected by <I>--close-stderr</I>. The filename can  include <I>%d</I> to get daily log files; the <I>%d</I> is replaced by the  current date in the local timezone using a <I>YYYYMMDD</I> format.
 <DT><B>-L, --log-time</B>
 
 <DD>

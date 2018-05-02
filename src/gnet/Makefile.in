@@ -83,12 +83,12 @@ subdir = src/gnet
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/pkg.m4 \
+	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h
+CONFIG_HEADER = $(top_builddir)/gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
@@ -99,39 +99,79 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libgnet_a_AR = $(AR) $(ARFLAGS)
 libgnet_a_LIBADD =
-am__libgnet_a_SOURCES_DIST = gresolver_dns_disabled.cpp \
-	glocal_dns_disabled.cpp gresolver_unix.cpp gresolver_ip.cpp \
-	glocal_unix.cpp gmonitor.cpp gaddress_ip.cpp gaddress.h \
-	gbufferedserverpeer.cpp gbufferedserverpeer.h gclientptr.h \
-	gclient.cpp gclient.h gconnection.cpp gconnection.h \
-	gconnectionlookup.h gconnectionlookup_unix.cpp gdescriptor.cpp \
-	gdescriptor.h gdescriptor_unix.cpp gevent.h geventhandler.cpp \
-	geventhandler.h geventloop.cpp geventloop.h \
-	geventloop_unix.cpp gheapclient.cpp gheapclient.h \
-	glinebuffer.cpp glinebuffer.h glocal.cpp glocal.h gmonitor.h \
-	gmultiserver.cpp gmultiserver.h gnet.h grequest.h \
-	gresolver.cpp gresolver.h gresolverinfo.cpp gresolverinfo.h \
-	gserver.cpp gserver.h gsimpleclient.cpp gsimpleclient.h \
-	gsimpleclient_unix.cpp gsocket.h gsocket.cpp gsocket_unix.cpp \
-	gsocketprotocol.cpp gsocketprotocol.h gtimer.cpp gtimer.h \
-	gtimerlist.cpp gtimerlist.h
-@DNS_FALSE@am__objects_1 = gresolver_dns_disabled.$(OBJEXT) \
-@DNS_FALSE@	glocal_dns_disabled.$(OBJEXT)
-@DNS_TRUE@am__objects_1 = gresolver_unix.$(OBJEXT) \
-@DNS_TRUE@	gresolver_ip.$(OBJEXT) glocal_unix.$(OBJEXT)
-am_libgnet_a_OBJECTS = $(am__objects_1) gmonitor.$(OBJEXT) \
-	gaddress_ip.$(OBJEXT) gbufferedserverpeer.$(OBJEXT) \
-	gclient.$(OBJEXT) gconnection.$(OBJEXT) \
-	gconnectionlookup_unix.$(OBJEXT) gdescriptor.$(OBJEXT) \
-	gdescriptor_unix.$(OBJEXT) geventhandler.$(OBJEXT) \
-	geventloop.$(OBJEXT) geventloop_unix.$(OBJEXT) \
-	gheapclient.$(OBJEXT) glinebuffer.$(OBJEXT) glocal.$(OBJEXT) \
-	gmultiserver.$(OBJEXT) gresolver.$(OBJEXT) \
-	gresolverinfo.$(OBJEXT) gserver.$(OBJEXT) \
-	gsimpleclient.$(OBJEXT) gsimpleclient_unix.$(OBJEXT) \
-	gsocket.$(OBJEXT) gsocket_unix.$(OBJEXT) \
-	gsocketprotocol.$(OBJEXT) gtimer.$(OBJEXT) \
-	gtimerlist.$(OBJEXT)
+am__libgnet_a_SOURCES_DIST = gresolver.cpp gmonitor.cpp \
+	gaddress_ip.cpp gaddress.h gaddress4.h gaddress4.cpp \
+	gaddress6.h gaddress6.cpp gbufferedserverpeer.cpp \
+	gbufferedserverpeer.h gclientptr.h gclient.cpp gclient.h \
+	gconnection.cpp gconnection.h gdescriptor.cpp gdescriptor.h \
+	gdescriptor_unix.cpp gevent.h geventhandler.cpp \
+	geventhandler.h geventhandlerlist.cpp geventhandlerlist.h \
+	geventloop.cpp geventloop.h geventloop_unix.cpp \
+	gexceptionhandler.cpp gexceptionhandler.h gfutureevent.h \
+	gfutureevent_unix.cpp gheapclient.cpp gheapclient.h \
+	glinebuffer.cpp glinebuffer.h glocal.cpp glocal.h \
+	glocation.cpp glocation.h gmonitor.h gmultiserver.cpp \
+	gmultiserver.h gnet.h gresolver.h gresolverfuture.cpp \
+	gresolverfuture.h gserver.cpp gserver.h gsimpleclient.cpp \
+	gsimpleclient.h gsocket.h gsocket.cpp gsocket_unix.cpp \
+	gsocketprotocol.cpp gsocketprotocol.h gsocks.cpp gsocks.h \
+	gtask.cpp gtask.h gtimer.cpp gtimer.h gtimerlist.cpp \
+	gtimerlist.h gdescriptor_win32.cpp geventloop_win32.cpp \
+	gfutureevent_win32.cpp gsocket_win32.cpp
+@GCONFIG_WINDOWS_FALSE@am__objects_1 = gresolver.$(OBJEXT)
+@GCONFIG_WINDOWS_FALSE@am_libgnet_a_OBJECTS = $(am__objects_1) \
+@GCONFIG_WINDOWS_FALSE@	gmonitor.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gaddress_ip.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gaddress4.$(OBJEXT) gaddress6.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gbufferedserverpeer.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gclient.$(OBJEXT) gconnection.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gdescriptor.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gdescriptor_unix.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	geventhandler.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	geventhandlerlist.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	geventloop.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	geventloop_unix.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gexceptionhandler.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gfutureevent_unix.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gheapclient.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	glinebuffer.$(OBJEXT) glocal.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	glocation.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gmultiserver.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gresolver.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gresolverfuture.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gserver.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gsimpleclient.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gsocket.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gsocket_unix.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gsocketprotocol.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gsocks.$(OBJEXT) gtask.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gtimer.$(OBJEXT) gtimerlist.$(OBJEXT)
+@GCONFIG_WINDOWS_TRUE@am_libgnet_a_OBJECTS = gaddress4.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gaddress6.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gaddress_ip.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gbufferedserverpeer.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gclient.$(OBJEXT) gconnection.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gdescriptor.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gdescriptor_win32.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	geventhandler.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	geventhandlerlist.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	geventloop.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	geventloop_win32.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gexceptionhandler.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gfutureevent_win32.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gheapclient.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	glinebuffer.$(OBJEXT) glocal.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	glocation.$(OBJEXT) gmonitor.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gmultiserver.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gresolver.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gresolverfuture.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gserver.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gsimpleclient.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gsocket.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gsocketprotocol.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gsocket_win32.$(OBJEXT) gsocks.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gtask.$(OBJEXT) gtimer.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gtimerlist.$(OBJEXT)
 libgnet_a_OBJECTS = $(am_libgnet_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -212,8 +252,6 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-COMPILER_VERSION = @COMPILER_VERSION@
-CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
@@ -224,13 +262,20 @@ DEPDIR = @DEPDIR@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
-EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+GCONFIG_CONFIGURATION = @GCONFIG_CONFIGURATION@
+GCONFIG_HAVE_DOXYGEN = @GCONFIG_HAVE_DOXYGEN@
+GCONFIG_HAVE_MAN2HTML = @GCONFIG_HAVE_MAN2HTML@
+GCONFIG_QT_CFLAGS = @GCONFIG_QT_CFLAGS@
+GCONFIG_QT_LIBS = @GCONFIG_QT_LIBS@
+GCONFIG_QT_MOC = @GCONFIG_QT_MOC@
+GCONFIG_STATIC_END = @GCONFIG_STATIC_END@
+GCONFIG_STATIC_START = @GCONFIG_STATIC_START@
+GCONFIG_TLS_LIBS = @GCONFIG_TLS_LIBS@
+GCONFIG_WINDMC = @GCONFIG_WINDMC@
+GCONFIG_WINDRES = @GCONFIG_WINDRES@
 GREP = @GREP@
 GZIP = @GZIP@
-G_CAPABILITIES = @G_CAPABILITIES@
-HAVE_DOXYGEN = @HAVE_DOXYGEN@
-HAVE_MAN2HTML = @HAVE_MAN2HTML@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -252,8 +297,6 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
-PAM_INCLUDE = @PAM_INCLUDE@
-PAM_LIBS = @PAM_LIBS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
@@ -262,14 +305,11 @@ QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
 QT_MOC = @QT_MOC@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SSL_LIBS = @SSL_LIBS@
-STATIC_END = @STATIC_END@
-STATIC_START = @STATIC_START@
 STRIP = @STRIP@
 VERSION = @VERSION@
-ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -321,81 +361,159 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@DNS_FALSE@DNS_EXTRA_DIST = gresolver_unix.cpp gresolver_ip.cpp glocal_unix.cpp
-@DNS_TRUE@DNS_EXTRA_DIST = gresolver_dns_disabled.cpp glocal_dns_disabled.cpp
-@DNS_FALSE@DNS_SOURCES = gresolver_dns_disabled.cpp glocal_dns_disabled.cpp
-@DNS_TRUE@DNS_SOURCES = gresolver_unix.cpp gresolver_ip.cpp glocal_unix.cpp
-EXTRA_DIST = \
-	$(DNS_EXTRA_DIST) \
-	gaddress_ipv4.cpp \
-	gaddress_ipv6.cpp \
-	gconnectionlookup_win32.cpp \
-    gdescriptor_win32.cpp \
-    geventloop_win32.cpp \
-    glocal_win32.cpp \
-	gresolver_ipv4.cpp \
-	gresolver_ipv6.cpp \
-    grequest_win32.cpp \
-    gresolver_win32.cpp \
-    gsimpleclient_win32.cpp \
-    gsocket_win32.cpp \
-    mingw.mak
-
-AM_CPPFLAGS = -I$(top_srcdir)/lib/$(COMPILER_VERSION) -I$(top_srcdir)/src/glib  -I$(top_srcdir)/src/gssl
 noinst_LIBRARIES = libgnet.a
-libgnet_a_SOURCES = \
-	$(DNS_SOURCES) \
-	gmonitor.cpp \
-	gaddress_ip.cpp \
-	gaddress.h \
-	gbufferedserverpeer.cpp \
-	gbufferedserverpeer.h \
-	gclientptr.h \
-	gclient.cpp \
-	gclient.h \
-	gconnection.cpp \
-	gconnection.h \
-	gconnectionlookup.h \
-	gconnectionlookup_unix.cpp \
-	gdescriptor.cpp \
-	gdescriptor.h \
-	gdescriptor_unix.cpp \
-	gevent.h \
-	geventhandler.cpp \
-	geventhandler.h \
-	geventloop.cpp \
-	geventloop.h \
-	geventloop_unix.cpp \
-	gheapclient.cpp \
-	gheapclient.h \
-	glinebuffer.cpp \
-	glinebuffer.h \
-	glocal.cpp \
-	glocal.h \
-	gmonitor.h \
-	gmultiserver.cpp \
-	gmultiserver.h \
-	gnet.h \
-	grequest.h \
-	gresolver.cpp \
-	gresolver.h \
-	gresolverinfo.cpp \
-	gresolverinfo.h \
-	gserver.cpp \
-	gserver.h \
-	gsimpleclient.cpp \
-	gsimpleclient.h \
-	gsimpleclient_unix.cpp \
-	gsocket.h \
-	gsocket.cpp \
-	gsocket_unix.cpp \
-	gsocketprotocol.cpp \
-	gsocketprotocol.h \
-	gtimer.cpp \
-	gtimer.h \
-	gtimerlist.cpp \
-	gtimerlist.h
+@GCONFIG_WINDOWS_FALSE@AM_CPPFLAGS = -I$(top_srcdir)/src/glib  -I$(top_srcdir)/src/gssl
+@GCONFIG_WINDOWS_TRUE@AM_CPPFLAGS = -I$(top_srcdir)/src/glib  -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/win32
+@GCONFIG_WINDOWS_FALSE@EXTRA_DIST = \
+@GCONFIG_WINDOWS_FALSE@	$(DNS_EXTRA_DIST) \
+@GCONFIG_WINDOWS_FALSE@	gaddress_ipv4.cpp \
+@GCONFIG_WINDOWS_FALSE@	gaddress_ipv6.cpp \
+@GCONFIG_WINDOWS_FALSE@    gdescriptor_win32.cpp \
+@GCONFIG_WINDOWS_FALSE@    geventloop_win32.cpp \
+@GCONFIG_WINDOWS_FALSE@	gfutureevent_win32.cpp \
+@GCONFIG_WINDOWS_FALSE@    gsocket_win32.cpp
 
+@GCONFIG_WINDOWS_TRUE@EXTRA_DIST = \
+@GCONFIG_WINDOWS_TRUE@	gaddress_ipv4.cpp \
+@GCONFIG_WINDOWS_TRUE@	gaddress_ipv6.cpp \
+@GCONFIG_WINDOWS_TRUE@	gdescriptor_unix.cpp \
+@GCONFIG_WINDOWS_TRUE@	geventloop_unix.cpp \
+@GCONFIG_WINDOWS_TRUE@	gfutureevent_unix.cpp \
+@GCONFIG_WINDOWS_TRUE@	gsocket_unix.cpp \
+@GCONFIG_WINDOWS_TRUE@	glocal_dns_disabled.cpp \
+@GCONFIG_WINDOWS_TRUE@	gresolver_dns_disabled.cpp
+
+@GCONFIG_WINDOWS_FALSE@libgnet_a_SOURCES = \
+@GCONFIG_WINDOWS_FALSE@	$(DNS_SOURCES) \
+@GCONFIG_WINDOWS_FALSE@	gmonitor.cpp \
+@GCONFIG_WINDOWS_FALSE@	gaddress_ip.cpp \
+@GCONFIG_WINDOWS_FALSE@	gaddress.h \
+@GCONFIG_WINDOWS_FALSE@	gaddress4.h \
+@GCONFIG_WINDOWS_FALSE@	gaddress4.cpp \
+@GCONFIG_WINDOWS_FALSE@	gaddress6.h \
+@GCONFIG_WINDOWS_FALSE@	gaddress6.cpp \
+@GCONFIG_WINDOWS_FALSE@	gbufferedserverpeer.cpp \
+@GCONFIG_WINDOWS_FALSE@	gbufferedserverpeer.h \
+@GCONFIG_WINDOWS_FALSE@	gclientptr.h \
+@GCONFIG_WINDOWS_FALSE@	gclient.cpp \
+@GCONFIG_WINDOWS_FALSE@	gclient.h \
+@GCONFIG_WINDOWS_FALSE@	gconnection.cpp \
+@GCONFIG_WINDOWS_FALSE@	gconnection.h \
+@GCONFIG_WINDOWS_FALSE@	gdescriptor.cpp \
+@GCONFIG_WINDOWS_FALSE@	gdescriptor.h \
+@GCONFIG_WINDOWS_FALSE@	gdescriptor_unix.cpp \
+@GCONFIG_WINDOWS_FALSE@	gevent.h \
+@GCONFIG_WINDOWS_FALSE@	geventhandler.cpp \
+@GCONFIG_WINDOWS_FALSE@	geventhandler.h \
+@GCONFIG_WINDOWS_FALSE@	geventhandlerlist.cpp \
+@GCONFIG_WINDOWS_FALSE@	geventhandlerlist.h \
+@GCONFIG_WINDOWS_FALSE@	geventloop.cpp \
+@GCONFIG_WINDOWS_FALSE@	geventloop.h \
+@GCONFIG_WINDOWS_FALSE@	geventloop_unix.cpp \
+@GCONFIG_WINDOWS_FALSE@	gexceptionhandler.cpp \
+@GCONFIG_WINDOWS_FALSE@	gexceptionhandler.h \
+@GCONFIG_WINDOWS_FALSE@	gfutureevent.h \
+@GCONFIG_WINDOWS_FALSE@	gfutureevent_unix.cpp \
+@GCONFIG_WINDOWS_FALSE@	gheapclient.cpp \
+@GCONFIG_WINDOWS_FALSE@	gheapclient.h \
+@GCONFIG_WINDOWS_FALSE@	glinebuffer.cpp \
+@GCONFIG_WINDOWS_FALSE@	glinebuffer.h \
+@GCONFIG_WINDOWS_FALSE@	glocal.cpp \
+@GCONFIG_WINDOWS_FALSE@	glocal.h \
+@GCONFIG_WINDOWS_FALSE@	glocation.cpp \
+@GCONFIG_WINDOWS_FALSE@	glocation.h \
+@GCONFIG_WINDOWS_FALSE@	gmonitor.h \
+@GCONFIG_WINDOWS_FALSE@	gmultiserver.cpp \
+@GCONFIG_WINDOWS_FALSE@	gmultiserver.h \
+@GCONFIG_WINDOWS_FALSE@	gnet.h \
+@GCONFIG_WINDOWS_FALSE@	gresolver.cpp \
+@GCONFIG_WINDOWS_FALSE@	gresolver.h \
+@GCONFIG_WINDOWS_FALSE@	gresolverfuture.cpp \
+@GCONFIG_WINDOWS_FALSE@	gresolverfuture.h \
+@GCONFIG_WINDOWS_FALSE@	gserver.cpp \
+@GCONFIG_WINDOWS_FALSE@	gserver.h \
+@GCONFIG_WINDOWS_FALSE@	gsimpleclient.cpp \
+@GCONFIG_WINDOWS_FALSE@	gsimpleclient.h \
+@GCONFIG_WINDOWS_FALSE@	gsocket.h \
+@GCONFIG_WINDOWS_FALSE@	gsocket.cpp \
+@GCONFIG_WINDOWS_FALSE@	gsocket_unix.cpp \
+@GCONFIG_WINDOWS_FALSE@	gsocketprotocol.cpp \
+@GCONFIG_WINDOWS_FALSE@	gsocketprotocol.h \
+@GCONFIG_WINDOWS_FALSE@	gsocks.cpp \
+@GCONFIG_WINDOWS_FALSE@	gsocks.h \
+@GCONFIG_WINDOWS_FALSE@	gtask.cpp \
+@GCONFIG_WINDOWS_FALSE@	gtask.h \
+@GCONFIG_WINDOWS_FALSE@	gtimer.cpp \
+@GCONFIG_WINDOWS_FALSE@	gtimer.h \
+@GCONFIG_WINDOWS_FALSE@	gtimerlist.cpp \
+@GCONFIG_WINDOWS_FALSE@	gtimerlist.h
+
+@GCONFIG_WINDOWS_TRUE@libgnet_a_SOURCES = \
+@GCONFIG_WINDOWS_TRUE@	gaddress4.cpp \
+@GCONFIG_WINDOWS_TRUE@	gaddress4.h \
+@GCONFIG_WINDOWS_TRUE@	gaddress6.cpp \
+@GCONFIG_WINDOWS_TRUE@	gaddress6.h \
+@GCONFIG_WINDOWS_TRUE@	gaddress.h \
+@GCONFIG_WINDOWS_TRUE@	gaddress_ip.cpp \
+@GCONFIG_WINDOWS_TRUE@	gbufferedserverpeer.cpp \
+@GCONFIG_WINDOWS_TRUE@	gbufferedserverpeer.h \
+@GCONFIG_WINDOWS_TRUE@	gclient.cpp \
+@GCONFIG_WINDOWS_TRUE@	gclient.h \
+@GCONFIG_WINDOWS_TRUE@	gclientptr.h \
+@GCONFIG_WINDOWS_TRUE@	gconnection.cpp \
+@GCONFIG_WINDOWS_TRUE@	gconnection.h \
+@GCONFIG_WINDOWS_TRUE@	gdescriptor.cpp \
+@GCONFIG_WINDOWS_TRUE@	gdescriptor.h \
+@GCONFIG_WINDOWS_TRUE@	gdescriptor_win32.cpp \
+@GCONFIG_WINDOWS_TRUE@	gevent.h \
+@GCONFIG_WINDOWS_TRUE@	geventhandler.cpp \
+@GCONFIG_WINDOWS_TRUE@	geventhandler.h \
+@GCONFIG_WINDOWS_TRUE@	geventhandlerlist.cpp \
+@GCONFIG_WINDOWS_TRUE@	geventhandlerlist.h \
+@GCONFIG_WINDOWS_TRUE@	geventloop.cpp \
+@GCONFIG_WINDOWS_TRUE@	geventloop.h \
+@GCONFIG_WINDOWS_TRUE@	geventloop_win32.cpp \
+@GCONFIG_WINDOWS_TRUE@	gexceptionhandler.cpp \
+@GCONFIG_WINDOWS_TRUE@	gexceptionhandler.h \
+@GCONFIG_WINDOWS_TRUE@	gfutureevent.h \
+@GCONFIG_WINDOWS_TRUE@	gfutureevent_win32.cpp \
+@GCONFIG_WINDOWS_TRUE@	gheapclient.cpp \
+@GCONFIG_WINDOWS_TRUE@	gheapclient.h \
+@GCONFIG_WINDOWS_TRUE@	glinebuffer.cpp \
+@GCONFIG_WINDOWS_TRUE@	glinebuffer.h \
+@GCONFIG_WINDOWS_TRUE@	glocal.cpp \
+@GCONFIG_WINDOWS_TRUE@	glocal.h \
+@GCONFIG_WINDOWS_TRUE@	glocation.cpp \
+@GCONFIG_WINDOWS_TRUE@	glocation.h \
+@GCONFIG_WINDOWS_TRUE@	gmonitor.cpp \
+@GCONFIG_WINDOWS_TRUE@	gmonitor.h \
+@GCONFIG_WINDOWS_TRUE@	gmultiserver.cpp \
+@GCONFIG_WINDOWS_TRUE@	gmultiserver.h \
+@GCONFIG_WINDOWS_TRUE@	gnet.h \
+@GCONFIG_WINDOWS_TRUE@	gresolver.cpp \
+@GCONFIG_WINDOWS_TRUE@	gresolver.h \
+@GCONFIG_WINDOWS_TRUE@	gresolverfuture.cpp \
+@GCONFIG_WINDOWS_TRUE@	gresolverfuture.h \
+@GCONFIG_WINDOWS_TRUE@	gserver.cpp \
+@GCONFIG_WINDOWS_TRUE@	gserver.h \
+@GCONFIG_WINDOWS_TRUE@	gsimpleclient.cpp \
+@GCONFIG_WINDOWS_TRUE@	gsimpleclient.h \
+@GCONFIG_WINDOWS_TRUE@	gsocket.cpp \
+@GCONFIG_WINDOWS_TRUE@	gsocket.h \
+@GCONFIG_WINDOWS_TRUE@	gsocketprotocol.cpp \
+@GCONFIG_WINDOWS_TRUE@	gsocketprotocol.h \
+@GCONFIG_WINDOWS_TRUE@	gsocket_win32.cpp \
+@GCONFIG_WINDOWS_TRUE@	gsocks.cpp \
+@GCONFIG_WINDOWS_TRUE@	gsocks.h \
+@GCONFIG_WINDOWS_TRUE@	gtask.cpp \
+@GCONFIG_WINDOWS_TRUE@	gtask.h \
+@GCONFIG_WINDOWS_TRUE@	gtimer.cpp \
+@GCONFIG_WINDOWS_TRUE@	gtimer.h \
+@GCONFIG_WINDOWS_TRUE@	gtimerlist.cpp \
+@GCONFIG_WINDOWS_TRUE@	gtimerlist.h
+
+@GCONFIG_WINDOWS_FALSE@DNS_EXTRA_DIST = gresolver_dns_disabled.cpp glocal_dns_disabled.cpp
+@GCONFIG_WINDOWS_FALSE@DNS_SOURCES = gresolver.cpp
 all: all-am
 
 .SUFFIXES:
@@ -445,34 +563,39 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaddress4.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaddress6.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaddress_ip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbufferedserverpeer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconnection.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconnectionlookup_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdescriptor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdescriptor_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdescriptor_win32.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventhandler.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventhandlerlist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloop_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloop_win32.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexceptionhandler.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfutureevent_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfutureevent_win32.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gheapclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glinebuffer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glocal.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glocal_dns_disabled.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glocal_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glocation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmonitor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmultiserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolver_dns_disabled.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolver_ip.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolver_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolverinfo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolverfuture.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsimpleclient.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsimpleclient_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocket_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocket_win32.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocketprotocol.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsocks.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtask.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtimer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtimerlist.Po@am__quote@
 

@@ -70,7 +70,8 @@ GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , ExceptionHa
 	m_h(0) ,
 	m_h2(0)
 {
-	m_h = ::CreateEventEx( NULL , NULL , 0 , DELETE | SYNCHRONIZE | EVENT_MODIFY_STATE | PROCESS_DUP_HANDLE ) ;
+	// (the event loop requires manual-reset because it re-tests the state of the handles after WFMO has been released)
+	m_h = ::CreateEventEx( NULL , NULL , CREATE_EVENT_MANUAL_RESET , DELETE | SYNCHRONIZE | EVENT_MODIFY_STATE | PROCESS_DUP_HANDLE ) ;
 	if( m_h == 0 )
 		throw Error( "CreateEventEx" ) ;
 
@@ -91,8 +92,9 @@ GNet::FutureEventImp::~FutureEventImp()
 
 HANDLE GNet::FutureEventImp::dup()
 {
-	// duplicate the handle so that the kernel object is
-	// only deleted once both handles are closed
+	// duplicate the handle so that the kernel object is only deleted
+	// once both handles are closed -- we need the main thread and the
+	// worker thread to both keep the kernel event-object alive
 	HANDLE h = 0 ;
 	BOOL ok = ::DuplicateHandle(
 		::GetCurrentProcess() , m_h ,
@@ -116,7 +118,7 @@ GNet::FutureEventImp::handle_type GNet::FutureEventImp::handle()
 bool GNet::FutureEventImp::send( handle_type handle ) g__noexcept
 {
 	bool ok = ::SetEvent( handle ) != 0 ;
-	::CloseHandle( handle ) ;
+	::CloseHandle( handle ) ; // kernel event-object still open
 	return ok ;
 }
 

@@ -70,7 +70,7 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & arg , const std
 		m_arg(arg) ,
 		m_getopt(m_arg,spec)
 {
-	if( !m_getopt.hasErrors() )
+	if( !m_getopt.hasErrors() && m_getopt.args().c() == 2U )
 		m_getopt.addOptionsFromFile( 1U ) ; // read argv[1] as config file
 }
 
@@ -192,6 +192,12 @@ void Main::CommandLine::showNothingToDo( bool e ) const
 	show.s() << m_arg.prefix() << ": nothing to do" << std::endl ;
 }
 
+void Main::CommandLine::showFinished( bool e ) const
+{
+	Show show( m_output , e ) ;
+	show.s() << m_arg.prefix() << ": finished" << std::endl ;
+}
+
 void Main::CommandLine::showError( const std::string & reason , bool e ) const
 {
 	Show show( m_output , e ) ;
@@ -266,16 +272,25 @@ void Main::CommandLine::showVersion( bool e ) const
 	showWarranty( e ) ;
 }
 
-void Main::CommandLine::showSemanticError( const std::string & semantic_error ) const
+void Main::CommandLine::showSemanticError( const std::string & error ) const
 {
 	Show show( m_output , true ) ;
-	show.s() << m_arg.prefix() << ": usage error: " << semantic_error << std::endl ;
+	show.s() << m_arg.prefix() << ": usage error: " << error << std::endl ;
 }
 
-void Main::CommandLine::logSemanticWarnings( const std::string & semantic_warnings ) const
+void Main::CommandLine::showSemanticWarnings( const G::StringArray & warnings ) const
 {
-	if( !semantic_warnings.empty() )
-		G_WARNING( "CommandLine::logSemanticWarnings: " << semantic_warnings ) ;
+	if( !warnings.empty() )
+	{
+		Show show( m_output , true ) ;
+		show.s() << m_arg.prefix() << ": warning: " << G::Str::join("\n"+m_arg.prefix()+": warning: ",warnings) << std::endl ;
+	}
+}
+
+void Main::CommandLine::logSemanticWarnings( const G::StringArray & warnings ) const
+{
+	for( G::StringArray::const_iterator p = warnings.begin() ; p != warnings.end() ; ++p )
+		G_WARNING( "CommandLine::logSemanticWarnings: " << (*p) ) ;
 }
 
 // ===

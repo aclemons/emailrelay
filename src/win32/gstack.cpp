@@ -157,7 +157,7 @@ void GGui::Stack::create( HWND hparent , const std::string & title , int idi , u
 
 	HWND hsheet = reinterpret_cast<HWND>(rc) ;
 	G_DEBUG( "GGui::Stack::create: hsheet=" << hsheet ) ;
-	setHandle( hsheet ) ;
+	setHandle( hsheet ) ; // GGui::WindowBase
 	setptr( hsheet , this ) ;
 
 	PropSheet_CancelToClose( hsheet ) ; // 'ok' and 'cancel' makes no sense -- 'close' with disabled 'cancel' is marginally better
@@ -168,7 +168,7 @@ void GGui::Stack::onCompleteImp( bool b )
 	G_DEBUG( "GGui::Stack::onCompleteImp: b=" << b << " notify=" << m_notify_hwnd << " msg=" << m_notify_message ) ;
 	setptr( handle() , 0 ) ;
 	if( m_notify_message )
-		::PostMessage( m_notify_hwnd , m_notify_message , b?1U:0U , 0 ) ;
+		::PostMessage( m_notify_hwnd , m_notify_message , b?1U:0U , reinterpret_cast<LPARAM>(handle()) ) ;
 }
 
 GGui::Stack::~Stack()

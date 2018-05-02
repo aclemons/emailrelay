@@ -71,7 +71,7 @@ namespace
 }
 
 static Result install( std::string commandline , std::string name , std::string display_name ,
-	std::string description )
+	std::string description , bool autostart )
 {
 	SC_HANDLE hmanager = OpenSCManager( nullptr , nullptr , SC_MANAGER_ALL_ACCESS ) ;
 	if( hmanager == 0 )
@@ -80,8 +80,10 @@ static Result install( std::string commandline , std::string name , std::string 
 		return Result(true,e) ;
 	}
 
+	DWORD start_type = autostart ? SERVICE_AUTO_START : SERVICE_DEMAND_START ;
+
 	SC_HANDLE hservice = CreateServiceA( hmanager , name.c_str() , display_name.c_str() ,
-		SERVICE_ALL_ACCESS , SERVICE_WIN32_OWN_PROCESS , SERVICE_AUTO_START , SERVICE_ERROR_NORMAL ,
+		SERVICE_ALL_ACCESS , SERVICE_WIN32_OWN_PROCESS , start_type , SERVICE_ERROR_NORMAL ,
 		commandline.c_str() ,
 		nullptr , nullptr , nullptr , nullptr , nullptr ) ;
 
@@ -92,7 +94,9 @@ static Result install( std::string commandline , std::string name , std::string 
 		return Result(false,e) ;
 	}
 
-	if( description.empty() ) description = ( display_name + " service" ) ;
+	if( description.empty() )
+		description = ( display_name + " service" ) ;
+
 	if( REG_SZ > 5 && (description.length()+5) > REG_SZ )
 	{
 		description.resize(REG_SZ-5) ;
@@ -109,29 +113,52 @@ static Result install( std::string commandline , std::string name , std::string 
 }
 
 std::string service_install( std::string commandline , std::string name , std::string display_name ,
-	std::string description )
+	std::string description , bool autostart )
 {
 	if( name.empty() || display_name.empty() )
 		return "invalid zero-length service name" ;
 
-	Result r = install( commandline , name , display_name , description ) ;
+	Result r = install( commandline , name , display_name , description , autostart ) ;
 	if( !r.manager && r.e == ERROR_SERVICE_EXISTS )
 	{
 		std::string error = service_remove( name ) ;
 		if( !error.empty() )
 			return error ;
 
-		r = install( commandline , name , display_name , description ) ;
+		r = install( commandline , name , display_name , description , autostart ) ;
 	}
 
 	return r.reason ;
 }
 
+bool service_installed( std::string name )
+{
+	SC_HANDLE hmanager = OpenSCManager( nullptr , nullptr , SC_MANAGER_CONNECT ) ;
+	if( hmanager == 0 )
+		return false ;
+
+	SC_HANDLE hservice = OpenService( hmanager , name.c_str() , SERVICE_QUERY_CONFIG ) ;
+	if( hservice == 0 )
+	{
+		CloseServiceHandle( hmanager ) ;
+		return false ;
+	}
+
+	CloseServiceHandle( hservice ) ;
+	CloseServiceHandle( hmanager ) ;
+	return true ;
+}
+
 #else
 
-std::string service_install( std::string , std::string , std::string , std::string )
+std::string service_install( std::string , std::string , std::string , std::string , bool )
 {
 	return std::string() ;
+}
+
+bool service_installed( std::string name )
+{
+	return false ;
 }
 
 #endif

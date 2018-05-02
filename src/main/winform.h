@@ -38,11 +38,14 @@ namespace Main
 }
 
 /// \class Main::WinForm
-/// A class for the main user interface comprising a
-/// 'property sheet' containing a stack of 'property
-/// page' dialog boxes. In practice each dialog box
-/// is made up of a COMMCTL List View control (see
+/// A class for the main user interface comprising a 'property sheet'
+/// containing a stack of 'property page' dialog boxes. In practice each
+/// dialog box is made up of a COMMCTL List View control (see
 /// GGui::ListView).
+///
+/// The WinForm manages all the the GGui::Stack callbacks, and also
+/// asks GGui::Stack to post a user-other message to the WinApp when
+/// it is complete.
 ///
 class Main::WinForm : public GGui::Stack , private GGui::StackPageCallback
 {
@@ -54,13 +57,12 @@ public:
 		///< Closes the form and destroys its window.
 
 	bool closed() const ;
-		///< Returns true if closed (because of the ok/cancel
-		///< buttons, the window-close button, or close()).
+		///< Returns true if close()d. If closed() there is no window and the
+		///< WinForm object can be deleted.
 
 	void setStatus( const std::string & , const std::string & , const std::string & ) ;
-		///< Updates the 'status' property page.
-		///< The parameters come from slot/signal
-		///< parameters.
+		///< Updates the 'status' property page. The parameters come
+		///< from slot/signal parameters.
 
 private:
 	virtual void onInit( HWND , const std::string & ) override ; // StackPageCallback

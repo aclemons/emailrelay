@@ -79,6 +79,9 @@ public:
 	void showNothingToDo( bool error_stream = false ) const ;
 		///< Writes a nothing-to-do message.
 
+	void showFinished( bool error_stream = false ) const ;
+		///< Writes an all-done message.
+
 	void showError( const std::string & reason , bool error_stream = true ) const ;
 		///< Writes a failed message.
 
@@ -94,11 +97,14 @@ public:
 	void showBuildConfiguration( bool error_stream = false , const std::string & = std::string() ) const ;
 		///< Writes a build configuration line.
 
-	void logSemanticWarnings( const std::string & semantic_warnings ) const ;
-		///< Logs the given semantic warnings. See Configuration::semanticWarnings().
-
 	void showSemanticError( const std::string & semantic_error ) const ;
-		///< Writes the given semantic error. See Configuration::semanticError().
+		///< Displays the given semantic error. See Configuration::semanticError().
+
+	void showSemanticWarnings( const G::StringArray & semantic_warnings ) const ;
+		///< Displays the given semantic warnings. See Configuration::semanticWarnings().
+
+	void logSemanticWarnings( const G::StringArray & semantic_warnings ) const ;
+		///< Logs the given semantic warnings. See Configuration::semanticWarnings().
 
 private:
 	CommandLine( const CommandLine & ) ;

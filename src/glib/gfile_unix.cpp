@@ -64,6 +64,12 @@ bool G::File::exists( const char * path , bool & enoent , bool & eaccess )
 	}
 }
 
+bool G::File::isLink( const Path & path )
+{
+	struct stat statbuf ;
+	return 0 == ::stat( path.str().c_str() , &statbuf ) && (statbuf.st_mode & S_IFLNK) ;
+}
+
 bool G::File::isDirectory( const Path & path )
 {
 	struct stat statbuf ;
@@ -116,19 +122,15 @@ G::EpochTime G::File::time( const Path & path , const NoThrow & )
 
 bool G::File::chmodx( const Path & path , bool do_throw )
 {
-	mode_t mode = 0 ;
 	struct stat statbuf ;
-	if( 0 == ::stat( path.str().c_str() , &statbuf ) )
-	{
-		mode = statbuf.st_mode | S_IRUSR | S_IXUSR ; // add user-read and user-executable
-		if( mode & S_IRGRP ) mode |= S_IXGRP ; // add group-executable iff group-read
-		if( mode & S_IROTH ) mode |= S_IXOTH ; // add world-executable iff world-read
-	}
-	else
-	{
-		// shouldnt really get here -- default to open permissions, but limited by umask
-		mode = 0777 ;
-	}
+	mode_t mode =
+		0 == ::stat( path.str().c_str() , &statbuf ) ?
+			statbuf.st_mode :
+			mode_t(0777) ; // default to open permissions, but limited by umask
+
+	mode |= ( S_IRUSR | S_IXUSR ) ; // add user-read and user-executable
+	if( mode & S_IRGRP ) mode |= S_IXGRP ; // add group-executable iff group-read
+	if( mode & S_IROTH ) mode |= S_IXOTH ; // add world-executable iff world-read
 
 	// apply the current umask
 	mode_t mask = ::umask( ::umask(0) ) ;

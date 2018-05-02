@@ -126,51 +126,50 @@ void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
 		std::string message_location = m_new_msg->prepare( session_auth_id , peer_socket_address , peer_certificate ) ;
 
 		// start the filter
-		G_LOG( "GSmtp::ProtocolMessageStore::process: filter: [" << m_filter->id() << "] [" << message_location << "]" ) ;
+		G_LOG( "GSmtp::ProtocolMessageStore::process: filter start: [" << m_filter->id() << "] [" << message_location << "]" ) ;
 		m_filter->start( message_location ) ;
 	}
 	catch( std::exception & e ) // catch filtering errors
 	{
-		G_DEBUG( "GSmtp::ProtocolMessageStore::process: exception: " << e.what() ) ;
+		G_WARNING( "GSmtp::ProtocolMessageStore::process: message processing exception: " << e.what() ) ;
 		clear() ;
-		m_done_signal.emit( false , 0UL , e.what() ) ;
+		m_done_signal.emit( false , 0UL , "failed" , e.what() ) ;
 	}
 }
 
-void GSmtp::ProtocolMessageStore::filterDone( bool ok )
+void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 {
 	try
 	{
-		G_DEBUG( "GSmtp::ProtocolMessageStore::filterDone: " << (ok?1:0) ) ;
+		G_DEBUG( "GSmtp::ProtocolMessageStore::filterDone: " << filter_result ) ;
 		G_ASSERT( m_new_msg.get() != nullptr ) ;
 		if( m_new_msg.get() == nullptr )
 			throw G::Exception( "internal error" ) ; // never gets here
 
-		// interpret the filter result -- note different semantics wrt. client-side
-		bool ignore_this = !ok && m_filter->specialCancelled() ;
-		bool rescan = m_filter->specialOther() ;
+		const bool ok = filter_result == 0 ;
+		const bool abandon = filter_result == 1 ;
+		const bool rescan = m_filter->special() ;
+		G_ASSERT( m_filter->reason().empty() == (ok || abandon) ) ; // filter post-condition
+
+		G_LOG( "GSmtp::ProtocolMessageStore::filterDone: filter done: " << m_filter->str(true) ) ;
 
 		unsigned long id = 0UL ;
-		std::string reason ;
 		if( ok )
 		{
 			// commit the message to the store
-			m_new_msg->commit() ;
+			m_new_msg->commit( true ) ;
 			id = m_new_msg->id() ;
 		}
-		else if( ignore_this )
+		else if( abandon )
 		{
-			; // no-op
+			// make a token effort to commit the message
+			// but ignore errors and dont set the id
+			m_new_msg->commit( false ) ;
 		}
 		else
 		{
-			reason = m_filter->text() ;
-			G_LOG_S( "GSmtp::ProtocolMessageStore::filterDone: error storing message: [" << reason << "]" ) ;
-			reason = "rejected" ; // don't tell the client too much
+			G_LOG_S( "GSmtp::ProtocolMessageStore::filterDone: rejected by filter: [" << m_filter->reason() << "]" ) ;
 		}
-
-		G_LOG( "GSmtp::ProtocolMessageStore::process: filter: ok=" << ok << " "
-			<< "ignore=" << ignore_this << " rescan=" << rescan << " text=[" << G::Str::printable(reason) << "]" ) ;
 
 		if( rescan )
 		{
@@ -178,19 +177,21 @@ void GSmtp::ProtocolMessageStore::filterDone( bool ok )
 			m_store.rescan() ;
 		}
 
+		std::string filter_response = m_filter->response() ;
+		std::string filter_reason = m_filter->reason() ;
 		clear() ;
 		G_DEBUG( "GSmtp::ProtocolMessageStore::filterDone: emiting done signal" ) ;
-		m_done_signal.emit( reason.empty() , id , reason ) ;
+		m_done_signal.emit( ok || abandon , id , filter_response , filter_reason ) ;
 	}
 	catch( std::exception & e ) // catch filtering errors
 	{
-		G_DEBUG( "GSmtp::ProtocolMessageStore::filterDone: exception: " << e.what() ) ;
+		G_WARNING( "GSmtp::ProtocolMessageStore::filterDone: filter exception: " << e.what() ) ;
 		clear() ;
-		m_done_signal.emit( false , 0UL , e.what() ) ;
+		m_done_signal.emit( false , 0UL , "rejected" , e.what() ) ;
 	}
 }
 
-G::Slot::Signal3<bool,unsigned long,std::string> & GSmtp::ProtocolMessageStore::doneSignal()
+G::Slot::Signal4<bool,unsigned long,std::string,std::string> & GSmtp::ProtocolMessageStore::doneSignal()
 {
 	return m_done_signal ;
 }

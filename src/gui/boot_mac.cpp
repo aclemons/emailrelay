@@ -53,4 +53,9 @@ bool Boot::uninstall( const G::Path & dir_boot , const std::string & , const G::
 		G::File::remove( dir_boot + exe.basename() , G::File::NoThrow() ) ;
 }
 
+bool Boot::installed( const G::Path & dir_boot , const std::string & name )
+{
+	return G::File::exists( dir_boot + name + name , G::File::NoThrow() ) ; // not tested
+}
+
 /// \file boot_mac.cpp

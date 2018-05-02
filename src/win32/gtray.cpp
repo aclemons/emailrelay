@@ -34,12 +34,19 @@ GGui::Tray::Tray( unsigned int icon_id , const WindowBase & window ,
 	m_info.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP ;
 	m_info.uCallbackMessage = message ;
 	m_info.hIcon = ::LoadIcon( ApplicationInstance::hinstance() , MAKEINTRESOURCE(icon_id)) ;
+	strncpy_s( m_info.szTip , sizeof(m_info.szTip) , tip.c_str() , _TRUNCATE ) ;
+	//m_info.dwState = 0 ;
+	//m_info.dwStateMask = 0 ;
+	//m_info.szInfo ...
+	//m_info.uVersion = 0 ;
+	//m_info.szInfoTitle ...
+	//m_info.dwInfoFlags = 0 ;
+	//m_info.guidItem = ...
+	//m_info.hBalloonIcon = 0 ;
+
 	if( m_info.hIcon == NULL )
 		throw IconError() ;
 
-	// TODO new data members for Windows 2000
-
-	strncpy_s( m_info.szTip , sizeof(m_info.szTip) , tip.c_str() , _TRUNCATE ) ;
 	bool ok = !! ::Shell_NotifyIconA( NIM_ADD , &m_info ) ;
 	if( !ok )
 		throw Error() ;

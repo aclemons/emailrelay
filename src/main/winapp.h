@@ -55,7 +55,6 @@ namespace Main
 /// "connecting to ..." and the Main::WinApp class will display them
 /// (in a status page, for instance).
 ///
-///
 class Main::WinApp : public GGui::ApplicationBase , public Main::Output
 {
 public:
@@ -80,6 +79,9 @@ public:
 		///< Puts up a message box. Override from Main::Output.
 
 	virtual G::Options::Layout layout() const override ;
+		///< Override from Main::Output.
+
+	virtual bool simpleOutput() const override ;
 		///< Override from Main::Output.
 
 	void onError( const std::string & message ) ;
@@ -111,7 +113,6 @@ private:
 	virtual bool onClose() override ;
 	virtual void onTrayDoubleClick() override ;
 	virtual void onTrayRightMouseButtonDown() override ;
-	virtual void onDimension( int & , int & ) override ;
 	virtual bool onSysCommand( SysCommand ) override ;
 	virtual LRESULT onUser( WPARAM , LPARAM ) override ;
 	virtual LRESULT onUserOther( WPARAM , LPARAM ) override ;

@@ -21,47 +21,99 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gfilter.h"
+#include "gstr.h"
+
+std::string GSmtp::Filter::str( bool server_side ) const
+{
+	std::string part1 = response().empty() ? "ok=1" : "ok=0" ;
+	std::string part2( abandoned() ? "abandon" : "" ) ;
+	std::string part3( special() ? (server_side?"rescan":"break") : "" ) ;
+
+	std::ostringstream ss ;
+	ss
+		<< G::Str::join( " " , part1 , part2 , part3 ) << " "
+		<< "response=[" << response() << "]" ;
+	if( reason() != response() )
+		ss << " reason=[" << reason() << "]" ;
+
+	return ss.str() ;
+}
 
 GSmtp::Filter::~Filter()
 {
 }
 
 GSmtp::Filter::Exit::Exit( int exit_code , bool server_side ) :
-	ok(false) ,
-	cancelled(false) ,
-	other(false)
+	result(f_fail) ,
+	special(false)
 {
 	if( exit_code == 0 )
 	{
-		ok = true ;
+		result = f_ok ;
 	}
-	else if( exit_code >= 100 && exit_code <= 115 )
+	else if( exit_code >= 1 && exit_code < 100 )
 	{
-		if( exit_code == 100 )
+		result = f_fail ;
+	}
+	else if( exit_code == 100 )
+	{
+		result = f_abandon ;
+	}
+	else if( exit_code == 101 )
+	{
+		result = f_ok ;
+	}
+	if( server_side )
+	{
+		const bool rescan = true ;
+		if( exit_code == 102 )
 		{
-			cancelled = true ;
+			result = f_abandon ; special = rescan ;
 		}
-		else if( exit_code == 101 )
+		else if( exit_code == 103 )
 		{
-			ok = true ;
-			other = true ;
+			result = f_ok ; special = rescan ;
 		}
-		else
+		else if( exit_code == 104 && server_side )
 		{
-			bool goodbit = !!( (exit_code-100) & 1 ) ;
-			bool rescanbit = !!( (exit_code-100) & 2 ) ;
-			bool stopscanbit = !!( (exit_code-100) & 4 ) ;
-			bool cancelbit = !!( (exit_code-100) & 8 ) ;
+			result = f_fail ; special = rescan ;
+		}
+	}
+	else // client-side
+	{
+		const bool stop_scanning = true ;
+		if( exit_code == 102 )
+		{
+			result = f_ok ; special = stop_scanning ;
+		}
+		else if( exit_code == 103 )
+		{
+			result = f_ok ;
+		}
+		else if( exit_code == 104 )
+		{
+			result = f_abandon ; special = stop_scanning ;
+		}
+		else if( exit_code == 105 )
+		{
+			result = f_fail ; special = stop_scanning ;
+		}
+	}
+}
 
-			cancelled = cancelbit ;
-			ok = cancelled ? false : goodbit ;
-			other = server_side ? rescanbit : stopscanbit ;
-		}
-	}
-	else
-	{
-		ok = false ;
-	}
+bool GSmtp::Filter::Exit::ok() const
+{
+	return result == f_ok ;
+}
+
+bool GSmtp::Filter::Exit::abandon() const
+{
+	return result == f_abandon ;
+}
+
+bool GSmtp::Filter::Exit::fail() const
+{
+	return result == f_fail ;
 }
 
 /// \file gfilter.cpp

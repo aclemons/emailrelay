@@ -29,9 +29,9 @@
 #	directory getting cleaned up.
 #
 
-MAC_SOURCES = dir_mac.cpp boot_mac.cpp glink_mac.cpp
-WIN32_SOURCES = dir_win32.cpp boot_win32.cpp glink_win32.cpp emailrelay-gui.rc
-UNIX_SOURCES = dir_unix.cpp boot_unix.cpp glink_unix.cpp
+MAC_SOURCES = access_mac.cpp dir_mac.cpp boot_mac.cpp glink_mac.cpp
+WIN32_SOURCES = access_win32.cpp dir_win32.cpp boot_win32.cpp glink_win32.cpp emailrelay-gui.rc
+UNIX_SOURCES = access_unix.cpp dir_unix.cpp boot_unix.cpp glink_unix.cpp
 
 if GCONFIG_WINDOWS
 OS_EXTRA_DIST = $(MAC_SOURCES) $(UNIX_SOURCES)
@@ -50,7 +50,7 @@ endif
 endif
 
 EXTRA_DIST=\
-	emailrelay.exe.manifest \
+	emailrelay-gui.exe.manifest \
 	gcominit.h \
 	$(OS_EXTRA_DIST)
 
@@ -107,6 +107,7 @@ noinst_SCRIPTS = $(OS_NOINST)
 
 emailrelay_gui_real_SOURCES = \
 	$(OS_SOURCES) \
+	access.h \
 	boot.h \
 	dir.cpp \
 	dir.h \
@@ -126,14 +127,13 @@ emailrelay_gui_real_SOURCES = \
 	pages.h \
 	qt.h \
 	serverconfiguration.cpp \
-	serverconfiguration.h
+	serverconfiguration.h \
+	glibsources.cpp
 
 emailrelay_gui_real_DEPENDENCIES = $(MOC_OBJECTS)
 
 emailrelay_gui_real_LDADD = \
 	$(MOC_OBJECTS) \
-	$(top_builddir)/src/glib/libglib.a \
-	$(top_builddir)/src/main/libmain.a \
 	$(GCONFIG_QT_LIBS)
 
 install-exec-hook:

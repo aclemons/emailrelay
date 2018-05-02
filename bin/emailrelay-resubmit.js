@@ -26,7 +26,7 @@
 
 // configuration
 //
-var cfg_store = "c:/windows/spool/emailrelay" ;
+var cfg_store = "C:/ProgramData/E-MailRelay/spool" ;
 var cfg_retry_limit = 5 ;
 var cfg_debug = false ;
 
@@ -53,7 +53,7 @@ function debug( line )
 var fso = WScript.CreateObject( "Scripting.FileSystemObject" ) ;
 if( ! fso.FolderExists( cfg_store ) )
 {
-	WScript.StdOut.WriteLine( "invalid spool directory: \"" + cfg_store + "\"" ) ;
+	WScript.Echo( "invalid spool directory: \"" + cfg_store + "\"" ) ;
 	WScript.Quit( 1 ) ;
 }
 

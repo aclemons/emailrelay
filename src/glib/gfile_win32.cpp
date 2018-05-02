@@ -81,6 +81,13 @@ bool G::File::exists( const char * path , bool & enoent , bool & eaccess )
 	return ok ;
 }
 
+bool G::File::isLink( const Path & path )
+{
+	// this is weak, but good enough
+	struct _stat statbuf ;
+	return 0 == ::_stat( path.str().c_str() , &statbuf ) && !(statbuf.st_mode & S_IFDIR) ;
+}
+
 bool G::File::isDirectory( const Path & path )
 {
 	struct _stat statbuf ;
