@@ -83,8 +83,10 @@ subdir = src/gnet
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/pkg.m4 \
-	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
+	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
+	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -103,7 +105,7 @@ am__libgnet_a_SOURCES_DIST = gresolver.cpp gmonitor.cpp \
 	gaddress_ip.cpp gaddress.h gaddress4.h gaddress4.cpp \
 	gaddress6.h gaddress6.cpp gbufferedserverpeer.cpp \
 	gbufferedserverpeer.h gclientptr.h gclient.cpp gclient.h \
-	gconnection.cpp gconnection.h gdescriptor.cpp gdescriptor.h \
+	gconnection.cpp gconnection.h gdescriptor.h \
 	gdescriptor_unix.cpp gevent.h geventhandler.cpp \
 	geventhandler.h geventhandlerlist.cpp geventhandlerlist.h \
 	geventloop.cpp geventloop.h geventloop_unix.cpp \
@@ -125,7 +127,6 @@ am__libgnet_a_SOURCES_DIST = gresolver.cpp gmonitor.cpp \
 @GCONFIG_WINDOWS_FALSE@	gaddress4.$(OBJEXT) gaddress6.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	gbufferedserverpeer.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	gclient.$(OBJEXT) gconnection.$(OBJEXT) \
-@GCONFIG_WINDOWS_FALSE@	gdescriptor.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	gdescriptor_unix.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	geventhandler.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	geventhandlerlist.$(OBJEXT) \
@@ -151,7 +152,6 @@ am__libgnet_a_SOURCES_DIST = gresolver.cpp gmonitor.cpp \
 @GCONFIG_WINDOWS_TRUE@	gaddress_ip.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	gbufferedserverpeer.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	gclient.$(OBJEXT) gconnection.$(OBJEXT) \
-@GCONFIG_WINDOWS_TRUE@	gdescriptor.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	gdescriptor_win32.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	geventhandler.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	geventhandlerlist.$(OBJEXT) \
@@ -276,6 +276,7 @@ GCONFIG_WINDMC = @GCONFIG_WINDMC@
 GCONFIG_WINDRES = @GCONFIG_WINDRES@
 GREP = @GREP@
 GZIP = @GZIP@
+HAVE_CXX11 = @HAVE_CXX11@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -399,7 +400,6 @@ noinst_LIBRARIES = libgnet.a
 @GCONFIG_WINDOWS_FALSE@	gclient.h \
 @GCONFIG_WINDOWS_FALSE@	gconnection.cpp \
 @GCONFIG_WINDOWS_FALSE@	gconnection.h \
-@GCONFIG_WINDOWS_FALSE@	gdescriptor.cpp \
 @GCONFIG_WINDOWS_FALSE@	gdescriptor.h \
 @GCONFIG_WINDOWS_FALSE@	gdescriptor_unix.cpp \
 @GCONFIG_WINDOWS_FALSE@	gevent.h \
@@ -462,7 +462,6 @@ noinst_LIBRARIES = libgnet.a
 @GCONFIG_WINDOWS_TRUE@	gclientptr.h \
 @GCONFIG_WINDOWS_TRUE@	gconnection.cpp \
 @GCONFIG_WINDOWS_TRUE@	gconnection.h \
-@GCONFIG_WINDOWS_TRUE@	gdescriptor.cpp \
 @GCONFIG_WINDOWS_TRUE@	gdescriptor.h \
 @GCONFIG_WINDOWS_TRUE@	gdescriptor_win32.cpp \
 @GCONFIG_WINDOWS_TRUE@	gevent.h \
@@ -569,7 +568,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbufferedserverpeer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconnection.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdescriptor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdescriptor_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdescriptor_win32.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventhandler.Po@am__quote@

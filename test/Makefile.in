@@ -84,8 +84,10 @@ subdir = test
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp $(top_srcdir)/test-driver
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/pkg.m4 \
-	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
+	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
+	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -93,14 +95,18 @@ CONFIG_HEADER = $(top_builddir)/gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = emailrelay-test-scanner$(EXEEXT) \
+	emailrelay-test-client$(EXEEXT) \
 	emailrelay-test-server$(EXEEXT) \
 	emailrelay-test-verifier$(EXEEXT)
 @GCONFIG_TESTING_TRUE@am__EXEEXT_2 = $(am__EXEEXT_1)
+am_emailrelay_test_client_OBJECTS = emailrelay_test_client.$(OBJEXT)
+emailrelay_test_client_OBJECTS = $(am_emailrelay_test_client_OBJECTS)
+am__DEPENDENCIES_1 =
+emailrelay_test_client_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_emailrelay_test_scanner_OBJECTS =  \
 	emailrelay_test_scanner.$(OBJEXT)
 emailrelay_test_scanner_OBJECTS =  \
 	$(am_emailrelay_test_scanner_OBJECTS)
-am__DEPENDENCIES_1 =
 emailrelay_test_scanner_DEPENDENCIES =  \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
@@ -151,10 +157,12 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(emailrelay_test_scanner_SOURCES) \
+SOURCES = $(emailrelay_test_client_SOURCES) \
+	$(emailrelay_test_scanner_SOURCES) \
 	$(emailrelay_test_server_SOURCES) \
 	$(emailrelay_test_verifier_SOURCES)
-DIST_SOURCES = $(emailrelay_test_scanner_SOURCES) \
+DIST_SOURCES = $(emailrelay_test_client_SOURCES) \
+	$(emailrelay_test_scanner_SOURCES) \
 	$(emailrelay_test_server_SOURCES) \
 	$(emailrelay_test_verifier_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
@@ -463,6 +471,7 @@ GCONFIG_WINDMC = @GCONFIG_WINDMC@
 GCONFIG_WINDRES = @GCONFIG_WINDRES@
 GREP = @GREP@
 GZIP = @GZIP@
+HAVE_CXX11 = @HAVE_CXX11@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -550,11 +559,13 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 helper_programs = \
 	emailrelay-test-scanner \
+	emailrelay-test-client \
 	emailrelay-test-server \
 	emailrelay-test-verifier
 
 helper_sources = \
 	emailrelay_test_scanner.cpp \
+	emailrelay_test_client.cpp \
 	emailrelay_test_server.cpp \
 	emailrelay_test_verifier.cpp
 
@@ -604,6 +615,7 @@ SUBDIRS = certificates
 check_SCRIPTS = $(TESTING_FILES)
 CLEANFILES = $(check_SCRIPTS) .emailrelay-test-server.pid
 AM_CPPFLAGS = \
+	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
@@ -630,6 +642,10 @@ emailrelay_test_server_LDADD = \
 	$(top_builddir)/src/win32/libextra.a \
 	$(COMMON_LDADD) \
 	$(GCONFIG_TLS_LIBS) \
+	$(SYS_LIBS)
+
+emailrelay_test_client_SOURCES = emailrelay_test_client.cpp
+emailrelay_test_client_LDADD = \
 	$(SYS_LIBS)
 
 emailrelay_test_verifier_SOURCES = emailrelay_test_verifier.cpp
@@ -679,6 +695,10 @@ $(am__aclocal_m4_deps):
 clean-checkPROGRAMS:
 	-test -z "$(check_PROGRAMS)" || rm -f $(check_PROGRAMS)
 
+emailrelay-test-client$(EXEEXT): $(emailrelay_test_client_OBJECTS) $(emailrelay_test_client_DEPENDENCIES) $(EXTRA_emailrelay_test_client_DEPENDENCIES) 
+	@rm -f emailrelay-test-client$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(emailrelay_test_client_OBJECTS) $(emailrelay_test_client_LDADD) $(LIBS)
+
 emailrelay-test-scanner$(EXEEXT): $(emailrelay_test_scanner_OBJECTS) $(emailrelay_test_scanner_DEPENDENCIES) $(EXTRA_emailrelay_test_scanner_DEPENDENCIES) 
 	@rm -f emailrelay-test-scanner$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(emailrelay_test_scanner_OBJECTS) $(emailrelay_test_scanner_LDADD) $(LIBS)
@@ -697,6 +717,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_server.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_verifier.Po@am__quote@
