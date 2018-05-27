@@ -65,7 +65,7 @@ e_examples_DATA = \
 e_examples_SCRIPTS = \
 	$(example_scripts_out)
 
-e_init_DATA = \
+e_init_SCRIPTS = \
 	$(init_scripts)
 
 CLEANFILES = \

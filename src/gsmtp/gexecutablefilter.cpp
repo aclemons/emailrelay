@@ -22,7 +22,7 @@
 #include "gsmtp.h"
 #include "gprocess.h"
 #include "gnewprocess.h"
-#include "gexecutable.h"
+#include "gexecutablecommand.h"
 #include "gexecutablefilter.h"
 #include "gstr.h"
 #include "groot.h"
@@ -34,7 +34,7 @@ GSmtp::ExecutableFilter::ExecutableFilter( GNet::ExceptionHandler & eh ,
 		m_prefix(server_side?"filter":"client filter") ,
 		m_exit(0,server_side) ,
 		m_path(path) ,
-		m_task(*this,eh,"<<exec error: __strerror__>>",G::Root::nobody())
+		m_task(*this,eh,"<<filter exec error: __strerror__>>",G::Root::nobody())
 {
 }
 
@@ -78,8 +78,9 @@ std::string GSmtp::ExecutableFilter::reason() const
 void GSmtp::ExecutableFilter::start( const std::string & message_file )
 {
 	// run the program
-	G::Executable commandline( m_path.str() ) ;
-	commandline.add( G::Path(message_file).str() ) ;
+	G::StringArray args ;
+	args.push_back( G::Path(message_file).str() ) ;
+	G::ExecutableCommand commandline( m_path.str() , args ) ;
 	G_LOG( "GSmtp::ExecutableFilter::start: " << m_prefix << ": running " << commandline.displayString() ) ;
 	m_task.start( commandline ) ;
 }
@@ -99,7 +100,7 @@ void GSmtp::ExecutableFilter::onTaskDone( int exit_code , const std::string & ou
 	}
 	else
 	{
-		if( output.find("<<exec error: ") == 0U )
+		if( output.find("<<filter exec error: ") == 0U )
 			m_response = "rejected" ;
 
 		G_LOG( "GSmtp::ExecutableFilter::onTaskDone: " << m_prefix << " exit code " << exit_code << " "

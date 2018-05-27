@@ -47,7 +47,7 @@ if test "${1}" = "-v"
 then
 	shift
 	valgrind="valgrind"
-	valgrind_sw="--leak-check=full --show-reachable=yes --num-callers=50"
+	valgrind_sw="--leak-check=full --show-reachable=no --num-callers=50"
 	sleep=4
 fi
 test -z "${1}" || exe="${1}"
@@ -76,10 +76,13 @@ Cleanup()
 {
 	echo cleaning up...
 	trap "" 0 1 2 3 13 15
-	pids="`cat server-1.pid server-2.pid proxy.pid`"
-	kill $pids
-	sleep 1
-	kill -9 $pids 2>/dev/null
+	pids="`cat server-1.pid server-2.pid proxy.pid 2>/dev/null`"
+	if test "$pids" != ""
+	then
+		kill $pids
+		sleep 1
+		kill -9 $pids 2>/dev/null
+	fi
 	rm -rf ${base_dir} 2>/dev/null
 	echo ... done
 	exit
@@ -105,13 +108,16 @@ Content()
 
 Envelope()
 {
-	echo "X-MailRelay-Format: #2821.3"
+	echo "X-MailRelay-Format: #2821.5"
 	echo "X-MailRelay-Content: 8bit"
 	echo "X-MailRelay-From: me"
 	echo "X-MailRelay-ToCount: 1"
 	echo "X-MailRelay-To-Remote:" ${USER}@`uname -n`
 	echo "X-MailRelay-Authentication: anon"
 	echo "X-MailRelay-Client: 127.0.0.1"
+	echo "X-MailRelay-ClientCertificate: "
+	echo "X-MailRelay-MailFromAuthIn: "
+	echo "X-MailRelay-MailFromAuthOut: "
 	echo "X-MailRelay-End: 1"
 }
 
@@ -219,6 +225,23 @@ CheckServers()
 	fi
 }
 
+StopServers()
+{
+	for port in ${pp}1 ${pp}2 ${pp}3
+	do
+    	perl -e '
+        	use IO::Socket ;
+        	my $p = $ARGV[0] + 100 ;
+        	my $c = "terminate" ;
+        	my $s = new IO::Socket::INET( PeerHost=>"127.0.0.1" , PeerPort=>$p , Proto=>"tcp" ) or die ;
+        	$s->send( $c . "\r\n" ) or die ;
+        	my $buffer = "" ;
+        	alarm( 2 ) ;
+        	$s->recv( $buffer , 1024 ) ;
+    	' $port
+	done
+}
+
 Ps()
 {
 	echo `basename $0`: output from \"ps -l -p `cat server-2.pid` -p `cat server-1.pid` -p `cat proxy.pid`\"...
@@ -236,8 +259,8 @@ Main()
 		rm -f ${base_dir}/spool-?/*content
 	done
 	rm -f .stop
-	echo `basename $0`: sleeping...
-	sleep 20 # allow clean sutdown with admin client while quiescent
+	StopServers
+	sleep 2
 }
 
 Init

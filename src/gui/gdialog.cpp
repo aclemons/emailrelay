@@ -136,7 +136,7 @@ void GDialog::helpButtonClicked()
 
 void GDialog::launchButtonClicked()
 {
-	G::Executable command = page(currentPageName()).launchCommand() ;
+	G::ExecutableCommand command = page(currentPageName()).launchCommand() ;
 	if( !command.exe().str().empty() )
 	{
 		m_launcher.reset( new Launcher( *this , command ) ) ;
@@ -250,7 +250,7 @@ void GDialog::updateLaunchButton( GPage & page )
 {
 	if( m_launch_button != nullptr )
 	{
-		G::Executable launch_command = page.launchCommand() ;
+		G::ExecutableCommand launch_command = page.launchCommand() ;
 		bool enabled = launch_command.exe() != G::Path() ;
 		if( m_virgin_flag_file != G::Path() && G::File::exists(m_virgin_flag_file) )
 			enabled = false ; // grey it out first time round

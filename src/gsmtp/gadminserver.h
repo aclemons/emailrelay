@@ -24,7 +24,6 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gmultiserver.h"
-#include "gexecutable.h"
 #include "gstr.h"
 #include "gstrings.h"
 #include "glinebuffer.h"
@@ -65,7 +64,7 @@ protected:
 	virtual void onSendComplete() override ;
 		///< Override from GNet::BufferedServerPeer.
 
-	virtual bool onReceive( const std::string & ) override ;
+	virtual bool onReceive( const char * , size_t , size_t ) override ;
 		///< Override from GNet::BufferedServerPeer.
 
 	virtual void onDelete( const std::string & ) override ;
@@ -91,7 +90,7 @@ private:
 	void warranty() ;
 	void version() ;
 	void copyright() ;
-	static const std::string & crlf() ;
+	std::string eol() const ;
 	void unfailAll() ;
 	void send_( const std::string & ) ;
 

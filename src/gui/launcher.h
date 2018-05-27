@@ -18,12 +18,12 @@
 /// \file launcher.h
 ///
 
-#ifndef G_LAUNCHER_H__
-#define G_LAUNCHER_H__
+#ifndef G_LAUNCHER_H
+#define G_LAUNCHER_H
 
 #include "gdef.h"
 #include "gpath.h"
-#include "gexecutable.h"
+#include "gexecutablecommand.h"
 #include "qt.h"
 #include <string>
 
@@ -38,7 +38,7 @@
 class Launcher : private QDialog
 {Q_OBJECT
 public:
-	explicit Launcher( QWidget & parent , const G::Executable & command_line ) ;
+	explicit Launcher( QWidget & parent , const G::ExecutableCommand & command_line ) ;
 		///< Constructor. The command-line is
 
 	virtual ~Launcher() ;
@@ -57,7 +57,7 @@ private:
 	QTextEdit * m_text_edit ;
 	QString m_text ;
 	QTimer * m_timer ;
-	G::Executable m_command_line ;
+	G::ExecutableCommand m_command_line ;
 	G::Path m_log_file ;
 	std::string m_shell_command ;
 	unsigned int m_poke_count ;

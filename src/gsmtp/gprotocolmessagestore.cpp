@@ -78,7 +78,7 @@ bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , VerifierStatus
 		if( !to_status.is_valid )
 		{
 			G_WARNING( "GSmtp::ProtocolMessage: rejecting recipient \"" << to << "\": "
-				<< to_status.reason << (to_status.help.empty()?"":": ") << to_status.help ) ;
+				<< to_status.response << (to_status.reason.empty()?"":": ") << to_status.reason ) ;
 			return false ;
 		}
 		else
@@ -96,15 +96,16 @@ bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , VerifierStatus
 void GSmtp::ProtocolMessageStore::addReceived( const std::string & received_line )
 {
 	G_DEBUG( "GSmtp::ProtocolMessageStore::addReceived" ) ;
-	addText( received_line ) ;
+	if( m_new_msg.get() != nullptr )
+		m_new_msg->addTextLine( received_line ) ;
 }
 
-bool GSmtp::ProtocolMessageStore::addText( const std::string & line )
+bool GSmtp::ProtocolMessageStore::addText( const char * line_data , size_t line_size )
 {
 	G_ASSERT( m_new_msg.get() != nullptr ) ;
 	if( m_new_msg.get() == nullptr )
 		return true ;
-	return m_new_msg->addText( line ) ;
+	return m_new_msg->addText( line_data , line_size ) ;
 }
 
 std::string GSmtp::ProtocolMessageStore::from() const

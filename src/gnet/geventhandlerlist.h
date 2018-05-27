@@ -85,6 +85,7 @@ public:
 		EventHandler * handler() ;
 		ExceptionHandler * eh() ;
 		void raiseEvent( void (EventHandler::*method)() ) ;
+		void raiseEvent( void (EventHandler::*method)(EventHandler::Reason) , EventHandler::Reason ) ;
 		std::vector<Value>::const_iterator m_p ;
 		std::vector<Value>::const_iterator m_end ;
 	} ;

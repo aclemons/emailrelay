@@ -64,11 +64,11 @@ public:
 	Stack( StackPageCallback & , HINSTANCE ) ;
 		///< Contructor. Initialise with addPage() and create().
 
-	void addPage( const std::string & title , int idd , int idi = 0 ) ;
+	void addPage( const std::string & title , int dialog_id , int icon_id = 0 ) ;
 		///< Creates a property sheet page and adds it to
 		///< to the internal list.
 
-	void create( HWND parent , const std::string & title , int idi ,
+	void create( HWND parent , const std::string & title , int icon_id ,
 		unsigned int notify_message_id = 0U ) ;
 			///< Creates the property sheet containing all the added pages.
 			///< If the notify message id is non-zero then the parent window

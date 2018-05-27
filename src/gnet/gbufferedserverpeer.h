@@ -39,26 +39,23 @@ namespace GNet
 class GNet::BufferedServerPeer : public ServerPeer
 {
 public:
-	explicit BufferedServerPeer( Server::PeerInfo ) ;
-		///< Constructor with an auto-detected line ending.
-
-	BufferedServerPeer( Server::PeerInfo , const std::string & eol ) ;
-		///< Constructor with a fixed line ending.
+	explicit BufferedServerPeer( Server::PeerInfo , LineBufferConfig ) ;
+		///< Constructor.
 
 	virtual ~BufferedServerPeer() ;
 		///< Destructor.
 
-	const std::string & eol() const ;
-		///< Returns the line-buffer's line ending. This is typically used
-		///< in the first onReceive() callback to check the auto-detection
-		///< result.
+	std::string lineBufferEndOfLine() const ;
+		///< Returns the line buffer end-of-line string. Returns
+		///< the empty string if auto-detecting and not yet
+		///< auto-detected.
 
 	void expect( size_t n ) ;
 		///< Temporarily suspends line buffering so that the next 'n' bytes
 		///< are accumulated without regard to line terminators.
 
 protected:
-	virtual bool onReceive( const std::string & ) = 0 ;
+	virtual bool onReceive( const char * line_data , size_t line_size , size_t eolsize ) = 0 ;
 		///< Called when a complete line is received from the peer. Returns
 		///< false if no more lines should be delivered.
 

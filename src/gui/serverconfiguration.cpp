@@ -95,10 +95,8 @@ G::MapFile ServerConfiguration::read( const G::Path & config_file )
 	return config ;
 }
 
-std::string ServerConfiguration::quote( std::string s , bool escape_spaces )
+std::string ServerConfiguration::quote( const std::string & s )
 {
-	if( escape_spaces )
-		G::Str::replaceAll( s , " " , "\\ " ) ;
 	return s.find_first_of(" \t") == std::string::npos ? s : (std::string()+"\""+s+"\"") ;
 }
 
@@ -131,12 +129,7 @@ G::StringArray ServerConfiguration::args( bool no_close_stderr ) const
 		result.push_back( "--" + option ) ;
 		if( ! option_arg.empty() )
 		{
-			bool option_arg_is_commandline =
-				result.back() == "--filter" || result.back() == "-z" ||
-				result.back() == "--client-filter" || result.back() == "-Y" ||
-				result.back() == "--address-verifier" ||
-				result.back() == "--verifier" || result.back() == "-Z" ;
-			result.push_back( quote(option_arg,option_arg_is_commandline) ) ;
+			result.push_back( quote(option_arg) ) ;
 		}
 	}
 	return result ;
@@ -213,7 +206,7 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages , c
 		{
 			out["pop-by-name"] ;
 		}
-		if( pages.booleanValue("pop-by-name-auto-copy",true) )
+		if( pages.booleanValue("pop-filter-copy",true) )
 		{
 			out["filter"] = copy_filter.str() ;
 		}
@@ -231,6 +224,14 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages , c
 	{
 		out["no-syslog"] ;
 	}
+	if( !pages.value("logging-file").empty() )
+	{
+		out["log-file"] = pages.value("logging-file") ;
+	}
+	if( pages.booleanValue("logging-time",true) )
+	{
+		out["log-time"] ;
+	}
 	if( pages.booleanValue("listening-remote",true) )
 	{
 		out["remote-clients"] ;
@@ -238,7 +239,6 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages , c
 	if( !pages.booleanValue("listening-all",true) && !pages.value("listening-interface").empty() )
 	{
 		out["interface"] = pages.value("listening-interface") ;
-		out["client-interface"] = "0.0.0.0" ;
 	}
 
 	ServerConfiguration result ;

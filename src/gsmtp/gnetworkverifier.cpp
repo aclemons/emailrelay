@@ -26,12 +26,14 @@
 #include "glog.h"
 
 GSmtp::NetworkVerifier::NetworkVerifier( GNet::ExceptionHandler & exception_handler ,
-	const std::string & server , unsigned int connection_timeout , unsigned int response_timeout ) :
+	const std::string & server , unsigned int connection_timeout , unsigned int response_timeout ,
+	bool compatible ) :
 		m_exception_handler(exception_handler) ,
 		m_location(server) ,
 		m_connection_timeout(connection_timeout) ,
 		m_response_timeout(response_timeout) ,
-		m_lazy(true)
+		m_lazy(true) ,
+		m_compatible(compatible)
 {
 	G_DEBUG( "GSmtp::NetworkVerifier::ctor: " << server ) ;
 	m_client.eventSignal().connect( G::Slot::slot(*this,&GSmtp::NetworkVerifier::clientEvent) ) ;
@@ -42,24 +44,40 @@ GSmtp::NetworkVerifier::~NetworkVerifier()
 	m_client.eventSignal().disconnect() ;
 }
 
-void GSmtp::NetworkVerifier::verify( const std::string & to_address ,
-		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
+void GSmtp::NetworkVerifier::verify( const std::string & mail_to_address ,
+		const std::string & mail_from_address , const GNet::Address & client_ip ,
 		const std::string & auth_mechanism , const std::string & auth_extra )
 {
 	if( !m_lazy || m_client.get() == nullptr )
 	{
-		m_client.reset( new RequestClient("verify","","\n",m_location,m_connection_timeout,m_response_timeout) ) ;
+		m_client.reset( new RequestClient("verify","",m_location,m_connection_timeout,m_response_timeout) ) ;
 	}
 
 	G::StringArray args ;
-	args.push_back( to_address ) ;
-	args.push_back( GNet::Local::canonicalName() ) ;
-	args.push_back( mail_from_parameter ) ;
-	args.push_back( client_ip.hostPartString() ) ;
-	args.push_back( auth_mechanism ) ;
-	args.push_back( auth_extra ) ;
+	if( m_compatible )
+	{
+		std::string user = G::Str::head( mail_to_address , "@" , false ) ;
+		std::string host = G::Str::tail( mail_to_address , "@" , true ) ;
+		args.push_back( mail_to_address ) ;
+		args.push_back( G::Str::upper(user) ) ;
+		args.push_back( G::Str::upper(host) ) ;
+		args.push_back( G::Str::upper(GNet::Local::canonicalName()) ) ;
+		args.push_back( mail_from_address ) ;
+		args.push_back( client_ip.hostPartString() ) ;
+		args.push_back( auth_mechanism ) ;
+		args.push_back( auth_extra ) ;
+	}
+	else
+	{
+		args.push_back( mail_to_address ) ;
+		args.push_back( mail_from_address ) ;
+		args.push_back( client_ip.displayString() ) ;
+		args.push_back( GNet::Local::canonicalName() ) ;
+		args.push_back( G::Str::lower(auth_mechanism) ) ;
+		args.push_back( auth_extra ) ;
+	}
 
-	m_to_address = to_address ;
+	m_to_address = mail_to_address ;
 	m_client->request( G::Str::join("|",args) ) ;
 }
 
@@ -96,7 +114,7 @@ void GSmtp::NetworkVerifier::clientEvent( std::string s1 , std::string s2 )
 		else if( part.size() >= 2U && ( part[0U] == "2" || part[0U] == "3" ) )
 		{
 			status.is_valid = false ;
-			status.reason = part[1U] ;
+			status.response = part[1U] ;
 			status.temporary = part[0U] == "3" ;
 		}
 		else

@@ -50,10 +50,6 @@ public:
 	G::StringArray args( bool disallow_close_stderr = false ) const ;
 		///< Returns the list of emailrelay server command-line arguments.
 
-	std::string command() const ;
-		///< Returns a command-line built from exe() and args() with additional
-		///< escaping suitable for system().
-
 	const G::MapFile & map() const ;
 		///< Accessor for the underlying configuration map.
 
@@ -61,7 +57,7 @@ private:
 	ServerConfiguration() ;
 	static G::MapFile read( const G::Path & config_file ) ;
 	static std::string spec() ;
-	static std::string quote( std::string , bool ) ;
+	static std::string quote( const std::string & ) ;
 
 private:
 	G::MapFile m_config ;

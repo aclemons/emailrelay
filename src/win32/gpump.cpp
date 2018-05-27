@@ -52,10 +52,8 @@ std::pair<bool,std::string> GGui::Pump::runToEmpty( HWND idle_window , unsigned 
 
 void GGui::Pump::quit( std::string reason )
 {
-	G_DEBUG( "GGui::Pump::quit: [" << reason << "]" ) ;
+	G_DEBUG( "GGui::Pump::quit: quit-reason=[" << reason << "] run-id=" << m_run_id ) ;
 	m_quit_reason = reason ;
-	// (include a run-id in the message so that any messages that are
-	// pathalogically delayed in the message queue are ignored)
 	::PostMessage( 0 , Cracker::wm_quit() , m_run_id , 0 ) ; // not PostQuitMessage()
 }
 
@@ -93,6 +91,7 @@ std::pair<bool,std::string> GGui::Pump::runImp( bool send_idle_messages , HWND h
 			block = false ;
 			if( msg.message == Cracker::wm_quit() ) // (our own quit message, not WM_QUIT)
 			{
+				G_DEBUG( "GGui::Pump::quit: mw_quit message: wparam=" << msg.wParam << " run-id=" << m_run_id ) ;
 				if( msg.wParam == m_run_id )
 					seen_quit = true ;
 			}
@@ -134,7 +133,7 @@ std::pair<bool,std::string> GGui::Pump::runImp( bool send_idle_messages , HWND h
 			break ;
 	}
 	std::string reason = m_quit_reason ;
-	m_quit_reason.resize(0) ;
+	m_quit_reason.clear() ;
 	return std::make_pair( seen_quit , reason ) ;
 }
 

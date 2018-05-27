@@ -14,4 +14,9 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-EXTRA_DIST = pkg.m4
+EXTRA_DIST = \
+	pkg.m4 \
+	m4_ax_cxx_compile_stdcxx_11.m4 \
+	m4_ax_cxx_compile_stdcxx.m4 \
+	m4_ax_require_defined.m4
+

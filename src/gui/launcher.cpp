@@ -33,7 +33,7 @@ namespace
 	{
 		return G::Path( "/tmp" , "launcher." + G::Process::Id().str() + ".tmp" ) ;
 	}
-	std::string shellCommand( const G::Executable & command_line , const G::Path & log_file )
+	std::string shellCommand( const G::ExecutableCommand & command_line , const G::Path & log_file )
 	{
 		G::StringArray parts = command_line.args() ;
 		parts.insert( parts.begin() , command_line.exe().str() ) ;
@@ -47,7 +47,7 @@ namespace
 	}
 }
 
-Launcher::Launcher( QWidget & parent , const G::Executable & command_line ) :
+Launcher::Launcher( QWidget & parent , const G::ExecutableCommand & command_line ) :
 	QDialog( &parent , Qt::Dialog ) ,
 	m_ok_button(nullptr) ,
 	m_text_edit(nullptr) ,
@@ -63,7 +63,7 @@ Launcher::Launcher( QWidget & parent , const G::Executable & command_line ) :
 	m_text_edit->setWordWrapMode(QTextOption::WrapAnywhere) ;
 
 	// prepare the shell command-line
-	if( G::Test::enabled("launcher-test") ) m_command_line = G::Executable("./launcher-test.sh") ;
+	if( G::Test::enabled("launcher-test") ) m_command_line = G::ExecutableCommand("./launcher-test.sh") ;
 	m_command_line.add( "--daemon" ) ;
 	m_shell_command = shellCommand( m_command_line , m_log_file ) ;
 

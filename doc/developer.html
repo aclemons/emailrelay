@@ -149,7 +149,7 @@
      interface are available: one for normal spooling (<em class="quote">ProtocolMessageStore</em>), and
      another for immediate forwarding (<em class="quote">ProtocolMessageForward</em>). The <em class="quote">Decorator</em>
      pattern is used whereby the forwarding class uses an instance of the storage
-     class to do the message storing and pre-processing, while adding in an instance
+     class to do the message storing and filtering, while adding in an instance
      of the <em class="quote">GSmtp::Client</em> class to do the forwarding.
     </p>
 

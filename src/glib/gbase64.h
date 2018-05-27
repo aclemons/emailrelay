@@ -32,7 +32,7 @@ namespace G
 
 /// \class G::Base64
 /// A base64 codec class.
-/// \see RFC 1341 section 5.2
+/// \see RFC-1341 section 5.2
 ///
 class G::Base64
 {

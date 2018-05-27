@@ -68,6 +68,12 @@ protected:
 	virtual ~HeapClient() ;
 		///< Destructor.
 
+	void finish() ;
+		///< Indicates that the last data has been sent and the client
+		///< is expecting a peer disconnect. The subsequent onDelete()
+		///< callback will have an empty reason string. The caller
+		///< should also consider using Socket::shutdown().
+
 	virtual void onDelete( const std::string & reason ) = 0 ;
 		///< Called just before deletion.
 
@@ -95,6 +101,7 @@ private:
 private:
 	GNet::Timer<HeapClient> m_connect_timer ;
 	GNet::Timer<HeapClient> m_delete_timer ;
+	bool m_finished ;
 } ;
 
 #endif

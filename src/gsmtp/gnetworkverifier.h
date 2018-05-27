@@ -39,8 +39,9 @@ namespace GSmtp
 class GSmtp::NetworkVerifier : public Verifier
 {
 public:
-	NetworkVerifier( GNet::ExceptionHandler & , const std::string & , unsigned int , unsigned int ) ;
-		///< Constructor.
+	NetworkVerifier( GNet::ExceptionHandler & , const std::string & server ,
+		unsigned int connection_timeout , unsigned int response_timeout , bool compatible ) ;
+			///< Constructor.
 
 	virtual ~NetworkVerifier() ;
 		///< Destructor.
@@ -68,6 +69,7 @@ private:
 	unsigned int m_connection_timeout ;
 	unsigned int m_response_timeout ;
 	bool m_lazy ;
+	bool m_compatible ;
 	GNet::ClientPtr<RequestClient> m_client ;
 	std::string m_to_address ;
 } ;

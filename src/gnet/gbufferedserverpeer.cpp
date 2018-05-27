@@ -23,14 +23,9 @@
 #include "gstr.h"
 #include "glog.h"
 
-GNet::BufferedServerPeer::BufferedServerPeer( Server::PeerInfo peer_info ) :
-	ServerPeer(peer_info)
-{
-}
-
-GNet::BufferedServerPeer::BufferedServerPeer( Server::PeerInfo peer_info , const std::string & eol ) :
+GNet::BufferedServerPeer::BufferedServerPeer( Server::PeerInfo peer_info , LineBufferConfig line_buffer_config ) :
 	ServerPeer(peer_info) ,
-	m_line_buffer(eol)
+	m_line_buffer(line_buffer_config)
 {
 }
 
@@ -41,10 +36,11 @@ GNet::BufferedServerPeer::~BufferedServerPeer()
 void GNet::BufferedServerPeer::onData( const char * p , ServerPeer::size_type n )
 {
 	m_line_buffer.add( p , n ) ;
-
-	LineBufferIterator iter( m_line_buffer ) ;
-	while( iter.more() && onReceive(iter.line()) )
-		;
+	while( m_line_buffer.more() )
+	{
+		if( !onReceive( m_line_buffer.lineData() , m_line_buffer.lineSize() , m_line_buffer.eolSize() ) )
+			break ;
+	}
 }
 
 void GNet::BufferedServerPeer::expect( size_t n )
@@ -52,7 +48,7 @@ void GNet::BufferedServerPeer::expect( size_t n )
 	m_line_buffer.expect( n ) ;
 }
 
-const std::string & GNet::BufferedServerPeer::eol() const
+std::string GNet::BufferedServerPeer::lineBufferEndOfLine() const
 {
 	return m_line_buffer.eol() ;
 }

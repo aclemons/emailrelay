@@ -45,12 +45,13 @@ Main::WinForm::WinForm( WinApp & app , const Main::Configuration & cfg , bool /*
   	addPage( "Version" , IDD_PROPPAGE_1 ) ;
   	addPage( "Status" , IDD_PROPPAGE_1 ) ;
 
-  	create( app.handle() , "E-MailRelay" , 0 , GGui::Cracker::wm_user_other() ) ;
+	// create the stack - completion notification is via App::onUserOther()
+  	create( app.handle() , "E-MailRelay" , 0 , GGui::Cracker::wm_user_other() ) ; // GGui::Stack
 }
 
 void Main::WinForm::close()
 {
-	G_DEBUG( "Main::WinForm::close: close" ) ;
+	G_DEBUG( "Main::WinForm::close: closed=" << (m_closed?1:0) ) ;
 	if( !m_closed )
 	{
 		m_closed = true ;
@@ -89,6 +90,7 @@ void Main::WinForm::onInit( HWND hdialog , const std::string & title )
 
 void Main::WinForm::onDestroy( HWND )
 {
+	G_DEBUG( "Main::WinForm::onDestroy: on destroy" ) ;
 }
 
 void Main::WinForm::setStatus( const std::string & category , const std::string & s1 , const std::string & s2 )

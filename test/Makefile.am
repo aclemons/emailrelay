@@ -17,11 +17,13 @@
 
 helper_programs = \
 	emailrelay-test-scanner \
+	emailrelay-test-client \
 	emailrelay-test-server \
 	emailrelay-test-verifier
 
 helper_sources = \
 	emailrelay_test_scanner.cpp \
+	emailrelay_test_client.cpp \
 	emailrelay_test_server.cpp \
 	emailrelay_test_verifier.cpp
 
@@ -87,6 +89,7 @@ emailrelay-chain-test: emailrelay-chain-test.sh
 	chmod +x emailrelay-chain-test
 
 AM_CPPFLAGS = \
+	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
@@ -117,6 +120,10 @@ emailrelay_test_server_LDADD = \
 	$(top_builddir)/src/win32/libextra.a \
 	$(COMMON_LDADD) \
 	$(GCONFIG_TLS_LIBS) \
+	$(SYS_LIBS)
+
+emailrelay_test_client_SOURCES = emailrelay_test_client.cpp
+emailrelay_test_client_LDADD = \
 	$(SYS_LIBS)
 
 emailrelay_test_verifier_SOURCES = emailrelay_test_verifier.cpp

@@ -47,6 +47,7 @@ public:
 	FdSet() ;
 	void init( const EventHandlerList & ) ;
 	void raiseEvents( EventHandlerList & , void (EventHandler::*method)() ) ;
+	void raiseEvents( EventHandlerList & , void (EventHandler::*method)(EventHandler::Reason) , EventHandler::Reason ) ;
 	void invalidate() ;
 	int fdmax( int = 0 ) const ;
 	fd_set * operator()() ;
@@ -74,10 +75,10 @@ public:
 	virtual void quit( const G::SignalSafe & ) override ;
 	virtual void addRead( Descriptor fd , EventHandler & , ExceptionHandler & ) override ;
 	virtual void addWrite( Descriptor fd , EventHandler & , ExceptionHandler & ) override ;
-	virtual void addOob( Descriptor fd , EventHandler & , ExceptionHandler & ) override ;
+	virtual void addOther( Descriptor fd , EventHandler & , ExceptionHandler & ) override ;
 	virtual void dropRead( Descriptor fd ) override ;
 	virtual void dropWrite( Descriptor fd ) override ;
-	virtual void dropOob( Descriptor fd ) override ;
+	virtual void dropOther( Descriptor fd ) override ;
 	virtual std::string report() const override ;
 	virtual void setTimeout( G::EpochTime t ) override ;
 	virtual void disarm( ExceptionHandler * ) override ;
@@ -95,8 +96,8 @@ private:
 	FdSet m_read_set ;
 	EventHandlerList m_write_list ;
 	FdSet m_write_set ;
-	EventHandlerList m_oob_list ;
-	FdSet m_oob_set ;
+	EventHandlerList m_other_list ;
+	FdSet m_other_set ;
 } ;
 
 // ===
@@ -153,8 +154,6 @@ int GNet::FdSet::fdmax( int n ) const
 
 void GNet::FdSet::raiseEvents( EventHandlerList & list , void (EventHandler::*method)() )
 {
-	// call the event-handler for fds in fd-set which are ISSET()
-
 	EventHandlerList::Lock lock( list ) ; // since event handlers may change the list while we iterate
 	const EventHandlerList::Iterator end = list.end() ;
 	for( EventHandlerList::Iterator p = list.begin() ; p != end ; ++p )
@@ -163,6 +162,20 @@ void GNet::FdSet::raiseEvents( EventHandlerList & list , void (EventHandler::*me
 		if( fd.fd() >= 0 && FD_ISSET( fd.fd() , &m_set_external ) )
 		{
 			p.raiseEvent( method ) ;
+		}
+	}
+}
+
+void GNet::FdSet::raiseEvents( EventHandlerList & list , void (EventHandler::*method)(EventHandler::Reason) , EventHandler::Reason reason )
+{
+	EventHandlerList::Lock lock( list ) ; // since event handlers may change the list while we iterate
+	const EventHandlerList::Iterator end = list.end() ;
+	for( EventHandlerList::Iterator p = list.begin() ; p != end ; ++p )
+	{
+		Descriptor fd = p.fd() ;
+		if( fd.fd() >= 0 && FD_ISSET( fd.fd() , &m_set_external ) )
+		{
+			p.raiseEvent( method , reason ) ;
 		}
 	}
 }
@@ -181,7 +194,7 @@ GNet::EventLoopImp::EventLoopImp() :
 	m_running(false) ,
 	m_read_list("read") ,
 	m_write_list("write") ,
-	m_oob_list("oob")
+	m_other_list("other")
 {
 }
 
@@ -224,8 +237,8 @@ void GNet::EventLoopImp::runOnce()
 	//
 	m_read_set.init( m_read_list ) ;
 	m_write_set.init( m_write_list ) ;
-	m_oob_set.init( m_oob_list ) ;
-	int n = m_read_set.fdmax( m_write_set.fdmax(m_oob_set.fdmax()) ) ;
+	m_other_set.init( m_other_list ) ;
+	int n = m_read_set.fdmax( m_write_set.fdmax(m_other_set.fdmax()) ) ;
 
 	// get a timeout interval() from TimerList
 	//
@@ -257,7 +270,7 @@ void GNet::EventLoopImp::runOnce()
 
 	// do the select()
 	//
-	int rc = ::select( n , m_read_set() , m_write_set() , m_oob_set() , timeout_p ) ;
+	int rc = ::select( n , m_read_set() , m_write_set() , m_other_set() , timeout_p ) ;
 	if( rc < 0 )
 	{
 		int e = errno ;
@@ -280,7 +293,7 @@ void GNet::EventLoopImp::runOnce()
 		//G_DEBUG( "GNet::EventLoopImp::runOnce: detected event(s) on " << rc << " fd(s)" ) ;
 		m_read_set.raiseEvents( m_read_list , &EventHandler::readEvent ) ;
 		m_write_set.raiseEvents( m_write_list , &EventHandler::writeEvent ) ;
-		m_oob_set.raiseEvents( m_oob_list , &EventHandler::oobEvent ) ;
+		m_other_set.raiseEvents( m_other_list , &EventHandler::otherEvent , EventHandler::reason_other ) ;
 	}
 
 	if( G::Test::enabled("event-loop-slow") )
@@ -304,10 +317,10 @@ void GNet::EventLoopImp::addWrite( Descriptor fd , EventHandler & handler , Exce
 	m_write_set.invalidate() ;
 }
 
-void GNet::EventLoopImp::addOob( Descriptor fd , EventHandler & handler , ExceptionHandler & eh )
+void GNet::EventLoopImp::addOther( Descriptor fd , EventHandler & handler , ExceptionHandler & eh )
 {
-	m_oob_list.add( fd , &handler , &eh ) ;
-	m_oob_set.invalidate() ;
+	m_other_list.add( fd , &handler , &eh ) ;
+	m_other_set.invalidate() ;
 }
 
 void GNet::EventLoopImp::dropRead( Descriptor fd )
@@ -322,17 +335,17 @@ void GNet::EventLoopImp::dropWrite( Descriptor fd )
 	m_write_set.invalidate() ;
 }
 
-void GNet::EventLoopImp::dropOob( Descriptor fd )
+void GNet::EventLoopImp::dropOther( Descriptor fd )
 {
-	m_oob_list.remove( fd ) ;
-	m_oob_set.invalidate() ;
+	m_other_list.remove( fd ) ;
+	m_other_set.invalidate() ;
 }
 
 void GNet::EventLoopImp::disarm( ExceptionHandler * p )
 {
 	m_read_list.disarm( p ) ;
 	m_write_list.disarm( p ) ;
-	m_oob_list.disarm( p ) ;
+	m_other_list.disarm( p ) ;
 }
 
 void GNet::EventLoopImp::setTimeout( G::EpochTime )

@@ -15,11 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gexecutable.h
+/// \file gexecutablecommand.h
 ///
 
-#ifndef G_EXE_H
-#define G_EXE_H
+#ifndef G_EXECUTABLE_COMMAND_H
+#define G_EXECUTABLE_COMMAND_H
 
 #include "gdef.h"
 #include "gpath.h"
@@ -28,10 +28,10 @@
 
 namespace G
 {
-	class Executable ;
+	class ExecutableCommand ;
 }
 
-/// \class G::Executable
+/// \class G::ExecutableCommand
 /// A structure representing an external program, holding a path and a set of
 /// arguments. The constructor takes a complete command-line and splits it up
 /// into the executable part and a list of command-line parameters. If the
@@ -40,14 +40,14 @@ namespace G
 ///
 /// \see G::Path, G::Args
 ///
-class G::Executable
+class G::ExecutableCommand
 {
 public:
-	explicit Executable( const std::string & command_line = std::string() ) ;
+	explicit ExecutableCommand( const std::string & command_line = std::string() ) ;
 		///< Constructor taking a complete command-line. The command-line
-		///< is split up on unescaped space characters.
+		///< is split up on unescaped-and-unquoted space characters.
 
-	Executable( const G::Path & exe , const StringArray & args ) ;
+	ExecutableCommand( const G::Path & exe , const StringArray & args , bool os_add_wrapper = true ) ;
 		///< Constructor taking the executable and arguments explicitly.
 
 	Path exe() const ;
@@ -65,6 +65,7 @@ public:
 private:
 	bool osNativelyRunnable() const ;
 	void osAddWrapper() ;
+	static G::StringArray osSplit( const std::string & ) ;
 
 private:
 	G::Path m_exe ;

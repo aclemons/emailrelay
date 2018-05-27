@@ -17,20 +17,20 @@ E-MailRelay Change Log
 * New `--forward-on-disconnect` option replaces `--poll=0`.
 * The `--anonymous` option now suppresses the `Received` line, whatever the `--domain`.
 * The second field in the secrets file indicates the password encoding, not AUTH mechanism.
-* The `--verifier` options is now `--address-verifier` with simplified command-line parameters.
+* The `--verifier` option is now `--address-verifier`, with simplified command-line parameters.
 * Command-line file paths can use `@app` as a prefix to be relative to the executable directory.
 * Command-line file paths can be relative to the startup cwd even when daemonised.
 * Filter exit codes between 104 and 107 are interpreted differently.
 * Message rejection reasons passed back to the submitting SMTP client are much less verbose.
 * Forwarding events are queued up if the forwarding client is still busy from last time.
 * The bind address for outgoing connections is no longer taken from first unqualified `--interface` address [bug-id #27].
-* Line-feed line endings are allowed in the SMTP server protocol, with a warning.
 * The SMTP client protocol tries more than one authentication mechanism.
+* Client protocol sends QUIT with a socket shutdown().
 * The Windows commdlg list-view widget is used for the server status pages.
 * The Windows connection-lookup feature is withdrawn (`--peer-lookup`).
 * Several build-time configure options like `--disable-pop` are withdrawn.
-* Support for old versions of Windows is dropped.
-* Support for old compilers is dropped (eg. gcc 2.95).
+* C++ 2011 is preferred, and required for multi-threading.
+* Support for very old versions of Windows is dropped.
 
 1.9.1 -> 1.9.2
 --------------
@@ -40,7 +40,7 @@ E-MailRelay Change Log
 * A warning is emitted if there is more than one client authentication secret.
 * Multiple `--interface` options are allowed separately on the command-line.
 * Added a new `--client-interface` option.
-* The `Received` line is formatted as per RFC 3848 (`with ESMTPSA`).
+* The `Received` line is formatted as per RFC-3848 (`with ESMTPSA`).
 * The LOGIN and PLAIN mechanisms in the secrets file are now equivalent.
 * The Windows service wrapper can use a configuration file to locate the startup batch file.
 * Simplified the implementation of the GUI installation program.

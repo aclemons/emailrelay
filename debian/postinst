@@ -5,31 +5,41 @@
 
 spool="/var/spool/emailrelay"
 submit="/usr/sbin/emailrelay-submit"
+init="/etc/init.d/emailrelay"
+rundir="/var/run/emailrelay"
 
-create_spool()
+emailrelay_setup()
 {
 	test -d "$spool" || mkdir "$spool"
-}
-
-fix_permissions()
-{
 	if ls -nd "$spool" | cut -d' ' --fields=3,4 | grep -q '^0 0$'
 	then
-		chgrp daemon "$spool" && chmod 775 "$spool"
+		chgrp daemon "$spool" && chmod 775 "$spool" && chmod g+s "$spool"
 	fi
+
+	test -d "$rundir" || mkdir "$rundir"
+	if ls -nd "$rundir" | cut -d' ' --fields=3,4 | grep -q '^0 0$'
+	then
+		chgrp daemon "$rundir" && chmod 770 "$rundir"
+	fi
+
 	if ls -n "$submit" | cut -d' ' --fields=3,4 | grep -q '^0 0$'
 	then
 		chgrp daemon "$submit" && chmod g+s "$submit"
 	fi
+
+	if test -f "$init" -a ! -x "$init"
+	then
+		chmod +x "$init"
+	fi
 }
 
-fix_html()
+emailrelay_fix_html()
 {
 	# index.html refers to changelog.html, not changelog.html.gz
 	cd /usr/share/doc/emailrelay && gzip -d -c changelog.html.gz > changelog.html
 }
 
-create_config()
+emailrelay_create_config()
 {
 	if test ! -f /etc/emailrelay.conf -a -f /etc/emailrelay.conf.template
 	then
@@ -39,8 +49,7 @@ create_config()
 
 #DEBHELPER#
 
-create_config
-create_spool
-fix_permissions
-fix_html
+emailrelay_setup
+emailrelay_fix_html
+emailrelay_create_config
 

@@ -26,7 +26,11 @@
 
 GSmtp::NewMessage::~NewMessage()
 {
-	// empty
+}
+
+bool GSmtp::NewMessage::addTextLine( const std::string & line )
+{
+	return addText( line.data() , line.size() ) ;
 }
 
 /// \file gnewmessage.cpp

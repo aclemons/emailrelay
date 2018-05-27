@@ -62,7 +62,7 @@ protected:
 	virtual void onDelete( const std::string & ) override ;
 		///< Final override from GNet::ServerPeer.
 
-	virtual bool onReceive( const std::string & ) override ;
+	virtual bool onReceive( const char * , size_t , size_t ) override ;
 		///< Final override from GNet::BufferedServerPeer.
 
 	virtual void onSecure( const std::string & ) override ;
@@ -81,7 +81,6 @@ private:
 	ServerPeer( const ServerPeer & ) ;
 	void operator=( const ServerPeer & ) ;
 	void processLine( const std::string & line ) ;
-	static const std::string & crlf() ;
 
 private:
 	Server & m_server ;

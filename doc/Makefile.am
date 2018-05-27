@@ -28,14 +28,12 @@ txt_files_install=\
 man_files_install=\
 	emailrelay.1 \
 	emailrelay-passwd.1 \
-	emailrelay-poke.1 \
 	emailrelay-submit.1 \
 	emailrelay-filter-copy.1
 
 man_files_clean=\
 	emailrelay.1.gz \
 	emailrelay-passwd.1.gz \
-	emailrelay-poke.1.gz \
 	emailrelay-submit.1.gz \
 	emailrelay-filter-copy.1.gz
 
@@ -66,7 +64,8 @@ png_files_install=\
 	authentication.png \
 	forwardto.png \
 	serverclient.png \
-	whatisit.png
+	whatisit.png \
+	download-button.png
 
 
 EXTRA_DIST = \
@@ -106,9 +105,6 @@ emailrelay-submit.1.gz : emailrelay-submit.1
 
 emailrelay-filter-copy.1.gz : emailrelay-filter-copy.1
 	if test -n "$(GZIP)" ; then $(GZIP) -c "$(top_srcdir)/doc/emailrelay-filter-copy.1" > emailrelay-filter-copy.1.gz ; fi
-
-emailrelay-poke.1.gz: emailrelay-poke.1
-	if test -n "$(GZIP)" ; then $(GZIP) -c "$(top_srcdir)/doc/emailrelay-poke.1" > emailrelay-poke.1.gz ; fi
 
 install-data-local: install-e_docDATA
 	$(mkinstalldirs) "$(DESTDIR)$(e_docdir)/doxygen"

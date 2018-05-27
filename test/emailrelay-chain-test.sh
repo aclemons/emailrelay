@@ -27,9 +27,9 @@
 #   The script creates messages in store-1. A client sends messages
 #   from store-1 to server-1. Server-1 stores messages in store-2.
 #   Server-2 is poked to read messages from store-2 and send to
-#   server-3 authenticating as 'joe'. Server-3 authenticates joe
+#   server-3 authenticating as 'carol'. Server-3 authenticates carol
 #   and runs as a proxy using store-3 to forward messages to
-#   server-4 as 'fred'. Server-4 authenticates fred and stores
+#   server-4 as 'alice'. Server-4 authenticates alice and stores
 #   messages in store-4 which server-5 is continuously polling.
 #   Server-5 forwards messages that appear in store-4 to
 #   server-6 using a client preprocessor. Server-6 stores messages
@@ -45,13 +45,12 @@
 # If this test takes more a minute (without valgrind) then it
 # has failed.
 #
-# usage: emailrelay-chain-test.sh [-v] [-f] [-d] [-n] [-s] [-a <awk>] [<exe-dir> [<content-file>]]
+# usage: emailrelay-chain-test.sh [-v] [-f] [-d] [-n] [-s] [<exe-dir> [<content-file>]]
 #	-v    use valgrind
 #	-f    use fetchmail
 #	-d    use --debug
 #	-n    no cleanup
 #	-s    smaller content
-#	-a    use specified awk
 #
 
 # parse the command line
@@ -61,7 +60,6 @@ opt_use_fetchmail="0"
 opt_smaller="0"
 opt_debug="0"
 opt_no_cleanup="0"
-opt_awk="awk"
 while getopts 'vfdnsa:' opt ; do
 	case "$opt" in
 		v) opt_use_valgrind="1" ;;
@@ -69,7 +67,6 @@ while getopts 'vfdnsa:' opt ; do
 		s) opt_smaller="1" ;;
 		d) opt_debug="1" ;;
 		n) opt_no_cleanup="1" ;;
-		a) opt_awk="$OPTARG" ;;
 	esac
 done
 shift `expr $OPTIND - 1`
@@ -78,10 +75,9 @@ opt_exe_dir="${1}"
 # configuration
 #
 cfg_sw_debug="" ; test "${opt_debug}" -eq 0 || cfg_sw_debug="--debug"
-cfg_sw_extra="--domain test.localnet" ; test "${opt_use_valgrind}" -eq 0 || cfg_sw_extra="--no-daemon"
+cfg_sw_extra="--domain chaintest.localnet" ; test "${opt_use_valgrind}" -eq 0 || cfg_sw_extra="--no-daemon"
 cfg_exe_dir="../src/main" ; test -z "${opt_exe_dir}" || cfg_exe_dir="${opt_exe_dir}"
 cfg_main_exe="${cfg_exe_dir}/emailrelay"
-cfg_poke_exe="${cfg_exe_dir}/emailrelay-poke"
 cfg_null_filter="/bin/touch" ; test -f ${cfg_null_filter} || cfg_null_filter="/usr/bin/touch"
 cfg_pp="201" # port-prefix
 cfg_base_dir="/tmp/`basename $0`.$$.tmp"
@@ -93,7 +89,7 @@ Init()
 {
 	MALLOC_CHECK_="2"
 	export MALLOC_CHECK_
-	ulimit -c 1000000
+	ulimit -c unlimited
 	trap "Trap 1 ; exit 1" 1 2 3 13 15
 	trap "e=\$? ; Trap 0 ; exit \$e" 0
 }
@@ -108,17 +104,42 @@ Trap()
 	Cleanup > /dev/null 2>&1
 }
 
+RunPoke()
+{
+	port_="${1}"
+	command_="${2}"
+	log_="${3}"
+
+	echo ++ poke ${cfg_pp}${port_} flush > ${cfg_base_dir}/${log_}
+	Poke ${cfg_pp}${port_} ${command_} >> ${cfg_base_dir}/${log_}
+}
+
+Poke()
+{
+	perl -e '
+		use IO::Socket ;
+		my $p = $ARGV[0] ;
+		my $c = $ARGV[1] || "flush" ;
+		my $s = new IO::Socket::INET( PeerHost=>"127.0.0.1" , PeerPort=>$p , Proto=>"tcp" ) or die ;
+		$s->send( $c . "\r\n" ) or die ;
+		my $buffer = "" ;
+		alarm( 10 ) ;
+		$s->recv( $buffer , 1024 ) ;
+		print $buffer , "\n" ;
+	' "$@"
+}
+
 Cleanup()
 {
-	${cfg_poke_exe} ${cfg_pp}11 terminate
-	${cfg_poke_exe} ${cfg_pp}12 terminate
-	${cfg_poke_exe} ${cfg_pp}13 terminate
-	${cfg_poke_exe} ${cfg_pp}14 terminate
-	${cfg_poke_exe} ${cfg_pp}15 terminate
-	${cfg_poke_exe} ${cfg_pp}16 terminate
+	Poke ${cfg_pp}11 terminate
+	Poke ${cfg_pp}12 terminate
+	Poke ${cfg_pp}13 terminate
+	Poke ${cfg_pp}14 terminate
+	Poke ${cfg_pp}15 terminate
+	Poke ${cfg_pp}16 terminate
 	if test "${opt_use_fetchmail}" -eq 1
 	then
-		${cfg_poke_exe} ${cfg_pp}17 terminate
+		Poke ${cfg_pp}17 terminate
 	fi
 	sleep 2
 
@@ -166,7 +187,7 @@ RunServer()
 	chmod 775 ${cfg_base_dir}/${spool_}
 
 	cmd_="${cfg_main_exe} ${cfg_sw_extra} ${cfg_sw_debug}"
-	cmd_="${cmd_} --log --verbose --no-syslog"
+	cmd_="${cmd_} --log --log-time --verbose --no-syslog"
 	cmd_="${cmd_} --port ${cfg_pp}${port_}"
 	cmd_="${cmd_} --spool-dir ${cfg_base_dir}/${spool_}"
 	cmd_="${cmd_} --admin ${cfg_pp}${admin_port_}"
@@ -188,7 +209,7 @@ RunClient()
 	pidfile_="${4}"
 
 	cmd_="${cfg_main_exe} ${cfg_sw_extra} ${cfg_sw_debug}"
-	cmd_="${cmd_} --forward --no-daemon --dont-serve --log --verbose --no-syslog"
+	cmd_="${cmd_} --forward --no-daemon --dont-serve --log --verbose --log-time --no-syslog"
 	cmd_="${cmd_} --pid-file ${cfg_base_dir}/${pidfile_}"
 	cmd_="${cmd_} --forward-to ${to_}"
 	cmd_="${cmd_} --spool-dir ${cfg_base_dir}/${spool_}"
@@ -213,15 +234,6 @@ RunFetchmail()
 
 	echo ++ ${cmd_} > ${cfg_base_dir}/log-fetchmail
 	${cmd_} >> ${cfg_base_dir}/log-fetchmail 2>&1
-}
-
-RunPoke()
-{
-	port_="${1}"
-	log_="${2}"
-
-	echo ++ ${cfg_poke_exe} ${cfg_pp}${port_} > ${cfg_base_dir}/${log_}
-	${cfg_poke_exe} ${cfg_pp}${port_} >> ${cfg_base_dir}/${log_}
 }
 
 Content()
@@ -256,7 +268,7 @@ Envelope()
 
 CrLf()
 {
-	$opt_awk '{printf("%s\r\n",$0)}'
+	perl -ne 'chomp($_) ; print $_ , "\r\n"'
 }
 
 TestDone()
@@ -295,23 +307,23 @@ CreateAuth()
 	mkdir -p "${cfg_base_dir}"
 	chmod 777 "${cfg_base_dir}"
 
-	# encrypted version "joes_password" provided by emailrelay-passwd
+	# encrypted version "carols_password" provided by emailrelay-passwd
 	dotted_key="2168297042.2818429713.1297528852.2023008371.2713943401.1997919265.1829599518.235099638"
 	base64_key="OlKWPYER0/2nFLhWTXOolHhpfcOhIdQVdx55DW32VQMO"
 
 	file="${cfg_base_dir}/server.auth"
 	echo "# server.auth" > ${file}
-	echo "server plain fred freds_password" >> ${file}
-	echo "server md5 joe ${base64_key}" >> ${file}
-	echo "server md5 brian dfgkljdflkgjdfg" >> ${file}
+	echo "server plain alice alices_password" >> ${file}
+	echo "server md5 carol ${base64_key}" >> ${file}
+	echo "server md5 bob dfgkljdflkgjdfg" >> ${file}
 
-	file="${cfg_base_dir}/client-fred.auth"
-	echo "# client-fred.auth" > ${file}
-	echo "client plain fred freds_password" >> ${file}
+	file="${cfg_base_dir}/client-alice.auth"
+	echo "# client-alice.auth" > ${file}
+	echo "client plain alice alices_password" >> ${file}
 
-	file="${cfg_base_dir}/client-joe.auth"
-	echo "# client-joe.auth" > ${file}
-	echo "client CRAM-MD5 joe ${dotted_key}" >> ${file}
+	file="${cfg_base_dir}/client-carol.auth"
+	echo "# client-carol.auth" > ${file}
+	echo "client CRAM-MD5 carol ${dotted_key}" >> ${file}
 
 	file="${cfg_base_dir}/pop.auth"
 	echo "server APOP me secret" >> ${file}
@@ -353,15 +365,15 @@ Main()
 	CreateMessages
 
 	RunServer 01 11 store-2 log-1 pid-1
-	RunServer 02 12 store-2 log-2 pid-2 "--forward-to localhost:${cfg_pp}03 --client-auth ${cfg_base_dir}/client-joe.auth"
-	RunServer 03 13 store-3 log-3 pid-3 "--immediate --forward-to localhost:${cfg_pp}04 --filter ${cfg_null_filter} --client-auth ${cfg_base_dir}/client-fred.auth --server-auth ${cfg_base_dir}/server.auth"
+	RunServer 02 12 store-2 log-2 pid-2 "--forward-to localhost:${cfg_pp}03 --client-auth ${cfg_base_dir}/client-carol.auth"
+	RunServer 03 13 store-3 log-3 pid-3 "--immediate --forward-to localhost:${cfg_pp}04 --filter ${cfg_null_filter} --client-auth ${cfg_base_dir}/client-alice.auth --server-auth ${cfg_base_dir}/server.auth"
 	RunServer 04 14 store-4 log-4 pid-4 "--server-auth ${cfg_base_dir}/server.auth"
 	RunServer 05 15 store-4 log-5 pid-5 "--poll 1 --forward-to localhost:${cfg_pp}06 --client-filter ${cfg_base_dir}/filter.sh"
 	RunServer 06 16 store-5 log-6 pid-6 "--filter ${cfg_base_dir}/filter.sh"
 
 	Sleep 1
 	RunClient localhost:${cfg_pp}01 store-1 log-c pid-c
-	RunPoke 12 log-p
+	RunPoke 12 flush log-p
 
 	success="0"
 	for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20

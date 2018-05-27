@@ -129,13 +129,8 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 		}
 	}
 
-	// percent characters are doubled up in batch files -- here
-	// just undouble the last one
-	{
-		std::string::size_type pos = line.rfind( "%%" ) ;
-		if( pos != std::string::npos )
-			line.replace( pos , 2U , "%" ) ;
-	}
+	// percent characters are doubled up in batch files so un-double them here
+	G::Str::replaceAll( line , "%%" , "%" ) ;
 
 	return line ;
 }
@@ -179,12 +174,10 @@ void G::BatchFile::write( const G::Path & path , const StringArray & args , cons
 	if( !stream.good() )
 		throw Error( "cannot create batch file" , path.str() ) ;
 
-	// TODO double-percents
-
 	stream << "start \"" << name << "\"" ;
 	for( StringArray::const_iterator p = args.begin() ; p != args.end() ; ++p )
 	{
-		stream << " " << quote( *p ) ;
+		stream << " " << percents(quote(*p)) ;
 	}
 	stream << "\r\n" ;
 
@@ -200,6 +193,13 @@ G::StringArray G::BatchFile::split( const std::string & line )
 	if( !line.empty() )
 		args.parse( line ) ;
 	return args.array() ;
+}
+
+std::string G::BatchFile::percents( const std::string & s )
+{
+	std::string result( s ) ;
+	G::Str::replaceAll( result , "%" , "%%" ) ;
+	return result ;
 }
 
 std::string G::BatchFile::quote( const std::string & s )

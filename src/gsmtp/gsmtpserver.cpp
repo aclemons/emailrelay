@@ -32,6 +32,7 @@
 #include "gassert.h"
 #include "gtest.h"
 #include <string>
+#include <functional>
 
 namespace
 {
@@ -72,12 +73,12 @@ std::string AnonymousText::received( const std::string & smtp_peer_name , bool a
 GSmtp::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info , Server & server ,
 	const GAuth::Secrets & server_secrets , const Server::Config & server_config ,
 	unique_ptr<ServerProtocol::Text> ptext ) :
-		GNet::BufferedServerPeer(peer_info) ,
+		GNet::ServerPeer(peer_info) ,
 		m_server(server) ,
-		m_first_line(true) ,
 		m_verifier(VerifierFactory::newVerifier(*this,server_config.verifier_address,server_config.verifier_timeout,server_config.verifier_compatibility)) ,
 		m_pmessage(server.newProtocolMessage(*this)) ,
 		m_ptext(ptext.release()) ,
+		m_line_buffer(GNet::LineBufferConfig::smtp()) ,
 		m_protocol(*this,*this,*m_verifier.get(),*m_pmessage.get(),server_secrets,*m_ptext.get(),
 			peer_info.m_address,server_config.protocol_config)
 {
@@ -98,18 +99,24 @@ void GSmtp::ServerPeer::onSendComplete()
 	// never gets here -- see GNet::Sender ctor
 }
 
-bool GSmtp::ServerPeer::onReceive( const std::string & line )
+namespace
 {
-	if( m_first_line )
+	struct Adaptor
 	{
-		m_first_line = false ;
-		if( eol() != "\r\n" )
-			G_WARNING( "GSmtp::ServerPeer::onReceive: incorrect end-of-line detected: assuming line-feed line endings" ) ;
-	}
+		GSmtp::ServerProtocol & m_protocol ;
+		Adaptor( GSmtp::ServerProtocol & protocol ) : m_protocol(protocol) {}
+		bool operator()( const char * p , size_t n , size_t e )
+		{
+			return m_protocol.apply( p , n , e ) ;
+		}
+	} ;
+}
 
-	// apply the line to the protocol
-	m_protocol.apply( line ) ;
-	return true ;
+void GSmtp::ServerPeer::onData( const char * line_data , size_t line_size )
+{
+	G_ASSERT( line_size != 0U ) ; if( line_size == 0U ) return ;
+	Adaptor a( m_protocol ) ;
+	m_line_buffer.apply( line_data , line_size , a ) ;
 }
 
 void GSmtp::ServerPeer::onSecure( const std::string & certificate )
@@ -122,6 +129,11 @@ void GSmtp::ServerPeer::protocolSend( const std::string & line , bool go_secure 
 	send( line , 0U ) ; // GNet::Sender -- may throw SendError
 	if( go_secure )
 		secureAccept() ;
+}
+
+void GSmtp::ServerPeer::protocolShutdown()
+{
+	socket().shutdown() ; // fwiw
 }
 
 // ===

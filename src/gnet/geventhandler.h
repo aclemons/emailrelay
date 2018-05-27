@@ -47,6 +47,15 @@ namespace GNet
 class GNet::EventHandler
 {
 public:
+	enum Reason
+	{
+		reason_closed , // fin packet, clean shutdown
+		reason_down , // network down
+		reason_reset , // rst packet
+		reason_abort , // socket failed
+		reason_other // eg. oob data
+	} ;
+
 	virtual ~EventHandler() ;
 		///< Destructor.
 
@@ -58,9 +67,14 @@ public:
 		///< Called for a write event. Overrideable. The default
 		///< implementation does nothing.
 
-	virtual void oobEvent() ;
-		///< Called for a socket-exception event. Overridable.
-		///< The default implementation throws an exception.
+	virtual void otherEvent( Reason ) ;
+		///< Called for a socket-exception event or a socket-close
+		///< event on windows. Overridable. The default
+		///< implementation throws an exception.
+
+	static std::string str( Reason ) ;
+		///< Returns a printable description of the other-event
+		///< reason.
 
 private:
 	void operator=( const EventHandler & ) ;

@@ -21,200 +21,311 @@
 #include "gdef.h"
 #include "glimits.h"
 #include "glinebuffer.h"
+#include "gtest.h"
 #include "gdebug.h"
 #include "gassert.h"
+#include <algorithm>
 
-static const unsigned long line_limit = G::limits::net_line_limit ;
+static const size_t c_line_limit = G::limits::net_line_limit ;
 
-GNet::LineBuffer::LineBuffer() :
-	m_iterator(nullptr) ,
-	m_auto(true) ,
-	m_eol("\n") ,
-	m_throw_on_overflow(false) ,
-	m_expect(0U)
+GNet::LineBuffer::LineBuffer( LineBufferConfig config ) :
+	m_auto(config.eol().empty()) ,
+	m_eol(config.eol()) ,
+	m_warn_limit(config.warn()) ,
+	m_fail_limit(config.fail()?config.fail():c_line_limit) ,
+	m_extra_data(nullptr) ,
+	m_extra_size(0U) ,
+	m_expect(0U) ,
+	m_warned(false) ,
+	m_pos(0U) ,
+	m_line_data(nullptr) ,
+	m_line_size(0U) ,
+	m_eol_size(0U)
 {
 }
 
-GNet::LineBuffer::LineBuffer( const std::string & eol , bool do_throw ) :
-	m_iterator(nullptr) ,
-	m_auto(false) ,
-	m_eol(eol) ,
-	m_throw_on_overflow(do_throw) ,
-	m_expect(0U)
+void GNet::LineBuffer::add( const char * data , size_t size )
 {
-	G_ASSERT( !eol.empty() ) ;
-}
-
-size_t GNet::LineBuffer::lock( LineBufferIterator * iterator )
-{
-	if( m_iterator != nullptr ) throw Error("double lock") ;
-	m_iterator = iterator ;
-
-	detect() ;
-	size_t expect = m_expect ;
-	m_expect = 0U ;
-	return expect ;
-}
-
-void GNet::LineBuffer::unlock( LineBufferIterator * iterator , size_t discard , size_t expect )
-{
-	if( m_iterator == nullptr || iterator != m_iterator ) throw Error("double unlock") ;
-	m_iterator = nullptr ;
-	m_expect = expect ;
-
-	G_ASSERT( discard <= m_store.size() ) ;
-	if( discard == m_store.size() )
-		m_store.clear() ;
-	else if( discard != 0U )
-		m_store.erase( 0U , discard ) ;
-}
-
-void GNet::LineBuffer::add( const char * p , std::string::size_type n )
-{
-	if( check( n ) )
-		m_store.append( p , n ) ;
+	if( size )
+	{
+		precheck( size ) ;
+		m_store.append( data , size ) ;
+	}
 }
 
 void GNet::LineBuffer::add( const std::string & s )
 {
-	add( s.data() , s.size() ) ;
+	if( !s.empty() )
+	{
+		precheck( s.size() ) ;
+		m_store.append( s ) ;
+	}
+}
+
+void GNet::LineBuffer::addextra( const char * data , size_t size )
+{
+	if( G::Test::enabled("line-buffer-simple") )
+	{
+		add( data , size ) ; // no zero-copy optimisation
+	}
+	else if( size )
+	{
+		precheck( size ) ;
+		m_extra_data = data ; G_ASSERT( m_extra_size == 0U ) ;
+		m_extra_size = size ;
+
+		// make sure no eol spans store and extra
+		while( !m_store.empty() && m_extra_size != 0U && !m_eol.empty() &&
+			m_eol.find(m_store.at(m_store.size()-1U)) != std::string::npos &&
+			m_eol.find(*m_extra_data) != std::string::npos )
+		{
+			m_store.append( 1U , *m_extra_data++ ) ;
+			m_extra_size-- ;
+		}
+	}
+}
+
+void GNet::LineBuffer::precheck( size_t n )
+{
+	G_ASSERT( n != 0U ) ;
+	bool arithmetic_overflow = (m_store.size() + n) < m_store.size() ;
+	bool fail_limit_overflow = (m_store.size() + n) > m_fail_limit ;
+	if( arithmetic_overflow || fail_limit_overflow )
+		throw ErrorOverflow() ;
+}
+
+bool GNet::LineBuffer::more()
+{
+	const size_t npos = std::string::npos ;
+	size_t pos = npos ;
+	const char * p = nullptr ;
+	m_line_data = nullptr ;
+
+	G_ASSERT( m_pos <= (m_store.size()+m_extra_size) ) ;
+	if( m_pos == (m_store.size()+m_extra_size) )
+	{
+		// finished iterating, no residue
+		//
+		m_store.clear() ;
+		m_extra_size = 0U ;
+		m_pos = 0U ;
+		return false ;
+	}
+	else if( m_expect != 0U )
+	{
+		consolidate() ;
+		if( (m_pos+m_expect) <= m_store.size() )
+		{
+			// got all expected
+			//
+			m_eol_size = 0U ;
+			m_line_data = m_store.data() + m_pos ;
+			m_line_size = m_expect ;
+			m_pos += m_expect ;
+			m_expect = 0U ;
+			return true ;
+		}
+		else
+		{
+			// expecting more
+			//
+			return false ;
+		}
+	}
+	else if( !detect() )
+	{
+		// no eol detected
+		//
+		consolidate() ;
+		return false ;
+	}
+	else if( m_pos < m_store.size() && (pos=m_store.find(m_eol,m_pos)) != npos )
+	{
+		// complete line in store
+		//
+		m_eol_size = m_eol.size() ;
+		m_line_data = m_store.data() + m_pos ;
+		m_line_size = pos - m_pos ;
+		linecheck( m_line_size ) ;
+		m_pos = pos + m_eol_size ;
+		return true ;
+	}
+	else if( m_pos < m_store.size() && m_extra_size == 0U )
+	{
+		// finished iterating, leave the residue
+		//
+		if( m_pos ) m_store.erase( 0U , m_pos ) ;
+		m_pos = 0U ;
+		return false ;
+	}
+	else if( (p=extraeol()) != nullptr )
+	{
+		G_ASSERT( m_extra_size != 0U ) ;
+		if( m_pos < m_store.size() )
+		{
+			// line spans store and extra
+			//
+			size_t n_lhs = m_store.size() - m_pos ;
+			size_t n_rhs = std::distance(m_extra_data,p) + m_eol.size() ;
+			m_store.append( m_extra_data , n_rhs ) ;
+			m_extra_data += n_rhs ;
+			m_extra_size -= n_rhs ;
+			m_eol_size = m_eol.size() ;
+			m_line_data = m_store.data() + m_pos ;
+			m_line_size = n_lhs + n_rhs - m_eol_size ;
+			linecheck( m_line_size ) ;
+			m_pos += ( n_lhs + n_rhs ) ;
+			return true ;
+		}
+		else
+		{
+			// complete line in extra
+			//
+			m_eol_size = m_eol.size() ;
+			m_line_data = m_extra_data + m_pos - m_store.size() ;
+			m_line_size = std::distance( m_line_data , p ) ;
+			linecheck( m_line_size ) ;
+			m_pos += ( m_line_size + m_eol_size ) ;
+			return true ;
+		}
+	}
+	else if( m_pos < m_store.size() )
+	{
+		// finished iterating, residue in store and extra
+		//
+		G_ASSERT( m_extra_size != 0U ) ;
+		consolidate() ;
+		if( m_pos ) m_store.erase( 0U , m_pos ) ;
+		m_pos = 0U ;
+		return false ;
+	}
+	else
+	{
+		// finished iterating, residue in extra
+		//
+		G_ASSERT( m_extra_size != 0U ) ;
+		size_t n = m_pos - m_store.size() ;
+		m_store.assign( m_extra_data + n , m_extra_size - n ) ;
+		m_extra_size = 0U ;
+		m_pos = 0U ;
+		return false ;
+	}
+}
+
+const char * GNet::LineBuffer::extraeol() const
+{
+	G_ASSERT( m_store.find(m_eol,m_pos) == std::string::npos ) ;
+	G_ASSERT( m_extra_size != 0U ) ;
+
+	const char * end = m_extra_data + m_extra_size ;
+	const char * start = m_extra_data ;
+	if( m_pos > m_store.size() )
+		start += ( m_pos-m_store.size() ) ;
+
+	const char * p = std::search( start , end , m_eol.data() , m_eol.data()+m_eol.size() ) ;
+	return p == end ? nullptr : p ;
+}
+
+void GNet::LineBuffer::consolidate()
+{
+	if( m_extra_size )
+	{
+		m_store.append( m_extra_data , m_extra_size ) ;
+		m_extra_size = 0U ;
+	}
+}
+
+bool GNet::LineBuffer::detect()
+{
+	const size_t npos = std::string::npos ;
+	if( m_auto )
+	{
+		consolidate() ; // could do better
+		size_t pos = m_store.find( '\n' ) ;
+		if( pos != npos )
+		{
+			if( pos > 0U && m_store.at(pos-1U) == '\r' )
+				m_eol = std::string( "\r\n" , 2U ) ;
+			else
+				m_eol = std::string( 1U , '\n' ) ;
+			m_auto = false ;
+		}
+	}
+	return !m_eol.empty() ;
 }
 
 void GNet::LineBuffer::expect( size_t n )
 {
-	// pass it on, either now or at lock() time
-	if( m_iterator == nullptr )
-	{
-		m_expect = n ;
-	}
-	else
-	{
-		m_expect = 0U ;
-		m_iterator->expect( n ) ;
-	}
+	m_expect = n ;
 }
 
-void GNet::LineBuffer::detect()
-{
-	std::string::size_type pos = m_auto ? m_store.find('\n') : std::string::npos ;
-	if( m_auto && pos != std::string::npos )
-	{
-		if( pos > 0U && m_store.at(pos-1U) == '\r' )
-			m_eol = std::string( "\r\n" ) ;
-		m_auto = false ;
-	}
-}
-
-const std::string & GNet::LineBuffer::eol() const
+std::string GNet::LineBuffer::eol() const
 {
 	return m_eol ;
 }
 
-bool GNet::LineBuffer::check( size_t n ) const
+void GNet::LineBuffer::linecheck( size_t n )
 {
-	if( n == 0U ) return false ;
-	if( m_iterator != nullptr ) throw Error( "locked" ) ;
-	bool ok = (m_store.size()+n) <= line_limit ;
-	if( !ok )
+	if( !m_warned && m_warn_limit != 0U && n > m_warn_limit )
 	{
-		if( m_throw_on_overflow )
-			throw Error( "overflow" ) ;
-		else
-			G_ERROR( "GNet::LineBuffer::check: line too long: end-of-line expected: "
-				"have " << m_store.size() << " characters, and adding " << n << " more" ) ;
+		G_WARNING( "GNet::LineBuffer::check: very long line detected: " << n << " > " << m_warn_limit ) ;
+		m_warned = true ;
 	}
-	return ok ;
+}
+
+size_t GNet::LineBuffer::eolSize() const
+{
+	return m_eol_size ;
+}
+
+size_t GNet::LineBuffer::lineSize() const
+{
+	return m_line_size ;
+}
+
+const char * GNet::LineBuffer::lineData() const
+{
+	G_ASSERT( m_line_data != nullptr ) ;
+	return m_line_data ;
 }
 
 // ==
 
-GNet::LineBufferIterator::LineBufferIterator( LineBuffer & buffer ) :
-	m_buffer(buffer) ,
-	m_expect(0U) ,
-	m_pos(0U) ,
-	m_eol_size(buffer.m_eol.size()) ,
-	m_line_begin(buffer.m_store.begin()) ,
-	m_line_end(m_line_begin) ,
-	m_line_valid(false)
+GNet::LineBufferConfig::LineBufferConfig( const std::string & eol , size_t warn , size_t fail ) :
+	m_eol(eol) ,
+	m_warn(warn) ,
+	m_fail(fail)
 {
-	m_expect = m_buffer.lock( this ) ;
 }
 
-GNet::LineBufferIterator::~LineBufferIterator()
+GNet::LineBufferConfig GNet::LineBufferConfig::newline()
 {
-	m_buffer.unlock( this , m_pos , m_expect ) ;
+	return LineBufferConfig( std::string(1U,'\n') ) ;
 }
 
-void GNet::LineBufferIterator::expect( size_t n )
+GNet::LineBufferConfig GNet::LineBufferConfig::autodetect()
 {
-	m_expect = n ;
+	return LineBufferConfig( std::string() ) ;
 }
 
-bool GNet::LineBufferIterator::more()
+GNet::LineBufferConfig GNet::LineBufferConfig::crlf()
 {
-	m_line_valid = false ;
-
-	const size_t npos = std::string::npos ;
-	std::string & store = m_buffer.m_store ;
-	const std::string & eol = m_buffer.m_eol ;
-	size_t eol_size = eol.size() ;
-
-	G_ASSERT( m_pos <= store.size() ) ;
-	if( m_pos == store.size() )
-	{
-		m_line.clear() ;
-		return false ;
-	}
-
-	size_t pos = npos ;
-	if( m_expect != 0U )
-	{
-		if( (m_pos+m_expect) <= store.size() )
-		{
-			pos = m_pos + m_expect ;
-			m_expect = 0U ;
-			eol_size = 0U ;
-		}
-	}
-	else
-	{
-		pos = store.find( eol , m_pos ) ;
-	}
-
-	if( pos == std::string::npos )
-	{
-		m_line.clear() ;
-		return false ;
-	}
-	else
-	{
-		G_ASSERT( pos >= m_pos ) ;
-		const std::string & store = m_buffer.m_store ;
-		m_line_begin = store.begin() + m_pos ;
-		m_line_end = store.begin() + pos ;
-		m_pos = pos + eol_size ;
-		return true ;
-	}
+	return LineBufferConfig( std::string("\r\n",2U) ) ;
 }
 
-const std::string & GNet::LineBufferIterator::line() const
+GNet::LineBufferConfig GNet::LineBufferConfig::smtp()
 {
-	if( !m_line_valid )
-	{
-		m_line.assign( m_line_begin , m_line_end ) ;
-		m_line_valid = true ;
-	}
-	return m_line ;
+	return LineBufferConfig( std::string("\r\n",2U) , 998U + 2U ) ; // RFC-2822
 }
 
-std::string::const_iterator GNet::LineBufferIterator::begin() const
+GNet::LineBufferConfig GNet::LineBufferConfig::pop()
 {
-	return m_line_begin ;
+	return crlf() ;
 }
 
-std::string::const_iterator GNet::LineBufferIterator::end() const
+GNet::LineBufferConfig GNet::LineBufferConfig::http()
 {
-	return m_line_end ;
+	return crlf() ;
 }
 
 /// \file glinebuffer.cpp

@@ -116,7 +116,7 @@ mediated by the `ProtocolMessage` interface. Two main implementations of this
 interface are available: one for normal spooling (`ProtocolMessageStore`), and
 another for immediate forwarding (`ProtocolMessageForward`). The `Decorator`
 pattern is used whereby the forwarding class uses an instance of the storage
-class to do the message storing and pre-processing, while adding in an instance
+class to do the message storing and filtering, while adding in an instance
 of the `GSmtp::Client` class to do the forwarding.
 
 Message filtering (`--filter`) is implemented via an abstract `Filter`

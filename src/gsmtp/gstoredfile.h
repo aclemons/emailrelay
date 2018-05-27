@@ -24,7 +24,6 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gmessagestore.h"
-#include "gexecutable.h"
 #include "gstoredmessage.h"
 #include "gexception.h"
 #include "gpath.h"

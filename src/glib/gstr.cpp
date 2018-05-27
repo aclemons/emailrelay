@@ -96,6 +96,44 @@ void G::Str::escapeImp( std::string & s , char c_escape , const char * specials_
 	}
 }
 
+std::string G::Str::dequote( const std::string & s , char qq , char esc , const std::string & ws )
+{
+	std::string result ;
+	result.reserve( s.size() ) ;
+	bool in_quote = false ;
+	bool escaped = false ;
+	for( std::string::const_iterator p = s.begin() ; p != s.end() ; ++p )
+	{
+		if( *p == esc && !escaped )
+		{
+			escaped = true ;
+		}
+		else
+		{
+			bool is_space = ws.find(*p) != std::string::npos ;
+			if( *p == qq && !escaped && !in_quote )
+			{
+				in_quote = true ;
+			}
+			else if( *p == qq && !escaped )
+			{
+				in_quote = false ;
+			}
+			else if( ws.find(*p) != std::string::npos && in_quote )
+			{
+				result.append( 1U , esc ) ;
+				result.append( 1U , *p ) ;
+			}
+			else
+			{
+				result.append( 1U , *p ) ;
+			}
+			escaped = false ;
+		}
+	}
+	return result ;
+}
+
 void G::Str::unescape( std::string & s )
 {
 	unescape( s , '\\' , "rnt0" , "\r\n\t" ) ;
@@ -752,7 +790,9 @@ void G::Str::readLineFromImp( std::istream & stream , const std::string & eol , 
 	char c ;
 	for(;;)
 	{
+		// (maybe optimise by hoisting the sentry and calling rdbuf() methods)
 		stream.get( c ) ;
+
 		if( stream.fail() ) // get(char) always sets the failbit at eof, not necessarily eofbit
 		{
 			// set eofbit, reset failbit -- cf. std::getline() in <string>
@@ -766,11 +806,11 @@ void G::Str::readLineFromImp( std::istream & stream , const std::string & eol , 
 			break ;
 		}
 
-		line.append( 1U , c ) ; // fast enough if 'line' has sufficient capacity
+		line.append( 1U , c ) ;
 		changed = true ;
 		++line_length ;
 
-		if( line_length >= eol_length && c == eol_final ) // optimisation
+		if( line_length >= eol_length && c == eol_final )
 		{
 			const size_type offset = line_length - eol_length ;
 			if( line.find(eol,offset) == offset )
@@ -1050,7 +1090,7 @@ std::string G::Str::head( const std::string & in , std::string::size_type pos , 
 	return
 		pos == std::string::npos ?
 			default_ :
-			( pos == 0U ? std::string() : ( (pos+1U) > in.length() ? in : in.substr(0U,pos) ) ) ;
+			( pos == 0U ? std::string() : ( pos >= in.length() ? in : in.substr(0U,pos) ) ) ;
 }
 
 std::string G::Str::head( const std::string & in , const std::string & sep , bool default_empty )

@@ -24,20 +24,20 @@
      <li>New <em class="quote">--forward-on-disconnect</em> option replaces <em class="quote">--poll=0</em>.</li>
      <li>The <em class="quote">--anonymous</em> option now suppresses the <em class="quote">Received</em> line, whatever the <em class="quote">--domain</em>.</li>
      <li>The second field in the secrets file indicates the password encoding, not AUTH mechanism.</li>
-     <li>The <em class="quote">--verifier</em> options is now <em class="quote">--address-verifier</em> with simplified command-line parameters.</li>
+     <li>The <em class="quote">--verifier</em> option is now <em class="quote">--address-verifier</em>, with simplified command-line parameters.</li>
      <li>Command-line file paths can use <em class="quote">@app</em> as a prefix to be relative to the executable directory.</li>
      <li>Command-line file paths can be relative to the startup cwd even when daemonised.</li>
      <li>Filter exit codes between 104 and 107 are interpreted differently.</li>
      <li>Message rejection reasons passed back to the submitting SMTP client are much less verbose.</li>
      <li>Forwarding events are queued up if the forwarding client is still busy from last time.</li>
      <li>The bind address for outgoing connections is no longer taken from first unqualified <em class="quote">--interface</em> address [bug-id #27].</li>
-     <li>Line-feed line endings are allowed in the SMTP server protocol, with a warning.</li>
      <li>The SMTP client protocol tries more than one authentication mechanism.</li>
+     <li>Client protocol sends QUIT with a socket shutdown().</li>
      <li>The Windows commdlg list-view widget is used for the server status pages.</li>
      <li>The Windows connection-lookup feature is withdrawn (<em class="quote">--peer-lookup</em>).</li>
      <li>Several build-time configure options like <em class="quote">--disable-pop</em> are withdrawn.</li>
-     <li>Support for old versions of Windows is dropped.</li>
-     <li>Support for old compilers is dropped (eg. gcc 2.95).</li>
+     <li>C++ 2011 is preferred, and required for multi-threading.</li>
+     <li>Support for very old versions of Windows is dropped.</li>
     </ul>
    <h2><a class="a-header" name="SH_1_2">1.9.1 -&gt; 1.9.2</a></h2> <!-- index:2:SH:1:2:1.9.1 -&gt; 1.9.2 -->
     <ul>
@@ -46,7 +46,7 @@
      <li>A warning is emitted if there is more than one client authentication secret.</li>
      <li>Multiple <em class="quote">--interface</em> options are allowed separately on the command-line.</li>
      <li>Added a new <em class="quote">--client-interface</em> option.</li>
-     <li>The <em class="quote">Received</em> line is formatted as per RFC 3848 (<em class="quote">with ESMTPSA</em>).</li>
+     <li>The <em class="quote">Received</em> line is formatted as per RFC-3848 (<em class="quote">with ESMTPSA</em>).</li>
      <li>The LOGIN and PLAIN mechanisms in the secrets file are now equivalent.</li>
      <li>The Windows service wrapper can use a configuration file to locate the startup batch file.</li>
      <li>Simplified the implementation of the GUI installation program.</li>

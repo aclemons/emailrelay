@@ -24,12 +24,12 @@
 #include "grequestclient.h"
 #include "gassert.h"
 
-GSmtp::RequestClient::RequestClient( const std::string & key , const std::string & ok , const std::string & eol ,
+GSmtp::RequestClient::RequestClient( const std::string & key , const std::string & ok ,
 	const GNet::Location & location , unsigned int connect_timeout , unsigned int response_timeout ) :
-		GNet::Client(location,connect_timeout,response_timeout,0U,eol) ,
+		GNet::Client(location,connect_timeout,response_timeout,0U,config()) ,
+		m_eol(1U,'\n') ,
 		m_key(key) ,
 		m_ok(ok) ,
-		m_eol(eol) ,
 		m_timer(*this,&RequestClient::onTimeout,*this)
 {
 	G_DEBUG( "GSmtp::RequestClient::ctor: " << location.displayString() << ": "
@@ -38,6 +38,11 @@ GSmtp::RequestClient::RequestClient( const std::string & key , const std::string
 
 GSmtp::RequestClient::~RequestClient()
 {
+}
+
+GNet::LineBufferConfig GSmtp::RequestClient::config()
+{
+	return GNet::LineBufferConfig::newline() ;
 }
 
 void GSmtp::RequestClient::onConnect()
@@ -97,14 +102,14 @@ void GSmtp::RequestClient::onSecure( const std::string & )
 {
 }
 
-bool GSmtp::RequestClient::onReceive( const std::string & line )
+bool GSmtp::RequestClient::onReceive( const char * line_data , size_t line_size , size_t )
 {
+	std::string line( line_data , line_size ) ;
 	G_DEBUG( "GSmtp::RequestClient::onReceive: [" << G::Str::printable(line) << "]" ) ;
 	if( busy() )
 	{
 		m_request.erase() ;
-		std::string scan_result = result(line) ; // empty string if scanned okay
-		eventSignal().emit( m_key , scan_result ) ;
+		eventSignal().emit( m_key , result(line) ) ; // empty string if matching m_ok
 	}
 	return true ;
 }
@@ -120,7 +125,7 @@ std::string GSmtp::RequestClient::requestLine( const std::string & request_paylo
 
 std::string GSmtp::RequestClient::result( std::string line ) const
 {
-	G::Str::trim( line , "\r" ) ;
+	G::Str::trimRight( line , "\r" ) ;
 	return !m_ok.empty() && line.find(m_ok) == 0U ? std::string() : line ;
 }
 

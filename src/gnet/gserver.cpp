@@ -39,7 +39,7 @@ GNet::ServerPeer::ServerPeer( Server::PeerInfo peer_info ) :
 	G_DEBUG( "GNet::ServerPeer::ctor: [" << this << "]: " << logId() ) ;
 
 	m_socket->addReadHandler( *this , *this ) ;
-	m_socket->addOobHandler( *this , *this ) ;
+	m_socket->addOtherHandler( *this , *this ) ;
 	if( Monitor::instance() ) Monitor::instance()->addServerPeer(*this) ;
 }
 
@@ -49,7 +49,7 @@ GNet::ServerPeer::~ServerPeer()
 	if( Monitor::instance() ) Monitor::instance()->removeServerPeer(*this) ;
 	m_handle->reset() ;
 	m_socket->dropReadHandler() ;
-	m_socket->dropOobHandler() ;
+	m_socket->dropOtherHandler() ;
 }
 
 std::string GNet::ServerPeer::logId() const
@@ -66,6 +66,11 @@ GNet::StreamSocket & GNet::ServerPeer::socket()
 {
 	G_ASSERT( m_socket.get() != nullptr ) ;
 	return *m_socket.get() ;
+}
+
+void GNet::ServerPeer::otherEvent( EventHandler::Reason reason )
+{
+	m_sp.otherEvent( reason ) ;
 }
 
 void GNet::ServerPeer::readEvent()

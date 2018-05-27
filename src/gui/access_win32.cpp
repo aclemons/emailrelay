@@ -33,8 +33,8 @@ bool Access::modify( const G::Path & path , bool b )
 	{
 		// this is used to open up permissions on ProgramData/E-MailRelay so
 		// that the installing-user can edit emailrelay-start.bat (etc) -- if
-		// it doesnt work then it doesn't stop anything working, it's just
-		// a pita to modify startup options
+		// it doesnt work then it doesn't stop anything working, it's just then
+		// a pain to modify startup options
 		if( !b )
 			add_user_write_permissions_to_directory( path.str() ) ;
 		return true ;

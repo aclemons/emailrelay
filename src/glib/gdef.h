@@ -1018,7 +1018,7 @@
 	 */
 
 	#ifdef __cplusplus
-		#if GCONFIG_HAVE_IPV6
+		#if GCONFIG_ENABLE_IPV6 && GCONFIG_HAVE_IPV6
 			inline void gnet_address6_init( sockaddr_in6 & s )
 			{
 				#if GCONFIG_HAVE_SIN6_LEN

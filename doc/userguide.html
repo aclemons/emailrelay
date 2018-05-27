@@ -222,11 +222,6 @@
     </p>
 
     <p>
-     On Windows look for a batch file called <em class="quote">emailrelay-startup-with-log-file.bat</em>
-     under <em class="quote">ProgramData</em>.
-    </p>
-
-    <p>
      For more verbose logging add the <em class="quote">--verbose</em> option to the command-line.
     </p>
    <h2><a class="a-header" name="SH_1_7">Preventing open mail relay</a></h2> <!-- index:2:SH:1:7:Preventing open mail relay -->
@@ -366,10 +361,10 @@ exec /usr/local/sbin/emailrelay --as-client=smtp.example.com:smtp
     </p>
 
     <p>
-     For more ideas check out the <em class="quote">--client-filter</em> and <em class="quote">--poll</em> options, and don't
-     overlook the administration and control interface (<em class="quote">--admin</em>) which you can use
-     to receive notification of message arrival or force message forwarding at any
-     time.
+     The POP server can also be used for checking e-mails that are taken out of the
+     normal store-and-forward flow. For example, a <em class="quote">--filter</em> script that checks for
+     spam could move suspicious e-mails into a subdirectory of the spool directory
+     that is accessible via the <em class="quote">--pop-by-name</em> feature.
     </p>
    <h2><a class="a-header" name="SH_1_12">Rate limiting</a></h2> <!-- index:2:SH:1:12:Rate limiting -->
     <p>
@@ -441,7 +436,10 @@ exit 0
       </div><!-- div-pre -->
     <p>
      E-MailRelay can also talk to a SpamAssassin <em class="quote">spamd</em> daemon over the network
-     by using <em class="quote">--filter spam:localhost:783</em>.
+     by using <em class="quote">--filter spam:localhost:783</em>. This rejects the the message if
+     <em class="quote">spamd</em> thinks it is spam, or by using <em class="quote">--filter spam-edit:localhost:783</em>
+     the message will be accepted but the content will be replaced by the
+     <em class="quote">spamd</em> output.
     </p>
    <h2><a class="a-header" name="SH_1_14">Google mail</a></h2> <!-- index:2:SH:1:14:Google mail -->
     <p>

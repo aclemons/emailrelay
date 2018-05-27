@@ -38,10 +38,9 @@ namespace Main
 }
 
 /// \class Main::WinForm
-/// A class for the main user interface comprising a 'property sheet'
-/// containing a stack of 'property page' dialog boxes. In practice each
-/// dialog box is made up of a COMMCTL List View control (see
-/// GGui::ListView).
+/// A class for the main user interface that is-a property-sheet stack
+/// containing property-page dialog boxes. In practice each dialog box
+/// is made up of a COMMCTL List View control (see GGui::ListView).
 ///
 /// The WinForm manages all the the GGui::Stack callbacks, and also
 /// asks GGui::Stack to post a user-other message to the WinApp when

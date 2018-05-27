@@ -25,7 +25,7 @@
 #include "geventhandler.h"
 #include "gexception.h"
 #include "gidentity.h"
-#include "gexecutable.h"
+#include "gexecutablecommand.h"
 #include <memory>
 
 namespace GNet
@@ -44,6 +44,7 @@ class GNet::Task
 public:
 	G_EXCEPTION( Busy , "cannot execute command-line task: still busy from last time" ) ;
 	G_EXCEPTION( Error , "asynchronous task error" ) ;
+	G_EXCEPTION( Failed , "failed to collect task exit status" ) ;
 
 	Task( TaskCallback & , ExceptionHandler & eh ,
 		const std::string & exec_error_format = std::string() ,
@@ -55,7 +56,7 @@ public:
 		///< Destructor. Kills the spawned process and waits for it to
 		///< terminate, where necessary.
 
-	void start( const G::Executable & commandline ) ;
+	void start( const G::ExecutableCommand & commandline ) ;
 		///< Starts the task by spawning a new process with the given
 		///< command-line and also starting a thread to wait for it. The
 		///< wait thread signals completion of the child process via the

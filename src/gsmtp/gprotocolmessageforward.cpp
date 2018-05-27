@@ -90,9 +90,9 @@ void GSmtp::ProtocolMessageForward::addReceived( const std::string & line )
 	m_pm->addReceived( line ) ;
 }
 
-bool GSmtp::ProtocolMessageForward::addText( const std::string & line )
+bool GSmtp::ProtocolMessageForward::addText( const char * line_data , size_t line_size )
 {
-	return m_pm->addText( line ) ;
+	return m_pm->addText( line_data , line_size ) ;
 }
 
 std::string GSmtp::ProtocolMessageForward::from() const

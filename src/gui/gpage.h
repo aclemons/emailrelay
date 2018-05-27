@@ -25,7 +25,7 @@
 #include "qt.h"
 #include "gstrings.h"
 #include "gpath.h"
-#include "gexecutable.h"
+#include "gexecutablecommand.h"
 #include <string>
 
 class GDialog ;
@@ -72,7 +72,7 @@ public:
 		///< Called as this page becomes visible as a result
 		///< of the previous page's 'next' button being clicked.
 
-	virtual G::Executable launchCommand() const ;
+	virtual G::ExecutableCommand launchCommand() const ;
 		///< Called when the launch button is clicked. Returns a valid
 		///< launch command or a default-constructed object.
 

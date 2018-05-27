@@ -44,8 +44,8 @@ class G::LogOutput
 public:
  	enum SyslogFacility { User , Daemon , Mail , Cron } ; // etc.
 
-	LogOutput( const std::string & prefix , bool output , bool with_logging ,
-		bool with_verbose_logging , bool with_debug , bool with_level ,
+	LogOutput( const std::string & prefix , bool output , bool summary_logging ,
+		bool verbose_logging , bool with_debug , bool with_level ,
 		bool with_timestamp , bool strip_context , bool use_syslog ,
 		const std::string & stderr_replacement = std::string() ,
 		SyslogFacility syslog_facility = User ) ;
@@ -53,8 +53,8 @@ public:
 			///< is false, then there is no output of any sort. Otherwise at
 			///< least warning and error messages are generated.
 			///<
-			///< If 'with-logging' is true then log[summary] messages are
-			///< output. If 'with-verbose-logging' is true then log[verbose]
+			///< If 'summary_logging' is true then log-summary messages
+			///< are output. If 'verbose_logging' is true then log-verbose
 			///< messages are output. If 'with_debug' is true then debug
 			///< messages will also be generated (but only if compiled in).
 			///<
@@ -79,6 +79,11 @@ public:
 
 	bool enable( bool enabled = true ) ;
 		///< Enables or disables output. Returns the previous setting.
+
+	void quiet( bool quiet_stderr = true ) ;
+		///< Enables or disables quiet-stderr mode, intended for daemons
+		///< that log to syslog and only want startup errors and warnings
+		///< on stderr.
 
 	void verbose( bool verbose_log = true ) ;
 		///< Enables or disables verbose logging.
@@ -143,6 +148,7 @@ private:
 	bool m_enabled ;
 	bool m_summary_log ;
 	bool m_verbose_log ;
+	bool m_quiet ;
 	bool m_debug ;
 	bool m_level ;
 	bool m_strip ;
@@ -155,6 +161,7 @@ private:
 	bool m_timestamp ;
 	HANDLE m_handle ; // windows
 	bool m_handle_set ;
+	std::string m_buffer ;
 } ;
 
 #endif

@@ -35,11 +35,11 @@ namespace GSmtp
 /// a 'rcpt-to' recipient.
 ///
 /// If describing an invalid recipient then 'is_valid' is set false
-/// and a 'reason' is supplied. The reason is typically reported back
+/// and a 'response' is supplied. The response is typically reported back
 /// to the submitter, so it should not contain too much detail.
 ///
-/// The 'help' string can be added by the user of the verifier to give
-/// more context in the log in addition to 'reason'.
+/// The 'reason' string can be added by the user of the verifier to give
+/// more context in the log in addition to 'response'.
 ///
 /// If a valid local recipient then 'is_local' is set true, 'full_name'
 /// is set to the full description of the mailbox and 'address' is set
@@ -57,8 +57,8 @@ public:
 	bool abort ;
 	std::string full_name ;
 	std::string address ;
+	std::string response ;
 	std::string reason ;
-	std::string help ;
 
 	VerifierStatus() ;
 		///< Default constructor for an invalid remote mailbox.

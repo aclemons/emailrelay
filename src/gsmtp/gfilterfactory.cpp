@@ -37,14 +37,17 @@ std::string GSmtp::FilterFactory::check( const std::string & identifier )
 unique_ptr<GSmtp::Filter> GSmtp::FilterFactory::newFilter( GNet::ExceptionHandler & eh ,
 	bool server_side , const std::string & identifier , unsigned int timeout )
 {
-	Pair p = FactoryParser::parse( identifier , true ) ;
+	FactoryParser::Result p = FactoryParser::parse( identifier , true ) ;
 	if( p.first.empty() )
 	{
 		return unique_ptr<GSmtp::Filter>( new NullFilter( eh , server_side ) ) ;
 	}
 	else if( p.first == "spam" )
 	{
-		return unique_ptr<GSmtp::Filter>( new SpamFilter( eh , server_side , p.second , timeout , timeout ) ) ;
+		bool edit = p.third == 1 ;
+		bool read_only = !edit ;
+		bool always_pass = edit ;
+		return unique_ptr<GSmtp::Filter>( new SpamFilter( eh , server_side , p.second , read_only , always_pass , timeout , timeout ) ) ;
 	}
 	else if( p.first == "net" )
 	{

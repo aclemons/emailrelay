@@ -35,7 +35,7 @@ GSmtp::AdminServerPeer::AdminServerPeer( GNet::Server::PeerInfo peer_info ,
 	AdminServer & server , const std::string & remote_address ,
 	const G::StringMap & info_commands , const G::StringMap & config_commands ,
 	bool with_terminate ) :
-		GNet::BufferedServerPeer(peer_info) ,
+		GNet::BufferedServerPeer(peer_info,GNet::LineBufferConfig::autodetect()) ,
 		m_server(server) ,
 		m_prompt("E-MailRelay> ") ,
 		m_blocked(false) ,
@@ -47,7 +47,7 @@ GSmtp::AdminServerPeer::AdminServerPeer( GNet::Server::PeerInfo peer_info ,
 {
 	G_LOG_S( "GSmtp::AdminServerPeer: admin connection from " << peer_info.m_address.displayString() ) ;
 	m_client.doneSignal().connect( G::Slot::slot(*this,&AdminServerPeer::clientDone) ) ;
-	// dont prompt here -- it confuses the poke program
+	// dont prompt here -- it confuses some clients
 }
 
 GSmtp::AdminServerPeer::~AdminServerPeer()
@@ -79,8 +79,9 @@ void GSmtp::AdminServerPeer::onSecure( const std::string & )
 {
 }
 
-bool GSmtp::AdminServerPeer::onReceive( const std::string & line )
+bool GSmtp::AdminServerPeer::onReceive( const char * line_data , size_t line_size , size_t )
 {
+	std::string line( line_data , line_size ) ;
 	if( is(line,"flush") )
 	{
 		flush() ;
@@ -136,7 +137,7 @@ bool GSmtp::AdminServerPeer::onReceive( const std::string & line )
 	{
 		std::string arg = argument( line ) ;
 		if( arg.empty() )
-			sendLine( G::Str::join( crlf() , m_config_commands , "=[" , "]" ) ) ;
+			sendLine( G::Str::join( eol() , m_config_commands , "=[" , "]" ) ) ;
 		else if( !find(arg,m_config_commands).first )
 			sendLine( "usage: config [{" + G::Str::join("|",G::Str::keySet(m_config_commands)) + "}]" ) ;
 		else
@@ -153,10 +154,9 @@ bool GSmtp::AdminServerPeer::onReceive( const std::string & line )
 	return true ;
 }
 
-const std::string & GSmtp::AdminServerPeer::crlf()
+std::string GSmtp::AdminServerPeer::eol() const
 {
-	static const std::string s( "\015\012" ) ;
-	return s ;
+	return lineBufferEndOfLine().empty() ? std::string("\r\n") : lineBufferEndOfLine() ;
 }
 
 bool GSmtp::AdminServerPeer::is( const std::string & line_in , const std::string & key )
@@ -228,7 +228,7 @@ void GSmtp::AdminServerPeer::sendLine( std::string line , bool with_prompt )
 {
 	if( !line.empty() )
 		line.append( "\n" ) ;
-	G::Str::replaceAll( line , "\n" , crlf() ) ;
+	G::Str::replaceAll( line , "\n" , eol() ) ;
 	if( with_prompt )
 		line.append( m_prompt ) ;
 	send_( line ) ;
@@ -237,7 +237,7 @@ void GSmtp::AdminServerPeer::sendLine( std::string line , bool with_prompt )
 void GSmtp::AdminServerPeer::notify( const std::string & s0 , const std::string & s1 , const std::string & s2 )
 {
 	if( m_notifying )
-		send_( crlf() + "EVENT: " + G::Str::printable(G::Str::join(": ",s0,s1,s2)) ) ;
+		send_( eol() + "EVENT: " + G::Str::printable(G::Str::join(": ",s0,s1,s2)) ) ;
 }
 
 void GSmtp::AdminServerPeer::send_( const std::string & s )
@@ -263,9 +263,9 @@ void GSmtp::AdminServerPeer::status()
 	std::ostringstream ss ;
 	if( GNet::Monitor::instance() )
 	{
-		GNet::Monitor::instance()->report( ss , "" , crlf() ) ;
+		GNet::Monitor::instance()->report( ss , "" , eol() ) ;
 		std::string report = ss.str() ;
-		G::Str::trimRight( report , crlf() ) ;
+		G::Str::trimRight( report , eol() ) ;
 		sendLine( report ) ;
 	}
 	else
@@ -291,7 +291,7 @@ void GSmtp::AdminServerPeer::sendList( MessageStore::Iterator iter )
 	{
 		unique_ptr<StoredMessage> message( iter.next() ) ;
 		if( message.get() == nullptr ) break ;
-		if( !first ) ss << crlf() ;
+		if( !first ) ss << eol() ;
 		ss << message->name() ;
 	}
 

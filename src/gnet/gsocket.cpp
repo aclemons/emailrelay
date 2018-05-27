@@ -68,7 +68,7 @@ void GNet::Socket::drop()
 {
 	dropReadHandler() ;
 	dropWriteHandler() ;
-	dropOobHandler() ;
+	dropOtherHandler() ;
 }
 
 void GNet::Socket::saveReason() const
@@ -218,10 +218,10 @@ void GNet::Socket::addWriteHandler( EventHandler & handler , ExceptionHandler & 
 	EventLoop::instance().addWrite( m_socket , handler , eh ) ;
 }
 
-void GNet::Socket::addOobHandler( EventHandler & handler , ExceptionHandler & eh )
+void GNet::Socket::addOtherHandler( EventHandler & handler , ExceptionHandler & eh )
 {
-	G_DEBUG( "GNet::Socket::addOobHandler: fd " << m_socket ) ;
-	EventLoop::instance().addOob( m_socket , handler , eh ) ;
+	G_DEBUG( "GNet::Socket::addOtherHandler: fd " << m_socket ) ;
+	EventLoop::instance().addOther( m_socket , handler , eh ) ;
 }
 
 void GNet::Socket::dropReadHandler()
@@ -234,9 +234,9 @@ void GNet::Socket::dropWriteHandler()
 	EventLoop::instance().dropWrite( m_socket ) ;
 }
 
-void GNet::Socket::dropOobHandler()
+void GNet::Socket::dropOtherHandler()
 {
-	EventLoop::instance().dropOob( m_socket ) ;
+	EventLoop::instance().dropOther( m_socket ) ;
 }
 
 std::string GNet::Socket::asString() const
@@ -246,14 +246,21 @@ std::string GNet::Socket::asString() const
 	return ss.str() ;
 }
 
-void GNet::Socket::shutdown( bool for_writing )
+void GNet::Socket::shutdown( int how )
 {
-	::shutdown( m_socket.fd() , for_writing ? 1 : 0 ) ;
+	if( G::Test::enabled("socket-no-shutdown") ) return ;
+	::shutdown( m_socket.fd() , how ) ;
 }
 
 SOCKET GNet::Socket::fd() const
 {
 	return m_socket.fd() ;
+}
+
+std::string GNet::Socket::reason() const
+{
+	if( m_reason == 0 ) return std::string() ;
+	return reasonString( m_reason ) ;
 }
 
 //==
@@ -285,6 +292,7 @@ GNet::Socket::ssize_type GNet::StreamSocket::read( char * buf , size_type len )
 	if( len == 0 )
 		return 0 ;
 
+	m_reason = 0 ;
 	ssize_type nread = G::Msg::recv( m_socket.fd() , buf , len , 0 ) ;
 	if( sizeError(nread) )
 	{
@@ -389,14 +397,28 @@ GNet::Socket::ssize_type GNet::DatagramSocket::write( const char * buf , size_ty
 
 void GNet::StreamSocket::setOptionsOnCreate( bool /*listener*/ )
 {
-	setOptionNoLinger() ;
-	setOptionKeepAlive() ;
+	if( G::Test::enabled("socket-linger-zero") )
+		setOptionLingerImp( 1 , 0 ) ;
+	else if( G::Test::enabled("socket-linger-default") )
+		;
+	else
+		setOptionNoLinger() ;
+
+	if( G::Test::enabled("socket-keep-alive") )
+		setOptionKeepAlive() ;
 }
 
 void GNet::StreamSocket::setOptionsOnAccept()
 {
-	setOptionNoLinger() ;
-	setOptionKeepAlive() ;
+	if( G::Test::enabled("socket-linger-zero") )
+		setOptionLingerImp( 1 , 0 ) ;
+	else if( G::Test::enabled("socket-linger-default") )
+		;
+	else
+		setOptionNoLinger() ;
+
+	if( G::Test::enabled("socket-keep-alive") )
+		setOptionKeepAlive() ;
 }
 
 void GNet::Socket::setOptionsOnConnect( bool ipv6 )
@@ -406,7 +428,11 @@ void GNet::Socket::setOptionsOnConnect( bool ipv6 )
 
 void GNet::Socket::setOptionsOnBind( bool ipv6 )
 {
-	setOptionReuse() ; // allow us to rebind another socket's (eg. time-wait zombie's) address
+	if( G::Test::enabled("socket-no-reuse") )
+		;
+	else
+		setOptionReuse() ; // allow us to rebind another socket's (eg. time-wait zombie's) address
+
 	//setOptionExclusive() ; // don't allow anyone else to bind our address
 	setOptionPureV6( ipv6 ) ;
 }
@@ -418,14 +444,19 @@ void GNet::Socket::setOptionKeepAlive()
 
 void GNet::Socket::setOptionNoLinger()
 {
+	setOptionLingerImp( 0 , 0 ) ;
+}
+
+void GNet::Socket::setOptionLingerImp( int onoff , int time )
+{
 	struct linger options ;
-	options.l_onoff = 0 ;
-	options.l_linger = 0 ;
+	options.l_onoff = onoff ;
+	options.l_linger = time ;
 	bool ok = setOptionImp( SOL_SOCKET , SO_LINGER , reinterpret_cast<char*>(&options) , sizeof(options) ) ;
 	if( !ok )
 	{
 		saveReason() ;
-		throw SocketError( "cannot set so_linger" , m_reason_string ) ;
+		throw SocketError( "cannot set no_linger" , m_reason_string ) ;
 	}
 }
 

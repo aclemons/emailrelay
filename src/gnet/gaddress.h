@@ -173,8 +173,9 @@ public:
 		///< Returns true if this is a loopback address.
 
 	bool isLocal( std::string & reason ) const ;
-		///< Returns true if this seems to be a local address.
-		///< Returns an explanation by reference otherwise.
+		///< Returns true if this seems to be a local address (for some
+		///< definition of 'local'). Returns an explanation by reference
+		///< otherwise.
 
 	Family family() const ;
 		///< Returns the address family.

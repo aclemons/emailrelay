@@ -21,8 +21,6 @@
 #include "gdef.h"
 #include "geventhandlerlist.h"
 #include "gdebug.h"
-#include "gassert.h"
-#include "glog.h"
 #include <algorithm>
 
 namespace
@@ -186,6 +184,22 @@ void GNet::EventHandlerList::Iterator::raiseEvent( void (EventHandler::*method)(
 	{
 		if( m_p != m_end && handler() != nullptr )
 			(handler()->*method)() ;
+	}
+	catch( std::exception & e )
+	{
+		if( m_p != m_end && eh() != nullptr )
+			eh()->onException( e ) ;
+		else
+			throw ;
+	}
+}
+
+void GNet::EventHandlerList::Iterator::raiseEvent( void (EventHandler::*method)(EventHandler::Reason) , EventHandler::Reason reason )
+{
+	try
+	{
+		if( m_p != m_end && handler() != nullptr )
+			(handler()->*method)( reason ) ;
 	}
 	catch( std::exception & e )
 	{

@@ -18,7 +18,7 @@
 #
 # make_website
 #
-# usage: make_website <version-for-download-button>
+# usage: make_website [--host=<key>] <version-for-download-button>
 #
 # Pulls together a doxygen-based website. Developed against
 # doxygen version 1.8.14.
@@ -27,7 +27,10 @@
 use strict ;
 use FileHandle ;
 use File::Basename ;
+use Getopt::Long ;
 
+my %opt = () ;
+GetOptions( \%opt , "host=s" ) or die "usage error" ;
 die "usage error" if scalar(@ARGV) == 0 ;
 my $cfg_upload_version = $ARGV[0] ;
 
@@ -51,26 +54,40 @@ my $cfg_mainpage_md = "website.tmp.mainpage.md" ;
 my $cfg_pages_md = "website.tmp.pages.md" ;
 my $cfg_header = "website.tmp.header.html" ;
 
+my %cfg_hosts = (
+	sourceforge =>
+	{
+		url_base => "https://sourceforge.net/projects/emailrelay" ,
+		download_url => "__base__/files/emailrelay/__version__" ,
+		button_url => "__base__/files/latest/download" ,
+		button_img_src => 'https://a.fsdn.com/con/app/sf-download-button' ,
+		button_img_attributes => 'src="__src__" width=276 height=48 srcset="__src__?button_size=2x 2x"' ,
+		svn_trunk => 'https://svn.code.sf.net/p/emailrelay/code/trunk' ,
+	} ,
+	local =>
+	{
+		url_base => "https://sourceforge.net/projects/emailrelay" ,
+		download_url => "files/" ,
+		button_url => "files/" ,
+		button_img_src => 'download-button.png' ,
+		button_img_attributes => 'src="__src__"' ,
+		svn_trunk => 'https://svn.code.sf.net/p/emailrelay/code/trunk' ,
+	}
+) ;
+
+my %cfg_host = defined($opt{host}) ? %{$cfg_hosts{$opt{host}}} : %{$cfg_hosts{sourceforge}} ;
+$cfg_host{button_url} =~ s/__base__/$cfg_host{url_base}/g ;
+$cfg_host{download_url} =~ s/__base__/$cfg_host{url_base}/g ;
+$cfg_host{download_url} =~ s/__version__/$cfg_upload_version/g ;
+$cfg_host{button_img_attributes} =~ s/__src__/$cfg_host{button_img_src}/g ;
+
+my $cfg_project_md = '[SourceForge]('.$cfg_host{url_base}.')' ;
+my $cfg_download_page_md = '[download page]('.$cfg_host{download_url}.')' ;
+my $cfg_svn_trunk = $cfg_host{svn_trunk} ;
 my $cfg_button_html =
-	'<a href="https://sourceforge.net/projects/emailrelay/files/latest/download">' .
-	'<img alt="Download E-MailRelay" src="https://a.fsdn.com/con/app/sf-download-button" ' .
-	'width=276 height=48 srcset="https://a.fsdn.com/con/app/sf-download-button?button_size=2x 2x"></a>' ;
+	'<a href="'.$cfg_host{button_url}.'">' .
+	'<img alt="Download E-MailRelay" '.$cfg_host{button_img_attributes}.'></a>' ;
 
-my $cfg_button_html_alt =
-	'<a href="https://sourceforge.net/projects/emailrelay/files/emailrelay/__version__">' .
-	'<img alt="Download E-MailRelay" src="https://a.fsdn.com/con/app/sf-download-button" ' .
-	'width=276 height=48 srcset="https://a.fsdn.com/con/app/sf-download-button?button_size=2x 2x"></a>' ;
-
-my $cfg_button_md =
-	'[![Download E-MailRelay](https://a.fsdn.com/con/app/sf-download-button)]' .
-	'(https://sourceforge.net/projects/emailrelay/files/latest/download)' ;
-
-my $cfg_button_md_alt =
-	'[![Download E-MailRelay](https://a.fsdn.com/con/app/sf-download-button)]' .
-	'(https://sourceforge.net/projects/emailrelay/files/emailrelay/__version__)' ;
-
-$cfg_button_html =~ s/__version__/$cfg_upload_version/g ;
-$cfg_button_md =~ s/__version__/$cfg_upload_version/g ;
 my $cfg_button_marker = "i i i i i i i i i i i i i" ;
 
 my %config = (
@@ -99,9 +116,24 @@ sub make_config
 	my ( $fname ) = @_ ;
 	my $fh_in = new FileHandle( "doxygen -g - |" ) or die ;
 	my $fh = new FileHandle( $fname , "w" ) or die ;
+	my $line_number = 0 ;
 	while(<$fh_in>)
 	{
 		chomp( my $line = $_ ) ;
+
+		if( $line_number++ == 0 && $line =~ m/^# Doxyfile/ )
+		{
+			my ( $a , $b , $c ) = ( $line =~ m/# Doxyfile (\d+).?(\d*).?(\d*)/ ) ;
+			$a = ( defined($a) && $a ne "" ) ? $a : 0 ;
+			$b = ( defined($b) && $b ne "" ) ? $b : 0 ;
+			$c = ( defined($c) && $c ne "" ) ? $c : 0 ;
+			my $version = $a * 1000000 + $b * 1000 + $c ;
+			if( $version < 1008014 )
+			{
+				warn "warning: doxygen is too old: [$version]: please use 1.8.14 or later" ;
+			}
+		}
+
 		for my $key ( keys %config )
 		{
 			if( $line =~ m/^$key\s+/ )
@@ -179,8 +211,8 @@ sub make_pages_md
 	my $text = '
 		\page Download Download
 
-		E-MailRelay is hosted on [SourceForge](https://sourceforge.net/projects/emailrelay) and you can get release
-		tarballs from the project [download page](https://sourceforge.net/projects/emailrelay/files/emailrelay/__version__).
+		E-MailRelay is hosted on '.$cfg_project_md.' and you can get release
+		tarballs from the project '.$cfg_download_page_md.'.
 
 		The green button automatically downloads the latest release for a target environment that is deduced
 		from your browser version.
@@ -192,10 +224,10 @@ sub make_pages_md
 		\page Source Source
 
 		You can get source code tarballs from the SourceForge
-		[download page](https://sourceforge.net/projects/emailrelay/files/emailrelay/__version__) or
+		'.$cfg_download_page_md.' or
 		use subversion to get the latest code:
 
-			svn co https://svn.code.sf.net/p/emailrelay/code/trunk emailrelay
+			svn co '.$cfg_svn_trunk.' emailrelay
 
 		For a secondary source try [github](http://github.com/graeme-walker).
 
@@ -207,8 +239,6 @@ sub make_pages_md
 
 	$text =~ s/\t/    /mg ;
 	$text =~ s/^        //mg ;
-	$text =~ s/__version__/$cfg_upload_version/mg ;
-	#$text =~ s/__button__/$cfg_button_md/mg ;
 
 	my $fh_out = new FileHandle( $fname , "w" ) or die ;
 	print $fh_out $text ;

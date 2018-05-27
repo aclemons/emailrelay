@@ -53,7 +53,7 @@ public:
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;
-	virtual G::Executable launchCommand() const ;
+	virtual G::ExecutableCommand launchCommand() const ;
 
 private:
 	QLabel * m_label ;
@@ -82,6 +82,10 @@ public:
 	DirectoryPage( GDialog & dialog , const G::MapFile & , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
 		bool installing , bool is_mac ) ;
+
+	G::Path installDir() const ;
+	G::Path runtimeDir() const ;
+	G::Path configDir() const ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;
@@ -150,6 +154,7 @@ public:
 	explicit PopPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
 		bool have_accounts ) ;
+	bool withFilterCopy() const ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;
@@ -165,7 +170,7 @@ private:
 	QRadioButton * m_shared ;
 	QRadioButton * m_pop_by_name ;
 	QCheckBox * m_no_delete_checkbox ;
-	QCheckBox * m_auto_copy_checkbox ;
+	QCheckBox * m_filter_copy_checkbox ;
 	bool m_have_accounts ;
 	QLineEdit * m_name_1 ;
 	QLineEdit * m_pwd_1 ;
@@ -205,6 +210,42 @@ private:
 private slots:
 	void onToggle() ;
 	void browseCertificate() ;
+} ;
+
+class FilterPage : public GPage
+{Q_OBJECT
+public:
+	FilterPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
+		bool is_windows ) ;
+
+	virtual std::string nextPage() ;
+	virtual void dump( std::ostream & , bool ) const ;
+	virtual std::string helpName() const ;
+	virtual bool isComplete() ;
+	virtual void onShow( bool ) ;
+
+private slots:
+	void browseFilter() ;
+	void onToggle() ;
+
+private:
+	QString browse( QString ) ;
+
+private:
+	QCheckBox * m_filter_checkbox ;
+	QLabel * m_filter_label ;
+	QLineEdit * m_filter_edit_box ;
+	QPushButton * m_filter_browse_button ;
+	QCheckBox * m_client_filter_checkbox ;
+	QLabel * m_client_filter_label ;
+	QLineEdit * m_client_filter_edit_box ;
+	QPushButton * m_client_filter_browse_button ;
+	std::string m_config_filter ;
+	std::string m_config_client_filter ;
+	bool m_with_filter_copy ;
+	bool m_is_windows ;
+	std::string m_ext ;
 } ;
 
 class SmtpClientPage : public GPage
@@ -255,7 +296,7 @@ private:
 } ;
 
 class LoggingPage : public GPage
-{
+{Q_OBJECT
 public:
 	LoggingPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
@@ -263,11 +304,25 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;
 	virtual std::string helpName() const ;
+	virtual bool isComplete() ;
+	virtual void onShow( bool back ) ;
+
+private slots:
+	void browseLogFile() ;
+	void onToggle() ;
 
 private:
+	QString browse( QString ) ;
+
+private:
+	G::Path m_config_log_file ;
 	QCheckBox * m_verbose_checkbox ;
 	QCheckBox * m_debug_checkbox ;
 	QCheckBox * m_syslog_checkbox ;
+	QCheckBox * m_logfile_checkbox ;
+	QLabel * m_logfile_label ;
+	QLineEdit * m_logfile_edit_box ;
+	QPushButton * m_logfile_browse_button ;
 } ;
 
 class ListeningPage : public GPage
@@ -320,7 +375,7 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;
 	virtual void onShow( bool back ) ;
-	virtual G::Executable launchCommand() const ;
+	virtual G::ExecutableCommand launchCommand() const ;
 	virtual bool closeButton() const ;
 	virtual bool isComplete() ;
 	virtual std::string helpName() const ;

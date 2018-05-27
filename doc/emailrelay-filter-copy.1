@@ -35,7 +35,10 @@ feature of the
 server this results in messages being copied to all POP clients.
 .LP
 Only the message envelope is copied; the content file stays in
-the main directory.
+the main directory. If the envelope is successfully copied to
+one or more sub-directories then it is removed from the main
+spool directory and it will therefore not be available for SMTP
+forwarding.
 .SH SEE ALSO
 .BR emailrelay (1),
 .SH AUTHOR

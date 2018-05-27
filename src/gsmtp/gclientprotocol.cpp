@@ -84,6 +84,14 @@ void GSmtp::ClientProtocol::start( const std::string & from , const G::StringArr
 	applyEvent( Reply() , true ) ;
 }
 
+void GSmtp::ClientProtocol::finish()
+{
+	G_DEBUG( "GSmtp::ClientProtocol::finish" ) ;
+	m_response_timeout = 1U ;
+	m_state = sQuitting ;
+	send( "QUIT" ) ;
+}
+
 void GSmtp::ClientProtocol::secure()
 {
 	// convert the event into a pretend smtp Reply
@@ -164,7 +172,7 @@ void GSmtp::ClientProtocol::sendMail()
 	const bool dodgy = m_message_is_8bit && !m_server_has_8bitmime ;
 	if( dodgy && m_strict )
 	{
-		m_state = sDone ;
+		m_state = sMessageDone ;
 		raiseDoneSignal( 0 , "failed" , "cannot send 8-bit message to 7-bit server" ) ;
 	}
 	else
@@ -226,7 +234,7 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		m_state = sSentEhlo ;
 		sendEhlo() ;
 	}
-	else if( m_state == sDone && is_start_event )
+	else if( m_state == sMessageDone && is_start_event )
 	{
 		m_state = sFiltering ;
 		startFiltering() ;
@@ -400,20 +408,17 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	}
 	else if( m_state == sFiltering && reply.is(Reply::Internal_filter_abandon) )
 	{
-		m_state = sDone ;
-		protocol_done = true ;
+		m_state = sMessageDone ;
 		raiseDoneSignal( -1 , std::string() ) ;
 	}
 	else if( m_state == sFiltering && reply.is(Reply::Internal_filter_error) )
 	{
-		m_state = sDone ;
-		protocol_done = true ;
+		m_state = sMessageDone ;
 		raiseDoneSignal( -2 , reply.errorText() , reply.errorReason() ) ;
 	}
 	else if( m_state == sFiltering )
 	{
-		m_state = sDone ;
-		protocol_done = true ;
+		m_state = sMessageDone ;
 		raiseDoneSignal( reply.value() , reply.errorText() ) ;
 	}
 	else if( m_state == sSentMail && reply.is(Reply::Ok_250) )
@@ -465,16 +470,18 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	}
 	else if( m_state == sSentDataStub )
 	{
-		m_state = sDone ;
-		protocol_done = true ;
+		m_state = sMessageDone ;
 		std::string how_many = m_must_accept_all_recipients ? std::string("one or more") : std::string("all") ;
 		raiseDoneSignal( reply.value() , how_many + " recipients rejected" ) ;
 	}
 	else if( m_state == sSentDot )
 	{
-		m_state = sDone ;
-		protocol_done = true ;
+		m_state = sMessageDone ;
 		raiseDoneSignal( reply.value() , reply.errorText() ) ;
+	}
+	else if( m_state == sQuitting && reply.value() == 221 )
+	{
+		protocol_done = true ;
 	}
 	else if( is_start_event )
 	{
@@ -494,17 +501,21 @@ void GSmtp::ClientProtocol::onTimeout()
 	if( m_state == sStarted )
 	{
 		// no 220 greeting seen -- go on regardless
-		G_WARNING( "GSmtp::ClientProtocol: timeout: no greeting from remote server: continuing" ) ;
+		G_WARNING( "GSmtp::ClientProtocol: timeout: no greeting from remote server after " << m_ready_timeout << "s: continuing" ) ;
 		m_state = sSentEhlo ;
 		sendEhlo() ;
 	}
 	else if( m_state == sFiltering )
 	{
-		throw SmtpError( "filtering timeout" ) ;
+		throw SmtpError( "filtering timeout after " + G::Str::fromUInt(m_filter_timeout) + "s" ) ;
+	}
+	else if( m_state == sData )
+	{
+		throw SmtpError( "flow-control timeout after " + G::Str::fromUInt(m_response_timeout) + "s" ) ;
 	}
 	else
 	{
-		throw SmtpError( "response timeout" ) ;
+		throw SmtpError( "response timeout after " + G::Str::fromUInt(m_response_timeout) + "s" ) ;
 	}
 }
 
@@ -589,12 +600,16 @@ bool GSmtp::ClientProtocol::sendLine( std::string & line )
 	if( stream.good() )
 	{
 		const bool pre_erase = false ;
-		G::Str::readLineFrom( stream , lf() , line , pre_erase ) ;
+		G::Str::readLineFrom( stream , std::string(1U,'\n') , line , pre_erase ) ;
 		G_ASSERT( line.length() >= 1U && line.at(0U) == '.' ) ;
 
 		if( !stream.fail() )
 		{
-			line.append( !line.empty() && line.at(line.size()-1U) == '\r' ? lf() : crlf() ) ;
+			// read file wrt. lf -- send with cr-lf
+			if( !line.empty() && line.at(line.size()-1U) != '\r' )
+				line.append( 1U , '\r' ) ; // moot
+			line.append( 1U , '\n' ) ;
+
 			bool all_sent = m_sender.protocolSend( line , line.at(1U) == '.' ? 0U : 1U , false ) ;
 			if( !all_sent && m_response_timeout != 0U )
 				startTimer( m_response_timeout ) ; // use response timer for when flow-control asserted
@@ -627,28 +642,16 @@ bool GSmtp::ClientProtocol::send( const std::string & line , bool eot , bool sen
 	if( m_response_timeout != 0U )
 		startTimer( m_response_timeout ) ;
 
-	std::string prefix( !eot && line.length() && line.at(0U) == '.' ? "." : "" ) ;
+	bool dot_prefix = !eot && line.length() && line.at(0U) == '.' ;
 	if( sensitive )
 	{
 		G_LOG( "GSmtp::ClientProtocol: tx>>: [response not logged]" ) ;
 	}
 	else
 	{
-		G_LOG( "GSmtp::ClientProtocol: tx>>: \"" << prefix << G::Str::printable(line) << "\"" ) ;
+		G_LOG( "GSmtp::ClientProtocol: tx>>: \"" << (dot_prefix?".":"") << G::Str::printable(line) << "\"" ) ;
 	}
-	return m_sender.protocolSend( prefix + line + crlf() , 0U , false ) ;
-}
-
-const std::string & GSmtp::ClientProtocol::crlf()
-{
-	static const std::string s( "\r\n" ) ;
-	return s ;
-}
-
-const std::string & GSmtp::ClientProtocol::lf()
-{
-	static const std::string s( "\n" ) ;
-	return s ;
+	return m_sender.protocolSend( (dot_prefix?".":"") + line + "\r\n" , 0U , false ) ;
 }
 
 G::Slot::Signal3<int,std::string,std::string> & GSmtp::ClientProtocol::doneSignal()

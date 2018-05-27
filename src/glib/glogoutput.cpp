@@ -29,23 +29,24 @@
 #include <cstdlib>
 #include <fstream>
 
-// (note that the output code has to be reentrant and using only the standard runtime library)
+// (note that this code cannot use any library code that might do logging)
 
 G::LogOutput::LogOutput( const std::string & prefix , bool enabled , bool summary_log ,
-	bool verbose_log , bool debug , bool level , bool timestamp , bool strip ,
+	bool verbose_log , bool debug , bool with_level , bool with_timestamp , bool strip ,
 	bool use_syslog , const std::string & stderr_replacement , SyslogFacility syslog_facility ) :
 		m_prefix(prefix) ,
 		m_enabled(enabled) ,
 		m_summary_log(summary_log) ,
 		m_verbose_log(verbose_log) ,
+		m_quiet(false) ,
 		m_debug(debug) ,
-		m_level(level) ,
+		m_level(with_level) ,
 		m_strip(strip) ,
 		m_syslog(use_syslog) ,
 		m_std_err(err(stderr_replacement)) ,
 		m_facility(syslog_facility) ,
 		m_time(0) ,
-		m_timestamp(timestamp) ,
+		m_timestamp(with_timestamp) ,
 		m_handle(0) ,
 		m_handle_set(false)
 {
@@ -60,6 +61,7 @@ G::LogOutput::LogOutput( bool enabled_and_summary , bool verbose_and_debug ,
 		m_enabled(enabled_and_summary) ,
 		m_summary_log(enabled_and_summary) ,
 		m_verbose_log(verbose_and_debug) ,
+		m_quiet(false) ,
 		m_debug(verbose_and_debug) ,
 		m_level(false) ,
 		m_strip(false) ,
@@ -121,6 +123,11 @@ bool G::LogOutput::enable( bool enabled )
 	return was_enabled ;
 }
 
+void G::LogOutput::quiet( bool quiet )
+{
+	m_quiet = quiet ; // used in o/s-specific rawOutput
+}
+
 void G::LogOutput::verbose( bool verbose_log )
 {
 	m_verbose_log = verbose_log ;
@@ -151,17 +158,21 @@ void G::LogOutput::groups( const std::string & list )
 		instance()->m_groups.clear() ;
 		const char sep = ',' ;
 		size_t p1 = 0U ;
-		for( size_t p2 = list.find(sep,p1) ; p1 < list.size() ; p1 = p2==std::string::npos?std::string::npos:(p2+1U) , p2 = list.find(sep,p1) )
+		const size_t npos = std::string::npos ;
+		for( size_t p2 = list.find(sep,p1) ; p1 < list.size() ; p1 = p2==npos?npos:(p2+1U) , p2 = list.find(sep,p1) )
 		{
 			if( p1 != p2 )
-				instance()->m_groups.insert( list.substr( p1 , p2==std::string::npos ? p2 : (p2-p1) ) ) ;
+				instance()->m_groups.insert( list.substr( p1 , p2==npos ? p2 : (p2-p1) ) ) ;
 		}
 	}
 }
 
 bool G::LogOutput::at( Log::Severity severity , const std::string & group ) const
 {
-	return at(severity) && ( m_groups.find("log-all") != m_groups.end() || m_groups.find("log-"+group) != m_groups.end() ) ;
+	if( m_groups.empty() )
+		return at( severity ) ;
+	else
+		return at(severity) && ( m_groups.find("log-all") != m_groups.end() || m_groups.find("log-"+group) != m_groups.end() ) ;
 }
 
 void G::LogOutput::doOutput( Log::Severity severity , const char * /*file*/ , int /*line*/ , const std::string & text )
@@ -169,22 +180,22 @@ void G::LogOutput::doOutput( Log::Severity severity , const char * /*file*/ , in
 	bool do_output = at( severity ) ;
 	if( do_output )
 	{
-		// allocate a buffer
+		// reserve the buffer
 		const size_type limit = static_cast<size_type>(limits::log) ;
-		std::string buffer ;
-		buffer.reserve( (text.length()>limit?limit:text.length()) + 40U ) ;
+		m_buffer.reserve( (text.length()>limit?limit:text.length()) + 40U ) ;
+		m_buffer.clear() ;
 
 		// add the preamble to the buffer
 		std::string::size_type text_pos = 0U ;
 		if( m_prefix.length() )
 		{
-			buffer.append( m_prefix ) ;
-			buffer.append( ": " ) ;
+			m_buffer.append( m_prefix ) ;
+			m_buffer.append( ": " ) ;
 		}
 		if( m_timestamp )
-			appendTimestampStringTo( buffer ) ;
+			appendTimestampStringTo( m_buffer ) ;
 		if( m_level )
-			buffer.append( levelString(severity) ) ;
+			m_buffer.append( levelString(severity) ) ;
 
 		// strip the first word from the text - expected to be the method name
 		if( m_strip )
@@ -200,16 +211,16 @@ void G::LogOutput::doOutput( Log::Severity severity , const char * /*file*/ , in
 		size_type text_len = text.length() - text_pos ;
 		bool limited = text_len > limit ;
 		text_len = text_len > limit ? limit : text_len ;
-		buffer.append( text , text_pos , text_len ) ;
+		m_buffer.append( text , text_pos , text_len ) ;
 		if( limited )
-			buffer.append( " ..." ) ;
+			m_buffer.append( " ..." ) ;
 
 		// last ditch removal of ansi escape sequences
-		while( buffer.find('\033') != std::string::npos )
-			buffer[buffer.find('\033')] = '.' ;
+		while( m_buffer.find('\033') != std::string::npos )
+			m_buffer[m_buffer.find('\033')] = '.' ;
 
 		// do the actual output in an o/s-specific manner
-		rawOutput( m_std_err , severity , buffer ) ;
+		rawOutput( m_std_err , severity , m_buffer ) ;
 	}
 }
 

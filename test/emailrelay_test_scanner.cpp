@@ -61,13 +61,14 @@ private:
 	virtual void onSecure( const std::string & ) ;
 	virtual void onSendComplete() ;
 	void process() ;
-	bool processFile( std::string ) ;
+	bool processFile( std::string , std::string ) ;
 private:
 	GNet::LineBuffer m_buffer ;
 } ;
 
 Main::ScannerPeer::ScannerPeer( GNet::Server::PeerInfo info ) :
-	ServerPeer( info )
+	ServerPeer(info) ,
+	m_buffer(GNet::LineBufferConfig::autodetect())
 {
 	G_LOG_S( "ScannerPeer::ctor: new connection from " << info.m_address.displayString() ) ;
 }
@@ -102,7 +103,7 @@ void Main::ScannerPeer::process()
 		{
 			std::string path( s ) ;
 			G::Str::trim( path , " \r\n\t" ) ;
-			if( !processFile( path ) )
+			if( !processFile( path , iter.eol() ) )
 			{
 				G_LOG_S( "ScannerPeer::process: disconnecting" ) ;
 				doDelete() ;
@@ -112,7 +113,7 @@ void Main::ScannerPeer::process()
 	}
 }
 
-bool Main::ScannerPeer::processFile( std::string path )
+bool Main::ScannerPeer::processFile( std::string path , std::string eol )
 {
 	G_LOG_S( "ScannerPeer::processFile: file: \"" << path << "\"" ) ;
 
@@ -130,10 +131,10 @@ bool Main::ScannerPeer::processFile( std::string path )
 		G_LOG( "ScannerPeer::processFile: line: \"" << G::Str::printable(line) << "\"" ) ;
 		if( line.find("send") == 0U )
 		{
-			line.append( 1U , '\n' ) ;
+			line.append( eol ) ;
 			line = line.substr(4U) ;
 			G::Str::trimLeft( line , " \t" ) ;
-			G_LOG_S( "ScannerPeer::processFile: response: \"" << G::Str::trimmed(line,"\n\r") << "\"" ) ;
+			G_LOG_S( "ScannerPeer::processFile: response: \"" << G::Str::printable(line) << "\"" ) ;
 			socket().write( line.data() , line.length() ) ;
 			sent = true ;
 		}
@@ -181,8 +182,8 @@ bool Main::ScannerPeer::processFile( std::string path )
 	}
 	if( !sent )
 	{
-		std::string response = "ok\n" ;
-		G_LOG_S( "ScannerPeer::processFile: response: \"" << G::Str::trimmed(response,"\n\r") << "\"" ) ;
+		std::string response = "ok" + eol ;
+		G_LOG_S( "ScannerPeer::processFile: response: \"" << G::Str::printable(response) << "\"" ) ;
 		socket().write( response.data() , response.length() ) ;
 	}
 	return true ;

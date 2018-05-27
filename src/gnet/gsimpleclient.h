@@ -58,7 +58,7 @@ namespace GNet
 /// most operating systems implement their own name lookup cacheing,
 /// so this is not terribly useful in practice.
 ///
-class GNet::SimpleClient : public EventHandler, public Connection, public SocketProtocolSink, private Resolver::Callback
+class GNet::SimpleClient : public EventHandler, public Connection, private SocketProtocolSink, private Resolver::Callback
 {
 public:
 	enum ConnectStatus { Success , Failure , ImmediateSuccess } ;
@@ -124,9 +124,13 @@ public:
 	virtual void writeEvent() override ;
 		///< Override from GNet::EventHandler.
 
+	virtual void otherEvent( EventHandler::Reason ) override ;
+		///< Override from GNet::EventHandler.
+
 	bool send( const std::string & data , std::string::size_type offset = 0 ) ;
-		///< Returns true if all sent, or false if flow
-		///< control was asserted. Throws on error.
+		///< Sends data to the peer. Returns true if all sent,
+		///< or false if flow control was asserted. Throws on
+		///< error.
 
 protected:
 	virtual ~SimpleClient() ;

@@ -37,7 +37,7 @@ namespace md5
 
 /// \class md5::digest
 /// A class that calculates an md5 digest from one or more 64-byte blocks of
-/// data using the algorithm described by RFC 1321.
+/// data using the algorithm described by RFC-1321.
 ///
 /// A digest can be calculated in one go from an arbitrarily-sized block of
 /// data, or incrementally from a series of 64-byte blocks. The 64-byte
@@ -150,7 +150,7 @@ public:
 		// 2, etc.
 
 	big_t X( small_t ) const ;
-		// Returns a value from within the block. See RFC 1321.
+		// Returns a value from within the block. See RFC-1321.
 
 private:
 	block( const block & ) ; // not implemented

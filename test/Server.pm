@@ -41,6 +41,7 @@ our @pid_list = () ;
 our $bin_dir = ".." ;
 our $localhost = "127.0.0.1" ;
 our $tls_config = "x" ;
+our $with_valgrind = undef ;
 my $exe_name = "emailrelay" ;
 
 sub new
@@ -225,7 +226,7 @@ sub _set_all
 	$command_tail = _set( $command_tail , "__TLS_VERIFY__" , $this->tlsVerify() ) ;
 	$command_tail = _set( $command_tail , "__TLS_CONFIG__" , $this->tlsConfig() ) ;
 
-	my $valgrind = "" ; # "valgrind "
+	my $valgrind = $with_valgrind ? "valgrind -q " : "" ;
 	return $valgrind . $this->exe() . " " .  $command_tail ;
 }
 

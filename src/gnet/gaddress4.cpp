@@ -144,25 +144,6 @@ const char * GNet::Address4::setHostAddress( union_type & inet , const std::stri
 	return rc == 1 ? nullptr : "invalid ipv4 network address" ;
 }
 
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-
 void GNet::Address4::setPort( unsigned int port )
 {
 	const char * reason = setPort( m_inet , port ) ;
@@ -185,13 +166,6 @@ const char * GNet::Address4::setPort( union_type & inet , unsigned int port )
 	return nullptr ;
 }
 
-//
-//
-//
-//
-//
-//
-
 std::string GNet::Address4::displayString() const
 {
 	std::ostringstream ss ;
@@ -199,9 +173,6 @@ std::string GNet::Address4::displayString() const
 	ss << port_separator << port() ;
 	return ss.str() ;
 }
-
-//
-//
 
 std::string GNet::Address4::hostPartString() const
 {
@@ -268,20 +239,10 @@ bool GNet::Address4::sameAddr( const ::in_addr & a , const ::in_addr & b )
 	return a.s_addr == b.s_addr ;
 }
 
-//
-//
-//
-//
-
 unsigned int GNet::Address4::port() const
 {
 	return ntohs( m_inet.specific.sin_port ) ;
 }
-
-//
-//
-//
-//
 
 const sockaddr * GNet::Address4::address() const
 {

@@ -59,16 +59,14 @@ public:
 	explicit VerifierPeer( GNet::Server::PeerInfo info ) ;
 private:
 	virtual void onDelete( const std::string & ) ;
-	virtual bool onReceive( const std::string & ) ;
+	virtual bool onReceive( const char * , size_t , size_t ) ;
 	virtual void onSecure( const std::string & ) ;
 	virtual void onSendComplete() {}
 	bool processLine( std::string ) ;
-private:
-	GNet::LineBuffer m_buffer ;
 } ;
 
 Main::VerifierPeer::VerifierPeer( GNet::Server::PeerInfo info ) :
-	BufferedServerPeer( info , "\n" )
+	BufferedServerPeer( info , GNet::LineBufferConfig::newline() )
 {
 	G_LOG_S( "VerifierPeer::ctor: new connection from " << info.m_address.displayString() ) ;
 }
@@ -82,8 +80,9 @@ void Main::VerifierPeer::onSecure( const std::string & )
 {
 }
 
-bool Main::VerifierPeer::onReceive( const std::string & line )
+bool Main::VerifierPeer::onReceive( const char * line_data , size_t line_size , size_t )
 {
+	std::string line( line_data , line_size ) ;
 	G_DEBUG( "VerifierPeer::onReceive: [" << G::Str::printable(line) << "]" ) ;
 	processLine( line ) ;
 	return true ;

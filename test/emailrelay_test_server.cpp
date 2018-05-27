@@ -20,7 +20,7 @@
 // A dummy smtp server for testing purposes.
 //
 // usage: emailrelay-test-server [--quiet] [--tls] [--auth-foo-bar] [--auth-login] [--auth-plain]
-//        [--auth-ok] [--slow] [--fail-at <n>] [--ipv6] [--port <port>]
+//        [--auth-ok] [--slow] [--fail-at <n>] [--drop] [--ipv6] [--port <port>]
 //
 
 #include "gdef.h"
@@ -34,11 +34,28 @@
 #include "gbufferedserverpeer.h"
 #include "gprocess.h"
 #include "glogoutput.h"
+#include "gexception.h"
+#include "gsleep.h"
 #include <string>
 #include <fstream>
 #include <exception>
 #include <stdexcept>
 #include <iostream>
+
+namespace
+{
+	void sleep_ms( int ms )
+	{
+		#if G_WIN32
+			::Sleep( ms ) ;
+		#else
+			struct timeval t ;
+			t.tv_sec = 0 ;
+			t.tv_usec = ms * 1000 ;
+			::select( 0 , nullptr , nullptr , nullptr , &t ) ;
+		#endif
+	}
+}
 
 struct Config
 {
@@ -48,18 +65,22 @@ struct Config
 	bool m_auth_login ;
 	bool m_auth_plain ;
 	bool m_auth_ok ;
+	bool m_slow ;
 	int m_fail_at ;
+	bool m_drop ;
 	bool m_tls ;
 	bool m_quiet ;
 	Config( bool ipv6 , unsigned int port , bool auth_foo_bar , bool auth_login , bool auth_plain ,
-		bool auth_ok , int fail_at , bool tls , bool quiet ) :
+		bool auth_ok , bool slow , int fail_at , bool drop , bool tls , bool quiet ) :
 			m_ipv6(ipv6) ,
 			m_port(port) ,
 			m_auth_foo_bar(auth_foo_bar) ,
 			m_auth_login(auth_login) ,
 			m_auth_plain(auth_plain) ,
 			m_auth_ok(auth_ok) ,
+			m_slow(slow) ,
 			m_fail_at(fail_at) ,
+			m_drop(drop) ,
 			m_tls(tls) ,
 			m_quiet(quiet)
 	{
@@ -70,12 +91,18 @@ class Peer : public GNet::BufferedServerPeer
 {
 public:
 	Peer( GNet::Server::PeerInfo , Config ) ;
-	virtual void onDelete( const std::string & ) ;
-	virtual void onSendComplete() ;
-	virtual bool onReceive( const std::string & ) ;
-	virtual void onSecure( const std::string & ) ;
+	virtual void onDelete( const std::string & ) override ;
+	virtual void onSendComplete() override ;
+	virtual bool onReceive( const char * , size_t , size_t ) override ;
+	virtual void onSecure( const std::string & ) override ;
 	void tx( const std::string & ) ;
+
+private:
+	void onSlowTimeout() ;
+
+private:
 	Config m_config ;
+	GNet::Timer<Peer> m_slow_timer ;
 	bool m_in_data ;
 	bool m_in_auth_1 ;
 	bool m_in_auth_2 ;
@@ -94,6 +121,8 @@ Server::Server( GNet::ExceptionHandler & eh , Config config ) :
 	GNet::Server(eh,GNet::Address(config.m_ipv6?GNet::Address::Family::ipv6():GNet::Address::Family::ipv4(),config.m_port)) ,
 	m_config(config)
 {
+	if( m_config.m_slow )
+		GNet::SocketProtocol::setReadBufferSize( 3U ) ;
 }
 
 GNet::ServerPeer * Server::newPeer( PeerInfo info )
@@ -105,14 +134,23 @@ GNet::ServerPeer * Server::newPeer( PeerInfo info )
 //
 
 Peer::Peer( GNet::Server::PeerInfo info , Config config ) :
-	GNet::BufferedServerPeer(info,"\r\n") ,
+	GNet::BufferedServerPeer(info,GNet::LineBufferConfig::smtp()) ,
 	m_config(config) ,
+	m_slow_timer(*this,&Peer::onSlowTimeout,*this) ,
 	m_in_data(false) ,
 	m_in_auth_1(false) ,
 	m_in_auth_2(false) ,
 	m_message(0)
 {
 	send( "220 test server\r\n" ) ;
+	if( m_config.m_slow )
+		m_slow_timer.startTimer( 0U ) ;
+}
+
+void Peer::onSlowTimeout()
+{
+	sleep_ms( 800 ) ;
+	m_slow_timer.startTimer( 0U , 10 ) ;
 }
 
 void Peer::onDelete( const std::string & )
@@ -128,8 +166,9 @@ void Peer::onSecure( const std::string & )
 {
 }
 
-bool Peer::onReceive( const std::string & line )
+bool Peer::onReceive( const char * line_data , size_t line_size , size_t )
 {
+	std::string line( line_data , line_size ) ;
 	if( !m_config.m_quiet )
 		std::cout << "rx<<: [" << line << "]" << std::endl ;
 
@@ -165,6 +204,7 @@ bool Peer::onReceive( const std::string & line )
 		m_in_data = false ;
 		bool fail = m_config.m_fail_at >= 0 && m_message >= m_config.m_fail_at ;
 		m_message++ ;
+		if( fail && m_config.m_drop ) throw G::Exception("connection dropped") ;
 		tx( fail ? "452 failed\r\n" : "250 OK\r\n" ) ;
 	}
 	else if( G::Str::upper(line) == "STARTTLS" )
@@ -214,6 +254,16 @@ bool Peer::onReceive( const std::string & line )
 	{
 		tx( "550 invalid recipient\r\n" ) ;
 	}
+	else if( m_in_data && line.find("SHUTDOWN") != std::string::npos )
+	{
+		for( int i = 0 ; i < 100 ; i++ )
+			tx( "SHUTDOWN " + G::Str::fromInt(i) + "!\r\n" ) ;
+		socket().shutdown() ;
+	}
+	else if( m_in_data && line.find("DROP") != std::string::npos )
+	{
+		throw G::Exception("connection dropped") ;
+	}
 	else if( !m_in_data )
 	{
 		tx( "250 OK\r\n" ) ;
@@ -247,6 +297,7 @@ int main( int argc , char * argv [] )
 			"t!tls!enable tls!!0!!1" "|"
 			"q!quiet!less logging!!0!!1" "|"
 			"f!fail-at!fail the n'th message! (zero-based index)!1!n!1" "|"
+			"d!drop!drop the connection when content has DROP or when failing!!0!!1" "|"
 			"P!port!port number!!1!port!1" "|"
 			"f!pid-file!pid file!!1!path!1" "|"
 			"6!ipv6!use ipv6!!0!!1" "|"
@@ -270,7 +321,8 @@ int main( int argc , char * argv [] )
 		bool tls = opt.contains( "tls" ) ;
 		bool quiet = opt.contains( "quiet" ) ;
 		int fail_at = opt.contains("fail-at") ? G::Str::toInt(opt.value("fail-at")) : -1 ;
-		bool ipv6 = opt.contains("ipv6") ;
+		bool drop = opt.contains( "drop" ) ;
+		bool ipv6 = opt.contains( "ipv6" ) ;
 		unsigned int port = opt.contains("port") ? G::Str::toUInt(opt.value("port")) : 10025U ;
 
 		G::Path argv0 = G::Path(arg.v(0)).withoutExtension().basename() ;
@@ -289,25 +341,9 @@ int main( int argc , char * argv [] )
 
 		GNet::EventLoop * event_loop = GNet::EventLoop::create() ;
 		GNet::TimerList timer_list ;
-		Server server( *event_loop , Config(ipv6,port,auth_foo_bar,auth_login,auth_plain,auth_ok,fail_at,tls,quiet) ) ;
+		Server server( *event_loop , Config(ipv6,port,auth_foo_bar,auth_login,auth_plain,auth_ok,slow,fail_at,drop,tls,quiet) ) ;
 
-		if( slow )
-		{
-			while( true )
-			{
-				event_loop->quit("x") ;
-				if( event_loop->run() != "x" )
-					break ;
-				struct timeval t ;
-				t.tv_sec = 0 ;
-				t.tv_usec = 100000 ;
-				::select( 0 , nullptr , nullptr , nullptr , &t ) ;
-			}
-		}
-		else
-		{
-			event_loop->run() ;
-		}
+		event_loop->run() ;
 
 		return 0 ;
 	}

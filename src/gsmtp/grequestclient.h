@@ -38,21 +38,27 @@ namespace GSmtp
 /// A network client class that interacts with a remote server using a
 /// stateless line-based request/response protocol.
 ///
+/// Line buffering uses newline as end-of-line, and trailing carriage-returns
+/// are trimmed from the input.
+///
 class GSmtp::RequestClient : public GNet::Client
 {
 public:
 	G_EXCEPTION( ProtocolError , "protocol error" ) ;
 
-	RequestClient( const std::string & key , const std::string & ok , const std::string & eol ,
-		const GNet::Location & host_and_service , unsigned int connect_timeout , unsigned int response_timeout ) ;
-			///< Constructor. The key parameter is used in the callback
-			///< signal; the (optional) ok parameter is a response
-			///< string that is considered to be a success response;
-			///< the eol parameter is the response end-of-line.
+	RequestClient( const std::string & key , const std::string & ok ,
+		const GNet::Location & host_and_service , unsigned int connect_timeout ,
+		unsigned int response_timeout ) ;
+			///< Constructor.  The 'key' parameter is used in the callback
+			///< signal. The 'ok' parameter is a response string that is
+			///< converted to the empty string.
 
-	void request( const std::string & command ) ;
-		///< Issues a request. If not currently connected then the request is
-		///< queued up until the connection is made.
+	void request( const std::string & ) ;
+		///< Issues a request. A newline is added to the request string,
+		///< so append a carriage-return if required.
+		///<
+		///< If not currently connected then the request is queued up until
+		///< the connection is made.
 		///<
 		///< The base class's "event" signal will be emitted when processing
 		///< is complete. In this case the first signal parameter will be the
@@ -76,7 +82,7 @@ protected:
 	virtual void onConnect() override ;
 		///< Override from GNet::SimpleClient.
 
-	virtual bool onReceive( const std::string & ) override ;
+	virtual bool onReceive( const char * , size_t , size_t ) override ;
 		///< Override from GNet::Client.
 
 	virtual void onSendComplete() override ;
@@ -97,11 +103,12 @@ private:
 	void onTimeout() ;
 	std::string requestLine( const std::string & ) const ;
 	std::string result( std::string ) const ;
+	static GNet::LineBufferConfig config() ;
 
 private:
+	std::string m_eol ;
 	std::string m_key ;
 	std::string m_ok ;
-	std::string m_eol ;
 	std::string m_request ;
 	GNet::Timer<RequestClient> m_timer ;
 } ;

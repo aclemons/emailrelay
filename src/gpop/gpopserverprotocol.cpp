@@ -408,7 +408,7 @@ void GPop::ServerProtocol::doAuth( const std::string & line , bool & ok )
 	{
 		std::string initial_response = commandParameter(line,2) ;
 		if( initial_response == "=" )
-			initial_response = std::string() ; // RFC 5034
+			initial_response = std::string() ; // RFC-5034
 
 		// reject the LOGIN mechanism here since we did not avertise it
 		// and we only want a one-step challenge-response dialogue

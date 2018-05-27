@@ -35,8 +35,12 @@ ssize_t G::Msg::sendto( SOCKET fd , const void * buffer , size_t size , int flag
 	return ::sendto( fd , reinterpret_cast<const char*>(buffer) , static_cast<int>(size) , flags , address_p , address_n ) ;
 }
 
-ssize_t G::Msg::recv( SOCKET fd , void * buffer , size_t size , int flags ,
-	int * fd_received_p )
+ssize_t G::Msg::recv( SOCKET fd , void * buffer , size_t size , int flags )
+{
+	return ::recv( fd , reinterpret_cast<char*>(buffer) , static_cast<int>(size) , flags ) ;
+}
+
+ssize_t G::Msg::recv( SOCKET fd , void * buffer , size_t size , int flags , int * )
 {
 	return ::recv( fd , reinterpret_cast<char*>(buffer) , static_cast<int>(size) , flags ) ;
 }
