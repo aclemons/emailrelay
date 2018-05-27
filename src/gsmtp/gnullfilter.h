@@ -24,7 +24,6 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gtimer.h"
-#include "gexecutable.h"
 #include "gfilter.h"
 
 namespace GSmtp

@@ -35,14 +35,14 @@ std::string GSmtp::VerifierFactory::check( const std::string & identifier )
 GSmtp::Verifier * GSmtp::VerifierFactory::newVerifier( GNet::ExceptionHandler & exception_handler ,
 	const std::string & identifier , unsigned int timeout , bool compatible )
 {
-	Pair p = FactoryParser::parse( identifier , false ) ;
+	FactoryParser::Result p = FactoryParser::parse( identifier , false ) ;
 	if( p.first.empty() || p.first == "exit" )
 	{
 		return new InternalVerifier ;
 	}
 	else if( p.first == "net" )
 	{
-		return new NetworkVerifier( exception_handler , p.second , timeout , timeout ) ;
+		return new NetworkVerifier( exception_handler , p.second , timeout , timeout , compatible ) ;
 	}
 	else
 	{

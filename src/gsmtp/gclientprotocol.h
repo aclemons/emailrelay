@@ -224,6 +224,10 @@ public:
 			///< The doneSignal() is used to indicate that the
 			///< message has been processed.
 
+	void finish() ;
+		///< Called after the last message has been sent. Sends a quit
+		///< command and shuts down the socket.
+
 	void sendDone() ;
 		///< To be called when a blocked connection becomes unblocked.
 		///< See ClientProtocol::Sender::protocolSend().
@@ -259,8 +263,6 @@ private:
 	void sendMail() ;
 	void sendMailCore() ;
 	bool endOfContent() const ;
-	static const std::string & crlf() ;
-	static const std::string & lf() ;
 	bool applyEvent( const Reply & event , bool is_start_event = false ) ;
 	static bool parseReply( Reply & , const std::string & , std::string & ) ;
 	void raiseDoneSignal( int , const std::string & , const std::string & = std::string() ) ;
@@ -286,7 +288,9 @@ private:
 		sSentDot ,
 		sStartTls ,
 		sSentTlsEhlo ,
-		sDone } ;
+		sMessageDone ,
+		sQuitting
+	} ;
 
 private:
 	Sender & m_sender ;

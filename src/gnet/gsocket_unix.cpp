@@ -148,7 +148,7 @@ bool GNet::Socket::setOptionImp( int level , int op , const void * arg , socklen
 
 std::string GNet::Socket::reasonString( int e )
 {
-	return G::Process::strerror( e ) ;
+	return G::Str::lower(G::Process::strerror(e)) ;
 }
 
 /// \file gsocket_unix.cpp

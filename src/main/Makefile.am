@@ -17,7 +17,7 @@
 
 SUBDIRS = icon
 sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd $(MAC_PROGS) $(WINDOWS_PROGS)
-e_libexec_PROGRAMS = emailrelay-poke emailrelay-filter-copy
+e_libexec_PROGRAMS = emailrelay-filter-copy
 e_spool_DATA =
 noinst_SCRIPTS = $(MAC_NOINST)
 noinst_LIBRARIES = libmain.a
@@ -170,15 +170,6 @@ if GCONFIG_WINDOWS
 	$(top_builddir)/src/glib/libglib.a \
 	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
 	-lws2_32 -lcomctl32
-endif
-
-emailrelay_poke_SOURCES = poke.c
-if GCONFIG_WINDOWS
- emailrelay_poke_LDFLAGS = -static
- emailrelay_poke_LDADD = -lws2_32 -lcomctl32
-else
- emailrelay_poke_LDFLAGS =
- emailrelay_poke_LDADD =
 endif
 
 emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h

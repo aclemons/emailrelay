@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gsmtp.h"
+#include "gssl.h"
 #include "configuration.h"
 #include "commandline.h"
 #include "output.h"
@@ -156,24 +157,25 @@ private:
 	ExceptionHandler m_eh_throw ;
 	ExceptionHandler m_eh_nothrow ;
 	std::string m_option_spec ;
-	unique_ptr<G::LogOutput> m_log_output ;
-	unique_ptr<CommandLine> m_commandline ;
-	unique_ptr<Configuration> m_configuration ;
 	G::Arg m_arg ;
 	G::Slot::Signal3<std::string,std::string,std::string> m_signal ;
+	unique_ptr<CommandLine> m_commandline ;
+	unique_ptr<Configuration> m_configuration ;
+	unique_ptr<G::LogOutput> m_log_output ;
 	unique_ptr<GNet::EventLoop> m_event_loop ;
 	unique_ptr<GNet::TimerList> m_timer_list ;
+	unique_ptr<GNet::Timer<Run> > m_forwarding_timer ;
+	unique_ptr<GNet::Timer<Run> > m_poll_timer ;
+	unique_ptr<GNet::Timer<Run> > m_stop_timer ;
+	unique_ptr<GSsl::Library> m_tls_library ;
 	unique_ptr<GNet::Monitor> m_monitor ;
 	unique_ptr<GSmtp::FileStore> m_store ;
 	unique_ptr<GAuth::Secrets> m_client_secrets ;
 	unique_ptr<GAuth::Secrets> m_server_secrets ;
 	unique_ptr<GPop::Secrets> m_pop_secrets ;
-	unique_ptr<GSmtp::AdminServer> m_admin_server ;
 	unique_ptr<GSmtp::Server> m_smtp_server ;
 	unique_ptr<GPop::Server> m_pop_server ;
-	unique_ptr<GNet::Timer<Run> > m_stop_timer ;
-	unique_ptr<GNet::Timer<Run> > m_poll_timer ;
-	unique_ptr<GNet::Timer<Run> > m_forwarding_timer ;
+	unique_ptr<GSmtp::AdminServer> m_admin_server ;
 	GNet::ClientPtr<GSmtp::Client> m_client ;
 	std::string m_forwarding_reason ;
 	bool m_forwarding_pending ;

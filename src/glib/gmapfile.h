@@ -67,8 +67,9 @@ public:
 
 	explicit MapFile( const G::Path & , bool utf8 = false ) ;
 		///< Constructor that reads from a file. Lines can have a key
-		///< and no value. Comments must be at the start of the line.
-		///< Values are trimmed, but can otherwise contain whitespace.
+		///< and no value (see booleanValue()). Comments must be at
+		///< the start of the line. Values are trimmed, but can
+		///< otherwise contain whitespace.
 
 	explicit MapFile( std::istream & , bool utf8 = false ) ;
 		///< Constructor that reads from a stream.
@@ -105,24 +106,20 @@ public:
 	G::Path pathValue( const std::string & key , const G::Path & default_ ) const ;
 		///< Returns a path value from the map.
 
-	G::Path expandedPathValue( const std::string & key ) const ;
-		///< Returns a mandatory path value from the map
-		///< with expand(). Throws if it does not exist.
-
-	G::Path expandedPathValue( const std::string & key , const G::Path & default_ ) const ;
-		///< Returns a path value from the map with expand().
-
 	unsigned int numericValue( const std::string & key , unsigned int default_ ) const ;
 		///< Returns a numeric value from the map.
 
 	std::string value( const std::string & key , const std::string & default_ = std::string() ) const ;
-		///< Returns a string value from the map.
+		///< Returns a string value from the map. Returns the default
+		///< if there is no such key or if the value is empty.
 
 	std::string value( const std::string & key , const char * default_ ) const ;
 		///< Returns a string value from the map.
 
 	bool booleanValue( const std::string & key , bool default_ ) const ;
-		///< Returns a boolean value from the map.
+		///< Returns a boolean value from the map. Returns true if
+		///< the key exists with an empty value. Returns the default
+		///< if no such key.
 
 	void remove( const std::string & key ) ;
 		///< Removes a value (if it exists).
@@ -136,10 +133,17 @@ public:
 	std::string expand( const std::string & value ) const ;
 		///< Does one-pass variable substitution for the given string.
 		///< Sub-strings like "%xyz%" are replaced by 'value("xyz")'
-		///< and "%%" is replaced by "%". If there are no appropriate
+		///< and "%%" is replaced by "%". If there is no appropriate
 		///< value in the map then the sub-string is left alone
 		///< (so "%xyz%" remains as "%xyz%" if there is no "xyz"
 		///< map item).
+
+	G::Path expandedPathValue( const std::string & key ) const ;
+		///< Returns a mandatory path value from the map
+		///< with expand(). Throws if it does not exist.
+
+	G::Path expandedPathValue( const std::string & key , const G::Path & default_ ) const ;
+		///< Returns a path value from the map with expand().
 
 private:
 	typedef std::list<std::string> List ;

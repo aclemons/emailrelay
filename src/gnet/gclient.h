@@ -50,19 +50,15 @@ class GNet::Client : public HeapClient
 public:
 	explicit Client( const Location & remote_info , unsigned int connection_timeout = 0U ,
 		unsigned int response_timeout = 0U , unsigned int secure_connection_timeout = 0U ,
-		const std::string & eol = std::string("\n") ,
-		bool bind_local_address = false ,
+		LineBufferConfig = LineBufferConfig() , bool bind_local_address = false ,
 		const Address & local_address = Address::defaultAddress() ,
 		bool sync_dns = synchronousDnsDefault() ) ;
 			///< Constructor. The connection is initiated asynchronously.
 
 	G::Slot::Signal1<std::string> & doneSignal() ;
 		///< Returns a signal that indicates that client processing
-		///< is complete.
-		///<
-		///< The first signal parameter is a failure reason, or the
-		///< empty string on success. The second parameter gives some
-		///< idea of whether the connection can be retried later.
+		///< is complete. The signal parameter is a failure reason,
+		///< or the empty string on success.
 
 	G::Slot::Signal2<std::string,std::string> & eventSignal() ;
 		///< Returns a signal that indicates that something interesting
@@ -82,7 +78,7 @@ protected:
 	virtual ~Client() ;
 		///< Destructor.
 
-	virtual bool onReceive( const std::string & ) = 0 ;
+	virtual bool onReceive( const char * line_data , size_t line_size , size_t eol_size ) = 0 ;
 		///< Called when a complete line is received from the peer.
 		///< The implementation should return false if it needs
 		///< to stop further onReceive() calls being generated
@@ -93,6 +89,11 @@ protected:
 		///< Clears the line buffer. This discards any data that has
 		///< been received from the server but not delivered as a
 		///< complete line via onReceive().
+
+	std::string lineBufferEndOfLine() const ;
+		///< Returns the line buffer end-of-line string. Returns
+		///< the empty string if auto-detecting and not yet
+		///< auto-detected.
 
     virtual void onDeleteImp( const std::string & reason ) override ;
 		///< Override from GNet::HeapClient.

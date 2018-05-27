@@ -319,7 +319,10 @@ void GSmtp::FileStore::createTestMessage()
 	NewFile f( *this , "test@local.net" , "" ) ;
 	f.addTo( "test@local.net" , false ) ;
 	for( int i = 0 ; i < 1000 ; i++ )
-		f.addText( std::string(998U,'a'+(i%26)) ) ;
+	{
+		std::string line( 998U , 'a'+(i%26) ) ;
+		f.addText( line.data() , line.size() ) ;
+	}
 	f.prepare( "test" , "127.0.0.1:999" , std::string() ) ;
 	f.commit( true ) ;
 }

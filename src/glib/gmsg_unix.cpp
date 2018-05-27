@@ -73,6 +73,11 @@ ssize_t G::Msg::sendto( int fd , const void * buffer , size_t size , int flags ,
 	return ::sendmsg( fd , &msg , flags | MSG_NOSIGNAL ) ;
 }
 
+ssize_t G::Msg::recv( int fd , void * buffer , size_t size , int flags )
+{
+	return ::recv( fd , buffer , size , flags ) ;
+}
+
 ssize_t G::Msg::recv( int fd , void * buffer , size_t size , int flags ,
 	int * fd_received_p )
 {

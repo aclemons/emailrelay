@@ -74,6 +74,12 @@ public:
 		///< down the connection. Returns true if all pending data was
 		///< sent. Throws SendError on error.
 
+	void otherEvent( EventHandler::Reason ) ;
+		///< Called on receipt of an 'other' event. Throws an exception.
+		///< For simple socket-close events (on Windows) the read queue
+		///< is processed (see SocketProtocolSink::onData()) and the
+		///< socket is shutdown() before the exception is thrown.
+
 	bool send( const std::string & data , size_t offset = 0U ) ;
 		///< Sends data. Returns false if flow control asserted before
 		///< all the data is sent. Returns true if all the data was sent,
@@ -109,6 +115,9 @@ public:
 	std::string peerCertificate() const ;
 		///< Returns the peer's TLS/SSL certificate or the empty
 		///< string.
+
+	static void setReadBufferSize( size_t n ) ;
+		///< Sets the read buffer size. Used in testing.
 
 private:
 	SocketProtocol( const SocketProtocol & ) ;

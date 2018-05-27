@@ -112,10 +112,10 @@ public:
 		///< handler to the write list.
 		///< See also Socket::addWriteHandler().
 
-	virtual void addOob( Descriptor fd , EventHandler & , ExceptionHandler & ) = 0 ;
+	virtual void addOther( Descriptor fd , EventHandler & , ExceptionHandler & ) = 0 ;
 		///< Adds the given event source descriptor and associated
 		///< handler to the exception list.
-		///< See also Socket::addOobHandler().
+		///< See also Socket::addOtherHandler().
 
 	virtual void dropRead( Descriptor fd ) = 0 ;
 		///< Removes the given event source descriptor from the
@@ -127,10 +127,10 @@ public:
 		///< list of write sources.
 		///< See also Socket::dropWriteHandler().
 
-	virtual void dropOob( Descriptor fd ) = 0 ;
+	virtual void dropOther( Descriptor fd ) = 0 ;
 		///< Removes the given event source descriptor from the
 		///< list of exception sources.
-		///< See also Socket::dropOobHandler().
+		///< See also Socket::dropOtherHandler().
 
 	virtual void setTimeout( G::EpochTime t ) = 0 ;
 		///< Used by GNet::TimerList. Sets the absolute time at which

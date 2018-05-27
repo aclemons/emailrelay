@@ -22,20 +22,23 @@
 #include "gsmtp.h"
 #include "gstr.h"
 #include "gfile.h"
+#include "gtest.h"
 #include "gspamclient.h"
 #include "gassert.h"
 #include <sstream>
 
 std::string GSmtp::SpamClient::m_username ;
 
-GSmtp::SpamClient::SpamClient( const GNet::Location & location ,
+GSmtp::SpamClient::SpamClient( const GNet::Location & location , bool read_only ,
 	unsigned int connect_timeout , unsigned int response_timeout ) :
-		GNet::Client(location,connect_timeout,response_timeout,0U,"\n") ,
+		GNet::Client(location,connect_timeout,response_timeout,0U,GNet::LineBufferConfig::newline()) ,
 		m_busy(false) ,
 		m_timer(*this,&SpamClient::onTimeout,*this) ,
-		m_request(*this)
+		m_request(*this) ,
+		m_response(read_only)
 {
 	G_LOG( "GSmtp::SpamClient::ctor: spam connection to [" << location << "]" ) ;
+	G_DEBUG( "GSmtp::SpamClient::ctor: spam read/only=" << read_only ) ;
 	G_DEBUG( "GSmtp::SpamClient::ctor: spam connection timeout " << connect_timeout ) ;
 	G_DEBUG( "GSmtp::SpamClient::ctor: spam response timeout " << response_timeout ) ;
 }
@@ -96,9 +99,9 @@ void GSmtp::SpamClient::onSendComplete()
 	m_request.sendMore() ;
 }
 
-bool GSmtp::SpamClient::onReceive( const std::string & line )
+bool GSmtp::SpamClient::onReceive( const char * line_data , size_t line_size , size_t )
 {
-	m_response.add( m_path , line ) ;
+	m_response.add( m_path , std::string(line_data,line_size) ) ;
 	if( m_response.complete() )
 		eventSignal().emit( "spam" , m_response.result() ) ;
 	return true ;
@@ -156,7 +159,8 @@ bool GSmtp::SpamClient::Request::sendMore()
 
 // ==
 
-GSmtp::SpamClient::Response::Response() :
+GSmtp::SpamClient::Response::Response( bool read_only ) :
+	m_read_only(read_only) ,
 	m_state(0) ,
 	m_content_length(0U) ,
 	m_size(0U)
@@ -182,8 +186,8 @@ void GSmtp::SpamClient::Response::add( const std::string & path , const std::str
 	{
 		G_DEBUG( "GSmtp::SpamClient::Request::sendMore: spam response" ) ;
 		m_path_final = path ;
-		m_path_tmp = path + ".tmp" ;
-		if( !m_stream.is_open() )
+		m_path_tmp = path + ".spamd" ;
+		if( !m_read_only && !m_stream.is_open() )
 		{
 			m_stream.open( m_path_tmp.c_str() , std::ios_base::binary ) ;
 			if( !m_stream.good() )
@@ -207,19 +211,26 @@ void GSmtp::SpamClient::Response::add( const std::string & path , const std::str
 	else if( m_state == 2 ) // email content
 	{
 		m_size += ( line.size() + 1U ) ;
-		m_stream << line << "\n" ;
+
+		if( m_stream.is_open() )
+			m_stream << line << "\n" ;
+
 		if( m_size >= m_content_length )
 		{
 			if( m_size != m_content_length )
 				G_WARNING( "GSmtp::SpamClient::Response::add: incorrect content length in spam response" ) ;
+			G_LOG( "GSmtp::SpamClient::add: spam response size: " << m_content_length ) ;
 
-			m_stream.close() ;
-			if( m_stream.fail() )
-				throw SpamClient::Error( "cannot write temporary content file" , m_path_tmp ) ;
+			if( m_stream.is_open() )
+			{
+				m_stream.close() ;
+				if( m_stream.fail() )
+					throw SpamClient::Error( "cannot write temporary content file" , m_path_tmp ) ;
 
-			G_LOG( "GSmtp::SpamClient::add: spam response file size: " << m_content_length ) ;
-			G::File::remove( m_path_final ) ;
-			G::File::rename( m_path_tmp , m_path_final ) ;
+				G::File::remove( m_path_final ) ;
+				G::File::rename( m_path_tmp , m_path_final ) ;
+			}
+
 			m_state = 3 ;
 		}
 	}

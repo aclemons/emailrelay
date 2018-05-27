@@ -141,7 +141,8 @@ private:
 		s_Any ,
 		s_Same
 	} ;
-	typedef G::StateMachine<ServerProtocol,State,Event> Fsm ;
+	typedef const std::string & EventData ;
+	typedef G::StateMachine<ServerProtocol,State,Event,EventData> Fsm ;
 
 private:
 	ServerProtocol( const ServerProtocol & ) ; // not implemented

@@ -123,13 +123,27 @@ void GSmtp::NewFile::addTo( const std::string & to , bool local )
 		m_to_remote.push_back( to ) ;
 }
 
-bool GSmtp::NewFile::addText( const std::string & line )
+bool GSmtp::NewFile::addText( const char * line_data , size_t line_size )
 {
-	m_size += static_cast<unsigned long>( line.size() + 2U ) ;
-	if( ! m_eight_bit )
-		m_eight_bit = isEightBit( line ) ;
+	m_size += static_cast<unsigned long>( line_size + 2U ) ;
 
-	*(m_content.get()) << line << crlf() ;
+	// testing for eight-bit content can be slow, and _not_ testing
+	// the content is recommended by RFC-2821 ("a relay should ...
+	// relay [messages] without inspecting [the] content"), accepting
+	// the risk that a strictly-seven-bit server will reject or garble
+	// the message -- here we could assume eight-bit content and
+	// therefore ask servers for eightbitmime on everything (ignoring
+	// the question of mime-ness) -- if there are any seven-bit servers
+	// out there then some out-of-band processing could be used to edit
+	// the envelope file to the correct value before forwarding
+	//
+	//m_eight_bit = true ; // TODO always assume content is eight-bit
+	m_eight_bit = m_eight_bit || isEightBit(line_data,line_size) ;
+
+	std::ostream & stream = *m_content.get() ;
+	stream.write( line_data , line_size ) ;
+	stream.write( "\r\n" , 2U ) ;
+
 	return m_max_size == 0UL || m_size < m_max_size ;
 }
 
@@ -170,9 +184,10 @@ namespace
 	} ;
 }
 
-bool GSmtp::NewFile::isEightBit( const std::string & line )
+bool GSmtp::NewFile::isEightBit( const char * line_data , size_t line_size )
 {
-	return std::find_if( line.begin() , line.end() , EightBit() ) != line.end() ;
+	const char * end = line_data + line_size ;
+	return std::find_if( line_data , end , EightBit() ) != end ;
 }
 
 bool GSmtp::NewFile::saveEnvelope( const std::string & session_auth_id , const std::string & peer_socket_address ,
@@ -216,7 +231,7 @@ void GSmtp::NewFile::writeEnvelope( std::ostream & stream , const std::string & 
 	std::string peer_certificate = peer_certificate_in ;
 	G::Str::trim( peer_certificate , G::Str::ws() ) ;
 	G::Str::replaceAll( peer_certificate , "\r" , "" ) ;
-	G::Str::replaceAll( peer_certificate , "\n" , crlf() + " " ) ; // RFC-2822 folding
+	G::Str::replaceAll( peer_certificate , "\n" , crlf()+std::string(1U,' ') ) ; // RFC-2822 folding
 
 	const std::string x( m_store.x() ) ;
 
@@ -248,10 +263,9 @@ std::string GSmtp::NewFile::xnormalise( const std::string & s )
 	return G::Xtext::encode(G::Xtext::decode(s)) ;
 }
 
-const std::string & GSmtp::NewFile::crlf() const
+const char * GSmtp::NewFile::crlf()
 {
-	static const std::string s( "\015\012" ) ;
-	return s ;
+	return "\r\n" ;
 }
 
 unsigned long GSmtp::NewFile::id() const

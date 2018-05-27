@@ -343,6 +343,11 @@ public:
 	static StringArray splitIntoFields( const std::string & in , const std::string & ws = Str::ws() ) ;
 		///< Overload that returns by value.
 
+	static std::string dequote( const std::string & , char qq = '\"' , char esc = '\\' , const std::string & ws = Str::ws() ) ;
+		///< Dequotes a string by removing unescaped quotes and escaping
+		///< quoted whitespace, so "qq-aaa-esc-qq-bbb-ws-ccc-qq" becomes
+		///< "aaa-qq-bbb-esc-ws-ccc".
+
 	static std::string join( const std::string & sep , const StringArray & strings ) ;
 		///< Concatenates an array of strings with separators.
 
@@ -367,7 +372,8 @@ public:
 		const std::string & default_ = std::string() ) ;
 			///< Returns the first part of the string up to just before the given position.
 			///< The character at pos is not returned. Returns the supplied default
-			///< if pos is npos. Returns the whole string if pos is off the end.
+			///< if pos is npos. Returns the whole string if pos is one-or-more
+			///< off the end.
 
 	static std::string head( const std::string & in , const std::string & sep , bool default_empty = true ) ;
 		///< Overload taking a separator string, and with the default
@@ -379,7 +385,8 @@ public:
 		const std::string & default_ = std::string() ) ;
 			///< Returns the last part of the string after the given position.
 			///< The character at pos is not returned. Returns the supplied default
-			///< if pos is npos. Returns the empty string if pos if off the end.
+			///< if pos is npos. Returns the empty string if pos is one-or-more
+			///< off the end.
 
 	static std::string tail( const std::string & in , const std::string & sep , bool default_empty = true ) ;
 		///< Overload taking a separator string, and with the default
@@ -441,7 +448,7 @@ public:
 			///< search. The locale is ignored.
 
 	static std::string unique( std::string s , char c = ' ' , char r = ' ' ) ;
-		///< Returns a string with repeated 'c' charaters replaced by
+		///< Returns a string with repeated 'c' characters replaced by
 		///< one 'r' character. Single 'c' characters are not replaced.
 
 private:

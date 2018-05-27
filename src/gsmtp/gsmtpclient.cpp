@@ -33,7 +33,8 @@
 
 GSmtp::Client::Client( const GNet::Location & remote , const GAuth::Secrets & secrets , Config config ) :
 	GNet::Client(remote,config.connection_timeout,0U, // the protocol does the response timeout-ing
-		config.secure_connection_timeout,std::string("\r\n"),config.bind_local_address,config.local_address) ,
+		config.secure_connection_timeout,GNet::LineBufferConfig::smtp(),config.bind_local_address,
+		config.local_address) ,
 	m_store(nullptr) ,
 	m_filter(FilterFactory::newFilter(*this,false,config.filter_address,config.filter_timeout)) ,
 	m_protocol(*this,*this,secrets,config.client_protocol_config,config.secure_tunnel) ,
@@ -266,8 +267,9 @@ void GSmtp::Client::protocolDone( int response_code , std::string response , std
 	{
 		if( !sendNext() )
 		{
-			G_DEBUG( "GSmtp::Client::protocolDone: deleting" ) ;
-			doDelete( std::string() ) ;
+			m_protocol.finish() ; // send quit
+			socket().shutdown() ;
+			finish() ; // GNet::HeapClient
 		}
 	}
 	else
@@ -294,11 +296,14 @@ void GSmtp::Client::messageFail( int response_code , const std::string & reason 
 	}
 }
 
-bool GSmtp::Client::onReceive( const std::string & line )
+bool GSmtp::Client::onReceive( const char * line_data , size_t line_size , size_t )
 {
+	std::string line( line_data , line_size ) ;
 	G_DEBUG( "GSmtp::Client::onReceive: [" << G::Str::printable(line) << "]" ) ;
 	bool done = m_protocol.apply( line ) ;
-	return !done ; // if the protocol is done don't apply() any more
+	if( done )
+		doDelete( std::string() ) ;
+	return !done ; // discard line-buffer input if done
 }
 
 void GSmtp::Client::onDelete( const std::string & error )
@@ -306,7 +311,7 @@ void GSmtp::Client::onDelete( const std::string & error )
 	G_DEBUG( "GSmtp::Client::onDelete: error [" << error << "]" ) ;
 	if( ! error.empty() )
 	{
-		G_LOG( "GSmtp::Client: smtp client error: \"" << error << "\"" ) ; // was warning
+		G_LOG( "GSmtp::Client: smtp client error: " << error ) ; // was warning
 		messageFail( 0 , error ) ; // if not already failed or destroyed
 	}
 	m_message.reset() ;

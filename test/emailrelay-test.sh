@@ -39,6 +39,11 @@ perl -I"${srcdir}" "$srcdir/emailrelay-test.pl" "$@"
 rc=$?
 
 echo `basename $0`: done: $rc
-if test $rc -eq 0 ; then rm -rf .tmp.* ; fi
+
+if test $rc -eq 0
+then
+	rm -rf .tmp.*
+fi
+
 rm -f .emailrelay-test-server.pid
 exit $rc

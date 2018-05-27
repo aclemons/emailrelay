@@ -12,21 +12,21 @@ emailrelay (2.0) unstable; urgency=low
   * New "--forward-on-disconnect" option replaces "--poll=0".
   * The "--anonymous" option now suppresses the "Received" line, whatever the "--domain".
   * The second field in the secrets file indicates the password encoding, not AUTH mechanism.
-  * The "--verifier" options is now "--address-verifier" with simplified command-line parameters.
+  * The "--verifier" option is now "--address-verifier", with simplified command-line parameters.
   * Command-line file paths can use "@app" as a prefix to be relative to the executable directory.
   * Command-line file paths can be relative to the startup cwd even when daemonised.
   * Filter exit codes between 104 and 107 are interpreted differently.
   * Message rejection reasons passed back to the submitting SMTP client are much less verbose.
   * Forwarding events are queued up if the forwarding client is still busy from last time.
   * The bind address for outgoing connections is no longer taken from first unqualified "--interface" address [bug-id #27].
-  * Line-feed line endings are allowed in the SMTP server protocol, with a warning.
   * The SMTP client protocol tries more than one authentication mechanism.
+  * Client protocol sends QUIT with a socket shutdown().
   * The Windows commdlg list-view widget is used for the server status pages.
   * The Windows connection-lookup feature is withdrawn ("--peer-lookup").
   * Several build-time configure options like "--disable-pop" are withdrawn.
-  * Support for old versions of Windows is dropped.
-  * Support for old compilers is dropped (eg. gcc 2.95).
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 29 Apr 2018 02:19:26 +0000
+  * C++ 2011 is preferred, and required for multi-threading.
+  * Support for very old versions of Windows is dropped.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sat, 26 May 2018 20:53:34 +0000
 
 emailrelay (1.9.2) unstable; urgency=low
   * Fixed a leak in the event-loop garbage collection.
@@ -34,7 +34,7 @@ emailrelay (1.9.2) unstable; urgency=low
   * A warning is emitted if there is more than one client authentication secret.
   * Multiple "--interface" options are allowed separately on the command-line.
   * Added a new "--client-interface" option.
-  * The "Received" line is formatted as per RFC 3848 ("with ESMTPSA").
+  * The "Received" line is formatted as per RFC-3848 ("with ESMTPSA").
   * The LOGIN and PLAIN mechanisms in the secrets file are now equivalent.
   * The Windows service wrapper can use a configuration file to locate the startup batch file.
   * Simplified the implementation of the GUI installation program.
@@ -42,7 +42,7 @@ emailrelay (1.9.2) unstable; urgency=low
   * Less verbose logging of "no more messages to send".
   * Qt4 or Qt5 selected by the "configure" script.
   * Improved the RPM spec file.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 29 Apr 2018 02:19:26 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sat, 26 May 2018 20:53:34 +0000
 
 emailrelay (1.9.1) unstable; urgency=low
   * Updated OpenSSL from 1.0.1e to 1.0.1g in the Windows build.

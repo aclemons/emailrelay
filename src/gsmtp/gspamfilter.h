@@ -34,15 +34,16 @@ namespace GSmtp
 
 /// \class GSmtp::SpamFilter
 /// A Filter class that passes the body of a message file to a remote
-/// process over the network and stores the response back into the
-/// file. It looks for a spam header line in the resulting file to
-/// determine the overall result.
+/// process over the network and optionally stores the response back
+/// into the file. It parses the response's "Spam:" header to determine
+/// the overall pass/fail result, or it can optionally always pass.
 ///
 class GSmtp::SpamFilter : public Filter
 {
 public:
 	SpamFilter( GNet::ExceptionHandler & ,
 		bool server_side , const std::string & server_location ,
+		bool read_only , bool always_pass ,
 		unsigned int connection_timeout , unsigned int response_timeout ) ;
 			///< Constructor.
 
@@ -87,6 +88,8 @@ private:
 	GNet::ExceptionHandler & m_exception_handler ;
 	bool m_server_side ;
 	GNet::Location m_location ;
+	bool m_read_only ;
+	bool m_always_pass ;
 	unsigned int m_connection_timeout ;
 	unsigned int m_response_timeout ;
 	GNet::ClientPtr<SpamClient> m_client ;

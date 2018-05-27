@@ -215,9 +215,15 @@ public:
 
 	virtual void readEvent() override ;
 		///< Override from GNet::EventHandler.
+		///< Calls GNet::SocketProtocol::readEvent().
 
 	virtual void writeEvent() override ;
 		///< Override from GNet::EventHandler.
+		///< Calls GNet::SocketProtocol::writeEvent().
+
+	virtual void otherEvent( EventHandler::Reason ) override ;
+		///< Override from GNet::EventHandler.
+		///< Calls GNet::SocketProtocol::otherEvent().
 
 	void doDeleteThis( int ) ;
 		///< Does delete this. Should only be used by the GNet::Server class.
@@ -232,13 +238,13 @@ protected:
 		///< Called just before destruction. (Note that the
 		///< object typically deletes itself.)
 
-    virtual void onSendComplete() = 0 ;
-        ///< Called after flow-control has been released and all
-        ///< residual data sent.
-        ///<
-        ///< If an exception is thrown in the override then this
-        ///< object catches it and deletes iteself by calling
-        ///< doDelete().
+	virtual void onSendComplete() = 0 ;
+		///< Called after flow-control has been released and all
+		///< residual data sent.
+		///<
+		///< If an exception is thrown in the override then this
+		///< object catches it and deletes iteself by calling
+		///< doDelete().
 
 	void secureAccept() ;
 		///< Waits for the peer to start a secure session. Uses a

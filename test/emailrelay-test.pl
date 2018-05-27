@@ -32,6 +32,7 @@
 #      -t  - keep temporary files
 #      -T  - tls-config
 #      -C  - create certs
+#      -V  - use valgrind
 #
 # Use a dummy test name to get the list of tests available.
 #
@@ -62,7 +63,7 @@ $| = 1 ;
 
 # parse the command line
 my %opts = () ;
-getopts( 'd:x:c:CkvtT:' , \%opts ) ;
+getopts( 'd:x:c:CkvtT:V' , \%opts ) or die ;
 sub opt_bin_dir { return defined($opts{'d'}) ? $opts{'d'} : $_[0] }
 sub opt_test_bin_dir { return defined($opts{'x'}) ? $opts{'x'} : $_[0] }
 sub opt_certs_dir { return defined($opts{'c'}) ? $opts{'c'} : $_[0] }
@@ -74,6 +75,7 @@ $Server::bin_dir = $bin_dir ;
 my $localhost = "127.0.0.1" ; # in case localhost resolves to ipv6 first
 $Server::localhost = $localhost ;
 $Server::tls_config = $opts{T} if exists $opts{T} ;
+$Server::with_valgrind = $opts{V} if exists $opts{V} ;
 $System::bin_dir = $bin_dir ;
 $Helper::bin_dir = $test_bin_dir ;
 $TestServer::bin_dir = $test_bin_dir ;
@@ -1355,7 +1357,7 @@ sub testNetworkVerifierFail
 	# test that the verifier can reject
 	$c->submit_start( "fail\@here" , 1 ) ; # the test verifier interprets this string
 	Check::fileContains( $verifier->logfile() , "sending error" ) ;
-	Check::fileContains( $server->stderr() , "mailbox unavailable" ) ;
+	Check::fileContains( $server->stderr() , "VerifierError" ) ; # see emailrelay_test_verifier.cpp
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 0 ) ;
 
 	# tear down
@@ -2232,5 +2234,5 @@ END
 	cleanup() ;
 }
 
-exit 0 ;
+exit( exists($opts{t}) ? 1 : 0 ) ; # prevent .sh cleanup if -t
 

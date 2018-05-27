@@ -35,7 +35,6 @@
 #include "gslot.h"
 #include "gtimer.h"
 #include "gstrings.h"
-#include "gexecutable.h"
 #include "gexception.h"
 #include <memory>
 #include <iostream>
@@ -115,7 +114,7 @@ protected:
 	virtual void onConnect() override ;
 		///< Override from GNet::SimpleClient.
 
-	virtual bool onReceive( const std::string & ) override ;
+	virtual bool onReceive( const char * , size_t , size_t ) override ;
 		///< Override from GNet::Client.
 
 	virtual void onDelete( const std::string & ) override ;

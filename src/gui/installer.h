@@ -18,13 +18,13 @@
 /// \file installer.h
 ///
 
-#ifndef INSTALLER_H
-#define INSTALLER_H
+#ifndef G_INSTALLER_H
+#define G_INSTALLER_H
 
 #include "gdef.h"
 #include "gpath.h"
 #include "gmapfile.h"
-#include "gexecutable.h"
+#include "gexecutablecommand.h"
 #include <string>
 
 class InstallerImp ;
@@ -68,7 +68,7 @@ public:
 	std::string reason() const ;
 		///< Returns the failed() reason.
 
-	G::Executable launchCommand() const ;
+	G::ExecutableCommand launchCommand() const ;
 		///< Returns a server-launch command-line.
 
 private:
@@ -83,7 +83,7 @@ private:
 	G::Path m_payload ;
 	InstallerImp * m_imp ;
 	std::string m_reason ;
-	G::Executable m_launch_command ;
+	G::ExecutableCommand m_launch_command ;
 } ;
 
 #endif

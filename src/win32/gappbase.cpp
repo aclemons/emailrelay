@@ -102,6 +102,7 @@ void GGui::ApplicationBase::initFirst()
 
 void GGui::ApplicationBase::close() const
 {
+	G_DEBUG( "GGui::ApplicationBase::close: sending wm-close" ) ;
 	::SendMessage( handle() , WM_CLOSE , 0 , 0 ) ;
 }
 
@@ -115,6 +116,7 @@ void GGui::ApplicationBase::run( bool with_idle )
 
 void GGui::ApplicationBase::onDestroy()
 {
+	G_DEBUG( "GGui::ApplicationBase::onDestroy: application on-destroy" ) ;
 	GGui::Pump::quit() ;
 }
 

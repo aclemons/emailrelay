@@ -45,9 +45,11 @@ public:
 		int fd_to_send = -1 ) ;
 			///< A sendto() replacement using sendmsg().
 
-	static ssize_t recv( SOCKET , void * , size_t , int ,
-		int * fd_received_p = nullptr ) ;
-			///< A recv() replacement using recvmsg().
+	static ssize_t recv( SOCKET , void * , size_t , int ) ;
+		///< A recv() wrapper.
+
+	static ssize_t recv( SOCKET , void * , size_t , int , int * fd_received_p ) ;
+		///< A recv() replacement using recvmsg().
 
 	static ssize_t recvfrom( SOCKET , void * , size_t , int , sockaddr * , socklen_t * ,
 		int * fd_received_p = nullptr ) ;

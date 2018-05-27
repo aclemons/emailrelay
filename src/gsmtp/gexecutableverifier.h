@@ -24,7 +24,6 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gverifier.h"
-#include "gexecutable.h"
 #include "gtask.h"
 #include <string>
 

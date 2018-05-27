@@ -15,19 +15,29 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// gexecutable_unix.cpp
+// gexecutablecommand_unix.cpp
 //
 
 #include "gdef.h"
-#include "gexecutable.h"
+#include "gexecutablecommand.h"
+#include "gstr.h"
+#include <algorithm>
 
-bool G::Executable::osNativelyRunnable() const
+G::StringArray G::ExecutableCommand::osSplit( const std::string & s )
+{
+	G::StringArray parts ;
+	G::Str::splitIntoFields( G::Str::dequote(s) , parts , " " , '\\' ) ;
+	parts.erase( std::remove( parts.begin() , parts.end() , std::string() ) , parts.end() ) ;
+	return parts ;
+}
+
+bool G::ExecutableCommand::osNativelyRunnable() const
 {
 	return true ;
 }
 
-void G::Executable::osAddWrapper()
+void G::ExecutableCommand::osAddWrapper()
 {
 }
 
-/// \file gexecutable_unix.cpp
+/// \file gexecutablecommand_unix.cpp

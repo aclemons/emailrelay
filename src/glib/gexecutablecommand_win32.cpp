@@ -15,23 +15,44 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// gexecutable_win32.cpp
+// gexecutablecommand_win32.cpp
 //
 
 #include "gdef.h"
-#include "gexecutable.h"
+#include "gexecutablecommand.h"
 #include "glimits.h"
 #include "gstr.h"
 #include <stdexcept>
 #include <algorithm>
 
-bool G::Executable::osNativelyRunnable() const
+G::StringArray G::ExecutableCommand::osSplit( const std::string & s_in )
+{
+	std::string s( s_in ) ;
+
+	// mark escaped spaces using nul -- assume no directory name starts with a space
+	const std::string null( 1U , '\0' ) ;
+	G::Str::replaceAll( s , "\\ " , null ) ;
+
+	// split up on (unescaped) spaces
+	G::StringArray parts ;
+	G::Str::splitIntoTokens( s , parts , " " ) ;
+
+	// replace the escaped spaces
+	for( G::StringArray::iterator p = parts.begin() ; p != parts.end() ; ++p )
+	{
+		G::Str::replaceAll( *p , null , " " ) ;
+	}
+
+	return parts ;
+}
+
+bool G::ExecutableCommand::osNativelyRunnable() const
 {
 	std::string type = G::Str::lower(m_exe.extension()) ;
 	return type == "exe" || type == "bat" ;
 }
 
-void G::Executable::osAddWrapper()
+void G::ExecutableCommand::osAddWrapper()
 {
 	// use "<windows>/system32/cscript.exe" -- perhaps it would be
 	// better to do assoc/ftype and add "/H:CScript" if ends up as
@@ -61,4 +82,4 @@ void G::Executable::osAddWrapper()
 	m_exe = G::Path( windows , "system32" , "cscript.exe" ) ;
 }
 
-/// \file gexecutable_win32.cpp
+/// \file gexecutablecommand_win32.cpp

@@ -669,20 +669,15 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 		m_map.contains("as-server") ||
 		m_map.contains("as-proxy") ;
 
-	if( contains_log && close_stderr && ( m_map.contains("log-file") || !syslog ) ) // ie. logging to nowhere
+	if( contains_log && close_stderr && !m_map.contains("log-file") && !syslog ) // ie. logging to nowhere
 	{
 		std::string close_stderr_option =
 			( m_map.contains("close-stderr") ? "--close-stderr" :
 			( m_map.contains("as-server") ? "--as-server" :
 			"--as-proxy" ) ) ;
 
-		std::string warning = close_stderr_option + " closes the "
-			"standard error stream soon after startup " ;
-
-		if( m_map.contains("log-file") )
-			warning.append( "so --log-file will not be used" ) ;
-		else
-			warning.append( "and the system log is not used" ) ;
+		std::string warning = "logging will stop because " + close_stderr_option +
+			" closes the standard error stream soon after startup" ;
 
 		const bool help = false ; // moot
 		if( help )
@@ -705,7 +700,7 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 
 	if( m_map.contains("verifier") ) // backwards compatibility
 	{
-		warnings.push_back( "use of --verifier is deprecated; replace with --address-verifier and rtfm" ) ;
+		warnings.push_back( "use of --verifier is deprecated; replace with --address-verifier" ) ;
 	}
 
 	if( fixed_up )
@@ -725,6 +720,13 @@ G::Path Main::Configuration::pathValue( const std::string & option_name ) const
     }
     else
     {
+		// for backwards compatibility only replace backslash-space with space
+		// on windows -- old installer code used to put in the backslash when
+		// writing the startup batch file, but it's not needed when properly
+		// quoted
+		if( G::is_windows() )
+			G::Str::replaceAll( value , "\\ " , " " ) ; // TODO remove backwards compatibility
+
     	if( value.find("@app") == 0U && m_app_dir != G::Path() )
         	G::Str::replace( value , "@app" , m_app_dir.str() ) ;
 

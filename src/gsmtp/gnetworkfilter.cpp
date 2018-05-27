@@ -56,7 +56,7 @@ void GSmtp::NetworkFilter::start( const std::string & path )
 {
 	if( !m_lazy || m_client.get() == nullptr )
 	{
-		m_client.reset( new RequestClient("scanner","ok","\n",m_location,m_connection_timeout,m_response_timeout) );
+		m_client.reset( new RequestClient("scanner","ok",m_location,m_connection_timeout,m_response_timeout) );
 	}
 	m_text.erase() ;
 	m_client->request( path ) ; // (no need to wait for connection)

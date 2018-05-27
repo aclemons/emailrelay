@@ -28,17 +28,19 @@
 namespace GNet
 {
 	class LineBuffer ;
+	class LineBufferConfig ;
 	class LineBufferIterator ;
 }
 
 /// \class GNet::LineBuffer
-/// A class which does line buffering. Raw data is added, and newline-delimited
-/// lines are extracted via an iterator.
+/// A class that does line buffering, supporting auto-detection of
+/// line endings and fixed-size extraction. Raw data is added, and
+/// newline-delimited lines are extracted, optionally via an iterator.
 ///
 /// Usage:
 /// \code
 /// {
-///   GNet::LineBuffer buffer ;
+///   GNet::LineBuffer buffer( (GNet::LineBufferConfig()) ) ;
 ///   buffer.add("abc") ;
 ///   buffer.add("def\nABC\nDE") ;
 ///   buffer.add("F\n") ;
@@ -51,92 +53,241 @@ namespace GNet
 class GNet::LineBuffer
 {
 public:
-	G_EXCEPTION( Error , "line buffer error" ) ;
+	G_EXCEPTION( ErrorOverflow , "line buffer overflow" ) ;
 
-	LineBuffer() ;
-		///< Default constructor for a line buffer that auto-detects either
-		///< CR or CR-LF line endings based on the first line.
+	explicit LineBuffer( LineBufferConfig ) ;
+		///< Constructor.
 
-	explicit LineBuffer( const std::string & eol , bool do_throw_on_overflow = false ) ;
-		///< Constructor. The default is to not throw on overflow because
-		///< the very large overflow limit is only intended to be protection
-		///< against a rogue client or a denial-of-service attack.
-
-	void add( const std::string & segment ) ;
+	void add( const std::string & data ) ;
 		///< Adds a data segment.
 
-	void add( const char * p , std::string::size_type n ) ;
+	void add( const char * data , size_t size ) ;
 		///< Adds a data segment.
-
-	const std::string & eol() const ;
-		///< Returns the line-ending.
 
 	void expect( size_t n ) ;
-		///< The next 'n' bytes added and/or extracted are treated as a
-		///< complete line. This is useful for binary chunks of known
-		///< size surrounded by text, as in http.
+		///< The next 'n' bytes extracted will be extracted in one
+		///< contiguous block, without regard to line endings.
+		///<
+		///< This method can be used during a data-transfer phase to
+		///< obtain a chunk of data of known size, as in http with a
+		///< specific content-length.
+
+	std::string eol() const ;
+		///< Returns the end-of-line string as passed in to the
+		///< constructor, or as auto-detected. Returns the empty
+		///< string if auto-detection by iteration has not yet
+		///< occurred.
+
+	template <typename Tsink>
+	void apply( const char * data , size_t data_size , Tsink sink ) ;
+		///< Adds the data and passes complete lines to the sink
+		///< functor with line-data, line-size and eol-size parameters.
+		///< Stops if the sink functor returns false. This method
+		///< is zero-copy if the supplied data contains several
+		///< complete lines.
+
+	bool more() ;
+		///< Returns true if there is lineData() to be had.
+
+	const char * lineData() const ;
+		///< Returns a pointer for the current line, including the
+		///< line ending.
+		///< Precondition: more()
+
+	size_t lineSize() const ;
+		///< Returns the size of the current line, excluding the
+		///< line ending.
+		///< Precondition: more()
+
+	size_t eolSize() const ;
+		///< Returns the size of current line ending. This will
+		///< be zero if extracting a fixed-size block. (It will
+		///< never be zero as a result of auto-detection because
+		///< auto-detection has already happened.)
+		///< Precondition: more()
 
 private:
-	friend class LineBufferIterator ;
 	LineBuffer( const LineBuffer & ) ;
 	void operator=( const LineBuffer & ) ;
-	size_t lock( LineBufferIterator * ) ;
-	void unlock( LineBufferIterator * , size_t , size_t ) ;
-	bool check( size_t ) const ;
-	void detect() ;
+	void precheck( size_t ) ;
+	void linecheck( size_t ) ;
+	bool detect() ;
+	void addextra( const char * , size_t ) ;
+	void consolidate() ;
+	const char * extraeol() const ;
 
 private:
-	LineBufferIterator * m_iterator ;
 	bool m_auto ;
 	std::string m_eol ;
-	bool m_throw_on_overflow ;
+	size_t m_warn_limit ;
+	size_t m_fail_limit ;
 	std::string m_store ;
+	const char * m_extra_data ;
+	size_t m_extra_size ;
 	size_t m_expect ;
+	bool m_warned ;
+	size_t m_pos ;
+	const char * m_line_data ;
+	size_t m_line_size ;
+	size_t m_eol_size ;
 } ;
 
 /// \class GNet::LineBufferIterator
-/// An iterator class for GNet::LineBuffer that extracts complete lines.
-/// Iteration and add()ing should not be mixed.
+/// Syntactic sugar for calling GNet::LineBuffer iteration methods.
 ///
 class GNet::LineBufferIterator
 {
 public:
-	explicit LineBufferIterator( LineBuffer & ) ;
+	explicit LineBufferIterator( LineBuffer & buffer ) ;
 		///< Constructor.
 
-	~LineBufferIterator() ;
-		///< Destructor.
-
 	bool more() ;
-		///< Returns true if there is a line() to be had.
+		///< See LineBuffer::more().
 
-	const std::string & line() const ;
+	const char * lineData() const ;
+		///< See LineBuffer::lineData().
+
+	size_t lineSize() const ;
+		///< See LineBuffer::lineSize().
+
+	size_t eolSize() const ;
+		///< See LineBuffer::eolSize().
+
+	std::string line() const ;
 		///< Returns the current line.
-		///< Precondition: more()
 
-	std::string::const_iterator begin() const ;
-		///< Returns a begin iterator for the current line.
-		///< Precondition: more()
-
-	std::string::const_iterator end() const ;
-		///< Returns an end iterator for the current line.
-		///< Precondition: more()
+	std::string eol() const ;
+		///< Returns the current line ending but returns the empty
+		///< string if currently inside an expect() block.
 
 private:
-	friend class LineBuffer ;
 	LineBufferIterator( const LineBufferIterator & ) ;
 	void operator=( const LineBufferIterator & ) ;
-	void expect( size_t ) ;
 
 private:
 	LineBuffer & m_buffer ;
-	size_t m_expect ;
-	std::string::size_type m_pos ;
-	std::string::size_type m_eol_size ;
-	std::string::const_iterator m_line_begin ;
-	std::string::const_iterator m_line_end ;
-	mutable std::string m_line ;
-	mutable bool m_line_valid ;
 } ;
+
+/// \class GNet::LineBufferConfig
+/// A configuration structure for GNet::LineBuffer.
+///
+class GNet::LineBufferConfig
+{
+public:
+	explicit LineBufferConfig( const std::string & eol = std::string(1U,'\n') ,
+		size_t warn = 0U , size_t fail = 0U ) ;
+			///< Constructor. An empty end-of-line string detects either
+			///< LF or CR-LF. The default end-of-line string is newline.
+			///< A non-zero warn-limit generates a one-shot warning when
+			///< breached, and the fail-limit causes an exception when
+			///< breached. The fail-limit defaults to something large if
+			///< given as zero.
+
+	const std::string & eol() const ;
+		///< Returns the end-of-line string as passed to the constructor.
+
+	size_t warn() const ;
+		///< Returns the warn-limit, as passed to the constructor.
+
+	size_t fail() const ;
+		///< Returns the fail-limit, as passed to the constructor.
+
+	static LineBufferConfig http() ;
+		///< Convenience factory function.
+
+	static LineBufferConfig smtp() ;
+		///< Convenience factory function.
+
+	static LineBufferConfig pop() ;
+		///< Convenience factory function.
+
+	static LineBufferConfig crlf() ;
+		///< Convenience factory function.
+
+	static LineBufferConfig newline() ;
+		///< Convenience factory function.
+
+	static LineBufferConfig autodetect() ;
+		///< Convenience factory function.
+
+private:
+	std::string m_eol ;
+	size_t m_warn ;
+	size_t m_fail ;
+} ;
+
+inline
+const std::string & GNet::LineBufferConfig::eol() const
+{
+	return m_eol ;
+}
+
+inline
+size_t GNet::LineBufferConfig::warn() const
+{
+	return m_warn ;
+}
+
+inline
+size_t GNet::LineBufferConfig::fail() const
+{
+	return m_fail ;
+}
+
+namespace GNet
+{
+	template <typename T>
+	void LineBuffer::apply( const char * data , size_t size , T sink )
+	{
+		addextra( data , size ) ;
+		while( more() )
+		{
+			if( !sink( lineData() , lineSize() , eolSize() ) )
+				break ;
+		}
+	}
+}
+
+inline
+GNet::LineBufferIterator::LineBufferIterator( LineBuffer & buffer ) :
+	m_buffer(buffer)
+{
+}
+
+inline
+bool GNet::LineBufferIterator::more()
+{
+	return m_buffer.more() ;
+}
+
+inline
+std::string GNet::LineBufferIterator::line() const
+{
+	return std::string( m_buffer.lineData() , m_buffer.lineSize() ) ;
+}
+
+inline
+std::string GNet::LineBufferIterator::eol() const
+{
+	return m_buffer.eolSize() == 0U ? std::string() : m_buffer.eol() ;
+}
+
+inline
+const char * GNet::LineBufferIterator::lineData() const
+{
+	return m_buffer.lineData() ;
+}
+
+inline
+size_t GNet::LineBufferIterator::lineSize() const
+{
+	return m_buffer.lineSize() ;
+}
+
+inline
+size_t GNet::LineBufferIterator::eolSize() const
+{
+	return m_buffer.eolSize() ;
+}
 
 #endif

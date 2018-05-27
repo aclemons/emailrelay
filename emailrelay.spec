@@ -57,7 +57,6 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /etc/init.d/emailrelay
 %config /etc/pam.d/emailrelay
 /usr/lib/emailrelay/emailrelay-filter-copy
-/usr/lib/emailrelay/emailrelay-poke
 /usr/lib/emailrelay/examples/emailrelay
 /usr/lib/emailrelay/examples/emailrelay-deliver.sh
 /usr/lib/emailrelay/examples/emailrelay-multicast.sh
@@ -85,6 +84,7 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %doc /usr/share/doc/emailrelay/developer.md
 %doc /usr/share/doc/emailrelay/developer.rst
 %doc /usr/share/doc/emailrelay/developer.txt
+%doc /usr/share/doc/emailrelay/download-button.png
 %docdir /usr/share/doc/emailrelay/doxygen
 %doc /usr/share/doc/emailrelay/doxygen.cfg.in
 %doc /usr/share/doc/emailrelay/doxygen/index.html
@@ -115,7 +115,6 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /usr/share/emailrelay/emailrelay-icon.png
 /usr/share/man/man1/emailrelay-filter-copy.1.gz
 /usr/share/man/man1/emailrelay-passwd.1.gz
-/usr/share/man/man1/emailrelay-poke.1.gz
 /usr/share/man/man1/emailrelay-submit.1.gz
 /usr/share/man/man1/emailrelay.1.gz
 

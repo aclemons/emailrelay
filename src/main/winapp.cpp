@@ -107,6 +107,7 @@ void Main::WinApp::disableOutput()
 
 void Main::WinApp::init( const Configuration & cfg )
 {
+	G_DEBUG( "Main::WinApp::init: tray=" << (cfg.daemon()?1:0) << " hidden=" << ((m_hidden||m_cfg->hidden())?1:0) ) ;
 	m_use_tray = cfg.daemon() ;
 	m_cfg.reset( new Configuration(cfg) ) ;
 	m_hidden = m_hidden || m_cfg->hidden() ;
@@ -137,7 +138,7 @@ bool Main::WinApp::onCreate()
 {
 	if( m_use_tray )
 		m_tray.reset( new GGui::Tray(resource(),*this,"E-MailRelay") ) ;
-	else
+	else if( !m_hidden )
 		doOpen() ;
 	return true ;
 }
@@ -164,15 +165,23 @@ void Main::WinApp::onTrayDoubleClick()
 
 LRESULT Main::WinApp::onUserOther( WPARAM , LPARAM lparam )
 {
-	G_DEBUG( "Main::WinApp::onUserOther: hwnd=" << reinterpret_cast<HWND>(lparam) << " form=" << (m_form.get()?m_form->handle():HWND(0)) ) ;
+	// (triggered by completion message posted by the GGui::Stack)
 	HWND hwnd = reinterpret_cast<HWND>( lparam ) ;
-	if( m_form.get() != nullptr && hwnd == m_form->handle() ) // just in case delayed in the queue
+	HWND hform = m_form.get() ? m_form->handle() : HWND(0) ;
+	G_DEBUG( "Main::WinApp::onUserOther: hwnd=" << hwnd << " form=" << hform << " use-tray=" << (m_use_tray?1:0) ) ;
+
+	if( m_form.get() != nullptr && hwnd == hform ) // just in case delayed in the queue
 		m_form->close() ;
+
+	if( !m_use_tray )
+		doQuit() ;
+
 	return 0L ;
 }
 
 LRESULT Main::WinApp::onUser( WPARAM , LPARAM lparam )
 {
+	G_DEBUG( "Main::WinApp::onUser: lparam=" << lparam ) ;
 	int id = static_cast<int>(lparam) ;
 	if( id == IDM_OPEN ) doOpen() ;
 	if( id == IDM_CLOSE ) doClose() ;
@@ -182,27 +191,29 @@ LRESULT Main::WinApp::onUser( WPARAM , LPARAM lparam )
 
 void Main::WinApp::doOpen()
 {
+	G_DEBUG( "Main::WinApp::doOpen: do-open" ) ;
 	if( m_form.get() == nullptr || m_form.get()->closed() )
 	{
 		m_form.reset( new WinForm( *this , *m_cfg.get() , /*confirm=*/!m_use_tray ) ) ;
 	}
-
 	show() ;
 }
 
 void Main::WinApp::doQuit()
 {
+	G_DEBUG( "Main::WinApp::doQuit: do-quit" ) ;
 	m_quit = true ;
 	close() ; // AppBase::close() -- triggers onClose(), but without doClose()
 }
 
 bool Main::WinApp::onClose()
 {
-	// (this is triggered by AppBase::close() or using the system close menu item)
+	// (triggered by AppBase::close() sending wm-close)
+	G_DEBUG( "Main::WinApp::onClose: on-close: quit=" << (m_quit?1:0) << " hidden=" << (m_hidden?1:0) ) ;
 
 	if( m_quit || m_hidden )
 	{
-		return true ;
+		return true ; // continue to WM_DESTROY etc
 	}
 	else if( m_use_tray )
 	{
@@ -223,6 +234,7 @@ bool Main::WinApp::confirm()
 
 void Main::WinApp::doClose()
 {
+	G_DEBUG( "Main::WinApp::doClose: do-close" ) ;
 	hide() ;
 
 	// (close the form so that it gets recreated each time with current data)
@@ -232,7 +244,8 @@ void Main::WinApp::doClose()
 
 void Main::WinApp::formOk()
 {
-	// (this is triggered by clicking the OK button)
+	// (this is triggered by clicking the OK button, labelled 'close')
+	G_DEBUG( "Main::WinApp::formOk: form-ok: use-tray=" << (m_use_tray?1:0) ) ;
 	m_use_tray ? doClose() : doQuit() ;
 }
 

@@ -85,10 +85,10 @@ public:
 protected:
 	virtual void addRead( Descriptor , EventHandler & , ExceptionHandler & ) override ;
 	virtual void addWrite( Descriptor , EventHandler & , ExceptionHandler & ) override ;
-	virtual void addOob( Descriptor , EventHandler & , ExceptionHandler & ) override ;
+	virtual void addOther( Descriptor , EventHandler & , ExceptionHandler & ) override ;
 	virtual void dropRead( Descriptor ) override ;
 	virtual void dropWrite( Descriptor ) override ;
-	virtual void dropOob( Descriptor ) override ;
+	virtual void dropOther( Descriptor ) override ;
 	virtual void setTimeout( G::EpochTime ) override ;
 	virtual std::string report() const override ;
 
@@ -110,7 +110,7 @@ private:
 	std::string m_reason ;
 	EventHandlerList m_read_list ;
 	EventHandlerList m_write_list ;
-	EventHandlerList m_oob_list ;
+	EventHandlerList m_other_list ;
 	std::vector<int> m_active ;
 	Handles m_handles ;
 	Sockets m_sockets ;
@@ -129,7 +129,7 @@ GNet::EventLoopImp::EventLoopImp() :
 	m_running(false) ,
 	m_read_list("read") ,
 	m_write_list("write") ,
-	m_oob_list("oob")
+	m_other_list("other")
 {
 }
 
@@ -151,7 +151,7 @@ std::string GNet::EventLoopImp::run()
 		{
 			EventHandlerList::Lock lock_read( m_read_list , &updated ) ;
 			EventHandlerList::Lock lock_write( m_write_list , &updated ) ;
-			EventHandlerList::Lock lock_oob( m_oob_list , &updated ) ;
+			EventHandlerList::Lock lock_other( m_other_list , &updated ) ;
 
 			if( rc == WAIT_OBJECT_0 ) // timer
 			{
@@ -175,6 +175,7 @@ std::string GNet::EventLoopImp::run()
 				std::pair<bool,std::string> quit = GGui::Pump::runToEmpty() ;
 				if( quit.first )
 				{
+					G_DEBUG( "GNet::EventLoopImp::run: quit" ) ;
 					quit_reason = quit.second ;
 					break ;
 				}
@@ -229,7 +230,14 @@ void GNet::EventLoopImp::onEventHandleEvent( size_t handle_index )
 		}
 		if( event & EXCEPTION_EVENTS )
 		{
-			m_oob_list.find(fdd).raiseEvent( &EventHandler::oobEvent ) ;
+			int e = events_info.iErrorCode[FD_CLOSE_BIT] ; G_ASSERT( EXCEPTION_EVENTS == FD_CLOSE ) ;
+			G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::onEventHandleEvent: fd-close reason: " << e ) ;
+			EventHandler::Reason reason = EventHandler::reason_other ;
+			if( e == 0 ) reason = EventHandler::reason_closed ;
+			if( e == WSAENETDOWN ) reason = EventHandler::reason_down ;
+			if( e == WSAECONNRESET ) reason = EventHandler::reason_reset ;
+			if( e == WSAECONNABORTED ) reason = EventHandler::reason_abort ;
+			m_other_list.find(fdd).raiseEvent( &EventHandler::otherEvent , reason ) ;
 		}
 	}
 }
@@ -246,9 +254,9 @@ void GNet::EventLoopImp::addWrite( Descriptor fdd , EventHandler & handler , Exc
 	updateSocket( fdd ) ;
 }
 
-void GNet::EventLoopImp::addOob( Descriptor fdd , EventHandler & handler , ExceptionHandler & eh )
+void GNet::EventLoopImp::addOther( Descriptor fdd , EventHandler & handler , ExceptionHandler & eh )
 {
-	m_oob_list.add( fdd , &handler , &eh ) ;
+	m_other_list.add( fdd , &handler , &eh ) ;
 	updateSocket( fdd ) ;
 }
 
@@ -264,9 +272,9 @@ void GNet::EventLoopImp::dropWrite( Descriptor fdd )
 	updateSocket( fdd ) ;
 }
 
-void GNet::EventLoopImp::dropOob( Descriptor fdd )
+void GNet::EventLoopImp::dropOther( Descriptor fdd )
 {
-	m_oob_list.remove( fdd ) ;
+	m_other_list.remove( fdd ) ;
 	updateSocket( fdd ) ;
 }
 
@@ -289,7 +297,7 @@ void GNet::EventLoopImp::updateHandles()
 	m_sockets.push_back( 0 ) ;
 	addHandles( m_read_list ) ;
 	addHandles( m_write_list ) ;
-	addHandles( m_oob_list ) ;
+	addHandles( m_other_list ) ;
 	m_active.resize( m_handles.size() ) ;
 }
 
@@ -319,11 +327,11 @@ long GNet::EventLoopImp::desiredEvents( Descriptor fdd )
 	long mask = 0 ;
 	const bool read = m_read_list.contains( fdd ) ;
 	const bool write = m_write_list.contains( fdd ) ;
-	const bool oob = m_oob_list.contains( fdd ) ;
-	G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::updateSocket: socket events: " << fdd << ": r=" << read << " w=" << write << " o=" << oob ) ;
+	const bool other = m_other_list.contains( fdd ) ;
+	G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::updateSocket: socket events: " << fdd << ": r=" << read << " w=" << write << " o=" << other ) ;
 	if( read ) mask |= READ_EVENTS ;
 	if( write ) mask |= WRITE_EVENTS ;
-	if( oob ) mask |= EXCEPTION_EVENTS ;
+	if( other ) mask |= EXCEPTION_EVENTS ;
 	return mask ;
 }
 
@@ -331,7 +339,7 @@ void GNet::EventLoopImp::disarm( ExceptionHandler * p )
 {
 	m_read_list.disarm( p ) ;
 	m_write_list.disarm( p ) ;
-	m_oob_list.disarm( p ) ;
+	m_other_list.disarm( p ) ;
 }
 
 namespace

@@ -137,10 +137,14 @@ case "$1" in
 		chgrp "$GROUP" "$RUNDIR"
 		chmod 770 "$RUNDIR"
 
-		test -d "$SPOOLDIR" || mkdir -p "$SPOOLDIR" 2>/dev/null
-		chgrp "$GROUP" "$SPOOLDIR"
-		chmod 775 "$SPOOLDIR"
-		chmod g+s "$SPOOLDIR"
+		SPOOLDIR="`cat \"$CONFIG\" | grep '^spool-dir' | awk '{print $2}'`"
+		if test "$SPOOLDIR" != ""
+		then
+			test -d "$SPOOLDIR" || mkdir -p "$SPOOLDIR" 2>/dev/null
+			chgrp "$GROUP" "$SPOOLDIR"
+			chmod 775 "$SPOOLDIR"
+			chmod g+s "$SPOOLDIR"
+		fi
 
 		chmod 550 "$DAEMON"
 		chgrp "$GROUP" "$DAEMON"

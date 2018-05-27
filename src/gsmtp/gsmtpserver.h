@@ -24,10 +24,9 @@
 #include "gdef.h"
 #include "gsmtp.h"
 #include "gnoncopyable.h"
-#include "gexecutable.h"
-#include "gbufferedserverpeer.h"
 #include "gmultiserver.h"
 #include "gsmtpclient.h"
+#include "glinebuffer.h"
 #include "gverifier.h"
 #include "gmessagestore.h"
 #include "gserverprotocol.h"
@@ -116,10 +115,10 @@ private:
 } ;
 
 /// \class GSmtp::ServerPeer
-/// Represents a connection from an SMTP client.
+/// Handles a connection from a remote SMTP client.
 /// \see GSmtp::Server
 ///
-class GSmtp::ServerPeer : public GNet::BufferedServerPeer , private ServerProtocol::Sender
+class GSmtp::ServerPeer : public GNet::ServerPeer , private ServerProtocol::Sender
 {
 public:
 	ServerPeer( GNet::Server::PeerInfo peer_info , Server & server ,
@@ -129,13 +128,13 @@ public:
 
 protected:
 	virtual void onSendComplete() override ;
-		///< Override from GNet::BufferedServerPeer.
+		///< Override from GNet::ServerPeer.
 
 	virtual void onDelete( const std::string & reason ) override ;
 		///< Override from GNet::ServerPeer.
 
-	virtual bool onReceive( const std::string & line ) override ;
-		///< Override from GNet::BufferedServerPeer.
+	virtual void onData( const char * , size_t ) override ;
+		///< Override from GNet::SocketProtocolSink.
 
 	virtual void onSecure( const std::string & ) override ;
 		///< Override from GNet::SocketProtocolSink.
@@ -144,13 +143,14 @@ private:
 	ServerPeer( const ServerPeer & ) ;
 	void operator=( const ServerPeer & ) ;
 	virtual void protocolSend( const std::string & line , bool ) override ; // override from private base class
+	virtual void protocolShutdown() override ; // override from private base class
 
 private:
 	Server & m_server ;
-	bool m_first_line ;
 	unique_ptr<Verifier> m_verifier ;
 	unique_ptr<ProtocolMessage> m_pmessage ;
 	unique_ptr<ServerProtocol::Text> m_ptext ;
+	GNet::LineBuffer m_line_buffer ;
 	ServerProtocol m_protocol ; // order dependency -- last
 } ;
 

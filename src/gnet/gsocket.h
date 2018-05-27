@@ -106,12 +106,21 @@ public:
 		///< address for incoming connections or incoming
 		///< datagrams.
 
-	void shutdown( bool for_writing = true ) ;
-		///< Shuts the socket for writing (or reading).
+	void shutdown( int how = 1 ) ;
+		///< Modifies the local socket state so that so that new
+		///< sends (1 or 2) and/or receives (0 or 2) will fail.
+		///<
+		///< If receives are shut-down then anything received
+		///< will be rejected with a RST.
+		///<
+		///< If sends are shut-down then the transmit queue is
+		///< drained and a final empty FIN packet is sent when
+		///< fully acknowledged.
+		///<
+		///< Errors are ignored.
 
 	virtual ssize_type read( char * buffer , size_type buffer_length ) override = 0 ;
-		///< Reads from the socket. This is a default implementation
-		///< that can be called explicitly from derived classes.
+		///< Reads from the socket.
 		///< Override from G::ReadWrite.
 
 	virtual ssize_type write( const char * buf , size_type len ) override = 0 ;
@@ -155,19 +164,22 @@ public:
 	void dropWriteHandler() ;
 		///< Reverses addWriteHandler().
 
-	void addOobHandler( EventHandler & , ExceptionHandler & ) ;
+	void addOtherHandler( EventHandler & , ExceptionHandler & ) ;
 		///< Adds this socket to the event source list so that
 		///< the given handler receives exception events.
 		///< A TCP exception event should be treated as a
 		///< disconnection event. (Not used for datagram
 		///< sockets.)
 
-	void dropOobHandler() ;
-		///< Reverses addOobHandler().
+	void dropOtherHandler() ;
+		///< Reverses addOtherHandler().
 
 	std::string asString() const ;
 		///< Returns the socket handle as a string.
 		///< Only used in debugging.
+
+	std::string reason() const ;
+		///< Returns the reason for the previous error.
 
 protected:
 	Socket( int domain , int type , int protocol ) ;
@@ -180,7 +192,6 @@ protected:
 		///< StreamSocket::accept().
 
 protected:
-	static int reason() ;
 	static std::string reasonString( int ) ;
 	static bool error( int rc ) ;
 	static bool sizeError( ssize_type size ) ;
@@ -191,6 +202,7 @@ protected:
 	std::pair<bool,Address> getAddress( bool ) const ;
 	void setOptionsOnBind( bool ) ;
 	void setOptionsOnConnect( bool ) ;
+	void setOptionLingerImp( int , int ) ;
 	void setOptionNoLinger() ;
 	void setOptionReuse() ;
 	void setOptionExclusive() ;

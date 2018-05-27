@@ -58,8 +58,8 @@ GSmtp::VerifierStatus GSmtp::VerifierStatus::parse( const std::string & line , s
 		s.abort = part.at(i++) == "1" ;
 		s.full_name = part.at(i++) ;
 		s.address = part.at(i++) ;
+		s.response = part.at(i++) ;
 		s.reason = part.at(i++) ;
-		s.help = part.at(i++) ;
 		return s ;
 	}
 	catch( std::exception & )
@@ -82,8 +82,8 @@ std::string GSmtp::VerifierStatus::str( const std::string & mbox ) const
 		(abort?t:f) + sep +
 		full_name + sep +
 		address + sep +
-		reason + sep +
-		help ;
+		response + sep +
+		reason ;
 }
 
 /// \file gverifierstatus.cpp

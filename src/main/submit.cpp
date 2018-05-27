@@ -49,7 +49,6 @@
 #include "gfilestore.h"
 #include "gnewmessage.h"
 #include "gexception.h"
-#include "gexecutable.h"
 #include "legal.h"
 #include <exception>
 #include <iostream>
@@ -90,17 +89,6 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 	GSmtp::FileStore store( spool_dir ) ;
 	unique_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from , from_auth_in , from_auth_out ) ;
 
-	// read and stream out the content
-	//
-	while( stream.good() )
-	{
-		std::string line = G::Str::readLineFrom( stream ) ;
-		G::Str::trimRight( line , "\r" , 1U ) ;
-		if( !stream || line == "." )
-			break ;
-		msg->addText( line ) ;
-	}
-
 	// add "To:" lines to the envelope
 	//
 	for( G::StringArray::const_iterator to_p = to_list.begin() ; to_p != to_list.end() ; ++to_p )
@@ -111,7 +99,7 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 		msg->addTo( status.address , status.is_local ) ;
 	}
 
-	// stream out the header
+	// stream out the content header
 	{
 		bool has_from = false ;
 		for( G::StringArray::const_iterator header_p = header.begin() ; header_p != header.end() ; ++header_p )
@@ -119,13 +107,24 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 			if( (*header_p).find("From: ") == 0U )
 				has_from = true ;
 
-			msg->addText( *header_p ) ;
+			msg->addTextLine( *header_p ) ;
 		}
 		if( !has_from && !from.empty() )
 		{
-			msg->addText( std::string("From: ")+from ) ;
+			msg->addTextLine( std::string("From: ")+from ) ;
 		}
-		msg->addText( std::string() ) ;
+		msg->addTextLine( std::string() ) ;
+	}
+
+	// read and stream out the content body
+	//
+	while( stream.good() )
+	{
+		std::string line = G::Str::readLineFrom( stream ) ;
+		G::Str::trimRight( line , "\r" , 1U ) ;
+		if( !stream || line == "." )
+			break ;
+		msg->addTextLine( line ) ;
 	}
 
 	// commit the file

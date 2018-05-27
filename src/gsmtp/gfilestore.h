@@ -31,7 +31,6 @@
 #include "gslot.h"
 #include "groot.h"
 #include "gpath.h"
-#include "gexecutable.h"
 #include <memory>
 #include <string>
 

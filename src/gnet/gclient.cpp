@@ -20,10 +20,11 @@
 
 #include "gdef.h"
 #include "gclient.h"
+#include "gstr.h"
 
 GNet::Client::Client( const Location & remote_info , unsigned int connection_timeout ,
 	unsigned int response_timeout , unsigned int secure_connection_timeout ,
-	const std::string & eol , bool bind_local_address , const Address & local_address ,
+	LineBufferConfig eol , bool bind_local_address , const Address & local_address ,
 	bool sync_dns ) :
 		HeapClient(remote_info,bind_local_address,local_address,sync_dns,secure_connection_timeout) ,
 		m_done_signal(true) ,
@@ -72,12 +73,12 @@ void GNet::Client::onSendImp()
 
 void GNet::Client::onConnectionTimeout()
 {
-	doDelete( "connection timeout" ) ;
+	doDelete( "connection timeout after " + G::Str::fromUInt(m_connection_timeout) + "s connecting to " + remoteLocation().displayString() ) ;
 }
 
 void GNet::Client::onResponseTimeout()
 {
-	doDelete( "response timeout" ) ;
+	doDelete( "response timeout after " + G::Str::fromUInt(m_response_timeout) + "s talking to " + remoteLocation().displayString() ) ;
 }
 
 G::Slot::Signal1<std::string> & GNet::Client::doneSignal()
@@ -97,7 +98,7 @@ G::Slot::Signal0 & GNet::Client::connectedSignal()
 
 void GNet::Client::onData( const char * p , SimpleClient::size_type n )
 {
-	m_line_buffer.add(p,n) ;
+	m_line_buffer.add( p , n ) ;
 
 	LineBufferIterator iter( m_line_buffer ) ;
 	for( bool first = true ; iter.more() ; first = false )
@@ -105,10 +106,15 @@ void GNet::Client::onData( const char * p , SimpleClient::size_type n )
 		if( first && m_response_timeout != 0U )
 			m_response_timer.cancelTimer() ;
 
-		bool ok = onReceive( iter.line() ) ;
+		bool ok = onReceive( iter.lineData() , iter.lineSize() , iter.eolSize() ) ;
 		if( !ok )
 			break ;
 	}
+}
+
+std::string GNet::Client::lineBufferEndOfLine() const
+{
+	return m_line_buffer.eol() ;
 }
 
 void GNet::Client::clearInput()

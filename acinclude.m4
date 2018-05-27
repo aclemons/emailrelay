@@ -1178,9 +1178,10 @@ AC_DEFUN([GCONFIG_FN_WITH_ZLIB],
 ])
 	if test "$with_zlib" = "no"
 	then
+		AC_DEFINE(GCONFIG_HAVE_ZLIB,0,[Define true to enable use of zlib])
 		GCONFIG_ZLIB_LIBS=""
 	else
-    		if test "$gconfig_cv_zlib" = "yes"
+    	if test "$gconfig_cv_zlib" = "yes"
 		then
 			GCONFIG_ZLIB_LIBS="-lz"
 			AC_DEFINE(GCONFIG_HAVE_ZLIB,1,[Define true to enable use of zlib])
@@ -1394,11 +1395,14 @@ AC_DEFUN([GCONFIG_FN_ENABLE_IPV6],
 				AC_MSG_WARN([ignoring --enable-ipv6])
 			fi
 			gconfig_use_ipv6="no"
-			AC_DEFINE(GCONFIG_ENABLE_IPV6,0,[Define true to use IPv6])
 		else
-			AC_DEFINE(GCONFIG_ENABLE_IPV6,1,[Define true to use IPv6])
 			gconfig_use_ipv6="yes"
 		fi
+	fi
+	if test "$gconfig_use_ipv6" = "yes" ; then
+		AC_DEFINE(GCONFIG_ENABLE_IPV6,1,[Define true to use IPv6])
+	else
+		AC_DEFINE(GCONFIG_ENABLE_IPV6,0,[Define true to use IPv6])
 	fi
 	AM_CONDITIONAL([GCONFIG_IPV6],test "$gconfig_use_ipv6" = "yes")
 ])

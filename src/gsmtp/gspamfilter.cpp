@@ -25,11 +25,13 @@
 #include "glog.h"
 
 GSmtp::SpamFilter::SpamFilter( GNet::ExceptionHandler & exception_handler ,
-	bool server_side , const std::string & server ,
+	bool server_side , const std::string & server , bool read_only , bool always_pass ,
 	unsigned int connection_timeout , unsigned int response_timeout ) :
 		m_exception_handler(exception_handler) ,
 		m_server_side(server_side) ,
 		m_location(server) ,
+		m_read_only(read_only) ,
+		m_always_pass(always_pass) ,
 		m_connection_timeout(connection_timeout) ,
 		m_response_timeout(response_timeout)
 {
@@ -54,7 +56,7 @@ bool GSmtp::SpamFilter::simple() const
 void GSmtp::SpamFilter::start( const std::string & path )
 {
 	// the spam client can do more than one request, but it is simpler to start fresh
-	m_client.reset( new SpamClient(m_location,m_connection_timeout,m_response_timeout) ) ;
+	m_client.reset( new SpamClient(m_location,m_read_only,m_connection_timeout,m_response_timeout) ) ;
 
 	m_text.erase() ;
 	m_client->request( path ) ; // (no need to wait for connection)
@@ -65,7 +67,7 @@ void GSmtp::SpamFilter::clientEvent( std::string s1 , std::string s2 )
 	G_DEBUG( "GSmtp::SpamFilter::clientEvent: [" << s1 << "] [" << s2 << "]" ) ;
 	if( s1 == "spam" )
 	{
-		m_text = s2.empty() ? std::string() : ("spam: "+G::Str::printable(s2)) ;
+		m_text = ( s2.empty() || m_always_pass ) ? std::string() : ("spam: "+G::Str::printable(s2)) ;
 		emit( m_text.empty() ) ;
 	}
 	else if( s1 == "failed" )

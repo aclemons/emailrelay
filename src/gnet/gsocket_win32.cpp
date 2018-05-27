@@ -141,8 +141,25 @@ bool GNet::Socket::setOptionImp( int level , int op , const void * arg , socklen
 
 std::string GNet::Socket::reasonString( int e )
 {
-	DWORD size_limit = 128U ;
+	//if( e == WSANOTINITIALISED )
+	if( e == WSAENETDOWN ) return "network down" ;
+	//if( e == WSAEFAULT )
+	//if( e == WSAENOTCONN )
+	//if( e == WSAEINTR )
+	//if( e == WSAEINPROGRESS )
+	if( e == WSAENETRESET ) return "network reset" ;
+	//if( e == WSAENOTSOCK )
+	//if( e == WSAEOPNOTSUPP )
+	if( e == WSAESHUTDOWN ) return "already shut down" ;
+	//if( e == WSAEWOULDBLOCK )
+	//if( e == WSAEMSGSIZE )
+	//if( e == WSAEINVAL )
+	if( e == WSAECONNABORTED ) return "aborted" ;
+	if( e == WSAETIMEDOUT ) return "timed out" ;
+	if( e == WSAECONNRESET ) return "connection reset by peer" ;
+
 	std::string result = "unknown error" ;
+	DWORD size_limit = 128U ;
 	TCHAR * buffer = NULL ;
 	DWORD rc = ::FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS ,
 		NULL , e , 0 , reinterpret_cast<LPSTR>(&buffer) , size_limit , NULL ) ;
@@ -159,7 +176,8 @@ std::string GNet::Socket::reasonString( int e )
 	G::Str::removeAll( result , '\r' ) ;
 	G::Str::trimRight( result , ".\n" ) ;
 	G::Str::replaceAll( result , "\n" , " " ) ;
-	return result ;
+	G_DEBUG( "GNet::Socket::reasonString: " << e << " -> [" << G::Str::printable(result) << "]" ) ;
+	return G::Str::lower(G::Str::printable(result)) ;
 }
 
 /// \file gsocket_win32.cpp

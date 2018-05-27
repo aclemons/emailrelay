@@ -34,7 +34,7 @@ namespace GSmtp
 }
 
 /// \class GSmtp::InternalVerifier
-/// The standard internal Verifier.
+/// The standard internal Verifier that accepts all mailbox names.
 ///
 class GSmtp::InternalVerifier : public Verifier
 {
@@ -57,8 +57,8 @@ public:
 		///< Override from GSmtp::Verifier.
 
 private:
-	InternalVerifier( const InternalVerifier & ) ; // not implemented
-	void operator=( const InternalVerifier & ) ; // not implemented
+	InternalVerifier( const InternalVerifier & ) ;
+	void operator=( const InternalVerifier & ) ;
 	G::Slot::Signal2<std::string,VerifierStatus> m_done_signal ;
 	VerifierStatus verifyInternal( const std::string & address ) const ;
 } ;

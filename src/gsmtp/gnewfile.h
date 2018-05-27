@@ -56,7 +56,7 @@ public:
 	virtual void addTo( const std::string & to , bool local ) override ;
 		///< Override from GSmtp::NewMessage.
 
-	virtual bool addText( const std::string & line ) override ;
+	virtual bool addText( const char * , size_t ) override ;
 		///< Override from GSmtp::NewMessage.
 
 	virtual std::string prepare( const std::string & auth_id , const std::string & peer_socket_address ,
@@ -106,8 +106,8 @@ private:
 	bool commitEnvelope() ;
 	void deleteContent() ;
 	void deleteEnvelope() ;
-	static bool isEightBit( const std::string & line ) ;
-	const std::string & crlf() const ;
+	static bool isEightBit( const char * , size_t ) ;
+	static const char * crlf() ;
 	static std::string xnormalise( const std::string & ) ;
 	bool saveEnvelope( const std::string & auth_id , const std::string & peer_socket_address ,
 		const std::string & peer_certificate ) const ;

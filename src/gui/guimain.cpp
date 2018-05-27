@@ -141,7 +141,12 @@ static int width()
 
 static int height()
 {
-	return 480 ;
+	// this should be big enough that the buttons dont move
+	// when going from one page to another, but not so big
+	// that there is wasted space at the bottom of every
+	// page, and not so big that the dialog box does not fit
+	// on the screen (which may be 640x480)
+	return 490 ;
 }
 
 static void error( const std::string & what )
@@ -323,7 +328,7 @@ int main( int argc , char * argv [] )
 			// load the existing server configuration
 			G::Path dir_config = pointer_map.expandedPathValue( "dir-config" , Dir::config() ) ;
 			G::Path dir_run = pointer_map.expandedPathValue( "dir-run" , Dir::pid(dir_config) ) ;
-			G::Path server_config_file = configFile( dir_config ) ;
+			G::Path server_config_file = configFile( dir_config ) ; // config-file or batch-file
 			G::MapFile server_config_map ;
 			if( configure_mode )
 			{
@@ -405,9 +410,8 @@ int main( int argc , char * argv [] )
 			translator.load(QString("emailrelay_")+QLocale::system().name());
 			app.installTranslator(&translator);
 
-			// create the installer - see ProgressPage - pass minimal configuration
-			// directly to the installer since it takes most of its configuration
-			// from the output of the gui pages
+			// create the installer - the ProgressPage extracts dumps from all the
+			// dialog pages and passes the result to the installer
 			Installer installer( !configure_mode , isWindows() , isMac() , payload_path ) ;
 
 			// test whether we have run before -- this is normally the same
@@ -428,7 +432,8 @@ int main( int argc , char * argv [] )
 			d.add( new DirectoryPage(d,pages_config,"directory","dowhat","",false,false,!configure_mode,is_mac) ) ;
 			d.add( new DoWhatPage(d,pages_config,"dowhat","pop","smtpserver",false,false) ) ;
 			d.add( new PopPage(d,pages_config,"pop","smtpserver","logging",false,false,configure_mode) ) ;
-			d.add( new SmtpServerPage(d,pages_config,"smtpserver","smtpclient","",false,false,configure_mode) ) ;
+			d.add( new SmtpServerPage(d,pages_config,"smtpserver","filter","",false,false,configure_mode) ) ;
+			d.add( new FilterPage(d,pages_config,"filter","smtpclient","",false,false,isWindows()) ) ;
 			d.add( new SmtpClientPage(d,pages_config,"smtpclient","logging","",false,false,configure_mode) ) ;
 			d.add( new LoggingPage(d,pages_config,"logging","listening","",false,false) ) ;
 			d.add( new ListeningPage(d,pages_config,"listening","startup","",false,false) ) ;

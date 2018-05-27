@@ -54,7 +54,11 @@ void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity
 	{
 		::syslog( mode(m_facility,severity) , "%s" , message.c_str() ) ;
 	}
-	std_err << message << std::endl ;
+
+	if( !m_quiet || severity == G::Log::s_Error || severity == G::Log::s_Warning )
+	{
+		std_err << message << std::endl ;
+	}
 }
 
 void G::LogOutput::init()

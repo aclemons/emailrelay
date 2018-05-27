@@ -29,22 +29,29 @@ bool G::threading::works()
 {
 	if( using_std_thread )
 	{
-		try
+		static bool first = true ;
+		static bool result = false ;
+		if( first )
 		{
-			threading::thread_type t( test_fn ) ;
-			t.join() ;
-			threading::mutex_type mutex ;
-			threading::lock_type lock( mutex ) ;
-			return true ;
+			first = false ;
+			try
+			{
+				threading::thread_type t( test_fn ) ;
+				t.join() ;
+				threading::mutex_type mutex ;
+				threading::lock_type lock( mutex ) ;
+				result = true ;
+			}
+			catch(...)
+			{
+				// eg. gcc std::thread builds okay with -std=c++11 but throws
+				// at run-time if not also built with "-pthread" -- also, linking
+				// with -lGL suppresses linking with libpthread.so and breaks
+				// threading at run-time -- also, gcc 4.8 bugs
+				result = false ;
+			}
 		}
-		catch(...)
-		{
-			// eg. gcc std::thread builds okay with -std=c++11 but throws
-			// at run-time if not also built with "-pthread" - also, linking
-			// with -lGL suppresses linking with libpthread.so and breaks
-			// threading at run-time
-			return false ;
-		}
+		return result ;
 	}
 	else
 	{

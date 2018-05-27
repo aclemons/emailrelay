@@ -26,4 +26,9 @@ GSmtp::ProtocolMessage::~ProtocolMessage()
 {
 }
 
+bool GSmtp::ProtocolMessage::addTextLine( const std::string & line )
+{
+	return addText( line.data() , line.size() ) ;
+}
+
 /// \file gprotocolmessage.cpp

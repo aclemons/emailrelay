@@ -117,9 +117,13 @@ Main::Run::~Run()
 		m_client_secrets.reset() ;
 		m_store.reset() ;
 		m_monitor.reset() ;
-		m_forwarding_timer.reset() ;
-		m_poll_timer.reset() ;
+		m_tls_library.reset() ;
 		m_stop_timer.reset() ;
+		m_poll_timer.reset() ;
+		m_forwarding_timer.reset() ;
+		//m_timer_list.reset() ;
+		//m_event_loop.reset() ;
+		//m_log_output.reset() ;
 		m_configuration.reset() ;
 		m_commandline.reset() ;
 	}
@@ -198,9 +202,9 @@ void Main::Run::run()
 	//
 	m_log_output.reset( new G::LogOutput( m_arg.prefix() ,
 		configuration().log() , // output
-		configuration().log() , // with-logging
-		configuration().verbose() , // with-verbose-logging
-		configuration().debug() , // with-debug
+		configuration().log() , // summary-logging
+		configuration().verbose() , // verbose-logging
+		configuration().debug() , // debug
 		true , // with-level
 		configuration().logTimestamp() , // with-timestamp
 		!configuration().debug() , // strip-context
@@ -210,6 +214,9 @@ void Main::Run::run()
 	) ) ;
 	if( commandline().map().contains("test") )
 		G::LogOutput::groups( commandline().map().value("test") ) ;
+	if( configuration().useSyslog() && configuration().daemon() &&
+		configuration().closeStderr() && configuration().logFile() == G::Path() )
+			m_log_output->quiet() ;
 
 	// log command-line warnings
 	//
@@ -253,23 +260,24 @@ void Main::Run::run()
 		configuration().serverSecretsFile() != G::Path() ||
 		configuration().popSecretsFile() != G::Path() ;
 
-	GSsl::Library tls( need_tls || prefer_tls , configuration().tlsConfig() , GSsl::Library::log , configuration().debug() ) ;
+	m_tls_library.reset( new GSsl::Library( need_tls || prefer_tls ,
+		configuration().tlsConfig() , GSsl::Library::log , configuration().debug() ) ) ;
 
 	if( configuration().serverTls() )
-		tls.addProfile( "server" , true ,
+		m_tls_library->addProfile( "server" , true ,
 			configuration().serverTlsCertificate().str() , // key
 			configuration().serverTlsCertificate().str() , // cert
 			configuration().serverTlsCaList().str() ) ;
 
 	if( configuration().clientTls() || configuration().clientOverTls() )
-		tls.addProfile( "client" , false ,
+		m_tls_library->addProfile( "client" , false ,
 			configuration().clientTlsCertificate().str() , // key
 			configuration().clientTlsCertificate().str() , // cert
 			configuration().clientTlsCaList().str() ,
 			configuration().clientTlsPeerCertificateName() ,
 			configuration().clientTlsPeerHostName() ) ;
 
-	if( need_tls && !tls.enabled() )
+	if( need_tls && !m_tls_library->enabled() )
 		throw G::Exception( "cannot do tls/ssl: tls library not built in: "
 			"remove tls options from the command-line or rebuild "
 			"the emailrelay executable with a supported tls library" ) ;
@@ -278,6 +286,18 @@ void Main::Run::run()
 	//
 	m_monitor.reset( new GNet::Monitor ) ;
 	m_monitor->signal().connect( G::Slot::slot(*this,&Run::onNetworkEvent) ) ;
+
+	// early check of the forward-to address
+	//
+	if( configuration().log() && !configuration().serverAddress().empty() && !configuration().forwardOnStartup() )
+	{
+		GNet::Location location( configuration().serverAddress() , resolverFamily() ) ;
+		std::string error = GNet::Resolver::resolve( location ) ;
+		if( !error.empty() )
+			G_WARNING( "Main::Run::run: dns lookup of forward-to address failed: " << error ) ;
+		else
+			G_LOG( "Main::Run::run: forwarding address " << location.displayString() ) ;
+	}
 
 	// message store singletons
 	//
@@ -307,7 +327,7 @@ void Main::Run::run()
 	bool serving = do_smtp || do_pop || do_admin ;
 	bool admin_forwarding = do_admin && !configuration().serverAddress().empty() ;
 	bool forwarding = configuration().forwardOnStartup() || configuration().doPolling() || admin_forwarding ;
-	bool report_finished = configuration().forwardOnStartup() && !serving && m_output.simpleOutput() ;
+	bool report_finished = false ; // configuration().forwardOnStartup() && !serving && m_output.simpleOutput() ;
 	m_quit_when_sent =
 		!serving &&
 		configuration().forwardOnStartup() &&
@@ -643,7 +663,7 @@ std::string Main::Run::startForwarding()
 
 void Main::Run::onClientDone( std::string reason )
 {
-	G_DEBUG( "Main::Run::onClientDone: \"" << reason << "\"" ) ;
+	G_DEBUG( "Main::Run::onClientDone: reason=[" << reason << "]" ) ;
 	if( m_quit_when_sent )
 	{
 		// quit the event loop, but do it via a timer so that the
@@ -747,7 +767,7 @@ void Main::Run::checkFilterScript( const std::string & s ) const
 	std::string reason = GSmtp::FilterFactory::check( s ) ;
 	if( !reason.empty() )
 	{
-		G_WARNING( "Main::Run::checkScript: invalid preprocessor \"" << s << "\": " << reason ) ;
+		G_WARNING( "Main::Run::checkScript: invalid filter \"" << s << "\": " << reason ) ;
 	}
 }
 

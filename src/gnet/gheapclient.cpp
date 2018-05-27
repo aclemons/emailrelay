@@ -27,7 +27,8 @@ GNet::HeapClient::HeapClient( const Location & remote_info ,
 	unsigned int secure_connection_timeout ) :
 		SimpleClient(*this,remote_info,bind_local_address,local_address,sync_dns,secure_connection_timeout) ,
 		m_connect_timer(*this,&HeapClient::onConnectionTimeout,*this) ,
-		m_delete_timer(*this,&HeapClient::onDeletionTimeout,*this)
+		m_delete_timer(*this,&HeapClient::onDeletionTimeout,*this) ,
+		m_finished(false)
 {
 	m_connect_timer.startTimer( 0U ) ;
 }
@@ -58,8 +59,8 @@ void GNet::HeapClient::doDelete( const std::string & reason )
 {
 	m_connect_timer.cancelTimer() ;
 	m_delete_timer.startTimer( 0U ) ; // before the callbacks, in case they throw
-	onDeleteImp( reason ) ; // first -- for 'internal' library classes
-	onDelete( reason ) ; // second -- for 'external' client classes
+	onDeleteImp( reason ) ; // first -- for 'internal' library classes (see GNet::Client)
+	onDelete( reason ) ; // second -- for 'external' client classes (eg. GSmtp::Client)
 }
 
 void GNet::HeapClient::doDeleteThis()
@@ -69,8 +70,10 @@ void GNet::HeapClient::doDeleteThis()
 
 void GNet::HeapClient::onException( std::exception & e )
 {
-	G_DEBUG( "GNet::HeapClient::onException: exception: " << e.what() ) ;
-	doDelete( e.what() ) ;
+	std::string reason = e.what() ;
+	G_DEBUG( "GNet::HeapClient::onException: reason=[" << reason << "] finished=" << (m_finished?1:0) ) ;
+	if( m_finished ) reason.clear() ;
+	doDelete( reason ) ;
 }
 
 void GNet::HeapClient::onDeleteImp( const std::string & )
@@ -79,6 +82,11 @@ void GNet::HeapClient::onDeleteImp( const std::string & )
 
 void GNet::HeapClient::onConnecting()
 {
+}
+
+void GNet::HeapClient::finish()
+{
+	m_finished = true ;
 }
 
 /// \file gheapclient.cpp

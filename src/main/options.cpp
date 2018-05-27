@@ -106,10 +106,11 @@ std::string Main::Options::spec( bool is_windows )
 			// Sets the port number used for listening for incoming SMTP connections.
 
 		"r!remote-clients!allows remote clients to connect!!0!!2|"
-			// Allows incoming connections from addresses that are not on the local
-			// machine. The default behaviour is to ignore connections that are not
-			// local in order to prevent accidental exposure to the local network
-			// and public internet.
+			// Allows incoming connections from addresses that are not local. The
+			// default behaviour is to ignore connections that are not local in
+			// order to prevent accidental exposure to the public internet, but
+			// a firewall should also be used. The definition of 'local' is
+			// different for IPv4 and IPv6.
 
 		"s!spool-dir!specifies the spool directory!!1!dir!2|"
 			//example: /var/spool/emailrelay
@@ -121,30 +122,30 @@ std::string Main::Options::spec( bool is_windows )
 			// Displays version information and then exits.
 
 		"K!server-tls!enables negotiated TLS when acting as an SMTP server! (ie. STARTTLS) (requires --server-tls-certificate)!0!!3|"
-			// Enables TLS for incoming SMTP connections. SMTP clients can then
-			// request TLS encryption by issuing the STARTTLS command. The
+			// Enables TLS for incoming SMTP and POP connections. SMTP clients can
+			// then request TLS encryption by issuing the STARTTLS command. The
 			// --server-tls-certificate option must be used to define the server
 			// certificate.
 
 		"!server-tls-required!mandatory use of TLS before SMTP server authentication or mail-to! (requires --server-tls)!0!!3|"
-			// Makes the use of TLS mandatory for any incoming SMTP connections.
+			// Makes the use of TLS mandatory for any incoming SMTP and POP connections.
 			// SMTP clients must use the STARTTLS command to establish a TLS session
 			// before they can issue SMTP AUTH or SMTP MAIL-TO commands.
 
 		"!server-tls-certificate!specifies a private TLS key+certificate file for --server-tls!!1!pem-file!3|"
 			//example: /etc/ssl/certs/emailrelay.pem
 			//example: C:/ProgramData/E-MailRelay/emailrelay.pem
-			// Defines the TLS certificate file when acting as a SMTP server. This
-			// file must contain the server's private key and certificate chain
+			// Defines the TLS certificate file when acting as a SMTP or POP server.
+			// This file must contain the server's private key and certificate chain
 			// using the PEM file format. Keep the file permissions tight to avoid
 			// accidental exposure of the private key.
 
 		"!server-tls-verify!enables verification of remote client's certificate! against CA certificates in the given file or directory!1!ca-list!3|"
 			//example: /etc/ssl/certs/ca-certificates.crt
 			//example: C:/ProgramData/E-MailRelay/ca-certificates.crt
-			// Enables verification of remote SMTP clients' certificates against
-			// any of the trusted CA certificates in the specified file or
-			// directory. In many use cases this should be a file containing
+			// Enables verification of remote SMTP and POP clients' certificates
+			// against any of the trusted CA certificates in the specified file
+			// or directory. In many use cases this should be a file containing
 			// just your self-signed root certificate.
 
 		"j!client-tls!enables negotiated TLS when acting as an SMTP client! (ie. STARTTLS)!0!!3|"
@@ -153,8 +154,8 @@ std::string Main::Options::spec( bool is_windows )
 
 		"b!client-tls-connection!enables SMTP over TLS for SMTP client connections!!0!!3|"
 			// Enables the use of a TLS tunnel for outgoing SMTP connections.
-			// This is for SMTP over TLS, not TLS negotiated within SMTP using
-			// STARTTLS.
+			// This is for SMTP over TLS (SMTPS), not TLS negotiated within SMTP
+			// using STARTTLS.
 
 		"!client-tls-certificate!specifies a private TLS key+certificate file for --client-tls!!1!pem-file!3|"
 			//example: /etc/ssl/certs/emailrelay.pem
@@ -184,9 +185,9 @@ std::string Main::Options::spec( bool is_windows )
 
 		"!client-tls-required!mandatory use of TLS for SMTP client connections! (requires --client-tls)!0!!3|"
 			// Makes the use of TLS mandatory for outgoing SMTP connections. The SMTP
-			// STARTTLS command will be used before mail messages are
-			// sent out. If the remote server does not allow STARTTLS then the
-			// SMTP connection will fail.
+			// STARTTLS command will be used before mail messages are sent out.
+			// If the remote server does not allow STARTTLS then the SMTP connection
+			// will fail.
 
 		"9!tls-config!sets low-level TLS configuration options! (eg. tlsv1.2)!1!options!3|"
 			//example: mbedtls,tlsv1.2
@@ -199,7 +200,7 @@ std::string Main::Options::spec( bool is_windows )
 		"g!debug!generates debug-level logging if built in!!0!!3|"
 			// Enables debug level logging, if built in. Debug messages are usually
 			// only useful when cross-referenced with the source code and they may
-			// expose plaintext passwords and unencrypted mail message content.
+			// expose plaintext passwords and mail message content.
 
 		"C!client-auth!enables SMTP authentication with the remote server, using the given client secrets file!!1!file!3|"
 			//example: /etc/emailrelay.auth

@@ -20,8 +20,9 @@
 
 #include "gdef.h"
 #include "gsmtp.h"
-#include "gstrings.h"
 #include "gexecutableverifier.h"
+#include "gexecutablecommand.h"
+#include "gstrings.h"
 #include "gprocess.h"
 #include "gnewprocess.h"
 #include "gfile.h"
@@ -40,37 +41,37 @@ GSmtp::ExecutableVerifier::ExecutableVerifier( GNet::ExceptionHandler & eh , con
 
 void GSmtp::ExecutableVerifier::verify( const std::string & to_address ,
 	const std::string & from_address , const GNet::Address & ip ,
-	const std::string & mechanism , const std::string & extra )
+	const std::string & auth_mechanism , const std::string & auth_extra )
 {
 	G_DEBUG( "GSmtp::ExecutableVerifier::verify: to \"" << to_address << "\": from \"" << from_address << "\": "
-		<< "ip \"" << ip.hostPartString() << "\": auth-mechanism \"" << mechanism << "\": "
-		<< "auth-extra \"" << extra << "\"" ) ;
+		<< "ip \"" << ip.hostPartString() << "\": auth-mechanism \"" << auth_mechanism << "\": "
+		<< "auth-extra \"" << auth_extra << "\"" ) ;
 
-	G::Executable commandline( m_path.str() ) ;
+	G::ExecutableCommand commandline( m_path.str() , G::StringArray() ) ;
 	if( m_compatible )
 	{
-		std::string user = G::Str::head( to_address , to_address.find('@') , to_address ) ;
-		std::string host = G::Str::tail( to_address , to_address.find('@') , std::string() ) ;
+		std::string user = G::Str::head( to_address , "@" , false ) ;
+		std::string host = G::Str::tail( to_address , "@" , true ) ;
 		commandline.add( to_address ) ;
 		commandline.add( G::Str::upper(user) ) ;
 		commandline.add( G::Str::upper(host) ) ;
 		commandline.add( G::Str::upper(GNet::Local::canonicalName()) ) ;
 		commandline.add( from_address ) ;
 		commandline.add( ip.hostPartString() ) ;
-		commandline.add( mechanism ) ;
-		commandline.add( extra ) ;
+		commandline.add( auth_mechanism ) ;
+		commandline.add( auth_extra ) ;
 	}
 	else
 	{
 		commandline.add( to_address ) ;
-		commandline.add( GNet::Local::canonicalName() ) ;
 		commandline.add( from_address ) ;
-		commandline.add( ip.hostPartString() ) ;
-		commandline.add( mechanism ) ;
-		commandline.add( extra ) ;
+		commandline.add( ip.displayString() ) ;
+		commandline.add( GNet::Local::canonicalName() ) ;
+		commandline.add( G::Str::lower(auth_mechanism) ) ;
+		commandline.add( auth_extra ) ;
 	}
 
-	G_LOG( "GSmtp::ExecutableVerifier: executing " << commandline.displayString() ) ;
+	G_LOG( "GSmtp::ExecutableVerifier: address verifier: executing " << commandline.displayString() ) ;
 	m_to_address = to_address ;
 	m_task.start( commandline ) ;
 }
@@ -78,21 +79,26 @@ void GSmtp::ExecutableVerifier::verify( const std::string & to_address ,
 void GSmtp::ExecutableVerifier::onTaskDone( int exit_code , const std::string & response_in )
 {
 	std::string response( response_in ) ;
-	G_LOG( "GSmtp::ExecutableVerifier: " << exit_code << ": \"" << G::Str::printable(response) << "\"" ) ;
 	G::Str::trimRight( response , " \n\t" ) ;
 	G::Str::replaceAll( response , "\r\n" , "\n" ) ;
 	G::Str::replaceAll( response , "\r" , "" ) ;
+
 	G::StringArray response_parts ;
 	response_parts.reserve( 2U ) ;
 	G::Str::splitIntoFields( response , response_parts , "\n" ) ;
+	size_t parts = response_parts.size() ;
+	response_parts.resize( 2U ) ;
+
+	G_LOG( "GSmtp::ExecutableVerifier: address verifier: exit code " << exit_code << " "
+		<< "[" << G::Str::printable(response_parts[0]) << "] [" << G::Str::printable(response_parts[1]) << "]" ) ;
 
 	VerifierStatus status ;
-	if( ( exit_code == 0 || exit_code == 1 ) && response_parts.size() >= 2 )
+	if( ( exit_code == 0 || exit_code == 1 ) && parts >= 2 )
 	{
 		status.is_valid = true ;
 		status.is_local = exit_code == 0 ;
-		status.full_name = response_parts.at( 0U ) ;
-		status.address = response_parts.at( 1U ) ;
+		status.full_name = G::Str::printable( response_parts.at(0U) ) ;
+		status.address = G::Str::printable( response_parts.at(1U) ) ;
 	}
 	else if( exit_code == 100 )
 	{
@@ -103,10 +109,24 @@ void GSmtp::ExecutableVerifier::onTaskDone( int exit_code , const std::string & 
 	{
 		status.is_valid = false ;
 		status.temporary = exit_code == 3 ;
-		status.reason = response.empty() ? G::Str::fromInt(exit_code) : response ;
-		G::Str::replaceAll( status.reason , "\n" , " " ) ;
-		status.reason = G::Str::printable( status.reason ) ;
-		status.help = "rejected by external verifier program" ;
+
+		if( m_compatible )
+		{
+			G::Str::replaceAll( response , "\n" , " " ) ;
+			status.response = "no such mailbox: " +
+				( response.empty() ? G::Str::fromInt(exit_code) : G::Str::printable(response) ) ;
+			status.reason = "rejected by verifier" ;
+		}
+		else
+		{
+			status.response = parts > 0U ?
+				G::Str::printable(response_parts.at(0U)) :
+				std::string("mailbox unavailable") ;
+
+			status.reason = parts > 1U ?
+				G::Str::printable(response_parts.at(1U)) :
+				( "exit code " + G::Str::fromInt(exit_code) ) ;
+		}
 	}
 
 	doneSignal().emit( m_to_address , status ) ;

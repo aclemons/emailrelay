@@ -29,7 +29,7 @@
 #include "resource.h"
 #include <clocale>
 
-int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_line , int show )
+int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_line , int show_style )
 {
 	try
 	{
@@ -49,7 +49,7 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_lin
 			if( run.runnable() )
 			{
 				app.init( run.configuration() ) ;
-				app.createWindow( show , false ) ; // invisible main window
+				app.createWindow( show_style , /*show*/false ) ; // invisible main window
 				run.signal().connect( G::Slot::slot(app,&Main::WinApp::onRunEvent) ) ;
 				run.run() ;
 			}

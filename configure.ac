@@ -30,6 +30,7 @@ dnl check for programs...
 dnl
 AC_PROG_CC([cc gcc clang])
 AC_PROG_CXX([c++ g++ clang++])
+AX_CXX_COMPILE_STDCXX_11
 AC_PROG_RANLIB
 AC_PROG_INSTALL
 AC_PROG_AWK

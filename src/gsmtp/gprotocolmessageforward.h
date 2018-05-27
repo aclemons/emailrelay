@@ -27,7 +27,6 @@
 #include "gclientptr.h"
 #include "gprotocolmessage.h"
 #include "gprotocolmessagestore.h"
-#include "gexecutable.h"
 #include "gsecrets.h"
 #include "gsmtpclient.h"
 #include "gmessagestore.h"
@@ -84,7 +83,7 @@ public:
 	virtual void addReceived( const std::string & ) override ;
 		///< Override from GSmtp::ProtocolMessage.
 
-	virtual bool addText( const std::string & ) override ;
+	virtual bool addText( const char * , size_t ) override ;
 		///< Override from GSmtp::ProtocolMessage.
 
 	virtual std::string from() const override ;

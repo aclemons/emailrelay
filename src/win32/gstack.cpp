@@ -109,16 +109,16 @@ GGui::Stack::Stack( StackPageCallback & callback , HINSTANCE hinstance ) :
 {
 }
 
-void GGui::Stack::addPage( const std::string & title , int idd , int idi )
+void GGui::Stack::addPage( const std::string & title , int dialog_id , int icon_id )
 {
 	static PROPSHEETPAGE page_zero ;
 	PROPSHEETPAGE page ;
 	page = page_zero ;
 	page.dwSize = sizeof(PROPSHEETPAGE) ;
-	page.dwFlags = PSP_USECALLBACK | (idi ? PSP_USEICONID : 0 ) | PSP_USETITLE ;
+	page.dwFlags = PSP_USECALLBACK | (icon_id ? PSP_USEICONID : 0 ) | PSP_USETITLE ;
 	page.hInstance = m_hinstance ;
-	page.pszTemplate = idd ? MAKEINTRESOURCE(idd) : 0 ;
-	page.pszIcon = idi ? MAKEINTRESOURCE(idi) : 0 ;
+	page.pszTemplate = dialog_id ? MAKEINTRESOURCE(dialog_id) : 0 ;
+	page.pszIcon = icon_id ? MAKEINTRESOURCE(icon_id) : 0 ;
 	page.pfnDlgProc = gstack_dlgproc_export ;
 	page.pszTitle = static_cast<LPCSTR>(title.c_str()) ;
 	page.lParam = to_lparam(this) ; // PROPSHEETPAGE.lParam - see WM_INITDIALOG and PSPCB_CREATE
@@ -131,7 +131,7 @@ void GGui::Stack::addPage( const std::string & title , int idd , int idi )
 	m_pages.push_back(hpage) ;
 }
 
-void GGui::Stack::create( HWND hparent , const std::string & title , int idi , unsigned int notify_message )
+void GGui::Stack::create( HWND hparent , const std::string & title , int icon_id , unsigned int notify_message )
 {
 	G_DEBUG( "GGui::Stack::create: hparent=" << hparent ) ;
 	m_notify_hwnd = hparent ;
@@ -141,10 +141,10 @@ void GGui::Stack::create( HWND hparent , const std::string & title , int idi , u
 	PROPSHEETHEADER header = header_zero ;
 
 	header.dwSize = sizeof(PROPSHEETHEADER) ;
-	header.dwFlags = PSH_MODELESS | PSH_NOAPPLYNOW | PSH_NOCONTEXTHELP | PSH_USECALLBACK | ( idi ? PSH_USEICONID : 0 ) ;
+	header.dwFlags = PSH_MODELESS | PSH_NOAPPLYNOW | PSH_NOCONTEXTHELP | PSH_USECALLBACK | ( icon_id ? PSH_USEICONID : 0 ) ;
 	header.hwndParent = hparent ;
 	header.hInstance = m_hinstance ;
-	header.pszIcon = idi ? MAKEINTRESOURCE(idi) : 0 ;
+	header.pszIcon = icon_id ? MAKEINTRESOURCE(icon_id) : 0 ;
 	header.pszCaption = static_cast<LPCSTR>(title.c_str()) ;
 	header.nPages = static_cast<UINT>(m_pages.size()) ;
 	header.nStartPage = 0 ;

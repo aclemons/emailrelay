@@ -110,6 +110,17 @@ struct CreatePointerFile : public ActionBase
 	virtual std::string ok() const ;
 } ;
 
+struct CreateFilterScript : public ActionBase
+{
+	G::Path m_path ;
+	std::string m_type ;
+	std::string m_ok ;
+	CreateFilterScript( const G::Path & path , bool client ) ;
+	virtual void run() ;
+	virtual std::string text() const ;
+	virtual std::string ok() const ;
+} ;
+
 struct CopyFile : public ActionBase
 {
 	G::Path m_src ;
@@ -158,8 +169,7 @@ struct CreateBatchFile : public ActionBase
 	G::Path m_bat ;
 	G::Path m_exe ;
 	G::StringArray m_args ;
-	G::Path m_log_file ;
-	CreateBatchFile( const G::Path & bat , const G::Path & exe , const G::StringArray & args , const G::Path & = G::Path() ) ;
+	CreateBatchFile( const G::Path & bat , const G::Path & exe , const G::StringArray & args ) ;
 	virtual void run() ;
 	virtual std::string text() const ;
 } ;
@@ -251,7 +261,7 @@ public:
 	~InstallerImp() ;
 	bool next() ;
 	Action & current() ;
-	G::Executable launchCommand() const ;
+	G::ExecutableCommand launchCommand() const ;
 
 private:
 	InstallerImp( const InstallerImp & ) ;
@@ -648,11 +658,10 @@ void CreateSecrets::run()
 
 // ==
 
-CreateBatchFile::CreateBatchFile( const G::Path & bat , const G::Path & exe , const G::StringArray & args , const G::Path & log_file ) :
+CreateBatchFile::CreateBatchFile( const G::Path & bat , const G::Path & exe , const G::StringArray & args ) :
 	m_bat(bat) ,
 	m_exe(exe) ,
-	m_args(args) ,
-	m_log_file(log_file)
+	m_args(args)
 {
 }
 
@@ -665,15 +674,6 @@ void CreateBatchFile::run()
 {
 	G::StringArray all_args = m_args ;
 	all_args.insert( all_args.begin() , m_exe.str() ) ;
-
-	if( m_log_file != G::Path() )
-	{
-		std::string log_file = quote( m_log_file.str() ) ;
-		G::Str::replaceAll( log_file , "%" , "%%" ) ;
-		all_args.push_back( "--log-time" ) ;
-		all_args.push_back( "--log-file=" + log_file ) ;
-	}
-
 	G::BatchFile::write( m_bat , all_args , "emailrelay" ) ;
 }
 
@@ -821,6 +821,49 @@ std::string RegisterAsEventSource::text() const
 
 // ==
 
+CreateFilterScript::CreateFilterScript( const G::Path & path , bool client_filter ) :
+	m_path(path) ,
+	m_type(client_filter?"client ":"")
+{
+}
+
+void CreateFilterScript::run()
+{
+	if( m_path == G::Path() )
+	{
+		m_ok = "nothing to do" ;
+	}
+	else if( G::File::exists(m_path) )
+	{
+		m_ok = "exists" ;
+	}
+	else
+	{
+		std::ofstream f( m_path.str().c_str() ) ;
+		if( isWindows() )
+			f << "WScript.Quit(0);\r\n" << std::flush ;
+		else
+			f << "#!/bin/sh\nexit 0" << std::endl ;
+		if( !f.good() )
+			throw std::runtime_error( std::string() + "cannot write to \"" + m_path.basename() + "\"" ) ;
+		f.close() ;
+		if( !isWindows() )
+			G::File::chmodx( m_path ) ;
+	}
+}
+
+std::string CreateFilterScript::text() const
+{
+	return std::string() + "creating " + m_type + "filter script [" + m_path.str() + "]" ;
+}
+
+std::string CreateFilterScript::ok() const
+{
+	return m_ok.empty() ? ActionBase::ok() : m_ok ;
+}
+
+// ==
+
 CreateConfigFile::CreateConfigFile( G::Path dst_dir , std::string dst_name , G::Path template_ ) :
 	m_template(template_) ,
 	m_dst(dst_dir+dst_name)
@@ -911,15 +954,15 @@ InstallerImp::InstallerImp( bool installing , bool is_windows , bool is_mac , co
 	m_installer_config.add( "-authtemplate" , isWindows() ? "" : "%payload%/etc/emailrelay.auth.template" ) ;
 	m_installer_config.add( "-conftemplate" , isWindows() ? "" : "%payload%/etc/emailrelay.conf.template" ) ;
 	m_installer_config.add( "-bat" , isWindows() ? "%dir-config%/emailrelay-start.bat" : "" ) ; // not dir-install -- see guimain
-	m_installer_config.add( "-bat2" , isWindows() ? "%dir-config%/emailrelay-start-with-log-file.bat" : "" ) ;
-	m_installer_config.add( "-exe" , isWindows() ? "%dir-install%/emailrelay.exe" : ( isMac() ? "%dir-install%/E-MailRelay.app/Contents/MacOS/emailrelay" : "%dir-install%/sbin/emailrelay" ) ) ;
+	m_installer_config.add( "-exe" , isWindows() ? "%dir-install%/emailrelay.exe" :
+		( isMac() ? "%dir-install%/E-MailRelay.app/Contents/MacOS/emailrelay" : "%dir-install%/sbin/emailrelay" ) ) ;
 	m_installer_config.add( "-gui" , isWindows() ? "%dir-install%/emailrelay-gui.exe" : "%dir-install%/sbin/emailrelay-gui.real" ) ;
 	m_installer_config.add( "-icon" , isWindows()?"%dir-install%/emailrelay.exe":"%dir-install%/lib/emailrelay/emailrelay-icon.png");
 	m_installer_config.add( "-pointer" , isWindows() ? "%dir-install%/emailrelay-gui.cfg" : "%dir-install%/sbin/emailrelay-gui" ) ;
 	m_installer_config.add( "-startstop" , isWindows() ? "" : "%dir-install%/lib/emailrelay/emailrelay-startstop.sh" ) ;
 	m_installer_config.add( "-servicewrapper" , isWindows() ? "%dir-install%/emailrelay-service.exe" : "" ) ;
-	m_installer_config.add( "-copyfilter" ,
-		isWindows() ? "%dir-install%/emailrelay-copy-filter.exe" : "%dir-install%/lib/emailrelay/emailrelay-copy-filter" ) ;
+	m_installer_config.add( "-filtercopy" , isWindows() ?
+			"%dir-install%/emailrelay-filter-copy.exe" : "%dir-install%/lib/emailrelay/emailrelay-filter-copy" ) ;
 
 	// define some substitution variables (used for expansion of pvalues, ivalues and payload.cfg)
 	m_var.add( "dir-install" , pvalue("dir-install") ) ;
@@ -936,18 +979,18 @@ InstallerImp::~InstallerImp()
 {
 }
 
-G::Executable InstallerImp::launchCommand() const
+G::ExecutableCommand InstallerImp::launchCommand() const
 {
 	if( isWindows() )
 	{
-		return G::Executable( ivalue("-bat") , G::StringArray() ) ;
+		return G::ExecutableCommand( ivalue("-bat") , G::StringArray() ) ;
 	}
 	else
 	{
-		G::Path copy_filter = ivalue("-copyfilter") ;
+		G::Path filter_copy = ivalue("-filtercopy") ;
 		G::Path target = ivalue("-exe") ;
-		ServerConfiguration sc = ServerConfiguration::fromPages( m_pages_output , copy_filter ) ;
-		return G::Executable( target , sc.args() ) ;
+		ServerConfiguration sc = ServerConfiguration::fromPages( m_pages_output , filter_copy ) ;
+		return G::ExecutableCommand( target , sc.args() ) ;
 	}
 }
 
@@ -1014,11 +1057,27 @@ void InstallerImp::insertActions()
 		insert( new CreateDirectory("install",pvalue("dir-install"),true) ) ;
 		insert( new CreateDirectory("configuration",pvalue("dir-config")) ) ;
 	}
-	insert( new CreateDirectory("spool",pvalue("dir-spool")) ) ;
 	insert( new CreateDirectory("runtime",pvalue("dir-run")) ) ;
+	insert( new CreateDirectory("spool",pvalue("dir-spool")) ) ;
 
-	// process the payload -- see "make-setup.sh" -- the payload is a directory
-	// including a config file ("payload.cfg") like this:
+	// create pop-by-name sub-directories
+	//
+	{
+		G::Path spool_dir( pvalue("dir-spool") ) ;
+		std::vector<std::string> names ;
+		names.push_back( pvalue("pop-account-1-name") ) ;
+		names.push_back( pvalue("pop-account-2-name") ) ;
+		names.push_back( pvalue("pop-account-3-name") ) ;
+		for( std::vector<std::string>::iterator name_p = names.begin() ; name_p != names.end() ; ++name_p )
+		{
+			if( (*name_p).empty() ) continue ;
+			G::Path dir( spool_dir , *name_p ) ;
+			insert( new CreateDirectory("pop-by-name",dir.str()) ) ;
+		}
+	}
+
+	// process the payload -- the payload is a directory including a
+	// config file ("payload.cfg") like this:
 	//
 	//   pkgdir/filename= %dir-install%/bin/filename +x
 	//   pkgdir/subdir/= %dir-install%/subdir/
@@ -1064,19 +1123,11 @@ void InstallerImp::insertActions()
 	//
 	if( isWindows() )
 	{
-		G::Path copy_filter = ivalue("-copyfilter") ;
+		G::Path filter_copy = ivalue("-filtercopy") ;
 		G::Path exe = ivalue("-exe") ;
-		{
-			G::Path bat = ivalue("-bat") ;
-			G::StringArray args = ServerConfiguration::fromPages(m_pages_output,copy_filter).args() ;
-			insert( new CreateBatchFile(bat,exe,args) ) ;
-		}
-		{
-			G::Path bat = ivalue("-bat2") ;
-			G::StringArray args = ServerConfiguration::fromPages(m_pages_output,copy_filter).args(true) ;
-			G::Path log_file = G::Path(pvalue("dir-run")) + "emailrelay-%d.txt" ;
-			insert( new CreateBatchFile(bat,exe,args,log_file) ) ;
-		}
+		G::Path bat = ivalue("-bat") ;
+		G::StringArray args = ServerConfiguration::fromPages(m_pages_output,filter_copy).args() ;
+		insert( new CreateBatchFile(bat,exe,args) ) ;
 	}
 
 	// create the pointer file so that the gui program can be used to re-configure
@@ -1098,6 +1149,17 @@ void InstallerImp::insertActions()
 		insert( new RegisterAsEventSource(ivalue("-exe")) ) ;
 	}
 
+	// create filter scripts
+	//
+	if( m_installing )
+	{
+		if( !pvalue("filter-server").empty() && no(pvalue("pop-filter-copy")) )
+			insert( new CreateFilterScript( pvalue("filter-server") , false ) ) ;
+
+		if( !pvalue("filter-client").empty() )
+			insert( new CreateFilterScript( pvalue("filter-client") , true ) ) ;
+	}
+
 	// create startup links and startup config
 	//
 	{
@@ -1117,9 +1179,9 @@ void InstallerImp::insertActions()
 		G::Path dir_boot = pvalue( "dir-boot" ) ;
 
 		G::Path bat = ivalue( "-bat" ) ;
-		G::Path copy_filter = ivalue("-copyfilter") ;
+		G::Path filter_copy = ivalue("-filtercopy") ;
 		G::Path target = isWindows() ? bat : server_exe ;
-		G::StringArray args = isWindows() ? G::StringArray() : ServerConfiguration::fromPages(m_pages_output,copy_filter).args() ;
+		G::StringArray args = isWindows() ? G::StringArray() : ServerConfiguration::fromPages(m_pages_output,filter_copy).args() ;
 		G::Path icon = ivalue( "-icon" ) ;
 
 		insert( new UpdateLink(do_desktop,dir_desktop,working_dir,target,args,icon) ) ;
@@ -1137,7 +1199,7 @@ void InstallerImp::insertActions()
 		{
 			// install the startstop script and its config file
 			G::Path conftemplate_src = m_installing ? ivalue( "-conftemplate" ) : std::string() ;
-			G::MapFile server_config = ServerConfiguration::fromPages(m_pages_output,copy_filter).map() ;
+			G::MapFile server_config = ServerConfiguration::fromPages(m_pages_output,filter_copy).map() ;
 			insert( new UpdateBootLink(do_boot,dir_boot,"emailrelay",ivalue("-startstop"),server_exe) ) ;
 			insert( new CreateConfigFile(dir_config,"emailrelay.conf",conftemplate_src) ) ;
 			insert( new EditConfigFile(dir_config,"emailrelay.conf",server_config,!m_installing) ) ;
@@ -1284,7 +1346,7 @@ bool Installer::done() const
 	return m_imp == nullptr ;
 }
 
-G::Executable Installer::launchCommand() const
+G::ExecutableCommand Installer::launchCommand() const
 {
 	return m_launch_command ;
 }

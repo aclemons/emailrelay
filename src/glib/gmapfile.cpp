@@ -101,17 +101,23 @@ void G::MapFile::readFrom( std::istream & ss , bool utf8 )
 		if( ignore(line) )
 			continue ;
 
-		StringArray part ;
-		Str::splitIntoTokens( line , part , " =\t" ) ;
-		if( part.size() == 0U )
-			continue ;
+		// no escaping here -- just strip quotes if the value starts and ends with them
+		std::string key ;
+		std::string value ;
+		{
+			StringArray part ;
+			Str::splitIntoTokens( line , part , " =\t" ) ;
+			if( part.size() == 0U )
+				continue ;
+			key = part[0] ;
 
-		std::string key = part[0] ;
-		std::string value = part.size() == 1U ? std::string() : G::Str::trimmed( line.substr(part[0].length()+1U) , Str::ws() ) ;
+			value = G::Str::tail( line , line.find(key)+key.size() , std::string() ) ;
+			G::Str::trimLeft( value , " =\t" ) ;
+			G::Str::trimRight( value , G::Str::ws() ) ;
 
-		// strip double-quotes
-		if( value.length() >= 2U && value.at(0U) == '"' && value.at(value.length()-1U) == '"' )
-			value = value.substr(1U,value.length()-2U) ;
+			if( value.length() >= 2U && value.at(0U) == '"' && value.at(value.length()-1U) == '"' )
+				value = value.substr(1U,value.length()-2U) ;
+		}
 
 		log( key , value ) ;
 		value = fromUtf( value , utf8 ) ;
@@ -263,6 +269,23 @@ void G::MapFile::save( const G::Path & path , List & line_list , bool allow_writ
 		throw WriteError( path.str() ) ;
 }
 
+bool G::MapFile::booleanValue( const std::string & key , bool default_ ) const
+{
+	StringMap::const_iterator p = m_map.find( key ) ;
+	if( p == m_map.end() )
+	{
+		return default_ ;
+	}
+	else if( (*p).second.empty() )
+	{
+		return true ;
+	}
+	else
+	{
+		return G::Str::isPositive( (*p).second ) ;
+	}
+}
+
 std::string G::MapFile::value( const std::string & key , const std::string & default_ ) const
 {
 	StringMap::const_iterator p = m_map.find( key ) ;
@@ -306,12 +329,6 @@ unsigned int G::MapFile::numericValue( const std::string & key , unsigned int de
 {
 	std::string s = value( key , std::string() ) ;
 	return !s.empty() && Str::isUInt(s) ? Str::toUInt( s ) : default_ ;
-}
-
-bool G::MapFile::booleanValue( const std::string & key , bool default_ ) const
-{
-	std::string s = value( key , default_ ? "Y" : "N" ) ;
-	return !s.empty() && ( s.at(0U) == 'y' || s.at(0U) == 'Y' ) ;
 }
 
 void G::MapFile::remove( const std::string & key )

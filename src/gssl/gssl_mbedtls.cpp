@@ -419,6 +419,9 @@ void GSsl::MbedTls::ProfileImp::onDebug( void * This , int level_in , const char
 
 void GSsl::MbedTls::ProfileImp::doDebug( int level_in , const char * file , int line , const char * message )
 {
+	// in practice even level 0 messages are too noisy, so discard them all :(
+	level_in = 4 ;
+
 	// map from 'level_in' mbedtls levels to GSsl::Library::LogFn levels...
 	// 4 -> <discarded>
 	// 3 -> logAt(1) (verbose-debug)
@@ -427,7 +430,7 @@ void GSsl::MbedTls::ProfileImp::doDebug( int level_in , const char * file , int 
 	// 0 -> logAt(3) (errors-and-warnings)
 	// ... with this code doing its own logAt(2) (useful-information)
 	// see also mbedtls_debug_set_threshold() in LibraryImp::ctor()
-
+	//
 	int level_out = level_in >= 4 ? 0 : ( level_in >= 2 ? 1 : 3 ) ;
 	if( m_library_imp.log() && level_out )
 	{

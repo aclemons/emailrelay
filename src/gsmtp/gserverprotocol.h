@@ -62,6 +62,14 @@ public:
 	class Sender /// An interface used by ServerProtocol to send protocol replies.
 	{
 		public: virtual void protocolSend( const std::string & s , bool go_secure ) = 0 ;
+			///< Called when the protocol class wants to send
+			///< data down the socket.
+
+		public: virtual void protocolShutdown() = 0 ;
+			///< Called on receipt of a quit command after the quit
+			///< response has been sent allowing the socket to be
+			///< shut down.
+
 		public: virtual ~Sender() ;
 		private: void operator=( const Sender & ) ; // not implemented
 	} ;
@@ -115,10 +123,10 @@ public:
 	virtual ~ServerProtocol() ;
 		///< Destructor.
 
-	void apply( const std::string & line ) ;
-		///< Called on receipt of a string from the client. The string
-		///< is expected to be CR-LF terminated. Throws ProtocolDone
-		///< at the end of the protocol.
+	bool apply( const char * line_data , size_t line_size , size_t eolsize ) ;
+		///< Called on receipt of a line of text from the remote client
+		///< Returns true. Throws ProtocolDone at the end of the
+		///< protocol.
 
 	void secure( const std::string & certificate ) ;
 		///< To be called when the transport protocol goes
@@ -174,7 +182,8 @@ private:
 		s_Any ,
 		s_Same
 	} ;
-	typedef G::StateMachine<ServerProtocol,State,Event> Fsm ;
+	typedef std::pair<const char *,size_t> EventData ;
+	typedef G::StateMachine<ServerProtocol,State,Event,EventData> Fsm ;
 
 private:
 	ServerProtocol( const ServerProtocol & ) ; // not implemented
@@ -189,37 +198,37 @@ private:
 	void badClientEvent() ;
 	void processDone( bool , unsigned long , std::string , std::string ) ; // ProtocolMessage::doneSignal()
 	void prepareDone( bool , bool , std::string ) ;
-	bool isEndOfText( const std::string & ) const ;
-	bool isEscaped( const std::string & ) const ;
-	void doNoop( const std::string & , bool & ) ;
-	void doIgnore( const std::string & , bool & ) ;
-	void doNothing( const std::string & , bool & ) ;
-	void doDiscarded( const std::string & , bool & ) ;
-	void doDiscard( const std::string & , bool & ) ;
-	void doHelp( const std::string & line , bool & ) ;
-	void doExpn( const std::string & line , bool & ) ;
-	void doQuit( const std::string & , bool & ) ;
-	void doEhlo( const std::string & , bool & ) ;
-	void doHelo( const std::string & , bool & ) ;
-	void doAuth( const std::string & , bool & ) ;
-	void doAuthData( const std::string & , bool & ) ;
-	void doMail( const std::string & , bool & ) ;
-	void doRcpt( const std::string & , bool & ) ;
-	void doUnknown( const std::string & , bool & ) ;
-	void doRset( const std::string & , bool & ) ;
-	void doData( const std::string & , bool & ) ;
-	void doContent( const std::string & , bool & ) ;
-	void doComplete( const std::string & , bool & ) ;
-	void doEot( const std::string & , bool & ) ;
-	void doVrfy( const std::string & , bool & ) ;
-	void doVrfyReply( const std::string & line , bool & ) ;
-	void doVrfyToReply( const std::string & line , bool & ) ;
-	void doNoRecipients( const std::string & , bool & ) ;
-	void doStartTls( const std::string & , bool & ) ;
-	void doSecure( const std::string & , bool & ) ;
+	bool isEndOfText( const char * , size_t ) const ;
+	bool isEscaped( const char * , size_t ) const ;
+	void doNoop( EventData , bool & ) ;
+	void doIgnore( EventData , bool & ) ;
+	void doNothing( EventData , bool & ) ;
+	void doDiscarded( EventData , bool & ) ;
+	void doDiscard( EventData , bool & ) ;
+	void doHelp( EventData , bool & ) ;
+	void doExpn( EventData , bool & ) ;
+	void doQuit( EventData , bool & ) ;
+	void doEhlo( EventData , bool & ) ;
+	void doHelo( EventData , bool & ) ;
+	void doAuth( EventData , bool & ) ;
+	void doAuthData( EventData , bool & ) ;
+	void doMail( EventData , bool & ) ;
+	void doRcpt( EventData , bool & ) ;
+	void doUnknown( EventData , bool & ) ;
+	void doRset( EventData , bool & ) ;
+	void doData( EventData , bool & ) ;
+	void doContent( EventData , bool & ) ;
+	void doComplete( EventData , bool & ) ;
+	void doEot( EventData , bool & ) ;
+	void doVrfy( EventData , bool & ) ;
+	void doVrfyReply( EventData , bool & ) ;
+	void doVrfyToReply( EventData , bool & ) ;
+	void doNoRecipients( EventData , bool & ) ;
+	void doStartTls( EventData , bool & ) ;
+	void doSecure( EventData , bool & ) ;
 	void verifyDone( std::string , VerifierStatus status ) ;
 	void sendBadFrom( std::string ) ;
-	void sendTooBig( bool disconnecting = false ) ;
+	void sendTooBig( bool disconnecting ) ;
 	void sendChallenge( const std::string & ) ;
 	void sendBadTo( const std::string & , bool ) ;
 	void sendOutOfSequence( const std::string & ) ;

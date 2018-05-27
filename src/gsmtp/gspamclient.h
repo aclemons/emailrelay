@@ -48,7 +48,7 @@ class GSmtp::SpamClient : public GNet::Client
 public:
 	G_EXCEPTION( Error , "spam client error" ) ;
 
-	SpamClient( const GNet::Location & host_and_service ,
+	SpamClient( const GNet::Location & host_and_service , bool read_only ,
 		unsigned int connect_timeout , unsigned int response_timeout ) ;
 			///< Constructor.
 
@@ -78,7 +78,7 @@ protected:
 	virtual void onConnect() override ;
 		///< Override from GNet::SimpleClient.
 
-	virtual bool onReceive( const std::string & ) override ;
+	virtual bool onReceive( const char * , size_t , size_t ) override ;
 		///< Override from GNet::Client.
 
 	virtual void onSendComplete() override ;
@@ -109,12 +109,13 @@ private:
 	} ;
 	struct Response
 	{
-		Response() ;
+		explicit Response( bool read_only ) ;
 		~Response() ;
 		void add( const std::string & , const std::string & ) ;
 		bool ok( const std::string & ) const ;
 		bool complete() const ;
 		std::string result() const ;
+		bool m_read_only ;
 		int m_state ;
 		std::string m_path_tmp ;
 		std::string m_path_final ;

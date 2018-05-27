@@ -21,11 +21,17 @@
 # A simple wrapper for the configure script.
 #
 # usage: configure.sh [-d] [-m] [<configure-options>]
-#         -d  debug
+#         -d  debug compiler flags (see also --enable-debug)
 #         -m  mingw-w64
 #
 
 thisdir="`cd \`dirname $0\` && pwd`"
+
+if test ! -e "$thisdir/configure"
+then
+	echo error: no autoconf configure script: try running \'bootstrap\' >&2
+	exit 1
+fi
 
 if test "$1" = "-d"
 then

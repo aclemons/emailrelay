@@ -31,7 +31,7 @@
 GPop::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info , Server & server , Store & store ,
 	const Secrets & secrets , unique_ptr<ServerProtocol::Text> ptext ,
 	ServerProtocol::Config protocol_config ) :
-		GNet::BufferedServerPeer(peer_info,crlf()) ,
+		GNet::BufferedServerPeer(peer_info,GNet::LineBufferConfig::pop()) ,
 		m_server(server) ,
 		m_ptext(ptext.release()) ,
 		m_protocol(*this,*this,store,secrets,*m_ptext.get(),peer_info.m_address,protocol_config)
@@ -40,21 +40,15 @@ GPop::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info , Server & server
 	m_protocol.init() ;
 }
 
-const std::string & GPop::ServerPeer::crlf()
-{
-	static const std::string s( "\015\012" ) ;
-	return s ;
-}
-
 void GPop::ServerPeer::onDelete( const std::string & reason )
 {
 	G_LOG_S( "GPop::ServerPeer: pop connection closed: " << reason << (reason.empty()?"":": ")
 		<< peerAddress().second.displayString() ) ;
 }
 
-bool GPop::ServerPeer::onReceive( const std::string & line )
+bool GPop::ServerPeer::onReceive( const char * line_data , size_t line_size , size_t )
 {
-	processLine( line ) ;
+	processLine( std::string(line_data,line_size) ) ;
 	return true ;
 }
 

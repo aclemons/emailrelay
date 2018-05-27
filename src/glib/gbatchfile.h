@@ -76,6 +76,7 @@ private:
 	BatchFile( const BatchFile & ) ;
 	void operator=( const BatchFile & ) ;
 	static std::string quote( const std::string & ) ;
+	static std::string percents( const std::string & ) ;
 	static void dequote( std::string & ) ;
 	std::string readFrom( std::istream & , const std::string & , bool ) ;
 	static StringArray split( const std::string & ) ;

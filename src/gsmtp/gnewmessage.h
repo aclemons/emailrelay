@@ -41,7 +41,7 @@ public:
 	virtual void addTo( const std::string & to , bool local ) = 0 ;
 		///< Adds a 'to' address.
 
-	virtual bool addText( const std::string & line ) = 0 ;
+	virtual bool addText( const char * , size_t ) = 0 ;
 		///< Adds a line of content. The line should not include the
 		///< line ending. Returns false on overflow.
 
@@ -57,6 +57,10 @@ public:
 
 	virtual unsigned long id() const = 0 ;
 		///< Returns the message's unique non-zero identifier.
+
+	bool addTextLine( const std::string & ) ;
+		///< A convenience function that calls addText() taking
+		///< a string parameter.
 
 	virtual ~NewMessage() ;
 		///< Destructor. Rolls back any prepare()d storage

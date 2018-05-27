@@ -149,9 +149,6 @@ The standard error stream logging can be redirected to a file by using the
 "--log-file" option, and daily log files can be created by using "%d" in the
 filename.
 
-On Windows look for a batch file called "emailrelay-startup-with-log-file.bat"
-under "ProgramData".
-
 For more verbose logging add the "--verbose" option to the command-line.
 
 Preventing open mail relay
@@ -257,10 +254,10 @@ client authenticated with. Rather than use "emailrelay-filter-copy" to
 distribute incoming e-mail messages into all subdirectories you could use a
 custom script to do it based on the message addressing.
 
-For more ideas check out the "--client-filter" and "--poll" options, and don't
-overlook the administration and control interface ("--admin") which you can use
-to receive notification of message arrival or force message forwarding at any
-time.
+The POP server can also be used for checking e-mails that are taken out of the
+normal store-and-forward flow. For example, a "--filter" script that checks for
+spam could move suspicious e-mails into a subdirectory of the spool directory
+that is accessible via the "--pop-by-name" feature.
 
 Rate limiting
 -------------
@@ -308,7 +305,10 @@ On Windows an equivalent batch script would be:
 	exit 0
 
 E-MailRelay can also talk to a SpamAssassin "spamd" daemon over the network
-by using "--filter spam:localhost:783".
+by using "--filter spam:localhost:783". This rejects the the message if
+"spamd" thinks it is spam, or by using "--filter spam-edit:localhost:783"
+the message will be accepted but the content will be replaced by the
+"spamd" output.
 
 Google mail
 -----------

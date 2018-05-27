@@ -35,11 +35,10 @@
 # Also spits out batch files (like "winbuild-whatever.bat")
 # for doing sub-tasks, including "winbuild-install.bat".
 #
-# The "install" sub-task, which is not run by default,
-# assembles binaries and their dependencies in a directory
-# tree ("install.dir") ready for distribution. The
-# dependencies for Qt are assembled by the Qt dependency
-# tool, "windeployqt".
+# The "install" sub-task, which is not run by default, assembles
+# binaries and their dependencies in a directory tree ready
+# for zipping and distribution. The dependencies for Qt are
+# assembled by the Qt dependency tool, "windeployqt".
 #
 
 use strict ;
@@ -56,6 +55,9 @@ $AutoMakeParser::verbose = 0 ;
 
 my $project = "emailrelay" ;
 my $version = "2.0" ;
+my $install_x64 = "$project-$version-w64" ;
+my $install_x86 = "$project-$version-w32" ;
+
 my $cmake = winbuild::find_cmake() ;
 my $msbuild = winbuild::find_msbuild() ;
 my $touchfile = winbuild::default_touchfile($0) ;
@@ -146,10 +148,6 @@ for my $part ( @run_parts )
 	}
 	elsif( $part eq "debug-build" )
 	{
-		# debug builds use the release build of mbedtls because the
-		# mbedtls find_library() bakes the mbedtls library paths
-		# into the cmake cache file - this results in warnings about
-		# mismatched run-time libraries
 		winbuild::run_msbuild( $msbuild , $project , "x64" , "Debug" ) ;
 	}
 	elsif( $part eq "clean" )
@@ -169,13 +167,13 @@ for my $part ( @run_parts )
 		winbuild::run_msbuild( $msbuild , $project , "x64" , "Release" , "Clean" ) ;
 		winbuild::run_msbuild( $msbuild , $project , "x86" , "Debug" , "Clean" ) ;
 		winbuild::run_msbuild( $msbuild , $project , "x86" , "Release" , "Clean" ) ;
-		winbuild::deltree( "install.x64" ) ;
-		winbuild::deltree( "install.x86" ) ;
+		winbuild::deltree( $install_x64 ) ;
+		winbuild::deltree( $install_x86 ) ;
 	}
 	elsif( $part eq "install" )
 	{
-		install( "x64" , $switches{GCONFIG_GUI} ) ;
-		install( "x86" , $switches{GCONFIG_GUI} ) ;
+		install( $install_x64 , "x64" , $switches{GCONFIG_GUI} ) ;
+		install( $install_x86 , "x86" , $switches{GCONFIG_GUI} ) ;
 	}
 	elsif( $part eq "debug-test" )
 	{
@@ -443,6 +441,8 @@ sub build_mbedtls
 	my $mbed_dir = "../mbedtls" ; # could do better
 	my $base_dir = getcwd() ;
 
+	if( ! -d $mbed_dir ) { die "error: no mbedtls source directory: please download from tls.mbed.org\n" }
+
 	my $map = {
 		x86 => [] ,
 		x64 => [ "-A" , "x64" ] ,
@@ -484,9 +484,7 @@ sub build_mbedtls
 
 sub install
 {
-	my ( $arch , $with_gui ) = @_ ;
-
-	my $install = "install.$arch" ; # beware of text file "INSTALL"
+	my ( $install , $arch , $with_gui ) = @_ ;
 
 	my $msvc_base = winbuild::find_msvc_base( $arch ) ;
 	print "msvc-base=[$msvc_base]\n" ;
@@ -600,7 +598,6 @@ sub install_core
 		__arch__/src/main/Release/emailrelay.exe .
 		__arch__/src/main/Release/emailrelay-submit.exe .
 		__arch__/src/main/Release/emailrelay-filter-copy.exe .
-		__arch__/src/main/Release/emailrelay-poke.exe .
 		__arch__/src/main/Release/emailrelay-passwd.exe .
 		__arch__/src/main/Release/emailrelay-textmode.exe .
 		bin/emailrelay-service-install.js .

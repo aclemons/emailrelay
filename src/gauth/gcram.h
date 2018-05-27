@@ -34,7 +34,7 @@ namespace GAuth
 
 /// \class GAuth::Cram
 /// Implements the standard challenge-response authentication
-/// mechanism of rfc 2195.
+/// mechanism of RFC-2195.
 ///
 class GAuth::Cram
 {

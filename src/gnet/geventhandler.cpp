@@ -20,14 +20,8 @@
 
 #include "gdef.h"
 #include "geventhandler.h"
-#include "gtimerlist.h"
-#include "geventloop.h"
 #include "gexception.h"
 #include "gdebug.h"
-#include "gassert.h"
-#include "gdescriptor.h"
-#include "glog.h"
-#include <algorithm>
 
 GNet::EventHandler::~EventHandler()
 {
@@ -43,9 +37,23 @@ void GNet::EventHandler::writeEvent()
 	G_DEBUG( "GNet::EventHandler::writeEvent: no override" ) ;
 }
 
-void GNet::EventHandler::oobEvent()
+void GNet::EventHandler::otherEvent( EventHandler::Reason reason )
 {
-	throw G::Exception( "socket disconnect event" ) ; // was "exception event" but too confusing
+	// this event is mostly relevant to windows -- the default action is
+	// to throw an exception -- for 'reason_closed' (ie. a clean shutdown())
+	// it would be reasonable to read the socket until it returns an error
+	// or zero, and/or set a close timer
+
+	throw G::Exception( "socket disconnect event" , str(reason) ) ;
+}
+
+std::string GNet::EventHandler::str( EventHandler::Reason reason )
+{
+	if( reason == EventHandler::reason_closed ) return "closed" ;
+	if( reason == EventHandler::reason_down ) return "network down" ;
+	if( reason == EventHandler::reason_reset ) return "connection reset by peer" ;
+	if( reason == EventHandler::reason_abort ) return "connection aborted" ;
+	return std::string() ;
 }
 
 /// \file geventhandler.cpp

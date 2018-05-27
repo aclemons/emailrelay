@@ -60,7 +60,8 @@ GNet::SimpleClient::SimpleClient( ExceptionHandler & eh ,
 GNet::SimpleClient::~SimpleClient()
 {
 	if( Monitor::instance() ) Monitor::instance()->removeClient( *this ) ;
-	close() ;
+	m_sp.reset() ;
+	m_socket.reset() ;
 }
 
 std::string GNet::SimpleClient::logId() const
@@ -205,13 +206,13 @@ void GNet::SimpleClient::onWriteable()
 		m_socks.reset( new Socks(m_remote_location) ) ;
 		if( m_socks->send( socket() ) )
 		{
-			socket().addOobHandler( *this , m_eh ) ;
+			socket().addOtherHandler( *this , m_eh ) ;
 			socket().dropWriteHandler() ;
 			socket().addReadHandler( *this , m_eh ) ; // wait for the socks response
 		}
 		else
 		{
-			socket().addOobHandler( *this , m_eh ) ;
+			socket().addOtherHandler( *this , m_eh ) ;
 			socket().addWriteHandler( *this , m_eh ) ;
 			socket().dropReadHandler() ;
 		}
@@ -220,7 +221,7 @@ void GNet::SimpleClient::onWriteable()
 	{
 		socket().dropWriteHandler() ;
 		socket().addReadHandler( *this , m_eh ) ;
-		socket().addOobHandler( *this , m_eh ) ;
+		socket().addOtherHandler( *this , m_eh ) ;
 
 		setState( Connected ) ;
 		onConnectImp() ;
@@ -244,6 +245,14 @@ void GNet::SimpleClient::onWriteable()
 			onConnect() ;
 		}
 	}
+}
+
+void GNet::SimpleClient::otherEvent( EventHandler::Reason reason )
+{
+	if( m_state == Socksing || m_sp.get() == nullptr )
+		EventHandler::otherEvent( reason ) ; // default implementation
+	else
+		m_sp->otherEvent( reason ) ;
 }
 
 void GNet::SimpleClient::readEvent()

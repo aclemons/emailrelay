@@ -38,9 +38,19 @@ namespace GSmtp
 class GSmtp::FactoryParser
 {
 public:
-	static std::pair<std::string,std::string> parse( const std::string & identifier , bool allow_spam ) ;
+	struct Result /// Result tuple for GSmtp::FactoryParser::parse().
+	{
+		Result() ;
+		Result( const std::string & , const std::string & ) ;
+		Result( const std::string & , const std::string & , int ) ;
+		std::string first ;
+		std::string second ;
+		int third ;
+	} ;
+
+	static Result parse( const std::string & identifier , bool allow_spam ) ;
 		///< Parses an identifier like "/usr/bin/foo" or "net:127.0.0.1:99"
-		///< returning the type and the specification as a pair, eg.
+		///< returning the type and the specification in a result tuple, eg.
 		///< ("file","/usr/bin/foo") or ("net","127.0.0.1:99").
 
 	static std::string check( const std::string & identifier , bool allow_spam ) ;

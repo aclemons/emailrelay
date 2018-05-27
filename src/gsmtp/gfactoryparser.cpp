@@ -23,42 +23,46 @@
 #include "gfactoryparser.h"
 #include "gaddress.h"
 #include "gresolver.h"
-#include "gexecutable.h"
+#include "gexecutablecommand.h"
 #include "gstr.h"
 #include "gfile.h"
 
-std::pair<std::string,std::string> GSmtp::FactoryParser::parse( const std::string & identifier , bool allow_spam )
+GSmtp::FactoryParser::Result GSmtp::FactoryParser::parse( const std::string & identifier , bool allow_spam )
 {
 	G_DEBUG( "GSmtp::FactoryParser::parse: [" << identifier << "]" ) ;
 	if( identifier.find("net:") == 0U )
 	{
-		return std::make_pair( std::string("net") , G::Str::tail(identifier,":") ) ;
+		return Result( "net" , G::Str::tail(identifier,":") ) ;
 	}
-	else if( identifier.find("spam:") == 0U && allow_spam )
+	else if( allow_spam && identifier.find("spam:") == 0U )
 	{
-		return std::make_pair( std::string("spam") , G::Str::tail(identifier,":") ) ;
+		return Result( "spam" , G::Str::tail(identifier,":") , 0 ) ;
+	}
+	else if( allow_spam && identifier.find("spam-edit:") == 0U )
+	{
+		return Result( "spam" , G::Str::tail(identifier,":") , 1 ) ;
 	}
 	else if( identifier.find("file:") == 0U )
 	{
-		return std::make_pair( std::string("file") , G::Str::tail(identifier,":") ) ;
+		return Result( "file" , G::Str::tail(identifier,":") ) ;
 	}
 	else if( identifier.find("exit:") == 0U )
 	{
-		return std::make_pair( std::string("exit") , G::Str::tail(identifier,":") ) ;
+		return Result( "exit" , G::Str::tail(identifier,":") ) ;
 	}
 	else if( !identifier.empty() )
 	{
-		return std::make_pair( std::string("file") , identifier ) ;
+		return Result( "file" , identifier ) ;
 	}
 	else
 	{
-		return std::make_pair( std::string() , std::string() ) ;
+		return Result() ;
 	}
 }
 
 std::string GSmtp::FactoryParser::check( const std::string & identifier , bool allow_spam )
 {
-	std::pair<std::string,std::string> p = parse( identifier , allow_spam ) ;
+	Result p = parse( identifier , allow_spam ) ;
 	if( p.first == "net" || ( allow_spam && p.first == "spam" ) )
 	{
 		return std::string() ;
@@ -86,6 +90,25 @@ std::string GSmtp::FactoryParser::check( const std::string & identifier , bool a
 	{
 		return std::string() ;
 	}
+}
+
+GSmtp::FactoryParser::Result::Result() :
+	third(0)
+{
+}
+
+GSmtp::FactoryParser::Result::Result( const std::string & first_ , const std::string & second_ ) :
+	first(first_) ,
+	second(second_) ,
+	third(0)
+{
+}
+
+GSmtp::FactoryParser::Result::Result( const std::string & first_ , const std::string & second_ , int third_ ) :
+	first(first_) ,
+	second(second_) ,
+	third(third_)
+{
 }
 
 /// \file gfactoryparser.cpp

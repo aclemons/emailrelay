@@ -96,11 +96,15 @@ public:
 		///< Adds a 'received' line to the start of the content.
 		///< Precondition: at least one successful addTo() call
 
-	virtual bool addText( const std::string & ) = 0 ;
+	virtual bool addText( const char * , size_t ) = 0 ;
 		///< Adds text. Returns false on error, typically because a size
 		///< limit is reached.
 		///<
 		///< Precondition: at least one successful addTo() call
+
+	bool addTextLine( const std::string & ) ;
+		///< A convenience function that calls addText() taking
+		///< a string parameter.
 
 	virtual std::string from() const = 0 ;
 		///< Returns the setFrom() string.
@@ -121,4 +125,3 @@ private:
 } ;
 
 #endif
-

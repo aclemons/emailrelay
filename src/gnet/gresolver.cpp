@@ -30,8 +30,10 @@
 
 /// \class GNet::ResolverImp
 /// A private "pimple" implementation class used by GNet::Resolver to do
-/// asynchronous name resolution. The implementation contains a worker
-/// thread using the future/promise pattern.
+/// asynchronous name resolution. The object contains a worker thread using
+/// the future/promise pattern. Its lifetime is dependent on the worker
+/// thread, so the GNet::Resolver can only ask it to delete itself and
+/// then forget about it.
 ///
 class GNet::ResolverImp : private FutureEventHandler
 {
@@ -121,7 +123,7 @@ void GNet::ResolverImp::onFutureEvent()
 {
 	G_DEBUG( "GNet::ResolverImp::onFutureEvent: future event: ptr=" << m_resolver ) ;
 	G_ASSERT( m_busy ) ; if( !m_busy ) return ;
-	G_ASSERT( m_resolver != nullptr ) ; if( m_resolver == nullptr ) return ;
+	if( m_resolver == nullptr ) return ;
 
 	m_thread.join() ; // worker thread is finishing, so no delay here
 	m_busy = false ;
@@ -229,15 +231,13 @@ bool GNet::Resolver::busy() const
 
 bool GNet::Resolver::async()
 {
-	static bool threading_works = G::threading::works() ;
-	if( threading_works )
+	if( G::threading::works() )
 	{
 		return EventLoop::instance().running() ;
 	}
 	else
 	{
-		//G_WARNING_ONCE( "GNet::Resolver::async: multi-threading not built-in: using synchronous domain name lookup");
-		G_DEBUG( "GNet::Resolver::async: multi-threading not built-in: using synchronous domain name lookup");
+		G_DEBUG( "GNet::Resolver::async: not multi-threaded: using synchronous domain name lookup");
 		return false ;
 	}
 }

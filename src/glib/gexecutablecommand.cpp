@@ -15,42 +15,30 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// gexecutable.cpp
+// gexecutablecommand.cpp
 //
 
 #include "gdef.h"
-#include "gexecutable.h"
+#include "gexecutablecommand.h"
 #include "gstr.h"
 #include <algorithm>
 
-G::Executable::Executable( const std::string & s_ )
+G::ExecutableCommand::ExecutableCommand( const std::string & s )
 {
-	std::string s( s_ ) ;
 	if( s.find(' ') == std::string::npos ) // optimisation
 	{
 		m_exe = G::Path(s) ;
 	}
 	else
 	{
-		// mark escaped spaces using nul
-		const std::string null( 1U , '\0' ) ;
-		G::Str::replaceAll( s , "\\ " , null ) ;
-
-		// split up on (unescaped) spaces
-		G::Str::splitIntoTokens( s , m_args , " " ) ;
-
-		// replace the escaped spaces
-		for( G::StringArray::iterator p = m_args.begin() ; p != m_args.end() ; ++p )
-		{
-			G::Str::replaceAll( *p , null , " " ) ;
-		}
+		m_args = osSplit( s ) ;
 
 		// take the first part as the path to the exe
 		if( m_args.size() )
 		{
 			m_exe = G::Path( m_args.at(0U) ) ;
 			std::rotate( m_args.begin() , m_args.begin()+1U , m_args.end() ) ;
-			m_args.pop_back() ; // ie. pop_front()
+			m_args.pop_back() ; // remove exe
 		}
 	}
 
@@ -61,23 +49,27 @@ G::Executable::Executable( const std::string & s_ )
 	}
 }
 
-G::Executable::Executable( const G::Path & exe_ , const G::StringArray & args_ ) :
+G::ExecutableCommand::ExecutableCommand( const G::Path & exe_ , const G::StringArray & args_ , bool add_wrapper ) :
 	m_exe(exe_) ,
 	m_args(args_)
 {
+	if( add_wrapper && m_exe != G::Path() && !osNativelyRunnable() )
+	{
+		osAddWrapper() ;
+	}
 }
 
-G::Path G::Executable::exe() const
+G::Path G::ExecutableCommand::exe() const
 {
 	return m_exe ;
 }
 
-G::StringArray G::Executable::args() const
+G::StringArray G::ExecutableCommand::args() const
 {
 	return m_args ;
 }
 
-std::string G::Executable::displayString() const
+std::string G::ExecutableCommand::displayString() const
 {
 	return
 		m_args.size() ?
@@ -85,9 +77,9 @@ std::string G::Executable::displayString() const
 			std::string("[") + m_exe.str() + "]" ;
 }
 
-void G::Executable::add( const std::string & arg )
+void G::ExecutableCommand::add( const std::string & arg )
 {
 	m_args.push_back( arg ) ;
 }
 
-/// \file gexecutable.cpp
+/// \file gexecutablecommand.cpp
