@@ -117,6 +117,9 @@
 /* Define true if setgroups is available */
 #undef GCONFIG_HAVE_SETGROUPS
 
+/* Define true if setpgrp has two parameters */
+#undef GCONFIG_HAVE_SETPGRP_BSD
+
 /* Define true if sockaddr_in6 has a sin6_len member */
 #undef GCONFIG_HAVE_SIN6_LEN
 
@@ -140,6 +143,9 @@
 
 /* Define true for a windows build */
 #undef GCONFIG_WINDOWS
+
+/* define if the compiler supports basic C++11 syntax */
+#undef HAVE_CXX11
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT

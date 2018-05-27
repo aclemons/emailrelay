@@ -84,14 +84,15 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 sbin_PROGRAMS = emailrelay$(EXEEXT) emailrelay-submit$(EXEEXT) \
 	emailrelay-passwd$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2)
-e_libexec_PROGRAMS = emailrelay-poke$(EXEEXT) \
-	emailrelay-filter-copy$(EXEEXT)
+e_libexec_PROGRAMS = emailrelay-filter-copy$(EXEEXT)
 subdir = src/main
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/pkg.m4 \
-	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
+	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
+	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -185,11 +186,6 @@ emailrelay_passwd_OBJECTS = $(am_emailrelay_passwd_OBJECTS)
 @GCONFIG_WINDOWS_TRUE@	$(am__DEPENDENCIES_1)
 emailrelay_passwd_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_passwd_LDFLAGS) $(LDFLAGS) -o $@
-am_emailrelay_poke_OBJECTS = poke.$(OBJEXT)
-emailrelay_poke_OBJECTS = $(am_emailrelay_poke_OBJECTS)
-emailrelay_poke_DEPENDENCIES =
-emailrelay_poke_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(emailrelay_poke_LDFLAGS) $(LDFLAGS) -o $@
 am__emailrelay_service_SOURCES_DIST = service_wrapper.cpp
 am__objects_6 = service_wrapper.$(OBJEXT)
 @GCONFIG_WINDOWS_TRUE@am_emailrelay_service_OBJECTS =  \
@@ -254,18 +250,6 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-AM_V_CC = $(am__v_CC_@AM_V@)
-am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
-am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-AM_V_CCLD = $(am__v_CCLD_@AM_V@)
-am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
-am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 AM_V_CXX = $(am__v_CXX_@AM_V@)
@@ -279,15 +263,25 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_@AM_V@)
+am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
+am__v_CC_0 = @echo "  CC      " $@;
+am__v_CC_1 = 
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_@AM_V@)
+am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
+am__v_CCLD_0 = @echo "  CCLD    " $@;
+am__v_CCLD_1 = 
 SOURCES = $(libmain_a_SOURCES) $(emailrelay_SOURCES) \
 	$(emailrelay_filter_copy_SOURCES) $(emailrelay_passwd_SOURCES) \
-	$(emailrelay_poke_SOURCES) $(emailrelay_service_SOURCES) \
-	$(emailrelay_start_SOURCES) $(emailrelay_submit_SOURCES) \
-	$(emailrelay_textmode_SOURCES)
+	$(emailrelay_service_SOURCES) $(emailrelay_start_SOURCES) \
+	$(emailrelay_submit_SOURCES) $(emailrelay_textmode_SOURCES)
 DIST_SOURCES = $(am__libmain_a_SOURCES_DIST) \
 	$(am__emailrelay_SOURCES_DIST) \
 	$(emailrelay_filter_copy_SOURCES) $(emailrelay_passwd_SOURCES) \
-	$(emailrelay_poke_SOURCES) \
 	$(am__emailrelay_service_SOURCES_DIST) \
 	$(emailrelay_start_SOURCES) $(emailrelay_submit_SOURCES) \
 	$(am__emailrelay_textmode_SOURCES_DIST)
@@ -421,6 +415,7 @@ GCONFIG_WINDMC = @GCONFIG_WINDMC@
 GCONFIG_WINDRES = @GCONFIG_WINDRES@
 GREP = @GREP@
 GZIP = @GZIP@
+HAVE_CXX11 = @HAVE_CXX11@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -640,11 +635,6 @@ START_BUNDLE = E-MailRelay-Start
 @GCONFIG_WINDOWS_TRUE@	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
 @GCONFIG_WINDOWS_TRUE@	-lws2_32 -lcomctl32
 
-emailrelay_poke_SOURCES = poke.c
-@GCONFIG_WINDOWS_FALSE@emailrelay_poke_LDFLAGS = 
-@GCONFIG_WINDOWS_TRUE@emailrelay_poke_LDFLAGS = -static
-@GCONFIG_WINDOWS_FALSE@emailrelay_poke_LDADD = 
-@GCONFIG_WINDOWS_TRUE@emailrelay_poke_LDADD = -lws2_32 -lcomctl32
 emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_FALSE@emailrelay_passwd_LDFLAGS = 
 @GCONFIG_WINDOWS_TRUE@emailrelay_passwd_LDFLAGS = -static
@@ -705,7 +695,7 @@ emailrelay_start_SOURCES = start.cpp
 all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .o .obj
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -841,10 +831,6 @@ emailrelay-passwd$(EXEEXT): $(emailrelay_passwd_OBJECTS) $(emailrelay_passwd_DEP
 	@rm -f emailrelay-passwd$(EXEEXT)
 	$(AM_V_CXXLD)$(emailrelay_passwd_LINK) $(emailrelay_passwd_OBJECTS) $(emailrelay_passwd_LDADD) $(LIBS)
 
-emailrelay-poke$(EXEEXT): $(emailrelay_poke_OBJECTS) $(emailrelay_poke_DEPENDENCIES) $(EXTRA_emailrelay_poke_DEPENDENCIES) 
-	@rm -f emailrelay-poke$(EXEEXT)
-	$(AM_V_CCLD)$(emailrelay_poke_LINK) $(emailrelay_poke_OBJECTS) $(emailrelay_poke_LDADD) $(LIBS)
-
 emailrelay-service$(EXEEXT): $(emailrelay_service_OBJECTS) $(emailrelay_service_DEPENDENCIES) $(EXTRA_emailrelay_service_DEPENDENCIES) 
 	@rm -f emailrelay-service$(EXEEXT)
 	$(AM_V_CXXLD)$(emailrelay_service_LINK) $(emailrelay_service_OBJECTS) $(emailrelay_service_LDADD) $(LIBS)
@@ -879,7 +865,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/options.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/passwd.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/poke.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/run.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/service_install.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/service_remove.Po@am__quote@
@@ -890,20 +875,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/winform.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/winmain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/winmenu.Po@am__quote@
-
-.c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
-
-.c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

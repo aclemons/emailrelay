@@ -83,8 +83,10 @@ POST_UNINSTALL = :
 subdir = doc
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/pkg.m4 \
-	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
+	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
+	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -180,6 +182,7 @@ GCONFIG_WINDMC = @GCONFIG_WINDMC@
 GCONFIG_WINDRES = @GCONFIG_WINDRES@
 GREP = @GREP@
 GZIP = @GZIP@
+HAVE_CXX11 = @HAVE_CXX11@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -278,14 +281,12 @@ txt_files_install = \
 man_files_install = \
 	emailrelay.1 \
 	emailrelay-passwd.1 \
-	emailrelay-poke.1 \
 	emailrelay-submit.1 \
 	emailrelay-filter-copy.1
 
 man_files_clean = \
 	emailrelay.1.gz \
 	emailrelay-passwd.1.gz \
-	emailrelay-poke.1.gz \
 	emailrelay-submit.1.gz \
 	emailrelay-filter-copy.1.gz
 
@@ -316,7 +317,8 @@ png_files_install = \
 	authentication.png \
 	forwardto.png \
 	serverclient.png \
-	whatisit.png
+	whatisit.png \
+	download-button.png
 
 EXTRA_DIST = \
 	$(man_files_install) \
@@ -607,9 +609,6 @@ emailrelay-submit.1.gz : emailrelay-submit.1
 
 emailrelay-filter-copy.1.gz : emailrelay-filter-copy.1
 	if test -n "$(GZIP)" ; then $(GZIP) -c "$(top_srcdir)/doc/emailrelay-filter-copy.1" > emailrelay-filter-copy.1.gz ; fi
-
-emailrelay-poke.1.gz: emailrelay-poke.1
-	if test -n "$(GZIP)" ; then $(GZIP) -c "$(top_srcdir)/doc/emailrelay-poke.1" > emailrelay-poke.1.gz ; fi
 
 install-data-local: install-e_docDATA
 	$(mkinstalldirs) "$(DESTDIR)$(e_docdir)/doxygen"

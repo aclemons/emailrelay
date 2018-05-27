@@ -83,8 +83,10 @@ POST_UNINSTALL = :
 subdir = bin
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/pkg.m4 \
-	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
+	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
+	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -119,8 +121,8 @@ am__uninstall_files_from_dir = { \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
 am__installdirs = "$(DESTDIR)$(e_examplesdir)" \
-	"$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_initdir)"
-SCRIPTS = $(e_examples_SCRIPTS) $(noinst_SCRIPTS)
+	"$(DESTDIR)$(e_initdir)" "$(DESTDIR)$(e_examplesdir)"
+SCRIPTS = $(e_examples_SCRIPTS) $(e_init_SCRIPTS) $(noinst_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -140,7 +142,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-DATA = $(e_examples_DATA) $(e_init_DATA)
+DATA = $(e_examples_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
@@ -178,6 +180,7 @@ GCONFIG_WINDMC = @GCONFIG_WINDMC@
 GCONFIG_WINDRES = @GCONFIG_WINDRES@
 GREP = @GREP@
 GZIP = @GZIP@
+HAVE_CXX11 = @HAVE_CXX11@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -294,7 +297,6 @@ js_scripts = \
 	emailrelay-edit-content.js \
 	emailrelay-edit-envelope.js \
 	emailrelay-resubmit.js \
-	emailrelay-runperl.js \
 	emailrelay-service-install.js
 
 EXTRA_DIST = \
@@ -313,7 +315,7 @@ e_examples_DATA = \
 e_examples_SCRIPTS = \
 	$(example_scripts_out)
 
-e_init_DATA = \
+e_init_SCRIPTS = \
 	$(init_scripts)
 
 CLEANFILES = \
@@ -388,6 +390,41 @@ uninstall-e_examplesSCRIPTS:
 	files=`for p in $$list; do echo "$$p"; done | \
 	       sed -e 's,.*/,,;$(transform)'`; \
 	dir='$(DESTDIR)$(e_examplesdir)'; $(am__uninstall_files_from_dir)
+install-e_initSCRIPTS: $(e_init_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	@list='$(e_init_SCRIPTS)'; test -n "$(e_initdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(e_initdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(e_initdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n' \
+	    -e 'h;s|.*|.|' \
+	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
+	      if (++n[d] == $(am__install_max)) { \
+		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
+	    else { print "f", d "/" $$4, $$1 } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	     test -z "$$files" || { \
+	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(e_initdir)$$dir'"; \
+	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(e_initdir)$$dir" || exit $$?; \
+	     } \
+	; done
+
+uninstall-e_initSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(e_init_SCRIPTS)'; test -n "$(e_initdir)" || exit 0; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	       sed -e 's,.*/,,;$(transform)'`; \
+	dir='$(DESTDIR)$(e_initdir)'; $(am__uninstall_files_from_dir)
 install-e_examplesDATA: $(e_examples_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(e_examples_DATA)'; test -n "$(e_examplesdir)" || list=; \
@@ -409,27 +446,6 @@ uninstall-e_examplesDATA:
 	@list='$(e_examples_DATA)'; test -n "$(e_examplesdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(e_examplesdir)'; $(am__uninstall_files_from_dir)
-install-e_initDATA: $(e_init_DATA)
-	@$(NORMAL_INSTALL)
-	@list='$(e_init_DATA)'; test -n "$(e_initdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(e_initdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(e_initdir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(e_initdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(e_initdir)" || exit $$?; \
-	done
-
-uninstall-e_initDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(e_init_DATA)'; test -n "$(e_initdir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(e_initdir)'; $(am__uninstall_files_from_dir)
 tags TAGS:
 
 ctags CTAGS:
@@ -471,7 +487,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(SCRIPTS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_initdir)"; do \
+	for dir in "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_initdir)" "$(DESTDIR)$(e_examplesdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -526,7 +542,7 @@ info: info-am
 info-am:
 
 install-data-am: install-e_examplesDATA install-e_examplesSCRIPTS \
-	install-e_initDATA
+	install-e_initSCRIPTS
 
 install-dvi: install-dvi-am
 
@@ -571,7 +587,7 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-e_examplesDATA uninstall-e_examplesSCRIPTS \
-	uninstall-e_initDATA
+	uninstall-e_initSCRIPTS
 
 .MAKE: install-am install-strip
 
@@ -580,14 +596,14 @@ uninstall-am: uninstall-e_examplesDATA uninstall-e_examplesSCRIPTS \
 	html-am info info-am install install-am install-data \
 	install-data-am install-dvi install-dvi-am \
 	install-e_examplesDATA install-e_examplesSCRIPTS \
-	install-e_initDATA install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic pdf pdf-am ps ps-am tags-am uninstall \
-	uninstall-am uninstall-e_examplesDATA \
-	uninstall-e_examplesSCRIPTS uninstall-e_initDATA
+	install-e_initSCRIPTS install-exec install-exec-am \
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags-am \
+	uninstall uninstall-am uninstall-e_examplesDATA \
+	uninstall-e_examplesSCRIPTS uninstall-e_initSCRIPTS
 
 
 emailrelay-deliver.sh: emailrelay-deliver.sh.in
