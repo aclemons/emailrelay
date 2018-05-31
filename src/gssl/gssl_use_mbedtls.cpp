@@ -22,7 +22,7 @@
 #include "gssl.h"
 #include "gssl_mbedtls.h"
 
-GSsl::LibraryImpBase * GSsl::Library::newLibraryImp( const std::string & library_config , Library::LogFn log_fn , bool verbose )
+GSsl::LibraryImpBase * GSsl::Library::newLibraryImp( G::StringArray & library_config , Library::LogFn log_fn , bool verbose )
 {
 	return new MbedTls::LibraryImp( library_config , log_fn , verbose ) ;
 }

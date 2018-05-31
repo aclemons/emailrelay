@@ -1500,12 +1500,18 @@ AC_DEFUN([GCONFIG_FN_TLS_OPENSSL],
 		[[TLS_method(); return 1;]])],
 		gconfig_ssl_openssl_tls_method=yes,
 		gconfig_ssl_openssl_tls_method=no )
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[[#include <openssl/ssl.h>]],
+		[[SSL_set_min_proto_version((SSL*)0,0);]])],
+		gconfig_ssl_openssl_min_max=yes,
+		gconfig_ssl_openssl_min_max=no )
 	else
 		gconfig_ssl_openssl_sslv23_method=no
 		gconfig_ssl_openssl_sslv3_method=no
 		gconfig_ssl_openssl_tlsv1_1_method=no
 		gconfig_ssl_openssl_tlsv1_2_method=no
 		gconfig_ssl_openssl_tls_method=no
+		gconfig_ssl_openssl_min_max=no
 	fi
 
 	if test "$gconfig_ssl_openssl_sslv23_method" = "yes"
@@ -1543,6 +1549,12 @@ AC_DEFUN([GCONFIG_FN_TLS_OPENSSL],
 		AC_DEFINE(GCONFIG_HAVE_OPENSSL_TLS_METHOD,1,[Define true if openssl has TLS_method])
 	else
 		AC_DEFINE(GCONFIG_HAVE_OPENSSL_TLS_METHOD,0,[Define true if openssl has TLS_method])
+	fi
+	if test "$gconfig_ssl_openssl_min_max" = "yes"
+	then
+		AC_DEFINE(GCONFIG_HAVE_OPENSSL_MIN_MAX,1,[Define true if openssl has SSL_set_min_proto_version])
+	else
+		AC_DEFINE(GCONFIG_HAVE_OPENSSL_MIN_MAX,0,[Define true if openssl has SSL_set_min_proto_version])
 	fi
 ])
 

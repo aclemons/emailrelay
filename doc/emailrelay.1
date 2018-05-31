@@ -221,7 +221,7 @@ Specifies the directory used for holding mail messages that have been received b
 When used with \fI--log\fR this option enables logging to the syslog even if the \fI--no-syslog\fR option is also used. This is typically used as a convenient override when using \fI--as-client\fR.
 .TP
 .B \-9, --tls-config \fI<options>\fR
-Selects and configures the low-level TLS library, using a comma-separated list of keywords. If OpenSSL and mbedTLS are both built in then keywords of \fIopenssl\fR and \fImbedtls\fR will select one or the other. Keywords like \fItlsv1.2\fR can be used to set a minimum TLS protocol version, but test carefully since invalid settings are not reported.
+Selects and configures the low-level TLS library, using a comma-separated list of keywords. If OpenSSL and mbedTLS are both built in then keywords of \fIopenssl\fR and \fImbedtls\fR will select one or the other. Keywords like \fItlsv1.0\fR can be used to set a minimum TLS protocol version, or  \fI-tlsv1.2\fR to set a maximum version.
 .TP
 .B \-u, --user \fI<username>\fR
 When started as root the program switches to an non-privileged effective user-id when idle. This option can be used to define which user-id is used. Ignored on Windows.

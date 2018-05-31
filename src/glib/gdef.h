@@ -484,6 +484,9 @@
 			#define GCONFIG_HAVE_OPENSSL 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_OPENSSL_MIN_MAX)
+		#define GCONFIG_HAVE_OPENSSL_MIN_MAX 0
+	#endif
 	#if !defined(GCONFIG_HAVE_OPENSSL_SSLv3)
 		#define GCONFIG_HAVE_OPENSSL_SSLv3 1
 	#endif

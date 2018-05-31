@@ -127,12 +127,12 @@ GSsl::Protocol::Result GSsl::Protocol::stop()
 	return Result_error ;
 }
 
-GSsl::Protocol::Result GSsl::Protocol::read( char * , size_type , ssize_type & )
+GSsl::Protocol::Result GSsl::Protocol::read( char * , size_t , ssize_t & )
 {
 	return Result_error ;
 }
 
-GSsl::Protocol::Result GSsl::Protocol::write( const char * , size_type , ssize_type & )
+GSsl::Protocol::Result GSsl::Protocol::write( const char * , size_t , ssize_t & )
 {
 	return Result_error ;
 }

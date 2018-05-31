@@ -363,8 +363,8 @@ where &lt;option&gt; is:
     Selects and configures the low-level TLS library, using a comma-separated
     list of keywords. If OpenSSL and mbedTLS are both built in then keywords of
     `openssl` and `mbedtls` will select one or the other. Keywords like
-    `tlsv1.2` can be used to set a minimum TLS protocol version, but test
-    carefully since invalid settings are not reported.
+    `tlsv1.0` can be used to set a minimum TLS protocol version, or  `-tlsv1.2`
+    to set a maximum version.
 
 *   \-\-user &lt;username&gt; (-u)
 

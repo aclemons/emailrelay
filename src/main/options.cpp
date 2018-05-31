@@ -194,8 +194,8 @@ std::string Main::Options::spec( bool is_windows )
 			// Selects and configures the low-level TLS library, using a comma-separated
 			// list of keywords. If OpenSSL and mbedTLS are both built in then keywords
 			// of "openssl" and "mbedtls" will select one or the other. Keywords like
-			// "tlsv1.2" can be used to set a minimum TLS protocol version, but test
-			// carefully since invalid settings are not reported.
+			// "tlsv1.0" can be used to set a minimum TLS protocol version, or
+			// "-tlsv1.2" to set a maximum version.
 
 		"g!debug!generates debug-level logging if built in!!0!!3|"
 			// Enables debug level logging, if built in. Debug messages are usually

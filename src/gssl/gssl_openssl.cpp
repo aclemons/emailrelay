@@ -46,11 +46,11 @@
 #include <utility>
 #include <algorithm>
 
-GSsl::OpenSSL::LibraryImp::LibraryImp( const std::string & library_config , Library::LogFn log_fn , bool verbose ) :
-	m_library_config(library_config) ,
+GSsl::OpenSSL::LibraryImp::LibraryImp( G::StringArray & library_config , Library::LogFn log_fn , bool verbose ) :
 	m_evp_ctx(nullptr) ,
 	m_log_fn(log_fn) ,
-	m_verbose(verbose)
+	m_verbose(verbose) ,
+	m_config(library_config)
 {
 	SSL_load_error_strings() ;
 	SSL_library_init() ;
@@ -89,6 +89,11 @@ std::string GSsl::OpenSSL::LibraryImp::id() const
 	return sid() ;
 }
 
+GSsl::OpenSSL::Config GSsl::OpenSSL::LibraryImp::config() const
+{
+	return m_config ;
+}
+
 std::string GSsl::OpenSSL::LibraryImp::credit( const std::string & prefix , const std::string & eol , const std::string & eot )
 {
 	std::ostringstream ss ;
@@ -106,7 +111,7 @@ void GSsl::OpenSSL::LibraryImp::addProfile( const std::string & profile_name , b
 {
 	shared_ptr<ProfileImp> profile_ptr(
 		new ProfileImp(*this,is_server_profile,key_file,cert_file,ca_file,
-			default_peer_certificate_name,default_peer_host_name,m_library_config,profile_config) ) ;
+			default_peer_certificate_name,default_peer_host_name,profile_config) ) ;
 	m_profile_map.insert( Map::value_type(profile_name,profile_ptr) ) ;
 }
 
@@ -220,73 +225,29 @@ std::string GSsl::OpenSSL::DigesterImp::value()
 GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_server_profile ,
 	const std::string & key_file , const std::string & cert_file , const std::string & ca_path ,
 	const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
-	const std::string & library_config , const std::string & profile_config ) :
+	const std::string & profile_config ) :
 		m_library_imp(library_imp) ,
 		m_default_peer_certificate_name(default_peer_certificate_name) ,
 		m_default_peer_host_name(default_peer_host_name) ,
 		m_ssl_ctx(nullptr,std::ptr_fun(deleter))
 {
-	std::string extra_config = G::Str::join( "," , library_config , profile_config ) ;
-	if( !extra_config.empty() )
+	Config extra_config = m_library_imp.config() ;
+	if( !profile_config.empty() )
 	{
-		if( G::Str::isUInt(extra_config) ) // TODO remove backwards compatibility
-		{
-			unsigned int flags = G::Str::toUInt( extra_config ) ;
-
-			if( (flags&3U) == 2U )
-				m_ssl_ctx.reset( SSL_CTX_new(SSLv23_method()) ) ;
-
-#if GCONFIG_HAVE_OPENSSL_SSLv3_METHOD
-			if( (flags&3U) == 3U )
-				m_ssl_ctx.reset( SSL_CTX_new(SSLv3_method()) ) ;
-#endif
-
-			if( flags & 12U )
-				throw Error( "tls configuration flags 4 and 8 are no longer supported: "
-					"specify a ca certificate list to enable verification" ) ;
-		}
-
-		// openssl :-<
-
-		if( false )
-			{;}
-
-#if GCONFIG_HAVE_OPENSSL_SSLv23_METHOD
-		else if( extra_config.find("sslv23") == 0U )
-			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? SSLv23_server_method() : SSLv23_client_method()) ) ;
-#endif
-
-#if GCONFIG_HAVE_OPENSSL_SSLv3_METHOD
-		else if( extra_config.find("sslv3") == 0U )
-			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? SSLv3_server_method() : SSLv3_client_method()) ) ;
-#endif
-
-#if GCONFIG_HAVE_OPENSSL_TLSv1_METHOD
-		else if( extra_config.find("tlsv1.0") == 0U )
-			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? TLSv1_server_method() : TLSv1_client_method()) ) ;
-#endif
-
-#if GCONFIG_HAVE_OPENSSL_TLSv1_1_METHOD
-		else if( extra_config.find("tlsv1.1") == 0U )
-			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? TLSv1_1_server_method() : TLSv1_1_client_method()) ) ;
-#endif
-
-#if GCONFIG_HAVE_OPENSSL_TLSv1_2_METHOD
-		else if( extra_config.find("tlsv1.2") == 0U )
-			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? TLSv1_2_server_method() : TLSv1_2_client_method()) ) ;
-#endif
-
-		else
-#if GCONFIG_HAVE_OPENSSL_TLS_METHOD
-			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? TLS_server_method() : TLS_client_method()) ) ;
-#else
-			m_ssl_ctx.reset( SSL_CTX_new(is_server_profile ? TLSv1_server_method() : TLSv1_client_method()) ) ;
-#endif
-
+		G::StringArray profile_config_list = G::Str::splitIntoTokens( profile_config , "," ) ;
+		extra_config = Config( profile_config_list ) ;
+		if( !profile_config_list.empty() )
+			G_WARNING( "GSsl::OpenSSL::ProfileImp::ctor: tls-config: tls " << (is_server_profile?"server":"client")
+				<< " profile configuration ignored: [" << G::Str::join(",",profile_config_list) << "]" ) ;
 	}
 
 	if( m_ssl_ctx.get() == nullptr )
-		m_ssl_ctx.reset( SSL_CTX_new(TLSv1_method()) ) ;
+	{
+		Config::Fn version_fn = extra_config.fn( is_server_profile ) ;
+		m_ssl_ctx.reset( SSL_CTX_new( version_fn() ) ) ;
+		if( m_ssl_ctx.get() != nullptr )
+			apply( extra_config ) ;
+	}
 
 	if( m_ssl_ctx.get() == nullptr )
 		throw Error( "SSL_CTX_new" , ERR_get_error() ) ;
@@ -313,8 +274,8 @@ GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 
 	if( ca_path.empty() )
 	{
-		// ask for peer certificates but dont actually verify them - just log them - we
-		// don't use set_client_CA_list() so we allow the client to not send a certificate
+		// ask for peer certificates but just log them without verifying - we don't
+		// use set_client_CA_list() so we allow the client to not send a certificate
 		SSL_CTX_set_verify( m_ssl_ctx.get() , SSL_VERIFY_PEER , verifyPass ) ;
 	}
 	else if( ca_path == "<none>" )
@@ -324,18 +285,18 @@ GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 	}
 	else if( ca_path == "<default>" )
 	{
-		// ask for certificates, make sure they verify against the default ca database, and check the name in the certificate
-		bool no_verify = extra_config.find("noverify") != std::string::npos ;
+		// ask for certificates, make sure they verify against the default ca database, and check the name in the certificate (if given)
+		bool no_verify = extra_config.noverify() ;
 		SSL_CTX_set_verify( m_ssl_ctx.get() , no_verify ? SSL_VERIFY_NONE : (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT) , verifyPeerName ) ;
 		check( SSL_CTX_set_default_verify_paths( m_ssl_ctx.get() ) , "set_default_verify_paths" ) ;
 	}
 	else
 	{
-		// ask for certificates, make sure they verify against the given ca database, and check the name in the certificate
-		bool no_verify = extra_config.find("noverify") != std::string::npos ;
+		// ask for certificates, make sure they verify against the given ca database, and check the name in the certificate (if given)
 		bool ca_path_is_dir = G::File::isDirectory( ca_path ) ;
 		const char * ca_file_p = ca_path_is_dir ? nullptr : ca_path.c_str() ;
 		const char * ca_dir_p = ca_path_is_dir ? ca_path.c_str() : nullptr ;
+		bool no_verify = extra_config.noverify() ;
 		SSL_CTX_set_verify( m_ssl_ctx.get() , no_verify ? SSL_VERIFY_NONE : (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT) , verifyPeerName ) ;
 		check( SSL_CTX_load_verify_locations( m_ssl_ctx.get() , ca_file_p , ca_dir_p ) , "load_verify_locations" , ca_path ) ;
 	}
@@ -396,6 +357,23 @@ void GSsl::OpenSSL::ProfileImp::check( int rc , const std::string & fnname_tail 
 		std::string fnname = "SSL_CTX_" + fnname_tail ;
 		throw Error( fnname , ERR_get_error() , file ) ;
 	}
+}
+
+void GSsl::OpenSSL::ProfileImp::apply( const Config & config )
+{
+#if GCONFIG_HAVE_OPENSSL_MIN_MAX
+	if( config.hasMin() )
+		SSL_CTX_set_min_proto_version( m_ssl_ctx.get() , config.min_() ) ;
+
+	if( config.hasMax() )
+		SSL_CTX_set_max_proto_version( m_ssl_ctx.get() , config.max_() ) ;
+#else
+	if( config.reset() != 0L )
+		SSL_CTX_clear_options( m_ssl_ctx.get() , config.reset() ) ;
+
+	if( config.set() != 0L )
+		SSL_CTX_set_options( m_ssl_ctx.get() , config.set() ) ;
+#endif
 }
 
 int GSsl::OpenSSL::ProfileImp::verifyPass( int ok , X509_STORE_CTX * )
@@ -580,7 +558,7 @@ GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::stop()
 	return rc == 1 ? Protocol::Result_ok : Protocol::Result_error ; // since quiet shutdown
 }
 
-GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::read( char * buffer , size_type buffer_size_in , ssize_type & read_size )
+GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::read( char * buffer , size_t buffer_size_in , ssize_t & read_size )
 {
 	read_size = 0 ;
 
@@ -589,7 +567,7 @@ GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::read( char * buffer , size_ty
 	int rc = SSL_read( m_ssl.get() , buffer , buffer_size ) ;
 	if( rc > 0 )
 	{
-		read_size = static_cast<ssize_type>(rc) ;
+		read_size = static_cast<ssize_t>(rc) ;
 		return SSL_pending(m_ssl.get()) ? Protocol::Result_more : Protocol::Result_ok ;
 	}
 	else if( rc == 0 )
@@ -602,7 +580,7 @@ GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::read( char * buffer , size_ty
 	}
 }
 
-GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::write( const char * buffer , size_type size_in , ssize_type & size_out )
+GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::write( const char * buffer , size_t size_in , ssize_t & size_out )
 {
 	size_out = 0 ;
 	clearErrors() ;
@@ -610,7 +588,7 @@ GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::write( const char * buffer , 
 	int rc = SSL_write( m_ssl.get() , buffer , size ) ;
 	if( rc > 0 )
 	{
-		size_out = static_cast<ssize_type>(rc) ;
+		size_out = static_cast<ssize_t>(rc) ;
 		return Protocol::Result_ok ;
 	}
 	else if( rc == 0 )
@@ -752,4 +730,217 @@ std::string GSsl::OpenSSL::Certificate::str() const
 	return m_str ;
 }
 
+// ==
+
+GSsl::OpenSSL::Config::Config( G::StringArray & cfg ) :
+	m_min(0) ,
+	m_max(0) ,
+	m_options_set(0L) ,
+	m_options_reset(0L) ,
+	m_noverify(consume(cfg,"noverify"))
+{
+	#if GCONFIG_HAVE_OPENSSL_SSLv23_METHOD
+		m_server_fn = SSLv23_server_method ;
+		m_client_fn = SSLv23_client_method ;
+	#else
+		m_server_fn = TLS_server_method ;
+		m_client_fn = TLS_client_method ;
+	#endif
+
+	#if GCONFIG_HAVE_OPENSSL_MIN_MAX
+
+		#ifdef SSL3_VERSION
+		if( consume(cfg,"sslv3") ) m_min = SSL3_VERSION
+		if( consume(cfg,"-sslv3") ) m_max = SSL3_VERSION
+		#endif
+		#ifdef TLS1_VERSION
+		if( consume(cfg,"tlsv1.0") ) m_min = TLS1_VERSION ;
+		if( consume(cfg,"-tlsv1.0") ) m_max = TLS1_VERSION ;
+		#endif
+		#ifdef TLS1_1_VERSION
+		if( consume(cfg,"tlsv1.1") ) m_min = TLS1_1_VERSION ;
+		if( consume(cfg,"-tlsv1.1") ) m_max = TLS1_1_VERSION ;
+		#endif
+		#ifdef TLS1_2_VERSION
+		if( consume(cfg,"tlsv1.2") ) m_min = TLS1_2_VERSION ;
+		if( consume(cfg,"-tlsv1.2") ) m_max = TLS1_2_VERSION ;
+		#endif
+
+	#else
+
+		#ifndef SSL_OP_NO_SSLv2
+			const long SSL_OP_NO_SSLv2 = 0L ;
+		#endif
+		#ifndef SSL_OP_NO_SSLv3
+			const long SSL_OP_NO_SSLv3 = 0L ;
+		#endif
+
+		if( false ) {;}
+
+		#if GCONFIG_HAVE_OPENSSL_SSLv23_METHOD
+		else if( consume(cfg,"sslv2") )
+		{
+			// allow anything - disable all current and future deprecations
+			m_options_reset =
+				SSL_OP_NO_SSLv2 |
+				SSL_OP_NO_SSLv3 |
+				SSL_OP_NO_TLSv1 |
+				SSL_OP_NO_TLSv1_1 |
+				SSL_OP_NO_TLSv1_2 |
+				0L ;
+			m_options_set = 0L ; // disable nothing
+		}
+		#endif
+
+		else if( consume(cfg,"sslv3") )
+		{
+			#if GCONFIG_HAVE_OPENSSL_SSLv3_METHOD
+			if( consume(cfg,"-sslv3") )
+			{
+				m_server_fn = SSLv3_server_method ;
+				m_client_fn = SSLv3_client_method ;
+			}
+			else
+			#endif
+			{
+				m_options_reset =
+					SSL_OP_NO_SSLv3 |
+					SSL_OP_NO_TLSv1 |
+					SSL_OP_NO_TLSv1_1 |
+					SSL_OP_NO_TLSv1_2 |
+					0L ;
+				m_options_set =
+					SSL_OP_NO_SSLv2 |
+					0L ;
+			}
+		}
+
+		else if( consume(cfg,"tlsv1.0") )
+		{
+			#if GCONFIG_HAVE_OPENSSL_TLSv1_METHOD
+			if( consume(cfg,"-tlsv1.0") )
+			{
+				m_server_fn = TLSv1_server_method ;
+				m_client_fn = TLSv1_client_method ;
+			}
+			else
+			#endif
+			{
+				m_options_reset =
+					SSL_OP_NO_TLSv1 |
+					SSL_OP_NO_TLSv1_1 |
+					SSL_OP_NO_TLSv1_2 |
+					0L ;
+				m_options_set =
+					SSL_OP_NO_SSLv2 |
+					SSL_OP_NO_SSLv3 |
+					0L ;
+			}
+		}
+
+		else if( consume(cfg,"tlsv1.1") )
+		{
+			#if GCONFIG_HAVE_OPENSSL_TLSv1_1_METHOD
+			if( consume(cfg,"-tlsv1.1") )
+			{
+				m_server_fn = TLSv1_1_server_method ;
+				m_client_fn = TLSv1_1_client_method ;
+			}
+			else
+			#endif
+			{
+				m_options_reset =
+					SSL_OP_NO_TLSv1_1 |
+					SSL_OP_NO_TLSv1_2 |
+					0L ;
+				m_options_set =
+					SSL_OP_NO_SSLv2 |
+					SSL_OP_NO_SSLv3 |
+					SSL_OP_NO_TLSv1 |
+					0L ;
+			}
+		}
+
+		else if( consume(cfg,"tlsv1.2") )
+		{
+			#if GCONFIG_HAVE_OPENSSL_TLSv1_2_METHOD
+			if( consume(cfg,"-tlsv1.2") )
+			{
+				m_server_fn = TLSv1_2_server_method ;
+				m_client_fn = TLSv1_2_client_method ;
+			}
+			else
+			#endif
+			{
+				m_options_reset =
+					SSL_OP_NO_TLSv1_2 |
+					0L ;
+				m_options_set =
+					SSL_OP_NO_SSLv2 |
+					SSL_OP_NO_SSLv3 |
+					SSL_OP_NO_TLSv1 |
+					SSL_OP_NO_TLSv1_1 |
+					0L ;
+			}
+		}
+
+		// exact protocol versions are handled above because this is not future-proof...
+		if( consume(cfg,"-sslv3") )
+		{
+			m_options_set |=
+				SSL_OP_NO_TLSv1 |
+				SSL_OP_NO_TLSv1_1 |
+				SSL_OP_NO_TLSv1_2 |
+				0L ;
+		}
+		else if( consume(cfg,"-tlsv1.0") )
+		{
+			m_options_set |=
+				SSL_OP_NO_TLSv1_1 |
+				SSL_OP_NO_TLSv1_2 |
+				0L ;
+		}
+		else if( consume(cfg,"-tlsv1.1") )
+		{
+			m_options_set |=
+				SSL_OP_NO_TLSv1_2 |
+				0L ;
+		}
+	#endif
+}
+
+bool GSsl::OpenSSL::Config::consume( G::StringArray & list , const std::string & item )
+{
+	return LibraryImp::consume( list , item ) ;
+}
+
+GSsl::OpenSSL::Config::Fn GSsl::OpenSSL::Config::fn( bool server )
+{
+	return server ? m_server_fn : m_client_fn ;
+}
+
+long GSsl::OpenSSL::Config::set() const
+{
+	return m_options_set ;
+}
+
+long GSsl::OpenSSL::Config::reset() const
+{
+	return m_options_reset ;
+}
+
+int GSsl::OpenSSL::Config::min_() const
+{
+	return m_min ;
+}
+
+int GSsl::OpenSSL::Config::max_() const
+{
+	return m_max ;
+}
+
+bool GSsl::OpenSSL::Config::noverify() const
+{
+	return m_noverify ;
+}
 /// \file gssl_openssl.cpp
