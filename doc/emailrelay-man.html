@@ -295,7 +295,7 @@ When used with <I>--log</I> this option enables logging to the syslog even if th
 <DT><B>-9, --tls-config </B><I>&lt;options&gt;</I>
 
 <DD>
-Selects and configures the low-level TLS library, using a comma-separated list of keywords. If OpenSSL and mbedTLS are both built in then keywords of <I>openssl</I> and <I>mbedtls</I> will select one or the other. Keywords like <I>tlsv1.2</I> can be used to set a minimum TLS protocol version, but test carefully since invalid settings are not reported.
+Selects and configures the low-level TLS library, using a comma-separated list of keywords. If OpenSSL and mbedTLS are both built in then keywords of <I>openssl</I> and <I>mbedtls</I> will select one or the other. Keywords like <I>tlsv1.0</I> can be used to set a minimum TLS protocol version, or  <I>-tlsv1.2</I> to set a maximum version.
 <DT><B>-u, --user </B><I>&lt;username&gt;</I>
 
 <DD>

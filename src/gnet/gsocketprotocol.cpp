@@ -109,7 +109,7 @@ private:
 	GSsl::Protocol * m_ssl ;
 	State m_state ;
 	std::vector<char> m_read_buffer ;
-	GSsl::Protocol::ssize_type m_read_buffer_n ;
+	ssize_t m_read_buffer_n ;
 	Timer<SocketProtocolImp> m_secure_connection_timer ;
 	std::string m_peer_certificate ;
 	static size_t m_read_buffer_size ;
@@ -448,7 +448,7 @@ bool GNet::SocketProtocolImp::sslSendImp( const Segments & segments , Position p
 		const char * chunk_data = chunk_p( segments , pos ) ;
 		size_t chunk_size = chunk_n( segments , pos ) ;
 
-		GSsl::Protocol::ssize_type nsent = 0 ;
+		ssize_t nsent = 0 ;
 		GSsl::Protocol::Result result = m_ssl->write( chunk_data , chunk_size , nsent ) ;
 		if( result == Result_error )
 		{

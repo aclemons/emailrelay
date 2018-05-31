@@ -58,9 +58,9 @@ namespace
 	} ;
 }
 
-GSsl::MbedTls::LibraryImp::LibraryImp( const std::string & library_config , Library::LogFn log_fn , bool verbose ) :
-	m_library_config(library_config) ,
-	m_log_fn(log_fn)
+GSsl::MbedTls::LibraryImp::LibraryImp( G::StringArray & library_config , Library::LogFn log_fn , bool verbose ) :
+	m_log_fn(log_fn) ,
+	m_config(library_config)
 {
 	mbedtls_debug_set_threshold( verbose ? 3 : 1 ) ; // "Messages that have a level over the threshold value are ignored."
 }
@@ -81,7 +81,7 @@ void GSsl::MbedTls::LibraryImp::addProfile( const std::string & profile_name , b
 {
 	shared_ptr<ProfileImp> profile_ptr(
 		new ProfileImp(*this,is_server_profile,key_file,cert_file,ca_file,
-			default_peer_certificate_name,default_peer_host_name,m_library_config,profile_config) ) ;
+			default_peer_certificate_name,default_peer_host_name,profile_config) ) ;
 	m_profile_map.insert( Map::value_type(profile_name,profile_ptr) ) ;
 }
 
@@ -117,6 +117,11 @@ std::string GSsl::MbedTls::LibraryImp::id() const
 	return sid() ;
 }
 
+GSsl::MbedTls::Config GSsl::MbedTls::LibraryImp::config() const
+{
+	return m_config ;
+}
+
 std::string GSsl::MbedTls::LibraryImp::credit( const std::string & prefix , const std::string & eol , const std::string & eot )
 {
 	std::ostringstream ss ;
@@ -138,6 +143,54 @@ G::StringArray GSsl::MbedTls::LibraryImp::digesters( bool ) const
 GSsl::Digester GSsl::MbedTls::LibraryImp::digester( const std::string & hash_type , const std::string & state ) const
 {
 	return Digester( new MbedTls::DigesterImp(hash_type,state) ) ;
+}
+
+// ==
+
+GSsl::MbedTls::Config::Config( G::StringArray & config ) :
+	m_noverify(consume(config,"noverify")),
+	m_min(-1),
+	m_max(-1)
+{
+	static const int SSL_v3 = MBEDTLS_SSL_MINOR_VERSION_0 ;
+	static const int TLS_v1_0 = MBEDTLS_SSL_MINOR_VERSION_1 ;
+	static const int TLS_v1_1 = MBEDTLS_SSL_MINOR_VERSION_2 ;
+	static const int TLS_v1_2 = MBEDTLS_SSL_MINOR_VERSION_3 ;
+
+	G_ASSERT( SSL_v3 >= 0 ) ;
+	G_ASSERT( TLS_v1_0 >= 0 ) ;
+	G_ASSERT( TLS_v1_1 >= 0 ) ;
+	G_ASSERT( TLS_v1_2 >= 0 ) ;
+
+	if( consume(config,"sslv3") ) m_min = SSL_v3 ;
+	if( consume(config,"tlsv1.0") ) m_min = TLS_v1_0 ;
+	if( consume(config,"tlsv1.1") ) m_min = TLS_v1_1 ;
+	if( consume(config,"tlsv1.2") ) m_min = TLS_v1_2 ;
+
+	if( consume(config,"-sslv3") ) m_max = SSL_v3 ;
+	if( consume(config,"-tlsv1.0") ) m_max = TLS_v1_0 ;
+	if( consume(config,"-tlsv1.1") ) m_max = TLS_v1_1 ;
+	if( consume(config,"-tlsv1.2") ) m_max = TLS_v1_2 ;
+}
+
+int GSsl::MbedTls::Config::min_() const
+{
+	return m_min ;
+}
+
+int GSsl::MbedTls::Config::max_() const
+{
+	return m_max ;
+}
+
+bool GSsl::MbedTls::Config::noverify() const
+{
+	return m_noverify ;
+}
+
+bool GSsl::MbedTls::Config::consume( G::StringArray & list , const std::string & item )
+{
+	return LibraryImp::consume( list , item ) ;
 }
 
 // ==
@@ -256,13 +309,23 @@ size_t GSsl::MbedTls::DigesterImp::statesize() const
 GSsl::MbedTls::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_server_profile ,
 	const std::string & key_file , const std::string & cert_file , const std::string & ca_path ,
 	const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
-	const std::string & library_config , const std::string & profile_config ) :
+	const std::string & profile_config ) :
 		m_library_imp(library_imp) ,
 		m_default_peer_certificate_name(default_peer_certificate_name) ,
 		m_default_peer_host_name(default_peer_host_name)
 {
 	Cleanup<mbedtls_ssl_config> cleanup( mbedtls_ssl_config_free ) ;
-	std::string extra_config = G::Str::join( "," , library_config , profile_config ) ;
+
+	// use library config, or override with profile config
+	Config extra_config = library_imp.config() ;
+	if( !profile_config.empty() )
+	{
+		G::StringArray profile_config_list = G::Str::splitIntoTokens( profile_config , "," ) ;
+		extra_config = Config( profile_config_list ) ;
+		if( !profile_config_list.empty() )
+			G_WARNING( "GSsl::MbedTls::ProfileImp::ctor: tls-config: tls " << (is_server_profile?"server":"client")
+				<< " profile configuration ignored: [" << G::Str::join(",",profile_config_list) << "]" ) ;
+	}
 
 	// initialise the mbedtls_ssl_config structure
 	{
@@ -308,7 +371,7 @@ GSsl::MbedTls::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 		{
 			// verify against the default ca database
 			m_ca_list.load( ca_path_default ) ;
-			bool no_verify = extra_config.find("noverify") != std::string::npos ;
+			bool no_verify = extra_config.noverify() ;
 			mbedtls_ssl_conf_ca_chain( &m_config , m_ca_list.ptr() , crl() ) ;
 			mbedtls_ssl_conf_authmode( &m_config , no_verify ? MBEDTLS_SSL_VERIFY_OPTIONAL : MBEDTLS_SSL_VERIFY_REQUIRED ) ;
 		}
@@ -316,7 +379,7 @@ GSsl::MbedTls::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 		{
 			// verify against the given ca database
 			m_ca_list.load( ca_path ) ;
-			bool no_verify = extra_config.find("noverify") != std::string::npos ;
+			bool no_verify = extra_config.noverify() ;
 			mbedtls_ssl_conf_ca_chain( &m_config , m_ca_list.ptr() , crl() ) ;
 			mbedtls_ssl_conf_authmode( &m_config , no_verify ? MBEDTLS_SSL_VERIFY_OPTIONAL : MBEDTLS_SSL_VERIFY_REQUIRED ) ;
 		}
@@ -324,11 +387,10 @@ GSsl::MbedTls::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 
 	// configure protocol version
 	{
-		int min_version = minVersionFrom( G::Str::lower(extra_config) ) ;
-		int max_version = maxVersionFrom( G::Str::lower(extra_config) ) ;
-		mbedtls_ssl_conf_min_version( &m_config , MBEDTLS_SSL_MAJOR_VERSION_3 , min_version ) ;
-		if( max_version >= 0 )
-			mbedtls_ssl_conf_max_version( &m_config , MBEDTLS_SSL_MAJOR_VERSION_3 , max_version ) ;
+		if( extra_config.min_() >= 0 )
+			mbedtls_ssl_conf_min_version( &m_config , MBEDTLS_SSL_MAJOR_VERSION_3 , extra_config.min_() ) ;
+		if( extra_config.max_() >= 0 )
+			mbedtls_ssl_conf_max_version( &m_config , MBEDTLS_SSL_MAJOR_VERSION_3 , extra_config.max_() ) ;
 	}
 
 	// hooks
@@ -356,43 +418,6 @@ GSsl::ProtocolImpBase * GSsl::MbedTls::ProfileImp::newProtocol( const std::strin
 		new MbedTls::ProtocolImp( *this ,
 			peer_certificate_name.empty()?defaultPeerCertificateName():peer_certificate_name ,
 			peer_host_name.empty()?defaultPeerHostName():peer_host_name ) ;
-}
-
-int GSsl::MbedTls::ProfileImp::minVersionFrom( const std::string & config )
-{
-	static const int SSL_v3 = MBEDTLS_SSL_MINOR_VERSION_0 ;
-	static const int TLS_v1_0 = MBEDTLS_SSL_MINOR_VERSION_1 ;
-	static const int TLS_v1_1 = MBEDTLS_SSL_MINOR_VERSION_2 ;
-	static const int TLS_v1_2 = MBEDTLS_SSL_MINOR_VERSION_3 ;
-
-	if( config.empty() ) return TLS_v1_0 ;
-	G::StringArray parts = G::Str::splitIntoTokens( config , "," ) ;
-	if( G::Str::headMatch(parts,"sslv3") ) return SSL_v3 ;
-	if( G::Str::headMatch(parts,"tlsv1.0") ) return TLS_v1_0 ;
-	if( G::Str::headMatch(parts,"tlsv1.1") ) return TLS_v1_1 ;
-	if( G::Str::headMatch(parts,"tlsv1.2") ) return TLS_v1_2 ;
-	return TLS_v1_0 ;
-}
-
-int GSsl::MbedTls::ProfileImp::maxVersionFrom( const std::string & config )
-{
-	static const int SSL_v3 = MBEDTLS_SSL_MINOR_VERSION_0 ;
-	static const int TLS_v1_0 = MBEDTLS_SSL_MINOR_VERSION_1 ;
-	static const int TLS_v1_1 = MBEDTLS_SSL_MINOR_VERSION_2 ;
-	static const int TLS_v1_2 = MBEDTLS_SSL_MINOR_VERSION_3 ;
-
-	G_ASSERT( SSL_v3 >= 0 ) ;
-	G_ASSERT( TLS_v1_0 >= 0 ) ;
-	G_ASSERT( TLS_v1_1 >= 0 ) ;
-	G_ASSERT( TLS_v1_2 >= 0 ) ;
-
-	if( config.empty() ) return -1 ;
-	G::StringArray parts = G::Str::splitIntoTokens( config , "," ) ;
-	if( G::Str::tailMatch(parts,"-sslv3") ) return SSL_v3 ;
-	if( G::Str::tailMatch(parts,"-tlsv1.0") ) return TLS_v1_0 ;
-	if( G::Str::tailMatch(parts,"-tlsv1.1") ) return TLS_v1_1 ;
-	if( G::Str::tailMatch(parts,"-tlsv1.2") ) return TLS_v1_2 ;
-	return -1 ;
 }
 
 mbedtls_x509_crl * GSsl::MbedTls::ProfileImp::crl() const
@@ -487,7 +512,7 @@ GSsl::MbedTls::ProtocolImp::~ProtocolImp()
 {
 }
 
-GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::read( char * buffer , size_type buffer_size_in , ssize_type & data_size_out )
+GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::read( char * buffer , size_t buffer_size_in , ssize_t & data_size_out )
 {
 	int rc = mbedtls_ssl_read( m_ssl.ptr() , reinterpret_cast<unsigned char*>(buffer) , buffer_size_in ) ;
 	data_size_out = rc < 0 ? 0 : rc ;
@@ -496,17 +521,17 @@ GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::read( char * buffer , size_ty
 	return convert( "mbedtls_ssl_read" , rc , available > 0U ) ;
 }
 
-GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::write( const char * buffer_in , size_type data_size_in ,
-	ssize_type & data_size_out )
+GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::write( const char * buffer_in , size_t data_size_in ,
+	ssize_t & data_size_out )
 {
 	const unsigned char * p = reinterpret_cast<const unsigned char *>(buffer_in) ;
-	ssize_type n = static_cast<ssize_type>(data_size_in) ; G_ASSERT( n >= 0 ) ;
+	ssize_t n = static_cast<ssize_t>(data_size_in) ; G_ASSERT( n >= 0 ) ;
 	for(;;)
 	{
 		int rc = mbedtls_ssl_write( m_ssl.ptr() , p , n ) ;
 		if( rc >= n )
 		{
-			data_size_out = static_cast<ssize_type>(data_size_in) ;
+			data_size_out = static_cast<ssize_t>(data_size_in) ;
 			return Protocol::Result_ok ;
 		}
 		else if( rc >= 0 )

@@ -55,6 +55,7 @@ namespace GSsl
 		class ProfileImp ;
 		class ProtocolImp ;
 		class DigesterImp ;
+		class Config ;
 	}
 }
 
@@ -69,6 +70,35 @@ public:
 
 private:
 	std::string m_str ;
+} ;
+
+/// \class GSsl::OpenSSL::Config
+/// Holds protocol version information, etc.
+///
+class GSsl::OpenSSL::Config
+{
+public:
+	typedef const SSL_METHOD * (*Fn)() ;
+	explicit Config( G::StringArray & config ) ;
+	Fn fn( bool server ) ;
+	long set() const ;
+	long reset() const ;
+	int min_() const ;
+	int max_() const ;
+	bool noverify() const ;
+
+private:
+	static bool consume( G::StringArray & , const std::string & ) ;
+	static int map( int , int ) ;
+
+private:
+	Fn m_server_fn ;
+	Fn m_client_fn ;
+	int m_min ;
+	int m_max ;
+	long m_options_set ;
+	long m_options_reset ;
+	bool m_noverify ;
 } ;
 
 /// \class GSsl::OpenSSL::CertificateChain
@@ -115,13 +145,14 @@ public:
 	ProfileImp( const LibraryImp & , bool is_server_profile , const std::string & key_file ,
 		const std::string & cert_file , const std::string & ca_file ,
 		const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
-		const std::string & library_config , const std::string & profile_config ) ;
+		const std::string & profile_config ) ;
 	virtual ~ProfileImp() ;
 	SSL_CTX * p() const ;
 	const LibraryImp & lib() const ;
 	const std::string & defaultPeerCertificateName() const ;
 	const std::string & defaultPeerHostName() const ;
 	virtual ProtocolImpBase * newProtocol( const std::string & , const std::string & ) const override ;
+	void apply( const Config & ) ;
 
 private:
 	ProfileImp( const ProfileImp & ) ;
@@ -147,7 +178,7 @@ class GSsl::OpenSSL::LibraryImp : public LibraryImpBase
 public:
 	typedef GSsl::OpenSSL::Error Error ;
 
-	LibraryImp( const std::string & library_config , Library::LogFn , bool verbose ) ;
+	LibraryImp( G::StringArray & library_config , Library::LogFn , bool verbose ) ;
 	virtual ~LibraryImp() ;
 	virtual void addProfile( const std::string & name , bool is_server_profile ,
 		const std::string & key_file , const std::string & cert_file , const std::string & ca_file ,
@@ -158,6 +189,8 @@ public:
 	virtual std::string id() const override ;
 	virtual G::StringArray digesters( bool ) const override ;
 	virtual Digester digester( const std::string & , const std::string & ) const override ;
+	Config config() const ;
+	bool noverify() const ;
 
 	Library::LogFn log() const ;
 	bool verbose() const ;
@@ -178,6 +211,7 @@ private:
 	bool m_verbose ;
 	Map m_profile_map ;
 	int m_index ; // SSL_get_ex_new_index()
+	Config m_config ;
 } ;
 
 /// \class GSsl::OpenSSL::ProtocolImp
@@ -187,8 +221,6 @@ class GSsl::OpenSSL::ProtocolImp : public ProtocolImpBase
 {
 public:
 	typedef Protocol::Result Result ;
-	typedef Protocol::size_type size_type ;
-	typedef Protocol::ssize_type ssize_type ;
 	typedef OpenSSL::Error Error ;
 	typedef OpenSSL::Certificate Certificate ;
 	typedef OpenSSL::CertificateChain CertificateChain ;
@@ -198,8 +230,8 @@ public:
 	Result connect( G::ReadWrite & ) ;
 	Result accept( G::ReadWrite & ) ;
 	Result stop() ;
-	Result read( char * buffer , size_type buffer_size , ssize_type & read_size ) ;
-	Result write( const char * buffer , size_type size_in , ssize_type & size_out ) ;
+	Result read( char * buffer , size_t buffer_size , ssize_t & read_size ) ;
+	Result write( const char * buffer , size_t size_in , ssize_t & size_out ) ;
 	std::string peerCertificate() const ;
 	std::string peerCertificateChain() const ;
 	bool verified() const ;

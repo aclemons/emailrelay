@@ -59,6 +59,7 @@ namespace GSsl
 		class ProfileImp ;
 		class ProtocolImp ;
 		class DigesterImp ;
+		class Config ;
 	}
 }
 
@@ -181,6 +182,26 @@ private:
 	std::vector<char> m_buffer ;
 } ;
 
+/// \class GSsl::MbedTls::Config
+/// Holds protocol version information, etc.
+///
+class GSsl::MbedTls::Config
+{
+public:
+	explicit Config( G::StringArray & config ) ;
+	int min_() const ;
+	int max_() const ;
+	bool noverify() const ;
+
+private:
+	static bool consume( G::StringArray & , const std::string & ) ;
+
+private:
+	bool m_noverify ;
+	int m_min ;
+	int m_max ;
+} ;
+
 /// \class GSsl::MbedTls::LibraryImp
 /// An implementation of the GSsl::LibraryImpBase interface for mbedtls.
 ///
@@ -189,7 +210,7 @@ class GSsl::MbedTls::LibraryImp : public LibraryImpBase
 public:
 	typedef MbedTls::Rng Rng ;
 
-	LibraryImp( const std::string & library_config , Library::LogFn , bool verbose ) ;
+	LibraryImp( G::StringArray & , Library::LogFn , bool verbose ) ;
 	virtual ~LibraryImp() ;
 	virtual void addProfile( const std::string & profile_name , bool is_server_profile ,
 		const std::string & key_file , const std::string & cert_file , const std::string & ca_file ,
@@ -202,17 +223,20 @@ public:
 	virtual Digester digester( const std::string & , const std::string & ) const override ;
 	const Rng & rng() const ;
 	Library::LogFn log() const ;
+	Config config() const ;
 	static std::string credit( const std::string & , const std::string & , const std::string & ) ;
 	static std::string sid() ;
 
 private:
 	LibraryImp( const LibraryImp & ) ;
 	void operator=( const LibraryImp & ) ;
+	static int minVersionFrom( G::StringArray & ) ;
+	static int maxVersionFrom( G::StringArray & ) ;
 
 private:
 	typedef std::map<std::string,shared_ptr<ProfileImp> > Map ;
-	std::string m_library_config ;
 	Library::LogFn m_log_fn ;
+	Config m_config ;
 	Map m_profile_map ;
 	Rng m_rng ;
 	bool m_verbose ;
@@ -231,7 +255,7 @@ public:
 	ProfileImp( const LibraryImp & library_imp , bool is_server , const std::string & key_file ,
 		const std::string & cert_file , const std::string & ca_file ,
 		const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
-		const std::string & library_config , const std::string & profile_config ) ;
+		const std::string & profile_config ) ;
 	virtual ~ProfileImp() ;
 	virtual ProtocolImpBase * newProtocol( const std::string & , const std::string & ) const override ;
 	const mbedtls_ssl_config * config() const ;
@@ -243,8 +267,6 @@ public:
 private:
 	ProfileImp( const ProfileImp & ) ;
 	void operator=( const ProfileImp & ) ;
-	static int minVersionFrom( const std::string & ) ;
-	static int maxVersionFrom( const std::string & ) ;
 	static void onDebug( void * , int , const char * , int , const char * ) ;
 	void doDebug( int , const char * , int , const char * ) ;
 
@@ -264,8 +286,6 @@ private:
 class GSsl::MbedTls::ProtocolImp : public ProtocolImpBase
 {
 public:
-	typedef Protocol::size_type size_type ;
-	typedef Protocol::ssize_type ssize_type ;
 	typedef Protocol::Result Result ;
 	typedef MbedTls::Context Context ;
 	typedef MbedTls::Error Error ;
@@ -275,8 +295,8 @@ public:
 
 	virtual Result connect( G::ReadWrite & ) override ;
 	virtual Result accept( G::ReadWrite & ) override ;
-	virtual Result read( char * buffer , size_type buffer_size_in , ssize_type & data_size_out ) override ;
-	virtual Result write( const char * buffer , size_type data_size_in , ssize_type & data_size_out ) override ;
+	virtual Result read( char * buffer , size_t buffer_size_in , ssize_t & data_size_out ) override ;
+	virtual Result write( const char * buffer , size_t data_size_in , ssize_t & data_size_out ) override ;
 	virtual Result stop() override ;
 	virtual std::string peerCertificate() const override ;
 	virtual std::string peerCertificateChain() const override ;

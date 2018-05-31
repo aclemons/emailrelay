@@ -24,12 +24,17 @@
 #include "gssl_mbedtls.h"
 #include "gtest.h"
 
-GSsl::LibraryImpBase * GSsl::Library::newLibraryImp( const std::string & library_config , Library::LogFn log_fn , bool verbose )
+GSsl::LibraryImpBase * GSsl::Library::newLibraryImp( G::StringArray & library_config , Library::LogFn log_fn , bool verbose )
 {
-	if( library_config.find("mbedtls") != std::string::npos || G::Test::enabled("ssl-use-mbedtls") )
+	if( LibraryImpBase::consume(library_config,"mbedtls") || G::Test::enabled("ssl-use-mbedtls") )
+	{
 		return new MbedTls::LibraryImp( library_config , log_fn , verbose ) ;
+	}
 	else
+	{
+		LibraryImpBase::consume( library_config , "openssl" ) ;
 		return new OpenSSL::LibraryImp( library_config , log_fn , verbose ) ;
+	}
 }
 
 std::string GSsl::Library::credit( const std::string & prefix , const std::string & eol , const std::string & eot )

@@ -7441,12 +7441,30 @@ else
   gconfig_ssl_openssl_tls_method=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <openssl/ssl.h>
+int
+main ()
+{
+SSL_set_min_proto_version((SSL*)0,0);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  gconfig_ssl_openssl_min_max=yes
+else
+  gconfig_ssl_openssl_min_max=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 	else
 		gconfig_ssl_openssl_sslv23_method=no
 		gconfig_ssl_openssl_sslv3_method=no
 		gconfig_ssl_openssl_tlsv1_1_method=no
 		gconfig_ssl_openssl_tlsv1_2_method=no
 		gconfig_ssl_openssl_tls_method=no
+		gconfig_ssl_openssl_min_max=no
 	fi
 
 	if test "$gconfig_ssl_openssl_sslv23_method" = "yes"
@@ -7507,6 +7525,16 @@ $as_echo "#define GCONFIG_HAVE_OPENSSL_TLS_METHOD 1" >>confdefs.h
 	else
 
 $as_echo "#define GCONFIG_HAVE_OPENSSL_TLS_METHOD 0" >>confdefs.h
+
+	fi
+	if test "$gconfig_ssl_openssl_min_max" = "yes"
+	then
+
+$as_echo "#define GCONFIG_HAVE_OPENSSL_MIN_MAX 1" >>confdefs.h
+
+	else
+
+$as_echo "#define GCONFIG_HAVE_OPENSSL_MIN_MAX 0" >>confdefs.h
 
 	fi
 

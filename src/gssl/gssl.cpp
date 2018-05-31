@@ -20,8 +20,10 @@
 
 #include "gdef.h"
 #include "gssl.h"
+#include "gstr.h"
 #include "gexception.h"
 #include "glog.h"
+#include <algorithm>
 
 GSsl::Library * GSsl::Library::m_this = nullptr ;
 
@@ -30,8 +32,29 @@ GSsl::Library::Library( bool active , const std::string & library_config , LogFn
 {
 	if( m_this == nullptr )
 		m_this = this ;
+
 	if( active )
-		m_imp = newLibraryImp( library_config , log_fn , verbose ) ;
+	{
+		G::StringArray config = G::Str::splitIntoTokens( library_config , "," ) ;
+
+		// TODO remove backwards compatibility for numeric tls-config flags
+		if( G::Str::isUInt(library_config) )
+		{
+			G_WARNING( "GSsl::Library::ctor: tls-config: numeric tls configuration flags are deprecated" ) ;
+			unsigned int flags = G::Str::toUInt( library_config ) ;
+			if( (flags&(~3U)) == 0U )
+				config.clear() ;
+			if( (flags&3U) == 2U )
+				config.push_back( "sslv23" ) ;
+			else if( (flags&3U) == 3U )
+				config.push_back( "sslv3" ) ;
+		}
+
+		m_imp = newLibraryImp( config , log_fn , verbose ) ;
+
+		if( !config.empty() )
+			G_WARNING( "GSsl::Library::Library: tls-config: tls configuration items ignored: [" << G::Str::join(",",config) << "]" ) ;
+	}
 }
 
 GSsl::Library::~Library()
@@ -175,12 +198,12 @@ GSsl::Protocol::Result GSsl::Protocol::accept( G::ReadWrite & io )
 	return m_imp->accept( io ) ;
 }
 
-GSsl::Protocol::Result GSsl::Protocol::read( char * buffer , size_type buffer_size_in , ssize_type & data_size_out )
+GSsl::Protocol::Result GSsl::Protocol::read( char * buffer , size_t buffer_size_in , ssize_t & data_size_out )
 {
 	return m_imp->read( buffer , buffer_size_in , data_size_out ) ;
 }
 
-GSsl::Protocol::Result GSsl::Protocol::write( const char * buffer , size_type data_size_in , ssize_type & data_size_out)
+GSsl::Protocol::Result GSsl::Protocol::write( const char * buffer , size_t data_size_in , ssize_t & data_size_out)
 {
 	return m_imp->write( buffer , data_size_in , data_size_out ) ;
 }
@@ -232,6 +255,22 @@ size_t GSsl::Digester::statesize() const
 GSsl::LibraryImpBase::~LibraryImpBase()
 {
 }
+
+bool GSsl::LibraryImpBase::consume( G::StringArray & list , const std::string & key )
+{
+	G::StringArray::iterator p = std::find( list.begin() , list.end() , key ) ;
+	if( p != list.end() )
+	{
+		list.erase( p ) ;
+		return true ;
+	}
+	else
+	{
+		return false ;
+	}
+}
+
+// ==
 
 GSsl::Profile::~Profile()
 {

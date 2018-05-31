@@ -64,9 +64,14 @@ namespace GSsl
 class GSsl::Protocol
 {
 public:
-	typedef size_t size_type ;
-	typedef ssize_t ssize_type ;
-	enum Result { Result_ok , Result_read , Result_write , Result_error , Result_more } ;
+	enum Result // Result enumeration for GSsl::Protocol i/o methods.
+	{
+		Result_ok ,
+		Result_read ,
+		Result_write ,
+		Result_error ,
+		Result_more
+	} ;
 
 	explicit Protocol( const Profile & , const std::string & peer_certificate_name = std::string() ,
 		const std::string & peer_host_name = std::string() ) ;
@@ -104,7 +109,7 @@ public:
 	Result stop() ;
 		///< Initiates the protocol shutdown.
 
-	Result read( char * buffer , size_type buffer_size_in , ssize_type & data_size_out ) ;
+	Result read( char * buffer , size_t buffer_size_in , ssize_t & data_size_out ) ;
 		///< Reads user data into the supplied buffer.
 		///<
 		///< Returns Result_read if there is not enough transport data to
@@ -132,7 +137,7 @@ public:
 		///< or if the TLS session was shut down by the peer or if there
 		///< was an error.
 
-	Result write( const char * buffer , size_type data_size_in , ssize_type & data_size_out ) ;
+	Result write( const char * buffer , size_t data_size_in , ssize_t & data_size_out ) ;
 		///< Writes user data.
 		///<
 		///< Returns Result_ok if fully sent.
@@ -339,7 +344,7 @@ private:
 	void operator=( const Library & ) ;
 	const LibraryImpBase & imp() const ;
 	LibraryImpBase & imp() ;
-	static LibraryImpBase * newLibraryImp( const std::string & , Library::LogFn , bool ) ;
+	static LibraryImpBase * newLibraryImp( G::StringArray & , Library::LogFn , bool ) ;
 
 private:
 	static Library * m_this ;
@@ -354,13 +359,30 @@ class GSsl::LibraryImpBase
 {
 public:
 	virtual ~LibraryImpBase() ;
+		///< Destructor.
+
+	virtual std::string id() const = 0 ;
+		///< Implements Library::id().
+
 	virtual void addProfile( const std::string & , bool , const std::string & , const std::string & ,
 		const std::string & , const std::string & , const std::string & , const std::string & ) = 0 ;
+			///< Implements Library::addProfile().
+
 	virtual bool hasProfile( const std::string & profile_name ) const = 0 ;
+		///< Implements Library::hasProfile().
+
 	virtual const Profile & profile( const std::string & profile_name ) const = 0 ;
-	virtual std::string id() const = 0 ;
+		///< Implements Library::profile().
+
 	virtual G::StringArray digesters( bool ) const = 0 ;
+		///< Implements Library::digesters().
+
 	virtual Digester digester( const std::string & , const std::string & ) const = 0 ;
+		///< Implements Library::digester().
+
+	static bool consume( G::StringArray & list , const std::string & item ) ;
+		///< A convenience function that removes the item from
+		///< the list and returns true iff is was removed.
 } ;
 
 /// \class GSsl::Profile
@@ -371,7 +393,10 @@ class GSsl::Profile
 {
 public:
 	virtual ~Profile() ;
+		///< Destructor.
+
 	virtual ProtocolImpBase * newProtocol( const std::string & , const std::string & ) const = 0 ;
+		///< Factory method for a new Protocol object on the heap.
 } ;
 
 /// \class GSsl::ProtocolImpBase
@@ -381,14 +406,31 @@ class GSsl::ProtocolImpBase
 {
 public:
 	virtual ~ProtocolImpBase() ;
+		///< Destructor.
+
 	virtual Protocol::Result connect( G::ReadWrite & ) = 0 ;
+		///< Implements Protocol::connect().
+
 	virtual Protocol::Result accept( G::ReadWrite & ) = 0 ;
+		///< Implements Protocol::accept().
+
 	virtual Protocol::Result stop() = 0 ;
-	virtual Protocol::Result read( char * , Protocol::size_type , Protocol::ssize_type & ) = 0 ;
-	virtual Protocol::Result write( const char * , Protocol::size_type , Protocol::ssize_type & ) = 0 ;
+		///< Implements Protocol::stop().
+
+	virtual Protocol::Result read( char * , size_t , ssize_t & ) = 0 ;
+		///< Implements Protocol::read().
+
+	virtual Protocol::Result write( const char * , size_t , ssize_t & ) = 0 ;
+		///< Implements Protocol::write().
+
 	virtual std::string peerCertificate() const = 0 ;
+		///< Implements Protocol::peerCertificate().
+
 	virtual std::string peerCertificateChain() const = 0 ;
+		///< Implements Protocol::peerCertificateChain().
+
 	virtual bool verified() const = 0 ;
+		///< Implements Protocol::verified().
 } ;
 
 /// \class GSsl::DigesterImpBase
@@ -398,12 +440,25 @@ class GSsl::DigesterImpBase
 {
 public:
 	virtual ~DigesterImpBase() ;
+		///< Destructor.
+
 	virtual void add( const std::string & ) = 0 ;
+		///< Implements Digester::add().
+
 	virtual std::string value() = 0 ;
+		///< Implements Digester::value().
+
 	virtual std::string state() = 0 ;
+		///< Implements Digester::state().
+
 	virtual size_t blocksize() const = 0 ;
+		///< Implements Digester::blocksize().
+
 	virtual size_t valuesize() const = 0 ;
+		///< Implements Digester::valuesize().
+
 	virtual size_t statesize() const = 0 ;
+		///< Implements Digester::statesize().
 } ;
 
 #endif

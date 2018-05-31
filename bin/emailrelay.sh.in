@@ -95,6 +95,32 @@ then
 	cp -p "$CONFIG.template" "$CONFIG"
 fi
 
+setup_rundir()
+{
+	if test ! -d "$1"
+	then
+		mkdir -p "$1"
+		if test -d "$1"
+		then
+			chgrp "$GROUP" "$1" && chmod 770 "$1"
+		fi
+	fi
+}
+
+spooldir()
+{
+	cat "$CONFIG" | tr '\t' ' ' | sed 's/  */ /g' | grep '^spool-dir [^ ]' | tail -1 | cut -d' ' -f 2
+}
+
+setup_spooldir()
+{
+	if test "$1" != ""
+	then
+		test -d "$1" || mkdir -p "$1"
+		chgrp "$GROUP" "$1" && chmod 775 "$1" && chmod g+s "$1"
+	fi
+}
+
 case "$1" in
 
 	restart|force-reload)
@@ -105,6 +131,7 @@ case "$1" in
 	*start)
 		log_daemon_msg "Starting $DESC"
 		log_progress_msg "$NAME"
+		setup_rundir "`dirname \"$PIDFILE\"`" 2>/dev/null
 		start_daemon -p "$PIDFILE" -- "$DAEMON" --syslog --pid-file "$PIDFILE" "$CONFIG"
 		log_end_msg $?
 		;;
@@ -133,18 +160,8 @@ case "$1" in
 		;;
 
 	setup)
-		test -d "$RUNDIR" || mkdir -p "$RUNDIR" 2>/dev/null
-		chgrp "$GROUP" "$RUNDIR"
-		chmod 770 "$RUNDIR"
-
-		SPOOLDIR="`cat \"$CONFIG\" | grep '^spool-dir' | awk '{print $2}'`"
-		if test "$SPOOLDIR" != ""
-		then
-			test -d "$SPOOLDIR" || mkdir -p "$SPOOLDIR" 2>/dev/null
-			chgrp "$GROUP" "$SPOOLDIR"
-			chmod 775 "$SPOOLDIR"
-			chmod g+s "$SPOOLDIR"
-		fi
+		setup_rundir "$RUNDIR"
+		setup_spooldir "`spooldir`"
 
 		chmod 550 "$DAEMON"
 		chgrp "$GROUP" "$DAEMON"

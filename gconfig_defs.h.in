@@ -78,6 +78,9 @@
 /* Define true to enable openssl */
 #undef GCONFIG_HAVE_OPENSSL
 
+/* Define true if openssl has SSL_set_min_proto_version */
+#undef GCONFIG_HAVE_OPENSSL_MIN_MAX
+
 /* Define true if openssl has SSLv23_method */
 #undef GCONFIG_HAVE_OPENSSL_SSLv23_METHOD
 

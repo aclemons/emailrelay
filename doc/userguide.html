@@ -46,7 +46,9 @@
     <p>
      E-MailRelay does not do routing of individual messages; it is not a routing MTA.
      It forwards all e-mail messages to a pre-configured SMTP server, regardless of
-     any message addressing or DNS redirects.
+     any message addressing or DNS redirects. It does not forward messages separately
+     to the <em class="quote">To</em> and <em class="quote">Bcc</em> recipients, so <em class="quote">Bcc</em> recipients are not hidden by
+     E-MailRelay forwarding.
     </p>
    <h2><a class="a-header" name="SH_1_3">Why use it?</a></h2> <!-- index:2:SH:1:3:Why use it? -->
     <p>

@@ -377,8 +377,8 @@
        Selects and configures the low-level TLS library, using a comma-separated
        list of keywords. If OpenSSL and mbedTLS are both built in then keywords of
        <em class="quote">openssl</em> and <em class="quote">mbedtls</em> will select one or the other. Keywords like
-       <em class="quote">tlsv1.2</em> can be used to set a minimum TLS protocol version, but test
-       carefully since invalid settings are not reported.
+       <em class="quote">tlsv1.0</em> can be used to set a minimum TLS protocol version, or  <em class="quote">-tlsv1.2</em>
+       to set a maximum version.
       </dd>
      <dt>--user &lt;username&gt; (-u)</dt>
       <dd>
