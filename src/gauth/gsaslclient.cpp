@@ -43,21 +43,16 @@ namespace
 class GAuth::SaslClientImp
 {
 public:
+	typedef SaslClient::Response Response ;
 	explicit SaslClientImp( const SaslClientSecrets & ) ;
 	bool active() const ;
 	std::string preferred( const G::StringArray & ) const ;
-	std::string response( const std::string & mechanism , const std::string & challenge ,
-		bool & done , bool & sensitive ) const ;
+	Response response( const std::string & mechanism , const std::string & challenge ) const ;
 	bool next() ;
 	std::string preferred() const ;
 	std::string id() const ;
 	std::string info() const ;
-
-private:
-	static void log( const std::string & , const G::StringArray & , const Secret & ) ;
-	static void log( const G::StringArray & , const G::StringArray & , const Secret & ) ;
-	static void log( const std::string & mechanisms , const std::string & info , bool supported ) ;
-	static bool match( const G::StringArray & , const std::string & ) ;
+	static bool match( const G::StringArray & mechanisms , const std::string & ) ;
 
 private:
 	const SaslClientSecrets & m_secrets ;
@@ -83,51 +78,43 @@ std::string GAuth::SaslClientImp::preferred( const G::StringArray & server_mecha
 	if( !active() )
 		return std::string() ;
 
-	// build our list of possible mechanisms
-	G::StringArray our_mechanisms ;
-	Secret plain_secret = m_secrets.clientSecret( "plain" ) ;
-	if( plain_secret.valid() )
+	// if we have a plaintext password then we can use any cram
+	// mechanism for which we have a hash function -- otherwise
+	// we can use cram mechanisms where we have a hashed password
+	// of the correct type and the hash function is capable of
+	// initialisation with an intermediate state
+	//
+	G::StringArray our_list = Cram::hashTypes( "CRAM-" , !m_secrets.clientSecret("plain").valid() ) ;
+	for( G::StringArray::iterator p = our_list.begin() ; p != our_list.end() ; )
 	{
-		// if we have a plaintext password then we can use any
-		// cram mechanism for which we have a hash function
-		our_mechanisms = Cram::hashTypes( "CRAM-" , false ) ;
-		our_mechanisms.push_back( PLAIN ) ;
-		our_mechanisms.push_back( LOGIN ) ;
-		log( our_mechanisms , server_mechanisms , plain_secret ) ;
+		if( m_secrets.clientSecret((*p).substr(5U)).valid() )
+			++p ;
+		else
+			p = our_list.erase( p ) ;
 	}
-	else
+	if( m_secrets.clientSecret("oauth").valid() )
 	{
-		// if we only have masked passwords then we can only
-		// use matching mechanisms, and those hash functions
-		// must support initialisation with intermediate state
-		our_mechanisms = Cram::hashTypes( "CRAM-" , true ) ;
-		for( G::StringArray::iterator p = our_mechanisms.begin() ; p != our_mechanisms.end() ; )
-		{
-			std::string encoding_type = (*p).substr(5U) ;
-			Secret secret = m_secrets.clientSecret( encoding_type ) ;
-			if( !secret.valid() )
-			{
-				p = our_mechanisms.erase( p ) ;
-			}
-			else
-			{
-				log( *p , server_mechanisms , secret ) ;
-				++p ;
-			}
-		}
+		our_list.push_back( "XOAUTH2" ) ;
 	}
-	G_DEBUG( "GAuth::SaslClientImp::preferred: server mechanisms: [" << G::Str::join(",",server_mechanisms) << "]" ) ;
-	G_DEBUG( "GAuth::SaslClientImp::preferred: our mechanisms: [" << G::Str::join(",",our_mechanisms) << "]" ) ;
+	if( m_secrets.clientSecret("plain").valid() )
+	{
+		our_list.push_back( PLAIN ) ;
+		our_list.push_back( LOGIN ) ;
+	}
 
 	// build the list of mechanisms that we can use with the server
 	m_mechanisms.clear() ;
-	for( G::StringArray::iterator p = our_mechanisms.begin() ; p != our_mechanisms.end() ; ++p )
+	for( G::StringArray::iterator p = our_list.begin() ; p != our_list.end() ; ++p )
 	{
 		if( match(server_mechanisms,*p) )
 		{
 			m_mechanisms.push_back( *p ) ;
 		}
 	}
+
+	G_DEBUG( "GAuth::SaslClientImp::preferred: server mechanisms: [" << G::Str::join(",",server_mechanisms) << "]" ) ;
+	G_DEBUG( "GAuth::SaslClientImp::preferred: our mechanisms: [" << G::Str::join(",",our_list) << "]" ) ;
+	G_DEBUG( "GAuth::SaslClientImp::preferred: usable mechanisms: [" << G::Str::join(",",m_mechanisms) << "]" ) ;
 
 	return m_mechanisms.empty() ? std::string() : m_mechanisms.at(0U) ;
 }
@@ -144,51 +131,73 @@ std::string GAuth::SaslClientImp::preferred() const
 	return m_mechanisms.empty() ? std::string() : m_mechanisms.at(0U) ;
 }
 
-std::string GAuth::SaslClientImp::response( const std::string & mechanism ,
-	const std::string & challenge , bool & done , bool & sensitive ) const
+GAuth::SaslClient::Response GAuth::SaslClientImp::response( const std::string & mechanism ,
+	const std::string & challenge ) const
 {
-	done = false ;
-	sensitive = true ;
+	Response rsp ;
+	rsp.error = true ;
+	rsp.final = false ;
+	rsp.sensitive = true ;
 
 	Secret secret = Secret::none() ;
-	std::string rsp ;
 	if( mechanism.find("CRAM-") == 0U )
 	{
 		std::string hash_type = mechanism.substr( 5U ) ;
 		secret = m_secrets.clientSecret( hash_type ) ;
 		if( !secret.valid() )
 			secret = m_secrets.clientSecret( "plain" ) ;
-		rsp = Cram::response( hash_type , true , secret , challenge , secret.id() ) ;
-		done = true ;
+		rsp.data = Cram::response( hash_type , true , secret , challenge , secret.id() ) ;
+		rsp.error = rsp.data.empty() ;
+		rsp.final = true ;
 	}
 	else if( mechanism == "APOP" )
 	{
 		secret = m_secrets.clientSecret( "MD5" ) ;
-		rsp = Cram::response( "MD5" , false , secret , challenge , secret.id() ) ;
-		done = true ;
+		rsp.data = Cram::response( "MD5" , false , secret , challenge , secret.id() ) ;
+		rsp.error = rsp.data.empty() ;
+		rsp.final = true ;
 	}
 	else if( mechanism == PLAIN )
 	{
 		secret = m_secrets.clientSecret( "plain" ) ;
 		const std::string sep( 1U , '\0' ) ;
-		rsp = sep + secret.id() + sep + secret.key() ;
-		done = true ;
+		rsp.data = sep + secret.id() + sep + secret.key() ;
+		rsp.error = rsp.data.empty() ;
+		rsp.final = true ;
 	}
 	else if( mechanism == LOGIN && challenge == login_challenge_1 )
 	{
 		secret = m_secrets.clientSecret( "plain" ) ;
-		rsp = secret.id() ;
-		done = false ;
-		sensitive = false ;
+		rsp.data = secret.id() ;
+		rsp.error = rsp.data.empty() ;
+		rsp.final = false ;
+		rsp.sensitive = false ;
 	}
 	else if( mechanism == LOGIN && challenge == login_challenge_2 )
 	{
 		secret = m_secrets.clientSecret( "plain" ) ;
-		rsp = secret.key() ;
-		done = true ;
+		rsp.data = secret.key() ;
+		rsp.error = rsp.data.empty() ;
+		rsp.final = true ;
+	}
+	else if( mechanism == "XOAUTH2" && challenge.empty() )
+	{
+		secret = m_secrets.clientSecret( "oauth" ) ;
+		rsp.data = secret.key() ;
+		rsp.error = rsp.data.empty() ;
+		rsp.final = true ; // not well-defined, may get an informational challenge
+		rsp.sensitive = true ;
+	}
+	else if( mechanism == "XOAUTH2" )
+	{
+		secret = m_secrets.clientSecret( "oauth" ) ;
+		rsp.data.clear() ; // information-only challenge gets an empty response
+		rsp.error = false ;
+		rsp.final = true ;
+		rsp.sensitive = false ;
 	}
 
-	if( done )
+	if( rsp.final )
 	{
 		std::ostringstream ss ;
 		ss << "using mechanism [" << G::Str::lower(mechanism) << "] and " << secret.info() ;
@@ -219,40 +228,6 @@ bool GAuth::SaslClientImp::match( const G::StringArray & mechanisms , const std:
 	return std::find(mechanisms.begin(),mechanisms.end(),mechanism) != mechanisms.end() ;
 }
 
-void GAuth::SaslClientImp::log( const std::string & our_mechanism , const G::StringArray & server_mechanisms ,
-	const Secret & secret )
-{
-	if( G::LogOutput::instance() != nullptr && G::LogOutput::instance()->at(G::Log::s_LogVerbose) )
-	{
-		log( G::Str::lower(our_mechanism) , secret.info() , match(server_mechanisms,our_mechanism) ) ;
-	}
-}
-
-void GAuth::SaslClientImp::log( const G::StringArray & our_mechanisms , const G::StringArray & server_mechanisms ,
-	const Secret & secret )
-{
-	G::StringArray good_list , bad_list ;
-	for( G::StringArray::const_iterator p = our_mechanisms.begin() ; p != our_mechanisms.end() ; ++p )
-	{
-		match(server_mechanisms,*p) ? good_list.push_back(G::Str::lower(*p)) : bad_list.push_back(G::Str::lower(*p)) ;
-	}
-	if( !good_list.empty() )
-	{
-		log( G::Str::join(",",good_list) , secret.info() , true ) ;
-	}
-	if( !bad_list.empty() )
-	{
-		log( G::Str::join(",",bad_list) , secret.info() , false ) ;
-	}
-}
-
-void GAuth::SaslClientImp::log( const std::string & mechanisms , const std::string & info , bool supported )
-{
-	G_LOG( "GAuth::SaslClientImp::log: authentication with remote server using "
-		<< "[" << mechanisms << "] and " << info
-		<< (supported?"":": not supported by server") ) ;
-}
-
 // ===
 
 GAuth::SaslClient::SaslClient( const SaslClientSecrets & secrets ) :
@@ -270,10 +245,9 @@ bool GAuth::SaslClient::active() const
 	return m_imp->active() ;
 }
 
-std::string GAuth::SaslClient::response( const std::string & mechanism , const std::string & challenge ,
-	bool & done , bool & sensitive ) const
+GAuth::SaslClient::Response GAuth::SaslClient::response( const std::string & mechanism , const std::string & challenge ) const
 {
-	return m_imp->response( mechanism , challenge , done , sensitive ) ;
+	return m_imp->response( mechanism , challenge ) ;
 }
 
 std::string GAuth::SaslClient::preferred( const G::StringArray & server_mechanisms ) const

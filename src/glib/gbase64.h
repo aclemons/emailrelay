@@ -52,7 +52,7 @@ public:
 
 	static bool valid( const std::string & ) ;
 		///< Returns true if the string can be decoded without
-		///< any strict errors.
+		///< any strict errors. An empty string is valid.
 
 private:
 	Base64() ;

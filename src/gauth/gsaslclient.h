@@ -39,6 +39,14 @@ namespace GAuth
 class GAuth::SaslClient
 {
 public:
+	struct Response /// Result structure returned from GAuth::SaslClient::response
+	{
+		std::string data ;
+		bool sensitive ; // don't log
+		bool error ; // abort the sasl dialog
+		bool final ; // final response, server's decision time
+	} ;
+
 	explicit SaslClient( const SaslClientSecrets & secrets ) ;
 		///< Constructor. The secrets reference is kept.
 
@@ -48,12 +56,9 @@ public:
 	bool active() const ;
 		///< Returns true if the constructor's secrets object is valid.
 
-	std::string response( const std::string & mechanism , const std::string & challenge ,
-		bool & done , bool & sensitive ) const ;
-			///< Returns a response to the given challenge. The mechanism is
-			///< used to choose the appropriate entry in the secrets file.
-			///< Returns the empty string on error and returns boolean flags
-			///< by reference.
+	Response response( const std::string & mechanism , const std::string & challenge ) const ;
+		///< Returns a response to the given challenge. The mechanism is
+		///< used to choose the appropriate entry in the secrets file.
 
 	std::string preferred( const G::StringArray & mechanisms ) const ;
 		///< Returns the name of the preferred mechanism taken from the given
@@ -76,8 +81,8 @@ public:
 		///< the last response().
 
 private:
-	SaslClient( const SaslClient & ) ; // not implemented
-	void operator=( const SaslClient & ) ; // not implemented
+	SaslClient( const SaslClient & ) ;
+	void operator=( const SaslClient & ) ;
 
 private:
 	SaslClientImp * m_imp ;

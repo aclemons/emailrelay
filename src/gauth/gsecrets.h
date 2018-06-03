@@ -44,8 +44,8 @@ public:
 
 	Secrets( const std::string & source_storage_path , const std::string & debug_name ,
 		const std::string & server_type = std::string() ) ;
-			///< Constructor. In the current implementation the connection
-			///< connection string is a secrets file or "/pam".
+			///< Constructor. The connection string is a secrets file path
+			///< or "/pam".
 			///<
 			///< The 'debug-name' is used in log and error messages to
 			///< identify the repository.
@@ -53,7 +53,7 @@ public:
 			///< The 'server-type' parameter can be used to select
 			///< a different set of server-side authentication records
 			///< that may be stored in the same repository such as
-			///< "smtp" or "pop".
+			///< "smtp" or "pop". The default is "server".
 			///<
 			///< Throws on error, although an empty path is not
 			///< considered an error: see valid().

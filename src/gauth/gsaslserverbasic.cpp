@@ -23,6 +23,7 @@
 #include "gmd5.h"
 #include "ghash.h"
 #include "gcram.h"
+#include "gbase64.h"
 #include "gstr.h"
 #include "gtest.h"
 #include "gdatetime.h"
@@ -80,6 +81,8 @@ GAuth::SaslServerBasicImp::SaslServerBasicImp( const SaslServerSecrets & secrets
 	m_mechanisms = Cram::hashTypes( "CRAM-" ) ;
 	m_mechanisms.push_back( "PLAIN" ) ;
 	m_mechanisms.push_back( "LOGIN" ) ;
+	if( G::Test::enabled("sasl-server-oauth") )
+		m_mechanisms.push_back( "XOAUTH2" ) ; // for testing
 }
 
 std::string GAuth::SaslServerBasicImp::mechanisms( const std::string & sep ) const
@@ -123,14 +126,23 @@ bool GAuth::SaslServerBasicImp::init( const std::string & mechanism_in )
 
 std::string GAuth::SaslServerBasicImp::initialChallenge() const
 {
-	return
-		( m_mechanism == "LOGIN" ) ? login_challenge_1 :
-			( m_mechanism == "PLAIN" ? std::string() : m_challenge ) ;
+	// see RFC-4422 section 5
+	if( m_mechanism == "PLAIN" ) // "client-first"
+		return std::string() ;
+	else if( m_mechanism == "XOAUTH2" ) // for testing -- "client-first"
+		return std::string() ;
+	else if( m_mechanism == "LOGIN" ) // "variable"
+		return login_challenge_1 ;
+	else // CRAM-X "server-first"
+		return m_challenge ;
 }
 
 std::string GAuth::SaslServerBasicImp::apply( const std::string & response , bool & done )
 {
 	G_DEBUG( "GAuth::SaslServerBasic::apply: response: \"" << G::Str::printable(response) << "\"" ) ;
+
+	bool first_apply = m_first_apply ;
+	m_first_apply = false ;
 
 	done = false ;
 	std::string id ;
@@ -175,11 +187,29 @@ std::string GAuth::SaslServerBasicImp::apply( const std::string & response , boo
 		m_id = id ;
 		done = true ;
 	}
-	else if( m_first_apply ) // LOGIN username
+	else if( m_mechanism == "XOAUTH2" && first_apply ) // for testing
+	{
+		if( G::Test::enabled("sasl-server-oauth-pass") )
+		{
+			m_id = "test" ;
+			m_authenticated = true ;
+			done = true ;
+		}
+		else
+		{
+			next_challenge = "just testing" ;
+			done = false ;
+		}
+	}
+	else if( m_mechanism == "XOAUTH2" ) // for testing
+	{
+		m_authenticated = false ;
+		done = true ;
+	}
+	else if( first_apply ) // LOGIN username
 	{
 		// LOGIN uses two prompts; the first response is the username and the second is the password
 		G_ASSERT( m_mechanism == "LOGIN" ) ;
-		m_first_apply = false ;
 		id = m_id = response ;
 		if( !m_id.empty() )
 			next_challenge = login_challenge_2 ;
@@ -187,7 +217,6 @@ std::string GAuth::SaslServerBasicImp::apply( const std::string & response , boo
 	else // LOGIN password
 	{
 		G_ASSERT( m_mechanism == "LOGIN" ) ;
-		m_first_apply = true ;
 		id = m_id ;
 		secret = m_secrets.serverSecret( "plain" , m_id ) ;
 		m_authenticated = secret.valid() && !response.empty() && response == secret.key() ;
@@ -298,7 +327,8 @@ bool GAuth::SaslServerBasic::init( const std::string & mechanism )
 
 bool GAuth::SaslServerBasic::mustChallenge() const
 {
-	return m_imp->mechanism() == "CRAM-MD5" || m_imp->mechanism() == "APOP" ;
+	std::string m = G::Str::upper( m_imp->mechanism() ) ; // just in case
+	return m != "PLAIN" && m != "LOGIN" ;
 }
 
 std::string GAuth::SaslServerBasic::initialChallenge() const

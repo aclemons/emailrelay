@@ -42,11 +42,18 @@ namespace
 	struct DigesterAdaptor
 	{
 		explicit DigesterAdaptor( const std::string & name ) :
-			m_digester(lib().digester(name))
+			m_name(name) ,
+			m_digester(lib().digester(name)) ,
+			m_used(false)
 		{
 		}
 		std::string operator()( const std::string & data_1 , const std::string & data_2 )
 		{
+			// adaptor must be stateless
+			if( m_used )
+				m_digester = GSsl::Digester( lib().digester(m_name) ) ;
+			m_used = true ;
+
 			m_digester.add( data_1 ) ;
 			m_digester.add( data_2 ) ;
 			return m_digester.value() ;
@@ -55,7 +62,9 @@ namespace
 		{
 			return m_digester.blocksize() ;
 		}
+		std::string m_name ;
 		GSsl::Digester m_digester ;
+		bool m_used ;
 	} ;
 	struct PostDigesterAdaptor
 	{
@@ -84,8 +93,9 @@ std::string GAuth::Cram::response( const std::string & hash_type , bool as_hmac 
 {
 	try
 	{
-		G_LOG_GROUP( "cram" , "GAuth::Cram::response: [" << hash_type << "][" << as_hmac << "]"
-			"[" << secret.key() << "][" << secret.maskType() << "][" << challenge << "][" << id_prefix << "]"
+		G_DEBUG( "GAuth::Cram::response: [" << hash_type << "][" << as_hmac << "]"
+			"[" << G::Str::printable(secret.key()) << "][" << secret.maskType() << "][" << challenge << "]"
+			"[" << G::Str::printable(id_prefix) << "]"
 			"[" << responseImp(hash_type,as_hmac,secret,challenge) << "]" ) ;
 
 		return id_prefix + " " + responseImp(hash_type,as_hmac,secret,challenge) ;
@@ -103,11 +113,12 @@ bool GAuth::Cram::validate( const std::string & hash_type , bool as_hmac ,
 {
 	try
 	{
-		G_LOG_GROUP( "cram" , "GAuth::Cram::validate: [" << hash_type << "][" << as_hmac << "]"
-				"[" << secret.key() << "][" << secret.maskType() << "][" << challenge << "][" << response_in << "]"
+		G_DEBUG( "GAuth::Cram::validate: [" << hash_type << "][" << as_hmac << "]"
+				"[" << G::Str::printable(secret.key()) << "][" << secret.maskType() << "][" << challenge << "][" << response_in << "]"
 				"[" << responseImp(hash_type,as_hmac,secret,challenge) << "]" ) ;
 
-		return responseImp(hash_type,as_hmac,secret,challenge) == G::Str::tail(response_in," ") ;
+		std::string expectation = G::Str::tail( response_in , " " ) ;
+		return !expectation.empty() && responseImp(hash_type,as_hmac,secret,challenge) == expectation ;
 	}
 	catch( std::exception & e )
 	{
@@ -127,10 +138,8 @@ std::string GAuth::Cram::responseImp( const std::string & mechanism_hash_type , 
 	G_DEBUG( "GAuth::Cram::responseImp: mechanism-hash=[" << mechanism_hash_type << "] secret-hash=[" << secret.maskType() << "] as-hmac=" << as_hmac ) ;
 	if( !as_hmac )
 	{
-#if 0
 		if( secret.masked() )
 			throw BadType( secret.maskType() ) ;
-#endif
 
 		if( mechanism_hash_type == "MD5" )
 		{
@@ -185,7 +194,6 @@ G::StringArray GAuth::Cram::hashTypes( const std::string & prefix , bool require
 	G_DEBUG( "GAuth::Cram::hashTypes: tls library hash types: [" << G::Str::join(",",result) << "] (" << (require_state?1:0) << ")" ) ;
 
 	// always include MD5 since we use G::Md5 code
-	//
 	if( std::find(result.begin(),result.end(),"MD5") == result.end() )
 		result.push_back( "MD5" ) ;
 

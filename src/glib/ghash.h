@@ -105,7 +105,7 @@ std::string G::Hash::keyx( Fn2 fn , size_t blocksize , std::string k )
 	if( k.length() > blocksize )
 		k = fn( k , std::string() ) ;
 	if( k.length() < blocksize )
-		k.append( std::string(blocksize-k.length(),'\0') ) ;
+		k.append( blocksize-k.length() , '\0' ) ;
 	return k ;
 }
 
@@ -113,7 +113,7 @@ template <typename Fn2>
 inline
 std::string G::Hash::hmac( Fn2 fn , size_t blocksize , const std::string & k , const std::string & input )
 {
-	std::string kx = keyx( fn , blocksize , k ) ;
+	const std::string kx = keyx( fn , blocksize , k ) ;
 	return fn( xor_(kx,opad(blocksize)) , fn(xor_(kx,ipad(blocksize)),input) ) ;
 }
 

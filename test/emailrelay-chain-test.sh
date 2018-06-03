@@ -308,8 +308,8 @@ CreateAuth()
 	chmod 777 "${cfg_base_dir}"
 
 	# encrypted version "carols_password" provided by emailrelay-passwd
-	dotted_key="2168297042.2818429713.1297528852.2023008371.2713943401.1997919265.1829599518.235099638"
-	base64_key="OlKWPYER0/2nFLhWTXOolHhpfcOhIdQVdx55DW32VQMO"
+	dotted_key="4001433821.398427562.3259251711.3361837303.2461660504.3615007459.2556666290.2918439953"
+	base64_key="3QiB7qqFvxf/O0TC95BhyFj1uZLjonjXsqFjmBHc860="
 
 	file="${cfg_base_dir}/server.auth"
 	echo "# server.auth" > ${file}

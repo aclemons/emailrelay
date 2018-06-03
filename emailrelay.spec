@@ -58,6 +58,7 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %config /etc/pam.d/emailrelay
 /usr/lib/emailrelay/emailrelay-filter-copy
 /usr/lib/emailrelay/examples/emailrelay
+/usr/lib/emailrelay/examples/emailrelay-bcc-check.pl
 /usr/lib/emailrelay/examples/emailrelay-deliver.sh
 /usr/lib/emailrelay/examples/emailrelay-multicast.sh
 /usr/lib/emailrelay/examples/emailrelay-notify.sh

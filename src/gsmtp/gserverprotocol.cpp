@@ -185,7 +185,8 @@ void GSmtp::ServerProtocol::doContent( EventData event_data , bool & ok )
 	else
 		ok = m_message.addText( event_data.first , event_data.second ) ;
 
-	if( !ok && m_config.disconnect_on_overflow )
+	// moves to discard state if not ok - discard state throws if so configured
+	if( !ok && m_config.disconnect_on_max_size )
 		sendTooBig( true ) ;
 }
 
@@ -239,7 +240,7 @@ void GSmtp::ServerProtocol::doQuit( EventData , bool & )
 
 void GSmtp::ServerProtocol::doDiscard( EventData , bool & )
 {
-	if( m_config.disconnect_on_overflow )
+	if( m_config.disconnect_on_max_size )
 	{
 		reset() ;
 		sendClosing() ; // never deletes this
@@ -263,7 +264,7 @@ void GSmtp::ServerProtocol::doNothing( EventData , bool & )
 void GSmtp::ServerProtocol::doDiscarded( EventData , bool & )
 {
 	reset() ;
-	sendTooBig( false ) ;
+	sendTooBig() ;
 }
 
 void GSmtp::ServerProtocol::doExpn( EventData , bool & )
@@ -281,7 +282,7 @@ void GSmtp::ServerProtocol::doVrfy( EventData event_data , bool & predicate )
 	std::string line( event_data.first , event_data.second ) ;
 	if( m_config.with_vrfy )
 	{
-		std::string to = parseToParameter( line ) ;
+		std::string to = parseRcptParameter( line ) ;
 		if( to.empty() )
 		{
 			predicate = false ;
@@ -333,7 +334,7 @@ void GSmtp::ServerProtocol::doVrfyReply( EventData event_data , bool & )
 		sendNotVerified( status.response , status.temporary ) ; // 550 or 450
 }
 
-std::string GSmtp::ServerProtocol::parseToParameter( const std::string & line ) const
+std::string GSmtp::ServerProtocol::parseRcptParameter( const std::string & line ) const
 {
 	std::string to ;
 	size_t pos = line.find_first_of( " \t" ) ;
@@ -491,6 +492,7 @@ void GSmtp::ServerProtocol::sendChallenge( const std::string & challenge )
 
 void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 {
+	std::string line( event_data.first , event_data.second ) ;
 	if( !m_session_authenticated && m_sasl->active() && !m_sasl->trusted(m_peer_address) )
 	{
 		predicate = false ;
@@ -501,12 +503,16 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 		predicate = false ;
 		sendEncryptionRequired() ;
 	}
+	else if( m_config.max_size && parseMailSize(line) > m_config.max_size )
+	{
+		predicate = false ;
+		sendTooBig() ;
+	}
 	else
 	{
 		m_message.clear() ;
-		std::string line( event_data.first , event_data.second ) ;
-		std::pair<std::string,std::string> from_pair = parseFrom( line ) ;
-		bool ok = from_pair.second.empty() && m_message.setFrom( from_pair.first , parseFromAuth(line) ) ;
+		std::pair<std::string,std::string> from_pair = parseMailFrom( line ) ;
+		bool ok = from_pair.second.empty() && m_message.setFrom( from_pair.first , parseMailAuth(line) ) ;
 		predicate = ok ;
 		if( ok )
 		{
@@ -521,7 +527,7 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 
 void GSmtp::ServerProtocol::doRcpt( EventData event_data , bool & predicate )
 {
-	std::pair<std::string,std::string> to_pair = parseTo( std::string(event_data.first,event_data.second) ) ;
+	std::pair<std::string,std::string> to_pair = parseRcptTo( std::string(event_data.first,event_data.second) ) ;
 	std::string reason = to_pair.second ;
 	bool ok = reason.empty() ;
 
@@ -653,22 +659,22 @@ void GSmtp::ServerProtocol::sendClosing()
 
 void GSmtp::ServerProtocol::sendVerified( const std::string & user )
 {
-	send( std::string("250 ") + user ) ;
+	send( "250 " + user ) ;
 }
 
 void GSmtp::ServerProtocol::sendNotVerified( const std::string & response , bool temporary )
 {
-	send( std::string() + (temporary?"450":"550") + " " + response ) ;
+	send( (temporary?"450":"550") + std::string(1U,' ') + response ) ;
 }
 
 void GSmtp::ServerProtocol::sendWillAccept( const std::string & user )
 {
-	send( std::string("252 cannot verify but will accept: ") + G::Str::printable(user) ) ;
+	send( "252 cannot verify but will accept: " + G::Str::printable(user) ) ;
 }
 
 void GSmtp::ServerProtocol::sendUnrecognised( const std::string & line )
 {
-	send( "500 command unrecognized: \"" + G::Str::printable(line) + std::string("\"") ) ;
+	send( "500 command unrecognized: \"" + G::Str::printable(line) + std::string(1U,'\"') ) ;
 	badClientEvent() ;
 }
 
@@ -680,12 +686,12 @@ void GSmtp::ServerProtocol::sendNotImplemented()
 void GSmtp::ServerProtocol::sendAuthRequired()
 {
 	std::string more_help = authenticationRequiresEncryption() && !m_secure ? ": use starttls" : "" ;
-	send( std::string() + "530 authentication required" + more_help ) ;
+	send( "530 authentication required" + more_help ) ;
 }
 
 void GSmtp::ServerProtocol::sendEncryptionRequired()
 {
-	send( std::string() + "530 encryption required: use starttls" ) ;
+	send( "530 encryption required: use starttls" ) ;
 }
 
 void GSmtp::ServerProtocol::sendNoRecipients()
@@ -695,7 +701,9 @@ void GSmtp::ServerProtocol::sendNoRecipients()
 
 void GSmtp::ServerProtocol::sendTooBig( bool disconnecting )
 {
-	send( disconnecting ? "554 message too big, disconnecting" : "554 message too big" ) ;
+	std::string s = "552 message exceeds fixed maximum message size" ;
+	if( disconnecting ) s.append( ", disconnecting" ) ;
+	send( s ) ;
 }
 
 void GSmtp::ServerProtocol::sendDataReply()
@@ -728,7 +736,7 @@ void GSmtp::ServerProtocol::sendRcptReply()
 
 void GSmtp::ServerProtocol::sendBadFrom( std::string reason )
 {
-	std::string msg("553 mailbox name not allowed") ;
+	std::string msg = "553 mailbox name not allowed" ;
 	if( ! reason.empty() )
 	{
 		msg.append( ": " ) ;
@@ -739,13 +747,16 @@ void GSmtp::ServerProtocol::sendBadFrom( std::string reason )
 
 void GSmtp::ServerProtocol::sendBadTo( const std::string & text , bool temporary )
 {
-	send( std::string() + (temporary?"450":"550") + std::string(text.empty()?"":" ") + text ) ;
+	send( (temporary?"450":"550") + std::string(text.empty()?"":" ") + text ) ;
 }
 
 void GSmtp::ServerProtocol::sendEhloReply()
 {
 	std::ostringstream ss ;
 		ss << "250-" << m_text.hello(m_session_peer_name) << crlf() ;
+
+	if( m_config.max_size != 0U )
+		ss << "250-SIZE " << m_config.max_size << crlf() ;
 
 	if( m_sasl->active() && !( authenticationRequiresEncryption() && !m_secure ) )
 		ss << "250-AUTH " << m_sasl->mechanisms() << crlf() ;
@@ -783,7 +794,21 @@ void GSmtp::ServerProtocol::send( std::string line , bool go_secure )
 	m_sender.protocolSend( line , go_secure ) ;
 }
 
-std::string GSmtp::ServerProtocol::parseFromAuth( const std::string & line ) const
+size_t GSmtp::ServerProtocol::parseMailSize( const std::string & line ) const
+{
+	std::string parameter = parseMailParameter( line , "SIZE=" ) ;
+	if( parameter.empty() || !G::Str::isULong(parameter) )
+		return 0U ;
+	else
+		return static_cast<size_t>( G::Str::toULong(parameter,G::Str::Limited()) ) ;
+}
+
+std::string GSmtp::ServerProtocol::parseMailAuth( const std::string & line ) const
+{
+	return parseMailParameter( line , "AUTH=" ) ;
+}
+
+std::string GSmtp::ServerProtocol::parseMailParameter( const std::string & line , const std::string & key ) const
 {
 	std::string result ;
 	size_t end = line.find( '>' ) ;
@@ -792,10 +817,10 @@ std::string GSmtp::ServerProtocol::parseFromAuth( const std::string & line ) con
 		G::StringArray parameters = G::Str::splitIntoTokens( line.substr(end) , " " ) ;
 		for( G::StringArray::iterator p = parameters.begin() ; p != parameters.end() ; ++p )
 		{
-			size_t pos = G::Str::upper(*p).find("AUTH=") ;
-			if( pos == 0U && (*p).length() > 5U )
+			size_t pos = G::Str::upper(*p).find( key ) ;
+			if( pos == 0U && (*p).length() > key.size() )
 			{
-				result = G::Xtext::encode( G::Xtext::decode( (*p).substr(5U) ) ) ; // ensure valid xtext
+				result = G::Xtext::encode( G::Xtext::decode( (*p).substr(key.size()) ) ) ; // ensure valid xtext
 				break ;
 			}
 		}
@@ -803,20 +828,20 @@ std::string GSmtp::ServerProtocol::parseFromAuth( const std::string & line ) con
 	return result ;
 }
 
-std::pair<std::string,std::string> GSmtp::ServerProtocol::parseFrom( const std::string & line ) const
+std::pair<std::string,std::string> GSmtp::ServerProtocol::parseMailFrom( const std::string & line ) const
 {
 	// eg. MAIL FROM:<me@localhost>
-	return parse( line ) ;
+	return parseAddress( line ) ;
 }
 
-std::pair<std::string,std::string> GSmtp::ServerProtocol::parseTo( const std::string & line ) const
+std::pair<std::string,std::string> GSmtp::ServerProtocol::parseRcptTo( const std::string & line ) const
 {
 	// eg. RCPT TO:<@first.net,@second.net:you@last.net>
 	// eg. RCPT TO:<Postmaster>
-	return parse( line ) ;
+	return parseAddress( line ) ;
 }
 
-std::pair<std::string,std::string> GSmtp::ServerProtocol::parse( const std::string & line ) const
+std::pair<std::string,std::string> GSmtp::ServerProtocol::parseAddress( const std::string & line ) const
 {
 	size_t start = line.find( '<' ) ;
 	size_t end = line.find( '>' ) ;
@@ -933,13 +958,14 @@ GSmtp::ServerProtocol::Sender::~Sender()
 // ===
 
 GSmtp::ServerProtocol::Config::Config( bool with_vrfy_ , unsigned int filter_timeout_ ,
-	bool authentication_requires_encryption_ , bool mail_requires_encryption_ ,
+	size_t max_size_ , bool authentication_requires_encryption_ , bool mail_requires_encryption_ ,
 	bool advertise_tls_if_possible_ ) :
 		with_vrfy(with_vrfy_) ,
 		filter_timeout(filter_timeout_) ,
+		max_size(max_size_) ,
 		authentication_requires_encryption(authentication_requires_encryption_) ,
 		mail_requires_encryption(mail_requires_encryption_) ,
-		disconnect_on_overflow(true) , // (too harsh?)
+		disconnect_on_max_size(false) ,
 		advertise_tls_if_possible(advertise_tls_if_possible_)
 {
 }

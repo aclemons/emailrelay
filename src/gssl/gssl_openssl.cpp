@@ -217,7 +217,9 @@ std::string GSsl::OpenSSL::DigesterImp::value()
 	std::vector<unsigned char> output( EVP_MAX_MD_SIZE ) ;
 	unsigned int output_size = 0 ;
 	EVP_DigestFinal_ex( m_evp_ctx , &output[0] , &output_size ) ;
-	return std::string( reinterpret_cast<char*>(&output[0]) , static_cast<size_t>(output_size) ) ;
+	char * p = reinterpret_cast<char*>(&output[0]) ;
+	size_t n = static_cast<size_t>(output_size) ;
+	return std::string( p , n ) ;
 }
 
 // ==

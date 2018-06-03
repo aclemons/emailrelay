@@ -85,11 +85,12 @@ public:
 	{
 		bool with_vrfy ;
 		unsigned int filter_timeout ;
+		size_t max_size ;
 		bool authentication_requires_encryption ;
 		bool mail_requires_encryption ;
-		bool disconnect_on_overflow ;
+		bool disconnect_on_max_size ;
 		bool advertise_tls_if_possible ;
-		Config( bool with_vrfy , unsigned int filter_timeout ,
+		Config( bool with_vrfy , unsigned int filter_timeout , size_t max_size ,
 			bool authentication_requires_encryption ,
 			bool mail_requires_encryption ,
 			bool advertise_tls_if_possible ) ;
@@ -228,7 +229,7 @@ private:
 	void doSecure( EventData , bool & ) ;
 	void verifyDone( std::string , VerifierStatus status ) ;
 	void sendBadFrom( std::string ) ;
-	void sendTooBig( bool disconnecting ) ;
+	void sendTooBig( bool disconnecting = false ) ;
 	void sendChallenge( const std::string & ) ;
 	void sendBadTo( const std::string & , bool ) ;
 	void sendOutOfSequence( const std::string & ) ;
@@ -252,11 +253,13 @@ private:
 	void sendWillAccept( const std::string & ) ;
 	void sendAuthDone( bool ok ) ;
 	void sendOk() ;
-	std::pair<std::string,std::string> parse( const std::string & ) const ;
-	std::pair<std::string,std::string> parseFrom( const std::string & ) const ;
-	std::string parseFromAuth( const std::string & ) const ;
-	std::pair<std::string,std::string> parseTo( const std::string & ) const ;
-	std::string parseToParameter( const std::string & ) const ;
+	std::pair<std::string,std::string> parseAddress( const std::string & ) const ;
+	std::pair<std::string,std::string> parseMailFrom( const std::string & ) const ;
+	std::string parseMailParameter( const std::string & , const std::string & ) const ;
+	size_t parseMailSize( const std::string & ) const ;
+	std::string parseMailAuth( const std::string & ) const ;
+	std::pair<std::string,std::string> parseRcptTo( const std::string & ) const ;
+	std::string parseRcptParameter( const std::string & ) const ;
 	std::string parsePeerName( const std::string & ) const ;
 	void verify( const std::string & , const std::string & ) ;
 

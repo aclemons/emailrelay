@@ -515,6 +515,7 @@ GSmtp::ServerProtocol::Config Main::Run::serverProtocolConfig() const
 		GSmtp::ServerProtocol::Config(
 			!configuration().anonymous() , // (with-vrfy)
 			configuration().filterTimeout() , // (filter-timeout)
+			configuration().maxSize() , // (max-size)
 			configuration().serverTlsRequired() , // (authentication-requires-encryption)
 			configuration().serverTlsRequired() , // (mail-requires-encryption)
 			configuration().serverTls() ) ; // (advertise-tls-if-possible)

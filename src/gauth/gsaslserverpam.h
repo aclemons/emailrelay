@@ -50,7 +50,6 @@ namespace GAuth
 class GAuth::SaslServerPam : public SaslServer
 {
 public:
-
 	SaslServerPam( const SaslServerSecrets & , bool allow_apop ) ;
 		///< Constructor.
 
@@ -58,41 +57,41 @@ public:
 		///< Destructor.
 
 	virtual bool requiresEncryption() const override ;
-		///< Final override from GAuth::SaslServer.
+		///< Override from GAuth::SaslServer.
 
 	virtual bool active() const override ;
-		///< Final override from GAuth::SaslServer.
+		///< Override from GAuth::SaslServer.
 
 	virtual std::string mechanisms( char sep = ' ' ) const override ;
-		///< Final override from GAuth::SaslServer.
+		///< Override from GAuth::SaslServer.
 
 	virtual bool init( const std::string & mechanism ) override ;
-		///< Final override from GAuth::SaslServer.
+		///< Override from GAuth::SaslServer.
 
 	virtual std::string mechanism() const override ;
-		///< Final override from GAuth::SaslServer.
+		///< Override from GAuth::SaslServer.
 
 	virtual bool mustChallenge() const override ;
-		///< Final override from GAuth::SaslServer.
+		///< Override from GAuth::SaslServer.
 
 	virtual std::string initialChallenge() const override ;
-		///< Final override from GAuth::SaslServer.
+		///< Override from GAuth::SaslServer.
 
 	virtual std::string apply( const std::string & response , bool & done ) override ;
-		///< Final override from GAuth::SaslServer.
+		///< Override from GAuth::SaslServer.
 
 	virtual bool authenticated() const override ;
-		///< Final override from GAuth::SaslServer.
+		///< Override from GAuth::SaslServer.
 
 	virtual std::string id() const override ;
-		///< Final override from GAuth::SaslServer.
+		///< Override from GAuth::SaslServer.
 
 	virtual bool trusted( const GNet::Address & ) const override ;
-		///< Final override from GAuth::SaslServer.
+		///< Override from GAuth::SaslServer.
 
 private:
-	SaslServerPam( const SaslServerPam & ) ; // not implemented
-	void operator=( const SaslServerPam & ) ; // not implemented
+	SaslServerPam( const SaslServerPam & ) ;
+	void operator=( const SaslServerPam & ) ;
 
 private:
 	SaslServerPamImp * m_imp ;

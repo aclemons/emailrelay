@@ -600,6 +600,7 @@ sub install_core
 		__arch__/src/main/Release/emailrelay-filter-copy.exe .
 		__arch__/src/main/Release/emailrelay-passwd.exe .
 		__arch__/src/main/Release/emailrelay-textmode.exe .
+		bin/emailrelay-bcc-check.pl examples
 		bin/emailrelay-service-install.js .
 		bin/emailrelay-edit-content.js examples
 		bin/emailrelay-edit-envelope.js examples

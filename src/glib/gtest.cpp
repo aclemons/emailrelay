@@ -39,10 +39,14 @@ void G::Test::set( const std::string & s )
 bool G::Test::enabled( const char * name )
 {
 	if( !done )
+	{
 		spec = G::Environment::get("G_TEST",std::string()) ;
+		if( !spec.empty() )
+			spec = "," + spec + "," ;
+	}
 	done = true ;
 
-	bool result = spec.empty() ? false : ( spec.find(name) != std::string::npos ) ;
+	bool result = spec.empty() ? false : ( spec.find(","+std::string(name)+",") != std::string::npos ) ;
 	if( result )
 	{
 		static std::set<std::string> warned ;
