@@ -41,7 +41,7 @@ public:
 		///< A factory function for a SaslServer.
 
 private:
-	SaslServerFactory() ; // not implemented
+	SaslServerFactory() ;
 } ;
 
 #endif

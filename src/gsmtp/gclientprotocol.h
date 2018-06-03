@@ -252,6 +252,13 @@ protected:
 		///< Override from GNet::TimerBase.
 
 private:
+	struct AuthError : public SmtpError
+	{
+		AuthError( const GAuth::SaslClient & , const ClientProtocolReply & ) ;
+		std::string str() const ;
+	} ;
+
+private:
 	void send( const char * ) ;
 	void send( const char * , const std::string & ) ;
 	void send( const char * , const std::string & , const char * ) ;

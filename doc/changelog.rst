@@ -26,6 +26,7 @@ E-MailRelay Change Log
 * Forwarding events are queued up if the forwarding client is still busy from last time.
 * The bind address for outgoing connections is no longer taken from first unqualified *--interface* address [bug-id #27].
 * The SMTP client protocol tries more than one authentication mechanism.
+* Some support for XOAUTH2 client-side authentication.
 * Client protocol sends QUIT with a socket shutdown().
 * The Windows commdlg list-view widget is used for the server status pages.
 * The Windows connection-lookup feature is withdrawn (\ *--peer-lookup*\ ).

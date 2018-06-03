@@ -59,9 +59,8 @@ GAuth::Secret::Secret( const std::string & secret , const std::string & type ,
 	}
 	else
 	{
-		// for future flexibility use a colon separator and ignore the first field
 		G_ASSERT( G::Base64::valid(secret) ) ;
-		m_key = G::Str::tail( G::Base64::decode(secret) , ":" ) ;
+		m_key = G::Base64::decode( secret ) ;
 		m_mask_type = type ;
 	}
 }
@@ -78,12 +77,8 @@ std::string GAuth::Secret::check( const std::string & secret , const std::string
 		return "invalid plain secret" ;
 	if( type == "md5" && !( isDotted(secret) || G::Base64::valid(secret) ) )
 		return "invalid encoding of md5 secret" ;
-	if( type == "md5" && !isDotted(secret) && G::Base64::decode(secret).find(':') != 0U )
-		return "invalid md5 secret: no separator in base64 decoding" ;
 	if( type != "md5" && type != "plain" && !G::Base64::valid(secret) )
 		return "invalid base64 encoding of secret" ;
-	if( type != "md5" && type != "plain" && G::Base64::decode(secret).find(':') != 0U )
-		return "invalid md5 secret: no separator in base64 decoding" ;
 	return std::string() ;
 }
 

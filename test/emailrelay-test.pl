@@ -45,6 +45,9 @@ use strict ;
 die "emailrelay-test.pl: dont use msys perl" if $^O eq "msys" ;
 use Carp ;
 use FileHandle ;
+use Getopt::Std ;
+use File::Basename ;
+use lib File::Basename::dirname($0) ;
 use Server ;
 use TestServer ;
 use Helper ;
@@ -57,7 +60,6 @@ use Scanner ;
 use Verifier ;
 use Openssl ;
 use Filter ;
-use Getopt::Std ;
 
 $| = 1 ;
 
@@ -270,7 +272,7 @@ sub testPasswd
 	my $fh = new FileHandle( "echo foobar | $exe |" ) ;
 	my $result = <$fh> ;
 	chomp $result ;
-	my $base64 = "Ot6SDdGj23eWjdEuKICgN8Nj9z/Vx9IV3ISz9VvmnaUB" ;
+	my $base64 = "3pIN0aPbd5aN0S4ogKA3w2P3P9XH0hXchLP1W+adpQE=" ;
 	my $ok = ( $result eq $base64 ) ;
 	Check::that( $ok , "password digest generation failed" ) ;
 }
@@ -813,7 +815,7 @@ sub testServerSizeLimit
 	Check::that( $error ne "" , "large message submission did not fail as it should have" ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 0 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope*" , 0 ) ;
-	Check::fileContains( $server->stderr() , "554 message too big" ) ; # requires verbose
+	Check::fileContains( $server->stderr() , "552 message exceeds fixed maximum message size" ) ;
 
 	# tear down
 	$server->kill() ;
@@ -1582,7 +1584,7 @@ sub testClientGivenUnknownMechanisms
 
 	# test that protocol fails and one message fails
 	Check::ok( $emailrelay->run( \%args ) ) ;
-	System::waitForFileLine( $emailrelay->stderr() , "cannot do authentication mandated by " ) ;
+	System::waitForFileLine( $emailrelay->stderr() , "cannot do authentication required by " ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 1 ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope.bad", 1 ) ;
 

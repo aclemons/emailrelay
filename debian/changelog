@@ -20,13 +20,14 @@ emailrelay (2.0) unstable; urgency=low
   * Forwarding events are queued up if the forwarding client is still busy from last time.
   * The bind address for outgoing connections is no longer taken from first unqualified "--interface" address [bug-id #27].
   * The SMTP client protocol tries more than one authentication mechanism.
+  * Some support for XOAUTH2 client-side authentication.
   * Client protocol sends QUIT with a socket shutdown().
   * The Windows commdlg list-view widget is used for the server status pages.
   * The Windows connection-lookup feature is withdrawn ("--peer-lookup").
   * Several build-time configure options like "--disable-pop" are withdrawn.
   * C++ 2011 is preferred, and required for multi-threading.
   * Support for very old versions of Windows is dropped.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sat, 26 May 2018 20:53:34 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun,  3 Jun 2018 21:48:47 +0000
 
 emailrelay (1.9.2) unstable; urgency=low
   * Fixed a leak in the event-loop garbage collection.
@@ -42,7 +43,7 @@ emailrelay (1.9.2) unstable; urgency=low
   * Less verbose logging of "no more messages to send".
   * Qt4 or Qt5 selected by the "configure" script.
   * Improved the RPM spec file.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sat, 26 May 2018 20:53:34 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun,  3 Jun 2018 21:48:47 +0000
 
 emailrelay (1.9.1) unstable; urgency=low
   * Updated OpenSSL from 1.0.1e to 1.0.1g in the Windows build.

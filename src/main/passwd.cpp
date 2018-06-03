@@ -144,12 +144,12 @@ int main( int argc , char * argv [] )
 		}
 		else if( hash_function == "MD5" && !tls_lib )
 		{
-			result = G::Base64::encode( ":" + G::Hash::mask(G::Md5::predigest,G::Md5::digest2,G::Md5::blocksize(),password) ) ;
+			result = G::Base64::encode( G::Hash::mask(G::Md5::predigest,G::Md5::digest2,G::Md5::blocksize(),password) ) ;
 		}
 		else
 		{
 			imp::hash_function = hash_function ;
-			result = G::Base64::encode( ":" + G::Hash::mask(imp::predigest,imp::digest2,imp::blocksize(),password) ) ;
+			result = G::Base64::encode( G::Hash::mask(imp::predigest,imp::digest2,imp::blocksize(),password) ) ;
 		}
 
 		std::cout << result << std::endl ;

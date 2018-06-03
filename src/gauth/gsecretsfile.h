@@ -39,6 +39,7 @@ namespace GAuth
 
 /// \class GAuth::SecretsFile
 /// A class to read authentication secrets from file, used by GAuth::Secrets.
+/// Updates to the file are detected automatically.
 ///
 class GAuth::SecretsFile
 {

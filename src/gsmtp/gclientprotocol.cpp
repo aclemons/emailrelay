@@ -195,7 +195,7 @@ void GSmtp::ClientProtocol::sendMailCore()
 	{
 		mail_from_tail.append( " BODY=8BITMIME" ) ;
 	}
-	if( m_authenticated_with_server && m_message_mail_from_auth.empty() && m_sasl.get() && !m_sasl->id().empty() )
+	if( m_authenticated_with_server && m_message_mail_from_auth.empty() && !m_sasl->id().empty() )
 	{
 		// default policy is to use the session authentication id, although
 		// this is not strictly conforming with RFC-2554
@@ -223,49 +223,52 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	bool protocol_done = false ;
 	if( m_state == sInit && is_start_event )
 	{
-		// wait for 220 greeting
+		// got start-event -- wait for 220 greeting
 		m_state = sStarted ;
 		if( m_ready_timeout != 0U )
 			startTimer( m_ready_timeout ) ;
 	}
+	else if( m_state == sInit && reply.is(Reply::ServiceReady_220) )
+	{
+		// got greeting before start-event
+		G_DEBUG( "GSmtp::ClientProtocol::applyEvent: init -> ready" ) ;
+		m_state = sServiceReady ;
+	}
 	else if( m_state == sServiceReady && is_start_event )
 	{
-		// already got greeting
+		// got start-event after greeting
+		G_DEBUG( "GSmtp::ClientProtocol::applyEvent: ready -> sent-ehlo" ) ;
+		m_state = sSentEhlo ;
+		sendEhlo() ;
+	}
+	else if( m_state == sStarted && reply.is(Reply::ServiceReady_220) )
+	{
+		// got greeting after start-event
+		G_DEBUG( "GSmtp::ClientProtocol::applyEvent: start -> sent-ehlo" ) ;
 		m_state = sSentEhlo ;
 		sendEhlo() ;
 	}
 	else if( m_state == sMessageDone && is_start_event )
 	{
+		// new message within the current session, start the client filter
 		m_state = sFiltering ;
 		startFiltering() ;
-	}
-	else if( m_state == sInit && reply.is(Reply::ServiceReady_220) )
-	{
-		G_DEBUG( "GSmtp::ClientProtocol::applyEvent: init -> ready" ) ;
-		m_state = sServiceReady ;
-	}
-	else if( m_state == sStarted && reply.is(Reply::ServiceReady_220) )
-	{
-		G_DEBUG( "GSmtp::ClientProtocol::applyEvent: start -> sent-ehlo" ) ;
-		m_state = sSentEhlo ;
-		sendEhlo() ;
 	}
 	else if( m_state == sSentEhlo && (
 		reply.is(Reply::SyntaxError_500) ||
 		reply.is(Reply::SyntaxError_501) ||
 		reply.is(Reply::NotImplemented_502) ) )
 	{
-		// it didn't like EHLO so fall back to HELO
+		// server didn't like EHLO so fall back to HELO
 		if( m_must_use_tls && !m_in_secure_tunnel ) throw SmtpError( "tls is mandated but the server cannot do esmtp" ) ;
 		m_state = sSentHelo ;
 		sendHelo() ;
 	}
 	else if( ( m_state == sSentEhlo || m_state == sSentHelo || m_state == sSentTlsEhlo ) && reply.is(Reply::Ok_250) )
 	{
-		G_ASSERT( m_sasl.get() != nullptr ) ;
+		// hello accepted, start a new session
 		G_DEBUG( "GSmtp::ClientProtocol::applyEvent: ehlo/rset reply \"" << G::Str::printable(reply.text()) << "\"" ) ;
-
-		if( m_state == sSentEhlo || m_state == sSentTlsEhlo )
+		if( m_state == sSentEhlo || m_state == sSentTlsEhlo ) // esmtp
 		{
 			m_server_has_starttls = m_state == sSentEhlo && reply.textContains("\nSTARTTLS") ;
 			m_server_has_8bitmime = reply.textContains("\n8BITMIME");
@@ -297,21 +300,18 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		}
 		else if( m_server_has_auth && m_sasl->active() && m_auth_mechanism.empty() )
 		{
-			std::ostringstream ss ;
-			ss << "cannot do authentication mandated by remote server: add a client secret" ;
-			SmtpError error( ss.str() ) ;
+			SmtpError error( "cannot do authentication required by remote server: add a client secret" ) ;
 			G_WARNING( "GSmtp::ClientProtocol::applyEvent: " << error.what() ) ;
 			throw error ;
 		}
 		else if( m_server_has_auth && m_sasl->active() )
 		{
 			m_state = sAuth1 ;
-			send( "AUTH " , m_auth_mechanism ) ;
+			send( "AUTH " , m_auth_mechanism ) ; // TODO include client initial response in auth command for client-first mechanisms
 		}
 		else if( !m_server_has_auth && m_sasl->active() && m_must_authenticate )
 		{
-			// (this makes sense if we need to propagate messages' authentication credentials)
-			SmtpError error( "authentication not supported by the remote smtp server" ) ;
+			SmtpError error( "authentication is not supported by the remote smtp server" ) ;
 			G_WARNING( "GSmtp::ClientProtocol::applyEvent: " << error.what() ) ;
 			throw error ;
 		}
@@ -323,112 +323,128 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	}
 	else if( m_state == sStartTls && reply.is(Reply::ServiceReady_220) )
 	{
-		m_sender.protocolSend( std::string() , 0U , true ) ; // go secure
+		// greeting for new secure session -- start tls handshake
+		m_sender.protocolSend( std::string() , 0U , true ) ;
 	}
 	else if( m_state == sStartTls && reply.is(Reply::NotAvailable_454) )
 	{
+		// starttls rejected
 		throw TlsError( reply.errorText() ) ;
 	}
 	else if( m_state == sStartTls && reply.is(Reply::Internal_secure) )
 	{
+		// tls session established -- send ehlo
 		m_state = sSentTlsEhlo ;
 		sendEhlo() ;
 	}
 	else if( m_state == sAuth1 && reply.is(Reply::Challenge_334) && G::Base64::valid(reply.text()) )
 	{
-		bool done = true ;
-		bool sensitive = false ;
+		// authentication challenge -- send the response
 		std::string challenge = G::Base64::decode( reply.text() ) ;
-		std::string rsp = m_sasl->response( m_auth_mechanism , challenge , done , sensitive ) ;
-		if( rsp.empty() )
+		GAuth::SaslClient::Response rsp = m_sasl->response( m_auth_mechanism , challenge ) ;
+		if( rsp.error )
 		{
 			m_state = sAuth2 ;
 			send( "*" ) ; // ie. cancel authentication
 		}
 		else
 		{
-			m_state = done ? sAuth2 : m_state ;
-			send( G::Base64::encode(rsp,std::string()) , false , sensitive ) ;
+			m_state = rsp.final ? sAuth2 : m_state ;
+			send( G::Base64::encode(rsp.data,std::string()) , false , rsp.sensitive ) ;
 		}
 	}
-	else if( m_state == sAuth1 && !reply.positive() && m_sasl.get() != nullptr && m_sasl->next() )
+	else if( m_state == sAuth1 && !reply.positive() && m_sasl->next() )
 	{
-		SmtpError error( "authentication failed " + m_sasl->info() + ": [" + G::Str::printable(reply.text()) + "]" ) ;
+		// authentication failed -- try the next mechanism
+		AuthError error( *m_sasl.get() , reply ) ;
 		G_LOG( "GSmtp::ClientProtocol::applyEvent: " << error.what() << ": trying [" << G::Str::lower(m_sasl->preferred()) << "]" ) ;
 		m_auth_mechanism = m_sasl->preferred() ;
 		m_state = sAuth1 ;
 		send( "AUTH " , m_auth_mechanism ) ;
 	}
-	else if( m_state == sAuth1 && !reply.positive() ) // was is(Reply::NotAuthenticated_535)
+	else if( m_state == sAuth1 && !reply.positive() && m_must_authenticate )
 	{
-		SmtpError error( "authentication failed " + m_sasl->info() + ": [" + G::Str::printable(reply.text()) + "]" ) ;
-		G_WARNING( "GSmtp::ClientProtocol::applyEvent: " << error.what() << (m_must_authenticate?"":": continuing") ) ;
-		if( m_must_authenticate )
-			throw error ;
-
-		// continue even without sucessful authentication
+		// authentication failed and mandatory and no more mechanisms
+		AuthError error( *m_sasl.get() , reply ) ;
+		G_WARNING( "GSmtp::ClientProtocol::applyEvent: " << error.what() ) ;
+		throw error ;
+	}
+	else if( m_state == sAuth1 && !reply.positive() )
+	{
+		// authentication failed, but optional -- continue
+		G_ASSERT( !m_authenticated_with_server ) ;
+		G_WARNING( "GSmtp::ClientProtocol::applyEvent: " << AuthError(*m_sasl.get(),reply).str() << ": continuing" ) ;
 		m_state = sFiltering ;
 		startFiltering() ;
 	}
-	else if( m_state == sAuth2 && !reply.positive() && m_sasl.get() != nullptr && m_sasl->next() )
+	else if( m_state == sAuth2 && reply.is(Reply::Challenge_334) && G::Base64::valid(reply.text()) )
 	{
-		SmtpError error( "authentication failed " + m_sasl->info() + ": [" + G::Str::printable(reply.text()) + "]" ) ;
-		G_LOG( "GSmtp::ClientProtocol::applyEvent: " << error.what() << ": trying [" << G::Str::lower(m_sasl->preferred()) << "]" ) ;
+		// allow a new challenge even if expecting a final authentication response (esp. XOAUTH2)
+		GAuth::SaslClient::Response rsp = m_sasl->response( m_auth_mechanism , G::Base64::decode(reply.text()) ) ;
+		if( rsp.error )
+			send( "*" ) ; // ie. cancel authentication
+		else
+			send( G::Base64::encode(rsp.data,std::string()) , false , rsp.sensitive ) ;
+	}
+	else if( m_state == sAuth2 && !reply.positive() && m_sasl->next() )
+	{
+		// authentication failed -- try the next mechanism
+		G_LOG( "GSmtp::ClientProtocol::applyEvent: " << AuthError(*m_sasl.get(),reply).str() << ": trying [" << G::Str::lower(m_sasl->preferred()) << "]" ) ;
 		m_auth_mechanism = m_sasl->preferred() ;
 		m_state = sAuth1 ;
 		send( "AUTH " , m_auth_mechanism ) ;
 	}
+	else if( m_state == sAuth2 && reply.is(Reply::Authenticated_235) )
+	{
+		// authenticated -- send first message
+		m_authenticated_with_server = true ;
+		G_LOG( "GSmtp::ClientProtocol::applyEvent: successful authentication with remote server " << m_sasl->info() ) ;
+		m_state = sFiltering ;
+		startFiltering() ;
+	}
+	else if( m_state == sAuth2 && m_must_authenticate )
+	{
+		// authentication failed and mandatory and no more mechanisms
+		AuthError error( *m_sasl.get() , reply ) ;
+		G_WARNING( "GSmtp::ClientProtocol::applyEvent: " << error.what() ) ;
+		throw error ;
+	}
 	else if( m_state == sAuth2 )
 	{
-		m_authenticated_with_server = reply.is(Reply::Authenticated_235) ;
-		if( !m_authenticated_with_server && m_must_authenticate )
-		{
-			SmtpError error( "authentication failed " + m_sasl->info() ) ;
-			G_WARNING( "GSmtp::ClientProtocol::applyEvent: " << error.what() ) ;
-			throw error ;
-		}
-		else if( !m_authenticated_with_server )
-		{
-			// continue even without sucessful authentication
-			G_WARNING( "GSmtp::ClientProtocol::applyEvent: authentication failed " << m_sasl->info() << ": continuing" ) ;
-			m_state = sFiltering ;
-			startFiltering() ;
-		}
-		else
-		{
-			G_LOG( "GSmtp::ClientProtocol::applyEvent: successful authentication with remote server " << m_sasl->info() ) ;
-			m_state = sFiltering ;
-			startFiltering() ;
-		}
+		// authentication failed, but optional -- continue
+		G_ASSERT( !m_authenticated_with_server ) ;
+		G_WARNING( "GSmtp::ClientProtocol::applyEvent: " << AuthError(*m_sasl.get(),reply).str() << "]: continuing" ) ;
+		m_state = sFiltering ;
+		startFiltering() ;
 	}
 	else if( m_state == sFiltering && reply.is(Reply::Internal_filter_ok) )
 	{
+		// filter finished with 'ok'
 		m_state = sSentMail ;
 		sendMail() ;
 	}
 	else if( m_state == sFiltering && reply.is(Reply::Internal_filter_abandon) )
 	{
+		// filter failed with 'abandon'
 		m_state = sMessageDone ;
 		raiseDoneSignal( -1 , std::string() ) ;
 	}
 	else if( m_state == sFiltering && reply.is(Reply::Internal_filter_error) )
 	{
+		// filter failed with 'error'
 		m_state = sMessageDone ;
 		raiseDoneSignal( -2 , reply.errorText() , reply.errorReason() ) ;
 	}
-	else if( m_state == sFiltering )
-	{
-		m_state = sMessageDone ;
-		raiseDoneSignal( reply.value() , reply.errorText() ) ;
-	}
 	else if( m_state == sSentMail && reply.is(Reply::Ok_250) )
 	{
+		// got reponse to mail-from -- send rcpt-to
 		std::string to = m_to.at( m_to_index++ ) ;
 		m_state = sSentRcpt ;
 		send( "RCPT TO:<" , to , ">" ) ;
 	}
 	else if( m_state == sSentRcpt && m_to_index < m_to.size() )
 	{
+		// got reponse to rctp-to and more recipients to go
 		if( reply.positive() )
 			m_to_accepted++ ;
 		else
@@ -439,6 +455,7 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	}
 	else if( m_state == sSentRcpt )
 	{
+		// got reponse to rctp-to and all recipients requested
 		if( reply.positive() )
 			m_to_accepted++ ;
 		else
@@ -457,10 +474,9 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	}
 	else if( m_state == sSentData && reply.is(Reply::OkForData_354) )
 	{
+		// data command accepted -- send content until flow-control asserted or all sent
 		m_state = sData ;
-
 		size_t n = sendLines() ;
-
 		G_LOG( "GSmtp::ClientProtocol: tx>>: [" << n << " line(s) of content]" ) ;
 		if( endOfContent() )
 		{
@@ -470,21 +486,25 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	}
 	else if( m_state == sSentDataStub )
 	{
+		// got response to rst following rejection of recipients
 		m_state = sMessageDone ;
 		std::string how_many = m_must_accept_all_recipients ? std::string("one or more") : std::string("all") ;
 		raiseDoneSignal( reply.value() , how_many + " recipients rejected" ) ;
 	}
 	else if( m_state == sSentDot )
 	{
+		// got response to data eot
 		m_state = sMessageDone ;
 		raiseDoneSignal( reply.value() , reply.errorText() ) ;
 	}
 	else if( m_state == sQuitting && reply.value() == 221 )
 	{
+		// got quit response
 		protocol_done = true ;
 	}
 	else if( is_start_event )
 	{
+		// got a start-event for new message, but not in a valid state
 		throw NotReady() ;
 	}
 	else
@@ -834,4 +854,17 @@ GSmtp::ClientProtocol::Config::Config( const std::string & name_ ,
 		eight_bit_strict(eight_bit_strict_)
 {
 }
+
+// ==
+
+GSmtp::ClientProtocol::AuthError::AuthError( const GAuth::SaslClient & sasl , const GSmtp::ClientProtocolReply & reply ) :
+	SmtpError( "authentication failed " + sasl.info() + ": [" + G::Str::printable(reply.text()) + "]" )
+{
+}
+
+std::string GSmtp::ClientProtocol::AuthError::str() const
+{
+	return std::string( what() ) ;
+}
+
 /// \file gclientprotocol.cpp

@@ -16,6 +16,7 @@
 #
 
 example_scripts = \
+	emailrelay-bcc-check.pl \
 	emailrelay-multicast.sh \
 	emailrelay-process.sh \
 	emailrelay-sendmail.pl

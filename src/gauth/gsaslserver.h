@@ -47,7 +47,7 @@ namespace GAuth
 /// \code
 /// SaslServer sasl( secrets ) ;
 /// peer.advertise( sasl.mechanisms() ) ;
-/// if( sasl.init(peer.preferredMechanism()) )
+/// if( sasl.init(peer.preferred()) )
 /// {
 ///   peer.send( sasl.initialChallenge() ) ;
 ///   for(;;)
@@ -98,10 +98,18 @@ public:
 		///< call to return true.
 
 	virtual bool mustChallenge() const = 0 ;
-		///< Returns true if the mechanism must start with
-		///< a non-empty server challenge. Returns false for
-		///< the "LOGIN" mechanism since the initial challenge
-		///< ("username:") is not essential.
+		///< Returns true if authentication using the current mechanism
+		///< must always start with a non-empty server challenge, ie.
+		///< it is a "server-first" mechanism as per RFC-4422.
+		///<
+		///< Returns false for the "LOGIN" mechanism since the initial
+		///< challenge ("Username:") is not essential, ie. it is a
+		///< "variable" mechanism.
+		///<
+		///< The server should call initialChallenge() to decide whether
+		///< to send an initial challenge; this method is only to
+		///< stop a client providing an initial response before an
+		///< initial challenge has been sent.
 
 	virtual std::string initialChallenge() const = 0 ;
 		///< Returns the initial server challenge. May return
@@ -122,6 +130,9 @@ public:
 	virtual bool trusted( const GNet::Address & ) const = 0 ;
 		///< Returns true if a trusted client that
 		///< does not need to authenticate.
+
+private:
+	void operator=( const SaslServer & ) ;
 } ;
 
 #endif
