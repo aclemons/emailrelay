@@ -33,7 +33,7 @@
 	 * picking up a header from some third-party library. If this
 	 * file does not exist then there might be a suitable template
 	 * file to copy, or just create an empty file and tweak the
-	 * default values below.
+	 * values that are defaulted below.
 	 */
 	#include <gconfig_defs.h>
 
@@ -129,6 +129,14 @@
 			#define GCONFIG_HAVE_CXX_FINAL 1
 		#else
 			#define GCONFIG_HAVE_CXX_FINAL 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_CXX_ALIGNMENT)
+		/* no std::align in gcc 4.8 with -std=c++11 */
+		#if defined(G_COMPILER_CXX_11) && defined(_MSC_VER)
+			#define GCONFIG_HAVE_CXX_ALIGNMENT 0
+		#else
+			#define GCONFIG_HAVE_CXX_ALIGNMENT 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_CXX_SHARED_PTR)
@@ -1035,9 +1043,6 @@
 
 	/* Inline definitions of missing functions
 	 */
-
-	#if defined(G_UNIX)
-	#endif
 
 	#if ! GCONFIG_HAVE_INET_PTON
 		#ifdef __cplusplus
