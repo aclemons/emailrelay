@@ -340,6 +340,26 @@ AC_DEFUN([GCONFIG_FN_CXX_EMPLACE],
 	fi
 ])
 
+dnl GCONFIG_FN_CXX_ALIGNMENT
+dnl ------------------------
+dnl Tests for c++ std::align.
+dnl
+AC_DEFUN([GCONFIG_FN_CXX_ALIGNMENT],
+[AC_CACHE_CHECK([for c++ std::align],[gconfig_cv_cxx_alignment],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[[#include <memory>]],
+		[[void * p = nullptr; size_t n = 0U; std::align(alignof(long),1,p,n) ;]])],
+		gconfig_cv_cxx_alignment=yes ,
+		gconfig_cv_cxx_alignment=no )
+])
+	if test "$gconfig_cv_cxx_alignment" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_CXX_ALIGNMENT,1,[Define true if compiler has std::align()])
+	else
+		AC_DEFINE(GCONFIG_HAVE_CXX_ALIGNMENT,0,[Define true if compiler has std::align()])
+	fi
+])
+
 dnl GCONFIG_FN_CXX_SHARED_PTR
 dnl -------------------------
 dnl Tests for c++ std::shared_ptr.

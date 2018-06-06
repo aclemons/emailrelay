@@ -137,7 +137,7 @@ bool GSmtp::NewFile::addText( const char * line_data , size_t line_size )
 	// out there then some out-of-band processing could be used to edit
 	// the envelope file to the correct value before forwarding
 	//
-	//m_eight_bit = true ; // TODO always assume content is eight-bit
+	//m_eight_bit = true ; // TODO maybe always assume content is eight-bit
 	m_eight_bit = m_eight_bit || isEightBit(line_data,line_size) ;
 
 	std::ostream & stream = *m_content.get() ;
