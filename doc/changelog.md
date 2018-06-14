@@ -5,12 +5,12 @@ E-MailRelay Change Log
 ------------
 
 * Improved IPv6 support, with IPv4 and IPv6 used independently at run-time (see `--interface`).
-* Server process is not blocked during `--filter` or `--address-verifier` execution (if multi-threaded).
+* Server process is not blocked during `--filter` or `--address-verifier` execution, if multi-threaded.
 * Support for the `mbedTLS` [TLS][] library as an alternative to OpenSSL (`configure --with-mbedtls`).
 * TLS server certificates specified with new `--server-tls-certificate` option, not `--server-tls`.
 * TLS servers enable client certificate verification with `--server-tls-verify`, not `--tls-config`.
 * TLS clients can verify server certificates with `--client-tls-verify` and `--client-tls-verify-name`.
-* The `--tls-config` option works differently.
+* The `--tls-config` option works differently (see NEWS file).
 * New `--client-tls-server-name` option for server name identification (SNI).
 * New `--client-tls-required` option to force client connections to use TLS.
 * New `--server-tls-required` option to force remote [SMTP][] clients to use STARTTLS.
@@ -20,7 +20,7 @@ E-MailRelay Change Log
 * The `--verifier` option is now `--address-verifier`, with simplified command-line parameters.
 * Command-line file paths can use `@app` as a prefix to be relative to the executable directory.
 * Command-line file paths can be relative to the startup cwd even when daemonised.
-* Filter exit codes between 104 and 107 are interpreted differently.
+* Filter exit codes between 104 and 107 are interpreted differently (see NEWS file).
 * Message rejection reasons passed back to the submitting SMTP client are much less verbose.
 * Forwarding events are queued up if the forwarding client is still busy from last time.
 * The bind address for outgoing connections is no longer taken from first unqualified `--interface` address [bug-id #27].

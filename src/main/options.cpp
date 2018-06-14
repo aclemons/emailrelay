@@ -376,9 +376,8 @@ std::string Main::Options::spec( bool is_windows )
 
 		"A!anonymous!disables the SMTP VRFY command and sends less verbose SMTP responses!!0!!3|"
 			// Disables the server's SMTP VRFY command, sends less verbose SMTP
-			// responses and SMTP greeting, stops "Received" lines being
-			// added to mail message content files, and sends an empty AUTH
-			// parameter in SMTP MAIL commands.
+			// responses and SMTP greeting, and stops "Received" lines being
+			// added to mail message content files.
 
 		"B!pop!enables the pop server!!0!!3|"
 			// Enables the POP server listening, by default on port 110, providing

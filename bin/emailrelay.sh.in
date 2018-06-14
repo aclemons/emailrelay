@@ -16,6 +16,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
 #
+# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ===
+#
 # emailrelay
 #
 # A shell-script wrapper for E-MailRelay for use in the SysV-init system.
@@ -46,8 +62,8 @@ CONFIG=__SYSCONF_DIR__/emailrelay.conf
 RUNDIR=/var/run/$NAME
 PIDFILE=$RUNDIR/$NAME.pid
 GROUP=daemon
-DAEMON=/usr/sbin/$NAME
-SUBMIT=/usr/sbin/$NAME-submit
+DAEMON=__SBIN_DIR__/$NAME
+SUBMIT=__SBIN_DIR__/$NAME-submit
 
 test -f /etc/default/$NAME && . /etc/default/$NAME
 test -f /etc/rc.conf.d/$NAME && . /etc/rc.conf.d/$NAME
@@ -95,32 +111,6 @@ then
 	cp -p "$CONFIG.template" "$CONFIG"
 fi
 
-setup_rundir()
-{
-	if test ! -d "$1"
-	then
-		mkdir -p "$1"
-		if test -d "$1"
-		then
-			chgrp "$GROUP" "$1" && chmod 770 "$1"
-		fi
-	fi
-}
-
-spooldir()
-{
-	cat "$CONFIG" | tr '\t' ' ' | sed 's/  */ /g' | grep '^spool-dir [^ ]' | tail -1 | cut -d' ' -f 2
-}
-
-setup_spooldir()
-{
-	if test "$1" != ""
-	then
-		test -d "$1" || mkdir -p "$1"
-		chgrp "$GROUP" "$1" && chmod 775 "$1" && chmod g+s "$1"
-	fi
-}
-
 case "$1" in
 
 	restart|force-reload)
@@ -131,7 +121,6 @@ case "$1" in
 	*start)
 		log_daemon_msg "Starting $DESC"
 		log_progress_msg "$NAME"
-		setup_rundir "`dirname \"$PIDFILE\"`" 2>/dev/null
 		start_daemon -p "$PIDFILE" -- "$DAEMON" --syslog --pid-file "$PIDFILE" "$CONFIG"
 		log_end_msg $?
 		;;
@@ -160,8 +149,18 @@ case "$1" in
 		;;
 
 	setup)
-		setup_rundir "$RUNDIR"
-		setup_spooldir "`spooldir`"
+		test -d "$RUNDIR" || mkdir -p "$RUNDIR" 2>/dev/null
+		chgrp "$GROUP" "$RUNDIR"
+		chmod 770 "$RUNDIR"
+
+		SPOOLDIR="`cat \"$CONFIG\" | grep '^spool-dir' | awk '{print $2}'`"
+		if test "$SPOOLDIR" != ""
+		then
+			test -d "$SPOOLDIR" || mkdir -p "$SPOOLDIR" 2>/dev/null
+			chgrp "$GROUP" "$SPOOLDIR"
+			chmod 775 "$SPOOLDIR"
+			chmod g+s "$SPOOLDIR"
+		fi
 
 		chmod 550 "$DAEMON"
 		chgrp "$GROUP" "$DAEMON"

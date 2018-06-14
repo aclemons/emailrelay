@@ -432,6 +432,26 @@ AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD],
 	fi
 ])
 
+dnl GCONFIG_FN_CXX_STD_WSTRING
+dnl --------------------------
+dnl Tests for std::wstring typedef.
+dnl
+AC_DEFUN([GCONFIG_FN_CXX_STD_WSTRING],
+[AC_CACHE_CHECK([for c++ std::wstring],[gconfig_cv_cxx_std_wstring],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[[#include <string>]],
+		[[std::wstring ws;]])],
+		gconfig_cv_cxx_std_wstring=yes ,
+		gconfig_cv_cxx_std_wstring=no )
+])
+	if test "$gconfig_cv_cxx_std_wstring" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_CXX_STD_WSTRING,1,[Define true if compiler has std::wstring])
+	else
+		AC_DEFINE(GCONFIG_HAVE_CXX_STD_WSTRING,0,[Define true if compiler has std::wstring])
+	fi
+])
+
 dnl GCONFIG_FN_STATBUF_NSEC
 dnl -----------------------
 dnl Tests whether stat provides nanosecond file times.
@@ -1080,7 +1100,7 @@ AC_DEFUN([GCONFIG_FN_PROC_PIDPATH],
 			[#include <libproc.h>]
 		],
 		[
-			[int rc = proc_pidpath(getpid(),(char*)0,(size_t)0);]
+			[int rc = proc_pidpath((pid_t)1,(char*)0,(size_t)0);]
 		])],
 		gconfig_cv_proc_pidpath=yes ,
 		gconfig_cv_proc_pidpath=no )
@@ -1157,7 +1177,7 @@ dnl
 AC_DEFUN([GCONFIG_FN_CONFIGURATION],
 [
 changequote(<<,>>)
-	GCONFIG_CONFIGURATION="`echo \"$ac_configure_args\" | tr '\n' ' ' | base64 2>/dev/null | tr -d '\n' | tr -d ' '`"
+	GCONFIG_CONFIGURATION="`echo \"$ac_configure_args\" | tr ' ' '\n' | grep -E -- "--(with|enable|disable)" | tr '\n' ' ' | base64 2>/dev/null | tr -d '\n' | tr -d ' '`"
 changequote([,])
 	AC_SUBST([GCONFIG_CONFIGURATION])
 ])
@@ -1209,7 +1229,7 @@ AC_DEFUN([GCONFIG_FN_WITH_ZLIB],
 			AC_DEFINE(GCONFIG_HAVE_ZLIB,0,[Define true to enable use of zlib])
 			if test "$with_zlib" = "yes"
 			then
-				AC_MSG_WARN([ignoring --with-zlib: check config.log and try setting CFLAGS])
+				AC_MSG_WARN([ignoring --with-zlib: check config.log and try setting CPPFLAGS])
 			fi
 			GCONFIG_ZLIB_LIBS=""
 		fi
@@ -1437,6 +1457,16 @@ AC_DEFUN([GCONFIG_FN_ENABLE_MAC],
 	AM_CONDITIONAL([GCONFIG_MAC],test "$enable_mac" = "yes" -o "`uname`" = "Darwin")
 ])
 
+dnl GCONFIG_FN_ENABLE_BSD
+dnl ---------------------
+dnl Enables bsd tweaks if "--enable-bsd" is used. Typically used after
+dnl AC_ARG_ENABLE(bsd).
+dnl
+AC_DEFUN([GCONFIG_FN_ENABLE_BSD],
+[
+	AM_CONDITIONAL([GCONFIG_BSD],test "$enable_bsd" = "yes" -o "`uname`" = "NetBSD" -o "`uname`" = "FreeBSD" -o "`uname`" = "OpenBSD" )
+])
+
 dnl GCONFIG_FN_ENABLE_WINDOWS
 dnl -------------------------
 dnl Enables windows tweaks if "--enable-windows" is used. This is normally only
@@ -1625,7 +1655,7 @@ AC_DEFUN([GCONFIG_FN_TLS],
 [
 	if test "$with_openssl" = "yes" -a "$gconfig_cv_ssl_openssl" = "no"
 	then
-		AC_MSG_ERROR([cannot use --with-openssl: openssl is not available: check config.log])
+		AC_MSG_ERROR([cannot use --with-openssl: openssl is not available: check config.log and try setting CPPFLAGS])
 	fi
 	if test "$with_openssl" != "no" -a "$gconfig_cv_ssl_openssl" = "yes"
 	then
@@ -1636,7 +1666,7 @@ AC_DEFUN([GCONFIG_FN_TLS],
 
 	if test "$with_mbedtls" = "yes" -a "$gconfig_cv_ssl_mbedtls" = "no"
 	then
-		AC_MSG_ERROR([cannot use --with-mbedtls: mbedtls is not available: check config.log])
+		AC_MSG_ERROR([cannot use --with-mbedtls: mbedtls is not available: check config.log and try setting CPPFLAGS])
 	fi
 	if test "$with_mbedtls" != "no" -a "$gconfig_cv_ssl_mbedtls" = "yes"
 	then
@@ -2350,6 +2380,10 @@ AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES],
 	then
 		e_initdir="$libexecdir/$PACKAGE/init"
 	fi
+	if test "$e_bsdinitdir" = ""
+	then
+		e_bsdinitdir="$libexecdir/$PACKAGE/init/bsd"
+	fi
 	if test "$e_icondir" = ""
 	then
 		e_icondir="$datadir/$PACKAGE"
@@ -2357,6 +2391,7 @@ AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES],
 
 	AC_SUBST([e_docdir])
 	AC_SUBST([e_initdir])
+	AC_SUBST([e_bsdinitdir])
 	AC_SUBST([e_icondir])
 	AC_SUBST([e_spooldir])
 	AC_SUBST([e_examplesdir])

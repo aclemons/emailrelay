@@ -32,8 +32,8 @@
 #   server-4 as 'alice'. Server-4 authenticates alice and stores
 #   messages in store-4 which server-5 is continuously polling.
 #   Server-5 forwards messages that appear in store-4 to
-#   server-6 using a client preprocessor. Server-6 stores messages
-#   in store-5 using a server preprocessor. If using fetchmail
+#   server-6 using a client filter. Server-6 stores messages
+#   in store-5 using a server filter. If using fetchmail
 #   then fetchmail extracts messages from server-6 and sends them
 #   on to server-7 which stores them in store-6.
 #
@@ -116,6 +116,7 @@ RunPoke()
 
 Poke()
 {
+	# (or use netcat)
 	perl -e '
 		use IO::Socket ;
 		my $p = $ARGV[0] ;
@@ -224,7 +225,7 @@ RunFetchmail()
 	smtp_port_="${2}"
 
 	cfg_=${cfg_base_dir}/fetchmailrc
-	echo poll localhost username me password secret > ${cfg_}
+	echo poll localhost username fetchmailer password fetchmail_secret > ${cfg_}
 	chmod 700 ${cfg_}
 
 	cmd_="fetchmail"
@@ -326,7 +327,7 @@ CreateAuth()
 	echo "client CRAM-MD5 carol ${dotted_key}" >> ${file}
 
 	file="${cfg_base_dir}/pop.auth"
-	echo "server APOP me secret" >> ${file}
+	echo "server plain fetchmailer fetchmail_secret" >> ${file}
 }
 
 CreateFilter()

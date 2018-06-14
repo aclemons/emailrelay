@@ -25,6 +25,7 @@
 #include "gdebug.h"
 #include "glog.h"
 #include <windowsx.h>
+#include <vector>
 
 GGui::Cracker::Cracker( HWND hwnd ) :
 	WindowBase(hwnd)
@@ -184,13 +185,13 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam ,
 			G::StringArray list ;
 			for( int i = 0 ; i < count ; i++ )
 			{
-				static char buffer[G::limits::path] ;
-				buffer[0] = '\0' ;
-				if( ::DragQueryFileA( hdrop , i , buffer , sizeof(buffer) ) < sizeof(buffer) )
+				std::vector<char> buffer( G::limits::path , '\0' ) ;
+				unsigned int size = static_cast<unsigned int>(buffer.size()) ;
+				if( ::DragQueryFileA( hdrop , i , &buffer[0] , size ) < size )
 				{
-					buffer[sizeof(buffer)-1U] = '\0' ;
-					G_DEBUG( "Cracker::onDrop: \"" << buffer << "\"" ) ;
-					list.push_back( std::string(buffer) ) ;
+					buffer.at(buffer.size()-1U) = '\0' ;
+					G_DEBUG( "Cracker::onDrop: \"" << &buffer[0] << "\"" ) ;
+					list.push_back( std::string(&buffer[0]) ) ;
 				}
 			}
 			::DragFinish( hdrop ) ;

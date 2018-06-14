@@ -16,9 +16,10 @@ have backwards-compatibility mitigations built into the 2.0 code:
   backwards-compatibility fix inserts "--server-tls-certificate" between
   "--server-tls" and the filename, with a deprecation warning.
 
-  The "--tls-config" options have changed. The verification tweaks have
-  become command-line options in their own right (such as "--server-tls-verify")
-  and the protocol version options are spelt out as "tlsv1.1" etc.
+  The "--tls-config" options have changed. The certificate-verification
+  tweaks have become command-line options in their own right (such as
+  "--server-tls-verify") and the protocol version options are spelt out
+  as "tlsv1.1" etc. For example, "--tls-config=mbedtls,tlsv1.1,-tlsv1.2".
 
 # Reserved exit codes from filters are handled differently
 
@@ -36,8 +37,8 @@ have backwards-compatibility mitigations built into the 2.0 code:
   The command-line passed to the external address verifier script is
   simplified. Backwards compatibility is preserved by using a new
   command-line option "--address-verifier" to replace "--verifier". For
-  forwards compatibility there is a documented but unused requirement
-  to supply an interface version number.
+  forwards compatibility there requirement to supply an interface version
+  number.
 
 # The secrets file format has changed
 
@@ -46,7 +47,8 @@ have backwards-compatibility mitigations built into the 2.0 code:
 # The message envelope format is updated
 
   The message envelope file format has changed, with full backwards
-  compatibility.
+  compatibility. The ClientName fields is removed, and the MailFromAuthIn
+  and MailFromAuthOut fields are added.
 
 Secrets file
 ------------
@@ -55,29 +57,29 @@ the authentication mechanism. This can be made backwards compatible since in
 earlier releases there was an unambiguous mapping of mechanism to format.
 
 In 2.0 the mechanism is not fixed; the client side protocol will try all of
-the server's mechanisms for which it has compatible secrets (with plaintext
-passwords being compatible with any mechanism).
+the server's mechanisms for which it has compatible secrets, with plaintext
+passwords being compatible with any mechanism.
 
 On the server side the server advertises all mechanisms, regardless of the
 available secrets, since the client is expected to go through the list of
 advertised mechanisms until it gets to one where there is an available server
-secret.
-
-This is unlikely to cause a regression since only MD5 passwords can result in
-an authentication mismatch and CRAM-MD5 is the first and most secure mechanism
-advertised; to get a regression failure a CRAM-MD5 capable client would see
-(eg.) LOGIN appear as an additional mechanism, and then perversely choose LOGIN
-in preference to CRAM-MD5, and then give up before trying CRAM-MD5.
+secret. This is unlikely to cause a regression since only MD5 passwords can
+result in an authentication mismatch and CRAM-MD5 is the first and most secure
+mechanism advertised; to get a regression failure a CRAM-MD5 capable client
+would see (eg.) LOGIN appear as an additional mechanism, and then perversely
+choose LOGIN in preference to CRAM-MD5, and then give up before trying
+CRAM-MD5.
 
 Filter exit codes
 -----------------
 For completeness, this is the filter exit code handling, showing how the
-changes affect exit codes in the range 104..107:
+changes for 2.0 affect documented and undocumented exit codes in the
+range 104 to 107:
 
 Server v1.9:
 * 0 ok (commit of .new)
 * 1..99 fail (rename .bad)
-* 100 abandon (try commit) (documented)
+* 100 abandon (try to commit but ignore errors) (documented)
 * 101 ok
 * 102 abandon, re-scan (by expiring --poll timer)
 * 103 ok, re-scan (documented)
@@ -90,7 +92,7 @@ Server v1.9:
 Server v2.0:
 * 0 ok (commit of .new)
 * 1..99 fail (rename .bad)
-* 100 abandon (try commit) (documented)
+* 100 abandon (try to commit but ignore errors) (documented)
 * 101 ok
 * 102 abandon, re-scan (independent of --poll)
 * 103 ok, re-scan (documented)

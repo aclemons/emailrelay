@@ -405,6 +405,7 @@ void G::Pam::refreshCredentials()
 
 void G::Pam::delay( unsigned int usec )
 {
+	// this is the default implementation, usually overridden
 	if( usec != 0U )
 	{
 		typedef struct timeval Timeval ;

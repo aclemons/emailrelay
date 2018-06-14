@@ -40,9 +40,8 @@
 # Name: anonymous
 # Format: anonymous
 # Description: Disables the server's SMTP VRFY command, sends less verbose
-# SMTP responses and SMTP greeting, stops "Received" lines being added to
-# mail message content files, and sends an empty AUTH parameter in SMTP MAIL
-# commands.
+# SMTP responses and SMTP greeting, and stops "Received" lines being added to
+# mail message content files.
 #
 #anonymous
 

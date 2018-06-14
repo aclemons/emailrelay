@@ -72,7 +72,7 @@
      <li>Right-drag <em class="quote">emailrelay.exe</em> onto the desktop to create a shortcut for the server.</li>
      <li>Add <em class="quote">--as-server --verbose</em> to the server shortcut properties in the <em class="quote">target</em> box.</li>
      <li>Right-drag again to create a shortcut to do the forwarding.</li>
-     <li>Add <em class="quote">--as-client myisp.net:smtp --client-auth c:\ProgramData\E-MailRelay\emailrelay-auth.txt</em> to the client shortcut.</li>
+     <li>Add <em class="quote">--as-client example.com:smtp --client-auth c:\ProgramData\E-MailRelay\emailrelay-auth.txt</em> to the client shortcut.</li>
     </ul>
 
     <p>
@@ -80,16 +80,17 @@
     </p>
    <h2><a class="a-header" name="SH_1_5">Running as a service</a></h2> <!-- index:2:SH:1:5:Running as a service -->
     <p>
-     If you are installing manually you can set up E-MailRelay as a service so that
-     it starts up automatically at boot-time. You must first have a one-line batch
-     file called <em class="quote">emailrelay-start.bat</em> that contains all the command-line options
-     for running the E-MailRelay server, and you must have a simple configuration
-     file called <em class="quote">emailrelay-service.cfg</em> that points to it. The configuration file
-     must be in the same directory as the <em class="quote">emailrelay-service.exe</em> executable.
+     E-MailRelay can be set up as a service so that it starts up automatically at
+     boot-time. If you are setting this up manually you must first have a one-line
+     batch file called <em class="quote">emailrelay-start.bat</em> that contains all the command-line
+     options for running the E-MailRelay server, and you must have a simple
+     configuration file called <em class="quote">emailrelay-service.cfg</em> that points to it. The
+     configuration file must be in the same directory as the
+     <em class="quote">emailrelay-service.exe</em> executable.
     </p>
 
     <p>
-     The batch file should contain a single line, like this:
+     The batch file should contain a single line, something like this:
     </p>
 
       <div class="div-pre">

@@ -52,6 +52,7 @@ endif
 EXTRA_DIST=\
 	emailrelay-gui.exe.manifest \
 	gcominit.h \
+	messages.mc \
 	$(OS_EXTRA_DIST)
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'

@@ -31,8 +31,8 @@ where \<option\> is:
 *   --anonymous (-A)
 
     Disables the server's SMTP_ VRFY command, sends less verbose SMTP responses
-    and SMTP greeting, stops *Received* lines being added to mail message
-    content files, and sends an empty AUTH parameter in SMTP MAIL commands.
+    and SMTP greeting, and stops *Received* lines being added to mail message
+    content files.
 
 *   --as-client \<host:port\> (-q)
 
@@ -426,7 +426,7 @@ command-line options:
 * on demand using the administration interface's *flush* command (\ *--admin=<port>*\ )
 * when a *--filter* script exits with an exit code of 103
 
-These modes of operation can be mixed.
+These can be mixed.
 
 When using *--as-client*, or *--dont-serve* and *--forward*, the spooled
 messages begin to be forwarded as soon as the program starts up, and the
@@ -609,9 +609,10 @@ Lines have four white-space delimited fields:
 * \ *password*\
 
 The *client-or-server* field must be *client* or *server*; the *password-type*
-field must be *plain*, *md5* or *oauth*; the *userid* field is xtext-encoded
-user identifier; and the *password* field is the xtext-encoded plain password,
-a base64-encoded *HMAC-MD5* state, or a base64-encoded OAuth 2.0 token.
+field must be *plain* or *md5*; the *userid* field is xtext-encoded
+user identifier; and the *password* field is the xtext-encoded plain password
+or a base64-encoded *HMAC-MD5* state. For *client* lines the password-type can
+also be *oauth*.
 
 The first two fields are case-insensitive. The *xtext* encoding scheme is
 defined properly in RFC-1891, but basically it says that non-alphanumeric
@@ -624,7 +625,7 @@ advertised by the server and selected by the client. Many authentication
 mechanisms have been defined and standardised, and the simplest ones just
 exchange a username and plaintext password. E-MailRelay supports the PLAIN,
 LOGIN and HMAC-MD5 mechanisms for both client-side and server-side
-authentication as a minimum, but other mechanisms might be built-in or
+authentication as a minimum, but other mechanisms might be built in or
 available via PAM (see below).
 
 The PLAIN, LOGIN and HMAC-MD5 mechanisms can use plaintext passwords, stored
@@ -639,10 +640,10 @@ can be used for client-side authentication using tokens that have been
 recently obtained from a third-party authentication server and added to the
 secrets file with a password-type of *oauth*.
 
-As an example, the following secrets file defines *bob* as the username to be
-used when E-MailRelay authenticates with a remote SMTP server, and defines two
-usernames (*alice* and *carol*) that can be used by clients when they
-authenticate with the E-MailRelay server:
+In the following example *bob* is the username that E-MailRelay uses when
+it authenticates with a remote SMTP server, and two usernames (*alice* and
+\ *carol*\ ) can be used by remote clients when they authenticate with the
+E-MailRelay server:
 
 ::
 
@@ -859,20 +860,11 @@ there is a local Tor node running on port 9050:
 
 ::
 
-    emailrelay --forward-to myisp.net:smtp@localhost:9050 ...
+    emailrelay --forward-to example.com:smtp@localhost:9050 ...
 
-The Tor system will then be used to resolve the *myisp.net* domain name and
+The Tor system will then be used to resolve the *example.com* domain name and
 establish the connection. The target SMTP server will see a connection coming
 from the Tor exit node rather than from the E-MailRelay server.
-
-Pop server
-==========
-E-MailRelay can be used as a POP server so that POP clients have access to
-spooled messages.
-
-Refer to the documentation of the various *--pop* command-line options for
-more detail: *--pop*, *--pop-port*, *--pop-auth*, *--pop-no-delete* and
-\ *--pop-by-name*\ .
 
 Address verification
 ====================
@@ -885,10 +877,11 @@ valid and which are rejected.
 Your verifier program is passed a command-line containing: (1) the recipient
 e-mail address as supplied by the remote client, (2) the *from* e-mail address
 as supplied by the client, or the empty string in the case of the *VRFY*
-command, (3) the IP address and port of the far end of the client connection,
-used by the client (if any, and *none* if trusted), and (6) either the
-authentication name or the fourth field from authentication secrets file if a
-trusted IP address.
+command, (3) the IP address and port of the far end of the client
+connection, (4) the local fully qualified domain name, (5) the authentication
+mechanism used by the client (if any, and *none* if trusted), and (6) either
+the authentication name or the fourth field from authentication secrets file
+if a trusted IP address.
 
 So, for example, a verifier program called *myverifier* might be run with the
 following command-line:
@@ -1158,23 +1151,23 @@ An E-MailRelay *--filter* script can be used to reject messages with incorrect
 
 Files and directories
 =====================
-On Unix-like systems E-MailRelay installs by default under */usr/local*,
-but binary distributions will probably have been built so that they
-install elsewhere.
+On Unix-like systems E-MailRelay installs by default under */usr/local*, but
+binary distributions will probably have been built to install elsewhere.
 
 Installation directories can be defined at build-time by the following
 *configure* script command-line options:
 
 * --mandir=\<dir\>
 * --sbindir=\<dir\>
-* e_libexecdir=\<dir\>
-* e_sysconfdir=\<dir\>
+* e_bsdinitdir=\<dir\>
 * e_docdir=\<dir\>
 * e_examplesdir=\<dir\>
-* e_initdir=\<dir\>
-* e_spooldir=\<dir\>
-* e_pamdir=\<dir\>
 * e_icondir=\<dir\>
+* e_initdir=\<dir\>
+* e_libexecdir=\<dir\>
+* e_pamdir=\<dir\>
+* e_spooldir=\<dir\>
+* e_sysconfdir=\<dir\>
 
 These are all defaulted to paths that are ultimately based on *--prefix*, so
 *./configure --prefix=$HOME* will work as expected.

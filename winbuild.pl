@@ -592,6 +592,7 @@ sub install_core
 		COPYING copying.txt
 		AUTHORS authors.txt
 		LICENSE license.txt
+		NEWS news.txt
 		ChangeLog changelog.txt
 		doc/doxygen-missing.html doc/doxygen/index.html
 		__arch__/src/main/Release/emailrelay-service.exe .
@@ -624,13 +625,12 @@ sub install_core
 		map { install_copy( $_ , "$root/$dst" ) } glob( $src ) ;
 	}
 	winbuild::fixup( $root ,
-		[ "readme.txt" , "license.txt" , "authors.txt" ] ,
+		[ "readme.txt" , "license.txt" ] ,
 		{
 			README => 'readme.txt' ,
 			COPYING => 'copying.txt' ,
 			AUTHORS => 'authors.txt' ,
 			INSTALL => 'install.txt' ,
-			LICENSE => 'license.txt' ,
 			ChangeLog => 'changelog.txt' ,
 		} ) ;
 }
@@ -640,9 +640,9 @@ sub install_copy
 	my ( $src , $dst ) = @_ ;
 
 	my $convert = undef ;
-	for my $ext ( "txt" , "js" )
+	for my $ext ( "txt" , "js" , "pl" , "pm" )
 	{
-		$convert = 1 if( ( ! -d $dst && $dst =~ m/$ext$/ ) || ( -d $dst && $src =~ m/$ext$/ ) ) ;
+		$convert = 1 if( ( ! -d $dst && ( $dst =~ m/$ext$/ ) ) || ( -d $dst && ( $src =~ m/$ext$/ ) ) ) ;
 	}
 
 	if( $convert )

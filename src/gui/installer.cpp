@@ -901,7 +901,7 @@ EditConfigFile::EditConfigFile( G::Path dir , std::string name , const G::MapFil
 
 void EditConfigFile::run()
 {
-	m_server_config.editInto( m_path , m_do_backup , false , false ) ;
+	m_server_config.editInto( m_path , m_do_backup , /*allow-read-error=*/false , /*allow-write-error=*/false ) ;
 }
 
 std::string EditConfigFile::text() const

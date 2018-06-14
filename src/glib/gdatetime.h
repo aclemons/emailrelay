@@ -51,13 +51,6 @@ public:
 public:
 	std::time_t s ;
 	unsigned int us ;
-
-private:
-	friend EpochTime operator+( EpochTime et , std::time_t s ) ;
-	friend EpochTime operator+( EpochTime lhs , EpochTime rhs ) ;
-	friend EpochTime operator-( EpochTime big , EpochTime small_ ) ;
-	friend bool operator<( EpochTime lhs , EpochTime rhs ) ;
-	friend bool operator==( EpochTime lhs , EpochTime rhs ) ;
 } ;
 
 namespace G
