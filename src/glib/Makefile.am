@@ -23,6 +23,7 @@ if GCONFIG_WINDOWS
 
 EXTRA_DIST=\
 	gcleanup_unix.cpp \
+	gconvert_none.cpp \
 	gconvert_unix.cpp \
 	gdaemon_unix.cpp \
 	gdatetime_unix.cpp \
@@ -149,10 +150,18 @@ PAM_EXTRA_DIST = gpam_linux.cpp
 PAM_SOURCES = gpam_none.cpp
 endif
 
+if GCONFIG_ICONV
+ICONV_EXTRA_DIST = gconvert_none.cpp gconvert_win32.cpp
+ICONV_SOURCES = gconvert_unix.cpp
+else
+ICONV_EXTRA_DIST = gconvert_unix.cpp gconvert_win32.cpp
+ICONV_SOURCES = gconvert_none.cpp
+endif
+
 EXTRA_DIST=\
 	$(PAM_EXTRA_DIST) \
+	$(ICONV_EXTRA_DIST) \
 	gcleanup_win32.cpp \
-	gconvert_win32.cpp \
 	gdaemon_win32.cpp \
 	gdatetime_win32.cpp \
 	gdirectory_win32.cpp \
@@ -168,6 +177,7 @@ EXTRA_DIST=\
 
 libglib_a_SOURCES = \
 	$(PAM_SOURCES) \
+	$(ICONV_SOURCES) \
 	garg.h \
 	garg.cpp \
 	gassert.h \
@@ -179,7 +189,6 @@ libglib_a_SOURCES = \
 	gcleanup_unix.cpp \
 	gconvert.h \
 	gconvert.cpp \
-	gconvert_unix.cpp \
 	gdaemon.h \
 	gdaemon_unix.cpp \
 	gdate.h \

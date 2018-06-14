@@ -183,4 +183,10 @@ private:
 	std::string m_stop_reason ;
 } ;
 
+inline
+const Main::Configuration & Main::Run::configuration() const
+{
+	return *m_configuration.get() ;
+}
+
 #endif

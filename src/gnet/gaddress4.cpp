@@ -35,7 +35,7 @@
 
 namespace
 {
-	const char * port_separators = ":/." ;
+	const char * port_separators = ":/" ;
 	char port_separator = ':' ;
 }
 

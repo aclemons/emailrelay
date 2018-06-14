@@ -39,8 +39,7 @@ namespace G
 
 /// \class G::MapFile
 /// A class for reading and editing key=value files, supporting comments,
-/// creation of backup files, variable expansion, character-set encoding
-/// and logging.
+/// creation of backup files, variable expansion and logging.
 /// \see G::OptionValue
 ///
 class G::MapFile
@@ -65,19 +64,19 @@ public:
 		///< Multi-valued options are loaded as a comma-separated
 		///< list.
 
-	explicit MapFile( const G::Path & , bool utf8 = false ) ;
+	explicit MapFile( const G::Path & ) ;
 		///< Constructor that reads from a file. Lines can have a key
 		///< and no value (see booleanValue()). Comments must be at
 		///< the start of the line. Values are trimmed, but can
 		///< otherwise contain whitespace.
 
-	explicit MapFile( std::istream & , bool utf8 = false ) ;
+	explicit MapFile( std::istream & ) ;
 		///< Constructor that reads from a stream.
 
 	const G::StringArray & keys() const ;
 		///< Returns a reference to the ordered list of keys.
 
-	static void check( const G::Path & , bool utf8 = false ) ;
+	static void check( const G::Path & ) ;
 		///< Throws if the file is invalid. This is equivalent to
 		///< constructing a temporary MapFile object, but it
 		///< specifically does not do any logging.
@@ -85,14 +84,14 @@ public:
 	void add( const std::string & key , const std::string & value ) ;
 		///< Adds or updates a single item in the map.
 
-	void writeItem( std::ostream & , const std::string & key , bool utf8 = false ) const ;
+	void writeItem( std::ostream & , const std::string & key ) const ;
 		///< Writes a single item from this map to the stream.
 
-	static void writeItem( std::ostream & , const std::string & key , const std::string & value , bool utf8 = false ) ;
+	static void writeItem( std::ostream & , const std::string & key , const std::string & value ) ;
 		///< Writes an arbitrary item to the stream.
 
-	void editInto( const G::Path & path , bool make_backup = true ,
-		bool allow_read_error = false , bool allow_write_error = false , bool utf8 = false ) const ;
+	void editInto( const G::Path & path , bool make_backup ,
+		bool allow_read_error , bool allow_write_error ) const ;
 			///< Edits an existing file so that its contents
 			///< reflect this map.
 
@@ -147,20 +146,18 @@ public:
 
 private:
 	typedef std::list<std::string> List ;
-	void readFrom( const G::Path & , bool ) ;
-	void readFrom( std::istream & ss , bool ) ;
+	void readFrom( const G::Path & ) ;
+	void readFrom( std::istream & ss ) ;
 	static std::string quote( const std::string & ) ;
 	List read( const G::Path & , bool ) const ;
 	void commentOut( List & ) const ;
-	void replace( List & , bool ) const ;
+	void replace( List & ) const ;
 	bool expand_( std::string & ) const ;
 	std::string expandAll( const std::string & ) const ;
 	static void backup( const G::Path & ) ;
 	static void save( const G::Path & , List & , bool ) ;
 	void log( const std::string & , const std::string & ) const ;
 	static void log( bool , const std::string & , const std::string & ) ;
-	static std::string fromUtf( const std::string & value , bool utf8 ) ;
-	static std::string toUtf( const std::string & value , bool utf8 ) ;
 	std::string mandatoryValue( const std::string & ) const ;
 	bool ignore( const std::string & ) const ;
 

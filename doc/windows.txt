@@ -50,20 +50,21 @@ setup program, goes something like this:
 * Right-drag "emailrelay.exe" onto the desktop to create a shortcut for the server.
 * Add "--as-server --verbose" to the server shortcut properties in the "target" box.
 * Right-drag again to create a shortcut to do the forwarding.
-* Add "--as-client myisp.net:smtp --client-auth c:\ProgramData\E-MailRelay\emailrelay-auth.txt" to the client shortcut.
+* Add "--as-client example.com:smtp --client-auth c:\ProgramData\E-MailRelay\emailrelay-auth.txt" to the client shortcut.
 
 Copy the shortcuts to "Start Menu" and "Startup" folders as necessary.
 
 Running as a service
 --------------------
-If you are installing manually you can set up E-MailRelay as a service so that
-it starts up automatically at boot-time. You must first have a one-line batch
-file called "emailrelay-start.bat" that contains all the command-line options
-for running the E-MailRelay server, and you must have a simple configuration
-file called "emailrelay-service.cfg" that points to it. The configuration file
-must be in the same directory as the "emailrelay-service.exe" executable.
+E-MailRelay can be set up as a service so that it starts up automatically at
+boot-time. If you are setting this up manually you must first have a one-line
+batch file called "emailrelay-start.bat" that contains all the command-line
+options for running the E-MailRelay server, and you must have a simple
+configuration file called "emailrelay-service.cfg" that points to it. The
+configuration file must be in the same directory as the
+"emailrelay-service.exe" executable.
 
-The batch file should contain a single line, like this:
+The batch file should contain a single line, something like this:
 
 	start "emailrelay" "C:\Program Files\E-MailRelay\emailrelay.exe" --forward-to smtp.example.com:25 ...
 

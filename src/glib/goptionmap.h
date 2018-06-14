@@ -69,6 +69,9 @@ public:
 		///< Returns true if the map contains the given key, but ignoring un-valued()
 		///< 'off' options.
 
+	bool contains( const char * ) const ;
+		///< Overload taking a c-string.
+
 	size_t count( const std::string & key ) const ;
 		///< Returns the number of times the key appears in the multimap.
 
@@ -76,6 +79,9 @@ public:
 		///< Returns the value of the valued() option identified by the given key.
 		///< Multiple matching values are concatenated with a comma separator
 		///< (normally in the order of insertion).
+
+	std::string value( const char * key , const char * default_ = nullptr ) const ;
+		///< Overload taking c-strings.
 
 private:
 	std::string join( Map::const_iterator , Map::const_iterator ) const ;

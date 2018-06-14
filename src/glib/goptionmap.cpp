@@ -50,6 +50,11 @@ void G::OptionMap::clear()
 	m_map.clear() ;
 }
 
+bool G::OptionMap::contains( const char * key ) const
+{
+	return contains( std::string(key) ) ;
+}
+
 bool G::OptionMap::contains( const std::string & key ) const
 {
 	const Map::const_iterator end = m_map.end() ;
@@ -68,6 +73,11 @@ size_t G::OptionMap::count( const std::string & key ) const
 	for( Map::const_iterator p = m_map.find(key) ; p != end && (*p).first == key ; ++p )
 		n++ ;
 	return n ;
+}
+
+std::string G::OptionMap::value( const char * key , const char * default_ ) const
+{
+	return value( std::string(key) , default_ ? std::string(default_) : std::string() ) ;
 }
 
 std::string G::OptionMap::value( const std::string & key , const std::string & default_ ) const

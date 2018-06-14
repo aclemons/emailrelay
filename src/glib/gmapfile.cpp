@@ -21,7 +21,6 @@
 #include "gdef.h"
 #include "gmapfile.h"
 #include "gstr.h"
-#include "gconvert.h"
 #include "gpath.h"
 #include "gprocess.h"
 #include "gdatetime.h"
@@ -39,18 +38,18 @@ G::MapFile::MapFile() :
 {
 }
 
-G::MapFile::MapFile( const G::Path & path , bool utf8 ) :
+G::MapFile::MapFile( const G::Path & path ) :
 	m_logging(true)
 {
 	if( path != Path() )
-		readFrom( path , utf8 ) ;
+		readFrom( path ) ;
 }
 
-G::MapFile::MapFile( std::istream & stream , bool utf8 ) :
+G::MapFile::MapFile( std::istream & stream ) :
 	m_logging(true)
 {
 	G_LOG( "MapFile::read: start" ) ;
-	readFrom( stream , utf8 ) ;
+	readFrom( stream ) ;
 }
 
 G::MapFile::MapFile( const G::StringMap & map ) :
@@ -79,16 +78,16 @@ G::MapFile::MapFile( const OptionMap & map , const std::string & yes ) :
 	}
 }
 
-void G::MapFile::readFrom( const G::Path & path , bool utf8 )
+void G::MapFile::readFrom( const G::Path & path )
 {
 	std::ifstream stream( path.str().c_str() ) ;
 	if( !stream.good() )
 		throw ReadError( path.str() ) ;
 	G_LOG( "MapFile::read: reading [" << path.str() << "]" ) ;
-	readFrom( stream , utf8 ) ;
+	readFrom( stream ) ;
 }
 
-void G::MapFile::readFrom( std::istream & ss , bool utf8 )
+void G::MapFile::readFrom( std::istream & ss )
 {
 	std::string line ;
 	while( ss.good() )
@@ -120,8 +119,6 @@ void G::MapFile::readFrom( std::istream & ss , bool utf8 )
 		}
 
 		log( key , value ) ;
-		value = fromUtf( value , utf8 ) ;
-
 		add( key , value ) ;
 	}
 }
@@ -139,11 +136,11 @@ bool G::MapFile::ignore( const std::string & line ) const
 	return false ;
 }
 
-void G::MapFile::check( const G::Path & path , bool utf8 )
+void G::MapFile::check( const G::Path & path )
 {
 	MapFile tmp ;
 	tmp.m_logging = false ;
-	tmp.readFrom( path , utf8 ) ;
+	tmp.readFrom( path ) ;
 }
 
 void G::MapFile::log() const
@@ -167,17 +164,17 @@ void G::MapFile::log( bool logging , const std::string & key , const std::string
 		) << "]" ) ;
 }
 
-void G::MapFile::writeItem( std::ostream & stream , const std::string & key , bool utf8 ) const
+void G::MapFile::writeItem( std::ostream & stream , const std::string & key ) const
 {
 	std::string value = m_map.find(key) == m_map.end() ? std::string() : (*m_map.find(key)).second ;
-	writeItem( stream , key , value , utf8 ) ;
+	writeItem( stream , key , value ) ;
 }
 
-void G::MapFile::writeItem( std::ostream & stream , const std::string & key , const std::string & value , bool utf8 )
+void G::MapFile::writeItem( std::ostream & stream , const std::string & key , const std::string & value )
 {
 	log( true , key , value ) ;
 	const char * qq = value.find(' ') == std::string::npos ? "" : "\"" ;
-	stream << key << "=" << qq << toUtf(value,utf8) << qq << "\n" ;
+	stream << key << "=" << qq << value << qq << "\n" ;
 }
 
 std::string G::MapFile::quote( const std::string & s )
@@ -185,12 +182,12 @@ std::string G::MapFile::quote( const std::string & s )
 	return s.find_first_of(" \t") == std::string::npos ? s : (std::string()+"\""+s+"\"") ;
 }
 
-void G::MapFile::editInto( const G::Path & path , bool make_backup , bool allow_read_error , bool allow_write_error , bool utf8 ) const
+void G::MapFile::editInto( const G::Path & path , bool make_backup , bool allow_read_error , bool allow_write_error ) const
 {
 	typedef std::list<std::string> List ;
 	List lines = read( path , allow_read_error ) ;
 	commentOut( lines ) ;
-	replace( lines , utf8 ) ;
+	replace( lines ) ;
 	if( make_backup ) backup( path ) ;
 	save( path , lines , allow_write_error ) ;
 }
@@ -221,7 +218,7 @@ void G::MapFile::commentOut( List & line_list ) const
 	}
 }
 
-void G::MapFile::replace( List & line_list , bool utf8 ) const
+void G::MapFile::replace( List & line_list ) const
 {
 	for( StringMap::const_iterator map_p = m_map.begin() ; map_p != m_map.end() ; ++map_p )
 	{
@@ -235,7 +232,7 @@ void G::MapFile::replace( List & line_list , bool utf8 ) const
 			if( part.size() == 0U ) continue ;
 			if( part.at(0U) == (*map_p).first )
 			{
-				std::string value = toUtf( (*map_p).second , utf8 ) ;
+				std::string value = (*map_p).second ;
 				line = Str::trimmed( (*map_p).first + " " + quote(value) , Str::ws() ) ;
 				found = true ;
 				break ;
@@ -244,7 +241,7 @@ void G::MapFile::replace( List & line_list , bool utf8 ) const
 
 		if( !found )
 		{
-			std::string value = toUtf( (*map_p).second , utf8 ) ;
+			std::string value = (*map_p).second ;
 			line_list.push_back( Str::trimmed( (*map_p).first + " " + quote(value) , Str::ws() ) ) ;
 		}
 	}
@@ -429,34 +426,6 @@ const G::StringMap & G::MapFile::map() const
 const G::StringArray & G::MapFile::keys() const
 {
 	return m_keys ;
-}
-
-std::string G::MapFile::fromUtf( const std::string & value , bool utf8 )
-{
-	if( G::is_windows() && utf8 )
-	{
-		std::string result ;
-		Convert::convert( result , Convert::utf8(value) , Convert::ThrowOnError() ) ;
-		return result ;
-	}
-	else
-	{
-		return value ;
-	}
-}
-
-std::string G::MapFile::toUtf( const std::string & value , bool utf8 )
-{
-	if( G::is_windows() && utf8 )
-	{
-		Convert::utf8 result ;
-		Convert::convert( result , value ) ;
-		return result.s ;
-	}
-	else
-	{
-		return value ;
-	}
 }
 
 /// \file gmapfile.cpp

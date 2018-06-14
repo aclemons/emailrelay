@@ -127,7 +127,8 @@ void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
 		std::string message_location = m_new_msg->prepare( session_auth_id , peer_socket_address , peer_certificate ) ;
 
 		// start the filter
-		G_LOG( "GSmtp::ProtocolMessageStore::process: filter start: [" << m_filter->id() << "] [" << message_location << "]" ) ;
+		if( !m_filter->simple() )
+			G_LOG( "GSmtp::ProtocolMessageStore::process: filter start: [" << m_filter->id() << "] [" << message_location << "]" ) ;
 		m_filter->start( message_location ) ;
 	}
 	catch( std::exception & e ) // catch filtering errors
@@ -152,7 +153,8 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 		const bool rescan = m_filter->special() ;
 		G_ASSERT( m_filter->reason().empty() == (ok || abandon) ) ; // filter post-condition
 
-		G_LOG( "GSmtp::ProtocolMessageStore::filterDone: filter done: " << m_filter->str(true) ) ;
+		if( !m_filter->simple() )
+			G_LOG( "GSmtp::ProtocolMessageStore::filterDone: filter done: " << m_filter->str(true) ) ;
 
 		unsigned long id = 0UL ;
 		if( ok )

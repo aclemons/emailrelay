@@ -52,7 +52,7 @@ private:
 private:
 	bool m_active ;
 	bool m_allow_apop ;
-	PamImp * m_pam ;
+	unique_ptr<PamImp> m_pam ;
 } ;
 
 /// \class GAuth::PamImp
@@ -85,7 +85,6 @@ private:
 	std::string m_id ;
 	std::string m_pwd ;
 } ;
-
 
 GAuth::PamImp::PamImp( const std::string & app , const std::string & id ) :
 	G::Pam(app,id,true) ,
@@ -140,14 +139,12 @@ void GAuth::PamImp::delay( unsigned int )
 
 GAuth::SaslServerPamImp::SaslServerPamImp( bool active , bool allow_apop ) :
 	m_active(active) ,
-	m_allow_apop(allow_apop) ,
-	m_pam(nullptr)
+	m_allow_apop(allow_apop)
 {
 }
 
 GAuth::SaslServerPamImp::~SaslServerPamImp()
 {
-	delete m_pam ;
 }
 
 bool GAuth::SaslServerPamImp::active() const
@@ -164,7 +161,7 @@ bool GAuth::SaslServerPamImp::init( const std::string & mechanism )
 
 std::string GAuth::SaslServerPamImp::id() const
 {
-	return m_pam ? m_pam->id() : std::string() ;
+	return m_pam.get() ? m_pam->id() : std::string() ;
 }
 
 std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool & done )
@@ -175,9 +172,7 @@ std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool 
 	std::string id = G::Str::head( s , s.find(sep) , std::string() ) ;
 	std::string pwd = G::Str::tail( s , s.find(sep) , std::string() ) ;
 
-	delete m_pam ;
-	m_pam = nullptr ;
-	m_pam = new PamImp( "emailrelay" , id ) ;
+	m_pam.reset( new PamImp( "emailrelay" , id ) ) ;
 
 	try
 	{
@@ -186,14 +181,12 @@ std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool 
 	catch( G::PamError & e )
 	{
 		G_WARNING( "GAuth::SaslServer::apply: " << e.what() ) ;
-		delete m_pam ;
-		m_pam = nullptr ;
+		m_pam.reset() ;
 	}
 	catch( PamImp::NoPrompt & e )
 	{
 		G_WARNING( "GAuth::SaslServer::apply: pam error: " << e.what() ) ;
-		delete m_pam ;
-		m_pam = nullptr ;
+		m_pam.reset() ;
 	}
 
 	done = true ; // (only single challenge-response supported)

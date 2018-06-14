@@ -42,8 +42,8 @@
      <dt>--anonymous (-A)</dt>
       <dd>
        Disables the server's SMTP VRFY command, sends less verbose SMTP responses
-       and SMTP greeting, stops <em class="quote">Received</em> lines being added to mail message
-       content files, and sends an empty AUTH parameter in SMTP MAIL commands.
+       and SMTP greeting, and stops <em class="quote">Received</em> lines being added to mail message
+       content files.
       </dd>
      <dt>--as-client &lt;host:port&gt; (-q)</dt>
       <dd>
@@ -453,7 +453,7 @@
     </ul>
 
     <p>
-     These modes of operation can be mixed.
+     These can be mixed.
     </p>
 
     <p>
@@ -685,9 +685,10 @@ emailrelay --as-client=example.com:smtp --client-auth=/etc/emailrelay-server.aut
 
     <p>
      The <em class="quote">client-or-server</em> field must be <em class="quote">client</em> or <em class="quote">server</em>; the <em class="quote">password-type</em>
-     field must be <em class="quote">plain</em>, <em class="quote">md5</em> or <em class="quote">oauth</em>; the <em class="quote">userid</em> field is xtext-encoded
-     user identifier; and the <em class="quote">password</em> field is the xtext-encoded plain password,
-     a base64-encoded <em class="quote">HMAC-MD5</em> state, or a base64-encoded OAuth 2.0 token.
+     field must be <em class="quote">plain</em> or <em class="quote">md5</em>; the <em class="quote">userid</em> field is xtext-encoded
+     user identifier; and the <em class="quote">password</em> field is the xtext-encoded plain password
+     or a base64-encoded <em class="quote">HMAC-MD5</em> state. For <em class="quote">client</em> lines the password-type can
+     also be <em class="quote">oauth</em>.
     </p>
 
     <p>
@@ -704,7 +705,7 @@ emailrelay --as-client=example.com:smtp --client-auth=/etc/emailrelay-server.aut
      mechanisms have been defined and standardised, and the simplest ones just
      exchange a username and plaintext password. E-MailRelay supports the PLAIN,
      LOGIN and HMAC-MD5 mechanisms for both client-side and server-side
-     authentication as a minimum, but other mechanisms might be built-in or
+     authentication as a minimum, but other mechanisms might be built in or
      available via PAM (see below).
     </p>
 
@@ -723,10 +724,10 @@ emailrelay --as-client=example.com:smtp --client-auth=/etc/emailrelay-server.aut
     </p>
 
     <p>
-     As an example, the following secrets file defines <em class="quote">bob</em> as the username to be
-     used when E-MailRelay authenticates with a remote SMTP server, and defines two
-     usernames (<em class="quote">alice</em> and <em class="quote">carol</em>) that can be used by clients when they
-     authenticate with the E-MailRelay server:
+     In the following example <em class="quote">bob</em> is the username that E-MailRelay uses when
+     it authenticates with a remote SMTP server, and two usernames (<em class="quote">alice</em> and
+     <em class="quote">carol</em>) can be used by remote clients when they authenticate with the
+     E-MailRelay server:
     </p>
 
       <div class="div-pre">
@@ -998,26 +999,15 @@ password required pam_deny.so
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --forward-to myisp.net:smtp@localhost:9050 ...
+       <pre>emailrelay --forward-to example.com:smtp@localhost:9050 ...
 </pre>
       </div><!-- div-pre -->
     <p>
-     The Tor system will then be used to resolve the <em class="quote">myisp.net</em> domain name and
+     The Tor system will then be used to resolve the <em class="quote">example.com</em> domain name and
      establish the connection. The target SMTP server will see a connection coming
      from the Tor exit node rather than from the E-MailRelay server.
     </p>
-   <h2><a class="a-header" name="SH_1_10">Pop server</a></h2> <!-- index:2:SH:1:10:Pop server -->
-    <p>
-     E-MailRelay can be used as a POP server so that POP clients have access to
-     spooled messages.
-    </p>
-
-    <p>
-     Refer to the documentation of the various <em class="quote">--pop</em> command-line options for
-     more detail: <em class="quote">--pop</em>, <em class="quote">--pop-port</em>, <em class="quote">--pop-auth</em>, <em class="quote">--pop-no-delete</em> and
-     <em class="quote">--pop-by-name</em>.
-    </p>
-   <h2><a class="a-header" name="SH_1_11">Address verification</a></h2> <!-- index:2:SH:1:11:Address verification -->
+   <h2><a class="a-header" name="SH_1_10">Address verification</a></h2> <!-- index:2:SH:1:10:Address verification -->
     <p>
      By default the E-MailRelay server will accept all recipient addresses for
      incoming e-mails as valid. This default behaviour can be modified by using an
@@ -1030,15 +1020,11 @@ password required pam_deny.so
      Your verifier program is passed a command-line containing: (1) the recipient
      e-mail address as supplied by the remote client, (2) the <em class="quote">from</em> e-mail address
      as supplied by the client, or the empty string in the case of the <em class="quote">VRFY</em>
-     command, (3) the IP address and port of the far end of the client connection,
-    </p>
-    <ol>
-     <li>the local fully qualified domain name, (5) the authentication mechanism</li>
-    </ol>
-    <p>
-     used by the client (if any, and <em class="quote">none</em> if trusted), and (6) either the
-     authentication name or the fourth field from authentication secrets file if a
-     trusted IP address.
+     command, (3) the IP address and port of the far end of the client
+     connection, (4) the local fully qualified domain name, (5) the authentication
+     mechanism used by the client (if any, and <em class="quote">none</em> if trusted), and (6) either
+     the authentication name or the fourth field from authentication secrets file
+     if a trusted IP address.
     </p>
 
     <p>
@@ -1216,7 +1202,7 @@ catch( e )
      as returned by verifier scripts but in reverse, such as <em class="quote">3|address unavailable</em>
      or <em class="quote">0|postmaster|Local Postmaster &lt;postmaster@localhost&gt;</em>.
     </p>
-   <h2><a class="a-header" name="SH_1_12">Security issues</a></h2> <!-- index:2:SH:1:12:Security issues -->
+   <h2><a class="a-header" name="SH_1_11">Security issues</a></h2> <!-- index:2:SH:1:11:Security issues -->
     <p>
      The following are some security issues that have been taken into consideration:
     </p>
@@ -1303,7 +1289,7 @@ catch( e )
      The <em class="quote">Authentication</em>, <em class="quote">PAM Authentication</em> and <em class="quote">TLS encryption</em> sections
      above also relate to security.
     </p>
-   <h2><a class="a-header" name="SH_1_13">Administration interface</a></h2> <!-- index:2:SH:1:13:Administration interface -->
+   <h2><a class="a-header" name="SH_1_12">Administration interface</a></h2> <!-- index:2:SH:1:12:Administration interface -->
     <p>
      If enabled with the <em class="quote">--admin</em> command-line option, the E-MailRelay server will
      provide a network interface for performing administration tasks. This is a
@@ -1327,7 +1313,7 @@ E-MailRelay&gt; quit
      network status information and activity statistics, and <em class="quote">notify</em> enables
      asynchronous event notification.
     </p>
-   <h2><a class="a-header" name="SH_1_14">Bcc handling</a></h2> <!-- index:2:SH:1:14:Bcc handling -->
+   <h2><a class="a-header" name="SH_1_13">Bcc handling</a></h2> <!-- index:2:SH:1:13:Bcc handling -->
     <p>
      E-MailRelay transfers e-mail messages without changing their content in any
      way, other than by adding a <em class="quote">Received</em> header. In particular, if a message
@@ -1348,11 +1334,10 @@ E-MailRelay&gt; quit
      An E-MailRelay <em class="quote">--filter</em> script can be used to reject messages with incorrect
      <em class="quote">Bcc:</em> headers, and an example script is included.
     </p>
-   <h2><a class="a-header" name="SH_1_15">Files and directories</a></h2> <!-- index:2:SH:1:15:Files and directories -->
+   <h2><a class="a-header" name="SH_1_14">Files and directories</a></h2> <!-- index:2:SH:1:14:Files and directories -->
     <p>
-     On Unix-like systems E-MailRelay installs by default under <em class="quote">/usr/local</em>,
-     but binary distributions will probably have been built so that they
-     install elsewhere.
+     On Unix-like systems E-MailRelay installs by default under <em class="quote">/usr/local</em>, but
+     binary distributions will probably have been built to install elsewhere.
     </p>
 
     <p>
@@ -1362,14 +1347,15 @@ E-MailRelay&gt; quit
     <ul>
      <li>--mandir=&lt;dir&gt;</li>
      <li>--sbindir=&lt;dir&gt;</li>
-     <li>e_libexecdir=&lt;dir&gt;</li>
-     <li>e_sysconfdir=&lt;dir&gt;</li>
+     <li>e_bsdinitdir=&lt;dir&gt;</li>
      <li>e_docdir=&lt;dir&gt;</li>
      <li>e_examplesdir=&lt;dir&gt;</li>
-     <li>e_initdir=&lt;dir&gt;</li>
-     <li>e_spooldir=&lt;dir&gt;</li>
-     <li>e_pamdir=&lt;dir&gt;</li>
      <li>e_icondir=&lt;dir&gt;</li>
+     <li>e_initdir=&lt;dir&gt;</li>
+     <li>e_libexecdir=&lt;dir&gt;</li>
+     <li>e_pamdir=&lt;dir&gt;</li>
+     <li>e_spooldir=&lt;dir&gt;</li>
+     <li>e_sysconfdir=&lt;dir&gt;</li>
     </ul>
 
     <p>

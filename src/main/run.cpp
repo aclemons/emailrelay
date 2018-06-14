@@ -418,11 +418,6 @@ const Main::CommandLine & Main::Run::commandline() const
 	return *m_commandline.get() ;
 }
 
-const Main::Configuration & Main::Run::configuration() const
-{
-	return *m_configuration.get() ;
-}
-
 std::string Main::Run::smtpIdent() const
 {
 	return std::string("E-MailRelay V") + versionNumber() ;

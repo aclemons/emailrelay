@@ -30,7 +30,7 @@ dnl check for programs...
 dnl
 AC_PROG_CC([cc gcc clang])
 AC_PROG_CXX([c++ g++ clang++])
-AX_CXX_COMPILE_STDCXX_11
+AX_CXX_COMPILE_STDCXX_11([],[optional])
 AC_PROG_RANLIB
 AC_PROG_INSTALL
 AC_PROG_AWK
@@ -69,6 +69,7 @@ GCONFIG_FN_CXX_EMPLACE
 GCONFIG_FN_CXX_ALIGNMENT
 GCONFIG_FN_CXX_SHARED_PTR
 GCONFIG_FN_CXX_STD_THREAD
+GCONFIG_FN_CXX_STD_WSTRING
 GCONFIG_FN_IPV6
 GCONFIG_FN_SIN6_LEN
 GCONFIG_FN_STATBUF_NSEC
@@ -126,6 +127,12 @@ dnl "--enable-verbose"
 dnl
 AC_ARG_ENABLE(verbose,AS_HELP_STRING([--enable-verbose],[enable verbose logging (default yes)]))
 GCONFIG_FN_ENABLE_VERBOSE
+
+dnl ===
+dnl "--enable-bsd"
+dnl
+AC_ARG_ENABLE(bsd,AS_HELP_STRING([--enable-bsd],[enable building for bsd (default auto)]))
+GCONFIG_FN_ENABLE_BSD
 
 dnl ===
 dnl "--enable-mac"
@@ -194,6 +201,6 @@ GCONFIG_FN_SET_DIRECTORIES
 dnl ===
 dnl generate files...
 dnl
-AC_CONFIG_FILES([Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gauth/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/main/icon/Makefile src/win32/Makefile src/gui/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile test/certificates/Makefile m4/Makefile debian/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gauth/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/main/icon/Makefile src/win32/Makefile src/gui/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile test/certificates/Makefile m4/Makefile bsd/Makefile debian/Makefile])
 AC_OUTPUT
 

@@ -225,7 +225,9 @@ to authenticate with the E-MailRelay server. You just need to create the
 sub-directory for each client and then specify *emailrelay-filter-copy*
 as the *--filter* program.
 
-Refer to the reference guide for more information.
+Refer to the documentation of the various *--pop* command-line options for
+more detail: *--pop*, *--pop-port*, *--pop-auth*, *--pop-no-delete* and
+\ *--pop-by-name*\ .
 
 Triggering delivery
 ===================

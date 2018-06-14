@@ -34,10 +34,10 @@ namespace G
 }
 
 /// \class G::Pam
-/// A thin abstract interface to the system PAM library.
-///
-/// Derived classes should implement converse() to supply passwords
-/// etc. and delay() to implement anti-brute-force delays.
+/// A thin interface to the system PAM library, with two pure
+/// virtual methods that derived classes should implement: the
+/// converse() method supplies passwords etc. and delay()
+/// implements an optional anti-brute-force delay.
 ///
 /// As per the PAM model the user code should authenticate(),
 /// then checkAccount(), then establishCredentials() and finally
@@ -144,12 +144,11 @@ public:
 		///< is running.
 
 private:
-	Pam( const Pam & ) ; // not implemented
-	void operator=( const Pam & ) ; // not implemented
+	Pam( const Pam & ) ;
+	void operator=( const Pam & ) ;
 
 private:
 	PamImp * m_imp ;
 } ;
 
 #endif
-

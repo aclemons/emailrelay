@@ -62,7 +62,7 @@ Enables an administration interface on the specified listening port number. Use 
 Enables the \fIterminate\fR command in the administration interface.
 .TP
 .B \-A, --anonymous
-Disables the server's SMTP VRFY command, sends less verbose SMTP responses and SMTP greeting, stops \fIReceived\fR lines being added to mail message content files, and sends an empty AUTH parameter in SMTP MAIL commands.
+Disables the server's SMTP VRFY command, sends less verbose SMTP responses and SMTP greeting, and stops \fIReceived\fR lines being added to mail message content files.
 .TP
 .B \-q, --as-client \fI<host:port>\fR
 This is equivalent to \fI--log\fR, \fI--no-syslog\fR, \fI--no-daemon\fR, \fI--dont-serve\fR, \fI--forward\fR and \fI--forward-to\fR. It is a convenient way of running a forwarding agent that forwards spooled mail messages and then terminates.

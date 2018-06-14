@@ -62,19 +62,19 @@ elif test "`uname`" = "NetBSD"
 then
 	export CPPFLAGS="$CPPFLAGS -I/usr/X11R7/include"
 	export LDFLAGS="$LDFLAGS -L/usr/X11R7/lib"
-	$thisdir/configure --prefix=/usr --libexecdir=/usr/lib --docdir=/usr/share/doc --mandir=/usr/share/man "$@"
+	$thisdir/configure --prefix=/usr --libexecdir=/usr/lib --docdir=/usr/share/doc --mandir=/usr/share/man --sysconfdir=/etc e_bsdinitdir=/etc/rc.d "$@"
 :
 elif test "`uname`" = "FreeBSD"
 then
 	export CPPFLAGS="$CPPFLAGS -I/usr/local/include -I/usr/local/include/libav"
 	export LDFLAGS="$LDFLAGS -L/usr/local/lib -L/usr/local/lib/libav"
-	$thisdir/configure --prefix=/usr/local --mandir=/usr/local/man "$@"
+	$thisdir/configure --prefix=/usr/local --mandir=/usr/local/man e_bsdinitdir=/usr/local/etc/rc.d "$@"
 :
 elif test "`uname`" = "OpenBSD"
 then
 	export CPPFLAGS="$CPPFLAGS -I/usr/X11R6/include"
 	export LDFLAGS="$LDFLAGS -L/usr/X11R6/lib"
-	$thisdir/configure --prefix=/usr/local --mandir=/usr/local/man "$@"
+	$thisdir/configure --prefix=/usr/local --mandir=/usr/local/man e_bsdinitdir=/usr/local/etc/rc.d "$@"
 :
 elif test "`uname`" = "Darwin"
 then
@@ -86,7 +86,7 @@ elif test "`uname`" = "Linux"
 then
 	export CPPFLAGS
 	export LDFLAGS
-	$thisdir/configure --prefix=/usr --sysconfdir=/etc e_initdir=/etc/init.d "$@"
+	$thisdir/configure --prefix=/usr --sysconfdir=/etc e_initdir=/etc/init.d e_spooldir=/var/spool/emailrelay "$@"
 :
 else
 	export CPPFLAGS="$CPPFLAGS -I/usr/X11R7/include -I/usr/X11R6/include -I/usr/local/include -I/opt/local/include -I/opt/X11/include"

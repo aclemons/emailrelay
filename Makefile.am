@@ -42,7 +42,7 @@ EXTRA_DIST = \
 	winbuild-parser.pm \
 	runperl.bat
 
-SUBDIRS = bin src etc doc debian test m4
+SUBDIRS = bin src etc doc debian test m4 bsd
 
 # work-round PKG_CHECK_MODULES if no pkg-config
 ACLOCAL_AMFLAGS = -I m4

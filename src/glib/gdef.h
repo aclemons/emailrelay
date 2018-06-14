@@ -560,6 +560,9 @@
 			#define GCONFIG_HAVE_WINDOWS_CREATE_EVENT_EX 1
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_CXX_STD_WSTRING)
+		#define GCONFIG_HAVE_CXX_STD_WSTRING 1
+	#endif
 
 	/* Include main o/s headers
 	 */
@@ -699,6 +702,14 @@
 	#endif
 	#if ! GCONFIG_HAVE_ERRNO_T
 		typedef int errno_t ; /* for _s() return type */
+	#endif
+	#if ! GCONFIG_HAVE_CXX_STD_WSTRING
+		#if __cplusplus
+			namespace std
+			{
+				typedef basic_string<wchar_t> wstring ;
+			}
+		#endif
 	#endif
 
 	/* Pull some std types into the global namespace
@@ -1029,7 +1040,7 @@
 	 */
 
 	#ifdef __cplusplus
-		#if GCONFIG_ENABLE_IPV6 && GCONFIG_HAVE_IPV6
+		#if GCONFIG_HAVE_IPV6
 			inline void gnet_address6_init( sockaddr_in6 & s )
 			{
 				#if GCONFIG_HAVE_SIN6_LEN

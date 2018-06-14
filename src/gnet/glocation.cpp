@@ -26,7 +26,7 @@
 
 namespace
 {
-	const char * host_service_separators = ":/." ;
+	const char * host_service_separators = ":/" ;
 }
 
 GNet::Location::Location( const std::string & host , const std::string & service , int family ) :
