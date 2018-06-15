@@ -16,30 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-# ===
-#
 # emailrelay
 #
 # A shell-script wrapper for E-MailRelay for use in the SysV-init system.
-#
-# Additional command-line options for the emailrelay daemon are sourced from
-# the file "/etc/emailrelay.conf" if it exists. Uncommented lines in the config
-# file have "--" prepended to them and then they are pasted onto the command
-# line.
 #
 # usage: emailrelay { start | stop | restart | force-reload | status }
 #
@@ -111,6 +90,30 @@ then
 	cp -p "$CONFIG.template" "$CONFIG"
 fi
 
+setup_rundir()
+{
+	if test ! -d "$1"
+	then
+		mkdir -p "$1" && chgrp "$GROUP" "$1" && chmod 770 "$1"
+	fi
+}
+
+spooldir()
+{
+	cat "$CONFIG" | tr '\t' ' ' | sed 's/  */ /g' | grep '^spool-dir [^ ]' | tail -1 | cut -d' ' -f 2
+}
+
+setup_spooldir()
+{
+	if test "$1" != ""
+	then
+		if test ! -d "$1"
+		then
+			mkdir -p "$1" && chgrp "$GROUP" "$1" && chmod 775 "$1" && chmod g+s "$1"
+		fi
+	fi
+}
+
 case "$1" in
 
 	restart|force-reload)
@@ -121,6 +124,7 @@ case "$1" in
 	*start)
 		log_daemon_msg "Starting $DESC"
 		log_progress_msg "$NAME"
+		setup_rundir "`dirname \"$PIDFILE\"`" 2>/dev/null
 		start_daemon -p "$PIDFILE" -- "$DAEMON" --syslog --pid-file "$PIDFILE" "$CONFIG"
 		log_end_msg $?
 		;;
@@ -149,18 +153,8 @@ case "$1" in
 		;;
 
 	setup)
-		test -d "$RUNDIR" || mkdir -p "$RUNDIR" 2>/dev/null
-		chgrp "$GROUP" "$RUNDIR"
-		chmod 770 "$RUNDIR"
-
-		SPOOLDIR="`cat \"$CONFIG\" | grep '^spool-dir' | awk '{print $2}'`"
-		if test "$SPOOLDIR" != ""
-		then
-			test -d "$SPOOLDIR" || mkdir -p "$SPOOLDIR" 2>/dev/null
-			chgrp "$GROUP" "$SPOOLDIR"
-			chmod 775 "$SPOOLDIR"
-			chmod g+s "$SPOOLDIR"
-		fi
+		setup_rundir "$RUNDIR"
+		setup_spooldir "`spooldir`"
 
 		chmod 550 "$DAEMON"
 		chgrp "$GROUP" "$DAEMON"
