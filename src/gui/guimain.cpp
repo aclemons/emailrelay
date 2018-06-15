@@ -424,17 +424,16 @@ int main( int argc , char * argv [] )
 			bool run_before = virgin_flag_file == G::Path() ? configure_mode : !G::File::exists(virgin_flag_file) ;
 
 			// create the dialog and all its pages
-			const bool with_launch_button = is_mac ;
 			const bool licence_accepted = run_before ;
-			GDialog d( false , with_launch_button , virgin_flag_file ) ;
-			d.add( new TitlePage(d,pages_config,"title","license","",false,false,installer) ) ;
+			GDialog d( false , virgin_flag_file ) ;
+			d.add( new TitlePage(d,pages_config,"title","license","",false,false) ) ;
 			d.add( new LicensePage(d,pages_config,"license","directory","",false,false,licence_accepted) ) ;
 			d.add( new DirectoryPage(d,pages_config,"directory","dowhat","",false,false,!configure_mode,is_mac) ) ;
 			d.add( new DoWhatPage(d,pages_config,"dowhat","pop","smtpserver",false,false) ) ;
 			d.add( new PopPage(d,pages_config,"pop","smtpserver","logging",false,false,configure_mode) ) ;
-			d.add( new SmtpServerPage(d,pages_config,"smtpserver","filter","",false,false,configure_mode) ) ;
-			d.add( new FilterPage(d,pages_config,"filter","smtpclient","",false,false,isWindows()) ) ;
-			d.add( new SmtpClientPage(d,pages_config,"smtpclient","logging","",false,false,configure_mode) ) ;
+			d.add( new SmtpServerPage(d,pages_config,"smtpserver","smtpclient","",false,false,configure_mode) ) ;
+			d.add( new SmtpClientPage(d,pages_config,"smtpclient","filter","",false,false,configure_mode) ) ;
+			d.add( new FilterPage(d,pages_config,"filter","logging","",false,false,isWindows()) ) ;
 			d.add( new LoggingPage(d,pages_config,"logging","listening","",false,false) ) ;
 			d.add( new ListeningPage(d,pages_config,"listening","startup","",false,false) ) ;
 			d.add( new StartupPage(d,pages_config,"startup","ready","",false,false,Boot::able(Dir::boot()),is_mac) ) ;

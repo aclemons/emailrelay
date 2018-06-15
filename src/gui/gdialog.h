@@ -23,7 +23,6 @@
 
 #include "gdef.h"
 #include "qt.h"
-#include "launcher.h"
 #include "gpage.h"
 #include "gpath.h"
 #include <list>
@@ -40,7 +39,7 @@ class GDialog : public QDialog
 {Q_OBJECT
 public:
 
-	GDialog( bool with_help , bool with_launch , G::Path virgin_flag_file ) ;
+	GDialog( bool with_help , G::Path virgin_flag_file ) ;
 		///< Constructor. Use a sequence of add()s to initialise
 		///< ending with add(void).
 
@@ -84,18 +83,16 @@ public:
 
 private slots:
 	void helpButtonClicked() ;
-	void launchButtonClicked() ;
 	void backButtonClicked() ;
 	void nextButtonClicked() ;
 	void finishButtonClicked() ;
 	void pageUpdated() ;
 
 private:
-	void init( bool , bool ) ;
+	void init( bool ) ;
 	void dump( std::ostream & , bool for_install ) const ;
 	void setFirstPage( GPage & ) ;
 	void switchPage( std::string new_page_name , std::string old_page_name = std::string() , bool back = false ) ;
-	void updateLaunchButton( GPage & ) ;
 
 private:
 	typedef std::list<std::string> History ;
@@ -104,7 +101,6 @@ private:
 	History m_history ;
 	bool m_first ;
 	QPushButton * m_help_button ;
-	QPushButton * m_launch_button ;
 	QPushButton * m_cancel_button ;
 	QPushButton * m_back_button ;
 	QPushButton * m_next_button ;
@@ -116,7 +112,6 @@ private:
 	bool m_next_state ;
 	bool m_finish_state ;
 	G::Path m_virgin_flag_file ;
-	std::auto_ptr<Launcher> m_launcher ;
 } ;
 
 #endif

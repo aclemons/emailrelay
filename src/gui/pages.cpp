@@ -55,10 +55,8 @@ namespace
 // ==
 
 TitlePage::TitlePage( GDialog & dialog , const G::MapFile & , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
-	const Installer & installer ) :
-		GPage(dialog,name,next_1,next_2,finish,close) ,
-		m_installer(installer)
+	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) :
+		GPage(dialog,name,next_1,next_2,finish,close)
 {
 	m_label = new QLabel( Legal::text() ) ;
 	m_credit = new QLabel( Legal::credit() ) ;
@@ -78,11 +76,6 @@ std::string TitlePage::nextPage()
 void TitlePage::dump( std::ostream & stream , bool for_install ) const
 {
 	GPage::dump( stream , for_install ) ;
-}
-
-G::ExecutableCommand TitlePage::launchCommand() const
-{
-	return m_installer.launchCommand() ;
 }
 
 // ==
@@ -849,38 +842,30 @@ FilterPage::FilterPage( GDialog & dialog , const G::MapFile & config , const std
 	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
 	bool is_windows ) :
 		GPage(dialog,name,next_1,next_2,finish,close) ,
-		m_with_filter_copy(false) ,
 		m_is_windows(is_windows) ,
-		m_ext(is_windows?".js":".sh")
+		m_dot_exe(is_windows?".exe":"") ,
+		m_dot_script(is_windows?".js":".sh") ,
+		m_pop_page_with_filter_copy(false)
 {
-	m_config_filter = config.value( "filter" ) ;
-	m_config_client_filter = config.value( "client-filter" ) ;
-
 	m_filter_checkbox = new QCheckBox( tr("&Filter") ) ;
 	tip( m_filter_checkbox , "--filter" ) ;
 	m_filter_label = new QLabel(tr("Filter &script:")) ;
 	m_filter_edit_box = new QLineEdit ;
 	m_filter_label->setBuddy( m_filter_edit_box ) ;
-	m_filter_browse_button = new QPushButton(tr("B&rowse")) ;
-	m_filter_browse_button->setVisible( false ) ; // moot
 
 	m_client_filter_checkbox = new QCheckBox( tr("&Client filter") ) ;
 	tip( m_client_filter_checkbox , "--client-filter" ) ;
 	m_client_filter_label = new QLabel(tr("Filter &script:")) ;
 	m_client_filter_edit_box = new QLineEdit ;
 	m_client_filter_label->setBuddy( m_client_filter_edit_box ) ;
-	m_client_filter_browse_button = new QPushButton(tr("B&rowse")) ;
-	m_client_filter_browse_button->setVisible( false ) ; // moot
 
 	QHBoxLayout * script_layout = new QHBoxLayout ;
 	script_layout->addWidget( m_filter_label ) ;
 	script_layout->addWidget( m_filter_edit_box ) ;
-	script_layout->addWidget( m_filter_browse_button ) ;
 
 	QHBoxLayout * client_script_layout = new QHBoxLayout ;
 	client_script_layout->addWidget( m_client_filter_label ) ;
 	client_script_layout->addWidget( m_client_filter_edit_box ) ;
-	client_script_layout->addWidget( m_client_filter_browse_button ) ;
 
 	QVBoxLayout * server_layout = new QVBoxLayout ;
 	server_layout->addWidget( m_filter_checkbox ) ;
@@ -896,14 +881,6 @@ FilterPage::FilterPage( GDialog & dialog , const G::MapFile & config , const std
 	QGroupBox * client_group = new QGroupBox(tr("Client")) ;
 	client_group->setLayout( client_layout ) ;
 
-	m_filter_checkbox->setChecked( !config.value("filter").empty() ) ;
-	m_filter_edit_box->setText( qstr(config.value("filter")) ) ;
-
-	m_client_filter_checkbox->setChecked( !config.value("client-filter").empty() ) ;
-	m_client_filter_edit_box->setText( qstr(config.value("client-filter")) ) ;
-
-	//
-
 	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("Filters"))) ;
 	layout->addWidget( server_group ) ;
@@ -914,12 +891,21 @@ FilterPage::FilterPage( GDialog & dialog , const G::MapFile & config , const std
 	connect( m_filter_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_filter_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
 	connect( m_filter_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
-	connect( m_filter_browse_button , SIGNAL(clicked()) , this , SLOT(browseFilter()) ) ;
 
 	connect( m_client_filter_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_client_filter_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
 	connect( m_client_filter_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
-	connect( m_client_filter_browse_button , SIGNAL(clicked()) , this , SLOT(browseFilter()) ) ;
+
+	// directories are fixed by the first page, so keep the paths locked down
+	m_filter_edit_box->setEnabled( false ) ;
+	m_client_filter_edit_box->setEnabled( false ) ;
+
+	bool pop_filter_copy = config.value("filter").find("emailrelay-filter-copy") != std::string::npos ;
+	m_filter_path = G::Path( pop_filter_copy ? std::string() : config.value("filter") ) ;
+	m_filter_checkbox->setChecked( m_filter_path != G::Path() ) ;
+
+	m_client_filter_path = config.value( "client-filter" ) ;
+	m_client_filter_checkbox->setChecked( m_client_filter_path != G::Path() ) ;
 
 	onToggle() ;
 }
@@ -933,98 +919,45 @@ void FilterPage::onShow( bool )
 {
 	// initialise after contruction because we need data from other pages
 
-	DirectoryPage & dir_page = dynamic_cast<DirectoryPage&>( dialog().page("directory") ) ;
-	G::Path filter_copy_dir = dir_page.installDir() ;
-	G::Path filter_script_dir = dir_page.configDir() ;
-
 	PopPage & pop_page = dynamic_cast<PopPage&>( dialog().page("pop") ) ;
-	bool first_time = m_filter_edit_box->text().isEmpty() ;
-	bool with_filter_copy_on = !m_with_filter_copy && pop_page.withFilterCopy() ;
-	bool with_filter_copy_off = m_with_filter_copy && !pop_page.withFilterCopy() ;
-	m_with_filter_copy = pop_page.withFilterCopy() ;
+	DirectoryPage & dir_page = dynamic_cast<DirectoryPage&>( dialog().page("directory") ) ;
+	m_pop_page_with_filter_copy = pop_page.withFilterCopy() ;
 
-	if( with_filter_copy_on )
-	{
-		m_filter_edit_box->setText( qstr("<emailrelay-filter-copy>") ) ;
-	}
-	else // if( first_time || with_filter_copy_off )
-	{
-		if( !m_config_filter.empty() )
-		{
-			m_filter_edit_box->setText( qstr(m_config_filter) ) ;
-		}
-		else
-		{
-			G::Path default_filter = filter_script_dir + ("emailrelay-filter"+m_ext) ;
-			m_filter_edit_box->setText( qstr(default_filter.str()) ) ;
-		}
-	}
-
-	if( pop_page.withFilterCopy() )
-	{
-		m_filter_checkbox->setEnabled( false ) ;
+	m_filter_checkbox->setEnabled( !m_pop_page_with_filter_copy ) ;
+	if( m_pop_page_with_filter_copy )
 		m_filter_checkbox->setChecked( true ) ;
-	}
-	else if( first_time || with_filter_copy_off )
-	{
-		m_filter_checkbox->setEnabled( true ) ;
-		m_filter_checkbox->setChecked( !m_config_filter.empty() ) ;
-	}
 
-	if( m_config_client_filter.empty() )
-	{
-		G::Path default_client_filter = filter_script_dir + ("emailrelay-client-filter"+m_ext) ;
-		m_client_filter_edit_box->setText( qstr(default_client_filter.str()) ) ;
-	}
-	else
-	{
-		m_client_filter_edit_box->setText( qstr(m_config_client_filter) ) ;
-	}
+	// todo -- refactor wrt. installer and payload
+	G::Path script_dir = m_is_windows ? dir_page.configDir() : ( dir_page.installDir() + "lib" + "emailrelay" ) ;
+	G::Path exe_dir = m_is_windows ? dir_page.installDir() : ( dir_page.installDir() + "lib" + "emailrelay" ) ;
 
-	if( first_time )
-	{
-		m_client_filter_checkbox->setChecked( !m_config_client_filter.empty() ) ;
-	}
+	m_filter_path_default = script_dir + ("emailrelay-filter"+m_dot_script) ;
+	m_client_filter_path_default = script_dir + ("emailrelay-client-filter"+m_dot_script) ;
+	m_filter_copy_path = exe_dir + ("emailrelay-filter-copy"+m_dot_exe) ;
 
 	onToggle() ;
 }
 
-bool FilterPage::isComplete()
-{
-    G_DEBUG( "FilterPage::isComplete: " << m_filter_checkbox->isChecked() << " " << value(m_filter_edit_box) ) ;
-    return
-		(
-        	!m_filter_checkbox->isChecked() ||
-        	!m_filter_edit_box->text().isEmpty()
-		) &&
-		(
-        	!m_client_filter_checkbox->isChecked() ||
-        	!m_client_filter_edit_box->text().isEmpty()
-		) ;
-}
-
-void FilterPage::browseFilter()
-{
-	QString s = browse(m_filter_edit_box->text()) ;
-	if( ! s.isEmpty() )
-		m_filter_edit_box->setText( s ) ;
-}
-
-QString FilterPage::browse( QString /*ignored*/ )
-{
-	return QFileDialog::getOpenFileName( this ) ;
-}
-
 void FilterPage::onToggle()
 {
-	// directories are fixed by the first page, so keep everything locked down
-	m_filter_edit_box->setEnabled( false ) ;
-	m_filter_browse_button->setEnabled( false ) ;
-	m_filter_label->setEnabled( m_filter_checkbox->isChecked() ) ;
+	G::Path filter_path =
+		m_pop_page_with_filter_copy ?
+			m_filter_copy_path :
+			( m_filter_path.str().empty() ?
+				m_filter_path_default :
+				m_filter_path ) ;
 
-	m_client_filter_edit_box->setEnabled( false ) ;
-	m_client_filter_browse_button->setEnabled( false ) ;
-	m_client_filter_label->setEnabled( m_client_filter_checkbox->isChecked() ) ;
+	G::Path client_filter_path = m_client_filter_path.str().empty() ?
+		m_client_filter_path_default :
+		m_client_filter_path ;
+
+	bool with_filter = m_filter_checkbox->isChecked() ;
+	m_filter_label->setEnabled( with_filter ) ;
+	m_filter_edit_box->setText( qstr(with_filter?filter_path.str():std::string()) ) ;
+
+	bool with_client_filter = m_client_filter_checkbox->isChecked() ;
+	m_client_filter_label->setEnabled( with_client_filter ) ;
+	m_client_filter_edit_box->setText( qstr(with_client_filter?client_filter_path.str():std::string()) ) ;
 }
 
 void FilterPage::dump( std::ostream & stream , bool for_install ) const
@@ -1301,7 +1234,7 @@ void LoggingPage::onShow( bool back )
 	if( m_config_log_file == G::Path() )
 	{
 		DirectoryPage & dir_page = dynamic_cast<DirectoryPage&>( dialog().page("directory") ) ;
-		G::Path default_log_file = G::Path(dir_page.runtimeDir()) + "emailrelay-log-%d.txt" ;
+		G::Path default_log_file = dir_page.runtimeDir() + "emailrelay-log-%d.txt" ;
 		m_logfile_edit_box->setText( qstr(default_log_file.str()) ) ;
 	}
 	else
@@ -1608,11 +1541,6 @@ void ProgressPage::onShow( bool back )
 		connect( m_timer , SIGNAL(timeout()) , this , SLOT(poke()) ) ;
 		m_timer->start() ;
 	}
-}
-
-G::ExecutableCommand ProgressPage::launchCommand() const
-{
-	return m_installer.launchCommand() ;
 }
 
 void ProgressPage::poke()

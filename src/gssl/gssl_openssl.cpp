@@ -364,10 +364,10 @@ void GSsl::OpenSSL::ProfileImp::check( int rc , const std::string & fnname_tail 
 void GSsl::OpenSSL::ProfileImp::apply( const Config & config )
 {
 #if GCONFIG_HAVE_OPENSSL_MIN_MAX
-	if( config.hasMin() )
+	if( config.min_() )
 		SSL_CTX_set_min_proto_version( m_ssl_ctx.get() , config.min_() ) ;
 
-	if( config.hasMax() )
+	if( config.max_() )
 		SSL_CTX_set_max_proto_version( m_ssl_ctx.get() , config.max_() ) ;
 #else
 	if( config.reset() != 0L )
@@ -691,9 +691,9 @@ std::string GSsl::OpenSSL::Error::text( unsigned long e )
 
 GSsl::OpenSSL::CertificateChain::CertificateChain( STACK_OF(X509) * chain )
 {
-	for( int i = 0 ; chain != nullptr && i < chain->stack.num ; i++ )
+	for( int i = 0 ; chain != nullptr && i < sk_X509_num(chain) ; i++ )
 	{
-		void * p = chain->stack.data[i] ; if( p == nullptr ) break ;
+		void * p = sk_X509_value(chain,i) ; if( p == nullptr ) break ;
 		X509 * x509 = reinterpret_cast<X509*>(p) ;
 		m_str.append( Certificate(x509,false).str() ) ;
 	}
@@ -752,8 +752,8 @@ GSsl::OpenSSL::Config::Config( G::StringArray & cfg ) :
 	#if GCONFIG_HAVE_OPENSSL_MIN_MAX
 
 		#ifdef SSL3_VERSION
-		if( consume(cfg,"sslv3") ) m_min = SSL3_VERSION
-		if( consume(cfg,"-sslv3") ) m_max = SSL3_VERSION
+		if( consume(cfg,"sslv3") ) m_min = SSL3_VERSION ;
+		if( consume(cfg,"-sslv3") ) m_max = SSL3_VERSION ;
 		#endif
 		#ifdef TLS1_VERSION
 		if( consume(cfg,"tlsv1.0") ) m_min = TLS1_VERSION ;

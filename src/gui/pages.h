@@ -48,17 +48,14 @@ class TitlePage : public GPage
 {
 public:
 	TitlePage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
-		const Installer & ) ;
+		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;
-	virtual G::ExecutableCommand launchCommand() const ;
 
 private:
 	QLabel * m_label ;
 	QLabel * m_credit ;
-	const Installer & m_installer ;
 };
 
 class LicensePage : public GPage
@@ -222,30 +219,28 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;
 	virtual std::string helpName() const ;
-	virtual bool isComplete() ;
 	virtual void onShow( bool ) ;
 
 private slots:
-	void browseFilter() ;
 	void onToggle() ;
-
-private:
-	QString browse( QString ) ;
 
 private:
 	QCheckBox * m_filter_checkbox ;
 	QLabel * m_filter_label ;
 	QLineEdit * m_filter_edit_box ;
-	QPushButton * m_filter_browse_button ;
 	QCheckBox * m_client_filter_checkbox ;
 	QLabel * m_client_filter_label ;
 	QLineEdit * m_client_filter_edit_box ;
-	QPushButton * m_client_filter_browse_button ;
-	std::string m_config_filter ;
-	std::string m_config_client_filter ;
-	bool m_with_filter_copy ;
 	bool m_is_windows ;
-	std::string m_ext ;
+	std::string m_dot_exe ;
+	std::string m_dot_script ;
+	//
+	bool m_pop_page_with_filter_copy ;
+	G::Path m_filter_copy_path ;
+	G::Path m_filter_path ;
+	G::Path m_filter_path_default ;
+	G::Path m_client_filter_path ;
+	G::Path m_client_filter_path_default ;
 } ;
 
 class SmtpClientPage : public GPage
@@ -375,7 +370,6 @@ public:
 	virtual std::string nextPage() ;
 	virtual void dump( std::ostream & , bool ) const ;
 	virtual void onShow( bool back ) ;
-	virtual G::ExecutableCommand launchCommand() const ;
 	virtual bool closeButton() const ;
 	virtual bool isComplete() ;
 	virtual std::string helpName() const ;

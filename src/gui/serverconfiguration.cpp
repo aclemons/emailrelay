@@ -186,6 +186,14 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages , c
 		{
 			out["client-auth"] = auth ;
 		}
+		if( !pages.value("filter-server").empty() )
+		{
+			out["filter"] = pages.value("filter-server") ;
+		}
+		if( !pages.value("filter-client").empty() )
+		{
+			out["client-filter"] = pages.value("filter-client") ;
+		}
 	}
 	else
 	{

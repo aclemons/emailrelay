@@ -1154,10 +1154,16 @@ void InstallerImp::insertActions()
 	if( m_installing )
 	{
 		if( !pvalue("filter-server").empty() && no(pvalue("pop-filter-copy")) )
+		{
+			insert( new CreateDirectory( "filter" , G::Path(pvalue("filter-server")).dirname().str() ) ) ;
 			insert( new CreateFilterScript( pvalue("filter-server") , false ) ) ;
+		}
 
 		if( !pvalue("filter-client").empty() )
+		{
+			insert( new CreateDirectory( "client-filter" , G::Path(pvalue("filter-client")).dirname().str() ) ) ;
 			insert( new CreateFilterScript( pvalue("filter-client") , true ) ) ;
+		}
 	}
 
 	// create startup links and startup config

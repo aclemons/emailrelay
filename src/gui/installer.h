@@ -30,9 +30,9 @@
 class InstallerImp ;
 
 /// \class Installer
-/// A class that interprets a set of install variables
-/// dump()ed out by the GPage class and then executes a series of
-/// installation tasks using an iteration interface.
+/// A class that interprets a set of install variables dump()ed out
+/// by the GPage class and then executes a series of installation
+/// tasks using an iteration interface.
 ///
 class Installer
 {

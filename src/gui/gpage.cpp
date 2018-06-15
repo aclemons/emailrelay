@@ -164,11 +164,6 @@ void GPage::onShow( bool )
 	// no-op
 }
 
-G::ExecutableCommand GPage::launchCommand() const
-{
-	return G::ExecutableCommand() ;
-}
-
 void GPage::tip( QWidget * w , const char * p )
 {
 	// see also QWidget::setWhatsThis()

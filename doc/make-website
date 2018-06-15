@@ -16,9 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
 #
-# make_website
+# make-website
 #
-# usage: make_website [--host=<key>] <version-for-download-button>
+# usage: make-website [--host=<key>] <version-for-download-button>
 #
 # Pulls together a doxygen-based website. Developed against
 # doxygen version 1.8.14.
