@@ -91,20 +91,17 @@ void GSmtp::ExecutableFilter::onTaskDone( int exit_code , const std::string & ou
 	std::pair<std::string,std::string> pair = parseOutput( output , "rejected" ) ;
 	m_response = pair.first ;
 	m_reason = pair.second ;
+	if( m_response.find("filter exec error") == 0U ) // see ctor
+	{
+		m_reason = m_response ;
+		m_response = "rejected" ;
+	}
 
 	m_exit = Exit( exit_code , m_server_side ) ;
 	if( !m_exit.ok() )
 	{
 		G_WARNING( "GSmtp::ExecutableFilter::onTaskDone: " << m_prefix << " failed: "
 			<< "exit code " << exit_code << " [" << m_response << "]" ) ;
-	}
-	else
-	{
-		if( output.find("<<filter exec error: ") == 0U )
-			m_response = "rejected" ;
-
-		G_LOG( "GSmtp::ExecutableFilter::onTaskDone: " << m_prefix << " exit code " << exit_code << " "
-			<< "[" << m_response << "] [" << m_reason << "]" ) ;
 	}
 
 	// callback

@@ -72,10 +72,6 @@ public:
 		///< Called as this page becomes visible as a result
 		///< of the previous page's 'next' button being clicked.
 
-	virtual G::ExecutableCommand launchCommand() const ;
-		///< Called when the launch button is clicked. Returns a valid
-		///< launch command or a default-constructed object.
-
 	virtual std::string nextPage() = 0 ;
 		///< Returns the name of the next page.
 		///< Returns the empty string if last.

@@ -26,11 +26,10 @@
 #include <algorithm>
 #include <stdexcept>
 
-GDialog::GDialog( bool with_help , bool with_launch , G::Path virgin_flag_file ) :
+GDialog::GDialog( bool with_help , G::Path virgin_flag_file ) :
 	QDialog(nullptr) ,
 	m_first(true) ,
 	m_help_button(nullptr) ,
-	m_launch_button(nullptr) ,
 	m_cancel_button(nullptr) ,
 	m_back_button(nullptr) ,
 	m_next_button(nullptr) ,
@@ -38,21 +37,15 @@ GDialog::GDialog( bool with_help , bool with_launch , G::Path virgin_flag_file )
 	m_waiting(false) ,
 	m_virgin_flag_file(virgin_flag_file)
 {
-	init( with_help , with_launch ) ;
+	init( with_help ) ;
 }
 
-void GDialog::init( bool with_help , bool with_launch )
+void GDialog::init( bool with_help )
 {
 	if( with_help )
 	{
 		m_help_button = new QPushButton(tr("&Help")) ;
 		connect( m_help_button, SIGNAL(clicked()) , this , SLOT(helpButtonClicked()) ) ;
-	}
-
-	if( with_launch )
-	{
-		m_launch_button = new QPushButton(tr("&Launch")) ;
-		connect( m_launch_button , SIGNAL(clicked()) , this , SLOT(launchButtonClicked()) ) ;
 	}
 
 	m_cancel_button = new QPushButton(tr("Cancel")) ;
@@ -68,8 +61,6 @@ void GDialog::init( bool with_help , bool with_launch )
 	m_button_layout = new QHBoxLayout ;
 	if( m_help_button != nullptr )
 		m_button_layout->addWidget( m_help_button ) ;
-	if( m_launch_button != nullptr )
-		m_button_layout->addWidget( m_launch_button ) ;
 	m_button_layout->addStretch( 1 ) ;
 	m_button_layout->addWidget( m_cancel_button ) ;
 	m_button_layout->addWidget( m_back_button ) ;
@@ -134,15 +125,6 @@ void GDialog::helpButtonClicked()
 	QDesktopServices::openUrl( QString(url.c_str()) ) ;
 }
 
-void GDialog::launchButtonClicked()
-{
-	G::ExecutableCommand command = page(currentPageName()).launchCommand() ;
-	if( !command.exe().str().empty() )
-	{
-		m_launcher.reset( new Launcher( *this , command ) ) ;
-	}
-}
-
 void GDialog::backButtonClicked()
 {
 	std::string old_page_name = m_history.back();
@@ -179,7 +161,6 @@ void GDialog::pageUpdated()
 	G_DEBUG( "GDialog::pageUpdated: \"" << current_page_name << "\" page updated" ) ;
 
 	GPage & current_page = page(current_page_name) ;
-	updateLaunchButton( current_page ) ;
 	if( m_waiting )
 	{
 		; // no-op
@@ -244,18 +225,6 @@ void GDialog::switchPage( std::string new_page_name , std::string old_page_name 
 	// modify the next and finish buttons according to the page state
 	//
 	pageUpdated() ;
-}
-
-void GDialog::updateLaunchButton( GPage & page )
-{
-	if( m_launch_button != nullptr )
-	{
-		G::ExecutableCommand launch_command = page.launchCommand() ;
-		bool enabled = launch_command.exe() != G::Path() ;
-		if( m_virgin_flag_file != G::Path() && G::File::exists(m_virgin_flag_file) )
-			enabled = false ; // grey it out first time round
-		m_launch_button->setEnabled( enabled ) ;
-	}
 }
 
 bool GDialog::historyContains( const std::string & name ) const

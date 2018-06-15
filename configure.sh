@@ -86,7 +86,7 @@ elif test "`uname`" = "Linux"
 then
 	export CPPFLAGS
 	export LDFLAGS
-	$thisdir/configure --prefix=/usr --sysconfdir=/etc e_initdir=/etc/init.d e_spooldir=/var/spool/emailrelay "$@"
+	$thisdir/configure --prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d e_spooldir=/var/spool/emailrelay "$@"
 :
 else
 	export CPPFLAGS="$CPPFLAGS -I/usr/X11R7/include -I/usr/X11R6/include -I/usr/local/include -I/opt/local/include -I/opt/X11/include"

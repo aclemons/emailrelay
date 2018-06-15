@@ -55,7 +55,7 @@ rm -rf $payload/usr/share/doc/emailrelay/doxygen
 # check the "./configure" was done by "bin/configure-fhs.sh" (even on a mac)
 if test ! -d "$payload/usr/lib/emailrelay"
 then
-	echo `basename $0`: cannot see expected directories: configure with \"bin/configure-fhs.sh\" >&2
+	echo `basename $0`: cannot see expected directories: configure with \"configure.sh\" >&2
 	exit 1
 fi
 

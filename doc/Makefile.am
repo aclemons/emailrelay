@@ -76,7 +76,7 @@ EXTRA_DIST = \
 	$(svg_files_noinstall) \
 	$(html_files_install) \
 	$(html_files_noinstall) \
-	make_website
+	make-website
 
 noinst_SCRIPTS = .dox
 man1_MANS = $(man_files_install)
@@ -126,4 +126,9 @@ md:
 .PHONY: sphinx
 sphinx:
 	sphinx-build -b html . ./_build
+
+.PHONY: website
+website:
+	@chmod +x make-website || true
+	./make-website 2.0
 
