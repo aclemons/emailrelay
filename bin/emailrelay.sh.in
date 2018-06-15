@@ -83,12 +83,14 @@ log_progress_msg() {
 log_end_msg() {
 	if test "$1" -eq 0 ; then log_success_msg "...ok" ; else log_failure_msg "...failed!" ; fi
 }
-test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
 
-if test ! -f "$CONFIG" -a -f "$CONFIG.template"
-then
-	cp -p "$CONFIG.template" "$CONFIG"
-fi
+setup_config()
+{
+	if test ! -f "$CONFIG" -a -f "$CONFIG.template"
+	then
+		cp -p "$CONFIG.template" "$CONFIG"
+	fi
+}
 
 setup_rundir()
 {
@@ -114,6 +116,19 @@ setup_spooldir()
 	fi
 }
 
+# do some setup steps -- these should have been done by
+# make-install or by the packaging scripts, but the /etc/default
+# file could have been changed or something -- do this before
+# the potential init-functions redirect to systemd
+if test "$1" = "start"
+then
+	setup_config
+	setup_rundir "`dirname \"$PIDFILE\"`" 2>/dev/null
+	setup_spooldir "`spooldir`" 2>/dev/null
+fi
+
+test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
+
 case "$1" in
 
 	restart|force-reload)
@@ -124,7 +139,6 @@ case "$1" in
 	*start)
 		log_daemon_msg "Starting $DESC"
 		log_progress_msg "$NAME"
-		setup_rundir "`dirname \"$PIDFILE\"`" 2>/dev/null
 		start_daemon -p "$PIDFILE" -- "$DAEMON" --syslog --pid-file "$PIDFILE" "$CONFIG"
 		log_end_msg $?
 		;;
@@ -153,7 +167,7 @@ case "$1" in
 		;;
 
 	setup)
-		setup_rundir "$RUNDIR"
+		setup_rundir "`dirname \"$PIDFILE\"`"
 		setup_spooldir "`spooldir`"
 
 		chmod 550 "$DAEMON"

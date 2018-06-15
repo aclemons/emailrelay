@@ -4,12 +4,14 @@
 #
 
 spool="/var/spool/emailrelay"
+rundir="/var/run/emailrelay"
 
 rm -f /usr/share/doc/emailrelay/changelog.html || true
 if test "$1" = "purge"
 then
-	rmdir "$spool" || true
-	rm /etc/emailrelay.conf || true
+	rmdir "$spool" 2>/dev/null || true
+	rmdir "$rundir" 2>/dev/null || true
+	rm /etc/emailrelay.conf 2>/dev/null || true
 fi
 
 #DEBHELPER#
