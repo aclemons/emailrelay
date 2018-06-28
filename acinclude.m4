@@ -429,6 +429,7 @@ AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD],
 		AC_DEFINE(GCONFIG_HAVE_CXX_STD_THREAD,1,[Define true if compiler has std::thread])
 	else
 		AC_DEFINE(GCONFIG_HAVE_CXX_STD_THREAD,0,[Define true if compiler has std::thread])
+		gconfig_warnings="$gconfig_warnings std::thread_asynchronous_script_execution"
 	fi
 ])
 
@@ -1339,6 +1340,11 @@ AC_DEFUN([GCONFIG_FN_ENABLE_GUI],
 		fi
 	fi
 
+	if test "$enable_gui" != "no" -a "$QT_MOC" = ""
+	then
+		gconfig_warnings="$gconfig_warnings qt_graphical_user_interface"
+	fi
+
 	if test "$QT_MOC" != ""
 	then
 		AC_MSG_NOTICE([QT version: $gconfig_qt])
@@ -1439,6 +1445,12 @@ AC_DEFUN([GCONFIG_FN_ENABLE_IPV6],
 			gconfig_use_ipv6="yes"
 		fi
 	fi
+
+	if test "$enable_ipv6" != "no" -a "$gconfig_use_ipv6" = "no"
+	then
+		gconfig_warnings="$gconfig_warnings ipv6_ipv6_networking"
+	fi
+
 	if test "$gconfig_use_ipv6" = "yes" ; then
 		AC_DEFINE(GCONFIG_ENABLE_IPV6,1,[Define true to use IPv6])
 	else
@@ -1702,6 +1714,11 @@ AC_DEFUN([GCONFIG_FN_TLS],
 		gconfig_ssl_use_none=yes
 		gconfig_ssl_use_both=no
 		GCONFIG_TLS_LIBS=""
+	fi
+
+	if test "$gconfig_ssl_use_none" = "yes" -a "$with_openssl" != "no"
+	then
+		gconfig_warnings="$gconfig_warnings openssl/mbedtls_transport_layer_security"
 	fi
 
 	AC_SUBST([GCONFIG_TLS_LIBS])
@@ -1987,6 +2004,11 @@ AC_DEFUN([GCONFIG_FN_WITH_PAM],
 	if test "$with_pam" = "" -a "$gconfig_pam_compiles" = "yes"
 	then
 		gconfig_use_pam="yes"
+	fi
+
+	if test "$gconfig_pam_compiles" != "yes" -a "$with_pam" != "no"
+	then
+		gconfig_warnings="$gconfig_warnings pam_pam_authentication"
 	fi
 
 	if test "$gconfig_use_pam" = "yes"

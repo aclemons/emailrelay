@@ -65,6 +65,8 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /usr/lib/emailrelay/examples/emailrelay-process.sh
 /usr/lib/emailrelay/examples/emailrelay-resubmit.sh
 /usr/lib/emailrelay/examples/emailrelay-sendmail.pl
+/usr/lib/emailrelay/examples/emailrelay-set-from.js
+/usr/lib/emailrelay/examples/emailrelay-set-from.pl
 /usr/lib/emailrelay/examples/emailrelay-submit.sh
 /usr/sbin/emailrelay
 /usr/sbin/emailrelay-passwd
