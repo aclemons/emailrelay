@@ -117,8 +117,8 @@ setup_spooldir()
 }
 
 # do some setup steps -- these should have been done by
-# make-install or by the packaging scripts, but the /etc/default
-# file could have been changed or something -- do this before
+# make-install or by the packaging scripts, but /etc/default
+# edits could have changed something -- do this before
 # the potential init-functions redirect to systemd
 if test "$1" = "start"
 then
@@ -150,7 +150,7 @@ case "$1" in
 		log_end_msg $?
 		;;
 
-	try-restart|reload|force-reload)
+	try-restart|reload)
 		echo `basename $0`: $1 not implemented >&2
 		exit 3
 		;;

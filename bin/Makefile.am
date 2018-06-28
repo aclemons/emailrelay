@@ -19,7 +19,9 @@ example_scripts = \
 	emailrelay-bcc-check.pl \
 	emailrelay-multicast.sh \
 	emailrelay-process.sh \
-	emailrelay-sendmail.pl
+	emailrelay-sendmail.pl \
+	emailrelay-set-from.js \
+	emailrelay-set-from.pl
 
 example_scripts_in = \
 	emailrelay-deliver.sh.in \

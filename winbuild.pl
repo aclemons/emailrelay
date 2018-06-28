@@ -606,6 +606,8 @@ sub install_core
 		bin/emailrelay-edit-content.js examples
 		bin/emailrelay-edit-envelope.js examples
 		bin/emailrelay-resubmit.js examples
+		bin/emailrelay-set-from.pl examples
+		bin/emailrelay-set-from.js examples
 		doc/authentication.png doc
 		doc/forwardto.png doc
 		doc/whatisit.png doc
