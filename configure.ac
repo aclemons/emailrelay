@@ -50,7 +50,6 @@ dnl check for libraries...
 dnl
 AC_LANG([C])
 GCONFIG_FN_SEARCHLIBS_POSIX
-GCONFIG_FN_SEARCHLIBS_PAM
 
 dnl ===
 dnl check for header files, functions and typedefs...
@@ -175,7 +174,6 @@ dnl ===
 dnl "--with-pam"
 dnl
 AC_ARG_WITH(pam,AS_HELP_STRING([--with-pam],[use linux pam for authentication (default auto)]))
-GCONFIG_FN_PAM
 GCONFIG_FN_WITH_PAM
 
 dnl ===
