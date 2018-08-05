@@ -106,7 +106,7 @@ void GNet::Client::onData( const char * p , SimpleClient::size_type n )
 		if( first && m_response_timeout != 0U )
 			m_response_timer.cancelTimer() ;
 
-		bool ok = onReceive( iter.lineData() , iter.lineSize() , iter.eolSize() ) ;
+		bool ok = onReceive( iter.data() , iter.size() , iter.eolsize() ) ;
 		if( !ok )
 			break ;
 	}

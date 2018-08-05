@@ -44,7 +44,6 @@ public:
 	enum { pipe_buffer = 4096 } ; // one-off read from a pipe
 	enum { get_pwnam_r_buffer = 1024 } ; // if no sysconf() value - more than line length in /etc/passwd
 	enum { net_buffer = 20000 } ; // best if bigger than the TLS maximum block size of 16k
-	enum { net_line_limit = 1000000 } ; // d.o.s. network read line limit
 	enum { net_file_limit = 200000000 } ; // d.o.s. network read file limit
 	enum { net_hostname = 1024 } ;
 	enum { net_listen_queue = 3 } ;
@@ -59,7 +58,6 @@ public:
 	enum { pipe_buffer = 128 } ;
 	enum { get_pwnam_r_buffer = 200 } ;
 	enum { net_buffer = 512 } ;
-	enum { net_line_limit = 2000 } ;
 	enum { net_file_limit = 10000000 } ;
 	enum { net_hostname = 128 } ;
 	enum { net_listen_queue = 3 } ;

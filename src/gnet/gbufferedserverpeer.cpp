@@ -38,7 +38,7 @@ void GNet::BufferedServerPeer::onData( const char * p , ServerPeer::size_type n 
 	m_line_buffer.add( p , n ) ;
 	while( m_line_buffer.more() )
 	{
-		if( !onReceive( m_line_buffer.lineData() , m_line_buffer.lineSize() , m_line_buffer.eolSize() ) )
+		if( !onReceive( m_line_buffer.data() , m_line_buffer.size() , m_line_buffer.eolsize() ) )
 			break ;
 	}
 }

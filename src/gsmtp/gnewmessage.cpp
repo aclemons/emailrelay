@@ -30,7 +30,7 @@ GSmtp::NewMessage::~NewMessage()
 
 bool GSmtp::NewMessage::addTextLine( const std::string & line )
 {
-	return addText( line.data() , line.size() ) ;
+	return addText( line.data() , line.size() ) && addText( "\r\n" , 2U ) ;
 }
 
 /// \file gnewmessage.cpp

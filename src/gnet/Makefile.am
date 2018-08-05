@@ -63,6 +63,8 @@ libgnet_a_SOURCES = \
 	gheapclient.h \
 	glinebuffer.cpp \
 	glinebuffer.h \
+	glinestore.cpp \
+	glinestore.h \
 	glocal.cpp \
 	glocal.h \
 	glocation.cpp \
@@ -144,6 +146,8 @@ libgnet_a_SOURCES = \
 	gheapclient.h \
 	glinebuffer.cpp \
 	glinebuffer.h \
+	glinestore.cpp \
+	glinestore.h \
 	glocal.cpp \
 	glocal.h \
 	glocation.cpp \

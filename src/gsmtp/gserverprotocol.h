@@ -124,10 +124,13 @@ public:
 	virtual ~ServerProtocol() ;
 		///< Destructor.
 
-	bool apply( const char * line_data , size_t line_size , size_t eolsize ) ;
-		///< Called on receipt of a line of text from the remote client
-		///< Returns true. Throws ProtocolDone at the end of the
-		///< protocol.
+	bool inDataState() const ;
+		///< Returns true if currently in the data-transfer state.
+
+	bool apply( const char * line_data , size_t line_size , size_t eolsize , size_t linesize , char c0 ) ;
+		///< Called on receipt of a line of text (or line fragment)
+		///< from the remote client. Returns true. Throws ProtocolDone
+		///< at the end of the protocol.
 
 	void secure( const std::string & certificate ) ;
 		///< To be called when the transport protocol goes
@@ -183,7 +186,16 @@ private:
 		s_Any ,
 		s_Same
 	} ;
-	typedef std::pair<const char *,size_t> EventData ;
+	struct EventData
+	{
+		const char * ptr ;
+		size_t size ;
+		size_t eolsize ;
+		size_t linesize ;
+		char c0 ;
+		EventData( const char * ptr , size_t size ) ;
+		EventData( const char * ptr , size_t size , size_t eolsize , size_t linesize , char c0 ) ;
+	} ;
 	typedef G::StateMachine<ServerProtocol,State,Event,EventData> Fsm ;
 
 private:
@@ -199,8 +211,8 @@ private:
 	void badClientEvent() ;
 	void processDone( bool , unsigned long , std::string , std::string ) ; // ProtocolMessage::doneSignal()
 	void prepareDone( bool , bool , std::string ) ;
-	bool isEndOfText( const char * , size_t ) const ;
-	bool isEscaped( const char * , size_t ) const ;
+	bool isEndOfText( const EventData & ) const ;
+	bool isEscaped( const EventData & ) const ;
 	void doNoop( EventData , bool & ) ;
 	void doIgnore( EventData , bool & ) ;
 	void doNothing( EventData , bool & ) ;
