@@ -4,6 +4,7 @@ E-MailRelay Change Log
 2.0 -> 2.1
 ----------
 * Backwards compatibility features for 1.9/2.0 removed.
+* No intrinsic limit on the length of lines that can be received during SMTP data transfer (but see "--size").
 
 1.9.2 -> 2.0
 ------------

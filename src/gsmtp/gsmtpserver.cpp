@@ -105,18 +105,18 @@ namespace
 	{
 		GSmtp::ServerProtocol & m_protocol ;
 		Adaptor( GSmtp::ServerProtocol & protocol ) : m_protocol(protocol) {}
-		bool operator()( const char * p , size_t n , size_t e )
+		bool operator()( const char * p , size_t n , size_t eolsize , size_t linesize , char c0 )
 		{
-			return m_protocol.apply( p , n , e ) ;
+			return m_protocol.apply( p , n , eolsize , linesize , c0 ) ;
 		}
 	} ;
 }
 
-void GSmtp::ServerPeer::onData( const char * line_data , size_t line_size )
+void GSmtp::ServerPeer::onData( const char * data , size_t size )
 {
-	G_ASSERT( line_size != 0U ) ; if( line_size == 0U ) return ;
+	G_ASSERT( size != 0U ) ; if( size == 0U ) return ;
 	Adaptor a( m_protocol ) ;
-	m_line_buffer.apply( line_data , line_size , a ) ;
+	m_line_buffer.apply( data , size , a , m_protocol.inDataState() ) ;
 }
 
 void GSmtp::ServerPeer::onSecure( const std::string & certificate )

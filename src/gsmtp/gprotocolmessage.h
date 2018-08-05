@@ -35,9 +35,9 @@ namespace GSmtp
 }
 
 /// \class GSmtp::ProtocolMessage
-/// An interface used by the ServerProtocol class
-/// to assemble and process an incoming message. It implements
-/// the three 'buffers' mentioned in RFC-2821 (esp. section 4.1.1).
+/// An interface used by the ServerProtocol class to assemble and
+/// process an incoming message. It implements the three 'buffers'
+/// mentioned in RFC-2821 (esp. section 4.1.1).
 ///
 /// This interface serves to decouple the protocol class from
 /// the downstream message processing -- hence the name. Derived
@@ -97,14 +97,14 @@ public:
 		///< Precondition: at least one successful addTo() call
 
 	virtual bool addText( const char * , size_t ) = 0 ;
-		///< Adds text. Returns false on error, typically because a size
-		///< limit is reached.
+		///< Adds text. The text should normally end in CR-LF. Returns
+		///< false on error, typically because a size limit is reached.
 		///<
 		///< Precondition: at least one successful addTo() call
 
 	bool addTextLine( const std::string & ) ;
 		///< A convenience function that calls addText() taking
-		///< a string parameter.
+		///< a string parameter and adding CR-LF.
 
 	virtual std::string from() const = 0 ;
 		///< Returns the setFrom() string.

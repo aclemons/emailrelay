@@ -125,7 +125,7 @@ void GSmtp::NewFile::addTo( const std::string & to , bool local )
 
 bool GSmtp::NewFile::addText( const char * line_data , size_t line_size )
 {
-	m_size += static_cast<unsigned long>( line_size + 2U ) ;
+	m_size += static_cast<unsigned long>( line_size ) ;
 
 	// testing for eight-bit content can be slow, and _not_ testing
 	// the content is recommended by RFC-2821 ("a relay should ...
@@ -142,7 +142,6 @@ bool GSmtp::NewFile::addText( const char * line_data , size_t line_size )
 
 	std::ostream & stream = *m_content.get() ;
 	stream.write( line_data , line_size ) ;
-	stream.write( "\r\n" , 2U ) ;
 
 	return m_max_size == 0UL || m_size < m_max_size ;
 }

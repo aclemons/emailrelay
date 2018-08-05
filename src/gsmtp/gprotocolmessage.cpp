@@ -28,7 +28,7 @@ GSmtp::ProtocolMessage::~ProtocolMessage()
 
 bool GSmtp::ProtocolMessage::addTextLine( const std::string & line )
 {
-	return addText( line.data() , line.size() ) ;
+	return addText( line.data() , line.size() ) && addText( "\r\n" , 2U ) ;
 }
 
 /// \file gprotocolmessage.cpp

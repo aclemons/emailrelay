@@ -42,8 +42,8 @@ public:
 		///< Adds a 'to' address.
 
 	virtual bool addText( const char * , size_t ) = 0 ;
-		///< Adds a line of content. The line should not include the
-		///< line ending. Returns false on overflow.
+		///< Adds a line of content, typically ending with CR-LF.
+		///< Returns false on overflow.
 
 	virtual std::string prepare( const std::string & session_auth_id ,
 		const std::string & peer_socket_address , const std::string & peer_certificate ) = 0 ;
@@ -60,7 +60,7 @@ public:
 
 	bool addTextLine( const std::string & ) ;
 		///< A convenience function that calls addText() taking
-		///< a string parameter.
+		///< a string parameter and adding CR-LF.
 
 	virtual ~NewMessage() ;
 		///< Destructor. Rolls back any prepare()d storage
