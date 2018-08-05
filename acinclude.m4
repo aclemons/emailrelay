@@ -1986,24 +1986,31 @@ dnl Tests for pam. Typically used after AC_ARG_WITH(pam).
 dnl
 AC_DEFUN([GCONFIG_FN_WITH_PAM],
 [
-	AC_REQUIRE([GCONFIG_FN_SEARCHLIBS_PAM])
 	AC_REQUIRE([GCONFIG_FN_PAM])
 
-	gconfig_pam_compiles="no"
-	if test "$gconfig_cv_pam_in_security" = "yes" -o "$gconfig_cv_pam_in_pam" = "yes" -o "$gconfig_cv_pam_in_include" = "yes"
+	if test "$with_pam" = "no"
 	then
-		gconfig_pam_compiles="yes"
-	fi
+		gconfig_use_pam="no"
+	else
 
-	if test "$with_pam" = "yes" -a "$gconfig_pam_compiles" = "no"
-	then
-		AC_MSG_WARN([forcing use of pam even though it does not seem to compile])
-	fi
+		AC_SEARCH_LIBS([pam_end],[pam],[gconfig_have_libpam=yes],[gconfig_have_libpam=no])
+	
+		gconfig_pam_compiles="no"
+		if test "$gconfig_cv_pam_in_security" = "yes" -o "$gconfig_cv_pam_in_pam" = "yes" -o "$gconfig_cv_pam_in_include" = "yes"
+		then
+			gconfig_pam_compiles="yes"
+		fi
 
-	gconfig_use_pam="$with_pam"
-	if test "$with_pam" = "" -a "$gconfig_pam_compiles" = "yes"
-	then
-		gconfig_use_pam="yes"
+		if test "$with_pam" = "yes" -a "$gconfig_pam_compiles" = "no"
+		then
+			AC_MSG_WARN([forcing use of pam even though it does not seem to compile])
+		fi
+
+		gconfig_use_pam="$with_pam"
+		if test "$with_pam" = "" -a "$gconfig_pam_compiles" = "yes"
+		then
+			gconfig_use_pam="yes"
+		fi
 	fi
 
 	if test "$gconfig_pam_compiles" != "yes" -a "$with_pam" != "no"
