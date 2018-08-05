@@ -6,6 +6,7 @@ E-MailRelay Change Log
 ==========
 
 * Backwards compatibility features for 1.9/2.0 removed.
+* No intrinsic limit on the length of lines that can be received during SMTP_ data transfer (but see *--size*).
 
 1.9.2 -> 2.0
 ============
@@ -19,7 +20,7 @@ E-MailRelay Change Log
 * The *--tls-config* option works differently (see NEWS file).
 * New *--client-tls-server-name* option for server name identification (SNI).
 * New *--client-tls-required* option to force client connections to use TLS.
-* New *--server-tls-required* option to force remote SMTP_ clients to use STARTTLS.
+* New *--server-tls-required* option to force remote SMTP clients to use STARTTLS.
 * New *--forward-on-disconnect* option replaces *--poll=0*.
 * The *--anonymous* option now suppresses the *Received* line, whatever the *--domain*.
 * The second field in the secrets file indicates the password encoding, not AUTH mechanism.

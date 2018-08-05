@@ -1,5 +1,6 @@
 emailrelay (2.1) unstable; urgency=low
   * Backwards compatibility features for 1.9/2.0 removed.
+  * No intrinsic limit on the length of lines that can be received during SMTP data transfer (but see "--size").
  -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Fri, 20 Jul 2018 11:35:44 +0000
 
 emailrelay (2.0) unstable; urgency=low
@@ -31,7 +32,7 @@ emailrelay (2.0) unstable; urgency=low
   * Several build-time configure options like "--disable-pop" are withdrawn.
   * C++ 2011 is preferred, and required for multi-threading.
   * Support for very old versions of Windows is dropped.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 10 Jun 2018 16:17:54 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Fri, 15 Jun 2018 00:00:00 +0000
 
 emailrelay (1.9.2) unstable; urgency=low
   * Fixed a leak in the event-loop garbage collection.
@@ -47,7 +48,7 @@ emailrelay (1.9.2) unstable; urgency=low
   * Less verbose logging of "no more messages to send".
   * Qt4 or Qt5 selected by the "configure" script.
   * Improved the RPM spec file.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 10 Jun 2018 16:17:54 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Thu, 01 Jan 2015 00:00:00 +0000
 
 emailrelay (1.9.1) unstable; urgency=low
   * Updated OpenSSL from 1.0.1e to 1.0.1g in the Windows build.
