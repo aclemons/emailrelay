@@ -117,9 +117,6 @@ GSmtp::FileStore::FileStore( const G::Path & dir , bool optimise , unsigned long
 
 	if( G::Test::enabled("message-store-clear") )
 		clearAll() ;
-
-	if( G::Test::enabled("message-store-populate") )
-		createTestMessage() ;
 }
 
 std::string GSmtp::FileStore::x()
@@ -311,20 +308,6 @@ void GSmtp::FileStore::unfailAll()
 		G_DEBUG( "GSmtp::FileStore::unfailAll: " << message->name() ) ;
 		message->unfail() ;
 	}
-}
-
-void GSmtp::FileStore::createTestMessage()
-{
-	// for testing...
-	NewFile f( *this , "test@local.net" , "" ) ;
-	f.addTo( "test@local.net" , false ) ;
-	for( int i = 0 ; i < 1000 ; i++ )
-	{
-		std::string line( 998U , 'a'+(i%26) ) ;
-		f.addText( line.data() , line.size() ) ;
-	}
-	f.prepare( "test" , "127.0.0.1:999" , std::string() ) ;
-	f.commit( true ) ;
 }
 
 void GSmtp::FileStore::clearAll()

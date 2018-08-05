@@ -40,7 +40,7 @@ class GSmtp::NetworkVerifier : public Verifier
 {
 public:
 	NetworkVerifier( GNet::ExceptionHandler & , const std::string & server ,
-		unsigned int connection_timeout , unsigned int response_timeout , bool compatible ) ;
+		unsigned int connection_timeout , unsigned int response_timeout ) ;
 			///< Constructor.
 
 	virtual ~NetworkVerifier() ;

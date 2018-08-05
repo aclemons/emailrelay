@@ -53,10 +53,6 @@ public:
 		///< value, and the base-dir path is used turn relative paths
 		///< into absolute ones.
 
-	static G::Arg backwardsCompatibilityFixup( const G::Arg & ) ;
-		///< Modifies the command-line for backwards-compatibility with
-		///< earlier releases.
-
 	std::string semanticError() const ;
 		///< Returns a non-empty string if there is a fatal semantic conflict
 		///< in the configuration.
@@ -197,9 +193,6 @@ public:
 
 	G::Path verifier() const ;
 		///< Returns the path of an external address verifier program.
-
-	bool verifierCompatibility() const ;
-		///< Returns true if using the old-style verifier option.
 
 	bool doPolling() const ;
 		///< Returns true if doing poll-based forwarding.

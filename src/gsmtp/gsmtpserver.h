@@ -63,12 +63,11 @@ public:
 		unsigned int filter_timeout ;
 		std::string verifier_address ;
 		unsigned int verifier_timeout ;
-		bool verifier_compatibility ;
 		ServerProtocol::Config protocol_config ;
 
 		Config( bool allow_remote , unsigned int port , const AddressList & , const std::string & ident ,
 			bool anonymous , const std::string & filter_address , unsigned int filter_timeout ,
-			const std::string & verifier_adress , unsigned int verifier_timeout , bool verifier_compatibility ,
+			const std::string & verifier_adress , unsigned int verifier_timeout ,
 			ServerProtocol::Config protocol_config ) ;
 	} ;
 

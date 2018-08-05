@@ -34,44 +34,6 @@ namespace
 	bool fixed_up = false ;
 }
 
-G::Arg Main::Configuration::backwardsCompatibilityFixup( const G::Arg & arg )
-{
-	// TODO remove backwards compatibility
-	bool has_server_tls = false ;
-	bool has_server_tls_certificate = false ;
-	for( size_t i = 1U ; i < arg.c() ; i++ )
-	{
-		if( arg.v(i) == "--server-tls" || arg.v(i) == "-K" || arg.v(i).find("--server-tls=") == 0U )
-			has_server_tls = true ;
-		if( arg.v(i) == "--server-tls-certificate" || arg.v(i).find("--server-tls-certificate=") == 0U )
-			has_server_tls_certificate = true ;
-	}
-	if( has_server_tls && !has_server_tls_certificate )
-	{
-		for( size_t i = 1U ; i < arg.c() ; i++ )
-		{
-			if( ( ( arg.v(i) == "-K" && (i+1U) < arg.c() ) ||
-				( arg.v(i) == "--server-tls" && (i+1U) < arg.c() ) ) &&
-				( !arg.v(i+1U).empty() && arg.v(i+1U).at(0U) != '-' ) )
-			{
-				G::StringArray args = arg.array() ;
-				args.insert( args.begin()+i+1 , "--server-tls-certificate" ) ;
-				fixed_up = true ;
-				return G::Arg( args ) ;
-			}
-			else if( arg.v(i).find("--server-tls=") == 0U && (i+1U) < arg.c() )
-			{
-				G::StringArray args = arg.array() ;
-				args.insert( args.begin()+i , "--server-tls" ) ;
-				G::Str::replace( args[i+1U] , "server-tls" , "server-tls-certificate" ) ;
-				fixed_up = true ;
-				return G::Arg( args ) ;
-			}
-		}
-	}
-	return arg ;
-}
-
 Main::Configuration::Configuration( const G::Options & options , const G::OptionMap & map ,
 	const G::Path & app_dir , const G::Path & base_dir ) :
 		m_options(options) ,
@@ -226,7 +188,6 @@ bool Main::Configuration::pollingLog() const
 bool Main::Configuration::forwardOnDisconnect() const
 {
 	return
-		( m_map.contains("poll") && pollingTimeout() == 0U ) || // TODO remove backwards compatibility
 		m_map.contains("forward-on-disconnect") ||
 		m_map.contains("as-proxy") ;
 }
@@ -403,15 +364,7 @@ std::string Main::Configuration::nobody() const
 
 G::Path Main::Configuration::verifier() const
 {
-	return
-		m_map.contains("address-verifier") ?
-			pathValue( "address-verifier" ) :
-			( m_map.contains("verifier") ? pathValue("verifier") : G::Path() ) ;
-}
-
-bool Main::Configuration::verifierCompatibility() const
-{
-	return m_map.contains( "verifier" ) ;
+	return m_map.contains("address-verifier") ? pathValue("address-verifier") : G::Path() ;
 }
 
 bool Main::Configuration::withTerminate() const
@@ -650,11 +603,6 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 		errors.push_back( "using --interface with client= is no longer supported: use --client-interface instead" ) ;
 	}
 
-	if( m_map.contains("verifier") && m_map.contains("address-verifier") )
-	{
-		errors.push_back( "use --address-verifier, not --verifier" ) ;
-	}
-
 	// warnings...
 
 	const bool no_syslog =
@@ -698,11 +646,6 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 		warnings.push_back( "use of --poll=0 is deprecated; replace with --forward-on-disconnect" ) ;
 	}
 
-	if( m_map.contains("verifier") ) // backwards compatibility
-	{
-		warnings.push_back( "use of --verifier is deprecated; replace with --address-verifier" ) ;
-	}
-
 	if( fixed_up )
 	{
 		warnings.push_back( "use of --server-tls with a filename is deprecated; use --server-tls-certificate" ) ;
@@ -720,13 +663,6 @@ G::Path Main::Configuration::pathValue( const std::string & option_name ) const
     }
     else
     {
-		// for backwards compatibility only replace backslash-space with space
-		// on windows -- old installer code used to put in the backslash when
-		// writing the startup batch file, but it's not needed when properly
-		// quoted
-		if( G::is_windows() )
-			G::Str::replaceAll( value , "\\ " , " " ) ; // TODO remove backwards compatibility
-
     	if( value.find("@app") == 0U && m_app_dir != G::Path() )
         	G::Str::replace( value , "@app" , m_app_dir.str() ) ;
 
@@ -749,7 +685,6 @@ bool Main::Configuration::pathlike( const std::string & option_name ) const
         option_name == "client-tls-verify" ||
         option_name == "pop-auth" ||
         option_name == "server-auth" ||
-        option_name == "verifier" ||
         option_name == "address-verifier" ||
 		false ;
 }
@@ -759,7 +694,6 @@ bool Main::Configuration::compoundy( const std::string & option_name ) const
 	return
 		option_name == "filter" ||
 		option_name == "client-filter" ||
-		option_name == "verifier" ||
 		option_name == "address-verifier" ;
 }
 
@@ -810,8 +744,6 @@ G::StringArray Main::Configuration::display() const
 				result.push_back( (doSmtp()&&doServing()) ? G::Str::fromUInt(port()) : std::string() ) ;
 			else if( name == "pop-port" )
 				result.push_back( (doPop()&&doServing()) ? G::Str::fromUInt(popPort()) : std::string() ) ;
-			else if( name == "address-verifier" ) // TODO remove backwards compatibility
-				result.push_back( verifier().str() ) ;
 			else if( m_options.multivalued(name) )
 				result.push_back( m_map.value(name) ) ;
 			else if( m_options.valued(name) && pathlike(name) )
