@@ -38,7 +38,7 @@ namespace GSmtp
 class GSmtp::ExecutableVerifier : public Verifier, private GNet::TaskCallback
 {
 public:
-	ExecutableVerifier( GNet::ExceptionHandler & , const G::Path & , bool compatible ) ;
+	ExecutableVerifier( GNet::ExceptionHandler & , const G::Path & ) ;
 		///< Constructor.
 
 	virtual void verify( const std::string & rcpt_to_parameter ,

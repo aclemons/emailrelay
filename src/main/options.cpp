@@ -417,7 +417,6 @@ std::string Main::Options::spec( bool is_windows )
 			//example: 10000000
 			// Limits the size of mail messages that can be submitted over SMTP.
 
-		"Z!verifier!!!1!x!99|"
 		"!test!!!1!x!99|"
 	) ;
 

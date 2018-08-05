@@ -2,6 +2,11 @@
 E-MailRelay Change Log
 **********************
 
+2.0 -> 2.1
+==========
+
+* Backwards compatibility features for 1.9/2.0 removed.
+
 1.9.2 -> 2.0
 ============
 

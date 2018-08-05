@@ -75,7 +75,7 @@ GSmtp::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info , Server & serve
 	unique_ptr<ServerProtocol::Text> ptext ) :
 		GNet::ServerPeer(peer_info) ,
 		m_server(server) ,
-		m_verifier(VerifierFactory::newVerifier(*this,server_config.verifier_address,server_config.verifier_timeout,server_config.verifier_compatibility)) ,
+		m_verifier(VerifierFactory::newVerifier(*this,server_config.verifier_address,server_config.verifier_timeout)) ,
 		m_pmessage(server.newProtocolMessage(*this)) ,
 		m_ptext(ptext.release()) ,
 		m_line_buffer(GNet::LineBufferConfig::smtp()) ,
@@ -230,7 +230,6 @@ GSmtp::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const A
 	unsigned int filter_timeout_ ,
 	const std::string & verifier_address_ ,
 	unsigned int verifier_timeout_ ,
-	bool verifier_compatibility_ ,
 	ServerProtocol::Config protocol_config_ ) :
 		allow_remote(allow_remote_) ,
 		port(port_) ,
@@ -241,7 +240,6 @@ GSmtp::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const A
 		filter_timeout(filter_timeout_) ,
 		verifier_address(verifier_address_) ,
 		verifier_timeout(verifier_timeout_) ,
-		verifier_compatibility(verifier_compatibility_) ,
 		protocol_config(protocol_config_)
 {
 }

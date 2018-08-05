@@ -33,7 +33,7 @@ std::string GSmtp::VerifierFactory::check( const std::string & identifier )
 }
 
 GSmtp::Verifier * GSmtp::VerifierFactory::newVerifier( GNet::ExceptionHandler & exception_handler ,
-	const std::string & identifier , unsigned int timeout , bool compatible )
+	const std::string & identifier , unsigned int timeout )
 {
 	FactoryParser::Result p = FactoryParser::parse( identifier , false ) ;
 	if( p.first.empty() || p.first == "exit" )
@@ -42,11 +42,11 @@ GSmtp::Verifier * GSmtp::VerifierFactory::newVerifier( GNet::ExceptionHandler & 
 	}
 	else if( p.first == "net" )
 	{
-		return new NetworkVerifier( exception_handler , p.second , timeout , timeout , compatible ) ;
+		return new NetworkVerifier( exception_handler , p.second , timeout , timeout ) ;
 	}
 	else
 	{
-		return new ExecutableVerifier( exception_handler , G::Path(p.second) , compatible ) ;
+		return new ExecutableVerifier( exception_handler , G::Path(p.second) ) ;
 	}
 }
 

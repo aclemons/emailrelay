@@ -32,9 +32,6 @@
 # other authentication mechanisms. Hashed passwords should be generated
 # by running the "emailrelay-passwd" program.
 #
-# For backwards compatibility the first two fields can be reversed and the
-# hashed passwords can be in an older dotted-decimal format.
-#
 # Any unusual characters (including space, "=" and "+") in the "name" and
 # "password" fields should encoded using the RFC-1891 "xtext" encoding scheme
 # so that they are representing as hexadecimal ascii as "+XX".

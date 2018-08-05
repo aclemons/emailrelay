@@ -17,7 +17,7 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([E-MailRelay],[2.0],[],[emailrelay])
+AC_INIT([E-MailRelay],[2.1],[],[emailrelay])
 AC_CONFIG_SRCDIR([src/gsmtp/gsmtp.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])

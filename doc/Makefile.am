@@ -130,5 +130,5 @@ sphinx:
 .PHONY: website
 website:
 	@chmod +x make-website || true
-	./make-website 2.0
+	./make-website 2.1
 

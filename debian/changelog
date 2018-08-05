@@ -1,3 +1,7 @@
+emailrelay (2.1) unstable; urgency=low
+  * Backwards compatibility features for 1.9/2.0 removed.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Fri, 20 Jul 2018 11:35:44 +0000
+
 emailrelay (2.0) unstable; urgency=low
   * Improved IPv6 support, with IPv4 and IPv6 used independently at run-time (see "--interface").
   * Server process is not blocked during "--filter" or "--address-verifier" execution, if multi-threaded.

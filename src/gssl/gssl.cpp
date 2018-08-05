@@ -36,22 +36,7 @@ GSsl::Library::Library( bool active , const std::string & library_config , LogFn
 	if( active )
 	{
 		G::StringArray config = G::Str::splitIntoTokens( library_config , "," ) ;
-
-		// TODO remove backwards compatibility for numeric tls-config flags
-		if( G::Str::isUInt(library_config) )
-		{
-			G_WARNING( "GSsl::Library::ctor: tls-config: numeric tls configuration flags are deprecated" ) ;
-			unsigned int flags = G::Str::toUInt( library_config ) ;
-			if( (flags&(~3U)) == 0U )
-				config.clear() ;
-			if( (flags&3U) == 2U )
-				config.push_back( "sslv23" ) ;
-			else if( (flags&3U) == 3U )
-				config.push_back( "sslv3" ) ;
-		}
-
 		m_imp = newLibraryImp( config , log_fn , verbose ) ;
-
 		if( !config.empty() )
 			G_WARNING( "GSsl::Library::Library: tls-config: tls configuration items ignored: [" << G::Str::join(",",config) << "]" ) ;
 	}

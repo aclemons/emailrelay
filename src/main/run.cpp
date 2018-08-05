@@ -71,7 +71,7 @@ std::string Main::Run::buildConfiguration()
 
 std::string Main::Run::versionNumber()
 {
-	return "2.0" ;
+	return "2.1" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string & option_spec ) :
@@ -79,7 +79,7 @@ Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string &
 	m_eh_throw(true) ,
 	m_eh_nothrow(false) ,
 	m_option_spec(option_spec) ,
-	m_arg(Configuration::backwardsCompatibilityFixup(arg)) ,
+	m_arg(arg) ,
 	m_forwarding_pending(false) ,
 	m_quit_when_sent(false)
 {
@@ -529,7 +529,6 @@ GSmtp::Server::Config Main::Run::serverConfig() const
 			configuration().filterTimeout() ,
 			configuration().verifier().str() ,
 			configuration().filterTimeout() , // (verifier-timeout)
-			configuration().verifierCompatibility() ,
 			serverProtocolConfig() ) ;
 }
 

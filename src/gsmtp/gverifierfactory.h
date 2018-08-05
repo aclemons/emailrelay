@@ -40,8 +40,7 @@ class GSmtp::VerifierFactory
 {
 public:
 	static Verifier * newVerifier( GNet::ExceptionHandler & ,
-		const std::string & identifier , unsigned int timeout ,
-		bool compatible ) ;
+		const std::string & identifier , unsigned int timeout ) ;
 			///< Returns a Verifier on the heap. The identifier
 			///< is normally prefixed with a verifier type, or it
 			///< is the file system path of an exectuable.

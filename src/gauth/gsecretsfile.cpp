@@ -160,10 +160,6 @@ void GAuth::SecretsFile::process( unsigned int line_number , std::string side ,
 	G::Str::toLower( encoding_type ) ;
 	G::Str::toLower( side ) ;
 
-	// allow columns 1 and 2 to switch around - TODO remove backwards compatibility
-	if( encoding_type == G::Str::lower(m_server_type) || encoding_type == "client" )
-		std::swap( encoding_type , side ) ;
-
 	if( side == G::Str::lower(m_server_type) )
 	{
 		// server-side

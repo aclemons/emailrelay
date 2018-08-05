@@ -140,7 +140,6 @@ private:
 	std::string value( const std::string & ) const ;
 	static const std::string & crlf() ;
 	bool emptyCore() const ;
-	void createTestMessage() ;
 	void clearAll() ;
 
 private:
