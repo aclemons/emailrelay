@@ -182,6 +182,10 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages , c
 		{
 			out["client-tls"] ;
 		}
+		if( pages.booleanValue("smtp-client-tls-connection",true) )
+		{
+			out["client-tls-connection"] ;
+		}
 		if( pages.booleanValue("smtp-client-auth",true) )
 		{
 			out["client-auth"] = auth ;
