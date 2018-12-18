@@ -1107,7 +1107,8 @@ void SmtpClientPage::dump( std::ostream & stream , bool for_install ) const
 	std::string mechanism = "plain" ; // was value(m_mechanism_combo)
 	dumpItem( stream , for_install , "smtp-client-host" , value(m_server_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-client-port" , value(m_port_edit_box) ) ;
-	dumpItem( stream , for_install , "smtp-client-tls" , value(m_tls_checkbox) ) ;
+	dumpItem( stream , for_install , "smtp-client-tls" , value(m_tls_checkbox->isChecked()&&!m_tls_tunnel->isChecked()) ) ;
+	dumpItem( stream , for_install , "smtp-client-tls-connection" , value(m_tls_checkbox->isChecked()&&m_tls_tunnel->isChecked()) ) ;
 	dumpItem( stream , for_install , "smtp-client-auth" , value(m_auth_checkbox) ) ;
 	dumpItem( stream , for_install , "smtp-client-auth-mechanism" , mechanism ) ;
 	if( for_install )
