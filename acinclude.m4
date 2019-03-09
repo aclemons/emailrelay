@@ -21,8 +21,6 @@ dnl
 AC_DEFUN([GCONFIG_FN_SEARCHLIBS_POSIX],[
 	AC_SEARCH_LIBS([gethostbyname],[nsl])
 	AC_SEARCH_LIBS([connect],[socket])
-	AC_SEARCH_LIBS([shm_open],[rt])
-	AC_SEARCH_LIBS([dlopen],[dl])
 ])
 
 dnl GCONFIG_FN_SEARCHLIBS_CURSES
@@ -1629,6 +1627,12 @@ AC_DEFUN([GCONFIG_FN_TLS_MBEDTLS],
 		[[int x = MBEDTLS_ERR_NET_RECV_FAILED;]])],
 		gconfig_ssl_mbedtls_net_h=yes,
 		gconfig_ssl_mbedtls_net_h=no )
+
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[[#include <mbedtls/net_sockets.h>]],
+		[[int x = MBEDTLS_ERR_NET_RECV_FAILED;]])],
+		gconfig_ssl_mbedtls_net_sockets_h=yes,
+		gconfig_ssl_mbedtls_net_sockets_h=no )
 	fi
 
 	if test "$gconfig_cv_ssl_mbedtls" = "yes" ; then
@@ -1639,7 +1643,7 @@ AC_DEFUN([GCONFIG_FN_TLS_MBEDTLS],
 		gconfig_ssl_mbedtls_libs=""
 	fi
 
-	if test "$gconfig_ssl_mbedtls_net_h" = "yes" ; then
+	if test "$gconfig_ssl_mbedtls_net_h" = "yes" -a "$gconfig_ssl_mbedtls_net_sockets_h" = "no" ; then
 		AC_DEFINE(GCONFIG_HAVE_MBEDTLS_NET_H,1,[Define true to use deprecated mbedtls/net.h])
 	else
 		AC_DEFINE(GCONFIG_HAVE_MBEDTLS_NET_H,0,[Define true to use deprecated mbedtls/net.h])
