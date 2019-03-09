@@ -927,10 +927,11 @@ std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_pe
 	const G::Date date( tm ) ;
 	const G::Time time( tm ) ;
 	const std::string esmtp = std::string("ESMTP") + (secure?"S":"") + (authenticated?"A":"") ; // RFC-3848
+	const std::string peer_name = G::Str::escaped(G::Str::printable(smtp_peer_name),'\\'," ","s") ;
 
 	std::ostringstream ss ;
 	ss
-		<< "Received: from " << smtp_peer_name
+		<< "Received: from " << peer_name
 		<< " ("
 			<< "[" << peer_address << "]"
 		<< ") by " << thishost << " with " << esmtp << " ; "
