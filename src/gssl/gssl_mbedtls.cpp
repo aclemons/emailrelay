@@ -793,11 +793,10 @@ static void scrub( unsigned char *p_in , size_t n )
 
 GSsl::MbedTls::SecureFile::SecureFile( const std::string & path , bool with_nul )
 {
-	FILE * fp = nullptr ;
+	std::filebuf f ;
+	std::filebuf * fp = nullptr ;
 	try
 	{
-		std::filebuf f ;
-		std::filebuf * fp = nullptr ;
 		const char * path_p = path.c_str() ;
 		{
 			G::Root claim_root ;
@@ -810,13 +809,13 @@ GSsl::MbedTls::SecureFile::SecureFile( const std::string & path , bool with_nul 
 		if( ok ) fp->pubseekpos( 0 , std::ios_base::in ) ;
 		if( ok ) ok = fp->sgetn( &m_buffer[0] , m_buffer.size() ) == static_cast<std::streamsize>(m_buffer.size()) ;
 		if( !ok ) scrub( pu() , size() ) ;
-		if( fp ) fp->close() ;
+		if( fp ) { fp->close() ; fp = nullptr ; }
 		if( ok && with_nul ) m_buffer.push_back( '\0' ) ;
 	}
 	catch(...)
 	{
 		scrub( pu() , size() ) ;
-		if( fp ) std::fclose( fp ) ;
+		if( fp ) fp->close() ;
 		throw ;
 	}
 }
