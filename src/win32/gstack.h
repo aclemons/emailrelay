@@ -92,7 +92,6 @@ private:
 	static LPARAM to_lparam( const Stack * p ) ;
 	static void setptr( HWND hwnd , const Stack * This ) ;
 	static GGui::Stack * getptr( HWND hwnd ) ;
-	static std::string convert( const char * p , const std::string & default_ = std::string() ) ;
 	void onCompleteImp( bool ) ;
 
 private:

@@ -66,22 +66,25 @@ bool Main::WinForm::closed() const
 
 void Main::WinForm::onInit( HWND hdialog , const std::string & title )
 {
-	if( title == "Configuration" )
+	if( title.empty() )
+	{
+	}
+	else if( title.at(0U) == 'C' ) // Configuration
 	{
 		m_cfg_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
   		m_cfg_view->set( cfgData() , 2U , 150U ) ;
 	}
-	else if( title == "Version" )
+	else if( title.at(0U) == 'V' ) // Version
 	{
 		m_version_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
   		m_version_view->set( versionData() , 1U , 330U ) ;
 	}
-	else if( title == "Status" )
+	else if( title.at(0U) == 'S' ) // Status
 	{
 		m_status_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
   		m_status_view->set( statusData() , 3U , 100U ) ;
 	}
-	else if( title == "Licence" )
+	else if( title.at(0U) == 'L' ) // Licence
 	{
 		m_licence_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
   		m_licence_view->set( licenceData() , 1U , 330U ) ;

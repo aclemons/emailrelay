@@ -20,7 +20,6 @@
 
 #include "gdef.h"
 #include "gstack.h"
-#include "gconvert.h"
 #include "gstr.h"
 #include "gwindowhidden.h"
 #include "glog.h"
@@ -230,29 +229,6 @@ bool GGui::Stack::stackMessage( MSG & msg )
 	return false ;
 }
 
-std::string GGui::Stack::convert( const char * p , const std::string & default_ )
-{
-	// mingw+wine bug -- the title is always in wide characters -- try both
-
-	std::string simple = std::string( p ) ;
-	std::wstring wide( reinterpret_cast<const WCHAR *>(p) ) ;
-
-	G::Convert::utf8 utf8_holder ;
-	try
-	{
-		G::Convert::convert( utf8_holder , wide ) ;
-	}
-	catch( G::Convert::Error & )
-	{
-	}
-	std::string utf8 = utf8_holder.s ;
-
-	bool valid_simple = simple.length() >= 2U && G::Str::toPrintableAscii(simple) == simple ;
-	bool valid_wide = !utf8.empty() && G::Str::toPrintableAscii(utf8) == utf8 ;
-
-	return valid_wide ? utf8 : ( valid_simple ? simple : default_ ) ;
-}
-
 bool GGui::Stack::dlgProc( HWND hdialog , UINT message , WPARAM wparam , LPARAM lparam )
 {
 	// see also GGui::Dialog
@@ -278,7 +254,6 @@ bool GGui::Stack::dlgProc( HWND hdialog , UINT message , WPARAM wparam , LPARAM 
 		Stack * This = getptr( hdialog ) ;
 		if( This )
 		{
-			int index = PropSheet_HwndToIndex( This->handle() , hdialog ) ;
 			if( message == WM_CLOSE )
 			{
 				G_DEBUG( "GGui::Stack::dlgProc: WM_CLOSE: h=" << hdialog ) ;
@@ -296,6 +271,7 @@ bool GGui::Stack::dlgProc( HWND hdialog , UINT message , WPARAM wparam , LPARAM 
 				NMHDR * header = reinterpret_cast<NMHDR*>(lparam) ;
 				if( header->code == PSN_SETACTIVE )
 				{
+					int index = PropSheet_HwndToIndex( This->handle() , hdialog ) ;
 					G_DEBUG( "GGui::Stack::dlgProc: WM_NOTIFY: PSN_SETACTIVE: h=" << hdialog << " index=" << index ) ;
 					HWND hfrom = header->hwndFrom ; G_IGNORE_VARIABLE(hfrom) ;
 					//PSHNOTIFY * p = reinterpret_cast<PSHNOTIFY*>(lparam) ; // 'derived' structure
@@ -304,6 +280,7 @@ bool GGui::Stack::dlgProc( HWND hdialog , UINT message , WPARAM wparam , LPARAM 
 				}
 				if( header->code == PSN_KILLACTIVE )
 				{
+					int index = PropSheet_HwndToIndex( This->handle() , hdialog ) ;
 					G_DEBUG( "GGui::Stack::dlgProc: WM_NOTIFY: PSN_KILLACTIVE: h=" << hdialog << " index=" << index ) ;
 					HWND hfrom = header->hwndFrom ; G_IGNORE_VARIABLE(hfrom) ;
 					//PSHNOTIFY * p = reinterpret_cast<PSHNOTIFY*>(lparam) ; // 'derived' structure
