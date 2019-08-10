@@ -121,6 +121,8 @@ private:
 class GSmtp::ServerPeer : public GNet::ServerPeer , private ServerProtocol::Sender
 {
 public:
+	G_EXCEPTION( SendError , "failed to send smtp response" ) ;
+
 	ServerPeer( GNet::Server::PeerInfo peer_info , Server & server ,
 		const GAuth::Secrets & server_secrets , const Server::Config & server_config ,
 		unique_ptr<ServerProtocol::Text> ptext ) ;
