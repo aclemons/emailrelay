@@ -148,6 +148,7 @@ void GNet::SimpleClient::startConnecting()
 
 	// create and open a socket
 	//
+	m_sp.reset() ;
 	m_socket.reset( new StreamSocket(m_remote_location.address().domain()) ) ;
 	socket().addWriteHandler( *this , m_eh ) ;
 
