@@ -96,7 +96,7 @@ void GSmtp::ServerPeer::onDelete( const std::string & reason )
 
 void GSmtp::ServerPeer::onSendComplete()
 {
-	// never gets here -- see GNet::Sender ctor
+	// never gets here -- see protocolSend()
 }
 
 namespace
@@ -126,7 +126,9 @@ void GSmtp::ServerPeer::onSecure( const std::string & certificate )
 
 void GSmtp::ServerPeer::protocolSend( const std::string & line , bool go_secure )
 {
-	send( line , 0U ) ; // GNet::Sender -- may throw SendError
+	if( !send( line , 0U ) ) // GNet::ServerPeer::send()
+		throw SendError() ; // we only send short responses, so treat flow control as fatal
+
 	if( go_secure )
 		secureAccept() ;
 }
