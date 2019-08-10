@@ -337,10 +337,11 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		m_state = sSentTlsEhlo ;
 		sendEhlo() ;
 	}
-	else if( m_state == sAuth1 && reply.is(Reply::Challenge_334) && G::Base64::valid(reply.text()) )
+	else if( m_state == sAuth1 && reply.is(Reply::Challenge_334) && 
+		( m_auth_mechanism == "PLAIN" || G::Base64::valid(reply.text()) ) )
 	{
 		// authentication challenge -- send the response
-		std::string challenge = G::Base64::decode( reply.text() ) ;
+		std::string challenge = m_auth_mechanism == "PLAIN" ? std::string() : G::Base64::decode( reply.text() ) ;
 		GAuth::SaslClient::Response rsp = m_sasl->response( m_auth_mechanism , challenge ) ;
 		if( rsp.error )
 		{
