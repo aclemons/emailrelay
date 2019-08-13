@@ -1,3 +1,7 @@
+emailrelay (2.0.1) unstable; urgency=low
+  * Make PLAIN client authentication work against servers with broken 334 responses.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Tue, 13 Aug 2019 09:53:07 +0000
+
 emailrelay (2.0) unstable; urgency=low
   * Improved IPv6 support, with IPv4 and IPv6 used independently at run-time (see "--interface").
   * Server process is not blocked during "--filter" or "--address-verifier" execution, if multi-threaded.
@@ -27,7 +31,7 @@ emailrelay (2.0) unstable; urgency=low
   * Several build-time configure options like "--disable-pop" are withdrawn.
   * C++ 2011 is preferred, and required for multi-threading.
   * Support for very old versions of Windows is dropped.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 10 Jun 2018 16:17:54 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Fri, 15 Jun 2018 00:00:00 +0000
 
 emailrelay (1.9.2) unstable; urgency=low
   * Fixed a leak in the event-loop garbage collection.
@@ -43,7 +47,7 @@ emailrelay (1.9.2) unstable; urgency=low
   * Less verbose logging of "no more messages to send".
   * Qt4 or Qt5 selected by the "configure" script.
   * Improved the RPM spec file.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 10 Jun 2018 16:17:54 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Thu, 01 Jan 2015 00:00:00 +0000
 
 emailrelay (1.9.1) unstable; urgency=low
   * Updated OpenSSL from 1.0.1e to 1.0.1g in the Windows build.

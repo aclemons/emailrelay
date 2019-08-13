@@ -54,7 +54,7 @@ require "winbuild.pm" ;
 $AutoMakeParser::verbose = 0 ;
 
 my $project = "emailrelay" ;
-my $version = "2.0" ;
+my $version = "2.0.1" ;
 my $install_x64 = "$project-$version-w64" ;
 my $install_x86 = "$project-$version-w32" ;
 

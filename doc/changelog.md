@@ -1,6 +1,11 @@
 E-MailRelay Change Log
 ======================
 
+2.0 -> 2.0.1
+------------
+
+* Make PLAIN client authentication work against servers with broken 334 responses.
+
 1.9.2 -> 2.0
 ------------
 
