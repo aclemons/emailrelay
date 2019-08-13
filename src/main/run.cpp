@@ -71,7 +71,7 @@ std::string Main::Run::buildConfiguration()
 
 std::string Main::Run::versionNumber()
 {
-	return "2.0" ;
+	return "2.0.1" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string & option_spec ) :

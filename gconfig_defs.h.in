@@ -6,6 +6,9 @@
 /* Define true to use std::thread */
 #undef GCONFIG_ENABLE_STD_THREAD
 
+/* Define true if compiler has std::align() */
+#undef GCONFIG_HAVE_CXX_ALIGNMENT
+
 /* Define true if compiler supports c++ constexpr */
 #undef GCONFIG_HAVE_CXX_CONSTEXPR
 
@@ -29,6 +32,9 @@
 
 /* Define true if compiler has std::thread */
 #undef GCONFIG_HAVE_CXX_STD_THREAD
+
+/* Define true if compiler has std::wstring */
+#undef GCONFIG_HAVE_CXX_STD_WSTRING
 
 /* Define true if compiler has <type_traits> make_unsigned */
 #undef GCONFIG_HAVE_CXX_TYPE_TRAITS_MAKE_UNSIGNED
