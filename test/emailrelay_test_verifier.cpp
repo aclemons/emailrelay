@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,12 +37,14 @@
 #include "glinebuffer.h"
 #include "gstr.h"
 #include "gevent.h"
+#include "gtimerlist.h"
 #include "gprocess.h"
-#include "gbufferedserverpeer.h"
+#include "gserverpeer.h"
 #include "ggetopt.h"
 #include "garg.h"
 #include "gsleep.h"
-#include "gdebug.h"
+#include "glogoutput.h"
+#include "glog.h"
 #include <sstream>
 #include <iostream>
 #include <fstream>
@@ -53,20 +55,20 @@ namespace Main
 	class Verifier ;
 }
 
-class Main::VerifierPeer : public GNet::BufferedServerPeer
+class Main::VerifierPeer : public GNet::ServerPeer
 {
 public:
-	explicit VerifierPeer( GNet::Server::PeerInfo info ) ;
+	VerifierPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo info ) ;
 private:
-	virtual void onDelete( const std::string & ) ;
-	virtual bool onReceive( const char * , size_t , size_t ) ;
-	virtual void onSecure( const std::string & ) ;
-	virtual void onSendComplete() {}
+	virtual void onDelete( const std::string & ) override ;
+	virtual bool onReceive( const char * , size_t , size_t , size_t , char ) override ;
+	virtual void onSecure( const std::string & , const std::string & ) override ;
+	virtual void onSendComplete() override {}
 	bool processLine( std::string ) ;
 } ;
 
-Main::VerifierPeer::VerifierPeer( GNet::Server::PeerInfo info ) :
-	BufferedServerPeer( info , GNet::LineBufferConfig::newline() )
+Main::VerifierPeer::VerifierPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo info ) :
+	GNet::ServerPeer( ebu.bind(this) , info , GNet::LineBufferConfig::newline() )
 {
 	G_LOG_S( "VerifierPeer::ctor: new connection from " << info.m_address.displayString() ) ;
 }
@@ -76,11 +78,11 @@ void Main::VerifierPeer::onDelete( const std::string & )
 	G_LOG_S( "VerifierPeer::onDelete: disconnected" ) ;
 }
 
-void Main::VerifierPeer::onSecure( const std::string & )
+void Main::VerifierPeer::onSecure( const std::string & , const std::string & )
 {
 }
 
-bool Main::VerifierPeer::onReceive( const char * line_data , size_t line_size , size_t )
+bool Main::VerifierPeer::onReceive( const char * line_data , size_t line_size , size_t , size_t , char )
 {
 	std::string line( line_data , line_size ) ;
 	G_DEBUG( "VerifierPeer::onReceive: [" << G::Str::printable(line) << "]" ) ;
@@ -138,31 +140,42 @@ bool Main::VerifierPeer::processLine( std::string line )
 class Main::Verifier : public GNet::Server
 {
 public:
-	Verifier( GNet::ExceptionHandler & , bool ipv6 , unsigned int port ) ;
-	virtual GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) override ;
+	Verifier( GNet::ExceptionSink , bool ipv6 , unsigned int port , unsigned int idle_timeout ) ;
+	~Verifier() ;
+	virtual unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo ) override ;
 } ;
 
-Main::Verifier::Verifier( GNet::ExceptionHandler & eh , bool ipv6 , unsigned int port ) :
-	GNet::Server( eh , GNet::Address(ipv6?GNet::Address::Family::ipv6():GNet::Address::Family::ipv4(),port) )
+Main::Verifier::Verifier( GNet::ExceptionSink es , bool ipv6 , unsigned int port , unsigned int idle_timeout ) :
+	GNet::Server( es , GNet::Address(ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,port) , GNet::ServerPeerConfig(idle_timeout) )
 {
 }
 
-GNet::ServerPeer * Main::Verifier::newPeer( GNet::Server::PeerInfo info )
+Main::Verifier::~Verifier()
 {
-	return new VerifierPeer( info ) ;
+	serverCleanup() ; // base class early cleanup
+}
+
+unique_ptr<GNet::ServerPeer> Main::Verifier::newPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo info )
+{
+	try
+	{
+		return unique_ptr<GNet::ServerPeer>( new VerifierPeer( ebu , info ) ) ;
+	}
+	catch( std::exception & e )
+	{
+		G_WARNING( "Verifier::newPeer: new connection error: " << e.what() ) ;
+		return unique_ptr<GNet::ServerPeer>() ;
+	}
 }
 
 // ===
 
-static int run( bool ipv6 , unsigned int port )
+static int run( bool ipv6 , unsigned int port , unsigned int idle_timeout )
 {
-	struct Eh : GNet::ExceptionHandler
-	{
-		virtual void onException( std::exception & ) { throw ; }
-	} eh ;
 	unique_ptr<GNet::EventLoop> loop( GNet::EventLoop::create() ) ;
+	GNet::ExceptionSink es ;
 	GNet::TimerList timer_list ;
-	Main::Verifier verifier( eh , ipv6 , port ) ;
+	Main::Verifier verifier( es , ipv6 , port , idle_timeout ) ;
 	loop->run() ;
 	return 0 ;
 }
@@ -197,6 +210,7 @@ int main( int argc , char * argv [] )
 		bool ipv6 = opt.contains("ipv6") ;
 		unsigned int port = G::Str::toUInt( opt.value("port","10020") ) ;
 		std::string pid_file = opt.value("pid-file","") ;
+		unsigned int idle_timeout = 30U ;
 
 		if( !pid_file.empty() )
 		{
@@ -205,7 +219,7 @@ int main( int argc , char * argv [] )
 		}
 
 		G::LogOutput log_output( log , debug , log_file ) ;
-		int rc = run( ipv6 , port ) ;
+		int rc = run( ipv6 , port , idle_timeout ) ;
 		std::cout << "done" << std::endl ;
 		return rc ;
 	}

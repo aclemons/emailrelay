@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,13 +42,13 @@ namespace G
 class G::LogOutput
 {
 public:
- 	enum SyslogFacility { User , Daemon , Mail , Cron } ; // etc.
+ 	g__enum(SyslogFacility) { User , Daemon , Mail , Cron } ; g__enum_end(SyslogFacility) // etc.
 
 	LogOutput( const std::string & prefix , bool output , bool summary_logging ,
 		bool verbose_logging , bool with_debug , bool with_level ,
 		bool with_timestamp , bool strip_context , bool use_syslog ,
 		const std::string & stderr_replacement = std::string() ,
-		SyslogFacility syslog_facility = User ) ;
+		SyslogFacility syslog_facility = SyslogFacility::User ) ;
 			///< Constructor. If there is no LogOutput object, or if 'output'
 			///< is false, then there is no output of any sort. Otherwise at
 			///< least warning and error messages are generated.
@@ -66,12 +66,8 @@ public:
 			///< Constructor for test programs. Only generates output if the
 			///< first parameter is true. Never uses syslog.
 
-	virtual ~LogOutput() ;
+	~LogOutput() ;
 		///< Destructor.
-
-	virtual void rawOutput( std::ostream & , G::Log::Severity , const std::string & ) ;
-		///< Overridable. Used to do the final message
-		///< output (with OutputDebugString() or stderr).
 
 	static LogOutput * instance() ;
 		///< Returns a pointer to the controlling LogOutput object. Returns
@@ -91,17 +87,6 @@ public:
 	bool at( G::Log::Severity ) const ;
 		///< Returns true if logging should occur for the given severity level.
 
-	bool at( G::Log::Severity , const std::string & group ) const ;
-		///< Returns true if logging should occur for the given severity level
-		///< and logging group.
-
-	static void groups( const std::string & ) ;
-		///< Sets the list of active logging groups. The string is a comma-separated
-		///< list of "log-whatever" names, with "log-all" having the obvious meaning.
-		///< Names that do not start with "log-" are ignored. The default set of
-		///< groups is taken from an environment variable on construction. Does
-		///< nothing if there is no instance().
-
 	bool syslog() const ;
 		///< Returns true if syslog output is enabled.
 
@@ -113,10 +98,9 @@ public:
 		///< Makes an assertion check (regardless of any LogOutput
 		///< object). Calls output() if the 'file' parameter is not null.
 
-	virtual void onAssert() ;
-		///< Called during an assertion failure. This allows Windows
-		///< applications to stop timers etc. (Timers can cause reentrancy
-		///< problems and infinitely recursive dialog box creation.)
+	static void assertion( const char * file , int line , void * test , const char * ) ;
+		///< Overload for pointers (motivated by the MSVC warning
+		///< message).
 
 	static void register_( const std::string & exe ) ;
 		///< Registers the given executable as a source of logging.
@@ -126,19 +110,18 @@ public:
 
 private:
 	typedef size_t size_type ;
-	LogOutput( const LogOutput & ) ; // not implemented
-	void operator=( const LogOutput & ) ; // not implemented
+	LogOutput( const LogOutput & ) g__eq_delete ;
+	void operator=( const LogOutput & ) g__eq_delete ;
 	void init() ;
 	void cleanup() ;
 	void appendTimestampStringTo( std::string & ) ;
 	static std::string dateString() ;
 	void doOutput( G::Log::Severity , const std::string & ) ;
 	void doOutput( G::Log::Severity s , const char * , int , const std::string & ) ;
-	void doAssertion( const char * , int , const std::string & ) ;
+	void rawOutput( std::ostream & , G::Log::Severity , const std::string & ) ;
 	static const char * levelString( Log::Severity s ) ;
 	static std::string itoa( int ) ;
 	static std::string fileAndLine( const char * , int ) ;
-	static void halt() ;
 	static LogOutput * & pthis() ;
 	static std::ostream & err( const std::string & ) ;
 	static void getLocalTime( time_t , struct std::tm * ) ; // dont make logging dependent on G::DateTime
@@ -153,7 +136,6 @@ private:
 	bool m_level ;
 	bool m_strip ;
 	bool m_syslog ;
-	std::set<std::string> m_groups ;
 	std::ostream & m_std_err ;
 	SyslogFacility m_facility ;
 	time_t m_time ;

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,10 +26,10 @@
 #    emailrelay_enable="YES"
 #
 # Delegates to the linux start/stop script, which reads default directories
-# etc. from "/etc/rc.conf.d/emailrelay" and the server command-line options
-# from "/usr/local/etc/emailrelay.conf".
+# from "/etc/rc.conf.d/emailrelay" (if present) and server command-line
+# options from "/usr/local/etc/emailrelay.conf".
 #
-# See also man rc(8).
+# See also man rc(8), man service(8)
 #
 # PROVIDE: emailrelay
 # REQUIRE: DAEMON

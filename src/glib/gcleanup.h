@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,12 +54,12 @@ public:
 		///< Ensures that the cleanup functions are also called via atexit(), in
 		///< addition to abnormal-termination signals.
 		///<
-		///< This can be useful when third-party library code (eg. Xlib) might call
-		///< exit() (grrr). But be careful to call atexit(false) before normal
-		///< termination, returning from main().
+		///< This can be useful when ancient third-party library code (eg. Xlib)
+		///< might call exit(), but be careful to disable these exit handlers
+		///< before normal termination by calling atexit(false).
 
 private:
-	Cleanup() ;
+	Cleanup() g__eq_delete ;
 } ;
 
 #endif

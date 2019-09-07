@@ -87,14 +87,24 @@
 #
 #client-auth /etc/emailrelay.auth
 
+# Name: client-auth-config
+# Format: client-auth-config <config>
+# Description: Configures the SMTP client authentication module using a
+# semicolon-separated list of configuration items. Each item is a
+# single-character key, followed by a colon and then a comma-separated	list.
+# A 'm' character introduces an ordered list of authentication	mechanisms,
+# and an 'x' is used for blacklisted mechanisms.
+#
+#client-auth-config m:cram-sha1,cram-md5
+
 # Name: client-filter
 # Format: client-filter <program>
 # Description: Runs the specified external filter program whenever a mail
 # message is forwarded. The filter is passed the name of the message file in
 # the spool directory so that it can edit it as required. A network filter
-# can be specified as "net:<transport-address>" and prefixes of "spam:" and
-# "exit:" are also allowed. The "--filter" option is normally more useful
-# than "--client-filter".
+# can be specified as "net:<transport-address>" and prefixes of "spam:",
+# "spam-edit:" and "exit:" are also allowed. The "--filter" option is
+# normally more useful than "--client-filter".
 #
 #client-filter /usr/local/sbin/emailrelay-client-filter
 
@@ -191,7 +201,7 @@
 # Format: domain <fqdn>
 # Description: Specifies the network name that is used in SMTP EHLO commands,
 # "Received" lines, and for generating authentication challenges. The default
-# network name it derived from a DNS lookup of the local hostname.
+# is derived from a DNS lookup of the local hostname.
 #
 #domain smtp.example.com
 
@@ -210,8 +220,10 @@
 # spool directory so that it can edit it as required. The mail message is
 # rejected if the filter program terminates with an exit code between 1 and
 # 99. Use "net:<transport-address>" to communicate with a filter daemon over
-# the network, or "spam:<transport-address>" to talk to a spamassassin spamd
-# daemon, or "exit:<number>" to emulate a filter program that just exits.
+# the network, or "spam:<transport-address>" for a spamassassin spamd daemon
+# to accept or reject mail messages, or  "spam-edit:<transport-address>" to
+# have spamassassin edit the message  content without rejecting it, or
+# "exit:<number>" to emulate a filter  program that just exits.
 #
 #filter /usr/local/sbin/emailrelay-filter
 
@@ -250,11 +262,18 @@
 #
 #hidden
 
+# Name: idle-timeout
+# Format: idle-timeout <time>
+# Description: Specifies a timeout (in seconds) for receiving network traffic
+# from	remote SMTP and POP clients. The default is 1800 seconds.
+#
+#idle-timeout 2
+
 # Name: immediate
 # Format: immediate
-# Description: Causes mail messages to be forwarded as soon as they are
-# submitted, even before they are accepted. This can be used to do proxying
-# without store-and-forward, but in practice clients tend to to time out
+# Description: Causes mail messages to be forwarded as they are received,
+# even before  they have been accepted. This can be used to do proxying
+# without  store-and-forward, but in practice clients tend to to time out
 # while waiting for their mail message to be accepted.
 #
 #immediate
@@ -270,7 +289,7 @@
 # comma-separated list. Use a prefix of "smtp=", "pop=" or "admin=" on
 # addresses that should apply only to those types of listening port.
 #
-#interface 192.168.0.1,127.0.0.1,::1
+#interface 192.168.0.1,127.0.0.1,pop=::1,smtp=::
 
 # Name: log
 # Format: log
@@ -338,7 +357,7 @@
 # Name: pop
 # Format: pop
 # Description: Enables the POP server listening, by default on port 110,
-# providing access to spooled mail messages. Negotiated TLS using the POP3
+# providing access to spooled mail messages. Negotiated TLS using the POP
 # "STLS" command will be enabled if the "--server-tls" option is also given.
 #
 #pop
@@ -358,10 +377,11 @@
 # Description: Modifies the spool directory used by the POP server to be a
 # sub-directory with the same name as the POP authentication user-id. This
 # allows multiple POP clients to read the spooled messages without
-# interfering with each other. Content files can stay in the main spool
-# directory with the envelope files copied into user-specific
-# sub-directories. The "emailrelay-filter-copy" program is a convenient way
-# of doing this when run via "--filter".
+# interfering with each other, particularly when also  using
+# "--pop-no-delete". Content files can stay in the main spool  directory with
+# only the envelope files copied into user-specific  sub-directories. The
+# "emailrelay-filter-copy" program is a  convenient way of doing this when
+# run via "--filter".
 #
 #pop-by-name
 
@@ -422,6 +442,16 @@
 # of "/pam" can be used for authentication using linux PAM.
 #
 #server-auth /etc/private/emailrelay.auth
+
+# Name: server-auth-config
+# Format: server-auth-config <config>
+# Description: Configures the SMTP server authentication module using a
+# semicolon-separated list of configuration items. Each item is a
+# single-character key, followed by a colon and then a comma-separated	list.
+# A 'm' character introduces a preferred sub-set of the built-in
+# authentication mechanisms, and an 'x' is used for blacklisted  mechanisms.
+#
+#server-auth-config m:cram-sha256,cram-sha1
 
 # Name: server-tls
 # Format: server-tls
@@ -494,7 +524,8 @@
 # Format: user <username>
 # Description: When started as root the program switches to an non-privileged
 # effective user-id when idle. This option can be used to define which
-# user-id is used. Ignored on Windows.
+# user-id is used. Specify "root" to disable all user-id switching. Ignored
+# on Windows.
 #
 #user nobody
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,12 +22,11 @@
 #define G_POP_SERVER_PROTOCOL_H
 
 #include "gdef.h"
-#include "gpop.h"
 #include "gaddress.h"
 #include "gstatemachine.h"
-#include "gpopsecrets.h"
+#include "gsaslserversecrets.h"
 #include "gpopstore.h"
-#include "gpopauth.h"
+#include "gsaslserver.h"
 #include "gtimer.h"
 #include "gexception.h"
 
@@ -49,36 +48,40 @@ class GPop::ServerProtocol
 {
 public:
 	G_EXCEPTION( ProtocolDone , "pop protocol done" ) ;
+
 	class Sender /// An interface used by ServerProtocol to send protocol replies.
 	{
-		public: virtual bool protocolSend( const std::string & s , size_t offset ) = 0 ;
-		public: virtual ~Sender() ;
-		private: void operator=( const Sender & ) ; // not implemented
-	} ;
-	class Text /// An interface used by ServerProtocol to provide response text strings.
-	{
-		public: virtual std::string greeting() const = 0 ;
-		public: virtual std::string quit() const = 0 ;
-		public: virtual std::string capa() const = 0 ;
-		public: virtual std::string user( const std::string & id ) const = 0 ;
-		public: virtual ~Text() ;
-		private: void operator=( const Text & ) ; // not implemented
-	} ;
-	struct Config /// A structure containing configuration parameters for ServerProtocol. NOT USED.
-	{
-		bool dummy ;
-		Config() ;
-	} ;
-	class Security /// An interface used by ServerProtocol to enable TLS.
-	{
-		public: virtual bool securityEnabled() const = 0 ;
-		public: virtual void securityStart() = 0 ;
-		public: virtual ~Security() ;
-		private: void operator=( const Security & ) ; // not implemented
+	public:
+		virtual bool protocolSend( const std::string & s , size_t offset ) = 0 ;
+		virtual ~Sender() ;
 	} ;
 
-	ServerProtocol( Sender & sender , Security & security , Store & store , const Secrets & secrets ,
-		const Text & text , GNet::Address peer_address , Config config ) ;
+	class Text /// An interface used by ServerProtocol to provide response text strings.
+	{
+	public:
+		virtual std::string greeting() const = 0 ;
+		virtual std::string quit() const = 0 ;
+		virtual std::string capa() const = 0 ;
+		virtual std::string user( const std::string & id ) const = 0 ;
+		virtual ~Text() ;
+	} ;
+
+	struct Config /// A structure containing configuration parameters for ServerProtocol, currently empty.
+	{
+		Config() ;
+	} ;
+
+	class Security /// An interface used by ServerProtocol to enable TLS.
+	{
+	public:
+		virtual bool securityEnabled() const = 0 ;
+		virtual void securityStart() = 0 ;
+		virtual ~Security() ;
+	} ;
+
+	ServerProtocol( Sender & sender , Security & security , Store & store ,
+		const GAuth::SaslServerSecrets & server_secrets , const std::string & sasl_server_config ,
+		const Text & text , GNet::Address peer_address , const Config & config ) ;
 			///< Constructor.
 			///<
 			///< The Sender interface is used to send protocol
@@ -88,9 +91,6 @@ public:
 			///< for returning to the client.
 			///<
 			///< All references are kept.
-
-	virtual ~ServerProtocol() ;
-		///< Destructor.
 
 	void init() ;
 		///< Starts the protocol.
@@ -109,11 +109,12 @@ public:
 		///< Called when the server connection becomes secure.
 
 private:
-	enum Event
+	g__enum(Event)
 	{
 		eApop ,
 		eAuth ,
 		eAuthData ,
+		eAuthComplete ,
 		eCapa ,
 		eDele ,
 		eList ,
@@ -130,8 +131,8 @@ private:
 		eStls ,
 		eSecure ,
 		eUnknown
-	} ;
-	enum State
+	} ; g__enum_end(Event)
+	g__enum(State)
 	{
 		sStart ,
 		sEnd ,
@@ -140,13 +141,13 @@ private:
 		sAuth ,
 		s_Any ,
 		s_Same
-	} ;
+	} ; g__enum_end(State)
 	typedef const std::string & EventData ;
 	typedef G::StateMachine<ServerProtocol,State,Event,EventData> Fsm ;
 
 private:
-	ServerProtocol( const ServerProtocol & ) ; // not implemented
-	void operator=( const ServerProtocol & ) ; // not implemented
+	ServerProtocol( const ServerProtocol & ) g__eq_delete ;
+	void operator=( const ServerProtocol & ) g__eq_delete ;
 	void doQuit( const std::string & line , bool & ) ;
 	void doQuitEarly( const std::string & line , bool & ) ;
 	void doStat( const std::string & line , bool & ) ;
@@ -164,6 +165,7 @@ private:
 	void doStls( const std::string & line , bool & ) ;
 	void doAuth( const std::string & line , bool & ) ;
 	void doAuthData( const std::string & line , bool & ) ;
+	void doAuthComplete( const std::string & line , bool & ) ;
 	void doUidl( const std::string & line , bool & ) ;
 	void sendInit() ;
 	void sendError() ;
@@ -180,7 +182,7 @@ private:
 	bool sendContentLine( std::string & , bool & ) ;
 	void send( std::string ) ;
 	void lockStore() ;
-	std::string mechanismsWithoutLogin() const ;
+	std::string mechanisms() const ;
 	bool mechanismsIncludePlain() const ;
 
 private:
@@ -189,8 +191,7 @@ private:
 	Security & m_security ;
 	Store & m_store ;
 	StoreLock m_store_lock ;
-	const Secrets & m_secrets ;
-	Auth m_auth ;
+	unique_ptr<GAuth::SaslServer> m_sasl_server ;
 	GNet::Address m_peer_address ;
 	Fsm m_fsm ;
 	std::string m_user ;
@@ -198,6 +199,7 @@ private:
 	long m_body_limit ;
 	bool m_in_body ;
 	bool m_secure ;
+	bool m_sasl_server_init_apop ;
 } ;
 
 /// \class GPop::ServerProtocolText
@@ -209,17 +211,11 @@ public:
 	explicit ServerProtocolText( GNet::Address peer ) ;
 		///< Constructor.
 
-	virtual std::string greeting() const override ;
-		///< Final override from GPop::ServerProtocol::Text.
-
-	virtual std::string quit() const override ;
-		///< Final override from GPop::ServerProtocol::Text.
-
-	virtual std::string capa() const override ;
-		///< Final override from GPop::ServerProtocol::Text.
-
-	virtual std::string user( const std::string & id ) const override ;
-		///< Final override from GPop::ServerProtocol::Text.
+private: // overrides
+	virtual std::string greeting() const override ; // Override from GPop::ServerProtocol::Text.
+	virtual std::string quit() const override ; // Override from GPop::ServerProtocol::Text.
+	virtual std::string capa() const override ; // Override from GPop::ServerProtocol::Text.
+	virtual std::string user( const std::string & id ) const override ; // Override from GPop::ServerProtocol::Text.
 } ;
 
 #endif

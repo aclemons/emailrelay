@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gfilestore.h"
 #include "gstoredfile.h"
 #include "gxtext.h"
@@ -31,8 +30,9 @@
 
 GSmtp::StoredFile::StoredFile( FileStore & store , const G::Path & envelope_path ) :
 	m_store(store) ,
+	m_content(new std::ifstream) ,
 	m_envelope_path(envelope_path) ,
-	m_eight_bit(false) ,
+	m_eight_bit(0) ,
 	m_errors(0U) ,
 	m_locked(false) ,
 	m_crlf(false)
@@ -49,6 +49,7 @@ GSmtp::StoredFile::~StoredFile()
 	{
 		if( m_locked )
 		{
+			// unlock
 			FileWriter claim_writer ;
 			G::File::rename( m_envelope_path , m_old_envelope_path , G::File::NoThrow() ) ;
 		}
@@ -68,14 +69,23 @@ std::string GSmtp::StoredFile::location() const
 	return contentPath().str() ;
 }
 
-bool GSmtp::StoredFile::eightBit() const
+int GSmtp::StoredFile::eightBit() const
 {
 	return m_eight_bit ;
 }
 
-void GSmtp::StoredFile::sync( bool )
+void GSmtp::StoredFile::close()
 {
-	readEnvelopeCore( true ) ;
+	m_content.reset() ;
+}
+
+std::string GSmtp::StoredFile::reopen()
+{
+	std::string reason = "error" ;
+	if( !readEnvelope(reason,true) || !openContent(reason) )
+		return reason ;
+	else
+		return std::string() ;
 }
 
 bool GSmtp::StoredFile::readEnvelope( std::string & reason , bool check_recipients )
@@ -94,8 +104,11 @@ bool GSmtp::StoredFile::readEnvelope( std::string & reason , bool check_recipien
 
 void GSmtp::StoredFile::readEnvelopeCore( bool check_recipients )
 {
-	FileReader claim_reader ;
-	std::ifstream stream( m_envelope_path.str().c_str() , std::ios_base::binary | std::ios_base::in ) ;
+	std::ifstream stream ;
+	{
+		FileReader claim_reader ;
+		G::File::open( stream , m_envelope_path ) ;
+	}
 	if( ! stream.good() )
 		throw ReadError( m_envelope_path.str() ) ;
 
@@ -137,7 +150,8 @@ void GSmtp::StoredFile::readFormat( std::istream & stream )
 
 void GSmtp::StoredFile::readFlag( std::istream & stream )
 {
-	m_eight_bit = readValue(stream,"Content") == "8bit" ;
+	std::string content = readValue( stream , "Content" ) ;
+	m_eight_bit = content == "8bit" ? 1 : ( content == "7bit" ? 0 : -1 ) ;
 }
 
 void GSmtp::StoredFile::readFrom( std::istream & stream )
@@ -224,20 +238,18 @@ bool GSmtp::StoredFile::openContent( std::string & reason )
 {
 	try
 	{
-		FileReader claim_reader ;
 		G::Path content_path = contentPath() ;
 		G_DEBUG( "GSmtp::FileStore::openContent: \"" << content_path << "\"" ) ;
-		unique_ptr<std::istream> stream( new std::ifstream(
-			content_path.str().c_str() , std::ios_base::in | std::ios_base::binary ) ) ;
+		unique_ptr<std::ifstream> stream( new std::ifstream ) ;
+		{
+			FileReader claim_reader ;
+			G::File::open( *stream.get() , content_path ) ;
+		}
 		if( !stream->good() )
 		{
 			reason = "cannot open content file" ;
 			return false ;
 		}
-
-		G_DEBUG( "GSmtp::MessageStore: processing envelope \"" << m_envelope_path.basename() << "\"" ) ;
-		G_DEBUG( "GSmtp::MessageStore: processing content \"" << content_path.basename() << "\"" ) ;
-
 		m_content.reset( stream.release() ) ;
 		return true ;
 	}
@@ -319,21 +331,6 @@ bool GSmtp::StoredFile::lock()
 	return ok ;
 }
 
-void GSmtp::StoredFile::unlock()
-{
-	if( m_locked )
-	{
-		{
-			FileWriter claim_writer ;
-			G::File::rename( m_envelope_path , m_old_envelope_path ) ;
-		}
-		G_LOG( "GSmtp::StoredMessage: unlocking file \"" << m_envelope_path.basename() << "\"" ) ;
-		m_envelope_path = m_old_envelope_path ;
-		m_locked = false ;
-		m_store.updated() ;
-	}
-}
-
 void GSmtp::StoredFile::fail( const std::string & reason , int reason_code )
 {
 	if( G::File::exists(m_envelope_path) ) // client-side preprocessing may have removed it
@@ -377,14 +374,16 @@ void GSmtp::StoredFile::unfail()
 
 void GSmtp::StoredFile::addReason( const G::Path & path , const std::string & reason , int reason_code ) const
 {
-	FileWriter claim_writer ;
-	std::ofstream file( path.str().c_str() ,
-		std::ios_base::binary | std::ios_base::app ) ; // "app", not "ate", for win32
-	file << FileStore::x() << "Reason: " << reason << eol() ;
+	std::ofstream file ;
+	{
+		FileWriter claim_writer ;
+		G::File::open( file , path , std::ios_base::app ) ; // "app", not "ate", for win32
+	}
+	file << FileStore::x() << "Reason: " << G::Str::toPrintableAscii(reason) << eol() ;
 	file << FileStore::x() << "ReasonCode:" ; if( reason_code ) file << " " << reason_code ; file << eol() ;
 }
 
-G::Path GSmtp::StoredFile::badPath( G::Path busy_path )
+G::Path GSmtp::StoredFile::badPath( const G::Path & busy_path )
 {
 	return busy_path.withExtension("bad") ; ; // "foo.envelope.busy" -> "foo.envelope.bad"
 }
@@ -399,27 +398,35 @@ void GSmtp::StoredFile::destroy()
 
 	G::Path content_path = contentPath() ;
 	G_LOG( "GSmtp::StoredMessage: deleting file: \"" << content_path.basename() << "\"" ) ;
-	m_content.reset() ; // close it first (but not much good if it's been extracted already)
+	m_content.reset() ; // close it before deleting
 	{
 		FileWriter claim_writer ;
 		G::File::remove( content_path , G::File::NoThrow() ) ;
 	}
 }
 
-const std::string & GSmtp::StoredFile::from() const
+std::string GSmtp::StoredFile::from() const
 {
 	return m_from ;
 }
 
-const G::StringArray & GSmtp::StoredFile::to() const
+std::string GSmtp::StoredFile::to( size_t i ) const
 {
-	return m_to_remote ;
+	return i < m_to_remote.size() ? m_to_remote[i] : std::string() ;
 }
 
-unique_ptr<std::istream> GSmtp::StoredFile::extractContentStream()
+size_t GSmtp::StoredFile::toCount() const
+{
+	return m_to_remote.size() ;
+}
+
+std::istream & GSmtp::StoredFile::contentStream()
 {
 	G_ASSERT( m_content.get() != nullptr ) ;
-	return unique_ptr<std::istream>( m_content.release() ) ;
+	if( m_content.get() == nullptr )
+		m_content.reset( new std::ifstream ) ;
+
+	return *m_content.get() ;
 }
 
 G::Path GSmtp::StoredFile::contentPath() const
@@ -431,11 +438,6 @@ G::Path GSmtp::StoredFile::contentPath() const
 		throw FilenameError( filename ) ;
 
 	return G::Path( G::Str::head(filename,pos,std::string()) + ".content" ) ;
-}
-
-size_t GSmtp::StoredFile::remoteRecipientCount() const
-{
-	return m_to_remote.size() ;
 }
 
 size_t GSmtp::StoredFile::errorCount() const

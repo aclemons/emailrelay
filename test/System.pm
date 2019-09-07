@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -271,12 +271,19 @@ sub createMessageFile
 sub createSpoolDir
 {
 	# Creates a spool directory with open permissions.
-	my ( $mode , $dir , $key ) = @_ ;
+	my ( $mode , $dir , $key , $group ) = @_ ;
 	$mode = defined($mode) ? $mode : 0777 ;
 	$key = defined($key) ? $key : "spool" ;
+	$group ||= "daemon" ;
 	my $path = tempfile($key,$dir) ;
 	my $old_mask = umask 0 ;
 	my $ok = mkdir $path , $mode ;
+	if( unix() && `id -u` == 0 )
+	{
+		my $rc = system( "chgrp $group $path" ) ;
+		$rc += system( "chmod g+s $path" ) ;
+		Check::that( $rc == 0 , "cannot set spool dir permissions" ) ;
+	}
 	umask $old_mask ;
 	Check::that( $ok , "failed to create spool directory" , $path ) ;
 	return $path ;
@@ -329,8 +336,18 @@ sub match
 	# the given filespec. Fails if not exactly one.
 	my ( $filespec ) = @_ ;
 	my @files = glob_( $filespec ) ;
-	Check::that( @files == 0 || @files == 1 , "too many matching files" , $filespec ) ;
+	Check::that( @files == 1 , "wrong number of matching files" , $filespec ) ;
 	return $files[0] ;
+}
+
+sub matchOne
+{
+	# Returns the name of one of the files that match
+	# the given filespec. Fails if not the expected count.
+	my ( $filespec , $index , $count ) = @_ ;
+	my @files = glob_( $filespec ) ;
+	Check::that( @files == $count , "wrong number of matching files" , $filespec ) ;
+	return $files[$index] ;
 }
 
 sub submitSmallMessage

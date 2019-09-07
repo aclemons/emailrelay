@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,14 +49,17 @@ namespace GAuth
 /// peer.advertise( sasl.mechanisms() ) ;
 /// if( sasl.init(peer.preferred()) )
 /// {
-///   peer.send( sasl.initialChallenge() ) ;
-///   for(;;)
+///   if( peer.haveInitialResponse() && sasl.mustChallenge() ) throw ProtocolError() ;
+///   bool done = false ;
+///   string challenge = peer.haveInitialResponse() ?
+///     sasl.apply(peer.initialResponse(),done) : sasl.initialChallenge() ;
+///   while( !done )
 ///   {
-///     std::string reply = peer.receive() ;
-///     bool done = false ;
-///     std::string challenge = sasl.apply( reply , done ) ;
-///     if( done ) break ;
-///     peer.send( challenge ) ;
+/// \endcode
+/// peer.send( challenge ) ;
+/// \code
+///     string response = peer.receive() ;
+///     challenge = sasl.apply( response , done ) ;
 ///   }
 ///   bool ok = sasl.authenticated() ;
 /// }
@@ -79,7 +82,7 @@ public:
 		///< Returns true if the constructor's "secrets" object
 		///< was valid. See also Secrets::valid().
 
-	virtual std::string mechanisms( char sep = ' ' ) const = 0 ;
+	virtual std::string mechanisms( char space_separator ) const = 0 ;
 		///< Returns a list of supported, standard mechanisms
 		///< that can be advertised to the client.
 		///<
@@ -91,7 +94,8 @@ public:
 		///< mechanisms() list, or if it is some other supported
 		///< mechanism (like "APOP") that the derived-class object
 		///< allows implicitly. May be used more than once.
-		///< The initialChallenge() is re-initialised.
+		///< The initialChallenge() is re-initialised on each
+		///< successful init().
 
 	virtual std::string mechanism() const = 0 ;
 		///< Returns the mechanism, as passed to the last init()
@@ -112,16 +116,21 @@ public:
 		///< initial challenge has been sent.
 
 	virtual std::string initialChallenge() const = 0 ;
-		///< Returns the initial server challenge. May return
-		///< an empty string.
+		///< Returns the possibly-empty initial server challenge.
 
 	virtual std::string apply( const std::string & response , bool & done ) = 0 ;
-		///< Applies the client response and returns the
-		///< next challenge.
+		///< Applies the client response and returns the next
+		///< challenge and a 'done' flag by reference.
+		///<
+		///< Note that some mechanisms generate an extra round-trip
+		///< even after the authentication status has been settled.
+		///< In this case the 'done' flag will be set true only
+		///< when the final empty response from the client is
+		///< apply()d.
 
 	virtual bool authenticated() const = 0 ;
 		///< Returns true if authenticated sucessfully.
-		///< Precondition: apply() returned empty
+		///< Precondition: apply() 'done'
 
 	virtual std::string id() const = 0 ;
 		///< Returns the authenticated or trusted identity. Returns the
@@ -130,9 +139,6 @@ public:
 	virtual bool trusted( const GNet::Address & ) const = 0 ;
 		///< Returns true if a trusted client that
 		///< does not need to authenticate.
-
-private:
-	void operator=( const SaslServer & ) ;
 } ;
 
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #define G_AUTH_SECRET__H
 
 #include "gdef.h"
-#include "gstrings.h"
 #include "gexception.h"
 #include <string>
 
@@ -33,23 +32,28 @@ namespace GAuth
 
 /// \class GAuth::Secret
 /// Encapsulates a shared secret from the secrets file plus the associated
-/// userid. A secret is usually a shared key, but it may be masked by a hash
-/// function. If masked then it can only be verified by an hmac operation
-/// using the matching hash function. However, the hmac hash function must
-/// be capable of accepting an intermediate hash state, and this is might
+/// userid. A secret is usually a plaintext shared key, but it may be masked
+/// by a hash function. If masked then it can only be verified by an hmac
+/// operation using the matching hash function. However, the hmac hash function
+/// must be capable of accepting an intermediate hash state, and this is might
 /// only be available for md5.
 ///
 class GAuth::Secret
 {
 public:
 	G_EXCEPTION( Error , "invalid authorisation secret" ) ;
+	G_EXCEPTION( BadId , "invalid authorisation id" ) ;
 
-	Secret( const std::string & , const std::string & , const std::string & , const std::string & = std::string() ) ;
-		///< Constructor used by the SecretsFile class.
+	Secret( const std::string & secret , const std::string & secret_encoding ,
+		const std::string & id , bool id_encoding_xtext ,
+		const std::string & context = std::string() ) ;
+			///< Constructor used by the SecretsFile class. Throws on error,
+			///< including if the encodings are invalid.
 
-	static std::string check( const std::string & , const std::string & , const std::string & ) ;
-		///< Does a non-throwing check of the constructor parameters,
-		///< returning an error or the empty string.
+	static std::string check( const std::string & secret , const std::string & secret_encoding ,
+		const std::string & id , bool id_encoding_xtext ) ;
+			///< Does a non-throwing check of the constructor parameters,
+			///< returning an error message or the empty string.
 
 	bool valid() const ;
 		///< Returns true if the secret is valid.
@@ -80,7 +84,7 @@ public:
 		///< sensitive. The secret may be in-valid().
 
 private:
-	Secret() ;
+	Secret() ; // Secret::none()
 	explicit Secret( const std::string & ) ;
 	static bool isDotted( const std::string & ) ;
 	static std::string undotted( const std::string & ) ;

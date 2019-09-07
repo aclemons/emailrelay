@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,27 +19,25 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gnetworkfilter.h"
 #include "gstr.h"
 #include "glog.h"
 
-GSmtp::NetworkFilter::NetworkFilter( GNet::ExceptionHandler & exception_handler ,
-	bool server_side , const std::string & server ,
+GSmtp::NetworkFilter::NetworkFilter( GNet::ExceptionSink es , const std::string & server ,
 	unsigned int connection_timeout , unsigned int response_timeout ) :
-		m_exception_handler(exception_handler) ,
-		m_server_side(server_side) ,
+		m_es(es) ,
 		m_location(server) ,
 		m_connection_timeout(connection_timeout) ,
-		m_response_timeout(response_timeout) ,
-		m_lazy(true)
+		m_response_timeout(response_timeout)
 {
-	m_client.eventSignal().connect( G::Slot::slot(*this,&GSmtp::NetworkFilter::clientEvent) ) ;
+	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&GSmtp::NetworkFilter::clientEvent) ) ;
+	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&GSmtp::NetworkFilter::clientDeleted) ) ;
 }
 
 GSmtp::NetworkFilter::~NetworkFilter()
 {
-	m_client.eventSignal().disconnect() ;
+	m_client_ptr.eventSignal().disconnect() ;
+	m_client_ptr.deletedSignal().disconnect() ;
 }
 
 std::string GSmtp::NetworkFilter::id() const
@@ -54,28 +52,29 @@ bool GSmtp::NetworkFilter::simple() const
 
 void GSmtp::NetworkFilter::start( const std::string & path )
 {
-	if( !m_lazy || m_client.get() == nullptr )
-	{
-		m_client.reset( new RequestClient("scanner","ok",m_location,m_connection_timeout,m_response_timeout) );
-	}
 	m_text.erase() ;
-	m_client->request( path ) ; // (no need to wait for connection)
+	if( m_client_ptr.get() == nullptr )
+	{
+		m_client_ptr.reset( new RequestClient(GNet::ExceptionSink(m_client_ptr,nullptr),"scanner","ok",m_location,m_connection_timeout,m_response_timeout) );
+	}
+	m_client_ptr->request( path ) ; // (no need to wait for connection)
 }
 
-void GSmtp::NetworkFilter::clientEvent( std::string s1 , std::string s2 )
+void GSmtp::NetworkFilter::clientDeleted( std::string reason )
 {
-	G_DEBUG( "GSmtp::NetworkFilter::clientEvent: [" << s1 << "] [" << s2 << "]" ) ;
-	if( s1 == "scanner" )
+	if( !reason.empty() )
+	{
+		m_text = "failed" "\t" + reason ;
+		m_done_signal.emit( 2 ) ;
+	}
+}
+
+void GSmtp::NetworkFilter::clientEvent( std::string s1 , std::string s2 , std::string /*s3*/ )
+{
+	if( s1 == "scanner" ) // ie. this is the response received by the RequestClient
 	{
 		m_text = s2 ;
-		try
-		{
-			m_done_signal.emit( m_text.empty() ? 0 : 2 ) ;
-		}
-		catch( std::exception & e )
-		{
-			m_exception_handler.onException( e ) ;
-		}
+		m_done_signal.emit( m_text.empty() ? 0 : 2 ) ;
 	}
 }
 
@@ -102,7 +101,7 @@ G::Slot::Signal1<int> & GSmtp::NetworkFilter::doneSignal()
 
 void GSmtp::NetworkFilter::cancel()
 {
-	m_client.reset() ;
+	m_client_ptr.reset() ;
 	m_text.erase() ;
 }
 

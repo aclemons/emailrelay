@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,21 +19,30 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gstr.h"
 #include "gfile.h"
 #include "gtest.h"
 #include "gspamclient.h"
-#include "gassert.h"
 #include <sstream>
 
 std::string GSmtp::SpamClient::m_username ;
 
-GSmtp::SpamClient::SpamClient( const GNet::Location & location , bool read_only ,
+namespace
+{
+	GNet::Client::Config netConfig( unsigned int connect_timeout , unsigned int response_timeout )
+	{
+		GNet::Client::Config net_config( GNet::LineBufferConfig::newline() ) ;
+		net_config.connection_timeout = connect_timeout ;
+		net_config.response_timeout = response_timeout ;
+		return net_config ;
+	}
+}
+
+GSmtp::SpamClient::SpamClient( GNet::ExceptionSink es , const GNet::Location & location , bool read_only ,
 	unsigned int connect_timeout , unsigned int response_timeout ) :
-		GNet::Client(location,connect_timeout,response_timeout,0U,GNet::LineBufferConfig::newline()) ,
+		GNet::Client(es,location,netConfig(connect_timeout,response_timeout)) ,
 		m_busy(false) ,
-		m_timer(*this,&SpamClient::onTimeout,*this) ,
+		m_timer(*this,&SpamClient::onTimeout,es) ,
 		m_request(*this) ,
 		m_response(read_only)
 {
@@ -41,11 +50,6 @@ GSmtp::SpamClient::SpamClient( const GNet::Location & location , bool read_only 
 	G_DEBUG( "GSmtp::SpamClient::ctor: spam read/only=" << read_only ) ;
 	G_DEBUG( "GSmtp::SpamClient::ctor: spam connection timeout " << connect_timeout ) ;
 	G_DEBUG( "GSmtp::SpamClient::ctor: spam response timeout " << response_timeout ) ;
-}
-
-GSmtp::SpamClient::~SpamClient()
-{
-	G_DEBUG( "GSmtp::SpamClient::dtor: busy=" << m_busy ) ;
 }
 
 void GSmtp::SpamClient::username( const std::string & username )
@@ -75,11 +79,11 @@ void GSmtp::SpamClient::onTimeout()
 		start() ;
 }
 
-void GSmtp::SpamClient::onDelete( const std::string & reason )
+void GSmtp::SpamClient::onDelete( const std::string & )
 {
 }
 
-void GSmtp::SpamClient::onSecure( const std::string & )
+void GSmtp::SpamClient::onSecure( const std::string & , const std::string & )
 {
 }
 
@@ -99,11 +103,11 @@ void GSmtp::SpamClient::onSendComplete()
 	m_request.sendMore() ;
 }
 
-bool GSmtp::SpamClient::onReceive( const char * line_data , size_t line_size , size_t )
+bool GSmtp::SpamClient::onReceive( const char * line_data , size_t line_size , size_t , size_t , char )
 {
 	m_response.add( m_path , std::string(line_data,line_size) ) ;
 	if( m_response.complete() )
-		eventSignal().emit( "spam" , m_response.result() ) ;
+		eventSignal().emit( "spam" , m_response.result() , std::string() ) ;
 	return true ;
 }
 
@@ -118,7 +122,7 @@ GSmtp::SpamClient::Request::Request( Client & client ) :
 void GSmtp::SpamClient::Request::send( const std::string & path , const std::string & username )
 {
 	G_LOG( "GSmtp::SpamClient::Request::send: spam request for [" << path << "]" ) ;
-	m_stream.open( path.c_str() , std::ios_base::binary ) ;
+	G::File::open( m_stream , path ) ;
 	if( !m_stream.good() )
 		throw SpamClient::Error( "cannot read content file" , path ) ;
 
@@ -189,7 +193,7 @@ void GSmtp::SpamClient::Response::add( const std::string & path , const std::str
 		m_path_tmp = path + ".spamd" ;
 		if( !m_read_only && !m_stream.is_open() )
 		{
-			m_stream.open( m_path_tmp.c_str() , std::ios_base::binary ) ;
+			G::File::open( m_stream , m_path_tmp ) ;
 			if( !m_stream.good() )
 				throw SpamClient::Error( "cannot write temporary content file" , m_path_tmp ) ;
 		}

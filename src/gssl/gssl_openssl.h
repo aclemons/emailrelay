@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,9 +23,12 @@
 
 #include "gdef.h"
 #include "gssl.h"
+#include "gassert.h"
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
+#include <openssl/md5.h>
+#include <openssl/sha.h>
 #include <openssl/evp.h>
 #include <map>
 
@@ -46,6 +49,9 @@
 
 namespace GSsl
 {
+	/// \namespace GSsl::OpenSSL
+	/// A namespace for implementing the GSsl interface using the OpenSSL library.
+	///
 	namespace OpenSSL
 	{
 		class Error ;
@@ -151,12 +157,14 @@ public:
 	const LibraryImp & lib() const ;
 	const std::string & defaultPeerCertificateName() const ;
 	const std::string & defaultPeerHostName() const ;
-	virtual ProtocolImpBase * newProtocol( const std::string & , const std::string & ) const override ;
 	void apply( const Config & ) ;
 
+private: // overrides
+	virtual unique_ptr<ProtocolImpBase> newProtocol( const std::string & , const std::string & ) const override ;
+
 private:
-	ProfileImp( const ProfileImp & ) ;
-	void operator=( const ProfileImp & ) ;
+	ProfileImp( const ProfileImp & ) g__eq_delete ;
+	void operator=( const ProfileImp & ) g__eq_delete ;
 	static void check( int , const std::string & , const std::string & = std::string() ) ;
 	static int verifyPass( int , X509_STORE_CTX * ) ;
 	static int verifyPeerName( int , X509_STORE_CTX * ) ;
@@ -180,15 +188,6 @@ public:
 
 	LibraryImp( G::StringArray & library_config , Library::LogFn , bool verbose ) ;
 	virtual ~LibraryImp() ;
-	virtual void addProfile( const std::string & name , bool is_server_profile ,
-		const std::string & key_file , const std::string & cert_file , const std::string & ca_file ,
-		const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
-		const std::string & profile_config ) override ;
-	virtual bool hasProfile( const std::string & ) const override ;
-	virtual const GSsl::Profile & profile( const std::string & ) const override ;
-	virtual std::string id() const override ;
-	virtual G::StringArray digesters( bool ) const override ;
-	virtual Digester digester( const std::string & , const std::string & ) const override ;
 	Config config() const ;
 	bool noverify() const ;
 
@@ -198,15 +197,25 @@ public:
 	static std::string credit( const std::string & prefix , const std::string & eol , const std::string & eot ) ;
 	static std::string sid() ;
 
+private: // overrides
+	virtual void addProfile( const std::string & name , bool is_server_profile ,
+		const std::string & key_file , const std::string & cert_file , const std::string & ca_file ,
+		const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
+		const std::string & profile_config ) override ;
+	virtual bool hasProfile( const std::string & ) const override ;
+	virtual const GSsl::Profile & profile( const std::string & ) const override ;
+	virtual std::string id() const override ;
+	virtual G::StringArray digesters( bool ) const override ;
+	virtual Digester digester( const std::string & , const std::string & , bool ) const override ;
+
 private:
-	LibraryImp( const LibraryImp & ) ;
-	void operator=( const LibraryImp & ) ;
+	LibraryImp( const LibraryImp & ) g__eq_delete ;
+	void operator=( const LibraryImp & ) g__eq_delete ;
 	static void cleanup() ;
 
 private:
 	typedef std::map<std::string,shared_ptr<ProfileImp> > Map ;
 	std::string m_library_config ;
-	mutable EVP_MD_CTX * m_evp_ctx ;
 	Library::LogFn m_log_fn ;
 	bool m_verbose ;
 	Map m_profile_map ;
@@ -227,19 +236,22 @@ public:
 
 	ProtocolImp( const ProfileImp & , const std::string & , const std::string & ) ;
 	virtual ~ProtocolImp() ;
-	Result connect( G::ReadWrite & ) ;
-	Result accept( G::ReadWrite & ) ;
-	Result stop() ;
-	Result read( char * buffer , size_t buffer_size , ssize_t & read_size ) ;
-	Result write( const char * buffer , size_t size_in , ssize_t & size_out ) ;
-	std::string peerCertificate() const ;
-	std::string peerCertificateChain() const ;
-	bool verified() const ;
 	std::string requiredPeerCertificateName() const ;
 
+private: // overrides
+	virtual Result connect( G::ReadWrite & ) override ;
+	virtual Result accept( G::ReadWrite & ) override ;
+	virtual Result shutdown() override ;
+	virtual Result read( char * buffer , size_t buffer_size , ssize_t & read_size ) override ;
+	virtual Result write( const char * buffer , size_t size_in , ssize_t & size_out ) override ;
+	virtual std::string peerCertificate() const override ;
+	virtual std::string peerCertificateChain() const override ;
+	virtual std::string cipher() const override ;
+	virtual bool verified() const override ;
+
 private:
-	ProtocolImp( const ProtocolImp & ) ;
-	void operator=( const ProtocolImp & ) ;
+	ProtocolImp( const ProtocolImp & ) g__eq_delete ;
+	void operator=( const ProtocolImp & ) g__eq_delete ;
 	int error( const char * , int ) const ;
 	void set( int ) ;
 	Result connect() ;
@@ -251,7 +263,6 @@ private:
 	static void deleter( SSL * ) ;
 
 private:
-	const Profile & m_profile ;
 	unique_ptr<SSL,std::pointer_to_unary_function<SSL*,void> > m_ssl ;
 	Library::LogFn m_log_fn ;
 	bool m_verbose ;
@@ -268,8 +279,10 @@ private:
 class GSsl::OpenSSL::DigesterImp : public GSsl::DigesterImpBase
 {
 public:
-	DigesterImp( const std::string & , const std::string & ) ;
+	DigesterImp( const std::string & , const std::string & , bool ) ;
 	virtual ~DigesterImp() ;
+
+private: // overrides
 	virtual void add( const std::string & ) override ;
 	virtual std::string value() override ;
 	virtual std::string state() override ;
@@ -278,10 +291,15 @@ public:
 	virtual size_t statesize() const override ;
 
 private:
-	DigesterImp( const DigesterImp & ) ;
-	void operator=( const DigesterImp & ) ;
+	DigesterImp( const DigesterImp & ) g__eq_delete ;
+	void operator=( const DigesterImp & ) g__eq_delete ;
 
 private:
+	g__enum(Type) { Md5 , Sha1 , Sha256 , Other } ; g__enum_end(Type)
+	Type m_hash_type ;
+	MD5_CTX m_md5 ;
+	SHA_CTX m_sha1 ;
+	SHA256_CTX m_sha256 ;
 	EVP_MD_CTX * m_evp_ctx ;
 	size_t m_block_size ;
 	size_t m_value_size ;

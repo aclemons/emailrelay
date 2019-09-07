@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,16 +19,12 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gmessagestore.h"
 #include "gpath.h"
 #include "genvironment.h"
 
 G::Path GSmtp::MessageStore::defaultDirectory()
 {
-	// break backwards compatibility -- move to "C:/ProgramData/E-MailRelay/spool" --
-	// and use the "ProgramData" environment variable rather than SHGetFolderPathA(CSIDL_COMMON_APPDATA)
-	//
 	return G::Path(G::Environment::get("ProgramData","c:/ProgramData")) + "E-MailRelay" + "spool" ;
 }
 

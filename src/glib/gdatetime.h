@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ namespace G
 {
 	class DateTime ;
 	class EpochTime ;
+	class TimeInterval ;
 }
 
 /// \class G::EpochTime
@@ -39,32 +40,86 @@ namespace G
 class G::EpochTime
 {
 public:
+	typedef std::time_t seconds_type ;
+
 	explicit EpochTime( std::time_t ) ;
 		///< Constructor.
 
 	EpochTime( std::time_t , unsigned long us ) ;
-		///< Constructor. The 'us' parameter can be more than 10^6.
+		///< Constructor. The first parameter should be some
+		///< large positive number. The second parameter can be
+		///< more than 10^6.
 
 	void streamOut( std::ostream & ) const ;
-		///< Used by operator<<.
+		///< Used by operator<<().
+
+private:
+	void normalise() ;
 
 public:
 	std::time_t s ;
 	unsigned int us ;
 } ;
 
+/// \class G::TimeInterval
+/// An interval between two G::EpochTime values.
+///
+class G::TimeInterval
+{
+public:
+	typedef unsigned int seconds_type ;
+
+	TimeInterval( unsigned int s , unsigned int us = 0U ) ;
+		///< Constructor.
+
+	TimeInterval( const EpochTime & start , const EpochTime & end ) ;
+		///< Constructor. Constructs a zero interval if 'end' is before
+		///< 'start', and the limit() interval if 'end' is too far
+		///< ahead of 'start' for the underlying type.
+
+	static TimeInterval limit() ;
+		///< Returns the maximum valid interval.
+
+	void streamOut( std::ostream & ) const ;
+		///< Used by operator<<().
+
+private:
+	void normalise() ;
+
+public:
+	unsigned int s ;
+	unsigned int us ;
+} ;
+
+inline
+G::TimeInterval::TimeInterval( unsigned int s_ , unsigned int us_ ) :
+	s(s_) ,
+	us(us_)
+{
+	if( us > 1000000U )
+		normalise() ;
+}
+
 namespace G
 {
-	EpochTime operator+( EpochTime et , std::time_t s ) ;
-	EpochTime operator+( EpochTime lhs , EpochTime rhs ) ;
-	EpochTime operator-( EpochTime big , EpochTime small_ ) ;
+	EpochTime operator+( EpochTime et , std::time_t interval ) ;
+	EpochTime operator+( EpochTime base , TimeInterval interval ) ;
+	TimeInterval operator-( EpochTime end , EpochTime start ) ;
+	TimeInterval operator-( TimeInterval end , TimeInterval start ) ;
 	bool operator<( EpochTime lhs , EpochTime rhs ) ;
+	bool operator<( TimeInterval lhs , TimeInterval rhs ) ;
 	bool operator==( EpochTime lhs , EpochTime rhs ) ;
+	bool operator==( TimeInterval lhs , TimeInterval rhs ) ;
 	bool operator!=( EpochTime lhs , EpochTime rhs ) ;
+	bool operator!=( TimeInterval lhs , TimeInterval rhs ) ;
 	bool operator<=( EpochTime lhs , EpochTime rhs ) ;
+	bool operator<=( TimeInterval lhs , TimeInterval rhs ) ;
 	bool operator>=( EpochTime lhs , EpochTime rhs ) ;
+	bool operator>=( TimeInterval lhs , TimeInterval rhs ) ;
 	bool operator>( EpochTime lhs , EpochTime rhs ) ;
+	bool operator>( TimeInterval lhs , TimeInterval rhs ) ;
 	std::ostream & operator<<( std::ostream & s , const EpochTime & et ) ;
+	std::ostream & operator<<( std::ostream & s , const TimeInterval & ti ) ;
 }
 
 /// \class G::DateTime
@@ -80,7 +135,7 @@ public:
 	static EpochTime now() ;
 		///< Returns the current epoch time.
 
-	static EpochTime epochTime( const BrokenDownTime & broken_down_time ) ;
+	static EpochTime epochTime( const BrokenDownTime & broken_down_time , bool optimise = true ) ;
 		///< Converts from UTC broken-down-time to epoch time.
 
 	static BrokenDownTime utc( EpochTime epoch_time ) ;
@@ -89,7 +144,7 @@ public:
 	static BrokenDownTime local( EpochTime epoch_time ) ;
 		///< Converts from epoch time to local broken-down-time.
 
-	static Offset offset( EpochTime epoch_time ) ;
+	static Offset offset( EpochTime epoch_time , bool optimise = true ) ;
 		///< Returns the offset between UTC and localtime as at
 		///< 'epoch_time'. The returned pair has 'first' set to
 		///< true if localtime is ahead of (ie. east of) UTC.
@@ -106,11 +161,12 @@ public:
 		///< Overload for a signed integer timezone.
 
 private:
+	DateTime() g__eq_delete ;
 	static bool equivalent( EpochTime , const BrokenDownTime & ) ;
 	static bool equivalent( const BrokenDownTime & , const BrokenDownTime & ) ;
 	static std::tm * gmtime_imp( const std::time_t * , std::tm * ) ;
 	static std::tm * localtime_imp( const std::time_t * , std::tm * ) ;
-	DateTime() ; // not implemented
+	static EpochTime epochTime( const BrokenDownTime & broken_down_time , bool & , std::time_t & ) ;
 } ;
 
 inline
@@ -121,16 +177,28 @@ G::EpochTime::EpochTime( std::time_t t ) :
 }
 
 inline
-G::EpochTime G::operator+( G::EpochTime et , std::time_t s )
+G::EpochTime G::operator+( G::EpochTime et , std::time_t interval )
 {
-	et.s += s ;
+	et.s += interval ;
 	return et ;
+}
+
+inline
+G::TimeInterval G::operator-( G::EpochTime end , G::EpochTime start )
+{
+	return TimeInterval( start , end ) ;
 }
 
 inline
 bool G::operator<( G::EpochTime lhs , G::EpochTime rhs )
 {
-	return lhs.s < rhs.s || (lhs.s == rhs.s && lhs.us < rhs.us ) ;
+	return lhs.s < rhs.s || ( lhs.s == rhs.s && lhs.us < rhs.us ) ;
+}
+
+inline
+bool G::operator<( G::TimeInterval lhs , G::TimeInterval rhs )
+{
+	return lhs.s < rhs.s || ( lhs.s == rhs.s && lhs.us < rhs.us ) ;
 }
 
 inline
@@ -140,9 +208,21 @@ bool G::operator==( G::EpochTime lhs , G::EpochTime rhs )
 }
 
 inline
+bool G::operator==( G::TimeInterval lhs , G::TimeInterval rhs )
+{
+	return lhs.s == rhs.s && lhs.us == rhs.us ;
+}
+
+inline
 bool G::operator!=( G::EpochTime lhs , G::EpochTime rhs )
 {
-	return !(lhs == rhs) ;
+	return !( lhs == rhs ) ;
+}
+
+inline
+bool G::operator!=( G::TimeInterval lhs , G::TimeInterval rhs )
+{
+	return !( lhs == rhs ) ;
 }
 
 inline
@@ -152,21 +232,46 @@ bool G::operator<=( G::EpochTime lhs , G::EpochTime rhs )
 }
 
 inline
+bool G::operator<=( G::TimeInterval lhs , G::TimeInterval rhs )
+{
+	return lhs == rhs || lhs < rhs ;
+}
+
+inline
 bool G::operator>=( G::EpochTime lhs , G::EpochTime rhs )
 {
-	return !(lhs < rhs) ;
+	return !( lhs < rhs ) ;
+}
+
+inline
+bool G::operator>=( G::TimeInterval lhs , G::TimeInterval rhs )
+{
+	return !( lhs < rhs ) ;
 }
 
 inline
 bool G::operator>( G::EpochTime lhs , G::EpochTime rhs )
 {
-	return lhs >= rhs && lhs != rhs ;
+	return !( lhs == rhs ) && !( lhs < rhs ) ;
+}
+
+inline
+bool G::operator>( G::TimeInterval lhs , G::TimeInterval rhs )
+{
+	return !( lhs == rhs ) && !( lhs < rhs ) ;
 }
 
 inline
 std::ostream & G::operator<<( std::ostream & s , const G::EpochTime & t )
 {
 	t.streamOut( s ) ;
+	return s ;
+}
+
+inline
+std::ostream & G::operator<<( std::ostream & s , const G::TimeInterval & ti )
+{
+	ti.streamOut( s ) ;
 	return s ;
 }
 

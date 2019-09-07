@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,10 +28,7 @@ return std::string() +
 "the concept, you should think of \"free\" as in \"free speech,\" " +
 "not as in \"free beer\". Windows is not free, even if you did not pay for it, " +
 "because it limits your freedoms; check out the Free Software Foundation " +
-"website http://www.fsf.org for more information about software freedom. " +
-"E-MailRelay was developed on Linux, which is a free, secure and easy-to-use " +
-"alternative to Microsoft Windows, supporting a wide range of desktop " +
-"and server applications." +
+"website http://www.fsf.org for more information about software freedom." +
 eol
 ;
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,9 +26,11 @@
 #include "gexception.h"
 #include "gtray.h"
 #include "winform.h"
+#include "winmenu.h"
 #include "configuration.h"
 #include "output.h"
 #include <memory>
+#include <utility>
 
 namespace Main
 {
@@ -36,31 +38,32 @@ namespace Main
 }
 
 /// \class Main::WinApp
-/// A main-window class instantiated in WinMain() that contains the
-/// Main::WinForm user interface.
+/// A main-window class for an invisible window that manages the
+/// Main::WinForm user interface, the system tray icon, and message
+/// boxes.
 ///
-/// The class derives from Main::Output so that Main::CommandLine can
-/// call output() to throw up message boxes.
+/// The class derives from Main::Output so that Main::CommandLine can call
+/// output() to throw up message boxes.
 ///
-/// The window can be a normal window, or controlled from the system
-/// tray, or 'hidden' (see Main::Configuration), and if hidden the
-/// Main::Output mechanism is also disabled.
+/// The onRunEvent() method is provided as a sink for Main::Run::signal().
 ///
-/// When controlled from the system tray the main window is alternately
-/// 'shown' and 'hidden'; when the window is hidden the form is destroyed,
-/// and when reshown the form is recreated.
-///
-/// WinMain() sets up slot/signal links from Main::Run to Main::WinApp
-/// objects so that the Main::Run class can emit() progress events like
-/// "connecting to ..." and the Main::WinApp class will display them
-/// (in a status page, for instance).
+/// \code
+/// WinMain( hinstance , hprevious , show )
+/// {
+///   WinApp app( hinstance , hprevious , "Test" ) ;
+///   if( cfg.hidden() ) app.disableOutput() ;
+///   app.init( cfg ) ;
+///   app.createWindow( show ) ; // GGui::ApplicationBase
+///   EventLoop::run() ; // hooks into GGui::Pump
+/// }
+/// \endcode
 ///
 class Main::WinApp : public GGui::ApplicationBase , public Main::Output
 {
 public:
 	G_EXCEPTION( Error , "application error" ) ;
 
-	WinApp( HINSTANCE h , HINSTANCE p , const char * name ) ;
+	WinApp( HINSTANCE h , HINSTANCE p , const std::string & name ) ;
 		///< Constructor. Initialise with init().
 
 	virtual ~WinApp() ;
@@ -75,56 +78,73 @@ public:
 	void disableOutput() ;
 		///< Disables subsequent calls to output().
 
-	virtual void output( const std::string & message , bool error ) override ;
-		///< Puts up a message box. Override from Main::Output.
-
-	virtual G::Options::Layout layout() const override ;
-		///< Override from Main::Output.
-
-	virtual bool simpleOutput() const override ;
-		///< Override from Main::Output.
-
 	void onError( const std::string & message ) ;
 		///< To be called when WinMain() catches an exception.
 
 	unsigned int columns() ;
 		///< See Main::Output.
 
-	bool confirm() ;
-		///< Puts up a confirmation message box.
+	void onRunEvent( std::string , std::string , std::string , std::string ) ;
+		///< The Main::Run::signal() signal can be connected to
+		///< this method so that its interesting event information
+		///< can be displayed.
 
-	void formOk() ;
-		///< Called from the form's ok button handler.
-
-	void onRunEvent( std::string , std::string , std::string ) ;
-		///< Slot for Main::Run::signal().
-
-	virtual void onWindowException( std::exception & e ) override ;
-		///< Override from GGui::Window.
-
-private:
-	void doOpen() ;
-	void doClose() ;
-	void doQuit() ;
-	void hide() ;
-	virtual UINT resource() const override ;
-	virtual DWORD windowStyle() const override ;
+private: // overrides
+	virtual void output( const std::string & message , bool error ) override ; // Override from Main::Output.
+	virtual G::Options::Layout layout() const override ; // Override from Main::Output.
+	virtual bool simpleOutput() const override ; // Override from Main::Output.
+	virtual void onWindowException( std::exception & e ) override ; // Override from GGui::Window.
+	virtual DWORD classStyle() const override ; // Override from GGui::ApplicationBase.
+	virtual std::pair<DWORD,DWORD> windowStyle() const override ; // Override from GGui::ApplicationBase.
+	virtual UINT resource() const override ; // Override from GGui::ApplicationBase.
 	virtual bool onCreate() override ;
 	virtual bool onClose() override ;
 	virtual void onTrayDoubleClick() override ;
 	virtual void onTrayRightMouseButtonDown() override ;
-	virtual bool onSysCommand( SysCommand ) override ;
 	virtual LRESULT onUser( WPARAM , LPARAM ) override ;
 	virtual LRESULT onUserOther( WPARAM , LPARAM ) override ;
 
 private:
+	struct Config
+	{
+		bool with_tray ;
+		bool with_sysmenu_quit ;
+		bool never_open ;
+		bool open_on_create ;
+		bool allow_apply ;
+		bool quit_on_form_ok ;
+		bool close_on_form_ok ;
+		bool close_on_close ;
+		bool form_minimisable ;
+		bool form_parentless ;
+		bool minimise_on_close ;
+		bool restore_on_open ;
+		Config() ;
+		static Config create( const Main::Configuration & ) ;
+		static Config hidden() ;
+		static Config nodaemon() ;
+		static Config window( bool with_tray ) ;
+		static Config tray() ;
+	} ;
+
+private:
+	WinApp( const WinApp & ) g__eq_delete ;
+	void operator=( const WinApp & ) g__eq_delete ;
+	void doOpen() ;
+	void doClose() ;
+	void doQuit() ;
+
+private:
 	unique_ptr<GGui::Tray> m_tray ;
 	unique_ptr<Main::WinForm> m_form ;
-	unique_ptr<Main::Configuration> m_cfg ;
-	bool m_quit ;
-	bool m_use_tray ;
-	bool m_hidden ;
+	unique_ptr<Main::Configuration> m_form_cfg ;
+	unique_ptr<Main::WinMenu> m_menu ;
+	bool m_disable_output ;
+	Config m_cfg ;
+	bool m_quitting ;
 	int m_exit_code ;
+	bool m_in_do_open ;
+	bool m_in_do_close ;
 } ;
 
 #endif

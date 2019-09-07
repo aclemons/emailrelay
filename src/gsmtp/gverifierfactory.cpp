@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gfactoryparser.h"
 #include "gexception.h"
 #include "gverifierfactory.h"
@@ -32,22 +31,24 @@ std::string GSmtp::VerifierFactory::check( const std::string & identifier )
 	return FactoryParser::check( identifier , false ) ;
 }
 
-GSmtp::Verifier * GSmtp::VerifierFactory::newVerifier( GNet::ExceptionHandler & exception_handler ,
+unique_ptr<GSmtp::Verifier> GSmtp::VerifierFactory::newVerifier( GNet::ExceptionSink es ,
 	const std::string & identifier , unsigned int timeout )
 {
+	unique_ptr<Verifier> ptr ;
 	FactoryParser::Result p = FactoryParser::parse( identifier , false ) ;
 	if( p.first.empty() || p.first == "exit" )
 	{
-		return new InternalVerifier ;
+		ptr.reset( new InternalVerifier ) ;
 	}
 	else if( p.first == "net" )
 	{
-		return new NetworkVerifier( exception_handler , p.second , timeout , timeout ) ;
+		ptr.reset( new NetworkVerifier( es , p.second , timeout , timeout ) ) ;
 	}
 	else
 	{
-		return new ExecutableVerifier( exception_handler , G::Path(p.second) ) ;
+		ptr.reset( new ExecutableVerifier( es , G::Path(p.second) ) ) ;
 	}
+	return ptr ;
 }
 
 /// \file gverifierfactory.cpp

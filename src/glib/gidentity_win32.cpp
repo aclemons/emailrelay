@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,27 +45,27 @@ G::Identity::Identity( const std::string & ) :
 
 G::Identity G::Identity::effective()
 {
-	return G::Identity() ;
+	return Identity() ;
 }
 
 G::Identity G::Identity::real()
 {
-	return G::Identity() ;
+	return Identity() ;
 }
 
 G::Identity G::Identity::invalid()
 {
-	return G::Identity() ;
+	return Identity() ;
 }
 
 G::Identity G::Identity::invalid( SignalSafe safe )
 {
-	return G::Identity(safe) ;
+	return Identity(safe) ;
 }
 
 G::Identity G::Identity::root()
 {
-	return G::Identity() ;
+	return Identity() ;
 }
 
 std::string G::Identity::str() const

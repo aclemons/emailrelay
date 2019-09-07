@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,19 +23,12 @@
 #include "glog.h"
 #include "gassert.h"
 #include <list>
-#include <algorithm> // std::swap
-#include <utility> // std::swap
 
-GNet::MultiServer::MultiServer( ExceptionHandler & eh , const AddressList & address_list ) :
-	m_eh(eh)
+GNet::MultiServer::MultiServer( ExceptionSink es , const AddressList & address_list , ServerPeerConfig server_peer_config ) :
+	m_es(es)
 {
 	G_ASSERT( ! address_list.empty() ) ;
-	init( address_list ) ;
-}
-
-GNet::MultiServer::MultiServer( ExceptionHandler & eh ) :
-	m_eh(eh)
-{
+	init( address_list , server_peer_config ) ;
 }
 
 GNet::MultiServer::~MultiServer()
@@ -43,21 +36,27 @@ GNet::MultiServer::~MultiServer()
 	serverCleanup() ;
 }
 
-void GNet::MultiServer::init( const AddressList & address_list )
+void GNet::MultiServer::serverCleanup()
+{
+	for( ServerList::iterator p = m_server_list.begin() ; p != m_server_list.end() ; ++p )
+	{
+		(*p)->cleanup() ;
+	}
+}
+
+void GNet::MultiServer::init( const AddressList & address_list , ServerPeerConfig server_peer_config )
 {
 	G_ASSERT( ! address_list.empty() ) ;
 	for( AddressList::const_iterator p = address_list.begin() ; p != address_list.end() ; ++p )
 	{
-		init( *p ) ;
+		init( *p , server_peer_config ) ;
 	}
 }
 
-void GNet::MultiServer::init( const Address & address )
+void GNet::MultiServer::init( const Address & address , ServerPeerConfig server_peer_config )
 {
-	// note that the Ptr class does not have proper value semantics...
-	MultiServerPtr ptr( new MultiServerImp(*this,m_eh,address) ) ;
-	m_server_list.push_back( MultiServerPtr() ) ; // copy a null pointer into the list
-	m_server_list.back().swap( ptr ) ;
+	ServerPtr server_ptr( new MultiServerImp(*this,m_es,address,server_peer_config) ) ;
+	m_server_list.push_back( server_ptr ) ;
 }
 
 bool GNet::MultiServer::canBind( const AddressList & address_list , bool do_throw )
@@ -84,8 +83,8 @@ GNet::MultiServer::AddressList GNet::MultiServer::addressList( const AddressList
 	if( list.empty() )
 	{
 		result.reserve( 2U ) ;
-		if( Address::supports(Address::Family::ipv4()) ) result.push_back( Address(Address::Family::ipv4(),port) ) ;
-		if( Address::supports(Address::Family::ipv6()) ) result.push_back( Address(Address::Family::ipv6(),port) ) ;
+		if( Address::supports(Address::Family::ipv4) ) result.push_back( Address(Address::Family::ipv4,port) ) ;
+		if( Address::supports(Address::Family::ipv6) ) result.push_back( Address(Address::Family::ipv6,port) ) ;
 	}
 	else
 	{
@@ -102,8 +101,8 @@ GNet::MultiServer::AddressList GNet::MultiServer::addressList( const G::StringAr
 	if( list.empty() )
 	{
 		result.reserve( 2U ) ;
-		if( Address::supports(Address::Family::ipv4()) ) result.push_back( Address(Address::Family::ipv4(),port) ) ;
-		if( Address::supports(Address::Family::ipv6()) ) result.push_back( Address(Address::Family::ipv6(),port) ) ;
+		if( Address::supports(Address::Family::ipv4) ) result.push_back( Address(Address::Family::ipv4,port) ) ;
+		if( Address::supports(Address::Family::ipv6) ) result.push_back( Address(Address::Family::ipv6,port) ) ;
 	}
 	else
 	{
@@ -113,8 +112,8 @@ GNet::MultiServer::AddressList GNet::MultiServer::addressList( const G::StringAr
 			const bool is_inaddrany = (*p).empty() ;
 			if( is_inaddrany )
 			{
-				if( Address::supports(Address::Family::ipv4()) ) result.push_back( Address(Address::Family::ipv4(),port) ) ;
-				if( Address::supports(Address::Family::ipv6()) ) result.push_back( Address(Address::Family::ipv6(),port) ) ; // moot
+				if( Address::supports(Address::Family::ipv4) ) result.push_back( Address(Address::Family::ipv4,port) ) ;
+				if( Address::supports(Address::Family::ipv6) ) result.push_back( Address(Address::Family::ipv6,port) ) ; // moot
 			}
 			else
 			{
@@ -125,57 +124,53 @@ GNet::MultiServer::AddressList GNet::MultiServer::addressList( const G::StringAr
 	return result ;
 }
 
-void GNet::MultiServer::serverCleanup()
-{
-	for( List::iterator p = m_server_list.begin() ; p != m_server_list.end() ; ++p )
-	{
-		try
-		{
-			(*p).get()->cleanup() ;
-		}
-		catch(...) // dtor
-		{
-		}
-	}
-}
-
 void GNet::MultiServer::serverReport( const std::string & type ) const
 {
-	for( List::const_iterator p = m_server_list.begin() ; p != m_server_list.end() ; ++p )
+	for( ServerList::const_iterator p = m_server_list.begin() ; p != m_server_list.end() ; ++p )
 	{
-		const Server & server = *((*p).get()) ;
-		G_LOG_S( "GNet::MultiServer: " << type << " server on " << server.address().second.displayString() ) ;
+		const Server & server = *(*p).get() ;
+		G_LOG_S( "GNet::MultiServer: " << type << " server on " << server.address().displayString() ) ;
 	}
 }
 
-std::pair<bool,GNet::Address> GNet::MultiServer::firstAddress() const
+unique_ptr<GNet::ServerPeer> GNet::MultiServer::doNewPeer( ExceptionSinkUnbound esu , ServerPeerInfo pi , ServerInfo si )
 {
-	std::pair<bool,Address> result( false , Address::defaultAddress() ) ;
-	for( List::const_iterator p = m_server_list.begin() ; p != m_server_list.end() ; ++p )
+	return newPeer( esu , pi , si ) ;
+}
+
+bool GNet::MultiServer::hasPeers() const
+{
+	for( ServerList::const_iterator server_p = m_server_list.begin() ; server_p != m_server_list.end() ; ++server_p )
 	{
-		if( (*p).get()->address().first )
-		{
-			result.first = true ;
-			result.second = (*p).get()->address().second ;
-			break ;
-		}
+		if( (*server_p)->hasPeers() )
+			return true ;
+	}
+	return false ;
+}
+
+std::vector<weak_ptr<GNet::ServerPeer> > GNet::MultiServer::peers()
+{
+	typedef std::vector<weak_ptr<ServerPeer> > List ;
+	List result ;
+	for( ServerList::iterator server_p = m_server_list.begin() ; server_p != m_server_list.end() ; ++server_p )
+	{
+		List list = (*server_p)->peers() ;
+		result.insert( result.end() , list.begin() , list.end() ) ;
 	}
 	return result ;
 }
 
 // ==
 
-GNet::MultiServerImp::MultiServerImp( MultiServer & ms , ExceptionHandler & eh , const Address & address ) :
-	Server(eh,address) ,
-	m_ms(ms)
+GNet::MultiServerImp::MultiServerImp( MultiServer & ms , ExceptionSink es , const Address & address , ServerPeerConfig server_peer_config ) :
+	GNet::Server(es,address,server_peer_config) ,
+	m_ms(ms) ,
+	m_address(address)
 {
 }
 
-GNet::ServerPeer * GNet::MultiServerImp::newPeer( PeerInfo peer_info )
+GNet::MultiServerImp::~MultiServerImp()
 {
-	MultiServer::ServerInfo server_info ;
-	server_info.m_address = address().first ? address().second : Address::defaultAddress() ;
-	return m_ms.newPeer( peer_info , server_info ) ;
 }
 
 void GNet::MultiServerImp::cleanup()
@@ -183,41 +178,11 @@ void GNet::MultiServerImp::cleanup()
 	serverCleanup() ;
 }
 
-// ==
-
-GNet::MultiServerPtr::MultiServerPtr( ServerImp * p ) :
-	m_p(p)
+unique_ptr<GNet::ServerPeer> GNet::MultiServerImp::newPeer( ExceptionSinkUnbound esu , ServerPeerInfo peer_info )
 {
-}
-
-GNet::MultiServerPtr::MultiServerPtr( const MultiServerPtr & other ) :
-	m_p(other.m_p)
-{
-}
-
-GNet::MultiServerPtr::~MultiServerPtr()
-{
-	delete m_p ;
-}
-
-void GNet::MultiServerPtr::operator=( const MultiServerPtr & rhs )
-{
-	m_p = rhs.m_p ;
-}
-
-void GNet::MultiServerPtr::swap( MultiServerPtr & other )
-{
-	std::swap( other.m_p , m_p ) ;
-}
-
-GNet::MultiServerImp * GNet::MultiServerPtr::get()
-{
-	return m_p ;
-}
-
-const GNet::MultiServerImp * GNet::MultiServerPtr::get() const
-{
-	return m_p ;
+	MultiServer::ServerInfo server_info ;
+	server_info.m_address = address() ; // GNet::Server::address()
+	return m_ms.doNewPeer( esu , peer_info , server_info ) ;
 }
 
 // ==
@@ -226,5 +191,4 @@ GNet::MultiServer::ServerInfo::ServerInfo() :
 	m_address(Address::defaultAddress())
 {
 }
-
 /// \file gmultiserver.cpp

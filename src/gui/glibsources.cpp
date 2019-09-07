@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,14 +43,13 @@
 #include "goptionmap.cpp"
 #include "gpath.cpp"
 #include "gstr.cpp"
-#include "gstrings.cpp"
 #include "gtest.cpp"
 #include "gtime.cpp"
 #include "gxtext.cpp"
 #include "options.cpp"
 #include "service_install.cpp"
 #include "service_remove.cpp"
-#ifdef G_WIN32
+#ifdef G_WINDOWS
 #include "gconvert_win32.cpp"
 #include "gdatetime_win32.cpp"
 #include "gdirectory_win32.cpp"

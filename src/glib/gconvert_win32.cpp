@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ std::wstring G::Convert::widen( const std::string & s , bool is_utf8 , const std
 		if( n == 0 )
 		{
 			DWORD e = ::GetLastError() ;
-			throw G::Convert::Error( message(context,e,G::Str::toPrintableAscii(s)) ) ;
+			throw Convert::Error( message(context,e,Str::toPrintableAscii(s)) ) ;
 		}
 
 		wchar_t * buffer = new wchar_t[n] ;
@@ -49,7 +49,7 @@ std::wstring G::Convert::widen( const std::string & s , bool is_utf8 , const std
 		{
 			DWORD e = ::GetLastError() ;
 			delete [] buffer ;
-			throw G::Convert::Error( message(context,e,G::Str::toPrintableAscii(s)) ) ;
+			throw Convert::Error( message(context,e,Str::toPrintableAscii(s)) ) ;
 		}
 		result = std::wstring( buffer , n ) ;
 		delete [] buffer ;
@@ -74,7 +74,7 @@ std::string G::Convert::narrow( const std::wstring & s , bool is_utf8 , const st
 		if( n == 0 || defaulted )
 		{
 			DWORD e = n == 0 ? ::GetLastError() : 0 ;
-			throw G::Convert::Error( message(context,e,G::Str::toPrintableAscii(s)) ) ;
+			throw Convert::Error( message(context,e,Str::toPrintableAscii(s)) ) ;
 		}
 
 		char * buffer = new char[n] ;
@@ -84,7 +84,7 @@ std::string G::Convert::narrow( const std::wstring & s , bool is_utf8 , const st
 		{
 			DWORD e = n == 0 ? ::GetLastError() : 0 ;
 			delete [] buffer ;
-			throw G::Convert::Error( message(context,e,G::Str::toPrintableAscii(s)) ) ;
+			throw Convert::Error( message(context,e,Str::toPrintableAscii(s)) ) ;
 		}
 		result = std::string( buffer , n ) ;
 		delete [] buffer ;

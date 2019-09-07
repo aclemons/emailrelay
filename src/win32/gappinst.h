@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,11 +23,6 @@
 
 #include "gdef.h"
 
-#ifndef __cplusplus
-void ggui_applicationinstance( HINSTANCE h ) ;
-#else
-extern "C" void ggui_applicationinstance( HINSTANCE h ) ;
-
 namespace GGui
 {
 	class ApplicationInstance ;
@@ -41,7 +36,7 @@ namespace GGui
 /// obtain the application instance handle, rather than some
 /// higher-level mechanism.
 ///
-/// Programs which need a message pump, but want to avoid the
+/// Programs that need a message pump, but want to avoid the
 /// overhead of the full GUI application framework must, as an
 /// absolute minimum, use this class to set the application
 /// instance handle.
@@ -52,27 +47,25 @@ class GGui::ApplicationInstance
 {
 protected:
 	explicit ApplicationInstance( HINSTANCE h ) ;
-		///< Protected constructor which calls
+		///< Protected constructor that calls
 		///< hinstance(h).
-		///<
-		///< (Providing a constructor can simplify
-		///< early initialisation.)
+
+	~ApplicationInstance() ;
+		///< Destructor.
 
 public:
 	static void hinstance( HINSTANCE h ) ;
-		///< Sets the instance handle which is
+		///< Sets the instance handle, which is
 		///< subsequently returned by hinstance().
 
 	static HINSTANCE hinstance() ;
 		///< Returns the instance handle that was
 		///< passed to the constructor. Returns
-		///< zero hinstance(h) has never been
+		///< zero if hinstance(h) has never been
 		///< called.
 
 private:
 	static HINSTANCE m_hinstance ;
 } ;
-
-#endif
 
 #endif

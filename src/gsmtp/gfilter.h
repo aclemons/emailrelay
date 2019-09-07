@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #define G_SMTP_FILTER__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gslot.h"
 
 namespace GSmtp
@@ -90,12 +89,12 @@ public:
 		///< Returns a diagnostic string for logging.
 
 public:
-	enum Result // Filter tri-state result value.
+	g__enum(Result) // Filter tri-state result value.
 	{
 		f_ok = 0 ,
 		f_abandon = 1 ,
 		f_fail = 2
-	} ;
+	} ; g__enum_end(Result)
 
 protected:
 	struct Exit /// Interprets an executable filter's exit code.
@@ -104,12 +103,12 @@ protected:
 		bool ok() const ;
 		bool abandon() const ;
 		bool fail() const ;
-		int result ; // enum
+		Result result ;
 		bool special ;
 	} ;
 
 private:
-	void operator=( const Filter & ) ; // not implemented
+	void operator=( const Filter & ) g__eq_delete ;
 } ;
 
 #endif

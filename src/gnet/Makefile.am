@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -27,9 +27,7 @@ EXTRA_DIST=\
 	gdescriptor_unix.cpp \
 	geventloop_unix.cpp \
 	gfutureevent_unix.cpp \
-	gsocket_unix.cpp \
-	glocal_dns_disabled.cpp \
-	gresolver_dns_disabled.cpp
+	gsocket_unix.cpp
 
 libgnet_a_SOURCES = \
 	gaddress4.cpp \
@@ -38,10 +36,9 @@ libgnet_a_SOURCES = \
 	gaddress6.h \
 	gaddress.h \
 	gaddress_ip.cpp \
-	gbufferedserverpeer.cpp \
-	gbufferedserverpeer.h \
 	gclient.cpp \
 	gclient.h \
+	gclientptr.cpp \
 	gclientptr.h \
 	gconnection.cpp \
 	gconnection.h \
@@ -57,10 +54,12 @@ libgnet_a_SOURCES = \
 	geventloop_win32.cpp \
 	gexceptionhandler.cpp \
 	gexceptionhandler.h \
+	gexceptionsink.cpp \
+	gexceptionsink.h \
+	gexceptionsource.cpp \
+	gexceptionsource.h \
 	gfutureevent.h \
 	gfutureevent_win32.cpp \
-	gheapclient.cpp \
-	gheapclient.h \
 	glinebuffer.cpp \
 	glinebuffer.h \
 	glinestore.cpp \
@@ -73,15 +72,16 @@ libgnet_a_SOURCES = \
 	gmonitor.h \
 	gmultiserver.cpp \
 	gmultiserver.h \
-	gnet.h \
+	gnetdone.cpp \
+	gnetdone.h \
 	gresolver.cpp \
 	gresolver.h \
 	gresolverfuture.cpp \
 	gresolverfuture.h \
 	gserver.cpp \
 	gserver.h \
-	gsimpleclient.cpp \
-	gsimpleclient.h \
+	gserverpeer.cpp \
+	gserverpeer.h \
 	gsocket.cpp \
 	gsocket.h \
 	gsocketprotocol.cpp \
@@ -100,11 +100,7 @@ else
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/glib  -I$(top_srcdir)/src/gssl
 
-DNS_EXTRA_DIST = gresolver_dns_disabled.cpp glocal_dns_disabled.cpp
-DNS_SOURCES = gresolver.cpp
-
 EXTRA_DIST=\
-	$(DNS_EXTRA_DIST) \
 	gaddress_ipv4.cpp \
 	gaddress_ipv6.cpp \
     gdescriptor_win32.cpp \
@@ -113,19 +109,16 @@ EXTRA_DIST=\
     gsocket_win32.cpp
 
 libgnet_a_SOURCES = \
-	$(DNS_SOURCES) \
-	gmonitor.cpp \
 	gaddress_ip.cpp \
 	gaddress.h \
 	gaddress4.h \
 	gaddress4.cpp \
 	gaddress6.h \
 	gaddress6.cpp \
-	gbufferedserverpeer.cpp \
-	gbufferedserverpeer.h \
-	gclientptr.h \
 	gclient.cpp \
 	gclient.h \
+	gclientptr.cpp \
+	gclientptr.h \
 	gconnection.cpp \
 	gconnection.h \
 	gdescriptor.h \
@@ -140,10 +133,12 @@ libgnet_a_SOURCES = \
 	geventloop_unix.cpp \
 	gexceptionhandler.cpp \
 	gexceptionhandler.h \
+	gexceptionsink.cpp \
+	gexceptionsink.h \
+	gexceptionsource.cpp \
+	gexceptionsource.h \
 	gfutureevent.h \
 	gfutureevent_unix.cpp \
-	gheapclient.cpp \
-	gheapclient.h \
 	glinebuffer.cpp \
 	glinebuffer.h \
 	glinestore.cpp \
@@ -152,18 +147,20 @@ libgnet_a_SOURCES = \
 	glocal.h \
 	glocation.cpp \
 	glocation.h \
+	gmonitor.cpp \
 	gmonitor.h \
 	gmultiserver.cpp \
 	gmultiserver.h \
-	gnet.h \
+	gnetdone.cpp \
+	gnetdone.h \
 	gresolver.cpp \
 	gresolver.h \
 	gresolverfuture.cpp \
 	gresolverfuture.h \
 	gserver.cpp \
 	gserver.h \
-	gsimpleclient.cpp \
-	gsimpleclient.h \
+	gserverpeer.cpp \
+	gserverpeer.h \
 	gsocket.h \
 	gsocket.cpp \
 	gsocket_unix.cpp \

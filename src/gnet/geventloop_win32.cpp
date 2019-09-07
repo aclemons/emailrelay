@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,9 +25,9 @@
 #include "gpump.h"
 #include "gexception.h"
 #include "gtimer.h"
+#include "gtimerlist.h"
 #include "gtest.h"
 #include "gassert.h"
-#include "gdebug.h"
 #include "glog.h"
 #include <stdexcept>
 #include <vector>
@@ -53,7 +53,7 @@ namespace
 	const long EXCEPTION_EVENTS = (FD_CLOSE) ;
 	int isActive( HANDLE h )
 	{
-		return WAIT_OBJECT_0 == WaitForSingleObject( h , 0 ) ? 1 : 0 ;
+		return WAIT_OBJECT_0 == WaitForSingleObject( h , /*timeout-ms*/0 ) ? 1 : 0 ;
 	}
 }
 
@@ -65,48 +65,43 @@ public:
 		Library() ;
 		~Library() ;
 	} ;
-	struct TimerObject
-	{
-		TimerObject() ;
-		~TimerObject() ;
-		HANDLE h() ;
-		HANDLE m_handle ;
-	} ;
 
 public:
 	EventLoopImp() ;
 	virtual ~EventLoopImp() ;
 	virtual std::string run() override ;
 	virtual bool running() const override ;
-	virtual void quit( std::string ) override ;
+	virtual void quit( const std::string & ) override ;
 	virtual void quit( const G::SignalSafe & ) override ;
 	virtual void disarm( ExceptionHandler * ) override ;
 
-protected:
-	virtual void addRead( Descriptor , EventHandler & , ExceptionHandler & ) override ;
-	virtual void addWrite( Descriptor , EventHandler & , ExceptionHandler & ) override ;
-	virtual void addOther( Descriptor , EventHandler & , ExceptionHandler & ) override ;
+private:
+	virtual void addRead( Descriptor , EventHandler & , ExceptionSink ) override ;
+	virtual void addWrite( Descriptor , EventHandler & , ExceptionSink ) override ;
+	virtual void addOther( Descriptor , EventHandler & , ExceptionSink ) override ;
 	virtual void dropRead( Descriptor ) override ;
 	virtual void dropWrite( Descriptor ) override ;
 	virtual void dropOther( Descriptor ) override ;
-	virtual void setTimeout( G::EpochTime ) override ;
 	virtual std::string report() const override ;
-
-private:
-	EventLoopImp( const EventLoopImp & ) ;
-	void operator=( const EventLoopImp & ) ;
-	void updateSocket( Descriptor ) ;
-	void updateHandles() ;
-	void addHandles( EventHandlerList & ) ;
-	long desiredEvents( Descriptor ) ;
-	void onEventHandleEvent( size_t ) ;
 
 private:
 	typedef std::vector<HANDLE> Handles ;
 	typedef std::vector<SOCKET> Sockets ;
+	EventLoopImp( const EventLoopImp & ) g__eq_delete ;
+	void operator=( const EventLoopImp & ) g__eq_delete ;
+	DWORD interval() ;
+	void updateSocket( Descriptor ) ;
+	void updateHandles() ;
+	void loadHandles( Handles & , Sockets & ) ;
+	static void getHandles( EventHandlerList & , Handles & , Sockets & ) ;
+	long desiredEvents( Descriptor ) ;
+	void onEventHandleEvent( size_t ) ;
+	void checkOnAdd( Descriptor ) ;
+	static void checkForOverflow( size_t ) ;
+
+private:
 	bool m_running ;
 	Library m_library ;
-	TimerObject m_timer_object ;
 	std::string m_reason ;
 	EventHandlerList m_read_list ;
 	EventHandlerList m_write_list ;
@@ -114,6 +109,7 @@ private:
 	std::vector<int> m_active ;
 	Handles m_handles ;
 	Sockets m_sockets ;
+	Handles m_count_handles ;
 } ;
 
 // ===
@@ -145,22 +141,26 @@ std::string GNet::EventLoopImp::run()
 	for(;;)
 	{
 		DWORD handles_n = static_cast<DWORD>(m_handles.size()) ;
-		G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::run: wait: " << handles_n << " handles" ) ;
-		DWORD rc = ::MsgWaitForMultipleObjectsEx( handles_n , &m_handles[0] , INFINITE , QS_ALLINPUT , 0 ) ;
+		HANDLE * handles_p = handles_n ? &m_handles[0] : nullptr ;
+
+		checkForOverflow( handles_n ) ;
+
+		DWORD rc = ::MsgWaitForMultipleObjectsEx( handles_n , handles_p , interval() , QS_ALLINPUT , 0 ) ;
 		bool updated = false ;
 		{
 			EventHandlerList::Lock lock_read( m_read_list , &updated ) ;
 			EventHandlerList::Lock lock_write( m_write_list , &updated ) ;
 			EventHandlerList::Lock lock_other( m_other_list , &updated ) ;
 
-			if( rc == WAIT_OBJECT_0 ) // timer
+			if( rc == WAIT_TIMEOUT )
 			{
-				G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::run: event: timeout" ) ;
 				TimerList::instance().doTimeouts() ;
 			}
-			else if( rc > WAIT_OBJECT_0 && rc < (WAIT_OBJECT_0+handles_n) ) // socket etc event
+			else if( rc >= WAIT_OBJECT_0 && rc < (WAIT_OBJECT_0+handles_n) ) // socket etc event
 			{
-				G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::run: event: socket etc" ) ;
+				// rc indicates left-most event, but we want to process all events in the
+				// current iteration since leaving events for the next iteration leads
+				// to starvation, so check forwards from the left-most using isActive()
 				size_t index = static_cast<size_t>(rc-WAIT_OBJECT_0) ;
 				std::transform( m_handles.begin()+index , m_handles.end() , m_active.begin()+index , isActive ) ;
 				for( ; index < handles_n ; index++ )
@@ -171,7 +171,6 @@ std::string GNet::EventLoopImp::run()
 			}
 			else if( rc == (WAIT_OBJECT_0+handles_n) ) // window message
 			{
-				G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::run: event: window message" ) ;
 				std::pair<bool,std::string> quit = GGui::Pump::runToEmpty() ;
 				if( quit.first )
 				{
@@ -179,10 +178,6 @@ std::string GNet::EventLoopImp::run()
 					quit_reason = quit.second ;
 					break ;
 				}
-			}
-			else if( rc == WAIT_TIMEOUT )
-			{
-				; // never gets here
 			}
 			else
 			{
@@ -201,7 +196,6 @@ void GNet::EventLoopImp::onEventHandleEvent( size_t handle_index )
 	Descriptor fdd( m_sockets.at(handle_index) , m_handles.at(handle_index) ) ;
 	if( fdd.fd() == INVALID_SOCKET ) // future event
 	{
-		G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::onEventHandleEvent: event on non-socket handle" ) ;
 		GNet::EventHandlerList::Iterator p = m_read_list.find( fdd ) ;
 		if( p != m_read_list.end() ) // the FutureEvent may have disappeared and invalidated the handle
 		{
@@ -217,9 +211,6 @@ void GNet::EventLoopImp::onEventHandleEvent( size_t handle_index )
 			throw Error( "wsa-enum-network-events failed" ) ;
 
 		long event = events_info.lNetworkEvents ;
-		G_DEBUG_GROUP( "event" ,
-			"GNet::EventLoopImp::onEventHandleEvent: network events: " << fdd << ": " << std::hex << event ) ;
-
 		if( event & WRITE_EVENTS )
 		{
 			m_write_list.find(fdd).raiseEvent( &EventHandler::writeEvent ) ;
@@ -231,32 +222,34 @@ void GNet::EventLoopImp::onEventHandleEvent( size_t handle_index )
 		if( event & EXCEPTION_EVENTS )
 		{
 			int e = events_info.iErrorCode[FD_CLOSE_BIT] ; G_ASSERT( EXCEPTION_EVENTS == FD_CLOSE ) ;
-			G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::onEventHandleEvent: fd-close reason: " << e ) ;
-			EventHandler::Reason reason = EventHandler::reason_other ;
-			if( e == 0 ) reason = EventHandler::reason_closed ;
-			if( e == WSAENETDOWN ) reason = EventHandler::reason_down ;
-			if( e == WSAECONNRESET ) reason = EventHandler::reason_reset ;
-			if( e == WSAECONNABORTED ) reason = EventHandler::reason_abort ;
+			EventHandler::Reason reason = EventHandler::Reason::other ;
+			if( e == 0 ) reason = EventHandler::Reason::closed ;
+			if( e == WSAENETDOWN ) reason = EventHandler::Reason::down ;
+			if( e == WSAECONNRESET ) reason = EventHandler::Reason::reset ;
+			if( e == WSAECONNABORTED ) reason = EventHandler::Reason::abort ;
 			m_other_list.find(fdd).raiseEvent( &EventHandler::otherEvent , reason ) ;
 		}
 	}
 }
 
-void GNet::EventLoopImp::addRead( Descriptor fdd , EventHandler & handler , ExceptionHandler & eh )
+void GNet::EventLoopImp::addRead( Descriptor fdd , EventHandler & handler , ExceptionSink es )
 {
-	m_read_list.add( fdd , &handler , &eh ) ;
+	checkOnAdd( fdd ) ;
+	m_read_list.add( fdd , &handler , es ) ;
 	updateSocket( fdd ) ;
 }
 
-void GNet::EventLoopImp::addWrite( Descriptor fdd , EventHandler & handler , ExceptionHandler & eh )
+void GNet::EventLoopImp::addWrite( Descriptor fdd , EventHandler & handler , ExceptionSink es )
 {
-	m_write_list.add( fdd , &handler , &eh ) ;
+	checkOnAdd( fdd ) ;
+	m_write_list.add( fdd , &handler , es ) ;
 	updateSocket( fdd ) ;
 }
 
-void GNet::EventLoopImp::addOther( Descriptor fdd , EventHandler & handler , ExceptionHandler & eh )
+void GNet::EventLoopImp::addOther( Descriptor fdd , EventHandler & handler , ExceptionSink es )
 {
-	m_other_list.add( fdd , &handler , &eh ) ;
+	checkOnAdd( fdd ) ;
+	m_other_list.add( fdd , &handler , es ) ;
 	updateSocket( fdd ) ;
 }
 
@@ -291,35 +284,59 @@ void GNet::EventLoopImp::updateSocket( Descriptor fdd )
 
 void GNet::EventLoopImp::updateHandles()
 {
-	m_handles.clear() ;
-	m_sockets.clear() ;
-	m_handles.push_back( m_timer_object.h() ) ;
-	m_sockets.push_back( 0 ) ;
-	addHandles( m_read_list ) ;
-	addHandles( m_write_list ) ;
-	addHandles( m_other_list ) ;
+	loadHandles( m_handles , m_sockets ) ;
 	m_active.resize( m_handles.size() ) ;
 }
 
-void GNet::EventLoopImp::addHandles( EventHandlerList & list )
+void GNet::EventLoopImp::loadHandles( Handles & handles , Sockets & sockets )
 {
-	G_ASSERT( m_handles.size() >= 1U ) ;
-	G_ASSERT( m_handles.size() == m_sockets.size() ) ;
+	handles.clear() ;
+	sockets.clear() ;
+	getHandles( m_read_list , handles , sockets ) ;
+	getHandles( m_write_list , handles , sockets ) ;
+	getHandles( m_other_list , handles , sockets ) ;
+}
+
+void GNet::EventLoopImp::getHandles( EventHandlerList & list , Handles & handles , Sockets & sockets )
+{
+	G_ASSERT( handles.size() == sockets.size() ) ;
 	typedef std::pair<Handles::iterator,Handles::iterator> Range ;
 	for( EventHandlerList::Iterator p = list.begin() ; p != list.end() ; ++p )
 	{
-		// we need to avoid duplicates so populate as a sorted list
+		// we need to avoid duplicate handles so populate as a sorted list
 		HANDLE h = p.fd().h() ;
 		SOCKET s = p.fd().fd() ;
-		Range range = std::equal_range( m_handles.begin()+1 , m_handles.end() , h ) ;
+		Range range = std::equal_range( handles.begin() , handles.end() , h ) ;
 		if( range.first == range.second )
 		{
-			G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::addHandles: wait: " << Descriptor(s,h) ) ;
-			Handles::iterator h_pos = m_handles.insert( range.first , h ) ;
-			Sockets::iterator s_pos = m_sockets.begin() + std::distance(m_handles.begin(),h_pos) ;
-			m_sockets.insert( s_pos , s ) ;
+			Handles::iterator h_pos = handles.insert( range.first , h ) ;
+			Sockets::iterator s_pos = sockets.begin() + std::distance(handles.begin(),h_pos) ;
+			sockets.insert( s_pos , s ) ;
 		}
 	}
+}
+
+void GNet::EventLoopImp::checkOnAdd( Descriptor new_fdd )
+{
+	// check the number of handles that will be waited for in the next
+	// event-loop iteration assuming no other adds or removes happen
+	// before we get there
+
+	if( !new_fdd.h() ) return ;
+	m_count_handles.clear() ;
+	m_read_list.getHandles( m_count_handles ) ;
+	m_write_list.getHandles( m_count_handles ) ;
+	m_other_list.getHandles( m_count_handles ) ;
+	bool is_new = std::binary_search( m_count_handles.begin() , m_count_handles.end() , new_fdd.h() ) ;
+	size_t n = m_count_handles.size() + (is_new?1U:0U) ;
+	checkForOverflow( n ) ;
+}
+
+void GNet::EventLoopImp::checkForOverflow( size_t n )
+{
+	size_t limit = MAXIMUM_WAIT_OBJECTS ;
+	if( n > limit )
+		throw EventLoop::Overflow( "too many open handles" ) ;
 }
 
 long GNet::EventLoopImp::desiredEvents( Descriptor fdd )
@@ -328,7 +345,6 @@ long GNet::EventLoopImp::desiredEvents( Descriptor fdd )
 	const bool read = m_read_list.contains( fdd ) ;
 	const bool write = m_write_list.contains( fdd ) ;
 	const bool other = m_other_list.contains( fdd ) ;
-	G_DEBUG_GROUP( "event" , "GNet::EventLoopImp::updateSocket: socket events: " << fdd << ": r=" << read << " w=" << write << " o=" << other ) ;
 	if( read ) mask |= READ_EVENTS ;
 	if( write ) mask |= WRITE_EVENTS ;
 	if( other ) mask |= EXCEPTION_EVENTS ;
@@ -342,45 +358,23 @@ void GNet::EventLoopImp::disarm( ExceptionHandler * p )
 	m_other_list.disarm( p ) ;
 }
 
-namespace
+DWORD GNet::EventLoopImp::interval()
 {
-	struct LargeInteger
+	std::pair<G::TimeInterval,bool> interval_pair = TimerList::instance().interval() ;
+	if( interval_pair.second )
 	{
-		LargeInteger( time_t s , unsigned int us )
-		{
-			// time_t is signed and possibly 64 bits, but s is positive and not huge
-			ULARGE_INTEGER u ;
-			u.QuadPart = static_cast<ULONGLONG>( s ) ;
-			if( u.HighPart ) u.HighPart = 0 , u.LowPart = 0xffffffff ;
-			u.QuadPart = UInt32x32To64( u.LowPart , 10000000U ) ; // s->100ns
-			u.QuadPart += ( us * 10U ) ; // us->100ns
-			n.QuadPart = static_cast<LONGLONG>(u.QuadPart) ;
-		}
-		void negate()
-		{
-			n.QuadPart = -n.QuadPart ;
-		}
-		LARGE_INTEGER n ;
-	} ;
-}
-
-void GNet::EventLoopImp::setTimeout( G::EpochTime utc_time )
-{
-	if( utc_time.s )
-	{
-		G::EpochTime now = G::DateTime::now() ;
-		G::EpochTime interval = utc_time > now ? (utc_time-now) : G::EpochTime(0U) ;
-
-		LargeInteger due_time( interval.s , interval.us ) ;
-		due_time.negate() ;
-
-		INT_PTR rc = ::SetWaitableTimer( m_timer_object.h() , &due_time.n , 0 , NULL , NULL , FALSE ) ;
-		if( rc == 0 )
-			throw G::Exception( "SetWaitableTimer() failure" ) ;
+		return INFINITE ; // 0xffffffff
 	}
 	else
 	{
-		::CancelWaitableTimer( m_timer_object.h() ) ;
+		ULARGE_INTEGER u ; // (64-bit ULONGLONG Quad and 32-bit DWORD HighPart/LowPart)
+		u.QuadPart = static_cast<ULONGLONG>( interval_pair.first.s ) ;
+		if( u.HighPart ) u.HighPart = 0 , u.LowPart = 0xffffffff ;
+		u.QuadPart = UInt32x32To64( u.LowPart , 1000U ) ; // s->ms
+		u.QuadPart += ( interval_pair.first.us / 1000U ) ; // us->ms
+		DWORD ms = u.HighPart ? 0xffffffff : u.LowPart ;
+		if( ms == INFINITE ) --ms ;
+		return ms ;
 	}
 }
 
@@ -389,7 +383,7 @@ bool GNet::EventLoopImp::running() const
 	return m_running ;
 }
 
-void GNet::EventLoopImp::quit( std::string reason )
+void GNet::EventLoopImp::quit( const std::string & reason )
 {
 	GGui::Pump::quit( reason ) ;
 }
@@ -408,44 +402,23 @@ std::string GNet::EventLoopImp::report() const
 
 GNet::EventLoopImp::Library::Library()
 {
-	typedef GNet::EventLoopImp::Error Error ;
 	WSADATA info ;
 	WORD version = MAKEWORD( 2 , 2 ) ;
 	int rc = ::WSAStartup( version , &info ) ;
 	if( rc != 0 )
 	{
-		throw Error( "winsock startup failure" ) ;
+		throw EventLoopImp::Error( "winsock startup failure" ) ;
 	}
 	if( LOBYTE(info.wVersion) != 2 || HIBYTE(info.wVersion) != 2 )
 	{
 		::WSACleanup() ;
-		throw Error( "incompatible winsock version" ) ;
+		throw EventLoopImp::Error( "incompatible winsock version" ) ;
 	}
 }
 
 GNet::EventLoopImp::Library::~Library()
 {
 	// ::WSACleanup() not
-}
-
-// ==
-
-GNet::EventLoopImp::TimerObject::TimerObject()
-{
-	typedef GNet::EventLoopImp::Error Error ;
-	m_handle = ::CreateWaitableTimerEx( NULL , NULL , 0 , SYNCHRONIZE | TIMER_MODIFY_STATE ) ;
-	if( m_handle == NULL )
-		throw Error( "cannot create timer object" ) ;
-}
-
-GNet::EventLoopImp::TimerObject::~TimerObject()
-{
-	::CloseHandle( m_handle ) ;
-}
-
-HANDLE GNet::EventLoopImp::TimerObject::h()
-{
-	return m_handle ;
 }
 
 /// \file geventloop_win32.cpp

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,38 +26,78 @@
 
 namespace G
 {
+	class HashStateImp ;
 	template <unsigned int N, typename U, typename S> class HashState ;
 }
 
+/// \class G::HashStateImp
+/// The non-template part of G::HashState.
+///
+class G::HashStateImp
+{
+public:
+	template <typename U> static std::string extension( U n ) ;
+		///< Returns the given data size a four-character
+		///< string.
+
+protected:
+	template <typename U> static void convert_( U n , std::string::iterator p ) ;
+		///< Encodes the given value into four characters.
+
+private:
+	HashStateImp() g__eq_delete ;
+} ;
+
 /// \class G::HashState
-/// Helper functions for representing the state of a hash function as
-/// a non-printable string. The hash state must be an array of 'N/4'
-/// 32-bit values, with encoded strings being N or N+4 characters.
+/// Functions for representing the intermediate state of a hash function
+/// as a non-printable string. The input is an array of 'N/4' 32-bit
+/// values. The output is a string of N non-printable characters, or N+4
+/// characters if also including the data size. The 'U' type can be more
+/// than 32 bits wide but it should hold values of no more than 32 bits
+/// significance.
 /// \see G::Hash::printable
 ///
 template <unsigned int N, typename U, typename S>
-class G::HashState
+class G::HashState : public HashStateImp
 {
 public:
 	typedef U uint_type ;
 	typedef S size_type ;
 
 	static std::string encode( const uint_type * ) ;
-		///< Returns the hash state as a string, typically
-		///< containing non-printing characters.
+		///< Returns the hash state as an N-character string of
+		///< non-printing characters.
 
 	static std::string encode( const uint_type * , size_type n ) ;
 		///< Returns the hash state as a string that also
-		///< encodes the data size.
+		///< has the original data size as a four-character
+		///< extension().
 
-	static void decode( const std::string & , uint_type * , size_type & ) ;
+	static std::string encode( uint_type hi , uint_type low , const uint_type * ) ;
+		///< An overload with a hi/low bit count.
+
+	static std::string encode( uint_type hi , uint_type low , uint_type v0 , uint_type v1 , uint_type v2 , uint_type v3 , uint_type v4 = 0 ) ;
+		///< An overload for N=16 or N=20 with broken-out
+		///< values and a hi/low bit count.
+
+	static void decode( const std::string & s , uint_type * values_out , size_type & size_out ) ;
 		///< Converts an encode()d string back into a hash
-		///< state of N integers and a data size returned
-		///< by reference.
+		///< state of N/4 integers and a data size returned
+		///< by reference. The data size is returned as zero
+		///< if the input string is only N characters long.
+
+	static void decode( const std::string & , uint_type & size_hi_out , uint_type & size_low_out ,
+		uint_type * value_0 , uint_type * value_1 , uint_type * value_2 , uint_type * value_3 ,
+		uint_type * value_4 = nullptr ) ;
+			///< An overload for N=16 or N=20 with broken-out
+			///< values and hi/low bit count.
+
+	static void decode( const std::string & , uint_type & size_hi_out , uint_type & size_low_out ,
+		uint_type * values_out ) ;
+			///< An overload for a hi/low bit count.
 
 private:
-	HashState() ;
-	static void convert( uint_type n , char * p ) ;
+	HashState() g__eq_delete ;
 	static void convert( char hi , char himid , char lomid , char lo , uint_type & n ) ;
 	static void convert( const std::string & str , uint_type & n ) ;
 	static void convert( const std::string & s , uint_type * state ) ;
@@ -65,38 +105,96 @@ private:
 } ;
 
 template <unsigned int N, typename U, typename S>
-std::string G::HashState<N,U,S>::encode( const uint_type * state )
+std::string G::HashState<N,U,S>::encode( const uint_type * values )
 {
 	std::string result( N , '\0' ) ;
 	for( size_t i = 0U ; i < N/4 ; i++ )
 	{
-		convert( state[i] , &result[i*4U] ) ;
+		convert_( values[i] , result.begin() + (i*4U) ) ;
 	}
 	return result ;
 }
 
 template <unsigned int N, typename U, typename S>
-std::string G::HashState<N,U,S>::encode( const uint_type * state , size_type n )
+std::string G::HashState<N,U,S>::encode( const uint_type * values , size_type n )
 {
 	std::string result( N+4U , '\0' ) ;
 	for( size_t i = 0U ; i < N/4 ; i++ )
 	{
-		convert( state[i] , &result[i*4U] ) ;
+		convert_( values[i] , result.begin() + (i*4U) ) ;
 	}
-	convert( n , &result[N] ) ;
+	convert_( n , result.begin() + N ) ;
 	return result ;
 }
 
 template <unsigned int N, typename U, typename S>
-void G::HashState<N,U,S>::decode( const std::string & str , uint_type * state_out , size_type & n_out )
+std::string G::HashState<N,U,S>::encode( uint_type hi , uint_type low , const uint_type * values )
 {
-	if( str.length() < (N+4U) )
-		return decode( str+std::string(N+4U,'\0') , state_out , n_out ) ; // resurse if too short
-	convert( str , state_out , n_out ) ;
+	uint_type n = hi ;
+	n <<= 29 ;
+	n |= ( low >> 3 ) ;
+	return encode( values , n ) ;
 }
 
 template <unsigned int N, typename U, typename S>
-void G::HashState<N,U,S>::convert( uint_type n , char * p_out )
+std::string G::HashState<N,U,S>::encode( uint_type hi , uint_type low , uint_type v0 , uint_type v1 , uint_type v2 , uint_type v3 , uint_type v4 )
+{
+	uint_type n = hi ;
+	n <<= 29 ;
+	n |= ( low >> 3 ) ;
+	uint_type values[N/4] ;
+	if( N > 0 ) values[0] = v0 ;
+	if( N > 4 ) values[1] = v1 ;
+	if( N > 8 ) values[2] = v2 ;
+	if( N > 12 ) values[3] = v3 ;
+	if( N > 16 ) values[4] = v4 ;
+	return encode( values , n ) ;
+}
+
+template <typename U>
+std::string G::HashStateImp::extension( U n )
+{
+	std::string result( 4U , '\0' ) ;
+	convert_( n , result.begin() ) ;
+	return result ;
+}
+
+template <unsigned int N, typename U, typename S>
+void G::HashState<N,U,S>::decode( const std::string & str , uint_type * values_out , size_type & size_out )
+{
+	if( str.length() < (N+4U) ) return decode( str+std::string(N+4U,'\0') , values_out , size_out ) ; // call ourselves again if too short
+	convert( str , values_out , size_out ) ;
+}
+
+template <unsigned int N, typename U, typename S>
+void G::HashState<N,U,S>::decode( const std::string & str , uint_type & hi , uint_type & low ,
+	uint_type * v0 , uint_type * v1 , uint_type * v2 , uint_type * v3 , uint_type * v4 )
+{
+	if( str.length() < (N+4U) ) return decode( str+std::string(N+4U,'\0') , hi , low , v0 , v1 , v2 , v3 , v4 ) ;
+	uint_type values[N/4] ;
+	uint_type n ;
+	convert( str , values , n ) ;
+	if( v0 && N > 0 ) *v0 = values[0] ;
+	if( v1 && N > 4 ) *v1 = values[1] ;
+	if( v2 && N > 8 ) *v2 = values[2] ;
+	if( v3 && N > 12 ) *v3 = values[3] ;
+	if( v4 && N > 16 ) *v4 = values[4] ;
+	hi = ( n >> 29 ) ;
+	low = ( n << 3 ) & 0xffffffffUL ;
+}
+
+template <unsigned int N, typename U, typename S>
+void G::HashState<N,U,S>::decode( const std::string & str , uint_type & hi , uint_type & low , uint_type * values_out )
+{
+	if( str.length() < (N+4U) ) return decode( str+std::string(N+4U,'\0') , hi , low , values_out ) ;
+	uint_type n ;
+	convert( str , values_out , n ) ;
+	hi = ( n >> 29 ) ;
+	low = ( n << 3 ) & 0xffffffffUL ;
+}
+
+template <typename U>
+void G::HashStateImp::convert_( U n , std::string::iterator p_out )
 {
 	*p_out++ = static_cast<char>(n&0xffU) ; n >>= 8U ;
 	*p_out++ = static_cast<char>(n&0xffU) ; n >>= 8U ;
@@ -133,7 +231,7 @@ template <unsigned int N, typename U, typename S>
 void G::HashState<N,U,S>::convert( const std::string & str , uint_type * state_out , size_type & n_out )
 {
 	convert( str , state_out ) ;
-	uint_type nn ;
+	uint_type nn = 0 ;
 	convert( str.at(N+3U) , str.at(N+2U) , str.at(N+1U) , str.at(N) , nn ) ;
 	n_out = static_cast<size_type>(nn) ;
 }

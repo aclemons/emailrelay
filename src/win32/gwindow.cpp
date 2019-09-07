@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@
 #include "gwindow.h"
 #include "gpump.h"
 #include "gconvert.h"
-#include "gdebug.h"
 #include "glog.h"
+#include "gassert.h"
 
 extern "C" LRESULT CALLBACK gwindow_wndproc_export( HWND , UINT , WPARAM , LPARAM ) ;
 
@@ -36,7 +36,7 @@ GGui::Window::Window( HWND hwnd ) :
 GGui::Window::~Window()
 {
 	if( handle() )
-		::SetWindowLong( handle() , 0 , 0 ) ;
+		::SetWindowLongPtr( handle() , 0 , 0 ) ;
 }
 
 bool GGui::Window::registerWindowClass( const std::string & class_name_in ,
@@ -67,19 +67,15 @@ bool GGui::Window::registerWindowClass( const std::string & class_name_in ,
 }
 
 bool GGui::Window::create( const std::string & class_name ,
-	const std::string & title , DWORD style ,
+	const std::string & title , std::pair<DWORD,DWORD> style_pair ,
 	int x , int y , int dx , int dy ,
 	HWND parent , HMENU menu , HINSTANCE hinstance )
 {
 	G_ASSERT( handle() == NULL ) ;
 	G_DEBUG( "GGui::Window::create: \"" << class_name << "\", \"" << title << "\"" ) ;
 
-	DWORD extended_style = 0 ;
-	if( style == 0 )
-	{
-		style = windowStyleHidden() ;
-		extended_style = WS_EX_TOOLWINDOW ;
-	}
+	DWORD style = style_pair.first ;
+	DWORD extended_style = style_pair.second ;
 
 	void *vp = reinterpret_cast<void*>(this) ;
 	HWND hwnd = ::CreateWindowExA( extended_style , class_name.c_str() , title.c_str() ,
@@ -124,7 +120,7 @@ extern "C" LRESULT CALLBACK gwindow_wndproc_export( HWND hwnd , UINT message , W
 	catch( std::exception & e )
 	{
 		// never gets here
-		G_DEBUG( "gwindow_wndproc_export: exception absorbed: " << e.what() ) ; G_IGNORE_VARIABLE( e ) ;
+		G_DEBUG( "gwindow_wndproc_export: exception absorbed: " << e.what() ) ; G_IGNORE_VARIABLE(std::exception&,e) ;
 		return 0 ;
 	}
 }
@@ -139,11 +135,6 @@ std::string GGui::Window::wndProcExceptionString()
 	std::string reason = m_reason ;
 	m_reason.resize(0) ;
 	return reason ;
-}
-
-WNDPROC GGui::Window::windowProcedure()
-{
-	return gwindow_wndproc_export ;
 }
 
 LRESULT GGui::Window::wndProc( HWND hwnd , UINT msg , WPARAM wparam , LPARAM lparam )
@@ -233,29 +224,39 @@ void GGui::Window::destroy()
 	::DestroyWindow( handle() ) ;
 }
 
-DWORD GGui::Window::windowStyleMain()
+namespace
 {
-	return WS_OVERLAPPEDWINDOW ;
+	std::pair<DWORD,DWORD> make_style( DWORD first , DWORD second = 0 )
+	{
+		return std::make_pair( first , second ) ;
+	}
 }
 
-DWORD GGui::Window::windowStylePopup()
+std::pair<DWORD,DWORD> GGui::Window::windowStyleMain()
+{
+	return make_style( WS_OVERLAPPEDWINDOW ) ;
+}
+
+std::pair<DWORD,DWORD> GGui::Window::windowStylePopup()
 {
 	return
-		WS_THICKFRAME |
-		WS_POPUP |
-		WS_SYSMENU |
-		WS_CAPTION |
-		WS_VISIBLE ;
+		make_style(
+			WS_THICKFRAME |
+			WS_POPUP |
+			WS_SYSMENU |
+			WS_CAPTION |
+			WS_VISIBLE |
+		0 ) ;
 }
 
-DWORD GGui::Window::windowStyleChild()
+std::pair<DWORD,DWORD> GGui::Window::windowStyleChild()
 {
-	return WS_CHILDWINDOW ;
+	return make_style( WS_CHILDWINDOW ) ;
 }
 
-DWORD GGui::Window::windowStyleHidden()
+std::pair<DWORD,DWORD> GGui::Window::windowStylePopupNoButton()
 {
-	return WS_POPUP ; // no WS_VISIBLE
+	return make_style( WS_POPUP , WS_EX_TOOLWINDOW ) ;
 }
 
 UINT GGui::Window::classStyle( bool redraw )

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 //
 // usage: emailrelay-test-scanner [--log] [--log-file <file>] [--debug] [--pid-file <pidfile>]
 //
-// Listens on port 10020 by default. Each request is a filename and the message
-// file is treated as a mini script with commands of:
+// Listens on port 10020 by default. Each request is a 'content' filename
+// and the file should contain a mini script with commands of:
 //  * send [<string>]
 //  * sleep [<time>]
 //  * delete-content
@@ -33,14 +33,17 @@
 
 #include "gdef.h"
 #include "gserver.h"
+#include "gnetdone.h"
 #include "glinebuffer.h"
-#include "gstr.h"
 #include "gevent.h"
+#include "gtimerlist.h"
 #include "gprocess.h"
+#include "gstr.h"
 #include "garg.h"
 #include "gfile.h"
 #include "gsleep.h"
-#include "gdebug.h"
+#include "glogoutput.h"
+#include "glog.h"
 #include <sstream>
 #include <iostream>
 #include <fstream>
@@ -54,21 +57,17 @@ namespace Main
 class Main::ScannerPeer : public GNet::ServerPeer
 {
 public:
-	explicit ScannerPeer( GNet::Server::PeerInfo info ) ;
+	ScannerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo info ) ;
 private:
-	virtual void onDelete( const std::string & ) ;
-	virtual void onData( const char * , GNet::ServerPeer::size_type ) ;
-	virtual void onSecure( const std::string & ) ;
-	virtual void onSendComplete() ;
-	void process() ;
+	virtual void onDelete( const std::string & ) override ;
+	virtual bool onReceive( const char * , size_t , size_t , size_t , char ) override ;
+	virtual void onSecure( const std::string & , const std::string & ) override ;
+	virtual void onSendComplete() override ;
 	bool processFile( std::string , std::string ) ;
-private:
-	GNet::LineBuffer m_buffer ;
 } ;
 
-Main::ScannerPeer::ScannerPeer( GNet::Server::PeerInfo info ) :
-	ServerPeer(info) ,
-	m_buffer(GNet::LineBufferConfig::autodetect())
+Main::ScannerPeer::ScannerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo info ) :
+	ServerPeer(esu.bind(this),info,GNet::LineBufferConfig::autodetect())
 {
 	G_LOG_S( "ScannerPeer::ctor: new connection from " << info.m_address.displayString() ) ;
 }
@@ -78,39 +77,25 @@ void Main::ScannerPeer::onDelete( const std::string & )
 	G_LOG_S( "ScannerPeer::onDelete: disconnected" ) ;
 }
 
-void Main::ScannerPeer::onSecure( const std::string & )
+void Main::ScannerPeer::onSecure( const std::string & , const std::string & )
 {
 }
 
-void Main::ScannerPeer::onData( const char * p , GNet::ServerPeer::size_type n )
+bool Main::ScannerPeer::onReceive( const char * p , size_t n , size_t , size_t , char )
 {
-	G_DEBUG( "ScannerPeer::onData: " << G::Str::printable(std::string(p,n)) ) ;
-	m_buffer.add( p , n ) ;
-	process() ;
+	G_DEBUG( "ScannerPeer::onReceive: " << G::Str::printable(std::string(p,n)) ) ;
+	std::string path( p , n ) ;
+	G::Str::trim( path , " \r\n\t" ) ;
+	if( !processFile( path , lineBuffer().eol() ) )
+	{
+		G_LOG_S( "ScannerPeer::process: disconnecting" ) ;
+		throw GNet::Done() ;
+	}
+	return true ;
 }
 
 void Main::ScannerPeer::onSendComplete()
 {
-}
-
-void Main::ScannerPeer::process()
-{
-	GNet::LineBufferIterator iter( m_buffer ) ;
-	if( iter.more() )
-	{
-		std::string s = iter.line() ;
-		if( !s.empty() )
-		{
-			std::string path( s ) ;
-			G::Str::trim( path , " \r\n\t" ) ;
-			if( !processFile( path , iter.eol() ) )
-			{
-				G_LOG_S( "ScannerPeer::process: disconnecting" ) ;
-				doDelete() ;
-				return ;
-			}
-		}
-	}
 }
 
 bool Main::ScannerPeer::processFile( std::string path , std::string eol )
@@ -191,33 +176,45 @@ bool Main::ScannerPeer::processFile( std::string path , std::string eol )
 
 // ===
 
-/// \class Main::Scanner
-/// A GNet::Server class used by the scanner utility.
-///
 class Main::Scanner : public GNet::Server
 {
 public:
-	Scanner( GNet::ExceptionHandler & , unsigned int port ) ;
-	virtual GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) override ;
+	Scanner( GNet::ExceptionSink , unsigned int port , unsigned int idle_timeout ) ;
+	~Scanner() ;
+	virtual unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo ) override ;
 } ;
 
-Main::Scanner::Scanner( GNet::ExceptionHandler & eh , unsigned int port ) :
-	GNet::Server( eh , GNet::Address(GNet::Address::Family::ipv4(),port) )
+Main::Scanner::Scanner( GNet::ExceptionSink es , unsigned int port , unsigned int idle_timeout ) :
+	GNet::Server( es , GNet::Address(GNet::Address::Family::ipv4,port) , GNet::ServerPeerConfig(idle_timeout) )
 {
 }
 
-GNet::ServerPeer * Main::Scanner::newPeer( GNet::Server::PeerInfo info )
+Main::Scanner::~Scanner()
 {
-	return new ScannerPeer( info ) ;
+	serverCleanup() ; // base class early cleanup
+}
+
+unique_ptr<GNet::ServerPeer> Main::Scanner::newPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo info )
+{
+	try
+	{
+		return unique_ptr<GNet::ServerPeer>( new ScannerPeer( ebu , info ) ) ;
+	}
+	catch( std::exception & e )
+	{
+		G_WARNING( "Scanner::newPeer: new connection error: " << e.what() ) ;
+		return unique_ptr<GNet::ServerPeer>() ;
+	}
 }
 
 // ===
 
-static int run( unsigned int port )
+static int run( unsigned int port , unsigned int idle_timeout )
 {
 	unique_ptr<GNet::EventLoop> event_loop( GNet::EventLoop::create() ) ;
+	GNet::ExceptionSink es ;
 	GNet::TimerList timer_list ;
-	Main::Scanner scanner( *event_loop.get() , port ) ;
+	Main::Scanner scanner( es , port , idle_timeout ) ;
 	event_loop->run() ;
 	return 0 ;
 }
@@ -232,6 +229,7 @@ int main( int argc , char * argv [] )
 		std::string log_file = arg.index("--log-file",1U) ? arg.v(arg.index("--log-file",1U)+1U) : std::string() ;
 		unsigned int port = arg.index("--port",1U) ? G::Str::toUInt(arg.v(arg.index("--port",1U)+1U)) : 10020U ;
 		std::string pid_file = arg.index("--pid-file",1U) ? arg.v(arg.index("--pid-file",1U)+1U) : std::string() ;
+		unsigned int idle_timeout = 30U ;
 
 		if( !pid_file.empty() )
 		{
@@ -240,7 +238,7 @@ int main( int argc , char * argv [] )
 		}
 
 		G::LogOutput log_output( log , debug , log_file ) ;
-		int rc = run( port ) ;
+		int rc = run( port , idle_timeout ) ;
 		std::cout << "done" << std::endl ;
 		return rc ;
 	}
@@ -255,3 +253,4 @@ int main( int argc , char * argv [] )
 	return 1 ;
 }
 
+/// \file emailrelay_test_scanner.cpp

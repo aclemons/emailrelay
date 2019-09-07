@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,15 +19,14 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gmessagestore.h"
 #include "gnewfile.h"
 #include "gprocess.h"
-#include "gstrings.h"
 #include "groot.h"
 #include "gfile.h"
 #include "gstr.h"
 #include "gxtext.h"
+#include "geightbit.h"
 #include "gassert.h"
 #include "glog.h"
 #include <functional>
@@ -37,13 +36,14 @@
 
 GSmtp::NewFile::NewFile( FileStore & store , const std::string & from ,
 	const std::string & from_auth_in , const std::string & from_auth_out ,
-	size_t max_size ) :
+	size_t max_size , bool test_for_eight_bit ) :
 		m_store(store) ,
 		m_from(from) ,
 		m_from_auth_in(from_auth_in) ,
 		m_from_auth_out(from_auth_out) ,
 		m_committed(false) ,
-		m_eight_bit(false) ,
+		m_test_for_eight_bit(test_for_eight_bit) ,
+		m_eight_bit(-1) ,
 		m_saved(false) ,
 		m_size(0UL) ,
 		m_max_size(max_size)
@@ -56,7 +56,7 @@ GSmtp::NewFile::NewFile( FileStore & store , const std::string & from ,
 	//
 	m_content_path = m_store.contentPath( m_seq ) ;
 	G_LOG( "GSmtp::NewMessage: content file: " << m_content_path ) ;
-	unique_ptr<std::ostream> content_stream = m_store.stream( m_content_path ) ;
+	unique_ptr<std::ofstream> content_stream = m_store.stream( m_content_path ) ;
 	m_content.reset( content_stream.release() ) ;
 }
 
@@ -66,7 +66,6 @@ GSmtp::NewFile::~NewFile()
 	{
 		G_DEBUG( "GSmtp::NewFile::dtor: " << m_content_path ) ;
 		cleanup() ;
-		m_store.updated() ;
 	}
 	catch(...) // dtor
 	{
@@ -113,6 +112,8 @@ void GSmtp::NewFile::commit( bool strict )
 	bool ok = commitEnvelope() ;
 	if( !ok && strict )
 		throw FileError( "cannot rename envelope file to " + m_envelope_path_1.str() ) ;
+	if( ok )
+		m_store.updated() ;
 }
 
 void GSmtp::NewFile::addTo( const std::string & to , bool local )
@@ -127,18 +128,16 @@ bool GSmtp::NewFile::addText( const char * line_data , size_t line_size )
 {
 	m_size += static_cast<unsigned long>( line_size ) ;
 
-	// testing for eight-bit content can be slow, and _not_ testing
-	// the content is recommended by RFC-2821 ("a relay should ...
-	// relay [messages] without inspecting [the] content"), accepting
-	// the risk that a strictly-seven-bit server will reject or garble
-	// the message -- here we could assume eight-bit content and
-	// therefore ask servers for eightbitmime on everything (ignoring
-	// the question of mime-ness) -- if there are any seven-bit servers
-	// out there then some out-of-band processing could be used to edit
-	// the envelope file to the correct value before forwarding
+	// testing for eight-bit content can be relatively slow -- not testing
+	// the content is implied by RFC-2821 ("a relay should ... relay
+	// [messages] without inspecting [the] content"), but RFC-6152
+	// disallows sending eight-bit content to a seven-bit server --
+	// here we optionally do the test on each line of content -- the
+	// final result is written into the envelope file, allowing an
+	// external program to change it before forwarding
 	//
-	//m_eight_bit = true ; // TODO maybe always assume content is eight-bit
-	m_eight_bit = m_eight_bit || isEightBit(line_data,line_size) ;
+	if( m_test_for_eight_bit && m_eight_bit != 1 )
+		m_eight_bit = isEightBit(line_data,line_size) ? 1 : 0 ;
 
 	std::ostream & stream = *m_content.get() ;
 	stream.write( line_data , line_size ) ;
@@ -149,8 +148,8 @@ bool GSmtp::NewFile::addText( const char * line_data , size_t line_size )
 void GSmtp::NewFile::flushContent()
 {
 	G_ASSERT( m_content.get() != nullptr ) ;
-	m_content->flush() ;
-	if( ! m_content->good() )
+	m_content->close() ;
+	if( m_content->fail() ) // trap failbit/badbit
 		throw FileError( "cannot write content file " + m_content_path.str() ) ;
 	m_content.reset() ;
 }
@@ -175,27 +174,19 @@ void GSmtp::NewFile::deleteEnvelope()
 	}
 }
 
-namespace
-{
-	struct EightBit : std::unary_function<char,bool>
-	{
-		bool operator()( char c ) { return !! ( static_cast<unsigned char>(c) & 0x80U ) ; }
-	} ;
-}
-
 bool GSmtp::NewFile::isEightBit( const char * line_data , size_t line_size )
 {
-	const char * end = line_data + line_size ;
-	return std::find_if( line_data , end , EightBit() ) != end ;
+	return G::eightbit( line_data , line_size ) ;
 }
 
 bool GSmtp::NewFile::saveEnvelope( const std::string & session_auth_id , const std::string & peer_socket_address ,
 	const std::string & peer_certificate ) const
 {
-	unique_ptr<std::ostream> envelope_stream = m_store.stream( m_envelope_path_0 ) ;
+	unique_ptr<std::ofstream> envelope_stream = m_store.stream( m_envelope_path_0 ) ;
 	writeEnvelope( *(envelope_stream.get()) , m_envelope_path_0.str() ,
 		session_auth_id , peer_socket_address , peer_certificate ) ;
-	bool ok = envelope_stream->good() ;
+	envelope_stream->close() ;
+	bool ok = !envelope_stream->fail() ;
 	return ok ;
 }
 
@@ -221,7 +212,7 @@ void GSmtp::NewFile::deliver( const G::StringArray & /*to*/ ,
 	G::File::copy( envelope_path_now.str() , envelope_path_later.str()+".local" ) ;
 }
 
-void GSmtp::NewFile::writeEnvelope( std::ostream & stream , const std::string & where ,
+void GSmtp::NewFile::writeEnvelope( std::ofstream & stream , const std::string & where ,
 	const std::string & session_auth_id , const std::string & peer_socket_address ,
 	const std::string & peer_certificate_in ) const
 {
@@ -235,7 +226,7 @@ void GSmtp::NewFile::writeEnvelope( std::ostream & stream , const std::string & 
 	const std::string x( m_store.x() ) ;
 
 	stream << x << "Format: " << m_store.format() << crlf() ;
-	stream << x << "Content: " << (m_eight_bit?"8":"7") << "bit" << crlf() ;
+	stream << x << "Content: " << (m_eight_bit==1?"8bit":(m_eight_bit==0?"7bit":"unknown")) << crlf() ;
 	stream << x << "From: " << m_from << crlf() ;
 	stream << x << "ToCount: " << (m_to_local.size()+m_to_remote.size()) << crlf() ;
 	{

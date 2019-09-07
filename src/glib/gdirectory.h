@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,8 +38,8 @@ namespace G
 }
 
 /// \class G::Directory
-/// An encapsulation of a file system directory that allows for iterating
-/// through the set of contained files.
+/// An encapsulation of a file system directory that works with
+/// G::DirectoryIterator.
 /// \see G::Path, G::FileSystem, G::File
 ///
 class G::Directory
@@ -56,9 +56,6 @@ public:
 
 	explicit Directory( const std::string & path ) ;
 		///< Constructor.
-
-	~Directory() ;
-		///< Destructor.
 
 	bool valid( bool for_creating_files = false ) const ;
 		///< Returns true if the object represents a valid directory.
@@ -77,24 +74,19 @@ public:
 	Path path() const ;
 		///< Returns the directory's path.
 
-	Directory( const Directory & other ) ;
-		///< Copy constructor.
-
-	Directory & operator=( const Directory & ) ;
-		///< Assignment operator.
-
 	static std::string tmp() ;
 		///< A convenience function for constructing a filename for
-		///< writeable(). This is factored-out to this public
-		///< interface so that client code can minimise the time
-		///< spent with a privileged effective userid.
+		///< writeable(). This is factored-out from writeable() into
+		///< this public interface so that client code can minimise
+		///< the time spent with a privileged effective userid.
 
 private:
 	Path m_path ;
 } ;
 
 /// \class G::DirectoryIterator
-/// A Directory iterator. The iteration model is
+/// A iterator that returns filenames in a directory.
+/// The iteration model is:
 /// \code
 /// while(iter.more()) { (void)iter.filePath() ; }
 /// \endcode
@@ -129,18 +121,17 @@ public:
 		///< Returns the name of the current item.
 
 private:
-	DirectoryIterator( const DirectoryIterator & ) ; // not implemented
-	void operator=( const DirectoryIterator & ) ; // not implemented
+	DirectoryIterator( const DirectoryIterator & ) g__eq_delete ;
+	void operator=( const DirectoryIterator & ) g__eq_delete ;
 
 private:
-	DirectoryIteratorImp * m_imp ;
+	unique_ptr<DirectoryIteratorImp> m_imp ;
 } ;
 
 /// \class G::DirectoryList
-/// A Directory iterator with the same kind of interface as G::DirectoryIterator,
-/// but doing all file i/o in one go. This is useful, compared to
-/// DirectoryIterator, when temporarily adopting additional process privileges
-/// to read a directory.
+/// A iterator similar to G::DirectoryIterator but doing all file
+/// i/o in one go. This is useful when temporarily adopting
+/// additional process privileges to read a directory.
 ///
 class G::DirectoryList
 {

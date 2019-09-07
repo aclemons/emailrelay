@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,8 @@
 
 #include "gdef.h"
 #include "gstr.h"
-#include "gdebug.h"
+#include "glog.h"
+#include "gassert.h"
 #include <cmath>
 #include <algorithm>
 #include <iterator>
@@ -110,7 +111,6 @@ std::string G::Str::dequote( const std::string & s , char qq , char esc , const 
 		}
 		else
 		{
-			bool is_space = ws.find(*p) != std::string::npos ;
 			if( *p == qq && !escaped && !in_quote )
 			{
 				in_quote = true ;
@@ -196,7 +196,7 @@ unsigned int G::Str::replaceAll( std::string & s , const std::string & from , co
 {
 	unsigned int count = 0U ;
 	for( size_type pos = 0U ; replace(s,from,to,&pos) ; count++ )
-		; // no-op
+		{;} // no-op
 	return count ;
 }
 
@@ -206,7 +206,7 @@ unsigned int G::Str::replaceAll( std::string & s , const char * from , const cha
 	{
 		unsigned int count = 0U ;
 		for( size_type pos = 0U ; replace(s,from,to,&pos) ; count++ )
-			; // no-op
+			{;} // no-op
 		return count ;
 	}
 	else
@@ -215,10 +215,29 @@ unsigned int G::Str::replaceAll( std::string & s , const char * from , const cha
 	}
 }
 
+std::string G::Str::replaced( const std::string & s , char from , char to )
+{
+	std::string result( s ) ;
+	replaceAll( result , std::string(1U,from) , std::string(1U,to) ) ;
+	return result ;
+}
+
 void G::Str::removeAll( std::string & s , char c )
 {
 	const std::string::iterator end = s.end() ;
 	s.erase( std::remove_if( s.begin() , end , std::bind1st(std::equal_to<char>(),c) ) , end ) ;
+}
+
+std::string G::Str::only( const std::string & chars , const std::string & s )
+{
+	std::string result ;
+	result.reserve( s.size() ) ;
+	for( std::string::const_iterator p = s.begin() ; p != s.end() ; ++p )
+	{
+		if( chars.find(*p) != std::string::npos )
+			result.append( 1U , *p ) ;
+	}
+	return result ;
 }
 
 void G::Str::trimLeft( std::string & s , const std::string & ws , size_type limit )
@@ -257,9 +276,51 @@ std::string G::Str::trimmed( const std::string & s_in , const std::string & ws )
 
 namespace
 {
-	struct IsDigit : std::unary_function<char,bool>
+	struct IsDigit // : std::unary_function<char,bool>
 	{
-		bool operator()( char c ) const { return !! isdigit( c ) ; }
+		bool operator()( char c ) const
+		{
+			unsigned char uc = static_cast<unsigned char>(c) ;
+			return uc >= 48U && uc <= 57U ;
+		}
+	} ;
+	struct NotIsDigit // std::not1(IsDigit())
+	{
+		bool operator()( char c ) const
+		{
+			return !IsDigit()(c) ;
+		}
+	} ;
+	struct IsPrintableAscii // : std::unary_function<char,bool>
+	{
+		bool operator()( char c ) const
+		{
+			unsigned char uc = static_cast<unsigned char>(c) ;
+			return uc >= 32U && uc < 127U ;
+		}
+	} ;
+	struct NotIsPrintableAscii // std::not1(IsPrintableAscii())
+	{
+		bool operator()( char c ) const
+		{
+			return !IsPrintableAscii()(c) ;
+		}
+	} ;
+	struct ToLower // : std::unary_function<char,char>
+	{
+		char operator()( char c )
+		{
+			const unsigned char uc = static_cast<unsigned char>(c) ;
+			return ( uc >= 65U && uc <= 90U ) ? ( c + '\x20' ) : c ;
+		}
+	} ;
+	struct ToUpper // : std::unary_function<char,char>
+	{
+		char operator()( char c )
+		{
+			const unsigned char uc = static_cast<unsigned char>(c) ;
+			return ( uc >= 97U && uc <= 122U ) ? ( c - '\x20' ) : c ;
+		}
 	} ;
 }
 
@@ -268,21 +329,13 @@ bool G::Str::isNumeric( const std::string & s , bool allow_minus_sign )
 	const std::string::const_iterator end = s.end() ;
 	std::string::const_iterator p = s.begin() ;
 	if( allow_minus_sign && p != end && *p == '-' ) ++p ;
-	return std::find_if( p , end , std::not1(IsDigit()) ) == end ;
-}
-
-namespace
-{
-	struct IsPrintableAscii : std::unary_function<char,bool>
-	{
-		bool operator()( char c ) const { return c >= 0x20 && c < 0x7f ; }
-	} ;
+	return std::find_if( p , end , NotIsDigit() ) == end ;
 }
 
 bool G::Str::isPrintableAscii( const std::string & s )
 {
 	const std::string::const_iterator end = s.end() ;
-	return std::find_if( s.begin() , end , std::not1(IsPrintableAscii()) ) == end ;
+	return std::find_if( s.begin() , end , NotIsPrintableAscii() ) == end ;
 }
 
 bool G::Str::isInt( const std::string & s )
@@ -374,19 +427,14 @@ std::string G::Str::fromUShort( unsigned short us )
 bool G::Str::toBool( const std::string & s )
 {
 	std::string str = lower( s ) ;
+	bool result = true ;
 	if( str == "true" )
-	{
-		return true ;
-	}
+		{;}
 	else if( str == "false" )
-	{
-		return false ;
-	}
+		result = false ;
 	else
-	{
 		throw InvalidFormat( "expected true/false" , s ) ;
-		return false ; // never gets here -- the return pacifies some compilers
-	}
+	return result ;
 }
 
 double G::Str::toDouble( const std::string & s )
@@ -397,7 +445,10 @@ double G::Str::toDouble( const std::string & s )
 	if( end == 0 || end[0] != '\0' )
 		throw InvalidFormat( "expected floating point number" , s ) ;
 
-	if( result == HUGE_VAL || result == -(HUGE_VAL) )
+	if( result == HUGE_VAL )
+	 	throw Overflow( s ) ;
+
+	if( result == -(HUGE_VAL) )
 	 	throw Overflow( s ) ;
 
 	return result ;
@@ -583,14 +634,6 @@ unsigned short G::Str::toUShortImp( const std::string & s , bool & overflow , bo
 	return result ;
 }
 
-namespace
-{
-	struct ToLower : std::unary_function<char,char>
-	{
-		char operator()( char c ) { return static_cast<char>( tolower(c) ) ; }
-	} ;
-}
-
 void G::Str::toLower( std::string & s )
 {
 	std::transform( s.begin() , s.end() , s.begin() , ToLower() ) ;
@@ -601,14 +644,6 @@ std::string G::Str::lower( const std::string & in )
 	std::string out = in ;
 	toLower( out ) ;
 	return out ;
-}
-
-namespace
-{
-	struct ToUpper : std::unary_function<char,char>
-	{
-		char operator()( char c ) { return static_cast<char>( toupper(c) ) ; }
-	} ;
 }
 
 void G::Str::toUpper( std::string & s )
@@ -626,7 +661,7 @@ std::string G::Str::upper( const std::string & in )
 namespace
 {
 	template <typename Tchar = char , typename Tuchar = unsigned char>
-	struct PrintableAppender : std::unary_function<Tchar,void>
+	struct PrintableAppender // : std::unary_function<Tchar,void>
 	{
 		std::string & s ;
 		Tchar escape_in ;
@@ -717,6 +752,7 @@ std::string G::Str::toPrintableAscii( const std::string & in , char escape )
 std::string G::Str::toPrintableAscii( char c , char escape )
 {
 	std::string result ;
+	result.reserve( 2U ) ;
 	PrintableAppender<char,unsigned char> append_printable( result , escape , false ) ;
 	append_printable( c ) ;
 	return result ;
@@ -889,7 +925,7 @@ std::string G::Str::wrap( std::string text , const std::string & prefix_1 ,
 namespace
 {
 	template <typename T>
-	void splitIntoTokens_( const std::string & in , T & out , const std::string & ws )
+	void splitIntoTokensImp( const std::string & in , T & out , const std::string & ws )
 	{
 		typedef G::Str::size_type size_type ;
 		for( size_type p = 0U ; p != std::string::npos ; )
@@ -907,19 +943,19 @@ namespace
 }
 void G::Str::splitIntoTokens( const std::string & in , StringArray & out , const std::string & ws )
 {
-	splitIntoTokens_( in , out , ws ) ;
+	splitIntoTokensImp( in , out , ws ) ;
 }
 G::StringArray G::Str::splitIntoTokens( const std::string & in , const std::string & ws )
 {
 	StringArray out ;
-	splitIntoTokens_( in , out , ws ) ;
+	splitIntoTokensImp( in , out , ws ) ;
 	return out ;
 }
 
 namespace
 {
 	template <typename T>
-	void splitIntoFields_( const std::string & in , T & out , const std::string & ws )
+	void splitIntoFieldsImp( const std::string & in , T & out , const std::string & ws )
 	{
 		if( in.length() )
 		{
@@ -938,7 +974,7 @@ namespace
 		}
 	}
 	template <typename T>
-	void splitIntoFields_( const std::string & in_in , T & out , const std::string & ws ,
+	void splitIntoFieldsImp( const std::string & in_in , T & out , const std::string & ws ,
 		char escape , bool remove_escapes )
 	{
 		std::string ews( ws ) ; // escape+whitespace
@@ -975,19 +1011,19 @@ namespace
 void G::Str::splitIntoFields( const std::string & in , StringArray & out , const std::string & ws ,
 	char escape , bool remove_escapes )
 {
-	splitIntoFields_( in , out , ws , escape , remove_escapes ) ;
+	splitIntoFieldsImp( in , out , ws , escape , remove_escapes ) ;
 }
 G::StringArray G::Str::splitIntoFields( const std::string & in , const std::string & ws )
 {
 	G::StringArray out ;
-	splitIntoFields_( in , out , ws ) ;
+	splitIntoFieldsImp( in , out , ws ) ;
 	return out ;
 }
 
 namespace
 {
 	template <typename T>
-	struct Joiner : std::unary_function<const T&,void>
+	struct Joiner
 	{
 		T & result ;
 		const T & sep ;
@@ -1063,7 +1099,7 @@ void G::Str::joinImp( const std::string & sep , std::string & result , const std
 namespace
 {
 	template <typename T>
-	struct Firster : std::unary_function<const T&,const typename T::first_type&>
+	struct Firster
 	{
 		const typename T::first_type & operator()( const T & pair ) { return pair.first ; }
 	} ;
@@ -1078,6 +1114,11 @@ std::set<std::string> G::Str::keySet( const StringMap & map )
 std::string G::Str::ws()
 {
 	return std::string(" \t\n\r") ;
+}
+
+std::string G::Str::alnum()
+{
+	return std::string("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") ;
 }
 
 std::string G::Str::meta()
@@ -1126,7 +1167,7 @@ namespace
 	struct TailMatch
 	{
 		const std::string & m_tail ;
-		TailMatch( const std::string & s ) : m_tail(s) {}
+		explicit TailMatch( const std::string & s ) : m_tail(s) {}
 		bool operator()( const std::string & s ) const { return G::Str::tailMatch(s,m_tail) ; }
 	} ;
 }
@@ -1148,7 +1189,7 @@ namespace
 	struct HeadMatch
 	{
 		const std::string & m_head ;
-		HeadMatch( const std::string & s ) : m_head(s) {}
+		explicit HeadMatch( const std::string & s ) : m_head(s) {}
 		bool operator()( const std::string & s ) const { return G::Str::headMatch(s,m_head) ; }
 	} ;
 }
@@ -1160,8 +1201,8 @@ bool G::Str::headMatch( const StringArray & in , const std::string & head )
 
 std::string G::Str::headMatchResidue( const StringArray & in , const std::string & head )
 {
-	G::StringArray::const_iterator const end = in.end() ;
-	for( G::StringArray::const_iterator p = in.begin() ; p != end ; ++p )
+	StringArray::const_iterator const end = in.end() ;
+	for( StringArray::const_iterator p = in.begin() ; p != end ; ++p )
 	{
 		if( headMatch( *p , head ) )
 			return (*p).substr( head.length() ) ;
@@ -1198,39 +1239,66 @@ bool G::Str::match( const std::string & a , const std::string & b )
 
 bool G::Str::match( const StringArray & a , const std::string & b )
 {
-	StringArray::const_iterator const end = a.end() ;
-	for( StringArray::const_iterator p = a.begin() ; p != end ; ++p )
-	{
-		if( match(*p,b) )
-			return true ;
-	}
-	return false ;
+	return std::find( a.begin() , a.end() , b ) != a.end() ;
 }
 
 namespace
 {
+	template <typename T1, typename T2, typename P> bool std_equal( T1 p1 , T1 end1 , T2 p2 , T2 end2 , P p )
+	{
+		// (std::equal with four iterators is c++14 or later)
+		for( ; p1 != end1 && p2 != end2 ; ++p1 , ++p2 )
+		{
+			if( !p(*p1,*p2) )
+				return false ;
+		}
+		return p1 == end1 && p2 == end2 ;
+	}
 	bool icompare( char c1 , char c2 )
 	{
 		if( c1 >= 'A' && c1 <= 'Z' ) c1 += '\x20' ;
 		if( c2 >= 'A' && c2 <= 'Z' ) c2 += '\x20' ;
 		return c1 == c2 ;
 	}
+	bool imatchImp( const std::string & a , const std::string & b )
+	{
+		return a.size() == b.size() && ::std_equal( a.begin() , a.end() , b.begin() , b.end() , icompare ) ;
+	}
+	struct StringMatcher // : std::unary_function<std::string,bool>
+	{
+		StringMatcher( const std::string & s , bool i ) : m_s(s) , m_i(i) {}
+		bool operator()( const std::string & s ) const { return m_i ? imatchImp(m_s,s) : (m_s==s) ; }
+		std::string m_s ;
+		bool m_i ;
+	} ;
+	struct InListMatcher // : std::unary_function<std::string,bool>
+	{
+		typedef G::StringArray::const_iterator T ;
+		InListMatcher( T begin , T end , bool i ) : m_begin(begin) , m_end(end) , m_i(i) {}
+		bool operator()( const std::string & s ) const { return std::find_if(m_begin,m_end,StringMatcher(s,m_i)) != m_end ; }
+		T m_begin ;
+		T m_end ;
+		bool m_i ;
+	} ;
+	struct NotInListMatcher // std::not1(InListMatcher())
+	{
+		typedef G::StringArray::const_iterator T ;
+		NotInListMatcher( T begin , T end , bool i ) : m_begin(begin) , m_end(end) , m_i(i) {}
+		bool operator()( const std::string & s ) const { return std::find_if(m_begin,m_end,StringMatcher(s,m_i)) == m_end ; }
+		T m_begin ;
+		T m_end ;
+		bool m_i ;
+	} ;
 }
 
 bool G::Str::imatch( const std::string & a , const std::string & b )
 {
-	return a.size() == b.size() && std::equal( a.begin() , a.end() , b.begin() , icompare ) ;
+	return imatchImp( a , b ) ;
 }
 
 bool G::Str::imatch( const StringArray & a , const std::string & b )
 {
-	StringArray::const_iterator const end = a.end() ;
-	for( StringArray::const_iterator p = a.begin() ; p != end ; ++p )
-	{
-		if( imatch(*p,b) )
-			return true ;
-	}
-	return false ;
+	return InListMatcher(a.begin(),a.end(),true)( b ) ;
 }
 
 std::string::size_type G::Str::ifind( const std::string & s , const std::string & key , std::string::size_type pos )
@@ -1243,7 +1311,7 @@ std::string::size_type G::Str::ifind( const std::string & s , const std::string 
 namespace
 {
 	template <typename T, typename V>
-	T unique_imp( T in , T end , V repeat , V replacement )
+	T uniqueImp( T in , T end , V repeat , V replacement )
 	{
 		// replace repeated repeat-s with a single replacement
 		T out = in ;
@@ -1265,10 +1333,29 @@ namespace
 	}
 }
 
-std::string G::Str::unique( std::string s , char c , char r )
+std::string G::Str::unique( const std::string & s_in , char c , char r )
 {
-	s.erase( unique_imp( s.begin() , s.end() , c , r ) , s.end() ) ;
+	std::string s( s_in ) ;
+	s.erase( uniqueImp( s.begin() , s.end() , c , r ) , s.end() ) ;
 	return s ;
+}
+
+std::string G::Str::unique( const std::string & s , char c )
+{
+	return s.find(c) == std::string::npos ? s : unique( s , c , c ) ;
+}
+
+G::StringArray::iterator G::Str::keepMatch( StringArray::iterator begin , StringArray::iterator end ,
+	const StringArray & match_list , bool ignore_case )
+{
+	if( match_list.empty() ) return end ;
+	return std::remove_if( begin , end , NotInListMatcher(match_list.begin(),match_list.end(),ignore_case) ) ;
+}
+
+G::StringArray::iterator G::Str::removeMatch( StringArray::iterator begin , StringArray::iterator end ,
+	const StringArray & match_list , bool ignore_case )
+{
+	return std::remove_if( begin , end , InListMatcher(match_list.begin(),match_list.end(),ignore_case) ) ;
 }
 
 /// \file gstr.cpp

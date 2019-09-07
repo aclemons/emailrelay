@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
 #
 # Use a dummy test name to get the list of tests available.
 #
-# Ubuntu package required: libnet-telnet-perl
+# Debian package required: libnet-telnet-perl
 #
 # See also: man Net::Telnet
 #
@@ -302,14 +302,14 @@ sub testSubmitPermissions
 	$rc += system( "chmod g+s $exe" ) ;
 	Check::that( $rc == 0 , "cannot create suid submit exe" ) ;
 	my $spool_dir = System::createSpoolDir() ;
-	$rc = system( "chgrp daemon $spool_dir" ) ;
-	$rc += system( "chmod 770 $spool_dir" ) ;
-	Check::that( $rc == 0 , "cannot set spool dir permissions" ) ;
+	#$rc = system( "chgrp daemon $spool_dir" ) ;
+	#$rc += system( "chmod 770 $spool_dir" ) ;
+	#Check::that( $rc == 0 , "cannot set spool dir permissions" ) ;
 	my $path = System::createSmallMessageFile() ;
 	$rc = system( "chmod 440 $path" ) ;
 	Check::that( $rc == 0 , "cannot file permissions" ) ;
 
-	# test that group-suid-daemon submit executable creates files correctly
+	# test that group-suid-daemon submit executable creates files correctly when run from some random test-account
 	my $cmd = "$exe --from me\@here.localnet --spool-dir $spool_dir me\@there.localnet" ;
 	my $someuser = getTestAccount() ;
 	$rc = system( "cat $path | su -m $someuser -c \"$cmd\"" ) ;
@@ -447,12 +447,7 @@ sub testServerPermissions
 	requireUnix() ;
 	requireRoot() ;
 	my $server = new Server() ;
-	# for bsd/mac the file group is inherited from the directory - also assume the
-	# group name is the same as the user name
-	my $rc = 0 ;
-	$rc = system( "chgrp ".$server->user()." ".$server->spoolDir() ) if ( System::bsd() || System::mac() ) ;
-	$rc += system( "chmod 770 ".$server->spoolDir() ) if ( System::bsd() || System::mac() ) ;
-	Check::that( $rc == 0 , "chgrp/chmod of spool directory failed" ) ;
+	my $rc = system( "chmod g-s " . $server->spoolDir() ) ; # take off sticky group bit to test --user=nobody
 	$server->run( \%args , "sudo " ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	my $client = new SmtpClient( $server->smtpPort() , $localhost ) ;
@@ -918,7 +913,7 @@ sub testFilter
 	) ;
 	my $server = new Server() ;
 	my $outputfile = System::tempfile("output",System::unix()?"/tmp":undef) ; # /tmp is writeable by daemon
-	Filter::create( $server->filter() , {
+	Filter::create( $server->filter() , {edit=>1} , {
 			unix => [
 				"echo \"\$\@\" | sed 's/^/arg: /' > $outputfile" ,
 				"env | sed 's/^/env: /' >> $outputfile" ,
@@ -936,7 +931,7 @@ sub testFilter
 	my $c = new SmtpClient( $server->smtpPort() , $localhost ) ;
 	Check::ok( $c->open() ) ;
 
-	# test that the filter is executed with the correct environment
+	# test that the filter edits the envelope and is executed with the correct environment
 	$c->submit() ;
 	Check::that( -f $outputfile , "filter did not create an output file" ) ;
 	Check::fileContains( $outputfile , "arg: " , "filter did not generate output" ) ;
@@ -944,6 +939,7 @@ sub testFilter
 	Check::fileLineCountLessThan( $outputfile , 7 , "env: " , "wrong number of environment variables" ) if System::unix() ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 1 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 1 ) ;
+	Check::fileContains( System::match($server->spoolDir()."/emailrelay.*.envelope") , "FROM-EDIT" ) ;
 
 	# tear down
 	System::unlink( $outputfile ) ;
@@ -969,7 +965,7 @@ sub testFilterIdentity
 	requireRoot() ;
 	my $server = new Server() ;
 	my $outputfile = System::tempfile("output","/tmp") ;
-	Filter::create( $server->filter() , {
+	Filter::create( $server->filter() , {} , {
 			unix => [
 				'ps -p $$'." -o uid,ruid | sed 's/  */ /g' | sed 's/^ *//' > $outputfile" ,
 				"exit 0" ,
@@ -1010,7 +1006,7 @@ sub testFilterFailure
 		Filter => 1 ,
 	) ;
 	my $server = new Server() ;
-	Filter::create( $server->filter() , {
+	Filter::create( $server->filter() , {} ,{
 			unix => [
 				"echo aaa" ,
 				"echo '<<foo bar>> yy'" ,
@@ -1063,14 +1059,14 @@ sub _testFilterWithFileDeletion
 		Port => 1 ,
 		SpoolDir => 1 ,
 		PidFile => 1 ,
-		Filter => 1 ,
-		ForwardTo => 1 ,
-		Immediate => 1 ,
+		Filter => 1 , # proxy
+		ForwardTo => 1 , # proxy
+		Immediate => 1 , # proxy
 	) ;
-	my $server_1 = new Server() ;
-	my $server_2 = new Server($server_1->smtpPort()+100) ;
+	my $server_1 = new Server() ; # proxy
+	my $server_2 = new Server($server_1->smtpPort()+100) ; # target server
 	$server_1->set_dst("$localhost:".$server_2->smtpPort()) ;
-	Filter::create( $server_1->filter() , {
+	Filter::create( $server_1->filter() , {} , {
 			unix => [
 				'rm `dirname $1`/emailrelay.*' ,
 				"exit $exit_code" ,
@@ -1093,7 +1089,7 @@ sub _testFilterWithFileDeletion
 	my $c = new SmtpClient( $server_1->smtpPort() , $localhost ) ;
 	Check::ok( $c->open() ) ;
 
-	# test that if the filter deletes the message files then proxying succeeds or fails depending on the exit code
+	# test that once the filter deletes the message files then proxying succeeds or fails depending on the exit code
 	$c->submit($expect_submit_error) ;
 
 	# tear down
@@ -1105,7 +1101,7 @@ sub _testFilterWithFileDeletion
 	System::deleteSpoolDir( $server_2->spoolDir() ) ;
 }
 
-sub testFilterPollTimeout
+sub testFilterRescan
 {
 	# setup
 	my %args = (
@@ -1119,7 +1115,7 @@ sub testFilterPollTimeout
 		ForwardTo => 1 ,
 	) ;
 	my $server = new Server() ;
-	Filter::create( $server->filter() , {
+	Filter::create( $server->filter() , {} , {
 			unix => [
 				"exit 103" ,
 			] ,
@@ -1132,7 +1128,7 @@ sub testFilterPollTimeout
 	my $c = new SmtpClient( $server->smtpPort() , $localhost ) ;
 	Check::ok( $c->open() ) ;
 
-	# test that the rescan is triggered
+	# test that the rescan is triggered by the filter exit code
 	$c->submit() ;
 	System::waitForFileLine( $server->stderr() , "forwarding: .rescan" , "no rescan message in the log file" ) ;
 
@@ -1158,7 +1154,7 @@ sub testFilterParallelism
 	) ;
 	requireThreads() ;
 	my $server = new Server() ;
-	Filter::create( $server->filter() , {
+	Filter::create( $server->filter() , {} , {
 			unix => [
 				"sleep 3" ,
 				"exit 0" ,
@@ -1237,7 +1233,6 @@ sub testScannerBlock
 		SpoolDir => 1 ,
 		PidFile => 1 ,
 		Scanner => 1 ,
-Debug => 1 ,
 	) ;
 	my $server = new Server() ;
 	my $scanner = new Scanner( $server->scannerPort() ) ;
@@ -1321,7 +1316,7 @@ sub testNetworkVerifierPass
 	Check::ok( $c->open() ) ;
 
 	# test that the verifier is used
-	$c->submit_start( "OK\@here" ) ; # the test verifier interprets this string
+	$c->submit_start( "OK\@here" ) ; # (the test verifier interprets the recipient string)
 	$c->submit_line( "just testing" ) ;
 	$c->submit_end() ;
 	Check::fileContains( $verifier->logfile() , "sending valid" ) ;
@@ -1357,7 +1352,7 @@ sub testNetworkVerifierFail
 	Check::ok( $c->open() ) ;
 
 	# test that the verifier can reject
-	$c->submit_start( "fail\@here" , 1 ) ; # the test verifier interprets this string
+	$c->submit_start( "fail\@here" , 1 ) ; # (the test verifier interprets the recipient string)
 	Check::fileContains( $verifier->logfile() , "sending error" ) ;
 	Check::fileContains( $server->stderr() , "VerifierError" ) ; # see emailrelay_test_verifier.cpp
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 0 ) ;
@@ -1458,7 +1453,7 @@ sub testClientFilterPass
 	Check::running( $server_2->pid() , $server_2->message() ) ;
 	$server_1->set_dst("$localhost:".$server_2->smtpPort()) ;
 	my $outputfile = System::tempfile("output",System::unix()?"/tmp":undef) ; # /tmp is writeable by daemon
-	Filter::create( $server_1->clientFilter() , {
+	Filter::create( $server_1->clientFilter() , {client=>1,edit=>1} , {
 			unix => [
 				"echo \"\$\@\" | sed 's/^/arg: /' > $outputfile" ,
 				"env | sed 's/^/env: /' >> $outputfile" ,
@@ -1473,12 +1468,14 @@ sub testClientFilterPass
 		} ) ;
 	Check::ok( $server_1->run(\%args) ) ;
 
-	# test that the client filter runs and the messages are forwarded
+	# test that the client filter runs and the messages are edited and forwarded
 	System::waitForFiles( $spool_dir_2 ."/emailrelay.*" , 4 ) ;
 	System::waitForFiles( $spool_dir_1 . "/emailrelay.*" , 0 ) ;
 	Check::fileExists( $outputfile , "no output file generated by the client filter" ) ;
 	Check::fileMatchCount( $spool_dir_2 ."/emailrelay.*.envelope", 2 ) ;
 	Check::fileMatchCount( $spool_dir_2 ."/emailrelay.*.content", 2 ) ;
+	Check::fileContains( System::matchOne($spool_dir_2."/emailrelay.*.envelope",0,2) , "FROM-EDIT" ) ;
+	Check::fileContains( System::matchOne($spool_dir_2."/emailrelay.*.envelope",1,2) , "FROM-EDIT" ) ;
 
 	# tear down
 	$server_1->kill() ;
@@ -1525,7 +1522,7 @@ sub testClientFilterBlock
 	Check::running( $server_2->pid() , $server_2->message() ) ;
 	$server_1->set_dst("$localhost:".$server_2->smtpPort()) ;
 	my $outputfile = System::tempfile("output",System::unix()?"/tmp":undef) ; # /tmp is writeable by daemon
-	Filter::create( $server_1->clientFilter() , {
+	Filter::create( $server_1->clientFilter() , {client=>1,edit=>1} , {
 			unix => [
 				"echo '<<foo bar>>sldkfj'" ,
 				"echo a > $outputfile" ,
@@ -1903,14 +1900,12 @@ sub _testTlsClient
 	{
 		Check::fileDoesNotContain( $client_log , "tls.*established" ) ;
 		Check::fileContains( $client_log , "tls error" ) ;
-		Check::fileDoesNotContain( $client_log , "BEGIN CERT" ) ;
 		Check::fileContains( $server_log , "ERROR" ) ;
 	}
 	else
 	{
 		Check::fileContains( $client_log , "tls.*established" ) ;
 		Check::fileDoesNotContain( $client_log , "tls error" ) ;
-		Check::fileContains( $client_log , "BEGIN CERT" ) ;
 	}
 
 	# tear down
@@ -2047,7 +2042,6 @@ sub _testTls
 		System::waitForFiles( $server->spoolDir()."/emailrelay.*.envelope" , 1 ) ;
 		System::waitForFileLine( $client_log , "tls.*established" ) ;
 		Check::fileDoesNotContain( $client_log , "tls error" ) ;
-		Check::fileContains( $client_log , "BEGIN CERT" ) ;
 		System::waitForFileLine( $server_log , "tls.*established" ) ;
 		Check::fileDoesNotContain( $server_log , "tls error" ) ;
 	}

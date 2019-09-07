@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,11 +24,11 @@
 #include "goptions.h"
 #include "goptionvalue.h"
 #include "goptionparser.h"
-#include "gstrings.h"
 #include "gstr.h"
 #include "gassert.h"
-#include "gdebug.h"
+#include "glog.h"
 #include <fstream>
+#include <algorithm>
 
 G::GetOpt::GetOpt( const Arg & args_in , const std::string & spec ) :
 	m_spec(spec) ,
@@ -156,11 +156,24 @@ void G::GetOpt::showErrors( std::ostream & stream ) const
 	showErrors( stream , m_args.prefix() + ": error" ) ;
 }
 
-void G::GetOpt::showErrors( std::ostream & stream , std::string prefix_1 , std::string prefix_2 ) const
+void G::GetOpt::showErrors( std::ostream & stream , const std::string & prefix_1 , const std::string & prefix_2 ) const
 {
 	for( StringArray::const_iterator p = m_errors.begin() ; p != m_errors.end() ; ++p )
 	{
 		stream << prefix_1 << prefix_2 << *p << std::endl ;
+	}
+}
+
+void G::GetOpt::collapse( const std::string & name )
+{
+	G::StringArray values = G::Str::splitIntoFields( value(name) , "," ) ;
+	if( values.size() > 1U )
+	{
+		size_t n = static_cast<size_t>( std::count( values.begin() , values.end() , *values.begin() ) ) ;
+		if( n == values.size() )
+			m_map.replace( name , *values.begin() ) ;
+		else
+			m_parser.errorDuplicate( name ) ;
 	}
 }
 

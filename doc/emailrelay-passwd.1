@@ -1,4 +1,4 @@
-.\" Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+.\" Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 .\"
 .\" This program is free software: you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ emailrelay-passwd \- a password encoding utility for emailrelay
 .I emailrelay-passwd
 is a utility which reads a single plaintext password from the standard
 input, and writes out an encoded form onto the standard
-output. The encoded form is suitable for pasting into a CRAM-MD5
+output. The encoded form is suitable for pasting into a "md5"
 line in an
 .B emailrelay
 secrets file.
@@ -38,11 +38,25 @@ this:
 server md5 alice Oqng9/H7wAyKgbuqw5VzG1bNO6feqtblyiNEi6QuN5dH
 .br
 server md5 bob Ot6SDdGj23eWjdEuKICgN8Nj9z/Vx9IV3ISz9VvmnaUB
-.br
+.SH OPTIONS
+.TP
+.B \-b, --base64
+Interpret the input password as base64 encoded.
+.TP
+.B \-d, --dotted
+Generate a dotted decimal format, for backwards compatibility.
+.TP
+.B \-H, --hash \fI<function>\fR
+Specifies the hash function, such as MD5 or SHA1. MD5 is the default, and a hash function of NONE does simple xtext encoding. Other hash function may or may not be available, depending on the build.
+.TP
+.B \-h, --help
+Shows help and exits.
+.TP
+.B \-p, --password \fI<pwd>\fR
+Specifies the password to be hashed. Beware of leaking sensitive passwords via command-line history or the process-table when using this option.
 .SH SEE ALSO
 .BR emailrelay (1),
 .BR emailrelay-submit (1),
-.BR emailrelay-poke (1)
 .br
 .B RFC-2104
 .br

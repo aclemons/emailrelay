@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,17 +43,18 @@ class G::OptionParser
 {
 public:
 	OptionParser( const Options & spec , OptionMap & values_out , StringArray & errors_out ) ;
-		///< Constructor. Output references are kept. The output map is a
-		///< multimap, but with methods that also allow it to be used as
-		///< a simple map with multi-valued options concatenated into a
-		///< comma-separated list.
+		///< Constructor. All references are kept (including the const
+		///< reference). The output map is a multimap, but with methods
+		///< that also allow it to be used as a simple map with multi-valued
+		///< options concatenated into a comma-separated list.
 
 	OptionParser( const Options & spec , OptionMap & values_out ) ;
 		///< Constructor for when errors can be ignored.
 
 	size_t parse( const StringArray & args , size_t start_position = 1U ) ;
 		///< Parses the given command-line arguments into the value map and/or
-		///< error list defined by the constructor.
+		///< error list defined by the constructor. This can be called
+		///< more than once, typically with a zero start_position.
 		///<
 		///< By default the program name is expected to be the first item in
 		///< the array and it is ignored, although the 'start-position' parameter
@@ -70,15 +71,20 @@ public:
 		///< Entries in the output map are keyed by the option's long name,
 		///< even if supplied in short-form.
 		///<
-		///< Errors are reported into the error list.
+		///< Errors are reported into the constructor's error list.
 		///<
 		///< Returns the position in the array where the non-option command-line
 		///< arguments begin.
 
+	void errorDuplicate( const std::string & ) ;
+		///< Adds a 'duplicate' error in the constructor's error list
+		///< for the given option.
+
 private:
-	OptionParser( const OptionParser & ) ;
-	void operator=( const OptionParser & ) ;
+	OptionParser( const OptionParser & ) g__eq_delete ;
+	void operator=( const OptionParser & ) g__eq_delete ;
 	bool haveSeen( const std::string & ) const ;
+	bool haveSeenSame( const std::string & , const std::string & ) const ;
 	static std::string::size_type eqPos( const std::string & ) ;
 	static std::string eqValue( const std::string & , std::string::size_type ) ;
 	void processOptionOn( char c ) ;
@@ -92,7 +98,6 @@ private:
 	void errorUnknownOption( const std::string & ) ;
 	void errorDubiousValue( const std::string & , const std::string & ) ;
 	void errorDuplicate( char ) ;
-	void errorDuplicate( const std::string & ) ;
 	void errorExtraValue( char , const std::string & ) ;
 	void errorExtraValue( const std::string & , const std::string & ) ;
 	void errorConflict( const std::string & ) ;
@@ -103,11 +108,11 @@ private:
 	static bool isAnOptionSet( const std::string & ) ;
 
 private:
-	bool m_multimap ;
 	const Options & m_spec ;
 	OptionMap & m_map ;
 	StringArray m_errors_ignored ;
 	StringArray & m_errors ;
+	bool m_allow_matching_duplicates ;
 } ;
 
 #endif

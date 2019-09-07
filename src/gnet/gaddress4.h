@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ public:
 	bool sameHostPart( const Address4 & other ) const ;
 	bool isLoopback() const ;
 	bool isLocal( std::string & ) const ;
-
+	unsigned int bits() const ;
 	std::string displayString() const ;
 	std::string hostPartString() const ;
 	G::StringArray wildcards() const ;

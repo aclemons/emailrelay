@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gssl.h"
 #include "gssl_openssl.h"
+#include "ghashstate.h"
 #include "gtest.h"
 #include "gstr.h"
 #include "gpath.h"
@@ -28,11 +29,10 @@
 #include "gfile.h"
 #include "groot.h"
 #include "gexception.h"
-#include "gdebug.h"
+#include "glog.h"
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
-#include <openssl/engine.h>
 #include <openssl/conf.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
@@ -47,14 +47,13 @@
 #include <algorithm>
 
 GSsl::OpenSSL::LibraryImp::LibraryImp( G::StringArray & library_config , Library::LogFn log_fn , bool verbose ) :
-	m_evp_ctx(nullptr) ,
 	m_log_fn(log_fn) ,
 	m_verbose(verbose) ,
 	m_config(library_config)
 {
 	SSL_load_error_strings() ;
 	SSL_library_init() ;
-	int rc = RAND_status() ; G_IGNORE_VARIABLE(rc) ;
+	int rc = RAND_status() ; G_IGNORE_VARIABLE(int,rc) ;
 	OpenSSL_add_all_digests() ;
 
 	// allocate a slot for a pointer from SSL to ProtocolImp
@@ -143,48 +142,80 @@ int GSsl::OpenSSL::LibraryImp::index() const
 	return m_index ;
 }
 
-G::StringArray GSsl::OpenSSL::LibraryImp::digesters( bool require_state ) const
+G::StringArray GSsl::OpenSSL::LibraryImp::digesters( bool need_state ) const
 {
 	G::StringArray result ;
-	if( require_state )
-	{
-		; // state() not implemented for any
-	}
-	else
-	{
+	if( !need_state )
 		result.push_back( "SHA512" ) ;
-		result.push_back( "SHA256" ) ;
-		result.push_back( "SHA1" ) ;
-		result.push_back( "MD5" ) ;
-	}
+	result.push_back( "SHA256" ) ;
+	result.push_back( "SHA1" ) ;
+	result.push_back( "MD5" ) ;
 	return result ;
 }
 
-GSsl::Digester GSsl::OpenSSL::LibraryImp::digester( const std::string & hash_type , const std::string & state ) const
+GSsl::Digester GSsl::OpenSSL::LibraryImp::digester( const std::string & hash_type , const std::string & state , bool need_state ) const
 {
-	return Digester( new OpenSSL::DigesterImp(hash_type,state) ) ;
+	return Digester( new OpenSSL::DigesterImp(hash_type,state,need_state) ) ;
 }
 
-GSsl::OpenSSL::DigesterImp::DigesterImp( const std::string & hash_type , const std::string & state ) :
-	m_evp_ctx(EVP_MD_CTX_create())
+GSsl::OpenSSL::DigesterImp::DigesterImp( const std::string & hash_type , const std::string & state , bool need_state ) :
+	m_evp_ctx(nullptr)
 {
-	const EVP_MD * md = EVP_get_digestbyname( hash_type.c_str() ) ;
-	if( md == nullptr )
-		throw Error( "unsupported hash function name: [" + hash_type + "]" ) ;
+	bool have_state = !state.empty() ;
+	if( hash_type == "MD5" && ( have_state || need_state ) )
+	{
+		m_hash_type = Type::Md5 ;
+		MD5_Init( &m_md5 ) ;
+		if( have_state )
+			G::HashState<16,MD5_LONG,MD5_LONG>::decode( state , m_md5.Nh , m_md5.Nl , &m_md5.A , &m_md5.B , &m_md5.C , &m_md5.D ) ;
+		m_block_size = 64U ;
+		m_value_size = 16U ;
+		m_state_size = m_value_size + 4U ;
+	}
+	else if( hash_type == "SHA1" && ( have_state || need_state ) )
+	{
+		m_hash_type = Type::Sha1 ;
+		SHA1_Init( &m_sha1 ) ;
+		if( have_state )
+			G::HashState<20,SHA_LONG,SHA_LONG>::decode( state , m_sha1.Nh , m_sha1.Nl , &m_sha1.h0 , &m_sha1.h1 , &m_sha1.h2 , &m_sha1.h3 , &m_sha1.h4 ) ;
+		m_block_size = 64U ;
+		m_value_size = 20U ;
+		m_state_size = m_value_size + 4U ;
+	}
+	else if( hash_type == "SHA256" && ( have_state || need_state ) )
+	{
+		m_hash_type = Type::Sha256 ;
+		SHA256_Init( &m_sha256 ) ;
+		if( have_state )
+			G::HashState<32,SHA_LONG,unsigned int>::decode( state , m_sha256.Nh , m_sha256.Nl , m_sha256.h ) ;
+		m_block_size = 64U ;
+		m_value_size = 32U ;
+		m_state_size = m_value_size + 4U ;
+	}
+	else
+	{
+		m_hash_type = Type::Other ;
+		m_evp_ctx = EVP_MD_CTX_create() ;
 
-	m_block_size = static_cast<size_t>( EVP_MD_block_size(md) ) ;
-	m_value_size = static_cast<size_t>( EVP_MD_size(md) ) ;
-	m_state_size = 0U ; // not implemented
+		const EVP_MD * md = EVP_get_digestbyname( hash_type.c_str() ) ;
+		if( md == nullptr )
+			throw Error( "unsupported hash function name: [" + hash_type + "]" ) ;
 
-	if( m_state_size == 0U && !state.empty() )
-		throw Error( "hash state resoration not implemented for " + hash_type ) ;
+		m_block_size = static_cast<size_t>( EVP_MD_block_size(md) ) ;
+		m_value_size = static_cast<size_t>( EVP_MD_size(md) ) ;
+		m_state_size = 0U ; // intermediate state not available
 
-	EVP_DigestInit_ex( m_evp_ctx , md , 0/*engine*/ ) ;
+		if( m_state_size == 0U && !state.empty() )
+			throw Error( "hash state resoration not implemented for " + hash_type ) ;
+
+		EVP_DigestInit_ex( m_evp_ctx , md , 0/*engine*/ ) ;
+	}
 }
 
 GSsl::OpenSSL::DigesterImp::~DigesterImp()
 {
-	EVP_MD_CTX_destroy( m_evp_ctx ) ;
+	if( m_hash_type == Type::Other )
+		EVP_MD_CTX_destroy( m_evp_ctx ) ;
 }
 
 size_t GSsl::OpenSSL::DigesterImp::blocksize() const
@@ -199,27 +230,65 @@ size_t GSsl::OpenSSL::DigesterImp::valuesize() const
 
 size_t GSsl::OpenSSL::DigesterImp::statesize() const
 {
-	return m_state_size ; // zero when not implemented
+	return m_state_size ;
 }
 
 std::string GSsl::OpenSSL::DigesterImp::state()
 {
-	return std::string() ; // not implemented
+	if( m_hash_type == Type::Md5 )
+		return G::HashState<16,MD5_LONG,MD5_LONG>::encode( m_md5.Nh , m_md5.Nl , m_md5.A , m_md5.B , m_md5.C , m_md5.D ) ;
+	else if( m_hash_type == Type::Sha1 )
+		return G::HashState<20,SHA_LONG,SHA_LONG>::encode( m_sha1.Nh , m_sha1.Nl , m_sha1.h0 , m_sha1.h1 , m_sha1.h2 , m_sha1.h3 , m_sha1.h4 ) ;
+	else if( m_hash_type == Type::Sha256 )
+		return G::HashState<32,SHA_LONG,SHA_LONG>::encode( m_sha256.Nh , m_sha256.Nl , m_sha256.h ) ;
+	else
+		return std::string() ; // not available
 }
 
 void GSsl::OpenSSL::DigesterImp::add( const std::string & data )
 {
-	EVP_DigestUpdate( m_evp_ctx , data.data() , data.size() ) ;
+	if( m_hash_type == Type::Md5 )
+		MD5_Update( &m_md5 , data.data() , data.size() ) ;
+	else if( m_hash_type == Type::Sha1 )
+		SHA1_Update( &m_sha1 , data.data() , data.size() ) ;
+	else if( m_hash_type == Type::Sha256 )
+		SHA256_Update( &m_sha256 , data.data() , data.size() ) ;
+	else
+		EVP_DigestUpdate( m_evp_ctx , data.data() , data.size() ) ;
 }
 
 std::string GSsl::OpenSSL::DigesterImp::value()
 {
-	std::vector<unsigned char> output( EVP_MAX_MD_SIZE ) ;
-	unsigned int output_size = 0 ;
-	EVP_DigestFinal_ex( m_evp_ctx , &output[0] , &output_size ) ;
-	char * p = reinterpret_cast<char*>(&output[0]) ;
-	size_t n = static_cast<size_t>(output_size) ;
-	return std::string( p , n ) ;
+	std::vector<unsigned char> output ;
+	size_t n = 0U ;
+	if( m_hash_type == Type::Md5 )
+	{
+		n = MD5_DIGEST_LENGTH ;
+		output.resize( n ) ;
+		MD5_Final( &output[0] , &m_md5 ) ;
+	}
+	else if( m_hash_type == Type::Sha1 )
+	{
+		n = SHA_DIGEST_LENGTH ;
+		output.resize( n ) ;
+		SHA1_Final( &output[0] , &m_sha1 ) ;
+	}
+	else if( m_hash_type == Type::Sha256 )
+	{
+		n = SHA256_DIGEST_LENGTH ;
+		output.resize( n ) ;
+		SHA256_Final( &output[0] , &m_sha256 ) ;
+	}
+	else
+	{
+		unsigned int output_size = 0 ;
+		output.resize( EVP_MAX_MD_SIZE ) ;
+		EVP_DigestFinal_ex( m_evp_ctx , &output[0] , &output_size ) ;
+		n = static_cast<size_t>(output_size) ;
+	}
+	G_ASSERT( n == valuesize() ) ;
+	const char * p = reinterpret_cast<char*>(&output[0]) ;
+	return std::string(p,n) ;
 }
 
 // ==
@@ -303,7 +372,6 @@ GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 		check( SSL_CTX_load_verify_locations( m_ssl_ctx.get() , ca_file_p , ca_dir_p ) , "load_verify_locations" , ca_path ) ;
 	}
 
-	SSL_CTX_set_quiet_shutdown( m_ssl_ctx.get() , 1 ) ;
 	SSL_CTX_set_cipher_list( m_ssl_ctx.get() , "DEFAULT" ) ;
 	SSL_CTX_set_session_cache_mode( m_ssl_ctx.get() , SSL_SESS_CACHE_OFF ) ;
 	if( is_server_profile )
@@ -323,13 +391,13 @@ void GSsl::OpenSSL::ProfileImp::deleter( SSL_CTX * p )
 		SSL_CTX_free( p ) ;
 }
 
-GSsl::ProtocolImpBase * GSsl::OpenSSL::ProfileImp::newProtocol( const std::string & peer_certificate_name ,
+unique_ptr<GSsl::ProtocolImpBase> GSsl::OpenSSL::ProfileImp::newProtocol( const std::string & peer_certificate_name ,
 	const std::string & peer_host_name ) const
 {
-	return
+	return unique_ptr<ProtocolImpBase>(
 		new OpenSSL::ProtocolImp( *this ,
 			peer_certificate_name.empty()?defaultPeerCertificateName():peer_certificate_name ,
-			peer_host_name.empty()?defaultPeerHostName():peer_host_name ) ;
+			peer_host_name.empty()?defaultPeerHostName():peer_host_name ) ) ;
 }
 
 SSL_CTX * GSsl::OpenSSL::ProfileImp::p() const
@@ -363,22 +431,22 @@ void GSsl::OpenSSL::ProfileImp::check( int rc , const std::string & fnname_tail 
 
 void GSsl::OpenSSL::ProfileImp::apply( const Config & config )
 {
-#if GCONFIG_HAVE_OPENSSL_MIN_MAX
+	#if GCONFIG_HAVE_OPENSSL_MIN_MAX
 	if( config.min_() )
 		SSL_CTX_set_min_proto_version( m_ssl_ctx.get() , config.min_() ) ;
 
 	if( config.max_() )
 		SSL_CTX_set_max_proto_version( m_ssl_ctx.get() , config.max_() ) ;
-#else
+	#endif
+
 	if( config.reset() != 0L )
 		SSL_CTX_clear_options( m_ssl_ctx.get() , config.reset() ) ;
 
 	if( config.set() != 0L )
 		SSL_CTX_set_options( m_ssl_ctx.get() , config.set() ) ;
-#endif
 }
 
-int GSsl::OpenSSL::ProfileImp::verifyPass( int ok , X509_STORE_CTX * )
+int GSsl::OpenSSL::ProfileImp::verifyPass( int /*ok*/ , X509_STORE_CTX * )
 {
 	return 1 ;
 }
@@ -428,7 +496,6 @@ std::string GSsl::OpenSSL::ProfileImp::name( X509_NAME * x509_name )
 
 GSsl::OpenSSL::ProtocolImp::ProtocolImp( const ProfileImp & profile , const std::string & required_peer_certificate_name ,
 	const std::string & target_peer_host_name ) :
-		m_profile(profile) ,
 		m_ssl(nullptr,std::ptr_fun(deleter)) ,
 		m_log_fn(profile.lib().log()) ,
 		m_verbose(profile.lib().verbose()) ,
@@ -474,9 +541,9 @@ int GSsl::OpenSSL::ProtocolImp::error( const char * op , int rc ) const
 
 GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::convert( int e )
 {
-	if( e == SSL_ERROR_WANT_READ ) return Protocol::Result_read ;
-	if( e == SSL_ERROR_WANT_WRITE ) return Protocol::Result_write ;
-	return Protocol::Result_error ;
+	if( e == SSL_ERROR_WANT_READ ) return Protocol::Result::read ;
+	if( e == SSL_ERROR_WANT_WRITE ) return Protocol::Result::write ;
+	return Protocol::Result::error ;
 }
 
 GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::connect( G::ReadWrite & io )
@@ -516,7 +583,7 @@ GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::connect()
 	if( rc >= 1 )
 	{
 		saveResult() ;
-		return Protocol::Result_ok ;
+		return Protocol::Result::ok ;
 	}
 	else if( rc == 0 )
 	{
@@ -535,7 +602,7 @@ GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::accept()
 	if( rc >= 1 )
 	{
 		saveResult() ;
-		return Protocol::Result_ok ;
+		return Protocol::Result::ok ;
 	}
 	else if( rc == 0 )
 	{
@@ -554,10 +621,13 @@ void GSsl::OpenSSL::ProtocolImp::saveResult()
 	m_verified = !m_peer_certificate.empty() && SSL_get_verify_result(m_ssl.get()) == X509_V_OK ;
 }
 
-GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::stop()
+GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::shutdown()
 {
 	int rc = SSL_shutdown( m_ssl.get() ) ;
-	return rc == 1 ? Protocol::Result_ok : Protocol::Result_error ; // since quiet shutdown
+	if( rc == 0 || rc == 1 )
+		return Protocol::Result::ok ;
+	else
+		return convert( rc ) ;
 }
 
 GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::read( char * buffer , size_t buffer_size_in , ssize_t & read_size )
@@ -570,7 +640,7 @@ GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::read( char * buffer , size_t 
 	if( rc > 0 )
 	{
 		read_size = static_cast<ssize_t>(rc) ;
-		return SSL_pending(m_ssl.get()) ? Protocol::Result_more : Protocol::Result_ok ;
+		return SSL_pending(m_ssl.get()) ? Protocol::Result::more : Protocol::Result::ok ;
 	}
 	else if( rc == 0 )
 	{
@@ -591,7 +661,7 @@ GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::write( const char * buffer , 
 	if( rc > 0 )
 	{
 		size_out = static_cast<ssize_t>(rc) ;
-		return Protocol::Result_ok ;
+		return Protocol::Result::ok ;
 	}
 	else if( rc == 0 )
 	{
@@ -613,6 +683,13 @@ std::string GSsl::OpenSSL::ProtocolImp::peerCertificateChain() const
 	return m_peer_certificate_chain ;
 }
 
+std::string GSsl::OpenSSL::ProtocolImp::cipher() const
+{
+	const SSL_CIPHER * cipher = SSL_get_current_cipher( const_cast<SSL*>(m_ssl.get()) ) ;
+	const char * name = cipher ? SSL_CIPHER_get_name(cipher) : nullptr ;
+	return name ? G::Str::printable(name) : std::string() ;
+}
+
 bool GSsl::OpenSSL::ProtocolImp::verified() const
 {
 	return m_verified ;
@@ -629,10 +706,9 @@ void GSsl::OpenSSL::ProtocolImp::logErrors( const std::string & op , int rc , in
 			(*m_log_fn)( 1 , ss.str() ) ; // 1 => verbose-debug
 		}
 
-		unsigned long ee = 0 ;
 		for( int i = 2 ; i < 10000 ; i++ )
 		{
-			ee = ERR_get_error() ;
+			unsigned long ee = ERR_get_error() ;
 			if( ee == 0 ) break ;
 			Error eee( op , ee ) ;
 			(*m_log_fn)( 3 , std::string() + eee.what() ) ; // 3 => errors-and-warnings
@@ -741,173 +817,45 @@ GSsl::OpenSSL::Config::Config( G::StringArray & cfg ) :
 	m_options_reset(0L) ,
 	m_noverify(consume(cfg,"noverify"))
 {
-	#if GCONFIG_HAVE_OPENSSL_SSLv23_METHOD
-		m_server_fn = SSLv23_server_method ;
-		m_client_fn = SSLv23_client_method ;
-	#else
+	#if GCONFIG_HAVE_OPENSSL_TLS_METHOD
 		m_server_fn = TLS_server_method ;
 		m_client_fn = TLS_client_method ;
+	#else
+		m_server_fn = SSLv23_server_method ;
+		m_client_fn = SSLv23_client_method ;
 	#endif
 
-	#if GCONFIG_HAVE_OPENSSL_MIN_MAX
-
-		#ifdef SSL3_VERSION
+	#ifdef SSL3_VERSION
 		if( consume(cfg,"sslv3") ) m_min = SSL3_VERSION ;
 		if( consume(cfg,"-sslv3") ) m_max = SSL3_VERSION ;
-		#endif
-		#ifdef TLS1_VERSION
+	#endif
+
+	#ifdef TLS1_VERSION
 		if( consume(cfg,"tlsv1.0") ) m_min = TLS1_VERSION ;
 		if( consume(cfg,"-tlsv1.0") ) m_max = TLS1_VERSION ;
-		#endif
-		#ifdef TLS1_1_VERSION
+	#endif
+
+	#ifdef TLS1_1_VERSION
 		if( consume(cfg,"tlsv1.1") ) m_min = TLS1_1_VERSION ;
 		if( consume(cfg,"-tlsv1.1") ) m_max = TLS1_1_VERSION ;
-		#endif
-		#ifdef TLS1_2_VERSION
+	#endif
+
+	#ifdef TLS1_2_VERSION
 		if( consume(cfg,"tlsv1.2") ) m_min = TLS1_2_VERSION ;
 		if( consume(cfg,"-tlsv1.2") ) m_max = TLS1_2_VERSION ;
-		#endif
+	#endif
 
-	#else
+	#ifdef TLS1_3_VERSION
+		if( consume(cfg,"tlsv1.3") ) m_min = TLS1_3_VERSION ;
+		if( consume(cfg,"-tlsv1.3") ) m_max = TLS1_3_VERSION ;
+	#endif
 
-		#ifndef SSL_OP_NO_SSLv2
-			const long SSL_OP_NO_SSLv2 = 0L ;
-		#endif
-		#ifndef SSL_OP_NO_SSLv3
-			const long SSL_OP_NO_SSLv3 = 0L ;
-		#endif
+	#ifdef SSL_OP_ALL
+		if( consume(cfg,"op_all") ) m_options_set |= SSL_OP_ALL ;
+	#endif
 
-		if( false ) {;}
-
-		#if GCONFIG_HAVE_OPENSSL_SSLv23_METHOD
-		else if( consume(cfg,"sslv2") )
-		{
-			// allow anything - disable all current and future deprecations
-			m_options_reset =
-				SSL_OP_NO_SSLv2 |
-				SSL_OP_NO_SSLv3 |
-				SSL_OP_NO_TLSv1 |
-				SSL_OP_NO_TLSv1_1 |
-				SSL_OP_NO_TLSv1_2 |
-				0L ;
-			m_options_set = 0L ; // disable nothing
-		}
-		#endif
-
-		else if( consume(cfg,"sslv3") )
-		{
-			#if GCONFIG_HAVE_OPENSSL_SSLv3_METHOD
-			if( consume(cfg,"-sslv3") )
-			{
-				m_server_fn = SSLv3_server_method ;
-				m_client_fn = SSLv3_client_method ;
-			}
-			else
-			#endif
-			{
-				m_options_reset =
-					SSL_OP_NO_SSLv3 |
-					SSL_OP_NO_TLSv1 |
-					SSL_OP_NO_TLSv1_1 |
-					SSL_OP_NO_TLSv1_2 |
-					0L ;
-				m_options_set =
-					SSL_OP_NO_SSLv2 |
-					0L ;
-			}
-		}
-
-		else if( consume(cfg,"tlsv1.0") )
-		{
-			#if GCONFIG_HAVE_OPENSSL_TLSv1_METHOD
-			if( consume(cfg,"-tlsv1.0") )
-			{
-				m_server_fn = TLSv1_server_method ;
-				m_client_fn = TLSv1_client_method ;
-			}
-			else
-			#endif
-			{
-				m_options_reset =
-					SSL_OP_NO_TLSv1 |
-					SSL_OP_NO_TLSv1_1 |
-					SSL_OP_NO_TLSv1_2 |
-					0L ;
-				m_options_set =
-					SSL_OP_NO_SSLv2 |
-					SSL_OP_NO_SSLv3 |
-					0L ;
-			}
-		}
-
-		else if( consume(cfg,"tlsv1.1") )
-		{
-			#if GCONFIG_HAVE_OPENSSL_TLSv1_1_METHOD
-			if( consume(cfg,"-tlsv1.1") )
-			{
-				m_server_fn = TLSv1_1_server_method ;
-				m_client_fn = TLSv1_1_client_method ;
-			}
-			else
-			#endif
-			{
-				m_options_reset =
-					SSL_OP_NO_TLSv1_1 |
-					SSL_OP_NO_TLSv1_2 |
-					0L ;
-				m_options_set =
-					SSL_OP_NO_SSLv2 |
-					SSL_OP_NO_SSLv3 |
-					SSL_OP_NO_TLSv1 |
-					0L ;
-			}
-		}
-
-		else if( consume(cfg,"tlsv1.2") )
-		{
-			#if GCONFIG_HAVE_OPENSSL_TLSv1_2_METHOD
-			if( consume(cfg,"-tlsv1.2") )
-			{
-				m_server_fn = TLSv1_2_server_method ;
-				m_client_fn = TLSv1_2_client_method ;
-			}
-			else
-			#endif
-			{
-				m_options_reset =
-					SSL_OP_NO_TLSv1_2 |
-					0L ;
-				m_options_set =
-					SSL_OP_NO_SSLv2 |
-					SSL_OP_NO_SSLv3 |
-					SSL_OP_NO_TLSv1 |
-					SSL_OP_NO_TLSv1_1 |
-					0L ;
-			}
-		}
-
-		// exact protocol versions are handled above because this is not future-proof...
-		if( consume(cfg,"-sslv3") )
-		{
-			m_options_set |=
-				SSL_OP_NO_TLSv1 |
-				SSL_OP_NO_TLSv1_1 |
-				SSL_OP_NO_TLSv1_2 |
-				0L ;
-		}
-		else if( consume(cfg,"-tlsv1.0") )
-		{
-			m_options_set |=
-				SSL_OP_NO_TLSv1_1 |
-				SSL_OP_NO_TLSv1_2 |
-				0L ;
-		}
-		else if( consume(cfg,"-tlsv1.1") )
-		{
-			m_options_set |=
-				SSL_OP_NO_TLSv1_2 |
-				0L ;
-		}
+	#ifdef SSL_OP_NO_TICKET
+		if( consume(cfg,"op_no_ticket") ) m_options_set |= SSL_OP_NO_TICKET ;
 	#endif
 }
 

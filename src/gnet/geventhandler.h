@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,23 +38,23 @@ namespace GNet
 /// event loop.
 ///
 /// An event handler object has its virtual methods called when an
-/// event is detected on the associated file descriptor.
+/// event is detected on the relevant file descriptor.
 ///
-/// If an event handler throws an exception which is caught by the
-/// event loop then the event loop calls the associated ExceptionHandler,
-/// if any.
+/// The EventHandlerList class ensures that if an exception is thrown
+/// out of an event handler it is caught and delivered to an associated
+/// ExceptionHandler interface (if any).
 ///
 class GNet::EventHandler
 {
 public:
-	enum Reason
+	g__enum(Reason)
 	{
-		reason_closed , // fin packet, clean shutdown
-		reason_down , // network down
-		reason_reset , // rst packet
-		reason_abort , // socket failed
-		reason_other // eg. oob data
-	} ;
+		closed , // fin packet, clean shutdown
+		down , // network down
+		reset , // rst packet
+		abort , // socket failed
+		other // eg. oob data
+	} ; g__enum_end(Reason)
 
 	virtual ~EventHandler() ;
 		///< Destructor.
@@ -68,16 +68,13 @@ public:
 		///< implementation does nothing.
 
 	virtual void otherEvent( Reason ) ;
-		///< Called for a socket-exception event or a socket-close
+		///< Called for a socket-exception event, or a socket-close
 		///< event on windows. Overridable. The default
 		///< implementation throws an exception.
 
 	static std::string str( Reason ) ;
 		///< Returns a printable description of the other-event
 		///< reason.
-
-private:
-	void operator=( const EventHandler & ) ;
 } ;
 
 #endif

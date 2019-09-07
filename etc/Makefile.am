@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -38,8 +38,9 @@ clean-local:
 
 if GCONFIG_INSTALL_HOOK
 
-# create the .conf file from .conf.template with directory edits - dont
-# use this when running configure for building a .deb or .rpm package
+# create the .conf file from .conf.template with directory edits - disable
+# this when running configure for a .deb or .rpm package by using
+# 'configure --disable-install-hook'
 install-data-hook:
 	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else cat "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" | sed "s:^#spool-dir .*:spool-dir $(e_spooldir):g" | sed 's:"/var/spool/emailrelay":"'"$(e_spooldir)"'":g' | sed "s:/etc:$(e_sysconfdir):g" | sed "s:/usr/local/bin:$(e_libexecdir):g" > "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
 	cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.makeinstall"

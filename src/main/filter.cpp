@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "garg.h"
 #include "gfile.h"
 #include "gstr.h"
+#include "gprocess.h"
 #include "gexception.h"
 #include "gdirectory.h"
 #include "legal.h"
@@ -35,7 +36,7 @@
 #include <list>
 #include <string>
 
-G_EXCEPTION( FilterError , "filter error" ) ;
+G_EXCEPTION_CLASS( FilterError , "filter error" ) ;
 
 void filter_help( const std::string & prefix )
 {
@@ -73,7 +74,7 @@ bool filter_run( const std::string & content )
 	G::Path envelope_path = G::Path( dir_path , envelope_name + ".new" ) ;
 	if( ! G::File::exists(envelope_path) )
 	{
-		// fall back to no ".new" extension in case we are run manually for some reason
+		// fall back to no extension in case we are run manually for some reason
 		G::Path envelope_path_alt = G::Path( dir_path , envelope_name ) ;
 		if( G::File::exists(envelope_path_alt) )
 			envelope_path = envelope_path_alt ;
@@ -82,7 +83,16 @@ bool filter_run( const std::string & content )
 	}
 
 	// read the content "to" address
+	//
 	std::string to = filter_read_to( content_path.str() ) ;
+
+	// the umask inherited from the emailrelay server does not give
+	// group access, so loosen it up to "-rw-rw----" and note that
+	// the spool directory should have sticky group ownership
+	// which gets inherited by sub-directories and all message
+	// files
+	//
+	G::Process::Umask::set( G::Process::Umask::Mode::Tighter ) ; // 0177
 
 	// copy the envelope into all sub-directories
 	//

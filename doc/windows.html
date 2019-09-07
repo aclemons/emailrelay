@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML PUBLIC "%-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
  <head>
   <title>E-MailRelay Windows</title>
@@ -12,12 +12,12 @@
    <h2><a class="a-header" name="SH_1_1">Setup program</a></h2> <!-- index:2:SH:1:1:Setup program -->
     <p>
      Installing E-MailRelay on Windows should be straightforward if you have the
-     setup program <em class="quote">emailrelay-setup.exe</em> and its associated <em class="quote">payload</em> files.
+     setup program <em>emailrelay-setup.exe</em> and its associated <em>payload</em> files.
     </p>
 
     <p>
-     Run <em class="quote">emailrelay-setup.exe</em> as an administrator if you are going to be installing
-     into protected directories like <em class="quote">Program Files</em>.
+     Run <em>emailrelay-setup.exe</em> as an administrator if you are going to be installing
+     into protected directories like <em>Program Files</em>.
     </p>
 
     <p>
@@ -28,19 +28,19 @@
     <p>
      If anything goes wrong with the installation process then you can still just
      run the main E-MailRelay executable straight out of the distribution zip file.
-     Follow the <em class="quote">Manual installation</em> section below for more help.
+     Follow the <em>Manual installation</em> section below for more help.
     </p>
    <h2><a class="a-header" name="SH_1_2">Running the program</a></h2> <!-- index:2:SH:1:2:Running the program -->
     <p>
      After a successful installation you should see E-MailRelay listed in the Windows
-     Start Menu. This will run the <em class="quote">emailrelay-start.bat</em> batch file to start
+     Start Menu. This will run the <em>emailrelay-start.bat</em> batch file to start
      the E-MailRelay server, and you should then see an icon appear in the Windows
      system tray.
     </p>
    <h2><a class="a-header" name="SH_1_3">Configuration</a></h2> <!-- index:2:SH:1:3:Configuration -->
     <p>
-     E-MailRelay is configured though command-line options like <em class="quote">--verbose</em> or
-     <em class="quote">--spool-dir=c:/temp</em> in the <em class="quote">emailrelay-startup.bat</em> batch file.
+     E-MailRelay is configured though command-line options like <em>--verbose</em> or
+     <em>--spool-dir=c:/temp</em> in the <em>emailrelay-startup.bat</em> batch file.
     </p>
 
     <p>
@@ -48,14 +48,22 @@
      some Windows-specific variations:
     </p>
     <ul>
-     <li>The <em class="quote">--syslog</em> option refers to the Windows Event Viewer's Application log.</li>
-     <li>The <em class="quote">--no-daemon</em> option is used to disable the icon in the system tray.</li>
-     <li>The <em class="quote">--hidden</em> option with <em class="quote">--no-daemon</em> hides all windows and suppresses message boxes.</li>
+     <li>The <em>--syslog</em> option refers to the Windows Event Viewer's Application log.</li>
+     <li>The <em>--no-daemon</em> option is used for a normal window rather than an icon in the system tray.</li>
+     <li>The <em>--minimise</em> option, used with <em>--no-daemon</em>, makes the window start minimised.</li>
+     <li>The <em>--hidden</em> option with <em>--no-daemon</em> hides all windows and suppresses message boxes.</li>
     </ul>
 
     <p>
-     Account information can be configured by editing the E-MailRelay <em class="quote">secrets</em> file.
-     Look for the <em class="quote">--client-auth</em> or <em class="quote">--server-auth</em> options in the startup batch
+     The Windows-only <em>--show</em> option can be used as a more flexible alternative
+     to <em>--no-daemon</em> and <em>--hidden</em> using <em>--show=popup</em> and <em>--show=hidden</em>
+     respectively, or <em>--show=window</em> for a minimisable window, <em>--show=tray</em>
+     for the default system-tray icon or <em>--show=window,tray</em> for both.
+    </p>
+
+    <p>
+     Account information can be configured by editing the E-MailRelay <em>secrets</em> file.
+     Look for the <em>--client-auth</em> or <em>--server-auth</em> options in the startup batch
      file to find out where this is.
     </p>
    <h2><a class="a-header" name="SH_1_4">Manual installation</a></h2> <!-- index:2:SH:1:4:Manual installation -->
@@ -64,29 +72,29 @@
      setup program, goes something like this:
     </p>
     <ul>
-     <li>Create a new program directory <em class="quote">c:\Program Files\E-MailRelay</em></li>
-     <li>Copy the packaged files into <em class="quote">c:\Program Files\E-MailRelay</em></li>
-     <li>Create a new spool directory <em class="quote">c:\ProgramData\E-MailRelay\spool</em></li>
-     <li>Create a new text file, eg. <em class="quote">c:\ProgramData\E-MailRelay\emailrelay-auth.txt</em>, to contain account details</li>
-     <li>Add your account details to <em class="quote">emailrelay-auth.txt</em> with a line like <em class="quote">client plain myaccount mypassword</em></li>
-     <li>Right-drag <em class="quote">emailrelay.exe</em> onto the desktop to create a shortcut for the server.</li>
-     <li>Add <em class="quote">--as-server --verbose</em> to the server shortcut properties in the <em class="quote">target</em> box.</li>
+     <li>Create a new program directory <em>c:\Program Files\E-MailRelay</em></li>
+     <li>Copy the packaged files into <em>c:\Program Files\E-MailRelay</em></li>
+     <li>Create a new spool directory <em>c:\ProgramData\E-MailRelay\spool</em></li>
+     <li>Create a new text file, eg. <em>c:\ProgramData\E-MailRelay\emailrelay-auth.txt</em>, to contain account details</li>
+     <li>Add your account details to <em>emailrelay-auth.txt</em> with a line like <em>client plain myaccount mypassword</em></li>
+     <li>Right-drag <em>emailrelay.exe</em> onto the desktop to create a shortcut for the server.</li>
+     <li>Add <em>--as-server --verbose</em> to the server shortcut properties in the <em>target</em> box.</li>
      <li>Right-drag again to create a shortcut to do the forwarding.</li>
-     <li>Add <em class="quote">--as-client example.com:smtp --client-auth c:\ProgramData\E-MailRelay\emailrelay-auth.txt</em> to the client shortcut.</li>
+     <li>Add <em>--as-client example.com:smtp --client-auth c:\ProgramData\E-MailRelay\emailrelay-auth.txt</em> to the client shortcut.</li>
     </ul>
 
     <p>
-     Copy the shortcuts to <em class="quote">Start Menu</em> and <em class="quote">Startup</em> folders as necessary.
+     Copy the shortcuts to <em>Start Menu</em> and <em>Startup</em> folders as necessary.
     </p>
    <h2><a class="a-header" name="SH_1_5">Running as a service</a></h2> <!-- index:2:SH:1:5:Running as a service -->
     <p>
      E-MailRelay can be set up as a service so that it starts up automatically at
      boot-time. If you are setting this up manually you must first have a one-line
-     batch file called <em class="quote">emailrelay-start.bat</em> that contains all the command-line
+     batch file called <em>emailrelay-start.bat</em> that contains all the command-line
      options for running the E-MailRelay server, and you must have a simple
-     configuration file called <em class="quote">emailrelay-service.cfg</em> that points to it. The
+     configuration file called <em>emailrelay-service.cfg</em> that points to it. The
      configuration file must be in the same directory as the
-     <em class="quote">emailrelay-service.exe</em> executable.
+     <em>emailrelay-service.exe</em> executable.
     </p>
 
     <p>
@@ -98,7 +106,7 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     There is no need to use <em class="quote">--no-daemon</em> and <em class="quote">--hidden</em>; these are added
+     There is no need to use <em>--no-daemon</em> and <em>--hidden</em>; these are added
      automatically.
     </p>
 
@@ -111,7 +119,7 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     Then just run <em class="quote">emailrelay-service --install</em> from an Administrator command
+     Then just run <em>emailrelay-service --install</em> from an Administrator command
      prompt to install the service.
     </p>
 
@@ -122,9 +130,9 @@
 
     <p>
      If you need to run multiple E-MailRelay services then put a unique service
-     name and display name on the <em class="quote">emailrelay-service --install &lt;name&gt; &lt;display-name&gt;</em>
+     name and display name on the <em>emailrelay-service --install <name> <display-name></em>
      command-line. The service name you give is used to derive the name of the
-     <em class="quote">&lt;name&gt;-start.bat</em> batch file that contains the E-MailRelay server's
+     <em><name>-start.bat</em> batch file that contains the E-MailRelay server's
      command-line options, so you will need to create that first.
     </p>
    <h2><a class="a-header" name="SH_1_6">Uninstall</a></h2> <!-- index:2:SH:1:6:Uninstall -->
@@ -132,43 +140,42 @@
      To uninstall:
     </p>
     <ul>
-     <li>Stop the program and/or the service (<em class="quote">ControlPanel</em>-&gt;<em class="quote">SystemAndSecurity</em>-&gt;<em class="quote">AdministrativeTools</em>-&gt;<em class="quote">Services</em>).</li>
-     <li>Uninstall the service, if installed (<em class="quote">emailrelay-service --remove</em>).</li>
-     <li>Delete the files from the E-MailRelay <em class="quote">program files</em> folder (eg. <em class="quote">C:\Program Files\E-MailRelay</em>).</li>
-     <li>Delete the files from the E-MailRelay <em class="quote">program data</em> folder (eg. <em class="quote">C:\ProgramData\E-MailRelay</em>).</li>
-     <li>Delete any desktop shortcuts (eg. <em class="quote">%USERPROFILE%\Desktop\E-MailRelay.lnk</em>).</li>
-     <li>Delete any start menu shortcuts (eg. <em class="quote">%APPDATA%\Microsoft\Windows\Start Menu\Programs\E-MailRelay.lnk</em>).</li>
-     <li>Delete any auto-start shortcuts (eg. <em class="quote">%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\E-MailRelay.lnk</em>).</li>
-     <li>Clean up the registry under <em class="quote">HKLM\System\CurrentControlSet\Services\EventLog\Application\emailrelay</em>.</li>
+     <li>Stop the program and/or the service (<em>ControlPanel</em>-><em>SystemAndSecurity</em>-><em>AdministrativeTools</em>-><em>Services</em>).</li>
+     <li>Uninstall the service, if installed (<em>emailrelay-service --remove</em>).</li>
+     <li>Delete the files from the E-MailRelay <em>program files</em> folder (eg. <em>C:\Program Files\E-MailRelay</em>).</li>
+     <li>Delete the files from the E-MailRelay <em>program data</em> folder (eg. <em>C:\ProgramData\E-MailRelay</em>).</li>
+     <li>Delete any desktop shortcuts (eg. <em>%USERPROFILE%\Desktop\E-MailRelay.lnk</em>).</li>
+     <li>Delete any start menu shortcuts (eg. <em>%APPDATA%\Microsoft\Windows\Start Menu\Programs\E-MailRelay.lnk</em>).</li>
+     <li>Delete any auto-start shortcuts (eg. <em>%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\E-MailRelay.lnk</em>).</li>
+     <li>Clean up the registry under <em>HKLM\System\CurrentControlSet\Services\EventLog\Application\emailrelay</em>.</li>
     </ul>
    <h2><a class="a-header" name="SH_1_7">Diagnostics</a></h2> <!-- index:2:SH:1:7:Diagnostics -->
     <p>
-     E-MailRelay normally writes errors and warnings into the Windows Event Log,
-     which you can view by running <em class="quote">eventvwr.exe</em> or going to
-     <em class="quote">ControlPanel</em>-&gt;<em class="quote">SystemAndSecurity</em>-&gt;<em class="quote">AdministrativeTools</em>-&gt;<em class="quote">EventViewer</em>; from
-     there look under <em class="quote">Windows Logs</em> and <em class="quote">Application</em>.
+     E-MailRelay logging is sent to the Windows Event Log and/or written to a log
+     file, and individual failed mail messages will have the failure reason recorded
+     inside the <em>.bad</em> envelope file.
     </p>
 
     <p>
-     You can increase the verbosity of the logging by adding the <em class="quote">--verbose</em> option
-     to the E-MailRelay command-line, typically by editing the <em class="quote">emailrelay-start.bat</em>
+     The Windows Event Log can be accessed by running <em>eventvwr.exe</em> or going to
+     <em>ControlPanel</em>-><em>SystemAndSecurity</em>-><em>AdministrativeTools</em>-><em>EventViewer</em>; from
+     there look under <em>Windows Logs</em> and <em>Application</em>.
+    </p>
+
+    <p>
+     You can increase the verbosity of the logging by adding the <em>--verbose</em> option
+     to the E-MailRelay command-line, typically by editing the <em>emailrelay-start.bat</em>
      batch script.
-    </p>
-
-    <p>
-     The Windows Event Log is a bit clunky, so consider using daily log files by
-     using the E-MailRelay <em class="quote">--log-file</em> option with the special <em class="quote">%d</em> date
-     placeholder. Then turn off the event-log logging with <em class="quote">--no-syslog</em>.
     </p>
    <h2><a class="a-header" name="SH_1_8">Testing with telnet</a></h2> <!-- index:2:SH:1:8:Testing with telnet -->
     <p>
-     The <em class="quote">telnet</em> program can be used for testing an E-MailRelay server. You should
+     The <em>telnet</em> program can be used for testing an E-MailRelay server. You should
      start by enabling the Windows telnet client using
-     <em class="quote">ControlPanel</em>-&gt;<em class="quote">Programs</em>-&gt;<em class="quote">TurnWindowsFeaturesOnAndOff</em>.
+     <em>ControlPanel</em>-><em>Programs</em>-><em>TurnWindowsFeaturesOnAndOff</em>.
     </p>
 
     <p>
-     Then run telnet from a command prompt, using <em class="quote">localhost</em> and the E-MailRelay
+     Then run telnet from a command prompt, using <em>localhost</em> and the E-MailRelay
      port number as command-line parameters:
     </p>
 
@@ -178,17 +185,17 @@
       </div><!-- div-pre -->
     <p>
      This should show a greeting from the E-MailRelay server and then you can
-     start typing SMTP commands like <em class="quote">EHLO</em>, <em class="quote">MAIL FROM:&lt;..&gt;</em>, <em class="quote">RCPT TO:&lt;...&gt;</em>
-     and <em class="quote">DATA</em>.
+     start typing SMTP commands like <em>EHLO</em>, <em>MAIL FROM:<..></em>, <em>RCPT TO:<...></em>
+     and <em>DATA</em>.
     </p>
    <h2><a class="a-header" name="SH_1_9">Building from source</a></h2> <!-- index:2:SH:1:9:Building from source -->
     <p>
      E-MailRelay can be compiled on Windows using Microsoft Visual Studio C++ (MSVC)
-     or mingw-w64. For MSVC builds there is a perl script (<em class="quote">winbuild</em>) that creates
-     <em class="quote">cmake</em> files from the autotools makefiles, runs <em class="quote">cmake</em> to create the MSVC
-     project files and then runs <em class="quote">msbuild</em> to compile E-MailRelay. If perl, cmake,
+     or mingw-w64. For MSVC builds there is a perl script (<em>winbuild</em>) that creates
+     <em>cmake</em> files from the autotools makefiles, runs <em>cmake</em> to create the MSVC
+     project files and then runs <em>msbuild</em> to compile E-MailRelay. If perl, cmake,
      MSVC, Qt and mbedTLS source are installed in the right way then the
-     <em class="quote">winbuild.bat</em> batch file should be able to do a complete MSVC release build
+     <em>winbuild.bat</em> batch file should be able to do a complete MSVC release build
      in one go.
     </p>
 
@@ -196,10 +203,10 @@
 
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2018 Graeme Walker
+      Copyright (C) 2001-2019 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

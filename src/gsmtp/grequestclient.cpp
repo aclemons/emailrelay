@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,30 +19,30 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gstr.h"
 #include "grequestclient.h"
-#include "gassert.h"
 
-GSmtp::RequestClient::RequestClient( const std::string & key , const std::string & ok ,
+namespace
+{
+	GNet::Client::Config netConfig( unsigned int connection_timeout , unsigned int response_timeout )
+	{
+		GNet::Client::Config net_config( GNet::LineBufferConfig::newline() ) ;
+		net_config.connection_timeout = connection_timeout ;
+		net_config.response_timeout = response_timeout ;
+		return net_config ;
+	}
+}
+
+GSmtp::RequestClient::RequestClient( GNet::ExceptionSink es , const std::string & key , const std::string & ok ,
 	const GNet::Location & location , unsigned int connect_timeout , unsigned int response_timeout ) :
-		GNet::Client(location,connect_timeout,response_timeout,0U,config()) ,
+		GNet::Client(es,location,netConfig(connect_timeout,response_timeout)) ,
 		m_eol(1U,'\n') ,
 		m_key(key) ,
 		m_ok(ok) ,
-		m_timer(*this,&RequestClient::onTimeout,*this)
+		m_timer(*this,&RequestClient::onTimeout,es)
 {
 	G_DEBUG( "GSmtp::RequestClient::ctor: " << location.displayString() << ": "
 		<< connect_timeout << " " << response_timeout ) ;
-}
-
-GSmtp::RequestClient::~RequestClient()
-{
-}
-
-GNet::LineBufferConfig GSmtp::RequestClient::config()
-{
-	return GNet::LineBufferConfig::newline() ;
 }
 
 void GSmtp::RequestClient::onConnect()
@@ -55,13 +55,15 @@ void GSmtp::RequestClient::onConnect()
 void GSmtp::RequestClient::request( const std::string & request_payload )
 {
 	G_DEBUG( "GSmtp::RequestClient::request: \"" << request_payload << "\"" ) ;
-	if( busy() ) throw ProtocolError() ;
+	if( busy() )
+		throw ProtocolError() ;
+
 	m_request = request_payload ;
 	m_timer.startTimer( 0U ) ;
 
 	// clear the base-class line buffer of any incomplete line
-	// data -- but a race condition is possible for servers
-	// which reply with more that one line
+	// data from a previous request -- this is racy for servers
+	// which incorrectly reply with more than one line
 	clearInput() ;
 }
 
@@ -76,42 +78,30 @@ bool GSmtp::RequestClient::busy() const
 	return !m_request.empty() ;
 }
 
-void GSmtp::RequestClient::onDelete( const std::string & )
+void GSmtp::RequestClient::onDelete( const std::string & reason )
 {
-}
-
-void GSmtp::RequestClient::onDeleteImp( const std::string & reason )
-{
-	// we override onDeleteImp() rather than onDelete() so that
-	// we get to emit our signal before any other signal handler --
-	// consider that they might throw an exception and then we don't
-	// get called -- so this guarantees every request gets a response
-
 	if( !reason.empty() )
-		G_WARNING( "GSmtp::RequestClient::onDeleteImp: error: " << reason ) ;
-
-	if( busy() )
-	{
-		m_request.erase() ;
-		eventSignal().emit( m_key , reason.empty() ? std::string("error") : reason ) ;
-	}
-	GNet::Client::onDeleteImp( reason ) ; // base class
+		G_WARNING( "GSmtp::RequestClient::onDelete: error: " << reason ) ;
 }
 
-void GSmtp::RequestClient::onSecure( const std::string & )
+void GSmtp::RequestClient::onSecure( const std::string & , const std::string & )
 {
 }
 
-bool GSmtp::RequestClient::onReceive( const char * line_data , size_t line_size , size_t )
+bool GSmtp::RequestClient::onReceive( const char * line_data , size_t line_size , size_t , size_t , char )
 {
 	std::string line( line_data , line_size ) ;
 	G_DEBUG( "GSmtp::RequestClient::onReceive: [" << G::Str::printable(line) << "]" ) ;
 	if( busy() )
 	{
 		m_request.erase() ;
-		eventSignal().emit( m_key , result(line) ) ; // empty string if matching m_ok
+		eventSignal().emit( m_key , result(line) , std::string() ) ; // empty string if matching m_ok
+		return false ;
 	}
-	return true ;
+	else
+	{
+		return true ;
+	}
 }
 
 void GSmtp::RequestClient::onSendComplete()

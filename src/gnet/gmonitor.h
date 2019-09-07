@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,9 +34,9 @@ namespace GNet
 }
 
 /// \class GNet::Monitor
-/// A singleton for monitoring GNet::SimpleClient and GNet::ServerPeer
-/// connections and for storing their TLS certificates.
-/// \see GNet::SimpleClient, GNet::ServerPeer
+/// A singleton for monitoring GNet::Client and GNet::ServerPeer
+/// connections.
+/// \see GNet::Client, GNet::ServerPeer
 ///
 class GNet::Monitor
 {
@@ -44,22 +44,22 @@ public:
 	Monitor() ;
 		///< Default constructor.
 
-	virtual ~Monitor() ;
+	~Monitor() ;
 		///< Destructor.
 
 	static Monitor * instance() ;
-		///< Returns the singleton pointer. Returns null if none.
+		///< Returns the singleton pointer. Returns nullptr if none.
 
-	void addClient( const Connection & simple_client ) ;
+	static void addClient( const Connection & simple_client ) ;
 		///< Adds a client connection.
 
-	void removeClient( const Connection & simple_client ) ;
+	static void removeClient( const Connection & simple_client ) ;
 		///< Removes a client connection.
 
-	void addServerPeer( const Connection & server_peer ) ;
+	static void addServerPeer( const Connection & server_peer ) ;
 		///< Adds a server connection.
 
-	void removeServerPeer( const Connection & server_peer ) ;
+	static void removeServerPeer( const Connection & server_peer ) ;
 		///< Removes a server connection.
 
 	void report( std::ostream & stream ,
@@ -68,12 +68,8 @@ public:
 			///< Reports itself onto a stream.
 
 	void report( G::StringArray & out ) const ;
-			///< Reports itself into a three-column table.
-
-	std::pair<std::string,bool> findCertificate( const std::string & certificate ) ;
-		///< Returns a short id for the given certificate and a boolean
-		///< flag to indicate if it is a new certificate id that has
-		///< not been returned before.
+		///< Reports itself into a three-column table (ordered
+		///< with the column index varying fastest).
 
 	G::Slot::Signal2<std::string,std::string> & signal() ;
 		///< Provides a callback signal which can be connect()ed
@@ -84,12 +80,12 @@ public:
 		///< "start" or "stop".
 
 private:
-	Monitor( const Monitor & ) ;
-	void operator=( const Monitor & ) ;
+	Monitor( const Monitor & ) g__eq_delete ;
+	void operator=( const Monitor & ) g__eq_delete ;
 
 private:
 	static Monitor * & pthis() ;
-	MonitorImp * m_imp ;
+	unique_ptr<MonitorImp> m_imp ;
 	G::Slot::Signal2<std::string,std::string> m_signal ;
 } ;
 

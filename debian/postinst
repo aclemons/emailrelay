@@ -5,32 +5,18 @@
 
 spool="/var/spool/emailrelay"
 submit="/usr/sbin/emailrelay-submit"
+filtercopy="/usr/lib/emailrelay/emailrelay-filter-copy"
 init="/etc/init.d/emailrelay"
 rundir="/var/run/emailrelay"
 
 emailrelay_setup()
 {
-	test -d "$spool" || mkdir "$spool"
-	if ls -nd "$spool" | cut -d' ' --fields=3,4 | grep -q '^0 0$'
-	then
-		chgrp daemon "$spool" && chmod 775 "$spool" && chmod g+s "$spool"
-	fi
-
-	test -d "$rundir" || mkdir "$rundir"
-	if ls -nd "$rundir" | cut -d' ' --fields=3,4 | grep -q '^0 0$'
-	then
-		chgrp daemon "$rundir" && chmod 770 "$rundir"
-	fi
-
-	if ls -n "$submit" | cut -d' ' --fields=3,4 | grep -q '^0 0$'
-	then
-		chgrp daemon "$submit" && chmod g+s "$submit"
-	fi
-
-	if test -f "$init" -a ! -x "$init"
+	# use the init script for some post-install setup
+	if test -e "$init" -a ! -x "$init"
 	then
 		chmod +x "$init"
 	fi
+	"$init" setup
 }
 
 emailrelay_fix_html()
@@ -47,9 +33,11 @@ emailrelay_create_config()
 	fi
 }
 
-#DEBHELPER#
-
 emailrelay_setup
 emailrelay_fix_html
 emailrelay_create_config
+
+#DEBHELPER#
+
+exit 0
 

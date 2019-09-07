@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,8 @@
 #
 #   if test -f /var/spool/emailrelay/*.envelope.bad ; then echo Failed mail >&2 ; fi
 #
-# or perhaps a cron entry like this (since output from a cron job gets sent as mail):
+# or perhaps a cron entry like this, since output from a cron job gets sent
+# as mail:
 #
 #   0 0 * * * /bin/cat /var/spool/emailrelay/*.envelope.bad 2>/dev/null
 #

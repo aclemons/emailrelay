@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,8 @@
 #
 # AutoMakeParser.pm
 #
-# Automakefile parser.
+# Parser package (AutoMakeParser) for parsing automake makefiles,
+# with full variable expansion and support for conditional sections.
 #
 # Synopsis:
 #
@@ -261,7 +262,7 @@ sub parse
 		[ qr/^\s*$/ , \&AutoMakeParser::do_blank ] ,
 		[ qr/^\s*#/ , \&AutoMakeParser::do_comment ] ,
 		[ qr/^\s*(\S+)\s*\+=\s*(.*)/ , \&AutoMakeParser::do_assign_more ] ,
-		[ qr/^\s*(\S+)\s*=\s*(.*)/ , \&AutoMakeParser::do_assign ] ,
+		[ qr/^\s*(\S+)\s*(=|\?=|:=|::=)\s*(.*)/ , \&AutoMakeParser::do_assign ] ,
 		[ qr/^\s*if\s+(\S+)/ , \&AutoMakeParser::do_if ] ,
 		[ qr/^\s*else\s*$/ , \&AutoMakeParser::do_else ] ,
 		[ qr/^\s*endif\s*$/ , \&AutoMakeParser::do_endif ] ,
@@ -273,7 +274,11 @@ sub parse
 		for my $h ( @handlers )
 		{
 			my ( $hre , $hfn ) = @$h ;
-			if( $line =~ $hre ) { &{$hfn}( $this , $n , $line , $1 , $2 , $3 , $4 , $5 , $6 ) }
+			if( $line =~ $hre )
+			{
+				&{$hfn}( $this , $n , $line , $1 , $2 , $3 , $4 , $5 , $6 ) ;
+				last ; # (new)
+			}
 		}
 		debug_( "$$this{m_path}($n): " , $this->enabled() ? $line : "..." ) ;
 	}
@@ -362,12 +367,13 @@ sub do_endif
 
 sub do_assign
 {
-	my ( $this , $n , $line , $lhs , $rhs ) = @_ ;
+	my ( $this , $n , $line , $lhs , $eq , $rhs ) = @_ ;
 	if( $this->enabled() )
 	{
 		$rhs =~ s/\s+/ /g ;
 		$rhs =~ s/^\s*// ;
 		$rhs =~ s/\s*$// ;
+		# TODO if $eq is "?="
 		$this->{m_vars}->{$lhs} = $rhs ;
 	}
 }

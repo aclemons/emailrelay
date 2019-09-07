@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,11 +19,10 @@
 //
 
 #include "gdef.h"
-#include "glimits.h"
 #include "gprocess.h"
 #include "gidentity.h"
 #include "gstr.h"
-#include "gassert.h"
+#include "gfile.h"
 #include "gpath.h"
 #include "glog.h"
 #include <iostream>
@@ -66,7 +65,7 @@ bool G::Process::cd( const Path & dir , NoThrow )
 void G::Process::closeStderr()
 {
 	::close( STDERR_FILENO ) ;
-	::open( G::Path::nullDevice().str().c_str() , O_WRONLY ) ;
+	::open( Path::nullDevice().str().c_str() , O_WRONLY ) ;
 	noCloseOnExec( STDERR_FILENO ) ;
 }
 
@@ -95,7 +94,7 @@ void G::Process::closeFilesExcept( int keep_1 , int keep_2 )
 	}
 
 	// reopen standard fds to /dev/null
-	G::Path dev_null = G::Path::nullDevice() ;
+	Path dev_null = Path::nullDevice() ;
 	if( keep_1 != STDIN_FILENO && keep_2 != STDIN_FILENO )
 	{
 		::open( dev_null.str().c_str() , O_RDONLY ) ;
@@ -132,7 +131,7 @@ std::string G::Process::strerror( int errno_ )
 	char * p = std::strerror( errno_ ) ;
 	std::string s( p ? p : "" ) ;
 	if( s.empty() ) s = "unknown error" ;
-	return G::Str::isPrintableAscii(s) ? G::Str::lower(s) : s ;
+	return Str::isPrintableAscii(s) ? Str::lower(s) : s ;
 }
 
 void G::Process::revokeExtraGroups()
@@ -140,7 +139,7 @@ void G::Process::revokeExtraGroups()
 	if( Identity::real().isRoot() || Identity::effective() != Identity::real() )
 	{
 		gid_t dummy ;
-		int rc = ::setgroups( 0U , &dummy ) ; G_IGNORE_VARIABLE(rc) ; // (only works for root, so ignore the return code)
+		int rc = ::setgroups( 0U , &dummy ) ; G_IGNORE_VARIABLE(int,rc) ; // (only works for root, so ignore the return code)
 	}
 }
 
@@ -237,12 +236,9 @@ namespace
 {
 	bool readlink_( const char * path , std::string & value )
 	{
-		std::vector<char> buffer( PATH_MAX + 1 ) ; // best effort, not guaranteed
-		buffer[0] = '\0' ;
-		ssize_t rc = readlink( path , &buffer[0] , buffer.size() ) ;
-		if( rc > 0 && static_cast<size_t>(rc) <= buffer.size() )
-			value = std::string(&buffer[0],static_cast<size_t>(rc)) ;
-		return rc > 0 ;
+		G::Path target = G::File::readlink( path , G::File::NoThrow() ) ;
+		if( target != G::Path() ) value = target.str() ;
+		return target != G::Path() ;
 	}
 }
 
@@ -330,18 +326,18 @@ namespace
 	mode_t umask_value( G::Process::Umask::Mode mode )
 	{
 		mode_t m = 0 ;
-		if( mode == G::Process::Umask::Tightest ) m = 0177 ; // -rw-------
-		if( mode == G::Process::Umask::Tighter ) m = 0117 ;  // -rw-rw----
-		if( mode == G::Process::Umask::Readable ) m = 0133 ; // -rw-r--r--
-		if( mode == G::Process::Umask::GroupOpen ) m = 0113 ;// -rw-rw-r--
+		if( mode == G::Process::Umask::Mode::Tightest ) m = 0177 ; // -rw-------
+		if( mode == G::Process::Umask::Mode::Tighter ) m = 0117 ;  // -rw-rw----
+		if( mode == G::Process::Umask::Mode::Readable ) m = 0133 ; // -rw-r--r--
+		if( mode == G::Process::Umask::Mode::GroupOpen ) m = 0113 ;// -rw-rw-r--
 		return m ;
 	}
 }
 
-/// \class G::Process::Umask::UmaskImp
+/// \class G::Process::UmaskImp
 /// A pimple-pattern implementation class used by G::Process::Umask.
 ///
-class G::Process::Umask::UmaskImp
+class G::Process::UmaskImp
 {
 public:
 	mode_t m_old_mode ;
@@ -355,13 +351,12 @@ G::Process::Umask::Umask( Mode mode ) :
 
 G::Process::Umask::~Umask()
 {
-	mode_t rc = ::umask( m_imp->m_old_mode ) ; G_IGNORE_VARIABLE(rc) ;
-	delete m_imp ;
+	mode_t rc = ::umask( m_imp->m_old_mode ) ; G_IGNORE_VARIABLE(mode_t,rc) ;
 }
 
 void G::Process::Umask::set( Mode mode )
 {
-	mode_t rc = ::umask( umask_value(mode) ) ; G_IGNORE_VARIABLE(rc) ;
+	mode_t rc = ::umask( umask_value(mode) ) ; G_IGNORE_VARIABLE(mode_t,rc) ;
 }
 
 void G::Process::Umask::tighten()

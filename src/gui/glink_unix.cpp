@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ GLinkImp::GLinkImp( const G::Path & target_path , const std::string & name , con
 		m_working_dir(working_dir) ,
 		m_args(args) ,
 		m_icon_source(icon_source) ,
-		m_terminal(show==GLink::Show_Default) ,
+		m_terminal(show==GLink::Show::Default) ,
 		m_c1(c1) ,
 		m_c2(c2) ,
 		m_c3(c3)

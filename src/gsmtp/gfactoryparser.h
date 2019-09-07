@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,11 +18,10 @@
 /// \file gfactoryparser.h
 ///
 
-#ifndef G_SMTP_FACTORY_PARSER_H
-#define G_SMTP_FACTORY_PARSER_H
+#ifndef G_SMTP_FACTORY_PARSER__H
+#define G_SMTP_FACTORY_PARSER__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include <utility>
 #include <string>
 
@@ -32,8 +31,9 @@ namespace GSmtp
 }
 
 /// \class GSmtp::FactoryParser
-/// A simple class to parse identifiers that can be a program
-/// in the file system or a network address.
+/// A simple static class to parse identifiers that can be a
+/// program in the file system or a network address. Used by
+/// the filter factory and the address-verifier factory.
 ///
 class GSmtp::FactoryParser
 {
@@ -59,7 +59,7 @@ public:
 		///< or empty.
 
 private:
-	FactoryParser() ; // not implemented
+	FactoryParser() g__eq_delete ;
 } ;
 
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #define G_NET_FUTURE_EVENT__H
 
 #include "gdef.h"
-#include "gexception.h"
+#include "gexceptionsink.h"
 #include "geventhandler.h"
 
 namespace GNet
@@ -42,10 +42,11 @@ namespace GNet
 /// struct Foo : private FutureEventHandler , private ExceptionHandler
 /// {
 ///  Foo() ;
-///  void onFutureEvent( unsigned int result ) ;
+///  void onFutureEvent() ;
 ///  void run( FutureEvent::handle_type ) ;
 ///  FutureEvent m_future_event ;
 ///  std::thread m_thread ;
+///  int m_result ;
 /// }
 /// Foo::Foo() :
 ///    m_future_event(*this,*this) ,
@@ -54,7 +55,7 @@ namespace GNet
 /// }
 /// void Foo::run( FutureEvent::handle_type h )
 /// {
-///   ... // do blocking work
+///   m_result = ... ; // do blocking work in worker thread
 ///   FutureEvent::send( h ) ;
 /// }
 /// \endcode
@@ -65,7 +66,7 @@ public:
 	G_EXCEPTION( Error , "FutureEvent error" ) ;
 	typedef HANDLE handle_type ;
 
-	FutureEvent( FutureEventHandler & , ExceptionHandler & ) ;
+	FutureEvent( FutureEventHandler & , ExceptionSink ) ;
 		///< Constructor. Installs itself in the event loop.
 
 	~FutureEvent() ;
@@ -86,8 +87,8 @@ public:
 		///< deleted. Returns true on success.
 
 private:
-	FutureEvent( const FutureEvent & ) ;
-	void operator=( const FutureEvent & ) ;
+	FutureEvent( const FutureEvent & ) g__eq_delete ;
+	void operator=( const FutureEvent & ) g__eq_delete ;
 
 private:
 	friend class FutureEventImp ;
@@ -100,15 +101,11 @@ private:
 class GNet::FutureEventHandler
 {
 public:
-	virtual void onFutureEvent() = 0 ;
-		///< Callback function that delivers the future event.
-
-protected:
 	virtual ~FutureEventHandler() ;
 		///< Destructor.
 
-private:
-	void operator=( const FutureEventHandler & ) ;
+	virtual void onFutureEvent() = 0 ;
+		///< Callback function that delivers the future event.
 } ;
 
 #endif

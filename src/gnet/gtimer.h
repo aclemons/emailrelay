@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #include "gdatetime.h"
 #include "geventhandler.h"
 #include "gexception.h"
-#include "gtimerlist.h"
+#include "gexceptionsink.h"
 
 namespace GNet
 {
@@ -40,24 +40,22 @@ namespace GNet
 class GNet::TimerBase
 {
 protected:
-	explicit TimerBase( ExceptionHandler & ) ;
-		///< Constructor.
+	explicit TimerBase( ExceptionSink es ) ;
+		///< Constructor. The ExceptionSink receives an onException()
+		///< call if the onTimeout() implementation throws.
 
 public:
 	virtual ~TimerBase() ;
 		///< Destructor.
 
 	void startTimer( unsigned int interval_s , unsigned int interval_us = 0U ) ;
-		///< Starts the timer so that it goes off after the
-		///< given time interval.
-
-	void startTimer( const G::EpochTime & interval_time ) ;
-		///< Overload for an interval expressed as an G::EpochTime.
+		///< Starts or restarts the timer so that it expires
+		///< after the given interval.
 
 	void cancelTimer() ;
-		///< Cancels the timer.
+		///< Cancels the timer. Does nothing if not running.
 
-	bool active() const ;
+	bool active() const g__noexcept ;
 		///< Returns true if the timer is started and not cancelled.
 
 	bool immediate() const ;
@@ -68,7 +66,14 @@ public:
 		///< Used by TimerList to execute the onTimeout() callback.
 
 	G::EpochTime t() const ;
-		///< Used by TimerList to get the expiry epoch time.
+		///< Used by TimerList to get the expiry epoch time. Zero-length
+		///< timers return a value corresponding to some time in ancient
+		///< history (1970).
+
+	void adjust( unsigned int us ) ;
+		///< Used by TimerList to set the fractional part of the expiry
+		///< time of immediate() timers so that t() is ordered by
+		///< startTimer() time.
 
 	bool expired( G::EpochTime & ) const ;
 		///< Used by TimerList. Returns true if expired when compared
@@ -79,15 +84,16 @@ protected:
 		///< Called when the timer expires (or soon after).
 
 private:
-	TimerBase( const TimerBase & ) ; // not implemented
-	void operator=( const TimerBase & ) ; // not implemented
+	TimerBase( const TimerBase & ) g__eq_delete ;
+	void operator=( const TimerBase & ) g__eq_delete ;
+	static G::EpochTime history() ;
 
 private:
 	G::EpochTime m_time ;
 } ;
 
 inline
-bool GNet::TimerBase::active() const
+bool GNet::TimerBase::active() const g__noexcept
 {
 	return m_time.s != 0 ;
 }
@@ -98,51 +104,84 @@ namespace GNet
 /// \class Timer
 /// A timer class template in which the timeout is delivered to the specified
 /// method. Any exception thrown out of the timeout handler is delivered to
-/// the specified EventHandler interface so that it can be handled or rethrown.
+/// the specified ExceptionHandler interface so that it can be handled or
+/// rethrown.
 ///
 /// Eg:
 /// \code
-/// struct Foo : public ExceptionHandler
+/// struct Foo
 /// {
 ///   Timer<Foo> m_timer ;
-///   Foo() : m_timer(*this,&Foo::onTimeout,*this) {}
-///   void onTimeout() {}
-///   void onException( std::exception & ) { throw ; }
+///   Foo( ExceptionSink es ) : m_timer(*this,&Foo::onTimeout,es) {}
+///   void onTimeout() { throw "oops" ; }
 /// } ;
 /// \endcode
 ///
 template <typename T>
-class Timer : public TimerBase
+class Timer : private TimerBase
 {
 public:
 	typedef void (T::*method_type)() ;
 
-	Timer( T & t , method_type m , ExceptionHandler & ) ;
-		///< Constructor. The ExceptionHandler reference is used when
-		///< the timeout handler throws; the onException() implementation
-		///< can simply rethrow to exit the event loop.
+	Timer( T & t , method_type m , ExceptionSink ) ;
+		///< Constructor.
 
-protected:
-	virtual void onTimeout() override ;
-		///< Override from GNet::TimerBase.
+	void startTimer( unsigned int interval_s , unsigned int interval_us = 0U ) ;
+		///< Starts or restarts the timer so that it expires
+		///< after the given interval.
+
+	void startTimer( const G::TimeInterval & ) ;
+		///< Starts or restarts the timer so that it expires
+		///< after the given interval.
+
+	void cancelTimer() ;
+		///< Cancels the timer. Does nothing if not running.
+
+	bool active() const g__noexcept ;
+		///< Returns true if the timer is running.
+
+private: // overrides
+	virtual void onTimeout() override ; // Override from GNet::TimerBase.
 
 private:
-	Timer( const Timer<T> & ) ; // not implemented
-	void operator=( const Timer<T> & ) ; // not implemented
+	Timer( const Timer<T> & ) g__eq_delete ;
+	void operator=( const Timer<T> & ) g__eq_delete ;
 
 private:
-	T & m_t ;
+	T & m_t ; // callback target object
 	method_type m_m ;
-	ExceptionHandler & m_event_exception_handler ;
 } ;
 
 template <typename T>
-Timer<T>::Timer( T & t , method_type m , ExceptionHandler & e ) :
-	TimerBase(e) ,
+Timer<T>::Timer( T & t , method_type m , GNet::ExceptionSink es ) :
+	TimerBase(es) ,
 	m_t(t) ,
-	m_m(m) ,
-	m_event_exception_handler(e)
+	m_m(m)
 {
+}
+
+template <typename T>
+void Timer<T>::startTimer( unsigned int s , unsigned int us )
+{
+	TimerBase::startTimer( s , us ) ;
+}
+
+template <typename T>
+void Timer<T>::startTimer( const G::TimeInterval & i )
+{
+	TimerBase::startTimer( i.s , i.us ) ;
+}
+
+template <typename T>
+void Timer<T>::cancelTimer()
+{
+	TimerBase::cancelTimer() ;
+}
+
+template <typename T>
+bool Timer<T>::active() const g__noexcept
+{
+	return TimerBase::active() ;
 }
 
 template <typename T>

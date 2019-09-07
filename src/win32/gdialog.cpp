@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,8 +20,8 @@
 
 #include "gdef.h"
 #include "gdialog.h"
-#include "gdebug.h"
 #include "glog.h"
+#include "gassert.h"
 #include <algorithm> // find
 
 BOOL CALLBACK gdialog_dlgproc_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
@@ -29,7 +29,7 @@ BOOL CALLBACK gdialog_dlgproc_export( HWND hwnd , UINT message , WPARAM wparam ,
 	return GGui::Dialog::dlgProc( hwnd , message , wparam , lparam ) ;
 }
 
-GGui::DialogList GGui::Dialog::m_list ;
+GGui::Dialog::DialogList GGui::Dialog::m_list ;
 
 GGui::Dialog::Dialog( HINSTANCE hinstance , HWND hwnd_parent , const std::string & title ) :
 	WindowBase(NULL) ,
@@ -66,7 +66,7 @@ GGui::Dialog::~Dialog()
 	m_magic = 0 ;
 }
 
-GGui::DialogList::iterator GGui::Dialog::find( HWND h )
+GGui::Dialog::DialogList::iterator GGui::Dialog::find( HWND h )
 {
 	return std::find( m_list.begin() , m_list.end() , DialogHandle(h) ) ;
 }
@@ -214,13 +214,11 @@ BOOL GGui::Dialog::dlgProc( UINT message , WPARAM wparam , LPARAM lparam )
 			return onControlColour_( wparam , lparam , CTLCOLOR_STATIC ) ;
 		}
 
-#if 0 // Windows bug -- WM_SETCURSOR is useless in a dialog box
 		case WM_SETCURSOR:
 		{
-			onSetCursor( reinterpret_cast<HWND>(wparam) , LOWORD(lparam) , HIWORD(lparam) ) ;
+			// no-op -- WM_SETCURSOR is useless in a dialog box
 			return 0 ;
 		}
-#endif
 
 		case WM_CLOSE:
 		{
@@ -386,7 +384,7 @@ bool GGui::Dialog::runModelessEnd( HWND hwnd , bool visible )
 
 bool GGui::Dialog::dialogMessage( MSG & msg )
 {
-	for( GGui::DialogList::iterator p = m_list.begin() ; p != m_list.end() ; ++p )
+	for( DialogList::iterator p = m_list.begin() ; p != m_list.end() ; ++p )
 	{
 		if( ::IsDialogMessage( (*p).h , &msg ) )
 			return true ;

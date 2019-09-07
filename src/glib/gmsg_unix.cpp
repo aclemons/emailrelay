@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -104,7 +104,7 @@ ssize_t G::Msg::recvfrom( int fd , void * buffer , size_t size , int flags ,
 	msg.msg_controllen = sizeof(control_buffer) ;
 
 	ssize_t rc = ::recvmsg( fd , &msg , flags ) ;
-	int e = G::Process::errno_() ;
+	int e = Process::errno_() ;
 	if( rc >= 0 && msg.msg_controllen > 0U && fd_received_p != nullptr )
 	{
 		struct cmsghdr * cmsg = CMSG_FIRSTHDR( &msg ) ;
@@ -117,7 +117,7 @@ ssize_t G::Msg::recvfrom( int fd , void * buffer , size_t size , int flags ,
 	{
 		*address_np = msg.msg_namelen ;
 	}
-	G::Process::errno_( G::SignalSafe() , e ) ;
+	Process::errno_( SignalSafe() , e ) ;
 	return rc ; // with errno
 }
 

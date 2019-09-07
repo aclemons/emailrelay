@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,9 +19,13 @@
 //
 
 #include "gdef.h"
-#include "gaddress.h"
 #include "gaddress4.h"
 #include "gaddress6.h"
+#include "gaddress.h"
+#include "gassert.h"
+#include <algorithm> // std::swap()
+#include <utility> // std::swap()
+#include <sstream>
 #include <cstring>
 
 namespace
@@ -47,14 +51,27 @@ bool GNet::Address::supports( Family )
 	return true ;
 }
 
-GNet::Address GNet::Address::defaultAddress()
+bool GNet::Address::supports( unsigned int f )
 {
-	return Address( Family::ipv4() , 0U ) ;
+	return f == AF_INET || f == AF_INET6 ;
 }
 
+GNet::Address GNet::Address::defaultAddress()
+{
+	return Address( Family::ipv4 , 0U ) ;
+}
+
+#if GCONFIG_HAVE_CXX_MOVE
+GNet::Address::Address( Address && other ) g__noexcept :
+	m_4imp(std::move(other.m_4imp)) ,
+	m_6imp(std::move(other.m_6imp))
+{
+}
+#endif
+
 GNet::Address::Address( Family f , unsigned int port ) :
-	m_4imp( f==Family::ipv4() ? new Address4(port) : nullptr ) ,
-	m_6imp( f!=Family::ipv4() ? new Address6(port) : nullptr )
+	m_4imp( f==Family::ipv4 ? new Address4(port) : nullptr ) ,
+	m_6imp( f!=Family::ipv4 ? new Address6(port) : nullptr )
 {
 }
 
@@ -89,32 +106,49 @@ GNet::Address::Address( const Address & other ) :
 }
 
 GNet::Address::Address( Family f , unsigned int port , int loopback_overload ) :
-	m_4imp( f==Family::ipv4() ? new Address4(port,loopback_overload) : nullptr ) ,
-	m_6imp( f!=Family::ipv4() ? new Address6(port,loopback_overload) : nullptr )
+	m_4imp( f==Family::ipv4 ? new Address4(port,loopback_overload) : nullptr ) ,
+	m_6imp( f!=Family::ipv4 ? new Address6(port,loopback_overload) : nullptr )
 {
 }
+
+GNet::Address::~Address()
+{
+}
+
+void GNet::Address::swap( Address & other ) g__noexcept
+{
+	using std::swap ;
+	swap( m_4imp , other.m_4imp ) ;
+	swap( m_6imp , other.m_6imp ) ;
+}
+
+GNet::Address & GNet::Address::operator=( const Address & other )
+{
+	Address(other).swap( *this ) ;
+	return *this ;
+}
+
+#if GCONFIG_HAVE_CXX_MOVE
+GNet::Address & GNet::Address::operator=( Address && other ) g__noexcept
+{
+	Address(std::move(other)).swap( *this ) ;
+	return *this ;
+}
+#endif
 
 GNet::Address GNet::Address::loopback( Family f , unsigned int port )
 {
 	return Address( f , port , 1 ) ;
 }
 
-void GNet::Address::operator=( const Address & addr )
-{
-	Address temp( addr ) ;
-	std::swap( m_4imp , temp.m_4imp ) ;
-	std::swap( m_6imp , temp.m_6imp ) ;
-}
-
-GNet::Address::~Address()
-{
-	delete m_4imp ;
-	delete m_6imp ;
-}
-
 void GNet::Address::setPort( unsigned int port )
 {
 	m_4imp ? m_4imp->setPort(port) : m_6imp->setPort(port) ;
+}
+
+unsigned int GNet::Address::bits() const
+{
+	return m_4imp ? m_4imp->bits() : m_6imp->bits() ;
 }
 
 bool GNet::Address::isLoopback() const
@@ -212,7 +246,7 @@ int GNet::Address::domain() const
 
 GNet::Address::Family GNet::Address::family() const
 {
-	return m_4imp ? Family::ipv4() : Family::ipv6() ;
+	return m_4imp ? Family::ipv4 : Family::ipv6 ;
 }
 
 G::StringArray GNet::Address::wildcards() const
@@ -237,12 +271,14 @@ public:
 GNet::AddressStorage::AddressStorage() :
 	m_imp(new AddressStorageImp)
 {
-	m_imp->n = sizeof(Address6::union_type) ;
+	G_ASSERT( sizeof(Address6::union_type) > sizeof(Address4::union_type) ) ;
+	G_ASSERT( sizeof(Address6::union_type) == sizeof(Address6::storage_type) ) ;
+	size_t n = std::max( sizeof(Address6::union_type) , sizeof(Address4::union_type) ) ;
+	m_imp->n = static_cast<socklen_t>(n) ;
 }
 
 GNet::AddressStorage::~AddressStorage()
 {
-	delete m_imp ;
 }
 
 sockaddr * GNet::AddressStorage::p1()
@@ -267,8 +303,8 @@ socklen_t GNet::AddressStorage::n() const
 
 // ==
 
-// fallback implementation for inet_pton() -- see GCONFIG_HAVE_INET_PTON in gdef.h
-//
+#if ! GCONFIG_HAVE_INET_PTON
+// fallback implementation for inet_pton() using getaddrinfo() -- see gdef.h
 int GNet::inet_pton_imp( int f , const char * p , void * result )
 {
 	if( p == nullptr || result == nullptr ) return 0 ; // just in case
@@ -294,14 +330,17 @@ int GNet::inet_pton_imp( int f , const char * p , void * result )
 			*reinterpret_cast<struct in6_addr*>(result) = sa.sin6_addr ;
 		}
 		else
+		{
 			ok = false ;
+		}
 		freeaddrinfo( ai_p ) ;
 	}
 	return ok ? 1 : 0 ;
 }
+#endif
 
 #if ! GCONFIG_HAVE_INET_NTOP
-// fallback implementation for inet_ntop() -- see GCONFIG_HAVE_INET_NTOP in gdef.h
+// fallback implementation for inet_ntop() using inet_ntoa() for ipv4 and by hand for ipv6 -- see gdef.h
 const char * GNet::inet_ntop_imp( int f , void * ap , char * buffer , size_t n )
 {
 	std::string s ;
@@ -309,7 +348,7 @@ const char * GNet::inet_ntop_imp( int f , void * ap , char * buffer , size_t n )
 	{
 		std::ostringstream ss ;
 		struct in_addr a = *reinterpret_cast<struct in_addr*>(ap) ;
-		ss << inet_ntoa( a ) ; // ignore warnings - this is not used if inet_ntop is available
+		ss << inet_ntoa( a ) ; // ignore warnings - this code is not used if inet_ntop is available
 		s = ss.str() ;
 	}
 	else if( f == AF_INET6 )
@@ -318,36 +357,40 @@ const char * GNet::inet_ntop_imp( int f , void * ap , char * buffer , size_t n )
 		std::ostringstream ss ;
 		const char * sep = ":" ;
 		const char * hexmap = "0123456789abcdef" ;
-		for( int i = 0 ; i < 16 ; i++ , sep = *sep ? "" : ":" )
+		for( int i = 0 ; i < 16 ; i++ , sep = *sep ? "" : ":" ) // sep alternates
 		{
 			unsigned int n = static_cast<unsigned int>(a.s6_addr[i]) % 256U ;
 			ss << sep << hexmap[(n>>4U)%16U] << hexmap[(n&15U)%16U] ;
 		}
 		ss << ":" ;
+		// eg. ":0001:0002:0000:0000:0005:0006:dead:beef:"
 		s = ss.str() ;
 		for( std::string::size_type pos = s.find(":0") ; pos != std::string::npos ; pos = s.find(":0",pos) )
 		{
-			if( s.find(":0:",pos) == std::string::npos )
-				s.erase( pos+1U , 1U ) ;
-			else
-				pos++ ;
+			pos += 1U ;
+			while( s.at(pos) == '0' && s.at(pos+1U) != ':' )
+				s.erase( pos , 1U ) ;
 		}
+		// eg. ":1:2:0:0:5:6:dead:beef:"
 		std::string run = ":0:0:0:0:0:0:0:0:" ;
-		while( run.length() >= 3U )
+		while( run.length() >= 5U ) // (single zero fields are not elided)
 		{
 			std::string::size_type pos = s.find( run ) ;
 			if( pos != std::string::npos )
 			{
-				std::string::size_type r = 2U ;
-				if( pos == 0U ) r++ ;
-				if( (pos + run.length()) == s.length() ) r++ ;
+				std::string::size_type r = 2U ; // ":1:0:0:2:" -> ":1::2:"
+				if( pos == 0U ) r++ ; // ":0:0:1:2:" -> ":::1:2:"
+				if( (pos + run.length()) == s.length() ) r++ ; // ":1:0:0:" -> ":1:::", ":0:0:0:" -> "::::"
 				s.replace( pos , run.length() , std::string("::::").substr(0U,r) ) ;
 				break ;
 			}
 			run.erase( 0U , 2U ) ;
 		}
+		// eg. ":1:2::5:6:dead:beef:"
+		G_ASSERT( s.length() > 2U ) ;
 		s.erase( 0U , 1U ) ;
 		s.erase( s.length()-1U , 1U ) ;
+		// eg. "1:2::5:6:dead:beef"
 	}
 	else
 	{

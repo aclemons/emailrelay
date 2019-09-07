@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,15 +40,9 @@ class GGui::DialogHandle
 {
 public:
 	HWND h ;
-	DialogHandle(HWND h_) : h(h_) {}
-	bool operator==( const DialogHandle & rhs ) const
-		{ return h == rhs.h ; }
+	explicit DialogHandle(HWND h_) ;
+	bool operator==( const DialogHandle & rhs ) const ;
 } ;
-
-namespace GGui
-{
-	typedef std::list<DialogHandle> DialogList ;
-}
 
 /// \class GGui::Dialog
 /// A dialog box class for modal and modeless operation.
@@ -179,6 +173,9 @@ protected:
 		///< necessary.
 
 private:
+	typedef std::list<DialogHandle> DialogList ;
+	Dialog( const Dialog &other ) g__eq_delete ;
+	void operator=( const Dialog &other ) g__eq_delete ;
 	BOOL dlgProc( UINT message , WPARAM wparam , LPARAM lparam ) ;
 	void privateInit( HWND hwnd ) ;
 	void privateEnd( int n ) ;
@@ -197,11 +194,9 @@ private:
 	bool runModelessCore( const char * , bool ) ;
 	bool runModelessCore( const wchar_t * , bool ) ;
 	bool runModelessEnd( HWND , bool ) ;
-	Dialog( const Dialog &other ) ; // not implemented
-	void operator=( const Dialog &other ) ; // not implemented
 
 private:
-	enum { Magic = 4567 } ;
+	G_CONSTANT( int , Magic , 4567 ) ;
 	std::string m_name ;
 	std::string m_title ;
 	bool m_modal ;
@@ -212,5 +207,17 @@ private:
 	SubClassMap m_map ;
 	static DialogList m_list ;
 } ;
+
+inline
+GGui::DialogHandle::DialogHandle( HWND h_ ) :
+	h(h_)
+{
+}
+
+inline
+bool GGui::DialogHandle::operator==( const DialogHandle & rhs ) const
+{
+	return h == rhs.h ;
+}
 
 #endif

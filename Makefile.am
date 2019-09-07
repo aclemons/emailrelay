@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 #
 # Additional pseudo-targets for packaging:
 #	* rpm - builds an rpm package using rpmbuild
-#	* deb - converts the rpm to a deb package using alien.
+#	* deb - builds a deb package using debhelper
 #
 # When running "make distcheck" consider doing this to avoid
 # a lengthy testing stage:
@@ -53,11 +53,11 @@ uninstall-local:
 	-for try in 1 2 3 4 ; do echo "$(e_pamdir)" "$(e_initdir)" "$(e_sysconfdir)" "$(e_examplesdir)" "$(e_libexecdir)" "$(e_spooldir)" "$(e_docdir)" "$(pkgdatadir)" | tr ' ' '\n' | grep "emailrelay$" | while read d ; do rmdir "$(DESTDIR)/$$d" 2>/dev/null ; done ; done
 
 RPM_ROOT ?= ${HOME}/rpmbuild
-#RPM_ARCH ?= $(shell arch)
-RPM_ARCH ?= x86_64
-RPM=$(RPM_ROOT)/RPMS/$(RPM_ARCH)/emailrelay-$(VERSION)-1.$(RPM_ARCH).rpm
-DEB=emailrelay_$(VERSION)-1_$(RPM_ARCH).deb
+#ARCH ?= $(shell arch)
+ARCH ?= x86_64
+RPM=$(RPM_ROOT)/RPMS/$(ARCH)/emailrelay-$(VERSION)-1.$(ARCH).rpm
 TAR=emailrelay-$(VERSION).tar.gz
+DEB=emailrelay_$(VERSION)_$(ARCH).deb
 
 .PHONY: rpm
 rpm: $(RPM)
@@ -75,14 +75,17 @@ $(RPM): dist
 .PHONY: deb
 deb: $(DEB)
 
-$(DEB): $(RPM)
+$(DEB): dist
 	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$$$ || true
-	alien --to-deb --generate --single --keep-version $(RPM)
-	sed -i 's/^Section:.*/Section: mail/' emailrelay-$(VERSION)/debian/control
-	sed -i 's/^Maintainer:.*/Maintainer: Graeme Walker <graeme_walker@users.sourceforge.net>/' emailrelay-$(VERSION)/debian/control
-	chmod +x $(top_srcdir)/debian/pre* $(top_srcdir)/debian/post*
-	cp $(top_srcdir)/debian/* emailrelay-$(VERSION)/debian/
-	sed -i 's:dh_installchangelogs:dh_installchangelogs ; cp etc/init.d/emailrelay debian/emailrelay.init ; dh_installinit:' emailrelay-$(VERSION)/debian/rules
-	sed -i 's:dh_installdeb:dh_installdeb ; echo /etc/emailrelay.conf > debian/emailrelay/DEBIAN/conffiles:' emailrelay-$(VERSION)/debian/rules
-	cd emailrelay-$(VERSION) && debian/rules binary
+	tar xzf $(TAR)
+	cd emailrelay-$(VERSION) && fakeroot debian/rules binary
+	mkdir emailrelay-$(VERSION)/debian/source
+
+.PHONY: deb-src
+deb-src: dist
+	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$$$ || true
+	tar xzf $(TAR)
+	mkdir emailrelay-$(VERSION)/debian/source
+	echo 1.0 > emailrelay-$(VERSION)/debian/source/format
+	dpkg-source --build emailrelay-$(VERSION)
 

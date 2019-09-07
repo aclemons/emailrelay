@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,29 +48,38 @@ public:
 	G_EXCEPTION( InvalidId , "invalid process-id string" ) ;
 
 	class IdImp ;
+	class UmaskImp ;
+
 	class Id /// Process-id class.
 	{
-		public: Id() ;
-		public: explicit Id( std::istream & ) ;
-		public: Id( SignalSafe , const char * pid_file_path ) ; // (ctor for signal-handler)
-		public: std::string str() const ;
-		public: bool operator==( const Id & ) const ;
-		private: pid_t m_pid ;
+	public:
+		Id() ;
+		explicit Id( std::istream & ) ;
+		Id( SignalSafe , const char * pid_file_path ) ; // (ctor for signal-handler)
+		std::string str() const ;
+		bool operator==( const Id & ) const ;
+
+	private:
 		friend class NewProcess ;
 		friend class Process ;
+		pid_t m_pid ;
 	} ;
+
 	class Umask /// Used to temporarily modify the process umask.
 	{
-		public: enum Mode { Readable , Tighter , Tightest , GroupOpen } ;
-		public: explicit Umask( Mode ) ;
-		public: ~Umask() ;
-		public: static void set( Mode ) ;
-		public: static void tighten() ; // no "other" access, user and group unchanged
-		private: Umask( const Umask & ) ; // not implemented
-		private: void operator=( const Umask & ) ; // not implemented
-		private: class UmaskImp ;
-		private: UmaskImp * m_imp ;
+	public:
+		g__enum(Mode) { Readable , Tighter , Tightest , GroupOpen } ; g__enum_end(Mode)
+		explicit Umask( Mode ) ;
+		~Umask() ;
+		static void set( Mode ) ;
+		static void tighten() ; // no "other" access, user and group unchanged
+
+	private:
+		Umask( const Umask & ) g__eq_delete ;
+		void operator=( const Umask & ) g__eq_delete ;
+		unique_ptr<UmaskImp> m_imp ;
 	} ;
+
 	class NoThrow /// An overload discriminator for Process.
 		{} ;
 
@@ -150,7 +159,7 @@ public:
 		///< the empty string if unknown.
 
 private:
-	Process() ;
+	Process() g__eq_delete ;
 } ;
 
 namespace G

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #include "gbatchfile.h"
 #include "gfile.h"
 #include "goptionparser.h"
-#include "gdebug.h"
+#include "glog.h"
 
 ServerConfiguration::ServerConfiguration()
 {
@@ -181,6 +181,10 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages , c
 		if( pages.booleanValue("smtp-client-tls",true) )
 		{
 			out["client-tls"] ;
+		}
+		if( pages.booleanValue("smtp-client-tls-connection",true) )
+		{
+			out["client-tls-connection"] ;
 		}
 		if( pages.booleanValue("smtp-client-auth",true) )
 		{

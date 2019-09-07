@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ QString Legal::text()
 		"<p>MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</p>"
 		"<p>GNU General Public License for more details.</p>"
 		"<p></p>"
-		"<p>Copyright (C) 2001-2018 Graeme Walker</p>"
+		"<p>Copyright (C) 2001-2019 Graeme Walker</p>"
 		"</center>" ) ;
 }
 

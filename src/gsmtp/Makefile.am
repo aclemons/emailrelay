@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -61,8 +61,6 @@ libgsmtp_a_SOURCES = \
 	$(ADMIN_SOURCES) \
 	$(EXEC_SOURCES) \
 	$(OS_SOURCES) \
-	gclientprotocol.cpp \
-	gclientprotocol.h \
 	gfactoryparser.cpp \
 	gfactoryparser.h \
 	gfilestore.cpp \
@@ -86,13 +84,14 @@ libgsmtp_a_SOURCES = \
 	gprotocolmessage.h \
 	gprotocolmessagestore.cpp \
 	gprotocolmessagestore.h \
-	gserverprotocol.cpp \
-	gserverprotocol.h \
 	gsmtpclient.cpp \
 	gsmtpclient.h \
-	gsmtp.h \
+	gsmtpclientprotocol.cpp \
+	gsmtpclientprotocol.h \
 	gsmtpserver.cpp \
 	gsmtpserver.h \
+	gsmtpserverprotocol.cpp \
+	gsmtpserverprotocol.h \
 	gstoredfile.cpp \
 	gstoredfile.h \
 	gstoredmessage.cpp \

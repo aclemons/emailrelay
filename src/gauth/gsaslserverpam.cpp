@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 #include "gsaslserverpam.h"
 #include "gexception.h"
 #include "gstr.h"
-#include "gdebug.h"
+#include "glog.h"
 
 namespace GAuth
 {
@@ -37,7 +37,7 @@ namespace GAuth
 class GAuth::SaslServerPamImp
 {
 public:
-	SaslServerPamImp( bool valid , bool allow_apop ) ;
+	SaslServerPamImp( bool valid , const std::string & config , bool allow_apop ) ;
 	virtual ~SaslServerPamImp() ;
 	bool active() const ;
 	bool init( const std::string & mechanism ) ;
@@ -137,7 +137,7 @@ void GAuth::PamImp::delay( unsigned int )
 
 // ==
 
-GAuth::SaslServerPamImp::SaslServerPamImp( bool active , bool allow_apop ) :
+GAuth::SaslServerPamImp::SaslServerPamImp( bool active , const std::string & /*config*/ , bool allow_apop ) :
 	m_active(active) ,
 	m_allow_apop(allow_apop)
 {
@@ -178,7 +178,7 @@ std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool 
 	{
 		m_pam->apply( pwd ) ;
 	}
-	catch( G::PamError & e )
+	catch( G::Pam::Error & e )
 	{
 		G_WARNING( "GAuth::SaslServer::apply: " << e.what() ) ;
 		m_pam.reset() ;
@@ -195,8 +195,8 @@ std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool 
 
 // ==
 
-GAuth::SaslServerPam::SaslServerPam( const SaslServerSecrets & secrets , bool allow_apop ) :
-	m_imp(new SaslServerPamImp(secrets.valid(),allow_apop))
+GAuth::SaslServerPam::SaslServerPam( const SaslServerSecrets & secrets , const std::string & config , bool allow_apop ) :
+	m_imp(new SaslServerPamImp(secrets.valid(),config,allow_apop))
 {
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,10 +19,10 @@
 //
 
 #include "gdef.h"
-#include "glimits.h"
 #include "gfile.h"
 #include "gprocess.h"
-#include "gdebug.h"
+#include "glog.h"
+#include "gassert.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -34,11 +34,11 @@ namespace
 {
 	G::EpochTime mtime( struct stat & statbuf )
 	{
-#if GCONFIG_HAVE_STATBUF_NSEC
+		#if GCONFIG_HAVE_STATBUF_NSEC
 		return G::EpochTime( statbuf.st_mtime , statbuf.st_mtim.tv_nsec/1000U ) ;
-#else
+		#else
 		return G::EpochTime( statbuf.st_mtime ) ;
-#endif
+		#endif
 	}
 }
 
@@ -57,7 +57,7 @@ bool G::File::exists( const char * path , bool & enoent , bool & eaccess )
 	}
 	else
 	{
-		int error = G::Process::errno_() ;
+		int error = Process::errno_() ;
 		enoent = error == ENOENT || error == ENOTDIR ;
 		eaccess = error == EACCES ;
 		return false ;
@@ -174,23 +174,41 @@ bool G::File::link( const Path & target , const Path & new_link , const NoThrow 
 int G::File::link( const char * target , const char * new_link )
 {
 	int rc = ::symlink( target , new_link ) ;
-	int error = G::Process::errno_() ;
+	int error = Process::errno_() ;
 	return rc == 0 ? 0 : (error?error:EINVAL) ;
+}
+
+G::Path G::File::readlink( const Path & link )
+{
+	Path result = readlink( link , NoThrow() ) ;
+	if( result == Path() )
+		throw CannotReadLink( link.str() ) ;
+	return result ;
+}
+
+G::Path G::File::readlink( const Path & link , const NoThrow & )
+{
+	Path result ;
+	struct stat statbuf ;
+	int rc = ::lstat( link.str().c_str() , &statbuf ) ;
+	if( rc == 0 )
+	{
+		size_t buffer_size = statbuf.st_size ? (statbuf.st_size+1U) : 1024U ;
+		std::vector<char> buffer( buffer_size , '\0' ) ;
+		ssize_t rc = ::readlink( link.str().c_str() , &buffer[0] , buffer.size() ) ;
+		if( rc > 0 && static_cast<size_t>(rc) < buffer.size() ) // filesystem race can cause trucation -- treat as an error
+		{
+			G_ASSERT( buffer.at(static_cast<size_t>(rc-1)) != '\0' ) ; // readlink does not null-terminate
+			result = Path( std::string( &buffer[0] , static_cast<size_t>(rc) ) ) ;
+		}
+	}
+	return result ;
 }
 
 bool G::File::linked( const Path & target , const Path & new_link )
 {
 	// see if already linked correctly - errors and overflows are not fatal
-	std::vector<char> buffer( limits::path , '\0' ) ;
-	ssize_t rc = ::readlink( new_link.str().c_str() , &buffer[0] , buffer.size() ) ;
-	size_t n = rc < 0 ? size_t(0U) : static_cast<size_t>(rc) ;
-	if( rc > 0 && n != buffer.size() )
-	{
-		std::string old_target( &buffer[0] , n ) ;
-		if( target.str() == old_target )
-			return true ;
-	}
-	return false ;
+	return readlink(new_link,NoThrow()) == target ;
 }
 
 /// \file gfile_unix.cpp

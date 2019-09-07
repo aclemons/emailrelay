@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,10 +21,8 @@
 #include "gdef.h"
 #include "gsocket.h"
 #include "gprocess.h"
-#include "gdebug.h"
 #include "gstr.h"
 #include "gcleanup.h"
-#include "gassert.h"
 #include "glog.h"
 #include <errno.h>
 #include <sys/types.h>
@@ -42,7 +40,7 @@ bool GNet::Socket::create( int domain , int type , int protocol )
 	return true ;
 }
 
-bool GNet::Socket::prepare( bool accepted )
+bool GNet::Socket::prepare( bool /*accepted*/ )
 {
 	static bool first = true ;
 	if( first )
@@ -71,7 +69,7 @@ bool GNet::Socket::error( int rc )
 
 void GNet::Socket::saveReason()
 {
-	m_reason = errno ;
+	m_reason = G::Process::errno_() ;
 	m_reason_string = reasonString( m_reason ) ;
 }
 
@@ -103,6 +101,11 @@ bool GNet::Socket::eInProgress()
 bool GNet::Socket::eMsgSize()
 {
 	return m_reason == EMSGSIZE ;
+}
+
+bool GNet::Socket::eTooMany()
+{
+	return m_reason == EMFILE ;
 }
 
 bool GNet::Socket::canBindHint( const Address & address )

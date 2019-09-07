@@ -1,0 +1,3 @@
+# change this to 1 to enable the emailrelay system-v init script
+# and run 'service emailrelay start' when configured
+EMAILRELAY_ENABLED=0

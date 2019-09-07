@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ namespace GNet
 /// socksFarHost()); after the "@" is the host/service pair for the
 /// socks server itself, which we resolve and connect to (see host()).
 ///
-/// \see GNet::ClientPtr
+/// \see GNet::Client
 ///
 class GNet::Location
 {

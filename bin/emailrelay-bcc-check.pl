@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,20 +18,20 @@
 #
 # emailrelay-bcc-check.pl
 #
-# An example emailrelay filter script that rejects messages
-# that have a non-empty "Bcc:" recipient list unless the "Bcc:"
-# recipient list contains a single addressee that matches
-# envelope recipient.
+# An example E-MailRelay "--filter" script that rejects e-mail messages that
+# have a non-empty "Bcc:" recipient list unless the "Bcc:" recipient list
+# contains a single addressee that matches the envelope recipient. This has
+# the effect of checking that a submitting user agent is behaving correctly
+# as per RFC-5322 3.6.3.
 #
-# Bcc handling is generally only a concern for e-mail user agent
-# programs and not relays and proxies. User agents should
-# normally submit a message separately for each Bcc recipient
-# with either no "Bcc:" field or with the "Bcc:" field
-# containing that one recipient (see RFC-5322).
+# Bcc handling is generally only a concern for e-mail user agent programs
+# and not relays and proxies. User agents should normally submit a message
+# separately for each Bcc recipient with either no "Bcc:" field or with the
+# "Bcc:" field containing that one recipient.
 #
-# Note that correct parsing of content files is beyond the
-# scope of a simple example script like this, and incorrect
-# Bcc handling can have a serious privacy implications.
+# Note that correct parsing of content files is beyond the scope of a simple
+# example script like this, and incorrect Bcc handling can have a serious
+# privacy implications.
 #
 
 use strict ;
@@ -87,7 +87,7 @@ sub read_headers
 		last if ( $line eq "" ) ;
 		my ( $a , $b , $c , $d ) = ( $line =~ m/^(\S*):\s*(.*)|^(\s)(.*)/ ) ;
 		if( $a ) { $h{$a} = $b ; $k = $a }
-		if( $k && $d ) { $h{$k} .= "$c$d" }
+		if( $k && $d ) { $h{$k} .= "$c$d" } # folding
 	}
 	return %h ;
 }

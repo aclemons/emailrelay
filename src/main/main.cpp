@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gstr.h"
 #include "garg.h"
 #include "run.h"
@@ -68,11 +67,13 @@ int main( int argc , char * argv [] )
 	{
 		G::Arg arg( argc , argv ) ;
 		Main::App app ;
-		Main::Run run( app , arg , Main::Options::spec(false) ) ;
+		Main::Run run( app , arg , Main::Options::spec(false) , false ) ;
 		run.configure() ;
 		if( run.runnable() )
+		{
 			run.run() ;
-		ok = true ;
+			ok = true ;
+		}
 	}
 	catch( std::exception & e )
 	{

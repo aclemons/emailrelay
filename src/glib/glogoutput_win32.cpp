@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,15 +20,9 @@
 
 #include "gdef.h"
 #include "glogoutput.h"
-#include "glimits.h"
 #include "genvironment.h"
 #include <time.h> // localtime_s
-
-static bool simple( const std::string & dir )
-{
-	const char * map = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-\\.: " ;
-	return std::string::npos == dir.find_first_not_of( map ) ;
-}
+#include <fstream>
 
 void G::LogOutput::cleanup()
 {
@@ -44,43 +38,34 @@ void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity
 
 	// debugger
 	//
-	static bool debugger = ! G::Environment::get( "GLOGOUTPUT_DEBUGGER" , std::string() ).empty() ;
+	static bool debugger = ! Environment::get( "GLOGOUTPUT_DEBUGGER" , std::string() ).empty() ;
 	if( debugger )
 	{
 		::OutputDebugStringA( message.c_str() ) ;
 		::OutputDebugStringA( "\r\n" ) ;
 	}
 
-	// file
-	//
-	static std::string dir = G::Environment::get( "GLOGOUTPUT_DIR" , std::string() ) ;
-	if( !dir.empty() && simple(dir) )
-	{
-		static std::ofstream file( (dir+"\\log.txt").c_str() ) ;
-		file << message << std::endl ;
-	}
-
 	// event log
 	//
-	if( m_syslog && severity != Log::s_Debug && m_handle != 0 )
+	if( m_syslog && severity != Log::Severity::s_Debug && m_handle != 0 )
 	{
 		// (assume suitable string resources of 1001..1003)
 
 		DWORD id = 0x400003E9L ;
 		WORD type = EVENTLOG_INFORMATION_TYPE ;
-		if( severity == Log::s_Warning )
+		if( severity == Log::Severity::s_Warning )
 		{
 			id = 0x800003EAL ;
 			type = EVENTLOG_WARNING_TYPE ;
 		}
-		else if( severity == Log::s_Error || severity == Log::s_Assertion )
+		else if( severity == Log::Severity::s_Error || severity == Log::Severity::s_Assertion )
 		{
 			id = 0xC00003EBL ;
 			type = EVENTLOG_ERROR_TYPE ;
 		}
 
 		const char * p[] = { message.c_str() , NULL } ;
-		BOOL rc = ::ReportEventA( m_handle, type, 0, id, NULL, 1, 0, p, NULL ) ; G_IGNORE_VARIABLE(rc) ;
+		BOOL rc = ::ReportEventA( m_handle, type, 0, id, NULL, 1, 0, p, NULL ) ; G_IGNORE_VARIABLE(BOOL,rc) ;
 	}
 }
 
@@ -88,19 +73,20 @@ namespace
 {
 	std::string thisExe()
 	{
-		HINSTANCE hinstance = 0 ;
-		std::vector<char> buffer( G::limits::path , '\0' ) ;
-		DWORD size = static_cast<DWORD>(buffer.size()) ;
-		DWORD rc = ::GetModuleFileNameA( hinstance , &buffer[0] , size-1U ) ;
-		if( rc != 0UL && (rc+1U) != size )
+		// same code is in G::Process:exe()...
+		std::vector<char> buffer ;
+		size_t sizes[] = { 80U , 1024U , 32768U , 0U } ; // documented limit of 32k
+		for( size_t * size_p = sizes ; *size_p ; ++size_p )
 		{
-			buffer[size-1U] = '\0' ;
-			return std::string(&buffer[0]) ;
+			buffer.resize( *size_p+1U , '\0' ) ;
+			DWORD size = static_cast<DWORD>( buffer.size() ) ;
+			HINSTANCE hinstance = NULL ;
+			DWORD rc = ::GetModuleFileNameA( hinstance , &buffer[0] , size ) ;
+			if( rc == 0 ) break ;
+			if( rc < size )
+				return std::string( &buffer[0] , rc ) ;
 		}
-		else
-		{
-			return std::string() ;
-		}
+		return std::string() ;
 	}
 
 	std::string basename( std::string s )
@@ -120,9 +106,12 @@ void G::LogOutput::init()
 	if( m_syslog )
 	{
 		std::string this_exe = thisExe() ;
-		std::string this_name = basename( this_exe ) ;
-		G::LogOutput::register_( this_exe ) ;
-		m_handle = ::RegisterEventSourceA( NULL , this_name.c_str() ) ;
+		if( !this_exe.empty() )
+		{
+			std::string this_name = basename( this_exe ) ;
+			G::LogOutput::register_( this_exe ) ;
+			m_handle = ::RegisterEventSourceA( NULL , this_name.c_str() ) ;
+		}
 	}
 }
 
@@ -156,6 +145,6 @@ void G::LogOutput::register_( const std::string & exe_path )
 void G::LogOutput::getLocalTime( time_t epoch_time , struct std::tm * broken_down_time_p )
 {
 	errno_t rc = localtime_s( broken_down_time_p , &epoch_time ) ;
-	G_IGNORE_VARIABLE( rc ) ; // ignore errors - it's just for logging
+	G_IGNORE_VARIABLE(errno_t,rc) ; // ignore errors - it's just for logging
 }
 /// \file glogoutput_win32.cpp

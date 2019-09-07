@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gdatetime.h"
-#include "gdebug.h"
+#include "glog.h"
 #include <ctime>
 #include <string>
 
@@ -33,7 +33,7 @@ namespace G
 }
 
 /// \class G::Date
-/// A date (dd/mm/yyyy) class.
+/// A day-month-year date class.
 /// \see G::Time, G::DateTime
 ///
 class G::Date
@@ -42,15 +42,11 @@ public:
 	class LocalTime /// An overload discriminator class for Date constructors.
 		{} ;
 
-	enum Weekday
-		{ sunday, monday, tuesday, wednesday, thursday, friday, saturday } ;
+	g__enum(Weekday) { sunday, monday, tuesday, wednesday, thursday, friday, saturday } ; g__enum_end(Weekday)
 
-	enum Month
-		{ january = 1 , february , march , april , may , june , july ,
-		august , september , october , november , december } ;
+	g__enum(Month) { january = 1 , february , march , april , may , june , july , august , september , october , november , december } ; g__enum_end(Month)
 
-	enum Format
-		{ yyyy_mm_dd_slash , yyyy_mm_dd , mm_dd } ;
+	g__enum(Format) { yyyy_mm_dd_slash , yyyy_mm_dd , mm_dd } ; g__enum_end(Format)
 
 	static int yearUpperLimit() ;
 		///< Returns the largest supported year value.
@@ -66,7 +62,7 @@ public:
 		///< Constructor for the current date
 		///< in the local timezone.
 
-	Date( const G::DateTime::BrokenDownTime & tm ) ;
+	explicit Date( const G::DateTime::BrokenDownTime & tm ) ;
 		///< Constructor for the specified date.
 
 	explicit Date( G::EpochTime t ) ;
@@ -80,7 +76,7 @@ public:
 	Date( int year , Month month , int day_of_month ) ;
 		///< Constructor for the specified date.
 
-	std::string string( Format format = yyyy_mm_dd_slash ) const ;
+	std::string string( Format format = Format::yyyy_mm_dd_slash ) const ;
 		///< Returns a string representation of the date.
 
 	Weekday weekday() const ;

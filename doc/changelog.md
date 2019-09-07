@@ -1,25 +1,40 @@
 E-MailRelay Change Log
 ======================
 
-2.0 -> 2.1
-----------
+2.0.1 -> 2.1
+------------
 
-* Backwards compatibility features for 1.9/2.0 removed.
-* No intrinsic limit on the length of lines that can be received during [SMTP][] data transfer (but see `--size`).
+* Backwards compatibility features for 1.9-to-2.0 transition removed.
+* Better handling of too-many-connections on Windows.
+* New `--idle-timeout` option for server-side connections.
+* New `--show` option on windows to better control the user interface style.
+* Filter scripts are given the path of the envelope file in argv2.
+* Message files can be editied by `--client-filter` scripts.
+* Better support for CRAM-SHAx authentication.
+* New `--client-auth-config` and `--server-auth-config` options.
+* The `--pop` option always requires `--pop-auth`.
+* [TLS][] cipher name added to `Received` line as per RFC-8314 4.3.
+* Certificate contents are not logged.
+* Timestamp parts of spool filenames no longer limited to six digits.
+
+2.0 -> 2.0.1
+------------
+
+* Make PLAIN client authentication work against servers with broken 334 responses.
 
 1.9.2 -> 2.0
 ------------
 
 * Improved IPv6 support, with IPv4 and IPv6 used independently at run-time (see `--interface`).
 * Server process is not blocked during `--filter` or `--address-verifier` execution, if multi-threaded.
-* Support for the `mbedTLS` [TLS][] library as an alternative to OpenSSL (`configure --with-mbedtls`).
+* Support for the `mbedTLS` TLS library as an alternative to OpenSSL (`configure --with-mbedtls`).
 * TLS server certificates specified with new `--server-tls-certificate` option, not `--server-tls`.
 * TLS servers enable client certificate verification with `--server-tls-verify`, not `--tls-config`.
 * TLS clients can verify server certificates with `--client-tls-verify` and `--client-tls-verify-name`.
 * The `--tls-config` option works differently (see NEWS file).
 * New `--client-tls-server-name` option for server name identification (SNI).
 * New `--client-tls-required` option to force client connections to use TLS.
-* New `--server-tls-required` option to force remote SMTP clients to use STARTTLS.
+* New `--server-tls-required` option to force remote [SMTP][] clients to use STARTTLS.
 * New `--forward-on-disconnect` option replaces `--poll=0`.
 * The `--anonymous` option now suppresses the `Received` line, whatever the `--domain`.
 * The second field in the secrets file indicates the password encoding, not AUTH mechanism.

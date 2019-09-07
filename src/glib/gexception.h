@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -58,7 +58,13 @@ public:
 	Exception( const std::string & what , const std::string & more ) ;
 		///< Constructor.
 
+	Exception( const char * what , const std::string & more1 , const std::string & more2 ) ;
+		///< Constructor.
+
 	Exception( const std::string & what , const std::string & more1 , const std::string & more2 ) ;
+		///< Constructor.
+
+	Exception( const char * what , const std::string & more1 , const std::string & more2 , const std::string & more3 ) ;
 		///< Constructor.
 
 	Exception( const std::string & what , const std::string & more1 , const std::string & more2 , const std::string & more3 ) ;
@@ -85,8 +91,19 @@ public:
 
 #define G_EXCEPTION_CLASS( class_name , description ) class class_name : public G::Exception { public: class_name() : G::Exception(description) {} explicit class_name(const char *more) : G::Exception(description,more) {} explicit class_name(const std::string &more) : G::Exception(description,more) {} class_name(const std::string &more1,const std::string &more2) : G::Exception(description,more1,more2) {} class_name(const std::string &more1,const std::string &more2,const std::string &more3) : G::Exception(description,more1,more2,more3) {} }
 
+#define G_EXCEPTION_FUNCTION( name , description ) \
+	inline static G::Exception name() { return G::Exception(description) ; } \
+	inline static G::Exception name( const std::string & s ) { return G::Exception(description,s) ; } \
+	inline static G::Exception name( const std::string & s1 , const std::string & s2 ) { return G::Exception(description,s1,s2) ; } \
+	inline static G::Exception name( const std::string & s1 , const std::string & s2 , const std::string & s3 ) { return G::Exception(description,s1,s2,s3) ; }
+
+// as a code-size optimisation G_EXCEPTION can be implemented as inline
+// functions using G_EXCEPTION_FUNCION rather than separate classes
+// with G_EXCEPTION_CLASS -- G_EXCEPTION_CLASS is required when catching
+// specific errors
+//
 #ifndef G_EXCEPTION
-#define G_EXCEPTION( class_name , description ) G_EXCEPTION_CLASS( class_name , description )
+#define G_EXCEPTION( class_name , description ) G_EXCEPTION_FUNCTION( class_name , description )
 #endif
 
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,6 +47,9 @@
 
 namespace GSsl
 {
+	/// \namespace GSsl::MbedTls
+	/// A namespace for implementing the GSsl interface using the mbedtls library.
+	///
 	namespace MbedTls
 	{
 		class Certificate ;
@@ -77,8 +80,8 @@ public:
 	mbedtls_x509_crt * ptr() const ;
 
 private:
-	Certificate( const Certificate & ) ;
-	void operator=( const Certificate & ) ;
+	Certificate( const Certificate & ) g__eq_delete ;
+	void operator=( const Certificate & ) g__eq_delete ;
 
 private:
 	bool m_loaded ;
@@ -97,8 +100,8 @@ public:
 	mbedtls_ctr_drbg_context * ptr() const ;
 
 private:
-	Rng( const Rng & ) ;
-	void operator=( const Rng & ) ;
+	Rng( const Rng & ) g__eq_delete ;
+	void operator=( const Rng & ) g__eq_delete ;
 
 private:
 	mbedtls_ctr_drbg_context x ; // "counter-mode deterministic random byte generator"
@@ -118,8 +121,8 @@ public:
 	mbedtls_pk_context * ptr() const ;
 
 private:
-	Key( const Key & ) ;
-	void operator=( const Key & ) ;
+	Key( const Key & ) g__eq_delete ;
+	void operator=( const Key & ) g__eq_delete ;
 
 private:
 	mbedtls_pk_context x ;
@@ -137,8 +140,8 @@ public:
 	mbedtls_ssl_context * ptr() const ;
 
 private:
-	Context( const Context & ) ;
-	void operator=( const Context & ) ;
+	Context( const Context & ) g__eq_delete ;
+	void operator=( const Context & ) g__eq_delete ;
 
 private:
 	mbedtls_ssl_context x ;
@@ -175,8 +178,8 @@ public:
 	bool empty() const ;
 
 private:
-	SecureFile( const SecureFile & ) ;
-	void operator=( const SecureFile & ) ;
+	SecureFile( const SecureFile & ) g__eq_delete ;
+	void operator=( const SecureFile & ) g__eq_delete ;
 
 private:
 	std::vector<char> m_buffer ;
@@ -212,6 +215,13 @@ public:
 
 	LibraryImp( G::StringArray & , Library::LogFn , bool verbose ) ;
 	virtual ~LibraryImp() ;
+	const Rng & rng() const ;
+	Library::LogFn log() const ;
+	Config config() const ;
+	static std::string credit( const std::string & , const std::string & , const std::string & ) ;
+	static std::string sid() ;
+
+private: // overrides
 	virtual void addProfile( const std::string & profile_name , bool is_server_profile ,
 		const std::string & key_file , const std::string & cert_file , const std::string & ca_file ,
 		const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
@@ -220,16 +230,11 @@ public:
 	virtual const Profile & profile( const std::string & profile_name ) const override ;
 	virtual std::string id() const override ;
 	virtual G::StringArray digesters( bool ) const override ;
-	virtual Digester digester( const std::string & , const std::string & ) const override ;
-	const Rng & rng() const ;
-	Library::LogFn log() const ;
-	Config config() const ;
-	static std::string credit( const std::string & , const std::string & , const std::string & ) ;
-	static std::string sid() ;
+	virtual Digester digester( const std::string & , const std::string & , bool ) const override ;
 
 private:
-	LibraryImp( const LibraryImp & ) ;
-	void operator=( const LibraryImp & ) ;
+	LibraryImp( const LibraryImp & ) g__eq_delete ;
+	void operator=( const LibraryImp & ) g__eq_delete ;
 	static int minVersionFrom( G::StringArray & ) ;
 	static int maxVersionFrom( G::StringArray & ) ;
 
@@ -239,7 +244,6 @@ private:
 	Config m_config ;
 	Map m_profile_map ;
 	Rng m_rng ;
-	bool m_verbose ;
 } ;
 
 /// \class GSsl::MbedTls::ProfileImp
@@ -257,16 +261,18 @@ public:
 		const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
 		const std::string & profile_config ) ;
 	virtual ~ProfileImp() ;
-	virtual ProtocolImpBase * newProtocol( const std::string & , const std::string & ) const override ;
 	const mbedtls_ssl_config * config() const ;
 	mbedtls_x509_crl * crl() const ;
 	void logAt( int level_out , std::string ) const ;
 	const std::string & defaultPeerCertificateName() const ;
 	const std::string & defaultPeerHostName() const ;
 
+private: // overrides
+	virtual unique_ptr<ProtocolImpBase> newProtocol( const std::string & , const std::string & ) const override ;
+
 private:
-	ProfileImp( const ProfileImp & ) ;
-	void operator=( const ProfileImp & ) ;
+	ProfileImp( const ProfileImp & ) g__eq_delete ;
+	void operator=( const ProfileImp & ) g__eq_delete ;
 	static void onDebug( void * , int , const char * , int , const char * ) ;
 	void doDebug( int , const char * , int , const char * ) ;
 
@@ -293,25 +299,26 @@ public:
 	ProtocolImp( const ProfileImp & , const std::string & , const std::string & ) ;
 	virtual ~ProtocolImp() ;
 
-	virtual Result connect( G::ReadWrite & ) override ;
-	virtual Result accept( G::ReadWrite & ) override ;
-	virtual Result read( char * buffer , size_t buffer_size_in , ssize_t & data_size_out ) override ;
-	virtual Result write( const char * buffer , size_t data_size_in , ssize_t & data_size_out ) override ;
-	virtual Result stop() override ;
-	virtual std::string peerCertificate() const override ;
-	virtual std::string peerCertificateChain() const override ;
-	virtual bool verified() const override ;
-
 	static int doSend( void * , const unsigned char * , size_t ) ;
 	static int doRecv( void * , unsigned char * , size_t ) ;
 	static int doRecvTimeout( void * , unsigned char * , size_t , uint32_t ) ;
 	std::string protocol() const ;
-	std::string cipher() const ;
 	const Profile & profile() const ;
 
+private: // overrides
+	virtual Result connect( G::ReadWrite & ) override ;
+	virtual Result accept( G::ReadWrite & ) override ;
+	virtual Result read( char * buffer , size_t buffer_size_in , ssize_t & data_size_out ) override ;
+	virtual Result write( const char * buffer , size_t data_size_in , ssize_t & data_size_out ) override ;
+	virtual Result shutdown() override ;
+	virtual std::string peerCertificate() const override ;
+	virtual std::string peerCertificateChain() const override ;
+	virtual std::string cipher() const override ;
+	virtual bool verified() const override ;
+
 private:
-	ProtocolImp( const ProtocolImp & ) ;
-	void operator=( const ProtocolImp & ) ;
+	ProtocolImp( const ProtocolImp & ) g__eq_delete ;
+	void operator=( const ProtocolImp & ) g__eq_delete ;
 	Result convert( const char * , int , bool more = false ) ;
 	Result handshake() ;
 	std::string getPeerCertificate() ;
@@ -332,8 +339,11 @@ private:
 class GSsl::MbedTls::DigesterImp : public GSsl::DigesterImpBase
 {
 public:
-	DigesterImp( const std::string & , const std::string & ) ;
+	typedef MbedTls::Error Error ;
+	DigesterImp( const std::string & , const std::string & , bool ) ;
 	virtual ~DigesterImp() ;
+
+private: // overrides
 	virtual void add( const std::string & ) override ;
 	virtual std::string value() override ;
 	virtual std::string state() override ;
@@ -342,14 +352,19 @@ public:
 	virtual size_t statesize() const override ;
 
 private:
-	DigesterImp( const DigesterImp & ) ;
-	void operator=( const DigesterImp & ) ;
+	DigesterImp( const DigesterImp & ) g__eq_delete ;
+	void operator=( const DigesterImp & ) g__eq_delete ;
+	static void check_ret( int , const char * ) ;
 
 private:
-	std::string m_hash_type ;
+	g__enum(Type) { Md5 , Sha1 , Sha256 } ; g__enum_end(Type)
+	Type m_hash_type ;
 	mbedtls_md5_context m_md5 ;
 	mbedtls_sha1_context m_sha1 ;
 	mbedtls_sha256_context m_sha256 ;
+	size_t m_block_size ;
+	size_t m_value_size ;
+	size_t m_state_size ;
 } ;
 
 #endif

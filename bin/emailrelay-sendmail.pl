@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,11 +18,11 @@
 #
 # emailrelay-sendmail.pl
 #
-# A sendmail/emailrelay shim. Typically installed as /usr/sbin/sendmail or /usr/lib/sendmail.
+# A sendmail/emailrelay shim. Typically installed as /usr/sbin/sendmail or
+# /usr/lib/sendmail.
 #
 use strict ;
 use Getopt::Std ;
-use FileHandle ;
 
 my $usage = "usage: emailrelay-sendmail [-intUv] [-BbCdFhNOopqRrVX <arg>] [-f <from>]" ;
 my %opt = () ;

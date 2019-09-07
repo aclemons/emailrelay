@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,6 +37,9 @@ namespace GNet
 class GNet::Connection
 {
 public:
+	virtual ~Connection() ;
+		///< Destructor.
+
 	virtual std::pair<bool,Address> localAddress() const = 0 ;
 		///< Returns the connection's local address.
 		///< Pair.first is false if none.
@@ -53,12 +56,6 @@ public:
 	virtual std::string peerCertificate() const = 0 ;
 		///< Returns the peer's TLS certificate. Returns the
 		///< empty string if none.
-
-	virtual ~Connection() ;
-		///< Destructor.
-
-private:
-	void operator=( const Connection & ) ; // not implemented
 } ;
 
 #endif

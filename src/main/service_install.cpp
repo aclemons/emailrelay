@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -156,7 +156,7 @@ std::string service_install( std::string , std::string , std::string , std::stri
 	return std::string() ;
 }
 
-bool service_installed( std::string name )
+bool service_installed( std::string )
 {
 	return false ;
 }

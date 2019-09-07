@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -82,24 +82,24 @@ G_EXCEPTION_CLASS( StateMachine_Error , "invalid state machine transition" ) ;
 /// class Protocol
 /// {
 ///   struct ProtocolError {} ;
-///   enum State { s_Any , s_Same , sFoo , sBar , sEnd } ;
-///   enum Event { eFoo , eBar , eError } ;
+///   enum class State { s_Any , s_Same , sFoo , sBar , sEnd } ;
+///   enum class Event { eFoo , eBar , eError } ;
 ///   typedef StateMachine<Protocol,State,Event> Fsm ;
 ///   Fsm m_fsm ;
 ///   void doFoo( const std::string & , bool & ) {}
 ///   void doBar( const std::string & , bool & ) { delete this ; }
 ///   Event decode( const std::string & ) const ;
 /// public:
-///   Protocol() : m_fsm(sFoo,sBar,s_Same,s_Any)
+///   Protocol() : m_fsm(State::sFoo,State::sBar,State::s_Same,State::s_Any)
 ///   {
-///      m_fsm.addTransition(eFoo,sFoo,sBar,&Protocol::doFoo) ;
-///      m_fsm.addTransition(eBar,sBar,sEnd,&Protocol::doBar) ;
+///      m_fsm.addTransition(Event::eFoo,State::sFoo,sBar,&Protocol::doFoo) ;
+///      m_fsm.addTransition(Event::eBar,State::sBar,sEnd,&Protocol::doBar) ;
 ///   }
 ///   void apply( const std::string & event_string )
 ///   {
 ///      State s = m_fsm.apply( *this , decode(event_string) , event_string ) ;
-///      if( s == sEnd ) return ; // this already deleted by doBar()
-///      if( s == sAny ) throw ProtocolError() ;
+///      if( s == State::sEnd ) return ; // this already deleted by doBar()
+///      if( s == State::sAny ) throw ProtocolError() ;
 ///   }
 /// } ;
 /// \endcode

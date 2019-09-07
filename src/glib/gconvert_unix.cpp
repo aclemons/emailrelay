@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #include "gconvert.h"
 #include "gstr.h"
 #include "glog.h"
-#include "gassert.h"
 #include <vector>
 #include <iconv.h>
 
@@ -42,8 +41,8 @@ public:
 	static ConvertImp & utf16_to_ansi() ;
 
 private:
-	ConvertImp( const ConvertImp & ) ;
-	void operator=( const ConvertImp & ) ;
+	ConvertImp( const ConvertImp & ) g__eq_delete ;
+	void operator=( const ConvertImp & ) g__eq_delete ;
 	void reset() ;
 	static std::wstring to_wstring( const std::vector<char> & ) ;
 	static void from_wstring( std::vector<char> & , const std::wstring & ) ;
@@ -62,7 +61,7 @@ G::ConvertImp::ConvertImp( const std::string & to_code , const std::string & fro
 {
 	m = ::iconv_open( to_code.c_str() , from_code.c_str() ) ;
 	if( m == reinterpret_cast<iconv_t>(-1) )
-		throw G::Convert::Error( "iconv_open failed for " + from_code + " -> " + to_code ) ;
+		throw Convert::Error( "iconv_open failed for " + from_code + " -> " + to_code ) ;
 }
 
 G::ConvertImp::~ConvertImp()
@@ -111,12 +110,12 @@ std::wstring G::ConvertImp::widen( const std::string & s , const std::string & c
 	size_t out_n = out_n_start ;
 
 	// iconv()
-	//G_DEBUG( "G::ConvertImp::widen: in...\n" << G::hexdump<16>(in_p_start,in_p_end) ) ;
+	//G_DEBUG( "G::ConvertImp::widen: in...\n" << hexdump<16>(in_p_start,in_p_end) ) ;
 	size_t rc = call( ::iconv , m , &in_p , &in_n , &out_p , &out_n ) ;
 	const size_t e = static_cast<size_t>(ssize_t(-1)) ;
 	if( rc == e || in_p != in_p_end || out_n > out_n_start )
-		throw G::Convert::Error( "iconv failed" + std::string(context.empty()?"":": ") + context ) ;
-	//G_DEBUG( "G::ConvertImp::widen: out...\n" << G::hexdump<16>(out_p_start,out_p) ) ;
+		throw Convert::Error( "iconv failed" + std::string(context.empty()?"":": ") + context ) ;
+	//G_DEBUG( "G::ConvertImp::widen: out...\n" << hexdump<16>(out_p_start,out_p) ) ;
 
 	out_buffer.resize( out_n_start - out_n ) ;
 	return to_wstring( out_buffer ) ;
@@ -143,11 +142,11 @@ std::string G::ConvertImp::narrow( const std::wstring & s , const std::string & 
 	size_t out_n = out_n_start ;
 
 	// iconv()
-	//G_DEBUG( "G::ConvertImp::narrow: in...\n" << G::hexdump<16>(in_p_start,in_p_end) ) ;
+	//G_DEBUG( "G::ConvertImp::narrow: in...\n" << hexdump<16>(in_p_start,in_p_end) ) ;
 	size_t rc = call( ::iconv , m , &in_p , &in_n , &out_p , &out_n ) ;
 	const size_t e = static_cast<size_t>(ssize_t(-1)) ;
 	if( rc == e || in_p != in_p_end || out_n > out_n_start )
-		throw G::Convert::Error( "iconv failed" + std::string(context.empty()?"":": ") + context ) ;
+		throw Convert::Error( "iconv failed" + std::string(context.empty()?"":": ") + context ) ;
 	//G_DEBUG( "G::ConvertImp::narrow: out...\n" << G::hexdump<16>(out_p_start,out_p) ) ;
 
 	return std::string( &out_buffer[0] , &out_buffer[0] + (out_n_start-out_n) ) ;

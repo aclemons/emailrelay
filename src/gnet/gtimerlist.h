@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,40 +23,54 @@
 
 #include "gdef.h"
 #include "gdatetime.h"
+#include "gtimer.h"
 #include "geventhandler.h"
 #include "gexception.h"
-#include <list>
+#include "gexceptionsink.h"
+#include <utility>
+#include <vector>
 
 namespace GNet
 {
 	class TimerList ;
 	class TimerBase ;
+	class TimerListTest ;
 }
 
 /// \class GNet::TimerList
 /// A singleton which maintains a list of all Timer objects, and interfaces
 /// to the event loop on their behalf.
 ///
-/// Event loops that can do a timed-wait should call TimerList::interval()
-/// to determine how long to wait before the first G::Timer goes off.
-/// If the timed-wait times-out or if the interval was zero then they must
-/// call TimerList::doTimeouts().
+/// Event loops should call TimerList::interval() to determine how long to
+/// wait before the first Timer goes off. If the timed-wait times-out or
+/// if the interval was zero then they must call TimerList::doTimeouts().
 ///
-/// Event loops that cannot do timed waits efficiently (ie. the traditional
-/// Windows message queue) have their setTimeout() method called by this
-/// class and they are expected to call doTimeouts() when the event-loop
-/// timer expires.
+/// There can be a race where this class sees no expired timers in
+/// doTimeouts(), perhaps because the system clock is being stretched.
+/// However, the next interval() or setTimer() time will be very small
+/// and the race will resolve itself naturally.
 ///
-/// In both models there can be a race where this class sees no expired
-/// timers in doTimeouts(), perhaps because the system clock is being
-/// stretched. However, the next interval() or setTimer() time will be
-/// very small and the race will resolve itself naturally.
+/// Every timer has an associated exception handler, typically a
+/// more long-lived object that has the timer as a sub-object.
+/// If the timer callback throws an exception then timer list catches
+/// it and invokes the exception handler -- and if that throws then the
+/// exception escapes the event loop. This is safe even if the exception
+/// handler object is destroyed by the original exception because the
+/// exception handler base-class destructor uses the timer list's disarm()
+/// mechanism. This is the same behaviour as in the EventHandlerList.
 ///
-/// If a timer callback throws an exception then the associated
-/// exception handler is called. This is the same behaviour as in the
-/// EventHandlerList. This is made safe even if the event handler object
-/// is destroyed by the original exception because of the disarm()
-/// mechanism.
+/// Exception handlers are combined with an additional 'source' pointer
+/// in an ExceptionSink tuple. The source pointer can be used to
+/// provide additional information to the exception handler, typically
+/// as a pointer to the event handler (sic) object.
+///
+/// The implementation maintains a pointer to the timer that will
+/// expire soonest so that interval() is fast and O(1) when the set
+/// of timers is stable and most events are non-timer events.
+///
+/// Zero-length timers expire in the same order as they were started,
+/// which allows them to be used as a mechanism for asynchronous
+/// message-passing.
 ///
 class GNet::TimerList
 {
@@ -69,24 +83,33 @@ public:
 		///< Default constructor.
 
 	~TimerList() ;
-		///< Destructor. Any expired timers have their timeouts called.
+		///< Destructor.
 
-	void add( TimerBase & , ExceptionHandler & ) ;
-		///< Adds a timer.
+	void add( TimerBase & , ExceptionSink ) ;
+		///< Adds a timer. Called from the Timer constructor.
 
 	void remove( TimerBase & ) ;
-		///< Removes a timer from the list.
+		///< Removes a timer from the list. Called from the
+		///< Timer destructor.
 
-	void update( TimerBase & ) ;
-		///< Called when a timer changes its value.
+	void updateOnStart( TimerBase & ) ;
+		///< Called by Timer when a timer is started.
 
-	G::EpochTime interval( bool & infinite ) const ;
-		///< Returns the interval to the first timer expiry. The 'infinite'
-		///< value is set to true if there are no timers running.
+	void updateOnCancel( TimerBase & ) ;
+		///< Called by Timer when a timer is cancelled.
+
+	std::pair<G::TimeInterval,bool> interval() const ;
+		///< Returns the interval to the first timer expiry. The second
+		///< part is an 'infinite' flag that is set if there are no
+		///< timers running. In pathalogical cases the interval
+		///< will be capped at the type's maximum value.
 
 	void doTimeouts() ;
 		///< Triggers the timeout callbacks of any expired timers.
-		///< Called by the event loop (GNet::EventLoop).
+		///< Called by the event loop (GNet::EventLoop). Any exception
+		///< thrown out of an expired timer's callback is caught and
+		///< delivered back to the ExceptionSink associated with
+		///< the timer.
 
 	static bool exists() ;
 		///< Returns true if instance() exists.
@@ -105,24 +128,45 @@ public:
 		///< Resets any matching ExceptionHandler pointers.
 
 private:
-	TimerList( const TimerList & ) ;
-	void operator=( const TimerList & ) ;
-	G::EpochTime soonestTime() const ;
-	TimerBase * findSoonest() ;
-	void collectGarbage() ;
-	void setTimeout() ;
-
-private:
 	struct Value /// A value type for the GNet::TimerList.
 	{
-		TimerBase * first ;
-		ExceptionHandler * second ;
-		Value( TimerBase * t , ExceptionHandler *eh ) : first(t) , second(eh) {}
+		TimerBase * m_timer ; // handler for the timeout event
+		ExceptionSink m_es ; // handler for any exception thrown
+		Value() ; // for uclibc++
+		Value( TimerBase * t , ExceptionSink es ) ;
+		bool operator==( const Value & v ) const g__noexcept ;
+		void resetIf( TimerBase * p ) g__noexcept ;
+		void disarmIf( ExceptionHandler * eh ) g__noexcept ;
 	} ;
-	typedef std::list<Value> List ;
+	typedef std::vector<Value> List ;
+	struct Lock /// A raii class to lock and unlock GNet::TimerList.
+	{
+		explicit Lock( TimerList & ) ;
+		~Lock() ;
+		TimerList & m_timer_list ;
+	} ;
+
+private:
+	friend class GNet::TimerListTest ;
+	friend struct Lock ;
+	TimerList( const TimerList & ) g__eq_delete ;
+	void operator=( const TimerList & ) g__eq_delete ;
+	const TimerBase * findSoonest() const ;
+	void lock() ;
+	void unlock() ;
+	void purgeRemoved() ;
+	void mergeAdded() ;
+	static void removeFrom( List & , TimerBase * ) ;
+	static void disarmIn( List & , ExceptionHandler * ) ;
+
+private:
 	static TimerList * m_this ;
-	TimerBase * m_soonest ;
+	mutable const TimerBase * m_soonest ;
+	unsigned int m_adjust ;
+	bool m_locked ;
+	bool m_removed ;
 	List m_list ;
+	List m_list_added ; // temporary list for when add()ed from within doTimeouts()
 } ;
 
 #endif

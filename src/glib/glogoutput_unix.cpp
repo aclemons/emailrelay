@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,19 +27,19 @@ namespace
 {
 	int decode( G::LogOutput::SyslogFacility facility )
 	{
-		if( facility == G::LogOutput::User ) return LOG_USER ;
-		if( facility == G::LogOutput::Daemon ) return LOG_DAEMON ;
-		if( facility == G::LogOutput::Mail ) return LOG_MAIL ;
-		if( facility == G::LogOutput::Cron ) return LOG_CRON ;
+		if( facility == G::LogOutput::SyslogFacility::User ) return LOG_USER ;
+		if( facility == G::LogOutput::SyslogFacility::Daemon ) return LOG_DAEMON ;
+		if( facility == G::LogOutput::SyslogFacility::Mail ) return LOG_MAIL ;
+		if( facility == G::LogOutput::SyslogFacility::Cron ) return LOG_CRON ;
 		// etc...
 		return LOG_USER ;
 	}
 	int decode( G::Log::Severity severity )
 	{
-		if( severity == G::Log::s_Warning ) return LOG_WARNING ;
-		if( severity == G::Log::s_Error ) return LOG_ERR ;
-		if( severity == G::Log::s_LogSummary ) return LOG_INFO ;
-		if( severity == G::Log::s_LogVerbose ) return LOG_INFO ;
+		if( severity == G::Log::Severity::s_Warning ) return LOG_WARNING ;
+		if( severity == G::Log::Severity::s_Error ) return LOG_ERR ;
+		if( severity == G::Log::Severity::s_LogSummary ) return LOG_INFO ;
+		if( severity == G::Log::Severity::s_LogVerbose ) return LOG_INFO ;
 		return LOG_CRIT ;
 	}
 	int mode( G::LogOutput::SyslogFacility facility , G::Log::Severity severity )
@@ -50,12 +50,12 @@ namespace
 
 void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity , const std::string & message )
 {
-	if( severity != G::Log::s_Debug && m_syslog )
+	if( severity != Log::Severity::s_Debug && m_syslog )
 	{
 		::syslog( mode(m_facility,severity) , "%s" , message.c_str() ) ;
 	}
 
-	if( !m_quiet || severity == G::Log::s_Error || severity == G::Log::s_Warning )
+	if( !m_quiet || severity == Log::Severity::s_Error || severity == Log::Severity::s_Warning )
 	{
 		std_err << message << std::endl ;
 	}

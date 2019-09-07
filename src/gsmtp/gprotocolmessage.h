@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,11 +18,10 @@
 /// \file gprotocolmessage.h
 ///
 
-#ifndef G_SMTP_PROTOCOL_MESSAGE_H
-#define G_SMTP_PROTOCOL_MESSAGE_H
+#ifndef G_SMTP_PROTOCOL_MESSAGE__H
+#define G_SMTP_PROTOCOL_MESSAGE__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gslot.h"
 #include "gstrings.h"
 #include "gverifier.h"
@@ -119,9 +118,6 @@ public:
 			///< information from the SMTP AUTH command into individual messages.
 			///< It is the empty string for unauthenticated clients.
 			///< See also GAuth::SaslServer::id().
-
-private:
-	void operator=( const ProtocolMessage & ) ; // not implemented
 } ;
 
 #endif

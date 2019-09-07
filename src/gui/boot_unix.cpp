@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,7 +51,6 @@ bool Boot::install( const G::Path & dir_boot , const std::string & name , const 
 
 bool Boot::uninstall( const G::Path & dir_boot , const std::string & name , const G::Path & , const G::Path & )
 {
-	std::string symlink = "../" + dir_boot.basename() + "/" + name ;
 	std::string linkname = "S50" + name ;
 	bool ok0 = G::File::remove( dir_boot+".."+"rc2.d"+linkname , G::File::NoThrow() ) ;
 	bool ok1 = G::File::remove( dir_boot+".."+"rc3.d"+linkname , G::File::NoThrow() ) ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,22 +19,22 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gprocess.h"
 #include "gnewprocess.h"
 #include "gexecutablecommand.h"
 #include "gexecutablefilter.h"
 #include "gstr.h"
 #include "groot.h"
-#include "gdebug.h"
+#include "glog.h"
+#include "gassert.h"
 
-GSmtp::ExecutableFilter::ExecutableFilter( GNet::ExceptionHandler & eh ,
+GSmtp::ExecutableFilter::ExecutableFilter( GNet::ExceptionSink es ,
 	bool server_side , const std::string & path ) :
 		m_server_side(server_side) ,
 		m_prefix(server_side?"filter":"client filter") ,
 		m_exit(0,server_side) ,
 		m_path(path) ,
-		m_task(*this,eh,"<<filter exec error: __strerror__>>",G::Root::nobody())
+		m_task(*this,es,"<<filter exec error: __strerror__>>",G::Root::nobody())
 {
 }
 
@@ -75,11 +75,17 @@ std::string GSmtp::ExecutableFilter::reason() const
 		return m_reason ;
 }
 
-void GSmtp::ExecutableFilter::start( const std::string & message_file )
+void GSmtp::ExecutableFilter::start( const std::string & location )
 {
 	// run the program
 	G::StringArray args ;
-	args.push_back( G::Path(message_file).str() ) ;
+	G::Path content_path( location ) ;
+	args.push_back( G::Path(content_path).str() ) ;
+	if( content_path.extension() == "content" )
+	{
+		G::Path envelope_path( content_path.withExtension("envelope") ) ;
+		args.push_back( G::Path(envelope_path).str() + (m_server_side?".new":".busy") ) ;
+	}
 	G::ExecutableCommand commandline( m_path.str() , args ) ;
 	G_LOG( "GSmtp::ExecutableFilter::start: " << m_prefix << ": running " << commandline.displayString() ) ;
 	m_task.start( commandline ) ;
@@ -105,7 +111,7 @@ void GSmtp::ExecutableFilter::onTaskDone( int exit_code , const std::string & ou
 	}
 
 	// callback
-	m_done_signal.emit( m_exit.result ) ;
+	m_done_signal.emit( static_cast<int>(m_exit.result) ) ;
 }
 
 std::pair<std::string,std::string> GSmtp::ExecutableFilter::parseOutput( std::string s , const std::string & default_ ) const

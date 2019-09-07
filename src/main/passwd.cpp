@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 //
 // passwd.cpp
 //
-// A utility which encrypts a password so that it can be pasted
-// into the emailrelay secrets file(s) and used for CRAM-MD5
+// A utility which hashes a password so that it can be pasted
+// into the emailrelay secrets file(s) and used for CRAM-xxx
 // authentication.
 //
 // The password should be supplied on the standard input so that
@@ -33,6 +33,7 @@
 #include "ghash.h"
 #include "ggetopt.h"
 #include "gbase64.h"
+#include "gxtext.h"
 #include "gssl.h"
 #include "legal.h"
 #include <iostream>
@@ -46,7 +47,7 @@ namespace imp
 	std::string hash_function ;
 	std::string predigest( const std::string & padded_key )
 	{
-		GSsl::Digester d( GSsl::Library::instance()->digester(hash_function) ) ;
+		GSsl::Digester d( GSsl::Library::instance()->digester(hash_function,std::string(),true) ) ;
 		d.add( padded_key ) ;
 		return d.state().substr( 0U , d.valuesize() ) ;
 	}
@@ -70,13 +71,36 @@ int main( int argc , char * argv [] )
 	try
 	{
 		G::GetOpt opt( arg ,
+
 			"h!help!show usage help!!0!!1" "|"
-			"H!hash!use the named hash function! (MD5)!1!function!1" "|"
+				// Shows help and exits.
+
+			"H!hash!use the named hash function! (eg. MD5)!1!function!1" "|"
+				// Specifies the hash function, such as MD5 or SHA1.
+				// MD5 is the default, and a hash function of NONE does
+				// simple xtext encoding. Other hash function may or may
+				// not be available, depending on the build.
+
 			"p!password!defines the password! on the command-line (beware command-line history)!2!pwd!2" "|"
+				// Specifies the password to be hashed. Beware of leaking
+				// sensitive passwords via command-line history or the
+				// process-table when using this option.
+
+			"b!base64!interpret the password as base64-encoded!!0!!2" "|"
+				// Interpret the input password as base64 encoded.
+
 			"v!verbose!!!0!!0" "|"
-			"d!dotted!use a dotted decimal format! for backwards compatibility!0!!1" "|"
+				// Verbose logging.
+
+			"d!dotted!use a dotted decimal format! for backwards compatibility!0!!2" "|"
+				// Generate a dotted decimal format, for backwards compatibility.
+
 			"t!tls!!!0!!0" "|"
+				// Enable the TLS library even if using a hash function of MD5 or NONE.
+
 			"T!tls-config!!!1!config!0" "|"
+				// Configure the TLS library with the given configuration string.
+
 		) ;
 		if( opt.hasErrors() )
 		{
@@ -107,10 +131,11 @@ int main( int argc , char * argv [] )
 		}
 		bool dotted = opt.contains( "dotted" ) ;
 		bool tls_lib = opt.contains( "tls" ) ;
-		std::string tls_lib_config = opt.value( "tls-config" , "" ) ;
+		std::string tls_lib_config = opt.value( "tls-config" , "mbedtls,ignoreextra" ) ; // prefer mbedtls digesters
 		std::string hash_function = G::Str::upper( opt.value("hash","MD5") ) ;
 
-		bool native = hash_function == "MD5" ;
+		bool xtext = hash_function == "NONE" ;
+		bool native = hash_function == "MD5" || xtext ;
 
 		// get a list of digest functions from the tls library -- but we can
 		// only use ones that have a working state() method
@@ -119,7 +144,7 @@ int main( int argc , char * argv [] )
 		if( !native || tls_lib )
 			list = GSsl::Library::digesters( true ) ;
 
-		if( (!native||tls_lib) && std::find(list.begin(),list.end(),hash_function) == list.end() )
+		if( (!native||tls_lib) && !xtext && std::find(list.begin(),list.end(),hash_function) == list.end() )
 			throw std::runtime_error( "invalid hash function" ) ;
 
 		if( dotted && hash_function != "MD5" )
@@ -136,11 +161,17 @@ int main( int argc , char * argv [] )
 			std::cerr << arg.prefix() << ": invalid password" << std::endl ;
 			return EXIT_FAILURE ;
 		}
+		if( opt.contains("base64") )
+			password = G::Base64::decode( password , /*throw=*/true ) ;
 
 		std::string result ;
 		if( dotted )
 		{
 			result = as_dotted( G::Hash::mask(G::Md5::predigest,G::Md5::digest2,G::Md5::blocksize(),password) ) ;
+		}
+		else if( hash_function == "NONE" )
+		{
+			result = G::Xtext::encode( password ) ;
 		}
 		else if( hash_function == "MD5" && !tls_lib )
 		{

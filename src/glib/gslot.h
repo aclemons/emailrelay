@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,8 @@
 
 #include "gdef.h"
 #include "gexception.h"
-#include "gnoncopyable.h"
+#include <algorithm> // std::swap()
+#include <utility> // std::swap()
 
 namespace G
 {
@@ -122,8 +123,8 @@ public:
 		///< and does "delete this" on zero.
 
 private:
-	SlotImpBase( const SlotImpBase & ) ; // not implemented
-	void operator=( const SlotImpBase & ) ; // not implemented
+	SlotImpBase( const SlotImpBase & ) g__eq_delete ;
+	void operator=( const SlotImpBase & ) g__eq_delete ;
 
 private:
 	unsigned long m_ref_count ;
@@ -135,10 +136,11 @@ private:
 class SignalImp
 {
 public:
-	G_EXCEPTION( AlreadyConnected , "signal already connected to a slot" ) ;
+	G_EXCEPTION_CLASS( AlreadyConnected , "signal already connected to a slot" ) ;
 	static void check( const SlotImpBase * p ) ;
+
 private:
-	SignalImp() ; // not implemented
+	SignalImp() g__eq_delete ;
 } ;
 
 //
@@ -152,6 +154,7 @@ class SlotImp0 : public SlotImpBase
 public:
 	SlotImp0( T & object , void (T::*fn)() ) : m_object(object) , m_fn(fn) {}
 	void callback() { (m_object.*m_fn)() ; }
+
 private:
 	T & m_object ;
 	void (T::*m_fn)() ;
@@ -176,30 +179,37 @@ class Slot0
 private:
 	SlotImpBase * m_imp ;
 	void (*m_callback_fn)( SlotImpBase * ) ;
+
 public:
 	Slot0() : m_imp(0) , m_callback_fn(0) {}
 	Slot0( SlotImpBase * imp , void (*op)(SlotImpBase*) ) : m_imp(imp) , m_callback_fn(op) {}
 	~Slot0() { if(m_imp) m_imp->down() ; }
 	void callback() { if( m_imp ) (*m_callback_fn)( m_imp ) ; }
 	Slot0( const Slot0 & other ) : m_imp(other.m_imp) , m_callback_fn(other.m_callback_fn) { if(m_imp) m_imp->up() ; }
-	void swap( Slot0 & rhs ) { using std::swap ; swap(m_imp,rhs.m_imp) ; swap(m_callback_fn,rhs.m_callback_fn) ; }
-	void operator=( const Slot0 & rhs ) { Slot0 tmp(rhs) ; swap(tmp) ; }
+	void swap( Slot0 & rhs ) g__noexcept { using std::swap ; swap(m_imp,rhs.m_imp) ; swap(m_callback_fn,rhs.m_callback_fn) ; }
+	Slot0 & operator=( const Slot0 & rhs ) { Slot0 tmp(rhs) ; swap(tmp) ; return *this ; }
 	const SlotImpBase * base() const { return m_imp ; }
 } ;
 
 /// \class G::Slot::Signal0
 /// A signal class for zero-parameter callbacks.
 ///
-class Signal0 : public noncopyable
+class Signal0
 {
 private:
 	bool m_emitted ;
 	bool m_once ;
 	Slot0 m_slot ;
+
+private:
+	Signal0( const Signal0 & ) g__eq_delete ;
+	void operator=( const Signal0 & ) g__eq_delete ;
+
 public:
 	explicit Signal0( bool once = false ) : m_emitted(false) , m_once(once) {}
 	void emit() { if(!m_once||!m_emitted) { m_emitted = true ; m_slot.callback() ; } }
 	void connect( Slot0 slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
+	bool connected() const { return m_slot.base() != nullptr ; }
 	void disconnect() { m_slot = Slot0() ; }
 	void reset() { m_emitted = false ; }
 } ;
@@ -222,6 +232,7 @@ class SlotImp1 : public SlotImpBase
 private:
 	T & m_object ;
 	void (T::*m_fn)( P ) ;
+
 public:
 	SlotImp1( T & object , void (T::*fn)(P) ) : m_object(object) , m_fn(fn) {}
 	void callback( P p ) { (m_object.*m_fn)(p) ; }
@@ -247,14 +258,15 @@ class Slot1
 private:
 	SlotImpBase * m_imp ;
 	void (*m_callback_fn)( SlotImpBase * , P ) ;
+
 public:
 	Slot1() : m_imp(0) , m_callback_fn(0) {}
 	Slot1( SlotImpBase * imp , void (*op)(SlotImpBase*,P) ) : m_imp(imp) , m_callback_fn(op) {}
 	~Slot1() { if( m_imp ) m_imp->down() ; }
 	void callback( P p ) { if( m_imp ) (*m_callback_fn)( m_imp , p ) ; }
 	Slot1( const Slot1<P> & other ) : m_imp(other.m_imp) , m_callback_fn(other.m_callback_fn) { if(m_imp) m_imp->up() ; }
-	void swap( Slot1<P> & rhs ) { using std::swap ; swap(m_imp,rhs.m_imp) ; swap(m_callback_fn,rhs.m_callback_fn) ; }
-	void operator=( const Slot1<P> & rhs ) { Slot1 tmp(rhs) ; swap(tmp) ; }
+	void swap( Slot1<P> & rhs ) g__noexcept { using std::swap ; swap(m_imp,rhs.m_imp) ; swap(m_callback_fn,rhs.m_callback_fn) ; }
+	Slot1<P> & operator=( const Slot1<P> & rhs ) { Slot1 tmp(rhs) ; swap(tmp) ; return *this ; }
 	const SlotImpBase * base() const { return m_imp ; }
 } ;
 
@@ -262,16 +274,22 @@ public:
 /// A signal class for one-parameter callbacks.
 ///
 template <typename P>
-class Signal1 : public noncopyable
+class Signal1
 {
 private:
 	bool m_emitted ;
 	bool m_once ;
 	Slot1<P> m_slot ;
+
+private:
+	Signal1( const Signal1 & ) g__eq_delete ;
+	void operator=( const Signal1 & ) g__eq_delete ;
+
 public:
 	explicit Signal1( bool once = false ) : m_emitted(false) , m_once(once) {}
 	void emit( P p ) { if(!m_once||!m_emitted) { m_emitted = true ; m_slot.callback( p ) ; } }
 	void connect( Slot1<P> slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
+	bool connected() const { return m_slot.base() != nullptr ; }
 	void disconnect() { m_slot = Slot1<P>() ; }
 	void reset() { m_emitted = false ; }
 } ;
@@ -294,6 +312,7 @@ class SlotImp2 : public SlotImpBase
 private:
 	T & m_object ;
 	void (T::*m_fn)( P1 , P2 ) ;
+
 public:
 	SlotImp2( T & object , void (T::*fn)(P1,P2) ) : m_object(object) , m_fn(fn) {}
 	void callback( P1 p1 , P2 p2 ) { (m_object.*m_fn)(p1,p2) ; }
@@ -319,14 +338,15 @@ class Slot2
 private:
 	SlotImpBase * m_imp ;
 	void (*m_callback_fn)( SlotImpBase * , P1 , P2 ) ;
+
 public:
 	Slot2() : m_imp(0) , m_callback_fn(0) {}
 	Slot2( SlotImpBase * imp , void (*op)(SlotImpBase*,P1,P2) ) : m_imp(imp) , m_callback_fn(op) {}
 	~Slot2() { if( m_imp ) m_imp->down() ; }
 	void callback( P1 p1 , P2 p2 ) { if( m_imp ) (*m_callback_fn)( m_imp , p1 , p2 ) ; }
 	Slot2( const Slot2<P1,P2> & other ) : m_imp(other.m_imp) , m_callback_fn(other.m_callback_fn) { if(m_imp) m_imp->up() ; }
-	void swap( Slot2<P1,P2> & rhs ) { using std::swap ; swap(m_imp,rhs.m_imp) ; swap(m_callback_fn,rhs.m_callback_fn) ; }
-	void operator=( const Slot2<P1,P2> & rhs ) { Slot2 tmp(rhs) ; swap(tmp) ; }
+	void swap( Slot2<P1,P2> & rhs ) g__noexcept { using std::swap ; swap(m_imp,rhs.m_imp) ; swap(m_callback_fn,rhs.m_callback_fn) ; }
+	Slot2<P1,P2> & operator=( const Slot2<P1,P2> & rhs ) { Slot2 tmp(rhs) ; swap(tmp) ; return *this ; }
 	const SlotImpBase * base() const { return m_imp ; }
 } ;
 
@@ -334,16 +354,22 @@ public:
 /// A signal class for two-parameter callbacks.
 ///
 template <typename P1, typename P2>
-class Signal2 : public noncopyable
+class Signal2
 {
 private:
 	bool m_emitted ;
 	bool m_once ;
 	Slot2<P1,P2> m_slot ;
+
+private:
+	Signal2( const Signal2 & ) g__eq_delete ;
+	void operator=( const Signal2 & ) g__eq_delete ;
+
 public:
 	explicit Signal2( bool once = false ) : m_emitted(false) , m_once(once) {}
 	void emit( P1 p1 , P2 p2 ) { if(!m_once||!m_emitted) { m_emitted = true ; m_slot.callback( p1 , p2 ) ; } }
 	void connect( Slot2<P1,P2> slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
+	bool connected() const { return m_slot.base() != nullptr ; }
 	void disconnect() { m_slot = Slot2<P1,P2>() ; }
 	void reset() { m_emitted = false ; }
 } ;
@@ -366,6 +392,7 @@ class SlotImp3 : public SlotImpBase
 private:
 	T & m_object ;
 	void (T::*m_fn)( P1 , P2 , P3 ) ;
+
 public:
 	SlotImp3( T & object , void (T::*fn)(P1,P2,P3) ) : m_object(object) , m_fn(fn) {}
 	void callback( P1 p1 , P2 p2 , P3 p3 ) { (m_object.*m_fn)(p1,p2,p3) ; }
@@ -391,14 +418,15 @@ class Slot3
 private:
 	SlotImpBase * m_imp ;
 	void (*m_callback_fn)( SlotImpBase * , P1 , P2 , P3 ) ;
+
 public:
 	Slot3() : m_imp(0) , m_callback_fn(0) {}
 	Slot3( SlotImpBase * imp , void (*op)(SlotImpBase*,P1,P2,P3) ) : m_imp(imp) , m_callback_fn(op) {}
 	~Slot3() { if( m_imp ) m_imp->down() ; }
 	void callback( P1 p1 , P2 p2 , P3 p3 ) { if( m_imp ) (*m_callback_fn)( m_imp , p1 , p2 , p3 ) ; }
 	Slot3( const Slot3<P1,P2,P3> & other ) : m_imp(other.m_imp) , m_callback_fn(other.m_callback_fn) { if(m_imp) m_imp->up() ; }
-	void swap( Slot3<P1,P2,P3> & rhs ) { using std::swap ; swap(m_imp,rhs.m_imp) ; swap(m_callback_fn,rhs.m_callback_fn) ; }
-	void operator=( const Slot3<P1,P2,P3> & rhs ) { Slot3 tmp(rhs) ; swap(tmp) ; }
+	void swap( Slot3<P1,P2,P3> & rhs ) g__noexcept { using std::swap ; swap(m_imp,rhs.m_imp) ; swap(m_callback_fn,rhs.m_callback_fn) ; }
+	Slot3<P1,P2,P3> & operator=( const Slot3<P1,P2,P3> & rhs ) { Slot3 tmp(rhs) ; swap(tmp) ; return *this ; }
 	const SlotImpBase * base() const { return m_imp ; }
 } ;
 
@@ -406,16 +434,22 @@ public:
 /// A signal class for three-parameter callbacks.
 ///
 template <typename P1, typename P2, typename P3>
-class Signal3 : public noncopyable
+class Signal3
 {
 private:
 	bool m_emitted ;
 	bool m_once ;
 	Slot3<P1,P2,P3> m_slot ;
+
+private:
+	Signal3( const Signal3 & ) g__eq_delete ;
+	void operator=( const Signal3 & ) g__eq_delete ;
+
 public:
 	explicit Signal3( bool once = false ) : m_emitted(false) , m_once(once) {}
 	void emit( P1 p1 , P2 p2 , P3 p3 ) { if(!m_once||!m_emitted) { m_emitted = true ; m_slot.callback( p1 , p2 , p3 ) ; }}
 	void connect( Slot3<P1,P2,P3> slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
+	bool connected() const { return m_slot.base() != nullptr ; }
 	void disconnect() { m_slot = Slot3<P1,P2,P3>() ; }
 	void reset() { m_emitted = false ; }
 } ;
@@ -438,6 +472,7 @@ class SlotImp4 : public SlotImpBase
 private:
 	T & m_object ;
 	void (T::*m_fn)( P1 , P2 , P3 , P4 ) ;
+
 public:
 	SlotImp4( T & object , void (T::*fn)(P1,P2,P3,P4) ) : m_object(object) , m_fn(fn) {}
 	void callback( P1 p1 , P2 p2 , P3 p3 , P4 p4 ) { (m_object.*m_fn)(p1,p2,p3,p4) ; }
@@ -463,14 +498,15 @@ class Slot4
 private:
 	SlotImpBase * m_imp ;
 	void (*m_callback_fn)( SlotImpBase * , P1 , P2 , P3 , P4 ) ;
+
 public:
 	Slot4() : m_imp(0) , m_callback_fn(0) {}
 	Slot4( SlotImpBase * imp , void (*op)(SlotImpBase*,P1,P2,P3,P4) ) : m_imp(imp) , m_callback_fn(op) {}
 	~Slot4() { if( m_imp ) m_imp->down() ; }
 	void callback( P1 p1 , P2 p2 , P3 p3 , P4 p4 ) { if( m_imp ) (*m_callback_fn)( m_imp , p1 , p2 , p3 , p4 ) ; }
 	Slot4( const Slot4<P1,P2,P3,P4> & other ) : m_imp(other.m_imp) , m_callback_fn(other.m_callback_fn) { if(m_imp) m_imp->up() ; }
-	void swap( Slot4<P1,P2,P3,P4> & rhs ) { using std::swap ; swap(m_imp,rhs.m_imp) ; swap(m_callback_fn,rhs.m_callback_fn) ; }
-	void operator=( const Slot4<P1,P2,P3,P4> & rhs ) { Slot4 tmp(rhs) ; swap(tmp) ; }
+	void swap( Slot4<P1,P2,P3,P4> & rhs ) g__noexcept { using std::swap ; swap(m_imp,rhs.m_imp) ; swap(m_callback_fn,rhs.m_callback_fn) ; }
+	Slot4<P1,P2,P3,P4> & operator=( const Slot4<P1,P2,P3,P4> & rhs ) { Slot4 tmp(rhs) ; swap(tmp) ; return *this ; }
 	const SlotImpBase * base() const { return m_imp ; }
 } ;
 
@@ -478,16 +514,22 @@ public:
 /// A signal class for four-parameter callbacks.
 ///
 template <typename P1, typename P2, typename P3, typename P4>
-class Signal4 : public noncopyable
+class Signal4
 {
 private:
 	bool m_emitted ;
 	bool m_once ;
 	Slot4<P1,P2,P3,P4> m_slot ;
+
+private:
+	Signal4( const Signal4 & ) g__eq_delete ;
+	void operator=( const Signal4 & ) g__eq_delete ;
+
 public:
 	explicit Signal4( bool once = false ) : m_emitted(false) , m_once(once) {}
 	void emit( P1 p1 , P2 p2 , P3 p3 , P4 p4 ) { if(!m_once||!m_emitted) { m_emitted = true ; m_slot.callback( p1 , p2 , p3 , p4 ) ; }}
 	void connect( Slot4<P1,P2,P3,P4> slot ) { SignalImp::check(m_slot.base()) ; m_slot = slot ; }
+	bool connected() const { return m_slot.base() != nullptr ; }
 	void disconnect() { m_slot = Slot4<P1,P2,P3,P4>() ; }
 	void reset() { m_emitted = false ; }
 } ;

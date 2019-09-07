@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include "gpath.h"
 #include "gdatetime.h"
 #include "gsecret.h"
+#include "gexception.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -44,14 +45,17 @@ namespace GAuth
 class GAuth::SecretsFile
 {
 public:
+	G_EXCEPTION( Error , "invalid secrets file" ) ;
+
+	static void check( const std::string & path ) ;
+		///< Checks the given file. Logs warnings and throws an exception
+		///< if there are any fatal errors.
+
 	SecretsFile( const G::Path & path , bool auto_reread , const std::string & debug_name ,
 		const std::string & server_type = std::string() ) ;
 			///< Constructor to read "client" and "<server-type>" records
 			///< from the named file. The server type defaults to "server".
 			///< The filename path is optional; see valid().
-
-	~SecretsFile() ;
-		///< Destructor.
 
 	bool valid() const ;
 		///< Returns true if the file path was supplied in the ctor.
@@ -75,32 +79,47 @@ public:
 		///< Returns true if the given server encoding-type is represented.
 
 private:
-	void process( unsigned int , std::string side , std::string , std::string , std::string ) ;
-	void warning( unsigned int , const std::string & , const std::string & ) ;
-	static std::string canonical( const std::string & encoding_type ) ;
-	static std::string serverKey( std::string , const std::string & ) ;
-	static std::string clientKey( std::string ) ;
-	void read( const G::Path & ) ;
-	void read( std::istream & ) ;
-	void reread() const ;
-	void reread(int) ;
-	static G::EpochTime readFileTime( const G::Path & ) ;
-	static std::string context( unsigned int ) ;
-
-private:
-	struct Value { Value(const std::string &s_,unsigned int n_):s(s_),n(n_) {} std::string s ; unsigned int n ; } ;
+	struct Value
+	{
+		Value(const std::string &s_,unsigned int n_):s(s_),n(n_) {}
+		std::string s ;
+		unsigned int n ;
+	} ;
 	typedef std::map<std::string,Value> Map ;
 	typedef std::set<std::string> Set ;
 	typedef std::pair<unsigned long,std::string> Warning ;
 	typedef std::vector<Warning> Warnings ;
+	struct Contents
+	{
+		Map m_map ;
+		Set m_types ;
+		Warnings m_warnings ;
+	} ;
+
+private:
+	void read( const G::Path & , bool ) ;
+	void reread() const ;
+	void reread( int ) ;
+	static void checkImp( const std::string & path , bool strict , const std::string & server_type ) ;
+	static Contents readContents( const G::Path & , const std::string & , bool ) ;
+	static Contents readContents( std::istream & , const std::string & , bool ) ;
+	static void processLine( Contents & , const std::string & server_type ,
+		unsigned int , const std::string & side , const std::string & , const std::string & , const std::string & , bool ) ;
+	static void showWarnings( const Warnings & warnings , const G::Path & path , const std::string & debug_name = std::string() ) ;
+	static void addWarning( Contents & , unsigned int , const std::string & , const std::string & ) ;
+	static std::string canonical( const std::string & encoding_type ) ;
+	static std::string serverKey( const std::string & , const std::string & ) ;
+	static std::string clientKey( const std::string & ) ;
+	static G::EpochTime readFileTime( const G::Path & ) ;
+	static std::string line( unsigned int ) ;
+
+private:
 	G::Path m_path ;
 	bool m_auto ;
 	std::string m_debug_name ;
 	std::string m_server_type ;
 	bool m_valid ;
-	Map m_map ;
-	Set m_types ;
-	Warnings m_warnings ;
+	Contents m_contents ;
 	G::EpochTime m_file_time ;
 	G::EpochTime m_check_time ;
 } ;

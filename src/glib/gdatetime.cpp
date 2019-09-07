@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,9 @@
 
 #include "gdef.h"
 #include "gdatetime.h"
+#include "genvironment.h"
 #include "gstr.h"
+#include "glog.h"
 #include "gassert.h"
 #include <sstream>
 #include <iomanip>
@@ -30,41 +32,37 @@ namespace
 	const std::time_t minute = 60 ;
 	const std::time_t hour = 60 * minute ;
 	const std::time_t day = 24 * hour ;
+	const unsigned int million = 1000000U ;
 }
 
 G::EpochTime::EpochTime( std::time_t s_ , unsigned long us_ ) :
 	s(s_) ,
 	us(static_cast<unsigned int>(us_))
 {
-	if( us_ >= 1000000UL )
+	if( us_ >= million )
 	{
-		s += static_cast<std::time_t>( us_ / 1000000UL ) ;
-		us = static_cast<unsigned int>( us_ % 1000000UL ) ;
+		us_ -= million ;
+		s_++ ;
+		if( us_ >= million ) // still
+		{
+			s_ += static_cast<std::time_t>( us_ / million ) ;
+			us_ = static_cast<unsigned int>( us_ % million ) ;
+		}
+		s = s_ ;
+		us = static_cast<unsigned int>(us_) ;
 	}
 }
 
-G::EpochTime G::operator+( G::EpochTime lhs , G::EpochTime rhs )
+G::EpochTime G::operator+( EpochTime t , TimeInterval interval )
 {
-	lhs.s += rhs.s ;
-	lhs.us += rhs.us ;
-	if( lhs.us > 1000000UL )
+	t.s += interval.s ;
+	t.us += interval.us ;
+	if( t.us > million ) // carry
 	{
-		lhs.s++ ;
-		lhs.us -= 1000000UL ;
+		t.s++ ;
+		t.us -= million ;
 	}
-	return lhs ;
-}
-
-G::EpochTime G::operator-( G::EpochTime big , G::EpochTime small_ )
-{
-	big.s -= small_.s ;
-	if( small_.us > big.us )
-	{
-		big.s-- ;
-		big.us += 1000000U ;
-	}
-	big.us -= small_.us ;
-	return big ;
+	return t ;
 }
 
 void G::EpochTime::streamOut( std::ostream & stream ) const
@@ -80,51 +78,132 @@ void G::EpochTime::streamOut( std::ostream & stream ) const
 
 // ==
 
-G::EpochTime G::DateTime::epochTime( const BrokenDownTime & bdt_in )
+G::TimeInterval::TimeInterval( const EpochTime & start , const EpochTime & end ) :
+    s(0U) ,
+    us(0U)
 {
-	// get a rough starting point -- mktime() works with localtime,
-	// including daylight saving, but there is no UTC equivalent --
-	// timegm(3) is deprecated in favour of nasty fiddling with the
-	// TZ environment variable
-	//
-	BrokenDownTime bdt( bdt_in ) ;
-	const bool leap_second = bdt.tm_sec == 60 ;
-	if( leap_second ) bdt.tm_sec = 59 ;
-	EpochTime tlocal( std::mktime(&bdt) , 0U ) ; // localtime
+    if( end > start )
+    {
+        EpochTime t = end ;
+		{
+			t.s -= start.s ;
+			if( t.us < start.us ) // borrow
+			{
+				G_ASSERT( t.s != 0 ) ;
+				t.s-- ;
+				t.us += million ;
+			}
+			G_ASSERT( t.us >= start.us ) ;
+			t.us -= start.us ;
+		}
+        G_ASSERT( t.s >= 0 && t.us < million ) ;
+		{
+    		typedef std::make_unsigned<std::time_t>::type utime_t ;
+        	utime_t ts = static_cast<utime_t>( t.s ) ;
 
-	// optimisation
+        	us = t.us ;
+        	s = static_cast<unsigned int>(ts) ; // possibly narrowing utime_t->uint
+        	bool overflow = static_cast<utime_t>(s) != ts ;
+        	if( overflow )
+			{
+            	s = ~0U ;
+				us = million-1U ;
+			}
+		}
+    }
+}
+
+G::TimeInterval G::TimeInterval::limit()
+{
+	return TimeInterval( ~0U , million-1U ) ;
+}
+
+void G::TimeInterval::normalise()
+{
+	if( us >= million )
+	{
+		us -= million ;
+		s++ ;
+	}
+	if( us >= million ) // still
+	{
+		s += ( us / million ) ;
+		us = us % million ;
+	}
+}
+
+void G::TimeInterval::streamOut( std::ostream & stream ) const
+{
+	std::streamsize w = stream.width() ;
+	char c = stream.fill() ;
+	stream
+		<< s << "."
+		<< std::setw(6) << std::setfill('0')
+		<< us
+		<< std::setw(w) << std::setfill(c) ;
+}
+
+// ==
+
+G::EpochTime G::DateTime::epochTime( const BrokenDownTime & bdt , bool optimise )
+{
 	static std::time_t diff = 0 ;
 	static bool diff_set = false ;
-	if( diff_set )
-	{
-		EpochTime t( tlocal.s + diff ) ;
-		if( equivalent( t , bdt_in ) )
-			return leap_second ? (t+1) : t ;
-		diff_set = false ; // optimisation failure eg. change of dst
-	}
+	std::time_t diff_no = 0 ;
+	bool diff_set_no = false ;
+	return epochTime( bdt , optimise?diff_set:diff_set_no , optimise?diff:diff_no ) ;
+}
 
-	// iterate over all possible timezones
-	//
-	const std::time_t dt = minute * 30 ;
-	const std::time_t day_and_a_bit = day + dt ;
-	EpochTime t( tlocal.s - day_and_a_bit ) ;
-	const EpochTime end( tlocal.s + day_and_a_bit ) ;
-	for( diff = -day_and_a_bit ; t <= end ; t.s += dt , diff += dt )
+G::EpochTime G::DateTime::epochTime( const BrokenDownTime & bdt , bool & diff_set , std::time_t & diff )
+{
+	// we are given a UTC brokendown time, but there is no UTC
+	// equivalent of mktime() -- timegm(3) is deprecated in favour
+	// of nasty fiddling with the TZ environment variable
+
+	// use mktime() for a rough starting point
+	BrokenDownTime bdt_simple( bdt ) ;
+	const bool leap_second = bdt.tm_sec == 60 ;
+	if( leap_second ) bdt_simple.tm_sec = 59 ;
+	EpochTime tlocal( std::mktime(&bdt_simple) , 0U ) ; // localtime
+
+	// re-check the difference
+	if( diff_set && !equivalent( EpochTime(tlocal.s+diff) , bdt ) )
+		diff_set = false ; // optimisation failure eg. change of dst
+
+	// find the timezone difference
+	if( !diff_set )
 	{
-		if( equivalent( t , bdt_in ) )
+		// iterate over all possible timezones modifying the epoch time until
+		// its utc broken-down-time (gmtime()) matches the broken-down-time
+		// passed in (to some tolerance)
+		//
+		const std::time_t dt = minute * 15 ; // india 30mins, nepal 45mins
+		const std::time_t day_and_a_bit = day + dt ;
+		std::time_t di = 0 ;
+		EpochTime ti( tlocal.s - day_and_a_bit ) ;
+		const EpochTime end( tlocal.s + day_and_a_bit ) ;
+		for( di = -day_and_a_bit ; ti <= end ; ti.s += dt , di += dt )
 		{
-			diff_set = true ;
-			return leap_second ? (t+1) : t ;
+			if( equivalent( ti , bdt ) )
+			{
+				diff = di ;
+				diff_set = true ;
+				break ;
+			}
 		}
 	}
-	throw Error() ;
+
+	if( !diff_set )
+		throw Error( "unsupported timezone" , G::Environment::get("TZ","") ) ;
+
+	return EpochTime( tlocal.s + diff + (leap_second?1:0) ) ;
 }
 
 G::DateTime::BrokenDownTime G::DateTime::utc( EpochTime epoch_time )
 {
 	static BrokenDownTime zero ;
 	BrokenDownTime result = zero ;
-	G::DateTime::gmtime_imp( &epoch_time.s , &result ) ;
+	DateTime::gmtime_imp( &epoch_time.s , &result ) ;
 	return result ;
 }
 
@@ -132,15 +211,14 @@ G::DateTime::BrokenDownTime G::DateTime::local( EpochTime epoch_time )
 {
 	static BrokenDownTime zero ;
 	BrokenDownTime bdt_local = zero ;
-	G::DateTime::localtime_imp( &epoch_time.s , &bdt_local ) ;
+	DateTime::localtime_imp( &epoch_time.s , &bdt_local ) ;
 	return bdt_local ;
 }
 
-G::DateTime::Offset G::DateTime::offset( EpochTime utc )
+G::DateTime::Offset G::DateTime::offset( EpochTime utc , bool optimise )
 {
-	BrokenDownTime bdt_local = local(utc) ;
-
-	EpochTime local = epochTime(bdt_local) ;
+	BrokenDownTime bdt_local = local( utc ) ;
+	EpochTime local = epochTime( bdt_local , optimise ) ;
 	bool ahead = local.s >= utc.s ; // ie. east-of
 	EpochTime n( ahead ? (local.s-utc.s) : (utc.s-local.s) ) ;
 	return Offset( ahead , static_cast<unsigned int>(n.s) ) ;
@@ -168,7 +246,7 @@ std::string G::DateTime::offsetString( Offset offset )
 
 bool G::DateTime::equivalent( EpochTime t , const BrokenDownTime & bdt_in )
 {
-	BrokenDownTime bdt_test = utc(t) ;
+	BrokenDownTime bdt_test = utc( t ) ;
 	return equivalent( bdt_test , bdt_in ) ;
 }
 

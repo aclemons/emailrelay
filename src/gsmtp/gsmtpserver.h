@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,18 +18,16 @@
 /// \file gsmtpserver.h
 ///
 
-#ifndef G_SMTP_SERVER_H
-#define G_SMTP_SERVER_H
+#ifndef G_SMTP_SERVER__H
+#define G_SMTP_SERVER__H
 
 #include "gdef.h"
-#include "gsmtp.h"
-#include "gnoncopyable.h"
 #include "gmultiserver.h"
 #include "gsmtpclient.h"
 #include "glinebuffer.h"
 #include "gverifier.h"
 #include "gmessagestore.h"
-#include "gserverprotocol.h"
+#include "gsmtpserverprotocol.h"
 #include "gprotocolmessage.h"
 #include "gexception.h"
 #include <string>
@@ -63,25 +61,26 @@ public:
 		unsigned int filter_timeout ;
 		std::string verifier_address ;
 		unsigned int verifier_timeout ;
+		GNet::ServerPeerConfig server_peer_config ;
 		ServerProtocol::Config protocol_config ;
+		std::string sasl_server_config ;
 
 		Config( bool allow_remote , unsigned int port , const AddressList & , const std::string & ident ,
 			bool anonymous , const std::string & filter_address , unsigned int filter_timeout ,
 			const std::string & verifier_adress , unsigned int verifier_timeout ,
-			ServerProtocol::Config protocol_config ) ;
+			GNet::ServerPeerConfig server_peer_config , ServerProtocol::Config protocol_config ,
+			const std::string & sasl_server_config ) ;
 	} ;
 
-	Server( GNet::ExceptionHandler & eh , MessageStore & store , const GAuth::Secrets & client_secrets ,
-		const GAuth::Secrets & server_secrets , Config server_config , std::string forward_to ,
-		GSmtp::Client::Config client_config ) ;
+	Server( GNet::ExceptionSink es , MessageStore & store ,
+		const GAuth::Secrets & client_secrets , const GAuth::Secrets & server_secrets ,
+		Config server_config , std::string forward_to , GSmtp::Client::Config client_config ) ;
 			///< Constructor. Listens on the given port number using
 			///< INET_ANY if 'interfaces' is empty, or on specific
 			///< interfaces otherwise.
 			///<
 			///< If the forward-to address is given then all messages are
 			///< forwarded immediately, using the given client configuration.
-			///<
-			///< The references are kept.
 
 	virtual ~Server() ;
 		///< Destructor.
@@ -92,24 +91,30 @@ public:
 	G::Slot::Signal2<std::string,std::string> & eventSignal() ;
 		///< Returns a signal that indicates that something has happened.
 
-	unique_ptr<ProtocolMessage> newProtocolMessage( ServerPeer & ) ;
+	unique_ptr<ProtocolMessage> newProtocolMessage( GNet::ExceptionSink ) ;
 		///< Called by GSmtp::ServerPeer to construct a ProtocolMessage.
 
+private: // overrides
+	virtual unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo , GNet::MultiServer::ServerInfo ) override ; // Override from GNet::MultiServer.
+
 private:
-	unique_ptr<Filter> newFilter( ServerPeer & ) ;
+	Server( const Server & ) g__eq_delete ;
+	void operator=( const Server & ) g__eq_delete ;
+	unique_ptr<Filter> newFilter( GNet::ExceptionSink ) ;
 	unique_ptr<ProtocolMessage> newProtocolMessageStore( unique_ptr<Filter> ) ;
 	unique_ptr<ProtocolMessage> newProtocolMessageScanner( unique_ptr<ProtocolMessage> ) ;
-	unique_ptr<ProtocolMessage> newProtocolMessageForward( unique_ptr<ProtocolMessage> ) ;
+	unique_ptr<ProtocolMessage> newProtocolMessageForward( GNet::ExceptionSink , unique_ptr<ProtocolMessage> ) ;
 	unique_ptr<ServerProtocol::Text> newProtocolText( bool , const GNet::Address & ) const ;
-	virtual GNet::ServerPeer * newPeer( GNet::Server::PeerInfo , GNet::MultiServer::ServerInfo ) override ; // GNet::MultiServer
 
 private:
 	MessageStore & m_store ;
 	Config m_server_config ;
 	Client::Config m_client_config ;
 	const GAuth::Secrets & m_server_secrets ;
+	std::string m_sasl_server_config ;
 	std::string m_forward_to ;
 	const GAuth::Secrets & m_client_secrets ;
+	std::string m_sasl_client_config ;
 	G::Slot::Signal2<std::string,std::string> m_event_signal ;
 } ;
 
@@ -120,29 +125,24 @@ private:
 class GSmtp::ServerPeer : public GNet::ServerPeer , private ServerProtocol::Sender
 {
 public:
-	ServerPeer( GNet::Server::PeerInfo peer_info , Server & server ,
+	G_EXCEPTION( SendError , "failed to send smtp response" ) ;
+
+	ServerPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo peer_info , Server & server ,
 		const GAuth::Secrets & server_secrets , const Server::Config & server_config ,
 		unique_ptr<ServerProtocol::Text> ptext ) ;
 			///< Constructor.
 
-protected:
-	virtual void onSendComplete() override ;
-		///< Override from GNet::ServerPeer.
-
-	virtual void onDelete( const std::string & reason ) override ;
-		///< Override from GNet::ServerPeer.
-
-	virtual void onData( const char * , size_t ) override ;
-		///< Override from GNet::SocketProtocolSink.
-
-	virtual void onSecure( const std::string & ) override ;
-		///< Override from GNet::SocketProtocolSink.
+private: // overrides
+	virtual void onSendComplete() override ; // Override from GNet::ServerPeer.
+	virtual void onDelete( const std::string & reason ) override ; // Override from GNet::ServerPeer.
+	virtual bool onReceive( const char * , size_t , size_t , size_t , char ) override ; // Override from GNet::ServerPeer.
+	virtual void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
+	virtual void protocolSend( const std::string & line , bool ) override ; // Override from ServerProtocol::Sender.
+	virtual void protocolShutdown() override ; // Override from ServerProtocol::Sender.
 
 private:
-	ServerPeer( const ServerPeer & ) ;
-	void operator=( const ServerPeer & ) ;
-	virtual void protocolSend( const std::string & line , bool ) override ; // override from private base class
-	virtual void protocolShutdown() override ; // override from private base class
+	ServerPeer( const ServerPeer & ) g__eq_delete ;
+	void operator=( const ServerPeer & ) g__eq_delete ;
 
 private:
 	Server & m_server ;

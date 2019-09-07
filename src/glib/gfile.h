@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #include "gexception.h"
 #include "gdatetime.h"
 #include <cstdio> // std::remove()
+#include <fstream>
 
 namespace G
 {
@@ -48,6 +49,7 @@ public:
 	G_EXCEPTION( CannotChmod , "cannot chmod file" ) ;
 	G_EXCEPTION( CannotLink , "cannot create symlink" ) ;
 	G_EXCEPTION( CannotCreate , "cannot create empty file" ) ;
+	G_EXCEPTION( CannotReadLink , "cannot read symlink" ) ;
 	G_EXCEPTION( SizeOverflow , "file size overflow" ) ;
 	G_EXCEPTION( TimeError , "cannot get file modification time" ) ;
 	class NoThrow /// An overload discriminator class for File methods.
@@ -112,23 +114,31 @@ public:
 		///< Symlinks are followed.
 
 	static EpochTime time( const Path & file ) ;
-		///< Returns the file's timestamp.
+		///< Returns the file's timestamp. Throws on error.
 
 	static EpochTime time( const Path & file , const NoThrow & ) ;
 		///< Returns the file's timestamp. Returns EpochTime(0)
 		///< on error.
 
 	static void chmodx( const Path & file ) ;
-		///< Makes the file executable.
+		///< Makes the file executable. Throws on error.
 
 	static bool chmodx( const Path & file , const NoThrow & ) ;
 		///< Makes the file executable.
 
+	static G::Path readlink( const Path & link ) ;
+		///< Reads a symlink. Throws on error.
+
+	static G::Path readlink( const Path & link , const NoThrow & ) ;
+		///< Reads a symlink. Returns the empty path on error.
+
 	static void link( const Path & target , const Path & new_link ) ;
-		///< Creates a symlink.
+		///< Creates a symlink. If the link already exists but is
+		///< not not pointing at the correct target then the link
+		///< is deleted and recreated. Throws on error.
 
 	static bool link( const Path & target , const Path & new_link , const NoThrow & ) ;
-		///< Creates a symlink.
+		///< Creates a symlink. Returns false on error.
 
 	static bool executable( const Path & ) ;
 		///< Returns true if the path is probably executable.
@@ -139,16 +149,43 @@ public:
 	static void create( const Path & ) ;
 		///< Creates an empty file. Throws on error.
 
+	static int compare( const Path & , const Path & , const NoThrow & ) ;
+		///< Compares the contents of the two files. Returns 0, 1 or -1.
+
+	static void open( std::ofstream & , const Path & ) ;
+		///< Calls open() on the given output file stream, with a 'out-binary' output
+		///< openmode (but no 'app' or 'ate'). Uses SH_DENYNO on windows.
+
+	static void open( std::ofstream & , const Path & , std::ios_base::openmode ) ;
+		///< Calls open() on the given output file stream, with 'out-binary'
+		///< added to the given openmode. Uses SH_DENYNO on windows.
+
+	static void open( std::ifstream & , const Path & ) ;
+		///< Calls open() on the given input file stream, with a 'in-binary' input
+		///< openmode. Uses SH_DENYNO on windows.
+
+	static void open( std::ifstream & , const Path & , std::ios_base::openmode ) ;
+		///< Calls open() on the given input file stream, with 'in-binary'
+		///< added to the given openmode. Uses SH_DENYNO on windows.
+
+	static std::filebuf * open( std::filebuf & , const Path & , std::ios_base::openmode ) ;
+		///< Calls open() on the given filebuf, with 'binary'
+		///< added to the given openmode. Uses SH_DENYNO on windows.
+		///< Returns the address of the given filebuf, or nullptr
+		///< on failure.
+
 private:
 	friend class G::DirectoryIteratorImp ;
+	File() g__eq_delete ;
 	static std::string copy( const Path & , const Path & , int ) ;
 	static std::string sizeString( g_uint32_t hi , g_uint32_t lo ) ; // win32
 	static bool exists( const Path & , bool , bool ) ;
 	static bool exists( const char * , bool & , bool & ) ; // o/s-specific
-	static bool rename( const char * from , const char * to , bool & enoent ) ;
+	static bool rename( const std::string & from , const std::string & to , bool & enoent ) ;
 	static bool chmodx( const Path & file , bool ) ;
 	static int link( const char * , const char * ) ;
 	static bool linked( const Path & , const Path & ) ;
+	static bool remove( const std::string & path , bool , bool ) ;
 } ;
 
 #endif

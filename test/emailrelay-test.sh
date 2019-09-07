@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,12 +28,12 @@ perl -e "use Carp; use FileHandle; use Getopt::Std; use Net::Telnet; exit(99);" 
 rc=$?
 if test $rc -ne 99
 then
-	echo `basename $0`: no perl or missing perl modules: for ubuntu try installing libnet-telnet-perl or use cpan to install Net::Telnet >&2
+	echo `basename $0`: no perl or missing perl modules: for debian try installing libnet-telnet-perl or use cpan to install Net::Telnet >&2
 	echo `basename $0`: succeeding trivially >&2
 	exit 0
 fi
 
-# run the test
+# run the tests
 if test -z "$srcdir" ; then srcdir="`cd \`dirname \"$0\"\` && pwd`" ; fi
 perl -I"${srcdir}" "$srcdir/emailrelay-test.pl" "$@"
 rc=$?

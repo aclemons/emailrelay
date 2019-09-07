@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,13 +33,16 @@ HANDLE CreateEventEx( LPSECURITY_ATTRIBUTES sec , LPCTSTR name , DWORD flags , D
 }
 #endif
 
+#ifndef CREATE_EVENT_MANUAL_RESET
+#define CREATE_EVENT_MANUAL_RESET 1
+#endif
+
 class GNet::FutureEventImp : public EventHandler
 {
 public:
-	typedef FutureEvent::Error Error ;
 	typedef FutureEvent::handle_type handle_type ;
 
-	FutureEventImp( FutureEventHandler & handler , ExceptionHandler & eh ) ;
+	FutureEventImp( FutureEventHandler & handler , ExceptionSink es ) ;
 		// Constructor.
 
 	virtual ~FutureEventImp() ;
@@ -51,43 +54,52 @@ public:
 	handle_type handle() ;
 		// Returns the event-object handle.
 
-private:
-	FutureEventImp( const FutureEventImp & ) ;
-	void operator=( const FutureEventImp & ) ;
-	HANDLE dup() ;
+private: // overrides
 	virtual void readEvent() override ; // GNet::EventHandler
 
 private:
+	FutureEventImp( const FutureEventImp & ) g__eq_delete ;
+	void operator=( const FutureEventImp & ) g__eq_delete ;
+	HANDLE dup() ;
+
+private:
+	struct Handle
+	{
+		Handle() : h(0) {}
+		~Handle() { if(h) ::CloseHandle(h) ; }
+		void operator=( HANDLE h_ ) { h = h_ ; }
+		bool operator==( HANDLE h_ ) const { return h == h_ ; }
+		HANDLE h ;
+		private: Handle( const Handle & ) g__eq_delete ;
+		private: void operator=( const Handle & ) g__eq_delete ;
+	} ;
+
+private:
 	FutureEventHandler & m_handler ;
-	ExceptionHandler & m_eh ;
-	HANDLE m_h ;
-	HANDLE m_h2 ;
+	ExceptionSink m_es ;
+	Handle m_h ;
+	Handle m_h2 ;
 } ;
 
-GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , ExceptionHandler & eh ) :
+GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , ExceptionSink es ) :
 	m_handler(handler) ,
-	m_eh(eh) ,
-	m_h(0) ,
-	m_h2(0)
+	m_es(es)
 {
 	// (the event loop requires manual-reset because it re-tests the state of the handles after WFMO has been released)
 	m_h = ::CreateEventEx( NULL , NULL , CREATE_EVENT_MANUAL_RESET , DELETE | SYNCHRONIZE | EVENT_MODIFY_STATE | PROCESS_DUP_HANDLE ) ;
 	if( m_h == 0 )
-		throw Error( "CreateEventEx" ) ;
+		throw FutureEvent::Error( "CreateEventEx" ) ;
 
 	m_h2 = dup() ;
-	G_DEBUG( "GNet::FutureEventImp::ctor: h=" << m_h << " h2=" << m_h2 ) ;
+	G_DEBUG( "GNet::FutureEventImp::ctor: h=" << m_h.h << " h2=" << m_h2.h ) ;
 
-	EventLoop::instance().addRead( Descriptor(INVALID_SOCKET,m_h) , *this , eh ) ;
+	EventLoop::instance().addRead( Descriptor(INVALID_SOCKET,m_h.h) , *this , es ) ;
 }
 
 GNet::FutureEventImp::~FutureEventImp()
 {
 	if( EventLoop::exists() )
-		EventLoop::instance().dropRead( Descriptor(INVALID_SOCKET,m_h) ) ;
-	::CloseHandle( m_h ) ;
-	if( m_h2 )
-		::CloseHandle( m_h2 ) ;
+		EventLoop::instance().dropRead( Descriptor(INVALID_SOCKET,m_h.h) ) ;
 }
 
 HANDLE GNet::FutureEventImp::dup()
@@ -97,21 +109,21 @@ HANDLE GNet::FutureEventImp::dup()
 	// worker thread to both keep the kernel event-object alive
 	HANDLE h = 0 ;
 	BOOL ok = ::DuplicateHandle(
-		::GetCurrentProcess() , m_h ,
+		::GetCurrentProcess() , m_h.h ,
 		::GetCurrentProcess() , &h ,
 		0 , FALSE , DUPLICATE_SAME_ACCESS ) ;
 	if( !ok )
 	{
 		DWORD e = ::GetLastError() ;
-		throw Error( "DuplicateHandle" , G::Str::fromUInt(static_cast<unsigned int>(e)) ) ;
+		throw FutureEvent::Error( "DuplicateHandle" , G::Str::fromUInt(static_cast<unsigned int>(e)) ) ;
 	}
 	return h ;
 }
 
 GNet::FutureEventImp::handle_type GNet::FutureEventImp::handle()
 {
-	HANDLE h2 = m_h2 ;
-	m_h2 = 0 ;
+	HANDLE h2 = 0 ;
+	std::swap( h2 , m_h2.h ) ;
 	return h2 ;
 }
 
@@ -124,14 +136,14 @@ bool GNet::FutureEventImp::send( handle_type handle ) g__noexcept
 
 void GNet::FutureEventImp::readEvent()
 {
-	G_DEBUG( "GNet::FutureEventImp::readEvent: future event: h=" << m_h ) ;
+	G_DEBUG( "GNet::FutureEventImp::readEvent: future event: h=" << m_h.h ) ;
 	m_handler.onFutureEvent() ;
 }
 
 // ==
 
-GNet::FutureEvent::FutureEvent( FutureEventHandler & handler , ExceptionHandler & eh ) :
-	m_imp(new FutureEventImp(handler,eh))
+GNet::FutureEvent::FutureEvent( FutureEventHandler & handler , ExceptionSink es ) :
+	m_imp(new FutureEventImp(handler,es))
 {
 }
 

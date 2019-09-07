@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,19 +36,31 @@ namespace GAuth
 /// Implements the standard challenge-response authentication
 /// mechanism of RFC-2195.
 ///
+/// The response can be built from a simple digest or a hmac.
+/// It comprises the userid, followed by a space, followed by the
+/// printable digest or hmac. This is normally base64 encoded
+/// at higher protocol levels.
+///
+/// A hmac is (roughly) the hash of (1) the single-block shared
+/// key and (2) the hash of (2a) the single-block shared key and
+/// (2b) the challenge. The two intermediate hash states of
+/// stages (1) and (2a) can be stored instead of the the plaintext
+/// key (see GAuth::Secret::masked()).
+///
 class GAuth::Cram
 {
 public:
 	G_EXCEPTION( BadType , "invalid secret type" ) ;
 	G_EXCEPTION( Mismatch , "mismatched hash types" ) ;
-	G_EXCEPTION( NoState , "no implementation for extracting hash function state" ) ;
+	G_EXCEPTION( NoState , "no intermediate-state hash function available" ) ;
+	G_EXCEPTION( InvalidState , "invalid hash function intermediate state" ) ;
 
 	static std::string response( const std::string & hash_type , bool hmac ,
 		const Secret & secret , const std::string & challenge ,
 		const std::string & response_prefix ) ;
 			///< Constructs a response to a challenge comprising the
 			///< response-prefix, space, and digest-or-hmac of
-			///< key-plus-challenge. Returns an empty string on
+			///< secretkey-plus-challenge. Returns an empty string on
 			///< error; does not throw.
 
 	static std::string id( const std::string & response ) ;

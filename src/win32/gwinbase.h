@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ namespace GGui
 }
 
 /// \class GGui::WindowBase
-/// A low-level window class which encapsulates a window handle
+/// A low-level window class that encapsulates a window handle
 /// and provides methods to retrieve basic window attributes.
 /// Knows nothing about window messages.
 /// \see GGui::Cracker, GGui::Window, GGui::Dialog
@@ -46,12 +46,6 @@ public:
 
 	HWND handle() const ;
 		///< Returns the window handle.
-
-	WindowBase & operator=( const WindowBase &other ) ;
-		///< Assignment operator.
-
-	WindowBase( const WindowBase & other ) ;
-		///< Copy constructor.
 
 	Size externalSize() const ;
 		///< Returns the external size of the window.
@@ -72,10 +66,15 @@ protected:
 		///< Sets the window handle.
 
 private:
+	WindowBase( const WindowBase & other ) g__eq_delete ;
+	void operator=( const WindowBase &other ) g__eq_delete ;
+
+private:
 	HWND m_hwnd ;
 } ;
 
-inline HWND GGui::WindowBase::handle() const
+inline
+HWND GGui::WindowBase::handle() const
 {
 	return m_hwnd ;
 }

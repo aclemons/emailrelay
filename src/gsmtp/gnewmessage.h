@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,11 +18,10 @@
 /// \file gnewmessage.h
 ///
 
-#ifndef G_SMTP_NEW_MESSAGE_H
-#define G_SMTP_NEW_MESSAGE_H
+#ifndef G_SMTP_NEW_MESSAGE__H
+#define G_SMTP_NEW_MESSAGE__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 
 namespace GSmtp
 {
@@ -33,7 +32,7 @@ namespace GSmtp
 /// \class GSmtp::NewMessage
 /// An abstract class to allow the creation of a new message in
 /// the message store.
-/// \see GSmtp::MessageStore, GSmtp::MessageStore::newMessage()
+/// \see GSmtp::MessageStore
 ///
 class GSmtp::NewMessage
 {
@@ -65,9 +64,6 @@ public:
 	virtual ~NewMessage() ;
 		///< Destructor. Rolls back any prepare()d storage
 		///< if un-commit()ed.
-
-private:
-	void operator=( const NewMessage & ) ; // not implemented
 } ;
 
 #endif

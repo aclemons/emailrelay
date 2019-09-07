@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,8 @@
 #include "gbatchfile.h"
 #include "garg.h"
 #include "gstr.h"
-#include "gdebug.h"
+#include "glog.h"
+#include "gassert.h"
 #include <stdexcept>
 #include <fstream>
 
@@ -81,7 +82,7 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 		if( !stream ) break ;
 		Str::trim( s , Str::ws() ) ;
 		Str::replaceAll( s , "\t" , " " ) ;
-		s = Str::unique( s ) ;
+		s = Str::unique( s , ' ' ) ;
 		if( relevant(s) )
 		{
 			if( line.empty() )
@@ -130,7 +131,7 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 	}
 
 	// percent characters are doubled up in batch files so un-double them here
-	G::Str::replaceAll( line , "%%" , "%" ) ;
+	Str::replaceAll( line , "%%" , "%" ) ;
 
 	return line ;
 }
@@ -198,7 +199,7 @@ G::StringArray G::BatchFile::split( const std::string & line )
 std::string G::BatchFile::percents( const std::string & s )
 {
 	std::string result( s ) ;
-	G::Str::replaceAll( result , "%" , "%%" ) ;
+	Str::replaceAll( result , "%" , "%%" ) ;
 	return result ;
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ class G::Md5
 {
 public:
 	G_EXCEPTION( Error , "internal md5 error" ) ;
+	G_EXCEPTION_CLASS( InvalidState , "invalid md5 hash state" ) ;
 	typedef size_t big_t ; // To hold at least 32 bits.
 	typedef size_t small_t ; // To hold at least a size_t and no bigger than a big_t.
 	struct digest_state /// Holds the four parts of the md5 state.
@@ -61,6 +62,7 @@ public:
 
 	explicit Md5( const std::string & state ) ;
 		///< Constructor using an intermediate state() string.
+		///< Precondition: state.size() == 20
 
 	std::string state() const ;
 		///< Returns the current intermediate state as a 20
@@ -113,11 +115,12 @@ public:
 		///< of an inner digest add()ed; the inner digest being
 		///< initialised with the first half of the state pair,
 		///< and with the given message add()ed. The result is
-		///< a string of 32 non-printing characters.
+		///< a string of 32 non-printing characters. Throws
+		///< InvalidState if the state-pair string is not valid.
 
 private:
-	Md5( const Md5 & ) ;
-	void operator=( const Md5 & ) ;
+	Md5( const Md5 & ) g__eq_delete ;
+	void operator=( const Md5 & ) g__eq_delete ;
 
 private:
 	digest_state m_d ;

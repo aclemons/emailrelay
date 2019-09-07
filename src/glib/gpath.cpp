@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,11 +21,11 @@
 #include "gdef.h"
 #include "gpath.h"
 #include "gstr.h"
-#include "gdebug.h"
 #include "glog.h"
 #include "gassert.h"
 #include <cstring>
-#include <algorithm>
+#include <algorithm> // std::swap()
+#include <utility> // std::swap()
 
 /// \class G::PathImp
 /// A private implementation class used by G::Path providing a set of
@@ -35,7 +35,6 @@
 class G::PathImp
 {
 public:
-
 	static bool use_posix ;
 	typedef std::string::size_type pos_t ;
 
@@ -222,9 +221,12 @@ public:
 	{
 		return join( a.begin() , a.end() ) ;
 	}
+
+private:
+	PathImp() g__eq_delete ;
 } ;
 
-#ifdef G_WIN32
+#ifdef G_WINDOWS
 bool G::PathImp::use_posix = false ;
 #else
 bool G::PathImp::use_posix = true ;
@@ -234,19 +236,15 @@ bool G::PathImp::use_posix = true ;
 
 void G::Path::setPosixStyle()
 {
-	G::PathImp::use_posix = true ;
+	PathImp::use_posix = true ;
 }
 
 void G::Path::setWindowsStyle()
 {
-	G::PathImp::use_posix = false ;
+	PathImp::use_posix = false ;
 }
 
 G::Path::Path()
-{
-}
-
-G::Path::~Path()
 {
 }
 
@@ -277,10 +275,25 @@ G::Path::Path( const Path & path , const std::string & tail_1 , const std::strin
 	PathImp::normalise( m_str ) ;
 }
 
-G::Path::Path( const Path & other ) :
-	m_str(other.m_str)
+G::Path::Path( const Path & path , const std::string & tail_1 , const std::string & tail_2 , const std::string & tail_3 ) :
+	m_str(path.m_str)
 {
+	pathAppend( tail_1 ) ;
+	pathAppend( tail_2 ) ;
+	pathAppend( tail_3 ) ;
+	PathImp::normalise( m_str ) ;
 }
+
+#if GCONFIG_HAVE_CXX_INITIALIZER_LIST
+G::Path::Path( std::initializer_list<std::string> args )
+{
+	G_ASSERT( args.size() != 0U ) ;
+	m_str = *args.begin() ;
+	for( const std::string * p = args.begin()+1 ; p != args.end() ; ++p )
+		pathAppend( *p ) ;
+	PathImp::normalise( m_str ) ;
+}
+#endif
 
 G::Path G::Path::nullDevice()
 {
@@ -426,7 +439,7 @@ G::Path G::Path::collapsed() const
 	while( start != end )
 	{
 		while( start != end && *start == dots )
-			start++ ;
+			++start ;
 
 		Ptr p_dots = std::find( start , end , dots ) ;
 		if( p_dots == end )
@@ -452,17 +465,10 @@ bool G::Path::operator!=( const Path & other ) const
 	return m_str != other.m_str ;
 }
 
-void G::Path::swap( Path & other )
+void G::Path::swap( Path & other ) g__noexcept
 {
 	using std::swap ;
 	swap( m_str , other.m_str ) ;
-}
-
-G::Path & G::Path::operator=( const Path & other )
-{
-	Path tmp( other ) ;
-	tmp.swap( *this ) ;
-	return *this ;
 }
 
 static bool string_less( const std::string & a , const std::string & b )
@@ -484,13 +490,13 @@ G::Path G::Path::difference( const G::Path & root_in , const G::Path & path_in )
 {
 	StringArray path_parts ;
 	StringArray root_parts ;
-	if( root_in != G::Path() ) root_parts = root_in.collapsed().split() ;
-	if( path_in != G::Path() ) path_parts = path_in.collapsed().split() ;
+	if( root_in != Path() ) root_parts = root_in.collapsed().split() ;
+	if( path_in != Path() ) path_parts = path_in.collapsed().split() ;
 	if( root_parts.size() == 1U && root_parts.at(0U) == "." ) root_parts.clear() ;
 	if( path_parts.size() == 1U && path_parts.at(0U) == "." ) path_parts.clear() ;
 
 	if( path_parts.size() < root_parts.size() )
-		return G::Path() ;
+		return Path() ;
 
 	typedef std::pair<StringArray::iterator,StringArray::iterator> Pair ;
 	Pair p = std::mismatch( root_parts.begin() , root_parts.end() , path_parts.begin() ) ;

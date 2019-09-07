@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 class GNet::TaskImp : private FutureEventHandler
 {
 public:
-	TaskImp( Task & , ExceptionHandler & eh , const G::ExecutableCommand & ,
+	TaskImp( Task & , ExceptionSink es , const G::ExecutableCommand & ,
 		const std::string & exec_error_format , const G::Identity & id ) ;
 			// Constructor. Spawns the child processes and starts the
 			// associated wait() thread.
@@ -55,10 +55,12 @@ public:
 	void kill() ;
 		// Kills the task.
 
+private: // overrides
+	virtual void onFutureEvent() override ; // Override from GNet::FutureEventHandler.
+
 private:
-	TaskImp( const TaskImp & ) ;
-	void operator=( const TaskImp & ) ;
-	virtual void onFutureEvent() override ; // GNet::FutureEventHandler
+	TaskImp( const TaskImp & ) g__eq_delete ;
+	void operator=( const TaskImp & ) g__eq_delete ;
 	static void wait( TaskImp * , FutureEvent::handle_type ) ; // thread function
 
 private:
@@ -70,11 +72,14 @@ private:
 
 // ==
 
-GNet::TaskImp::TaskImp( Task & task , ExceptionHandler & eh , const G::ExecutableCommand & commandline ,
-	const std::string & exec_error_format , const G::Identity & id ) :
+GNet::TaskImp::TaskImp( Task & task , ExceptionSink es ,
+	const G::ExecutableCommand & commandline , const std::string & exec_error_format ,
+	const G::Identity & id ) :
 		m_task(task) ,
-		m_future_event(*this,eh) ,
-		m_process(commandline.exe(),commandline.args(),1,true,true,id,true,127,exec_error_format)
+		m_future_event(*this,es) ,
+		m_process(commandline.exe(),commandline.args(),/*stdxxx=*/1,
+			/*cleanenv=*/true,/*strictpath=*/true,id,/*strictid=*/true,
+			/*execerrorexit=*/127,exec_error_format)
 {
 	if( ! G::threading::works() ) // grr
 	{
@@ -115,27 +120,20 @@ void GNet::TaskImp::wait( TaskImp * This , FutureEvent::handle_type handle )
 
 void GNet::TaskImp::onFutureEvent()
 {
-	try
+	G_DEBUG( "GNet::TaskImp::onFutureEvent: future event" ) ;
+	if( G::threading::works() )
 	{
-		G_DEBUG( "GNet::TaskImp::onFutureEvent: future event" ) ;
-		if( G::threading::works() )
-		{
-			m_thread.join() ;
-			G_DEBUG( "GNet::TaskImp::onFutureEvent: thread joined" ) ;
-		}
-
-		int exit_code = m_process.wait().get() ;
-		G_DEBUG( "GNet::TaskImp::onFutureEvent: exit code " << exit_code ) ;
-
-		std::string output = m_process.wait().output() ;
-		G_DEBUG( "GNet::TaskImp::onFutureEvent: output: [" << G::Str::printable(output) << "]" ) ;
-
-		m_task.done( exit_code , output ) ; // last
+		m_thread.join() ;
+		G_DEBUG( "GNet::TaskImp::onFutureEvent: thread joined" ) ;
 	}
-	catch( std::exception & e )
-	{
-		throw Task::Failed( e.what() ) ;
-	}
+
+	int exit_code = m_process.wait().get() ;
+	G_DEBUG( "GNet::TaskImp::onFutureEvent: exit code " << exit_code ) ;
+
+	std::string output = m_process.wait().output() ;
+	G_DEBUG( "GNet::TaskImp::onFutureEvent: output: [" << G::Str::printable(output) << "]" ) ;
+
+	m_task.done( exit_code , output ) ; // last
 }
 
 void GNet::TaskImp::kill()
@@ -145,10 +143,10 @@ void GNet::TaskImp::kill()
 
 // ==
 
-GNet::Task::Task( TaskCallback & callback , ExceptionHandler & eh ,
+GNet::Task::Task( TaskCallback & callback , ExceptionSink es ,
 	const std::string & exec_error_format , const G::Identity & id ) :
 		m_callback(callback) ,
-		m_eh(eh) ,
+		m_es(es) ,
 		m_exec_error_format(exec_error_format) ,
 		m_id(id) ,
 		m_busy(false)
@@ -165,7 +163,7 @@ void GNet::Task::start( const G::ExecutableCommand & commandline )
 		throw Busy() ;
 
 	m_busy = true ;
-	m_imp.reset( new TaskImp( *this , m_eh , commandline , m_exec_error_format , m_id ) ) ;
+	m_imp.reset( new TaskImp( *this , m_es , commandline , m_exec_error_format , m_id ) ) ;
 }
 
 void GNet::Task::stop()

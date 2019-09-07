@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #define G_SMTP_SPAM_FILTER__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gfilter.h"
 #include "gclientptr.h"
 #include "gspamclient.h"
@@ -41,58 +40,41 @@ namespace GSmtp
 class GSmtp::SpamFilter : public Filter
 {
 public:
-	SpamFilter( GNet::ExceptionHandler & ,
-		bool server_side , const std::string & server_location ,
-		bool read_only , bool always_pass ,
-		unsigned int connection_timeout , unsigned int response_timeout ) ;
+	SpamFilter( GNet::ExceptionSink , const std::string & server_location ,
+		bool read_only , bool always_pass , unsigned int connection_timeout ,
+		unsigned int response_timeout ) ;
 			///< Constructor.
 
 	virtual ~SpamFilter() ;
 		///< Destructor.
 
-	virtual std::string id() const override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual bool simple() const override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual G::Slot::Signal1<int> & doneSignal() override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual void start( const std::string & path ) override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual void cancel() override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual bool abandoned() const override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual std::string response() const override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual std::string reason() const override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual bool special() const override ;
-		///< Override from from GSmtp::Filter.
+private: // overrides
+	virtual std::string id() const override ; // Override from from GSmtp::Filter.
+	virtual bool simple() const override ; // Override from from GSmtp::Filter.
+	virtual G::Slot::Signal1<int> & doneSignal() override ; // Override from from GSmtp::Filter.
+	virtual void start( const std::string & path ) override ; // Override from from GSmtp::Filter.
+	virtual void cancel() override ; // Override from from GSmtp::Filter.
+	virtual bool abandoned() const override ; // Override from from GSmtp::Filter.
+	virtual std::string response() const override ; // Override from from GSmtp::Filter.
+	virtual std::string reason() const override ; // Override from from GSmtp::Filter.
+	virtual bool special() const override ; // Override from from GSmtp::Filter.
 
 private:
-	SpamFilter( const SpamFilter & ) ; // not implemented
-	void operator=( const SpamFilter & ) ; // not implemented
-	void clientEvent( std::string , std::string ) ;
+	SpamFilter( const SpamFilter & ) g__eq_delete ;
+	void operator=( const SpamFilter & ) g__eq_delete ;
+	void clientEvent( std::string , std::string , std::string ) ;
+	void clientDeleted( std::string ) ;
 	void emit( bool ) ;
 
 private:
 	G::Slot::Signal1<int> m_done_signal ;
-	GNet::ExceptionHandler & m_exception_handler ;
-	bool m_server_side ;
+	GNet::ExceptionSink m_es ;
 	GNet::Location m_location ;
 	bool m_read_only ;
 	bool m_always_pass ;
 	unsigned int m_connection_timeout ;
 	unsigned int m_response_timeout ;
-	GNet::ClientPtr<SpamClient> m_client ;
+	GNet::ClientPtr<SpamClient> m_client_ptr ;
 	std::string m_text ;
 } ;
 

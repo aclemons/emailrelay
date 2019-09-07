@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 //
 
 #include "gdef.h"
-#include "gpop.h"
 #include "gpopstore.h"
 #include "gstr.h"
 #include "gfile.h"
@@ -66,7 +65,7 @@ struct GPop::FileDeleter : private G::Root
 
 // ==
 
-GPop::Store::Store( G::Path path , bool by_name , bool allow_delete ) :
+GPop::Store::Store( const G::Path & path , bool by_name , bool allow_delete ) :
 	m_path(path) ,
 	m_by_name(by_name) ,
 	m_allow_delete(allow_delete)
@@ -132,9 +131,9 @@ bool GPop::Store::valid( G::Path dir_path , bool allow_delete )
 	bool ok = false ;
 	if( allow_delete )
 	{
-		std::string tmp = G::Directory::tmp() ;
+		std::string tmp_filename = G::Directory::tmp() ;
 		FileDeleter claim_deleter ;
-		ok = dir_test.valid() && dir_test.writeable(tmp) ;
+		ok = dir_test.valid() && dir_test.writeable( tmp_filename ) ;
 	}
 	else
 	{

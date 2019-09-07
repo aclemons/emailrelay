@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,15 +40,17 @@ public:
 		///< Encodes the given string.
 
 	static std::string decode( const std::string & ) ;
-		///< Decodes the given string. Allows lowercase
-		///< hex characters (eg. "+1a")
+		///< Decodes the given string. Input strings must be
+		///< un-strictly valid(), otherwise the result is
+		///< undefined.
 
-	static bool valid( const std::string & ) ;
-		///< Returns true if a valid encoding. Allows
-		///< lowercase hex characters (eg. "+1a")
+	static bool valid( const std::string & , bool strict = false ) ;
+		///< Returns true if a valid encoding. If strict
+		///< then 'equals' and 'space' are disallowed and
+		///< hex characters must be uppercase (eg. "+1A").
 
 private:
-	Xtext() ;
+	Xtext() g__eq_delete ;
 } ;
 
 #endif

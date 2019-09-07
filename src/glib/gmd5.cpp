@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,10 +21,14 @@
 #include "gdef.h"
 #include "gmd5.h"
 #include "ghashstate.h"
+#include "gexception.h"
 #include "gassert.h"
 #include <string> // std::string
 #include <cstdlib> // std::size_t
 
+/// \namespace md5
+/// An implementation namespace for G::Md5.
+///
 namespace md5
 {
 	typedef G::Md5::digest_state digest_state ;
@@ -71,7 +75,7 @@ public:
 
 private:
 	typedef big_t (*aux_fn_t)( big_t , big_t , big_t ) ;
-	enum Permutation { ABCD , DABC , CDAB , BCDA } ;
+	g__enum(Permutation) { ABCD , DABC , CDAB , BCDA } ; g__enum_end(Permutation)
 
 private:
 	explicit digest( const block & ) ;
@@ -111,7 +115,7 @@ public:
 		// state and a stream-size.
 
 private:
-	format() ; // not implemented
+	format() g__eq_delete ;
 } ;
 
 /// \class md5::block
@@ -153,8 +157,8 @@ public:
 		// Returns a value from within the block. See RFC-1321.
 
 private:
-	block( const block & ) ; // not implemented
-	void operator=( const block & ) ; // not implemented
+	block( const block & ) g__eq_delete ;
+	void operator=( const block & ) g__eq_delete ;
 	small_t x( small_t ) const ;
 	static small_t rounded( small_t n ) ;
 
@@ -230,48 +234,53 @@ void md5::digest::add( const digest & other )
 	d += other.d ;
 }
 
+#ifdef P
+#undef P
+#endif
+#define P(x) Permutation::x
+
 void md5::digest::round1( const block & m )
 {
 	digest & r = *this ;
-	r(m,F,ABCD, 0, 7, 1); r(m,F,DABC, 1,12, 2); r(m,F,CDAB, 2,17, 3); r(m,F,BCDA, 3,22, 4);
-	r(m,F,ABCD, 4, 7, 5); r(m,F,DABC, 5,12, 6); r(m,F,CDAB, 6,17, 7); r(m,F,BCDA, 7,22, 8);
-	r(m,F,ABCD, 8, 7, 9); r(m,F,DABC, 9,12,10); r(m,F,CDAB,10,17,11); r(m,F,BCDA,11,22,12);
-	r(m,F,ABCD,12, 7,13); r(m,F,DABC,13,12,14); r(m,F,CDAB,14,17,15); r(m,F,BCDA,15,22,16);
+	r(m,F,P(ABCD), 0, 7, 1); r(m,F,P(DABC), 1,12, 2); r(m,F,P(CDAB), 2,17, 3); r(m,F,P(BCDA), 3,22, 4);
+	r(m,F,P(ABCD), 4, 7, 5); r(m,F,P(DABC), 5,12, 6); r(m,F,P(CDAB), 6,17, 7); r(m,F,P(BCDA), 7,22, 8);
+	r(m,F,P(ABCD), 8, 7, 9); r(m,F,P(DABC), 9,12,10); r(m,F,P(CDAB),10,17,11); r(m,F,P(BCDA),11,22,12);
+	r(m,F,P(ABCD),12, 7,13); r(m,F,P(DABC),13,12,14); r(m,F,P(CDAB),14,17,15); r(m,F,P(BCDA),15,22,16);
 }
 
 void md5::digest::round2( const block & m )
 {
 	digest & r = *this ;
-	r(m,G,ABCD, 1, 5,17); r(m,G,DABC, 6, 9,18); r(m,G,CDAB,11,14,19); r(m,G,BCDA, 0,20,20);
-	r(m,G,ABCD, 5, 5,21); r(m,G,DABC,10, 9,22); r(m,G,CDAB,15,14,23); r(m,G,BCDA, 4,20,24);
-	r(m,G,ABCD, 9, 5,25); r(m,G,DABC,14, 9,26); r(m,G,CDAB, 3,14,27); r(m,G,BCDA, 8,20,28);
-	r(m,G,ABCD,13, 5,29); r(m,G,DABC, 2, 9,30); r(m,G,CDAB, 7,14,31); r(m,G,BCDA,12,20,32);
+	r(m,G,P(ABCD), 1, 5,17); r(m,G,P(DABC), 6, 9,18); r(m,G,P(CDAB),11,14,19); r(m,G,P(BCDA), 0,20,20);
+	r(m,G,P(ABCD), 5, 5,21); r(m,G,P(DABC),10, 9,22); r(m,G,P(CDAB),15,14,23); r(m,G,P(BCDA), 4,20,24);
+	r(m,G,P(ABCD), 9, 5,25); r(m,G,P(DABC),14, 9,26); r(m,G,P(CDAB), 3,14,27); r(m,G,P(BCDA), 8,20,28);
+	r(m,G,P(ABCD),13, 5,29); r(m,G,P(DABC), 2, 9,30); r(m,G,P(CDAB), 7,14,31); r(m,G,P(BCDA),12,20,32);
 }
 
 void md5::digest::round3( const block & m )
 {
 	digest & r = *this ;
-	r(m,H,ABCD, 5, 4,33); r(m,H,DABC, 8,11,34); r(m,H,CDAB,11,16,35); r(m,H,BCDA,14,23,36);
-	r(m,H,ABCD, 1, 4,37); r(m,H,DABC, 4,11,38); r(m,H,CDAB, 7,16,39); r(m,H,BCDA,10,23,40);
-	r(m,H,ABCD,13, 4,41); r(m,H,DABC, 0,11,42); r(m,H,CDAB, 3,16,43); r(m,H,BCDA, 6,23,44);
-	r(m,H,ABCD, 9, 4,45); r(m,H,DABC,12,11,46); r(m,H,CDAB,15,16,47); r(m,H,BCDA, 2,23,48);
+	r(m,H,P(ABCD), 5, 4,33); r(m,H,P(DABC), 8,11,34); r(m,H,P(CDAB),11,16,35); r(m,H,P(BCDA),14,23,36);
+	r(m,H,P(ABCD), 1, 4,37); r(m,H,P(DABC), 4,11,38); r(m,H,P(CDAB), 7,16,39); r(m,H,P(BCDA),10,23,40);
+	r(m,H,P(ABCD),13, 4,41); r(m,H,P(DABC), 0,11,42); r(m,H,P(CDAB), 3,16,43); r(m,H,P(BCDA), 6,23,44);
+	r(m,H,P(ABCD), 9, 4,45); r(m,H,P(DABC),12,11,46); r(m,H,P(CDAB),15,16,47); r(m,H,P(BCDA), 2,23,48);
 }
 
 void md5::digest::round4( const block & m )
 {
 	digest & r = *this ;
-	r(m,I,ABCD, 0, 6,49); r(m,I,DABC, 7,10,50); r(m,I,CDAB,14,15,51); r(m,I,BCDA, 5,21,52);
-	r(m,I,ABCD,12, 6,53); r(m,I,DABC, 3,10,54); r(m,I,CDAB,10,15,55); r(m,I,BCDA, 1,21,56);
-	r(m,I,ABCD, 8, 6,57); r(m,I,DABC,15,10,58); r(m,I,CDAB, 6,15,59); r(m,I,BCDA,13,21,60);
-	r(m,I,ABCD, 4, 6,61); r(m,I,DABC,11,10,62); r(m,I,CDAB, 2,15,63); r(m,I,BCDA, 9,21,64);
+	r(m,I,P(ABCD), 0, 6,49); r(m,I,P(DABC), 7,10,50); r(m,I,P(CDAB),14,15,51); r(m,I,P(BCDA), 5,21,52);
+	r(m,I,P(ABCD),12, 6,53); r(m,I,P(DABC), 3,10,54); r(m,I,P(CDAB),10,15,55); r(m,I,P(BCDA), 1,21,56);
+	r(m,I,P(ABCD), 8, 6,57); r(m,I,P(DABC),15,10,58); r(m,I,P(CDAB), 6,15,59); r(m,I,P(BCDA),13,21,60);
+	r(m,I,P(ABCD), 4, 6,61); r(m,I,P(DABC),11,10,62); r(m,I,P(CDAB), 2,15,63); r(m,I,P(BCDA), 9,21,64);
 }
 
 void md5::digest::operator()( const block & m , aux_fn_t aux , Permutation p , small_t k , small_t s , small_t i )
 {
-	if( p == ABCD ) a = op( m , aux , a , b , c , d , k , s , i ) ;
-	if( p == DABC ) d = op( m , aux , d , a , b , c , k , s , i ) ;
-	if( p == CDAB ) c = op( m , aux , c , d , a , b , k , s , i ) ;
-	if( p == BCDA ) b = op( m , aux , b , c , d , a , k , s , i ) ;
+	if( p == P(ABCD) ) a = op( m , aux , a , b , c , d , k , s , i ) ;
+	if( p == P(DABC) ) d = op( m , aux , d , a , b , c , k , s , i ) ;
+	if( p == P(CDAB) ) c = op( m , aux , c , d , a , b , k , s , i ) ;
+	if( p == P(BCDA) ) b = op( m , aux , b , c , d , a , k , s , i ) ;
 }
 
 md5::big_t md5::digest::op( const block & m , aux_fn_t aux , big_t a , big_t b , big_t c , big_t d ,
@@ -548,6 +557,9 @@ std::string G::Md5::predigest( const std::string & input )
 
 std::string G::Md5::postdigest( const std::string & state_pair , const std::string & message )
 {
+	if( state_pair.size() != 32U ) // valuesize()*2
+		throw InvalidState() ;
+
 	std::string _64( "\x40\0\0\0" , 4U ) ; // state size suffix
 	std::string state_i = state_pair.substr( 0U , state_pair.size()/2 ) + _64 ;
 	std::string state_o = state_pair.substr( state_pair.size()/2 ) + _64 ;

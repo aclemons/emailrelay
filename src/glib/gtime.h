@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,6 +44,11 @@ public:
 	Time() ;
 		///< Constructor for the current time, using UTC.
 
+	Time( int hh , int mm , int ss ) ;
+		///< Constructor for the given time. Out-of-range values are
+		///< clamped, with leap seconds allowed only just before
+		///< midnight.
+
 	explicit Time( const G::DateTime::BrokenDownTime & tm ) ;
 		///< Constructor for the given broken-down time.
 
@@ -55,6 +60,12 @@ public:
 
 	explicit Time( const LocalTime & ) ;
 		///< Constructor for the current time, using the local timezone.
+
+	static Time at( unsigned int ) ;
+		///< Factory function for a time that is the given number of
+		///< seconds since midnight (see value()). Values that are out
+		///< of the normal time-of-day range are clamped, with leap
+		///< seconds beging lost in the process.
 
 	int hours() const ;
 		///< Returns the hours (0 <= h < 24).
@@ -73,6 +84,16 @@ public:
 
 	std::string ss() const ;
 		///< Returns the seconds as a two-digit decimal string.
+
+	unsigned int value() const ;
+		///< Returns the time as the number of seconds since midnight
+		///< (ignoring leap seconds).
+
+	bool operator==( const Time & ) const ;
+		///< Comparison operator.
+
+	bool operator!=( const Time & ) const ;
+		///< Comparison operator.
 
 private:
 	int m_hh ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -137,8 +137,8 @@ protected:
 		///< Loads common-control library code for the given control types.
 
 private:
-	Control( const Control & ) ; // not implemented
-	void operator=( const Control & ) ; // not implemented
+	Control( const Control & ) g__eq_delete ;
+	void operator=( const Control & ) g__eq_delete ;
 	static void load() ;
 
 private:
@@ -181,14 +181,14 @@ public:
 		///< Returns the number of list box entries.
 
 private:
-	ListBox( const ListBox & ) ; // not implemented
-	void operator=( const ListBox & ) ; // not implemented
+	ListBox( const ListBox & ) g__eq_delete ;
+	void operator=( const ListBox & ) g__eq_delete ;
 } ;
 
 /// \class GGui::ListView
-/// A simple write-only list-view class.
-/// The list-view resource is expected to use "report" mode
-/// so that a multi-column list box is displayed.
+/// A simple write-only list-view class. The list-view resource
+/// is expected to use "report" mode so that a multi-column list
+/// box is displayed.
 ///
 class GGui::ListView : public Control
 {
@@ -212,8 +212,8 @@ public:
 		///< that start the list.
 
 private:
-	ListView( const ListView & ) ; // not implemented
-	void operator=( const ListView & ) ; // not implemented
+	ListView( const ListView & ) g__eq_delete ;
+	void operator=( const ListView & ) g__eq_delete ;
 	static LPTSTR ptext( const std::string & s ) ;
 } ;
 
@@ -274,8 +274,8 @@ public:
 		///< template units" (the default being 32).
 
 private:
-	EditBox( const EditBox & ) ; // not implemented
-	void operator=( const EditBox & ) ; // not implemented
+	EditBox( const EditBox & ) g__eq_delete ;
+	void operator=( const EditBox & ) g__eq_delete ;
 	unsigned windowHeight() ; // not const
 	unsigned characterHeight() ; // not const
 
@@ -302,8 +302,8 @@ public:
 		///< Sets the state of a boolean check box.
 
 private:
-	CheckBox( const CheckBox & ) ; // not implemented
-	void operator=( const CheckBox ) ; // not implemented
+	CheckBox( const CheckBox & ) g__eq_delete ;
+	void operator=( const CheckBox ) g__eq_delete ;
 } ;
 
 /// \class GGui::Button
@@ -329,8 +329,8 @@ public:
 		///< Disables the button, greying it.
 
 private:
-	Button( const Button & ) ; // not implemented
-	void operator=( const Button & ) ; // not implemented
+	Button( const Button & ) g__eq_delete ;
+	void operator=( const Button & ) g__eq_delete ;
 } ;
 
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 #include "gprocess.h"
 #include "gpath.h"
 #include "gstr.h"
-#include "gdebug.h"
+#include "glog.h"
 #include "gassert.h"
 #include <cstring>
 
@@ -51,15 +51,6 @@ G::Arg::Arg( const StringArray & args ) :
 {
 }
 
-G::Arg::Arg( const Arg & other ) :
-	m_array(other.m_array)
-{
-}
-
-G::Arg::~Arg()
-{
-}
-
 G::Arg::Arg()
 {
 	// now use parse()
@@ -67,8 +58,10 @@ G::Arg::Arg()
 
 void G::Arg::parse( HINSTANCE , const std::string & command_line_tail )
 {
+	std::string proc_exe = Process::exe() ;
+	if( proc_exe.empty() ) throw Exception( "cannot determine the path of this executable" ) ;
 	m_array.clear() ;
-	m_array.push_back( Process::exe() ) ;
+	m_array.push_back( proc_exe ) ;
 	parseCore( command_line_tail ) ;
 }
 
@@ -90,16 +83,9 @@ std::string G::Arg::v0()
 	return m_v0 ;
 }
 
-G::Arg & G::Arg::operator=( const Arg & rhs )
-{
-	Arg tmp( rhs ) ;
-	m_array.swap( tmp.m_array ) ;
-	return *this ;
-}
-
 G::StringArray G::Arg::array( unsigned int shift ) const
 {
-	G::StringArray result = m_array ;
+	StringArray result = m_array ;
 	while( !result.empty() && shift-- )
 		result.erase( result.begin() ) ;
 	return result ;
@@ -190,16 +176,17 @@ void G::Arg::parseCore( const std::string & command_line )
 {
 	std::string s( command_line ) ;
 	protect( s ) ;
-	G::Str::splitIntoTokens( s , m_array , " " ) ;
+	Str::splitIntoTokens( s , m_array , " " ) ;
 	unprotect( m_array ) ;
 	dequote( m_array ) ;
 }
 
 void G::Arg::protect( std::string & s )
 {
-	// replace all quoted spaces with a replacement
-	// (could do better: escaped quotes, tabs, single quotes)
-	//G_DEBUG( "G::Arg::protect: before: " << Str::printable(s) ) ;
+	// replace all quoted spaces with a replacement -- this is not
+	// great because it does not allow for escaped quotes etc, but
+	// the relevant operating system's command-line parsing is
+	// appallingly bad to start with
 	bool in_quote = false ;
 	const char quote = '"' ;
 	const char space = ' ' ;
@@ -209,7 +196,6 @@ void G::Arg::protect( std::string & s )
 		if( s.at(pos) == quote ) in_quote = ! in_quote ;
 		if( in_quote && s.at(pos) == space ) s[pos] = replacement ;
 	}
-	//G_DEBUG( "G::Arg::protect: after: " << Str::printable(s) ) ;
 }
 
 void G::Arg::unprotect( StringArray & array )
@@ -220,7 +206,7 @@ void G::Arg::unprotect( StringArray & array )
 	for( StringArray::iterator p = array.begin() ; p != array.end() ; ++p )
 	{
 		std::string & s = *p ;
-		G::Str::replaceAll( s , std::string(1U,replacement) , std::string(1U,space) ) ;
+		Str::replaceAll( s , std::string(1U,replacement) , std::string(1U,space) ) ;
 	}
 }
 
@@ -247,27 +233,27 @@ void G::Arg::dequote( StringArray & array )
 
 std::string G::Arg::exe( bool do_throw )
 {
-	std::string procfs = Process::exe() ;
-	if( procfs.empty() && ( m_v0.empty() || ( m_cwd.empty() && Path(m_v0).isRelative() ) ) )
+	std::string proc_exe = Process::exe() ;
+	if( proc_exe.empty() && ( m_v0.empty() || ( m_cwd.empty() && Path(m_v0).isRelative() ) ) )
 	{
 		if( do_throw )
 		{
-			throw G::Exception( "cannot determine the absolute path of the current executable" ,
+			throw Exception( "cannot determine the absolute path of the current executable" ,
 				G::is_windows() ? "" : "try mounting procfs" ) ;
 		}
 		return std::string() ;
 	}
-	else if( procfs.empty() && G::Path(m_v0).isRelative() )
+	else if( proc_exe.empty() && Path(m_v0).isRelative() )
 	{
 		return Path::join(m_cwd,m_v0).collapsed().str() ;
 	}
-	else if( procfs.empty() )
+	else if( proc_exe.empty() )
 	{
 		return m_v0 ;
 	}
 	else
 	{
-		return procfs ;
+		return proc_exe ;
 	}
 }
 

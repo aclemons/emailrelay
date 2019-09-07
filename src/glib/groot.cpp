@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 #include "gtest.h"
 #include "gassert.h"
 #include "gprocess.h"
-#include "gdebug.h"
+#include "glog.h"
 
 G::Root * G::Root::m_this = nullptr ;
 bool G::Root::m_initialised = false ;

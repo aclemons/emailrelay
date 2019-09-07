@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ EXTRA_DIST=\
 	gprocess_unix.cpp
 
 libglib_a_SOURCES = \
+	galign.h \
 	garg.h \
 	garg.cpp \
 	gassert.h \
@@ -47,6 +48,7 @@ libglib_a_SOURCES = \
 	gbase64.cpp \
 	gbatchfile.h \
 	gbatchfile.cpp \
+	gcall.h \
 	gcleanup.h \
 	gcleanup_win32.cpp \
 	gconvert.h \
@@ -59,11 +61,11 @@ libglib_a_SOURCES = \
 	gdatetime.h \
 	gdatetime.cpp \
 	gdatetime_win32.cpp \
-	gdebug.h \
 	gdef.h \
 	gdirectory.h \
 	gdirectory.cpp \
 	gdirectory_win32.cpp \
+	geightbit.h \
 	genvironment.h \
 	genvironment_win32.cpp \
 	gexception.h \
@@ -89,7 +91,7 @@ libglib_a_SOURCES = \
 	glogoutput.h \
 	glogoutput.cpp \
 	glogoutput_win32.cpp \
-	gmacros.h \
+	gstrmacros.h \
 	gmapfile.h \
 	gmapfile.cpp \
 	gmd5.h \
@@ -98,7 +100,6 @@ libglib_a_SOURCES = \
 	gmsg_win32.cpp \
 	gnewprocess.h \
 	gnewprocess_win32.cpp \
-	gnoncopyable.h \
 	goptionmap.h \
 	goptionmap.cpp \
 	goptionparser.h \
@@ -107,8 +108,6 @@ libglib_a_SOURCES = \
 	goptions.cpp \
 	goptionvalue.h \
 	gpam.h \
-	gpamerror.h \
-	gpamerror.cpp \
 	gpam_none.cpp \
 	gpath.h \
 	gpath.cpp \
@@ -120,7 +119,6 @@ libglib_a_SOURCES = \
 	greadwrite.cpp \
 	groot.h \
 	groot.cpp \
-	gsharedptr.h \
 	gsignalsafe.h \
 	gsleep.h \
 	gslot.h \
@@ -129,14 +127,12 @@ libglib_a_SOURCES = \
 	gstr.h \
 	gstr.cpp \
 	gstrings.h \
-	gstrings.cpp \
 	gtest.h \
 	gtest.cpp \
 	gthread.h \
 	gthread.cpp \
 	gtime.h \
 	gtime.cpp \
-	guniqueptr.h \
 	gxtext.h \
 	gxtext.cpp
 
@@ -185,6 +181,7 @@ libglib_a_SOURCES = \
 	gbase64.cpp \
 	gbatchfile.h \
 	gbatchfile.cpp \
+	gcall.h \
 	gcleanup.h \
 	gcleanup_unix.cpp \
 	gconvert.h \
@@ -196,7 +193,6 @@ libglib_a_SOURCES = \
 	gdatetime.h \
 	gdatetime.cpp \
 	gdatetime_unix.cpp \
-	gdebug.h \
 	gdef.h \
 	gdirectory.h \
 	gdirectory.cpp \
@@ -233,7 +229,6 @@ libglib_a_SOURCES = \
 	gmsg.h \
 	gnewprocess.h \
 	gnewprocess_unix.cpp \
-	gnoncopyable.h \
 	goptionmap.h \
 	goptionmap.cpp \
 	goptionparser.h \
@@ -242,8 +237,6 @@ libglib_a_SOURCES = \
 	goptions.cpp \
 	goptionvalue.h \
 	gpam.h \
-	gpamerror.h \
-	gpamerror.cpp \
 	gpath.h \
 	gpath.cpp \
 	gpidfile.h \
@@ -254,7 +247,6 @@ libglib_a_SOURCES = \
 	greadwrite.cpp \
 	groot.h \
 	groot.cpp \
-	gsharedptr.h \
 	gsignalsafe.h \
 	gsleep.h \
 	gslot.h \
@@ -263,14 +255,12 @@ libglib_a_SOURCES = \
 	gstr.h \
 	gstr.cpp \
 	gstrings.h \
-	gstrings.cpp \
 	gtest.h \
 	gtest.cpp \
 	gthread.h \
 	gthread.cpp \
 	gtime.h \
 	gtime.cpp \
-	guniqueptr.h \
 	gxtext.h \
 	gxtext.cpp
 

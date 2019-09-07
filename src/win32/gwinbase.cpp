@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,10 +19,12 @@
 //
 
 #include "gdef.h"
-#include "glimits.h"
+#include "gstr.h"
 #include "gwinbase.h"
-#include "gdebug.h"
+#include "glog.h"
+#include "gassert.h"
 #include <windowsx.h>
+#include <vector>
 #include <cstring>
 
 GGui::WindowBase::WindowBase( HWND hwnd ) :
@@ -31,17 +33,6 @@ GGui::WindowBase::WindowBase( HWND hwnd ) :
 }
 
 GGui::WindowBase::~WindowBase()
-{
-}
-
-GGui::WindowBase & GGui::WindowBase::operator=( const WindowBase & other )
-{
-	m_hwnd = other.m_hwnd ;
-	return *this ;
-}
-
-GGui::WindowBase::WindowBase( const WindowBase &other ) :
-	m_hwnd(other.m_hwnd)
 {
 }
 
@@ -82,18 +73,18 @@ GGui::Size GGui::WindowBase::externalSize() const
 
 std::string GGui::WindowBase::windowClass() const
 {
-	char buffer[G::limits::win32_classname_buffer] ;
+	std::vector<char> buffer( 257U ) ; // atom size limit
 	buffer[0U] = '\0' ;
-	::GetClassNameA( m_hwnd , buffer , sizeof(buffer)-1U ) ;
-	buffer[sizeof(buffer)-1U] = '\0' ;
+	::GetClassNameA( m_hwnd , &buffer[0] , static_cast<int>(buffer.size()-1U) ) ;
+	buffer[buffer.size()-1U] = '\0' ;
 
-	if( (std::strlen(buffer)+1U) == sizeof(buffer) )
+	if( (std::strlen(&buffer[0])+1U) == buffer.size() )
 	{
 		G_WARNING( "GGui::WindowBase::windowClass: possible truncation: "
-			<< "\"" << buffer << "\"" ) ;
+			<< "\"" << G::Str::printable(&buffer[0]) << "\"" ) ;
 	}
 
-	return std::string( buffer ) ;
+	return std::string( &buffer[0] ) ;
 }
 
 HINSTANCE GGui::WindowBase::windowInstanceHandle() const

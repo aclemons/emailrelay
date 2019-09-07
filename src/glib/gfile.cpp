@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,26 +26,73 @@
 #include <iostream>
 #include <cstdio>
 
+void G::File::open( std::ofstream & ofstream , const Path & path )
+{
+	open( ofstream , path , std::ios_base::out | std::ios_base::binary ) ; // 'out' for uclibc
+}
+
+void G::File::open( std::ofstream & ofstream , const Path & path , std::ios_base::openmode mode )
+{
+	#if GCONFIG_HAVE_FSOPEN
+		ofstream.open( path.str().c_str() , mode | std::ios_base::out | std::ios_base::binary , _SH_DENYNO ) ; // _fsopen()
+	#else
+		ofstream.open( path.str().c_str() , mode | std::ios_base::out | std::ios_base::binary ) ;
+	#endif
+}
+
+void G::File::open( std::ifstream & ifstream , const Path & path )
+{
+	open( ifstream , path , std::ios_base::in | std::ios_base::binary ) ; // 'in' for uclibc
+}
+
+void G::File::open( std::ifstream & ifstream , const Path & path , std::ios_base::openmode mode )
+{
+	#if GCONFIG_HAVE_FSOPEN
+		ifstream.open( path.str().c_str() , mode | std::ios_base::in | std::ios_base::binary , _SH_DENYNO ) ; // _fsopen()
+	#else
+		ifstream.open( path.str().c_str() , mode | std::ios_base::in | std::ios_base::binary ) ;
+	#endif
+}
+
+std::filebuf * G::File::open( std::filebuf & fb , const Path & path , std::ios_base::openmode mode )
+{
+	#if GCONFIG_HAVE_FSOPEN
+		return fb.open( path.str().c_str() , mode | std::ios_base::binary , _SH_DENYNO ) ; // _fsopen()
+	#else
+		return fb.open( path.str().c_str() , mode | std::ios_base::binary ) ;
+	#endif
+}
+
 bool G::File::remove( const Path & path , const G::File::NoThrow & )
 {
-	bool rc = 0 == std::remove( path.str().c_str() ) ;
-	G_DEBUG( "G::File::remove: \"" << path << "\": success=" << rc ) ;
-	return rc ;
+	return remove( path.str() , true , false ) ;
 }
 
 void G::File::remove( const Path & path )
 {
-	if( 0 != std::remove( path.str().c_str() ) )
+	remove( path.str() , false , true ) ;
+}
+
+bool G::File::remove( const std::string & path , bool no_throw , bool warn )
+{
+	int rc = std::remove( path.c_str() ) ; // beware temporaries disrupting errno
+	int e = Process::errno_() ;
+	G_DEBUG( "G::File::remove: [" << path << "]: " << rc << " " << e ) ;
+
+	if( rc != 0 )
 	{
-		throw CannotRemove( path.str() ) ;
+		if( warn )
+			G_WARNING( "G::File::remove: cannot delete file [" << path << "]: " << Process::strerror(e) ) ;
+		if( !no_throw )
+			throw CannotRemove( path , Process::strerror(e) ) ;
 	}
-	G_DEBUG( "G::File::remove: \"" << path << "\"" ) ;
+	return rc == 0 ;
 }
 
 bool G::File::rename( const Path & from , const Path & to , const NoThrow & )
 {
 	bool is_missing = false ;
-	bool ok = rename( from.str().c_str() , to.str().c_str() , is_missing ) ;
+	bool ok = rename( from.str() , to.str() , is_missing ) ;
 	G_DEBUG( "G::File::rename: \"" << from << "\" -> \"" << to << "\": success=" << ok ) ;
 	return ok ;
 }
@@ -53,7 +100,7 @@ bool G::File::rename( const Path & from , const Path & to , const NoThrow & )
 void G::File::rename( const Path & from , const Path & to , bool ignore_missing )
 {
 	bool is_missing = false ;
-	bool ok = rename( from.str().c_str() , to.str().c_str() , is_missing ) ;
+	bool ok = rename( from.str() , to.str() , is_missing ) ;
 	if( !ok && !(is_missing && ignore_missing) )
 	{
 		throw CannotRename( std::string() + "[" + from.str() + "] to [" + to.str() + "]" ) ;
@@ -61,10 +108,10 @@ void G::File::rename( const Path & from , const Path & to , bool ignore_missing 
 	G_DEBUG( "G::File::rename: \"" << from << "\" -> \"" << to << "\": success=" << ok ) ;
 }
 
-bool G::File::rename( const char * from , const char * to , bool & enoent )
+bool G::File::rename( const std::string & from , const std::string & to , bool & enoent )
 {
-	bool ok = 0 == std::rename( from , to ) ;
-	int error = G::Process::errno_() ;
+	bool ok = 0 == std::rename( from.c_str() , to.c_str() ) ; // beware temporaries disrupting errno
+	int error = Process::errno_() ;
 	enoent = !ok && error == ENOENT ;
 	return ok ;
 }
@@ -83,11 +130,11 @@ bool G::File::copy( const Path & from , const Path & to , const NoThrow & )
 
 std::string G::File::copy( const Path & from , const Path & to , int )
 {
-	std::ifstream in( from.str().c_str() , std::ios::binary | std::ios::in ) ;
+	std::ifstream in ; open( in , from ) ;
 	if( !in.good() )
 		return "cannot open input file" ;
 
-	std::ofstream out( to.str().c_str() , std::ios::binary | std::ios::out | std::ios::trunc ) ;
+	std::ofstream out ; open( out , to , std::ios_base::trunc ) ;
 	if( !out.good() )
 		return "cannot open output file" ;
 
@@ -225,10 +272,34 @@ void G::File::mkdirs( const Path & path , int limit )
 
 void G::File::create( const Path & path )
 {
-	std::ofstream f( path.str().c_str() , std::ios_base::out | std::ios_base::app ) ;
+	std::ofstream f ; open( f , path , std::ios_base::app ) ;
 	f.close() ;
 	if( !exists(path) ) // race
 		throw CannotCreate( path.str() ) ;
+}
+
+int G::File::compare( const Path & path_1 , const Path & path_2 , const NoThrow & )
+{
+	std::ifstream file_1 ; open( file_1 , path_1 ) ;
+	std::ifstream file_2 ; open( file_2 , path_2 ) ;
+	const int eof = std::char_traits<char>::eof() ; // EOF
+	if( !file_1.good() && !file_2.good() ) return -1 ;
+	if( !file_1.good() ) return -1 ;
+	if( !file_2.good() ) return 1 ;
+	int result = 0 ;
+	for(;;)
+	{
+		int a = file_1.get() ;
+		int b = file_2.get() ;
+		if( a == eof && b == eof )
+			break ;
+		if( a != b )
+		{
+			result = a < b ? -1 : 1 ;
+			break ;
+		}
+	}
+	return result ;
 }
 
 /// \file gfile.cpp

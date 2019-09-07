@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -69,9 +69,9 @@ public:
 
 private:
 	typedef struct pam_conv Conversation ;
-	typedef G::PamError Error ;
-	typedef G::Pam::ItemArray ItemArray ;
-	enum { MAGIC = 3456 } ;
+	typedef Pam::Error Error ;
+	typedef Pam::ItemArray ItemArray ;
+	G_CONSTANT( int , MAGIC , 3456 ) ;
 
 public:
 	Pam & m_pam ;
@@ -82,7 +82,7 @@ public:
 	bool m_silent ;
 
 public:
-	PamImp( G::Pam & pam , const std::string & app , const std::string & user , bool silent ) ;
+	PamImp( Pam & pam , const std::string & app , const std::string & user , bool silent ) ;
 	~PamImp() ;
 	Handle hpam() const ;
 	bool silent() const ;
@@ -96,6 +96,8 @@ public:
 	std::string name() const ;
 
 private:
+	PamImp( const PamImp & ) g__eq_delete ;
+	void operator=( const PamImp & ) g__eq_delete ;
 	static int converseCallback( int n , const struct pam_message ** in , struct pam_response ** out , void * vp ) ;
 	static void delayCallback( int , unsigned , void * ) ;
 	static std::string decodeStyle( int pam_style ) ;
@@ -156,7 +158,7 @@ bool G::PamImp::silent() const
 
 std::string G::PamImp::decodeStyle( int pam_style )
 {
-	std::string defolt = std::string( "#" ) + G::Str::fromInt( pam_style ) ;
+	std::string defolt = std::string( "#" ) + Str::fromInt( pam_style ) ;
 	if( pam_style == PAM_PROMPT_ECHO_OFF ) return "password" ;
 	if( pam_style == PAM_PROMPT_ECHO_ON ) return "prompt" ;
 	if( pam_style == PAM_ERROR_MSG ) return "error" ;
@@ -225,7 +227,7 @@ int G::PamImp::converseCallback( int n_in , const struct pam_message ** in , str
 	G_ASSERT( out != nullptr ) ;
 	size_t n = n_in < 0 ? size_t(0U) : static_cast<size_t>(n_in) ;
 
-	// pam_conv(3) on linux points out that the pam interface is under-speficied, and on some
+	// pam_conv(3) on linux points out that the pam interface is under-specified, and on some
 	// systems, possibly including solaris, the "in" pointer is interpreted differently - this
 	// is only a problem for n greater than one, so warn about it at run-time
 	//
@@ -355,7 +357,6 @@ G::Pam::Pam( const std::string & application , const std::string & user , bool s
 
 G::Pam::~Pam()
 {
-	delete m_imp ;
 }
 
 bool G::Pam::authenticate( bool require_token )

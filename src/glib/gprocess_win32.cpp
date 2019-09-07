@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,12 +19,12 @@
 //
 
 #include "gdef.h"
-#include "glimits.h"
 #include "gprocess.h"
 #include "gexception.h"
 #include "gstr.h"
 #include "glog.h"
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <algorithm>
 #include <vector>
@@ -35,17 +35,15 @@
 #include <fcntl.h>
 #include <direct.h> // _getcwd()
 
-/// \class G::Process::IdImp
-/// A private implementation class used by G::Process that wraps
-/// a process id.
-///
 class G::Process::IdImp
 {
 public:
 	unsigned int m_pid ;
 } ;
 
-// ===
+class G::Process::UmaskImp
+{
+} ;
 
 G::Process::Id::Id()
 {
@@ -125,9 +123,11 @@ int G::Process::errno_( const G::SignalSafe & , int e )
 
 std::string G::Process::strerror( int errno_ )
 {
-	std::ostringstream ss ;
-	ss << errno_ ; // could do better
-	return ss.str() ;
+	std::vector<char> buffer( 80U , '\0' ) ;
+	if( strerror_s( &buffer[0] , buffer.size()-1U , errno_ ) || buffer.at(0U) == '\0' )
+		return "unknown error" ;
+	std::string s( &buffer[0] ) ;
+	return G::Str::isPrintableAscii(s) ? G::Str::lower(s) : s ;
 }
 
 G::Identity G::Process::beOrdinary( Identity identity , bool )
@@ -161,15 +161,20 @@ void G::Process::revokeExtraGroups()
 
 std::string G::Process::exe()
 {
-	HINSTANCE hinstance = NULL ;
-	std::vector<char> buffer( limits::path , '\0' ) ; // at least MAX_PATH
-	DWORD size = static_cast<DWORD>( buffer.size() ) ;
-	DWORD rc = ::GetModuleFileNameA( hinstance , &buffer[0] , size ) ;
-	if( rc == 0 ) // some doubt about what's in rc - just test for zero
-		return std::string() ;
-	if( std::find(buffer.begin(),buffer.end(),'\0') == buffer.end() )
-		*buffer.rbegin() = '\0' ;
-	return std::string( &buffer[0] ) ;
+	// same code is in G::LogOutput...
+	std::vector<char> buffer ;
+	size_t sizes[] = { 80U , 1024U , 32768U , 0U } ; // documented limit of 32k
+	for( size_t * size_p = sizes ; *size_p ; ++size_p )
+	{
+		buffer.resize( *size_p+1U , '\0' ) ;
+		DWORD size = static_cast<DWORD>( buffer.size() ) ;
+		HINSTANCE hinstance = NULL ;
+		DWORD rc = ::GetModuleFileNameA( hinstance , &buffer[0] , size ) ;
+		if( rc == 0 ) break ;
+		if( rc < size )
+			return std::string( &buffer[0] , rc ) ;
+	}
+	return std::string() ;
 }
 
 std::string G::Process::cwd( bool no_throw )
@@ -198,8 +203,7 @@ std::string G::Process::cwd( bool no_throw )
 
 // ===
 
-G::Process::Umask::Umask( G::Process::Umask::Mode ) :
-	m_imp(0)
+G::Process::Umask::Umask( G::Process::Umask::Mode )
 {
 }
 
@@ -212,3 +216,4 @@ void G::Process::Umask::set( G::Process::Umask::Mode )
 	// not implemented
 }
 
+/// \file gprocess_win32.cpp

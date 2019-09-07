@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+   Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,46 +20,44 @@
  */
 
 /* This header is always the first header included in source
- * files. It takes care of some portability issues, and
- * is a good candidate for precompilation. It requires
- * either G_UNIX or G_WIN32 to be defined on the compiler
- * command line.
+ * files. It takes care of a lot of portability concerns
+ * and it works best when autoconf is used to set GCONFIG
+ * preprocessor switches. Either G_UNIX or G_WINDOWS are expected
+ * to be defined on the compiler command-line.
  */
 
 #ifndef G_DEF__H
 #define G_DEF__H
 
-	/* Pull in GCONFIG definitions. Use an odd file name to avoid
+	/* Pull in GCONFIG definitions. Uses an odd file name to avoid
 	 * picking up a header from some third-party library. If this
 	 * file does not exist then there might be a suitable template
-	 * file to copy, or just create an empty file and tweak the
-	 * values that are defaulted below.
+	 * file to copy, or just create an empty file and maybe tweak
+	 * the values that are defaulted below.
 	 */
 	#include <gconfig_defs.h>
 
 	/* Check target operating-system switches
 	 */
-	#if !defined(G_WIN32) && !defined(G_UNIX)
+	#if !defined(G_WINDOWS) && !defined(G_UNIX)
 		#if defined(_WIN32)
-			#define G_WIN32 1
+			#define G_WINDOWS 1
 		#else
 			#define G_UNIX 1
 		#endif
 	#endif
-	#if defined(G_WIN32) && defined(G_UNIX)
-		#error invalid compilation switches - define G_WIN32 or G_UNIX but not both
+	#if defined(G_WINDOWS) && defined(G_UNIX)
+		#error invalid compilation switches - define G_WINDOWS or G_UNIX but not both
 	#endif
 
 	/* Define supplementary o/s switches
 	 */
 	#if defined(__MINGW32__) && !defined(G_MINGW)
+		/* mingw-w64 */
 		#define G_MINGW 1
 	#endif
-	#if defined(G_MINGW) && !defined(G_WIN32)
-		#error invalid compilation switches - G_MINGW requires G_WIN32
-	#endif
-	#if defined(G_WIN32) && !defined(G_WINDOWS)
-		#define G_WINDOWS 1
+	#if defined(G_MINGW) && !defined(G_WINDOWS)
+		#error invalid compilation switches - G_MINGW requires G_WINDOWS
 	#endif
 	#if defined(__NetBSD__)
 		#define G_UNIX_BSD 1
@@ -81,11 +79,11 @@
 		#define G_UNIX_LINUX 1
 	#endif
 
-	/* Define the compiler family and capabilities
+	/* Define the compiler c++ dialect
 	 */
 	#if !defined(G_COMPILER_CXX_11)
 		#if defined(_MSC_VER)
-			/* MSV_VER 1500=>VS9(2008) 1700=>VS11(2012), 1800=>VS12(2013) 1900=>VS14(2015) */
+			/* MSC_VER 1500=>VS9(2008) 1700=>VS11(2012), 1800=>VS12(2013) 1900=>VS14(2015) */
 			#define G_COMPILER_CXX_11 (_MSC_VER >= 1900)
 		#else
 			#if __cplusplus > 199711L
@@ -94,7 +92,7 @@
 		#endif
 	#endif
 
-	/* Fill in any GCONFIG gaps
+	/* Apply GCONFIG defaults in case of no autoconf
 	 */
 	#if !defined(GCONFIG_HAVE_CXX_NULLPTR)
 		#ifdef G_COMPILER_CXX_11
@@ -108,6 +106,13 @@
 			#define GCONFIG_HAVE_CXX_CONSTEXPR 1
 		#else
 			#define GCONFIG_HAVE_CXX_CONSTEXPR 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_CXX_ENUM_CLASS)
+		#ifdef G_COMPILER_CXX_11
+			#define GCONFIG_HAVE_CXX_ENUM_CLASS 1
+		#else
+			#define GCONFIG_HAVE_CXX_ENUM_CLASS 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_CXX_NOEXCEPT)
@@ -147,7 +152,7 @@
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_CXX_STD_THREAD)
-		#if defined(G_COMPILER_CXX_11) || _MSC_VER >= 1800
+		#if !defined(G_MINGW) && ( defined(G_COMPILER_CXX_11) || _MSC_VER >= 1800 )
 			#define GCONFIG_HAVE_CXX_STD_THREAD 1
 		#else
 			#define GCONFIG_HAVE_CXX_STD_THREAD 0
@@ -167,6 +172,105 @@
 			#define GCONFIG_HAVE_CXX_EMPLACE 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_CXX_MOVE)
+		#ifdef G_COMPILER_CXX_11
+			#define GCONFIG_HAVE_CXX_MOVE 1
+		#else
+			#define GCONFIG_HAVE_CXX_MOVE 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_CXX_DELETED)
+		#ifdef G_COMPILER_CXX_11
+			#define GCONFIG_HAVE_CXX_DELETED 1
+		#else
+			#define GCONFIG_HAVE_CXX_DELETED 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_CXX_DEFAULTED)
+		#ifdef G_COMPILER_CXX_11
+			#define GCONFIG_HAVE_CXX_DEFAULTED 1
+		#else
+			#define GCONFIG_HAVE_CXX_DEFAULTED 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_CXX_INITIALIZER_LIST)
+		#ifdef G_COMPILER_CXX_11
+			#define GCONFIG_HAVE_CXX_INITIALIZER_LIST 1
+		#else
+			#define GCONFIG_HAVE_CXX_INITIALIZER_LIST 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_SYS_UTSNAME_H)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_SYS_UTSNAME_H 1
+		#else
+			#define GCONFIG_HAVE_SYS_UTSNAME_H 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_SYS_SELECT_H)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_SYS_SELECT_H 1
+		#else
+			#define GCONFIG_HAVE_SYS_SELECT_H 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_SYS_SOCKET_H)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_SYS_SOCKET_H 1
+		#else
+			#define GCONFIG_HAVE_SYS_SOCKET_H 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_SYS_MMAN_H)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_SYS_MMAN_H 1
+		#else
+			#define GCONFIG_HAVE_SYS_MMAN_H 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_NETINET_IN_H)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_NETINET_IN_H 1
+		#else
+			#define GCONFIG_HAVE_NETINET_IN_H 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_NETDB_H)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_NETDB_H 1
+		#else
+			#define GCONFIG_HAVE_NETDB_H 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_ARPA_INET_H)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_ARPA_INET_H 1
+		#else
+			#define GCONFIG_HAVE_ARPA_INET_H 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_LONG_LONG)
+		#define GCONFIG_HAVE_LONG_LONG 1
+	#endif
+	#if !defined(GCONFIG_HAVE_LONG_LONG_LONG)
+		/* "long long" is longer than "long" */
+		#define GCONFIG_HAVE_LONG_LONG_LONG 0
+	#endif
+	#if !defined(GCONFIG_HAVE_STDINT_H)
+		#define GCONFIG_HAVE_STDINT_H 1
+	#endif
+	#if !defined(GCONFIG_HAVE_INTTYPES_H)
+		#define GCONFIG_HAVE_INTTYPES_H 1
+	#endif
+	#if !defined(GCONFIG_HAVE_INT64)
+		#define GCONFIG_HAVE_INT64 1
+	#endif
+	#if !defined(GCONFIG_HAVE_INT32)
+		#define GCONFIG_HAVE_INT32 1
+	#endif
+	#if !defined(GCONFIG_HAVE_INT16)
+		#define GCONFIG_HAVE_INT16 1
+	#endif
 	#if !defined(GCONFIG_HAVE_DIRENT_H)
 		#define GCONFIG_HAVE_DIRENT_H 1
 	#endif
@@ -178,14 +282,14 @@
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_ERRNO_T)
-		#ifdef G_WIN32
+		#ifdef G_WINDOWS
 			#define GCONFIG_HAVE_ERRNO_T 1
 		#else
 			#define GCONFIG_HAVE_ERRNO_T 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_GETENV_S)
-		#if defined(G_WIN32) || defined(getenv_s)
+		#if ( defined(G_WINDOWS) && !defined(G_MINGW) ) || defined(getenv_s)
 			#define GCONFIG_HAVE_GETENV_S 1
 		#else
 			#define GCONFIG_HAVE_GETENV_S 0
@@ -201,14 +305,11 @@
 		#define GCONFIG_HAVE_GMTIME_R 1
 	#endif
 	#if !defined(GCONFIG_HAVE_GMTIME_S)
-		#if defined(G_WIN32) || defined(gmtime_s)
+		#if defined(G_WINDOWS) || defined(gmtime_s)
 			#define GCONFIG_HAVE_GMTIME_S 1
 		#else
 			#define GCONFIG_HAVE_GMTIME_S 0
 		#endif
-	#endif
-	#if !defined(GCONFIG_HAVE_INTTYPES_H)
-		#define GCONFIG_HAVE_INTTYPES_H 1
 	#endif
 	#if !defined(GCONFIG_HAVE_IPV6)
 		#define GCONFIG_HAVE_IPV6 1
@@ -217,7 +318,7 @@
 		#define GCONFIG_HAVE_LOCALTIME_R 1
 	#endif
 	#if !defined(GCONFIG_HAVE_LOCALTIME_S)
-		#if defined(G_WIN32) || defined(localtime_s)
+		#if defined(G_WINDOWS) || defined(localtime_s)
 			#define GCONFIG_HAVE_LOCALTIME_S 1
 		#else
 			#define GCONFIG_HAVE_LOCALTIME_S 0
@@ -226,11 +327,8 @@
 	#if !defined(GCONFIG_HAVE_MEMORY_H)
 		#define GCONFIG_HAVE_MEMORY_H 1
 	#endif
-	#if !defined(GCONFIG_HAVE_NDIR_H)
-		#define GCONFIG_HAVE_NDIR_H 0
-	#endif
 	#if !defined(GCONFIG_HAVE_SETPGRP_BSD)
-		#if defined(G_UNIX_LINUX)
+		#if defined(G_UNIX_LINUX) || defined(G_UNIX_MAC)
 			#define GCONFIG_HAVE_SETPGRP_BSD 0
 		#else
 			#define GCONFIG_HAVE_SETPGRP_BSD 1
@@ -252,14 +350,11 @@
 	#if !defined(GCONFIG_HAVE_SOCKLEN_T)
 		#define GCONFIG_HAVE_SOCKLEN_T 1
 	#endif
-	#if !defined(GCONFIG_HAVE_STDINT_H)
-		#define GCONFIG_HAVE_STDINT_H 1
-	#endif
 	#if !defined(GCONFIG_HAVE_STDLIB_H)
 		#define GCONFIG_HAVE_STDLIB_H 1
 	#endif
 	#if !defined(GCONFIG_HAVE_STRNCPY_S)
-		#if defined(G_WIN32) || defined(strncpy_s)
+		#if defined(G_WINDOWS) || defined(strncpy_s)
 			#define GCONFIG_HAVE_STRNCPY_S 1
 		#else
 			#define GCONFIG_HAVE_STRNCPY_S 0
@@ -271,6 +366,9 @@
 	#if !defined(GCONFIG_HAVE_STRING_H)
 		#define GCONFIG_HAVE_STRING_H 1
 	#endif
+	#if !defined(GCONFIG_HAVE_NDIR_H)
+		#define GCONFIG_HAVE_NDIR_H 0
+	#endif
 	#if !defined(GCONFIG_HAVE_SYS_DIR_H)
 		#define GCONFIG_HAVE_SYS_DIR_H 0
 	#endif
@@ -280,90 +378,103 @@
 	#if !defined(GCONFIG_HAVE_SYS_STAT_H)
 		#define GCONFIG_HAVE_SYS_STAT_H 1
 	#endif
+	#if !defined(GCONFIG_HAVE_SYS_WAIT_H)
+		#define GCONFIG_HAVE_SYS_WAIT_H 1
+	#endif
 	#if !defined(GCONFIG_HAVE_SYS_TIME_H)
 		#define GCONFIG_HAVE_SYS_TIME_H 1
 	#endif
 	#if !defined(GCONFIG_HAVE_SYS_TYPES_H)
 		#define GCONFIG_HAVE_SYS_TYPES_H 1
 	#endif
+	#if !defined(GCONFIG_HAVE_UNISTD_H)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_UNISTD_H 1
+		#else
+			#define GCONFIG_HAVE_UNISTD_H 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_ERRNO_H)
+		#define GCONFIG_HAVE_ERRNO_H 1
+	#endif
 	#if !defined(GCONFIG_HAVE_INET_NTOP)
 		#define GCONFIG_HAVE_INET_NTOP 1
 	#endif
 	#if !defined(GCONFIG_HAVE_IF_NAMETOINDEX)
-		#if G_WINDOWS
-			#define GCONFIG_HAVE_IF_NAMETOINDEX 0
-		#else
+		#ifdef G_UNIX
 			#define GCONFIG_HAVE_IF_NAMETOINDEX 1
+		#else
+			#define GCONFIG_HAVE_IF_NAMETOINDEX 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_INET_PTON)
 		#define GCONFIG_HAVE_INET_PTON 1
 	#endif
 	#if !defined(GCONFIG_HAVE_MISSING_STD_ABORT)
-		#ifdef G_WINDOWS
+		#if defined(_MSG_VER) && (_MSC_VER <= 1500)
 			#define GCONFIG_HAVE_MISSING_STD_ABORT 1
 		#else
 			#define GCONFIG_HAVE_MISSING_STD_ABORT 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_MISSING_STD_EXIT)
-		#if defined(G_WINDOWS)
-			#define GCONFIG_HAVE_MISSING_STD_EXIT 0
-		#else
+		#if defined(_MSG_VER) && (_MSC_VER <= 1500)
 			#define GCONFIG_HAVE_MISSING_STD_EXIT 1
+		#else
+			#define GCONFIG_HAVE_MISSING_STD_EXIT 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_MISSING_STD_SYSTEM)
-		#if defined(G_WINDOWS)
+		#if defined(_MSG_VER) && (_MSC_VER <= 1500)
 			#define GCONFIG_HAVE_MISSING_STD_SYSTEM 1
 		#else
 			#define GCONFIG_HAVE_MISSING_STD_SYSTEM 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_MISSING_STD_MEMSET)
-		#if defined(G_WINDOWS)
+		#if defined(_MSG_VER) && (_MSC_VER <= 1500)
 			#define GCONFIG_HAVE_MISSING_STD_MEMSET 1
 		#else
 			#define GCONFIG_HAVE_MISSING_STD_MEMSET 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_MISSING_STD_MEMCPY)
-		#if defined(G_WINDOWS)
+		#if defined(_MSG_VER) && (_MSC_VER <= 1500)
 			#define GCONFIG_HAVE_MISSING_STD_MEMCPY 1
 		#else
 			#define GCONFIG_HAVE_MISSING_STD_MEMCPY 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_MISSING_STD_STRERROR)
-		#if defined(G_WINDOWS)
+		#if defined(_MSG_VER) && (_MSC_VER <= 1500)
 			#define GCONFIG_HAVE_MISSING_STD_STRERROR 1
 		#else
 			#define GCONFIG_HAVE_MISSING_STD_STRERROR 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_MISSING_STD_FOPEN)
-		#if defined(G_WINDOWS)
+		#if defined(_MSG_VER) && (_MSC_VER <= 1500)
 			#define GCONFIG_HAVE_MISSING_STD_FOPEN 1
 		#else
 			#define GCONFIG_HAVE_MISSING_STD_FOPEN 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_MISSING_STD_FCLOSE)
-		#if defined(G_WINDOWS)
+		#if defined(_MSG_VER) && (_MSC_VER <= 1500)
 			#define GCONFIG_HAVE_MISSING_STD_FCLOSE 1
 		#else
 			#define GCONFIG_HAVE_MISSING_STD_FCLOSE 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_MISSING_STD_FPUTS)
-		#if defined(G_WINDOWS)
+		#if defined(_MSG_VER) && (_MSC_VER <= 1500)
 			#define GCONFIG_HAVE_MISSING_STD_FPUTS 1
 		#else
 			#define GCONFIG_HAVE_MISSING_STD_FPUTS 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_UID_T)
-		#if defined(G_UNIX)
+		#ifdef G_UNIX
 			#define GCONFIG_HAVE_UID_T 1
 		#else
 			#define GCONFIG_HAVE_UID_T 0
@@ -371,6 +482,9 @@
 	#endif
 	#if !defined(GCONFIG_HAVE_GID_T)
 		#define GCONFIG_HAVE_GID_T GCONFIG_HAVE_UID_T
+	#endif
+	#if !defined(GCONFIG_HAVE_UINTPTR_T)
+		#define GCONFIG_HAVE_UINTPTR_T 0
 	#endif
 	#if !defined(GCONFIG_HAVE_SSIZE_T)
 		#if defined(G_UNIX) || defined(G_MINGW)
@@ -387,35 +501,35 @@
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_GET_WINDOW_LONG_PTR)
-		#if defined(G_WIN32)
+		#ifdef G_WINDOWS
 			#define GCONFIG_HAVE_GET_WINDOW_LONG_PTR 1
 		#else
 			#define GCONFIG_HAVE_GET_WINDOW_LONG_PTR 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_MREMAP)
-		#if defined(G_UNIX_LINUX)
+		#ifdef G_UNIX_LINUX
 			#define GCONFIG_HAVE_MREMAP 1
 		#else
 			#define GCONFIG_HAVE_MREMAP 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_TIMERFD)
-		#if defined(G_UNIX_LINUX)
+		#ifdef G_UNIX_LINUX
 			#define GCONFIG_HAVE_TIMERFD 1
 		#else
 			#define GCONFIG_HAVE_TIMERFD 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_PAM)
-		#if defined(G_UNIX)
+		#ifdef G_UNIX
 			#define GCONFIG_HAVE_PAM 1
 		#else
 			#define GCONFIG_HAVE_PAM 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_PAM_IN_SECURITY)
-		#if defined(G_UNIX)
+		#ifdef G_UNIX
 			#define GCONFIG_HAVE_PAM_IN_SECURITY 1
 		#else
 			#define GCONFIG_HAVE_PAM_IN_SECURITY 0
@@ -428,7 +542,7 @@
 		#define GCONFIG_HAVE_PAM_IN_PAM 0
 	#endif
 	#if !defined(GCONFIG_HAVE_GET_NATIVE_SYSTEM_INFO)
-		#if defined(G_WIN32)
+		#ifdef G_WINDOWS
 			#define GCONFIG_HAVE_GET_NATIVE_SYSTEM_INFO 1
 		#else
 			#define GCONFIG_HAVE_GET_NATIVE_SYSTEM_INFO 0
@@ -450,7 +564,7 @@
 		#define GCONFIG_HAVE_LIBEXIV 0
 	#endif
 	#if !defined(GCONFIG_HAVE_V4L)
-		#if defined(G_UNIX_LINUX)
+		#ifdef G_UNIX_LINUX
 			#define GCONFIG_HAVE_V4L 1
 		#else
 			#define GCONFIG_HAVE_V4L 0
@@ -473,7 +587,7 @@
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_X11)
-		#if defined(G_UNIX)
+		#ifdef G_UNIX
 			#define GCONFIG_HAVE_X11 1
 		#else
 			#define GCONFIG_HAVE_X11 0
@@ -486,7 +600,7 @@
 		#define GCONFIG_HAVE_MBEDTLS_NET_H 0
 	#endif
 	#if !defined(GCONFIG_HAVE_OPENSSL)
-		#if defined(G_UNIX)
+		#ifdef G_UNIX
 			#define GCONFIG_HAVE_OPENSSL 1
 		#else
 			#define GCONFIG_HAVE_OPENSSL 0
@@ -495,24 +609,27 @@
 	#if !defined(GCONFIG_HAVE_OPENSSL_MIN_MAX)
 		#define GCONFIG_HAVE_OPENSSL_MIN_MAX 0
 	#endif
-	#if !defined(GCONFIG_HAVE_OPENSSL_SSLv3)
-		#define GCONFIG_HAVE_OPENSSL_SSLv3 1
+	#if !defined(GCONFIG_HAVE_OPENSSL_SSLv23_METHOD)
+		#define GCONFIG_HAVE_OPENSSL_SSLv23_METHOD 0
 	#endif
-	#if !defined(GCONFIG_HAVE_OPENSSL_TLSv1_1)
-		#define GCONFIG_HAVE_OPENSSL_TLSv1_1 1
+	#if !defined(GCONFIG_HAVE_OPENSSL_SSLv3_METHOD)
+		#define GCONFIG_HAVE_OPENSSL_SSLv3_METHOD 0
 	#endif
-	#if !defined(GCONFIG_HAVE_OPENSSL_TLSv1_2)
-		#define GCONFIG_HAVE_OPENSSL_TLSv1_2 1
+	#if !defined(GCONFIG_HAVE_OPENSSL_TLSv1_1_METHOD)
+		#define GCONFIG_HAVE_OPENSSL_TLSv1_1_METHOD 1
+	#endif
+	#if !defined(GCONFIG_HAVE_OPENSSL_TLSv1_2_METHOD)
+		#define GCONFIG_HAVE_OPENSSL_TLSv1_2_METHOD 1
 	#endif
 	#if !defined(GCONFIG_HAVE_BOOST)
-		#if defined(G_UNIX_LINUX)
+		#ifdef G_UNIX_LINUX
 			#define GCONFIG_HAVE_BOOST 1
 		#else
 			#define GCONFIG_HAVE_BOOST 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_ALSA)
-		#if defined(G_UNIX_LINUX)
+		#ifdef G_UNIX_LINUX
 			#define GCONFIG_HAVE_ALSA 1
 		#else
 			#define GCONFIG_HAVE_ALSA 0
@@ -525,13 +642,6 @@
 			#define GCONFIG_HAVE_FMEMOPEN 0
 		#endif
 	#endif
-	#if !defined(GCONFIG_HAVE_X11)
-		#if defined(G_UNIX)
-			#define GCONFIG_HAVE_X11 1
-		#else
-			#define GCONFIG_HAVE_X11 0
-		#endif
-	#endif
 	#if !defined(GCONFIG_HAVE_IP_MREQN)
 		#if defined(G_UNIX_LINUX) || defined(G_UNIX_FREEBSD)
 			#define GCONFIG_HAVE_IP_MREQN 1
@@ -540,85 +650,136 @@
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_EXECVPE)
-		#if defined(G_UNIX_LINUX)
+		#ifdef G_UNIX_LINUX
 			#define GCONFIG_HAVE_EXECVPE 1
 		#else
 			#define GCONFIG_HAVE_EXECVPE 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_WINDOWS_CREATE_WAITABLE_TIMER_EX)
-		#if defined(G_UNIX)
-			#define GCONFIG_HAVE_WINDOWS_CREATE_WAITABLE_TIMER_EX 0
-		#else
+		#if defined(G_WINDOWS) && !defined(G_MINGW)
 			#define GCONFIG_HAVE_WINDOWS_CREATE_WAITABLE_TIMER_EX 1
+		#else
+			#define GCONFIG_HAVE_WINDOWS_CREATE_WAITABLE_TIMER_EX 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_WINDOWS_CREATE_EVENT_EX)
-		#if defined(G_UNIX)
-			#define GCONFIG_HAVE_WINDOWS_CREATE_EVENT_EX 0
-		#else
+		#if defined(G_WINDOWS) && !defined(G_MINGW)
 			#define GCONFIG_HAVE_WINDOWS_CREATE_EVENT_EX 1
+		#else
+			#define GCONFIG_HAVE_WINDOWS_CREATE_EVENT_EX 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_CXX_STD_WSTRING)
 		#define GCONFIG_HAVE_CXX_STD_WSTRING 1
 	#endif
+	#if !defined(GCONFIG_HAVE_DLOPEN)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_DLOPEN 1
+		#else
+			#define GCONFIG_HAVE_DLOPEN 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_FSOPEN)
+		#if defined(G_UNIX) || defined(G_MINGW)
+			#define GCONFIG_HAVE_FSOPEN 0
+		#else
+			#define GCONFIG_HAVE_FSOPEN 1
+		#endif
+	#endif
+
+	/* Include early o/s headers
+	 */
+	#if defined(G_WINDOWS)
+		#ifndef WIN32_LEAN_AND_MEAN
+			#define WIN32_LEAN_AND_MEAN
+		#endif
+		#include <winsock2.h>
+		#include <windows.h>
+		#include <ws2tcpip.h>
+	#endif
+
+	/* Include commonly-used c++ headers
+	 */
+	#ifdef __cplusplus
+		#include <cstddef>
+		#include <cstdlib>
+		#include <ios>
+		#include <iosfwd>
+		#if GCONFIG_HAVE_CXX_INITIALIZER_LIST
+		#include <initializer_list>
+		#endif
+	#endif
 
 	/* Include main o/s headers
 	 */
 	#if defined(G_WINDOWS)
-		#ifdef G_MINGW
-			#define __USE_W32_SOCKETS
-			#ifndef _WIN32_WINNT
-				#define _WIN32_WINNT _WIN32_WINNT_VISTA
-			#endif
-			#if (_WIN32_WINNT < _WIN32_WINNT_VISTA)
-				#undef _WIN32_WINNT
-				#define _WIN32_WINNT _WIN32_WINNT_VISTA
-			#endif
-		#endif
-		#ifndef WIN32_LEAN_AND_MEAN
-			#define WIN32_LEAN_AND_MEAN
-		#endif
-		#ifdef G_WIN32_IE
-			#ifndef _WIN32_IE
-				#define _WIN32_IE 0x600
-			#endif
-		#endif
-		#include <windows.h>
-		#include <winsock2.h>
-		#include <ws2tcpip.h>
 		#include <shellapi.h>
 		#include <direct.h>
 		#ifdef G_MINGW
 			#include <sys/stat.h>
 			#include <unistd.h>
+		#else
+			#include <share.h>
 		#endif
 	#else
-		#include <unistd.h>
-		#include <sys/stat.h>
-		#include <sys/types.h>
-		#include <sys/wait.h>
-		#include <sys/utsname.h>
-		#include <sys/select.h>
-		#include <sys/socket.h>
+		#if GCONFIG_HAVE_SYS_TYPES_H
+			#include <sys/types.h>
+		#endif
+		#if GCONFIG_HAVE_SYS_STAT_H
+			#include <sys/stat.h>
+		#endif
+		#if GCONFIG_HAVE_INTTYPES_H
+			#include <inttypes.h>
+		#endif
+		#if GCONFIG_HAVE_STDINT_H
+			#include <stdint.h>
+		#endif
+		#if GCONFIG_HAVE_UNISTD_H
+			#include <unistd.h>
+		#endif
+		#if GCONFIG_HAVE_ERRNO_H
+			#include <errno.h>
+		#endif
+		#if GCONFIG_HAVE_SYS_WAIT_H
+			#include <sys/wait.h>
+		#endif
+		#if GCONFIG_HAVE_SYS_UTSNAME_H
+			#include <sys/utsname.h>
+		#endif
+		#if GCONFIG_HAVE_SYS_SELECT_H
+			#include <sys/select.h>
+		#endif
+		#if GCONFIG_HAVE_SYS_SOCKET_H
+			#include <sys/socket.h>
+		#endif
 		#ifndef MSG_NOSIGNAL
 			#define MSG_NOSIGNAL 0
 		#endif
-		#include <sys/mman.h>
-		#if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
-			#define MAP_ANONYMOUS MAP_ANON
+		#if GCONFIG_HAVE_SYS_MMAN_H
+			#include <sys/mman.h>
+			#if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
+				#define MAP_ANONYMOUS MAP_ANON
+			#endif
+			#ifndef MREMAP_MAYMOVE
+				#define MREMAP_MAYMOVE 0
+			#endif
 		#endif
-		#ifndef MREMAP_MAYMOVE
-			#define MREMAP_MAYMOVE 0
+		#if GCONFIG_HAVE_NETINET_IN_H
+			#include <netinet/in.h>
 		#endif
-		#include <netinet/in.h>
-		#include <netdb.h>
-		#include <arpa/inet.h>
+		#if GCONFIG_HAVE_NETDB_H
+			#include <netdb.h>
+		#endif
+		#if GCONFIG_HAVE_ARPA_INET_H
+			#include <arpa/inet.h>
+		#endif
 		#if GCONFIG_HAVE_IF_NAMETOINDEX
 			#include <net/if.h>
 		#endif
-		#include <errno.h>
+	#endif
+	#ifndef __cplusplus
+		#include <wchar.h>
 	#endif
 
 	/* Undefine some out-dated macros
@@ -630,22 +791,6 @@
 		#ifdef min
 			#undef min
 		#endif
-	#endif
-
-	/* Include commonly-used system headers (good for pre-compilation)
-	 */
-	#ifdef __cplusplus
-		#include <cstddef>
-		#include <cstdlib>
-		#include <exception>
-		#include <fstream>
-		#include <iostream>
-		#include <memory>
-		#include <sstream>
-		#include <string>
-		#include <ctime>
-	#else
-		#include <stddef.h>
 	#endif
 
 	/* Define a few Windows-style types under unix
@@ -660,23 +805,63 @@
 		typedef int SOCKET ;
 	#endif
 
-	/* Define fixed-size types
+	/* Pull some std types into the global namespace
+	 */
+	#ifdef __cplusplus
+		using std::size_t ;
+	#endif
+
+	/* Define fixed-size types - the underlying types should come
+	 * from C99's stdint.h, but they are all optional
 	 */
 	#if defined(G_WINDOWS)
-		typedef UINT32 g_uint32_t ;
-		typedef UINT16 g_uint16_t ;
-		typedef INT32 g_int32_t ;
-		typedef INT16 g_int16_t ;
+		#if GCONFIG_HAVE_INT64
+			typedef INT64 g_int64_t ;
+			typedef UINT64 g_uint64_t ;
+		#endif
+		#if GCONFIG_HAVE_INT32
+			typedef UINT32 g_uint32_t ;
+			typedef UINT16 g_uint16_t ;
+		#endif
+		#if GCONFIG_HAVE_INT16
+			typedef INT32 g_int32_t ;
+			typedef INT16 g_int16_t ;
+		#endif
 	#else
-		#include <stdint.h>
-		typedef uint32_t g_uint32_t ;
-		typedef uint16_t g_uint16_t ;
-		typedef int32_t g_int32_t ;
-		typedef int16_t g_int16_t ;
+		#if GCONFIG_HAVE_INT64
+			typedef int64_t g_int64_t ;
+			typedef uint64_t g_uint64_t ;
+		#endif
+		#if GCONFIG_HAVE_INT32
+			typedef uint32_t g_uint32_t ;
+			typedef int32_t g_int32_t ;
+		#endif
+		#if GCONFIG_HAVE_INT16
+			typedef uint16_t g_uint16_t ;
+			typedef int16_t g_int16_t ;
+		#endif
+	#endif
+	#if GCONFIG_HAVE_UINTPTR_T
+		typedef uintptr_t g_uintptr_t ; /* uintptr_t in C99 and C++2011 */
+	#else
+		typedef size_t g_uintptr_t ; /* using size_t assumes a non-segmented architecture - see also windows LONG_PTR */
 	#endif
 	#if __cplusplus
-		typedef char assert_sizeof_uint16_is_2[sizeof(g_uint16_t)==2U?1:-1] ;
-		typedef char assert_sizeof_uint32_is_4[sizeof(g_uint32_t)==4U?1:-1] ;
+		#if GCONFIG_HAVE_INT64
+			typedef char assert_sizeof_int64_is_8[sizeof(g_int64_t)==8U?1:-1] ;
+			typedef char assert_sizeof_uint64_is_8[sizeof(g_uint64_t)==8U?1:-1] ;
+		#endif
+		#if GCONFIG_HAVE_INT32
+			typedef char assert_sizeof_uint32_is_4[sizeof(g_uint32_t)==4U?1:-1] ;
+			typedef char assert_sizeof_int32_is_4[sizeof(g_int32_t)==4U?1:-1] ;
+		#endif
+		#if GCONFIG_HAVE_INT16
+			typedef char assert_sizeof_uint16_is_2[sizeof(g_uint16_t)==2U?1:-1] ;
+			typedef char assert_sizeof_int16_is_2[sizeof(g_int16_t)==2U?1:-1] ;
+		#endif
+		#if GCONFIG_HAVE_UINTPTR_T
+			typedef char assert_uintptr_t_is_big_enough[sizeof(g_uintptr_t)>=sizeof(void*)?1:-1] ; /* try 'typedef unsigned long g_uintptr_t' if this fails */
+		#endif
 	#endif
 
 	/* Define missing standard types
@@ -691,6 +876,7 @@
 		#if defined(SSIZE_T)
 			typedef SSIZE_T ssize_t ;
 		#else
+			/* read(2) return type -- 'int' on some unix systems */
 			typedef int ssize_t ;
 		#endif
 	#endif
@@ -701,7 +887,8 @@
 		typedef int socklen_t ;
 	#endif
 	#if ! GCONFIG_HAVE_ERRNO_T
-		typedef int errno_t ; /* for _s() return type */
+		/* whatever_s() return type */
+		typedef int errno_t ;
 	#endif
 	#if ! GCONFIG_HAVE_CXX_STD_WSTRING
 		#if __cplusplus
@@ -712,13 +899,7 @@
 		#endif
 	#endif
 
-	/* Pull some std types into the global namespace
-	 */
-	#ifdef __cplusplus
-		using std::size_t ;
-	#endif
-
-	/* Pull other stuff into the std namespace
+	/* Pull stuff into the std namespace as a fix for old compilers
 	 */
 	#ifdef __cplusplus
 		#include <cstdio>
@@ -728,37 +909,37 @@
 		namespace std
 		{
 			#if GCONFIG_HAVE_MISSING_STD_ABORT
-				using ::abort ; // stdlib
+				using ::abort ; // cstdlib
 			#endif
 			#if GCONFIG_HAVE_MISSING_STD_EXIT
-				using ::exit ; // stdlib
+				using ::exit ; // cstdlib
 			#endif
 			#if GCONFIG_HAVE_MISSING_STD_SYSTEM
-				using ::system ; // stdlib
+				using ::system ; // cstdlib
 			#endif
 			#if GCONFIG_HAVE_MISSING_STD_MEMSET
-				using ::memset ; // string
+				using ::memset ; // cstring
 			#endif
 			#if GCONFIG_HAVE_MISSING_STD_MEMCPY
-				using ::memcpy ; // string
+				using ::memcpy ; // cstring
 			#endif
 			#if GCONFIG_HAVE_MISSING_STD_STRERROR
-				using ::strerror ; // string
+				using ::strerror ; // cstring
 			#endif
 			#if GCONFIG_HAVE_MISSING_STD_FOPEN
-				using ::fopen ; // stdio
+				using ::fopen ; // cstdio
 			#endif
 			#if GCONFIG_HAVE_MISSING_STD_FCLOSE
-				using ::fclose ; // stdio
+				using ::fclose ; // cstdio
 			#endif
 			#if GCONFIG_HAVE_MISSING_STD_FPUTS
-				using ::fputs ; // stdio
+				using ::fputs ; // cstdio
 			#endif
 			#if GCONFIG_HAVE_MISSING_STD_STRUCT_TM
-				using ::tm ; // time
+				using ::tm ; // ctime
 			#endif
 			#if GCONFIG_HAVE_MISSING_STD_TIME_T
-				using ::time_t ; // time
+				using ::time_t ; // ctime
 			#endif
 		}
 	#endif
@@ -779,7 +960,7 @@
 	#define G_IGNORE_PASTE(a,b) G_IGNORE_PASTE_IMP(a,b)
 	#define G_IGNORE_RETURN(type,expr) do { type G_IGNORE_PASTE(ignore_,__LINE__) = expr ; (void) G_IGNORE_PASTE(ignore_,__LINE__) ; } while(0)
 	#define G_IGNORE_PARAMETER(type,name) (void)name
-	#define G_IGNORE_VARIABLE(name) (void)name
+	#define G_IGNORE_VARIABLE(type,name) (void)name
 
 	/* C++ language backwards compatibility
 	 */
@@ -792,10 +973,33 @@
 		#endif
 
 		#if GCONFIG_HAVE_CXX_CONSTEXPR
-			#define g__constexpr constexpr
+			#define g__constexpr constexpr /* for in-class initialisation of static integer-type constants */
+			#define g__constexpr_fn constexpr /* for constexpr on functions */
+			#define G_CONSTANT( int_type , name , value ) static constexpr int_type name = value
 		#else
-			/* for in-class initialisation of static integer-type constants only */
-			#define g__constexpr const
+			#define g__constexpr const /* for in-class initialisation of static integer-type constants */
+			#define g__constexpr_fn /* for constexpr on functions */
+			#define G_CONSTANT( int_type , name , value ) enum { name = value }
+		#endif
+
+		#if GCONFIG_HAVE_CXX_ENUM_CLASS
+			#define g__enum(name) enum class name
+			#define g__enum_end(name)
+		#else
+			#define g__enum(name) struct name { enum X
+			#define g__enum_end(name) X x;name(int x_):x(static_cast<X>(x_)){};name():x(static_cast<X>(0)){};operator int()const{return static_cast<int>(x);}};
+		#endif
+
+		#if GCONFIG_HAVE_CXX_DELETED
+			#define g__eq_delete =delete
+		#else
+			#define g__eq_delete
+		#endif
+
+		#if GCONFIG_HAVE_CXX_DEFAULTED
+			#define g__eq_default =default
+		#else
+			#define g__eq_default
 		#endif
 
 		#if GCONFIG_HAVE_CXX_NOEXCEPT
@@ -814,40 +1018,41 @@
 			#define g__final
 		#endif
 
-		#if GCONFIG_HAVE_CXX_SHARED_PTR
-			#include <memory>
-			using std::shared_ptr ;
-			using std::unique_ptr ;
-			using std::const_pointer_cast ;
-		#else
+		#if !GCONFIG_HAVE_CXX_SHARED_PTR || defined(G_WITH_SHARED_PTR)
+			#include <algorithm>
+			#include <utility>
 			namespace G {
-				template <typename T>
-				struct shared_ptr_deleter
+				template <typename T> struct shared_ptr_deleter
 				{
 					static void fn( void * p ) { delete static_cast<T*>(p) ; }
 				} ;
 				struct shared_ptr_control
 				{
 					explicit shared_ptr_control( void * object , void (*deleter)(void*) ) :
-						m_object(object) , m_deleter(deleter) , m_n(1U) {}
+						m_object(object) , m_deleter(deleter) , m_n(1U) , m_w(0U) {}
 					explicit shared_ptr_control( const void * object , void (*deleter)(void*) ) :
-						m_object(const_cast<void*>(object)) , m_deleter(deleter) , m_n(1U) {}
+						m_object(const_cast<void*>(object)) , m_deleter(deleter) , m_n(1U) , m_w(0U) {}
 					void inc() { m_n++ ; }
 					bool dec() { m_n-- ; return m_n == 0 ; }
+					void winc() { m_w++ ; }
+					bool wdec() { m_w-- ; return unused() ; }
+					bool unused() const { return m_n == 0 && m_w == 0 ; }
+					unsigned int use_count() const { return m_object ? m_n : 0U ; }
 					void * m_object ;
 					void (*m_deleter)(void *) ;
 					unsigned int m_n ;
+					unsigned int m_w ;
 				} ;
 				template <typename T> class shared_ptr
 				{
 					public:
 						typedef shared_ptr<T> ptr ;
-						explicit shared_ptr( T * p = 0 ) : m_control(new shared_ptr_control(p,&shared_ptr_deleter<T>::fn)) , m_p(p) {}
-						shared_ptr( T * p , void (*d)(void*) ) : m_control(new shared_ptr_control(p,d)) , m_p(p) {}
+						explicit shared_ptr( T * p = 0 ) : m_control(p?new shared_ptr_control(p,&shared_ptr_deleter<T>::fn):nullptr) , m_p(p) {}
+						shared_ptr( T * p , void (*d)(void*) ) : m_control(p?new shared_ptr_control(p,d):nullptr) , m_p(p) {}
 						template <typename Y> shared_ptr( const shared_ptr<Y> & obj , T * p ) : m_control(obj.m_control) , m_p(p) { inc(); }
 						~shared_ptr() { dec(); }
-						void reset( T * p = 0 ) { ptr tmp(p); swap(tmp); }
-						void reset( T * p , void (*d)(void*) ) { ptr tmp(p,d); swap(tmp); }
+						void reset( T * p = 0 ) { ptr(p).swap(*this); }
+						void reset( T * p , void (*d)(void*) ) { ptr(p,d).swap(*this); }
 						T * get() { return m_p; }
 						const T * get() const { return m_p; }
 						T * operator->() { return m_p; }
@@ -857,28 +1062,46 @@
 						operator bool () const { return m_p != nullptr; }
 						template <typename D> shared_ptr( const shared_ptr<D> & o ) : m_control(o.m_control) , m_p(o.m_p) { inc(); }
 						shared_ptr( const shared_ptr<T> & o ) : m_control(o.m_control) , m_p(o.m_p) { inc(); }
-						void operator=( const shared_ptr<T> & o ) { ptr tmp(o); swap(tmp); }
-						unsigned int use_count() const { return m_control->m_n ; }
+						ptr & operator=( const shared_ptr<T> & o ) { ptr(o).swap(*this); return *this; }
+						unsigned int use_count() const { return m_control ? m_control->use_count() : 0U ; }
 						bool unique() const { return use_count() == 1; }
+						static shared_ptr<T> from_weak( shared_ptr_control * control , T * p ) { return (control&&control->m_object)?ptr(control,p):ptr(); }
 					private:
-						void swap( shared_ptr<T> & o ) { std::swap(m_p,o.m_p); std::swap(m_control,o.m_control); }
+						shared_ptr( shared_ptr_control * control , T * p ) : m_control(control) , m_p(p) { inc(); }
+						void swap( shared_ptr<T> & o ) g__noexcept { std::swap(m_p,o.m_p); std::swap(m_control,o.m_control); }
 						void dec()
 						{
-							if( m_control->dec() )
+							if( m_control && m_control->dec() )
 							{
 								m_control->m_deleter( m_control->m_object ) ;
-								delete m_control ;
-								m_control = nullptr ;
-								m_p = nullptr ;
+								m_control->m_object = nullptr ;
 							}
+							if( m_control && m_control->unused() )
+								delete m_control ;
 						}
-						void inc() { m_control->inc(); }
+						void inc() { if(m_control) m_control->inc(); }
 					public:
 						shared_ptr_control * m_control ;
 						T * m_p ;
 				} ;
-				template <typename T, typename U>
-				shared_ptr<T> const_pointer_cast( const shared_ptr<U> & ptr_in ) g__noexcept
+				template <typename T> class weak_ptr
+				{
+					public:
+						weak_ptr() : m_control(nullptr) , m_p(nullptr) {}
+						weak_ptr( const shared_ptr<T> & sp ) : m_control(sp.m_control) , m_p(sp.m_p) { m_control->winc(); } // implicit
+						weak_ptr( const weak_ptr<T> & other ) : m_control(other.m_control) , m_p(other.m_p) { if(m_control) m_control->winc(); }
+						~weak_ptr() { if(m_control && m_control->wdec()) delete m_control; }
+						weak_ptr<T> & operator=( const weak_ptr<T> & other ) { weak_ptr<T>(other).swap(*this); return *this; }
+						void swap( weak_ptr<T> & other ) g__noexcept { std::swap(m_control,other.m_control); std::swap(m_p,other.m_p); }
+						void reset() { if(m_control&&m_control->wdec()) delete m_control; m_control = nullptr; m_p = nullptr; }
+						bool expired() const { return m_control == nullptr; }
+						unsigned int use_count() const { return expired() ? 0U : m_control->use_count(); }
+						shared_ptr<T> lock() const { return shared_ptr<T>::from_weak(m_control,m_p); }
+					private:
+						shared_ptr_control * m_control ;
+						T * m_p ;
+				} ;
+				template <typename T, typename U> shared_ptr<T> const_pointer_cast( const shared_ptr<U> & ptr_in ) g__noexcept
 				{
 					T * p = const_cast<T*>(ptr_in.get()) ;
 					return shared_ptr<T>( ptr_in , p ) ;
@@ -890,32 +1113,44 @@
 				template <typename T, typename D=default_delete<T> > class unique_ptr
 				{
 					public:
-						unique_ptr() : m_p(0) {}
-						explicit unique_ptr( T * p ) : m_p(p) {}
-						unique_ptr( T * p , D d ) : m_p(p) , m_d(d) {}
-						explicit unique_ptr( std::auto_ptr<T> p ) : m_p(p.release()) {}
+						unique_ptr() g__noexcept : m_p(0) {}
+						explicit unique_ptr( T * p ) g__noexcept : m_p(p) {}
+						unique_ptr( T * p , D d ) g__noexcept : m_p(p) , m_d(d) {}
 						~unique_ptr() { reset(); }
-						void reset( T * p ) { m_d(m_p); m_p = p; }
-						void reset() { reset(nullptr); }
-						T * get() { return m_p; }
-						T & operator*() { return *m_p; }
-						const T * get() const { return m_p; }
-						const T & operator*() const { return *m_p; }
-						T * operator->() { return m_p; }
-						const T * operator->() const { return m_p; }
-						T * release() { T * p = m_p; m_p = 0; return p; }
-						operator bool () const { return m_p != nullptr; }
-						unique_ptr( const unique_ptr<T> & rhs ) { m_p = rhs.m_p ; const_cast<unique_ptr<T>&>(rhs).m_p = 0 ; }  // for c++98, mimic auto_ptr
+						void reset( T * p ) g__noexcept { m_d(m_p); m_p = p; }
+						void reset() g__noexcept { reset(nullptr); }
+						T * get() g__noexcept { return m_p; }
+						T & operator*() g__noexcept { return *m_p; }
+						const T * get() const g__noexcept { return m_p; }
+						const T & operator*() const g__noexcept { return *m_p; }
+						T * operator->() g__noexcept { return m_p; }
+						const T * operator->() const g__noexcept { return m_p; }
+						T * release() g__noexcept { T * p = m_p; m_p = 0; return p; }
+						operator bool () const g__noexcept { return m_p != nullptr; }
+						void swap( unique_ptr<T,D> & other ) g__noexcept { using std::swap; swap(m_p,other.m_p); swap(m_d,other.m_d); }
+						/* define a copy constructor that behaves like auto_ptr -- this reasonable if the code also compiles correctly with c++11 */
+						unique_ptr( const unique_ptr<T,D> & rhs ) { m_p = rhs.m_p ; const_cast<unique_ptr<T,D>&>(rhs).m_p = 0 ; }
 					private:
-						void operator=( const unique_ptr<T> & ) ;
+						void operator=( const unique_ptr<T,D> & ) g__eq_delete ;
 					private:
 						T * m_p ;
 						D m_d ;
 				} ;
+				template <typename T, typename D> void swap( unique_ptr<T,D> & a , unique_ptr<T,D> & b ) g__noexcept { a.swap(b) ; }
 			}
+		#endif
+
+		#if !GCONFIG_HAVE_CXX_SHARED_PTR || defined(G_USE_SHARED_PTR)
 			using G::shared_ptr ;
 			using G::unique_ptr ;
+			using G::weak_ptr ;
 			using G::const_pointer_cast ;
+		#else
+			#include <memory>
+			using std::shared_ptr ;
+			using std::unique_ptr ;
+			using std::weak_ptr ;
+			using std::const_pointer_cast ;
 		#endif
 
 		#if GCONFIG_ENABLE_STD_THREAD
@@ -924,9 +1159,9 @@
 			#include <cstring>
 			namespace G
 			{
-				struct threading /// Helper class for std::thread capabilities.
+				struct threading // Helper class for std::thread capabilities.
 				{
-					enum { using_std_thread = 1 } ;
+					G_CONSTANT( int , using_std_thread , 1 ) ;
 					typedef std::thread thread_type ;
 					typedef std::mutex mutex_type ;
 					typedef std::lock_guard<std::mutex> lock_type ;
@@ -940,7 +1175,7 @@
 				{
 					public:
 						typedef int id ;
-						template <typename T_fn> dummy_thread( T_fn fn ) { fn() ; }
+						template <typename T_fn> explicit dummy_thread( T_fn fn ) { fn() ; }
 						template <typename T_fn,typename T_arg1> dummy_thread( T_fn fn , T_arg1 arg1 ) { fn(arg1) ; }
 						template <typename T_fn,typename T_arg1,typename T_arg2> dummy_thread( T_fn fn , T_arg1 arg1 , T_arg2 arg2 ) { fn(arg1,arg2) ; }
 						dummy_thread() {}
@@ -953,7 +1188,7 @@
 				class dummy_lock { public: explicit dummy_lock( dummy_mutex & ) {} } ;
 				struct threading
 				{
-					enum { using_std_thread = 0 } ;
+					G_CONSTANT( int , using_std_thread , 0 ) ;
 					typedef G::dummy_thread thread_type ;
 					typedef G::dummy_mutex mutex_type ;
 					typedef G::dummy_lock lock_type ;
@@ -975,39 +1210,44 @@
 				template <> struct make_unsigned<int> { typedef unsigned int type ; } ;
 				template <> struct make_unsigned<unsigned long> { typedef unsigned long type ; } ;
 				template <> struct make_unsigned<long> { typedef unsigned long type ; } ;
+				#if GCONFIG_HAVE_LONG_LONG
+				template <> struct make_unsigned<unsigned long long> { typedef unsigned long long type ; } ;
+				template <> struct make_unsigned<long long> { typedef unsigned long long type ; } ;
+				#endif
 			}
 		#endif
 
 	#endif
 
-	/* Run-time o/s identification */
+	/* Run-time o/s identification
+	*/
 	#ifdef __cplusplus
 		namespace G
 		{
 			#ifdef G_WINDOWS
-				inline bool is_windows() { return true ; }
+				inline g__constexpr_fn bool is_windows() { return true ; }
 			#else
-				inline bool is_windows() { return false ; }
+				inline g__constexpr_fn bool is_windows() { return false ; }
 			#endif
 			#ifdef G_UNIX_LINUX
-				inline bool is_linux() { return true ; }
+				inline g__constexpr_fn bool is_linux() { return true ; }
 			#else
-				inline bool is_linux() { return false ; }
+				inline g__constexpr_fn bool is_linux() { return false ; }
 			#endif
 			#ifdef G_UNIX_FREEBSD
-				inline bool is_free_bsd() { return true ; }
+				inline g__constexpr_fn bool is_free_bsd() { return true ; }
 			#else
-				inline bool is_free_bsd() { return false ; }
+				inline g__constexpr_fn bool is_free_bsd() { return false ; }
 			#endif
 			#ifdef G_UNIX_OPENBSD
-				inline bool is_open_bsd() { return true ; }
+				inline g__constexpr_fn bool is_open_bsd() { return true ; }
 			#else
-				inline bool is_open_bsd() { return false ; }
+				inline g__constexpr_fn bool is_open_bsd() { return false ; }
 			#endif
 			#ifdef G_UNIX_BSD
-				inline bool is_bsd() { return true ; }
+				inline g__constexpr_fn bool is_bsd() { return true ; }
 			#else
-				inline bool is_bsd() { return false ; }
+				inline g__constexpr_fn bool is_bsd() { return false ; }
 			#endif
 		}
 	#endif
@@ -1022,15 +1262,14 @@
 			#ifndef AI_NUMERICSERV
 				#define AI_NUMERICSERV 0
 			#endif
-			#ifndef AI_ADDRCONFIG
-				#define AI_ADDRCONFIG 0
-			#endif
 		#endif
 		#ifndef MSG_NOSIGNAL
 			#define MSG_NOSIGNAL 0
 		#endif
 	#endif
-
+	#ifndef AI_ADDRCONFIG
+		#define AI_ADDRCONFIG 0
+	#endif
 	#ifndef INADDR_NONE
 		/* (should be in netinet/in.h) */
 		#define INADDR_NONE 0xffffffff
@@ -1055,9 +1294,9 @@
 	/* Inline definitions of missing functions
 	 */
 
-	#if ! GCONFIG_HAVE_INET_PTON
-		#ifdef __cplusplus
-			namespace GNet { int inet_pton_imp( int f , const char * p , void * result ) ; }
+	#ifdef __cplusplus
+		namespace GNet { int inet_pton_imp( int f , const char * p , void * result ) ; }
+		#if ! GCONFIG_HAVE_INET_PTON
 			inline int inet_pton( int f , const char * p , void * result )
 			{
 				return GNet::inet_pton_imp( f , p , result ) ;
@@ -1065,9 +1304,9 @@
 		#endif
 	#endif
 
-	#if ! GCONFIG_HAVE_INET_NTOP
-		#ifdef __cplusplus
-			namespace GNet { const char * inet_ntop_imp( int f , void * ap , char * buffer , size_t n ) ; }
+	#ifdef __cplusplus
+		namespace GNet { const char * inet_ntop_imp( int f , void * ap , char * buffer , size_t n ) ; }
+		#if ! GCONFIG_HAVE_INET_NTOP
 			inline const char * inet_ntop( int f , void * ap , char * buffer , size_t n )
 			{
 				return GNet::inet_ntop_imp( f , ap , buffer , n ) ;
@@ -1095,7 +1334,6 @@
 
 	#if GCONFIG_HAVE_GETPWNAM && ! GCONFIG_HAVE_GETPWNAM_R
 		#ifdef __cplusplus
-			#include <sys/types.h>
 			#include <pwd.h>
 			inline int getpwnam_r( const char * name , struct passwd * pwd ,
 				char * buf , size_t buflen , struct passwd ** result )
@@ -1110,7 +1348,7 @@
 				else
 				{
 					*result = nullptr ;
-					return 0 ; /* or errno */
+					return 0 ;
 				}
 			}
 		#endif

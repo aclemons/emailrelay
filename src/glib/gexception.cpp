@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,11 +43,26 @@ G::Exception::Exception( const std::string & what , const std::string & more ) :
 	append( more ) ;
 }
 
+G::Exception::Exception( const char * what , const std::string & more1 , const std::string & more2 ) :
+	m_what(what)
+{
+	append( more1 ) ;
+	append( more2 ) ;
+}
+
 G::Exception::Exception( const std::string & what , const std::string & more1 , const std::string & more2 ) :
 	m_what(what)
 {
 	append( more1 ) ;
 	append( more2 ) ;
+}
+
+G::Exception::Exception( const char * what , const std::string & more1 , const std::string & more2 , const std::string & more3 ) :
+	m_what(what)
+{
+	append( more1 ) ;
+	append( more2 ) ;
+	append( more3 ) ;
 }
 
 G::Exception::Exception( const std::string & what , const std::string & more1 , const std::string & more2 , const std::string & more3 ) :

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include <direct.h>
 #include <iomanip>
 #include <sstream>
+#include <share.h>
 
 bool G::File::mkdir( const Path & dir , const NoThrow & )
 {
@@ -113,11 +114,14 @@ bool G::File::chmodx( const Path & , bool )
 	return true ; // no-op
 }
 
+G::Path G::File::readlink( const Path & )
+{
+	return Path() ;
+}
+
 void G::File::link( const Path & , const Path & new_link )
 {
-	CannotLink e( new_link.str() ) ;
-	e.append( "not supported" ) ;
-	throw e ;
+	throw CannotLink( new_link.str() , "not supported" ) ;
 }
 
 bool G::File::link( const Path & , const Path & , const NoThrow & )
@@ -125,22 +129,4 @@ bool G::File::link( const Path & , const Path & , const NoThrow & )
 	return false ; // not supported
 }
 
-#if 0
-G::Path G::File::realpath( const Path & path )
-{
-	std::vector<char> buffer( PATH_MAX + 1 ) ;
-	buffer[0] = '\0' ;
-	DWORD rc = GetFullPathNameA( path.str().c_str() , &buffer[0] , buffer.size() , NULL ) ;
-	size_t n = static_cast<size_t>(rc) ;
-	if( n > buffer.size() )
-	{
-		buffer.resize( rc ) ;
-		rc = GetFullPathNameA( path.str().c_str() , &buffer[0] , buffer.size() , NULL ) ;
-		n = static_cast<size_t>(rc) ;
-	}
-	if( rc == 0U )
-		throw StatError( path.str() ) ;
-	return Path( std::string(&buffer[0],n) ) ;
-}
-#endif
 /// \file gfile_win32.cpp

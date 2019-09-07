@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,19 +39,12 @@ namespace GGui
 class GGui::Cracker : public WindowBase
 {
 public:
-
 	explicit Cracker( HWND hwnd ) ;
 		///< Constructor. The window handle is passed on to
 		///< the base class.
 
 	virtual ~Cracker() ;
 		///< Virtual destructor.
-
-	Cracker( const Cracker &other ) ;
-		///< Copy constructor.
-
-	Cracker & operator=( const Cracker & other ) ;
-		///< Assignment operator.
 
 	LRESULT crack( unsigned int msg , WPARAM w , LPARAM l , bool & default_ ) ;
 		///< Cracks the given message, calling virtual functions as
@@ -97,7 +90,7 @@ protected:
 		///< Overridable. Called when the window receives a
 		///< WM_SYSCOLORCHANGE message.
 
-	enum SysCommand { scMaximise , scMinimise , scClose , scSize /*etc*/ } ;
+	g__enum(SysCommand) { scMaximise , scMinimise , scClose , scSize /*etc*/ } ; g__enum_end(SysCommand)
 	virtual bool onSysCommand( SysCommand sys_command ) ;
 		///< Overridable. Called when the window receives a
 		///< WM_SYSCOMMAND message. Returns true if processed.
@@ -144,7 +137,7 @@ protected:
 		///< WM_DROPFILES message. Returns false if the file list
 		///< is ignored. See also: DragAcceptFiles().
 
-	enum SizeType { maximised , minimised , restored } ;
+	g__enum(SizeType) { maximised , minimised , restored } ; g__enum_end(SizeType)
 	virtual void onSize( SizeType type , unsigned int dx , unsigned int dy ) ;
 		///< Overridable. Called on receipt of a WM_SIZE message.
 
@@ -160,6 +153,22 @@ protected:
 		///< focus. Typically this is overridden with a call to
 		///< ::SetFocus(), passing focus on to some more appropriate
 		///< window.
+
+	virtual bool onActivate( HWND other_window , bool by_mouse ) ;
+		///< Overridable. Called on receipt of a WA_ACTIVE WM_ACTIVATE message.
+		///< Returns true if processed.
+
+	virtual bool onDeactivate( HWND other_window ) ;
+		///< Overridable. Called on receipt of a WA_INACTIVE WM_ACTIVATE message.
+		///< Returns true if processed.
+
+	virtual bool onActivateApp( DWORD ) ;
+		///< Overridable. Called on receipt of a TRUE WM_ACTIVATEAPP message.
+		///< Returns true if processed.
+
+	virtual bool onDeactivateApp( DWORD ) ;
+		///< Overridable. Called on receipt of a FALSE WM_ACTIVATEAPP message.
+		///< Returns true if processed.
 
 	virtual void onChar( WORD vkey , unsigned int repeat_count ) ;
 		///< Overridable. Called on receipt of a WM_CHAR message.
@@ -217,8 +226,8 @@ protected:
 		bool right_button_down ) ;
 			///< Overridable. Called on receipt of a mouse-move message.
 
-	enum MouseButton { Mouse_Left , Mouse_Middle , Mouse_Right } ;
-	enum MouseButtonDirection { Mouse_Up , Mouse_Down } ;
+	g__enum(MouseButton) { Left , Middle , Right } ; g__enum_end(MouseButton)
+	g__enum(MouseButtonDirection) { Up , Down } ; g__enum_end(MouseButtonDirection)
 
 	virtual void onMouseButton( MouseButton , MouseButtonDirection ,
 		int x , int y , bool shift_key_down , bool control_key_down ) ;
@@ -281,6 +290,8 @@ protected:
 		/// \see GGui::Pump
 
 private:
+	Cracker( const Cracker &other ) g__eq_delete ;
+	void operator=( const Cracker & other ) g__eq_delete ;
 	typedef void (Cracker::*Fn)(int,int,bool,bool) ;
 	LRESULT doMouseButton( Fn fn , MouseButton , MouseButtonDirection , unsigned int , WPARAM , LPARAM ) ;
 	LRESULT onControlColour_( WPARAM hDC , LPARAM hWndControl , WORD type ) ;

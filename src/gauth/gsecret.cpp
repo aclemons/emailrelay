@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,46 +38,50 @@ GAuth::Secret::Secret( const std::string & id ) :
 	G_ASSERT( !valid() ) ;
 }
 
-GAuth::Secret::Secret( const std::string & secret , const std::string & type ,
-	const std::string & id , const std::string & context ) :
+GAuth::Secret::Secret( const std::string & secret , const std::string & secret_encoding ,
+	const std::string & id , bool id_encoding_xtext , const std::string & context ) :
 		m_id(id) ,
 		m_context(context)
 {
-	G_ASSERT( type == G::Str::lower(type) ) ;
-	std::string reason = check( secret , type , id ) ;
+	G_ASSERT( secret_encoding == G::Str::lower(secret_encoding) ) ;
+	std::string reason = check( secret , secret_encoding , id , id_encoding_xtext ) ;
 	if( !reason.empty() )
-		throw Error( reason ) ;
+		throw context.empty() ? Error(reason) : Error(context,reason) ;
 
-	if( type == "plain" )
+	if( secret_encoding == "plain" )
 	{
+		G_ASSERT( G::Xtext::valid(secret) ) ;
 		m_key = G::Xtext::decode( secret ) ;
 	}
-	else if( type == "md5" && isDotted(secret) )
+	else if( secret_encoding == "md5" && isDotted(secret) )
 	{
 		m_key = undotted( secret ) ;
-		m_mask_type = type ;
+		m_mask_type = secret_encoding ;
 	}
 	else
 	{
-		G_ASSERT( G::Base64::valid(secret) ) ;
+		G_ASSERT( G::Base64::valid(secret) ) ; // check()ed
 		m_key = G::Base64::decode( secret ) ;
-		m_mask_type = type ;
+		m_mask_type = secret_encoding ;
 	}
 }
 
-std::string GAuth::Secret::check( const std::string & secret , const std::string & type , const std::string & id )
+std::string GAuth::Secret::check( const std::string & secret , const std::string & secret_encoding ,
+	const std::string & id , bool id_encoding_xtext )
 {
 	if( secret.empty() )
-		return "empty shared key" ;
-	if( type.empty() || type != G::Str::lower(type) || !G::Str::isPrintableAscii(type) )
+		return "empty secret" ;
+	if( secret_encoding.empty() || secret_encoding != G::Str::lower(secret_encoding) || !G::Str::isPrintableAscii(secret_encoding) )
 		return "invalid encoding type" ;
-	if( id.empty() || !G::Xtext::valid(id) )
-		return "invalid id" ;
-	if( type == "plain" && !G::Xtext::valid(secret) )
-		return "invalid plain secret" ;
-	if( type == "md5" && !( isDotted(secret) || G::Base64::valid(secret) ) )
+	if( id.empty() )
+		return "empty id" ;
+	if( id_encoding_xtext && !G::Xtext::valid(id) )
+		return "invalid xtext encoding of id" ;
+	if( secret_encoding == "plain" && !G::Xtext::valid(secret) )
+		return "invalid xtext encoding of secret" ;
+	if( secret_encoding == "md5" && !( isDotted(secret) || G::Base64::valid(secret) ) )
 		return "invalid encoding of md5 secret" ;
-	if( type != "md5" && type != "plain" && !G::Base64::valid(secret) )
+	if( secret_encoding != "md5" && secret_encoding != "plain" && !G::Base64::valid(secret) )
 		return "invalid base64 encoding of secret" ;
 	return std::string() ;
 }
@@ -129,7 +133,10 @@ std::string GAuth::Secret::info( const std::string & id_in ) const
 	{
 		 ss << " for [" << G::Str::printable(id_) << "]" ;
 	}
-	ss << m_context ; // eg. secrets-file line number
+	if( !m_context.empty() )
+	{
+		ss << " from " << m_context ;
+	}
 	return ss.str() ;
 }
 

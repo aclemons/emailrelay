@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 # emailrelay
 #
-# A shell-script wrapper for E-MailRelay for use in the SysV-init system.
+# A start/stop script for E-MailRelay in the SysV init system.
 #
 # usage: emailrelay { start | stop | restart | force-reload | status }
 #
@@ -30,13 +30,13 @@
 # Required-Stop:       $local_fs $network $syslog
 # Default-Start:       2 3 4 5
 # Default-Stop:        0 1 6
-# Short-Description:   E-MailRelay store-and-forward MTA.
+# Short-Description:   E-MailRelay mail server
 ### END INIT INFO
 ##
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 NAME=emailrelay
-DESC=$NAME
+DESC="E-MailRelay mail server"
 CONFIG=__SYSCONF_DIR__/emailrelay.conf
 RUNDIR=/var/run/$NAME
 PIDFILE=$RUNDIR/$NAME.pid
@@ -44,20 +44,26 @@ GROUP=daemon
 DAEMON=__SBIN_DIR__/$NAME
 SUBMIT=__SBIN_DIR__/$NAME-submit
 
-test -f /etc/default/$NAME && . /etc/default/$NAME
+test -f __SYSCONF_DIR__/default/$NAME && . __SYSCONF_DIR__/default/$NAME
 test -f /etc/rc.conf.d/$NAME && . /etc/rc.conf.d/$NAME
 test -f /etc/default/rcS && . /etc/default/rcS
 
-log_success_msg() {
+# Default lsb functions in case there is no lsb/init-functions...
+#
+log_success_msg()
+{
 	echo "$@"
 }
-log_failure_msg() {
+log_failure_msg()
+{
 	echo "$@"
 }
-log_warning_msg() {
+log_warning_msg()
+{
 	echo "$@"
 }
-start_daemon() {
+start_daemon()
+{
 	if test "`cat \"$2\" 2>/dev/null`" -gt 0 2>/dev/null && kill -0 "`cat \"$2\"`"
 	then
 		: # running already
@@ -66,24 +72,40 @@ start_daemon() {
 		"$@"
 	fi
 }
-killproc() {
+killproc()
+{
 	shift
 	kill `cat "$1" 2>/dev/null` 2>/dev/null
 }
-pidofproc() {
+pidofproc()
+{
 	shift
 	kill -0 `cat "$1" 2>/dev/null` 2>/dev/null
 }
-log_daemon_msg() {
-	log_success_msg "$@"
+log_daemon_msg()
+{
+	echo -n "$@"
 }
-log_progress_msg() {
+log_progress_msg()
+{
 	:;
 }
-log_end_msg() {
-	if test "$1" -eq 0 ; then log_success_msg "...ok" ; else log_failure_msg "...failed!" ; fi
+log_end_msg()
+{
+	if test "$1" -eq 0
+	then
+		log_success_msg " ... ok"
+		true
+	else
+		log_failure_msg " ... failed!"
+		false
+	fi
 }
 
+# Allow packaging scripts to do "init.d/emailrelay setup" for some of their
+# post-install steps, or for use after editing the /etc/default file. (This
+# must come before the potential 'init-functions' redirect to systemd.)
+#
 setup_config()
 {
 	if test ! -f "$CONFIG" -a -f "$CONFIG.template"
@@ -91,43 +113,76 @@ setup_config()
 		cp -p "$CONFIG.template" "$CONFIG"
 	fi
 }
-
-setup_rundir()
+root_root()
 {
-	if test ! -d "$1"
-	then
-		mkdir -p "$1" && chgrp "$GROUP" "$1" && chmod 770 "$1"
-	fi
+	# True if the given file exists and is owned by 'root.root',
+	# as if newly copied by the install process and never
+	# subsequently chown'ed by the administrator
+	ls -nd "$1" 2>/dev/null | cut -d' ' --fields=3,4 | grep -q '^0 0$'
 }
-
 spooldir()
 {
-	cat "$CONFIG" | tr '\t' ' ' | sed 's/  */ /g' | grep '^spool-dir [^ ]' | tail -1 | cut -d' ' -f 2
+	# Prints the spool directory path from the config file, but with a
+	# default because packaged installs may not edit the config file
+	# like 'make install' does
+	( echo spool-dir /var/spool/emailrelay ; cat "$CONFIG" ) | \
+		tr '\t' ' ' | sed 's/  */ /g' | grep '^spool-dir [^ ]' | \
+		tail -1 | cut -d' ' -f 2
 }
-
-setup_spooldir()
+setup_rundir()
 {
-	if test "$1" != ""
+	test -d "$1" || mkdir -p "$1"
+	if root_root "$1"
 	then
-		if test ! -d "$1"
-		then
-			mkdir -p "$1" && chgrp "$GROUP" "$1" && chmod 775 "$1" && chmod g+s "$1"
-		fi
+		chgrp "$GROUP" "$1"
+		chmod 775 "$1"
 	fi
 }
-
-# do some setup steps -- these should have been done by
-# make-install or by the packaging scripts, but /etc/default
-# edits could have changed something -- do this before
-# the potential init-functions redirect to systemd
-if test "$1" = "start"
-then
+setup_spooldir()
+{
+	test -d "$1" || mkdir -p "$1"
+	if root_root "$1"
+	then
+		chgrp "$GROUP" "$1"
+		chmod 775 "$1"
+		chmod g+s "$1"
+	fi
+}
+setup_sgid()
+{
+	if root_root "$1"
+	then
+		chgrp "$GROUP" "$1"
+		chmod 755 "$1"
+		chmod g+s "$1"
+	fi
+}
+setup_tools()
+{
+	setup_sgid "/usr/sbin/emailrelay-submit"
+	setup_sgid "/usr/lib/emailrelay/emailrelay-filter-copy"
+}
+setup()
+{
 	setup_config
-	setup_rundir "`dirname \"$PIDFILE\"`" 2>/dev/null
-	setup_spooldir "`spooldir`" 2>/dev/null
-fi
+	setup_rundir "`dirname \"$PIDFILE\"`"
+	setup_spooldir "`spooldir`"
+	setup_tools
+}
+if test "$1" = "setup" ; then setup ; exit 0 ; fi
 
+# Read lsb init-functions. Annoyingly, systemd sometimes hijacks this to
+# generate a service file under /run/systemd, run systemctl etc, without
+# ever returning to this script.
+#
 test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
+
+# Ignore /etc/default 'enabled' switch if running from systemd (moot).
+#
+if test -d /run/systemd/system -a "$PPID" -eq 1
+then
+	EMAILRELAY_ENABLED="1"
+fi
 
 case "$1" in
 
@@ -136,11 +191,24 @@ case "$1" in
 		$0 start
 	;;
 
+	try-restart)
+		echo `basename $0`: $1 not implemented >&2
+		exit 3
+		;;
+
 	*start)
-		log_daemon_msg "Starting $DESC"
-		log_progress_msg "$NAME"
-		start_daemon -p "$PIDFILE" -- "$DAEMON" --syslog --pid-file "$PIDFILE" "$CONFIG"
-		log_end_msg $?
+		if test "${EMAILRELAY_ENABLED:-1}" -eq 1
+		then
+			log_daemon_msg "Starting $DESC"
+			log_progress_msg "$NAME"
+			start_daemon -p "$PIDFILE" -- "$DAEMON" --as-server --syslog --pid-file "$PIDFILE" "$CONFIG"
+			e="$?"
+			log_end_msg $e
+			test "$e" -eq 0
+		else
+			log_warning_msg "$NAME startup is disabled in __SYSCONF_DIR__/default/$NAME"
+			exit 0
+		fi
 		;;
 
 	stop)
@@ -150,7 +218,7 @@ case "$1" in
 		log_end_msg $?
 		;;
 
-	try-restart|reload)
+	reload)
 		echo `basename $0`: $1 not implemented >&2
 		exit 3
 		;;
@@ -167,16 +235,7 @@ case "$1" in
 		;;
 
 	setup)
-		setup_rundir "`dirname \"$PIDFILE\"`"
-		setup_spooldir "`spooldir`"
-
-		chmod 550 "$DAEMON"
-		chgrp "$GROUP" "$DAEMON"
-		chmod g+s "$DAEMON"
-
-		chmod 555 "$SUBMIT"
-		chgrp "$GROUP" "$SUBMIT"
-		chmod g+s "$SUBMIT"
+		setup
 		;;
 
 	*)

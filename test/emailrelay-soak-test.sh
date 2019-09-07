@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -90,8 +90,8 @@ Cleanup()
 
 Auth()
 {
-	echo "login server joe joe+00s+3Dpassword"
-	echo "login client joe joe+00s+3Dpassword"
+	echo "server plain joe joe+00s+3Dpassword"
+	echo "client plain joe joe+00s+3Dpassword"
 }
 
 Content()

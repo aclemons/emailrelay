@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,19 +26,20 @@
 #include "gfutureevent.h"
 #include "gtest.h"
 #include "gstr.h"
-#include "gdebug.h"
+#include "glog.h"
+#include "gassert.h"
 
 /// \class GNet::ResolverImp
 /// A private "pimple" implementation class used by GNet::Resolver to do
 /// asynchronous name resolution. The object contains a worker thread using
 /// the future/promise pattern. Its lifetime is dependent on the worker
-/// thread, so the GNet::Resolver can only ask it to delete itself and
-/// then forget about it.
+/// thread, so the best the GNet::Resolver class can do to cancel a resolve
+/// request is to ask it to delete itself and then forget about it.
 ///
 class GNet::ResolverImp : private FutureEventHandler
 {
 public:
-	ResolverImp( Resolver & , ExceptionHandler & , const Location & ) ;
+	ResolverImp( Resolver & , ExceptionSink , const Location & ) ;
 		// Constructor.
 
 	virtual ~ResolverImp() ;
@@ -57,10 +58,12 @@ public:
 	static size_t count() ;
 		// Returns the number of objects.
 
-private:
-	ResolverImp( const ResolverImp & ) ;
-	void operator=( const ResolverImp & ) ;
+private: // overrides
 	virtual void onFutureEvent() override ; // GNet::FutureEventHandler
+
+private:
+	ResolverImp( const ResolverImp & ) g__eq_delete ;
+	void operator=( const ResolverImp & ) g__eq_delete ;
 	void onTimeout() ;
 
 private:
@@ -77,10 +80,10 @@ private:
 
 size_t GNet::ResolverImp::m_instance_count = 0U ;
 
-GNet::ResolverImp::ResolverImp( Resolver & resolver , ExceptionHandler & eh , const Location & location ) :
+GNet::ResolverImp::ResolverImp( Resolver & resolver , ExceptionSink es , const Location & location ) :
 	m_resolver(&resolver) ,
-	m_future_event(new FutureEvent(*this,eh)) ,
-	m_timer(*this,&ResolverImp::onTimeout,eh) ,
+	m_future_event(new FutureEvent(*this,es)) ,
+	m_timer(*this,&ResolverImp::onTimeout,es) ,
 	m_location(location) ,
 	m_future(location.host(),location.service(),location.family(),location.dgram(),true) ,
 	m_thread(ResolverImp::start,this,m_future_event->handle()) ,
@@ -155,16 +158,16 @@ void GNet::ResolverImp::onTimeout()
 
 // ==
 
-GNet::Resolver::Resolver( Resolver::Callback & callback , ExceptionHandler & eh ) :
+GNet::Resolver::Resolver( Resolver::Callback & callback , ExceptionSink es ) :
 	m_callback(callback) ,
-	m_eh(eh)
+	m_es(es)
 {
 	// lazy imp construction
 }
 
 GNet::Resolver::~Resolver()
 {
-	const size_t sanity_limit = 50U ;
+	const size_t sanity_limit = 50U ; // dtor blocks after this limit
 	if( m_imp.get() != nullptr && ResolverImp::count() < sanity_limit )
 	{
 		// release the imp to an independent lifetime until its getaddrinfo() completes
@@ -213,7 +216,7 @@ void GNet::Resolver::start( const Location & location )
 	if( !EventLoop::instance().running() ) throw Error("no event loop") ;
 	if( busy() ) throw BusyError() ;
 	G_DEBUG( "GNet::Resolver::start: resolve start [" << location.displayString() << "]" ) ;
-	m_imp.reset( new ResolverImp(*this,m_eh,location) ) ;
+	m_imp.reset( new ResolverImp(*this,m_es,location) ) ;
 }
 
 void GNet::Resolver::done( std::string error , Location location )

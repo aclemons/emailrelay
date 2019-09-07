@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,18 +32,32 @@ namespace GGui
 }
 
 /// \class GGui::ApplicationBase
-/// A simple windows application class which can be used for very
-/// simple applications on its own or as a base class for a more
-/// fully-functional Application class.
+/// The ApplicationBase class is a convienient GGui::Window for
+/// the application's main window.
 ///
-/// The application object creates and manages the application's
-/// main window and runs the ::GetMessage() event loop.
+/// It is initialised by calling createWindow() from WinMain().
+/// This registers a Windows window class pointing at the the
+/// GGui::Window window procedure (see also GGui::Cracker).
 ///
 /// GGui::ApplicationBase derives from GGui::Window allowing the
 /// user to override the default message handing for the main
 /// application window.
 ///
-/// \see Application, ApplicationInstance, Pump
+/// \code
+/// struct Application : GGui::ApplicationBase
+/// {
+///   UINT resource() const override { return ID_APP ; } // menu and icon in .rc
+///   std::string className() const override { return "MyApp" ; }
+///   std::pair<DWORD,DWORD> windowStyle() const override { return Window::windowStyleMain() ; }
+///   DWORD classStyle() const override { return Window::classStyle() | CS_... ; }
+/// } ;
+/// WinMain( hinstance , hprevious , ...)
+/// {
+///   Application app( hinstance , hprevious , "Test" ) ;
+///   app.createWindow() ;
+///   app.run() ;
+/// }
+/// \endcode
 ///
 class GGui::ApplicationBase : public ApplicationInstance , public Window
 {
@@ -67,21 +81,21 @@ public:
 		///< Returns an error string if no-throw.
 
 	void run( bool with_idle = true ) ;
-		///< Runs the GetMessage()/DispatchMessage() message pump.
-		///< This should be called from WinMain().
+		///< Runs the GGui::Pump class's GetMessage()/DispatchMessage() message
+		///< pump. This is typically used by simple GUI applications that do not
+		///< have a separate network event loop.
 
 	void close() const ;
-		///< Sends a close message to this application's
-		///< main window, resulting in onClose() being
-		///< called.
+		///< Sends a close message to this application's main window, resulting
+		///< in onClose() being called.
 
 	virtual std::string title() const ;
 		///< Overridable. Defines the main window's title.
 
-	bool messageBoxQuery( const std::string & message ) ; // not const
+	bool messageBoxQuery( const std::string & message ) ;
 		///< Puts up a questioning message box.
 
-	void messageBox( const std::string & message ) ; // not const
+	void messageBox( const std::string & message ) ;
 		///< Puts up a message box.
 
 	static void messageBox( const std::string & title , const std::string & message ) ;
@@ -107,12 +121,13 @@ protected:
 		///< Overridable. Defines the main window's class name.
 
 	virtual HBRUSH backgroundBrush() ;
-		///< Overridable. Defines the main window class background brush.
-		///< Overrides are typically implemented as
+		///< Overridable. Defines the main window class background
+		///< brush. Overrides are typically implemented as
 		///< "return (HBRUSH)(1+COLOR_...)".
 
-	virtual DWORD windowStyle() const ;
-		///< Overridable. Defines the main window's style.
+	virtual std::pair<DWORD,DWORD> windowStyle() const ;
+		///< Overridable. Defines the main window's style and
+		///< the CreateWindowEx extended style.
 
 	virtual DWORD classStyle() const ;
 		///< Overridable. Defines the main window class style.
@@ -125,12 +140,12 @@ protected:
 		///< Registers the main window class. If resource() returns
 		///< non-zero then it is used as the icon id.
 		///<
-		///< May be overridden only if this base class
-		///< implementation is called first.
+		///< If overridden then this base class implementation must
+		///< be called first.
 
 private:
-	ApplicationBase( const ApplicationBase & ) ; // not implemented
-	void operator=( const ApplicationBase & ) ; // not implemented
+	ApplicationBase( const ApplicationBase & ) g__eq_delete ;
+	void operator=( const ApplicationBase & ) g__eq_delete ;
 	static bool messageBoxCore( HWND , unsigned int , const std::string & , const std::string & ) ;
 	HWND messageBoxHandle() const ;
 	static unsigned int messageBoxType(HWND,unsigned int) ;

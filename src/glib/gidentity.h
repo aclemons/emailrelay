@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ class G::Identity
 {
 public:
 	G_EXCEPTION( NoSuchUser , "no such user" ) ;
+	G_EXCEPTION( Error , "cannot read user database" ) ;
 	G_EXCEPTION( UidError , "cannot set uid" ) ;
 	G_EXCEPTION( GidError , "cannot set gid" ) ;
 
@@ -134,7 +135,7 @@ protected:
 		///< Sets the effective group id.
 
 private:
-	IdentityUser() ; // not implemented
+	IdentityUser() g__eq_delete ;
 } ;
 
 namespace G

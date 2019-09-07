@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ GLinkImp::GLinkImp( const G::Path & target_path , const std::string & , const st
 	if( ! working_dir.str().empty() ) setWorkingDir( working_dir ) ;
 	if( ! args.empty() ) setArgs( args ) ;
 	if( icon_source != G::Path() ) setIcon( icon_source ) ;
-	if( show_enum == GLink::Show_Hide ) setShow( SW_HIDE ) ;
+	if( show_enum == GLink::Show::Hide ) setShow( SW_HIDE ) ;
 	qi() ;
 }
 

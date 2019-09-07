@@ -13,7 +13,7 @@ Dependencies
 ------------
 E-MailRelay started life at a time when Linux had no decent package manager and
 Windows was in the grip of DLL hell. As a result, a key principle is that it
-has no dependencies other than a decent C++ runtime. Since that time OpenSSL
+has no dependencies other than a good C++ runtime. Since that time OpenSSL
 has been introduced as a dependency to support TLS encryption, and the optional
 configuration and installation GUI has been developed using the Qt toolkit.
 
@@ -63,6 +63,14 @@ slot/signal implementation has been simplified compared to Qt or boost by not
 supporting signal multicasting, so each signal connects to no more than one
 slot.
 
+The synchronous slot/signal pattern needs some care when when the signalling
+object gets destructed as a side-effect of raising a signal, and that situation
+can be non-obvious precisely because of the slot/signal code decoupling. In
+most cases signals are emitted at the end of a function and the stack unwinds
+back to the event loop immediately afterwards, but in other situations,
+particularly when emitting more than one signal, defensive measures are
+required.
+
 Module structure
 ----------------
 The main C++ libraries in the E-MailRelay code base are as follows:
@@ -88,7 +96,8 @@ The main C++ libraries in the E-MailRelay code base are as follows:
 
 All of these libraries are portable between Unix-like systems and Windows.
 
-Under Windows there is an additional library "win32" for the user interface.
+Under Windows there is an additional library under "src/win32" for the user
+interface implemented using the Microsoft Win32 API.
 
 SMTP class structure
 --------------------
@@ -133,27 +142,21 @@ high-level feature.
 The event loop delivers asynchronous socket events to the "EventHandler"
 interface, timer events to the "TimerBase" interface, and 'future' events to the
 "FutureEventCallback" interface. If any of the these event handlers throws an
-exception then the event loop will catch it and deliver it back to an exception
+exception then the event loop catches it and delivers it back to an exception
 handler through the "onException()" method of an associated "ExceptionHandler"
 interface. If an exception is thrown out of _this_ callback then the event loop
 code lets it propagate back to "main()", typically terminating the program.
 
-Every pointer to an event callback interface is associated with an
-"ExceptionHandler". The default "ExceptionHandler" is the "EventLoop"
-singleton, and a call to its "onException()" method terminates the event loop.
+However, sometimes there are objects that need to be more resilient to
+exceptions. In particular, a network server should not terminate just because
+one of its connections fails unexpectedly. In these cases the owning parent
+object receives the exception notification together with a pointer that
+identifies the child object that threw the exception (ie. the exception
+source). This allows the parent object to absorb the exception and delete the
+child, without the exception killing the whole server.
 
-This leads to a programming model where key objects are instantiated on the
-heap and these objects delete themselves when they receive certain events from
-the event loop. In the "GNet" library it is the "ServerPeer" and "HeapClient"
-classes that do this lifetime management; instances of these classes delete
-themselves when the associated network connection goes away and they
-implement the "ExceptionHandler" interface so that they schedule their own
-deletion when an exception is thrown.
-
-Special smart pointers are sometimes used for these self-deleting classes; the
-smart pointer does not delete the contained object when it is reset, it just
-tells the object to delete itself with a zero-length timer and then releases it
-for garbage collection.
+The combination of an exception handler and the optional exception source
+pointer bound to it is known as an "ExceptionSink".
 
 Multi-threading
 ---------------
@@ -235,4 +238,4 @@ Use "./configure --help" to see a complete list of options and refer to
 
 
 _____________________________________
-Copyright (C) 2001-2018 Graeme Walker
+Copyright (C) 2001-2019 Graeme Walker

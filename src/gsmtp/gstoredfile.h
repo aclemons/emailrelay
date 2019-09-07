@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,11 +18,10 @@
 /// \file gstoredfile.h
 ///
 
-#ifndef G_SMTP_STORED_FILE_H
-#define G_SMTP_STORED_FILE_H
+#ifndef G_SMTP_STORED_FILE__H
+#define G_SMTP_STORED_FILE__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gmessagestore.h"
 #include "gstoredmessage.h"
 #include "gexception.h"
@@ -69,51 +68,28 @@ public:
 	virtual std::string name() const override ;
 		///< Override from GSmtp::StoredMessage.
 
-	virtual std::string location() const override ;
-		///< Override from GSmtp::StoredMessage.
-
-	virtual bool eightBit() const override ;
-		///< Override from GSmtp::StoredMessage.
-
-	virtual const std::string & from() const override ;
-		///< Override from GSmtp::StoredMessage.
-
-	virtual const G::StringArray & to() const override ;
-		///< Override from GSmtp::StoredMessage.
-
-	virtual std::string authentication() const override ;
-		///< Override from GSmtp::StoredMessage.
-
-	virtual std::string fromAuthIn() const override ;
-		///< Override from GSmtp::StoredMessage.
-
-	virtual std::string fromAuthOut() const override ;
-		///< Override from GSmtp::StoredMessage.
-
-	virtual void destroy() override ;
-		///< Override from GSmtp::StoredMessage.
-
 	virtual void fail( const std::string & reason , int reason_code ) override ;
 		///< Override from GSmtp::StoredMessage.
 
-	virtual void unfail() override ;
-		///< Override from GSmtp::StoredMessage.
-
-	virtual unique_ptr<std::istream> extractContentStream() override ;
-		///< Override from GSmtp::StoredMessage.
-
-	virtual size_t remoteRecipientCount() const override ;
-		///< Override from GSmtp::StoredMessage.
-
-	virtual size_t errorCount() const override ;
-		///< Override from GSmtp::StoredMessage.
-
-	virtual void sync( bool ) override ;
-		///< Override from GSmtp::StoredMessage.
+private: // overrides
+	virtual std::string location() const override ; // Override from GSmtp::StoredMessage.
+	virtual int eightBit() const override ; // Override from GSmtp::StoredMessage.
+	virtual std::string from() const override ; // Override from GSmtp::StoredMessage.
+	virtual std::string to( size_t ) const override ; // Override from GSmtp::StoredMessage.
+	virtual size_t toCount() const override ; // Override from GSmtp::StoredMessage.
+	virtual std::string authentication() const override ; // Override from GSmtp::StoredMessage.
+	virtual std::string fromAuthIn() const override ; // Override from GSmtp::StoredMessage.
+	virtual std::string fromAuthOut() const override ; // Override from GSmtp::StoredMessage.
+	virtual void close() override ; // Override from GSmtp::StoredMessage.
+	virtual std::string reopen() override ; // Override from GSmtp::StoredMessage.
+	virtual void destroy() override ; // Override from GSmtp::StoredMessage.
+	virtual void unfail() override ; // Override from GSmtp::StoredMessage.
+	virtual std::istream & contentStream() override ; // Override from GSmtp::StoredMessage.
+	virtual size_t errorCount() const override ; // Override from GSmtp::StoredMessage.
 
 private:
-	StoredFile( const StoredFile & ) ; // not implemented
-	void operator=( const StoredFile & ) ; // not implemented
+	StoredFile( const StoredFile & ) g__eq_delete ;
+	void operator=( const StoredFile & ) g__eq_delete ;
 	const std::string & eol() const ;
 	G::Path contentPath() const ;
 	std::string readLine( std::istream & ) ;
@@ -133,11 +109,11 @@ private:
 	void readClientCertificate( std::istream & stream ) ;
 	void readEnvelopeCore( bool ) ;
 	void addReason( const G::Path & path , const std::string & , int ) const ;
-	static G::Path badPath( G::Path ) ;
-	void unlock() ;
+	static G::Path badPath( const G::Path & ) ;
 
 private:
 	FileStore & m_store ;
+	unique_ptr<std::istream> m_content ;
 	G::StringArray m_to_local ;
 	G::StringArray m_to_remote ;
 	std::string m_from ;
@@ -146,8 +122,7 @@ private:
 	G::Path m_envelope_path ;
 	G::Path m_old_envelope_path ;
 	std::string m_name ;
-	unique_ptr<std::istream> m_content ;
-	bool m_eight_bit ;
+	int m_eight_bit ;
 	std::string m_authentication ;
 	std::string m_format ;
 	std::string m_client_socket_address ;

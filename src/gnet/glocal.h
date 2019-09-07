@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ public:
 		///< with the local host, or a helpful error message if not.
 
 private:
-	Local() ;
+	Local() g__eq_delete ;
 	static std::string resolvedHostname() ;
 
 private:

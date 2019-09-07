@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -71,9 +71,6 @@ public:
 		///< command-line should not contain the program name: the v(0)
 		///< value and prefix() are unchanged.
 
-	~Arg() ;
-		///< Destructor.
-
 	static std::string v0() ;
 		///< Returns a copy of argv[0] from the first call to the constructor
 		///< that takes argc/argv. Returns the empty string if that constructor
@@ -121,16 +118,8 @@ public:
 		///< Returns the arguments a string array, including the program name
 		///< in the first position.
 
-	Arg & operator=( const Arg & ) ;
-		///< Assignment operator.
-
-	Arg( const Arg & ) ;
-		///< Copy constructor.
-
 private:
 	bool find( bool , const std::string & , size_type , size_type * ) const ;
-	void setPrefix() ;
-	void setExe() ;
 	static bool match( bool , const std::string & , const std::string & ) ;
 	void parseCore( const std::string & ) ;
 	static void protect( std::string & ) ;

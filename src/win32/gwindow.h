@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,18 +33,23 @@ namespace GGui
 
 /// \class GGui::Window
 /// A window class. Window messages should be processed by overriding
-/// the on*() virtual functions inherited from GGui::Cracker.
+/// the 'onWhatever()' virtual functions inherited from GGui::Cracker.
 ///
 /// Recall that messages are passed through a global message queue
 /// and dispatched to window procedures. Windows are created with
 /// reference to a window class that is registered with a name and a
-/// window procedure. A window is identified by a handle that points'
+/// window procedure. A window is identified by a handle that points
 /// to a hidden window structure containing a reference to the
 /// window class. Windows messages have a message-id and two
 /// parameters. The message-id is typically used in a big switch
 /// statement within the window procedure. The GGui::Cracker
 /// class contains a standardised window procedure that dispatches
 /// to virtual functions.
+///
+/// This class uses the window's first SetWindowLongPtr() value
+/// to point to the Window object. This is set during WM_CREATE
+/// and reset in the destructor. After destruction of the Window
+/// object all window messages are handled by DefWindowProc().
 ///
 /// \see WindowBase
 ///
@@ -57,9 +62,9 @@ public:
 		///< create() function.
 
 	virtual ~Window() ;
-		///< Virtual destructor. The Windows window is _not_ destroyed; its
-		///< "window long" is reset so any window messages go unprocessed
-		///< and return zero.
+		///< Destructor. The Windows window is _not_ destroyed; its
+		///< SetWindowLongPtr() value is reset and any window messages
+		///< are handled by DefWindowProc().
 
 	static bool registerWindowClass( const std::string & class_name ,
 		HINSTANCE hinstance , UINT class_style , HICON icon ,
@@ -68,9 +73,9 @@ public:
 			///< windows. The Windows window class points to a window procedure
 			///< and in this case the window procedure is implemented by
 			///< GGui::Window::wndProc(). In processing the WM_CREATE message
-			///< the wndProc() method sets the "window long" to point to the
-			///< GGui::Window object. In subsequent messages this is used to
-			///< deliver the message to GGui::Cracker::crack().
+			///< the wndProc() method sets the SetWindowLongPtr() value to
+			///< point to the GGui::Window object and in subsequent messages
+			///< this is used to deliver the message to GGui::Cracker::crack().
 			///<
 			///< (Compare this to GGui::Dialog where the window (dialog)
 			///< procedure is passed in when the dialog box is created; when
@@ -95,7 +100,7 @@ public:
 			///< See also ::RegisterClass() and struct WNDCLASS.
 
 	bool create( const std::string & class_name ,
-		const std::string & title , DWORD window_style ,
+		const std::string & title , std::pair<DWORD,DWORD> window_style ,
 		int x , int y , int dx , int dy ,
 		HWND parent , HMENU menu_or_child_id , HINSTANCE hinstance ) ;
 			///< Creates the window. Returns true on success.
@@ -105,9 +110,8 @@ public:
 			///<
 			///< Typical values for the 'window_style' parameter can
 			///< be obtained from the static methods windowStyleMain(),
-			///< windowStylePopup() and windowStyleChild(). A value
-			///< of zero defaults to windowStyleHidden(), with the
-			///< 'exclude-from-toolbar' extended style.
+			///< windowStylePopup() and windowStyleChild(). A value of
+			///< zero defaults to windowStylePopupNoButton().
 			///<
 			///< The window size and location parameters may be specified
 			///< using CW_USEDEFAULT.
@@ -154,15 +158,15 @@ public:
 		///< Returns a general-purpose value for
 		///< resisterWindowClass(class_style).
 
-	static DWORD windowStyleMain() ;
-		///< Returns a value for create(window_style) for a typical
+	static std::pair<DWORD,DWORD> windowStyleMain() ;
+		///< Returns a value for create() window_style for a typical
 		///< 'main' window.
 		///<
 		///< The create() parent window parameter should be NULL, and
 		///< the x,y,dx,dy parameters will normally be CW_USEDEFAULT.
 
-	static DWORD windowStylePopup() ;
-		///< Returns a value for create(window_style) for a typical
+	static std::pair<DWORD,DWORD> windowStylePopup() ;
+		///< Returns a value for create() window_style for a typical
 		///< 'popup' window ie. (in this case) a window which typically
 		///< acts like a modeless dialog box -- it can be independetly
 		///< activated, has a title bar but no minimise/maximise buttons,
@@ -172,15 +176,16 @@ public:
 		///< NULL then this window will be independently iconised with
 		///< a separate button on the toolbar.
 
-	static DWORD windowStyleChild() ;
-		///< Returns a value for create(window_style) for a typical
+	static std::pair<DWORD,DWORD> windowStyleChild() ;
+		///< Returns a value for create() window_style for a typical
 		///< 'child' window.
 		///<
 		///< The create() parent window parameter cannot be NULL.
 
-	static DWORD windowStyleHidden() ;
-		///< Returns a value for create(window_style) for a hidden
-		///< window.
+	static std::pair<DWORD,DWORD> windowStylePopupNoButton() ;
+		///< Returns a value for create() window_style for a non-visible
+		///< popup window with the 'exclude-from-toolbar' extended
+		///< style.
 
 	static HBRUSH classBrush() ;
 		///< Returns a default value for registerWindowClass(background).
@@ -209,20 +214,16 @@ protected:
 		///< Overridable. Called when the window receives a message
 		///< from sendUserString().
 
-	static WNDPROC windowProcedure() ;
-		///< Returns the address of the exported 'C' window procedure.
-		///< This is not for general use -- see WindowHidden.
-
 	virtual void onWindowException( std::exception & e ) = 0 ;
 		///< Called if an exception is being thrown out of the
 		///< window procedure. The default implementation
 		///< posts a quit message.
 
 private:
+	Window( const Window & other ) g__eq_delete ;
+	void operator=( const Window & other ) g__eq_delete ;
 	static LRESULT wndProcCore( Window * , HWND , UINT , WPARAM , LPARAM ) ;
 	virtual LRESULT onUserOther( WPARAM , LPARAM ) ;
-	Window( const Window & other ) ; // not implemented
-	void operator=( const Window & other ) ; // not implemented
 	static Window * instance( CREATESTRUCT * ) ;
 
 private:
