@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,12 +21,10 @@
 
 #include "gdef.h"
 #include "gaddress6.h"
-#include "gstrings.h"
 #include "gstr.h"
-#include "gassert.h"
-#include "gdebug.h"
-#include <utility> // std::swap()
+#include "glog.h"
 #include <algorithm> // std::swap()
+#include <utility> // std::swap()
 #include <climits>
 #include <sys/types.h>
 #include <sstream>
@@ -54,8 +52,8 @@ void GNet::Address6::init()
 	static specific_type zero ;
 	m_inet.specific = zero ;
 	m_inet.specific.sin6_family = family() ;
-	m_inet.specific.sin6_flowinfo = 0 ;
 	m_inet.specific.sin6_port = 0 ;
+	m_inet.specific.sin6_flowinfo = 0 ;
 	gnet_address6_init( m_inet.specific ) ; // gdef.h
 }
 
@@ -300,17 +298,19 @@ socklen_t GNet::Address6::length()
 
 namespace
 {
-	void shiftLeft( struct in6_addr & mask )
+	bool shiftLeft( struct in6_addr & mask )
 	{
+		bool carry_out = false ;
 		bool carry_in = false ;
 		for( int i = 15 ; i >= 0 ; i-- )
 		{
 			const unsigned char top_bit = 128U ;
-			bool carry_out = !!( mask.s6_addr[i] & top_bit ) ;
+			carry_out = !!( mask.s6_addr[i] & top_bit ) ;
 			mask.s6_addr[i] <<= 1U ;
 			if( carry_in ) ( mask.s6_addr[i] |= 1U ) ;
 			carry_in = carry_out ;
 		}
+		return carry_out ;
 	}
 	void shiftLeft( struct in6_addr & mask , unsigned int bits )
 	{
@@ -379,6 +379,15 @@ G::StringArray GNet::Address6::wildcards() const
 		applyMask( a.m_inet.specific.sin6_addr , mask ) ;
 	}
 	return result ;
+}
+
+unsigned int GNet::Address6::bits() const
+{
+	struct in6_addr a = m_inet.specific.sin6_addr ;
+	unsigned int count = 0U ;
+	while( shiftLeft(a) )
+		count++ ;
+	return count ;
 }
 
 bool GNet::Address6::isLoopback() const

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,11 +18,10 @@
 /// \file gnetworkverifier.h
 ///
 
-#ifndef G_SMTP_NETWORK_VERIFIER_H
-#define G_SMTP_NETWORK_VERIFIER_H
+#ifndef G_SMTP_NETWORK_VERIFIER__H
+#define G_SMTP_NETWORK_VERIFIER__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gverifier.h"
 #include "grequestclient.h"
 #include "gclientptr.h"
@@ -34,43 +33,38 @@ namespace GSmtp
 }
 
 /// \class GSmtp::NetworkVerifier
-/// A Verifier that talks to a remote verifier over the network.
+/// A Verifier that talks to a remote address verifier over the network.
 ///
 class GSmtp::NetworkVerifier : public Verifier
 {
 public:
-	NetworkVerifier( GNet::ExceptionHandler & , const std::string & server ,
+	NetworkVerifier( GNet::ExceptionSink , const std::string & server ,
 		unsigned int connection_timeout , unsigned int response_timeout ) ;
 			///< Constructor.
 
 	virtual ~NetworkVerifier() ;
 		///< Destructor.
 
+private: // overrides
 	virtual void verify( const std::string & rcpt_to_parameter ,
 		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
-		const std::string & auth_mechanism , const std::string & auth_extra ) override ;
-			///< Override from GSmtp::Verifier.
-
-	virtual G::Slot::Signal2<std::string,VerifierStatus> & doneSignal() override ;
-		///< Override from GSmtp::Verifier.
-
-	virtual void cancel() override ;
-		///< Override from GSmtp::Verifier.
+		const std::string & auth_mechanism , const std::string & auth_extra ) override ; // Override from GSmtp::Verifier.
+	virtual G::Slot::Signal2<std::string,VerifierStatus> & doneSignal() override ; // Override from GSmtp::Verifier.
+	virtual void cancel() override ; // Override from GSmtp::Verifier.
 
 private:
-	NetworkVerifier( const NetworkVerifier & ) ;
-	void operator=( const NetworkVerifier & ) ;
-	void clientEvent( std::string , std::string ) ;
+	NetworkVerifier( const NetworkVerifier & ) g__eq_delete ;
+	void operator=( const NetworkVerifier & ) g__eq_delete ;
+	void clientEvent( std::string , std::string , std::string ) ;
+	void clientDeleted( std::string ) ;
 
 private:
-	GNet::ExceptionHandler & m_exception_handler ;
+	GNet::ExceptionSink m_es ;
 	G::Slot::Signal2<std::string,VerifierStatus> m_done_signal ;
 	GNet::Location m_location ;
 	unsigned int m_connection_timeout ;
 	unsigned int m_response_timeout ;
-	bool m_lazy ;
-	bool m_compatible ;
-	GNet::ClientPtr<RequestClient> m_client ;
+	GNet::ClientPtr<RequestClient> m_client_ptr ;
 	std::string m_to_address ;
 } ;
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,14 +23,13 @@
 #include "gexception.h"
 #include "gsaslserverbasic.h"
 #include "gsaslserverpam.h"
-#include "gassert.h"
 
-unique_ptr<GAuth::SaslServer> GAuth::SaslServerFactory::newSaslServer( const SaslServerSecrets & secrets , bool allow_apop )
+unique_ptr<GAuth::SaslServer> GAuth::SaslServerFactory::newSaslServer( const SaslServerSecrets & secrets , const std::string & config , bool allow_apop )
 {
 	if( secrets.source() == "/pam" )
-		return unique_ptr<SaslServer>( new SaslServerPam(secrets,allow_apop) ) ;
+		return unique_ptr<SaslServer>( new SaslServerPam(secrets,config,allow_apop) ) ;
 	else
-		return unique_ptr<SaslServer>( new SaslServerBasic(secrets,allow_apop) ) ;
+		return unique_ptr<SaslServer>( new SaslServerBasic(secrets,config,allow_apop) ) ;
 }
 
 /// \file gsaslserverfactory_pam.cpp

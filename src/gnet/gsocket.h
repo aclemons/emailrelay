@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gaddress.h"
-#include "gexception.h"
+#include "gexceptionsink.h"
 #include "gevent.h"
 #include "gdescriptor.h"
 #include "greadwrite.h"
@@ -43,14 +43,15 @@ namespace GNet
 /// A network socket base class, holding a non-blocking socket file descriptor.
 ///
 /// Provides bind(), listen(), connect(), write(); derived classes provide
-/// accept() and read(). Also interfaces to the event loop with addReadHandler()
-/// and addWriteHandler().
+/// accept() and read(). Interfaces to the event loop with addReadHandler(),
+/// addWriteHandler() etc.
 ///
 class GNet::Socket : public G::ReadWrite
 {
 public:
 	G_EXCEPTION( SocketError , "socket error" ) ;
-	G_EXCEPTION( SocketBindError , "socket bind error" ) ;
+	G_EXCEPTION_CLASS( SocketBindError , "socket bind error" ) ;
+	G_EXCEPTION_CLASS( SocketTooMany , "socket accept error" ) ;
 	typedef G::ReadWrite::size_type size_type ;
 	typedef G::ReadWrite::ssize_type ssize_type ;
 	struct NoThrow /// Overload discriminator class for GNet::Socket.
@@ -59,15 +60,16 @@ public:
 		{} ;
 
 	virtual ~Socket() ;
-		///< Destructor.
+		///< Destructor. The socket file descriptor is removed
+		///< from the event loop.
 
 	std::pair<bool,Address> getLocalAddress() const ;
 		///< Retrieves local address of the socket.
-		///< Pair.first is false on error.
+		///< The boolean value is false on error.
 
 	std::pair<bool,Address> getPeerAddress() const ;
 		///< Retrieves address of socket's peer.
-		///< 'Pair.first' is false on error.
+		///< The boolean value is false on error.
 
 	bool hasPeer() const ;
 		///< Returns true if the socket has a valid peer. This
@@ -115,13 +117,9 @@ public:
 		///<
 		///< If sends are shut-down then the transmit queue is
 		///< drained and a final empty FIN packet is sent when
-		///< fully acknowledged.
+		///< fully acknowledged. See also RFC-793 3.5.
 		///<
 		///< Errors are ignored.
-
-	virtual ssize_type read( char * buffer , size_type buffer_length ) override = 0 ;
-		///< Reads from the socket.
-		///< Override from G::ReadWrite.
 
 	virtual ssize_type write( const char * buf , size_type len ) override = 0 ;
 		///< Writes to the socket. This is a default implementation
@@ -148,14 +146,18 @@ public:
 		///< writing to a datagram socket this indicates that
 		///< the message was too big to send atomically.
 
-	void addReadHandler( EventHandler & , ExceptionHandler & ) ;
+	bool eTooMany() ;
+		///< Returns true if the previous socket operation
+		///< failed with the EMFILE error status, or similar.
+
+	void addReadHandler( EventHandler & , ExceptionSink ) ;
 		///< Adds this socket to the event source list so that
 		///< the given handler receives read events.
 
 	void dropReadHandler();
 		///< Reverses addReadHandler().
 
-	void addWriteHandler( EventHandler & , ExceptionHandler & ) ;
+	void addWriteHandler( EventHandler & , ExceptionSink ) ;
 		///< Adds this socket to the event source list so that
 		///< the given handler receives write events when flow
 		///< control is released. (Not used for datagram
@@ -164,7 +166,7 @@ public:
 	void dropWriteHandler() ;
 		///< Reverses addWriteHandler().
 
-	void addOtherHandler( EventHandler & , ExceptionHandler & ) ;
+	void addOtherHandler( EventHandler & , ExceptionSink ) ;
 		///< Adds this socket to the event source list so that
 		///< the given handler receives exception events.
 		///< A TCP exception event should be treated as a
@@ -215,11 +217,10 @@ protected:
 	std::string m_reason_string ;
 	int m_domain ;
 	Descriptor m_socket ;
-	HANDLE m_handle ;
 
 private:
-	Socket( const Socket & ) ;
-	void operator=( const Socket & ) ;
+	Socket( const Socket & ) g__eq_delete ;
+	void operator=( const Socket & ) g__eq_delete ;
 	void drop() ;
 	void destroy() ;
 	bool setNonBlock() ;
@@ -259,11 +260,8 @@ public:
 		///< Constructor overload specifically for a listening
 		///< socket. This can be used modify the socket options.
 
-	virtual ~StreamSocket() ;
-		///< Destructor.
-
 	virtual ssize_type read( char * buffer , size_type buffer_length ) override ;
-		///< Override from Socket::read().
+		///< Override from ReadWrite::read().
 
 	virtual ssize_type write( const char * buf , size_type len ) override ;
 		///< Override from Socket::write().
@@ -273,8 +271,8 @@ public:
 		///< socket and the peer address.
 
 private:
-	StreamSocket( const StreamSocket & ) ; // not implemented
-	void operator=( const StreamSocket & ) ; // not implemented
+	StreamSocket( const StreamSocket & ) g__eq_delete ;
+	void operator=( const StreamSocket & ) g__eq_delete ;
 	StreamSocket( Descriptor s , const Socket::Accepted & ) ;
 	void setOptionsOnCreate( bool ) ;
 	void setOptionsOnAccept() ;
@@ -289,11 +287,8 @@ public:
 	explicit DatagramSocket( int address_domain ) ;
 		///< Constructor with a hint of a local address.
 
-	virtual ~DatagramSocket() ;
-		///< Destructor.
-
 	virtual ssize_type read( char * buffer , size_type len ) override ;
-		///< Override from Socket::read().
+		///< Override from ReadWrite::read().
 
 	virtual ssize_type write( const char * buffer , size_type len ) override ;
 		///< Override from Socket::write().
@@ -312,8 +307,8 @@ public:
 		///< reversing the effect of the previous Socket::connect().
 
 private:
-	DatagramSocket( const DatagramSocket & ) ;
-	void operator=( const DatagramSocket & ) ;
+	DatagramSocket( const DatagramSocket & ) g__eq_delete ;
+	void operator=( const DatagramSocket & ) g__eq_delete ;
 } ;
 
 #endif

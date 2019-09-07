@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,13 +44,18 @@ public:
 	~WinMenu() ;
 		///< Destructor.
 
-	int popup( const GGui::WindowBase & w , bool with_open , bool with_close ) ;
-		///< Opens the menu as a popup.
+	int popup( const GGui::WindowBase & w , bool foreground , bool with_open , bool with_close ) ;
+		///< Opens the menu as a popup and returns when the
+		///< mouse button is released.
 		/// \see TrackPopupMenuEx()
 
+	void update( bool with_open , bool with_close ) ;
+		///< Updates the menu, even while popup() is
+		///< still running.
+
 private:
-	WinMenu( const WinMenu & ) ; // not implemented
-	void operator=( const WinMenu & ) ; // not implemented
+	WinMenu( const WinMenu & ) g__eq_delete ;
+	void operator=( const WinMenu & ) g__eq_delete ;
 
 private:
 	HMENU m_hmenu ;

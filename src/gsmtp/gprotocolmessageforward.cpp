@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,20 +19,19 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gprotocolmessageforward.h"
 #include "gprotocolmessagestore.h"
 #include "gnullfilter.h"
 #include "gexecutablefilter.h"
 #include "gmessagestore.h"
 #include "gstr.h"
-#include "gassert.h"
 #include "glog.h"
 
-GSmtp::ProtocolMessageForward::ProtocolMessageForward( MessageStore & store ,
-	unique_ptr<ProtocolMessage> pm ,
+GSmtp::ProtocolMessageForward::ProtocolMessageForward( GNet::ExceptionSink es ,
+	MessageStore & store , unique_ptr<ProtocolMessage> pm ,
 	const GSmtp::Client::Config & client_config ,
 	const GAuth::Secrets & client_secrets , const std::string & server ) :
+		m_es(es) ,
 		m_store(store) ,
 		m_client_location(server) ,
 		m_client_config(client_config) ,
@@ -43,15 +42,15 @@ GSmtp::ProtocolMessageForward::ProtocolMessageForward( MessageStore & store ,
 {
 	// signal plumbing to receive 'done' events
 	m_pm->doneSignal().connect( G::Slot::slot(*this,&ProtocolMessageForward::processDone) ) ;
-	m_client.doneSignal().connect( G::Slot::slot(*this,&ProtocolMessageForward::clientDone) ) ;
+	m_client_ptr.deleteSignal().connect( G::Slot::slot(*this,&ProtocolMessageForward::clientDone) ) ;
 }
 
 GSmtp::ProtocolMessageForward::~ProtocolMessageForward()
 {
 	m_pm->doneSignal().disconnect() ;
-	m_client.doneSignal().disconnect() ;
-	if( m_client.get() != nullptr )
-		m_client->messageDoneSignal().disconnect() ;
+	m_client_ptr.deleteSignal().disconnect() ;
+	if( m_client_ptr.get() != nullptr )
+		m_client_ptr->messageDoneSignal().disconnect() ;
 }
 
 G::Slot::Signal4<bool,unsigned long,std::string,std::string> & GSmtp::ProtocolMessageForward::storageDoneSignal()
@@ -67,7 +66,7 @@ G::Slot::Signal4<bool,unsigned long,std::string,std::string> & GSmtp::ProtocolMe
 void GSmtp::ProtocolMessageForward::reset()
 {
 	m_pm->reset() ;
-	m_client.reset() ;
+	m_client_ptr.reset() ;
 }
 
 void GSmtp::ProtocolMessageForward::clear()
@@ -110,6 +109,7 @@ void GSmtp::ProtocolMessageForward::process( const std::string & auth_id , const
 void GSmtp::ProtocolMessageForward::processDone( bool success , unsigned long id , std::string response , std::string reason )
 {
 	G_DEBUG( "ProtocolMessageForward::processDone: " << (success?1:0) << " " << id << " [" << response << "] [" << reason << "]" ) ;
+	G::CallFrame this_( m_call_stack ) ;
 	if( success && id != 0UL )
 	{
 		m_id = id ;
@@ -117,6 +117,7 @@ void GSmtp::ProtocolMessageForward::processDone( bool success , unsigned long id
 		// the message is now stored -- start the forwarding using the Client object
 		bool nothing_to_do = false ;
 		std::string error = forward( id , nothing_to_do ) ;
+		if( this_.deleted() ) return ; // just in case
 		if( !error.empty() || nothing_to_do )
 		{
 			// immediate failure or no recipients
@@ -139,7 +140,7 @@ std::string GSmtp::ProtocolMessageForward::forward( unsigned long id , bool & no
 
 		unique_ptr<StoredMessage> message = m_store.get( id ) ;
 
-		if( message->remoteRecipientCount() == 0U )
+		if( message->toCount() == 0U )
 		{
 			// use our local delivery mechanism, not the downstream server's
 			nothing_to_do = true ;
@@ -147,19 +148,21 @@ std::string GSmtp::ProtocolMessageForward::forward( unsigned long id , bool & no
 		}
 		else
 		{
-			if( m_client.get() == nullptr )
+			if( m_client_ptr.get() == nullptr )
 			{
-				m_client.reset( new Client(m_client_location,m_client_secrets,m_client_config) ) ;
-				m_client->messageDoneSignal().connect( G::Slot::slot(*this,&GSmtp::ProtocolMessageForward::messageDone) ) ;
+				m_client_ptr.reset( new Client(GNet::ExceptionSink(m_client_ptr,nullptr),m_client_location,m_client_secrets,m_client_config) ) ;
+				m_client_ptr->messageDoneSignal().connect( G::Slot::slot(*this,&GSmtp::ProtocolMessageForward::messageDone) ) ;
 			}
-			m_client->sendMessage( unique_ptr<StoredMessage>(message.release()) ) ;
+			m_client_ptr->sendMessage( unique_ptr<StoredMessage>(message.release()) ) ;
 		}
 		return std::string() ;
 	}
 	catch( std::exception & e ) // send forwarding errors back to the remote client via the server protocol
 	{
 		G_WARNING( "GSmtp::ProtocolMessageForward::forward: forwarding exception: " << e.what() ) ;
-		std::string e_what = e.what() ; if( e_what.empty() ) e_what = "exception" ;
+		std::string e_what = e.what() ;
+		if( e_what.empty() )
+			e_what = "exception" ;
 		return e_what ;
 	}
 }

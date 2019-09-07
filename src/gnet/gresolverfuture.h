@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -84,8 +84,8 @@ public:
 		///< Precondition: error()
 
 private:
-	ResolverFuture( const ResolverFuture & ) ;
-	void operator=( const ResolverFuture & ) ;
+	ResolverFuture( const ResolverFuture & ) g__eq_delete ;
+	void operator=( const ResolverFuture & ) g__eq_delete ;
 	std::string failure() const ;
 	bool fetch( List & ) const ;
 	bool fetch( Pair & ) const ;

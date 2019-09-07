@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 #include "gdef.h"
 #include "gtest.h"
-#include "gdebug.h"
+#include "glog.h"
 #include "genvironment.h"
 #include <string>
 #include <set>
@@ -40,7 +40,7 @@ bool G::Test::enabled( const char * name )
 {
 	if( !done )
 	{
-		spec = G::Environment::get("G_TEST",std::string()) ;
+		spec = Environment::get("G_TEST",std::string()) ;
 		if( !spec.empty() )
 			spec = "," + spec + "," ;
 	}

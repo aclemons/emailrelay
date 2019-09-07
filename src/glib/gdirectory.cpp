@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@
 #include "gdirectory.h"
 #include "gfile.h"
 #include "gpath.h"
+#include "gprocess.h"
 #include "gstr.h"
-#include "gassert.h"
 #include "glog.h"
 #include <algorithm> // std::sort
 #include <functional> // std::ptr_fun
@@ -49,24 +49,17 @@ G::Directory::Directory( const Path & path ) :
 {
 }
 
-G::Directory::~Directory()
-{
-}
-
-G::Directory::Directory( const Directory &other ) :
-	m_path(other.m_path)
-{
-}
-
-G::Directory &G::Directory::operator=( const Directory &rhs )
-{
-	m_path = rhs.m_path ;
-	return *this ;
-}
-
 G::Path G::Directory::path() const
 {
 	return m_path ;
+}
+
+std::string G::Directory::tmp()
+{
+	std::ostringstream ss ;
+	static int sequence = 1 ;
+	ss << "." << DateTime::now() << "." << sequence++ << "." << Process::Id() << ".tmp" ;
+	return ss.str() ;
 }
 
 // ==

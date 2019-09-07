@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,16 @@
 
 #include "gdef.h"
 #include "gslot.h"
+
+#ifdef G_SLOT_NEW
+
+void G::Slot::SignalImp::check( const SlotImpBase * p )
+{
+	if( p != nullptr )
+		throw AlreadyConnected() ;
+}
+
+#else
 
 G::Slot::SlotImpBase::~SlotImpBase()
 {
@@ -49,4 +59,5 @@ void G::Slot::SignalImp::check( const SlotImpBase * p )
 		throw AlreadyConnected() ;
 }
 
+#endif
 /// \file gslot.cpp

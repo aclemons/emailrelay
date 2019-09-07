@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,16 +21,18 @@
 #include "gdef.h"
 #include "gevent.h"
 #include "geventhandlerlist.h"
+#include "gprocess.h"
 #include "gexception.h"
 #include "gstr.h"
 #include "gfile.h"
 #include "gtimer.h"
+#include "gtimerlist.h"
 #include "gtest.h"
-#include "gdebug.h"
+#include "glog.h"
+#include "gassert.h"
 #include <sstream>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <errno.h>
 
 namespace GNet
 {
@@ -69,24 +71,26 @@ public:
 	G_EXCEPTION( Error , "select() error" ) ;
 	EventLoopImp() ;
 	virtual ~EventLoopImp() ;
+
+private: // overrides
 	virtual std::string run() override ;
 	virtual bool running() const override ;
-	virtual void quit( std::string ) override ;
+	virtual void quit( const std::string & ) override ;
 	virtual void quit( const G::SignalSafe & ) override ;
-	virtual void addRead( Descriptor fd , EventHandler & , ExceptionHandler & ) override ;
-	virtual void addWrite( Descriptor fd , EventHandler & , ExceptionHandler & ) override ;
-	virtual void addOther( Descriptor fd , EventHandler & , ExceptionHandler & ) override ;
+	virtual void addRead( Descriptor fd , EventHandler & , ExceptionSink ) override ;
+	virtual void addWrite( Descriptor fd , EventHandler & , ExceptionSink ) override ;
+	virtual void addOther( Descriptor fd , EventHandler & , ExceptionSink ) override ;
 	virtual void dropRead( Descriptor fd ) override ;
 	virtual void dropWrite( Descriptor fd ) override ;
 	virtual void dropOther( Descriptor fd ) override ;
 	virtual std::string report() const override ;
-	virtual void setTimeout( G::EpochTime t ) override ;
 	virtual void disarm( ExceptionHandler * ) override ;
 
 private:
-	EventLoopImp( const EventLoopImp & ) ;
-	void operator=( const EventLoopImp & ) ;
+	EventLoopImp( const EventLoopImp & ) g__eq_delete ;
+	void operator=( const EventLoopImp & ) g__eq_delete ;
 	void runOnce() ;
+	static void check( int ) ;
 
 private:
 	bool m_quit ;
@@ -135,8 +139,8 @@ void GNet::FdSet::init( const EventHandlerList & list )
 		const EventHandlerList::Iterator end = list.end() ;
 		for( EventHandlerList::Iterator p = list.begin() ; p != end ; ++p )
 		{
+			G_ASSERT( p.fd().valid() && p.fd().fd() >= 0 ) ;
 			Descriptor fd = p.fd() ;
-			G_ASSERT( fd.valid() && fd.fd() >= 0 ) ;
 			if( fd.fd() < 0 ) continue ;
 			FD_SET( fd.fd() , &m_set_internal ) ;
 			if( (fd.fd()+1) > m_fdmax )
@@ -220,7 +224,7 @@ bool GNet::EventLoopImp::running() const
 	return m_running ;
 }
 
-void GNet::EventLoopImp::quit( std::string reason )
+void GNet::EventLoopImp::quit( const std::string & reason )
 {
 	m_quit = true ;
 	m_quit_reason = reason ;
@@ -248,8 +252,9 @@ void GNet::EventLoopImp::runOnce()
 	bool timeout_immediate = false ;
 	if( TimerList::instance(TimerList::NoThrow()) != nullptr )
 	{
-		bool timeout_infinite = false ;
-		G::EpochTime interval = TimerList::instance().interval( timeout_infinite ) ;
+		std::pair<G::TimeInterval,bool> interval_pair = TimerList::instance().interval() ;
+		G::TimeInterval interval = interval_pair.first ;
+		bool timeout_infinite = interval_pair.second ;
 		timeout_immediate = !timeout_infinite && interval.s == 0 && interval.us == 0U ;
 		timeout.tv_sec = interval.s ;
 		timeout.tv_usec = interval.us ;
@@ -263,7 +268,7 @@ void GNet::EventLoopImp::runOnce()
 		if( timeout_p == nullptr || timeout.tv_sec > 0 )
 		{
 			timeout.tv_sec = 0 ;
-			timeout.tv_usec = 999999 ;
+			timeout.tv_usec = 999999U ;
 		}
 		timeout_p = &timeout ;
 	}
@@ -273,7 +278,7 @@ void GNet::EventLoopImp::runOnce()
 	int rc = ::select( n , m_read_set() , m_write_set() , m_other_set() , timeout_p ) ;
 	if( rc < 0 )
 	{
-		int e = errno ;
+		int e = G::Process::errno_() ;
 		if( e != EINTR ) // eg. when profiling
 			throw Error( G::Str::fromInt(e) ) ;
 	}
@@ -293,7 +298,7 @@ void GNet::EventLoopImp::runOnce()
 		//G_DEBUG( "GNet::EventLoopImp::runOnce: detected event(s) on " << rc << " fd(s)" ) ;
 		m_read_set.raiseEvents( m_read_list , &EventHandler::readEvent ) ;
 		m_write_set.raiseEvents( m_write_list , &EventHandler::writeEvent ) ;
-		m_other_set.raiseEvents( m_other_list , &EventHandler::otherEvent , EventHandler::reason_other ) ;
+		m_other_set.raiseEvents( m_other_list , &EventHandler::otherEvent , EventHandler::Reason::other ) ;
 	}
 
 	if( G::Test::enabled("event-loop-slow") )
@@ -305,22 +310,31 @@ void GNet::EventLoopImp::runOnce()
 	}
 }
 
-void GNet::EventLoopImp::addRead( Descriptor fd , EventHandler & handler , ExceptionHandler & eh )
+void GNet::EventLoopImp::addRead( Descriptor fd , EventHandler & handler , ExceptionSink es )
 {
-	m_read_list.add( fd , &handler , &eh ) ;
+	check( fd.fd() ) ;
+	m_read_list.add( fd , &handler , es ) ;
 	m_read_set.invalidate() ;
 }
 
-void GNet::EventLoopImp::addWrite( Descriptor fd , EventHandler & handler , ExceptionHandler & eh )
+void GNet::EventLoopImp::addWrite( Descriptor fd , EventHandler & handler , ExceptionSink es )
 {
-	m_write_list.add( fd , &handler , &eh ) ;
+	check( fd.fd() ) ;
+	m_write_list.add( fd , &handler , es ) ;
 	m_write_set.invalidate() ;
 }
 
-void GNet::EventLoopImp::addOther( Descriptor fd , EventHandler & handler , ExceptionHandler & eh )
+void GNet::EventLoopImp::addOther( Descriptor fd , EventHandler & handler , ExceptionSink es )
 {
-	m_other_list.add( fd , &handler , &eh ) ;
+	check( fd.fd() ) ;
+	m_other_list.add( fd , &handler , es ) ;
 	m_other_set.invalidate() ;
+}
+
+void GNet::EventLoopImp::check( int fd )
+{
+	if( fd >= FD_SETSIZE )
+		throw EventLoop::Overflow( "too many open file descriptors for select()" ) ;
 }
 
 void GNet::EventLoopImp::dropRead( Descriptor fd )
@@ -346,11 +360,6 @@ void GNet::EventLoopImp::disarm( ExceptionHandler * p )
 	m_read_list.disarm( p ) ;
 	m_write_list.disarm( p ) ;
 	m_other_list.disarm( p ) ;
-}
-
-void GNet::EventLoopImp::setTimeout( G::EpochTime )
-{
-	// does nothing -- interval() in runOnce() suffices
 }
 
 std::string GNet::EventLoopImp::report() const

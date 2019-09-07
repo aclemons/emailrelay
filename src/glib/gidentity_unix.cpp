@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,8 +22,9 @@
 
 #include "gdef.h"
 #include "gidentity.h"
-#include "glimits.h"
+#include "gprocess.h"
 #include "gassert.h"
+#include <climits>
 #include <sstream>
 #include <vector>
 #include <pwd.h> // getpwnam_r()
@@ -48,49 +49,46 @@ G::Identity::Identity( const std::string & name ) :
 	m_gid(static_cast<gid_t>(-1)) ,
 	m_h(0)
 {
-	size_t buffer_size = 0 ;
-	{
-		long n = ::sysconf( _SC_GETPW_R_SIZE_MAX ) ;
-		if( n < limits::get_pwnam_r_buffer )
+	typedef struct passwd P ;
+    long n = ::sysconf( _SC_GETPW_R_SIZE_MAX ) ;
+	if( n < 0 || n > INT_MAX ) n = -1L ;
+    int sizes[] = { 120 , static_cast<int>(n) , 16000 , 0 } ;
+    for( int * size_p = sizes ; *size_p ; ++size_p )
+    {
+        if( *size_p < 0 ) continue ;
+        size_t buffer_size = static_cast<size_t>(*size_p) ;
+        std::vector<char> buffer( buffer_size ) ;
+		static P pwd_zero ;
+        P pwd = pwd_zero ;
+        P * result_p = nullptr ;
+        int rc = ::getpwnam_r( name.c_str() , &pwd , &buffer[0] , buffer_size , &result_p ) ;
+        int e = Process::errno_() ;
+		if( rc == 0 && result_p )
 		{
-			buffer_size = limits::get_pwnam_r_buffer ;
+			m_uid = result_p->pw_uid ;
+			m_gid = result_p->pw_gid ;
+			break ;
 		}
-		else
-		{
-			G_ASSERT( n > 0 ) ;
-			unsigned long un = static_cast<unsigned long>(n) ;
-			const size_t size_max = (size_t)-1 ;
-			buffer_size = un > size_max ? size_max : static_cast<size_t>(un) ;
-		}
-	}
-
-	std::vector<char> buffer( buffer_size ) ;
-
-	::passwd pwd ;
-	::passwd * result_p = nullptr ;
-	int rc = ::getpwnam_r( name.c_str() , &pwd , &buffer[0] , buffer_size , &result_p ) ;
-	if( rc != 0 || result_p == nullptr )
-	{
-		if( name == "root" ) // in case no /etc/passwd
+		else if( rc == 0 && name == "root" ) // in case of no /etc/passwd file
 		{
 			m_uid = 0 ;
 			m_gid = 0 ;
+			break ;
 		}
-		else
+		else if( rc == 0 )
 		{
-			throw NoSuchUser(name) ;
+			throw NoSuchUser( name ) ;
 		}
-	}
-	else
-	{
-		m_uid = result_p->pw_uid ;
-		m_gid = result_p->pw_gid ;
+		else if( e != ERANGE )
+		{
+			throw Error( Process::strerror(e) ) ;
+		}
 	}
 }
 
 G::Identity G::Identity::effective()
 {
-	G::Identity id ;
+	Identity id ;
 	id.m_uid = ::geteuid() ;
 	id.m_gid = ::getegid() ;
 	return id ;
@@ -98,7 +96,7 @@ G::Identity G::Identity::effective()
 
 G::Identity G::Identity::real()
 {
-	G::Identity id ;
+	Identity id ;
 	id.m_uid = ::getuid() ;
 	id.m_gid = ::getgid() ;
 	return id ;
@@ -106,17 +104,17 @@ G::Identity G::Identity::real()
 
 G::Identity G::Identity::invalid()
 {
-	return G::Identity() ;
+	return Identity() ;
 }
 
 G::Identity G::Identity::invalid( SignalSafe safe )
 {
-	return G::Identity(safe) ;
+	return Identity(safe) ;
 }
 
 G::Identity G::Identity::root()
 {
-	G::Identity id ;
+	Identity id ;
 	id.m_uid = 0 ;
 	id.m_gid = 0 ;
 	return id ;
@@ -146,7 +144,8 @@ bool G::Identity::operator!=( const Identity & other ) const
 
 void G::Identity::setEffectiveUser( SignalSafe )
 {
-	int rc = ::seteuid(m_uid) ; G_IGNORE_VARIABLE(rc) ;
+	m_h = 0 ; // for -Wunused-private-field
+	int rc = ::seteuid(m_uid) ; G_IGNORE_VARIABLE(int,rc) ;
 }
 
 void G::Identity::setEffectiveUser( bool do_throw )
@@ -166,7 +165,7 @@ void G::Identity::setEffectiveGroup( bool do_throw )
 
 void G::Identity::setEffectiveGroup( SignalSafe )
 {
-	int rc = ::setegid(m_gid) ; G_IGNORE_VARIABLE(rc) ;
+	int rc = ::setegid(m_gid) ; G_IGNORE_VARIABLE(int,rc) ;
 }
 
 void G::Identity::setRealGroup( bool do_throw )

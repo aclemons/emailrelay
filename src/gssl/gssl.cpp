@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,8 +27,7 @@
 
 GSsl::Library * GSsl::Library::m_this = nullptr ;
 
-GSsl::Library::Library( bool active , const std::string & library_config , LogFn log_fn , bool verbose ) :
-	m_imp(nullptr)
+GSsl::Library::Library( bool active , const std::string & library_config , LogFn log_fn , bool verbose )
 {
 	if( m_this == nullptr )
 		m_this = this ;
@@ -37,15 +36,15 @@ GSsl::Library::Library( bool active , const std::string & library_config , LogFn
 	{
 		G::StringArray config = G::Str::splitIntoTokens( library_config , "," ) ;
 		m_imp = newLibraryImp( config , log_fn , verbose ) ;
-		if( !config.empty() )
+		bool ignore_extra = LibraryImpBase::consume( config , "ignoreextra" ) ;
+		if( !config.empty() && !ignore_extra )
 			G_WARNING( "GSsl::Library::Library: tls-config: tls configuration items ignored: [" << G::Str::join(",",config) << "]" ) ;
 	}
 }
 
 GSsl::Library::~Library()
 {
-	delete m_imp ;
-	if( m_this == nullptr )
+	if( m_this == this )
 		m_this = nullptr ;
 }
 
@@ -61,7 +60,7 @@ GSsl::Library * GSsl::Library::instance()
 
 bool GSsl::Library::enabled() const
 {
-	return m_imp != nullptr ;
+	return m_imp.get() != nullptr ;
 }
 
 std::string GSsl::Library::id() const
@@ -74,7 +73,7 @@ void GSsl::Library::addProfile( const std::string & profile_name , bool is_serve
 	const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
 	const std::string & profile_config )
 {
-	if( m_imp != nullptr )
+	if( m_imp.get() != nullptr )
 		m_imp->addProfile( profile_name , is_server_profile , key_file , cert_file , ca_file ,
 			default_peer_certificate_name , default_peer_host_name , profile_config ) ;
 }
@@ -105,16 +104,16 @@ GSsl::LibraryImpBase & GSsl::Library::impstance()
 
 GSsl::LibraryImpBase & GSsl::Library::imp()
 {
-	if( m_imp == nullptr )
+	if( m_imp.get() == nullptr )
 		throw G::Exception( "no tls library instance" ) ;
-	return *m_imp ;
+	return *m_imp.get() ;
 }
 
 const GSsl::LibraryImpBase & GSsl::Library::imp() const
 {
-	if( m_imp == nullptr )
+	if( m_imp.get() == nullptr )
 		throw G::Exception( "no tls library instance" ) ;
-	return *m_imp ;
+	return *m_imp.get() ;
 }
 
 void GSsl::Library::log( int level , const std::string & log_line )
@@ -129,12 +128,12 @@ void GSsl::Library::log( int level , const std::string & log_line )
 
 G::StringArray GSsl::Library::digesters( bool require_state )
 {
-	return instance() == nullptr || instance()->m_imp == nullptr ? G::StringArray() : impstance().digesters(require_state) ;
+	return instance() == nullptr || instance()->m_imp.get() == nullptr ? G::StringArray() : impstance().digesters(require_state) ;
 }
 
-GSsl::Digester GSsl::Library::digester( const std::string & hash_function , const std::string & state ) const
+GSsl::Digester GSsl::Library::digester( const std::string & hash_function , const std::string & state , bool need_state ) const
 {
-	return impstance().digester( hash_function , state ) ;
+	return impstance().digester( hash_function , state , need_state ) ;
 }
 
 // ==
@@ -146,7 +145,6 @@ GSsl::Protocol::Protocol( const Profile & profile , const std::string & peer_cer
 
 GSsl::Protocol::~Protocol()
 {
-	delete m_imp ;
 }
 
 std::string GSsl::Protocol::peerCertificate() const
@@ -159,6 +157,11 @@ std::string GSsl::Protocol::peerCertificateChain() const
 	return m_imp->peerCertificateChain() ;
 }
 
+std::string GSsl::Protocol::cipher() const
+{
+	return m_imp->cipher() ;
+}
+
 bool GSsl::Protocol::verified() const
 {
 	return m_imp->verified() ;
@@ -166,10 +169,10 @@ bool GSsl::Protocol::verified() const
 
 std::string GSsl::Protocol::str( Result result )
 {
-	if( result == Result_ok ) return "Result_ok" ;
-	if( result == Result_read ) return "Result_read" ;
-	if( result == Result_write ) return "Result_write" ;
-	if( result == Result_error ) return "Result_error" ;
+	if( result == Result::ok ) return "Result_ok" ;
+	if( result == Result::read ) return "Result_read" ;
+	if( result == Result::write ) return "Result_write" ;
+	if( result == Result::error ) return "Result_error" ;
 	return "Result_undefined" ;
 }
 
@@ -193,9 +196,9 @@ GSsl::Protocol::Result GSsl::Protocol::write( const char * buffer , size_t data_
 	return m_imp->write( buffer , data_size_in , data_size_out ) ;
 }
 
-GSsl::Protocol::Result GSsl::Protocol::stop()
+GSsl::Protocol::Result GSsl::Protocol::shutdown()
 {
-	return m_imp->stop() ;
+	return m_imp->shutdown() ;
 }
 
 // ==

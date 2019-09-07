@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -73,8 +73,8 @@ public:
 			///< derived from the command-line.
 
 private:
-	BatchFile( const BatchFile & ) ;
-	void operator=( const BatchFile & ) ;
+	BatchFile( const BatchFile & ) g__eq_delete ;
+	void operator=( const BatchFile & ) g__eq_delete ;
 	static std::string quote( const std::string & ) ;
 	static std::string percents( const std::string & ) ;
 	static void dequote( std::string & ) ;

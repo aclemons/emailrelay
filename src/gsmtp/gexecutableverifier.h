@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,11 +18,10 @@
 /// \file gexecutableverifier.h
 ///
 
-#ifndef G_SMTP_EXECUTABLE_VERIFIER_H
-#define G_SMTP_EXECUTABLE_VERIFIER_H
+#ifndef G_SMTP_EXECUTABLE_VERIFIER__H
+#define G_SMTP_EXECUTABLE_VERIFIER__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gverifier.h"
 #include "gtask.h"
 #include <string>
@@ -38,31 +37,26 @@ namespace GSmtp
 class GSmtp::ExecutableVerifier : public Verifier, private GNet::TaskCallback
 {
 public:
-	ExecutableVerifier( GNet::ExceptionHandler & , const G::Path & ) ;
+	ExecutableVerifier( GNet::ExceptionSink , const G::Path & ) ;
 		///< Constructor.
 
+private: // overrides
+	virtual G::Slot::Signal2<std::string,VerifierStatus> & doneSignal() override ; // Override from GSmtp::Verifier.
+	virtual void cancel() override ; // Override from GSmtp::Verifier.
+	virtual void onTaskDone( int , const std::string & ) override ; // override from GNet::TaskCallback
 	virtual void verify( const std::string & rcpt_to_parameter ,
 		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
-		const std::string & auth_mechanism , const std::string & auth_extra ) override ;
-			///< Override from GSmtp::Verifier.
-
-	virtual G::Slot::Signal2<std::string,VerifierStatus> & doneSignal() override ;
-		///< Override from GSmtp::Verifier.
-
-	virtual void cancel() override ;
-		///< Override from GSmtp::Verifier.
+		const std::string & auth_mechanism , const std::string & auth_extra ) override ; // Override from GSmtp::Verifier.
 
 private:
-	ExecutableVerifier( const ExecutableVerifier & ) ; // not implemented
-	void operator=( const ExecutableVerifier & ) ; // not implemented
-	virtual void onTaskDone( int , const std::string & ) override ; // override from GNet::TaskCallback
+	ExecutableVerifier( const ExecutableVerifier & ) g__eq_delete ;
+	void operator=( const ExecutableVerifier & ) g__eq_delete ;
 
 private:
 	G::Path m_path ;
 	G::Slot::Signal2<std::string,VerifierStatus> m_done_signal ;
 	std::string m_to_address ;
 	GNet::Task m_task ;
-	bool m_compatible ;
 } ;
 
 #endif

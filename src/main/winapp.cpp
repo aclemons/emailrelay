@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@
 #include "gtest.h"
 #include "gcontrol.h"
 #include "gdialog.h"
-#include "gassert.h"
 #include "resource.h"
 #if G_MINGW
 static int cfg_tab_stop = 200 ; // edit control tab stops are flakey in mingw
@@ -38,29 +37,311 @@ static int cfg_tab_stop = 120 ;
 namespace Main
 {
 	class Box ;
+	class Config ;
 } ;
 
-/// \class Main::Box
-/// A message-box class for pop-up messages on windows.
-///
 class Main::Box : public GGui::Dialog
 {
 public:
 	Box( GGui::ApplicationBase & app , const G::StringArray & text ) ;
 	bool run() ;
 
-private:
-	bool onInit() ;
+private: // overrides
+	bool onInit() override ; // Override from GGui::Dialog.
 
 private:
 	GGui::EditBox m_edit ;
 	G::StringArray m_text ;
 } ;
 
+// ==
+
+Main::WinApp::WinApp( HINSTANCE h , HINSTANCE p , const std::string & name ) :
+	GGui::ApplicationBase(h,p,name) ,
+	m_disable_output(false) ,
+	m_quitting(false) ,
+	m_exit_code(0) ,
+	m_in_do_open(false) ,
+	m_in_do_close(false)
+{
+}
+
+Main::WinApp::~WinApp()
+{
+}
+
+void Main::WinApp::disableOutput()
+{
+	m_disable_output = true ;
+}
+
+void Main::WinApp::init( const Configuration & cfg )
+{
+	m_form_cfg.reset( new Configuration(cfg) ) ;
+	m_cfg = Config::create( cfg ) ;
+}
+
+int Main::WinApp::exitCode() const
+{
+	if( G::Test::enabled("special-exit-code") ) return (G::threading::works()?23:25) ;
+	return m_exit_code ;
+}
+
+std::pair<DWORD,DWORD> Main::WinApp::windowStyle() const
+{
+	return GGui::Window::windowStyleMain() ;
+}
+
+DWORD Main::WinApp::classStyle() const
+{
+	return 0 ;
+}
+
+UINT Main::WinApp::resource() const
+{
+	// (resource() provides the combined menu and icon id, but we have no menus)
+	return IDI_ICON1 ;
+}
+
+bool Main::WinApp::onCreate()
+{
+	if( m_cfg.with_tray )
+	{
+		try
+		{
+			m_tray.reset( new GGui::Tray(resource(),*this,"E-MailRelay") ) ;
+		}
+		catch( std::exception & e )
+		{
+			throw G::Exception( e.what() , "try using the --no-daemon option" ) ;
+		}
+	}
+	if( m_cfg.open_on_create )
+	{
+		doOpen() ;
+	}
+	return true ;
+}
+
+namespace
+{
+	struct ScopeFinalReset
+	{
+		ScopeFinalReset( unique_ptr<Main::WinMenu> & ptr ) : m_ptr(ptr) {}
+		~ScopeFinalReset() { m_ptr.reset() ; }
+		unique_ptr<Main::WinMenu> & m_ptr ;
+	} ;
+}
+
+void Main::WinApp::onTrayRightMouseButtonDown()
+{
+	G_DEBUG( "Main::WinApp::onTrayRightMouseButtonDown: tray right-click" ) ;
+
+	// (popup() returns when the mouse released, but we might get
+	// other event notifications before then, so make the menu
+	// accessible to them via a data member)
+	ScopeFinalReset final_reset( m_menu ) ;
+	m_menu.reset( new WinMenu(IDR_MENU1) ) ;
+
+	bool form_is_visible = m_form.get() != nullptr && m_form.get()->visible() ;
+	bool with_open = !form_is_visible ;
+	bool with_close = form_is_visible ;
+	int id = m_menu->popup( *this , false , with_open , with_close ) ;
+
+	PostMessage( handle() , wm_user() , 1 , static_cast<LPARAM>(id) ) ;
+}
+
+void Main::WinApp::onTrayDoubleClick()
+{
+	G_DEBUG( "Main::WinApp::onTrayDoubleClick: tray double-click" ) ;
+	PostMessage( handle() , wm_user() , 2 , static_cast<LPARAM>(IDM_OPEN) ) ;
+}
+
+LRESULT Main::WinApp::onUser( WPARAM wparam , LPARAM lparam )
+{
+	G_DEBUG( "Main::WinApp::onUser: wparam=" << wparam << " lparam=" << lparam ) ;
+	int id = static_cast<int>(lparam) ;
+	if( id == IDM_OPEN ) doOpen() ;
+	if( id == IDM_CLOSE ) doClose() ;
+	if( id == IDM_QUIT ) doQuit() ;
+	return 0L ;
+}
+
+LRESULT Main::WinApp::onUserOther( WPARAM wparam , LPARAM )
+{
+	// this is asynchronous notification from GGui::Stack that
+	// the dialog has completed (wparam=0/1) or the apply button
+	// has been denied (wparam=2) or WM_SYSCOMMAND has been
+	// received (wparam=3)
+
+	G_DEBUG( "Main::WinApp::onUserOther: wparam=" << wparam ) ;
+
+	if( wparam == 3 ) // iff cfg.with_sysmenu_quit
+		doQuit() ;
+
+	else if( m_cfg.quit_on_form_ok )
+		doQuit() ;
+
+	else if( m_cfg.close_on_form_ok )
+		doClose() ;
+
+	return 0L ;
+}
+
+namespace
+{
+	struct ScopeSet
+	{
+		explicit ScopeSet( bool & b ) : m_b(b) { b = true ; }
+		~ScopeSet() { m_b = false ; }
+		bool & m_b ;
+	} ;
+}
+
+void Main::WinApp::doOpen()
+{
+	G_DEBUG( "Main::WinApp::doOpen: do-open" ) ;
+	if( m_in_do_open || m_in_do_close ) return ;
+	ScopeSet scope_set( m_in_do_open ) ;
+
+	if( m_cfg.never_open )
+		return ;
+
+	if( m_form.get() == nullptr || m_form.get()->closed() )
+	{
+		G_DEBUG( "Main::WinApp::doOpen: do-open: form reset" ) ;
+
+		std::pair<DWORD,DWORD> form_style( WS_OVERLAPPEDWINDOW , 0 ) ;
+		if( m_cfg.form_minimisable )
+		{
+			form_style.first &= ~WS_MAXIMIZEBOX ;
+			form_style.second = WS_EX_APPWINDOW ;
+		}
+		else
+		{
+			form_style.first &= ~WS_MAXIMIZEBOX ;
+			form_style.first &= ~WS_MINIMIZEBOX ;
+			form_style.first &= ~WS_SYSMENU ;
+		}
+
+		HWND form_hparent = handle() ;
+		if( m_cfg.form_parentless )
+			form_hparent = 0 ;
+
+		bool form_allow_apply = m_cfg.allow_apply ;
+		bool form_with_icon = true ;
+		bool form_with_system_menu_quit = m_cfg.with_sysmenu_quit ;
+
+		m_form.reset( new WinForm( hinstance() , *m_form_cfg.get() ,
+			form_hparent , handle() , form_style , form_allow_apply ,
+			form_with_icon , form_with_system_menu_quit ) ) ;
+	}
+
+	if( m_cfg.restore_on_open )
+	{
+		if( m_form.get() != nullptr )
+			m_form->restore() ;
+	}
+}
+
+void Main::WinApp::doClose()
+{
+	G_DEBUG( "Main::WinApp::doClose: do-close" ) ;
+	if( m_in_do_open || m_in_do_close ) return ;
+	ScopeSet _( m_in_do_close ) ;
+
+	if( m_form.get() != nullptr )
+	{
+		if( m_cfg.minimise_on_close )
+			m_form->minimise() ;
+
+		if( m_cfg.close_on_close )
+			m_form->close() ;
+	}
+}
+
+void Main::WinApp::doQuit()
+{
+	G_DEBUG( "Main::WinApp::doQuit: do-quit" ) ;
+	m_quitting = true ;
+	close() ; // AppBase::close() so WM_CLOSE and virtual onClose()
+}
+
+bool Main::WinApp::onClose()
+{
+	G_DEBUG( "Main::WinApp::onClose: on-close" ) ;
+	if( m_quitting )
+	{
+		return true ; // continue to WM_DESTROY etc
+	}
+	else if( m_tray.get() != nullptr )
+	{
+		doClose() ;
+		return false ; // dont continue with the WM_CLOSE
+	}
+	else
+	{
+		return true ;
+	}
+}
+
+void Main::WinApp::onRunEvent( std::string category , std::string s1 , std::string s2 , std::string s3 )
+{
+	if( m_form.get() )
+		m_form->setStatus( category , s1 , s2 , s3 ) ;
+}
+
+void Main::WinApp::onWindowException( std::exception & e )
+{
+	GGui::Window::onWindowException( e ) ;
+}
+
+G::Options::Layout Main::WinApp::layout() const
+{
+	G::Options::Layout layout( 0U ) ;
+	layout.separator = "\t" ;
+	layout.indent = "\t\t" ;
+	layout.width = 100U ;
+	return layout ;
+}
+
+bool Main::WinApp::simpleOutput() const
+{
+	return false ;
+}
+
+void Main::WinApp::output( const std::string & text , bool )
+{
+	if( !m_disable_output )
+	{
+		G::StringArray text_lines ;
+		G::Str::splitIntoFields( text , text_lines , "\r\n" ) ;
+		if( text_lines.size() > 25U ) // eg. "--help"
+		{
+			Box box( *this , text_lines ) ;
+			if( ! box.run() )
+				messageBox( text ) ;
+		}
+		else
+		{
+			messageBox( text ) ;
+		}
+	}
+}
+
+void Main::WinApp::onError( const std::string & text )
+{
+	// called from WinMain(), possibly before init()
+	output( text , true ) ;
+	m_exit_code = 1 ;
+}
+
+// ==
+
 Main::Box::Box( GGui::ApplicationBase & app , const G::StringArray & text ) :
-	GGui::Dialog( app , false ) ,
-	m_edit( *this , IDC_EDIT1 ) ,
-	m_text( text )
+	GGui::Dialog(app,false) ,
+	m_edit(*this,IDC_EDIT1) ,
+	m_text(text)
 {
 }
 
@@ -85,224 +366,99 @@ bool Main::Box::run()
 	return rc ;
 }
 
-// ===
+// ==
 
-Main::WinApp::WinApp( HINSTANCE h , HINSTANCE p , const char * name ) :
-	GGui::ApplicationBase( h , p , name ) ,
-	m_quit(false) ,
-	m_use_tray(false) ,
-	m_hidden(false) ,
-	m_exit_code(0)
+Main::WinApp::Config::Config() :
+	with_tray(false) ,
+	with_sysmenu_quit(false) ,
+	never_open(false) ,
+	open_on_create(true) ,
+	allow_apply(false) ,
+	quit_on_form_ok(false) ,
+	close_on_form_ok(false) ,
+	close_on_close(false) ,
+	form_minimisable(false) ,
+	form_parentless(false) ,
+	minimise_on_close(false) ,
+	restore_on_open(false)
 {
 }
 
-Main::WinApp::~WinApp()
+Main::WinApp::Config Main::WinApp::Config::hidden()
 {
+	Config cfg ;
+	cfg.never_open = true ;
+	return cfg ;
 }
 
-void Main::WinApp::disableOutput()
+Main::WinApp::Config Main::WinApp::Config::tray()
 {
-	m_hidden = true ;
+	Config cfg ;
+	cfg.open_on_create = false ;
+	cfg.with_tray = true ;
+	cfg.close_on_form_ok = true ;
+	cfg.close_on_close = true ;
+	return cfg ;
 }
 
-void Main::WinApp::init( const Configuration & cfg )
+Main::WinApp::Config Main::WinApp::Config::nodaemon()
 {
-	G_DEBUG( "Main::WinApp::init: tray=" << (cfg.daemon()?1:0) << " hidden=" << ((m_hidden||m_cfg->hidden())?1:0) ) ;
-	m_use_tray = cfg.daemon() ;
-	m_cfg.reset( new Configuration(cfg) ) ;
-	m_hidden = m_hidden || m_cfg->hidden() ;
+	Config cfg ;
+	cfg.with_tray = false ;
+	cfg.quit_on_form_ok = true ;
+	cfg.close_on_close = true ;
+	return cfg ;
 }
 
-int Main::WinApp::exitCode() const
+Main::WinApp::Config Main::WinApp::Config::window( bool with_tray )
 {
-	return G::Test::enabled("special-exit-code") ? (G::threading::works()?23:25) : m_exit_code ;
+	Config cfg ;
+	cfg.with_tray = with_tray ;
+	cfg.with_sysmenu_quit = true ;
+	cfg.close_on_form_ok = true ;
+	cfg.form_minimisable = true ;
+	cfg.form_parentless = true ;
+	cfg.minimise_on_close = true ;
+	cfg.restore_on_open = true ;
+	return cfg ;
 }
 
-void Main::WinApp::hide()
+Main::WinApp::Config Main::WinApp::Config::create( const Main::Configuration & cfg_in )
 {
-	show( SW_HIDE ) ;
-}
-
-DWORD Main::WinApp::windowStyle() const
-{
-	return 0 ; // not visible
-}
-
-UINT Main::WinApp::resource() const
-{
-	// (resource() provides the combined menu and icon id, but we have no menus)
-	return IDI_ICON1 ;
-}
-
-bool Main::WinApp::onCreate()
-{
-	if( m_use_tray )
-		m_tray.reset( new GGui::Tray(resource(),*this,"E-MailRelay") ) ;
-	else if( !m_hidden )
-		doOpen() ;
-	return true ;
-}
-
-void Main::WinApp::onTrayRightMouseButtonDown()
-{
-	WinMenu menu( IDR_MENU1 ) ;
-	bool form_is_open = m_form.get() != nullptr && !m_form.get()->closed() ;
-	bool with_open = !form_is_open ;
-	bool with_close = form_is_open ;
-	int id = menu.popup( *this , with_open , with_close ) ;
-
-	// make it asychronous to prevent "RPC_E_CANTCALLOUT_ININPUTSYNCCALL" --
-	// see App::onUser()
-	::PostMessage( handle() , wm_user() , 0 , static_cast<LPARAM>(id) ) ;
-}
-
-void Main::WinApp::onTrayDoubleClick()
-{
-	// make it asychronous to prevent "RPC_E_CANTCALLOUT_ININPUTSYNCCALL" --
-	// see App::onUser()
-	::PostMessage( handle() , wm_user() , 0 , static_cast<LPARAM>(IDM_OPEN) ) ;
-}
-
-LRESULT Main::WinApp::onUserOther( WPARAM , LPARAM lparam )
-{
-	// (triggered by completion message posted by the GGui::Stack)
-	HWND hwnd = reinterpret_cast<HWND>( lparam ) ;
-	HWND hform = m_form.get() ? m_form->handle() : HWND(0) ;
-	G_DEBUG( "Main::WinApp::onUserOther: hwnd=" << hwnd << " form=" << hform << " use-tray=" << (m_use_tray?1:0) ) ;
-
-	if( m_form.get() != nullptr && hwnd == hform ) // just in case delayed in the queue
-		m_form->close() ;
-
-	if( !m_use_tray )
-		doQuit() ;
-
-	return 0L ;
-}
-
-LRESULT Main::WinApp::onUser( WPARAM , LPARAM lparam )
-{
-	G_DEBUG( "Main::WinApp::onUser: lparam=" << lparam ) ;
-	int id = static_cast<int>(lparam) ;
-	if( id == IDM_OPEN ) doOpen() ;
-	if( id == IDM_CLOSE ) doClose() ;
-	if( id == IDM_QUIT ) doQuit() ;
-	return 0L ;
-}
-
-void Main::WinApp::doOpen()
-{
-	G_DEBUG( "Main::WinApp::doOpen: do-open" ) ;
-	if( m_form.get() == nullptr || m_form.get()->closed() )
+	if( cfg_in.hidden() )
 	{
-		m_form.reset( new WinForm( *this , *m_cfg.get() , /*confirm=*/!m_use_tray ) ) ;
+		// "--hidden" for no window, no tray icon and no message boxes
+		return hidden() ;
 	}
-	show() ;
-}
-
-void Main::WinApp::doQuit()
-{
-	G_DEBUG( "Main::WinApp::doQuit: do-quit" ) ;
-	m_quit = true ;
-	close() ; // AppBase::close() -- triggers onClose(), but without doClose()
-}
-
-bool Main::WinApp::onClose()
-{
-	// (triggered by AppBase::close() sending wm-close)
-	G_DEBUG( "Main::WinApp::onClose: on-close: quit=" << (m_quit?1:0) << " hidden=" << (m_hidden?1:0) ) ;
-
-	if( m_quit || m_hidden )
+	else if( cfg_in.nodaemon() )
 	{
-		return true ; // continue to WM_DESTROY etc
+		// "--no-daemon" for a foreground window with no taskbar button and no tray icon; close terminates
+		return nodaemon() ;
 	}
-	else if( m_use_tray )
+	else if( cfg_in.show("window") )
 	{
-		doClose() ;
-		return false ; // dont continue with the WM_CLOSE, just hide
+		// "--show=window" or "--show=window,tray" for a minimisable window and with a sysmenu quit item; close minimises
+		return window( cfg_in.show("tray") ) ;
+	}
+	else if( cfg_in.show("nodaemon") || cfg_in.show("popup") )
+	{
+		// "--show=popup" or "--show=nodaemon" are like "--no-daemon", ie. a foreground window with no taskbar button and no tray icon; close terminates
+		return nodaemon() ;
+	}
+	else if( cfg_in.show("hidden") )
+	{
+		// "--show=hidden" is like "--hidden"
+		return hidden() ;
+	}
+	else if( cfg_in.show("tray") )
+	{
+		// "--show=tray" for a foreground window hidden/shown by a tray icon; close hides
+		return tray() ;
 	}
 	else
 	{
-		return confirm() ;
+		return tray() ;
 	}
 }
 
-bool Main::WinApp::confirm()
-{
-	// (also called from winform)
-	return true ; // was messageBoxQuery("really?")
-}
-
-void Main::WinApp::doClose()
-{
-	G_DEBUG( "Main::WinApp::doClose: do-close" ) ;
-	hide() ;
-
-	// (close the form so that it gets recreated each time with current data)
-	if( m_form.get() != nullptr )
-		m_form->close() ;
-}
-
-void Main::WinApp::formOk()
-{
-	// (this is triggered by clicking the OK button, labelled 'close')
-	G_DEBUG( "Main::WinApp::formOk: form-ok: use-tray=" << (m_use_tray?1:0) ) ;
-	m_use_tray ? doClose() : doQuit() ;
-}
-
-bool Main::WinApp::onSysCommand( SysCommand sc )
-{
-	// true <= processed as no-op => dont change size
-	return sc == scMaximise || sc == scSize ;
-}
-
-void Main::WinApp::onRunEvent( std::string category , std::string s1 , std::string s2 )
-{
-	if( m_form.get() )
-		m_form->setStatus( category , s1 , s2 ) ;
-}
-
-void Main::WinApp::onWindowException( std::exception & e )
-{
-	GGui::Window::onWindowException( e ) ;
-}
-
-G::Options::Layout Main::WinApp::layout() const
-{
-	G::Options::Layout layout( 0U ) ;
-	layout.separator = "\t" ;
-	layout.indent = "\t\t" ;
-	layout.width = 100U ;
-	return layout ;
-}
-
-bool Main::WinApp::simpleOutput() const
-{
-	return false ;
-}
-
-void Main::WinApp::output( const std::string & text , bool )
-{
-	if( !m_hidden )
-	{
-		G::StringArray text_lines ;
-		G::Str::splitIntoFields( text , text_lines , "\r\n" ) ;
-		if( text_lines.size() > 25U ) // eg. "--help"
-		{
-			Box box( *this , text_lines ) ;
-			if( ! box.run() )
-				messageBox( text ) ;
-		}
-		else
-		{
-			messageBox( text ) ;
-		}
-	}
-}
-
-void Main::WinApp::onError( const std::string & text )
-{
-	// called from WinMain(), possibly before init()
-	output( text , true ) ;
-	m_exit_code = 1 ;
-}
-
+/// \file winapp.cpp

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,19 +18,18 @@
 /// \file gfilestore.h
 ///
 
-#ifndef G_SMTP_FILE_STORE_H
-#define G_SMTP_FILE_STORE_H
+#ifndef G_SMTP_FILE_STORE__H
+#define G_SMTP_FILE_STORE__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gmessagestore.h"
 #include "gdatetime.h"
 #include "gexception.h"
 #include "gprocess.h"
-#include "gnoncopyable.h"
 #include "gslot.h"
 #include "groot.h"
 #include "gpath.h"
+#include <fstream>
 #include <memory>
 #include <string>
 
@@ -61,23 +60,24 @@ public:
 	G_EXCEPTION( InvalidDirectory , "invalid spool directory" ) ;
 	G_EXCEPTION( GetError , "error reading specific message" ) ;
 
-	FileStore( const G::Path & dir , bool optimise = false , unsigned long max_size = 0UL ) ;
-		///< Constructor. Throws an exception if the storage directory
-		///< is invalid.
-		///<
-		///< If the optimise flag is set then the implementation of
-		///< empty() will be efficient for an empty filestore
-		///< (ignoring failed and local-delivery messages). This
-		///< might be useful for applications in which the main
-		///< event loop is used to check for pending jobs. The
-		///< disadvantage is that this process will not be
-		///< sensititive to messages deposited into its spool
-		///< directory by other processes.
+	FileStore( const G::Path & dir , bool optimise_empty_test ,
+		unsigned long max_size , bool test_for_eight_bit ) ;
+			///< Constructor. Throws an exception if the storage directory
+			///< is invalid.
+			///<
+			///< If the optimise flag is set then the implementation of
+			///< empty() will be efficient for an empty filestore
+			///< (ignoring failed and local-delivery messages). This
+			///< might be useful for applications in which the main
+			///< event loop is used to check for pending jobs. The
+			///< disadvantage is that this process will not be
+			///< sensititive to messages deposited into its spool
+			///< directory by other processes.
 
 	unsigned long newSeq() ;
 		///< Hands out a new non-zero sequence number.
 
-	unique_ptr<std::ostream> stream( const G::Path & path ) ;
+	unique_ptr<std::ofstream> stream( const G::Path & path ) ;
 		///< Returns a stream to the given content.
 
 	G::Path contentPath( unsigned long seq ) const ;
@@ -117,12 +117,6 @@ public:
 		///< Returns true if the storage format string is
 		///< recognised and supported for reading.
 
-	virtual void rescan() override ;
-		///< Override from GSmtp::MessageStore.
-
-	virtual void unfailAll() override ;
-		///< Override from GSmtp::MessageStore.
-
 	virtual void updated() override ;
 		///< Override from GSmtp::MessageStore.
 
@@ -132,7 +126,13 @@ public:
 	virtual G::Slot::Signal0 & messageStoreRescanSignal() override ;
 		///< Override from GSmtp::MessageStore.
 
+private: // overrides
+	virtual void rescan() override ; // Override from GSmtp::MessageStore.
+	virtual void unfailAll() override ; // Override from GSmtp::MessageStore.
+
 private:
+	FileStore( const FileStore & ) g__eq_delete ;
+	void operator=( const FileStore & ) g__eq_delete ;
 	static void checkPath( const G::Path & dir ) ;
 	G::Path fullPath( const std::string & filename ) const ;
 	std::string filePrefix( unsigned long seq ) const ;
@@ -146,18 +146,18 @@ private:
 	unsigned long m_seq ;
 	G::Path m_dir ;
 	bool m_optimise ;
-	bool m_empty ; // mutable
+	mutable bool m_empty ;
 	bool m_rescan ;
 	unsigned long m_max_size ;
+	bool m_test_for_eight_bit ;
 	unsigned long m_pid_modifier ;
 	G::Slot::Signal0 m_update_signal ;
 	G::Slot::Signal0 m_rescan_signal ;
 } ;
 
 /// \class GSmtp::FileReader
-/// Used by GSmtp::FileStore, GSmtp::NewFile and
-/// GSmtp::StoredFile to claim read permissions for
-/// reading a file.
+/// Used by GSmtp::FileStore, GSmtp::NewFile and GSmtp::StoredFile to
+/// claim read permissions for reading a file.
 /// \see G::Root
 ///
 class GSmtp::FileReader : private G::Root
@@ -172,9 +172,8 @@ public:
 } ;
 
 /// \class GSmtp::DirectoryReader
-/// Used by GSmtp::FileStore, GSmtp::NewFile and
-/// GSmtp::StoredFile to claim read permissions for
-/// reading a directory.
+/// Used by GSmtp::FileStore, GSmtp::NewFile and GSmtp::StoredFile to
+/// claim read permissions for reading a directory.
 /// \see G::Root
 ///
 class GSmtp::DirectoryReader : private G::Root
@@ -189,8 +188,8 @@ public:
 } ;
 
 /// \class GSmtp::FileWriter
-/// Used by GSmtp::FileStore, GSmtp::NewFile and
-/// GSmtp::StoredFile to claim write permissions.
+/// Used by GSmtp::FileStore, GSmtp::NewFile and GSmtp::StoredFile to
+/// claim write permissions.
 /// \see G::Root
 ///
 class GSmtp::FileWriter : private G::Root , private G::Process::Umask
@@ -205,4 +204,3 @@ public:
 } ;
 
 #endif
-

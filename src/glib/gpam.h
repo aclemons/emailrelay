@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #define G_PAM_H
 
 #include "gdef.h"
-#include "gpamerror.h"
+#include "gstr.h"
 #include "gexception.h"
 #include <string>
 #include <vector>
@@ -64,6 +64,12 @@ public:
 		const std::string in ; // password prompt, non-password prompt, error text, infomation message, etc
 		std::string out ; // password, or whatever was prompted for
 		bool out_defined ; // to be set to true if 'out' is assigned
+	} ;
+	class Error : public G::Exception /// An exception class for G::Pam.
+	{
+	public:
+		Error( const std::string & op , int pam_error ) ;
+		Error( const std::string & op , int pam_error , const char * ) ;
 	} ;
 	typedef std::vector<Item> ItemArray ;
 
@@ -144,11 +150,23 @@ public:
 		///< is running.
 
 private:
-	Pam( const Pam & ) ;
-	void operator=( const Pam & ) ;
+	Pam( const Pam & ) g__eq_delete ;
+	void operator=( const Pam & ) g__eq_delete ;
 
 private:
-	PamImp * m_imp ;
+	unique_ptr<PamImp> m_imp ;
 } ;
+
+inline
+G::Pam::Error::Error( const std::string & op , int rc ) :
+	G::Exception("pam error",op,Str::fromInt(rc))
+{
+}
+
+inline
+G::Pam::Error::Error( const std::string & op , int rc , const char * more ) :
+	G::Exception("pam error",op,Str::fromInt(rc),more)
+{
+}
 
 #endif

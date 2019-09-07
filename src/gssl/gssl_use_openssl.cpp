@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,9 +22,9 @@
 #include "gssl.h"
 #include "gssl_openssl.h"
 
-GSsl::LibraryImpBase * GSsl::Library::newLibraryImp( G::StringArray & library_config , Library::LogFn log_fn , bool verbose )
+unique_ptr<GSsl::LibraryImpBase> GSsl::Library::newLibraryImp( G::StringArray & library_config , Library::LogFn log_fn , bool verbose )
 {
-	return new OpenSSL::LibraryImp( library_config , log_fn , verbose ) ;
+	return unique_ptr<LibraryImpBase>( new OpenSSL::LibraryImp( library_config , log_fn , verbose ) ) ;
 }
 
 std::string GSsl::Library::credit( const std::string & prefix , const std::string & eol , const std::string & eot )

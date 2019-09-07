@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #define G_SMTP_NULL_FILTER__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gtimer.h"
 #include "gfilter.h"
 
@@ -37,47 +36,28 @@ namespace GSmtp
 class GSmtp::NullFilter : public Filter
 {
 public:
-	NullFilter( GNet::ExceptionHandler & , bool server_side ) ;
+	NullFilter( GNet::ExceptionSink , bool server_side ) ;
 		///< Constructor.
 
-	NullFilter( GNet::ExceptionHandler & , bool server_side , unsigned int exit_code ) ;
+	NullFilter( GNet::ExceptionSink , bool server_side , unsigned int exit_code ) ;
 		///< Constructor for a processor that behaves like an
 		///< executable that always exits with the given
 		///< exit code.
 
-	virtual ~NullFilter() ;
-		///< Destructor.
-
-	virtual std::string id() const override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual bool simple() const override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual G::Slot::Signal1<int> & doneSignal() override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual void start( const std::string & path ) override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual void cancel() override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual bool abandoned() const override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual std::string response() const override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual std::string reason() const override ;
-		///< Override from from GSmtp::Filter.
-
-	virtual bool special() const override ;
-		///< Override from from GSmtp::Filter.
+private: // overrides
+	virtual std::string id() const override ; // Override from from GSmtp::Filter.
+	virtual bool simple() const override ; // Override from from GSmtp::Filter.
+	virtual G::Slot::Signal1<int> & doneSignal() override ; // Override from from GSmtp::Filter.
+	virtual void start( const std::string & path ) override ; // Override from from GSmtp::Filter.
+	virtual void cancel() override ; // Override from from GSmtp::Filter.
+	virtual bool abandoned() const override ; // Override from from GSmtp::Filter.
+	virtual std::string response() const override ; // Override from from GSmtp::Filter.
+	virtual std::string reason() const override ; // Override from from GSmtp::Filter.
+	virtual bool special() const override ; // Override from from GSmtp::Filter.
 
 private:
-	NullFilter( const NullFilter & ) ; // not implemented
-	void operator=( const NullFilter & ) ; // not implemented
+	NullFilter( const NullFilter & ) g__eq_delete ;
+	void operator=( const NullFilter & ) g__eq_delete ;
 	void onTimeout() ;
 
 private:

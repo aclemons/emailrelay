@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,11 +18,10 @@
 /// \file grequestclient.h
 ///
 
-#ifndef G_REQUEST_CLIENT_H
-#define G_REQUEST_CLIENT_H
+#ifndef G_REQUEST_CLIENT__H
+#define G_REQUEST_CLIENT__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gclient.h"
 #include "gtimer.h"
 #include "gpath.h"
@@ -41,12 +40,15 @@ namespace GSmtp
 /// Line buffering uses newline as end-of-line, and trailing carriage-returns
 /// are trimmed from the input.
 ///
+/// The received network responses are delivered via the GNet::Client
+/// class's event signal.
+///
 class GSmtp::RequestClient : public GNet::Client
 {
 public:
 	G_EXCEPTION( ProtocolError , "protocol error" ) ;
 
-	RequestClient( const std::string & key , const std::string & ok ,
+	RequestClient( GNet::ExceptionSink , const std::string & key , const std::string & ok ,
 		const GNet::Location & host_and_service , unsigned int connect_timeout ,
 		unsigned int response_timeout ) ;
 			///< Constructor.  The 'key' parameter is used in the callback
@@ -75,35 +77,19 @@ public:
 		///< Returns true after request() and before the subsequent
 		///< event signal.
 
-protected:
-	virtual ~RequestClient() ;
-		///< Destructor.
-
-	virtual void onConnect() override ;
-		///< Override from GNet::SimpleClient.
-
-	virtual bool onReceive( const char * , size_t , size_t ) override ;
-		///< Override from GNet::Client.
-
-	virtual void onSendComplete() override ;
-		///< Override from GNet::BufferedClient.
-
-	virtual void onDelete( const std::string & ) override ;
-		///< Override from GNet::HeapClient.
-
-	virtual void onDeleteImp( const std::string & ) override ;
-		///< Override from GNet::Client.
-
-	virtual void onSecure( const std::string & ) override ;
-		///< Override from GNet::SocketProtocolSink.
+private: // overrides
+	virtual bool onReceive( const char * , size_t , size_t , size_t , char ) override ; // Override from GNet::Client.
+	virtual void onSendComplete() override ; // Override from GNet::BufferedClient.
+	virtual void onDelete( const std::string & ) override ; // Override from GNet::Client.
+	virtual void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
+	virtual void onConnect() override ; // Override from GNet::SimpleClient.
 
 private:
-	RequestClient( const RequestClient & ) ;
-	void operator=( const RequestClient & ) ;
+	RequestClient( const RequestClient & ) g__eq_delete ;
+	void operator=( const RequestClient & ) g__eq_delete ;
 	void onTimeout() ;
 	std::string requestLine( const std::string & ) const ;
 	std::string result( std::string ) const ;
-	static GNet::LineBufferConfig config() ;
 
 private:
 	std::string m_eol ;

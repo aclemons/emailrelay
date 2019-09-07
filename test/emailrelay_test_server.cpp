@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,19 +19,20 @@
 //
 // A dummy smtp server for testing purposes.
 //
-// usage: emailrelay-test-server [--quiet] [--tls] [--auth-foo-bar] [--auth-login] [--auth-plain]
+// usage: emailrelay-test-server [--quiet] [--tls] [--auth-foo-bar] [--auth-cram] [--auth-login] [--auth-plain]
 //        [--auth-ok] [--slow] [--fail-at <n>] [--drop] [--ipv6] [--port <port>]
 //
 
 #include "gdef.h"
 #include "geventloop.h"
 #include "gtimerlist.h"
+#include "gnetdone.h"
 #include "gstr.h"
 #include "garg.h"
 #include "ggetopt.h"
 #include "gpath.h"
 #include "gserver.h"
-#include "gbufferedserverpeer.h"
+#include "gserverpeer.h"
 #include "gprocess.h"
 #include "glogoutput.h"
 #include "gexception.h"
@@ -46,7 +47,7 @@ namespace
 {
 	void sleep_ms( int ms )
 	{
-		#if G_WIN32
+		#if G_WINDOWS
 			::Sleep( ms ) ;
 		#else
 			struct timeval t ;
@@ -62,6 +63,7 @@ struct Config
 	bool m_ipv6 ;
 	unsigned int m_port ;
 	bool m_auth_foo_bar ;
+	bool m_auth_cram ;
 	bool m_auth_login ;
 	bool m_auth_plain ;
 	bool m_auth_ok ;
@@ -70,11 +72,13 @@ struct Config
 	bool m_drop ;
 	bool m_tls ;
 	bool m_quiet ;
-	Config( bool ipv6 , unsigned int port , bool auth_foo_bar , bool auth_login , bool auth_plain ,
-		bool auth_ok , bool slow , int fail_at , bool drop , bool tls , bool quiet ) :
+	unsigned int m_idle_timeout ;
+	Config( bool ipv6 , unsigned int port , bool auth_foo_bar , bool auth_cram , bool auth_login , bool auth_plain ,
+		bool auth_ok , bool slow , int fail_at , bool drop , bool tls , bool quiet , unsigned int idle_timeout ) :
 			m_ipv6(ipv6) ,
 			m_port(port) ,
 			m_auth_foo_bar(auth_foo_bar) ,
+			m_auth_cram(auth_cram) ,
 			m_auth_login(auth_login) ,
 			m_auth_plain(auth_plain) ,
 			m_auth_ok(auth_ok) ,
@@ -82,25 +86,27 @@ struct Config
 			m_fail_at(fail_at) ,
 			m_drop(drop) ,
 			m_tls(tls) ,
-			m_quiet(quiet)
+			m_quiet(quiet) ,
+			m_idle_timeout(idle_timeout)
 	{
 	}
 } ;
 
-class Peer : public GNet::BufferedServerPeer
+class Peer : public GNet::ServerPeer
 {
 public:
-	Peer( GNet::Server::PeerInfo , Config ) ;
+	Peer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo , Config ) ;
 	virtual void onDelete( const std::string & ) override ;
 	virtual void onSendComplete() override ;
-	virtual bool onReceive( const char * , size_t , size_t ) override ;
-	virtual void onSecure( const std::string & ) override ;
+	virtual bool onReceive( const char * , size_t , size_t , size_t , char ) override ;
+	virtual void onSecure( const std::string & , const std::string & ) override ;
 	void tx( const std::string & ) ;
 
 private:
 	void onSlowTimeout() ;
 
 private:
+	GNet::ExceptionSink m_es ;
 	Config m_config ;
 	GNet::Timer<Peer> m_slow_timer ;
 	bool m_in_data ;
@@ -112,31 +118,46 @@ private:
 class Server : public GNet::Server
 {
 public:
-	Server( GNet::ExceptionHandler & , Config c ) ;
-	virtual GNet::ServerPeer * newPeer( GNet::Server::PeerInfo ) override ;
+	Server( GNet::ExceptionSink , Config c ) ;
+	~Server() ;
+	virtual unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo ) override ;
 	Config m_config ;
 } ;
 
-Server::Server( GNet::ExceptionHandler & eh , Config config ) :
-	GNet::Server(eh,GNet::Address(config.m_ipv6?GNet::Address::Family::ipv6():GNet::Address::Family::ipv4(),config.m_port)) ,
+Server::Server( GNet::ExceptionSink es , Config config ) :
+	GNet::Server(es,GNet::Address(config.m_ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,config.m_port),GNet::ServerPeerConfig(config.m_idle_timeout)) ,
 	m_config(config)
 {
 	if( m_config.m_slow )
 		GNet::SocketProtocol::setReadBufferSize( 3U ) ;
 }
 
-GNet::ServerPeer * Server::newPeer( PeerInfo info )
+Server::~Server()
 {
-	G_LOG_S( "Server::newPeer: new connection from " << info.m_address.displayString() ) ;
-	return new Peer( info , m_config ) ;
+	serverCleanup() ; // base class early cleanup
+}
+
+unique_ptr<GNet::ServerPeer> Server::newPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo info )
+{
+	try
+	{
+		G_LOG_S( "Server::newPeer: new connection from " << info.m_address.displayString() ) ;
+		return unique_ptr<GNet::ServerPeer>( new Peer( esu , info , m_config ) ) ;
+	}
+	catch( std::exception & e )
+	{
+		G_WARNING( "Server::newPeer: new connection error: " << e.what() ) ;
+		return unique_ptr<GNet::ServerPeer>() ;
+	}
 }
 
 //
 
-Peer::Peer( GNet::Server::PeerInfo info , Config config ) :
-	GNet::BufferedServerPeer(info,GNet::LineBufferConfig::smtp()) ,
+Peer::Peer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo info , Config config ) :
+	GNet::ServerPeer(esu.bind(this),info,GNet::LineBufferConfig::smtp()) ,
+	m_es(esu.bind(this)) ,
 	m_config(config) ,
-	m_slow_timer(*this,&Peer::onSlowTimeout,*this) ,
+	m_slow_timer(*this,&Peer::onSlowTimeout,m_es) ,
 	m_in_data(false) ,
 	m_in_auth_1(false) ,
 	m_in_auth_2(false) ,
@@ -162,19 +183,24 @@ void Peer::onSendComplete()
 {
 }
 
-void Peer::onSecure( const std::string & )
+void Peer::onSecure( const std::string & , const std::string & )
 {
 }
 
-bool Peer::onReceive( const char * line_data , size_t line_size , size_t )
+bool Peer::onReceive( const char * line_data , size_t line_size , size_t , size_t , char )
 {
 	std::string line( line_data , line_size ) ;
 	if( !m_config.m_quiet )
 		std::cout << "rx<<: [" << line << "]" << std::endl ;
 
-	if( G::Str::upper(line).find("EHLO") == 0UL )
+	G::StringArray uwords = G::Str::splitIntoTokens( G::Str::upper(line) , " \t\r" ) ;
+	uwords.push_back( "" ) ;
+	uwords.push_back( "" ) ;
+	uwords.push_back( "" ) ;
+
+	if( uwords[0] == "EHLO" )
 	{
-		bool auth = m_config.m_auth_foo_bar || m_config.m_auth_login || m_config.m_auth_plain ;
+		bool auth = m_config.m_auth_foo_bar || m_config.m_auth_cram || m_config.m_auth_login || m_config.m_auth_plain ;
 
 		std::ostringstream ss ;
 		ss << "250-HELLO\r\n" ;
@@ -183,6 +209,8 @@ bool Peer::onReceive( const char * line_data , size_t line_size , size_t )
 			ss << "250-AUTH" ;
 		if( m_config.m_auth_foo_bar )
 			ss << " FOO BAR" ;
+		if( m_config.m_auth_cram )
+			ss << " CRAM-MD5" ;
 		if( m_config.m_auth_login )
 			ss << " LOGIN" ;
 		if( m_config.m_auth_plain )
@@ -194,7 +222,7 @@ bool Peer::onReceive( const char * line_data , size_t line_size , size_t )
 		ss << "250 8BITMIME\r\n" ;
 		tx( ss.str() ) ;
 	}
-	else if( G::Str::upper(line) == "DATA" )
+	else if( uwords[0] == "DATA" )
 	{
 		m_in_data = true ;
 		tx( "354 start mail input\r\n" ) ;
@@ -207,30 +235,36 @@ bool Peer::onReceive( const char * line_data , size_t line_size , size_t )
 		if( fail && m_config.m_drop ) throw G::Exception("connection dropped") ;
 		tx( fail ? "452 failed\r\n" : "250 OK\r\n" ) ;
 	}
-	else if( G::Str::upper(line) == "STARTTLS" )
+	else if( uwords[0] == "STARTTLS" )
 	{
 		; // no starttls response -- could do better
 	}
-	else if( G::Str::upper(line) == "QUIT" )
+	else if( uwords[0] == "QUIT" )
 	{
-		doDelete() ;
+		throw GNet::Done() ;
 	}
-	else if( G::Str::trimmed(G::Str::upper(line),G::Str::ws()) == "AUTH PLAIN" )
-	{
-		// got "auth plain" command on its own, without credentials
-		m_in_auth_2 = true ;
-		tx( "334\r\n" ) ;
-	}
-	else if( G::Str::upper(line).find("AUTH") == 0U && G::Str::upper(line).find("PLAIN") != std::string::npos )
-	{
-		// got "auth plain" command with credentials
-		tx( m_config.m_auth_ok ? "235 authentication ok\r\n" : "535 authentication failed\r\n" ) ;
-	}
-	else if( G::Str::upper(line).find("AUTH") == 0U && G::Str::upper(line).find("LOGIN") != std::string::npos )
+	else if( uwords[0] == "AUTH" && uwords[1] == "LOGIN" && uwords[2].empty() )
 	{
 		// got "auth login"
 		m_in_auth_1 = true ;
 		tx( "334 VXNlcm5hbWU6\r\n" ) ; // "Username:"
+	}
+	else if( uwords[0] == "AUTH" && uwords[1] == "LOGIN" )
+	{
+		// got "auth login <username>"
+		m_in_auth_2 = true ;
+		tx( "334 UGFzc3dvcmQ6\r\n" ) ; // "Password:"
+	}
+	else if( uwords[0] == "AUTH" && uwords[2].empty() ) // any mechanism except LOGIN
+	{
+		// got "auth whatever"
+		m_in_auth_2 = true ;
+		tx( "334 \r\n" ) ;
+	}
+	else if( uwords[0] == "AUTH" && uwords[1] == "PLAIN" )
+	{
+		// got "auth plain <initial-response>"
+		tx( m_config.m_auth_ok ? "235 authentication ok\r\n" : "535 authentication failed\r\n" ) ;
 	}
 	else if( m_in_auth_1 )
 	{
@@ -250,7 +284,7 @@ bool Peer::onReceive( const char * line_data , size_t line_size , size_t )
 		m_in_auth_2 = false ;
 		tx( m_config.m_auth_ok ? "235 authentication ok\r\n" : "535 authentication failed\r\n" ) ;
 	}
-	else if( G::Str::upper(line).find("RCPT TO:<REJECTME") == 0U )
+	else if( uwords[0] == "RCPT" && uwords[1].find("TO:<REJECTME") == 0U )
 	{
 		tx( "550 invalid recipient\r\n" ) ;
 	}
@@ -290,6 +324,7 @@ int main( int argc , char * argv [] )
 		G::GetOpt opt( arg ,
 			"h!help!show help!!0!!1" "|"
 			"b!auth-foo-bar!enable mechanisms foo and bar!!0!!1" "|"
+			"c!auth-cram!enable mechanism cram-md5!!0!!1" "|"
 			"l!auth-login!enable mechanism login!!0!!1" "|"
 			"p!auth-plain!enable mechanism plain!!0!!1" "|"
 			"o!auth-ok!successful authentication!!0!!1" "|"
@@ -298,6 +333,7 @@ int main( int argc , char * argv [] )
 			"q!quiet!less logging!!0!!1" "|"
 			"f!fail-at!fail the n'th message! (zero-based index)!1!n!1" "|"
 			"d!drop!drop the connection when content has DROP or when failing!!0!!1" "|"
+			"i!idle-timeout!idle timeout!!1!<seconds>!1" "|"
 			"P!port!port number!!1!port!1" "|"
 			"f!pid-file!pid file!!1!path!1" "|"
 			"6!ipv6!use ipv6!!0!!1" "|"
@@ -314,6 +350,7 @@ int main( int argc , char * argv [] )
 		}
 
 		bool auth_foo_bar = opt.contains( "auth-foo-bar" ) ;
+		bool auth_cram = opt.contains( "auth-cram" ) ;
 		bool auth_login = opt.contains( "auth-login" ) ;
 		bool auth_plain = opt.contains( "auth-plain" ) ;
 		bool auth_ok = opt.contains( "auth-ok" ) ;
@@ -324,6 +361,7 @@ int main( int argc , char * argv [] )
 		bool drop = opt.contains( "drop" ) ;
 		bool ipv6 = opt.contains( "ipv6" ) ;
 		unsigned int port = opt.contains("port") ? G::Str::toUInt(opt.value("port")) : 10025U ;
+		unsigned int idle_timeout = opt.contains("idle-timeout") ? G::Str::toInt(opt.value("idle-timeout")) : 300U ;
 
 		G::Path argv0 = G::Path(arg.v(0)).withoutExtension().basename() ;
 		std::string pid_file_name = opt.value( "pid-file" , "."+argv0.str()+".pid" ) ;
@@ -340,8 +378,9 @@ int main( int argc , char * argv [] )
 		}
 
 		GNet::EventLoop * event_loop = GNet::EventLoop::create() ;
+		GNet::ExceptionSink es ;
 		GNet::TimerList timer_list ;
-		Server server( *event_loop , Config(ipv6,port,auth_foo_bar,auth_login,auth_plain,auth_ok,slow,fail_at,drop,tls,quiet) ) ;
+		Server server( es , Config(ipv6,port,auth_foo_bar,auth_cram,auth_login,auth_plain,auth_ok,slow,fail_at,drop,tls,quiet,idle_timeout) ) ;
 
 		event_loop->run() ;
 

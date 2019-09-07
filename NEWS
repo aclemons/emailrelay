@@ -1,1 +1,10 @@
-No news
+News
+----
+E-MailRelay 2.1 removes the backwards-compatibility features that were put in
+to make the migration from 1.9 to 2.0 smoother. Refer to the NEWS file from
+the 2.0 release for the details.
+
+The 2.1 code-base continues the migration from C++ 1998 to C++ 2011. It is still
+possible to use C++ 1998, but in addition to loosing multithreading (as before)
+you might also loose the installation/configuration GUI as Qt drops support
+for C++ 1998.

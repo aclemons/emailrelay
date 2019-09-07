@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -125,13 +125,26 @@ std::string GPage::value( const QAbstractButton * p )
 
 std::string GPage::stdstr( const QString & s )
 {
-	QByteArray a = s.toLocal8Bit() ;
+	// (config files and batch scripts are in the local 8bit code page)
+	QByteArray a = s.toLocal8Bit() ; //
+	return std::string( a.constData() , a.length() ) ;
+}
+
+std::string GPage::stdstr_utf8( const QString & s )
+{
+	// (userids and passwords are in utf8 (RFC-4954) and then either xtext-ed or hashed)
+	QByteArray a = s.toUtf8() ;
 	return std::string( a.constData() , a.length() ) ;
 }
 
 QString GPage::qstr( const std::string & s )
 {
 	return QString::fromLocal8Bit( s.data() , static_cast<int>(s.size()) ) ;
+}
+
+std::string GPage::value_utf8( const QLineEdit * p )
+{
+	return stdstr_utf8(p->text()) ;
 }
 
 std::string GPage::value( const QLineEdit * p )

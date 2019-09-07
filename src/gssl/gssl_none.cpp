@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ G::StringArray GSsl::Library::digesters( bool require_state )
 	return G::StringArray() ;
 }
 
-GSsl::Digester GSsl::Library::digester( const std::string & name , const std::string & state ) const
+GSsl::Digester GSsl::Library::digester( const std::string & , const std::string & , bool ) const
 {
 	throw G::Exception( "internal error" ) ;
 	//return Digester( nullptr ) ; // never gets here
@@ -114,27 +114,27 @@ GSsl::Protocol::~Protocol()
 
 GSsl::Protocol::Result GSsl::Protocol::connect( G::ReadWrite & )
 {
-	return Result_error ;
+	return Result::error ;
 }
 
 GSsl::Protocol::Result GSsl::Protocol::accept( G::ReadWrite & )
 {
-	return Result_error ;
+	return Result::error ;
 }
 
-GSsl::Protocol::Result GSsl::Protocol::stop()
+GSsl::Protocol::Result GSsl::Protocol::shutdown()
 {
-	return Result_error ;
+	return Result::error ;
 }
 
 GSsl::Protocol::Result GSsl::Protocol::read( char * , size_t , ssize_t & )
 {
-	return Result_error ;
+	return Result::error ;
 }
 
 GSsl::Protocol::Result GSsl::Protocol::write( const char * , size_t , ssize_t & )
 {
-	return Result_error ;
+	return Result::error ;
 }
 
 std::string GSsl::Protocol::str( Protocol::Result )
@@ -148,6 +148,11 @@ std::string GSsl::Protocol::peerCertificate() const
 }
 
 std::string GSsl::Protocol::peerCertificateChain() const
+{
+	return std::string() ;
+}
+
+std::string GSsl::Protocol::cipher() const
 {
 	return std::string() ;
 }

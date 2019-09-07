@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,32 +21,68 @@
 #include "gdef.h"
 #include "gssl.h"
 #include "gstr.h"
-#include "gstrings.h"
 #include "gmonitor.h"
-#include "gpump.h"
 #include "gtime.h"
 #include "run.h"
 #include "winform.h"
 #include "news.h"
 #include "licence.h"
-#include "winapp.h"
 #include "legal.h"
 #include "resource.h"
-#include <sstream>
 
-Main::WinForm::WinForm( WinApp & app , const Main::Configuration & cfg , bool /*confirm*/ ) :
-	GGui::Stack(*this,app.hinstance()) ,
-	m_app(app) ,
-	m_closed(false) ,
-	m_cfg(cfg)
+Main::WinForm::WinForm( HINSTANCE hinstance , const Main::Configuration & cfg ,
+	HWND parent , HWND hnotify , std::pair<DWORD,DWORD> style ,
+	bool allow_apply , bool with_icon , bool with_system_menu_quit ) :
+		GGui::Stack(*this,hinstance,style) ,
+		m_hnotify(hnotify) ,
+		m_allow_apply(allow_apply) ,
+		m_closed(false) ,
+		m_cfg(cfg)
 {
   	addPage( "Configuration" , IDD_PROPPAGE_1 ) ;
   	addPage( "Licence" , IDD_PROPPAGE_1 ) ;
   	addPage( "Version" , IDD_PROPPAGE_1 ) ;
   	addPage( "Status" , IDD_PROPPAGE_1 ) ;
 
-	// create the stack - completion notification is via App::onUserOther()
-  	create( app.handle() , "E-MailRelay" , 0 , GGui::Cracker::wm_user_other() ) ; // GGui::Stack
+	// create the stack
+  	create( parent , "E-MailRelay" , with_icon?IDI_ICON1:0 , hnotify , GGui::Cracker::wm_user_other() ) ;
+
+	if( with_system_menu_quit )
+		addSystemMenuItem( "Quit" , 0x10 ) ;
+}
+
+void Main::WinForm::addSystemMenuItem( const char * name , unsigned int id )
+{
+	G_ASSERT( id > 2 && (id & 0xf) == 0 && id < 0xf000 ) ;
+	HMENU hmenu = GetSystemMenu( handle() , FALSE ) ;
+	if( hmenu )
+	{
+		static MENUITEMINFO item_zero ;
+		MENUITEMINFO item = item_zero ;
+		item.cbSize = sizeof( item ) ;
+		item.fMask = MIIM_STRING | MIIM_ID ;
+		item.fType = MFT_STRING ;
+		item.wID = id ;
+		item.dwTypeData = const_cast<LPSTR>(name) ;
+		InsertMenuItem( hmenu , 0 , TRUE , &item ) ;
+	}
+}
+
+void Main::WinForm::minimise()
+{
+	ShowWindow( handle() , SW_MINIMIZE ) ;
+}
+
+void Main::WinForm::restore()
+{
+	ShowWindow( handle() , SW_RESTORE ) ;
+	BringWindowToTop( handle() ) ;
+}
+
+bool Main::WinForm::visible() const
+{
+	bool minimised = IsIconic( handle() ) != 0 ;
+	return !m_closed && !minimised ;
 }
 
 void Main::WinForm::close()
@@ -64,61 +100,69 @@ bool Main::WinForm::closed() const
 	return m_closed ;
 }
 
-void Main::WinForm::onInit( HWND hdialog , const std::string & title )
+void Main::WinForm::onInit( HWND hdialog , int index )
 {
-	if( title == "Configuration" )
+	G_DEBUG( "Main::WinForm::onInit: h=" << hdialog << " index=" << index ) ;
+	if( index == 0 ) // "Configuration"
 	{
 		m_cfg_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
   		m_cfg_view->set( cfgData() , 2U , 150U ) ;
 	}
-	else if( title == "Version" )
-	{
-		m_version_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
-  		m_version_view->set( versionData() , 1U , 330U ) ;
-	}
-	else if( title == "Status" )
-	{
-		m_status_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
-  		m_status_view->set( statusData() , 3U , 100U ) ;
-	}
-	else if( title == "Licence" )
+	else if( index == 1 ) // "Licence"
 	{
 		m_licence_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
   		m_licence_view->set( licenceData() , 1U , 330U ) ;
 	}
+	else if( index == 2 ) // "Version"
+	{
+		m_version_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
+  		m_version_view->set( versionData() , 1U , 330U ) ;
+	}
+	else if( index == 3 ) // "Status"
+	{
+		m_status_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
+  		m_status_view->set( statusData() , 3U , 100U ) ;
+	}
 }
 
-void Main::WinForm::onDestroy( HWND )
+bool Main::WinForm::onApply()
 {
-	G_DEBUG( "Main::WinForm::onDestroy: on destroy" ) ;
+	// called by the Stack when the property page's main apply button
+	// ("Close") is pressed -- if false is returned then the Stack will
+	// not complete the dialog but post an apply-denied notification
+	// message to the WinApp instead
+	return m_allow_apply ;
 }
 
-void Main::WinForm::setStatus( const std::string & category , const std::string & s1 , const std::string & s2 )
+void Main::WinForm::setStatus( const std::string & category , const std::string & s1 ,
+	const std::string & s2 , const std::string & s3 )
 {
 	G_DEBUG( "Main::WinForm::setStatus: [" << category << "] [" << s1 << "] [" << s2 << "]" ) ;
 	G_DEBUG( "Main::WinForm::setStatus: time=[" << G::Time(G::Time::LocalTime()).hhmmss(":") << "]" ) ;
 
-	// poll,{start|busy|end,<error>}
-	// forward,{start|busy|end,<error>}
-	// client,{sending,<message>|connecting,<address>|connected,<address>|done,""|failed,<error>}
-	// store,update,[poll]
+	// forward,{start|end,<error>}
+	// client,{sending,<message>|sent,<message>,<error>|resolving,<location>|connecting,<address>|connected,<address>}
 	// network,{in|out},{start|end}
 	//
 	if( ( category == "poll" || category == "forward" ) && s1 == "start" )
 	{
-		m_status_map["Forwarding started"] = std::make_pair(G::Time(G::Time::LocalTime()).hhmmss(":"),std::string()) ;
+		m_status_map["Forwarding"] = std::make_pair( timestamp() , "started" ) ;
 	}
 	else if( ( category == "poll" || category == "forward" ) && s1 == "end" )
 	{
-		m_status_map["Forwarding finished"] = std::make_pair(G::Time(G::Time::LocalTime()).hhmmss(":"),s2) ;
+		std::string reason = G::Str::printable( s2 ) ;
+		m_status_map["Forwarding"] = std::make_pair( timestamp() , reason.empty() ? std::string("finished") : reason ) ;
 	}
 	else if( category == "client" && s1 == "sending" )
 	{
-		m_status_map["Forwarding file"] = std::make_pair(G::Time(G::Time::LocalTime()).hhmmss(":"),s2) ;
+		const std::string & message_id = s2 ;
+		m_status_map["Message"] = std::make_pair( timestamp() , "sending: " + message_id ) ;
 	}
-	else if( category == "client" && s1 == "failed" )
+	else if( category == "client" && s1 == "sent" )
 	{
-		m_status_map["Connection failure"] = std::make_pair(G::Time(G::Time::LocalTime()).hhmmss(":"),s2) ;
+		const std::string & message_id = s2 ;
+		std::string reason = G::Str::printable( s3 ) ;
+		m_status_map["Message"] = std::make_pair( timestamp() , (reason.empty()?std::string("sent"):reason) + ": " + message_id ) ;
 	}
 
 	// update the gui
@@ -129,6 +173,11 @@ void Main::WinForm::setStatus( const std::string & category , const std::string 
 		getStatusData( status_data ) ;
 		m_status_view->update( status_data , 3U ) ;
 	}
+}
+
+std::string Main::WinForm::timestamp()
+{
+	return G::Time(G::Time::LocalTime()).hhmmss(":") ;
 }
 
 G::StringArray Main::WinForm::versionData() const
@@ -163,7 +212,6 @@ G::StringArray Main::WinForm::licenceData() const
 
 G::StringArray Main::WinForm::cfgData() const
 {
-	const Configuration & c = m_cfg ;
 	G::StringArray s = m_cfg.display() ;
 	s.insert( s.begin() , "Value" ) ;
 	s.insert( s.begin() , "Key" ) ;

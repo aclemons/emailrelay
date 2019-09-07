@@ -64,7 +64,7 @@ BEGIN
             VALUE "FileDescription", "E-MailRelay Application"
             VALUE "FileVersion", "2, 1, 0, 0"
             VALUE "InternalName", "emailrelay"
-            VALUE "LegalCopyright", "Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>"
+            VALUE "LegalCopyright", "Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>"
             VALUE "OriginalFilename", "emailrelay.exe"
             VALUE "ProductName", "E-MailRelay"
             VALUE "ProductVersion", "2, 1, 0, 0"

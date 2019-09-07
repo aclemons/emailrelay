@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #define G_SCMAP_H
 
 #include "gdef.h"
-#include "glimits.h"
+#include <vector>
 
 namespace GGui
 {
@@ -43,15 +43,12 @@ public:
 	typedef WNDPROC Proc ; // see CallWindowProc
 
 	SubClassMap() ;
-		///< Default constructor.
+		///< Constructor.
 
-	~SubClassMap() ;
-		///< Destructor.
-
-	void add( HWND hwnd , Proc proc , void *context = NULL ) ;
+	void add( HWND hwnd , Proc proc , void * context = nullptr ) ;
 		///< Adds the given entry to the map.
 
-	Proc find( HWND hwnd , void **context_p = NULL ) ;
+	Proc find( HWND hwnd , void ** context_p = nullptr ) ;
 		///< Finds the entry in the map whith the given
 		///< window handle. Optionally returns the context
 		///< pointer by reference.
@@ -61,20 +58,19 @@ public:
 		///< called when processing a WM_NCDESTROY message.
 
 private:
-	SubClassMap( const SubClassMap &other ) ;
-	void operator=( const SubClassMap &other ) ;
+	SubClassMap( const SubClassMap &other ) g__eq_delete ;
+	void operator=( const SubClassMap &other ) g__eq_delete ;
 
 private:
-	enum { SlotsLimit = G::limits::win32_subclass_limit } ;
 	struct Slot
 	{
 		Proc proc ;
 		HWND hwnd ;
-		void *context ;
-		Slot() : proc(0) , hwnd(0) , context(NULL) {} ;
+		void * context ;
+		Slot() : proc(0) , hwnd(0) , context(nullptr) {}
+		Slot( Proc proc_ , HWND hwnd_ , void * context_ ) : proc(proc_) , hwnd(hwnd_) , context(context_) {}
 	} ;
-	Slot m_list[SlotsLimit] ;
-	unsigned int m_high_water ;
+	std::vector<Slot> m_list ;
 } ;
 
 #endif

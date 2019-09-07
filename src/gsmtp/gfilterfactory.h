@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,13 +18,12 @@
 /// \file gfilterfactory.h
 ///
 
-#ifndef G_SMTP_FILTER_FACTORY_H
-#define G_SMTP_FILTER_FACTORY_H
+#ifndef G_SMTP_FILTER_FACTORY__H
+#define G_SMTP_FILTER_FACTORY__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gfilter.h"
-#include "geventhandler.h"
+#include "gexceptionsink.h"
 #include <string>
 #include <utility>
 
@@ -39,7 +38,7 @@ namespace GSmtp
 class GSmtp::FilterFactory
 {
 public:
-	static unique_ptr<Filter> newFilter( GNet::ExceptionHandler & ,
+	static unique_ptr<Filter> newFilter( GNet::ExceptionSink ,
 		bool server_side , const std::string & identifier , unsigned int timeout ) ;
 			///< Returns a Filter on the heap. The identifier
 			///< is normally prefixed with a processor type, or it
@@ -50,9 +49,7 @@ public:
 		///< or a diagnostic reason string.
 
 private:
-	typedef std::pair<std::string,std::string> Pair ;
-	FilterFactory() ; // not implemented
-	static Pair split( const std::string & ) ;
+	FilterFactory() g__eq_delete ;
 } ;
 
 #endif

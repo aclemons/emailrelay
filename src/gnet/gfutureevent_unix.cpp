@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,10 +32,9 @@
 class GNet::FutureEventImp : public EventHandler
 {
 public:
-	typedef FutureEvent::Error Error ;
 	typedef FutureEvent::handle_type handle_type ;
 
-	FutureEventImp( FutureEventHandler & , ExceptionHandler & ) ;
+	FutureEventImp( FutureEventHandler & , ExceptionSink ) ;
 		// Constructor.
 
 	virtual ~FutureEventImp() ;
@@ -51,65 +50,68 @@ public:
 		// Returns the socket fd as a handle.
 
 private:
-	FutureEventImp( const FutureEventImp & ) ;
-	void operator=( const FutureEventImp & ) ;
+	FutureEventImp( const FutureEventImp & ) g__eq_delete ;
+	void operator=( const FutureEventImp & ) g__eq_delete ;
 	static int init( int ) ;
 	virtual void readEvent() ; // Override from GNet::EventHandler.
 
 private:
+	struct Fd
+	{
+		Fd() : fd(-1) {}
+		~Fd() { if(fd!=-1) ::close(fd) ; }
+		void operator=( int fd_ ) { fd = fd_ ; }
+		int fd ;
+		private: Fd( const Fd & ) g__eq_delete ;
+		private: void operator=( const Fd & ) g__eq_delete ;
+	} ;
+
+private:
 	FutureEventHandler & m_handler ;
-	int m_fd_read ;
-	int m_fd_write ;
+	Fd m_read ;
+	Fd m_write ;
 	bool m_triggered ;
 } ;
 
-GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , ExceptionHandler & eh ) :
+GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , ExceptionSink es ) :
 	m_handler(handler) ,
-	m_fd_read(-1) ,
-	m_fd_write(-1) ,
 	m_triggered(false)
 {
-	int fds[2] ;
+	int fds[2] = { -1 , -1 } ;
 	int rc = ::socketpair( AF_UNIX , SOCK_DGRAM , 0 , fds ) ;
 	if( rc != 0 )
-		throw Error( "socketpair" ) ;
-	m_fd_read = init( fds[0] ) ;
-	m_fd_write = init( fds[1] ) ;
-	EventLoop::instance().addRead( Descriptor(m_fd_read) , *this , eh ) ;
+		throw FutureEvent::Error( "socketpair" ) ;
+	m_read = init( fds[0] ) ;
+	m_write = init( fds[1] ) ;
+	EventLoop::instance().addRead( Descriptor(m_read.fd) , *this , es ) ;
 }
 
 int GNet::FutureEventImp::init( int fd )
 {
-	int rc = ::fcntl( fd , F_SETFL , ::fcntl(fd,F_GETFL) | O_NONBLOCK ) ; G_IGNORE_VARIABLE(rc) ;
+	int rc = ::fcntl( fd , F_SETFL , ::fcntl(fd,F_GETFL) | O_NONBLOCK ) ; G_IGNORE_VARIABLE(int,rc) ;
 	return fd ;
 }
 
 GNet::FutureEventImp::~FutureEventImp()
 {
-	if( m_fd_read >= 0 )
+	if( m_read.fd >= 0 )
 	{
 		if( EventLoop::exists() )
-			EventLoop::instance().dropRead( Descriptor(m_fd_read) ) ;
-		::close( m_fd_read ) ;
-	}
-	if( m_fd_write >= 0 )
-	{
-		::close( m_fd_write ) ;
+			EventLoop::instance().dropRead( Descriptor(m_read.fd) ) ;
 	}
 }
 
 GNet::FutureEventImp::handle_type GNet::FutureEventImp::handle()
 {
-	int fd = m_fd_write ;
-	m_fd_write = -1 ;
+	int fd = -1 ;
+	std::swap( m_write.fd , fd ) ;
 	return static_cast<handle_type>(fd) ;
 }
 
 void GNet::FutureEventImp::receive()
 {
 	char c = '\0' ;
-	ssize_t rc = ::recv( m_fd_read , &c , 1 , 0 ) ;
-	G_IGNORE_VARIABLE( rc ) ;
+	ssize_t rc = ::recv( m_read.fd , &c , 1 , 0 ) ; G_IGNORE_VARIABLE(ssize_t,rc) ;
 }
 
 bool GNet::FutureEventImp::send( handle_type handle ) g__noexcept
@@ -134,8 +136,8 @@ void GNet::FutureEventImp::readEvent()
 
 // ==
 
-GNet::FutureEvent::FutureEvent( FutureEventHandler & handler , ExceptionHandler & eh ) :
-	m_imp(new FutureEventImp(handler,eh))
+GNet::FutureEvent::FutureEvent( FutureEventHandler & handler , ExceptionSink es ) :
+	m_imp(new FutureEventImp(handler,es))
 {
 }
 

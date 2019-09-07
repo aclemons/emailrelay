@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,25 +19,20 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gnullfilter.h"
 #include "gstr.h"
 
-GSmtp::NullFilter::NullFilter( GNet::ExceptionHandler & eh , bool server_side ) :
+GSmtp::NullFilter::NullFilter( GNet::ExceptionSink es , bool server_side ) :
 	m_exit(0,server_side) ,
 	m_id("none") ,
-	m_timer(*this,&NullFilter::onTimeout,eh)
+	m_timer(*this,&NullFilter::onTimeout,es)
 {
 }
 
-GSmtp::NullFilter::NullFilter( GNet::ExceptionHandler & eh , bool server_side , unsigned int exit_code ) :
+GSmtp::NullFilter::NullFilter( GNet::ExceptionSink es , bool server_side , unsigned int exit_code ) :
 	m_exit(exit_code,server_side) ,
 	m_id("exit:"+G::Str::fromUInt(exit_code)) ,
-	m_timer(*this,&NullFilter::onTimeout,eh)
-{
-}
-
-GSmtp::NullFilter::~NullFilter()
+	m_timer(*this,&NullFilter::onTimeout,es)
 {
 }
 
@@ -82,7 +77,7 @@ void GSmtp::NullFilter::start( const std::string & )
 
 void GSmtp::NullFilter::onTimeout()
 {
-	m_done_signal.emit( m_exit.result ) ;
+	m_done_signal.emit( static_cast<int>(m_exit.result) ) ;
 }
 
 bool GSmtp::NullFilter::abandoned() const

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 #include "gdef.h"
 #include "geventloop.h"
-#include "gdebug.h"
+#include "glog.h"
 #include "gassert.h"
 
 GNet::EventLoop * GNet::EventLoop::m_this = nullptr ;
@@ -56,11 +56,6 @@ void GNet::EventLoop::stop( const G::SignalSafe & signal_safe )
 {
 	if( m_this != nullptr )
 		m_this->quit( signal_safe ) ;
-}
-
-void GNet::EventLoop::onException( std::exception & )
-{
-	throw ;
 }
 
 /// \file geventloop.cpp

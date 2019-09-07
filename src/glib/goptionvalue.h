@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,10 +51,10 @@ public:
 	static OptionValue off() ;
 		///< A factory function for an unvalued option-disabled option.
 
-	bool is_on() const ;
+	bool isOn() const ;
 		///< Returns true if an unvalued enabled option.
 
-	bool is_off() const ;
+	bool isOff() const ;
 		///< Returns true if an unvalued disabled option.
 
 	bool valued() const ;
@@ -109,13 +109,13 @@ G::OptionValue G::OptionValue::off()
 }
 
 inline
-bool G::OptionValue::is_on() const
+bool G::OptionValue::isOn() const
 {
 	return !m_valued && G::Str::isPositive(m_value) ;
 }
 
 inline
-bool G::OptionValue::is_off() const
+bool G::OptionValue::isOff() const
 {
 	return !m_valued && G::Str::isNegative(m_value) ;
 }

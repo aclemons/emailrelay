@@ -207,9 +207,9 @@ more detail: `--pop`, `--pop-port`, `--pop-auth`, `--pop-no-delete` and
 Triggering delivery
 -------------------
 If you are using E-MailRelay on Unix to store and forward e-mail over an
-intermittent link to internet such as dial-up or wireless networking, then you
-might need to set things up so that the network tells E-MailRelay when to start
-forwarding e-mail.
+intermittent link to the internet such as dial-up or wireless networking, then
+you might need to set things up so that the network tells E-MailRelay when to
+start forwarding e-mail.
 
 On Linux systems you should find that there are special directories where you
 can install your own hook scripts that are called whenever a dial-up or wireless
@@ -335,7 +335,7 @@ command-line, and also add in the `--client-tls` option:
 Connection tunnelling
 ---------------------
 E-MailRelay can send mail out via a [SOCKS][] v4 proxy, which makes it easy to route
-your mail through an encrypted tunnel using `ssh -N -D` or via the Tor
+your mail through an encrypted tunnel created by `ssh -N -D` or via the Tor
 anonymising network.
 
 For example, this will run an E-MailRelay proxy on port 587 that routes via a
@@ -354,4 +354,4 @@ local Tor server on port 9050 to the mail server at smtp.example.com:
 [TLS]: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
 _____________________________________
-Copyright (C) 2001-2018 Graeme Walker
+Copyright (C) 2001-2019 Graeme Walker

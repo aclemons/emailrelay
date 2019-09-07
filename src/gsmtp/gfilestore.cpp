@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,8 +19,6 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
-#include "gnoncopyable.h"
 #include "gfilestore.h"
 #include "gnewfile.h"
 #include "gstoredfile.h"
@@ -32,7 +30,6 @@
 #include "gstr.h"
 #include "gtest.h"
 #include "glog.h"
-#include "gassert.h"
 #include <iostream>
 #include <fstream>
 
@@ -46,26 +43,26 @@ namespace GSmtp
 /// handle/body pattern allows us to copy iterators by value
 /// and therefore return them from MessageStore::iterator().
 ///
-class GSmtp::FileIterator : public MessageStore::IteratorImp , public G::noncopyable
+class GSmtp::FileIterator : public MessageStore::IteratorImp
 {
 public:
 	FileIterator( FileStore & store , const G::Path & dir , bool lock , bool failures ) ;
 	~FileIterator() ;
 	virtual unique_ptr<GSmtp::StoredMessage> next() ;
-
+private:
+	FileIterator( const FileIterator & ) g__eq_delete ;
+	void operator=( const FileIterator & ) g__eq_delete ;
 private:
 	FileStore & m_store ;
 	G::DirectoryList m_iter ;
 	bool m_lock ;
-	bool m_failures ;
 } ;
 
 // ===
 
 GSmtp::FileIterator::FileIterator( FileStore & store , const G::Path & dir , bool lock , bool failures ) :
 	m_store(store) ,
-	m_lock(lock) ,
-	m_failures(failures)
+	m_lock(lock)
 {
 	DirectoryReader claim_reader ;
 	m_iter.readType( dir , std::string(failures?".envelope.bad":".envelope") ) ;
@@ -102,15 +99,23 @@ unique_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
 
 // ===
 
-GSmtp::FileStore::FileStore( const G::Path & dir , bool optimise , unsigned long max_size ) :
-	m_seq(1UL) ,
-	m_dir(dir) ,
-	m_optimise(optimise) ,
-	m_empty(false) ,
-	m_max_size(max_size)
+GSmtp::FileStore::FileStore( const G::Path & dir , bool optimise ,
+	unsigned long max_size , bool test_for_eight_bit ) :
+		m_seq(1UL) ,
+		m_dir(dir) ,
+		m_optimise(optimise) ,
+		m_empty(false) ,
+		m_max_size(max_size) ,
+		m_test_for_eight_bit(test_for_eight_bit)
 {
-	m_pid_modifier = static_cast<unsigned long>(G::DateTime::now().s) % 1000000UL ;
+	m_pid_modifier = static_cast<unsigned long>(G::DateTime::now().s) ; // was %10^6
 	checkPath( dir ) ;
+
+	if( G::Test::enabled("message-store-with-8bit-test") )
+		m_test_for_eight_bit = true ;
+
+	if( G::Test::enabled("message-store-without-8bit-test") )
+		m_test_for_eight_bit = false ;
 
 	if( G::Test::enabled("message-store-unfail") )
 		unfailAll() ;
@@ -159,9 +164,9 @@ void GSmtp::FileStore::checkPath( const G::Path & directory_path )
 
 	// warn if not writeable (after switching effective userid)
 	{
-		std::string tmp = G::Directory::tmp() ;
+		std::string tmp_filename = G::Directory::tmp() ;
 		FileWriter claim_writer ;
-		ok = dir_test.writeable(tmp) ;
+		ok = dir_test.writeable( tmp_filename ) ;
 	}
 	if( !ok )
 	{
@@ -169,11 +174,14 @@ void GSmtp::FileStore::checkPath( const G::Path & directory_path )
 	}
 }
 
-unique_ptr<std::ostream> GSmtp::FileStore::stream( const G::Path & path )
+unique_ptr<std::ofstream> GSmtp::FileStore::stream( const G::Path & path )
 {
-	FileWriter claim_writer ;
-	return unique_ptr<std::ostream>( new std::ofstream( path.str().c_str() ,
-		std::ios_base::binary | std::ios_base::out | std::ios_base::trunc ) ) ;
+	unique_ptr<std::ofstream> stream_ptr( new std::ofstream ) ;
+	{
+		FileWriter claim_writer ; // seteuid(), umask(Tighter)
+		G::File::open( *stream_ptr.get() , path , std::ios_base::trunc ) ;
+	}
+	return stream_ptr ;
 }
 
 G::Path GSmtp::FileStore::contentPath( unsigned long seq ) const
@@ -219,7 +227,7 @@ bool GSmtp::FileStore::empty() const
 	if( m_optimise )
 	{
 		if( !m_empty )
-			const_cast<FileStore*>(this)->m_empty = emptyCore() ;
+			m_empty = emptyCore() ;
 		return m_empty ;
 	}
 	else
@@ -273,7 +281,7 @@ unique_ptr<GSmtp::NewMessage> GSmtp::FileStore::newMessage( const std::string & 
 	const std::string & from_auth_in , const std::string & from_auth_out )
 {
 	m_empty = false ;
-	return unique_ptr<NewMessage>( new NewFile(*this,from,from_auth_in,from_auth_out,m_max_size) ) ;
+	return unique_ptr<NewMessage>( new NewFile(*this,from,from_auth_in,from_auth_out,m_max_size,m_test_for_eight_bit) ) ;
 }
 
 void GSmtp::FileStore::updated()
@@ -348,7 +356,7 @@ GSmtp::DirectoryReader::~DirectoryReader()
 
 GSmtp::FileWriter::FileWriter() :
 	G::Root(false) ,
-	G::Process::Umask(G::Process::Umask::Tighter)
+	G::Process::Umask(G::Process::Umask::Mode::Tighter)
 {
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #define G_MAIN_COMMAND_LINE_H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "garg.h"
 #include "ggetopt.h"
 #include "output.h"
@@ -46,7 +45,7 @@ class Main::CommandLine
 {
 public:
 	CommandLine( Main::Output & output , const G::Arg & arg , const std::string & spec ,
-		const std::string & version , const std::string & build_configuration ) ;
+		const std::string & version ) ;
 			///< Constructor.
 
 	~CommandLine() ;
@@ -94,9 +93,6 @@ public:
 	void showCopyright( bool error_stream = false , const std::string & = std::string() ) const ;
 		///< Writes a copyright message.
 
-	void showBuildConfiguration( bool error_stream = false , const std::string & = std::string() ) const ;
-		///< Writes a build configuration line.
-
 	void showSemanticError( const std::string & semantic_error ) const ;
 		///< Displays the given semantic error. See Configuration::semanticError().
 
@@ -107,23 +103,23 @@ public:
 		///< Logs the given semantic warnings. See Configuration::semanticWarnings().
 
 private:
-	CommandLine( const CommandLine & ) ;
-	void operator=( const CommandLine & ) ;
+	CommandLine( const CommandLine & ) g__eq_delete ;
+	void operator=( const CommandLine & ) g__eq_delete ;
 	void showUsage( bool e ) const ;
 	void showShortHelp( bool e ) const ;
 	void showExtraHelp( bool e ) const ;
 	void showWarranty( bool e = false , const std::string & eot = std::string() ) const ;
 	void showSslCredit( bool e = false , const std::string & eot = std::string() ) const ;
 	void showSslVersion( bool e = false , const std::string & eot = std::string() ) const ;
-	void showTestFeatures( bool e = false , const std::string & eot = std::string() ) const ;
 	void showThreading( bool e = false , const std::string & eot = std::string() ) const ;
+	bool sanityCheck( const G::Path & ) ;
 
 private:
 	Output & m_output ;
 	std::string m_version ;
-	std::string m_build_configuration ;
 	G::Arg m_arg ;
 	G::GetOpt m_getopt ;
+	std::string m_insanity ;
 } ;
 
 #endif

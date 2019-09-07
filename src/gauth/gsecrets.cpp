@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,7 +21,21 @@
 #include "gdef.h"
 #include "gsecrets.h"
 #include "gsecretsfile.h"
-#include "gdebug.h"
+#include "glog.h"
+#include <algorithm>
+
+void GAuth::Secrets::check( const std::string & p1 , const std::string & p2 , const std::string & p3 )
+{
+	G::StringArray list ;
+	list.push_back( p1 ) ;
+	list.push_back( p2 ) ;
+	list.push_back( p3 ) ;
+	list.erase( std::remove(list.begin(),list.end(),std::string()) , list.end() ) ;
+	list.erase( std::remove(list.begin(),list.end(),"/pam") , list.end() ) ;
+	std::sort( list.begin() , list.end() ) ;
+	list.erase( std::unique(list.begin(),list.end()) , list.end() ) ;
+	std::for_each( list.begin() , list.end() , &SecretsFile::check ) ;
+}
 
 GAuth::Secrets::Secrets( const std::string & path , const std::string & name , const std::string & type ) :
 	m_source(path) ,

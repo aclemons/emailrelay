@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,28 +19,28 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gspamfilter.h"
 #include "gstr.h"
 #include "glog.h"
 
-GSmtp::SpamFilter::SpamFilter( GNet::ExceptionHandler & exception_handler ,
-	bool server_side , const std::string & server , bool read_only , bool always_pass ,
-	unsigned int connection_timeout , unsigned int response_timeout ) :
-		m_exception_handler(exception_handler) ,
-		m_server_side(server_side) ,
+GSmtp::SpamFilter::SpamFilter( GNet::ExceptionSink es , const std::string & server ,
+	bool read_only , bool always_pass , unsigned int connection_timeout ,
+	unsigned int response_timeout ) :
+		m_es(es) ,
 		m_location(server) ,
 		m_read_only(read_only) ,
 		m_always_pass(always_pass) ,
 		m_connection_timeout(connection_timeout) ,
 		m_response_timeout(response_timeout)
 {
-	m_client.eventSignal().connect( G::Slot::slot(*this,&GSmtp::SpamFilter::clientEvent) ) ;
+	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&GSmtp::SpamFilter::clientEvent) ) ;
+	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&GSmtp::SpamFilter::clientDeleted) ) ;
 }
 
 GSmtp::SpamFilter::~SpamFilter()
 {
-	m_client.eventSignal().disconnect() ;
+	m_client_ptr.eventSignal().disconnect() ;
+	m_client_ptr.deletedSignal().disconnect() ;
 }
 
 std::string GSmtp::SpamFilter::id() const
@@ -56,13 +56,23 @@ bool GSmtp::SpamFilter::simple() const
 void GSmtp::SpamFilter::start( const std::string & path )
 {
 	// the spam client can do more than one request, but it is simpler to start fresh
-	m_client.reset( new SpamClient(m_location,m_read_only,m_connection_timeout,m_response_timeout) ) ;
+	m_client_ptr.reset( new SpamClient(GNet::ExceptionSink(m_client_ptr,nullptr),m_location,m_read_only,m_connection_timeout,m_response_timeout) ) ;
 
 	m_text.erase() ;
-	m_client->request( path ) ; // (no need to wait for connection)
+	m_client_ptr->request( path ) ; // (no need to wait for connection)
 }
 
-void GSmtp::SpamFilter::clientEvent( std::string s1 , std::string s2 )
+void GSmtp::SpamFilter::clientDeleted( std::string reason )
+{
+	if( !reason.empty() )
+	{
+		G_WARNING( "GSmtp::SpamFilter::clientDeleted: spamd interaction failed: " << reason ) ;
+		m_text.erase() ;
+		emit( false ) ;
+	}
+}
+
+void GSmtp::SpamFilter::clientEvent( std::string s1 , std::string s2 , std::string /*s3*/ )
 {
 	G_DEBUG( "GSmtp::SpamFilter::clientEvent: [" << s1 << "] [" << s2 << "]" ) ;
 	if( s1 == "spam" )
@@ -79,14 +89,7 @@ void GSmtp::SpamFilter::clientEvent( std::string s1 , std::string s2 )
 
 void GSmtp::SpamFilter::emit( bool ok )
 {
-	try
-	{
-		m_done_signal.emit( ok ? 0 : 2 ) ;
-	}
-	catch( std::exception & e )
-	{
-		m_exception_handler.onException( e ) ;
-	}
+	m_done_signal.emit( ok ? 0 : 2 ) ;
 }
 
 bool GSmtp::SpamFilter::special() const
@@ -113,8 +116,8 @@ void GSmtp::SpamFilter::cancel()
 {
 	G_DEBUG( "GSmtp::SpamFilter::cancel: cancelled" ) ;
 	m_text.erase() ;
-	if( m_client.get() != nullptr && m_client->busy() )
-		m_client.reset() ;
+	if( m_client_ptr.get() != nullptr && m_client_ptr->busy() )
+		m_client_ptr.reset() ;
 }
 
 bool GSmtp::SpamFilter::abandoned() const

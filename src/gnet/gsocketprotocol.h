@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gsocket.h"
+#include "geventhandler.h"
 #include "gexception.h"
 #include <string>
 #include <vector>
@@ -56,10 +57,11 @@ public:
 	typedef SocketProtocolSink Sink ;
 	G_EXCEPTION_CLASS( ReadError , "peer disconnected" ) ;
 	G_EXCEPTION( SendError , "peer disconnected" ) ;
+	G_EXCEPTION( ShutdownError , "shutdown error" ) ;
 	G_EXCEPTION( SecureConnectionTimeout , "secure connection timeout" ) ;
 
-	SocketProtocol( EventHandler & , ExceptionHandler & , Sink & ,
-		StreamSocket & , unsigned int secure_connection_timeout ) ;
+	SocketProtocol( EventHandler & , ExceptionSink ,
+		Sink & , StreamSocket & , unsigned int secure_connection_timeout ) ;
 			///< Constructor. The references are kept.
 
 	~SocketProtocol() ;
@@ -98,6 +100,10 @@ public:
 		///< If false is returned then segment data pointers must
 		///< stay valid until writeEvent() returns true.
 
+	void shutdown() ;
+		///< Initiates a TLS-close if secure, together with a
+		///< Socket::shutdown(1).
+
 	static bool secureConnectCapable() ;
 		///< Returns true if the implementation supports TLS/SSL and a
 		///< "client" profile has been configured. See also GSsl::enabledAs().
@@ -112,6 +118,10 @@ public:
 	void secureAccept() ;
 		///< Waits for the TLS/SSL handshake protocol, acting as a server.
 
+	bool secure() const ;
+		///< Returns true if the connection is currently secure, ie. after
+		///< onSecure().
+
 	std::string peerCertificate() const ;
 		///< Returns the peer's TLS/SSL certificate or the empty
 		///< string.
@@ -120,16 +130,16 @@ public:
 		///< Sets the read buffer size. Used in testing.
 
 private:
-	SocketProtocol( const SocketProtocol & ) ;
-	void operator=( const SocketProtocol & ) ;
+	SocketProtocol( const SocketProtocol & ) g__eq_delete ;
+	void operator=( const SocketProtocol & ) g__eq_delete ;
 
 private:
-	SocketProtocolImp * m_imp ;
+	unique_ptr<SocketProtocolImp> m_imp ;
 } ;
 
 /// \class GNet::SocketProtocolSink
-/// An interface used by GNet::SocketProtocol
-/// to deliver data from a socket.
+/// An interface used by GNet::SocketProtocol to deliver data
+/// from a socket.
 ///
 class GNet::SocketProtocolSink
 {
@@ -137,13 +147,10 @@ public:
 	virtual ~SocketProtocolSink() ;
 		///< Destructor.
 
-protected:
-	friend class SocketProtocolImp ;
-
 	virtual void onData( const char * , size_t ) = 0 ;
 		///< Called when data is read from the socket.
 
-	virtual void onSecure( const std::string & peer_certificate ) = 0 ;
+	virtual void onSecure( const std::string & peer_certificate , const std::string & cipher ) = 0 ;
 		///< Called once the secure socket protocol has
 		///< been successfully negotiated.
 } ;

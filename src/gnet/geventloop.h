@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "geventhandler.h"
-#include "gexceptionhandler.h"
+#include "gexceptionsink.h"
 #include "gexception.h"
 #include "gdescriptor.h"
 #include "gsignalsafe.h"
@@ -48,14 +48,12 @@ namespace GNet
 /// The class has a static member for finding an instance, but instances
 /// are not created automatically.
 ///
-/// As a convenience the event loop is also an ExceptionHandler that does
-/// a rethrow.
-///
-class GNet::EventLoop : public ExceptionHandler
+class GNet::EventLoop
 {
 public:
 	G_EXCEPTION( Error , "failed to initialise the event loop" ) ;
 	G_EXCEPTION( NoInstance , "no event loop instance" ) ;
+	G_EXCEPTION( Overflow , "event loop overflow" ) ;
 
 protected:
 	EventLoop() ;
@@ -63,8 +61,8 @@ protected:
 
 	struct Running /// RAII class that sets a boolean, for implementations of run()/running().
 	{
-		Running( bool & bref ) : m_bref(bref) { m_bref = true ; }
-		~Running() { m_bref = false ; }
+		explicit Running( bool & bref ) ;
+		~Running() ;
 		bool & m_bref ;
 	} ;
 
@@ -94,7 +92,7 @@ public:
 	virtual bool running() const = 0 ;
 		///< Returns true if called from within run().
 
-	virtual void quit( std::string reason ) = 0 ;
+	virtual void quit( const std::string & reason ) = 0 ;
 		///< Causes run() to return (once the call stack has
 		///< unwound). If there are multiple quit()s before
 		///< run() returns then the latest reason is used.
@@ -102,17 +100,17 @@ public:
 	virtual void quit( const G::SignalSafe & ) = 0 ;
 		///< A signal-safe overload to quit() the event loop.
 
-	virtual void addRead( Descriptor fd , EventHandler & , ExceptionHandler & ) = 0 ;
+	virtual void addRead( Descriptor fd , EventHandler & , ExceptionSink ) = 0 ;
 		///< Adds the given event source descriptor and associated
 		///< handler to the read list.
 		///< See also Socket::addReadHandler().
 
-	virtual void addWrite( Descriptor fd , EventHandler & , ExceptionHandler & ) = 0 ;
+	virtual void addWrite( Descriptor fd , EventHandler & , ExceptionSink ) = 0 ;
 		///< Adds the given event source descriptor and associated
 		///< handler to the write list.
 		///< See also Socket::addWriteHandler().
 
-	virtual void addOther( Descriptor fd , EventHandler & , ExceptionHandler & ) = 0 ;
+	virtual void addOther( Descriptor fd , EventHandler & , ExceptionSink ) = 0 ;
 		///< Adds the given event source descriptor and associated
 		///< handler to the exception list.
 		///< See also Socket::addOtherHandler().
@@ -132,11 +130,6 @@ public:
 		///< list of exception sources.
 		///< See also Socket::dropOtherHandler().
 
-	virtual void setTimeout( G::EpochTime t ) = 0 ;
-		///< Used by GNet::TimerList. Sets the absolute time at which
-		///< TimerList::doTimeouts() is to be called. A zero time
-		///< is used if there are no active timers.
-
 	virtual std::string report() const = 0 ;
 		///< Returns a line of text reporting the status of the event loop.
 		///< Used in debugging and diagnostics.
@@ -146,12 +139,25 @@ public:
 		///< typically called from the ExceptionHandler
 		///< destructor.
 
-	virtual void onException( std::exception & ) override ;
-		///< Override from ExceptionHandler that just rethrows
-		///< the current exception.
+private:
+	EventLoop( const EventLoop & ) g__eq_delete ;
+	void operator=( const EventLoop & ) g__eq_delete ;
 
 private:
 	static EventLoop * m_this ;
 } ;
+
+inline
+GNet::EventLoop::Running::Running( bool & bref ) :
+	m_bref(bref)
+{
+	m_bref = true ;
+}
+
+inline
+GNet::EventLoop::Running::~Running()
+{
+	m_bref = false ;
+}
 
 #endif

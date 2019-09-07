@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,33 +18,33 @@
 #
 # emailrelay-multicast.sh
 #
-# An example "--filter" script that copies/links each new message into all
-# avaliable sub-directories of the main spool directory. The original message
-# files are deleted if they were successfully copied/linked into all
+# An example E-MailRelay "--filter" script that copies/links each new message
+# into all available sub-directories of the main spool directory. The original
+# message files are deleted if they were successfully copied/linked into all
 # sub-directories.
 #
-# This can be used for doing SMTP multicast by having an emailrelay forwarding
+# This can be used for SMTP multicast by having an emailrelay forwarding
 # process polling each sub-directory. (For POP multicasting use the
 # "emailrelay-filter-copy" program with the "pop-by-name" feature so that
 # there is no need to copy or link content files.)
 #
-# Hard links are used for the content files in order to conserve disk space. Log
-# entries are written into the base envelope file to help with error recovery.
+# Hard links are used for the content files in order to conserve disk space.
+# Log entries are written into the base envelope file to help with error
+# recovery.
 #
-# The remote SMTP client which is submitting the message will be notified of any
-# failures in this script via SMTP error responses. Alternatively an "exit 0"
-# can be used to silently leave the message in the main spool directory (see
-# below).
+# By default errors in running this script are fed back to the remote SMTP
+# client. Alternatively, edit the code below to ignore these errors and leave
+# the submitted e-mail message in the main spool directory.
 #
 
 # parse the command-line
 #
 content="$1"
-envelope="`echo \"${content}\" | sed 's/content$/envelope.new/'`"
+envelope="$2"
 base_dir="`dirname \"${content}\"`"
-if test "$1" = "" -o "${content}" = "${envelope}" -o "${base_dir}" = "."
+if test "$1" = "" -o "${base_dir}" = "."
 then
-	echo usage: `basename $0` '<content-file>' >&2
+	echo usage: `basename $0` '<content-file> <envelope-file>' >&2
 	exit 2
 fi
 
@@ -82,7 +82,7 @@ then
 	rm -f "${content}" "${envelope}"
 	exit 100
 else
-	# something failed -- tell the submitting smtp client
+	# something failed -- tell the submitting smtp client, or
 	# replace these two lines with "exit 0" if the client should not know...
 	echo "<<`basename $0`: `basename "${content}"`: failed to copy message into${error_list}>>"
 	exit 1

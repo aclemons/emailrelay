@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,12 +35,10 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "glocal.h"
 #include "gaddress.h"
 #include "geventloop.h"
 #include "garg.h"
-#include "gstrings.h"
 #include "gstr.h"
 #include "gxtext.h"
 #include "ggetopt.h"
@@ -55,7 +53,7 @@
 #include <memory>
 #include <cstdlib>
 
-G_EXCEPTION( NoBody , "no body text" ) ;
+G_EXCEPTION_CLASS( NoBody , "no body text" ) ;
 
 static std::string process( const G::Path & spool_dir , std::istream & stream ,
 	const G::StringArray & to_list , std::string from , std::string from_auth_in ,
@@ -86,7 +84,7 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 
 	// create the output file
 	//
-	GSmtp::FileStore store( spool_dir ) ;
+	GSmtp::FileStore store( spool_dir , /*optimise=*/true , /*maxsize=*/0U , /*eightbittest=*/true ) ;
 	unique_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from , from_auth_in , from_auth_out ) ;
 
 	// add "To:" lines to the envelope
@@ -129,11 +127,38 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 
 	// commit the file
 	//
-	GNet::Address ip = GNet::Address::loopback( GNet::Address::Family::ipv4() ) ;
+	GNet::Address ip = GNet::Address::loopback( GNet::Address::Family::ipv4 ) ;
 	std::string auth_id = std::string() ;
 	std::string new_path = msg->prepare( auth_id , ip.hostPartString() , std::string() ) ;
 	msg->commit( true ) ;
 	return new_path ;
+}
+
+static G::Path appDir( const std::string & argv0 )
+{
+	G::Path this_exe = G::Arg::exe() ;
+	if( this_exe == G::Path() )
+		return G::Path(argv0).dirname() ;
+	else if( this_exe.dirname().basename() == "MacOS" && this_exe.dirname().dirname().basename() == "Contents" )
+		return this_exe.dirname().dirname().dirname() ;
+	else
+		return this_exe.dirname() ;
+}
+
+G::Path path( const std::string & s_in , const std::string & argv0 )
+{
+	G::Path result( s_in ) ;
+	if( s_in.find("@app") == 0U )
+	{
+		G::Path app_dir = appDir( argv0 ) ;
+		if( app_dir != G::Path() )
+		{
+			std::string s = s_in ;
+			G::Str::replace( s , "@app" , app_dir.str() ) ;
+			result = G::Path( s ) ;
+		}
+	}
+	return result ;
 }
 
 static void run( const G::Arg & arg )
@@ -172,7 +197,7 @@ static void run( const G::Arg & arg )
 	{
 		G::Path spool_dir = GSmtp::MessageStore::defaultDirectory() ;
 		if( opt.contains("spool-dir") )
-			spool_dir = opt.value("spool-dir") ;
+			spool_dir = path( opt.value("spool-dir") , arg.v(0U) ) ;
 
 		std::string from ;
 		if( opt.contains("from") )

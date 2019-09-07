@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #include "groot.h"
 #include "gcleanup.h"
 #include "gfile.h"
-#include "gdebug.h"
+#include "glog.h"
 #include <fstream>
 #include <string>
 
@@ -54,18 +54,17 @@ void G::PidFile::create( const Path & pid_file )
 {
 	if( pid_file != Path() )
 	{
-		G_DEBUG( "G::PidFile::create: \"" << pid_file << "\"" ) ;
-
+		// (the effective user-id and umask is set by the caller)
 		std::ofstream file ;
-		{
-			//Process::Umask umask(Process::Umask::Readable) ; // let the caller do this now
-			file.open( pid_file.str().c_str() , std::ios_base::out | std::ios_base::trunc ) ;
-		}
+		File::open( file , pid_file , std::ios_base::trunc ) ;
+		int e = G::Process::errno_() ;
+		if( !file.good() )
+			throw Error( "cannot create file" , pid_file.str() , G::Process::strerror(e) ) ;
 		Process::Id pid ;
 		file << pid.str() << std::endl ;
 		file.close() ;
 		if( file.fail() )
-			throw Error(std::string("cannot create file: ")+pid_file.str()) ;
+			throw Error( "cannot write file" , pid_file.str() ) ;
 		Cleanup::add( cleanup , new_string_ignore_leak(pid_file.str())->c_str() ) ;
 	}
 }

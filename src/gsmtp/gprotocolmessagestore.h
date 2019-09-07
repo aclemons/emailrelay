@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,11 +18,10 @@
 /// \file gprotocolmessagestore.h
 ///
 
-#ifndef G_SMTP_PROTOCOL_MESSAGE_STORE_H
-#define G_SMTP_PROTOCOL_MESSAGE_STORE_H
+#ifndef G_SMTP_PROTOCOL_MESSAGE_STORE__H
+#define G_SMTP_PROTOCOL_MESSAGE_STORE__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gprotocolmessage.h"
 #include "gmessagestore.h"
 #include "gnewmessage.h"
@@ -79,7 +78,8 @@ public:
 			///< Override from GSmtp::ProtocolMessage.
 
 private:
-	void operator=( const ProtocolMessageStore & ) ; // not implemented
+	ProtocolMessageStore( const ProtocolMessageStore & ) g__eq_delete ;
+	void operator=( const ProtocolMessageStore & ) g__eq_delete ;
 	void filterDone( int ) ;
 
 private:

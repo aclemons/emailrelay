@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #define G_POP_STORE_H
 
 #include "gdef.h"
-#include "gpop.h"
 #include "gpath.h"
 #include "gexception.h"
 #include <string>
@@ -47,7 +46,7 @@ class GPop::Store
 public:
 	G_EXCEPTION( InvalidDirectory , "invalid spool directory" ) ;
 
-	Store( G::Path spool_dir , bool by_name , bool allow_delete ) ;
+	Store( const G::Path & spool_dir , bool by_name , bool allow_delete ) ;
 		///< Constructor.
 
 	G::Path dir() const ;
@@ -61,8 +60,8 @@ public:
 		///< by the user name.
 
 private:
-	Store( const Store & ) ;
-	void operator=( const Store & ) ;
+	Store( const Store & ) g__eq_delete ;
+	void operator=( const Store & ) g__eq_delete ;
 	static void checkPath( G::Path , bool , bool ) ;
 	static bool valid( G::Path , bool ) ;
 
@@ -169,8 +168,8 @@ private:
 	typedef std::set<File> Set ;
 
 private:
-	StoreLock( const StoreLock & ) ; // not implemented
-	void operator=( const StoreLock & ) ; // not implemented
+	StoreLock( const StoreLock & ) g__eq_delete ;
+	void operator=( const StoreLock & ) g__eq_delete ;
 	Set::iterator find( const std::string & ) ;
 	Set::const_iterator find( int id ) const ;
 	Set::iterator find( int id ) ;

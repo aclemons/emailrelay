@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,10 +18,11 @@
 /// \file gmultiserver.h
 ///
 
-#ifndef G_NET_MULTI_SERVER__H
-#define G_NET_MULTI_SERVER__H
+#ifndef G_NET_MULTISERVER__H
+#define G_NET_MULTISERVER__H
 
 #include "gdef.h"
+#include "gevent.h"
 #include "gserver.h"
 #include <vector>
 #include <utility> // std::pair<>
@@ -30,103 +31,38 @@ namespace GNet
 {
 	class MultiServer ;
 	class MultiServerImp ;
-	class MultiServerPtr ;
 }
 
-/// \class GNet::MultiServerImp
-/// A private implementation class used by GNet::MultiServer.
-///
-class GNet::MultiServerImp : public GNet::Server
-{
-public:
-	MultiServerImp( MultiServer & , ExceptionHandler & , const Address & ) ;
-		///< Constructor.
-
-	void cleanup() ;
-		///< Does cleanup.
-
-private:
-	virtual ServerPeer * newPeer( PeerInfo ) override ;
-
-private:
-	MultiServer & m_ms ;
-} ;
-
-/// \class GNet::MultiServerPtr
-/// A private implementation class used by GNet::MultiServer.
-/// The implementation is unusual in that it only has proper value semantics
-/// if the contained pointer is null.
-///
-class GNet::MultiServerPtr
-{
-public:
-	typedef GNet::MultiServerImp ServerImp ;
-
-	explicit MultiServerPtr( ServerImp * = nullptr ) ;
-		///< Constructor.
-
-	~MultiServerPtr() ;
-		///< Destructor.
-
-	void swap( MultiServerPtr & ) ;
-		///< Swaps internals with the other.
-
-	MultiServerImp * get() ;
-		///< Returns the raw pointer.
-
-	const MultiServerImp * get() const ;
-		///< Returns the raw const pointer.
-
-	MultiServerPtr( const MultiServerPtr & ) ;
-		///< Copy constructor.
-
-	void operator=( const MultiServerPtr & ) ;
-		///< Assignment operator.
-
-private:
-	MultiServerImp * m_p ;
-} ;
-
 /// \class GNet::MultiServer
-/// A server that listens on more than one interface using a facade
+/// A server that listens on more than one address using a facade
 /// pattern to multiple GNet::Server instances.
 ///
 class GNet::MultiServer
 {
 public:
 	typedef std::vector<Address> AddressList ;
-	typedef Server::PeerInfo PeerInfo ;
 
 	struct ServerInfo /// A structure used in GNet::MultiServer::newPeer().
 	{
-		Address m_address ; ///< The server address that the peer connected to.
 		ServerInfo() ;
+		Address m_address ; ///< The server address that the peer connected to.
 	} ;
 
-	MultiServer( ExceptionHandler & , const AddressList & address_list ) ;
-		///< Constructor. The server listens on on the
-		///< specific (local) interfaces.
-		///<
-		///< Precondition: ! address_list.empty()
-
-	explicit MultiServer( ExceptionHandler & ) ;
-		///< Default constructor. Initialise with init().
-
-	void init( const AddressList & address_list ) ;
-		///< Initilisation after default construction.
-		///<
-		///< Precondition: ! address_list.empty()
+	MultiServer( ExceptionSink listener_exception_sink , const AddressList & address_list ,
+		ServerPeerConfig server_peer_config ) ;
+			///< Constructor. The server listens on on the specific
+			///< (local) interfaces.
+			///<
+			///< Precondition: !address_list.empty()
 
 	virtual ~MultiServer() ;
 		///< Destructor.
 
-	std::pair<bool,Address> firstAddress() const ;
-		///< Returns the first listening address. The boolean
-		///< value is false if none.
+	bool hasPeers() const ;
+		///< Returns true if peers() is not empty.
 
-	virtual ServerPeer * newPeer( PeerInfo , ServerInfo ) = 0 ;
-		///< A factory method which new()s a ServerPeer-derived
-		///< object. See Server for the details.
+	std::vector<weak_ptr<ServerPeer> > peers() ;
+		///< Returns the list of ServerPeer-derived objects.
 
 	static bool canBind( const AddressList & listening_address_list , bool do_throw ) ;
 		///< Checks that the specified addresses can be
@@ -149,25 +85,62 @@ public:
 		///< interfaces is empty then a single 'any' address
 		///< is returned.
 
+	unique_ptr<ServerPeer> doNewPeer( ExceptionSinkUnbound , ServerPeerInfo , ServerInfo ) ;
+		///< Pseudo-private method used by the pimple class.
+
 protected:
+	virtual unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo , ServerInfo ) = 0 ;
+		///< A factory method which new()s a ServerPeer-derived
+		///< object. See GNet::Server for the details.
+
 	void serverCleanup() ;
 		///< Should be called from all derived classes' destructors
 		///< so that peer objects can use their Server objects
 		///< safely during their own destruction.
 
 	void serverReport( const std::string & server_type ) const ;
-		///< Writes to the system log a summary of the underlying server objects
-		///< and their addresses.
+		///< Writes to the system log a summary of the underlying server
+		///< objects and their addresses.
 
 private:
-	MultiServer( const MultiServer & ) ; // not implemented
-	void operator=( const MultiServer & ) ; // not implemented
-	void init( const Address & ) ;
+	friend class GNet::MultiServerImp ;
+	MultiServer( const MultiServer & ) g__eq_delete ;
+	void operator=( const MultiServer & ) g__eq_delete ;
+	void init( const Address & , ServerPeerConfig ) ;
+	void init( const AddressList & address_list , ServerPeerConfig ) ;
 
 private:
-	typedef std::list<MultiServerPtr> List ;
-	ExceptionHandler & m_eh ;
-	List m_server_list ;
+	typedef shared_ptr<MultiServerImp> ServerPtr ;
+	typedef std::vector<ServerPtr> ServerList ;
+	ExceptionSink m_es ;
+	ServerList m_server_list ;
+} ;
+
+/// \class GNet::MultiServerImp
+/// A GNet::Server class used in GNet::MultiServer.
+///
+class GNet::MultiServerImp : public GNet::Server
+{
+public:
+	MultiServerImp( MultiServer & , ExceptionSink , const Address & , ServerPeerConfig ) ;
+		///< Constructor.
+
+	virtual ~MultiServerImp() ;
+		///< Destructor.
+
+	unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo ) g__final override ;
+		///< Called by the base class to create a new ServerPeer.
+
+	void cleanup() ;
+		///< Calls GNet::Server::serverCleanup().
+
+private:
+	MultiServerImp( const MultiServerImp & ) g__eq_delete ;
+	void operator=( const MultiServerImp & ) g__eq_delete ;
+
+private:
+	MultiServer & m_ms ;
+	Address m_address ;
 } ;
 
 #endif

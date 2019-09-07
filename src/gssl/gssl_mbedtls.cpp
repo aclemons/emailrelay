@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -140,9 +140,9 @@ G::StringArray GSsl::MbedTls::LibraryImp::digesters( bool ) const
 	return result ;
 }
 
-GSsl::Digester GSsl::MbedTls::LibraryImp::digester( const std::string & hash_type , const std::string & state ) const
+GSsl::Digester GSsl::MbedTls::LibraryImp::digester( const std::string & hash_type , const std::string & state , bool need_state ) const
 {
-	return Digester( new MbedTls::DigesterImp(hash_type,state) ) ;
+	return Digester( new MbedTls::DigesterImp(hash_type,state,need_state) ) ;
 }
 
 // ==
@@ -195,73 +195,104 @@ bool GSsl::MbedTls::Config::consume( G::StringArray & list , const std::string &
 
 // ==
 
-GSsl::MbedTls::DigesterImp::DigesterImp( const std::string & hash_type , const std::string & state ) :
-	m_hash_type(G::Str::upper(hash_type))
+// old void-return functions without "_ret" are deprecated in mbedtls 2.7.0
+#if MBEDTLS_VERSION_NUMBER >= 0x02070000
+#define gssl_call_paste_imp( a , b ) a##b
+#define gssl_call_paste( a , b ) gssl_call_paste_imp( a , b )
+#define gssl_call2( fn , a ) check_ret( gssl_call_paste(fn,_ret)( a ) , #fn )
+#define gssl_call3( fn , a , b ) check_ret( gssl_call_paste(fn,_ret)( a , b ) , #fn )
+#define gssl_call4( fn , a , b , c ) check_ret( gssl_call_paste(fn,_ret)( a , b , c ) , #fn )
+#else
+#define gssl_call2( fn , a ) fn( a )
+#define gssl_call3( fn , a , b ) fn( a , b )
+#define gssl_call4( fn , a , b , c ) fn( a , b , c )
+#endif
+
+GSsl::MbedTls::DigesterImp::DigesterImp( const std::string & hash_name , const std::string & state , bool )
 {
-	if( m_hash_type == "MD5" )
+	if( hash_name == "MD5" )
 	{
+		m_hash_type = Type::Md5 ;
+		m_block_size = 64U ;
+		m_value_size = 16U ;
+		m_state_size = m_value_size + 4U ;
+
 		mbedtls_md5_init( &m_md5 ) ;
 		if( state.empty() )
-			mbedtls_md5_starts( &m_md5 ) ;
+			gssl_call2( mbedtls_md5_starts , &m_md5 ) ;
 		else
 			G::HashState<16,uint32_t,uint32_t>::decode( state , m_md5.state , m_md5.total[0] ) ;
 	}
-	else if( m_hash_type == "SHA1" )
+	else if( hash_name == "SHA1" )
 	{
+		m_hash_type = Type::Sha1 ;
+		m_block_size = 64U ;
+		m_value_size = 20U ;
+		m_state_size = m_value_size + 4U ;
+
 		mbedtls_sha1_init( &m_sha1 ) ;
 		if( state.empty() )
-			mbedtls_sha1_starts( &m_sha1 ) ;
+			gssl_call2( mbedtls_sha1_starts , &m_sha1 ) ;
 		else
 			G::HashState<20,uint32_t,uint32_t>::decode( state , m_sha1.state , m_sha1.total[0] ) ;
 	}
-	else if( m_hash_type == "SHA256" )
+	else if( hash_name == "SHA256" )
 	{
+		m_hash_type = Type::Sha256 ;
+		m_block_size = 64U ;
+		m_value_size = 32U ;
+		m_state_size = m_value_size + 4U ;
+
 		mbedtls_sha256_init( &m_sha256 ) ;
 		if( state.empty() )
-			mbedtls_sha256_starts( &m_sha256 , 0 ) ;
+			gssl_call3( mbedtls_sha256_starts , &m_sha256 , 0 ) ;
 		else
 			G::HashState<32,uint32_t,uint32_t>::decode( state , m_sha256.state , m_sha256.total[0] ) ;
+	}
+	else
+	{
+		throw Error( "invalid hash function" ) ;
 	}
 }
 
 GSsl::MbedTls::DigesterImp::~DigesterImp()
 {
-	if( m_hash_type == "MD5" )
+	if( m_hash_type == Type::Md5 )
 		mbedtls_md5_free( &m_md5 ) ;
-	else if( m_hash_type == "SHA1" )
+	else if( m_hash_type == Type::Sha1 )
 		mbedtls_sha1_free( &m_sha1 ) ;
-	else if( m_hash_type == "SHA256" )
+	else if( m_hash_type == Type::Sha256 )
 		mbedtls_sha256_free( &m_sha256 ) ;
 }
 
 void GSsl::MbedTls::DigesterImp::add( const std::string & s )
 {
-	if( m_hash_type == "MD5" )
-		mbedtls_md5_update( &m_md5 , reinterpret_cast<const unsigned char*>(s.data()) , s.size() ) ;
-	else if( m_hash_type == "SHA1" )
-		mbedtls_sha1_update( &m_sha1 , reinterpret_cast<const unsigned char*>(s.data()) , s.size() ) ;
-	else if( m_hash_type == "SHA256" )
-		mbedtls_sha256_update( &m_sha256 , reinterpret_cast<const unsigned char*>(s.data()) , s.size() ) ;
+	if( m_hash_type == Type::Md5 )
+		gssl_call4( mbedtls_md5_update , &m_md5 , reinterpret_cast<const unsigned char*>(s.data()) , s.size() ) ;
+	else if( m_hash_type == Type::Sha1 )
+		gssl_call4( mbedtls_sha1_update , &m_sha1 , reinterpret_cast<const unsigned char*>(s.data()) , s.size() ) ;
+	else if( m_hash_type == Type::Sha256 )
+		gssl_call4( mbedtls_sha256_update , &m_sha256 , reinterpret_cast<const unsigned char*>(s.data()) , s.size() ) ;
 }
 
 std::string GSsl::MbedTls::DigesterImp::value()
 {
-	if( m_hash_type == "MD5" )
+	if( m_hash_type == Type::Md5 )
 	{
 		unsigned char buffer[16] ;
-		mbedtls_md5_finish( &m_md5 , buffer ) ;
+		gssl_call3( mbedtls_md5_finish , &m_md5 , buffer ) ;
 		return std::string( reinterpret_cast<const char*>(buffer) , sizeof(buffer) ) ;
 	}
-	else if( m_hash_type == "SHA1" )
+	else if( m_hash_type == Type::Sha1 )
 	{
 		unsigned char buffer[20] ;
-		mbedtls_sha1_finish( &m_sha1 , buffer ) ;
+		gssl_call3( mbedtls_sha1_finish , &m_sha1 , buffer ) ;
 		return std::string( reinterpret_cast<const char*>(buffer) , sizeof(buffer) ) ;
 	}
-	else if( m_hash_type == "SHA256" )
+	else if( m_hash_type == Type::Sha256 )
 	{
 		unsigned char buffer[32] ;
-		mbedtls_sha256_finish( &m_sha256 , buffer ) ;
+		gssl_call3( mbedtls_sha256_finish , &m_sha256 , buffer ) ;
 		return std::string( reinterpret_cast<const char*>(buffer) , sizeof(buffer) ) ;
 	}
 	else
@@ -272,11 +303,11 @@ std::string GSsl::MbedTls::DigesterImp::value()
 
 std::string GSsl::MbedTls::DigesterImp::state()
 {
-	if( m_hash_type == "MD5" )
+	if( m_hash_type == Type::Md5 )
 		return G::HashState<16,uint32_t,uint32_t>::encode( m_md5.state , m_md5.total[0] ) ;
-	else if( m_hash_type == "SHA1" )
+	else if( m_hash_type == Type::Sha1 )
 		return G::HashState<20,uint32_t,uint32_t>::encode( m_sha1.state , m_sha1.total[0] ) ;
-	else if( m_hash_type == "SHA256" )
+	else if( m_hash_type == Type::Sha256 )
 		return G::HashState<32,uint32_t,uint32_t>::encode( m_sha256.state , m_sha256.total[0] ) ;
 	else
 		return std::string() ;
@@ -284,24 +315,23 @@ std::string GSsl::MbedTls::DigesterImp::state()
 
 size_t GSsl::MbedTls::DigesterImp::blocksize() const
 {
-	return 64U ;
+	return m_block_size ;
 }
 
 size_t GSsl::MbedTls::DigesterImp::valuesize() const
 {
-	if( m_hash_type == "MD5" )
-		return 16U ;
-	else if( m_hash_type == "SHA1" )
-		return 20U ;
-	else if( m_hash_type == "SHA256" )
-		return 32U ;
-	else
-		return 0U ;
+	return m_value_size ;
 }
 
 size_t GSsl::MbedTls::DigesterImp::statesize() const
 {
-	return valuesize() + 4U ;
+	return m_state_size ;
+}
+
+void GSsl::MbedTls::DigesterImp::check_ret( int rc , const char * fn )
+{
+	if( rc )
+		throw Error( fn , rc ) ;
 }
 
 // ==
@@ -356,7 +386,7 @@ GSsl::MbedTls::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 
 	// configure verification
 	{
-		std::string ca_path_default = "/etc/ssl/certs/ca-certificates.crt" ; // see "man update-ca-certificates"
+		std::string ca_path_default = "/etc/ssl/certs/ca-certificates.crt" ; // see debian "man update-ca-certificates"
 		if( ca_path.empty() )
 		{
 			// verify if possible, but continue on failure - see mbedtls_ssl_get_verify_result()
@@ -411,13 +441,13 @@ GSsl::MbedTls::ProfileImp::~ProfileImp()
 	mbedtls_ssl_config_free( &m_config ) ;
 }
 
-GSsl::ProtocolImpBase * GSsl::MbedTls::ProfileImp::newProtocol( const std::string & peer_certificate_name ,
+unique_ptr<GSsl::ProtocolImpBase> GSsl::MbedTls::ProfileImp::newProtocol( const std::string & peer_certificate_name ,
 	const std::string & peer_host_name ) const
 {
-	return
+	return unique_ptr<ProtocolImpBase>(
 		new MbedTls::ProtocolImp( *this ,
 			peer_certificate_name.empty()?defaultPeerCertificateName():peer_certificate_name ,
-			peer_host_name.empty()?defaultPeerHostName():peer_host_name ) ;
+			peer_host_name.empty()?defaultPeerHostName():peer_host_name ) ) ;
 }
 
 mbedtls_x509_crl * GSsl::MbedTls::ProfileImp::crl() const
@@ -516,7 +546,7 @@ GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::read( char * buffer , size_t 
 {
 	int rc = mbedtls_ssl_read( m_ssl.ptr() , reinterpret_cast<unsigned char*>(buffer) , buffer_size_in ) ;
 	data_size_out = rc < 0 ? 0 : rc ;
-	if( rc == 0 ) return Protocol::Result_error ; // disconnected
+	if( rc == 0 ) return Protocol::Result::error ; // disconnected
 	size_t available = rc > 0 ? mbedtls_ssl_get_bytes_avail( m_ssl.ptr() ) : 0U ;
 	return convert( "mbedtls_ssl_read" , rc , available > 0U ) ;
 }
@@ -532,7 +562,7 @@ GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::write( const char * buffer_in
 		if( rc >= n )
 		{
 			data_size_out = static_cast<ssize_t>(data_size_in) ;
-			return Protocol::Result_ok ;
+			return Protocol::Result::ok ;
 		}
 		else if( rc >= 0 )
 		{
@@ -546,12 +576,13 @@ GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::write( const char * buffer_in
 	}
 }
 
-GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::stop()
+GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::shutdown()
 {
-	return Protocol::Result_ok ;
+	int rc = mbedtls_ssl_close_notify( m_ssl.ptr() ) ;
+	return convert( "mbedtls_ssl_close_notify" , rc ) ;
 }
 
-int GSsl::MbedTls::ProtocolImp::doRecvTimeout( void * This , unsigned char * p , size_t n , uint32_t timeout_ms )
+int GSsl::MbedTls::ProtocolImp::doRecvTimeout( void * This , unsigned char * p , size_t n , uint32_t /*timeout_ms*/ )
 {
 	// with event-driven i/o the timeout is probably not useful since
 	// higher layers will time out eventually
@@ -580,15 +611,15 @@ int GSsl::MbedTls::ProtocolImp::doSend( void * This , const unsigned char * p , 
 
 GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::convert( const char * fnname , int rc , bool more )
 {
-	// Result_ok , Result_read , Result_write , Result_error , Result_more
-	if( rc == MBEDTLS_ERR_SSL_WANT_READ ) return Protocol::Result_read ;
-	if( rc == MBEDTLS_ERR_SSL_WANT_WRITE ) return Protocol::Result_write ;
-	if( rc == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY ) return Protocol::Result_error ;
+	// ok , read , write , error , more
+	if( rc == MBEDTLS_ERR_SSL_WANT_READ ) return Protocol::Result::read ;
+	if( rc == MBEDTLS_ERR_SSL_WANT_WRITE ) return Protocol::Result::write ;
+	if( rc == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY ) return Protocol::Result::error ;
 	if( rc < 0 ) // throw on error -- moot
 	{
 		throw Error( fnname , rc , verifyResultString(rc) ) ;
 	}
-	return more ? Protocol::Result_more : Protocol::Result_ok ;
+	return more ? Protocol::Result::more : Protocol::Result::ok ;
 }
 
 std::string GSsl::MbedTls::ProtocolImp::verifyResultString( int rc )
@@ -623,7 +654,7 @@ GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::handshake()
 {
 	int rc = mbedtls_ssl_handshake( m_ssl.ptr() ) ;
 	Result result = convert( "mbedtls_ssl_handshake" , rc ) ;
-	if( result == Protocol::Result_ok )
+	if( result == Protocol::Result::ok )
 	{
 		const char * vstr = "" ;
 		if( m_ssl.ptr()->conf->authmode == MBEDTLS_SSL_VERIFY_NONE )
@@ -785,7 +816,7 @@ mbedtls_ctr_drbg_context * GSsl::MbedTls::Rng::ptr() const
 
 static void scrub( unsigned char *p_in , size_t n )
 {
-	// see also SecureZeroMemory(), memset_s(3) and mbedtls_zeroize()
+	// see also SecureZeroMemory(), memset_s(3), explicit_bzero(BSD) and mbedtls_zeroize()
 	volatile unsigned char *p = p_in ;
 	while( n-- )
 		*p++ = 0U ;
@@ -793,15 +824,14 @@ static void scrub( unsigned char *p_in , size_t n )
 
 GSsl::MbedTls::SecureFile::SecureFile( const std::string & path , bool with_nul )
 {
-	FILE * fp = nullptr ;
+	std::filebuf f ;
+	std::filebuf * fp = nullptr ;
 	try
 	{
-		std::filebuf f ;
-		std::filebuf * fp = nullptr ;
 		const char * path_p = path.c_str() ;
 		{
 			G::Root claim_root ;
-			fp = f.open( path_p , std::ios_base::in | std::ios_base::binary ) ;
+			fp = G::File::open( f , path_p , std::ios_base::in ) ;
 		}
 		std::streamoff n = 0 ;
 		bool ok = fp != nullptr ;
@@ -810,13 +840,13 @@ GSsl::MbedTls::SecureFile::SecureFile( const std::string & path , bool with_nul 
 		if( ok ) fp->pubseekpos( 0 , std::ios_base::in ) ;
 		if( ok ) ok = fp->sgetn( &m_buffer[0] , m_buffer.size() ) == static_cast<std::streamsize>(m_buffer.size()) ;
 		if( !ok ) scrub( pu() , size() ) ;
-		if( fp ) fp->close() ;
+		if( fp ) { fp->close() ; fp = nullptr ; }
 		if( ok && with_nul ) m_buffer.push_back( '\0' ) ;
 	}
 	catch(...)
 	{
 		scrub( pu() , size() ) ;
-		if( fp ) std::fclose( fp ) ;
+		if( fp ) fp->close() ;
 		throw ;
 	}
 }

@@ -32,8 +32,14 @@ These options are all documented in the reference document, although there are
 some Windows-specific variations:
 
 * The `--syslog` option refers to the Windows Event Viewer's Application log.
-* The `--no-daemon` option is used to disable the icon in the system tray.
+* The `--no-daemon` option is used for a normal window rather than an icon in the system tray.
+* The `--minimise` option, used with `--no-daemon`, makes the window start minimised.
 * The `--hidden` option with `--no-daemon` hides all windows and suppresses message boxes.
+
+The Windows-only `--show` option can be used as a more flexible alternative
+to `--no-daemon` and `--hidden` using `--show=popup` and `--show=hidden`
+respectively, or `--show=window` for a minimisable window, `--show=tray`
+for the default system-tray icon or `--show=window,tray` for both.
 
 Account information can be configured by editing the E-MailRelay `secrets` file.
 Look for the `--client-auth` or `--server-auth` options in the startup batch
@@ -104,18 +110,17 @@ To uninstall:
 
 Diagnostics
 -----------
-E-MailRelay normally writes errors and warnings into the Windows Event Log,
-which you can view by running `eventvwr.exe` or going to
+E-MailRelay logging is sent to the Windows Event Log and/or written to a log
+file, and individual failed mail messages will have the failure reason recorded
+inside the `.bad` envelope file.
+
+The Windows Event Log can be accessed by running `eventvwr.exe` or going to
 `ControlPanel`->`SystemAndSecurity`->`AdministrativeTools`->`EventViewer`; from
 there look under `Windows Logs` and `Application`.
 
 You can increase the verbosity of the logging by adding the `--verbose` option
 to the E-MailRelay command-line, typically by editing the `emailrelay-start.bat`
 batch script.
-
-The Windows Event Log is a bit clunky, so consider using daily log files by
-using the E-MailRelay `--log-file` option with the special `%d` date
-placeholder. Then turn off the event-log logging with `--no-syslog`.
 
 Testing with telnet
 -------------------
@@ -148,4 +153,4 @@ in one go.
 [SMTP]: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 
 _____________________________________
-Copyright (C) 2001-2018 Graeme Walker
+Copyright (C) 2001-2019 Graeme Walker

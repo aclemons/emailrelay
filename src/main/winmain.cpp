@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_lin
 		arg.parse( hinstance , command_line ) ;
 
 		Main::WinApp app( hinstance , previous , "E-MailRelay" ) ;
-		Main::Run run( app , arg , Main::Options::spec(true) ) ;
+		Main::Run run( app , arg , Main::Options::spec(true) , true ) ;
 		try
 		{
 			run.configure() ;
@@ -49,7 +49,7 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_lin
 			if( run.runnable() )
 			{
 				app.init( run.configuration() ) ;
-				app.createWindow( show_style , /*show*/false ) ; // invisible main window
+				app.createWindow( show_style , /*show=*/false , 10 , 10 ) ; // main window, not shown yet
 				run.signal().connect( G::Slot::slot(app,&Main::WinApp::onRunEvent) ) ;
 				run.run() ;
 			}

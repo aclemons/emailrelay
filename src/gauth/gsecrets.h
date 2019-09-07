@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,6 +42,10 @@ class GAuth::Secrets : public SaslClientSecrets , public SaslServerSecrets
 public:
 	G_EXCEPTION( OpenError , "cannot read secrets file" ) ;
 
+	static void check( const std::string & , const std::string & , const std::string & ) ;
+		///< Checks the given secret sources. Logs warnings and throws
+		///< an exception if there are any fatal errors.
+
 	Secrets( const std::string & source_storage_path , const std::string & debug_name ,
 		const std::string & server_type = std::string() ) ;
 			///< Constructor. The connection string is a secrets file path
@@ -64,28 +68,23 @@ public:
 	virtual ~Secrets() ;
 		///< Destructor.
 
-	virtual std::string source() const override ;
-		///< Override from GAuth::SaslServerSecrets.
-
 	virtual bool valid() const override ;
 		///< Override from GAuth::Valid virtual base.
 
-	virtual Secret clientSecret( const std::string & mechanism ) const override ;
-			///< Override from GAuth::SaslClientSecrets.
-
-	virtual Secret serverSecret( const std::string & mechanism ,
-		const std::string & id ) const override ;
-			///< Override from GAuth::SaslServerSecrets.
-
-	virtual std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const override ;
-			///< Override from GAuth::SaslServerSecrets.
+	virtual Secret serverSecret( const std::string & mechanism , const std::string & id ) const override ;
+		///< Override from GAuth::SaslServerSecrets.
 
 	virtual bool contains( const std::string & mechanism ) const override ;
 		///< Override from GAuth::SaslServerSecrets.
 
+private: // overrides
+	virtual std::string source() const override ; // Override from GAuth::SaslServerSecrets.
+	virtual Secret clientSecret( const std::string & mechanism ) const override ; // Override from GAuth::SaslClientSecrets.
+	virtual std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const override ; // Override from GAuth::SaslServerSecrets.
+
 private:
-	Secrets( const Secrets & ) ;
-	void operator=( const Secrets & ) ;
+	Secrets( const Secrets & ) g__eq_delete ;
+	void operator=( const Secrets & ) g__eq_delete ;
 
 private:
 	std::string m_source ;

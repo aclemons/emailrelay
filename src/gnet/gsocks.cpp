@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,13 +48,13 @@ std::string GNet::Socks::buildPdu( const std::string & far_host , unsigned int f
 	data.append( 1U , 1 ) ; // connect request
 	data.append( 1U , static_cast<char>(far_port_lo) ) ;
 	data.append( 1U , static_cast<char>(far_port_hi) ) ;
-	data.append( 1U , 0 ) ; // invalid ipv4
+	data.append( 1U , 0 ) ; // invalid ipv4 (signals 4A protocol extension)
 	data.append( 1U , 0 ) ; // invalid ipv4
 	data.append( 1U , 0 ) ; // invalid ipv4
 	data.append( 1U , 1 ) ; // invalid ipv4
 	data.append( userid ) ;
 	data.append( 1U , 0 ) ; // NUL terminator
-	data.append( far_host ) ;
+	data.append( far_host ) ; // 4A protocol extension: get the socks server to do dns
 	data.append( 1U , 0 ) ; // NUL terminator
 
 	return data ;

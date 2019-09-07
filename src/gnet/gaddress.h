@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,24 +54,22 @@ namespace GNet
 class GNet::Address
 {
 public:
-	class Family /// A type-safe enumerator for IP address family.
+	g__enum(Family)
 	{
-		public:
-			static Family ipv4() ;
-			static Family ipv6() ;
-			bool operator==( const Family & other ) const ;
-			bool operator!=( const Family & other ) const ;
-		private:
-			explicit Family( bool is4_ ) ;
-			bool is4 ;
-	} ;
+		ipv4 ,
+		ipv6
+	} ; g__enum_end(Family) ;
 
 	G_EXCEPTION( Error , "address error" ) ;
-	G_EXCEPTION( BadFamily , "unsupported address family" ) ;
 	G_EXCEPTION( BadString , "invalid address" ) ;
+	G_EXCEPTION_CLASS( BadFamily , "unsupported address family" ) ;
 
 	static bool supports( Family ) ;
-		///< Returns true if the implementation supports the given address family.
+		///< Returns true if the implementation supports the given address family,
+		///< either ipv4 or ipv6.
+
+	static bool supports( unsigned int ) ;
+		///< Returns true if the implementation supports the given sockaddr sa_family.
 
 	Address( const Address & ) ;
 		///< Copy constructor.
@@ -96,6 +94,11 @@ public:
 		///< Constructor taking an ip-address and a port number. Throws an
 		///< exception if an invalid string.
 
+	#if GCONFIG_HAVE_CXX_MOVE
+	Address( Address && ) g__noexcept ;
+		// Move constructor.
+	#endif
+
 	~Address() ;
 		///< Destructor.
 
@@ -105,9 +108,6 @@ public:
 
 	static Address loopback( Family , unsigned int port = 0U ) ;
 		///< Returns a loopback address.
-
-	void operator=( const Address & addr ) ;
-		///< Assignment operator.
 
 	const sockaddr * address() const ;
 		///< Returns the sockaddr address. Typically used when making socket
@@ -169,6 +169,10 @@ public:
 		///< comes first, and the most general match-all wildcard like
 		///< "*.*.*.*" or "128.0.0.0/1" comes last.
 
+	unsigned int bits() const ;
+		///< Returns the number of leading bits set, relevant only
+		///< to netmask addresses.
+
 	bool isLoopback() const ;
 		///< Returns true if this is a loopback address.
 
@@ -186,13 +190,32 @@ public:
 	bool operator!=( const Address & ) const ;
 		///< Comparison operator.
 
+	void swap( Address & other ) g__noexcept ;
+		///< Swaps this with other.
+
+	Address & operator=( const Address & addr ) ;
+		///< Assignment operator.
+
+	#if GCONFIG_HAVE_CXX_MOVE
+	Address & operator=( Address && ) g__noexcept ;
+		// Move assigmnemt operator.
+	#endif
+
 private:
 	Address( Family , unsigned int , int ) ; // loopback()
 
 private:
-	Address4 * m_4imp ;
-	Address6 * m_6imp ;
+	unique_ptr<Address4> m_4imp ;
+	unique_ptr<Address6> m_6imp ;
 } ;
+
+namespace GNet
+{
+	inline void swap( Address & a , Address & b ) g__noexcept
+	{
+		a.swap(b) ;
+	}
+}
 
 /// \class GNet::AddressStorage
 /// A helper class for calling accept(), getsockname() and getpeername()
@@ -202,7 +225,8 @@ class GNet::AddressStorage
 {
 public:
 	AddressStorage() ;
-		///< Default constructor.
+		///< Default constructor, with n() reflecting the size of the
+		///< largest supported address type.
 
 	~AddressStorage() ;
 		///< Destructor.
@@ -216,23 +240,17 @@ public:
 		///< to write into.
 
 	const sockaddr * p() const ;
-		///< Returns the pointer.
+		///< Returns the pointer, typically set via p1().
 
 	socklen_t n() const ;
-		///< Returns the length.
+		///< Returns the length, typically modified via p2().
 
 private:
-	AddressStorage( const AddressStorage & ) ;
-	void operator=( const AddressStorage & ) ;
+	AddressStorage( const AddressStorage & ) g__eq_delete ;
+	void operator=( const AddressStorage & ) g__eq_delete ;
 
 private:
-	AddressStorageImp * m_imp ;
+	unique_ptr<AddressStorageImp> m_imp ;
 } ;
-
-inline GNet::Address::Family GNet::Address::Family::ipv4() { return Family(true) ; }
-inline GNet::Address::Family GNet::Address::Family::ipv6() { return Family(false) ; }
-inline bool GNet::Address::Family::operator==( const Family & other ) const { return is4 == other.is4 ; }
-inline bool GNet::Address::Family::operator!=( const Family & other ) const { return is4 != other.is4 ; }
-inline GNet::Address::Family::Family( bool is4_ ) : is4(is4_) {}
 
 #endif

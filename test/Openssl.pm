@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -471,7 +471,7 @@ sub _run_logged
 {
 	# Runs the given openssl command (in practice s_server or s_client) with its output
 	# piped back to this perl script. The output is logged via the logging function
-	# and also logged to file. The output is also searched for and end marker,
+	# and also logged to file. The output is also searched for an end marker,
 	# or a pair of end markers; the second end marker has to occur after the first.
 	# Once the second end marker is seen the command is considered to have done its
 	# work and the on-completion callback is called. The callback will typically

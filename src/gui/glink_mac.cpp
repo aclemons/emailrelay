@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -78,8 +78,7 @@ void GLinkImp::saveAs( const G::Path & )
 				<< "hidden:true}\" "
 			<< "-e \"end tell\"" ;
 
-	int rc = system( ss.str().c_str() ) ;
-	G_IGNORE_VARIABLE( rc ) ;
+	int rc = system( ss.str().c_str() ) ; G_IGNORE_VARIABLE(int,rc) ;
 }
 
 // ==
@@ -131,8 +130,7 @@ bool GLink::remove( const G::Path & )
 				<< "-e \"delete login item __\" "
 				<< "-e \"end tell\"" ;
 
-	int rc = system( ss.str().c_str() ) ;
-	G_IGNORE_VARIABLE( rc ) ;
+	int rc = system( ss.str().c_str() ) ; G_IGNORE_VARIABLE(int,rc) ;
 	return true ;
 }
 

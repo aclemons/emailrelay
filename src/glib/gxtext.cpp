@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,11 +30,11 @@ namespace
 		static const char * map = "0123456789ABCDEF" ;
 		return map[n] ;
 	}
-	inline bool ishex( char c )
+	inline bool ishex( char c , bool allow_lowercase )
 	{
 		return
 			( c >= '0' && c <= '9' ) ||
-			( c >= 'a' && c <= 'f' ) || // moot
+			( allow_lowercase && c >= 'a' && c <= 'f' ) ||
 			( c >= 'A' && c <= 'F' ) ;
 	}
 	inline unsigned int unhex( char c )
@@ -58,7 +58,7 @@ namespace
 			case 'D': rc = 13U ; break ;
 			case 'E': rc = 14U ; break ;
 			case 'F': rc = 15U ; break ;
-			case 'a': rc = 10U ; break ; // moot
+			case 'a': rc = 10U ; break ;
 			case 'b': rc = 11U ; break ;
 			case 'c': rc = 12U ; break ;
 			case 'd': rc = 13U ; break ;
@@ -69,18 +69,22 @@ namespace
 	}
 }
 
-bool G::Xtext::valid( const std::string & s )
+bool G::Xtext::valid( const std::string & s , bool strict )
 {
-	if( s.find('\x7f') != std::string::npos ) return false ;
-	if( s.find(' ') != std::string::npos ) return false ;
-	if( s.find('+') == std::string::npos ) return G::Str::isPrintableAscii(s) ;
-	for( size_t pos = s.find('+') ; pos != std::string::npos ; pos = ((pos+1U)==s.size()?std::string::npos:s.find('+',pos+1U)) )
+	if( !Str::isPrintableAscii(s) || ( strict && s.find_first_of("= ") != std::string::npos ) )
 	{
-		if( (pos+2U) >= s.size() ) return false ;
-		if( !ishex(s.at(pos+1U)) ) return false ;
-		if( !ishex(s.at(pos+2U)) ) return false ;
+		return false ;
 	}
-	return true ;
+	else
+	{
+		for( size_t pos = s.find('+') ; pos != std::string::npos ; pos = ((pos+1U)==s.size()?std::string::npos:s.find('+',pos+1U)) )
+		{
+			if( (pos+2U) >= s.size() ) return false ;
+			if( !ishex(s.at(pos+1U),!strict) ) return false ;
+			if( !ishex(s.at(pos+2U),!strict) ) return false ;
+		}
+		return true ;
+	}
 }
 
 std::string G::Xtext::encode( const std::string & s )

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 #include "gdef.h"
 #include "gexecutablecommand.h"
-#include "glimits.h"
 #include "gstr.h"
 #include <stdexcept>
 #include <algorithm>
@@ -31,16 +30,16 @@ G::StringArray G::ExecutableCommand::osSplit( const std::string & s_in )
 
 	// mark escaped spaces using nul -- assume no directory name starts with a space
 	const std::string null( 1U , '\0' ) ;
-	G::Str::replaceAll( s , "\\ " , null ) ;
+	Str::replaceAll( s , "\\ " , null ) ;
 
 	// split up on (unescaped) spaces
-	G::StringArray parts ;
-	G::Str::splitIntoTokens( s , parts , " " ) ;
+	StringArray parts ;
+	Str::splitIntoTokens( s , parts , " " ) ;
 
 	// replace the escaped spaces
-	for( G::StringArray::iterator p = parts.begin() ; p != parts.end() ; ++p )
+	for( StringArray::iterator p = parts.begin() ; p != parts.end() ; ++p )
 	{
-		G::Str::replaceAll( *p , null , " " ) ;
+		Str::replaceAll( *p , null , " " ) ;
 	}
 
 	return parts ;
@@ -48,7 +47,7 @@ G::StringArray G::ExecutableCommand::osSplit( const std::string & s_in )
 
 bool G::ExecutableCommand::osNativelyRunnable() const
 {
-	std::string type = G::Str::lower(m_exe.extension()) ;
+	std::string type = Str::lower(m_exe.extension()) ;
 	return type == "exe" || type == "bat" ;
 }
 
@@ -79,7 +78,7 @@ void G::ExecutableCommand::osAddWrapper()
 	}
 	std::reverse( m_args.begin() , m_args.end() ) ;
 
-	m_exe = G::Path( windows , "system32" , "cscript.exe" ) ;
+	m_exe = Path( windows , "system32" , "cscript.exe" ) ;
 }
 
 /// \file gexecutablecommand_win32.cpp

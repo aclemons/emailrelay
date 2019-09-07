@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@
 #include "gsaslserver.h"
 #include "gexception.h"
 #include "gaddress.h"
-#include "gstrings.h"
 #include "gpath.h"
 #include <map>
 #include <memory>
@@ -50,48 +49,28 @@ namespace GAuth
 class GAuth::SaslServerPam : public SaslServer
 {
 public:
-	SaslServerPam( const SaslServerSecrets & , bool allow_apop ) ;
+	SaslServerPam( const SaslServerSecrets & , const std::string & config , bool allow_apop ) ;
 		///< Constructor.
 
 	virtual ~SaslServerPam() ;
 		///< Destructor.
 
-	virtual bool requiresEncryption() const override ;
-		///< Override from GAuth::SaslServer.
-
-	virtual bool active() const override ;
-		///< Override from GAuth::SaslServer.
-
-	virtual std::string mechanisms( char sep = ' ' ) const override ;
-		///< Override from GAuth::SaslServer.
-
-	virtual bool init( const std::string & mechanism ) override ;
-		///< Override from GAuth::SaslServer.
-
-	virtual std::string mechanism() const override ;
-		///< Override from GAuth::SaslServer.
-
-	virtual bool mustChallenge() const override ;
-		///< Override from GAuth::SaslServer.
-
-	virtual std::string initialChallenge() const override ;
-		///< Override from GAuth::SaslServer.
-
-	virtual std::string apply( const std::string & response , bool & done ) override ;
-		///< Override from GAuth::SaslServer.
-
-	virtual bool authenticated() const override ;
-		///< Override from GAuth::SaslServer.
-
-	virtual std::string id() const override ;
-		///< Override from GAuth::SaslServer.
-
-	virtual bool trusted( const GNet::Address & ) const override ;
-		///< Override from GAuth::SaslServer.
+private: // overrides
+	virtual bool requiresEncryption() const override ; // Override from GAuth::SaslServer.
+	virtual bool active() const override ; // Override from GAuth::SaslServer.
+	virtual std::string mechanisms( char sep ) const override ; // Override from GAuth::SaslServer.
+	virtual bool init( const std::string & mechanism ) override ; // Override from GAuth::SaslServer.
+	virtual std::string mechanism() const override ; // Override from GAuth::SaslServer.
+	virtual bool mustChallenge() const override ; // Override from GAuth::SaslServer.
+	virtual std::string initialChallenge() const override ; // Override from GAuth::SaslServer.
+	virtual std::string apply( const std::string & response , bool & done ) override ; // Override from GAuth::SaslServer.
+	virtual bool authenticated() const override ; // Override from GAuth::SaslServer.
+	virtual std::string id() const override ; // Override from GAuth::SaslServer.
+	virtual bool trusted( const GNet::Address & ) const override ; // Override from GAuth::SaslServer.
 
 private:
-	SaslServerPam( const SaslServerPam & ) ;
-	void operator=( const SaslServerPam & ) ;
+	SaslServerPam( const SaslServerPam & ) g__eq_delete ;
+	void operator=( const SaslServerPam & ) g__eq_delete ;
 
 private:
 	SaslServerPamImp * m_imp ;

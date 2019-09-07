@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,19 +18,19 @@
 /// \file gsmtpclient.h
 ///
 
-#ifndef G_SMTP_CLIENT_H
-#define G_SMTP_CLIENT_H
+#ifndef G_SMTP_CLIENT__H
+#define G_SMTP_CLIENT__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "glocation.h"
 #include "gsecrets.h"
 #include "glinebuffer.h"
 #include "gclient.h"
-#include "gclientprotocol.h"
+#include "gsmtpclientprotocol.h"
 #include "gmessagestore.h"
 #include "gstoredmessage.h"
 #include "gfilter.h"
+#include "gcall.h"
 #include "gsocket.h"
 #include "gslot.h"
 #include "gtimer.h"
@@ -62,22 +62,22 @@ public:
 		unsigned int connection_timeout ;
 		unsigned int secure_connection_timeout ;
 		bool secure_tunnel ;
+		std::string sasl_client_config ;
+
 		Config( std::string filter_address , unsigned int filter_timeout ,
 			bool bind_local_address , const GNet::Address & local_address ,
 			const ClientProtocol::Config & protocol_config ,
 			unsigned int connection_timeout , unsigned int secure_connection_timeout ,
-			bool secure_tunnel ) ;
+			bool secure_tunnel , const std::string & sasl_client_config ) ;
 	} ;
 
-	Client( const GNet::Location & remote , const GAuth::Secrets & secrets , Config config ) ;
-		///< Constructor. Starts connecting immediately.
-		///<
-		///< All Client instances must be on the heap since they
-		///< delete themselves after raising the done signal.
-		///<
-		///< Use sendMessagesFrom() once, or use sendMessage()
-		///< repeatedly. Wait for a messageDoneSignal() between
-		///< each sendMessage().
+	Client( GNet::ExceptionSink , const GNet::Location & remote ,
+		const GAuth::Secrets & secrets , const Config & config ) ;
+			///< Constructor. Starts connecting immediately.
+			///<
+			///< Use sendMessagesFrom() once, or use sendMessage()
+			///< repeatedly. Wait for a messageDoneSignal() between
+			///< each sendMessage().
 
 	virtual ~Client() ;
 		///< Destructor.
@@ -87,20 +87,18 @@ public:
 		///< connected. This must be used immediately after
 		///< construction with a non-empty message store.
 		///<
-		///< Once all messages have been sent the client will delete
-		///< itself (see GNet::HeapClient).
+		///< Once all messages have been sent the client will throw
+		///< GNet::Done. See GNet::ClientPtr.
 		///<
-		///< The base class GNet::Client::doneSignal() can be used as
-		///< an indication that all messages have been sent and the
-		///< object is about to delete itself. The messageDoneSignal()
-		///< is not used.
+		///< The messageDoneSignal() is not used when sending
+		///< messages using this method.
 
 	void sendMessage( unique_ptr<StoredMessage> message ) ;
 		///< Starts sending the given message. Cannot be called
 		///< if there is a message already in the pipeline.
 		///<
-		///< The messageDoneSignal() is used to indicate that the message
-		///< filtering has finished or failed.
+		///< The messageDoneSignal() is used to indicate that the
+		///< message filtering has finished or failed.
 		///<
 		///< The message is fail()ed if it cannot be sent. If this
 		///< Client object is deleted before the message is sent
@@ -110,38 +108,33 @@ public:
 		///< Returns a signal that indicates that sendMessage()
 		///< has completed or failed.
 
-protected:
-	virtual void onConnect() override ;
-		///< Override from GNet::SimpleClient.
-
-	virtual bool onReceive( const char * , size_t , size_t ) override ;
-		///< Override from GNet::Client.
-
-	virtual void onDelete( const std::string & ) override ;
-		///< Override from GNet::HeapClient.
-
-	virtual void onSendComplete() override ;
-		///< Override from GNet::BufferedClient.
-
-	virtual void onSecure( const std::string & ) override ;
-		///< Override from GNet::SocketProtocol.
+private: // overrides
+	virtual void onConnect() override ; // Override from GNet::SimpleClient.
+	virtual bool onReceive( const char * , size_t , size_t , size_t , char ) override ; // Override from GNet::Client.
+	virtual void onDelete( const std::string & ) override ; // Override from GNet::HeapClient.
+	virtual void onSendComplete() override ; // Override from GNet::BufferedClient.
+	virtual void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocol.
+	virtual bool protocolSend( const std::string & , size_t , bool ) override ; // Override from ClientProtocol::Sender.
 
 private:
-	virtual bool protocolSend( const std::string & , size_t , bool ) override ; // override from private base class
+	Client( const Client & ) g__eq_delete ;
+	void operator=( const Client & ) g__eq_delete ;
+	shared_ptr<StoredMessage> message() ;
 	void protocolDone( int , std::string , std::string ) ; // see ClientProtocol::doneSignal()
 	void filterStart() ;
 	void filterDone( int ) ;
 	bool sendNext() ;
-	void start( StoredMessage & ) ;
+	void start() ;
 	void messageFail( int = 0 , const std::string & = std::string() ) ;
 	void messageDestroy() ;
-	void doOnConnect() ;
-	void logCertificate( const std::string & ) ;
+	void startSending() ;
+	void quitAndFinish() ;
 
 private:
 	MessageStore * m_store ;
+	G::CallStack m_stack ;
 	unique_ptr<Filter> m_filter ;
-	unique_ptr<StoredMessage> m_message ;
+	shared_ptr<StoredMessage> m_message ;
 	MessageStore::Iterator m_iter ;
 	ClientProtocol m_protocol ;
 	bool m_secure_tunnel ;

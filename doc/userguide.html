@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML PUBLIC "%-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
  <head>
   <title>E-MailRelay User Guide</title>
@@ -79,9 +79,9 @@
     </p>
    <h2><a class="a-header" name="SH_1_4">Running E-MailRelay</a></h2> <!-- index:2:SH:1:4:Running E-MailRelay -->
     <p>
-     To use E-MailRelay in store-and-forward mode use the <em class="quote">--as-server</em> option to
+     To use E-MailRelay in store-and-forward mode use the <em>--as-server</em> option to
      start the storage daemon in the background, and then do delivery of spooled
-     messages by running with the <em class="quote">--as-client</em> option.
+     messages by running with the <em>--as-client</em> option.
     </p>
 
 <img src="serverclient.png" alt="image">
@@ -97,7 +97,7 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     And then to forward the spooled mail to <em class="quote">smtp.example.com</em> run something
+     And then to forward the spooled mail to <em>smtp.example.com</em> run something
      like this:
     </p>
 
@@ -106,7 +106,7 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     To get behaviour more like a proxy you can add the <em class="quote">--poll</em> and <em class="quote">--forward-to</em>
+     To get behaviour more like a proxy you can add the <em>--poll</em> and <em>--forward-to</em>
      options so that messages are forwarded continuously rather than on-demand.
     </p>
 
@@ -124,7 +124,7 @@
       </div><!-- div-pre -->
     <p>
      Or for a proxy server that forwards each message soon after it has been
-     received, you can use <em class="quote">--as-proxy</em> or add <em class="quote">--forward-on-disconnect</em>:
+     received, you can use <em>--as-proxy</em> or add <em>--forward-on-disconnect</em>:
     </p>
 
       <div class="div-pre">
@@ -133,7 +133,7 @@
       </div><!-- div-pre -->
     <p>
      To edit or filter e-mail as it passes through the proxy specify your filter
-     program with the <em class="quote">--filter</em> option, something like this:
+     program with the <em>--filter</em> option, something like this:
     </p>
 
       <div class="div-pre">
@@ -141,7 +141,7 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     To run E-MailRelay as a POP server without SMTP use <em class="quote">--pop</em> and <em class="quote">--no-smtp</em>:
+     To run E-MailRelay as a POP server without SMTP use <em>--pop</em> and <em>--no-smtp</em>:
     </p>
 
       <div class="div-pre">
@@ -149,13 +149,13 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     The <em class="quote">emailrelay-submit</em> utility can be used to put messages straight into the
+     The <em>emailrelay-submit</em> utility can be used to put messages straight into the
      spool directory so that the POP clients can fetch them.
     </p>
 
     <p>
      By default E-MailRelay will always reject connections from remote machines. To
-     allow connections from anywhere use the <em class="quote">--remote-clients</em> option, but please
+     allow connections from anywhere use the <em>--remote-clients</em> option, but please
      check your firewall settings to make sure this cannot be exploited by spammers.
     </p>
 
@@ -169,14 +169,14 @@
       </div><!-- div-pre -->
    <h2><a class="a-header" name="SH_1_5">Configuration</a></h2> <!-- index:2:SH:1:5:Configuration -->
     <p>
-     The <em class="quote">emailrelay</em> program itself is mostly configured through command-line
-     options (such as <em class="quote">--port</em> and <em class="quote">--forward-to</em>).
+     The <em>emailrelay</em> program itself is mostly configured through command-line
+     options (such as <em>--port</em> and <em>--forward-to</em>).
     </p>
 
     <p>
      In most installations on Unix-like system the E-MailRelay server will be
-     started up by the boot-time script called <em class="quote">emailrelay</em> in the <em class="quote">/etc/init.d</em>
-     directory, and this script uses the configuration file <em class="quote">/etc/emailrelay.conf</em> to
+     started up by the boot-time script called <em>emailrelay</em> in the <em>/etc/init.d</em>
+     directory, and this script uses the configuration file <em>/etc/emailrelay.conf</em> to
      define the server command-line. Each entry in the configuration file corresponds
      to an E-MailRelay command-line option, so you can edit this file to add and
      remove server options. Refer to the reference guide for a complete list of
@@ -185,7 +185,7 @@
 
     <p>
      On Windows the installation program creates a startup batch file called
-     <em class="quote">emailrelay-start.bat</em> that contains all the server command-line options and
+     <em>emailrelay-start.bat</em> that contains all the server command-line options and
      you can edit this file to change the server configuration. You can also set up
      your own shortcuts to the E-MailRelay executable and add and remove command-line
      options using the shortcut properties tab.
@@ -194,35 +194,35 @@
     <p>
      If you are using authentication then you will have to create the text files
      containing your authentication secrets (account names, passwords and password
-     hashes). The <em class="quote">--server-auth</em>, <em class="quote">--client-auth</em> and <em class="quote">--pop-auth</em> command-line
+     hashes). The <em>--server-auth</em>, <em>--client-auth</em> and <em>--pop-auth</em> command-line
      options are used to point to these files.
     </p>
 
     <p>
-     There is also a graphical configuration program called <em class="quote">emailrelay-gui</em> that
+     There is also a graphical configuration program called <em>emailrelay-gui</em> that
      may be available to help with configuring the system. This is mostly intended
      to be used once at installation time since it is the basis of the Windows
      installer, but it can also be used to do some simple reconfiguration of an
      already-installed system. It takes you through a sequence of configuration
      pages and then on the last page creates or updates the configuration files, ie.
-     the authentication secrets file and the configuration file <em class="quote">emailrelay.conf</em>
-     or <em class="quote">emailrelay-start.bat</em>.
+     the authentication secrets file and the configuration file <em>emailrelay.conf</em>
+     or <em>emailrelay-start.bat</em>.
     </p>
    <h2><a class="a-header" name="SH_1_6">Logging</a></h2> <!-- index:2:SH:1:6:Logging -->
     <p>
-     If the <em class="quote">--log</em> option is used then E-MailRelay program sends warnings and error
-     messages to its standard error stream, and to the <em class="quote">syslog</em> system on Unix or
+     If the <em>--log</em> option is used then E-MailRelay program sends warnings and error
+     messages to its standard error stream, and to the <em>syslog</em> system on Unix or
      to the Event Viewer on Windows.
     </p>
 
     <p>
      The standard error stream logging can be redirected to a file by using the
-     <em class="quote">--log-file</em> option, and daily log files can be created by using <em class="quote">%d</em> in the
+     <em>--log-file</em> option, and daily log files can be created by using <em>%d</em> in the
      filename.
     </p>
 
     <p>
-     For more verbose logging add the <em class="quote">--verbose</em> option to the command-line.
+     For more verbose logging add the <em>--verbose</em> option to the command-line.
     </p>
    <h2><a class="a-header" name="SH_1_7">Preventing open mail relay</a></h2> <!-- index:2:SH:1:7:Preventing open mail relay -->
     <p>
@@ -230,25 +230,25 @@
      internet it is important to prevent open mail relay because this can be
      exploited by spammers and get you into trouble with your ISP. By default open
      mail relaying is not possible because E-MailRelay does not accept IP connections
-     from remote clients. However, if you use the <em class="quote">--remote-clients</em> option then you
+     from remote clients. However, if you use the <em>--remote-clients</em> option then you
      need to be more careful.
     </p>
 
     <p>
      If the only required access to the E-MailRelay server is from a local network
      and not from the internet then just set up your firewall to block incoming
-     connections on ports 25 (SMTP) and 110 (POP) and also use the <em class="quote">--interface</em>
+     connections on ports 25 (SMTP) and 110 (POP) and also use the <em>--interface</em>
      option on the E-MailRelay command-line so that it only listens for incoming
      connections on the local network.
     </p>
 
     <p>
      If you do need to accept connections from the internet then you should require
-     all clients to authenticate themselves by using the <em class="quote">--server-auth</em> option on
+     all clients to authenticate themselves by using the <em>--server-auth</em> option on
      the E-MailRelay command-line. If you also want local clients running on your
      internal network to be able to bypass this authentication then you can put those
      trusted IP addresses in the E-MailRelay secrets file with an authentication
-     mechanism of <em class="quote">none</em>. Refer to the reference guide for more information.
+     mechanism of <em>none</em>. Refer to the reference guide for more information.
     </p>
    <h2><a class="a-header" name="SH_1_8">Running as a POP server</a></h2> <!-- index:2:SH:1:8:Running as a POP server -->
     <p>
@@ -265,7 +265,7 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     You will need to create the authentication secrets file (<em class="quote">emailrelay.auth</em> in
+     You will need to create the authentication secrets file (<em>emailrelay.auth</em> in
      this example) containing usernames and passwords. A simple example would look
      like this:
     </p>
@@ -278,33 +278,33 @@ server plain user2 password2
     <p>
      It can sometimes be useful to serve up the same e-mail messages to multiple POP
      clients. For example, you might use several e-mail clients on your local network
-     and you would like to see your mail on all of them equally. The <em class="quote">--pop-by-name</em>
+     and you would like to see your mail on all of them equally. The <em>--pop-by-name</em>
      option is intended to be used in this scenario; each e-mail client sees its own
      copy of the e-mail messages, stored in its own sub-directory of the main spool
      directory. The name of the sub-directory is simply the name that the client uses
      to authenticate with the E-MailRelay server. You just need to create the
-     sub-directory for each client and then specify <em class="quote">emailrelay-filter-copy</em>
-     as the <em class="quote">--filter</em> program.
+     sub-directory for each client and then specify <em>emailrelay-filter-copy</em>
+     as the <em>--filter</em> program.
     </p>
 
     <p>
-     Refer to the documentation of the various <em class="quote">--pop</em> command-line options for
-     more detail: <em class="quote">--pop</em>, <em class="quote">--pop-port</em>, <em class="quote">--pop-auth</em>, <em class="quote">--pop-no-delete</em> and
-     <em class="quote">--pop-by-name</em>.
+     Refer to the documentation of the various <em>--pop</em> command-line options for
+     more detail: <em>--pop</em>, <em>--pop-port</em>, <em>--pop-auth</em>, <em>--pop-no-delete</em> and
+     <em>--pop-by-name</em>.
     </p>
    <h2><a class="a-header" name="SH_1_9">Triggering delivery</a></h2> <!-- index:2:SH:1:9:Triggering delivery -->
     <p>
      If you are using E-MailRelay on Unix to store and forward e-mail over an
-     intermittent link to internet such as dial-up or wireless networking, then you
-     might need to set things up so that the network tells E-MailRelay when to start
-     forwarding e-mail.
+     intermittent link to the internet such as dial-up or wireless networking, then
+     you might need to set things up so that the network tells E-MailRelay when to
+     start forwarding e-mail.
     </p>
 
     <p>
      On Linux systems you should find that there are special directories where you
      can install your own hook scripts that are called whenever a dial-up or wireless
-     network connection is established. For dial-up this might be <em class="quote">/etc/ppp/ip-up.d</em>,
-     and for wireless <em class="quote">/etc/network/if-up.d</em>.
+     network connection is established. For dial-up this might be <em>/etc/ppp/ip-up.d</em>,
+     and for wireless <em>/etc/network/if-up.d</em>.
     </p>
 
     <p>
@@ -317,23 +317,23 @@ exec /usr/local/sbin/emailrelay --as-client=smtp.example.com:smtp
 </pre>
       </div><!-- div-pre -->
     <p>
-     and make it executable using <em class="quote">chmod +x</em>.
+     and make it executable using <em>chmod +x</em>.
     </p>
    <h2><a class="a-header" name="SH_1_10">Failed e-mails</a></h2> <!-- index:2:SH:1:10:Failed e-mails -->
     <p>
      If e-mail messages cannot be forwarded by the E-MailRelay system then the
-     envelope files in the spool directory are given a <em class="quote">.bad</em> suffix. The reason for
+     envelope files in the spool directory are given a <em>.bad</em> suffix. The reason for
      the failure will be recorded in the envelope file itself.
     </p>
 
     <p>
-     You should check for <em class="quote">.bad</em> envelope files in the E-MailRelay spool directory
+     You should check for <em>.bad</em> envelope files in the E-MailRelay spool directory
      from time to time.
     </p>
 
     <p>
      If you want failed e-mails to be retried a few times you can run the
-     <em class="quote">emailrelay-resubmit</em> script periodically. This script simply removes the <em class="quote">.bad</em>
+     <em>emailrelay-resubmit</em> script periodically. This script simply removes the <em>.bad</em>
      suffix from files in the spool directory, as long as they have not been retried
      too many times already.
     </p>
@@ -348,30 +348,30 @@ exec /usr/local/sbin/emailrelay --as-client=smtp.example.com:smtp
 
     <p>
      Remember that messages can be introduced directly into the E-MailRelay spool
-     directory using the <em class="quote">emailrelay-submit</em> utility, and they can be moved out again
+     directory using the <em>emailrelay-submit</em> utility, and they can be moved out again
      at any time, as long as the envelope file is not locked (ie. with a special
-     filename extension). Your <em class="quote">--filter</em> program can edit messages in any way you
+     filename extension). Your <em>--filter</em> program can edit messages in any way you
      want, and it can even delete the current message from the spool directory.
     </p>
 
     <p>
-     When using E-MailRelay as a POP server the <em class="quote">--pop-by-name</em> feature can be used
+     When using E-MailRelay as a POP server the <em>--pop-by-name</em> feature can be used
      to serve up different spooled messages according to the username that the
-     client authenticated with. Rather than use <em class="quote">emailrelay-filter-copy</em> to
+     client authenticated with. Rather than use <em>emailrelay-filter-copy</em> to
      distribute incoming e-mail messages into all subdirectories you could use a
      custom script to do it based on the message addressing.
     </p>
 
     <p>
      The POP server can also be used for checking e-mails that are taken out of the
-     normal store-and-forward flow. For example, a <em class="quote">--filter</em> script that checks for
+     normal store-and-forward flow. For example, a <em>--filter</em> script that checks for
      spam could move suspicious e-mails into a subdirectory of the spool directory
-     that is accessible via the <em class="quote">--pop-by-name</em> feature.
+     that is accessible via the <em>--pop-by-name</em> feature.
     </p>
    <h2><a class="a-header" name="SH_1_12">Rate limiting</a></h2> <!-- index:2:SH:1:12:Rate limiting -->
     <p>
      If you need to slow the rate at which e-mails are forwarded you can use a
-     <em class="quote">--client-filter</em> program to introduce a delay. On Windows this JavaScript
+     <em>--client-filter</em> program to introduce a delay. On Windows this JavaScript
      program would give you a delay of a minute:
     </p>
 
@@ -382,18 +382,18 @@ WScript.Quit( 0 ) ;
       </div><!-- div-pre -->
     <p>
      However, this can cause timeouts at the server, so a better approach is to use
-     <em class="quote">--client-filter exit:102</em> so that only one e-mail message is forwarded on each
-     polling cycle, and then use <em class="quote">--poll 60</em> to limit it to one e-mail per minute.
+     <em>--client-filter exit:102</em> so that only one e-mail message is forwarded on each
+     polling cycle, and then use <em>--poll 60</em> to limit it to one e-mail per minute.
     </p>
    <h2><a class="a-header" name="SH_1_13">SpamAssassin</a></h2> <!-- index:2:SH:1:13:SpamAssassin -->
     <p>
-     The E-MailRelay server can use <a class="a-href" href="http://spamassassin.apache.org">SpamAssassin</a>
+     The E-MailRelay server can use <a href="http://spamassassin.apache.org">SpamAssassin</a>
      to mark or reject potential spam.
     </p>
 
     <p>
-     To get E-MailRelay to reject spam outright you can just use <em class="quote">spamassassin -e</em> as
-     your E-MailRelay <em class="quote">--filter</em> program:
+     To get E-MailRelay to reject spam outright you can just use <em>spamassassin -e</em> as
+     your E-MailRelay <em>--filter</em> program:
     </p>
 
       <div class="div-pre">
@@ -410,18 +410,18 @@ WScript.Quit( 0 ) ;
       </div><!-- div-pre -->
     <p>
      To get spam messages identified by SpamAssassin but still pass through the
-     E-MailRelay system you will have to have a small <em class="quote">--filter</em> script to collect
-     the output from the <em class="quote">spamassassin</em> program and write it back into the
+     E-MailRelay system you will have to have a small <em>--filter</em> script to collect
+     the output from the <em>spamassassin</em> program and write it back into the
      E-MailRelay content file.
     </p>
 
     <p>
-     On Unix your <em class="quote">--filter</em> shell script could look something like this:
+     On Unix your <em>--filter</em> shell script could look something like this:
     </p>
 
       <div class="div-pre">
        <pre>#!/bin/sh
-spamassassin "$1" &gt; "$1.tmp"
+spamassassin "$1" > "$1.tmp"
 mv "$1.tmp" "$1"
 exit 0
 </pre>
@@ -431,23 +431,23 @@ exit 0
     </p>
 
       <div class="div-pre">
-       <pre>c:\Program Files\perl\site\bin\spamassassin.bat %1 &gt; %1.tmp
+       <pre>c:\Program Files\perl\site\bin\spamassassin.bat %1 > %1.tmp
 ren %1.tmp %1
 exit 0
 </pre>
       </div><!-- div-pre -->
     <p>
-     E-MailRelay can also talk to a SpamAssassin <em class="quote">spamd</em> daemon over the network
-     by using <em class="quote">--filter spam:localhost:783</em>. This rejects the the message if
-     <em class="quote">spamd</em> thinks it is spam, or by using <em class="quote">--filter spam-edit:localhost:783</em>
+     E-MailRelay can also talk to a SpamAssassin <em>spamd</em> daemon over the network
+     by using <em>--filter spam:localhost:783</em>. This rejects the the message if
+     <em>spamd</em> thinks it is spam, or by using <em>--filter spam-edit:localhost:783</em>
      the message will be accepted but the content will be replaced by the
-     <em class="quote">spamd</em> output.
+     <em>spamd</em> output.
     </p>
    <h2><a class="a-header" name="SH_1_14">Google mail</a></h2> <!-- index:2:SH:1:14:Google mail -->
     <p>
      To send mail via Google mail's SMTP gateway you will need to create a client
      secrets file containing your account details and also enable TLS support in
-     E-MailRelay by using the <em class="quote">--client-tls</em> option.
+     E-MailRelay by using the <em>--client-tls</em> option.
     </p>
 
     <p>
@@ -461,12 +461,12 @@ exit 0
     <p>
      If your password contains a space, equals or plus sign, or any control
      character then you will need to replace those characters with their
-     corresponding hexadecimal ascii value, something like <em class="quote">+20</em> or <em class="quote">+2B</em>.
+     corresponding hexadecimal ascii value, something like <em>+20</em> or <em>+2B</em>.
     </p>
 
     <p>
-     Refer to your secrets file by using <em class="quote">--client-auth</em> on the E-MailRelay
-     command-line, and also add in the <em class="quote">--client-tls</em> option:
+     Refer to your secrets file by using <em>--client-auth</em> on the E-MailRelay
+     command-line, and also add in the <em>--client-tls</em> option:
     </p>
 
       <div class="div-pre">
@@ -475,7 +475,7 @@ exit 0
    <h2><a class="a-header" name="SH_1_15">Connection tunnelling</a></h2> <!-- index:2:SH:1:15:Connection tunnelling -->
     <p>
      E-MailRelay can send mail out via a SOCKS v4 proxy, which makes it easy to route
-     your mail through an encrypted tunnel using <em class="quote">ssh -N -D</em> or via the Tor
+     your mail through an encrypted tunnel created by <em>ssh -N -D</em> or via the Tor
      anonymising network.
     </p>
 
@@ -493,10 +493,10 @@ exit 0
       </div><!-- div-pre -->
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2018 Graeme Walker
+      Copyright (C) 2001-2019 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

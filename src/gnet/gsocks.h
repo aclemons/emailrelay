@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ namespace GNet
 }
 
 /// \class GNet::Socks
-/// Implements the socks4a proxy connection protocol.
+/// Implements the SOCKS4a proxy connection protocol.
 ///
 class GNet::Socks
 {
@@ -50,10 +50,12 @@ public:
 		///< Reads the response. Returns true if fully received
 		///< and positive. Throws if the response is negative.
 
+	static std::string buildPdu( const std::string & far_host , unsigned int far_port ) ;
+		///< Builds a SOCKS4a connect request pdu.
+
 private:
-	Socks( const Socks & ) ;
-	void operator=( const Socks & ) ;
-	static std::string buildPdu( const std::string & , unsigned int ) ;
+	Socks( const Socks & ) g__eq_delete ;
+	void operator=( const Socks & ) g__eq_delete ;
 
 private:
 	size_t m_request_offset ;

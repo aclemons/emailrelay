@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #include "gdirectory.h"
 #include "gnewprocess.h"
 #include "gfile.h"
-#include "gmacros.h"
+#include "gstrmacros.h"
 #include <stdexcept>
 #include <unistd.h>
 
@@ -66,7 +66,6 @@ namespace
 		const std::string & arg_3 = std::string() ,
 		const std::string & arg_4 = std::string() )
 	{
-#ifdef G_NEW_PROCESS_WITH_WAIT_FUTURE
 		G::StringArray args ;
 		if( !arg_1.empty() ) args.push_back( arg_1 ) ;
 		if( !arg_2.empty() ) args.push_back( arg_2 ) ;
@@ -75,17 +74,6 @@ namespace
 		G::NewProcess child( exe , args ) ;
 		child.wait().run() ;
 		return child.wait().output() ;
-#else
-		// backwards compatibility -- delete soon
-		G::Strings args ;
-		if( !arg_1.empty() ) args.push_back( arg_1 ) ;
-		if( !arg_2.empty() ) args.push_back( arg_2 ) ;
-		if( !arg_3.empty() ) args.push_back( arg_3 ) ;
-		if( !arg_4.empty() ) args.push_back( arg_4 ) ;
-		G::NewProcess::ChildProcess child = G::NewProcess::spawn( exe , args ) ;
-		child.wait() ;
-		return child.read() ;
-#endif
 	}
 
 	G::Path kde( const std::string & key , const G::Path & default_ )

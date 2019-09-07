@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 #include "gprocess.h"
 #include "gdatetime.h"
 #include "gfile.h"
-#include "gdebug.h"
 #include "glog.h"
 #include <sstream>
 #include <sys/stat.h>
@@ -43,12 +42,6 @@ namespace G
 ///
 class G::DirectoryIteratorImp
 {
-private:
-	DIR * m_d ;
-	struct dirent * m_dp ;
-	Directory m_dir ;
-	bool m_error ;
-
 public:
 	explicit DirectoryIteratorImp( const Directory & dir ) ;
 	~DirectoryIteratorImp() ;
@@ -60,8 +53,14 @@ public:
 	std::string fileName() const ;
 
 private:
-	void operator=( const DirectoryIteratorImp & ) ;
-	DirectoryIteratorImp( const DirectoryIteratorImp & ) ;
+	DirectoryIteratorImp( const DirectoryIteratorImp & ) g__eq_delete ;
+	void operator=( const DirectoryIteratorImp & ) g__eq_delete ;
+
+private:
+	DIR * m_d ;
+	struct dirent * m_dp ;
+	Directory m_dir ;
+	bool m_error ;
 } ;
 
 //
@@ -96,33 +95,26 @@ bool G::Directory::valid( bool for_creation ) const
 	return rc ;
 }
 
-std::string G::Directory::tmp()
+bool G::Directory::writeable( std::string filename ) const
 {
-	std::ostringstream ss ;
-	ss << "." << DateTime::now() << "." << Process::Id() << ".tmp" ;
-	return ss.str() ;
-}
-
-bool G::Directory::writeable( std::string tmp_filename ) const
-{
-	G::Path test_file( m_path ) ;
-	if( tmp_filename.empty() ) tmp_filename = tmp() ;
-	test_file.pathAppend( tmp_filename ) ;
-
-	int fd = ::open( test_file.str().c_str() , O_WRONLY | O_CREAT | O_EXCL , S_IRWXU ) ;
+	// use open(2) so we can use O_EXCL, ie. fail if it already exists
+	Path path( m_path , filename.empty() ? tmp() : filename ) ;
+	int fd = ::open( path.str().c_str() , O_WRONLY | O_CREAT | O_EXCL , S_IRWXU ) ;
 	if( fd == -1 )
-	{
 		return false ;
-	}
+
 	::close( fd ) ;
-	bool ok = 0 == ::unlink( test_file.str().c_str() ) ;
-	return ok ;
+	return 0 == std::remove( path.str().c_str() ) ;
 }
 
 // ===
 
 G::DirectoryIterator::DirectoryIterator( const Directory & dir ) :
 	m_imp( new DirectoryIteratorImp(dir) )
+{
+}
+
+G::DirectoryIterator::~DirectoryIterator()
 {
 }
 
@@ -154,11 +146,6 @@ bool G::DirectoryIterator::isDir() const
 std::string G::DirectoryIterator::sizeString() const
 {
 	return m_imp->sizeString() ;
-}
-
-G::DirectoryIterator::~DirectoryIterator()
-{
-	delete m_imp ;
 }
 
 // ===
@@ -215,7 +202,7 @@ G::DirectoryIteratorImp::~DirectoryIteratorImp()
 
 std::string G::DirectoryIteratorImp::sizeString() const
 {
-	std::string s = G::File::sizeString( filePath() ) ;
+	std::string s = File::sizeString( filePath() ) ;
 	return s.empty() ? std::string("0") : s ;
 }
 

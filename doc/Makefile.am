@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ txt_files_install=\
 	windows.txt windows.md windows.rst \
 	changelog.txt changelog.md changelog.rst \
 	doxygen.cfg.in \
-	index.rst conf.py
+	index.rst conf.py.sphinx
 
 man_files_install=\
 	emailrelay.1 \
@@ -83,7 +83,7 @@ man1_MANS = $(man_files_install)
 e_doc_DATA = $(txt_files_install) $(html_files_install) $(css_files_install) $(png_files_install)
 CLEANFILES = $(noinst_SCRIPTS) $(man_files_clean) doxygen.out doxygen.cfg doxygen/search/* doxygen/*
 
-SUFFIXES = .txt .html .mu
+SUFFIXES = .txt .html
 
 run_doxygen=$(top_srcdir)/bin/doxygen.sh
 
@@ -125,6 +125,7 @@ md:
 
 .PHONY: sphinx
 sphinx:
+	cp conf.py.sphinx conf.py
 	sphinx-build -b html . ./_build
 
 .PHONY: website

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ public:
 			///< '*pos_p' by to.length().
 
 	static unsigned int replaceAll( std::string & s , const std::string & from , const std::string & to ) ;
-		///< Does a global replace on string 's', replacing all occurances
+		///< Does a global replace on string 's', replacing all occurrences
 		///< of sub-string 'from' with 'to'. Returns the number of substitutions
 		///< made. Consider using in a while loop if 'from' is more than one
 		///< character.
@@ -65,8 +65,11 @@ public:
 	static unsigned int replaceAll( std::string & s , const char * from , const char * to ) ;
 		///< A c-string overload, provided for performance reasons.
 
+	static std::string replaced( const std::string & s , char from , char to ) ;
+		///< Returns the string 's' with all occurrences of 'from' replaced by 'to'.
+
 	static void removeAll( std::string & , char ) ;
-		///< Removes all occurrences of the character from the string.
+		///< Removes all occurrences of the character from the string. See also only().
 
 	static void trimLeft( std::string & s , const std::string & ws , size_type limit = 0U ) ;
 		///< Trims the lhs of s, taking off up to 'limit' of the 'ws' characters.
@@ -220,7 +223,8 @@ public:
 		///< have been replaced by lowercase characters.
 
 	static std::string toPrintableAscii( char c , char escape = '\\' ) ;
-		///< Returns a 7-bit printable representation of the given input character.
+		///< Returns a 7-bit printable representation of the given input character,
+		///< using character codes 0x20 to 0x7e inclusive.
 
 	static std::string toPrintableAscii( const std::string & in , char escape = '\\' ) ;
 		///< Returns a 7-bit printable representation of the given input string.
@@ -229,8 +233,13 @@ public:
 		///< Returns a 7-bit printable representation of the given wide input string.
 
 	static std::string printable( const std::string & in , char escape = '\\' ) ;
-		///< Returns a printable represention of the given input string.
+		///< Returns a printable represention of the given input string, using
+		///< chacter code ranges 0x20 to 0x7e and 0xa0 to 0xfe inclusive.
 		///< Typically used to prevent escape sequences getting into log files.
+
+	static std::string only( const std::string & chars , const std::string & s ) ;
+		///< Returns the 's' with all occurrences of the characters not appearing in
+		///< the fist string deleted.
 
 	static void escape( std::string & s , char c_escape , const std::string & specials_in ,
 		const std::string & specials_out ) ;
@@ -320,7 +329,8 @@ public:
 	static void splitIntoTokens( const std::string & in , StringArray & out , const std::string & ws ) ;
 		///< Splits the string into 'ws'-delimited tokens. The behaviour is like
 		///< strtok() in that adjacent delimiters count as one and leading and
-		///< trailing delimiters are ignored. The output array is cleared first.
+		///< trailing delimiters are ignored. The output array is _not_ cleared
+		///< first; new tokens are appended to the output list.
 
 	static StringArray splitIntoTokens( const std::string & in , const std::string & ws = Str::ws() ) ;
 		///< Overload that returns by value.
@@ -363,7 +373,7 @@ public:
 
 	static std::string join( const std::string & sep , const StringMap & ,
 		const std::string & eq = std::string(1U,'=') , const std::string & tail = std::string() ) ;
-			///< Contatenates entries in a map, where an entry is "<key><eq><value><tail>".
+			///< Concatenates entries in a map, where an entry is "<key><eq><value><tail>".
 
 	static std::set<std::string> keySet( const StringMap & string_map ) ;
 		///< Extracts the keys from a map of strings.
@@ -379,7 +389,7 @@ public:
 		///< Overload taking a separator string, and with the default
 		///< as either the input string or the empty string. If the
 		///< separator occurs more than once in the input then only the
-		///< first occurence is relevant.
+		///< first occurrence is relevant.
 
 	static std::string tail( const std::string & in , size_type pos ,
 		const std::string & default_ = std::string() ) ;
@@ -392,7 +402,7 @@ public:
 		///< Overload taking a separator string, and with the default
 		///< as either the input string or the empty string. If the
 		///< separator occurs more than once in the input then only the
-		///< first occurence is relevant.
+		///< first occurrence is relevant.
 
 	static bool match( const std::string & , const std::string & ) ;
 		///< Returns true if the two strings are the same.
@@ -430,6 +440,9 @@ public:
 	static std::string ws() ;
 		///< Returns a string of standard whitespace characters.
 
+	static std::string alnum() ;
+		///< Returns a string of seven-bit alphanumeric characters, ie A-Z, a-z and 0-9.
+
 	static std::string positive() ;
 		///< Returns a default positive string. See isPositive().
 
@@ -447,12 +460,29 @@ public:
 			///< Returns the position of the key in 's' using a Latin-1 case-insensitive
 			///< search. The locale is ignored.
 
-	static std::string unique( std::string s , char c = ' ' , char r = ' ' ) ;
+	static std::string unique( const std::string & s , char c , char r ) ;
 		///< Returns a string with repeated 'c' characters replaced by
 		///< one 'r' character. Single 'c' characters are not replaced.
 
+	static std::string unique( const std::string & s , char c ) ;
+		///< An overload that replaces repeated 'c' characters by
+		///< one 'c' character.
+
+	static StringArray::iterator keepMatch( StringArray::iterator begin , StringArray::iterator end ,
+		const StringArray & match_list , bool ignore_case = false ) ;
+			///< Removes items in the begin/end list that do not match any of the
+			///< elements in the match-list (whitelist), but keeps everything (by
+			///< returning 'end') if the match-list is empty. Returns an iterator
+			///< for erase().
+
+	static StringArray::iterator removeMatch( StringArray::iterator begin , StringArray::iterator end ,
+		const StringArray & match_list , bool ignore_case = false ) ;
+			///< Removes items in the begin/end list that match one of the elements
+			///< in the match-list (blacklist). (Removes nothing if the match-list is
+			///< empty.) Returns an iterator for erase().
+
 private:
-	Str() ; // not implemented
+	Str() g__eq_delete ;
 	static void readLineFromImp( std::istream & , const std::string & , std::string & ) ;
 	static unsigned short toUShortImp( const std::string & s , bool & overflow , bool & invalid ) ;
 	static unsigned long toULongImp( const std::string & s , bool & overflow , bool & invalid ) ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,7 +17,8 @@
 //
 // emailrelay-service-install.js
 //
-// Runs "emailrelay-service --install" and then opens the service control panel.
+// Runs "emailrelay-service --install" and then opens the Windows service
+// control panel.
 //
 
 try

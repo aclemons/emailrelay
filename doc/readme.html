@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML PUBLIC "%-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
  <head>
   <title>E-MailRelay Readme</title>
@@ -44,9 +44,9 @@
     </p>
    <h2><a class="a-header" name="SH_1_2">Quick start</a></h2> <!-- index:2:SH:1:2:Quick start -->
     <p>
-     To use E-MailRelay in store-and-forward mode use the <em class="quote">--as-server</em> option to
+     To use E-MailRelay in store-and-forward mode use the <em>--as-server</em> option to
      start the storage daemon in the background, and then do delivery of spooled
-     messages by running with the <em class="quote">--as-client</em> option.
+     messages by running with the <em>--as-client</em> option.
     </p>
 
 <img src="serverclient.png" alt="image">
@@ -62,7 +62,7 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     And then to forward the spooled mail to <em class="quote">smtp.example.com</em> run something
+     And then to forward the spooled mail to <em>smtp.example.com</em> run something
      like this:
     </p>
 
@@ -71,7 +71,7 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     To get behaviour more like a proxy you can add the <em class="quote">--poll</em> and <em class="quote">--forward-to</em>
+     To get behaviour more like a proxy you can add the <em>--poll</em> and <em>--forward-to</em>
      options so that messages are forwarded continuously rather than on-demand.
     </p>
 
@@ -89,7 +89,7 @@
       </div><!-- div-pre -->
     <p>
      Or for a proxy server that forwards each message soon after it has been
-     received, you can use <em class="quote">--as-proxy</em> or add <em class="quote">--forward-on-disconnect</em>:
+     received, you can use <em>--as-proxy</em> or add <em>--forward-on-disconnect</em>:
     </p>
 
       <div class="div-pre">
@@ -98,7 +98,7 @@
       </div><!-- div-pre -->
     <p>
      To edit or filter e-mail as it passes through the proxy specify your filter
-     program with the <em class="quote">--filter</em> option, something like this:
+     program with the <em>--filter</em> option, something like this:
     </p>
 
       <div class="div-pre">
@@ -106,7 +106,7 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     To run E-MailRelay as a POP server without SMTP use <em class="quote">--pop</em> and <em class="quote">--no-smtp</em>:
+     To run E-MailRelay as a POP server without SMTP use <em>--pop</em> and <em>--no-smtp</em>:
     </p>
 
       <div class="div-pre">
@@ -114,13 +114,13 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     The <em class="quote">emailrelay-submit</em> utility can be used to put messages straight into the
+     The <em>emailrelay-submit</em> utility can be used to put messages straight into the
      spool directory so that the POP clients can fetch them.
     </p>
 
     <p>
      By default E-MailRelay will always reject connections from remote machines. To
-     allow connections from anywhere use the <em class="quote">--remote-clients</em> option, but please
+     allow connections from anywhere use the <em>--remote-clients</em> option, but please
      check your firewall settings to make sure this cannot be exploited by spammers.
     </p>
 
@@ -139,7 +139,7 @@
     <ul>
      <li>README -- this document</li>
      <li>COPYING -- the GNU General Public License</li>
-     <li>INSTALL -- generic build &amp; install instructions</li>
+     <li>INSTALL -- generic build & install instructions</li>
      <li>AUTHORS -- authors, credits and additional copyrights</li>
      <li>userguide.txt -- user guide</li>
      <li>reference.txt -- reference document</li>
@@ -148,14 +148,14 @@
 
     <p>
      Source code documentation will be generated when building from source if
-     <em class="quote">doxygen</em> is available.
+     <em>doxygen</em> is available.
     </p>
    <h2><a class="a-header" name="SH_1_4">Feedback</a></h2> <!-- index:2:SH:1:4:Feedback -->
     <p>
-     Please feel free to e-mail the author at <em class="quote">mailto:graeme_walker@users.sourceforge.net</em>.
+     Please feel free to e-mail the author at <em>mailto:graeme_walker@users.sourceforge.net</em>.
     </p>
 
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,23 +19,21 @@
 //
 
 #include "gdef.h"
-#include "glimits.h"
 #include "ghostname.h"
 #include "genvironment.h"
 #include "gstr.h"
 
 std::string G::hostname()
 {
-	char buffer[G::limits::net_hostname] = { '\0' } ;
-	if( 0 == ::gethostname( buffer , sizeof(buffer)-1U ) ) // winsock2.h
+	std::vector<char> buffer( 257U , '\0' ) ; // documented hostname limit of 256
+	if( 0 == ::gethostname( &buffer[0] , static_cast<int>(buffer.size()-1U) ) && buffer.at(0U) != '\0' ) // winsock2.h
 	{
-		buffer[sizeof(buffer)-1U] = '\0' ;
-		return std::string(buffer) ;
+		return std::string( &buffer[0] ) ;
 	}
 	else
 	{
-		return G::Str::toPrintableAscii(
-			G::Environment::get("COMPUTERNAME",std::string()) , '_' ) ;
+		return Str::toPrintableAscii(
+			Environment::get("COMPUTERNAME",std::string()) , '_' ) ;
 	}
 }
 

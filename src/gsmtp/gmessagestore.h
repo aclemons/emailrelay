@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,11 +18,10 @@
 /// \file gmessagestore.h
 ///
 
-#ifndef G_SMTP_MESSAGE_STORE_H
-#define G_SMTP_MESSAGE_STORE_H
+#ifndef G_SMTP_MESSAGE_STORE__H
+#define G_SMTP_MESSAGE_STORE__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gnewmessage.h"
 #include "gstoredmessage.h"
 #include "gexception.h"
@@ -45,23 +44,32 @@ class GSmtp::MessageStore
 public:
 	class IteratorImp /// A base class for MessageStore::Iterator implementations.
 	{
-		public: unsigned long m_ref_count ;
-		public: virtual unique_ptr<StoredMessage> next() = 0 ;
-		public: IteratorImp() ;
-		public: virtual ~IteratorImp() ;
-		private: IteratorImp( const IteratorImp & ) ;
-		private: void operator=( const IteratorImp & ) ;
+	public:
+		IteratorImp() ;
+		virtual unique_ptr<StoredMessage> next() = 0 ;
+		virtual ~IteratorImp() ;
+
+	public:
+		unsigned long m_ref_count ;
+
+	private:
+		IteratorImp( const IteratorImp & ) g__eq_delete ;
+		void operator=( const IteratorImp & ) g__eq_delete ;
 	} ;
+
 	class Iterator /// An iterator class for GSmtp::MessageStore.
 	{
-		public: Iterator() ;
-		public: explicit Iterator( IteratorImp * ) ;
-		public: ~Iterator() ;
-		public: Iterator( const Iterator & ) ;
-		public: Iterator & operator=( const Iterator & ) ;
-		public: unique_ptr<StoredMessage> next() ;
-		public: void last() ;
-		private: IteratorImp * m_imp ;
+	public:
+		Iterator() ;
+		explicit Iterator( IteratorImp * ) ;
+		~Iterator() ;
+		Iterator( const Iterator & ) ;
+		Iterator & operator=( const Iterator & ) ;
+		unique_ptr<StoredMessage> next() ;
+		void last() ;
+
+	private:
+		IteratorImp * m_imp ;
 	} ;
 
 	static G::Path defaultDirectory() ;
@@ -120,12 +128,8 @@ public:
 		///< have changed in the store.
 
 	virtual G::Slot::Signal0 & messageStoreRescanSignal() = 0 ;
-		///< Provides a signal which is emitted when iteration
-		///< finishes and rescan() has been called.
-
-private:
-	void operator=( const MessageStore & ) ;
+		///< Provides a signal which is emitted when rescan()
+		///< is called.
 } ;
 
 #endif
-

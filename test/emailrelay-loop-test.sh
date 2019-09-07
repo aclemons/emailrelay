@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,8 +23,8 @@
 # usage: emailrelay-loop-test.sh [-v] [<exe>]
 #        -v  - use valgrind
 #
-# To get a good valgrind report make use of the admin interface to 'terminate'
-# the server cleanly. The admin port is recorded in the ".info" file.
+# To get a good valgrind report make use of the admin 'terminate' command
+# to quit the server cleanly. The admin port is recorded in the ".info" file.
 #
 
 # configure
@@ -85,4 +85,4 @@ fi
 
 # run
 set -x
-${v}${exe} --spool-dir=$base_ -lt -p $port_1 -a $port_2 -Q --forward-to=localhost:$port_1 --poll 1 --verifier $verifier --log-time $options --size 9999999 --pid-file $base_/pidfile
+${v}${exe} --spool-dir=$base_ --log --no-daemon --port $port_1 --admin $port_2 --admin-terminate --forward-to=localhost:$port_1 --poll 1 --address-verifier $verifier --log-time $options --size 9999999 --pid-file $base_/pidfile

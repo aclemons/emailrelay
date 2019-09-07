@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,9 +27,11 @@
 #include "gstr.h"
 #include "gtest.h"
 #include "gdatetime.h"
-#include "gdebug.h"
+#include "glog.h"
+#include "gassert.h"
 #include <sstream>
 #include <algorithm>
+#include <functional>
 
 namespace
 {
@@ -43,7 +45,7 @@ namespace
 class GAuth::SaslServerBasicImp
 {
 public:
-	SaslServerBasicImp( const SaslServerSecrets & , bool ) ;
+	SaslServerBasicImp( const SaslServerSecrets & , const std::string & , bool ) ;
 	std::string mechanisms( const std::string & ) const ;
 	bool init( const std::string & mechanism ) ;
 	std::string mechanism() const ;
@@ -65,14 +67,11 @@ private:
 	bool m_authenticated ;
 	std::string m_id ;
 	std::string m_trustee ;
-	bool m_advertise_login ;
-	bool m_advertise_plain ;
-	bool m_advertise_cram_md5 ;
 } ;
 
 // ===
 
-GAuth::SaslServerBasicImp::SaslServerBasicImp( const SaslServerSecrets & secrets , bool allow_apop ) :
+GAuth::SaslServerBasicImp::SaslServerBasicImp( const SaslServerSecrets & secrets , const std::string & sasl_server_config , bool allow_apop ) :
 	m_allow_apop(allow_apop) ,
 	m_first_apply(true) ,
 	m_secrets(secrets) ,
@@ -82,7 +81,19 @@ GAuth::SaslServerBasicImp::SaslServerBasicImp( const SaslServerSecrets & secrets
 	m_mechanisms.push_back( "PLAIN" ) ;
 	m_mechanisms.push_back( "LOGIN" ) ;
 	if( G::Test::enabled("sasl-server-oauth") )
-		m_mechanisms.push_back( "XOAUTH2" ) ; // for testing
+		m_mechanisms.push_back( "XOAUTH2" ) ; // to allow testing of the client-side
+
+	// use the configuration string as a mechanism whitelist and/or blacklist
+	if( !sasl_server_config.empty() )
+	{
+		G::StringArray list = G::Str::splitIntoTokens( G::Str::upper(sasl_server_config) , ";" ) ;
+		G::StringArray whitelist = G::Str::splitIntoTokens( G::Str::headMatchResidue( list , "M:" ) , "," ) ;
+		G::StringArray blacklist = G::Str::splitIntoTokens( G::Str::headMatchResidue( list , "X:" ) , "," ) ;
+		m_mechanisms.erase( G::Str::keepMatch( m_mechanisms.begin() , m_mechanisms.end() , whitelist , true ) , m_mechanisms.end() ) ;
+		m_mechanisms.erase( G::Str::removeMatch( m_mechanisms.begin() , m_mechanisms.end() , blacklist , true ) , m_mechanisms.end() ) ;
+		if( m_mechanisms.empty() )
+			throw SaslServerBasic::NoMechanisms() ;
+	}
 }
 
 std::string GAuth::SaslServerBasicImp::mechanisms( const std::string & sep ) const
@@ -155,10 +166,17 @@ std::string GAuth::SaslServerBasicImp::apply( const std::string & response , boo
 		secret = Secret::none() ;
 		if( !id.empty() )
 		{
-			std::string hash_type = m_mechanism == "APOP" ? "MD5" : m_mechanism.substr(5U) ;
-			secret = m_secrets.serverSecret( hash_type , id ) ;
-			if( !secret.valid() )
-				secret = m_secrets.serverSecret( "plain" , id ) ;
+			if( m_mechanism == "APOP" )
+			{
+				secret = m_secrets.serverSecret( "plain" , id ) ; // (APOP is MD5 but not HMAC)
+			}
+			else
+			{
+				std::string hash_type = m_mechanism.substr(5U) ;
+				secret = m_secrets.serverSecret( hash_type , id ) ;
+				if( !secret.valid() )
+					secret = m_secrets.serverSecret( "plain" , id ) ;
+			}
 		}
 		if( !secret.valid() )
 		{
@@ -258,7 +276,7 @@ bool GAuth::SaslServerBasicImp::trustedCore( const std::string & address_wildcar
 	if( !trustee.empty() )
 	{
 		G_LOG( "GAuth::SaslServer::trusted: trusting [" << address.hostPartString() << "]: "
-			<< "matched [" << address_wildcard << "] " << pair.second ) ;
+			<< "matched [" << address_wildcard << "] from " << pair.second ) ;
 		const_cast<SaslServerBasicImp*>(this)->m_trustee = trustee ;
 		return true ;
 	}
@@ -290,8 +308,8 @@ bool GAuth::SaslServerBasicImp::authenticated() const
 
 // ===
 
-GAuth::SaslServerBasic::SaslServerBasic( const SaslServerSecrets & secrets , bool allow_apop ) :
-	m_imp(new SaslServerBasicImp(secrets,allow_apop))
+GAuth::SaslServerBasic::SaslServerBasic( const SaslServerSecrets & secrets , const std::string & config , bool allow_apop ) :
+	m_imp(new SaslServerBasicImp(secrets,config,allow_apop))
 {
 }
 
@@ -327,7 +345,7 @@ bool GAuth::SaslServerBasic::init( const std::string & mechanism )
 
 bool GAuth::SaslServerBasic::mustChallenge() const
 {
-	std::string m = G::Str::upper( m_imp->mechanism() ) ; // just in case
+	std::string m = G::Str::upper( m_imp->mechanism() ) ; // upper() just in case
 	return m != "PLAIN" && m != "LOGIN" ;
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,8 +42,6 @@ namespace G
 class G::Daemon
 {
 public:
-	G_EXCEPTION( CannotFork , "cannot fork" ) ;
-
 	static void detach() ;
 		///< Detaches from the parent environment. This typically
 		///< involves fork()ing, _exit()ing the parent, and calling
@@ -62,9 +60,8 @@ public:
 		///< Throws PidFile::Error on error.
 
 private:
-	Daemon() ;
+	Daemon() g__eq_delete ;
 	static void setsid() ;
 } ;
 
 #endif
-

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,8 +24,7 @@
 #include "gsleep.h"
 #include "gmsg.h"
 #include "gstr.h"
-#include "gdebug.h"
-#include "gassert.h"
+#include "glog.h"
 
 GNet::Socket::Socket( int domain , int type , int protocol ) :
 	m_reason(0) ,
@@ -83,7 +82,7 @@ void GNet::Socket::bind( const Address & local_address )
 	if( local_address.domain() != m_domain )
 		throw SocketBindError( "address family does not match the socket domain" ) ;
 
-	setOptionsOnBind( local_address.family() == Address::Family::ipv6() ) ;
+	setOptionsOnBind( local_address.family() == Address::Family::ipv6 ) ;
 
 	int rc = ::bind( m_socket.fd() , local_address.address() , local_address.length() ) ;
 	if( error(rc) )
@@ -98,7 +97,7 @@ bool GNet::Socket::bind( const Address & local_address , NoThrow )
 	G_DEBUG( "Socket::bind: binding " << local_address.displayString() << " on fd " << m_socket ) ;
 	if( local_address.domain() != m_domain ) return false ;
 
-	setOptionsOnBind( local_address.family() == Address::Family::ipv6() ) ;
+	setOptionsOnBind( local_address.family() == Address::Family::ipv6 ) ;
 
 	int rc = ::bind( m_socket.fd() , local_address.address() , local_address.length() ) ;
 	if( error(rc) )
@@ -119,7 +118,7 @@ bool GNet::Socket::connect( const Address & address , bool *done )
 		return false ;
 	}
 
-	setOptionsOnConnect( address.family() == Address::Family::ipv6() ) ;
+	setOptionsOnConnect( address.family() == Address::Family::ipv6 ) ;
 
 	int rc = ::connect( m_socket.fd() , address.address() , address.length() ) ;
 	if( error(rc) )
@@ -206,22 +205,22 @@ bool GNet::Socket::hasPeer() const
 	return getPeerAddress().first ;
 }
 
-void GNet::Socket::addReadHandler( EventHandler & handler , ExceptionHandler & eh )
+void GNet::Socket::addReadHandler( EventHandler & handler , ExceptionSink es )
 {
 	G_DEBUG( "GNet::Socket::addReadHandler: fd " << m_socket ) ;
-	EventLoop::instance().addRead( m_socket , handler , eh ) ;
+	EventLoop::instance().addRead( m_socket , handler , es ) ;
 }
 
-void GNet::Socket::addWriteHandler( EventHandler & handler , ExceptionHandler & eh )
+void GNet::Socket::addWriteHandler( EventHandler & handler , ExceptionSink es )
 {
 	G_DEBUG( "GNet::Socket::addWriteHandler: fd " << m_socket ) ;
-	EventLoop::instance().addWrite( m_socket , handler , eh ) ;
+	EventLoop::instance().addWrite( m_socket , handler , es ) ;
 }
 
-void GNet::Socket::addOtherHandler( EventHandler & handler , ExceptionHandler & eh )
+void GNet::Socket::addOtherHandler( EventHandler & handler , ExceptionSink es )
 {
 	G_DEBUG( "GNet::Socket::addOtherHandler: fd " << m_socket ) ;
-	EventLoop::instance().addOther( m_socket , handler , eh ) ;
+	EventLoop::instance().addOther( m_socket , handler , es ) ;
 }
 
 void GNet::Socket::dropReadHandler()
@@ -283,15 +282,9 @@ GNet::StreamSocket::StreamSocket( Descriptor s , const Socket::Accepted & accept
 	setOptionsOnAccept() ;
 }
 
-GNet::StreamSocket::~StreamSocket()
-{
-}
-
 GNet::Socket::ssize_type GNet::StreamSocket::read( char * buf , size_type len )
 {
-	if( len == 0 )
-		return 0 ;
-
+	if( len == 0 ) return 0 ;
 	m_reason = 0 ;
 	ssize_type nread = G::Msg::recv( m_socket.fd() , buf , len , 0 ) ;
 	if( sizeError(nread) )
@@ -315,7 +308,10 @@ GNet::AcceptPair GNet::StreamSocket::accept()
 	if( ! new_fd.valid() )
 	{
 		saveReason() ;
-		throw SocketError( "cannot accept on socket" , m_reason_string ) ;
+		if( eTooMany() )
+			throw SocketTooMany( "cannot accept on listening socket" , m_reason_string ) ;
+		else
+			throw SocketError( "cannot accept on listening socket" , m_reason_string ) ;
 	}
 
 	if( G::Test::enabled("socket-accept-throws") )
@@ -335,10 +331,6 @@ GNet::AcceptPair GNet::StreamSocket::accept()
 
 GNet::DatagramSocket::DatagramSocket( int address_domain ) :
 	Socket( address_domain , SOCK_DGRAM , 0 )
-{
-}
-
-GNet::DatagramSocket::~DatagramSocket()
 {
 }
 

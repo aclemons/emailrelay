@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -104,8 +104,7 @@ void Launcher::poke()
 	m_poke_count++ ;
 	if( m_poke_count == 1U )
 	{
-		int rc = system( m_shell_command.c_str() ) ;
-		G_IGNORE_VARIABLE( rc ) ;
+		int rc = system( m_shell_command.c_str() ) ; G_IGNORE_VARIABLE(int,rc) ;
 	}
 	else if( m_poke_count == 100U )
 	{

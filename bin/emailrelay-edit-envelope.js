@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ try
 {
 	// parse the command-line to get the envelope filename
 	var content = WScript.Arguments(0) ;
-	var envelope = content.substr(0,content.length-7) + "envelope.new" ;
+	var envelope = WScript.Arguments(1) ;
 
 	// open the envelope file
 	var fs = WScript.CreateObject( "Scripting.FileSystemObject" ) ;

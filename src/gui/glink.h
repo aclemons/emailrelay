@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,11 +38,11 @@ class GLink
 public:
 	G_EXCEPTION( SaveError , "error saving desktop or menu link" ) ;
 
-	enum Show { Show_Default , Show_Hide } ;
+	g__enum(Show) { Default , Hide } ; g__enum_end(Show)
 
 	GLink( const G::Path & target_path , const std::string & name , const std::string & description ,
 		const G::Path & working_dir , const G::StringArray & args = G::StringArray() ,
-		const G::Path & icon_source = G::Path() , Show show = Show_Default ,
+		const G::Path & icon_source = G::Path() , Show show = Show::Default ,
 		const std::string & internal_comment_1 = std::string() ,
 		const std::string & internal_comment_2 = std::string() ,
 		const std::string & internal_comment_3 = std::string() ) ;

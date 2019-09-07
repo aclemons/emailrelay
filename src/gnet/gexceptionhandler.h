@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,43 +22,47 @@
 #define G_NET_EXCEPTION_HANDLER__H
 
 #include "gdef.h"
+#include "gexceptionsource.h"
 #include <exception>
 
 namespace GNet
 {
 	class ExceptionHandler ;
+	class EventHandler ;
 }
 
 /// \class GNet::ExceptionHandler
-/// An abstract interface for handling exceptions thrown out of event-loop
-/// callbacks (socket events, future events and timer events). If the handler
-/// just rethrows then the event loop will terminate.
+/// An abstract interface for handling exceptions thrown out of
+/// event-loop callbacks (socket/future events and timer events).
+/// If the handler just rethrows then the event loop will terminate.
 ///
-/// Many GNet classes require a ExceptionHandler reference to be passed
-/// around, but only classes that manage their own lifetimes on the heap will
-/// use this as a base; these classes override onException() to absorb the
-/// exception and schedule their own deletion.
-///
-/// The event loop itself derives from this interface as a convenience.
+/// The ExceptionHandler destructor calls disarm() on the EventHandlerList
+/// and TimerList so that an onException() callback is not delivered
+/// if the target object has been destroyed.
 ///
 class GNet::ExceptionHandler
 {
 public:
-	virtual void onException( std::exception & ) = 0 ;
-		///< Called by the event loop when an exception is thrown out
-		///< of an event loop callback.
-		///<
-		///< The implementation may just do a "throw" to rethrow the
-		///< current exception out of the event loop, or schedule
-		///< a "delete this" for objects that manage themselves
-		///< on the heap.
-
-protected:
 	virtual ~ExceptionHandler() ;
-		///< Destructor.
+		///< Destructor. Matching entries in the EventHandlerList and
+		///< TimerList are disarm()ed.
 
-private:
-	void operator=( const ExceptionHandler & ) ;
+	virtual void onException( ExceptionSource * source , std::exception & e , bool done ) = 0 ;
+		///< Called by the event loop when an exception is thrown out
+		///< of an event loop callback. The exception is still active
+		///< so it can be rethrown with "throw".
+		///<
+		///< The source parameter can be used to point to the object
+		///< that received the original event loop callback. This
+		///< requires the appropriate exception source pointer is
+		///< defined when the event source is first registered with
+		///< the event loop, otherwise it defaults to a null pointer.
+		///< (The ExceptionSinkUnbound class is used where necessary
+		///< to encourage the definition of a valid exception source
+		///< pointer.)
+		///<
+		///< The 'done' parameter indicates whether the exception
+		///< was of type GNet::Done.
 } ;
 
 #endif

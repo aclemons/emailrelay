@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 example_scripts = \
 	emailrelay-bcc-check.pl \
 	emailrelay-multicast.sh \
-	emailrelay-process.sh \
+	emailrelay-rot13.pl \
 	emailrelay-sendmail.pl \
 	emailrelay-set-from.js \
 	emailrelay-set-from.pl

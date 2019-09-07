@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -116,9 +116,9 @@ public:
 		///< ansi to ansi.
 
 private:
+	Convert() g__eq_delete ;
 	static std::string narrow( const std::wstring & s , bool is_utf8 , const std::string & = std::string() ) ;
 	static std::wstring widen( const std::string & s , bool is_utf8 , const std::string & = std::string() ) ;
-	Convert() ; // not implemented
 } ;
 
 #endif

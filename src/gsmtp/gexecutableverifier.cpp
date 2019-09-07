@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,22 +19,19 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gexecutableverifier.h"
 #include "gexecutablecommand.h"
-#include "gstrings.h"
 #include "gprocess.h"
 #include "gnewprocess.h"
 #include "gfile.h"
 #include "groot.h"
 #include "gstr.h"
 #include "glocal.h"
-#include "gassert.h"
 #include "glog.h"
 
-GSmtp::ExecutableVerifier::ExecutableVerifier( GNet::ExceptionHandler & eh , const G::Path & path ) :
+GSmtp::ExecutableVerifier::ExecutableVerifier( GNet::ExceptionSink es , const G::Path & path ) :
 	m_path(path) ,
-	m_task(*this,eh,"<<verifier exec error: __strerror__>>",G::Root::nobody())
+	m_task(*this,es,"<<verifier exec error: __strerror__>>",G::Root::nobody())
 {
 }
 

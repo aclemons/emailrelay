@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,9 +38,20 @@ namespace G
 }
 
 /// \class G::MapFile
-/// A class for reading and editing key=value files, supporting comments,
-/// creation of backup files, variable expansion and logging.
-/// \see G::OptionValue
+/// A class for reading, writing and editing key=value files,
+/// supporting variable expansion of percent-key-percent values,
+/// comments, creation of backup files, and logging.
+///
+/// Also supports initialisation from a G::OptionMap, containing
+/// G::OptionValue values. See also G::OptionParser.
+///
+/// Values containing whitespace are/can-be simply quoted with
+/// initial and terminal double-quote characters, but with no
+/// special handling of escapes or embedded quotes. For full
+/// transparency values must not start with whitespace or '=',
+/// must not end with whitespace, must not start-and-end with
+/// double-quotes, must not contain commas, and should not
+/// contain percent characters if using expand() methods.
 ///
 class G::MapFile
 {
@@ -57,10 +68,10 @@ public:
 
 	explicit MapFile( const OptionMap & map , const std::string & yes = std::string() ) ;
 		///< Constructor that initialises from an option value map,
-		///< typically parsed out from a command-line. Unvalued 'true'
+		///< typically parsed out from a command-line. Unvalued 'on'
 		///< options in the option value map are loaded into this
 		///< mapfile object with a value given by the 'yes' parameter,
-		///< whereas unvalued 'false' options are not loaded.
+		///< whereas unvalued 'off' options are not loaded at all.
 		///< Multi-valued options are loaded as a comma-separated
 		///< list.
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -99,6 +99,11 @@ bool GNet::Socket::eInProgress()
 bool GNet::Socket::eMsgSize()
 {
 	return m_reason == WSAEMSGSIZE ;
+}
+
+bool GNet::Socket::eTooMany()
+{
+	return m_reason == WSAEMFILE ; // or WSAENOBUFS ?
 }
 
 bool GNet::Socket::setNonBlock()

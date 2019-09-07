@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ namespace G
 }
 
 /// \class G::GetOpt
-/// A command line option parser.
+/// A command-line option parser.
 ///
 /// Usage:
 /// \code
@@ -50,7 +50,7 @@ namespace G
 ///		run( opt.args() , opt.contains("extra") ? opt.value("extra") : std::string() ) ;
 /// \endcode
 ///
-/// \see G::Arg
+/// \see G::Arg, G::Options, G::OptionMap, G::OptionParser
 ///
 class G::GetOpt
 {
@@ -72,7 +72,7 @@ public:
 
 	void addOptionsFromFile( size_type n = 1U ) ;
 		///< Adds options from the config file named by the n'th non-option
-		///< command-line argument (zero-based but allowing for the program
+		///< command-line argument (zero-based and allowing for the program
 		///< name in argv0). The n'th argument is then removed. Does nothing
 		///< if the n'th argument does not exists or if it is empty. Throws
 		///< if the file is specified but cannot be opened. Parsing errors
@@ -97,8 +97,8 @@ public:
 	bool hasErrors() const ;
 		///< Returns true if there are errors.
 
-	void showErrors( std::ostream & stream , std::string prefix_1 ,
-		std::string prefix_2 = std::string(": ") ) const ;
+	void showErrors( std::ostream & stream , const std::string & prefix_1 ,
+		const std::string & prefix_2 = std::string(": ") ) const ;
 			///< A convenience function which streams out each errorList()
 			///< item to the given stream, prefixed with the given
 			///< prefix(es). The two prefixes are simply concatenated.
@@ -107,11 +107,11 @@ public:
 		///< An overload which has a sensible prefix.
 
 	bool contains( char option_letter ) const ;
-		///< Returns true if the command line contains the option identified by its
+		///< Returns true if the command-line contains the option identified by its
 		///< short-form letter.
 
 	bool contains( const std::string & option_name ) const ;
-		///< Returns true if the command line contains the option identified by its
+		///< Returns true if the command-line contains the option identified by its
 		///< long-form name.
 
 	size_t count( const std::string & option_name ) const ;
@@ -126,10 +126,14 @@ public:
 		///< Returns a string that is a comma-separated list if multi-valued.
 		///< Precondition: contains(option_letter)
 
+	void collapse( const std::string & option_name ) ;
+		///< Collapses duplicate of the given option into one if they all
+		///< have the same value, or adds a 'duplicate' error if there is
+		///< a mismatch.
 
 private:
-	void operator=( const GetOpt & ) ;
-	GetOpt( const GetOpt & ) ;
+	GetOpt( const GetOpt & ) g__eq_delete ;
+	void operator=( const GetOpt & ) g__eq_delete ;
 	void parseArgs( Arg & ) ;
 	StringArray optionsFromFile( const G::Path & ) const ;
 

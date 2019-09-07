@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 #include "gdef.h"
 #include "geventhandler.h"
 #include "gexception.h"
-#include "gdebug.h"
+#include "glog.h"
 
 GNet::EventHandler::~EventHandler()
 {
@@ -39,20 +39,20 @@ void GNet::EventHandler::writeEvent()
 
 void GNet::EventHandler::otherEvent( EventHandler::Reason reason )
 {
-	// this event is mostly relevant to windows -- the default action is
-	// to throw an exception -- for 'reason_closed' (ie. a clean shutdown())
-	// it would be reasonable to read the socket until it returns an error
-	// or zero, and/or set a close timer
+	// this event is mostly relevant to windows -- the default action
+	// is to throw an exception -- for 'reason_closed' (ie. a clean
+	// shutdown()) it would also be reasonable to read the socket
+	// until it returns an error or zero, and/or set a close timer
 
 	throw G::Exception( "socket disconnect event" , str(reason) ) ;
 }
 
 std::string GNet::EventHandler::str( EventHandler::Reason reason )
 {
-	if( reason == EventHandler::reason_closed ) return "closed" ;
-	if( reason == EventHandler::reason_down ) return "network down" ;
-	if( reason == EventHandler::reason_reset ) return "connection reset by peer" ;
-	if( reason == EventHandler::reason_abort ) return "connection aborted" ;
+	if( reason == EventHandler::Reason::closed ) return "closed" ;
+	if( reason == EventHandler::Reason::down ) return "network down" ;
+	if( reason == EventHandler::Reason::reset ) return "connection reset by peer" ;
+	if( reason == EventHandler::Reason::abort ) return "connection aborted" ;
 	return std::string() ;
 }
 

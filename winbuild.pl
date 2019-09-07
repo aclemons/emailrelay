@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ require "winbuild.pm" ;
 $AutoMakeParser::verbose = 0 ;
 
 my $project = "emailrelay" ;
-my $version = "2.0" ;
+chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.1" ) ;
 my $install_x64 = "$project-$version-w64" ;
 my $install_x86 = "$project-$version-w32" ;
 
@@ -262,7 +262,7 @@ sub create_cmake_file
 		print $fh "add_subdirectory($subdir)\n" ;
 	}
 
-	my $definitions = join( " " , "G_WIN32=1" , $m->definitions() ) ;
+	my $definitions = join( " " , "G_WINDOWS=1" , $m->definitions() ) ;
 	my $includes = join( " " , "." , ".." , $m->includes($m->top()) , '"${MBEDTLS_INCLUDE_DIRS}"' ) ;
 
 	my @libraries = $m->libraries() ;

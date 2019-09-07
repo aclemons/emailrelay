@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,52 +19,55 @@
 //
 
 #include "gdef.h"
-#include "gpop.h"
 #include "gpopserverprotocol.h"
+#include "gsaslserverfactory.h"
 #include "gstr.h"
+#include "gtest.h"
 #include "gbase64.h"
 #include "gassert.h"
 #include "glog.h"
 #include <sstream>
 
-GPop::ServerProtocol::ServerProtocol( Sender & sender , Security & security , Store & store , const Secrets & secrets ,
-	const Text & text , GNet::Address peer_address , Config ) :
+GPop::ServerProtocol::ServerProtocol( Sender & sender , Security & security , Store & store ,
+	const GAuth::SaslServerSecrets & server_secrets , const std::string & sasl_server_config ,
+	const Text & text , GNet::Address peer_address , const Config & ) :
 		m_text(text) ,
 		m_sender(sender) ,
 		m_security(security) ,
 		m_store(store) ,
 		m_store_lock(m_store) ,
-		m_secrets(secrets) ,
-		m_auth(m_secrets) ,
+		m_sasl_server(GAuth::SaslServerFactory::newSaslServer(server_secrets,sasl_server_config,true)) ,
 		m_peer_address(peer_address) ,
-		m_fsm(sStart,sEnd,s_Same,s_Any) ,
+		m_fsm(State::sStart,State::sEnd,State::s_Same,State::s_Any) ,
 		m_body_limit(-1L) ,
 		m_in_body(false) ,
-		m_secure(false)
+		m_secure(false) ,
+		m_sasl_server_init_apop(false)
 {
 	// (dont send anything to the peer from this ctor -- the Sender object is not fuly constructed)
 
-	m_fsm.addTransition( eStat , sActive , sActive , &GPop::ServerProtocol::doStat ) ;
-	m_fsm.addTransition( eList , sActive , sActive , &GPop::ServerProtocol::doList ) ;
-	m_fsm.addTransition( eRetr , sActive , sData , &GPop::ServerProtocol::doRetr , sActive ) ;
-	m_fsm.addTransition( eTop , sActive , sData , &GPop::ServerProtocol::doTop , sActive ) ;
-	m_fsm.addTransition( eDele , sActive , sActive , &GPop::ServerProtocol::doDele ) ;
-	m_fsm.addTransition( eNoop , sActive , sActive , &GPop::ServerProtocol::doNoop ) ;
-	m_fsm.addTransition( eRset , sActive , sActive , &GPop::ServerProtocol::doRset ) ;
-	m_fsm.addTransition( eUidl , sActive , sActive , &GPop::ServerProtocol::doUidl ) ;
-	m_fsm.addTransition( eSent , sData , sActive , &GPop::ServerProtocol::doNothing ) ;
-	m_fsm.addTransition( eUser , sStart , sStart , &GPop::ServerProtocol::doUser ) ;
-	m_fsm.addTransition( ePass , sStart , sActive , &GPop::ServerProtocol::doPass , sStart ) ;
-	m_fsm.addTransition( eApop , sStart , sActive , &GPop::ServerProtocol::doApop , sStart ) ;
-	m_fsm.addTransition( eQuit , sStart , sEnd , &GPop::ServerProtocol::doQuitEarly ) ;
-	m_fsm.addTransition( eCapa , sStart , sStart , &GPop::ServerProtocol::doCapa ) ;
-	m_fsm.addTransition( eCapa , sActive , sActive , &GPop::ServerProtocol::doCapa ) ;
+	m_fsm.addTransition( Event::eStat , State::sActive , State::sActive , &GPop::ServerProtocol::doStat ) ;
+	m_fsm.addTransition( Event::eList , State::sActive , State::sActive , &GPop::ServerProtocol::doList ) ;
+	m_fsm.addTransition( Event::eRetr , State::sActive , State::sData , &GPop::ServerProtocol::doRetr , State::sActive ) ;
+	m_fsm.addTransition( Event::eTop , State::sActive , State::sData , &GPop::ServerProtocol::doTop , State::sActive ) ;
+	m_fsm.addTransition( Event::eDele , State::sActive , State::sActive , &GPop::ServerProtocol::doDele ) ;
+	m_fsm.addTransition( Event::eNoop , State::sActive , State::sActive , &GPop::ServerProtocol::doNoop ) ;
+	m_fsm.addTransition( Event::eRset , State::sActive , State::sActive , &GPop::ServerProtocol::doRset ) ;
+	m_fsm.addTransition( Event::eUidl , State::sActive , State::sActive , &GPop::ServerProtocol::doUidl ) ;
+	m_fsm.addTransition( Event::eSent , State::sData , State::sActive , &GPop::ServerProtocol::doNothing ) ;
+	m_fsm.addTransition( Event::eUser , State::sStart , State::sStart , &GPop::ServerProtocol::doUser ) ;
+	m_fsm.addTransition( Event::ePass , State::sStart , State::sActive , &GPop::ServerProtocol::doPass , State::sStart ) ;
+	m_fsm.addTransition( Event::eApop , State::sStart , State::sActive , &GPop::ServerProtocol::doApop , State::sStart ) ;
+	m_fsm.addTransition( Event::eQuit , State::sStart , State::sEnd , &GPop::ServerProtocol::doQuitEarly ) ;
+	m_fsm.addTransition( Event::eCapa , State::sStart , State::sStart , &GPop::ServerProtocol::doCapa ) ;
+	m_fsm.addTransition( Event::eCapa , State::sActive , State::sActive , &GPop::ServerProtocol::doCapa ) ;
 	if( m_security.securityEnabled() )
-	m_fsm.addTransition( eStls , sStart , sStart , &GPop::ServerProtocol::doStls , sStart ) ;
-	m_fsm.addTransition( eAuth , sStart , sAuth , &GPop::ServerProtocol::doAuth , sStart ) ;
-	m_fsm.addTransition( eAuthData , sAuth , sActive , &GPop::ServerProtocol::doAuthData , sStart ) ;
-	m_fsm.addTransition( eCapa , sActive , sActive , &GPop::ServerProtocol::doCapa ) ;
-	m_fsm.addTransition( eQuit , sActive , sEnd , &GPop::ServerProtocol::doQuit ) ;
+	m_fsm.addTransition( Event::eStls , State::sStart , State::sStart , &GPop::ServerProtocol::doStls , State::sStart ) ;
+	m_fsm.addTransition( Event::eAuth , State::sStart , State::sAuth , &GPop::ServerProtocol::doAuth , State::sStart ) ;
+	m_fsm.addTransition( Event::eAuthData , State::sAuth , State::sAuth , &GPop::ServerProtocol::doAuthData , State::sStart ) ;
+	m_fsm.addTransition( Event::eAuthComplete , State::sAuth , State::sActive , &GPop::ServerProtocol::doAuthComplete ) ;
+	m_fsm.addTransition( Event::eCapa , State::sActive , State::sActive , &GPop::ServerProtocol::doCapa ) ;
+	m_fsm.addTransition( Event::eQuit , State::sActive , State::sEnd , &GPop::ServerProtocol::doQuit ) ;
 }
 
 void GPop::ServerProtocol::init()
@@ -72,18 +75,18 @@ void GPop::ServerProtocol::init()
 	sendInit() ;
 }
 
-GPop::ServerProtocol::~ServerProtocol()
-{
-}
-
 void GPop::ServerProtocol::sendInit()
 {
 	std::string greeting = std::string() + "+OK " + m_text.greeting() ;
-	std::string apop_challenge = m_auth.challenge() ;
-	if( ! apop_challenge.empty() )
+	if( m_sasl_server->active() && m_sasl_server->init("APOP") )
 	{
-		greeting.append( " " ) ;
-		greeting.append( apop_challenge ) ;
+		m_sasl_server_init_apop = true ;
+		std::string apop_challenge = m_sasl_server->initialChallenge() ;
+		if( ! apop_challenge.empty() )
+		{
+			greeting.append( " " ) ;
+			greeting.append( apop_challenge ) ;
+		}
 	}
 	send( greeting ) ;
 }
@@ -98,7 +101,7 @@ void GPop::ServerProtocol::sendError( const std::string & more )
 	if( more.empty() )
 		sendError() ;
 	else
-		send( std::string() + "-ERR " + more ) ;
+		send( "-ERR " + more ) ;
 }
 
 void GPop::ServerProtocol::sendError()
@@ -109,26 +112,29 @@ void GPop::ServerProtocol::sendError()
 void GPop::ServerProtocol::apply( const std::string & line )
 {
 	// decode the event
-	Event event = m_fsm.state() == sAuth ? eAuthData : commandEvent(commandWord(line)) ;
+	Event event = m_fsm.state() == State::sAuth ? Event::eAuthData : commandEvent(commandWord(line)) ;
 
 	// log the input
 	std::string log_text = G::Str::printable(line) ;
-	if( event == ePass )
+	if( event == Event::ePass )
 		log_text = (commandPart(line,0U)+" [password not logged]") ;
-	if( event == eAuthData )
-		log_text = ("[password not logged]") ;
-	if( event == eAuth && !commandPart(line,1U).empty() )
+	if( event == Event::eAuthData || event == Event::eAuthComplete )
+		log_text = ("[authentication response not logged]") ;
+	if( event == Event::eAuth && !commandPart(line,1U).empty() )
 		log_text = commandPart(line,0U) + " " + commandPart(line,1U) ;
 	G_LOG( "GPop::ServerProtocol: rx<<: \"" << log_text << "\"" ) ;
 
 	// apply the event to the state machine
 	State new_state = m_fsm.apply( *this , event , line ) ;
-	const bool protocol_error = new_state == s_Any ;
+	const bool protocol_error = new_state == State::s_Any ;
 	if( protocol_error )
+	{
+		G_DEBUG( "GPop::ServerProtocol::apply: protocol error: " << static_cast<int>(event) << " " << static_cast<int>(m_fsm.state()) ) ;
 		sendError() ;
+	}
 
 	// squirt data down the pipe if appropriate
-	if( new_state == sData )
+	if( new_state == State::sData )
 		sendContent() ;
 }
 
@@ -147,14 +153,17 @@ void GPop::ServerProtocol::sendContent()
 	{
 		G_LOG( "GPop::ServerProtocol: tx>>: ." ) ;
 		m_content.reset() ; // free up resources
-		m_fsm.apply( *this , eSent , "" ) ; // sData -> sActive
+		m_fsm.apply( *this , Event::eSent , "" ) ; // State::sData -> State::sActive
 	}
 }
 
 void GPop::ServerProtocol::resume()
 {
+	// flow control is not generally an issue because we always send() a
+	// complete protocol response in one go -- however, message content
+	// is sent in chunks so the resume() has to send the next bit
 	G_DEBUG( "GPop::ServerProtocol::resume: flow control released" ) ;
-	if( m_fsm.state() == sData )
+	if( m_fsm.state() == State::sData )
 		sendContent() ;
 }
 
@@ -233,36 +242,36 @@ std::string GPop::ServerProtocol::commandParameter( const std::string & line_in 
 
 GPop::ServerProtocol::Event GPop::ServerProtocol::commandEvent( const std::string & command ) const
 {
-	if( command == "QUIT" ) return eQuit ;
-	if( command == "STAT" ) return eStat ;
-	if( command == "LIST" ) return eList ;
-	if( command == "RETR" ) return eRetr ;
-	if( command == "DELE" ) return eDele ;
-	if( command == "NOOP" ) return eNoop ;
-	if( command == "RSET" ) return eRset ;
+	if( command == "QUIT" ) return Event::eQuit ;
+	if( command == "STAT" ) return Event::eStat ;
+	if( command == "LIST" ) return Event::eList ;
+	if( command == "RETR" ) return Event::eRetr ;
+	if( command == "DELE" ) return Event::eDele ;
+	if( command == "NOOP" ) return Event::eNoop ;
+	if( command == "RSET" ) return Event::eRset ;
 	//
-	if( command == "TOP" ) return eTop ;
-	if( command == "UIDL" ) return eUidl ;
-	if( command == "USER" ) return eUser ;
-	if( command == "PASS" ) return ePass ;
-	if( command == "APOP" ) return eApop ;
-	if( command == "AUTH" ) return eAuth ;
-	if( command == "CAPA" ) return eCapa ;
-	if( command == "STLS" ) return eStls ;
+	if( command == "TOP" ) return Event::eTop ;
+	if( command == "UIDL" ) return Event::eUidl ;
+	if( command == "USER" ) return Event::eUser ;
+	if( command == "PASS" ) return Event::ePass ;
+	if( command == "APOP" ) return Event::eApop ;
+	if( command == "AUTH" ) return Event::eAuth ;
+	if( command == "CAPA" ) return Event::eCapa ;
+	if( command == "STLS" ) return Event::eStls ;
 
-	return eUnknown ;
+	return Event::eUnknown ;
 }
 
 void GPop::ServerProtocol::doQuitEarly( const std::string & , bool & )
 {
-	send( std::string() + "+OK " + m_text.quit() ) ;
+	send( "+OK " + m_text.quit() ) ;
 	throw ProtocolDone() ;
 }
 
 void GPop::ServerProtocol::doQuit( const std::string & , bool & )
 {
 	m_store_lock.commit() ;
-	send( std::string() + "+OK " + m_text.quit() ) ;
+	send( "+OK " + m_text.quit() ) ;
 	throw ProtocolDone() ;
 }
 
@@ -389,15 +398,13 @@ void GPop::ServerProtocol::doAuth( const std::string & line , bool & ok )
 
 	if( mechanism.empty() )
 	{
-		// completely non-standard behaviour, but required by some clients
-		ok = false ; // dont change state
-		std::string list = m_auth.mechanisms() ;
+		// non-standard, but some clients expect a list of mechanisms
+		ok = false ; // => stay in start state
+		std::string list = mechanisms() ;
 		G::Str::replaceAll(list," ",crlf()) ;
-		send( "+OK" ) ;
-		send( list ) ;
-		send( "." ) ;
+		send( "+OK" + crlf() + list + crlf() + "." ) ;
 	}
-	else if( m_auth.sensitive() && ! m_secure )
+	else if( m_sasl_server->requiresEncryption() && ! m_secure )
 	{
 		// reject authentication over an unencrypted transport
 		// if authentication is sensitive
@@ -408,55 +415,68 @@ void GPop::ServerProtocol::doAuth( const std::string & line , bool & ok )
 	{
 		std::string initial_response = commandParameter(line,2) ;
 		if( initial_response == "=" )
-			initial_response = std::string() ; // RFC-5034
+			initial_response.clear() ; // RFC-5034
 
-		// reject the LOGIN mechanism here since we did not avertise it
-		// and we only want a one-step challenge-response dialogue
-
-		bool supported = mechanism != "LOGIN" && m_auth.init( mechanism ) ;
-		if( !supported )
+		m_sasl_server_init_apop = false ;
+		if( ! m_sasl_server->init( mechanism ) )
 		{
 			ok = false ;
 			sendError( "invalid mechanism" ) ;
 		}
-		else if( m_auth.mustChallenge() && !initial_response.empty() )
+		else if( m_sasl_server->mustChallenge() && !initial_response.empty() )
 		{
 			ok = false ;
 			sendError( "invalid initial response" ) ;
 		}
 		else if( !initial_response.empty() )
 		{
-			m_fsm.apply( *this , eAuthData , initial_response ) ;
+			m_fsm.apply( *this , Event::eAuthData , initial_response ) ;
 		}
 		else
 		{
-			std::string initial_challenge = m_auth.challenge() ;
-			send( std::string() + "+ " + G::Base64::encode(initial_challenge) ) ;
+			std::string initial_challenge = m_sasl_server->initialChallenge() ;
+			send( "+ " + G::Base64::encode(initial_challenge) ) ;
 		}
 	}
 }
 
 void GPop::ServerProtocol::doAuthData( const std::string & line , bool & ok )
 {
-	// (only one-step sasl authentication supported for now)
-	ok = m_auth.authenticated( G::Base64::decode(line) , std::string() ) ;
-	if( ok )
+	if( line == "*" )
 	{
-		sendOk() ;
-		m_user = m_auth.id() ;
-		lockStore() ;
+		ok = false ;
+		sendError() ;
+		return ;
+	}
+
+	bool done = false ;
+	std::string challenge = m_sasl_server->apply( G::Base64::decode(line) , done ) ;
+	if( done && m_sasl_server->authenticated() )
+	{
+		m_fsm.apply( *this , Event::eAuthComplete , "" ) ;
+	}
+	else if( done )
+	{
+		ok = false ; // => start
+		sendError() ;
 	}
 	else
 	{
-		sendError() ;
+		send( "+ " + G::Base64::encode(challenge) ) ;
 	}
+}
+
+void GPop::ServerProtocol::doAuthComplete( const std::string & , bool & )
+{
+	G_LOG_S( "GPop::ServerProtocol: pop authentication of " << m_sasl_server->id() << " connected from " << m_peer_address.displayString() ) ;
+	m_user = m_sasl_server->id() ;
+	lockStore() ;
+	sendOk() ;
 }
 
 void GPop::ServerProtocol::lockStore()
 {
 	m_store_lock.lock( m_user ) ;
-	G_LOG_S( "GPop::ServerProtocol: pop authentication of " << m_user
-		<< " connected from " << m_peer_address.displayString() ) ;
 }
 
 void GPop::ServerProtocol::doStls( const std::string & , bool & )
@@ -474,45 +494,38 @@ void GPop::ServerProtocol::secure()
 
 bool GPop::ServerProtocol::mechanismsIncludePlain() const
 {
-	return m_auth.valid() && m_auth.mechanisms().find("PLAIN") != std::string::npos ;
+	return m_sasl_server->active() && mechanisms().find("PLAIN") != std::string::npos ;
 }
 
-std::string GPop::ServerProtocol::mechanismsWithoutLogin() const
+std::string GPop::ServerProtocol::mechanisms() const
 {
-	std::string result ;
-	if( m_auth.valid() )
-	{
-		result = m_auth.mechanisms() ;
-		G::Str::replace( result , "LOGIN" , "" ) ;
-		result = G::Str::trimmed( G::Str::unique(result) , G::Str::ws() ) ;
-	}
-	return result ;
+	if( G::Test::enabled("pop-server-sasl-plain") ) return "PLAIN" ;
+	return m_sasl_server->active() ? m_sasl_server->mechanisms(' ') : std::string() ;
 }
 
 void GPop::ServerProtocol::doCapa( const std::string & , bool & )
 {
-	send( std::string() + "+OK " + m_text.capa() ) ;
+	std::ostringstream ss ;
+	ss << "+OK " << m_text.capa() << crlf() ;
 
 	// USER/PASS POP3 authentication uses the PLAIN SASL mechanism
 	// so only advertise it if it is available
 	if( mechanismsIncludePlain() )
-		send( "USER" ) ;
+		ss << "USER" << crlf() ;
 
-	send( "CAPA" ) ;
-	send( "TOP" ) ;
-	send( "UIDL" ) ;
+	ss
+		<< "CAPA" << crlf()
+		<< "TOP" << crlf()
+		<< "UIDL" << crlf() ;
 
 	if( m_security.securityEnabled() )
-		send( "STLS" ) ;
+		ss << "STLS" << crlf() ;
 
-	// don't advertise LOGIN since we cannot do multi-challenge
-	// mechanisms and USER/PASS provides the same functionality
-	//
-	std::string mechanisms = std::string(1U,' ') + mechanismsWithoutLogin() ;
-	if( mechanisms.length() > 1U )
-		send( std::string() + "SASL" + mechanisms ) ;
+	if( !mechanisms().empty() )
+		ss << "SASL " << mechanisms() << crlf() ;
 
-	send( "." ) ;
+	ss << "." ;
+	send( ss.str() ) ;
 }
 
 void GPop::ServerProtocol::doUser( const std::string & line , bool & )
@@ -520,7 +533,7 @@ void GPop::ServerProtocol::doUser( const std::string & line , bool & )
 	if( mechanismsIncludePlain() )
 	{
 		m_user = commandParameter(line) ;
-		send( std::string() + "+OK " + m_text.user(commandParameter(line)) ) ;
+		send( "+OK " + m_text.user(commandParameter(line)) ) ;
 	}
 	else
 	{
@@ -530,34 +543,52 @@ void GPop::ServerProtocol::doUser( const std::string & line , bool & )
 
 void GPop::ServerProtocol::doPass( const std::string & line , bool & ok )
 {
-	// note that USER/PASS POP3 authentication uses the PLAIN SASL mechanism
-	std::string rsp = m_user + std::string(1U,'\0') + m_user + std::string(1U,'\0') + commandParameter(line) ;
-	ok = !m_user.empty() && m_auth.valid() && m_auth.init("PLAIN") &&
-		m_auth.authenticated( rsp , std::string() ) ;
-	if( ok )
+	m_sasl_server_init_apop = false ;
+	if( !m_user.empty() && m_sasl_server->init("PLAIN") ) // (USER/PASS uses SASL PLAIN)
 	{
-		lockStore() ;
-		sendOk() ;
+		std::string rsp = m_user + std::string(1U,'\0') + m_user + std::string(1U,'\0') + commandParameter(line) ;
+		bool done = false ;
+		std::string ignore = m_sasl_server->apply( rsp , done ) ;
+		if( done && m_sasl_server->authenticated() )
+		{
+			lockStore() ;
+			sendOk() ;
+		}
+		else
+		{
+			ok = false ;
+			sendError() ;
+		}
 	}
 	else
 	{
+		ok = false ;
 		sendError() ;
 	}
 }
 
 void GPop::ServerProtocol::doApop( const std::string & line , bool & ok )
 {
-	m_user = commandParameter(line,1) ;
-	std::string rsp = m_user + " " + commandParameter(line,2) ;
-	ok = m_auth.valid() && m_auth.init("APOP") && m_auth.authenticated(rsp,std::string()) ;
-	if( ok )
+	if( m_sasl_server->active() && m_sasl_server_init_apop )
 	{
-		lockStore() ;
-		sendOk() ;
+		std::string rsp = commandParameter(line,1) + " " + commandParameter(line,2) ;
+		bool done = false ;
+		std::string ignore = m_sasl_server->apply( rsp , done ) ;
+		if( done && m_sasl_server->authenticated() )
+		{
+			m_user = m_sasl_server->id() ;
+			lockStore() ;
+			sendOk() ;
+		}
+		else
+		{
+			ok = false ;
+			sendError() ;
+		}
 	}
 	else
 	{
-		m_user = std::string() ;
+		ok = false ;
 		sendError() ;
 	}
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ namespace G
 ///
 /// Usage:
 /// \code
-///	G::Log(G::Log::s_LogSummary,__FILE__,__LINE__) << a << b ;
+///	G::Log(G::Log::Severity::s_LogSummary,__FILE__,__LINE__) << a << b ;
 /// \endcode
 /// or
 /// \code
@@ -48,7 +48,7 @@ namespace G
 class G::Log
 {
 public:
-	enum Severity { s_LogVerbose , s_LogSummary , s_Debug , s_Warning , s_Error , s_Assertion } ;
+	g__enum(Severity) { s_LogVerbose , s_LogSummary , s_Debug , s_Warning , s_Error , s_Assertion } ; g__enum_end(Severity)
 
 	class Line /// A class for adding line number information to the Log output.
 		{ public: const char * m_file ; int m_line ; Line( const char *file , int line ) : m_file(file) , m_line(line) {} } ;
@@ -74,6 +74,8 @@ public:
 		///< An overload that adds a logging group name to the test.
 
 private:
+	Log( const Log & ) g__eq_delete ;
+	void operator=( const Log & ) g__eq_delete ;
 	void flush() ;
 	bool active() ;
 
@@ -85,58 +87,54 @@ private:
 	int m_line ;
 } ;
 
-/// The debug macro is for debugging during development. The log macro
-/// is used for progress logging, typically in long-lived server processes.
-/// The warning and error macros are used for error warning/error messages.
-/// In programs where logging can be disabled completely (see LogOutput)
-/// then warning/error messages should also get raised by some another
-/// independent means.
+/// The DEBUG macro is for debugging during development. The LOG macro
+/// generates informational logging in verbose mode only, while the
+/// 'summary' macro LOG_S generates informational logging even when not
+/// verbose.  The warning and error macros are used for error warning/error
+/// messages, but in programs where logging can be disabled completely (see
+/// LogOutput) error conditions should be made visible by some other means
+/// (such as stderr).
 ///
 #define G_LOG_IMP( expr , severity ) do { if(G::Log::at(severity)) G::Log(severity,__FILE__,__LINE__) << expr ; } while(0)
 #define G_LOG_IMP_IF( cond , expr , severity ) do { if(G::Log::at(severity)&&(cond)) G::Log(severity,__FILE__,__LINE__) << expr ; } while(0)
-#define G_LOG_IMP_GROUP( grp , expr , severity ) do { if(G::Log::at(severity,grp)) G::Log(severity,__FILE__,__LINE__) << expr ; } while(0)
 #define G_LOG_IMP_ONCE( expr , severity ) do { static bool done__ = false ; if(!done__) G::Log(severity,__FILE__,__LINE__) << expr ; done__ = true ; } while(0)
 
 #if defined(G_WITH_DEBUG) || ( defined(_DEBUG) && ! defined(G_NO_DEBUG) )
-#define G_DEBUG( expr ) G_LOG_IMP( expr , G::Log::s_Debug )
-#define G_DEBUG_IF( cond , expr ) G_LOG_IMP_IF( cond , expr , G::Log::s_Debug )
-#define G_DEBUG_GROUP( group , expr ) G_LOG_IMP_GROUP( group , expr , G::Log::s_Debug )
-#define G_DEBUG_ONCE( expr ) G_LOG_IMP_ONCE( expr , G::Log::s_Debug )
+#define G_DEBUG( expr ) G_LOG_IMP( expr , G::Log::Severity::s_Debug )
+#define G_DEBUG_IF( cond , expr ) G_LOG_IMP_IF( cond , expr , G::Log::Severity::s_Debug )
+#define G_DEBUG_ONCE( expr ) G_LOG_IMP_ONCE( expr , G::Log::Severity::s_Debug )
 #else
 #define G_DEBUG( expr )
 #define G_DEBUG_IF( cond , expr )
-#define G_DEBUG_GROUP( group , expr )
 #define G_DEBUG_ONCE( group , expr )
 #endif
 
 #if ! defined(G_NO_LOG)
-#define G_LOG( expr ) G_LOG_IMP( expr , G::Log::s_LogVerbose )
-#define G_LOG_IF( cond , expr ) G_LOG_IMP_IF( cond , expr , G::Log::s_LogVerbose )
-#define G_LOG_GROUP( grp , expr ) G_LOG_IMP_GROUP( grp , expr , G::Log::s_LogVerbose )
-#define G_LOG_ONCE( expr ) G_LOG_IMP_ONCE( cond , expr , G::Log::s_LogVerbose )
+#define G_LOG( expr ) G_LOG_IMP( expr , G::Log::Severity::s_LogVerbose )
+#define G_LOG_IF( cond , expr ) G_LOG_IMP_IF( cond , expr , G::Log::Severity::s_LogVerbose )
+#define G_LOG_ONCE( expr ) G_LOG_IMP_ONCE( cond , expr , G::Log::Severity::s_LogVerbose )
 #else
 #define G_LOG( expr )
 #define G_LOG_IF( cond , expr )
-#define G_LOG_GROUP( grp , expr )
 #define G_LOG_ONCE( expr )
 #endif
 
 #if ! defined(G_NO_LOG_S)
-#define G_LOG_S( expr ) G_LOG_IMP( expr , G::Log::s_LogSummary )
+#define G_LOG_S( expr ) G_LOG_IMP( expr , G::Log::Severity::s_LogSummary )
 #else
 #define G_LOG_S( expr )
 #endif
 
 #if ! defined(G_NO_WARNING)
-#define G_WARNING( expr ) G_LOG_IMP( expr , G::Log::s_Warning )
-#define G_WARNING_ONCE( expr ) G_LOG_IMP_ONCE( expr , G::Log::s_Warning )
+#define G_WARNING( expr ) G_LOG_IMP( expr , G::Log::Severity::s_Warning )
+#define G_WARNING_ONCE( expr ) G_LOG_IMP_ONCE( expr , G::Log::Severity::s_Warning )
 #else
 #define G_WARNING( expr )
 #define G_WARNING_ONCE( expr )
 #endif
 
 #if ! defined(G_NO_ERROR)
-#define G_ERROR( expr ) G_LOG_IMP( expr , G::Log::s_Error )
+#define G_ERROR( expr ) G_LOG_IMP( expr , G::Log::Severity::s_Error )
 #else
 #define G_ERROR( expr )
 #endif

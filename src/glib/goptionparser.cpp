@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,8 +21,7 @@
 #include "gdef.h"
 #include "goptionparser.h"
 #include "gstr.h"
-#include "gassert.h"
-#include "gdebug.h"
+#include "glog.h"
 #include <algorithm>
 #include <map>
 #include <stdexcept>
@@ -30,7 +29,8 @@
 G::OptionParser::OptionParser( const Options & spec , OptionMap & values_out , StringArray & errors_out ) :
 	m_spec(spec) ,
 	m_map(values_out) ,
-	m_errors(errors_out)
+	m_errors(errors_out) ,
+	m_allow_matching_duplicates(true)
 {
 }
 
@@ -75,9 +75,9 @@ size_t G::OptionParser::parse( const StringArray & args_in , size_t start )
 			std::string::size_type pos_eq = eqPos(name) ;
 			bool has_eq = pos_eq != std::string::npos ;
 			std::string key = has_eq ? name.substr(0U,pos_eq) : name ;
-			if( has_eq && m_spec.unvalued(key) && G::Str::isPositive(eqValue(name,pos_eq)) ) // "foo=yes"
+			if( has_eq && m_spec.unvalued(key) && Str::isPositive(eqValue(name,pos_eq)) ) // "foo=yes"
 				processOptionOn( key ) ;
-			else if( has_eq && m_spec.unvalued(key) && G::Str::isNegative(eqValue(name,pos_eq)) ) // "foo=no"
+			else if( has_eq && m_spec.unvalued(key) && Str::isNegative(eqValue(name,pos_eq)) ) // "foo=no"
 				processOptionOff( key ) ;
 			else if( has_eq ) // "foo=bar"
 				processOption( key , eqValue(name,pos_eq) , false ) ;
@@ -128,6 +128,8 @@ void G::OptionParser::processOption( const std::string & name , const std::strin
 		errorDubiousValue( name , value ) ;
 	else if( !m_spec.valued(name) && !value.empty() )
 		errorExtraValue( name , value ) ;
+	else if( haveSeenSame(name,value) && !m_spec.multivalued(name) && m_allow_matching_duplicates )
+		;
 	else if( haveSeen(name) && !m_spec.multivalued(name) )
 		errorDuplicate( name ) ;
 	else
@@ -143,6 +145,8 @@ void G::OptionParser::processOptionOn( char c )
 		errorNoValue( c ) ;
 	else if( haveSeenOff(name) )
 		errorConflict( name ) ;
+	else if( haveSeenOn(name) && m_allow_matching_duplicates )
+		;
 	else
 		m_map.insert( std::make_pair(name,OptionValue::on()) ) ;
 }
@@ -154,6 +158,8 @@ void G::OptionParser::processOption( char c , const std::string & value )
 		errorUnknownOption( c ) ;
 	else if( !m_spec.valued(name) && !value.empty() )
 		errorExtraValue( name , value ) ;
+	else if( haveSeenSame(name,value) && !m_spec.multivalued(c) && m_allow_matching_duplicates )
+		;
 	else if( haveSeen(name) && !m_spec.multivalued(c) )
 		errorDuplicate( c ) ;
 	else
@@ -190,69 +196,75 @@ bool G::OptionParser::isAnOptionSet( const std::string & arg )
 
 void G::OptionParser::errorDubiousValue( const std::string & name , const std::string & value )
 {
-	m_errors.push_back( std::string("use of \"--")+name+" "+value+"\" is probably a mistake, or try \"--"+name+"="+value+"\" instead" ) ;
+	m_errors.push_back( "use of \"--"+name+" "+value+"\" is probably a mistake, or try \"--"+name+"="+value+"\" instead" ) ;
 }
 
 void G::OptionParser::errorDuplicate( char c )
 {
-	m_errors.push_back( std::string("duplicate use of \"-") + std::string(1U,c) + "\"" ) ;
+	m_errors.push_back( "duplicate use of \"-" + std::string(1U,c) + "\"" ) ;
 }
 
 void G::OptionParser::errorDuplicate( const std::string & name )
 {
-	m_errors.push_back( std::string("duplicate use of \"--") + name + "\"" ) ;
+	m_errors.push_back( "duplicate use of \"--" + name + "\"" ) ;
 }
 
 void G::OptionParser::errorExtraValue( char c , const std::string & )
 {
-	m_errors.push_back( std::string("cannot give a value with \"-") + std::string(1U,c) + "\"" ) ;
+	m_errors.push_back( "cannot give a value with \"-" + std::string(1U,c) + "\"" ) ;
 }
 
 void G::OptionParser::errorExtraValue( const std::string & name , const std::string & value )
 {
-	m_errors.push_back( std::string("cannot give a value with \"--") + name + "\" (" + value + ")" ) ;
+	m_errors.push_back( "cannot give a value with \"--" + name + "\" (" + value + ")" ) ;
 }
 
 void G::OptionParser::errorNoValue( char c )
 {
-	m_errors.push_back( std::string("no value supplied for -") + std::string(1U,c) ) ;
+	m_errors.push_back( "no value supplied for -" + std::string(1U,c) ) ;
 }
 
 void G::OptionParser::errorNoValue( const std::string & name )
 {
-	m_errors.push_back( std::string("no value supplied for \"--") + name + "\"" ) ;
+	m_errors.push_back( "no value supplied for \"--" + name + "\"" ) ;
 }
 
 void G::OptionParser::errorUnknownOption( char c )
 {
-	m_errors.push_back( std::string("invalid option: \"-") + std::string(1U,c) + "\"" ) ;
+	m_errors.push_back( "invalid option: \"-" + std::string(1U,c) + "\"" ) ;
 }
 
 void G::OptionParser::errorUnknownOption( const std::string & name )
 {
-	m_errors.push_back( std::string("invalid option: \"--") + name + "\"" ) ;
+	m_errors.push_back( "invalid option: \"--" + name + "\"" ) ;
 }
 
 void G::OptionParser::errorConflict( const std::string & name )
 {
-	m_errors.push_back( std::string("conflicting values: \"--") + name + "\"" ) ;
+	m_errors.push_back( "conflicting values: \"--" + name + "\"" ) ;
 }
 
 bool G::OptionParser::haveSeenOn( const std::string & name ) const
 {
 	OptionMap::const_iterator p = m_map.find( name ) ;
-	return p != m_map.end() && !(*p).second.is_off() ;
+	return p != m_map.end() && !(*p).second.isOff() ;
 }
 
 bool G::OptionParser::haveSeenOff( const std::string & name ) const
 {
 	OptionMap::const_iterator p = m_map.find( name ) ;
-	return p != m_map.end() && (*p).second.is_off() ;
+	return p != m_map.end() && (*p).second.isOff() ;
 }
 
 bool G::OptionParser::haveSeen( const std::string & name ) const
 {
 	return m_map.find(name) != m_map.end() ;
+}
+
+bool G::OptionParser::haveSeenSame( const std::string & name , const std::string & value ) const
+{
+	OptionMap::const_iterator p = m_map.find( name ) ;
+	return p != m_map.end() && (*p).second.value() == value ;
 }
 
 /// \file goptionparser.cpp

@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -15,35 +15,13 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-if GCONFIG_WINDOWS
- OS_SOURCES=gpopsecrets_win32.cpp
- OS_SOURCES_EXTRA_DIST=gpopsecrets_unix.cpp
-else
- OS_SOURCES=gpopsecrets_unix.cpp
- OS_SOURCES_EXTRA_DIST=gpopsecrets_win32.cpp
-endif
-
 POP_SOURCES= \
-	$(OS_SOURCES) \
-	gpopauth.cpp \
-	gpopauth.h \
-	gpop.h \
-	gpopsecrets.cpp \
-	gpopsecrets.h \
 	gpopserver.cpp \
 	gpopserver.h \
 	gpopstore.cpp \
 	gpopstore.h \
 	gpopserverprotocol.cpp \
 	gpopserverprotocol.h
-
-POP_EXTRA_DIST = \
-	$(OS_SOURCES_EXTRA_DIST) \
-	gpop_disabled.cpp
-
-EXTRA_DIST=\
-	$(POP_EXTRA_DIST) \
-	gpopsecrets_win32.cpp
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \

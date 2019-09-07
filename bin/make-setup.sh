@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,14 +50,18 @@ fi
 echo `basename $0`: running make install into $payload
 payload_path="`cd $payload && pwd`"
 ( cd ../.. && make install GCONFIG_HAVE_DOXYGEN=no DESTDIR=$payload_path ) > /dev/null 2>&1
-rm -rf $payload/usr/share/doc/emailrelay/doxygen
 
-# check the "./configure" was done by "bin/configure-fhs.sh" (even on a mac)
+# check the "./configure" was done by "bin/configure.sh" for FHS compliance
 if test ! -d "$payload/usr/lib/emailrelay"
 then
 	echo `basename $0`: cannot see expected directories: configure with \"configure.sh\" >&2
 	exit 1
 fi
+
+# clean up the "make install" output
+rm -f $payload/etc/emailrelay.conf.makeinstall 2>/dev/null
+rm -f $payload/usr/sbin/emailrelay-gui
+rm -rf $payload/usr/share/doc/emailrelay/doxygen
 
 # add the icon
 cp "$icon" $payload/usr/lib/emailrelay/ 2>/dev/null
@@ -67,7 +71,7 @@ cat <<EOF >$payload/payload.cfg
 etc/emailrelay.conf=%dir-config%/emailrelay.conf
 etc/emailrelay.conf.template=%dir-config%/emailrelay.conf.template
 etc/emailrelay.auth.template=%dir-config%/emailrelay.auth.template
-etc/init.d/emailrelay=%dir-install%/lib/emailrelay/emailrelay-startstop.sh
+etc/init.d/emailrelay=%dir-config%/init.d/emailrelay
 usr/lib/=%dir-install%/lib/
 usr/share/=%dir-install%/share/
 usr/sbin/=%dir-install%/sbin/

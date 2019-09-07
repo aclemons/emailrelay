@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,7 +21,15 @@
 #include "gdef.h"
 #include "gtime.h"
 #include "gdatetime.h"
-#include "gassert.h"
+#include <sstream>
+#include <algorithm>
+
+G::Time::Time( int hh , int mm , int ss ) :
+	m_hh(std::min(23,std::max(0,hh))) ,
+	m_mm(std::min(59,std::max(0,mm))) ,
+	m_ss(std::min((hh==23&&mm==59)?60:59,std::max(0,ss)))
+{
+}
 
 G::Time::Time( const G::DateTime::BrokenDownTime & tm )
 {
@@ -32,7 +40,7 @@ G::Time::Time( const G::DateTime::BrokenDownTime & tm )
 
 G::Time::Time()
 {
-	G::DateTime::BrokenDownTime tm = G::DateTime::utc( G::DateTime::now() ) ;
+	DateTime::BrokenDownTime tm = DateTime::utc( DateTime::now() ) ;
 	m_hh = tm.tm_hour ;
 	m_mm = tm.tm_min ;
 	m_ss = tm.tm_sec ;
@@ -40,7 +48,7 @@ G::Time::Time()
 
 G::Time::Time( G::EpochTime t )
 {
-	G::DateTime::BrokenDownTime tm = G::DateTime::utc( t ) ;
+	DateTime::BrokenDownTime tm = DateTime::utc( t ) ;
 	m_hh = tm.tm_hour ;
 	m_mm = tm.tm_min ;
 	m_ss = tm.tm_sec ;
@@ -48,7 +56,7 @@ G::Time::Time( G::EpochTime t )
 
 G::Time::Time( const LocalTime & )
 {
-	G::DateTime::BrokenDownTime tm = G::DateTime::local( G::DateTime::now() ) ;
+	DateTime::BrokenDownTime tm = DateTime::local( DateTime::now() ) ;
 	m_hh = tm.tm_hour ;
 	m_mm = tm.tm_min ;
 	m_ss = tm.tm_sec ;
@@ -56,7 +64,7 @@ G::Time::Time( const LocalTime & )
 
 G::Time::Time( G::EpochTime t , const LocalTime & )
 {
-	G::DateTime::BrokenDownTime tm = G::DateTime::local( t ) ;
+	DateTime::BrokenDownTime tm = DateTime::local( t ) ;
 	m_hh = tm.tm_hour ;
 	m_mm = tm.tm_min ;
 	m_ss = tm.tm_sec ;
@@ -98,6 +106,34 @@ std::string G::Time::ss() const
 	std::ostringstream ss ;
 	ss << (m_ss/10) << (m_ss%10) ;
 	return ss.str() ;
+}
+
+unsigned int G::Time::value() const
+{
+	return
+		static_cast<unsigned int>(std::max(0,std::min(23,m_hh))) * 3600U +
+		static_cast<unsigned int>(std::max(0,std::min(59,m_mm))) * 60U +
+		static_cast<unsigned int>(std::max(0,std::min(59,m_ss))) ; // ignore leap seconds here
+}
+
+G::Time G::Time::at( unsigned int s )
+{
+	unsigned int hh = s / 3600U ;
+	unsigned int mm_ss = s - (hh*3600U) ;
+	return Time(
+		std::max(0,std::min(static_cast<int>(hh),23)) ,
+		std::max(0,std::min(static_cast<int>(mm_ss/60U),59)) ,
+		std::max(0,std::min(static_cast<int>(mm_ss%60U),59)) ) ;
+}
+
+bool G::Time::operator==( const Time & other ) const
+{
+	return m_hh == other.m_hh && m_mm == other.m_mm && m_ss == other.m_ss ;
+}
+
+bool G::Time::operator!=( const Time & other ) const
+{
+	return !(*this==other) ;
 }
 
 

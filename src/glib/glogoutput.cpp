@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,7 +29,8 @@
 #include <cstdlib>
 #include <fstream>
 
-// (note that this code cannot use any library code that might do logging)
+// (note that this code cannot use any library code that might do logging, but
+// we allow G::Environment::get() as an exception)
 
 G::LogOutput::LogOutput( const std::string & prefix , bool enabled , bool summary_log ,
 	bool verbose_log , bool debug , bool with_level , bool with_timestamp , bool strip ,
@@ -53,7 +54,6 @@ G::LogOutput::LogOutput( const std::string & prefix , bool enabled , bool summar
 	if( pthis() == nullptr )
 		pthis() = this ;
 	init() ;
-	groups( G::Environment::get("G_LOG_GROUPS","") ) ;
 }
 
 G::LogOutput::LogOutput( bool enabled_and_summary , bool verbose_and_debug ,
@@ -67,7 +67,7 @@ G::LogOutput::LogOutput( bool enabled_and_summary , bool verbose_and_debug ,
 		m_strip(false) ,
 		m_syslog(false) ,
 		m_std_err(err(stderr_replacement)) ,
-		m_facility(User) ,
+		m_facility(SyslogFacility::User) ,
 		m_time(0) ,
 		m_timestamp(false) ,
 		m_handle(0) ,
@@ -76,7 +76,6 @@ G::LogOutput::LogOutput( bool enabled_and_summary , bool verbose_and_debug ,
 	if( pthis() == nullptr )
 		pthis() = this ;
 	init() ;
-	groups( G::Environment::get("G_LOG_GROUPS","") ) ;
 }
 
 std::ostream & G::LogOutput::err( const std::string & path_in )
@@ -107,7 +106,7 @@ G::LogOutput::~LogOutput()
 
 G::LogOutput * & G::LogOutput::pthis()
 {
-	static G::LogOutput * p = nullptr ;
+	static LogOutput * p = nullptr ;
 	return p ;
 }
 
@@ -142,37 +141,13 @@ void G::LogOutput::output( Log::Severity severity , const char * file , int line
 bool G::LogOutput::at( Log::Severity severity ) const
 {
 	bool do_output = m_enabled ;
-	if( severity == Log::s_Debug )
+	if( severity == Log::Severity::s_Debug )
 		do_output = m_enabled && m_debug ;
-	else if( severity == Log::s_LogSummary )
+	else if( severity == Log::Severity::s_LogSummary )
 		do_output = m_enabled && m_summary_log ;
-	else if( severity == Log::s_LogVerbose )
+	else if( severity == Log::Severity::s_LogVerbose )
 		do_output = m_enabled && m_verbose_log ;
 	return do_output ;
-}
-
-void G::LogOutput::groups( const std::string & list )
-{
-	if( instance() )
-	{
-		instance()->m_groups.clear() ;
-		const char sep = ',' ;
-		size_t p1 = 0U ;
-		const size_t npos = std::string::npos ;
-		for( size_t p2 = list.find(sep,p1) ; p1 < list.size() ; p1 = p2==npos?npos:(p2+1U) , p2 = list.find(sep,p1) )
-		{
-			if( p1 != p2 )
-				instance()->m_groups.insert( list.substr( p1 , p2==npos ? p2 : (p2-p1) ) ) ;
-		}
-	}
-}
-
-bool G::LogOutput::at( Log::Severity severity , const std::string & group ) const
-{
-	if( m_groups.empty() )
-		return at( severity ) ;
-	else
-		return at(severity) && ( m_groups.find("log-all") != m_groups.end() || m_groups.find("log-"+group) != m_groups.end() ) ;
 }
 
 void G::LogOutput::doOutput( Log::Severity severity , const char * /*file*/ , int /*line*/ , const std::string & text )
@@ -224,15 +199,10 @@ void G::LogOutput::doOutput( Log::Severity severity , const char * /*file*/ , in
 	}
 }
 
-void G::LogOutput::onAssert()
-{
-	// no-op
-}
-
 void G::LogOutput::appendTimestampStringTo( std::string & result )
 {
 	// use a cache to optimise away calls to localtime() and strftime()
-	G::EpochTime now = G::DateTime::now() ;
+	EpochTime now = DateTime::now() ;
 	if( m_time == 0 || m_time != now.s )
 	{
 		m_time = now.s ;
@@ -285,36 +255,31 @@ void G::LogOutput::assertion( const char * file , int line , bool test , const c
 	if( !test )
 	{
 		if( instance() )
-			instance()->doAssertion( file , line , test_string ) ;
+		{
+			instance()->rawOutput( instance()->m_std_err , Log::Severity::s_Assertion ,
+				std::string() + "Assertion error: " + fileAndLine(file,line) + test_string ) ;
+		}
 		else
+		{
 			std::cerr << "assertion error: " << file << "(" << line << "): " << test_string << std::endl ;
-		halt() ;
+		}
+		std::abort() ;
 	}
 }
 
-void G::LogOutput::doAssertion( const char * file , int line , const std::string & test_string )
+void G::LogOutput::assertion( const char * file , int line , void * test , const char * test_string )
 {
-	// forward to derived classes -- overrides may safely re-enter this
-	// method since all code in this class is re-entrant
-	onAssert() ;
-
-	rawOutput( m_std_err , Log::s_Assertion ,
-		std::string() + "Assertion error: " + fileAndLine(file,line) + test_string ) ;
-}
-
-void G::LogOutput::halt()
-{
-	std::abort() ;
+	assertion( file , line , test != nullptr , test_string ) ;
 }
 
 const char * G::LogOutput::levelString( Log::Severity s )
 {
-	if( s == Log::s_Debug ) return "debug: " ;
-	else if( s == Log::s_LogSummary ) return "info: " ;
-	else if( s == Log::s_LogVerbose ) return "info: " ;
-	else if( s == Log::s_Warning ) return "warning: " ;
-	else if( s == Log::s_Error ) return "error: " ;
-	else if( s == Log::s_Assertion ) return "fatal: " ;
+	if( s == Log::Severity::s_Debug ) return "debug: " ;
+	else if( s == Log::Severity::s_LogSummary ) return "info: " ;
+	else if( s == Log::Severity::s_LogVerbose ) return "info: " ;
+	else if( s == Log::Severity::s_Warning ) return "warning: " ;
+	else if( s == Log::Severity::s_Error ) return "error: " ;
+	else if( s == Log::Severity::s_Assertion ) return "fatal: " ;
 	return "" ;
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,17 +20,16 @@
 
 #include "gdef.h"
 #include "gssl.h"
-#include "gsmtp.h"
 #include "goptions.h"
 #include "legal.h"
 #include "configuration.h"
 #include "commandline.h"
 #include "gmessagestore.h"
-#include "gpopsecrets.h"
 #include "ggetopt.h"
+#include "gfile.h"
 #include "gtest.h"
 #include "gstr.h"
-#include "gdebug.h"
+#include "glog.h"
 
 namespace Main
 {
@@ -50,8 +49,8 @@ public:
 	~Show() ;
 
 private:
-	Show( const Show & ) ; // not implemented
-	void operator=( const Show & ) ; // not implemented
+	Show( const Show & ) g__eq_delete ;
+	void operator=( const Show & ) g__eq_delete ;
 
 private:
 	static Show * m_this ;
@@ -63,15 +62,19 @@ private:
 // ==
 
 Main::CommandLine::CommandLine( Output & output , const G::Arg & arg , const std::string & spec ,
-	const std::string & version , const std::string & build_configuration ) :
+	const std::string & version ) :
 		m_output(output) ,
 		m_version(version) ,
-		m_build_configuration(build_configuration) ,
 		m_arg(arg) ,
 		m_getopt(m_arg,spec)
 {
 	if( !m_getopt.hasErrors() && m_getopt.args().c() == 2U )
-		m_getopt.addOptionsFromFile( 1U ) ; // read argv[1] as config file
+	{
+		std::string config_file = m_getopt.args().v(1U) ;
+		if( sanityCheck( config_file ) )
+			m_getopt.addOptionsFromFile( 1U ) ;
+	}
+	m_getopt.collapse( "pid-file" ) ; // allow multiple pidfiles but only if all the same
 }
 
 Main::CommandLine::~CommandLine()
@@ -93,9 +96,21 @@ G::Arg::size_type Main::CommandLine::argc() const
 	return m_getopt.args().c() ;
 }
 
+bool Main::CommandLine::sanityCheck( const G::Path & path )
+{
+	// a simple check to reject pem files since 'server-tls' no longer takes a value
+	std::ifstream file ;
+	if( path.extension() == "pem" )
+		m_insanity = "invalid filename extension for config file: [" + path.str() + "]" ;
+	G::File::open( file , path ) ;
+	if( file.good() && G::Str::readLineFrom(file).find("---") == 0U )
+		m_insanity = "invalid file format for config file: [" + path.str() + "]" ;
+	return m_insanity.empty() ;
+}
+
 bool Main::CommandLine::hasUsageErrors() const
 {
-	return m_getopt.hasErrors() ;
+	return !m_insanity.empty() || m_getopt.hasErrors() ;
 }
 
 void Main::CommandLine::showUsage( bool e ) const
@@ -117,7 +132,10 @@ void Main::CommandLine::showUsage( bool e ) const
 void Main::CommandLine::showUsageErrors( bool e ) const
 {
 	Show show( m_output , e ) ;
-	m_getopt.showErrors( show.s() ) ;
+	if( !m_insanity.empty() )
+		show.s() << m_arg.prefix() << ": error: " << m_insanity << std::endl ;
+	else
+		m_getopt.showErrors( show.s() ) ;
 	showShortHelp( e ) ;
 }
 
@@ -217,15 +235,6 @@ void Main::CommandLine::showCopyright( bool e , const std::string & eot ) const
 	show.s() << Legal::copyright() << std::endl << eot ;
 }
 
-void Main::CommandLine::showBuildConfiguration( bool e , const std::string & eot ) const
-{
-	if( !m_build_configuration.empty() )
-	{
-		Show show( m_output , e ) ;
-		show.s() << "Build configuration [" << m_build_configuration << "]" << std::endl << eot ;
-	}
-}
-
 void Main::CommandLine::showWarranty( bool e , const std::string & eot ) const
 {
 	Show show( m_output , e ) ;
@@ -244,16 +253,10 @@ void Main::CommandLine::showSslVersion( bool e , const std::string & eot ) const
 	show.s() << "TLS library: " << GSsl::Library::ids() << std::endl << eot ;
 }
 
-void Main::CommandLine::showTestFeatures( bool e , const std::string & eot ) const
-{
-	Show show( m_output , e ) ;
-	show.s() << "Test features " << (G::Test::enabled()?"enabled":"disabled") << std::endl << eot ;
-}
-
 void Main::CommandLine::showThreading( bool e , const std::string & eot ) const
 {
 	Show show( m_output , e ) ;
-	show.s() << "Multi-threading " << (G::threading::works()?"enabled":"disabled") << std::endl << eot ;
+	show.s() << "Multi-threading: " << (G::threading::works()?"enabled":"disabled") << std::endl << eot ;
 }
 
 void Main::CommandLine::showVersion( bool e ) const
@@ -263,8 +266,6 @@ void Main::CommandLine::showVersion( bool e ) const
 	showCopyright( e , "\n" ) ;
 	if( m_getopt.contains("verbose") )
 	{
-		showBuildConfiguration( e , "\n" ) ;
-		showTestFeatures( e , "\n" ) ;
 		showThreading( e , "\n" ) ;
 		showSslVersion( e , "\n" ) ;
 	}

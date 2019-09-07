@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@
 
 std::string G::Environment::get( const std::string & name , const std::string & default_ )
 {
+	// (do no logging here)
+
 	size_t n = 0U ;
 	errno_t rc = ::getenv_s( &n , NULL , 0U , name.c_str() ) ;
 	if( n == 0U ) // rc will be ERANGE if the environment variable exists

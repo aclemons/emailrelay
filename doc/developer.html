@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML PUBLIC "%-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
  <head>
   <title>E-MailRelay Developer Guide</title>
@@ -23,7 +23,7 @@
     <p>
      E-MailRelay started life at a time when Linux had no decent package manager and
      Windows was in the grip of DLL hell. As a result, a key principle is that it
-     has no dependencies other than a decent C++ runtime. Since that time OpenSSL
+     has no dependencies other than a good C++ runtime. Since that time OpenSSL
      has been introduced as a dependency to support TLS encryption, and the optional
      configuration and installation GUI has been developed using the Qt toolkit.
     </p>
@@ -39,20 +39,20 @@
     </p>
 
     <p>
-     The header files <em class="quote">gdef.h</em> in <em class="quote">src/glib</em> is used to fix up some compiler
+     The header files <em>gdef.h</em> in <em>src/glib</em> is used to fix up some compiler
      portability issues such as missing standard types, non-standard system headers
-     etc. Conditional compilation directives (<em class="quote">#ifdef</em> etc.) are largely confined
+     etc. Conditional compilation directives (<em>#ifdef</em> etc.) are largely confined
      this file in order to improve readability.
     </p>
 
     <p>
      Windows/Unix portability is generally addressed by providing a common class
      declaration with two implementations. The implementations are put into separate
-     source files with a <em class="quote">_unix</em> or <em class="quote">_win32</em> suffix, and if necessary a 'pimple' (or
+     source files with a <em>_unix</em> or <em>_win32</em> suffix, and if necessary a 'pimple' (or
      'Bridge') pattern is used to keep the o/s-specific details out of the header.
      If only small parts of the implementation are o/s-specific then there can be
-     three source files per header. For example, <em class="quote">gsocket.cpp</em>, <em class="quote">gsocket_win32.cpp</em>
-     and <em class="quote">gsocket_unix.cpp</em> in the <em class="quote">src/gnet</em> directory.
+     three source files per header. For example, <em>gsocket.cpp</em>, <em>gsocket_win32.cpp</em>
+     and <em>gsocket_unix.cpp</em> in the <em>src/gnet</em> directory.
     </p>
 
     <p>
@@ -65,7 +65,7 @@
      This event model means that the server can handle multiple network connections
      simultaneously from a single thread, and even if multi-threading is disabled at
      build-time the only blocking occurs when external programs are executed (see
-     <em class="quote">--filter</em> and <em class="quote">--address-verifier</em>).
+     <em>--filter</em> and <em>--address-verifier</em>).
     </p>
 
     <p>
@@ -77,7 +77,7 @@
 
     <p>
      The advantages of a non-blocking event model are discussed in the well-known
-     <a class="a-href" href="http://www.kegel.com/c10k.html">C10K Problem</a> document.
+     <a href="http://www.kegel.com/c10k.html">C10K Problem</a> document.
     </p>
 
     <p>
@@ -87,34 +87,44 @@
      supporting signal multicasting, so each signal connects to no more than one
      slot.
     </p>
+
+    <p>
+     The synchronous slot/signal pattern needs some care when when the signalling
+     object gets destructed as a side-effect of raising a signal, and that situation
+     can be non-obvious precisely because of the slot/signal code decoupling. In
+     most cases signals are emitted at the end of a function and the stack unwinds
+     back to the event loop immediately afterwards, but in other situations,
+     particularly when emitting more than one signal, defensive measures are
+     required.
+    </p>
    <h2><a class="a-header" name="SH_1_5">Module structure</a></h2> <!-- index:2:SH:1:5:Module structure -->
     <p>
      The main C++ libraries in the E-MailRelay code base are as follows:
     </p>
 
     <dl>
-     <dt><em class="quote">glib</em></dt>
+     <dt><em>glib</em></dt>
       <dd>
        Low-level classes for file-system abstraction, date and time representation,
        string utility functions, logging, command line parsing etc.
       </dd>
-     <dt><em class="quote">gssl</em></dt>
+     <dt><em>gssl</em></dt>
       <dd>
        A thin layer over the third-party TLS libraries.
       </dd>
-     <dt><em class="quote">gnet</em></dt>
+     <dt><em>gnet</em></dt>
       <dd>
        Network and event-loop classes.
       </dd>
-     <dt><em class="quote">gauth</em></dt>
+     <dt><em>gauth</em></dt>
       <dd>
        Implements various authentication mechanisms.
       </dd>
-     <dt><em class="quote">gsmtp</em></dt>
+     <dt><em>gsmtp</em></dt>
       <dd>
        SMTP protocol and message-store classes.
       </dd>
-     <dt><em class="quote">gpop</em></dt>
+     <dt><em>gpop</em></dt>
       <dd>
        POP3 protocol classes.
       </dd>
@@ -124,45 +134,46 @@
     </p>
 
     <p>
-     Under Windows there is an additional library <em class="quote">win32</em> for the user interface.
+     Under Windows there is an additional library under <em>src/win32</em> for the user
+     interface implemented using the Microsoft Win32 API.
     </p>
    <h2><a class="a-header" name="SH_1_6">SMTP class structure</a></h2> <!-- index:2:SH:1:6:SMTP class structure -->
     <p>
-     The message-store functionality uses three abstract interfaces: <em class="quote">MessageStore</em>,
-     <em class="quote">NewMessage</em> and <em class="quote">StoredMessage</em>. The <em class="quote">NewMessage</em> interface is used to create
-     messages within the store, and the <em class="quote">StoredMessage</em> interface is used for
+     The message-store functionality uses three abstract interfaces: <em>MessageStore</em>,
+     <em>NewMessage</em> and <em>StoredMessage</em>. The <em>NewMessage</em> interface is used to create
+     messages within the store, and the <em>StoredMessage</em> interface is used for
      reading and extracting messages from the store. The concrete implementation
-     classes based on these interfaces are respectively <em class="quote">FileStore</em>, <em class="quote">NewFile</em> and
-     <em class="quote">StoredFile</em>.
+     classes based on these interfaces are respectively <em>FileStore</em>, <em>NewFile</em> and
+     <em>StoredFile</em>.
     </p>
 
     <p>
-     Protocol classes such as <em class="quote">GSmtp::ServerProtocol</em> receive network and timer
-     events from their container and use an abstract <em class="quote">Sender</em> interface to send
+     Protocol classes such as <em>GSmtp::ServerProtocol</em> receive network and timer
+     events from their container and use an abstract <em>Sender</em> interface to send
      network data. This means that the protocols can be independent of the network
      and event loop framework.
     </p>
 
     <p>
      The interaction between the SMTP server protocol class and the message store is
-     mediated by the <em class="quote">ProtocolMessage</em> interface. Two main implementations of this
-     interface are available: one for normal spooling (<em class="quote">ProtocolMessageStore</em>), and
-     another for immediate forwarding (<em class="quote">ProtocolMessageForward</em>). The <em class="quote">Decorator</em>
+     mediated by the <em>ProtocolMessage</em> interface. Two main implementations of this
+     interface are available: one for normal spooling (<em>ProtocolMessageStore</em>), and
+     another for immediate forwarding (<em>ProtocolMessageForward</em>). The <em>Decorator</em>
      pattern is used whereby the forwarding class uses an instance of the storage
      class to do the message storing and filtering, while adding in an instance
-     of the <em class="quote">GSmtp::Client</em> class to do the forwarding.
+     of the <em>GSmtp::Client</em> class to do the forwarding.
     </p>
 
     <p>
-     Message filtering (<em class="quote">--filter</em>) is implemented via an abstract <em class="quote">Filter</em>
+     Message filtering (<em>--filter</em>) is implemented via an abstract <em>Filter</em>
      interface. Concrete implementations are provided for doing nothing, running an
      external executable program and talking to an external network server.
     </p>
 
     <p>
      The protocol, processor and message-store interfaces are brought together by the
-     high-level <em class="quote">GSmtp::Server</em> and <em class="quote">GSmtp::Client</em> classes. Dependency injection is
-     used to create the concrete instances of the <em class="quote">ProtocolMessage</em> and <em class="quote">Filter</em>
+     high-level <em>GSmtp::Server</em> and <em>GSmtp::Client</em> classes. Dependency injection is
+     used to create the concrete instances of the <em>ProtocolMessage</em> and <em>Filter</em>
      interfaces.
     </p>
    <h2><a class="a-header" name="SH_1_7">Event handling and exceptions</a></h2> <!-- index:2:SH:1:7:Event handling and exceptions -->
@@ -176,60 +187,52 @@
     </p>
 
     <p>
-     The event loop delivers asynchronous socket events to the <em class="quote">EventHandler</em>
-     interface, timer events to the <em class="quote">TimerBase</em> interface, and 'future' events to the
-     <em class="quote">FutureEventCallback</em> interface. If any of the these event handlers throws an
-     exception then the event loop will catch it and deliver it back to an exception
-     handler through the <em class="quote">onException()</em> method of an associated <em class="quote">ExceptionHandler</em>
+     The event loop delivers asynchronous socket events to the <em>EventHandler</em>
+     interface, timer events to the <em>TimerBase</em> interface, and 'future' events to the
+     <em>FutureEventCallback</em> interface. If any of the these event handlers throws an
+     exception then the event loop catches it and delivers it back to an exception
+     handler through the <em>onException()</em> method of an associated <em>ExceptionHandler</em>
      interface. If an exception is thrown out of _this_ callback then the event loop
-     code lets it propagate back to <em class="quote">main()</em>, typically terminating the program.
+     code lets it propagate back to <em>main()</em>, typically terminating the program.
     </p>
 
     <p>
-     Every pointer to an event callback interface is associated with an
-     <em class="quote">ExceptionHandler</em>. The default <em class="quote">ExceptionHandler</em> is the <em class="quote">EventLoop</em>
-     singleton, and a call to its <em class="quote">onException()</em> method terminates the event loop.
+     However, sometimes there are objects that need to be more resilient to
+     exceptions. In particular, a network server should not terminate just because
+     one of its connections fails unexpectedly. In these cases the owning parent
+     object receives the exception notification together with a pointer that
+     identifies the child object that threw the exception (ie. the exception
+     source). This allows the parent object to absorb the exception and delete the
+     child, without the exception killing the whole server.
     </p>
 
     <p>
-     This leads to a programming model where key objects are instantiated on the
-     heap and these objects delete themselves when they receive certain events from
-     the event loop. In the <em class="quote">GNet</em> library it is the <em class="quote">ServerPeer</em> and <em class="quote">HeapClient</em>
-     classes that do this lifetime management; instances of these classes delete
-     themselves when the associated network connection goes away and they
-     implement the <em class="quote">ExceptionHandler</em> interface so that they schedule their own
-     deletion when an exception is thrown.
-    </p>
-
-    <p>
-     Special smart pointers are sometimes used for these self-deleting classes; the
-     smart pointer does not delete the contained object when it is reset, it just
-     tells the object to delete itself with a zero-length timer and then releases it
-     for garbage collection.
+     The combination of an exception handler and the optional exception source
+     pointer bound to it is known as an <em>ExceptionSink</em>.
     </p>
    <h2><a class="a-header" name="SH_1_8">Multi-threading</a></h2> <!-- index:2:SH:1:8:Multi-threading -->
     <p>
      Multi-threading can be used as a build-time option to make DNS lookup and the
      execution of helper programs asynchronous; if std::thread is available then it
-     is used in a future/promise pattern to wrap up <em class="quote">getaddrinfo()</em> and <em class="quote">waitpid()</em>
+     is used in a future/promise pattern to wrap up <em>getaddrinfo()</em> and <em>waitpid()</em>
      system calls. The shared state comprises only the parameters and return results
      from these system calls, and synchronisation back to the main thread uses the
-     event loop (see <em class="quote">GNet::FutureEvent</em>).
+     event loop (see <em>GNet::FutureEvent</em>).
     </p>
    <h2><a class="a-header" name="SH_1_9">E-MailRelay GUI</a></h2> <!-- index:2:SH:1:9:E-MailRelay GUI -->
     <p>
-     The optional GUI program <em class="quote">emailrelay-gui</em> uses the Qt toolkit for its user
+     The optional GUI program <em>emailrelay-gui</em> uses the Qt toolkit for its user
      interface components. The GUI can run as an installer or as a configuration
-     helper, depending on whether it can find an installation <em class="quote">payload</em>. Refer to
-     the comments in <em class="quote">src/gui/guimain.cpp</em> for more details.
+     helper, depending on whether it can find an installation <em>payload</em>. Refer to
+     the comments in <em>src/gui/guimain.cpp</em> for more details.
     </p>
 
     <p>
      The user interface runs as a stack of dialog-box pages with forward and back
      buttons at the bottom. Once the stack has been completed by the user then each
      page is asked to dump out its state as a set of key-value pairs (see
-     <em class="quote">src/gui/pages.cpp</em>). These key-value pairs are processed by an installer class
-     into a list of action objects (in the <em class="quote">Command</em> design pattern) and then the
+     <em>src/gui/pages.cpp</em>). These key-value pairs are processed by an installer class
+     into a list of action objects (in the <em>Command</em> design pattern) and then the
      action objects are run in turn. In order to display the progress of the
      installation each action object is run within a timer callback so that the Qt
      framework gets a chance to update the display between each one.
@@ -243,8 +246,8 @@
 
     <p>
      When run in configure mode the GUI normally ends up simply editing the
-     <em class="quote">emailrelay.conf</em> file (or <em class="quote">emailrelay-start.bat</em> on Windows) and/or the
-     <em class="quote">emailrelay.auth</em> secrets file.
+     <em>emailrelay.conf</em> file (or <em>emailrelay-start.bat</em> on Windows) and/or the
+     <em>emailrelay.auth</em> secrets file.
     </p>
 
     <p>
@@ -257,29 +260,29 @@
    <h2><a class="a-header" name="SH_1_10">Windows packaging</a></h2> <!-- index:2:SH:1:10:Windows packaging -->
     <p>
      On Windows E-MailRelay is packaged as a zip file containing the executables
-     (including the emailrelay GUI as <em class="quote">emailrelay-setup.exe</em>), documentation, and a
-     <em class="quote">payload</em> directory tree. The payload contains many of the same files all over
+     (including the emailrelay GUI as <em>emailrelay-setup.exe</em>), documentation, and a
+     <em>payload</em> directory tree. The payload contains many of the same files all over
      again, and while this duplication is not ideal it is at least straightforward.
     </p>
 
     <p>
-     The Qt tool <em class="quote">windeployqt</em> is used to add run-time dependencies, such as the
+     The Qt tool <em>windeployqt</em> is used to add run-time dependencies, such as the
      Qt DLLs.
     </p>
    <h2><a class="a-header" name="SH_1_11">Unix packaging</a></h2> <!-- index:2:SH:1:11:Unix packaging -->
     <p>
      On Unix-like operating systems it is more natural to use some sort of package
-     derived from the <em class="quote">make install</em> process rather than an installer program, so
+     derived from the <em>make install</em> process rather than an installer program, so
      the emailrelay GUI is not normally used.
     </p>
 
     <p>
-     Top-level makefile targets <em class="quote">dist</em>, <em class="quote">deb</em> and <em class="quote">rpm</em> can be used to create a
+     Top-level makefile targets <em>dist</em>, <em>deb</em> and <em>rpm</em> can be used to create a
      binary tarball, a debian package, and an RPM package respectively.
     </p>
    <h2><a class="a-header" name="SH_1_12">Source control</a></h2> <!-- index:2:SH:1:12:Source control -->
     <p>
-     The source code is stored in the SourceForge <em class="quote">svn</em> repository. A working
+     The source code is stored in the SourceForge <em>svn</em> repository. A working
      copy can be checked out as follows:
     </p>
 
@@ -288,29 +291,29 @@
       </div><!-- div-pre -->
    <h2><a class="a-header" name="SH_1_13">Compile-time features</a></h2> <!-- index:2:SH:1:13:Compile-time features -->
     <p>
-     Compile-time features can be selected with options passed to the <em class="quote">configure</em>
+     Compile-time features can be selected with options passed to the <em>configure</em>
      script. These include the following:
     </p>
 
     <ul>
-     <li>Debug-level logging (<em class="quote">--enable-debug</em>)</li>
-     <li>Configuration GUI (<em class="quote">--enable-gui</em>)</li>
-     <li>PAM support (<em class="quote">--with-pam</em>)</li>
+     <li>Debug-level logging (<em>--enable-debug</em>)</li>
+     <li>Configuration GUI (<em>--enable-gui</em>)</li>
+     <li>PAM support (<em>--with-pam</em>)</li>
     </ul>
 
     <p>
-     Use <em class="quote">./configure --help</em> to see a complete list of options and refer to
-     <em class="quote">acinclude.m4</em> for more detailed comments.
+     Use <em>./configure --help</em> to see a complete list of options and refer to
+     <em>acinclude.m4</em> for more detailed comments.
     </p>
 
 
 
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2018 Graeme Walker
+      Copyright (C) 2001-2019 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

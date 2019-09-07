@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,8 +22,7 @@
 #include "glocal.h"
 #include "ghostname.h"
 #include "gresolver.h"
-#include "gassert.h"
-#include "gdebug.h"
+#include "glog.h"
 #include <sstream>
 
 std::string GNet::Local::m_name_override ;
@@ -71,7 +70,7 @@ bool GNet::Local::isLocal( const Address & address , std::string & reason )
 		return true ;
 
 	// ipv6 is easier - no need to use dns
-	if( address.family() == Address::Family::ipv6() )
+	if( address.family() == Address::Family::ipv6 )
 		return address.isLocal( reason ) ;
 
 	// look up and cache the hostname() ipv4 addresses

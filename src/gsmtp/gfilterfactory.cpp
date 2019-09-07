@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gstr.h"
 #include "gfilterfactory.h"
 #include "gnullfilter.h"
@@ -34,32 +33,34 @@ std::string GSmtp::FilterFactory::check( const std::string & identifier )
 	return FactoryParser::check( identifier , true ) ;
 }
 
-unique_ptr<GSmtp::Filter> GSmtp::FilterFactory::newFilter( GNet::ExceptionHandler & eh ,
+unique_ptr<GSmtp::Filter> GSmtp::FilterFactory::newFilter( GNet::ExceptionSink es ,
 	bool server_side , const std::string & identifier , unsigned int timeout )
 {
 	FactoryParser::Result p = FactoryParser::parse( identifier , true ) ;
 	if( p.first.empty() )
 	{
-		return unique_ptr<GSmtp::Filter>( new NullFilter( eh , server_side ) ) ;
+		return unique_ptr<GSmtp::Filter>( new NullFilter( es , server_side ) ) ;
 	}
 	else if( p.first == "spam" )
 	{
+		// "spam:" is read-only, not-always-pass
+		// "spam-edit:" is read-write, always-pass
 		bool edit = p.third == 1 ;
 		bool read_only = !edit ;
 		bool always_pass = edit ;
-		return unique_ptr<GSmtp::Filter>( new SpamFilter( eh , server_side , p.second , read_only , always_pass , timeout , timeout ) ) ;
+		return unique_ptr<GSmtp::Filter>( new SpamFilter( es , p.second , read_only , always_pass , timeout , timeout ) ) ;
 	}
 	else if( p.first == "net" )
 	{
-		return unique_ptr<GSmtp::Filter>( new NetworkFilter( eh , server_side , p.second , timeout , timeout ) ) ;
+		return unique_ptr<GSmtp::Filter>( new NetworkFilter( es , p.second , timeout , timeout ) ) ;
 	}
 	else if( p.first == "exit" )
 	{
-		return unique_ptr<GSmtp::Filter>( new NullFilter( eh , server_side , G::Str::toUInt(p.second) ) ) ;
+		return unique_ptr<GSmtp::Filter>( new NullFilter( es , server_side , G::Str::toUInt(p.second) ) ) ;
 	}
 	else
 	{
-		return unique_ptr<GSmtp::Filter>( new ExecutableFilter( eh , server_side , p.second ) ) ;
+		return unique_ptr<GSmtp::Filter>( new ExecutableFilter( es , server_side , p.second ) ) ;
 	}
 }
 

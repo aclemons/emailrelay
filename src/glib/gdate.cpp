@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,8 @@
 
 #include "gdef.h"
 #include "gdate.h"
-#include "gdebug.h"
+#include "glog.h"
+#include "gassert.h"
 #include <ctime>
 #include <iomanip>
 #include <sstream>
@@ -37,17 +38,17 @@ int G::Date::yearLowerLimit()
 
 G::Date::Date()
 {
-	init( G::DateTime::utc(G::DateTime::now()) ) ;
+	init( DateTime::utc(DateTime::now()) ) ;
 }
 
 G::Date::Date( G::EpochTime t )
 {
-	init( G::DateTime::utc(t) ) ;
+	init( DateTime::utc(t) ) ;
 }
 
 G::Date::Date( G::EpochTime t , const LocalTime & )
 {
-	init( G::DateTime::local(t) ) ;
+	init( DateTime::local(t) ) ;
 }
 
 G::Date::Date( const G::DateTime::BrokenDownTime & tm )
@@ -57,7 +58,7 @@ G::Date::Date( const G::DateTime::BrokenDownTime & tm )
 
 G::Date::Date( const LocalTime & )
 {
-	init( G::DateTime::local(G::DateTime::now()) ) ;
+	init( DateTime::local(DateTime::now()) ) ;
 }
 
 G::Date::Date( int year , G::Date::Month month , int day_of_month )
@@ -70,11 +71,12 @@ G::Date::Date( int year , G::Date::Month month , int day_of_month )
 	G_ASSERT( day_of_month < 32 ) ;
 	m_day = day_of_month ;
 
-	G_ASSERT( month >= 1 ) ;
-	G_ASSERT( month <= 12 ) ;
-	m_month = month ;
+	G_ASSERT( static_cast<int>(month) >= 1 ) ;
+	G_ASSERT( static_cast<int>(month) <= 12 ) ;
+	m_month = static_cast<int>(month) ;
 
 	m_weekday_set = false ;
+	m_weekday = Weekday::sunday ;
 }
 
 void G::Date::init( const G::DateTime::BrokenDownTime & tm )
@@ -83,21 +85,21 @@ void G::Date::init( const G::DateTime::BrokenDownTime & tm )
 	m_month = tm.tm_mon + 1 ;
 	m_day = tm.tm_mday ;
 	m_weekday_set = false ;
-	m_weekday = sunday ;
+	m_weekday = Weekday::sunday ;
 }
 
 std::string G::Date::string( Format format ) const
 {
 	std::ostringstream ss ;
-	if( format == yyyy_mm_dd_slash )
+	if( format == Format::yyyy_mm_dd_slash )
 	{
 		ss << yyyy() << "/" << mm() << "/" << dd() ;
 	}
-	else if( format == yyyy_mm_dd )
+	else if( format == Format::yyyy_mm_dd )
 	{
 		ss << yyyy() << mm() << dd() ;
 	}
-	else if( format == mm_dd )
+	else if( format == Format::mm_dd )
 	{
 		ss << mm() << dd() ;
 	}
@@ -131,7 +133,7 @@ G::Date::Weekday G::Date::weekday() const
 {
 	if( ! m_weekday_set )
 	{
-		G::DateTime::BrokenDownTime tm ;
+		DateTime::BrokenDownTime tm ;
 		tm.tm_year = m_year - 1900 ;
 		tm.tm_mon = m_month - 1 ;
 		tm.tm_mday = m_day ;
@@ -142,7 +144,7 @@ G::Date::Weekday G::Date::weekday() const
 		tm.tm_yday = 0 ; // ignored
 		tm.tm_isdst = 0 ; // ignored
 
-		G::DateTime::BrokenDownTime out = G::DateTime::utc(G::DateTime::epochTime(tm)) ;
+		DateTime::BrokenDownTime out = DateTime::utc(DateTime::epochTime(tm)) ;
 
 		const_cast<Date*>(this)->m_weekday_set = true ;
 		const_cast<Date*>(this)->m_weekday = Weekday(out.tm_wday) ;
@@ -152,13 +154,13 @@ G::Date::Weekday G::Date::weekday() const
 
 std::string G::Date::weekdayName( bool brief ) const
 {
-	if( weekday() == sunday ) return brief ? "Sun" : "Sunday" ;
-	if( weekday() == monday ) return brief ? "Mon" : "Monday" ;
-	if( weekday() == tuesday ) return brief ? "Tue" : "Tuesday" ;
-	if( weekday() == wednesday ) return brief ? "Wed" : "Wednesday" ;
-	if( weekday() == thursday ) return brief ? "Thu" : "Thursday" ;
-	if( weekday() == friday ) return brief ? "Fri" : "Friday" ;
-	if( weekday() == saturday ) return brief ? "Sat" : "Saturday" ;
+	if( weekday() == Weekday::sunday ) return brief ? "Sun" : "Sunday" ;
+	if( weekday() == Weekday::monday ) return brief ? "Mon" : "Monday" ;
+	if( weekday() == Weekday::tuesday ) return brief ? "Tue" : "Tuesday" ;
+	if( weekday() == Weekday::wednesday ) return brief ? "Wed" : "Wednesday" ;
+	if( weekday() == Weekday::thursday ) return brief ? "Thu" : "Thursday" ;
+	if( weekday() == Weekday::friday ) return brief ? "Fri" : "Friday" ;
+	if( weekday() == Weekday::saturday ) return brief ? "Sat" : "Saturday" ;
 	return "" ;
 }
 
@@ -169,18 +171,18 @@ G::Date::Month G::Date::month() const
 
 std::string G::Date::monthName( bool brief ) const
 {
-	if( month() == january ) return brief ? "Jan" : "January" ;
-	if( month() == february ) return brief ? "Feb" : "February" ;
-	if( month() == march ) return brief ? "Mar" : "March" ;
-	if( month() == april ) return brief ? "Apr" : "April" ;
-	if( month() == may ) return brief ? "May" : "May" ;
-	if( month() == june ) return brief ? "Jun" : "June" ;
-	if( month() == july ) return brief ? "Jul" : "July" ;
-	if( month() == august ) return brief ? "Aug" : "August" ;
-	if( month() == september ) return brief ? "Sep" : "September" ;
-	if( month() == october ) return brief ? "Oct" : "October" ;
-	if( month() == november ) return brief ? "Nov" : "November" ;
-	if( month() == december ) return brief ? "Dec" : "December" ;
+	if( month() == Month::january ) return brief ? "Jan" : "January" ;
+	if( month() == Month::february ) return brief ? "Feb" : "February" ;
+	if( month() == Month::march ) return brief ? "Mar" : "March" ;
+	if( month() == Month::april ) return brief ? "Apr" : "April" ;
+	if( month() == Month::may ) return "May" ;
+	if( month() == Month::june ) return brief ? "Jun" : "June" ;
+	if( month() == Month::july ) return brief ? "Jul" : "July" ;
+	if( month() == Month::august ) return brief ? "Aug" : "August" ;
+	if( month() == Month::september ) return brief ? "Sep" : "September" ;
+	if( month() == Month::october ) return brief ? "Oct" : "October" ;
+	if( month() == Month::november ) return brief ? "Nov" : "November" ;
+	if( month() == Month::december ) return brief ? "Dec" : "December" ;
 	return "" ;
 }
 
@@ -211,10 +213,10 @@ G::Date & G::Date::operator++()
 	}
 	if( m_weekday_set )
 	{
-		if( m_weekday == saturday )
-			m_weekday = sunday ;
+		if( m_weekday == Weekday::saturday )
+			m_weekday = Weekday::sunday ;
 		else
-			m_weekday = Weekday(int(m_weekday)+1) ;
+			m_weekday = static_cast<Weekday>(static_cast<int>(m_weekday)+1) ;
 	}
 	return *this ;
 }
@@ -241,10 +243,10 @@ G::Date & G::Date::operator--()
 	}
 	if( m_weekday_set )
 	{
-		if( m_weekday == sunday )
-			m_weekday = saturday ;
+		if( m_weekday == Weekday::sunday )
+			m_weekday = Weekday::saturday ;
 		else
-			m_weekday = Weekday(int(m_weekday)-1) ;
+			m_weekday = static_cast<Weekday>(static_cast<int>(m_weekday)-1) ;
 	}
 	return *this ;
 }

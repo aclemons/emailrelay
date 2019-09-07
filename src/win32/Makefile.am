@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -48,9 +48,7 @@ libextra_a_SOURCES = \
 	gwinbase.cpp \
 	gwinbase.h \
 	gwindow.cpp \
-	gwindow.h \
-	gwindowhidden.cpp \
-	gwindowhidden.h
+	gwindow.h
 
 else
 
@@ -77,9 +75,7 @@ EXTRA_DIST = \
 	gwinbase.cpp \
 	gwinbase.h \
 	gwindow.cpp \
-	gwindow.h \
-	gwindowhidden.cpp \
-	gwindowhidden.h
+	gwindow.h
 
 libextra_a_SOURCES = empty.c
 

@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -66,8 +66,6 @@ SHARED_SOURCES = \
 	options.h
 
 OTHER_SOURCES = \
-	admin.h \
-	admin.cpp \
 	commandline.h \
 	commandline.cpp \
 	configuration.h \
@@ -88,11 +86,10 @@ MISC_EXTRA_DIST = \
 	messages.mc \
 	resource.h
 
-START_BUNDLE=E-MailRelay-Start
 if GCONFIG_MAC
  MAC_PROGS = emailrelay-start
  MAC_EXTRA_DIST =
- MAC_NOINST = $(START_BUNDLE).app
+ MAC_NOINST =
 else
  MAC_PROGS =
  MAC_EXTRA_DIST = start.cpp
@@ -246,18 +243,15 @@ install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPR
 	-chmod g+s "$(DESTDIR)$(e_spooldir)"
 	-chgrp daemon "$(DESTDIR)$(sbindir)/emailrelay-submit"
 	-chmod g+s "$(DESTDIR)$(sbindir)/emailrelay-submit"
+	-chgrp daemon "$(DESTDIR)$(e_libexecdir)/emailrelay-filter-copy"
+	-chmod g+s "$(DESTDIR)$(e_libexecdir)/emailrelay-filter-copy"
 
 install-exec-local:
 	-mkdir -p "$(DESTDIR)$(sbindir)"
-	-if test -d "$(START_BUNDLE).app" ; then cp -R "$(START_BUNDLE).app" "$(DESTDIR)$(sbindir)/" ; fi
 
 uninstall-local:
 	-rmdir "$(DESTDIR)$(e_spooldir)" 2>/dev/null
 	-rmdir "$(DESTDIR)$(e_libexecdir)" 2>/dev/null
-	-rm -rf "$(DESTDIR)$(sbindir)/$(START_BUNDLE).app"
-
-clean-local:
-	rm -rf "$(START_BUNDLE).app"
 
 MSG00001.bin messages.rc: fakemc.exe messages.mc
 	$(GCONFIG_WINDMC) $(top_srcdir)/src/main/messages.mc

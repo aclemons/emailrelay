@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,11 +22,11 @@
 #include "qt.h"
 #include "gdialog.h"
 #include "gfile.h"
-#include "gdebug.h"
+#include "glog.h"
 #include <algorithm>
 #include <stdexcept>
 
-GDialog::GDialog( bool with_help , G::Path virgin_flag_file ) :
+GDialog::GDialog( bool with_help , const G::Path & virgin_flag_file ) :
 	QDialog(nullptr) ,
 	m_first(true) ,
 	m_help_button(nullptr) ,
@@ -201,7 +201,7 @@ void GDialog::pageUpdated()
 	}
 }
 
-void GDialog::switchPage( std::string new_page_name , std::string old_page_name , bool back )
+void GDialog::switchPage( const std::string & new_page_name , const std::string & old_page_name , bool back )
 {
 	// hide and disconnect the old page
 	//

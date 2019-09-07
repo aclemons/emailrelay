@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 #include "gcontrol.h"
 #include "glog.h"
 #include "gassert.h"
-#include "gdebug.h"
 #include "gdc.h"
 #include <commctrl.h>
 #include <prsht.h> // PropertySheet
@@ -314,11 +313,14 @@ void GGui::ListView::set( const G::StringArray & list , unsigned int columns , u
 		column.fmt = LVCFMT_LEFT ;
 		sendMessage( LVM_INSERTCOLUMN , c , reinterpret_cast<LPARAM>(&column) ) ;
 	}
-	update( list , columns ) ;
+	if( columns != 0U )
+		update( list , columns ) ;
 }
 
 void GGui::ListView::update( const G::StringArray & list , unsigned int columns )
 {
+	G_ASSERT( columns != 0U ) ;
+	G_ASSERT( list.size() >= static_cast<size_t>(columns) ) ;
 	NoRedraw no_redraw( *this ) ;
 	sendMessage( LVM_DELETEALLITEMS ) ;
 	sendMessage( LVM_SETITEMCOUNT , (list.size()-columns)/columns ) ;

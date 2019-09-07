@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "geventhandler.h"
-#include "gexception.h"
+#include "gexceptionsink.h"
 #include "gidentity.h"
 #include "gexecutablecommand.h"
 #include <memory>
@@ -43,10 +43,8 @@ class GNet::Task
 {
 public:
 	G_EXCEPTION( Busy , "cannot execute command-line task: still busy from last time" ) ;
-	G_EXCEPTION( Error , "asynchronous task error" ) ;
-	G_EXCEPTION( Failed , "failed to collect task exit status" ) ;
 
-	Task( TaskCallback & , ExceptionHandler & eh ,
+	Task( TaskCallback & , ExceptionSink es ,
 		const std::string & exec_error_format = std::string() ,
 		const G::Identity & = G::Identity::invalid() ) ;
 			///< Constructor for a start()able object. The two trailing
@@ -68,8 +66,8 @@ public:
 		///< to terminate. No task-done callback will be triggered.
 
 private:
-	Task( const Task & ) ;
-	void operator=( const Task & ) ;
+	Task( const Task & ) g__eq_delete ;
+	void operator=( const Task & ) g__eq_delete ;
 	friend class GNet::TaskImp ;
 	void done( int exit_code , std::string output ) ;
 	void exception( std::exception & ) ;
@@ -77,7 +75,7 @@ private:
 private:
 	unique_ptr<TaskImp> m_imp ;
 	TaskCallback & m_callback ;
-	ExceptionHandler & m_eh ;
+	ExceptionSink m_es ;
 	std::string m_exec_error_format ;
 	G::Identity m_id ;
 	bool m_busy ;
@@ -89,15 +87,11 @@ private:
 class GNet::TaskCallback
 {
 public:
-	virtual void onTaskDone( int exit_status , const std::string & output ) = 0 ;
-		///< Callback function to signal task completion.
-
-protected:
 	virtual ~TaskCallback() ;
 		///< Destructor.
 
-private:
-	void operator=( const TaskCallback & ) ;
+	virtual void onTaskDone( int exit_status , const std::string & output ) = 0 ;
+		///< Callback function to signal task completion.
 } ;
 
 #endif

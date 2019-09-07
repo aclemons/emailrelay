@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ public:
 		bool final ; // final response, server's decision time
 	} ;
 
-	explicit SaslClient( const SaslClientSecrets & secrets ) ;
+	explicit SaslClient( const SaslClientSecrets & secrets , const std::string & config ) ;
 		///< Constructor. The secrets reference is kept.
 
 	~SaslClient() ;
@@ -60,7 +60,14 @@ public:
 		///< Returns a response to the given challenge. The mechanism is
 		///< used to choose the appropriate entry in the secrets file.
 
-	std::string preferred( const G::StringArray & mechanisms ) const ;
+	std::string initialResponse( size_t limit = 0U ) const ;
+		///< Returns an optional initial response. Always returns the empty
+		///< string if the mechanism is 'server-first'. Returns the empty
+		///< string, with no side-effects, if the initial response is longer
+		///< than the specified limit. Zero-length initial-responses are not
+		///< distinguishable from absent initial-responses.
+
+	std::string mechanism( const G::StringArray & mechanisms ) const ;
 		///< Returns the name of the preferred mechanism taken from the given
 		///< set, taking into account what client secrets are available.
 		///< Returns the empty string if none is supported or if not active().
@@ -68,9 +75,14 @@ public:
 	bool next() ;
 		///< Moves to the next preferred mechanism.
 
-	std::string preferred() const ;
-		///< Returns the name of the current preferred mechanism after
-		///< next() returns true.
+	std::string next( const std::string & ) ;
+		///< A convenience overload that moves to the next() mechanism
+		///< and returns it. Returns the empty string at the end, or
+		///< if the given string is empty.
+
+	std::string mechanism() const ;
+		///< Returns the name of the current mechanism once next() has
+		///< returned true.
 
 	std::string id() const ;
 		///< Returns the authentication id, valid after the last
@@ -81,8 +93,8 @@ public:
 		///< the last response().
 
 private:
-	SaslClient( const SaslClient & ) ;
-	void operator=( const SaslClient & ) ;
+	SaslClient( const SaslClient & ) g__eq_delete ;
+	void operator=( const SaslClient & ) g__eq_delete ;
 
 private:
 	SaslClientImp * m_imp ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,21 +31,21 @@ namespace G
 }
 
 /// \class G::Hash
-/// A class for creating HMACs using an arbitrary cryptographic hash function.
+/// A class for creating HMACs using an arbitrary cryptographic hash function
+/// as per RFC-2104.
 ///
 class G::Hash
 {
 public:
-	G_EXCEPTION( InvalidMaskedKey , "invalid hash key" ) ;
 	struct Masked  /// An overload discriminator for G::Hash::hmac()
 		{} ;
 
 	template <typename Fn2> static std::string hmac( Fn2 digest , size_t blocksize , const std::string & key ,
 		const std::string & input ) ;
-			///< Computes a Hashed Message Authentication Code using given hash
+			///< Computes a Hashed Message Authentication Code using the given hash
 			///< function. This is typically for challenge-response authentication
 			///< where the plaintext input is an arbitrary challenge string from the
-			///< server that the client has to hmac() using their shared private key.
+			///< server that the client needs to hmac() using their shared private key.
 			///<
 			///< See also RFC-2104 [HMAC-MD5].
 			///<
@@ -58,23 +58,28 @@ public:
 			///< HMAC = H( K XOR opad , H( K XOR ipad , plaintext ) )
 			///< \endcode
 			///<
-			///< The H() function processes a stream of blocks; the first parameter
-			///< above represents the first block, and the second parameter is the
-			///< rest of the stream (zero-padded up to a block boundary).
+			///< The H() function processes a stream of blocks; the first parameter above
+			///< represents the first block, and the second parameter is the rest of the
+			///< stream (zero-padded up to a block boundary).
 			///<
-			///< The shared key can be up to B bytes, or if more than B bytes then
-			///< K is the L-byte result of hashing the shared-key. K is zero-padded
-			///< up to B bytes for XOR-ing.
+			///< The shared key can be up to B bytes, or if more than B bytes then K is
+			///< the L-byte result of hashing the shared-key. K is zero-padded up to
+			///< B bytes for XOR-ing.
 
 	template <typename Fn2> static std::string hmac( Fn2 postdigest , const std::string & masked_key ,
 		const std::string & input , Masked ) ;
-			///< An hmac() overload using a masked key.
+			///< An hmac() overload using a masked key. The postdigest function should
+			///< behave like G::Md5::postdigest() and it must throw an exception if the
+			///< masked key is invalid.
 
 	template <typename Fn1, typename Fn2> static std::string mask( Fn1 predigest , Fn2 digest ,
 		size_t blocksize , const std::string & shared_key ) ;
-			///< Computes a masked key from the given shared key, returning a
-			///< non-printable string. This can be passed to the 'masked' overload
-			///< of hmac() once the message is known.
+			///< Computes a masked key from the given shared key, returning a non-printable
+			///< string. This can be passed to the 'masked' overload of hmac() once the
+			///< message is known.
+			///<
+			///< The predigest and digest functions must behave like G::Md5::predigest()
+			///< and G::Md5::digest2().
 			///<
 			///< A masked key (MK) is the result of doing the initial, plaintext-independent
 			///< parts of HMAC computation, taking the intermediate state of both the

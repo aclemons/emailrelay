@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,12 +49,12 @@ namespace GSsl
 /// accept().
 ///
 /// Client code will generally need separate states to reflect an incomplete
-/// read(), write(), connect() or accept() in order that they can be retried.
-/// The distinction between a return code of Result_read or Result_write
-/// should dictate whether the connection is put into the event loop's read
-/// list or write list but it should not influence the resulting state; in
-/// each state socket read events and write events can be handled identically,
-/// by retrying the incomplete function call.
+/// read(), write(), connect(), accept() or shutdown() in order that they can
+/// be retried. The distinction between a return code of Result::read or
+/// Result::write should dictate whether the connection is put into the event
+/// loop's read list or write list but it should not influence the resulting
+/// state; in each state socket read events and write events can be handled
+/// identically, by retrying the incomplete function call.
 ///
 /// The protocol is half-duplex in the sense that it is not possible to read()
 /// data while a write() is incomplete or write() data while a read() is
@@ -64,14 +64,14 @@ namespace GSsl
 class GSsl::Protocol
 {
 public:
-	enum Result // Result enumeration for GSsl::Protocol i/o methods.
+	g__enum(Result) // Result enumeration for GSsl::Protocol i/o methods.
 	{
-		Result_ok ,
-		Result_read ,
-		Result_write ,
-		Result_error ,
-		Result_more
-	} ;
+		ok ,
+		read ,
+		write ,
+		error ,
+		more
+	} ; g__enum_end(Result)
 
 	explicit Protocol( const Profile & , const std::string & peer_certificate_name = std::string() ,
 		const std::string & peer_host_name = std::string() ) ;
@@ -106,55 +106,57 @@ public:
 	Result accept( G::ReadWrite & io ) ;
 		///< Starts the protocol passively (as a server).
 
-	Result stop() ;
-		///< Initiates the protocol shutdown.
+	Result shutdown() ;
+		///< Initiates the protocol shutdown by sending a "close notify
+		///< shutdown alert" and does a socket shutdown once the alert
+		///< is fully sent.
 
 	Result read( char * buffer , size_t buffer_size_in , ssize_t & data_size_out ) ;
 		///< Reads user data into the supplied buffer.
 		///<
-		///< Returns Result_read if there is not enough transport data to
+		///< Returns Result::read if there is not enough transport data to
 		///< complete the internal TLS data packet. In this case the file
 		///< descriptor should remain in the select() read list and the
 		///< Protocol::read() should be retried using the same parameters
 		///< once the file descriptor is ready to be read.
 		///<
-		///< Returns Result_write if the TLS layer tried to write to the
+		///< Returns Result::write if the TLS layer tried to write to the
 		///< file descriptor and had flow control asserted. In this case
 		///< the file descriptor should be added to the select() write
 		///< list and the Protocol::read() should be retried using the
 		///< same parameters once the file descriptor is ready to be
 		///< written.
 		///<
-		///< Returns Result_ok if the internal TLS data packet is complete
+		///< Returns Result::ok if the internal TLS data packet is complete
 		///< and it has been completely deposited in the supplied buffer.
 		///<
-		///< Returns Result_more if the internal TLS data packet is complete
+		///< Returns Result::more if the internal TLS data packet is complete
 		///< and the supplied buffer was too small to take it all. In this
 		///< case there will be no read event to trigger more read()s so
 		///< call read() again imediately.
 		///<
-		///< Returns Result_error if the transport connnection was lost
+		///< Returns Result::error if the transport connnection was lost
 		///< or if the TLS session was shut down by the peer or if there
 		///< was an error.
 
 	Result write( const char * buffer , size_t data_size_in , ssize_t & data_size_out ) ;
 		///< Writes user data.
 		///<
-		///< Returns Result_ok if fully sent.
+		///< Returns Result::ok if fully sent.
 		///<
-		///< Returns Result_read if the TLS layer needs more transport
+		///< Returns Result::read if the TLS layer needs more transport
 		///< data (eg. for a renegotiation). The write() should be repeated
 		///< using the same parameters on the file descriptor's next
 		///< readable event.
 		///<
-		///< Returns Result_write if the TLS layer was blocked in
+		///< Returns Result::write if the TLS layer was blocked in
 		///< writing transport data. The write() should be repeated
 		///< using the same parameters on the file descriptor's next
 		///< writable event.
 		///<
-		///< Never returns Result_more.
+		///< Never returns Result::more.
 		///<
-		///< Returns Result_error if the transport connnection was lost
+		///< Returns Result::error if the transport connnection was lost
 		///< or if the TLS session was shut down by the peer or on error.
 
 	static std::string str( Result result ) ;
@@ -164,6 +166,10 @@ public:
 	std::string peerCertificate() const ;
 		///< Returns the peer certificate in PEM format. This can be
 		///< interpreted using "openssl x509 -in ... -noout -text".
+
+	std::string cipher() const ;
+		///< Returns the cipher name, or the empty string if not
+		///< yet available.
 
 	bool verified() const ;
 		///< Returns true if the peer certificate has been verified.
@@ -177,19 +183,24 @@ public:
 		///< returned string may be just the peerCertificate().
 
 private:
-	Protocol( const Protocol & ) ; // not implemented
-	void operator=( const Protocol & ) ; // not implemented
+	Protocol( const Protocol & ) g__eq_delete ;
+	void operator=( const Protocol & ) g__eq_delete ;
 
 private:
-	ProtocolImpBase * m_imp ;
+	unique_ptr<ProtocolImpBase> m_imp ;
 } ;
 
 /// \class GSsl::Digester
-/// Returns an object that can perform a cryptographic hash.
+/// A class for objects that can perform a cryptographic hash.
+/// Instances are created by the Library::digester() factory
+/// method and can then be copied around.
+///
 /// Use add() one or more times, then call either state() or
-/// value() and discard. The state() string can be passed
-/// to the Library factory method to restart the digest
-/// from the intermediate state.
+/// value() and discard. The state() string can be passed in
+/// to the Library factory method to get the digest to start
+/// from the intermediate state. However, the statesize() method
+/// returns zero if intermediate state is not supported
+/// by the underlying library.
 ///
 class GSsl::Digester
 {
@@ -328,27 +339,27 @@ public:
 		///< A static convenience function that returns true if there is an
 		///< enabled() Library instance() that has the named profile.
 
-	static G::StringArray digesters( bool require_state = false ) ;
+	static G::StringArray digesters( bool need_state = false ) ;
 		///< Returns a list of hash function names (such as "MD5") that the TLS
 		///< library can do, ordered roughly from strongest to weakest. Returns
 		///< the empty list if there is no Library instance. If the boolean
 		///< parameter is true then the returned list is limited to those
-		///< hash functions that can be initialised with an intermediate
-		///< state.
+		///< hash functions that can generate and be initialised with an
+		///< intermediate state.
 
-	Digester digester( const std::string & name , const std::string & state = std::string() ) const ;
+	Digester digester( const std::string & name , const std::string & state = std::string() , bool need_state = false ) const ;
 		///< Returns a digester object.
 
 private:
-	Library( const Library & ) ;
-	void operator=( const Library & ) ;
+	Library( const Library & ) g__eq_delete ;
+	void operator=( const Library & ) g__eq_delete ;
 	const LibraryImpBase & imp() const ;
 	LibraryImpBase & imp() ;
-	static LibraryImpBase * newLibraryImp( G::StringArray & , Library::LogFn , bool ) ;
+	static unique_ptr<LibraryImpBase> newLibraryImp( G::StringArray & , Library::LogFn , bool ) ;
 
 private:
 	static Library * m_this ;
-	LibraryImpBase * m_imp ;
+	unique_ptr<LibraryImpBase> m_imp ;
 } ;
 
 /// \class GSsl::LibraryImpBase
@@ -377,7 +388,7 @@ public:
 	virtual G::StringArray digesters( bool ) const = 0 ;
 		///< Implements Library::digesters().
 
-	virtual Digester digester( const std::string & , const std::string & ) const = 0 ;
+	virtual Digester digester( const std::string & , const std::string & , bool ) const = 0 ;
 		///< Implements Library::digester().
 
 	static bool consume( G::StringArray & list , const std::string & item ) ;
@@ -395,7 +406,7 @@ public:
 	virtual ~Profile() ;
 		///< Destructor.
 
-	virtual ProtocolImpBase * newProtocol( const std::string & , const std::string & ) const = 0 ;
+	virtual unique_ptr<ProtocolImpBase> newProtocol( const std::string & , const std::string & ) const = 0 ;
 		///< Factory method for a new Protocol object on the heap.
 } ;
 
@@ -414,8 +425,8 @@ public:
 	virtual Protocol::Result accept( G::ReadWrite & ) = 0 ;
 		///< Implements Protocol::accept().
 
-	virtual Protocol::Result stop() = 0 ;
-		///< Implements Protocol::stop().
+	virtual Protocol::Result shutdown() = 0 ;
+		///< Implements Protocol::shutdown().
 
 	virtual Protocol::Result read( char * , size_t , ssize_t & ) = 0 ;
 		///< Implements Protocol::read().
@@ -428,6 +439,9 @@ public:
 
 	virtual std::string peerCertificateChain() const = 0 ;
 		///< Implements Protocol::peerCertificateChain().
+
+	virtual std::string cipher() const = 0 ;
+		///< Implements Protocol::cipher().
 
 	virtual bool verified() const = 0 ;
 		///< Implements Protocol::verified().

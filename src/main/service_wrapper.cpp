@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,7 +38,6 @@
 //
 
 #include "gdef.h"
-#include "glimits.h"
 #include "gconvert.h"
 #include "gbatchfile.h"
 #include "gmapfile.h"
@@ -66,10 +65,11 @@ unsigned int cfg_overall_timeout_ms()
 	return 8000U ;
 }
 
-static void log( std::string s )
+static void log( const std::string & s )
 {
-	// add this for debugging
+	G_IGNORE_PARAMETER(const std::string&,s) ;
  #if 0
+	// add this for debugging
 	static std::ofstream f( "c:\\temp\\temp.out" ) ;
 	f << s << std::endl ;
  #endif
@@ -116,7 +116,7 @@ class Service
 {
 private:
 	typedef SERVICE_STATUS_HANDLE Handle ;
-	enum { Magic = 345897 } ;
+	G_CONSTANT( int , Magic , 345897 ) ;
 	volatile int m_magic ;
 	Handle m_hservice ;
 	Child m_child ;
@@ -124,20 +124,21 @@ private:
 	HANDLE m_hthread ;
 	DWORD m_thread_id ;
 	HANDLE m_thread_exit ;
+
 public:
 	typedef std::basic_string<TCHAR> tstring ;
 	static void install( const std::string & name , const std::string & display_name ) ;
 	static void remove( const std::string & name ) ;
 	static void start() ;
 	Service() ;
-	void init( std::string name ) ;
+	void init( const std::string & name ) ;
 	~Service() ;
 	static Service * instance() ;
 	bool valid() const ;
 	void onEvent( DWORD ) ;
 	void runThread() ;
 	static std::string thisExe() ;
-	static G::Path configFile( G::Path ) ;
+	static G::Path configFile( const G::Path & ) ;
 	static G::Path bat( const std::string & service_name ) ;
 	static std::string commandline( const G::Path & bat_path ) ;
 
@@ -145,7 +146,7 @@ private:
 	Service( const Service & ) ;
 	void operator=( const Service & ) ;
 	void setStatus( DWORD ) ;
-	Handle statusHandle( std::string ) ;
+	Handle statusHandle( const std::string & ) ;
 	void stopThread() ;
 
 private:
@@ -278,7 +279,7 @@ void Service::install( const std::string & service_name , const std::string & di
 
 	// check that we will be able to read the batch file at service run-time
 	G::Path batch_file = Service::bat( service_name ) ;
-	std::string server_command_line = Service::commandline( batch_file ) ;
+	Service::commandline( batch_file ) ;
 
 	// create the service
 	std::string description = display_name + " service (reads " + batch_file.str() + " at service start time)" ;
@@ -305,7 +306,7 @@ Service::Service() :
 	m_this = this ;
 }
 
-void Service::init( std::string name )
+void Service::init( const std::string & name )
 {
 	try
 	{
@@ -372,7 +373,7 @@ std::string Service::thisExe()
 	return arg.v(0U) ;
 }
 
-G::Path Service::configFile( G::Path p )
+G::Path Service::configFile( const G::Path & p )
 {
 	return p.dirname() + (p.withoutExtension().basename()+".cfg") ;
 }
@@ -495,7 +496,7 @@ void Service::start()
 	G_DEBUG( "Service::start: done" ) ;
 }
 
-Service::Handle Service::statusHandle( std::string service_name )
+Service::Handle Service::statusHandle( const std::string & service_name )
 {
 	Handle h = RegisterServiceCtrlHandlerA( service_name.c_str() , Handler ) ;
 	if( h == 0 )

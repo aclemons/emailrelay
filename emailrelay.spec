@@ -33,18 +33,19 @@ General Public License V3.
 %setup
 
 %build
-./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d --disable-gui --without-man2html --without-doxygen --with-openssl --without-mbedtls --with-pam --disable-install-hook
+./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d --without-doxygen --without-man2html --with-openssl --without-mbedtls --with-pam --disable-gui --disable-install-hook --disable-testing
 make
 
 %install
 make install-strip destdir=$RPM_BUILD_ROOT DESTDIR=$RPM_BUILD_ROOT
-
-%post
-test -f /usr/lib/lsb/install_initd && cd $RPM_BUILD_ROOT/etc/init.d && /usr/lib/lsb/install_initd emailrelay || true
 test -f $RPM_BUILD_ROOT/etc/emailrelay.conf || cp $RPM_BUILD_ROOT/etc/emailrelay.conf.template $RPM_BUILD_ROOT/etc/emailrelay.conf || true
 
+%post
+test -x /etc/init.d/emailrelay && /etc/init.d/emailrelay setup || true
+test -x /sbin/chkconfig && cd /etc/init.d && /sbin/chkconfig --add emailrelay || true
+
 %preun
-test $1 -eq 0 && test -f /usr/lib/lsb/remove_initd && cd /etc/init.d && /usr/lib/lsb/remove_initd emailrelay || true
+test -x /sbin/chkconfig && /sbin/chkconfig --del emailrelay || true
 
 %clean
 test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
@@ -56,21 +57,25 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /etc/emailrelay.conf.template
 /etc/init.d/emailrelay
 %config /etc/pam.d/emailrelay
-/usr/lib/emailrelay/emailrelay-filter-copy
+%dir /usr/lib/emailrelay
+%attr(2755, root, daemon) /usr/lib/emailrelay/emailrelay-filter-copy
+%dir /usr/lib/emailrelay/examples
 /usr/lib/emailrelay/examples/emailrelay
 /usr/lib/emailrelay/examples/emailrelay-bcc-check.pl
 /usr/lib/emailrelay/examples/emailrelay-deliver.sh
 /usr/lib/emailrelay/examples/emailrelay-multicast.sh
 /usr/lib/emailrelay/examples/emailrelay-notify.sh
-/usr/lib/emailrelay/examples/emailrelay-process.sh
 /usr/lib/emailrelay/examples/emailrelay-resubmit.sh
+/usr/lib/emailrelay/examples/emailrelay-rot13.pl
 /usr/lib/emailrelay/examples/emailrelay-sendmail.pl
 /usr/lib/emailrelay/examples/emailrelay-set-from.js
 /usr/lib/emailrelay/examples/emailrelay-set-from.pl
 /usr/lib/emailrelay/examples/emailrelay-submit.sh
 /usr/sbin/emailrelay
 /usr/sbin/emailrelay-passwd
-/usr/sbin/emailrelay-submit
+%attr(2755, root, daemon) /usr/sbin/emailrelay-submit
+%docdir /usr/share/doc/emailrelay
+%dir /usr/share/doc/emailrelay
 %doc /usr/share/doc/emailrelay/AUTHORS
 %doc /usr/share/doc/emailrelay/COPYING
 %doc /usr/share/doc/emailrelay/ChangeLog
@@ -82,7 +87,7 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %doc /usr/share/doc/emailrelay/changelog.md
 %doc /usr/share/doc/emailrelay/changelog.rst
 %doc /usr/share/doc/emailrelay/changelog.txt
-%doc /usr/share/doc/emailrelay/conf.py
+%doc /usr/share/doc/emailrelay/conf.py.sphinx
 %doc /usr/share/doc/emailrelay/developer.html
 %doc /usr/share/doc/emailrelay/developer.md
 %doc /usr/share/doc/emailrelay/developer.rst
@@ -115,11 +120,13 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %doc /usr/share/doc/emailrelay/windows.md
 %doc /usr/share/doc/emailrelay/windows.rst
 %doc /usr/share/doc/emailrelay/windows.txt
+%dir /usr/share/emailrelay
 /usr/share/emailrelay/emailrelay-icon.png
 /usr/share/man/man1/emailrelay-filter-copy.1.gz
 /usr/share/man/man1/emailrelay-passwd.1.gz
 /usr/share/man/man1/emailrelay-submit.1.gz
 /usr/share/man/man1/emailrelay.1.gz
+%dir %attr(2775, root, daemon) /var/spool/emailrelay
 
 %changelog
 

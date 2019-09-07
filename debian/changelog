@@ -1,7 +1,21 @@
 emailrelay (2.1) unstable; urgency=low
-  * Backwards compatibility features for 1.9/2.0 removed.
-  * No intrinsic limit on the length of lines that can be received during SMTP data transfer (but see "--size").
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Fri, 20 Jul 2018 11:35:44 +0000
+  * Backwards compatibility features for 1.9-to-2.0 transition removed.
+  * Better handling of too-many-connections on Windows.
+  * New "--idle-timeout" option for server-side connections.
+  * New "--show" option on windows to better control the user interface style.
+  * Filter scripts are given the path of the envelope file in argv2.
+  * Message files can be editied by "--client-filter" scripts.
+  * Better support for CRAM-SHAx authentication.
+  * New "--client-auth-config" and "--server-auth-config" options.
+  * The "--pop" option always requires "--pop-auth".
+  * TLS cipher name added to "Received" line as per RFC-8314 4.3.
+  * Certificate contents are not logged.
+  * Timestamp parts of spool filenames no longer limited to six digits.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Fri,  6 Sep 2019 15:03:44 +0000
+
+emailrelay (2.0.1) unstable; urgency=low
+  * Make PLAIN client authentication work against servers with broken 334 responses.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Wed, 14 Aug 2019 00:00:00 +0000
 
 emailrelay (2.0) unstable; urgency=low
   * Improved IPv6 support, with IPv4 and IPv6 used independently at run-time (see "--interface").

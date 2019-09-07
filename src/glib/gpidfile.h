@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -110,17 +110,16 @@ public:
 		///< or init().
 
 private:
-	Path m_path ;
-	bool m_committed ;
-
-private:
-	PidFile( const PidFile & ) ; // not implemented
-	void operator=( const PidFile & ) ; // not implemented
+	PidFile( const PidFile & ) g__eq_delete ;
+	void operator=( const PidFile & ) g__eq_delete ;
 	static bool mine( SignalSafe , const char * path ) ; // reentrant
 	static void create( const Path & pid_file ) ;
 	static std::string * new_string_ignore_leak( const std::string & ) ;
 	bool valid() const ;
+
+private:
+	Path m_path ;
+	bool m_committed ;
 } ;
 
 #endif
-

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@
 
 G::StringArray G::ExecutableCommand::osSplit( const std::string & s )
 {
-	G::StringArray parts ;
-	G::Str::splitIntoFields( G::Str::dequote(s) , parts , " " , '\\' ) ;
+	StringArray parts ;
+	Str::splitIntoFields( Str::dequote(s) , parts , " " , '\\' ) ;
 	parts.erase( std::remove( parts.begin() , parts.end() , std::string() ) , parts.end() ) ;
 	return parts ;
 }

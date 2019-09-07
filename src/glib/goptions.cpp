@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 //
 
 #include "gdef.h"
-#include "gstrings.h"
 #include "gstr.h"
 #include "gassert.h"
 #include "goptions.h"
@@ -42,7 +41,7 @@ void G::Options::parseSpec( const std::string & spec , char sep_major , char sep
 	StringArray outer_part ;
 	outer_part.reserve( 40U ) ;
 	std::string ws_major( 1U , sep_major ) ;
-	G::Str::splitIntoFields( spec , outer_part , ws_major , escape , false ) ;
+	Str::splitIntoFields( spec , outer_part , ws_major , escape , false ) ;
 
 	// for each option
 	for( StringArray::iterator p = outer_part.begin() ; p != outer_part.end() ; ++p )
@@ -52,7 +51,7 @@ void G::Options::parseSpec( const std::string & spec , char sep_major , char sep
 		StringArray inner_part ;
 		inner_part.reserve( 7U ) ;
 		std::string ws_minor( 1U , sep_minor ) ;
-		G::Str::splitIntoFields( *p , inner_part , ws_minor , escape ) ;
+		Str::splitIntoFields( *p , inner_part , ws_minor , escape ) ;
 		if( inner_part.size() != 7U )
 		{
 			std::ostringstream ss ;
@@ -60,8 +59,8 @@ void G::Options::parseSpec( const std::string & spec , char sep_major , char sep
 			throw InvalidSpecification( ss.str() ) ;
 		}
 
-		unsigned int value_multiplicity = G::Str::toUInt( inner_part[4U] ) ;
-		unsigned int level = G::Str::toUInt( inner_part[6U] ) ;
+		unsigned int value_multiplicity = Str::toUInt( inner_part[4U] ) ;
+		unsigned int level = Str::toUInt( inner_part[6U] ) ;
 		std::string short_form = inner_part[0] ;
 		char c = short_form.empty() ? '\0' : short_form.at(0U) ;
 
@@ -142,13 +141,7 @@ const G::StringArray & G::Options::names() const
 
 size_t G::Options::widthDefault()
 {
-	unsigned int result = 79U ;
-	std::string p = G::Environment::get("COLUMNS",std::string()) ;
-	if( !p.empty() )
-	{
-		try { result = G::Str::toUInt(p) ; } catch(std::exception&) {}
-	}
-	return result ;
+	return Str::toUInt( Environment::get("COLUMNS",std::string()) , "79" ) ;
 }
 
 size_t G::Options::widthFloor( size_t w )
@@ -276,7 +269,7 @@ std::string G::Options::usageHelpCore( const std::string & prefix , Level level 
 			if( layout.width )
 			{
 				std::string indent = layout.indent.empty() ? std::string(layout.column,' ') : layout.indent ;
-				line = G::Str::wrap( line , "" , indent , layout.width ) ;
+				line = Str::wrap( line , "" , indent , layout.width ) ;
 			}
 			else
 			{
@@ -302,7 +295,7 @@ std::string G::Options::usageSummary( const std::string & exe , const std::strin
 {
 	std::string s = introducer + exe + " " + usageSummaryPartOne(level) + usageSummaryPartTwo(level) + (args.empty()||args.at(0U)==' '?"":" ") + args ;
 	std::string indent( 2U , ' ' ) ; // or from OptionsLayout ?
-	return width == 0U ? s : G::Str::wrap( s , "" , indent , widthFloor(width) ) ;
+	return width == 0U ? s : Str::wrap( s , "" , indent , widthFloor(width) ) ;
 }
 
 // ==

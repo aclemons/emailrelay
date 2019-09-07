@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,6 +34,8 @@ namespace G
 
 /// \class G::OptionMap
 /// A multimap-like container for command-line options and their values.
+/// The values are G::OptionValue objects, so they can be valued with a
+/// string value or unvalued with an on/off status.
 /// Normally populated by G::OptionParser.
 ///
 class G::OptionMap
@@ -52,6 +54,9 @@ public:
 		///< Inserts the key/value pair into the map. The ordering of values in the
 		///< map with the same key is normally the order of insertion (but this
 		///< can depend on the underlying multimap implementation).
+
+	void replace( const std::string & key , const std::string & value ) ;
+		///< Replaces all matching values with a single valued() value.
 
 	const_iterator begin() const ;
 		///< Returns the begin iterator.
@@ -85,6 +90,7 @@ public:
 
 private:
 	std::string join( Map::const_iterator , Map::const_iterator ) const ;
+	static bool value_comp( const Map::value_type & , const Map::value_type & ) ;
 
 private:
 	Map m_map ;

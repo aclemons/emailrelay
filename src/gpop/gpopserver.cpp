@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,22 +19,18 @@
 //
 
 #include "gdef.h"
-#include "gpop.h"
 #include "gpopserver.h"
 #include "gsocketprotocol.h"
 #include "glocal.h"
 #include "glog.h"
-#include "gdebug.h"
-#include "gassert.h"
 #include <string>
 
-GPop::ServerPeer::ServerPeer( GNet::Server::PeerInfo peer_info , Server & server , Store & store ,
-	const Secrets & secrets , unique_ptr<ServerProtocol::Text> ptext ,
-	ServerProtocol::Config protocol_config ) :
-		GNet::BufferedServerPeer(peer_info,GNet::LineBufferConfig::pop()) ,
-		m_server(server) ,
+GPop::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo peer_info , Store & store ,
+	const GAuth::SaslServerSecrets & server_secrets , const std::string & sasl_server_config ,
+	unique_ptr<ServerProtocol::Text> ptext , const ServerProtocol::Config & protocol_config ) :
+		GNet::ServerPeer(esu.bind(this),peer_info,GNet::LineBufferConfig::pop()) ,
 		m_ptext(ptext.release()) ,
-		m_protocol(*this,*this,store,secrets,*m_ptext.get(),peer_info.m_address,protocol_config)
+		m_protocol(*this,*this,store,server_secrets,sasl_server_config,*m_ptext.get(),peer_info.m_address,protocol_config)
 {
 	G_LOG_S( "GPop::ServerPeer: pop connection from " << peer_info.m_address.displayString() ) ;
 	m_protocol.init() ;
@@ -46,7 +42,7 @@ void GPop::ServerPeer::onDelete( const std::string & reason )
 		<< peerAddress().second.displayString() ) ;
 }
 
-bool GPop::ServerPeer::onReceive( const char * line_data , size_t line_size , size_t )
+bool GPop::ServerPeer::onReceive( const char * line_data , size_t line_size , size_t , size_t , char )
 {
 	processLine( std::string(line_data,line_size) ) ;
 	return true ;
@@ -59,7 +55,7 @@ void GPop::ServerPeer::processLine( const std::string & line )
 
 bool GPop::ServerPeer::protocolSend( const std::string & line , size_t offset )
 {
-	return send( line , offset ) ; // BufferedServerPeer::send() -- ServerPeer::send() -- see also GNet::Sender
+	return send( line , offset ) ; // ServerPeer::send()
 }
 
 void GPop::ServerPeer::onSendComplete()
@@ -69,8 +65,9 @@ void GPop::ServerPeer::onSendComplete()
 
 bool GPop::ServerPeer::securityEnabled() const
 {
+	// require a tls server certificate -- see GSsl::Library::addProfile()
 	bool enabled = GNet::SocketProtocol::secureAcceptCapable() ;
-	G_DEBUG( "ServerPeer::securityEnabled: ssl library " << (enabled?"enabled":"disabled") ) ;
+	G_DEBUG( "ServerPeer::securityEnabled: tls library " << (enabled?"enabled":"disabled") ) ;
 	return enabled ;
 }
 
@@ -79,16 +76,16 @@ void GPop::ServerPeer::securityStart()
 	secureAccept() ; // base class
 }
 
-void GPop::ServerPeer::onSecure( const std::string & certificate )
+void GPop::ServerPeer::onSecure( const std::string & /*certificate*/ , const std::string & )
 {
 	m_protocol.secure() ;
 }
 
 // ===
 
-GPop::Server::Server( GNet::ExceptionHandler & eh , Store & store , const Secrets & secrets , Config config ) :
-	GNet::MultiServer(eh,GNet::MultiServer::addressList(config.addresses,config.port)) ,
-	m_allow_remote(config.allow_remote) ,
+GPop::Server::Server( GNet::ExceptionSink es , Store & store , const GAuth::SaslServerSecrets & secrets , const Config & config ) :
+	GNet::MultiServer(es,GNet::MultiServer::addressList(config.addresses,config.port),config.server_peer_config) ,
+	m_config(config) ,
 	m_store(store) ,
 	m_secrets(secrets)
 {
@@ -96,35 +93,36 @@ GPop::Server::Server( GNet::ExceptionHandler & eh , Store & store , const Secret
 
 GPop::Server::~Server()
 {
-	// early cleanup -- not really required
-	serverCleanup() ; // base class
+	serverCleanup() ; // base class early cleanup
 }
 
 void GPop::Server::report() const
 {
 	serverReport( "pop" ) ; // base class implementation
-	G_LOG_S( "GPop::Server: pop authentication secrets from \"" << m_secrets.path() << "\"" ) ;
+	G_LOG_S( "GPop::Server: pop authentication secrets from \"" << m_secrets.source() << "\"" ) ;
 }
 
-GNet::ServerPeer * GPop::Server::newPeer( GNet::Server::PeerInfo peer_info , GNet::MultiServer::ServerInfo )
+unique_ptr<GNet::ServerPeer> GPop::Server::newPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo peer_info , GNet::MultiServer::ServerInfo )
 {
+	unique_ptr<GNet::ServerPeer> ptr ;
 	try
 	{
 		std::string reason ;
-		if( ! m_allow_remote && ! GNet::Local::isLocal(peer_info.m_address,reason) )
+		if( ! m_config.allow_remote && ! GNet::Local::isLocal(peer_info.m_address,reason) )
 		{
 			G_WARNING( "GPop::Server: configured to reject non-local pop connection: " << reason ) ;
-			return nullptr ;
 		}
-
-		return new ServerPeer( peer_info , *this , m_store , m_secrets ,
-			newProtocolText(peer_info.m_address) , ServerProtocol::Config() ) ;
+		else
+		{
+			ptr.reset( new ServerPeer( esu , peer_info , m_store , m_secrets , m_config.sasl_server_config ,
+				newProtocolText(peer_info.m_address) , ServerProtocol::Config() ) ) ;
+		}
 	}
 	catch( std::exception & e ) // newPeer()
 	{
-		G_WARNING( "GPop::Server: exception from new connection: " << e.what() ) ;
-		return nullptr ;
+		G_WARNING( "GPop::Server: new connection error: " << e.what() ) ;
 	}
+	return ptr ;
 }
 
 unique_ptr<GPop::ServerProtocol::Text> GPop::Server::newProtocolText( GNet::Address peer_address ) const
@@ -136,14 +134,18 @@ unique_ptr<GPop::ServerProtocol::Text> GPop::Server::newProtocolText( GNet::Addr
 
 GPop::Server::Config::Config() :
 	allow_remote(false) ,
-	port(110)
+	port(110) ,
+	server_peer_config(0U)
 {
 }
 
-GPop::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const G::StringArray & addresses_ ) :
-	allow_remote(allow_remote_) ,
-	port(port_) ,
-	addresses(addresses_)
+GPop::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const G::StringArray & addresses_ ,
+	const GNet::ServerPeerConfig & server_peer_config_ , const std::string & sasl_server_config_ ) :
+		allow_remote(allow_remote_) ,
+		port(port_) ,
+		addresses(addresses_) ,
+		server_peer_config(server_peer_config_) ,
+		sasl_server_config(sasl_server_config_)
 {
 }
 

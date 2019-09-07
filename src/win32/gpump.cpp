@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,8 @@
 #include "gcracker.h"
 #include "gdialog.h"
 #include "gstack.h"
-#include "gdebug.h"
+#include "glog.h"
+#include "gassert.h"
 
 WPARAM GGui::Pump::m_run_id = 1U ;
 std::string GGui::Pump::m_quit_reason ;
@@ -68,17 +69,17 @@ bool GGui::Pump::getMessage( MSG * msg_p , bool block )
 
 namespace
 {
-	struct Inc
+	struct ScopeEndIncrement
 	{
 		WPARAM & m_n ;
-		Inc( WPARAM & n ) : m_n(n) {}
-		~Inc() { m_n++ ; }
+		explicit ScopeEndIncrement( WPARAM & n ) : m_n(n) {}
+		~ScopeEndIncrement() { m_n++ ; }
 	} ;
 }
 
 std::pair<bool,std::string> GGui::Pump::runImp( bool send_idle_messages , HWND hwnd_idle , unsigned int wm_idle , bool run_to_empty )
 {
-	Inc inc( m_run_id ) ; // enable quit() for this run or the next
+	ScopeEndIncrement inc( m_run_id ) ; // enable quit() for this run or the next
 	MSG msg ;
 	bool block = false ;
 	bool done_idling = false ;
