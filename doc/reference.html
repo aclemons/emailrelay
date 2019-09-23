@@ -83,7 +83,7 @@
        list of configuration items. Each item is a  single-character key, followed
        by a colon and then a comma-separated  list. A 'm' character introduces an
        ordered list of authentication  mechanisms, and an 'x' is used for
-       blacklisted mechanisms.
+       blocklisted mechanisms.
       </dd>
      <dt>--client-filter &lt;program&gt; (-Y)</dt>
       <dd>
@@ -158,6 +158,13 @@
        Enables debug level logging, if built in. Debug messages are usually only
        useful when cross-referenced with the source code and they may expose
        plaintext passwords and mail message content.
+      </dd>
+     <dt>--dnsbl &lt;config&gt;</dt>
+      <dd>
+       Specifies a list of DNSBL servers that are used to reject SMTP	connections
+       from blocked addresses. The configuration string is made up of
+       comma-separated fields: the DNS server's transport address, a timeout in
+       milliseconds, a rejection threshold, and then the list of DNSBL servers.
       </dd>
      <dt>--domain &lt;fqdn&gt; (-D)</dt>
       <dd>
@@ -351,7 +358,7 @@
        list of configuration items. Each item is a  single-character key, followed
        by a colon and then a comma-separated  list. A 'm' character introduces a
        preferred sub-set of the built-in  authentication mechanisms, and an 'x' is
-       used for blacklisted	mechanisms.
+       used for blocklisted	mechanisms.
       </dd>
      <dt>--server-tls (-K)</dt>
       <dd>
@@ -1108,9 +1115,11 @@ exit 0
 </pre>
       </div><!-- div-pre -->
     <p>
-     For E-MailRelay local delivery just means that the message file in the spool
-     directory is given a <em>.local</em> filename suffix. This can be used to create a
-     separate channel for administrative messages such as delivery reports.
+     For E-MailRelay local delivery just means that the message files in the spool
+     directory are copied to files with a <em>.local</em> filename suffix. If all the
+     envelope recipients are local-mailboxes then no normal message files are
+     created. This mechanism can be used to create a separate channel for
+     administrative messages such as delivery reports.
     </p>
 
     <p>
@@ -1234,7 +1243,47 @@ catch( e )
      information as returned by verifier scripts but in reverse, such as
      <em>3|address unavailable</em> or <em>0|postmaster|Local Postmaster <postmaster@eg.com></em>.
     </p>
-   <h2><a class="a-header" name="SH_1_11">Security issues</a></h2> <!-- index:2:SH:1:11:Security issues -->
+   <h2><a class="a-header" name="SH_1_11">Connection blocking</a></h2> <!-- index:2:SH:1:11:Connection blocking -->
+    <p>
+     All incoming connections from remote network addresses are blocked by default,
+     but can be allowed by using the <em>--remote-clients</em>/<em>-r</em> option. This is to
+     guard against accidental exposure to the internet.
+    </p>
+
+    <p>
+     Incoming SMTP connections can also be checked against DNSBL blocklists in order
+     to block connections from known spammers. Use the <em>--dnsbl</em> option to define a
+     list of DNSBL servers, together with a rejection threshold. If the threshold
+     number of servers 'deny' the incoming connection's network address then
+     E-MailRelay will drop the connection immediately.
+    </p>
+
+    <p>
+     The <em>--dnsbl</em> configuration starts with the DNS server network address and a
+     millisond timeout, followed by the threshold and list of servers:
+    </p>
+
+      <div class="div-pre">
+       <pre>emailrelay -r --dnsbl 1.1.1.1:53,500,1,spam.example.com,block.example.com ...
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     A threshold of zero means that the DNSBL servers are consulted but connections
+     are always allowed. This can be combined with verbose logging (<em>--log -v</em>)
+     for initial testing.
+    </p>
+
+    <p>
+     If the timeout period expires before a collective decision is reached then the
+     connection is allowed. This default behaviour can be changed by using a negative
+     timeout, but for finer control use a DNSBL proxy.
+    </p>
+
+    <p>
+     Connections from loopback and private (RFC-1918) network addresses are never
+     checked.
+    </p>
+   <h2><a class="a-header" name="SH_1_12">Security issues</a></h2> <!-- index:2:SH:1:12:Security issues -->
     <p>
      The following are some security issues that have been taken into consideration:
     </p>
@@ -1321,7 +1370,7 @@ catch( e )
      The <em>Authentication</em>, <em>PAM Authentication</em> and <em>TLS encryption</em> sections
      above also relate to security.
     </p>
-   <h2><a class="a-header" name="SH_1_12">Administration interface</a></h2> <!-- index:2:SH:1:12:Administration interface -->
+   <h2><a class="a-header" name="SH_1_13">Administration interface</a></h2> <!-- index:2:SH:1:13:Administration interface -->
     <p>
      If enabled with the <em>--admin</em> command-line option, the E-MailRelay server will
      provide a network interface for performing administration tasks. This is a
@@ -1345,7 +1394,7 @@ E-MailRelay> quit
      network status information and activity statistics, and <em>notify</em> enables
      asynchronous event notification.
     </p>
-   <h2><a class="a-header" name="SH_1_13">Bcc handling</a></h2> <!-- index:2:SH:1:13:Bcc handling -->
+   <h2><a class="a-header" name="SH_1_14">Bcc handling</a></h2> <!-- index:2:SH:1:14:Bcc handling -->
     <p>
      E-MailRelay transfers e-mail messages without changing their content in any
      way, other than by adding a <em>Received</em> header. In particular, if a message
@@ -1366,7 +1415,7 @@ E-MailRelay> quit
      An E-MailRelay <em>--filter</em> script can be used to reject messages with incorrect
      <em>Bcc:</em> headers, and an example script is included.
     </p>
-   <h2><a class="a-header" name="SH_1_14">Files and directories</a></h2> <!-- index:2:SH:1:14:Files and directories -->
+   <h2><a class="a-header" name="SH_1_15">Files and directories</a></h2> <!-- index:2:SH:1:15:Files and directories -->
     <p>
      On Unix-like systems E-MailRelay installs by default under <em>/usr/local</em>, but
      binary distributions will probably have been built to install elsewhere.
@@ -1388,6 +1437,7 @@ E-MailRelay> quit
      <li>e_pamdir=&lt;dir&gt;</li>
      <li>e_spooldir=&lt;dir&gt;</li>
      <li>e_sysconfdir=&lt;dir&gt;</li>
+     <li>e_rundir=&lt;dir&gt;</li>
     </ul>
 
     <p>
@@ -1401,7 +1451,7 @@ E-MailRelay> quit
     </p>
 
       <div class="div-pre">
-       <pre>./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d
+       <pre>./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d e_rundir=/run/emailrelay
 </pre>
       </div><!-- div-pre -->
     <p>

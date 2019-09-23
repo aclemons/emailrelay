@@ -124,11 +124,18 @@ void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
 
 		// write ".new" envelope
 		std::string message_location = m_new_msg->prepare( session_auth_id , peer_socket_address , peer_certificate ) ;
-
-		// start the filter
-		if( !m_filter->simple() )
-			G_LOG( "GSmtp::ProtocolMessageStore::process: filter start: [" << m_filter->id() << "] [" << message_location << "]" ) ;
-		m_filter->start( message_location ) ;
+		if( message_location.empty() )
+		{
+			// local-mailbox only -- handle a bit like filter-abandonded
+			m_done_signal.emit( true , 0UL , std::string() , std::string() ) ;
+		}
+		else
+		{
+			// start the filter
+			if( !m_filter->simple() )
+				G_LOG( "GSmtp::ProtocolMessageStore::process: filter start: [" << m_filter->id() << "] [" << message_location << "]" ) ;
+			m_filter->start( message_location ) ;
+		}
 	}
 	catch( std::exception & e ) // catch filtering errors
 	{
@@ -179,10 +186,11 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 			m_store.rescan() ;
 		}
 
-		std::string filter_response = m_filter->response() ;
-		std::string filter_reason = m_filter->reason() ;
+		// save the filter output before it is clear()ed
+		std::string filter_response = (ok||abandon) ? std::string() : m_filter->response() ;
+		std::string filter_reason = (ok||abandon) ? std::string() : m_filter->reason() ;
+
 		clear() ;
-		G_DEBUG( "GSmtp::ProtocolMessageStore::filterDone: emiting done signal" ) ;
 		m_done_signal.emit( ok || abandon , id , filter_response , filter_reason ) ;
 	}
 	catch( std::exception & e ) // catch filtering errors

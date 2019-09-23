@@ -91,7 +91,7 @@ std::string GSsl::Library::ids()
 	return "none" ;
 }
 
-G::StringArray GSsl::Library::digesters( bool require_state )
+G::StringArray GSsl::Library::digesters( bool )
 {
 	return G::StringArray() ;
 }

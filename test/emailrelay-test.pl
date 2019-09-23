@@ -23,9 +23,10 @@
 # Some tests are skipped if not run as root. Timing parameters might
 # need tweaking depending on the speed of the machine.
 #
-# usage: emailrelay-test.pl [-d <bin-dir>] [-x <test-bin-dir>] [-c <certs-dir>] [-k] [-v] [-t] [-T <config>] [<test-name> ...]
+# usage: emailrelay-test.pl [-d <bin-dir>] [-x <testbin-dir>] [-o <openssltool-dir>] [-c <certs-dir>] [-k] [-v] [-t] [-T <config>] [<test-name> ...]
 #      -d  - directory containing emailrelay binary
 #      -x  - directory containing test program binaries
+#      -o  - directory containing the openssl tool
 #      -c  - directory containing test certificates
 #      -k  - keep going after a failed test
 #      -v  - verbose logging from this script
@@ -65,7 +66,7 @@ $| = 1 ;
 
 # parse the command line
 my %opts = () ;
-getopts( 'd:x:c:CkvtT:V' , \%opts ) or die ;
+getopts( 'd:o:x:c:CkvtT:V' , \%opts ) or die ;
 sub opt_bin_dir { return defined($opts{'d'}) ? $opts{'d'} : $_[0] }
 sub opt_test_bin_dir { return defined($opts{'x'}) ? $opts{'x'} : $_[0] }
 sub opt_certs_dir { return defined($opts{'c'}) ? $opts{'c'} : $_[0] }
@@ -73,6 +74,7 @@ sub opt_keep_going { return exists $opts{'k'} }
 my $bin_dir = opt_bin_dir("../src/main") ;
 my $test_bin_dir = opt_test_bin_dir(".") ;
 my $certs_dir = opt_certs_dir("certificates") ;
+$Openssl::openssl = Openssl::search( $opts{'o'} ) ;
 $Server::bin_dir = $bin_dir ;
 my $localhost = "127.0.0.1" ; # in case localhost resolves to ipv6 first
 $Server::localhost = $localhost ;
@@ -106,6 +108,16 @@ sub requireRoot
 	}
 }
 
+sub requireSudo
+{
+	my $text = `sudo -V 2>/dev/null` ;
+	$text ||= "" ;
+	if( $text !~ m/version/ )
+	{
+		die "skipped: no sudo\n" ;
+	}
+}
+
 sub requireDebug
 {
 	my $server = new Server() ;
@@ -118,7 +130,9 @@ sub requireDebug
 sub requireThreads
 {
 	my $server = new Server() ;
-	if( ! $server->hasThreads() )
+	my $has_threads = $server->hasThreads() ;
+	$server->cleanup() ;
+	if( ! $has_threads )
 	{
 		die "skipped: not a multi-threaded build\n" ;
 	}
@@ -343,6 +357,7 @@ sub testServerIdentityRunningAsRoot
 	) ;
 	requireUnix() ;
 	requireRoot() ;
+	requireSudo() ;
 	my $server = new Server() ;
 	$server->run( \%args , "sudo " ) ;
 	Check::running( $server->pid() , $server->message() ) ;
@@ -371,6 +386,7 @@ sub testServerIdentityRunningSuidRoot
 	) ;
 	requireUnix() ;
 	requireRoot() ;
+	requireSudo() ;
 	my $server = new Server() ;
 	my $exe = System::tempfile("emailrelay") ;
 	my $rc = system( "cp ".$server->exe()." $exe" ) ;
@@ -428,7 +444,6 @@ sub testServerSmtpSubmit
 	# tear down
 	$server->kill() ;
 	$server->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
 sub testServerPermissions
@@ -446,6 +461,7 @@ sub testServerPermissions
 	) ;
 	requireUnix() ;
 	requireRoot() ;
+	requireSudo() ;
 	my $server = new Server() ;
 	my $rc = system( "chmod g-s " . $server->spoolDir() ) ; # take off sticky group bit to test --user=nobody
 	$server->run( \%args , "sudo " ) ;
@@ -467,7 +483,6 @@ sub testServerPermissions
 	# tear down
 	$server->kill() ;
 	$server->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
 sub testServerPop
@@ -501,7 +516,6 @@ sub testServerPop
 	# tear down
 	$server->kill() ;
 	$server->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
 sub disabled_testServerPopList
@@ -542,7 +556,6 @@ sub disabled_testServerPopList
 	# tear down
 	$server->kill() ;
 	$server->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
 sub testServerPopDisconnect
@@ -608,7 +621,6 @@ sub testServerFlushNoMessages
 	# tear down
 	$server->kill() ;
 	$server->cleanup() ;
-	System::deleteSpoolDir( $spool_dir ) ;
 }
 
 sub testServerFlushNoServer
@@ -645,7 +657,6 @@ sub testServerFlushNoServer
 	# tear down
 	$server->kill() ;
 	$server->cleanup() ;
-	System::deleteSpoolDir($spool_dir) ;
 }
 
 sub testServerFlush
@@ -776,7 +787,6 @@ sub testServerWithBadClient
 	# tear down
 	$server->kill() ;
 	$server->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
 sub testServerSizeLimit
@@ -815,7 +825,6 @@ sub testServerSizeLimit
 	# tear down
 	$server->kill() ;
 	$server->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
 sub testClientContinuesIfNoSecrets
@@ -860,8 +869,6 @@ sub testClientContinuesIfNoSecrets
 	$server->kill() ;
 	$server->cleanup() ;
 	$client->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
-	System::deleteSpoolDir( $client->spoolDir() , 1 ) ;
 }
 
 sub testClientSavesReasonCode
@@ -892,11 +899,10 @@ sub testClientSavesReasonCode
 	Check::fileContains( $files[0] , "X-MailRelay-ReasonCode: 452" ) ;
 
 	# tear down
-	$client->kill() ;
-	$client->cleanup() ;
+	$client->wait() ;
 	$test_server->kill() ;
+	$client->cleanup() ;
 	$test_server->cleanup() ;
-	System::deleteSpoolDir( $client->spoolDir() , 1 ) ;
 }
 
 sub testFilter
@@ -945,7 +951,6 @@ sub testFilter
 	System::unlink( $outputfile ) ;
 	$server->kill() ;
 	$server->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
 sub testFilterIdentity
@@ -990,7 +995,6 @@ sub testFilterIdentity
 	System::unlink( $outputfile ) ;
 	$server->kill() ;
 	$server->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
 sub testFilterFailure
@@ -1034,7 +1038,6 @@ sub testFilterFailure
 	# tear down
 	$server->kill() ;
 	$server->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
 sub testFilterWithBadFileDeletion
@@ -1135,7 +1138,6 @@ sub testFilterRescan
 	# tear down
 	$server->kill() ;
 	$server->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
 sub testFilterParallelism
@@ -1182,7 +1184,6 @@ sub testFilterParallelism
 	# tear down
 	$server->kill() ;
 	$server->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
 }
 
 sub testScannerPass
@@ -1217,9 +1218,8 @@ sub testScannerPass
 	# tear down
 	$server->kill() ;
 	$scanner->kill() ;
-	$server->cleanup() ;
 	$scanner->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
+	$server->cleanup() ;
 }
 
 sub testScannerBlock
@@ -1253,9 +1253,8 @@ sub testScannerBlock
 	# tear down
 	$server->kill() ;
 	$scanner->kill() ;
-	$server->cleanup() ;
 	$scanner->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
+	$server->cleanup() ;
 }
 
 sub testScannerTimeout
@@ -1290,9 +1289,8 @@ sub testScannerTimeout
 	# tear down
 	$server->kill() ;
 	$scanner->kill() ;
-	$server->cleanup() ;
 	$scanner->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
+	$server->cleanup() ;
 }
 
 sub testNetworkVerifierPass
@@ -1326,9 +1324,8 @@ sub testNetworkVerifierPass
 	# tear down
 	$server->kill() ;
 	$verifier->kill() ;
-	$server->cleanup() ;
 	$verifier->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
+	$server->cleanup() ;
 }
 
 sub testNetworkVerifierFail
@@ -1360,9 +1357,8 @@ sub testNetworkVerifierFail
 	# tear down
 	$server->kill() ;
 	$verifier->kill() ;
-	$server->cleanup() ;
 	$verifier->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir() ) ;
+	$server->cleanup() ;
 }
 
 sub testProxyConnectsOnce
@@ -1478,7 +1474,7 @@ sub testClientFilterPass
 	Check::fileContains( System::matchOne($spool_dir_2."/emailrelay.*.envelope",1,2) , "FROM-EDIT" ) ;
 
 	# tear down
-	$server_1->kill() ;
+	$server_1->wait() ;
 	$server_2->kill() ;
 	$server_1->cleanup() ;
 	$server_2->cleanup() ;
@@ -1545,7 +1541,7 @@ sub testClientFilterBlock
 	Check::fileMatchCount( $spool_dir_2 ."/emailrelay.*", 0 ) ;
 
 	# tear down
-	$server_1->kill() ;
+	$server_1->wait() ;
 	$server_2->kill() ;
 	$server_1->cleanup() ;
 	$server_2->cleanup() ;
@@ -1586,9 +1582,10 @@ sub testClientGivenUnknownMechanisms
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope.bad", 1 ) ;
 
 	# tear down
+	$emailrelay->wait() ;
+	$test_server->kill() ;
 	$emailrelay->cleanup() ;
 	$test_server->cleanup() ;
-	System::deleteSpoolDir( $spool_dir , 1 ) ;
 }
 
 sub testClientAuthenticationFailure
@@ -1623,10 +1620,10 @@ sub testClientAuthenticationFailure
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 1 ) ;
 
 	# tear down
-	$emailrelay->cleanup() ;
 	$test_server->kill() ;
+	$emailrelay->wait() ;
 	$test_server->cleanup() ;
-	System::deleteSpoolDir( $spool_dir , 1 ) ;
+	$emailrelay->cleanup() ;
 }
 
 sub testClientMessageFailure
@@ -1662,9 +1659,10 @@ sub testClientMessageFailure
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 0 ) ;
 
 	# tear down
-	$emailrelay->cleanup() ;
+	$test_server->kill() ;
+	$emailrelay->wait() ;
 	$test_server->cleanup() ;
-	System::deleteSpoolDir( $spool_dir , 1 ) ;
+	$emailrelay->cleanup() ;
 }
 
 sub testClientInvalidRecipients
@@ -1703,25 +1701,27 @@ sub testClientInvalidRecipients
 	Check::allFilesContain( $spool_dir ."/emailrelay.*.envelope.bad" , "one or more recipients rejected" ) ;
 
 	# tear down
-	$emailrelay->cleanup() ;
+	$test_server->kill() ;
+	$emailrelay->wait() ;
 	$test_server->cleanup() ;
-	System::deleteSpoolDir( $spool_dir , 1 ) ;
+	$emailrelay->cleanup() ;
 }
 
 sub _newOpenssl
 {
 	my $openssl ;
+	my $verbose = 0 ; # see also $System::verbose
 	if( -f "$certs_dir/alice.key" ) # if pre-prepared by "-C"
 	{
 		unlink( System::glob_("$certs_dir/*-*") ) ;
 		unlink( System::glob_("$certs_dir/*.out") ) ;
-		$openssl = new Openssl( sub{"$certs_dir/".$_[0]} , sub{System::log_($_[0])} ) ;
+		$openssl = new Openssl( sub{"$certs_dir/".$_[0]} , $verbose ? sub{System::log_($_[0])} : undef ) ;
 		$openssl->readActors() ;
 	}
 	else
 	{
 		requireOpensslTool() ;
-		$openssl = new Openssl( sub{System::tempfile($_[0])} , sub{System::log_($_[0])} ) ;
+		$openssl = new Openssl( sub{System::tempfile($_[0])} , $verbose ? sub{System::log_($_[0])} : undef ) ;
 		$openssl->createActors() ;
 	}
 	return $openssl ;
@@ -1775,9 +1775,9 @@ sub _testTlsServer
 	}
 
 	# tear down
+	$emailrelay->kill() ;
 	$emailrelay->cleanup() ;
 	$openssl->cleanup() ;
-	System::deleteSpoolDir( $spool_dir , 1 ) ;
 	System::unlink( $server_log ) ;
 }
 
@@ -1909,9 +1909,9 @@ sub _testTlsClient
 	}
 
 	# tear down
-	$emailrelay->cleanup() ;
 	$openssl->cleanup() ;
-	System::deleteSpoolDir( $spool_dir , 1 ) ;
+	$emailrelay->kill() ;
+	$emailrelay->cleanup() ;
 	System::unlink( $client_log ) ;
 }
 
@@ -1965,6 +1965,7 @@ sub _testTls
 		ForwardTo => 1 ,
 		NoSmtp => 1 ,
 		Poll => 2 ,
+		PidFile => 1 ,
 	) ;
 	my %server_args = (
 		Log => 1 ,
@@ -2049,13 +2050,11 @@ sub _testTls
 	# tear down
 	$server->kill() ;
 	$client->kill() ;
-	$client->cleanup() ;
-	$server->cleanup() ;
-	System::deleteSpoolDir( $client_spool_dir , 1 ) ;
-	System::deleteSpoolDir( $server_spool_dir , 1 ) ;
 	System::unlink( $client_log ) ;
 	System::unlink( $server_log ) ;
 	$openssl->cleanup() ;
+	$client->cleanup() ;
+	$server->cleanup() ;
 }
 
 sub testTlsGoodServerCertificateVerifyAccepted

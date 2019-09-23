@@ -35,7 +35,8 @@ GSsl::Library::Library( bool active , const std::string & library_config , LogFn
 	if( active )
 	{
 		G::StringArray config = G::Str::splitIntoTokens( library_config , "," ) ;
-		m_imp = newLibraryImp( config , log_fn , verbose ) ;
+		unique_ptr<LibraryImpBase> new_imp = newLibraryImp( config , log_fn , verbose ) ;
+		m_imp.reset( new_imp.release() ) ; // for c++98
 		bool ignore_extra = LibraryImpBase::consume( config , "ignoreextra" ) ;
 		if( !config.empty() && !ignore_extra )
 			G_WARNING( "GSsl::Library::Library: tls-config: tls configuration items ignored: [" << G::Str::join(",",config) << "]" ) ;

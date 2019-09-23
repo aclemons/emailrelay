@@ -251,15 +251,14 @@ void GNet::Client::onResponseTimeout()
 	std::ostringstream ss ;
 	ss << "no response after " << m_response_timeout << " while connected to " << m_remote_location ;
 	G_DEBUG( "GNet::Client::onResponseTimeout: response timeout: " << ss.str() ) ;
-    throw ResponseTimeout( ss.str() ) ;
+	throw ResponseTimeout( ss.str() ) ;
 }
 
 void GNet::Client::onIdleTimeout()
 {
 	std::ostringstream ss ;
 	ss << "no activity after " << m_idle_timeout << "s while connected to " << m_remote_location ;
-	G_DEBUG( "GNet::Client::onIdleTimeout: idle timeout: " << ss.str() ) ;
-    throw IdleTimeout( ss.str() ) ;
+	throw IdleTimeout( ss.str() ) ;
 }
 
 void GNet::Client::onConnectedTimeout()

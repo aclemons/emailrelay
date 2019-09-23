@@ -177,6 +177,12 @@ void GPage::onShow( bool )
 	// no-op
 }
 
+void GPage::tip( QWidget * w , const std::string & s )
+{
+	if( !s.empty() )
+		w->setToolTip( tip(s.c_str()) ) ;
+}
+
 void GPage::tip( QWidget * w , const char * p )
 {
 	// see also QWidget::setWhatsThis()

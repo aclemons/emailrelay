@@ -212,6 +212,18 @@ std::string GNet::Address6::hostPartString() const
 	return std::string(buffer) ;
 }
 
+std::string GNet::Address6::queryString() const
+{
+	std::ostringstream ss ;
+	const char * hexmap = "0123456789abcdef" ;
+	for( size_t i = 0U ; i < 16U ; i++ )
+	{
+		unsigned int n = static_cast<unsigned int>(m_inet.specific.sin6_addr.s6_addr[15U-i]) % 256U ;
+		ss << (i==0U?"":".") << hexmap[(n&15U)%16U] << "." << hexmap[(n>>4U)%16U] ;
+	}
+	return ss.str() ;
+}
+
 bool GNet::Address6::validData( const sockaddr * addr , socklen_t len )
 {
 	return addr != nullptr && addr->sa_family == family() && len == sizeof(specific_type) ;
@@ -399,26 +411,28 @@ bool GNet::Address6::isLoopback() const
 
 bool GNet::Address6::isLocal( std::string & reason ) const
 {
-	struct in6_addr addr_128 = masked( m_inet.specific.sin6_addr , mask(128U) ) ; // degenerate mask
-	struct in6_addr addr_64 = masked( m_inet.specific.sin6_addr , mask(64U) ) ;
-	struct in6_addr addr_7 = masked( m_inet.specific.sin6_addr , mask(7U) ) ;
-
-	struct in6_addr _1 = make( 0U , 0U , 1U ) ;
-	struct in6_addr _fe80 = make( 0xfeU , 0x80U , 0U ) ;
-	struct in6_addr _fc00 = make( 0xfcU , 0U , 0U ) ;
-
-	bool local =
-		sameAddr( _1 , addr_128 ) ||
-		sameAddr( _fe80 , addr_64 ) ||
-		sameAddr( _fc00 , addr_7 ) ;
-
-	if( !local )
+	if( isLoopback() || isPrivate() )
+	{
+		return true ;
+	}
+	else
 	{
 		std::ostringstream ss ;
 		ss << hostPartString() << " is not ::1/128 or in fe80::/64 or fc00::/7" ;
 		reason = ss.str() ;
+		return false ;
 	}
-	return local ;
+}
+
+bool GNet::Address6::isPrivate() const
+{
+	struct in6_addr addr_64 = masked( m_inet.specific.sin6_addr , mask(64U) ) ;
+	struct in6_addr addr_7 = masked( m_inet.specific.sin6_addr , mask(7U) ) ;
+
+	struct in6_addr _fe80 = make( 0xfeU , 0x80U , 0U ) ;
+	struct in6_addr _fc00 = make( 0xfcU , 0U , 0U ) ;
+
+	return sameAddr( _fe80 , addr_64 ) || sameAddr( _fc00 , addr_7 ) ;
 }
 
 /// \file gaddress6.cpp

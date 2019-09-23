@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gsmtpserver.h"
 #include "gresolver.h"
+#include "gdnsblock.h"
 #include "gprotocolmessagestore.h"
 #include "gprotocolmessageforward.h"
 #include "gfilterfactory.h"
@@ -74,6 +75,7 @@ GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeer
 	unique_ptr<ServerProtocol::Text> ptext ) :
 		GNet::ServerPeer(esu.bind(this),peer_info,GNet::LineBufferConfig::transparent()) ,
 		m_server(server) ,
+		m_block(*this,esu.bind(this),server_config.dnsbl_config) ,
 		m_verifier(VerifierFactory::newVerifier(esu.bind(this),server_config.verifier_address,server_config.verifier_timeout)) ,
 		m_pmessage(server.newProtocolMessage(esu.bind(this))) ,
 		m_ptext(ptext.release()) ,
@@ -82,7 +84,10 @@ GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeer
 			*m_ptext.get(),peer_info.m_address,server_config.protocol_config)
 {
 	G_LOG_S( "GSmtp::ServerPeer: smtp connection from " << peer_info.m_address.displayString() ) ;
-	m_protocol.init() ;
+	if( server_config.dnsbl_config.empty() )
+		m_protocol.init() ;
+	else
+		m_block.start( peer_info.m_address ) ;
 }
 
 void GSmtp::ServerPeer::onDelete( const std::string & reason )
@@ -96,6 +101,12 @@ void GSmtp::ServerPeer::onDelete( const std::string & reason )
 void GSmtp::ServerPeer::onSendComplete()
 {
 	// never gets here -- see protocolSend()
+}
+
+void GSmtp::ServerPeer::onData( const char * data , size_t size )
+{
+	if( !m_block.busy() ) // DoS prevention
+		GNet::ServerPeer::onData( data , size ) ;
 }
 
 bool GSmtp::ServerPeer::onReceive( const char * data , size_t size , size_t , size_t , char )
@@ -122,6 +133,16 @@ void GSmtp::ServerPeer::protocolSend( const std::string & line , bool go_secure 
 void GSmtp::ServerPeer::protocolShutdown()
 {
 	socket().shutdown() ; // fwiw
+}
+
+void GSmtp::ServerPeer::onDnsBlockResult( const GNet::DnsBlockResult & result )
+{
+	result.log() ;
+	result.warn() ;
+	if( result.allow() )
+		m_protocol.init() ;
+	else
+		throw GNet::Done() ;
 }
 
 // ===
@@ -221,7 +242,8 @@ GSmtp::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const A
 	unsigned int verifier_timeout_ ,
 	GNet::ServerPeerConfig server_peer_config_ ,
 	ServerProtocol::Config protocol_config_ ,
-	const std::string & sasl_server_config_ ) :
+	const std::string & sasl_server_config_ ,
+	const std::string & dnsbl_config_ ) :
 		allow_remote(allow_remote_) ,
 		port(port_) ,
 		interfaces(interfaces_) ,
@@ -233,7 +255,8 @@ GSmtp::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const A
 		verifier_timeout(verifier_timeout_) ,
 		server_peer_config(server_peer_config_) ,
 		protocol_config(protocol_config_) ,
-		sasl_server_config(sasl_server_config_)
+		sasl_server_config(sasl_server_config_) ,
+		dnsbl_config(dnsbl_config_)
 {
 }
 

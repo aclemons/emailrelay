@@ -4,7 +4,12 @@ E-MailRelay 2.1 removes the backwards-compatibility features that were put in
 to make the migration from 1.9 to 2.0 smoother. Refer to the NEWS file from
 the 2.0 release for the details.
 
-The 2.1 code-base continues the migration from C++ 1998 to C++ 2011. It is still
-possible to use C++ 1998, but in addition to loosing multithreading (as before)
-you might also loose the installation/configuration GUI as Qt drops support
-for C++ 1998.
+The creation of ".local" files for local-mailbox recipients has changed slightly
+in this release in that normal message files are not created if the message only
+has local-mailbox recipients. This will affect users of the "--address-verifier"
+option where the verifier script returns zero.
+
+The 2.1 release continues the migration from C++1998 to C++2011. It is still
+possible to use C++1998, but in addition to loosing multithreading you might
+also loose the installation/configuration GUI since Qt has dropped support for
+C++1998.

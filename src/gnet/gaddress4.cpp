@@ -184,6 +184,18 @@ std::string GNet::Address4::hostPartString() const
 	return std::string(buffer) ;
 }
 
+std::string GNet::Address4::queryString() const
+{
+	G::StringArray parts = G::Str::splitIntoFields( hostPartString() , "." ) ;
+	std::reverse( parts.begin() , parts.end() ) ;
+	return G::Str::join( "." , parts ) ;
+}
+
+
+
+
+
+
 bool GNet::Address4::validData( const sockaddr * addr , socklen_t len )
 {
 	return addr != nullptr && addr->sa_family == family() && len == sizeof(specific_type) ;
@@ -407,4 +419,14 @@ bool GNet::Address4::isLocal( std::string & reason ) const
 		return false ;
 	}
 }
+
+bool GNet::Address4::isPrivate() const
+{
+	// RFC-1918
+	return
+		( ntohl(m_inet.specific.sin_addr.s_addr) >> 24 ) == 0x0A || // 10.0.0.0/8
+		( ntohl(m_inet.specific.sin_addr.s_addr) >> 20 ) == 0xAC1 || // 172.16.0.0/12
+		( ntohl(m_inet.specific.sin_addr.s_addr) >> 16 ) == 0xC0A8 ; // 192.168.0.0/16
+}
+
 /// \file gaddress4.cpp

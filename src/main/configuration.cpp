@@ -131,6 +131,11 @@ bool Main::Configuration::daemon() const
 	return !m_map.contains("no-daemon") && !m_map.contains("as-client") ;
 }
 
+std::string Main::Configuration::dnsbl() const
+{
+	return m_map.value( "dnsbl" ) ;
+}
+
 std::string Main::Configuration::show() const
 {
 	return m_map.value( "show" ) ;
@@ -139,6 +144,11 @@ std::string Main::Configuration::show() const
 bool Main::Configuration::show( const std::string & key ) const
 {
 	return (","+show()+",").find(","+key+",") != std::string::npos ;
+}
+
+bool Main::Configuration::hidden() const
+{
+	return m_map.contains( "hidden" ) ; // also test for show("hidden")
 }
 
 G::Path Main::Configuration::spoolDir() const
@@ -262,11 +272,6 @@ G::Path Main::Configuration::filter() const
 G::Path Main::Configuration::clientFilter() const
 {
 	return m_map.contains("client-filter") ? pathValue("client-filter") : G::Path() ;
-}
-
-bool Main::Configuration::hidden() const
-{
-	return m_map.contains( "hidden" ) ;
 }
 
 G::Path Main::Configuration::clientSecretsFile() const
@@ -449,6 +454,11 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 {
 	G::StringArray errors ;
 	G::StringArray warnings ;
+
+	if( m_map.contains("poll") && G::Str::toUInt(m_map.value("poll","0")) == 0U )
+	{
+		errors.push_back( "invalid --poll period: try --forward-on-disconnect" ) ;
+	}
 
 	if(
 		( m_map.contains("admin") && adminPort() == port() ) ||
@@ -635,6 +645,11 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 		errors.push_back( "using --interface with client= is no longer supported: use --client-interface instead" ) ;
 	}
 
+	if( m_map.contains("dnsbl") && !m_map.contains("remote-clients") )
+	{
+		errors.push_back( "--dnsbl requires --remote-clients or -r" ) ;
+	}
+
 	// warnings...
 
 	const bool no_syslog =
@@ -658,11 +673,6 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 
 		warnings.push_back( "logging will stop because " + close_stderr_option +
 			" closes the standard error stream soon after startup" ) ;
-	}
-
-	if( m_map.contains("poll") && G::Str::toUInt(m_map.value("poll","1")) == 0U )
-	{
-		warnings.push_back( "use of --poll=0 is deprecated; replace with --forward-on-disconnect" ) ;
 	}
 
 	if( m_map.contains("show") && ( no_daemon || m_map.contains("hidden") ) ) // (windows)

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,14 +15,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gserverprotocol.h
+/// \file gsmtpserverprotocol.h
 ///
 
-#ifndef G_SMTP_SERVER_PROTOCOL_H
-#define G_SMTP_SERVER_PROTOCOL_H
+#ifndef G_SMTP_SERVER_PROTOCOL__H
+#define G_SMTP_SERVER_PROTOCOL__H
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gprotocolmessage.h"
 #include "geventhandler.h"
 #include "gaddress.h"
@@ -33,7 +32,6 @@
 #include "gstatemachine.h"
 #include "gtimer.h"
 #include "gexception.h"
-#include <map>
 #include <utility>
 #include <memory>
 
@@ -59,28 +57,40 @@ class GSmtp::ServerProtocol : private GNet::TimerBase
 {
 public:
 	G_EXCEPTION( ProtocolDone , "smtp protocol done" ) ;
+
 	class Sender /// An interface used by ServerProtocol to send protocol replies.
 	{
-		public: virtual void protocolSend( const std::string & s , bool go_secure ) = 0 ;
+	public:
+		virtual void protocolSend( const std::string & s , bool go_secure ) = 0 ;
 			///< Called when the protocol class wants to send
 			///< data down the socket.
 
-		public: virtual void protocolShutdown() = 0 ;
+		virtual void protocolShutdown() = 0 ;
 			///< Called on receipt of a quit command after the quit
 			///< response has been sent allowing the socket to be
 			///< shut down.
 
-		public: virtual ~Sender() ;
-		private: void operator=( const Sender & ) ; // not implemented
+		virtual ~Sender() ;
+			///< Destructor.
 	} ;
+
 	class Text /// An interface used by ServerProtocol to provide response text strings.
 	{
-		public: virtual std::string greeting() const = 0 ;
-		public: virtual std::string hello( const std::string & smtp_peer_name ) const = 0 ;
-		public: virtual std::string received( const std::string & smtp_peer_name , bool a , bool s ) const = 0 ;
-		public: virtual ~Text() ;
-		private: void operator=( const Text & ) ; // not implemented
+	public:
+		virtual std::string greeting() const = 0 ;
+			///< Returns a system identifier for the initial greeting.
+
+		virtual std::string hello( const std::string & smtp_peer_name ) const = 0 ;
+			///< Returns a hello response.
+
+		virtual std::string received( const std::string & smtp_peer_name , bool auth , bool secure ,
+			const std::string & cipher ) const = 0 ;
+				///< Returns a complete 'Received' line.
+
+		virtual ~Text() ;
+			///< Destructor.
 	} ;
+
 	struct Config /// A structure containing configuration parameters for ServerProtocol.
 	{
 		bool with_vrfy ;
@@ -90,15 +100,16 @@ public:
 		bool mail_requires_encryption ;
 		bool disconnect_on_max_size ;
 		bool advertise_tls_if_possible ;
+
 		Config( bool with_vrfy , unsigned int filter_timeout , size_t max_size ,
 			bool authentication_requires_encryption ,
 			bool mail_requires_encryption ,
 			bool advertise_tls_if_possible ) ;
 	} ;
 
-	ServerProtocol( GNet::ExceptionHandler & , Sender & , Verifier & , ProtocolMessage & ,
-		const GAuth::Secrets & secrets , Text & text , GNet::Address peer_address ,
-		Config config ) ;
+	ServerProtocol( GNet::ExceptionSink , Sender & , Verifier & , ProtocolMessage & ,
+		const GAuth::Secrets & secrets , const std::string & sasl_server_config ,
+		Text & text , GNet::Address peer_address , const Config & config ) ;
 			///< Constructor.
 			///<
 			///< The Verifier interface is used to verify recipient
@@ -114,7 +125,7 @@ public:
 			///< for returning to the client.
 			///<
 			///< Exceptions thrown out of event-loop and timer callbacks
-			///< are delivered to the given exception handler interface.
+			///< are delivered to the given exception sink.
 			///<
 			///< All references are kept.
 
@@ -126,22 +137,22 @@ public:
 
 	bool inDataState() const ;
 		///< Returns true if currently in the data-transfer state.
+		///< This can be used to enable the GNet::LineBuffer
+		///< 'fragments' option.
 
 	bool apply( const char * line_data , size_t line_size , size_t eolsize , size_t linesize , char c0 ) ;
-		///< Called on receipt of a line of text (or line fragment)
-		///< from the remote client. Returns true. Throws ProtocolDone
-		///< at the end of the protocol.
+		///< Called on receipt of a line of text from the remote
+		///< client. As an optimisation this can also be a
+		///< GNet::LineBuffer line fragment iff this object is
+		///< currently inDataState(). Returns true. Throws
+		///< ProtocolDone at the end of the protocol.
 
-	void secure( const std::string & certificate ) ;
+	void secure( const std::string & certificate , const std::string & cipher ) ;
 		///< To be called when the transport protocol goes
 		///< into secure mode.
 
-protected:
-	virtual void onTimeout() override ;
-		///< Override from GNet::TimerBase.
-
 private:
-	enum Event
+	g__enum(Event)
 	{
 		eQuit ,
 		eHelo ,
@@ -164,8 +175,8 @@ private:
 		eDone ,
 		eTimeout ,
 		eUnknown
-	} ;
-	enum State
+	} ; g__enum_end(Event)
+	g__enum(State)
 	{
 		sStart ,
 		sEnd ,
@@ -185,22 +196,27 @@ private:
 		sDiscarding ,
 		s_Any ,
 		s_Same
-	} ;
-	struct EventData
+	} ; g__enum_end(State)
+	struct EventData /// Contains GNet::LineBuffer callback parameters or a complete input line, passed through the G::StateMachine.
 	{
 		const char * ptr ;
 		size_t size ;
 		size_t eolsize ;
 		size_t linesize ;
 		char c0 ;
+
 		EventData( const char * ptr , size_t size ) ;
 		EventData( const char * ptr , size_t size , size_t eolsize , size_t linesize , char c0 ) ;
 	} ;
 	typedef G::StateMachine<ServerProtocol,State,Event,EventData> Fsm ;
 
+private: // overrides
+	virtual void onTimeout() override ; // Override from GNet::TimerBase.
+
 private:
-	ServerProtocol( const ServerProtocol & ) ; // not implemented
-	void operator=( const ServerProtocol & ) ; // not implemented
+	ServerProtocol( const ServerProtocol & ) g__eq_delete ;
+	void operator=( const ServerProtocol & ) g__eq_delete ;
+	void send( const char * ) ;
 	void send( std::string , bool = false ) ;
 	Event commandEvent( const std::string & ) const ;
 	std::string commandWord( const std::string & line ) const ;
@@ -223,6 +239,9 @@ private:
 	void doQuit( EventData , bool & ) ;
 	void doEhlo( EventData , bool & ) ;
 	void doHelo( EventData , bool & ) ;
+	void sendReadyForTls() ;
+	void sendBadMechanism() ;
+	void doAuthInvalid( EventData , bool & ) ;
 	void doAuth( EventData , bool & ) ;
 	void doAuthData( EventData , bool & ) ;
 	void doMail( EventData , bool & ) ;
@@ -244,8 +263,9 @@ private:
 	void sendTooBig( bool disconnecting = false ) ;
 	void sendChallenge( const std::string & ) ;
 	void sendBadTo( const std::string & , bool ) ;
-	void sendOutOfSequence( const std::string & ) ;
+	void sendOutOfSequence() ;
 	void sendGreeting( const std::string & ) ;
+	void sendQuitOk() ;
 	void sendClosing() ;
 	void sendUnrecognised( const std::string & ) ;
 	void sendNotImplemented() ;
@@ -256,6 +276,8 @@ private:
 	void sendRcptReply() ;
 	void sendDataReply() ;
 	void sendCompletionReply( bool ok , const std::string & ) ;
+	void sendInvalidArgument() ;
+	void sendAuthenticationCancelled() ;
 	void sendAuthRequired() ;
 	void sendEncryptionRequired() ;
 	void sendNoRecipients() ;
@@ -287,6 +309,7 @@ private:
 	GNet::Address m_peer_address ;
 	bool m_secure ;
 	std::string m_certificate ;
+	std::string m_cipher ;
 	unsigned int m_bad_client_count ;
 	unsigned int m_bad_client_limit ;
 	std::string m_session_peer_name ;
@@ -305,20 +328,15 @@ public:
 		const GNet::Address & peer_address ) ;
 			///< Constructor.
 
-	virtual std::string greeting() const override ;
-		///< Override from GSmtp::ServerProtocol::Text.
-
-	virtual std::string hello( const std::string & smtp_peer_name_from_helo ) const override ;
-		///< Override from GSmtp::ServerProtocol::Text.
-
-	virtual std::string received( const std::string & smtp_peer_name_from_helo ,
-		bool authenticated , bool secure ) const override ;
-			///< Override from GSmtp::ServerProtocol::Text.
-
 	static std::string receivedLine( const std::string & smtp_peer_name_from_helo ,
 		const std::string & peer_address , const std::string & thishost ,
-		bool authenticated , bool secure ) ;
+		bool authenticated , bool secure , const std::string & secure_cipher ) ;
 			///< Returns a standard "Received:" line.
+
+private: // overrides
+	virtual std::string greeting() const override ; // Override from GSmtp::ServerProtocol::Text.
+	virtual std::string hello( const std::string & smtp_peer_name_from_helo ) const override ; // Override from GSmtp::ServerProtocol::Text.
+	virtual std::string received( const std::string & smtp_peer_name_from_helo , bool authenticated , bool secure , const std::string & cipher ) const override ; // Override from GSmtp::ServerProtocol::Text.
 
 private:
 	std::string m_code_ident ;

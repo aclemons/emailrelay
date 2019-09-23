@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gmultiserver.h"
 #include "gsmtpclient.h"
+#include "gdnsblock.h"
 #include "glinebuffer.h"
 #include "gverifier.h"
 #include "gmessagestore.h"
@@ -64,12 +65,13 @@ public:
 		GNet::ServerPeerConfig server_peer_config ;
 		ServerProtocol::Config protocol_config ;
 		std::string sasl_server_config ;
+		std::string dnsbl_config ;
 
 		Config( bool allow_remote , unsigned int port , const AddressList & , const std::string & ident ,
 			bool anonymous , const std::string & filter_address , unsigned int filter_timeout ,
 			const std::string & verifier_adress , unsigned int verifier_timeout ,
 			GNet::ServerPeerConfig server_peer_config , ServerProtocol::Config protocol_config ,
-			const std::string & sasl_server_config ) ;
+			const std::string & sasl_server_config , const std::string & dnsbl_config ) ;
 	} ;
 
 	Server( GNet::ExceptionSink es , MessageStore & store ,
@@ -122,7 +124,7 @@ private:
 /// Handles a connection from a remote SMTP client.
 /// \see GSmtp::Server
 ///
-class GSmtp::ServerPeer : public GNet::ServerPeer , private ServerProtocol::Sender
+class GSmtp::ServerPeer : public GNet::ServerPeer , private ServerProtocol::Sender , private GNet::DnsBlockCallback
 {
 public:
 	G_EXCEPTION( SendError , "failed to send smtp response" ) ;
@@ -139,6 +141,8 @@ private: // overrides
 	virtual void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
 	virtual void protocolSend( const std::string & line , bool ) override ; // Override from ServerProtocol::Sender.
 	virtual void protocolShutdown() override ; // Override from ServerProtocol::Sender.
+	virtual void onDnsBlockResult( const GNet::DnsBlockResult & ) override ; // Override from GNet::DnsBlockCallback.
+	virtual void onData( const char * , size_t ) override ; // Override from GNet::ServerPeer.
 
 private:
 	ServerPeer( const ServerPeer & ) g__eq_delete ;
@@ -146,6 +150,7 @@ private:
 
 private:
 	Server & m_server ;
+	GNet::DnsBlock m_block ;
 	unique_ptr<Verifier> m_verifier ;
 	unique_ptr<ProtocolMessage> m_pmessage ;
 	unique_ptr<ServerProtocol::Text> m_ptext ;

@@ -103,6 +103,7 @@ protected:
 	struct NameTip {} ;
 	struct PasswordTip {} ;
 	static QLabel * newTitle( QString ) ;
+	static void tip( QWidget * , const std::string & ) ;
 	static void tip( QWidget * , const char * ) ;
 	static void tip( QWidget * , NameTip ) ;
 	static void tip( QWidget * , PasswordTip ) ;

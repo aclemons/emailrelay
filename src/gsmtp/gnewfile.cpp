@@ -96,14 +96,22 @@ std::string GSmtp::NewFile::prepare( const std::string & session_auth_id , const
 	if( ! saveEnvelope( session_auth_id , peer_socket_address , peer_certificate ) )
 		throw FileError( "cannot write envelope file " + m_envelope_path_0.str() ) ;
 
-	// deliver to local mailboxes
+	// copy or move aside for local mailboxes
 	//
-	if( m_to_local.size() != 0U )
+	if( m_to_local.size() != 0U && m_to_remote.size() == 0U )
 	{
-		deliver( m_to_local , m_content_path , m_envelope_path_0 , m_envelope_path_1 ) ;
+		moveToLocal( m_content_path , m_envelope_path_0 , m_envelope_path_1 ) ;
+		return std::string() ;
 	}
-
-	return m_content_path.str() ;
+	else if( m_to_local.size() != 0U )
+	{
+		copyToLocal( m_content_path , m_envelope_path_0 , m_envelope_path_1 ) ;
+		return m_content_path.str() ;
+	}
+	else
+	{
+		return m_content_path.str() ;
+	}
 }
 
 void GSmtp::NewFile::commit( bool strict )
@@ -197,16 +205,19 @@ bool GSmtp::NewFile::commitEnvelope()
 	return m_saved ;
 }
 
-void GSmtp::NewFile::deliver( const G::StringArray & /*to*/ ,
-	const G::Path & content_path , const G::Path & envelope_path_now ,
+void GSmtp::NewFile::moveToLocal( const G::Path & content_path , const G::Path & envelope_path_now ,
 	const G::Path & envelope_path_later )
 {
-	// could shell out to "procmail" or "deliver" here, but keep it
-	// simple and within the scope -- just copy into ".local" files
+	G_LOG_S( "GSmtp::NewMessage: message for local-mailbox recipient(s): " << content_path.basename() << ".local" ) ;
+	FileWriter claim_writer ;
+	G::File::rename( content_path.str() , content_path.str()+".local" ) ;
+	G::File::rename( envelope_path_now.str() , envelope_path_later.str()+".local" ) ;
+}
 
-	G_LOG_S( "GSmtp::NewMessage: copying message for local recipient(s): "
-		<< content_path.basename() << ".local" ) ;
-
+void GSmtp::NewFile::copyToLocal( const G::Path & content_path , const G::Path & envelope_path_now ,
+	const G::Path & envelope_path_later )
+{
+	G_LOG_S( "GSmtp::NewMessage: message for local-mailbox recipient(s): " << content_path.basename() << ".local" ) ;
 	FileWriter claim_writer ;
 	G::File::copy( content_path.str() , content_path.str()+".local" ) ;
 	G::File::copy( envelope_path_now.str() , envelope_path_later.str()+".local" ) ;

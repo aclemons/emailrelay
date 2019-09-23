@@ -1177,6 +1177,13 @@ bool G::Str::tailMatch( const StringArray & in , const std::string & tail )
 	return std::find_if( in.begin() , in.end() , matcher ) != in.end() ;
 }
 
+bool G::Str::headMatch( const std::string & in , const char * head )
+{
+	if( head == nullptr || *head == '\0' ) return true ;
+	size_t head_length = std::strlen( head ) ;
+	return ( in.length() >= head_length && 0 == in.compare(0U,head_length,head) ) ;
+}
+
 bool G::Str::headMatch( const std::string & in , const std::string & head )
 {
 	return

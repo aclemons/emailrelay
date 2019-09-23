@@ -20,6 +20,10 @@ emailrelay-filter-copy \- an emailrelay filter program for pop-by-name
 .I <emailrelay-content-file>
 .LP
 .B emailrelay-filter-copy
+-d
+.I <spool-directory>
+.LP
+.B emailrelay-filter-copy
 [--help]
 .SH DESCRIPTION
 The
@@ -39,6 +43,11 @@ the main directory. If the envelope is successfully copied to
 one or more sub-directories then it is removed from the main
 spool directory and it will therefore not be available for SMTP
 forwarding.
+.LP
+When using
+.I "-d"
+all envelope files in the spool directory are copied to all
+sub-directories.
 .SH SEE ALSO
 .BR emailrelay (1),
 .SH AUTHOR

@@ -22,7 +22,7 @@
 # more sensible directories depending on the host environment and
 # simplifies cross-compilation to windows or arm.
 #
-# usage: configure.sh [-d] [{-m|-p}] [<configure-options>]
+# usage: configure.sh [-d] [{-o|-m|-p}] [<configure-options>]
 #         -d  debug compiler flags
 #         -o  openwrt sdk and uclibc (edit as required)
 #         -m  mingw-w64
@@ -97,9 +97,9 @@ then
     export CXX="$SDK_TOOLCHAIN_DIR/bin/$TARGET-c++"
     export AR="$SDK_TOOLCHAIN_DIR/bin/$TARGET-ar"
     export STRIP="$SDK_TOOLCHAIN_DIR/bin/$TARGET-strip"
-    export CXXFLAGS="-fno-rtti -fno-threadsafe-statics -Os"
-    export LDFLAGS="-L$SDK_TARGET_DIR/usr/lib -luClibc++"
-    export CPPFLAGS="-I$SDK_TARGET_DIR/usr/include/uClibc++"
+    export CXXFLAGS="-fno-rtti -fno-threadsafe-statics -Os $CXXFLAGS"
+    export LDFLAGS="-L$SDK_TARGET_DIR/usr/lib -luClibc++ $LDFLAGS"
+    export CPPFLAGS="-I$SDK_TARGET_DIR/usr/include/uClibc++ $CPPFLAGS"
 	if test -x "$CXX" ; then : ; else echo "error: no c++ compiler for target [$TARGET]: CXX=[$CXX]\n" ; exit 1 ; fi
 	if test -f "$SDK_TARGET_DIR/usr/lib/libuClibc++.so" ; then : ; else echo "error: no uclibc++ library under [$SDK_TARGET_DIR]\n" ; exit 1 ; fi
     $thisdir/configure $enable_debug --host $TARGET \
@@ -147,7 +147,8 @@ then
 	export LDFLAGS
 	$thisdir/configure $enable_debug \
 		--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \
-		--localstatedir=/var e_initdir=/etc/init.d "$@"
+		--localstatedir=/var e_initdir=/etc/init.d \
+		e_rundir=/run/emailrelay "$@"
 :
 else
 	export CPPFLAGS="$CPPFLAGS -I/usr/X11R7/include -I/usr/X11R6/include -I/usr/local/include -I/opt/local/include -I/opt/X11/include"

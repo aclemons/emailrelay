@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+#
+# rules
+#
+# See dh(1) and debhelper(7)
+#
+
+%:
+	dh $@ --with autotools_dev
+
+override_dh_auto_configure:
+	# (the init script goes to one side under /usr/lib since we have debian/emailrelay.init)
+	dh_auto_configure -- --libexecdir=/usr/lib e_initdir=/usr/lib/emailrelay/init e_rundir=/run/emailrelay --without-doxygen --without-man2html --with-openssl --without-mbedtls --with-pam --disable-gui --disable-install-hook --disable-testing
+

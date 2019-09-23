@@ -33,8 +33,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/gauth \
 	-I$(top_srcdir)/src/gsmtp \
 	-I$(top_srcdir)/src/gpop \
-	-D "G_SPOOLDIR=$(e_spooldir)" \
-	-D "GCONFIG_CONFIGURATION=$(GCONFIG_CONFIGURATION)"
+	-D "G_SPOOLDIR=$(e_spooldir)"
 
 WINDOWS_MAIN_SOURCES = \
 	winmain.cpp \
@@ -204,7 +203,7 @@ else
 	$(top_builddir)/src/glib/libglib.a
 endif
 
-emailrelay_filter_copy_SOURCES = filter_copy.cpp filter.cpp filter.h legal.cpp legal.h
+emailrelay_filter_copy_SOURCES = filter.cpp legal.cpp legal.h
 if GCONFIG_WINDOWS
  emailrelay_filter_copy_LDFLAGS = -static
  emailrelay_filter_copy_LDADD = \

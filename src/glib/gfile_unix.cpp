@@ -93,6 +93,12 @@ bool G::File::executable( const Path & path )
 	}
 }
 
+bool G::File::empty( const Path & path )
+{
+	struct stat statbuf ;
+	return 0 == ::stat( path.str().c_str() , &statbuf ) && statbuf.st_size == 0 ;
+}
+
 std::string G::File::sizeString( const Path & path )
 {
 	struct stat statbuf ;

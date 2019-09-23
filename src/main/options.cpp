@@ -195,7 +195,7 @@ std::string Main::Options::spec( bool is_windows )
 			// If the remote server does not allow STARTTLS then the SMTP connection
 			// will fail.
 
-		"9!tls-config!sets low-level TLS configuration options! (eg. tlsv1.2)!1!options!3|"
+		"9!tls-config!sets low-level TLS configuration options! (eg. tlsv1.2)!2!options!3|"
 			//example: mbedtls,tlsv1.2
 			// Selects and configures the low-level TLS library, using a comma-separated
 			// list of keywords. If OpenSSL and mbedTLS are both built in then keywords
@@ -228,7 +228,7 @@ std::string Main::Options::spec( bool is_windows )
 			// semicolon-separated list of configuration items. Each item is a
 			// single-character key, followed by a colon and then a comma-separated
 			// list. A 'm' character introduces an ordered list of authentication
-			// mechanisms, and an 'x' is used for blacklisted mechanisms.
+			// mechanisms, and an 'x' is used for blocklisted mechanisms.
 
 		"L!log-time!adds a timestamp to the logging output!!0!!3|"
 			// Adds a timestamp to the logging output using the local timezone.
@@ -262,7 +262,7 @@ std::string Main::Options::spec( bool is_windows )
 			// semicolon-separated list of configuration items. Each item is a
 			// single-character key, followed by a colon and then a comma-separated
 			// list. A 'm' character introduces a preferred sub-set of the built-in
-			// authentication mechanisms, and an 'x' is used for blacklisted
+			// authentication mechanisms, and an 'x' is used for blocklisted
 			// mechanisms.
 
 		"e!close-stderr!closes the standard error stream soon after start-up!!0!!3|"
@@ -380,7 +380,7 @@ std::string Main::Options::spec( bool is_windows )
 			// or "::" for IPv6.
 
 		"i!pid-file!defines a file for storing the daemon process-id!!2!pid-file!3|"
-			//example: /var/run/emailrelay/emailrelay.pid
+			//example: /run/emailrelay/emailrelay.pid
 			//example: C:/ProgramData/E-MailRelay/pid.txt
 			// Causes the process-id to be written into the specified file when the
 			// program starts up, typically after it has become a backgroud daemon.
@@ -451,6 +451,14 @@ std::string Main::Options::spec( bool is_windows )
 		"M!size!limits the size of submitted messages!!1!bytes!3|"
 			//example: 10000000
 			// Limits the size of mail messages that can be submitted over SMTP.
+
+		"!dnsbl!configuration for DNSBL blocking of smtp client addresses!!2!config!3|"
+			//example: 1.1.1.1:53,1000,1,spam.dnsbl.example.com,block.dnsbl.example.com
+			// Specifies a list of DNSBL servers that are used to reject SMTP
+			// connections from blocked addresses. The configuration string
+			// is made up of comma-separated fields: the DNS server's
+			// transport address, a timeout in milliseconds, a rejection
+			// threshold, and then the list of DNSBL servers.
 
 		"!test!!!1!x!99|"
 	) ;

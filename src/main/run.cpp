@@ -34,6 +34,7 @@
 #include "gpopserver.h"
 #include "gfilterfactory.h"
 #include "gverifierfactory.h"
+#include "gdnsblock.h"
 #include "gslot.h"
 #include "gmonitor.h"
 #include "glocal.h"
@@ -263,6 +264,11 @@ void Main::Run::run()
 			G_LOG( "Main::Run::run: forwarding address " << location.displayString() ) ;
 	}
 
+	// early check on the DNSBL configuration string
+	//
+	if( !configuration().dnsbl().empty() )
+		GNet::DnsBlock::checkConfig( configuration().dnsbl() ) ;
+
 	// figure out what we're doing
 	//
 	bool do_smtp = configuration().doServing() && configuration().doSmtp() ;
@@ -415,7 +421,7 @@ void Main::Run::closeMoreFiles()
 
 bool Main::Run::hidden() const
 {
-	return commandline().map().contains("hidden") ;
+	return configuration().hidden() || configuration().show("hidden") ;
 }
 
 void Main::Run::checkPort( bool check , const std::string & ip , unsigned int port )
@@ -506,7 +512,8 @@ GSmtp::Server::Config Main::Run::serverConfig() const
 			configuration().filterTimeout() , // (verifier-timeout)
 			GNet::ServerPeerConfig(configuration().idleTimeout()) ,
 			serverProtocolConfig() ,
-			configuration().smtpSaslServerConfig() ) ;
+			configuration().smtpSaslServerConfig() ,
+			configuration().dnsbl() ) ;
 }
 
 GPop::Server::Config Main::Run::popConfig() const

@@ -25,7 +25,7 @@
 #include "glog.h"
 #include <string>
 #include <vector>
-#include <set>
+#include <fstream>
 #include <ctime>
 
 namespace G
@@ -113,6 +113,7 @@ private:
 	LogOutput( const LogOutput & ) g__eq_delete ;
 	void operator=( const LogOutput & ) g__eq_delete ;
 	void init() ;
+	static void open( std::ofstream & , const std::string & ) ;
 	void cleanup() ;
 	void appendTimestampStringTo( std::string & ) ;
 	static std::string dateString() ;

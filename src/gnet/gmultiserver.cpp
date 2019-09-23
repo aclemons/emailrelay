@@ -92,6 +92,7 @@ GNet::MultiServer::AddressList GNet::MultiServer::addressList( const AddressList
 		for( AddressList::iterator p = result.begin() ; p != result.end() ; ++p )
 			(*p).setPort( port ) ;
 	}
+	G_ASSERT( !result.empty() ) ;
 	return result ;
 }
 
@@ -121,6 +122,7 @@ GNet::MultiServer::AddressList GNet::MultiServer::addressList( const G::StringAr
 			}
 		}
 	}
+	G_ASSERT( !result.empty() ) ;
 	return result ;
 }
 

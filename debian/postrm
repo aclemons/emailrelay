@@ -4,7 +4,7 @@
 #
 
 spool="/var/spool/emailrelay"
-rundir="/var/run/emailrelay"
+rundir="/run/emailrelay"
 
 emailrelay_unfix_html()
 {

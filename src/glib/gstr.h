@@ -428,6 +428,9 @@ public:
 	static bool headMatch( const std::string & in , const std::string & head ) ;
 		///< Returns true if the string has the given start (or head is empty).
 
+	static bool headMatch( const std::string & in , const char * head ) ;
+		///< A c-string overload.
+
 	static bool headMatch( const StringArray & in , const std::string & head ) ;
 		///< Returns true if any string in the array has the given start
 		///< (or head is empty).

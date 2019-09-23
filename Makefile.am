@@ -63,12 +63,14 @@ DEB=emailrelay_$(VERSION)_$(ARCH).deb
 rpm: $(RPM)
 
 $(RPM): dist
-	-rm -rf $(RPM_ROOT)/BUILD/emailrelay-$(VERSION)
+	-rm -rf $(RPM_ROOT)/BUILD/emailrelay-$(VERSION)-1.$(ARCH)
+	test ! -d $(RPM_ROOT)/BUILD/emailrelay-$(VERSION)-1.$(ARCH)
 	-mkdir -p $(RPM_ROOT)/BUILD $(RPM_ROOT)/SOURCES $(RPM_ROOT)/SPECS 2>/dev/null
 	cp $(TAR) $(RPM_ROOT)/SOURCES/emailrelay-$(VERSION)-src.tar.gz
 	cp $(top_srcdir)/emailrelay.spec $(RPM_ROOT)/SPECS/
-	chown root:root $(RPM_ROOT)/SPECS/emailrelay.spec
-	-rm -f $(RPM) || true
+	-chown root:root $(RPM_ROOT)/SPECS/emailrelay.spec
+	-rm -f $(RPM)
+	test ! -f $(RPM)
 	rpmbuild -ba $(RPM_ROOT)/SPECS/emailrelay.spec
 	test -f $(RPM)
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,16 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-///
-/// \file gdebug.h
-///
-
-#ifndef G_DEBUG_H
-#define G_DEBUG_H
+//
+// gexceptionsource.cpp
+//
 
 #include "gdef.h"
-#include "glogoutput.h"
-#include "glog.h"
-#include "gassert.h"
+#include "gexceptionsource.h"
 
-#endif
+GNet::ExceptionSource::~ExceptionSource()
+{
+}
+
+/// \file gexceptionsource.cpp

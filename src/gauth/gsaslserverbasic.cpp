@@ -215,7 +215,7 @@ std::string GAuth::SaslServerBasicImp::apply( const std::string & response , boo
 		}
 		else
 		{
-			next_challenge = "just testing" ;
+			next_challenge = "not authenticated, send empty response" ;
 			done = false ;
 		}
 	}
@@ -346,7 +346,7 @@ bool GAuth::SaslServerBasic::init( const std::string & mechanism )
 bool GAuth::SaslServerBasic::mustChallenge() const
 {
 	std::string m = G::Str::upper( m_imp->mechanism() ) ; // upper() just in case
-	return m != "PLAIN" && m != "LOGIN" ;
+	return m != "PLAIN" && m != "LOGIN" && m != "XOAUTH2" ;
 }
 
 std::string GAuth::SaslServerBasic::initialChallenge() const

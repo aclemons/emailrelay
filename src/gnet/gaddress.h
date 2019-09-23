@@ -68,9 +68,6 @@ public:
 		///< Returns true if the implementation supports the given address family,
 		///< either ipv4 or ipv6.
 
-	static bool supports( unsigned int ) ;
-		///< Returns true if the implementation supports the given sockaddr sa_family.
-
 	Address( const Address & ) ;
 		///< Copy constructor.
 
@@ -128,11 +125,21 @@ public:
 		///< Returns a string which represents the network address for
 		///< debugging and diagnostics purposes.
 
+	std::string queryString() const ;
+		///< Returns a string that can be used as a prefix for rDNS or
+		///< DNSBL queries.
+
 	unsigned int port() const;
 		///< Returns port part of the address.
 
 	int domain() const ;
 		///< Returns the address 'domain', eg. PF_INET.
+
+	Family family() const ;
+		///< Returns the address family enumeration.
+
+	int af() const ;
+		///< Returns the address family number, AF_INET or AFINET6.
 
 	unsigned long scopeId( unsigned long default_ = 0UL ) const ;
 		///< Returns the scope-id. Returns the default if scope-ids are not
@@ -177,12 +184,13 @@ public:
 		///< Returns true if this is a loopback address.
 
 	bool isLocal( std::string & reason ) const ;
-		///< Returns true if this seems to be a local address (for some
-		///< definition of 'local'). Returns an explanation by reference
-		///< otherwise.
+		///< Returns true if this seems to be a 'local' address, ie. an
+		///< address that is inherently more trusted. Returns an
+		///< explanation by reference otherwise.
 
-	Family family() const ;
-		///< Returns the address family.
+	bool isPrivate() const ;
+		///< Returns true if this seems to be a 'private' address,
+		///< as in RFC-1918 for IPv4.
 
 	bool operator==( const Address & ) const ;
 		///< Comparison operator.

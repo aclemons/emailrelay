@@ -93,6 +93,9 @@ public:
 	static void mkdir( const Path & dir ) ;
 		///< Creates a directory.
 
+	static bool empty( const Path & file ) ;
+		///< Returns true if the file size is zero.
+
 	static std::string sizeString( const Path & file ) ;
 		///< Returns the file's size in string format.
 		///< Returns the empty string on error.

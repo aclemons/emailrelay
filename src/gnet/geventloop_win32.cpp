@@ -182,7 +182,9 @@ std::string GNet::EventLoopImp::run()
 			else
 			{
 				DWORD e = GetLastError() ;
-				throw Error( "msg-wait-for-multiple-objects failed" , G::Str::fromUInt(static_cast<unsigned int>(e)) ) ;
+				throw Error( "msg-wait-for-multiple-objects failed" ,
+					G::Str::fromUInt(static_cast<unsigned int>(handles_n)) ,
+					G::Str::fromUInt(static_cast<unsigned int>(e)) ) ;
 			}
 		}
 		if( updated )
@@ -335,7 +337,7 @@ void GNet::EventLoopImp::checkOnAdd( Descriptor new_fdd )
 void GNet::EventLoopImp::checkForOverflow( size_t n )
 {
 	size_t limit = MAXIMUM_WAIT_OBJECTS ;
-	if( n > limit )
+	if( n >= limit )
 		throw EventLoop::Overflow( "too many open handles" ) ;
 }
 

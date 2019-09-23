@@ -7,7 +7,7 @@ spool="/var/spool/emailrelay"
 submit="/usr/sbin/emailrelay-submit"
 filtercopy="/usr/lib/emailrelay/emailrelay-filter-copy"
 init="/etc/init.d/emailrelay"
-rundir="/var/run/emailrelay"
+rundir="/run/emailrelay"
 
 emailrelay_setup()
 {

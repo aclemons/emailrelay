@@ -25,6 +25,7 @@
 #include "glimits.h"
 #include <sstream>
 #include <string>
+#include <stdexcept>
 #include <ctime>
 #include <cstdlib>
 #include <fstream>
@@ -87,8 +88,11 @@ std::ostream & G::LogOutput::err( const std::string & path_in )
 		if( pos != std::string::npos )
 			path.replace( pos , 2U , dateString() ) ;
 
-		static std::ofstream file( path.c_str() , std::ios_base::out | std::ios_base::app ) ;
-		// ignore errors
+		static std::ofstream file ;
+		open( file , path ) ;
+		if( !file.good() )
+			throw std::runtime_error( "cannot open log file: " + path ) ;
+
 		return file ;
 	}
 	else

@@ -66,7 +66,8 @@ sub windows
 
 sub unlink
 {
-	my ( $path ) = @_ ;
+	my ( $path , $wintries ) = @_ ;
+	$wintries = (windows()?20:0) if !defined($wintries) ;
 	my $pidfile = ( $path =~ m/\.pid$/ ) ;
 	my $keep_this = $keep && !$pidfile ;
 	if( -f $path )
@@ -78,7 +79,15 @@ sub unlink
 		else
 		{
 			log_( "deleting [$path]" ) ;
-			CORE::unlink( $path ) or warn "warning: failed to delete [$path]: $!" ;
+			my $rc = CORE::unlink( $path ) ;
+			$rc or warn "warning: failed to delete [$path]: $!" ;
+
+			while( !$rc && $wintries && -f $path )
+			{
+				$wintries-- ;
+				sleep_cs( 50 ) ;
+				$rc = CORE::unlink( $path )
+			}
 		}
 	}
 }
@@ -90,7 +99,7 @@ sub _dot_exe
 
 sub path
 {
-	return join( "/" , @_ ) ;
+	return join( "/" , grep { m/./ } @_ ) ;
 }
 
 sub mangledpath
@@ -308,7 +317,7 @@ sub deleteSpoolDir
 	# directory. Optionally deletes all files.
 	my ( $path , $all ) = @_ ;
 	$all = defined($all) ? $all : 0 ;
-	if( -d $path )
+	if( defined($path) && -d $path )
 	{
 		_deleteFiles( $path , "content" ) ;
 		_deleteFiles( $path , "envelope" ) ;
@@ -498,8 +507,9 @@ sub kill_
 		sleep_cs( $timeout_cs ) ;
 		if( processIsRunning($pid) )
 		{
-			log_( "killing pid [$pid]" ) ;
+			log_( "still killing pid [$pid]" ) ;
 			kill( 9 , $pid ) ;
+			sleep_cs( $timeout_cs ) ;
 		}
 	}
 	else
@@ -521,7 +531,7 @@ sub processIsRunning
 	my ( $pid ) = @_ ;
 	if( unix() )
 	{
-		if( defined($pid) )
+		if( defined($pid) && $pid > 0 )
 		{
 			my $rc = kill 0 , $pid ;
 			return defined($rc) ? $rc : 0 ;
@@ -540,8 +550,8 @@ sub processIsRunning
 				return ( $f_pid eq "\"$pid\"" ? 1 : 0 ) ;
 			}
 		}
-		return 0 ;
 	}
+	return 0 ;
 }
 
 my $_port = 10000 ;

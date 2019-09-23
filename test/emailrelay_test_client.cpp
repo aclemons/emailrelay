@@ -24,8 +24,8 @@
 // of email messages on each one in turn.
 //
 // usage:
-//		emailrelay-test-client [-v [-v]] <port>
-//		emailrelay-test-client [-v [-v]] <addr> <port> [<connections> [<iterations> [<lines> [<line-length> [<messages>]]]]]
+//		emailrelay-test-client [-v [-v]] [<port>]
+//		emailrelay-test-client [-v [-v]] <addr-ipv4> <port> [<connections> [<iterations> [<lines> [<line-length> [<messages>]]]]]
 //
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
@@ -252,7 +252,8 @@ void init()
 {
 	#ifdef _WIN32
 		WSADATA info ;
-		::WSAStartup( MAKEWORD(2,2) , &info ) ;
+		if( ::WSAStartup( MAKEWORD(2,2) , &info ) )
+			throw std::runtime_error( "WSAStartup failed" ) ;
 	#else
 		signal( SIGPIPE , SIG_IGN ) ;
 	#endif

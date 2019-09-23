@@ -54,7 +54,7 @@ bool GNet::Server::canBind( const Address & address , bool do_throw )
 		ok = socket.canBindHint( address ) ;
 	}
 	if( !ok && do_throw )
-		throw CannotBind( address.displayString() ) ;
+		throw CannotBind( address.displayString() , socket.reason() ) ;
 	return ok ;
 }
 
