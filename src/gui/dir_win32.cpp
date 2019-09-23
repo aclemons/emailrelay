@@ -71,9 +71,9 @@ namespace
 {
 	int special_id( const std::string & type )
 	{
-		if( type == "desktop" ) return CSIDL_DESKTOPDIRECTORY ; // "c:/documents and settings/<username>/desktop"
-		if( type == "menu" ) return CSIDL_PROGRAMS ; // "c:/documents and settings/<username>/start menu/programs"
-		if( type == "login" ) return CSIDL_STARTUP ; // "c:/documents and settings/<username>/start menu/programs/startup"
+		if( type == "desktop" ) return CSIDL_DESKTOPDIRECTORY ; // "c:/users/<username>/desktop"
+		if( type == "menu" ) return CSIDL_PROGRAMS ; // "c:/users/<username>/appdata/roaming/microsoft/windows/start menu/programs"
+		if( type == "autostart" ) return CSIDL_STARTUP ; // "c:/users/<username>/appdata/roaming/microsoft/windows/start menu/startup/programs"
 		if( type == "programs" ) return sizeof(void*) == 4 ? CSIDL_PROGRAM_FILESX86 : CSIDL_PROGRAM_FILES ; // "c:/program files"
 		if( type == "data" ) return CSIDL_COMMON_APPDATA ; // "c:/programdata"
 		throw std::runtime_error("internal error") ;
@@ -83,8 +83,12 @@ namespace
 
 G::Path Dir::special( const std::string & type )
 {
+	// this is not quite right when running with UAC administrator rights because
+	// it gets the administrator's user directories for the desktop etc links and not
+	// the user's -- and there is no reasonable way to get the user's access token
 	char buffer[MAX_PATH] = { 0 } ;
-	bool ok = S_OK == ::SHGetFolderPathA( NULL , special_id(type) , NULL , SHGFP_TYPE_CURRENT , buffer ) ;
+	HANDLE user_token = NULL ; // TODO original user's paths when run-as administrator
+	bool ok = S_OK == ::SHGetFolderPathA( NULL , special_id(type) , user_token , SHGFP_TYPE_CURRENT , buffer ) ;
 	return ok ? G::Path(buffer) : G::Path("c:/") ;
 }
 

@@ -62,6 +62,7 @@
 #
 #	Openssl::available() or die ;
 #	$Openssl::keep = 0 ;
+#	$Openssl::openssl = Openssl::search("/usr/local/bin") ;
 #	my $openssl = new Openssl( sub{"/tmp/$$.".$_[0]} ) ;
 #	$openssl->createActors() ;
 #	my $alice_pem = $openssl->file("alice.key","alice.crt") ;
@@ -79,18 +80,50 @@ use strict ;
 use FileHandle ;
 use File::Basename ;
 use Carp ;
+use System ;
 
 package Openssl ;
 our $keep = 0 ;
+our $openssl = "openssl" ;
 
 sub available
 {
 	# Returns true if the "openssl" tool is available.
+	return _available( $openssl ) ;
+}
 
-	my $fh = new FileHandle( "openssl errstr 0 2>&1 |" ) or return 0 ;
-	my $line = <$fh> ;
-	return 0 if( !$line ) ;
-	return $line =~ m/^error:0/ ;
+sub _available
+{
+	my ( $tool ) = @_ ;
+	my $fh = new FileHandle( "$tool errstr 0 2>&1 |" ) ;
+	my $result = 0 ;
+	if( defined($fh) )
+	{
+		my $line = <$fh> ;
+		$result = 1 if( $line && ( $line =~ m/^error:0/ ) ) ;
+	}
+	return $result ;
+}
+
+sub search
+{
+	# Searches for the "openssl" tool in the given directory or
+	# on the PATH or in other likely places and returns a value
+	# that can be assigned to "$openssl".
+
+	my ( $dir0 ) = @_ ;
+	my @dirs = System::windows() ? ( "" , "c:/program files/git/mingw64/bin" ) : ( "" ) ;
+	unshift @dirs , $dir0 if defined($dir0) ;
+	for my $dir ( @dirs )
+	{
+		my $tool = System::mangledpath( System::exe($dir,"openssl") ) ;
+		$tool = "\"$tool\"" if( $tool =~ m/ / ) ;
+		if( _available($tool) )
+		{
+			return $tool ;
+		}
+	}
+	return System::exe("openssl") ;
 }
 
 sub new
@@ -228,7 +261,7 @@ sub sign
 
 	# generate the user's csr file
 	my $user_csr = $this->_new_path( "$user_basename.csr" ) ;
-	my $req_cmd = "openssl req -new -key $user_key -batch -subj /CN=$user_cname -out $user_csr" ;
+	my $req_cmd = "$openssl req -new -key $user_key -batch -subj /CN=$user_cname -out $user_csr" ;
 	$this->_run( $req_cmd ) ;
 	$this->_check( $user_csr ) ;
 
@@ -256,7 +289,7 @@ sub sign
 	# generate the user's certificate file
 	my $user_cert = $this->_new_path( "$user_basename.crt" ) ;
 	my $days = 30000 ; # expiry time in days
-	my $x509_cmd = "openssl x509 -req -days $days -in $user_csr -CA $ca_pem -CAserial $ca_serial -CAcreateserial -out $user_cert" ;
+	my $x509_cmd = "$openssl x509 -req -days $days -in $user_csr -CA $ca_pem -CAserial $ca_serial -CAcreateserial -out $user_cert" ;
 	$x509_cmd .= " -extfile $extfile" if defined($extfile) ;
 	$this->_run( $x509_cmd ) ;
 	$this->_check( $user_cert ) ;
@@ -271,7 +304,7 @@ sub selfcert
 	my $crt_file = $this->_new_path( "$basename.crt" ) ;
 	my $key_file = $this->_new_path( "$basename.key" ) ;
 	my $days = 30000 ; # expiry time in days
-	$this->_run( "openssl req -x509 -newkey rsa:2048 -days $days -subj /CN=$cname -nodes -out $crt_file -keyout $key_file" ) ;
+	$this->_run( "$openssl req -x509 -newkey rsa:2048 -days $days -subj /CN=$cname -nodes -out $crt_file -keyout $key_file" ) ;
 	$this->_check( $crt_file , $key_file ) ;
 }
 
@@ -282,7 +315,7 @@ sub genkey
 	my ( $this , $basename ) = @_ ;
 
 	my $key_file = $this->_new_path( "$basename.key" ) ;
-	$this->_run( "openssl genrsa -out $key_file 2048" ) ;
+	$this->_run( "$openssl genrsa -out $key_file 2048" ) ;
 	$this->_check( $key_file ) ;
 	$this->_add_cleanable( $key_file ) ;
 }
@@ -298,7 +331,7 @@ sub runClient
 	my ( $this , $peer , $logfile , $cert , $ca_file , $on_completion ) = @_ ;
 
 	my $line ;
-	my $cmd = "openssl s_client -tls1 -msg -starttls smtp -crlf -connect $peer -showcerts" ;
+	my $cmd = "$openssl s_client -tls1 -msg -starttls smtp -crlf -connect $peer -showcerts" ;
 	$cmd .= " -cert $cert" if defined($cert) ;
 	$cmd .= " -CAfile $ca_file" if defined($ca_file) ;
 	$cmd .= " -verify 10" ; # failure is not fatal -- look for "verify error:" near top of s_client log
@@ -316,7 +349,7 @@ sub runServer
 
 	my ( $this , $port , $logfile , $cert , $ca_file , $on_completion ) = @_ ;
 
-	my $cmd = "openssl s_server -tls1 -msg -crlf -accept $port" ;
+	my $cmd = "$openssl s_server -tls1 -msg -crlf -accept $port" ;
 	$cmd .= " -cert $cert" if defined($cert) ;
 	$cmd .= " -CAfile $ca_file" if defined($ca_file) ;
 	$cmd .= " -Verify 99" ;

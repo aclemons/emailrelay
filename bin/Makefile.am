@@ -51,7 +51,6 @@ js_scripts = \
 	emailrelay-resubmit.js \
 	emailrelay-service-install.js
 
-
 EXTRA_DIST = \
 	$(example_scripts) \
 	$(example_scripts_in) \
@@ -74,7 +73,7 @@ e_init_SCRIPTS = \
 CLEANFILES = \
 	$(example_scripts_out)
 
-do_sed = sed -e "s%__SPOOL_DIR__%${e_spooldir}%g" -e "s%__SBIN_DIR__%${sbindir}%g" -e "s%__SYSCONF_DIR__%${e_sysconfdir}%g"
+do_sed = sed -e "s%__SPOOL_DIR__%${e_spooldir}%g" -e "s%__SBIN_DIR__%${sbindir}%g" -e "s%__SYSCONF_DIR__%${e_sysconfdir}%g" -e "s%__LIBEXEC_DIR__%${e_libexecdir}%g" -e "s%__RUNDIR__%${e_rundir}%g"
 
 emailrelay-deliver.sh: emailrelay-deliver.sh.in
 	$(do_sed) < $(srcdir)/emailrelay-deliver.sh.in > emailrelay-deliver.sh

@@ -304,9 +304,14 @@ sub sleep_cs
 
 sub wait
 {
-	# Waits for the server to die
+	# Waits for the server to exit. This does not work well for synchronising the
+	# exit of a short-lived 'client-like' process because it requires a pid-file
+	# to provide the pid but the pid reading in run() is racey.
 	my ( $this ) = @_ ;
-	System::waitpid( $this->pid() ) ;
+	if( $this->pidFile() && $this->pid() )
+	{
+		System::waitpid( $this->pid() ) ;
+	}
 }
 
 sub kill
@@ -328,6 +333,8 @@ sub cleanup
 	System::unlink( $this->filter() ) ;
 	System::unlink( $this->clientFilter() ) ;
 	# System::unlink( $this->tlsCertificate() ) ; # done in Openssl::cleanup()
+	System::unlink( $this->pidFile() ) if System::windows() ;
+	System::deleteSpoolDir( $this->spoolDir() , 1 ) ;
 }
 
 sub hasDebug
@@ -361,7 +368,7 @@ sub hasThreads
 	if( System::unix() )
 	{
 		my $exe = $this->exe() ;
-		my $rc = system( "$exe --version --verbose | grep -qi threading.enabled" ) ;
+		my $rc = system( "$exe --version --verbose | grep -qi threading.*enabled" ) ;
 		return $rc == 0 ;
 	}
 	else

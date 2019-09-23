@@ -73,11 +73,11 @@ public:
 		Identity run_as_id , bool strict_id ,
 		int exec_error_exit , const std::string & exec_error_format ,
 		std::string (*exec_error_format_fn)(std::string,int) ) ;
-	int id() const ;
+	int id() const g__noexcept ;
 	static std::pair<bool,pid_t> fork() ;
 	NewProcessWaitFuture & wait() ;
 	int run( const Path & , const StringArray & , bool clean_env , bool strict ) ;
-	void kill() ;
+	void kill() g__noexcept ;
 	static void printError( int , const std::string & s ) ;
 	std::string execErrorFormat( const std::string & format , int errno_ ) ;
 
@@ -118,14 +118,20 @@ std::pair<bool,pid_t> G::NewProcess::fork()
 	return NewProcessImp::fork() ;
 }
 
-int G::NewProcess::id() const
+int G::NewProcess::id() const g__noexcept
 {
 	return m_imp->id() ;
 }
 
-void G::NewProcess::kill()
+void G::NewProcess::kill( bool yield ) g__noexcept
 {
 	m_imp->kill() ;
+	if( yield )
+	{
+		G::threading::yield() ;
+		::close( ::open( "/dev/null" , O_RDONLY ) ) ; // hmm
+		G::threading::yield() ;
+	}
 }
 
 // ==
@@ -256,7 +262,7 @@ int G::NewProcessImp::run( const G::Path & exe , const StringArray & args , bool
 	return e ;
 }
 
-int G::NewProcessImp::id() const
+int G::NewProcessImp::id() const g__noexcept
 {
 	return static_cast<int>(m_child_pid) ;
 }
@@ -266,9 +272,8 @@ G::NewProcessWaitFuture & G::NewProcessImp::wait()
 	return m_wait_future ;
 }
 
-void G::NewProcessImp::kill()
+void G::NewProcessImp::kill() g__noexcept
 {
-	G_DEBUG( "G::NewProcessImp::kill: killing process group " << m_child_pid ) ;
 	if( !m_killed && m_child_pid != -1 )
 	{
 		// kill the group so the pipe is closed in all processes and the read returns zero

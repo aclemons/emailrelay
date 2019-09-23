@@ -29,8 +29,7 @@
 G::OptionParser::OptionParser( const Options & spec , OptionMap & values_out , StringArray & errors_out ) :
 	m_spec(spec) ,
 	m_map(values_out) ,
-	m_errors(errors_out) ,
-	m_allow_matching_duplicates(true)
+	m_errors(errors_out)
 {
 }
 
@@ -128,9 +127,7 @@ void G::OptionParser::processOption( const std::string & name , const std::strin
 		errorDubiousValue( name , value ) ;
 	else if( !m_spec.valued(name) && !value.empty() )
 		errorExtraValue( name , value ) ;
-	else if( haveSeenSame(name,value) && !m_spec.multivalued(name) && m_allow_matching_duplicates )
-		;
-	else if( haveSeen(name) && !m_spec.multivalued(name) )
+	else if( haveSeen(name) && !m_spec.multivalued(name) && !haveSeenSame(name,value) )
 		errorDuplicate( name ) ;
 	else
 		m_map.insert( OptionMap::value_type(name,OptionValue(value)) ) ;
@@ -145,8 +142,6 @@ void G::OptionParser::processOptionOn( char c )
 		errorNoValue( c ) ;
 	else if( haveSeenOff(name) )
 		errorConflict( name ) ;
-	else if( haveSeenOn(name) && m_allow_matching_duplicates )
-		;
 	else
 		m_map.insert( std::make_pair(name,OptionValue::on()) ) ;
 }
@@ -158,9 +153,7 @@ void G::OptionParser::processOption( char c , const std::string & value )
 		errorUnknownOption( c ) ;
 	else if( !m_spec.valued(name) && !value.empty() )
 		errorExtraValue( name , value ) ;
-	else if( haveSeenSame(name,value) && !m_spec.multivalued(c) && m_allow_matching_duplicates )
-		;
-	else if( haveSeen(name) && !m_spec.multivalued(c) )
+	else if( haveSeen(name) && !m_spec.multivalued(c) && !haveSeenSame(name,value) )
 		errorDuplicate( c ) ;
 	else
 		m_map.insert( OptionMap::value_type(name,OptionValue(value)) ) ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,31 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gpamerror.cpp
-//
+///
+/// \file gexceptionsource.h
+///
+
+#ifndef G_NET_EXCEPTION_SOURCE__H
+#define G_NET_EXCEPTION_SOURCE__H
 
 #include "gdef.h"
-#include "gpam.h"
-#include "gexception.h"
-#include "gstr.h"
-#include "gdebug.h"
 
-G::PamError::PamError( const std::string & op , int rc ) :
-	G::Exception("pam error")
+namespace GNet
 {
-	append( op ) ;
-	append( Str::fromInt(rc) ) ;
-	G_DEBUG( "G::Pam::Error::ctor: " << m_what ) ;
+	class ExceptionSource ;
 }
 
-G::PamError::PamError( const std::string & op , int rc , const char * more ) :
-	G::Exception("pam error")
+/// \class GNet::ExceptionSource
+/// An empty class that identifies the source of an exception as
+/// delivered to a GNet::ExceptionHandler interface. This is used
+/// as a public mixin base class for classes that are held in a
+/// container and need to be identified from within the onException()
+/// call delivered to the container.
+///
+class GNet::ExceptionSource
 {
-	append( op ) ;
-	append( Str::fromInt(rc) ) ;
-	append( more ) ;
-	G_DEBUG( "G::Pam::Error::ctor: " << m_what ) ;
-}
+public:
+	virtual ~ExceptionSource() ;
+		///< Destructor.
+} ;
 
-/// \file gpamerror.cpp
+#endif

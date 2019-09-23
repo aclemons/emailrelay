@@ -110,4 +110,10 @@ bool GNet::Local::isLocal( const Address & address , std::string & reason )
 	return false ;
 }
 
+bool GNet::Local::isLocal( const Address & address )
+{
+	std::string reason ;
+	return isLocal( address , reason ) ;
+}
+
 /// \file glocal.cpp

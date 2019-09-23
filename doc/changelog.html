@@ -14,12 +14,14 @@
      <li>Backwards compatibility features for 1.9-to-2.0 transition removed.</li>
      <li>Better handling of too-many-connections on Windows.</li>
      <li>New <em>--idle-timeout</em> option for server-side connections.</li>
-     <li>New <em>--show</em> option on windows to better control the user interface style.</li>
+     <li>Support for RFC-5782 DNSBL blocking (<em>--dnsbl</em>).</li>
      <li>Filter scripts are given the path of the envelope file in argv2.</li>
      <li>Message files can be editied by <em>--client-filter</em> scripts.</li>
      <li>Better support for CRAM-SHAx authentication.</li>
      <li>New <em>--client-auth-config</em> and <em>--server-auth-config</em> options.</li>
+     <li>New <em>--show</em> option on windows to better control the user interface style.</li>
      <li>The <em>--pop</em> option always requires <em>--pop-auth</em>.</li>
+     <li>No message is spooled if all its envelope recipients are local-mailboxes.</li>
      <li>TLS cipher name added to <em>Received</em> line as per RFC-8314 4.3.</li>
      <li>Certificate contents are not logged.</li>
      <li>Timestamp parts of spool filenames no longer limited to six digits.</li>

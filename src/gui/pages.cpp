@@ -178,7 +178,7 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , con
 
 	m_runtime_dir_label = new QLabel(tr("Dire&ctory:")) ;
 	m_runtime_dir_edit_box = new QLineEdit ;
-	tip( m_runtime_dir_edit_box , "--pid-file" ) ;
+	tip( m_runtime_dir_edit_box , "--pid-file, --log-file" ) ;
 	m_runtime_dir_label->setBuddy(m_runtime_dir_edit_box) ;
 	m_runtime_dir_browse_button = new QPushButton(tr("B&rowse")) ;
 
@@ -307,7 +307,7 @@ void DirectoryPage::dump( std::ostream & stream , bool for_install ) const
 	dumpItem( stream , for_install , "dir-boot" , Dir::boot() ) ;
 	dumpItem( stream , for_install , "dir-desktop" , Dir::desktop() ) ;
 	dumpItem( stream , for_install , "dir-menu" , Dir::menu() ) ;
-	dumpItem( stream , for_install , "dir-login" , Dir::login() ) ;
+	dumpItem( stream , for_install , "dir-login" , Dir::autostart() ) ;
 }
 
 bool DirectoryPage::isComplete()
@@ -1397,10 +1397,10 @@ StartupPage::StartupPage( GDialog & dialog , const G::MapFile & config , const s
 		m_add_menu_item_checkbox->setEnabled( false ) ;
 		m_add_desktop_item_checkbox->setEnabled( false ) ;
 	}
-	m_at_login_checkbox->setEnabled( !Dir::login().str().empty() ) ;
+	m_at_login_checkbox->setEnabled( !Dir::autostart().str().empty() ) ;
 	m_on_boot_checkbox->setEnabled( start_on_boot_able ) ;
 
-	m_at_login_checkbox->setChecked( !Dir::login().str().empty() && config.booleanValue("start-at-login",false) ) ;
+	m_at_login_checkbox->setChecked( !Dir::autostart().str().empty() && config.booleanValue("start-at-login",false) ) ;
 	m_add_menu_item_checkbox->setChecked( !m_is_mac && config.booleanValue("start-link-menu",true) ) ;
 	m_add_desktop_item_checkbox->setChecked( !m_is_mac && config.booleanValue("start-link-desktop",false) ) ;
 	m_on_boot_checkbox->setChecked( start_on_boot_able && config.booleanValue("start-on-boot",false) ) ;
@@ -1417,6 +1417,10 @@ StartupPage::StartupPage( GDialog & dialog , const G::MapFile & config , const s
 	layout->addWidget(manual_group) ;
 	layout->addStretch() ;
 	setLayout( layout ) ;
+
+	tip( m_at_login_checkbox , Dir::autostart().str() ) ;
+	tip( m_add_menu_item_checkbox , Dir::menu().str() ) ;
+	tip( m_add_desktop_item_checkbox , Dir::desktop().str() ) ;
 
 	connect( m_on_boot_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
 	connect( m_add_desktop_item_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));

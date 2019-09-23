@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2018 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,14 +15,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// gserverprotocol.cpp
+// gsmtpserverprotocol.cpp
 //
 
 #include "gdef.h"
-#include "gsmtp.h"
 #include "gsaslserverfactory.h"
 #include "gsocketprotocol.h"
-#include "gserverprotocol.h"
+#include "gsmtpserverprotocol.h"
 #include "gxtext.h"
 #include "gbase64.h"
 #include "gdate.h"
@@ -30,20 +29,22 @@
 #include "gdatetime.h"
 #include "gstr.h"
 #include "glog.h"
+#include "gtest.h"
 #include "gassert.h"
 #include <string>
 
-GSmtp::ServerProtocol::ServerProtocol( GNet::ExceptionHandler & eh , Sender & sender ,
-	Verifier & verifier , ProtocolMessage & pmessage , const GAuth::Secrets & secrets , Text & text ,
-	GNet::Address peer_address , Config config ) :
-		GNet::TimerBase(eh) ,
+GSmtp::ServerProtocol::ServerProtocol( GNet::ExceptionSink es , Sender & sender ,
+	Verifier & verifier , ProtocolMessage & pmessage ,
+	const GAuth::Secrets & secrets , const std::string & sasl_server_config ,
+	Text & text , GNet::Address peer_address , const Config & config ) :
+		GNet::TimerBase(es) ,
 		m_sender(sender) ,
 		m_verifier(verifier) ,
 		m_text(text) ,
 		m_message(pmessage) ,
-		m_sasl(GAuth::SaslServerFactory::newSaslServer(secrets,false/*apop*/)) ,
+		m_sasl(GAuth::SaslServerFactory::newSaslServer(secrets,sasl_server_config,false/*apop*/)) ,
 		m_config(config) ,
-		m_fsm(sStart,sEnd,s_Same,s_Any) ,
+		m_fsm(State::sStart,State::sEnd,State::s_Same,State::s_Any) ,
 		m_with_starttls(false) ,
 		m_peer_address(peer_address) ,
 		m_secure(false) ,
@@ -52,53 +53,57 @@ GSmtp::ServerProtocol::ServerProtocol( GNet::ExceptionHandler & eh , Sender & se
 		m_session_authenticated(false)
 {
 	m_message.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::processDone) ) ;
-	verifier.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::verifyDone) ) ;
+	m_verifier.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::verifyDone) ) ;
 
 	// (dont send anything to the peer from this ctor -- the Sender object is not fuly constructed)
 
-	m_fsm.addTransition( eQuit        , s_Any       , sEnd        , &GSmtp::ServerProtocol::doQuit ) ;
-	m_fsm.addTransition( eUnknown     , sProcessing , s_Same      , &GSmtp::ServerProtocol::doIgnore ) ;
-	m_fsm.addTransition( eUnknown     , s_Any       , s_Same      , &GSmtp::ServerProtocol::doUnknown ) ;
-	m_fsm.addTransition( eRset        , sStart      , s_Same      , &GSmtp::ServerProtocol::doNoop ) ;
-	m_fsm.addTransition( eRset        , s_Any       , sIdle       , &GSmtp::ServerProtocol::doRset ) ;
-	m_fsm.addTransition( eNoop        , s_Any       , s_Same      , &GSmtp::ServerProtocol::doNoop ) ;
-	m_fsm.addTransition( eHelp        , s_Any       , s_Same      , &GSmtp::ServerProtocol::doHelp ) ;
-	m_fsm.addTransition( eExpn        , s_Any       , s_Same      , &GSmtp::ServerProtocol::doExpn ) ;
-	m_fsm.addTransition( eVrfy        , sStart      , sVrfyStart  , &GSmtp::ServerProtocol::doVrfy , s_Same ) ;
-	m_fsm.addTransition( eVrfyReply   , sVrfyStart  , sStart      , &GSmtp::ServerProtocol::doVrfyReply ) ;
-	m_fsm.addTransition( eVrfy        , sIdle       , sVrfyIdle   , &GSmtp::ServerProtocol::doVrfy , s_Same ) ;
-	m_fsm.addTransition( eVrfyReply   , sVrfyIdle   , sIdle       , &GSmtp::ServerProtocol::doVrfyReply ) ;
-	m_fsm.addTransition( eVrfy        , sGotMail    , sVrfyGotMail, &GSmtp::ServerProtocol::doVrfy , s_Same ) ;
-	m_fsm.addTransition( eVrfyReply   , sVrfyGotMail, sGotMail    , &GSmtp::ServerProtocol::doVrfyReply ) ;
-	m_fsm.addTransition( eVrfy        , sGotRcpt    , sVrfyGotRcpt, &GSmtp::ServerProtocol::doVrfy , s_Same ) ;
-	m_fsm.addTransition( eVrfyReply   , sVrfyGotRcpt, sGotRcpt    , &GSmtp::ServerProtocol::doVrfyReply ) ;
-	m_fsm.addTransition( eEhlo        , s_Any       , sIdle       , &GSmtp::ServerProtocol::doEhlo , s_Same ) ;
-	m_fsm.addTransition( eHelo        , s_Any       , sIdle       , &GSmtp::ServerProtocol::doHelo , s_Same ) ;
-	m_fsm.addTransition( eMail        , sIdle       , sGotMail    , &GSmtp::ServerProtocol::doMail , sIdle ) ;
-	m_fsm.addTransition( eRcpt        , sGotMail    , sVrfyTo1    , &GSmtp::ServerProtocol::doRcpt , s_Same ) ;
-	m_fsm.addTransition( eVrfyReply   , sVrfyTo1    , sGotRcpt    , &GSmtp::ServerProtocol::doVrfyToReply , sGotMail ) ;
-	m_fsm.addTransition( eRcpt        , sGotRcpt    , sVrfyTo2    , &GSmtp::ServerProtocol::doRcpt , s_Same ) ;
-	m_fsm.addTransition( eVrfyReply   , sVrfyTo2    , sGotRcpt    , &GSmtp::ServerProtocol::doVrfyToReply ) ;
-	m_fsm.addTransition( eData        , sGotMail    , sIdle       , &GSmtp::ServerProtocol::doNoRecipients ) ;
-	m_fsm.addTransition( eData        , sGotRcpt    , sData       , &GSmtp::ServerProtocol::doData ) ;
-	m_fsm.addTransition( eContent     , sData       , sData       , &GSmtp::ServerProtocol::doContent , sDiscarding ) ;
-	m_fsm.addTransition( eEot         , sData       , sProcessing , &GSmtp::ServerProtocol::doEot ) ;
-	m_fsm.addTransition( eDone        , sProcessing , sIdle       , &GSmtp::ServerProtocol::doComplete ) ;
-	m_fsm.addTransition( eTimeout     , sProcessing , sIdle       , &GSmtp::ServerProtocol::doComplete ) ;
-	m_fsm.addTransition( eContent     , sDiscarding , sDiscarding , &GSmtp::ServerProtocol::doDiscard ) ;
-	m_fsm.addTransition( eEot         , sDiscarding , sIdle       , &GSmtp::ServerProtocol::doDiscarded ) ;
+	m_fsm.addTransition( Event::eQuit        , State::s_Any       , State::sEnd        , &GSmtp::ServerProtocol::doQuit ) ;
+	m_fsm.addTransition( Event::eUnknown     , State::sProcessing , State::s_Same      , &GSmtp::ServerProtocol::doIgnore ) ;
+	m_fsm.addTransition( Event::eUnknown     , State::s_Any       , State::s_Same      , &GSmtp::ServerProtocol::doUnknown ) ;
+	m_fsm.addTransition( Event::eRset        , State::sStart      , State::s_Same      , &GSmtp::ServerProtocol::doNoop ) ;
+	m_fsm.addTransition( Event::eRset        , State::s_Any       , State::sIdle       , &GSmtp::ServerProtocol::doRset ) ;
+	m_fsm.addTransition( Event::eNoop        , State::s_Any       , State::s_Same      , &GSmtp::ServerProtocol::doNoop ) ;
+	m_fsm.addTransition( Event::eHelp        , State::s_Any       , State::s_Same      , &GSmtp::ServerProtocol::doHelp ) ;
+	m_fsm.addTransition( Event::eExpn        , State::s_Any       , State::s_Same      , &GSmtp::ServerProtocol::doExpn ) ;
+	m_fsm.addTransition( Event::eVrfy        , State::sStart      , State::sVrfyStart  , &GSmtp::ServerProtocol::doVrfy , State::s_Same ) ;
+	m_fsm.addTransition( Event::eVrfyReply   , State::sVrfyStart  , State::sStart      , &GSmtp::ServerProtocol::doVrfyReply ) ;
+	m_fsm.addTransition( Event::eVrfy        , State::sIdle       , State::sVrfyIdle   , &GSmtp::ServerProtocol::doVrfy , State::s_Same ) ;
+	m_fsm.addTransition( Event::eVrfyReply   , State::sVrfyIdle   , State::sIdle       , &GSmtp::ServerProtocol::doVrfyReply ) ;
+	m_fsm.addTransition( Event::eVrfy        , State::sGotMail    , State::sVrfyGotMail, &GSmtp::ServerProtocol::doVrfy , State::s_Same ) ;
+	m_fsm.addTransition( Event::eVrfyReply   , State::sVrfyGotMail, State::sGotMail    , &GSmtp::ServerProtocol::doVrfyReply ) ;
+	m_fsm.addTransition( Event::eVrfy        , State::sGotRcpt    , State::sVrfyGotRcpt, &GSmtp::ServerProtocol::doVrfy , State::s_Same ) ;
+	m_fsm.addTransition( Event::eVrfyReply   , State::sVrfyGotRcpt, State::sGotRcpt    , &GSmtp::ServerProtocol::doVrfyReply ) ;
+	m_fsm.addTransition( Event::eEhlo        , State::s_Any       , State::sIdle       , &GSmtp::ServerProtocol::doEhlo , State::s_Same ) ;
+	m_fsm.addTransition( Event::eHelo        , State::s_Any       , State::sIdle       , &GSmtp::ServerProtocol::doHelo , State::s_Same ) ;
+	m_fsm.addTransition( Event::eMail        , State::sIdle       , State::sGotMail    , &GSmtp::ServerProtocol::doMail , State::sIdle ) ;
+	m_fsm.addTransition( Event::eRcpt        , State::sGotMail    , State::sVrfyTo1    , &GSmtp::ServerProtocol::doRcpt , State::s_Same ) ;
+	m_fsm.addTransition( Event::eVrfyReply   , State::sVrfyTo1    , State::sGotRcpt    , &GSmtp::ServerProtocol::doVrfyToReply , State::sGotMail ) ;
+	m_fsm.addTransition( Event::eRcpt        , State::sGotRcpt    , State::sVrfyTo2    , &GSmtp::ServerProtocol::doRcpt , State::s_Same ) ;
+	m_fsm.addTransition( Event::eVrfyReply   , State::sVrfyTo2    , State::sGotRcpt    , &GSmtp::ServerProtocol::doVrfyToReply ) ;
+	m_fsm.addTransition( Event::eData        , State::sGotMail    , State::sIdle       , &GSmtp::ServerProtocol::doNoRecipients ) ;
+	m_fsm.addTransition( Event::eData        , State::sGotRcpt    , State::sData       , &GSmtp::ServerProtocol::doData ) ;
+	m_fsm.addTransition( Event::eContent     , State::sData       , State::sData       , &GSmtp::ServerProtocol::doContent , State::sDiscarding ) ;
+	m_fsm.addTransition( Event::eEot         , State::sData       , State::sProcessing , &GSmtp::ServerProtocol::doEot ) ;
+	m_fsm.addTransition( Event::eDone        , State::sProcessing , State::sIdle       , &GSmtp::ServerProtocol::doComplete ) ;
+	m_fsm.addTransition( Event::eTimeout     , State::sProcessing , State::sIdle       , &GSmtp::ServerProtocol::doComplete ) ;
+	m_fsm.addTransition( Event::eContent     , State::sDiscarding , State::sDiscarding , &GSmtp::ServerProtocol::doDiscard ) ;
+	m_fsm.addTransition( Event::eEot         , State::sDiscarding , State::sIdle       , &GSmtp::ServerProtocol::doDiscarded ) ;
 
 	if( m_sasl->active() )
 	{
-		m_fsm.addTransition( eAuth    , sIdle   , sAuth    , &GSmtp::ServerProtocol::doAuth , sIdle ) ;
-		m_fsm.addTransition( eAuthData, sAuth   , sAuth    , &GSmtp::ServerProtocol::doAuthData , sIdle ) ;
+		m_fsm.addTransition( Event::eAuth    , State::sIdle   , State::sAuth    , &GSmtp::ServerProtocol::doAuth , State::sIdle ) ;
+		m_fsm.addTransition( Event::eAuthData, State::sAuth   , State::sAuth    , &GSmtp::ServerProtocol::doAuthData , State::sIdle ) ;
+	}
+	else
+	{
+		m_fsm.addTransition( Event::eAuth    , State::sIdle   , State::sIdle    , &GSmtp::ServerProtocol::doAuthInvalid ) ;
 	}
 
 	m_with_starttls = GNet::SocketProtocol::secureAcceptCapable() && m_config.advertise_tls_if_possible ;
 	if( m_with_starttls )
 	{
-		m_fsm.addTransition( eStartTls , sIdle , sStartingTls , &GSmtp::ServerProtocol::doStartTls , sIdle ) ;
-		m_fsm.addTransition( eSecure   , sStartingTls , sIdle , &GSmtp::ServerProtocol::doSecure ) ;
+		m_fsm.addTransition( Event::eStartTls , State::sIdle , State::sStartingTls , &GSmtp::ServerProtocol::doStartTls , State::sIdle ) ;
+		m_fsm.addTransition( Event::eSecure   , State::sStartingTls , State::sIdle , &GSmtp::ServerProtocol::doSecure ) ;
 	}
 }
 
@@ -113,61 +118,58 @@ GSmtp::ServerProtocol::~ServerProtocol()
 	m_verifier.doneSignal().disconnect() ;
 }
 
-void GSmtp::ServerProtocol::secure( const std::string & certificate )
+void GSmtp::ServerProtocol::secure( const std::string & certificate , const std::string & cipher )
 {
-	State new_state = m_fsm.apply( *this , eSecure , EventData(certificate.data(),certificate.size()) ) ;
-	if( new_state == s_Any )
+	m_certificate = certificate ;
+	m_cipher = cipher ;
+
+	State new_state = m_fsm.apply( *this , Event::eSecure , EventData("",0U) ) ;
+	if( new_state == State::s_Any )
 		throw ProtocolDone( "protocol error" ) ;
 }
 
-void GSmtp::ServerProtocol::doSecure( EventData certificate , bool & )
+void GSmtp::ServerProtocol::doSecure( EventData , bool & )
 {
 	G_DEBUG( "GSmtp::ServerProtocol::doSecure" ) ;
 	m_secure = true ;
-	m_certificate = std::string(certificate.ptr,certificate.size) ;
 }
 
 void GSmtp::ServerProtocol::doStartTls( EventData , bool & ok )
 {
 	if( m_secure )
 	{
-		send( "503 command out of sequence" ) ;
+		sendOutOfSequence() ;
 		ok = false ;
 	}
 	else
 	{
-		send( "220 ready to start tls" , true ) ;
+		sendReadyForTls() ;
 	}
-}
-
-void GSmtp::ServerProtocol::sendGreeting( const std::string & text )
-{
-	send( std::string("220 ") + text ) ;
 }
 
 bool GSmtp::ServerProtocol::inDataState() const
 {
-	return m_fsm.state() == sData || m_fsm.state() == sDiscarding ;
+	return m_fsm.state() == State::sData || m_fsm.state() == State::sDiscarding ;
 }
 
 bool GSmtp::ServerProtocol::apply( const char * line_data , size_t line_data_size ,
 	size_t eolsize , size_t linesize , char c0 )
 {
-	G_ASSERT( eolsize == 2U || ( (m_fsm.state()==sData||m_fsm.state()==sDiscarding) && eolsize == 0U ) ) ;
-	Event event = eUnknown ;
+	G_ASSERT( eolsize == 2U || ( (m_fsm.state()==State::sData||m_fsm.state()==State::sDiscarding) && eolsize == 0U ) ) ;
+	Event event = Event::eUnknown ;
 	State state = m_fsm.state() ;
 	EventData event_data( line_data , line_data_size , eolsize , linesize , c0 ) ;
-	if( (state == sData || state == sDiscarding) && isEndOfText(event_data) )
+	if( (state == State::sData || state == State::sDiscarding) && isEndOfText(event_data) )
 	{
-		event = eEot ;
+		event = Event::eEot ;
 	}
-	else if( state == sData || state == sDiscarding )
+	else if( state == State::sData || state == State::sDiscarding )
 	{
-		event = eContent ;
+		event = Event::eContent ;
 	}
-	else if( state == sAuth )
+	else if( state == State::sAuth )
 	{
-		event = eAuthData ;
+		event = Event::eAuthData ;
 	}
 	else
 	{
@@ -179,8 +181,8 @@ bool GSmtp::ServerProtocol::apply( const char * line_data , size_t line_data_siz
 	}
 
 	State new_state = m_fsm.apply( *this , event , event_data ) ;
-	if( new_state == s_Any )
-		sendOutOfSequence( std::string(line_data,line_data_size) ) ;
+	if( new_state == State::s_Any )
+		sendOutOfSequence() ;
 
 	return true ; // see GNet::LineBuffer::apply()
 }
@@ -197,7 +199,7 @@ void GSmtp::ServerProtocol::doContent( EventData event_data , bool & ok )
 		sendTooBig( true ) ;
 }
 
-void GSmtp::ServerProtocol::doEot( EventData event_data , bool & )
+void GSmtp::ServerProtocol::doEot( EventData , bool & )
 {
 	G_LOG( "GSmtp::ServerProtocol: rx<<: [message content not logged]" ) ;
 	G_LOG( "GSmtp::ServerProtocol: rx<<: \".\"" ) ;
@@ -211,22 +213,23 @@ void GSmtp::ServerProtocol::doEot( EventData event_data , bool & )
 
 void GSmtp::ServerProtocol::processDone( bool success , unsigned long id , std::string response , std::string reason )
 {
+	G_IGNORE_PARAMETER( bool , success ) ;
 	G_IGNORE_PARAMETER( unsigned long , id ) ;
 	G_IGNORE_PARAMETER( std::string , reason ) ;
 	G_DEBUG( "GSmtp::ServerProtocol::processDone: " << (success?1:0) << " " << id << " [" << response << "] [" << reason << "]" ) ;
 	G_ASSERT( success == response.empty() ) ;
 
-	State new_state = m_fsm.apply( *this , eDone , EventData(response.data(),response.size()) ) ;
-	if( new_state == s_Any )
+	State new_state = m_fsm.apply( *this , Event::eDone , EventData(response.data(),response.size()) ) ;
+	if( new_state == State::s_Any )
 		throw ProtocolDone( "protocol error" ) ;
 }
 
 void GSmtp::ServerProtocol::onTimeout()
 {
 	G_WARNING( "GSmtp::ServerProtocol::onTimeout: message filter timed out after " << m_config.filter_timeout << "s" ) ;
-	std::string reason = "timed out" ;
-	State new_state = m_fsm.apply( *this , eTimeout , EventData(reason.data(),reason.size()) ) ;
-	if( new_state == s_Any )
+	std::string response = "timed out" ;
+	State new_state = m_fsm.apply( *this , Event::eTimeout , EventData(response.data(),response.size()) ) ;
+	if( new_state == State::s_Any )
 		throw ProtocolDone( "protocol error" ) ;
 }
 
@@ -240,7 +243,7 @@ void GSmtp::ServerProtocol::doComplete( EventData event_data , bool & )
 void GSmtp::ServerProtocol::doQuit( EventData , bool & )
 {
 	reset() ;
-	sendClosing() ; // never deletes this
+	sendQuitOk() ;
 	throw ProtocolDone() ;
 }
 
@@ -249,7 +252,7 @@ void GSmtp::ServerProtocol::doDiscard( EventData , bool & )
 	if( m_config.disconnect_on_max_size )
 	{
 		reset() ;
-		sendClosing() ; // never deletes this
+		sendClosing() ;
 		throw ProtocolDone() ;
 	}
 }
@@ -317,12 +320,13 @@ void GSmtp::ServerProtocol::verify( const std::string & to , const std::string &
 
 void GSmtp::ServerProtocol::verifyDone( std::string mbox , VerifierStatus status )
 {
+	G_DEBUG( "GSmtp::ServerProtocol::verifyDone: verify done: [" << status.str(mbox) << "]" ) ;
 	if( status.abort )
-		throw ProtocolDone( "verifier abort" ) ;
+		throw ProtocolDone( "address verifier abort" ) ; // denial-of-service countermeasure
 
 	std::string status_str = status.str( mbox ) ;
-	State new_state = m_fsm.apply( *this , eVrfyReply , EventData(status_str.data(),status_str.size()) ) ;
-	if( new_state == s_Any )
+	State new_state = m_fsm.apply( *this , Event::eVrfyReply , EventData(status_str.data(),status_str.size()) ) ;
+	if( new_state == State::s_Any )
 		throw ProtocolDone( "protocol error" ) ;
 }
 
@@ -393,13 +397,18 @@ bool GSmtp::ServerProtocol::authenticationRequiresEncryption() const
 	return encryption_required_by_user || encryption_required_by_sasl ;
 }
 
+void GSmtp::ServerProtocol::doAuthInvalid( EventData , bool & )
+{
+	G_WARNING( "GSmtp::ServerProtocol: client protocol error: AUTH requested but not advertised" ) ; // (workround with "--server-auth" pointing to an empty file)
+	sendNotImplemented() ;
+}
+
 void GSmtp::ServerProtocol::doAuth( EventData event_data , bool & predicate )
 {
 	G::StringArray word_array ;
 	G::Str::splitIntoTokens( std::string(event_data.ptr,event_data.size) , word_array , " \t" ) ;
 
-	std::string mechanism = word_array.size() > 1U ? word_array[1U] : std::string() ;
-	G::Str::toUpper( mechanism ) ;
+	std::string mechanism = word_array.size() > 1U ? G::Str::upper(word_array[1U]) : std::string() ;
 	std::string initial_response = word_array.size() > 2U ? word_array[2U] : std::string() ;
 	bool got_initial_response = word_array.size() > 2U ;
 
@@ -409,25 +418,31 @@ void GSmtp::ServerProtocol::doAuth( EventData event_data , bool & predicate )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: rejecting authentication attempt without encryption" ) ;
 		predicate = false ; // => idle
-		send( "504 Unsupported authentication mechanism" ) ; // since none until encryption
+		sendBadMechanism() ; // since none until encryption
 	}
 	else if( m_session_authenticated )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: too many AUTH requests" ) ;
 		predicate = false ; // => idle
-		sendOutOfSequence(std::string(event_data.ptr,event_data.size)) ; // see RFC-2554 "Restrictions"
+		sendOutOfSequence() ; // see RFC-2554 "Restrictions"
 	}
 	else if( ! m_sasl->init(mechanism) )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: request for unsupported server AUTH mechanism: " << mechanism ) ;
 		predicate = false ; // => idle
-		send( "504 Unsupported authentication mechanism" ) ;
+		sendBadMechanism() ;
 	}
-	else if( got_initial_response && ! G::Base64::valid(initial_response) )
+	else if( got_initial_response && m_sasl->mustChallenge() ) // RFC-4959 4
+	{
+		G_WARNING( "GSmtp::ServerProtocol: unexpected initial-response with a server-first AUTH mechanism" ) ;
+		predicate = false ; // => idle
+		sendInvalidArgument() ;
+	}
+	else if( got_initial_response && ( initial_response != "=" && !G::Base64::valid(initial_response) ) )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: invalid base64 encoding of AUTH parameter" ) ;
 		predicate = false ; // => idle
-		send( "501 Invalid argument" ) ;
+		sendInvalidArgument() ;
 	}
 	else if( got_initial_response )
 	{
@@ -451,14 +466,6 @@ void GSmtp::ServerProtocol::doAuth( EventData event_data , bool & predicate )
 	}
 }
 
-void GSmtp::ServerProtocol::sendAuthDone( bool ok )
-{
-	if( ok )
-		send( "235 Authentication sucessful" ) ;
-	else
-		send( "535 Authentication failed" ) ;
-}
-
 void GSmtp::ServerProtocol::doAuthData( EventData event_data , bool & predicate )
 {
 	G_LOG( "GSmtp::ServerProtocol: rx<<: [authentication response not logged]" ) ;
@@ -466,9 +473,9 @@ void GSmtp::ServerProtocol::doAuthData( EventData event_data , bool & predicate 
 	if( line == "*" )
 	{
 		predicate = false ; // => idle
-		send( "501 authentication cancelled" ) ;
+		sendAuthenticationCancelled() ;
 	}
-	else if( ! G::Base64::valid(line) )
+	else if( !G::Base64::valid(line) )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: invalid base64 encoding of authentication response" ) ;
 		predicate = false ; // => idle
@@ -478,7 +485,13 @@ void GSmtp::ServerProtocol::doAuthData( EventData event_data , bool & predicate 
 	{
 		bool done = false ;
 		std::string next_challenge = m_sasl->apply( G::Base64::decode(line) , done ) ;
-		if( done )
+		if( done && G::Test::enabled("sasl-server-oauth") )
+		{
+			predicate = false ;
+			m_session_authenticated = m_sasl->authenticated() ;
+			send( "535-more info at\r\n535 http://example.com" ) ; // testing
+		}
+		else if( done )
 		{
 			predicate = false ; // => idle
 			m_session_authenticated = m_sasl->authenticated() ;
@@ -489,11 +502,6 @@ void GSmtp::ServerProtocol::doAuthData( EventData event_data , bool & predicate 
 			sendChallenge( next_challenge ) ;
 		}
 	}
-}
-
-void GSmtp::ServerProtocol::sendChallenge( const std::string & challenge )
-{
-	send( std::string("334 ") + G::Base64::encode(challenge,std::string()) ) ;
 }
 
 void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
@@ -534,8 +542,8 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 void GSmtp::ServerProtocol::doRcpt( EventData event_data , bool & predicate )
 {
 	std::pair<std::string,std::string> to_pair = parseRcptTo( std::string(event_data.ptr,event_data.size) ) ;
-	std::string reason = to_pair.second ;
-	bool ok = reason.empty() ;
+	std::string response = to_pair.second ;
+	bool ok = response.empty() ;
 
 	if( ok )
 	{
@@ -544,7 +552,7 @@ void GSmtp::ServerProtocol::doRcpt( EventData event_data , bool & predicate )
 	else
 	{
 		predicate = false ;
-		sendBadTo( reason , false ) ;
+		sendBadTo( response , false ) ;
 	}
 }
 
@@ -592,22 +600,11 @@ void GSmtp::ServerProtocol::doNoRecipients( EventData , bool & )
 
 void GSmtp::ServerProtocol::doData( EventData , bool & )
 {
-	std::string received_line = m_text.received( m_session_peer_name , m_session_authenticated , m_secure ) ;
+	std::string received_line = m_text.received( m_session_peer_name , m_session_authenticated , m_secure , m_cipher ) ;
 	if( received_line.length() )
 		m_message.addReceived( received_line ) ;
 
 	sendDataReply() ;
-}
-
-void GSmtp::ServerProtocol::sendOutOfSequence( const std::string & )
-{
-	send( "503 command out of sequence -- use RSET to resynchronise" ) ;
-	badClientEvent() ;
-}
-
-void GSmtp::ServerProtocol::sendMissingParameter()
-{
-	send( "501 parameter required" ) ;
 }
 
 bool GSmtp::ServerProtocol::isEndOfText( const EventData & e ) const
@@ -641,20 +638,81 @@ std::string GSmtp::ServerProtocol::commandLine( const std::string & line_in ) co
 
 GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( const std::string & command ) const
 {
-	if( command == "QUIT" ) return eQuit ;
-	if( command == "HELO" ) return eHelo ;
-	if( command == "EHLO" ) return eEhlo ;
-	if( command == "RSET" ) return eRset ;
-	if( command == "DATA" ) return eData ;
-	if( command == "RCPT" ) return eRcpt ;
-	if( command == "MAIL" ) return eMail ;
-	if( command == "VRFY" ) return eVrfy ;
-	if( command == "NOOP" ) return eNoop ;
-	if( command == "EXPN" ) return eExpn ;
-	if( command == "HELP" ) return eHelp ;
-	if( command == "STARTTLS" ) return eStartTls ;
-	if( m_sasl->active() && command == "AUTH" ) return eAuth ;
-	return eUnknown ;
+	if( command == "QUIT" ) return Event::eQuit ;
+	if( command == "HELO" ) return Event::eHelo ;
+	if( command == "EHLO" ) return Event::eEhlo ;
+	if( command == "RSET" ) return Event::eRset ;
+	if( command == "DATA" ) return Event::eData ;
+	if( command == "RCPT" ) return Event::eRcpt ;
+	if( command == "MAIL" ) return Event::eMail ;
+	if( command == "VRFY" ) return Event::eVrfy ;
+	if( command == "NOOP" ) return Event::eNoop ;
+	if( command == "EXPN" ) return Event::eExpn ;
+	if( command == "HELP" ) return Event::eHelp ;
+	if( command == "STARTTLS" ) return Event::eStartTls ;
+	if( command == "AUTH" ) return Event::eAuth ;
+	return Event::eUnknown ;
+}
+
+const std::string & GSmtp::ServerProtocol::crlf()
+{
+	static const std::string s( "\015\012" ) ;
+	return s ;
+}
+
+void GSmtp::ServerProtocol::sendChallenge( const std::string & challenge )
+{
+	send( "334 " + G::Base64::encode(challenge) ) ;
+}
+
+void GSmtp::ServerProtocol::sendGreeting( const std::string & text )
+{
+	send( "220 " + text ) ;
+}
+
+void GSmtp::ServerProtocol::sendReadyForTls()
+{
+	send( "220 ready to start tls" , /*go-secure=*/ true ) ;
+}
+
+void GSmtp::ServerProtocol::sendInvalidArgument()
+{
+	send( "501 invalid argument" ) ;
+}
+
+void GSmtp::ServerProtocol::sendAuthenticationCancelled()
+{
+	send( "501 authentication cancelled" ) ;
+}
+
+void GSmtp::ServerProtocol::sendBadMechanism()
+{
+	send( "504 unsupported authentication mechanism" ) ;
+}
+
+void GSmtp::ServerProtocol::sendAuthDone( bool ok )
+{
+	if( ok )
+		send( "235 authentication sucessful" ) ;
+	else
+		send( "535 authentication failed" ) ;
+}
+
+void GSmtp::ServerProtocol::sendOutOfSequence()
+{
+	send( "503 command out of sequence -- use RSET to resynchronise" ) ;
+	badClientEvent() ;
+}
+
+void GSmtp::ServerProtocol::sendMissingParameter()
+{
+	send( "501 parameter required" ) ;
+}
+
+void GSmtp::ServerProtocol::sendQuitOk()
+{
+	send( "221 OK" ) ;
+	m_sender.protocolShutdown() ;
 }
 
 void GSmtp::ServerProtocol::sendClosing()
@@ -697,7 +755,7 @@ void GSmtp::ServerProtocol::sendAuthRequired()
 
 void GSmtp::ServerProtocol::sendEncryptionRequired()
 {
-	send( "530 encryption required: use starttls" ) ;
+	send( "538 encryption required: use starttls" ) ; // was 530 -- 538 in RFC-2554 but deprecated in RFC-4954
 }
 
 void GSmtp::ServerProtocol::sendNoRecipients()
@@ -727,12 +785,12 @@ void GSmtp::ServerProtocol::sendMailReply()
 	sendOk() ;
 }
 
-void GSmtp::ServerProtocol::sendCompletionReply( bool ok , const std::string & reason )
+void GSmtp::ServerProtocol::sendCompletionReply( bool ok , const std::string & response )
 {
 	if( ok )
 		sendOk() ;
 	else
-		send( "452 " + reason ) ;
+		send( "452 " + response ) ; // 452=>"action not taken", or perhaps 554=>"transaction failed" (so don't try again)
 }
 
 void GSmtp::ServerProtocol::sendRcptReply()
@@ -740,15 +798,15 @@ void GSmtp::ServerProtocol::sendRcptReply()
 	sendOk() ;
 }
 
-void GSmtp::ServerProtocol::sendBadFrom( std::string reason )
+void GSmtp::ServerProtocol::sendBadFrom( std::string response_extra )
 {
-	std::string msg = "553 mailbox name not allowed" ;
-	if( ! reason.empty() )
+	std::string response = "553 mailbox name not allowed" ;
+	if( ! response_extra.empty() )
 	{
-		msg.append( ": " ) ;
-		msg.append( reason ) ;
+		response.append( ": " ) ;
+		response.append( response_extra ) ;
 	}
-	send( msg ) ;
+	send( response ) ;
 }
 
 void GSmtp::ServerProtocol::sendBadTo( const std::string & text , bool temporary )
@@ -765,7 +823,7 @@ void GSmtp::ServerProtocol::sendEhloReply()
 		ss << "250-SIZE " << m_config.max_size << crlf() ;
 
 	if( m_sasl->active() && !( authenticationRequiresEncryption() && !m_secure ) )
-		ss << "250-AUTH " << m_sasl->mechanisms() << crlf() ;
+		ss << "250-AUTH " << m_sasl->mechanisms(' ') << crlf() ;
 
 	if( m_with_starttls && !m_secure )
 		ss << "250-STARTTLS" << crlf() ;
@@ -787,10 +845,9 @@ void GSmtp::ServerProtocol::sendOk()
 	send( "250 OK" ) ;
 }
 
-const std::string & GSmtp::ServerProtocol::crlf()
+void GSmtp::ServerProtocol::send( const char * line )
 {
-	static const std::string s( "\015\012" ) ;
-	return s ;
+	send( std::string(line) ) ;
 }
 
 void GSmtp::ServerProtocol::send( std::string line , bool go_secure )
@@ -798,6 +855,17 @@ void GSmtp::ServerProtocol::send( std::string line , bool go_secure )
 	G_LOG( "GSmtp::ServerProtocol: tx>>: \"" << G::Str::printable(line) << "\"" ) ;
 	line.append( crlf() ) ;
 	m_sender.protocolSend( line , go_secure ) ;
+}
+
+void GSmtp::ServerProtocol::badClientEvent()
+{
+	m_bad_client_count++ ;
+	if( m_bad_client_limit && m_bad_client_count >= m_bad_client_limit )
+	{
+		std::string reason = "too many protocol errors from the client" ;
+		G_DEBUG( "GSmtp::ServerProtocol::badClientEvent: " << reason << ": dropping the connection" ) ;
+		throw ProtocolDone( reason ) ;
+	}
 }
 
 size_t GSmtp::ServerProtocol::parseMailSize( const std::string & line ) const
@@ -853,8 +921,8 @@ std::pair<std::string,std::string> GSmtp::ServerProtocol::parseAddress( const st
 	size_t end = line.find( '>' ) ;
 	if( start == std::string::npos || end == std::string::npos || end < start )
 	{
-		std::string reason( "missing or invalid angle brackets in mailbox name" ) ;
-		return std::make_pair(std::string(),reason) ;
+		std::string response( "missing or invalid angle brackets in mailbox name" ) ;
+		return std::make_pair(std::string(),response) ;
 	}
 
 	std::string s = line.substr( start + 1U , end - start - 1U ) ;
@@ -866,8 +934,8 @@ std::pair<std::string,std::string> GSmtp::ServerProtocol::parseAddress( const st
 		size_t colon_pos = s.find( ':' ) ;
 		if( colon_pos == std::string::npos )
 		{
-			std::string reason( "invalid mailbox name: no colon after leading at character" ) ;
-			return std::make_pair(std::string(),reason) ;
+			std::string response( "invalid mailbox name: no colon after leading at character" ) ;
+			return std::make_pair(std::string(),response) ;
 		}
 		s = s.substr( colon_pos + 1U ) ;
 	}
@@ -884,17 +952,6 @@ std::string GSmtp::ServerProtocol::parsePeerName( const std::string & line ) con
 	std::string smtp_peer_name = line.substr( pos + 1U ) ;
 	G::Str::trim( smtp_peer_name , " \t" ) ;
 	return smtp_peer_name ;
-}
-
-void GSmtp::ServerProtocol::badClientEvent()
-{
-	m_bad_client_count++ ;
-	if( m_bad_client_limit && m_bad_client_count >= m_bad_client_limit )
-	{
-		std::string reason = "too many protocol errors from the client" ;
-		G_DEBUG( "GSmtp::ServerProtocol::badClientEvent: " << reason << ": dropping the connection" ) ;
-		throw ProtocolDone( reason ) ;
-	}
 }
 
 // ===
@@ -918,14 +975,15 @@ std::string GSmtp::ServerProtocolText::hello( const std::string & ) const
 }
 
 std::string GSmtp::ServerProtocolText::received( const std::string & smtp_peer_name ,
-	bool authenticated , bool secure ) const
+	bool authenticated , bool secure , const std::string & cipher ) const
 {
-	return receivedLine( smtp_peer_name , m_peer_address.hostPartString() , m_thishost , authenticated , secure ) ;
+	return receivedLine( smtp_peer_name , m_peer_address.hostPartString() , m_thishost ,
+		authenticated , secure , cipher ) ;
 }
 
 std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_peer_name ,
 	const std::string & peer_address , const std::string & thishost ,
-	bool authenticated , bool secure )
+	bool authenticated , bool secure , const std::string & cipher_in )
 {
 	const G::EpochTime t = G::DateTime::now() ;
 	const G::DateTime::BrokenDownTime tm = G::DateTime::local(t) ;
@@ -933,13 +991,18 @@ std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_pe
 	const G::Date date( tm ) ;
 	const G::Time time( tm ) ;
 	const std::string esmtp = std::string("ESMTP") + (secure?"S":"") + (authenticated?"A":"") ; // RFC-3848
+	const std::string peer_name = G::Str::toPrintableAscii(G::Str::replaced(smtp_peer_name,' ','-')) ; // typically alphanumeric with ".-:[]_"
+	std::string cipher = secure ? G::Str::only(G::Str::alnum()+"_",G::Str::replaced(cipher_in,'-','_')) : std::string() ;
 
+	// RFC-5321 4.4
 	std::ostringstream ss ;
 	ss
-		<< "Received: from " << smtp_peer_name
+		<< "Received: from " << peer_name
 		<< " ("
 			<< "[" << peer_address << "]"
-		<< ") by " << thishost << " with " << esmtp << " ; "
+		<< ") by " << thishost << " with " << esmtp
+		<< (cipher.empty()?"":" tls ") << cipher // RFC-8314 4.3 7.4
+		<< " ; "
 		<< date.weekdayName(true) << ", "
 		<< date.monthday() << " "
 		<< date.monthName(true) << " "
@@ -982,7 +1045,8 @@ GSmtp::ServerProtocol::EventData::EventData( const char * ptr_ , size_t size_ ) 
 	ptr(ptr_) ,
 	size(size_) ,
 	eolsize(2U) ,
-	linesize(size_)
+	linesize(size_) ,
+	c0('\0')
 {
 }
 
@@ -995,4 +1059,4 @@ GSmtp::ServerProtocol::EventData::EventData( const char * ptr_ , size_t size_ , 
 {
 }
 
-/// \file gserverprotocol.cpp
+/// \file gsmtpserverprotocol.cpp

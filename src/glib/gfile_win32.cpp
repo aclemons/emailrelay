@@ -36,6 +36,14 @@ bool G::File::executable( const Path & path )
 	return exists( path , NoThrow() ) ;
 }
 
+bool G::File::empty( const Path & path )
+{
+	WIN32_FIND_DATAA info ;
+	HANDLE h = ::FindFirstFileA( path.str().c_str() , &info ) ;
+	if( h != INVALID_HANDLE_VALUE ) ::FindClose( h ) ;
+	return h != INVALID_HANDLE_VALUE && info.nFileSizeHigh == 0 && info.nFileSizeLow == 0 ;
+}
+
 std::string G::File::sizeString( const Path & path )
 {
 	WIN32_FIND_DATAA info ;

@@ -332,7 +332,7 @@ void Main::WinApp::output( const std::string & text , bool )
 void Main::WinApp::onError( const std::string & text )
 {
 	// called from WinMain(), possibly before init()
-	output( text , true ) ;
+	output( text , true ) ; // override implemented above
 	m_exit_code = 1 ;
 }
 

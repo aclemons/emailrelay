@@ -95,7 +95,7 @@ private:
 inline
 bool GNet::TimerBase::active() const g__noexcept
 {
-	return m_time.s != 0 ;
+	return m_time.s != 0 ; // sic
 }
 
 namespace GNet

@@ -50,8 +50,11 @@ public:
 		///< Sets the canonicalName() override.
 
 	static bool isLocal( const Address & , std::string & reason ) ;
-		///< Returns true if the given address appears to be associated
-		///< with the local host, or a helpful error message if not.
+		///< Returns true if the given address appears to be 'local',
+		///< or a helpful error message if not.
+
+	static bool isLocal( const Address & ) ;
+		///< Overload without an explanation.
 
 private:
 	Local() g__eq_delete ;

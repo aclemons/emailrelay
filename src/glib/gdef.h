@@ -1159,13 +1159,14 @@
 			#include <cstring>
 			namespace G
 			{
-				struct threading // Helper class for std::thread capabilities.
+				struct threading /// Helper class for std::thread capabilities.
 				{
 					G_CONSTANT( int , using_std_thread , 1 ) ;
 					typedef std::thread thread_type ;
 					typedef std::mutex mutex_type ;
 					typedef std::lock_guard<std::mutex> lock_type ;
 					static bool works() ; // run-time test -- see gthread.cpp
+					static void yield() g__noexcept { std::this_thread::yield() ; }
 				} ;
 			}
 		#else
@@ -1179,7 +1180,7 @@
 						template <typename T_fn,typename T_arg1> dummy_thread( T_fn fn , T_arg1 arg1 ) { fn(arg1) ; }
 						template <typename T_fn,typename T_arg1,typename T_arg2> dummy_thread( T_fn fn , T_arg1 arg1 , T_arg2 arg2 ) { fn(arg1,arg2) ; }
 						dummy_thread() {}
-						bool joinable() const { return false ; }
+						bool joinable() const g__noexcept { return false ; }
 						void detach() {}
 						void join() {}
 						id get_id() const { return 0 ; }
@@ -1193,6 +1194,7 @@
 					typedef G::dummy_mutex mutex_type ;
 					typedef G::dummy_lock lock_type ;
 					static bool works() ;
+					static void yield() g__noexcept {}
 				} ;
 			}
 		#endif

@@ -143,10 +143,13 @@ std::string G::File::copy( const Path & from , const Path & to , int )
 	if( in.fail() )
 		return "read error" ;
 
+	//bool empty = in.tellg() == std::streampos(0) ; // not uclibc++
+	bool empty = false ;
+
 	in.close() ;
 	out.close() ;
 
-	if( out.fail() )
+	if( out.fail() && !empty )
 		return "write error" ;
 
 	return std::string() ;

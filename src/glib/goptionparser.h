@@ -112,7 +112,6 @@ private:
 	OptionMap & m_map ;
 	StringArray m_errors_ignored ;
 	StringArray & m_errors ;
-	bool m_allow_matching_duplicates ;
 } ;
 
 #endif

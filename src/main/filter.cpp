@@ -17,7 +17,11 @@
 //
 // filter.cpp
 //
-// Provides filter_run(), filter_main() and filter_help().
+// A utility that can be installed as a "--filter" program to copy the message
+// envelope into all spool sub-directories for use by "--pop-by-name".
+//
+// If the envelope in the parent directory has been copied at least once then
+// it is removed and the program exits with a value of 100.
 //
 
 #include "gdef.h"
@@ -28,64 +32,51 @@
 #include "gexception.h"
 #include "gdirectory.h"
 #include "legal.h"
-#include "filter.h"
 #include <iostream>
 #include <exception>
 #include <stdexcept>
 #include <sstream>
-#include <list>
+#include <vector>
+#include <set>
 #include <string>
 
 G_EXCEPTION_CLASS( FilterError , "filter error" ) ;
 
-void filter_help( const std::string & prefix )
+static void help( const std::string & prefix )
 {
 	std::cout
-		<< "usage: " << prefix << " <emailrelay-content-file>" << std::endl
-		<< std::endl
-		<< "Copies the corresponding emailrelay envelope file into all " << std::endl
-		<< "subdirectories of the spool directory. Exits with a " << std::endl
-		<< "value of 100 if copied once or more. Intended for use " << std::endl
-		<< "with \"emailrelay --pop-by-name\"." << std::endl
-		<< std::endl
-		<< Main::Legal::warranty(std::string(),"\n") << std::endl
+		<< "usage: " << prefix << " { <emailrelay-content-file> | [-v] -d <spool-dir> }\n"
+		<< "\n"
+		<< "Copies the corresponding emailrelay envelope file into all \n"
+		<< "sub-directories of the spool directory. Exits with a \n"
+		<< "value of 100 if copied once or more. Intended for use \n"
+		<< "with \"emailrelay --pop-by-name --filter=...\".\n"
+		<< "\n"
+		<< "With \"-d\" all envelope files are copied.\n"
+		<< "\n"
+		<< Main::Legal::warranty(std::string(),"\n") << "\n"
 		<< Main::Legal::copyright() << std::endl ;
 }
 
-bool filter_run( const std::string & content )
+struct Filter
 {
-	// check the content file exists
-	//
-	G::Path content_path( content ) ;
-	bool ok = G::File::exists( content_path ) ;
-	if( !ok )
-		throw FilterError( "no such file" ) ;
+	std::string m_envelope_name ;
+	G::Path m_envelope_path ; // "<spool-dir>/<envelope-name>[.new]"
+	bool m_envelope_deleted ;
+	int m_directory_count ;
+	std::set<std::string> m_failures ;
+	bool m_verbose ;
+	bool m_dryrun ;
 
-	// build the envelope name
-	//
-	G::Path dir_path = content_path.dirname() ;
-	std::string envelope_name = content_path.basename() ;
-	unsigned int n = G::Str::replaceAll( envelope_name , "content" , "envelope" ) ;
-	if( n != 1U )
-		throw FilterError( "invalid filename" ) ;
+	Filter() : m_envelope_deleted(false) , m_directory_count(0) , m_verbose(false) , m_dryrun(false) {}
+	void process_content( const std::string & ) ;
+	void process_envelope() ;
+	void notify( bool ) ;
+	bool ok() const { return m_failures.empty() ; }
+} ;
 
-	// check the envelope file exists
-	//
-	G::Path envelope_path = G::Path( dir_path , envelope_name + ".new" ) ;
-	if( ! G::File::exists(envelope_path) )
-	{
-		// fall back to no extension in case we are run manually for some reason
-		G::Path envelope_path_alt = G::Path( dir_path , envelope_name ) ;
-		if( G::File::exists(envelope_path_alt) )
-			envelope_path = envelope_path_alt ;
-		else
-			throw FilterError( std::string() + "no envelope file \"" + envelope_path.str() + "\"" ) ;
-	}
-
-	// read the content "to" address
-	//
-	std::string to = filter_read_to( content_path.str() ) ;
-
+void Filter::process_envelope()
+{
 	// the umask inherited from the emailrelay server does not give
 	// group access, so loosen it up to "-rw-rw----" and note that
 	// the spool directory should have sticky group ownership
@@ -96,56 +87,134 @@ bool filter_run( const std::string & content )
 
 	// copy the envelope into all sub-directories
 	//
-	int directory_count = 0 ;
-	std::list<std::string> failures ;
-	G::Directory dir( dir_path ) ;
-	G::DirectoryIterator iter( dir ) ;
+	G::Directory spool_dir( m_envelope_path.simple() ? std::string(".") : m_envelope_path.dirname() ) ;
+	G::DirectoryIterator iter( spool_dir ) ;
+	int copies = 0 ;
+	int failures = 0 ;
 	while( iter.more() && !iter.error() )
 	{
-		if( iter.isDir() && filter_match(iter.filePath(),to) )
+		if( iter.isDir() )
 		{
-			directory_count++ ;
-			G::Path target = G::Path( iter.filePath() , envelope_name ) ;
-			bool copied = G::File::copy( envelope_path , target , G::File::NoThrow() ) ;
+			G::Path subdir = iter.filePath() ;
+			copies++ ;
+			G::Path target = G::Path( subdir , m_envelope_name ) ;
+			bool copied = m_dryrun ? true : G::File::copy( m_envelope_path , target , G::File::NoThrow() ) ;
+			if( m_verbose )
+				std::cout << (copied?"copied":"failed") << ": " << m_envelope_path << " " << target << "\n" ;
 			if( !copied )
-				failures.push_back( iter.fileName() ) ;
+			{
+				failures++ ;
+				m_failures.insert( iter.fileName() ) ;
+			}
 		}
 	}
+	if( m_directory_count == 0 )
+		m_directory_count = copies ;
 
-	// delete the parent envelope (ignore errors)
+	// delete the original envelope (ignore errors)
 	//
-	bool envelope_deleted = false ;
-	if( directory_count > 0 && failures.empty() )
+	if( copies > 0 && failures == 0 )
 	{
-		envelope_deleted = G::File::remove( envelope_path , G::File::NoThrow() ) ;
+		m_envelope_deleted = m_dryrun ? true : G::File::remove( m_envelope_path , G::File::NoThrow() ) ;
+	}
+}
+
+void Filter::process_content( const std::string & content )
+{
+	// check the content file exists
+	//
+	G::Path content_path( content ) ;
+	bool ok = G::File::exists( content_path ) ;
+	if( !ok )
+		throw FilterError( "no such file" ) ;
+
+	// build the envelope name
+	//
+	m_envelope_name = content_path.basename() ;
+	unsigned int n = G::Str::replaceAll( m_envelope_name , "content" , "envelope" ) ;
+	if( n != 1U )
+		throw FilterError( "invalid filename" ) ;
+
+	// check the envelope file exists
+	//
+	G::Path dir_path = content_path.dirname() ;
+	m_envelope_path = G::Path( dir_path , m_envelope_name + ".new" ) ;
+	if( ! G::File::exists(m_envelope_path) )
+	{
+		// fall back to no extension in case we are run manually for some reason
+		G::Path envelope_path_alt = G::Path( dir_path , m_envelope_name ) ;
+		if( G::File::exists(envelope_path_alt) )
+			m_envelope_path = envelope_path_alt ;
+		else
+			throw FilterError( std::string() + "no envelope file \"" + m_envelope_path.str() + "\"" ) ;
 	}
 
-	// notify failures
+	// copy the envelope into subdirectories
 	//
-	if( ! failures.empty() )
+	process_envelope() ;
+}
+
+void Filter::notify( bool one )
+{
+	if( ! m_failures.empty() )
 	{
 		std::ostringstream ss ;
-		ss << "failed to copy envelope file " << envelope_path.str() << " into " ;
-		if( failures.size() == 1U )
+		if( one )
 		{
-			ss << "the \"" << failures.front() << "\" sub-directory" ;
+			ss << "failed to copy envelope file " << m_envelope_path.str() << " into " ;
 		}
 		else
 		{
-			ss << failures.size() << " sub-directories, including \"" << failures.front() << "\"" ;
+			ss << "failed to copy one or more envelope files into " ;
+		}
+		if( m_failures.size() == 1U )
+		{
+			ss << "the \"" << *m_failures.begin() << "\" sub-directory" ;
+		}
+		else
+		{
+			ss << m_failures.size() << " sub-directories, including \"" << *m_failures.begin() << "\"" ;
 		}
 		throw FilterError( ss.str() ) ;
 	}
-	if( directory_count == 0 ) // probably a permissioning problem
+	if( one && m_directory_count == 0 ) // probably a permissioning problem
 	{
 		throw FilterError( "no sub-directories to copy into: check permissions" ) ;
 	}
-
-	return envelope_deleted ;
 }
 
-int filter_main( int argc , char * argv [] )
+static bool run_one( const std::string & content )
 {
+	// copy the envelope
+	//
+	Filter filter ;
+	filter.process_content( content ) ;
+	filter.notify( true ) ;
+	return filter.m_envelope_deleted ;
+}
+
+static bool run_all( const std::string & spool_dir , bool verbose )
+{
+	Filter filter ;
+	filter.m_verbose = verbose ;
+	G::Directory dir( spool_dir ) ;
+	G::DirectoryIterator iter( dir ) ;
+	while( iter.more() && !iter.error() )
+	{
+		if( !iter.isDir() && G::Str::headMatch(iter.fileName(),"emailrelay") && iter.filePath().extension().compare("envelope")==0 )
+		{
+			filter.m_envelope_name = iter.fileName() ;
+			filter.m_envelope_path = iter.filePath() ;
+			filter.process_envelope() ;
+		}
+	}
+	filter.notify( false ) ;
+	return filter.ok() ;
+}
+
+int main( int argc , char * argv [] )
+{
+	bool fancy = true ;
 	try
 	{
 		G::Arg args( argc , argv ) ;
@@ -153,23 +222,51 @@ int filter_main( int argc , char * argv [] )
 		if( args.c() <= 1U )
 			throw FilterError( "usage error: must be run by emailrelay with the full path of a message content file" ) ;
 
-		if( args.v(1U) == "--help" )
+		if( args.contains("-d",1U) && args.remove("-d",0U) )
 		{
-			filter_help( args.prefix() ) ;
+			fancy = false ;
+			bool verbose = args.remove( "-v" ) ;
+			return run_all( args.v(1U) , verbose ) ? 1 : 0 ;
+		}
+		else if( args.contains("--spool-dir",1U) && args.remove("--spool-dir",0U) )
+		{
+			fancy = false ;
+			bool verbose = args.remove( "-v" ) ;
+			return run_all( args.v(1U) , verbose ) ? 1 : 0 ;
+		}
+		else if( args.v(1U) == "--help" )
+		{
+			help( args.prefix() ) ;
 			return 1 ;
 		}
 		else
 		{
-			return filter_run( args.v(1U) ) ? 100 : 0 ;
+			return run_one( args.v(1U) ) ? 100 : 0 ;
 		}
 	}
 	catch( std::exception & e )
 	{
-		std::cout << "<<" << e.what() << ">>" << std::endl ;
+		if( fancy )
+		{
+			std::cout << "<<filter failed>>" << std::endl ;
+			std::cout << "<<" << e.what() << ">>" << std::endl ;
+		}
+		else
+		{
+			std::cerr << e.what() << std::endl ;
+		}
 	}
 	catch(...)
 	{
-		std::cout << "<<" << "exception" << ">>" << std::endl ;
+		if( fancy )
+		{
+			std::cout << "<<filter failed>>" << std::endl ;
+			std::cout << "<<" << "exception" << ">>" << std::endl ;
+		}
+		else
+		{
+			std::cerr << "error: exception" << std::endl ;
+		}
 	}
 	return 1 ;
 }

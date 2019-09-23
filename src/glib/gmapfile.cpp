@@ -72,7 +72,7 @@ G::MapFile::MapFile( const OptionMap & map , const std::string & yes ) :
 			log( key , value ) ;
 			add( key , value ) ;
 		}
-		while( p != map.end() && (*p).first == key ) // since we used OptionMap::value()
+		while( p != map.end() && (*p).first == key ) // since we used OptionMap::value() to get them all
 			++p ;
 	}
 }
@@ -408,8 +408,15 @@ bool G::MapFile::expand_( std::string & value ) const
 void G::MapFile::add( const std::string & key , const std::string & value )
 {
 	if( m_map.find(key) == m_map.end() )
+	{
 		m_keys.push_back( key ) ;
-	m_map[key] = value ;
+		m_map[key] = value ;
+	}
+	else
+	{
+		m_map[key].append( std::string(1U,',') ) ;
+		m_map[key].append( value ) ;
+	}
 }
 
 bool G::MapFile::contains( const std::string & key ) const

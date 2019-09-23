@@ -33,7 +33,7 @@
 
 namespace
 {
-	bool valid( HANDLE h )
+	bool valid( HANDLE h ) g__noexcept
 	{
 		return h != NULL && h != INVALID_HANDLE_VALUE ;
 	}
@@ -80,10 +80,10 @@ public:
 		// Returns a reference to the WaitFuture sub-object to allow
 		// the caller to wait for the process to finish.
 
-	void kill() ;
+	void kill() g__noexcept ;
 		// Tries to kill the spawned process.
 
-	int id() const ;
+	int id() const g__noexcept ;
 		// Returns the process id.
 
 private:
@@ -121,14 +121,19 @@ G::NewProcessWaitFuture & G::NewProcess::wait()
 	return m_imp->wait() ;
 }
 
-int G::NewProcess::id() const
+int G::NewProcess::id() const g__noexcept
 {
 	return m_imp->id() ;
 }
 
-void G::NewProcess::kill()
+void G::NewProcess::kill( bool yield ) g__noexcept
 {
 	m_imp->kill() ;
+	if( yield )
+	{
+		G::threading::yield() ;
+		SleepEx( 0 , FALSE ) ;
+	}
 }
 
 // ===
@@ -149,7 +154,7 @@ G::NewProcessImp::NewProcessImp( const Path & exe_path , const StringArray & arg
 	m_wait_future.assign( m_hprocess , m_pipe.hread() , 0 ) ;
 }
 
-void G::NewProcessImp::kill()
+void G::NewProcessImp::kill() g__noexcept
 {
 	if( !m_killed && valid(m_hprocess) )
 		::TerminateProcess( m_hprocess , 127 ) ;
@@ -167,7 +172,7 @@ G::NewProcessWaitFuture & G::NewProcessImp::wait()
 	return m_wait_future ;
 }
 
-int G::NewProcessImp::id() const
+int G::NewProcessImp::id() const g__noexcept
 {
 	return static_cast<int>(m_pid) ;
 }

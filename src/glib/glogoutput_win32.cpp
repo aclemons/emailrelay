@@ -22,12 +22,22 @@
 #include "glogoutput.h"
 #include "genvironment.h"
 #include <time.h> // localtime_s
+#include <stdexcept>
 #include <fstream>
 
 void G::LogOutput::cleanup()
 {
 	if( m_handle != 0 )
 		::DeregisterEventSource( m_handle ) ;
+}
+
+void G::LogOutput::open( std::ofstream & file , const std::string & path )
+{
+	#if GCONFIG_HAVE_FSOPEN
+		file.open( path.c_str() , std::ios_base::out | std::ios_base::app , _SH_DENYNO ) ;
+	#else
+		file.open( path.c_str() , std::ios_base::out | std::ios_base::app ) ;
+	#endif
 }
 
 void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity , const std::string & message )
@@ -111,6 +121,8 @@ void G::LogOutput::init()
 			std::string this_name = basename( this_exe ) ;
 			G::LogOutput::register_( this_exe ) ;
 			m_handle = ::RegisterEventSourceA( NULL , this_name.c_str() ) ;
+			if( m_handle == NULL && !m_std_err.good() ) // complain if no other mechanism
+				throw std::runtime_error( "cannot access the system event log" ) ;
 		}
 	}
 }

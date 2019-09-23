@@ -50,13 +50,13 @@ public:
 		///< Returns the user's home directory, eg. "/home/username".
 
 	static G::Path pid( const G::Path & config_dir ) ;
-		///< Returns the directory for pid files, eg. "/var/run".
+		///< Returns the directory for pid files, eg. "/run".
 
 	static G::Path desktop() ;
 		///< Returns the desktop path, eg. "/home/username/Desktop".
 
-	static G::Path login() ;
-		///< Returns the login autostart directory path, eg. "/home/username/AutoStart".
+	static G::Path autostart() ;
+		///< Returns the autostart directory path, eg. "/home/username/AutoStart".
 
 	static G::Path menu() ;
 		///< Returns the menu path, eg. "/home/username/.local/share/applications".

@@ -83,7 +83,8 @@ then
 	exit 100
 else
 	# something failed -- tell the submitting smtp client, or
-	# replace these two lines with "exit 0" if the client should not know...
+	# replace these three lines with "exit 0" if the client should not know...
+	echo "<<multicast failed>>"
 	echo "<<`basename $0`: `basename "${content}"`: failed to copy message into${error_list}>>"
 	exit 1
 fi

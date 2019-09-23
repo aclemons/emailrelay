@@ -97,10 +97,13 @@ GNet::TaskImp::~TaskImp()
 {
 	if( m_thread.joinable() )
 	{
-		m_process.kill() ;
-		G_WARNING( "TaskImp::dtor: blocked waiting for process " << m_process.id() << " to terminate" ) ;
-		m_thread.join() ;
-		G_LOG( "TaskImp::dtor: process " << m_process.id() << " terminated" ) ;
+		m_process.kill( /*yield=*/true ) ;
+	}
+	if( m_thread.joinable() )
+	{
+		G_LOG_S( "TaskImp::dtor: waiting for killed process to terminate: pid " << m_process.id() ) ;
+		m_thread.join() ; // blocks the main event-loop thread
+		G_LOG( "TaskImp::dtor: killed process has terminated: pid " << m_process.id() ) ;
 	}
 }
 

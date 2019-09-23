@@ -32,17 +32,10 @@ void G::OptionMap::insert( const Map::value_type & value )
 
 void G::OptionMap::replace( const std::string & key , const std::string & value )
 {
-	Map::iterator p = m_map.find( key ) ;
-	if( p == m_map.end() )
-	{
-		m_map.insert( Map::value_type(key,OptionValue(value)) ) ;
-	}
-	else
-	{
-		(*p).second = OptionValue( value ) ;
-		for( ++p ; (*p).first == key && p != m_map.end() ; )
-			p = m_map.erase( p ) ;
-	}
+	std::pair<Map::iterator,Map::iterator> pair = m_map.equal_range( key ) ;
+	if( pair.first != pair.second )
+		m_map.erase( pair.first , pair.second ) ;
+	m_map.insert( Map::value_type(key,OptionValue(value)) ) ;
 }
 
 G::OptionMap::const_iterator G::OptionMap::begin() const
@@ -83,11 +76,8 @@ bool G::OptionMap::contains( const std::string & key ) const
 
 size_t G::OptionMap::count( const std::string & key ) const
 {
-	size_t n = 0U ;
-	const Map::const_iterator end = m_map.end() ;
-	for( Map::const_iterator p = m_map.find(key) ; p != end && (*p).first == key ; ++p )
-		n++ ;
-	return n ;
+	std::pair<Map::const_iterator,Map::const_iterator> pair = m_map.equal_range( key ) ;
+	return static_cast<size_t>( std::distance( pair.first , pair.second ) ) ;
 }
 
 std::string G::OptionMap::value( const char * key , const char * default_ ) const

@@ -37,9 +37,8 @@
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 NAME=emailrelay
 DESC="E-MailRelay mail server"
-CONFIG=__SYSCONF_DIR__/emailrelay.conf
-RUNDIR=/var/run/$NAME
-PIDFILE=$RUNDIR/$NAME.pid
+CONFIG=__SYSCONF_DIR__/$NAME.conf
+PIDFILE=__RUNDIR__/$NAME.pid
 GROUP=daemon
 DAEMON=__SBIN_DIR__/$NAME
 SUBMIT=__SBIN_DIR__/$NAME-submit
@@ -102,9 +101,16 @@ log_end_msg()
 	fi
 }
 
-# Allow packaging scripts to do "init.d/emailrelay setup" for some of their
-# post-install steps, or for use after editing the /etc/default file. (This
-# must come before the potential 'init-functions' redirect to systemd.)
+# Setup functions...
+#
+# Some packaging scripts do "emailrelay setup" for some of their
+# post-install steps, and "emailrelay setup" might also be useful
+# administratively after editing the /etc/default file. The "start"
+# sub-command below also uses setup_rundir() because the /run
+# directory will not necessarily persist across a reboot.
+#
+# (This code must come before the potential 'init-functions' redirect
+# to systemd.)
 #
 setup_config()
 {
@@ -129,16 +135,24 @@ spooldir()
 		tr '\t' ' ' | sed 's/  */ /g' | grep '^spool-dir [^ ]' | \
 		tail -1 | cut -d' ' -f 2
 }
-setup_rundir()
+setup_rundir_imp()
 {
 	test -d "$1" || mkdir -p "$1"
-	if root_root "$1"
+	if echo "$1" | grep -q "/emailrelay$"
 	then
-		chgrp "$GROUP" "$1"
-		chmod 775 "$1"
+		if root_root "$1"
+		then
+			chgrp "$GROUP" "$1"
+			chmod 775 "$1"
+		fi
 	fi
 }
-setup_spooldir()
+setup_rundir()
+{
+	# Recreates the pidfile directory, which might disappear after a reboot
+	setup_rundir_imp "`dirname \"$PIDFILE\"`"
+}
+setup_spooldir_imp()
 {
 	test -d "$1" || mkdir -p "$1"
 	if root_root "$1"
@@ -147,6 +161,10 @@ setup_spooldir()
 		chmod 775 "$1"
 		chmod g+s "$1"
 	fi
+}
+setup_spooldir()
+{
+	setup_spooldir_imp "`spooldir`"
 }
 setup_sgid()
 {
@@ -159,14 +177,14 @@ setup_sgid()
 }
 setup_tools()
 {
-	setup_sgid "/usr/sbin/emailrelay-submit"
-	setup_sgid "/usr/lib/emailrelay/emailrelay-filter-copy"
+	setup_sgid "__SBIN_DIR__/emailrelay-submit"
+	setup_sgid "__LIBEXEC_DIR__/emailrelay-filter-copy"
 }
 setup()
 {
 	setup_config
-	setup_rundir "`dirname \"$PIDFILE\"`"
-	setup_spooldir "`spooldir`"
+	setup_rundir
+	setup_spooldir
 	setup_tools
 }
 if test "$1" = "setup" ; then setup ; exit 0 ; fi
@@ -177,7 +195,13 @@ if test "$1" = "setup" ; then setup ; exit 0 ; fi
 #
 test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
 
-# Ignore /etc/default 'enabled' switch if running from systemd (moot).
+# Ignore /etc/default 'enabled' switch if running from systemd.
+#
+# (The 'enabled' mechanism is needed on non-systemd debian distros
+# because the dpkg postinstall script starts the server, whereas
+# on systemd systems the dpkg postinstall script's call to update-rc.d
+# does nothing. On rpm or 'make install' systems the /etc/default file
+# is not installed at all.)
 #
 if test -d /run/systemd/system -a "$PPID" -eq 1
 then
@@ -201,6 +225,7 @@ case "$1" in
 		then
 			log_daemon_msg "Starting $DESC"
 			log_progress_msg "$NAME"
+			setup_rundir
 			start_daemon -p "$PIDFILE" -- "$DAEMON" --as-server --syslog --pid-file "$PIDFILE" "$CONFIG"
 			e="$?"
 			log_end_msg $e
@@ -235,6 +260,7 @@ case "$1" in
 		;;
 
 	setup)
+		# never gets here -- see above
 		setup
 		;;
 

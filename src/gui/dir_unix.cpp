@@ -125,7 +125,7 @@ G::Path Dir::os_spool()
 
 G::Path Dir::os_pid( const G::Path & )
 {
-	return oneOf( "/var/run" , "/tmp" ) ;
+	return oneOf( "/run" , "/var/run" , "/tmp" ) ;
 }
 
 G::Path Dir::special( const std::string & type )
@@ -134,12 +134,12 @@ G::Path Dir::special( const std::string & type )
 
 	G::Path desktop = queryDesktop( home()+"Desktop" ) ; // see also "xdg-desktop-icon install"
 	G::Path menu = envPath("XDG_DATA_HOME",home()+".local"+"share") + "applications" ; // see also "xdg-desktop-menu install"
-	G::Path login = queryAutostart() ; // default was envPath("XDG_CONFIG_HOME",home()+".config")+"autostart"
+	G::Path autostart = queryAutostart() ; // default was envPath("XDG_CONFIG_HOME",home()+".config")+"autostart"
 	G::Path programs = "/usr/bin" ;
 
 	if( type == "desktop" ) return desktop ;
 	if( type == "menu" ) return menu ;
-	if( type == "login" ) return login ;
+	if( type == "autostart" ) return autostart ;
 	if( type == "programs" ) return programs ;
 	return G::Path() ;
 }

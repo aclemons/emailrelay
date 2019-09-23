@@ -173,7 +173,7 @@ void G::GetOpt::collapse( const std::string & name )
 		if( n == values.size() )
 			m_map.replace( name , *values.begin() ) ;
 		else
-			m_parser.errorDuplicate( name ) ;
+			m_parser.errorDuplicate( name ) ; // duplicates but with different values
 	}
 }
 

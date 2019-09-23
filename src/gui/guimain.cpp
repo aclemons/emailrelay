@@ -28,9 +28,18 @@
 //
 // Payload
 // -------
-// Originally the payload was a single packed file, but it is now a directory
-// tree called "payload", containing a "payload.cfg" configuration file that
-// describes how and where the other payload files are to be installed.
+// The installation payload is a directory tree called "payload", containing
+// a "payload.cfg" configuration file that describes how and where the other
+// payload files are to be installed.
+//
+// The core file-copying stage of the install is driven from the payload
+// configuration file. Each line specifies a file-or-directory-tree copy, or
+// a chown/chmod. For each file-copy the source path is relative to the payload
+// root, and the destination typically starts with a base-directory substitution
+// variable (eg. "%dir-install%").
+//
+// The payload is assembled by the "make-setup.sh" script on unix or
+// "winbuild.pl" on windows.
 //
 // Pointer variables
 // -----------------
@@ -46,7 +55,7 @@
 // just "dir.cfg" somewhere inside the bundle.
 //
 // The main pointer variables are "dir-config", "dir-install" and "dir-run".
-// On unix these might be "/etc", "/usr/bin", and "/var/run", respectively.
+// On unix these might be "/etc", "/usr/bin", and "/run", respectively.
 //
 // The pointer file on unix is cunningly formatted as an executable script that
 // runs the real GUI program.
@@ -76,13 +85,6 @@
 // the individual GUI pages, and its own "installer" variables (ivalues). A
 // handful of substitution variables allow the pvalues to be defined in terms
 // of ivalues.
-//
-// The core file-copying stage of the install is driven from the payload
-// configuration file, "payload/payload.cfg" (see "bin/make-setup.sh"). Each
-// line specifies a file-or-directory-tree copy, or a chown/chmod. For each file
-// the source path is relative to the payload root, and the destination
-// typically starts with a base-directory substitution variable (eg.
-// "%dir-install%").
 //
 // End-result
 // ----------
@@ -377,7 +379,7 @@ int main( int argc , char * argv [] )
 				pages_config.add( "start-on-boot" , Boot::installed(Dir::boot(),"emailrelay") ? "y" : "n" ) ;
 				pages_config.add( "start-link-desktop" , GLink::exists(Dir::desktop()+fname) ? "y" : "n" ) ;
 				pages_config.add( "start-link-menu" , GLink::exists(Dir::menu()+fname) ? "y" : "n" ) ;
-				pages_config.add( "start-at-login" , GLink::exists(Dir::login()+fname) ? "y" : "n" ) ;
+				pages_config.add( "start-at-login" , GLink::exists(Dir::autostart()+fname) ? "y" : "n" ) ;
 			}
 
 			// check the config file (or windows batch file) will be writeable

@@ -47,7 +47,9 @@ public:
 	virtual std::string prepare( const std::string & session_auth_id ,
 		const std::string & peer_socket_address , const std::string & peer_certificate ) = 0 ;
 			///< Prepares to store the message in the message store.
-			///< Returns the location of the pre-commit()ed message.
+			///< Returns the location of the pre-commit()ed message,
+			///< or returns the empty string for a local-mailbox only
+			///< message that has already been fully written.
 
 	virtual void commit( bool strict ) = 0 ;
 		///< Commits the prepare()d message to the store. Errors are

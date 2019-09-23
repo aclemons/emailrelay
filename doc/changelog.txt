@@ -6,12 +6,14 @@ E-MailRelay Change Log
 * Backwards compatibility features for 1.9-to-2.0 transition removed.
 * Better handling of too-many-connections on Windows.
 * New "--idle-timeout" option for server-side connections.
-* New "--show" option on windows to better control the user interface style.
+* Support for RFC-5782 DNSBL blocking ("--dnsbl").
 * Filter scripts are given the path of the envelope file in argv2.
 * Message files can be editied by "--client-filter" scripts.
 * Better support for CRAM-SHAx authentication.
 * New "--client-auth-config" and "--server-auth-config" options.
+* New "--show" option on windows to better control the user interface style.
 * The "--pop" option always requires "--pop-auth".
+* No message is spooled if all its envelope recipients are local-mailboxes.
 * TLS cipher name added to "Received" line as per RFC-8314 4.3.
 * Certificate contents are not logged.
 * Timestamp parts of spool filenames no longer limited to six digits.

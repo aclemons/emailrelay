@@ -15,21 +15,34 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file filter.h
+/// \file gnetdone.h
 ///
 
-#ifndef G_MAIN_FILTER_H
-#define G_MAIN_FILTER_H
+#ifndef G_NET_DONE__H
+#define G_NET_DONE__H
 
 #include "gdef.h"
-#include "gpath.h"
+#include "gexception.h"
 #include <string>
 
-void filter_help( const std::string & prefix ) ;
-bool filter_run( const std::string & content ) ;
-int filter_main( int argc , char * argv [] ) ;
+namespace GNet
+{
+	class Done ;
+}
 
-bool filter_match( G::Path , std::string ) ;
-std::string filter_read_to( const std::string & ) ;
+/// \class GNet::Done
+/// An exception class that is handled by GNet::EventHandlerList
+/// resuting in an onException() callback with a distinct
+/// exception type specifier.
+///
+class GNet::Done : public std::exception
+{
+public:
+	virtual ~Done() g__noexcept ;
+		///< Destructor.
+
+	virtual const char * what() const g__noexcept override ;
+		///< Override from std::exception.
+} ;
 
 #endif

@@ -110,15 +110,16 @@ public:
 		///< Destructor. Kills the spawned process if the WaitFuture has
 		///< not been resolved.
 
-	int id() const ;
+	int id() const g__noexcept ;
 		///< Returns the process id.
 
 	NewProcessWaitFuture & wait() ;
 		///< Returns a reference to the WaitFuture sub-object so that the caller
 		///< can wait for the child process to exit.
 
-	void kill() ;
-		///< Tries to kill the spawned process.
+	void kill( bool yield = false ) g__noexcept ;
+		///< Tries to kill the spawned process and optionally yield
+		///< to a thread that might be waiting on it.
 
 	static std::pair<bool,pid_t> fork() ;
 		///< A utility function that forks the calling process and returns

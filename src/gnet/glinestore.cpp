@@ -29,6 +29,9 @@ namespace GNet
 	class LineStoreIterator ;
 }
 
+/// \class GNet::LineStoreIterator
+/// An iterator class for GNet::LineStore.
+///
 class GNet::LineStoreIterator : public std::iterator<std::bidirectional_iterator_tag,char,ptrdiff_t>
 {
 public:
@@ -322,4 +325,3 @@ std::string GNet::LineStore::str() const
 	return result ;
 }
 
-/// \file glinestore.cpp

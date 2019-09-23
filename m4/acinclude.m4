@@ -141,18 +141,6 @@ AC_DEFUN([GCONFIG_FN_CHECK_TYPES],[
 	AC_REQUIRE([GCONFIG_FN_STATBUF_NSEC])
 ])
 
-dnl GCONFIG_FN_CONFIGURATION
-dnl ------------------------
-dnl Sets GCONFIG_CONFIGURATION in makefiles to provide information about the build.
-dnl
-AC_DEFUN([GCONFIG_FN_CONFIGURATION],
-[
-changequote(<<,>>)
-	GCONFIG_CONFIGURATION="`echo \"$ac_configure_args\" | tr ' ' '\n' | grep -E -- "--(with|enable|disable)" | tr '\n' ' ' | base64 2>/dev/null | tr -d '\n' | tr -d ' '`"
-changequote([,])
-	AC_SUBST([GCONFIG_CONFIGURATION])
-])
-
 dnl GCONFIG_FN_CXX_ALIGNMENT
 dnl ------------------------
 dnl Tests for c++ std::align.
@@ -592,6 +580,7 @@ dnl AC_ARG_ENABLE(bsd).
 dnl
 AC_DEFUN([GCONFIG_FN_ENABLE_BSD],
 [
+	gconfig_bsd="$enable_bsd"
 	AM_CONDITIONAL([GCONFIG_BSD],test "$enable_bsd" = "yes" -o "`uname`" = "NetBSD" -o "`uname`" = "FreeBSD" -o "`uname`" = "OpenBSD" )
 ])
 
@@ -1499,11 +1488,21 @@ AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES_E],
 	fi
 	if test "$e_bsdinitdir" = ""
 	then
-		e_bsdinitdir="$libexecdir/$PACKAGE/init/bsd"
+		if test "$gconfig_bsd" = "yes"
+		then
+			e_bsdinitdir="$sysconfdir/rc.d"
+		else
+			e_bsdinitdir="$libexecdir/$PACKAGE/init/bsd"
+		fi
 	fi
 	if test "$e_icondir" = ""
 	then
 		e_icondir="$datadir/$PACKAGE"
+	fi
+	if test "$e_rundir" = ""
+	then
+		# (linux fhs's "/run" not widely used)
+		e_rundir="/var/run/$PACKAGE"
 	fi
 
 	AC_SUBST([e_docdir])
@@ -1515,6 +1514,7 @@ AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES_E],
 	AC_SUBST([e_libexecdir])
 	AC_SUBST([e_pamdir])
 	AC_SUBST([e_sysconfdir])
+	AC_SUBST([e_rundir])
 ])
 
 dnl GCONFIG_FN_SETGROUPS

@@ -84,6 +84,9 @@ public:
 	bool debug() const ;
 		///< Returns true if doing debug-level logging.
 
+	bool hidden() const ;
+		///< Returns true if explicitly hidden, but see also show('hidden').
+
 	bool useSyslog() const ;
 		///< Returns true if generating syslog events.
 
@@ -154,9 +157,6 @@ public:
 	unsigned int filterTimeout() const ;
 		///< Returns the timeout for executing an ansynchronous
 		///< filter() or clientFilter() program.
-
-	bool hidden() const ;
-		///< Returns true if the main window is hidden (win32).
 
 	unsigned int responseTimeout() const ;
 		///< Returns the client-side protocol timeout value.
@@ -285,6 +285,9 @@ public:
 	bool eightBitTest() const ;
 		///< Returns true if the new messages should be tested as to
 		///< whether they have 7bit or 8bit content.
+
+	std::string dnsbl() const ;
+		///< Returns a DNSBL configuration string including a list servers.
 
 	std::string show() const ;
 		///< Returns the requested Windows user-interface style,

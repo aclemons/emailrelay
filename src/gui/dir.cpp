@@ -36,9 +36,9 @@ G::Path Dir::desktop()
 	return special( "desktop" ) ;
 }
 
-G::Path Dir::login()
+G::Path Dir::autostart()
 {
-	return special( "login" ) ;
+	return special( "autostart" ) ;
 }
 
 G::Path Dir::menu()

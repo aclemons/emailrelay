@@ -44,6 +44,12 @@ libgnet_a_SOURCES = \
 	gconnection.h \
 	gdescriptor.h \
 	gdescriptor_win32.cpp \
+	gdnsblock.cpp \
+	gdnsblock.h \
+	gdnsmessage.cpp \
+	gdnsmessage.h \
+	gdnsmessage.cpp \
+	gdnsmessage.h \
 	gevent.h \
 	geventhandler.cpp \
 	geventhandler.h \
@@ -123,6 +129,10 @@ libgnet_a_SOURCES = \
 	gconnection.h \
 	gdescriptor.h \
 	gdescriptor_unix.cpp \
+	gdnsblock.cpp \
+	gdnsblock.h \
+	gdnsmessage.cpp \
+	gdnsmessage.h \
 	gevent.h \
 	geventhandler.cpp \
 	geventhandler.h \

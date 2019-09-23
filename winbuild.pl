@@ -91,6 +91,8 @@ my %vars = (
 	e_spooldir => "c:/windows/spool/emailrelay" ,
 	e_docdir => "c:/emailrelay" ,
 	e_initdir => "c:/emailrelay" ,
+	e_bsdinitdir => "c:/emailrelay" ,
+	e_rundir => "c:/emailrelay" ,
 	e_icondir => "c:/emailrelay" ,
 	e_spooldir => "c:/emailrelay" ,
 	e_examplesdir => "c:/emailrelay" ,
@@ -99,7 +101,6 @@ my %vars = (
 	e_sysconfdir => "c:/emailrelay" ,
 	GCONFIG_WINDRES => "windres" ,
 	GCONFIG_WINDMC => "mc" ,
-	GCONFIG_CONFIGURATION => "windows" ,
 	GCONFIG_QT_LIBS => "" ,
 	GCONFIG_QT_CFLAGS => "" ,
 	GCONFIG_QT_MOC => "" ,
@@ -676,7 +677,7 @@ sub install_mkdir
 sub run_tests
 {
 	my ( $main_bin_dir , $test_bin_dir ) = @_ ;
-	my $dash_v = "-v" ; # for now
+	my $dash_v = "" ; # or "-v"
 	my $script = "test/emailrelay-test.pl" ;
 	## $script = ( $script."_") if ! -f $script ;
 	system( "perl -Itest \"$script\" $dash_v -d \"$main_bin_dir\" -x \"$test_bin_dir\" -c \"test/certificates\"" ) ;

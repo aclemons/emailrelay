@@ -51,11 +51,6 @@ bool GNet::Address::supports( Family )
 	return true ;
 }
 
-bool GNet::Address::supports( unsigned int f )
-{
-	return f == AF_INET || f == AF_INET6 ;
-}
-
 GNet::Address GNet::Address::defaultAddress()
 {
 	return Address( Family::ipv4 , 0U ) ;
@@ -165,6 +160,13 @@ bool GNet::Address::isLocal( std::string & reason ) const
 		( m_6imp && m_6imp->isLocal(reason) ) ;
 }
 
+bool GNet::Address::isPrivate() const
+{
+	return
+		( m_4imp && m_4imp->isPrivate() ) ||
+		( m_6imp && m_6imp->isPrivate() ) ;
+}
+
 bool GNet::Address::operator==( const Address & other ) const
 {
 	return
@@ -192,6 +194,11 @@ std::string GNet::Address::displayString() const
 std::string GNet::Address::hostPartString() const
 {
 	return m_4imp ? m_4imp->hostPartString() : m_6imp->hostPartString() ;
+}
+
+std::string GNet::Address::queryString() const
+{
+	return m_4imp ? m_4imp->queryString() : m_6imp->queryString() ;
 }
 
 bool GNet::Address::validString( const std::string & s , std::string * reason_p )
@@ -247,6 +254,11 @@ int GNet::Address::domain() const
 GNet::Address::Family GNet::Address::family() const
 {
 	return m_4imp ? Family::ipv4 : Family::ipv6 ;
+}
+
+int GNet::Address::af() const
+{
+	return m_4imp ? AF_INET : AF_INET6 ;
 }
 
 G::StringArray GNet::Address::wildcards() const

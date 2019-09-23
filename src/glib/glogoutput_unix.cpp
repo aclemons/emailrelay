@@ -48,6 +48,11 @@ namespace
 	}
 }
 
+void G::LogOutput::open( std::ofstream & file , const std::string & path )
+{
+	file.open( path.c_str() , std::ios_base::out | std::ios_base::app ) ;
+}
+
 void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity , const std::string & message )
 {
 	if( severity != Log::Severity::s_Debug && m_syslog )

@@ -69,9 +69,11 @@ public:
 	bool sameHostPart( const Address6 & other ) const ;
 	bool isLoopback() const ;
 	bool isLocal( std::string & ) const ;
+	bool isPrivate() const ;
 	unsigned int bits() const ;
 	std::string displayString() const ;
 	std::string hostPartString() const ;
+	std::string queryString() const ;
 	G::StringArray wildcards() const ;
 
 
