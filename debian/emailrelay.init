@@ -38,7 +38,7 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 NAME=emailrelay
 DESC="E-MailRelay mail server"
 CONFIG=/etc/$NAME.conf
-PIDFILE=__RUNDIR__/$NAME.pid
+PIDFILE=/run/emailrelay/$NAME.pid
 GROUP=daemon
 DAEMON=/usr/sbin/$NAME
 SUBMIT=/usr/sbin/$NAME-submit
@@ -178,7 +178,7 @@ setup_sgid()
 setup_tools()
 {
 	setup_sgid "/usr/sbin/emailrelay-submit"
-	setup_sgid "__LIBEXEC_DIR__/emailrelay-filter-copy"
+	setup_sgid "/usr/lib/emailrelay/emailrelay-filter-copy"
 }
 setup()
 {
