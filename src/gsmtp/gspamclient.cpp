@@ -100,7 +100,10 @@ void GSmtp::SpamClient::start()
 
 void GSmtp::SpamClient::onSendComplete()
 {
-	m_request.sendMore() ;
+	while( m_request.sendMore() ) 
+	{
+		;
+	}
 }
 
 bool GSmtp::SpamClient::onReceive( const char * line_data , size_t line_size , size_t , size_t , char )
