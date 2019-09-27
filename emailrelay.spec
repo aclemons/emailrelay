@@ -29,6 +29,7 @@ excellent scalability and resource usage.
 C++ source code is available and distribution is permitted under the GNU
 General Public License V3.
 
+%global debug_package %{nil}
 %prep
 %setup
 
