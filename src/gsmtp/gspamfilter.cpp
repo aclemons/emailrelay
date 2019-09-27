@@ -67,7 +67,7 @@ void GSmtp::SpamFilter::clientDeleted( std::string reason )
 	if( !reason.empty() )
 	{
 		G_WARNING( "GSmtp::SpamFilter::clientDeleted: spamd interaction failed: " << reason ) ;
-		m_text.erase() ;
+		m_text = reason ;
 		emit( false ) ;
 	}
 }
