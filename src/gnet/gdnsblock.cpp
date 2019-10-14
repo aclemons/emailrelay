@@ -98,13 +98,14 @@ void GNet::DnsBlock::start( const Address & address )
 	}
 
 	static unsigned int id_generator = 10 ;
-	m_id_base = id_generator ;
+	if( (id_generator+m_servers.size()) > 65535U )
+		id_generator = 10 ;
 
 	m_socket_ptr.reset( new DatagramSocket(m_dns_server.domain()) ) ;
 	m_socket_ptr->addReadHandler( *this , m_es ) ;
 
 	std::string prefix = queryString( address ) ;
-	unsigned int id = m_id_base ;
+	unsigned int id = m_id_base = id_generator ;
 	for( G::StringArray::const_iterator server_p = m_servers.begin() ; server_p != m_servers.end() ; ++server_p , id++ , id_generator++ )
 	{
 		std::string server = G::Str::trimmed( *server_p , G::Str::ws() ) ;
@@ -138,7 +139,10 @@ void GNet::DnsBlock::readEvent()
 
 	DnsMessage message( buffer ) ;
 	if( !message.QR() || message.ID() < m_id_base || message.ID() >= (m_id_base+m_servers.size()) || message.RCODE() > 5 )
-		throw Error( "invalid dns response" , G::Str::fromUInt(message.RCODE()) ) ;
+	{
+		G_WARNING( "GNet::DnsBlock::readEvent: invalid dns response: qr=" << message.QR() << " rcode=" << message.RCODE() << " id=" << message.ID() ) ;
+		return ;
+	}
 
 	m_result.at(message.ID()-m_id_base).set( message.addresses() ) ;
 
