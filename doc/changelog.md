@@ -1,6 +1,15 @@
 E-MailRelay Change Log
 ======================
 
+2.1 -> 2.2
+----------
+
+* Updated to C++ 2011.
+* Connections from IPv4 'private use' addresses are allowed by default (see `--remote-clients`).
+* Interface names now supported by `--interface`.
+* New `--server-tls-connection` option for server-side implicit [TLS][].
+* New `--log-address` option to aid adaptive firewalling.
+
 2.0.1 -> 2.1
 ------------
 
@@ -15,7 +24,7 @@ E-MailRelay Change Log
 * New `--show` option on windows to better control the user interface style.
 * The `--pop` option always requires `--pop-auth`.
 * No message is spooled if all its envelope recipients are local-mailboxes.
-* [TLS][] cipher name added to `Received` line as per [RFC-8314][] 4.3.
+* TLS cipher name added to `Received` line as per [RFC-8314][] 4.3.
 * Certificate contents are not logged.
 * Timestamp parts of spool filenames no longer limited to six digits.
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ G::ExecutableCommand::ExecutableCommand( const std::string & s )
 		m_args = osSplit( s ) ;
 
 		// take the first part as the path to the exe
-		if( m_args.size() )
+		if( !m_args.empty() )
 		{
 			m_exe = Path( m_args.at(0U) ) ;
 			std::rotate( m_args.begin() , m_args.begin()+1U , m_args.end() ) ;
@@ -72,9 +72,9 @@ G::StringArray G::ExecutableCommand::args() const
 std::string G::ExecutableCommand::displayString() const
 {
 	return
-		m_args.size() ?
-			std::string("[") + m_exe.str() + "] [" + Str::join("] [",m_args) + "]" :
-			std::string("[") + m_exe.str() + "]" ;
+		m_args.empty() ?
+			std::string("[") + m_exe.str() + "]" :
+			std::string("[") + m_exe.str() + "] [" + Str::join("] [",m_args) + "]" ;
 }
 
 void G::ExecutableCommand::add( const std::string & arg )

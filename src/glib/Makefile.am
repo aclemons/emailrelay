@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ EXTRA_DIST=\
 	gconvert_none.cpp \
 	gconvert_unix.cpp \
 	gdaemon_unix.cpp \
-	gdatetime_unix.cpp \
 	gdirectory_unix.cpp \
 	genvironment_unix.cpp \
 	gexecutablecommand_unix.cpp \
@@ -60,13 +59,13 @@ libglib_a_SOURCES = \
 	gdate.cpp \
 	gdatetime.h \
 	gdatetime.cpp \
-	gdatetime_win32.cpp \
 	gdef.h \
 	gdirectory.h \
 	gdirectory.cpp \
 	gdirectory_win32.cpp \
 	geightbit.h \
 	genvironment.h \
+	genvironment.cpp \
 	genvironment_win32.cpp \
 	gexception.h \
 	gexception.cpp \
@@ -115,10 +114,13 @@ libglib_a_SOURCES = \
 	gpidfile.cpp \
 	gprocess.h \
 	gprocess_win32.cpp \
+	grandom.h \
+	grandom.cpp \
 	greadwrite.h \
 	greadwrite.cpp \
 	groot.h \
 	groot.cpp \
+	gscope.h \
 	gsignalsafe.h \
 	gsleep.h \
 	gslot.h \
@@ -129,7 +131,6 @@ libglib_a_SOURCES = \
 	gstrings.h \
 	gtest.h \
 	gtest.cpp \
-	gthread.h \
 	gthread.cpp \
 	gtime.h \
 	gtime.cpp \
@@ -159,7 +160,6 @@ EXTRA_DIST=\
 	$(ICONV_EXTRA_DIST) \
 	gcleanup_win32.cpp \
 	gdaemon_win32.cpp \
-	gdatetime_win32.cpp \
 	gdirectory_win32.cpp \
 	genvironment_win32.cpp \
 	gexecutablecommand_win32.cpp \
@@ -192,12 +192,12 @@ libglib_a_SOURCES = \
 	gdate.cpp \
 	gdatetime.h \
 	gdatetime.cpp \
-	gdatetime_unix.cpp \
 	gdef.h \
 	gdirectory.h \
 	gdirectory.cpp \
 	gdirectory_unix.cpp \
 	genvironment.h \
+	genvironment.cpp \
 	genvironment_unix.cpp \
 	gexception.h \
 	gexception.cpp \
@@ -243,10 +243,13 @@ libglib_a_SOURCES = \
 	gpidfile.cpp \
 	gprocess.h \
 	gprocess_unix.cpp \
+	grandom.h \
+	grandom.cpp \
 	greadwrite.h \
 	greadwrite.cpp \
 	groot.h \
 	groot.cpp \
+	gscope.h \
 	gsignalsafe.h \
 	gsleep.h \
 	gslot.h \
@@ -257,7 +260,6 @@ libglib_a_SOURCES = \
 	gstrings.h \
 	gtest.h \
 	gtest.cpp \
-	gthread.h \
 	gthread.cpp \
 	gtime.h \
 	gtime.cpp \

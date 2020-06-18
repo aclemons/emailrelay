@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -53,13 +53,13 @@ public:
 	static void addClient( const Connection & simple_client ) ;
 		///< Adds a client connection.
 
-	static void removeClient( const Connection & simple_client ) ;
+	static void removeClient( const Connection & simple_client ) noexcept ;
 		///< Removes a client connection.
 
 	static void addServerPeer( const Connection & server_peer ) ;
 		///< Adds a server connection.
 
-	static void removeServerPeer( const Connection & server_peer ) ;
+	static void removeServerPeer( const Connection & server_peer ) noexcept ;
 		///< Removes a server connection.
 
 	void report( std::ostream & stream ,
@@ -71,7 +71,7 @@ public:
 		///< Reports itself into a three-column table (ordered
 		///< with the column index varying fastest).
 
-	G::Slot::Signal2<std::string,std::string> & signal() ;
+	G::Slot::Signal<const std::string&,const std::string&> & signal() ;
 		///< Provides a callback signal which can be connect()ed
 		///< to a slot.
 		///<
@@ -79,14 +79,16 @@ public:
 		///< the first is "in" or "out", and the second is
 		///< "start" or "stop".
 
-private:
-	Monitor( const Monitor & ) g__eq_delete ;
-	void operator=( const Monitor & ) g__eq_delete ;
+public:
+	Monitor( const Monitor & ) = delete ;
+	Monitor( Monitor && ) = delete ;
+	void operator=( const Monitor & ) = delete ;
+	void operator=( Monitor && ) = delete ;
 
 private:
-	static Monitor * & pthis() ;
-	unique_ptr<MonitorImp> m_imp ;
-	G::Slot::Signal2<std::string,std::string> m_signal ;
+	static Monitor * & pthis() noexcept ;
+	std::unique_ptr<MonitorImp> m_imp ;
+	G::Slot::Signal<const std::string&,const std::string&> m_signal ;
 } ;
 
 #endif

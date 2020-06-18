@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -154,7 +154,7 @@ sub _switches
 	return
 		"" .
 		( exists($sw{AsServer}) ? "--as-server " : "" ) .
-		( exists($sw{Log}) ? "--log --log-time " : "" ) .
+		( exists($sw{Log}) ? "--log --log-time --log-address " : "" ) .
 		( exists($sw{Port}) ? "--port __SMTP_PORT__ " : "" ) .
 		( exists($sw{Admin}) ? "--admin __ADMIN_PORT__ " : "" ) .
 		( exists($sw{Pop}) ? "--pop " : "" ) .

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@
 #  winbuild::find_cmake(...) ;
 #  winbuild::find_msbuild(...) ;
 #  winbuild::find_qt(...) ;
+#  winbuild::find_mbedtls(...) ;
+#  winbuild::find_runtime(...) ;
 #  winbuild::spit_out_batch_files(...) ;
 #  winbuild::clean_cmake_files(...) ;
 #  winbuild::clean_cmake_cache_files(...) ;
@@ -38,6 +40,8 @@
 #  winbuild::cache_value(...) ;
 #  winbuild::find_msvc_base(...) ;
 #  winbuild::fixup(...) ;
+#  winbuild::touch(...) ;
+#  winbuild::file_copy(...) ;
 #
 
 use strict ;
@@ -46,8 +50,77 @@ use FileHandle ;
 use File::Basename ;
 use File::Find ;
 use File::Path ;
+use lib dirname($0) , dirname($0)."/bin" ;
+use AutoMakeParser ;
+$AutoMakeParser::debug = 0 ;
 
 package winbuild ;
+
+sub find_cmake
+{
+	return
+		_find_basic( "cmake" , "cmake.exe" , _path_dirs() ) ||
+		_find_match( "cmake" , "cmake*/bin/cmake.exe" , undef ,
+			"$ENV{SystemDrive}" ,
+			"$ENV{ProgramFiles}" ) ;
+}
+
+sub find_msbuild
+{
+	return
+		_find_basic( "msbuild" , "msbuild.exe" , _path_dirs() ) ||
+		_find_under( "msbuild" , "msbuild.exe" ,
+			$ENV{'ProgramFiles(x86)'}."/msbuild" ,
+			$ENV{'ProgramFiles(x86)'}."/Microsoft Visual Studio" ,
+			$ENV{'ProgramFiles(x86)'} ,
+			$ENV{ProgramFiles} ) ;
+}
+
+sub find_qt
+{
+	my @dirs = (
+		File::Basename::dirname($0)."/.." ,
+		"$ENV{HOMEDRIVE}$ENV{HOMEPATH}/qt" ,
+		"$ENV{SystemDrive}/qt" ,
+	) ;
+	return {
+		x86 => _find_match( "qt(x86)" , "5*/msvc*/lib/cmake/qt5" , qr;/msvc\d\d\d\d/; , @dirs ) ,
+		x64 => _find_match( "qt(x64)" , "5*/msvc*_64/lib/cmake/qt5" , undef , @dirs ) ,
+	} ;
+}
+
+sub find_mbedtls
+{
+	return _find_match( "mbedtls" , "mbedtls*" , undef ,
+		File::Basename::dirname($0)."/.." ,
+		"$ENV{HOMEDRIVE}$ENV{HOMEPATH}" ,
+		"$ENV{SystemDrive}" ) ;
+}
+
+sub find_runtime
+{
+	my ( $msvc_base , $arch , @names ) = @_ ;
+	my $search_base = "$msvc_base/redist" ;
+	my %runtime = () ;
+	for my $name ( @names )
+	{
+		my @paths = grep { m:/$arch/:i } _find_all_under( $name , $search_base ) ;
+		if( @paths )
+		{
+			# pick the shortest, as a heuristic
+			my @p = sort { length($a) <=> length($b) } @paths ;
+			my $path = $p[0] ;
+			print "runtime: [$name] for [$arch] is [$path]\n" ;
+
+			$runtime{$name} = { path => $path , name => $name } ;
+		}
+		else
+		{
+			print "runtime: [$name] not found under [$search_base]\n" ;
+		}
+	}
+	return \%runtime ;
+}
 
 sub default_touchfile
 {
@@ -56,55 +129,69 @@ sub default_touchfile
 	return "$script.ok" ;
 }
 
-sub find_cmake
+sub _path_dirs
 {
-	return "cmake" if "$^O" eq "linux" ;
-	my @dirs = (
-		split(";",$ENV{PATH}) ,
-		"$ENV{SystemDrive}:/cmake/bin" ,
-		"$ENV{ProgramFiles}/cmake/bin" ,
-	) ;
-	my @list = grep { -f $_ } map { "$_/cmake.exe" } grep { $_ } @dirs ;
-	return scalar(@list) ? Cwd::realpath($list[0]) : undef ;
+	return split( ";" , $ENV{PATH} ) ;
 }
 
-sub find_msbuild
+sub _sanepath
 {
-	return "make" if "$^O" eq "linux" ;
-	my @list = grep { -f $_ } map { "$_/msbuild.exe" } grep { $_ } split(";",$ENV{PATH}) ;
-	for my $base (
-		$ENV{'ProgramFiles(x86)'}."/msbuild" ,
-		$ENV{ProgramFiles} ,
-		$ENV{'ProgramFiles(x86)'} )
-	{
-		next if !$base ;
-		last if scalar(@list) ;
-		print "msbuild-search=[$base]\n" ;
-		File::Find::find( sub { push @list , $File::Find::name if lc($_) eq "msbuild.exe" } , $base ) ;
-	}
-	return scalar(@list) ? Cwd::realpath($list[0]) : undef ;
+	my ( $path ) = @_ ;
+	$path =~ s:\\:/:g ;
+	return $path ;
 }
 
-sub find_qt
+sub _find_basic
 {
-	my ( @bases ) = @_ ;
-	my %map = (
-		x86 => [ "qt/5*/msvc*/lib/cmake/qt5" , qr;/msvc\d\d\d\d/; ] ,
-		x64 => [ "qt/5*/msvc*_64/lib/cmake/qt5" , qr;.; ] ,
-	) ;
-	my %result = () ;
-	for my $arch ( keys %map )
+	my ( $logname , $fname , @dirs ) = @_ ;
+	my $result ;
+	for my $dir ( map {_sanepath($_)} @dirs )
 	{
-		my $glob = @{$map{$arch}}[0] ;
-		my $re = @{$map{$arch}}[1] ;
-		my @list = () ;
-		for my $base ( @bases )
-		{
-			push @list , grep { -d $_ && $_ =~ m/$re/ } glob( "$base/$glob" ) ;
-		}
-		$result{$arch} = scalar(@list) ? $list[0] : undef ;
+		my $path = "$dir/$fname" ;
+		if( -e $path ) { $result = Cwd::realpath($path) ; last }
+		print "$logname: not $path\n" ;
 	}
-	return \%result ;
+	print "$logname=[$result]\n" if $result ;
+	return $result ;
+}
+
+sub _find_under
+{
+	my ( $logname , $fname , @dirs ) = @_ ;
+	my $result ;
+	for my $dir ( map {_sanepath($_)} @dirs )
+	{
+		my @find_list = () ;
+		File::Find::find( sub { push @find_list , $File::Find::name if lc($_) eq $fname } , $dir ) ;
+		if( @find_list ) { $result = Cwd::realpath($find_list[0]) ; last }
+		print "$logname: not under $dir\n" ;
+	}
+	print "$logname=[$result]\n" if $result ;
+	return $result ;
+}
+
+sub _find_all_under
+{
+	my ( $fname , $dir ) = @_ ;
+	my @result = () ;
+	File::Find::find( sub { push @result , $File::Find::name if lc($_) eq $fname } , $dir ) ;
+	return @result ;
+}
+
+sub _find_match
+{
+	my ( $logname , $glob , $re , @dirs ) = @_ ;
+	$re = qr;.; if !defined($re) ;
+	my $result ;
+	for my $dir ( map {_sanepath($_)} @dirs )
+	{
+		my @glob_match = () ;
+		push @glob_match , grep { -e $_ && $_ =~ m/$re/ } glob( "$dir/$glob" ) ;
+		if( @glob_match ) { $result = Cwd::realpath($glob_match[0]) ; last }
+		print "$logname: no match for $dir/$glob\n" ;
+	}
+	print "$logname=[$result]\n" if $result ;
+	return $result ;
 }
 
 sub spit_out_batch_files
@@ -187,21 +274,7 @@ sub create_touchfile
 sub read_makefiles
 {
 	my ( $switches , $vars ) = @_ ;
-	my @makefiles = () ;
-	read_makefiles_imp( \@makefiles , "." , $switches , $vars ) ;
-	return @makefiles ;
-}
-
-sub read_makefiles_imp
-{
-	my ( $makefiles , $dir , $switches , $vars ) = @_ ;
-	my $m = new AutoMakeParser( "$dir/Makefile.am" , $switches , $vars ) ;
-	print "makefile=[" , $m->path() , "]\n" ;
-	push @$makefiles , $m ;
-	for my $subdir ( $m->value("SUBDIRS") )
-	{
-		read_makefiles_imp( $makefiles , "$dir/$subdir" , $switches , $vars ) ;
-	}
+	return AutoMakeParser::readall( "." , $switches , $vars , 1 ) ;
 }
 
 sub cache_value
@@ -260,6 +333,45 @@ sub fixup
 		$fh_in->close() or die ;
 		$fh_out->close() or die ;
 		rename( "$base/$fname.$$.tmp" , "$base/$fname" ) or die ;
+	}
+}
+
+sub touch
+{
+	my ( $path ) = @_ ;
+	if( ! -f $path )
+	{
+		my $fh = new FileHandle( $path , "w" ) or die ;
+		$fh->close() or die ;
+	}
+}
+
+sub file_copy
+{
+	my ( $src , $dst ) = @_ ;
+
+	my $to_crlf = undef ;
+	for my $ext ( "txt" , "js" , "pl" , "pm" )
+	{
+		$to_crlf = 1 if( ( ! -d $dst && ( $dst =~ m/$ext$/ ) ) || ( -d $dst && ( $src =~ m/$ext$/ ) ) ) ;
+	}
+
+	if( $to_crlf )
+	{
+		if( -d $dst ) { $dst = "$dst/".basename($src) }
+		my $fh_in = new FileHandle( $src , "r" ) ;
+		my $fh_out = new FileHandle( $dst , "w" ) ;
+		( $fh_in && $fh_out ) or die "error: failed to copy [$src] to [$dst]\n" ;
+		while(<$fh_in>)
+		{
+			chomp( my $line = $_ ) ;
+			print $fh_out $line , "\r\n" ;
+		}
+		$fh_out->close() or die "error: failed to copy [$src] to [$dst]\n" ;
+	}
+	else
+	{
+		File::Copy::copy( $src , $dst ) or die "error: failed to copy [$src] to [$dst]\n" ;
 	}
 }
 

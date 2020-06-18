@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,32 +25,32 @@
 #include "gassert.h"
 #include <errno.h>
 
-bool GNet::Socket::create( int domain , int type , int protocol )
+bool GNet::SocketBase::create( int domain , int type , int protocol )
 {
-	m_socket = Descriptor( ::socket( domain , type , protocol ) , 0 ) ;
-	if( m_socket == Descriptor::invalid() )
+	m_fd = Descriptor( ::socket( domain , type , protocol ) , 0 ) ;
+	if( !m_fd.valid() )
 	{
 		saveReason() ;
 		return false ;
 	}
 
-	m_socket = Descriptor( m_socket.fd() , ::WSACreateEvent() ) ;
-	if( m_socket.h() == NULL )
+	m_fd = Descriptor( m_fd.fd() , WSACreateEvent() ) ;
+	if( m_fd.h() == HNULL )
 	{
 		saveReason() ;
-		::closesocket( m_socket.fd() ) ;
+		::closesocket( m_fd.fd() ) ;
 		return false ;
 	}
 	return true ;
 }
 
-bool GNet::Socket::prepare( bool accepted )
+bool GNet::SocketBase::prepare( bool accepted )
 {
 	if( accepted )
 	{
-		G_ASSERT( m_socket.h() == NULL ) ;
-		HANDLE h = ::WSACreateEvent() ; // handle errors in the event loop
-		m_socket = Descriptor( m_socket.fd() , h ) ;
+		G_ASSERT( m_fd.h() == HNULL ) ;
+		HANDLE h = WSACreateEvent() ; // handle errors in the event loop
+		m_fd = Descriptor( m_fd.fd() , h ) ;
 	}
 
 	if( !setNonBlock() )
@@ -61,56 +61,99 @@ bool GNet::Socket::prepare( bool accepted )
 	return true ;
 }
 
-void GNet::Socket::destroy()
+void GNet::SocketBase::destroy() noexcept
 {
-	if( m_socket.h() != NULL )
-		::WSACloseEvent( m_socket.h() ) ;
+	if( m_fd.h() != HNULL )
+		WSACloseEvent( m_fd.h() ) ;
 
-	if( m_socket != Descriptor::invalid() )
-		::closesocket( m_socket.fd() ) ;
+	if( m_fd.valid() )
+		::closesocket( m_fd.fd() ) ;
 }
 
-bool GNet::Socket::error( int rc )
+bool GNet::SocketBase::error( int rc )
 {
 	return rc == SOCKET_ERROR ;
 }
 
-void GNet::Socket::saveReason()
+void GNet::SocketBase::saveReason()
 {
-	m_reason = ::WSAGetLastError() ;
+	m_reason = WSAGetLastError() ;
 	m_reason_string = reasonString( m_reason ) ;
 }
 
-bool GNet::Socket::sizeError( ssize_t size )
+bool GNet::SocketBase::sizeError( ssize_t size )
 {
 	return size == SOCKET_ERROR ;
 }
 
-bool GNet::Socket::eWouldBlock()
+bool GNet::SocketBase::eWouldBlock() const
 {
 	return m_reason == WSAEWOULDBLOCK ;
 }
 
-bool GNet::Socket::eInProgress()
+bool GNet::SocketBase::eInProgress() const
 {
 	return m_reason == WSAEWOULDBLOCK ; // sic -- WSAEINPROGRESS has different semantics wrt. Unix
 }
 
-bool GNet::Socket::eMsgSize()
+bool GNet::SocketBase::eMsgSize() const
 {
 	return m_reason == WSAEMSGSIZE ;
 }
 
-bool GNet::Socket::eTooMany()
+bool GNet::SocketBase::eTooMany() const
 {
 	return m_reason == WSAEMFILE ; // or WSAENOBUFS ?
 }
 
-bool GNet::Socket::setNonBlock()
+bool GNet::SocketBase::setNonBlock()
 {
 	unsigned long ul = 1 ;
-	return ioctlsocket( m_socket.fd() , FIONBIO , &ul ) != SOCKET_ERROR ;
+	return ioctlsocket( m_fd.fd() , FIONBIO , &ul ) != SOCKET_ERROR ;
 }
+
+std::string GNet::SocketBase::reasonString( int e )
+{
+	//if( e == WSANOTINITIALISED )
+	if( e == WSAENETDOWN ) return "network down" ;
+	//if( e == WSAEFAULT )
+	//if( e == WSAENOTCONN )
+	//if( e == WSAEINTR )
+	//if( e == WSAEINPROGRESS )
+	if( e == WSAENETRESET ) return "network reset" ;
+	//if( e == WSAENOTSOCK )
+	//if( e == WSAEOPNOTSUPP )
+	if( e == WSAESHUTDOWN ) return "already shut down" ;
+	//if( e == WSAEWOULDBLOCK )
+	//if( e == WSAEMSGSIZE )
+	//if( e == WSAEINVAL )
+	if( e == WSAECONNABORTED ) return "aborted" ;
+	if( e == WSAETIMEDOUT ) return "timed out" ;
+	if( e == WSAECONNRESET ) return "connection reset by peer" ;
+
+	std::string result = "unknown error" ;
+	DWORD size_limit = 128U ;
+	TCHAR * buffer = nullptr ;
+	DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS ;
+	DWORD rc = FormatMessage( flags , nullptr , e , 0 , reinterpret_cast<LPSTR>(&buffer) , size_limit , nullptr ) ;
+	if( buffer == nullptr || rc == 0U ) return result ;
+	G::Convert::tstring tmessage( buffer , static_cast<std::size_t>(rc) ) ;
+	::LocalFree( buffer ) ;
+	try
+	{
+		G::Convert::convert( result , tmessage , G::Convert::ThrowOnError() ) ;
+	}
+	catch( G::Convert::Error & )
+	{
+	}
+	G::Str::removeAll( result , '\r' ) ;
+	G::Str::trimRight( result , ".\n" ) ;
+	G::Str::replaceAll( result , "\n" , " " ) ;
+	G_DEBUG( "GNet::SocketBase::reasonString: " << e << " -> [" << G::Str::printable(result) << "]" ) ;
+	return G::Str::lower(G::Str::printable(result)) ;
+}
+
+// ==
 
 bool GNet::Socket::canBindHint( const Address & )
 {
@@ -140,49 +183,8 @@ bool GNet::Socket::setOptionPureV6( bool , NoThrow )
 bool GNet::Socket::setOptionImp( int level , int op , const void * arg , socklen_t n )
 {
 	const char * cp = reinterpret_cast<const char*>(arg) ;
-	int rc = ::setsockopt( m_socket.fd() , level , op , cp , n ) ;
+	int rc = ::setsockopt( fd() , level , op , cp , n ) ;
 	return ! error(rc) ;
-}
-
-std::string GNet::Socket::reasonString( int e )
-{
-	//if( e == WSANOTINITIALISED )
-	if( e == WSAENETDOWN ) return "network down" ;
-	//if( e == WSAEFAULT )
-	//if( e == WSAENOTCONN )
-	//if( e == WSAEINTR )
-	//if( e == WSAEINPROGRESS )
-	if( e == WSAENETRESET ) return "network reset" ;
-	//if( e == WSAENOTSOCK )
-	//if( e == WSAEOPNOTSUPP )
-	if( e == WSAESHUTDOWN ) return "already shut down" ;
-	//if( e == WSAEWOULDBLOCK )
-	//if( e == WSAEMSGSIZE )
-	//if( e == WSAEINVAL )
-	if( e == WSAECONNABORTED ) return "aborted" ;
-	if( e == WSAETIMEDOUT ) return "timed out" ;
-	if( e == WSAECONNRESET ) return "connection reset by peer" ;
-
-	std::string result = "unknown error" ;
-	DWORD size_limit = 128U ;
-	TCHAR * buffer = NULL ;
-	DWORD rc = ::FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS ,
-		NULL , e , 0 , reinterpret_cast<LPSTR>(&buffer) , size_limit , NULL ) ;
-	if( buffer == NULL || rc == 0U ) return result ;
-	G::Convert::tstring tmessage( buffer , static_cast<size_t>(rc) ) ;
-	::LocalFree( buffer ) ;
-	try
-	{
-		G::Convert::convert( result , tmessage , G::Convert::ThrowOnError() ) ;
-	}
-	catch( G::Convert::Error & )
-	{
-	}
-	G::Str::removeAll( result , '\r' ) ;
-	G::Str::trimRight( result , ".\n" ) ;
-	G::Str::replaceAll( result , "\n" , " " ) ;
-	G_DEBUG( "GNet::Socket::reasonString: " << e << " -> [" << G::Str::printable(result) << "]" ) ;
-	return G::Str::lower(G::Str::printable(result)) ;
 }
 
 /// \file gsocket_win32.cpp

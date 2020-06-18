@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -137,7 +137,7 @@ if GCONFIG_WINDOWS
 	$(top_builddir)/src/glib/libglib.a \
 	$(RESOURCES) \
 	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
-	-lgdi32 -lws2_32 -ladvapi32 -lcomctl32
+	-lgdi32 -lws2_32 -liphlpapi -ladvapi32 -lcomctl32
 else
  emailrelay_SOURCES = $(TEXTMODE_MAIN_SOURCES) $(OTHER_SOURCES)
  emailrelay_LDFLAGS =
@@ -165,7 +165,7 @@ if GCONFIG_WINDOWS
 	$(top_builddir)/src/win32/libextra.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
-	-lws2_32 -lcomctl32
+	-lws2_32 -liphlpapi -lcomctl32
 endif
 
 emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
@@ -175,7 +175,7 @@ if GCONFIG_WINDOWS
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
-	-lws2_32 -lcomctl32
+	-lws2_32 -liphlpapi -lcomctl32
 else
  emailrelay_passwd_LDFLAGS =
  emailrelay_passwd_LDADD =  \
@@ -193,7 +193,7 @@ if GCONFIG_WINDOWS
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/win32/libextra.a \
 	$(top_builddir)/src/glib/libglib.a \
-	-lws2_32 -lcomctl32
+	-lws2_32 -liphlpapi -lcomctl32
 else
  emailrelay_submit_FLAGS =
  emailrelay_submit_LDADD = \
@@ -208,7 +208,7 @@ if GCONFIG_WINDOWS
  emailrelay_filter_copy_LDFLAGS = -static
  emailrelay_filter_copy_LDADD = \
 	$(top_builddir)/src/glib/libglib.a \
-	-lws2_32 -lcomctl32
+	-lws2_32 -liphlpapi -lcomctl32
 else
  emailrelay_filter_copy_LDFLAGS =
  emailrelay_filter_copy_LDADD = \
@@ -219,7 +219,7 @@ emailrelay_start_SOURCES = start.cpp
 if GCONFIG_WINDOWS
  emailrelay_start_LDFLAGS = -static
  emailrelay_start_LDADD = \
-	-lws2_32 -lcomctl32
+	-lws2_32 -liphlpapi -lcomctl32
 else
  emailrelay_start_LDFLAGS =
  emailrelay_start_LDADD =
@@ -232,7 +232,7 @@ if GCONFIG_WINDOWS
  emailrelay_service_LDADD = \
 	libmain.a \
 	$(top_builddir)/src/glib/libglib.a \
-	-lws2_32 -lcomctl32
+	-lws2_32 -liphlpapi -lcomctl32
 endif
 
 install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS

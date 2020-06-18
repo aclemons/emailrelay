@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,11 +39,8 @@ class GAuth::SaslClientSecrets : public virtual Valid
 {
 public:
 	virtual Secret clientSecret( const std::string & encoding_type ) const = 0 ;
-			///< Returns the client secret for the given encoding type.
-			///< Returns an invalid secret if none.
-
-	virtual ~SaslClientSecrets() ;
-		///< Destructor.
+		///< Returns the client secret for the given encoding type.
+		///< Returns an invalid secret if none.
 } ;
 
 #endif

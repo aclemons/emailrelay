@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,11 +42,11 @@ public:
 	class LocalTime /// An overload discriminator class for Date constructors.
 		{} ;
 
-	g__enum(Weekday) { sunday, monday, tuesday, wednesday, thursday, friday, saturday } ; g__enum_end(Weekday)
+	enum class Weekday { sunday, monday, tuesday, wednesday, thursday, friday, saturday } ;
 
-	g__enum(Month) { january = 1 , february , march , april , may , june , july , august , september , october , november , december } ; g__enum_end(Month)
+	enum class Month { january = 1 , february , march , april , may , june , july , august , september , october , november , december } ;
 
-	g__enum(Format) { yyyy_mm_dd_slash , yyyy_mm_dd , mm_dd } ; g__enum_end(Format)
+	enum class Format { yyyy_mm_dd_slash , yyyy_mm_dd , mm_dd } ;
 
 	static int yearUpperLimit() ;
 		///< Returns the largest supported year value.
@@ -62,21 +62,21 @@ public:
 		///< Constructor for the current date
 		///< in the local timezone.
 
-	explicit Date( const G::DateTime::BrokenDownTime & tm ) ;
+	explicit Date( const BrokenDownTime & tm ) ;
 		///< Constructor for the specified date.
 
-	explicit Date( G::EpochTime t ) ;
+	explicit Date( SystemTime t ) ;
 		///< Constructor for the date in the UTC
 		///< timezone as at the given epoch time.
 
-	Date( G::EpochTime t , const LocalTime & ) ;
+	Date( SystemTime t , const LocalTime & ) ;
 		///< Constructor for the date in the local
 		///< timezone as at the given epoch time.
 
 	Date( int year , Month month , int day_of_month ) ;
 		///< Constructor for the specified date.
 
-	std::string string( Format format = Format::yyyy_mm_dd_slash ) const ;
+	std::string str( Format format = Format::yyyy_mm_dd_slash ) const ;
 		///< Returns a string representation of the date.
 
 	Weekday weekday() const ;
@@ -120,16 +120,16 @@ public:
 		///< Comparison operator.
 
 private:
-	void init( const G::DateTime::BrokenDownTime & ) ;
+	void init( const BrokenDownTime & ) ;
 	static int lastDay( int month , int year ) ;
 	static bool isLeapYear( int y ) ;
 
 private:
-	int m_day ;
-	int m_month ;
-	int m_year ;
-	bool m_weekday_set ;
-	Weekday m_weekday ;
+	int m_day{1} ;
+	int m_month{1} ;
+	int m_year{2000} ;
+	bool m_weekday_set{false} ;
+	Weekday m_weekday{Weekday::sunday} ;
 } ;
 
 #endif

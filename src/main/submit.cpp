@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -56,16 +56,16 @@
 G_EXCEPTION_CLASS( NoBody , "no body text" ) ;
 
 static std::string process( const G::Path & spool_dir , std::istream & stream ,
-	const G::StringArray & to_list , std::string from , std::string from_auth_in ,
-	std::string from_auth_out , G::StringArray header )
+	const G::StringArray & to_list , std::string from ,
+	const std::string & from_auth_in , const std::string & from_auth_out ,
+	const G::StringArray & header )
 {
 	// look for a "From:" line in the header if not on the command-line
 	//
 	if( from.empty() )
 	{
-		for( G::StringArray::const_iterator header_p = header.begin() ; header_p != header.end() ; ++header_p )
+		for( const auto & line : header )
 		{
-			const std::string & line = *header_p ;
 			if( line.find("From: ") == 0U )
 			{
 				from = line.substr(5U) ;
@@ -84,14 +84,13 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 
 	// create the output file
 	//
-	GSmtp::FileStore store( spool_dir , /*optimise=*/true , /*maxsize=*/0U , /*eightbittest=*/true ) ;
-	unique_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from , from_auth_in , from_auth_out ) ;
+	GSmtp::FileStore store( spool_dir , /*optimise_empty_test=*/true , /*max_size=*/0U , /*test_for_eight_bit=*/true ) ;
+	std::unique_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from , from_auth_in , from_auth_out ) ;
 
 	// add "To:" lines to the envelope
 	//
-	for( G::StringArray::const_iterator to_p = to_list.begin() ; to_p != to_list.end() ; ++to_p )
+	for( auto to : to_list )
 	{
-		std::string to = *to_p ;
 		G::Str::trim( to , " \t\r\n" ) ;
 		GSmtp::VerifierStatus status( to ) ;
 		msg->addTo( status.address , status.is_local ) ;
@@ -100,12 +99,12 @@ static std::string process( const G::Path & spool_dir , std::istream & stream ,
 	// stream out the content header
 	{
 		bool has_from = false ;
-		for( G::StringArray::const_iterator header_p = header.begin() ; header_p != header.end() ; ++header_p )
+		for( const auto & line : header )
 		{
-			if( (*header_p).find("From: ") == 0U )
+			if( line.find("From: ") == 0U )
 				has_from = true ;
 
-			msg->addTextLine( *header_p ) ;
+			msg->addTextLine( line ) ;
 		}
 		if( !has_from && !from.empty() )
 		{

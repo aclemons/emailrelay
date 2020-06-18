@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,10 +28,8 @@
 #include <fstream>
 #include <string>
 
-G::PidFile::PidFile() :
-	m_committed(false)
-{
-}
+G::PidFile::PidFile()
+= default;
 
 G::PidFile::~PidFile()
 {
@@ -40,8 +38,7 @@ G::PidFile::~PidFile()
 }
 
 G::PidFile::PidFile( const Path & path ) :
-	m_path(path) ,
-	m_committed(false)
+	m_path(path)
 {
 }
 
@@ -82,7 +79,7 @@ void G::PidFile::cleanup( SignalSafe safe , const char * path )
 	// signal-safe, reentrant implementation...
 	try
 	{
-		Identity id = Root::start( safe ) ; // claim_root
+		Identity id = Root::start( SignalSafe() ) ; // claim_root
 		if( path && *path && mine(safe,path) )
 			std::remove( path ) ;
 		Root::stop( safe , id ) ;

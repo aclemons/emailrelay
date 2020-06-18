@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 #include "gdef.h"
 #include "gaddress6.h"
 #include "gstr.h"
+#include "gtest.h"
+#include "gprocess.h"
 #include "glog.h"
 #include <algorithm> // std::swap()
 #include <utility> // std::swap()
@@ -30,11 +32,15 @@
 #include <sstream>
 #include <vector>
 #include <iomanip>
+#include <array>
 
-namespace
+namespace GNet
 {
-	const char * port_separators = ":/." ;
-	char port_separator = '.' ;
+	namespace Address6Imp
+	{
+		const char * port_separators = ":/." ;
+		char port_separator = '.' ;
+	}
 }
 
 unsigned short GNet::Address6::family()
@@ -47,51 +53,45 @@ int GNet::Address6::domain()
 	return PF_INET6 ;
 }
 
-void GNet::Address6::init()
+GNet::Address6::Address6( std::nullptr_t ) // NOLINT cppcoreguidelines-pro-type-member-init
 {
-	static specific_type zero ;
-	m_inet.specific = zero ;
+	m_inet.specific = specific_type{} ;
 	m_inet.specific.sin6_family = family() ;
 	m_inet.specific.sin6_port = 0 ;
 	m_inet.specific.sin6_flowinfo = 0 ;
 	gnet_address6_init( m_inet.specific ) ; // gdef.h
 }
 
-GNet::Address6::Address6( unsigned int port )
+GNet::Address6::Address6( unsigned int port ) :
+	Address6(nullptr)
 {
-	init() ;
 	m_inet.specific.sin6_addr = in6addr_any ;
 	const char * reason = setPort( m_inet , port ) ;
 	if( reason ) throw Address::Error(reason) ;
 }
 
-GNet::Address6::Address6( unsigned int port , int )
+GNet::Address6::Address6( unsigned int port , int ) :
+	Address6(nullptr)
 {
-	init() ;
 	m_inet.specific.sin6_addr = in6addr_loopback ;
 	const char * reason = setPort( m_inet , port ) ;
 	if( reason ) throw Address::Error(reason) ;
 }
 
-GNet::Address6::Address6( const sockaddr * addr , socklen_t len )
+GNet::Address6::Address6( const sockaddr * addr , socklen_t len ) :
+	Address6(nullptr)
 {
-	init() ;
 	if( addr == nullptr )
 		throw Address::Error() ;
-	if( addr->sa_family != family() || static_cast<size_t>(len) < sizeof(specific_type) )
+	if( addr->sa_family != family() || static_cast<std::size_t>(len) < sizeof(specific_type) )
 		throw Address::BadFamily() ;
 
 	m_inet.specific = *(reinterpret_cast<const specific_type*>(addr)) ;
 }
 
-GNet::Address6::Address6( const Address6 & other )
+GNet::Address6::Address6( const std::string & host_part , unsigned int port ) :
+	Address6(nullptr)
 {
-	m_inet.specific = other.m_inet.specific ;
-}
-
-GNet::Address6::Address6( const std::string & host_part , unsigned int port )
-{
-	init() ;
 	const char * reason = setHostAddress( m_inet , host_part ) ;
 	if( !reason )
 		reason = setPort( m_inet , port ) ;
@@ -99,9 +99,9 @@ GNet::Address6::Address6( const std::string & host_part , unsigned int port )
 		throw Address::BadString( std::string(reason) + ": " + host_part ) ;
 }
 
-GNet::Address6::Address6( const std::string & host_part , const std::string & port_part )
+GNet::Address6::Address6( const std::string & host_part , const std::string & port_part ) :
+	Address6(nullptr)
 {
-	init() ;
 	const char * reason = setHostAddress( m_inet , host_part ) ;
 	if( !reason )
 		reason = setPort( m_inet , port_part ) ;
@@ -109,9 +109,9 @@ GNet::Address6::Address6( const std::string & host_part , const std::string & po
 		throw Address::BadString( std::string(reason) + ": [" + host_part + "][" + port_part + "]" ) ;
 }
 
-GNet::Address6::Address6( const std::string & display_string )
+GNet::Address6::Address6( const std::string & display_string ) :
+	Address6(nullptr)
 {
-	init() ;
 	const char * reason = setAddress( m_inet , display_string ) ;
 	if( reason )
 		throw Address::BadString( std::string(reason) + ": " + display_string ) ;
@@ -119,7 +119,7 @@ GNet::Address6::Address6( const std::string & display_string )
 
 const char * GNet::Address6::setAddress( union_type & inet , const std::string & display_string )
 {
-	const std::string::size_type pos = display_string.find_last_of( port_separators ) ;
+	const std::string::size_type pos = display_string.find_last_of( Address6Imp::port_separators ) ;
 	if( pos == std::string::npos )
 		return "no port separator" ;
 
@@ -151,11 +151,8 @@ const char * GNet::Address6::setHostAddress( union_type & inet , const std::stri
 
 	if( rc == 1 && !zone.empty() )
 	{
-		unsigned int zone_id = G::Str::toUInt( zone , "0" ) ;
-		if( zone_id == 0U )
-			zone_id = if_nametoindex( zone.c_str() ) ; // autoconf test -- see gdef.h
-		if( zone_id != 0U )
-			setZone( inet , zone_id ) ; // sin6_scope_id
+		if( !setZone( inet , zone ) )
+			return "invalid address zone/scope" ;
 	}
 
 	return rc == 1 ? nullptr : "invalid network address" ;
@@ -183,40 +180,63 @@ const char * GNet::Address6::setPort( union_type & inet , unsigned int port )
 	return nullptr ;
 }
 
-void GNet::Address6::setZone( union_type & inet , unsigned int zone_id )
+bool GNet::Address6::setZone( const std::string & zone )
 {
-	inet.specific.sin6_scope_id = zone_id ;
-	//inet.specific.sin6_scope_struct.Level = 0 ;
-	//inet.specific.sin6_scope_struct.Zone = zone_id ;
+	return setZone( m_inet , zone ) ;
+}
+
+bool GNet::Address6::setZone( union_type & inet , const std::string & zone )
+{
+	unsigned long scope_id = 0UL ; // uint on unix, ULONG on windows
+	if( G::Str::isULong(zone) )
+	{
+		scope_id = G::Str::toULong( zone ) ;
+	}
+	else
+	{
+		G::Process::errno_( G::SignalSafe() , 0 ) ;
+		scope_id = g_if_nametoindex( zone.c_str() ) ; // see gdef.h
+		int e = G::Process::errno_() ;
+		if( scope_id == 0U && e != 0 )
+			return false ;
+	}
+	inet.specific.sin6_scope_id = scope_id ; // narrowing conversion on unix
+	const bool no_overflow = scope_id == inet.specific.sin6_scope_id ;
+	return no_overflow ;
+}
+
+void GNet::Address6::setScopeId( unsigned long scope_id )
+{
+	m_inet.specific.sin6_scope_id = scope_id ; // narrowing conversion on unix
 }
 
 std::string GNet::Address6::displayString() const
 {
-	const bool with_scope_id = false ;
+	bool with_scope_id = G::Test::enabled("address-show-scope") ; // moot
 	std::ostringstream ss ;
 	ss << hostPartString() ;
-	if( with_scope_id )
+	if( with_scope_id && scopeId() != 0U )
 		ss << "%" << scopeId() ;
-	ss << port_separator << port() ;
+	ss << Address6Imp::port_separator << port() ;
 	return ss.str() ;
 }
 
 std::string GNet::Address6::hostPartString() const
 {
-	char buffer[INET6_ADDRSTRLEN+1U] ;
+	std::array<char,INET6_ADDRSTRLEN+1U> buffer ; // NOLINT cppcoreguidelines-pro-type-member-init
 	const void * vp = & m_inet.specific.sin6_addr ;
-	const char * p = inet_ntop( family() , const_cast<void*>(vp) , buffer , sizeof(buffer) ) ; // (const cast for windows)
+	const char * p = inet_ntop( family() , const_cast<void*>(vp) , &buffer[0] , buffer.size() ) ; // (const cast for windows)
 	if( p == nullptr )
 		throw Address::Error( "inet_ntop() failure" ) ;
-	buffer[sizeof(buffer)-1U] = '\0' ;
-	return std::string(buffer) ;
+	buffer[buffer.size()-1U] = '\0' ;
+	return std::string(&buffer[0]) ;
 }
 
 std::string GNet::Address6::queryString() const
 {
 	std::ostringstream ss ;
 	const char * hexmap = "0123456789abcdef" ;
-	for( size_t i = 0U ; i < 16U ; i++ )
+	for( std::size_t i = 0U ; i < 16U ; i++ )
 	{
 		unsigned int n = static_cast<unsigned int>(m_inet.specific.sin6_addr.s6_addr[15U-i]) % 256U ;
 		ss << (i==0U?"":".") << hexmap[(n&15U)%16U] << "." << hexmap[(n>>4U)%16U] ;
@@ -231,7 +251,7 @@ bool GNet::Address6::validData( const sockaddr * addr , socklen_t len )
 
 bool GNet::Address6::validString( const std::string & s , std::string * reason_p )
 {
-	union_type inet ;
+	union_type inet {} ;
 	const char * reason = setAddress( inet , s ) ;
 	if( reason && reason_p )
 		*reason_p = std::string(reason) ;
@@ -240,7 +260,7 @@ bool GNet::Address6::validString( const std::string & s , std::string * reason_p
 
 bool GNet::Address6::validStrings( const std::string & host_part , const std::string & port_part , std::string * reason_p )
 {
-	union_type inet ;
+	union_type inet {} ;
 	const char * reason = setHostAddress( inet , host_part ) ;
 	if( !reason )
 		reason = setPort( inet , port_part ) ;
@@ -251,31 +271,33 @@ bool GNet::Address6::validStrings( const std::string & host_part , const std::st
 
 bool GNet::Address6::validPort( unsigned int port )
 {
-	union_type inet ;
+	union_type inet {} ;
 	const char * reason = setPort( inet , port ) ;
 	return reason == nullptr ;
 }
 
-bool GNet::Address6::same( const Address6 & other ) const
+bool GNet::Address6::same( const Address6 & other , bool with_scope ) const
 {
 	return
 		m_inet.specific.sin6_family == family() &&
 		other.m_inet.specific.sin6_family == family() &&
 		sameAddr( m_inet.specific.sin6_addr , other.m_inet.specific.sin6_addr ) &&
+		( !with_scope || m_inet.specific.sin6_scope_id == other.m_inet.specific.sin6_scope_id ) &&
 		m_inet.specific.sin6_port == other.m_inet.specific.sin6_port ;
 }
 
-bool GNet::Address6::sameHostPart( const Address6 & other ) const
+bool GNet::Address6::sameHostPart( const Address6 & other , bool with_scope ) const
 {
 	return
 		m_inet.specific.sin6_family == family() &&
 		other.m_inet.specific.sin6_family == family() &&
-		sameAddr( m_inet.specific.sin6_addr , other.m_inet.specific.sin6_addr ) ;
+		sameAddr( m_inet.specific.sin6_addr , other.m_inet.specific.sin6_addr ) &&
+		( !with_scope || m_inet.specific.sin6_scope_id == other.m_inet.specific.sin6_scope_id ) ;
 }
 
 bool GNet::Address6::sameAddr( const ::in6_addr & a , const ::in6_addr & b )
 {
-	for( size_t i = 0 ; i < 16U ; i++ )
+	for( std::size_t i = 0 ; i < 16U ; i++ )
 	{
 		if( a.s6_addr[i] != b.s6_addr[i] )
 			return false ;
@@ -308,78 +330,82 @@ socklen_t GNet::Address6::length()
 	return sizeof(specific_type) ;
 }
 
-namespace
+namespace GNet
 {
-	bool shiftLeft( struct in6_addr & mask )
+	namespace Address6Imp
 	{
-		bool carry_out = false ;
-		bool carry_in = false ;
-		for( int i = 15 ; i >= 0 ; i-- )
+		bool shiftLeft( struct in6_addr & mask )
 		{
-			const unsigned char top_bit = 128U ;
-			carry_out = !!( mask.s6_addr[i] & top_bit ) ;
-			mask.s6_addr[i] <<= 1U ;
-			if( carry_in ) ( mask.s6_addr[i] |= 1U ) ;
-			carry_in = carry_out ;
+			bool carry_out = false ;
+			bool carry_in = false ;
+			for( int i = 15 ; i >= 0 ; i-- )
+			{
+				const unsigned char top_bit = 128U ;
+				carry_out = !!( mask.s6_addr[i] & top_bit ) ;
+				mask.s6_addr[i] <<= 1U ;
+				if( carry_in ) ( mask.s6_addr[i] |= 1U ) ;
+				carry_in = carry_out ;
+			}
+			return carry_out ;
 		}
-		return carry_out ;
-	}
-	void shiftLeft( struct in6_addr & mask , unsigned int bits )
-	{
-		for( unsigned int i = 0U ; i < bits ; i++ )
-			shiftLeft( mask ) ;
-	}
-	void reset( struct in6_addr & addr )
-	{
-		for( unsigned int i = 0 ; i < 16U ; i++ )
-			addr.s6_addr[i] = 0 ;
-	}
-	void fill( struct in6_addr & addr )
-	{
-		for( unsigned int i = 0 ; i < 16U ; i++ )
-			addr.s6_addr[i] = 0xff ;
-	}
-	struct in6_addr make( unsigned int lhs_hi , unsigned int lhs_lo , unsigned int rhs )
-	{
-		struct in6_addr addr ;
-		reset( addr ) ;
-		addr.s6_addr[15] = rhs ;
-		addr.s6_addr[0] = lhs_hi ;
-		addr.s6_addr[1] = lhs_lo ;
-		return addr ;
-	}
-	void applyMask( struct in6_addr & addr , const struct in6_addr & mask )
-	{
-		for( int i = 0 ; i < 16 ; i++ )
+		void shiftLeft( struct in6_addr & mask , unsigned int bits )
 		{
-			addr.s6_addr[i] &= mask.s6_addr[i] ;
+			for( unsigned int i = 0U ; i < bits ; i++ )
+				shiftLeft( mask ) ;
 		}
-	}
-	struct in6_addr mask( unsigned int bits )
-	{
-		struct in6_addr addr ;
-		fill( addr ) ;
-		shiftLeft( addr , 128U - bits ) ;
-		return addr ;
-	}
-	struct in6_addr masked( const struct in6_addr & addr_in , const struct in6_addr & mask )
-	{
-		struct in6_addr result = addr_in ;
-		applyMask( result , mask ) ;
-		return result ;
+		void reset( struct in6_addr & addr )
+		{
+			for( unsigned int i = 0 ; i < 16U ; i++ )
+				addr.s6_addr[i] = 0 ;
+		}
+		void fill( struct in6_addr & addr )
+		{
+			for( unsigned int i = 0 ; i < 16U ; i++ )
+				addr.s6_addr[i] = 0xff ;
+		}
+		struct in6_addr make( unsigned int lhs_hi , unsigned int lhs_lo , unsigned int rhs )
+		{
+			struct in6_addr addr {} ;
+			reset( addr ) ;
+			addr.s6_addr[15] = rhs ;
+			addr.s6_addr[0] = lhs_hi ;
+			addr.s6_addr[1] = lhs_lo ;
+			return addr ;
+		}
+		void applyMask( struct in6_addr & addr , const struct in6_addr & mask )
+		{
+			for( int i = 0 ; i < 16 ; i++ )
+			{
+				addr.s6_addr[i] &= mask.s6_addr[i] ;
+			}
+		}
+		struct in6_addr mask( unsigned int bits )
+		{
+			struct in6_addr addr {} ;
+			fill( addr ) ;
+			shiftLeft( addr , 128U - bits ) ;
+			return addr ;
+		}
+		struct in6_addr masked( const struct in6_addr & addr_in , const struct in6_addr & mask )
+		{
+			struct in6_addr result = addr_in ;
+			applyMask( result , mask ) ;
+			return result ;
+		}
 	}
 }
 
 G::StringArray GNet::Address6::wildcards() const
 {
+	namespace imp = Address6Imp ;
 	Address6 a( *this ) ;
 
 	G::StringArray result ;
 	result.reserve( 128U ) ;
 	result.push_back( hostPartString() ) ;
 
-	struct in6_addr mask ;
-	fill( mask ) ;
+	struct in6_addr mask {} ;
+	imp::fill( mask ) ;
 
 	for( int bit = 0 ; bit < 128 ; bit++ )
 	{
@@ -387,52 +413,71 @@ G::StringArray GNet::Address6::wildcards() const
 		ss << a.hostPartString() << "/" << (128-bit) ;
 		result.push_back( ss.str() ) ;
 
-		shiftLeft( mask ) ;
-		applyMask( a.m_inet.specific.sin6_addr , mask ) ;
+		imp::shiftLeft( mask ) ;
+		imp::applyMask( a.m_inet.specific.sin6_addr , mask ) ;
 	}
 	return result ;
 }
 
 unsigned int GNet::Address6::bits() const
 {
+	namespace imp = Address6Imp ;
 	struct in6_addr a = m_inet.specific.sin6_addr ;
 	unsigned int count = 0U ;
-	while( shiftLeft(a) )
+	while( imp::shiftLeft(a) )
 		count++ ;
 	return count ;
 }
 
-bool GNet::Address6::isLoopback() const
-{
-	// ::1/128
-	struct in6_addr _1 = make( 0U , 0U , 1U ) ;
-	return sameAddr( _1 , m_inet.specific.sin6_addr ) ;
-}
-
 bool GNet::Address6::isLocal( std::string & reason ) const
 {
-	if( isLoopback() || isPrivate() )
+	if( isLoopback() || isLinkLocal() || isUniqueLocal() )
 	{
 		return true ;
 	}
 	else
 	{
 		std::ostringstream ss ;
-		ss << hostPartString() << " is not ::1/128 or in fe80::/64 or fc00::/7" ;
+		ss << hostPartString() << " is not in ::1/128 or fe80::/64 or fc00::/7" ;
 		reason = ss.str() ;
 		return false ;
 	}
 }
 
-bool GNet::Address6::isPrivate() const
+bool GNet::Address6::isLoopback() const
 {
-	struct in6_addr addr_64 = masked( m_inet.specific.sin6_addr , mask(64U) ) ;
-	struct in6_addr addr_7 = masked( m_inet.specific.sin6_addr , mask(7U) ) ;
+	// ::1/128 (cf. 127.0.0.0/8)
+	namespace imp = Address6Imp ;
+	struct in6_addr _1 = imp::make( 0U , 0U , 1U ) ; // ::1/128
+	return sameAddr( _1 , m_inet.specific.sin6_addr ) ;
+}
 
-	struct in6_addr _fe80 = make( 0xfeU , 0x80U , 0U ) ;
-	struct in6_addr _fc00 = make( 0xfcU , 0U , 0U ) ;
+bool GNet::Address6::isLinkLocal() const
+{
+	// fe80::/64 (cf. 169.254.0.0/16)
+	namespace imp = Address6Imp ;
+	struct in6_addr addr_64 = imp::masked( m_inet.specific.sin6_addr , imp::mask(64U) ) ;
+	struct in6_addr _fe80 = imp::make( 0xfeU , 0x80U , 0U ) ;
+	return sameAddr( _fe80 , addr_64 ) ;
+}
 
-	return sameAddr( _fe80 , addr_64 ) || sameAddr( _fc00 , addr_7 ) ;
+bool GNet::Address6::isUniqueLocal() const
+{
+	// fc00::/7 (cf. 192.168.0.0/16 or 10.0.0.0/8)
+	namespace imp = Address6Imp ;
+	struct in6_addr addr_7 = imp::masked( m_inet.specific.sin6_addr , imp::mask(7U) ) ;
+	struct in6_addr _fc00 = imp::make( 0xfcU , 0U , 0U ) ;
+	return sameAddr( _fc00 , addr_7 ) ;
+}
+
+bool GNet::Address6::isAny() const
+{
+	for( int i = 0 ; i < 16 ; i++ )
+	{
+		if( m_inet.specific.sin6_addr.s6_addr[i] != in6addr_any.s6_addr[i] )
+			return false ;
+	}
+	return true ;
 }
 
 /// \file gaddress6.cpp

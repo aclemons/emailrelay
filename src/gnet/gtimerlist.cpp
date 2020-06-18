@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,16 +23,15 @@
 #include "gtimer.h"
 #include "gnetdone.h"
 #include "geventloop.h"
+#include "geventloggingcontext.h"
 #include "glog.h"
 #include "gassert.h"
 #include <algorithm>
 #include <functional>
 #include <sstream>
 
-GNet::TimerList::Value::Value() :
-	m_timer(nullptr)
-{
-}
+GNet::TimerList::Value::Value()
+= default;
 
 GNet::TimerList::Value::Value( TimerBase * t , ExceptionSink es ) :
 	m_timer(t) ,
@@ -40,18 +39,18 @@ GNet::TimerList::Value::Value( TimerBase * t , ExceptionSink es ) :
 {
 }
 
-inline bool GNet::TimerList::Value::operator==( const Value & v ) const g__noexcept
+inline bool GNet::TimerList::Value::operator==( const Value & v ) const noexcept
 {
 	return m_timer == v.m_timer ;
 }
 
-inline void GNet::TimerList::Value::resetIf( TimerBase * p ) g__noexcept
+inline void GNet::TimerList::Value::resetIf( TimerBase * p ) noexcept
 {
 	if( m_timer == p )
 		m_timer = nullptr ;
 }
 
-void GNet::TimerList::Value::disarmIf( ExceptionHandler * eh ) g__noexcept
+void GNet::TimerList::Value::disarmIf( ExceptionHandler * eh ) noexcept
 {
 	if( m_es.eh() == eh )
 		m_es.reset() ;
@@ -74,11 +73,7 @@ GNet::TimerList::Lock::~Lock()
 
 GNet::TimerList * GNet::TimerList::m_this = nullptr ;
 
-GNet::TimerList::TimerList() :
-	m_soonest(nullptr) ,
-	m_adjust(0) ,
-	m_locked(false) ,
-	m_removed(false)
+GNet::TimerList::TimerList()
 {
 	if( m_this == nullptr )
 		m_this = this ;
@@ -95,7 +90,7 @@ void GNet::TimerList::add( TimerBase & t , ExceptionSink es )
 	(m_locked?m_list_added:m_list).push_back( Value(&t,es) ) ;
 }
 
-void GNet::TimerList::remove( TimerBase & timer )
+void GNet::TimerList::remove( TimerBase & timer ) noexcept
 {
 	m_removed = true ;
 	removeFrom( m_list , &timer ) ;
@@ -103,24 +98,22 @@ void GNet::TimerList::remove( TimerBase & timer )
 	if( m_soonest == &timer ) m_soonest = nullptr ;
 }
 
-void GNet::TimerList::removeFrom( List & list , TimerBase * timer_p )
+void GNet::TimerList::removeFrom( List & list , TimerBase * timer_p ) noexcept
 {
-	//std::for_each( list.begin() , list.end() , std::bind2nd(std::mem_fun_ref(&Value::resetIf),timer_p) ) ;
-	for( List::iterator p = list.begin() ; p != list.end() ; ++p )
-		(*p).resetIf( timer_p ) ;
+	for( auto & value : list)
+		value.resetIf( timer_p ) ;
 }
 
-void GNet::TimerList::disarm( ExceptionHandler * eh )
+void GNet::TimerList::disarm( ExceptionHandler * eh ) noexcept
 {
 	disarmIn( m_list , eh ) ;
 	disarmIn( m_list_added , eh ) ;
 }
 
-void GNet::TimerList::disarmIn( List & list , ExceptionHandler * eh )
+void GNet::TimerList::disarmIn( List & list , ExceptionHandler * eh ) noexcept
 {
-	//std::for_each( list.begin() , list.end() , std::bind2nd(std::mem_fun_ref(&Value::disarmIf),eh) ) ;
-	for( List::iterator p = list.begin() ; p != list.end() ; ++p )
-		(*p).disarmIf( eh ) ;
+	for( auto & value : list )
+		value.disarmIf( eh ) ;
 }
 
 void GNet::TimerList::updateOnStart( TimerBase & timer )
@@ -142,8 +135,8 @@ const GNet::TimerBase * GNet::TimerList::findSoonest() const
 {
 	G_ASSERT( !m_locked ) ;
 	TimerBase * result = nullptr ;
-	const List::const_iterator end = m_list.end() ;
-	for( List::const_iterator p = m_list.begin() ; p != end ; ++p )
+	auto end = m_list.cend() ;
+	for( auto p = m_list.cbegin() ; p != end ; ++p )
 	{
 		if( (*p).m_timer != nullptr && (*p).m_timer->active() && ( result == nullptr || (*p).m_timer->t() < result->t() ) )
 			result = (*p).m_timer ;
@@ -166,13 +159,13 @@ std::pair<G::TimeInterval,bool> GNet::TimerList::interval() const
 	}
 	else
 	{
-		G::EpochTime now = G::DateTime::now() ;
-		G::EpochTime then = m_soonest->t() ;
+		G::TimerTime now = G::TimerTime::now() ;
+		G::TimerTime then = m_soonest->t() ;
 		return std::make_pair( G::TimeInterval(now,then) , false ) ;
 	}
 }
 
-GNet::TimerList * GNet::TimerList::instance( const NoThrow & )
+GNet::TimerList * GNet::TimerList::ptr() noexcept
 {
 	return m_this ;
 }
@@ -228,27 +221,28 @@ void GNet::TimerList::doTimeouts()
 	G_ASSERT( m_list_added.empty() ) ;
 	Lock lock( *this ) ;
 	m_adjust = 0 ;
-	G::EpochTime now( 0 ) ; // lazy initialisation to G::DateTime::now() in G::Timer::expired()
-	for( List::iterator p = m_list.begin() ; p != m_list.end() ; ++p )
+	G::TimerTime now = G::TimerTime::zero() ; // lazy initialisation to G::TimerTime::now() in G::Timer::expired()
+	for( auto & value : m_list )
 	{
-		if( (*p).m_timer != nullptr && (*p).m_timer->active() && (*p).m_timer->expired(now) )
+		if( value.m_timer != nullptr && value.m_timer->active() && value.m_timer->expired(now) )
 		{
+			EventLoggingContext set_logging_context( value.m_es.esrc() ) ;
 			try
 			{
-				if( (*p).m_timer == m_soonest ) m_soonest = nullptr ;
-				(*p).m_timer->doTimeout() ;
+				if( value.m_timer == m_soonest ) m_soonest = nullptr ;
+				value.m_timer->doTimeout() ;
 			}
 			catch( GNet::Done & e ) // (caught separately to avoid requiring rtti)
 			{
-				if( (*p).m_es.set() )
-					(*p).m_es.call( e , true ) ; // call onException()
+				if( value.m_es.set() )
+					value.m_es.call( e , true ) ; // call onException()
 				else
 					throw ; // (new)
 			}
 			catch( std::exception & e )
 			{
-				if( (*p).m_es.set() )
-					(*p).m_es.call( e , false ) ; // call onException()
+				if( value.m_es.set() )
+					value.m_es.call( e , false ) ; // call onException()
 				else
 					throw ; // (new)
 			}

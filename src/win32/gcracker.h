@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ protected:
 		///< Overridable. Called when the window receives a
 		///< WM_SYSCOLORCHANGE message.
 
-	g__enum(SysCommand) { scMaximise , scMinimise , scClose , scSize /*etc*/ } ; g__enum_end(SysCommand)
+	enum class SysCommand { scMaximise , scMinimise , scClose , scSize /*etc*/ } ;
 	virtual bool onSysCommand( SysCommand sys_command ) ;
 		///< Overridable. Called when the window receives a
 		///< WM_SYSCOMMAND message. Returns true if processed.
@@ -137,7 +137,7 @@ protected:
 		///< WM_DROPFILES message. Returns false if the file list
 		///< is ignored. See also: DragAcceptFiles().
 
-	g__enum(SizeType) { maximised , minimised , restored } ; g__enum_end(SizeType)
+	enum class SizeType { maximised , minimised , restored } ;
 	virtual void onSize( SizeType type , unsigned int dx , unsigned int dy ) ;
 		///< Overridable. Called on receipt of a WM_SIZE message.
 
@@ -226,8 +226,8 @@ protected:
 		bool right_button_down ) ;
 			///< Overridable. Called on receipt of a mouse-move message.
 
-	g__enum(MouseButton) { Left , Middle , Right } ; g__enum_end(MouseButton)
-	g__enum(MouseButtonDirection) { Up , Down } ; g__enum_end(MouseButtonDirection)
+	enum class MouseButton { Left , Middle , Right } ;
+	enum class MouseButtonDirection { Up , Down } ;
 
 	virtual void onMouseButton( MouseButton , MouseButtonDirection ,
 		int x , int y , bool shift_key_down , bool control_key_down ) ;
@@ -289,10 +289,12 @@ protected:
 		///< still empty).
 		/// \see GGui::Pump
 
+public:
+	Cracker( const Cracker &other ) = delete ;
+	void operator=( const Cracker & other ) = delete ;
+
 private:
-	Cracker( const Cracker &other ) g__eq_delete ;
-	void operator=( const Cracker & other ) g__eq_delete ;
-	typedef void (Cracker::*Fn)(int,int,bool,bool) ;
+	using Fn = void (Cracker::*)(int,int,bool,bool) ;
 	LRESULT doMouseButton( Fn fn , MouseButton , MouseButtonDirection , unsigned int , WPARAM , LPARAM ) ;
 	LRESULT onControlColour_( WPARAM hDC , LPARAM hWndControl , WORD type ) ;
 	static HWND hwnd_from( WPARAM ) ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ GPage & GDialog::page( const std::string & name )
 
 const GPage & GDialog::page( const std::string & name ) const
 {
-	Map::const_iterator p = m_map.find(name) ;
+	auto p = m_map.find( name ) ;
 	if( p == m_map.end() )
 		throw std::runtime_error( std::string() + "internal error: no such page: " + name ) ;
 	return *(*p).second ;
@@ -240,7 +240,7 @@ std::string GDialog::currentPageName() const
 GPage & GDialog::previousPage( unsigned int distance )
 {
 	if( m_history.size() < (distance+1U) ) throw std::runtime_error("internal error") ;
-	History::reverse_iterator p = m_history.rbegin() ;
+	auto p = m_history.rbegin() ;
 	while( distance-- ) ++p ;
 	G_DEBUG( "GDialog::previousPage: " << currentPageName() << " -> " << *p ) ;
 	return page(*p) ;
@@ -258,8 +258,8 @@ void GDialog::dumpInstallVariables( std::ostream & stream ) const
 
 void GDialog::dump( std::ostream & stream , bool for_install ) const
 {
-	for( History::const_iterator p = m_history.begin() ; p != m_history.end() ; ++p )
-		page(*p).dump( stream , for_install ) ;
+	for( const auto & pname : m_history )
+		page(pname).dump( stream , for_install ) ;
 }
 
 void GDialog::wait( bool wait_on )

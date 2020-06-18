@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,13 +21,24 @@
 // other executables, so this file can be compiled with Qt-friendly
 // compiler flags without affecting the rest of the build.
 //
+
 #include "gdef.h"
+
+#ifdef G_WINDOWS
+#include "genvironment.cpp"
+#include "genvironment_win32.cpp"
+#include "gdatetime.cpp"
+#else
+#include "genvironment.cpp"
+#include "genvironment_unix.cpp"
+#include "gdatetime.cpp"
+#endif
+
 #include "garg.cpp"
 #include "gbase64.cpp"
 #include "gbatchfile.cpp"
 #include "gconvert.cpp"
 #include "gdate.cpp"
-#include "gdatetime.cpp"
 #include "gdirectory.cpp"
 #include "gexception.cpp"
 #include "gexecutablecommand.cpp"
@@ -51,9 +62,7 @@
 #include "service_remove.cpp"
 #ifdef G_WINDOWS
 #include "gconvert_win32.cpp"
-#include "gdatetime_win32.cpp"
 #include "gdirectory_win32.cpp"
-#include "genvironment_win32.cpp"
 #include "gexecutablecommand_win32.cpp"
 #include "gfile_win32.cpp"
 #include "gidentity_win32.cpp"
@@ -62,9 +71,7 @@
 #include "gprocess_win32.cpp"
 #else
 #include "gconvert_unix.cpp"
-#include "gdatetime_unix.cpp"
 #include "gdirectory_unix.cpp"
-#include "genvironment_unix.cpp"
 #include "gexecutablecommand_unix.cpp"
 #include "gfile_unix.cpp"
 #include "gidentity_unix.cpp"

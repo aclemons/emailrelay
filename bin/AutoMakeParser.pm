@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,14 +18,17 @@
 #
 # AutoMakeParser.pm
 #
-# Parser package (AutoMakeParser) for parsing automake makefiles,
-# with full variable expansion and support for conditional sections.
+# Parser package for parsing automake makefiles, with full variable
+# expansion and support for conditional sections.
 #
 # Synopsis:
 #
+#  use AutoMakeParser ;
+#  $AutoMakeParser::debug = 0 ;
+#  my @makefiles = AutoMakeParser::readall( "." , { FOO => 1 , BAR => 0 } , { A => 'aaa' , B => 'bbb' } ) ;
 #  my $makefile = new AutoMakeParser( "Makefile.am" , { FOO => 1 , BAR => 0 } , { A => 'aaa' , B => 'bbb' } ) ;
 #  $makefile->path() ;
-#  $makefile->keys() ;
+#  $makefile->keys_() ;
 #  $makefile->value("some_VAR") ;
 #  $makefile->subdirs() ;
 #  $makefile->programs() ;
@@ -39,19 +42,19 @@
 
 use strict ;
 use FileHandle ;
+use Cwd ;
+use Carp ;
 use File::Basename ;
-use File::Find ;
-use File::Path ;
 
 package AutoMakeParser ;
-
-our $verbose = 0 ;
+our $debug = 0 ;
 
 sub new
 {
 	my ( $classname , $path , $switches , $ro_vars ) = @_ ;
 	my %me = (
 		m_path => simplepath($path) ,
+		m_depth => undef , # from readall()
 		m_lines => [] ,
 		m_vars => {} ,
 		m_switches => $switches ,
@@ -66,15 +69,47 @@ sub new
 
 sub path
 {
-	return $_[0]->{m_path}
+	return $_[0]->{m_path} ;
+}
+
+sub readall
+{
+	my ( $base_dir , $switches , $vars , $verbose ) = @_ ;
+	my @makefiles = () ;
+	_readall_imp( \@makefiles , 0 , $base_dir , $switches , $vars , $verbose ) ; # recursive
+	return @makefiles ;
+}
+
+sub _readall_imp
+{
+	my ( $makefiles , $depth , $dir , $switches , $vars , $verbose ) = @_ ;
+	my $m = new AutoMakeParser( "$dir/Makefile.am" , $switches , $vars ) ;
+	$m->{m_depth} = $depth ;
+	print "makefile=[" , $m->path() , "] ($depth)\n" if $verbose ;
+	push @$makefiles , $m ;
+	for my $subdir ( $m->value("SUBDIRS") )
+	{
+		_readall_imp( $makefiles , $depth+1 , "$dir/$subdir" , $switches , $vars , $verbose ) ;
+	}
+}
+
+sub depth
+{
+	# Returns the readall() recursion depth.
+	#
+	my ( $this ) = @_ ;
+	return $this->{m_depth} ;
 }
 
 sub top
 {
+	# Returns the relative path up to the first readall()
+	# makefile, which might be different from $(top_srcdir).
+	#
 	my ( $this ) = @_ ;
-	my $depth = scalar(split("/",$this->{m_path})) - 1 ;
-	die if $depth < 0 ;
-	return simplepath( "../" x $depth ) ;
+	my $depth = $this->{m_depth} ;
+	Carp::confess("bad depth") if ( !defined($depth) || $depth < 0 ) ;
+	return $depth == 0 ? "." : ( "../" x $depth ) ;
 }
 
 sub value
@@ -84,7 +119,7 @@ sub value
 	return wantarray ? split(' ',$v) : $v ;
 }
 
-sub keys
+sub keys_
 {
 	my ( $this ) = @_ ;
 	my @k = sort keys %{$this->{m_vars}} ;
@@ -94,13 +129,13 @@ sub keys
 sub programs
 {
 	my ( $this ) = @_ ;
-	return map { $this->value($_) } grep { m/_PROGRAMS$/ } $this->keys() ;
+	return map { $this->value($_) } grep { m/_PROGRAMS$/ } $this->keys_() ;
 }
 
 sub libraries
 {
 	my ( $this ) = @_ ;
-	return map { $this->value($_) } grep { m/_LIBRARIES$/ } $this->keys() ;
+	return map { $this->value($_) } grep { m/_LIBRARIES$/ } $this->keys_() ;
 }
 
 sub subdirs
@@ -153,14 +188,30 @@ sub definitions
 
 sub includes
 {
-	my ( $this , $top , $var ) = @_ ;
+	# Returns a list of include directories, so for example
+	# "-I$(top_srcdir)/one/two -I$(top_srcdir)/three"
+	# with 'top_srcdir' defined as ".." gives
+	# ("../one/two","../three"). However, since the 'top_srcdir'
+	# path is the same throughout the directory tree it is also
+	# possible to pass in a variable prefix. This can be from
+	# calling top(), but note that top() points to wherever
+	# readall() started and this is not necessarily the same
+	# as 'top_srcdir'. So in practice set 'top_srcdir' to
+	# reflect the difference between the readall() start
+	# directory and the 'top_srcdir' and call includes() with
+	# top().
+	#
+	my ( $this , $top , $var , $extra , $full ) = @_ ;
 	$top ||= "" ;
 	$var ||= "AM_CPPFLAGS" ;
-	my $s = protect_quoted_spaces( simple_spaces( $this->{m_vars}->{$var} ) ) ;
+	$extra ||= "" ;
+	my $cppflags = join( " " , $extra , $this->{m_vars}->{$var} ) ;
+	my $s = protect_quoted_spaces( simple_spaces( $cppflags ) ) ;
 	$s =~ s/-I /-I/g ;
 	return
+		map { $full?$this->fullpath($_):$_ }
 		map { simplepath($_) }
-		map { join("/",$top,$_) }
+		map { $top?join("/",$top,$_):$_ }
 		map { s/\t/ /g ; $_ }
 		map { s:-I:: ; $_ } grep { m/-I\S+/ }
 		split( " " , $s ) ;
@@ -175,8 +226,29 @@ sub vars
 
 sub simplepath
 {
-	my ( @parts ) = @_ ;
-	return join( "/" , grep { $_ ne "" && $_ ne "." } split("/",join("/",@parts)) ) ;
+	my ( $path ) = @_ ;
+	my $first = ( $path =~ m;^/; ) ? "/" : "" ;
+	my @out = () ;
+	my @split = split( "/" , $path ) ;
+	for my $x ( @split )
+	{
+		next if( $x eq "" || $x eq "." ) ;
+		if( $x eq ".." && scalar(@out) && @out[-1] ne ".." )
+		{
+			pop @out ;
+		}
+		else
+		{
+			push @out , $x ;
+		}
+	}
+	return $first . join( "/" , @out ) ;
+}
+
+sub fullpath
+{
+	my ( $this , $relpath ) = @_ ;
+	return simplepath( join("/",File::Basename::dirname(Cwd::realpath($this->path())),$relpath) ) ;
 }
 
 sub simple_spaces
@@ -392,7 +464,7 @@ sub do_assign_more
 
 sub debug_
 {
-	print @_ , "\n" if $verbose ;
+	print @_ , "\n" if $debug ;
 }
 
 1 ;

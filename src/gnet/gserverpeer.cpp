@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,17 +25,17 @@
 #include "gassert.h"
 #include <sstream>
 
-GNet::ServerPeer::ServerPeer( ExceptionSink es , ServerPeerInfo peer_info , LineBufferConfig line_buffer_config ) :
+GNet::ServerPeer::ServerPeer( ExceptionSink es , const ServerPeerInfo & peer_info , const LineBufferConfig & line_buffer_config ) :
 	m_address(peer_info.m_address) ,
 	m_socket(peer_info.m_socket) ,
-	m_sp(*this,es,*this,*m_socket.get(),0U) ,
+	m_sp(*this,es,*this,*m_socket,0U) ,
 	m_line_buffer(line_buffer_config) ,
 	m_config(peer_info.m_config) ,
 	m_idle_timer(*this,&ServerPeer::onIdleTimeout,es)
 {
 	G_ASSERT( peer_info.m_server != nullptr ) ;
 	G_ASSERT( m_socket.get() != nullptr ) ;
-	G_ASSERT( es.esrc() != nullptr ) ; // moot
+	//G_ASSERT( es.esrc() != nullptr ) ; // moot
 	G_DEBUG( "GNet::ServerPeer::ctor: [" << this << "]: port " << m_address.port() ) ;
 
 	if( m_config.idle_timeout )
@@ -59,10 +59,15 @@ void GNet::ServerPeer::secureAccept()
 	m_sp.secureAccept() ;
 }
 
+void GNet::ServerPeer::expect( std::size_t n )
+{
+	m_line_buffer.expect( n ) ;
+}
+
 GNet::StreamSocket & GNet::ServerPeer::socket()
 {
 	G_ASSERT( m_socket.get() != nullptr ) ;
-	return *m_socket.get() ;
+	return *m_socket ;
 }
 
 void GNet::ServerPeer::otherEvent( EventHandler::Reason reason )
@@ -101,7 +106,7 @@ bool GNet::ServerPeer::send( const std::string & data , std::string::size_type o
 	return m_sp.send( data , offset ) ;
 }
 
-bool GNet::ServerPeer::send( const std::vector<std::pair<const char*,size_t> > & segments )
+bool GNet::ServerPeer::send( const std::vector<std::pair<const char*,std::size_t> > & segments )
 {
 	return m_sp.send( segments ) ;
 }
@@ -125,15 +130,16 @@ void GNet::ServerPeer::onIdleTimeout()
     throw IdleTimeout( ss.str() ) ;
 }
 
-void GNet::ServerPeer::onData( const char * data , size_t size )
+void GNet::ServerPeer::onData( const char * data , std::size_t size )
 {
 	if( m_config.idle_timeout )
 		m_idle_timer.startTimer( m_config.idle_timeout ) ;
 
-	m_line_buffer.apply( this , &ServerPeer::onDataImp , data , size , /*fragments=*/m_line_buffer.transparent() ) ;
+	bool fragments = m_line_buffer.transparent() ;
+	m_line_buffer.apply( this , &ServerPeer::onDataImp , data , size , fragments ) ;
 }
 
-bool GNet::ServerPeer::onDataImp( const char * data , size_t size , size_t eolsize , size_t linesize , char c0 )
+bool GNet::ServerPeer::onDataImp( const char * data , std::size_t size , std::size_t eolsize , std::size_t linesize , char c0 )
 {
 	return onReceive( data , size , eolsize , linesize , c0 ) ;
 }
@@ -143,11 +149,31 @@ GNet::LineBufferState GNet::ServerPeer::lineBuffer() const
 	return LineBufferState( m_line_buffer ) ;
 }
 
+std::string GNet::ServerPeer::exceptionSourceId() const
+{
+	if( m_exception_source_id.empty() )
+	{
+		std::pair<bool,Address> pair = peerAddress() ; // GNet::Connection
+		if( pair.first )
+			m_exception_source_id = pair.second.hostPartString() ;
+	}
+	return m_exception_source_id ;
+}
+
 // ==
+
+GNet::ServerPeerConfig::ServerPeerConfig()
+= default;
 
 GNet::ServerPeerConfig::ServerPeerConfig( unsigned int idle_timeout_in ) :
 	idle_timeout(idle_timeout_in)
 {
+}
+
+GNet::ServerPeerConfig & GNet::ServerPeerConfig::set_idle_timeout( unsigned int t )
+{
+	idle_timeout = t ;
+	return *this ;
 }
 
 /// \file gserverpeer.cpp

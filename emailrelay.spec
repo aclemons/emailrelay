@@ -1,11 +1,11 @@
 Summary: Simple e-mail message transfer agent and proxy using SMTP
 Name: emailrelay
-Version: 2.1
+Version: 2.2dev
 Release: 1
 License: GPL3
 Group: System Environment/Daemons
 URL: http://emailrelay.sourceforge.net
-Source: http://sourceforge.net/projects/emailrelay/files/emailrelay/2.1/emailrelay-2.1-src.tar.gz
+Source: http://sourceforge.net/projects/emailrelay/files/emailrelay/2.2dev/emailrelay-2.2dev-src.tar.gz
 BuildRoot: /tmp/emailrelay-install
 
 %description
@@ -29,6 +29,7 @@ excellent scalability and resource usage.
 C++ source code is available and distribution is permitted under the GNU
 General Public License V3.
 
+%global debug_package %{nil}
 %prep
 %setup
 

@@ -177,7 +177,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-GCONFIG_CONFIGURATION = @GCONFIG_CONFIGURATION@
 GCONFIG_HAVE_DOXYGEN = @GCONFIG_HAVE_DOXYGEN@
 GCONFIG_HAVE_MAN2HTML = @GCONFIG_HAVE_MAN2HTML@
 GCONFIG_QT_CFLAGS = @GCONFIG_QT_CFLAGS@
@@ -248,6 +247,7 @@ e_icondir = @e_icondir@
 e_initdir = @e_initdir@
 e_libexecdir = @e_libexecdir@
 e_pamdir = @e_pamdir@
+e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
@@ -527,8 +527,9 @@ emailrelay: emailrelay.pam
 clean-local:
 	-rm -f emailrelay 2>/dev/null
 
-# create the .conf file from .conf.template with directory edits - dont
-# use this when running configure for building a .deb or .rpm package
+# create the .conf file from .conf.template with directory edits - disable
+# this when running configure for a .deb or .rpm package by using
+# 'configure --disable-install-hook'
 @GCONFIG_INSTALL_HOOK_TRUE@install-data-hook:
 @GCONFIG_INSTALL_HOOK_TRUE@	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else cat "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" | sed "s:^#spool-dir .*:spool-dir $(e_spooldir):g" | sed 's:"/var/spool/emailrelay":"'"$(e_spooldir)"'":g' | sed "s:/etc:$(e_sysconfdir):g" | sed "s:/usr/local/bin:$(e_libexecdir):g" > "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
 @GCONFIG_INSTALL_HOOK_TRUE@	cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.makeinstall"

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,25 +35,25 @@ namespace G
 /// \class G::OptionMap
 /// A multimap-like container for command-line options and their values.
 /// The values are G::OptionValue objects, so they can be valued with a
-/// string value or unvalued with an on/off status.
-/// Normally populated by G::OptionParser.
+/// string value or unvalued with an on/off status. Normally populated
+/// by G::OptionParser.
 ///
 class G::OptionMap
 {
 public:
-	typedef std::multimap<std::string,OptionValue> Map ;
-	typedef Map::value_type value_type ;
-	typedef Map::iterator iterator ;
-	typedef Map::const_iterator const_iterator ;
+	using Map = std::multimap<std::string,OptionValue> ;
+	using value_type = Map::value_type ;
+	using iterator = Map::iterator ;
+	using const_iterator = Map::const_iterator ;
 
 public:
 	OptionMap() ;
 		///< Default constructor for an empty map.
 
 	void insert( const Map::value_type & ) ;
-		///< Inserts the key/value pair into the map. The ordering of values in the
-		///< map with the same key is normally the order of insertion (but this
-		///< can depend on the underlying multimap implementation).
+		///< Inserts the key/value pair into the map. The ordering of values in
+		///< the map with the same key is undefined (but see std::multimap for
+		///< c++98 and c++11).
 
 	void replace( const std::string & key , const std::string & value ) ;
 		///< Replaces all matching values with a single valued() value.
@@ -61,7 +61,13 @@ public:
 	const_iterator begin() const ;
 		///< Returns the begin iterator.
 
+	const_iterator cbegin() const ;
+		///< Returns the begin iterator.
+
 	const_iterator end() const ;
+		///< Returns the off-the-end iterator.
+
+	const_iterator cend() const ;
 		///< Returns the off-the-end iterator.
 
 	const_iterator find( const std::string & ) const ;
@@ -77,7 +83,7 @@ public:
 	bool contains( const char * ) const ;
 		///< Overload taking a c-string.
 
-	size_t count( const std::string & key ) const ;
+	std::size_t count( const std::string & key ) const ;
 		///< Returns the number of times the key appears in the multimap.
 
 	std::string value( const std::string & key , const std::string & default_ = std::string() ) const ;

@@ -1,6 +1,14 @@
 E-MailRelay Change Log
 ======================
 
+2.1 -> 2.2
+----------
+* Updated to C++ 2011.
+* Connections from IPv4 'private use' addresses are allowed by default (see "--remote-clients").
+* Interface names now supported by "--interface".
+* New "--server-tls-connection" option for server-side implicit TLS.
+* New "--log-address" option to aid adaptive firewalling.
+
 2.0.1 -> 2.1
 ------------
 * Backwards compatibility features for 1.9-to-2.0 transition removed.

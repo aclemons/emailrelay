@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #include "gassert.h"
 #include <algorithm>
 
-GNet::LineBuffer::LineBuffer( LineBufferConfig config ) :
+GNet::LineBuffer::LineBuffer( const LineBufferConfig & config ) :
 	m_auto(config.eol().empty()) ,
 	m_eol(config.eol()) ,
 	m_warn_limit(config.warn()) ,
@@ -48,7 +48,7 @@ void GNet::LineBuffer::clear()
 	G_ASSERT( !more(true) ) ;
 }
 
-void GNet::LineBuffer::add( const char * data , size_t size )
+void GNet::LineBuffer::add( const char * data , std::size_t size )
 {
 	m_in.append( data , size ) ;
 }
@@ -58,7 +58,7 @@ void GNet::LineBuffer::add( const std::string & s )
 	m_in.append( s ) ;
 }
 
-void GNet::LineBuffer::extensionStart( const char * data , size_t size )
+void GNet::LineBuffer::extensionStart( const char * data , std::size_t size )
 {
 	m_in.extend( data , size ) ;
 }
@@ -72,8 +72,8 @@ void GNet::LineBuffer::extensionEnd()
 bool GNet::LineBuffer::more( bool fragments )
 {
 	G_ASSERT( m_pos <= m_in.size() ) ;
-	const size_t npos = std::string::npos ;
-	size_t pos = 0U ;
+	const std::size_t npos = std::string::npos ;
+	std::size_t pos = 0U ;
 
 	if( m_pos == m_in.size() )
 	{
@@ -98,7 +98,7 @@ bool GNet::LineBuffer::more( bool fragments )
 			// not all expected, return the available fragment
 			//
 			G_ASSERT( m_in.size() > m_pos ) ;
-			size_t n = m_in.size() - m_pos ;
+			std::size_t n = m_in.size() - m_pos ;
 			output( n , 0U ) ;
 			if( !transparent() ) m_expect -= n ;
 			return true ;
@@ -139,7 +139,7 @@ bool GNet::LineBuffer::more( bool fragments )
 	}
 }
 
-bool GNet::LineBuffer::trivial( size_t pos ) const
+bool GNet::LineBuffer::trivial( std::size_t pos ) const
 {
 	pos = pos == std::string::npos ? m_in.size() : pos ;
 	return ( pos - m_pos ) < m_fmin ;
@@ -147,10 +147,10 @@ bool GNet::LineBuffer::trivial( size_t pos ) const
 
 bool GNet::LineBuffer::detect()
 {
-	const size_t npos = std::string::npos ;
+	const std::size_t npos = std::string::npos ;
 	if( m_auto )
 	{
-		size_t pos = m_in.find( '\n' ) ;
+		std::size_t pos = m_in.find( '\n' ) ;
 		if( pos != npos )
 		{
 			if( pos > 0U && m_in.at(pos-1U) == '\r' )
@@ -163,7 +163,7 @@ bool GNet::LineBuffer::detect()
 	return !m_eol.empty() ;
 }
 
-void GNet::LineBuffer::expect( size_t n )
+void GNet::LineBuffer::expect( std::size_t n )
 {
 	m_expect = n ;
 }
@@ -178,7 +178,7 @@ std::string GNet::LineBuffer::eol() const
 	return m_eol ;
 }
 
-void GNet::LineBuffer::output( size_t size , size_t eolsize , bool force_next_is_start_of_line )
+void GNet::LineBuffer::output( std::size_t size , std::size_t eolsize , bool force_next_is_start_of_line )
 {
 	G_ASSERT( (size+eolsize) != 0U ) ;
 	m_pos += m_out.set( m_in , m_pos , size , eolsize ) ;
@@ -209,17 +209,10 @@ GNet::LineBufferState GNet::LineBuffer::state() const
 
 // ==
 
-GNet::LineBuffer::Output::Output() :
-	m_first(true) ,
-	m_data(nullptr) ,
-	m_size(0U) ,
-	m_eolsize(0U) ,
-	m_linesize(0U) ,
-	m_c0('\0')
-{
-}
+GNet::LineBuffer::Output::Output()
+= default;
 
-size_t GNet::LineBuffer::Output::set( LineStore & in , size_t pos , size_t size , size_t eolsize )
+std::size_t GNet::LineBuffer::Output::set( LineStore & in , std::size_t pos , std::size_t size , std::size_t eolsize )
 {
 	bool start = m_first || m_eolsize != 0U ; // ie. wrt previous line's eolsize
 	m_first = false ;
@@ -235,7 +228,7 @@ size_t GNet::LineBuffer::Output::set( LineStore & in , size_t pos , size_t size 
 
 // ==
 
-GNet::LineBufferConfig::LineBufferConfig( const std::string & eol , size_t warn , size_t fmin , size_t expect ) :
+GNet::LineBufferConfig::LineBufferConfig( const std::string & eol , std::size_t warn , std::size_t fmin , std::size_t expect ) :
 	m_eol(eol) ,
 	m_warn(warn) ,
 	m_fmin(fmin) ,
@@ -245,7 +238,7 @@ GNet::LineBufferConfig::LineBufferConfig( const std::string & eol , size_t warn 
 
 GNet::LineBufferConfig GNet::LineBufferConfig::transparent()
 {
-	const size_t inf = ~(size_t(0)) ;
+	const std::size_t inf = ~(std::size_t(0)) ;
 	//G_ASSERT( (inf+1U) == 0U ) ;
 	return LineBufferConfig( std::string(1U,'\n') , 0U , 0U , inf ) ;
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,9 +48,11 @@ public:
 	G::Options::Layout layout() const ;
 	~Show() ;
 
-private:
-	Show( const Show & ) g__eq_delete ;
-	void operator=( const Show & ) g__eq_delete ;
+public:
+	Show( const Show & ) = delete ;
+	Show( Show && ) = delete ;
+	void operator=( const Show & ) = delete ;
+	void operator=( Show && ) = delete ;
 
 private:
 	static Show * m_this ;
@@ -78,8 +80,7 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & arg , const std
 }
 
 Main::CommandLine::~CommandLine()
-{
-}
+= default;
 
 const G::OptionMap & Main::CommandLine::map() const
 {
@@ -91,7 +92,7 @@ const G::Options & Main::CommandLine::options() const
 	return m_getopt.options() ;
 }
 
-G::Arg::size_type Main::CommandLine::argc() const
+std::size_t Main::CommandLine::argc() const
 {
 	return m_getopt.args().c() ;
 }
@@ -290,8 +291,8 @@ void Main::CommandLine::showSemanticWarnings( const G::StringArray & warnings ) 
 
 void Main::CommandLine::logSemanticWarnings( const G::StringArray & warnings ) const
 {
-	for( G::StringArray::const_iterator p = warnings.begin() ; p != warnings.end() ; ++p )
-		G_WARNING( "CommandLine::logSemanticWarnings: " << (*p) ) ;
+	for( const auto & warning : warnings )
+		G_WARNING( "CommandLine::logSemanticWarnings: " << warning ) ;
 }
 
 // ===

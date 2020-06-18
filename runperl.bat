@@ -44,7 +44,7 @@ goto end
 
 @rem error if no touchfile
 :fail_no_touchfile
-echo error: perl command failed to create an output file
+echo error: perl command failed: no output file created
 goto end
 
 :end

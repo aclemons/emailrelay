@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ GGui::SubClassMap::SubClassMap()
 
 void GGui::SubClassMap::add( HWND hwnd , SubClassMap::Proc proc , void *context )
 {
-	for( size_t i = 0U ; i < m_list.size() ; i++ )
+	for( std::size_t i = 0U ; i < m_list.size() ; i++ )
 	{
 		if( m_list[i].hwnd == 0 || m_list[i].hwnd == hwnd )
 		{
@@ -45,7 +45,7 @@ GGui::SubClassMap::Proc GGui::SubClassMap::find( HWND hwnd , void **context_p )
 	if( context_p != nullptr )
 		*context_p = nullptr ;
 
-	for( size_t i = 0U ; i < m_list.size() ; i++ )
+	for( std::size_t i = 0U ; i < m_list.size() ; i++ )
 	{
 		if( m_list[i].hwnd == hwnd )
 		{
@@ -59,7 +59,7 @@ GGui::SubClassMap::Proc GGui::SubClassMap::find( HWND hwnd , void **context_p )
 
 void GGui::SubClassMap::remove( HWND hwnd )
 {
-	for( size_t i = 0U ; i < m_list.size() ; i++ )
+	for( std::size_t i = 0U ; i < m_list.size() ; i++ )
 	{
 		if( m_list[i].hwnd == hwnd )
 			m_list[i].hwnd = 0 ;

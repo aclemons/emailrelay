@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,8 +27,7 @@
 #include "glog.h"
 
 ServerConfiguration::ServerConfiguration()
-{
-}
+= default;
 
 ServerConfiguration::ServerConfiguration( const G::Path & config_file ) :
 	m_config(read(config_file))
@@ -118,10 +117,10 @@ std::string ServerConfiguration::exe( const G::Path & config_file )
 G::StringArray ServerConfiguration::args( bool no_close_stderr ) const
 {
 	G::StringArray result ;
-	for( G::StringMap::const_iterator p = m_config.map().begin() ; p != m_config.map().end() ; ++p )
+	for( const auto & map_item : m_config.map() )
 	{
-		std::string option = (*p).first ;
-		std::string option_arg = (*p).second ;
+		std::string option = map_item.first ;
+		std::string option_arg = map_item.second ;
 
 		if( no_close_stderr && option == "close-stderr" )
 			continue ;
@@ -175,6 +174,11 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages , c
 		if( pages.booleanValue("smtp-server-tls",false) )
 		{
 			out["server-tls"] ;
+			out["server-tls-certificate"] = pages.value("smtp-server-tls-certificate") ;
+		}
+		else if( pages.booleanValue("smtp-server-tls-connection",false) )
+		{
+			out["server-tls-connection"] ;
 			out["server-tls-certificate"] = pages.value("smtp-server-tls-certificate") ;
 		}
 		out["forward-to"] = pages.value("smtp-client-host") + ":" + pages.value("smtp-client-port") ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -59,11 +59,16 @@ public:
 		///< Returns true if the spool directory is affected
 		///< by the user name.
 
+public:
+	~Store() = default ;
+	Store( const Store & ) = delete ;
+	Store( Store && ) = delete ;
+	void operator=( const Store & ) = delete ;
+	void operator=( Store && ) = delete ;
+
 private:
-	Store( const Store & ) g__eq_delete ;
-	void operator=( const Store & ) g__eq_delete ;
-	static void checkPath( G::Path , bool , bool ) ;
-	static bool valid( G::Path , bool ) ;
+	static void checkPath( const G::Path & , bool , bool ) ;
+	static bool valid( const G::Path & , bool ) ;
 
 private:
 	G::Path m_path ;
@@ -79,7 +84,7 @@ class GPop::StoreLockEntry
 {
 public:
 	int id ;
-	typedef unsigned long Size ;
+	using Size = unsigned long ;
 	Size size ;
 	std::string uidl ;
 	StoreLockEntry( int id_ , Size size_ , const std::string & uidl_ ) :
@@ -99,10 +104,10 @@ class GPop::StoreLock
 public:
 	G_EXCEPTION( CannotDelete , "cannot delete message file" ) ;
 	G_EXCEPTION( CannotRead , "cannot read message file" ) ;
-	typedef StoreLockEntry::Size Size ;
-	typedef StoreLockEntry Entry ;
-	typedef std::list<Entry> List ;
-	typedef void (*Fn)(std::ostream&,const std::string&) ;
+	using Size = StoreLockEntry::Size ;
+	using Entry = StoreLockEntry ;
+	using List = std::list<Entry> ;
+	using Fn = void (*)(std::ostream &, const std::string &) ;
 
 	explicit StoreLock( Store & store ) ;
 		///< Constructor. Keeps the reference.
@@ -139,7 +144,7 @@ public:
 	List list( int id = -1 ) const ;
 		///< Lists messages in the store.
 
-	unique_ptr<std::istream> get( int id ) const ;
+	std::unique_ptr<std::istream> get( int id ) const ;
 		///< Retrieves the message content.
 
 	void remove( int ) ;
@@ -165,11 +170,15 @@ private:
 		bool operator<( const File & ) const ;
 		static StoreLockEntry::Size toSize( const std::string & s ) ;
 	} ;
-	typedef std::set<File> Set ;
+	using Set = std::set<File> ;
+
+public:
+	StoreLock( const StoreLock & ) = delete ;
+	StoreLock( StoreLock && ) = delete ;
+	void operator=( const StoreLock & ) = delete ;
+	void operator=( StoreLock && ) = delete ;
 
 private:
-	StoreLock( const StoreLock & ) g__eq_delete ;
-	void operator=( const StoreLock & ) g__eq_delete ;
 	Set::iterator find( const std::string & ) ;
 	Set::const_iterator find( int id ) const ;
 	Set::iterator find( int id ) ;

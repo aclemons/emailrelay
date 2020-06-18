@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ namespace GGui
 class GGui::SubClassMap
 {
 public:
-	typedef WNDPROC Proc ; // see CallWindowProc
+	using Proc = WNDPROC ; // see CallWindowProc
 
 	SubClassMap() ;
 		///< Constructor.
@@ -57,9 +57,9 @@ public:
 		///< Removes the given entry from the map. Typically
 		///< called when processing a WM_NCDESTROY message.
 
-private:
-	SubClassMap( const SubClassMap &other ) g__eq_delete ;
-	void operator=( const SubClassMap &other ) g__eq_delete ;
+public:
+	SubClassMap( const SubClassMap &other ) = delete ;
+	void operator=( const SubClassMap &other ) = delete ;
 
 private:
 	struct Slot

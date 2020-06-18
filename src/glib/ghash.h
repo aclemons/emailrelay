@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ public:
 	struct Masked  /// An overload discriminator for G::Hash::hmac()
 		{} ;
 
-	template <typename Fn2> static std::string hmac( Fn2 digest , size_t blocksize , const std::string & key ,
+	template <typename Fn2> static std::string hmac( Fn2 digest , std::size_t blocksize , const std::string & key ,
 		const std::string & input ) ;
 			///< Computes a Hashed Message Authentication Code using the given hash
 			///< function. This is typically for challenge-response authentication
@@ -73,7 +73,7 @@ public:
 			///< masked key is invalid.
 
 	template <typename Fn1, typename Fn2> static std::string mask( Fn1 predigest , Fn2 digest ,
-		size_t blocksize , const std::string & shared_key ) ;
+		std::size_t blocksize , const std::string & shared_key ) ;
 			///< Computes a masked key from the given shared key, returning a non-printable
 			///< string. This can be passed to the 'masked' overload of hmac() once the
 			///< message is known.
@@ -96,16 +96,18 @@ public:
 		///< Converts a binary string into a printable form, using a
 		///< lowercase hexadecimal encoding.
 
+public:
+	Hash() = delete ;
+
 private:
-	template <typename Fn2> static std::string keyx( Fn2 , size_t blocksize , std::string k ) ;
+	template <typename Fn2> static std::string keyx( Fn2 , std::size_t blocksize , std::string k ) ;
 	static std::string xor_( const std::string & s1 , const std::string & s2 ) ;
-	static std::string ipad( size_t blocksize ) ;
-	static std::string opad( size_t blocksize ) ;
-	Hash() ;
+	static std::string ipad( std::size_t blocksize ) ;
+	static std::string opad( std::size_t blocksize ) ;
 } ;
 
 template <typename Fn2>
-std::string G::Hash::keyx( Fn2 fn , size_t blocksize , std::string k )
+std::string G::Hash::keyx( Fn2 fn , std::size_t blocksize , std::string k )
 {
 	if( k.length() > blocksize )
 		k = fn( k , std::string() ) ;
@@ -116,7 +118,7 @@ std::string G::Hash::keyx( Fn2 fn , size_t blocksize , std::string k )
 
 template <typename Fn2>
 inline
-std::string G::Hash::hmac( Fn2 fn , size_t blocksize , const std::string & k , const std::string & input )
+std::string G::Hash::hmac( Fn2 fn , std::size_t blocksize , const std::string & k , const std::string & input )
 {
 	const std::string kx = keyx( fn , blocksize , k ) ;
 	return fn( xor_(kx,opad(blocksize)) , fn(xor_(kx,ipad(blocksize)),input) ) ;
@@ -124,7 +126,7 @@ std::string G::Hash::hmac( Fn2 fn , size_t blocksize , const std::string & k , c
 
 template <typename Fn, typename Fn2>
 inline
-std::string G::Hash::mask( Fn predigest_fn , Fn2 digest_fn , size_t blocksize , const std::string & k )
+std::string G::Hash::mask( Fn predigest_fn , Fn2 digest_fn , std::size_t blocksize , const std::string & k )
 {
 	std::string kx = keyx( digest_fn , blocksize , k ) ;
 	std::string ki_state = predigest_fn( xor_(kx,ipad(blocksize)) ) ;

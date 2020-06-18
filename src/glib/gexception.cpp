@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,91 +21,66 @@
 #include "gdef.h"
 #include "gexception.h"
 
+namespace G
+{
+	namespace ExceptionImp
+	{
+		std::string join( std::string s1 , const std::string & s2 )
+		{
+			return s1.append(": ").append(s2) ;
+		}
+		std::string join( std::string s1 , const std::string & s2 , const std::string & s3 )
+		{
+			return s1.append(": ").append(s2).append(": ").append(s3) ;
+		}
+		std::string join( std::string s1 , const std::string & s2 , const std::string & s3 , const std::string & s4 )
+		{
+			return s1.append(": ").append(s2).append(": ").append(s3).append(": ").append(s4) ;
+		}
+		std::string join( std::string s1 , const std::string & s2 , const std::string & s3 , const std::string & s4 , const std::string & s5 )
+		{
+			return s1.append(": ").append(s2).append(": ").append(s3).append(": ").append(s4).append(": ").append(s5) ;
+		}
+	}
+}
+
 G::Exception::Exception( const char * what ) :
-	m_what(what?what:"")
+	std::runtime_error(what?what:"")
 {
 }
 
 G::Exception::Exception( const std::string & what ) :
-	m_what(what)
+	std::runtime_error(what)
 {
 }
 
 G::Exception::Exception( const char * what , const std::string & more ) :
-	m_what(what)
+	std::runtime_error(ExceptionImp::join(what,more))
 {
-	append( more ) ;
 }
 
 G::Exception::Exception( const std::string & what , const std::string & more ) :
-	m_what(what)
+	std::runtime_error(ExceptionImp::join(what,more))
 {
-	append( more ) ;
 }
 
 G::Exception::Exception( const char * what , const std::string & more1 , const std::string & more2 ) :
-	m_what(what)
+	std::runtime_error(ExceptionImp::join(what,more1,more2))
 {
-	append( more1 ) ;
-	append( more2 ) ;
 }
 
 G::Exception::Exception( const std::string & what , const std::string & more1 , const std::string & more2 ) :
-	m_what(what)
+	std::runtime_error(ExceptionImp::join(what,more1,more2))
 {
-	append( more1 ) ;
-	append( more2 ) ;
 }
 
 G::Exception::Exception( const char * what , const std::string & more1 , const std::string & more2 , const std::string & more3 ) :
-	m_what(what)
+	std::runtime_error(ExceptionImp::join(what,more1,more2,more3))
 {
-	append( more1 ) ;
-	append( more2 ) ;
-	append( more3 ) ;
 }
 
 G::Exception::Exception( const std::string & what , const std::string & more1 , const std::string & more2 , const std::string & more3 ) :
-	m_what(what)
-{
-	append( more1 ) ;
-	append( more2 ) ;
-	append( more3 ) ;
-}
-
-G::Exception::~Exception() g__noexcept
+	std::runtime_error(ExceptionImp::join(what,more1,more2,more3))
 {
 }
-
-const char * G::Exception::what() const g__noexcept
-{
-	return m_what.c_str() ;
-}
-
-void G::Exception::append( const char * more )
-{
-	if( more != nullptr && *more != '\0' )
-	{
-		m_what += std::string(": ") ;
-		m_what += std::string(more) ;
-	}
-}
-
-void G::Exception::append( const std::string & more )
-{
-	if( !more.empty() )
-	{
-		m_what += std::string(": ") ;
-		m_what += std::string(more) ;
-	}
-}
-
-void G::Exception::prepend( const char * context )
-{
-	if( context != nullptr && *context != '\0' )
-	{
-		m_what = std::string(context) + ": " + m_what ;
-	}
-}
-
 /// \file gexception.cpp

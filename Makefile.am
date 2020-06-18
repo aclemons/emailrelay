@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -21,6 +21,18 @@
 #	* rpm - builds an rpm package using rpmbuild
 #	* deb - builds a deb package using debhelper
 #
+# Eg:
+#	$ dnf install g++ make automake openssl-devel pam-devel rpm-build # rpm
+#	$ ./bootstrap
+#	$ ./configure.sh
+#	$ sudo make rpm
+#
+# or:
+#	$ apt install g++ make automake libssl-dev libpam0g-dev debhelper # deb
+#	$ ./bootstrap
+#	$ ./configure.sh
+#	$ sudo make deb
+#
 # When running "make distcheck" consider doing this to avoid
 # a lengthy testing stage:
 #	$ make distcheck DISTCHECK_CONFIGURE_FLAGS=--disable-testing
@@ -38,8 +50,6 @@ EXTRA_DIST = \
 	autogen.sh \
 	winbuild.bat \
 	winbuild.pl \
-	winbuild.pm \
-	winbuild-parser.pm \
 	runperl.bat
 
 SUBDIRS = bin src etc doc debian test m4 bsd
@@ -90,4 +100,15 @@ deb-src: dist
 	mkdir emailrelay-$(VERSION)/debian/source
 	echo 1.0 > emailrelay-$(VERSION)/debian/source/format
 	dpkg-source --build emailrelay-$(VERSION)
+
+.PHONY: lint
+lint:
+	cd src && make lint
+
+.PHONY: cmake
+cmake:
+	@chmod +x bin/make2cmake || true
+	bin/make2cmake
+	mkdir build || true
+	cd build && cmake -DCMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/make -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. && make
 

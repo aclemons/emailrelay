@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,23 +33,30 @@
 class GNet::MonitorImp
 {
 public:
+	using Signal = G::Slot::Signal<const std::string&,const std::string&> ;
 	explicit MonitorImp( Monitor & monitor ) ;
 	void add( const Connection & , bool is_client ) ;
-	void remove( const Connection & , bool is_client ) ;
+	void remove( const Connection & , bool is_client ) noexcept ;
 	void report( std::ostream & s , const std::string & px , const std::string & eol ) const ;
 	void report( G::StringArray & ) const ;
+	void emit( Signal & , const char * , const char * ) noexcept ;
 
 private:
 	struct ConnectionInfo
 	{
 		bool is_client ;
-		explicit ConnectionInfo( bool is_client_ ) : is_client(is_client_) {}
+		explicit ConnectionInfo( bool is_client_ ) noexcept : is_client(is_client_) {}
 	} ;
-	typedef std::map<const Connection*,ConnectionInfo> ConnectionMap ;
+	using ConnectionMap = std::map<const Connection*,ConnectionInfo> ;
+
+public:
+	~MonitorImp() = default ;
+	MonitorImp( const MonitorImp & ) = delete ;
+	MonitorImp( MonitorImp && ) = delete ;
+	void operator=( const MonitorImp & ) = delete ;
+	void operator=( MonitorImp && ) = delete ;
 
 private:
-	MonitorImp( const MonitorImp & ) g__eq_delete ;
-	void operator=( const MonitorImp & ) g__eq_delete ;
 	static std::string join( const std::string & , const std::string & ) ;
 	static void add( G::StringArray & , const std::string & , unsigned int , const std::string & ,
 		unsigned int , const std::string & ) ;
@@ -74,7 +81,7 @@ GNet::MonitorImp::MonitorImp( Monitor & ) :
 
 // ===
 
-GNet::Monitor * & GNet::Monitor::pthis()
+GNet::Monitor * & GNet::Monitor::pthis() noexcept
 {
 	static GNet::Monitor * p = nullptr ;
 	return p ;
@@ -97,7 +104,7 @@ GNet::Monitor * GNet::Monitor::instance()
 	return pthis() ;
 }
 
-G::Slot::Signal2<std::string,std::string> & GNet::Monitor::signal()
+G::Slot::Signal<const std::string&,const std::string&> & GNet::Monitor::signal()
 {
 	return m_signal ;
 }
@@ -107,16 +114,16 @@ void GNet::Monitor::addClient( const Connection & client )
 	if( pthis() )
 	{
 		pthis()->m_imp->add( client , true ) ;
-		pthis()->m_signal.emit( "out" , "start" ) ;
+		pthis()->m_imp->emit( pthis()->m_signal , "out" , "start" ) ;
 	}
 }
 
-void GNet::Monitor::removeClient( const Connection & client )
+void GNet::Monitor::removeClient( const Connection & client ) noexcept
 {
 	if( pthis() )
 	{
 		pthis()->m_imp->remove( client , true ) ;
-		pthis()->m_signal.emit( "out" , "end" ) ;
+		pthis()->m_imp->emit( pthis()->m_signal , "out" , "end" ) ;
 	}
 }
 
@@ -125,17 +132,17 @@ void GNet::Monitor::addServerPeer( const Connection & server_peer )
 	if( pthis() )
 	{
 		pthis()->m_imp->add( server_peer , false ) ;
-		pthis()->m_signal.emit( "in" , "start" ) ;
+		pthis()->m_imp->emit( pthis()->m_signal , "in" , "start" ) ;
 	}
 }
 
 
-void GNet::Monitor::removeServerPeer( const Connection & server_peer )
+void GNet::Monitor::removeServerPeer( const Connection & server_peer ) noexcept
 {
 	if( pthis() )
 	{
 		pthis()->m_imp->remove( server_peer , false ) ;
-		pthis()->m_signal.emit( "in" , "end" ) ;
+		pthis()->m_imp->emit( pthis()->m_signal , "in" , "end" ) ;
 	}
 }
 
@@ -163,9 +170,20 @@ void GNet::MonitorImp::add( const Connection & connection , bool is_client )
 	}
 }
 
-void GNet::MonitorImp::remove( const Connection & connection , bool is_client )
+void GNet::MonitorImp::emit( Signal & s , const char * a , const char * b ) noexcept
 {
-	bool removed = 0U != m_connections.erase( &connection ) ;
+	try
+	{
+		s.emit( std::string(a) , std::string(b) ) ;
+	}
+	catch(...)
+	{
+	}
+}
+
+void GNet::MonitorImp::remove( const Connection & connection , bool is_client ) noexcept
+{
+	bool removed = 0U != m_connections.erase( &connection ) ; // noexcept since trivial Compare
 	if( removed )
 	{
 		if( is_client )
@@ -180,14 +198,14 @@ void GNet::MonitorImp::report( std::ostream & s , const std::string & px , const
 	s << px << "OUT started: " << m_client_adds << eol ;
 	s << px << "OUT finished: " << m_client_removes << eol ;
 	{
-		for( ConnectionMap::const_iterator p = m_connections.begin() ; p != m_connections.end() ; ++p )
+		for( const auto & connection : m_connections )
 		{
-			if( (*p).second.is_client )
+			if( connection.second.is_client )
 			{
 				s << px
 					<< "OUT: "
-					<< (*p).first->localAddress().second.displayString() << " -> "
-					<< (*p).first->connectionState() << eol ;
+					<< connection.first->localAddress().second.displayString() << " -> "
+					<< connection.first->connectionState() << eol ;
 			}
 		}
 	}
@@ -195,14 +213,14 @@ void GNet::MonitorImp::report( std::ostream & s , const std::string & px , const
 	s << px << "IN started: " << m_server_peer_adds << eol ;
 	s << px << "IN finished: " << m_server_peer_removes << eol ;
 	{
-		for( ConnectionMap::const_iterator p = m_connections.begin() ; p != m_connections.end() ; ++p )
+		for( const auto & connection : m_connections )
 		{
-			if( !(*p).second.is_client )
+			if( !connection.second.is_client )
 			{
 				s << px
 					<< "IN: "
-					<< (*p).first->localAddress().second.displayString() << " <- "
-					<< (*p).first->peerAddress().second.displayString() << eol ;
+					<< connection.first->localAddress().second.displayString() << " <- "
+					<< connection.first->peerAddress().second.displayString() << eol ;
 			}
 		}
 	}
@@ -212,19 +230,19 @@ void GNet::MonitorImp::report( G::StringArray & out ) const
 {
 	add( out , "Outgoing connections" , m_client_adds , "started" , m_client_removes , "finished" ) ;
 	add( out , "Incoming connections" , m_server_peer_adds , "started" , m_server_peer_removes , "finished" ) ;
-	for( ConnectionMap::const_iterator p = m_connections.begin() ; p != m_connections.end() ; ++p )
+	for( const auto & connection : m_connections )
 	{
-		if( (*p).second.is_client )
+		if( connection.second.is_client )
 		{
-			add( out , "Outgoing connection" , (*p).first->localAddress().second.displayString() , "-->" ,
-				(*p).first->connectionState() , "" ) ;
+			add( out , "Outgoing connection" , connection.first->localAddress().second.displayString() , "-->" ,
+				connection.first->connectionState() , "" ) ;
 		}
 	}
-	for( ConnectionMap::const_iterator p = m_connections.begin() ; p != m_connections.end() ; ++p )
+	for( const auto & connection : m_connections )
 	{
-		if( !(*p).second.is_client )
-			add( out , "Incoming connection" , (*p).first->localAddress().second.displayString() , "<--" ,
-				(*p).first->peerAddress().second.displayString() , "" ) ;
+		if( !connection.second.is_client )
+			add( out , "Incoming connection" , connection.first->localAddress().second.displayString() , "<--" ,
+				connection.first->peerAddress().second.displayString() , "" ) ;
 	}
 }
 

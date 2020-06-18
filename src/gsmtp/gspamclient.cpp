@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,17 +27,6 @@
 
 std::string GSmtp::SpamClient::m_username ;
 
-namespace
-{
-	GNet::Client::Config netConfig( unsigned int connect_timeout , unsigned int response_timeout )
-	{
-		GNet::Client::Config net_config( GNet::LineBufferConfig::newline() ) ;
-		net_config.connection_timeout = connect_timeout ;
-		net_config.response_timeout = response_timeout ;
-		return net_config ;
-	}
-}
-
 GSmtp::SpamClient::SpamClient( GNet::ExceptionSink es , const GNet::Location & location , bool read_only ,
 	unsigned int connect_timeout , unsigned int response_timeout ) :
 		GNet::Client(es,location,netConfig(connect_timeout,response_timeout)) ,
@@ -50,6 +39,14 @@ GSmtp::SpamClient::SpamClient( GNet::ExceptionSink es , const GNet::Location & l
 	G_DEBUG( "GSmtp::SpamClient::ctor: spam read/only=" << read_only ) ;
 	G_DEBUG( "GSmtp::SpamClient::ctor: spam connection timeout " << connect_timeout ) ;
 	G_DEBUG( "GSmtp::SpamClient::ctor: spam response timeout " << response_timeout ) ;
+}
+
+GNet::Client::Config GSmtp::SpamClient::netConfig( unsigned int connect_timeout , unsigned int response_timeout )
+{
+	GNet::Client::Config net_config( GNet::LineBufferConfig::newline() ) ;
+	net_config.connection_timeout = connect_timeout ;
+	net_config.response_timeout = response_timeout ;
+	return net_config ;
 }
 
 void GSmtp::SpamClient::username( const std::string & username )
@@ -100,10 +97,13 @@ void GSmtp::SpamClient::start()
 
 void GSmtp::SpamClient::onSendComplete()
 {
-	m_request.sendMore() ;
+	while( m_request.sendMore() )
+	{
+		;
+	}
 }
 
-bool GSmtp::SpamClient::onReceive( const char * line_data , size_t line_size , size_t , size_t , char )
+bool GSmtp::SpamClient::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
 {
 	m_response.add( m_path , std::string(line_data,line_size) ) ;
 	if( m_response.complete() )
@@ -157,7 +157,7 @@ bool GSmtp::SpamClient::Request::sendMore()
 	else
 	{
 		G_DEBUG( "GSmtp::SpamClient::Request::sendMore: spam request sending " << n << " bytes" ) ;
-		return m_client->send( std::string(&m_buffer[0],static_cast<size_t>(n)) ) ;
+		return m_client->send( std::string(&m_buffer[0],static_cast<std::size_t>(n)) ) ;
 	}
 }
 

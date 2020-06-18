@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -77,7 +77,7 @@ public:
 	unsigned long newSeq() ;
 		///< Hands out a new non-zero sequence number.
 
-	unique_ptr<std::ofstream> stream( const G::Path & path ) ;
+	std::unique_ptr<std::ofstream> stream( const G::Path & path ) ;
 		///< Returns a stream to the given content.
 
 	G::Path contentPath( unsigned long seq ) const ;
@@ -90,19 +90,19 @@ public:
 		///< Returns the path for an envelope file
 		///< which is in the process of being written.
 
-	virtual bool empty() const override ;
+	bool empty() const override ;
 		///< Override from GSmtp::MessageStore.
 
-	virtual unique_ptr<StoredMessage> get( unsigned long id ) override ;
+	std::unique_ptr<StoredMessage> get( unsigned long id ) override ;
 		///< Override from GSmtp::MessageStore.
 
-	virtual MessageStore::Iterator iterator( bool lock ) override ;
+	std::shared_ptr<MessageStore::Iterator> iterator( bool lock ) override ;
 		///< Override from GSmtp::MessageStore.
 
-	virtual MessageStore::Iterator failures() override ;
+	std::shared_ptr<MessageStore::Iterator> failures() override ;
 		///< Override from GSmtp::MessageStore.
 
-	virtual unique_ptr<NewMessage> newMessage( const std::string & from ,
+	std::unique_ptr<NewMessage> newMessage( const std::string & from ,
 		const std::string & from_auth_in , const std::string & from_auth_out ) override ;
 			///< Override from GSmtp::MessageStore.
 
@@ -117,27 +117,34 @@ public:
 		///< Returns true if the storage format string is
 		///< recognised and supported for reading.
 
-	virtual void updated() override ;
+	void updated() override ;
 		///< Override from GSmtp::MessageStore.
 
-	virtual G::Slot::Signal0 & messageStoreUpdateSignal() override ;
+	G::Slot::Signal<> & messageStoreUpdateSignal() override ;
 		///< Override from GSmtp::MessageStore.
 
-	virtual G::Slot::Signal0 & messageStoreRescanSignal() override ;
+	G::Slot::Signal<> & messageStoreRescanSignal() override ;
 		///< Override from GSmtp::MessageStore.
 
 private: // overrides
-	virtual void rescan() override ; // Override from GSmtp::MessageStore.
-	virtual void unfailAll() override ; // Override from GSmtp::MessageStore.
+	void rescan() override ; // Override from GSmtp::MessageStore.
+	void unfailAll() override ; // Override from GSmtp::MessageStore.
+
+public:
+	~FileStore() override = default ;
+	FileStore( const FileStore & ) = delete ;
+	FileStore( FileStore && ) = delete ;
+	void operator=( const FileStore & ) = delete ;
+	void operator=( FileStore && ) = delete ;
 
 private:
-	FileStore( const FileStore & ) g__eq_delete ;
-	void operator=( const FileStore & ) g__eq_delete ;
 	static void checkPath( const G::Path & dir ) ;
 	G::Path fullPath( const std::string & filename ) const ;
 	std::string filePrefix( unsigned long seq ) const ;
 	std::string getline( std::istream & ) const ;
 	std::string value( const std::string & ) const ;
+	std::shared_ptr<MessageStore::Iterator> iteratorImp( bool ) ;
+	void unfailAllImp() ;
 	static const std::string & crlf() ;
 	bool emptyCore() const ;
 	void clearAll() ;
@@ -147,12 +154,11 @@ private:
 	G::Path m_dir ;
 	bool m_optimise ;
 	mutable bool m_empty ;
-	bool m_rescan ;
 	unsigned long m_max_size ;
 	bool m_test_for_eight_bit ;
 	unsigned long m_pid_modifier ;
-	G::Slot::Signal0 m_update_signal ;
-	G::Slot::Signal0 m_rescan_signal ;
+	G::Slot::Signal<> m_update_signal ;
+	G::Slot::Signal<> m_rescan_signal ;
 } ;
 
 /// \class GSmtp::FileReader
@@ -169,6 +175,12 @@ public:
 
 	~FileReader() ;
 		///< Destructor. Switches identity back.
+
+public:
+	FileReader( const FileReader & ) = delete ;
+	FileReader( FileReader && ) = delete ;
+	void operator=( const FileReader & ) = delete ;
+	void operator=( FileReader && ) = delete ;
 } ;
 
 /// \class GSmtp::DirectoryReader
@@ -185,6 +197,12 @@ public:
 
 	~DirectoryReader() ;
 		///< Destructor. Switches identity back.
+
+public:
+	DirectoryReader( const DirectoryReader & ) = delete ;
+	DirectoryReader( DirectoryReader && ) = delete ;
+	void operator=( const DirectoryReader & ) = delete ;
+	void operator=( DirectoryReader && ) = delete ;
 } ;
 
 /// \class GSmtp::FileWriter
@@ -201,6 +219,12 @@ public:
 
 	~FileWriter() ;
 		///< Destructor. Switches identity back.
+
+public:
+	FileWriter( const FileWriter & ) = delete ;
+	FileWriter( FileWriter && ) = delete ;
+	void operator=( const FileWriter & ) = delete ;
+	void operator=( FileWriter && ) = delete ;
 } ;
 
 #endif

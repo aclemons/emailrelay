@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,134 +23,347 @@
 
 #include "gdef.h"
 #include "gexception.h"
-#include <ctime>
+#include <chrono>
+#include <vector>
 #include <string>
 #include <iostream>
 
 namespace G
 {
 	class DateTime ;
-	class EpochTime ;
+	class SystemTime ;
+	class TimerTime ;
 	class TimeInterval ;
+	class BrokenDownTime ;
+	class DateTimeTest ;
 }
 
-/// \class G::EpochTime
-/// A subsecond-resolution timestamp based on a time_t.
+/// \class G::BrokenDownTime
+/// An encapsulation of 'struct std::tm'.
 ///
-class G::EpochTime
+class G::BrokenDownTime
 {
 public:
-	typedef std::time_t seconds_type ;
-
-	explicit EpochTime( std::time_t ) ;
+	explicit BrokenDownTime( const struct std::tm & ) ;
 		///< Constructor.
 
-	EpochTime( std::time_t , unsigned long us ) ;
+	BrokenDownTime( int year , int month , int day , int hh , int mm , int ss ) ;
+		///< Constructor.
+
+	static BrokenDownTime midday( int year , int month , int day ) ;
+		///< Factory function for midday on the given date.
+
+	static BrokenDownTime local( SystemTime ) ;
+		///< Factory function for the locale-dependent local time of the
+		///< given epoch time. See also SystemTime::local().
+
+	static BrokenDownTime utc( SystemTime ) ;
+		///< Factory function for the utc time of the given epoch time.
+		///< See also SystemTime::utc().
+
+	void format( std::vector<char> & out , const char * fmt ) const ;
+		///< Puts the formatted date, including a terminating null character,
+		///< into the given buffer. Only simple non-locale-dependent format
+		///< specifiers are allowed, and these allowed specifiers explicitly
+		///< exclude '%z' and '%Z'.
+
+	std::string str( const char * fmt ) const ;
+		///< Returns the formatted date, with the same restrictions
+		///< as format().
+
+	std::string str() const ;
+		///< Returns str() using a "%F %T" format.
+
+	int year() const ;
+		///< Returns the four-digit year value.
+
+	int month() const ;
+		///< Returns the 1..12 month value.
+
+	int day() const ;
+		///< Returns the 1..31 month-day value.
+
+	int hour() const ;
+		///< Returns the 0..23 hour value.
+
+	int min() const ;
+		///< Returns the 0..59 minute value.
+
+	int sec() const ;
+		///< Returns the 0..59 or 0..60 seconds value.
+
+	int wday() const ;
+		///< Returns week day where sunday=0 and saturday=6.
+
+	std::time_t epochTimeFromUtc() const ;
+		///< Searches std::mktime() over the range of all timezones
+		///< to convert this utc broken-down time into epoch time.
+
+	std::time_t epochTimeFromLocal() const ;
+		///< Uses std::mktime() to convert this locale-dependent
+		///< local broken-down time into epoch time.
+
+	bool sameMinute( const BrokenDownTime & other ) const ;
+		///< Returns true if this and the other broken-down
+		///< times are the same, at minute resolution with
+		///< no rounding.
+
+private:
+	BrokenDownTime() ;
+	std::time_t epochTimeFromUtcImp( bool & , std::time_t & ) const ;
+	std::time_t epochTimeFromUtcImp() const ;
+
+private:
+	friend class G::DateTimeTest ;
+	struct std::tm m_tm ;
+} ;
+
+/// \class G::SystemTime
+/// Represents a unix-epoch time with microsecond resolution.
+///
+class G::SystemTime
+{
+public:
+	static SystemTime now() ;
+		///< Factory function for the current time.
+
+	static SystemTime zero() ;
+		///< Factory function for the start of the epoch.
+
+	explicit SystemTime( std::time_t , unsigned long us = 0UL ) ;
 		///< Constructor. The first parameter should be some
 		///< large positive number. The second parameter can be
 		///< more than 10^6.
 
+	bool sameSecond( const SystemTime & other ) const ;
+		///< Returns true if this time and the other time are the same,
+		///< at second resolution.
+
+	BrokenDownTime local() const ;
+		///< Returns the locale-dependent local broken-down time.
+
+	BrokenDownTime utc() const ;
+		///< Returns the utc broken-down time.
+
+	unsigned int ms() const ;
+		///< Returns the millisecond fraction.
+
+	unsigned int us() const ;
+		///< Returns the microsecond fraction.
+
+	std::time_t s() const ;
+		///< Returns the number of seconds since the start of the epoch.
+
+	bool operator<( const SystemTime & ) const ;
+		///< Comparison operator.
+
+	bool operator<=( const SystemTime & ) const ;
+		///< Comparison operator.
+
+	bool operator==( const SystemTime & ) const ;
+		///< Comparison operator.
+
+	bool operator!=( const SystemTime & ) const ;
+		///< Comparison operator.
+
+	bool operator>( const SystemTime & ) const ;
+		///< Comparison operator.
+
+	bool operator>=( const SystemTime & ) const ;
+		///< Comparison operator.
+
+	void operator+=( TimeInterval ) ;
+		///< Adds the given interval. Throws on overflow.
+
+	SystemTime operator+( TimeInterval ) const ;
+		///< Returns this time with given interval added.
+		///< Throws on overflow.
+
+	TimeInterval operator-( const SystemTime & start ) const ;
+		///< Returns the given start time's interval() compared
+		///< to this end time. Returns TimeInterval::zero() on
+		///< underflow or TimeInterval::limit() on overflow of
+		///< TimeInterval::s_type.
+
+	TimeInterval interval( const SystemTime & end ) const ;
+		///< Returns the interval between this time and the given
+		///< end time. Returns TimeInterval::zero() on underflow or
+		///< TimeInterval::limit() on overflow of TimeInterval::s_type.
+
 	void streamOut( std::ostream & ) const ;
-		///< Used by operator<<().
+		///< Streams out the time comprised of the s() value, a decimal
+		///< point, and then the six-digit us() value.
 
 private:
-	void normalise() ;
+	friend class G::DateTimeTest ;
+	using duration_type = std::chrono::system_clock::duration ;
+	using time_point_type = std::chrono::time_point<std::chrono::system_clock> ;
+	explicit SystemTime( time_point_type ) ;
+	SystemTime & add( unsigned long us ) ;
 
+private:
+	time_point_type m_tp ;
+} ;
+
+/// \class G::TimerTime
+/// A monotonically increasing subsecond-resolution timestamp, notionally
+/// unrelated to time_t.
+///
+class G::TimerTime
+{
 public:
-	std::time_t s ;
-	unsigned int us ;
+	static TimerTime now() ;
+		///< Factory function for the current steady-clock time.
+
+	static TimerTime zero() ;
+		///< Factory function for the start of the epoch.
+
+	bool sameSecond( const TimerTime & other ) const ;
+		///< Returns true if this time and the other time are the same,
+		///< at second resolution.
+
+	bool operator<( const TimerTime & ) const ;
+		///< Comparison operator.
+
+	bool operator<=( const TimerTime & ) const ;
+		///< Comparison operator.
+
+	bool operator==( const TimerTime & ) const ;
+		///< Comparison operator.
+
+	bool operator!=( const TimerTime & ) const ;
+		///< Comparison operator.
+
+	bool operator>( const TimerTime & ) const ;
+		///< Comparison operator.
+
+	bool operator>=( const TimerTime & ) const ;
+		///< Comparison operator.
+
+	TimerTime operator+( const TimeInterval & ) const ;
+		///< Returns this time with given interval added.
+
+	void operator+=( TimeInterval ) ;
+		///< Adds an interval.
+
+	TimeInterval operator-( const TimerTime & start ) const ;
+		///< Returns the given start time's interval() compared
+		///< to this end time. Returns TimeInterval::zero() on
+		///< underflow or TimeInterval::limit() if the
+		///< TimeInterval::s_type value overflows.
+
+	TimeInterval interval( const TimerTime & end ) const ;
+		///< Returns the interval between this time and the given
+		///< end time. Returns TimeInterval::zero() on underflow or
+		///< TimeInterval::limit() if the TimeInterval::s_type
+		///< value overflows.
+
+private:
+	friend class G::DateTimeTest ;
+	using duration_type = std::chrono::steady_clock::duration ;
+	using time_point_type = std::chrono::time_point<std::chrono::steady_clock> ;
+	explicit TimerTime( time_point_type ) ;
+	static TimerTime test( int , int ) ;
+	unsigned long test_s() const ;
+	unsigned long test_us() const ;
+
+private:
+	time_point_type m_tp ;
 } ;
 
 /// \class G::TimeInterval
-/// An interval between two G::EpochTime values.
+/// An interval between two G::SystemTime values or two G::TimerTime
+/// values.
 ///
 class G::TimeInterval
 {
 public:
-	typedef unsigned int seconds_type ;
+	using s_type = unsigned int ;
+	using us_type = unsigned int ;
 
-	TimeInterval( unsigned int s , unsigned int us = 0U ) ;
+	explicit TimeInterval( unsigned int s , unsigned int us = 0U ) ;
 		///< Constructor.
 
-	TimeInterval( const EpochTime & start , const EpochTime & end ) ;
+	TimeInterval( const SystemTime & start , const SystemTime & end ) ;
 		///< Constructor. Constructs a zero interval if 'end' is before
 		///< 'start', and the limit() interval if 'end' is too far
 		///< ahead of 'start' for the underlying type.
 
+	TimeInterval( const TimerTime & start , const TimerTime & end ) ;
+		///< Constructor. Overload for TimerTime.
+
+	static TimeInterval zero() ;
+		///< Factory function for the zero interval.
+
 	static TimeInterval limit() ;
-		///< Returns the maximum valid interval.
+		///< Factory function for the maximum valid interval.
+
+	unsigned int s() const ;
+		///< Returns the number of seconds.
+
+	unsigned int us() const ;
+		///< Returns the fractional microseconds part.
 
 	void streamOut( std::ostream & ) const ;
-		///< Used by operator<<().
+		///< Streams out the interval.
+
+	bool operator<( const TimeInterval & ) const ;
+		///< Comparison operator.
+
+	bool operator<=( const TimeInterval & ) const ;
+		///< Comparison operator.
+
+	bool operator==( const TimeInterval & ) const ;
+		///< Comparison operator.
+
+	bool operator!=( const TimeInterval & ) const ;
+		///< Comparison operator.
+
+	bool operator>( const TimeInterval & ) const ;
+		///< Comparison operator.
+
+	bool operator>=( const TimeInterval & ) const ;
+		///< Comparison operator.
+
+	TimeInterval operator+( const TimeInterval & ) const ;
+		///< Returns the combined interval. Throws on overflow.
+
+	TimeInterval operator-( const TimeInterval & ) const ;
+		///< Returns the interval difference. Throws on underflow.
+
+	void operator+=( TimeInterval ) ;
+		///< Adds the given interval. Throws on overflow.
+
+	void operator-=( TimeInterval ) ;
+		///< Subtracts the given interval. Throws on underflow.
 
 private:
 	void normalise() ;
 
-public:
-	unsigned int s ;
-	unsigned int us ;
+private:
+	unsigned int m_s ;
+	unsigned int m_us ;
 } ;
-
-inline
-G::TimeInterval::TimeInterval( unsigned int s_ , unsigned int us_ ) :
-	s(s_) ,
-	us(us_)
-{
-	if( us > 1000000U )
-		normalise() ;
-}
 
 namespace G
 {
-	EpochTime operator+( EpochTime et , std::time_t interval ) ;
-	EpochTime operator+( EpochTime base , TimeInterval interval ) ;
-	TimeInterval operator-( EpochTime end , EpochTime start ) ;
-	TimeInterval operator-( TimeInterval end , TimeInterval start ) ;
-	bool operator<( EpochTime lhs , EpochTime rhs ) ;
-	bool operator<( TimeInterval lhs , TimeInterval rhs ) ;
-	bool operator==( EpochTime lhs , EpochTime rhs ) ;
-	bool operator==( TimeInterval lhs , TimeInterval rhs ) ;
-	bool operator!=( EpochTime lhs , EpochTime rhs ) ;
-	bool operator!=( TimeInterval lhs , TimeInterval rhs ) ;
-	bool operator<=( EpochTime lhs , EpochTime rhs ) ;
-	bool operator<=( TimeInterval lhs , TimeInterval rhs ) ;
-	bool operator>=( EpochTime lhs , EpochTime rhs ) ;
-	bool operator>=( TimeInterval lhs , TimeInterval rhs ) ;
-	bool operator>( EpochTime lhs , EpochTime rhs ) ;
-	bool operator>( TimeInterval lhs , TimeInterval rhs ) ;
-	std::ostream & operator<<( std::ostream & s , const EpochTime & et ) ;
-	std::ostream & operator<<( std::ostream & s , const TimeInterval & ti ) ;
+	std::ostream & operator<<( std::ostream & , const SystemTime & ) ;
+	std::ostream & operator<<( std::ostream & , const TimeInterval & ) ;
 }
 
 /// \class G::DateTime
-/// A low-level static class used by Date and Time.
+/// A static class that knows about timezone offsets.
 ///
 class G::DateTime
 {
 public:
-	G_EXCEPTION( Error , "date/time error" ) ;
-	typedef struct std::tm BrokenDownTime ;
-	typedef std::pair<bool,unsigned int> Offset ;
+	G_EXCEPTION_CLASS( Error , "date/time error" ) ;
+	using Offset = std::pair<bool,unsigned int> ;
 
-	static EpochTime now() ;
-		///< Returns the current epoch time.
-
-	static EpochTime epochTime( const BrokenDownTime & broken_down_time , bool optimise = true ) ;
-		///< Converts from UTC broken-down-time to epoch time.
-
-	static BrokenDownTime utc( EpochTime epoch_time ) ;
-		///< Converts from epoch time to UTC broken-down-time.
-
-	static BrokenDownTime local( EpochTime epoch_time ) ;
-		///< Converts from epoch time to local broken-down-time.
-
-	static Offset offset( EpochTime epoch_time , bool optimise = true ) ;
-		///< Returns the offset between UTC and localtime as at
-		///< 'epoch_time'. The returned pair has 'first' set to
-		///< true if localtime is ahead of (ie. east of) UTC.
-		///<
-		///< (Note that this may be a relatively expensive
-		///< operation.)
+	static Offset offset( SystemTime ) ;
+		///< Returns the offset in seconds between UTC and localtime
+		///< as at the given system time. The returned pair has 'first'
+		///< set to true if localtime is ahead of (ie. east of) UTC.
 
 	static std::string offsetString( Offset offset ) ;
 		///< Converts the given utc/localtime offset into a five-character
@@ -160,119 +373,8 @@ public:
 	static std::string offsetString( int hh ) ;
 		///< Overload for a signed integer timezone.
 
-private:
-	DateTime() g__eq_delete ;
-	static bool equivalent( EpochTime , const BrokenDownTime & ) ;
-	static bool equivalent( const BrokenDownTime & , const BrokenDownTime & ) ;
-	static std::tm * gmtime_imp( const std::time_t * , std::tm * ) ;
-	static std::tm * localtime_imp( const std::time_t * , std::tm * ) ;
-	static EpochTime epochTime( const BrokenDownTime & broken_down_time , bool & , std::time_t & ) ;
+public:
+	DateTime() = delete ;
 } ;
-
-inline
-G::EpochTime::EpochTime( std::time_t t ) :
-	s(t) ,
-	us(0UL)
-{
-}
-
-inline
-G::EpochTime G::operator+( G::EpochTime et , std::time_t interval )
-{
-	et.s += interval ;
-	return et ;
-}
-
-inline
-G::TimeInterval G::operator-( G::EpochTime end , G::EpochTime start )
-{
-	return TimeInterval( start , end ) ;
-}
-
-inline
-bool G::operator<( G::EpochTime lhs , G::EpochTime rhs )
-{
-	return lhs.s < rhs.s || ( lhs.s == rhs.s && lhs.us < rhs.us ) ;
-}
-
-inline
-bool G::operator<( G::TimeInterval lhs , G::TimeInterval rhs )
-{
-	return lhs.s < rhs.s || ( lhs.s == rhs.s && lhs.us < rhs.us ) ;
-}
-
-inline
-bool G::operator==( G::EpochTime lhs , G::EpochTime rhs )
-{
-	return lhs.s == rhs.s && lhs.us == rhs.us ;
-}
-
-inline
-bool G::operator==( G::TimeInterval lhs , G::TimeInterval rhs )
-{
-	return lhs.s == rhs.s && lhs.us == rhs.us ;
-}
-
-inline
-bool G::operator!=( G::EpochTime lhs , G::EpochTime rhs )
-{
-	return !( lhs == rhs ) ;
-}
-
-inline
-bool G::operator!=( G::TimeInterval lhs , G::TimeInterval rhs )
-{
-	return !( lhs == rhs ) ;
-}
-
-inline
-bool G::operator<=( G::EpochTime lhs , G::EpochTime rhs )
-{
-	return lhs == rhs || lhs < rhs ;
-}
-
-inline
-bool G::operator<=( G::TimeInterval lhs , G::TimeInterval rhs )
-{
-	return lhs == rhs || lhs < rhs ;
-}
-
-inline
-bool G::operator>=( G::EpochTime lhs , G::EpochTime rhs )
-{
-	return !( lhs < rhs ) ;
-}
-
-inline
-bool G::operator>=( G::TimeInterval lhs , G::TimeInterval rhs )
-{
-	return !( lhs < rhs ) ;
-}
-
-inline
-bool G::operator>( G::EpochTime lhs , G::EpochTime rhs )
-{
-	return !( lhs == rhs ) && !( lhs < rhs ) ;
-}
-
-inline
-bool G::operator>( G::TimeInterval lhs , G::TimeInterval rhs )
-{
-	return !( lhs == rhs ) && !( lhs < rhs ) ;
-}
-
-inline
-std::ostream & G::operator<<( std::ostream & s , const G::EpochTime & t )
-{
-	t.streamOut( s ) ;
-	return s ;
-}
-
-inline
-std::ostream & G::operator<<( std::ostream & s , const G::TimeInterval & ti )
-{
-	ti.streamOut( s ) ;
-	return s ;
-}
 
 #endif

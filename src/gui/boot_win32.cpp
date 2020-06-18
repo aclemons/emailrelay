@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,8 +43,8 @@ namespace
 
 bool Boot::able( const G::Path & )
 {
-	SC_HANDLE hmanager = OpenSCManager( NULL , NULL , SC_MANAGER_ALL_ACCESS ) ;
-	bool ok = hmanager != 0 ;
+	SC_HANDLE hmanager = OpenSCManager( nullptr , nullptr , SC_MANAGER_ALL_ACCESS ) ;
+	bool ok = hmanager != HNULL ;
 	if( hmanager ) CloseServiceHandle( hmanager ) ;
 	return ok ;
 }

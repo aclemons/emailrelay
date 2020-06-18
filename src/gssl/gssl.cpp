@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,8 +35,7 @@ GSsl::Library::Library( bool active , const std::string & library_config , LogFn
 	if( active )
 	{
 		G::StringArray config = G::Str::splitIntoTokens( library_config , "," ) ;
-		unique_ptr<LibraryImpBase> new_imp = newLibraryImp( config , log_fn , verbose ) ;
-		m_imp.reset( new_imp.release() ) ; // for c++98
+		m_imp = newLibraryImp( config , log_fn , verbose ) ;
 		bool ignore_extra = LibraryImpBase::consume( config , "ignoreextra" ) ;
 		if( !config.empty() && !ignore_extra )
 			G_WARNING( "GSsl::Library::Library: tls-config: tls configuration items ignored: [" << G::Str::join(",",config) << "]" ) ;
@@ -61,7 +60,7 @@ GSsl::Library * GSsl::Library::instance()
 
 bool GSsl::Library::enabled() const
 {
-	return m_imp.get() != nullptr ;
+	return m_imp != nullptr ;
 }
 
 std::string GSsl::Library::id() const
@@ -74,7 +73,7 @@ void GSsl::Library::addProfile( const std::string & profile_name , bool is_serve
 	const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
 	const std::string & profile_config )
 {
-	if( m_imp.get() != nullptr )
+	if( m_imp != nullptr )
 		m_imp->addProfile( profile_name , is_server_profile , key_file , cert_file , ca_file ,
 			default_peer_certificate_name , default_peer_host_name , profile_config ) ;
 }
@@ -105,16 +104,16 @@ GSsl::LibraryImpBase & GSsl::Library::impstance()
 
 GSsl::LibraryImpBase & GSsl::Library::imp()
 {
-	if( m_imp.get() == nullptr )
+	if( m_imp == nullptr )
 		throw G::Exception( "no tls library instance" ) ;
-	return *m_imp.get() ;
+	return *m_imp ;
 }
 
 const GSsl::LibraryImpBase & GSsl::Library::imp() const
 {
-	if( m_imp.get() == nullptr )
+	if( m_imp == nullptr )
 		throw G::Exception( "no tls library instance" ) ;
-	return *m_imp.get() ;
+	return *m_imp ;
 }
 
 void GSsl::Library::log( int level , const std::string & log_line )
@@ -129,7 +128,7 @@ void GSsl::Library::log( int level , const std::string & log_line )
 
 G::StringArray GSsl::Library::digesters( bool require_state )
 {
-	return instance() == nullptr || instance()->m_imp.get() == nullptr ? G::StringArray() : impstance().digesters(require_state) ;
+	return instance() == nullptr || instance()->m_imp == nullptr ? G::StringArray() : impstance().digesters(require_state) ;
 }
 
 GSsl::Digester GSsl::Library::digester( const std::string & hash_function , const std::string & state , bool need_state ) const
@@ -145,8 +144,7 @@ GSsl::Protocol::Protocol( const Profile & profile , const std::string & peer_cer
 }
 
 GSsl::Protocol::~Protocol()
-{
-}
+= default;
 
 std::string GSsl::Protocol::peerCertificate() const
 {
@@ -187,12 +185,12 @@ GSsl::Protocol::Result GSsl::Protocol::accept( G::ReadWrite & io )
 	return m_imp->accept( io ) ;
 }
 
-GSsl::Protocol::Result GSsl::Protocol::read( char * buffer , size_t buffer_size_in , ssize_t & data_size_out )
+GSsl::Protocol::Result GSsl::Protocol::read( char * buffer , std::size_t buffer_size_in , ssize_t & data_size_out )
 {
 	return m_imp->read( buffer , buffer_size_in , data_size_out ) ;
 }
 
-GSsl::Protocol::Result GSsl::Protocol::write( const char * buffer , size_t data_size_in , ssize_t & data_size_out)
+GSsl::Protocol::Result GSsl::Protocol::write( const char * buffer , std::size_t data_size_in , ssize_t & data_size_out)
 {
 	return m_imp->write( buffer , data_size_in , data_size_out ) ;
 }
@@ -224,30 +222,26 @@ std::string GSsl::Digester::state()
 	return m_imp->state() ;
 }
 
-size_t GSsl::Digester::blocksize() const
+std::size_t GSsl::Digester::blocksize() const
 {
 	return m_imp->blocksize() ;
 }
 
-size_t GSsl::Digester::valuesize() const
+std::size_t GSsl::Digester::valuesize() const
 {
 	return m_imp->valuesize() ;
 }
 
-size_t GSsl::Digester::statesize() const
+std::size_t GSsl::Digester::statesize() const
 {
 	return m_imp->statesize() ;
 }
 
 // ==
 
-GSsl::LibraryImpBase::~LibraryImpBase()
-{
-}
-
 bool GSsl::LibraryImpBase::consume( G::StringArray & list , const std::string & key )
 {
-	G::StringArray::iterator p = std::find( list.begin() , list.end() , key ) ;
+	auto p = std::find( list.begin() , list.end() , key ) ;
 	if( p != list.end() )
 	{
 		list.erase( p ) ;
@@ -257,20 +251,6 @@ bool GSsl::LibraryImpBase::consume( G::StringArray & list , const std::string & 
 	{
 		return false ;
 	}
-}
-
-// ==
-
-GSsl::Profile::~Profile()
-{
-}
-
-GSsl::ProtocolImpBase::~ProtocolImpBase()
-{
-}
-
-GSsl::DigesterImpBase::~DigesterImpBase()
-{
 }
 
 /// \file gssl.cpp

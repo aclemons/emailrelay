@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,9 +48,9 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , boo
 			if( ! done )
 			{
 				PAINTSTRUCT ps ;
-				HDC dc = ::BeginPaint( handle() , &ps ) ;
+				HDC dc = BeginPaint( handle() , &ps ) ;
 				onPaint( dc ) ;
-				::EndPaint( handle() , &ps ) ;
+				EndPaint( handle() , &ps ) ;
 			}
 			return 0 ;
 		}
@@ -59,7 +59,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , boo
 		{
 			G_DEBUG( "Cracker::onClose" ) ;
 			if( onClose() )
-				::PostMessage( handle() , WM_DESTROY , 0 , 0 ) ;
+				PostMessage( handle() , WM_DESTROY , 0 , 0 ) ;
 			return 0 ;
 		}
 
@@ -169,20 +169,20 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , boo
 		{
 			G_DEBUG( "Cracker::onDrop" ) ;
 			HDROP hdrop = hdrop_from( wparam ) ;
-			int count = ::DragQueryFileA( hdrop , 0xFFFFFFFF , NULL , 0 ) ;
+			int count = DragQueryFileA( hdrop , 0xFFFFFFFF , nullptr , 0 ) ;
 			G::StringArray list ;
 			std::vector<char> buffer( 32768U , '\0' ) ;
 			for( int i = 0 ; i < count ; i++ )
 			{
 				unsigned int size = static_cast<unsigned int>(buffer.size()) ;
-				if( ::DragQueryFileA( hdrop , i , &buffer[0] , size ) < size )
+				if( DragQueryFileA( hdrop , i , &buffer[0] , size ) < size )
 				{
 					buffer.at(buffer.size()-1U) = '\0' ;
 					G_DEBUG( "Cracker::onDrop: \"" << &buffer[0] << "\"" ) ;
 					list.push_back( std::string(&buffer[0]) ) ;
 				}
 			}
-			::DragFinish( hdrop ) ;
+			DragFinish( hdrop ) ;
 			return !onDrop( list ) ;
 		}
 
@@ -197,7 +197,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , boo
 				case SIZE_MAXHIDE:
 				case SIZE_MAXSHOW:
 				default:
-					return ::DefWindowProc( handle() , message , wparam , lparam ) ;
+					return DefWindowProc( handle() , message , wparam , lparam ) ;
 			}
 			onSize( type , LOWORD(lparam) , HIWORD(lparam) ) ;
 			return 0 ;
@@ -325,7 +325,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , boo
 		case WM_GETMINMAXINFO:
 		{
 			MINMAXINFO * mmi_p = reinterpret_cast<MINMAXINFO*>(lparam) ;
-			G_ASSERT( mmi_p != NULL ) ;
+			G_ASSERT( mmi_p != nullptr ) ;
 			int dx = mmi_p->ptMaxSize.x ;
 			int dy = mmi_p->ptMaxSize.y ;
 			onDimension( dx , dy ) ;
@@ -589,7 +589,7 @@ bool GGui::Cracker::onDeactivateApp( DWORD )
 bool GGui::Cracker::onEraseBackground( HDC hdc )
 {
 	WPARAM wparam = reinterpret_cast<WPARAM>(hdc) ;
-	return !! ::DefWindowProc( handle() , WM_ERASEBKGND , wparam , 0L ) ;
+	return !! DefWindowProc( handle() , WM_ERASEBKGND , wparam , 0L ) ;
 }
 
 void GGui::Cracker::onMouseMove( unsigned int x , unsigned int y ,

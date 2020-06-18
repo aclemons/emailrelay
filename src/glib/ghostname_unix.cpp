@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 std::string G::hostname()
 {
-	struct utsname info ;
+	struct utsname info {} ;
 	int rc = ::uname( &info ) ;
 	if( rc == -1 )
 		return std::string() ;

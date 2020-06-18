@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,16 +47,16 @@ namespace GNet
 class GNet::EventHandler
 {
 public:
-	g__enum(Reason)
+	enum class Reason
 	{
 		closed , // fin packet, clean shutdown
 		down , // network down
 		reset , // rst packet
 		abort , // socket failed
 		other // eg. oob data
-	} ; g__enum_end(Reason)
+	} ;
 
-	virtual ~EventHandler() ;
+	virtual ~EventHandler() = default ;
 		///< Destructor.
 
 	virtual void readEvent() ;

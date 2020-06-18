@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -71,9 +71,13 @@ public:
 	G::ExecutableCommand launchCommand() const ;
 		///< Returns a server-launch command-line.
 
+public:
+	Installer( const Installer & ) = delete ;
+	Installer( Installer && ) = delete ;
+	void operator=( const Installer & ) = delete ;
+	void operator=( Installer && ) = delete ;
+
 private:
-	Installer( const Installer & ) ;
-	void operator=( const Installer & ) ;
 	void cleanup( const std::string & = std::string() ) ;
 
 private:

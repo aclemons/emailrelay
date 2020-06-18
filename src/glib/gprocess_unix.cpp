@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,16 +26,28 @@
 #include "gpath.h"
 #include "glog.h"
 #include <iostream>
+#include <stdexcept>
+#include <array>
 #include <cstring> // std::strerror()
-#include <limits.h>
+#include <climits> // PATH_MAX
+#include <cerrno> // errno
 #include <fcntl.h>
-#include <errno.h>
 
-namespace
+namespace G
 {
-	void noCloseOnExec( int fd )
+	namespace ProcessImp
 	{
-		::fcntl( fd , F_SETFD , 0 ) ;
+		void noCloseOnExec( int fd )
+		{
+			::fcntl( fd , F_SETFD , 0 ) ;
+		}
+		void reopen( int fd , int mode )
+		{
+			int fd_null = ::open( Path::nullDevice().str().c_str() , mode ) ;
+			if( fd_null < 0 ) throw std::runtime_error( "cannot open /dev/null" ) ;
+			::dup2( fd_null , fd ) ;
+			::close( fd_null ) ;
+		}
 	}
 }
 
@@ -64,59 +76,42 @@ bool G::Process::cd( const Path & dir , NoThrow )
 
 void G::Process::closeStderr()
 {
-	::close( STDERR_FILENO ) ;
-	::open( Path::nullDevice().str().c_str() , O_WRONLY ) ;
-	noCloseOnExec( STDERR_FILENO ) ;
+	ProcessImp::reopen( STDERR_FILENO , O_WRONLY ) ;
 }
 
 void G::Process::closeFiles( bool keep_stderr )
 {
-	closeFilesExcept( keep_stderr ? STDERR_FILENO : -1 ) ;
-}
-
-void G::Process::closeFilesExcept( int keep_1 , int keep_2 )
-{
-	// flush
 	std::cout << std::flush ;
 	std::cerr << std::flush ;
 
-	// find how many to close
+	ProcessImp::reopen( STDIN_FILENO , O_RDONLY ) ;
+	ProcessImp::reopen( STDOUT_FILENO , O_WRONLY ) ;
+	if( !keep_stderr )
+		ProcessImp::reopen( STDERR_FILENO , O_WRONLY ) ;
+
+	closeOtherFiles() ;
+}
+
+void G::Process::closeOtherFiles( int fd_keep )
+{
 	int n = 256U ;
 	long rc = ::sysconf( _SC_OPEN_MAX ) ;
 	if( rc > 0L )
 		n = static_cast<int>( rc ) ;
 
-	// close everything except those given
 	for( int fd = 0 ; fd < n ; fd++ )
 	{
-		if( fd != keep_1 && fd != keep_2 )
+		if( fd != STDIN_FILENO && fd != STDOUT_FILENO && fd != STDERR_FILENO && fd != fd_keep )
 			::close( fd ) ;
 	}
-
-	// reopen standard fds to /dev/null
-	Path dev_null = Path::nullDevice() ;
-	if( keep_1 != STDIN_FILENO && keep_2 != STDIN_FILENO )
-	{
-		::open( dev_null.str().c_str() , O_RDONLY ) ;
-	}
-	if( keep_1 != STDOUT_FILENO && keep_2 != STDOUT_FILENO )
-	{
-		::open( dev_null.str().c_str() , O_WRONLY ) ;
-	}
-	if( keep_1 != STDERR_FILENO && keep_2 != STDERR_FILENO )
-	{
-		::open( dev_null.str().c_str() , O_WRONLY ) ;
-	}
-
-	// make sure standard fds stay open across exec()
-	noCloseOnExec( STDIN_FILENO ) ;
-	noCloseOnExec( STDOUT_FILENO ) ;
-	noCloseOnExec( STDERR_FILENO ) ;
+	ProcessImp::noCloseOnExec( STDIN_FILENO ) ;
+	ProcessImp::noCloseOnExec( STDOUT_FILENO ) ;
+	ProcessImp::noCloseOnExec( STDERR_FILENO ) ;
 }
 
 int G::Process::errno_( const G::SignalSafe & )
 {
-	return errno ; // not ::errno or std::errno
+	return errno ; // macro, not ::errno or std::errno
 }
 
 int G::Process::errno_( const G::SignalSafe & , int e_new )
@@ -138,7 +133,8 @@ void G::Process::revokeExtraGroups()
 {
 	if( Identity::real().isRoot() || Identity::effective() != Identity::real() )
 	{
-		gid_t dummy ;
+		// set supplementary group-ids to a zero-length list
+		gid_t dummy = 0 ;
 		int rc = ::setgroups( 0U , &dummy ) ; G_IGNORE_VARIABLE(int,rc) ; // (only works for root, so ignore the return code)
 	}
 }
@@ -149,7 +145,7 @@ G::Identity G::Process::beSpecial( Identity special_identity , bool change_group
 	Identity old_identity( Identity::effective() ) ;
 	setEffectiveUserTo( special_identity ) ;
 	if( change_group )
-	setEffectiveGroupTo( special_identity ) ;
+		setEffectiveGroupTo( special_identity ) ;
 	return old_identity ;
 }
 
@@ -159,7 +155,7 @@ G::Identity G::Process::beSpecial( SignalSafe safe , Identity special_identity ,
 	Identity old_identity( Identity::effective() ) ;
 	setEffectiveUserTo( safe , special_identity ) ;
 	if( change_group )
-	setEffectiveGroupTo( safe , special_identity ) ;
+		setEffectiveGroupTo( safe , special_identity ) ;
 	return old_identity ;
 }
 
@@ -170,14 +166,14 @@ G::Identity G::Process::beOrdinary( Identity ordinary_id , bool change_group )
 	{
 		setEffectiveUserTo( Identity::root() ) ;
 		if( change_group )
-		setEffectiveGroupTo( ordinary_id ) ;
+			setEffectiveGroupTo( ordinary_id ) ;
 		setEffectiveUserTo( ordinary_id ) ;
 	}
 	else
 	{
 		setEffectiveUserTo( Identity::real() ) ;
 		if( change_group )
-		setEffectiveGroupTo( Identity::real() ) ;
+			setEffectiveGroupTo( Identity::real() ) ;
 	}
 	return special_identity ;
 }
@@ -189,14 +185,14 @@ G::Identity G::Process::beOrdinary( SignalSafe safe , Identity ordinary_id , boo
 	{
 		setEffectiveUserTo( safe , Identity::root() ) ;
 		if( change_group )
-		setEffectiveGroupTo( safe , ordinary_id ) ;
+			setEffectiveGroupTo( safe , ordinary_id ) ;
 		setEffectiveUserTo( safe , ordinary_id ) ;
 	}
 	else
 	{
 		setEffectiveUserTo( safe , Identity::real() ) ;
 		if( change_group )
-		setEffectiveGroupTo( safe , Identity::real() ) ;
+			setEffectiveGroupTo( safe , Identity::real() ) ;
 	}
 	return special_identity ;
 }
@@ -215,7 +211,7 @@ void G::Process::beOrdinaryForExec( Identity run_as_id )
 
 std::string G::Process::cwd( bool no_throw )
 {
-	size_t n = PATH_MAX ; n += 10U ;
+	std::size_t n = PATH_MAX ; n += 10U ;
 	std::vector<char> buffer( n ) ;
 	for( int i = 0 ; i < 1000 ; i++ )
 	{
@@ -232,13 +228,16 @@ std::string G::Process::cwd( bool no_throw )
 	return std::string( &buffer[0] ) ;
 }
 
-namespace
+namespace G
 {
-	bool readlink_( const char * path , std::string & value )
+	namespace ProcessImp
 	{
-		G::Path target = G::File::readlink( path , G::File::NoThrow() ) ;
-		if( target != G::Path() ) value = target.str() ;
-		return target != G::Path() ;
+		bool readlink_( const char * path , std::string & value )
+		{
+			G::Path target = G::File::readlink( path , G::File::NoThrow() ) ;
+			if( target != G::Path() ) value = target.str() ;
+			return target != G::Path() ;
+		}
 	}
 }
 
@@ -252,7 +251,7 @@ std::string G::Process::exe()
 	int rc = proc_pidpath( getpid() , &buffer[0] , buffer.size() ) ;
 	if( rc > 0 )
 	{
-		size_t n = static_cast<size_t>(rc) ;
+		std::size_t n = static_cast<std::size_t>(rc) ;
 		if( n > buffer.size() ) n = buffer.size() ;
 		return std::string( &buffer[0] , n ) ;
 	}
@@ -266,9 +265,9 @@ std::string G::Process::exe()
 {
 	// best effort, not guaranteed
 	std::string result ;
-	readlink_( "/proc/self/exe" , result ) ||
-	readlink_( "/proc/curproc/file" , result ) ||
-	readlink_( "/proc/curproc/exe" , result ) ;
+	ProcessImp::readlink_( "/proc/self/exe" , result ) ||
+	ProcessImp::readlink_( "/proc/curproc/file" , result ) ||
+	ProcessImp::readlink_( "/proc/curproc/exe" , result ) ;
 	return result ;
 }
 #endif
@@ -281,18 +280,18 @@ G::Process::Id::Id()
 }
 
 G::Process::Id::Id( SignalSafe , const char * path ) :
-	m_pid(0)
+	m_pid(0U)
 {
 	// signal-safe, reentrant implementation suitable for a signal handler...
 	int fd = ::open( path ? path : "" , O_RDONLY ) ;
 	if( fd >= 0 )
 	{
-		const size_t buffer_size = 11U ;
-		char buffer[buffer_size] ;
+		constexpr std::size_t buffer_size = 11U ;
+		std::array<char,buffer_size> buffer ; // NOLINT cppcoreguidelines-pro-type-member-init
 		buffer[0U] = '\0' ;
-		ssize_t rc = ::read( fd , buffer , buffer_size-1U ) ;
+		ssize_t rc = ::read( fd , &buffer[0] , buffer_size-1U ) ;
 		::close( fd ) ;
-		for( const char * p = buffer ; rc > 0 && *p >= '0' && *p <= '9' ; p++ , rc-- )
+		for( const char * p = &buffer[0] ; rc > 0 && *p >= '0' && *p <= '9' ; p++ , rc-- )
 		{
 			m_pid *= 10 ;
 			m_pid += ( *p - '0' ) ;
@@ -300,7 +299,8 @@ G::Process::Id::Id( SignalSafe , const char * path ) :
 	}
 }
 
-G::Process::Id::Id( std::istream & stream )
+G::Process::Id::Id( std::istream & stream ) :
+	m_pid(0U)
 {
 	stream >> m_pid ;
 	if( !stream.good() )
@@ -314,23 +314,26 @@ std::string G::Process::Id::str() const
 	return ss.str() ;
 }
 
-bool G::Process::Id::operator==( const Id & other ) const
+bool G::Process::Id::operator==( const Id & other ) const noexcept
 {
 	return m_pid == other.m_pid ;
 }
 
 // ===
 
-namespace
+namespace G
 {
-	mode_t umask_value( G::Process::Umask::Mode mode )
+	namespace ProcessImp
 	{
-		mode_t m = 0 ;
-		if( mode == G::Process::Umask::Mode::Tightest ) m = 0177 ; // -rw-------
-		if( mode == G::Process::Umask::Mode::Tighter ) m = 0117 ;  // -rw-rw----
-		if( mode == G::Process::Umask::Mode::Readable ) m = 0133 ; // -rw-r--r--
-		if( mode == G::Process::Umask::Mode::GroupOpen ) m = 0113 ;// -rw-rw-r--
-		return m ;
+		mode_t umask_value( G::Process::Umask::Mode mode )
+		{
+			mode_t m = 0 ;
+			if( mode == G::Process::Umask::Mode::Tightest ) m = 0177 ; // -rw-------
+			if( mode == G::Process::Umask::Mode::Tighter ) m = 0117 ;  // -rw-rw----
+			if( mode == G::Process::Umask::Mode::Readable ) m = 0133 ; // -rw-r--r--
+			if( mode == G::Process::Umask::Mode::GroupOpen ) m = 0113 ;// -rw-rw-r--
+			return m ;
+		}
 	}
 }
 
@@ -346,7 +349,7 @@ public:
 G::Process::Umask::Umask( Mode mode ) :
 	m_imp(new UmaskImp)
 {
-	m_imp->m_old_mode = ::umask( umask_value(mode) ) ;
+	m_imp->m_old_mode = ::umask( ProcessImp::umask_value(mode) ) ;
 }
 
 G::Process::Umask::~Umask()
@@ -356,7 +359,7 @@ G::Process::Umask::~Umask()
 
 void G::Process::Umask::set( Mode mode )
 {
-	mode_t rc = ::umask( umask_value(mode) ) ; G_IGNORE_VARIABLE(mode_t,rc) ;
+	mode_t rc = ::umask( ProcessImp::umask_value(mode) ) ; G_IGNORE_VARIABLE(mode_t,rc) ;
 }
 
 void G::Process::Umask::tighten()

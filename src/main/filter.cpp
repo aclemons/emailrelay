@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -60,19 +60,28 @@ static void help( const std::string & prefix )
 
 struct Filter
 {
-	std::string m_envelope_name ;
-	G::Path m_envelope_path ; // "<spool-dir>/<envelope-name>[.new]"
-	bool m_envelope_deleted ;
-	int m_directory_count ;
-	std::set<std::string> m_failures ;
-	bool m_verbose ;
-	bool m_dryrun ;
-
-	Filter() : m_envelope_deleted(false) , m_directory_count(0) , m_verbose(false) , m_dryrun(false) {}
+public:
+	Filter() = default;
+	explicit Filter( bool verbose ) : m_verbose(verbose) {}
 	void process_content( const std::string & ) ;
 	void process_envelope() ;
-	void notify( bool ) ;
+	void throwFailures( bool ) ;
 	bool ok() const { return m_failures.empty() ; }
+	bool envelopeDeleted() const { return m_envelope_deleted ; }
+	void setEnvelope( const std::string & name , const G::Path & path )
+	{
+		m_envelope_name = name ;
+		m_envelope_path = path ;
+	}
+
+private:
+	std::string m_envelope_name ;
+	G::Path m_envelope_path ; // "<spool-dir>/<envelope-name>[.new]"
+	bool m_envelope_deleted{false} ;
+	int m_directory_count{0} ;
+	std::set<std::string> m_failures ;
+	bool m_verbose{false} ;
+	bool m_dryrun{false} ;
 } ;
 
 void Filter::process_envelope()
@@ -154,7 +163,7 @@ void Filter::process_content( const std::string & content )
 	process_envelope() ;
 }
 
-void Filter::notify( bool one )
+void Filter::throwFailures( bool one )
 {
 	if( ! m_failures.empty() )
 	{
@@ -189,26 +198,24 @@ static bool run_one( const std::string & content )
 	//
 	Filter filter ;
 	filter.process_content( content ) ;
-	filter.notify( true ) ;
-	return filter.m_envelope_deleted ;
+	filter.throwFailures( true ) ;
+	return filter.envelopeDeleted() ;
 }
 
 static bool run_all( const std::string & spool_dir , bool verbose )
 {
-	Filter filter ;
-	filter.m_verbose = verbose ;
+	Filter filter( verbose ) ;
 	G::Directory dir( spool_dir ) ;
 	G::DirectoryIterator iter( dir ) ;
 	while( iter.more() && !iter.error() )
 	{
-		if( !iter.isDir() && G::Str::headMatch(iter.fileName(),"emailrelay") && iter.filePath().extension().compare("envelope")==0 )
+		if( !iter.isDir() && G::Str::headMatch(iter.fileName(),"emailrelay") && iter.filePath().extension() == "envelope" )
 		{
-			filter.m_envelope_name = iter.fileName() ;
-			filter.m_envelope_path = iter.filePath() ;
+			filter.setEnvelope( iter.fileName() , iter.filePath() ) ;
 			filter.process_envelope() ;
 		}
 	}
-	filter.notify( false ) ;
+	filter.throwFailures( false ) ;
 	return filter.ok() ;
 }
 

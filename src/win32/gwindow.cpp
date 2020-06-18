@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ bool GGui::Window::registerWindowClass( const std::string & class_name_in ,
 	c.lpszMenuName = menu_name ;
 	c.lpszClassName = class_name.c_str() ;
 
-	return ::RegisterClass( &c ) != 0 ;
+	return RegisterClass( &c ) != 0 ;
 }
 
 bool GGui::Window::create( const std::string & class_name ,
@@ -71,42 +71,42 @@ bool GGui::Window::create( const std::string & class_name ,
 	int x , int y , int dx , int dy ,
 	HWND parent , HMENU menu , HINSTANCE hinstance )
 {
-	G_ASSERT( handle() == NULL ) ;
+	G_ASSERT( handle() == HNULL ) ;
 	G_DEBUG( "GGui::Window::create: \"" << class_name << "\", \"" << title << "\"" ) ;
 
 	DWORD style = style_pair.first ;
 	DWORD extended_style = style_pair.second ;
 
 	void *vp = reinterpret_cast<void*>(this) ;
-	HWND hwnd = ::CreateWindowExA( extended_style , class_name.c_str() , title.c_str() ,
+	HWND hwnd = CreateWindowExA( extended_style , class_name.c_str() , title.c_str() ,
 		style , x , y , dx , dy , parent , menu , hinstance , vp ) ;
 	setHandle( hwnd ) ; // GGui::WindowBase
 
 	G_DEBUG( "GGui::Window::create: handle " << handle() ) ;
-	return handle() != NULL ;
+	return handle() != HNULL ;
 }
 
 void GGui::Window::update()
 {
-	G_ASSERT( handle() != NULL ) ;
+	G_ASSERT( handle() != HNULL ) ;
 	::UpdateWindow( handle() ) ;
 }
 
 void GGui::Window::show( int style )
 {
-	G_ASSERT( handle() != NULL ) ;
+	G_ASSERT( handle() != HNULL ) ;
 	::ShowWindow( handle() , style ) ;
 }
 
 void GGui::Window::invalidate( bool erase )
 {
-	::InvalidateRect( handle() , NULL , erase ) ;
+	::InvalidateRect( handle() , nullptr , erase ) ;
 }
 
 GGui::Window * GGui::Window::instance( HWND hwnd )
 {
-	G_ASSERT( hwnd != NULL ) ;
-	LONG_PTR wl = ::GetWindowLongPtr( hwnd , 0 ) ;
+	G_ASSERT( hwnd != HNULL ) ;
+	LONG_PTR wl = GetWindowLongPtr( hwnd , 0 ) ;
 	void * vp = reinterpret_cast<void*>(wl) ;
 	return reinterpret_cast<Window*>(vp) ;
 }
@@ -174,7 +174,7 @@ LRESULT GGui::Window::wndProc( HWND hwnd , UINT msg , WPARAM wparam , LPARAM lpa
 
 GGui::Window * GGui::Window::instance( CREATESTRUCT * cs )
 {
-	G_ASSERT( cs != NULL ) ;
+	G_ASSERT( cs != nullptr ) ;
 	return reinterpret_cast<Window*>(cs->lpCreateParams) ;
 }
 
@@ -183,7 +183,7 @@ LRESULT GGui::Window::wndProcCore( Window * window , HWND hwnd , UINT msg , WPAR
 	LRESULT result = 0 ;
 	if( msg == WM_CREATE )
 	{
-		G_ASSERT( window != NULL ) ;
+		G_ASSERT( window != nullptr ) ;
 		G_DEBUG( "GGui::Window::wndProc: WM_CREATE: ptr " << window ) ;
 		G_DEBUG( "GGui::Window::wndProc: WM_CREATE: hwnd " << hwnd ) ;
 		void * vp = reinterpret_cast<void*>(window) ;
@@ -194,19 +194,19 @@ LRESULT GGui::Window::wndProcCore( Window * window , HWND hwnd , UINT msg , WPAR
 	}
 	else
 	{
-		bool call_default = window == NULL ;
-		if( window != NULL )
+		bool call_default = window == nullptr ;
+		if( window != nullptr )
 			result = window->crack( msg , wparam , lparam , call_default ) ;
 		if( call_default )
-			result = ::DefWindowProc( hwnd , msg , wparam , lparam ) ;
+			result = DefWindowProc( hwnd , msg , wparam , lparam ) ;
 	}
 	return result ;
 }
 
 LRESULT GGui::Window::sendUserString( HWND hwnd , const char * string )
 {
-	G_ASSERT( string != NULL ) ;
-	return ::SendMessage( hwnd , Cracker::wm_user_other() , 0 , reinterpret_cast<LPARAM>(string) ) ;
+	G_ASSERT( string != nullptr ) ;
+	return SendMessage( hwnd , Cracker::wm_user_other() , 0 , reinterpret_cast<LPARAM>(string) ) ;
 }
 
 LRESULT GGui::Window::onUserOther( WPARAM , LPARAM lparam )
@@ -224,23 +224,26 @@ void GGui::Window::destroy()
 	::DestroyWindow( handle() ) ;
 }
 
-namespace
+namespace GGui
 {
-	std::pair<DWORD,DWORD> make_style( DWORD first , DWORD second = 0 )
+	namespace WindowImp
 	{
-		return std::make_pair( first , second ) ;
+		std::pair<DWORD,DWORD> make_style( DWORD first , DWORD second = 0 )
+		{
+			return std::make_pair( first , second ) ;
+		}
 	}
 }
 
 std::pair<DWORD,DWORD> GGui::Window::windowStyleMain()
 {
-	return make_style( WS_OVERLAPPEDWINDOW ) ;
+	return WindowImp::make_style( WS_OVERLAPPEDWINDOW ) ;
 }
 
 std::pair<DWORD,DWORD> GGui::Window::windowStylePopup()
 {
 	return
-		make_style(
+		WindowImp::make_style(
 			WS_THICKFRAME |
 			WS_POPUP |
 			WS_SYSMENU |
@@ -251,12 +254,12 @@ std::pair<DWORD,DWORD> GGui::Window::windowStylePopup()
 
 std::pair<DWORD,DWORD> GGui::Window::windowStyleChild()
 {
-	return make_style( WS_CHILDWINDOW ) ;
+	return WindowImp::make_style( WS_CHILDWINDOW ) ;
 }
 
 std::pair<DWORD,DWORD> GGui::Window::windowStylePopupNoButton()
 {
-	return make_style( WS_POPUP , WS_EX_TOOLWINDOW ) ;
+	return WindowImp::make_style( WS_POPUP , WS_EX_TOOLWINDOW ) ;
 }
 
 UINT GGui::Window::classStyle( bool redraw )
@@ -274,12 +277,12 @@ HBRUSH GGui::Window::classBrush()
 
 HICON GGui::Window::classIcon()
 {
-	return ::LoadIcon( NULL , IDI_APPLICATION ) ;
+	return LoadIcon( HNULL , IDI_APPLICATION ) ;
 }
 
 HCURSOR GGui::Window::classCursor()
 {
-	return ::LoadCursor( NULL , IDC_ARROW ) ;
+	return LoadCursor( HNULL , IDC_ARROW ) ;
 }
 
 GGui::Size GGui::Window::borderSize( bool has_menu )
@@ -292,11 +295,11 @@ GGui::Size GGui::Window::borderSize( bool has_menu )
 	// MSDN 4 "Ask Dr GUI #10".
 
 	Size size ;
-	size.dx = ::GetSystemMetrics( SM_CXFRAME ) * 2 ;
-	size.dy = ::GetSystemMetrics( SM_CYFRAME ) * 2 ;
-	size.dy += ::GetSystemMetrics( SM_CYCAPTION ) - ::GetSystemMetrics( SM_CYBORDER ) ;
+	size.dx = GetSystemMetrics( SM_CXFRAME ) * 2 ;
+	size.dy = GetSystemMetrics( SM_CYFRAME ) * 2 ;
+	size.dy += GetSystemMetrics( SM_CYCAPTION ) - GetSystemMetrics( SM_CYBORDER ) ;
 	if( has_menu )
-		size.dy += ::GetSystemMetrics( SM_CYMENU ) + ::GetSystemMetrics( SM_CYBORDER ) ;
+		size.dy += GetSystemMetrics( SM_CYMENU ) + GetSystemMetrics( SM_CYBORDER ) ;
 	return size ;
 }
 
@@ -308,9 +311,9 @@ void GGui::Window::resize( Size new_size , bool repaint )
 	// the parent window for child windows
 
 	RECT rect ;
-	if( ::GetWindowRect( handle() , &rect ) )
+	if( GetWindowRect( handle() , &rect ) )
 	{
-		HWND parent = ::GetParent( handle() ) ;
+		HWND parent = GetParent( handle() ) ;
 		const bool child_window = parent != 0 ;
 		if( child_window )
 		{

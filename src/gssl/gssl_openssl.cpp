@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,10 +51,17 @@ GSsl::OpenSSL::LibraryImp::LibraryImp( G::StringArray & library_config , Library
 	m_verbose(verbose) ,
 	m_config(library_config)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+	// library initialisation -- not required for OpenSSL v1.1 (August 2016)
 	SSL_load_error_strings() ;
 	SSL_library_init() ;
-	int rc = RAND_status() ; G_IGNORE_VARIABLE(int,rc) ;
 	OpenSSL_add_all_digests() ;
+#endif
+
+	// "on systems without /dev/*random devices providing entropy from the kernel the EGD entropy
+	// gathering daemon can be used to collect entropy... OpenSSL automatically queries EGD when
+	// entropy is ... checked via RAND_status() for the first time" (man RAND_egd(3))
+	int rc = RAND_status() ; G_IGNORE_VARIABLE(int,rc) ;
 
 	// allocate a slot for a pointer from SSL to ProtocolImp
 	m_index = SSL_get_ex_new_index( 0 , nullptr , nullptr , nullptr , nullptr ) ;
@@ -72,15 +79,20 @@ GSsl::OpenSSL::LibraryImp::~LibraryImp()
 
 void GSsl::OpenSSL::LibraryImp::cleanup()
 {
-	// ffs...
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	ERR_free_strings() ;
 	RAND_cleanup() ;
 	CRYPTO_cleanup_all_ex_data();
+#endif
 }
 
 std::string GSsl::OpenSSL::LibraryImp::sid()
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	return G::Str::printable( SSLeay_version(SSLEAY_VERSION) ) ;
+#else
+	return G::Str::printable( OpenSSL_version(OPENSSL_VERSION) ) ;
+#endif
 }
 
 std::string GSsl::OpenSSL::LibraryImp::id() const
@@ -108,7 +120,7 @@ void GSsl::OpenSSL::LibraryImp::addProfile( const std::string & profile_name , b
 	const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
 	const std::string & profile_config )
 {
-	shared_ptr<ProfileImp> profile_ptr(
+	std::shared_ptr<ProfileImp> profile_ptr(
 		new ProfileImp(*this,is_server_profile,key_file,cert_file,ca_file,
 			default_peer_certificate_name,default_peer_host_name,profile_config) ) ;
 	m_profile_map.insert( Map::value_type(profile_name,profile_ptr) ) ;
@@ -116,15 +128,15 @@ void GSsl::OpenSSL::LibraryImp::addProfile( const std::string & profile_name , b
 
 bool GSsl::OpenSSL::LibraryImp::hasProfile( const std::string & profile_name ) const
 {
-	Map::const_iterator p = m_profile_map.find( profile_name ) ;
+	auto p = m_profile_map.find( profile_name ) ;
 	return p != m_profile_map.end() ;
 }
 
 const GSsl::Profile & GSsl::OpenSSL::LibraryImp::profile( const std::string & profile_name ) const
 {
-	Map::const_iterator p = m_profile_map.find( profile_name ) ;
+	auto p = m_profile_map.find( profile_name ) ;
 	if( p == m_profile_map.end() ) throw Error( "no such profile: [" + profile_name + "]" ) ;
-	return *(*p).second.get() ;
+	return *(*p).second ;
 }
 
 GSsl::Library::LogFn GSsl::OpenSSL::LibraryImp::log() const
@@ -159,6 +171,7 @@ GSsl::Digester GSsl::OpenSSL::LibraryImp::digester( const std::string & hash_typ
 }
 
 GSsl::OpenSSL::DigesterImp::DigesterImp( const std::string & hash_type , const std::string & state , bool need_state ) :
+	m_hash_type(Type::Other) ,
 	m_evp_ctx(nullptr)
 {
 	bool have_state = !state.empty() ;
@@ -201,14 +214,14 @@ GSsl::OpenSSL::DigesterImp::DigesterImp( const std::string & hash_type , const s
 		if( md == nullptr )
 			throw Error( "unsupported hash function name: [" + hash_type + "]" ) ;
 
-		m_block_size = static_cast<size_t>( EVP_MD_block_size(md) ) ;
-		m_value_size = static_cast<size_t>( EVP_MD_size(md) ) ;
+		m_block_size = static_cast<std::size_t>( EVP_MD_block_size(md) ) ;
+		m_value_size = static_cast<std::size_t>( EVP_MD_size(md) ) ;
 		m_state_size = 0U ; // intermediate state not available
 
 		if( m_state_size == 0U && !state.empty() )
 			throw Error( "hash state resoration not implemented for " + hash_type ) ;
 
-		EVP_DigestInit_ex( m_evp_ctx , md , 0/*engine*/ ) ;
+		EVP_DigestInit_ex( m_evp_ctx , md , nullptr ) ;
 	}
 }
 
@@ -218,17 +231,17 @@ GSsl::OpenSSL::DigesterImp::~DigesterImp()
 		EVP_MD_CTX_destroy( m_evp_ctx ) ;
 }
 
-size_t GSsl::OpenSSL::DigesterImp::blocksize() const
+std::size_t GSsl::OpenSSL::DigesterImp::blocksize() const
 {
 	return m_block_size ;
 }
 
-size_t GSsl::OpenSSL::DigesterImp::valuesize() const
+std::size_t GSsl::OpenSSL::DigesterImp::valuesize() const
 {
 	return m_value_size ;
 }
 
-size_t GSsl::OpenSSL::DigesterImp::statesize() const
+std::size_t GSsl::OpenSSL::DigesterImp::statesize() const
 {
 	return m_state_size ;
 }
@@ -260,7 +273,7 @@ void GSsl::OpenSSL::DigesterImp::add( const std::string & data )
 std::string GSsl::OpenSSL::DigesterImp::value()
 {
 	std::vector<unsigned char> output ;
-	size_t n = 0U ;
+	std::size_t n = 0U ;
 	if( m_hash_type == Type::Md5 )
 	{
 		n = MD5_DIGEST_LENGTH ;
@@ -284,7 +297,7 @@ std::string GSsl::OpenSSL::DigesterImp::value()
 		unsigned int output_size = 0 ;
 		output.resize( EVP_MAX_MD_SIZE ) ;
 		EVP_DigestFinal_ex( m_evp_ctx , &output[0] , &output_size ) ;
-		n = static_cast<size_t>(output_size) ;
+		n = static_cast<std::size_t>(output_size) ;
 	}
 	G_ASSERT( n == valuesize() ) ;
 	const char * p = reinterpret_cast<char*>(&output[0]) ;
@@ -312,15 +325,15 @@ GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 				<< " profile configuration ignored: [" << G::Str::join(",",profile_config_list) << "]" ) ;
 	}
 
-	if( m_ssl_ctx.get() == nullptr )
+	if( m_ssl_ctx == nullptr )
 	{
 		Config::Fn version_fn = extra_config.fn( is_server_profile ) ;
 		m_ssl_ctx.reset( SSL_CTX_new( version_fn() ) ) ;
-		if( m_ssl_ctx.get() != nullptr )
+		if( m_ssl_ctx != nullptr )
 			apply( extra_config ) ;
 	}
 
-	if( m_ssl_ctx.get() == nullptr )
+	if( m_ssl_ctx == nullptr )
 		throw Error( "SSL_CTX_new" , ERR_get_error() ) ;
 
 	if( !key_file.empty() )
@@ -382,8 +395,7 @@ GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 }
 
 GSsl::OpenSSL::ProfileImp::~ProfileImp()
-{
-}
+= default;
 
 void GSsl::OpenSSL::ProfileImp::deleter( SSL_CTX * p )
 {
@@ -391,10 +403,10 @@ void GSsl::OpenSSL::ProfileImp::deleter( SSL_CTX * p )
 		SSL_CTX_free( p ) ;
 }
 
-unique_ptr<GSsl::ProtocolImpBase> GSsl::OpenSSL::ProfileImp::newProtocol( const std::string & peer_certificate_name ,
+std::unique_ptr<GSsl::ProtocolImpBase> GSsl::OpenSSL::ProfileImp::newProtocol( const std::string & peer_certificate_name ,
 	const std::string & peer_host_name ) const
 {
-	return unique_ptr<ProtocolImpBase>(
+	return std::unique_ptr<ProtocolImpBase>(
 		new OpenSSL::ProtocolImp( *this ,
 			peer_certificate_name.empty()?defaultPeerCertificateName():peer_certificate_name ,
 			peer_host_name.empty()?defaultPeerHostName():peer_host_name ) ) ;
@@ -457,7 +469,6 @@ int GSsl::OpenSSL::ProfileImp::verifyPeerName( int ok , X509_STORE_CTX * ctx )
 	{
 		if( ok && X509_STORE_CTX_get_error_depth(ctx) == 0 )
 		{
-			using namespace GSsl ;
 			SSL * ssl = reinterpret_cast<SSL*>( X509_STORE_CTX_get_ex_data( ctx , SSL_get_ex_data_X509_STORE_CTX_idx() ) ) ; if(ssl==nullptr) throw 1 ;
 			OpenSSL::LibraryImp & library = dynamic_cast<OpenSSL::LibraryImp&>( Library::impstance() ) ;
 			OpenSSL::ProtocolImp * protocol = reinterpret_cast<OpenSSL::ProtocolImp*>( SSL_get_ex_data(ssl,library.index()) ) ; if(protocol==nullptr) throw 1 ;
@@ -504,7 +515,7 @@ GSsl::OpenSSL::ProtocolImp::ProtocolImp( const ProfileImp & profile , const std:
 		m_verified(false)
 {
 	m_ssl.reset( SSL_new(profile.p()) ) ;
-	if( m_ssl.get() == nullptr )
+	if( m_ssl == nullptr )
 		throw Error( "SSL_new" , ERR_get_error() ) ;
 
 	// TODO feature test for SSL_set_tlsext_host_name() ?
@@ -516,8 +527,7 @@ GSsl::OpenSSL::ProtocolImp::ProtocolImp( const ProfileImp & profile , const std:
 }
 
 GSsl::OpenSSL::ProtocolImp::~ProtocolImp()
-{
-}
+= default;
 
 void GSsl::OpenSSL::ProtocolImp::deleter( SSL * p )
 {
@@ -630,7 +640,7 @@ GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::shutdown()
 		return convert( rc ) ;
 }
 
-GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::read( char * buffer , size_t buffer_size_in , ssize_t & read_size )
+GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::read( char * buffer , std::size_t buffer_size_in , ssize_t & read_size )
 {
 	read_size = 0 ;
 
@@ -652,7 +662,7 @@ GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::read( char * buffer , size_t 
 	}
 }
 
-GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::write( const char * buffer , size_t size_in , ssize_t & size_out )
+GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::write( const char * buffer , std::size_t size_in , ssize_t & size_out )
 {
 	size_out = 0 ;
 	clearErrors() ;
@@ -724,18 +734,18 @@ std::string GSsl::OpenSSL::ProtocolImp::requiredPeerCertificateName() const
 // ==
 
 GSsl::OpenSSL::Error::Error( const std::string & s ) :
-	m_what( "tls error: " + s )
+	std::runtime_error( "tls error: " + s )
 {
 }
 
 GSsl::OpenSSL::Error::Error( const std::string & fnname , unsigned long e ) :
-	m_what( "tls error: " + fnname + "(): [" + text(e) + "]" )
+	std::runtime_error( "tls error: " + fnname + "(): [" + text(e) + "]" )
 {
 	clearErrors() ;
 }
 
 GSsl::OpenSSL::Error::Error( const std::string & fnname , unsigned long e , const std::string & file ) :
-	m_what( "tls error: " + fnname + "(): [" + text(e) + "]: file=[" + file + "]" )
+	std::runtime_error( "tls error: " + fnname + "(): [" + text(e) + "]: file=[" + file + "]" )
 {
 	clearErrors() ;
 }
@@ -746,21 +756,12 @@ void GSsl::OpenSSL::Error::clearErrors()
 		{;}
 }
 
-GSsl::OpenSSL::Error::~Error() throw ()
-{
-}
-
-const char * GSsl::OpenSSL::Error::what() const throw ()
-{
-	return m_what.c_str() ;
-}
-
 std::string GSsl::OpenSSL::Error::text( unsigned long e )
 {
 	std::vector<char> v( 300 ) ;
 	ERR_error_string_n( e , &v[0] , v.size() ) ;
 	std::string s( &v[0] , v.size() ) ;
-	return std::string( s.c_str() ) ; // no nuls
+	return std::string( s.c_str() ) ; // NOLINT copy up to first null character
 }
 
 // ==
@@ -790,7 +791,7 @@ GSsl::OpenSSL::Certificate::Certificate( X509 * x509 , bool do_free )
 	if( !rc ) return ;
 	BUF_MEM * mem = nullptr ;
 	BIO_get_mem_ptr( bio , &mem ) ;
-	size_t n = mem ? static_cast<size_t>(mem->length) : 0U ;
+	std::size_t n = mem ? static_cast<std::size_t>(mem->length) : 0U ;
 	const char * p = mem ? mem->data : nullptr ;
 	std::string data = p&&n ? std::string(p,n) : std::string() ;
 	BIO_free( bio ) ;

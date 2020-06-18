@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -92,6 +92,9 @@ public:
 
 	bool logTimestamp() const ;
 		///< Returns true if logging output should be timestamped.
+
+	bool logAddress() const ;
+		///< Returns true if logging output should have remote addresses.
 
 	bool daemon() const ;
 		///< Returns true if running in the background.
@@ -194,7 +197,7 @@ public:
 	std::string popSaslServerConfig() const ;
 		///< Returns the POP SASL configuration string.
 
-	std::string networkName( std::string default_ = std::string() ) const ;
+	std::string networkName( const std::string & default_ = std::string() ) const ;
 		///< Returns an override for local host's canonical network name.
 
 	std::string user() const ;
@@ -252,7 +255,10 @@ public:
 		///< (as opposed to using STARTTLS).
 
 	bool serverTls() const ;
-		///< Returns true if the server protocol should support TLS.
+		///< Returns true if the server protocol should support negotiated TLS.
+
+	bool serverTlsConnection() const ;
+		///< Returns true if the server protocol should support implicit TLS.
 
 	bool serverTlsRequired() const ;
 		///< Returns true if the SMTP server requires TLS before authentication.

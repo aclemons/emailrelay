@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ public:
 	const G::Options & options() const ;
 		///< Exposes the options sub-object.
 
-	G::Arg::size_type argc() const ;
+	std::size_t argc() const ;
 		///< Returns the number of non-option arguments on the command line.
 
 	bool hasUsageErrors() const ;
@@ -102,9 +102,13 @@ public:
 	void logSemanticWarnings( const G::StringArray & semantic_warnings ) const ;
 		///< Logs the given semantic warnings. See Configuration::semanticWarnings().
 
+public:
+	CommandLine( const CommandLine & ) = delete ;
+	CommandLine( CommandLine && ) = delete ;
+	void operator=( const CommandLine & ) = delete ;
+	void operator=( CommandLine && ) = delete ;
+
 private:
-	CommandLine( const CommandLine & ) g__eq_delete ;
-	void operator=( const CommandLine & ) g__eq_delete ;
 	void showUsage( bool e ) const ;
 	void showShortHelp( bool e ) const ;
 	void showExtraHelp( bool e ) const ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,43 +31,43 @@ G::Time::Time( int hh , int mm , int ss ) :
 {
 }
 
-G::Time::Time( const G::DateTime::BrokenDownTime & tm )
+G::Time::Time( const BrokenDownTime & tm )
 {
-	m_hh = tm.tm_hour ;
-	m_mm = tm.tm_min ;
-	m_ss = tm.tm_sec ;
+	m_hh = tm.hour() ;
+	m_mm = tm.min() ;
+	m_ss = tm.sec() ;
 }
 
 G::Time::Time()
 {
-	DateTime::BrokenDownTime tm = DateTime::utc( DateTime::now() ) ;
-	m_hh = tm.tm_hour ;
-	m_mm = tm.tm_min ;
-	m_ss = tm.tm_sec ;
+	BrokenDownTime tm = SystemTime::now().utc() ;
+	m_hh = tm.hour() ;
+	m_mm = tm.min() ;
+	m_ss = tm.sec() ;
 }
 
-G::Time::Time( G::EpochTime t )
+G::Time::Time( SystemTime t )
 {
-	DateTime::BrokenDownTime tm = DateTime::utc( t ) ;
-	m_hh = tm.tm_hour ;
-	m_mm = tm.tm_min ;
-	m_ss = tm.tm_sec ;
+	BrokenDownTime tm = t.utc() ;
+	m_hh = tm.hour() ;
+	m_mm = tm.min() ;
+	m_ss = tm.sec() ;
 }
 
 G::Time::Time( const LocalTime & )
 {
-	DateTime::BrokenDownTime tm = DateTime::local( DateTime::now() ) ;
-	m_hh = tm.tm_hour ;
-	m_mm = tm.tm_min ;
-	m_ss = tm.tm_sec ;
+	BrokenDownTime tm = SystemTime::now().local() ;
+	m_hh = tm.hour() ;
+	m_mm = tm.min() ;
+	m_ss = tm.sec() ;
 }
 
-G::Time::Time( G::EpochTime t , const LocalTime & )
+G::Time::Time( SystemTime t , const LocalTime & )
 {
-	DateTime::BrokenDownTime tm = DateTime::local( t ) ;
-	m_hh = tm.tm_hour ;
-	m_mm = tm.tm_min ;
-	m_ss = tm.tm_sec ;
+	BrokenDownTime tm = t.local() ;
+	m_hh = tm.hour() ;
+	m_mm = tm.min() ;
+	m_ss = tm.sec() ;
 }
 
 int G::Time::hours() const
@@ -120,10 +120,10 @@ G::Time G::Time::at( unsigned int s )
 {
 	unsigned int hh = s / 3600U ;
 	unsigned int mm_ss = s - (hh*3600U) ;
-	return Time(
+	return {
 		std::max(0,std::min(static_cast<int>(hh),23)) ,
 		std::max(0,std::min(static_cast<int>(mm_ss/60U),59)) ,
-		std::max(0,std::min(static_cast<int>(mm_ss%60U),59)) ) ;
+		std::max(0,std::min(static_cast<int>(mm_ss%60U),59)) } ;
 }
 
 bool G::Time::operator==( const Time & other ) const
@@ -135,6 +135,5 @@ bool G::Time::operator!=( const Time & other ) const
 {
 	return !(*this==other) ;
 }
-
 
 /// \file gtime.cpp

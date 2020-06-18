@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -116,11 +116,11 @@ public:
 		///< Returns true if the path exists() and is a directory.
 		///< Symlinks are followed.
 
-	static EpochTime time( const Path & file ) ;
+	static SystemTime time( const Path & file ) ;
 		///< Returns the file's timestamp. Throws on error.
 
-	static EpochTime time( const Path & file , const NoThrow & ) ;
-		///< Returns the file's timestamp. Returns EpochTime(0)
+	static SystemTime time( const Path & file , const NoThrow & ) ;
+		///< Returns the file's timestamp. Returns SystemTime(0)
 		///< on error.
 
 	static void chmodx( const Path & file ) ;
@@ -177,9 +177,11 @@ public:
 		///< Returns the address of the given filebuf, or nullptr
 		///< on failure.
 
+public:
+	File() = delete ;
+
 private:
 	friend class G::DirectoryIteratorImp ;
-	File() g__eq_delete ;
 	static std::string copy( const Path & , const Path & , int ) ;
 	static std::string sizeString( g_uint32_t hi , g_uint32_t lo ) ; // win32
 	static bool exists( const Path & , bool , bool ) ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gserver.h"
 #include "gnetdone.h"
+#include "geventloggingcontext.h"
 #include "glimits.h"
 #include "groot.h"
 #include "glog.h"
@@ -42,8 +43,7 @@ GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
 }
 
 GNet::Server::~Server()
-{
-}
+= default;
 
 bool GNet::Server::canBind( const Address & address , bool do_throw )
 {
@@ -58,11 +58,12 @@ bool GNet::Server::canBind( const Address & address , bool do_throw )
 	return ok ;
 }
 
-GNet::Address GNet::Server::address() const
+GNet::Address GNet::Server::address( bool with_scope ) const
 {
-	G_ASSERT( m_socket.getLocalAddress().first ) ;
-	std::pair<bool,Address> pair = m_socket.getLocalAddress() ;
-	return pair.second ;
+	Address result = m_socket.getLocalAddress().second ;
+	if( with_scope )
+		result.setScopeId( m_socket.getBoundScopeId() ) ;
+	return result ;
 }
 
 void GNet::Server::readEvent()
@@ -71,27 +72,37 @@ void GNet::Server::readEvent()
 	G_DEBUG( "GNet::Server::readEvent: " << this ) ;
 
 	// accept the connection
+	//
 	ServerPeerInfo peer_info( this , m_server_peer_config ) ;
 	accept( peer_info ) ;
+
+	// do an early set of the logging context so that it applies
+	// during the newPeer() construction process -- it is then set
+	// more normally by the event hander list when handing out events
+	// with a well-defined ExceptionSource
+	//
+	EventLoggingContext event_logging_context( peer_info.m_address.hostPartString() ) ;
 	G_DEBUG( "GNet::Server::readEvent: new connection from " << peer_info.m_address.displayString()
 		<< " on " << peer_info.m_socket->asString() ) ;
 
 	// create the peer object -- newPeer() implementations will normally catch
 	// their exceptions and return null to avoid terminating the server -- peer
 	// objects are given this object as their exception sink so we get
-	// to delete them
+	// to delete them when they throw -- the exception sink is passed as
+	// 'unbound' to force the peer object to set themselves as the exception
+	// source
 	//
-	unique_ptr<ServerPeer> peer = newPeer( ExceptionSinkUnbound(this) , peer_info ) ;
+	std::unique_ptr<ServerPeer> peer = newPeer( ExceptionSinkUnbound(this) , peer_info ) ;
 
 	// commit or roll back
-	if( peer.get() == nullptr )
+	if( peer == nullptr )
 	{
 		G_WARNING( "GNet::Server::readEvent: connection rejected from " << peer_info.m_address.displayString() ) ;
 	}
 	else
 	{
 		G_DEBUG( "GNet::Server::readEvent: new connection accepted" ) ;
-		m_peer_list.push_back( shared_ptr<ServerPeer>(peer.release()) ) ;
+		m_peer_list.push_back( std::shared_ptr<ServerPeer>(peer.release()) ) ;
 	}
 }
 
@@ -112,11 +123,11 @@ void GNet::Server::onException( ExceptionSource * esrc , std::exception & e , bo
 	bool handled = false ;
 	if( esrc != nullptr )
 	{
-		for( PeerList::iterator list_p = m_peer_list.begin() ; list_p != m_peer_list.end() ; ++list_p )
+		for( auto list_p = m_peer_list.begin() ; list_p != m_peer_list.end() ; ++list_p )
 		{
 			if( (*list_p).get() == esrc ) // implicit ServerPeer/ExceptionSource static cast
 			{
-				shared_ptr<ServerPeer> peer_p = *list_p ;
+				std::shared_ptr<ServerPeer> peer_p = *list_p ;
 				m_peer_list.erase( list_p ) ; // remove first, in case onDelete() throws
 				(*peer_p).doOnDelete( e.what() , done ) ;
 				handled = true ;
@@ -141,13 +152,13 @@ bool GNet::Server::hasPeers() const
 	return !m_peer_list.empty() ;
 }
 
-std::vector<weak_ptr<GNet::ServerPeer> > GNet::Server::peers()
+std::vector<std::weak_ptr<GNet::ServerPeer> > GNet::Server::peers()
 {
-	typedef std::vector<weak_ptr<ServerPeer> > Peers ;
+	using Peers = std::vector<std::weak_ptr<ServerPeer> > ;
 	Peers result ;
 	result.reserve( m_peer_list.size() ) ;
-	for( PeerList::iterator peer_p = m_peer_list.begin() ; peer_p != m_peer_list.end() ; ++peer_p )
-		result.push_back( weak_ptr<ServerPeer>(*peer_p) ) ;
+	for( auto & peer : m_peer_list )
+		result.push_back( std::weak_ptr<ServerPeer>(peer) ) ;
 	return result ;
 }
 

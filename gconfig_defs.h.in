@@ -33,6 +33,9 @@
 /* Define true if compiler supports c++ initializer_list */
 #undef GCONFIG_HAVE_CXX_INITIALIZER_LIST
 
+/* Define true if compiler has std::make_unique */
+#undef GCONFIG_HAVE_CXX_MAKE_UNIQUE
+
 /* Define true if compiler has std::move() */
 #undef GCONFIG_HAVE_CXX_MOVE
 
@@ -63,11 +66,20 @@
 /* Define true if errno_t type definition in error.h */
 #undef GCONFIG_HAVE_ERRNO_T
 
+/* Define true if have execvpe() in unistd.h */
+#undef GCONFIG_HAVE_EXECVPE
+
 /* Define true if _fsopen() is available */
 #undef GCONFIG_HAVE_FSOPEN
 
 /* Define true if getenv_s in stdlib.h */
 #undef GCONFIG_HAVE_GETENV_S
+
+/* Define true if getgrnam in pwd.h */
+#undef GCONFIG_HAVE_GETGRNAM
+
+/* Define true if getgrnam_r in pwd.h */
+#undef GCONFIG_HAVE_GETGRNAM_R
 
 /* Define true if getpwnam in pwd.h */
 #undef GCONFIG_HAVE_GETPWNAM
@@ -87,6 +99,12 @@
 /* Define true to enable use of iconv */
 #undef GCONFIG_HAVE_ICONV
 
+/* Define true if if_nametoindex() is available */
+#undef GCONFIG_HAVE_IFNAMETOINDEX
+
+/* Define true if ConvertInterfaceNameToLuid() is available */
+#undef GCONFIG_HAVE_IFNAMETOLUID
+
 /* Define true if inet_ntop() is available */
 #undef GCONFIG_HAVE_INET_NTOP
 
@@ -104,6 +122,9 @@
 
 /* Define true if inttypes.h is available */
 #undef GCONFIG_HAVE_INTTYPES_H
+
+/* Define true if iphlpapi.h is available */
+#undef GCONFIG_HAVE_IPHLPAPI_H
 
 /* Define true if ipv6 is available */
 #undef GCONFIG_HAVE_IPV6
@@ -125,6 +146,12 @@
 
 /* Define true if netinet/in.h is available */
 #undef GCONFIG_HAVE_NETINET_IN_H
+
+/* Define true to enable use of bsd routing sockets */
+#undef GCONFIG_HAVE_NETROUTE
+
+/* Define true if net/if.h is available */
+#undef GCONFIG_HAVE_NET_IF_H
 
 /* Define true to enable openssl */
 #undef GCONFIG_HAVE_OPENSSL
@@ -155,6 +182,9 @@
 
 /* Define true if have readlink() in unistd.h */
 #undef GCONFIG_HAVE_READLINK
+
+/* Define true to enable use of linux rtnetlink */
+#undef GCONFIG_HAVE_RTNETLINK
 
 /* Define true if setgroups is available */
 #undef GCONFIG_HAVE_SETGROUPS
@@ -215,6 +245,9 @@
 
 /* Define to disable the G_LOG macro */
 #undef GCONFIG_NO_LOG
+
+/* Define true if the PAM API uses const */
+#undef GCONFIG_PAM_CONST
 
 /* Define true for a windows build */
 #undef GCONFIG_WINDOWS

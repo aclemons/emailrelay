@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,7 +33,6 @@ namespace GGui
 {
 	class StackPageCallback ;
 	class Stack ;
-	class StackImp ;
 }
 
 /// \class GGui::StackPageCallback
@@ -99,12 +98,19 @@ public:
 		///< similarly to GGui::Dialog::dialogMessage(). Returns true
 		///< if a stack message.
 
-private:
-	friend class StackImp ;
 	static int sheetProc( HWND hwnd , UINT message , LPARAM lparam ) ;
+		///< Implementation window procedure.
+
 	static unsigned int pageProc( HWND hwnd , UINT message , PROPSHEETPAGE * page ) ;
+		///< Implementation window procedure.
+
 	static bool dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam ) ;
+		///< Implementation window procedure.
+
 	static LRESULT wndProc( HWND , UINT , WPARAM , LPARAM ) ;
+		///< Implementation window procedure.
+
+private:
 	static Stack * getObjectPointer( HWND hwnd ) ;
 	LRESULT wndProc( UINT , WPARAM , LPARAM , bool & ) ;
 	void hook( HWND ) ;
@@ -112,13 +118,13 @@ private:
 	void doOnApply( HWND ) ;
 	void postNotifyMessage( WPARAM , LPARAM = 0 ) ;
 
-private:
-	Stack( const Stack & ) g__eq_delete ;
-	void operator=( const Stack & ) g__eq_delete ;
+public:
+	Stack( const Stack & ) = delete ;
+	void operator=( const Stack & ) = delete ;
 
 private:
-	typedef std::pair<Stack*,int> PageInfo ;
-	G_CONSTANT( int , MAGIC , 24938 ) ;
+	using PageInfo = std::pair<Stack*,int> ;
+	static constexpr int MAGIC = 24938 ;
 	int m_magic ;
 	HINSTANCE m_hinstance ;
 	StackPageCallback & m_callback ;

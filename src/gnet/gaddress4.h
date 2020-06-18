@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,9 +37,9 @@ namespace GNet
 class GNet::Address4
 {
 public:
-	typedef sockaddr general_type ;
-	typedef sockaddr_in specific_type ;
-	typedef sockaddr storage_type ;
+	using general_type = sockaddr ;
+	using specific_type = sockaddr_in ;
+	using storage_type = sockaddr ;
 	union union_type /// Used by GNet::Address4 to cast between sockaddr and sockaddr_in.
 		{ specific_type specific ; general_type general ; storage_type storage ; } ;
 
@@ -49,7 +49,6 @@ public:
 	Address4( const std::string & , unsigned int ) ;
 	Address4( unsigned int port , int /*for overload resolution*/ ) ; // canonical loopback address
 	Address4( const sockaddr * addr , socklen_t len ) ;
-	Address4( const Address4 & other ) ;
 
 	static int domain() ;
 	static unsigned short family() ;
@@ -60,6 +59,7 @@ public:
 	unsigned int port() const ;
 	void setPort( unsigned int port ) ;
 
+
 	static bool validString( const std::string & , std::string * = nullptr ) ;
 	static bool validStrings( const std::string & , const std::string & , std::string * = nullptr ) ;
 	static bool validPort( unsigned int port ) ;
@@ -69,7 +69,9 @@ public:
 	bool sameHostPart( const Address4 & other ) const ;
 	bool isLoopback() const ;
 	bool isLocal( std::string & ) const ;
-	bool isPrivate() const ;
+	bool isLinkLocal() const ;
+	bool isUniqueLocal() const ;
+	bool isAny() const ;
 	unsigned int bits() const ;
 	std::string displayString() const ;
 	std::string hostPartString() const ;
@@ -78,7 +80,7 @@ public:
 	static bool format( std::string ) ;
 
 private:
-	void init() ;
+	explicit Address4( std::nullptr_t ) ;
 	static const char * setAddress( union_type & , const std::string & ) ;
 	static const char * setHostAddress( union_type & , const std::string & ) ;
 	static const char * setPort( union_type & , unsigned int ) ;

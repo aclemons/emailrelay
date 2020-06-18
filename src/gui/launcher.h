@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,12 +41,16 @@ public:
 	explicit Launcher( QWidget & parent , const G::ExecutableCommand & command_line ) ;
 		///< Constructor. The command-line is
 
-	virtual ~Launcher() ;
+	~Launcher() override ;
 		///< Destructor.
 
+public:
+	Launcher( const Launcher & ) = delete ;
+	Launcher( Launcher && ) = delete ;
+	void operator=( const Launcher & ) = delete ;
+	void operator=( Launcher && ) = delete ;
+
 private:
-	Launcher( const Launcher & ) ;
-	void operator=( const Launcher & ) ;
 	void addLine( const std::string & ) ;
 
 private slots:

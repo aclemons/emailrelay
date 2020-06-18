@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@
 
 static std::string as_dotted( const std::string & ) ;
 
-namespace imp
+namespace PasswdImp
 {
 	std::string hash_function ;
 	std::string predigest( const std::string & padded_key )
@@ -58,7 +58,7 @@ namespace imp
 		d.add( data_2 ) ;
 		return d.value() ;
 	}
-	size_t blocksize()
+	std::size_t blocksize()
 	{
 		GSsl::Digester d( GSsl::Library::instance()->digester(hash_function) ) ;
 		return d.blocksize() ;
@@ -162,7 +162,7 @@ int main( int argc , char * argv [] )
 			return EXIT_FAILURE ;
 		}
 		if( opt.contains("base64") )
-			password = G::Base64::decode( password , /*throw=*/true ) ;
+			password = G::Base64::decode( password , /*throw_on_invalid=*/true ) ;
 
 		std::string result ;
 		if( dotted )
@@ -179,6 +179,7 @@ int main( int argc , char * argv [] )
 		}
 		else
 		{
+			namespace imp = PasswdImp ;
 			imp::hash_function = hash_function ;
 			result = G::Base64::encode( G::Hash::mask(imp::predigest,imp::digest2,imp::blocksize(),password) ) ;
 		}

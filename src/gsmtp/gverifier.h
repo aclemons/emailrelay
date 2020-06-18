@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ public:
 			///< The 'mail-from' address is passed in for RCPT commands, but
 			///< not VRFY.
 
-	virtual G::Slot::Signal2<std::string,VerifierStatus> & doneSignal() = 0 ;
+	virtual G::Slot::Signal<const std::string&,const VerifierStatus&> & doneSignal() = 0 ;
 		///< Returns a signal that is emit()ed when the verify() request
 		///< is complete. The first signal parameter is the mailbox
 		///< name (ie. rcpt_to_parameter).
@@ -60,7 +60,7 @@ public:
 	virtual void cancel() = 0 ;
 		///< Aborts any current processing.
 
-	virtual ~Verifier() ;
+	virtual ~Verifier() = default ;
 		///< Destructor.
 } ;
 

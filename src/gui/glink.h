@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ class GLink
 public:
 	G_EXCEPTION( SaveError , "error saving desktop or menu link" ) ;
 
-	g__enum(Show) { Default , Hide } ; g__enum_end(Show)
+	enum class Show { Default , Hide } ;
 
 	GLink( const G::Path & target_path , const std::string & name , const std::string & description ,
 		const G::Path & working_dir , const G::StringArray & args = G::StringArray() ,
@@ -66,12 +66,14 @@ public:
 	static bool exists( const G::Path & link_path ) ;
 		///< Returns true if the link exists.
 
-private:
-	GLink( const GLink & ) ;
-	void operator=( const GLink & ) ;
+public:
+	GLink( const GLink & ) = delete ;
+	GLink( GLink && ) = delete ;
+	void operator=( const GLink & ) = delete ;
+	void operator=( GLink && ) = delete ;
 
 private:
-	GLinkImp * m_imp ;
+	std::unique_ptr<GLinkImp> m_imp ;
 } ;
 
 #endif

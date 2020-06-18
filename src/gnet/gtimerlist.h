@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,10 +45,10 @@ namespace GNet
 /// wait before the first Timer goes off. If the timed-wait times-out or
 /// if the interval was zero then they must call TimerList::doTimeouts().
 ///
-/// There can be a race where this class sees no expired timers in
-/// doTimeouts(), perhaps because the system clock is being stretched.
-/// However, the next interval() or setTimer() time will be very small
-/// and the race will resolve itself naturally.
+/// There can be a race where this class incorrectly sees no expired timers
+/// in doTimeouts() if, for example, the system clock is being stretched.
+/// However, the interval() or setTimer() time will be very small and the
+/// race will resolve itself naturally.
 ///
 /// Every timer has an associated exception handler, typically a
 /// more long-lived object that has the timer as a sub-object.
@@ -76,8 +76,6 @@ class GNet::TimerList
 {
 public:
 	G_EXCEPTION( NoInstance , "no TimerList instance" ) ;
-	class NoThrow /// Overload discriminator class for TimerList.
-		{} ;
 
 	TimerList() ;
 		///< Default constructor.
@@ -88,7 +86,7 @@ public:
 	void add( TimerBase & , ExceptionSink ) ;
 		///< Adds a timer. Called from the Timer constructor.
 
-	void remove( TimerBase & ) ;
+	void remove( TimerBase & ) noexcept ;
 		///< Removes a timer from the list. Called from the
 		///< Timer destructor.
 
@@ -101,7 +99,7 @@ public:
 	std::pair<G::TimeInterval,bool> interval() const ;
 		///< Returns the interval to the first timer expiry. The second
 		///< part is an 'infinite' flag that is set if there are no
-		///< timers running. In pathalogical cases the interval
+		///< timers running. In pathological cases the interval
 		///< will be capped at the type's maximum value.
 
 	void doTimeouts() ;
@@ -114,7 +112,7 @@ public:
 	static bool exists() ;
 		///< Returns true if instance() exists.
 
-	static TimerList * instance( const NoThrow & ) ;
+	static TimerList * ptr() noexcept ;
 		///< Singleton access. Returns nullptr if none.
 
 	static TimerList & instance() ;
@@ -124,47 +122,55 @@ public:
 		///< Returns a line of text reporting the status of the timer list.
 		///< Used in debugging and diagnostics.
 
-	void disarm( ExceptionHandler * ) ;
+	void disarm( ExceptionHandler * ) noexcept ;
 		///< Resets any matching ExceptionHandler pointers.
 
 private:
 	struct Value /// A value type for the GNet::TimerList.
 	{
-		TimerBase * m_timer ; // handler for the timeout event
+		TimerBase * m_timer{nullptr} ; // handler for the timeout event
 		ExceptionSink m_es ; // handler for any exception thrown
 		Value() ; // for uclibc++
 		Value( TimerBase * t , ExceptionSink es ) ;
-		bool operator==( const Value & v ) const g__noexcept ;
-		void resetIf( TimerBase * p ) g__noexcept ;
-		void disarmIf( ExceptionHandler * eh ) g__noexcept ;
+		bool operator==( const Value & v ) const noexcept ;
+		void resetIf( TimerBase * p ) noexcept ;
+		void disarmIf( ExceptionHandler * eh ) noexcept ;
 	} ;
-	typedef std::vector<Value> List ;
+	using List = std::vector<Value> ;
 	struct Lock /// A raii class to lock and unlock GNet::TimerList.
 	{
 		explicit Lock( TimerList & ) ;
 		~Lock() ;
+		Lock( const Lock & ) = delete ;
+		Lock( Lock && ) = delete ;
+		void operator=( const Lock & ) = delete ;
+		void operator=( Lock && ) = delete ;
 		TimerList & m_timer_list ;
 	} ;
+
+public:
+	TimerList( const TimerList & ) = delete ;
+	TimerList( TimerList && ) = delete ;
+	void operator=( const TimerList & ) = delete ;
+	void operator=( TimerList && ) = delete ;
 
 private:
 	friend class GNet::TimerListTest ;
 	friend struct Lock ;
-	TimerList( const TimerList & ) g__eq_delete ;
-	void operator=( const TimerList & ) g__eq_delete ;
 	const TimerBase * findSoonest() const ;
 	void lock() ;
 	void unlock() ;
 	void purgeRemoved() ;
 	void mergeAdded() ;
-	static void removeFrom( List & , TimerBase * ) ;
-	static void disarmIn( List & , ExceptionHandler * ) ;
+	static void removeFrom( List & , TimerBase * ) noexcept ;
+	static void disarmIn( List & , ExceptionHandler * ) noexcept ;
 
 private:
 	static TimerList * m_this ;
-	mutable const TimerBase * m_soonest ;
-	unsigned int m_adjust ;
-	bool m_locked ;
-	bool m_removed ;
+	mutable const TimerBase * m_soonest{nullptr} ;
+	unsigned int m_adjust{0} ;
+	bool m_locked{false} ;
+	bool m_removed{false} ;
 	List m_list ;
 	List m_list_added ; // temporary list for when add()ed from within doTimeouts()
 } ;

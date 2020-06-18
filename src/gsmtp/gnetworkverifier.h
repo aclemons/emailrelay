@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,25 +42,29 @@ public:
 		unsigned int connection_timeout , unsigned int response_timeout ) ;
 			///< Constructor.
 
-	virtual ~NetworkVerifier() ;
+	~NetworkVerifier() override ;
 		///< Destructor.
 
 private: // overrides
-	virtual void verify( const std::string & rcpt_to_parameter ,
+	void verify( const std::string & rcpt_to_parameter ,
 		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
 		const std::string & auth_mechanism , const std::string & auth_extra ) override ; // Override from GSmtp::Verifier.
-	virtual G::Slot::Signal2<std::string,VerifierStatus> & doneSignal() override ; // Override from GSmtp::Verifier.
-	virtual void cancel() override ; // Override from GSmtp::Verifier.
+	G::Slot::Signal<const std::string&,const VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
+	void cancel() override ; // Override from GSmtp::Verifier.
+
+public:
+	NetworkVerifier( const NetworkVerifier & ) = delete ;
+	NetworkVerifier( NetworkVerifier && ) = delete ;
+	void operator=( const NetworkVerifier & ) = delete ;
+	void operator=( NetworkVerifier && ) = delete ;
 
 private:
-	NetworkVerifier( const NetworkVerifier & ) g__eq_delete ;
-	void operator=( const NetworkVerifier & ) g__eq_delete ;
-	void clientEvent( std::string , std::string , std::string ) ;
-	void clientDeleted( std::string ) ;
+	void clientEvent( const std::string & , const std::string & , const std::string & ) ;
+	void clientDeleted( const std::string & ) ;
 
 private:
 	GNet::ExceptionSink m_es ;
-	G::Slot::Signal2<std::string,VerifierStatus> m_done_signal ;
+	G::Slot::Signal<const std::string&,const VerifierStatus&> m_done_signal ;
 	GNet::Location m_location ;
 	unsigned int m_connection_timeout ;
 	unsigned int m_response_timeout ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -85,10 +85,10 @@ private:
 		std::string s ;
 		unsigned int n ;
 	} ;
-	typedef std::map<std::string,Value> Map ;
-	typedef std::set<std::string> Set ;
-	typedef std::pair<unsigned long,std::string> Warning ;
-	typedef std::vector<Warning> Warnings ;
+	using Map = std::map<std::string,Value> ;
+	using Set = std::set<std::string> ;
+	using Warning = std::pair<unsigned long,std::string> ;
+	using Warnings = std::vector<Warning> ;
 	struct Contents
 	{
 		Map m_map ;
@@ -110,7 +110,7 @@ private:
 	static std::string canonical( const std::string & encoding_type ) ;
 	static std::string serverKey( const std::string & , const std::string & ) ;
 	static std::string clientKey( const std::string & ) ;
-	static G::EpochTime readFileTime( const G::Path & ) ;
+	static G::SystemTime readFileTime( const G::Path & ) ;
 	static std::string line( unsigned int ) ;
 
 private:
@@ -120,8 +120,8 @@ private:
 	std::string m_server_type ;
 	bool m_valid ;
 	Contents m_contents ;
-	G::EpochTime m_file_time ;
-	G::EpochTime m_check_time ;
+	G::SystemTime m_file_time ;
+	G::SystemTime m_check_time ;
 } ;
 
 #endif

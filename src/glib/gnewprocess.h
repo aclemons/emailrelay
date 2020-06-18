@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gexception.h"
+#include "genvironment.h"
 #include "gidentity.h"
 #include "gprocess.h"
 #include "gpath.h"
@@ -55,35 +56,52 @@ namespace G
 class G::NewProcess
 {
 public:
+	G_EXCEPTION( Error , "cannot spawn new process" ) ;
 	G_EXCEPTION( CannotFork , "cannot fork()" ) ;
 	G_EXCEPTION( WaitError , "cannot wait()" ) ;
 	G_EXCEPTION( ChildError , "child process terminated abnormally or stopped" ) ;
 	G_EXCEPTION( Insecure , "refusing to exec() while the user-id is zero" ) ;
 	G_EXCEPTION( PipeError , "pipe error" ) ;
 	G_EXCEPTION( InvalidPath , "invalid executable path -- must be absolute" ) ;
+	G_EXCEPTION( InvalidParameter , "invalid parameter" ) ;
 	G_EXCEPTION( CreateProcessError , "CreateProcess() error" ) ; // windows
 
-	NewProcess( const Path & exe , const StringArray & args ,
-		int capture_stdxxx = 1 , bool clean_environment = true , bool strict_path = true ,
-		Identity run_as_id = Identity::invalid() , bool strict_id = true ,
+	struct Fd /// Wraps up a file descriptor for passing to G::NewProcess.
+	{
+		bool m_null ;
+		bool m_pipe ;
+		int m_fd ;
+		Fd( bool null_ , bool pipe_ , int fd_ ) : m_null(null_) , m_pipe(pipe_) , m_fd(fd_) {}
+		static Fd pipe() { return {false,true,-1} ; }
+		static Fd devnull() { return {true,false,-1} ; }
+		static Fd fd(int fd_) { return fd_ < 0 ? devnull() : Fd(false,false,fd_) ; }
+		bool operator==( const Fd & other ) const { return m_null == other.m_null && m_pipe == other.m_pipe && m_fd == other.m_fd ; }
+		bool operator!=( const Fd & other ) const { return !(*this == other) ; }
+	} ;
+
+	NewProcess( const Path & exe , const StringArray & args , const Environment & env = Environment::minimal() ,
+		Fd fd_stdin = Fd::devnull() , Fd fd_stdout = Fd::pipe() , Fd fd_stderr = Fd::devnull() ,
+		const G::Path & cd = G::Path() ,
+		bool strict_path = true , Identity run_as_id = Identity::invalid() , bool strict_id = true ,
 		int exec_error_exit = 127 ,
 		const std::string & exec_error_format = std::string() ,
-		std::string (*exec_error_format_fn)(std::string,int) = 0 ) ;
+		std::string (*exec_error_format_fn)(std::string,int) = nullptr ) ;
 			///< Constructor. Spawns the given program to run independently in a
 			///< child process.
 			///<
-			///< The parent process can capture the child process's stdout or
-			///< stderr (ie. stdxxx) by redirecting it to an internal pipe going
-			///< from child to parent. The stdxxx parameter is 1 for stdout,
-			///< 2 for stderr or 0 for neither.
+			///< The child process's stdin, stdout and stderr are connected
+			///< as directed, but exactly one of stdout and stderr must be the
+			///< internal pipe since it is used to detect process termination.
+			///< To inherit the existing file descriptors use Fd(STDIN_FILENO)
+			///< etc. Using Fd::fd(-1) is equivalent to Fd::devnull().
 			///<
-			///< The child process is optionally given a clean, minimalist
-			///< environment.
+			///< The child process is given the new environment, unless the
+			///< environment given is empty() in which case the environment is
+			///< inherited from the calling process (see G::Environment::inherit()).
 			///<
 			///< If 'strict_path' then the program must be given as an absolute path.
-			///< Otherwise it can be relative and the PATH environment is used
-			///< to find it. (The PATH search is done after the environment has
-			///< been either cleaned or not.)
+			///< Otherwise it can be relative and the calling process's PATH is used
+			///< to find it.
 			///<
 			///< If a valid identity is supplied then the child process runs as
 			///< that identity. If 'strict_id' is also true then the id is not
@@ -91,9 +109,6 @@ public:
 			///<
 			///< If the exec() fails then the 'exec_error_exit' argument is used as
 			///< the child process exit code.
-			///<
-			///< By default the child process runs with stdin and stderr attached to
-			///< the null device and stdout attached to the internal pipe.
 			///<
 			///< The internal pipe can be used for error messages in the situation
 			///< where the exec() in the forked child process fails. This requires
@@ -110,14 +125,14 @@ public:
 		///< Destructor. Kills the spawned process if the WaitFuture has
 		///< not been resolved.
 
-	int id() const g__noexcept ;
+	int id() const noexcept ;
 		///< Returns the process id.
 
 	NewProcessWaitFuture & wait() ;
 		///< Returns a reference to the WaitFuture sub-object so that the caller
 		///< can wait for the child process to exit.
 
-	void kill( bool yield = false ) g__noexcept ;
+	void kill( bool yield = false ) noexcept ;
 		///< Tries to kill the spawned process and optionally yield
 		///< to a thread that might be waiting on it.
 
@@ -127,13 +142,17 @@ public:
 		///< an "is-in-child/child-pid" pair.
 		/// \see G::Daemon
 
+public:
+	NewProcess( const NewProcess & ) = delete ;
+	NewProcess( NewProcess && ) = delete ;
+	void operator=( const NewProcess & ) = delete ;
+	void operator=( NewProcess && ) = delete ;
+
 private:
-	NewProcess( const NewProcess & ) g__eq_delete ;
-	void operator=( const NewProcess & ) g__eq_delete ;
 	static std::string execErrorFormat( const std::string & , int ) ;
 
 private:
-	unique_ptr<NewProcessImp> m_imp ;
+	std::unique_ptr<NewProcessImp> m_imp ;
 } ;
 
 /// \class G::NewProcessWaitFuture
@@ -181,20 +200,23 @@ public:
 		///< Returns the first bit of child-process output.
 		///< Used after get().
 
-private:
-	NewProcessWaitFuture( const NewProcessWaitFuture & ) g__eq_delete ;
-	void operator=( const NewProcessWaitFuture & ) g__eq_delete ;
+public:
+	~NewProcessWaitFuture() = default ;
+	NewProcessWaitFuture( const NewProcessWaitFuture & ) = delete ;
+	NewProcessWaitFuture( NewProcessWaitFuture && ) = delete ;
+	void operator=( const NewProcessWaitFuture & ) = delete ;
+	void operator=( NewProcessWaitFuture && ) = delete ;
 
 private:
 	std::vector<char> m_buffer ;
-	HANDLE m_hprocess ;
-	HANDLE m_hpipe ;
-	pid_t m_pid ;
-	int m_fd ;
-	int m_rc ;
-	int m_status ;
-	int m_error ;
-	int m_read_error ;
+	HANDLE m_hprocess{0} ;
+	HANDLE m_hpipe{0} ;
+	pid_t m_pid{0} ;
+	int m_fd{-1} ;
+	int m_rc{0} ;
+	int m_status{0} ;
+	int m_error{0} ;
+	int m_read_error{0} ;
 } ;
 
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,20 +32,20 @@ std::string G::Hash::xor_( const std::string & s1 , const std::string & s2 )
 	result.reserve( s1.length() ) ;
 	for( ; p1 != s1.end() ; ++p1 , ++p2 )
 	{
-		unsigned char c1 = static_cast<unsigned char>(*p1) ;
-		unsigned char c2 = static_cast<unsigned char>(*p2) ;
-		unsigned char c = static_cast<unsigned char>( c1 ^ c2 ) ;
+		auto c1 = static_cast<unsigned char>(*p1) ;
+		auto c2 = static_cast<unsigned char>(*p2) ;
+		auto c = static_cast<unsigned char>( c1 ^ c2 ) ;
 		result.append( 1U , static_cast<char>(c) ) ;
 	}
 	return result ;
 }
 
-std::string G::Hash::ipad( size_t blocksize )
+std::string G::Hash::ipad( std::size_t blocksize )
 {
 	return std::string( blocksize , '\066' ) ;
 }
 
-std::string G::Hash::opad( size_t blocksize )
+std::string G::Hash::opad( std::size_t blocksize )
 {
 	return std::string( blocksize , '\134' ) ;
 }
@@ -55,10 +55,10 @@ std::string G::Hash::printable( const std::string & input )
 	std::string result ;
 	result.reserve( input.length() * 2U ) ;
 	const char * hex = "0123456789abcdef" ;
-	const size_t n = input.length() ;
-	for( size_t i = 0U ; i < n ; i++ )
+	const std::size_t n = input.length() ;
+	for( std::size_t i = 0U ; i < n ; i++ )
 	{
-		unsigned char c = static_cast<unsigned char>(input.at(i)) ;
+		auto c = static_cast<unsigned char>(input.at(i)) ;
 		result.append( 1U , hex[(c>>4U)&0x0F] ) ;
 		result.append( 1U , hex[(c>>0U)&0x0F] ) ;
 	}

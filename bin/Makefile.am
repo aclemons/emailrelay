@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -43,7 +43,12 @@ init_scripts = \
 work_scripts = \
 	doxygen.sh \
 	make-manifest.sh \
-	make-setup.sh
+	make-setup.sh \
+	make2cmake \
+	make2cdb \
+	AutoMakeParser.pm \
+	CompilationDatabase.pm \
+	winbuild.pm
 
 js_scripts = \
 	emailrelay-edit-content.js \

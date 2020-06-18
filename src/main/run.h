@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ public:
 	Run( Output & output , const G::Arg & arg , const std::string & option_spec , bool has_gui ) ;
 		///< Constructor. Tries not to throw.
 
-	virtual ~Run() ;
+	~Run() override ;
 		///< Destructor.
 
 	void configure() ;
@@ -100,7 +100,7 @@ public:
 	static std::string versionNumber() ;
 		///< Returns the application version number string.
 
-	G::Slot::Signal4<std::string,std::string,std::string,std::string> & signal() ;
+	G::Slot::Signal<std::string,std::string,std::string,std::string> & signal() ;
 		///< Provides a signal which is activated when something changes.
 
 private:
@@ -121,22 +121,26 @@ private:
 		}
 	} ;
 
+public:
+	Run( const Run & ) = delete ;
+	Run( Run && ) = delete ;
+	void operator=( const Run & ) = delete ;
+	void operator=( Run && ) = delete ;
+
 private:
-	Run( const Run & ) g__eq_delete ;
-	void operator=( const Run & ) g__eq_delete ;
 	void doForwardingOnStartup( G::PidFile & ) ;
-	void closeFiles() ;
-	void closeMoreFiles() ;
+	void closeFiles() const ;
+	void closeMoreFiles() const ;
 	void commit( G::PidFile & ) ;
 	std::string smtpIdent() const ;
 	void recordPid() ;
 	const CommandLine & commandline() const ;
-	void onClientDone( std::string ) ; // Client::doneSignal()
-	void onClientEvent( std::string , std::string , std::string ) ; // Client::eventSignal()
-	void onServerEvent( std::string , std::string ) ; // Server::eventSignal()
+	void onClientDone( const std::string & ) ; // Client::doneSignal()
+	void onClientEvent( const std::string & , const std::string & , const std::string & ) ; // Client::eventSignal()
+	void onServerEvent( const std::string & , const std::string & ) ; // Server::eventSignal()
 	void onStoreUpdateEvent() ;
 	void onStoreRescanEvent() ;
-	void onNetworkEvent( std::string , std::string ) ;
+	void onNetworkEvent( const std::string & , const std::string & ) ;
 	void emit( const std::string & , const std::string & , const std::string & = std::string() , const std::string & = std::string() ) ;
 	void onPollTimeout() ;
 	void requestForwarding( const std::string & = std::string() ) ;
@@ -158,7 +162,7 @@ private:
 	std::string versionString() const ;
 	static std::string buildConfiguration() ;
 	G::Path appDir() const ;
-	unique_ptr<GSmtp::AdminServer> newAdminServer( GNet::ExceptionSink ,
+	std::unique_ptr<GSmtp::AdminServer> newAdminServer( GNet::ExceptionSink ,
 		const Configuration & , GSmtp::MessageStore & , const GNet::ServerPeerConfig & ,
 		const GSmtp::Client::Config & , const GAuth::Secrets & , const std::string & ) ;
 
@@ -168,25 +172,25 @@ private:
 	GNet::ExceptionSink m_es_nothrow ;
 	std::string m_option_spec ;
 	G::Arg m_arg ;
-	G::Slot::Signal4<std::string,std::string,std::string,std::string> m_signal ;
-	unique_ptr<CommandLine> m_commandline ;
-	unique_ptr<Configuration> m_configuration ;
-	unique_ptr<G::LogOutput> m_log_output ;
-	unique_ptr<GNet::EventLoop> m_event_loop ;
-	unique_ptr<GNet::TimerList> m_timer_list ;
-	unique_ptr<GNet::Timer<Run> > m_forwarding_timer ;
-	unique_ptr<GNet::Timer<Run> > m_poll_timer ;
-	unique_ptr<GNet::Timer<Run> > m_queue_timer ;
-	unique_ptr<GSsl::Library> m_tls_library ;
-	unique_ptr<GNet::Monitor> m_monitor ;
-	unique_ptr<GSmtp::FileStore> m_store ;
-	unique_ptr<GAuth::Secrets> m_client_secrets ;
-	unique_ptr<GAuth::Secrets> m_server_secrets ;
-	unique_ptr<GAuth::Secrets> m_pop_secrets ;
-	unique_ptr<GSmtp::Server> m_smtp_server ;
-	unique_ptr<GPop::Store> m_pop_store ;
-	unique_ptr<GPop::Server> m_pop_server ;
-	unique_ptr<GSmtp::AdminServer> m_admin_server ;
+	G::Slot::Signal<std::string,std::string,std::string,std::string> m_signal ;
+	std::unique_ptr<CommandLine> m_commandline ;
+	std::unique_ptr<Configuration> m_configuration ;
+	std::unique_ptr<G::LogOutput> m_log_output ;
+	std::unique_ptr<GNet::EventLoop> m_event_loop ;
+	std::unique_ptr<GNet::TimerList> m_timer_list ;
+	std::unique_ptr<GNet::Timer<Run> > m_forwarding_timer ;
+	std::unique_ptr<GNet::Timer<Run> > m_poll_timer ;
+	std::unique_ptr<GNet::Timer<Run> > m_queue_timer ;
+	std::unique_ptr<GSsl::Library> m_tls_library ;
+	std::unique_ptr<GNet::Monitor> m_monitor ;
+	std::unique_ptr<GSmtp::FileStore> m_store ;
+	std::unique_ptr<GAuth::Secrets> m_client_secrets ;
+	std::unique_ptr<GAuth::Secrets> m_server_secrets ;
+	std::unique_ptr<GAuth::Secrets> m_pop_secrets ;
+	std::unique_ptr<GSmtp::Server> m_smtp_server ;
+	std::unique_ptr<GPop::Store> m_pop_store ;
+	std::unique_ptr<GPop::Server> m_pop_server ;
+	std::unique_ptr<GSmtp::AdminServer> m_admin_server ;
 	GNet::ClientPtr<GSmtp::Client> m_client_ptr ;
 	std::deque<QueueItem> m_queue ;
 	std::string m_forwarding_reason ;
@@ -198,7 +202,7 @@ private:
 inline
 const Main::Configuration & Main::Run::configuration() const
 {
-	return *m_configuration.get() ;
+	return *m_configuration ;
 }
 
 #endif

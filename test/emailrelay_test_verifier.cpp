@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -60,10 +60,10 @@ class Main::VerifierPeer : public GNet::ServerPeer
 public:
 	VerifierPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo info ) ;
 private:
-	virtual void onDelete( const std::string & ) override ;
-	virtual bool onReceive( const char * , size_t , size_t , size_t , char ) override ;
-	virtual void onSecure( const std::string & , const std::string & ) override ;
-	virtual void onSendComplete() override {}
+	void onDelete( const std::string & ) override ;
+	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ;
+	void onSecure( const std::string & , const std::string & ) override ;
+	void onSendComplete() override {}
 	bool processLine( std::string ) ;
 } ;
 
@@ -82,7 +82,7 @@ void Main::VerifierPeer::onSecure( const std::string & , const std::string & )
 {
 }
 
-bool Main::VerifierPeer::onReceive( const char * line_data , size_t line_size , size_t , size_t , char )
+bool Main::VerifierPeer::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
 {
 	std::string line( line_data , line_size ) ;
 	G_DEBUG( "VerifierPeer::onReceive: [" << G::Str::printable(line) << "]" ) ;
@@ -141,8 +141,8 @@ class Main::Verifier : public GNet::Server
 {
 public:
 	Verifier( GNet::ExceptionSink , bool ipv6 , unsigned int port , unsigned int idle_timeout ) ;
-	~Verifier() ;
-	virtual unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo ) override ;
+	~Verifier() override ;
+	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo ) override ;
 } ;
 
 Main::Verifier::Verifier( GNet::ExceptionSink es , bool ipv6 , unsigned int port , unsigned int idle_timeout ) :
@@ -155,16 +155,16 @@ Main::Verifier::~Verifier()
 	serverCleanup() ; // base class early cleanup
 }
 
-unique_ptr<GNet::ServerPeer> Main::Verifier::newPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo info )
+std::unique_ptr<GNet::ServerPeer> Main::Verifier::newPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo info )
 {
 	try
 	{
-		return unique_ptr<GNet::ServerPeer>( new VerifierPeer( ebu , info ) ) ;
+		return std::unique_ptr<GNet::ServerPeer>( new VerifierPeer( ebu , info ) ) ;
 	}
 	catch( std::exception & e )
 	{
 		G_WARNING( "Verifier::newPeer: new connection error: " << e.what() ) ;
-		return unique_ptr<GNet::ServerPeer>() ;
+		return std::unique_ptr<GNet::ServerPeer>() ;
 	}
 }
 
@@ -172,7 +172,7 @@ unique_ptr<GNet::ServerPeer> Main::Verifier::newPeer( GNet::ExceptionSinkUnbound
 
 static int run( bool ipv6 , unsigned int port , unsigned int idle_timeout )
 {
-	unique_ptr<GNet::EventLoop> loop( GNet::EventLoop::create() ) ;
+	std::unique_ptr<GNet::EventLoop> loop( GNet::EventLoop::create() ) ;
 	GNet::ExceptionSink es ;
 	GNet::TimerList timer_list ;
 	Main::Verifier verifier( es , ipv6 , port , idle_timeout ) ;

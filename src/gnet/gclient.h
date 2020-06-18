@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -82,24 +82,32 @@ public:
 	struct Config /// A structure containing GNet::Client configuration parameters.
 	{
 		Config() ;
-		explicit Config( LineBufferConfig ) ;
-		Config( LineBufferConfig , unsigned int all_timeouts ) ;
-		Config( LineBufferConfig , unsigned int connection_timeout ,
+		explicit Config( const LineBufferConfig & ) ;
+		Config( const LineBufferConfig & , unsigned int all_timeouts ) ;
+		Config( const LineBufferConfig & , unsigned int connection_timeout ,
 			unsigned int secure_connection_timeout , unsigned int response_timeout , unsigned int idle_timeout ) ;
 		Config & setTimeouts( unsigned int all_timeouts ) ;
 		Config & setAutoStart( bool auto_start ) ;
 		bool sync_dns ;
-		bool auto_start ;
-		bool bind_local_address ;
+		bool auto_start{true} ;
+		bool bind_local_address{false} ;
 		Address local_address ;
-		unsigned int connection_timeout ;
-		unsigned int secure_connection_timeout ;
-		unsigned int response_timeout ;
-		unsigned int idle_timeout ;
+		unsigned int connection_timeout{0U} ;
+		unsigned int secure_connection_timeout{0U} ;
+		unsigned int response_timeout{0U} ;
+		unsigned int idle_timeout{0U} ;
+		Config & set_sync_dns( bool = true ) ;
+		Config & set_auto_start( bool = true ) ;
+		Config & set_bind_local_address( bool = true ) ;
+		Config & set_local_address( const Address & ) ;
+		Config & set_connection_timeout( unsigned int ) ;
+		Config & set_secure_connection_timeout( unsigned int ) ;
+		Config & set_response_timeout( unsigned int ) ;
+		Config & set_idle_timeout( unsigned int ) ;
 		LineBufferConfig line_buffer_config ;
 	} ;
 
-	Client( ExceptionSink , const Location & remote_location , Config ) ;
+	Client( ExceptionSink , const Location & remote_location , const Config & ) ;
 		///< Constructor. If not auto-starting then connect()
 		///< is required to start connecting. The ExceptionSink
 		///< should delete this Client object when an exception is
@@ -123,21 +131,21 @@ public:
 		///< only calls to hasConnected(), finished() and the dtor
 		///< are allowed.
 
-	virtual std::pair<bool,Address> localAddress() const override ;
+	std::pair<bool,Address> localAddress() const override ;
 		///< Override from Connection. Returns the local
 		///< address. Pair.first is false on error.
 		///< Override from GNet::Connection.
 
-	virtual std::pair<bool,Address> peerAddress() const override ;
+	std::pair<bool,Address> peerAddress() const override ;
 		///< Override from Connection. Returns the peer
 		///< address. Pair.first is false on error.
 		///< Override from GNet::Connection.
 
-	virtual std::string connectionState() const override ;
+	std::string connectionState() const override ;
 		///< Returns the connection state display string.
 		///< Override from GNet::Connection.
 
-	virtual std::string peerCertificate() const override ;
+	std::string peerCertificate() const override ;
 		///< Returns the peer's TLS certificate.
 		///< Override from GNet::Connection.
 
@@ -145,23 +153,22 @@ public:
 		///< Returns a Location structure, including the result of
 		///< name lookup if available.
 
-	bool send( const std::string & data , size_t offset = 0 ) ;
+	bool send( const std::string & data , std::size_t offset = 0 ) ;
 		///< Sends data to the peer and starts the response
 		///< timer (if configured). Returns true if all sent.
 		///< Returns false if flow control was asserted, in which
 		///< case the unsent portion is copied internally and
 		///< onSendComplete() called when complete. Throws on error.
 
-	G::Slot::Signal3<std::string,std::string,std::string> & eventSignal() ;
+	G::Slot::Signal<const std::string&,const std::string&,const std::string&> & eventSignal() noexcept ;
 		///< Returns a signal that indicates that something interesting
 		///< has happened. The first signal parameter is one of
 		///< "resolving", "connecting", or "connected", but other
 		///< classes may inject the own events into this channel.
 
 	void doOnDelete( const std::string & reason , bool done ) ;
-		///< Called by ClientPtr (or equivalent) when handling an
-		///< exception, just before the Client is deleted,
-		///< triggering onDelete().
+		///< Called by ClientPtr (or equivalent) to call onDelete(),
+		///< just before this client object is deleted.
 
 	bool finished() const ;
 		///< Returns true if finish()ed or disconnect()ed.
@@ -170,7 +177,7 @@ public:
 		///< Returns information about the state of the internal
 		///< line-buffer.
 
-	virtual ~Client() ;
+	~Client() override ;
 		///< Destructor.
 
 protected:
@@ -190,7 +197,7 @@ protected:
 		///< Clears the input LineBuffer and cancels the response
 		///< timer if running.
 
-	virtual bool onReceive( const char * data , size_t size , size_t eolsize , size_t linesize , char c0 ) = 0 ;
+	virtual bool onReceive( const char * data , std::size_t size , std::size_t eolsize , std::size_t linesize , char c0 ) = 0 ;
 		///< Called with received data. If configured with no line
 		///< buffering then only the first two parameters are
 		///< relevant. The implementation should return false if
@@ -219,17 +226,21 @@ protected:
 		///< triggered when the secure session is established.
 
 private: // overrides
-	virtual void readEvent() override ; // Override from GNet::EventHandler.
-	virtual void writeEvent() override ; // Override from GNet::EventHandler.
-	virtual void otherEvent( EventHandler::Reason ) override ; // Override from GNet::EventHandler.
-	virtual void onResolved( std::string , Location ) override ; // Override from GNet::Resolver.
-	virtual void onData( const char * , size_t ) override ; // Override from GNet::SocketProtocolSink.
+	void readEvent() override ; // Override from GNet::EventHandler.
+	void writeEvent() override ; // Override from GNet::EventHandler.
+	void otherEvent( EventHandler::Reason ) override ; // Override from GNet::EventHandler.
+	void onResolved( std::string , Location ) override ; // Override from GNet::Resolver.
+	void onData( const char * , std::size_t ) override ; // Override from GNet::SocketProtocolSink.
+
+public:
+	Client( const Client & ) = delete ;
+	Client( Client && ) = delete ;
+	void operator=( const Client & ) = delete ;
+	void operator=( Client && ) = delete ;
 
 private:
-	g__enum(State) { Idle , Resolving , Connecting , Connected , Socksing , Disconnected , Testing } ; g__enum_end(State)
-	Client( const Client& ) g__eq_delete ;
-	void operator=( const Client& ) g__eq_delete ;
-	bool onDataImp( const char * , size_t , size_t , size_t , char ) ;
+	enum class State { Idle , Resolving , Connecting , Connected , Socksing , Disconnected , Testing } ;
+	bool onDataImp( const char * , std::size_t , std::size_t , std::size_t , char ) ;
 	void emit( const std::string & ) ;
 	void startConnecting() ;
 	void bindLocalAddress( const Address & ) ;
@@ -245,11 +256,11 @@ private:
 private:
 	ExceptionSink m_es ;
 	G::CallStack m_call_stack ;
-	unique_ptr<StreamSocket> m_socket ;
-	unique_ptr<SocketProtocol> m_sp ;
-	unique_ptr<Socks> m_socks ;
+	std::unique_ptr<StreamSocket> m_socket ;
+	std::unique_ptr<SocketProtocol> m_sp ;
+	std::unique_ptr<Socks> m_socks ;
 	LineBuffer m_line_buffer ;
-	unique_ptr<Resolver> m_resolver ;
+	std::unique_ptr<Resolver> m_resolver ;
 	Location m_remote_location ;
 	bool m_bind_local_address ;
 	Address m_local_address ;
@@ -266,7 +277,16 @@ private:
 	Timer<Client> m_connected_timer ;
 	Timer<Client> m_response_timer ;
 	Timer<Client> m_idle_timer ;
-	G::Slot::Signal3<std::string,std::string,std::string> m_event_signal ;
+	G::Slot::Signal<const std::string&,const std::string&,const std::string&> m_event_signal ;
 } ;
+
+inline GNet::Client::Config & GNet::Client::Config::set_sync_dns( bool b ) { sync_dns = b ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_auto_start( bool b ) { auto_start = b ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_bind_local_address( bool b ) { bind_local_address = b ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_local_address( const Address & a ) { local_address = a ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_connection_timeout( unsigned int t ) { connection_timeout = t ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_secure_connection_timeout( unsigned int t ) { secure_connection_timeout = t ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_response_timeout( unsigned int t ) { response_timeout = t ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_idle_timeout( unsigned int t ) { idle_timeout = t ; return *this ; }
 
 #endif

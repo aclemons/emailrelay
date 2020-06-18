@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include <string>
 #include <iostream>
+#include <stdexcept>
 
 namespace G
 {
@@ -32,7 +33,7 @@ namespace G
 
 /// \class G::Exception
 /// A general-purpose exception class derived from std::exception and containing
-/// a std::string. Provides constructors that simplify the assembly of multi-part
+/// an error message. Provides constructors that simplify the assembly of multi-part
 /// error messages.
 ///
 /// Usage:
@@ -40,11 +41,8 @@ namespace G
 ///	throw G::Exception( "initialisation error" , "no such file" , path ) ;
 /// \endcode
 ///
-class G::Exception : public std::exception
+class G::Exception : public std::runtime_error
 {
-protected:
-	std::string m_what ;
-
 public:
 	explicit Exception( const char * what ) ;
 		///< Constructor.
@@ -69,33 +67,15 @@ public:
 
 	Exception( const std::string & what , const std::string & more1 , const std::string & more2 , const std::string & more3 ) ;
 		///< Constructor.
-
-	virtual ~Exception() g__noexcept ;
-		///< Destructor.
-
-	virtual const char * what() const g__noexcept override ;
-		///< Override from std::exception.
-
-	void prepend( const char * context ) ;
-		///< Prepends context to the what string.
-		///< Inserts a separator as needed.
-
-	void append( const char * more ) ;
-		///< Appends 'more' to the what string.
-		///< Inserts a separator as needed.
-
-	void append( const std::string & more ) ;
-		///< Appends 'more' to the what string.
-		///< Inserts a separator as needed.
 } ;
 
-#define G_EXCEPTION_CLASS( class_name , description ) class class_name : public G::Exception { public: class_name() : G::Exception(description) {} explicit class_name(const char *more) : G::Exception(description,more) {} explicit class_name(const std::string &more) : G::Exception(description,more) {} class_name(const std::string &more1,const std::string &more2) : G::Exception(description,more1,more2) {} class_name(const std::string &more1,const std::string &more2,const std::string &more3) : G::Exception(description,more1,more2,more3) {} }
+#define G_EXCEPTION_CLASS( class_name , description ) class class_name : public G::Exception { public: class_name() : G::Exception((description)) {} explicit class_name(const char *more) : G::Exception((description),more) {} explicit class_name(const std::string &more) : G::Exception((description),more) {} class_name(const std::string &more1,const std::string &more2) : G::Exception((description),more1,more2) {} class_name(const std::string &more1,const std::string &more2,const std::string &more3) : G::Exception((description),more1,more2,more3) {} }
 
 #define G_EXCEPTION_FUNCTION( name , description ) \
-	inline static G::Exception name() { return G::Exception(description) ; } \
-	inline static G::Exception name( const std::string & s ) { return G::Exception(description,s) ; } \
-	inline static G::Exception name( const std::string & s1 , const std::string & s2 ) { return G::Exception(description,s1,s2) ; } \
-	inline static G::Exception name( const std::string & s1 , const std::string & s2 , const std::string & s3 ) { return G::Exception(description,s1,s2,s3) ; }
+	inline static G::Exception name() { return G::Exception((description)) ; } \
+	inline static G::Exception name( const std::string & s ) { return G::Exception((description),s) ; } \
+	inline static G::Exception name( const std::string & s1 , const std::string & s2 ) { return G::Exception((description),s1,s2) ; } \
+	inline static G::Exception name( const std::string & s1 , const std::string & s2 , const std::string & s3 ) { return G::Exception((description),s1,s2,s3) ; }
 
 // as a code-size optimisation G_EXCEPTION can be implemented as inline
 // functions using G_EXCEPTION_FUNCION rather than separate classes

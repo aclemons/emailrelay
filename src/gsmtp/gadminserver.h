@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -50,12 +50,12 @@ namespace GSmtp
 class GSmtp::AdminServerPeer : public GNet::ServerPeer
 {
 public:
-	AdminServerPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo , AdminServer & ,
+	AdminServerPeer( GNet::ExceptionSinkUnbound , const GNet::ServerPeerInfo & , AdminServer & ,
 		const std::string & remote , const G::StringMap & info_commands ,
 		const G::StringMap & config_commands , bool with_terminate ) ;
 			///< Constructor.
 
-	virtual ~AdminServerPeer() ;
+	~AdminServerPeer() override ;
 		///< Destructor.
 
 	bool notifying() const ;
@@ -67,24 +67,28 @@ public:
 			///< user might be interested in.
 
 private: // overrides
-	virtual void onSendComplete() override ; // Override from GNet::BufferedServerPeer.
-	virtual bool onReceive( const char * , size_t , size_t , size_t , char ) override ; // Override from GNet::BufferedServerPeer.
-	virtual void onDelete( const std::string & ) override ; // Override from GNet::ServerPeer.
-	virtual void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
+	void onSendComplete() override ; // Override from GNet::BufferedServerPeer.
+	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::BufferedServerPeer.
+	void onDelete( const std::string & ) override ; // Override from GNet::ServerPeer.
+	void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
+
+public:
+	AdminServerPeer( const AdminServerPeer & ) = delete ;
+	AdminServerPeer( AdminServerPeer && ) = delete ;
+	void operator=( const AdminServerPeer & ) = delete ;
+	void operator=( AdminServerPeer && ) = delete ;
 
 private:
-	AdminServerPeer( const AdminServerPeer & ) g__eq_delete ;
-	void operator=( const AdminServerPeer & ) g__eq_delete ;
-	void clientDone( std::string ) ;
+	void clientDone( const std::string & ) ;
 	static bool is( const std::string & , const std::string & ) ;
 	static std::pair<bool,std::string> find( const std::string & line , const G::StringMap & map ) ;
 	static std::string argument( const std::string & ) ;
 	void flush() ;
 	void help() ;
 	void status() ;
-	MessageStore::Iterator spooled() ;
-	MessageStore::Iterator failures() ;
-	void sendList( MessageStore::Iterator ) ;
+	std::shared_ptr<MessageStore::Iterator> spooled() ;
+	std::shared_ptr<MessageStore::Iterator> failures() ;
+	void sendList( std::shared_ptr<MessageStore::Iterator> ) ;
 	void sendLine( std::string , bool = true ) ;
 	void warranty() ;
 	void version() ;
@@ -115,13 +119,13 @@ public:
 	AdminServer( GNet::ExceptionSink , MessageStore & store ,
 		const GNet::ServerPeerConfig & server_peer_config ,
 		const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
-		const GNet::MultiServer::AddressList & listening_addresses , bool allow_remote ,
+		const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
 		const std::string & remote_address , unsigned int connection_timeout ,
 		const G::StringMap & info_commands , const G::StringMap & config_commands ,
 		bool with_terminate ) ;
 			///< Constructor.
 
-	virtual ~AdminServer() ;
+	~AdminServer() override ;
 		///< Destructor.
 
 	void report() const ;
@@ -152,12 +156,14 @@ public:
 			///< users might be interested in.
 
 protected:
-	virtual unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo , GNet::MultiServer::ServerInfo ) override ;
+	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo , GNet::MultiServer::ServerInfo ) override ;
 		///< Override from GNet::MultiServer.
 
-private:
-	AdminServer( const AdminServer & ) g__eq_delete ;
-	void operator=( const AdminServer & ) g__eq_delete ;
+public:
+	AdminServer( const AdminServer & ) = delete ;
+	AdminServer( AdminServer && ) = delete ;
+	void operator=( const AdminServer & ) = delete ;
+	void operator=( AdminServer && ) = delete ;
 
 private:
 	MessageStore & m_store ;

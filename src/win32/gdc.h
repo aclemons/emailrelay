@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -76,9 +76,9 @@ private:
 	HWND m_hwnd ;
 	bool m_do_release ;
 
-private:
-	DeviceContext( const DeviceContext & ) g__eq_delete ;
-	void operator=( const DeviceContext & ) g__eq_delete ;
+public:
+	DeviceContext( const DeviceContext & ) = delete ;
+	void operator=( const DeviceContext & ) = delete ;
 } ;
 
 /// \class GGui::ScreenDeviceContext
@@ -116,9 +116,9 @@ public:
 	int aspecty() const ;
 		///< Returns the other part of the screen's aspect ratio.
 
-private:
-	ScreenDeviceContext( const ScreenDeviceContext & ) g__eq_delete ;
-	void operator=( const ScreenDeviceContext & ) g__eq_delete ;
+public:
+	ScreenDeviceContext( const ScreenDeviceContext & ) = delete ;
+	void operator=( const ScreenDeviceContext & ) = delete ;
 
 private:
 	HDC m_dc ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -162,7 +162,7 @@ public:
 		///< Returns a value for create() window_style for a typical
 		///< 'main' window.
 		///<
-		///< The create() parent window parameter should be NULL, and
+		///< The create() parent window parameter should be null, and
 		///< the x,y,dx,dy parameters will normally be CW_USEDEFAULT.
 
 	static std::pair<DWORD,DWORD> windowStylePopup() ;
@@ -172,15 +172,15 @@ public:
 		///< activated, has a title bar but no minimise/maximise buttons,
 		///< and stays on top of its parent (if any).
 		///<
-		///< The create() parent window parameter may be NULL -- if
-		///< NULL then this window will be independently iconised with
+		///< The create() parent window parameter may be null -- if
+		///< null then this window will be independently iconised with
 		///< a separate button on the toolbar.
 
 	static std::pair<DWORD,DWORD> windowStyleChild() ;
 		///< Returns a value for create() window_style for a typical
 		///< 'child' window.
 		///<
-		///< The create() parent window parameter cannot be NULL.
+		///< The create() parent window parameter cannot be null.
 
 	static std::pair<DWORD,DWORD> windowStylePopupNoButton() ;
 		///< Returns a value for create() window_style for a non-visible
@@ -219,9 +219,11 @@ protected:
 		///< window procedure. The default implementation
 		///< posts a quit message.
 
+public:
+	Window( const Window & other ) = delete ;
+	void operator=( const Window & other ) = delete ;
+
 private:
-	Window( const Window & other ) g__eq_delete ;
-	void operator=( const Window & other ) g__eq_delete ;
 	static LRESULT wndProcCore( Window * , HWND , UINT , WPARAM , LPARAM ) ;
 	virtual LRESULT onUserOther( WPARAM , LPARAM ) ;
 	static Window * instance( CREATESTRUCT * ) ;

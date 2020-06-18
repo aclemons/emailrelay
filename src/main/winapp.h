@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -90,19 +90,19 @@ public:
 		///< can be displayed.
 
 private: // overrides
-	virtual void output( const std::string & message , bool error ) override ; // Override from Main::Output.
-	virtual G::Options::Layout layout() const override ; // Override from Main::Output.
-	virtual bool simpleOutput() const override ; // Override from Main::Output.
-	virtual void onWindowException( std::exception & e ) override ; // Override from GGui::Window.
-	virtual DWORD classStyle() const override ; // Override from GGui::ApplicationBase.
-	virtual std::pair<DWORD,DWORD> windowStyle() const override ; // Override from GGui::ApplicationBase.
-	virtual UINT resource() const override ; // Override from GGui::ApplicationBase.
-	virtual bool onCreate() override ;
-	virtual bool onClose() override ;
-	virtual void onTrayDoubleClick() override ;
-	virtual void onTrayRightMouseButtonDown() override ;
-	virtual LRESULT onUser( WPARAM , LPARAM ) override ;
-	virtual LRESULT onUserOther( WPARAM , LPARAM ) override ;
+	void output( const std::string & message , bool error ) override ; // Override from Main::Output.
+	G::Options::Layout layout() const override ; // Override from Main::Output.
+	bool simpleOutput() const override ; // Override from Main::Output.
+	void onWindowException( std::exception & e ) override ; // Override from GGui::Window.
+	DWORD classStyle() const override ; // Override from GGui::ApplicationBase.
+	std::pair<DWORD,DWORD> windowStyle() const override ; // Override from GGui::ApplicationBase.
+	UINT resource() const override ; // Override from GGui::ApplicationBase.
+	bool onCreate() override ;
+	bool onClose() override ;
+	void onTrayDoubleClick() override ;
+	void onTrayRightMouseButtonDown() override ;
+	LRESULT onUser( WPARAM , LPARAM ) override ;
+	LRESULT onUserOther( WPARAM , LPARAM ) override ;
 
 private:
 	struct Config
@@ -127,18 +127,22 @@ private:
 		static Config tray() ;
 	} ;
 
+public:
+	WinApp( const WinApp & ) = delete ;
+	WinApp( WinApp && ) = delete ;
+	void operator=( const WinApp & ) = delete ;
+	void operator=( WinApp && ) = delete ;
+
 private:
-	WinApp( const WinApp & ) g__eq_delete ;
-	void operator=( const WinApp & ) g__eq_delete ;
 	void doOpen() ;
 	void doClose() ;
 	void doQuit() ;
 
 private:
-	unique_ptr<GGui::Tray> m_tray ;
-	unique_ptr<Main::WinForm> m_form ;
-	unique_ptr<Main::Configuration> m_form_cfg ;
-	unique_ptr<Main::WinMenu> m_menu ;
+	std::unique_ptr<GGui::Tray> m_tray ;
+	std::unique_ptr<Main::WinForm> m_form ;
+	std::unique_ptr<Main::Configuration> m_form_cfg ;
+	std::unique_ptr<Main::WinMenu> m_menu ;
 	bool m_disable_output ;
 	Config m_cfg ;
 	bool m_quitting ;

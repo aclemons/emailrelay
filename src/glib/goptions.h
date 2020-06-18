@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -52,10 +52,10 @@ class G::OptionsLayout
 public:
 	std::string separator ; ///< separator between columns for two-column output
 	std::string indent ; ///< indent for wrapped lines in two-column output
-	size_t column ; ///< left hand column width if no separator defined
-	size_t width ; ///< overall width for wrapping, or zero for no newlines
-	explicit OptionsLayout( size_t column ) ;
-	OptionsLayout( size_t column , size_t width ) ;
+	std::size_t column ; ///< left hand column width if no separator defined
+	std::size_t width ; ///< overall width for wrapping, or zero for no newlines
+	explicit OptionsLayout( std::size_t column ) ;
+	OptionsLayout( std::size_t column , std::size_t width ) ;
 } ;
 
 /// \class G::Options
@@ -65,8 +65,8 @@ public:
 class G::Options
 {
 public:
-	typedef OptionsLevel Level ;
-	typedef OptionsLayout Layout ;
+	using Level = OptionsLevel ;
+	using Layout = OptionsLayout ;
 	G_EXCEPTION( InvalidSpecification , "invalid options specification string" ) ;
 
 	explicit Options( const std::string & spec , char sep_major = '|' , char sep_minor = '!' , char escape = '^' ) ;
@@ -118,7 +118,7 @@ public:
 		///< Returns true if the given option name is valid and
 		///< takes no value. Returns false if not valid().
 
-	static size_t widthDefault() ;
+	static std::size_t widthDefault() ;
 		///< Returns a default, non-zero word-wrapping width, reflecting
 		///< the size of the standard output where possible.
 
@@ -133,17 +133,17 @@ public:
 
 	std::string usageSummary( const std::string & exe , const std::string & args ,
 		const std::string & introducer = introducerDefault() ,
-		Level level = levelDefault() , size_t wrap_width = widthDefault() ) const ;
+		Level level = levelDefault() , std::size_t wrap_width = widthDefault() ) const ;
 			///< Returns a one-line (or line-wrapped) usage summary, as
 			///< "usage: <exe> <options> <args>"
 
 	std::string usageHelp( Level level = levelDefault() ,
-		Layout layout = layoutDefault() , bool level_exact = false , bool extra = true ) const ;
+		const Layout & layout = layoutDefault() , bool level_exact = false , bool extra = true ) const ;
 			///< Returns a multi-line string giving help on each option.
 
 	void showUsage( std::ostream & stream , const std::string & exe ,
 		const std::string & args = std::string() , const std::string & introducer = introducerDefault() ,
-		Level level = levelDefault() , Layout layout = layoutDefault() ,
+		Level level = levelDefault() , const Layout & layout = layoutDefault() ,
 		bool extra = true ) const ;
 			///< Streams out multi-line usage text using usageSummary() and
 			///< usageHelp(). The 'args' parameter should represent the non-option
@@ -170,13 +170,13 @@ private:
 	void parseSpec( const std::string & spec , char , char , char ) ;
 	void addSpec( const std::string & , char c , const std::string & , const std::string & ,
 		unsigned int , const std::string & , unsigned int ) ;
-	static size_t widthFloor( size_t w ) ;
+	static std::size_t widthFloor( std::size_t w ) ;
 	std::string usageSummaryPartOne( Level ) const ;
 	std::string usageSummaryPartTwo( Level ) const ;
-	std::string usageHelpCore( const std::string & , Level , Layout , bool , bool ) const ;
+	std::string usageHelpCore( const std::string & , Level , const Layout & , bool , bool ) const ;
 
 private:
-	typedef std::map<std::string,Option> Map ;
+	using Map = std::map<std::string,Option> ;
 	StringArray m_names ;
 	Map m_map ;
 } ;
@@ -188,14 +188,14 @@ G::OptionsLevel::OptionsLevel( unsigned int l ) :
 }
 
 inline
-G::OptionsLayout::OptionsLayout( size_t column_ ) :
+G::OptionsLayout::OptionsLayout( std::size_t column_ ) :
 	column(column_) ,
 	width(G::Options::widthDefault())
 {
 }
 
 inline
-G::OptionsLayout::OptionsLayout( size_t column_ , size_t width_ ) :
+G::OptionsLayout::OptionsLayout( std::size_t column_ , std::size_t width_ ) :
 	column(column_) ,
 	width(width_)
 {

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@
 class G::Process::IdImp
 {
 public:
-	unsigned int m_pid ;
+	unsigned int m_pid{0} ;
 } ;
 
 class G::Process::UmaskImp
@@ -50,8 +50,7 @@ G::Process::Id::Id()
 	m_pid = static_cast<unsigned int>(::_getpid()) ; // or ::GetCurrentProcessId()
 }
 
-G::Process::Id::Id( SignalSafe , const char * path ) :
-	m_pid(0)
+G::Process::Id::Id( SignalSafe , const char * path )
 {
 	std::ifstream file( path ? path : "" ) ;
 	file >> m_pid ;
@@ -73,7 +72,7 @@ std::string G::Process::Id::str() const
 	return ss.str() ;
 }
 
-bool G::Process::Id::operator==( const Id & rhs ) const
+bool G::Process::Id::operator==( const Id & rhs ) const noexcept
 {
 	return m_pid == rhs.m_pid ;
 }
@@ -89,9 +88,8 @@ void G::Process::closeFiles( bool keep_stderr )
 	std::cerr << std::flush ;
 }
 
-void G::Process::closeFilesExcept( int , int )
+void G::Process::closeOtherFiles( int )
 {
-	// old versions of this code closed files but it's not really needed
 }
 
 void G::Process::closeStderr()
@@ -109,15 +107,18 @@ bool G::Process::cd( const Path & dir , NoThrow )
 	return 0 == ::_chdir( dir.str().c_str() ) ;
 }
 
-int G::Process::errno_( const G::SignalSafe & )
+int G::Process::errno_( const SignalSafe & )
 {
-	return errno ;
+	int e = EINVAL ;
+	if( _get_errno( &e ) )
+		e = EINVAL ;
+	return e ;
 }
 
-int G::Process::errno_( const G::SignalSafe & , int e )
+int G::Process::errno_( const SignalSafe & signal_safe , int e )
 {
-	int old = errno ;
-	errno = e ;
+	int old = errno_( SignalSafe() ) ;
+	_set_errno( e ) ;
 	return old ;
 }
 
@@ -127,7 +128,7 @@ std::string G::Process::strerror( int errno_ )
 	if( strerror_s( &buffer[0] , buffer.size()-1U , errno_ ) || buffer.at(0U) == '\0' )
 		return "unknown error" ;
 	std::string s( &buffer[0] ) ;
-	return G::Str::isPrintableAscii(s) ? G::Str::lower(s) : s ;
+	return Str::isPrintableAscii(s) ? Str::lower(s) : s ;
 }
 
 G::Identity G::Process::beOrdinary( Identity identity , bool )
@@ -163,12 +164,12 @@ std::string G::Process::exe()
 {
 	// same code is in G::LogOutput...
 	std::vector<char> buffer ;
-	size_t sizes[] = { 80U , 1024U , 32768U , 0U } ; // documented limit of 32k
-	for( size_t * size_p = sizes ; *size_p ; ++size_p )
+	std::size_t sizes[] = { 80U , 1024U , 32768U , 0U } ; // documented limit of 32k
+	for( std::size_t * size_p = sizes ; *size_p ; ++size_p )
 	{
 		buffer.resize( *size_p+1U , '\0' ) ;
 		DWORD size = static_cast<DWORD>( buffer.size() ) ;
-		HINSTANCE hinstance = NULL ;
+		HINSTANCE hinstance = HNULL ;
 		DWORD rc = ::GetModuleFileNameA( hinstance , &buffer[0] , size ) ;
 		if( rc == 0 ) break ;
 		if( rc < size )
@@ -203,15 +204,14 @@ std::string G::Process::cwd( bool no_throw )
 
 // ===
 
-G::Process::Umask::Umask( G::Process::Umask::Mode )
+G::Process::Umask::Umask( Process::Umask::Mode )
 {
 }
 
 G::Process::Umask::~Umask()
-{
-}
+= default ;
 
-void G::Process::Umask::set( G::Process::Umask::Mode )
+void G::Process::Umask::set( Process::Umask::Mode )
 {
 	// not implemented
 }

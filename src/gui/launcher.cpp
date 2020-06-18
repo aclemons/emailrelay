@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,11 +37,11 @@ namespace
 	{
 		G::StringArray parts = command_line.args() ;
 		parts.insert( parts.begin() , command_line.exe().str() ) ;
-		for( G::StringArray::iterator p = parts.begin() ; p != parts.end() ; ++p )
+		for( auto & part : parts )
 		{
-			*p = G::Str::escaped( *p , '\\' , G::Str::meta().substr(1U) , G::Str::meta().substr(1U) ) ;
-			if( (*p).find(' ') != std::string::npos || (*p).find('\t') != std::string::npos )
-				*p = "\"" + *p + "\"" ;
+			part = G::Str::escaped( part , '\\' , G::Str::meta().substr(1U) , G::Str::meta().substr(1U) ) ;
+			if( part.find(' ') != std::string::npos || part.find('\t') != std::string::npos )
+				part = "\"" + part + "\"" ;
 		}
 		return G::Str::join(" ",parts) + " 2>" + log_file.str() + " &" ;
 	}
@@ -71,12 +71,12 @@ Launcher::Launcher( QWidget & parent , const G::ExecutableCommand & command_line
 	addLine( m_command_line.displayString() ) ;
 	addLine( m_shell_command ) ;
 
-	QHBoxLayout * button_layout = new QHBoxLayout ;
+	auto * button_layout = new QHBoxLayout ;
 	button_layout->addStretch( 1 ) ;
 	button_layout->addWidget( m_ok_button ) ;
 	button_layout->addStretch( 1 ) ;
 
-	QVBoxLayout * layout = new QVBoxLayout ;
+	auto * layout = new QVBoxLayout ;
 	layout->addWidget( m_text_edit ) ;
 	layout->addLayout( button_layout ) ;
 	setLayout( layout ) ;

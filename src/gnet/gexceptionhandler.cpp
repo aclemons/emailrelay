@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,11 +25,11 @@
 
 GNet::ExceptionHandler::~ExceptionHandler()
 {
-	if( EventLoop::exists() )
-		EventLoop::instance().disarm( this ) ;
+	if( EventLoop::ptr() )
+		EventLoop::ptr()->disarm( this ) ;
 
-	if( TimerList::exists() )
-		TimerList::instance().disarm( this ) ;
+	if( TimerList::ptr() )
+		TimerList::ptr()->disarm( this ) ;
 }
 
 /// \file gexceptionhandler.cpp

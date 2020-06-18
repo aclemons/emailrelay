@@ -180,7 +180,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-GCONFIG_CONFIGURATION = @GCONFIG_CONFIGURATION@
 GCONFIG_HAVE_DOXYGEN = @GCONFIG_HAVE_DOXYGEN@
 GCONFIG_HAVE_MAN2HTML = @GCONFIG_HAVE_MAN2HTML@
 GCONFIG_QT_CFLAGS = @GCONFIG_QT_CFLAGS@
@@ -251,6 +250,7 @@ e_icondir = @e_icondir@
 e_initdir = @e_initdir@
 e_libexecdir = @e_libexecdir@
 e_pamdir = @e_pamdir@
+e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
@@ -307,7 +307,12 @@ init_scripts = \
 work_scripts = \
 	doxygen.sh \
 	make-manifest.sh \
-	make-setup.sh
+	make-setup.sh \
+	make2cmake \
+	make2cdb \
+	AutoMakeParser.pm \
+	CompilationDatabase.pm \
+	winbuild.pm
 
 js_scripts = \
 	emailrelay-edit-content.js \
@@ -337,7 +342,7 @@ e_init_SCRIPTS = \
 CLEANFILES = \
 	$(example_scripts_out)
 
-do_sed = sed -e "s%__SPOOL_DIR__%${e_spooldir}%g" -e "s%__SBIN_DIR__%${sbindir}%g" -e "s%__SYSCONF_DIR__%${e_sysconfdir}%g"
+do_sed = sed -e "s%__SPOOL_DIR__%${e_spooldir}%g" -e "s%__SBIN_DIR__%${sbindir}%g" -e "s%__SYSCONF_DIR__%${e_sysconfdir}%g" -e "s%__LIBEXEC_DIR__%${e_libexecdir}%g" -e "s%__RUNDIR__%${e_rundir}%g"
 all: all-am
 
 .SUFFIXES:

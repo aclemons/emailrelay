@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,21 +22,21 @@
 #include "gidentity.h"
 #include <sstream>
 
-G::Identity::Identity() :
+G::Identity::Identity() noexcept :
 	m_uid(0) ,
 	m_gid(0) ,
 	m_h(0)
 {
 }
 
-G::Identity::Identity( SignalSafe ) :
+G::Identity::Identity( SignalSafe ) noexcept :
 	m_uid(0) ,
 	m_gid(0) ,
 	m_h(0)
 {
 }
 
-G::Identity::Identity( const std::string & ) :
+G::Identity::Identity( const std::string & , const std::string & ) :
 	m_uid(0) ,
 	m_gid(0) ,
 	m_h(0)
@@ -53,12 +53,12 @@ G::Identity G::Identity::real()
 	return Identity() ;
 }
 
-G::Identity G::Identity::invalid()
+G::Identity G::Identity::invalid() noexcept
 {
 	return Identity() ;
 }
 
-G::Identity G::Identity::invalid( SignalSafe safe )
+G::Identity G::Identity::invalid( SignalSafe safe ) noexcept
 {
 	return Identity(safe) ;
 }
@@ -88,27 +88,27 @@ bool G::Identity::operator!=( const Identity & other ) const
 	return false ;
 }
 
-void G::Identity::setEffectiveUser( SignalSafe )
+void G::Identity::setEffectiveUser( SignalSafe ) const noexcept
 {
 }
 
-void G::Identity::setEffectiveUser( bool do_throw )
+void G::Identity::setEffectiveUser( bool do_throw ) const
 {
 }
 
-void G::Identity::setRealUser( bool do_throw )
+void G::Identity::setRealUser( bool do_throw ) const
 {
 }
 
-void G::Identity::setEffectiveGroup( bool do_throw )
+void G::Identity::setEffectiveGroup( bool do_throw ) const
 {
 }
 
-void G::Identity::setEffectiveGroup( SignalSafe )
+void G::Identity::setEffectiveGroup( SignalSafe ) const noexcept
 {
 }
 
-void G::Identity::setRealGroup( bool do_throw )
+void G::Identity::setRealGroup( bool do_throw ) const
 {
 }
 
@@ -122,7 +122,7 @@ void G::IdentityUser::setEffectiveUserTo( Identity , bool )
 {
 }
 
-void G::IdentityUser::setEffectiveUserTo( SignalSafe , Identity )
+void G::IdentityUser::setEffectiveUserTo( SignalSafe , Identity ) noexcept
 {
 }
 
@@ -134,7 +134,7 @@ void G::IdentityUser::setEffectiveGroupTo( Identity , bool )
 {
 }
 
-void G::IdentityUser::setEffectiveGroupTo( SignalSafe , Identity )
+void G::IdentityUser::setEffectiveGroupTo( SignalSafe , Identity ) noexcept
 {
 }
 

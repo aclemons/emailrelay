@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -65,9 +65,9 @@ protected:
 	void setHandle( HWND hwnd ) ;
 		///< Sets the window handle.
 
-private:
-	WindowBase( const WindowBase & other ) g__eq_delete ;
-	void operator=( const WindowBase &other ) g__eq_delete ;
+public:
+	WindowBase( const WindowBase & other ) = delete ;
+	void operator=( const WindowBase &other ) = delete ;
 
 private:
 	HWND m_hwnd ;

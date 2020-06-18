@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,24 +42,14 @@ G::Log::~Log()
 
 bool G::Log::at( Severity s )
 {
-	LogOutput * output = LogOutput::instance() ;
-	return output != nullptr && output->at(s) ;
+	const LogOutput * output = LogOutput::instance() ;
+	return output && output->at(s) ;
 }
 
 bool G::Log::active()
 {
-	LogOutput * output = LogOutput::instance() ;
-	if( output == nullptr )
-	{
-		return false ;
-	}
-	else
-	{
-		// (enable it just to get the original state, then restore it)
-		bool a = output->enable(true) ;
-		output->enable(a) ;
-		return a ;
-	}
+	const LogOutput * output = LogOutput::instance() ;
+	return output ? output->config().m_output_enabled : false ;
 }
 
 void G::Log::flush()

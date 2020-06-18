@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,10 +41,10 @@ class GAuth::SaslClient
 public:
 	struct Response /// Result structure returned from GAuth::SaslClient::response
 	{
+		bool sensitive{true} ; // don't log
+		bool error{true} ; // abort the sasl dialog
+		bool final{false} ; // final response, server's decision time
 		std::string data ;
-		bool sensitive ; // don't log
-		bool error ; // abort the sasl dialog
-		bool final ; // final response, server's decision time
 	} ;
 
 	explicit SaslClient( const SaslClientSecrets & secrets , const std::string & config ) ;
@@ -60,7 +60,7 @@ public:
 		///< Returns a response to the given challenge. The mechanism is
 		///< used to choose the appropriate entry in the secrets file.
 
-	std::string initialResponse( size_t limit = 0U ) const ;
+	std::string initialResponse( std::size_t limit = 0U ) const ;
 		///< Returns an optional initial response. Always returns the empty
 		///< string if the mechanism is 'server-first'. Returns the empty
 		///< string, with no side-effects, if the initial response is longer
@@ -73,12 +73,14 @@ public:
 		///< Returns the empty string if none is supported or if not active().
 
 	bool next() ;
-		///< Moves to the next preferred mechanism.
+		///< Moves to the next preferred mechanism. Returns the empty
+		///< string if there are no more mechanisms.
 
 	std::string next( const std::string & ) ;
 		///< A convenience overload that moves to the next() mechanism
-		///< and returns it. Returns the empty string at the end, or
-		///< if the given string is empty.
+		///< and returns it. Returns the empty string if the
+		///< given string is empty or if there are no more
+		///< mechanisms.
 
 	std::string mechanism() const ;
 		///< Returns the name of the current mechanism once next() has
@@ -92,12 +94,14 @@ public:
 		///< Returns logging and diagnostic information, valid after
 		///< the last response().
 
-private:
-	SaslClient( const SaslClient & ) g__eq_delete ;
-	void operator=( const SaslClient & ) g__eq_delete ;
+public:
+	SaslClient( const SaslClient & ) = delete ;
+	SaslClient( SaslClient && ) = delete ;
+	void operator=( const SaslClient & ) = delete ;
+	void operator=( SaslClient && ) = delete ;
 
 private:
-	SaslClientImp * m_imp ;
+	std::unique_ptr<SaslClientImp> m_imp ;
 } ;
 
 #endif

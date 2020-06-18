@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,14 +23,13 @@
 #include "glog.h"
 
 GSmtp::InternalVerifier::InternalVerifier()
-{
-}
+= default;
 
 void GSmtp::InternalVerifier::verify( const std::string & to , const std::string & , const GNet::Address & ,
 	const std::string & , const std::string & )
 {
 	VerifierStatus status = verifyInternal( to ) ;
-	doneSignal().emit( to , status ) ;
+	doneSignal().emit( std::string(to) , status ) ;
 }
 
 GSmtp::VerifierStatus GSmtp::InternalVerifier::verifyInternal( const std::string & address ) const
@@ -43,7 +42,7 @@ GSmtp::VerifierStatus GSmtp::InternalVerifier::verifyInternal( const std::string
 	return status ;
 }
 
-G::Slot::Signal2<std::string,GSmtp::VerifierStatus> & GSmtp::InternalVerifier::doneSignal()
+G::Slot::Signal<const std::string&,const GSmtp::VerifierStatus&> & GSmtp::InternalVerifier::doneSignal()
 {
 	return m_done_signal ;
 }

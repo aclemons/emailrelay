@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gdnsmessage.h"
+#include "gassert.h"
 #include "gstr.h"
 #include <map>
 #include <vector>
@@ -29,6 +30,7 @@
 GNet::DnsMessageRequest::DnsMessageRequest( const std::string & type , const std::string & hostname , unsigned int id )
 {
 	// header section
+	G_ASSERT( id < 0xffffU ) ;
 	q( (id>>8U)&0xff ) ; q( id&0xff ) ; // ID=id - arbitrary identifier to link query with response
 	q( 0x01 ) ; // flags - QR=0 (ie. query) and RD=1 (ie. recursion desired)
 	q( 0x00 ) ; // RA=0 (recursion available) and Z=0 (zero bits, but see RFC-2671) and RCODE=0 (response code)
@@ -47,9 +49,9 @@ void GNet::DnsMessageRequest::q( const std::string & domain , const std::string 
 {
 	G::StringArray parts ;
 	G::Str::splitIntoFields( domain , parts , seps ) ;
-	for( G::StringArray::iterator part = parts.begin() ; part != parts.end() ; ++part )
+	for( const auto & part : parts )
 	{
-		q( *part ) ;
+		q( part ) ;
 	}
 	q( std::string() ) ;
 }
@@ -76,7 +78,7 @@ const char * GNet::DnsMessageRequest::p() const
 	return m_data.data() ;
 }
 
-size_t GNet::DnsMessageRequest::n() const
+std::size_t GNet::DnsMessageRequest::n() const
 {
 	return m_data.size() ;
 }
@@ -84,8 +86,7 @@ size_t GNet::DnsMessageRequest::n() const
 // ==
 
 GNet::DnsMessage::DnsMessage()
-{
-}
+= default;
 
 GNet::DnsMessage::DnsMessage( const std::vector<char> & buffer ) :
 	m_buffer(buffer)
@@ -94,7 +95,7 @@ GNet::DnsMessage::DnsMessage( const std::vector<char> & buffer ) :
 		throw Error( "truncated response" ) ;
 }
 
-GNet::DnsMessage::DnsMessage( const char * p , size_t n ) :
+GNet::DnsMessage::DnsMessage( const char * p , std::size_t n ) :
 	m_buffer(p,p+n)
 {
 }
@@ -104,7 +105,7 @@ const char * GNet::DnsMessage::p() const
 	return &m_buffer[0] ;
 }
 
-size_t GNet::DnsMessage::n() const
+std::size_t GNet::DnsMessage::n() const
 {
 	return m_buffer.size() ;
 }
@@ -125,7 +126,7 @@ std::vector<GNet::Address> GNet::DnsMessage::addresses() const
 	std::vector<Address> list ;
 	for( unsigned int i = QDCOUNT() ; i < (QDCOUNT()+ANCOUNT()) ; i++ )
 	{
-		list.push_back( rr(i).address() ) ;
+		list.push_back( rrAddress(i) ) ;
 	}
 	return list ;
 }
@@ -255,6 +256,11 @@ GNet::DnsMessageRR GNet::DnsMessage::rr( unsigned int record_index ) const
 			offset += RR(*this,offset).size() ;
 	}
 	return RR( *this , offset ) ;
+}
+
+GNet::Address GNet::DnsMessage::rrAddress( unsigned int record_index ) const
+{
+	return rr(record_index).address() ;
 }
 
 // ==
@@ -477,17 +483,17 @@ void GNet::DnsMessageRecordType::add( unsigned int value , const std::string & n
 
 unsigned int GNet::DnsMessageRecordType::value( const std::string & type_name )
 {
-	for( Map::const_iterator p = map().begin() ; p != map().end() ; ++p )
+	for( const auto & item : map() )
 	{
-		if( (*p).second == type_name )
-			return (*p).first ;
+		if( item.second == type_name )
+			return item.first ;
 	}
 	throw DnsMessage::Error( "invalid rr type name" ) ;
 }
 
 std::string GNet::DnsMessageRecordType::name( unsigned int type_value )
 {
-	Map::const_iterator p = map().find( type_value ) ;
+	auto p = map().find( type_value ) ;
 	if( p == map().end() )
 		throw DnsMessage::Error( "invalid rr type value" ) ;
 	return (*p).second ;

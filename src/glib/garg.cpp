@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ bool G::Arg::m_first = true ;
 std::string G::Arg::m_v0 ;
 std::string G::Arg::m_cwd ;
 
-G::Arg::Arg( int argc , char *argv[] )
+G::Arg::Arg( int argc , char **argv )
 {
 	G_ASSERT( argc > 0 ) ;
 	G_ASSERT( argv != nullptr ) ;
@@ -52,9 +52,7 @@ G::Arg::Arg( const StringArray & args ) :
 }
 
 G::Arg::Arg()
-{
-	// now use parse()
-}
+= default ; // now use parse()
 
 void G::Arg::parse( HINSTANCE , const std::string & command_line_tail )
 {
@@ -91,14 +89,14 @@ G::StringArray G::Arg::array( unsigned int shift ) const
 	return result ;
 }
 
-bool G::Arg::contains( const std::string & option , size_type option_args , bool cs ) const
+bool G::Arg::contains( const std::string & option , std::size_t option_args , bool cs ) const
 {
 	return find( cs , option , option_args , nullptr ) ;
 }
 
-bool G::Arg::find( bool cs , const std::string & option , size_type option_args , size_type * index_p ) const
+bool G::Arg::find( bool cs , const std::string & option , std::size_t option_args , std::size_t * index_p ) const
 {
-	for( size_type i = 1 ; i < m_array.size() ; i++ ) // start from v[1]
+	for( std::size_t i = 1 ; i < m_array.size() ; i++ ) // start from v[1]
 	{
 		if( match(cs,option,m_array[i]) && (i+option_args) < m_array.size() )
 		{
@@ -115,41 +113,41 @@ bool G::Arg::match( bool cs , const std::string & s1 , const std::string & s2 )
 	return cs ? (s1==s2) : (Str::upper(s1)==Str::upper(s2)) ;
 }
 
-bool G::Arg::remove( const std::string & option , size_type option_args )
+bool G::Arg::remove( const std::string & option , std::size_t option_args )
 {
-	size_type i = 0U ;
+	std::size_t i = 0U ;
 	const bool found = find( true , option , option_args , &i ) ;
 	if( found )
 		removeAt( i , option_args ) ;
 	return found ;
 }
 
-void G::Arg::removeAt( size_type option_index , size_type option_args )
+void G::Arg::removeAt( std::size_t option_index , std::size_t option_args )
 {
 	G_ASSERT( option_index > 0U && option_index < m_array.size() ) ;
 	if( option_index > 0U && option_index < m_array.size() )
 	{
-		StringArray::iterator p = m_array.begin() ;
-		for( size_type i = 0U ; i < option_index ; i++ ) ++p ; // (rather than cast)
+		auto p = m_array.begin() ;
+		for( std::size_t i = 0U ; i < option_index ; i++ ) ++p ; // (rather than cast)
 		p = m_array.erase( p ) ;
-		for( size_type i = 0U ; i < option_args && p != m_array.end() ; i++ )
+		for( std::size_t i = 0U ; i < option_args && p != m_array.end() ; i++ )
 			p = m_array.erase( p ) ;
 	}
 }
 
-G::Arg::size_type G::Arg::index( const std::string & option , size_type option_args ) const
+std::size_t G::Arg::index( const std::string & option , std::size_t option_args ) const
 {
-	size_type i = 0U ;
+	std::size_t i = 0U ;
 	const bool found = find( true , option , option_args , &i ) ;
 	return found ? i : 0U ;
 }
 
-G::Arg::size_type G::Arg::c() const
+std::size_t G::Arg::c() const
 {
 	return m_array.size() ;
 }
 
-std::string G::Arg::v( size_type i ) const
+std::string G::Arg::v( std::size_t i ) const
 {
 	G_ASSERT( i < m_array.size() ) ;
 	return m_array.at(i) ;
@@ -162,7 +160,7 @@ std::string G::Arg::prefix() const
 	return path.withoutExtension().basename() ;
 }
 
-const char * G::Arg::prefix( char * argv [] ) // noexcept
+const char * G::Arg::prefix( char ** argv ) noexcept
 {
 	const char * exe = argv[0] ;
 	const char * p1 = std::strrchr( exe , '/' ) ;
@@ -191,10 +189,10 @@ void G::Arg::protect( std::string & s )
 	const char quote = '"' ;
 	const char space = ' ' ;
 	const char replacement = '\0' ;
-	for( std::string::size_type pos = 0U ; pos < s.length() ; pos++ )
+	for( char & c : s )
 	{
-		if( s.at(pos) == quote ) in_quote = ! in_quote ;
-		if( in_quote && s.at(pos) == space ) s[pos] = replacement ;
+		if( c == quote ) in_quote = ! in_quote ;
+		if( in_quote && c == space ) c = replacement ;
 	}
 }
 
@@ -203,10 +201,9 @@ void G::Arg::unprotect( StringArray & array )
 	// restore replacements to spaces
 	const char space = ' ' ;
 	const char replacement = '\0' ;
-	for( StringArray::iterator p = array.begin() ; p != array.end() ; ++p )
+	for( auto & s : array )
 	{
-		std::string & s = *p ;
-		Str::replaceAll( s , std::string(1U,replacement) , std::string(1U,space) ) ;
+			Str::replaceAll( s , std::string(1U,replacement) , std::string(1U,space) ) ;
 	}
 }
 
@@ -214,10 +211,9 @@ void G::Arg::dequote( StringArray & array )
 {
 	// remove quotes if first and last characters (or equivalent)
 	char qq = '\"' ;
-	for( StringArray::iterator p = array.begin() ; p != array.end() ; ++p )
+	for( auto & s : array )
 	{
-		std::string & s = *p ;
-		if( s.length() > 1U )
+			if( s.length() > 1U )
 		{
 			std::string::size_type start = s.at(0U) == qq ? 0U : s.find("=\"") ;
 			if( start != std::string::npos && s.at(start) != qq ) ++start ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include "gdef.h"
 #include "gaddress4.h"
 #include "gstr.h"
+#include "gtest.h"
 #include "gassert.h"
 #include "glog.h"
 #include <algorithm> // std::swap()
@@ -29,13 +30,17 @@
 #include <climits>
 #include <sys/types.h>
 #include <sstream>
+#include <array>
 //
 //
 
-namespace
+namespace GNet
 {
-	const char * port_separators = ":/" ;
-	char port_separator = ':' ;
+	namespace Address4Imp
+	{
+		const char * port_separators = ":/" ;
+		char port_separator = ':' ;
+	}
 }
 
 unsigned short GNet::Address4::family()
@@ -48,51 +53,45 @@ int GNet::Address4::domain()
 	return PF_INET ;
 }
 
-void GNet::Address4::init()
+GNet::Address4::Address4( std::nullptr_t ) // NOLINT cppcoreguidelines-pro-type-member-init
 {
-	static specific_type zero ;
-	m_inet.specific = zero ;
+	m_inet.specific = specific_type{} ;
 	m_inet.specific.sin_family =  family() ;
 	m_inet.specific.sin_port =  0 ;
 //
 //
 }
 
-GNet::Address4::Address4( unsigned int port )
+GNet::Address4::Address4( unsigned int port ) :
+	Address4(nullptr)
 {
-	init() ;
 	m_inet.specific.sin_addr.s_addr = htonl(INADDR_ANY);
 	const char * reason = setPort( m_inet , port ) ;
 	if( reason ) throw Address::Error(reason) ;
 }
 
-GNet::Address4::Address4( unsigned int port , int )
+GNet::Address4::Address4( unsigned int port , int ) :
+	Address4(nullptr)
 {
-	init() ;
 	m_inet.specific.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	const char * reason = setPort( m_inet , port ) ;
 	if( reason ) throw Address::Error(reason) ;
 }
 
-GNet::Address4::Address4( const sockaddr * addr , socklen_t len )
+GNet::Address4::Address4( const sockaddr * addr , socklen_t len ) :
+	Address4(nullptr)
 {
-	init() ;
 	if( addr == nullptr )
 		throw Address::Error() ;
-	if( addr->sa_family != family() || static_cast<size_t>(len) < sizeof(specific_type) )
+	if( addr->sa_family != family() || static_cast<std::size_t>(len) < sizeof(specific_type) )
 		throw Address::BadFamily() ;
 
 	m_inet.specific = *(reinterpret_cast<const specific_type*>(addr)) ;
 }
 
-GNet::Address4::Address4( const Address4 & other )
+GNet::Address4::Address4( const std::string & host_part , unsigned int port ) :
+	Address4(nullptr)
 {
-	m_inet.specific = other.m_inet.specific ;
-}
-
-GNet::Address4::Address4( const std::string & host_part , unsigned int port )
-{
-	init() ;
 	const char * reason = setHostAddress( m_inet , host_part ) ;
 	if( !reason )
 		reason = setPort( m_inet , port ) ;
@@ -100,9 +99,9 @@ GNet::Address4::Address4( const std::string & host_part , unsigned int port )
 		throw Address::BadString( std::string(reason) + ": " + host_part ) ;
 }
 
-GNet::Address4::Address4( const std::string & host_part , const std::string & port_part )
+GNet::Address4::Address4( const std::string & host_part , const std::string & port_part ) :
+	Address4(nullptr)
 {
-	init() ;
 	const char * reason = setHostAddress( m_inet , host_part ) ;
 	if( !reason )
 		reason = setPort( m_inet , port_part ) ;
@@ -110,9 +109,9 @@ GNet::Address4::Address4( const std::string & host_part , const std::string & po
 		throw Address::BadString( std::string(reason) + ": [" + host_part + "][" + port_part + "]" ) ;
 }
 
-GNet::Address4::Address4( const std::string & display_string )
+GNet::Address4::Address4( const std::string & display_string ) :
+	Address4(nullptr)
 {
-	init() ;
 	const char * reason = setAddress( m_inet , display_string ) ;
 	if( reason )
 		throw Address::BadString( std::string(reason) + ": " + display_string ) ;
@@ -120,7 +119,7 @@ GNet::Address4::Address4( const std::string & display_string )
 
 const char * GNet::Address4::setAddress( union_type & inet , const std::string & display_string )
 {
-	const std::string::size_type pos = display_string.find_last_of( port_separators ) ;
+	const std::string::size_type pos = display_string.find_last_of( Address4Imp::port_separators ) ;
 	if( pos == std::string::npos )
 		return "no port separator" ;
 
@@ -141,6 +140,22 @@ const char * GNet::Address4::setHostAddress( union_type & inet , const std::stri
 
 	int rc = inet_pton( family() , host_part.c_str() , &inet.specific.sin_addr ) ;
 	return rc == 1 ? nullptr : "invalid ipv4 network address" ;
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 }
 
 void GNet::Address4::setPort( unsigned int port )
@@ -165,23 +180,41 @@ const char * GNet::Address4::setPort( union_type & inet , unsigned int port )
 	return nullptr ;
 }
 
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
 std::string GNet::Address4::displayString() const
 {
 	std::ostringstream ss ;
 	ss << hostPartString() ;
-	ss << port_separator << port() ;
+	ss << Address4Imp::port_separator << port() ;
 	return ss.str() ;
 }
 
 std::string GNet::Address4::hostPartString() const
 {
-	char buffer[INET_ADDRSTRLEN+1U] ;
+	std::array<char,INET_ADDRSTRLEN+1U> buffer ; // NOLINT cppcoreguidelines-pro-type-member-init
 	const void * vp = & m_inet.specific.sin_addr ;
-	const char * p = inet_ntop( family() , const_cast<void*>(vp) , buffer , sizeof(buffer) ) ;
+	const char * p = inet_ntop( family() , const_cast<void*>(vp) , &buffer[0] , buffer.size() ) ;
 	if( p == nullptr )
 		throw Address::Error( "inet_ntop() failure" ) ;
-	buffer[sizeof(buffer)-1U] = '\0' ;
-	return std::string(buffer) ;
+	buffer[buffer.size()-1U] = '\0' ;
+	return std::string(&buffer[0]) ;
 }
 
 std::string GNet::Address4::queryString() const
@@ -203,7 +236,7 @@ bool GNet::Address4::validData( const sockaddr * addr , socklen_t len )
 
 bool GNet::Address4::validString( const std::string & s , std::string * reason_p )
 {
-	union_type inet ;
+	union_type inet {} ;
 	const char * reason = setAddress( inet , s ) ;
 	if( reason && reason_p )
 		*reason_p = std::string(reason) ;
@@ -212,7 +245,7 @@ bool GNet::Address4::validString( const std::string & s , std::string * reason_p
 
 bool GNet::Address4::validStrings( const std::string & host_part , const std::string & port_part , std::string * reason_p )
 {
-	union_type inet ;
+	union_type inet {} ;
 	const char * reason = setHostAddress( inet , host_part ) ;
 	if( !reason )
 		reason = setPort( inet , port_part ) ;
@@ -223,7 +256,7 @@ bool GNet::Address4::validStrings( const std::string & host_part , const std::st
 
 bool GNet::Address4::validPort( unsigned int port )
 {
-	union_type inet ;
+	union_type inet {} ;
 	const char * reason = setPort( inet , port ) ;
 	return reason == nullptr ;
 }
@@ -378,9 +411,9 @@ bool GNet::Address4::format( std::string s )
 			return false ;
 
 	unsigned int n = 0U ;
-	for( std::string::iterator pp = s.begin() ; pp != s.end() ; ++pp )
+	for( char c : s )
 	{
-		n = (*pp) == '.' ? 0U : ( ( n * 10U ) + (static_cast<unsigned int>(*pp)-static_cast<unsigned int>('0')) ) ;
+		n = c == '.' ? 0U : ( ( n * 10U ) + (static_cast<unsigned int>(c)-static_cast<unsigned int>('0')) ) ;
 		if( n >= 256U )
 			return false ;
 	}
@@ -396,37 +429,47 @@ unsigned int GNet::Address4::bits() const
 	return count ;
 }
 
-bool GNet::Address4::isLoopback() const
-{
-	// 127.0.0.0/8
-	return ( ntohl(m_inet.specific.sin_addr.s_addr) >> 24 ) == 127U ;
-}
-
 bool GNet::Address4::isLocal( std::string & reason ) const
 {
-	// this is a dummy implementation that only tests for loopback
-	// addresses -- prefer GNet::Local::isLocal()
-	//
-	if( isLoopback() )
+	// see also GNet::Local::isLocal()
+	if( isLoopback() || isLinkLocal() || isUniqueLocal() )
 	{
 		return true ;
 	}
 	else
 	{
 		std::ostringstream ss ;
-		ss << hostPartString() << " is not a loopback address" ;
+		ss << hostPartString() << " is not in "
+			"127.0.0.0/8, 169.254.0.0/16, 10.0.0.0/8, 172.16.0.0/12, or 192.168.0.0/16" ;
 		reason = ss.str() ;
 		return false ;
 	}
 }
 
-bool GNet::Address4::isPrivate() const
+bool GNet::Address4::isLoopback() const
 {
-	// RFC-1918
+	// RFC-1918, RFC-6890
+	return ( ntohl(m_inet.specific.sin_addr.s_addr) >> 24 ) == 127U ; // 127.0.0.0/8
+}
+
+bool GNet::Address4::isLinkLocal() const
+{
+	// RFC-3927, RFC-6890
+	return ( ntohl(m_inet.specific.sin_addr.s_addr) >> 16 ) == 0xA9FE ; // 169.254.0.0/16
+}
+
+bool GNet::Address4::isUniqueLocal() const
+{
+	// RFC-1918, RFC-6890
 	return
 		( ntohl(m_inet.specific.sin_addr.s_addr) >> 24 ) == 0x0A || // 10.0.0.0/8
 		( ntohl(m_inet.specific.sin_addr.s_addr) >> 20 ) == 0xAC1 || // 172.16.0.0/12
 		( ntohl(m_inet.specific.sin_addr.s_addr) >> 16 ) == 0xC0A8 ; // 192.168.0.0/16
+}
+
+bool GNet::Address4::isAny() const
+{
+	return m_inet.specific.sin_addr.s_addr == htonl(INADDR_ANY) ;
 }
 
 /// \file gaddress4.cpp

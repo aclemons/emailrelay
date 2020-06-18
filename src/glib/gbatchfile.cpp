@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -99,18 +99,18 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 	// title but dont expect any "start" options such as "/min"
 	if( !line.empty() )
 	{
-		typedef std::string::size_type size_type ;
+		using size_type = std::string::size_type ;
 		size_type const npos = std::string::npos ;
 
 		std::string start = "start " ;
 		size_type start_pos = Str::lower(line).find(start) ;
-		size_type command_pos = start_pos == npos ? 0U : line.find_first_not_of(" ",start_pos+start.size()) ;
+		size_type command_pos = start_pos == npos ? 0U : line.find_first_not_of(' ',start_pos+start.size()) ;
 
 		bool named = start_pos != npos && line.at(command_pos) == '"' ;
 		if( named )
 		{
-			size_t name_start_pos = command_pos ;
-			size_t name_end_pos = line.find( "\"" , name_start_pos+1U ) ;
+			std::size_t name_start_pos = command_pos ;
+			std::size_t name_end_pos = line.find( '\"' , name_start_pos+1U ) ;
 			if( name_end_pos == npos )
 				throw Error( "mismatched quotes in batch file" , stream_name ) ;
 			if( (name_end_pos+2U) >= line.size() || line.at(name_end_pos+1U) != ' ' )
@@ -120,7 +120,7 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 			dequote( m_name ) ;
 			Str::trim( m_name , Str::ws() ) ;
 
-			command_pos = line.find_first_not_of(" ",name_end_pos+2U) ;
+			command_pos = line.find_first_not_of(' ',name_end_pos+2U) ;
 		}
 
 		if( command_pos != npos )
@@ -153,14 +153,14 @@ const G::StringArray & G::BatchFile::args() const
 
 void G::BatchFile::dequote( std::string & s )
 {
-	if( s.size() >= 2U && s.find("\"") == 0U && (s.rfind("\"")+1U) == s.size() )
+	if( s.size() >= 2U && s.find('\"') == 0U && (s.rfind('\"')+1U) == s.size() )
 		s = s.substr( 1U , s.size()-2U ) ;
 }
 
 void G::BatchFile::write( const G::Path & path , const StringArray & args , const std::string & name_in )
 {
 	G_ASSERT( args.size() > 0U ) ;
-	if( args.size() == 0U )
+	if( args.empty() )
 		throw Error( "invalid contents for startup batch file" ) ;
 
 	std::string name = name_in ;
@@ -176,9 +176,9 @@ void G::BatchFile::write( const G::Path & path , const StringArray & args , cons
 		throw Error( "cannot create batch file" , path.str() ) ;
 
 	stream << "start \"" << name << "\"" ;
-	for( StringArray::const_iterator p = args.begin() ; p != args.end() ; ++p )
+	for( const auto & arg : args )
 	{
-		stream << " " << percents(quote(*p)) ;
+		stream << " " << percents(quote(arg)) ;
 	}
 	stream << "\r\n" ;
 
@@ -206,7 +206,7 @@ std::string G::BatchFile::percents( const std::string & s )
 std::string G::BatchFile::quote( const std::string & s )
 {
 	return
-		s.find("\"") == std::string::npos && s.find_first_of(" \t") != std::string::npos ?
+		s.find('\"') == std::string::npos && s.find_first_of(" \t") != std::string::npos ?
 			"\"" + s + "\"" : s ;
 }
 

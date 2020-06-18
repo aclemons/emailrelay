@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,13 +45,15 @@ public:
 	G_EXCEPTION_CLASS( Overflow , "string conversion error: over/underflow" ) ;
 	G_EXCEPTION_CLASS( InvalidFormat, "string conversion error: invalid format" ) ;
 	G_EXCEPTION_CLASS( NotEmpty, "internal error: string container not empty" ) ;
-	typedef std::string::size_type size_type ;
 
-	struct Limited /// Overload discrimiator for G::Str::toUWhatever()
+	struct Limited /// Overload discrimiator for G::Str::toUWhatever() requesting a range-limited result.
+		{} ;
+
+	struct Hex /// Overload discrimiator for G::Str::toUWhatever() indicating hexadecimal strings.
 		{} ;
 
 	static bool replace( std::string & s , const std::string & from , const std::string & to ,
-		size_type * pos_p = nullptr ) ;
+		std::size_t * pos_p = nullptr ) ;
 			///< Replaces 'from' with 'to', starting at offset '*pos_p'.
 			///< Returns true if a substitution was made, and adjusts
 			///< '*pos_p' by to.length().
@@ -71,10 +73,10 @@ public:
 	static void removeAll( std::string & , char ) ;
 		///< Removes all occurrences of the character from the string. See also only().
 
-	static void trimLeft( std::string & s , const std::string & ws , size_type limit = 0U ) ;
+	static void trimLeft( std::string & s , const std::string & ws , std::size_t limit = 0U ) ;
 		///< Trims the lhs of s, taking off up to 'limit' of the 'ws' characters.
 
-	static void trimRight( std::string & s , const std::string & ws , size_type limit = 0U ) ;
+	static void trimRight( std::string & s , const std::string & ws , std::size_t limit = 0U ) ;
 		///< Trims the rhs of s, taking off up to 'limit' of the 'ws' characters.
 
 	static void trim( std::string & s , const std::string & ws ) ;
@@ -85,6 +87,10 @@ public:
 
 	static bool isNumeric( const std::string & s , bool allow_minus_sign = false ) ;
 		///< Returns true if every character is a decimal digit.
+		///< Empty strings return true.
+
+	static bool isHex( const std::string & s ) ;
+		///< Returns true if every character is a hexadecimal digit.
 		///< Empty strings return true.
 
 	static bool isPrintableAscii( const std::string & s ) ;
@@ -186,11 +192,24 @@ public:
 		///<
 		///< Exception: InvalidFormat
 
+	static unsigned long toULong( const std::string & s , Hex ) ;
+		///< An overload for hexadecimal strings. To avoid exceptions
+		///< use isHex() and check the string length.
+
+	static unsigned long toULong( const std::string & s , Hex , Limited ) ;
+		///< An overload for hexadecimal strings where overflow
+		///< results in the return of the maximum value. To avoid
+		///< exceptions use isHex().
+
 	static unsigned long toULong( const std::string & s ) ;
 		///< Converts string 's' to an unsigned long.
 		///<
 		///< Exception: Overflow
 		///< Exception: InvalidFormat
+
+	static unsigned long toULong( const std::string & s1 , const std::string & s2 ) ;
+		///< Overload that converts the first string if it can be converted
+		///< without throwing, or otherwise the second string.
 
 	static unsigned short toUShort( const std::string & s , Limited ) ;
 		///< Converts string 's' to an unsigned short.
@@ -207,20 +226,20 @@ public:
 		///< Exception: InvalidFormat
 
 	static void toUpper( std::string & s ) ;
-		///< Replaces all Latin-1 lowercase characters in string 's' by
-		///< uppercase characters.
+		///< Replaces all Latin-1 lower-case characters in string 's' by
+		///< upper-case characters.
 
 	static void toLower( std::string & s ) ;
-		///< Replaces all Latin-1 uppercase characters in string 's' by
-		///< lowercase characters.
+		///< Replaces all Latin-1 upper-case characters in string 's' by
+		///< lower-case characters.
 
 	static std::string upper( const std::string & s ) ;
-		///< Returns a copy of 's' in which all Latin-1 lowercase characters
-		///< have been replaced by uppercase characters.
+		///< Returns a copy of 's' in which all Latin-1 lower-case characters
+		///< have been replaced by upper-case characters.
 
 	static std::string lower( const std::string & s ) ;
-		///< Returns a copy of 's' in which all Latin-1 uppercase characters
-		///< have been replaced by lowercase characters.
+		///< Returns a copy of 's' in which all Latin-1 upper-case characters
+		///< have been replaced by lower-case characters.
 
 	static std::string toPrintableAscii( char c , char escape = '\\' ) ;
 		///< Returns a 7-bit printable representation of the given input character,
@@ -237,7 +256,7 @@ public:
 		///< chacter code ranges 0x20 to 0x7e and 0xa0 to 0xfe inclusive.
 		///< Typically used to prevent escape sequences getting into log files.
 
-	static std::string only( const std::string & chars , const std::string & s ) ;
+	static std::string only( const std::string & allow_chars , const std::string & s ) ;
 		///< Returns the 's' with all occurrences of the characters not appearing in
 		///< the fist string deleted.
 
@@ -322,7 +341,7 @@ public:
 
 	static std::string wrap( std::string text ,
 		const std::string & prefix_first_line , const std::string & prefix_subsequent_lines ,
-		size_type width = 70U ) ;
+		std::size_t width = 70U ) ;
 			///< Does word-wrapping. The return value is a string with
 			///< embedded newlines.
 
@@ -378,7 +397,10 @@ public:
 	static std::set<std::string> keySet( const StringMap & string_map ) ;
 		///< Extracts the keys from a map of strings.
 
-	static std::string head( const std::string & in , size_type pos ,
+	static StringArray keys( const StringMap & string_map ) ;
+		///< Extracts the keys from a map of strings.
+
+	static std::string head( const std::string & in , std::size_t pos ,
 		const std::string & default_ = std::string() ) ;
 			///< Returns the first part of the string up to just before the given position.
 			///< The character at pos is not returned. Returns the supplied default
@@ -391,7 +413,7 @@ public:
 		///< separator occurs more than once in the input then only the
 		///< first occurrence is relevant.
 
-	static std::string tail( const std::string & in , size_type pos ,
+	static std::string tail( const std::string & in , std::size_t pos ,
 		const std::string & default_ = std::string() ) ;
 			///< Returns the last part of the string after the given position.
 			///< The character at pos is not returned. Returns the supplied default
@@ -410,6 +432,14 @@ public:
 	static bool match( const StringArray & , const std::string & ) ;
 		///< Returns true if any string in the array matches the given string.
 
+	static bool iless( const std::string & , const std::string & ) ;
+		///< Returns true if the first string is lexicographically less
+		///< than the first, after Latin-1 lower-case letters have been
+		///< folded to upper-case.
+
+	static bool imatch( char , char ) ;
+		///< Returns true if the two characters are the same, ignoring Latin-1 case.
+
 	static bool imatch( const std::string & , const std::string & ) ;
 		///< Returns true if the two strings are the same, ignoring Latin-1 case.
 		///< The locale is ignored.
@@ -418,12 +448,17 @@ public:
 		///< Returns true if any string in the array matches the given string, ignoring
 		///< Latin-1 case. The locale is ignored.
 
+	static std::size_t ifind( const std::string & s , const std::string & key ,
+		std::size_t pos = 0U ) ;
+			///< Returns the position of the key in 's' using a Latin-1 case-insensitive
+			///< search. Returns std::string::npos is not found. The locale is ignored.
+
 	static bool tailMatch( const std::string & in , const std::string & ending ) ;
-		///< Returns true if the string has the given ending (or ending is empty).
+		///< Returns true if the string has the given ending (or the given ending is empty).
 
 	static bool tailMatch( const StringArray & in , const std::string & ending ) ;
 		///< Returns true if any string in the array has the given ending
-		///< (or ending is empty).
+		///< (or the given ending is empty).
 
 	static bool headMatch( const std::string & in , const std::string & head ) ;
 		///< Returns true if the string has the given start (or head is empty).
@@ -458,11 +493,6 @@ public:
 	static bool isNegative( const std::string & ) ;
 		///< Returns true if the string has a negative meaning, such as "0", "false", "no".
 
-	static size_type ifind( const std::string & s , const std::string & key ,
-		size_type pos = 0U ) ;
-			///< Returns the position of the key in 's' using a Latin-1 case-insensitive
-			///< search. The locale is ignored.
-
 	static std::string unique( const std::string & s , char c , char r ) ;
 		///< Returns a string with repeated 'c' characters replaced by
 		///< one 'r' character. Single 'c' characters are not replaced.
@@ -484,17 +514,8 @@ public:
 			///< in the match-list (blacklist). (Removes nothing if the match-list is
 			///< empty.) Returns an iterator for erase().
 
-private:
-	Str() g__eq_delete ;
-	static void readLineFromImp( std::istream & , const std::string & , std::string & ) ;
-	static unsigned short toUShortImp( const std::string & s , bool & overflow , bool & invalid ) ;
-	static unsigned long toULongImp( const std::string & s , bool & overflow , bool & invalid ) ;
-	static unsigned int toUIntImp( const std::string & s , bool & overflow , bool & invalid ) ;
-	static short toShortImp( const std::string & s , bool & overflow , bool & invalid ) ;
-	static long toLongImp( const std::string & s , bool & overflow , bool & invalid ) ;
-	static int toIntImp( const std::string & s , bool & overflow , bool & invalid ) ;
-	static void escapeImp( std::string & , char , const char * , const char * , bool ) ;
-	static void joinImp( const std::string & , std::string & , const std::string & ) ;
+public:
+	Str() = delete ;
 } ;
 
 #endif

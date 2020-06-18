@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 # An example E-MailRelay "--filter" script that edits the content originator
 # fields (ie. From, Sender and Reply-To) to a fixed value.
 #
-# See also: RFC-2822
+# See also: emailrelay-set-from.js, RFC-2822
 #
 
 use strict ;

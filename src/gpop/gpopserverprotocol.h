@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -52,8 +52,8 @@ public:
 	class Sender /// An interface used by ServerProtocol to send protocol replies.
 	{
 	public:
-		virtual bool protocolSend( const std::string & s , size_t offset ) = 0 ;
-		virtual ~Sender() ;
+		virtual bool protocolSend( const std::string & s , std::size_t offset ) = 0 ;
+		virtual ~Sender() = default ;
 	} ;
 
 	class Text /// An interface used by ServerProtocol to provide response text strings.
@@ -63,12 +63,12 @@ public:
 		virtual std::string quit() const = 0 ;
 		virtual std::string capa() const = 0 ;
 		virtual std::string user( const std::string & id ) const = 0 ;
-		virtual ~Text() ;
+		virtual ~Text() = default ;
 	} ;
 
 	struct Config /// A structure containing configuration parameters for ServerProtocol, currently empty.
 	{
-		Config() ;
+		Config() = default ;
 	} ;
 
 	class Security /// An interface used by ServerProtocol to enable TLS.
@@ -76,12 +76,12 @@ public:
 	public:
 		virtual bool securityEnabled() const = 0 ;
 		virtual void securityStart() = 0 ;
-		virtual ~Security() ;
+		virtual ~Security() = default ;
 	} ;
 
 	ServerProtocol( Sender & sender , Security & security , Store & store ,
 		const GAuth::SaslServerSecrets & server_secrets , const std::string & sasl_server_config ,
-		const Text & text , GNet::Address peer_address , const Config & config ) ;
+		const Text & text , const GNet::Address & peer_address , const Config & config ) ;
 			///< Constructor.
 			///<
 			///< The Sender interface is used to send protocol
@@ -109,7 +109,7 @@ public:
 		///< Called when the server connection becomes secure.
 
 private:
-	g__enum(Event)
+	enum class Event
 	{
 		eApop ,
 		eAuth ,
@@ -131,8 +131,8 @@ private:
 		eStls ,
 		eSecure ,
 		eUnknown
-	} ; g__enum_end(Event)
-	g__enum(State)
+	} ;
+	enum class State
 	{
 		sStart ,
 		sEnd ,
@@ -141,13 +141,18 @@ private:
 		sAuth ,
 		s_Any ,
 		s_Same
-	} ; g__enum_end(State)
-	typedef const std::string & EventData ;
-	typedef G::StateMachine<ServerProtocol,State,Event,EventData> Fsm ;
+	} ;
+	using EventData = const std::string & ;
+	using Fsm = G::StateMachine<ServerProtocol,State,Event,EventData> ;
+
+public:
+	~ServerProtocol() = default ;
+	ServerProtocol( const ServerProtocol & ) = delete ;
+	ServerProtocol( ServerProtocol && ) = delete ;
+	void operator=( const ServerProtocol & ) = delete ;
+	void operator=( ServerProtocol && ) = delete ;
 
 private:
-	ServerProtocol( const ServerProtocol & ) g__eq_delete ;
-	void operator=( const ServerProtocol & ) g__eq_delete ;
 	void doQuit( const std::string & line , bool & ) ;
 	void doQuitEarly( const std::string & line , bool & ) ;
 	void doStat( const std::string & line , bool & ) ;
@@ -173,11 +178,11 @@ private:
 	void sendOk() ;
 	static const std::string & crlf() ;
 	Event commandEvent( const std::string & ) const ;
-	int commandNumber( const std::string & , int , size_t index = 1U ) const ;
+	int commandNumber( const std::string & , int , std::size_t index = 1U ) const ;
 	void sendList( const std::string & , bool ) ;
 	std::string commandWord( const std::string & ) const ;
-	std::string commandParameter( const std::string & , size_t index = 1U ) const ;
-	std::string commandPart( const std::string & , size_t index ) const ;
+	std::string commandParameter( const std::string & , std::size_t index = 1U ) const ;
+	std::string commandPart( const std::string & , std::size_t index ) const ;
 	void sendContent() ;
 	bool sendContentLine( std::string & , bool & ) ;
 	void send( std::string ) ;
@@ -191,11 +196,11 @@ private:
 	Security & m_security ;
 	Store & m_store ;
 	StoreLock m_store_lock ;
-	unique_ptr<GAuth::SaslServer> m_sasl_server ;
+	std::unique_ptr<GAuth::SaslServer> m_sasl_server ;
 	GNet::Address m_peer_address ;
 	Fsm m_fsm ;
 	std::string m_user ;
-	unique_ptr<std::istream> m_content ;
+	std::unique_ptr<std::istream> m_content ;
 	long m_body_limit ;
 	bool m_in_body ;
 	bool m_secure ;
@@ -208,14 +213,21 @@ private:
 class GPop::ServerProtocolText : public ServerProtocol::Text
 {
 public:
-	explicit ServerProtocolText( GNet::Address peer ) ;
+	explicit ServerProtocolText( const GNet::Address & peer ) ;
 		///< Constructor.
 
+public:
+	~ServerProtocolText() override = default ;
+	ServerProtocolText( const ServerProtocolText & ) = delete ;
+	ServerProtocolText( ServerProtocolText && ) = delete ;
+	void operator=( const ServerProtocolText & ) = delete ;
+	void operator=( ServerProtocolText && ) = delete ;
+
 private: // overrides
-	virtual std::string greeting() const override ; // Override from GPop::ServerProtocol::Text.
-	virtual std::string quit() const override ; // Override from GPop::ServerProtocol::Text.
-	virtual std::string capa() const override ; // Override from GPop::ServerProtocol::Text.
-	virtual std::string user( const std::string & id ) const override ; // Override from GPop::ServerProtocol::Text.
+	std::string greeting() const override ; // Override from GPop::ServerProtocol::Text.
+	std::string quit() const override ; // Override from GPop::ServerProtocol::Text.
+	std::string capa() const override ; // Override from GPop::ServerProtocol::Text.
+	std::string user( const std::string & id ) const override ; // Override from GPop::ServerProtocol::Text.
 } ;
 
 #endif

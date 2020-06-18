@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -109,9 +109,13 @@ public:
 		///< Returns the path as supplied to the constructor
 		///< or init().
 
+public:
+	PidFile( const PidFile & ) = delete ;
+	PidFile( PidFile && ) = delete ;
+	void operator=( const PidFile & ) = delete ;
+	void operator=( PidFile && ) = delete ;
+
 private:
-	PidFile( const PidFile & ) g__eq_delete ;
-	void operator=( const PidFile & ) g__eq_delete ;
 	static bool mine( SignalSafe , const char * path ) ; // reentrant
 	static void create( const Path & pid_file ) ;
 	static std::string * new_string_ignore_leak( const std::string & ) ;
@@ -119,7 +123,7 @@ private:
 
 private:
 	Path m_path ;
-	bool m_committed ;
+	bool m_committed{false} ;
 } ;
 
 #endif

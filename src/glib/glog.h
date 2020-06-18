@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ namespace G
 ///
 /// Usage:
 /// \code
-///	G::Log(G::Log::Severity::s_LogSummary,__FILE__,__LINE__) << a << b ;
+///	G::Log(G::Log::Severity::s_InfoSummary,__FILE__,__LINE__) << a << b ;
 /// \endcode
 /// or
 /// \code
@@ -48,7 +48,7 @@ namespace G
 class G::Log
 {
 public:
-	g__enum(Severity) { s_LogVerbose , s_LogSummary , s_Debug , s_Warning , s_Error , s_Assertion } ; g__enum_end(Severity)
+	enum class Severity { s_InfoVerbose , s_InfoSummary , s_Debug , s_Warning , s_Error , s_Assertion } ;
 
 	class Line /// A class for adding line number information to the Log output.
 		{ public: const char * m_file ; int m_line ; Line( const char *file , int line ) : m_file(file) , m_line(line) {} } ;
@@ -73,9 +73,13 @@ public:
 	static bool at( Severity , const char * group ) ;
 		///< An overload that adds a logging group name to the test.
 
+public:
+	Log( const Log & ) = delete ;
+	Log( Log && ) = delete ;
+	void operator=( const Log & ) = delete ;
+	void operator=( Log && ) = delete ;
+
 private:
-	Log( const Log & ) g__eq_delete ;
-	void operator=( const Log & ) g__eq_delete ;
 	void flush() ;
 	bool active() ;
 
@@ -110,9 +114,9 @@ private:
 #endif
 
 #if ! defined(G_NO_LOG)
-#define G_LOG( expr ) G_LOG_IMP( expr , G::Log::Severity::s_LogVerbose )
-#define G_LOG_IF( cond , expr ) G_LOG_IMP_IF( cond , expr , G::Log::Severity::s_LogVerbose )
-#define G_LOG_ONCE( expr ) G_LOG_IMP_ONCE( cond , expr , G::Log::Severity::s_LogVerbose )
+#define G_LOG( expr ) G_LOG_IMP( expr , G::Log::Severity::s_InfoVerbose )
+#define G_LOG_IF( cond , expr ) G_LOG_IMP_IF( cond , expr , G::Log::Severity::s_InfoVerbose )
+#define G_LOG_ONCE( expr ) G_LOG_IMP_ONCE( expr , G::Log::Severity::s_InfoVerbose )
 #else
 #define G_LOG( expr )
 #define G_LOG_IF( cond , expr )
@@ -120,7 +124,7 @@ private:
 #endif
 
 #if ! defined(G_NO_LOG_S)
-#define G_LOG_S( expr ) G_LOG_IMP( expr , G::Log::Severity::s_LogSummary )
+#define G_LOG_S( expr ) G_LOG_IMP( expr , G::Log::Severity::s_InfoSummary )
 #else
 #define G_LOG_S( expr )
 #endif

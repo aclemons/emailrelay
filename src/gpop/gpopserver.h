@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,27 +49,32 @@ class GPop::ServerPeer : public GNet::ServerPeer , private ServerProtocol::Sende
 public:
 	G_EXCEPTION( SendError , "network send error" ) ;
 
-	ServerPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo , Store & ,
+	ServerPeer( GNet::ExceptionSinkUnbound , const GNet::ServerPeerInfo & , Store & ,
 		const GAuth::SaslServerSecrets & , const std::string & sasl_server_config ,
-		unique_ptr<ServerProtocol::Text> ptext , const ServerProtocol::Config & ) ;
+		std::unique_ptr<ServerProtocol::Text> ptext , const ServerProtocol::Config & ) ;
 			///< Constructor.
 
 private: // overrides
-	virtual bool protocolSend( const std::string & line , size_t ) override ; // Override from GPop::ServerProtocol::Sender.
-	virtual void onDelete( const std::string & ) override ; // Override from GNet::ServerPeer.
-	virtual bool onReceive( const char * , size_t , size_t , size_t , char ) override ; // Override from GNet::ServerPeer.
-	virtual void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
-	virtual void onSendComplete() override ; // Override from GNet::ServerPeer.
-	virtual bool securityEnabled() const override ; // Override from GPop::ServerProtocol::Security.
-	virtual void securityStart() override ; // Override from GPop::ServerProtocol::Security.
+	bool protocolSend( const std::string & line , std::size_t ) override ; // Override from GPop::ServerProtocol::Sender.
+	void onDelete( const std::string & ) override ; // Override from GNet::ServerPeer.
+	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::ServerPeer.
+	void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
+	void onSendComplete() override ; // Override from GNet::ServerPeer.
+	bool securityEnabled() const override ; // Override from GPop::ServerProtocol::Security.
+	void securityStart() override ; // Override from GPop::ServerProtocol::Security.
+
+public:
+	~ServerPeer() override = default ;
+	ServerPeer( const ServerPeer & ) = delete ;
+	ServerPeer( ServerPeer && ) = delete ;
+	void operator=( const ServerPeer & ) = delete ;
+	void operator=( ServerPeer && ) = delete ;
 
 private:
-	ServerPeer( const ServerPeer & ) g__eq_delete ;
-	void operator=( const ServerPeer & ) g__eq_delete ;
 	void processLine( const std::string & line ) ;
 
 private:
-	unique_ptr<ServerProtocol::Text> m_ptext ; // order dependency
+	std::unique_ptr<ServerProtocol::Text> m_ptext ; // order dependency
 	ServerProtocol m_protocol ; // order dependency -- last
 } ;
 
@@ -82,37 +87,53 @@ public:
 	G_EXCEPTION( Overflow , "too many interface addresses" ) ;
 	struct Config /// A structure containing GPop::Server configuration parameters.
 	{
-		bool allow_remote ;
-		unsigned int port ;
+		bool allow_remote{false} ;
+		unsigned int port{110} ;
 		G::StringArray addresses ;
 		GNet::ServerPeerConfig server_peer_config ;
 		std::string sasl_server_config ;
+
 		Config() ;
 		Config( bool , unsigned int port , const G::StringArray & addresses ,
 			const GNet::ServerPeerConfig & , const std::string & sasl_server_config ) ;
+		Config & set_allow_remote( bool = true ) ;
+		Config & set_port( unsigned int ) ;
+		Config & set_addresses( const G::StringArray & ) ;
+		Config & set_server_peer_config( const GNet::ServerPeerConfig & ) ;
+		Config & set_sasl_server_config( const std::string & ) ;
 	} ;
 
 	Server( GNet::ExceptionSink , Store & store , const GAuth::SaslServerSecrets & , const Config & ) ;
 		///< Constructor. The 'secrets' reference is kept.
 
-	virtual ~Server() ;
+	~Server() override ;
 		///< Destructor.
 
 	void report() const ;
 		///< Generates helpful diagnostics after construction.
 
 private: // overrides
-	virtual unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo , GNet::MultiServer::ServerInfo ) override ;
+	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo , GNet::MultiServer::ServerInfo ) override ;
+
+public:
+	Server( const Server & ) = delete ;
+	Server( Server && ) = delete ;
+	void operator=( const Server & ) = delete ;
+	void operator=( Server && ) = delete ;
 
 private:
-	Server( const Server & ) g__eq_delete ;
-	void operator=( const Server & ) g__eq_delete ;
-	unique_ptr<ServerProtocol::Text> newProtocolText( GNet::Address ) const ;
+	std::unique_ptr<ServerProtocol::Text> newProtocolText( const GNet::Address & ) const ;
 
 private:
 	Config m_config ;
 	Store & m_store ;
 	const GAuth::SaslServerSecrets & m_secrets ;
 } ;
+
+inline GPop::Server::Config & GPop::Server::Config::set_allow_remote( bool b ) { allow_remote = b ; return *this ; }
+inline GPop::Server::Config & GPop::Server::Config::set_port( unsigned int p ) { port = p ; return *this ; }
+inline GPop::Server::Config & GPop::Server::Config::set_addresses( const G::StringArray & a ) { addresses = a ; return *this ; }
+inline GPop::Server::Config & GPop::Server::Config::set_server_peer_config( const GNet::ServerPeerConfig & c ) { server_peer_config = c ; return *this ; }
+inline GPop::Server::Config & GPop::Server::Config::set_sasl_server_config( const std::string & s ) { sasl_server_config = s ; return *this ; }
 
 #endif

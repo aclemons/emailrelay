@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,18 +21,17 @@
 #include "gdef.h"
 #include "gdescriptor.h"
 
-GNet::Descriptor::Descriptor() :
-	m_fd(-1) ,
-	m_handle(0)
+GNet::Descriptor::Descriptor() noexcept :
+	m_fd(-1)
 {
 }
 
-bool GNet::Descriptor::valid() const
+bool GNet::Descriptor::valid() const noexcept
 {
 	return m_fd >= 0 ;
 }
 
-HANDLE GNet::Descriptor::h() const
+HANDLE GNet::Descriptor::h() const noexcept
 {
 	return 0 ;
 }

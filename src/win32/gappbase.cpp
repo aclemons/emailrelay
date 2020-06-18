@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -53,8 +53,8 @@ std::string GGui::ApplicationBase::createWindow( int show_style , bool do_show ,
 	if( !create( className() , title() , windowStyle() ,
 			CW_USEDEFAULT , CW_USEDEFAULT , // position (x,y)
 			dx , dy , // size
-			NULL , // parent window
-			NULL , // menu handle: NULL => use class's menu
+			HNULL , // parent window
+			HNULL , // menu handle: HNULL => use class's menu
 			hinstance() ) )
 	{
 		if( no_throw )
@@ -81,7 +81,7 @@ void GGui::ApplicationBase::initFirst()
 	G_DEBUG( "GGui::ApplicationBase::initFirst" ) ;
 
 	UINT icon_id = resource() ;
-	HICON icon = icon_id ? ::LoadIcon(hinstance(),MAKEINTRESOURCE(icon_id)) : 0 ;
+	HICON icon = icon_id ? LoadIcon(hinstance(),MAKEINTRESOURCE(icon_id)) : 0 ;
 	if( icon == 0 )
 		icon = classIcon() ;
 
@@ -102,7 +102,7 @@ void GGui::ApplicationBase::initFirst()
 void GGui::ApplicationBase::close() const
 {
 	G_DEBUG( "GGui::ApplicationBase::close: sending wm-close" ) ;
-	::SendMessage( handle() , WM_CLOSE , 0 , 0 ) ;
+	SendMessage( handle() , WM_CLOSE , 0 , 0 ) ;
 }
 
 void GGui::ApplicationBase::run( bool with_idle )
@@ -151,7 +151,7 @@ UINT GGui::ApplicationBase::resource() const
 
 void GGui::ApplicationBase::beep() const
 {
-	::MessageBeep( MB_ICONEXCLAMATION ) ;
+	MessageBeep( MB_ICONEXCLAMATION ) ;
 }
 
 bool GGui::ApplicationBase::messageBoxQuery( const std::string & message )
@@ -170,7 +170,7 @@ void GGui::ApplicationBase::messageBox( const std::string & message )
 
 void GGui::ApplicationBase::messageBox( const std::string & title , const std::string & message )
 {
-	HWND hwnd = NULL ;
+	HWND hwnd = HNULL ;
 	unsigned int type = messageBoxType( hwnd , MB_OK | MB_ICONEXCLAMATION ) ;
 	messageBoxCore( hwnd , type , title , message ) ;
 }
@@ -178,14 +178,14 @@ void GGui::ApplicationBase::messageBox( const std::string & title , const std::s
 bool GGui::ApplicationBase::messageBoxCore( HWND parent , unsigned int type ,
 	const std::string & title , const std::string & message )
 {
-	int rc = ::MessageBoxA( parent , message.c_str() , title.c_str() , type ) ;
+	int rc = MessageBoxA( parent , message.c_str() , title.c_str() , type ) ;
 	return rc == IDOK || rc == IDYES ;
 }
 
 HWND GGui::ApplicationBase::messageBoxHandle() const
 {
-	HWND hwnd = ::GetActiveWindow() ; // eg. a dialog box
-	if( hwnd == NULL )
+	HWND hwnd = GetActiveWindow() ; // eg. a dialog box
+	if( hwnd == HNULL )
 		hwnd = handle() ;
 	return hwnd ;
 }
@@ -193,7 +193,7 @@ HWND GGui::ApplicationBase::messageBoxHandle() const
 unsigned int GGui::ApplicationBase::messageBoxType( HWND hwnd , unsigned int base_type )
 {
 	unsigned int type = base_type ;
-	if( hwnd == NULL )
+	if( hwnd == HNULL )
 		base_type |= ( MB_TASKMODAL | MB_SETFOREGROUND ) ;
 	return type ;
 }

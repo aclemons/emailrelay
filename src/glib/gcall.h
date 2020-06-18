@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,8 +36,8 @@ namespace G
 /// instantiated on the heap, emits some sort of synchronous
 /// signal, event, or callback and the receiving code somehow
 /// ends up deleting the originating object. If the emitting
-/// object does more work before the stack unwinds then it can
-/// protect itself with a CallFrame check, with almost zero
+/// object might do more work before the stack unwinds then it
+/// can protect itself with a CallFrame check, with almost zero
 /// run-time cost:
 ///
 /// \code
@@ -57,24 +57,26 @@ namespace G
 class G::CallStack
 {
 public:
-	CallStack() g__noexcept ;
+	CallStack() noexcept ;
 		///< Constructor.
 
-	~CallStack() g__noexcept ;
+	~CallStack() noexcept ;
 		///< Destructor. Calls invalidate() on all the frames in the stack.
 
-	CallFrame * push( CallFrame * ) g__noexcept ;
+	CallFrame * push( CallFrame * ) noexcept ;
 		///< Pushes a new innermost call frame onto the stack.
 
-	void pop( CallFrame * ) g__noexcept ;
+	void pop( CallFrame * ) noexcept ;
 		///< Makes the given frame the innermost.
 
-private:
-	CallStack( const CallStack & ) g__eq_delete ;
-	void operator=( const CallStack & ) g__eq_delete ;
+public:
+	CallStack( const CallStack & ) = delete ;
+	CallStack( CallStack && ) = delete ;
+	void operator=( const CallStack & ) = delete ;
+	void operator=( CallStack && ) = delete ;
 
 private:
-	CallFrame * m_inner ;
+	CallFrame * m_inner{nullptr} ;
 } ;
 
 /// \class G::CallFrame
@@ -84,29 +86,31 @@ private:
 class G::CallFrame
 {
 public:
-	explicit CallFrame( CallStack & ) g__noexcept ;
+	explicit CallFrame( CallStack & ) noexcept ;
 		///< Constructor. The newly constructed call frame becomes
 		///< the innermost frame in the stack.
 
-	~CallFrame() g__noexcept ;
+	~CallFrame() noexcept ;
 		///< Destructor.
 
-	void invalidate() g__noexcept ;
+	void invalidate() noexcept ;
 		///< Invalidates the call-frame.
 
-	bool valid() const g__noexcept ;
+	bool valid() const noexcept ;
 		///< Returns true if not invalidate()d. This is safe to call
 		///< even if the call stack has been destructed.
 
-	bool deleted() const g__noexcept ;
+	bool deleted() const noexcept ;
 		///< Returns !valid().
 
-	CallFrame * outer() g__noexcept ;
+	CallFrame * outer() noexcept ;
 		///< Returns the next outermost frame in the stack.
 
-private:
-	CallFrame( const CallFrame & ) g__eq_delete ;
-	void operator=( const CallFrame & ) g__eq_delete ;
+public:
+	CallFrame( const CallFrame & ) = delete ;
+	CallFrame( CallFrame && ) = delete ;
+	void operator=( const CallFrame & ) = delete ;
+	void operator=( CallFrame && ) = delete ;
 
 private:
 	CallStack & m_stack ;
@@ -117,20 +121,18 @@ private:
 // ==
 
 inline
-G::CallStack::CallStack() g__noexcept :
-	m_inner(nullptr)
-{
-}
+G::CallStack::CallStack() noexcept
+= default;
 
 inline
-G::CallStack::~CallStack() g__noexcept
+G::CallStack::~CallStack() noexcept
 {
 	for( CallFrame * p = m_inner ; p ; p = p->outer() )
 		p->invalidate() ;
 }
 
 inline
-G::CallFrame * G::CallStack::push( CallFrame * p ) g__noexcept
+G::CallFrame * G::CallStack::push( CallFrame * p ) noexcept
 {
 	CallFrame * old = m_inner ;
 	m_inner = p ;
@@ -138,7 +140,7 @@ G::CallFrame * G::CallStack::push( CallFrame * p ) g__noexcept
 }
 
 inline
-void G::CallStack::pop( CallFrame * p ) g__noexcept
+void G::CallStack::pop( CallFrame * p ) noexcept
 {
 	m_inner = p ;
 }
@@ -146,7 +148,7 @@ void G::CallStack::pop( CallFrame * p ) g__noexcept
 // ==
 
 inline
-G::CallFrame::CallFrame( CallStack & stack ) g__noexcept :
+G::CallFrame::CallFrame( CallStack & stack ) noexcept :
 	m_stack(stack) ,
 	m_valid(true)
 {
@@ -154,32 +156,32 @@ G::CallFrame::CallFrame( CallStack & stack ) g__noexcept :
 }
 
 inline
-G::CallFrame::~CallFrame() g__noexcept
+G::CallFrame::~CallFrame() noexcept
 {
 	if( m_valid )
 		m_stack.pop( m_outer ) ;
 }
 
 inline
-void G::CallFrame::invalidate() g__noexcept
+void G::CallFrame::invalidate() noexcept
 {
 	m_valid = false ;
 }
 
 inline
-bool G::CallFrame::valid() const g__noexcept
+bool G::CallFrame::valid() const noexcept
 {
 	return m_valid ;
 }
 
 inline
-bool G::CallFrame::deleted() const g__noexcept
+bool G::CallFrame::deleted() const noexcept
 {
 	return !m_valid ;
 }
 
 inline
-G::CallFrame * G::CallFrame::outer() g__noexcept
+G::CallFrame * G::CallFrame::outer() noexcept
 {
 	return m_outer ;
 }

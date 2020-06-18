@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ public:
 		///< valid() returns true. For a more accurate test use
 		///< writeable().
 
-	bool writeable( std::string probe_filename = tmp() ) const ;
+	bool writeable( const std::string & probe_filename = tmp() ) const ;
 		///< Tries to create and then delete an empty test file
 		///< in the directory. Returns true on success.
 		///< Precondition: valid()
@@ -120,12 +120,14 @@ public:
 	std::string fileName() const ;
 		///< Returns the name of the current item.
 
-private:
-	DirectoryIterator( const DirectoryIterator & ) g__eq_delete ;
-	void operator=( const DirectoryIterator & ) g__eq_delete ;
+public:
+	DirectoryIterator( const DirectoryIterator & ) = delete ;
+	DirectoryIterator( DirectoryIterator && ) noexcept = default ;
+	void operator=( const DirectoryIterator & ) = delete ;
+	DirectoryIterator & operator=( DirectoryIterator && ) noexcept = default ;
 
 private:
-	unique_ptr<DirectoryIteratorImp> m_imp ;
+	std::unique_ptr<DirectoryIteratorImp> m_imp ;
 } ;
 
 /// \class G::DirectoryList
@@ -138,7 +140,7 @@ class G::DirectoryList
 public:
 	struct Item /// A directory-entry item for G::DirectoryList.
 	{
-		bool m_is_dir ;
+		bool m_is_dir{false} ;
 		Path m_path ;
 		std::string m_name ;
 	} ;
@@ -179,8 +181,8 @@ private:
 	static bool compare( const Item & , const Item & ) ;
 
 private:
-	bool m_first ;
-	unsigned int m_index ;
+	bool m_first{true} ;
+	unsigned int m_index{0U} ;
 	std::vector<Item> m_list ;
 } ;
 

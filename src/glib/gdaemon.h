@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ class G::Daemon
 public:
 	static void detach() ;
 		///< Detaches from the parent environment. This typically
-		///< involves fork()ing, _exit()ing the parent, and calling
+		///< involves fork()ing, std::_Exit()ing the parent, and calling
 		///< setsid() in the child.
 
 	static void detach( PidFile & pid_file ) ;
@@ -59,8 +59,10 @@ public:
 		///<
 		///< Throws PidFile::Error on error.
 
+public:
+	Daemon() = delete ;
+
 private:
-	Daemon() g__eq_delete ;
 	static void setsid() ;
 } ;
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,16 +32,12 @@ namespace Main
 	class App ;
 }
 
-/// \class Main::App
-/// An implementation of the Main::Output abstract interface
-/// for command-line output. An App instance is passed to Main::Run.
-/// \see Main::Run
-///
 class Main::App : public Main::Output
 {
-	virtual void output( const std::string & text , bool e ) override ;
-	virtual G::Options::Layout layout() const override ;
-	virtual bool simpleOutput() const override ;
+private: // overrides
+	void output( const std::string & text , bool e ) override ;
+	G::Options::Layout layout() const override ;
+	bool simpleOutput() const override ;
 } ;
 
 void Main::App::output( const std::string & text , bool e )
@@ -86,3 +82,4 @@ int main( int argc , char * argv [] )
 	return ok ? EXIT_SUCCESS : EXIT_FAILURE ;
 }
 
+/// \file main.cpp

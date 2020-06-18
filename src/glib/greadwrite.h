@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,8 +49,8 @@ namespace G
 class G::ReadWrite
 {
 public:
-	typedef size_t size_type ;
-	typedef ssize_t ssize_type ;
+	using size_type = std::size_t ;
+	using ssize_type = ssize_t ;
 
 	virtual ssize_type read( char * buffer , size_type buffer_length ) = 0 ;
 		///< Reads data. Returns 0 if the connection has been lost.
@@ -67,13 +67,13 @@ public:
 		///< requested length then eWouldBlock() should not be
 		///< used.
 
-	virtual bool eWouldBlock() = 0 ;
+	virtual bool eWouldBlock() const = 0 ;
 		///< See read() and write().
 
 	virtual SOCKET fd() const = 0 ;
 		///< Returns the file descriptor.
 
-	virtual ~ReadWrite() ;
+	virtual ~ReadWrite() = default ;
 		///< Destructor.
 } ;
 

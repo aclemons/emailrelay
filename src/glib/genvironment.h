@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 
 #include "gdef.h"
 #include <string>
+#include <vector>
+#include <map>
 
 namespace G
 {
@@ -30,7 +32,8 @@ namespace G
 }
 
 /// \class G::Environment
-/// A static class to wrap getenv() and putenv().
+/// Holds a set of environment variables and also provides static methods
+/// to wrap getenv() and putenv().
 ///
 class G::Environment
 {
@@ -41,8 +44,88 @@ public:
 	static void put( const std::string & name , const std::string & value ) ;
 		///< Sets the environment variable value.
 
+	static Environment minimal() ;
+		///< Returns a minimal, safe set of environment variables.
+
+	static Environment inherit() ;
+		///< Returns an empty() environment, as if default constructed.
+		///< This is syntactic sugar for G::NewProcess.
+
+	explicit Environment( const std::map<std::string,std::string> & ) ;
+		///< Constructor from a map.
+
+	~Environment() = default ;
+		///< Destructor.
+
+	void add( const std::string & name , const std::string & value ) ;
+		///< Adds a variable to this set. Does nothing if already
+		///< present.
+
+	bool contains( const std::string & name ) const ;
+		///< Returns true if the given variable is in this set.
+
+	std::string value( const std::string & name , const std::string & default_ = std::string() ) const ;
+		///< Returns the value of the given variable in this set.
+
+	void set( const std::string & name , const std::string & value ) ;
+		///< Inserts or updates a variable in this set.
+
+	const char * ptr() const noexcept ;
+		///< Returns a contiguous block of memory containing the
+		///< null-terminated strings with an extra zero byte
+		///< at the end.
+
+	char ** v() const noexcept ;
+		///< Returns a null-terminated array of pointers.
+
+	bool empty() const noexcept ;
+		///< Returns true if empty.
+
+	Environment( const Environment & ) ;
+		///< Copy constructor.
+
+	Environment( Environment && ) noexcept ;
+		///< Move constructor.
+
+	Environment & operator=( const Environment & ) ;
+		///< Assigment operator.
+
+	Environment & operator=( Environment && ) noexcept ;
+		///< Move assigment operator.
+
+	bool valid() const ;
+		///< Returns true if the class invariants are
+		///< satisfied. Used in testing.
+
 private:
-	Environment() g__eq_delete ;
+	Environment() ;
+	void swap( Environment & ) noexcept ;
+
+private:
+	using Map = std::map<std::string,std::string> ;
+	using List = std::vector<std::string> ;
+	void setup() ;
+	void setList() ;
+	void setPointers() ;
+	void setBlock() ;
+
+private:
+	Map m_map ;
+	std::vector<std::string> m_list ;
+	std::vector<char *> m_pointers ;
+	std::string m_block ;
 } ;
+
+inline
+bool G::Environment::empty() const noexcept
+{
+	return m_map.empty() ;
+}
+
+inline
+G::Environment G::Environment::inherit()
+{
+	return {} ;
+}
 
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,38 +32,33 @@
 #include <algorithm> // std::find
 #include <iterator>
 #include <stdexcept>
+#include <array>
 
-G::MapFile::MapFile() :
-	m_logging(true)
-{
-}
+G::MapFile::MapFile()
+= default;
 
-G::MapFile::MapFile( const G::Path & path ) :
-	m_logging(true)
+G::MapFile::MapFile( const G::Path & path )
 {
 	if( path != Path() )
 		readFrom( path ) ;
 }
 
-G::MapFile::MapFile( std::istream & stream ) :
-	m_logging(true)
+G::MapFile::MapFile( std::istream & stream )
 {
 	readFrom( stream ) ;
 }
 
 G::MapFile::MapFile( const G::StringMap & map ) :
-	m_logging(true) ,
 	m_map(map)
 {
 	m_keys.reserve( m_map.size() ) ;
-	for( StringMap::iterator p = m_map.begin() ; p != m_map.end() ; ++p )
-		m_keys.push_back( (*p).first ) ;
+	for( auto & p : m_map )
+		m_keys.push_back( p.first ) ;
 }
 
-G::MapFile::MapFile( const OptionMap & map , const std::string & yes ) :
-	m_logging(true)
+G::MapFile::MapFile( const OptionMap & map , const std::string & yes )
 {
-	for( OptionMap::const_iterator p = map.begin() ; p != map.end() ; )
+	for( auto p = map.begin() ; p != map.end() ; )
 	{
 		std::string key = (*p).first ;
 		if( map.contains(key) ) // ie. ignore "--foo=off"
@@ -105,7 +100,7 @@ void G::MapFile::readFrom( std::istream & ss )
 		{
 			StringArray part ;
 			Str::splitIntoTokens( line , part , " =\t" ) ;
-			if( part.size() == 0U )
+			if( part.empty() )
 				continue ;
 			key = part[0] ;
 
@@ -128,7 +123,7 @@ bool G::MapFile::ignore( const std::string & line ) const
 	if( pos_interesting == std::string::npos )
 		return true ;
 
-	std::string::size_type pos_hash = line.find("#") ;
+	std::string::size_type pos_hash = line.find('#') ;
 	if( pos_hash != std::string::npos && pos_hash < pos_interesting )
 		return true ;
 
@@ -144,8 +139,8 @@ void G::MapFile::check( const G::Path & path )
 
 void G::MapFile::log() const
 {
-	for( StringArray::const_iterator p = m_keys.begin() ; p != m_keys.end() ; ++p )
-		log( (*(m_map.find(*p))).first , (*(m_map.find(*p))).second ) ;
+	for( const auto & key : m_keys )
+		log( (*(m_map.find(key))).first , (*(m_map.find(key))).second ) ;
 }
 
 void G::MapFile::log( const std::string & key , const std::string & value ) const
@@ -183,7 +178,7 @@ std::string G::MapFile::quote( const std::string & s )
 
 void G::MapFile::editInto( const G::Path & path , bool make_backup , bool allow_read_error , bool allow_write_error ) const
 {
-	typedef std::list<std::string> List ;
+	using List = std::list<std::string> ;
 	List lines = read( path , allow_read_error ) ;
 	commentOut( lines ) ;
 	replace( lines ) ;
@@ -208,31 +203,29 @@ G::MapFile::List G::MapFile::read( const G::Path & path , bool allow_read_error 
 
 void G::MapFile::commentOut( List & line_list ) const
 {
-	for( List::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
+	for( auto & line : line_list )
 	{
-		std::string & line = *line_p ;
 		if( line.empty() || line.at(0U) == '#' )
 			continue ;
-		line = std::string(1U,'#') + line ;
+		line.insert( line.cbegin() , '#' ) ;
 	}
 }
 
 void G::MapFile::replace( List & line_list ) const
 {
-	for( StringMap::const_iterator map_p = m_map.begin() ; map_p != m_map.end() ; ++map_p )
+	for( const auto & map_item : m_map )
 	{
 		bool found = false ;
-		for( List::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
+		for(auto & line : line_list)
 		{
-			std::string & line = (*line_p) ;
 			if( line.empty() ) continue ;
 			StringArray part ;
 			Str::splitIntoTokens( line , part , Str::ws()+"=#" ) ;
-			if( part.size() == 0U ) continue ;
-			if( part.at(0U) == (*map_p).first )
+			if( part.empty() ) continue ;
+			if( part.at(0U) == map_item.first )
 			{
-				std::string value = (*map_p).second ;
-				line = Str::trimmed( (*map_p).first + " " + quote(value) , Str::ws() ) ;
+				std::string value = map_item.second ;
+				line = Str::trimmed( map_item.first + " " + quote(value) , Str::ws() ) ;
 				found = true ;
 				break ;
 			}
@@ -240,8 +233,8 @@ void G::MapFile::replace( List & line_list ) const
 
 		if( !found )
 		{
-			std::string value = (*map_p).second ;
-			line_list.push_back( Str::trimmed( (*map_p).first + " " + quote(value) , Str::ws() ) ) ;
+			std::string value = map_item.second ;
+			line_list.push_back( Str::trimmed( map_item.first + " " + quote(value) , Str::ws() ) ) ;
 		}
 	}
 }
@@ -249,8 +242,8 @@ void G::MapFile::replace( List & line_list ) const
 void G::MapFile::backup( const G::Path & path )
 {
 	// ignore errors
-	DateTime::BrokenDownTime now = DateTime::local( DateTime::now() ) ;
-	std::string timestamp = Date(now).string(Date::Format::yyyy_mm_dd) + Time(now).hhmmss() ;
+	BrokenDownTime now = SystemTime::now().local() ;
+	std::string timestamp = Date(now).str(Date::Format::yyyy_mm_dd) + Time(now).hhmmss() ;
 	Path backup( path.dirname() , path.basename() + "." + timestamp ) ;
 	Process::Umask umask( Process::Umask::Mode::Tightest ) ;
 	File::copy( path , backup , File::NoThrow() ) ;
@@ -267,7 +260,7 @@ void G::MapFile::save( const G::Path & path , List & line_list , bool allow_writ
 
 bool G::MapFile::booleanValue( const std::string & key , bool default_ ) const
 {
-	StringMap::const_iterator p = m_map.find( key ) ;
+	auto p = m_map.find( key ) ;
 	if( p == m_map.end() )
 	{
 		return default_ ;
@@ -284,7 +277,7 @@ bool G::MapFile::booleanValue( const std::string & key , bool default_ ) const
 
 std::string G::MapFile::value( const std::string & key , const std::string & default_ ) const
 {
-	StringMap::const_iterator p = m_map.find( key ) ;
+	auto p = m_map.find( key ) ;
 	std::string result = ( p == m_map.end() || (*p).second.empty() ) ? default_ : (*p).second ;
 	return result ;
 }
@@ -329,7 +322,7 @@ unsigned int G::MapFile::numericValue( const std::string & key , unsigned int de
 
 void G::MapFile::remove( const std::string & key )
 {
-	StringMap::iterator p = m_map.find( key ) ;
+	auto p = m_map.find( key ) ;
 	if( p != m_map.end() )
 	{
 		m_map.erase( p ) ;
@@ -345,57 +338,60 @@ std::string G::MapFile::expand( const std::string & value_in ) const
 	return value ;
 }
 
-namespace
+namespace G
 {
-	size_t find_single( std::string & s , char c , size_t start_pos )
+	namespace MapFileImp
 	{
-		char cc[] = { c , '\0' } ;
-		size_t pos = start_pos ;
-		for(;;)
+		std::size_t find_single( std::string & s , char c , std::size_t start_pos )
 		{
-			pos = s.find( cc , pos ) ;
-			if( pos == std::string::npos )
+			std::array<char,2U> cc {{ c , '\0' }} ;
+			std::size_t pos = start_pos ;
+			for(;;)
 			{
-				break ; // not found
-			}
-			else if( (pos+1U) < s.length() && s.at(pos+1U) == c )
-			{
-				s.erase( pos , 1U ) ;
-				if( (pos+1U) == s.length() )
+				pos = s.find( &cc[0] , pos ) ;
+				if( pos == std::string::npos )
 				{
-					pos = std::string::npos ;
-					break ;
+					break ; // not found
 				}
-				pos++ ;
+				else if( (pos+1U) < s.length() && s.at(pos+1U) == c )
+				{
+					s.erase( pos , 1U ) ;
+					if( (pos+1U) == s.length() )
+					{
+						pos = std::string::npos ;
+						break ;
+					}
+					pos++ ;
+				}
+				else
+				{
+					break ; // found
+				}
 			}
-			else
-			{
-				break ; // found
-			}
+			return pos ;
 		}
-		return pos ;
 	}
 }
 
 bool G::MapFile::expand_( std::string & value ) const
 {
 	bool changed = false ;
-	size_t start = 0U ;
-	size_t end = 0U ;
-	size_t const npos = std::string::npos ;
+	std::size_t start = 0U ;
+	std::size_t end = 0U ;
+	std::size_t const npos = std::string::npos ;
 	while( end < value.length() )
 	{
-		start = find_single( value , '%' , end ) ;
+		start = MapFileImp::find_single( value , '%' , end ) ;
 		if( start == npos ) break ;
-		end = value.find( "%" , start+1U ) ;
+		end = value.find( '%' , start+1U ) ;
 		if( end == npos ) break ;
 		end++ ;
 		std::string key = value.substr( start+1U , end-start-2U ) ;
-		StringMap::const_iterator p = m_map.find( key ) ;
+		auto p = m_map.find( key ) ;
 		if( p != m_map.end() )
 		{
-			size_t old = end - start ;
-			size_t new_ = (*p).second.length() ;
+			std::size_t old = end - start ;
+			std::size_t new_ = (*p).second.length() ;
 			value.replace( start , old , (*p).second ) ;
 			end += new_ ;
 			end -= old ;

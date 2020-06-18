@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include "gdatetime.h"
 #include "glogoutput.h"
 #include "genvironment.h"
+#include "gscope.h"
 #include "glimits.h"
 #include <sstream>
 #include <string>
@@ -29,54 +30,46 @@
 #include <ctime>
 #include <cstdlib>
 #include <fstream>
+#include <array>
 
-// (note that this code cannot use any library code that might do logging, but
-// we allow G::Environment::get() as an exception)
-
-G::LogOutput::LogOutput( const std::string & prefix , bool enabled , bool summary_log ,
-	bool verbose_log , bool debug , bool with_level , bool with_timestamp , bool strip ,
-	bool use_syslog , const std::string & stderr_replacement , SyslogFacility syslog_facility ) :
-		m_prefix(prefix) ,
-		m_enabled(enabled) ,
-		m_summary_log(summary_log) ,
-		m_verbose_log(verbose_log) ,
-		m_quiet(false) ,
-		m_debug(debug) ,
-		m_level(with_level) ,
-		m_strip(strip) ,
-		m_syslog(use_syslog) ,
+G::LogOutput::LogOutput( const std::string & exename , const Config & config ,
+	const std::string & stderr_replacement , SyslogFacility syslog_facility ) :
+		m_exename(exename) ,
+		m_config(config) ,
 		m_std_err(err(stderr_replacement)) ,
 		m_facility(syslog_facility) ,
-		m_time(0) ,
-		m_timestamp(with_timestamp) ,
-		m_handle(0) ,
-		m_handle_set(false)
+		m_context_fn(nullptr)
 {
-	if( pthis() == nullptr )
-		pthis() = this ;
+	if( pthisref() == nullptr )
+		pthisref() = this ;
 	init() ;
 }
 
-G::LogOutput::LogOutput( bool enabled_and_summary , bool verbose_and_debug ,
-	const std::string & stderr_replacement ) :
-		m_enabled(enabled_and_summary) ,
-		m_summary_log(enabled_and_summary) ,
-		m_verbose_log(verbose_and_debug) ,
-		m_quiet(false) ,
-		m_debug(verbose_and_debug) ,
-		m_level(false) ,
-		m_strip(false) ,
-		m_syslog(false) ,
+G::LogOutput::LogOutput( bool output_enabled_and_summary_info ,
+	bool verbose_info_and_debug , const std::string & stderr_replacement ) :
 		m_std_err(err(stderr_replacement)) ,
 		m_facility(SyslogFacility::User) ,
-		m_time(0) ,
-		m_timestamp(false) ,
-		m_handle(0) ,
-		m_handle_set(false)
+		m_context_fn(nullptr)
 {
-	if( pthis() == nullptr )
-		pthis() = this ;
+	m_config = Config()
+		.set_output_enabled(output_enabled_and_summary_info)
+		.set_summary_info(output_enabled_and_summary_info)
+		.set_verbose_info(verbose_info_and_debug)
+		.set_debug(verbose_info_and_debug) ;
+
+	if( pthisref() == nullptr )
+		pthisref() = this ;
 	init() ;
+}
+
+G::LogOutput::Config G::LogOutput::config() const
+{
+	return m_config ;
+}
+
+void G::LogOutput::configure( const Config & config )
+{
+	m_config = config ;
 }
 
 std::ostream & G::LogOutput::err( const std::string & path_in )
@@ -84,9 +77,12 @@ std::ostream & G::LogOutput::err( const std::string & path_in )
 	if( !path_in.empty() )
 	{
 		std::string path = path_in ;
-		std::string::size_type pos = path.find("%d") ;
+		std::size_t pos = path.find("%d") ;
 		if( pos != std::string::npos )
-			path.replace( pos , 2U , dateString() ) ;
+		{
+			std::string yyyymmdd = SystemTime::now().local().str( "%Y" "%m" "%d" ) ;
+			path.replace( pos , 2U , yyyymmdd ) ;
+		}
 
 		static std::ofstream file ;
 		open( file , path ) ;
@@ -103,37 +99,36 @@ std::ostream & G::LogOutput::err( const std::string & path_in )
 
 G::LogOutput::~LogOutput()
 {
-	if( pthis() == this )
-		pthis() = nullptr ;
+	if( pthisref() == this )
+		pthisref() = nullptr ;
 	cleanup() ;
 }
 
-G::LogOutput * & G::LogOutput::pthis()
+G::LogOutput * & G::LogOutput::pthisref() noexcept
 {
 	static LogOutput * p = nullptr ;
 	return p ;
 }
 
-G::LogOutput * G::LogOutput::instance()
+G::LogOutput * G::LogOutput::instance() noexcept
 {
-	return pthis() ;
+	return pthisref() ;
 }
 
-bool G::LogOutput::enable( bool enabled )
+void G::LogOutput::context( std::string (*fn)(void *) , void * fn_arg ) noexcept
 {
-	bool was_enabled = m_enabled ;
-	m_enabled = enabled ;
-	return was_enabled ;
+	LogOutput * p = instance() ;
+	if( p )
+	{
+		p->m_context_fn = fn ;
+		p->m_context_fn_arg = fn_arg ;
+	}
 }
 
-void G::LogOutput::quiet( bool quiet )
+void * G::LogOutput::contextarg() noexcept
 {
-	m_quiet = quiet ; // used in o/s-specific rawOutput
-}
-
-void G::LogOutput::verbose( bool verbose_log )
-{
-	m_verbose_log = verbose_log ;
+	LogOutput * p = instance() ;
+	return p ? p->m_context_fn_arg : nullptr ;
 }
 
 void G::LogOutput::output( Log::Severity severity , const char * file , int line , const std::string & text )
@@ -144,40 +139,44 @@ void G::LogOutput::output( Log::Severity severity , const char * file , int line
 
 bool G::LogOutput::at( Log::Severity severity ) const
 {
-	bool do_output = m_enabled ;
+	bool do_output = m_config.m_output_enabled ;
 	if( severity == Log::Severity::s_Debug )
-		do_output = m_enabled && m_debug ;
-	else if( severity == Log::Severity::s_LogSummary )
-		do_output = m_enabled && m_summary_log ;
-	else if( severity == Log::Severity::s_LogVerbose )
-		do_output = m_enabled && m_verbose_log ;
+		do_output = m_config.m_output_enabled && m_config.m_debug ;
+	else if( severity == Log::Severity::s_InfoSummary )
+		do_output = m_config.m_output_enabled && m_config.m_summary_info ;
+	else if( severity == Log::Severity::s_InfoVerbose )
+		do_output = m_config.m_output_enabled && m_config.m_verbose_info ;
 	return do_output ;
 }
 
 void G::LogOutput::doOutput( Log::Severity severity , const char * /*file*/ , int /*line*/ , const std::string & text )
 {
+	if( m_in_output ) return ;
+	ScopeExitSetFalse setter( m_in_output = true ) ;
 	bool do_output = at( severity ) ;
 	if( do_output )
 	{
 		// reserve the buffer
-		const size_type limit = static_cast<size_type>(limits::log) ;
+		const auto limit = static_cast<std::size_t>( limits::log ) ;
 		m_buffer.reserve( (text.length()>limit?limit:text.length()) + 40U ) ;
 		m_buffer.clear() ;
 
 		// add the preamble to the buffer
-		std::string::size_type text_pos = 0U ;
-		if( m_prefix.length() )
+		std::size_t text_pos = 0U ;
+		if( m_exename.length() )
 		{
-			m_buffer.append( m_prefix ) ;
+			m_buffer.append( m_exename ) ;
 			m_buffer.append( ": " ) ;
 		}
-		if( m_timestamp )
+		if( m_config.m_with_timestamp )
 			appendTimestampStringTo( m_buffer ) ;
-		if( m_level )
+		if( m_config.m_with_level )
 			m_buffer.append( levelString(severity) ) ;
+		if( m_config.m_with_context && m_context_fn )
+			m_buffer.append( (*m_context_fn)(m_context_fn_arg) ) ;
 
 		// strip the first word from the text - expected to be the method name
-		if( m_strip )
+		if( m_config.m_strip )
 		{
 			text_pos = text.find(' ') ;
 			if( text_pos == std::string::npos || (text_pos+1U) == text.length() )
@@ -187,7 +186,7 @@ void G::LogOutput::doOutput( Log::Severity severity , const char * /*file*/ , in
 		}
 
 		// add the text to the buffer, with a sanity limit
-		size_type text_len = text.length() - text_pos ;
+		std::size_t text_len = text.length() - text_pos ;
 		bool limited = text_len > limit ;
 		text_len = text_len > limit ? limit : text_len ;
 		m_buffer.append( text , text_pos , text_len ) ;
@@ -206,36 +205,20 @@ void G::LogOutput::doOutput( Log::Severity severity , const char * /*file*/ , in
 void G::LogOutput::appendTimestampStringTo( std::string & result )
 {
 	// use a cache to optimise away calls to localtime() and strftime()
-	EpochTime now = DateTime::now() ;
-	if( m_time == 0 || m_time != now.s )
+	SystemTime now = SystemTime::now() ;
+	if( m_time == 0 || m_time != now.s() || m_time_buffer.empty() )
 	{
-		m_time = now.s ;
-		static struct std::tm zero_broken_down_time ;
-		struct std::tm broken_down_time = zero_broken_down_time ;
-		getLocalTime( m_time , &broken_down_time ) ;
-		m_time_buffer.reserve( 30U ) ;
-		m_time_buffer.assign( 17U , '\0' ) ;
-		std::strftime( &m_time_buffer[0] , m_time_buffer.size() , "%Y" "%m" "%d." "%H" "%M" "%S.", &broken_down_time ) ;
-		m_time_buffer.pop_back() ;
+		m_time = now.s() ;
+		m_time_buffer.resize( 17U ) ;
+		now.local().format( m_time_buffer , "%Y" "%m" "%d." "%H" "%M" "%S." ) ;
+		m_time_buffer[m_time_buffer.size()-1U] = '\0' ; // just in case
 	}
 
-	result.append( &m_time_buffer[0] , m_time_buffer.size() ) ;
-	result.append( 1U , '0' + ( ( now.us / 100000 ) % 10 ) ) ;
-	result.append( 1U , '0' + ( ( now.us / 10000 ) % 10 ) ) ;
-	result.append( 1U , '0' + ( ( now.us / 1000 ) % 10 ) ) ;
+	result.append( &m_time_buffer[0] ) ;
+	result.append( 1U , '0' + ( ( now.us() / 100000 ) % 10 ) ) ;
+	result.append( 1U , '0' + ( ( now.us() / 10000 ) % 10 ) ) ;
+	result.append( 1U , '0' + ( ( now.us() / 1000 ) % 10 ) ) ;
 	result.append( ": " ) ;
-}
-
-std::string G::LogOutput::dateString()
-{
-	// (prefer to not use G::Date here to avoid reentrancy)
-	static struct std::tm zero_broken_down_time ;
-	struct std::tm broken_down_time = zero_broken_down_time ;
-	getLocalTime( std::time(nullptr) , &broken_down_time ) ;
-	char buffer[10] = { 0 } ;
-	std::strftime( buffer , sizeof(buffer)-1U , "%Y" "%m" "%d" , &broken_down_time ) ;
-	buffer[sizeof(buffer)-1U] = '\0' ;
-	return std::string( buffer ) ;
 }
 
 std::string G::LogOutput::fileAndLine( const char * file , int line )
@@ -243,7 +226,7 @@ std::string G::LogOutput::fileAndLine( const char * file , int line )
 	if( file != nullptr )
 	{
 		std::string basename( file ) ;
-		std::string::size_type slash_pos = basename.find_last_of( "/\\" ) ;
+		std::size_t slash_pos = basename.find_last_of( "/\\" ) ;
 		if( slash_pos != std::string::npos && (slash_pos+1U) < basename.length() )
 			basename.erase( 0U , slash_pos+1U ) ;
 		return basename + "(" + itoa(line) + "): " ;
@@ -254,56 +237,114 @@ std::string G::LogOutput::fileAndLine( const char * file , int line )
 	}
 }
 
-void G::LogOutput::assertion( const char * file , int line , bool test , const char * test_string )
+void G::LogOutput::assertionFailure( const char * file , int line , const char * test_expression ) noexcept
 {
-	if( !test )
+	// (the 'noexcept' on this fn means that we std::terminate() if any of this throws)
+	if( instance() )
 	{
-		if( instance() )
-		{
-			instance()->rawOutput( instance()->m_std_err , Log::Severity::s_Assertion ,
-				std::string() + "Assertion error: " + fileAndLine(file,line) + test_string ) ;
-		}
-		else
-		{
-			std::cerr << "assertion error: " << file << "(" << line << "): " << test_string << std::endl ;
-		}
-		std::abort() ;
+		instance()->rawOutput( instance()->m_std_err , Log::Severity::s_Assertion ,
+			std::string() + "Assertion error: " + fileAndLine(file,line) + test_expression ) ;
+	}
+	else
+	{
+		std::cerr << "assertion error: " << file << "(" << line << "): " << test_expression << std::endl ;
 	}
 }
 
-void G::LogOutput::assertion( const char * file , int line , void * test , const char * test_string )
+void G::LogOutput::assertionAbort() // [[analyzer_noreturn]]
 {
-	assertion( file , line , test != nullptr , test_string ) ;
+	std::abort() ;
 }
 
 const char * G::LogOutput::levelString( Log::Severity s )
 {
 	if( s == Log::Severity::s_Debug ) return "debug: " ;
-	else if( s == Log::Severity::s_LogSummary ) return "info: " ;
-	else if( s == Log::Severity::s_LogVerbose ) return "info: " ;
+	else if( s == Log::Severity::s_InfoSummary ) return "info: " ;
+	else if( s == Log::Severity::s_InfoVerbose ) return "info: " ;
 	else if( s == Log::Severity::s_Warning ) return "warning: " ;
 	else if( s == Log::Severity::s_Error ) return "error: " ;
 	else if( s == Log::Severity::s_Assertion ) return "fatal: " ;
 	return "" ;
 }
 
-std::string G::LogOutput::itoa( int n_ )
+std::string G::LogOutput::itoa( int n_in )
 {
 	// diy implementation for speed and portability
-	if( n_ < 0 ) return std::string(1U,'0') ;
-	char buffer[20] = { '0' , '\0' } ;
-	unsigned int buffer_size = sizeof(buffer) ;
-	unsigned int n = static_cast<unsigned int>(n_) ;
-	n %= 1000000U ;
+	if( n_in < 0 ) return std::string(1U,'0') ;
+	auto n = static_cast<unsigned int>(n_in) ;
+	std::array<char,20U> buffer {{ '0' , '\0' }} ;
+	const unsigned int million = 1000000U ;
+	if( n > million ) n %= million ;
 	bool zero = n == 0U ;
-	char * p = buffer + buffer_size - 1U ;
+	char * p = &buffer[0] + buffer.size() - 1U ;
 	for( *p-- = '\0' ; n > 0U ; --p , n /= 10U )
 		*p = static_cast<char>( '0' + (n % 10U) ) ;
-	return zero ? buffer : (p+1U) ;
+	return zero ? std::string(1U,'0') : std::string(p+1U) ;
 }
 
-bool G::LogOutput::syslog() const
+// ==
+
+G::LogOutput::Config::Config()
+= default;
+
+G::LogOutput::Config & G::LogOutput::Config::set_output_enabled( bool value )
 {
-	return m_syslog ;
+	m_output_enabled = value ;
+	return *this ;
 }
+
+G::LogOutput::Config & G::LogOutput::Config::set_summary_info( bool value )
+{
+	m_summary_info = value ;
+	return *this ;
+}
+
+G::LogOutput::Config & G::LogOutput::Config::set_verbose_info( bool value )
+{
+	m_verbose_info = value ;
+	return *this ;
+}
+
+G::LogOutput::Config & G::LogOutput::Config::set_debug( bool value )
+{
+	m_debug = value ;
+	return *this ;
+}
+
+G::LogOutput::Config & G::LogOutput::Config::set_with_level( bool value )
+{
+	m_with_level = value ;
+	return *this ;
+}
+
+G::LogOutput::Config & G::LogOutput::Config::set_with_timestamp( bool value )
+{
+	m_with_timestamp = value ;
+	return *this ;
+}
+
+G::LogOutput::Config & G::LogOutput::Config::set_with_context( bool value )
+{
+	m_with_context = value ;
+	return *this ;
+}
+
+G::LogOutput::Config & G::LogOutput::Config::set_strip( bool value )
+{
+	m_strip = value ;
+	return *this ;
+}
+
+G::LogOutput::Config & G::LogOutput::Config::set_quiet_stderr( bool value )
+{
+	m_quiet_stderr = value ;
+	return *this ;
+}
+
+G::LogOutput::Config & G::LogOutput::Config::set_use_syslog( bool value )
+{
+	m_use_syslog = value ;
+	return *this ;
+}
+
 /// \file glogoutput.cpp

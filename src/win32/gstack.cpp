@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,59 +27,63 @@
 #include <prsht.h> // PropertySheet
 #include <windowsx.h>
 
-typedef LRESULT (CALLBACK *WNDPROC_t)(HWND,UINT,WPARAM,LPARAM) ;
+using WNDPROC_t = LRESULT (CALLBACK *)(HWND,UINT,WPARAM,LPARAM) ;
 
 std::list<HWND> GGui::Stack::m_list ;
 
-class GGui::StackImp
+namespace GGui
 {
-public:
-	static LRESULT wndProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam ) ;
-	static bool dlgProc( HWND hpage , UINT message , WPARAM wparam , LPARAM lparam ) ;
-	static int sheetProc( HWND hsheet , UINT message , LPARAM lparam ) ;
-	static unsigned int pageProc( HWND hwnd , UINT message , PROPSHEETPAGE * page ) ;
-} ;
+	namespace StackImp
+	{
+		LRESULT CALLBACK sheet_wndproc_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam ) ;
+		INT_PTR CALLBACK dlgproc_export( HWND hdialog , UINT message , WPARAM wparam , LPARAM lparam ) ;
+		int CALLBACK sheet_callback_export( HWND hwnd , UINT message , LPARAM lparam ) ;
+		UINT CALLBACK page_callback_export( HWND hwnd , UINT message , PROPSHEETPAGE * page ) ;
 
-namespace
+		GGui::Stack * m_this = nullptr ;
+
+		struct ScopeSet
+		{
+			ScopeSet( GGui::Stack * p ) { StackImp::m_this = p ; }
+			~ScopeSet() { StackImp::m_this = nullptr ; }
+		} ;
+		template <typename T> T convert( void * p )
+		{
+			return reinterpret_cast<T>( p ) ;
+		}
+		template <typename T> T convert( const void * p )
+		{
+			return reinterpret_cast<T>( p ) ;
+		}
+		template <typename T> T convert( WNDPROC_t p )
+		{
+			return reinterpret_cast<T>( reinterpret_cast<void*>(p) ) ;
+		}
+		template <typename T> T convert( LONG_PTR p )
+		{
+			return reinterpret_cast<T>( p ) ;
+		}
+	}
+}
+
+LRESULT CALLBACK GGui::StackImp::sheet_wndproc_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
 {
-	GGui::Stack * m_this = nullptr ;
-	struct ScopeSet
-	{
-		ScopeSet( GGui::Stack * p ) { m_this = p ; }
-		~ScopeSet() { m_this = nullptr ; }
-	} ;
-	template <typename T> T convert( void * p )
-	{
-		return reinterpret_cast<T>( p ) ;
-	}
-	template <typename T> T convert( const void * p )
-	{
-		return reinterpret_cast<T>( p ) ;
-	}
-	template <typename T> T convert( WNDPROC_t p )
-	{
-		return reinterpret_cast<T>( reinterpret_cast<void*>(p) ) ;
-	}
-	template <typename T> T convert( LONG_PTR p )
-	{
-		return reinterpret_cast<T>( p ) ;
-	}
-	LRESULT CALLBACK gstack_sheet_wndproc_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
-	{
-		return GGui::StackImp::wndProc( hwnd , message , wparam , lparam ) ;
-	}
-	INT_PTR CALLBACK gstack_dlgproc_export( HWND hdialog , UINT message , WPARAM wparam , LPARAM lparam )
-	{
-		return GGui::StackImp::dlgProc( hdialog , message , wparam , lparam ) ;
-	}
-	int CALLBACK gstack_sheet_callback_export( HWND hwnd , UINT message , LPARAM lparam )
-	{
-		return GGui::StackImp::sheetProc( hwnd , message , lparam ) ;
-	}
-	UINT CALLBACK gstack_page_callback_export( HWND hwnd , UINT message , PROPSHEETPAGE * page )
-	{
-		return GGui::StackImp::pageProc( hwnd , message , page ) ;
-	}
+	return GGui::Stack::wndProc( hwnd , message , wparam , lparam ) ;
+}
+
+INT_PTR CALLBACK GGui::StackImp::dlgproc_export( HWND hdialog , UINT message , WPARAM wparam , LPARAM lparam )
+{
+	return GGui::Stack::dlgProc( hdialog , message , wparam , lparam ) ;
+}
+
+int CALLBACK GGui::StackImp::sheet_callback_export( HWND hwnd , UINT message , LPARAM lparam )
+{
+	return GGui::Stack::sheetProc( hwnd , message , lparam ) ;
+}
+
+UINT CALLBACK GGui::StackImp::page_callback_export( HWND hwnd , UINT message , PROPSHEETPAGE * page )
+{
+	return GGui::Stack::pageProc( hwnd , message , page ) ;
 }
 
 GGui::Stack::Stack( StackPageCallback & callback , HINSTANCE hinstance , std::pair<DWORD,DWORD> style , bool set_style ) :
@@ -103,13 +107,12 @@ void GGui::Stack::create( HWND hparent , const std::string & title , int icon_id
 	G_ASSERT( !m_hpages.empty() ) ;
 	G_ASSERT( (notify_hwnd==0) == (notify_message==0U) ) ;
 
-	ScopeSet set_m_this( this ) ;
+	StackImp::ScopeSet set_m_this( this ) ;
 
 	m_notify_hwnd = notify_hwnd ;
 	m_notify_message = notify_message ;
 
-	static PROPSHEETHEADER header_zero ;
-	PROPSHEETHEADER header = header_zero ;
+	PROPSHEETHEADER header{} ;
 
 	header.dwSize = sizeof(PROPSHEETHEADER) ;
 	header.dwFlags = PSH_MODELESS | PSH_NOAPPLYNOW | PSH_NOCONTEXTHELP | PSH_USECALLBACK | ( icon_id ? PSH_USEICONID : 0 ) ;
@@ -119,8 +122,8 @@ void GGui::Stack::create( HWND hparent , const std::string & title , int icon_id
 	header.pszCaption = static_cast<LPCSTR>(title.c_str()) ;
 	header.nPages = static_cast<UINT>(m_hpages.size()) ;
 	header.nStartPage = 0 ;
-	header.phpage = m_hpages.size() ? &m_hpages[0] : NULL ;
-	header.pfnCallback = gstack_sheet_callback_export ;
+	header.phpage = m_hpages.size() ? &m_hpages[0] : nullptr ;
+	header.pfnCallback = StackImp::sheet_callback_export ;
 
 	INT_PTR rc = PropertySheet( &header ) ;
 	if( rc == 0 || rc == ID_PSREBOOTSYSTEM || rc == ID_PSRESTARTWINDOWS )
@@ -130,7 +133,7 @@ void GGui::Stack::create( HWND hparent , const std::string & title , int icon_id
 	G_DEBUG( "GGui::Stack::create: hsheet=" << hsheet ) ;
 
 	// redraw in case we have changed the window style
-	RedrawWindow( hsheet , NULL , NULL , RDW_FRAME | RDW_INVALIDATE | RDW_ERASENOW ) ;
+	RedrawWindow( hsheet , nullptr , HNULL , RDW_FRAME | RDW_INVALIDATE | RDW_ERASENOW ) ;
 	m_fixed_size = fixed_size ;
 
 	PropSheet_CancelToClose( hsheet ) ; // 'ok' and 'cancel' makes no sense -- 'close' with disabled 'cancel' is better
@@ -142,21 +145,19 @@ void GGui::Stack::addPage( const std::string & title , int dialog_id )
 	m_pages.push_back( PageInfo(this,index) ) ;
 	PageInfo * page_info = &m_pages.back() ;
 
-	static PROPSHEETPAGE page_zero ;
-	PROPSHEETPAGE page ;
-	page = page_zero ;
+	PROPSHEETPAGE page{} ;
 	page.dwSize = sizeof(PROPSHEETPAGE) ;
 	page.dwFlags = PSP_USECALLBACK | PSP_USETITLE ;
 	page.hInstance = m_hinstance ;
 	page.pszTemplate = dialog_id ? MAKEINTRESOURCE(dialog_id) : 0 ;
 	page.pszIcon = 0 ;
-	page.pfnDlgProc = gstack_dlgproc_export ;
+	page.pfnDlgProc = StackImp::dlgproc_export ;
 	page.pszTitle = static_cast<LPCSTR>(title.c_str()) ;
 	page.lParam = reinterpret_cast<LPARAM>(page_info) ;
-	page.pfnCallback = gstack_page_callback_export ;
+	page.pfnCallback = StackImp::page_callback_export ;
 
 	HPROPSHEETPAGE hpage = CreatePropertySheetPage( &page ) ;
-	if( hpage == NULL )
+	if( hpage == HNULL )
 	{
 		m_pages.pop_back() ;
 		throw std::runtime_error( "CreatePropertySheetPage() failed" ) ;
@@ -189,9 +190,9 @@ void GGui::Stack::hook( HWND hwnd )
 
 	if( GetWindowLongPtr( hwnd , GWLP_USERDATA ) == 0 )
 	{
-		SetWindowLongPtr( hwnd , GWLP_USERDATA , convert<LONG_PTR>(this) ) ;
+		SetWindowLongPtr( hwnd , GWLP_USERDATA , StackImp::convert<LONG_PTR>(this) ) ;
 		m_wndproc_orig = GetWindowLongPtr( hwnd , GWLP_WNDPROC ) ;
-		SetWindowLongPtr( hwnd , GWLP_WNDPROC , convert<LONG_PTR>(gstack_sheet_wndproc_export) ) ;
+		SetWindowLongPtr( hwnd , GWLP_WNDPROC , StackImp::convert<LONG_PTR>(StackImp::sheet_wndproc_export) ) ;
 	}
 }
 
@@ -213,13 +214,13 @@ void GGui::Stack::unhook()
 GGui::Stack * GGui::Stack::getObjectPointer( HWND hwnd )
 {
 	LONG_PTR lp = GetWindowLongPtr( hwnd , GWLP_USERDATA ) ;
-	Stack * This = convert<Stack*>( lp ) ;
+	Stack * This = StackImp::convert<Stack*>( lp ) ;
 	return This && This->m_magic == MAGIC ? This : nullptr ;
 }
 
 bool GGui::Stack::stackMessage( MSG & msg )
 {
-	typedef std::list<HWND> List ;
+	using List = std::list<HWND> ;
 	for( List::iterator p = m_list.begin() ; p != m_list.end() ; ++p )
 	{
 		HWND hwnd = *p ;
@@ -227,7 +228,7 @@ bool GGui::Stack::stackMessage( MSG & msg )
 		{
 			// this is the only way to know if the property page is
 			// finished -- see MSDN PropertySheet() "Remarks"
-			bool finished = PropSheet_GetCurrentPageHwnd(hwnd) == NULL ;
+			bool finished = PropSheet_GetCurrentPageHwnd(hwnd) == HNULL ;
 			if( finished )
 			{
 				Stack * This = getObjectPointer(hwnd) ;
@@ -253,7 +254,7 @@ LRESULT GGui::Stack::wndProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM 
 		LRESULT result = This->wndProc( message , wparam , lparam , call_default ) ;
 
 		return ( call_default && This->m_wndproc_orig ) ?
-			CallWindowProc( convert<WNDPROC_t>(This->m_wndproc_orig) , hwnd , message , wparam , lparam ) :
+			CallWindowProc( StackImp::convert<WNDPROC_t>(This->m_wndproc_orig) , hwnd , message , wparam , lparam ) :
 			result ;
 	}
 	else
@@ -286,9 +287,9 @@ int GGui::Stack::sheetProc( HWND hsheet , UINT message , LPARAM lparam )
 {
 	if( message == PSCB_INITIALIZED )
 	{
-		G_ASSERT( m_this != nullptr ) ;
-		if( m_this )
-			m_this->hook( hsheet ) ;
+		G_ASSERT( StackImp::m_this != nullptr ) ;
+		if( StackImp::m_this )
+			StackImp::m_this->hook( hsheet ) ;
 	}
 	return 0 ;
 }
@@ -315,7 +316,7 @@ bool GGui::Stack::dlgProc( HWND hpage , UINT message , WPARAM wparam , LPARAM lp
 		if( page_info && page_info->first )
 		{
 			Stack * This = page_info->first ;
-			SetWindowLongPtr( hpage , GWLP_USERDATA , convert<LONG_PTR>(This) ) ;
+			SetWindowLongPtr( hpage , GWLP_USERDATA , StackImp::convert<LONG_PTR>(This) ) ;
 			This->m_callback.onInit( hpage , page_info->second ) ;
 		}
 		return true ;
@@ -361,28 +362,6 @@ void GGui::Stack::postNotifyMessage( WPARAM wparam , LPARAM lparam )
 {
 	if( m_notify_message )
 		PostMessage( m_notify_hwnd , m_notify_message , wparam , lparam ) ;
-}
-
-// ==
-
-LRESULT GGui::StackImp::wndProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
-{
-	return Stack::wndProc( hwnd , message , wparam , lparam ) ;
-}
-
-bool GGui::StackImp::dlgProc( HWND hdialog , UINT message , WPARAM wparam , LPARAM lparam )
-{
-	return Stack::dlgProc( hdialog , message , wparam , lparam ) ;
-}
-
-int GGui::StackImp::sheetProc( HWND hwnd , UINT message , LPARAM lparam )
-{
-	return Stack::sheetProc( hwnd , message , lparam ) ;
-}
-
-UINT GGui::StackImp::pageProc( HWND hwnd , UINT message , PROPSHEETPAGE * page )
-{
-	return Stack::pageProc( hwnd , message , page ) ;
 }
 
 // ==

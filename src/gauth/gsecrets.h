@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -65,30 +65,30 @@ public:
 	Secrets() ;
 		///< Default constructor for an in-valid(), empty-path object.
 
-	virtual ~Secrets() ;
-		///< Destructor.
-
-	virtual bool valid() const override ;
+	bool valid() const override ;
 		///< Override from GAuth::Valid virtual base.
 
-	virtual Secret serverSecret( const std::string & mechanism , const std::string & id ) const override ;
+	Secret serverSecret( const std::string & mechanism , const std::string & id ) const override ;
 		///< Override from GAuth::SaslServerSecrets.
 
-	virtual bool contains( const std::string & mechanism ) const override ;
+	bool contains( const std::string & mechanism ) const override ;
 		///< Override from GAuth::SaslServerSecrets.
+
+public:
+	~Secrets() override ;
+	Secrets( const Secrets & ) = delete ;
+	Secrets( Secrets && ) = delete ;
+	void operator=( const Secrets & ) = delete ;
+	void operator=( Secrets && ) = delete ;
 
 private: // overrides
-	virtual std::string source() const override ; // Override from GAuth::SaslServerSecrets.
-	virtual Secret clientSecret( const std::string & mechanism ) const override ; // Override from GAuth::SaslClientSecrets.
-	virtual std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const override ; // Override from GAuth::SaslServerSecrets.
-
-private:
-	Secrets( const Secrets & ) g__eq_delete ;
-	void operator=( const Secrets & ) g__eq_delete ;
+	std::string source() const override ; // Override from GAuth::SaslServerSecrets.
+	Secret clientSecret( const std::string & mechanism ) const override ; // Override from GAuth::SaslClientSecrets.
+	std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const override ; // Override from GAuth::SaslServerSecrets.
 
 private:
 	std::string m_source ;
-	SecretsFile * m_imp ;
+	std::unique_ptr<SecretsFile> m_imp ;
 } ;
 
 #endif

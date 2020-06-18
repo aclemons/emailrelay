@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,17 +29,30 @@ namespace GNet
 }
 
 /// \class GNet::ExceptionSource
-/// An empty class that identifies the source of an exception as
-/// delivered to a GNet::ExceptionHandler interface. This is used
-/// as a public mixin base class for classes that are held in a
-/// container and need to be identified from within the onException()
-/// call delivered to the container.
+/// A mixin base class that identifies the source of an exception
+/// when delivered to GNet::ExceptionHandler and optionally provides
+/// an indentifier for logging purposes.
+///
+/// The primary motivation is to allow a Server to manage its
+/// ServerPeer list when one of them throws an exception.
 ///
 class GNet::ExceptionSource
 {
 public:
+	virtual std::string exceptionSourceId() const ;
+		///< Returns an identifying string for logging purposes,
+		///< or the empty string. This typically provides the
+		///< remote peer's network address.
+
 	virtual ~ExceptionSource() ;
 		///< Destructor.
+
+public:
+	ExceptionSource() = default ;
+	ExceptionSource( const ExceptionSource & ) = delete ;
+	ExceptionSource( ExceptionSource && ) = delete ;
+	void operator=( const ExceptionSource & ) = delete ;
+	void operator=( ExceptionSource && ) = delete ;
 } ;
 
 #endif

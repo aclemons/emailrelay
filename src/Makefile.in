@@ -207,7 +207,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-GCONFIG_CONFIGURATION = @GCONFIG_CONFIGURATION@
 GCONFIG_HAVE_DOXYGEN = @GCONFIG_HAVE_DOXYGEN@
 GCONFIG_HAVE_MAN2HTML = @GCONFIG_HAVE_MAN2HTML@
 GCONFIG_QT_CFLAGS = @GCONFIG_QT_CFLAGS@
@@ -278,6 +277,7 @@ e_icondir = @e_icondir@
 e_initdir = @e_initdir@
 e_libexecdir = @e_libexecdir@
 e_pamdir = @e_pamdir@
+e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
@@ -307,6 +307,9 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = glib gssl gnet gauth gsmtp gpop win32 main gui
+EXTRA_DIST = .clang-tidy
+CLEANFILES = compile_commands.json
+LINT = clang-tidy
 all: all-recursive
 
 .SUFFIXES:
@@ -521,6 +524,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -611,6 +615,19 @@ uninstall-am:
 
 .PRECIOUS: Makefile
 
+
+.PHONY: cdb
+cdb: compile_commands.json
+
+compile_commands.json:
+	@chmod +x ../bin/make2cdb || true
+	../bin/make2cdb > compile_commands.json
+
+.PHONY: lint
+lint: compile_commands.json
+	@chmod +x ../bin/make2cdb || true
+	@touch ../gconfig_defs.h
+	../bin/make2cdb --list | xargs $(LINT) -p . || true
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

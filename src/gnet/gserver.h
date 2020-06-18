@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,10 +54,10 @@ public:
 		///< is used for exceptions relating to the listening
 		///< socket, not the server peers.
 
-	virtual ~Server() ;
+	~Server() override ;
 		///< Destructor.
 
-	Address address() const ;
+	Address address( bool with_scope = false ) const ;
 		///< Returns the listening address.
 
 	static bool canBind( const Address & listening_address , bool do_throw ) ;
@@ -65,14 +65,14 @@ public:
 		///< bound. Throws CannotBind if the address cannot
 		///< be bound and 'do_throw' is true.
 
-	std::vector<weak_ptr<GNet::ServerPeer> > peers() ;
+	std::vector<std::weak_ptr<GNet::ServerPeer> > peers() ;
 		///< Returns the list of ServerPeer objects.
 
 	bool hasPeers() const ;
 		///< Returns true if peers() is not empty.
 
 protected:
-	virtual unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo ) = 0 ;
+	virtual std::unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo ) = 0 ;
 		///< A factory method which new()s a ServerPeer-derived
 		///< object. This method is called when a new connection
 		///< comes in to this server. The new ServerPeer object
@@ -97,17 +97,21 @@ protected:
 		///< most-derived Server.
 
 private: // overrides
-	virtual void readEvent() override ; // Override from GNet::EventHandler.
-	virtual void writeEvent() override ; // Override from GNet::EventHandler.
-	virtual void onException( ExceptionSource * , std::exception & , bool ) override ; // Override from GNet::ExceptionHandler.
+	void readEvent() override ; // Override from GNet::EventHandler.
+	void writeEvent() override ; // Override from GNet::EventHandler.
+	void onException( ExceptionSource * , std::exception & , bool ) override ; // Override from GNet::ExceptionHandler.
+
+public:
+	Server( const Server & ) = delete ;
+	Server( Server && ) = delete ;
+	void operator=( const Server & ) = delete ;
+	void operator=( Server && ) = delete ;
 
 private:
-	Server( const Server & ) g__eq_delete ;
-	void operator=( const Server & ) g__eq_delete ;
 	void accept( ServerPeerInfo & ) ;
 
 private:
-	typedef std::vector<shared_ptr<ServerPeer> > PeerList ;
+	using PeerList = std::vector<std::shared_ptr<ServerPeer> > ;
 	ExceptionSink m_es ;
 	ServerPeerConfig m_server_peer_config ;
 	StreamSocket m_socket ; // listening socket
@@ -120,7 +124,7 @@ private:
 class GNet::ServerPeerInfo
 {
 public:
-	shared_ptr<StreamSocket> m_socket ;
+	std::shared_ptr<StreamSocket> m_socket ;
 	Address m_address ;
 	ServerPeerConfig m_config ;
 	Server * m_server ;

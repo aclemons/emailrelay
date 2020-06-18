@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "glinestore.h"
 #include "gexception.h"
+#include "gstr.h"
 #include "gassert.h"
 #include <iterator>
 
@@ -36,11 +37,14 @@ class GNet::LineStoreIterator : public std::iterator<std::bidirectional_iterator
 {
 public:
 	G_EXCEPTION( Error , "line buffer internal error" ) ;
-	LineStoreIterator() : m_p(nullptr) , m_pos(0U) {}
-	LineStoreIterator( const LineStore & line_store , bool end = false ) : m_p(&line_store) , m_pos(end?line_store.size():0U) {}
+	LineStoreIterator() = default;
+	~LineStoreIterator() = default;
+	explicit LineStoreIterator( const LineStore & line_store , bool end = false ) : m_p(&line_store) , m_pos(end?line_store.size():0U) {}
 	LineStoreIterator( const LineStoreIterator & other ) : m_p(other.m_p) , m_pos(other.m_pos) {}
-	void swap( LineStoreIterator & other ) g__noexcept { using std::swap ; swap( m_p , other.m_p ) ; swap( m_pos , other.m_pos ) ; }
-	LineStoreIterator & operator=( const LineStoreIterator & other ) { LineStoreIterator tmp( other ) ; swap( tmp ) ; return *this ; }
+	LineStoreIterator( LineStoreIterator && other ) noexcept : m_p(other.m_p) , m_pos(other.m_pos) {}
+	void swap( LineStoreIterator & other ) noexcept { using std::swap ; swap( m_p , other.m_p ) ; swap( m_pos , other.m_pos ) ; }
+	LineStoreIterator & operator=( const LineStoreIterator & other ) { LineStoreIterator(other).swap(*this) ; return *this ; }
+	LineStoreIterator & operator=( LineStoreIterator && other ) noexcept { LineStoreIterator(other).swap(*this) ; return *this ; }
 	LineStoreIterator & operator++() { m_pos++ ; return *this ; }
 	LineStoreIterator & operator--() { m_pos-- ; return *this ; }
 	bool operator==( const LineStoreIterator & other ) const { return m_pos == other.m_pos ; }
@@ -50,15 +54,15 @@ public:
 	bool operator>( const LineStoreIterator & other ) const { return m_pos > other.m_pos ; }
 	bool operator>=( const LineStoreIterator & other ) const { return m_pos >= other.m_pos ; }
 	char operator*() const { G_ASSERT( m_p != nullptr ) ; if( m_p == nullptr ) throw Error() ; return m_p->at( m_pos ) ; }
-	char operator[]( size_t n ) const { G_ASSERT( m_p != nullptr ) ; if( m_p == nullptr ) throw Error() ; return m_p->at( m_pos + n ) ; }
-	void operator+=( ptrdiff_t n ) { if( n < 0 ) m_pos -= static_cast<size_t>(-n) ; else m_pos += static_cast<size_t>(n) ; }
-	void operator-=( ptrdiff_t n ) { if( n < 0 ) m_pos += static_cast<size_t>(-n) ; else m_pos -= static_cast<size_t>(n) ; }
+	char operator[]( std::size_t n ) const { G_ASSERT( m_p != nullptr ) ; if( m_p == nullptr ) throw Error() ; return m_p->at( m_pos + n ) ; }
+	void operator+=( ptrdiff_t n ) { if( n < 0 ) m_pos -= static_cast<std::size_t>(-n) ; else m_pos += static_cast<std::size_t>(n) ; }
+	void operator-=( ptrdiff_t n ) { if( n < 0 ) m_pos += static_cast<std::size_t>(-n) ; else m_pos -= static_cast<std::size_t>(n) ; }
 	ptrdiff_t distanceTo( const LineStoreIterator & other ) const { if( other.m_pos >= m_pos ) return static_cast<ptrdiff_t>(other.m_pos-m_pos) ; else return -static_cast<ptrdiff_t>(m_pos-other.m_pos) ; }
-	size_t pos() const { return ( m_p == nullptr || m_pos >= m_p->size() ) ? std::string::npos : m_pos ; }
+	std::size_t pos() const { return ( m_p == nullptr || m_pos >= m_p->size() ) ? std::string::npos : m_pos ; }
 
 private:
-	const LineStore * m_p ;
-	size_t m_pos ;
+	const LineStore * m_p{nullptr} ;
+	std::size_t m_pos{0U} ;
 } ;
 
 namespace GNet
@@ -85,33 +89,33 @@ namespace GNet
 	{
 		return a.distanceTo( b ) ;
 	}
-	inline void swap( LineStoreIterator & a , LineStoreIterator & b ) g__noexcept
+	inline void swap( LineStoreIterator & a , LineStoreIterator & b ) noexcept
 	{
 		a.swap( b ) ;
 	}
 }
 
-namespace
+namespace GNet
 {
-	template <typename T1, typename T2> bool std_equal( T1 p1 , T1 end1 , T2 p2 , T2 end2 )
+	namespace LineStoreImp
 	{
-		// (std::equal with four iterators is c++14 or later)
-		for( ; p1 != end1 && p2 != end2 ; ++p1 , ++p2 )
+		template <typename T1, typename T2> bool std_equal( T1 p1 , T1 end1 , T2 p2 , T2 end2 )
 		{
-			if( !(*p1 == *p2) )
-				return false ;
+			// (std::equal with four iterators is c++14 or later)
+			for( ; p1 != end1 && p2 != end2 ; ++p1 , ++p2 )
+			{
+				if( !(*p1 == *p2) )
+					return false ;
+			}
+			return p1 == end1 && p2 == end2 ;
 		}
-		return p1 == end1 && p2 == end2 ;
 	}
 }
 
 // ==
 
-GNet::LineStore::LineStore() :
-	m_extra_data(nullptr) ,
-	m_extra_size(0U)
-{
-}
+GNet::LineStore::LineStore()
+= default;
 
 void GNet::LineStore::append( const std::string & s )
 {
@@ -119,13 +123,13 @@ void GNet::LineStore::append( const std::string & s )
 	m_store.append( s ) ;
 }
 
-void GNet::LineStore::append( const char * data , size_t size )
+void GNet::LineStore::append( const char * data , std::size_t size )
 {
 	consolidate() ;
 	m_store.append( data , size ) ;
 }
 
-void GNet::LineStore::extend( const char * data , size_t size )
+void GNet::LineStore::extend( const char * data , std::size_t size )
 {
 	consolidate() ;
 	m_extra_data = data ;
@@ -145,7 +149,7 @@ void GNet::LineStore::consolidate()
 	m_extra_size = 0U ;
 }
 
-void GNet::LineStore::discard( size_t n )
+void GNet::LineStore::discard( std::size_t n )
 {
 	if( n == 0U )
 	{
@@ -175,7 +179,7 @@ void GNet::LineStore::discard( size_t n )
 	}
 	else if( n < size() )
 	{
-		size_t offset = n - m_store.size() ;
+		std::size_t offset = n - m_store.size() ;
 		m_store.clear() ;
 		if( m_extra_size )
 		{
@@ -190,18 +194,18 @@ void GNet::LineStore::discard( size_t n )
 	}
 }
 
-size_t GNet::LineStore::find( char c , size_t startpos ) const
+std::size_t GNet::LineStore::find( char c , std::size_t startpos ) const
 {
 	G_ASSERT( startpos <= size() ) ;
-	size_t result = std::string::npos ;
-	const size_t store_size = m_store.size() ;
+	std::size_t result = std::string::npos ;
+	const std::size_t store_size = m_store.size() ;
 	if( startpos < store_size )
 	{
 		result = m_store.find( c , startpos ) ;
 	}
 	if( result == std::string::npos && m_extra_size != 0U )
 	{
-		const size_t offset = startpos > store_size ? (startpos-store_size) : 0U ;
+		const std::size_t offset = startpos > store_size ? (startpos-store_size) : 0U ;
 		const char * const begin = m_extra_data + offset ;
 		const char * const end = m_extra_data + m_extra_size ;
 		G_ASSERT( begin >= m_extra_data && begin <= end ) ;
@@ -213,16 +217,16 @@ size_t GNet::LineStore::find( char c , size_t startpos ) const
 	return result ;
 }
 
-size_t GNet::LineStore::find( const std::string & s , size_t startpos ) const
+std::size_t GNet::LineStore::find( const std::string & s , std::size_t startpos ) const
 {
-	const size_t npos = std::string::npos ;
-	size_t result = npos ;
+	const std::size_t npos = std::string::npos ;
+	std::size_t result = npos ;
 	if( s.size() == 2U )
 	{
 		const char c0 = s[0] ;
 		const char c1 = s[1] ;
-		const size_t end = size() ;
-		for( size_t pos = startpos ; pos != npos ; ++pos )
+		const std::size_t end = size() ;
+		for( std::size_t pos = startpos ; pos != npos ; ++pos )
 		{
 			pos = find( c0 , pos ) ;
 			if( pos == npos ) break ;
@@ -246,21 +250,22 @@ size_t GNet::LineStore::find( const std::string & s , size_t startpos ) const
 	return result ;
 }
 
-size_t GNet::LineStore::search( std::string::const_iterator begin , std::string::const_iterator end , size_t startpos ) const
+std::size_t GNet::LineStore::search( std::string::const_iterator begin , std::string::const_iterator end , std::size_t startpos ) const
 {
 	return std::search( LineStoreIterator(*this)+startpos , LineStoreIterator(*this,true) , begin , end ).pos() ;
 }
 
-size_t GNet::LineStore::findSubStringAtEnd( const std::string & s , size_t startpos ) const
+std::size_t GNet::LineStore::findSubStringAtEnd( const std::string & s , std::size_t startpos ) const
 {
+	namespace imp = LineStoreImp ;
 	if( s.empty() )
 	{
 		return 0U ;
 	}
 	else
 	{
-		size_t result = std::string::npos ;
-		size_t s_size = s.size() ;
+		std::size_t result = std::string::npos ;
+		std::size_t s_size = s.size() ;
 		std::string::const_iterator s_start = s.begin() ;
 		std::string::const_iterator s_end = s.end() ;
 		// for progressivley shorter leading substrings...
@@ -271,7 +276,7 @@ size_t GNet::LineStore::findSubStringAtEnd( const std::string & s , size_t start
 				// compare leading substring with the end of the store
 				const LineStoreIterator end( *this , true ) ;
 				LineStoreIterator p = end - s_size ;
-				if( ::std_equal(s_start,s_end,p,end) )
+				if( imp::std_equal(s_start,s_end,p,end) )
 				{
 					result = p.pos() ;
 					break ;
@@ -282,12 +287,12 @@ size_t GNet::LineStore::findSubStringAtEnd( const std::string & s , size_t start
 	}
 }
 
-const char * GNet::LineStore::data( size_t pos , size_t n ) const
+const char * GNet::LineStore::data( std::size_t pos , std::size_t n ) const
 {
 	return (const_cast<LineStore*>(this))->dataimp( pos , n ) ;
 }
 
-const char * GNet::LineStore::dataimp( size_t pos , size_t n )
+const char * GNet::LineStore::dataimp( std::size_t pos , std::size_t n )
 {
 	G_ASSERT( (n==0U && size()==0U) || (pos+n) <= size() ) ;
 	if( n == 0U && size() == 0U )
@@ -304,12 +309,12 @@ const char * GNet::LineStore::dataimp( size_t pos , size_t n )
 	}
 	else if( pos >= m_store.size() )
 	{
-		size_t offset = pos - m_store.size() ;
+		std::size_t offset = pos - m_store.size() ;
 		return m_extra_data + offset ;
 	}
 	else
 	{
-		size_t nmove = pos + n - m_store.size() ;
+		std::size_t nmove = pos + n - m_store.size() ;
 		m_store.append( m_extra_data , nmove ) ;
 		m_extra_data += nmove ;
 		m_extra_size -= nmove ;
@@ -322,6 +327,14 @@ std::string GNet::LineStore::str() const
 	std::string result( m_store ) ;
 	if( m_extra_size )
 		result.append( m_extra_data , m_extra_size ) ;
+	return result ;
+}
+
+std::string GNet::LineStore::head( std::size_t n ) const
+{
+	std::string result = G::Str::head( m_store , n ) ;
+	if( result.size() < n && m_extra_size )
+		result.append( m_extra_data , std::min(n-result.size(),m_extra_size) ) ;
 	return result ;
 }
 

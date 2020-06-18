@@ -1,3 +1,11 @@
+emailrelay (2.2) unstable; urgency=low
+  * Updated to C++ 2011.
+  * Connections from IPv4 'private use' addresses are allowed by default (see "--remote-clients").
+  * Interface names now supported by "--interface".
+  * New "--server-tls-connection" option for server-side implicit TLS.
+  * New "--log-address" option to aid adaptive firewalling.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Thu, 18 Jun 2020 12:18:55 +0000
+
 emailrelay (2.1) unstable; urgency=low
   * Backwards compatibility features for 1.9-to-2.0 transition removed.
   * Better handling of too-many-connections on Windows.
@@ -13,7 +21,7 @@ emailrelay (2.1) unstable; urgency=low
   * TLS cipher name added to "Received" line as per RFC-8314 4.3.
   * Certificate contents are not logged.
   * Timestamp parts of spool filenames no longer limited to six digits.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Mon, 16 Sep 2019 02:34:03 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Mon, 16 Sep 2019 00:00:00 +0000
 
 emailrelay (2.0.1) unstable; urgency=low
   * Make PLAIN client authentication work against servers with broken 334 responses.

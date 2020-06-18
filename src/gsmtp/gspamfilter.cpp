@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -56,23 +56,23 @@ bool GSmtp::SpamFilter::simple() const
 void GSmtp::SpamFilter::start( const std::string & path )
 {
 	// the spam client can do more than one request, but it is simpler to start fresh
-	m_client_ptr.reset( new SpamClient(GNet::ExceptionSink(m_client_ptr,nullptr),m_location,m_read_only,m_connection_timeout,m_response_timeout) ) ;
+	m_client_ptr.reset( new SpamClient(GNet::ExceptionSink(m_client_ptr,m_es.esrc()),m_location,m_read_only,m_connection_timeout,m_response_timeout) ) ;
 
 	m_text.erase() ;
 	m_client_ptr->request( path ) ; // (no need to wait for connection)
 }
 
-void GSmtp::SpamFilter::clientDeleted( std::string reason )
+void GSmtp::SpamFilter::clientDeleted( const std::string & reason )
 {
 	if( !reason.empty() )
 	{
 		G_WARNING( "GSmtp::SpamFilter::clientDeleted: spamd interaction failed: " << reason ) ;
-		m_text.erase() ;
+		m_text = reason ;
 		emit( false ) ;
 	}
 }
 
-void GSmtp::SpamFilter::clientEvent( std::string s1 , std::string s2 , std::string /*s3*/ )
+void GSmtp::SpamFilter::clientEvent( const std::string & s1 , const std::string & s2 , const std::string & )
 {
 	G_DEBUG( "GSmtp::SpamFilter::clientEvent: [" << s1 << "] [" << s2 << "]" ) ;
 	if( s1 == "spam" )
@@ -107,7 +107,7 @@ std::string GSmtp::SpamFilter::reason() const
 	return m_text ;
 }
 
-G::Slot::Signal1<int> & GSmtp::SpamFilter::doneSignal()
+G::Slot::Signal<int> & GSmtp::SpamFilter::doneSignal()
 {
 	return m_done_signal ;
 }

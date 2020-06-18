@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ BOOL CALLBACK gdialog_dlgproc_export( HWND hwnd , UINT message , WPARAM wparam ,
 GGui::Dialog::DialogList GGui::Dialog::m_list ;
 
 GGui::Dialog::Dialog( HINSTANCE hinstance , HWND hwnd_parent , const std::string & title ) :
-	WindowBase(NULL) ,
+	WindowBase(HNULL) ,
 	m_title(title) ,
 	m_modal(false) ,
 	m_focus_set(false) ,
@@ -43,12 +43,12 @@ GGui::Dialog::Dialog( HINSTANCE hinstance , HWND hwnd_parent , const std::string
 }
 
 GGui::Dialog::Dialog( const ApplicationBase & app , bool top_level ) :
-	WindowBase(NULL) ,
+	WindowBase(HNULL) ,
 	m_title(app.title()) ,
 	m_modal(false) ,
 	m_focus_set(false) ,
 	m_hinstance(app.hinstance()) ,
-	m_hwnd_parent(top_level?NULL:app.handle()) ,
+	m_hwnd_parent(top_level?HNULL:app.handle()) ,
 	m_magic(Magic)
 {
 }
@@ -56,7 +56,7 @@ GGui::Dialog::Dialog( const ApplicationBase & app , bool top_level ) :
 void GGui::Dialog::privateInit( HWND hwnd )
 {
 	setHandle( hwnd ) ;
-	::SetWindowTextA( handle() , m_title.c_str() ) ;
+	SetWindowTextA( handle() , m_title.c_str() ) ;
 }
 
 GGui::Dialog::~Dialog()
@@ -74,12 +74,12 @@ GGui::Dialog::DialogList::iterator GGui::Dialog::find( HWND h )
 void GGui::Dialog::cleanup()
 {
 	// if not already cleaned up
-	if( handle() != NULL )
+	if( handle() != HNULL )
 	{
 		G_DEBUG( "GGui::Dialog::cleanup" ) ;
 
 		// reset the object pointer
-		::SetWindowLongPtr( handle() , DWLP_USER , LPARAM(0) ) ;
+		SetWindowLongPtr( handle() , DWLP_USER , LPARAM(0) ) ;
 
 		// remove from the modeless list
 		if( !m_modal && find(handle()) != m_list.end() )
@@ -89,23 +89,23 @@ void GGui::Dialog::cleanup()
 			G_ASSERT( find(handle()) == m_list.end() ) ; // assert only one
 		}
 	}
-	setHandle( NULL ) ;
+	setHandle( HNULL ) ;
 }
 
 void GGui::Dialog::setFocus( int control )
 {
-	HWND hwnd_control = ::GetDlgItem( handle() , control ) ;
-	if( hwnd_control != NULL )
+	HWND hwnd_control = GetDlgItem( handle() , control ) ;
+	if( hwnd_control != HNULL )
 	{
 		m_focus_set = true ; // determines the WM_INITDIALOG return value
-		::SetFocus( hwnd_control ) ;
+		SetFocus( hwnd_control ) ;
 	}
 }
 
 LRESULT GGui::Dialog::sendMessage( int control , unsigned int message , WPARAM wparam , LPARAM lparam ) const
 {
-	HWND hwnd_control = ::GetDlgItem( handle() , control ) ;
-	return ::SendMessage( hwnd_control , message , wparam , lparam ) ;
+	HWND hwnd_control = GetDlgItem( handle() , control ) ;
+	return SendMessage( hwnd_control , message , wparam , lparam ) ;
 }
 
 BOOL GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
@@ -113,7 +113,7 @@ BOOL GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lp
 	if( message == WM_INITDIALOG )
 	{
 		Dialog * dialog = from_lparam( lparam ) ;
-		::SetWindowLongPtr( hwnd , DWLP_USER , to_lparam(dialog) ) ;
+		SetWindowLongPtr( hwnd , DWLP_USER , to_lparam(dialog) ) ;
 		dialog->privateInit( hwnd ) ;
 		G_DEBUG( "GGui::Dialog::dlgProc: WM_INITDIALOG" ) ;
 		if( !dialog->onInit() )
@@ -134,8 +134,8 @@ BOOL GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lp
 	}
 	else
 	{
-		Dialog * dialog = from_long_ptr( ::GetWindowLongPtr(hwnd,DWLP_USER) ) ;
-		if( dialog != NULL )
+		Dialog * dialog = from_long_ptr( GetWindowLongPtr(hwnd,DWLP_USER) ) ;
+		if( dialog != nullptr )
 			return dialog->dlgProc( message , wparam , lparam ) ;
 		else
 			return 0 ; // WM_SETFONT etc.
@@ -263,13 +263,13 @@ void GGui::Dialog::end()
 
 void GGui::Dialog::privateEnd( int i )
 {
-	if( handle() != NULL )
+	if( handle() != HNULL )
 	{
 		G_DEBUG( "GGui::Dialog::privateEnd: " << i ) ;
 		if( m_modal )
-			::EndDialog( handle() , i ) ;
+			EndDialog( handle() , i ) ;
 		else
-			::DestroyWindow( handle() ) ;
+			DestroyWindow( handle() ) ;
 	}
 }
 
@@ -297,7 +297,7 @@ bool GGui::Dialog::run( const char * f_name )
 bool GGui::Dialog::runStart()
 {
 	G_DEBUG( "GGui::Dialog::run" ) ;
-	if( handle() != NULL )
+	if( handle() != HNULL )
 	{
 		G_DEBUG( "GGui::Dialog::run: already running" ) ;
 		return false ;
@@ -308,7 +308,7 @@ bool GGui::Dialog::runStart()
 bool GGui::Dialog::runCore( const char * f_name )
 {
 	m_modal = true ;
-	INT_PTR end_dialog_value = ::DialogBoxParamA( m_hinstance , f_name ,
+	INT_PTR end_dialog_value = DialogBoxParamA( m_hinstance , f_name ,
 		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
 	int rc = static_cast<int>(end_dialog_value) ;
 	return runEnd( rc ) ;
@@ -317,7 +317,7 @@ bool GGui::Dialog::runCore( const char * f_name )
 bool GGui::Dialog::runCore( const wchar_t * f_name )
 {
 	m_modal = true ;
-	INT_PTR end_dialog_value = ::DialogBoxParamW( m_hinstance , f_name ,
+	INT_PTR end_dialog_value = DialogBoxParamW( m_hinstance , f_name ,
 		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
 	int rc = static_cast<int>(end_dialog_value) ;
 	return runEnd( rc ) ;
@@ -327,7 +327,7 @@ bool GGui::Dialog::runEnd( int rc )
 {
 	if( rc == -1 )
 	{
-		DWORD error = ::GetLastError() ;
+		DWORD error = GetLastError() ;
 		G_DEBUG( "GGui::Dialog::run: cannot create dialog box: " << error ) ;
 		return false ;
 	}
@@ -353,7 +353,7 @@ bool GGui::Dialog::runModeless( const char * f_name , bool visible )
 bool GGui::Dialog::runModelessCore( const char * f_name , bool visible )
 {
 	m_modal = false ;
-	HWND hwnd = ::CreateDialogParamA( m_hinstance , f_name ,
+	HWND hwnd = CreateDialogParamA( m_hinstance , f_name ,
 		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
 	return runModelessEnd( hwnd , visible ) ;
 }
@@ -361,14 +361,14 @@ bool GGui::Dialog::runModelessCore( const char * f_name , bool visible )
 bool GGui::Dialog::runModelessCore( const wchar_t * f_name , bool visible )
 {
 	m_modal = false ;
-	HWND hwnd = ::CreateDialogParamW( m_hinstance , f_name ,
+	HWND hwnd = CreateDialogParamW( m_hinstance , f_name ,
 		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
 	return runModelessEnd( hwnd , visible ) ;
 }
 
 bool GGui::Dialog::runModelessEnd( HWND hwnd , bool visible )
 {
-	if( hwnd == NULL )
+	if( hwnd == HNULL )
 	{
 		G_DEBUG( "GGui::Dialog::runModless: cannot create dialog box" ) ;
 		return false ;
@@ -377,7 +377,7 @@ bool GGui::Dialog::runModelessEnd( HWND hwnd , bool visible )
 	G_ASSERT( hwnd == handle() ) ;
 
 	if( visible )
-		::ShowWindow( hwnd , SW_SHOW ) ; // in case not WS_VISIBLE style
+		ShowWindow( hwnd , SW_SHOW ) ; // in case not WS_VISIBLE style
 
 	return true ;
 }
@@ -386,7 +386,7 @@ bool GGui::Dialog::dialogMessage( MSG & msg )
 {
 	for( DialogList::iterator p = m_list.begin() ; p != m_list.end() ; ++p )
 	{
-		if( ::IsDialogMessage( (*p).h , &msg ) )
+		if( IsDialogMessage( (*p).h , &msg ) )
 			return true ;
 	}
 	return false ;
@@ -405,13 +405,13 @@ bool GGui::Dialog::registerNewClass( HICON hicon , const std::string & new_class
 	// get our class info
 	//
 	WNDCLASSA class_info ;
-	::GetClassInfoA( hinstance , old_class_name.c_str() , &class_info ) ;
+	GetClassInfoA( hinstance , old_class_name.c_str() , &class_info ) ;
 
 	// register a new class
 	//
 	class_info.hIcon = hicon ;
 	class_info.lpszClassName = new_class_name.c_str() ;
-	ATOM rc = ::RegisterClassA( &class_info ) ;
+	ATOM rc = RegisterClassA( &class_info ) ;
 
 	return rc != 0 ;
 }

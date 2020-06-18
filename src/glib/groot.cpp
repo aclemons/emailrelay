@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -89,11 +89,11 @@ void G::Root::stop( SignalSafe safe , Identity identity )
 	Process::beOrdinary( safe , identity , m_default_change_group ) ;
 }
 
-void G::Root::init( const std::string & non_root , bool default_change_group )
+void G::Root::init( const std::string & non_root_name , bool default_change_group )
 {
-	G_ASSERT( !non_root.empty() ) ;
+	G_ASSERT( !non_root_name.empty() ) ;
 	Process::revokeExtraGroups() ;
-	m_ordinary = Identity( non_root ) ;
+	m_ordinary = Identity( non_root_name ) ;
 	m_special = Process::beOrdinary( SignalSafe() , m_ordinary , default_change_group ) ;
 	m_initialised = true ;
 	m_default_change_group = default_change_group ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #include "gassert.h"
 #include "glog.h"
 
-GSmtp::ProtocolMessageStore::ProtocolMessageStore( MessageStore & store , unique_ptr<Filter> filter ) :
+GSmtp::ProtocolMessageStore::ProtocolMessageStore( MessageStore & store , std::unique_ptr<Filter> filter ) :
 	m_store(store) ,
 	m_filter(filter.release())
 {
@@ -58,10 +58,10 @@ bool GSmtp::ProtocolMessageStore::setFrom( const std::string & from , const std:
 	if( from.length() == 0U ) // => probably a failure notification message
 		G_WARNING( "GSmtp::ProtocolMessageStore: empty MAIL-FROM return path" ) ;
 
-	G_ASSERT( m_new_msg.get() == nullptr ) ;
+	G_ASSERT( m_new_msg == nullptr ) ;
 	clear() ; // just in case
 
-	m_new_msg.reset( m_store.newMessage(from,from_auth,"").release() ) ;
+	m_new_msg = m_store.newMessage( from , from_auth , "" ) ;
 
 	m_from = from ;
 	return true ; // accept any name
@@ -71,8 +71,8 @@ bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , VerifierStatus
 {
 	G_DEBUG( "GSmtp::ProtocolMessageStore::addTo: " << to ) ;
 
-	G_ASSERT( m_new_msg.get() != nullptr ) ;
-	if( to.length() > 0U && m_new_msg.get() != nullptr )
+	G_ASSERT( m_new_msg != nullptr ) ;
+	if( to.length() > 0U && m_new_msg != nullptr )
 	{
 		if( !to_status.is_valid )
 		{
@@ -95,21 +95,21 @@ bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , VerifierStatus
 void GSmtp::ProtocolMessageStore::addReceived( const std::string & received_line )
 {
 	G_DEBUG( "GSmtp::ProtocolMessageStore::addReceived" ) ;
-	if( m_new_msg.get() != nullptr )
+	if( m_new_msg != nullptr )
 		m_new_msg->addTextLine( received_line ) ;
 }
 
-bool GSmtp::ProtocolMessageStore::addText( const char * line_data , size_t line_size )
+bool GSmtp::ProtocolMessageStore::addText( const char * line_data , std::size_t line_size )
 {
-	G_ASSERT( m_new_msg.get() != nullptr ) ;
-	if( m_new_msg.get() == nullptr )
+	G_ASSERT( m_new_msg != nullptr ) ;
+	if( m_new_msg == nullptr )
 		return true ;
 	return m_new_msg->addText( line_data , line_size ) ;
 }
 
 std::string GSmtp::ProtocolMessageStore::from() const
 {
-	return m_new_msg.get() ? m_from : std::string() ;
+	return m_new_msg ? m_from : std::string() ;
 }
 
 void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id , const std::string & peer_socket_address ,
@@ -118,8 +118,8 @@ void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
 	try
 	{
 		G_DEBUG( "GSmtp::ProtocolMessageStore::process: \"" << session_auth_id << "\", \"" << peer_socket_address << "\"" ) ;
-		G_ASSERT( m_new_msg.get() != nullptr ) ;
-		if( m_new_msg.get() == nullptr )
+		G_ASSERT( m_new_msg != nullptr ) ;
+		if( m_new_msg == nullptr )
 			throw G::Exception( "internal error" ) ; // never gets here
 
 		// write ".new" envelope
@@ -150,8 +150,8 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 	try
 	{
 		G_DEBUG( "GSmtp::ProtocolMessageStore::filterDone: " << filter_result ) ;
-		G_ASSERT( m_new_msg.get() != nullptr ) ;
-		if( m_new_msg.get() == nullptr )
+		G_ASSERT( m_new_msg != nullptr ) ;
+		if( m_new_msg == nullptr )
 			throw G::Exception( "internal error" ) ; // never gets here
 
 		const bool ok = filter_result == 0 ;
@@ -201,7 +201,7 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 	}
 }
 
-G::Slot::Signal4<bool,unsigned long,std::string,std::string> & GSmtp::ProtocolMessageStore::doneSignal()
+G::Slot::Signal<bool,unsigned long,const std::string&,const std::string&> & GSmtp::ProtocolMessageStore::doneSignal()
 {
 	return m_done_signal ;
 }

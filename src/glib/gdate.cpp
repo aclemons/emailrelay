@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,57 +38,50 @@ int G::Date::yearLowerLimit()
 
 G::Date::Date()
 {
-	init( DateTime::utc(DateTime::now()) ) ;
+	init( SystemTime::now().utc() ) ;
 }
 
-G::Date::Date( G::EpochTime t )
+G::Date::Date( SystemTime t )
 {
-	init( DateTime::utc(t) ) ;
+	init( t.utc() ) ;
 }
 
-G::Date::Date( G::EpochTime t , const LocalTime & )
+G::Date::Date( SystemTime t , const LocalTime & )
 {
-	init( DateTime::local(t) ) ;
+	init( t.local() ) ;
 }
 
-G::Date::Date( const G::DateTime::BrokenDownTime & tm )
+G::Date::Date( const BrokenDownTime & tm )
 {
 	init( tm ) ;
 }
 
 G::Date::Date( const LocalTime & )
 {
-	init( DateTime::local(DateTime::now()) ) ;
+	init( SystemTime::now().local() ) ;
 }
 
-G::Date::Date( int year , G::Date::Month month , int day_of_month )
+G::Date::Date( int year , Date::Month month , int day_of_month ) :
+	m_day(day_of_month) ,
+	m_month(static_cast<int>(month)) ,
+	m_year(year)
 {
 	G_ASSERT( year >= yearLowerLimit() ) ;
 	G_ASSERT( year <= yearUpperLimit() ) ;
-	m_year = year ;
-
 	G_ASSERT( day_of_month > 0 ) ;
 	G_ASSERT( day_of_month < 32 ) ;
-	m_day = day_of_month ;
-
 	G_ASSERT( static_cast<int>(month) >= 1 ) ;
 	G_ASSERT( static_cast<int>(month) <= 12 ) ;
-	m_month = static_cast<int>(month) ;
-
-	m_weekday_set = false ;
-	m_weekday = Weekday::sunday ;
 }
 
-void G::Date::init( const G::DateTime::BrokenDownTime & tm )
+void G::Date::init( const BrokenDownTime & tm )
 {
-	m_year = tm.tm_year + 1900 ;
-	m_month = tm.tm_mon + 1 ;
-	m_day = tm.tm_mday ;
-	m_weekday_set = false ;
-	m_weekday = Weekday::sunday ;
+	m_year = tm.year() ;
+	m_month = tm.month() ;
+	m_day = tm.day() ;
 }
 
-std::string G::Date::string( Format format ) const
+std::string G::Date::str( Format format ) const
 {
 	std::ostringstream ss ;
 	if( format == Format::yyyy_mm_dd_slash )
@@ -105,7 +98,7 @@ std::string G::Date::string( Format format ) const
 	}
 	else
 	{
-		G_ASSERT( "enum error" == 0 ) ;
+		G_ASSERT( !"enum error" ) ;
 	}
 	return ss.str() ;
 }
@@ -133,21 +126,9 @@ G::Date::Weekday G::Date::weekday() const
 {
 	if( ! m_weekday_set )
 	{
-		DateTime::BrokenDownTime tm ;
-		tm.tm_year = m_year - 1900 ;
-		tm.tm_mon = m_month - 1 ;
-		tm.tm_mday = m_day ;
-		tm.tm_hour = 12 ;
-		tm.tm_min = 0 ;
-		tm.tm_sec = 0 ;
-		tm.tm_wday = 0 ; // ignored
-		tm.tm_yday = 0 ; // ignored
-		tm.tm_isdst = 0 ; // ignored
-
-		DateTime::BrokenDownTime out = DateTime::utc(DateTime::epochTime(tm)) ;
-
+		BrokenDownTime bdt = BrokenDownTime::midday( m_year , m_month , m_day ) ;
 		const_cast<Date*>(this)->m_weekday_set = true ;
-		const_cast<Date*>(this)->m_weekday = Weekday(out.tm_wday) ;
+		const_cast<Date*>(this)->m_weekday = Weekday(bdt.wday()) ;
 	}
 	return m_weekday ;
 }

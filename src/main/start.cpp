@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <errno.h>
+#include <cerrno>
 
 static bool exists( std::string path )
 {
@@ -91,12 +91,12 @@ static std::list<std::string> gui_candidates( std::string base )
 
 static std::string find( std::list<std::string> list )
 {
-	for( std::list<std::string>::iterator p = list.begin() ; p != list.end() ; ++p )
+	for( const auto & path : list )
 	{
-		if( exists(*p) )
+		if( exists(path) )
 		{
-			std::cout << "found [" << *p << "]" << std::endl ;
-			return *p ;
+			std::cout << "found [" << path << "]" << std::endl ;
+			return path ;
 		}
 	}
 	std::cout << "not found ...\n " ;
@@ -150,7 +150,7 @@ static std::string sanitised( std::string s )
 static std::list<std::string> read( std::string path )
 {
 	std::list<std::string> result ;
-	result.push_back( "--as-server" ) ;
+	result.emplace_back( "--as-server" ) ;
 
 	std::ifstream s( path.c_str() ) ;
 	while( s.good() )
@@ -178,8 +178,7 @@ static void exec( std::string exe , std::list<std::string> args )
 {
 	char ** argv = new char* [args.size()+2U] ;
 	int i = 1 ;
-	for( std::list<std::string>::iterator p = args.begin() ;
-		p != args.end() ; ++p , i++ )
+	for( auto p = args.cbegin() ; p != args.cend() ; ++p , i++ )
 	{
 		argv[i] = const_cast<char*>((*p).c_str()) ;
 	}
@@ -242,10 +241,10 @@ static void run( std::string exe , std::list<std::string> args )
 
 std::string join( const std::list<std::string> & list )
 {
-	typedef std::list<std::string> List ;
+	using List = std::list<std::string> ;
 	std::ostringstream ss ;
 	const char * sep = "" ;
-	for( List::const_iterator p = list.begin() ; p != list.end() ; ++p , sep = " " )
+	for( auto p = list.begin() ; p != list.end() ; ++p , sep = " " )
 	{
 		ss << sep << *p ;
 	}

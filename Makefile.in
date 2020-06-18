@@ -23,6 +23,18 @@
 #	* rpm - builds an rpm package using rpmbuild
 #	* deb - builds a deb package using debhelper
 #
+# Eg:
+#	$ dnf install g++ make automake openssl-devel pam-devel rpm-build # rpm
+#	$ ./bootstrap
+#	$ ./configure.sh
+#	$ sudo make rpm
+#
+# or:
+#	$ apt install g++ make automake libssl-dev libpam0g-dev debhelper # deb
+#	$ ./bootstrap
+#	$ ./configure.sh
+#	$ sudo make deb
+#
 # When running "make distcheck" consider doing this to avoid
 # a lengthy testing stage:
 #	$ make distcheck DISTCHECK_CONFIGURE_FLAGS=--disable-testing
@@ -271,7 +283,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-GCONFIG_CONFIGURATION = @GCONFIG_CONFIGURATION@
 GCONFIG_HAVE_DOXYGEN = @GCONFIG_HAVE_DOXYGEN@
 GCONFIG_HAVE_MAN2HTML = @GCONFIG_HAVE_MAN2HTML@
 GCONFIG_QT_CFLAGS = @GCONFIG_QT_CFLAGS@
@@ -342,6 +353,7 @@ e_icondir = @e_icondir@
 e_initdir = @e_initdir@
 e_libexecdir = @e_libexecdir@
 e_pamdir = @e_pamdir@
+e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
@@ -382,8 +394,6 @@ EXTRA_DIST = \
 	autogen.sh \
 	winbuild.bat \
 	winbuild.pl \
-	winbuild.pm \
-	winbuild-parser.pm \
 	runperl.bat
 
 SUBDIRS = bin src etc doc debian test m4 bsd
@@ -902,12 +912,14 @@ ARCH ?= x86_64
 rpm: $(RPM)
 
 $(RPM): dist
-	-rm -rf $(RPM_ROOT)/BUILD/emailrelay-$(VERSION)
+	-rm -rf $(RPM_ROOT)/BUILD/emailrelay-$(VERSION)-1.$(ARCH)
+	test ! -d $(RPM_ROOT)/BUILD/emailrelay-$(VERSION)-1.$(ARCH)
 	-mkdir -p $(RPM_ROOT)/BUILD $(RPM_ROOT)/SOURCES $(RPM_ROOT)/SPECS 2>/dev/null
 	cp $(TAR) $(RPM_ROOT)/SOURCES/emailrelay-$(VERSION)-src.tar.gz
 	cp $(top_srcdir)/emailrelay.spec $(RPM_ROOT)/SPECS/
-	chown root:root $(RPM_ROOT)/SPECS/emailrelay.spec
-	-rm -f $(RPM) || true
+	-chown root:root $(RPM_ROOT)/SPECS/emailrelay.spec
+	-rm -f $(RPM)
+	test ! -f $(RPM)
 	rpmbuild -ba $(RPM_ROOT)/SPECS/emailrelay.spec
 	test -f $(RPM)
 
@@ -927,6 +939,17 @@ deb-src: dist
 	mkdir emailrelay-$(VERSION)/debian/source
 	echo 1.0 > emailrelay-$(VERSION)/debian/source/format
 	dpkg-source --build emailrelay-$(VERSION)
+
+.PHONY: lint
+lint:
+	cd src && make lint
+
+.PHONY: cmake
+cmake:
+	@chmod +x bin/make2cmake || true
+	bin/make2cmake
+	mkdir build || true
+	cd build && cmake -DCMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/make -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. && make
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,28 +43,32 @@ public:
 	ExecutableFilter( GNet::ExceptionSink , bool server_side , const std::string & ) ;
 		///< Constructor.
 
-	virtual ~ExecutableFilter() ;
+	~ExecutableFilter() override ;
 		///< Destructor.
 
 private: // overrides
-	virtual std::string id() const override ; // Override from from GSmtp::Filter.
-	virtual bool simple() const override ; // Override from from GSmtp::Filter.
-	virtual G::Slot::Signal1<int> & doneSignal() override ; // Override from from GSmtp::Filter.
-	virtual void start( const std::string & path ) override ; // Override from from GSmtp::Filter.
-	virtual void cancel() override ; // Override from from GSmtp::Filter.
-	virtual bool abandoned() const override ; // Override from from GSmtp::Filter.
-	virtual std::string response() const override ; // Override from from GSmtp::Filter.
-	virtual std::string reason() const override ; // Override from from GSmtp::Filter.
-	virtual bool special() const override ; // Override from from GSmtp::Filter.
-	virtual void onTaskDone( int , const std::string & ) override ; // Override from GNet::TaskCallback.
+	std::string id() const override ; // Override from from GSmtp::Filter.
+	bool simple() const override ; // Override from from GSmtp::Filter.
+	G::Slot::Signal<int> & doneSignal() override ; // Override from from GSmtp::Filter.
+	void start( const std::string & path ) override ; // Override from from GSmtp::Filter.
+	void cancel() override ; // Override from from GSmtp::Filter.
+	bool abandoned() const override ; // Override from from GSmtp::Filter.
+	std::string response() const override ; // Override from from GSmtp::Filter.
+	std::string reason() const override ; // Override from from GSmtp::Filter.
+	bool special() const override ; // Override from from GSmtp::Filter.
+	void onTaskDone( int , const std::string & ) override ; // Override from GNet::TaskCallback.
+
+public:
+	ExecutableFilter( const ExecutableFilter & ) = delete ;
+	ExecutableFilter( ExecutableFilter && ) = delete ;
+	void operator=( const ExecutableFilter & ) = delete ;
+	void operator=( ExecutableFilter && ) = delete ;
 
 private:
-	ExecutableFilter( const ExecutableFilter & ) g__eq_delete ;
-	void operator=( const ExecutableFilter & ) g__eq_delete ;
 	std::pair<std::string,std::string> parseOutput( std::string , const std::string & ) const ;
 
 private:
-	G::Slot::Signal1<int> m_done_signal ;
+	G::Slot::Signal<int> m_done_signal ;
 	bool m_server_side ;
 	std::string m_prefix ;
 	Exit m_exit ;

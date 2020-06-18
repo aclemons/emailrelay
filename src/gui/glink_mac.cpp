@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-#include <stdlib.h> // system()
+#include <cstdlib> // std::system()
 
 class GLinkImp
 {
@@ -35,9 +35,9 @@ public:
 	static std::string filename( const std::string & ) ;
 	void saveAs( const G::Path & ) ;
 
-private:
-	GLinkImp( const GLinkImp & ) ;
-	void operator=( const GLinkImp & ) ;
+public:
+	GLinkImp( const GLinkImp & ) = delete ;
+	void operator=( const GLinkImp & ) = delete ;
 
 private:
 	G::Path m_target_path ;
@@ -78,7 +78,7 @@ void GLinkImp::saveAs( const G::Path & )
 				<< "hidden:true}\" "
 			<< "-e \"end tell\"" ;
 
-	int rc = system( ss.str().c_str() ) ; G_IGNORE_VARIABLE(int,rc) ;
+	int rc = std::system( ss.str().c_str() ) ; G_IGNORE_VARIABLE(int,rc) ;
 }
 
 // ==
@@ -130,7 +130,7 @@ bool GLink::remove( const G::Path & )
 				<< "-e \"delete login item __\" "
 				<< "-e \"end tell\"" ;
 
-	int rc = system( ss.str().c_str() ) ; G_IGNORE_VARIABLE(int,rc) ;
+	int rc = std::system( ss.str().c_str() ) ; G_IGNORE_VARIABLE(int,rc) ;
 	return true ;
 }
 

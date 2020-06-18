@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,8 +41,8 @@ public:
 	static std::string copyright() ;
 		///< Returns the copyright text.
 
-private:
-	Legal() g__eq_delete ;
+public:
+	Legal() = delete ;
 } ;
 
 #endif

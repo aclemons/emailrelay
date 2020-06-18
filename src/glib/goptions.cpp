@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,8 +26,7 @@
 #include <algorithm>
 
 G::Options::Options()
-{
-}
+= default;
 
 G::Options::Options( const std::string & spec , char sep_major , char sep_minor , char escape )
 {
@@ -38,24 +37,24 @@ G::Options::Options( const std::string & spec , char sep_major , char sep_minor 
 void G::Options::parseSpec( const std::string & spec , char sep_major , char sep_minor , char escape )
 {
 	// split into separate options
-	StringArray outer_part ;
-	outer_part.reserve( 40U ) ;
+	StringArray spec_items ;
+	spec_items.reserve( 40U ) ;
 	std::string ws_major( 1U , sep_major ) ;
-	Str::splitIntoFields( spec , outer_part , ws_major , escape , false ) ;
+	Str::splitIntoFields( spec , spec_items , ws_major , escape , false ) ;
 
 	// for each option
-	for( StringArray::iterator p = outer_part.begin() ; p != outer_part.end() ; ++p )
+	for( auto & spec_item : spec_items )
 	{
 		// split into separate fields
-		if( (*p).empty() ) continue ;
+		if( spec_item.empty() ) continue ;
 		StringArray inner_part ;
 		inner_part.reserve( 7U ) ;
 		std::string ws_minor( 1U , sep_minor ) ;
-		Str::splitIntoFields( *p , inner_part , ws_minor , escape ) ;
+		Str::splitIntoFields( spec_item , inner_part , ws_minor , escape ) ;
 		if( inner_part.size() != 7U )
 		{
 			std::ostringstream ss ;
-			ss << "\"" << *p << "\" (" << ws_minor << ")" ;
+			ss << "\"" << spec_item << "\" (" << ws_minor << ")" ;
 			throw InvalidSpecification( ss.str() ) ;
 		}
 
@@ -87,7 +86,7 @@ bool G::Options::valued( char c ) const
 
 bool G::Options::valued( const std::string & name ) const
 {
-	Map::const_iterator p = m_map.find( name ) ;
+	auto p = m_map.find( name ) ;
 	return p == m_map.end() ? false : ( (*p).second.value_multiplicity > 0U ) ;
 }
 
@@ -103,13 +102,13 @@ bool G::Options::multivalued( char c ) const
 
 bool G::Options::multivalued( const std::string & name ) const
 {
-	Map::const_iterator p = m_map.find( name ) ;
+	auto p = m_map.find( name ) ;
 	return p == m_map.end() ? false : ( (*p).second.value_multiplicity > 1U ) ;
 }
 
 bool G::Options::visible( const std::string & name , Level level , bool exact ) const
 {
-	Map::const_iterator p = m_map.find( name ) ;
+	auto p = m_map.find( name ) ;
 	if( p == m_map.end() ) return false ;
 	return
 		exact ?
@@ -124,7 +123,7 @@ bool G::Options::valid( const std::string & name ) const
 
 std::string G::Options::lookup( char c ) const
 {
-	for( Map::const_iterator p = m_map.begin() ; c != '\0' && p != m_map.end() ; ++p )
+	for( auto p = m_map.begin() ; c != '\0' && p != m_map.end() ; ++p )
 	{
 		if( (*p).second.c == c )
 			return (*p).second.name ;
@@ -139,12 +138,12 @@ const G::StringArray & G::Options::names() const
 
 // --
 
-size_t G::Options::widthDefault()
+std::size_t G::Options::widthDefault()
 {
 	return Str::toUInt( Environment::get("COLUMNS",std::string()) , "79" ) ;
 }
 
-size_t G::Options::widthFloor( size_t w )
+std::size_t G::Options::widthFloor( std::size_t w )
 {
 	return (w != 0U && w < 50U) ? 50U : w ;
 }
@@ -169,10 +168,10 @@ std::string G::Options::usageSummaryPartOne( Level level ) const
 	// summarise the single-character switches, excluding those which take a value
 	std::ostringstream ss ;
 	bool first = true ;
-	for( StringArray::const_iterator name_p = m_names.begin() ; name_p != m_names.end() ; ++name_p )
+	for( const auto & name : m_names )
 	{
-		Map::const_iterator spec_p = m_map.find( *name_p ) ;
-		if( (*spec_p).second.c != '\0' && !valued(*name_p) && visible(*name_p,level,false) )
+		auto spec_p = m_map.find( name ) ;
+		if( (*spec_p).second.c != '\0' && !valued(name) && visible(name,level,false) )
 		{
 			if( first )
 				ss << "[-" ;
@@ -190,11 +189,11 @@ std::string G::Options::usageSummaryPartTwo( Level level ) const
 {
 	std::ostringstream ss ;
 	const char * sep = "" ;
-	for( StringArray::const_iterator name_p = m_names.begin() ; name_p != m_names.end() ; ++name_p )
+	for( const auto & name : m_names )
 	{
-		if( visible(*name_p,level,false) )
+		if( visible(name,level,false) )
 		{
-			Map::const_iterator spec_p = m_map.find( *name_p ) ;
+			auto spec_p = m_map.find( name ) ;
 			ss << sep << "[" ;
 			if( (*spec_p).second.name.length() )
 			{
@@ -218,21 +217,22 @@ std::string G::Options::usageSummaryPartTwo( Level level ) const
 	return ss.str() ;
 }
 
-std::string G::Options::usageHelp( Level level , Layout layout , bool exact , bool extra ) const
+std::string G::Options::usageHelp( Level level , const Layout & layout_in , bool exact , bool extra ) const
 {
-	layout.width = widthFloor( layout.width ) ;
+	Layout layout( layout_in ) ;
+	layout.width = widthFloor( layout_in.width ) ;
 	return usageHelpCore( "  " , level , layout , exact , extra ) ;
 }
 
 std::string G::Options::usageHelpCore( const std::string & prefix , Level level ,
-	Layout layout , bool exact , bool extra ) const
+	const Layout & layout , bool exact , bool extra ) const
 {
 	std::string result ;
-	for( StringArray::const_iterator name_p = m_names.begin() ; name_p != m_names.end() ; ++name_p )
+	for( const auto & name : m_names )
 	{
-		if( visible(*name_p,level,exact) )
+		if( visible(name,level,exact) )
 		{
-			Map::const_iterator spec_p = m_map.find( *name_p ) ;
+			auto spec_p = m_map.find( name ) ;
 			std::string line( prefix ) ;
 			if( (*spec_p).second.c != '\0' )
 			{
@@ -283,7 +283,7 @@ std::string G::Options::usageHelpCore( const std::string & prefix , Level level 
 }
 
 void G::Options::showUsage( std::ostream & stream , const std::string & exe , const std::string & args ,
-	const std::string & introducer , Level level , Layout layout , bool extra ) const
+	const std::string & introducer , Level level , const Layout & layout , bool extra ) const
 {
 	stream
 		<< usageSummary(exe,args,introducer,level,layout.width) << std::endl
@@ -291,7 +291,7 @@ void G::Options::showUsage( std::ostream & stream , const std::string & exe , co
 }
 
 std::string G::Options::usageSummary( const std::string & exe , const std::string & args ,
-	const std::string & introducer , Level level , size_t width ) const
+	const std::string & introducer , Level level , std::size_t width ) const
 {
 	std::string s = introducer + exe + " " + usageSummaryPartOne(level) + usageSummaryPartTwo(level) + (args.empty()||args.at(0U)==' '?"":" ") + args ;
 	std::string indent( 2U , ' ' ) ; // or from OptionsLayout ?

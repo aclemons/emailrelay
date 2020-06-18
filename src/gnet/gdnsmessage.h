@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
 #include "gdef.h"
 #include "gexception.h"
 #include "gaddress.h"
-#include <ostream>
 #include <vector>
 #include <string>
 #include <map>
@@ -52,13 +51,13 @@ class GNet::DnsMessage
 {
 public:
 	G_EXCEPTION( Error , "dns message error" ) ;
-	typedef DnsMessageQuestion Question ;
-	typedef DnsMessageRR RR ;
+	using Question = DnsMessageQuestion ;
+	using RR = DnsMessageRR ;
 
 	explicit DnsMessage( const std::vector<char> & buffer ) ;
 		///< Constructor.
 
-	DnsMessage( const char * , size_t ) ;
+	DnsMessage( const char * , std::size_t ) ;
 		///< Constructor.
 
 	std::vector<Address> addresses() const ;
@@ -112,13 +111,18 @@ public:
 		///< Precondition: n < QDCOUNT()
 
 	RR rr( unsigned int n ) const ;
-		///< Returns the n'th record as a RR record.
+		///< Returns the n'th record as a RR record. The returned
+		///< object retains a reference to this DnsMessage, so
+		///< prefer rrAddress().
 		///< Precondition: n >= QDCOUNT() && n < (QDCOUNT()+ANCOUNT()+NSCOUNT()+ARCOUNT())
+
+	Address rrAddress( unsigned int n ) const ;
+		///< Returns the address in the n'th record treated as a RR record.
 
 	const char * p() const ;
 		///< Returns the raw data.
 
-	size_t n() const ;
+	std::size_t n() const ;
 		///< Returns the raw data size.
 
 	unsigned int byte( unsigned int byte_index ) const ;
@@ -144,6 +148,7 @@ public:
 		///< throw, except n() will return zero.
 
 private:
+	friend class DnsMessageDumper ;
 	DnsMessage() ;
 	void reject( unsigned int rcode ) ;
 
@@ -164,9 +169,11 @@ public:
 	static std::string name( unsigned int type_value ) ;
 		///< Returns the type name for the given type value.
 
+public:
+	DnsMessageRecordType() = delete ;
+
 private:
-	typedef std::map<unsigned int,std::string> Map ;
-	DnsMessageRecordType() g__eq_delete ;
+	using Map = std::map<unsigned int,std::string> ;
 	static void add( unsigned int , const std::string & ) ;
 	static const Map & map() ;
 
@@ -180,11 +187,12 @@ private:
 class GNet::DnsMessageRR
 {
 public:
-	typedef DnsMessageRR RR ;
+	using RR = DnsMessageRR ;
 
 public:
 	DnsMessageRR( const DnsMessage & , unsigned int offset ) ;
-		///< Constructor.
+		///< Constructor. Keeps the reference, which is then passed
+		///< to copies.
 
 	bool isa( const std::string & ) const ;
 		///< Returns true if the type() has the given name().
@@ -257,6 +265,9 @@ public:
 		///< Returns the decompressed name, made up of the
 		///< labels with dots inbetween.
 
+public:
+	DnsMessageNameParser() = delete ;
+
 private:
 	static std::string read_imp( const DnsMessage & , std::vector<char>::const_iterator ) ;
 } ;
@@ -267,7 +278,7 @@ private:
 class GNet::DnsMessageRequest
 {
 public:
-	typedef DnsMessageRR RR ;
+	using RR = DnsMessageRR ;
 
 	DnsMessageRequest( const std::string & type , const std::string & hostname , unsigned int id = 0U ) ;
 		///< Constructor.
@@ -275,7 +286,7 @@ public:
 	const char * p() const ;
 		///< Returns a pointer to the message data.
 
-	size_t n() const ;
+	std::size_t n() const ;
 		///< Returns message size.
 
 private:

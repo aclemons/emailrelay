@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,23 +45,23 @@ namespace GSmtp
 class GSmtp::ClientProtocolReply
 {
 public:
-	g__enum(Type)
+	enum class Type
 	{
 		PositivePreliminary = 1 ,
 		PositiveCompletion = 2 ,
 		PositiveIntermediate = 3 ,
 		TransientNegative = 4 ,
 		PermanentNegative = 5
-	} ; g__enum_end(Type)
-	g__enum(SubType)
+	} ;
+	enum class SubType
 	{
 		Syntax = 0 ,
 		Information = 1 ,
 		Connections = 2 ,
 		MailSystem = 3 ,
 		Invalid_SubType = 4
-	} ; g__enum_end(SubType)
-	g__enum(Value)
+	} ;
+	enum class Value
 	{
 		Internal_filter_ok = 222 ,
 		Internal_filter_abandon = 223 ,
@@ -79,7 +79,7 @@ public:
 		NotAuthenticated_535 = 535 ,
 		NotAvailable_454 = 454 ,
 		Invalid = 0
-	} ; g__enum_end(Value)
+	} ;
 
 	static ClientProtocolReply ok() ;
 		///< Factory function for an ok reply.
@@ -142,9 +142,9 @@ private:
 	static bool is_digit( char ) ;
 
 private:
-	bool m_complete ;
-	bool m_valid ;
-	int m_value ;
+	bool m_complete{false} ;
+	bool m_valid{false} ;
+	int m_value{0} ;
 	std::string m_text ;
 	std::string m_reason ; // additional error reason
 } ;
@@ -158,12 +158,12 @@ public:
 	G_EXCEPTION( NotReady , "not ready" ) ;
 	G_EXCEPTION( TlsError , "tls/ssl error" ) ;
 	G_EXCEPTION_CLASS( SmtpError , "smtp error" ) ;
-	typedef ClientProtocolReply Reply ;
+	using Reply = ClientProtocolReply ;
 
 	class Sender /// An interface used by ClientProtocol to send protocol messages.
 	{
 	public:
-		virtual bool protocolSend( const std::string & , size_t offset , bool go_secure ) = 0 ;
+		virtual bool protocolSend( const std::string & , std::size_t offset , bool go_secure ) = 0 ;
 			///< Called by the Protocol class to send network data to
 			///< the peer.
 			///<
@@ -176,27 +176,38 @@ public:
 			///<
 			///< Throws on error, eg. if disconnected.
 
-		virtual ~Sender() ;
+		virtual ~Sender() = default ;
 			///< Destructor.
 	} ;
 
 	struct Config /// A structure containing GSmtp::ClientProtocol configuration parameters.
 	{
 		std::string thishost_name ; // EHLO parameter
-		unsigned int response_timeout ;
-		unsigned int ready_timeout ;
-		unsigned int filter_timeout ;
-		bool use_starttls_if_possible ;
-		bool must_use_tls ;
-		bool must_authenticate ;
-		bool anonymous ; // MAIL..AUTH=
-		bool must_accept_all_recipients ;
-		bool eight_bit_strict ; // fail 8bit messages to 7bit server
+		unsigned int response_timeout{0U} ;
+		unsigned int ready_timeout{0U} ;
+		unsigned int filter_timeout{0U} ;
+		bool use_starttls_if_possible{false} ;
+		bool must_use_tls{false} ;
+		bool must_authenticate{false} ;
+		bool anonymous{false} ; // MAIL..AUTH=
+		bool must_accept_all_recipients{false} ;
+		bool eight_bit_strict{false} ; // fail 8bit messages to 7bit server
+		Config() ;
 		Config( const std::string & name , unsigned int response_timeout ,
 			unsigned int ready_timeout , unsigned int filter_timeout ,
 			bool use_starttls_if_possible , bool must_use_tls ,
 			bool must_authenticate , bool anonymous ,
 			bool must_accept_all_recipients , bool eight_bit_strict ) ;
+		Config & set_thishost_name( const std::string & ) ;
+		Config & set_response_timeout( unsigned int ) ;
+		Config & set_ready_timeout( unsigned int ) ;
+		Config & set_filter_timeout( unsigned int ) ;
+		Config & set_use_starttls_if_possible( bool = true ) ;
+		Config & set_must_use_tls( bool = true ) ;
+		Config & set_must_authenticate( bool = true ) ;
+		Config & set_anonymous( bool = true ) ;
+		Config & set_must_accept_all_recipients( bool = true ) ;
+		Config & set_eight_bit_strict( bool = true ) ;
 	} ;
 
 	ClientProtocol( GNet::ExceptionSink , Sender & sender ,
@@ -205,7 +216,7 @@ public:
 			///< Constructor. The Sender interface is used to send protocol
 			///< messages to the peer. The references are kept.
 
-	G::Slot::Signal3<int,std::string,std::string> & doneSignal() ;
+	G::Slot::Signal<int,const std::string&,const std::string&> & doneSignal() ;
 		///< Returns a signal that is raised once the protocol has finished
 		///< with a given message. The first signal parameter is the SMTP response
 		///< value, or 0 for an internal error, or -1 for filter-abandon, or -2
@@ -213,12 +224,12 @@ public:
 		///< or a non-empty response string. The third parameter contains
 		///< any additional error reason text.
 
-	G::Slot::Signal0 & filterSignal() ;
+	G::Slot::Signal<> & filterSignal() ;
 		///< Returns a signal that is raised when the protocol
 		///< needs to do message filtering. The callee must call
 		///< filterDone() when finished.
 
-	void start( weak_ptr<StoredMessage> ) ;
+	void start( std::weak_ptr<StoredMessage> ) ;
 		///< Starts transmission of the given message. The doneSignal()
 		///< is used to indicate that the message has been processed
 		///< and the shared object should remain valid until then.
@@ -246,6 +257,13 @@ public:
 		///< Returns true if the protocol is done and the doneSignal()
 		///< has been emited.
 
+public:
+	~ClientProtocol() override = default ;
+	ClientProtocol( const ClientProtocol & ) = delete ;
+	ClientProtocol( ClientProtocol && ) = delete ;
+	void operator=( const ClientProtocol & ) = delete ;
+	void operator=( ClientProtocol && ) = delete ;
+
 private:
 	struct AuthError : public SmtpError
 	{
@@ -254,16 +272,16 @@ private:
 	} ;
 
 private: // overrides
-	virtual void onTimeout() override ; // Override from GNet::TimerBase.
+	void onTimeout() override ; // Override from GNet::TimerBase.
 
 private:
-	shared_ptr<StoredMessage> message() ;
+	std::shared_ptr<StoredMessage> message() ;
 	void send( const char * ) ;
 	void send( const char * , const std::string & ) ;
 	void send( const char * , const std::string & , const std::string & ) ;
 	bool send( const std::string & , bool eot , bool sensitive = false ) ;
 	bool sendLine( std::string & ) ;
-	size_t sendLines() ;
+	std::size_t sendLines() ;
 	void sendEhlo() ;
 	void sendHelo() ;
 	void sendMail() ;
@@ -278,7 +296,7 @@ private:
 	static std::string initialResponse( const GAuth::SaslClient & ) ;
 
 private:
-	g__enum(State) {
+	enum class State {
 		sInit ,
 		sStarted ,
 		sServiceReady ,
@@ -296,17 +314,17 @@ private:
 		sSentTlsEhlo ,
 		sMessageDone ,
 		sQuitting
-	} ; g__enum_end(State)
+	} ;
 
 private:
 	Sender & m_sender ;
 	const GAuth::Secrets & m_secrets ;
-	unique_ptr<GAuth::SaslClient> m_sasl ;
-	weak_ptr<StoredMessage> m_message ;
+	std::unique_ptr<GAuth::SaslClient> m_sasl ;
+	std::weak_ptr<StoredMessage> m_message ;
 	Config m_config ;
 	State m_state ;
-	size_t m_to_index ;
-	size_t m_to_accepted ;
+	std::size_t m_to_index ;
+	std::size_t m_to_accepted ;
 	bool m_server_has_starttls ;
 	bool m_server_has_auth ;
 	bool m_server_secure ;
@@ -317,8 +335,19 @@ private:
 	bool m_in_secure_tunnel ;
 	bool m_warned ;
 	Reply m_reply ;
-	G::Slot::Signal3<int,std::string,std::string> m_done_signal ;
-	G::Slot::Signal0 m_filter_signal ;
+	G::Slot::Signal<int,const std::string&,const std::string&> m_done_signal ;
+	G::Slot::Signal<> m_filter_signal ;
 } ;
+
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_thishost_name( const std::string & s ) { thishost_name = s ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_response_timeout( unsigned int t ) { response_timeout = t ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_ready_timeout( unsigned int t ) { ready_timeout = t ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_filter_timeout( unsigned int t ) { filter_timeout = t ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_use_starttls_if_possible( bool b ) { use_starttls_if_possible = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_must_use_tls( bool b ) { must_use_tls = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_must_authenticate( bool b ) { must_authenticate = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_anonymous( bool b ) { anonymous = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_must_accept_all_recipients( bool b ) { must_accept_all_recipients = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_eight_bit_strict( bool b ) { eight_bit_strict = b ; return *this ; }
 
 #endif
