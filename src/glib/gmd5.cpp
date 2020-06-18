@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,15 +25,16 @@
 #include "gassert.h"
 #include <string> // std::string
 #include <cstdlib> // std::size_t
+#include <array>
 
 /// \namespace md5
 /// An implementation namespace for G::Md5.
 ///
 namespace md5
 {
-	typedef G::Md5::digest_state digest_state ;
-	typedef G::Md5::small_t small_t ;
-	typedef G::Md5::big_t big_t ;
+	using digest_state = G::Md5::digest_state ;
+	using small_t = G::Md5::small_t ;
+	using big_t = G::Md5::big_t ;
 	class digest ;
 	class format ;
 	class block ;
@@ -74,8 +75,8 @@ public:
 		// Adds a 64-byte block of the message.
 
 private:
-	typedef big_t (*aux_fn_t)( big_t , big_t , big_t ) ;
-	g__enum(Permutation) { ABCD , DABC , CDAB , BCDA } ; g__enum_end(Permutation)
+	using aux_fn_t = big_t (*)(big_t, big_t, big_t) ;
+	enum class Permutation { ABCD , DABC , CDAB , BCDA } ;
 
 private:
 	explicit digest( const block & ) ;
@@ -114,8 +115,8 @@ public:
 		// Converts a encode() string back into a digest
 		// state and a stream-size.
 
-private:
-	format() g__eq_delete ;
+public:
+	format() = delete ;
 } ;
 
 /// \class md5::block
@@ -156,9 +157,14 @@ public:
 	big_t X( small_t ) const ;
 		// Returns a value from within the block. See RFC-1321.
 
+public:
+	~block() = default ;
+	block( const block & ) = delete ;
+	block( block && ) = delete ;
+	void operator=( const block & ) = delete ;
+	void operator=( block && ) = delete ;
+
 private:
-	block( const block & ) g__eq_delete ;
-	void operator=( const block & ) g__eq_delete ;
 	small_t x( small_t ) const ;
 	static small_t rounded( small_t n ) ;
 
@@ -170,12 +176,14 @@ private:
 
 // ==
 
-md5::digest::digest()
+md5::digest::digest() :
+	digest_state{}
 {
 	init() ;
 }
 
-md5::digest::digest( const std::string & s )
+md5::digest::digest( const std::string & s ) :
+	digest_state{}
 {
 	init() ;
 	small_t n = block::blocks( s.length() ) ;
@@ -186,7 +194,8 @@ md5::digest::digest( const std::string & s )
 	}
 }
 
-md5::digest::digest( digest_state d_in )
+md5::digest::digest( digest_state d_in ) :
+	digest_state{}
 {
 	a = d_in.a ;
 	b = d_in.b ;
@@ -321,8 +330,7 @@ md5::big_t md5::digest::T( small_t i )
 {
 	// T = static_cast<big_t>( 4294967296.0 * std::fabs(std::sin(static_cast<double>(i))) ) for 1 <= i <= 64
 	//
-	static big_t t_map[] =
-	{
+	static std::array<big_t,64U> t_map {{
 		0xd76aa478UL ,
 		0xe8c7b756UL ,
 		0x242070dbUL ,
@@ -386,29 +394,30 @@ md5::big_t md5::digest::T( small_t i )
 		0xf7537e82UL ,
 		0xbd3af235UL ,
 		0x2ad7d2bbUL ,
-		0xeb86d391UL } ;
-	return t_map[i-1UL] ;
+		0xeb86d391UL }} ;
+	G_ASSERT( i > 0 && i <= t_map.size() ) ;
+	return t_map[i-1U] ;
 }
 
 // ===
 
 std::string md5::format::encode( const digest_state & state )
 {
-	const big_t state_array[] = { state.a , state.b , state.c , state.d } ;
-	return G::HashState<16,big_t,small_t>::encode( state_array ) ;
+	const std::array<big_t,4U> state_array {{ state.a , state.b , state.c , state.d }} ;
+	return G::HashState<16,big_t,small_t>::encode( &state_array[0] ) ;
 }
 
 std::string md5::format::encode( const digest_state & state , big_t n )
 {
-	const big_t state_array[] = { state.a , state.b , state.c , state.d } ;
-	return G::HashState<16,big_t,small_t>::encode( state_array , n ) ;
+	const std::array<big_t,4U> state_array {{ state.a , state.b , state.c , state.d }} ;
+	return G::HashState<16,big_t,small_t>::encode( &state_array[0] , n ) ;
 }
 
 md5::digest_state md5::format::decode( const std::string & str , small_t & n )
 {
-	big_t state_array[] = { 0 , 0 , 0 , 0 } ;
-	G::HashState<16,big_t,small_t>::decode( str , state_array , n ) ;
-	digest_state result ;
+	std::array<big_t,4U> state_array {{ 0 , 0 , 0 , 0 }} ;
+	G::HashState<16,big_t,small_t>::decode( str , &state_array[0] , n ) ;
+	digest_state result = { 0 , 0 , 0 , 0 } ;
 	result.a = state_array[0] ;
 	result.b = state_array[1] ;
 	result.c = state_array[2] ;
@@ -485,16 +494,16 @@ md5::small_t md5::block::x( small_t i ) const
 // ==
 
 G::Md5::Md5() :
-	m_n(0U)
+	m_n(0) ,
+	m_d(md5::digest().state())
 {
-	md5::digest dd ;
-	m_d = dd.state() ;
 }
 
-G::Md5::Md5( const std::string & str_state )
+G::Md5::Md5( const std::string & str_state ) :
+	m_n(0) ,
+	m_d(md5::format::decode(str_state,m_n))
 {
 	G_ASSERT( str_state.size() == (valuesize()+4U) ) ;
-	m_d = md5::format::decode( str_state , m_n ) ;
 }
 
 std::string G::Md5::state() const
@@ -573,17 +582,17 @@ std::string G::Md5::postdigest( const std::string & state_pair , const std::stri
 	return xo.value() ;
 }
 
-size_t G::Md5::blocksize()
+std::size_t G::Md5::blocksize()
 {
 	return 64U ;
 }
 
-size_t G::Md5::valuesize()
+std::size_t G::Md5::valuesize()
 {
 	return 16U ;
 }
 
-size_t G::Md5::statesize()
+std::size_t G::Md5::statesize()
 {
 	return 20U ;
 }

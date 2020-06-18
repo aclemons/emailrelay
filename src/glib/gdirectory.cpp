@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -58,17 +58,14 @@ std::string G::Directory::tmp()
 {
 	std::ostringstream ss ;
 	static int sequence = 1 ;
-	ss << "." << DateTime::now() << "." << sequence++ << "." << Process::Id() << ".tmp" ;
+	ss << "." << SystemTime::now() << "." << sequence++ << "." << Process::Id() << ".tmp" ;
 	return ss.str() ;
 }
 
 // ==
 
-G::DirectoryList::DirectoryList() :
-	m_first(true) ,
-	m_index(0U)
-{
-}
+G::DirectoryList::DirectoryList()
+= default;
 
 void G::DirectoryList::readAll( const G::Path & dir , std::vector<G::DirectoryList::Item> & out , bool sorted )
 {

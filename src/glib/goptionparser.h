@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,38 +51,44 @@ public:
 	OptionParser( const Options & spec , OptionMap & values_out ) ;
 		///< Constructor for when errors can be ignored.
 
-	size_t parse( const StringArray & args , size_t start_position = 1U ) ;
-		///< Parses the given command-line arguments into the value map and/or
-		///< error list defined by the constructor. This can be called
-		///< more than once, typically with a zero start_position.
-		///<
-		///< By default the program name is expected to be the first item in
-		///< the array and it is ignored, although the 'start-position' parameter
-		///< can be used to change this. See also G::Arg::array().
-		///<
-		///< Individual arguments can be in short-form like "-c", or long-form
-		///< like "--foo" or "--foo=bar". Long-form arguments can be passed in
-		///< two separate arguments, eg. "--foo" followed by "bar". Short-form
-		///< options can be grouped (eg. "-abc"). Boolean options can be enabled
-		///< by (eg.) "--verbose" or "--verbose=yes", and disabled by "--verbose=no".
-		///< Boolean options cannot use two separate arguments (eg. "--verbose"
-		///< followed by "yes").
-		///<
-		///< Entries in the output map are keyed by the option's long name,
-		///< even if supplied in short-form.
-		///<
-		///< Errors are reported into the constructor's error list.
-		///<
-		///< Returns the position in the array where the non-option command-line
-		///< arguments begin.
+	StringArray parse( const StringArray & args , std::size_t start_position = 1U ,
+		std::size_t ignore_non_options = 0U ) ;
+			///< Parses the given command-line arguments into the value map and/or
+			///< error list defined by the constructor. This can be called
+			///< more than once, with options accumulating in the internal
+			///< OptionMap.
+			///<
+			///< By default the program name is expected to be the first item in
+			///< the array and it is ignored, although the 'start-position' parameter
+			///< can be used to change this. See also G::Arg::array().
+			///<
+			///< Individual arguments can be in short-form like "-c", or long-form
+			///< like "--foo" or "--foo=bar". Long-form arguments can be passed in
+			///< two separate arguments, eg. "--foo" followed by "bar". Short-form
+			///< options can be grouped (eg. "-abc"). Boolean options can be enabled
+			///< by (eg.) "--verbose" or "--verbose=yes", and disabled by "--verbose=no".
+			///< Boolean options cannot use two separate arguments (eg. "--verbose"
+			///< followed by "yes").
+			///<
+			///< Entries in the output map are keyed by the option's long name,
+			///< even if supplied in short-form.
+			///<
+			///< Errors are reported into the constructor's error list.
+			///<
+			///< Returns the non-option arguments.
 
 	void errorDuplicate( const std::string & ) ;
 		///< Adds a 'duplicate' error in the constructor's error list
 		///< for the given option.
 
+public:
+	~OptionParser() = default ;
+	OptionParser( const OptionParser & ) = delete ;
+	OptionParser( OptionParser && ) = delete ;
+	void operator=( const OptionParser & ) = delete ;
+	void operator=( OptionParser && ) = delete ;
+
 private:
-	OptionParser( const OptionParser & ) g__eq_delete ;
-	void operator=( const OptionParser & ) g__eq_delete ;
 	bool haveSeen( const std::string & ) const ;
 	bool haveSeenSame( const std::string & , const std::string & ) const ;
 	static std::string::size_type eqPos( const std::string & ) ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,173 +20,107 @@
 
 #include "gdef.h"
 #include "gdatetime.h"
-#include "genvironment.h"
 #include "gstr.h"
-#include "glog.h"
 #include "gassert.h"
 #include <sstream>
 #include <iomanip>
+#include <utility>
+#include <vector>
+#include <type_traits>
 
-namespace
+namespace G
 {
-	const std::time_t minute = 60 ;
-	const std::time_t hour = 60 * minute ;
-	const std::time_t day = 24 * hour ;
-	const unsigned int million = 1000000U ;
-}
-
-G::EpochTime::EpochTime( std::time_t s_ , unsigned long us_ ) :
-	s(s_) ,
-	us(static_cast<unsigned int>(us_))
-{
-	if( us_ >= million )
+	namespace DateTimeImp
 	{
-		us_ -= million ;
-		s_++ ;
-		if( us_ >= million ) // still
+		static const char * good_format = "%ntYyCGgmUWVjdwuHIMSDFRT" ;
+		static constexpr unsigned int million = 1000000U ;
+
+		template <typename Tp> TimeInterval interval( Tp start , Tp end )
 		{
-			s_ += static_cast<std::time_t>( us_ / million ) ;
-			us_ = static_cast<unsigned int>( us_ % million ) ;
+			using namespace std::chrono ;
+			if( end <= start )
+				return TimeInterval::zero() ;
+			auto d = end - start ;
+
+			auto s = (duration_cast<seconds>(d)).count() ; G_ASSERT( s >= 0 ) ;
+			typename std::make_unsigned<decltype(s)>::type su = s ;
+			if( sizeof(su) > sizeof(TimeInterval::s_type) &&
+				su > std::numeric_limits<TimeInterval::s_type>::max() )
+					return TimeInterval::limit() ;
+
+			auto us = (duration_cast<microseconds>(d) % seconds(1)).count() ; G_ASSERT( us >= 0 ) ;
+			typename std::make_unsigned<decltype(us)>::type usu = us ;
+			G_ASSERT( us <= std::numeric_limits<TimeInterval::us_type>::max() ) ;
+
+			return TimeInterval( static_cast<TimeInterval::s_type>(su) , static_cast<TimeInterval::us_type>(usu) ) ;
 		}
-		s = s_ ;
-		us = static_cast<unsigned int>(us_) ;
 	}
 }
 
-G::EpochTime G::operator+( EpochTime t , TimeInterval interval )
+G::BrokenDownTime::BrokenDownTime() :
+	m_tm{}
 {
-	t.s += interval.s ;
-	t.us += interval.us ;
-	if( t.us > million ) // carry
-	{
-		t.s++ ;
-		t.us -= million ;
-	}
+	m_tm.tm_isdst = -1 ;
+}
+
+G::BrokenDownTime::BrokenDownTime( const struct std::tm & tm_in ) :
+	m_tm(tm_in)
+{
+	m_tm.tm_isdst = -1 ;
+	if( std::time_t(-1) == std::mktime( &m_tm ) ) // set wday and yday
+		throw DateTime::Error() ;
+}
+
+std::time_t G::BrokenDownTime::epochTimeFromLocal() const
+{
+	struct std::tm tm = m_tm ;
+	tm.tm_isdst = -1 ;
+	std::time_t t = std::mktime( &tm ) ;
+	if( t == std::time_t(-1) )
+		throw DateTime::Error() ;
 	return t ;
 }
 
-void G::EpochTime::streamOut( std::ostream & stream ) const
+std::time_t G::BrokenDownTime::epochTimeFromUtc() const
 {
-	std::streamsize w = stream.width() ;
-	char c = stream.fill() ;
-	stream
-		<< s << "."
-		<< std::setw(6) << std::setfill('0')
-		<< us
-		<< std::setw(w) << std::setfill(c) ;
+	BrokenDownTime copy( *this ) ;
+	copy.m_tm.tm_sec = 0 ; // simplify for leap-seconds, add back below
+	return copy.epochTimeFromUtcImp() + m_tm.tm_sec ;
 }
 
-// ==
-
-G::TimeInterval::TimeInterval( const EpochTime & start , const EpochTime & end ) :
-    s(0U) ,
-    us(0U)
+std::time_t G::BrokenDownTime::epochTimeFromUtcImp() const
 {
-    if( end > start )
-    {
-        EpochTime t = end ;
-		{
-			t.s -= start.s ;
-			if( t.us < start.us ) // borrow
-			{
-				G_ASSERT( t.s != 0 ) ;
-				t.s-- ;
-				t.us += million ;
-			}
-			G_ASSERT( t.us >= start.us ) ;
-			t.us -= start.us ;
-		}
-        G_ASSERT( t.s >= 0 && t.us < million ) ;
-		{
-    		typedef std::make_unsigned<std::time_t>::type utime_t ;
-        	utime_t ts = static_cast<utime_t>( t.s ) ;
-
-        	us = t.us ;
-        	s = static_cast<unsigned int>(ts) ; // possibly narrowing utime_t->uint
-        	bool overflow = static_cast<utime_t>(s) != ts ;
-        	if( overflow )
-			{
-            	s = ~0U ;
-				us = million-1U ;
-			}
-		}
-    }
-}
-
-G::TimeInterval G::TimeInterval::limit()
-{
-	return TimeInterval( ~0U , million-1U ) ;
-}
-
-void G::TimeInterval::normalise()
-{
-	if( us >= million )
-	{
-		us -= million ;
-		s++ ;
-	}
-	if( us >= million ) // still
-	{
-		s += ( us / million ) ;
-		us = us % million ;
-	}
-}
-
-void G::TimeInterval::streamOut( std::ostream & stream ) const
-{
-	std::streamsize w = stream.width() ;
-	char c = stream.fill() ;
-	stream
-		<< s << "."
-		<< std::setw(6) << std::setfill('0')
-		<< us
-		<< std::setw(w) << std::setfill(c) ;
-}
-
-// ==
-
-G::EpochTime G::DateTime::epochTime( const BrokenDownTime & bdt , bool optimise )
-{
-	static std::time_t diff = 0 ;
 	static bool diff_set = false ;
-	std::time_t diff_no = 0 ;
-	bool diff_set_no = false ;
-	return epochTime( bdt , optimise?diff_set:diff_set_no , optimise?diff:diff_no ) ;
+	static std::time_t diff = 0 ;
+	return epochTimeFromUtcImp( diff_set , diff ) ;
 }
 
-G::EpochTime G::DateTime::epochTime( const BrokenDownTime & bdt , bool & diff_set , std::time_t & diff )
+std::time_t G::BrokenDownTime::epochTimeFromUtcImp( bool & diff_set , std::time_t & diff ) const
 {
-	// we are given a UTC brokendown time, but there is no UTC
-	// equivalent of mktime() -- timegm(3) is deprecated in favour
-	// of nasty fiddling with the TZ environment variable
+	constexpr int day = 24 * 60 * 60 ;
+	constexpr std::time_t dt = 60 * 15 ; // india 30mins, nepal 45mins
+	constexpr std::time_t day_and_a_bit = day + dt ;
+	constexpr std::time_t t_rounding = 30 ;
 
 	// use mktime() for a rough starting point
-	BrokenDownTime bdt_simple( bdt ) ;
-	const bool leap_second = bdt.tm_sec == 60 ;
-	if( leap_second ) bdt_simple.tm_sec = 59 ;
-	EpochTime tlocal( std::mktime(&bdt_simple) , 0U ) ; // localtime
+	std::time_t t_base = epochTimeFromLocal() ;
 
-	// re-check the difference
-	if( diff_set && !equivalent( EpochTime(tlocal.s+diff) , bdt ) )
-		diff_set = false ; // optimisation failure eg. change of dst
+	// see if the previous diff result is still valid (no change of dst etc),
+	if( diff_set && !sameMinute( SystemTime(t_base+diff+t_rounding).utc() ) )
+		diff_set = false ;
 
-	// find the timezone difference
+	// find the timezone diff
 	if( !diff_set )
 	{
 		// iterate over all possible timezones modifying the epoch time until
-		// its utc broken-down-time (gmtime()) matches the broken-down-time
-		// passed in (to some tolerance)
+		// its utc broken-down-time (gmtime()) matches ours
 		//
-		const std::time_t dt = minute * 15 ; // india 30mins, nepal 45mins
-		const std::time_t day_and_a_bit = day + dt ;
-		std::time_t di = 0 ;
-		EpochTime ti( tlocal.s - day_and_a_bit ) ;
-		const EpochTime end( tlocal.s + day_and_a_bit ) ;
-		for( di = -day_and_a_bit ; ti <= end ; ti.s += dt , di += dt )
+		auto t = t_base - day_and_a_bit ;
+		auto end = t_base + day_and_a_bit ;
+		for( diff = -day_and_a_bit ; t <= end ; t += dt , diff += dt )
 		{
-			if( equivalent( ti , bdt ) )
+			if( sameMinute( SystemTime(t+t_rounding).utc() ) )
 			{
-				diff = di ;
 				diff_set = true ;
 				break ;
 			}
@@ -194,34 +128,533 @@ G::EpochTime G::DateTime::epochTime( const BrokenDownTime & bdt , bool & diff_se
 	}
 
 	if( !diff_set )
-		throw Error( "unsupported timezone" , G::Environment::get("TZ","") ) ;
+		throw DateTime::Error( "unsupported timezone" ) ;
 
-	return EpochTime( tlocal.s + diff + (leap_second?1:0) ) ;
+	return t_base + diff ;
 }
 
-G::DateTime::BrokenDownTime G::DateTime::utc( EpochTime epoch_time )
+G::BrokenDownTime G::BrokenDownTime::local( SystemTime t )
 {
-	static BrokenDownTime zero ;
-	BrokenDownTime result = zero ;
-	DateTime::gmtime_imp( &epoch_time.s , &result ) ;
-	return result ;
+	BrokenDownTime tm ;
+	std::time_t s = t.s() ;
+	if( ! localtime_r( &s , &tm.m_tm ) )
+		throw DateTime::Error() ;
+	return tm ;
 }
 
-G::DateTime::BrokenDownTime G::DateTime::local( EpochTime epoch_time )
+G::BrokenDownTime G::BrokenDownTime::utc( SystemTime t )
 {
-	static BrokenDownTime zero ;
-	BrokenDownTime bdt_local = zero ;
-	DateTime::localtime_imp( &epoch_time.s , &bdt_local ) ;
-	return bdt_local ;
+	BrokenDownTime tm ;
+	std::time_t s = t.s() ;
+	if( ! gmtime_r( &s , &tm.m_tm ) )
+		throw DateTime::Error() ;
+	return tm ;
 }
 
-G::DateTime::Offset G::DateTime::offset( EpochTime utc , bool optimise )
+G::BrokenDownTime::BrokenDownTime( int y , int mon , int d , int h , int min , int sec ) :
+	m_tm{}
 {
-	BrokenDownTime bdt_local = local( utc ) ;
-	EpochTime local = epochTime( bdt_local , optimise ) ;
-	bool ahead = local.s >= utc.s ; // ie. east-of
-	EpochTime n( ahead ? (local.s-utc.s) : (utc.s-local.s) ) ;
-	return Offset( ahead , static_cast<unsigned int>(n.s) ) ;
+	m_tm.tm_year = y - 1900 ;
+	m_tm.tm_mon = mon - 1 ;
+	m_tm.tm_mday = d ;
+	m_tm.tm_hour = h ;
+	m_tm.tm_min = min ;
+	m_tm.tm_sec = sec ;
+	m_tm.tm_isdst = -1 ;
+	if( std::time_t(-1) == std::mktime( &m_tm ) ) // set wday and yday
+		throw DateTime::Error() ;
+}
+
+G::BrokenDownTime G::BrokenDownTime::midday( int year , int month , int day )
+{
+	return { year , month , day , 12 , 0 , 0 } ;
+}
+
+void G::BrokenDownTime::format( std::vector<char> & out , const char * fmt ) const
+{
+	for( const char * p = std::strchr(fmt,'%') ; p && p[1] ; p = std::strchr(p+1,'%') )
+	{
+		if( !std::strchr(DateTimeImp::good_format,p[1]) )
+			throw DateTime::Error() ;
+	}
+
+	if( std::strftime( &out[0] , out.size() , fmt , &m_tm ) == 0U )
+		throw DateTime::Error() ;
+}
+
+std::string G::BrokenDownTime::str() const
+{
+	return str( "%F %T" ) ;
+}
+
+std::string G::BrokenDownTime::str( const char * fmt ) const
+{
+	std::size_t n = std::strlen( fmt ) ;
+	for( const char * p = std::strchr(fmt,'%') ; p && p[1] ; p = std::strchr(p+1,'%') )
+		n += 10U ; // biggest allowed format is eg. %F -> "2001-12-31"
+
+	std::vector<char> buffer( n ) ;
+	format( buffer , fmt ) ;
+	buffer.at(buffer.size()-1U) = '\0' ; // just in case
+	return std::string( &buffer[0] ) ;
+}
+
+int G::BrokenDownTime::hour() const
+{
+	return m_tm.tm_hour ;
+}
+
+int G::BrokenDownTime::min() const
+{
+	return m_tm.tm_min ;
+}
+
+int G::BrokenDownTime::sec() const
+{
+	return m_tm.tm_sec ;
+}
+
+int G::BrokenDownTime::year() const
+{
+	return m_tm.tm_year + 1900 ;
+}
+
+int G::BrokenDownTime::month() const
+{
+	return m_tm.tm_mon + 1 ;
+}
+
+int G::BrokenDownTime::day() const
+{
+	return m_tm.tm_mday ;
+}
+
+int G::BrokenDownTime::wday() const
+{
+	return m_tm.tm_wday ;
+}
+
+bool G::BrokenDownTime::sameMinute( const BrokenDownTime & other ) const
+{
+	return
+		year() == other.year() &&
+		month() == other.month() &&
+		day() == other.day() &&
+		hour() == other.hour() &&
+		min() == other.min() ;
+}
+
+// ==
+
+G::SystemTime::SystemTime( time_point_type tp ) :
+	m_tp(tp)
+{
+}
+
+G::SystemTime::SystemTime( std::time_t t , unsigned long us )
+{
+	m_tp = std::chrono::system_clock::from_time_t(t) ;
+	m_tp += std::chrono::microseconds( us ) ;
+}
+
+G::SystemTime G::SystemTime::now()
+{
+	return SystemTime( std::chrono::system_clock::now() ) ;
+}
+
+G::TimeInterval G::SystemTime::operator-( const SystemTime & start ) const
+{
+	return start.interval( *this ) ;
+}
+
+G::TimeInterval G::SystemTime::interval( const SystemTime & end ) const
+{
+	return DateTimeImp::interval( m_tp , end.m_tp ) ;
+}
+
+G::SystemTime & G::SystemTime::add( unsigned long us )
+{
+	m_tp += std::chrono::microseconds( us ) ;
+	return *this ;
+}
+
+bool G::SystemTime::sameSecond( const SystemTime & t ) const
+{
+	return s() == t.s() ;
+}
+
+G::BrokenDownTime G::SystemTime::local() const
+{
+	return BrokenDownTime::local( *this ) ;
+}
+
+G::BrokenDownTime G::SystemTime::utc() const
+{
+	return BrokenDownTime::utc( *this ) ;
+}
+
+unsigned int G::SystemTime::ms() const
+{
+	using namespace std::chrono ;
+	return static_cast<unsigned int>((duration_cast<milliseconds>(m_tp.time_since_epoch()) % seconds(1)).count()) ;
+}
+
+unsigned int G::SystemTime::us() const
+{
+	using namespace std::chrono ;
+	return static_cast<unsigned int>((duration_cast<microseconds>(m_tp.time_since_epoch()) % seconds(1)).count()) ;
+}
+
+std::time_t G::SystemTime::s() const
+{
+	using namespace std::chrono ;
+	G_ASSERT( duration_cast<seconds>(m_tp.time_since_epoch()).count() == system_clock::to_time_t(m_tp) ) ; // as per c++17
+	return system_clock::to_time_t( m_tp ) ;
+}
+
+G::SystemTime G::SystemTime::zero()
+{
+	duration_type zero{0} ;
+	G_ASSERT( SystemTime(time_point_type(zero)).s() == 0 )  ; // assert 1970 epoch as per c++17
+	return SystemTime( time_point_type(zero) ) ;
+}
+
+bool G::SystemTime::operator<( const SystemTime & other ) const
+{
+	return m_tp < other.m_tp ;
+}
+
+bool G::SystemTime::operator<=( const SystemTime & other ) const
+{
+	return m_tp <= other.m_tp ;
+}
+
+bool G::SystemTime::operator==( const SystemTime & other ) const
+{
+	return m_tp == other.m_tp ;
+}
+
+bool G::SystemTime::operator!=( const SystemTime & other ) const
+{
+	return !( *this == other ) ;
+}
+
+bool G::SystemTime::operator>( const SystemTime & other ) const
+{
+	return m_tp > other.m_tp ;
+}
+
+bool G::SystemTime::operator>=( const SystemTime & other ) const
+{
+	return m_tp >= other.m_tp ;
+}
+
+G::SystemTime G::SystemTime::operator+( TimeInterval interval ) const
+{
+	SystemTime t( *this ) ;
+	t += interval ;
+	return t ;
+}
+
+void G::SystemTime::operator+=( TimeInterval i )
+{
+	using namespace std::chrono ;
+	m_tp += seconds(i.s()) ;
+	m_tp += microseconds(i.us()) ;
+}
+
+void G::SystemTime::streamOut( std::ostream & stream ) const
+{
+	std::streamsize w = stream.width() ;
+	char c = stream.fill() ;
+	stream
+		<< s() << "."
+		<< std::setw(6) << std::setfill('0')
+		<< us()
+		<< std::setw(w) << std::setfill(c) ;
+}
+
+std::ostream & G::operator<<( std::ostream & stream , const SystemTime & t )
+{
+	t.streamOut( stream ) ;
+	return stream ;
+}
+
+// ==
+
+G::TimerTime G::TimerTime::now()
+{
+	return TimerTime( std::chrono::steady_clock::now() ) ;
+}
+
+G::TimerTime G::TimerTime::zero()
+{
+	duration_type zero{0} ;
+	return TimerTime( time_point_type(zero) ) ;
+}
+
+G::TimerTime G::TimerTime::test( int s , int us )
+{
+	return TimerTime( time_point_type(std::chrono::seconds(s)+std::chrono::microseconds(us)) ) ;
+}
+
+G::TimerTime::TimerTime( time_point_type tp ) :
+	m_tp(tp)
+{
+}
+
+unsigned long G::TimerTime::test_s() const
+{
+	using namespace std::chrono ;
+	return static_cast<unsigned long>(duration_cast<seconds>(m_tp.time_since_epoch()).count()) ;
+}
+
+unsigned long G::TimerTime::test_us() const
+{
+	using namespace std::chrono ;
+	return static_cast<unsigned long>((duration_cast<microseconds>(m_tp.time_since_epoch()) % seconds(1)).count()) ;
+}
+
+G::TimerTime G::TimerTime::operator+( const TimeInterval & interval ) const
+{
+	TimerTime t( *this ) ;
+	t += interval ;
+	return t ;
+}
+
+void G::TimerTime::operator+=( TimeInterval i )
+{
+	using namespace std::chrono ;
+	m_tp += seconds(i.s()) ;
+	m_tp += microseconds(i.us()) ;
+}
+
+G::TimeInterval G::TimerTime::operator-( const TimerTime & start ) const
+{
+	return start.interval( *this ) ;
+}
+
+G::TimeInterval G::TimerTime::interval( const TimerTime & end ) const
+{
+	return DateTimeImp::interval( m_tp , end.m_tp ) ;
+}
+
+bool G::TimerTime::sameSecond( const TimerTime & t ) const
+{
+	using namespace std::chrono ;
+	return
+		duration_cast<seconds>(m_tp.time_since_epoch()) ==
+		duration_cast<seconds>(t.m_tp.time_since_epoch()) ;
+}
+
+bool G::TimerTime::operator<( const TimerTime & other ) const
+{
+	return m_tp < other.m_tp ;
+}
+
+bool G::TimerTime::operator<=( const TimerTime & other ) const
+{
+	return m_tp <= other.m_tp ;
+}
+
+bool G::TimerTime::operator==( const TimerTime & other ) const
+{
+	return m_tp == other.m_tp ;
+}
+
+bool G::TimerTime::operator!=( const TimerTime & other ) const
+{
+	return m_tp != other.m_tp ;
+}
+
+bool G::TimerTime::operator>( const TimerTime & other ) const
+{
+	return m_tp > other.m_tp ;
+}
+
+bool G::TimerTime::operator>=( const TimerTime & other ) const
+{
+	return m_tp >= other.m_tp ;
+}
+
+// ==
+
+G::TimeInterval::TimeInterval( s_type s , us_type us ) :
+	m_s(s) ,
+	m_us(us)
+{
+	normalise() ;
+}
+
+G::TimeInterval::TimeInterval( const SystemTime & start , const SystemTime & end ) :
+	m_s(0) ,
+	m_us(0)
+{
+	TimeInterval i = start.interval( end ) ;
+	m_s = i.m_s ;
+	m_us = i.m_us ;
+	normalise() ;
+}
+
+G::TimeInterval::TimeInterval( const TimerTime & start , const TimerTime & end ) :
+	m_s(0) ,
+	m_us(0)
+{
+	TimeInterval i = start.interval( end ) ;
+	m_s = i.m_s ;
+	m_us = i.m_us ;
+	normalise() ;
+}
+
+void G::TimeInterval::normalise()
+{
+	using namespace G::DateTimeImp ;
+	if( m_us >= million )
+	{
+		m_us -= million ;
+		m_s++ ;
+		if( m_s == 0 )
+			throw DateTime::Error( "overflow" ) ;
+		if( m_us >= million ) // still
+		{
+			m_s += m_us / million ;
+			m_us = m_us % million ;
+		}
+	}
+}
+
+G::TimeInterval G::TimeInterval::limit()
+{
+	using namespace G::DateTimeImp ;
+	return TimeInterval( std::numeric_limits<s_type>::max() , million-1U ) ;
+}
+
+G::TimeInterval G::TimeInterval::zero()
+{
+	return TimeInterval( 0UL , 0U ) ;
+}
+
+G::TimeInterval::s_type G::TimeInterval::s() const
+{
+	return m_s ;
+}
+
+G::TimeInterval::us_type G::TimeInterval::us() const
+{
+	return m_us ;
+}
+
+bool G::TimeInterval::operator==( const TimeInterval & other ) const
+{
+	return m_s == other.m_s && m_us == other.m_us ;
+}
+
+bool G::TimeInterval::operator!=( const TimeInterval & other ) const
+{
+	return !( *this == other ) ;
+}
+
+bool G::TimeInterval::operator<( const TimeInterval & other ) const
+{
+	return m_s < other.m_s || ( m_s == other.m_s && m_us < other.m_us ) ;
+}
+
+bool G::TimeInterval::operator<=( const TimeInterval & other ) const
+{
+	return *this == other || *this < other ;
+}
+
+bool G::TimeInterval::operator>( const TimeInterval & other ) const
+{
+	return m_s > other.m_s || ( m_s == other.m_s && m_us > other.m_us ) ;
+}
+
+bool G::TimeInterval::operator>=( const TimeInterval & other ) const
+{
+	return *this == other || *this > other ;
+}
+
+G::TimeInterval G::TimeInterval::operator+( const TimeInterval & other ) const
+{
+	TimeInterval t( *this ) ;
+	t += other ;
+	return t ;
+}
+
+G::TimeInterval G::TimeInterval::operator-( const TimeInterval & other ) const
+{
+	TimeInterval t( *this ) ;
+	t -= other ;
+	return t ;
+}
+
+void G::TimeInterval::operator+=( TimeInterval i )
+{
+	using namespace G::DateTimeImp ;
+	bool overflow = false ;
+
+	m_us += i.m_us ;
+	if( m_us >= million )
+	{
+		m_us -= million ;
+		m_s++ ;
+		if( m_s == 0 ) overflow = true ;
+	}
+
+	auto old = m_s ;
+	m_s += i.m_s ;
+	if( m_s < old ) overflow = true ;
+
+	if( overflow )
+		throw DateTime::Error( "overflow" ) ;
+}
+
+void G::TimeInterval::operator-=( TimeInterval i )
+{
+	using namespace G::DateTimeImp ;
+	bool underflow = false ;
+
+	if( m_us < i.m_us )
+	{
+		if( m_s == 0U ) underflow = true ;
+		m_s-- ;
+		m_us += million ;
+	}
+	m_us -= i.m_us ;
+
+	if( m_s < i.m_s ) underflow = true ;
+	m_s -= i.m_s ;
+
+	if( underflow )
+		throw DateTime::Error( "underflow" ) ;
+}
+
+void G::TimeInterval::streamOut( std::ostream & stream ) const
+{
+	std::streamsize w = stream.width() ;
+	char c = stream.fill() ;
+	stream
+		<< s() << "."
+		<< std::setw(6) << std::setfill('0')
+		<< us()
+		<< std::setw(w) << std::setfill(c) ;
+}
+
+std::ostream & G::operator<<( std::ostream & stream , const TimeInterval & ti )
+{
+	ti.streamOut( stream ) ;
+	return stream ;
+}
+
+// ==
+
+G::DateTime::Offset G::DateTime::offset( SystemTime t_in )
+{
+	G_ASSERT( !(t_in == SystemTime::zero()) ) ;
+	SystemTime t_zone( BrokenDownTime::local(t_in).epochTimeFromUtc() ) ;
+	bool ahead = t_in < t_zone ; // ie. east-of
+	TimeInterval i = ahead ? (t_zone-t_in) : (t_in-t_zone) ;
+	return Offset{ ahead , i.s() } ;
 }
 
 std::string G::DateTime::offsetString( int tz )
@@ -235,27 +668,13 @@ std::string G::DateTime::offsetString( int tz )
 
 std::string G::DateTime::offsetString( Offset offset )
 {
-	unsigned int hh = offset.second / 3600U ;
-	unsigned int mm = (offset.second / 60U) % 60 ;
+	unsigned int hh = (offset.second+30U) / 3600U ;
+	unsigned int mm = ((offset.second+30U) / 60U) % 60 ;
 
 	std::ostringstream ss ;
 	char sign = (offset.first || (hh==0&&mm==0)) ? '+' : '-' ;
 	ss << sign << (hh/10U) << (hh%10U) << (mm/10) << (mm%10) ;
 	return ss.str() ;
-}
-
-bool G::DateTime::equivalent( EpochTime t , const BrokenDownTime & bdt_in )
-{
-	BrokenDownTime bdt_test = utc( t ) ;
-	return equivalent( bdt_test , bdt_in ) ;
-}
-
-bool G::DateTime::equivalent( const BrokenDownTime & bdt1 , const BrokenDownTime & bdt2 )
-{
-	return
-		bdt1.tm_mday == bdt2.tm_mday &&
-		bdt1.tm_hour == bdt2.tm_hour &&
-		bdt1.tm_min == bdt2.tm_min ;
 }
 
 /// \file gdatetime.cpp

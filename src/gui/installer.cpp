@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ struct ActionInterface
 	virtual void run() = 0 ;
 	virtual std::string text() const = 0 ;
 	virtual std::string ok() const = 0 ;
-	protected: virtual ~ActionInterface() {}
+	protected: virtual ~ActionInterface() = default;
 } ;
 
 struct Helper
@@ -80,7 +80,7 @@ bool Helper::m_is_mac = false ;
 
 struct ActionBase : public ActionInterface , protected Helper
 {
-	virtual std::string ok() const ;
+	std::string ok() const override ;
 } ;
 
 struct CreateDirectory : public ActionBase
@@ -90,9 +90,9 @@ struct CreateDirectory : public ActionBase
 	G::Path m_path ;
 	bool m_tight_permissions ;
 	CreateDirectory( std::string display_name , std::string path , bool tight_permissions = false ) ;
-	virtual std::string text() const ;
-	virtual std::string ok() const ;
-	virtual void run() ;
+	std::string text() const override ;
+	std::string ok() const override ;
+	void run() override ;
 } ;
 
 struct CreatePointerFile : public ActionBase
@@ -102,9 +102,9 @@ struct CreatePointerFile : public ActionBase
 	G::Path m_dir_config ;
 	G::Path m_dir_install ;
 	CreatePointerFile( const G::Path & pointer_file , const G::Path & gui_exe , const G::Path & dir_config , const G::Path & dir_install ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
-	virtual std::string ok() const ;
+	void run() override ;
+	std::string text() const override ;
+	std::string ok() const override ;
 } ;
 
 struct CreateFilterScript : public ActionBase
@@ -113,9 +113,9 @@ struct CreateFilterScript : public ActionBase
 	std::string m_type ;
 	std::string m_ok ;
 	CreateFilterScript( const G::Path & path , bool client ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
-	virtual std::string ok() const ;
+	void run() override ;
+	std::string text() const override ;
+	std::string ok() const override ;
 } ;
 
 struct CopyFile : public ActionBase
@@ -124,8 +124,8 @@ struct CopyFile : public ActionBase
 	G::Path m_dst ;
 	std::string m_flags ;
 	CopyFile( G::Path src , G::Path dst , std::string flags ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
+	void run() override ;
+	std::string text() const override ;
 } ;
 
 struct CopyTree : public ActionBase
@@ -133,8 +133,8 @@ struct CopyTree : public ActionBase
 	G::Path m_src ;
 	G::Path m_dst ;
 	CopyTree( G::Path src , G::Path dst ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
+	void run() override ;
+	std::string text() const override ;
 	void add( int depth , G::Path , G::Path ) const ;
 } ;
 
@@ -145,9 +145,9 @@ struct FileGroup : public ActionBase
 	std::string m_ok ;
 	FileGroup( const std::string & , const std::string & ) ;
 	void exec( const std::string & , const std::string & ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
-	virtual std::string ok() const ;
+	void run() override ;
+	std::string text() const override ;
+	std::string ok() const override ;
 } ;
 
 struct CreateSecrets : public ActionBase
@@ -156,8 +156,8 @@ struct CreateSecrets : public ActionBase
 	G::Path m_template ;
 	G::StringMap m_content ;
 	CreateSecrets( const std::string & config_dir , const std::string & filename , G::Path template_ , G::StringMap content ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
+	void run() override ;
+	std::string text() const override ;
 	static bool match( std::string , std::string ) ;
 } ;
 
@@ -167,8 +167,8 @@ struct CreateBatchFile : public ActionBase
 	G::Path m_exe ;
 	G::StringArray m_args ;
 	CreateBatchFile( const G::Path & bat , const G::Path & exe , const G::StringArray & args ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
+	void run() override ;
+	std::string text() const override ;
 } ;
 
 struct UpdateLink : public ActionBase
@@ -182,9 +182,9 @@ struct UpdateLink : public ActionBase
 	G::Path m_link_path ;
 	std::string m_ok ;
 	UpdateLink( bool active , G::Path link_dir , G::Path working_dir , G::Path target , const G::StringArray & args , G::Path icon ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
-	virtual std::string ok() const ;
+	void run() override ;
+	std::string text() const override ;
+	std::string ok() const override ;
 } ;
 
 struct UpdateBootLink : public ActionBase
@@ -196,9 +196,9 @@ struct UpdateBootLink : public ActionBase
 	G::Path m_startstop_src ;
 	G::Path m_exe ;
 	UpdateBootLink( bool active , G::Path dir_boot , std::string , G::Path startstop_src , G::Path exe ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
-	virtual std::string ok() const ;
+	void run() override ;
+	std::string text() const override ;
+	std::string ok() const override ;
 } ;
 
 struct InstallService : public ActionBase
@@ -208,17 +208,17 @@ struct InstallService : public ActionBase
 	G::Path m_bat ;
 	G::Path m_service_wrapper ;
 	InstallService( bool active , G::Path bat , G::Path wrapper ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
-	virtual std::string ok() const ;
+	void run() override ;
+	std::string text() const override ;
+	std::string ok() const override ;
 } ;
 
 struct RegisterAsEventSource : public ActionBase
 {
 	G::Path m_exe ;
 	explicit RegisterAsEventSource( const G::Path & ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
+	void run() override ;
+	std::string text() const override ;
 } ;
 
 struct CreateConfigFile : public ActionBase
@@ -227,9 +227,9 @@ struct CreateConfigFile : public ActionBase
 	G::Path m_template ;
 	G::Path m_dst ;
 	CreateConfigFile( G::Path dst_dir , std::string dst_name , G::Path template_ ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
-	virtual std::string ok() const ;
+	void run() override ;
+	std::string text() const override ;
+	std::string ok() const override ;
 } ;
 
 struct EditConfigFile : public ActionBase
@@ -238,8 +238,8 @@ struct EditConfigFile : public ActionBase
 	G::MapFile m_server_config ;
 	bool m_do_backup ;
 	EditConfigFile( G::Path dir , std::string name , const G::MapFile & server_config , bool ) ;
-	virtual void run() ;
-	virtual std::string text() const ;
+	void run() override ;
+	std::string text() const override ;
 } ;
 
 struct Action
@@ -260,9 +260,11 @@ public:
 	Action & current() ;
 	G::ExecutableCommand launchCommand() const ;
 
+public:
+	InstallerImp( const InstallerImp & ) = delete ;
+	void operator=( const InstallerImp & ) = delete ;
+
 private:
-	InstallerImp( const InstallerImp & ) ;
-	void operator=( const InstallerImp & ) ;
 	void insertActions() ;
 	std::string pvalue( const std::string & key , const std::string & default_ ) const ;
 	std::string pvalue( const std::string & key ) const ;
@@ -276,7 +278,7 @@ private:
 	void insert( ActionInterface * p ) ;
 
 private:
-	typedef std::list<Action> List ;
+	using List = std::list<Action> ;
 	bool m_installing ;
 	G::MapFile m_installer_config ;
 	G::Path m_payload ;
@@ -550,11 +552,10 @@ void CreateSecrets::run()
 	// impose the new field order - remove this eventually
 	{
 		G::StringArray result ;
-		for( G::StringArray::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
+		for( auto & line : line_list )
 		{
-			typedef std::string::size_type pos_t ;
+			using pos_t = std::string::size_type ;
 			const pos_t npos = std::string::npos ;
-			std::string line = *line_p ;
 			pos_t pos1 = line.find_first_not_of(G::Str::ws()) ;
 			pos_t pos2 = pos1 == npos ? npos : line.find_first_of(G::Str::ws(),pos1) ;
 			pos_t pos3 = pos2 == npos ? npos : line.find_first_not_of(G::Str::ws(),pos2) ;
@@ -602,29 +603,29 @@ void CreateSecrets::run()
 	}
 
 	// assemble the new file
-	for( G::StringMap::iterator map_p = m_content.begin() ; map_p != m_content.end() ; ++map_p )
+	for( const auto & map_item : m_content )
 	{
 		bool replaced = false ;
-		for( G::StringArray::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
+		for( auto & line : line_list )
 		{
-			if( match( *line_p , (*map_p).first ) )
+			if( match( line , map_item.first ) )
 			{
-				*line_p = (*map_p).second ;
+				line = map_item.second ;
 				replaced = true ;
 				break ;
 			}
 		}
 		if( !replaced )
 		{
-			line_list.push_back( (*map_p).second ) ;
+			line_list.push_back( map_item.second ) ;
 		}
 	}
 
 	// make a backup -- ignore errors for now
 	if( file_exists )
 	{
-		G::DateTime::BrokenDownTime now = G::DateTime::local( G::DateTime::now() ) ;
-		std::string timestamp = G::Date(now).string(G::Date::Format::yyyy_mm_dd) + G::Time(now).hhmmss() ;
+		G::BrokenDownTime now = G::SystemTime::now().local() ;
+		std::string timestamp = G::Date(now).str(G::Date::Format::yyyy_mm_dd) + G::Time(now).hhmmss() ;
 		G::Path backup_path( m_path.dirname() , m_path.basename() + "." + timestamp ) ;
 		G::Process::Umask umask( G::Process::Umask::Mode::Tightest ) ;
 		G::File::copy( m_path , backup_path , G::File::NoThrow() ) ;
@@ -633,9 +634,9 @@ void CreateSecrets::run()
 	// write the new file
 	std::ofstream file( m_path.str().c_str() ) ;
 	bool ok = file.good() ;
-	for( G::StringArray::iterator line_p = line_list.begin() ; line_p != line_list.end() ; ++line_p )
+	for( const auto & line : line_list )
 	{
-		file << *line_p << std::endl ;
+		file << line << std::endl ;
 	}
 	ok = ok && file.good() ;
 	file.close() ;
@@ -960,8 +961,7 @@ InstallerImp::InstallerImp( bool installing , bool is_windows , bool is_mac , co
 }
 
 InstallerImp::~InstallerImp()
-{
-}
+= default;
 
 G::ExecutableCommand InstallerImp::launchCommand() const
 {
@@ -1047,10 +1047,10 @@ void InstallerImp::insertActions()
 		names.push_back( pvalue("pop-account-1-name") ) ;
 		names.push_back( pvalue("pop-account-2-name") ) ;
 		names.push_back( pvalue("pop-account-3-name") ) ;
-		for( std::vector<std::string>::iterator name_p = names.begin() ; name_p != names.end() ; ++name_p )
+		for( const auto & name : names )
 		{
-			if( (*name_p).empty() ) continue ;
-			G::Path dir( spool_dir , *name_p ) ;
+			if( name.empty() ) continue ;
+			G::Path dir( spool_dir , name ) ;
 			insert( new CreateDirectory("pop-by-name",dir.str()) ) ;
 		}
 	}
@@ -1068,9 +1068,9 @@ void InstallerImp::insertActions()
 		G::MapFile payload_map( m_payload + "payload.cfg" ) ;
 
 		// insert the file copy tasks
-		for( G::StringArray::const_iterator p = payload_map.keys().begin() ; p != payload_map.keys().end() ; ++p )
+		const G::StringArray keys = payload_map.keys() ;
+		for( const auto & key : keys )
 		{
-			const std::string & key = *p ;
 			const std::string & value = payload_map.value( key ) ;
 			if( key.find("+") == 0U && key.length() > 1U && value.find("group ") == 0U && value.length() > 6U )
 				insert( new FileGroup(m_var.expand(key.substr(1U)),value.substr(6U)) ) ;

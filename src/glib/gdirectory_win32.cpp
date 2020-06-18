@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ bool G::Directory::valid( bool for_creation ) const
 	return ( attributes & FILE_ATTRIBUTE_DIRECTORY ) != 0 ;
 }
 
-bool G::Directory::writeable( std::string filename ) const
+bool G::Directory::writeable( const std::string & filename ) const
 {
 	Path path( m_path , filename.empty() ? tmp() : filename ) ;
 	int fd = -1 ;
@@ -69,9 +69,11 @@ public:
 	Path filePath() const ;
 	std::string fileName() const ;
 
-private:
-	DirectoryIteratorImp( const DirectoryIteratorImp & ) g__eq_delete ;
-	void operator=( const DirectoryIteratorImp & ) g__eq_delete ;
+public:
+	DirectoryIteratorImp( const DirectoryIteratorImp & ) = delete ;
+	DirectoryIteratorImp( DirectoryIteratorImp && ) = delete ;
+	void operator=( const DirectoryIteratorImp & ) = delete ;
+	void operator=( DirectoryIteratorImp && ) = delete ;
 
 private:
 	WIN32_FIND_DATAA m_context ;
@@ -119,8 +121,7 @@ std::string G::DirectoryIterator::sizeString() const
 }
 
 G::DirectoryIterator::~DirectoryIterator()
-{
-}
+= default ;
 
 // ===
 
@@ -129,7 +130,7 @@ G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory & dir ) :
 	m_error(false) ,
 	m_first(true)
 {
-	m_handle = ::FindFirstFileA( (dir.path()+"*").str().c_str() , &m_context ) ;
+	m_handle = FindFirstFileA( (dir.path()+"*").str().c_str() , &m_context ) ;
 	if( m_handle == INVALID_HANDLE_VALUE )
 	{
 		DWORD err = ::GetLastError() ;
@@ -157,14 +158,14 @@ bool G::DirectoryIteratorImp::more()
 
 	for(;;)
 	{
-		bool rc = ::FindNextFileA( m_handle , &m_context ) != 0 ;
+		bool rc = FindNextFileA( m_handle , &m_context ) != 0 ;
 		if( !rc )
 		{
 			DWORD err = ::GetLastError() ;
 			if( err != ERROR_NO_MORE_FILES )
 				m_error = true ;
 
-			::FindClose( m_handle ) ;
+			FindClose( m_handle ) ;
 			m_handle = INVALID_HANDLE_VALUE ;
 			return false ;
 		}
@@ -197,7 +198,7 @@ bool G::DirectoryIteratorImp::isDir() const
 G::DirectoryIteratorImp::~DirectoryIteratorImp()
 {
 	if( m_handle != INVALID_HANDLE_VALUE )
-		::FindClose( m_handle ) ;
+		FindClose( m_handle ) ;
 }
 
 std::string G::DirectoryIteratorImp::sizeString() const

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ GSmtp::StoredFile::StoredFile( FileStore & store , const G::Path & envelope_path
 	m_crlf(false)
 {
 	m_name = m_envelope_path.basename() ;
-	size_t pos = m_name.rfind(".envelope") ;
+	std::size_t pos = m_name.rfind(".envelope") ;
 	if( pos != std::string::npos ) m_name.erase( pos ) ;
 	G_DEBUG( "GSmtp::StoredFile::ctor: name=[" << m_name << "]" ) ;
 }
@@ -132,7 +132,7 @@ void GSmtp::StoredFile::readEnvelopeCore( bool check_recipients )
 	}
 	readEnd( stream ) ;
 
-	if( check_recipients && m_to_remote.size() == 0U )
+	if( check_recipients && m_to_remote.empty() )
 		throw FormatError( "no recipients" ) ;
 
 	if( ! stream.good() )
@@ -240,17 +240,17 @@ bool GSmtp::StoredFile::openContent( std::string & reason )
 	{
 		G::Path content_path = contentPath() ;
 		G_DEBUG( "GSmtp::FileStore::openContent: \"" << content_path << "\"" ) ;
-		unique_ptr<std::ifstream> stream( new std::ifstream ) ;
+		auto stream = std::make_unique<std::ifstream>() ;
 		{
 			FileReader claim_reader ;
-			G::File::open( *stream.get() , content_path ) ;
+			G::File::open( *stream , content_path ) ;
 		}
 		if( !stream->good() )
 		{
 			reason = "cannot open content file" ;
 			return false ;
 		}
-		m_content.reset( stream.release() ) ;
+		m_content.reset( stream.release() ) ; // NOLINT upcast from ifstream to stream
 		return true ;
 	}
 	catch( std::exception & e ) // invalid file in store
@@ -282,7 +282,7 @@ std::string GSmtp::StoredFile::readValue( std::istream & stream , const std::str
 		return std::string() ;
 
 	prefix.append( 1U , ' ' ) ;
-	size_t pos = line.find( prefix  ) ;
+	std::size_t pos = line.find( prefix  ) ;
 	if( pos != 0U )
 		throw FormatError( "expected \"" + FileStore::x() + expected_key + ":\"" ) ;
 
@@ -301,7 +301,7 @@ std::string GSmtp::StoredFile::readValue( std::istream & stream , const std::str
 
 std::string GSmtp::StoredFile::value( const std::string & line ) const
 {
-	return G::Str::trimmed( G::Str::tail( line , line.find(":") , std::string() ) , G::Str::ws() ) ;
+	return G::Str::trimmed( G::Str::tail( line , line.find(':') , std::string() ) , G::Str::ws() ) ;
 }
 
 const std::string & GSmtp::StoredFile::eol() const
@@ -410,37 +410,37 @@ std::string GSmtp::StoredFile::from() const
 	return m_from ;
 }
 
-std::string GSmtp::StoredFile::to( size_t i ) const
+std::string GSmtp::StoredFile::to( std::size_t i ) const
 {
 	return i < m_to_remote.size() ? m_to_remote[i] : std::string() ;
 }
 
-size_t GSmtp::StoredFile::toCount() const
+std::size_t GSmtp::StoredFile::toCount() const
 {
 	return m_to_remote.size() ;
 }
 
 std::istream & GSmtp::StoredFile::contentStream()
 {
-	G_ASSERT( m_content.get() != nullptr ) ;
-	if( m_content.get() == nullptr )
-		m_content.reset( new std::ifstream ) ;
+	G_ASSERT( m_content != nullptr ) ;
+	if( m_content == nullptr )
+		m_content.reset( new std::ifstream ) ; // upcast
 
-	return *m_content.get() ;
+	return *m_content ;
 }
 
 G::Path GSmtp::StoredFile::contentPath() const
 {
 	std::string filename = m_envelope_path.str() ;
 
-	size_t pos = filename.rfind( ".envelope" ) ; // also works for ".envelope.bad" etc.
+	std::size_t pos = filename.rfind( ".envelope" ) ; // also works for ".envelope.bad" etc.
 	if( pos == std::string::npos )
 		throw FilenameError( filename ) ;
 
 	return G::Path( G::Str::head(filename,pos,std::string()) + ".content" ) ;
 }
 
-size_t GSmtp::StoredFile::errorCount() const
+std::size_t GSmtp::StoredFile::errorCount() const
 {
 	return m_errors ;
 }

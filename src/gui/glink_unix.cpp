@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,9 +35,11 @@ public:
 	static std::string filename( const std::string & ) ;
 	void saveAs( const G::Path & ) ;
 
+public:
+	GLinkImp( const GLinkImp & ) = delete ;
+	void operator=( const GLinkImp & ) = delete ;
+
 private:
-	GLinkImp( const GLinkImp & ) ;
-	void operator=( const GLinkImp & ) ;
 	static std::string quote( const std::string & ) ;
 	static std::string escape( const std::string & ) ;
 	static std::string escapeAndQuote( const G::StringArray & ) ;
@@ -165,9 +167,9 @@ std::string GLinkImp::escapeAndQuote( const G::StringArray & args )
 {
 	std::ostringstream ss ;
 	const char * sep = "" ;
-	for( G::StringArray::const_iterator p = args.begin() ; p != args.end() ; ++p )
+	for( const auto & arg : args )
 	{
-		ss << sep << quote(escape(*p)) ;
+		ss << sep << quote(escape(arg)) ;
 		sep = " " ;
 	}
 	return ss.str() ;
@@ -178,9 +180,12 @@ std::string GLinkImp::escapeAndQuote( const G::StringArray & args )
 GLink::GLink( const G::Path & target_path , const std::string & name , const std::string & description ,
 	const G::Path & working_dir , const G::StringArray & args , const G::Path & icon_source , Show show ,
 	const std::string & c1 , const std::string & c2 , const std::string & c3 ) :
-		m_imp( new GLinkImp(target_path,name,description,working_dir,args,icon_source,show,c1,c2,c3) )
+		m_imp(std::make_unique<GLinkImp>(target_path,name,description,working_dir,args,icon_source,show,c1,c2,c3))
 {
 }
+
+GLink::~GLink()
+= default ;
 
 std::string GLink::filename( const std::string & name_in )
 {
@@ -190,11 +195,6 @@ std::string GLink::filename( const std::string & name_in )
 void GLink::saveAs( const G::Path & link_path )
 {
 	m_imp->saveAs( link_path ) ;
-}
-
-GLink::~GLink()
-{
-	delete m_imp ;
 }
 
 bool GLink::exists( const G::Path & path )

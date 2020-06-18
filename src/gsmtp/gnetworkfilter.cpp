@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,12 +55,12 @@ void GSmtp::NetworkFilter::start( const std::string & path )
 	m_text.erase() ;
 	if( m_client_ptr.get() == nullptr )
 	{
-		m_client_ptr.reset( new RequestClient(GNet::ExceptionSink(m_client_ptr,nullptr),"scanner","ok",m_location,m_connection_timeout,m_response_timeout) );
+		m_client_ptr.reset( new RequestClient(GNet::ExceptionSink(m_client_ptr,m_es.esrc()),"scanner","ok",m_location,m_connection_timeout,m_response_timeout) );
 	}
 	m_client_ptr->request( path ) ; // (no need to wait for connection)
 }
 
-void GSmtp::NetworkFilter::clientDeleted( std::string reason )
+void GSmtp::NetworkFilter::clientDeleted( const std::string & reason )
 {
 	if( !reason.empty() )
 	{
@@ -69,7 +69,7 @@ void GSmtp::NetworkFilter::clientDeleted( std::string reason )
 	}
 }
 
-void GSmtp::NetworkFilter::clientEvent( std::string s1 , std::string s2 , std::string /*s3*/ )
+void GSmtp::NetworkFilter::clientEvent( const std::string & s1 , const std::string & s2 , const std::string & )
 {
 	if( s1 == "scanner" ) // ie. this is the response received by the RequestClient
 	{
@@ -94,7 +94,7 @@ std::string GSmtp::NetworkFilter::reason() const
 	return G::Str::printable( G::Str::tail( m_text , "\t" , false ) ) ;
 }
 
-G::Slot::Signal1<int> & GSmtp::NetworkFilter::doneSignal()
+G::Slot::Signal<int> & GSmtp::NetworkFilter::doneSignal()
 {
 	return m_done_signal ;
 }

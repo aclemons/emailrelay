@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,12 +54,12 @@ GSmtp::ClientProtocol::ClientProtocol( GNet::ExceptionSink es , Sender & sender 
 {
 }
 
-void GSmtp::ClientProtocol::start( weak_ptr<StoredMessage> message )
+void GSmtp::ClientProtocol::start( std::weak_ptr<StoredMessage> message )
 {
 	G_DEBUG( "GSmtp::ClientProtocol::start" ) ;
 
 	// reinitialise for the new message
-	m_message = message ;
+	m_message = message ; // NOLINT performance-unnecessary-value-param
 	m_to_index = 0U ;
 	m_to_accepted = 0U ;
 	m_reply = Reply() ;
@@ -69,11 +69,11 @@ void GSmtp::ClientProtocol::start( weak_ptr<StoredMessage> message )
 	applyEvent( Reply() , true ) ;
 }
 
-shared_ptr<GSmtp::StoredMessage> GSmtp::ClientProtocol::message()
+std::shared_ptr<GSmtp::StoredMessage> GSmtp::ClientProtocol::message()
 {
 	G_ASSERT( !m_message.expired() ) ;
 	if( m_message.expired() )
-		return shared_ptr<StoredMessage>( new StoredMessageStub ) ;
+		return std::shared_ptr<StoredMessage>( new StoredMessageStub ) ;
 
 	return m_message.lock() ;
 }
@@ -96,7 +96,7 @@ void GSmtp::ClientProtocol::sendComplete()
 {
 	if( m_state == State::sData )
 	{
-		size_t n = sendLines() ;
+		std::size_t n = sendLines() ;
 
 		G_LOG( "GSmtp::ClientProtocol: tx>>: [" << n << " line(s) of content]" ) ;
 		if( endOfContent() )
@@ -358,20 +358,20 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	else if( m_state == State::sAuth && !reply.positive() && m_sasl->next() )
 	{
 		// authentication failed -- try the next mechanism
-		G_LOG( "GSmtp::ClientProtocol::applyEvent: " << AuthError(*m_sasl.get(),reply).str() << ": trying [" << G::Str::lower(m_sasl->mechanism()) << "]" ) ;
+		G_LOG( "GSmtp::ClientProtocol::applyEvent: " << AuthError(*m_sasl,reply).str() << ": trying [" << G::Str::lower(m_sasl->mechanism()) << "]" ) ;
 		m_auth_mechanism = m_sasl->mechanism() ;
 		send( "AUTH " , m_auth_mechanism , initialResponse(*m_sasl) ) ;
 	}
 	else if( m_state == State::sAuth && !reply.positive() && m_config.must_authenticate )
 	{
 		// authentication failed and mandatory and no more mechanisms
-		throw AuthError( *m_sasl.get() , reply ) ;
+		throw AuthError( *m_sasl , reply ) ;
 	}
 	else if( m_state == State::sAuth && !reply.positive() )
 	{
 		// authentication failed, but optional -- continue and expect submission errors
 		G_ASSERT( !m_authenticated_with_server ) ;
-		G_WARNING( "GSmtp::ClientProtocol::applyEvent: " << AuthError(*m_sasl.get(),reply).str() << ": continuing" ) ;
+		G_WARNING( "GSmtp::ClientProtocol::applyEvent: " << AuthError(*m_sasl,reply).str() << ": continuing" ) ;
 		m_state = State::sFiltering ;
 		startFiltering() ;
 	}
@@ -434,7 +434,7 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	{
 		// data command accepted -- send content until flow-control asserted or all sent
 		m_state = State::sData ;
-		size_t n = sendLines() ;
+		std::size_t n = sendLines() ;
 		G_LOG( "GSmtp::ClientProtocol: tx>>: [" << n << " line(s) of content]" ) ;
 		if( endOfContent() )
 		{
@@ -514,7 +514,7 @@ G::StringArray GSmtp::ClientProtocol::serverAuthMechanisms( const ClientProtocol
 	std::string auth_line = reply.textLine("AUTH ") ; // trailing space to avoid "AUTH="
 	if( ! auth_line.empty() )
 	{
-		std::string tail = G::Str::tail( auth_line , auth_line.find(" ") , std::string() ) ; // after "AUTH "
+		std::string tail = G::Str::tail( auth_line , auth_line.find(' ') , std::string() ) ; // after "AUTH "
 		G::Str::splitIntoTokens( tail , result , G::Str::ws() ) ; // expect space separators, but ignore CR etc
 	}
 	return result ;
@@ -553,7 +553,7 @@ void GSmtp::ClientProtocol::raiseDoneSignal( int response_code , const std::stri
 		G_WARNING( "GSmtp::ClientProtocol: smtp client protocol: " << response ) ;
 
 	cancelTimer() ;
-	m_done_signal.emit( response_code , response , reason ) ;
+	m_done_signal.emit( response_code , std::string(response) , std::string(reason) ) ;
 }
 
 bool GSmtp::ClientProtocol::endOfContent()
@@ -561,14 +561,14 @@ bool GSmtp::ClientProtocol::endOfContent()
 	return !message()->contentStream().good() ;
 }
 
-size_t GSmtp::ClientProtocol::sendLines()
+std::size_t GSmtp::ClientProtocol::sendLines()
 {
 	cancelTimer() ; // no response expected during data transfer
 
 	// the read buffer -- capacity grows to longest line, but start with something reasonable
 	std::string read_buffer( 200U , '.' ) ;
 
-	size_t n = 0U ;
+	std::size_t n = 0U ;
 	while( sendLine(read_buffer) )
 		n++ ;
 	return n ;
@@ -637,21 +637,19 @@ bool GSmtp::ClientProtocol::send( const std::string & line , bool eot , bool sen
 	return m_sender.protocolSend( (dot_prefix?".":"") + line + "\r\n" , 0U , false ) ;
 }
 
-G::Slot::Signal3<int,std::string,std::string> & GSmtp::ClientProtocol::doneSignal()
+G::Slot::Signal<int,const std::string&,const std::string&> & GSmtp::ClientProtocol::doneSignal()
 {
 	return m_done_signal ;
 }
 
-G::Slot::Signal0 & GSmtp::ClientProtocol::filterSignal()
+G::Slot::Signal<> & GSmtp::ClientProtocol::filterSignal()
 {
 	return m_filter_signal ;
 }
 
 // ===
 
-GSmtp::ClientProtocolReply::ClientProtocolReply( const std::string & line ) :
-	m_complete(false) ,
-	m_valid(false)
+GSmtp::ClientProtocolReply::ClientProtocolReply( const std::string & line )
 {
 	if( line.length() >= 3U &&
 		is_digit(line.at(0U)) &&
@@ -739,7 +737,7 @@ std::string GSmtp::ClientProtocolReply::text() const
 
 std::string GSmtp::ClientProtocolReply::textLine( const std::string & prefix ) const
 {
-	size_t start_pos = m_text.find( std::string("\n")+prefix ) ;
+	std::size_t start_pos = m_text.find( std::string("\n")+prefix ) ;
 	if( start_pos == std::string::npos )
 	{
 		return std::string() ;
@@ -747,7 +745,7 @@ std::string GSmtp::ClientProtocolReply::textLine( const std::string & prefix ) c
 	else
 	{
 		start_pos++ ;
-		size_t end_pos = m_text.find( "\n" , start_pos + prefix.length() ) ;
+		std::size_t end_pos = m_text.find( '\n' , start_pos + prefix.length() ) ;
 		return m_text.substr( start_pos , end_pos-start_pos ) ;
 	}
 }
@@ -794,11 +792,8 @@ bool GSmtp::ClientProtocolReply::textContains( std::string key ) const
 
 // ===
 
-GSmtp::ClientProtocol::Sender::~Sender()
-{
-}
-
-// ===
+GSmtp::ClientProtocol::Config::Config()
+= default;
 
 GSmtp::ClientProtocol::Config::Config( const std::string & name_ ,
 	unsigned int response_timeout_ ,

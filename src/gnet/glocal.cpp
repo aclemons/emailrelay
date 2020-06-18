@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include "glocal.h"
 #include "ghostname.h"
 #include "gresolver.h"
+#include "ginterfaces.h"
 #include "glog.h"
 #include <sstream>
 
@@ -63,51 +64,8 @@ void GNet::Local::canonicalName( const std::string & name_override )
 
 bool GNet::Local::isLocal( const Address & address , std::string & reason )
 {
-	// TODO use getifaddrs(3) and GetAdaptersAddresses()
-
-	// local if a loopback address
-	if( address.isLoopback() )
-		return true ;
-
-	// ipv6 is easier - no need to use dns
-	if( address.family() == Address::Family::ipv6 )
-		return address.isLocal( reason ) ;
-
-	// look up and cache the hostname() ipv4 addresses
-	typedef std::vector<Address> List ;
-	static List list ;
-	static bool done = false ;
-	if( !done )
-	{
-		list = Resolver::resolve( hostname() , "0" , AF_INET ) ;
-		done = true ;
-	}
-
-	// local if a hostname() address
-	for( List::iterator p = list.begin() ; p != list.end() ; ++p )
-	{
-		if( (*p).sameHostPart(address) )
-			return true ;
-	}
-
-	// format a reason string
-	std::stringstream ss ;
-	if( list.empty() )
-	{
-		ss << address.hostPartString() << " is not a loopback address" ;
-	}
-	else
-	{
-		ss << address.hostPartString() << " is not a loopback address or " ;
-		const char * sep = "" ;
-		for( List::iterator p = list.begin() ; p != list.end() ; ++p , sep = " or " )
-		{
-			ss << sep << (*p).hostPartString() ;
-		}
-	}
-	reason = ss.str() ;
-
-	return false ;
+	// by inspection wrt RFC-1918, RFC-6890 etc
+	return address.isLocal( reason ) ;
 }
 
 bool GNet::Local::isLocal( const Address & address )

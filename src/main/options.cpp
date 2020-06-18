@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -113,10 +113,10 @@ std::string Main::Options::spec( bool is_windows )
 
 		"r!remote-clients!allows remote clients to connect!!0!!2|"
 			// Allows incoming connections from addresses that are not local. The
-			// default behaviour is to ignore connections that are not local in
-			// order to prevent accidental exposure to the public internet, but
-			// a firewall should also be used. The definition of 'local' is
-			// different for IPv4 and IPv6.
+			// default behaviour is to reject connections that are not local in
+			// order to prevent accidental exposure to the public internet,
+			// although a firewall should also be used. Local address ranges are
+			// defined in RFC-1918, RFC-6890 etc.
 
 		"s!spool-dir!specifies the spool directory!!1!dir!2|"
 			//example: /var/spool/emailrelay
@@ -133,12 +133,16 @@ std::string Main::Options::spec( bool is_windows )
 			// --server-tls-certificate option must be used to define the server
 			// certificate.
 
-		"!server-tls-required!mandatory use of TLS before SMTP server authentication or mail-to! (requires --server-tls)!0!!3|"
+		"!server-tls-connection!enables implicit TLS when acting as an SMTP server! (ie. SMTPS) (requires --server-tls-certificate)!0!!3|"
+			// Enables SMTP over TLS when acting as an SMTP server. This is for SMTP
+			// over TLS (SMTPS), not TLS negotiated within SMTP using STARTTLS.
+
+		"!server-tls-required!mandatory use of TLS before SMTP server authentication or mail-to!!0!!3|"
 			// Makes the use of TLS mandatory for any incoming SMTP and POP connections.
 			// SMTP clients must use the STARTTLS command to establish a TLS session
 			// before they can issue SMTP AUTH or SMTP MAIL-TO commands.
 
-		"!server-tls-certificate!specifies a private TLS key+certificate file for --server-tls!!1!pem-file!3|"
+		"!server-tls-certificate!specifies a private TLS key+certificate file for --server-tls! or --server-tls-connection!1!pem-file!3|"
 			//example: /etc/ssl/certs/emailrelay.pem
 			//example: C:/ProgramData/E-MailRelay/emailrelay.pem
 			// Defines the TLS certificate file when acting as a SMTP or POP server.
@@ -232,6 +236,9 @@ std::string Main::Options::spec( bool is_windows )
 
 		"L!log-time!adds a timestamp to the logging output!!0!!3|"
 			// Adds a timestamp to the logging output using the local timezone.
+
+		"!log-address!adds the network address of remote clients to the logging output!!0!!3|"
+			// Adds the network address of remote clients to the logging output.
 
 		"N!log-file!log to file instead of stderr! (with '%d' replaced by the current date)!1!file!3|"
 			//example: /var/log/emailrelay-%d
@@ -360,16 +367,24 @@ std::string Main::Options::spec( bool is_windows )
 			// while waiting for their mail message to be accepted.
 
 		"I!interface!defines the listening network addresses used for incoming connections! (comma-separated list with optional smtp=,pop=,admin= qualifiers)!2!ip-address-list!3|"
-			//example: 192.168.0.1,127.0.0.1,pop=::1,smtp=::
-			// Specifies the IP network addresses used to bind listening ports. By
-			// default listening ports for incoming SMTP, POP and administration
-			// connections will bind the 'any' address for IPv4 and for IPv6,
-			// ie. "0.0.0.0" and "::". Use this option to limit listening to particular
-			// addresses (and by implication to particular network interfaces).
-			// Multiple addresses can be specified by using the option more than
-			// once or by using a comma-separated list. Use a prefix of "smtp=", "pop="
-			// or "admin=" on addresses that should apply only to those types of
-			// listening port.
+			//example: 127.0.0.1,smtp=eth0
+			//example: smtp=::,admin=lo-ipv4,pop=10.0.0.1
+			//example: lo
+			//example: 10.0.0.1
+			// Specifies the IP network addresses or interface names used to bind
+			// listening ports. By default listening ports for incoming SMTP, POP
+			// and administration connections will bind the 'any' address for IPv4
+			// and for IPv6, ie. "0.0.0.0" and "::". Multiple addresses can be
+			// specified by using the option more than once or by using a
+			// comma-separated list. Use a prefix of "smtp=", "pop=" or "admin=" on
+			// addresses that should apply only to those types of listening port.
+			// Any link-local IPv6 addresses must include a zone name or scope id.
+			//
+			// Interface names can be used instead of addresses, in which case all
+			// the addresses associated with that interface at startup will used
+			// for listening. When an interface name is decorated with a "-ipv4"
+			// or "-ipv6" suffix only their IPv4 or IPv6 addresses will be used
+			// (eg. "ppp0-ipv4").
 
 		"6!client-interface!defines the local network address used for outgoing connections!!1!ip-address!3|"
 			//example: 10.0.0.2
@@ -403,8 +418,10 @@ std::string Main::Options::spec( bool is_windows )
 			// forwarded. The filter is passed the name of the message file in the spool
 			// directory so that it can edit it as required. A network filter can be
 			// specified as "net:<transport-address>" and prefixes of "spam:", "spam-edit:"
-			// and "exit:" are also allowed. The --filter option is normally more useful
-			// than --client-filter.
+			// and "exit:" are also allowed. The "spam:" and "spam-edit:" prefixes
+			// require a SpamAssassin daemon to be running. For store-and-forward
+			// applications the --filter option is normally more useful than
+			// --client-filter.
 
 		"Q!admin-terminate!enables the terminate command on the admin interface!!0!!3|"
 			// Enables the "terminate" command in the administration interface.

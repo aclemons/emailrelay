@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ void GSmtp::ExecutableVerifier::onTaskDone( int exit_code , const std::string & 
 	G::StringArray response_parts ;
 	response_parts.reserve( 2U ) ;
 	G::Str::splitIntoFields( response , response_parts , "\n" ) ;
-	size_t parts = response_parts.size() ;
+	std::size_t parts = response_parts.size() ;
 	response_parts.resize( 2U ) ;
 
 	G_LOG( "GSmtp::ExecutableVerifier: address verifier: exit code " << exit_code << " "
@@ -99,10 +99,10 @@ void GSmtp::ExecutableVerifier::onTaskDone( int exit_code , const std::string & 
 			( "exit code " + G::Str::fromInt(exit_code) ) ;
 	}
 
-	doneSignal().emit( m_to_address , status ) ;
+	doneSignal().emit( std::string(m_to_address) , status ) ;
 }
 
-G::Slot::Signal2<std::string,GSmtp::VerifierStatus> & GSmtp::ExecutableVerifier::doneSignal()
+G::Slot::Signal<const std::string&,const GSmtp::VerifierStatus&> & GSmtp::ExecutableVerifier::doneSignal()
 {
 	return m_done_signal ;
 }

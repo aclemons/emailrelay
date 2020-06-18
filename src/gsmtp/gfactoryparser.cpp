@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -92,15 +92,12 @@ std::string GSmtp::FactoryParser::check( const std::string & identifier , bool a
 	}
 }
 
-GSmtp::FactoryParser::Result::Result() :
-	third(0)
-{
-}
+GSmtp::FactoryParser::Result::Result()
+= default;
 
 GSmtp::FactoryParser::Result::Result( const std::string & first_ , const std::string & second_ ) :
 	first(first_) ,
-	second(second_) ,
-	third(0)
+	second(second_)
 {
 }
 

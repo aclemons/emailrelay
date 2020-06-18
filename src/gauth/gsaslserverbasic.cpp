@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,17 +27,12 @@
 #include "gstr.h"
 #include "gtest.h"
 #include "gdatetime.h"
+#include "grandom.h"
 #include "glog.h"
 #include "gassert.h"
 #include <sstream>
 #include <algorithm>
 #include <functional>
-
-namespace
-{
-	const char * login_challenge_1 = "Username:" ;
-	const char * login_challenge_2 = "Password:" ;
-}
 
 /// \class GAuth::SaslServerBasicImp
 /// A private pimple-pattern implementation class used by GAuth::SaslServerBasic.
@@ -67,7 +62,12 @@ private:
 	bool m_authenticated ;
 	std::string m_id ;
 	std::string m_trustee ;
+	static const char * login_challenge_1 ;
+	static const char * login_challenge_2 ;
 } ;
+
+const char * GAuth::SaslServerBasicImp::login_challenge_1 = "Username:" ;
+const char * GAuth::SaslServerBasicImp::login_challenge_2 = "Password:" ;
 
 // ===
 
@@ -114,7 +114,7 @@ bool GAuth::SaslServerBasicImp::init( const std::string & mechanism_in )
 	if( m_allow_apop && mechanism == "APOP" )
 	{
 		m_mechanism = mechanism ;
-		m_challenge = Cram::challenge() ;
+		m_challenge = Cram::challenge( G::Random::rand() ) ;
 		return true ;
 	}
 	else if( std::find(m_mechanisms.begin(),m_mechanisms.end(),mechanism) == m_mechanisms.end() )
@@ -125,7 +125,7 @@ bool GAuth::SaslServerBasicImp::init( const std::string & mechanism_in )
 	else if( mechanism.find("CRAM-") == 0U )
 	{
 		m_mechanism = mechanism ;
-		m_challenge = Cram::challenge() ;
+		m_challenge = Cram::challenge( G::Random::rand() ) ;
 		return true ;
 	}
 	else
@@ -259,10 +259,10 @@ std::string GAuth::SaslServerBasicImp::apply( const std::string & response , boo
 bool GAuth::SaslServerBasicImp::trusted( const GNet::Address & address ) const
 {
 	G_DEBUG( "GAuth::SaslServerBasicImp::trusted: \"" << address.hostPartString() << "\"" ) ;
-	G::StringArray wc = address.wildcards() ;
-	for( G::StringArray::iterator p = wc.begin() ; p != wc.end() ; ++p )
+	G::StringArray wildcards = address.wildcards() ;
+	for( const auto & wc : wildcards )
 	{
-		if( trustedCore(*p,address) )
+		if( trustedCore(wc,address) )
 			return true ;
 	}
 	return false ;
@@ -314,9 +314,7 @@ GAuth::SaslServerBasic::SaslServerBasic( const SaslServerSecrets & secrets , con
 }
 
 GAuth::SaslServerBasic::~SaslServerBasic()
-{
-	delete m_imp ;
-}
+= default ;
 
 std::string GAuth::SaslServerBasic::mechanisms( char c ) const
 {

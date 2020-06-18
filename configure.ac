@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([E-MailRelay],[2.1],[],[emailrelay])
+AC_INIT([E-MailRelay],[2.2dev],[],[emailrelay])
 AC_CONFIG_SRCDIR([src/glib/gdef.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])
@@ -31,7 +31,7 @@ dnl check for programs
 dnl
 AC_PROG_CC([cc gcc clang])
 AC_PROG_CXX([c++ g++ clang++])
-AX_CXX_COMPILE_STDCXX_11([],[optional])
+AX_CXX_COMPILE_STDCXX_11([],[mandatory])
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_PROG_SED
@@ -92,6 +92,8 @@ AC_ARG_ENABLE([testing],AS_HELP_STRING([--enable-testing],[enable make check tes
 GCONFIG_FN_ENABLE_TESTING
 AC_ARG_ENABLE([install-hook],AS_HELP_STRING([--enable-install-hook],[enable fixing up the start/stop configuration file at install time (default yes)]))
 GCONFIG_FN_ENABLE_INSTALL_HOOK
+AC_ARG_ENABLE([interface-names],AS_HELP_STRING([--enable-interface-names],[allow network interface names for defining listening addresses (default yes)]))
+GCONFIG_FN_ENABLE_INTERFACE_NAMES
 
 dnl "--with-whatever"
 dnl

@@ -68,10 +68,10 @@ where \<option\> is:
 
 *   --client-auth-config \<config\>
 
-    Configures the SMTP client authentication module using a  semicolon-separated
-    list of configuration items. Each item is a  single-character key, followed
-    by a colon and then a comma-separated  list. A 'm' character introduces an
-    ordered list of authentication  mechanisms, and an 'x' is used for
+    Configures the SMTP client authentication module using a semicolon-separated
+    list of configuration items. Each item is a single-character key, followed
+    by a colon and then a comma-separated list. A 'm' character introduces an
+    ordered list of authentication mechanisms, and an 'x' is used for
     blocklisted mechanisms.
 
 *   --client-filter \<program\> (-Y)
@@ -80,8 +80,11 @@ where \<option\> is:
     forwarded. The filter is passed the name of the message file in the spool
     directory so that it can edit it as required. A network filter can be
     specified as *net:<transport-address>* and prefixes of *spam:*,
-    *spam-edit:* and *exit:* are also allowed. The *--filter* option is
-    normally more useful than *--client-filter*.
+    *spam-edit:* and *exit:* are also allowed. The *spam:* and *spam-edit:*
+    prefixes require a SpamAssassin daemon to be running. For store-and-forward
+
+   applications the *--filter* option is normally more useful than
+    \ *--client-filter*\ .
 
 *   --client-interface \<ip-address\> (-6)
 
@@ -150,7 +153,7 @@ where \<option\> is:
 
 *   --dnsbl \<config\>
 
-    Specifies a list of DNSBL_ servers that are used to reject SMTP	connections
+    Specifies a list of DNSBL_ servers that are used to reject SMTP connections
     from blocked addresses. The configuration string is made up of
     comma-separated fields: the DNS server's transport address, a timeout in
     milliseconds, a rejection threshold, and then the list of DNSBL servers.
@@ -175,9 +178,9 @@ where \<option\> is:
     program terminates with an exit code between 1 and 99. Use
     *net:<transport-address>* to communicate with a filter daemon over the
     network, or *spam:<transport-address>* for a spamassassin spamd daemon to
-    accept or reject mail messages, or  *spam-edit:<transport-address>* to have
-    spamassassin edit the message  content without rejecting it, or
-    *exit:<number>* to emulate a filter  program that just exits.
+    accept or reject mail messages, or *spam-edit:<transport-address>* to have
+    spamassassin edit the message content without rejecting it, or
+    *exit:<number>* to emulate a filter program that just exits.
 
 *   --filter-timeout \<time\> (-W)
 
@@ -210,26 +213,29 @@ where \<option\> is:
 
 *   --idle-timeout \<time\>
 
-    Specifies a timeout (in seconds) for receiving network traffic from  remote
+    Specifies a timeout (in seconds) for receiving network traffic from remote
     SMTP and POP clients. The default is 1800 seconds.
 
 *   --immediate (-m)
 
-    Causes mail messages to be forwarded as they are received, even before	they
+    Causes mail messages to be forwarded as they are received, even before they
     have been accepted. This can be used to do proxying without
     store-and-forward, but in practice clients tend to to time out while
     waiting for their mail message to be accepted.
 
 *   --interface \<ip-address-list\> (-I)
 
-    Specifies the IP network addresses used to bind listening ports. By default
-    listening ports for incoming SMTP, POP and administration connections will
-    bind the 'any' address for IPv4 and for IPv6, ie. *0.0.0.0* and *::*. Use
-    this option to limit listening to particular addresses (and by implication
-    to particular network interfaces). Multiple addresses can be specified by
-    using the option more than once or by using a comma-separated list. Use a
-    prefix of *smtp=*, *pop=* or *admin=* on addresses that should apply only
-    to those types of listening port.
+    Specifies the IP network addresses or interface names used to bind listening
+    ports. By default listening ports for incoming SMTP, POP and administration
+    connections will bind the 'any' address for IPv4 and for IPv6, ie.
+    *0.0.0.0* and *::*. Multiple addresses can be specified by using the option
+    more than once or by using a comma-separated list. Use a prefix of *smtp=*,
+    *pop=* or *admin=* on addresses that should apply only to those types of
+    listening port. Any link-local IPv6 addresses must include a zone name or
+    scope id.  Interface names can be used instead of addresses, in which case
+    all  the addresses associated with that interface at startup will used  for
+    listening. When an interface name is decorated with a *-ipv4*  or *-ipv6*
+    suffix only their IPv4 or IPv6 addresses will be used  (eg. *ppp0-ipv4*).
 
 *   --log (-l)
 
@@ -238,6 +244,10 @@ where \<option\> is:
     standard error stream and the syslog separately. Note that *--as-server*,
     *--as-client* and *--as-proxy* imply *--log*, and *--as-server* and
     *--as-proxy* also imply *--close-stderr*.
+
+*   --log-address
+
+    Adds the network address of remote clients to the logging output.
 
 *   --log-file \<file\> (-N)
 
@@ -294,9 +304,9 @@ where \<option\> is:
     Modifies the spool directory used by the POP server to be a sub-directory
     with the same name as the POP authentication user-id. This allows multiple
     POP clients to read the spooled messages without interfering with each
-    other, particularly when also  using *--pop-no-delete*. Content files can
-    stay in the main spool  directory with only the envelope files copied into
-    user-specific  sub-directories. The *emailrelay-filter-copy* program is a
+    other, particularly when also using *--pop-no-delete*. Content files can
+    stay in the main spool directory with only the envelope files copied into
+    user-specific sub-directories. The *emailrelay-filter-copy* program is a
     convenient way of doing this when run via *--filter*.
 
 *   --pop-no-delete (-G)
@@ -321,9 +331,9 @@ where \<option\> is:
 *   --remote-clients (-r)
 
     Allows incoming connections from addresses that are not local. The default
-    behaviour is to ignore connections that are not local in order to prevent
-    accidental exposure to the public internet, but a firewall should also be
-    used. The definition of 'local' is different for IPv4 and IPv6.
+    behaviour is to reject connections that are not local in order to prevent
+    accidental exposure to the public internet,  although a firewall should
+    also be used. Local address ranges are  defined in RFC-1918_, RFC-6890 etc.
 
 *   --response-timeout \<time\> (-T)
 
@@ -343,11 +353,11 @@ where \<option\> is:
 
 *   --server-auth-config \<config\>
 
-    Configures the SMTP server authentication module using a  semicolon-separated
-    list of configuration items. Each item is a  single-character key, followed
-    by a colon and then a comma-separated  list. A 'm' character introduces a
-    preferred sub-set of the built-in  authentication mechanisms, and an 'x' is
-    used for blocklisted	mechanisms.
+    Configures the SMTP server authentication module using a semicolon-separated
+    list of configuration items. Each item is a single-character key, followed
+    by a colon and then a comma-separated list. A 'm' character introduces a
+    preferred sub-set of the built-in authentication mechanisms, and an 'x' is
+    used for blocklisted mechanisms.
 
 *   --server-tls (-K)
 
@@ -362,6 +372,11 @@ where \<option\> is:
     file must contain the server's private key and certificate chain using the
     PEM file format. Keep the file permissions tight to avoid accidental
     exposure of the private key.
+
+*   --server-tls-connection
+
+    Enables SMTP over TLS when acting as an SMTP server. This is for SMTP over
+    TLS (SMTPS), not TLS negotiated within SMTP using STARTTLS.
 
 *   --server-tls-required
 
@@ -396,7 +411,7 @@ where \<option\> is:
     Selects and configures the low-level TLS library, using a comma-separated
     list of keywords. If OpenSSL and mbedTLS are both built in then keywords of
     *openssl* and *mbedtls* will select one or the other. Keywords like
-    *tlsv1.0* can be used to set a minimum TLS protocol version, or  *-tlsv1.2*
+    *tlsv1.0* can be used to set a minimum TLS protocol version, or *-tlsv1.2*
     to set a maximum version.
 
 *   --user \<username\> (-u)
@@ -846,14 +861,33 @@ Eg:
     --interface 192.168.0.1,127.0.0.1,fc00::1,::1
     --interface 192.168.0.1 --interface 127.0.0.1 --interface fc00::1 --interface ::1
 
-A listening address can also be qualified by one of the prefixes *smtp=*,
-*pop=* or *admin=* so that it is only used in that context.
+On some systems interface names can be used, in which case all the addresses
+associated with that interface are used for listening.
+
+Eg:
+
+::
+
+    --interface eth0
+
+The interface name can have a *-ipv4* or *-ipv6* suffix to limit the listening
+addresses to one address family.
+
+Eg:
+
+::
+
+    --interface eth0-ipv4
+
+The *--interface* option can also have one of the prefixes *smtp=*, *pop=* or
+*admin=* so that it is only used in that context.
 
 Eg:
 
 ::
 
     --interface smtp=192.168.0.1 --interface pop=127.0.0.1 --interface admin=127.0.0.1
+    --interface smtp=eth0-ipv4,pop=eth1-ipv6
 
 The IPv4 and IPv6 wildcard addresses (*0.0.0.0* and *::*) can be used with
 *--interface* and *--client-interface* to enable the use of IPv4 only or IPv6
@@ -1096,8 +1130,8 @@ are always allowed. This can be combined with verbose logging (\ *--log -v*\ )
 for initial testing.
 
 If the timeout period expires before a collective decision is reached then the
-connection is allowed. This default behaviour can be changed by using a negative
-timeout, but for finer control use a DNSBL proxy.
+connection is allowed by default. This default behaviour can be changed by
+using a negative timeout, but for finer control use a DNSBL proxy.
 
 Connections from loopback and private (RFC-1918_) network addresses are never
 checked.

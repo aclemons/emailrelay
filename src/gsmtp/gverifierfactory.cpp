@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,22 +31,22 @@ std::string GSmtp::VerifierFactory::check( const std::string & identifier )
 	return FactoryParser::check( identifier , false ) ;
 }
 
-unique_ptr<GSmtp::Verifier> GSmtp::VerifierFactory::newVerifier( GNet::ExceptionSink es ,
+std::unique_ptr<GSmtp::Verifier> GSmtp::VerifierFactory::newVerifier( GNet::ExceptionSink es ,
 	const std::string & identifier , unsigned int timeout )
 {
-	unique_ptr<Verifier> ptr ;
+	std::unique_ptr<Verifier> ptr ;
 	FactoryParser::Result p = FactoryParser::parse( identifier , false ) ;
 	if( p.first.empty() || p.first == "exit" )
 	{
-		ptr.reset( new InternalVerifier ) ;
+		ptr.reset( new InternalVerifier ) ; // upcast
 	}
 	else if( p.first == "net" )
 	{
-		ptr.reset( new NetworkVerifier( es , p.second , timeout , timeout ) ) ;
+		ptr.reset( new NetworkVerifier( es , p.second , timeout , timeout ) ) ; // upcast
 	}
 	else
 	{
-		ptr.reset( new ExecutableVerifier( es , G::Path(p.second) ) ) ;
+		ptr.reset( new ExecutableVerifier( es , G::Path(p.second) ) ) ; // upcast
 	}
 	return ptr ;
 }

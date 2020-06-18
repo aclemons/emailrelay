@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include "gstr.h"
 #include "glog.h"
 
-GNet::Socket::Socket( int domain , int type , int protocol ) :
+GNet::SocketBase::SocketBase( int domain , int type , int protocol ) :
 	m_reason(0) ,
 	m_domain(domain)
 {
@@ -40,9 +40,10 @@ GNet::Socket::Socket( int domain , int type , int protocol ) :
 	}
 }
 
-GNet::Socket::Socket( Descriptor s , const Accepted & ) :
+GNet::SocketBase::SocketBase( int domain , Descriptor fd , const Accepted & ) :
 	m_reason(0) ,
-	m_socket(s)
+	m_domain(domain),
+	m_fd(fd)
 {
 	if( !prepare(true) )
 	{
@@ -51,76 +52,173 @@ GNet::Socket::Socket( Descriptor s , const Accepted & ) :
 	}
 }
 
-GNet::Socket::~Socket()
+GNet::SocketBase::~SocketBase()
 {
-	try
-	{
-		drop() ;
-		destroy() ;
-	}
-	catch(...) // dtor
-	{
-	}
+	drop() ;
+	destroy() ;
 }
 
-void GNet::Socket::drop()
+void GNet::SocketBase::drop() noexcept
 {
 	dropReadHandler() ;
 	dropWriteHandler() ;
 	dropOtherHandler() ;
 }
 
-void GNet::Socket::saveReason() const
+void GNet::SocketBase::clearReason()
 {
-	const_cast<GNet::Socket*>(this)->saveReason() ;
+	m_reason = 0 ;
+	m_reason_string.clear() ;
+}
+
+void GNet::SocketBase::saveReason() const
+{
+	const_cast<GNet::SocketBase*>(this)->saveReason() ;
+}
+
+GNet::SocketBase::ssize_type GNet::SocketBase::writeImp( const char * buffer , size_type length )
+{
+	if( static_cast<ssize_type>(length) < 0 )
+		G_WARNING( "GNet::SocketBase::writeImp: too big" ) ; // should get EMSGSIZE from ::send()
+
+	ssize_type nsent = G::Msg::send( m_fd.fd() , buffer , length , MSG_NOSIGNAL ) ;
+	if( sizeError(nsent) ) // if -1
+	{
+		saveReason() ;
+		G_DEBUG( "GNet::SocketBase::writeImp: write error " << m_reason ) ;
+		return -1 ;
+	}
+	else if( nsent < 0 || static_cast<size_type>(nsent) < length )
+	{
+		saveReason() ;
+	}
+	return nsent;
+}
+
+void GNet::SocketBase::addReadHandler( EventHandler & handler , ExceptionSink es )
+{
+	G_DEBUG( "GNet::SocketBase::addReadHandler: fd " << m_fd ) ;
+	EventLoop::instance().addRead( m_fd , handler , es ) ;
+}
+
+void GNet::SocketBase::addWriteHandler( EventHandler & handler , ExceptionSink es )
+{
+	G_DEBUG( "GNet::SocketBase::addWriteHandler: fd " << m_fd ) ;
+	EventLoop::instance().addWrite( m_fd , handler , es ) ;
+}
+
+void GNet::SocketBase::addOtherHandler( EventHandler & handler , ExceptionSink es )
+{
+	G_DEBUG( "GNet::SocketBase::addOtherHandler: fd " << m_fd ) ;
+	EventLoop::instance().addOther( m_fd , handler , es ) ;
+}
+
+void GNet::SocketBase::dropReadHandler() noexcept
+{
+	if( EventLoop::ptr() )
+		EventLoop::ptr()->dropRead( m_fd ) ;
+}
+
+void GNet::SocketBase::dropWriteHandler() noexcept
+{
+	if( EventLoop::ptr() )
+		EventLoop::ptr()->dropWrite( m_fd ) ;
+}
+
+void GNet::SocketBase::dropOtherHandler() noexcept
+{
+	if( EventLoop::ptr() )
+		EventLoop::ptr()->dropOther( m_fd ) ;
+}
+
+SOCKET GNet::SocketBase::fd() const
+{
+	return m_fd.fd() ;
+}
+
+int GNet::SocketBase::domain() const
+{
+	return m_domain ;
+}
+
+std::string GNet::SocketBase::reason() const
+{
+	if( m_reason == 0 ) return std::string() ;
+	return reasonString( m_reason ) ;
+}
+
+std::string GNet::SocketBase::asString() const
+{
+	std::ostringstream ss ;
+	ss << m_fd ;
+	return ss.str() ;
+}
+
+// ==
+
+GNet::Socket::Socket( int domain , int type , int protocol ) :
+	SocketBase(domain,type,protocol)
+{
+}
+
+GNet::Socket::Socket( int domain , Descriptor s , const Accepted & a ) :
+	SocketBase(domain,s,a)
+{
 }
 
 void GNet::Socket::bind( const Address & local_address )
 {
-	G_DEBUG( "Socket::bind: binding " << local_address.displayString() << " on fd " << m_socket ) ;
+	G_DEBUG( "Socket::bind: binding " << local_address.displayString() << " on fd " << fd() ) ;
 
-	if( local_address.domain() != m_domain )
+	if( local_address.domain() != domain() )
 		throw SocketBindError( "address family does not match the socket domain" ) ;
 
 	setOptionsOnBind( local_address.family() == Address::Family::ipv6 ) ;
 
-	int rc = ::bind( m_socket.fd() , local_address.address() , local_address.length() ) ;
+	int rc = ::bind( fd() , local_address.address() , local_address.length() ) ;
 	if( error(rc) )
 	{
 		saveReason() ;
-		throw SocketBindError( local_address.displayString() , m_reason_string ) ;
+		throw SocketBindError( local_address.displayString() , reason() ) ;
 	}
+	m_bound_scope_id = local_address.scopeId() ;
 }
 
 bool GNet::Socket::bind( const Address & local_address , NoThrow )
 {
-	G_DEBUG( "Socket::bind: binding " << local_address.displayString() << " on fd " << m_socket ) ;
-	if( local_address.domain() != m_domain ) return false ;
+	G_DEBUG( "Socket::bind: binding " << local_address.displayString() << " on fd " << fd() ) ;
+	if( local_address.domain() != domain() ) return false ;
 
 	setOptionsOnBind( local_address.family() == Address::Family::ipv6 ) ;
 
-	int rc = ::bind( m_socket.fd() , local_address.address() , local_address.length() ) ;
+	int rc = ::bind( fd() , local_address.address() , local_address.length() ) ;
 	if( error(rc) )
 	{
 		saveReason() ;
 		return false ;
 	}
+	m_bound_scope_id = local_address.scopeId() ;
 	return true ;
+}
+
+unsigned long GNet::Socket::getBoundScopeId() const
+{
+	return m_bound_scope_id ;
 }
 
 bool GNet::Socket::connect( const Address & address , bool *done )
 {
 	G_DEBUG( "GNet::Socket::connect: connecting to " << address.displayString() ) ;
-	if( address.domain() != m_domain )
+	if( address.domain() != domain() )
 	{
 		G_WARNING( "GNet::Socket::connect: cannot connect: address family does not match "
-			"the socket domain (" << address.domain() << "," << m_domain << ")" ) ;
+			"the socket domain (" << address.domain() << "," << domain() << ")" ) ;
 		return false ;
 	}
 
 	setOptionsOnConnect( address.family() == Address::Family::ipv6 ) ;
 
-	int rc = ::connect( m_socket.fd() , address.address() , address.length() ) ;
+	int rc = ::connect( fd() , address.address() , address.length() ) ;
 	if( error(rc) )
 	{
 		saveReason() ;
@@ -135,7 +233,7 @@ bool GNet::Socket::connect( const Address & address , bool *done )
 			return true ;
 		}
 
-		G_DEBUG( "GNet::Socket::connect: synchronous connect failure: " << m_reason ) ;
+		G_DEBUG( "GNet::Socket::connect: synchronous connect failure: " << reason() ) ;
 		return false;
 	}
 
@@ -143,32 +241,13 @@ bool GNet::Socket::connect( const Address & address , bool *done )
 	return true ;
 }
 
-GNet::Socket::ssize_type GNet::Socket::write( const char * buf , size_type len )
-{
-	if( static_cast<ssize_type>(len) < 0 )
-		G_WARNING( "GNet::Socket::write: too big" ) ; // should get EMSGSIZE from ::send()
-
-	ssize_type nsent = G::Msg::send( m_socket.fd() , buf , len , MSG_NOSIGNAL ) ;
-	if( sizeError(nsent) ) // if -1
-	{
-		saveReason() ;
-		G_DEBUG( "GNet::Socket::write: write error " << m_reason ) ;
-		return -1 ;
-	}
-	else if( nsent < 0 || static_cast<size_type>(nsent) < len )
-	{
-		saveReason() ;
-	}
-	return nsent;
-}
-
 void GNet::Socket::listen( int backlog )
 {
-	int rc = ::listen( m_socket.fd() , backlog ) ;
+	int rc = ::listen( fd() , backlog ) ;
 	if( error(rc) )
 	{
 		saveReason() ;
-		throw SocketError( "cannot listen on socket" , m_reason_string ) ;
+		throw SocketError( "cannot listen on socket" , reason() ) ;
 	}
 }
 
@@ -178,8 +257,8 @@ std::pair<bool,GNet::Address> GNet::Socket::getAddress( bool local ) const
 	AddressStorage address_storage ;
 	int rc =
 		local ?
-			::getsockname( m_socket.fd() , address_storage.p1() , address_storage.p2() ) :
-			::getpeername( m_socket.fd() , address_storage.p1() , address_storage.p2() ) ;
+			::getsockname( fd() , address_storage.p1() , address_storage.p2() ) :
+			::getpeername( fd() , address_storage.p1() , address_storage.p2() ) ;
 
 	if( error(rc) )
 	{
@@ -205,61 +284,10 @@ bool GNet::Socket::hasPeer() const
 	return getPeerAddress().first ;
 }
 
-void GNet::Socket::addReadHandler( EventHandler & handler , ExceptionSink es )
-{
-	G_DEBUG( "GNet::Socket::addReadHandler: fd " << m_socket ) ;
-	EventLoop::instance().addRead( m_socket , handler , es ) ;
-}
-
-void GNet::Socket::addWriteHandler( EventHandler & handler , ExceptionSink es )
-{
-	G_DEBUG( "GNet::Socket::addWriteHandler: fd " << m_socket ) ;
-	EventLoop::instance().addWrite( m_socket , handler , es ) ;
-}
-
-void GNet::Socket::addOtherHandler( EventHandler & handler , ExceptionSink es )
-{
-	G_DEBUG( "GNet::Socket::addOtherHandler: fd " << m_socket ) ;
-	EventLoop::instance().addOther( m_socket , handler , es ) ;
-}
-
-void GNet::Socket::dropReadHandler()
-{
-	EventLoop::instance().dropRead( m_socket ) ;
-}
-
-void GNet::Socket::dropWriteHandler()
-{
-	EventLoop::instance().dropWrite( m_socket ) ;
-}
-
-void GNet::Socket::dropOtherHandler()
-{
-	EventLoop::instance().dropOther( m_socket ) ;
-}
-
-std::string GNet::Socket::asString() const
-{
-	std::ostringstream ss ;
-	ss << m_socket ;
-	return ss.str() ;
-}
-
 void GNet::Socket::shutdown( int how )
 {
 	if( G::Test::enabled("socket-no-shutdown") ) return ;
-	::shutdown( m_socket.fd() , how ) ;
-}
-
-SOCKET GNet::Socket::fd() const
-{
-	return m_socket.fd() ;
-}
-
-std::string GNet::Socket::reason() const
-{
-	if( m_reason == 0 ) return std::string() ;
-	return reasonString( m_reason ) ;
+	::shutdown( fd() , how ) ;
 }
 
 //==
@@ -276,42 +304,42 @@ GNet::StreamSocket::StreamSocket( int address_domain , const Listener & ) :
 	setOptionsOnCreate( true ) ;
 }
 
-GNet::StreamSocket::StreamSocket( Descriptor s , const Socket::Accepted & accepted ) :
-	Socket(s,accepted)
+GNet::StreamSocket::StreamSocket( int domain , Descriptor s , const Socket::Accepted & accepted ) :
+	Socket(domain,s,accepted)
 {
 	setOptionsOnAccept() ;
 }
 
-GNet::Socket::ssize_type GNet::StreamSocket::read( char * buf , size_type len )
+GNet::Socket::ssize_type GNet::StreamSocket::read( char * buffer , size_type length )
 {
-	if( len == 0 ) return 0 ;
-	m_reason = 0 ;
-	ssize_type nread = G::Msg::recv( m_socket.fd() , buf , len , 0 ) ;
+	if( length == 0 ) return 0 ;
+	clearReason() ;
+	ssize_type nread = G::Msg::recv( fd() , buffer , length , 0 ) ;
 	if( sizeError(nread) )
 	{
 		saveReason() ;
-		G_DEBUG( "GNet::StreamSocket::read: cannot read from " << m_socket.fd() ) ;
+		G_DEBUG( "GNet::StreamSocket::read: cannot read from " << fd() ) ;
 		return -1 ;
 	}
 	return nread ;
 }
 
-GNet::Socket::ssize_type GNet::StreamSocket::write( const char * buf , size_type len )
+GNet::Socket::ssize_type GNet::StreamSocket::write( const char * buffer , size_type length )
 {
-	return Socket::write( buf , len ) ;
+	return writeImp( buffer , length ) ; // SocketBase
 }
 
 GNet::AcceptPair GNet::StreamSocket::accept()
 {
 	AddressStorage addr ;
-	Descriptor new_fd( ::accept(m_socket.fd(),addr.p1(),addr.p2()) ) ;
+	Descriptor new_fd( ::accept(fd(),addr.p1(),addr.p2()) ) ;
 	if( ! new_fd.valid() )
 	{
 		saveReason() ;
 		if( eTooMany() )
-			throw SocketTooMany( "cannot accept on listening socket" , m_reason_string ) ;
+			throw SocketTooMany( "cannot accept on listening socket" , reason() ) ;
 		else
-			throw SocketError( "cannot accept on listening socket" , m_reason_string ) ;
+			throw SocketError( "cannot accept on listening socket" , reason() ) ;
 	}
 
 	if( G::Test::enabled("socket-accept-throws") )
@@ -319,9 +347,9 @@ GNet::AcceptPair GNet::StreamSocket::accept()
 
 	AcceptPair pair ;
 	pair.second = Address( addr.p() , addr.n() ) ;
-	pair.first.reset( new StreamSocket(new_fd,Socket::Accepted()) ) ;
+	pair.first.reset( new StreamSocket(domain(),new_fd,Socket::Accepted()) ) ;
 
-	G_DEBUG( "GNet::StreamSocket::accept: accepted from " << m_socket.fd()
+	G_DEBUG( "GNet::StreamSocket::accept: accepted from " << fd()
 		<< " to " << new_fd << " (" << pair.second.displayString() << ")" ) ;
 
 	return pair ;
@@ -329,24 +357,24 @@ GNet::AcceptPair GNet::StreamSocket::accept()
 
 //==
 
-GNet::DatagramSocket::DatagramSocket( int address_domain ) :
-	Socket( address_domain , SOCK_DGRAM , 0 )
+GNet::DatagramSocket::DatagramSocket( int address_domain , int protocol ) :
+	Socket( address_domain , SOCK_DGRAM , protocol )
 {
 }
 
 void GNet::DatagramSocket::disconnect()
 {
-	int rc = ::connect( m_socket.fd() , 0 , 0 ) ;
+	int rc = ::connect( fd() , nullptr , 0 ) ;
 	if( error(rc) )
 		saveReason() ;
 }
 
-GNet::Socket::ssize_type GNet::DatagramSocket::read( char * buf , size_type len )
+GNet::Socket::ssize_type GNet::DatagramSocket::read( char * buffer , size_type length )
 {
-	if( len == 0 ) return 0 ;
-	sockaddr sender ; // not used
+	if( length == 0 ) return 0 ;
+	sockaddr sender {} ; // not used
 	socklen_t sender_len = sizeof(sender) ;
-	ssize_type nread = G::Msg::recvfrom( m_socket.fd() , buf , len , 0 , &sender , &sender_len ) ;
+	ssize_type nread = G::Msg::recvfrom( fd() , buffer , length , 0 , &sender , &sender_len ) ;
 	if( sizeError(nread) )
 	{
 		saveReason() ;
@@ -355,12 +383,12 @@ GNet::Socket::ssize_type GNet::DatagramSocket::read( char * buf , size_type len 
 	return nread ;
 }
 
-GNet::Socket::ssize_type GNet::DatagramSocket::readfrom( char * buf , size_type len , Address & src_address )
+GNet::Socket::ssize_type GNet::DatagramSocket::readfrom( char * buffer , size_type length , Address & src_address )
 {
-	if( len == 0 ) return 0 ;
-	sockaddr sender ;
+	if( length == 0 ) return 0 ;
+	sockaddr sender {} ;
 	socklen_t sender_len = sizeof(sender) ;
-	ssize_type nread = G::Msg::recvfrom( m_socket.fd() , buf , len , 0 , &sender , &sender_len ) ;
+	ssize_type nread = G::Msg::recvfrom( fd() , buffer , length , 0 , &sender , &sender_len ) ;
 	if( sizeError(nread) )
 	{
 		saveReason() ;
@@ -370,22 +398,24 @@ GNet::Socket::ssize_type GNet::DatagramSocket::readfrom( char * buf , size_type 
 	return nread ;
 }
 
-GNet::Socket::ssize_type GNet::DatagramSocket::writeto( const char * buf , size_type len , const Address & dst )
+GNet::Socket::ssize_type GNet::DatagramSocket::writeto( const char * buffer , size_type length , const Address & dst )
 {
-	ssize_type nsent = G::Msg::sendto( m_socket.fd() , buf , len , MSG_NOSIGNAL , dst.address() , dst.length() ) ;
+	ssize_type nsent = G::Msg::sendto( fd() , buffer , length , MSG_NOSIGNAL , dst.address() , dst.length() ) ;
 	if( nsent < 0 )
 	{
 		saveReason() ;
-		G_DEBUG( "GNet::DatagramSocket::write: write error " << m_reason ) ;
+		G_DEBUG( "GNet::DatagramSocket::write: write error " << reason() ) ;
 		return -1 ;
 	}
 	return nsent ;
 }
 
-GNet::Socket::ssize_type GNet::DatagramSocket::write( const char * buf , size_type len )
+GNet::Socket::ssize_type GNet::DatagramSocket::write( const char * buffer , size_type length )
 {
-	return Socket::write( buf , len ) ;
+	return writeImp( buffer , length ) ; // SocketBase
 }
+
+// ==
 
 void GNet::StreamSocket::setOptionsOnCreate( bool /*listener*/ )
 {
@@ -441,14 +471,14 @@ void GNet::Socket::setOptionNoLinger()
 
 void GNet::Socket::setOptionLingerImp( int onoff , int time )
 {
-	struct linger options ;
+	struct linger options {} ;
 	options.l_onoff = onoff ;
 	options.l_linger = time ;
 	bool ok = setOptionImp( SOL_SOCKET , SO_LINGER , reinterpret_cast<char*>(&options) , sizeof(options) ) ;
 	if( !ok )
 	{
 		saveReason() ;
-		throw SocketError( "cannot set no_linger" , m_reason_string ) ;
+		throw SocketError( "cannot set no_linger" , reason() ) ;
 	}
 }
 
@@ -464,7 +494,7 @@ bool GNet::Socket::setOption( int level , const char * , int op , int arg , NoTh
 void GNet::Socket::setOption( int level , const char * opp , int op , int arg )
 {
 	if( !setOption( level , opp , op , arg , NoThrow() ) )
-		throw SocketError( opp , m_reason_string ) ;
+		throw SocketError( opp , reason() ) ;
 }
 
 /// \file gsocket.cpp

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,12 +23,12 @@
 #include "gprocess.h"
 #include "groot.h"
 #include "glog.h"
-#include <signal.h>
+#include <csignal> // ::sigaction()
 
 extern "C"
 {
 	void gcleanup_unix_handler_( int signum ) ;
-	typedef void (*Handler)( int ) ;
+	using Handler = void (*)(int) ;
 }
 
 namespace G
@@ -67,15 +67,8 @@ private:
 		const char * arg ;
 		Link * next ;
 	} ;
-	struct BlockSignals /// A private implementation class that temporarily blocks signals.
-	{
-		BlockSignals() ;
-		~BlockSignals() ;
-	} ;
 
 private:
-	CleanupImp( const CleanupImp & ) g__eq_delete ;
-	void operator=( const CleanupImp & ) g__eq_delete ;
 	static void init() ;
 	static void install( int , Handler , bool ) ;
 	static void installHandler( int ) ;
@@ -146,7 +139,7 @@ void G::CleanupImp::add( void (*fn)(SignalSafe,const char*) , const char * arg )
 
 G::CleanupImp::Link * G::CleanupImp::new_link_ignore_leak()
 {
-	return new Link ;
+	return new Link ; // ignore leak
 }
 
 void G::CleanupImp::installHandler( int signum )
@@ -159,8 +152,8 @@ void G::CleanupImp::installHandler( int signum )
 
 bool G::CleanupImp::ignored( int signum )
 {
-	static struct sigaction zero_action ;
-	struct sigaction action( zero_action ) ;
+	static struct ::sigaction zero_action ;
+	struct ::sigaction action( zero_action ) ;
 	if( ::sigaction( signum , nullptr , &action ) )
 		throw Cleanup::Error( "sigaction" ) ;
 	return action.sa_handler == SIG_IGN ;
@@ -184,8 +177,8 @@ void G::CleanupImp::installIgnore( int signum )
 void G::CleanupImp::install( int signum , Handler fn , bool do_throw )
 {
 	// install the given handler, or the system default if null
-	static struct sigaction zero_action ;
-	struct sigaction action( zero_action ) ;
+	static struct ::sigaction zero_action ;
+	struct ::sigaction action( zero_action ) ;
 	action.sa_handler = fn ;
 	if( ::sigaction( signum , &action , nullptr ) && do_throw )
 		throw Cleanup::Error( "sigaction" ) ;

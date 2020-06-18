@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,8 +39,7 @@ GSmtp::ExecutableFilter::ExecutableFilter( GNet::ExceptionSink es ,
 }
 
 GSmtp::ExecutableFilter::~ExecutableFilter()
-{
-}
+= default;
 
 bool GSmtp::ExecutableFilter::simple() const
 {
@@ -128,11 +127,11 @@ std::pair<std::string,std::string> GSmtp::ExecutableFilter::parseOutput( std::st
 	G::Str::replaceAll( s , "\r" , "\n" ) ;
 	G::Str::splitIntoFields( s , lines , "\n" ) ;
 
-	for( G::StringArray::iterator p = lines.begin() ; p != lines.end() ; )
+	for( auto p = lines.begin() ; p != lines.end() ; )
 	{
 		std::string line = *p ;
-		size_t pos_start = line.find(start_1) ;
-		size_t pos_end = line.find(end_1) ;
+		std::size_t pos_start = line.find(start_1) ;
+		std::size_t pos_end = line.find(end_1) ;
 		if( pos_start != 0U )
 		{
 			pos_start = line.find(start_2) ;
@@ -155,7 +154,7 @@ std::pair<std::string,std::string> GSmtp::ExecutableFilter::parseOutput( std::st
 	return std::make_pair( response , reason ) ;
 }
 
-G::Slot::Signal1<int> & GSmtp::ExecutableFilter::doneSignal()
+G::Slot::Signal<int> & GSmtp::ExecutableFilter::doneSignal()
 {
 	return m_done_signal ;
 }

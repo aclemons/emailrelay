@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "gstr.h"
 #include <stdexcept>
 #include <algorithm>
+#include <array>
 
 G::StringArray G::ExecutableCommand::osSplit( const std::string & s_in )
 {
@@ -60,11 +61,11 @@ void G::ExecutableCommand::osAddWrapper()
 
 	std::string windows ;
 	{
-		char buffer[MAX_PATH] = { 0 } ;
-		unsigned int n = ::GetWindowsDirectoryA( buffer , MAX_PATH ) ;
+		std::array<char,MAX_PATH> buffer {{ 0 }} ;
+		unsigned int n = ::GetWindowsDirectoryA( &buffer[0] , MAX_PATH ) ;
 		if( n == 0 || n > MAX_PATH )
 			throw std::runtime_error( "cannot determine the windows directory" ) ;
-		windows = std::string( buffer , n ) ;
+		windows = std::string( &buffer[0] , n ) ;
 	}
 
 	// m_exe=<exe>, m_args=[<arg> ...]

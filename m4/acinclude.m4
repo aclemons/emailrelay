@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_CXX],[
 	AC_REQUIRE([GCONFIG_FN_CXX_ALIGNMENT])
 	AC_REQUIRE([GCONFIG_FN_CXX_MOVE])
 	AC_REQUIRE([GCONFIG_FN_CXX_SHARED_PTR])
+	AC_REQUIRE([GCONFIG_FN_CXX_MAKE_UNIQUE])
 	AC_REQUIRE([GCONFIG_FN_CXX_STD_THREAD])
 	AC_REQUIRE([GCONFIG_FN_CXX_STD_WSTRING])
 	AC_REQUIRE([GCONFIG_FN_CXX_DELETED])
@@ -43,6 +44,8 @@ dnl
 AC_DEFUN([GCONFIG_FN_CHECK_FUNCTIONS],[
 	AC_REQUIRE([GCONFIG_FN_GETPWNAM])
 	AC_REQUIRE([GCONFIG_FN_GETPWNAM_R])
+	AC_REQUIRE([GCONFIG_FN_GETGRNAM])
+	AC_REQUIRE([GCONFIG_FN_GETGRNAM_R])
 	AC_REQUIRE([GCONFIG_FN_GMTIME_R])
 	AC_REQUIRE([GCONFIG_FN_GMTIME_S])
 	AC_REQUIRE([GCONFIG_FN_LOCALTIME_R])
@@ -55,6 +58,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_FUNCTIONS],[
 	AC_REQUIRE([GCONFIG_FN_PROC_PIDPATH])
 	AC_REQUIRE([GCONFIG_FN_SETPGRP_BSD])
 	AC_REQUIRE([GCONFIG_FN_SETGROUPS])
+	AC_REQUIRE([GCONFIG_FN_EXECVPE])
 ])
 
 dnl GCONFIG_FN_CHECK_HEADERS
@@ -89,6 +93,9 @@ AC_DEFUN([GCONFIG_FN_CHECK_HEADERS],[
 	AC_CHECK_HEADER([netinet/in.h],
 		AC_DEFINE([GCONFIG_HAVE_NETINET_IN_H],1,[Define true if netinet/in.h is available]),
 		AC_DEFINE([GCONFIG_HAVE_NETINET_IN_H],0,[Define true if netinet/in.h is available]))
+	AC_CHECK_HEADER([net/if.h],
+		AC_DEFINE([GCONFIG_HAVE_NET_IF_H],1,[Define true if net/if.h is available]),
+		AC_DEFINE([GCONFIG_HAVE_NET_IF_H],0,[Define true if net/if.h is available]))
 	AC_CHECK_HEADER([arpa/inet.h],
 		AC_DEFINE([GCONFIG_HAVE_ARPA_INET_H],1,[Define true if arpa/inet.h is available]),
 		AC_DEFINE([GCONFIG_HAVE_ARPA_INET_H],0,[Define true if arpa/inet.h is available]))
@@ -104,6 +111,9 @@ AC_DEFUN([GCONFIG_FN_CHECK_HEADERS],[
 	AC_CHECK_HEADER([errno.h],
 		AC_DEFINE([GCONFIG_HAVE_ERRNO_H],1,[Define true if errno.h is available]),
 		AC_DEFINE([GCONFIG_HAVE_ERRNO_H],0,[Define true if errno.h is available]))
+	AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[#include <iphlpapi.h>]],[[]])],
+		AC_DEFINE([GCONFIG_HAVE_IPHLPAPI_H],1,[Define true if iphlpapi.h is available]),
+		AC_DEFINE([GCONFIG_HAVE_IPHLPAPI_H],0,[Define true if iphlpapi.h is available]))
 ])
 
 dnl GCONFIG_FN_CHECK_NET
@@ -115,6 +125,10 @@ AC_DEFUN([GCONFIG_FN_CHECK_NET],[
 	AC_REQUIRE([GCONFIG_FN_SIN6_LEN])
 	AC_REQUIRE([GCONFIG_FN_INET_NTOP])
 	AC_REQUIRE([GCONFIG_FN_INET_PTON])
+	AC_REQUIRE([GCONFIG_FN_RTNETLINK])
+	AC_REQUIRE([GCONFIG_FN_NETROUTE])
+	AC_REQUIRE([GCONFIG_FN_IFNAMETOINDEX])
+	AC_REQUIRE([GCONFIG_FN_IFNAMETOLUID])
 ])
 
 dnl GCONFIG_FN_CHECK_TYPES
@@ -471,11 +485,38 @@ AC_DEFUN([GCONFIG_FN_CXX_SHARED_PTR],
 	fi
 ])
 
-dnl GCONFIG_FN_CXX_STD_THREAD
-dnl -----------------------------
-dnl Tests for a viable c++ std::thread class under the current compile and link options.
+dnl GCONFIG_FN_CXX_SHARED_PTR
+dnl -------------------------
+dnl Tests for c++ std::make_unique.
 dnl
-AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD_IMP],
+AC_DEFUN([GCONFIG_FN_CXX_MAKE_UNIQUE],
+[AC_CACHE_CHECK([for c++ std::make_unique],[gconfig_cv_cxx_std_make_unique],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <memory>]
+			[#include <utility>]
+			[struct Foo {};]
+		],
+		[
+			[auto ptr = std::make_unique<Foo>() ;]
+		])],
+		gconfig_cv_cxx_std_make_unique=yes ,
+		gconfig_cv_cxx_std_make_unique=no )
+])
+	if test "$gconfig_cv_cxx_std_make_unique" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_CXX_MAKE_UNIQUE,1,[Define true if compiler has std::make_unique])
+	else
+		AC_DEFINE(GCONFIG_HAVE_CXX_MAKE_UNIQUE,0,[Define true if compiler has std::make_unique])
+	fi
+])
+
+dnl GCONFIG_FN_CXX_STD_THREAD_PTHREAD
+dnl ---------------------------------
+dnl Tests for a viable c++ std::thread class under the current compile and link options,
+dnl setting 'gconfig_cxx_std_thread' and adding '-pthread' as necessary.
+dnl
+AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD_PTHREAD],
 [
 	AC_MSG_CHECKING([for c++ std::thread])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM(
@@ -515,16 +556,40 @@ AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD_IMP],
 			LDFLAGS="$gconfig_save_LDFLAGS"
 		fi
 	fi
+])
 
-	if test "$gconfig_cxx_std_thread" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_STD_THREAD,1,[Define true if compiler has std::thread])
-	else
+dnl GCONFIG_FN_CXX_STD_THREAD_IMP
+dnl -----------------------------
+dnl Tests for a viable c++ std::thread class under the current compile and link options
+dnl and adds '-pthread' as necessary. The first parameter is a warning message added to
+dnl gconfig_warnings, something like 'std::thread_multithreading'.
+dnl
+AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD_IMP],
+[
+	if test "$enable_std_thread" = "no"
+	then
 		AC_DEFINE(GCONFIG_HAVE_CXX_STD_THREAD,0,[Define true if compiler has std::thread])
-		gconfig_warnings="$gconfig_warnings $1"
+	else
+		GCONFIG_FN_CXX_STD_THREAD_PTHREAD
+
+		if test "$gconfig_cxx_std_thread" = "yes" ; then
+			AC_DEFINE(GCONFIG_HAVE_CXX_STD_THREAD,1,[Define true if compiler has std::thread])
+		else
+			AC_DEFINE(GCONFIG_HAVE_CXX_STD_THREAD,0,[Define true if compiler has std::thread])
+			gconfig_warnings="$gconfig_warnings $1"
+		fi
 	fi
 ])
 
-AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD], [GCONFIG_FN_CXX_STD_THREAD_IMP([std::thread_asynchronous_script_execution])])
+dnl GCONFIG_FN_CXX_STD_THREAD
+dnl -------------------------
+dnl Calls GCONFIG_FN_CXX_STD_THREAD_IMP with a suitable warning message.
+dnl
+AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD],
+[
+	GCONFIG_FN_CXX_STD_THREAD_IMP([std::thread_asynchronous_script_execution])
+])
+
 dnl GCONFIG_FN_CXX_STD_WSTRING
 dnl --------------------------
 dnl Tests for std::wstring typedef.
@@ -892,6 +957,60 @@ AC_DEFUN([GCONFIG_FN_GETPWNAM_R],
 		AC_DEFINE(GCONFIG_HAVE_GETPWNAM_R,1,[Define true if getpwnam_r in pwd.h])
 	else
 		AC_DEFINE(GCONFIG_HAVE_GETPWNAM_R,0,[Define true if getpwnam_r in pwd.h])
+	fi
+])
+
+dnl GCONFIG_FN_GETGRNAM
+dnl -------------------
+dnl Tests for getgrnam().
+dnl
+AC_DEFUN([GCONFIG_FN_GETGRNAM],
+[AC_CACHE_CHECK([for getgrnam],[gconfig_cv_getgrnam],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <sys/types.h>]
+			[#include <pwd.h>]
+			[struct group * p = 0 ;]
+		],
+		[
+			[p = getgrnam( "x" ) ;]
+		])],
+		gconfig_cv_getgrnam=yes ,
+		gconfig_cv_getgrnam=no )
+])
+	if test "$gconfig_cv_getgrnam" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_GETGRNAM,1,[Define true if getgrnam in pwd.h])
+	else
+		AC_DEFINE(GCONFIG_HAVE_GETGRNAM,0,[Define true if getgrnam in pwd.h])
+	fi
+])
+
+dnl GCONFIG_FN_GETGRNAM_R
+dnl ---------------------
+dnl Tests for getgrnam_r().
+dnl
+AC_DEFUN([GCONFIG_FN_GETGRNAM_R],
+[AC_CACHE_CHECK([for getgrnam_r],[gconfig_cv_getgrnam_r],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <sys/types.h>]
+			[#include <pwd.h>]
+			[char buf[100] ;]
+			[struct group p ;]
+			[struct group * p_out = 0 ;]
+		],
+		[
+			[getgrnam_r( "x" , &p , buf , 100U , &p_out ) ;]
+		])],
+		gconfig_cv_getgrnam_r=yes ,
+		gconfig_cv_getgrnam_r=no )
+])
+	if test "$gconfig_cv_getgrnam_r" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_GETGRNAM_R,1,[Define true if getgrnam_r in pwd.h])
+	else
+		AC_DEFINE(GCONFIG_HAVE_GETGRNAM_R,0,[Define true if getgrnam_r in pwd.h])
 	fi
 ])
 
@@ -1263,6 +1382,59 @@ AC_DEFUN([GCONFIG_FN_PAM_IN_INCLUDE],
 ])
 ])
 
+dnl GCONFIG_FN_PAM_CONST
+dnl --------------------
+dnl Tests for constness of the PAM API. Use after GCONFIG_FN_PAM.
+dnl
+AC_DEFUN([GCONFIG_FN_PAM_CONST],
+[AC_CACHE_CHECK([for pam constness],[gconfig_cv_pam_const],
+[
+	if test "$gconfig_cv_pam_in_security" = "yes"
+	then
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+			[
+				[#include <security/pam_appl.h>]
+				[const void * vp = 0; pam_handle_t * pam = 0; int rc = 0;]
+			],
+			[
+				[rc = pam_get_item( pam , PAM_USER , &vp )]
+			])],
+			gconfig_cv_pam_const=yes ,
+			gconfig_cv_pam_const=no )
+	else
+		if test "$gconfig_cv_pam_in_pam" = "yes"
+		then
+			AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+				[
+					[#include <pam/pam_appl.h>]
+					[const void * vp = 0; pam_handle_t * pam = 0; int rc = 0;]
+				],
+				[
+					[rc = pam_get_item( pam , PAM_USER , &vp )]
+				])],
+				gconfig_cv_pam_const=yes ,
+				gconfig_cv_pam_const=no )
+		else
+			AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+				[
+					[#include <pam_appl.h>]
+					[const void * vp = 0; pam_handle_t * pam = 0; int rc = 0;]
+				],
+				[
+					[rc = pam_get_item( pam , PAM_USER , &vp )]
+				])],
+				gconfig_cv_pam_const=yes ,
+				gconfig_cv_pam_const=no )
+		fi
+	fi
+])
+	if test "$gconfig_cv_pam_const" = "yes" ; then
+		AC_DEFINE(GCONFIG_PAM_CONST,1,[Define true if the PAM API uses const])
+	else
+		AC_DEFINE(GCONFIG_PAM_CONST,0,[Define true if the PAM API uses const])
+	fi
+])
+
 dnl GCONFIG_FN_PROC_PIDPATH
 dnl -----------------------
 dnl Tests for proc_pidpath() (osx).
@@ -1426,6 +1598,32 @@ AC_DEFUN([GCONFIG_FN_READLINK],
 		AC_DEFINE(GCONFIG_HAVE_READLINK,1,[Define true if have readlink() in unistd.h])
 	else
 		AC_DEFINE(GCONFIG_HAVE_READLINK,0,[Define true if have readlink() in unistd.h])
+	fi
+])
+
+dnl GCONFIG_FN_EXECVPE
+dnl ------------------
+dnl Tests for execvpe().
+dnl
+AC_DEFUN([GCONFIG_FN_EXECVPE],
+[AC_CACHE_CHECK([for execvpe],[gconfig_cv_execvpe],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <unistd.h>]
+			[char * array[] = { 0 , 0 } ;]
+			[int rc = 0 ;]
+		],
+		[
+			[rc = execvpe( "path" , array , array ) ;]
+		])],
+		gconfig_cv_execvpe=yes ,
+		gconfig_cv_execvpe=no )
+])
+	if test "$gconfig_cv_execvpe" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_EXECVPE,1,[Define true if have execvpe() in unistd.h])
+	else
+		AC_DEFINE(GCONFIG_HAVE_EXECVPE,0,[Define true if have execvpe() in unistd.h])
 	fi
 ])
 
@@ -2109,6 +2307,7 @@ dnl
 AC_DEFUN([GCONFIG_FN_WITH_PAM],
 [
 	AC_REQUIRE([GCONFIG_FN_PAM])
+	AC_REQUIRE([GCONFIG_FN_PAM_CONST])
 
 	if test "$with_pam" = "no"
 	then
@@ -2147,5 +2346,150 @@ AC_DEFUN([GCONFIG_FN_WITH_PAM],
 		AC_DEFINE(GCONFIG_HAVE_PAM,0,[Define true to use pam])
 	fi
 	AM_CONDITIONAL([GCONFIG_PAM],[test "$gconfig_use_pam" = "yes"])
+])
+
+dnl GCONFIG_FN_RTNETLINK
+dnl --------------------
+dnl Tests for linux rtnetlink.
+dnl
+AC_DEFUN([GCONFIG_FN_RTNETLINK],
+[AC_CACHE_CHECK([for rtnetlink],[gconfig_cv_rtnetlink],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <asm/types.h>]
+			[#include <sys/socket.h>]
+			[#include <linux/netlink.h>]
+			[#include <linux/rtnetlink.h>]
+		] ,
+		[
+			[int type = AF_NETLINK ;]
+			[int protocol = NETLINK_ROUTE ;]
+			[struct sockaddr_nl sa ;]
+			[sa.nl_family = AF_NETLINK ;]
+			[sa.nl_groups = RTMGRP_LINK | RTMGRP_IPV4_IFADDR | RTMGRP_IPV6_IFADDR ;]
+		])] ,
+		[gconfig_cv_rtnetlink=yes],
+		[gconfig_cv_rtnetlink=no])
+])
+	if test "$gconfig_cv_rtnetlink" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_RTNETLINK,1,[Define true to enable use of linux rtnetlink])
+	else
+		AC_DEFINE(GCONFIG_HAVE_RTNETLINK,0,[Define true to enable use of linux rtnetlink])
+		if test "`uname`" = "Linux" ; then
+			gconfig_warnings="$gconfig_warnings rtnetlink_network_interface_event_notification"
+		fi
+	fi
+])
+
+dnl GCONFIG_FN_NETROUTE
+dnl --------------------
+dnl Tests for BSD routing sockets.
+dnl
+AC_DEFUN([GCONFIG_FN_NETROUTE],
+[AC_CACHE_CHECK([for routing sockets],[gconfig_cv_netroute],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <sys/types.h>]
+			[#include <sys/time.h>]
+			[#include <sys/socket.h>]
+			[#include <net/if.h>]
+			[#include <net/route.h>]
+			[struct rt_msghdr header1 ;]
+			[struct ifa_msghdr header2 ;]
+		] ,
+		[
+			[int fd = socket( PF_ROUTE , SOCK_RAW , AF_INET ) ;]
+			[header1.rtm_msglen = header2.ifam_msglen = 0 ;]
+			[header1.rtm_type = RTM_ADD ;]
+			[header2.ifam_type = RTM_NEWADDR ;]
+		])] ,
+		[gconfig_cv_netroute=yes],
+		[gconfig_cv_netroute=no])
+])
+	if test "$gconfig_cv_netroute" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_NETROUTE,1,[Define true to enable use of bsd routing sockets])
+	else
+		AC_DEFINE(GCONFIG_HAVE_NETROUTE,0,[Define true to enable use of bsd routing sockets])
+		if test "`uname`" = "NetBSD" -o "`uname`" = "FreeBSD" -o "`uname`" = "OpenBSD" ; then
+			gconfig_warnings="$gconfig_warnings netroute_network_interface_event_notification"
+		fi
+	fi
+])
+
+dnl GCONFIG_FN_ENABLE_INTERFACE_NAMES
+dnl ---------------------------------
+dnl Enables interface-name source files in makefiles unless
+dnl "--disable-interface-names" is used. Typically used
+dnl after AC_ARG_ENABLE(interface-names).
+dnl
+AC_DEFUN([GCONFIG_FN_ENABLE_INTERFACE_NAMES],
+[
+	AM_CONDITIONAL([GCONFIG_INTERFACE_NAMES],test "$enable_interface_names" != "no")
+])
+
+dnl GCONFIG_FN_IFNAMETOINDEX
+dnl -------------------------
+dnl Tests for if_nametoindex().
+dnl
+AC_DEFUN([GCONFIG_FN_IFNAMETOINDEX],
+[AC_CACHE_CHECK([for if_nametoindex()],[gconfig_cv_ifnametoindex],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <winsock2.h>]
+				[#include <windows.h>]
+				[#include <ws2tcpip.h>]
+				[#include <iphlpapi.h>]
+			[#else]
+				[#include <arpa/inet.h>]
+				[#include <net/if.h>]
+			[#endif]
+			[unsigned int i = 0 ;]
+		],
+		[
+			[i = if_nametoindex("net0") ;]
+		])],
+		gconfig_cv_ifnametoindex=yes ,
+		gconfig_cv_ifnametoindex=no )
+])
+	if test "$gconfig_cv_ifnametoindex" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_IFNAMETOINDEX,1,[Define true if if_nametoindex() is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_IFNAMETOINDEX,0,[Define true if if_nametoindex() is available])
+	fi
+])
+
+dnl GCONFIG_FN_IFNAMETOLUID
+dnl -----------------------
+dnl Tests for
+dnl
+AC_DEFUN([GCONFIG_FN_IFNAMETOLUID],
+[AC_CACHE_CHECK([for ConvertInterfaceNameToLuid()],[gconfig_cv_ifnametoluid],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <winsock2.h>]
+				[#include <windows.h>]
+				[#include <ws2tcpip.h>]
+				[#include <iphlpapi.h>]
+			[#endif]
+			[NET_LUID luid ;]
+
+		],
+		[
+			[ConvertInterfaceNameToLuidA( "eth0" , &luid ) ;]
+		])],
+		gconfig_cv_ifnametoluid=yes ,
+		gconfig_cv_ifnametoluid=no )
+])
+	if test "$gconfig_cv_ifnametoluid" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_IFNAMETOLUID,1,[Define true if ConvertInterfaceNameToLuid() is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_IFNAMETOLUID,0,[Define true if ConvertInterfaceNameToLuid() is available])
+	fi
 ])
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 //
 
 #include "gdef.h"
+#include "gscope.h"
 #include "gevent.h"
 #include "geventhandlerlist.h"
 #include "gprocess.h"
@@ -50,13 +51,13 @@ public:
 	void init( const EventHandlerList & ) ;
 	void raiseEvents( EventHandlerList & , void (EventHandler::*method)() ) ;
 	void raiseEvents( EventHandlerList & , void (EventHandler::*method)(EventHandler::Reason) , EventHandler::Reason ) ;
-	void invalidate() ;
+	void invalidate() noexcept ;
 	int fdmax( int = 0 ) const ;
 	fd_set * operator()() ;
 
 private:
-	bool m_valid ;
-	int m_fdmax ;
+	bool m_valid{false} ;
+	int m_fdmax{0} ;
 	fd_set m_set_internal ; // set from EventHandlerList
 	fd_set m_set_external ; // passed to select() and modified by it
 } ;
@@ -70,32 +71,36 @@ class GNet::EventLoopImp : public EventLoop
 public:
 	G_EXCEPTION( Error , "select() error" ) ;
 	EventLoopImp() ;
-	virtual ~EventLoopImp() ;
+	~EventLoopImp() override ;
 
 private: // overrides
-	virtual std::string run() override ;
-	virtual bool running() const override ;
-	virtual void quit( const std::string & ) override ;
-	virtual void quit( const G::SignalSafe & ) override ;
-	virtual void addRead( Descriptor fd , EventHandler & , ExceptionSink ) override ;
-	virtual void addWrite( Descriptor fd , EventHandler & , ExceptionSink ) override ;
-	virtual void addOther( Descriptor fd , EventHandler & , ExceptionSink ) override ;
-	virtual void dropRead( Descriptor fd ) override ;
-	virtual void dropWrite( Descriptor fd ) override ;
-	virtual void dropOther( Descriptor fd ) override ;
-	virtual std::string report() const override ;
-	virtual void disarm( ExceptionHandler * ) override ;
+	std::string run() override ;
+	bool running() const override ;
+	void quit( const std::string & ) override ;
+	void quit( const G::SignalSafe & ) override ;
+	void addRead( Descriptor fd , EventHandler & , ExceptionSink ) override ;
+	void addWrite( Descriptor fd , EventHandler & , ExceptionSink ) override ;
+	void addOther( Descriptor fd , EventHandler & , ExceptionSink ) override ;
+	void dropRead( Descriptor fd ) noexcept override ;
+	void dropWrite( Descriptor fd ) noexcept override ;
+	void dropOther( Descriptor fd ) noexcept override ;
+	std::string report() const override ;
+	void disarm( ExceptionHandler * ) noexcept override ;
+
+public:
+	EventLoopImp( const EventLoopImp & ) = delete ;
+	EventLoopImp( EventLoopImp && ) = delete ;
+	void operator=( const EventLoopImp & ) = delete ;
+	void operator=( EventLoopImp && ) = delete ;
 
 private:
-	EventLoopImp( const EventLoopImp & ) g__eq_delete ;
-	void operator=( const EventLoopImp & ) g__eq_delete ;
 	void runOnce() ;
 	static void check( int ) ;
 
 private:
-	bool m_quit ;
+	bool m_quit{false} ;
 	std::string m_quit_reason ;
-	bool m_running ;
+	bool m_running{false} ;
 	EventHandlerList m_read_list ;
 	FdSet m_read_set ;
 	EventHandlerList m_write_list ;
@@ -106,18 +111,15 @@ private:
 
 // ===
 
-GNet::FdSet::FdSet() :
-	m_valid(false) ,
-	m_fdmax(0)
-{
-}
+GNet::FdSet::FdSet() // NOLINT cppcoreguidelines-pro-type-member-init
+= default;
 
 fd_set * GNet::FdSet::operator()()
 {
 	return &m_set_external ;
 }
 
-void GNet::FdSet::invalidate()
+void GNet::FdSet::invalidate() noexcept
 {
 	m_valid = false ;
 }
@@ -135,7 +137,7 @@ void GNet::FdSet::init( const EventHandlerList & list )
 	{
 		// copy the event-handler-list into the internal fd-set
 		m_fdmax = 0 ;
-		FD_ZERO( &m_set_internal ) ;
+		FD_ZERO( &m_set_internal ) ; // NOLINT readability-isolate-declaration
 		const EventHandlerList::Iterator end = list.end() ;
 		for( EventHandlerList::Iterator p = list.begin() ; p != end ; ++p )
 		{
@@ -194,8 +196,6 @@ GNet::EventLoop * GNet::EventLoop::create()
 // ===
 
 GNet::EventLoopImp::EventLoopImp() :
-	m_quit(false) ,
-	m_running(false) ,
 	m_read_list("read") ,
 	m_write_list("write") ,
 	m_other_list("other")
@@ -203,12 +203,11 @@ GNet::EventLoopImp::EventLoopImp() :
 }
 
 GNet::EventLoopImp::~EventLoopImp()
-{
-}
+= default;
 
 std::string GNet::EventLoopImp::run()
 {
-	EventLoop::Running running( m_running ) ;
+	G::ScopeExitSetFalse running( m_running = true ) ;
 	do
 	{
 		runOnce() ;
@@ -246,18 +245,18 @@ void GNet::EventLoopImp::runOnce()
 
 	// get a timeout interval() from TimerList
 	//
-	typedef struct timeval Timeval ;
+	using Timeval = struct timeval ;
 	Timeval timeout ;
 	Timeval * timeout_p = nullptr ;
 	bool timeout_immediate = false ;
-	if( TimerList::instance(TimerList::NoThrow()) != nullptr )
+	if( TimerList::ptr() != nullptr )
 	{
 		std::pair<G::TimeInterval,bool> interval_pair = TimerList::instance().interval() ;
 		G::TimeInterval interval = interval_pair.first ;
 		bool timeout_infinite = interval_pair.second ;
-		timeout_immediate = !timeout_infinite && interval.s == 0 && interval.us == 0U ;
-		timeout.tv_sec = interval.s ;
-		timeout.tv_usec = interval.us ;
+		timeout_immediate = !timeout_infinite && interval.s() == 0 && interval.us() == 0U ;
+		timeout.tv_sec = interval.s() ;
+		timeout.tv_usec = interval.us() ;
 		timeout_p = timeout_infinite ? nullptr : &timeout ;
 	}
 
@@ -337,25 +336,25 @@ void GNet::EventLoopImp::check( int fd )
 		throw EventLoop::Overflow( "too many open file descriptors for select()" ) ;
 }
 
-void GNet::EventLoopImp::dropRead( Descriptor fd )
+void GNet::EventLoopImp::dropRead( Descriptor fd ) noexcept
 {
 	m_read_list.remove( fd ) ;
 	m_read_set.invalidate() ;
 }
 
-void GNet::EventLoopImp::dropWrite( Descriptor fd )
+void GNet::EventLoopImp::dropWrite( Descriptor fd ) noexcept
 {
 	m_write_list.remove( fd ) ;
 	m_write_set.invalidate() ;
 }
 
-void GNet::EventLoopImp::dropOther( Descriptor fd )
+void GNet::EventLoopImp::dropOther( Descriptor fd ) noexcept
 {
 	m_other_list.remove( fd ) ;
 	m_other_set.invalidate() ;
 }
 
-void GNet::EventLoopImp::disarm( ExceptionHandler * p )
+void GNet::EventLoopImp::disarm( ExceptionHandler * p ) noexcept
 {
 	m_read_list.disarm( p ) ;
 	m_write_list.disarm( p ) ;

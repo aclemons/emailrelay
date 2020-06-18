@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -94,8 +94,8 @@ private:
 	void switchPage( const std::string & new_page_name , const std::string & old_page_name = std::string() , bool back = false ) ;
 
 private:
-	typedef std::list<std::string> History ;
-	typedef std::map<std::string,GPage*> Map ;
+	using History = std::list<std::string> ;
+	using Map = std::map<std::string,GPage*> ;
 	Map m_map ;
 	History m_history ;
 	bool m_first ;

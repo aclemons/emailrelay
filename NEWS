@@ -1,15 +1,17 @@
 News
 ----
-E-MailRelay 2.1 removes the backwards-compatibility features that were put in
-to make the migration from 1.9 to 2.0 smoother. Refer to the NEWS file from
-the 2.0 release for the details.
+E-MailRelay 2.2 is now fully C++11, so older compilers will not work unless
+they have a "-std=c++11" option or similar, and this also means that
+"uclibc++" is no longer supported.
 
-The creation of ".local" files for local-mailbox recipients has changed slightly
-in this release in that normal message files are not created if the message only
-has local-mailbox recipients. This will affect users of the "--address-verifier"
-option where the verifier script returns zero.
+The behaviour with respect to the "--remote-clients" command-line option is
+changed in this release: previously IPv4 connections were allowed only from
+the host's local address, as determined by a DNS lookup, unless using
+"--remote-clients". The new implementation allows connections from any
+loopback or 'private use' address, defined in RFC-1918 and RFC-5735. This
+brings the IPv4 behaviour in line with IPv6, and it still honours the intent
+of the "--remote-clients" option in protecting the naive user against
+accidental exposore to the public internet.
 
-The 2.1 release continues the migration from C++1998 to C++2011. It is still
-possible to use C++1998, but in addition to loosing multithreading you might
-also loose the installation/configuration GUI since Qt has dropped support for
-C++1998.
+This release has a new "make lint" option that runs "clang-tidy" over the
+code and also "make cmake" to generate simple cmake files for a unix build.

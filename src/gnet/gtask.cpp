@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "gfutureevent.h"
 #include "gnewprocess.h"
 #include "gstr.h"
+#include "gassert.h"
 #include "glog.h"
 
 /// \class GNet::TaskImp
@@ -31,13 +32,14 @@
 class GNet::TaskImp : private FutureEventHandler
 {
 public:
-	TaskImp( Task & , ExceptionSink es , const G::ExecutableCommand & ,
-		const std::string & exec_error_format , const G::Identity & id ) ;
-			// Constructor. Spawns the child processes and starts the
-			// associated wait() thread.
+	TaskImp( Task & , ExceptionSink es , bool sync ,
+		const G::ExecutableCommand & , const G::Environment & env ,
+		G::NewProcess::Fd fd_stdin , G::NewProcess::Fd fd_stdout , G::NewProcess::Fd fd_stderr ,
+		const G::Path & cd , const std::string & exec_error_format , const G::Identity & id ) ;
+			// Constructor. Spawns the child processes.
 			//
 			// The GNet::FutureEvent class is used to send the completion
-			// message from the wait() thread to the main thread via
+			// message from the waitpid(2) thread to the main thread via
 			// the event-loop.
 			//
 			// In a single-threaded build, or if multi-threading is broken,
@@ -45,23 +47,31 @@ public:
 			// and posts the completion message to the event-loop
 			// before this constructor returns.
 
-	static std::pair<int,std::string> run( const G::ExecutableCommand & ,
-		const std::string & exec_error_format , const G::Identity & id ) ;
-			// Runs the task synchronously.
-
-	virtual ~TaskImp() ;
+	~TaskImp() override ;
 		// Destructor.
+
+	void start() ;
+		// Starts a waitpid() thread asynchronously that emits a
+		// FutureEvent when done.
+
+	std::pair<int,std::string> wait() ;
+		// Runs waitpid() synchronously.
+		// Precondition: ctor 'sync'
 
 	void kill() ;
 		// Kills the task.
 
 private: // overrides
-	virtual void onFutureEvent() override ; // Override from GNet::FutureEventHandler.
+	void onFutureEvent() override ; // Override from GNet::FutureEventHandler.
+
+public:
+	TaskImp( const TaskImp & ) = delete ;
+	TaskImp( TaskImp && ) = delete ;
+	void operator=( const TaskImp & ) = delete ;
+	void operator=( TaskImp && ) = delete ;
 
 private:
-	TaskImp( const TaskImp & ) g__eq_delete ;
-	void operator=( const TaskImp & ) g__eq_delete ;
-	static void wait( TaskImp * , FutureEvent::handle_type ) ; // thread function
+	static void waitThread( TaskImp * , FutureEvent::handle_type ) ; // thread function
 
 private:
 	Task & m_task ;
@@ -72,24 +82,37 @@ private:
 
 // ==
 
-GNet::TaskImp::TaskImp( Task & task , ExceptionSink es ,
-	const G::ExecutableCommand & commandline , const std::string & exec_error_format ,
+GNet::TaskImp::TaskImp( Task & task , ExceptionSink es , bool sync ,
+	const G::ExecutableCommand & commandline , const G::Environment & env ,
+	G::NewProcess::Fd fd_stdin , G::NewProcess::Fd fd_stdout , G::NewProcess::Fd fd_stderr ,
+	const G::Path & cd , const std::string & exec_error_format ,
 	const G::Identity & id ) :
 		m_task(task) ,
 		m_future_event(*this,es) ,
-		m_process(commandline.exe(),commandline.args(),/*stdxxx=*/1,
-			/*cleanenv=*/true,/*strictpath=*/true,id,/*strictid=*/true,
-			/*execerrorexit=*/127,exec_error_format)
+		m_process(commandline.exe(),commandline.args(),
+			env,
+			fd_stdin ,
+			fd_stdout ,
+			fd_stderr ,
+			cd ,
+			true , // strict path
+			id ,
+			true, // strict id
+			127 , // exec error exit
+			exec_error_format )
 {
-	if( ! G::threading::works() ) // grr
+	if( sync )
+	{
+	}
+	else if( !G::threading::works() )
 	{
 		if( G::threading::using_std_thread )
 			G_WARNING_ONCE( "GNet::TaskImp::TaskImp: multi-threading disabled: running tasks synchronously" ) ;
-		wait( this , m_future_event.handle() ) ;
+		waitThread( this , m_future_event.handle() ) ;
 	}
 	else
 	{
-		m_thread = G::threading::thread_type( TaskImp::wait , this , m_future_event.handle() ) ;
+		m_thread = G::threading::thread_type( TaskImp::waitThread , this , m_future_event.handle() ) ;
 	}
 }
 
@@ -107,7 +130,13 @@ GNet::TaskImp::~TaskImp()
 	}
 }
 
-void GNet::TaskImp::wait( TaskImp * This , FutureEvent::handle_type handle )
+std::pair<int,std::string> GNet::TaskImp::wait()
+{
+	m_process.wait().run() ;
+	return std::make_pair( m_process.wait().get() , m_process.wait().output() ) ;
+}
+
+void GNet::TaskImp::waitThread( TaskImp * This , FutureEvent::handle_type handle )
 {
 	// worker-thread -- keep it simple
 	try
@@ -133,10 +162,10 @@ void GNet::TaskImp::onFutureEvent()
 	int exit_code = m_process.wait().get() ;
 	G_DEBUG( "GNet::TaskImp::onFutureEvent: exit code " << exit_code ) ;
 
-	std::string output = m_process.wait().output() ;
-	G_DEBUG( "GNet::TaskImp::onFutureEvent: output: [" << G::Str::printable(output) << "]" ) ;
+	std::string pipe_output = m_process.wait().output() ;
+	G_DEBUG( "GNet::TaskImp::onFutureEvent: output: [" << G::Str::printable(pipe_output) << "]" ) ;
 
-	m_task.done( exit_code , output ) ; // last
+	m_task.done( exit_code , pipe_output ) ; // last
 }
 
 void GNet::TaskImp::kill()
@@ -157,16 +186,45 @@ GNet::Task::Task( TaskCallback & callback , ExceptionSink es ,
 }
 
 GNet::Task::~Task()
+= default;
+
+std::pair<int,std::string> GNet::Task::run( const G::ExecutableCommand & commandline ,
+	const G::Environment & env ,
+	G::NewProcess::Fd fd_stdin ,
+	G::NewProcess::Fd fd_stdout ,
+	G::NewProcess::Fd fd_stderr ,
+	const G::Path & cd )
 {
+	G_ASSERT( !m_busy ) ;
+	m_imp = std::make_unique<TaskImp>( *this , m_es , true , commandline ,
+		env , fd_stdin , fd_stdout , fd_stderr , cd ,
+		m_exec_error_format , m_id ) ;
+	return m_imp->wait() ;
 }
 
 void GNet::Task::start( const G::ExecutableCommand & commandline )
+{
+	start( commandline , G::Environment::minimal() ,
+		G::NewProcess::Fd::devnull() ,
+		G::NewProcess::Fd::pipe() ,
+		G::NewProcess::Fd::devnull() ,
+		G::Path() ) ;
+}
+
+void GNet::Task::start( const G::ExecutableCommand & commandline ,
+	const G::Environment & env ,
+	G::NewProcess::Fd fd_stdin ,
+	G::NewProcess::Fd fd_stdout ,
+	G::NewProcess::Fd fd_stderr ,
+	const G::Path & cd )
 {
 	if( m_busy )
 		throw Busy() ;
 
 	m_busy = true ;
-	m_imp.reset( new TaskImp( *this , m_es , commandline , m_exec_error_format , m_id ) ) ;
+	m_imp = std::make_unique<TaskImp>( *this , m_es , false , commandline ,
+		env , fd_stdin , fd_stdout , fd_stderr , cd ,
+		m_exec_error_format , m_id ) ;
 }
 
 void GNet::Task::stop()
@@ -176,15 +234,9 @@ void GNet::Task::stop()
 	m_imp.reset() ;
 }
 
-void GNet::Task::done( int exit_code , std::string output )
+void GNet::Task::done( int exit_code , const std::string & output )
 {
 	m_busy = false ;
 	m_callback.onTaskDone( exit_code , output ) ;
-}
-
-// ==
-
-GNet::TaskCallback::~TaskCallback()
-{
 }
 

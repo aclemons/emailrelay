@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ GAuth::SecretsFile::SecretsFile( const G::Path & path , bool auto_reread , const
 		m_debug_name(debug_name) ,
 		m_server_type(G::Str::lower(server_type)) ,
 		m_file_time(0) ,
-		m_check_time(G::DateTime::now())
+		m_check_time(G::SystemTime::now())
 {
 	m_server_type = m_server_type.empty() ? std::string("server") : m_server_type ;
 	m_valid = ! path.str().empty() ;
@@ -80,12 +80,12 @@ void GAuth::SecretsFile::reread( int )
 {
 	if( m_auto )
 	{
-		G::EpochTime now = G::DateTime::now() ;
+		G::SystemTime now = G::SystemTime::now() ;
 		G_DEBUG( "GAuth::SecretsFile::reread: file time checked at " << m_check_time << ": now " << now ) ;
-		if( now != m_check_time ) // at most once a second
+		if( !now.sameSecond(m_check_time) ) // at most once a second
 		{
 			m_check_time = now ;
-			G::EpochTime t = readFileTime( m_path ) ;
+			G::SystemTime t = readFileTime( m_path ) ;
 			G_DEBUG( "GAuth::SecretsFile::reread: current file time " << t << ": saved file time " << m_file_time ) ;
 			if( t != m_file_time )
 			{
@@ -103,7 +103,7 @@ void GAuth::SecretsFile::read( const G::Path & path , bool strict_side )
 	showWarnings( m_contents.m_warnings , path , m_debug_name ) ;
 }
 
-G::EpochTime GAuth::SecretsFile::readFileTime( const G::Path & path )
+G::SystemTime GAuth::SecretsFile::readFileTime( const G::Path & path )
 {
 	G::Root claim_root ;
 	return G::File::time( path ) ;
@@ -111,17 +111,17 @@ G::EpochTime GAuth::SecretsFile::readFileTime( const G::Path & path )
 
 GAuth::SecretsFile::Contents GAuth::SecretsFile::readContents( const G::Path & path , const std::string & server_type , bool strict_side )
 {
-	unique_ptr<std::ifstream> file ;
+	std::unique_ptr<std::ifstream> file ;
 	{
 		G::Root claim_root ;
-		file.reset( new std::ifstream( path.str().c_str() ) ) ;
+		file = std::make_unique<std::ifstream>( path.str().c_str() ) ;
 	}
 	if( !file->good() )
 	{
 		throw Secrets::OpenError( path.str() ) ;
 	}
 
-	return readContents( *file.get() , server_type , strict_side ) ;
+	return readContents( *file , server_type , strict_side ) ;
 }
 
 GAuth::SecretsFile::Contents GAuth::SecretsFile::readContents( std::istream & file , const std::string & server_type , bool strict_side )
@@ -207,13 +207,13 @@ void GAuth::SecretsFile::addWarning( Contents & contents , unsigned int line_num
 
 void GAuth::SecretsFile::showWarnings( const Warnings & warnings , const G::Path & path , const std::string & debug_name )
 {
-	if( warnings.size() )
+	if( !warnings.empty() )
 	{
 		std::string prefix = path.basename() ;
 		G_WARNING( "GAuth::SecretsFile::read: problems reading" << (debug_name.empty()?"":" ") << debug_name << " secrets file [" << path.str() << "]..." ) ;
-		for( Warnings::const_iterator p = warnings.begin() ; p != warnings.end() ; ++p )
+		for( const auto & warning : warnings )
 		{
-			G_WARNING( "GAuth::SecretsFile::read: " << prefix << "(" << (*p).first << "): " << (*p).second ) ;
+			G_WARNING( "GAuth::SecretsFile::read: " << prefix << "(" << warning.first << "): " << warning.second ) ;
 		}
 	}
 }
@@ -249,7 +249,7 @@ GAuth::Secret GAuth::SecretsFile::clientSecret( const std::string & encoding_typ
 {
 	reread() ;
 
-	Map::const_iterator p = m_contents.m_map.find( clientKey(encoding_type) ) ;
+	auto p = m_contents.m_map.find( clientKey(encoding_type) ) ;
 	if( p == m_contents.m_map.end() )
 	{
 		return Secret::none() ;
@@ -269,7 +269,7 @@ GAuth::Secret GAuth::SecretsFile::serverSecret( const std::string & encoding_typ
 
 	reread() ;
 
-	Map::const_iterator p = m_contents.m_map.find( serverKey(encoding_type,G::Xtext::encode(id)) ) ;
+	auto p = m_contents.m_map.find( serverKey(encoding_type,G::Xtext::encode(id)) ) ;
 	if( p == m_contents.m_map.end() )
 	{
 		return Secret::none( id ) ;
@@ -284,8 +284,8 @@ std::pair<std::string,std::string> GAuth::SecretsFile::serverTrust( const std::s
 {
 	std::pair<std::string,std::string> result ;
 	std::string encoding_type = "none" ;
-	std::string id = address_range ; // the address-range lives in the id field
-	Map::const_iterator p = m_contents.m_map.find( serverKey(encoding_type,G::Xtext::encode(id)) ) ;
+	const std::string & id = address_range ; // the address-range lives in the id field
+	auto p = m_contents.m_map.find( serverKey(encoding_type,G::Xtext::encode(id)) ) ;
 	if( p != m_contents.m_map.end() )
 	{
 		result.first = (*p).second.s ; // the trustee name lives in the shared-secret field

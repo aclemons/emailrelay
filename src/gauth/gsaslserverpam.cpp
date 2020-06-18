@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ private:
 private:
 	bool m_active ;
 	bool m_allow_apop ;
-	unique_ptr<PamImp> m_pam ;
+	std::unique_ptr<PamImp> m_pam ;
 } ;
 
 /// \class GAuth::PamImp
@@ -63,18 +63,18 @@ private:
 class GAuth::PamImp : public G::Pam
 {
 public:
-	typedef GAuth::PamImp::ItemArray ItemArray ;
+	using ItemArray = GAuth::PamImp::ItemArray ;
 	G_EXCEPTION_CLASS( NoPrompt , "no password prompt received from pam module" ) ;
 
 	PamImp( const std::string & app , const std::string & id ) ;
-	virtual ~PamImp() ;
+	~PamImp() override ;
 	void fail() ;
 	void apply( const std::string & ) ;
 	std::string id() const ;
 
 protected:
-	virtual void converse( ItemArray & ) override ;
-	virtual void delay( unsigned int usec ) override ;
+	void converse( ItemArray & ) override ;
+	void delay( unsigned int usec ) override ;
 
 private:
 	PamImp( const PamImp & ) ;
@@ -95,8 +95,7 @@ GAuth::PamImp::PamImp( const std::string & app , const std::string & id ) :
 }
 
 GAuth::PamImp::~PamImp()
-{
-}
+= default;
 
 std::string GAuth::PamImp::id() const
 {
@@ -106,12 +105,12 @@ std::string GAuth::PamImp::id() const
 void GAuth::PamImp::converse( ItemArray & items )
 {
 	bool done = false ;
-	for( ItemArray::iterator p = items.begin() ; p != items.end() ; ++p )
+	for( auto & item : items )
 	{
-		if( (*p).in_type == "password" )
+		if( item.in_type == "password" )
 		{
-			(*p).out = m_pwd ;
-			(*p).out_defined = true ;
+			item.out = m_pwd ;
+			item.out_defined = true ;
 			done = true ;
 		}
 	}
@@ -144,8 +143,7 @@ GAuth::SaslServerPamImp::SaslServerPamImp( bool active , const std::string & /*c
 }
 
 GAuth::SaslServerPamImp::~SaslServerPamImp()
-{
-}
+= default;
 
 bool GAuth::SaslServerPamImp::active() const
 {
@@ -172,7 +170,7 @@ std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool 
 	std::string id = G::Str::head( s , s.find(sep) , std::string() ) ;
 	std::string pwd = G::Str::tail( s , s.find(sep) , std::string() ) ;
 
-	m_pam.reset( new PamImp( "emailrelay" , id ) ) ;
+	m_pam = std::make_unique<PamImp>( "emailrelay" , id ) ;
 
 	try
 	{
@@ -196,14 +194,12 @@ std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool 
 // ==
 
 GAuth::SaslServerPam::SaslServerPam( const SaslServerSecrets & secrets , const std::string & config , bool allow_apop ) :
-	m_imp(new SaslServerPamImp(secrets.valid(),config,allow_apop))
+	m_imp(std::make_unique<SaslServerPamImp>(secrets.valid(),config,allow_apop))
 {
 }
 
 GAuth::SaslServerPam::~SaslServerPam()
-{
-	delete m_imp ;
-}
+= default ;
 
 std::string GAuth::SaslServerPam::mechanisms( char ) const
 {

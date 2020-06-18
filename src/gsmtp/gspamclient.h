@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -72,17 +72,23 @@ public:
 		///< Sets the username used in the network protocol.
 
 private: // overrides
-	virtual void onConnect() override ; // Override from GNet::SimpleClient.
-	virtual bool onReceive( const char * , size_t , size_t , size_t , char ) override ; // Override from GNet::Client.
-	virtual void onSendComplete() override ; // Override from GNet::SimpleClient.
-	virtual void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
-	virtual void onDelete( const std::string & ) override ; // Override from GNet::HeapClient.
+	void onConnect() override ; // Override from GNet::SimpleClient.
+	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::Client.
+	void onSendComplete() override ; // Override from GNet::SimpleClient.
+	void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
+	void onDelete( const std::string & ) override ; // Override from GNet::HeapClient.
+
+public:
+	~SpamClient() override = default ;
+	SpamClient( const SpamClient & ) = delete ;
+	SpamClient( SpamClient && ) = delete ;
+	void operator=( const SpamClient & ) = delete ;
+	void operator=( SpamClient && ) = delete ;
 
 private:
-	SpamClient( const SpamClient & ) g__eq_delete ;
-	void operator=( const SpamClient & ) g__eq_delete ;
 	void onTimeout() ;
 	void start() ;
+	static GNet::Client::Config netConfig( unsigned int connect_timeout , unsigned int response_timeout ) ;
 
 private:
 	struct Request
@@ -99,6 +105,10 @@ private:
 	{
 		explicit Response( bool read_only ) ;
 		~Response() ;
+		Response( const Response & ) = delete ;
+		Response( Response && ) = delete ;
+		void operator=( const Response & ) = delete ;
+		void operator=( Response && ) = delete ;
 		void add( const std::string & , const std::string & ) ;
 		bool ok( const std::string & ) const ;
 		bool complete() const ;
@@ -108,8 +118,8 @@ private:
 		std::string m_path_tmp ;
 		std::string m_path_final ;
 		std::ofstream m_stream ;
-		size_t m_content_length ;
-		size_t m_size ;
+		std::size_t m_content_length ;
+		std::size_t m_size ;
 		std::string m_result ;
 	} ;
 

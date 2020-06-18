@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,29 +44,33 @@ public:
 		unsigned int connection_timeout , unsigned int response_timeout ) ;
 			///< Constructor.
 
-	virtual ~NetworkFilter() ;
+	~NetworkFilter() override ;
 		///< Destructor.
 
 private: // overrides
-	virtual std::string id() const override ; // Override from from GSmtp::Filter.
-	virtual bool simple() const override ; // Override from from GSmtp::Filter.
-	virtual G::Slot::Signal1<int> & doneSignal() override ; // Override from from GSmtp::Filter.
-	virtual void start( const std::string & path ) override ; // Override from from GSmtp::Filter.
-	virtual void cancel() override ; // Override from from GSmtp::Filter.
-	virtual bool abandoned() const override ; // Override from from GSmtp::Filter.
-	virtual std::string response() const override ; // Override from from GSmtp::Filter.
-	virtual std::string reason() const override ; // Override from from GSmtp::Filter.
-	virtual bool special() const override ; // Override from from GSmtp::Filter.
+	std::string id() const override ; // Override from from GSmtp::Filter.
+	bool simple() const override ; // Override from from GSmtp::Filter.
+	G::Slot::Signal<int> & doneSignal() override ; // Override from from GSmtp::Filter.
+	void start( const std::string & path ) override ; // Override from from GSmtp::Filter.
+	void cancel() override ; // Override from from GSmtp::Filter.
+	bool abandoned() const override ; // Override from from GSmtp::Filter.
+	std::string response() const override ; // Override from from GSmtp::Filter.
+	std::string reason() const override ; // Override from from GSmtp::Filter.
+	bool special() const override ; // Override from from GSmtp::Filter.
+
+public:
+	NetworkFilter( const NetworkFilter & ) = delete ;
+	NetworkFilter( NetworkFilter && ) = delete ;
+	void operator=( const NetworkFilter & ) = delete ;
+	void operator=( NetworkFilter && ) = delete ;
 
 private:
-	NetworkFilter( const NetworkFilter & ) g__eq_delete ;
-	void operator=( const NetworkFilter & ) g__eq_delete ;
-	void clientEvent( std::string , std::string , std::string ) ;
-	void clientDeleted( std::string ) ;
+	void clientEvent( const std::string & , const std::string & , const std::string & ) ;
+	void clientDeleted( const std::string & ) ;
 
 private:
 	GNet::ExceptionSink m_es ;
-	G::Slot::Signal1<int> m_done_signal ;
+	G::Slot::Signal<int> m_done_signal ;
 	GNet::Location m_location ;
 	unsigned int m_connection_timeout ;
 	unsigned int m_response_timeout ;

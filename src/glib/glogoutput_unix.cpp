@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,28 +23,31 @@
 #include <syslog.h>
 #include <iostream>
 
-namespace
+namespace G
 {
-	int decode( G::LogOutput::SyslogFacility facility )
+	namespace LogOutputImp
 	{
-		if( facility == G::LogOutput::SyslogFacility::User ) return LOG_USER ;
-		if( facility == G::LogOutput::SyslogFacility::Daemon ) return LOG_DAEMON ;
-		if( facility == G::LogOutput::SyslogFacility::Mail ) return LOG_MAIL ;
-		if( facility == G::LogOutput::SyslogFacility::Cron ) return LOG_CRON ;
-		// etc...
-		return LOG_USER ;
-	}
-	int decode( G::Log::Severity severity )
-	{
-		if( severity == G::Log::Severity::s_Warning ) return LOG_WARNING ;
-		if( severity == G::Log::Severity::s_Error ) return LOG_ERR ;
-		if( severity == G::Log::Severity::s_LogSummary ) return LOG_INFO ;
-		if( severity == G::Log::Severity::s_LogVerbose ) return LOG_INFO ;
-		return LOG_CRIT ;
-	}
-	int mode( G::LogOutput::SyslogFacility facility , G::Log::Severity severity )
-	{
-		return decode(facility) | decode(severity) ;
+		int decode( G::LogOutput::SyslogFacility facility )
+		{
+			if( facility == G::LogOutput::SyslogFacility::User ) return LOG_USER ;
+			if( facility == G::LogOutput::SyslogFacility::Daemon ) return LOG_DAEMON ;
+			if( facility == G::LogOutput::SyslogFacility::Mail ) return LOG_MAIL ;
+			if( facility == G::LogOutput::SyslogFacility::Cron ) return LOG_CRON ;
+			// etc...
+			return LOG_USER ;
+		}
+		int decode( G::Log::Severity severity )
+		{
+			if( severity == G::Log::Severity::s_Warning ) return LOG_WARNING ;
+			if( severity == G::Log::Severity::s_Error ) return LOG_ERR ;
+			if( severity == G::Log::Severity::s_InfoSummary ) return LOG_INFO ;
+			if( severity == G::Log::Severity::s_InfoVerbose ) return LOG_INFO ;
+			return LOG_CRIT ;
+		}
+		int mode( G::LogOutput::SyslogFacility facility , G::Log::Severity severity )
+		{
+			return decode(facility) | decode(severity) ;
+		}
 	}
 }
 
@@ -55,12 +58,12 @@ void G::LogOutput::open( std::ofstream & file , const std::string & path )
 
 void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity , const std::string & message )
 {
-	if( severity != Log::Severity::s_Debug && m_syslog )
+	if( severity != Log::Severity::s_Debug && m_config.m_use_syslog )
 	{
-		::syslog( mode(m_facility,severity) , "%s" , message.c_str() ) ;
+		::syslog( LogOutputImp::mode(m_facility,severity) , "%s" , message.c_str() ) ;
 	}
 
-	if( !m_quiet || severity == Log::Severity::s_Error || severity == Log::Severity::s_Warning )
+	if( !m_config.m_quiet_stderr || severity == Log::Severity::s_Error || severity == Log::Severity::s_Warning )
 	{
 		std_err << message << std::endl ;
 	}
@@ -68,23 +71,18 @@ void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity
 
 void G::LogOutput::init()
 {
-	if( m_syslog )
-		::openlog( nullptr , LOG_PID , decode(m_facility) ) ;
+	if( m_config.m_use_syslog )
+		::openlog( nullptr , LOG_PID , LogOutputImp::decode(m_facility) ) ;
 }
 
 void G::LogOutput::register_( const std::string & )
 {
 }
 
-void G::LogOutput::cleanup()
+void G::LogOutput::cleanup() const noexcept
 {
-	if( m_syslog )
+	if( m_config.m_use_syslog )
 		::closelog() ;
-}
-
-void G::LogOutput::getLocalTime( time_t epoch_time , struct std::tm * broken_down_time_p )
-{
-	localtime_r( &epoch_time , broken_down_time_p ) ; // see gdef.h
 }
 
 /// \file glogoutput_unix.cpp

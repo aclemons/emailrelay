@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ public:
 	ResolverImp( Resolver & , ExceptionSink , const Location & ) ;
 		// Constructor.
 
-	virtual ~ResolverImp() ;
+	~ResolverImp() override ;
 		// Destructor. The destructor will block if the worker thread is
 		// still busy.
 
@@ -55,30 +55,34 @@ public:
 		// to signal the main thread. The event plumbing then results in a
 		// call to Resolver::done() on the main thread.
 
-	static size_t count() ;
+	static std::size_t count() ;
 		// Returns the number of objects.
 
 private: // overrides
-	virtual void onFutureEvent() override ; // GNet::FutureEventHandler
+	void onFutureEvent() override ; // GNet::FutureEventHandler
+
+public:
+	ResolverImp( const ResolverImp & ) = delete ;
+	ResolverImp( ResolverImp && ) = delete ;
+	void operator=( const ResolverImp & ) = delete ;
+	void operator=( ResolverImp && ) = delete ;
 
 private:
-	ResolverImp( const ResolverImp & ) g__eq_delete ;
-	void operator=( const ResolverImp & ) g__eq_delete ;
 	void onTimeout() ;
 
 private:
-	typedef ResolverFuture::Pair Pair ;
+	using Pair = ResolverFuture::Pair ;
 	Resolver * m_resolver ;
-	unique_ptr<FutureEvent> m_future_event ;
+	std::unique_ptr<FutureEvent> m_future_event ;
 	Timer<ResolverImp> m_timer ;
 	Location m_location ;
 	ResolverFuture m_future ;
 	G::threading::thread_type m_thread ;
 	bool m_busy ;
-	static size_t m_instance_count ;
+	static std::size_t m_instance_count ;
 } ;
 
-size_t GNet::ResolverImp::m_instance_count = 0U ;
+std::size_t GNet::ResolverImp::m_instance_count = 0U ;
 
 GNet::ResolverImp::ResolverImp( Resolver & resolver , ExceptionSink es , const Location & location ) :
 	m_resolver(&resolver) ,
@@ -103,7 +107,7 @@ GNet::ResolverImp::~ResolverImp()
 	m_instance_count-- ;
 }
 
-size_t GNet::ResolverImp::count()
+std::size_t GNet::ResolverImp::count()
 {
 	return m_instance_count ;
 }
@@ -139,7 +143,7 @@ void GNet::ResolverImp::onFutureEvent()
 		m_location.update( result.first , result.second ) ;
 
 	G_DEBUG( "GNet::ResolverImp::onFutureEvent: [" << m_future.reason() << "][" << m_location.displayString() << "]" ) ;
-	resolver->done( m_future.reason() , m_location ) ;
+	resolver->done( std::string(m_future.reason()) , Location(m_location) ) ; // must take copies
 }
 
 void GNet::ResolverImp::doDelete()
@@ -167,20 +171,20 @@ GNet::Resolver::Resolver( Resolver::Callback & callback , ExceptionSink es ) :
 
 GNet::Resolver::~Resolver()
 {
-	const size_t sanity_limit = 50U ; // dtor blocks after this limit
-	if( m_imp.get() != nullptr && ResolverImp::count() < sanity_limit )
+	const std::size_t sanity_limit = 50U ; // dtor blocks after this limit
+	if( m_imp != nullptr && ResolverImp::count() < sanity_limit )
 	{
 		// release the imp to an independent lifetime until its getaddrinfo() completes
 		G_DEBUG( "GNet::Resolver::dtor: releasing still-busy thread: " << ResolverImp::count() ) ;
 		m_imp->doDelete() ;
-		m_imp.release() ;
+		G_IGNORE_RETURN( m_imp.release() ) ; // deleted in onTimeout() -- dtor blocks in thread::join()
 	}
 }
 
 std::string GNet::Resolver::resolve( Location & location )
 {
 	// synchronous resolve
-	typedef ResolverFuture::Pair Pair ;
+	using Pair = ResolverFuture::Pair ;
 	G_DEBUG( "GNet::Resolver::resolve: resolve request [" << location.displayString() << "] (" << location.family() << ")" ) ;
 	ResolverFuture future( location.host() , location.service() , location.family() , location.dgram() ) ;
 	future.run() ; // blocks until complete
@@ -216,10 +220,10 @@ void GNet::Resolver::start( const Location & location )
 	if( !EventLoop::instance().running() ) throw Error("no event loop") ;
 	if( busy() ) throw BusyError() ;
 	G_DEBUG( "GNet::Resolver::start: resolve start [" << location.displayString() << "]" ) ;
-	m_imp.reset( new ResolverImp(*this,m_es,location) ) ;
+	m_imp = std::make_unique<ResolverImp>( *this , m_es , location ) ;
 }
 
-void GNet::Resolver::done( std::string error , Location location )
+void GNet::Resolver::done( const std::string & error , const Location & location )
 {
 	// callback from the event loop after worker thread is done
 	G_DEBUG( "GNet::Resolver::done: resolve done: error=[" << error << "] location=[" << location.displayString() << "]" ) ;
@@ -229,7 +233,7 @@ void GNet::Resolver::done( std::string error , Location location )
 
 bool GNet::Resolver::busy() const
 {
-	return m_imp.get() != nullptr ;
+	return m_imp != nullptr ;
 }
 
 bool GNet::Resolver::async()
@@ -243,11 +247,5 @@ bool GNet::Resolver::async()
 		G_DEBUG( "GNet::Resolver::async: not multi-threaded: using synchronous domain name lookup");
 		return false ;
 	}
-}
-
-// ==
-
-GNet::Resolver::Callback::~Callback()
-{
 }
 

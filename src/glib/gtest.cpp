@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,27 +26,30 @@
 #include <set>
 
 #if defined(_DEBUG) || defined(G_TEST_ENABLED)
-namespace
+namespace G
 {
-	bool done = false ;
-	std::string spec ;
+	namespace TestImp
+	{
+		bool done = false ;
+		std::string spec ;
+	}
 }
 void G::Test::set( const std::string & s )
 {
-	done = true ;
-	spec = s ;
+	TestImp::done = true ;
+	TestImp::spec = s ;
 }
 bool G::Test::enabled( const char * name )
 {
-	if( !done )
+	if( !TestImp::done )
 	{
-		spec = Environment::get("G_TEST",std::string()) ;
-		if( !spec.empty() )
-			spec = "," + spec + "," ;
+		TestImp::spec = Environment::get("G_TEST",std::string()) ;
+		if( !TestImp::spec.empty() )
+			TestImp::spec = "," + TestImp::spec + "," ;
 	}
-	done = true ;
+	TestImp::done = true ;
 
-	bool result = spec.empty() ? false : ( spec.find(","+std::string(name)+",") != std::string::npos ) ;
+	bool result = TestImp::spec.empty() ? false : ( TestImp::spec.find(","+std::string(name)+",") != std::string::npos ) ;
 	if( result )
 	{
 		static std::set<std::string> warned ;

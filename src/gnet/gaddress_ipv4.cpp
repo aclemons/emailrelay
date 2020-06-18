@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,14 +31,13 @@ namespace GNet
 	class Address6
 	{
 	} ;
-}
-
-namespace
-{
-	void check( GNet::Address::Family f )
+	namespace AddressImp
 	{
-		if( !GNet::Address::supports(f) )
-			throw GNet::Address::BadFamily() ;
+		void check( GNet::Address::Family f )
+		{
+			if( !Address::supports(f) )
+				throw Address::BadFamily() ;
+		}
 	}
 }
 
@@ -47,22 +46,25 @@ bool GNet::Address::supports( Family f )
 	return f == Family::ipv4 ;
 }
 
+bool GNet::Address::supports( int af , int )
+{
+	return af == AF_INET ;
+}
+
 GNet::Address GNet::Address::defaultAddress()
 {
 	return Address( Family::ipv4 , 0U ) ;
 }
 
-#if GCONFIG_HAVE_CXX_MOVE
-GNet::Address::Address( Address && other ) g__noexcept :
+GNet::Address::Address( Address && other ) noexcept :
 	m_4imp(other.m_4imp.release())
 {
 }
-#endif
 
 GNet::Address::Address( Family f , unsigned int port ) :
 	m_4imp( new Address4(port) )
 {
-	check( f ) ;
+	AddressImp::check( f ) ;
 }
 
 GNet::Address::Address( const AddressStorage & storage ) :
@@ -93,14 +95,13 @@ GNet::Address::Address( const Address & other ) :
 GNet::Address::Address( Family f , unsigned int port , int loopback_overload ) :
 	m_4imp( new Address4(port,loopback_overload) )
 {
-	check( f ) ;
+	AddressImp::check( f ) ;
 }
 
 GNet::Address::~Address()
-{
-}
+= default;
 
-void GNet::Address::swap( Address & other ) g__noexcept
+void GNet::Address::swap( Address & other ) noexcept
 {
 	using std::swap ;
 	swap( m_4imp , other.m_4imp ) ;
@@ -112,22 +113,31 @@ GNet::Address & GNet::Address::operator=( const Address & other )
 	return *this ;
 }
 
-#if GCONFIG_HAVE_CXX_MOVE
-GNet::Address & GNet::Address::operator=( Address && other ) g__noexcept
+GNet::Address & GNet::Address::operator=( Address && other ) noexcept
 {
 	Address(std::move(other)).swap( *this ) ;
 	return *this ;
 }
-#endif
 
 GNet::Address GNet::Address::loopback( Family f , unsigned int port )
 {
 	return Address( f , port , 1 ) ;
 }
 
-void GNet::Address::setPort( unsigned int port )
+GNet::Address & GNet::Address::setPort( unsigned int port )
 {
 	m_4imp->setPort( port ) ;
+	return *this ;
+}
+
+GNet::Address & GNet::Address::setScopeId( unsigned long )
+{
+	return *this ; // not relevant for ipv4
+}
+
+bool GNet::Address::setZone( const std::string & )
+{
+	return true ; // not relevant for ipv4
 }
 
 unsigned int GNet::Address::bits() const
@@ -145,14 +155,39 @@ bool GNet::Address::isLocal( std::string & reason ) const
 	return m_4imp->isLocal( reason ) ;
 }
 
-bool GNet::Address::isPrivate() const
+bool GNet::Address::isLinkLocal() const
 {
-	return m_4imp->isPrivate() ;
+	return m_4imp->isLinkLocal() ;
+}
+
+bool GNet::Address::isUniqueLocal() const
+{
+	return m_4imp->isUniqueLocal() ;
+}
+
+bool GNet::Address::isAny() const
+{
+	return m_4imp->isAny() ;
+}
+
+bool GNet::Address::is4() const
+{
+	return true ;
+}
+
+bool GNet::Address::is6() const
+{
+	return false ;
+}
+
+bool GNet::Address::same( const Address & other , bool ) const
+{
+	return m_4imp->same( *other.m_4imp ) ;
 }
 
 bool GNet::Address::operator==( const Address & other ) const
 {
-	return m_4imp->same(*other.m_4imp) ;
+	return m_4imp->same( *other.m_4imp ) ;
 }
 
 bool GNet::Address::operator!=( const Address & other ) const
@@ -267,8 +302,7 @@ GNet::AddressStorage::AddressStorage() :
 }
 
 GNet::AddressStorage::~AddressStorage()
-{
-}
+= default;
 
 sockaddr * GNet::AddressStorage::p1()
 {
@@ -302,8 +336,7 @@ int GNet::inet_pton_imp( int f , const char * p , void * result )
 	}
 	else if( f == AF_INET )
 	{
-		static sockaddr_in sa_zero ;
-		sockaddr_in sa = sa_zero ;
+		sockaddr_in sa {} ;
 		sa.sin_family = AF_INET ;
 		sa.sin_addr.s_addr = inet_addr( p ) ;
 		*reinterpret_cast<struct in_addr*>(result) = sa.sin_addr ;
@@ -318,7 +351,7 @@ int GNet::inet_pton_imp( int f , const char * p , void * result )
 
 #if ! GCONFIG_HAVE_INET_NTOP
 // fallback implementation for inet_ntop() -- see gdef.h
-const char * GNet::inet_ntop_imp( int f , void * ap , char * buffer , size_t n )
+const char * GNet::inet_ntop_imp( int f , void * ap , char * buffer , std::size_t n )
 {
 	if( f == AF_INET )
 	{

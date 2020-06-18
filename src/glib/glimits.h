@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,25 +37,25 @@ class G::limits
 public:
 
  #ifndef G_SMALL
-	G_CONSTANT( int , log , 1000 ) ; // log line limit
-	G_CONSTANT( int , file_buffer , 102400 ) ; // cf. BUFSIZ
-	G_CONSTANT( int , file_slurp , 100000000 ) ;  // read file into contiguous memory
-	G_CONSTANT( int , pipe_buffer , 4096 ) ; // one-off read from a pipe
-	G_CONSTANT( int , net_buffer , 20000 ) ; // best if bigger than the TLS maximum block size of 16k
-	G_CONSTANT( int , net_file_limit , 200000000 ) ; // d.o.s. network read file limit
-	G_CONSTANT( int , net_listen_queue , 3 ) ;
+	static constexpr int log = 1000 ; // log line limit
+	static constexpr int file_buffer = 102400 ; // cf. BUFSIZ
+	static constexpr int file_slurp = 100000000 ;  // read file into contiguous memory
+	static constexpr int pipe_buffer = 4096 ; // one-off read from a pipe
+	static constexpr int net_buffer = 20000 ; // best if bigger than the TLS maximum block size of 16k
+	static constexpr int net_file_limit = 200000000 ; // d.o.s. network read file limit
+	static constexpr int net_listen_queue = 3 ;
  #else
-	G_CONSTANT( int , log , 120 ) ;
-	G_CONSTANT( int , file_buffer , 128 ) ;
-	G_CONSTANT( int , file_slurp , 10000000 ) ;
-	G_CONSTANT( int , pipe_buffer , 128 ) ;
-	G_CONSTANT( int , net_buffer , 512 ) ;
-	G_CONSTANT( int , net_file_limit , 10000000 ) ;
-	G_CONSTANT( int , net_listen_queue , 3 ) ;
+	static constexpr int log = 120 ;
+	static constexpr int file_buffer = 128 ;
+	static constexpr int file_slurp = 10000000 ;
+	static constexpr int pipe_buffer = 128 ;
+	static constexpr int net_buffer = 512 ;
+	static constexpr int net_file_limit = 10000000 ;
+	static constexpr int net_listen_queue = 3 ;
  #endif
 
-private:
-	limits() g__eq_delete ;
+public:
+	limits() = delete ;
 } ;
 
 #endif

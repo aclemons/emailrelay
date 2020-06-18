@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,22 +45,28 @@ public:
 	G_EXCEPTION( FileError , "message store error" ) ;
 
 	NewFile( FileStore & store , const std::string & from , const std::string & from_auth_in ,
-		const std::string & from_auth_out , size_t max_size , bool test_for_eight_bit ) ;
+		const std::string & from_auth_out , std::size_t max_size , bool test_for_eight_bit ) ;
 			///< Constructor. The FileStore reference is kept.
 
-	virtual ~NewFile() ;
+	~NewFile() override ;
 		///< Destructor. If the new message has not been
 		///< commit()ed then the files are deleted.
 
 	G::Path contentPath() const ;
 		///< Returns the path of the content file.
 
+public:
+	NewFile( const NewFile & ) = delete ;
+	NewFile( NewFile && ) = delete ;
+	void operator=( const NewFile & ) = delete ;
+	void operator=( NewFile && ) = delete ;
+
 private: // overrides
-	virtual void commit( bool strict ) override ; // Override from GSmtp::NewMessage.
-	virtual unsigned long id() const override ; // Override from GSmtp::NewMessage.
-	virtual void addTo( const std::string & to , bool local ) override ; // Override from GSmtp::NewMessage.
-	virtual bool addText( const char * , size_t ) override ; // Override from GSmtp::NewMessage.
-	virtual std::string prepare( const std::string & auth_id , const std::string & peer_socket_address ,
+	void commit( bool strict ) override ; // Override from GSmtp::NewMessage.
+	unsigned long id() const override ; // Override from GSmtp::NewMessage.
+	void addTo( const std::string & to , bool local ) override ; // Override from GSmtp::NewMessage.
+	bool addText( const char * , std::size_t ) override ; // Override from GSmtp::NewMessage.
+	std::string prepare( const std::string & auth_id , const std::string & peer_socket_address ,
 		const std::string & peer_certificate ) override ; // Override from GSmtp::NewMessage.
 
 private:
@@ -70,7 +76,7 @@ private:
 	bool commitEnvelope() ;
 	void deleteContent() ;
 	void deleteEnvelope() ;
-	static bool isEightBit( const char * , size_t ) ;
+	static bool isEightBit( const char * , std::size_t ) ;
 	static const char * crlf() ;
 	static std::string xnormalise( const std::string & ) ;
 	bool saveEnvelope( const std::string & auth_id , const std::string & peer_socket_address ,
@@ -89,7 +95,7 @@ private:
 	std::string m_from_auth_out ;
 	G::StringArray m_to_local ;
 	G::StringArray m_to_remote ;
-	unique_ptr<std::ofstream> m_content ;
+	std::unique_ptr<std::ofstream> m_content ;
 	G::Path m_content_path ;
 	G::Path m_envelope_path_0 ;
 	G::Path m_envelope_path_1 ;
@@ -97,8 +103,8 @@ private:
 	bool m_test_for_eight_bit ;
 	int m_eight_bit ;
 	bool m_saved ;
-	size_t m_size ;
-	size_t m_max_size ;
+	std::size_t m_size ;
+	std::size_t m_max_size ;
 } ;
 
 #endif

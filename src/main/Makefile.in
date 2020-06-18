@@ -165,8 +165,7 @@ am__DEPENDENCIES_1 =
 @GCONFIG_WINDOWS_TRUE@	$(RESOURCES) $(am__DEPENDENCIES_1)
 emailrelay_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_LDFLAGS) $(LDFLAGS) -o $@
-am_emailrelay_filter_copy_OBJECTS = filter_copy.$(OBJEXT) \
-	filter.$(OBJEXT) legal.$(OBJEXT)
+am_emailrelay_filter_copy_OBJECTS = filter.$(OBJEXT) legal.$(OBJEXT)
 emailrelay_filter_copy_OBJECTS = $(am_emailrelay_filter_copy_OBJECTS)
 @GCONFIG_WINDOWS_FALSE@emailrelay_filter_copy_DEPENDENCIES =  \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/glib/libglib.a
@@ -402,7 +401,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-GCONFIG_CONFIGURATION = @GCONFIG_CONFIGURATION@
 GCONFIG_HAVE_DOXYGEN = @GCONFIG_HAVE_DOXYGEN@
 GCONFIG_HAVE_MAN2HTML = @GCONFIG_HAVE_MAN2HTML@
 GCONFIG_QT_CFLAGS = @GCONFIG_QT_CFLAGS@
@@ -473,6 +471,7 @@ e_icondir = @e_icondir@
 e_initdir = @e_initdir@
 e_libexecdir = @e_libexecdir@
 e_pamdir = @e_pamdir@
+e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
 exec_prefix = @exec_prefix@
@@ -516,8 +515,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/gauth \
 	-I$(top_srcdir)/src/gsmtp \
 	-I$(top_srcdir)/src/gpop \
-	-D "G_SPOOLDIR=$(e_spooldir)" \
-	-D "GCONFIG_CONFIGURATION=$(GCONFIG_CONFIGURATION)"
+	-D "G_SPOOLDIR=$(e_spooldir)"
 
 WINDOWS_MAIN_SOURCES = \
 	winmain.cpp \
@@ -616,7 +614,7 @@ MISC_EXTRA_DIST = \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
 @GCONFIG_WINDOWS_TRUE@	$(RESOURCES) \
 @GCONFIG_WINDOWS_TRUE@	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
-@GCONFIG_WINDOWS_TRUE@	-lgdi32 -lws2_32 -ladvapi32 -lcomctl32
+@GCONFIG_WINDOWS_TRUE@	-lgdi32 -lws2_32 -liphlpapi -ladvapi32 -lcomctl32
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_textmode_SOURCES = $(TEXTMODE_MAIN_SOURCES) $(OTHER_SOURCES)
 @GCONFIG_WINDOWS_TRUE@emailrelay_textmode_LDFLAGS = -static
@@ -630,7 +628,7 @@ MISC_EXTRA_DIST = \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/win32/libextra.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
 @GCONFIG_WINDOWS_TRUE@	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
-@GCONFIG_WINDOWS_TRUE@	-lws2_32 -lcomctl32
+@GCONFIG_WINDOWS_TRUE@	-lws2_32 -liphlpapi -lcomctl32
 
 emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_FALSE@emailrelay_passwd_LDFLAGS = 
@@ -644,7 +642,7 @@ emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
 @GCONFIG_WINDOWS_TRUE@	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
-@GCONFIG_WINDOWS_TRUE@	-lws2_32 -lcomctl32
+@GCONFIG_WINDOWS_TRUE@	-lws2_32 -liphlpapi -lcomctl32
 
 emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_FALSE@emailrelay_submit_FLAGS = 
@@ -661,9 +659,9 @@ emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/gnet/libgnet.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/win32/libextra.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
-@GCONFIG_WINDOWS_TRUE@	-lws2_32 -lcomctl32
+@GCONFIG_WINDOWS_TRUE@	-lws2_32 -liphlpapi -lcomctl32
 
-emailrelay_filter_copy_SOURCES = filter_copy.cpp filter.cpp filter.h legal.cpp legal.h
+emailrelay_filter_copy_SOURCES = filter.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_FALSE@emailrelay_filter_copy_LDFLAGS = 
 @GCONFIG_WINDOWS_TRUE@emailrelay_filter_copy_LDFLAGS = -static
 @GCONFIG_WINDOWS_FALSE@emailrelay_filter_copy_LDADD = \
@@ -671,14 +669,14 @@ emailrelay_filter_copy_SOURCES = filter_copy.cpp filter.cpp filter.h legal.cpp l
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_filter_copy_LDADD = \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
-@GCONFIG_WINDOWS_TRUE@	-lws2_32 -lcomctl32
+@GCONFIG_WINDOWS_TRUE@	-lws2_32 -liphlpapi -lcomctl32
 
 emailrelay_start_SOURCES = start.cpp
 @GCONFIG_WINDOWS_FALSE@emailrelay_start_LDFLAGS = 
 @GCONFIG_WINDOWS_TRUE@emailrelay_start_LDFLAGS = -static
 @GCONFIG_WINDOWS_FALSE@emailrelay_start_LDADD = 
 @GCONFIG_WINDOWS_TRUE@emailrelay_start_LDADD = \
-@GCONFIG_WINDOWS_TRUE@	-lws2_32 -lcomctl32
+@GCONFIG_WINDOWS_TRUE@	-lws2_32 -liphlpapi -lcomctl32
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_service_SOURCES = \
 @GCONFIG_WINDOWS_TRUE@	$(WINDOWS_SERVICE_SOURCES)
@@ -687,7 +685,7 @@ emailrelay_start_SOURCES = start.cpp
 @GCONFIG_WINDOWS_TRUE@emailrelay_service_LDADD = \
 @GCONFIG_WINDOWS_TRUE@	libmain.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
-@GCONFIG_WINDOWS_TRUE@	-lws2_32 -lcomctl32
+@GCONFIG_WINDOWS_TRUE@	-lws2_32 -liphlpapi -lcomctl32
 
 all: all-recursive
 
@@ -852,7 +850,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/commandline.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/configuration.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter_copy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/legal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/licence.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@

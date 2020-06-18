@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,34 +22,37 @@
 #include "gconvert.h"
 #include "glog.h"
 
-namespace
+namespace G
 {
-	void warn_if( bool b )
+	namespace ConvertImp
 	{
-		static bool warned = false ;
-		if( b && !warned )
+		void warn_if( bool b )
 		{
-			G_WARNING( "G::Convert::convert: no iconv library built in: character set conversions will be incorrect" ) ;
-			warned = true ;
+			static bool warned = false ;
+			if( b && !warned )
+			{
+				G_WARNING( "G::Convert::convert: no iconv library built in: character set conversions will be incorrect" ) ;
+				warned = true ;
+			}
 		}
 	}
 }
 
 std::wstring G::Convert::widen( const std::string & s , bool utf8 , const std::string & /*context*/ )
 {
-	warn_if( utf8 ) ;
+	ConvertImp::warn_if( utf8 ) ;
 	std::wstring result ;
-	for( std::string::const_iterator p = s.begin() ; p != s.end() ; ++p )
-		result.append( 1U , static_cast<wchar_t>(*p) ) ;
+	for( char c : s )
+		result.append( 1U , static_cast<wchar_t>(c) ) ;
 	return result ;
 }
 
 std::string G::Convert::narrow( const std::wstring & s , bool utf8 , const std::string & /*context*/ )
 {
-	warn_if( utf8 ) ;
+	ConvertImp::warn_if( utf8 ) ;
 	std::string result ;
-	for( std::wstring::const_iterator p = s.begin() ; p != s.end() ; ++p )
-		result.append( 1U , static_cast<char>(*p) ) ;
+	for( wchar_t wc : s )
+		result.append( 1U , static_cast<char>(wc) ) ;
 	return result ;
 }
 

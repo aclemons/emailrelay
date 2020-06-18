@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gsocks.h"
 #include "gassert.h"
+#include <array>
 
 GNet::Socks::Socks( const Location & location ) :
 	m_request_offset(0U)
@@ -66,16 +67,16 @@ bool GNet::Socks::send( G::ReadWrite & io )
 		return true ;
 
 	const char * p = m_request.data() + m_request_offset ;
-	size_t n = m_request.size() - m_request_offset ;
+	std::size_t n = m_request.size() - m_request_offset ;
 
 	ssize_t rc = io.write( p , n ) ;
 	if( rc < 0 && !io.eWouldBlock() )
 	{
 		throw SocksError( "socket write error" ) ;
 	}
-	else if( rc < 0 || static_cast<size_t>(rc) < n )
+	else if( rc < 0 || static_cast<std::size_t>(rc) < n )
 	{
-		size_t nsent = rc < 0 ? size_t(0U) : static_cast<size_t>(rc) ;
+		std::size_t nsent = rc < 0 ? std::size_t(0U) : static_cast<std::size_t>(rc) ;
 		m_request_offset += nsent ;
 		return false ;
 	}
@@ -88,8 +89,8 @@ bool GNet::Socks::send( G::ReadWrite & io )
 
 bool GNet::Socks::read( G::ReadWrite & io )
 {
-	char buffer[8] ;
-	ssize_t rc = io.read( buffer , sizeof(buffer) ) ;
+	std::array<char,8U> buffer {} ;
+	ssize_t rc = io.read( &buffer[0] , buffer.size() ) ;
 	if( rc == 0 )
 	{
 		throw SocksError( "disconnected" ) ;
@@ -105,7 +106,7 @@ bool GNet::Socks::read( G::ReadWrite & io )
 	else
 	{
 		G_ASSERT( rc >= 1 && rc <= 8 ) ;
-		m_response.append( buffer , static_cast<size_t>(rc) ) ;
+		m_response.append( &buffer[0] , static_cast<std::size_t>(rc) ) ;
 	}
 
 	if( m_response.size() >= 8U )

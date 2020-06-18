@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -187,7 +187,7 @@ class Application : public QApplication
 {
 public:
 	Application( int & argc , char * argv [] ) ;
-	virtual bool notify( QObject * p1 , QEvent * p2 ) ;
+	bool notify( QObject * p1 , QEvent * p2 ) override ;
 } ;
 Application::Application( int & argc , char * argv [] ) :
 	QApplication(argc,argv)
@@ -251,15 +251,13 @@ int main( int argc , char * argv [] )
 		}
 		G::LogOutput log_ouptut(
 			"emailrelay-gui" ,
-			true , // output
-			true , // with-logging
-			args.contains("-v") , // with-verbose-logging
-			args.contains("-v") , // with-debug
-			true , // with-level
-			false , // with-timestamp
-			false , // strip-context
-			args.contains("-v") // use-syslog
-		) ;
+			G::LogOutput::Config()
+				.set_output_enabled(true)
+				.set_summary_info(true)
+				.set_verbose_info(args.contains("-v"))
+				.set_debug(args.contains("-v"))
+				.set_with_level(true)
+				.set_use_syslog(args.contains("-v")) ) ;
 		G_LOG( "main: start: " << argv[0] ) ;
 
 		try

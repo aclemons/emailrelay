@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -73,11 +73,15 @@ namespace
 		{
 			return m_h ;
 		}
+		Token( const Token & ) = delete ;
+		Token( Token && ) = delete ;
+		void operator=( const Token & ) = delete ;
+		void operator=( Token && ) = delete ;
 		HANDLE m_h ;
 	} ;
 	struct Sid
 	{
-		virtual ~Sid() {}
+		virtual ~Sid() = default ;
 		virtual PSID ptr() const = 0 ;
 	} ;
 	struct UserSid : Sid
@@ -85,9 +89,9 @@ namespace
 		UserSid( const Token & token )
 		{
 			DWORD size = 0 ;
-			GetTokenInformation( token.handle() , TokenUser , NULL , 0 , &size ) ;
+			GetTokenInformation( token.handle() , TokenUser , nullptr , 0 , &size ) ;
 			if( size == 0 ) throw Error() ;
-			m_buffer.resize( static_cast<size_t>(size) ) ;
+			m_buffer.resize( static_cast<std::size_t>(size) ) ;
 			BOOL rc = GetTokenInformation( token.handle() , TokenUser , &m_buffer[0] , size , &size ) ;
 			if( rc == 0 )
 				throw Error() ;
@@ -109,16 +113,14 @@ namespace
 			}
 			return s ;
 		}
-		virtual ~UserSid()
-		{
-		}
+		~UserSid() override = default ;
 		std::vector<char> m_buffer ;
 	} ;
 	struct DirectoryWriteAccessFor : public EXPLICIT_ACCESS
 	{
 		explicit DirectoryWriteAccessFor( const Sid & sid )
 		{
-			static EXPLICIT_ACCESS zero ;
+			EXPLICIT_ACCESS zero{} ;
 			*static_cast<EXPLICIT_ACCESS*>(this) = zero ;
 			grfAccessPermissions = GENERIC_ALL ;
 			grfAccessMode = GRANT_ACCESS ;
@@ -137,7 +139,7 @@ namespace
 		{
 			DWORD rc = GetNamedSecurityInfo( path.c_str() , SE_FILE_OBJECT , DACL_SECURITY_INFORMATION ,
 				nullptr , nullptr , &m_dacl , nullptr , &m_sd ) ;
-			if( rc != ERROR_SUCCESS || m_dacl == NULL )
+			if( rc != ERROR_SUCCESS || m_dacl == nullptr )
 				throw Error() ;
 		}
 		~Dacl()
@@ -158,11 +160,15 @@ namespace
 		}
 		void applyTo( const std::string & path )
 		{
-			DWORD rc = SetNamedSecurityInfo( const_cast<char*>(path.c_str()) , SE_FILE_OBJECT , DACL_SECURITY_INFORMATION ,
-				nullptr , nullptr , m_dacl , nullptr ) ;
+			DWORD rc = SetNamedSecurityInfo( const_cast<char*>(path.c_str()) , SE_FILE_OBJECT ,
+				DACL_SECURITY_INFORMATION , nullptr , nullptr , m_dacl , nullptr ) ;
 			if( rc != ERROR_SUCCESS )
 				throw Error() ;
 		}
+		Dacl( const Dacl & ) = delete ;
+		Dacl( Dacl && ) = delete ;
+		void operator=( const Dacl & ) = delete ;
+		void operator=( Dacl && ) = delete ;
 		PSECURITY_DESCRIPTOR m_sd ;
 		ACL * m_dacl ;
 		bool m_free_me ;

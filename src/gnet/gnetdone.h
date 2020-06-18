@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gexception.h"
-#include <string>
+#include <stdexcept>
 
 namespace GNet
 {
@@ -31,18 +31,15 @@ namespace GNet
 }
 
 /// \class GNet::Done
-/// An exception class that is handled by GNet::EventHandlerList
-/// resuting in an onException() callback with a distinct
-/// exception type specifier.
+/// An exception class that is detected by GNet::EventHandlerList and
+/// results in onException() being called with the 'done' parameter
+/// set.
 ///
-class GNet::Done : public std::exception
+class GNet::Done : public std::runtime_error
 {
 public:
-	virtual ~Done() g__noexcept ;
-		///< Destructor.
-
-	virtual const char * what() const g__noexcept override ;
-		///< Override from std::exception.
+	Done() ;
+		///< Constructor.
 } ;
 
 #endif

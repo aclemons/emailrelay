@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ public:
 	StoredFile( FileStore & store , const G::Path & envelope_path ) ;
 		///< Constructor.
 
-	virtual ~StoredFile() ;
+	~StoredFile() override ;
 		///< Destructor. Unlocks the file if it has been lock()ed
 		///< but not destroy()ed or fail()ed.
 
@@ -65,31 +65,35 @@ public:
 		///< Opens the content file. Returns false on error.
 		///< Used by FileStore and FileIterator.
 
-	virtual std::string name() const override ;
+	std::string name() const override ;
 		///< Override from GSmtp::StoredMessage.
 
-	virtual void fail( const std::string & reason , int reason_code ) override ;
+	void fail( const std::string & reason , int reason_code ) override ;
 		///< Override from GSmtp::StoredMessage.
 
 private: // overrides
-	virtual std::string location() const override ; // Override from GSmtp::StoredMessage.
-	virtual int eightBit() const override ; // Override from GSmtp::StoredMessage.
-	virtual std::string from() const override ; // Override from GSmtp::StoredMessage.
-	virtual std::string to( size_t ) const override ; // Override from GSmtp::StoredMessage.
-	virtual size_t toCount() const override ; // Override from GSmtp::StoredMessage.
-	virtual std::string authentication() const override ; // Override from GSmtp::StoredMessage.
-	virtual std::string fromAuthIn() const override ; // Override from GSmtp::StoredMessage.
-	virtual std::string fromAuthOut() const override ; // Override from GSmtp::StoredMessage.
-	virtual void close() override ; // Override from GSmtp::StoredMessage.
-	virtual std::string reopen() override ; // Override from GSmtp::StoredMessage.
-	virtual void destroy() override ; // Override from GSmtp::StoredMessage.
-	virtual void unfail() override ; // Override from GSmtp::StoredMessage.
-	virtual std::istream & contentStream() override ; // Override from GSmtp::StoredMessage.
-	virtual size_t errorCount() const override ; // Override from GSmtp::StoredMessage.
+	std::string location() const override ; // Override from GSmtp::StoredMessage.
+	int eightBit() const override ; // Override from GSmtp::StoredMessage.
+	std::string from() const override ; // Override from GSmtp::StoredMessage.
+	std::string to( std::size_t ) const override ; // Override from GSmtp::StoredMessage.
+	std::size_t toCount() const override ; // Override from GSmtp::StoredMessage.
+	std::string authentication() const override ; // Override from GSmtp::StoredMessage.
+	std::string fromAuthIn() const override ; // Override from GSmtp::StoredMessage.
+	std::string fromAuthOut() const override ; // Override from GSmtp::StoredMessage.
+	void close() override ; // Override from GSmtp::StoredMessage.
+	std::string reopen() override ; // Override from GSmtp::StoredMessage.
+	void destroy() override ; // Override from GSmtp::StoredMessage.
+	void unfail() override ; // Override from GSmtp::StoredMessage.
+	std::istream & contentStream() override ; // Override from GSmtp::StoredMessage.
+	std::size_t errorCount() const override ; // Override from GSmtp::StoredMessage.
+
+public:
+	StoredFile( const StoredFile & ) = delete ;
+	StoredFile( StoredFile && ) = delete ;
+	void operator=( const StoredFile & ) = delete ;
+	void operator=( StoredFile && ) = delete ;
 
 private:
-	StoredFile( const StoredFile & ) g__eq_delete ;
-	void operator=( const StoredFile & ) g__eq_delete ;
 	const std::string & eol() const ;
 	G::Path contentPath() const ;
 	std::string readLine( std::istream & ) ;
@@ -113,7 +117,7 @@ private:
 
 private:
 	FileStore & m_store ;
-	unique_ptr<std::istream> m_content ;
+	std::unique_ptr<std::istream> m_content ;
 	G::StringArray m_to_local ;
 	G::StringArray m_to_remote ;
 	std::string m_from ;
@@ -128,7 +132,7 @@ private:
 	std::string m_client_socket_address ;
 	std::string m_client_socket_name ;
 	std::string m_client_certificate ;
-	size_t m_errors ;
+	std::size_t m_errors ;
 	bool m_locked ;
 	bool m_crlf ;
 } ;

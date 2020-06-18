@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -78,8 +78,8 @@ public:
 	explicit MapFile( const G::Path & ) ;
 		///< Constructor that reads from a file. Lines can have a key
 		///< and no value (see booleanValue()). Comments must be at
-		///< the start of the line. Values are trimmed, but can
-		///< otherwise contain whitespace.
+		///< the start of the line. Values are left and right-trimmed,
+		///< but can otherwise contain whitespace.
 
 	explicit MapFile( std::istream & ) ;
 		///< Constructor that reads from a stream.
@@ -156,7 +156,7 @@ public:
 		///< Returns a path value from the map with expand().
 
 private:
-	typedef std::list<std::string> List ;
+	using List = std::list<std::string> ;
 	void readFrom( const G::Path & ) ;
 	void readFrom( std::istream & ss ) ;
 	static std::string quote( const std::string & ) ;
@@ -173,7 +173,7 @@ private:
 	bool ignore( const std::string & ) const ;
 
 private:
-	bool m_logging ;
+	bool m_logging{true} ;
 	G::StringMap m_map ;
 	G::StringArray m_keys ; // kept in input order
 } ;

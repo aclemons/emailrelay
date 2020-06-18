@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -115,8 +115,8 @@ struct Child
 class Service
 {
 private:
-	typedef SERVICE_STATUS_HANDLE Handle ;
-	G_CONSTANT( int , Magic , 345897 ) ;
+	using Handle = SERVICE_STATUS_HANDLE ;
+	static constexpr int Magic = 345897 ;
 	volatile int m_magic ;
 	Handle m_hservice ;
 	Child m_child ;
@@ -126,7 +126,7 @@ private:
 	HANDLE m_thread_exit ;
 
 public:
-	typedef std::basic_string<TCHAR> tstring ;
+	using tstring = std::basic_string<TCHAR> ;
 	static void install( const std::string & name , const std::string & display_name ) ;
 	static void remove( const std::string & name ) ;
 	static void start() ;

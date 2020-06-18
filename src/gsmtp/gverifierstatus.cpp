@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,19 +24,11 @@
 #include "gstr.h"
 #include "glog.h"
 
-GSmtp::VerifierStatus::VerifierStatus() :
-	is_valid(false) ,
-	is_local(false) ,
-	temporary(false) ,
-	abort(false)
-{
-}
+GSmtp::VerifierStatus::VerifierStatus()
+= default;
 
 GSmtp::VerifierStatus::VerifierStatus( const std::string & mbox ) :
 	is_valid(true) ,
-	is_local(false) ,
-	temporary(false) ,
-	abort(false) ,
 	address(mbox)
 {
 }
@@ -50,7 +42,7 @@ GSmtp::VerifierStatus GSmtp::VerifierStatus::parse( const std::string & line , s
 		G::StringArray part ;
 		G::Str::splitIntoFields( line , part , sep ) ;
 		if( part.size() != 9U ) throw std::runtime_error( "incorrect number of parts" ) ;
-		size_t i = 0U ;
+		std::size_t i = 0U ;
 		mbox = part.at(i++) ;
 		s.is_valid = part.at(i++) == "1" ;
 		s.is_local = part.at(i++) == "1" ;

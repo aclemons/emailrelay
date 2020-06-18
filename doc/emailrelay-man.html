@@ -1,5 +1,6 @@
 
-<HTML><HEAD><TITLE>Manpage of EMAILRELAY</TITLE>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of EMAILRELAY</TITLE>
 </HEAD><BODY>
 <H1>EMAILRELAY</H1>
 Section: User Commands  (1)<BR>Updated: local<BR><A HREF="#index">Index</A>
@@ -102,11 +103,11 @@ Enables SMTP client authentication with the remote server, using the client acco
 <DT><B>--client-auth-config </B><I>&lt;config&gt;</I>
 
 <DD>
-Configures the SMTP client authentication module using a  semicolon-separated list of configuration items. Each item is a  single-character key, followed by a colon and then a comma-separated  list. A 'm' character introduces an ordered list of authentication  mechanisms, and an 'x' is used for blocklisted mechanisms.
+Configures the SMTP client authentication module using a semicolon-separated list of configuration items. Each item is a single-character key, followed by a colon and then a comma-separated list. A 'm' character introduces an ordered list of authentication mechanisms, and an 'x' is used for blocklisted mechanisms.
 <DT><B>-Y, --client-filter </B><I>&lt;program&gt;</I>
 
 <DD>
-Runs the specified external filter program whenever a mail message is forwarded. The filter is passed the name of the message file in the spool directory so that it can edit it as required. A network filter can be specified as <I>net:&lt;transport-address&gt;</I> and prefixes of <I>spam:</I>, <I>spam-edit:</I> and <I>exit:</I> are also allowed. The <I>--filter</I> option is normally more useful than <I>--client-filter</I>.
+Runs the specified external filter program whenever a mail message is forwarded. The filter is passed the name of the message file in the spool directory so that it can edit it as required. A network filter can be specified as <I>net:&lt;transport-address&gt;</I> and prefixes of <I>spam:</I>, <I>spam-edit:</I> and <I>exit:</I> are also allowed. The <I>spam:</I> and <I>spam-edit:</I> prefixes require a SpamAssassin daemon to be running. For store-and-forward  applications the <I>--filter</I> option is normally more useful than  <I>--client-filter</I>.
 <DT><B>-6, --client-interface </B><I>&lt;ip-address&gt;</I>
 
 <DD>
@@ -154,7 +155,7 @@ Enables debug level logging, if built in. Debug messages are usually only useful
 <DT><B>--dnsbl </B><I>&lt;config&gt;</I>
 
 <DD>
-Specifies a list of DNSBL servers that are used to reject SMTP  connections from blocked addresses. The configuration string is made up of comma-separated fields: the DNS server's transport address, a timeout in milliseconds, a rejection threshold, and then the list of DNSBL servers.
+Specifies a list of DNSBL servers that are used to reject SMTP connections from blocked addresses. The configuration string is made up of comma-separated fields: the DNS server's transport address, a timeout in milliseconds, a rejection threshold, and then the list of DNSBL servers.
 <DT><B>-D, --domain </B><I>&lt;fqdn&gt;</I>
 
 <DD>
@@ -166,7 +167,7 @@ Disables all network serving, including SMTP, POP and administration interfaces.
 <DT><B>-z, --filter </B><I>&lt;program&gt;</I>
 
 <DD>
-Runs the specified external filter program whenever a mail message is stored. The filter is passed the name of the message file in the spool directory so that it can edit it as required. The mail message is rejected if the filter program terminates with an exit code between 1 and 99. Use <I>net:&lt;transport-address&gt;</I> to communicate with a filter daemon over the network, or <I>spam:&lt;transport-address&gt;</I> for a spamassassin spamd daemon to accept or reject mail messages, or  <I>spam-edit:&lt;transport-address&gt;</I> to have spamassassin edit the message  content without rejecting it, or <I>exit:&lt;number&gt;</I> to emulate a filter  program that just exits.
+Runs the specified external filter program whenever a mail message is stored. The filter is passed the name of the message file in the spool directory so that it can edit it as required. The mail message is rejected if the filter program terminates with an exit code between 1 and 99. Use <I>net:&lt;transport-address&gt;</I> to communicate with a filter daemon over the network, or <I>spam:&lt;transport-address&gt;</I> for a spamassassin spamd daemon to accept or reject mail messages, or <I>spam-edit:&lt;transport-address&gt;</I> to have spamassassin edit the message content without rejecting it, or <I>exit:&lt;number&gt;</I> to emulate a filter program that just exits.
 <DT><B>-W, --filter-timeout </B><I>&lt;time&gt;</I>
 
 <DD>
@@ -194,19 +195,23 @@ Windows only. Hides the application window and disables all message boxes. This 
 <DT><B>--idle-timeout </B><I>&lt;time&gt;</I>
 
 <DD>
-Specifies a timeout (in seconds) for receiving network traffic from  remote SMTP and POP clients. The default is 1800 seconds.
+Specifies a timeout (in seconds) for receiving network traffic from remote SMTP and POP clients. The default is 1800 seconds.
 <DT><B>-m, --immediate</B>
 
 <DD>
-Causes mail messages to be forwarded as they are received, even before  they have been accepted. This can be used to do proxying without  store-and-forward, but in practice clients tend to to time out while waiting for their mail message to be accepted.
+Causes mail messages to be forwarded as they are received, even before they have been accepted. This can be used to do proxying without store-and-forward, but in practice clients tend to to time out while waiting for their mail message to be accepted.
 <DT><B>-I, --interface </B><I>&lt;ip-address-list&gt;</I>
 
 <DD>
-Specifies the IP network addresses used to bind listening ports. By default listening ports for incoming SMTP, POP and administration connections will bind the 'any' address for IPv4 and for IPv6, ie. <I>0.0.0.0</I> and <I>::</I>. Use this option to limit listening to particular addresses (and by implication to particular network interfaces). Multiple addresses can be specified by using the option more than once or by using a comma-separated list. Use a prefix of <I>smtp=</I>, <I>pop=</I> or <I>admin=</I> on addresses that should apply only to those types of listening port.
+Specifies the IP network addresses or interface names used to bind listening ports. By default listening ports for incoming SMTP, POP and administration connections will bind the 'any' address for IPv4 and for IPv6, ie. <I>0.0.0.0</I> and <I>::</I>. Multiple addresses can be specified by using the option more than once or by using a comma-separated list. Use a prefix of <I>smtp=</I>, <I>pop=</I> or <I>admin=</I> on addresses that should apply only to those types of listening port. Any link-local IPv6 addresses must include a zone name or scope id.  Interface names can be used instead of addresses, in which case all  the addresses associated with that interface at startup will used  for listening. When an interface name is decorated with a <I>-ipv4</I>  or <I>-ipv6</I> suffix only their IPv4 or IPv6 addresses will be used  (eg. <I>ppp0-ipv4</I>).
 <DT><B>-l, --log</B>
 
 <DD>
 Enables logging to the standard error stream and to the syslog. The <I>--close-stderr</I> and <I>--no-syslog</I> options can be used to disable output to standard error stream and the syslog separately. Note that <I>--as-server</I>, <I>--as-client</I> and <I>--as-proxy</I> imply <I>--log</I>, and <I>--as-server</I> and <I>--as-proxy</I> also imply <I>--close-stderr</I>.
+<DT><B>--log-address</B>
+
+<DD>
+Adds the network address of remote clients to the logging output.
 <DT><B>-N, --log-file </B><I>&lt;file&gt;</I>
 
 <DD>
@@ -246,7 +251,7 @@ Specifies a file containing valid POP account details. The file format is the sa
 <DT><B>-J, --pop-by-name</B>
 
 <DD>
-Modifies the spool directory used by the POP server to be a sub-directory with the same name as the POP authentication user-id. This allows multiple POP clients to read the spooled messages without interfering with each other, particularly when also  using <I>--pop-no-delete</I>. Content files can stay in the main spool  directory with only the envelope files copied into user-specific  sub-directories. The <I>emailrelay-filter-copy</I> program is a  convenient way of doing this when run via <I>--filter</I>.
+Modifies the spool directory used by the POP server to be a sub-directory with the same name as the POP authentication user-id. This allows multiple POP clients to read the spooled messages without interfering with each other, particularly when also using <I>--pop-no-delete</I>. Content files can stay in the main spool directory with only the envelope files copied into user-specific sub-directories. The <I>emailrelay-filter-copy</I> program is a convenient way of doing this when run via <I>--filter</I>.
 <DT><B>-G, --pop-no-delete</B>
 
 <DD>
@@ -266,7 +271,7 @@ Specifies a timeout (in seconds) for getting the initial prompt from a remote SM
 <DT><B>-r, --remote-clients</B>
 
 <DD>
-Allows incoming connections from addresses that are not local. The default behaviour is to ignore connections that are not local in order to prevent accidental exposure to the public internet, but a firewall should also be used. The definition of 'local' is different for IPv4 and IPv6.
+Allows incoming connections from addresses that are not local. The default behaviour is to reject connections that are not local in order to prevent accidental exposure to the public internet,  although a firewall should also be used. Local address ranges are  defined in RFC-1918, RFC-6890 etc.
 <DT><B>-T, --response-timeout </B><I>&lt;time&gt;</I>
 
 <DD>
@@ -278,7 +283,7 @@ Enables SMTP server authentication of remote SMTP clients. Account names and pas
 <DT><B>--server-auth-config </B><I>&lt;config&gt;</I>
 
 <DD>
-Configures the SMTP server authentication module using a  semicolon-separated list of configuration items. Each item is a  single-character key, followed by a colon and then a comma-separated  list. A 'm' character introduces a preferred sub-set of the built-in  authentication mechanisms, and an 'x' is used for blocklisted  mechanisms.
+Configures the SMTP server authentication module using a semicolon-separated list of configuration items. Each item is a single-character key, followed by a colon and then a comma-separated list. A 'm' character introduces a preferred sub-set of the built-in authentication mechanisms, and an 'x' is used for blocklisted mechanisms.
 <DT><B>-K, --server-tls</B>
 
 <DD>
@@ -287,6 +292,10 @@ Enables TLS for incoming SMTP and POP connections. SMTP clients can then request
 
 <DD>
 Defines the TLS certificate file when acting as a SMTP or POP server. This file must contain the server's private key and certificate chain using the PEM file format. Keep the file permissions tight to avoid accidental exposure of the private key.
+<DT><B>--server-tls-connection</B>
+
+<DD>
+Enables SMTP over TLS when acting as an SMTP server. This is for SMTP over TLS (SMTPS), not TLS negotiated within SMTP using STARTTLS.
 <DT><B>--server-tls-required</B>
 
 <DD>
@@ -310,7 +319,7 @@ When used with <I>--log</I> this option enables logging to the syslog even if th
 <DT><B>-9, --tls-config </B><I>&lt;options&gt;</I>
 
 <DD>
-Selects and configures the low-level TLS library, using a comma-separated list of keywords. If OpenSSL and mbedTLS are both built in then keywords of <I>openssl</I> and <I>mbedtls</I> will select one or the other. Keywords like <I>tlsv1.0</I> can be used to set a minimum TLS protocol version, or  <I>-tlsv1.2</I> to set a maximum version.
+Selects and configures the low-level TLS library, using a comma-separated list of keywords. If OpenSSL and mbedTLS are both built in then keywords of <I>openssl</I> and <I>mbedtls</I> will select one or the other. Keywords like <I>tlsv1.0</I> can be used to set a minimum TLS protocol version, or <I>-tlsv1.2</I> to set a maximum version.
 <DT><B>-u, --user </B><I>&lt;username&gt;</I>
 
 <DD>
@@ -353,4 +362,4 @@ This document was created by
 using the manual pages.<BR>
 </BODY>
 </HTML>
-<!-- Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

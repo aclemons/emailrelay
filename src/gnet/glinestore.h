@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,7 +35,8 @@ namespace GNet
 /// \class GNet::LineStore
 /// A pair of character buffers, one kept by value and the other being
 /// an ephemeral extension. An iterator class can iterate over the
-/// combined data. Used in the implementation of GNet::LineBuffer.
+/// combined data. Used in the implementation of GNet::LineBuffer
+/// as a zero-copy optimisation.
 ///
 class GNet::LineStore
 {
@@ -47,17 +48,17 @@ public:
 		///< Appends to the store (by copying). Any existing
 		///< extension is first consolidate()d.
 
-	void append( const char * , size_t ) ;
+	void append( const char * , std::size_t ) ;
 		///< Appends to the store (by copying). Any existing
 		///< extension is first consolidate()d.
 
-	void extend( const char * , size_t ) ;
+	void extend( const char * , std::size_t ) ;
 		///< Sets the extension. Any existing extension is
 		///< consolidated(). Use consolidate(), discard() or
 		///< clear() before the extension pointer becomes
 		///< invalid.
 
-	void discard( size_t n ) ;
+	void discard( std::size_t n ) ;
 		///< Discards the first 'n' bytes and consolidates
 		///< the residue.
 
@@ -67,58 +68,67 @@ public:
 	void clear() ;
 		///< Clears all data.
 
-	size_t size() const ;
+	std::size_t size() const ;
 		///< Returns the overall size.
 
 	bool empty() const ;
 		///< Returns true if size() is zero.
 
-	size_t find( char c , size_t startpos = 0U ) const ;
+	std::size_t find( char c , std::size_t startpos = 0U ) const ;
 		///< Finds the given character. Returns npos if
 		///< not found.
 
-	size_t find( const std::string & s , size_t startpos = 0U ) const ;
+	std::size_t find( const std::string & s , std::size_t startpos = 0U ) const ;
 		///< Finds the given sub-string. Returns npos if not
 		///< found.
 
-	size_t findSubStringAtEnd( const std::string & s , size_t startpos = 0U ) const ;
-		///< Finds a non-empty leading substring of 's' that
+	std::size_t findSubStringAtEnd( const std::string & s , std::size_t startpos = 0U ) const ;
+		///< Finds a non-empty leading substring 's' that
 		///< appears at the end of the data. Returns npos
 		///< if not found.
 
-	const char * data( size_t pos , size_t size ) const ;
+	const char * data( std::size_t pos , std::size_t size ) const ;
 		///< Returns a pointer for the data at the given
 		///< position that is contiguous for the given size.
 		///< Data is shuffled around as required, which
 		///< means that previous pointers are invalidated.
 
-	char at( size_t n ) const ;
+	char at( std::size_t n ) const ;
 		///< Returns the n'th character.
 
 	std::string str() const ;
 		///< Returns the complete string.
 
+	std::string head( std::size_t n ) const ;
+		///< Returns the leading sub-string of str() of up
+		///< to 'n' characters.
+
+public:
+	~LineStore() = default ;
+	LineStore( const LineStore & ) = delete ;
+	LineStore( LineStore && ) = delete ;
+	void operator=( const LineStore & ) = delete ;
+	void operator=( LineStore && ) = delete ;
+
 private:
-	LineStore( const LineStore & ) g__eq_delete ;
-	void operator=( const LineStore & ) g__eq_delete ;
-	const char * dataimp( size_t pos , size_t size ) ;
-	size_t search( std::string::const_iterator , std::string::const_iterator , size_t ) const ;
+	const char * dataimp( std::size_t pos , std::size_t size ) ;
+	std::size_t search( std::string::const_iterator , std::string::const_iterator , std::size_t ) const ;
 
 private:
 	std::string m_store ;
-	const char * m_extra_data ;
-	size_t m_extra_size ;
+	const char * m_extra_data{nullptr} ;
+	std::size_t m_extra_size{0U} ;
 } ;
 
 inline
-char GNet::LineStore::at( size_t n ) const
+char GNet::LineStore::at( std::size_t n ) const
 {
 	G_ASSERT( n < size() ) ;
 	return n < m_store.size() ? m_store[n] : m_extra_data[n-m_store.size()] ;
 }
 
 inline
-size_t GNet::LineStore::size() const
+std::size_t GNet::LineStore::size() const
 {
 	return m_store.size() + m_extra_size ;
 }

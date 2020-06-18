@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -64,14 +64,14 @@ namespace GSsl
 class GSsl::Protocol
 {
 public:
-	g__enum(Result) // Result enumeration for GSsl::Protocol i/o methods.
+	enum class Result // Result enumeration for GSsl::Protocol i/o methods.
 	{
 		ok ,
 		read ,
 		write ,
 		error ,
 		more
-	} ; g__enum_end(Result)
+	} ;
 
 	explicit Protocol( const Profile & , const std::string & peer_certificate_name = std::string() ,
 		const std::string & peer_host_name = std::string() ) ;
@@ -111,7 +111,7 @@ public:
 		///< shutdown alert" and does a socket shutdown once the alert
 		///< is fully sent.
 
-	Result read( char * buffer , size_t buffer_size_in , ssize_t & data_size_out ) ;
+	Result read( char * buffer , std::size_t buffer_size_in , ssize_t & data_size_out ) ;
 		///< Reads user data into the supplied buffer.
 		///<
 		///< Returns Result::read if there is not enough transport data to
@@ -139,7 +139,7 @@ public:
 		///< or if the TLS session was shut down by the peer or if there
 		///< was an error.
 
-	Result write( const char * buffer , size_t data_size_in , ssize_t & data_size_out ) ;
+	Result write( const char * buffer , std::size_t data_size_in , ssize_t & data_size_out ) ;
 		///< Writes user data.
 		///<
 		///< Returns Result::ok if fully sent.
@@ -182,12 +182,14 @@ public:
 		///< This is not supported by all underlying TLS libraries; the
 		///< returned string may be just the peerCertificate().
 
-private:
-	Protocol( const Protocol & ) g__eq_delete ;
-	void operator=( const Protocol & ) g__eq_delete ;
+public:
+	Protocol( const Protocol & ) = delete ;
+	Protocol( Protocol && ) = delete ;
+	void operator=( const Protocol & ) = delete ;
+	void operator=( Protocol && ) = delete ;
 
 private:
-	unique_ptr<ProtocolImpBase> m_imp ;
+	std::unique_ptr<ProtocolImpBase> m_imp ;
 } ;
 
 /// \class GSsl::Digester
@@ -208,13 +210,13 @@ public:
 	explicit Digester( DigesterImpBase * ) ;
 		///< Constructor, used by the Library class.
 
-	size_t blocksize() const ;
+	std::size_t blocksize() const ;
 		///< Returns the hash function's block size in bytes.
 
-	size_t valuesize() const ;
+	std::size_t valuesize() const ;
 		///< Returns the hash function's value size in bytes.
 
-	size_t statesize() const ;
+	std::size_t statesize() const ;
 		///< Returns the size of the state() string in bytes,
 		///< or zero if state() is not implemented.
 
@@ -233,7 +235,7 @@ public:
 		///< Returns the hash value.
 
 private:
-	shared_ptr<DigesterImpBase> m_imp ;
+	std::shared_ptr<DigesterImpBase> m_imp ;
 } ;
 
 /// \class GSsl::Library
@@ -245,7 +247,7 @@ private:
 class GSsl::Library
 {
 public:
-	typedef void (*LogFn)( int , const std::string & ) ;
+	using LogFn = void (*)(int, const std::string &) ;
 
 	explicit Library( bool active = true , const std::string & library_config = std::string() ,
 		LogFn = Library::log , bool verbose = true ) ;
@@ -350,16 +352,20 @@ public:
 	Digester digester( const std::string & name , const std::string & state = std::string() , bool need_state = false ) const ;
 		///< Returns a digester object.
 
+public:
+	Library( const Library & ) = delete ;
+	Library( Library && ) = delete ;
+	void operator=( const Library & ) = delete ;
+	void operator=( Library && ) = delete ;
+
 private:
-	Library( const Library & ) g__eq_delete ;
-	void operator=( const Library & ) g__eq_delete ;
 	const LibraryImpBase & imp() const ;
 	LibraryImpBase & imp() ;
-	static unique_ptr<LibraryImpBase> newLibraryImp( G::StringArray & , Library::LogFn , bool ) ;
+	static std::unique_ptr<LibraryImpBase> newLibraryImp( G::StringArray & , Library::LogFn , bool ) ;
 
 private:
 	static Library * m_this ;
-	unique_ptr<LibraryImpBase> m_imp ;
+	std::unique_ptr<LibraryImpBase> m_imp ;
 } ;
 
 /// \class GSsl::LibraryImpBase
@@ -369,7 +375,7 @@ private:
 class GSsl::LibraryImpBase
 {
 public:
-	virtual ~LibraryImpBase() ;
+	virtual ~LibraryImpBase() = default ;
 		///< Destructor.
 
 	virtual std::string id() const = 0 ;
@@ -403,10 +409,10 @@ public:
 class GSsl::Profile
 {
 public:
-	virtual ~Profile() ;
+	virtual ~Profile() = default ;
 		///< Destructor.
 
-	virtual unique_ptr<ProtocolImpBase> newProtocol( const std::string & , const std::string & ) const = 0 ;
+	virtual std::unique_ptr<ProtocolImpBase> newProtocol( const std::string & , const std::string & ) const = 0 ;
 		///< Factory method for a new Protocol object on the heap.
 } ;
 
@@ -416,7 +422,7 @@ public:
 class GSsl::ProtocolImpBase
 {
 public:
-	virtual ~ProtocolImpBase() ;
+	virtual ~ProtocolImpBase() = default ;
 		///< Destructor.
 
 	virtual Protocol::Result connect( G::ReadWrite & ) = 0 ;
@@ -428,10 +434,10 @@ public:
 	virtual Protocol::Result shutdown() = 0 ;
 		///< Implements Protocol::shutdown().
 
-	virtual Protocol::Result read( char * , size_t , ssize_t & ) = 0 ;
+	virtual Protocol::Result read( char * , std::size_t , ssize_t & ) = 0 ;
 		///< Implements Protocol::read().
 
-	virtual Protocol::Result write( const char * , size_t , ssize_t & ) = 0 ;
+	virtual Protocol::Result write( const char * , std::size_t , ssize_t & ) = 0 ;
 		///< Implements Protocol::write().
 
 	virtual std::string peerCertificate() const = 0 ;
@@ -453,7 +459,7 @@ public:
 class GSsl::DigesterImpBase
 {
 public:
-	virtual ~DigesterImpBase() ;
+	virtual ~DigesterImpBase() = default ;
 		///< Destructor.
 
 	virtual void add( const std::string & ) = 0 ;
@@ -465,13 +471,13 @@ public:
 	virtual std::string state() = 0 ;
 		///< Implements Digester::state().
 
-	virtual size_t blocksize() const = 0 ;
+	virtual std::size_t blocksize() const = 0 ;
 		///< Implements Digester::blocksize().
 
-	virtual size_t valuesize() const = 0 ;
+	virtual std::size_t valuesize() const = 0 ;
 		///< Implements Digester::valuesize().
 
-	virtual size_t statesize() const = 0 ;
+	virtual std::size_t statesize() const = 0 ;
 		///< Implements Digester::statesize().
 } ;
 

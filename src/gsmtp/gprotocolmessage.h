@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -62,10 +62,10 @@ namespace GSmtp
 class GSmtp::ProtocolMessage
 {
 public:
-	virtual ~ProtocolMessage() ;
+	virtual ~ProtocolMessage() = default ;
 		///< Destructor.
 
-	virtual G::Slot::Signal4<bool,unsigned long,std::string,std::string> & doneSignal() = 0 ;
+	virtual G::Slot::Signal<bool,unsigned long,const std::string&,const std::string&> & doneSignal() = 0 ;
 		///< Returns a signal which is raised once process() has
 		///< completed.
 		///<
@@ -96,7 +96,7 @@ public:
 		///< Adds a 'received' line to the start of the content.
 		///< Precondition: at least one successful addTo() call
 
-	virtual bool addText( const char * , size_t ) = 0 ;
+	virtual bool addText( const char * , std::size_t ) = 0 ;
 		///< Adds text. The text should normally end in CR-LF. Returns
 		///< false on error, typically because a size limit is reached.
 		///<

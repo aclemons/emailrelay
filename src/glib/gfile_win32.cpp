@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gfile.h"
+#include "gprocess.h"
 #include <sys/stat.h>
 #include <direct.h>
 #include <iomanip>
@@ -103,18 +104,21 @@ bool G::File::isDirectory( const Path & path )
 	return 0 == ::_stat( path.str().c_str() , &statbuf ) && (statbuf.st_mode & S_IFDIR) ;
 }
 
-G::EpochTime G::File::time( const Path & path )
+G::SystemTime G::File::time( const Path & path )
 {
 	struct _stat statbuf ;
 	if( 0 != ::_stat( path.str().c_str() , &statbuf ) )
-		throw TimeError( path.str() ) ;
-	return EpochTime(statbuf.st_mtime) ;
+	{
+		int e = G::Process::errno_() ;
+		throw TimeError( path.str() , G::Process::strerror(e) ) ;
+	}
+	return SystemTime(statbuf.st_mtime) ;
 }
 
-G::EpochTime G::File::time( const Path & path , const NoThrow & )
+G::SystemTime G::File::time( const Path & path , const NoThrow & )
 {
 	struct _stat statbuf ;
-	return EpochTime( ::_stat( path.str().c_str() , &statbuf ) == 0 ? statbuf.st_mtime : 0 ) ;
+	return SystemTime( ::_stat( path.str().c_str() , &statbuf ) == 0 ? statbuf.st_mtime : 0 ) ;
 }
 
 bool G::File::chmodx( const Path & , bool )

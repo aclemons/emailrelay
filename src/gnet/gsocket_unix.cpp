@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,19 +20,20 @@
 
 #include "gdef.h"
 #include "gsocket.h"
+#include "gmsg.h"
 #include "gprocess.h"
 #include "gstr.h"
 #include "gcleanup.h"
 #include "glog.h"
-#include <errno.h>
+#include <cerrno> // EWOULDBLOCK etc
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-bool GNet::Socket::create( int domain , int type , int protocol )
+bool GNet::SocketBase::create( int domain , int type , int protocol )
 {
-	m_socket = Descriptor( ::socket(domain,type,protocol) ) ;
-	if( m_socket == Descriptor::invalid() )
+	m_fd = Descriptor( ::socket(domain,type,protocol) ) ;
+	if( m_fd == Descriptor::invalid() )
 	{
 		saveReason() ;
 		return false ;
@@ -40,7 +41,7 @@ bool GNet::Socket::create( int domain , int type , int protocol )
 	return true ;
 }
 
-bool GNet::Socket::prepare( bool /*accepted*/ )
+bool GNet::SocketBase::prepare( bool /*accepted*/ )
 {
 	static bool first = true ;
 	if( first )
@@ -57,56 +58,63 @@ bool GNet::Socket::prepare( bool /*accepted*/ )
 	return true ;
 }
 
-void GNet::Socket::destroy()
+void GNet::SocketBase::destroy() noexcept
 {
-	::close( m_socket.fd() ) ;
+	::close( m_fd.fd() ) ;
 }
 
-bool GNet::Socket::error( int rc )
+bool GNet::SocketBase::error( int rc )
 {
 	return rc < 0 ;
 }
 
-void GNet::Socket::saveReason()
+void GNet::SocketBase::saveReason()
 {
 	m_reason = G::Process::errno_() ;
 	m_reason_string = reasonString( m_reason ) ;
 }
 
-bool GNet::Socket::setNonBlock()
+bool GNet::SocketBase::setNonBlock()
 {
-	int mode = ::fcntl( m_socket.fd() , F_GETFL ) ;
+	int mode = ::fcntl( m_fd.fd() , F_GETFL ) ;
 	if( mode < 0 )
 		return false ;
 
-	int rc = ::fcntl( m_socket.fd() , F_SETFL , mode | O_NONBLOCK ) ;
+	int rc = ::fcntl( m_fd.fd() , F_SETFL , mode | O_NONBLOCK ) ;
 	return rc >= 0 ;
 }
 
-bool GNet::Socket::sizeError( ssize_t size )
+bool GNet::SocketBase::sizeError( ssize_t size )
 {
 	return size < 0 ;
 }
 
-bool GNet::Socket::eWouldBlock()
+bool GNet::SocketBase::eWouldBlock() const
 {
 	return m_reason == EWOULDBLOCK || m_reason == EAGAIN || m_reason == EINTR ;
 }
 
-bool GNet::Socket::eInProgress()
+bool GNet::SocketBase::eInProgress() const
 {
 	return m_reason == EINPROGRESS ;
 }
 
-bool GNet::Socket::eMsgSize()
+bool GNet::SocketBase::eMsgSize() const
 {
 	return m_reason == EMSGSIZE ;
 }
 
-bool GNet::Socket::eTooMany()
+bool GNet::SocketBase::eTooMany() const
 {
 	return m_reason == EMFILE ;
 }
+
+std::string GNet::SocketBase::reasonString( int e )
+{
+	return G::Str::lower(G::Process::strerror(e)) ;
+}
+
+// ==
 
 bool GNet::Socket::canBindHint( const Address & address )
 {
@@ -145,13 +153,34 @@ bool GNet::Socket::setOptionPureV6( bool active , NoThrow )
 
 bool GNet::Socket::setOptionImp( int level , int op , const void * arg , socklen_t n )
 {
-	int rc = ::setsockopt( m_socket.fd() , level , op , arg , n ) ;
+	int rc = ::setsockopt( fd() , level , op , arg , n ) ;
 	return ! error(rc) ;
 }
 
-std::string GNet::Socket::reasonString( int e )
+// ==
+
+GNet::RawSocket::RawSocket( int domain , int protocol ) :
+	SocketBase(domain,SOCK_RAW,protocol)
 {
-	return G::Str::lower(G::Process::strerror(e)) ;
+}
+
+GNet::SocketBase::ssize_type GNet::RawSocket::read( char * buffer , size_type length )
+{
+	if( length == 0 ) return 0 ;
+	clearReason() ;
+	ssize_type nread = G::Msg::recv( fd() , buffer , length , 0 ) ;
+	if( sizeError(nread) )
+	{
+		saveReason() ;
+		G_DEBUG( "GNet::RawSocket::read: cannot read from " << fd() ) ;
+		return -1 ;
+	}
+	return nread ;
+}
+
+GNet::SocketBase::ssize_type GNet::RawSocket::write( const char * buffer , size_type length )
+{
+	return writeImp( buffer , length ) ; // SocketBase
 }
 
 /// \file gsocket_unix.cpp

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ public:
 		///< Constructor. After contruction just call run() or
 		///< runModeless() with the appropriate dialog resource
 		///< id or name. The hdialog returned by WindowBase::handle()
-		///< will be NULL until the dialog box is run()ning.
+		///< will be HNULL until the dialog box is run()ning.
 
 	explicit Dialog( const GGui::ApplicationBase & app , bool top_level = false ) ;
 		///< Contructor for a dialog box which takes some
@@ -172,10 +172,12 @@ protected:
 		///< message. The override may do a "delete this" if
 		///< necessary.
 
+public:
+	Dialog( const Dialog &other ) = delete ;
+	void operator=( const Dialog &other ) = delete ;
+
 private:
-	typedef std::list<DialogHandle> DialogList ;
-	Dialog( const Dialog &other ) g__eq_delete ;
-	void operator=( const Dialog &other ) g__eq_delete ;
+	using DialogList = std::list<DialogHandle> ;
 	BOOL dlgProc( UINT message , WPARAM wparam , LPARAM lparam ) ;
 	void privateInit( HWND hwnd ) ;
 	void privateEnd( int n ) ;
@@ -196,7 +198,7 @@ private:
 	bool runModelessEnd( HWND , bool ) ;
 
 private:
-	G_CONSTANT( int , Magic , 4567 ) ;
+	static constexpr int Magic = 4567 ;
 	std::string m_name ;
 	std::string m_title ;
 	bool m_modal ;

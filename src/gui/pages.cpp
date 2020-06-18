@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ TitlePage::TitlePage( GDialog & dialog , const G::MapFile & , const std::string 
 	m_label = new QLabel( Legal::text() ) ;
 	m_credit = new QLabel( Legal::credit() ) ;
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("E-MailRelay"))) ;
 	layout->addWidget(m_label);
 	layout->addWidget(m_credit);
@@ -97,7 +97,7 @@ LicensePage::LicensePage( GDialog & dialog , const G::MapFile & , const std::str
 	if( testMode() || accepted )
 		m_agree_checkbox->setChecked(true) ;
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("License"))) ;
 	layout->addWidget(m_text_edit);
 	layout->addWidget(m_agree_checkbox);
@@ -135,7 +135,7 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , con
 	m_install_dir_label->setBuddy(m_install_dir_edit_box) ;
 	m_install_dir_browse_button = new QPushButton(tr("B&rowse")) ;
 
-	QHBoxLayout * install_layout = new QHBoxLayout ;
+	auto * install_layout = new QHBoxLayout ;
 	install_layout->addWidget( m_install_dir_label ) ;
 	install_layout->addWidget( m_install_dir_edit_box ) ;
 	install_layout->addWidget( m_install_dir_browse_button ) ;
@@ -151,7 +151,7 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , con
 	m_spool_dir_label->setBuddy(m_spool_dir_edit_box) ;
 	m_spool_dir_browse_button = new QPushButton(tr("B&rowse")) ;
 
-	QHBoxLayout * spool_layout = new QHBoxLayout ;
+	auto * spool_layout = new QHBoxLayout ;
 	spool_layout->addWidget( m_spool_dir_label ) ;
 	spool_layout->addWidget( m_spool_dir_edit_box ) ;
 	spool_layout->addWidget( m_spool_dir_browse_button ) ;
@@ -166,7 +166,7 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , con
 	m_config_dir_label->setBuddy(m_config_dir_edit_box) ;
 	m_config_dir_browse_button = new QPushButton(tr("B&rowse")) ;
 
-	QHBoxLayout * config_layout = new QHBoxLayout ;
+	auto * config_layout = new QHBoxLayout ;
 	config_layout->addWidget( m_config_dir_label ) ;
 	config_layout->addWidget( m_config_dir_edit_box ) ;
 	config_layout->addWidget( m_config_dir_browse_button ) ;
@@ -182,7 +182,7 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , con
 	m_runtime_dir_label->setBuddy(m_runtime_dir_edit_box) ;
 	m_runtime_dir_browse_button = new QPushButton(tr("B&rowse")) ;
 
-	QHBoxLayout * runtime_layout = new QHBoxLayout ;
+	auto * runtime_layout = new QHBoxLayout ;
 	runtime_layout->addWidget( m_runtime_dir_label ) ;
 	runtime_layout->addWidget( m_runtime_dir_edit_box ) ;
 	runtime_layout->addWidget( m_runtime_dir_browse_button ) ;
@@ -202,7 +202,7 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , con
 	m_config_dir_edit_box->setText( qstr(config.value("=dir-config")) ) ;
 	m_runtime_dir_edit_box->setText( qstr(config.value("=dir-run")) ) ;
 
-	QVBoxLayout * layout = new QVBoxLayout;
+	auto * layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("Directories"))) ;
 	layout->addWidget( install_group ) ;
 	layout->addWidget( spool_group ) ;
@@ -352,7 +352,7 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const G::MapFile & config , const std
 	m_smtp_checkbox->setChecked( !config.booleanValue("no-smtp",false) ) ;
 	m_pop_checkbox->setChecked( config.booleanValue("pop",false) ) ;
 
-	QVBoxLayout * server_type_box_layout = new QVBoxLayout ;
+	auto * server_type_box_layout = new QVBoxLayout ;
 	server_type_box_layout->addWidget( m_pop_checkbox ) ;
 	server_type_box_layout->addWidget( m_smtp_checkbox ) ;
 
@@ -391,11 +391,11 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const G::MapFile & config , const std
 	m_period_combo->setEditable( false ) ;
 	period_label->setBuddy( m_period_combo ) ;
 
-	QVBoxLayout * forwarding_box_layout = new QVBoxLayout ;
+	auto * forwarding_box_layout = new QVBoxLayout ;
 	forwarding_box_layout->addWidget( m_immediate_checkbox ) ;
 	forwarding_box_layout->addWidget( m_on_disconnect_checkbox ) ;
 	{
-		QHBoxLayout * inner = new QHBoxLayout ;
+		auto * inner = new QHBoxLayout ;
 		inner->addWidget( m_periodically_checkbox ) ;
 		inner->addWidget( period_label ) ;
 		inner->addWidget( m_period_combo ) ;
@@ -406,7 +406,7 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const G::MapFile & config , const std
 	m_forwarding_group = new QGroupBox(tr("Mail forwarding")) ;
 	m_forwarding_group->setLayout( forwarding_box_layout ) ;
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("Installation type"))) ;
 	layout->addWidget( server_type_group ) ;
 	layout->addWidget( m_forwarding_group ) ;
@@ -476,7 +476,7 @@ PopPage::PopPage( GDialog & dialog , const G::MapFile & config , const std::stri
 	tip( m_port_edit_box , "--pop-port" ) ;
 	port_label->setBuddy( m_port_edit_box ) ;
 
-	QHBoxLayout * server_layout = new QHBoxLayout ;
+	auto * server_layout = new QHBoxLayout ;
 	server_layout->addWidget( port_label ) ;
 	server_layout->addWidget( m_port_edit_box ) ;
 
@@ -493,7 +493,7 @@ PopPage::PopPage( GDialog & dialog , const G::MapFile & config , const std::stri
 	m_filter_copy_checkbox = new QCheckBox( tr("Copy SMTP messages to all") ) ;
 	tip( m_filter_copy_checkbox , "--filter=emailrelay-filter-copy" ) ;
 
-	QGridLayout * type_layout = new QGridLayout ;
+	auto * type_layout = new QGridLayout ;
 	type_layout->addWidget( m_one , 0 , 0 ) ;
 	type_layout->addWidget( m_shared , 1 , 0 ) ;
 	type_layout->addWidget( m_no_delete_checkbox , 1 , 1 ) ;
@@ -521,7 +521,7 @@ PopPage::PopPage( GDialog & dialog , const G::MapFile & config , const std::stri
 	QGroupBox * type_group = new QGroupBox(tr("Client accounts")) ;
 	type_group->setLayout( type_layout ) ;
 
-	QGridLayout * accounts_layout = new QGridLayout ;
+	auto * accounts_layout = new QGridLayout ;
 	QLabel * name_label = new QLabel(tr("Name:")) ;
 	QLabel * pwd_label = new QLabel(tr("Password:")) ;
 	m_name_1 = new QLineEdit ;
@@ -560,7 +560,7 @@ PopPage::PopPage( GDialog & dialog , const G::MapFile & config , const std::stri
 			new QGroupBox(tr("Accounts")) ;
 	accounts_group->setLayout( accounts_layout ) ;
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("POP server"))) ;
 	layout->addWidget( server_group ) ;
 	layout->addWidget( type_group ) ;
@@ -658,7 +658,7 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , c
 	tip( m_port_edit_box , "--port" ) ;
 	port_label->setBuddy( m_port_edit_box ) ;
 
-	QHBoxLayout * server_layout = new QHBoxLayout ;
+	auto * server_layout = new QHBoxLayout ;
 	server_layout->addWidget( port_label ) ;
 	server_layout->addWidget( m_port_edit_box ) ;
 
@@ -671,7 +671,7 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , c
 	tip( m_auth_checkbox , "--server-auth" ) ;
 	m_auth_checkbox->setChecked( config.contains("server-auth") ) ;
 
-	QVBoxLayout * auth_layout = new QVBoxLayout ;
+	auto * auth_layout = new QVBoxLayout ;
 	auth_layout->addWidget( m_auth_checkbox ) ;
 
 	QGroupBox * auth_group = new QGroupBox( tr("Authentication") ) ;
@@ -697,7 +697,7 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , c
 		m_account_pwd->setText("secret") ;
 	}
 
-	QGridLayout * account_layout = new QGridLayout ;
+	auto * account_layout = new QGridLayout ;
 	account_layout->addWidget( account_name_label , 0 , 0 ) ;
 	account_layout->addWidget( m_account_name , 0 , 1 ) ;
 	account_layout->addWidget( account_pwd_label , 1 , 0 ) ;
@@ -716,7 +716,7 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , c
 	trust_label->setBuddy( m_trust_address ) ;
 	tip( m_trust_address , "eg. 192.168.0.0/8" ) ;
 	m_trust_group = new QGroupBox(tr("Exemptions")) ;
-	QHBoxLayout * trust_layout = new QHBoxLayout ;
+	auto * trust_layout = new QHBoxLayout ;
 	trust_layout->addWidget( trust_label ) ;
 	trust_layout->addWidget( m_trust_address ) ;
 	m_trust_group->setLayout( trust_layout ) ;
@@ -724,31 +724,43 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , c
 
 	//
 
-	QGroupBox * tls_group = new QGroupBox(tr("TLS/SSL encryption")) ;
+	QGroupBox * tls_group = new QGroupBox(tr("TLS encryption")) ;
 
-	m_tls_checkbox = new QCheckBox( tr("&Offer TLS/SSL encryption") ) ;
-	tip( m_tls_checkbox , "--server-tls" ) ;
+	m_tls_checkbox = new QCheckBox( tr("&Enable TLS encryption") ) ;
+	m_tls_starttls = new QRadioButton( tr("&STARTTLS")) ;
+	tip( m_tls_starttls , "--server-tls" ) ;
+	m_tls_tunnel = new QRadioButton( tr("&Implicit TLS (smtps)") ) ;
+	tip( m_tls_tunnel , "--server-tls-connection" ) ;
+	auto * tls_innermost_layout = new QHBoxLayout ;
+	tls_innermost_layout->addWidget( m_tls_checkbox ) ;
+	tls_innermost_layout->addWidget( m_tls_starttls ) ;
+	tls_innermost_layout->addWidget( m_tls_tunnel ) ;
+
 	m_tls_certificate_label = new QLabel(tr("&Certificate:")) ;
 	tip( m_tls_certificate_label , "--server-tls-certificate" ) ;
 	m_tls_certificate_edit_box = new QLineEdit ;
-	tip( m_tls_certificate_edit_box , "private key and X.509 certificate" ) ;
+	tip( m_tls_certificate_edit_box , "private key and X.509 certificate pem file" ) ;
 	m_tls_certificate_label->setBuddy( m_tls_certificate_edit_box ) ;
 	m_tls_browse_button = new QPushButton(tr("B&rowse")) ;
-	QVBoxLayout * tls_layout = new QVBoxLayout ;
-	QHBoxLayout * tls_inner_layout = new QHBoxLayout ;
+	auto * tls_layout = new QVBoxLayout ;
+	auto * tls_inner_layout = new QHBoxLayout ;
 	tls_inner_layout->addWidget( m_tls_certificate_label ) ;
 	tls_inner_layout->addWidget( m_tls_certificate_edit_box ) ;
 	tls_inner_layout->addWidget( m_tls_browse_button ) ;
-	tls_layout->addWidget( m_tls_checkbox ) ;
+	tls_layout->addLayout( tls_innermost_layout ) ;
 	tls_layout->addLayout( tls_inner_layout ) ;
 	tls_group->setLayout( tls_layout ) ;
 
-	m_tls_checkbox->setChecked( config.booleanValue("server-tls",false) ) ;
+	m_tls_checkbox->setChecked(
+		config.booleanValue("server-tls",false) ||
+		config.booleanValue("server-tls-connection",false) ) ;
+	m_tls_starttls->setChecked( !config.booleanValue("server-tls-connection",false) ) ;
+	m_tls_tunnel->setChecked( config.booleanValue("server-tls-connection",false) ) ;
 	m_tls_certificate_edit_box->setText( qstr(config.value("server-tls-certificate")) ) ;
 
 	//
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("SMTP server"))) ;
 	layout->addWidget( server_group ) ;
 	layout->addWidget( auth_group ) ;
@@ -802,7 +814,8 @@ void SmtpServerPage::dump( std::ostream & stream , bool for_install ) const
 		dumpItem( stream , for_install , "smtp-server-account-password" , encode(value_utf8(m_account_pwd),mechanism) ) ;
 	}
 	dumpItem( stream , for_install , "smtp-server-trust" , value(m_trust_address) ) ;
-	dumpItem( stream , for_install , "smtp-server-tls" , value(m_tls_checkbox) ) ;
+	dumpItem( stream , for_install , "smtp-server-tls" , value(m_tls_checkbox->isChecked() && m_tls_starttls->isChecked()) ) ;
+	dumpItem( stream , for_install , "smtp-server-tls-connection" , value(m_tls_checkbox->isChecked() && m_tls_tunnel->isChecked()) ) ;
 	dumpItem( stream , for_install , "smtp-server-tls-certificate" , m_tls_checkbox->isChecked() ? G::Path(value(m_tls_certificate_edit_box)) : G::Path() ) ;
 }
 
@@ -810,6 +823,8 @@ void SmtpServerPage::onToggle()
 {
 	m_account_group->setEnabled( m_auth_checkbox->isChecked() ) ;
 	m_trust_group->setEnabled( m_auth_checkbox->isChecked() ) ;
+	m_tls_starttls->setEnabled( m_tls_checkbox->isChecked() ) ;
+	m_tls_tunnel->setEnabled( m_tls_checkbox->isChecked() ) ;
 	m_tls_certificate_label->setEnabled( m_tls_checkbox->isChecked() ) ;
 	m_tls_certificate_edit_box->setEnabled( m_tls_checkbox->isChecked() ) ;
 	m_tls_browse_button->setEnabled( m_tls_checkbox->isChecked() ) ;
@@ -859,29 +874,29 @@ FilterPage::FilterPage( GDialog & dialog , const G::MapFile & config , const std
 	m_client_filter_edit_box = new QLineEdit ;
 	m_client_filter_label->setBuddy( m_client_filter_edit_box ) ;
 
-	QHBoxLayout * script_layout = new QHBoxLayout ;
+	auto * script_layout = new QHBoxLayout ;
 	script_layout->addWidget( m_filter_label ) ;
 	script_layout->addWidget( m_filter_edit_box ) ;
 
-	QHBoxLayout * client_script_layout = new QHBoxLayout ;
+	auto * client_script_layout = new QHBoxLayout ;
 	client_script_layout->addWidget( m_client_filter_label ) ;
 	client_script_layout->addWidget( m_client_filter_edit_box ) ;
 
-	QVBoxLayout * server_layout = new QVBoxLayout ;
+	auto * server_layout = new QVBoxLayout ;
 	server_layout->addWidget( m_filter_checkbox ) ;
 	server_layout->addLayout( script_layout ) ;
 
 	QGroupBox * server_group = new QGroupBox(tr("Server")) ;
 	server_group->setLayout( server_layout ) ;
 
-	QVBoxLayout * client_layout = new QVBoxLayout ;
+	auto * client_layout = new QVBoxLayout ;
 	client_layout->addWidget( m_client_filter_checkbox ) ;
 	client_layout->addLayout( client_script_layout ) ;
 
 	QGroupBox * client_group = new QGroupBox(tr("Client")) ;
 	client_group->setLayout( client_layout ) ;
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("Filters"))) ;
 	layout->addWidget( server_group ) ;
 	layout->addWidget( client_group ) ;
@@ -995,7 +1010,7 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const G::MapFile & config , c
 	m_port_edit_box = new QLineEdit( qstr(port) ) ;
 	port_label->setBuddy( m_port_edit_box ) ;
 
-	QHBoxLayout * server_layout = new QHBoxLayout ;
+	auto * server_layout = new QHBoxLayout ;
 	server_layout->addWidget( server_label ) ;
 	server_layout->addWidget( m_server_edit_box ) ;
 	server_layout->addWidget( port_label ) ;
@@ -1005,30 +1020,30 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const G::MapFile & config , c
 	QGroupBox * server_group = new QGroupBox(tr("Remote server")) ;
 	server_group->setLayout( server_layout ) ;
 
-	m_tls_checkbox = new QCheckBox( tr("&Use TLS/SSL encryption") ) ;
+	m_tls_checkbox = new QCheckBox( tr("&Use TLS encryption") ) ;
 	const bool config_tls = config.booleanValue( "client-tls" , false ) ;
 	const bool config_tls_connection = config.booleanValue( "client-tls-connection" , false ) ;
 	m_tls_checkbox->setChecked( config_tls || config_tls_connection ) ;
 	m_tls_starttls = new QRadioButton( tr("&STARTTLS")) ;
 	m_tls_starttls->setChecked( !config_tls_connection ) ;
 	tip( m_tls_starttls , "--client-tls" ) ;
-	m_tls_tunnel = new QRadioButton( tr("&Tunnel (smtps)") ) ;
+	m_tls_tunnel = new QRadioButton( tr("&Implicit TLS (smtps)") ) ;
 	m_tls_tunnel->setChecked( config_tls_connection ) ;
 	tip( m_tls_tunnel , "--client-tls-connection" ) ;
 
-	QHBoxLayout * tls_layout = new QHBoxLayout ;
+	auto * tls_layout = new QHBoxLayout ;
 	tls_layout->addWidget( m_tls_checkbox ) ;
 	tls_layout->addWidget( m_tls_starttls ) ;
 	tls_layout->addWidget( m_tls_tunnel ) ;
 
-	QGroupBox * tls_group = new QGroupBox(tr("TLS/SSL encryption")) ;
+	QGroupBox * tls_group = new QGroupBox(tr("TLS encryption")) ;
 	tls_group->setLayout( tls_layout ) ;
 
 	m_auth_checkbox = new QCheckBox( tr("&Supply authentication") ) ;
 	m_auth_checkbox->setChecked( config.contains("client-auth") ) ;
 	tip( m_auth_checkbox , "--client-auth" ) ;
 
-	QVBoxLayout * auth_layout = new QVBoxLayout ;
+	auto * auth_layout = new QVBoxLayout ;
 	auth_layout->addWidget( m_auth_checkbox ) ;
 
 	QGroupBox * auth_group = new QGroupBox(tr("Authentication")) ;
@@ -1052,7 +1067,7 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const G::MapFile & config , c
 		m_account_pwd->setText("secret") ;
 	}
 
-	QGridLayout * account_layout = new QGridLayout ;
+	auto * account_layout = new QGridLayout ;
 	account_layout->addWidget( account_name_label , 0 , 0 ) ;
 	account_layout->addWidget( m_account_name , 0 , 1 ) ;
 	account_layout->addWidget( account_pwd_label , 1 , 0 ) ;
@@ -1064,7 +1079,7 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const G::MapFile & config , c
 			new QGroupBox(tr("Account")) ;
 	m_account_group->setLayout( account_layout ) ;
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("SMTP client"))) ;
 	layout->addWidget( server_group ) ;
 	layout->addWidget( auth_group ) ;
@@ -1156,16 +1171,16 @@ LoggingPage::LoggingPage( GDialog & dialog , const G::MapFile & config , const s
 	m_logfile_browse_button = new QPushButton(tr("B&rowse")) ;
 	m_logfile_browse_button->setVisible( false ) ; // moot
 
-	QHBoxLayout * logfile_layout = new QHBoxLayout ;
+	auto * logfile_layout = new QHBoxLayout ;
 	logfile_layout->addWidget( m_logfile_label ) ;
 	logfile_layout->addWidget( m_logfile_edit_box ) ;
 	logfile_layout->addWidget( m_logfile_browse_button ) ;
 
-	QVBoxLayout * level_layout = new QVBoxLayout ;
+	auto * level_layout = new QVBoxLayout ;
 	level_layout->addWidget( m_verbose_checkbox ) ;
 	level_layout->addWidget( m_debug_checkbox ) ;
 
-	QVBoxLayout * output_layout = new QVBoxLayout ;
+	auto * output_layout = new QVBoxLayout ;
 	output_layout->addWidget( m_syslog_checkbox ) ;
 	output_layout->addWidget( m_logfile_checkbox ) ;
 	output_layout->addLayout( logfile_layout ) ;
@@ -1188,7 +1203,7 @@ LoggingPage::LoggingPage( GDialog & dialog , const G::MapFile & config , const s
 
 	//
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("Logging"))) ;
 	layout->addWidget(level_group) ;
 	layout->addWidget(output_group) ;
@@ -1301,7 +1316,7 @@ ListeningPage::ListeningPage( GDialog & dialog , const G::MapFile & config , con
 		m_listening_interface->setEnabled( false ) ;
 	}
 
-	QGridLayout * listening_layout = new QGridLayout ;
+	auto * listening_layout = new QGridLayout ;
 	listening_layout->addWidget( m_all_radio , 0 , 0 ) ;
 	listening_layout->addWidget( m_one_radio , 1 , 0 ) ;
 	listening_layout->addWidget( listening_interface_label , 1 , 1 ) ;
@@ -1316,7 +1331,7 @@ ListeningPage::ListeningPage( GDialog & dialog , const G::MapFile & config , con
 	tip( m_remote_checkbox , "--remote-clients" ) ;
 	m_remote_checkbox->setChecked( config.booleanValue("remote-clients",false) ) ;
 
-	QHBoxLayout * connections_layout = new QHBoxLayout ;
+	auto * connections_layout = new QHBoxLayout ;
 	connections_layout->addWidget( m_remote_checkbox ) ;
 
 	QGroupBox * connections_group = new QGroupBox(tr("Clients")) ;
@@ -1324,7 +1339,7 @@ ListeningPage::ListeningPage( GDialog & dialog , const G::MapFile & config , con
 
 	//
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("Connections"))) ;
 	layout->addWidget(listening_group) ;
 	layout->addWidget(connections_group) ;
@@ -1381,14 +1396,14 @@ StartupPage::StartupPage( GDialog & dialog , const G::MapFile & config , const s
 {
 	m_on_boot_checkbox = new QCheckBox( tr("At &system startup") ) ;
 	m_at_login_checkbox = new QCheckBox( tr("&When logging in") ) ;
-	QVBoxLayout * auto_layout = new QVBoxLayout ;
+	auto * auto_layout = new QVBoxLayout ;
 	auto_layout->addWidget( m_on_boot_checkbox ) ;
 	auto_layout->addWidget( m_at_login_checkbox ) ;
 
 	m_add_menu_item_checkbox = new QCheckBox( tr("Add to start menu") ) ;
 	m_add_desktop_item_checkbox = new QCheckBox( tr("Add to desktop") ) ;
 
-	QVBoxLayout * manual_layout = new QVBoxLayout ;
+	auto * manual_layout = new QVBoxLayout ;
 	manual_layout->addWidget( m_add_menu_item_checkbox ) ;
 	manual_layout->addWidget( m_add_desktop_item_checkbox ) ;
 
@@ -1411,7 +1426,7 @@ StartupPage::StartupPage( GDialog & dialog , const G::MapFile & config , const s
 	QGroupBox * manual_group = new QGroupBox(tr("Manual")) ;
 	manual_group->setLayout( manual_layout ) ;
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("Server startup"))) ;
 	layout->addWidget(auto_group) ;
 	layout->addWidget(manual_group) ;
@@ -1463,7 +1478,7 @@ ReadyPage::ReadyPage( GDialog & dialog , const G::MapFile & , const std::string 
 {
 	m_label = new QLabel( text() ) ;
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	std::string message = std::string() + "Ready to " + verb(false) ;
 	layout->addWidget(newTitle(tr(message.c_str()))) ;
 	layout->addWidget(m_label);
@@ -1518,7 +1533,7 @@ ProgressPage::ProgressPage( GDialog & dialog , const G::MapFile & , const std::s
 	m_text_edit->setLineWrapMode(QTextEdit::NoWrap) ;
 	m_text_edit->setFontFamily("courier") ;
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("Installing"))) ;
 	layout->addWidget(m_text_edit) ;
 	setLayout( layout ) ;
@@ -1631,7 +1646,7 @@ std::string ProgressPage::helpName() const
 EndPage_::EndPage_( GDialog & dialog , const G::MapFile & , const std::string & name ) :
 	GPage(dialog,name,"","",true,true)
 {
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	layout->addWidget(newTitle(tr("Finish"))) ;
 	layout->addStretch() ;
 	setLayout( layout ) ;

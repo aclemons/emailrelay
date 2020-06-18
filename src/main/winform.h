@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -76,9 +76,14 @@ private: // overrides
 	virtual void onInit( HWND , int ) override ; // Override from StackPageCallback.
 	virtual bool onApply() override ; // Override from StackPageCallback.
 
+public:
+	~WinForm() = default ;
+	WinForm( const WinForm & ) = delete ;
+	WinForm( WinForm && ) = delete ;
+	void operator=( const WinForm & ) = delete ;
+	void operator=( WinForm && ) = delete ;
+
 private:
-	WinForm( const WinForm & ) g__eq_delete ;
-	void operator=( const WinForm & ) g__eq_delete ;
 	static void add( G::StringArray & s , const std::string & key , const std::string & value ) ;
 	static void add( G::StringArray & list , std::string s ) ;
 	static G::StringArray split( const std::string & s ) ;
@@ -91,14 +96,14 @@ private:
 	static std::string timestamp() ;
 
 private:
-	typedef std::map<std::string,std::pair<std::string,std::string> > StatusMap ;
+	using StatusMap = std::map<std::string,std::pair<std::string,std::string>> ;
 	HWND m_hnotify ;
 	bool m_allow_apply ;
 	bool m_closed ;
-	unique_ptr<GGui::ListView> m_cfg_view ;
-	unique_ptr<GGui::ListView> m_status_view ;
-	unique_ptr<GGui::ListView> m_version_view ;
-	unique_ptr<GGui::ListView> m_licence_view ;
+	std::unique_ptr<GGui::ListView> m_cfg_view ;
+	std::unique_ptr<GGui::ListView> m_status_view ;
+	std::unique_ptr<GGui::ListView> m_version_view ;
+	std::unique_ptr<GGui::ListView> m_licence_view ;
 	Configuration m_cfg ;
 	StatusMap m_status_map ;
 } ;

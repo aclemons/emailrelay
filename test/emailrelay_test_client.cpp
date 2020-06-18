@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,8 +37,8 @@
 #include <exception>
 #include <vector>
 #include <algorithm>
-#include <cstring>
-#include <stdlib.h>
+#include <cstring> // std::strtoul()
+#include <cstdlib>
 #ifndef _WIN32
 #include <sys/signal.h>
 #endif
@@ -46,13 +46,13 @@
 int cfg_verbosity = 0 ;
 
 #ifdef _WIN32
-typedef int read_size_type ;
-typedef int connect_size_type ;
-typedef int send_size_type ;
+using read_size_type = int ;
+using connect_size_type = int ;
+using send_size_type = int ;
 #else
-typedef ssize_t read_size_type ;
-typedef std::size_t connect_size_type ;
-typedef std::size_t send_size_type ;
+using read_size_type = ssize_t ;
+using connect_size_type = std::size_t ;
+using send_size_type = std::size_t ;
 const int INVALID_SOCKET = -1 ;
 #endif
 
@@ -103,19 +103,14 @@ private:
 	static void close_( SOCKET fd ) ;
 	static void shutdown( SOCKET fd ) ;
 	SOCKET m_fd ;
-	int m_messages ;
-	int m_lines ;
-	int m_line_length ;
-	int m_state ;
-	bool m_done ;
+	int m_messages{0} ;
+	int m_lines{0} ;
+	int m_line_length{0} ;
+	int m_state{0} ;
+	bool m_done{false} ;
 } ;
 
-Test::Test() :
-	m_messages(0) ,
-	m_lines(0) ,
-	m_line_length(0) ,
-	m_state(0) ,
-	m_done(false)
+Test::Test()
 {
 	m_fd = ::socket( PF_INET , SOCK_STREAM , 0 ) ;
 	if( m_fd == INVALID_SOCKET )
@@ -263,7 +258,7 @@ static int to_int( const char * p )
 {
 	if( *p == '\0' ) return 0 ;
 	if( *p == '-' ) return -1 ;
-	return static_cast<int>( ::strtoul(p,nullptr,10) ) ;
+	return static_cast<int>( std::strtoul(p,nullptr,10) ) ;
 }
 
 int main( int argc , char * argv [] )
@@ -329,16 +324,22 @@ int main( int argc , char * argv [] )
 		for( int i = 0 ; iterations < 0 || i < iterations ; i++ )
 		{
 			std::vector<Test> test( connections ) ;
-			{ for( size_t t = 0 ; t < test.size() ; t++ ) test[t].init( a , messages , lines , line_length ) ; }
+			for( auto & t : test )
+			{
+				t.init( a , messages , lines , line_length ) ;
+			}
 			for( unsigned done_count = 0 ; done_count < test.size() ; )
 			{
-				for( size_t t = 0 ; t < test.size() ; t++ )
+				for( auto & t : test )
 				{
-					if( !test[t].done() && test[t].runSome() )
+					if( !t.done() && t.runSome() )
 						done_count++ ;
 				}
 			}
-			{ for( size_t t = 0 ; t < test.size() ; t++ ) test[t].close() ; }
+			{
+				for( auto & t : test )
+					t.close() ;
+			}
 		}
 
 		return 0 ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #include <algorithm>
 
 GNet::TimerBase::TimerBase( ExceptionSink es ) :
-	m_time(0)
+	m_time(G::TimerTime::zero())
 {
 	TimerList::instance().add( *this , es ) ;
 }
@@ -36,15 +36,15 @@ GNet::TimerBase::~TimerBase()
 {
 	try
 	{
-		if( TimerList::instance(TimerList::NoThrow()) != nullptr )
-			TimerList::instance().remove( *this ) ;
+		if( TimerList::ptr() != nullptr )
+			TimerList::ptr()->remove( *this ) ;
 	}
 	catch(...) // dtor
 	{
 	}
 }
 
-bool GNet::TimerBase::expired( G::EpochTime & now ) const
+bool GNet::TimerBase::expired( G::TimerTime & now ) const
 {
 	if( !active() )
 	{
@@ -56,38 +56,45 @@ bool GNet::TimerBase::expired( G::EpochTime & now ) const
 	}
 	else
 	{
-		if( now.s == 0 ) now = G::DateTime::now() ;
+		if( now == G::TimerTime::zero() ) now = G::TimerTime::now() ;
 		return m_time <= now ;
 	}
 }
 
 void GNet::TimerBase::startTimer( unsigned int time , unsigned int time_us )
 {
-	m_time = (time==0U && time_us==0U) ? history() : ( G::DateTime::now() + G::TimeInterval(time,time_us) ) ;
+	m_time = (time==0U && time_us==0U) ? history() : ( G::TimerTime::now() + G::TimeInterval(time,time_us) ) ;
 	TimerList::instance().updateOnStart( *this ) ;
 }
 
-G::EpochTime GNet::TimerBase::history()
+void GNet::TimerBase::startTimer( const G::TimeInterval & i )
 {
-	return G::EpochTime( 1 ) ;
+	m_time = i == G::TimeInterval(0U) ? history() : ( G::TimerTime::now() + i ) ;
+	TimerList::instance().updateOnStart( *this ) ;
+}
+
+
+G::TimerTime GNet::TimerBase::history()
+{
+	return G::TimerTime::zero() + G::TimeInterval( 1U ) ;
 }
 
 bool GNet::TimerBase::immediate() const
 {
-	return m_time.s == 1 ; // history() with any adjust()ment
+	return m_time.sameSecond( history() ) ; // history() with any adjust()ment
 }
 
 void GNet::TimerBase::adjust( unsigned int us )
 {
-	G_ASSERT( m_time.s == 1 ) ;
-	m_time.us = std::min( 999999U , us ) ;
+	G_ASSERT( m_time.sameSecond( history() ) ) ;
+	m_time = history() + G::TimeInterval( 0U , std::min( 999999U , us ) ) ;
 }
 
 void GNet::TimerBase::cancelTimer()
 {
 	if( active() )
 	{
-		m_time = G::EpochTime(0) ;
+		m_time = G::TimerTime::zero() ;
 		TimerList::instance().updateOnCancel( *this ) ;
 	}
 }
@@ -95,11 +102,11 @@ void GNet::TimerBase::cancelTimer()
 void GNet::TimerBase::doTimeout()
 {
 	G_ASSERT( active() ) ;
-	m_time = G::EpochTime(0) ;
+	m_time = G::TimerTime::zero() ;
 	onTimeout() ;
 }
 
-G::EpochTime GNet::TimerBase::t() const
+G::TimerTime GNet::TimerBase::t() const
 {
 	return m_time ;
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -50,15 +50,6 @@ namespace GSmtp
 class GSmtp::VerifierStatus
 {
 public:
-	bool is_valid ;
-	bool is_local ;
-	bool temporary ;
-	bool abort ;
-	std::string full_name ;
-	std::string address ;
-	std::string response ;
-	std::string reason ;
-
 	VerifierStatus() ;
 		///< Default constructor for an invalid remote mailbox.
 
@@ -73,6 +64,17 @@ public:
 	std::string str( const std::string & to ) const ;
 		///< Returns a string representation of the structure
 		///< plus the original recipient 'to' address.
+
+public:
+	bool is_valid{false} ;
+	bool is_local{false} ;
+	bool temporary{false} ;
+	bool abort{false} ;
+	std::string full_name ;
+	std::string address ;
+	std::string response ;
+	std::string reason ;
+
 } ;
 
 #endif

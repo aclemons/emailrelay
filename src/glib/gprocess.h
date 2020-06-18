@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ public:
 		explicit Id( std::istream & ) ;
 		Id( SignalSafe , const char * pid_file_path ) ; // (ctor for signal-handler)
 		std::string str() const ;
-		bool operator==( const Id & ) const ;
+		bool operator==( const Id & ) const noexcept ;
 
 	private:
 		friend class NewProcess ;
@@ -68,33 +68,31 @@ public:
 	class Umask /// Used to temporarily modify the process umask.
 	{
 	public:
-		g__enum(Mode) { Readable , Tighter , Tightest , GroupOpen } ; g__enum_end(Mode)
+		enum class Mode { Readable , Tighter , Tightest , GroupOpen } ;
 		explicit Umask( Mode ) ;
 		~Umask() ;
 		static void set( Mode ) ;
 		static void tighten() ; // no "other" access, user and group unchanged
-
-	private:
-		Umask( const Umask & ) g__eq_delete ;
-		void operator=( const Umask & ) g__eq_delete ;
-		unique_ptr<UmaskImp> m_imp ;
+		Umask( const Umask & ) = delete ;
+		Umask( Umask && ) = delete ;
+		void operator=( const Umask & ) = delete ;
+		void operator=( Umask && ) = delete ;
+		private: std::unique_ptr<UmaskImp> m_imp ;
 	} ;
 
 	class NoThrow /// An overload discriminator for Process.
 		{} ;
 
 	static void closeFiles( bool keep_stderr = false ) ;
-		///< Closes all open file descriptors, but optionally not stderr.
-		///< Stdin, stdout, and possibly stderr are reopened to the
-		///< null device.
-
-	static void closeFilesExcept( int fd_1 , int fd_2 = -1 ) ;
-		///< Closes all open file descriptors except the given ones.
-		///< If stdin, stdout, or stderr are closed then they are
-		///< reopened to the null device.
+		///< Closes all open file descriptors and reopen stdin,
+		///< stdout and possibly stderr to the null device.
 
 	static void closeStderr() ;
 		///< Closes stderr and reopens it to the null device.
+
+	static void closeOtherFiles( int fd_keep = -1 ) ;
+		///< Closes all open file descriptors except the three
+		///< standard ones and possibly one other.
 
 	static void cd( const Path & dir ) ;
 		///< Changes directory.
@@ -158,8 +156,8 @@ public:
 		///< independent of the argv array passed to main(). Returns
 		///< the empty string if unknown.
 
-private:
-	Process() g__eq_delete ;
+public:
+	Process() = delete ;
 } ;
 
 namespace G

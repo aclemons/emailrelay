@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 //
 
 #include "gdef.h"
+#include "gscope.h"
 #include "gstr.h"
 #include "gevent.h"
 #include "gappinst.h"
@@ -44,17 +45,9 @@ HANDLE CreateWaitableTimerEx( LPSECURITY_ATTRIBUTES sec , LPCTSTR name , DWORD f
 namespace GNet
 {
 	class EventLoopImp ;
-}
-
-namespace
-{
 	const long READ_EVENTS = (FD_READ | FD_ACCEPT | FD_OOB) ;
 	const long WRITE_EVENTS = (FD_WRITE) ; // no need for "FD_CONNECT"
 	const long EXCEPTION_EVENTS = (FD_CLOSE) ;
-	int isActive( HANDLE h )
-	{
-		return WAIT_OBJECT_0 == WaitForSingleObject( h , /*timeout-ms*/0 ) ? 1 : 0 ;
-	}
 }
 
 class GNet::EventLoopImp : public EventLoop
@@ -64,40 +57,51 @@ public:
 	{
 		Library() ;
 		~Library() ;
+		Library( const Library & ) = delete ;
+		Library( Library && ) = delete ;
+		void operator=( const Library & ) = delete ;
+		void operator=( Library && ) = delete ;
 	} ;
 
 public:
 	EventLoopImp() ;
 	virtual ~EventLoopImp() ;
-	virtual std::string run() override ;
-	virtual bool running() const override ;
-	virtual void quit( const std::string & ) override ;
-	virtual void quit( const G::SignalSafe & ) override ;
-	virtual void disarm( ExceptionHandler * ) override ;
+	std::string run() override ;
+	bool running() const override ;
+	void quit( const std::string & ) override ;
+	void quit( const G::SignalSafe & ) override ;
+	void disarm( ExceptionHandler * ) noexcept override ;
 
 private:
-	virtual void addRead( Descriptor , EventHandler & , ExceptionSink ) override ;
-	virtual void addWrite( Descriptor , EventHandler & , ExceptionSink ) override ;
-	virtual void addOther( Descriptor , EventHandler & , ExceptionSink ) override ;
-	virtual void dropRead( Descriptor ) override ;
-	virtual void dropWrite( Descriptor ) override ;
-	virtual void dropOther( Descriptor ) override ;
-	virtual std::string report() const override ;
+	void addRead( Descriptor , EventHandler & , ExceptionSink ) override ;
+	void addWrite( Descriptor , EventHandler & , ExceptionSink ) override ;
+	void addOther( Descriptor , EventHandler & , ExceptionSink ) override ;
+	void dropRead( Descriptor ) noexcept override ;
+	void dropWrite( Descriptor ) noexcept override ;
+	void dropOther( Descriptor ) noexcept override ;
+	std::string report() const override ;
+
+public:
+	EventLoopImp( const EventLoopImp & ) = delete ;
+	EventLoopImp( EventLoopImp && ) = delete ;
+	void operator=( const EventLoopImp & ) = delete ;
+	void operator=( EventLoopImp && ) = delete ;
 
 private:
-	typedef std::vector<HANDLE> Handles ;
-	typedef std::vector<SOCKET> Sockets ;
-	EventLoopImp( const EventLoopImp & ) g__eq_delete ;
-	void operator=( const EventLoopImp & ) g__eq_delete ;
+	using Handles = std::vector<HANDLE> ;
+	using Sockets = std::vector<SOCKET> ;
+	struct NoThrow {} ;
 	DWORD interval() ;
 	void updateSocket( Descriptor ) ;
+	bool updateSocket( Descriptor , NoThrow ) noexcept ;
 	void updateHandles() ;
 	void loadHandles( Handles & , Sockets & ) ;
 	static void getHandles( EventHandlerList & , Handles & , Sockets & ) ;
-	long desiredEvents( Descriptor ) ;
-	void onEventHandleEvent( size_t ) ;
+	long desiredEvents( Descriptor ) noexcept ;
+	void onEventHandleEvent( std::size_t ) ;
 	void checkOnAdd( Descriptor ) ;
-	static void checkForOverflow( size_t ) ;
+	static void checkForOverflow( std::size_t ) ;
+	static int isActive( HANDLE h ) ;
 
 private:
 	bool m_running ;
@@ -133,9 +137,14 @@ GNet::EventLoopImp::~EventLoopImp()
 {
 }
 
+int GNet::EventLoopImp::isActive( HANDLE h )
+{
+	return WAIT_OBJECT_0 == WaitForSingleObject( h , /*timeout-ms*/0 ) ? 1 : 0 ;
+}
+
 std::string GNet::EventLoopImp::run()
 {
-	EventLoop::Running running( m_running ) ;
+	G::ScopeExitSetFalse running( m_running = true ) ;
 	updateHandles() ;
 	std::string quit_reason ;
 	for(;;)
@@ -145,7 +154,7 @@ std::string GNet::EventLoopImp::run()
 
 		checkForOverflow( handles_n ) ;
 
-		DWORD rc = ::MsgWaitForMultipleObjectsEx( handles_n , handles_p , interval() , QS_ALLINPUT , 0 ) ;
+		DWORD rc = MsgWaitForMultipleObjectsEx( handles_n , handles_p , interval() , QS_ALLINPUT , 0 ) ;
 		bool updated = false ;
 		{
 			EventHandlerList::Lock lock_read( m_read_list , &updated ) ;
@@ -161,7 +170,7 @@ std::string GNet::EventLoopImp::run()
 				// rc indicates left-most event, but we want to process all events in the
 				// current iteration since leaving events for the next iteration leads
 				// to starvation, so check forwards from the left-most using isActive()
-				size_t index = static_cast<size_t>(rc-WAIT_OBJECT_0) ;
+				std::size_t index = static_cast<std::size_t>(rc-WAIT_OBJECT_0) ;
 				std::transform( m_handles.begin()+index , m_handles.end() , m_active.begin()+index , isActive ) ;
 				for( ; index < handles_n ; index++ )
 				{
@@ -193,7 +202,7 @@ std::string GNet::EventLoopImp::run()
 	return quit_reason ;
 }
 
-void GNet::EventLoopImp::onEventHandleEvent( size_t handle_index )
+void GNet::EventLoopImp::onEventHandleEvent( std::size_t handle_index )
 {
 	Descriptor fdd( m_sockets.at(handle_index) , m_handles.at(handle_index) ) ;
 	if( fdd.fd() == INVALID_SOCKET ) // future event
@@ -208,7 +217,7 @@ void GNet::EventLoopImp::onEventHandleEvent( size_t handle_index )
 	else
 	{
 		WSANETWORKEVENTS events_info ;
-		int rc = ::WSAEnumNetworkEvents( fdd.fd() , fdd.h() , &events_info ) ;
+		int rc = WSAEnumNetworkEvents( fdd.fd() , fdd.h() , &events_info ) ;
 		if( rc != 0 )
 			throw Error( "wsa-enum-network-events failed" ) ;
 
@@ -255,22 +264,22 @@ void GNet::EventLoopImp::addOther( Descriptor fdd , EventHandler & handler , Exc
 	updateSocket( fdd ) ;
 }
 
-void GNet::EventLoopImp::dropRead( Descriptor fdd )
+void GNet::EventLoopImp::dropRead( Descriptor fdd ) noexcept
 {
 	m_read_list.remove( fdd ) ;
-	updateSocket( fdd ) ;
+	updateSocket( fdd , NoThrow() ) ;
 }
 
-void GNet::EventLoopImp::dropWrite( Descriptor fdd )
+void GNet::EventLoopImp::dropWrite( Descriptor fdd ) noexcept
 {
 	m_write_list.remove( fdd ) ;
-	updateSocket( fdd ) ;
+	updateSocket( fdd , NoThrow() ) ;
 }
 
-void GNet::EventLoopImp::dropOther( Descriptor fdd )
+void GNet::EventLoopImp::dropOther( Descriptor fdd ) noexcept
 {
 	m_other_list.remove( fdd ) ;
-	updateSocket( fdd ) ;
+	updateSocket( fdd , NoThrow() ) ;
 }
 
 void GNet::EventLoopImp::updateSocket( Descriptor fdd )
@@ -278,10 +287,18 @@ void GNet::EventLoopImp::updateSocket( Descriptor fdd )
 	G_ASSERT( fdd.h() != 0 ) ;
 	if( fdd.fd() != INVALID_SOCKET ) // see GNet::FutureEvent
 	{
-		int rc = ::WSAEventSelect( fdd.fd() , fdd.h() , desiredEvents(fdd) ) ;
+		int rc = WSAEventSelect( fdd.fd() , fdd.h() , desiredEvents(fdd) ) ;
 		if( rc != 0 )
 			throw Error( "wsa-event-select failed" ) ;
 	}
+}
+
+bool GNet::EventLoopImp::updateSocket( Descriptor fdd , NoThrow ) noexcept
+{
+	int rc = 0 ;
+	if( fdd.fd() != INVALID_SOCKET )
+		rc = WSAEventSelect( fdd.fd() , fdd.h() , desiredEvents(fdd) ) ;
+	return rc == 0 ;
 }
 
 void GNet::EventLoopImp::updateHandles()
@@ -301,8 +318,9 @@ void GNet::EventLoopImp::loadHandles( Handles & handles , Sockets & sockets )
 
 void GNet::EventLoopImp::getHandles( EventHandlerList & list , Handles & handles , Sockets & sockets )
 {
+	// TODO optimise getHandles()
 	G_ASSERT( handles.size() == sockets.size() ) ;
-	typedef std::pair<Handles::iterator,Handles::iterator> Range ;
+	using Range = std::pair<Handles::iterator,Handles::iterator> ;
 	for( EventHandlerList::Iterator p = list.begin() ; p != list.end() ; ++p )
 	{
 		// we need to avoid duplicate handles so populate as a sorted list
@@ -330,18 +348,18 @@ void GNet::EventLoopImp::checkOnAdd( Descriptor new_fdd )
 	m_write_list.getHandles( m_count_handles ) ;
 	m_other_list.getHandles( m_count_handles ) ;
 	bool is_new = std::binary_search( m_count_handles.begin() , m_count_handles.end() , new_fdd.h() ) ;
-	size_t n = m_count_handles.size() + (is_new?1U:0U) ;
+	std::size_t n = m_count_handles.size() + (is_new?1U:0U) ;
 	checkForOverflow( n ) ;
 }
 
-void GNet::EventLoopImp::checkForOverflow( size_t n )
+void GNet::EventLoopImp::checkForOverflow( std::size_t n )
 {
-	size_t limit = MAXIMUM_WAIT_OBJECTS ;
+	std::size_t limit = MAXIMUM_WAIT_OBJECTS ;
 	if( n >= limit )
 		throw EventLoop::Overflow( "too many open handles" ) ;
 }
 
-long GNet::EventLoopImp::desiredEvents( Descriptor fdd )
+long GNet::EventLoopImp::desiredEvents( Descriptor fdd ) noexcept
 {
 	long mask = 0 ;
 	const bool read = m_read_list.contains( fdd ) ;
@@ -353,7 +371,7 @@ long GNet::EventLoopImp::desiredEvents( Descriptor fdd )
 	return mask ;
 }
 
-void GNet::EventLoopImp::disarm( ExceptionHandler * p )
+void GNet::EventLoopImp::disarm( ExceptionHandler * p ) noexcept
 {
 	m_read_list.disarm( p ) ;
 	m_write_list.disarm( p ) ;
@@ -370,10 +388,10 @@ DWORD GNet::EventLoopImp::interval()
 	else
 	{
 		ULARGE_INTEGER u ; // (64-bit ULONGLONG Quad and 32-bit DWORD HighPart/LowPart)
-		u.QuadPart = static_cast<ULONGLONG>( interval_pair.first.s ) ;
+		u.QuadPart = static_cast<ULONGLONG>( interval_pair.first.s() ) ;
 		if( u.HighPart ) u.HighPart = 0 , u.LowPart = 0xffffffff ;
 		u.QuadPart = UInt32x32To64( u.LowPart , 1000U ) ; // s->ms
-		u.QuadPart += ( interval_pair.first.us / 1000U ) ; // us->ms
+		u.QuadPart += ( interval_pair.first.us() / 1000U ) ; // us->ms
 		DWORD ms = u.HighPart ? 0xffffffff : u.LowPart ;
 		if( ms == INFINITE ) --ms ;
 		return ms ;
@@ -406,21 +424,21 @@ GNet::EventLoopImp::Library::Library()
 {
 	WSADATA info ;
 	WORD version = MAKEWORD( 2 , 2 ) ;
-	int rc = ::WSAStartup( version , &info ) ;
+	int rc = WSAStartup( version , &info ) ;
 	if( rc != 0 )
 	{
 		throw EventLoopImp::Error( "winsock startup failure" ) ;
 	}
 	if( LOBYTE(info.wVersion) != 2 || HIBYTE(info.wVersion) != 2 )
 	{
-		::WSACleanup() ;
+		WSACleanup() ;
 		throw EventLoopImp::Error( "incompatible winsock version" ) ;
 	}
 }
 
 GNet::EventLoopImp::Library::~Library()
 {
-	// ::WSACleanup() not
+	// WSACleanup() not
 }
 
 /// \file geventloop_win32.cpp

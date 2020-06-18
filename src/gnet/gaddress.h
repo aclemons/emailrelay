@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,8 +33,6 @@ namespace GNet
 	class Address6 ;
 	class AddressStorage ;
 	class AddressStorageImp ;
-	int inet_pton_imp( int f , const char * p , void * result ) ;
-	const char * inet_ntop_imp( int f , void * ap , char * buffer , size_t n ) ;
 }
 
 /// \class GNet::Address
@@ -54,11 +52,11 @@ namespace GNet
 class GNet::Address
 {
 public:
-	g__enum(Family)
+	enum class Family
 	{
 		ipv4 ,
 		ipv6
-	} ; g__enum_end(Family) ;
+	} ;
 
 	G_EXCEPTION( Error , "address error" ) ;
 	G_EXCEPTION( BadString , "invalid address" ) ;
@@ -67,6 +65,10 @@ public:
 	static bool supports( Family ) ;
 		///< Returns true if the implementation supports the given address family,
 		///< either ipv4 or ipv6.
+
+	static bool supports( int af , int dummy ) ;
+		///< Returns true if the implementation supports the given address family,
+		///< either AF_INET or AF_INET6.
 
 	Address( const Address & ) ;
 		///< Copy constructor.
@@ -81,6 +83,7 @@ public:
 	Address( Family , unsigned int port ) ;
 		///< Constructor for a wildcard INADDR_ANY address with the given port
 		///< number. Throws an exception if an invalid port number.
+		///< Postcondition: isAny()
 		/// \see validPort()
 
 	explicit Address( const std::string & display_string ) ;
@@ -91,10 +94,8 @@ public:
 		///< Constructor taking an ip-address and a port number. Throws an
 		///< exception if an invalid string.
 
-	#if GCONFIG_HAVE_CXX_MOVE
-	Address( Address && ) g__noexcept ;
-		// Move constructor.
-	#endif
+	Address( Address && ) noexcept ;
+		///< Move constructor.
 
 	~Address() ;
 		///< Destructor.
@@ -141,10 +142,6 @@ public:
 	int af() const ;
 		///< Returns the address family number, AF_INET or AFINET6.
 
-	unsigned long scopeId( unsigned long default_ = 0UL ) const ;
-		///< Returns the scope-id. Returns the default if scope-ids are not
-		///< supported by the underlying address type.
-
 	static bool validPort( unsigned int n ) ;
 		///< Returns true if the port number is within the valid range. This
 		///< can be used to avoid exceptions from the relevant constructors.
@@ -166,9 +163,24 @@ public:
 		///< Returns true if the two addresses have the same host part
 		///< (ie. the network address, ignoring the port number).
 
-	void setPort( unsigned int port ) ;
+	Address & setPort( unsigned int port ) ;
 		///< Sets the port number. Throws an exception if an invalid
 		///< port number (ie. too big).
+
+	bool setZone( const std::string & ) ;
+		///< Sets the zone. The parameter is normally a decimal string
+		///< representation of the zone-id, aka scope-id (eg. "1"), but
+		///< if not numeric then it is treated as an interface name
+		///< which is mapped to a zone-id by if_nametoindex(3). Returns
+		///< false on error. Returns true if zones are not used by the
+		///< address family.
+
+	Address & setScopeId( unsigned long ) ;
+		///< Sets the scope-id.
+
+	unsigned long scopeId( unsigned long default_ = 0UL ) const ;
+		///< Returns the scope-id. Returns the default if scope-ids are not
+		///< supported by the underlying address type.
 
 	G::StringArray wildcards() const ;
 		///< Returns an ordered list of wildcard strings that match this
@@ -183,14 +195,28 @@ public:
 	bool isLoopback() const ;
 		///< Returns true if this is a loopback address.
 
+	bool isLinkLocal() const ;
+		///< Returns true if this is a link-local address.
+
+	bool isUniqueLocal() const ;
+		///< Returns true if this is a locally administered address.
+
+	bool isAny() const ;
+		///< Returns true if this is the address family's 'any' address.
+
 	bool isLocal( std::string & reason ) const ;
 		///< Returns true if this seems to be a 'local' address, ie. an
 		///< address that is inherently more trusted. Returns an
 		///< explanation by reference otherwise.
 
-	bool isPrivate() const ;
-		///< Returns true if this seems to be a 'private' address,
-		///< as in RFC-1918 for IPv4.
+	bool is4() const ;
+		///< Returns true if family() is ipv4.
+
+	bool is6() const ;
+		///< Returns true if family() is ipv6.
+
+	bool same( const Address & , bool with_scope ) const ;
+		///< Comparison function.
 
 	bool operator==( const Address & ) const ;
 		///< Comparison operator.
@@ -198,28 +224,26 @@ public:
 	bool operator!=( const Address & ) const ;
 		///< Comparison operator.
 
-	void swap( Address & other ) g__noexcept ;
+	void swap( Address & other ) noexcept ;
 		///< Swaps this with other.
 
-	Address & operator=( const Address & addr ) ;
+	Address & operator=( const Address & ) ;
 		///< Assignment operator.
 
-	#if GCONFIG_HAVE_CXX_MOVE
-	Address & operator=( Address && ) g__noexcept ;
-		// Move assigmnemt operator.
-	#endif
+	Address & operator=( Address && ) noexcept ;
+		///< Move assigmnemt operator.
 
 private:
 	Address( Family , unsigned int , int ) ; // loopback()
 
 private:
-	unique_ptr<Address4> m_4imp ;
-	unique_ptr<Address6> m_6imp ;
+	std::unique_ptr<Address4> m_4imp ;
+	std::unique_ptr<Address6> m_6imp ;
 } ;
 
 namespace GNet
 {
-	inline void swap( Address & a , Address & b ) g__noexcept
+	inline void swap( Address & a , Address & b ) noexcept
 	{
 		a.swap(b) ;
 	}
@@ -253,12 +277,14 @@ public:
 	socklen_t n() const ;
 		///< Returns the length, typically modified via p2().
 
-private:
-	AddressStorage( const AddressStorage & ) g__eq_delete ;
-	void operator=( const AddressStorage & ) g__eq_delete ;
+public:
+	AddressStorage( const AddressStorage & ) = delete ;
+	AddressStorage( AddressStorage && ) = delete ;
+	void operator=( const AddressStorage & ) = delete ;
+	void operator=( AddressStorage && ) = delete ;
 
 private:
-	unique_ptr<AddressStorageImp> m_imp ;
+	std::unique_ptr<AddressStorageImp> m_imp ;
 } ;
 
 #endif

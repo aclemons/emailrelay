@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -136,9 +136,11 @@ protected:
 	static void load( DWORD ) ;
 		///< Loads common-control library code for the given control types.
 
+public:
+	Control( const Control & ) = delete ;
+	void operator=( const Control & ) = delete ;
+
 private:
-	Control( const Control & ) g__eq_delete ;
-	void operator=( const Control & ) g__eq_delete ;
 	static void load() ;
 
 private:
@@ -180,9 +182,9 @@ public:
 	unsigned entries() const ;
 		///< Returns the number of list box entries.
 
-private:
-	ListBox( const ListBox & ) g__eq_delete ;
-	void operator=( const ListBox & ) g__eq_delete ;
+public:
+	ListBox( const ListBox & ) = delete ;
+	void operator=( const ListBox & ) = delete ;
 } ;
 
 /// \class GGui::ListView
@@ -196,7 +198,7 @@ public:
 	ListView( Dialog & dialog , int id ) ;
 		///< Constructor.
 
-	ListView( HWND hdialog , int id , HWND hcontrol = NULL ) ;
+	ListView( HWND hdialog , int id , HWND hcontrol = HNULL ) ;
 		///< Constructor overload for property sheets.
 
 	virtual ~ListView() ;
@@ -211,9 +213,11 @@ public:
 		///< Updates the grid contents, ignoring the column headers
 		///< that start the list.
 
+public:
+	ListView( const ListView & ) = delete ;
+	void operator=( const ListView & ) = delete ;
+
 private:
-	ListView( const ListView & ) g__eq_delete ;
-	void operator=( const ListView & ) g__eq_delete ;
 	static LPTSTR ptext( const std::string & s ) ;
 } ;
 
@@ -273,9 +277,11 @@ public:
 		///< Sets tab stop positions, measured in "dialog box
 		///< template units" (the default being 32).
 
+public:
+	EditBox( const EditBox & ) = delete ;
+	void operator=( const EditBox & ) = delete ;
+
 private:
-	EditBox( const EditBox & ) g__eq_delete ;
-	void operator=( const EditBox & ) g__eq_delete ;
 	unsigned windowHeight() ; // not const
 	unsigned characterHeight() ; // not const
 
@@ -301,9 +307,9 @@ public:
 	void set( bool b ) ;
 		///< Sets the state of a boolean check box.
 
-private:
-	CheckBox( const CheckBox & ) g__eq_delete ;
-	void operator=( const CheckBox ) g__eq_delete ;
+public:
+	CheckBox( const CheckBox & ) = delete ;
+	void operator=( const CheckBox ) = delete ;
 } ;
 
 /// \class GGui::Button
@@ -328,9 +334,9 @@ public:
 	void disable() ;
 		///< Disables the button, greying it.
 
-private:
-	Button( const Button & ) g__eq_delete ;
-	void operator=( const Button & ) g__eq_delete ;
+public:
+	Button( const Button & ) = delete ;
+	void operator=( const Button & ) = delete ;
 } ;
 
 #endif

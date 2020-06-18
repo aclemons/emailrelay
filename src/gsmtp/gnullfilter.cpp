@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ GSmtp::NullFilter::NullFilter( GNet::ExceptionSink es , bool server_side ) :
 }
 
 GSmtp::NullFilter::NullFilter( GNet::ExceptionSink es , bool server_side , unsigned int exit_code ) :
-	m_exit(exit_code,server_side) ,
+	m_exit(static_cast<int>(exit_code),server_side) ,
 	m_id("exit:"+G::Str::fromUInt(exit_code)) ,
 	m_timer(*this,&NullFilter::onTimeout,es)
 {
@@ -61,7 +61,7 @@ std::string GSmtp::NullFilter::reason() const
 	return ( m_exit.ok() || m_exit.abandon() ) ? std::string() : m_id ;
 }
 
-G::Slot::Signal1<int> & GSmtp::NullFilter::doneSignal()
+G::Slot::Signal<int> & GSmtp::NullFilter::doneSignal()
 {
 	return m_done_signal ;
 }

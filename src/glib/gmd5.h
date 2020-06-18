@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -50,8 +50,8 @@ class G::Md5
 public:
 	G_EXCEPTION( Error , "internal md5 error" ) ;
 	G_EXCEPTION_CLASS( InvalidState , "invalid md5 hash state" ) ;
-	typedef size_t big_t ; // To hold at least 32 bits.
-	typedef size_t small_t ; // To hold at least a size_t and no bigger than a big_t.
+	using big_t = std::size_t ; // To hold at least 32 bits.
+	using small_t = std::size_t ; // To hold at least a std::size_t and no bigger than a big_t.
 	struct digest_state /// Holds the four parts of the md5 state.
 		{ big_t a ; big_t b ; big_t c ; big_t d ; } ;
 	struct digest_stream_state /// Holds the md5 state plus unprocessed residual data.
@@ -81,13 +81,13 @@ public:
 		///< generally printable and it may have embedded nulls.
 		/// \see G::HashState, G::Hash::printable().
 
-	static size_t blocksize() ;
+	static std::size_t blocksize() ;
 		///< Returns the block size in bytes (64).
 
-	static size_t valuesize() ;
+	static std::size_t valuesize() ;
 		///< Returns the value() size in bytes (16).
 
-	static size_t statesize() ;
+	static std::size_t statesize() ;
 		///< Returns the size of the state() string (20).
 
 	static std::string digest( const std::string & input ) ;
@@ -118,13 +118,16 @@ public:
 		///< a string of 32 non-printing characters. Throws
 		///< InvalidState if the state-pair string is not valid.
 
-private:
-	Md5( const Md5 & ) g__eq_delete ;
-	void operator=( const Md5 & ) g__eq_delete ;
+public:
+	~Md5() = default ;
+	Md5( const Md5 & ) = delete ;
+	Md5( Md5 && ) = delete ;
+	void operator=( const Md5 & ) = delete ;
+	void operator=( Md5 && ) = delete ;
 
 private:
+	std::size_t m_n{0U} ;
 	digest_state m_d ;
-	size_t m_n ;
 	std::string m_s ;
 } ;
 

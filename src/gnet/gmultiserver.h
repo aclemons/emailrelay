@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@
 #include "gdef.h"
 #include "gevent.h"
 #include "gserver.h"
+#include "gtimer.h"
+#include "ginterfaces.h"
 #include <vector>
 #include <utility> // std::pair<>
 
@@ -35,12 +37,15 @@ namespace GNet
 
 /// \class GNet::MultiServer
 /// A server that listens on more than one address using a facade
-/// pattern to multiple GNet::Server instances.
+/// pattern to multiple GNet::Server instances. Supports dynamic
+/// server instantiation based on available network interface
+/// addresses (see GNet::InterfacesHandler).
 ///
-class GNet::MultiServer
+class GNet::MultiServer : private InterfacesHandler
 {
 public:
-	typedef std::vector<Address> AddressList ;
+	using AddressList = std::vector<Address> ;
+	G_EXCEPTION( NoListeningAddresses , "no listening addresses" ) ;
 
 	struct ServerInfo /// A structure used in GNet::MultiServer::newPeer().
 	{
@@ -48,20 +53,22 @@ public:
 		Address m_address ; ///< The server address that the peer connected to.
 	} ;
 
-	MultiServer( ExceptionSink listener_exception_sink , const AddressList & address_list ,
-		ServerPeerConfig server_peer_config ) ;
-			///< Constructor. The server listens on on the specific
-			///< (local) interfaces.
-			///<
-			///< Precondition: !address_list.empty()
+	MultiServer( ExceptionSink listener_exception_sink , const G::StringArray & interfaces ,
+		unsigned int port , const std::string & server_type , ServerPeerConfig server_peer_config ) ;
+			///< Constructor. The server listens on on the specific local
+			///< interfaces, given as either interface names (eg. "eth0")
+			///< or IP network addresses (eg. "::1") together with a
+			///< fixed port number. Throws if there are no listening
+			///< addresses and the GNet::Interfaces implementation is
+			///< not active().
 
-	virtual ~MultiServer() ;
+	~MultiServer() override ;
 		///< Destructor.
 
 	bool hasPeers() const ;
 		///< Returns true if peers() is not empty.
 
-	std::vector<weak_ptr<ServerPeer> > peers() ;
+	std::vector<std::weak_ptr<ServerPeer> > peers() ;
 		///< Returns the list of ServerPeer-derived objects.
 
 	static bool canBind( const AddressList & listening_address_list , bool do_throw ) ;
@@ -69,27 +76,11 @@ public:
 		///< bound. Throws CannotBind if an address cannot
 		///< be bound and 'do_throw' is true.
 
-	static AddressList addressList( const Address & ) ;
-		///< A trivial convenience fuction that returns the given
-		///< address as a single-element list.
-
-	static AddressList addressList( const AddressList & , unsigned int port ) ;
-		///< Returns the given list of addresses with the port set
-		///< correctly. If the given list is empty then a single
-		///< 'any' address is returned.
-
-	static AddressList addressList( const G::StringArray & , unsigned int port ) ;
-		///< A convenience function that returns a list of
-		///< listening addresses given a list of listening
-		///< interfaces and a port number. If the list of
-		///< interfaces is empty then a single 'any' address
-		///< is returned.
-
-	unique_ptr<ServerPeer> doNewPeer( ExceptionSinkUnbound , ServerPeerInfo , ServerInfo ) ;
+	std::unique_ptr<ServerPeer> doNewPeer( ExceptionSinkUnbound , const ServerPeerInfo & , const ServerInfo & ) ;
 		///< Pseudo-private method used by the pimple class.
 
 protected:
-	virtual unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo , ServerInfo ) = 0 ;
+	virtual std::unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo , ServerInfo ) = 0 ;
 		///< A factory method which new()s a ServerPeer-derived
 		///< object. See GNet::Server for the details.
 
@@ -98,22 +89,39 @@ protected:
 		///< so that peer objects can use their Server objects
 		///< safely during their own destruction.
 
-	void serverReport( const std::string & server_type ) const ;
+	void serverReport() const ;
 		///< Writes to the system log a summary of the underlying server
 		///< objects and their addresses.
 
-private:
-	friend class GNet::MultiServerImp ;
-	MultiServer( const MultiServer & ) g__eq_delete ;
-	void operator=( const MultiServer & ) g__eq_delete ;
-	void init( const Address & , ServerPeerConfig ) ;
-	void init( const AddressList & address_list , ServerPeerConfig ) ;
+private: // overrides
+	void onInterfaceEvent( const std::string & ) override ; // GNet::InterfacesHandler
+
+public:
+	MultiServer( const MultiServer & ) = delete ;
+	MultiServer( MultiServer && ) = delete ;
+	void operator=( const MultiServer & ) = delete ;
+	void operator=( MultiServer && ) = delete ;
 
 private:
-	typedef shared_ptr<MultiServerImp> ServerPtr ;
-	typedef std::vector<ServerPtr> ServerList ;
+	friend class GNet::MultiServerImp ;
+	AddressList addresses( unsigned int ) const ;
+	AddressList addresses( unsigned int , G::StringArray & , G::StringArray & ) const ;
+	void init( const AddressList & address_list , ServerPeerConfig ) ;
+	bool gotServerFor( const Address & ) const ;
+	void onInterfaceEventTimeout() ;
+	static bool match( const Address & , const Address & ) ;
+
+private:
+	using ServerPtr = std::shared_ptr<MultiServerImp> ; // std::unique_ptr when c++11
+	using ServerList = std::vector<ServerPtr> ;
 	ExceptionSink m_es ;
+	G::StringArray m_interfaces ;
+	unsigned int m_port ;
+	std::string m_server_type ;
+	ServerPeerConfig m_server_peer_config ;
+	Interfaces m_if ;
 	ServerList m_server_list ;
+	Timer<MultiServer> m_interface_event_timer ;
 } ;
 
 /// \class GNet::MultiServerImp
@@ -125,18 +133,20 @@ public:
 	MultiServerImp( MultiServer & , ExceptionSink , const Address & , ServerPeerConfig ) ;
 		///< Constructor.
 
-	virtual ~MultiServerImp() ;
+	~MultiServerImp() override ;
 		///< Destructor.
 
-	unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo ) g__final override ;
+	std::unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo ) final ;
 		///< Called by the base class to create a new ServerPeer.
 
 	void cleanup() ;
 		///< Calls GNet::Server::serverCleanup().
 
-private:
-	MultiServerImp( const MultiServerImp & ) g__eq_delete ;
-	void operator=( const MultiServerImp & ) g__eq_delete ;
+public:
+	MultiServerImp( const MultiServerImp & ) = delete ;
+	MultiServerImp( MultiServerImp && ) = delete ;
+	void operator=( const MultiServerImp & ) = delete ;
+	void operator=( MultiServerImp && ) = delete ;
 
 private:
 	MultiServer & m_ms ;

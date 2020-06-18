@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,21 +37,21 @@ namespace G
 class G::Msg
 {
 public:
-	static ssize_t send( SOCKET , const void * , size_t , int ,
+	static ssize_t send( SOCKET , const void * , std::size_t , int ,
 		int fd_to_send = -1 ) ;
 			///< A send() replacement using sendmsg().
 
-	static ssize_t sendto( SOCKET , const void * , size_t , int , const sockaddr * , socklen_t ,
+	static ssize_t sendto( SOCKET , const void * , std::size_t , int , const sockaddr * , socklen_t ,
 		int fd_to_send = -1 ) ;
 			///< A sendto() replacement using sendmsg().
 
-	static ssize_t recv( SOCKET , void * , size_t , int ) ;
+	static ssize_t recv( SOCKET , void * , std::size_t , int ) ;
 		///< A recv() wrapper.
 
-	static ssize_t recv( SOCKET , void * , size_t , int , int * fd_received_p ) ;
+	static ssize_t recv( SOCKET , void * , std::size_t , int , int * fd_received_p ) ;
 		///< A recv() replacement using recvmsg().
 
-	static ssize_t recvfrom( SOCKET , void * , size_t , int , sockaddr * , socklen_t * ,
+	static ssize_t recvfrom( SOCKET , void * , std::size_t , int , sockaddr * , socklen_t * ,
 		int * fd_received_p = nullptr ) ;
 			///< A recvfrom() replacement using recvmsg().
 
@@ -59,8 +59,8 @@ public:
 		///< Returns true if the error value indicates a permanent
 		///< problem with the socket.
 
-private:
-	Msg() g__eq_delete ;
+public:
+	Msg() = delete ;
 } ;
 
 #endif

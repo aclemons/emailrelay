@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,18 +55,18 @@ namespace G
 class G::GetOpt
 {
 public:
-	typedef std::string::size_type size_type ;
+	using size_type = std::string::size_type ;
 
-	GetOpt( const Arg & arg , const std::string & spec ) ;
-		///< Constructor taking a Arg reference and a G::Options specification string.
+	GetOpt( const Arg & arg , const std::string & spec , std::size_t ignore_non_options = 0U ) ;
+		///< Constructor taking a Arg object and a G::Options specification string.
 		///< Parsing errors are reported via errorList().
 
-	GetOpt( const StringArray & arg , const std::string & spec ) ;
+	GetOpt( const StringArray & arg , const std::string & spec , std::size_t ignore_non_options = 0U ) ;
 		///< An overload taking a vector of command-line arguments.
 		///< The program name in the first argument is expected but
 		///< ignored.
 
-	void reload( const StringArray & arg ) ;
+	void reload( const StringArray & arg , std::size_t ignore_non_options = 0U ) ;
 		///< Reinitialises the object with the given command-line arguments.
 		///< The program name in the first position is expected but ignored.
 
@@ -114,7 +114,7 @@ public:
 		///< Returns true if the command-line contains the option identified by its
 		///< long-form name.
 
-	size_t count( const std::string & option_name ) const ;
+	std::size_t count( const std::string & option_name ) const ;
 		///< Returns the number of times the option was supplied.
 
 	std::string value( const std::string & option_name , const std::string & default_ = std::string() ) const ;
@@ -131,10 +131,15 @@ public:
 		///< have the same value, or adds a 'duplicate' error if there is
 		///< a mismatch.
 
+public:
+	~GetOpt() = default ;
+	GetOpt( const GetOpt & ) = delete ;
+	GetOpt( GetOpt && ) = delete ;
+	void operator=( const GetOpt & ) = delete ;
+	void operator=( GetOpt && ) = delete ;
+
 private:
-	GetOpt( const GetOpt & ) g__eq_delete ;
-	void operator=( const GetOpt & ) g__eq_delete ;
-	void parseArgs( Arg & ) ;
+	void parseArgs( Arg & , std::size_t ) ;
 	StringArray optionsFromFile( const G::Path & ) const ;
 
 private:

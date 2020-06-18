@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,38 +31,145 @@
 
 namespace GNet
 {
+	class SocketBase ;
 	class Socket ;
 	class SocketProtocol ;
 	class StreamSocket ;
 	class DatagramSocket ;
+	class RawSocket ;
 	class AcceptPair ;
 }
 
-/// \class GNet::Socket
+/// \class GNet::SocketBase
+/// A socket base class that holds a non-blocking socket file descriptor and
+/// interfaces to the event loop.
 ///
-/// A network socket base class, holding a non-blocking socket file descriptor.
-///
-/// Provides bind(), listen(), connect(), write(); derived classes provide
-/// accept() and read(). Interfaces to the event loop with addReadHandler(),
-/// addWriteHandler() etc.
-///
-class GNet::Socket : public G::ReadWrite
+class GNet::SocketBase : public G::ReadWrite
 {
 public:
 	G_EXCEPTION( SocketError , "socket error" ) ;
 	G_EXCEPTION_CLASS( SocketBindError , "socket bind error" ) ;
 	G_EXCEPTION_CLASS( SocketTooMany , "socket accept error" ) ;
-	typedef G::ReadWrite::size_type size_type ;
-	typedef G::ReadWrite::ssize_type ssize_type ;
+	using size_type = G::ReadWrite::size_type ;
+	using ssize_type = G::ReadWrite::ssize_type ;
 	struct NoThrow /// Overload discriminator class for GNet::Socket.
 		{} ;
 	struct Accepted /// Overload discriminator class for GNet::Socket.
 		{} ;
 
-	virtual ~Socket() ;
-		///< Destructor. The socket file descriptor is removed
-		///< from the event loop.
+	~SocketBase() override ;
+		///< Destructor. The socket file descriptor is closed and
+		///< removed from the event loop.
 
+	SOCKET fd() const override ;
+		///< Returns the socket descriptor. Override from G::ReadWrite.
+
+	bool eWouldBlock() const override ;
+		///< Returns true if the previous socket operation
+		///< failed because the socket would have blocked.
+		///< Override from G::ReadWrite.
+
+	bool eInProgress() const ;
+		///< Returns true if the previous socket operation
+		///< failed with the EINPROGRESS error status.
+		///< When connecting this can be considered a
+		///< non-error.
+
+	bool eMsgSize() const ;
+		///< Returns true if the previous socket operation
+		///< failed with the EMSGSIZE error status. When
+		///< writing to a datagram socket this indicates that
+		///< the message was too big to send atomically.
+
+	bool eTooMany() const ;
+		///< Returns true if the previous socket operation
+		///< failed with the EMFILE error status, or similar.
+
+	void addReadHandler( EventHandler & , ExceptionSink ) ;
+		///< Adds this socket to the event source list so that
+		///< the given handler receives read events.
+
+	void dropReadHandler() noexcept ;
+		///< Reverses addReadHandler().
+
+	void addWriteHandler( EventHandler & , ExceptionSink ) ;
+		///< Adds this socket to the event source list so that
+		///< the given handler receives write events when flow
+		///< control is released. (Not used for datagram
+		///< sockets.)
+
+	void dropWriteHandler() noexcept ;
+		///< Reverses addWriteHandler().
+
+	void addOtherHandler( EventHandler & , ExceptionSink ) ;
+		///< Adds this socket to the event source list so that
+		///< the given handler receives exception events.
+		///< A TCP exception event should be treated as a
+		///< disconnection event. (Not used for datagram
+		///< sockets.)
+
+	void dropOtherHandler() noexcept ;
+		///< Reverses addOtherHandler().
+
+	std::string asString() const ;
+		///< Returns the socket handle as a string.
+		///< Only used in debugging.
+
+	std::string reason() const ;
+		///< Returns the reason for the previous error.
+
+protected:
+	SocketBase( int domain , int type , int protocol ) ;
+		///< Constructor used by derived classes. Creates the
+		///< socket using socket().
+
+	SocketBase( int domain , Descriptor s , const Accepted & ) ;
+		///< Constructor which creates a socket object from
+		///< a socket handle from accept(). Used only by
+		///< StreamSocket::accept().
+
+	ssize_type writeImp( const char * buf , size_type len ) ;
+		///< Writes to the socket. This is a default implementation
+		///< for write() that can be called from derived classes'
+		///< overrides.
+
+protected:
+	static std::string reasonString( int ) ;
+	static bool error( int rc ) ;
+	static bool sizeError( ssize_type size ) ;
+	bool create( int , int , int ) ;
+	void clearReason() ;
+	void saveReason() ;
+	void saveReason() const ;
+	int domain() const ;
+	bool prepare( bool ) ;
+
+private:
+	void drop() noexcept ;
+	void destroy() noexcept ;
+	bool setNonBlock() ;
+
+public:
+	SocketBase( const SocketBase & ) = delete ;
+	SocketBase( SocketBase && ) = delete ;
+	void operator=( const SocketBase & ) = delete ;
+	void operator=( SocketBase && ) = delete ;
+
+private:
+	int m_reason ;
+	std::string m_reason_string ;
+	int m_domain ;
+	Descriptor m_fd ;
+} ;
+
+/// \class GNet::Socket
+/// An internet-protocol socket class. Provides bind(), listen(),
+/// and connect(); the base class provide write(); and derived
+/// classes provide accept() and read().
+///
+class GNet::Socket : public SocketBase
+{
+public:
 	std::pair<bool,Address> getLocalAddress() const ;
 		///< Retrieves local address of the socket.
 		///< The boolean value is false on error.
@@ -87,6 +194,12 @@ public:
 		///< always return true. This method should be used on
 		///< a temporary socket of the correct dynamic type
 		///< since this socket may become unusable.
+
+	unsigned long getBoundScopeId() const ;
+		///< Returns the scope-id of the address last successfully
+		///< bind()ed. Note that getLocalAddress() has a zero
+		///< scope-id even after bind()ing an address with
+		///< a non-zero scope-id.
 
 	bool connect( const Address & addr , bool *done = nullptr ) ;
 		///< Initiates a connection to (or association with)
@@ -121,87 +234,20 @@ public:
 		///<
 		///< Errors are ignored.
 
-	virtual ssize_type write( const char * buf , size_type len ) override = 0 ;
-		///< Writes to the socket. This is a default implementation
-		///< that can be called explicitly from derived classes.
-		///< Override from G::ReadWrite.
-
-	virtual SOCKET fd() const override ;
-		///< Returns the socket descriptor. Override from G::ReadWrite.
-
-	virtual bool eWouldBlock() override ;
-		///< Returns true if the previous socket operation
-		///< failed because the socket would have blocked.
-		///< Override from G::ReadWrite.
-
-	bool eInProgress() ;
-		///< Returns true if the previous socket operation
-		///< failed with the EINPROGRESS error status.
-		///< When connecting this can be considered a
-		///< non-error.
-
-	bool eMsgSize() ;
-		///< Returns true if the previous socket operation
-		///< failed with the EMSGSIZE error status. When
-		///< writing to a datagram socket this indicates that
-		///< the message was too big to send atomically.
-
-	bool eTooMany() ;
-		///< Returns true if the previous socket operation
-		///< failed with the EMFILE error status, or similar.
-
-	void addReadHandler( EventHandler & , ExceptionSink ) ;
-		///< Adds this socket to the event source list so that
-		///< the given handler receives read events.
-
-	void dropReadHandler();
-		///< Reverses addReadHandler().
-
-	void addWriteHandler( EventHandler & , ExceptionSink ) ;
-		///< Adds this socket to the event source list so that
-		///< the given handler receives write events when flow
-		///< control is released. (Not used for datagram
-		///< sockets.)
-
-	void dropWriteHandler() ;
-		///< Reverses addWriteHandler().
-
-	void addOtherHandler( EventHandler & , ExceptionSink ) ;
-		///< Adds this socket to the event source list so that
-		///< the given handler receives exception events.
-		///< A TCP exception event should be treated as a
-		///< disconnection event. (Not used for datagram
-		///< sockets.)
-
-	void dropOtherHandler() ;
-		///< Reverses addOtherHandler().
-
-	std::string asString() const ;
-		///< Returns the socket handle as a string.
-		///< Only used in debugging.
-
-	std::string reason() const ;
-		///< Returns the reason for the previous error.
+public:
+	~Socket() override = default ;
+	Socket( const Socket & ) = delete ;
+	Socket( Socket && ) = delete ;
+	void operator=( const Socket & ) = delete ;
+	void operator=( Socket && ) = delete ;
 
 protected:
 	Socket( int domain , int type , int protocol ) ;
-		///< Constructor used by derived classes. Creates the
-		///< socket using socket().
-
-	Socket( Descriptor s , const Accepted & ) ;
-		///< Constructor which creates a socket object from
-		///< a socket handle from accept(). Used only by
-		///< StreamSocket::accept().
-
-protected:
-	static std::string reasonString( int ) ;
-	static bool error( int rc ) ;
-	static bool sizeError( ssize_type size ) ;
-	bool create( int , int , int ) ;
-	void saveReason() ;
-	void saveReason() const ;
-	bool prepare( bool ) ;
+	Socket( int domain , Descriptor s , const Accepted & ) ;
 	std::pair<bool,Address> getAddress( bool ) const ;
+	void setOption( int , const char * , int , int ) ;
+	bool setOption( int , const char * , int , int , NoThrow ) ;
+	bool setOptionImp( int , int , const void * , socklen_t ) ;
 	void setOptionsOnBind( bool ) ;
 	void setOptionsOnConnect( bool ) ;
 	void setOptionLingerImp( int , int ) ;
@@ -212,21 +258,8 @@ protected:
 	bool setOptionPureV6( bool , NoThrow ) ;
 	void setOptionKeepAlive() ;
 
-protected:
-	int m_reason ;
-	std::string m_reason_string ;
-	int m_domain ;
-	Descriptor m_socket ;
-
 private:
-	Socket( const Socket & ) g__eq_delete ;
-	void operator=( const Socket & ) g__eq_delete ;
-	void drop() ;
-	void destroy() ;
-	bool setNonBlock() ;
-	void setOption( int , const char * , int , int ) ;
-	bool setOption( int , const char * , int , int , NoThrow ) ;
-	bool setOptionImp( int , int , const void * , socklen_t ) ;
+	unsigned long m_bound_scope_id{0UL} ;
 } ;
 
 /// \class GNet::AcceptPair
@@ -236,7 +269,7 @@ private:
 class GNet::AcceptPair
 {
 public:
-	shared_ptr<StreamSocket> first ;
+	std::shared_ptr<StreamSocket> first ;
 	Address second ;
 	AcceptPair() : second(Address::defaultAddress()) {}
 } ;
@@ -247,33 +280,37 @@ public:
 class GNet::StreamSocket : public Socket
 {
 public:
-	typedef Socket::size_type size_type ;
-	typedef Socket::ssize_type ssize_type ;
+	using size_type = Socket::size_type ;
+	using ssize_type = Socket::ssize_type ;
 	struct Listener /// Overload discriminator class for GNet::StreamSocket.
 		{} ;
 
 	explicit StreamSocket( int address_domain ) ;
-		///< Constructor with a hint of the bind()/connect()
-		///< address to be used later.
+		///< Constructor.
 
 	StreamSocket( int address_domain , const Listener & ) ;
 		///< Constructor overload specifically for a listening
 		///< socket. This can be used modify the socket options.
 
-	virtual ssize_type read( char * buffer , size_type buffer_length ) override ;
+	ssize_type read( char * buffer , size_type buffer_length ) override ;
 		///< Override from ReadWrite::read().
 
-	virtual ssize_type write( const char * buf , size_type len ) override ;
+	ssize_type write( const char * buf , size_type len ) override ;
 		///< Override from Socket::write().
 
 	AcceptPair accept() ;
 		///< Accepts an incoming connection, returning a new()ed
 		///< socket and the peer address.
 
+public:
+	~StreamSocket() override = default ;
+	StreamSocket( const StreamSocket & ) = delete ;
+	StreamSocket( StreamSocket && ) = delete ;
+	void operator=( const StreamSocket & ) = delete ;
+	void operator=( StreamSocket && ) = delete ;
+
 private:
-	StreamSocket( const StreamSocket & ) g__eq_delete ;
-	void operator=( const StreamSocket & ) g__eq_delete ;
-	StreamSocket( Descriptor s , const Socket::Accepted & ) ;
+	StreamSocket( int , Descriptor s , const Socket::Accepted & ) ;
 	void setOptionsOnCreate( bool ) ;
 	void setOptionsOnAccept() ;
 } ;
@@ -284,13 +321,13 @@ private:
 class GNet::DatagramSocket : public Socket
 {
 public:
-	explicit DatagramSocket( int address_domain ) ;
-		///< Constructor with a hint of a local address.
+	explicit DatagramSocket( int address_domain , int protocol = 0 ) ;
+		///< Constructor.
 
-	virtual ssize_type read( char * buffer , size_type len ) override ;
+	ssize_type read( char * buffer , size_type len ) override ;
 		///< Override from ReadWrite::read().
 
-	virtual ssize_type write( const char * buffer , size_type len ) override ;
+	ssize_type write( const char * buffer , size_type len ) override ;
 		///< Override from Socket::write().
 
 	ssize_type readfrom( char * buffer , size_type len , Address & src ) ;
@@ -306,9 +343,35 @@ public:
 		///< Releases the association between two datagram endpoints
 		///< reversing the effect of the previous Socket::connect().
 
-private:
-	DatagramSocket( const DatagramSocket & ) g__eq_delete ;
-	void operator=( const DatagramSocket & ) g__eq_delete ;
+public:
+	~DatagramSocket() override = default ;
+	DatagramSocket( const DatagramSocket & ) = delete ;
+	DatagramSocket( DatagramSocket && ) = delete ;
+	void operator=( const DatagramSocket & ) = delete ;
+	void operator=( DatagramSocket && ) = delete ;
+} ;
+
+/// \class GNet::RawSocket
+/// A derivation of GNet::SocketBase for a raw socket.
+///
+class GNet::RawSocket : public SocketBase
+{
+public:
+	explicit RawSocket( int domain , int protocol = 0 ) ;
+		///< Constructor.
+
+	ssize_type read( char * buffer , size_type buffer_length ) override ;
+		///< Reads from the socket.
+
+	ssize_type write( const char * buf , size_type len ) override ;
+		///< Writes to the socket.
+
+public:
+	~RawSocket() override = default ;
+	RawSocket( const RawSocket & ) = delete ;
+	RawSocket( RawSocket && ) = delete ;
+	void operator=( const RawSocket & ) = delete ;
+	void operator=( RawSocket && ) = delete ;
 } ;
 
 #endif

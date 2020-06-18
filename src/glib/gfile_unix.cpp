@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,19 +26,22 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <errno.h>
 #include <vector>
 #include <sstream>
+#include <cerrno> // ENOENT etc
 
-namespace
+namespace G
 {
-	G::EpochTime mtime( struct stat & statbuf )
+	namespace FileImp
 	{
-		#if GCONFIG_HAVE_STATBUF_NSEC
-		return G::EpochTime( statbuf.st_mtime , statbuf.st_mtim.tv_nsec/1000U ) ;
-		#else
-		return G::EpochTime( statbuf.st_mtime ) ;
-		#endif
+		G::SystemTime mtime( struct stat & statbuf )
+		{
+			#if GCONFIG_HAVE_STATBUF_NSEC
+				return G::SystemTime( statbuf.st_mtime , statbuf.st_mtim.tv_nsec/1000U ) ;
+			#else
+				return G::SystemTime( statbuf.st_mtime ) ;
+			#endif
+		}
 	}
 }
 
@@ -50,7 +53,7 @@ bool G::File::mkdir( const Path & dir , const NoThrow & )
 
 bool G::File::exists( const char * path , bool & enoent , bool & eaccess )
 {
-	struct stat statbuf ;
+	struct stat statbuf {} ;
 	if( 0 == ::stat( path , &statbuf ) )
 	{
 		return true ;
@@ -66,19 +69,19 @@ bool G::File::exists( const char * path , bool & enoent , bool & eaccess )
 
 bool G::File::isLink( const Path & path )
 {
-	struct stat statbuf ;
+	struct stat statbuf {} ;
 	return 0 == ::stat( path.str().c_str() , &statbuf ) && (statbuf.st_mode & S_IFLNK) ;
 }
 
 bool G::File::isDirectory( const Path & path )
 {
-	struct stat statbuf ;
+	struct stat statbuf {} ;
 	return 0 == ::stat( path.str().c_str() , &statbuf ) && (statbuf.st_mode & S_IFDIR) ;
 }
 
 bool G::File::executable( const Path & path )
 {
-	struct stat statbuf ;
+	struct stat statbuf {} ;
 	if( 0 == ::stat( path.str().c_str() , &statbuf ) )
 	{
 		bool x = !!( statbuf.st_mode & S_IXUSR ) ;
@@ -95,13 +98,13 @@ bool G::File::executable( const Path & path )
 
 bool G::File::empty( const Path & path )
 {
-	struct stat statbuf ;
+	struct stat statbuf {} ;
 	return 0 == ::stat( path.str().c_str() , &statbuf ) && statbuf.st_size == 0 ;
 }
 
 std::string G::File::sizeString( const Path & path )
 {
-	struct stat statbuf ;
+	struct stat statbuf {} ;
 	if( 0 != ::stat( path.str().c_str() , &statbuf ) )
 		return std::string() ;
 
@@ -110,25 +113,25 @@ std::string G::File::sizeString( const Path & path )
 	return ss.str() ;
 }
 
-G::EpochTime G::File::time( const Path & path )
+G::SystemTime G::File::time( const Path & path )
 {
-	struct stat statbuf ;
+	struct stat statbuf {} ;
 	if( 0 != ::stat( path.str().c_str() , &statbuf ) )
 		throw TimeError( path.str() ) ;
-	return mtime( statbuf ) ;
+	return FileImp::mtime( statbuf ) ;
 }
 
-G::EpochTime G::File::time( const Path & path , const NoThrow & )
+G::SystemTime G::File::time( const Path & path , const NoThrow & )
 {
-	struct stat statbuf ;
+	struct stat statbuf {} ;
 	if( ::stat( path.str().c_str() , &statbuf ) != 0 )
-		return EpochTime( 0 ) ;
-	return mtime( statbuf ) ;
+		return SystemTime( 0 ) ;
+	return FileImp::mtime( statbuf ) ;
 }
 
 bool G::File::chmodx( const Path & path , bool do_throw )
 {
-	struct stat statbuf ;
+	struct stat statbuf {} ;
 	mode_t mode =
 		0 == ::stat( path.str().c_str() , &statbuf ) ?
 			statbuf.st_mode :
@@ -195,17 +198,17 @@ G::Path G::File::readlink( const Path & link )
 G::Path G::File::readlink( const Path & link , const NoThrow & )
 {
 	Path result ;
-	struct stat statbuf ;
+	struct stat statbuf {} ;
 	int rc = ::lstat( link.str().c_str() , &statbuf ) ;
 	if( rc == 0 )
 	{
-		size_t buffer_size = statbuf.st_size ? (statbuf.st_size+1U) : 1024U ;
+		std::size_t buffer_size = statbuf.st_size ? (statbuf.st_size+1U) : 1024U ;
 		std::vector<char> buffer( buffer_size , '\0' ) ;
 		ssize_t rc = ::readlink( link.str().c_str() , &buffer[0] , buffer.size() ) ;
-		if( rc > 0 && static_cast<size_t>(rc) < buffer.size() ) // filesystem race can cause trucation -- treat as an error
+		if( rc > 0 && static_cast<std::size_t>(rc) < buffer.size() ) // filesystem race can cause truncation -- treat as an error
 		{
-			G_ASSERT( buffer.at(static_cast<size_t>(rc-1)) != '\0' ) ; // readlink does not null-terminate
-			result = Path( std::string( &buffer[0] , static_cast<size_t>(rc) ) ) ;
+			G_ASSERT( buffer.at(static_cast<std::size_t>(rc-1)) != '\0' ) ; // readlink does not null-terminate
+			result = Path( std::string( &buffer[0] , static_cast<std::size_t>(rc) ) ) ;
 		}
 	}
 	return result ;

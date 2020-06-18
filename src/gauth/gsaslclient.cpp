@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,23 +31,17 @@
 #include <algorithm>
 #include <sstream>
 
-namespace
-{
-	const char * login_challenge_1 = "Username:" ;
-	const char * login_challenge_2 = "Password:" ;
-}
-
 /// \class GAuth::SaslClientImp
 /// A private pimple-pattern implementation class used by GAuth::SaslClient.
 ///
 class GAuth::SaslClientImp
 {
 public:
-	typedef SaslClient::Response Response ;
+	using Response = SaslClient::Response ;
 	SaslClientImp( const SaslClientSecrets & , const std::string & ) ;
 	bool active() const ;
 	std::string mechanism( const G::StringArray & ) const ;
-	std::string initialResponse( size_t limit ) const ;
+	std::string initialResponse( std::size_t limit ) const ;
 	Response response( const std::string & mechanism , const std::string & challenge ) const ;
 	bool next() ;
 	std::string mechanism() const ;
@@ -63,7 +57,12 @@ private:
 	mutable std::string m_id ;
 	std::string PLAIN ;
 	std::string LOGIN ;
+	static const char * login_challenge_1 ;
+	static const char * login_challenge_2 ;
 } ;
+
+const char * GAuth::SaslClientImp::login_challenge_1 = "Username:" ;
+const char * GAuth::SaslClientImp::login_challenge_2 = "Password:" ;
 
 // ===
 
@@ -95,7 +94,7 @@ std::string GAuth::SaslClientImp::mechanism( const G::StringArray & server_mecha
 	else
 	{
 		our_list = Cram::hashTypes( "CRAM-" , true ) ;
-		for( G::StringArray::iterator p = our_list.begin() ; p != our_list.end() ; )
+		for( auto p = our_list.begin() ; p != our_list.end() ; )
 		{
 			if( m_secrets.clientSecret((*p).substr(5U)).valid() )
 				++p ;
@@ -126,11 +125,11 @@ std::string GAuth::SaslClientImp::mechanism( const G::StringArray & server_mecha
 
 	// build the list of mechanisms that we can use with the server
 	m_mechanisms.clear() ;
-	for( G::StringArray::iterator p = our_list.begin() ; p != our_list.end() ; ++p )
+	for( auto & our_mechanism : our_list )
 	{
-		if( match(server_mechanisms,*p) )
+		if( match(server_mechanisms,our_mechanism) )
 		{
-			m_mechanisms.push_back( *p ) ;
+			m_mechanisms.push_back( our_mechanism ) ;
 		}
 	}
 
@@ -153,7 +152,7 @@ std::string GAuth::SaslClientImp::mechanism() const
 	return m_mechanisms.empty() ? std::string() : m_mechanisms.at(0U) ;
 }
 
-std::string GAuth::SaslClientImp::initialResponse( size_t limit ) const
+std::string GAuth::SaslClientImp::initialResponse( std::size_t limit ) const
 {
 	// (the implementation of response() is stateless because it can derive
 	// state from the challege, so we doesn't need to worry here about
@@ -174,9 +173,9 @@ GAuth::SaslClient::Response GAuth::SaslClientImp::response( const std::string & 
 	const std::string & challenge ) const
 {
 	Response rsp ;
+	rsp.sensitive = true ;
 	rsp.error = true ;
 	rsp.final = false ;
-	rsp.sensitive = true ;
 
 	Secret secret = Secret::none() ;
 	if( mechanism.find("CRAM-") == 0U )
@@ -269,14 +268,12 @@ bool GAuth::SaslClientImp::match( const G::StringArray & mechanisms , const std:
 // ===
 
 GAuth::SaslClient::SaslClient( const SaslClientSecrets & secrets , const std::string & config ) :
-	m_imp(new SaslClientImp(secrets,config) )
+	m_imp(new SaslClientImp(secrets,config))
 {
 }
 
 GAuth::SaslClient::~SaslClient()
-{
-	delete m_imp ;
-}
+= default;
 
 bool GAuth::SaslClient::active() const
 {
@@ -288,7 +285,7 @@ GAuth::SaslClient::Response GAuth::SaslClient::response( const std::string & mec
 	return m_imp->response( mechanism , challenge ) ;
 }
 
-std::string GAuth::SaslClient::initialResponse( size_t limit ) const
+std::string GAuth::SaslClient::initialResponse( std::size_t limit ) const
 {
 	return m_imp->initialResponse( limit ) ;
 }

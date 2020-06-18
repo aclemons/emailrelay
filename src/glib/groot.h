@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -87,9 +87,11 @@ public:
 	static void stop( SignalSafe , Identity ) ;
 		///< A signal-safe alternative to destruction.
 
-private:
-	Root( const Root & ) g__eq_delete ;
-	void operator=( const Root & ) g__eq_delete ;
+public:
+	Root( const Root & ) = delete ;
+	Root( Root && ) = delete ;
+	void operator=( const Root & ) = delete ;
+	void operator=( Root && ) = delete ;
 
 private:
 	static Root * m_this ;

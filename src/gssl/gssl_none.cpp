@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -109,8 +109,7 @@ GSsl::Protocol::Protocol( const Profile & , const std::string & , const std::str
 }
 
 GSsl::Protocol::~Protocol()
-{
-}
+= default;
 
 GSsl::Protocol::Result GSsl::Protocol::connect( G::ReadWrite & )
 {
@@ -127,12 +126,12 @@ GSsl::Protocol::Result GSsl::Protocol::shutdown()
 	return Result::error ;
 }
 
-GSsl::Protocol::Result GSsl::Protocol::read( char * , size_t , ssize_t & )
+GSsl::Protocol::Result GSsl::Protocol::read( char * , std::size_t , ssize_t & )
 {
 	return Result::error ;
 }
 
-GSsl::Protocol::Result GSsl::Protocol::write( const char * , size_t , ssize_t & )
+GSsl::Protocol::Result GSsl::Protocol::write( const char * , std::size_t , ssize_t & )
 {
 	return Result::error ;
 }
@@ -183,17 +182,17 @@ std::string GSsl::Digester::state()
 	return std::string() ;
 }
 
-size_t GSsl::Digester::blocksize() const
+std::size_t GSsl::Digester::blocksize() const
 {
 	return 1U ;
 }
 
-size_t GSsl::Digester::valuesize() const
+std::size_t GSsl::Digester::valuesize() const
 {
 	return 1U ;
 }
 
-size_t GSsl::Digester::statesize() const
+std::size_t GSsl::Digester::statesize() const
 {
 	return 0U ;
 }

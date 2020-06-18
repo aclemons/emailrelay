@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ namespace GPop
 ///
 struct GPop::FileReader
 {
-	FileReader() {}
+	FileReader() = default;
 } ;
 
 /// \class GPop::DirectoryReader
@@ -51,7 +51,7 @@ struct GPop::FileReader
 ///
 struct GPop::DirectoryReader : private G::Root
 {
-	DirectoryReader() {}
+	DirectoryReader() = default;
 } ;
 
 /// \class GPop::FileDeleter
@@ -88,7 +88,7 @@ bool GPop::Store::byName() const
 	return m_by_name ;
 }
 
-void GPop::Store::checkPath( G::Path dir_path , bool by_name , bool allow_delete )
+void GPop::Store::checkPath( const G::Path & dir_path , bool by_name , bool allow_delete )
 {
 	if( by_name )
 	{
@@ -125,7 +125,7 @@ void GPop::Store::checkPath( G::Path dir_path , bool by_name , bool allow_delete
 	}
 }
 
-bool GPop::Store::valid( G::Path dir_path , bool allow_delete )
+bool GPop::Store::valid( const G::Path & dir_path , bool allow_delete )
 {
 	G::Directory dir_test( dir_path ) ;
 	bool ok = false ;
@@ -137,7 +137,7 @@ bool GPop::Store::valid( G::Path dir_path , bool allow_delete )
 	}
 	else
 	{
-		FileReader claim_reader ;
+		FileReader claim_reader ; G_IGNORE_VARIABLE(FileReader,claim_reader) ;
 		ok = dir_test.valid() ;
 	}
 	if( !ok )
@@ -205,8 +205,8 @@ void GPop::StoreLock::lock( const std::string & user )
 	if( G::Test::enabled("large-pop-list") )
 	{
 		// create a larger list
-		size_t limit = m_initial.size() * 1000U ;
-		for( size_t i = 0U ; i < limit ; i++ )
+		std::size_t limit = m_initial.size() * 1000U ;
+		for( std::size_t i = 0U ; i < limit ; i++ )
 		{
 			std::ostringstream ss ;
 			ss << "dummy." << i << ".content" ;
@@ -226,8 +226,7 @@ bool GPop::StoreLock::locked() const
 }
 
 GPop::StoreLock::~StoreLock()
-{
-}
+= default;
 
 GPop::StoreLock::Size GPop::StoreLock::messageCount() const
 {
@@ -239,8 +238,8 @@ GPop::StoreLock::Size GPop::StoreLock::totalByteCount() const
 {
 	G_ASSERT( locked() ) ;
 	Size total = 0 ;
-	for( Set::const_iterator p = m_current.begin() ; p != m_current.end() ; ++p )
-		total += (*p).size ;
+	for( const auto & item : m_current )
+		total += item.size ;
 	return total ;
 }
 
@@ -253,7 +252,7 @@ bool GPop::StoreLock::valid( int id ) const
 GPop::StoreLock::Set::iterator GPop::StoreLock::find( int id )
 {
 	G_ASSERT( valid(id) ) ;
-	Set::iterator initial_p = m_initial.begin() ;
+	auto initial_p = m_initial.begin() ;
 	for( int i = 1 ; i < id && initial_p != m_initial.end() ; i++ , ++initial_p ) ;
 	return initial_p ;
 }
@@ -261,14 +260,14 @@ GPop::StoreLock::Set::iterator GPop::StoreLock::find( int id )
 GPop::StoreLock::Set::const_iterator GPop::StoreLock::find( int id ) const
 {
 	G_ASSERT( valid(id) ) ;
-	Set::const_iterator initial_p = m_initial.begin() ;
+	auto initial_p = m_initial.begin() ;
 	for( int i = 1 ; i < id && initial_p != m_initial.end() ; i++ , ++initial_p ) ;
 	return initial_p ;
 }
 
 GPop::StoreLock::Set::iterator GPop::StoreLock::find( const std::string & name )
 {
-	Set::iterator current_p = m_current.begin() ;
+	auto current_p = m_current.begin() ;
 	for( ; current_p != m_current.end() ; ++current_p )
 	{
 		if( (*current_p).name == name )
@@ -288,7 +287,7 @@ GPop::StoreLock::List GPop::StoreLock::list( int id ) const
 	G_ASSERT( locked() ) ;
 	List list ;
 	int i = 1 ;
-	for( Set::const_iterator p = m_current.begin() ; p != m_current.end() ; ++p , i++ )
+	for( auto p = m_current.begin() ; p != m_current.end() ; ++p , i++ )
 	{
 		if( id == -1 || id == i )
 			list.push_back( Entry(i,(*p).size,(*p).name) ) ;
@@ -296,23 +295,23 @@ GPop::StoreLock::List GPop::StoreLock::list( int id ) const
 	return list ;
 }
 
-unique_ptr<std::istream> GPop::StoreLock::get( int id ) const
+std::unique_ptr<std::istream> GPop::StoreLock::get( int id ) const
 {
 	G_ASSERT( locked() ) ;
 	G_ASSERT( valid(id) ) ;
 
 	G_DEBUG( "GPop::StoreLock::get: " << id << ": " << path(id) ) ;
 
-	unique_ptr<std::ifstream> file ;
+	std::unique_ptr<std::ifstream> file ;
 	{
-		FileReader claim_reader ;
-		file.reset( new std::ifstream( path(id).str().c_str() , std::ios_base::binary | std::ios_base::in ) ) ;
+		FileReader claim_reader ; G_IGNORE_VARIABLE(FileReader,claim_reader) ;
+		file = std::make_unique<std::ifstream>( path(id).str().c_str() , std::ios_base::binary | std::ios_base::in ) ;
 	}
 
 	if( ! file->good() )
 		throw CannotRead( path(id).str() ) ;
 
-	return unique_ptr<std::istream>( file.release() ) ;
+	return std::unique_ptr<std::istream>( file.release() ) ;
 }
 
 void GPop::StoreLock::remove( int id )
@@ -320,8 +319,8 @@ void GPop::StoreLock::remove( int id )
 	G_ASSERT( locked() ) ;
 	G_ASSERT( valid(id) ) ;
 
-	Set::iterator initial_p = find( id ) ;
-	Set::iterator current_p = find( (*initial_p).name ) ;
+	auto initial_p = find( id ) ;
+	auto current_p = find( (*initial_p).name ) ;
 	if( current_p != m_current.end() )
 	{
 		m_deleted.insert( *initial_p ) ;
@@ -344,17 +343,17 @@ void GPop::StoreLock::commit()
 void GPop::StoreLock::doCommit( Store & store ) const
 {
 	bool all_ok = true ;
-	for( Set::const_iterator p = m_deleted.begin() ; p != m_deleted.end() ; ++p )
+	for( const auto & item : m_deleted )
 	{
 		if( store.allowDelete() )
 		{
-			deleteFile( envelopePath(*p) , all_ok ) ;
-			if( unlinked(store,*p) ) // race condition could leave content files undeleted
-				deleteFile( contentPath(*p) , all_ok ) ;
+			deleteFile( envelopePath(item) , all_ok ) ;
+			if( unlinked(store,item) ) // race condition could leave content files undeleted
+				deleteFile( contentPath(item) , all_ok ) ;
 		}
 		else
 		{
-			G_DEBUG( "StoreLock::doCommit: not deleting \"" << (*p).name << "\"" ) ;
+			G_DEBUG( "StoreLock::doCommit: not deleting \"" << item.name << "\"" ) ;
 		}
 	}
 	if( ! all_ok )
@@ -376,14 +375,14 @@ void GPop::StoreLock::deleteFile( const G::Path & path , bool & all_ok ) const
 std::string GPop::StoreLock::uidl( int id ) const
 {
 	G_ASSERT( valid(id) ) ;
-	Set::const_iterator p = find(id) ;
+	auto p = find( id ) ;
 	return (*p).name ;
 }
 
 G::Path GPop::StoreLock::path( int id ) const
 {
 	G_ASSERT( valid(id) ) ;
-	Set::const_iterator p = find(id) ;
+	auto p = find( id ) ;
 	const File & file = (*p) ;
 	return contentPath( file ) ;
 }

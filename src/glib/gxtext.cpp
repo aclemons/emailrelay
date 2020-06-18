@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,65 +23,69 @@
 #include "gstr.h"
 #include "gassert.h"
 
-namespace
+namespace G
 {
-	inline char hex( unsigned int n )
+	namespace XtextImp
 	{
-		static const char * map = "0123456789ABCDEF" ;
-		return map[n] ;
-	}
-	inline bool ishex( char c , bool allow_lowercase )
-	{
-		return
-			( c >= '0' && c <= '9' ) ||
-			( allow_lowercase && c >= 'a' && c <= 'f' ) ||
-			( c >= 'A' && c <= 'F' ) ;
-	}
-	inline unsigned int unhex( char c )
-	{
-		unsigned int rc = 0U ;
-		switch( c )
+		inline char hex( unsigned int n )
 		{
-			case '0': rc = 0U ; break ;
-			case '1': rc = 1U ; break ;
-			case '2': rc = 2U ; break ;
-			case '3': rc = 3U ; break ;
-			case '4': rc = 4U ; break ;
-			case '5': rc = 5U ; break ;
-			case '6': rc = 6U ; break ;
-			case '7': rc = 7U ; break ;
-			case '8': rc = 8U ; break ;
-			case '9': rc = 9U ; break ;
-			case 'A': rc = 10U ; break ;
-			case 'B': rc = 11U ; break ;
-			case 'C': rc = 12U ; break ;
-			case 'D': rc = 13U ; break ;
-			case 'E': rc = 14U ; break ;
-			case 'F': rc = 15U ; break ;
-			case 'a': rc = 10U ; break ;
-			case 'b': rc = 11U ; break ;
-			case 'c': rc = 12U ; break ;
-			case 'd': rc = 13U ; break ;
-			case 'e': rc = 14U ; break ;
-			case 'f': rc = 15U ; break ;
+			static const char * map = "0123456789ABCDEF" ;
+			return map[n] ;
 		}
-		return rc ;
+		inline bool ishex( char c , bool allow_lowercase )
+		{
+			return
+				( c >= '0' && c <= '9' ) ||
+				( allow_lowercase && c >= 'a' && c <= 'f' ) ||
+				( c >= 'A' && c <= 'F' ) ;
+		}
+		inline unsigned int unhex( char c )
+		{
+			unsigned int rc = 0U ;
+			switch( c )
+			{
+				case '0': rc = 0U ; break ;
+				case '1': rc = 1U ; break ;
+				case '2': rc = 2U ; break ;
+				case '3': rc = 3U ; break ;
+				case '4': rc = 4U ; break ;
+				case '5': rc = 5U ; break ;
+				case '6': rc = 6U ; break ;
+				case '7': rc = 7U ; break ;
+				case '8': rc = 8U ; break ;
+				case '9': rc = 9U ; break ;
+				case 'A': rc = 10U ; break ;
+				case 'B': rc = 11U ; break ;
+				case 'C': rc = 12U ; break ;
+				case 'D': rc = 13U ; break ;
+				case 'E': rc = 14U ; break ;
+				case 'F': rc = 15U ; break ;
+				case 'a': rc = 10U ; break ;
+				case 'b': rc = 11U ; break ;
+				case 'c': rc = 12U ; break ;
+				case 'd': rc = 13U ; break ;
+				case 'e': rc = 14U ; break ;
+				case 'f': rc = 15U ; break ;
+			}
+			return rc ;
+		}
 	}
 }
 
 bool G::Xtext::valid( const std::string & s , bool strict )
 {
+	namespace imp = XtextImp ;
 	if( !Str::isPrintableAscii(s) || ( strict && s.find_first_of("= ") != std::string::npos ) )
 	{
 		return false ;
 	}
 	else
 	{
-		for( size_t pos = s.find('+') ; pos != std::string::npos ; pos = ((pos+1U)==s.size()?std::string::npos:s.find('+',pos+1U)) )
+		for( std::size_t pos = s.find('+') ; pos != std::string::npos ; pos = ((pos+1U)==s.size()?std::string::npos:s.find('+',pos+1U)) )
 		{
 			if( (pos+2U) >= s.size() ) return false ;
-			if( !ishex(s.at(pos+1U),!strict) ) return false ;
-			if( !ishex(s.at(pos+2U),!strict) ) return false ;
+			if( !imp::ishex(s.at(pos+1U),!strict) ) return false ;
+			if( !imp::ishex(s.at(pos+2U),!strict) ) return false ;
 		}
 		return true ;
 	}
@@ -89,19 +93,20 @@ bool G::Xtext::valid( const std::string & s , bool strict )
 
 std::string G::Xtext::encode( const std::string & s )
 {
+	namespace imp = XtextImp ;
 	std::string result ;
-	for( std::string::const_iterator p = s.begin() ; p != s.end() ; ++p )
+	for( char c : s )
 	{
-		if( *p >= '!' && *p <= '~' && *p != '=' && *p != '+' )
+		if( c >= '!' && c <= '~' && c != '=' && c != '+' )
 		{
-			result.append( 1U , *p ) ;
+			result.append( 1U , c ) ;
 		}
 		else
 		{
-			unsigned int n = static_cast<unsigned char>(*p) ;
+			unsigned int n = static_cast<unsigned char>(c) ;
 			result.append( 1U , '+' ) ;
-			result.append( 1U , hex( n >> 4U ) ) ;
-			result.append( 1U , hex( n & 0x0f ) ) ;
+			result.append( 1U , imp::hex( n >> 4U ) ) ;
+			result.append( 1U , imp::hex( n & 0x0f ) ) ;
 		}
 	}
 	G_ASSERT( decode(result) == s ) ;
@@ -110,6 +115,7 @@ std::string G::Xtext::encode( const std::string & s )
 
 std::string G::Xtext::decode( const std::string & s )
 {
+	namespace imp = XtextImp ;
 	std::string result ;
 	for( std::string::const_iterator p = s.begin() ; p != s.end() ; ++p )
 	{
@@ -118,7 +124,7 @@ std::string G::Xtext::decode( const std::string & s )
 			++p ; if( p == s.end() ) break ;
 			char h1 = *p++ ; if( p == s.end() ) break ;
 			char h2 = *p ;
-			unsigned int c = ( unhex(h1) << 4U ) | unhex(h2) ;
+			unsigned int c = ( imp::unhex(h1) << 4U ) | imp::unhex(h2) ;
 			result.append( 1U , static_cast<char>(static_cast<unsigned char>(c)) ) ;
 		}
 		else

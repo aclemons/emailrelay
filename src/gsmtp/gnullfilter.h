@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,23 +45,28 @@ public:
 		///< exit code.
 
 private: // overrides
-	virtual std::string id() const override ; // Override from from GSmtp::Filter.
-	virtual bool simple() const override ; // Override from from GSmtp::Filter.
-	virtual G::Slot::Signal1<int> & doneSignal() override ; // Override from from GSmtp::Filter.
-	virtual void start( const std::string & path ) override ; // Override from from GSmtp::Filter.
-	virtual void cancel() override ; // Override from from GSmtp::Filter.
-	virtual bool abandoned() const override ; // Override from from GSmtp::Filter.
-	virtual std::string response() const override ; // Override from from GSmtp::Filter.
-	virtual std::string reason() const override ; // Override from from GSmtp::Filter.
-	virtual bool special() const override ; // Override from from GSmtp::Filter.
+	std::string id() const override ; // Override from from GSmtp::Filter.
+	bool simple() const override ; // Override from from GSmtp::Filter.
+	G::Slot::Signal<int> & doneSignal() override ; // Override from from GSmtp::Filter.
+	void start( const std::string & path ) override ; // Override from from GSmtp::Filter.
+	void cancel() override ; // Override from from GSmtp::Filter.
+	bool abandoned() const override ; // Override from from GSmtp::Filter.
+	std::string response() const override ; // Override from from GSmtp::Filter.
+	std::string reason() const override ; // Override from from GSmtp::Filter.
+	bool special() const override ; // Override from from GSmtp::Filter.
+
+public:
+	~NullFilter() override = default ;
+	NullFilter( const NullFilter & ) = delete ;
+	NullFilter( NullFilter && ) = delete ;
+	void operator=( const NullFilter & ) = delete ;
+	void operator=( NullFilter && ) = delete ;
 
 private:
-	NullFilter( const NullFilter & ) g__eq_delete ;
-	void operator=( const NullFilter & ) g__eq_delete ;
 	void onTimeout() ;
 
 private:
-	G::Slot::Signal1<int> m_done_signal ;
+	G::Slot::Signal<int> m_done_signal ;
 	Filter::Exit m_exit ;
 	std::string m_id ;
 	GNet::Timer<NullFilter> m_timer ;

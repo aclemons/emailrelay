@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,20 +21,24 @@
 #include "gdef.h"
 #include "gnetdone.h"
 #include "geventhandlerlist.h"
+#include "geventloggingcontext.h"
 #include "glog.h"
 #include "gassert.h"
 #include <algorithm>
 
-namespace
+namespace GNet
 {
-	struct fdless
+	namespace EventHandlerListImp /// An implementation namespace for GNet::EventHandlerList.
 	{
-		typedef GNet::EventHandlerList::Value Value ;
-		bool operator()( const Value & p1 , const Value & p2 )
+		struct fdless /// A functor that compares two file descriptors.
 		{
-			return p1.m_fd < p2.m_fd ;
-		}
-	} ;
+			using Value = GNet::EventHandlerList::Value ;
+			bool operator()( const Value & p1 , const Value & p2 ) noexcept
+			{
+				return p1.m_fd < p2.m_fd ;
+			}
+		} ;
+	}
 }
 
 GNet::EventHandlerList::EventHandlerList( const std::string & type ) :
@@ -55,15 +59,16 @@ void GNet::EventHandlerList::add( Descriptor fd , EventHandler * handler , Excep
 
 void GNet::EventHandlerList::addImp( List & list , Descriptor fd , EventHandler * handler , ExceptionSink es )
 {
-	typedef std::pair<List::iterator,List::iterator> Range ;
-	Range range = std::equal_range( list.begin() , list.end() , List::value_type(fd) , fdless() ) ;
+	namespace imp = EventHandlerListImp ;
+	using Range = std::pair<List::iterator,List::iterator> ;
+	Range range = std::equal_range( list.begin() , list.end() , List::value_type(fd) , imp::fdless() ) ;
 	if( range.first == range.second )
 		list.insert( range.first , List::value_type(fd,handler,es) ) ;
 	else
 		*range.first = List::value_type(fd,handler,es) ;
 }
 
-void GNet::EventHandlerList::remove( Descriptor fd )
+void GNet::EventHandlerList::remove( Descriptor fd ) noexcept
 {
 	G_DEBUG( "GNet::EventHandlerList::remove: " << m_type << "-list: " << "removing " << fd ) ;
 	if( m_lock )
@@ -77,10 +82,11 @@ void GNet::EventHandlerList::remove( Descriptor fd )
 	}
 }
 
-bool GNet::EventHandlerList::disable( List & list , Descriptor fd )
+bool GNet::EventHandlerList::disable( List & list , Descriptor fd ) noexcept
 {
-	typedef std::pair<List::iterator,List::iterator> Range ;
-	Range range = std::equal_range( list.begin() , list.end() , List::value_type(fd) , fdless() ) ;
+	namespace imp = EventHandlerListImp ;
+	using Range = std::pair<List::iterator,List::iterator> ;
+	Range range = std::equal_range( list.begin() , list.end() , List::value_type(fd) , imp::fdless() ) ;
 	const bool found = range.first != range.second ;
 	if( found )
 	{
@@ -89,44 +95,47 @@ bool GNet::EventHandlerList::disable( List & list , Descriptor fd )
 	return found ;
 }
 
-bool GNet::EventHandlerList::remove( List & list , Descriptor fd )
+bool GNet::EventHandlerList::remove( List & list , Descriptor fd ) noexcept
 {
-	typedef std::pair<List::iterator,List::iterator> Range ;
-	Range range = std::equal_range( list.begin() , list.end() , List::value_type(fd) , fdless() ) ;
+	namespace imp = EventHandlerListImp ;
+	using Range = std::pair<List::iterator,List::iterator> ;
+	Range range = std::equal_range( list.begin() , list.end() , List::value_type(fd) , imp::fdless() ) ;
 	const bool found = range.first != range.second ;
 	if( found )
-		list.erase( range.first ) ;
+		list.erase( range.first ) ; // noexcept since Value::op=() does not throw
 	return found ;
 }
 
-void GNet::EventHandlerList::disarm( ExceptionHandler * eh )
+void GNet::EventHandlerList::disarm( ExceptionHandler * eh ) noexcept
 {
 	disarm( m_list , eh ) ;
 	disarm( m_pending_list , eh ) ;
 }
 
-void GNet::EventHandlerList::disarm( List & list , ExceptionHandler * eh )
+void GNet::EventHandlerList::disarm( List & list , ExceptionHandler * eh ) noexcept
 {
-	for( List::iterator p = list.begin() ; p != list.end() ; ++p )
+	for( auto & value : list )
 	{
-		if( (*p).m_es.eh() == eh )
-			(*p).m_es.reset() ;
+		if( value.m_es.eh() == eh )
+			value.m_es.reset() ;
 	}
 }
 
 GNet::EventHandlerList::Iterator GNet::EventHandlerList::find( Descriptor fd ) const
 {
-	typedef std::pair<List::const_iterator,List::const_iterator> Range ;
-	Range range = std::equal_range( m_list.begin() , m_list.end() , List::value_type(fd) , fdless() ) ;
+	namespace imp = EventHandlerListImp ;
+	using Range = std::pair<List::const_iterator,List::const_iterator> ;
+	Range range = std::equal_range( m_list.begin() , m_list.end() , List::value_type(fd) , imp::fdless() ) ;
 	return range.first == range.second ? Iterator(m_list.end(),m_list.end()) : Iterator(range.first,m_list.end()) ;
 }
 
-bool GNet::EventHandlerList::contains( Descriptor fd ) const
+bool GNet::EventHandlerList::contains( Descriptor fd ) const noexcept
 {
-	typedef std::pair<List::const_iterator,List::const_iterator> Range ;
-	Range range = std::equal_range( m_pending_list.begin() , m_pending_list.end() , List::value_type(fd) , fdless() ) ;
+	namespace imp = EventHandlerListImp ;
+	using Range = std::pair<List::const_iterator,List::const_iterator> ;
+	Range range = std::equal_range( m_pending_list.begin() , m_pending_list.end() , List::value_type(fd) , imp::fdless() ) ;
 	if( range.first == range.second )
-		range = std::equal_range( m_list.begin() , m_list.end() , List::value_type(fd) , fdless() ) ;
+		range = std::equal_range( m_list.begin() , m_list.end() , List::value_type(fd) , imp::fdless() ) ;
 	return range.first != range.second && (*range.first).m_event_handler != nullptr ;
 }
 
@@ -138,12 +147,12 @@ void GNet::EventHandlerList::getHandles( std::vector<HANDLE> & out ) const
 
 void GNet::EventHandlerList::getHandles( const List & list , std::vector<HANDLE> & out )
 {
-	typedef std::vector<HANDLE>::iterator iterator ;
-	typedef std::pair<iterator,iterator> Range ;
-	for( List::const_iterator p = list.begin() ; p != list.end() ; ++p )
+	using iterator = std::vector<HANDLE>::iterator ;
+	using Range = std::pair<iterator,iterator> ;
+	for( const auto & value : list )
 	{
-		HANDLE h = (*p).m_fd.h() ;
-		if( !h || (*p).m_event_handler == nullptr ) continue ;
+		HANDLE h = value.m_fd.h() ;
+		if( !h || value.m_event_handler == nullptr ) continue ;
 		Range range = std::equal_range( out.begin() , out.end() , h ) ;
 		if( range.first == range.second )
 			out.insert( range.first , h ) ;
@@ -172,7 +181,7 @@ bool GNet::EventHandlerList::unlock()
 void GNet::EventHandlerList::commitPending()
 {
 	const List::iterator end = m_pending_list.end() ;
-	for( List::iterator p = m_pending_list.begin() ; p != end ; ++p )
+	for( auto p = m_pending_list.begin() ; p != end ; ++p )
 	{
 		if( (*p).m_event_handler != nullptr )
 		{
@@ -188,7 +197,7 @@ void GNet::EventHandlerList::collectGarbage()
 	if( m_has_garbage )
 	{
 		m_has_garbage = false ;
-		for( List::iterator p = m_list.begin() ; p != m_list.end() ; )
+		for( auto p = m_list.begin() ; p != m_list.end() ; )
 		{
 			if( (*p).m_event_handler == nullptr )
 				p = m_list.erase( p ) ;
@@ -202,6 +211,8 @@ void GNet::EventHandlerList::collectGarbage()
 
 void GNet::EventHandlerList::Iterator::raiseEvent( void (EventHandler::*method)() )
 {
+	// TODO c++11 use std::make_exception_ptr and std::rethrow_exception
+	EventLoggingContext set_logging_context( (m_p!=m_end&&handler()&&es().set()) ? es().esrc() : nullptr ) ;
 	try
 	{
 		if( m_p != m_end && handler() != nullptr )
@@ -225,6 +236,7 @@ void GNet::EventHandlerList::Iterator::raiseEvent( void (EventHandler::*method)(
 
 void GNet::EventHandlerList::Iterator::raiseEvent( void (EventHandler::*method)(EventHandler::Reason) , EventHandler::Reason reason )
 {
+	EventLoggingContext set_logging_context( (m_p!=m_end&&handler()&&es().set()) ? es().esrc() : nullptr ) ;
 	try
 	{
 		if( m_p != m_end && handler() != nullptr )

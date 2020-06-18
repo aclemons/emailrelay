@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ noinst_LIBRARIES = libextra.a
 
 if GCONFIG_WINDOWS
 
-EXTRA_DIST = empty.c
+EXTRA_DIST = empty.cpp
 
 libextra_a_SOURCES = \
 	gappinst.cpp \
@@ -77,6 +77,6 @@ EXTRA_DIST = \
 	gwindow.cpp \
 	gwindow.h
 
-libextra_a_SOURCES = empty.c
+libextra_a_SOURCES = empty.cpp
 
 endif

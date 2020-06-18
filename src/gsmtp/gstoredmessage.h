@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,11 +49,11 @@ public:
 	virtual std::string from() const = 0 ;
 		///< Returns the envelope 'from' field.
 
-	virtual std::string to( size_t ) const = 0 ;
+	virtual std::string to( std::size_t ) const = 0 ;
 		///< Returns the requested envelope non-local recipient
 		///< or the empty string if out of range.
 
-	virtual size_t toCount() const = 0 ;
+	virtual std::size_t toCount() const = 0 ;
 		///< Returns the number of non-local recipients.
 
 	virtual std::istream & contentStream() = 0 ;
@@ -92,10 +92,10 @@ public:
 		///< Returns the outgoing "mail from" auth parameter,
 		///< either empty, xtext-encoded or "<>".
 
-	virtual size_t errorCount() const = 0 ;
+	virtual std::size_t errorCount() const = 0 ;
 		///< Returns the number of accumulated processing errors.
 
-	virtual ~StoredMessage() ;
+	virtual ~StoredMessage() = default ;
 		///< Destructor.
 } ;
 
@@ -109,30 +109,32 @@ public:
 	StoredMessageStub() ;
 		///< Constructor.
 
-	virtual ~StoredMessageStub() ;
+	~StoredMessageStub() override ;
 		///< Destructor.
 
 private: // overrides
-	virtual std::string name() const override ;
-	virtual std::string location() const override ;
-	virtual std::string from() const override ;
-	virtual std::string to( size_t ) const override ;
-	virtual size_t toCount() const override ;
-	virtual std::istream & contentStream() override ;
-	virtual void close() override ;
-	virtual std::string reopen() override ;
-	virtual void destroy() override ;
-	virtual void fail( const std::string & reason , int reason_code ) override ;
-	virtual void unfail() override ;
-	virtual int eightBit() const override ;
-	virtual std::string authentication() const override ;
-	virtual std::string fromAuthIn() const override ;
-	virtual std::string fromAuthOut() const override ;
-	virtual size_t errorCount() const override ;
+	std::string name() const override ;
+	std::string location() const override ;
+	std::string from() const override ;
+	std::string to( std::size_t ) const override ;
+	std::size_t toCount() const override ;
+	std::istream & contentStream() override ;
+	void close() override ;
+	std::string reopen() override ;
+	void destroy() override ;
+	void fail( const std::string & reason , int reason_code ) override ;
+	void unfail() override ;
+	int eightBit() const override ;
+	std::string authentication() const override ;
+	std::string fromAuthIn() const override ;
+	std::string fromAuthOut() const override ;
+	std::size_t errorCount() const override ;
 
-private:
-	StoredMessageStub( const StoredMessageStub & ) g__eq_delete ;
-	void operator=( const StoredMessageStub & ) g__eq_delete ;
+public:
+	StoredMessageStub( const StoredMessageStub & ) = delete ;
+	StoredMessageStub( StoredMessageStub && ) = delete ;
+	void operator=( const StoredMessageStub & ) = delete ;
+	void operator=( StoredMessageStub && ) = delete ;
 
 private:
 	G::StringArray m_to_list ;
@@ -142,8 +144,8 @@ private:
 inline std::string GSmtp::StoredMessageStub::name() const { return std::string() ; }
 inline std::string GSmtp::StoredMessageStub::location() const { return std::string() ; }
 inline std::string GSmtp::StoredMessageStub::from() const { return std::string() ; }
-inline std::string GSmtp::StoredMessageStub::to( size_t ) const { return std::string() ; }
-inline size_t GSmtp::StoredMessageStub::toCount() const { return 0U ; }
+inline std::string GSmtp::StoredMessageStub::to( std::size_t ) const { return std::string() ; }
+inline std::size_t GSmtp::StoredMessageStub::toCount() const { return 0U ; }
 inline std::istream & GSmtp::StoredMessageStub::contentStream() { return m_content_stream ; }
 inline void GSmtp::StoredMessageStub::close() {}
 inline std::string GSmtp::StoredMessageStub::reopen() { return std::string() ; }
@@ -154,6 +156,6 @@ inline int GSmtp::StoredMessageStub::eightBit() const { return false ; }
 inline std::string GSmtp::StoredMessageStub::authentication() const { return std::string() ; }
 inline std::string GSmtp::StoredMessageStub::fromAuthIn() const { return std::string() ; }
 inline std::string GSmtp::StoredMessageStub::fromAuthOut() const { return std::string() ; }
-inline size_t GSmtp::StoredMessageStub::errorCount() const { return 0U ; }
+inline std::size_t GSmtp::StoredMessageStub::errorCount() const { return 0U ; }
 
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,8 +57,7 @@ void Main::WinForm::addSystemMenuItem( const char * name , unsigned int id )
 	HMENU hmenu = GetSystemMenu( handle() , FALSE ) ;
 	if( hmenu )
 	{
-		static MENUITEMINFO item_zero ;
-		MENUITEMINFO item = item_zero ;
+		MENUITEMINFO item{} ;
 		item.cbSize = sizeof( item ) ;
 		item.fMask = MIIM_STRING | MIIM_ID ;
 		item.fType = MFT_STRING ;
@@ -105,22 +104,22 @@ void Main::WinForm::onInit( HWND hdialog , int index )
 	G_DEBUG( "Main::WinForm::onInit: h=" << hdialog << " index=" << index ) ;
 	if( index == 0 ) // "Configuration"
 	{
-		m_cfg_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
+		m_cfg_view = std::make_unique<GGui::ListView>( hdialog , IDC_LIST1 ) ;
   		m_cfg_view->set( cfgData() , 2U , 150U ) ;
 	}
 	else if( index == 1 ) // "Licence"
 	{
-		m_licence_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
+		m_licence_view = std::make_unique<GGui::ListView>( hdialog , IDC_LIST1 ) ;
   		m_licence_view->set( licenceData() , 1U , 330U ) ;
 	}
 	else if( index == 2 ) // "Version"
 	{
-		m_version_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
+		m_version_view = std::make_unique<GGui::ListView>( hdialog , IDC_LIST1 ) ;
   		m_version_view->set( versionData() , 1U , 330U ) ;
 	}
 	else if( index == 3 ) // "Status"
 	{
-		m_status_view.reset( new GGui::ListView(hdialog,IDC_LIST1) ) ;
+		m_status_view = std::make_unique<GGui::ListView>( hdialog , IDC_LIST1 ) ;
   		m_status_view->set( statusData() , 3U , 100U ) ;
 	}
 }

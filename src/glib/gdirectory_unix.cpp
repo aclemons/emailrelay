@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -52,9 +52,11 @@ public:
 	Path filePath() const ;
 	std::string fileName() const ;
 
-private:
-	DirectoryIteratorImp( const DirectoryIteratorImp & ) g__eq_delete ;
-	void operator=( const DirectoryIteratorImp & ) g__eq_delete ;
+public:
+	DirectoryIteratorImp( const DirectoryIteratorImp & ) = delete ;
+	DirectoryIteratorImp( DirectoryIteratorImp && ) = delete ;
+	void operator=( const DirectoryIteratorImp & ) = delete ;
+	void operator=( DirectoryIteratorImp && ) = delete ;
 
 private:
 	DIR * m_d ;
@@ -68,7 +70,7 @@ private:
 bool G::Directory::valid( bool for_creation ) const
 {
 	bool rc = true ;
-	struct stat statbuf ;
+	struct stat statbuf {} ;
 	if( ::stat( m_path.str().c_str() , &statbuf ) )
 	{
 		rc = false ; // doesnt exist
@@ -95,7 +97,7 @@ bool G::Directory::valid( bool for_creation ) const
 	return rc ;
 }
 
-bool G::Directory::writeable( std::string filename ) const
+bool G::Directory::writeable( const std::string & filename ) const
 {
 	// use open(2) so we can use O_EXCL, ie. fail if it already exists
 	Path path( m_path , filename.empty() ? tmp() : filename ) ;
@@ -115,8 +117,7 @@ G::DirectoryIterator::DirectoryIterator( const Directory & dir ) :
 }
 
 G::DirectoryIterator::~DirectoryIterator()
-{
-}
+= default ;
 
 bool G::DirectoryIterator::error() const
 {
@@ -190,7 +191,7 @@ std::string G::DirectoryIteratorImp::fileName() const
 
 bool G::DirectoryIteratorImp::isDir() const
 {
-	struct stat statbuf ;
+	struct stat statbuf {} ;
 	return ::stat( filePath().str().c_str() , &statbuf ) == 0 && (statbuf.st_mode & S_IFDIR) ;
 }
 

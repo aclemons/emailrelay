@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,8 +61,10 @@ public:
 	static G::Path menu() ;
 		///< Returns the menu path, eg. "/home/username/.local/share/applications".
 
+public:
+	Dir() = delete ;
+
 private:
-	Dir() ;
 	static G::Path envPath( const std::string & , const G::Path & = G::Path() ) ;
 	static bool ok( const std::string & ) ;
 	static std::string rebase( const std::string & ) ;

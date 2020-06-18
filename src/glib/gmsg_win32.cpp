@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,29 +23,29 @@
 #include "gprocess.h"
 #include "gstr.h"
 
-ssize_t G::Msg::send( SOCKET fd , const void * buffer , size_t size , int flags ,
+ssize_t G::Msg::send( SOCKET fd , const void * buffer , std::size_t size , int flags ,
 	int fd_to_send )
 {
 	return ::send( fd , reinterpret_cast<const char*>(buffer) , static_cast<int>(size) , flags ) ;
 }
 
-ssize_t G::Msg::sendto( SOCKET fd , const void * buffer , size_t size , int flags ,
+ssize_t G::Msg::sendto( SOCKET fd , const void * buffer , std::size_t size , int flags ,
 	const sockaddr * address_p , socklen_t address_n , int fd_to_send )
 {
 	return ::sendto( fd , reinterpret_cast<const char*>(buffer) , static_cast<int>(size) , flags , address_p , address_n ) ;
 }
 
-ssize_t G::Msg::recv( SOCKET fd , void * buffer , size_t size , int flags )
+ssize_t G::Msg::recv( SOCKET fd , void * buffer , std::size_t size , int flags )
 {
 	return ::recv( fd , reinterpret_cast<char*>(buffer) , static_cast<int>(size) , flags ) ;
 }
 
-ssize_t G::Msg::recv( SOCKET fd , void * buffer , size_t size , int flags , int * )
+ssize_t G::Msg::recv( SOCKET fd , void * buffer , std::size_t size , int flags , int * )
 {
 	return ::recv( fd , reinterpret_cast<char*>(buffer) , static_cast<int>(size) , flags ) ;
 }
 
-ssize_t G::Msg::recvfrom( SOCKET fd , void * buffer , size_t size , int flags ,
+ssize_t G::Msg::recvfrom( SOCKET fd , void * buffer , std::size_t size , int flags ,
 	sockaddr * address_p , socklen_t * address_np , int * fd_received_p )
 {
 	return ::recvfrom( fd , reinterpret_cast<char*>(buffer) , static_cast<int>(size) , flags , address_p , address_np ) ;

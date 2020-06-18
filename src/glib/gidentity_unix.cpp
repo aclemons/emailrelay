@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,45 +24,56 @@
 #include "gidentity.h"
 #include "gprocess.h"
 #include "gassert.h"
+#include <array>
 #include <climits>
 #include <sstream>
 #include <vector>
+#include <sstream>
 #include <pwd.h> // getpwnam_r()
 #include <unistd.h> // sysconf()
 
-G::Identity::Identity() :
+namespace G
+{
+	namespace IdentityImp
+	{
+		int sysconf_value( int key )
+		{
+			long n = ::sysconf( key ) ;
+			return ( n < 0 || n > INT_MAX ) ? -1 : static_cast<int>(n) ;
+		}
+	}
+}
+
+G::Identity::Identity() noexcept :
 	m_uid(static_cast<uid_t>(-1)) ,
-	m_gid(static_cast<gid_t>(-1)) ,
-	m_h(0)
+	m_gid(static_cast<gid_t>(-1))
 {
 }
 
-G::Identity::Identity( G::SignalSafe ) :
+G::Identity::Identity( G::SignalSafe ) noexcept :
 	m_uid(static_cast<uid_t>(-1)) ,
-	m_gid(static_cast<gid_t>(-1)) ,
-	m_h(0)
+	m_gid(static_cast<gid_t>(-1))
 {
 }
 
-G::Identity::Identity( const std::string & name ) :
+G::Identity::Identity( const std::string & name , const std::string & group ) :
 	m_uid(static_cast<uid_t>(-1)) ,
-	m_gid(static_cast<gid_t>(-1)) ,
-	m_h(0)
+	m_gid(static_cast<gid_t>(-1))
 {
-	typedef struct passwd P ;
-    long n = ::sysconf( _SC_GETPW_R_SIZE_MAX ) ;
-	if( n < 0 || n > INT_MAX ) n = -1L ;
-    int sizes[] = { 120 , static_cast<int>(n) , 16000 , 0 } ;
-    for( int * size_p = sizes ; *size_p ; ++size_p )
-    {
-        if( *size_p < 0 ) continue ;
-        size_t buffer_size = static_cast<size_t>(*size_p) ;
-        std::vector<char> buffer( buffer_size ) ;
-		static P pwd_zero ;
-        P pwd = pwd_zero ;
-        P * result_p = nullptr ;
-        int rc = ::getpwnam_r( name.c_str() , &pwd , &buffer[0] , buffer_size , &result_p ) ;
-        int e = Process::errno_() ;
+	using passwd_t = struct passwd ;
+	using group_t = struct group ;
+
+	std::array<int,3U> sizes {{ 120 , 0 , 16000 }} ;
+	sizes[1] = IdentityImp::sysconf_value( _SC_GETPW_R_SIZE_MAX ) ;
+	for( auto size : sizes )
+	{
+		if( size <= 0 ) continue ;
+		auto buffer_size = static_cast<std::size_t>(size) ;
+		std::vector<char> buffer( buffer_size ) ;
+		passwd_t pwd {} ;
+		passwd_t * result_p = nullptr ;
+		int rc = ::getpwnam_r( name.c_str() , &pwd , &buffer[0] , buffer_size , &result_p ) ;
+		int e = Process::errno_() ;
 		if( rc == 0 && result_p )
 		{
 			m_uid = result_p->pw_uid ;
@@ -84,6 +95,29 @@ G::Identity::Identity( const std::string & name ) :
 			throw Error( Process::strerror(e) ) ;
 		}
 	}
+
+	if( !group.empty() )
+	{
+		sizes[1] = IdentityImp::sysconf_value( _SC_GETGR_R_SIZE_MAX ) ;
+		for( auto size : sizes )
+		{
+			if( size <= 0 ) continue ;
+			auto buffer_size = static_cast<std::size_t>(size) ;
+			std::vector<char> buffer( buffer_size ) ;
+			group_t grp {} ;
+			group_t * result_p = nullptr ;
+			int rc = ::getgrnam_r( group.c_str() , &grp , &buffer[0] , buffer_size , &result_p ) ;
+			if( rc == 0 && result_p )
+			{
+				m_gid = result_p->gr_gid ;
+				break ;
+			}
+			else if( rc == 0 )
+			{
+				throw NoSuchGroup( group ) ;
+			}
+		}
+	}
 }
 
 G::Identity G::Identity::effective()
@@ -102,12 +136,12 @@ G::Identity G::Identity::real()
 	return id ;
 }
 
-G::Identity G::Identity::invalid()
+G::Identity G::Identity::invalid() noexcept
 {
-	return Identity() ;
+	return {} ;
 }
 
-G::Identity G::Identity::invalid( SignalSafe safe )
+G::Identity G::Identity::invalid( SignalSafe safe ) noexcept
 {
 	return Identity(safe) ;
 }
@@ -142,33 +176,38 @@ bool G::Identity::operator!=( const Identity & other ) const
 	return ! operator==( other ) ;
 }
 
-void G::Identity::setEffectiveUser( SignalSafe )
+void G::Identity::setEffectiveUser( SignalSafe ) const noexcept
 {
-	m_h = 0 ; // for -Wunused-private-field
 	int rc = ::seteuid(m_uid) ; G_IGNORE_VARIABLE(int,rc) ;
 }
 
-void G::Identity::setEffectiveUser( bool do_throw )
+void G::Identity::setEffectiveUser( bool do_throw ) const
 {
 	if( ::seteuid(m_uid) && do_throw ) throw UidError() ;
 }
 
-void G::Identity::setRealUser( bool do_throw )
+void G::Identity::setRealUser( bool do_throw ) const
 {
 	if( ::setuid(m_uid) && do_throw ) throw UidError() ;
 }
 
-void G::Identity::setEffectiveGroup( bool do_throw )
+void G::Identity::setEffectiveGroup( bool do_throw ) const
 {
-	if( ::setegid(m_gid) && do_throw ) throw GidError() ;
+	if( ::setegid(m_gid) && do_throw )
+	{
+		int e = Process::errno_() ;
+		std::ostringstream ss ;
+		ss << m_gid ;
+		throw GidError( ss.str() , Process::strerror(e) ) ;
+	}
 }
 
-void G::Identity::setEffectiveGroup( SignalSafe )
+void G::Identity::setEffectiveGroup( SignalSafe ) const noexcept
 {
 	int rc = ::setegid(m_gid) ; G_IGNORE_VARIABLE(int,rc) ;
 }
 
-void G::Identity::setRealGroup( bool do_throw )
+void G::Identity::setRealGroup( bool do_throw ) const
 {
 	if( ::setgid(m_gid) && do_throw ) throw GidError() ;
 }
@@ -185,7 +224,7 @@ void G::IdentityUser::setEffectiveUserTo( Identity id , bool do_throw )
 	id.setEffectiveUser( do_throw ) ;
 }
 
-void G::IdentityUser::setEffectiveUserTo( SignalSafe safe , Identity id )
+void G::IdentityUser::setEffectiveUserTo( SignalSafe safe , Identity id ) noexcept
 {
 	id.setEffectiveUser( safe ) ;
 }
@@ -200,7 +239,7 @@ void G::IdentityUser::setEffectiveGroupTo( Identity id , bool do_throw )
 	id.setEffectiveGroup( do_throw ) ;
 }
 
-void G::IdentityUser::setEffectiveGroupTo( SignalSafe safe , Identity id )
+void G::IdentityUser::setEffectiveGroupTo( SignalSafe safe , Identity id ) noexcept
 {
 	id.setEffectiveGroup( safe ) ;
 }

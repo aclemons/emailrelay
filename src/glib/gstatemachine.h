@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -108,8 +108,8 @@ template <typename T, typename State, typename Event, typename Arg>
 class StateMachine
 {
 public:
-	typedef void (T::*Action)(Arg, bool &) ;
-	typedef StateMachine_Error Error ;
+	using Action = void (T::*)(Arg, bool &) ;
+	using Error = StateMachine_Error ;
 
 	StateMachine( State s_start , State s_end , State s_same , State s_any ) ;
 		///< Constructor.
@@ -155,8 +155,8 @@ private:
 		Transition(State s1,State s2,Action a,State s3) :
 			from(s1) , to(s2) , alt(s3) , action(a) {}
 	} ;
-	typedef std::multimap<Event,Transition> Map ;
-	typedef typename Map::value_type Map_value_type ;
+	using Map = std::multimap<Event,Transition> ;
+	using Map_value_type = typename Map::value_type ;
 	Map m_map ;
 	State m_state ;
 	State m_end ;
@@ -215,7 +215,7 @@ template <typename T, typename State, typename Event, typename Arg>
 State StateMachine<T,State,Event,Arg>::apply( T & t , Event event , Arg arg )
 {
 	State state = m_state ;
-	typename Map::iterator p = m_map.find(event) ; // look up in the multimap keyed on event + current-state
+	auto p = m_map.find( event ) ; // look up in the multimap keyed on event + current-state
 	for( ; p != m_map.end() && (*p).first == event ; ++p )
 	{
 		if( (*p).second.from == m_any || (*p).second.from == m_state )

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include "gstrings.h"
 #include <string>
 #include <iostream>
+#include <initializer_list>
 
 namespace G
 {
@@ -91,10 +92,8 @@ public:
 	Path( const Path & path , const std::string & tail_1 , const std::string & tail_2 , const std::string & tail_3 ) ;
 		///< Constructor with three implicit pathAppend()s.
 
-	#if GCONFIG_HAVE_CXX_INITIALIZER_LIST
 	Path( std::initializer_list<std::string> ) ;
-		// Constructor with implicit pathAppend()s.
-	#endif
+		///< Constructor with implicit pathAppend()s.
 
 	std::string str() const ;
 		///< Returns the path string.
@@ -164,7 +163,7 @@ public:
 	static Path nullDevice() ;
 		///< Returns the path of the "/dev/null" special file, or equivalent.
 
-	void swap( Path & other ) g__noexcept ;
+	void swap( Path & other ) noexcept ;
 		///< Swaps this with other.
 
 	bool operator==( const Path & path ) const ;
@@ -213,7 +212,7 @@ namespace G
 	}
 
 	inline
-	void swap( Path & p1 , Path & p2 ) g__noexcept
+	void swap( Path & p1 , Path & p2 ) noexcept
 	{
 		p1.swap( p2 ) ;
 	}

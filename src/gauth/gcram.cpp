@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,65 +30,67 @@
 #include "gexception.h"
 #include "gtest.h"
 #include "glog.h"
-#include <cstdlib> // std::rand()
 #include <algorithm>
 
-namespace
+namespace GAuth
 {
-	GSsl::Library & lib()
+	namespace CramImp /// An implementation namespace for GAuth::Cram.
 	{
-		GSsl::Library * p = GSsl::Library::instance() ;
-		if( p == nullptr ) throw std::runtime_error( "no tsl library" ) ;
-		return *p ;
+		GSsl::Library & lib()
+		{
+			GSsl::Library * p = GSsl::Library::instance() ;
+			if( p == nullptr ) throw std::runtime_error( "no tsl library" ) ;
+			return *p ;
+		}
+		struct DigesterAdaptor /// Used by GAuth::Cram to use GSsl::Digester.
+		{
+			explicit DigesterAdaptor( const std::string & name ) :
+				m_name(name)
+			{
+				GSsl::Digester d( CramImp::lib().digester(m_name) ) ;
+				m_blocksize = d.blocksize() ;
+			}
+			std::string operator()( const std::string & data_1 , const std::string & data_2 ) const
+			{
+				GSsl::Digester d( CramImp::lib().digester(m_name) ) ;
+				d.add( data_1 ) ;
+				d.add( data_2 ) ;
+				return d.value() ;
+			}
+			std::size_t blocksize() const
+			{
+				return m_blocksize ;
+			}
+			std::string m_name ;
+			std::size_t m_blocksize ;
+		} ;
+		struct PostDigesterAdaptor /// Used by GAuth::Cram to use GSsl::Digester.
+		{
+			explicit PostDigesterAdaptor( const std::string & name ) :
+				m_name(name)
+			{
+				GSsl::Digester d( CramImp::lib().digester(m_name,std::string(),true) ) ;
+				if( d.statesize() == 0U )
+					throw GAuth::Cram::NoState( m_name ) ;
+				m_valuesize = d.valuesize() ;
+				m_blocksize = d.blocksize() ;
+			}
+			std::string operator()( const std::string & state_pair , const std::string & data ) const
+			{
+				if( state_pair.size() != (2U*m_valuesize) ) throw GAuth::Cram::InvalidState( m_name ) ;
+				std::string state_i = state_pair.substr( 0U , state_pair.size()/2U ) + G::HashStateImp::extension(m_blocksize) ;
+				std::string state_o = state_pair.substr( state_pair.size()/2U ) + G::HashStateImp::extension(m_blocksize) ;
+				GSsl::Digester xi( CramImp::lib().digester( m_name , state_i ) ) ;
+				xi.add( data ) ;
+				GSsl::Digester xo( CramImp::lib().digester( m_name , state_o ) ) ;
+				xo.add( xi.value() ) ;
+				return xo.value() ;
+			}
+			std::string m_name ;
+			std::size_t m_valuesize ;
+			std::size_t m_blocksize ;
+		} ;
 	}
-	struct DigesterAdaptor
-	{
-		explicit DigesterAdaptor( const std::string & name ) :
-			m_name(name)
-		{
-			GSsl::Digester d( lib().digester(m_name) ) ;
-			m_blocksize = d.blocksize() ;
-		}
-		std::string operator()( const std::string & data_1 , const std::string & data_2 )
-		{
-			GSsl::Digester d( lib().digester(m_name) ) ;
-			d.add( data_1 ) ;
-			d.add( data_2 ) ;
-			return d.value() ;
-		}
-		size_t blocksize() const
-		{
-			return m_blocksize ;
-		}
-		std::string m_name ;
-		size_t m_blocksize ;
-	} ;
-	struct PostDigesterAdaptor
-	{
-		explicit PostDigesterAdaptor( const std::string & name ) :
-			m_name(name)
-		{
-			GSsl::Digester d( lib().digester(m_name,std::string(),true) ) ;
-			if( d.statesize() == 0U )
-				throw GAuth::Cram::NoState( m_name ) ;
-			m_valuesize = d.valuesize() ;
-			m_blocksize = d.blocksize() ;
-		}
-		std::string operator()( const std::string & state_pair , const std::string & data )
-		{
-			if( state_pair.size() != (2U*m_valuesize) ) throw GAuth::Cram::InvalidState( m_name ) ;
-			std::string state_i = state_pair.substr( 0U , state_pair.size()/2U ) + G::HashStateImp::extension(m_blocksize) ;
-			std::string state_o = state_pair.substr( state_pair.size()/2U ) + G::HashStateImp::extension(m_blocksize) ;
-			GSsl::Digester xi( lib().digester( m_name , state_i ) ) ;
-			xi.add( data ) ;
-			GSsl::Digester xo( lib().digester( m_name , state_o ) ) ;
-			xo.add( xi.value() ) ;
-			return xo.value() ;
-		}
-		std::string m_name ;
-		size_t m_valuesize ;
-		size_t m_blocksize ;
-	} ;
 }
 
 std::string GAuth::Cram::response( const std::string & hash_type , bool as_hmac ,
@@ -152,7 +154,7 @@ std::string GAuth::Cram::responseImp( const std::string & mechanism_hash_type , 
 		}
 		else
 		{
-			DigesterAdaptor digest( mechanism_hash_type ) ;
+			CramImp::DigesterAdaptor digest( mechanism_hash_type ) ;
 			return G::Hash::printable( digest(challenge,secret.key()) ) ;
 		}
 	}
@@ -167,7 +169,7 @@ std::string GAuth::Cram::responseImp( const std::string & mechanism_hash_type , 
 		}
 		else
 		{
-			PostDigesterAdaptor postdigest( mechanism_hash_type ) ;
+			CramImp::PostDigesterAdaptor postdigest( mechanism_hash_type ) ;
 			return G::Hash::printable( G::Hash::hmac(postdigest,secret.key(),challenge,G::Hash::Masked()) ) ;
 		}
 	}
@@ -179,7 +181,7 @@ std::string GAuth::Cram::responseImp( const std::string & mechanism_hash_type , 
 		}
 		else
 		{
-			DigesterAdaptor digest( mechanism_hash_type ) ;
+			CramImp::DigesterAdaptor digest( mechanism_hash_type ) ;
 			return G::Hash::printable( G::Hash::hmac(digest,digest.blocksize(),secret.key(),challenge) ) ;
 		}
 	}
@@ -204,16 +206,16 @@ G::StringArray GAuth::Cram::hashTypes( const std::string & prefix , bool require
 
 	if( !prefix.empty() )
 	{
-		for( G::StringArray::iterator p = result.begin() ; p != result.end() ; ++p )
-			*p = prefix + *p ;
+		for( auto & hashtype : result )
+			hashtype.insert( 0U , prefix ) ;
 	}
 	return result ;
 }
 
-std::string GAuth::Cram::challenge()
+std::string GAuth::Cram::challenge( unsigned int random )
 {
 	std::ostringstream ss ;
-	ss << "<" << std::rand() << "." << G::DateTime::now() << "@" << GNet::Local::canonicalName() << ">" ;
+	ss << "<" << random << "." << G::SystemTime::now().s() << "@" << GNet::Local::canonicalName() << ">" ;
 	return ss.str() ;
 }
 

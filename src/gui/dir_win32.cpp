@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -87,8 +87,8 @@ G::Path Dir::special( const std::string & type )
 	// it gets the administrator's user directories for the desktop etc links and not
 	// the user's -- and there is no reasonable way to get the user's access token
 	char buffer[MAX_PATH] = { 0 } ;
-	HANDLE user_token = NULL ; // TODO original user's paths when run-as administrator
-	bool ok = S_OK == ::SHGetFolderPathA( NULL , special_id(type) , user_token , SHGFP_TYPE_CURRENT , buffer ) ;
+	HANDLE user_token = HNULL ; // TODO original user's paths when run-as administrator
+	bool ok = S_OK == SHGetFolderPathA( HNULL , special_id(type) , user_token , SHGFP_TYPE_CURRENT , buffer ) ;
 	return ok ? G::Path(buffer) : G::Path("c:/") ;
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -50,8 +50,8 @@ public:
 	TitlePage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
 
 private:
 	QLabel * m_label ;
@@ -64,9 +64,9 @@ public:
 	LicensePage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool accepted ) ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual bool isComplete() ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
+	bool isComplete() override ;
 
 private:
 	QTextEdit * m_text_edit ;
@@ -84,10 +84,10 @@ public:
 	G::Path runtimeDir() const ;
 	G::Path configDir() const ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual bool isComplete() ;
-	virtual std::string helpName() const ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
+	bool isComplete() override ;
+	std::string helpName() const override ;
 
 private slots:
 	void browseInstall() ;
@@ -126,10 +126,10 @@ public:
 	DoWhatPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual bool isComplete() ;
-	virtual std::string helpName() const ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
+	bool isComplete() override ;
+	std::string helpName() const override ;
 
 private:
 	QCheckBox * m_pop_checkbox ;
@@ -153,10 +153,10 @@ public:
 		bool have_accounts ) ;
 	bool withFilterCopy() const ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual bool isComplete() ;
-	virtual std::string helpName() const ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
+	bool isComplete() override ;
+	std::string helpName() const override ;
 
 private slots:
 	void onToggle() ;
@@ -183,10 +183,11 @@ public:
 	SmtpServerPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_account ) ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual bool isComplete() ;
-	virtual std::string helpName() const ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
+	bool isComplete() override ;
+	std::string helpName() const override ;
+
 	QString browse( QString ) ;
 
 private:
@@ -199,6 +200,8 @@ private:
 	QLineEdit * m_trust_address ;
 	QGroupBox * m_trust_group ;
 	QCheckBox * m_tls_checkbox ;
+	QRadioButton * m_tls_starttls ;
+	QRadioButton * m_tls_tunnel ;
 	QPushButton * m_tls_browse_button ;
 	QLabel * m_tls_certificate_label ;
 	QLineEdit * m_tls_certificate_edit_box ;
@@ -216,10 +219,10 @@ public:
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
 		bool is_windows ) ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual std::string helpName() const ;
-	virtual void onShow( bool ) ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
+	std::string helpName() const override ;
+	void onShow( bool ) override ;
 
 private slots:
 	void onToggle() ;
@@ -249,10 +252,10 @@ public:
 	SmtpClientPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_account ) ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual bool isComplete() ;
-	virtual std::string helpName() const ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
+	bool isComplete() override ;
+	std::string helpName() const override ;
 
 private:
 	bool m_have_account ;
@@ -277,10 +280,10 @@ public:
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
 		bool start_on_boot_able , bool is_mac ) ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual bool isComplete() ;
-	virtual std::string helpName() const ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
+	bool isComplete() override ;
+	std::string helpName() const override ;
 
 private:
 	bool m_is_mac ;
@@ -296,11 +299,11 @@ public:
 	LoggingPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual std::string helpName() const ;
-	virtual bool isComplete() ;
-	virtual void onShow( bool back ) ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
+	std::string helpName() const override ;
+	bool isComplete() override ;
+	void onShow( bool back ) override ;
 
 private slots:
 	void browseLogFile() ;
@@ -326,10 +329,10 @@ public:
 	ListeningPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual bool isComplete() ;
-	virtual std::string helpName() const ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
+	bool isComplete() override ;
+	std::string helpName() const override ;
 
 private slots:
 	void onToggle() ;
@@ -347,10 +350,10 @@ public:
 	ReadyPage( GDialog & dialog , const G::MapFile & config , const std::string & name , const std::string & next_1 ,
 		const std::string & next_2 , bool finish , bool close , bool installing ) ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual void onShow( bool back ) ;
-	virtual std::string helpName() const ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
+	void onShow( bool back ) override ;
+	std::string helpName() const override ;
 
 private:
 	QString text() const ;
@@ -367,12 +370,12 @@ public:
 	ProgressPage( GDialog & dialog , const G::MapFile & config , const std::string & name , const std::string & next_1 ,
 		const std::string & next_2 , bool finish , bool close , Installer & ) ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
-	virtual void onShow( bool back ) ;
-	virtual bool closeButton() const ;
-	virtual bool isComplete() ;
-	virtual std::string helpName() const ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
+	void onShow( bool back ) override ;
+	bool closeButton() const override ;
+	bool isComplete() override ;
+	std::string helpName() const override ;
 
 private slots:
 	void poke() ;
@@ -393,8 +396,8 @@ class EndPage_ : public GPage
 public:
 	EndPage_( GDialog & dialog , const G::MapFile & config , const std::string & name ) ;
 
-	virtual std::string nextPage() ;
-	virtual void dump( std::ostream & , bool ) const ;
+	std::string nextPage() override ;
+	void dump( std::ostream & , bool ) const override ;
 } ;
 
 #endif

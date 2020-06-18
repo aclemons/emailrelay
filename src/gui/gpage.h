@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -71,6 +71,7 @@ public:
 	virtual void onShow( bool back ) ;
 		///< Called as this page becomes visible as a result
 		///< of the previous page's 'next' button being clicked.
+		///< This default implementation does nothing.
 
 	virtual std::string nextPage() = 0 ;
 		///< Returns the name of the next page.
@@ -79,8 +80,9 @@ public:
 		///< next2().
 
 	virtual bool isComplete() ;
-		///< Returns true if the page is complete
-		///< and the 'next' button can be enabled.
+		///< Returns true if the page is complete and the 'next'
+		///< button can be enabled. This default implementation
+		///< returns true.
 
 	virtual void dump( std::ostream & , bool for_install ) const ;
 		///< Dumps the page's state to the given stream.
@@ -90,8 +92,8 @@ public:
 	static void setTestMode( int ) ;
 		///< Sets a test-mode. Typically this causes widgets
 		///< to be initialised in a way that helps with testing,
-		///< such as avoiding unnecessary clicks and visiting
-		///< every page.
+		///< such as avoiding unnecessary clicks and causing
+		///< every page to be visited.
 
 signals:
 	void pageUpdateSignal() ;

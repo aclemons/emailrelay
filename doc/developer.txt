@@ -22,8 +22,8 @@ until version 2.0 the code was single-threaded throughout.
 
 Portability
 -----------
-The E-MailRelay code is mostly written in C++-1998, but using some features of
-C++-2011. A C++-1998 compiler can be used, but multi-threading will be disabled.
+The E-MailRelay code is now written in C++11. Earlier versions of E-MailRelay
+used C++03.
 
 The header files "gdef.h" in "src/glib" is used to fix up some compiler
 portability issues such as missing standard types, non-standard system headers
@@ -155,14 +155,16 @@ identifies the child object that threw the exception (ie. the exception
 source). This allows the parent object to absorb the exception and delete the
 child, without the exception killing the whole server.
 
-The combination of an exception handler and the optional exception source
-pointer bound to it is known as an "ExceptionSink".
+Event sources in the event loop are held as a file descriptor, a windows event
+handle, an EventHandler pointer, an ExceptionHandler pointer and an
+ExceptionSource pointer. The first two together are known as a Descriptor, and
+the last two together are known as an "ExceptionSink".
 
 Multi-threading
 ---------------
 Multi-threading can be used as a build-time option to make DNS lookup and the
-execution of helper programs asynchronous; if std::thread is available then it
-is used in a future/promise pattern to wrap up "getaddrinfo()" and "waitpid()"
+execution of helper programs asynchronous; if enabled then std::thread is
+used in a future/promise pattern to wrap up "getaddrinfo()" and "waitpid()"
 system calls. The shared state comprises only the parameters and return results
 from these system calls, and synchronisation back to the main thread uses the
 event loop (see "GNet::FutureEvent").
@@ -192,10 +194,10 @@ When run in configure mode the GUI normally ends up simply editing the
 "emailrelay.auth" secrets file.
 
 When run in install mode the GUI expects to unpack all the E-MailRelay files
-from the payload into target directories. (The payload used to be a single
-archive file appended to the executable, but it is now simple directory
+from the payload into target directories. The payload is a simple directory
 tree that lives alongside the GUI exectuable or inside the Mac application
-bundle.)
+bundle, and it contains a configuration file to tell the installer where
+to copy its files.
 
 Windows packaging
 -----------------
@@ -228,12 +230,13 @@ Compile-time features
 Compile-time features can be selected with options passed to the "configure"
 script. These include the following:
 
-* Debug-level logging ("--enable-debug")
 * Configuration GUI ("--enable-gui")
+* Multi-threading ("--enable-std-thread")
+* TLS library ("--with-openssl", "--with-mbedtls")
+* Debug-level logging ("--enable-debug")
 * PAM support ("--with-pam")
 
-Use "./configure --help" to see a complete list of options and refer to
-"acinclude.m4" for more detailed comments.
+Use "./configure --help" to see a complete list of options.
 
 
 

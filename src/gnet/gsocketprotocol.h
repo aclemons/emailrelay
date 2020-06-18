@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ namespace GNet
 class GNet::SocketProtocol
 {
 public:
-	typedef SocketProtocolSink Sink ;
+	using Sink = SocketProtocolSink ;
 	G_EXCEPTION_CLASS( ReadError , "peer disconnected" ) ;
 	G_EXCEPTION( SendError , "peer disconnected" ) ;
 	G_EXCEPTION( ShutdownError , "shutdown error" ) ;
@@ -82,7 +82,7 @@ public:
 		///< is processed (see SocketProtocolSink::onData()) and the
 		///< socket is shutdown() before the exception is thrown.
 
-	bool send( const std::string & data , size_t offset = 0U ) ;
+	bool send( const std::string & data , std::size_t offset = 0U ) ;
 		///< Sends data. Returns false if flow control asserted before
 		///< all the data is sent. Returns true if all the data was sent,
 		///< or if the data passed in (taking the offset into account)
@@ -95,7 +95,7 @@ public:
 		///< call writeEvent(). There should be no new calls to send()
 		///< until writeEvent() returns true.
 
-	bool send( const std::vector<std::pair<const char *,size_t> > & data ) ;
+	bool send( const std::vector<std::pair<const char *,std::size_t> > & data ) ;
 		///< Overload to send data using scatter-gather segments.
 		///< If false is returned then segment data pointers must
 		///< stay valid until writeEvent() returns true.
@@ -126,15 +126,17 @@ public:
 		///< Returns the peer's TLS/SSL certificate or the empty
 		///< string.
 
-	static void setReadBufferSize( size_t n ) ;
+	static void setReadBufferSize( std::size_t n ) ;
 		///< Sets the read buffer size. Used in testing.
 
-private:
-	SocketProtocol( const SocketProtocol & ) g__eq_delete ;
-	void operator=( const SocketProtocol & ) g__eq_delete ;
+public:
+	SocketProtocol( const SocketProtocol & ) = delete ;
+	SocketProtocol( SocketProtocol && ) = delete ;
+	void operator=( const SocketProtocol & ) = delete ;
+	void operator=( SocketProtocol && ) = delete ;
 
 private:
-	unique_ptr<SocketProtocolImp> m_imp ;
+	std::unique_ptr<SocketProtocolImp> m_imp ;
 } ;
 
 /// \class GNet::SocketProtocolSink
@@ -144,10 +146,10 @@ private:
 class GNet::SocketProtocolSink
 {
 public:
-	virtual ~SocketProtocolSink() ;
+	virtual ~SocketProtocolSink() = default ;
 		///< Destructor.
 
-	virtual void onData( const char * , size_t ) = 0 ;
+	virtual void onData( const char * , std::size_t ) = 0 ;
 		///< Called when data is read from the socket.
 
 	virtual void onSecure( const std::string & peer_certificate , const std::string & cipher ) = 0 ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -62,12 +62,12 @@ bool GGui::Pump::getMessage( MSG * msg_p , bool block )
 {
 	BOOL rc =
 		block ?
-			::GetMessage( msg_p , NULL , 0 , 0 ) :
-			::PeekMessage( msg_p , NULL , 0 , 0 , PM_REMOVE ) ;
+			GetMessage( msg_p , HNULL , 0 , 0 ) :
+			PeekMessage( msg_p , HNULL , 0 , 0 , PM_REMOVE ) ;
 	return rc != -1 && rc != 0 ; // sic
 }
 
-namespace
+namespace GGui
 {
 	struct ScopeEndIncrement
 	{
@@ -141,7 +141,7 @@ std::pair<bool,std::string> GGui::Pump::runImp( bool send_idle_messages , HWND h
 bool GGui::Pump::sendIdle( HWND hwnd_idle , unsigned int wm_idle )
 {
 	G_ASSERT( hwnd_idle != 0 ) ;
-	return 1 == ::SendMessage( hwnd_idle , wm_idle , 0 , 0 ) ;
+	return 1 == SendMessage( hwnd_idle , wm_idle , 0 , 0 ) ;
 }
 
 /// \file gpump.cpp

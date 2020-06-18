@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -21,13 +21,37 @@ if GCONFIG_WINDOWS
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/glib  -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/win32
 
-EXTRA_DIST=\
+EXTRA_DIST_COMMON=\
 	gaddress_ipv4.cpp \
 	gaddress_ipv6.cpp \
 	gdescriptor_unix.cpp \
 	geventloop_unix.cpp \
 	gfutureevent_unix.cpp \
 	gsocket_unix.cpp
+
+if GCONFIG_INTERFACE_NAMES
+
+EXTRA_DIST = \
+	$(EXTRA_DIST_COMMON) \
+	ginterfaces_unix.cpp \
+	ginterfaces_none.cpp
+
+INTERFACES_SOURCES = \
+	ginterfaces_common.cpp \
+	ginterfaces_win32.cpp
+
+else
+
+EXTRA_DIST = \
+	$(EXTRA_DIST_COMMON) \
+	ginterfaces_unix.cpp \
+	ginterfaces_common.cpp \
+	ginterfaces_win32.cpp
+
+INTERFACES_SOURCES = \
+	ginterfaces_none.cpp
+
+endif
 
 libgnet_a_SOURCES = \
 	gaddress4.cpp \
@@ -55,6 +79,8 @@ libgnet_a_SOURCES = \
 	geventhandler.h \
 	geventhandlerlist.cpp \
 	geventhandlerlist.h \
+	geventloggingcontext.cpp \
+	geventloggingcontext.h \
 	geventloop.cpp \
 	geventloop.h \
 	geventloop_win32.cpp \
@@ -66,6 +92,8 @@ libgnet_a_SOURCES = \
 	gexceptionsource.h \
 	gfutureevent.h \
 	gfutureevent_win32.cpp \
+	ginterfaces.h \
+	$(INTERFACES_SOURCES) \
 	glinebuffer.cpp \
 	glinebuffer.h \
 	glinestore.cpp \
@@ -106,13 +134,35 @@ else
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/glib  -I$(top_srcdir)/src/gssl
 
-EXTRA_DIST=\
+EXTRA_DIST_COMMON=\
 	gaddress_ipv4.cpp \
 	gaddress_ipv6.cpp \
     gdescriptor_win32.cpp \
     geventloop_win32.cpp \
 	gfutureevent_win32.cpp \
     gsocket_win32.cpp
+
+if GCONFIG_INTERFACE_NAMES
+
+EXTRA_DIST = $(EXTRA_DIST_COMMON) \
+	ginterfaces_win32.cpp \
+	ginterfaces_none.cpp
+
+INTERFACES_SOURCES = \
+	ginterfaces_unix.cpp \
+	ginterfaces_common.cpp
+
+else
+
+EXTRA_DIST = $(EXTRA_DIST_COMMON) \
+	ginterfaces_win32.cpp \
+	ginterfaces_unix.cpp \
+	ginterfaces_common.cpp
+
+INTERFACES_SOURCES = \
+	ginterfaces_none.cpp
+
+endif
 
 libgnet_a_SOURCES = \
 	gaddress_ip.cpp \
@@ -138,6 +188,8 @@ libgnet_a_SOURCES = \
 	geventhandler.h \
 	geventhandlerlist.cpp \
 	geventhandlerlist.h \
+	geventloggingcontext.cpp \
+	geventloggingcontext.h \
 	geventloop.cpp \
 	geventloop.h \
 	geventloop_unix.cpp \
@@ -149,6 +201,8 @@ libgnet_a_SOURCES = \
 	gexceptionsource.h \
 	gfutureevent.h \
 	gfutureevent_unix.cpp \
+	ginterfaces.h \
+	$(INTERFACES_SOURCES) \
 	glinebuffer.cpp \
 	glinebuffer.h \
 	glinestore.cpp \

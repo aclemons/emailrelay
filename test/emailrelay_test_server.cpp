@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -96,10 +96,10 @@ class Peer : public GNet::ServerPeer
 {
 public:
 	Peer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo , Config ) ;
-	virtual void onDelete( const std::string & ) override ;
-	virtual void onSendComplete() override ;
-	virtual bool onReceive( const char * , size_t , size_t , size_t , char ) override ;
-	virtual void onSecure( const std::string & , const std::string & ) override ;
+	void onDelete( const std::string & ) override ;
+	void onSendComplete() override ;
+	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ;
+	void onSecure( const std::string & , const std::string & ) override ;
 	void tx( const std::string & ) ;
 
 private:
@@ -119,8 +119,8 @@ class Server : public GNet::Server
 {
 public:
 	Server( GNet::ExceptionSink , Config c ) ;
-	~Server() ;
-	virtual unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo ) override ;
+	~Server() override ;
+	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo ) override ;
 	Config m_config ;
 } ;
 
@@ -137,17 +137,17 @@ Server::~Server()
 	serverCleanup() ; // base class early cleanup
 }
 
-unique_ptr<GNet::ServerPeer> Server::newPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo info )
+std::unique_ptr<GNet::ServerPeer> Server::newPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo info )
 {
 	try
 	{
 		G_LOG_S( "Server::newPeer: new connection from " << info.m_address.displayString() ) ;
-		return unique_ptr<GNet::ServerPeer>( new Peer( esu , info , m_config ) ) ;
+		return std::unique_ptr<GNet::ServerPeer>( new Peer( esu , info , m_config ) ) ;
 	}
 	catch( std::exception & e )
 	{
 		G_WARNING( "Server::newPeer: new connection error: " << e.what() ) ;
-		return unique_ptr<GNet::ServerPeer>() ;
+		return std::unique_ptr<GNet::ServerPeer>() ;
 	}
 }
 
@@ -187,7 +187,7 @@ void Peer::onSecure( const std::string & , const std::string & )
 {
 }
 
-bool Peer::onReceive( const char * line_data , size_t line_size , size_t , size_t , char )
+bool Peer::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
 {
 	std::string line( line_data , line_size ) ;
 	if( !m_config.m_quiet )
@@ -366,7 +366,13 @@ int main( int argc , char * argv [] )
 		G::Path argv0 = G::Path(arg.v(0)).withoutExtension().basename() ;
 		std::string pid_file_name = opt.value( "pid-file" , "."+argv0.str()+".pid" ) ;
 
-		G::LogOutput log( "" , !quiet , !quiet , false , false , true , false , true , false ) ;
+		G::LogOutput log( "" ,
+			G::LogOutput::Config()
+				.set_output_enabled(!quiet)
+				.set_summary_info(!quiet)
+				.set_with_level(true)
+				.set_strip(true) ) ;
+
 		G_LOG_S( "pid=[" << G::Process::Id() << "]" ) ;
 		G_LOG_S( "pidfile=[" << pid_file_name << "]" ) ;
 		G_LOG_S( "port=[" << port << "]" ) ;

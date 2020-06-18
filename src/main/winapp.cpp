@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -77,7 +77,7 @@ void Main::WinApp::disableOutput()
 
 void Main::WinApp::init( const Configuration & cfg )
 {
-	m_form_cfg.reset( new Configuration(cfg) ) ;
+	m_form_cfg = std::make_unique<Configuration>( cfg ) ;
 	m_cfg = Config::create( cfg ) ;
 }
 
@@ -109,7 +109,7 @@ bool Main::WinApp::onCreate()
 	{
 		try
 		{
-			m_tray.reset( new GGui::Tray(resource(),*this,"E-MailRelay") ) ;
+			m_tray = std::make_unique<GGui::Tray>( resource() , *this , "E-MailRelay" ) ;
 		}
 		catch( std::exception & e )
 		{
@@ -123,13 +123,13 @@ bool Main::WinApp::onCreate()
 	return true ;
 }
 
-namespace
+namespace Main
 {
 	struct ScopeFinalReset
 	{
-		ScopeFinalReset( unique_ptr<Main::WinMenu> & ptr ) : m_ptr(ptr) {}
+		ScopeFinalReset( std::unique_ptr<Main::WinMenu> & ptr ) : m_ptr(ptr) {}
 		~ScopeFinalReset() { m_ptr.reset() ; }
-		unique_ptr<Main::WinMenu> & m_ptr ;
+		std::unique_ptr<Main::WinMenu> & m_ptr ;
 	} ;
 }
 
@@ -141,7 +141,7 @@ void Main::WinApp::onTrayRightMouseButtonDown()
 	// other event notifications before then, so make the menu
 	// accessible to them via a data member)
 	ScopeFinalReset final_reset( m_menu ) ;
-	m_menu.reset( new WinMenu(IDR_MENU1) ) ;
+	m_menu = std::make_unique<WinMenu>( IDR_MENU1 ) ;
 
 	bool form_is_visible = m_form.get() != nullptr && m_form.get()->visible() ;
 	bool with_open = !form_is_visible ;
@@ -188,7 +188,7 @@ LRESULT Main::WinApp::onUserOther( WPARAM wparam , LPARAM )
 	return 0L ;
 }
 
-namespace
+namespace Main
 {
 	struct ScopeSet
 	{
@@ -232,9 +232,9 @@ void Main::WinApp::doOpen()
 		bool form_with_icon = true ;
 		bool form_with_system_menu_quit = m_cfg.with_sysmenu_quit ;
 
-		m_form.reset( new WinForm( hinstance() , *m_form_cfg.get() ,
+		m_form = std::make_unique<WinForm>( hinstance() , *m_form_cfg.get() ,
 			form_hparent , handle() , form_style , form_allow_apply ,
-			form_with_icon , form_with_system_menu_quit ) ) ;
+			form_with_icon , form_with_system_menu_quit ) ;
 	}
 
 	if( m_cfg.restore_on_open )

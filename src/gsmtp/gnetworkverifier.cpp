@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ void GSmtp::NetworkVerifier::verify( const std::string & mail_to_address ,
 {
 	if( m_client_ptr.get() == nullptr )
 	{
-		m_client_ptr.reset( new RequestClient(GNet::ExceptionSink(m_client_ptr,nullptr),"verify","",m_location,m_connection_timeout,m_response_timeout) ) ;
+		m_client_ptr.reset( new RequestClient(GNet::ExceptionSink(m_client_ptr,m_es.esrc()),"verify","",m_location,m_connection_timeout,m_response_timeout) ) ;
 	}
 
 	G::StringArray args ;
@@ -64,7 +64,7 @@ void GSmtp::NetworkVerifier::verify( const std::string & mail_to_address ,
 	m_client_ptr->request( G::Str::join("|",args) ) ;
 }
 
-void GSmtp::NetworkVerifier::clientDeleted( std::string reason )
+void GSmtp::NetworkVerifier::clientDeleted( const std::string & reason )
 {
 	G_DEBUG( "GSmtp::NetworkVerifier::clientDeleted: reason=[" << reason << "]" ) ;
 	if( !reason.empty() )
@@ -80,7 +80,7 @@ void GSmtp::NetworkVerifier::clientDeleted( std::string reason )
 	}
 }
 
-void GSmtp::NetworkVerifier::clientEvent( std::string s1 , std::string s2 , std::string /*s3*/ )
+void GSmtp::NetworkVerifier::clientEvent( const std::string & s1 , const std::string & s2 , const std::string & )
 {
 	G_DEBUG( "GSmtp::NetworkVerifier::clientEvent: [" << s1 << "] [" << s2 << "]" ) ;
 	if( s1 == "verify" )
@@ -92,7 +92,7 @@ void GSmtp::NetworkVerifier::clientEvent( std::string s1 , std::string s2 , std:
 		//
 		G::StringArray part ;
 		G::Str::splitIntoFields( s2 , part , "|" ) ;
-		if( part.size() >= 1U && part[0U] == "100" )
+		if( !part.empty() && part[0U] == "100" )
 		{
 			status.is_valid = false ;
 			status.abort = true ;
@@ -126,7 +126,7 @@ void GSmtp::NetworkVerifier::clientEvent( std::string s1 , std::string s2 , std:
 	}
 }
 
-G::Slot::Signal2<std::string,GSmtp::VerifierStatus> & GSmtp::NetworkVerifier::doneSignal()
+G::Slot::Signal<const std::string&,const GSmtp::VerifierStatus&> & GSmtp::NetworkVerifier::doneSignal()
 {
 	return m_done_signal ;
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,9 +24,12 @@
 #include "gresolver.h"
 #include "gassert.h"
 
-namespace
+namespace GNet
 {
-	const char * host_service_separators = ":/" ;
+	namespace LocationImp
+	{
+		const char * host_service_separators = ":/" ;
+	}
 }
 
 GNet::Location::Location( const std::string & host , const std::string & service , int family ) :
@@ -90,19 +93,21 @@ std::string GNet::Location::sockless( const std::string & s )
 
 bool GNet::Location::socksified( const std::string & s , std::string & far_host , unsigned int & far_port )
 {
+	namespace imp = LocationImp ;
 	std::string::size_type pos = s.find('@') ;
 	if( pos != std::string::npos )
 	{
 		std::string ss = G::Str::head( s , pos ) ;
-		far_host = G::Str::head( ss , ss.find_last_of(host_service_separators) ) ;
-		far_port = G::Str::toUInt( G::Str::tail( ss , ss.find_last_of(host_service_separators) ) ) ;
+		far_host = G::Str::head( ss , ss.find_last_of(imp::host_service_separators) ) ;
+		far_port = G::Str::toUInt( G::Str::tail( ss , ss.find_last_of(imp::host_service_separators) ) ) ;
 	}
 	return pos != std::string::npos ;
 }
 
 std::string GNet::Location::head( const std::string & s )
 {
-	std::string result = G::Str::head( s , s.find_last_of(host_service_separators) ) ;
+	namespace imp = LocationImp ;
+	std::string result = G::Str::head( s , s.find_last_of(imp::host_service_separators) ) ;
 	if( result.size() > 1U && result.at(0U) == '[' && result.at(result.size()-1U) == ']' )
 		result = result.substr( 1U , result.size()-2U ) ;
 	return result ;
@@ -110,7 +115,8 @@ std::string GNet::Location::head( const std::string & s )
 
 std::string GNet::Location::tail( const std::string & s )
 {
-	return G::Str::tail( s , s.find_last_of(host_service_separators) ) ;
+	namespace imp = LocationImp ;
+	return G::Str::tail( s , s.find_last_of(imp::host_service_separators) ) ;
 }
 
 std::string GNet::Location::host() const
@@ -157,7 +163,7 @@ void GNet::Location::update( const Address & address , const std::string & name 
 	m_family = address.domain() ; // not family()
 	m_address_valid = true ;
 	m_canonical_name = name ;
-	m_update_time = G::DateTime::now() ;
+	m_update_time = G::SystemTime::now() ;
 	G_DEBUG( "GNet::Location::ctor: resolved location [" << displayString() << "]" ) ;
 }
 
@@ -172,7 +178,7 @@ std::string GNet::Location::displayString() const
 	return resolved() ? address().displayString() : (m_host+"/"+m_service+"/"+ipvx) ;
 }
 
-G::EpochTime GNet::Location::updateTime() const
+G::SystemTime GNet::Location::updateTime() const
 {
 	return m_update_time ;
 }

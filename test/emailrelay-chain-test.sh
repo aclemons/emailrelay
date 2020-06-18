@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -99,7 +99,7 @@ Trap()
 	trap 0 1 2 3 13 15
 	if test "$1" -ne 0
 	then
-		echo `basename $0`: cleaning up >&2
+		echo `basename $0`: stopping >&2
 	fi
 	Cleanup > /dev/null 2>&1
 }
@@ -157,6 +157,7 @@ Cleanup()
 		ls -lR ${cfg_base_dir} >> "${cfg_summary_log}"
 		if test "${opt_no_cleanup}" -eq 0
 		then
+			echo `basename $0`: cleaning up >&2
 			rm -rf ${cfg_base_dir}
 		fi
 	fi

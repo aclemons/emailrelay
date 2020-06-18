@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,13 +34,13 @@ void G::Daemon::detach()
 	// see Stevens, ISBN 0-201-563137-7, ch 13.
 
 	if( !NewProcess::fork().first )
-		::_exit( 0 ) ; // exit from parent
+		std::_Exit( 0 ) ; // exit from parent
 
 	setsid() ;
 	bool rc = Process::cd( "/" , Process::NoThrow() ) ; G_IGNORE_VARIABLE(bool,rc) ;
 
 	if( !NewProcess::fork().first )
-		::_exit( 0 ) ; // exit from parent
+		std::_Exit( 0 ) ; // exit from parent
 }
 
 void G::Daemon::setsid()

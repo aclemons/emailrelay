@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ public:
 		Result( const std::string & , const std::string & , int ) ;
 		std::string first ;
 		std::string second ;
-		int third ;
+		int third{0} ;
 	} ;
 
 	static Result parse( const std::string & identifier , bool allow_spam ) ;
@@ -58,8 +58,8 @@ public:
 		///< the identifier is invalid, or the empty string if valid
 		///< or empty.
 
-private:
-	FactoryParser() g__eq_delete ;
+public:
+	FactoryParser() = delete ;
 } ;
 
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,10 +23,16 @@
 #include "winmenu.h"
 #include "glog.h"
 
-namespace
+namespace Main
 {
 	const int open_pos = 0 ;
 	const int close_pos = 1 ;
+	struct ScopeZero
+	{
+		ScopeZero( HMENU h ) : m_h(h) {}
+		~ScopeZero() { m_h = 0 ; }
+		HMENU & m_h ;
+	} ;
 }
 
 Main::WinMenu::WinMenu( unsigned int id ) :
@@ -36,16 +42,6 @@ Main::WinMenu::WinMenu( unsigned int id ) :
 	m_hmenu = ::LoadMenu( hinstance , MAKEINTRESOURCE(id) ) ;
 	if( m_hmenu == nullptr )
 		throw Error() ;
-}
-
-namespace
-{
-	struct ScopeZero
-	{
-		ScopeZero( HMENU h ) : m_h(h) {}
-		~ScopeZero() { m_h = 0 ; }
-		HMENU & m_h ;
-	} ;
 }
 
 int Main::WinMenu::popup( const GGui::WindowBase & w , bool set_foreground , bool with_open , bool with_close )

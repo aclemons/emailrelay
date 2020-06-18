@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ namespace GSmtp
 class GSmtp::FilterFactory
 {
 public:
-	static unique_ptr<Filter> newFilter( GNet::ExceptionSink ,
+	static std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ,
 		bool server_side , const std::string & identifier , unsigned int timeout ) ;
 			///< Returns a Filter on the heap. The identifier
 			///< is normally prefixed with a processor type, or it
@@ -48,8 +48,8 @@ public:
 		///< Checks an identifier. Returns an empty string if okay,
 		///< or a diagnostic reason string.
 
-private:
-	FilterFactory() g__eq_delete ;
+public:
+	FilterFactory() = delete ;
 } ;
 
 #endif

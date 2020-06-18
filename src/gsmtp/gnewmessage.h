@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ public:
 	virtual void addTo( const std::string & to , bool local ) = 0 ;
 		///< Adds a 'to' address.
 
-	virtual bool addText( const char * , size_t ) = 0 ;
+	virtual bool addText( const char * , std::size_t ) = 0 ;
 		///< Adds a line of content, typically ending with CR-LF.
 		///< Returns false on overflow.
 
@@ -63,7 +63,7 @@ public:
 		///< A convenience function that calls addText() taking
 		///< a string parameter and adding CR-LF.
 
-	virtual ~NewMessage() ;
+	virtual ~NewMessage() = default ;
 		///< Destructor. Rolls back any prepare()d storage
 		///< if un-commit()ed.
 } ;

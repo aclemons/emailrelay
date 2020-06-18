@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,25 +38,21 @@ void GAuth::Secrets::check( const std::string & p1 , const std::string & p2 , co
 }
 
 GAuth::Secrets::Secrets( const std::string & path , const std::string & name , const std::string & type ) :
-	m_source(path) ,
-	m_imp(nullptr)
+	m_source(path)
 {
 	G_DEBUG( "GAuth::Secrets:ctor: [" << path << "]" ) ;
 	if( m_source != "/pam" )
-		m_imp = new SecretsFile(path,true,name,type) ;
+		m_imp = std::make_unique<SecretsFile>( path , true , name , type ) ;
 }
 
-GAuth::Secrets::Secrets() :
-	m_imp(nullptr)
+GAuth::Secrets::Secrets()
 {
 	if( m_source != "/pam" )
-		m_imp = new SecretsFile(std::string(),true,std::string(),std::string()) ;
+		m_imp = std::make_unique<SecretsFile>( std::string() , true , std::string() , std::string() ) ;
 }
 
 GAuth::Secrets::~Secrets()
-{
-	delete m_imp ;
-}
+= default ;
 
 std::string GAuth::Secrets::source() const
 {

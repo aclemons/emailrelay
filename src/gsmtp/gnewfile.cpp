@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
 
 GSmtp::NewFile::NewFile( FileStore & store , const std::string & from ,
 	const std::string & from_auth_in , const std::string & from_auth_out ,
-	size_t max_size , bool test_for_eight_bit ) :
+	std::size_t max_size , bool test_for_eight_bit ) :
 		m_store(store) ,
 		m_from(from) ,
 		m_from_auth_in(from_auth_in) ,
@@ -56,8 +56,7 @@ GSmtp::NewFile::NewFile( FileStore & store , const std::string & from ,
 	//
 	m_content_path = m_store.contentPath( m_seq ) ;
 	G_LOG( "GSmtp::NewMessage: content file: " << m_content_path ) ;
-	unique_ptr<std::ofstream> content_stream = m_store.stream( m_content_path ) ;
-	m_content.reset( content_stream.release() ) ;
+	m_content = m_store.stream( m_content_path ) ;
 }
 
 GSmtp::NewFile::~NewFile()
@@ -98,12 +97,12 @@ std::string GSmtp::NewFile::prepare( const std::string & session_auth_id , const
 
 	// copy or move aside for local mailboxes
 	//
-	if( m_to_local.size() != 0U && m_to_remote.size() == 0U )
+	if( !m_to_local.empty() && m_to_remote.empty() )
 	{
 		moveToLocal( m_content_path , m_envelope_path_0 , m_envelope_path_1 ) ;
 		return std::string() ;
 	}
-	else if( m_to_local.size() != 0U )
+	else if( !m_to_local.empty() )
 	{
 		copyToLocal( m_content_path , m_envelope_path_0 , m_envelope_path_1 ) ;
 		return m_content_path.str() ;
@@ -132,7 +131,7 @@ void GSmtp::NewFile::addTo( const std::string & to , bool local )
 		m_to_remote.push_back( to ) ;
 }
 
-bool GSmtp::NewFile::addText( const char * line_data , size_t line_size )
+bool GSmtp::NewFile::addText( const char * line_data , std::size_t line_size )
 {
 	m_size += static_cast<unsigned long>( line_size ) ;
 
@@ -147,7 +146,7 @@ bool GSmtp::NewFile::addText( const char * line_data , size_t line_size )
 	if( m_test_for_eight_bit && m_eight_bit != 1 )
 		m_eight_bit = isEightBit(line_data,line_size) ? 1 : 0 ;
 
-	std::ostream & stream = *m_content.get() ;
+	std::ostream & stream = *m_content ;
 	stream.write( line_data , line_size ) ;
 
 	return m_max_size == 0UL || m_size < m_max_size ;
@@ -155,7 +154,7 @@ bool GSmtp::NewFile::addText( const char * line_data , size_t line_size )
 
 void GSmtp::NewFile::flushContent()
 {
-	G_ASSERT( m_content.get() != nullptr ) ;
+	G_ASSERT( m_content != nullptr ) ;
 	m_content->close() ;
 	if( m_content->fail() ) // trap failbit/badbit
 		throw FileError( "cannot write content file " + m_content_path.str() ) ;
@@ -182,7 +181,7 @@ void GSmtp::NewFile::deleteEnvelope()
 	}
 }
 
-bool GSmtp::NewFile::isEightBit( const char * line_data , size_t line_size )
+bool GSmtp::NewFile::isEightBit( const char * line_data , std::size_t line_size )
 {
 	return G::eightbit( line_data , line_size ) ;
 }
@@ -190,7 +189,7 @@ bool GSmtp::NewFile::isEightBit( const char * line_data , size_t line_size )
 bool GSmtp::NewFile::saveEnvelope( const std::string & session_auth_id , const std::string & peer_socket_address ,
 	const std::string & peer_certificate ) const
 {
-	unique_ptr<std::ofstream> envelope_stream = m_store.stream( m_envelope_path_0 ) ;
+	std::unique_ptr<std::ofstream> envelope_stream = m_store.stream( m_envelope_path_0 ) ;
 	writeEnvelope( *(envelope_stream.get()) , m_envelope_path_0.str() ,
 		session_auth_id , peer_socket_address , peer_certificate ) ;
 	envelope_stream->close() ;
@@ -234,19 +233,19 @@ void GSmtp::NewFile::writeEnvelope( std::ofstream & stream , const std::string &
 	G::Str::replaceAll( peer_certificate , "\r" , "" ) ;
 	G::Str::replaceAll( peer_certificate , "\n" , crlf()+std::string(1U,' ') ) ; // RFC-2822 folding
 
-	const std::string x( m_store.x() ) ;
+	const std::string x( GSmtp::FileStore::x() ) ;
 
-	stream << x << "Format: " << m_store.format() << crlf() ;
+	stream << x << "Format: " << GSmtp::FileStore::format() << crlf() ;
 	stream << x << "Content: " << (m_eight_bit==1?"8bit":(m_eight_bit==0?"7bit":"unknown")) << crlf() ;
 	stream << x << "From: " << m_from << crlf() ;
 	stream << x << "ToCount: " << (m_to_local.size()+m_to_remote.size()) << crlf() ;
 	{
-		G::StringArray::const_iterator to_p = m_to_local.begin() ;
+		auto to_p = m_to_local.begin() ;
 		for( ; to_p != m_to_local.end() ; ++to_p )
 			stream << x << "To-Local: " << *to_p << crlf() ;
 	}
 	{
-		G::StringArray::const_iterator to_p = m_to_remote.begin() ;
+		auto to_p = m_to_remote.begin() ;
 		for( ; to_p != m_to_remote.end() ; ++to_p )
 			stream << x << "To-Remote: " << *to_p << crlf() ;
 	}

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 #include "glog.h"
 
 GSmtp::ProtocolMessageForward::ProtocolMessageForward( GNet::ExceptionSink es ,
-	MessageStore & store , unique_ptr<ProtocolMessage> pm ,
+	MessageStore & store , std::unique_ptr<ProtocolMessage> pm ,
 	const GSmtp::Client::Config & client_config ,
 	const GAuth::Secrets & client_secrets , const std::string & server ) :
 		m_es(es) ,
@@ -53,12 +53,12 @@ GSmtp::ProtocolMessageForward::~ProtocolMessageForward()
 		m_client_ptr->messageDoneSignal().disconnect() ;
 }
 
-G::Slot::Signal4<bool,unsigned long,std::string,std::string> & GSmtp::ProtocolMessageForward::storageDoneSignal()
+G::Slot::Signal<bool,unsigned long,const std::string&,const std::string&> & GSmtp::ProtocolMessageForward::storageDoneSignal()
 {
 	return m_pm->doneSignal() ;
 }
 
-G::Slot::Signal4<bool,unsigned long,std::string,std::string> & GSmtp::ProtocolMessageForward::doneSignal()
+G::Slot::Signal<bool,unsigned long,const std::string&,const std::string&> & GSmtp::ProtocolMessageForward::doneSignal()
 {
 	return m_done_signal ;
 }
@@ -89,7 +89,7 @@ void GSmtp::ProtocolMessageForward::addReceived( const std::string & line )
 	m_pm->addReceived( line ) ;
 }
 
-bool GSmtp::ProtocolMessageForward::addText( const char * line_data , size_t line_size )
+bool GSmtp::ProtocolMessageForward::addText( const char * line_data , std::size_t line_size )
 {
 	return m_pm->addText( line_data , line_size ) ;
 }
@@ -106,7 +106,7 @@ void GSmtp::ProtocolMessageForward::process( const std::string & auth_id , const
 	m_pm->process( auth_id , peer_socket_address , peer_certificate ) ;
 }
 
-void GSmtp::ProtocolMessageForward::processDone( bool success , unsigned long id , std::string response , std::string reason )
+void GSmtp::ProtocolMessageForward::processDone( bool success , unsigned long id , const std::string & response , const std::string & reason )
 {
 	G_DEBUG( "ProtocolMessageForward::processDone: " << (success?1:0) << " " << id << " [" << response << "] [" << reason << "]" ) ;
 	G::CallFrame this_( m_call_stack ) ;
@@ -127,7 +127,7 @@ void GSmtp::ProtocolMessageForward::processDone( bool success , unsigned long id
 	else
 	{
 		// filter fail-or-abandon, or message storage failed
-		m_done_signal.emit( success , id , response , reason ) ;
+		m_done_signal.emit( success , id , std::string(response) , std::string(reason) ) ;
 	}
 }
 
@@ -138,7 +138,7 @@ std::string GSmtp::ProtocolMessageForward::forward( unsigned long id , bool & no
 		nothing_to_do = false ;
 		G_DEBUG( "GSmtp::ProtocolMessageForward::forward: forwarding message " << id ) ;
 
-		unique_ptr<StoredMessage> message = m_store.get( id ) ;
+		std::unique_ptr<StoredMessage> message = m_store.get( id ) ;
 
 		if( message->toCount() == 0U )
 		{
@@ -150,10 +150,10 @@ std::string GSmtp::ProtocolMessageForward::forward( unsigned long id , bool & no
 		{
 			if( m_client_ptr.get() == nullptr )
 			{
-				m_client_ptr.reset( new Client(GNet::ExceptionSink(m_client_ptr,nullptr),m_client_location,m_client_secrets,m_client_config) ) ;
+				m_client_ptr.reset( new Client(GNet::ExceptionSink(m_client_ptr,m_es.esrc()),m_client_location,m_client_secrets,m_client_config) ) ;
 				m_client_ptr->messageDoneSignal().connect( G::Slot::slot(*this,&GSmtp::ProtocolMessageForward::messageDone) ) ;
 			}
-			m_client_ptr->sendMessage( unique_ptr<StoredMessage>(message.release()) ) ;
+			m_client_ptr->sendMessage( std::unique_ptr<StoredMessage>(message.release()) ) ;
 		}
 		return std::string() ;
 	}
@@ -167,18 +167,18 @@ std::string GSmtp::ProtocolMessageForward::forward( unsigned long id , bool & no
 	}
 }
 
-void GSmtp::ProtocolMessageForward::messageDone( std::string reason )
+void GSmtp::ProtocolMessageForward::messageDone( const std::string & reason )
 {
 	G_DEBUG( "GSmtp::ProtocolMessageForward::messageDone: \"" << reason << "\"" ) ;
 	const bool ok = reason.empty() ;
-	m_done_signal.emit( ok , m_id , ok?"":"forwarding failed" , reason ) ; // one-shot
+	m_done_signal.emit( ok , m_id , ok?"":"forwarding failed" , std::string(reason) ) ; // one-shot
 }
 
-void GSmtp::ProtocolMessageForward::clientDone( std::string reason )
+void GSmtp::ProtocolMessageForward::clientDone( const std::string & reason )
 {
 	G_DEBUG( "GSmtp::ProtocolMessageForward::clientDone: \"" << reason << "\"" ) ;
 	const bool ok = reason.empty() ;
-	m_done_signal.emit( ok , m_id , ok?"":"forwarding failed" , reason ) ; // one-shot
+	m_done_signal.emit( ok , m_id , ok?"":"forwarding failed" , std::string(reason) ) ; // one-shot
 }
 
 /// \file gprotocolmessageforward.cpp

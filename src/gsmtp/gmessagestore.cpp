@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,83 +20,6 @@
 
 #include "gdef.h"
 #include "gmessagestore.h"
-#include "glog.h"
-#include "gassert.h"
 
-GSmtp::MessageStore::~MessageStore()
-{
-}
-
-// ===
-
-GSmtp::MessageStore::IteratorImp::IteratorImp() :
-	m_ref_count(1UL)
-{
-}
-
-GSmtp::MessageStore::IteratorImp::~IteratorImp()
-{
-}
-
-// ===
-
-GSmtp::MessageStore::Iterator::Iterator() :
-	m_imp(nullptr)
-{
-}
-
-GSmtp::MessageStore::Iterator::Iterator( IteratorImp * imp ) :
-	m_imp(imp)
-{
-	G_ASSERT( m_imp->m_ref_count == 1UL ) ;
-}
-
-unique_ptr<GSmtp::StoredMessage> GSmtp::MessageStore::Iterator::next()
-{
-	return m_imp ? m_imp->next() : unique_ptr<StoredMessage>() ;
-}
-
-GSmtp::MessageStore::Iterator::~Iterator()
-{
-	if( m_imp )
-	{
-		m_imp->m_ref_count-- ;
-		if( m_imp->m_ref_count == 0UL )
-			delete m_imp ;
-	}
-}
-
-GSmtp::MessageStore::Iterator::Iterator( const Iterator & other ) :
-	m_imp(other.m_imp)
-{
-	if( m_imp )
-		m_imp->m_ref_count++ ;
-}
-
-GSmtp::MessageStore::Iterator & GSmtp::MessageStore::Iterator::operator=( const Iterator & rhs )
-{
-	if( this != &rhs )
-	{
-		if( m_imp )
-		{
-			m_imp->m_ref_count-- ;
-			if( m_imp->m_ref_count == 0UL )
-				delete m_imp ;
-		}
-		m_imp = rhs.m_imp ;
-		if( m_imp )
-		{
-			m_imp->m_ref_count++ ;
-		}
-	}
-	return *this ;
-}
-
-void GSmtp::MessageStore::Iterator::last()
-{
-	IteratorImp * imp = m_imp ;
-	m_imp = nullptr ;
-	delete imp ;
-}
-
+// empty
 /// \file gmessagestore.cpp

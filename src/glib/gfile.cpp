@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -163,7 +163,7 @@ void G::File::copy( std::istream & in , std::ostream & out , std::streamsize lim
 	std::vector<char> buffer ;
 	buffer.reserve( block ) ;
 
-	const std::streamsize b = static_cast<std::streamsize>(block) ;
+	const auto b = static_cast<std::streamsize>(block) ;
 	std::streamsize size = 0U ;
 	while( ( limit == 0U || size < limit ) && in.good() && out.good() )
 	{
@@ -285,7 +285,7 @@ int G::File::compare( const Path & path_1 , const Path & path_2 , const NoThrow 
 {
 	std::ifstream file_1 ; open( file_1 , path_1 ) ;
 	std::ifstream file_2 ; open( file_2 , path_2 ) ;
-	const int eof = std::char_traits<char>::eof() ; // EOF
+	constexpr int eof = std::char_traits<char>::eof() ; // EOF
 	if( !file_1.good() && !file_2.good() ) return -1 ;
 	if( !file_1.good() ) return -1 ;
 	if( !file_2.good() ) return 1 ;

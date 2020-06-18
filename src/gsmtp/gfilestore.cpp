@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,20 +38,21 @@ namespace GSmtp
 	class FileIterator ;
 }
 
-/// \class GSmtp::FileIterator
-/// A 'body' class for the MessageStore::Iterator 'handle'. The
-/// handle/body pattern allows us to copy iterators by value
-/// and therefore return them from MessageStore::iterator().
-///
-class GSmtp::FileIterator : public MessageStore::IteratorImp
+class GSmtp::FileIterator : public MessageStore::Iterator /// A GSmtp::MessageStore::Iterator for GSmtp::FileStore.
 {
 public:
 	FileIterator( FileStore & store , const G::Path & dir , bool lock , bool failures ) ;
-	~FileIterator() ;
-	virtual unique_ptr<GSmtp::StoredMessage> next() ;
-private:
-	FileIterator( const FileIterator & ) g__eq_delete ;
-	void operator=( const FileIterator & ) g__eq_delete ;
+	~FileIterator() override ;
+
+private: // overrides
+	std::unique_ptr<GSmtp::StoredMessage> next() override ;
+
+public:
+	FileIterator( const FileIterator & ) = delete ;
+	FileIterator( FileIterator && ) = delete ;
+	void operator=( const FileIterator & ) = delete ;
+	void operator=( FileIterator && ) = delete ;
+
 private:
 	FileStore & m_store ;
 	G::DirectoryList m_iter ;
@@ -69,14 +70,13 @@ GSmtp::FileIterator::FileIterator( FileStore & store , const G::Path & dir , boo
 }
 
 GSmtp::FileIterator::~FileIterator()
-{
-}
+= default;
 
-unique_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
+std::unique_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
 {
 	while( m_iter.more() )
 	{
-		unique_ptr<StoredFile> m( new StoredFile(m_store,m_iter.filePath()) ) ;
+		std::unique_ptr<StoredFile> m( new StoredFile(m_store,m_iter.filePath()) ) ;
 		if( m_lock && !m->lock() )
 		{
 			G_WARNING( "GSmtp::MessageStore: cannot lock file: \"" << m_iter.filePath() << "\"" ) ;
@@ -87,14 +87,14 @@ unique_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
 		const bool check_recipients = m_lock ; // check for no-remote-recipients
 		bool ok = m->readEnvelope(reason,check_recipients) && m->openContent(reason) ;
 		if( ok )
-			return unique_ptr<StoredMessage>(m.release()) ; // up-cast to base
+			return std::unique_ptr<StoredMessage>( m.release() ) ; // up-cast to base
 
 		if( m_lock )
 			m->fail( reason , 0 ) ;
 		else
 			G_WARNING( "GSmtp::MessageStore: ignoring \"" << m_iter.filePath() << "\": " << reason ) ;
 	}
-	return unique_ptr<StoredMessage>() ;
+	return std::unique_ptr<StoredMessage>() ;
 }
 
 // ===
@@ -108,7 +108,7 @@ GSmtp::FileStore::FileStore( const G::Path & dir , bool optimise ,
 		m_max_size(max_size) ,
 		m_test_for_eight_bit(test_for_eight_bit)
 {
-	m_pid_modifier = static_cast<unsigned long>(G::DateTime::now().s) ; // was %10^6
+	m_pid_modifier = static_cast<unsigned long>(G::SystemTime::now().s()) ;
 	checkPath( dir ) ;
 
 	if( G::Test::enabled("message-store-with-8bit-test") )
@@ -118,7 +118,7 @@ GSmtp::FileStore::FileStore( const G::Path & dir , bool optimise ,
 		m_test_for_eight_bit = false ;
 
 	if( G::Test::enabled("message-store-unfail") )
-		unfailAll() ;
+		unfailAllImp() ;
 
 	if( G::Test::enabled("message-store-clear") )
 		clearAll() ;
@@ -174,12 +174,12 @@ void GSmtp::FileStore::checkPath( const G::Path & directory_path )
 	}
 }
 
-unique_ptr<std::ofstream> GSmtp::FileStore::stream( const G::Path & path )
+std::unique_ptr<std::ofstream> GSmtp::FileStore::stream( const G::Path & path )
 {
-	unique_ptr<std::ofstream> stream_ptr( new std::ofstream ) ;
+	std::unique_ptr<std::ofstream> stream_ptr( new std::ofstream ) ;
 	{
 		FileWriter claim_writer ; // seteuid(), umask(Tighter)
-		G::File::open( *stream_ptr.get() , path , std::ios_base::trunc ) ;
+		G::File::open( *stream_ptr , path , std::ios_base::trunc ) ;
 	}
 	return stream_ptr ;
 }
@@ -245,21 +245,26 @@ bool GSmtp::FileStore::emptyCore() const
 	return no_more ;
 }
 
-GSmtp::MessageStore::Iterator GSmtp::FileStore::iterator( bool lock )
+std::shared_ptr<GSmtp::MessageStore::Iterator> GSmtp::FileStore::iterator( bool lock )
 {
-	return MessageStore::Iterator( new FileIterator(*this,m_dir,lock,false) ) ;
+	return iteratorImp( lock ) ;
 }
 
-GSmtp::MessageStore::Iterator GSmtp::FileStore::failures()
+std::shared_ptr<GSmtp::MessageStore::Iterator> GSmtp::FileStore::iteratorImp( bool lock )
 {
-	return MessageStore::Iterator( new FileIterator(*this,m_dir,false,true) ) ;
+	return std::shared_ptr<MessageStore::Iterator>( new FileIterator(*this,m_dir,lock,false) ) ; // upcast
 }
 
-unique_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( unsigned long id )
+std::shared_ptr<GSmtp::MessageStore::Iterator> GSmtp::FileStore::failures()
+{
+	return std::shared_ptr<MessageStore::Iterator>( new FileIterator(*this,m_dir,false,true) ) ; // upcast
+}
+
+std::unique_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( unsigned long id )
 {
 	G::Path path = envelopePath( id ) ;
 
-	unique_ptr<StoredFile> message( new StoredFile(*this,path) ) ;
+	std::unique_ptr<StoredFile> message( new StoredFile(*this,path) ) ;
 
 	if( ! message->lock() )
 		throw GetError( path.str() + ": cannot lock the file" ) ;
@@ -274,14 +279,14 @@ unique_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( unsigned long id )
 
 	G_LOG( "GSmtp::FileStore::get: processing message \"" << message->name() << "\"" ) ;
 
-	return unique_ptr<StoredMessage>( message.release() ) ; // up-cast to base
+	return std::unique_ptr<StoredMessage>( message.release() ) ; // up-cast to base
 }
 
-unique_ptr<GSmtp::NewMessage> GSmtp::FileStore::newMessage( const std::string & from ,
+std::unique_ptr<GSmtp::NewMessage> GSmtp::FileStore::newMessage( const std::string & from ,
 	const std::string & from_auth_in , const std::string & from_auth_out )
 {
 	m_empty = false ;
-	return unique_ptr<NewMessage>( new NewFile(*this,from,from_auth_in,from_auth_out,m_max_size,m_test_for_eight_bit) ) ;
+	return std::unique_ptr<NewMessage>( new NewFile(*this,from,from_auth_in,from_auth_out,m_max_size,m_test_for_eight_bit) ) ;
 }
 
 void GSmtp::FileStore::updated()
@@ -290,12 +295,12 @@ void GSmtp::FileStore::updated()
 	m_update_signal.emit() ;
 }
 
-G::Slot::Signal0 & GSmtp::FileStore::messageStoreUpdateSignal()
+G::Slot::Signal<> & GSmtp::FileStore::messageStoreUpdateSignal()
 {
 	return m_update_signal ;
 }
 
-G::Slot::Signal0 & GSmtp::FileStore::messageStoreRescanSignal()
+G::Slot::Signal<> & GSmtp::FileStore::messageStoreRescanSignal()
 {
 	return m_rescan_signal ;
 }
@@ -307,13 +312,18 @@ void GSmtp::FileStore::rescan()
 
 void GSmtp::FileStore::unfailAll()
 {
-	MessageStore::Iterator iter( failures() ) ;
+	unfailAllImp() ;
+}
+
+void GSmtp::FileStore::unfailAllImp()
+{
+	std::shared_ptr<MessageStore::Iterator> iter( failures() ) ;
 	for(;;)
 	{
-		unique_ptr<StoredMessage> message = iter.next() ;
-		if( message.get() == nullptr )
+		std::unique_ptr<StoredMessage> message = iter->next() ;
+		if( message == nullptr )
 			break ;
-		G_DEBUG( "GSmtp::FileStore::unfailAll: " << message->name() ) ;
+		G_DEBUG( "GSmtp::FileStore::unfailAllImp: " << message->name() ) ;
 		message->unfail() ;
 	}
 }
@@ -321,11 +331,11 @@ void GSmtp::FileStore::unfailAll()
 void GSmtp::FileStore::clearAll()
 {
 	// for testing...
-	MessageStore::Iterator iter( iterator(true) ) ;
+	std::shared_ptr<MessageStore::Iterator> iter( iteratorImp(true) ) ;
 	for(;;)
 	{
-		unique_ptr<StoredMessage> message = iter.next() ;
-		if( message.get() )
+		std::unique_ptr<StoredMessage> message = iter->next() ;
+		if( message )
 			message->destroy() ;
 		else
 			break ;
@@ -335,22 +345,18 @@ void GSmtp::FileStore::clearAll()
 // ===
 
 GSmtp::FileReader::FileReader()
-{
-}
+= default;
 
 GSmtp::FileReader::~FileReader()
-{
-}
+= default;
 
 // ===
 
 GSmtp::DirectoryReader::DirectoryReader()
-{
-}
+= default;
 
 GSmtp::DirectoryReader::~DirectoryReader()
-{
-}
+= default;
 
 // ===
 
@@ -361,6 +367,6 @@ GSmtp::FileWriter::FileWriter() :
 }
 
 GSmtp::FileWriter::~FileWriter()
-{
-}
+= default;
 
+/// \file gfilestore.cpp

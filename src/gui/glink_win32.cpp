@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,29 +34,33 @@ template <typename I>
 struct GComPtr
 {
 	I * m_p ;
-	GComPtr() : m_p(NULL) {}
+	GComPtr() : m_p(nullptr) {}
 	explicit GComPtr( I * p ) : m_p(p) {}
 	~GComPtr() { if(m_p) m_p->Release() ; }
 	I * get() { return m_p ; }
 	const I * get() const { return m_p ; }
 	void ** vp() { return (void**) &m_p ; }
-	private: GComPtr(const GComPtr<I> &) ;
-	private: void operator=(const GComPtr<I> &) ;
+	GComPtr( const GComPtr<I> & ) = delete ;
+	GComPtr( GComPtr<I> && ) = delete ;
+	void operator=( const GComPtr<I> & ) = delete ;
+	void operator=( GComPtr<I> && ) = delete ;
 } ;
 
 struct bstr
 {
-	private: BSTR m_p ;
-	public: explicit bstr( const std::string & s )
+	explicit bstr( const std::string & s )
 	{
 		std::wstring ws ;
 		G::Convert::convert( ws , s ) ;
 		m_p = SysAllocString( ws.c_str() ) ;
 	}
-	public: ~bstr() { SysFreeString(m_p) ; }
-	public: BSTR p() { return m_p ; }
-	private: bstr( const bstr & ) ;
-	private: void operator=( const bstr & ) ;
+	~bstr() { SysFreeString(m_p) ; }
+	BSTR p() { return m_p ; }
+	bstr( const bstr & ) = delete ;
+	bstr( bstr && ) = delete ;
+	void operator=( const bstr & ) = delete ;
+	void operator=( bstr && ) = delete ;
+	private: BSTR m_p ;
 } ;
 
 class GLinkImp
@@ -67,9 +71,12 @@ public:
 	static std::string filename( const std::string & ) ;
 	void saveAs( const G::Path & link_path ) ;
 
+	GLinkImp( const GLinkImp & ) = delete ;
+	GLinkImp( GLinkImp && ) = delete ;
+	void operator=( const GLinkImp & ) = delete ;
+	void operator=( GLinkImp && ) = delete ;
+
 private:
-	GLinkImp( const GLinkImp & ) ;
-	void operator=( const GLinkImp & ) ;
 	static void check( HRESULT , const char * ) ;
 	void createInstance() ;
 	void qi() ;
@@ -116,7 +123,7 @@ void GLinkImp::check( HRESULT hr , const char * op )
 
 void GLinkImp::createInstance()
 {
-	HRESULT hr = CoCreateInstance( CLSID_ShellLink , NULL , CLSCTX_INPROC_SERVER , IID_IShellLink , m_ilink.vp() ) ;
+	HRESULT hr = CoCreateInstance( CLSID_ShellLink , nullptr , CLSCTX_INPROC_SERVER , IID_IShellLink , m_ilink.vp() ) ;
 	check( hr , "createInstance" ) ;
 }
 
@@ -198,9 +205,12 @@ void GLinkImp::saveAs( const G::Path & link_path )
 GLink::GLink( const G::Path & target_path , const std::string & name , const std::string & description ,
 	const G::Path & working_dir , const G::StringArray & args , const G::Path & icon_source , Show show ,
 	const std::string & , const std::string & , const std::string & ) :
-		m_imp( new GLinkImp(target_path,name,description,working_dir,args,icon_source,show) )
+		m_imp(std::make_unique<GLinkImp>(target_path,name,description,working_dir,args,icon_source,show))
 {
 }
+
+GLink::~GLink()
+= default ;
 
 std::string GLink::filename( const std::string & name_in )
 {
@@ -210,11 +220,6 @@ std::string GLink::filename( const std::string & name_in )
 void GLink::saveAs( const G::Path & link_path )
 {
 	m_imp->saveAs( link_path ) ;
-}
-
-GLink::~GLink()
-{
-	delete m_imp ;
 }
 
 bool GLink::exists( const G::Path & path )

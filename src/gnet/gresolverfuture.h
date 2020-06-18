@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -56,8 +56,8 @@ namespace GNet
 class GNet::ResolverFuture
 {
 public:
-	typedef std::pair<Address,std::string> Pair ;
-	typedef std::vector<Address> List ;
+	using Pair = std::pair<Address,std::string> ;
+	using List = std::vector<Address> ;
 
 	ResolverFuture( const std::string & host , const std::string & service ,
 		int family , bool dgram , bool for_async_hint = false ) ;
@@ -83,9 +83,13 @@ public:
 		///< Returns the reason for the error().
 		///< Precondition: error()
 
+public:
+	ResolverFuture( const ResolverFuture & ) = delete ;
+	ResolverFuture( ResolverFuture && ) = delete ;
+	void operator=( const ResolverFuture & ) = delete ;
+	void operator=( ResolverFuture && ) = delete ;
+
 private:
-	ResolverFuture( const ResolverFuture & ) g__eq_delete ;
-	void operator=( const ResolverFuture & ) g__eq_delete ;
 	std::string failure() const ;
 	bool fetch( List & ) const ;
 	bool fetch( Pair & ) const ;
@@ -101,7 +105,7 @@ private:
 	std::string m_service ;
 	const char * m_service_p ;
 	int m_family ;
-	struct addrinfo m_ai_hint ;
+	struct addrinfo m_ai_hint {} ;
 	bool m_test_mode ;
 	int m_rc ;
 	struct addrinfo * m_ai ;

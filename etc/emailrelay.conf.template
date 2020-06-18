@@ -2,12 +2,13 @@
 # emailrelay.conf
 #
 # This is a configuration file for E-MailRelay (http://emailrelay.sf.net).
-# It is used by the emailrelay "init.d" script when it starts up an emailrelay
-# server.
 #
-# The "init.d" script constructs an emailrelay command-line by starting
-# with "--as-server --pid-file ..." and then contatenating uncommented lines
-# from this file, prefixing each with "--".
+# The E-MailRelay startup script constructs an emailrelay command-line
+# starting with "--as-server --syslog --pid-file ..." followed by the path
+# to this config file.
+#
+# Every configuration item in this file has an equivalent command-line
+# option with a leading "--".
 #
 # To enable one of the configuration options below remove the '#' character
 # on the last line in the block.
@@ -91,8 +92,8 @@
 # Format: client-auth-config <config>
 # Description: Configures the SMTP client authentication module using a
 # semicolon-separated list of configuration items. Each item is a
-# single-character key, followed by a colon and then a comma-separated	list.
-# A 'm' character introduces an ordered list of authentication	mechanisms,
+# single-character key, followed by a colon and then a comma-separated list.
+# A 'm' character introduces an ordered list of authentication mechanisms,
 # and an 'x' is used for blocklisted mechanisms.
 #
 #client-auth-config m:cram-sha1,cram-md5
@@ -103,8 +104,10 @@
 # message is forwarded. The filter is passed the name of the message file in
 # the spool directory so that it can edit it as required. A network filter
 # can be specified as "net:<transport-address>" and prefixes of "spam:",
-# "spam-edit:" and "exit:" are also allowed. The "--filter" option is
-# normally more useful than "--client-filter".
+# "spam-edit:" and "exit:" are also allowed. The "spam:" and "spam-edit:"
+# prefixes require a SpamAssassin daemon to be running. For store-and-forward
+#  applications the "--filter" option is normally more useful than
+# "--client-filter".
 #
 #client-filter /usr/local/sbin/emailrelay-client-filter
 
@@ -200,7 +203,7 @@
 # Name: dnsbl
 # Format: dnsbl <config>
 # Description: Specifies a list of DNSBL servers that are used to reject SMTP
-#  connections from blocked addresses. The configuration string is made up of
+# connections from blocked addresses. The configuration string is made up of
 # comma-separated fields: the DNS server's transport address, a timeout in
 # milliseconds, a rejection threshold, and then the list of DNSBL servers.
 #
@@ -230,9 +233,9 @@
 # rejected if the filter program terminates with an exit code between 1 and
 # 99. Use "net:<transport-address>" to communicate with a filter daemon over
 # the network, or "spam:<transport-address>" for a spamassassin spamd daemon
-# to accept or reject mail messages, or  "spam-edit:<transport-address>" to
-# have spamassassin edit the message  content without rejecting it, or
-# "exit:<number>" to emulate a filter  program that just exits.
+# to accept or reject mail messages, or "spam-edit:<transport-address>" to
+# have spamassassin edit the message content without rejecting it, or
+# "exit:<number>" to emulate a filter program that just exits.
 #
 #filter /usr/local/sbin/emailrelay-filter
 
@@ -274,31 +277,35 @@
 # Name: idle-timeout
 # Format: idle-timeout <time>
 # Description: Specifies a timeout (in seconds) for receiving network traffic
-# from	remote SMTP and POP clients. The default is 1800 seconds.
+# from remote SMTP and POP clients. The default is 1800 seconds.
 #
 #idle-timeout 2
 
 # Name: immediate
 # Format: immediate
 # Description: Causes mail messages to be forwarded as they are received,
-# even before  they have been accepted. This can be used to do proxying
-# without  store-and-forward, but in practice clients tend to to time out
+# even before they have been accepted. This can be used to do proxying
+# without store-and-forward, but in practice clients tend to to time out
 # while waiting for their mail message to be accepted.
 #
 #immediate
 
 # Name: interface
 # Format: interface <ip-address-list>
-# Description: Specifies the IP network addresses used to bind listening
-# ports. By default listening ports for incoming SMTP, POP and administration
-# connections will bind the 'any' address for IPv4 and for IPv6, ie.
-# "0.0.0.0" and "::". Use this option to limit listening to particular
-# addresses (and by implication to particular network interfaces). Multiple
-# addresses can be specified by using the option more than once or by using a
-# comma-separated list. Use a prefix of "smtp=", "pop=" or "admin=" on
-# addresses that should apply only to those types of listening port.
+# Description: Specifies the IP network addresses or interface names used to
+# bind listening ports. By default listening ports for incoming SMTP, POP and
+# administration connections will bind the 'any' address for IPv4 and for
+# IPv6, ie. "0.0.0.0" and "::". Multiple addresses can be specified by using
+# the option more than once or by using a comma-separated list. Use a prefix
+# of "smtp=", "pop=" or "admin=" on addresses that should apply only to those
+# types of listening port. Any link-local IPv6 addresses must include a zone
+# name or scope id.  Interface names can be used instead of addresses, in
+# which case all  the addresses associated with that interface at startup
+# will used  for listening. When an interface name is decorated with a
+# "-ipv4"  or "-ipv6" suffix only their IPv4 or IPv6 addresses will be used
+# (eg. "ppp0-ipv4").
 #
-#interface 192.168.0.1,127.0.0.1,pop=::1,smtp=::
+#interface 127.0.0.1,smtp=eth0
 
 # Name: log
 # Format: log
@@ -309,6 +316,13 @@
 # "--as-server" and "--as-proxy" also imply "--close-stderr".
 #
 #log
+
+# Name: log-address
+# Format: log-address
+# Description: Adds the network address of remote clients to the logging
+# output.
+#
+#log-address
 
 # Name: log-file
 # Format: log-file <file>
@@ -386,11 +400,11 @@
 # Description: Modifies the spool directory used by the POP server to be a
 # sub-directory with the same name as the POP authentication user-id. This
 # allows multiple POP clients to read the spooled messages without
-# interfering with each other, particularly when also  using
-# "--pop-no-delete". Content files can stay in the main spool  directory with
-# only the envelope files copied into user-specific  sub-directories. The
-# "emailrelay-filter-copy" program is a  convenient way of doing this when
-# run via "--filter".
+# interfering with each other, particularly when also using
+# "--pop-no-delete". Content files can stay in the main spool directory with
+# only the envelope files copied into user-specific sub-directories. The
+# "emailrelay-filter-copy" program is a convenient way of doing this when run
+# via "--filter".
 #
 #pop-by-name
 
@@ -425,10 +439,10 @@
 # Name: remote-clients
 # Format: remote-clients
 # Description: Allows incoming connections from addresses that are not local.
-# The default behaviour is to ignore connections that are not local in order
-# to prevent accidental exposure to the public internet, but a firewall
-# should also be used. The definition of 'local' is different for IPv4 and
-# IPv6.
+# The default behaviour is to reject connections that are not local in order
+# to prevent accidental exposure to the public internet,  although a firewall
+# should also be used. Local address ranges are  defined in RFC-1918,
+# RFC-6890 etc.
 #
 #remote-clients
 
@@ -456,9 +470,9 @@
 # Format: server-auth-config <config>
 # Description: Configures the SMTP server authentication module using a
 # semicolon-separated list of configuration items. Each item is a
-# single-character key, followed by a colon and then a comma-separated	list.
+# single-character key, followed by a colon and then a comma-separated list.
 # A 'm' character introduces a preferred sub-set of the built-in
-# authentication mechanisms, and an 'x' is used for blocklisted  mechanisms.
+# authentication mechanisms, and an 'x' is used for blocklisted mechanisms.
 #
 #server-auth-config m:cram-sha256,cram-sha1
 
@@ -479,6 +493,13 @@
 # accidental exposure of the private key.
 #
 #server-tls-certificate /etc/ssl/certs/emailrelay.pem
+
+# Name: server-tls-connection
+# Format: server-tls-connection
+# Description: Enables SMTP over TLS when acting as an SMTP server. This is
+# for SMTP over TLS (SMTPS), not TLS negotiated within SMTP using STARTTLS.
+#
+#server-tls-connection
 
 # Name: server-tls-required
 # Format: server-tls-required
@@ -525,7 +546,7 @@
 # comma-separated list of keywords. If OpenSSL and mbedTLS are both built in
 # then keywords of "openssl" and "mbedtls" will select one or the other.
 # Keywords like "tlsv1.0" can be used to set a minimum TLS protocol version,
-# or  "-tlsv1.2" to set a maximum version.
+# or "-tlsv1.2" to set a maximum version.
 #
 #tls-config mbedtls,tlsv1.2
 

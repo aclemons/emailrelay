@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,13 +43,15 @@ class G::Identity
 {
 public:
 	G_EXCEPTION( NoSuchUser , "no such user" ) ;
+	G_EXCEPTION( NoSuchGroup , "no such group" ) ;
 	G_EXCEPTION( Error , "cannot read user database" ) ;
 	G_EXCEPTION( UidError , "cannot set uid" ) ;
 	G_EXCEPTION( GidError , "cannot set gid" ) ;
 
-	explicit Identity( const std::string & login_name ) ;
-		///< Constructor for the named identity.
-		///< Throws if NoSuchUser.
+	explicit Identity( const std::string & login_name ,
+		const std::string & group_name_override = std::string() ) ;
+			///< Constructor for the named identity.
+			///< Throws NoSuchUser on error.
 
 	static Identity effective() ;
 		///< Returns the current effective identity.
@@ -60,10 +62,10 @@ public:
 	static Identity root() ;
 		///< Returns the superuser identity.
 
-	static Identity invalid() ;
+	static Identity invalid() noexcept ;
 		///< Returns an invalid identity.
 
-	static Identity invalid( SignalSafe ) ;
+	static Identity invalid( SignalSafe ) noexcept ;
 		///< Returns an invalid identity, with a
 		///< signal-safe guarantee.
 
@@ -73,23 +75,23 @@ public:
 	std::string str() const ;
 		///< Returns a string representation.
 
-	void setRealUser( bool do_throw = true ) ;
+	void setRealUser( bool do_throw = true ) const ;
 		///< Sets the real userid.
 
-	void setEffectiveUser( bool do_throw = true ) ;
+	void setEffectiveUser( bool do_throw = true ) const ;
 		///< Sets the effective userid.
 
-	void setEffectiveUser( SignalSafe ) ;
+	void setEffectiveUser( SignalSafe ) const noexcept ;
 		///< Sets the effective userid.
 		///< A signal-safe, reentrant overload.
 
-	void setRealGroup( bool do_throw = true ) ;
+	void setRealGroup( bool do_throw = true ) const ;
 		///< Sets the real group id.
 
-	void setEffectiveGroup( bool do_throw = true ) ;
+	void setEffectiveGroup( bool do_throw = true ) const ;
 		///< Sets the effective group id.
 
-	void setEffectiveGroup( SignalSafe ) ;
+	void setEffectiveGroup( SignalSafe ) const noexcept ;
 		///< Sets the effective group id.
 		///< A signal-safe, reentrant overload.
 
@@ -100,13 +102,13 @@ public:
 		///< Comparison operator.
 
 private:
-	Identity() ; // no throw
-	explicit Identity( SignalSafe ) ; // no throw
+	Identity() noexcept ;
+	explicit Identity( SignalSafe ) noexcept ;
 
 private:
 	uid_t m_uid ;
 	gid_t m_gid ;
-	HANDLE m_h ; // windows
+	HANDLE m_h{0} ; // windows
 } ;
 
 /// \class G::IdentityUser
@@ -122,7 +124,7 @@ protected:
 	static void setEffectiveUserTo( Identity , bool do_throw = true ) ;
 		///< Sets the effective userid.
 
-	static void setEffectiveUserTo( SignalSafe , Identity ) ;
+	static void setEffectiveUserTo( SignalSafe , Identity ) noexcept ;
 		///< Sets the effective userid.
 
 	static void setRealGroupTo( Identity , bool do_throw = true ) ;
@@ -131,11 +133,11 @@ protected:
 	static void setEffectiveGroupTo( Identity , bool do_throw = true ) ;
 		///< Sets the effective group id.
 
-	static void setEffectiveGroupTo( SignalSafe , Identity ) ;
+	static void setEffectiveGroupTo( SignalSafe , Identity ) noexcept ;
 		///< Sets the effective group id.
 
-private:
-	IdentityUser() g__eq_delete ;
+public:
+	IdentityUser() = delete ;
 } ;
 
 namespace G

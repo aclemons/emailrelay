@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,9 +40,10 @@ G::OptionParser::OptionParser( const Options & spec , OptionMap & values_out ) :
 {
 }
 
-size_t G::OptionParser::parse( const StringArray & args_in , size_t start )
+G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t start , std::size_t ignore_non_options )
 {
-	size_t i = start ;
+	StringArray args_out ;
+	std::size_t i = start ;
 	for( ; i < args_in.size() ; i++ )
 	{
 		const std::string & arg = args_in.at(i) ;
@@ -55,7 +56,7 @@ size_t G::OptionParser::parse( const StringArray & args_in , size_t start )
 
 		if( isAnOptionSet(arg) ) // eg. "-ltv"
 		{
-			for( size_t n = 1U ; n < arg.length() ; n++ )
+			for( std::size_t n = 1U ; n < arg.length() ; n++ )
 				processOptionOn( arg.at(n) ) ;
 		}
 		else if( isOldOption(arg) ) // eg. "-v"
@@ -71,7 +72,7 @@ size_t G::OptionParser::parse( const StringArray & args_in , size_t start )
 		else if( isNewOption(arg) ) // eg. "--foo"
 		{
 			std::string name = arg.substr( 2U ) ; // eg. "foo" or "foo=..."
-			std::string::size_type pos_eq = eqPos(name) ;
+			std::string::size_type pos_eq = eqPos( name ) ;
 			bool has_eq = pos_eq != std::string::npos ;
 			std::string key = has_eq ? name.substr(0U,pos_eq) : name ;
 			if( has_eq && m_spec.unvalued(key) && Str::isPositive(eqValue(name,pos_eq)) ) // "foo=yes"
@@ -87,12 +88,19 @@ size_t G::OptionParser::parse( const StringArray & args_in , size_t start )
 			else
 				processOptionOn( name ) ;
 		}
+		else if( ignore_non_options != 0U )
+		{
+			--ignore_non_options ;
+			args_out.push_back( arg ) ;
+		}
 		else
 		{
 			break ;
 		}
 	}
-	return i ;
+	for( ; i < args_in.size() ; i++ )
+		args_out.push_back( args_in.at(i) ) ;
+	return args_out ;
 }
 
 void G::OptionParser::processOptionOn( const std::string & name )
@@ -161,7 +169,7 @@ void G::OptionParser::processOption( char c , const std::string & value )
 
 std::string::size_type G::OptionParser::eqPos( const std::string & s )
 {
-	std::string::size_type p = s.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789-_") ;
+	std::string::size_type p = s.find_first_not_of( "abcdefghijklmnopqrstuvwxyz0123456789-_" ) ;
 	return p != std::string::npos && s.at(p) == '=' ? p : std::string::npos ;
 }
 
@@ -239,13 +247,13 @@ void G::OptionParser::errorConflict( const std::string & name )
 
 bool G::OptionParser::haveSeenOn( const std::string & name ) const
 {
-	OptionMap::const_iterator p = m_map.find( name ) ;
+	auto p = m_map.find( name ) ;
 	return p != m_map.end() && !(*p).second.isOff() ;
 }
 
 bool G::OptionParser::haveSeenOff( const std::string & name ) const
 {
-	OptionMap::const_iterator p = m_map.find( name ) ;
+	auto p = m_map.find( name ) ;
 	return p != m_map.end() && (*p).second.isOff() ;
 }
 
@@ -256,7 +264,7 @@ bool G::OptionParser::haveSeen( const std::string & name ) const
 
 bool G::OptionParser::haveSeenSame( const std::string & name , const std::string & value ) const
 {
-	OptionMap::const_iterator p = m_map.find( name ) ;
+	auto p = m_map.find( name ) ;
 	return p != m_map.end() && (*p).second.value() == value ;
 }
 

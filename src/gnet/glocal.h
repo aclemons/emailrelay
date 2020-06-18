@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -56,8 +56,10 @@ public:
 	static bool isLocal( const Address & ) ;
 		///< Overload without an explanation.
 
+public:
+	Local() = delete ;
+
 private:
-	Local() g__eq_delete ;
 	static std::string resolvedHostname() ;
 
 private:

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,10 +36,6 @@ std::string GSmtp::Filter::str( bool server_side ) const
 		ss << " reason=[" << reason() << "]" ;
 
 	return ss.str() ;
-}
-
-GSmtp::Filter::~Filter()
-{
 }
 
 GSmtp::Filter::Exit::Exit( int exit_code , bool server_side ) :

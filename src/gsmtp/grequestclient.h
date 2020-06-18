@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -78,18 +78,24 @@ public:
 		///< event signal.
 
 private: // overrides
-	virtual bool onReceive( const char * , size_t , size_t , size_t , char ) override ; // Override from GNet::Client.
-	virtual void onSendComplete() override ; // Override from GNet::BufferedClient.
-	virtual void onDelete( const std::string & ) override ; // Override from GNet::Client.
-	virtual void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
-	virtual void onConnect() override ; // Override from GNet::SimpleClient.
+	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::Client.
+	void onSendComplete() override ; // Override from GNet::BufferedClient.
+	void onDelete( const std::string & ) override ; // Override from GNet::Client.
+	void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
+	void onConnect() override ; // Override from GNet::SimpleClient.
+
+public:
+	~RequestClient() override = default ;
+	RequestClient( const RequestClient & ) = delete ;
+	RequestClient( RequestClient && ) = delete ;
+	void operator=( const RequestClient & ) = delete ;
+	void operator=( RequestClient && ) = delete ;
 
 private:
-	RequestClient( const RequestClient & ) g__eq_delete ;
-	void operator=( const RequestClient & ) g__eq_delete ;
 	void onTimeout() ;
 	std::string requestLine( const std::string & ) const ;
 	std::string result( std::string ) const ;
+	static GNet::Client::Config netConfig( unsigned int connection_timeout , unsigned int response_timeout ) ;
 
 private:
 	std::string m_eol ;

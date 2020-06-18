@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2019 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include "gmessagestore.h"
 #include "gprocess.h"
 #include "glog.h"
+#include <array>
 
 Main::Configuration::Configuration( const G::Options & options , const G::OptionMap & map ,
 	const G::Path & app_dir , const G::Path & base_dir ) :
@@ -66,6 +67,11 @@ bool Main::Configuration::logTimestamp() const
 	return m_map.contains( "log-time" ) ;
 }
 
+bool Main::Configuration::logAddress() const
+{
+	return m_map.contains( "log-address" ) ;
+}
+
 G::Path Main::Configuration::logFile() const
 {
 	return m_map.contains("log-file") ? pathValue("log-file") : G::Path() ;
@@ -86,7 +92,7 @@ G::StringArray Main::Configuration::listeningAddresses( const std::string & prot
 	// then weed out the ones that have an explicit protocol name that doesnt match the
 	// required protocol, removing the "protocol=" prefix at the same time to leave just
 	// the required list of addresses
-	for( G::StringArray::iterator p = result.begin() ; p != result.end() ; )
+	for( auto p = result.begin() ; p != result.end() ; )
 	{
 		if( protocol.empty() || protocol == G::Str::head( *p , (*p).find('=') , protocol ) )
 		{
@@ -314,6 +320,11 @@ bool Main::Configuration::serverTls() const
 	return m_map.contains( "server-tls" ) ;
 }
 
+bool Main::Configuration::serverTlsConnection() const
+{
+	return m_map.contains( "server-tls-connection" ) ;
+}
+
 bool Main::Configuration::serverTlsRequired() const
 {
 	return m_map.contains( "server-tls-required" ) ;
@@ -384,7 +395,7 @@ unsigned int Main::Configuration::secureConnectionTimeout() const
 	return connectionTimeout() ;
 }
 
-std::string Main::Configuration::networkName( std::string default_ ) const
+std::string Main::Configuration::networkName( const std::string & default_ ) const
 {
 	return m_map.value( "domain" , default_ ) ;
 }
@@ -512,18 +523,17 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 		m_map.contains("forward-to") ;
 
 	{
-		const char * need_forward_to [] = {
+		std::array<const char*,5U> need_forward_to {{
 			"forward" ,
 			"poll" ,
 			"forward-on-disconnect" ,
 			"immediate" ,
-			"client-filter" ,
-			nullptr } ;
+			"client-filter" }} ;
 
-		for( const char ** p = need_forward_to ; *p ; p++ )
+		for( const char * p : need_forward_to )
 		{
-			if( m_map.contains(*p) && !have_forward_to )
-				errors.push_back( "--" + std::string(*p) + " requires --forward-to" ) ;
+			if( m_map.contains(p) && !have_forward_to )
+				errors.push_back( "--" + std::string(p) + " requires --forward-to" ) ;
 		}
 	}
 
@@ -602,15 +612,25 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 		errors.push_back( "the --client-tls and --client-tls-connection options cannot be used together" ) ;
 	}
 
+	if( m_map.contains("server-tls") && m_map.contains("server-tls-connection") )
+	{
+		errors.push_back( "the --server-tls and --server-tls-connection options cannot be used together" ) ;
+	}
+
 	if( m_map.contains("server-tls") && !m_map.contains("server-tls-certificate") )
 	{
 		errors.push_back( "the --server-tls option requires --server-tls-certificate" ) ;
 	}
 
-	if( ( m_map.contains("server-tls-certificate") || m_map.contains("server-tls-verify") ) &&
-		!m_map.contains("server-tls") )
+	if( m_map.contains("server-tls-connection") && !m_map.contains("server-tls-certificate") )
 	{
-		errors.push_back( "the --server-tls-... options require --server-tls" ) ;
+		errors.push_back( "the --server-tls-connection option requires --server-tls-certificate" ) ;
+	}
+
+	if( ( m_map.contains("server-tls-certificate") || m_map.contains("server-tls-verify") ) &&
+		!( m_map.contains("server-tls") || m_map.contains("server-tls-connection") ) )
+	{
+		errors.push_back( "the --server-tls options require either --server-tls or --server-tls-connection" ) ;
 	}
 
 	if( ( m_map.contains("client-tls-certificate") || m_map.contains("client-tls-verify") ||
@@ -625,19 +645,22 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 		errors.push_back( "the --client-tls-verify-name options requires --client-tls-verify" ) ;
 	}
 
-	if( m_map.contains("server-auth") && m_map.value("server-auth") == "/pam" && !m_map.contains("server-tls" ) )
+	if( m_map.contains("server-auth") && m_map.value("server-auth") == "/pam" &&
+		!( m_map.contains("server-tls" ) || m_map.contains("server-tls-connection") ) )
 	{
-		errors.push_back( "--server-auth using pam requires --server-tls" ) ;
+		errors.push_back( "--server-auth using pam requires --server-tls or --server-tls-connection" ) ;
 	}
 
-	if( m_map.contains("server-tls-required") && !m_map.contains("server-tls") )
+	if( m_map.contains("server-tls-required") &&
+		!( m_map.contains("server-tls" ) || m_map.contains("server-tls-connection") ) )
 	{
-		errors.push_back( "--server-tls-required requires --server-tls" ) ;
+		errors.push_back( "--server-tls-required requires --server-tls or --server-tls-connection" ) ;
 	}
 
-	if( m_map.contains("pop-auth") && m_map.value("pop-auth") == "/pam" && !m_map.contains("server-tls" ) )
+	if( m_map.contains("pop-auth") && m_map.value("pop-auth") == "/pam" &&
+		!( m_map.contains("server-tls" ) || m_map.contains("server-tls-connection") ) )
 	{
-		errors.push_back( "--pop-auth using pam requires --server-tls" ) ;
+		errors.push_back( "--pop-auth using pam requires --server-tls or --server-tls-connection" ) ;
 	}
 
 	if( m_map.contains("interface") && m_map.value("interface").find("client=") != std::string::npos )
@@ -756,10 +779,9 @@ G::StringArray Main::Configuration::display() const
 	G::StringArray result ;
 	result.reserve( 70U ) ;
 	G::StringArray names = m_options.names() ;
-	for( G::StringArray::iterator name_p = names.begin() ; name_p != names.end() ; ++name_p )
+	for( const auto & name : names )
 	{
-		const std::string & name = *name_p ;
-		if( m_options.visible(name,G::OptionsLevel(99),false) &&
+			if( m_options.visible(name,G::OptionsLevel(99),false) &&
 			name != "version" &&
 			name != "help" &&
 			name != "no-syslog" &&
