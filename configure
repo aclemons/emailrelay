@@ -5318,7 +5318,7 @@ fi
 
 	if test "$GCONFIG_WINDRES" = ""
 	then
-		GCONFIG_WINDRES="`echo \"$CC\" | grep mingw32 | sed 's/gcc$/windres/'`"
+		GCONFIG_WINDRES="`echo \"$CXX\" | sed -E 's/-gc\+\+.*/-windres/'`"
 		if test "$GCONFIG_WINDRES" = ""
 		then
 			GCONFIG_WINDRES="windres"
@@ -5333,7 +5333,7 @@ $as_echo "$GCONFIG_WINDRES" >&6; }
 
 	if test "$GCONFIG_WINDMC" = ""
 	then
-		GCONFIG_WINDMC="`echo \"$CC\" | grep mingw32 | sed 's/gcc$/windmc/'`"
+		GCONFIG_WINDMC="`echo \"$CXX\" | sed -E 's/-gc\+\+.*/-windmc/'`"
 		if test "$GCONFIG_WINDMC" = ""
 		then
 			GCONFIG_WINDMC="./fakemc.exe"
@@ -8106,6 +8106,52 @@ $as_echo "#define GCONFIG_HAVE_GETENV_S 0" >>confdefs.h
 
 	fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for putenv_s" >&5
+$as_echo_n "checking for putenv_s... " >&6; }
+if ${gconfig_cv_putenv_s+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+			#ifdef _WIN32
+				#include <winsock2.h>
+				#include <windows.h>
+				#include <ws2tcpip.h>
+			#endif
+			#include <stdlib.h>
+
+int
+main ()
+{
+
+			_putenv_s( "name" , "value" ) ;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  gconfig_cv_putenv_s=yes
+else
+  gconfig_cv_putenv_s=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gconfig_cv_putenv_s" >&5
+$as_echo "$gconfig_cv_putenv_s" >&6; }
+	if test "$gconfig_cv_putenv_s" = "yes" ; then
+
+$as_echo "#define GCONFIG_HAVE_PUTENV_S 1" >>confdefs.h
+
+	else
+
+$as_echo "#define GCONFIG_HAVE_PUTENV_S 0" >>confdefs.h
+
+	fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for _fsopen()" >&5
 $as_echo_n "checking for _fsopen()... " >&6; }
 if ${gconfig_cv_fsopen+:} false; then :
@@ -8461,6 +8507,7 @@ $as_echo "#define GCONFIG_HAVE_EXECVPE 1" >>confdefs.h
 $as_echo "#define GCONFIG_HAVE_EXECVPE 0" >>confdefs.h
 
 	fi
+
 
 
 

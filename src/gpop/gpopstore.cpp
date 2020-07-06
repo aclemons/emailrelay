@@ -137,7 +137,7 @@ bool GPop::Store::valid( const G::Path & dir_path , bool allow_delete )
 	}
 	else
 	{
-		FileReader claim_reader ; G_IGNORE_VARIABLE(FileReader,claim_reader) ;
+		FileReader claim_reader ; G__IGNORE_VARIABLE(FileReader,claim_reader) ;
 		ok = dir_test.valid() ;
 	}
 	if( !ok )
@@ -304,7 +304,7 @@ std::unique_ptr<std::istream> GPop::StoreLock::get( int id ) const
 
 	std::unique_ptr<std::ifstream> file ;
 	{
-		FileReader claim_reader ; G_IGNORE_VARIABLE(FileReader,claim_reader) ;
+		FileReader claim_reader ; G__IGNORE_VARIABLE(FileReader,claim_reader) ;
 		file = std::make_unique<std::ifstream>( path(id).str().c_str() , std::ios_base::binary | std::ios_base::in ) ;
 	}
 

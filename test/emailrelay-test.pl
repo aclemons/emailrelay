@@ -148,6 +148,11 @@ sub requireOpensslTool
 	die "skipped: no openssl tool\n" if !Openssl::available() ;
 }
 
+sub requireTlsBuild
+{
+	die "skipped: not built with tls\n" if !Server::hasTls() ;
+}
+
 sub getTestAccount
 {
 	if( System::mac() )
@@ -1691,7 +1696,7 @@ sub testClientInvalidRecipients
 	my $emailrelay = new Server( undef , undef , undef , $spool_dir ) ;
 	$emailrelay->set_dst( "$localhost:".$test_server->port() ) ;
 
-	# test that the three "rejectme" messages out of five are left as ".bad"
+	# test that the three messages with "rejectme" are left as ".bad"
 	Check::ok( $emailrelay->run( \%args ) ) ;
 	System::waitForFiles( $spool_dir ."/emailrelay.*.envelope.bad" , 3 ) ;
 	System::waitForFiles( $spool_dir ."/emailrelay.*.content", 3 ) ;
@@ -1699,6 +1704,50 @@ sub testClientInvalidRecipients
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.content", 3 ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 0 ) ;
 	Check::allFilesContain( $spool_dir ."/emailrelay.*.envelope.bad" , "one or more recipients rejected" ) ;
+
+	# tear down
+	$test_server->kill() ;
+	$emailrelay->wait() ;
+	$test_server->cleanup() ;
+	$emailrelay->cleanup() ;
+}
+
+sub testClientInvalidRecipientsWithForwardToSome
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		Verbose => 1 ,
+		Domain => 1 ,
+		SpoolDir => 1 ,
+		Forward => 1 ,
+		ForwardTo => 1 ,
+		ForwardToSome => 1 ,
+		DontServe => 1 ,
+		NoDaemon => 1 ,
+		Hidden => 1 ,
+	) ;
+	my $spool_dir = System::createSpoolDir() ;
+	my $test_server = new TestServer( System::nextPort() ) ;
+	$test_server->run() ;
+	System::submitSmallMessage( $spool_dir , undef , "acceptme\@there.com" ) ;
+	System::submitSmallMessage( $spool_dir , undef , "acceptme1\@there.com" , "acceptme2\@there.com" ) ;
+	System::submitSmallMessage( $spool_dir , undef , "acceptme\@there.com" , "rejectme\@there.com" ) ;
+	System::submitSmallMessage( $spool_dir , undef , "rejectme\@there.com" ) ;
+	System::submitSmallMessage( $spool_dir , undef , "rejectme1\@there.com" , "rejectme2\@there.com" ) ;
+	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 5 ) ;
+	my $emailrelay = new Server( undef , undef , undef , $spool_dir ) ;
+	$emailrelay->set_dst( "$localhost:".$test_server->port() ) ;
+
+	# test that the three messages with "rejectme" are left as ".bad" and have no "acceptme" recipients
+	Check::ok( $emailrelay->run( \%args ) ) ;
+	System::waitForFiles( $spool_dir ."/emailrelay.*.envelope.bad" , 3 ) ;
+	System::waitForFiles( $spool_dir ."/emailrelay.*.content", 3 ) ;
+	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope.bad", 3 ) ;
+	Check::fileMatchCount( $spool_dir ."/emailrelay.*.content", 3 ) ;
+	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 0 ) ;
+	Check::allFilesContain( $spool_dir ."/emailrelay.*.envelope.bad" , "recipients rejected" ) ;
+	Check::noFileContains( $spool_dir ."/emailrelay.*.envelope.bad" , "acceptme" ) ;
 
 	# tear down
 	$test_server->kill() ;
@@ -1731,7 +1780,7 @@ sub _testTlsServer
 {
 	# setup
 	my ( $client_cert_names , $client_ca_names , $server_cert_names , $server_ca_names , $server_verify , $expect_failure ) = @_ ;
-	requireOpensslTool() ;
+	requireOpensslTool() ; # Openssl::runClient()
 	my %args = (
 		Log => 1 ,
 		Verbose => 1 ,
@@ -1861,7 +1910,7 @@ sub _testTlsClient
 {
 	# setup
 	my ( $client_cert_names , $client_ca_names , $server_cert_names , $server_ca_names , $client_verify , $expect_failure ) = @_ ;
-	requireOpensslTool() ;
+	requireOpensslTool() ; # Openssl::runServer()
 	my %args = (
 		Log => 1 ,
 		Verbose => 1 ,

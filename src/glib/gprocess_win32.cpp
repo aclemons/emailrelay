@@ -35,33 +35,29 @@
 #include <fcntl.h>
 #include <direct.h> // _getcwd()
 
-class G::Process::IdImp
-{
-public:
-	unsigned int m_pid{0} ;
-} ;
-
-class G::Process::UmaskImp
-{
-} ;
-
-G::Process::Id::Id()
+G::Process::Id::Id() noexcept
 {
 	m_pid = static_cast<unsigned int>(::_getpid()) ; // or ::GetCurrentProcessId()
 }
 
-G::Process::Id::Id( SignalSafe , const char * path )
+G::Process::Id::Id( SignalSafe , const char * path ) noexcept
 {
-	std::ifstream file( path ? path : "" ) ;
-	file >> m_pid ;
-	if( !file.good() )
-		m_pid = 0 ;
+	try
+	{
+		std::ifstream file( path ? path : "" ) ;
+		file >> m_pid ;
+		if( file.fail() )
+			m_pid = 0 ;
+	}
+	catch( std::exception & )
+	{
+	}
 }
 
 G::Process::Id::Id( std::istream & stream )
 {
 	stream >> m_pid ;
-	if( !stream.good() )
+	if( stream.fail() )
 		throw Process::InvalidId() ;
 }
 
@@ -76,9 +72,6 @@ bool G::Process::Id::operator==( const Id & rhs ) const noexcept
 {
 	return m_pid == rhs.m_pid ;
 }
-
-// not implemented...
-//G::Process::Id::Id( const char * pid_file_path ) {}
 
 // ===
 
@@ -107,7 +100,7 @@ bool G::Process::cd( const Path & dir , NoThrow )
 	return 0 == ::_chdir( dir.str().c_str() ) ;
 }
 
-int G::Process::errno_( const SignalSafe & )
+int G::Process::errno_( const SignalSafe & ) noexcept
 {
 	int e = EINVAL ;
 	if( _get_errno( &e ) )
@@ -115,7 +108,7 @@ int G::Process::errno_( const SignalSafe & )
 	return e ;
 }
 
-int G::Process::errno_( const SignalSafe & signal_safe , int e )
+int G::Process::errno_( const SignalSafe & signal_safe , int e ) noexcept
 {
 	int old = errno_( SignalSafe() ) ;
 	_set_errno( e ) ;
@@ -137,7 +130,7 @@ G::Identity G::Process::beOrdinary( Identity identity , bool )
 	return identity ;
 }
 
-G::Identity G::Process::beOrdinary( SignalSafe , Identity identity , bool )
+G::Identity G::Process::beOrdinary( SignalSafe , Identity identity , bool ) noexcept
 {
 	// not implemented -- see also ImpersonateLoggedOnUser()
 	return identity ;
@@ -149,7 +142,7 @@ G::Identity G::Process::beSpecial( Identity identity , bool )
 	return identity ;
 }
 
-G::Identity G::Process::beSpecial( SignalSafe , Identity identity , bool )
+G::Identity G::Process::beSpecial( SignalSafe , Identity identity , bool ) noexcept
 {
 	// not implemented -- see also RevertToSelf()
 	return identity ;
@@ -195,14 +188,17 @@ std::string G::Process::cwd( bool no_throw )
 	}
 }
 
-// not implemented...
-// Who G::Process::fork() {}
-// Who G::Process::fork( Id & child ) {}
-// void G::Process::exec( const Path & exe , const std::string & arg ) {}
-// int G::Process::wait( const Id & child ) {}
-// int G::Process::wait( const Id & child , int error_return ) {}
+void G::Process::terminate() noexcept
+{
+	// never gets here since beOrdinary() is stubbed out
+	std::terminate() ;
+}
 
 // ===
+
+class G::Process::Umask::UmaskImp
+{
+} ;
 
 G::Process::Umask::Umask( Process::Umask::Mode )
 {

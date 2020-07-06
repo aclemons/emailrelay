@@ -1,10 +1,11 @@
 emailrelay (2.2) unstable; urgency=low
-  * Updated to C++ 2011.
   * Connections from IPv4 'private use' addresses are allowed by default (see "--remote-clients").
-  * Interface names now supported by "--interface".
+  * Interface names are supported by "--interface".
   * New "--server-tls-connection" option for server-side implicit TLS.
+  * New "--forward-to-some" option to allow some message recipients to be rejected.
   * New "--log-address" option to aid adaptive firewalling.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Thu, 18 Jun 2020 12:18:55 +0000
+  * Updated to C++ 2011.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun,  5 Jul 2020 23:41:57 +0000
 
 emailrelay (2.1) unstable; urgency=low
   * Backwards compatibility features for 1.9-to-2.0 transition removed.

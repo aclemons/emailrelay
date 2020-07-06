@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gfilestore.h"
+#include "genvelope.h"
 #include "gstrings.h"
 #include "gnewmessage.h"
 #include "gexception.h"
@@ -77,34 +78,23 @@ private:
 	void deleteContent() ;
 	void deleteEnvelope() ;
 	static bool isEightBit( const char * , std::size_t ) ;
-	static const char * crlf() ;
-	static std::string xnormalise( const std::string & ) ;
-	bool saveEnvelope( const std::string & auth_id , const std::string & peer_socket_address ,
-		const std::string & peer_certificate ) const ;
-	void writeEnvelope( std::ofstream & , const std::string & where ,
-		const std::string & auth_id , const std::string & peer_socket_address ,
-		const std::string & peer_certificate ) const ;
+	bool saveEnvelope() ;
 	void moveToLocal( const G::Path & , const G::Path & , const G::Path & ) ;
 	void copyToLocal( const G::Path & , const G::Path & , const G::Path & ) ;
 
 private:
 	FileStore & m_store ;
 	unsigned long m_seq ;
-	std::string m_from ;
-	std::string m_from_auth_in ;
-	std::string m_from_auth_out ;
-	G::StringArray m_to_local ;
-	G::StringArray m_to_remote ;
 	std::unique_ptr<std::ofstream> m_content ;
 	G::Path m_content_path ;
 	G::Path m_envelope_path_0 ;
 	G::Path m_envelope_path_1 ;
 	bool m_committed ;
 	bool m_test_for_eight_bit ;
-	int m_eight_bit ;
 	bool m_saved ;
 	std::size_t m_size ;
 	std::size_t m_max_size ;
+	Envelope m_env ;
 } ;
 
 #endif

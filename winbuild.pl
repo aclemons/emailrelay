@@ -26,8 +26,8 @@
 #
 # Requires cmake and msbuild to be on the path or somewhere
 # obvious (see winbuild.pm), and expects mbedtls source
-# to be in a sibling directory and qt headers and libraries
-# to be in their default install location.
+# to be in a sibling directory and qt libraries, headers and
+# tools to be in their default install location.
 #
 # Also spits out batch files (like "winbuild-whatever.bat")
 # for doing sub-tasks, including "winbuild-install.bat".
@@ -49,19 +49,35 @@ require "winbuild.pm" ;
 
 # configuration ...
 
+# cmake command-line options
+my $cmake_args = {
+	x64 => [
+		# try these in turn...
+		[ "-G" , "Visual Studio 16 2019" , "-A" , "x64" ] ,
+		[ "-A" , "x64" ] ,
+	] ,
+	x86 => [
+		# try these in turn...
+		[ "-G" , "Visual Studio 16 2019" , "-A" , "Win32" ] ,
+		[ "-A" , "Win32" ] ,
+		[]
+	] ,
+} ;
+
+# version
 chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.2" ) ;
 
 # makefile conditionals
 my %switches = (
 	GCONFIG_BSD => 0 ,
-	GCONFIG_GUI => 1 ,
+	GCONFIG_GUI => 1 , # << zero if no qt libraries
 	GCONFIG_ICONV => 0 ,
 	GCONFIG_INSTALL_HOOK => 0 ,
 	GCONFIG_INTERFACE_NAMES => 1 ,
 	GCONFIG_MAC => 0 ,
 	GCONFIG_PAM => 0 ,
 	GCONFIG_TESTING => 1 ,
-	GCONFIG_TLS_USE_MBEDTLS => 1 ,
+	GCONFIG_TLS_USE_MBEDTLS => 1 , # << zero if no mbedtls source
 	GCONFIG_TLS_USE_OPENSSL => 0 ,
 	GCONFIG_TLS_USE_BOTH => 0 ,
 	GCONFIG_TLS_USE_NONE => 0 ,
@@ -97,17 +113,6 @@ my %vars = (
 	RPM_ROOT => "rpm" ,
 ) ;
 
-# cmake architecture command-line options
-my $cmake_args = {
-	x86 => [
-		[ "-A" , "Win32" ] , # for MSVC 2019 generator
-		[] # for older MSVC generators
-	] ,
-	x64 => [
-		[ "-A" , "x64" ] ,
-	] ,
-} ;
-
 $switches{GCONFIG_TLS_USE_NONE} = 1 if (
 	$switches{GCONFIG_TLS_USE_MBEDTLS} == 0 &&
 	$switches{GCONFIG_TLS_USE_OPENSSL} == 0 ) ;
@@ -133,7 +138,7 @@ my $no_mbedtls = ( $need_mbedtls && !$mbedtls ) ;
 
 warn "error: cannot find cmake.exe: please download from cmake.org\n" if $no_cmake ;
 warn "error: cannot find msbuild.exe: please install visual studio\n" if $no_msbuild ;
-warn "error: cannot find qt binaries: please download from wwww.qt.io or unset GCONFIG_GUI\n" if $no_qt ;
+warn "error: cannot find qt libraries: please download from wwww.qt.io or unset GCONFIG_GUI\n" if $no_qt ;
 warn "error: cannot find mbedtls source: please download from tls.mbed.org " .
 	"or unset GCONFIG_TLS_USE_MBEDTLS\n" if $no_mbedtls ;
 
@@ -270,10 +275,6 @@ sub create_cmake_file
 		if( $switches{GCONFIG_GUI} )
 		{
 			print $fh "find_package(Qt5 CONFIG REQUIRED Widgets Gui Core OpenGL)\n" ;
-			#print $fh "find_package(Qt5OpenGL REQUIRED)\n" ;
-			#print $fh "find_package(Qt5Widgets REQUIRED)\n" ;
-			#print $fh "find_package(Qt5Gui REQUIRED)\n" ;
-			#print $fh "find_package(Qt5Core REQUIRED)\n" ;
 		}
 		if( $switches{GCONFIG_TLS_USE_MBEDTLS} || $switches{GCONFIG_TLS_USE_BOTH} )
 		{
@@ -471,8 +472,9 @@ sub run_cmake
 	my $rc ;
 	for my $arch_args ( @arch_args )
 	{
-		my @args = @$arch_args ;
+		winbuild::clean_cmake_cache_files( $arch , {verbose=>0} ) ;
 
+		my @args = @$arch_args ;
 		unshift @args , "-DCMAKE_MODULE_PATH:FILEPATH=$module_path" ;
 		unshift @args , "-DCMAKE_INCLUDE_PATH:FILEPATH=$mbedtls_include_dir" ;
 		unshift @args , "-DCMAKE_LIBRARY_PATH:FILEPATH=$mbedtls_lib_dir" ;
@@ -489,7 +491,7 @@ sub run_cmake
 		last if $rc == 0 ;
 	}
 	print "cmake-exit=[$rc]\n" ;
-	die unless $rc == 0 ;
+	die "cmake failed: check error messages above and maybe tweak cmake_args in winbuild.pl\n" unless $rc == 0 ;
 }
 
 sub create_gconfig_header

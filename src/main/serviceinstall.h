@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file service_install.h
+/// \file serviceinstall.h
 ///
 
 #ifndef GUI_SERVICE_INSTALL_H
@@ -23,9 +23,9 @@
 
 #include <string>
 
-std::string service_install( std::string commandline , std::string name , std::string display_name ,
-	std::string description , bool autostart = true ) ;
+std::string service_install( const std::string & commandline , const std::string & name , const std::string & display_name ,
+	const std::string & description , bool autostart = true ) ;
 
-bool service_installed( std::string name ) ;
+bool service_installed( const std::string & name ) ;
 
 #endif

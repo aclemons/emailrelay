@@ -25,6 +25,15 @@
 #include "gassert.h"
 #include <errno.h>
 
+bool GNet::SocketBase::supports( int domain , int type , int protocol )
+{
+	SOCKET fd = ::socket( domain , type , protocol ) ;
+	if( fd == INVALID_SOCKET )
+		return false ;
+	::closesocket( fd ) ;
+	return true ;
+}
+
 bool GNet::SocketBase::create( int domain , int type , int protocol )
 {
 	m_fd = Descriptor( ::socket( domain , type , protocol ) , 0 ) ;

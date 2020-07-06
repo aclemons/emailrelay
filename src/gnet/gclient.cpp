@@ -62,7 +62,6 @@ GNet::Client::Client( ExceptionSink es , const Location & remote , const Config 
 GNet::Client::~Client()
 {
 	Monitor::removeClient( *this ) ;
-	m_sp.reset() ;
 }
 
 void GNet::Client::disconnect()

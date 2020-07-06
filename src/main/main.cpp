@@ -77,7 +77,7 @@ int main( int argc , char * argv [] )
 	}
 	catch(...)
 	{
-		std::cerr << G::Arg::prefix(argv) << ": unrecognised exception" << std::endl ;
+		std::cerr << G::Arg::prefix(argv) << ": fatal exception" << std::endl ;
 	}
 	return ok ? EXIT_SUCCESS : EXIT_FAILURE ;
 }

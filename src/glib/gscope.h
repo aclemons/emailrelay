@@ -49,7 +49,11 @@ public:
 		///< Constructor.
 
 	~ScopeExit() ;
-		///< Destructor. Calls the exit function.
+		///< Destructor. Calls the exit function unless
+		///< disarm()ed.
+
+	void disarm() noexcept ;
+		///< Deactivates the exit function.
 
 public:
 	ScopeExit( const ScopeExit & ) = delete ;
@@ -98,9 +102,16 @@ G::ScopeExit::ScopeExit( std::function<void()> fn ) :
 }
 
 inline
+void G::ScopeExit::disarm() noexcept
+{
+	m_fn = nullptr ;
+}
+
+inline
 G::ScopeExit::~ScopeExit()
 {
-	m_fn() ;
+	if( m_fn )
+		m_fn() ;
 }
 
 inline

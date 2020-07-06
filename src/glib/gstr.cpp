@@ -30,6 +30,7 @@
 #include <iomanip>
 #include <string>
 #include <sstream>
+#include <cerrno>
 
 namespace G
 {
@@ -65,6 +66,7 @@ namespace G
 		long toLong( const std::string & s , bool & overflow , bool & invalid ) ;
 		int toInt( const std::string & s , bool & overflow , bool & invalid ) ;
 		void join( const std::string & , std::string & , const std::string & ) ;
+		void strncpy( char * , const char * , size_t ) ;
 	}
 }
 
@@ -1467,6 +1469,49 @@ G::StringArray::iterator G::Str::removeMatch( StringArray::iterator begin , Stri
 	namespace imp = G::StrImp ;
 	using namespace std::placeholders ;
 	return std::remove_if( begin , end , std::bind(imp::inList,match_list.begin(),match_list.end(),_1,ignore_case) ) ;
+}
+
+void G::StrImp::strncpy( char * dst , const char * src , size_t n )
+{
+	for( ; n ; n-- , dst++ , src++ )
+	{
+		*dst = *src ;
+		if( *src == '\0' )
+			break ;
+	}
+}
+
+errno_t G::Str::strncpy_s( char * dst , size_t n_dst , const char * src , size_t count )
+{
+	if( dst == nullptr || n_dst == 0U )
+		return EINVAL ;
+
+	if( src == nullptr )
+	{
+		*dst = '\0' ;
+		return EINVAL ;
+	}
+
+	std::size_t n = std::strlen( src ) ;
+	if( count != truncate && count < n )
+		n = count ;
+
+	if( count == truncate && n >= n_dst )
+	{
+		StrImp::strncpy( dst , src , n_dst ) ;
+		dst[n_dst-1U] = '\0' ;
+	}
+	else if( n >= n_dst )
+	{
+		*dst = '\0' ;
+		return ERANGE ; // dst too small
+	}
+	else
+	{
+		StrImp::strncpy( dst , src , n ) ;
+		dst[n] = '\0' ;
+	}
+	return 0 ;
 }
 
 /// \file gstr.cpp

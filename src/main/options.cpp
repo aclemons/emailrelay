@@ -342,6 +342,10 @@ std::string Main::Options::spec( bool is_windows )
 			// Specifies the transport address of the remote SMTP server that is
 			// use for mail message forwarding.
 
+		"!forward-to-some!allows forwarding to some addressees! even if others are rejected!0!!3|"
+			// Allow forwarding to continue even if some recipient addresses on an
+			// e-mail envelope are rejected by the remote server.
+
 		"T!response-timeout!sets the response timeout (in seconds) when talking to a remote server (default is 1800)!!1!time!3|"
 			//default: 1800
 			//example: 2

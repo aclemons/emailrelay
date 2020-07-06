@@ -37,6 +37,8 @@ public:
 	explicit MonitorImp( Monitor & monitor ) ;
 	void add( const Connection & , bool is_client ) ;
 	void remove( const Connection & , bool is_client ) noexcept ;
+	void add( const Listener & ) ;
+	void remove( const Listener & ) noexcept ;
 	void report( std::ostream & s , const std::string & px , const std::string & eol ) const ;
 	void report( G::StringArray & ) const ;
 	void emit( Signal & , const char * , const char * ) noexcept ;
@@ -48,6 +50,7 @@ private:
 		explicit ConnectionInfo( bool is_client_ ) noexcept : is_client(is_client_) {}
 	} ;
 	using ConnectionMap = std::map<const Connection*,ConnectionInfo> ;
+	using ServerMap = std::map<const Listener*,Address> ;
 
 public:
 	~MonitorImp() = default ;
@@ -62,24 +65,17 @@ private:
 		unsigned int , const std::string & ) ;
 	static void add( G::StringArray & , const std::string & , const std::string & , const std::string & ,
 		const std::string & , const std::string & ) ;
+	static void add( G::StringArray & , const std::string & , const std::string & , const std::string & ) ;
+	static void add( G::StringArray & , const std::string & , const std::string & ) ;
 
 private:
 	ConnectionMap m_connections ;
+	ServerMap m_servers ;
 	unsigned long m_client_adds ;
 	unsigned long m_client_removes ;
 	unsigned long m_server_peer_adds ;
 	unsigned long m_server_peer_removes ;
 } ;
-
-GNet::MonitorImp::MonitorImp( Monitor & ) :
-	m_client_adds(0UL) ,
-	m_client_removes(0UL) ,
-	m_server_peer_adds(0UL) ,
-	m_server_peer_removes(0UL)
-{
-}
-
-// ===
 
 GNet::Monitor * & GNet::Monitor::pthis() noexcept
 {
@@ -123,7 +119,7 @@ void GNet::Monitor::removeClient( const Connection & client ) noexcept
 	if( pthis() )
 	{
 		pthis()->m_imp->remove( client , true ) ;
-		pthis()->m_imp->emit( pthis()->m_signal , "out" , "end" ) ;
+		pthis()->m_imp->emit( pthis()->m_signal , "out" , "stop" ) ;
 	}
 }
 
@@ -142,7 +138,25 @@ void GNet::Monitor::removeServerPeer( const Connection & server_peer ) noexcept
 	if( pthis() )
 	{
 		pthis()->m_imp->remove( server_peer , false ) ;
-		pthis()->m_imp->emit( pthis()->m_signal , "in" , "end" ) ;
+		pthis()->m_imp->emit( pthis()->m_signal , "in" , "stop" ) ;
+	}
+}
+
+void GNet::Monitor::addServer( const Listener & server )
+{
+	if( pthis() )
+	{
+		pthis()->m_imp->add( server ) ;
+		pthis()->m_imp->emit( pthis()->m_signal , "listen" , "start" ) ;
+	}
+}
+
+void GNet::Monitor::removeServer( const Listener & server ) noexcept
+{
+	if( pthis() )
+	{
+		pthis()->m_imp->remove( server ) ;
+		pthis()->m_imp->emit( pthis()->m_signal , "listen" , "stop" ) ;
 	}
 }
 
@@ -158,6 +172,14 @@ void GNet::Monitor::report( G::StringArray & out ) const
 
 // ==
 
+GNet::MonitorImp::MonitorImp( Monitor & ) :
+	m_client_adds(0UL) ,
+	m_client_removes(0UL) ,
+	m_server_peer_adds(0UL) ,
+	m_server_peer_removes(0UL)
+{
+}
+
 void GNet::MonitorImp::add( const Connection & connection , bool is_client )
 {
 	bool inserted = m_connections.insert(ConnectionMap::value_type(&connection,ConnectionInfo(is_client))).second ;
@@ -168,6 +190,11 @@ void GNet::MonitorImp::add( const Connection & connection , bool is_client )
 		else
 			m_server_peer_adds++ ;
 	}
+}
+
+void GNet::MonitorImp::add( const Listener & server )
+{
+	m_servers.insert( ServerMap::value_type(&server,server.address()) ) ;
 }
 
 void GNet::MonitorImp::emit( Signal & s , const char * a , const char * b ) noexcept
@@ -193,8 +220,18 @@ void GNet::MonitorImp::remove( const Connection & connection , bool is_client ) 
 	}
 }
 
+void GNet::MonitorImp::remove( const Listener & server ) noexcept
+{
+	m_servers.erase( &server ) ; // noexcept since trivial Compare
+}
+
 void GNet::MonitorImp::report( std::ostream & s , const std::string & px , const std::string & eol ) const
 {
+	for( const auto & server : m_servers )
+	{
+		s << px << "LISTEN: " << server.second.displayString() << eol ;
+	}
+
 	s << px << "OUT started: " << m_client_adds << eol ;
 	s << px << "OUT finished: " << m_client_removes << eol ;
 	{
@@ -228,6 +265,9 @@ void GNet::MonitorImp::report( std::ostream & s , const std::string & px , const
 
 void GNet::MonitorImp::report( G::StringArray & out ) const
 {
+	for( const auto & server : m_servers )
+		add( out , "Listening address" , server.second.displayString() ) ;
+
 	add( out , "Outgoing connections" , m_client_adds , "started" , m_client_removes , "finished" ) ;
 	add( out , "Incoming connections" , m_server_peer_adds , "started" , m_server_peer_removes , "finished" ) ;
 	for( const auto & connection : m_connections )
@@ -253,17 +293,28 @@ void GNet::MonitorImp::add( G::StringArray & out , const std::string & key ,
 	add( out , key , G::Str::fromUInt(value_1) , suffix_1 , G::Str::fromUInt(value_2) , suffix_2 ) ;
 }
 
-std::string GNet::MonitorImp::join( const std::string & s1 , const std::string & s2 )
-{
-	return s2.empty() ? s1 : ( s1 + " " + s2 ) ;
-}
-
 void GNet::MonitorImp::add( G::StringArray & out , const std::string & key ,
 	const std::string & value_1 , const std::string & suffix_1 ,
 	const std::string & value_2 , const std::string & suffix_2 )
 {
+	add( out , key , join(value_1,suffix_1) , join(value_2,suffix_2) ) ;
+}
+
+void GNet::MonitorImp::add( G::StringArray & out , const std::string & key , const std::string & value )
+{
+	add( out , key , value , std::string() ) ;
+}
+
+void GNet::MonitorImp::add( G::StringArray & out , const std::string & key , const std::string & value_1 ,
+	const std::string & value_2 )
+{
 	out.push_back( key ) ;
-	out.push_back( join(value_1,suffix_1) ) ;
-	out.push_back( join(value_2,suffix_2) ) ;
+	out.push_back( value_1 ) ;
+	out.push_back( value_2 ) ;
+}
+
+std::string GNet::MonitorImp::join( const std::string & s1 , const std::string & s2 )
+{
+	return s2.empty() ? s1 : ( s1 + " " + s2 ) ;
 }
 

@@ -32,6 +32,7 @@
 #include "gmultiserver.h"
 #include "gadminserver.h"
 #include "gpopserver.h"
+#include "gsocket.h"
 #include "gfilterfactory.h"
 #include "gverifierfactory.h"
 #include "gdnsblock.h"
@@ -434,7 +435,8 @@ void Main::Run::checkPort( bool check , const std::string & ip , unsigned int po
 		const bool do_throw = true ;
 		if( ip.empty() )
 		{
-			if( GNet::Address::supports( GNet::Address::Family::ipv6 ) )
+			if( GNet::Address::supports( GNet::Address::Family::ipv6 ) &&
+				GNet::StreamSocket::supports( GNet::Address::Family::ipv6 ) )
 			{
 				GNet::Address address( GNet::Address::Family::ipv6 , port ) ;
 				GNet::Server::canBind( address , do_throw ) ;
@@ -551,7 +553,7 @@ GSmtp::Client::Config Main::Run::clientConfig() const
 					.set_must_use_tls( configuration().clientTlsRequired() && !configuration().clientOverTls() )
 					.set_must_authenticate( true )
 					.set_anonymous( configuration().anonymous() )
-					.set_must_accept_all_recipients( true )
+					.set_must_accept_all_recipients( !configuration().forwardToSome() )
 					.set_eight_bit_strict( false ) )
 			.set_connection_timeout( configuration().connectionTimeout() )
 			.set_secure_connection_timeout( configuration().secureConnectionTimeout() )

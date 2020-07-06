@@ -33,8 +33,8 @@
 # by running the "emailrelay-passwd" program.
 #
 # Any unusual characters (including space, "=" and "+") in the "name" and
-# "password" fields should encoded using the RFC-1891 "xtext" encoding scheme
-# so that they are representing as hexadecimal ascii as "+XX".
+# "password" fields should be encoded using the RFC-1891 "xtext" encoding
+# scheme so that they are representing as hexadecimal ascii as "+XX".
 #
 # The "none" rows allow trusted IP addresses to bypass authentication.
 #

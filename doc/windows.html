@@ -92,9 +92,9 @@
      boot-time. If you are setting this up manually you must first have a one-line
      batch file called <em>emailrelay-start.bat</em> that contains all the command-line
      options for running the E-MailRelay server, and you must have a simple
-     configuration file called <em>emailrelay-service.cfg</em> that points to it. The
-     configuration file must be in the same directory as the
-     <em>emailrelay-service.exe</em> executable.
+     service-wrapper configuration file called <em>emailrelay-service.cfg</em> that
+     points to it, and this must be in the same directory as the service
+     wrapper executable (<em>emailrelay-service.exe</em>).
     </p>
 
     <p>
@@ -111,7 +111,9 @@
     </p>
 
     <p>
-     The contents of the configuration file can be a single line like this:
+     The contents of the service-wrapper configuration file can be a single
+     line that points to the directory containing the startup batch file,
+     like this:
     </p>
 
       <div class="div-pre">
@@ -124,8 +126,8 @@
     </p>
 
     <p>
-     Every time the service starts it reads the configuration file and the startup
-     batch file in order to run the E-MailRelelay program.
+     Every time the service starts it reads the service-wrapper configuration file
+     and the startup batch file in order to run the E-MailRelay program.
     </p>
 
     <p>
@@ -140,7 +142,7 @@
      To uninstall:
     </p>
     <ul>
-     <li>Stop the program and/or the service (<em>ControlPanel</em>-><em>SystemAndSecurity</em>-><em>AdministrativeTools</em>-><em>Services</em>).</li>
+     <li>Stop the program and/or the service.</li>
      <li>Uninstall the service, if installed (<em>emailrelay-service --remove</em>).</li>
      <li>Delete the files from the E-MailRelay <em>program files</em> folder (eg. <em>C:\Program Files\E-MailRelay</em>).</li>
      <li>Delete the files from the E-MailRelay <em>program data</em> folder (eg. <em>C:\ProgramData\E-MailRelay</em>).</li>
@@ -157,21 +159,20 @@
     </p>
 
     <p>
-     The Windows Event Log can be accessed by running <em>eventvwr.exe</em> or going to
-     <em>ControlPanel</em>-><em>SystemAndSecurity</em>-><em>AdministrativeTools</em>-><em>EventViewer</em>; from
-     there look under <em>Windows Logs</em> and <em>Application</em>.
+     The Windows Event Log can be accessed by running <em>eventvwr.exe</em> or searching for
+     <em>Event Viewer</em>; from there look under <em>Windows Logs</em> and <em>Application</em>.
     </p>
 
     <p>
      You can increase the verbosity of the logging by adding the <em>--verbose</em> option
      to the E-MailRelay command-line, typically by editing the <em>emailrelay-start.bat</em>
-     batch script.
+     batch script in <em>C:\ProgramData\E-MailRelay</em>.
     </p>
    <h2><a class="a-header" name="SH_1_8">Testing with telnet</a></h2> <!-- index:2:SH:1:8:Testing with telnet -->
     <p>
      The <em>telnet</em> program can be used for testing an E-MailRelay server. You should
-     start by enabling the Windows telnet client using
-     <em>ControlPanel</em>-><em>Programs</em>-><em>TurnWindowsFeaturesOnAndOff</em>.
+     start by enabling the Windows telnet client by searching for <em>Windows Features</em>
+     and checking the <em>Telnet Client</em> box.
     </p>
 
     <p>
@@ -188,22 +189,13 @@
      start typing SMTP commands like <em>EHLO</em>, <em>MAIL FROM:<..></em>, <em>RCPT TO:<...></em>
      and <em>DATA</em>.
     </p>
-   <h2><a class="a-header" name="SH_1_9">Building from source</a></h2> <!-- index:2:SH:1:9:Building from source -->
-    <p>
-     E-MailRelay can be compiled on Windows using Microsoft Visual Studio C++ (MSVC)
-     or mingw-w64. For MSVC builds there is a perl script (<em>winbuild</em>) that creates
-     <em>cmake</em> files from the autotools makefiles, runs <em>cmake</em> to create the MSVC
-     project files and then runs <em>msbuild</em> to compile E-MailRelay. If perl, cmake,
-     MSVC, Qt and mbedTLS source are installed in the right way then the
-     <em>winbuild.bat</em> batch file should be able to do a complete MSVC release build
-     in one go.
-    </p>
+
 
 
 
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2019 Graeme Walker
+      Copyright (C) 2001-2020 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->

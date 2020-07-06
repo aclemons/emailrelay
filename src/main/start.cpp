@@ -286,7 +286,7 @@ int main( int , char * argv [] )
 		{
 			std::stringstream ss ;
 			ss << gui << " --message " << sanitised(e.what()) ;
-			int rc = ::system( ss.str().c_str() ) ; G_IGNORE_VARIABLE(int,rc) ;
+			int rc = ::system( ss.str().c_str() ) ; G__IGNORE_VARIABLE(int,rc) ;
 		}
 	}
 	return 1 ;

@@ -43,7 +43,7 @@ public:
 	~Pipe() ;
 	HANDLE hread() const ;
 	HANDLE hwrite() const ;
-	static std::size_t read( const SignalSafe & , HANDLE read , char * buffer , std::size_t buffer_size ) ;
+	static std::size_t read( HANDLE read , char * buffer , std::size_t buffer_size ) noexcept ;
 	void close() ;
 
 public:
@@ -333,7 +333,7 @@ void G::Pipe::close()
 	m_write = HNULL ;
 }
 
-std::size_t G::Pipe::read( const SignalSafe & signal_safe , HANDLE hread , char * buffer , std::size_t buffer_size_in )
+std::size_t G::Pipe::read( HANDLE hread , char * buffer , std::size_t buffer_size_in ) noexcept
 {
 	// (worker thread - keep it simple)
 	DWORD buffer_size = static_cast<DWORD>(buffer_size_in) ;
@@ -384,14 +384,14 @@ G::NewProcessWaitFuture & G::NewProcessWaitFuture::run()
 	if( NewProcessImp::valid(m_hprocess) )
 	{
 		DWORD exit_code = 1 ;
-		bool ok = WaitForSingleObject( m_hprocess , INFINITE ) == WAIT_OBJECT_0 ; G_IGNORE_VARIABLE(bool,ok) ;
+		bool ok = WaitForSingleObject( m_hprocess , INFINITE ) == WAIT_OBJECT_0 ; G__IGNORE_VARIABLE(bool,ok) ;
 		GetExitCodeProcess( m_hprocess , &exit_code ) ; // returns zero on error, but nothing we can do here
 		m_status = static_cast<int>(exit_code) ;
 		m_hprocess = HNULL ;
 	}
 	if( m_hpipe != HNULL )
 	{
-		std::size_t nread = Pipe::read( SignalSafe() , m_hpipe , &m_buffer[0] , m_buffer.size() ) ;
+		std::size_t nread = Pipe::read( m_hpipe , &m_buffer[0] , m_buffer.size() ) ;
 		m_buffer.resize( nread ) ;
 		m_hpipe = HNULL ;
 	}

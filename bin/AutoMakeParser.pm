@@ -105,6 +105,7 @@ sub top
 {
 	# Returns the relative path up to the first readall()
 	# makefile, which might be different from $(top_srcdir).
+	# The returned value will be something like "../../../".
 	#
 	my ( $this ) = @_ ;
 	my $depth = $this->{m_depth} ;
@@ -175,9 +176,9 @@ sub sources
 
 sub definitions
 {
-	my ( $this , $var ) = @_ ;
-	$var ||= "AM_CPPFLAGS" ;
-	my $s = protect_quoted_spaces( simple_spaces( $this->{m_vars}->{$var} ) ) ;
+	my ( $this , $am_cppflags ) = @_ ;
+	$am_cppflags ||= "AM_CPPFLAGS" ;
+	my $s = protect_quoted_spaces( simple_spaces( $this->{m_vars}->{$am_cppflags} ) ) ;
 	$s =~ s/-D /-D/g ;
 	return
 		map { s/\t/ /g ; $_ }
@@ -190,26 +191,30 @@ sub includes
 {
 	# Returns a list of include directories, so for example
 	# "-I$(top_srcdir)/one/two -I$(top_srcdir)/three"
-	# with 'top_srcdir' defined as ".." gives
-	# ("../one/two","../three"). However, since the 'top_srcdir'
-	# path is the same throughout the directory tree it is also
-	# possible to pass in a variable prefix. This can be from
-	# calling top(), but note that top() points to wherever
-	# readall() started and this is not necessarily the same
-	# as 'top_srcdir'. So in practice set 'top_srcdir' to
-	# reflect the difference between the readall() start
-	# directory and the 'top_srcdir' and call includes() with
-	# top().
+	# with the 'top_srcdir' variable defined as "." gives
+	# ("./one/two","./three").
 	#
-	my ( $this , $top , $var , $extra , $full ) = @_ ;
+	# However, since the 'top_srcdir' expansion is fixed, and the
+	# relative include paths need to vary through the source
+	# tree, a prefix parameter ('top') can be passed in here.
+	# So then "-I$(top_srcdir)/one/two" becomes "<top>/./one/two".
+	#
+	# The 'top' parameter can be from top() as long as readall()
+	# started at the 'top_srcdir' directory and the 'top_srcdir'
+	# variable is defined as ".". Otherwise, a simple approach
+	# is to still use top() for the 'top' parameter but define
+	# the 'top_srcdir' variable as the difference between the
+	# readall() base and the actual 'top_srcdir' directory.
+	#
+	my ( $this , $top , $am_cppflags , $extra_includes , $full_paths ) = @_ ;
 	$top ||= "" ;
-	$var ||= "AM_CPPFLAGS" ;
-	$extra ||= "" ;
-	my $cppflags = join( " " , $extra , $this->{m_vars}->{$var} ) ;
+	$am_cppflags ||= "AM_CPPFLAGS" ;
+	$extra_includes ||= "" ;
+	my $cppflags = join( " " , $extra_includes , $this->{m_vars}->{$am_cppflags} ) ;
 	my $s = protect_quoted_spaces( simple_spaces( $cppflags ) ) ;
 	$s =~ s/-I /-I/g ;
 	return
-		map { $full?$this->fullpath($_):$_ }
+		map { $full_paths?$this->fullpath($_):$_ }
 		map { simplepath($_) }
 		map { $top?join("/",$top,$_):$_ }
 		map { s/\t/ /g ; $_ }

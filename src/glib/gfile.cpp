@@ -34,9 +34,9 @@ void G::File::open( std::ofstream & ofstream , const Path & path )
 void G::File::open( std::ofstream & ofstream , const Path & path , std::ios_base::openmode mode )
 {
 	#if GCONFIG_HAVE_FSOPEN
-		ofstream.open( path.str().c_str() , mode | std::ios_base::out | std::ios_base::binary , _SH_DENYNO ) ; // _fsopen()
+		ofstream.open( path.cstr() , mode | std::ios_base::out | std::ios_base::binary , _SH_DENYNO ) ; // _fsopen()
 	#else
-		ofstream.open( path.str().c_str() , mode | std::ios_base::out | std::ios_base::binary ) ;
+		ofstream.open( path.cstr() , mode | std::ios_base::out | std::ios_base::binary ) ;
 	#endif
 }
 
@@ -48,59 +48,53 @@ void G::File::open( std::ifstream & ifstream , const Path & path )
 void G::File::open( std::ifstream & ifstream , const Path & path , std::ios_base::openmode mode )
 {
 	#if GCONFIG_HAVE_FSOPEN
-		ifstream.open( path.str().c_str() , mode | std::ios_base::in | std::ios_base::binary , _SH_DENYNO ) ; // _fsopen()
+		ifstream.open( path.cstr() , mode | std::ios_base::in | std::ios_base::binary , _SH_DENYNO ) ; // _fsopen()
 	#else
-		ifstream.open( path.str().c_str() , mode | std::ios_base::in | std::ios_base::binary ) ;
+		ifstream.open( path.cstr() , mode | std::ios_base::in | std::ios_base::binary ) ;
 	#endif
 }
 
 std::filebuf * G::File::open( std::filebuf & fb , const Path & path , std::ios_base::openmode mode )
 {
 	#if GCONFIG_HAVE_FSOPEN
-		return fb.open( path.str().c_str() , mode | std::ios_base::binary , _SH_DENYNO ) ; // _fsopen()
+		return fb.open( path.cstr() , mode | std::ios_base::binary , _SH_DENYNO ) ; // _fsopen()
 	#else
-		return fb.open( path.str().c_str() , mode | std::ios_base::binary ) ;
+		return fb.open( path.cstr() , mode | std::ios_base::binary ) ;
 	#endif
 }
 
-bool G::File::remove( const Path & path , const G::File::NoThrow & )
+bool G::File::remove( const Path & path , const G::File::NoThrow & ) noexcept
 {
-	return remove( path.str() , true , false ) ;
+	int rc = std::remove( path.cstr() ) ;
+	return rc == 0 ;
 }
 
 void G::File::remove( const Path & path )
 {
-	remove( path.str() , false , true ) ;
-}
-
-bool G::File::remove( const std::string & path , bool no_throw , bool warn )
-{
-	int rc = std::remove( path.c_str() ) ; // beware temporaries disrupting errno
+	int rc = std::remove( path.cstr() ) ;
 	int e = Process::errno_() ;
-	G_DEBUG( "G::File::remove: [" << path << "]: " << rc << " " << e ) ;
-
 	if( rc != 0 )
 	{
-		if( warn )
-			G_WARNING( "G::File::remove: cannot delete file [" << path << "]: " << Process::strerror(e) ) ;
-		if( !no_throw )
-			throw CannotRemove( path , Process::strerror(e) ) ;
+		G_WARNING( "G::File::remove: cannot delete file [" << path << "]: " << Process::strerror(e) ) ;
+		throw CannotRemove( path.str() , Process::strerror(e) ) ;
 	}
-	return rc == 0 ;
 }
 
-bool G::File::rename( const Path & from , const Path & to , const NoThrow & )
+bool G::File::rename( const Path & from , const Path & to , const NoThrow & ) noexcept
 {
-	bool is_missing = false ;
-	bool ok = rename( from.str() , to.str() , is_missing ) ;
-	G_DEBUG( "G::File::rename: \"" << from << "\" -> \"" << to << "\": success=" << ok ) ;
+	bool ok = 0 == std::rename( from.cstr() , to.cstr() ) ;
+	if( !ok )
+	{
+		std::remove( to.cstr() ) ;
+		ok = 0 == std::rename( from.cstr() , to.cstr() ) ;
+	}
 	return ok ;
 }
 
 void G::File::rename( const Path & from , const Path & to , bool ignore_missing )
 {
 	bool is_missing = false ;
-	bool ok = rename( from.str() , to.str() , is_missing ) ;
+	bool ok = rename( from.cstr() , to.cstr() , is_missing ) ;
 	if( !ok && !(is_missing && ignore_missing) )
 	{
 		throw CannotRename( std::string() + "[" + from.str() + "] to [" + to.str() + "]" ) ;
@@ -108,9 +102,9 @@ void G::File::rename( const Path & from , const Path & to , bool ignore_missing 
 	G_DEBUG( "G::File::rename: \"" << from << "\" -> \"" << to << "\": success=" << ok ) ;
 }
 
-bool G::File::rename( const std::string & from , const std::string & to , bool & enoent )
+bool G::File::rename( const char * from , const char * to , bool & enoent ) noexcept
 {
-	bool ok = 0 == std::rename( from.c_str() , to.c_str() ) ; // beware temporaries disrupting errno
+	bool ok = 0 == std::rename( from , to ) ;
 	int error = Process::errno_() ;
 	enoent = !ok && error == ENOENT ;
 	return ok ;
@@ -202,7 +196,7 @@ bool G::File::exists( const Path & path , bool on_error , bool do_throw )
 {
 	bool enoent = false ;
 	bool eaccess = false ;
-	bool rc = exists( path.str().c_str() , enoent , eaccess ) ; // o/s-specific implementation
+	bool rc = exists( path.cstr() , enoent , eaccess ) ; // o/s-specific implementation
 	if( !rc && enoent )
 	{
 		return false ;

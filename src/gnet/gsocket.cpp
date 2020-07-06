@@ -30,8 +30,8 @@ GNet::SocketBase::SocketBase( int domain , int type , int protocol ) :
 	m_reason(0) ,
 	m_domain(domain)
 {
-	if( !create(domain,type,protocol ) )
-		throw SocketError( "cannot create socket" , m_reason_string ) ;
+	if( !create(domain,type,protocol) )
+		throw SocketCreateError( "cannot create socket" , m_reason_string ) ;
 
 	if( !prepare(false) )
 	{
@@ -291,6 +291,30 @@ void GNet::Socket::shutdown( int how )
 }
 
 //==
+
+bool GNet::StreamSocket::supports( Address::Family af )
+{
+	if( af == Address::Family::ipv6 )
+	{
+		static bool first = true ;
+		static bool result = false ;
+		if( first )
+		{
+			first = false ;
+			if( !Address::supports(af) )
+				G_WARNING( "GNet::StreamSocket::supports: no ipv6 support built-in" ) ;
+			else if( !SocketBase::supports(Address(af,0U).domain(),SOCK_STREAM,0) )
+				G_WARNING( "GNet::StreamSocket::supports: no ipv6 support at run-time" ) ;
+			else
+				result = true ;
+		}
+		return result ;
+	}
+	else
+	{
+		return true ;
+	}
+}
 
 GNet::StreamSocket::StreamSocket( int address_domain ) :
 	Socket(address_domain,SOCK_STREAM,0)

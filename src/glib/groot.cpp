@@ -28,8 +28,8 @@
 G::Root * G::Root::m_this = nullptr ;
 bool G::Root::m_initialised = false ;
 bool G::Root::m_default_change_group = true ;
-G::Identity G::Root::m_special( G::Identity::invalid() ) ;
-G::Identity G::Root::m_ordinary( G::Identity::invalid() ) ;
+G::Identity G::Root::m_special( G::Identity::invalid() ) ; // noexcept
+G::Identity G::Root::m_ordinary( G::Identity::invalid() ) ; // noexcept
 
 G::Root::Root() :
 	m_change_group(m_default_change_group)
@@ -64,26 +64,22 @@ G::Root::~Root()
 		if( m_this == this && m_initialised )
 		{
 			m_this = nullptr ;
-			Process::beOrdinary( m_ordinary , m_change_group ) ;
+			Process::beOrdinary( m_ordinary , m_change_group ) ; // throws on error
 		}
 	}
 	catch( std::exception & e )
 	{
-		G_ERROR( "G::Root: cannot release root privileges: " << e.what() ) ;
-	}
-	catch(...)
-	{
-		G_ERROR( "G::Root: cannot release root privileges" ) ;
+		Process::terminate() ;
 	}
 }
 
-G::Identity G::Root::start( SignalSafe safe )
+G::Identity G::Root::start( SignalSafe safe ) noexcept
 {
 	if( !m_initialised ) return Identity::invalid( safe ) ;
 	return Process::beSpecial( safe , m_special , m_default_change_group ) ;
 }
 
-void G::Root::stop( SignalSafe safe , Identity identity )
+void G::Root::stop( SignalSafe safe , Identity identity ) noexcept
 {
 	if( identity == Identity::invalid(safe) ) return ;
 	Process::beOrdinary( safe , identity , m_default_change_group ) ;
@@ -93,8 +89,8 @@ void G::Root::init( const std::string & non_root_name , bool default_change_grou
 {
 	G_ASSERT( !non_root_name.empty() ) ;
 	Process::revokeExtraGroups() ;
-	m_ordinary = Identity( non_root_name ) ;
-	m_special = Process::beOrdinary( SignalSafe() , m_ordinary , default_change_group ) ;
+	m_ordinary = Identity( non_root_name ) ; // throws NoSuchUser
+	m_special = Process::beOrdinary( m_ordinary , default_change_group ) ; // throws UidError
 	m_initialised = true ;
 	m_default_change_group = default_change_group ;
 }

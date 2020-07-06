@@ -227,9 +227,9 @@ void GSmtp::ServerProtocol::doEot( EventData , bool & )
 
 void GSmtp::ServerProtocol::processDone( bool success , unsigned long id , const std::string & response , const std::string & reason )
 {
-	G_IGNORE_PARAMETER( bool , success ) ;
-	G_IGNORE_PARAMETER( unsigned long , id ) ;
-	G_IGNORE_PARAMETER( std::string , reason ) ;
+	G__IGNORE_PARAMETER( bool , success ) ;
+	G__IGNORE_PARAMETER( unsigned long , id ) ;
+	G__IGNORE_PARAMETER( std::string , reason ) ;
 	G_DEBUG( "GSmtp::ServerProtocol::processDone: " << (success?1:0) << " " << id << " [" << response << "] [" << reason << "]" ) ;
 	G_ASSERT( success == response.empty() ) ;
 

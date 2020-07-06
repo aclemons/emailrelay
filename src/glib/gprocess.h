@@ -41,21 +41,18 @@ namespace G
 /// A static interface for doing things with processes.
 /// \see G::Identity
 ///
-class G::Process : private G::IdentityUser
+class G::Process
 {
 public:
 	G_EXCEPTION( CannotChangeDirectory , "cannot cd()" ) ;
 	G_EXCEPTION( InvalidId , "invalid process-id string" ) ;
 
-	class IdImp ;
-	class UmaskImp ;
-
 	class Id /// Process-id class.
 	{
 	public:
-		Id() ;
+		Id() noexcept ;
 		explicit Id( std::istream & ) ;
-		Id( SignalSafe , const char * pid_file_path ) ; // (ctor for signal-handler)
+		Id( SignalSafe , const char * pid_file_path ) noexcept ; // (ctor for signal-handler)
 		std::string str() const ;
 		bool operator==( const Id & ) const noexcept ;
 
@@ -77,6 +74,7 @@ public:
 		Umask( Umask && ) = delete ;
 		void operator=( const Umask & ) = delete ;
 		void operator=( Umask && ) = delete ;
+		class UmaskImp ;
 		private: std::unique_ptr<UmaskImp> m_imp ;
 	} ;
 
@@ -100,12 +98,12 @@ public:
 	static bool cd( const Path & dir , NoThrow ) ;
 		///< Changes directory. Returns false on error.
 
-	static int errno_( const SignalSafe & = G::SignalSafe() ) ;
+	static int errno_( const SignalSafe & = G::SignalSafe() ) noexcept ;
 		///< Returns the process's current 'errno' value.
 		///< (Beware of destructors of c++ temporaries disrupting
 		///< the global errno value.)
 
-	static int errno_( const SignalSafe & , int e_new ) ;
+	static int errno_( const SignalSafe & , int e_new ) noexcept ;
 		///< Sets the process's 'errno' value. Returns the old
 		///< value. Used in signal handlers.
 
@@ -136,16 +134,15 @@ public:
 		///<
 		///< See also class G::Root.
 
-	static Identity beOrdinary( SignalSafe , Identity ordinary_id , bool change_group = true ) ;
+	static Identity beOrdinary( SignalSafe , Identity ordinary_id , bool change_group = true ) noexcept ;
 		///< A signal-safe overload.
 
-	static Identity beSpecial( SignalSafe , Identity special_id , bool change_group = true ) ;
+	static Identity beSpecial( SignalSafe , Identity special_id , bool change_group = true ) noexcept ;
 		///< A signal-safe overload.
 
-	static void beOrdinaryForExec( Identity run_as_id ) ;
+	static void beOrdinaryForExec( Identity run_as_id ) noexcept ;
 		///< Sets the real and effective user and group ids to those
-		///< given. Errors are ignored. This should only be used in
-		///< a forked child process prior to doing an exec().
+		///< given, on a best-effort basis. Errors are ignored.
 
 	static std::string cwd( bool no_throw = false ) ;
 		///< Returns the current working directory. Throws on error
@@ -155,6 +152,11 @@ public:
 		///< Returns the absolute path of the current executable,
 		///< independent of the argv array passed to main(). Returns
 		///< the empty string if unknown.
+
+	static void terminate() noexcept G__NORETURN ;
+		///< Logs an error message and calls std::terminate(). This
+		///< is used when there is a fatal error that would otherwise
+		///< result in a security hole.
 
 public:
 	Process() = delete ;

@@ -114,6 +114,8 @@ public:
 		///< The message is fail()ed if it cannot be sent. If this
 		///< Client object is deleted before the message is sent
 		///< the message is neither fail()ed or destroy()ed.
+		///<
+		///< Does nothing if there are no message recipients.
 
 	G::Slot::Signal<const std::string&> & messageDoneSignal() ;
 		///< Returns a signal that indicates that sendMessage()
@@ -135,7 +137,7 @@ public:
 
 private:
 	std::shared_ptr<StoredMessage> message() ;
-	void protocolDone( int , const std::string & , const std::string & ) ; // see ClientProtocol::doneSignal()
+	void protocolDone( int , const std::string & , const std::string & , const G::StringArray & ) ; // see ClientProtocol::doneSignal()
 	void filterStart() ;
 	void filterDone( int ) ;
 	bool sendNext() ;

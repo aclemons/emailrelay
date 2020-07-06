@@ -116,13 +116,20 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libmain_a_AR = $(AR) $(ARFLAGS)
 libmain_a_LIBADD =
-am__libmain_a_SOURCES_DIST = options.cpp options.h service_install.cpp \
-	service_remove.cpp service_install.h service_remove.h
-am__objects_1 = options.$(OBJEXT)
-am__objects_2 = service_install.$(OBJEXT) service_remove.$(OBJEXT)
-@GCONFIG_WINDOWS_FALSE@am_libmain_a_OBJECTS = $(am__objects_1)
-@GCONFIG_WINDOWS_TRUE@am_libmain_a_OBJECTS = $(am__objects_2) \
-@GCONFIG_WINDOWS_TRUE@	$(am__objects_1)
+am__libmain_a_SOURCES_DIST = serviceimp_none.cpp \
+	serviceinstall_unix.cpp serviceremove_unix.cpp options.cpp \
+	options.h serviceimp.h serviceinstall.h serviceremove.h \
+	serviceimp_win32.cpp serviceinstall_win32.cpp \
+	serviceremove_win32.cpp
+am__objects_1 = serviceimp_none.$(OBJEXT) \
+	serviceinstall_unix.$(OBJEXT) serviceremove_unix.$(OBJEXT)
+am__objects_2 = options.$(OBJEXT)
+am__objects_3 = serviceimp_win32.$(OBJEXT) \
+	serviceinstall_win32.$(OBJEXT) serviceremove_win32.$(OBJEXT)
+@GCONFIG_WINDOWS_FALSE@am_libmain_a_OBJECTS = $(am__objects_1) \
+@GCONFIG_WINDOWS_FALSE@	$(am__objects_2)
+@GCONFIG_WINDOWS_TRUE@am_libmain_a_OBJECTS = $(am__objects_3) \
+@GCONFIG_WINDOWS_TRUE@	$(am__objects_2)
 libmain_a_OBJECTS = $(am_libmain_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(sbindir)" \
 	"$(DESTDIR)$(e_spooldir)"
@@ -135,15 +142,15 @@ am__emailrelay_SOURCES_DIST = main.cpp commandline.h commandline.cpp \
 	output.h run.cpp run.h winmain.cpp winapp.cpp winapp.h \
 	winform.cpp winform.h winmenu.cpp winmenu.h licence.cpp \
 	licence.h news.cpp news.h
-am__objects_3 = main.$(OBJEXT)
-am__objects_4 = commandline.$(OBJEXT) configuration.$(OBJEXT) \
+am__objects_4 = main.$(OBJEXT)
+am__objects_5 = commandline.$(OBJEXT) configuration.$(OBJEXT) \
 	legal.$(OBJEXT) output.$(OBJEXT) run.$(OBJEXT)
-am__objects_5 = winmain.$(OBJEXT) winapp.$(OBJEXT) winform.$(OBJEXT) \
+am__objects_6 = winmain.$(OBJEXT) winapp.$(OBJEXT) winform.$(OBJEXT) \
 	winmenu.$(OBJEXT) licence.$(OBJEXT) news.$(OBJEXT)
-@GCONFIG_WINDOWS_FALSE@am_emailrelay_OBJECTS = $(am__objects_3) \
-@GCONFIG_WINDOWS_FALSE@	$(am__objects_4)
-@GCONFIG_WINDOWS_TRUE@am_emailrelay_OBJECTS = $(am__objects_5) \
-@GCONFIG_WINDOWS_TRUE@	$(am__objects_4)
+@GCONFIG_WINDOWS_FALSE@am_emailrelay_OBJECTS = $(am__objects_4) \
+@GCONFIG_WINDOWS_FALSE@	$(am__objects_5)
+@GCONFIG_WINDOWS_TRUE@am_emailrelay_OBJECTS = $(am__objects_6) \
+@GCONFIG_WINDOWS_TRUE@	$(am__objects_5)
 emailrelay_OBJECTS = $(am_emailrelay_OBJECTS)
 am__DEPENDENCIES_1 =
 @GCONFIG_WINDOWS_FALSE@emailrelay_DEPENDENCIES = libmain.a \
@@ -185,10 +192,10 @@ emailrelay_passwd_OBJECTS = $(am_emailrelay_passwd_OBJECTS)
 @GCONFIG_WINDOWS_TRUE@	$(am__DEPENDENCIES_1)
 emailrelay_passwd_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_passwd_LDFLAGS) $(LDFLAGS) -o $@
-am__emailrelay_service_SOURCES_DIST = service_wrapper.cpp
-am__objects_6 = service_wrapper.$(OBJEXT)
+am__emailrelay_service_SOURCES_DIST = servicewrapper.cpp
+am__objects_7 = servicewrapper.$(OBJEXT)
 @GCONFIG_WINDOWS_TRUE@am_emailrelay_service_OBJECTS =  \
-@GCONFIG_WINDOWS_TRUE@	$(am__objects_6)
+@GCONFIG_WINDOWS_TRUE@	$(am__objects_7)
 emailrelay_service_OBJECTS = $(am_emailrelay_service_OBJECTS)
 @GCONFIG_WINDOWS_TRUE@emailrelay_service_DEPENDENCIES = libmain.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a
@@ -216,7 +223,7 @@ am__emailrelay_textmode_SOURCES_DIST = main.cpp commandline.h \
 	commandline.cpp configuration.h configuration.cpp legal.cpp \
 	legal.h output.cpp output.h run.cpp run.h
 @GCONFIG_WINDOWS_TRUE@am_emailrelay_textmode_OBJECTS =  \
-@GCONFIG_WINDOWS_TRUE@	$(am__objects_3) $(am__objects_4)
+@GCONFIG_WINDOWS_TRUE@	$(am__objects_4) $(am__objects_5)
 emailrelay_textmode_OBJECTS = $(am_emailrelay_textmode_OBJECTS)
 @GCONFIG_WINDOWS_TRUE@emailrelay_textmode_DEPENDENCIES = libmain.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/gpop/libgpop.a \
@@ -533,19 +540,6 @@ WINDOWS_MAIN_SOURCES = \
 TEXTMODE_MAIN_SOURCES = \
 	main.cpp
 
-WINDOWS_SERVICE_SOURCES = \
-	service_wrapper.cpp
-
-WINDOWS_SHARED_SOURCES = \
-	service_install.cpp \
-	service_remove.cpp \
-	service_install.h \
-	service_remove.h
-
-SHARED_SOURCES = \
-	options.cpp \
-	options.h
-
 OTHER_SOURCES = \
 	commandline.h \
 	commandline.cpp \
@@ -557,6 +551,26 @@ OTHER_SOURCES = \
 	output.h \
 	run.cpp \
 	run.h
+
+WINDOWS_SERVICEWRAPPER_SOURCES = \
+	servicewrapper.cpp
+
+WINDOWS_LIBMAIN_SOURCES = \
+	serviceimp_win32.cpp \
+	serviceinstall_win32.cpp \
+	serviceremove_win32.cpp
+
+UNIX_LIBMAIN_SOURCES = \
+	serviceimp_none.cpp \
+	serviceinstall_unix.cpp \
+	serviceremove_unix.cpp
+
+LIBMAIN_SOURCES = \
+	options.cpp \
+	options.h \
+	serviceimp.h \
+	serviceinstall.h \
+	serviceremove.h
 
 MISC_EXTRA_DIST = \
 	doxygen.h \
@@ -579,15 +593,16 @@ MISC_EXTRA_DIST = \
 @GCONFIG_WINDOWS_FALSE@	$(MAC_EXTRA_DIST) \
 @GCONFIG_WINDOWS_FALSE@	$(MISC_EXTRA_DIST) \
 @GCONFIG_WINDOWS_FALSE@	$(WINDOWS_MAIN_SOURCES) \
-@GCONFIG_WINDOWS_FALSE@	$(WINDOWS_SERVICE_SOURCES) \
-@GCONFIG_WINDOWS_FALSE@	$(WINDOWS_SHARED_SOURCES)
+@GCONFIG_WINDOWS_FALSE@	$(WINDOWS_SERVICEWRAPPER_SOURCES) \
+@GCONFIG_WINDOWS_FALSE@	$(WINDOWS_LIBMAIN_SOURCES)
 
 @GCONFIG_WINDOWS_TRUE@EXTRA_DIST = \
 @GCONFIG_WINDOWS_TRUE@	$(MAC_EXTRA_DIST) \
-@GCONFIG_WINDOWS_TRUE@	$(MISC_EXTRA_DIST)
+@GCONFIG_WINDOWS_TRUE@	$(MISC_EXTRA_DIST) \
+@GCONFIG_WINDOWS_TRUE@	$(UNIX_LIBMAIN_SOURCES)
 
-@GCONFIG_WINDOWS_FALSE@libmain_a_SOURCES = $(SHARED_SOURCES)
-@GCONFIG_WINDOWS_TRUE@libmain_a_SOURCES = $(WINDOWS_SHARED_SOURCES) $(SHARED_SOURCES)
+@GCONFIG_WINDOWS_FALSE@libmain_a_SOURCES = $(UNIX_LIBMAIN_SOURCES) $(LIBMAIN_SOURCES)
+@GCONFIG_WINDOWS_TRUE@libmain_a_SOURCES = $(WINDOWS_LIBMAIN_SOURCES) $(LIBMAIN_SOURCES)
 @GCONFIG_WINDOWS_TRUE@RESOURCES = emailrelay.o
 @GCONFIG_WINDOWS_FALSE@emailrelay_SOURCES = $(TEXTMODE_MAIN_SOURCES) $(OTHER_SOURCES)
 @GCONFIG_WINDOWS_TRUE@emailrelay_SOURCES = $(WINDOWS_MAIN_SOURCES) $(OTHER_SOURCES)
@@ -679,7 +694,7 @@ emailrelay_start_SOURCES = start.cpp
 @GCONFIG_WINDOWS_TRUE@	-lws2_32 -liphlpapi -lcomctl32
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_service_SOURCES = \
-@GCONFIG_WINDOWS_TRUE@	$(WINDOWS_SERVICE_SOURCES)
+@GCONFIG_WINDOWS_TRUE@	$(WINDOWS_SERVICEWRAPPER_SOURCES)
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_service_LDFLAGS = -static
 @GCONFIG_WINDOWS_TRUE@emailrelay_service_LDADD = \
@@ -858,9 +873,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/passwd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/run.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/service_install.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/service_remove.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/service_wrapper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serviceimp_none.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serviceimp_win32.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serviceinstall_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serviceinstall_win32.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serviceremove_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serviceremove_win32.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/servicewrapper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/start.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/submit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/winapp.Po@am__quote@

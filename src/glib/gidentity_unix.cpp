@@ -50,7 +50,7 @@ G::Identity::Identity() noexcept :
 {
 }
 
-G::Identity::Identity( G::SignalSafe ) noexcept :
+G::Identity::Identity( SignalSafe ) noexcept :
 	m_uid(static_cast<uid_t>(-1)) ,
 	m_gid(static_cast<gid_t>(-1))
 {
@@ -120,7 +120,7 @@ G::Identity::Identity( const std::string & name , const std::string & group ) :
 	}
 }
 
-G::Identity G::Identity::effective()
+G::Identity G::Identity::effective() noexcept
 {
 	Identity id ;
 	id.m_uid = ::geteuid() ;
@@ -128,7 +128,7 @@ G::Identity G::Identity::effective()
 	return id ;
 }
 
-G::Identity G::Identity::real()
+G::Identity G::Identity::real() noexcept
 {
 	Identity id ;
 	id.m_uid = ::getuid() ;
@@ -146,7 +146,7 @@ G::Identity G::Identity::invalid( SignalSafe safe ) noexcept
 	return Identity(safe) ;
 }
 
-G::Identity G::Identity::root()
+G::Identity G::Identity::root() noexcept
 {
 	Identity id ;
 	id.m_uid = 0 ;
@@ -161,39 +161,67 @@ std::string G::Identity::str() const
 	return ss.str() ;
 }
 
-bool G::Identity::isRoot() const
+bool G::Identity::isRoot() const noexcept
 {
 	return m_uid == 0 ;
 }
 
-bool G::Identity::operator==( const Identity & other ) const
+bool G::Identity::operator==( const Identity & other ) const noexcept
 {
 	return m_uid == other.m_uid && m_gid == other.m_gid ;
 }
 
-bool G::Identity::operator!=( const Identity & other ) const
+bool G::Identity::operator!=( const Identity & other ) const noexcept
 {
-	return ! operator==( other ) ;
+	return !operator==( other ) ;
 }
 
-void G::Identity::setEffectiveUser( SignalSafe ) const noexcept
+void G::Identity::setRealUser() const
 {
-	int rc = ::seteuid(m_uid) ; G_IGNORE_VARIABLE(int,rc) ;
+	if( ::setuid(m_uid) )
+		throw UidError() ;
 }
 
-void G::Identity::setEffectiveUser( bool do_throw ) const
+bool G::Identity::setRealUser( NoThrow ) const noexcept
 {
-	if( ::seteuid(m_uid) && do_throw ) throw UidError() ;
+	int rc = ::setuid(m_uid) ;
+	return rc == 0 ;
 }
 
-void G::Identity::setRealUser( bool do_throw ) const
+void G::Identity::setEffectiveUser() const
 {
-	if( ::setuid(m_uid) && do_throw ) throw UidError() ;
+	if( ::seteuid(m_uid) )
+		throw UidError() ;
 }
 
-void G::Identity::setEffectiveGroup( bool do_throw ) const
+bool G::Identity::setEffectiveUser( NoThrow ) const noexcept
 {
-	if( ::setegid(m_gid) && do_throw )
+	int rc = ::seteuid( m_uid ) ;
+	return rc == 0 ;
+}
+
+bool G::Identity::setEffectiveUser( SignalSafe ) const noexcept
+{
+	int rc = ::seteuid( m_uid ) ;
+	return rc == 0 ;
+}
+
+void G::Identity::setRealGroup() const
+{
+	if( ::setgid(m_gid) )
+		throw GidError() ;
+}
+
+bool G::Identity::setRealGroup( NoThrow ) const noexcept
+{
+	int rc = ::setgid( m_gid ) ;
+	return rc == 0 ;
+}
+
+void G::Identity::setEffectiveGroup() const
+{
+	int rc = ::setegid( m_gid ) ;
+	if( rc != 0 )
 	{
 		int e = Process::errno_() ;
 		std::ostringstream ss ;
@@ -202,45 +230,16 @@ void G::Identity::setEffectiveGroup( bool do_throw ) const
 	}
 }
 
-void G::Identity::setEffectiveGroup( SignalSafe ) const noexcept
+bool G::Identity::setEffectiveGroup( NoThrow ) const noexcept
 {
-	int rc = ::setegid(m_gid) ; G_IGNORE_VARIABLE(int,rc) ;
+	int rc = ::setegid( m_gid ) ;
+	return rc == 0 ;
 }
 
-void G::Identity::setRealGroup( bool do_throw ) const
+bool G::Identity::setEffectiveGroup( SignalSafe ) const noexcept
 {
-	if( ::setgid(m_gid) && do_throw ) throw GidError() ;
+	int rc = ::setegid( m_gid ) ;
+	return rc == 0 ;
 }
 
-// ===
-
-void G::IdentityUser::setRealUserTo( Identity id , bool do_throw )
-{
-	id.setRealUser( do_throw ) ;
-}
-
-void G::IdentityUser::setEffectiveUserTo( Identity id , bool do_throw )
-{
-	id.setEffectiveUser( do_throw ) ;
-}
-
-void G::IdentityUser::setEffectiveUserTo( SignalSafe safe , Identity id ) noexcept
-{
-	id.setEffectiveUser( safe ) ;
-}
-
-void G::IdentityUser::setRealGroupTo( Identity id , bool do_throw )
-{
-	id.setRealGroup( do_throw ) ;
-}
-
-void G::IdentityUser::setEffectiveGroupTo( Identity id , bool do_throw )
-{
-	id.setEffectiveGroup( do_throw ) ;
-}
-
-void G::IdentityUser::setEffectiveGroupTo( SignalSafe safe , Identity id ) noexcept
-{
-	id.setEffectiveGroup( safe ) ;
-}
 /// \file gidentity_unix.cpp

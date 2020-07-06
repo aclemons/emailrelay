@@ -54,14 +54,15 @@ GSmtp::ClientProtocol::ClientProtocol( GNet::ExceptionSink es , Sender & sender 
 {
 }
 
-void GSmtp::ClientProtocol::start( std::weak_ptr<StoredMessage> message )
+void GSmtp::ClientProtocol::start( std::weak_ptr<StoredMessage> message_in )
 {
 	G_DEBUG( "GSmtp::ClientProtocol::start" ) ;
 
 	// reinitialise for the new message
-	m_message = message ; // NOLINT performance-unnecessary-value-param
+	m_message = message_in ; // NOLINT performance-unnecessary-value-param
 	m_to_index = 0U ;
 	m_to_accepted = 0U ;
+	m_to_rejected.clear() ;
 	m_reply = Reply() ;
 
 	// (re)start the protocol
@@ -74,7 +75,6 @@ std::shared_ptr<GSmtp::StoredMessage> GSmtp::ClientProtocol::message()
 	G_ASSERT( !m_message.expired() ) ;
 	if( m_message.expired() )
 		return std::shared_ptr<StoredMessage>( new StoredMessageStub ) ;
-
 	return m_message.lock() ;
 }
 
@@ -395,8 +395,10 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	}
 	else if( m_state == State::sSentMail && reply.is(Reply::Value::Ok_250) )
 	{
-		// got reponse to mail-from -- send rcpt-to
+		// got reponse to mail-from -- send first rcpt-to
+		G_ASSERT( m_to_index == 0U && message()->toCount() != 0U ) ;
 		std::string to = message()->to( m_to_index++ ) ;
+		G_ASSERT( !to.empty() ) ;
 		m_state = State::sSentRcpt ;
 		send( "RCPT TO:<" , to , ">" ) ;
 	}
@@ -406,7 +408,7 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		if( reply.positive() )
 			m_to_accepted++ ;
 		else
-			G_WARNING( "GSmtp::ClientProtocol: recipient rejected" ) ;
+			m_to_rejected.push_back( message()->to(m_to_index-1U) ) ;
 
 		std::string to = message()->to( m_to_index++ ) ;
 		send( "RCPT TO:<" , to , ">" ) ;
@@ -417,7 +419,7 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		if( reply.positive() )
 			m_to_accepted++ ;
 		else
-			G_WARNING( "GSmtp::ClientProtocol: recipient rejected" ) ;
+			m_to_rejected.push_back( message()->to(m_to_index-1U) ) ;
 
 		if( ( m_config.must_accept_all_recipients && m_to_accepted < message()->toCount() ) || m_to_accepted == 0U )
 		{
@@ -444,7 +446,7 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	}
 	else if( m_state == State::sSentDataStub )
 	{
-		// got response to rst following rejection of recipients
+		// got response to "rset" following rejection of recipients
 		m_state = State::sMessageDone ;
 		std::string how_many = m_config.must_accept_all_recipients ? std::string("one or more") : std::string("all") ;
 		raiseDoneSignal( reply.value() , how_many + " recipients rejected" ) ;
@@ -453,7 +455,10 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	{
 		// got response to data eot
 		m_state = State::sMessageDone ;
-		raiseDoneSignal( reply.value() , reply.errorText() ) ;
+		if( m_to_accepted < message()->toCount() && reply.positive() )
+			raiseDoneSignal( 0 , "one or more recipients rejected" ) ;
+		else
+			raiseDoneSignal( reply.value() , reply.errorText() ) ;
 	}
 	else if( m_state == State::sQuitting && reply.value() == 221 )
 	{
@@ -549,11 +554,11 @@ void GSmtp::ClientProtocol::filterDone( bool ok , const std::string & response ,
 
 void GSmtp::ClientProtocol::raiseDoneSignal( int response_code , const std::string & response , const std::string & reason )
 {
-	if( ! response.empty() && response_code == 0 )
+	if( !response.empty() && response_code == 0 )
 		G_WARNING( "GSmtp::ClientProtocol: smtp client protocol: " << response ) ;
 
 	cancelTimer() ;
-	m_done_signal.emit( response_code , std::string(response) , std::string(reason) ) ;
+	m_done_signal.emit( response_code , std::string(response) , std::string(reason) , G::StringArray(m_to_rejected) ) ;
 }
 
 bool GSmtp::ClientProtocol::endOfContent()
@@ -637,7 +642,7 @@ bool GSmtp::ClientProtocol::send( const std::string & line , bool eot , bool sen
 	return m_sender.protocolSend( (dot_prefix?".":"") + line + "\r\n" , 0U , false ) ;
 }
 
-G::Slot::Signal<int,const std::string&,const std::string&> & GSmtp::ClientProtocol::doneSignal()
+G::Slot::Signal<int,const std::string&,const std::string&,const G::StringArray&> & GSmtp::ClientProtocol::doneSignal()
 {
 	return m_done_signal ;
 }

@@ -53,14 +53,14 @@ public:
 		Address m_address ; ///< The server address that the peer connected to.
 	} ;
 
-	MultiServer( ExceptionSink listener_exception_sink , const G::StringArray & interfaces ,
+	MultiServer( ExceptionSink listener_exception_sink , const G::StringArray & addresses ,
 		unsigned int port , const std::string & server_type , ServerPeerConfig server_peer_config ) ;
 			///< Constructor. The server listens on on the specific local
-			///< interfaces, given as either interface names (eg. "eth0")
+			///< addresses, given as either interface names (eg. "eth0")
 			///< or IP network addresses (eg. "::1") together with a
-			///< fixed port number. Throws if there are no listening
-			///< addresses and the GNet::Interfaces implementation is
-			///< not active().
+			///< fixed port number. Throws if there are no addresses in the
+			///< list and the GNet::Interfaces implementation is not active().
+			///< Listens on "0.0.0.0" and "::" if the list is empty.
 
 	~MultiServer() override ;
 		///< Destructor.

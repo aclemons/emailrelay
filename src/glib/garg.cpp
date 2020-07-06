@@ -155,7 +155,7 @@ std::string G::Arg::v( std::size_t i ) const
 
 std::string G::Arg::prefix() const
 {
-	G_ASSERT( m_array.size() > 0U ) ;
+	G_ASSERT( !m_array.empty() ) ;
 	Path path( m_array.at(0U) ) ;
 	return path.withoutExtension().basename() ;
 }

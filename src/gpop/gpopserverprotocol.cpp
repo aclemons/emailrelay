@@ -169,7 +169,7 @@ void GPop::ServerProtocol::resume()
 
 bool GPop::ServerProtocol::sendContentLine( std::string & line , bool & stop )
 {
-	G_ASSERT( m_content.get() != nullptr ) ;
+	G_ASSERT( m_content != nullptr ) ;
 
 	// maintain the line limit
 	bool limited = m_in_body && m_body_limit == 0L ;

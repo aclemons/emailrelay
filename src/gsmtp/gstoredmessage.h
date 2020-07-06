@@ -69,6 +69,10 @@ public:
 	virtual void destroy() = 0 ;
 		///< Deletes the message within the store.
 
+	virtual void edit( const G::StringArray & new_to_list ) = 0 ;
+		///< Edits the message by updating the list of
+		///< non-local recipients to the given non-empty list.
+
 	virtual void fail( const std::string & reason , int reason_code ) = 0 ;
 		///< Marks the message as failed within the store.
 
@@ -91,9 +95,6 @@ public:
 	virtual std::string fromAuthOut() const = 0 ;
 		///< Returns the outgoing "mail from" auth parameter,
 		///< either empty, xtext-encoded or "<>".
-
-	virtual std::size_t errorCount() const = 0 ;
-		///< Returns the number of accumulated processing errors.
 
 	virtual ~StoredMessage() = default ;
 		///< Destructor.
@@ -122,13 +123,13 @@ private: // overrides
 	void close() override ;
 	std::string reopen() override ;
 	void destroy() override ;
+	void edit( const G::StringArray & ) override ;
 	void fail( const std::string & reason , int reason_code ) override ;
 	void unfail() override ;
 	int eightBit() const override ;
 	std::string authentication() const override ;
 	std::string fromAuthIn() const override ;
 	std::string fromAuthOut() const override ;
-	std::size_t errorCount() const override ;
 
 public:
 	StoredMessageStub( const StoredMessageStub & ) = delete ;
@@ -150,12 +151,12 @@ inline std::istream & GSmtp::StoredMessageStub::contentStream() { return m_conte
 inline void GSmtp::StoredMessageStub::close() {}
 inline std::string GSmtp::StoredMessageStub::reopen() { return std::string() ; }
 inline void GSmtp::StoredMessageStub::destroy() {}
+inline void GSmtp::StoredMessageStub::edit( const G::StringArray & ) {}
 inline void GSmtp::StoredMessageStub::fail( const std::string & , int ) {}
 inline void GSmtp::StoredMessageStub::unfail() {}
 inline int GSmtp::StoredMessageStub::eightBit() const { return false ; }
 inline std::string GSmtp::StoredMessageStub::authentication() const { return std::string() ; }
 inline std::string GSmtp::StoredMessageStub::fromAuthIn() const { return std::string() ; }
 inline std::string GSmtp::StoredMessageStub::fromAuthOut() const { return std::string() ; }
-inline std::size_t GSmtp::StoredMessageStub::errorCount() const { return 0U ; }
 
 #endif

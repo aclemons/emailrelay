@@ -44,7 +44,7 @@ void GNet::LineBuffer::clear()
 	if( !transparent() )
 		m_expect = 0U ;
 
-	G_ASSERT( m_in.size() == 0U ) ;
+	G_ASSERT( !m_in.empty() ) ;
 	G_ASSERT( !more(true) ) ;
 }
 

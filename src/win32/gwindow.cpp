@@ -120,7 +120,7 @@ extern "C" LRESULT CALLBACK gwindow_wndproc_export( HWND hwnd , UINT message , W
 	catch( std::exception & e )
 	{
 		// never gets here
-		G_DEBUG( "gwindow_wndproc_export: exception absorbed: " << e.what() ) ; G_IGNORE_VARIABLE(std::exception&,e) ;
+		G_DEBUG( "gwindow_wndproc_export: exception absorbed: " << e.what() ) ; G__IGNORE_VARIABLE(std::exception&,e) ;
 		return 0 ;
 	}
 }

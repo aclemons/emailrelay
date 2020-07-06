@@ -69,9 +69,9 @@ E-MailRelay can be set up as a service so that it starts up automatically at
 boot-time. If you are setting this up manually you must first have a one-line
 batch file called *emailrelay-start.bat* that contains all the command-line
 options for running the E-MailRelay server, and you must have a simple
-configuration file called *emailrelay-service.cfg* that points to it. The
-configuration file must be in the same directory as the
-*emailrelay-service.exe* executable.
+service-wrapper configuration file called *emailrelay-service.cfg* that
+points to it, and this must be in the same directory as the service
+wrapper executable (\ *emailrelay-service.exe*\ ).
 
 The batch file should contain a single line, something like this:
 
@@ -82,7 +82,9 @@ The batch file should contain a single line, something like this:
 There is no need to use *--no-daemon* and *--hidden*; these are added
 automatically.
 
-The contents of the configuration file can be a single line like this:
+The contents of the service-wrapper configuration file can be a single
+line that points to the directory containing the startup batch file,
+like this:
 
 ::
 
@@ -91,8 +93,8 @@ The contents of the configuration file can be a single line like this:
 Then just run *emailrelay-service --install* from an Administrator command
 prompt to install the service.
 
-Every time the service starts it reads the configuration file and the startup
-batch file in order to run the E-MailRelelay program.
+Every time the service starts it reads the service-wrapper configuration file
+and the startup batch file in order to run the E-MailRelay program.
 
 If you need to run multiple E-MailRelay services then put a unique service
 name and display name on the *emailrelay-service --install <name> <display-name>*
@@ -104,7 +106,7 @@ Uninstall
 =========
 To uninstall:
 
-* Stop the program and/or the service (\ *ControlPanel*\ ->\ *SystemAndSecurity*\ ->\ *AdministrativeTools*\ ->\ *Services*\ ).
+* Stop the program and/or the service.
 * Uninstall the service, if installed (\ *emailrelay-service --remove*\ ).
 * Delete the files from the E-MailRelay *program files* folder (eg. *C:\\Program Files\\E-MailRelay*).
 * Delete the files from the E-MailRelay *program data* folder (eg. *C:\\ProgramData\\E-MailRelay*).
@@ -119,19 +121,18 @@ E-MailRelay logging is sent to the Windows Event Log and/or written to a log
 file, and individual failed mail messages will have the failure reason recorded
 inside the *.bad* envelope file.
 
-The Windows Event Log can be accessed by running *eventvwr.exe* or going to
-\ *ControlPanel*\ ->\ *SystemAndSecurity*\ ->\ *AdministrativeTools*\ ->\ *EventViewer*\ ; from
-there look under *Windows Logs* and *Application*.
+The Windows Event Log can be accessed by running *eventvwr.exe* or searching for
+\ *Event Viewer*\ ; from there look under *Windows Logs* and *Application*.
 
 You can increase the verbosity of the logging by adding the *--verbose* option
 to the E-MailRelay command-line, typically by editing the *emailrelay-start.bat*
-batch script.
+batch script in *C:\\ProgramData\\E-MailRelay*.
 
 Testing with telnet
 ===================
 The *telnet* program can be used for testing an E-MailRelay server. You should
-start by enabling the Windows telnet client using
-\ *ControlPanel*\ ->\ *Programs*\ ->\ *TurnWindowsFeaturesOnAndOff*\ .
+start by enabling the Windows telnet client by searching for *Windows Features*
+and checking the *Telnet Client* box.
 
 Then run telnet from a command prompt, using *localhost* and the E-MailRelay
 port number as command-line parameters:
@@ -144,15 +145,6 @@ This should show a greeting from the E-MailRelay server and then you can
 start typing SMTP_ commands like *EHLO*, *MAIL FROM:<..>*, *RCPT TO:<...>*
 and *DATA*.
 
-Building from source
-====================
-E-MailRelay can be compiled on Windows using Microsoft Visual Studio C++ (MSVC)
-or mingw-w64. For MSVC builds there is a perl script (\ *winbuild*\ ) that creates
-*cmake* files from the autotools makefiles, runs *cmake* to create the MSVC
-project files and then runs *msbuild* to compile E-MailRelay. If perl, cmake,
-MSVC, Qt and mbedTLS source are installed in the right way then the
-*winbuild.bat* batch file should be able to do a complete MSVC release build
-in one go.
 
 
 
@@ -160,4 +152,4 @@ in one go.
 
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 
-.. footer:: Copyright (C) 2001-2019 Graeme Walker
+.. footer:: Copyright (C) 2001-2020 Graeme Walker

@@ -180,6 +180,9 @@
 /* Define true if have OSX proc_pidpath() */
 #undef GCONFIG_HAVE_PROC_PIDPATH
 
+/* Define true if putenv_s in stdlib.h */
+#undef GCONFIG_HAVE_PUTENV_S
+
 /* Define true if have readlink() in unistd.h */
 #undef GCONFIG_HAVE_READLINK
 

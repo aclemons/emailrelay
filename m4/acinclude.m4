@@ -52,6 +52,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_FUNCTIONS],[
 	AC_REQUIRE([GCONFIG_FN_LOCALTIME_S])
 	AC_REQUIRE([GCONFIG_FN_STRNCPY_S])
 	AC_REQUIRE([GCONFIG_FN_GETENV_S])
+	AC_REQUIRE([GCONFIG_FN_PUTENV_S])
 	AC_REQUIRE([GCONFIG_FN_FSOPEN])
 	AC_REQUIRE([GCONFIG_FN_READLINK])
 	AC_REQUIRE([GCONFIG_FN_ICONV])
@@ -1464,13 +1465,14 @@ AC_DEFUN([GCONFIG_FN_PROC_PIDPATH],
 
 dnl GCONFIG_FN_PROG_WINDMC
 dnl ----------------------
-dnl Sets GCONFIG_WINDMC=... in makefiles as the windows message compiler,
-dnl overridable from the configure command-line.
+dnl Sets GCONFIG_WINDMC in makefiles as the windows message compiler,
+dnl based on $CXX but overridable from the configure command-line or
+dnl environment.
 dnl
 AC_DEFUN([GCONFIG_FN_PROG_WINDMC],[
 	if test "$GCONFIG_WINDMC" = ""
 	then
-		GCONFIG_WINDMC="`echo \"$CC\" | grep mingw32 | sed 's/gcc$/windmc/'`"
+		GCONFIG_WINDMC="`echo \"$CXX\" | sed -E 's/-[gc]\+\+.*/-windmc/'`"
 		if test "$GCONFIG_WINDMC" = ""
 		then
 			GCONFIG_WINDMC="./fakemc.exe"
@@ -1483,13 +1485,14 @@ AC_DEFUN([GCONFIG_FN_PROG_WINDMC],[
 
 dnl GCONFIG_FN_PROG_WINDRES
 dnl -----------------------
-dnl Sets GCONFIG_WINDRES=windres in makefiles as the windows resource compiler,
-dnl overridable from the configure command-line.
+dnl Sets GCONFIG_WINDRES in makefiles as the windows resource compiler,
+dnl based on $CXX but overridable from the configure command-line or
+dnl environment.
 dnl
 AC_DEFUN([GCONFIG_FN_PROG_WINDRES],[
 	if test "$GCONFIG_WINDRES" = ""
 	then
-		GCONFIG_WINDRES="`echo \"$CC\" | grep mingw32 | sed 's/gcc$/windres/'`"
+		GCONFIG_WINDRES="`echo \"$CXX\" | sed -E 's/-[gc]\+\+.*/-windres/'`"
 		if test "$GCONFIG_WINDRES" = ""
 		then
 			GCONFIG_WINDRES="windres"
@@ -1498,6 +1501,35 @@ AC_DEFUN([GCONFIG_FN_PROG_WINDRES],[
 	AC_MSG_CHECKING([for resource compiler])
 	AC_MSG_RESULT([$GCONFIG_WINDRES])
 	AC_SUBST([GCONFIG_WINDRES])
+])
+
+dnl GCONFIG_FN_PUTENV_S
+dnl -------------------
+dnl Tests for _putenv_s().
+dnl
+AC_DEFUN([GCONFIG_FN_PUTENV_S],
+[AC_CACHE_CHECK([for putenv_s],[gconfig_cv_putenv_s],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <winsock2.h>]
+				[#include <windows.h>]
+				[#include <ws2tcpip.h>]
+			[#endif]
+			[#include <stdlib.h>]
+		],
+		[
+			[_putenv_s( "name" , "value" ) ;]
+		])],
+		gconfig_cv_putenv_s=yes ,
+		gconfig_cv_putenv_s=no )
+])
+	if test "$gconfig_cv_putenv_s" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_PUTENV_S,1,[Define true if putenv_s in stdlib.h])
+	else
+		AC_DEFINE(GCONFIG_HAVE_PUTENV_S,0,[Define true if putenv_s in stdlib.h])
+	fi
 ])
 
 dnl GCONFIG_FN_QT

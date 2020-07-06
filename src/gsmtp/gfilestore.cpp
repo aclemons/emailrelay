@@ -76,7 +76,7 @@ std::unique_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
 {
 	while( m_iter.more() )
 	{
-		std::unique_ptr<StoredFile> m( new StoredFile(m_store,m_iter.filePath()) ) ;
+		auto m = std::make_unique<StoredFile>( m_store , m_iter.filePath() ) ;
 		if( m_lock && !m->lock() )
 		{
 			G_WARNING( "GSmtp::MessageStore: cannot lock file: \"" << m_iter.filePath() << "\"" ) ;
@@ -131,6 +131,7 @@ std::string GSmtp::FileStore::x()
 
 std::string GSmtp::FileStore::format( int generation )
 {
+	// use a weird prefix to help with file(1) and magic(5)
 	if( generation == -2 )
 		return "#2821.3" ; // original
 	else if( generation == -1 )
@@ -264,17 +265,16 @@ std::unique_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( unsigned long id )
 {
 	G::Path path = envelopePath( id ) ;
 
-	std::unique_ptr<StoredFile> message( new StoredFile(*this,path) ) ;
-
-	if( ! message->lock() )
+	auto message = std::make_unique<StoredFile>( *this , path ) ;
+	if( !message->lock() )
 		throw GetError( path.str() + ": cannot lock the file" ) ;
 
 	std::string reason ;
 	const bool check_recipients = false ; // don't check for no-remote-recipients
-	if( ! message->readEnvelope(reason,check_recipients) )
+	if( !message->readEnvelope(reason,check_recipients) )
 		throw GetError( path.str() + ": cannot read the envelope: " + reason ) ;
 
-	if( ! message->openContent(reason) )
+	if( !message->openContent(reason) )
 		throw GetError( path.str() + ": cannot read the content: " + reason ) ;
 
 	G_LOG( "GSmtp::FileStore::get: processing message \"" << message->name() << "\"" ) ;

@@ -15,14 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// service_install.cpp
+// serviceinstall_win32.cpp
 //
 
-#include "service_install.h"
-
-#ifdef _WIN32
-
-#include "service_remove.h"
+#include "serviceinstall.h"
+#include "serviceremove.h"
 #include <windows.h>
 #include <sstream>
 #include <utility>
@@ -70,8 +67,8 @@ namespace
 	} ;
 }
 
-static Result install( std::string commandline , std::string name , std::string display_name ,
-	std::string description , bool autostart )
+static Result install( const std::string & commandline , const std::string & name , const std::string & display_name ,
+	const std::string & description_in , bool autostart )
 {
 	SC_HANDLE hmanager = OpenSCManager( nullptr , nullptr , SC_MANAGER_ALL_ACCESS ) ;
 	if( hmanager == 0 )
@@ -91,15 +88,16 @@ static Result install( std::string commandline , std::string name , std::string 
 	{
 		DWORD e = GetLastError() ;
 		CloseServiceHandle( hmanager ) ;
-		return Result(false,e) ;
+		return Result( false , e ) ;
 	}
 
+	std::string description = description_in ;
 	if( description.empty() )
 		description = ( display_name + " service" ) ;
 
 	if( REG_SZ > 5 && (description.length()+5) > REG_SZ )
 	{
-		description.resize(REG_SZ-5) ;
+		description.resize( REG_SZ-5 ) ;
 		description.append( "..." ) ;
 	}
 
@@ -112,8 +110,8 @@ static Result install( std::string commandline , std::string name , std::string 
 	return Result() ;
 }
 
-std::string service_install( std::string commandline , std::string name , std::string display_name ,
-	std::string description , bool autostart )
+std::string service_install( const std::string & commandline , const std::string & name , const std::string & display_name ,
+	const std::string & description , bool autostart )
 {
 	if( name.empty() || display_name.empty() )
 		return "invalid zero-length service name" ;
@@ -131,7 +129,7 @@ std::string service_install( std::string commandline , std::string name , std::s
 	return r.reason ;
 }
 
-bool service_installed( std::string name )
+bool service_installed( const std::string & name )
 {
 	SC_HANDLE hmanager = OpenSCManager( nullptr , nullptr , SC_MANAGER_CONNECT ) ;
 	if( hmanager == 0 )
@@ -149,17 +147,4 @@ bool service_installed( std::string name )
 	return true ;
 }
 
-#else
-
-std::string service_install( std::string , std::string , std::string , std::string , bool )
-{
-	return std::string() ;
-}
-
-bool service_installed( std::string )
-{
-	return false ;
-}
-
-#endif
-/// \file service_install.cpp
+/// \file serviceinstall_win32.cpp

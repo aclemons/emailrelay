@@ -14,7 +14,7 @@ Dependencies
 ------------
 E-MailRelay started life at a time when Linux had no decent package manager and
 Windows was in the grip of DLL hell. As a result, a key principle is that it
-has no dependencies other than a good C++ runtime. Since that time OpenSSL
+has no dependencies other than a good C++ run-time. Since that time OpenSSL
 has been introduced as a dependency to support [TLS][] encryption, and the optional
 configuration and installation GUI has been developed using the Qt toolkit.
 
@@ -206,6 +206,21 @@ tree that lives alongside the GUI exectuable or inside the Mac application
 bundle, and it contains a configuration file to tell the installer where
 to copy its files.
 
+Windows build
+-------------
+E-MailRelay can be compiled on Windows using Microsoft Visual Studio C++ (MSVC)
+or mingw-w64. For MSVC builds there is a perl script (`winbuild.pl`) that creates
+`cmake` files from the autotools makefiles, runs `cmake` to create the MSVC
+project files and then runs `msbuild` to compile E-MailRelay. If perl, cmake,
+MSVC, Qt and mbedTLS source are installed in the right way then the
+`winbuild.bat` batch file should be able to do a complete MSVC release build
+in one go.
+
+For MinGW cross-builds use `./configure.sh -m` and `make` on a Linux box
+and copy the built executables and the MinGW run-time to the target. The
+run-time files can be identified by `dumpbin /dependents` in the normal
+way. This is particularly useful for running on ancient versions of Windows.
+
 Windows packaging
 -----------------
 On Windows E-MailRelay is packaged as a zip file containing the executables
@@ -253,4 +268,4 @@ Use `./configure --help` to see a complete list of options.
 [TLS]: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
 _____________________________________
-Copyright (C) 2001-2019 Graeme Walker
+Copyright (C) 2001-2020 Graeme Walker

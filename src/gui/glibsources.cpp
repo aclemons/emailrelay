@@ -58,8 +58,6 @@
 #include "gtime.cpp"
 #include "gxtext.cpp"
 #include "options.cpp"
-#include "service_install.cpp"
-#include "service_remove.cpp"
 #ifdef G_WINDOWS
 #include "gconvert_win32.cpp"
 #include "gdirectory_win32.cpp"
@@ -69,6 +67,8 @@
 #include "glogoutput_win32.cpp"
 #include "gnewprocess_win32.cpp"
 #include "gprocess_win32.cpp"
+#include "serviceinstall_win32.cpp"
+#include "serviceremove_win32.cpp"
 #else
 #include "gconvert_unix.cpp"
 #include "gdirectory_unix.cpp"
@@ -78,5 +78,7 @@
 #include "glogoutput_unix.cpp"
 #include "gnewprocess_unix.cpp"
 #include "gprocess_unix.cpp"
+#include "serviceinstall_unix.cpp"
+#include "serviceremove_unix.cpp"
 #endif
 /// \file glibsources.cpp

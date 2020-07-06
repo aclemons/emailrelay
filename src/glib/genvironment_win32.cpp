@@ -20,12 +20,42 @@
 
 #include "gdef.h"
 #include "genvironment.h"
-#include <cstdlib>
+#include <cstdlib> // _environ
+#include <cstring>
 #include <vector>
-#include <stdlib.h> // _environ
+#include <cerrno>
 
 #if defined(G_LOG) || defined(G_ASSERT)
 #error cannot use logging here
+#endif
+
+#if ! GCONFIG_HAVE_GETENV_S
+inline errno_t getenv_s( std::size_t * n_out , char * buffer , std::size_t n_in , const char * name )
+{
+	if( n_out == nullptr || name == nullptr || (!buffer&&n_in) )
+		return EINVAL ;
+
+	const char * p = ::getenv( name ) ;
+	if( p == nullptr )
+	{
+		*n_out = 0 ;
+		return 0 ;
+	}
+
+	size_t n = std::strlen( p ) ;
+	*n_out = n + 1U ;
+
+	if( n >= n_in )
+		return ERANGE ;
+
+	if( buffer )
+	{
+		for( ++n ; n ; n-- )
+			*buffer++ = *p++ ;
+	}
+
+	return 0 ;
+}
 #endif
 
 std::string G::Environment::get( const std::string & name , const std::string & default_ )
@@ -53,8 +83,11 @@ G::Environment G::Environment::minimal()
 
 void G::Environment::put( const std::string & name , const std::string & value )
 {
-	errno_t e = _putenv_s( name.c_str() , value.c_str() ) ;
-	G_IGNORE_VARIABLE( errno_t , e ) ;
+	// dont use _putenv_s() here in order to maintain compatibility
+	// with ancient run-times
+	std::string s = name + "=" + value ;
+	char * deliberately_leaky_copy = _strdup( s.c_str() ) ;
+	_putenv( deliberately_leaky_copy ) ;
 }
 
 /// \file genvironment_win32.cpp

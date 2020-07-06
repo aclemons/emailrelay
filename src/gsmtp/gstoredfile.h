@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gmessagestore.h"
 #include "gstoredmessage.h"
+#include "genvelope.h"
 #include "gexception.h"
 #include "gpath.h"
 #include "gstrings.h"
@@ -45,6 +46,7 @@ public:
 	G_EXCEPTION( FormatError , "invalid envelope file" ) ;
 	G_EXCEPTION( FilenameError , "invalid envelope filename" ) ;
 	G_EXCEPTION( ReadError , "cannot read envelope file" ) ;
+	G_EXCEPTION( EditError , "cannot update envelope file" ) ;
 
 	StoredFile( FileStore & store , const G::Path & envelope_path ) ;
 		///< Constructor.
@@ -68,6 +70,9 @@ public:
 	std::string name() const override ;
 		///< Override from GSmtp::StoredMessage.
 
+	void edit( const G::StringArray & ) override ;
+		///< Override from GSmtp::StoredMessage.
+
 	void fail( const std::string & reason , int reason_code ) override ;
 		///< Override from GSmtp::StoredMessage.
 
@@ -85,7 +90,6 @@ private: // overrides
 	void destroy() override ; // Override from GSmtp::StoredMessage.
 	void unfail() override ; // Override from GSmtp::StoredMessage.
 	std::istream & contentStream() override ; // Override from GSmtp::StoredMessage.
-	std::size_t errorCount() const override ; // Override from GSmtp::StoredMessage.
 
 public:
 	StoredFile( const StoredFile & ) = delete ;
@@ -94,47 +98,20 @@ public:
 	void operator=( StoredFile && ) = delete ;
 
 private:
+	void readEnvelopeCore( bool check_recipients ) ;
 	const std::string & eol() const ;
 	G::Path contentPath() const ;
-	std::string readLine( std::istream & ) ;
-	std::string readValue( std::istream & , const std::string & key ) ;
-	std::string value( const std::string & ) const ;
-	void readFormat( std::istream & stream ) ;
-	void readFlag( std::istream & stream ) ;
-	void readFrom( std::istream & stream ) ;
-	void readFromAuthIn( std::istream & stream ) ;
-	void readFromAuthOut( std::istream & stream ) ;
-	void readToList( std::istream & stream ) ;
-	void readEnd( std::istream & stream ) ;
-	void readReasons( std::istream & stream ) ;
-	void readAuthentication( std::istream & stream ) ;
-	void readClientSocketAddress( std::istream & stream ) ;
-	void readClientSocketName( std::istream & stream ) ;
-	void readClientCertificate( std::istream & stream ) ;
-	void readEnvelopeCore( bool ) ;
 	void addReason( const G::Path & path , const std::string & , int ) const ;
 	static G::Path badPath( const G::Path & ) ;
 
 private:
 	FileStore & m_store ;
 	std::unique_ptr<std::istream> m_content ;
-	G::StringArray m_to_local ;
-	G::StringArray m_to_remote ;
-	std::string m_from ;
-	std::string m_from_auth_in ;
-	std::string m_from_auth_out ;
 	G::Path m_envelope_path ;
 	G::Path m_old_envelope_path ;
 	std::string m_name ;
-	int m_eight_bit ;
-	std::string m_authentication ;
-	std::string m_format ;
-	std::string m_client_socket_address ;
-	std::string m_client_socket_name ;
-	std::string m_client_certificate ;
-	std::size_t m_errors ;
+	Envelope m_env ;
 	bool m_locked ;
-	bool m_crlf ;
 } ;
 
 #endif

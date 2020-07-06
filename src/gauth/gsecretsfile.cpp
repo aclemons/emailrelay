@@ -229,7 +229,7 @@ std::string GAuth::SecretsFile::canonical( const std::string & encoding_type )
 
 std::string GAuth::SecretsFile::serverKey( const std::string & encoding_type , const std::string & id_xtext )
 {
-	// eg. key -> value
+	// eg. key -> value...
 	// "server plain bob" -> "e+3Dmc2"
 	// "server md5 bob" -> "xbase64x=="
 	// "server none 192.168.0.0/24" -> "trustee"

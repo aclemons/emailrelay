@@ -108,7 +108,7 @@ void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity
 
 		const char * p[] = { message.c_str() , nullptr } ;
 		BOOL rc = ReportEventA( m_handle , type , 0 , id , nullptr , 1 , 0 , p , nullptr ) ;
-		G_IGNORE_VARIABLE(BOOL,rc) ;
+		G__IGNORE_VARIABLE(BOOL,rc) ;
 	}
 }
 

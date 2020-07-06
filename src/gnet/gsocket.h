@@ -48,6 +48,7 @@ class GNet::SocketBase : public G::ReadWrite
 {
 public:
 	G_EXCEPTION( SocketError , "socket error" ) ;
+	G_EXCEPTION_CLASS( SocketCreateError , "socket create error" ) ;
 	G_EXCEPTION_CLASS( SocketBindError , "socket bind error" ) ;
 	G_EXCEPTION_CLASS( SocketTooMany , "socket accept error" ) ;
 	using size_type = G::ReadWrite::size_type ;
@@ -56,6 +57,10 @@ public:
 		{} ;
 	struct Accepted /// Overload discriminator class for GNet::Socket.
 		{} ;
+
+	static bool supports( int domain , int type , int protocol ) ;
+		///< Returns true if sockets can be created with the
+		///< given parameters.
 
 	~SocketBase() override ;
 		///< Destructor. The socket file descriptor is closed and
@@ -284,6 +289,13 @@ public:
 	using ssize_type = Socket::ssize_type ;
 	struct Listener /// Overload discriminator class for GNet::StreamSocket.
 		{} ;
+
+	static bool supports( Address::Family ) ;
+		///< Returns true if stream sockets can be created with the
+		///< given the address family. This is a one-off run-time
+		///< check on socket creation, with a warning if it fails.
+		///< Note that a run-time check is useful when running a
+		///< new binary on an old operating system.
 
 	explicit StreamSocket( int address_domain ) ;
 		///< Constructor.
