@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gserver.h"
 #include "gnetdone.h"
+#include "gmonitor.h"
 #include "geventloggingcontext.h"
 #include "glimits.h"
 #include "groot.h"
@@ -40,10 +41,13 @@ GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
 	}
 	m_socket.listen( G::limits::net_listen_queue ) ;
 	m_socket.addReadHandler( *this , m_es ) ;
+	Monitor::addServer( *this ) ;
 }
 
 GNet::Server::~Server()
-= default;
+{
+	Monitor::removeServer( *this ) ;
+}
 
 bool GNet::Server::canBind( const Address & address , bool do_throw )
 {
@@ -58,8 +62,9 @@ bool GNet::Server::canBind( const Address & address , bool do_throw )
 	return ok ;
 }
 
-GNet::Address GNet::Server::address( bool with_scope ) const
+GNet::Address GNet::Server::address() const
 {
+	bool with_scope = true ; // was false
 	Address result = m_socket.getLocalAddress().second ;
 	if( with_scope )
 		result.setScopeId( m_socket.getBoundScopeId() ) ;

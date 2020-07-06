@@ -239,6 +239,16 @@
 			#define GCONFIG_HAVE_GETENV_S 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_PUTENV_S)
+		#if ( defined(G_WINDOWS) && !defined(G_MINGW) ) || defined(putenv_s)
+			#define GCONFIG_HAVE_PUTENV_S 1
+		#else
+			#define GCONFIG_HAVE_PUTENV_S 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_PUTENV)
+		#define GCONFIG_HAVE_PUTENV 1
+	#endif
 	#if !defined(GCONFIG_HAVE_GETPWNAM)
 		#define GCONFIG_HAVE_GETPWNAM 1
 	#endif
@@ -333,7 +343,7 @@
 		#define GCONFIG_HAVE_STDLIB_H 1
 	#endif
 	#if !defined(GCONFIG_HAVE_STRNCPY_S)
-		#if defined(G_WINDOWS) || defined(strncpy_s)
+		#if ( defined(G_WINDOWS) && !defined(G_MINGW) ) || defined(strncpy_s)
 			#define GCONFIG_HAVE_STRNCPY_S 1
 		#else
 			#define GCONFIG_HAVE_STRNCPY_S 0
@@ -772,7 +782,7 @@
 		#endif
 
 		/* Define a null value for opaque pointer types that are
-	 	* never dereferenced.
+	 	* never dereferenced
 	 	*/
 		#define HNULL 0
 
@@ -824,7 +834,7 @@
 				static_assert( sizeof(g_uint16_t) == 2U , "uint16 wrong size" ) ;
 				static_assert( sizeof(g_int16_t) == 2U , "int16 wrong size" ) ;
 			#endif
-			static_assert( sizeof(g_uintptr_t) >= sizeof(void*) , "uintptr_t wrong size; try typedef unsigned long g_uintptr_t" ) ;
+			static_assert( sizeof(g_uintptr_t) >= sizeof(void*) , "uintptr_t wrong size; try using g_uintptr_t = unsigned long" ) ;
 		#endif
 
 		/* Define missing standard types
@@ -855,20 +865,20 @@
 
 		/* Attributes
 	 	*/
-		#define G_IGNORE_RETURN(expr) (void)(expr)
-		#define G_IGNORE_PARAMETER(type,name) (void)name
-		#define G_IGNORE_VARIABLE(type,name) (void)name
+		#define G__IGNORE_RETURN(expr) (void)(expr)
+		#define G__IGNORE_PARAMETER(type,name) (void)name
+		#define G__IGNORE_VARIABLE(type,name) (void)name
 		#ifdef __cplusplus
-			#define G_IGNORE [[maybe_unused]]
-			#define G_FALLTHROUGH [[fallthrough]]
+			#define G__IGNORE [[maybe_unused]]
+			#define G__FALLTHROUGH [[fallthrough]]
 		#endif
 		#if __clang__
 			#if __has_feature(attribute_analyzer_noreturn)
-				#define G_ANALYZER_NORETURN __attribute__((analyzer_noreturn))
+				#define G__NORETURN __attribute__((analyzer_noreturn))
 			#endif
 		#endif
-		#ifndef G_ANALYZER_NORETURN
-			#define G_ANALYZER_NORETURN
+		#ifndef G__NORETURN
+			#define G__NORETURN
 		#endif
 
 		/* C++ language backwards compatibility
@@ -1188,54 +1198,6 @@
 		#else
 			inline int setgroups( std::size_t , const gid_t * )
 			{
-				return 0 ;
-			}
-		#endif
-
-		#if ! GCONFIG_HAVE_STRNCPY_S
-			#ifndef _TRUNCATE
-				#define _TRUNCATE (~(static_cast<std::size_t>(0U)))
-			#endif
-			#include <cstring>
-			inline errno_t strncpy_s( char * dst , std::size_t n_dst , const char * src , std::size_t n_src )
-			{
-				if( dst == nullptr ) return EINVAL ;
-				if( src == nullptr ) { *dst = '\0' ; return EINVAL ; }
-				if( n_dst == 0U ) { return EINVAL ; }
-				std::size_t d = std::strlen(src) ; if( n_src != _TRUNCATE && n_src < d ) d = n_src ;
-				if( d >= n_dst && n_src == _TRUNCATE )
-				{
-					std::strncpy( dst , src , n_dst ) ;
-					dst[n_dst-1U] = '\0' ;
-				}
-				else if( d >= n_dst )
-				{
-					*dst = '\0' ;
-					return ERANGE ;
-				}
-				else
-				{
-					std::strncpy( dst , src , d ) ;
-					dst[d] = '\0' ;
-				}
-				return 0 ;
-			}
-		#endif
-
-		#if ! GCONFIG_HAVE_GETENV_S
-			#include <cstdlib>
-			#include <cstring>
-			inline errno_t getenv_s( std::size_t * n_out , char * buffer , std::size_t n_in , const char * name )
-			{
-				const errno_t e_inval = 22 ;
-				const errno_t e_range = 34 ;
-				if( n_out == nullptr || name == nullptr || (!buffer&&n_in) ) return e_inval ;
-				const char * p = ::getenv( name ) ;
-				*n_out = p ? (std::strlen(p) + 1U) : 0 ;
-				if( p && *n_out > n_in )
-					return e_range ;
-				if( p && buffer )
-					strncpy_s( buffer , n_in , p , std::strlen(p) ) ;
 				return 0 ;
 			}
 		#endif

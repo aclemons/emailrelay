@@ -51,19 +51,6 @@ WINDOWS_MAIN_SOURCES = \
 TEXTMODE_MAIN_SOURCES = \
 	main.cpp
 
-WINDOWS_SERVICE_SOURCES = \
-	service_wrapper.cpp
-
-WINDOWS_SHARED_SOURCES = \
-	service_install.cpp \
-	service_remove.cpp \
-	service_install.h \
-	service_remove.h
-
-SHARED_SOURCES = \
-	options.cpp \
-	options.h
-
 OTHER_SOURCES = \
 	commandline.h \
 	commandline.cpp \
@@ -75,6 +62,26 @@ OTHER_SOURCES = \
 	output.h \
 	run.cpp \
 	run.h
+
+WINDOWS_SERVICEWRAPPER_SOURCES = \
+	servicewrapper.cpp
+
+WINDOWS_LIBMAIN_SOURCES = \
+	serviceimp_win32.cpp \
+	serviceinstall_win32.cpp \
+	serviceremove_win32.cpp
+
+UNIX_LIBMAIN_SOURCES = \
+	serviceimp_none.cpp \
+	serviceinstall_unix.cpp \
+	serviceremove_unix.cpp
+
+LIBMAIN_SOURCES = \
+	options.cpp \
+	options.h \
+	serviceimp.h \
+	serviceinstall.h \
+	serviceremove.h
 
 MISC_EXTRA_DIST = \
 	doxygen.h \
@@ -104,20 +111,21 @@ endif
 if GCONFIG_WINDOWS
  EXTRA_DIST=\
 	$(MAC_EXTRA_DIST) \
-	$(MISC_EXTRA_DIST)
+	$(MISC_EXTRA_DIST) \
+	$(UNIX_LIBMAIN_SOURCES)
 else
  EXTRA_DIST=\
 	$(MAC_EXTRA_DIST) \
 	$(MISC_EXTRA_DIST) \
 	$(WINDOWS_MAIN_SOURCES) \
-	$(WINDOWS_SERVICE_SOURCES) \
-	$(WINDOWS_SHARED_SOURCES)
+	$(WINDOWS_SERVICEWRAPPER_SOURCES) \
+	$(WINDOWS_LIBMAIN_SOURCES)
 endif
 
 if GCONFIG_WINDOWS
- libmain_a_SOURCES = $(WINDOWS_SHARED_SOURCES) $(SHARED_SOURCES)
+ libmain_a_SOURCES = $(WINDOWS_LIBMAIN_SOURCES) $(LIBMAIN_SOURCES)
 else
- libmain_a_SOURCES = $(SHARED_SOURCES)
+ libmain_a_SOURCES = $(UNIX_LIBMAIN_SOURCES) $(LIBMAIN_SOURCES)
 endif
 
 if GCONFIG_WINDOWS
@@ -227,7 +235,7 @@ endif
 
 if GCONFIG_WINDOWS
  emailrelay_service_SOURCES = \
-	$(WINDOWS_SERVICE_SOURCES)
+	$(WINDOWS_SERVICEWRAPPER_SOURCES)
  emailrelay_service_LDFLAGS = -static
  emailrelay_service_LDADD = \
 	libmain.a \

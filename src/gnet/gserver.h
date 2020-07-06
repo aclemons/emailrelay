@@ -25,6 +25,7 @@
 #include "gserverpeer.h"
 #include "gexceptionsink.h"
 #include "gsocket.h"
+#include "glistener.h"
 #include "gevent.h"
 #include <utility>
 #include <memory>
@@ -43,7 +44,7 @@ namespace GNet
 /// ServerPeer objects for each incoming connection.
 /// \see GNet::ServerPeer
 ///
-class GNet::Server : private EventHandler, private ExceptionHandler
+class GNet::Server : public Listener, private EventHandler, private ExceptionHandler
 {
 public:
 	G_EXCEPTION( CannotBind , "cannot bind the listening port" ) ;
@@ -57,8 +58,9 @@ public:
 	~Server() override ;
 		///< Destructor.
 
-	Address address( bool with_scope = false ) const ;
+	Address address() const override ;
 		///< Returns the listening address.
+		///< Override from GNet::Listener.
 
 	static bool canBind( const Address & listening_address , bool do_throw ) ;
 		///< Checks that the specified address can be

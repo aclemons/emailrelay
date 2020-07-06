@@ -97,7 +97,7 @@ std::vector<GNet::Address> GNet::MultiServer::addresses( unsigned int port , G::
 	{
 		if( Address::supports(Address::Family::ipv4) )
 			result.push_back( Address(Address::Family::ipv4,port) ) ;
-		if( Address::supports(Address::Family::ipv6) )
+		if( Address::supports(Address::Family::ipv6) && StreamSocket::supports(Address::Family::ipv6) )
 			result.push_back( Address(Address::Family::ipv6,port) ) ;
 	}
 	else
@@ -149,7 +149,7 @@ void GNet::MultiServer::onInterfaceEventTimeout()
 	// delete old
 	for( auto server_ptr_p = m_server_list.begin() ; server_ptr_p != m_server_list.end() ; )
 	{
-		Address server_address = (*server_ptr_p)->address( true ) ;
+		Address server_address = (*server_ptr_p)->address() ;
 		G_DEBUG( "GNet::MultiServer::onInterfaceEvent: server: " << server_address.displayString() << "%" << server_address.scopeId() ) ;
 
 		auto address_match_p = std::find_if( address_list.begin() , address_list.end() ,
@@ -194,7 +194,7 @@ bool GNet::MultiServer::gotServerFor( const Address & interface_address ) const
 {
 	for( const auto & server_ptr : m_server_list )
 	{
-		Address server_address = server_ptr->address( true ) ;
+		Address server_address = server_ptr->address() ;
 		if( match( interface_address , server_address ) )
 			return true ;
 	}

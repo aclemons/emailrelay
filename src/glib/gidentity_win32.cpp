@@ -43,12 +43,12 @@ G::Identity::Identity( const std::string & , const std::string & ) :
 {
 }
 
-G::Identity G::Identity::effective()
+G::Identity G::Identity::effective() noexcept
 {
 	return Identity() ;
 }
 
-G::Identity G::Identity::real()
+G::Identity G::Identity::real() noexcept
 {
 	return Identity() ;
 }
@@ -63,7 +63,7 @@ G::Identity G::Identity::invalid( SignalSafe safe ) noexcept
 	return Identity(safe) ;
 }
 
-G::Identity G::Identity::root()
+G::Identity G::Identity::root() noexcept
 {
 	return Identity() ;
 }
@@ -73,69 +73,65 @@ std::string G::Identity::str() const
 	return "-1/-1" ;
 }
 
-bool G::Identity::isRoot() const
+bool G::Identity::isRoot() const noexcept
 {
 	return false ;
 }
 
-bool G::Identity::operator==( const Identity & other ) const
+bool G::Identity::operator==( const Identity & other ) const noexcept
 {
 	return true ;
 }
 
-bool G::Identity::operator!=( const Identity & other ) const
+bool G::Identity::operator!=( const Identity & other ) const noexcept
 {
 	return false ;
 }
 
-void G::Identity::setEffectiveUser( SignalSafe ) const noexcept
+void G::Identity::setRealUser() const
 {
 }
 
-void G::Identity::setEffectiveUser( bool do_throw ) const
+bool G::Identity::setRealUser( NoThrow ) const noexcept
+{
+	return true ;
+}
+
+void G::Identity::setEffectiveUser() const
 {
 }
 
-void G::Identity::setRealUser( bool do_throw ) const
+bool G::Identity::setEffectiveUser( NoThrow ) const noexcept
+{
+	return true ;
+}
+
+bool G::Identity::setEffectiveUser( SignalSafe ) const noexcept
+{
+	return true ;
+}
+
+void G::Identity::setRealGroup() const
 {
 }
 
-void G::Identity::setEffectiveGroup( bool do_throw ) const
+bool G::Identity::setRealGroup( NoThrow ) const noexcept
+{
+	return true ;
+}
+
+void G::Identity::setEffectiveGroup() const
 {
 }
 
-void G::Identity::setEffectiveGroup( SignalSafe ) const noexcept
+bool G::Identity::setEffectiveGroup( NoThrow ) const noexcept
 {
+	return true ;
 }
 
-void G::Identity::setRealGroup( bool do_throw ) const
+bool G::Identity::setEffectiveGroup( SignalSafe ) const noexcept
 {
-}
-
-// ===
-
-void G::IdentityUser::setRealUserTo( Identity , bool )
-{
-}
-
-void G::IdentityUser::setEffectiveUserTo( Identity , bool )
-{
-}
-
-void G::IdentityUser::setEffectiveUserTo( SignalSafe , Identity ) noexcept
-{
-}
-
-void G::IdentityUser::setRealGroupTo( Identity , bool )
-{
-}
-
-void G::IdentityUser::setEffectiveGroupTo( Identity , bool )
-{
-}
-
-void G::IdentityUser::setEffectiveGroupTo( SignalSafe , Identity ) noexcept
-{
+	return true ;
 }
 
 /// \file gidentity_win32.cpp

@@ -104,7 +104,7 @@ void Launcher::poke()
 	m_poke_count++ ;
 	if( m_poke_count == 1U )
 	{
-		int rc = system( m_shell_command.c_str() ) ; G_IGNORE_VARIABLE(int,rc) ;
+		int rc = system( m_shell_command.c_str() ) ; G__IGNORE_VARIABLE(int,rc) ;
 	}
 	else if( m_poke_count == 100U )
 	{

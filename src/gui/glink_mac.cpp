@@ -78,7 +78,7 @@ void GLinkImp::saveAs( const G::Path & )
 				<< "hidden:true}\" "
 			<< "-e \"end tell\"" ;
 
-	int rc = std::system( ss.str().c_str() ) ; G_IGNORE_VARIABLE(int,rc) ;
+	int rc = std::system( ss.str().c_str() ) ; G__IGNORE_VARIABLE(int,rc) ;
 }
 
 // ==
@@ -130,7 +130,7 @@ bool GLink::remove( const G::Path & )
 				<< "-e \"delete login item __\" "
 				<< "-e \"end tell\"" ;
 
-	int rc = std::system( ss.str().c_str() ) ; G_IGNORE_VARIABLE(int,rc) ;
+	int rc = std::system( ss.str().c_str() ) ; G__IGNORE_VARIABLE(int,rc) ;
 	return true ;
 }
 

@@ -97,7 +97,7 @@ GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , ExceptionSi
 
 int GNet::FutureEventImp::init( int fd )
 {
-	int rc = ::fcntl( fd , F_SETFL , ::fcntl(fd,F_GETFL) | O_NONBLOCK ) ; G_IGNORE_VARIABLE(int,rc) ;
+	int rc = ::fcntl( fd , F_SETFL , ::fcntl(fd,F_GETFL) | O_NONBLOCK ) ; G__IGNORE_VARIABLE(int,rc) ;
 	return fd ;
 }
 
@@ -120,7 +120,7 @@ GNet::FutureEventImp::handle_type GNet::FutureEventImp::handle()
 void GNet::FutureEventImp::receive()
 {
 	char c = '\0' ;
-	ssize_t rc = ::recv( m_read.fd , &c , 1 , 0 ) ; G_IGNORE_VARIABLE(ssize_t,rc) ;
+	ssize_t rc = ::recv( m_read.fd , &c , 1 , 0 ) ; G__IGNORE_VARIABLE(ssize_t,rc) ;
 }
 
 bool GNet::FutureEventImp::send( handle_type handle , bool close ) noexcept

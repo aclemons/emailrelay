@@ -201,6 +201,16 @@ sub allFilesContain
 	}
 }
 
+sub noFileContains
+{
+	my ( $glob , $string_or_list , $more ) = @_ ;
+	my @files = System::glob_( $glob ) ;
+	for my $file ( @files )
+	{
+		fileDoesNotContain( $file , $string_or_list , $more ) ;
+	}
+}
+
 sub fileContains
 {
 	my ( $path , $string , $more ) = @_ ;

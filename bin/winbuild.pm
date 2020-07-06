@@ -50,6 +50,7 @@ use FileHandle ;
 use File::Basename ;
 use File::Find ;
 use File::Path ;
+use File::Glob ':bsd_glob' ;
 use lib dirname($0) , dirname($0)."/bin" ;
 use AutoMakeParser ;
 $AutoMakeParser::debug = 0 ;
@@ -59,8 +60,8 @@ package winbuild ;
 sub find_cmake
 {
 	return
-		_find_basic( "cmake" , "cmake.exe" , _path_dirs() ) ||
-		_find_match( "cmake" , "cmake*/bin/cmake.exe" , undef ,
+		_find_basic( "find-cmake" , "cmake.exe" , _path_dirs() ) ||
+		_find_match( "find-cmake" , "cmake*/bin/cmake.exe" , undef ,
 			"$ENV{SystemDrive}" ,
 			"$ENV{ProgramFiles}" ) ;
 }
@@ -68,8 +69,8 @@ sub find_cmake
 sub find_msbuild
 {
 	return
-		_find_basic( "msbuild" , "msbuild.exe" , _path_dirs() ) ||
-		_find_under( "msbuild" , "msbuild.exe" ,
+		_find_basic( "find-msbuild" , "msbuild.exe" , _path_dirs() ) ||
+		_find_under( "find-msbuild" , "msbuild.exe" ,
 			$ENV{'ProgramFiles(x86)'}."/msbuild" ,
 			$ENV{'ProgramFiles(x86)'}."/Microsoft Visual Studio" ,
 			$ENV{'ProgramFiles(x86)'} ,
@@ -84,14 +85,14 @@ sub find_qt
 		"$ENV{SystemDrive}/qt" ,
 	) ;
 	return {
-		x86 => _find_match( "qt(x86)" , "5*/msvc*/lib/cmake/qt5" , qr;/msvc\d\d\d\d/; , @dirs ) ,
-		x64 => _find_match( "qt(x64)" , "5*/msvc*_64/lib/cmake/qt5" , undef , @dirs ) ,
+		x86 => _find_match( "find-qt(x86)" , "5*/msvc*/lib/cmake/qt5" , qr;/msvc\d\d\d\d/; , @dirs ) ,
+		x64 => _find_match( "find-qt(x64)" , "5*/msvc*_64/lib/cmake/qt5" , undef , @dirs ) ,
 	} ;
 }
 
 sub find_mbedtls
 {
-	return _find_match( "mbedtls" , "mbedtls*" , undef ,
+	return _find_match( "find-mbedtls" , "mbedtls*" , undef ,
 		File::Basename::dirname($0)."/.." ,
 		"$ENV{HOMEDRIVE}$ENV{HOMEPATH}" ,
 		"$ENV{SystemDrive}" ) ;
@@ -186,7 +187,7 @@ sub _find_match
 	for my $dir ( map {_sanepath($_)} @dirs )
 	{
 		my @glob_match = () ;
-		push @glob_match , grep { -e $_ && $_ =~ m/$re/ } glob( "$dir/$glob" ) ;
+		push @glob_match , grep { -e $_ && $_ =~ m/$re/ } File::Glob::bsd_glob( "$dir/$glob" ) ;
 		if( @glob_match ) { $result = Cwd::realpath($glob_match[0]) ; last }
 		print "$logname: no match for $dir/$glob\n" ;
 	}
@@ -220,25 +221,23 @@ sub clean_cmake_files
 
 sub clean_cmake_cache_files
 {
-	my ( $base_dir ) = @_ ;
+	my ( $base_dir , $opt ) = @_ ;
+	my $verbose = $opt->{verbose} || 0 ;
 	$base_dir ||= "." ;
-	{
-		my @list = () ;
-		File::Find::find( sub { push @list , $File::Find::name if $_ eq "CMakeFiles" } , $base_dir ) ;
-		map { deltree($_) } @list ;
-	}
-	{
-		my @list = () ;
-		File::Find::find( sub { push @list , $File::Find::name if $_ eq "CMakeCache.txt" } , $base_dir ) ;
-		map { unlink $_ or die } @list ;
-	}
+	my @tree_list = () ;
+	my @file_list = () ;
+	File::Find::find( sub { push @tree_list , $File::Find::name if $_ eq "CMakeFiles" } , $base_dir ) ;
+	File::Find::find( sub { push @file_list , $File::Find::name if $_ eq "CMakeCache.txt" } , $base_dir ) ;
+	map { print "cmake: cleaning [$base_dir/$_]\n" if $verbose } ( @tree_list , @file_list ) ;
+	map { deltree($_) } @tree_list ;
+	map { unlink $_ or die } @file_list ;
 }
 
 sub deltree
 {
 	my ( $dir ) = @_ ;
 	my $e ;
-	File::Path::remove_tree( $dir , {safe=>1,verbose=>1,error=>\$e} ) ;
+	File::Path::remove_tree( $dir , {safe=>1,verbose=>0,error=>\$e} ) ;
 	if( $e && scalar(@$e) )
 	{
 		for my $x ( @$e )
@@ -358,7 +357,7 @@ sub file_copy
 
 	if( $to_crlf )
 	{
-		if( -d $dst ) { $dst = "$dst/".basename($src) }
+		if( -d $dst ) { $dst = "$dst/".File::Basename::basename($src) }
 		my $fh_in = new FileHandle( $src , "r" ) ;
 		my $fh_out = new FileHandle( $dst , "w" ) ;
 		( $fh_in && $fh_out ) or die "error: failed to copy [$src] to [$dst]\n" ;

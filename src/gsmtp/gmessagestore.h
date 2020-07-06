@@ -67,8 +67,8 @@ public:
 		///< Returns true if the message store is empty.
 
 	virtual std::unique_ptr<StoredMessage> get( unsigned long id ) = 0 ;
-		///< Pulls the specified message out of the store.
-		///< Throws execptions on error.
+		///< Pulls the specified message out of the store. Throws
+		///< execptions on error.
 		///<
 		///< See also NewMessage::id().
 		///<
@@ -79,13 +79,16 @@ public:
 		///< Returns an iterator for stored messages.
 		///<
 		///< If 'lock' is true then stored messages returned by the
-		///< iterator are locked. Normally they are then processed
-		///< (using StoredMessage::extractContentStream()) and then
-		///< deleted (by StoredMessage::destroy()).
+		///< iterator are locked. They can then be deleted by
+		///< StoredMessage::destroy() once they have been fully
+		///< processed.
 		///<
-		///< As a side effect of iteration when 'lock' is true some
+		///< If 'lock' is true invalid messages having no receipients
+		///< are not returned by the iterator.
+		///<
+		///< If 'lock' is true then as a side effect of iteration some
 		///< stored messages may be marked as bad, or get deleted
-		///< (if they have no recipients).
+		///< if they have no recipients.
 
 	virtual std::shared_ptr<Iterator> failures() = 0 ;
 		///< Returns an iterator for failed messages.

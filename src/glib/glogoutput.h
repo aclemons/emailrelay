@@ -131,7 +131,7 @@ public:
 	static void assertionFailure( const char * file , int line , const char * test_expression ) noexcept ;
 		///< Reports an assertion failure.
 
-	static void assertionAbort() G_ANALYZER_NORETURN ;
+	static void assertionAbort() G__NORETURN ;
 		///< Aborts the program when an assertion has failed.
 
 	static void register_( const std::string & exe ) ;

@@ -177,6 +177,11 @@ bool Main::Configuration::forwardOnStartup() const
 	return m_map.contains("forward") || m_map.contains("as-client") ;
 }
 
+bool Main::Configuration::forwardToSome() const
+{
+	return m_map.contains( "forward-to-some" ) ;
+}
+
 bool Main::Configuration::dontServe() const
 {
 	return m_map.contains("dont-serve") || m_map.contains("as-client") ;

@@ -159,7 +159,7 @@ void G::BatchFile::dequote( std::string & s )
 
 void G::BatchFile::write( const G::Path & path , const StringArray & args , const std::string & name_in )
 {
-	G_ASSERT( args.size() > 0U ) ;
+	G_ASSERT( !args.empty() ) ;
 	if( args.empty() )
 		throw Error( "invalid contents for startup batch file" ) ;
 

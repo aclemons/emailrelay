@@ -114,7 +114,7 @@ void GNet::InterfacesNotifierImp::readSocket()
 {
 	m_buffer.resize( 4096U ) ;
 	ssize_t rc = m_socket->read( &m_buffer[0] , m_buffer.size() ) ;
-	int e = G::Process::errno_() ; G_IGNORE_VARIABLE(int,e) ;
+	int e = G::Process::errno_() ; G__IGNORE_VARIABLE(int,e) ;
 	if( rc < 0 )
 	{
 		G_DEBUG( "GNet::InterfacesNotifierImp: read error: " << G::Process::strerror(e) ) ;
@@ -188,8 +188,8 @@ std::string GNet::InterfacesNotifierImp::readEvent()
 			hdr->nlmsg_type == RTM_DELLINK ||
 			hdr->nlmsg_type == RTM_GETLINK )
 		{
-			ifinfomsg * p = static_cast<ifinfomsg*>( NLMSG_DATA(hdr) ) ; G_IGNORE_VARIABLE(ifinfomsg*,p) ;
-			int n = NLMSG_PAYLOAD( hdr , size ) ; G_IGNORE_VARIABLE(int,n) ;
+			ifinfomsg * p = static_cast<ifinfomsg*>( NLMSG_DATA(hdr) ) ; G__IGNORE_VARIABLE(ifinfomsg*,p) ;
+			int n = NLMSG_PAYLOAD( hdr , size ) ; G__IGNORE_VARIABLE(int,n) ;
 			ss << sep << "link" ;
 			if( hdr->nlmsg_type == RTM_NEWLINK ) ss << " new" ;
 			if( hdr->nlmsg_type == RTM_DELLINK ) ss << " deleted" ;
@@ -198,8 +198,8 @@ std::string GNet::InterfacesNotifierImp::readEvent()
 			hdr->nlmsg_type == RTM_DELADDR ||
 			hdr->nlmsg_type == RTM_GETADDR )
 		{
-			ifaddrmsg * p = static_cast<ifaddrmsg*>( NLMSG_DATA(hdr) ) ; G_IGNORE_VARIABLE(ifaddrmsg*,p) ;
-			int n = NLMSG_PAYLOAD( hdr , size ) ; G_IGNORE_VARIABLE(int,n) ;
+			ifaddrmsg * p = static_cast<ifaddrmsg*>( NLMSG_DATA(hdr) ) ; G__IGNORE_VARIABLE(ifaddrmsg*,p) ;
+			int n = NLMSG_PAYLOAD( hdr , size ) ; G__IGNORE_VARIABLE(int,n) ;
 			ss << sep << "address" ;
 			if( hdr->nlmsg_type == RTM_NEWADDR ) ss << " new" ;
 			if( hdr->nlmsg_type == RTM_DELADDR ) ss << " deleted" ;

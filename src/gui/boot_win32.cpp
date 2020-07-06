@@ -23,8 +23,8 @@
 #include "gpath.h"
 #include "gmapfile.h"
 #include "gfile.h"
-#include "service_install.h"
-#include "service_remove.h"
+#include "serviceinstall.h"
+#include "serviceremove.h"
 #include <stdexcept>
 
 namespace

@@ -15,12 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 //
-// service_remove.cpp
+// serviceremove_win32.cpp
 //
 
-#include "service_remove.h"
-#ifdef _WIN32
-#include "windows.h"
+#include "serviceremove.h"
+#include <windows.h>
 #include <sstream>
 
 std::string service_remove( const std::string & name )
@@ -55,12 +54,4 @@ std::string service_remove( const std::string & name )
 	return reason ;
 }
 
-#else
-
-std::string service_remove( const std::string & )
-{
-	return std::string() ;
-}
-
-#endif
-/// \file service_remove.cpp
+/// \file serviceremove_win32.cpp

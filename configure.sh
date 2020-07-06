@@ -56,20 +56,44 @@ fi
 
 if test "$1" = "-m"
 then
+	# mingw -- to target ancient versions of windows edit 'gconfig_defs.h'
+	# after running configure and undefine GCONFIG_HAVE_PUTENV_S and
+	# GCONFIG_HAVE_STRNCPY_S -- note that the built executables need the
+	# mingw runtime DLLs to run
 	shift
 	TARGET="i686-w64-mingw32"
-	export CXX="$TARGET-g++"
-	export CC="$TARGET-gcc"
+	export CXX="$TARGET-g++-posix"
+	export CC="$TARGET-gcc-posix"
 	export AR="$TARGET-ar"
 	export STRIP="$TARGET-strip"
+	export GCONFIG_WINDMC="$TARGET-windmc"
+	export GCONFIG_WINDRES="$TARGET-windres"
 	export CXXFLAGS="$CXXFLAGS -std=c++11 -pthread"
 	export LDFLAGS="$LDFLAGS -pthread"
 	if test -x "`which $CXX`" ; then : ; else echo "error: no mingw c++ compiler: [$CXX]\n" ; exit 1 ; fi
-	$thisdir/configure $enable_debug --host $TARGET \
-		--enable-windows --disable-interface-names \
-		--disable-gui --without-pam --without-doxygen \
-		--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \
-		--localstatedir=/var e_initdir=/etc/init.d "$@"
+	MBEDTLS_DIR="`find . -maxdepth 1 -type d -name mbedtls\* 2>/dev/null`"
+	if test -d "$MBEDTLS_DIR"
+	then
+		export CPPFLAGS="$CPPFLAGS -I`pwd`/$MBEDTLS_DIR/include"
+		export LDFLAGS="$LDFLAGS -L`pwd`/$MBEDTLS_DIR/library"
+		$thisdir/configure $enable_debug --host $TARGET \
+			--enable-windows --disable-interface-names \
+			--with-mbedtls \
+			--disable-gui --without-pam --without-doxygen \
+			--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \
+			--localstatedir=/var e_initdir=/etc/init.d "$@"
+		if test ! -e "$MBEDTLS_DIR/library/libmbedtls.a"
+		then
+			echo "build mbedtls with..."
+			echo " make WINDOWS=1 CC=$CC AR=$AR -C $MBEDTLS_DIR/library"
+		fi
+	else
+		$thisdir/configure $enable_debug --host $TARGET \
+			--enable-windows --disable-interface-names \
+			--disable-gui --without-pam --without-doxygen \
+			--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \
+			--localstatedir=/var e_initdir=/etc/init.d "$@"
+	fi
 :
 elif test "$1" = "-p"
 then

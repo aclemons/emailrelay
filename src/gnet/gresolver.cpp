@@ -177,7 +177,7 @@ GNet::Resolver::~Resolver()
 		// release the imp to an independent lifetime until its getaddrinfo() completes
 		G_DEBUG( "GNet::Resolver::dtor: releasing still-busy thread: " << ResolverImp::count() ) ;
 		m_imp->doDelete() ;
-		G_IGNORE_RETURN( m_imp.release() ) ; // deleted in onTimeout() -- dtor blocks in thread::join()
+		G__IGNORE_RETURN( m_imp.release() ) ; // deleted in onTimeout() -- dtor blocks in thread::join()
 	}
 }
 

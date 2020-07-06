@@ -123,15 +123,16 @@ am__libgnet_a_SOURCES_DIST = gaddress_ip.cpp gaddress.h gaddress4.h \
 	gfutureevent_unix.cpp ginterfaces.h ginterfaces_none.cpp \
 	ginterfaces_unix.cpp ginterfaces_common.cpp \
 	ginterfaces_win32.cpp glinebuffer.cpp glinebuffer.h \
-	glinestore.cpp glinestore.h glocal.cpp glocal.h glocation.cpp \
-	glocation.h gmonitor.cpp gmonitor.h gmultiserver.cpp \
-	gmultiserver.h gnetdone.cpp gnetdone.h gresolver.cpp \
-	gresolver.h gresolverfuture.cpp gresolverfuture.h gserver.cpp \
-	gserver.h gserverpeer.cpp gserverpeer.h gsocket.h gsocket.cpp \
-	gsocket_unix.cpp gsocketprotocol.cpp gsocketprotocol.h \
-	gsocks.cpp gsocks.h gtask.cpp gtask.h gtimer.cpp gtimer.h \
-	gtimerlist.cpp gtimerlist.h gdescriptor_win32.cpp \
-	geventloop_win32.cpp gfutureevent_win32.cpp gsocket_win32.cpp
+	glinestore.cpp glinestore.h glistener.h glocal.cpp glocal.h \
+	glocation.cpp glocation.h gmonitor.cpp gmonitor.h \
+	gmultiserver.cpp gmultiserver.h gnetdone.cpp gnetdone.h \
+	gresolver.cpp gresolver.h gresolverfuture.cpp \
+	gresolverfuture.h gserver.cpp gserver.h gserverpeer.cpp \
+	gserverpeer.h gsocket.h gsocket.cpp gsocket_unix.cpp \
+	gsocketprotocol.cpp gsocketprotocol.h gsocks.cpp gsocks.h \
+	gtask.cpp gtask.h gtimer.cpp gtimer.h gtimerlist.cpp \
+	gtimerlist.h gdescriptor_win32.cpp geventloop_win32.cpp \
+	gfutureevent_win32.cpp gsocket_win32.cpp
 @GCONFIG_INTERFACE_NAMES_FALSE@@GCONFIG_WINDOWS_FALSE@am__objects_1 = ginterfaces_none.$(OBJEXT)
 @GCONFIG_INTERFACE_NAMES_FALSE@@GCONFIG_WINDOWS_TRUE@am__objects_1 = ginterfaces_none.$(OBJEXT)
 @GCONFIG_INTERFACE_NAMES_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_1 = ginterfaces_unix.$(OBJEXT) \
@@ -485,6 +486,7 @@ noinst_LIBRARIES = libgnet.a
 @GCONFIG_WINDOWS_FALSE@	glinebuffer.h \
 @GCONFIG_WINDOWS_FALSE@	glinestore.cpp \
 @GCONFIG_WINDOWS_FALSE@	glinestore.h \
+@GCONFIG_WINDOWS_FALSE@	glistener.h \
 @GCONFIG_WINDOWS_FALSE@	glocal.cpp \
 @GCONFIG_WINDOWS_FALSE@	glocal.h \
 @GCONFIG_WINDOWS_FALSE@	glocation.cpp \
@@ -562,6 +564,7 @@ noinst_LIBRARIES = libgnet.a
 @GCONFIG_WINDOWS_TRUE@	glinebuffer.h \
 @GCONFIG_WINDOWS_TRUE@	glinestore.cpp \
 @GCONFIG_WINDOWS_TRUE@	glinestore.h \
+@GCONFIG_WINDOWS_TRUE@	glistener.h \
 @GCONFIG_WINDOWS_TRUE@	glocal.cpp \
 @GCONFIG_WINDOWS_TRUE@	glocal.h \
 @GCONFIG_WINDOWS_TRUE@	glocation.cpp \

@@ -30,6 +30,15 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+bool GNet::SocketBase::supports( int domain , int type , int protocol )
+{
+	int fd = ::socket( domain , type , protocol ) ;
+	if( fd < 0 )
+		return false ;
+	::close( fd ) ;
+	return true ;
+}
+
 bool GNet::SocketBase::create( int domain , int type , int protocol )
 {
 	m_fd = Descriptor( ::socket(domain,type,protocol) ) ;

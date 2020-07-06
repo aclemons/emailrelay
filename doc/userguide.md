@@ -354,4 +354,4 @@ local Tor server on port 9050 to the mail server at smtp.example.com:
 [TLS]: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
 _____________________________________
-Copyright (C) 2001-2019 Graeme Walker
+Copyright (C) 2001-2020 Graeme Walker

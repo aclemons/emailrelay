@@ -302,6 +302,11 @@ std::string G::Path::str() const
 	return m_str ;
 }
 
+const char * G::Path::cstr() const noexcept
+{
+	return m_str.c_str() ;
+}
+
 bool G::Path::simple() const
 {
 	return dirname() == Path() ;

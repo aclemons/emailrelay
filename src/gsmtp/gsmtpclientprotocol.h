@@ -216,13 +216,14 @@ public:
 			///< Constructor. The Sender interface is used to send protocol
 			///< messages to the peer. The references are kept.
 
-	G::Slot::Signal<int,const std::string&,const std::string&> & doneSignal() ;
+	G::Slot::Signal<int,const std::string&,const std::string&,const G::StringArray&> & doneSignal() ;
 		///< Returns a signal that is raised once the protocol has finished
 		///< with a given message. The first signal parameter is the SMTP response
-		///< value, or 0 for an internal error, or -1 for filter-abandon, or -2
-		///< for a filter-fail. The second parameter is the empty string on success
-		///< or a non-empty response string. The third parameter contains
-		///< any additional error reason text.
+		///< value, or 0 for an internal non-SMTP error, or -1 for filter-abandon,
+		///< or -2 for a filter-fail. The second parameter is the empty string on
+		///< success or a non-empty response string. The third parameter contains
+		///< any additional error reason text. The fourth parameter is a list
+		///< of failed addressees (see 'must_accept_all_recipients').
 
 	G::Slot::Signal<> & filterSignal() ;
 		///< Returns a signal that is raised when the protocol
@@ -233,6 +234,7 @@ public:
 		///< Starts transmission of the given message. The doneSignal()
 		///< is used to indicate that the message has been processed
 		///< and the shared object should remain valid until then.
+		///< Precondition: StoredMessage::toCount() != 0
 
 	void finish() ;
 		///< Called after the last message has been sent. Sends a quit
@@ -255,7 +257,7 @@ public:
 	bool apply( const std::string & rx ) ;
 		///< Called on receipt of a line of text from the remote server.
 		///< Returns true if the protocol is done and the doneSignal()
-		///< has been emited.
+		///< has been emitted.
 
 public:
 	~ClientProtocol() override = default ;
@@ -325,6 +327,7 @@ private:
 	State m_state ;
 	std::size_t m_to_index ;
 	std::size_t m_to_accepted ;
+	G::StringArray m_to_rejected ;
 	bool m_server_has_starttls ;
 	bool m_server_has_auth ;
 	bool m_server_secure ;
@@ -335,7 +338,7 @@ private:
 	bool m_in_secure_tunnel ;
 	bool m_warned ;
 	Reply m_reply ;
-	G::Slot::Signal<int,const std::string&,const std::string&> m_done_signal ;
+	G::Slot::Signal<int,const std::string&,const std::string&,const G::StringArray&> m_done_signal ;
 	G::Slot::Signal<> m_filter_signal ;
 } ;
 

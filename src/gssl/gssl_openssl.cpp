@@ -61,7 +61,7 @@ GSsl::OpenSSL::LibraryImp::LibraryImp( G::StringArray & library_config , Library
 	// "on systems without /dev/*random devices providing entropy from the kernel the EGD entropy
 	// gathering daemon can be used to collect entropy... OpenSSL automatically queries EGD when
 	// entropy is ... checked via RAND_status() for the first time" (man RAND_egd(3))
-	int rc = RAND_status() ; G_IGNORE_VARIABLE(int,rc) ;
+	int rc = RAND_status() ; G__IGNORE_VARIABLE(int,rc) ;
 
 	// allocate a slot for a pointer from SSL to ProtocolImp
 	m_index = SSL_get_ex_new_index( 0 , nullptr , nullptr , nullptr , nullptr ) ;

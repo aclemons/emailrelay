@@ -82,8 +82,7 @@ where \<option\> is:
     specified as *net:<transport-address>* and prefixes of *spam:*,
     *spam-edit:* and *exit:* are also allowed. The *spam:* and *spam-edit:*
     prefixes require a SpamAssassin daemon to be running. For store-and-forward
-
-   applications the *--filter* option is normally more useful than
+    applications the *--filter* option is normally more useful than
     \ *--client-filter*\ .
 
 *   --client-interface \<ip-address\> (-6)
@@ -201,6 +200,11 @@ where \<option\> is:
     Specifies the transport address of the remote SMTP server that is use for
     mail message forwarding.
 
+*   --forward-to-some
+
+    Allow forwarding to continue even if some recipient addresses on an e-mail
+    envelope are rejected by the remote server.
+
 *   --help (-h)
 
     Displays help text and then exits. Use with *--verbose* for more complete
@@ -233,9 +237,9 @@ where \<option\> is:
     *pop=* or *admin=* on addresses that should apply only to those types of
     listening port. Any link-local IPv6 addresses must include a zone name or
     scope id.  Interface names can be used instead of addresses, in which case
-    all  the addresses associated with that interface at startup will used  for
-    listening. When an interface name is decorated with a *-ipv4*  or *-ipv6*
-    suffix only their IPv4 or IPv6 addresses will be used  (eg. *ppp0-ipv4*).
+    all the addresses associated with that interface at startup will used for
+    listening. When an interface name is decorated with a *-ipv4* or *-ipv6*
+    suffix only their IPv4 or IPv6 addresses will be used (eg. *ppp0-ipv4*).
 
 *   --log (-l)
 
@@ -332,8 +336,8 @@ where \<option\> is:
 
     Allows incoming connections from addresses that are not local. The default
     behaviour is to reject connections that are not local in order to prevent
-    accidental exposure to the public internet,  although a firewall should
-    also be used. Local address ranges are  defined in RFC-1918_, RFC-6890 etc.
+    accidental exposure to the public internet, although a firewall should also
+    be used. Local address ranges are defined in RFC-1918_, RFC-6890 etc.
 
 *   --response-timeout \<time\> (-T)
 
@@ -1314,4 +1318,4 @@ and these default to *%ProgramFiles%/E-MailRelay* for programs and
 .. _SOCKS: https://en.wikipedia.org/wiki/SOCKS
 .. _TLS: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
-.. footer:: Copyright (C) 2001-2019 Graeme Walker
+.. footer:: Copyright (C) 2001-2020 Graeme Walker

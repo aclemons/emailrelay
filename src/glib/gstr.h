@@ -514,6 +514,12 @@ public:
 			///< in the match-list (blacklist). (Removes nothing if the match-list is
 			///< empty.) Returns an iterator for erase().
 
+	static constexpr size_t truncate = (~(static_cast<std::size_t>(0U))) ;
+		///< A special value for the G::Str::strncpy_s() 'count' parameter.
+
+	static errno_t strncpy_s( char * dst , size_t n_dst , const char * src , size_t count ) ;
+		///< Does the same as windows strncpy_s().
+
 public:
 	Str() = delete ;
 } ;

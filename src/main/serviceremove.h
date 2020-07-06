@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file service_remove.h
+/// \file serviceremove.h
 ///
 
 #ifndef GUI_SERVICE_REMOVE_H

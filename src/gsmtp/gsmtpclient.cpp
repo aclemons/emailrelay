@@ -78,7 +78,8 @@ void GSmtp::Client::sendMessagesFrom( MessageStore & store )
 
 void GSmtp::Client::sendMessage( std::unique_ptr<StoredMessage> message )
 {
-	if( message )
+	G_ASSERT( message && message->toCount() ) ;
+	if( message && message->toCount() )
 	{
 		m_message.reset( message.release() ) ;
 		if( connected() )
@@ -148,6 +149,7 @@ bool GSmtp::Client::sendNext()
 
 void GSmtp::Client::start()
 {
+	G_ASSERT( message()->toCount() != 0U ) ;
 	m_message_count++ ;
 
 	G::CallFrame this_( m_stack ) ;
@@ -159,7 +161,7 @@ void GSmtp::Client::start()
 
 std::shared_ptr<GSmtp::StoredMessage> GSmtp::Client::message()
 {
-	G_ASSERT( m_message.get() != nullptr ) ;
+	G_ASSERT( m_message != nullptr ) ;
 	if( m_message == nullptr )
 		m_message = std::make_shared<StoredMessageStub>() ;
 
@@ -224,7 +226,8 @@ void GSmtp::Client::filterDone( int filter_result )
 	}
 }
 
-void GSmtp::Client::protocolDone( int response_code , const std::string & response_in , const std::string & reason_in )
+void GSmtp::Client::protocolDone( int response_code , const std::string & response_in ,
+	const std::string & reason_in , const G::StringArray & rejectees )
 {
 	G_DEBUG( "GSmtp::Client::protocolDone: \"" << response_in << "\"" ) ;
 
@@ -245,13 +248,21 @@ void GSmtp::Client::protocolDone( int response_code , const std::string & respon
 	}
 	else if( response.empty() )
 	{
-		// forwarded ok, so delete our copy
+		// forwarded ok to all, so delete our copy
 		messageDestroy() ;
+	}
+	else if( rejectees.empty() )
+	{
+		// eg. rejected by the server, so fail the message
+		G_ASSERT( !reason.empty() ) ;
+		m_filter->cancel() ;
+		messageFail( response_code , reason ) ;
 	}
 	else
 	{
-		// eg. rejected by the server, so fail the message
+		// some recipients rejected by the server, so update the to-list and fail the message
 		m_filter->cancel() ;
+		message()->edit( rejectees ) ;
 		messageFail( response_code , reason ) ;
 	}
 

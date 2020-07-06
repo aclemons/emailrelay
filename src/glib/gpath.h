@@ -98,6 +98,9 @@ public:
 	std::string str() const ;
 		///< Returns the path string.
 
+	const char * cstr() const noexcept ;
+		///< Returns the path string.
+
 	bool simple() const ;
 		///< Returns true if the path has a single component (ignoring "." parts),
 		///< ie. the dirname() is empty.

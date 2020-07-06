@@ -348,7 +348,7 @@ void GNet::SocketProtocolImp::shutdown()
 
 void GNet::SocketProtocolImp::shutdownImp()
 {
-	G_ASSERT( m_ssl.get() != nullptr ) ;
+	G_ASSERT( m_ssl != nullptr ) ;
 	G_ASSERT( m_state == State::shuttingdown ) ;
 	Result rc = m_ssl->shutdown() ;
 	if( rc == Result::ok )
@@ -379,7 +379,7 @@ bool GNet::SocketProtocolImp::secure() const
 void GNet::SocketProtocolImp::secureConnect()
 {
 	G_DEBUG( "SocketProtocolImp::secureConnect" ) ;
-	G_ASSERT( m_ssl.get() == nullptr ) ;
+	G_ASSERT( m_ssl == nullptr ) ;
 
 	m_ssl = newProtocol( "client" ) ;
 	m_state = State::connecting ;
@@ -391,7 +391,7 @@ void GNet::SocketProtocolImp::secureConnect()
 void GNet::SocketProtocolImp::secureConnectImp()
 {
 	G_DEBUG( "SocketProtocolImp::secureConnectImp" ) ;
-	G_ASSERT( m_ssl.get() != nullptr ) ;
+	G_ASSERT( m_ssl != nullptr ) ;
 	G_ASSERT( m_state == State::connecting ) ;
 
 	Result rc = m_ssl->connect( m_socket ) ;
@@ -425,7 +425,7 @@ void GNet::SocketProtocolImp::secureConnectImp()
 void GNet::SocketProtocolImp::secureAccept()
 {
 	G_DEBUG( "SocketProtocolImp::secureAccept" ) ;
-	G_ASSERT( m_ssl.get() == nullptr ) ;
+	G_ASSERT( m_ssl == nullptr ) ;
 
 	m_ssl = newProtocol( "server" ) ;
 	m_state = State::accepting ;
@@ -435,7 +435,7 @@ void GNet::SocketProtocolImp::secureAccept()
 void GNet::SocketProtocolImp::secureAcceptImp()
 {
 	G_DEBUG( "SocketProtocolImp::secureAcceptImp" ) ;
-	G_ASSERT( m_ssl.get() != nullptr ) ;
+	G_ASSERT( m_ssl != nullptr ) ;
 	G_ASSERT( m_state == State::accepting ) ;
 
 	Result rc = m_ssl->accept( m_socket ) ;
@@ -539,7 +539,7 @@ void GNet::SocketProtocolImp::sslReadImp()
 {
 	G_DEBUG( "SocketProtocolImp::sslReadImp" ) ;
 	G_ASSERT( m_state == State::idle ) ;
-	G_ASSERT( m_ssl.get() != nullptr ) ;
+	G_ASSERT( m_ssl != nullptr ) ;
 
 	Result rc = Result::more ;
 	for( int sanity = 0 ; rc == Result::more && sanity < 1000 ; sanity++ )

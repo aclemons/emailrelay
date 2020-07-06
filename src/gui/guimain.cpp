@@ -96,7 +96,8 @@
 // is a startup batch file on windows), and the authentication secrets file.
 //
 // On unix the server configuration file is in a format that can be read by the
-// System V init script to assemble the server's full command-line.
+// System V init script to assemble the server's full command-line (although
+// it is no longer done that way).
 //
 // The install directory, and to a lesser extent the configuration directory,
 // will contain additional files copied straight from the payload, such as

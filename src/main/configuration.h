@@ -105,6 +105,9 @@ public:
 	bool forwardOnStartup() const ;
 		///< Returns true if running as a client.
 
+	bool forwardToSome() const ;
+		///< Returns true if some envelope addressees can be rejected.
+
 	bool doServing() const ;
 		///< Returns true if running as a server (smtp, pop, admin).
 

@@ -23,7 +23,7 @@
     <p>
      E-MailRelay started life at a time when Linux had no decent package manager and
      Windows was in the grip of DLL hell. As a result, a key principle is that it
-     has no dependencies other than a good C++ runtime. Since that time OpenSSL
+     has no dependencies other than a good C++ run-time. Since that time OpenSSL
      has been introduced as a dependency to support TLS encryption, and the optional
      configuration and installation GUI has been developed using the Qt toolkit.
     </p>
@@ -259,7 +259,24 @@
      bundle, and it contains a configuration file to tell the installer where
      to copy its files.
     </p>
-   <h2><a class="a-header" name="SH_1_10">Windows packaging</a></h2> <!-- index:2:SH:1:10:Windows packaging -->
+   <h2><a class="a-header" name="SH_1_10">Windows build</a></h2> <!-- index:2:SH:1:10:Windows build -->
+    <p>
+     E-MailRelay can be compiled on Windows using Microsoft Visual Studio C++ (MSVC)
+     or mingw-w64. For MSVC builds there is a perl script (<em>winbuild.pl</em>) that creates
+     <em>cmake</em> files from the autotools makefiles, runs <em>cmake</em> to create the MSVC
+     project files and then runs <em>msbuild</em> to compile E-MailRelay. If perl, cmake,
+     MSVC, Qt and mbedTLS source are installed in the right way then the
+     <em>winbuild.bat</em> batch file should be able to do a complete MSVC release build
+     in one go.
+    </p>
+
+    <p>
+     For MinGW cross-builds use <em>./configure.sh -m</em> and <em>make</em> on a Linux box
+     and copy the built executables and the MinGW run-time to the target. The
+     run-time files can be identified by <em>dumpbin /dependents</em> in the normal
+     way. This is particularly useful for running on ancient versions of Windows.
+    </p>
+   <h2><a class="a-header" name="SH_1_11">Windows packaging</a></h2> <!-- index:2:SH:1:11:Windows packaging -->
     <p>
      On Windows E-MailRelay is packaged as a zip file containing the executables
      (including the emailrelay GUI as <em>emailrelay-setup.exe</em>), documentation, and a
@@ -271,7 +288,7 @@
      The Qt tool <em>windeployqt</em> is used to add run-time dependencies, such as the
      Qt DLLs.
     </p>
-   <h2><a class="a-header" name="SH_1_11">Unix packaging</a></h2> <!-- index:2:SH:1:11:Unix packaging -->
+   <h2><a class="a-header" name="SH_1_12">Unix packaging</a></h2> <!-- index:2:SH:1:12:Unix packaging -->
     <p>
      On Unix-like operating systems it is more natural to use some sort of package
      derived from the <em>make install</em> process rather than an installer program, so
@@ -282,7 +299,7 @@
      Top-level makefile targets <em>dist</em>, <em>deb</em> and <em>rpm</em> can be used to create a
      binary tarball, a debian package, and an RPM package respectively.
     </p>
-   <h2><a class="a-header" name="SH_1_12">Source control</a></h2> <!-- index:2:SH:1:12:Source control -->
+   <h2><a class="a-header" name="SH_1_13">Source control</a></h2> <!-- index:2:SH:1:13:Source control -->
     <p>
      The source code is stored in the SourceForge <em>svn</em> repository. A working
      copy can be checked out as follows:
@@ -291,7 +308,7 @@
       <div class="div-pre">
        <pre>$ svn co https://svn.code.sf.net/p/emailrelay/code/trunk emailrelay</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_13">Compile-time features</a></h2> <!-- index:2:SH:1:13:Compile-time features -->
+   <h2><a class="a-header" name="SH_1_14">Compile-time features</a></h2> <!-- index:2:SH:1:14:Compile-time features -->
     <p>
      Compile-time features can be selected with options passed to the <em>configure</em>
      script. These include the following:
@@ -313,7 +330,7 @@
 
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2019 Graeme Walker
+      Copyright (C) 2001-2020 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->

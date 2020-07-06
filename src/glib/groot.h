@@ -64,12 +64,12 @@ public:
 
 	~Root() ;
 		///< Desctructor. Releases special privileges if this instance acquired them.
-		///<
-		///< The implementation uses G::Process::beOrdinary().
+		///< The implementation uses G::Process::beOrdinary(). Errors from seteuid()
+		///< will call Process::terminate().
 
 	static void init( const std::string & non_root , bool default_change_group = true ) ;
 		///< Initialises this class on process start-up by releasing root (or suid)
-		///< privileges.
+		///< privileges. Throws on error.
 		///<
 		///< The string parameter gives a non-privileged username which is used if the
 		///< real user-id is root.
@@ -81,10 +81,10 @@ public:
 		///< Returns the 'nobody' identity corresponding to the init() user name.
 		///< Precondition: init() called
 
-	static Identity start( SignalSafe ) ;
+	static Identity start( SignalSafe ) noexcept ;
 		///< A signal-safe alternative to construction.
 
-	static void stop( SignalSafe , Identity ) ;
+	static void stop( SignalSafe , Identity ) noexcept ;
 		///< A signal-safe alternative to destruction.
 
 public:

@@ -98,6 +98,7 @@ libgnet_a_SOURCES = \
 	glinebuffer.h \
 	glinestore.cpp \
 	glinestore.h \
+	glistener.h \
 	glocal.cpp \
 	glocal.h \
 	glocation.cpp \
@@ -207,6 +208,7 @@ libgnet_a_SOURCES = \
 	glinebuffer.h \
 	glinestore.cpp \
 	glinestore.h \
+	glistener.h \
 	glocal.cpp \
 	glocal.h \
 	glocation.cpp \

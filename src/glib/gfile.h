@@ -55,14 +55,15 @@ public:
 	class NoThrow /// An overload discriminator class for File methods.
 		{} ;
 
-	static bool remove( const Path & path , const NoThrow & ) ;
+	static bool remove( const Path & path , const NoThrow & ) noexcept ;
 		///< Deletes the file or directory. Returns false on error.
 
 	static void remove( const Path & path ) ;
 		///< Deletes the file or directory. Throws an exception on error.
 
-	static bool rename( const Path & from , const Path & to , const NoThrow & ) ;
-		///< Renames the file. Returns false on error.
+	static bool rename( const Path & from , const Path & to , const NoThrow & ) noexcept ;
+		///< Renames the file. Returns false on error. Tries to
+		///< delete the target 'to' file if necessary.
 
 	static void rename( const Path & from , const Path & to , bool ignore_missing = false ) ;
 		///< Renames the file. Throws on error, but optionally
@@ -186,11 +187,10 @@ private:
 	static std::string sizeString( g_uint32_t hi , g_uint32_t lo ) ; // win32
 	static bool exists( const Path & , bool , bool ) ;
 	static bool exists( const char * , bool & , bool & ) ; // o/s-specific
-	static bool rename( const std::string & from , const std::string & to , bool & enoent ) ;
+	static bool rename( const char * , const char * to , bool & enoent ) noexcept ;
 	static bool chmodx( const Path & file , bool ) ;
 	static int link( const char * , const char * ) ;
 	static bool linked( const Path & , const Path & ) ;
-	static bool remove( const std::string & path , bool , bool ) ;
 } ;
 
 #endif

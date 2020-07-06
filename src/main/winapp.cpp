@@ -83,7 +83,10 @@ void Main::WinApp::init( const Configuration & cfg )
 
 int Main::WinApp::exitCode() const
 {
-	if( G::Test::enabled("special-exit-code") ) return (G::threading::works()?23:25) ;
+	// see test/Server.pm hasDebug()
+	if( G::Test::enabled("special-exit-code") )
+		return (G::threading::works()?23:25) ;
+
 	return m_exit_code ;
 }
 

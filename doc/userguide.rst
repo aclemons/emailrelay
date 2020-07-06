@@ -397,4 +397,4 @@ local Tor server on port 9050 to the mail server at smtp.example.com:
 .. _SOCKS: https://en.wikipedia.org/wiki/SOCKS
 .. _TLS: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
-.. footer:: Copyright (C) 2001-2019 Graeme Walker
+.. footer:: Copyright (C) 2001-2020 Graeme Walker

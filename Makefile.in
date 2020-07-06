@@ -215,7 +215,7 @@ CTAGS = ctags
 CSCOPE = cscope
 DIST_SUBDIRS = $(SUBDIRS)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/gconfig_defs.h.in \
-	AUTHORS COPYING ChangeLog INSTALL NEWS README compile \
+	AUTHORS COPYING ChangeLog INSTALL NEWS README compile depcomp \
 	install-sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)

@@ -37,7 +37,7 @@ void G::Daemon::detach()
 		std::_Exit( 0 ) ; // exit from parent
 
 	setsid() ;
-	bool rc = Process::cd( "/" , Process::NoThrow() ) ; G_IGNORE_VARIABLE(bool,rc) ;
+	bool rc = Process::cd( "/" , Process::NoThrow() ) ; G__IGNORE_VARIABLE(bool,rc) ;
 
 	if( !NewProcess::fork().first )
 		std::_Exit( 0 ) ; // exit from parent
@@ -45,7 +45,7 @@ void G::Daemon::detach()
 
 void G::Daemon::setsid()
 {
-	pid_t rc = ::setsid() ; G_IGNORE_VARIABLE(pid_t,rc) ;
+	pid_t rc = ::setsid() ; G__IGNORE_VARIABLE(pid_t,rc) ;
 }
 
 /// \file gdaemon_unix.cpp

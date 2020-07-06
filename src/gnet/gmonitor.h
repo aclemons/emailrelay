@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gslot.h"
 #include "gconnection.h"
+#include "glistener.h"
 #include <iostream>
 #include <utility>
 
@@ -50,10 +51,10 @@ public:
 	static Monitor * instance() ;
 		///< Returns the singleton pointer. Returns nullptr if none.
 
-	static void addClient( const Connection & simple_client ) ;
+	static void addClient( const Connection & client ) ;
 		///< Adds a client connection.
 
-	static void removeClient( const Connection & simple_client ) noexcept ;
+	static void removeClient( const Connection & client ) noexcept ;
 		///< Removes a client connection.
 
 	static void addServerPeer( const Connection & server_peer ) ;
@@ -61,6 +62,12 @@ public:
 
 	static void removeServerPeer( const Connection & server_peer ) noexcept ;
 		///< Removes a server connection.
+
+	static void addServer( const Listener & server ) ;
+		///< Adds a server.
+
+	static void removeServer( const Listener & server ) noexcept ;
+		///< Removes a server.
 
 	void report( std::ostream & stream ,
 		const std::string & line_prefix = std::string() ,
@@ -76,8 +83,8 @@ public:
 		///< to a slot.
 		///<
 		///< The signal emits events with two string parameters:
-		///< the first is "in" or "out", and the second is
-		///< "start" or "stop".
+		///< the first is "in", "out" or "listen", and the second
+		///< is "start" or "stop".
 
 public:
 	Monitor( const Monitor & ) = delete ;

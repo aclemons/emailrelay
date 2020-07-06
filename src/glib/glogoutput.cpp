@@ -251,7 +251,7 @@ void G::LogOutput::assertionFailure( const char * file , int line , const char *
 	}
 }
 
-void G::LogOutput::assertionAbort() // [[analyzer_noreturn]]
+void G::LogOutput::assertionAbort()
 {
 	std::abort() ;
 }

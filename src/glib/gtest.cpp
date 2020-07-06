@@ -61,7 +61,7 @@ bool G::Test::enabled( const char * name )
 	}
 	return result ;
 }
-bool G::Test::enabled()
+bool G::Test::enabled() noexcept
 {
 	return true ;
 }
@@ -69,7 +69,7 @@ bool G::Test::enabled()
 void G::Test::set( const std::string & )
 {
 }
-bool G::Test::enabled()
+bool G::Test::enabled() noexcept
 {
 	return false ;
 }

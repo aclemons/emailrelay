@@ -240,7 +240,7 @@ void G::NewProcessImp::printError( int stdxxx , const std::string & s )
 	// write an exec-failure message back down the pipe
 	if( stdxxx <= 0 ) return ;
 	ssize_t rc = ::write( stdxxx , s.c_str() , s.length() ) ;
-	G_IGNORE_VARIABLE( ssize_t , rc ) ;
+	G__IGNORE_VARIABLE( ssize_t , rc ) ;
 }
 
 int G::NewProcessImp::run( const G::Path & exe , const StringArray & args , const Environment & env , bool strict_path )

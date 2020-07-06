@@ -168,6 +168,7 @@ sub _switches
 		( exists($sw{Verbose}) ? "--verbose " : "" ) .
 		( exists($sw{Forward}) ? "--forward " : "" ) .
 		( exists($sw{ForwardTo}) ? "--forward-to __FORWARD_TO__ " : "" ) .
+		( exists($sw{ForwardToSome}) ? "--forward-to-some " : "" ) .
 		( exists($sw{User}) ? "--user __USER__ " : "" ) .
 		( exists($sw{Debug}) ? "--debug " : "" ) .
 		( !System::unix() && exists($sw{Log}) ? "--log-file __LOG_FILE__ " : "" ) .
@@ -368,7 +369,7 @@ sub hasThreads
 	if( System::unix() )
 	{
 		my $exe = $this->exe() ;
-		my $rc = system( "$exe --version --verbose | grep -qi threading.*enabled" ) ;
+		my $rc = system( "$exe --version --verbose | grep -qi threading:.*enabled" ) ;
 		return $rc == 0 ;
 	}
 	else
@@ -377,5 +378,23 @@ sub hasThreads
 	}
 }
 
-1 ;
+sub hasTls
+{
+	# Returns true if the executable has tls support.
 
+	my ( $this ) = @_ ;
+	my $exe = $this->exe() ;
+	$exe =~ s/\.exe$/-textmode.exe/ if !System::unix() ;
+	my $fh = new FileHandle( "$exe --version --verbose |" ) ;
+	while(<$fh>)
+	{
+		chomp( my $line = $_ ) ;
+		if( $line =~ m/tls.library:/i )
+		{
+			return ( $line =~ m/openssl/i ) || ( $line =~ m/mbed/i ) ;
+		}
+	}
+	return undef ;
+}
+
+1 ;

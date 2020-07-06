@@ -39,8 +39,6 @@
 #include "access.h"
 #include "serverconfiguration.h"
 #include "installer.h"
-#include "service_install.h"
-#include "service_remove.h"
 #include <exception>
 #include <iostream>
 #include <stdexcept>

@@ -61,23 +61,25 @@ libgsmtp_a_SOURCES = \
 	$(ADMIN_SOURCES) \
 	$(EXEC_SOURCES) \
 	$(OS_SOURCES) \
+	genvelope.cpp \
+	genvelope.h \
 	gfactoryparser.cpp \
 	gfactoryparser.h \
 	gfilestore.cpp \
 	gfilestore.h \
+	gfilter.cpp \
+	gfilter.h \
+	gfilterfactory.h \
 	ginternalverifier.cpp \
 	ginternalverifier.h \
 	gmessagestore.cpp \
 	gmessagestore.h \
 	gnullfilter.cpp \
 	gnullfilter.h \
-	gfilterfactory.h \
 	gnewfile.cpp \
 	gnewfile.h \
 	gnewmessage.cpp \
 	gnewmessage.h \
-	gfilter.cpp \
-	gfilter.h \
 	gprotocolmessage.cpp \
 	gprotocolmessageforward.cpp \
 	gprotocolmessageforward.h \

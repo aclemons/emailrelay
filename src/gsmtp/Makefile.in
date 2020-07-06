@@ -117,19 +117,19 @@ am__libgsmtp_a_SOURCES_DIST = gadminserver.cpp gadminserver.h \
 	gnetworkverifier.h gfilterfactory.cpp grequestclient.cpp \
 	grequestclient.h gspamclient.cpp gspamclient.h gspamfilter.cpp \
 	gspamfilter.h gverifierfactory.cpp gmessagestore_unix.cpp \
-	gmessagestore_win32.cpp gfactoryparser.cpp gfactoryparser.h \
-	gfilestore.cpp gfilestore.h ginternalverifier.cpp \
-	ginternalverifier.h gmessagestore.cpp gmessagestore.h \
-	gnullfilter.cpp gnullfilter.h gfilterfactory.h gnewfile.cpp \
-	gnewfile.h gnewmessage.cpp gnewmessage.h gfilter.cpp gfilter.h \
-	gprotocolmessage.cpp gprotocolmessageforward.cpp \
-	gprotocolmessageforward.h gprotocolmessage.h \
-	gprotocolmessagestore.cpp gprotocolmessagestore.h \
-	gsmtpclient.cpp gsmtpclient.h gsmtpclientprotocol.cpp \
-	gsmtpclientprotocol.h gsmtpserver.cpp gsmtpserver.h \
-	gsmtpserverprotocol.cpp gsmtpserverprotocol.h gstoredfile.cpp \
-	gstoredfile.h gstoredmessage.cpp gstoredmessage.h \
-	gverifier.cpp gverifier.h gverifierfactory.h \
+	gmessagestore_win32.cpp genvelope.cpp genvelope.h \
+	gfactoryparser.cpp gfactoryparser.h gfilestore.cpp \
+	gfilestore.h gfilter.cpp gfilter.h gfilterfactory.h \
+	ginternalverifier.cpp ginternalverifier.h gmessagestore.cpp \
+	gmessagestore.h gnullfilter.cpp gnullfilter.h gnewfile.cpp \
+	gnewfile.h gnewmessage.cpp gnewmessage.h gprotocolmessage.cpp \
+	gprotocolmessageforward.cpp gprotocolmessageforward.h \
+	gprotocolmessage.h gprotocolmessagestore.cpp \
+	gprotocolmessagestore.h gsmtpclient.cpp gsmtpclient.h \
+	gsmtpclientprotocol.cpp gsmtpclientprotocol.h gsmtpserver.cpp \
+	gsmtpserver.h gsmtpserverprotocol.cpp gsmtpserverprotocol.h \
+	gstoredfile.cpp gstoredfile.h gstoredmessage.cpp \
+	gstoredmessage.h gverifier.cpp gverifier.h gverifierfactory.h \
 	gverifierstatus.cpp gverifierstatus.h
 am__objects_1 = gadminserver.$(OBJEXT)
 am__objects_2 = gexecutablefilter.$(OBJEXT) \
@@ -140,11 +140,11 @@ am__objects_2 = gexecutablefilter.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@am__objects_3 = gmessagestore_unix.$(OBJEXT)
 @GCONFIG_WINDOWS_TRUE@am__objects_3 = gmessagestore_win32.$(OBJEXT)
 am_libgsmtp_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
-	$(am__objects_3) gfactoryparser.$(OBJEXT) gfilestore.$(OBJEXT) \
+	$(am__objects_3) genvelope.$(OBJEXT) gfactoryparser.$(OBJEXT) \
+	gfilestore.$(OBJEXT) gfilter.$(OBJEXT) \
 	ginternalverifier.$(OBJEXT) gmessagestore.$(OBJEXT) \
 	gnullfilter.$(OBJEXT) gnewfile.$(OBJEXT) gnewmessage.$(OBJEXT) \
-	gfilter.$(OBJEXT) gprotocolmessage.$(OBJEXT) \
-	gprotocolmessageforward.$(OBJEXT) \
+	gprotocolmessage.$(OBJEXT) gprotocolmessageforward.$(OBJEXT) \
 	gprotocolmessagestore.$(OBJEXT) gsmtpclient.$(OBJEXT) \
 	gsmtpclientprotocol.$(OBJEXT) gsmtpserver.$(OBJEXT) \
 	gsmtpserverprotocol.$(OBJEXT) gstoredfile.$(OBJEXT) \
@@ -383,23 +383,25 @@ libgsmtp_a_SOURCES = \
 	$(ADMIN_SOURCES) \
 	$(EXEC_SOURCES) \
 	$(OS_SOURCES) \
+	genvelope.cpp \
+	genvelope.h \
 	gfactoryparser.cpp \
 	gfactoryparser.h \
 	gfilestore.cpp \
 	gfilestore.h \
+	gfilter.cpp \
+	gfilter.h \
+	gfilterfactory.h \
 	ginternalverifier.cpp \
 	ginternalverifier.h \
 	gmessagestore.cpp \
 	gmessagestore.h \
 	gnullfilter.cpp \
 	gnullfilter.h \
-	gfilterfactory.h \
 	gnewfile.cpp \
 	gnewfile.h \
 	gnewmessage.cpp \
 	gnewmessage.h \
-	gfilter.cpp \
-	gfilter.h \
 	gprotocolmessage.cpp \
 	gprotocolmessageforward.cpp \
 	gprotocolmessageforward.h \
@@ -473,6 +475,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gadminserver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/genvelope.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutablefilter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutableverifier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfactoryparser.Po@am__quote@

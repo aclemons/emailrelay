@@ -34,7 +34,7 @@ GNet::ServerPeer::ServerPeer( ExceptionSink es , const ServerPeerInfo & peer_inf
 	m_idle_timer(*this,&ServerPeer::onIdleTimeout,es)
 {
 	G_ASSERT( peer_info.m_server != nullptr ) ;
-	G_ASSERT( m_socket.get() != nullptr ) ;
+	G_ASSERT( m_socket.get() ) ;
 	//G_ASSERT( es.esrc() != nullptr ) ; // moot
 	G_DEBUG( "GNet::ServerPeer::ctor: [" << this << "]: port " << m_address.port() ) ;
 
@@ -43,15 +43,13 @@ GNet::ServerPeer::ServerPeer( ExceptionSink es , const ServerPeerInfo & peer_inf
 
 	m_socket->addReadHandler( *this , es ) ;
 	m_socket->addOtherHandler( *this , es ) ;
-	Monitor::addServerPeer(*this) ;
+	Monitor::addServerPeer( *this ) ;
 }
 
 GNet::ServerPeer::~ServerPeer()
 {
 	G_DEBUG( "GNet::ServerPeer::dtor: [" << this << "]: port " << m_address.port() ) ;
-	Monitor::removeServerPeer(*this) ;
-	m_socket->dropReadHandler() ;
-	m_socket->dropOtherHandler() ;
+	Monitor::removeServerPeer( *this ) ;
 }
 
 void GNet::ServerPeer::secureAccept()
@@ -66,7 +64,7 @@ void GNet::ServerPeer::expect( std::size_t n )
 
 GNet::StreamSocket & GNet::ServerPeer::socket()
 {
-	G_ASSERT( m_socket.get() != nullptr ) ;
+	G_ASSERT( m_socket != nullptr ) ;
 	return *m_socket ;
 }
 
@@ -82,7 +80,7 @@ void GNet::ServerPeer::readEvent()
 
 std::pair<bool,GNet::Address> GNet::ServerPeer::localAddress() const
 {
-	G_ASSERT( m_socket.get() != nullptr ) ;
+	G_ASSERT( m_socket != nullptr ) ;
 	return m_socket->getLocalAddress() ;
 }
 

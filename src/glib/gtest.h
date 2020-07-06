@@ -52,7 +52,7 @@ public:
 	static void set( const std::string & ) ;
 		///< Sets the test specification string.
 
-	static bool enabled() ;
+	static bool enabled() noexcept ;
 		///< Returns true if test features are enabled.
 
 	static bool enabled( const char * name ) ;
