@@ -104,7 +104,8 @@ public:
 		///< Returns !valid().
 
 	CallFrame * outer() noexcept ;
-		///< Returns the next outermost frame in the stack.
+		///< Returns the next frame in the stack going from innermost
+		///< to outermost.
 
 public:
 	CallFrame( const CallFrame & ) = delete ;

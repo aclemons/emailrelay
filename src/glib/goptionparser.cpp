@@ -71,7 +71,7 @@ G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t
 		}
 		else if( isNewOption(arg) ) // eg. "--foo"
 		{
-			std::string name = arg.substr( 2U ) ; // eg. "foo" or "foo=..."
+			std::string name = arg.substr( 2U ) ; // eg. "--foo" or "--foo=..."
 			std::string::size_type pos_eq = eqPos( name ) ;
 			bool has_eq = pos_eq != std::string::npos ;
 			std::string key = has_eq ? name.substr(0U,pos_eq) : name ;
@@ -81,7 +81,9 @@ G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t
 				processOptionOff( key ) ;
 			else if( has_eq ) // "foo=bar"
 				processOption( key , eqValue(name,pos_eq) , false ) ;
-			else if( m_spec.valued(name) && (i+1U) >= args_in.size() ) // "foo bar"
+			else if( m_spec.defaulting(name) )
+				processOption( key , std::string() , false ) ;
+			else if( m_spec.valued(name) && (i+1U) >= args_in.size() )
 				errorNoValue( name ) ;
 			else if( m_spec.valued(name) )
 				processOption( name , args_in.at(++i) , true ) ;
@@ -111,6 +113,8 @@ void G::OptionParser::processOptionOn( const std::string & name )
 		errorNoValue( name ) ;
 	else if( haveSeenOff(name) )
 		errorConflict( name ) ;
+	else if( haveSeenOn(name) )
+		m_map.increment( name ) ;
 	else
 		m_map.insert( std::make_pair(name,OptionValue::on()) ) ;
 }
@@ -123,6 +127,8 @@ void G::OptionParser::processOptionOff( const std::string & name )
 		errorNoValue( name ) ;
 	else if( haveSeenOn(name) )
 		errorConflict( name ) ;
+	else if( haveSeenOff(name) )
+		m_map.increment( name ) ;
 	else
 		m_map.insert( std::make_pair(name,OptionValue::off()) ) ;
 }
@@ -135,8 +141,12 @@ void G::OptionParser::processOption( const std::string & name , const std::strin
 		errorDubiousValue( name , value ) ;
 	else if( !m_spec.valued(name) && !value.empty() )
 		errorExtraValue( name , value ) ;
-	else if( haveSeen(name) && !m_spec.multivalued(name) && !haveSeenSame(name,value) )
+	else if( m_spec.multivalued(name) )
+		m_map.insert( OptionMap::value_type(name,OptionValue(value,valueCount(value))) ) ;
+	else if( haveSeen(name) && !haveSeenSame(name,value) )
 		errorDuplicate( name ) ;
+	else if( haveSeen(name) )
+		m_map.increment( name ) ;
 	else
 		m_map.insert( OptionMap::value_type(name,OptionValue(value)) ) ;
 }
@@ -150,6 +160,8 @@ void G::OptionParser::processOptionOn( char c )
 		errorNoValue( c ) ;
 	else if( haveSeenOff(name) )
 		errorConflict( name ) ;
+	else if( haveSeenOn(name) )
+		m_map.increment( name ) ;
 	else
 		m_map.insert( std::make_pair(name,OptionValue::on()) ) ;
 }
@@ -161,8 +173,12 @@ void G::OptionParser::processOption( char c , const std::string & value )
 		errorUnknownOption( c ) ;
 	else if( !m_spec.valued(name) && !value.empty() )
 		errorExtraValue( name , value ) ;
-	else if( haveSeen(name) && !m_spec.multivalued(c) && !haveSeenSame(name,value) )
+	else if( m_spec.multivalued(c) )
+		m_map.insert( OptionMap::value_type(name,OptionValue(value,valueCount(value))) ) ;
+	else if( haveSeen(name) && !haveSeenSame(name,value) )
 		errorDuplicate( c ) ;
+	else if( haveSeen(name) )
+		m_map.increment( name ) ;
 	else
 		m_map.insert( OptionMap::value_type(name,OptionValue(value)) ) ;
 }
@@ -266,6 +282,11 @@ bool G::OptionParser::haveSeenSame( const std::string & name , const std::string
 {
 	auto p = m_map.find( name ) ;
 	return p != m_map.end() && (*p).second.value() == value ;
+}
+
+std::size_t G::OptionParser::valueCount( const std::string & s )
+{
+	return 1U + std::count( s.begin() , s.end() , ',' ) ;
 }
 
 /// \file goptionparser.cpp

@@ -17,7 +17,6 @@
 //
 // gaddress6.cpp
 //
-// This file is formatted for side-by-side comparison with gaddress4.cpp.
 
 #include "gdef.h"
 #include "gaddress6.h"

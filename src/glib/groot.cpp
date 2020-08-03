@@ -67,7 +67,7 @@ G::Root::~Root()
 			Process::beOrdinary( m_ordinary , m_change_group ) ; // throws on error
 		}
 	}
-	catch( std::exception & e )
+	catch( std::exception & )
 	{
 		Process::terminate() ;
 	}

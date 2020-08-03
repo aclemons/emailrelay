@@ -62,6 +62,35 @@ bool Main::Configuration::useSyslog() const
 	return use_syslog_override || basic ;
 }
 
+bool Main::Configuration::validSyslogFacility() const
+{
+	std::string s = m_map.value( "syslog" ) ;
+	return s.empty() || s == "mail" || s == "user" || s == "daemon" ||
+		( s.length() == 6U && s.find("local") == 0U &&
+			( s.at(5U) >= '0' && s.at(5U) <= '7' ) ) ;
+}
+
+std::string Main::Configuration::validSyslogFacilities() const
+{
+	return "mail, user, daemon, local0..7" ;
+}
+
+G::LogOutput::SyslogFacility Main::Configuration::syslogFacility() const
+{
+	std::string s = m_map.value( "syslog" ) ;
+	if( s == "user" ) return G::LogOutput::SyslogFacility::User ;
+	if( s == "daemon" ) return G::LogOutput::SyslogFacility::Daemon ;
+	if( s == "local0" ) return G::LogOutput::SyslogFacility::Local0 ;
+	if( s == "local1" ) return G::LogOutput::SyslogFacility::Local1 ;
+	if( s == "local2" ) return G::LogOutput::SyslogFacility::Local2 ;
+	if( s == "local3" ) return G::LogOutput::SyslogFacility::Local3 ;
+	if( s == "local4" ) return G::LogOutput::SyslogFacility::Local4 ;
+	if( s == "local5" ) return G::LogOutput::SyslogFacility::Local5 ;
+	if( s == "local6" ) return G::LogOutput::SyslogFacility::Local6 ;
+	if( s == "local7" ) return G::LogOutput::SyslogFacility::Local7 ;
+	return G::LogOutput::SyslogFacility::Mail ;
+}
+
 bool Main::Configuration::logTimestamp() const
 {
 	return m_map.contains( "log-time" ) ;
@@ -352,12 +381,12 @@ G::Path Main::Configuration::serverTlsCaList() const
 
 std::string Main::Configuration::clientTlsPeerCertificateName() const
 {
-	return m_map.value("client-tls-verify-name") ;
+	return m_map.value( "client-tls-verify-name" ) ;
 }
 
 std::string Main::Configuration::clientTlsPeerHostName() const
 {
-	return m_map.value("client-tls-server-name") ;
+	return m_map.value( "client-tls-server-name" ) ;
 }
 
 G::Path Main::Configuration::clientTlsCertificate() const
@@ -450,6 +479,12 @@ bool Main::Configuration::anonymous() const
 	return m_map.contains( "anonymous" ) ;
 }
 
+bool Main::Configuration::smtpPipelining() const
+{
+	// allow broken clients by default
+	return m_map.value( "test" ) != "smtp-no-pipelining" ;
+}
+
 unsigned int Main::Configuration::filterTimeout() const
 {
 	return G::Str::toUInt( m_map.value( "filter-timeout" , "300" ) ) ;
@@ -470,6 +505,11 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 {
 	G::StringArray errors ;
 	G::StringArray warnings ;
+
+	if( m_map.contains("syslog") && !validSyslogFacility() )
+	{
+		errors.push_back( "invalid --syslog facility [" + m_map.value("syslog") + "]: use " + validSyslogFacilities() ) ;
+	}
 
 	if( m_map.contains("poll") && G::Str::toUInt(m_map.value("poll","0")) == 0U )
 	{
@@ -706,6 +746,11 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 	if( m_map.contains("show") && ( no_daemon || m_map.contains("hidden") ) ) // (windows)
 	{
 		warnings.push_back( "the --show option is ignored when using --no-daemon, --as-client or --hidden" ) ;
+	}
+
+	if( m_map.contains("dnsblock") && !m_map.contains("remote-clients") )
+	{
+		warnings.push_back( "the --dnsblock option should be used with --remote-clients" ) ;
 	}
 
 	return want_errors ? errors : warnings ;

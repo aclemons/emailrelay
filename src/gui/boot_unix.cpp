@@ -24,10 +24,9 @@
 #include "gfile.h"
 #include "gdirectory.h"
 
-// TODO - other init systems
-
 bool Boot::able( const G::Path & dir )
 {
+	// check /etc/init.d is writable
 	return
 		dir != G::Path() &&
 		G::Directory(dir).valid(true) &&
@@ -37,16 +36,15 @@ bool Boot::able( const G::Path & dir )
 bool Boot::install( const G::Path & dir_boot , const std::string & name , const G::Path & startstop_src , const G::Path & )
 {
 	G::Path startstop_dst = dir_boot + name ;
-	//if( !G::File::exists(startstop_dst) ) // moot
-	G::File::copy( startstop_src , startstop_dst , G::File::NoThrow() ) ;
+	bool ok0 = G::File::copy( startstop_src , startstop_dst , G::File::NoThrow() ) ;
 
 	std::string symlink = "../" + dir_boot.basename() + "/" + name ;
 	std::string linkname = "S50" + name ;
-	bool ok0 = G::File::link( symlink , dir_boot+".."+"rc2.d"+linkname , G::File::NoThrow() ) ;
-	bool ok1 = G::File::link( symlink , dir_boot+".."+"rc3.d"+linkname , G::File::NoThrow() ) ;
-	bool ok2 = G::File::link( symlink , dir_boot+".."+"rc4.d"+linkname , G::File::NoThrow() ) ;
-	bool ok3 = G::File::link( symlink , dir_boot+".."+"rc5.d"+linkname , G::File::NoThrow() ) ;
-	return ok0 && ok1 && ok2 && ok3 ;
+	bool ok1 = G::File::link( symlink , dir_boot+".."+"rc2.d"+linkname , G::File::NoThrow() ) ;
+	bool ok2 = G::File::link( symlink , dir_boot+".."+"rc3.d"+linkname , G::File::NoThrow() ) ;
+	bool ok3 = G::File::link( symlink , dir_boot+".."+"rc4.d"+linkname , G::File::NoThrow() ) ;
+	bool ok4 = G::File::link( symlink , dir_boot+".."+"rc5.d"+linkname , G::File::NoThrow() ) ;
+	return ok0 && ok1 && ok2 && ok3 && ok4 ;
 }
 
 bool Boot::uninstall( const G::Path & dir_boot , const std::string & name , const G::Path & , const G::Path & )

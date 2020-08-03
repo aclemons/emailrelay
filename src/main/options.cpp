@@ -67,7 +67,7 @@ std::string Main::Options::spec( bool is_windows )
 			// user-id when idle. This option can be used to define which user-id is
 			// used. Specify "root" to disable all user-id switching. Ignored on Windows.
 
-		"k!syslog!forces syslog output if logging is enabled (overrides --no-syslog)!!0!!3|"
+		"k!syslog!forces syslog output if logging is enabled (overrides --no-syslog)!!01!facility!3|"
 			// When used with --log this option enables logging to the syslog even
 			// if the --no-syslog option is also used. This is typically used as
 			// a convenient override when using --as-client.
@@ -372,7 +372,7 @@ std::string Main::Options::spec( bool is_windows )
 
 		"I!interface!defines the listening network addresses used for incoming connections! (comma-separated list with optional smtp=,pop=,admin= qualifiers)!2!ip-address-list!3|"
 			//example: 127.0.0.1,smtp=eth0
-			//example: smtp=::,admin=lo-ipv4,pop=10.0.0.1
+			//example: fe80::1%1,smtp=::,admin=lo-ipv4,pop=10.0.0.1
 			//example: lo
 			//example: 10.0.0.1
 			// Specifies the IP network addresses or interface names used to bind
@@ -398,7 +398,7 @@ std::string Main::Options::spec( bool is_windows )
 			// addresses returned from DNS lookups of the --forward-to address,
 			// or "::" for IPv6.
 
-		"i!pid-file!defines a file for storing the daemon process-id!!2!pid-file!3|"
+		"i!pid-file!defines a file for storing the daemon process-id!!1!pid-file!3|"
 			//example: /run/emailrelay/emailrelay.pid
 			//example: C:/ProgramData/E-MailRelay/pid.txt
 			// Causes the process-id to be written into the specified file when the

@@ -266,3 +266,7 @@ MSG00001.bin messages.rc: fakemc.exe messages.mc
 fakemc.exe: $(top_srcdir)/src/main/fakemc.c
 	$(CC) -o fakemc.exe $(top_srcdir)/src/main/fakemc.c
 
+.PHONY: strip
+strip:
+	$(STRIP) $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
+

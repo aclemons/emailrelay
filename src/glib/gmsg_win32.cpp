@@ -23,14 +23,13 @@
 #include "gprocess.h"
 #include "gstr.h"
 
-ssize_t G::Msg::send( SOCKET fd , const void * buffer , std::size_t size , int flags ,
-	int fd_to_send )
+ssize_t G::Msg::send( SOCKET fd , const void * buffer , std::size_t size , int flags , int )
 {
 	return ::send( fd , reinterpret_cast<const char*>(buffer) , static_cast<int>(size) , flags ) ;
 }
 
 ssize_t G::Msg::sendto( SOCKET fd , const void * buffer , std::size_t size , int flags ,
-	const sockaddr * address_p , socklen_t address_n , int fd_to_send )
+	const sockaddr * address_p , socklen_t address_n , int )
 {
 	return ::sendto( fd , reinterpret_cast<const char*>(buffer) , static_cast<int>(size) , flags , address_p , address_n ) ;
 }

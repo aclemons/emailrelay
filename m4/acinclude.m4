@@ -54,6 +54,9 @@ AC_DEFUN([GCONFIG_FN_CHECK_FUNCTIONS],[
 	AC_REQUIRE([GCONFIG_FN_GETENV_S])
 	AC_REQUIRE([GCONFIG_FN_PUTENV_S])
 	AC_REQUIRE([GCONFIG_FN_FSOPEN])
+	AC_REQUIRE([GCONFIG_FN_SOPEN])
+	AC_REQUIRE([GCONFIG_FN_SOPEN_S])
+	AC_REQUIRE([GCONFIG_FN_EXTENDED_OPEN])
 	AC_REQUIRE([GCONFIG_FN_READLINK])
 	AC_REQUIRE([GCONFIG_FN_ICONV])
 	AC_REQUIRE([GCONFIG_FN_PROC_PIDPATH])
@@ -848,11 +851,37 @@ AC_DEFUN([GCONFIG_FN_ENABLE_WINDOWS],
 	AM_CONDITIONAL([GCONFIG_WINDOWS],test "$enable_windows" = "yes" -o "`uname -o 2>/dev/null`" = "Msys")
 ])
 
+dnl GCONFIG_FN_EXTENDED_OPEN
+dnl ------------------------
+dnl Defines GCONFIG_HAVE_EXTENDED_OPEN if fstream open
+dnl can take a third, share-mode parameter.
+dnl
+AC_DEFUN([GCONFIG_FN_EXTENDED_OPEN],
+[AC_CACHE_CHECK([for extended fstream open],[gconfig_cv_extended_open],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <windows.h>]
+			[#include <share.h>]
+			[#include <fstream>]
+		],
+		[
+			[std::ofstream stream ;]
+			[stream.open(".",std::ios_base::out,_SH_DENYNO) ;]
+		])],
+		gconfig_cv_extended_open=yes ,
+		gconfig_cv_extended_open=no )
+])
+	if test "$gconfig_cv_extended_open" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_EXTENDED_OPEN,1,[Define true if extended fstream::open() is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_EXTENDED_OPEN,0,[Define true if extended fstream::open() is available])
+	fi
+])
+
 dnl GCONFIG_FN_FSOPEN
 dnl -----------------
-dnl Defines GCONFIG_HAVE_FSOPEN if _fsopen() and the extra
-dnl sharing-mode parameter for std::stream::open() etc are
-dnl available.
+dnl Defines GCONFIG_HAVE_FSOPEN if _fsopen() is available.
 dnl
 AC_DEFUN([GCONFIG_FN_FSOPEN],
 [AC_CACHE_CHECK([for _fsopen()],[gconfig_cv_fsopen],
@@ -864,7 +893,7 @@ AC_DEFUN([GCONFIG_FN_FSOPEN],
 			[FILE * fp = 0 ;]
 		],
 		[
-			[fp = _sfopen("foo","w",_SH_DENYNO) ;]
+			[fp = _fsopen("foo","w",_SH_DENYNO) ;]
 		])],
 		gconfig_cv_fsopen=yes ,
 		gconfig_cv_fsopen=no )
@@ -873,6 +902,61 @@ AC_DEFUN([GCONFIG_FN_FSOPEN],
 		AC_DEFINE(GCONFIG_HAVE_FSOPEN,1,[Define true if _fsopen() is available])
 	else
 		AC_DEFINE(GCONFIG_HAVE_FSOPEN,0,[Define true if _fsopen() is available])
+	fi
+])
+
+dnl GCONFIG_FN_SOPEN
+dnl ----------------
+dnl Defines GCONFIG_HAVE_SOPEN if _sopen() is available.
+dnl
+AC_DEFUN([GCONFIG_FN_SOPEN],
+[AC_CACHE_CHECK([for _sopen()],[gconfig_cv_sopen],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <io.h>]
+			[#include <share.h>]
+			[#include <fcntl.h>]
+			[int fd = 0 ;]
+		],
+		[
+			[fd = _sopen("foo",_O_WRONLY,_SH_DENYNO) ;]
+		])],
+		gconfig_cv_sopen=yes ,
+		gconfig_cv_sopen=no )
+])
+	if test "$gconfig_cv_sopen" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_SOPEN,1,[Define true if _sopen() is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_SOPEN,0,[Define true if _sopen() is available])
+	fi
+])
+
+dnl GCONFIG_FN_SOPEN_S
+dnl ------------------
+dnl Defines GCONFIG_HAVE_SOPEN if _sopen_s() is available.
+dnl
+AC_DEFUN([GCONFIG_FN_SOPEN_S],
+[AC_CACHE_CHECK([for _sopen_s()],[gconfig_cv_sopen_s],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <io.h>]
+			[#include <share.h>]
+			[#include <fcntl.h>]
+			[#include <sys/stat.h>]
+			[int fd = 0 ;]
+		],
+		[
+			[errno_t e = _sopen_s(&fd,"foo",_O_WRONLY,_SH_DENYNO,_S_IWRITE) ;]
+		])],
+		gconfig_cv_sopen_s=yes ,
+		gconfig_cv_sopen_s=no )
+])
+	if test "$gconfig_cv_sopen_s" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_SOPEN_S,1,[Define true if _sopen_s() is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_SOPEN_S,0,[Define true if _sopen_s() is available])
 	fi
 ])
 
@@ -2393,10 +2477,10 @@ AC_DEFUN([GCONFIG_FN_RTNETLINK],
 			[#include <sys/socket.h>]
 			[#include <linux/netlink.h>]
 			[#include <linux/rtnetlink.h>]
+			[int protocol = 0 ;]
 		] ,
 		[
-			[int type = AF_NETLINK ;]
-			[int protocol = NETLINK_ROUTE ;]
+			[protocol = NETLINK_ROUTE ;]
 			[struct sockaddr_nl sa ;]
 			[sa.nl_family = AF_NETLINK ;]
 			[sa.nl_groups = RTMGRP_LINK | RTMGRP_IPV4_IFADDR | RTMGRP_IPV6_IFADDR ;]

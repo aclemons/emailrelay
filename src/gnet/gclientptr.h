@@ -153,7 +153,7 @@ public:
 		///< Resets the pointer. There is no call to onDelete()
 		///< and no emitted signals.
 
-	T * get() ;
+	T * get() noexcept ;
 		///< Returns the pointer, or nullptr if deleted.
 
 	T * operator->() ;
@@ -269,7 +269,7 @@ void GNet::ClientPtr<T>::reset() noexcept
 }
 
 template <typename T>
-T * GNet::ClientPtr<T>::get()
+T * GNet::ClientPtr<T>::get() noexcept
 {
 	return m_p ;
 }

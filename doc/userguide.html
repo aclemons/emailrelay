@@ -392,12 +392,22 @@ WScript.Quit( 0 ) ;
     </p>
 
     <p>
-     To get E-MailRelay to reject spam outright you can just use <em>spamassassin -e</em> as
+     It's easiest to run SpamAssassin's <em>spamd</em> program in the background and let
+     E-MailRelay send incoming messages to it over the network. By default
+     SpamAssassin <em>spamd</em> uses port 783 so you should use an E-MailRelay
+     command-line option of <em>--filter spam-edit:127.0.0.1:783</em> if you want spam
+     messages to pass through with a warning added, or <em>--filter spam:127.0.0.1:783</em>
+     if you want spam messages to be rejected outright.
+    </p>
+
+    <p>
+     Alternatively you can run SpamAssassin on demand for each message. To get
+     E-MailRelay to reject spam outright you can just use <em>spamassassin -e</em> as
      your E-MailRelay <em>--filter</em> program:
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-server --filter="/usr/bin/spamassassin --exit-code"
+       <pre>emailrelay --as-server --filter="/usr/bin/spamassassin -e"
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -405,7 +415,7 @@ WScript.Quit( 0 ) ;
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-server --filter="c:/Program\ Files/perl/site/bin/spamassassin.bat --exit-code"
+       <pre>emailrelay --as-server --filter="c:/perl/site/bin/spamassassin.bat -e"
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -431,18 +441,10 @@ exit 0
     </p>
 
       <div class="div-pre">
-       <pre>c:\Program Files\perl\site\bin\spamassassin.bat %1 > %1.tmp
+       <pre>c:\perl\site\bin\spamassassin.bat %1 > %1.tmp
 ren %1.tmp %1
-exit 0
-</pre>
+exit 0</pre>
       </div><!-- div-pre -->
-    <p>
-     E-MailRelay can also talk to a SpamAssassin <em>spamd</em> daemon over the network
-     by using <em>--filter spam:localhost:783</em>. This rejects the the message if
-     <em>spamd</em> thinks it is spam, or by using <em>--filter spam-edit:localhost:783</em>
-     the message will be accepted but the content will be replaced by the
-     <em>spamd</em> output.
-    </p>
    <h2><a class="a-header" name="SH_1_14">Google mail</a></h2> <!-- index:2:SH:1:14:Google mail -->
     <p>
      To send mail via Google mail's SMTP gateway you will need to create a client
@@ -485,12 +487,26 @@ exit 0
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --port 587 --as-proxy=smtp.example.com:25@localhost:9050 --domain=anonymous.net --anonymous --connection-timeout=300
-
-
-
-</pre>
+       <pre>emailrelay --port 587 --as-proxy=smtp.example.com:25@localhost:9050 --domain=anonymous.net --anonymous --connection-timeout=300</pre>
       </div><!-- div-pre -->
+   <h2><a class="a-header" name="SH_1_16">Blocklists and dynamic firewalls</a></h2> <!-- index:2:SH:1:16:Blocklists and dynamic firewalls -->
+    <p>
+     E-MailRelay can consult with remote DNSBL blocklist servers in order to block
+     incoming connections from known spammers. Refer to the documentation of the
+     <em>--dnsbl</em> option for more details.
+    </p>
+
+    <p>
+     It is also possible to integrate E-MailRelay with intrusion detection systems
+     such as <em>fail2ban</em> that monitor log files and dynamically modify your iptables
+     firewall. Use E-MailRelay's <em>--log-address</em> command-line option so that the
+     remote IP address of any badly-behaved remote user is logged and made available
+     to <em>fail2ban</em>.
+    </p>
+
+
+
+
     <div class="div-footer">
      <p>
       Copyright (C) 2001-2020 Graeme Walker

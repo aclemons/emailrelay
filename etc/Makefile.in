@@ -148,8 +148,9 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(e_pamdir)" "$(DESTDIR)$(e_sysconfdir)"
-DATA = $(e_pam_DATA) $(e_sysconf_DATA)
+am__installdirs = "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_pamdir)" \
+	"$(DESTDIR)$(e_sysconfdir)"
+DATA = $(e_examples_DATA) $(e_pam_DATA) $(e_sysconf_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -281,11 +282,17 @@ top_srcdir = @top_srcdir@
 EXTRA_DIST = \
 	emailrelay.conf.template \
 	emailrelay.auth.template \
+	emailrelay-fail2ban-jail \
+	emailrelay-fail2ban-filter \
 	emailrelay.pam
 
 e_sysconf_DATA = \
 	emailrelay.conf.template \
 	emailrelay.auth.template
+
+e_examples_DATA = \
+	emailrelay-fail2ban-jail \
+	emailrelay-fail2ban-filter
 
 all: all-am
 
@@ -319,6 +326,27 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+install-e_examplesDATA: $(e_examples_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(e_examples_DATA)'; test -n "$(e_examplesdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(e_examplesdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(e_examplesdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(e_examplesdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(e_examplesdir)" || exit $$?; \
+	done
+
+uninstall-e_examplesDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(e_examples_DATA)'; test -n "$(e_examplesdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(e_examplesdir)'; $(am__uninstall_files_from_dir)
 install-e_pamDATA: $(e_pam_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(e_pam_DATA)'; test -n "$(e_pamdir)" || list=; \
@@ -402,7 +430,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(e_pamdir)" "$(DESTDIR)$(e_sysconfdir)"; do \
+	for dir in "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_pamdir)" "$(DESTDIR)$(e_sysconfdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -455,7 +483,8 @@ info: info-am
 
 info-am:
 
-install-data-am: install-e_pamDATA install-e_sysconfDATA
+install-data-am: install-e_examplesDATA install-e_pamDATA \
+	install-e_sysconfDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 install-dvi: install-dvi-am
@@ -500,7 +529,8 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-e_pamDATA uninstall-e_sysconfDATA
+uninstall-am: uninstall-e_examplesDATA uninstall-e_pamDATA \
+	uninstall-e_sysconfDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 .MAKE: install-am install-data-am install-strip uninstall-am
@@ -509,13 +539,14 @@ uninstall-am: uninstall-e_pamDATA uninstall-e_sysconfDATA
 	cscopelist-am ctags-am distclean distclean-generic distdir dvi \
 	dvi-am html html-am info info-am install install-am \
 	install-data install-data-am install-data-hook install-dvi \
-	install-dvi-am install-e_pamDATA install-e_sysconfDATA \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
-	pdf-am ps ps-am tags-am uninstall uninstall-am \
+	install-dvi-am install-e_examplesDATA install-e_pamDATA \
+	install-e_sysconfDATA install-exec install-exec-am \
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags-am \
+	uninstall uninstall-am uninstall-e_examplesDATA \
 	uninstall-e_pamDATA uninstall-e_sysconfDATA uninstall-hook
 
 .PRECIOUS: Makefile

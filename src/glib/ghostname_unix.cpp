@@ -31,8 +31,8 @@ std::string G::hostname()
 	if( rc == -1 )
 		return std::string() ;
 
-	std::string name = std::string(info.nodename) ;
-	std::string::size_type pos = name.find('.') ;
+	std::string name = std::string( info.nodename ) ;
+	std::string::size_type pos = name.find( '.' ) ;
 	if( pos != std::string::npos )
 		name = name.substr( 0U , pos ) ;
 
@@ -42,7 +42,7 @@ std::string G::hostname()
 	//
 	if( name.empty() )
 	{
-		name = Str::toPrintableAscii( Environment::get("HOSTNAME",std::string()) , '_' ) ;
+		name = Str::printable( Environment::get("HOSTNAME",std::string()) , '_' ) ;
 	}
 
 	return name ;

@@ -18,8 +18,8 @@
 /// \file gdnsblock.h
 ///
 
-#ifndef GNET_DNS_BLOCK__H
-#define GNET_DNS_BLOCK__H
+#ifndef G_NET_DNS_BLOCK__H
+#define G_NET_DNS_BLOCK__H
 
 #include "gdef.h"
 #include "gaddress.h"

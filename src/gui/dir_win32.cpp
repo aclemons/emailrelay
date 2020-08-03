@@ -20,9 +20,14 @@
 
 #include "gdef.h"
 #include "gconvert.h"
+#include "dir.h"
+#include "gfile.h"
+#include "gpath.h"
+#include "glog.h"
+#include <stdexcept>
+#include <vector>
 #include <shlwapi.h>
 #include <shlobj.h>
-#include <vector>
 
 #ifndef SHGFP_TYPE_CURRENT
 #define SHGFP_TYPE_CURRENT 0
@@ -33,12 +38,6 @@
 #ifndef CSIDL_PROGRAM_FILESX86
 #define CSIDL_PROGRAM_FILESX86 42
 #endif
-
-#include "dir.h"
-#include "gfile.h"
-#include "gpath.h"
-#include "glog.h"
-#include <stdexcept>
 
 G::Path Dir::os_install()
 {
@@ -86,10 +85,12 @@ G::Path Dir::special( const std::string & type )
 	// this is not quite right when running with UAC administrator rights because
 	// it gets the administrator's user directories for the desktop etc links and not
 	// the user's -- and there is no reasonable way to get the user's access token
-	char buffer[MAX_PATH] = { 0 } ;
+	std::vector<char> buffer( MAX_PATH+1U ) ;
+	buffer.at(0) = '\0' ;
 	HANDLE user_token = HNULL ; // TODO original user's paths when run-as administrator
-	bool ok = S_OK == SHGetFolderPathA( HNULL , special_id(type) , user_token , SHGFP_TYPE_CURRENT , buffer ) ;
-	return ok ? G::Path(buffer) : G::Path("c:/") ;
+	bool ok = S_OK == SHGetFolderPathA( HNULL , special_id(type) , user_token , SHGFP_TYPE_CURRENT , &buffer[0] ) ;
+	buffer.at(buffer.size()-1U) = '\0' ;
+	return ok ? G::Path(&buffer[0]) : G::Path("c:/") ;
 }
 
 G::Path Dir::home()

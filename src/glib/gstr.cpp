@@ -1458,8 +1458,8 @@ G::StringArray::iterator G::Str::keepMatch( StringArray::iterator begin , String
 	const StringArray & match_list , bool ignore_case )
 {
 	namespace imp = G::StrImp ;
-	if( match_list.empty() ) return end ;
 	using namespace std::placeholders ;
+	if( match_list.empty() ) return end ;
 	return std::remove_if( begin , end , std::bind(imp::notInList,match_list.begin(),match_list.end(),_1,ignore_case) ) ;
 }
 

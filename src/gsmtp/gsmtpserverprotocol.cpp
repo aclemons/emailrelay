@@ -57,6 +57,7 @@ GSmtp::ServerProtocol::ServerProtocol( GNet::ExceptionSink es , Sender & sender 
 
 	// (dont send anything to the peer from this ctor -- the Sender object is not fuly constructed)
 
+	m_fsm.addTransition( Event::eQuit        , State::sProcessing , State::s_Same      , &GSmtp::ServerProtocol::doEagerQuit ) ;
 	m_fsm.addTransition( Event::eQuit        , State::s_Any       , State::sEnd        , &GSmtp::ServerProtocol::doQuit ) ;
 	m_fsm.addTransition( Event::eUnknown     , State::sProcessing , State::s_Same      , &GSmtp::ServerProtocol::doIgnore ) ;
 	m_fsm.addTransition( Event::eUnknown     , State::s_Any       , State::s_Same      , &GSmtp::ServerProtocol::doUnknown ) ;
@@ -163,16 +164,40 @@ void GSmtp::ServerProtocol::doStartTls( EventData , bool & ok )
 
 bool GSmtp::ServerProtocol::inDataState() const
 {
-	return m_fsm.state() == State::sData || m_fsm.state() == State::sDiscarding ;
+	return
+		m_fsm.state() == State::sData ||
+		m_fsm.state() == State::sDiscarding ;
+}
+
+bool GSmtp::ServerProtocol::halfDuplexBusy( const char * , std::size_t ) const
+{
+	return halfDuplexBusy() ;
+}
+
+bool GSmtp::ServerProtocol::halfDuplexBusy() const
+{
+	return
+		m_config.allow_pipelining && (
+			m_fsm.state() == State::sProcessing ||
+			m_fsm.state() == State::sVrfyStart ||
+			m_fsm.state() == State::sVrfyIdle ||
+			m_fsm.state() == State::sVrfyGotMail ||
+			m_fsm.state() == State::sVrfyGotRcpt ||
+			m_fsm.state() == State::sVrfyTo1 ||
+			m_fsm.state() == State::sVrfyTo2 ) ;
 }
 
 bool GSmtp::ServerProtocol::apply( const char * line_data , std::size_t line_data_size ,
 	std::size_t eolsize , std::size_t linesize , char c0 )
 {
 	G_ASSERT( eolsize == 2U || ( inDataState() && eolsize == 0U ) ) ;
+
+	// bundle the incoming data into a convenient structure
+	EventData event_data( line_data , line_data_size , eolsize , linesize , c0 ) ;
+
+	// parse the command into an event enum
 	Event event = Event::eUnknown ;
 	State state = m_fsm.state() ;
-	EventData event_data( line_data , line_data_size , eolsize , linesize , c0 ) ;
 	if( (state == State::sData || state == State::sDiscarding) && isEndOfText(event_data) )
 	{
 		event = Event::eEot ;
@@ -194,11 +219,14 @@ bool GSmtp::ServerProtocol::apply( const char * line_data , std::size_t line_dat
 		event_data = EventData( m_buffer.data() , m_buffer.size() ) ;
 	}
 
+	// apply the event to the state-machine
 	State new_state = m_fsm.apply( *this , event , event_data ) ;
 	if( new_state == State::s_Any )
 		sendOutOfSequence() ;
 
-	return true ; // see GNet::LineBuffer::apply()
+	// tell the network code to stop apply()ing us if we are now
+	// busy -- see GNet::LineBuffer::apply()
+	return !halfDuplexBusy() ;
 }
 
 void GSmtp::ServerProtocol::doContent( EventData event_data , bool & ok )
@@ -252,6 +280,17 @@ void GSmtp::ServerProtocol::doComplete( EventData event_data , bool & )
 	reset() ;
 	const bool empty = event_data.size == 0U ;
 	sendCompletionReply( empty , std::string(event_data.ptr,event_data.size) ) ;
+}
+
+void GSmtp::ServerProtocol::doEagerQuit( EventData , bool & )
+{
+	// broken client has sent "." and then immediatedly "QUIT" and we
+	// have not been saved by the half-duplex queueing -- if so
+	// configured we just ignore the quit with a warning
+	if( m_config.ignore_eager_quit )
+		G_WARNING( "GSmtp::ServerProtocol::doEagerQuit: ignoring out-of-sequence quit" ) ;
+	else
+		throw ProtocolDone( "protocol error: out-of-sequence quit" ) ;
 }
 
 void GSmtp::ServerProtocol::doQuit( EventData , bool & )
@@ -750,8 +789,10 @@ void GSmtp::ServerProtocol::sendWillAccept( const std::string & user )
 	send( "252 cannot verify but will accept: " + G::Str::printable(user) ) ;
 }
 
-void GSmtp::ServerProtocol::sendUnrecognised( const std::string & line )
+void GSmtp::ServerProtocol::sendUnrecognised( const std::string & line_in )
 {
+	std::string line = line_in.substr( 0U , 80U ) ;
+	if( line.size() >= 80U ) line.append( " ..." ) ;
 	send( "500 command unrecognized: \"" + G::Str::printable(line) + std::string(1U,'\"') ) ;
 	badClientEvent() ;
 }

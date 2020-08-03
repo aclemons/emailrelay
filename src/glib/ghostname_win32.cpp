@@ -26,14 +26,14 @@
 std::string G::hostname()
 {
 	std::vector<char> buffer( 257U , '\0' ) ; // documented hostname limit of 256
-	if( 0 == ::gethostname( &buffer[0] , static_cast<int>(buffer.size()-1U) ) && buffer.at(0U) != '\0' ) // winsock2.h
+	if( 0 == ::gethostname( &buffer[0] , static_cast<int>(buffer.size()-1U) ) && buffer.at(0U) != '\0' )
 	{
+		buffer[buffer.size()-1U] = '\0' ;
 		return std::string( &buffer[0] ) ;
 	}
 	else
 	{
-		return Str::toPrintableAscii(
-			Environment::get("COMPUTERNAME",std::string()) , '_' ) ;
+		return Str::printable( Environment::get("COMPUTERNAME",std::string()) , '_' ) ;
 	}
 }
 

@@ -69,6 +69,10 @@ RPM=$(RPM_ROOT)/RPMS/$(ARCH)/emailrelay-$(VERSION)-1.$(ARCH).rpm
 TAR=emailrelay-$(VERSION).tar.gz
 DEB=emailrelay_$(VERSION)_$(ARCH).deb
 
+.PHONY: strip
+strip:
+	$(MAKE) -C src/main strip
+
 .PHONY: rpm
 rpm: $(RPM)
 

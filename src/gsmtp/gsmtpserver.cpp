@@ -76,6 +76,7 @@ GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu , const GNet::Serv
 		GNet::ServerPeer(esu.bind(this),peer_info,GNet::LineBufferConfig::transparent()) ,
 		m_server(server) ,
 		m_block(*this,esu.bind(this),server_config.dnsbl_config) ,
+		m_flush_timer(*this,&ServerPeer::onFlushTimeout,esu.bind(this)) ,
 		m_check_timer(*this,&ServerPeer::onCheckTimeout,esu.bind(this)) ,
 		m_verifier(VerifierFactory::newVerifier(esu.bind(this),server_config.verifier_address,server_config.verifier_timeout)) ,
 		m_pmessage(server.newProtocolMessage(esu.bind(this))) ,
@@ -109,15 +110,37 @@ void GSmtp::ServerPeer::onSendComplete()
 
 void GSmtp::ServerPeer::onData( const char * data , std::size_t size )
 {
-	if( !m_block.busy() ) // DoS prevention
-		GNet::ServerPeer::onData( data , size ) ;
+	// discard anything received before we have even sent an initial greeting
+	if( m_block.busy() )
+		return ;
+
+	// just buffer up anything received in a half-duplex busy state
+	if( m_protocol.halfDuplexBusy(data,size) )
+	{
+		m_line_buffer.add( data , size ) ;
+		return ;
+	}
+
+	GNet::ServerPeer::onData( data , size ) ;
 }
 
 bool GSmtp::ServerPeer::onReceive( const char * data , std::size_t size , std::size_t , std::size_t , char )
 {
 	G_ASSERT( size != 0U ) ; if( size == 0U ) return true ;
 	m_line_buffer.apply( &m_protocol , &ServerProtocol::apply , data , size , &ServerProtocol::inDataState ) ;
+
+	if( m_protocol.halfDuplexBusy() && !m_line_buffer.state().empty() )
+	{
+		G_WARNING( "GSmtp::ServerPeer::onReceive: smtp client protocol violation: pipelining detected [" << G::Str::printable(m_line_buffer.state().head()) << "]" ) ;
+		m_flush_timer.startTimer( G::TimeInterval::limit() ) ;
+	}
+
 	return true ;
+}
+
+void GSmtp::ServerPeer::onFlushTimeout()
+{
+	m_line_buffer.apply( &m_protocol , &ServerProtocol::apply , nullptr , std::size_t(0U) , &ServerProtocol::inDataState ) ;
 }
 
 void GSmtp::ServerPeer::onSecure( const std::string & certificate , const std::string & cipher )
@@ -132,10 +155,17 @@ void GSmtp::ServerPeer::protocolSend( const std::string & line , bool go_secure 
 
 	if( go_secure )
 		secureAccept() ;
+
+	if( m_flush_timer.active() )
+	{
+		G_DEBUG( "GSmtp::ServerPeer::protocolSend: pipeline released (" << m_line_buffer.state().size() << ")" ) ;
+		m_flush_timer.startTimer( 0U ) ;
+	}
 }
 
 void GSmtp::ServerPeer::protocolShutdown()
 {
+	m_flush_timer.cancelTimer() ;
 	socket().shutdown() ; // fwiw
 }
 

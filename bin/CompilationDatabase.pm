@@ -21,15 +21,16 @@
 # Parses automake files throughout a source tree using AutoMakeParser
 # and generates a "compilation database" file, "compile_commands.json".
 #
+# See also: https://clang.llvm.org/docs/JSONCompilationDatabase.html
+#
 # Synopsis:
 #
 #    use CompilationDatabase ;
-#    my $cdb = new CompilationDatabase( $src_dir , ["-DFOO=BAR",...] , ["-I_TOP_"] , ["-Wall"] , {WINDOWS=>0,...} , {top_srcdir=>'..'} ) ;
+#    my $cdb = new CompilationDatabase( $src_dir ,
+#        ["-DFOO=BAR",...] , ["-I_TOP_"] , ["-Wall"] , {WINDOWS=>0,...} , {top_srcdir=>'..'} ) ;
 #    my @files = $cdb->list() ;
 #    my @stanzas = $cdb->stanzas() ;
 #    $cdb->print() ;
-#
-# See also: https://clang.llvm.org/docs/JSONCompilationDatabase.html
 #
 
 use strict ;

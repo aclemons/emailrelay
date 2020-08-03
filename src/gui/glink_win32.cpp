@@ -46,22 +46,25 @@ struct GComPtr
 	void operator=( GComPtr<I> && ) = delete ;
 } ;
 
-struct bstr
+namespace
 {
-	explicit bstr( const std::string & s )
+	struct bstr
 	{
-		std::wstring ws ;
-		G::Convert::convert( ws , s ) ;
-		m_p = SysAllocString( ws.c_str() ) ;
-	}
-	~bstr() { SysFreeString(m_p) ; }
-	BSTR p() { return m_p ; }
-	bstr( const bstr & ) = delete ;
-	bstr( bstr && ) = delete ;
-	void operator=( const bstr & ) = delete ;
-	void operator=( bstr && ) = delete ;
-	private: BSTR m_p ;
-} ;
+		explicit bstr( const std::string & s )
+		{
+			std::wstring ws ;
+			G::Convert::convert( ws , s ) ;
+			m_p = SysAllocString( ws.c_str() ) ;
+		}
+		~bstr() { SysFreeString(m_p) ; }
+		BSTR p() { return m_p ; }
+		bstr( const bstr & ) = delete ;
+		bstr( bstr && ) = delete ;
+		void operator=( const bstr & ) = delete ;
+		void operator=( bstr && ) = delete ;
+		private: BSTR m_p ;
+	} ;
+}
 
 class GLinkImp
 {
@@ -71,6 +74,8 @@ public:
 	static std::string filename( const std::string & ) ;
 	void saveAs( const G::Path & link_path ) ;
 
+public:
+	~GLinkImp() = default ;
 	GLinkImp( const GLinkImp & ) = delete ;
 	GLinkImp( GLinkImp && ) = delete ;
 	void operator=( const GLinkImp & ) = delete ;

@@ -82,7 +82,7 @@ G_EXCEPTION_CLASS( StateMachine_Error , "invalid state machine transition" ) ;
 /// class Protocol
 /// {
 ///   struct ProtocolError {} ;
-///   enum class State { s_Any , s_Same , sFoo , sBar , sEnd } ;
+///   enum class State { s_Same , sFoo , sBar , sEnd , s_Any } ;
 ///   enum class Event { eFoo , eBar , eError } ;
 ///   typedef StateMachine<Protocol,State,Event> Fsm ;
 ///   Fsm m_fsm ;

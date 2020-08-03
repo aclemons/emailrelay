@@ -1234,6 +1234,10 @@ MSG00001.bin messages.rc: fakemc.exe messages.mc
 fakemc.exe: $(top_srcdir)/src/main/fakemc.c
 	$(CC) -o fakemc.exe $(top_srcdir)/src/main/fakemc.c
 
+.PHONY: strip
+strip:
+	$(STRIP) $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
+
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

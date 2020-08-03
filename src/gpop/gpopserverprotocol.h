@@ -185,7 +185,8 @@ private:
 	std::string commandPart( const std::string & , std::size_t index ) const ;
 	void sendContent() ;
 	bool sendContentLine( std::string & , bool & ) ;
-	void send( std::string ) ;
+	void sendLine( std::string ) ;
+	void sendLines( std::ostringstream & ) ;
 	void lockStore() ;
 	std::string mechanisms() const ;
 	bool mechanismsIncludePlain() const ;

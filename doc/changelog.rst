@@ -5,12 +5,15 @@ E-MailRelay Change Log
 2.1 -> 2.2
 ==========
 
-* Connections from IPv4 'private use' addresses are allowed by default (see *--remote-clients*).
-* Interface names are supported by *--interface*.
+* Connections from all IPv4 'private use' addresses are allowed by default (see *--remote-clients*).
+* Interface names can be used with *--interface* (eg. *--interface=eth0*).
 * New *--server-tls-connection* option for server-side implicit TLS_.
 * New *--forward-to-some* option to allow some message recipients to be rejected.
 * New *--log-address* option to aid adaptive firewalling.
-* Updated to C++ 2011.
+* Choice of syslog 'facility' on Linux with *--syslog=local0* etc.
+* Dynamic log file rolling when using *--log-file=%d*.
+* Tolerance of SMTP_ pipelined commands sent by broken clients.
+* C++ 2011 compiler is required.
 
 2.0.1 -> 2.1
 ============
@@ -47,7 +50,7 @@ E-MailRelay Change Log
 * The *--tls-config* option works differently (see NEWS file).
 * New *--client-tls-server-name* option for server name identification (SNI).
 * New *--client-tls-required* option to force client connections to use TLS.
-* New *--server-tls-required* option to force remote SMTP_ clients to use STARTTLS.
+* New *--server-tls-required* option to force remote SMTP clients to use STARTTLS.
 * New *--forward-on-disconnect* option replaces *--poll=0*.
 * The *--anonymous* option now suppresses the *Received* line, whatever the *--domain*.
 * The second field in the secrets file indicates the password encoding, not AUTH mechanism.

@@ -47,7 +47,10 @@ forwarding.
 When using
 .I "-d"
 all envelope files in the spool directory are copied to all
-sub-directories.
+sub-directories. This should be used after using
+.B emailrelay-submit
+has deposited an envelope file into the main spool
+directory, or perhaps periodically from cron.
 .SH SEE ALSO
 .BR emailrelay (1),
 .SH AUTHOR

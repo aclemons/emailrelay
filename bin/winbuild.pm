@@ -46,6 +46,7 @@
 
 use strict ;
 use Cwd ;
+use Carp ;
 use FileHandle ;
 use File::Basename ;
 use File::Find ;
@@ -60,6 +61,7 @@ package winbuild ;
 sub find_cmake
 {
 	return
+		_find_bypass( "cmake" ) ||
 		_find_basic( "find-cmake" , "cmake.exe" , _path_dirs() ) ||
 		_find_match( "find-cmake" , "cmake*/bin/cmake.exe" , undef ,
 			"$ENV{SystemDrive}" ,
@@ -69,6 +71,7 @@ sub find_cmake
 sub find_msbuild
 {
 	return
+		_find_bypass( "msbuild" ) ||
 		_find_basic( "find-msbuild" , "msbuild.exe" , _path_dirs() ) ||
 		_find_under( "find-msbuild" , "msbuild.exe" ,
 			$ENV{'ProgramFiles(x86)'}."/msbuild" ,
@@ -84,18 +87,26 @@ sub find_qt
 		"$ENV{HOMEDRIVE}$ENV{HOMEPATH}/qt" ,
 		"$ENV{SystemDrive}/qt" ,
 	) ;
-	return {
-		x86 => _find_match( "find-qt(x86)" , "5*/msvc*/lib/cmake/qt5" , qr;/msvc\d\d\d\d/; , @dirs ) ,
-		x64 => _find_match( "find-qt(x64)" , "5*/msvc*_64/lib/cmake/qt5" , undef , @dirs ) ,
-	} ;
+
+	my $x86 =
+		_find_bypass( "qt" , "x86" ) ||
+		_find_match( "find-qt(x86)" , "5*/msvc*/lib/cmake/qt5" , qr;/msvc\d\d\d\d/; , @dirs ) ;
+
+	my $x64 =
+		_find_bypass( "qt" , "x64" ) ||
+		_find_match( "find-qt(x64)" , "5*/msvc*_64/lib/cmake/qt5" , undef , @dirs ) ;
+
+	return { x86 => $x86 , x64 => $x64 } ;
 }
 
 sub find_mbedtls
 {
-	return _find_match( "find-mbedtls" , "mbedtls*" , undef ,
-		File::Basename::dirname($0)."/.." ,
-		"$ENV{HOMEDRIVE}$ENV{HOMEPATH}" ,
-		"$ENV{SystemDrive}" ) ;
+	return
+		_find_bypass( "mbedtls" ) ||
+		_find_match( "find-mbedtls" , "mbedtls*" , undef ,
+			File::Basename::dirname($0)."/.." ,
+			"$ENV{HOMEDRIVE}$ENV{HOMEPATH}" ,
+			"$ENV{SystemDrive}" ) ;
 }
 
 sub find_runtime
@@ -177,6 +188,21 @@ sub _find_all_under
 	my @result = () ;
 	File::Find::find( sub { push @result , $File::Find::name if lc($_) eq $fname } , $dir ) ;
 	return @result ;
+}
+
+sub _find_bypass
+{
+	my ( $name , $arch ) = @_ ;
+	my $fh = new FileHandle( "winbuild.cfg" , "r" ) ;
+	return undef if !$fh ;
+	my $key = $arch ? "$name-$arch" : $name ;
+	while(<$fh>)
+	{
+		chomp( my $line = $_ ) ;
+		my ( $k , $v ) = split( /\s+/ , $line ) ;
+		return $v if( $k eq $key ) ;
+	}
+	return undef ;
 }
 
 sub _find_match
@@ -279,7 +305,7 @@ sub read_makefiles
 sub cache_value
 {
 	my ( $arch , $re ) = @_ ;
-	my $fh = new FileHandle( "$arch/CMakeCache.txt" , "r" ) or die "error: cannot open cmake cache file\n" ;
+	my $fh = new FileHandle( "$arch/CMakeCache.txt" , "r" ) or Carp::confess "error: cannot open cmake cache file\n" ;
 	my $value ;
 	while(<$fh>)
 	{
@@ -297,6 +323,7 @@ sub cache_value
 sub find_msvc_base
 {
 	my ( $arch ) = @_ ;
+	return _find_bypass("msvc") if _find_bypass("msvc") ;
 	my $msvc_linker = _cache_value_msvc_linker( $arch ) ;
 	my $dir = File::Basename::dirname( $msvc_linker ) ;
 	my ( $base ) = ( $dir =~ m:(.*/vc)/.*:i ) ; # could to better

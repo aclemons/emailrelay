@@ -59,7 +59,7 @@ public:
 	void cancelTimer() ;
 		///< Cancels the timer. Does nothing if not running.
 
-	bool active() const noexcept ;
+	bool active() const ;
 		///< Returns true if the timer is started and not cancelled.
 
 	bool immediate() const ;
@@ -101,7 +101,7 @@ private:
 } ;
 
 inline
-bool GNet::TimerBase::active() const noexcept
+bool GNet::TimerBase::active() const
 {
 	return !m_time.sameSecond( G::TimerTime::zero() ) ;
 }
@@ -145,7 +145,7 @@ public:
 	void cancelTimer() ;
 		///< Cancels the timer. Does nothing if not running.
 
-	bool active() const noexcept ;
+	bool active() const ;
 		///< Returns true if the timer is running.
 
 public:
@@ -190,7 +190,7 @@ void Timer<T>::cancelTimer()
 }
 
 template <typename T>
-bool Timer<T>::active() const noexcept
+bool Timer<T>::active() const
 {
 	return TimerBase::active() ;
 }

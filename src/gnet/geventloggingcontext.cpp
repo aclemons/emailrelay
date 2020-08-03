@@ -53,8 +53,10 @@ GNet::EventLoggingContext::~EventLoggingContext() noexcept
 
 std::string GNet::EventLoggingContext::fn( void * vp )
 {
-	// use a semi-colon separator for simpler fail2ban regexpes
-	return static_cast<EventLoggingContext*>(vp)->str() + "; " ;
+	std::string s = static_cast<EventLoggingContext*>(vp)->str() ;
+	if( !s.empty() )
+		s.append( "; " , 2U ) ; // semi-colon for simpler fail2ban regexpes
+	return s ;
 }
 
 std::string GNet::EventLoggingContext::str()

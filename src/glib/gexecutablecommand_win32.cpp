@@ -23,7 +23,7 @@
 #include "gstr.h"
 #include <stdexcept>
 #include <algorithm>
-#include <array>
+#include <vector>
 
 G::StringArray G::ExecutableCommand::osSplit( const std::string & s_in )
 {
@@ -61,7 +61,8 @@ void G::ExecutableCommand::osAddWrapper()
 
 	std::string windows ;
 	{
-		std::array<char,MAX_PATH> buffer {{ 0 }} ;
+		std::vector<char> buffer( MAX_PATH+1 ) ;
+		buffer.at(0) = '\0' ;
 		unsigned int n = ::GetWindowsDirectoryA( &buffer[0] , MAX_PATH ) ;
 		if( n == 0 || n > MAX_PATH )
 			throw std::runtime_error( "cannot determine the windows directory" ) ;

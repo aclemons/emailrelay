@@ -178,6 +178,23 @@ public:
 		///< Returns the address of the given filebuf, or nullptr
 		///< on failure.
 
+	static int open( const Path & , std::ios_base::openmode ) ;
+		///< Opens a file descriptor with 'binary' added to the given
+		///< openmode. Uses SH_DENYNO on windows. Returns -1 on error.
+
+	static int open( const char * , std::ios_base::openmode ) noexcept ;
+		///< Opens a file descriptor with 'binary' added to the given
+		///< openmode. Uses SH_DENYNO on windows. Returns -1 on error.
+
+	static ssize_t read( int fd , char * , std::size_t ) noexcept ;
+		///< Calls ::read() or equivalent.
+
+	static ssize_t write( int fd , const char * , std::size_t ) noexcept ;
+		///< Calls ::write() or equivalent.
+
+	static void close( int fd ) noexcept ;
+		///< Calls ::close() or equivalent.
+
 public:
 	File() = delete ;
 

@@ -43,9 +43,9 @@ then
 	shift
 	export CFLAGS="-O0 -g"
 	export CXXFLAGS="-O0 -g"
-	if expr "$*" : '.*enable.debug' ; then : ; else enable_debug="--enable-debug" ; fi
+	if expr "x$*" : '.*enable.debug' ; then : ; else enable_debug="--enable-debug" ; fi
 :
-elif expr "$*" : '.*enable.debug' >/dev/null
+elif expr "x$*" : '.*enable.debug' >/dev/null
 then
 	if test "$CFLAGS$CXXFLAGS" = ""
 	then
@@ -56,10 +56,8 @@ fi
 
 if test "$1" = "-m"
 then
-	# mingw -- to target ancient versions of windows edit 'gconfig_defs.h'
-	# after running configure and undefine GCONFIG_HAVE_PUTENV_S and
-	# GCONFIG_HAVE_STRNCPY_S -- note that the built executables need the
-	# mingw runtime DLLs to run
+	# mingw -- to build with mbedtls start by un-tarring its source tarball into
+	# the cwd -- to assemble an emailrelay distribution run 'winbuild.pl mingw'
 	shift
 	TARGET="i686-w64-mingw32"
 	export CXX="$TARGET-g++-posix"
@@ -71,9 +69,11 @@ then
 	export CXXFLAGS="$CXXFLAGS -std=c++11 -pthread"
 	export LDFLAGS="$LDFLAGS -pthread"
 	if test -x "`which $CXX`" ; then : ; else echo "error: no mingw c++ compiler: [$CXX]\n" ; exit 1 ; fi
+	( echo msbuild . ; echo qt-x86 . ; echo qt-x64 . ; echo cmake . ; echo msvc . ) > winbuild.cfg
 	MBEDTLS_DIR="`find . -maxdepth 1 -type d -name mbedtls\* 2>/dev/null`"
 	if test -d "$MBEDTLS_DIR"
 	then
+		echo mbedtls $MBEDTLS_DIR >> winbuild.cfg
 		export CPPFLAGS="$CPPFLAGS -I`pwd`/$MBEDTLS_DIR/include"
 		export LDFLAGS="$LDFLAGS -L`pwd`/$MBEDTLS_DIR/library"
 		$thisdir/configure $enable_debug --host $TARGET \
@@ -82,18 +82,19 @@ then
 			--disable-gui --without-pam --without-doxygen \
 			--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \
 			--localstatedir=/var e_initdir=/etc/init.d "$@"
-		if test ! -e "$MBEDTLS_DIR/library/libmbedtls.a"
-		then
-			echo "build mbedtls with..."
-			echo " make WINDOWS=1 CC=$CC AR=$AR -C $MBEDTLS_DIR/library"
-		fi
 	else
+		echo mbedtls . >> winbuild.cfg
 		$thisdir/configure $enable_debug --host $TARGET \
 			--enable-windows --disable-interface-names \
 			--disable-gui --without-pam --without-doxygen \
 			--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \
 			--localstatedir=/var e_initdir=/etc/init.d "$@"
 	fi
+	echo "build with..."
+	test -d "$MBEDTLS_DIR" && echo "  make -C $MBEDTLS_DIR/library WINDOWS=1 CC=$CC AR=$AR"
+	echo "  make"
+	echo "  make -C src/main strip"
+	echo "  perl winbuild.pl mingw"
 :
 elif test "$1" = "-p"
 then

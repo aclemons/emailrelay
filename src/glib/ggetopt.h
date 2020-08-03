@@ -115,21 +115,19 @@ public:
 		///< long-form name.
 
 	std::size_t count( const std::string & option_name ) const ;
-		///< Returns the number of times the option was supplied.
+		///< Returns the option's repeat count.
 
 	std::string value( const std::string & option_name , const std::string & default_ = std::string() ) const ;
-		///< Returns the value related to the option identified by its long-form name.
-		///< Returns a string that is a comma-separated list if multi-valued.
+		///< Returns the value for the option identified by its long-form name.
+		///< If the option is multi-valued then the returned value is a
+		///< comma-separated list. If the option-value is 'on' then
+		///< Str::positive() is returned; if the option-value is 'off'
+		///< then the given default is returned.
 
 	std::string value( char option_letter , const std::string & default_ = std::string() ) const ;
-		///< Returns the value related to the option identified by its short-form letter.
-		///< Returns a string that is a comma-separated list if multi-valued.
+		///< An overload that returns the value of the option identified
+		///< by its short-form letter.
 		///< Precondition: contains(option_letter)
-
-	void collapse( const std::string & option_name ) ;
-		///< Collapses duplicate of the given option into one if they all
-		///< have the same value, or adds a 'duplicate' error if there is
-		///< a mismatch.
 
 public:
 	~GetOpt() = default ;

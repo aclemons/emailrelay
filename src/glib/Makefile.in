@@ -124,7 +124,7 @@ am__libglib_a_SOURCES_DIST = gpam_none.cpp gpam_linux.cpp \
 	gidentity_unix.cpp glimits.h glog.h glog.cpp glogoutput.h \
 	glogoutput.cpp glogoutput_unix.cpp gmapfile.h gmapfile.cpp \
 	gmd5.h gmd5.cpp gmsg_unix.cpp gmsg.h gnewprocess.h \
-	gnewprocess_unix.cpp goptionmap.h goptionmap.cpp \
+	gnewprocess_unix.cpp gomembuf.h goptionmap.h goptionmap.cpp \
 	goptionparser.h goptionparser.cpp goptions.h goptions.cpp \
 	goptionvalue.h gpam.h gpath.h gpath.cpp gpidfile.h \
 	gpidfile.cpp gprocess.h gprocess_unix.cpp grandom.h \
@@ -495,6 +495,7 @@ noinst_LIBRARIES = libglib.a
 @GCONFIG_WINDOWS_FALSE@	gmsg.h \
 @GCONFIG_WINDOWS_FALSE@	gnewprocess.h \
 @GCONFIG_WINDOWS_FALSE@	gnewprocess_unix.cpp \
+@GCONFIG_WINDOWS_FALSE@	gomembuf.h \
 @GCONFIG_WINDOWS_FALSE@	goptionmap.h \
 @GCONFIG_WINDOWS_FALSE@	goptionmap.cpp \
 @GCONFIG_WINDOWS_FALSE@	goptionparser.h \
@@ -593,6 +594,7 @@ noinst_LIBRARIES = libglib.a
 @GCONFIG_WINDOWS_TRUE@	gmsg_win32.cpp \
 @GCONFIG_WINDOWS_TRUE@	gnewprocess.h \
 @GCONFIG_WINDOWS_TRUE@	gnewprocess_win32.cpp \
+@GCONFIG_WINDOWS_TRUE@	gomembuf.h \
 @GCONFIG_WINDOWS_TRUE@	goptionmap.h \
 @GCONFIG_WINDOWS_TRUE@	goptionmap.cpp \
 @GCONFIG_WINDOWS_TRUE@	goptionparser.h \

@@ -232,7 +232,7 @@ void GSmtp::StoredFile::edit( const G::StringArray & rejectees )
 	}
 	if( !ok )
 		throw EditError( path_in.str() ) ;
-	file_deleter.disarm() ;
+	file_deleter.release() ;
 
 	m_env.m_crlf = true ;
 	m_env.m_endpos = endpos ;

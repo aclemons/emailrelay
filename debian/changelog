@@ -1,11 +1,14 @@
 emailrelay (2.2) unstable; urgency=low
-  * Connections from IPv4 'private use' addresses are allowed by default (see "--remote-clients").
-  * Interface names are supported by "--interface".
+  * Connections from all IPv4 'private use' addresses are allowed by default (see "--remote-clients").
+  * Interface names can be used with "--interface" (eg. "--interface=eth0").
   * New "--server-tls-connection" option for server-side implicit TLS.
   * New "--forward-to-some" option to allow some message recipients to be rejected.
   * New "--log-address" option to aid adaptive firewalling.
-  * Updated to C++ 2011.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun,  5 Jul 2020 23:41:57 +0000
+  * Choice of syslog 'facility' on Linux with "--syslog=local0" etc.
+  * Dynamic log file rolling when using "--log-file=%d".
+  * Tolerance of SMTP pipelined commands sent by broken clients.
+  * C++ 2011 compiler is required.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Mon,  3 Aug 2020 13:17:05 +0000
 
 emailrelay (2.1) unstable; urgency=low
   * Backwards compatibility features for 1.9-to-2.0 transition removed.

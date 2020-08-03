@@ -51,7 +51,7 @@ public:
 	static bool send( handle_type , bool ) noexcept ;
 		// Raises an event.
 
-	handle_type handle() ;
+	handle_type handle() noexcept ;
 		// Extracts the event-object handle.
 
 private: // overrides
@@ -127,7 +127,7 @@ HANDLE GNet::FutureEventImp::dup()
 	return h ;
 }
 
-GNet::FutureEventImp::handle_type GNet::FutureEventImp::handle()
+GNet::FutureEventImp::handle_type GNet::FutureEventImp::handle() noexcept
 {
 	HANDLE h2 = 0 ;
 	std::swap( h2 , m_h2.h ) ;
@@ -163,7 +163,7 @@ bool GNet::FutureEvent::send( handle_type handle , bool close ) noexcept
 	return FutureEventImp::send( handle , close ) ;
 }
 
-GNet::FutureEvent::handle_type GNet::FutureEvent::handle()
+GNet::FutureEvent::handle_type GNet::FutureEvent::handle() noexcept
 {
 	return m_imp->handle() ;
 }

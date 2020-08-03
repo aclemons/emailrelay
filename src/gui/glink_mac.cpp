@@ -36,8 +36,11 @@ public:
 	void saveAs( const G::Path & ) ;
 
 public:
+	~GLinkImp() = default ;
 	GLinkImp( const GLinkImp & ) = delete ;
+	GLinkImp( GLinkImp && ) = delete ;
 	void operator=( const GLinkImp & ) = delete ;
+	void operator=( GLinkImp && ) = delete ;
 
 private:
 	G::Path m_target_path ;
@@ -86,9 +89,12 @@ void GLinkImp::saveAs( const G::Path & )
 GLink::GLink( const G::Path & target_path , const std::string & name , const std::string & description ,
 	const G::Path & working_dir , const G::StringArray & args , const G::Path & icon_source , Show show ,
 	const std::string & , const std::string & , const std::string & ) :
-		m_imp( new GLinkImp(target_path,name,description,working_dir,args,icon_source,show) )
+		m_imp( std::make_unique<GLinkImp>(target_path,name,description,working_dir,args,icon_source,show) )
 {
 }
+
+GLink::~GLink()
+= default ;
 
 std::string GLink::filename( const std::string & name_in )
 {
@@ -98,11 +104,6 @@ std::string GLink::filename( const std::string & name_in )
 void GLink::saveAs( const G::Path & link_path )
 {
 	m_imp->saveAs( link_path ) ;
-}
-
-GLink::~GLink()
-{
-	delete m_imp ;
 }
 
 bool GLink::exists( const G::Path & path )

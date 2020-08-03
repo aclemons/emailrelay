@@ -41,13 +41,13 @@ namespace G
 class G::Identity
 {
 public:
-	struct NoThrow /// Overload discriminator for G::Identity.
-		{} ;
 	G_EXCEPTION( NoSuchUser , "no such user" ) ;
 	G_EXCEPTION( NoSuchGroup , "no such group" ) ;
 	G_EXCEPTION( Error , "cannot read user database" ) ;
 	G_EXCEPTION( UidError , "cannot set uid" ) ;
 	G_EXCEPTION( GidError , "cannot set gid" ) ;
+	struct NoThrow /// Overload discriminator for G::Identity.
+		{} ;
 
 	explicit Identity( const std::string & login_name ,
 		const std::string & group_name_override = std::string() ) ;

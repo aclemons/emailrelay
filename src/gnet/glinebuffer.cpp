@@ -60,7 +60,8 @@ void GNet::LineBuffer::add( const std::string & s )
 
 void GNet::LineBuffer::extensionStart( const char * data , std::size_t size )
 {
-	m_in.extend( data , size ) ;
+	if( data )
+		m_in.extend( data , size ) ;
 }
 
 void GNet::LineBuffer::extensionEnd()

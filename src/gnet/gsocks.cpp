@@ -22,6 +22,7 @@
 #include "gsocks.h"
 #include "gassert.h"
 #include <array>
+#include <algorithm>
 
 GNet::Socks::Socks( const Location & location ) :
 	m_request_offset(0U)
@@ -45,6 +46,7 @@ std::string GNet::Socks::buildPdu( const std::string & far_host , unsigned int f
 
 	std::string userid ; // TODO - socks userid
 	std::string data ;
+	data.reserve( far_host.size() + 10U ) ;
 	data.append( 1U , 4 ) ; // version 4
 	data.append( 1U , 1 ) ; // connect request
 	data.append( 1U , static_cast<char>(far_port_lo) ) ;
@@ -106,7 +108,8 @@ bool GNet::Socks::read( G::ReadWrite & io )
 	else
 	{
 		G_ASSERT( rc >= 1 && rc <= 8 ) ;
-		m_response.append( &buffer[0] , static_cast<std::size_t>(rc) ) ;
+		std::size_t n = std::min( buffer.size() , static_cast<std::size_t>(rc) ) ;
+		m_response.append( &buffer[0] , n ) ;
 	}
 
 	if( m_response.size() >= 8U )

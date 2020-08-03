@@ -81,8 +81,8 @@ public:
 
 	NewProcess( const Path & exe , const StringArray & args , const Environment & env = Environment::minimal() ,
 		Fd fd_stdin = Fd::devnull() , Fd fd_stdout = Fd::pipe() , Fd fd_stderr = Fd::devnull() ,
-		const G::Path & cd = G::Path() ,
-		bool strict_path = true , Identity run_as_id = Identity::invalid() , bool strict_id = true ,
+		const G::Path & cd = G::Path() , bool strict_path = true ,
+		Identity run_as_id = Identity::invalid() , bool strict_id = true ,
 		int exec_error_exit = 127 ,
 		const std::string & exec_error_format = std::string() ,
 		std::string (*exec_error_format_fn)(std::string,int) = nullptr ) ;
@@ -105,7 +105,7 @@ public:
 			///<
 			///< If a valid identity is supplied then the child process runs as
 			///< that identity. If 'strict_id' is also true then the id is not
-			///< allowed to be root. See Process::beOrdinaryForExec().
+			///< allowed to be root. See G::Process::beOrdinaryForExec().
 			///<
 			///< If the exec() fails then the 'exec_error_exit' argument is used as
 			///< the child process exit code.

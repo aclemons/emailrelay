@@ -26,43 +26,6 @@
 #include <iostream>
 #include <cstdio>
 
-void G::File::open( std::ofstream & ofstream , const Path & path )
-{
-	open( ofstream , path , std::ios_base::out | std::ios_base::binary ) ; // 'out' for uclibc
-}
-
-void G::File::open( std::ofstream & ofstream , const Path & path , std::ios_base::openmode mode )
-{
-	#if GCONFIG_HAVE_FSOPEN
-		ofstream.open( path.cstr() , mode | std::ios_base::out | std::ios_base::binary , _SH_DENYNO ) ; // _fsopen()
-	#else
-		ofstream.open( path.cstr() , mode | std::ios_base::out | std::ios_base::binary ) ;
-	#endif
-}
-
-void G::File::open( std::ifstream & ifstream , const Path & path )
-{
-	open( ifstream , path , std::ios_base::in | std::ios_base::binary ) ; // 'in' for uclibc
-}
-
-void G::File::open( std::ifstream & ifstream , const Path & path , std::ios_base::openmode mode )
-{
-	#if GCONFIG_HAVE_FSOPEN
-		ifstream.open( path.cstr() , mode | std::ios_base::in | std::ios_base::binary , _SH_DENYNO ) ; // _fsopen()
-	#else
-		ifstream.open( path.cstr() , mode | std::ios_base::in | std::ios_base::binary ) ;
-	#endif
-}
-
-std::filebuf * G::File::open( std::filebuf & fb , const Path & path , std::ios_base::openmode mode )
-{
-	#if GCONFIG_HAVE_FSOPEN
-		return fb.open( path.cstr() , mode | std::ios_base::binary , _SH_DENYNO ) ; // _fsopen()
-	#else
-		return fb.open( path.cstr() , mode | std::ios_base::binary ) ;
-	#endif
-}
-
 bool G::File::remove( const Path & path , const G::File::NoThrow & ) noexcept
 {
 	int rc = std::remove( path.cstr() ) ;

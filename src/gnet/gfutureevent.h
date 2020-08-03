@@ -72,7 +72,7 @@ public:
 	~FutureEvent() ;
 		///< Destructor.
 
-	handle_type handle() ;
+	handle_type handle() noexcept ;
 		///< Extracts a handle that can be passed between threads
 		///< and used in send(). This should be called once,
 		///< typically as the worker thread is created.
