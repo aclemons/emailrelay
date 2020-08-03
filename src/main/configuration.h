@@ -27,6 +27,7 @@
 #include "goptionmap.h"
 #include "gpath.h"
 #include "gstrings.h"
+#include "glogoutput.h"
 #include <string>
 
 namespace Main
@@ -89,6 +90,12 @@ public:
 
 	bool useSyslog() const ;
 		///< Returns true if generating syslog events.
+
+	G::LogOutput::SyslogFacility syslogFacility() const ;
+		///< Returns the syslog facility enum.
+
+	std::string validSyslogFacilities() const ;
+		///< Returns help text for the valid syslog facility names.
 
 	bool logTimestamp() const ;
 		///< Returns true if logging output should be timestamped.
@@ -192,6 +199,11 @@ public:
 
 	std::string smtpSaslServerConfig() const ;
 		///< Returns the SMTP server-side SASL configuration string.
+
+	bool smtpPipelining() const ;
+		///< Returns true if the SMTP server protocol should allow some
+		///< limited SMTP command pipelining from broken clients, esp.
+		///< QUIT in the same network packet as the DATA EOM dot.
 
 	G::Path popSecretsFile() const ;
 		///< Returns the pop-server autentication secrets (password) file.
@@ -315,6 +327,7 @@ private:
 	bool verifyType( const std::string & ) const ;
 	bool specialVerifyValue( const std::string & ) const ;
 	G::StringArray semantics( bool ) const ;
+	bool validSyslogFacility() const ;
 
 private:
 	G::Options m_options ;

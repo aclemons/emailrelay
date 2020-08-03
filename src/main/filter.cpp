@@ -20,8 +20,11 @@
 // A utility that can be installed as a "--filter" program to copy the message
 // envelope into all spool sub-directories for use by "--pop-by-name".
 //
-// If the envelope in the parent directory has been copied at least once then
-// it is removed and the program exits with a value of 100.
+// If the envelope in the parent directory is successfully copied to at least
+// once sub-directory then it is removed from the parent directory and the
+// program exits with a value of 100.
+//
+// Does nothing successfully if there are no sub-directories.
 //
 
 #include "gdef.h"

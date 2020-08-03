@@ -26,8 +26,8 @@
 #
 # Requires cmake and msbuild to be on the path or somewhere
 # obvious (see winbuild.pm), and expects mbedtls source
-# to be in a sibling directory and qt libraries, headers and
-# tools to be in their default install location.
+# to be in a sibling directory and qt (libraries, headers and
+# tools) to be in its default install location.
 #
 # Also spits out batch files (like "winbuild-whatever.bat")
 # for doing sub-tasks, including "winbuild-install.bat".
@@ -163,6 +163,7 @@ my @default_parts =
 my $project = "emailrelay" ;
 my $install_x64 = "$project-$version-w64" ;
 my $install_x86 = "$project-$version-w32" ;
+my $install_mingw = "$project-$version-winxp" ;
 
 my @run_parts = scalar(@ARGV) ? @ARGV : @default_parts ;
 for my $part ( @run_parts )
@@ -237,6 +238,10 @@ for my $part ( @run_parts )
 		install( $install_x64 , "x64" , $switches{GCONFIG_GUI} ) ;
 		install( $install_x86 , "x86" , $switches{GCONFIG_GUI} ) ;
 	}
+	elsif( $part eq "mingw" )
+	{
+		install_mingw() ;
+	}
 	elsif( $part eq "debug-test" )
 	{
 		run_tests( "x64/src/main/Debug" , "x64/test/Debug" ) ;
@@ -244,6 +249,10 @@ for my $part ( @run_parts )
 	elsif( $part eq "test" )
 	{
 		run_tests( "x64/src/main/Release" , "x64/test/Release" ) ;
+	}
+	else
+	{
+		die "usage error\n" ;
 	}
 }
 
@@ -577,14 +586,14 @@ sub install
 	my $msvc_base = winbuild::find_msvc_base( $arch ) ;
 	print "msvc-base=[$msvc_base]\n" ;
 
-	install_core( $arch , $install ) ;
+	install_core( "$arch/src/main/Release" , $install ) ;
 	install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/emailrelay-setup.exe" ) if $with_gui ;
 
 	if( $with_gui )
 	{
 		install_mkdir( "$install/payload" ) ;
 		install_payload_cfg( "$install/payload/payload.cfg" ) ;
-		install_core( $arch , "$install/payload/files" ) ;
+		install_core( "$arch/src/main/Release" , "$install/payload/files" ) ;
 		install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/payload/files" ) ;
 		install_gui_dependencies( $msvc_base , $arch ,
 			{ exe => "$install/emailrelay-setup.exe" } ,
@@ -596,6 +605,12 @@ sub install
 	install_runtime( $runtime , "$install/payload/files" ) ;
 
 	print "$arch distribution in [$install]\n" ;
+}
+
+sub install_mingw
+{
+	install_core( "src/main" , $install_mingw ) ;
+	print "mingw distribution in [$install_mingw]\n" ;
 }
 
 sub install_runtime
@@ -669,7 +684,7 @@ sub install_payload_cfg
 
 sub install_core
 {
-	my ( $arch , $root ) = @_ ;
+	my ( $main_bin_dir , $root ) = @_ ;
 
 	install_mkdir( $root ) ;
 
@@ -688,12 +703,12 @@ sub install_core
 		NEWS news.txt
 		ChangeLog changelog.txt
 		doc/doxygen-missing.html doc/doxygen/index.html
-		__arch__/src/main/Release/emailrelay-service.exe .
-		__arch__/src/main/Release/emailrelay.exe .
-		__arch__/src/main/Release/emailrelay-submit.exe .
-		__arch__/src/main/Release/emailrelay-filter-copy.exe .
-		__arch__/src/main/Release/emailrelay-passwd.exe .
-		__arch__/src/main/Release/emailrelay-textmode.exe .
+		__bin_dir__/emailrelay-service.exe .
+		__bin_dir__/emailrelay.exe .
+		__bin_dir__/emailrelay-submit.exe .
+		__bin_dir__/emailrelay-filter-copy.exe .
+		__bin_dir__/emailrelay-passwd.exe .
+		__bin_dir__/emailrelay-textmode.exe .
 		bin/emailrelay-bcc-check.pl examples
 		bin/emailrelay-service-install.js .
 		bin/emailrelay-edit-content.js examples
@@ -716,7 +731,7 @@ sub install_core
 	while( my ($src,$dst) = each %copy )
 	{
 		$dst = "" if $dst eq "." ;
-		$src =~ s:__arch__:$arch:g ;
+		$src =~ s:__bin_dir__:$main_bin_dir:g ;
 		map { install_copy( $_ , "$root/$dst" ) } glob( $src ) ;
 	}
 	winbuild::fixup( $root ,

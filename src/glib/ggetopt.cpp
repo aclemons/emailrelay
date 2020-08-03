@@ -82,14 +82,9 @@ G::StringArray G::GetOpt::optionsFromFile( const G::Path & filename ) const
 		const std::string & key = map_item.first ;
 		const std::string & value = map_item.second ;
 		if( m_spec.valued(key) )
-		{
-			result.push_back( std::string("--").append(key) ) ;
-			result.push_back( value ) ;
-		}
-		else
-		{
 			result.push_back( std::string("--").append(key).append(1U,'=').append(value) ) ;
-		}
+		else
+			result.push_back( std::string("--").append(key) ) ;
 	}
 	return result ;
 }
@@ -126,7 +121,7 @@ bool G::GetOpt::contains( const std::string & name ) const
 
 std::size_t G::GetOpt::count( const std::string & name ) const
 {
-	return m_map.count(name) ;
+	return m_map.count( name ) ;
 }
 
 std::string G::GetOpt::value( char c , const std::string & default_ ) const
@@ -137,7 +132,7 @@ std::string G::GetOpt::value( char c , const std::string & default_ ) const
 
 std::string G::GetOpt::value( const std::string & name , const std::string & default_ ) const
 {
-	return m_map.contains(name) ? m_map.value(name) : default_ ;
+	return m_map.value( name , default_ ) ;
 }
 
 G::Arg G::GetOpt::args() const
@@ -160,19 +155,6 @@ void G::GetOpt::showErrors( std::ostream & stream , const std::string & prefix_1
 	for( const auto & error : m_errors )
 	{
 		stream << prefix_1 << prefix_2 << error << std::endl ;
-	}
-}
-
-void G::GetOpt::collapse( const std::string & name )
-{
-	G::StringArray values = G::Str::splitIntoFields( value(name) , "," ) ;
-	if( values.size() > 1U )
-	{
-		std::size_t n = static_cast<std::size_t>( std::count( values.begin() , values.end() , *values.begin() ) ) ;
-		if( n == values.size() )
-			m_map.replace( name , *values.begin() ) ;
-		else
-			m_parser.errorDuplicate( name ) ; // duplicates but with different values
 	}
 }
 

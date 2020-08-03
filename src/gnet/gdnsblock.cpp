@@ -24,6 +24,7 @@
 #include "gresolver.h"
 #include "glocal.h"
 #include "gstr.h"
+#include "gtest.h"
 #include "gassert.h"
 #include "glog.h"
 #include <sstream>
@@ -138,7 +139,9 @@ void GNet::DnsBlock::start( const Address & address )
 	m_result.reset( m_threshold , address ) ;
 
 	// dont block connections from local addresses
-	if( m_servers.empty() || address.isLoopback() || address.isUniqueLocal() || address.isLinkLocal() )
+	bool is_local = address.isLoopback() || address.isUniqueLocal() || address.isLinkLocal() ;
+	if( G::Test::enabled("dns-block-allow-local") ) is_local = false ;
+	if( m_servers.empty() || is_local )
 	{
 		m_timer.startTimer( 0 ) ;
 		return ;

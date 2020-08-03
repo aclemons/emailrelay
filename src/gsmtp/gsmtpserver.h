@@ -171,10 +171,12 @@ public:
 
 private:
 	void onCheckTimeout() ;
+	void onFlushTimeout() ;
 
 private:
 	Server & m_server ;
 	GNet::DnsBlock m_block ;
+	GNet::Timer<ServerPeer> m_flush_timer ;
 	GNet::Timer<ServerPeer> m_check_timer ;
 	std::unique_ptr<Verifier> m_verifier ;
 	std::unique_ptr<ProtocolMessage> m_pmessage ;

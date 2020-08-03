@@ -190,7 +190,7 @@ std::string G::Process::cwd( bool no_throw )
 
 void G::Process::terminate() noexcept
 {
-	// never gets here since beOrdinary() is stubbed out
+	// never gets here in practice since beOrdinary() is stubbed out
 	std::terminate() ;
 }
 

@@ -24,11 +24,17 @@ endif
 EXTRA_DIST = \
 	emailrelay.conf.template \
 	emailrelay.auth.template \
+	emailrelay-fail2ban-jail \
+	emailrelay-fail2ban-filter \
 	emailrelay.pam
 
 e_sysconf_DATA = \
 	emailrelay.conf.template \
 	emailrelay.auth.template
+
+e_examples_DATA = \
+	emailrelay-fail2ban-jail \
+	emailrelay-fail2ban-filter
 
 emailrelay: emailrelay.pam
 	cp $(top_srcdir)/etc/emailrelay.pam $@

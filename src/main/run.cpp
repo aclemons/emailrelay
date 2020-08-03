@@ -57,7 +57,7 @@
 
 std::string Main::Run::versionNumber()
 {
-	return "2.2dev" ;
+	return "2.2rc3" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , const std::string & option_spec , bool has_gui ) :
@@ -169,10 +169,15 @@ void Main::Run::run()
 			.set_with_timestamp(configuration().logTimestamp())
 			.set_with_context(configuration().logAddress())
 			.set_strip(!configuration().debug())
-			.set_use_syslog(configuration().useSyslog()) ,
-		configuration().logFile().str() , // stderr-replacement
-		G::LogOutput::SyslogFacility::Mail // facility
+			.set_use_syslog(configuration().useSyslog())
+			.set_allow_bad_syslog(!(m_has_gui&&configuration().logFile()==G::Path()))
+			.set_facility(configuration().syslogFacility()) ,
+		configuration().logFile().str() // stderr-replacement
 	) ;
+
+	// if we are going to close stderr soon then make stderr logging
+	// less verbose so that startup scripts are cleaner, but without
+	// affecting syslog output
 	if( configuration().useSyslog() && configuration().daemon() &&
 		configuration().closeStderr() && configuration().logFile() == G::Path() )
 			m_log_output->configure( m_log_output->config().set_quiet_stderr() ) ;
@@ -500,7 +505,8 @@ GSmtp::ServerProtocol::Config Main::Run::serverProtocolConfig() const
 			.set_authentication_requires_encryption( configuration().serverTlsRequired() )
 			.set_mail_requires_encryption( configuration().serverTlsRequired() )
 			.set_tls_starttls( configuration().serverTls() )
-			.set_tls_connection( configuration().serverTlsConnection() ) ;
+			.set_tls_connection( configuration().serverTlsConnection() )
+			.set_allow_pipelining( configuration().smtpPipelining() ) ;
 }
 
 GSmtp::Server::Config Main::Run::serverConfig() const

@@ -280,14 +280,22 @@ SpamAssassin
 The E-MailRelay server can use [SpamAssassin](http://spamassassin.apache.org)
 to mark or reject potential spam.
 
-To get E-MailRelay to reject spam outright you can just use `spamassassin -e` as
+It's easiest to run SpamAssassin's `spamd` program in the background and let
+E-MailRelay send incoming messages to it over the network. By default
+SpamAssassin `spamd` uses port 783 so you should use an E-MailRelay
+command-line option of `--filter spam-edit:127.0.0.1:783` if you want spam
+messages to pass through with a warning added, or `--filter spam:127.0.0.1:783`
+if you want spam messages to be rejected outright.
+
+Alternatively you can run SpamAssassin on demand for each message. To get
+E-MailRelay to reject spam outright you can just use `spamassassin -e` as
 your E-MailRelay `--filter` program:
 
-        emailrelay --as-server --filter="/usr/bin/spamassassin --exit-code"
+        emailrelay --as-server --filter="/usr/bin/spamassassin -e"
 
 Or on Windows:
 
-        emailrelay --as-server --filter="c:/Program\ Files/perl/site/bin/spamassassin.bat --exit-code"
+        emailrelay --as-server --filter="c:/perl/site/bin/spamassassin.bat -e"
 
 To get spam messages identified by SpamAssassin but still pass through the
 E-MailRelay system you will have to have a small `--filter` script to collect
@@ -303,15 +311,9 @@ On Unix your `--filter` shell script could look something like this:
 
 On Windows an equivalent batch script would be:
 
-        c:\Program Files\perl\site\bin\spamassassin.bat %1 > %1.tmp
+        c:\perl\site\bin\spamassassin.bat %1 > %1.tmp
         ren %1.tmp %1
         exit 0
-
-E-MailRelay can also talk to a SpamAssassin `spamd` daemon over the network
-by using `--filter spam:localhost:783`. This rejects the the message if
-`spamd` thinks it is spam, or by using `--filter spam-edit:localhost:783`
-the message will be accepted but the content will be replaced by the
-`spamd` output.
 
 Google mail
 -----------
@@ -343,10 +345,23 @@ local Tor server on port 9050 to the mail server at smtp.example.com:
 
         emailrelay --port 587 --as-proxy=smtp.example.com:25@localhost:9050 --domain=anonymous.net --anonymous --connection-timeout=300
 
+Blocklists and dynamic firewalls
+--------------------------------
+E-MailRelay can consult with remote [DNSBL][] blocklist servers in order to block
+incoming connections from known spammers. Refer to the documentation of the
+`--dnsbl` option for more details.
+
+It is also possible to integrate E-MailRelay with intrusion detection systems
+such as `fail2ban` that monitor log files and dynamically modify your iptables
+firewall. Use E-MailRelay's `--log-address` command-line option so that the
+remote IP address of any badly-behaved remote user is logged and made available
+to `fail2ban`.
 
 
 
 
+
+[DNSBL]: https://en.wikipedia.org/wiki/DNSBL
 [MTA]: https://en.wikipedia.org/wiki/Message_transfer_agent
 [POP]: https://en.wikipedia.org/wiki/Post_Office_Protocol
 [SMTP]: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol

@@ -24,8 +24,11 @@
 // of email messages on each one in turn.
 //
 // usage:
-//		emailrelay-test-client [-v [-v]] [<port>]
-//		emailrelay-test-client [-v [-v]] <addr-ipv4> <port> [<connections> [<iterations> [<lines> [<line-length> [<messages>]]]]]
+//		emailrelay-test-client [-qQ] [-v [-v]] [<port>]
+//		emailrelay-test-client [-qQ] [-v [-v]] <addr-ipv4> <port> [<connections> [<iterations> [<lines> [<line-length> [<messages>]]]]]
+//         -v -- verbose logging
+//         -q -- send "."&"QUIT" instead of "."
+//         -Q -- send "."&"QUIT" and immediately disconnect
 //
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
@@ -44,6 +47,8 @@
 #endif
 
 int cfg_verbosity = 0 ;
+bool cfg_eager_quit = false ;
+bool cfg_eager_quit_disconnect = false ;
 
 #ifdef _WIN32
 using read_size_type = int ;
@@ -69,6 +74,8 @@ struct Address
 		specific = zero ;
 		specific.sin_family = AF_INET ;
 		specific.sin_addr.s_addr = inet_addr( address ) ;
+		if( specific.sin_addr.s_addr == INADDR_NONE )
+			throw std::runtime_error( std::string("invalid ipv4 address: ") + address ) ;
 		specific.sin_port = htons( port ) ;
 	}
 	explicit Address( int port )
@@ -99,7 +106,7 @@ private:
 	void send( const char * , std::size_t ) ;
 	void waitline() ;
 	void waitline( const char * ) ;
-	void sendMessage( int , int ) ;
+	void sendMessage( int , int , bool ) ;
 	static void close_( SOCKET fd ) ;
 	static void shutdown( SOCKET fd ) ;
 	SOCKET m_fd ;
@@ -153,7 +160,7 @@ bool Test::runSome()
 	}
 	else if( m_state > 1 && m_state < (m_messages+2) )
 	{
-		sendMessage( m_lines , m_line_length ) ;
+		sendMessage( m_lines , m_line_length , m_state == (m_messages+1) ) ;
 		m_state++ ;
 	}
 	else
@@ -165,7 +172,7 @@ bool Test::runSome()
 	return m_done ;
 }
 
-void Test::sendMessage( int lines , int length )
+void Test::sendMessage( int lines , int length , bool last )
 {
 	send( "MAIL FROM:<test>\r\n" ) ;
 	waitline() ;
@@ -181,8 +188,22 @@ void Test::sendMessage( int lines , int length )
 	for( int i = 0 ; i < lines ; i++ )
 		send( &buffer[0] , buffer.size() ) ;
 
-	send( ".\r\n" ) ;
-	waitline() ;
+	if( last && cfg_eager_quit )
+	{
+		send( ".\r\nQUIT\r\n" ) ;
+		if( cfg_eager_quit_disconnect )
+		{
+			close() ;
+			return ;
+		}
+		waitline() ;
+		waitline() ; // again
+	}
+	else
+	{
+		send( ".\r\n" ) ;
+		waitline() ;
+	}
 }
 
 void Test::waitline()
@@ -278,12 +299,15 @@ int main( int argc , char * argv [] )
 			return 0 ;
 		}
 
-        while( argc > 1 && argv[1][0] == '-' && argv[1][1] == 'v' )
-        {
-            cfg_verbosity++ ;
-            for( int i = 1 ; (i+1) <= argc ; i++ )
-                argv[i] = argv[i+1] ;
-            argc-- ;
+		while( argc > 1 && argv[1][0] == '-' && (argv[1][1] == 'v' || argv[1][1] == 'q' || argv[1][1] == 'Q') )
+		{
+			char c = argv[1][1] ;
+			if( c == 'v' ) cfg_verbosity++ ;
+			if( c == 'q' ) cfg_eager_quit = true ;
+			if( c == 'Q' ) cfg_eager_quit = cfg_eager_quit_disconnect = true ;
+			for( int i = 1 ; (i+1) <= argc ; i++ )
+				argv[i] = argv[i+1] ;
+			argc-- ;
 		}
 
 		const char * arg_address = nullptr ;
@@ -307,8 +331,13 @@ int main( int argc , char * argv [] )
 		int line_length = to_int( arg_line_length ) ;
 		int messages = to_int( arg_messages ) ;
 
+		init() ;
+
+		Address a = arg_address ? Address(arg_address,port) : Address(port) ;
+
 		if( cfg_verbosity )
 		{
+			std::cout << "address: " << (arg_address?arg_address:"<default>") << std::endl ;
 			std::cout << "port: " << port << std::endl ;
 			std::cout << "connections-in-parallel: " << connections << std::endl ;
 			std::cout << "iterations: " << iterations << std::endl ;
@@ -316,10 +345,6 @@ int main( int argc , char * argv [] )
 			std::cout << "line-length: " << line_length << std::endl ;
 			std::cout << "messages-per-connection: " << messages << std::endl ;
 		}
-
-		init() ;
-
-		Address a = arg_address ? Address(arg_address,port) : Address(port) ;
 
 		for( int i = 0 ; iterations < 0 || i < iterations ; i++ )
 		{

@@ -33,7 +33,6 @@
 class Dir
 {
 public:
-
 	static G::Path install() ;
 		///< Returns the default install directory, eg. "/usr".
 

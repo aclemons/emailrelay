@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "glogoutput.h"
+#include "glimits.h"
 #include <syslog.h>
 #include <iostream>
 
@@ -33,7 +34,14 @@ namespace G
 			if( facility == G::LogOutput::SyslogFacility::Daemon ) return LOG_DAEMON ;
 			if( facility == G::LogOutput::SyslogFacility::Mail ) return LOG_MAIL ;
 			if( facility == G::LogOutput::SyslogFacility::Cron ) return LOG_CRON ;
-			// etc...
+			if( facility == G::LogOutput::SyslogFacility::Local0 ) return LOG_LOCAL0 ;
+			if( facility == G::LogOutput::SyslogFacility::Local1 ) return LOG_LOCAL1 ;
+			if( facility == G::LogOutput::SyslogFacility::Local2 ) return LOG_LOCAL2 ;
+			if( facility == G::LogOutput::SyslogFacility::Local3 ) return LOG_LOCAL3 ;
+			if( facility == G::LogOutput::SyslogFacility::Local4 ) return LOG_LOCAL4 ;
+			if( facility == G::LogOutput::SyslogFacility::Local5 ) return LOG_LOCAL5 ;
+			if( facility == G::LogOutput::SyslogFacility::Local6 ) return LOG_LOCAL6 ;
+			if( facility == G::LogOutput::SyslogFacility::Local7 ) return LOG_LOCAL7 ;
 			return LOG_USER ;
 		}
 		int decode( G::Log::Severity severity )
@@ -51,35 +59,40 @@ namespace G
 	}
 }
 
-void G::LogOutput::open( std::ofstream & file , const std::string & path )
+void G::LogOutput::osoutput( int fd , G::Log::Severity severity , char * message , std::size_t n )
 {
-	file.open( path.c_str() , std::ios_base::out | std::ios_base::app ) ;
-}
-
-void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity , const std::string & message )
-{
-	if( severity != Log::Severity::s_Debug && m_config.m_use_syslog )
+	if( m_config.m_use_syslog && severity != Log::Severity::s_Debug )
 	{
-		::syslog( LogOutputImp::mode(m_facility,severity) , "%s" , message.c_str() ) ;
+		message[n] = '\0' ;
+		::syslog( LogOutputImp::mode(m_config.m_facility,severity) , "%s" , message ) ;
 	}
 
-	if( !m_config.m_quiet_stderr || severity == Log::Severity::s_Error || severity == Log::Severity::s_Warning )
+	if( m_config.m_quiet_stderr && (
+		severity == Log::Severity::s_Debug ||
+		severity == Log::Severity::s_InfoVerbose ||
+		severity == Log::Severity::s_InfoSummary ) )
 	{
-		std_err << message << std::endl ;
+		;
+	}
+	else
+	{
+		message[n] = '\n' ;
+		::write( fd , message , n+1U ) ;
 	}
 }
 
-void G::LogOutput::init()
+void G::LogOutput::osinit()
 {
+	m_handle = 1 ; // pacify -Wunused-private-field
 	if( m_config.m_use_syslog )
-		::openlog( nullptr , LOG_PID , LogOutputImp::decode(m_facility) ) ;
+		::openlog( nullptr , LOG_PID , LogOutputImp::decode(m_config.m_facility) ) ;
 }
 
 void G::LogOutput::register_( const std::string & )
 {
 }
 
-void G::LogOutput::cleanup() const noexcept
+void G::LogOutput::oscleanup() const noexcept
 {
 	if( m_config.m_use_syslog )
 		::closelog() ;

@@ -50,9 +50,6 @@ class G::Log
 public:
 	enum class Severity { s_InfoVerbose , s_InfoSummary , s_Debug , s_Warning , s_Error , s_Assertion } ;
 
-	class Line /// A class for adding line number information to the Log output.
-		{ public: const char * m_file ; int m_line ; Line( const char *file , int line ) : m_file(file) , m_line(line) {} } ;
-
 	Log( Severity , const char * file , int line ) ;
 		///< Constructor.
 
@@ -81,14 +78,12 @@ public:
 
 private:
 	void flush() ;
-	bool active() ;
 
 private:
-	friend class G::Log::Line ;
 	Severity m_severity ;
-	std::ostringstream m_ss ;
 	const char * m_file ;
 	int m_line ;
+	std::ostream & m_ostream ;
 } ;
 
 /// The DEBUG macro is for debugging during development. The LOG macro

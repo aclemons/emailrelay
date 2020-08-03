@@ -47,7 +47,7 @@ public:
 	void receive() ;
 		// Reads from the socket to clear the event.
 
-	handle_type handle() ;
+	handle_type handle() noexcept ;
 		// Extracts the socket fd as a handle.
 
 public:
@@ -110,7 +110,7 @@ GNet::FutureEventImp::~FutureEventImp()
 	}
 }
 
-GNet::FutureEventImp::handle_type GNet::FutureEventImp::handle()
+GNet::FutureEventImp::handle_type GNet::FutureEventImp::handle() noexcept
 {
 	int fd = -1 ;
 	std::swap( m_write.fd , fd ) ;
@@ -159,7 +159,7 @@ bool GNet::FutureEvent::send( handle_type handle , bool close ) noexcept
 	return FutureEventImp::send( handle , close ) ;
 }
 
-GNet::FutureEvent::handle_type GNet::FutureEvent::handle()
+GNet::FutureEvent::handle_type GNet::FutureEvent::handle() noexcept
 {
 	return m_imp->handle() ;
 }

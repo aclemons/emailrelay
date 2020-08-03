@@ -21,7 +21,7 @@
 #include "gdef.h"
 #include "glogoutput.h"
 #include "genvironment.h"
-#include <time.h> // localtime_s
+#include "gfile.h"
 #include <stdexcept>
 #include <fstream>
 
@@ -59,39 +59,11 @@ namespace G
 	}
 }
 
-void G::LogOutput::cleanup() const noexcept
+void G::LogOutput::osoutput( int fd , G::Log::Severity severity , char * message , std::size_t n )
 {
-	if( m_handle != 0 )
-		DeregisterEventSource( m_handle ) ;
-}
-
-void G::LogOutput::open( std::ofstream & file , const std::string & path )
-{
-	#if GCONFIG_HAVE_FSOPEN
-		file.open( path.c_str() , std::ios_base::out | std::ios_base::app , _SH_DENYNO ) ;
-	#else
-		file.open( path.c_str() , std::ios_base::out | std::ios_base::app ) ;
-	#endif
-}
-
-void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity , const std::string & message )
-{
-	// standard error
-	//
-	std_err << message << std::endl ;
-
-	// debugger
-	//
-	static bool debugger = ! Environment::get( "GLOGOUTPUT_DEBUGGER" , std::string() ).empty() ;
-	if( debugger )
-	{
-		OutputDebugStringA( message.c_str() ) ;
-		OutputDebugStringA( "\r\n" ) ;
-	}
-
 	// event log
 	//
-	if( m_config.m_use_syslog && severity != Log::Severity::s_Debug && m_handle != 0 )
+	if( m_config.m_use_syslog && severity != Log::Severity::s_Debug && m_handle != HNULL )
 	{
 		DWORD id = 0x400003E9L ;
 		WORD type = EVENTLOG_INFORMATION_TYPE ;
@@ -106,13 +78,21 @@ void G::LogOutput::rawOutput( std::ostream & std_err , G::Log::Severity severity
 			type = EVENTLOG_ERROR_TYPE ;
 		}
 
-		const char * p[] = { message.c_str() , nullptr } ;
+		message[n] = '\0' ;
+		const char * p[] = { message , nullptr } ;
 		BOOL rc = ReportEventA( m_handle , type , 0 , id , nullptr , 1 , 0 , p , nullptr ) ;
 		G__IGNORE_VARIABLE(BOOL,rc) ;
 	}
+
+	// standard error or log file -- note that stderr is not accessible if a gui
+	// build -- stderr will be text mode whereas a log file will be binary
+	//
+	if( fd > 2 ) message[n++] = '\r' ;
+	message[n++] = '\n' ;
+	G::File::write( fd , message , n ) ;
 }
 
-void G::LogOutput::init()
+void G::LogOutput::osinit()
 {
 	if( m_config.m_use_syslog )
 	{
@@ -122,7 +102,7 @@ void G::LogOutput::init()
 			std::string this_name = LogOutputImp::basename( this_exe ) ;
 			G::LogOutput::register_( this_exe ) ;
 			m_handle = RegisterEventSourceA( nullptr , this_name.c_str() ) ;
-			if( m_handle == HNULL && !m_std_err.good() ) // complain if no other mechanism
+			if( m_handle == HNULL && !m_config.m_allow_bad_syslog )
 				throw std::runtime_error( "cannot access the system event log" ) ;
 		}
 	}
@@ -153,6 +133,12 @@ void G::LogOutput::register_( const std::string & exe_path )
 	}
 	if( key != 0 )
 		RegCloseKey( key ) ;
+}
+
+void G::LogOutput::oscleanup() const noexcept
+{
+	if( m_handle != HNULL )
+		DeregisterEventSource( m_handle ) ;
 }
 
 /// \file glogoutput_win32.cpp

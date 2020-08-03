@@ -48,7 +48,6 @@ GNet::EventLoop & GNet::EventLoop::instance()
 {
 	if( m_this == nullptr )
 		throw NoInstance() ;
-	G_ASSERT( m_this != nullptr ) ;
 	return *m_this ;
 }
 

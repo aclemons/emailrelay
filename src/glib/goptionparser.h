@@ -112,6 +112,7 @@ private:
 	static bool isOldOption( const std::string & ) ;
 	static bool isNewOption( const std::string & ) ;
 	static bool isAnOptionSet( const std::string & ) ;
+	static std::size_t valueCount( const std::string & ) ;
 
 private:
 	const Options & m_spec ;

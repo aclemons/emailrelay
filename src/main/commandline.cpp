@@ -76,7 +76,6 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & arg , const std
 		if( sanityCheck( config_file ) )
 			m_getopt.addOptionsFromFile( 1U ) ;
 	}
-	m_getopt.collapse( "pid-file" ) ; // allow multiple pidfiles but only if all the same
 }
 
 Main::CommandLine::~CommandLine()

@@ -80,46 +80,45 @@ namespace G
 		}
 	}
 
-/// Returns a pointer inside the given buffer that is aligned for
-/// values of type T.
-///
-template <typename T>
-inline void * align( const char * buffer , std::size_t buffer_size )
-{
-	namespace imp = AlignImp ;
-	return imp::align_imp<T>( buffer , buffer_size ) ;
-}
+	/// Returns a pointer inside the given buffer that is aligned for
+	/// values of type T.
+	///
+	template <typename T>
+	inline void * align( const char * buffer , std::size_t buffer_size )
+	{
+		namespace imp = AlignImp ;
+		return imp::align_imp<T>( buffer , buffer_size ) ;
+	}
 
-/// Returns a pointer inside the given unsigned-char buffer that
-/// is aligned for values of type T.
-///
-template <typename T>
-inline void * align( const unsigned char * buffer , std::size_t buffer_size )
-{
-	namespace imp = AlignImp ;
-	return imp::align_imp<T>( buffer , buffer_size ) ;
-}
+	/// Returns a pointer inside the given unsigned-char buffer that
+	/// is aligned for values of type T.
+	///
+	template <typename T>
+	inline void * align( const unsigned char * buffer , std::size_t buffer_size )
+	{
+		namespace imp = AlignImp ;
+		return imp::align_imp<T>( buffer , buffer_size ) ;
+	}
 
-/// Divides the number of bytes in a range to give the number
-/// of whole Ts.
-///
-template <typename T>
-inline
-constexpr std::size_t align_shift( std::size_t n )
-{
-	return AlignImp::shift<T>( n ) ;
-}
+	/// Divides the number of bytes in a range to give the number
+	/// of whole Ts.
+	///
+	template <typename T>
+	inline
+	constexpr std::size_t align_shift( std::size_t n )
+	{
+		return AlignImp::shift<T>( n ) ;
+	}
 
-/// Rounds down the number of bytes in a range to give a number of
-/// bytes that will hold an exact number of Ts.
-///
-template <typename T>
-inline
-constexpr std::size_t align_mask( std::size_t n )
-{
-	return AlignImp::mask<T>( n ) ;
-}
-
+	/// Rounds down the number of bytes in a range to give a number of
+	/// bytes that will hold an exact number of Ts.
+	///
+	template <typename T>
+	inline
+	constexpr std::size_t align_mask( std::size_t n )
+	{
+		return AlignImp::mask<T>( n ) ;
+	}
 }
 
 #endif

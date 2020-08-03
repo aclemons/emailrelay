@@ -101,6 +101,8 @@ public:
 		bool disconnect_on_max_size{false} ;
 		bool tls_starttls{false} ;
 		bool tls_connection{false} ; // smtps
+		bool ignore_eager_quit{false} ;
+		bool allow_pipelining{false} ;
 
 		Config() ;
 		Config( bool with_vrfy , unsigned int filter_timeout , std::size_t max_size ,
@@ -116,6 +118,8 @@ public:
 		Config & set_disconnect_on_max_size( bool = true ) ;
 		Config & set_tls_starttls( bool = true ) ;
 		Config & set_tls_connection( bool = true ) ;
+		Config & set_ignore_eager_quit( bool = true ) ;
+		Config & set_allow_pipelining( bool = true ) ;
 	} ;
 
 	ServerProtocol( GNet::ExceptionSink , Sender & , Verifier & , ProtocolMessage & ,
@@ -153,6 +157,18 @@ public:
 		///< Returns true if currently in the data-transfer state.
 		///< This can be used to enable the GNet::LineBuffer
 		///< 'fragments' option.
+
+	bool halfDuplexBusy() const ;
+		///< Returns true if the protocol has received a command
+		///< but not yet sent a response. This can be used to
+		///< enforce half-duplex operation on a badly-behaved
+		///< client that is attempting to do command pipelining.
+
+	bool halfDuplexBusy( const char * , std::size_t ) const ;
+		///< This overload is used for a newly-received network
+		///< packet. If it returns true then the packet should be
+		///< queued up and only apply()d after then next use
+		///< of Sender::protocolSend().
 
 	bool apply( const char * line_data , std::size_t line_size , std::size_t eolsize , std::size_t linesize , char c0 ) ;
 		///< Called on receipt of a line of text from the remote
@@ -252,6 +268,7 @@ private:
 	void doDiscard( EventData , bool & ) ;
 	void doHelp( EventData , bool & ) ;
 	void doExpn( EventData , bool & ) ;
+	void doEagerQuit( EventData , bool & ) ;
 	void doQuit( EventData , bool & ) ;
 	void doEhlo( EventData , bool & ) ;
 	void doHelo( EventData , bool & ) ;
@@ -377,5 +394,6 @@ inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_mail_r
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_disconnect_on_max_size( bool b ) { disconnect_on_max_size = b ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_tls_starttls( bool b ) { tls_starttls = b ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_tls_connection( bool b ) { tls_connection = b ; return *this ; }
+inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_allow_pipelining( bool b ) { allow_pipelining = b ; return *this ; }
 
 #endif

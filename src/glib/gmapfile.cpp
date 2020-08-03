@@ -61,9 +61,9 @@ G::MapFile::MapFile( const OptionMap & map , const std::string & yes )
 	for( auto p = map.begin() ; p != map.end() ; )
 	{
 		std::string key = (*p).first ;
-		if( map.contains(key) ) // ie. ignore "--foo=off"
+		if( !(*p).second.isOff() )
 		{
-			std::string value = (*p).second.valued() ? map.value(key) : yes ;
+			std::string value = (*p).second.isOn() ? yes : map.value(key) ;
 			log( key , value ) ;
 			add( key , value ) ;
 		}
@@ -98,11 +98,11 @@ void G::MapFile::readFrom( std::istream & ss )
 		std::string key ;
 		std::string value ;
 		{
-			StringArray part ;
-			Str::splitIntoTokens( line , part , " =\t" ) ;
-			if( part.empty() )
+			StringArray parts ;
+			Str::splitIntoTokens( line , parts , " =\t" ) ;
+			if( parts.empty() )
 				continue ;
-			key = part[0] ;
+			key = parts[0] ;
 
 			value = Str::tail( line , line.find(key)+key.size() , std::string() ) ;
 			Str::trimLeft( value , " =\t" ) ;
@@ -216,13 +216,13 @@ void G::MapFile::replace( List & line_list ) const
 	for( const auto & map_item : m_map )
 	{
 		bool found = false ;
-		for(auto & line : line_list)
+		for( auto & line : line_list )
 		{
 			if( line.empty() ) continue ;
-			StringArray part ;
-			Str::splitIntoTokens( line , part , Str::ws()+"=#" ) ;
-			if( part.empty() ) continue ;
-			if( part.at(0U) == map_item.first )
+			StringArray parts ;
+			Str::splitIntoTokens( line , parts , Str::ws()+"=#" ) ;
+			if( parts.empty() ) continue ;
+			if( parts.at(0U) == map_item.first )
 			{
 				std::string value = map_item.second ;
 				line = Str::trimmed( map_item.first + " " + quote(value) , Str::ws() ) ;

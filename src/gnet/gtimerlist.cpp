@@ -211,8 +211,8 @@ void GNet::TimerList::purgeRemoved()
 {
 	if( m_removed )
 	{
-		m_list.erase( std::remove( m_list.begin() , m_list.end() , Value(nullptr,ExceptionSink()) ) , m_list.end() ) ;
 		m_removed = false ;
+		m_list.erase( std::remove( m_list.begin() , m_list.end() , Value(nullptr,ExceptionSink()) ) , m_list.end() ) ;
 	}
 }
 

@@ -638,6 +638,27 @@
 			#define GCONFIG_HAVE_FSOPEN 1
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_SOPEN)
+		#if defined(G_UNIX) || defined(G_MINGW)
+			#define GCONFIG_HAVE_SOPEN 0
+		#else
+			#define GCONFIG_HAVE_SOPEN 1
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_SOPEN_S)
+		#if defined(G_UNIX) || defined(G_MINGW)
+			#define GCONFIG_HAVE_SOPEN_S 0
+		#else
+			#define GCONFIG_HAVE_SOPEN_S 1
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_EXTENDED_OPEN)
+		#if defined(G_UNIX) || defined(G_MINGW)
+			#define GCONFIG_HAVE_EXTENDED_OPEN 0
+		#else
+			#define GCONFIG_HAVE_EXTENDED_OPEN 1
+		#endif
+	#endif
 
 	/* Include early o/s headers
 	 */
@@ -670,9 +691,7 @@
 	#if defined(G_WINDOWS)
 		#include <shellapi.h>
 		#include <direct.h>
-		#ifndef G_MINGW
-			#include <share.h>
-		#endif
+		#include <share.h>
 	#endif
 	#if GCONFIG_HAVE_SYS_TYPES_H
 		#include <sys/types.h>

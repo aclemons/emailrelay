@@ -50,9 +50,9 @@ public:
 
 	~ScopeExit() ;
 		///< Destructor. Calls the exit function unless
-		///< disarm()ed.
+		///< release()d.
 
-	void disarm() noexcept ;
+	void release() noexcept ;
 		///< Deactivates the exit function.
 
 public:
@@ -102,7 +102,7 @@ G::ScopeExit::ScopeExit( std::function<void()> fn ) :
 }
 
 inline
-void G::ScopeExit::disarm() noexcept
+void G::ScopeExit::release() noexcept
 {
 	m_fn = nullptr ;
 }

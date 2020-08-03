@@ -69,6 +69,9 @@
 /* Define true if have execvpe() in unistd.h */
 #undef GCONFIG_HAVE_EXECVPE
 
+/* Define true if extended fstream::open() is available */
+#undef GCONFIG_HAVE_EXTENDED_OPEN
+
 /* Define true if _fsopen() is available */
 #undef GCONFIG_HAVE_FSOPEN
 
@@ -200,6 +203,12 @@
 
 /* Define true if socklen_t type definition in sys/socket.h */
 #undef GCONFIG_HAVE_SOCKLEN_T
+
+/* Define true if _sopen() is available */
+#undef GCONFIG_HAVE_SOPEN
+
+/* Define true if _sopen_s() is available */
+#undef GCONFIG_HAVE_SOPEN_S
 
 /* Define true if ssize_t type is defined */
 #undef GCONFIG_HAVE_SSIZE_T

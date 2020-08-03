@@ -215,7 +215,7 @@ CTAGS = ctags
 CSCOPE = cscope
 DIST_SUBDIRS = $(SUBDIRS)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/gconfig_defs.h.in \
-	AUTHORS COPYING ChangeLog INSTALL NEWS README compile depcomp \
+	AUTHORS COPYING ChangeLog INSTALL NEWS README compile \
 	install-sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
@@ -907,6 +907,10 @@ uninstall-local:
 RPM_ROOT ?= ${HOME}/rpmbuild
 #ARCH ?= $(shell arch)
 ARCH ?= x86_64
+
+.PHONY: strip
+strip:
+	$(MAKE) -C src/main strip
 
 .PHONY: rpm
 rpm: $(RPM)

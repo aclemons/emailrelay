@@ -58,25 +58,30 @@ void G::Options::parseSpec( const std::string & spec , char sep_major , char sep
 			throw InvalidSpecification( ss.str() ) ;
 		}
 
-		unsigned int value_multiplicity = Str::toUInt( inner_part[4U] ) ;
 		unsigned int level = Str::toUInt( inner_part[6U] ) ;
 		std::string short_form = inner_part[0] ;
 		char c = short_form.empty() ? '\0' : short_form.at(0U) ;
 
 		addSpec( inner_part[1U] , c , inner_part[2U] ,
-			inner_part[3U] , value_multiplicity , inner_part[5U] , level ) ;
+			inner_part[3U] , inner_part[4U] , inner_part[5U] , level ) ;
 	}
 }
 
 void G::Options::addSpec( const std::string & name , char c ,
 	const std::string & description , const std::string & description_extra ,
-	unsigned int value_multiplicity , const std::string & value_description , unsigned int level )
+	const std::string & value_multiplicity , const std::string & value_description , unsigned int level )
 {
 	std::pair<Map::iterator,bool> rc = m_map.insert( std::make_pair( name ,
 		Option(c,name,description,description_extra,value_multiplicity,value_description,level) ) ) ;
 	if( ! rc.second )
 		throw InvalidSpecification("duplication") ;
 	m_names.push_back( name ) ; // defines the display order
+}
+
+bool G::Options::defaulting( const std::string & name ) const
+{
+	auto p = m_map.find( name ) ;
+	return p == m_map.end() ? false : ( (*p).second.value_multiplicity == Option::Multiplicity::zero_or_one ) ;
 }
 
 bool G::Options::valued( char c ) const
@@ -87,7 +92,7 @@ bool G::Options::valued( char c ) const
 bool G::Options::valued( const std::string & name ) const
 {
 	auto p = m_map.find( name ) ;
-	return p == m_map.end() ? false : ( (*p).second.value_multiplicity > 0U ) ;
+	return p == m_map.end() ? false : ( (*p).second.value_multiplicity != Option::Multiplicity::zero ) ;
 }
 
 bool G::Options::unvalued( const std::string & name ) const
@@ -103,7 +108,7 @@ bool G::Options::multivalued( char c ) const
 bool G::Options::multivalued( const std::string & name ) const
 {
 	auto p = m_map.find( name ) ;
-	return p == m_map.end() ? false : ( (*p).second.value_multiplicity > 1U ) ;
+	return p == m_map.end() ? false : ( (*p).second.value_multiplicity == Option::Multiplicity::many ) ;
 }
 
 bool G::Options::visible( const std::string & name , Level level , bool exact ) const
@@ -204,7 +209,7 @@ std::string G::Options::usageSummaryPartTwo( Level level ) const
 				G_ASSERT( (*spec_p).second.c != '\0' ) ;
 				ss << "-" << (*spec_p).second.c ;
 			}
-			if( (*spec_p).second.value_multiplicity > 0U )
+			if( (*spec_p).second.value_multiplicity != Option::Multiplicity::zero )
 			{
 				std::string vd = (*spec_p).second.value_description ;
 				if( vd.empty() ) vd = "value" ;
@@ -246,14 +251,16 @@ std::string G::Options::usageHelpCore( const std::string & prefix , Level level 
 				line.append( "--" ) ;
 				line.append( (*spec_p).second.name ) ;
 			}
-
-			if( (*spec_p).second.value_multiplicity > 0U )
+			if( (*spec_p).second.value_multiplicity != Option::Multiplicity::zero )
 			{
+				bool defaulting = (*spec_p).second.value_multiplicity == Option::Multiplicity::zero_or_one ;
 				std::string vd = (*spec_p).second.value_description ;
 				if( vd.empty() ) vd = "value" ;
+				if( defaulting ) line.append( "[" ) ;
 				line.append( "=<" ) ;
 				line.append( vd ) ;
 				line.append( ">" ) ;
+				if( defaulting ) line.append( "]" ) ;
 			}
 			line.append( 1U , ' ' ) ;
 
@@ -301,17 +308,31 @@ std::string G::Options::usageSummary( const std::string & exe , const std::strin
 // ==
 
 G::Options::Option::Option( char c_ , const std::string & name_ , const std::string & description_ ,
-	const std::string & description_extra_ , unsigned int value_multiplicity_ ,
+	const std::string & description_extra_ , const std::string & value_multiplicity_ ,
 	const std::string & vd_ , unsigned int level_ ) :
 		c(c_) ,
 		name(name_) ,
 		description(description_) ,
 		description_extra(description_extra_) ,
-		value_multiplicity(value_multiplicity_) ,
+		value_multiplicity(decode(value_multiplicity_)) ,
 		hidden(description_.empty()||level_==0U) ,
 		value_description(vd_) ,
 		level(level_)
 {
+}
+
+G::Options::Option::Multiplicity G::Options::Option::decode( const std::string & s )
+{
+	if( s == "0" )
+		return Multiplicity::zero ;
+	else if( s == "01" )
+		return Multiplicity::zero_or_one ;
+	else if( s == "1" )
+		return Multiplicity::one ;
+	else if( s == "2" )
+		return Multiplicity::many ;
+	else
+		throw InvalidSpecification( "multiplicity" ) ;
 }
 
 /// \file goptions.cpp

@@ -35,8 +35,8 @@ namespace G
 /// \class G::OptionMap
 /// A multimap-like container for command-line options and their values.
 /// The values are G::OptionValue objects, so they can be valued with a
-/// string value or unvalued with an on/off status. Normally populated
-/// by G::OptionParser.
+/// string value or unvalued with an on/off status, and they can have
+/// a repeat-count. Normally populated by G::OptionParser.
 ///
 class G::OptionMap
 {
@@ -52,11 +52,13 @@ public:
 
 	void insert( const Map::value_type & ) ;
 		///< Inserts the key/value pair into the map. The ordering of values in
-		///< the map with the same key is undefined (but see std::multimap for
-		///< c++98 and c++11).
+		///< the map with the same key is in the order of insert()ion.
 
 	void replace( const std::string & key , const std::string & value ) ;
-		///< Replaces all matching values with a single valued() value.
+		///< Replaces all matching values with a single value.
+
+	void increment( const std::string & key ) ;
+		///< Increments the repeat count for the given entry.
 
 	const_iterator begin() const ;
 		///< Returns the begin iterator.
@@ -77,26 +79,29 @@ public:
 		///< Clears the map.
 
 	bool contains( const std::string & ) const ;
-		///< Returns true if the map contains the given key, but ignoring un-valued()
-		///< 'off' options.
+		///< Returns true if the map contains the given key, but ignoring 'off'
+		///< option-values.
 
 	bool contains( const char * ) const ;
 		///< Overload taking a c-string.
 
 	std::size_t count( const std::string & key ) const ;
-		///< Returns the number of times the key appears in the multimap.
+		///< Returns the total repeat count for all matching entries.
+		///< See G::OptionValue::count().
 
 	std::string value( const std::string & key , const std::string & default_ = std::string() ) const ;
-		///< Returns the value of the valued() option identified by the given key.
-		///< Multiple matching values are concatenated with a comma separator
-		///< (normally in the order of insertion).
+		///< Returns the matching value, with concatentation into a comma-separated
+		///< list if multivalued. If there are any on/off option-values matching
+		///< the key then a single value is returned corresponding to the first
+		///< one, being G::Str::positive() if 'on' or the supplied default
+		///< if 'off'.
 
 	std::string value( const char * key , const char * default_ = nullptr ) const ;
 		///< Overload taking c-strings.
 
 private:
-	std::string join( Map::const_iterator , Map::const_iterator ) const ;
-	static bool value_comp( const Map::value_type & , const Map::value_type & ) ;
+	std::string join( Map::const_iterator , Map::const_iterator , const std::string & ) const ;
+	static bool compare( const Map::value_type & , const Map::value_type & ) ;
 
 private:
 	Map m_map ;

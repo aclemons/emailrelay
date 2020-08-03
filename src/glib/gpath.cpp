@@ -458,12 +458,12 @@ G::Path G::Path::collapsed() const
 
 bool G::Path::operator==( const Path & other ) const
 {
-	return m_str == other.m_str ;
+	return m_str == other.m_str ; // noexcept only in c++14
 }
 
 bool G::Path::operator!=( const Path & other ) const
 {
-	return m_str != other.m_str ;
+	return m_str != other.m_str ; // noexcept only in c++14
 }
 
 void G::Path::swap( Path & other ) noexcept

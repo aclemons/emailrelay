@@ -31,6 +31,7 @@ namespace GNet
 
 /// \class GNet::Listener
 /// An interface for a network listener.
+/// \see GNet::Server, GNet::Monitor
 ///
 class GNet::Listener
 {

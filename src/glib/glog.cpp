@@ -25,7 +25,8 @@
 G::Log::Log( Severity severity , const char * file , int line ) :
 	m_severity(severity) ,
 	m_file(file) ,
-	m_line(line)
+	m_line(line) ,
+	m_ostream(LogOutput::start(m_severity,m_file,m_line))
 {
 }
 
@@ -33,7 +34,7 @@ G::Log::~Log()
 {
 	try
 	{
-		flush() ;
+		LogOutput::output( m_ostream ) ;
 	}
 	catch(...)
 	{
@@ -42,33 +43,19 @@ G::Log::~Log()
 
 bool G::Log::at( Severity s )
 {
-	const LogOutput * output = LogOutput::instance() ;
-	return output && output->at(s) ;
-}
-
-bool G::Log::active()
-{
-	const LogOutput * output = LogOutput::instance() ;
-	return output ? output->config().m_output_enabled : false ;
-}
-
-void G::Log::flush()
-{
-	if( active() )
-	{
-		LogOutput::output( m_severity , m_file , m_line , m_ss.str() ) ;
-	}
+	const LogOutput * log_output = LogOutput::instance() ;
+	return log_output && log_output->at( s ) ;
 }
 
 std::ostream & G::Log::operator<<( const char * s )
 {
 	s = s ? s : "" ;
-	return m_ss << s ;
+	return m_ostream << s ;
 }
 
 std::ostream & G::Log::operator<<( const std::string & s )
 {
-	return m_ss << s ;
+	return m_ostream << s ;
 }
 
 /// \file glog.cpp

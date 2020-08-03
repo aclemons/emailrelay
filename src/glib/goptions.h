@@ -75,8 +75,9 @@ public:
 		///< Uses specifications like "p!port!defines the port number!!1!port!1|v!verbose!shows more logging!!0!!1"
 		///< made up of (1) an optional single-character-option-letter, (2) a multi-character-option-name
 		///< (3) an option-description, (4) optional option-description-extra text, (5) a value-type
-		///< (with 0 for unvalued, 1 for a string value, and 2 for a comma-separated list (possibly
-		///< multiple times)) or (6) a value-description (unless unvalued), and (7) a level enumeration.
+		///< (with '0' for unvalued, '1' for a single value, '2' for a comma-separated list (possibly
+		///< multiple times), or '01' for a defaultable single value) or (6) a value-description
+		///< (unless unvalued), and (7) a level enumeration.
 		///<
 		///< By convention mainstream options should have a level of 1, and obscure ones level 2 and above.
 		///< If the option-description field is empty or if the level is zero then the option is hidden.
@@ -99,12 +100,15 @@ public:
 		///< Returns false if not valid().
 
 	bool valued( char ) const ;
-		///< Returns true if the short-form option character is valid.
+		///< Returns true if the given short-form option takes a value,
+		///< Returns true if the short-form option character is valued,
+		///< including multivalued() and defaulting().
 		///< Returns false if not valid().
 
 	bool valued( const std::string & ) const ;
-		///< Returns true if the long-form option name is valued.
-		///< Returns false if not valid().
+		///< Returns true if the given long-form option takes a value,
+		///< including multivalued() and defaulting(). Returns false
+		///< if not valid().
 
 	bool multivalued( char ) const ;
 		///< Returns true if the short-form option can have multiple values.
@@ -114,9 +118,17 @@ public:
 		///< Returns true if the long-form option can have multiple values.
 		///< Returns false if not valid().
 
-	bool unvalued( const std::string & option_name ) const ;
+	bool unvalued( const std::string & ) const ;
 		///< Returns true if the given option name is valid and
 		///< takes no value. Returns false if not valid().
+
+	bool defaulting( const std::string & ) const ;
+		///< Returns true if the given long-form single-valued() option
+		///< can optionally have no explicit value, so "--foo=" and "--foo"
+		///< are equivalent, having an empty value, and "--foo=bar" has
+		///< a value of 'bar' but "--foo bar" is interpreted as 'foo'
+		///< taking its default (empty) value followed by a separate
+		///< argument 'bar'.
 
 	static std::size_t widthDefault() ;
 		///< Returns a default, non-zero word-wrapping width, reflecting
@@ -152,24 +164,26 @@ public:
 private:
 	struct Option
 	{
+		enum class Multiplicity { zero , zero_or_one , one , many } ;
 		char c ;
 		std::string name ;
 		std::string description ;
 		std::string description_extra ;
-		unsigned int value_multiplicity ; // 0,1,2 (unvalued, single-valued, multi-valued)
+		Multiplicity value_multiplicity ;
 		bool hidden ;
 		std::string value_description ;
 		unsigned int level ;
 
 		Option( char c_ , const std::string & name_ , const std::string & description_ ,
-			const std::string & description_extra_ , unsigned int value_multiplicity_ ,
+			const std::string & description_extra_ , const std::string & multiplicity_ ,
 			const std::string & vd_ , unsigned int level_ ) ;
+		static Multiplicity decode( const std::string & ) ;
 	} ;
 
 private:
 	void parseSpec( const std::string & spec , char , char , char ) ;
 	void addSpec( const std::string & , char c , const std::string & , const std::string & ,
-		unsigned int , const std::string & , unsigned int ) ;
+		const std::string & , const std::string & , unsigned int ) ;
 	static std::size_t widthFloor( std::size_t w ) ;
 	std::string usageSummaryPartOne( Level ) const ;
 	std::string usageSummaryPartTwo( Level ) const ;

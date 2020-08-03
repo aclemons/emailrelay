@@ -17,7 +17,6 @@
 //
 // gaddress4.cpp
 //
-// This file is formatted for side-by-side comparison with gaddress6.cpp.
 
 #include "gdef.h"
 #include "gaddress4.h"
@@ -31,8 +30,6 @@
 #include <sys/types.h>
 #include <sstream>
 #include <array>
-//
-//
 
 namespace GNet
 {
@@ -58,8 +55,6 @@ GNet::Address4::Address4( std::nullptr_t ) // NOLINT cppcoreguidelines-pro-type-
 	m_inet.specific = specific_type{} ;
 	m_inet.specific.sin_family =  family() ;
 	m_inet.specific.sin_port =  0 ;
-//
-//
 }
 
 GNet::Address4::Address4( unsigned int port ) :
@@ -140,22 +135,6 @@ const char * GNet::Address4::setHostAddress( union_type & inet , const std::stri
 
 	int rc = inet_pton( family() , host_part.c_str() , &inet.specific.sin_addr ) ;
 	return rc == 1 ? nullptr : "invalid ipv4 network address" ;
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
 }
 
 void GNet::Address4::setPort( unsigned int port )
@@ -179,24 +158,6 @@ const char * GNet::Address4::setPort( union_type & inet , unsigned int port )
 	inet.specific.sin_port = htons( in_port ) ;
 	return nullptr ;
 }
-
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
 
 std::string GNet::Address4::displayString() const
 {
@@ -223,11 +184,6 @@ std::string GNet::Address4::queryString() const
 	std::reverse( parts.begin() , parts.end() ) ;
 	return G::Str::join( "." , parts ) ;
 }
-
-
-
-
-
 
 bool GNet::Address4::validData( const sockaddr * addr , socklen_t len )
 {
@@ -411,9 +367,11 @@ bool GNet::Address4::format( std::string s )
 			return false ;
 
 	unsigned int n = 0U ;
+	unsigned int z = static_cast<unsigned char>('0') ;
 	for( char c : s )
 	{
-		n = c == '.' ? 0U : ( ( n * 10U ) + (static_cast<unsigned int>(c)-static_cast<unsigned int>('0')) ) ;
+		unsigned int uc = static_cast<unsigned char>(c) ;
+		n = c == '.' ? 0U : ( ( n * 10U ) + (uc-z) ) ;
 		if( n >= 256U )
 			return false ;
 	}

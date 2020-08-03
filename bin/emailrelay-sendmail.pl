@@ -26,12 +26,12 @@ use strict ;
 use Getopt::Std ;
 
 # parse and mostly ignore sendmail command-line options
-my $usage = "usage: emailrelay-sendmail [-intUv] [-BbCdFhNOopqRrVX <arg>] [-f <from>]" ;
+my $usage = "usage: emailrelay-sendmail [-intUv] [-BbCdFhNOopqRrVX <arg>] [-f <from>] <to> [<to> ...]" ;
 my %opt = () ;
 getopts( 'B:b:C:d:F:f:h:iN:nO:o:p:q:R:r:tUV:vX:' , \%opt ) or die "$usage\n" ;
 
 # submit into the emailrelay spool directory
 my $from = defined($opt{f}) ? $opt{f} : $ENV{USER} ;
-my @args = ( "-f" , $from ) ;
 my $exe = "/usr/sbin/emailrelay-submit" ;
+my @args = ( $exe , "-f" , $from , @ARGV ) ;
 exec { $exe } @args ;

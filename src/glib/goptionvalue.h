@@ -41,7 +41,7 @@ public:
 	OptionValue() ;
 		///< Default constructor for a valueless value.
 
-	explicit OptionValue( const std::string & s ) ;
+	explicit OptionValue( const std::string & s , std::size_t count = 1U ) ;
 		///< Constructor for a valued value.
 		///< Precondition: !s.empty()
 
@@ -52,16 +52,10 @@ public:
 		///< A factory function for an unvalued option-disabled option.
 
 	bool isOn() const ;
-		///< Returns true if an unvalued enabled option.
+		///< Returns true if on().
 
 	bool isOff() const ;
-		///< Returns true if an unvalued disabled option.
-
-	bool valued() const ;
-		///< Returns true if constructed with the string overload,
-		///< or false if constructed by on() or off() or the default
-		///< constructor. Note that a non-valued() value can still
-		///< have a non-empty value().
+		///< Returns true if off().
 
 	std::string value() const ;
 		///< Returns the value as a string.
@@ -73,20 +67,28 @@ public:
 		///< Returns value() as an unsigned integer.
 		///< Returns the default if not numeric().
 
+	size_t count() const ;
+		///< Returns an instance count that is one by default.
+
+	void increment() ;
+		///< Increments the instance count().
+
 private:
-	bool m_valued{false} ; // ie. valued
+	bool m_on_off{false} ;
+	std::size_t m_count{1U} ;
 	std::string m_value ;
 } ;
 
 inline
 G::OptionValue::OptionValue() :
+	m_on_off(true) ,
 	m_value(G::Str::positive())
 {
 }
 
 inline
-G::OptionValue::OptionValue( const std::string & s ) :
-	m_valued(true) ,
+G::OptionValue::OptionValue( const std::string & s , std::size_t count ) :
+	m_count(count) ,
 	m_value(s)
 {
 }
@@ -94,9 +96,7 @@ G::OptionValue::OptionValue( const std::string & s ) :
 inline
 G::OptionValue G::OptionValue::on()
 {
-	OptionValue v ;
-	v.m_value = G::Str::positive() ;
-	return v ;
+	return OptionValue() ;
 }
 
 inline
@@ -110,19 +110,13 @@ G::OptionValue G::OptionValue::off()
 inline
 bool G::OptionValue::isOn() const
 {
-	return !m_valued && G::Str::isPositive(m_value) ;
+	return m_on_off && G::Str::isPositive(m_value) ;
 }
 
 inline
 bool G::OptionValue::isOff() const
 {
-	return !m_valued && G::Str::isNegative(m_value) ;
-}
-
-inline
-bool G::OptionValue::valued() const
-{
-	return m_valued ;
+	return m_on_off && G::Str::isNegative(m_value) ;
 }
 
 inline
@@ -134,13 +128,25 @@ std::string G::OptionValue::value() const
 inline
 bool G::OptionValue::numeric() const
 {
-	return valued() && G::Str::isUInt(m_value) ;
+	return !m_on_off && G::Str::isUInt(m_value) ;
 }
 
 inline
 unsigned int G::OptionValue::number( unsigned int default_ ) const
 {
 	return numeric() ? G::Str::toUInt(m_value) : default_ ;
+}
+
+inline
+std::size_t G::OptionValue::count() const
+{
+	return m_count ;
+}
+
+inline
+void G::OptionValue::increment()
+{
+	m_count++ ;
 }
 
 #endif

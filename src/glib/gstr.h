@@ -298,7 +298,7 @@ public:
 		///< the end, otherwise the two specials strings must be the same length.
 
 	static void unescape( std::string & s ) ;
-		///< Overload for "normal" unescaping where the string has backslash escaping
+		///< Overload for 'normal' unescaping where the string has backslash escaping
 		///< of whitespace.
 
 	static std::string unescaped( const std::string & s ) ;
@@ -451,7 +451,7 @@ public:
 	static std::size_t ifind( const std::string & s , const std::string & key ,
 		std::size_t pos = 0U ) ;
 			///< Returns the position of the key in 's' using a Latin-1 case-insensitive
-			///< search. Returns std::string::npos is not found. The locale is ignored.
+			///< search. Returns std::string::npos if not found. The locale is ignored.
 
 	static bool tailMatch( const std::string & in , const std::string & ending ) ;
 		///< Returns true if the string has the given ending (or the given ending is empty).

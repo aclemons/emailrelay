@@ -18,8 +18,10 @@
 #
 # make2cdb
 #
-# Parses automake files throughout the "../src" source tree and
-# generates a "compilation database" file, "compile_commands.json".
+# Parses automake files throughout the source tree and generates
+# a "compilation database" file, "compile_commands.json".
+#
+# See also: https://clang.llvm.org/docs/JSONCompilationDatabase.html
 #
 # Usage: make2cdb [--list] [<src-dir> [<top-dir> [<src-to-top>]]]
 #
@@ -27,8 +29,6 @@
 #  $ cd src
 #  $ ../bin/make2cdb > compile_commands.json
 #  $ ../bin/make2cdb --list | xargs clang-tidy -p .
-#
-# See also: https://clang.llvm.org/docs/JSONCompilationDatabase.html
 #
 
 use strict ;

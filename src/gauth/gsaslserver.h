@@ -53,9 +53,7 @@ namespace GAuth
 ///     sasl.apply(peer.initialResponse(),done) : sasl.initialChallenge() ;
 ///   while( !done )
 ///   {
-/// \endcode
-/// peer.send( challenge ) ;
-/// \code
+///     peer.send( challenge ) ;
 ///     string response = peer.receive() ;
 ///     challenge = sasl.apply( response , done ) ;
 ///   }

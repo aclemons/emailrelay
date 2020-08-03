@@ -29,6 +29,7 @@
 #include <vector>
 #include <sstream>
 #include <cerrno> // ENOENT etc
+#include <fcntl.h>
 
 namespace G
 {
@@ -43,6 +44,67 @@ namespace G
 			#endif
 		}
 	}
+}
+
+int G::File::open( const Path & path , std::ios_base::openmode mode )
+{
+	return open( path.cstr() , mode ) ;
+}
+
+int G::File::open( const char * path , std::ios_base::openmode mode ) noexcept
+{
+	int flags = 0 ;
+	if( ( mode & std::ios_base::out ) || ( mode & std::ios_base::app ) ) flags = O_WRONLY|O_CREAT ;
+	if( mode & std::ios_base::in ) flags = O_RDONLY ;
+	if( mode & std::ios_base::trunc ) flags |= O_TRUNC ;
+	if( mode & std::ios_base::app ) flags |= O_APPEND ;
+	int fd = ::open( path , flags , 0666 ) ;
+	if( fd >= 0 && ( mode & std::ios_base::ate ) )
+	{
+		auto rc = ::lseek( fd , 0 , SEEK_END ) ;
+		if( rc < 0 ) ::close(fd) , fd=-1 ;
+	}
+	return fd ;
+}
+
+void G::File::open( std::ofstream & ofstream , const Path & path )
+{
+	open( ofstream , path , std::ios_base::out | std::ios_base::binary ) ; // 'out' for uclibc
+}
+
+void G::File::open( std::ofstream & ofstream , const Path & path , std::ios_base::openmode mode )
+{
+	ofstream.open( path.cstr() , mode | std::ios_base::out | std::ios_base::binary ) ;
+}
+
+void G::File::open( std::ifstream & ifstream , const Path & path )
+{
+	open( ifstream , path , std::ios_base::in | std::ios_base::binary ) ; // 'in' for uclibc
+}
+
+void G::File::open( std::ifstream & ifstream , const Path & path , std::ios_base::openmode mode )
+{
+	ifstream.open( path.cstr() , mode | std::ios_base::in | std::ios_base::binary ) ;
+}
+
+std::filebuf * G::File::open( std::filebuf & fb , const Path & path , std::ios_base::openmode mode )
+{
+	return fb.open( path.cstr() , mode | std::ios_base::binary ) ;
+}
+
+ssize_t G::File::read( int fd , char * p , std::size_t n ) noexcept
+{
+	return ::read( fd , p , n ) ;
+}
+
+ssize_t G::File::write( int fd , const char * p , std::size_t n ) noexcept
+{
+	return ::write( fd , p , n ) ;
+}
+
+void G::File::close( int fd ) noexcept
+{
+	::close( fd ) ;
 }
 
 bool G::File::mkdir( const Path & dir , const NoThrow & )

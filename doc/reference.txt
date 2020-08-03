@@ -339,7 +339,7 @@ where <option> is:
   Specifies the directory used for holding mail messages that have been
   received but not yet forwarded.
 
-# --syslog (-k)
+# --syslog[=<facility>] (-k)
   When used with "--log" this option enables logging to the syslog even if the
   "--no-syslog" option is also used. This is typically used as a convenient
   override when using "--as-client".
@@ -411,10 +411,12 @@ When using "--as-client", or "--dont-serve" and "--forward", the spooled
 messages begin to be forwarded as soon as the program starts up, and the
 program terminates once they have all been sent.
 
-All recipient e-mail addresses must be accepted by the remote server when
-E-MailRelay forwards an e-mail message. If any one recipient is rejected then
-the message will be left in the spool directory with a ".bad" suffix on the
-envelope file.
+By default all recipient e-mail addresses must be accepted by the remote server
+when E-MailRelay forwards an e-mail message. If any one recipient is rejected
+then the message will be left in the spool directory with a ".bad" suffix on
+the envelope file. This behaviour can be changed by using "--forward-to-some"
+command-line option so that forwarding will succeed for the valid recipients
+and the failed message will contain the invalid ones.
 
 Mail processing
 ---------------
@@ -706,6 +708,10 @@ E-MailRelay can also make outgoing SMTP connections using TLS encryption where
 the whole SMTP dialog is encrypted from the start ("--client-tls-connection").
 This is sometimes called SMTP-over-TLS or secure SMTP (smtps) or implicit TLS
 and it is normally used with port number 465.
+
+Similarly, when using "--server-tls-connection" the E-MailRelay server will
+expect all connections to be using TLS from the start, so the whole SMTP
+dialogue is encrypted, without the need for "STARTTLS".
 
 PAM Authentication
 ------------------

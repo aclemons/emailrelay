@@ -36,8 +36,11 @@ public:
 	void saveAs( const G::Path & ) ;
 
 public:
+	~GLinkImp() = default ;
 	GLinkImp( const GLinkImp & ) = delete ;
+	GLinkImp( GLinkImp && ) = delete ;
 	void operator=( const GLinkImp & ) = delete ;
+	void operator=( GLinkImp && ) = delete ;
 
 private:
 	static std::string quote( const std::string & ) ;

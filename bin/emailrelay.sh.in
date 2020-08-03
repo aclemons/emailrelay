@@ -42,6 +42,7 @@ PIDFILE=__RUNDIR__/$NAME.pid
 GROUP=daemon
 DAEMON=__SBIN_DIR__/$NAME
 SUBMIT=__SBIN_DIR__/$NAME-submit
+FACILITY=
 
 test -f __SYSCONF_DIR__/default/$NAME && . __SYSCONF_DIR__/default/$NAME
 test -f /etc/rc.conf.d/$NAME && . /etc/rc.conf.d/$NAME
@@ -226,7 +227,7 @@ case "$1" in
 			log_daemon_msg "Starting $DESC"
 			log_progress_msg "$NAME"
 			setup_rundir
-			start_daemon -p "$PIDFILE" -- "$DAEMON" --as-server --syslog --pid-file "$PIDFILE" "$CONFIG"
+			start_daemon -p "$PIDFILE" -- "$DAEMON" --as-server --syslog=$FACILITY --pid-file "$PIDFILE" "$CONFIG"
 			e="$?"
 			log_end_msg $e
 			test "$e" -eq 0

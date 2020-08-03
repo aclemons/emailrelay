@@ -53,9 +53,10 @@ namespace G
 	}
 }
 
-struct G::Process::Umask::UmaskImp
+class G::Process::Umask::UmaskImp
 {
-	public: mode_t m_old_mode ;
+public:
+	mode_t m_old_mode ;
 } ;
 
 // ===

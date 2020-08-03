@@ -126,8 +126,10 @@ public:
 		///< Adds the data and passes complete lines to the sink
 		///< function with line-data, line-size, eol-size and
 		///< c0 parameters. Stops if the sink function returns false.
-		///< This method is zero-copy if the supplied data contains
-		///< complete lines or if allowing line fragments.
+		///< The data can be nullptr in order to flush any existing
+		///< data to the sink function. This method is zero-copy if
+		///< the supplied data contains complete lines or if allowing
+		///< line fragments.
 		///<
 		///< \code
 		///< void Foo::onData( const char * data , std::size_t size )
@@ -168,6 +170,7 @@ public:
 
 	bool more( bool fragments = false ) ;
 		///< Returns true if there is more data() to be had.
+		///< This advances the implied iterator.
 		///<
 		///< If the fragments parameter is true then incomplete
 		///< lines will be returned (with eolsize zero), but
@@ -390,6 +393,9 @@ public:
 	std::size_t size() const ;
 		///< Returns the number of bytes currently buffered up.
 
+	bool empty() const ;
+		///< Returns true iff size() is zero.
+
 	std::string head() const ;
 		///< Returns the first bytes of buffered data up to a limit
 		///< of sixteen bytes.
@@ -462,44 +468,44 @@ char GNet::LineBuffer::c0() const
 	return m_out.m_c0 ;
 }
 
-namespace GNet
+template <typename Tfn>
+void GNet::LineBuffer::apply( const char * data_in , std::size_t size_in , Tfn sink_fn , bool with_fragments )
 {
-	template <typename Tfn>
-	void LineBuffer::apply( const char * data_in , std::size_t size_in , Tfn sink_fn , bool with_fragments )
+	Extension e( this , data_in , size_in ) ;
+	while( e.valid() && more(with_fragments) )
 	{
-		Extension e( this , data_in , size_in ) ;
-		while( e.valid() && more(with_fragments) )
-		{
-			if( !sink_fn( data() , size() , eolsize() , linesize() , c0() ) )
-				break ;
-		}
+		if( !sink_fn( data() , size() , eolsize() , linesize() , c0() ) )
+			break ;
 	}
-	template <typename Tsink, typename Tmemfun>
-	void LineBuffer::apply( Tsink sink_p , Tmemfun memfun , const char * data_in , std::size_t size_in , bool with_fragments )
+}
+
+template <typename Tsink, typename Tmemfun>
+void GNet::LineBuffer::apply( Tsink sink_p , Tmemfun memfun , const char * data_in , std::size_t size_in , bool with_fragments )
+{
+	Extension e( this , data_in , size_in ) ;
+	while( e.valid() && more(with_fragments) )
 	{
-		Extension e( this , data_in , size_in ) ;
-		while( e.valid() && more(with_fragments) )
-		{
-			if( !(sink_p->*memfun)( data() , size() , eolsize() , linesize() , c0() ) )
-				break ;
-		}
+		if( !(sink_p->*memfun)( data() , size() , eolsize() , linesize() , c0() ) )
+			break ;
 	}
-	template <typename Tsink, typename Tmemfun, typename Tmemfun2>
-	void LineBuffer::apply( Tsink sink_p , Tmemfun memfun , const char * data_in , std::size_t size_in , Tmemfun2 fragments_memfun )
+}
+
+template <typename Tsink, typename Tmemfun, typename Tmemfun2>
+void GNet::LineBuffer::apply( Tsink sink_p , Tmemfun memfun , const char * data_in , std::size_t size_in , Tmemfun2 fragments_memfun )
+{
+	Extension e( this , data_in , size_in ) ;
+	while( e.valid() && more( (sink_p->*fragments_memfun)() ) )
 	{
-		Extension e( this , data_in , size_in ) ;
-		while( e.valid() && more( (sink_p->*fragments_memfun)() ) )
-		{
-			if( !(sink_p->*memfun)( data() , size() , eolsize() , linesize() , c0() ) )
-				break ;
-		}
+		if( !(sink_p->*memfun)( data() , size() , eolsize() , linesize() , c0() ) )
+			break ;
 	}
-	template <typename T>
-	inline
-	void LineBuffer::apply( const std::string & data , T sink , bool with_fragments )
-	{
-		return apply( data.data() , data.size() , sink , with_fragments ) ;
-	}
+}
+
+template <typename T>
+inline
+void GNet::LineBuffer::apply( const std::string & data , T sink , bool with_fragments )
+{
+	return apply( data.data() , data.size() , sink , with_fragments ) ;
 }
 
 // ==
@@ -593,6 +599,12 @@ inline
 std::size_t GNet::LineBufferState::size() const
 {
 	return m_size ;
+}
+
+inline
+bool GNet::LineBufferState::empty() const
+{
+	return m_size == 0U ;
 }
 
 inline
