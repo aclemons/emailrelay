@@ -51,10 +51,7 @@ GSsl::OpenSSL::LibraryImp::LibraryImp( G::StringArray & library_config , Library
 	m_verbose(verbose) ,
 	m_config(library_config)
 {
-	SSL_load_error_strings() ;
-	SSL_library_init() ;
 	int rc = RAND_status() ; G_IGNORE_VARIABLE(int,rc) ;
-	OpenSSL_add_all_digests() ;
 
 	// allocate a slot for a pointer from SSL to ProtocolImp
 	m_index = SSL_get_ex_new_index( 0 , nullptr , nullptr , nullptr , nullptr ) ;
@@ -72,15 +69,11 @@ GSsl::OpenSSL::LibraryImp::~LibraryImp()
 
 void GSsl::OpenSSL::LibraryImp::cleanup()
 {
-	// ffs...
-	ERR_free_strings() ;
-	RAND_cleanup() ;
-	CRYPTO_cleanup_all_ex_data();
 }
 
 std::string GSsl::OpenSSL::LibraryImp::sid()
 {
-	return G::Str::printable( SSLeay_version(SSLEAY_VERSION) ) ;
+	return G::Str::printable( OpenSSL_version(OPENSSL_VERSION) ) ;
 }
 
 std::string GSsl::OpenSSL::LibraryImp::id() const
