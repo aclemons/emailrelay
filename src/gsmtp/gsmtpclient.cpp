@@ -339,14 +339,14 @@ void GSmtp::Client::onSendComplete()
 // ==
 
 GSmtp::Client::Config::Config( std::string filter_address_ , unsigned int filter_timeout_ ,
-	bool bind_local_address , const GNet::Address & local_address ,
+	bool bind_local_address_ , const GNet::Address & local_address_ ,
 	const ClientProtocol::Config & protocol_config , unsigned int connection_timeout_ ,
 	unsigned int secure_connection_timeout_ , bool secure_tunnel_ ,
 	const std::string & sasl_client_config_ ) :
 		filter_address(filter_address_) ,
 		filter_timeout(filter_timeout_) ,
-		bind_local_address(bind_local_address) ,
-		local_address(local_address) ,
+		bind_local_address(bind_local_address_) ,
+		local_address(local_address_) ,
 		client_protocol_config(protocol_config) ,
 		connection_timeout(connection_timeout_) ,
 		secure_connection_timeout(secure_connection_timeout_) ,

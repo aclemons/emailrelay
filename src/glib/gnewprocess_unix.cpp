@@ -394,7 +394,7 @@ G::NewProcessWaitFuture & G::NewProcessWaitFuture::run()
 		{
 			ssize_t n = ::read( m_fd , p?p:more , p?space:sizeof(more) ) ;
 			m_read_error = errno ;
-			if( n < 0 && m_error == EINTR )
+			if( n < 0 && m_read_error == EINTR )
 			{
 				; // keep reading
 			}

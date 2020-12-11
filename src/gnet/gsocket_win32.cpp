@@ -28,7 +28,7 @@
 bool GNet::Socket::create( int domain , int type , int protocol )
 {
 	m_socket = Descriptor( ::socket( domain , type , protocol ) , 0 ) ;
-	if( m_socket == Descriptor::invalid() )
+	if( !m_socket.valid() )
 	{
 		saveReason() ;
 		return false ;
@@ -66,7 +66,7 @@ void GNet::Socket::destroy()
 	if( m_socket.h() != NULL )
 		::WSACloseEvent( m_socket.h() ) ;
 
-	if( m_socket != Descriptor::invalid() )
+	if( m_socket.valid() )
 		::closesocket( m_socket.fd() ) ;
 }
 
