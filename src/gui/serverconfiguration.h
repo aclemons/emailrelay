@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,15 +18,15 @@
 /// \file serverconfiguration.h
 ///
 
-#ifndef SERVER_CONFIGURATION_H
-#define SERVER_CONFIGURATION_H
+#ifndef G_MAIN_GUI_SERVER_CONFIGURATION_H
+#define G_MAIN_GUI_SERVER_CONFIGURATION_H
 
 #include "gdef.h"
 #include "gstrings.h"
 #include "gmapfile.h"
 #include "gpath.h"
 
-/// \class ServerConfiguration
+//| \class ServerConfiguration
 /// An interface for manipulating an emailrelay server configuration
 /// taken from a configuration file, startup batch file or stack of gui pages.
 ///
@@ -38,7 +38,7 @@ public:
 		///< configuration file or startup batch file. If the file does
 		///< not exist then the exe() and args() will be empty.
 
-	static ServerConfiguration fromPages( const G::MapFile & pages_output , const G::Path & copy_filter ) ;
+	static ServerConfiguration fromPages( const G::MapFile & pages_output ) ;
 		///< Factory function using the output from the stack of
 		///< gui pages (see GPage::dump()).
 
@@ -56,7 +56,6 @@ public:
 private:
 	ServerConfiguration() ;
 	static G::MapFile read( const G::Path & config_file ) ;
-	static std::string spec() ;
 	static std::string quote( const std::string & ) ;
 
 private:

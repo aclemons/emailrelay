@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gsmtpclient.h
 ///
 
-#ifndef G_SMTP_CLIENT__H
-#define G_SMTP_CLIENT__H
+#ifndef G_SMTP_CLIENT_H
+#define G_SMTP_CLIENT_H
 
 #include "gdef.h"
 #include "glocation.h"
@@ -45,7 +45,7 @@ namespace GSmtp
 	class ClientProtocol ;
 }
 
-/// \class GSmtp::Client
+//| \class GSmtp::Client
 /// A class which acts as an SMTP client, extracting messages from a
 /// message store and forwarding them to a remote SMTP server.
 ///
@@ -126,7 +126,7 @@ private: // overrides
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::Client.
 	void onDelete( const std::string & ) override ; // Override from GNet::HeapClient.
 	void onSendComplete() override ; // Override from GNet::BufferedClient.
-	void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocol.
+	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocol.
 	bool protocolSend( const std::string & , std::size_t , bool ) override ; // Override from ClientProtocol::Sender.
 
 public:

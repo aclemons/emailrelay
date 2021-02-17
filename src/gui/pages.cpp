@@ -1,25 +1,25 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// pages.cpp
-//
+///
+/// \file pages.cpp
+///
 
 #include "gdef.h"
-#include "qt.h"
+#include "gqt.h"
 #include "pages.h"
 #include "legal.h"
 #include "dir.h"
@@ -33,9 +33,11 @@
 #include "ghash.h"
 #include "gbase64.h"
 #include "gxtext.h"
+#include "gstringview.h"
 #include "glog.h"
 #include <stdexcept>
 #include <fstream>
+#include <cstring>
 
 namespace
 {
@@ -55,16 +57,27 @@ namespace
 // ==
 
 TitlePage::TitlePage( GDialog & dialog , const G::MapFile & , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) :
-		GPage(dialog,name,next_1,next_2,finish,close)
+	const std::string & next_1 , const std::string & next_2 ) :
+		GPage(dialog,name,next_1,next_2)
 {
-	m_label = new QLabel( Legal::text() ) ;
-	m_credit = new QLabel( Legal::credit() ) ;
+	m_label = new QLabel( QString(Legal::text()) ) ;
+	m_label->setAlignment( Qt::AlignHCenter ) ;
 
-	auto *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("E-MailRelay"))) ;
-	layout->addWidget(m_label);
-	layout->addWidget(m_credit);
+	{
+		std::string credit = "<small><font color=\"#888\">" ;
+		credit.append( G::Str::join( "\n\n" , Legal::credits() ) ) ;
+		credit.append( "</font></small>" ) ;
+		m_credit = new QLabel( QString(credit.c_str()) ) ;
+		m_credit->setAlignment( Qt::AlignHCenter ) ;
+		m_credit->setWordWrap( true ) ;
+	}
+
+	auto * layout = new QVBoxLayout ;
+	//: page title of opening page
+	layout->addWidget( newTitle(tr("E-MailRelay")) ) ;
+	layout->addWidget( m_label ) ;
+	layout->addStretch() ;
+	layout->addWidget( m_credit ) ;
 	setLayout(layout);
 }
 
@@ -81,27 +94,28 @@ void TitlePage::dump( std::ostream & stream , bool for_install ) const
 // ==
 
 LicensePage::LicensePage( GDialog & dialog , const G::MapFile & , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool accepted ) :
-		GPage(dialog,name,next_1,next_2,finish,close)
+	const std::string & next_1 , const std::string & next_2 , bool accepted ) :
+		GPage(dialog,name,next_1,next_2)
 {
-	m_text_edit = new QTextEdit;
-	m_text_edit->setReadOnly(true) ;
-	m_text_edit->setWordWrapMode(QTextOption::NoWrap) ;
-	m_text_edit->setLineWrapMode(QTextEdit::NoWrap) ;
-	m_text_edit->setFontFamily("courier") ;
-	m_text_edit->setPlainText(Legal::license()) ;
+	m_text_edit = new QTextEdit ;
+	m_text_edit->setReadOnly( true ) ;
+	m_text_edit->setWordWrapMode( QTextOption::NoWrap ) ;
+	m_text_edit->setLineWrapMode( QTextEdit::NoWrap ) ;
+	m_text_edit->setFontFamily( "courier" ) ;
+	m_text_edit->setPlainText( QString(Legal::license()) ) ;
 
-	m_agree_checkbox = new QCheckBox(tr("I agree to the terms and conditions of the license"));
+	m_agree_checkbox = new QCheckBox( tr("I agree to the terms and conditions of the license") );
 	setFocusProxy( m_agree_checkbox ) ;
 
 	if( testMode() || accepted )
-		m_agree_checkbox->setChecked(true) ;
+		m_agree_checkbox->setChecked( true ) ;
 
-	auto *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("License"))) ;
-	layout->addWidget(m_text_edit);
-	layout->addWidget(m_agree_checkbox);
-	setLayout(layout);
+	auto * layout = new QVBoxLayout ;
+	//: page title of license page
+	layout->addWidget( newTitle(tr("License")) ) ;
+	layout->addWidget( m_text_edit ) ;
+	layout->addWidget( m_agree_checkbox ) ;
+	setLayout( layout ) ;
 
 	connect( m_agree_checkbox , SIGNAL(toggled(bool)) , this , SIGNAL(pageUpdateSignal()) ) ;
 }
@@ -121,73 +135,89 @@ bool LicensePage::isComplete()
 	return m_agree_checkbox->isChecked() ;
 }
 
+std::string LicensePage::helpUrl( const std::string & language ) const
+{
+	return "https://www.gnu.org/licenses/gpl-3.0." + language + ".html" ;
+}
+
 // ==
 
 DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
+	const std::string & next_1 , const std::string & next_2 ,
 	bool installing , bool is_mac ) :
-		GPage(dialog,name,next_1,next_2,finish,close) ,
+		GPage(dialog,name,next_1,next_2) ,
 		m_installing(installing) ,
-		m_is_mac(is_mac)
+		m_is_mac(is_mac) ,
+		m_other_dir_changed(false)
 {
-	m_install_dir_label = new QLabel(tr("&Directory:")) ;
+	//: install directory, text-edit label
+	m_install_dir_label = new QLabel( tr("Directory:") ) ;
 	m_install_dir_edit_box = new QLineEdit ;
-	m_install_dir_label->setBuddy(m_install_dir_edit_box) ;
-	m_install_dir_browse_button = new QPushButton(tr("B&rowse")) ;
+	m_install_dir_label->setBuddy( m_install_dir_edit_box ) ;
+	//: activate a file-open dialog box to select a directory
+	m_install_dir_browse_button = new QPushButton( tr("Browse") ) ;
 
 	auto * install_layout = new QHBoxLayout ;
 	install_layout->addWidget( m_install_dir_label ) ;
 	install_layout->addWidget( m_install_dir_edit_box ) ;
 	install_layout->addWidget( m_install_dir_browse_button ) ;
 
-	QGroupBox * install_group = new QGroupBox(tr("Installation directory")) ;
+	//: install directory, group label
+	QGroupBox * install_group = new QGroupBox( tr("Installation directory") ) ;
 	install_group->setLayout( install_layout ) ;
 
 	//
 
-	m_spool_dir_label = new QLabel(tr("D&irectory:")) ;
+	//: spool directory, text-edit label
+	m_spool_dir_label = new QLabel( tr("Directory:") ) ;
 	m_spool_dir_edit_box = new QLineEdit ;
-	tip( m_spool_dir_edit_box , "--spool-dir" ) ;
-	m_spool_dir_label->setBuddy(m_spool_dir_edit_box) ;
-	m_spool_dir_browse_button = new QPushButton(tr("B&rowse")) ;
+	tip( m_spool_dir_edit_box , tr("--spool-dir") ) ;
+	m_spool_dir_label->setBuddy( m_spool_dir_edit_box ) ;
+	//: activate a file-open dialog box to select a directory
+	m_spool_dir_browse_button = new QPushButton( tr("Browse") ) ;
 
 	auto * spool_layout = new QHBoxLayout ;
 	spool_layout->addWidget( m_spool_dir_label ) ;
 	spool_layout->addWidget( m_spool_dir_edit_box ) ;
 	spool_layout->addWidget( m_spool_dir_browse_button ) ;
 
-	QGroupBox * spool_group = new QGroupBox(tr("Spool directory")) ;
+	//: spool directory, group label
+	QGroupBox * spool_group = new QGroupBox( tr("Spool directory") ) ;
 	spool_group->setLayout( spool_layout ) ;
 
 	//
 
-	m_config_dir_label = new QLabel(tr("Dir&ectory:")) ;
+	m_config_dir_label = new QLabel( tr("Directory:") ) ;
 	m_config_dir_edit_box = new QLineEdit ;
-	m_config_dir_label->setBuddy(m_config_dir_edit_box) ;
-	m_config_dir_browse_button = new QPushButton(tr("B&rowse")) ;
+	m_config_dir_label->setBuddy( m_config_dir_edit_box ) ;
+	//: activate a file-open dialog box to select a directory
+	m_config_dir_browse_button = new QPushButton( tr("Browse") ) ;
 
 	auto * config_layout = new QHBoxLayout ;
 	config_layout->addWidget( m_config_dir_label ) ;
 	config_layout->addWidget( m_config_dir_edit_box ) ;
 	config_layout->addWidget( m_config_dir_browse_button ) ;
 
-	QGroupBox * config_group = new QGroupBox(tr("Configuration directory")) ;
+	QGroupBox * config_group = new QGroupBox( tr("Configuration directory") ) ;
 	config_group->setLayout( config_layout ) ;
 
 	//
 
-	m_runtime_dir_label = new QLabel(tr("Dire&ctory:")) ;
+	//: run-time directory, text-edit label
+	m_runtime_dir_label = new QLabel( tr("Directory:") ) ;
 	m_runtime_dir_edit_box = new QLineEdit ;
-	tip( m_runtime_dir_edit_box , "--pid-file, --log-file" ) ;
-	m_runtime_dir_label->setBuddy(m_runtime_dir_edit_box) ;
-	m_runtime_dir_browse_button = new QPushButton(tr("B&rowse")) ;
+	tip( m_runtime_dir_edit_box , tr("--pid-file, --log-file") ) ;
+	m_runtime_dir_label->setBuddy( m_runtime_dir_edit_box ) ;
+	//: activate a file-open dialog box to select a directory
+	m_runtime_dir_browse_button = new QPushButton( tr("Browse") ) ;
 
 	auto * runtime_layout = new QHBoxLayout ;
 	runtime_layout->addWidget( m_runtime_dir_label ) ;
 	runtime_layout->addWidget( m_runtime_dir_edit_box ) ;
 	runtime_layout->addWidget( m_runtime_dir_browse_button ) ;
 
-	QGroupBox * runtime_group = new QGroupBox(tr("Run-time directory")) ;
+	//: run-time directory, group label
+	QGroupBox * runtime_group = new QGroupBox( tr("Run-time directory") ) ;
 	runtime_group->setLayout( runtime_layout ) ;
 
 	//
@@ -197,13 +227,18 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , con
 	else
 		setFocusProxy( m_spool_dir_edit_box ) ;
 
-	m_install_dir_edit_box->setText( qstr(config.value("=dir-install")) ) ;
-	m_spool_dir_edit_box->setText( qstr(config.value("spool-dir")) ) ;
-	m_config_dir_edit_box->setText( qstr(config.value("=dir-config")) ) ;
-	m_runtime_dir_edit_box->setText( qstr(config.value("=dir-run")) ) ;
+	m_install_dir_start = qstr( config.value("=dir-install") ) ;
+	m_install_dir_edit_box->setText( m_install_dir_start ) ;
+	m_spool_dir_start = qstr( config.value("spool-dir") ) ;
+	m_spool_dir_edit_box->setText( m_spool_dir_start ) ;
+	m_config_dir_start = qstr( config.value("=dir-config") ) ;
+	m_config_dir_edit_box->setText( m_config_dir_start ) ;
+	m_runtime_dir_start = qstr( config.value("=dir-run") ) ;
+	m_runtime_dir_edit_box->setText( m_runtime_dir_start ) ;
 
-	auto * layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("Directories"))) ;
+	auto * layout = new QVBoxLayout ;
+	//: page title of directories page
+	layout->addWidget( newTitle(tr("Directories")) ) ;
 	layout->addWidget( install_group ) ;
 	layout->addWidget( spool_group ) ;
 	layout->addWidget( config_group ) ;
@@ -215,10 +250,10 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , con
 	{
 		// if just configuring dont allow the base directories to change
 		//
-		m_install_dir_browse_button->setEnabled(false) ;
-		m_install_dir_edit_box->setEnabled(false) ;
-		m_config_dir_browse_button->setEnabled(false) ;
-		m_config_dir_edit_box->setEnabled(false) ;
+		m_install_dir_browse_button->setEnabled( false ) ;
+		m_install_dir_edit_box->setEnabled( false ) ;
+		m_config_dir_browse_button->setEnabled( false ) ;
+		m_config_dir_edit_box->setEnabled( false ) ;
 	}
 
 	connect( m_install_dir_browse_button , SIGNAL(clicked()) , this , SLOT(browseInstall()) ) ;
@@ -226,37 +261,91 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , con
 	connect( m_config_dir_browse_button , SIGNAL(clicked()) , this , SLOT(browseConfig()) ) ;
 	connect( m_runtime_dir_browse_button , SIGNAL(clicked()) , this , SLOT(browseRuntime()) ) ;
 
+	if( m_installing )
+	{
+		// automagic prefixing
+		connect( m_install_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onInstallDirChange()) );
+		connect( m_spool_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
+		connect( m_config_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
+		connect( m_runtime_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
+		if( testMode() ) // todo not if windows
+			m_install_dir_edit_box->setText( qstr("/tmp/") + qstr(G::Process::Id().str()) + m_install_dir_edit_box->text() ) ;
+	}
+
 	connect( m_install_dir_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()));
 	connect( m_spool_dir_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()));
 	connect( m_config_dir_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()));
 	connect( m_runtime_dir_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()));
 }
 
+void DirectoryPage::onOtherDirChange()
+{
+	m_other_dir_changed = true ;
+}
+
+void DirectoryPage::onInstallDirChange()
+{
+	if( !m_other_dir_changed )
+	{
+		QString orig = m_install_dir_start ;
+		QString s = m_install_dir_edit_box->text() ;
+		if( s.endsWith(orig) )
+		{
+			QString prefix = s.mid( 0 , s.length() - m_install_dir_start.length() ) ;
+			m_spool_dir_edit_box->setText( prefix + m_spool_dir_start ) ;
+			m_config_dir_edit_box->setText( prefix + m_config_dir_start ) ;
+			m_runtime_dir_edit_box->setText( prefix + m_runtime_dir_start ) ;
+			m_other_dir_changed = false ;
+		}
+		else if( s.length() > 2 && s.at(1U) == ':' &&
+			orig.length() > 2 && orig.at(1U) == ':' &&
+			s.mid(2).endsWith(orig.mid(2)) )
+		{
+			QString prefix = s.mid( 0 , s.length() - m_install_dir_start.length() + 2 ) ;
+			m_spool_dir_edit_box->setText( prefix + m_spool_dir_start.mid(2) ) ;
+			m_config_dir_edit_box->setText( prefix + m_config_dir_start.mid(2) ) ;
+			m_runtime_dir_edit_box->setText( prefix + m_runtime_dir_start.mid(2) ) ;
+			m_other_dir_changed = false ;
+		}
+		// moot...
+		else if( s.length() > 3 && s.at(1U) == ':' && s.at(2U) == '\\' &&
+			orig.length() > 3 && orig.at(1U) == ':' && s.at(2U) == '\\' &&
+			s.mid(3).endsWith(orig.mid(3)) )
+		{
+			QString prefix = s.mid( 0 , s.length() - m_install_dir_start.length() + 3 ) ;
+			m_spool_dir_edit_box->setText( prefix + m_spool_dir_start.mid(3) ) ;
+			m_config_dir_edit_box->setText( prefix + m_config_dir_start.mid(3) ) ;
+			m_runtime_dir_edit_box->setText( prefix + m_runtime_dir_start.mid(3) ) ;
+			m_other_dir_changed = false ;
+		}
+	}
+}
+
 void DirectoryPage::browseInstall()
 {
 	QString s = browse(m_install_dir_edit_box->text()) ;
-	if( ! s.isEmpty() )
+	if( ! s.trimmed().isEmpty() )
 		m_install_dir_edit_box->setText( s ) ;
 }
 
 void DirectoryPage::browseSpool()
 {
 	QString s = browse(m_spool_dir_edit_box->text()) ;
-	if( ! s.isEmpty() )
+	if( ! s.trimmed().isEmpty() )
 		m_spool_dir_edit_box->setText( s ) ;
 }
 
 void DirectoryPage::browseConfig()
 {
 	QString s = browse(m_config_dir_edit_box->text()) ;
-	if( ! s.isEmpty() )
+	if( ! s.trimmed().isEmpty() )
 		m_config_dir_edit_box->setText( s ) ;
 }
 
 void DirectoryPage::browseRuntime()
 {
 	QString s = browse(m_runtime_dir_edit_box->text()) ;
-	if( ! s.isEmpty() )
+	if( ! s.trimmed().isEmpty() )
 		m_runtime_dir_edit_box->setText( s ) ;
 }
 
@@ -276,15 +365,19 @@ G::Path DirectoryPage::normalise( const G::Path & dir ) const
 	// leave them as relative to the bundle contents on mac
 
 	G::Path result = dir ;
-	if( dir.isRelative() && Dir::home() != G::Path() )
+	if( dir.isRelative() && !Dir::home().empty() )
 	{
-		if( dir.str() == "~" )
+		if( dir.str() == "~" || dir.str() == "~/" || dir.str() == "$HOME" || dir.str() == "$HOME/" )
 		{
 			result = Dir::home() ;
 		}
-		else if( dir.str().at(0U) == '~' )
+		else if( dir.str().find("~/") == 0U )
 		{
-			result = G::Path( Dir::home() , dir.str().substr(1U) ) ;
+			result = G::Path( Dir::home() , dir.str().substr(2U) ) ;
+		}
+		else if( dir.str().find("$HOME/") == 0U )
+		{
+			result = G::Path( Dir::home() , dir.str().substr(6U) ) ;
 		}
 		else if( !m_is_mac )
 		{
@@ -297,12 +390,10 @@ G::Path DirectoryPage::normalise( const G::Path & dir ) const
 void DirectoryPage::dump( std::ostream & stream , bool for_install ) const
 {
 	GPage::dump( stream , for_install ) ;
-	std::string ws = " " ;
-	G::Path dir_install = normalise(G::Str::trimmed(value(m_install_dir_edit_box),ws)) ;
-	dumpItem( stream , for_install , "dir-install" , dir_install ) ;
-	dumpItem( stream , for_install , "dir-spool" , normalise(G::Str::trimmed(value(m_spool_dir_edit_box),ws)) ) ;
-	dumpItem( stream , for_install , "dir-config" , normalise(G::Str::trimmed(value(m_config_dir_edit_box),ws)) ) ;
-	dumpItem( stream , for_install , "dir-run" , normalise(G::Str::trimmed(value(m_runtime_dir_edit_box),ws)) ) ;
+	dumpItem( stream , for_install , "dir-install" , installDir() ) ;
+	dumpItem( stream , for_install , "dir-spool" , spoolDir() ) ;
+	dumpItem( stream , for_install , "dir-config" , configDir() ) ;
+	dumpItem( stream , for_install , "dir-run" , runtimeDir() ) ;
 
 	dumpItem( stream , for_install , "dir-boot" , Dir::boot() ) ;
 	dumpItem( stream , for_install , "dir-desktop" , Dir::desktop() ) ;
@@ -313,41 +404,39 @@ void DirectoryPage::dump( std::ostream & stream , bool for_install ) const
 bool DirectoryPage::isComplete()
 {
 	return
-		!m_install_dir_edit_box->text().isEmpty() &&
-		!m_spool_dir_edit_box->text().isEmpty() &&
-		!m_config_dir_edit_box->text().isEmpty() ;
-}
-
-std::string DirectoryPage::helpName() const
-{
-	return name() ;
+		!m_install_dir_edit_box->text().trimmed().isEmpty() &&
+		!m_spool_dir_edit_box->text().trimmed().isEmpty() &&
+		!m_config_dir_edit_box->text().trimmed().isEmpty() ;
 }
 
 G::Path DirectoryPage::installDir() const
 {
-	return G::Path( value(m_install_dir_edit_box) ) ;
+	return normalise( G::Str::trimmed( value(m_install_dir_edit_box) , G::string_view(" ",1U) ) ) ;
+}
+
+G::Path DirectoryPage::spoolDir() const
+{
+	return normalise( G::Str::trimmed( value(m_spool_dir_edit_box) , G::string_view(" ",1U) ) ) ;
 }
 
 G::Path DirectoryPage::runtimeDir() const
 {
-	return G::Path( value(m_runtime_dir_edit_box) ) ;
+	return normalise( G::Str::trimmed( value(m_runtime_dir_edit_box) , G::string_view(" ",1U) ) ) ;
 }
 
 G::Path DirectoryPage::configDir() const
 {
-	return G::Path( value(m_config_dir_edit_box) ) ;
+	return normalise( G::Str::trimmed( value(m_config_dir_edit_box) , G::string_view(" ",1U) ) ) ;
 }
 
 // ==
 
 DoWhatPage::DoWhatPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) :
-		GPage(dialog,name,next_1,next_2,finish,close)
+	const std::string & next_1 , const std::string & next_2 ) :
+		GPage(dialog,name,next_1,next_2)
 {
-	m_pop_checkbox = new QCheckBox(tr("&POP3 server"));
-	tip( m_pop_checkbox , "Allow clients to see spooled messages using POP" ) ;
-	m_smtp_checkbox = new QCheckBox(tr("&SMTP server"));
-	tip( m_smtp_checkbox , "Allow clients to submit new messages using SMTP" ) ;
+	m_pop_checkbox = new QCheckBox( tr("POP3 server") ) ;
+	m_smtp_checkbox = new QCheckBox( tr("SMTP server") ) ;
 
 	m_smtp_checkbox->setChecked( !config.booleanValue("no-smtp",false) ) ;
 	m_pop_checkbox->setChecked( config.booleanValue("pop",false) ) ;
@@ -356,28 +445,34 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const G::MapFile & config , const std
 	server_type_box_layout->addWidget( m_pop_checkbox ) ;
 	server_type_box_layout->addWidget( m_smtp_checkbox ) ;
 
-	QGroupBox * server_type_group = new QGroupBox(tr("Server")) ;
+	//: group label for pop3/smtp check boxes
+	QGroupBox * server_type_group = new QGroupBox( tr("Server") ) ;
 	server_type_group->setLayout( server_type_box_layout ) ;
 
-	m_immediate_checkbox = new QRadioButton(tr("&Synchronously"));
-	tip( m_immediate_checkbox , "--immediate" ) ;
-	m_on_disconnect_checkbox = new QRadioButton(tr("When client &disconnects"));
-	tip( m_on_disconnect_checkbox , "--forward-on-disconnect" ) ;
-	m_periodically_checkbox = new QRadioButton(tr("&Check periodically"));
-	tip( m_periodically_checkbox , "--poll" ) ;
-	m_on_demand_checkbox = new QRadioButton(tr("&Only on demand"));
-	tip( m_on_demand_checkbox , "emailrelay --as-client" ) ;
+	//: forwarding checkbox: forward emails as they are received
+	m_immediate_checkbox = new QRadioButton( tr("Synchronously") ) ;
+	tip( m_immediate_checkbox , tr("--immediate") ) ;
+	//: forwarding checkbox: forward emails when the client disconnects
+	m_on_disconnect_checkbox = new QRadioButton( tr("When client disconnects") ) ;
+	tip( m_on_disconnect_checkbox , tr("--forward-on-disconnect") ) ;
+	//: forwarding checkbox: forward emails from time to time
+	m_periodically_checkbox = new QRadioButton( tr("Check periodically") ) ;
+	tip( m_periodically_checkbox , tr("--poll") ) ;
+	//: forwarding checkbox: forward emails when requested via the admin interface
+	m_on_demand_checkbox = new QRadioButton( tr("Only on demand") ) ;
+	tip( m_on_demand_checkbox , tr("--admin") ) ;
 
 	if( config.booleanValue("immediate",false) )
-		m_immediate_checkbox->setChecked(true) ;
+		m_immediate_checkbox->setChecked( true ) ;
 	else if( config.booleanValue("forward-on-disconnect",false) || config.numericValue("poll",99U) == 0U )
-		m_on_disconnect_checkbox->setChecked(true) ;
+		m_on_disconnect_checkbox->setChecked( true ) ;
 	else if( config.numericValue("poll",0U) != 0U )
-		m_periodically_checkbox->setChecked(true) ;
+		m_periodically_checkbox->setChecked( true ) ;
 	else
-		m_on_demand_checkbox->setChecked(true) ;
+		m_on_demand_checkbox->setChecked( true ) ;
 
-	QLabel * period_label = new QLabel( tr("e&very") ) ;
+	//: periodic forwarding: 'check periodically' (above) 'every' 'second/minute/hour' (below)
+	QLabel * period_label = new QLabel( tr("every") ) ;
 	m_period_combo = new QComboBox ;
 	m_period_combo->addItem( tr("second") ) ;
 	m_period_combo->addItem( tr("minute") ) ;
@@ -403,11 +498,12 @@ DoWhatPage::DoWhatPage( GDialog & dialog , const G::MapFile & config , const std
 	}
 	forwarding_box_layout->addWidget( m_on_demand_checkbox ) ;
 
-	m_forwarding_group = new QGroupBox(tr("Mail forwarding")) ;
+	m_forwarding_group = new QGroupBox( tr("Mail forwarding") ) ;
 	m_forwarding_group->setLayout( forwarding_box_layout ) ;
 
-	auto *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("Installation type"))) ;
+	auto * layout = new QVBoxLayout ;
+	//: page title of install-type page
+	layout->addWidget( newTitle(tr("Installation type")) ) ;
 	layout->addWidget( server_type_group ) ;
 	layout->addWidget( m_forwarding_group ) ;
 	layout->addStretch() ;
@@ -440,6 +536,11 @@ std::string DoWhatPage::nextPage()
 			next2() ;
 }
 
+bool DoWhatPage::pop() const
+{
+	return m_pop_checkbox->isChecked() ;
+}
+
 void DoWhatPage::dump( std::ostream & stream , bool for_install ) const
 {
 	GPage::dump( stream , for_install ) ;
@@ -458,47 +559,46 @@ bool DoWhatPage::isComplete()
 		m_smtp_checkbox->isChecked() ;
 }
 
-std::string DoWhatPage::helpName() const
-{
-	return name() ;
-}
-
 // ==
 
 PopPage::PopPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
+	const std::string & next_1 , const std::string & next_2 ,
 	bool have_accounts ) :
-		GPage(dialog,name,next_1,next_2,finish,close) ,
+		GPage(dialog,name,next_1,next_2) ,
 		m_have_accounts(have_accounts)
 {
-	QLabel * port_label = new QLabel( tr("P&ort:") ) ;
+	//: internet address, port number
+	QLabel * port_label = new QLabel( tr("Port:") ) ;
 	m_port_edit_box = new QLineEdit( qstr(config.value("pop-port","110")) ) ;
-	tip( m_port_edit_box , "--pop-port" ) ;
+	tip( m_port_edit_box , tr("--pop-port") ) ;
 	port_label->setBuddy( m_port_edit_box ) ;
 
 	auto * server_layout = new QHBoxLayout ;
 	server_layout->addWidget( port_label ) ;
 	server_layout->addWidget( m_port_edit_box ) ;
 
-	QGroupBox * server_group = new QGroupBox(tr("Local server")) ;
+	//: group label for port number edit box
+	QGroupBox * server_group = new QGroupBox( tr("Local server") ) ;
 	server_group->setLayout( server_layout ) ;
 
-	m_one = new QRadioButton( tr("&One client") ) ;
-	m_shared = new QRadioButton( tr("&Many clients sharing a spool directory") ) ;
-	m_pop_by_name = new QRadioButton( tr("M&any clients with separate spool directories") ) ;
-	tip( m_pop_by_name , "--pop-by-name" ) ;
+	//: how pop clients will access spooled emails...
+	m_one = new QRadioButton( tr("One client") ) ;
+	m_shared = new QRadioButton( tr("Many clients sharing a spool directory") ) ;
+	m_pop_by_name = new QRadioButton( tr("Many clients with separate spool directories") ) ;
+	tip( m_pop_by_name , tr("--pop-by-name") ) ;
 
 	m_no_delete_checkbox = new QCheckBox( tr("Disable message deletion") ) ;
-	tip( m_no_delete_checkbox , "--pop-no-delete" ) ;
-	m_filter_copy_checkbox = new QCheckBox( tr("Copy SMTP messages to all") ) ;
-	tip( m_filter_copy_checkbox , "--filter=emailrelay-filter-copy" ) ;
+	tip( m_no_delete_checkbox , tr("--pop-no-delete") ) ;
+	//: copy incoming email messages to all pop clients
+	m_pop_filter_copy_checkbox = new QCheckBox( tr("Copy SMTP messages to all") ) ;
+	tip( m_pop_filter_copy_checkbox , tr("--filter=emailrelay-filter-copy") ) ;
 
 	auto * type_layout = new QGridLayout ;
 	type_layout->addWidget( m_one , 0 , 0 ) ;
 	type_layout->addWidget( m_shared , 1 , 0 ) ;
 	type_layout->addWidget( m_no_delete_checkbox , 1 , 1 ) ;
 	type_layout->addWidget( m_pop_by_name , 2 , 0 ) ;
-	type_layout->addWidget( m_filter_copy_checkbox , 2 , 1 ) ;
+	type_layout->addWidget( m_pop_filter_copy_checkbox , 2 , 1 ) ;
 
 	bool pop_by_name = config.booleanValue("pop-by-name",false) ;
 	bool pop_no_delete = config.booleanValue("pop-no-delete",false) ;
@@ -506,7 +606,7 @@ PopPage::PopPage( GDialog & dialog , const G::MapFile & config , const std::stri
 	if( pop_by_name ) // "many clients with separate spool directories"
 	{
 		m_pop_by_name->setChecked( true ) ;
-		m_filter_copy_checkbox->setChecked( pop_filter_copy ) ;
+		m_pop_filter_copy_checkbox->setChecked( pop_filter_copy ) ;
 	}
 	else if( pop_no_delete ) // "many clients sharing a spool directory"
 	{
@@ -518,12 +618,15 @@ PopPage::PopPage( GDialog & dialog , const G::MapFile & config , const std::stri
 		m_one->setChecked( true ) ;
 	}
 
-	QGroupBox * type_group = new QGroupBox(tr("Client accounts")) ;
+	//: group label for username/password edit-box pairs
+	QGroupBox * type_group = new QGroupBox( tr("Client accounts") ) ;
 	type_group->setLayout( type_layout ) ;
 
 	auto * accounts_layout = new QGridLayout ;
-	QLabel * name_label = new QLabel(tr("Name:")) ;
-	QLabel * pwd_label = new QLabel(tr("Password:")) ;
+	//: pop account, username
+	QLabel * name_label = new QLabel( tr("Name:") ) ;
+	//: pop account, password
+	QLabel * pwd_label = new QLabel( tr("Password:") ) ;
 	m_name_1 = new QLineEdit ;
 	tip( m_name_1 , NameTip() ) ;
 	m_pwd_1 = new QLineEdit ;
@@ -548,20 +651,23 @@ PopPage::PopPage( GDialog & dialog , const G::MapFile & config , const std::stri
 	accounts_layout->addWidget( m_name_3 , 3 , 0 ) ;
 	accounts_layout->addWidget( m_pwd_3 , 3 , 1 ) ;
 
-	if( testMode() )
+	if( testMode() && !have_accounts )
 	{
-		m_name_1->setText("me") ;
-		m_pwd_1->setText("secret") ;
+		m_name_1->setText( "me" ) ;
+		m_pwd_1->setText( "secret" ) ;
 	}
 
 	QGroupBox * accounts_group =
 		m_have_accounts ?
-			new QGroupBox(tr("New Accounts")) :
-			new QGroupBox(tr("Accounts")) ;
+			//: group label for username/password edit boxes when installing
+			new QGroupBox( tr("New Accounts") ) :
+			//: group label for username/password edit boxes when reconfiguring
+			new QGroupBox( tr("Accounts") ) ;
 	accounts_group->setLayout( accounts_layout ) ;
 
-	auto *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("POP server"))) ;
+	auto * layout = new QVBoxLayout ;
+	//: page title of pop-server page
+	layout->addWidget( newTitle(tr("POP server")) ) ;
 	layout->addWidget( server_group ) ;
 	layout->addWidget( type_group ) ;
 	layout->addWidget( accounts_group ) ;
@@ -605,7 +711,6 @@ void PopPage::dump( std::ostream & stream , bool for_install ) const
 	dumpItem( stream , for_install , "pop-shared" , value(m_shared) ) ;
 	dumpItem( stream , for_install , "pop-shared-no-delete" , value(m_no_delete_checkbox) ) ;
 	dumpItem( stream , for_install , "pop-by-name" , value(m_pop_by_name) ) ;
-	dumpItem( stream , for_install , "pop-filter-copy" , value(m_filter_copy_checkbox) ) ;
 
 	std::string mechanism( "plain" ) ;
 	dumpItem( stream , for_install , "pop-auth-mechanism" , mechanism ) ;
@@ -623,78 +728,81 @@ void PopPage::dump( std::ostream & stream , bool for_install ) const
 bool PopPage::isComplete()
 {
 	return
-		! m_port_edit_box->text().isEmpty() && (
+		! m_port_edit_box->text().trimmed().isEmpty() && (
 			m_have_accounts ||
-			( !m_name_1->text().isEmpty() && !m_pwd_1->text().isEmpty() ) ||
-			( !m_name_2->text().isEmpty() && !m_pwd_2->text().isEmpty() ) ||
-			( !m_name_3->text().isEmpty() && !m_pwd_3->text().isEmpty() ) ) ;
+			( !m_name_1->text().trimmed().isEmpty() && !m_pwd_1->text().trimmed().isEmpty() ) ||
+			( !m_name_2->text().trimmed().isEmpty() && !m_pwd_2->text().trimmed().isEmpty() ) ||
+			( !m_name_3->text().trimmed().isEmpty() && !m_pwd_3->text().trimmed().isEmpty() ) ) ;
 }
 
 void PopPage::onToggle()
 {
 	m_no_delete_checkbox->setEnabled( m_shared->isChecked() ) ;
-	m_filter_copy_checkbox->setEnabled( m_pop_by_name->isChecked() ) ;
-}
-
-std::string PopPage::helpName() const
-{
-	return name() ;
+	m_pop_filter_copy_checkbox->setEnabled( m_pop_by_name->isChecked() ) ;
 }
 
 bool PopPage::withFilterCopy() const
 {
-	return m_filter_copy_checkbox->isChecked() ;
+	return m_pop_filter_copy_checkbox->isChecked() ;
 }
 
 // ==
 
 SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_account ) :
-		GPage(dialog,name,next_1,next_2,finish,close) ,
-		m_have_account(have_account)
+	const std::string & next_1 , const std::string & next_2 ,
+	bool have_account , bool can_generate ) :
+		GPage(dialog,name,next_1,next_2) ,
+		m_have_account(have_account) ,
+		m_can_generate(can_generate)
 {
-	QLabel * port_label = new QLabel(tr("P&ort:")) ;
+	//: internet address, port number
+	QLabel * port_label = new QLabel( tr("Port:") ) ;
 	m_port_edit_box = new QLineEdit( qstr(config.value("port","25")) ) ;
-	tip( m_port_edit_box , "--port" ) ;
+	tip( m_port_edit_box , tr("--port") ) ;
 	port_label->setBuddy( m_port_edit_box ) ;
 
 	auto * server_layout = new QHBoxLayout ;
 	server_layout->addWidget( port_label ) ;
 	server_layout->addWidget( m_port_edit_box ) ;
 
-	QGroupBox * server_group = new QGroupBox(tr("Local server")) ;
+	//: group label for port number edit box
+	QGroupBox * server_group = new QGroupBox( tr("Local server") ) ;
 	server_group->setLayout( server_layout ) ;
 
 	//
 
-	m_auth_checkbox = new QCheckBox( tr("&Require authentication") ) ;
-	tip( m_auth_checkbox , "--server-auth" ) ;
+	//: smtp server requires authentication
+	m_auth_checkbox = new QCheckBox( tr("Require authentication") ) ;
+	tip( m_auth_checkbox , tr("--server-auth") ) ;
 	m_auth_checkbox->setChecked( config.contains("server-auth") ) ;
 
 	auto * auth_layout = new QVBoxLayout ;
 	auth_layout->addWidget( m_auth_checkbox ) ;
 
+	//: group label for 'require authentication' check box
 	QGroupBox * auth_group = new QGroupBox( tr("Authentication") ) ;
 	auth_group->setLayout( auth_layout ) ;
 
 	//
 
-	QLabel * account_name_label = new QLabel(tr("&Name:")) ;
+	//: smtp server account, username
+	QLabel * account_name_label = new QLabel( tr("Name:") ) ;
 	m_account_name = new QLineEdit ;
 	tip( m_account_name , NameTip() ) ;
 	account_name_label->setBuddy( m_account_name ) ;
 
-	QLabel * account_pwd_label = new QLabel(tr("&Password:")) ;
+	//: smtp server account, password
+	QLabel * account_pwd_label = new QLabel( tr("Password:") ) ;
 	m_account_pwd = new QLineEdit ;
 	tip( m_account_pwd , PasswordTip() ) ;
 	m_account_pwd->setEchoMode( QLineEdit::Password ) ;
 	account_pwd_label->setBuddy( m_account_pwd ) ;
 
-	if( testMode() )
+	if( testMode() && !have_account )
 	{
-		m_auth_checkbox->setChecked(true) ;
-		m_account_name->setText("me") ;
-		m_account_pwd->setText("secret") ;
+		m_auth_checkbox->setChecked( true ) ;
+		m_account_name->setText( "me" ) ;
+		m_account_pwd->setText( "secret" ) ;
 	}
 
 	auto * account_layout = new QGridLayout ;
@@ -705,43 +813,58 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , c
 
 	m_account_group =
 		m_have_account ?
-			new QGroupBox(tr("New Account")) :
-			new QGroupBox(tr("Account")) ;
+			//: group label for username/password edit box when installing
+			new QGroupBox( tr("New Account") ) :
+			//: group label for username/password edit box when reconfiguring
+			new QGroupBox( tr("Account") ) ;
 	m_account_group->setLayout( account_layout ) ;
 
 	//
 
-	QLabel * trust_label = new QLabel(tr("&IP address:")) ;
-	m_trust_address = new QLineEdit ;
-	trust_label->setBuddy( m_trust_address ) ;
-	tip( m_trust_address , "eg. 192.168.0.0/8" ) ;
-	m_trust_group = new QGroupBox(tr("Exemptions")) ;
-	auto * trust_layout = new QHBoxLayout ;
-	trust_layout->addWidget( trust_label ) ;
-	trust_layout->addWidget( m_trust_address ) ;
-	m_trust_group->setLayout( trust_layout ) ;
-	m_trust_address->setText( qstr(testMode()?"192.168.1.*":"") ) ;
+	bool with_trust = false ; // too many widgets for a small screen
+	if( with_trust )
+	{
+		QLabel * trust_label = new QLabel( tr("IP address:") ) ;
+		m_trust_address = new QLineEdit ;
+		trust_label->setBuddy( m_trust_address ) ;
+		tip( m_trust_address , tr("eg. 192.168.0.0/8") ) ;
+		m_trust_group = new QGroupBox( tr("Exemptions") ) ;
+		auto * trust_layout = new QHBoxLayout ;
+		trust_layout->addWidget( trust_label ) ;
+		trust_layout->addWidget( m_trust_address ) ;
+		m_trust_group->setLayout( trust_layout ) ;
+	}
+	else
+	{
+		m_trust_address = nullptr ;
+		m_trust_group = nullptr ;
+	}
 
 	//
 
-	QGroupBox * tls_group = new QGroupBox(tr("TLS encryption")) ;
+	//: group box label for encryption options
+	QGroupBox * tls_group = new QGroupBox( tr("TLS encryption") ) ;
 
-	m_tls_checkbox = new QCheckBox( tr("&Enable TLS encryption") ) ;
-	m_tls_starttls = new QRadioButton( tr("&STARTTLS")) ;
-	tip( m_tls_starttls , "--server-tls" ) ;
-	m_tls_tunnel = new QRadioButton( tr("&Implicit TLS (smtps)") ) ;
-	tip( m_tls_tunnel , "--server-tls-connection" ) ;
+	m_tls_checkbox = new QCheckBox( tr("Enable TLS encryption") ) ;
+	tip( m_tls_checkbox , tr("--server-tls, --server-tls-connection") ) ;
+	//: not translatable, see RFC-2487
+	m_tls_starttls = new QRadioButton( tr("STARTTLS")) ;
+	tip( m_tls_starttls , tr("--server-tls") ) ;
+	//: 'implicit' because encryption is assumed to be always active, see RFC-8314 3.
+	m_tls_tunnel = new QRadioButton( tr("Implicit TLS (smtps)") ) ;
+	tip( m_tls_tunnel , tr("--server-tls-connection") ) ;
 	auto * tls_innermost_layout = new QHBoxLayout ;
 	tls_innermost_layout->addWidget( m_tls_checkbox ) ;
 	tls_innermost_layout->addWidget( m_tls_starttls ) ;
 	tls_innermost_layout->addWidget( m_tls_tunnel ) ;
 
-	m_tls_certificate_label = new QLabel(tr("&Certificate:")) ;
-	tip( m_tls_certificate_label , "--server-tls-certificate" ) ;
+	//: X.509 certificate
+	m_tls_certificate_label = new QLabel( tr("Certificate:") ) ;
 	m_tls_certificate_edit_box = new QLineEdit ;
-	tip( m_tls_certificate_edit_box , "private key and X.509 certificate pem file" ) ;
+	tip( m_tls_certificate_edit_box , tr("--server-tls-certificate") ) ;
 	m_tls_certificate_label->setBuddy( m_tls_certificate_edit_box ) ;
-	m_tls_browse_button = new QPushButton(tr("B&rowse")) ;
+	//: activate a file-open dialog box to select a file
+	m_tls_browse_button = new QPushButton( tr("Browse") ) ;
 	auto * tls_layout = new QVBoxLayout ;
 	auto * tls_inner_layout = new QHBoxLayout ;
 	tls_inner_layout->addWidget( m_tls_certificate_label ) ;
@@ -760,12 +883,14 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , c
 
 	//
 
-	auto *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("SMTP server"))) ;
+	auto * layout = new QVBoxLayout ;
+	//: page title of smtp-server page
+	layout->addWidget( newTitle(tr("SMTP server")) ) ;
 	layout->addWidget( server_group ) ;
 	layout->addWidget( auth_group ) ;
 	layout->addWidget( m_account_group ) ;
-	layout->addWidget( m_trust_group ) ;
+	if( m_trust_group )
+		layout->addWidget( m_trust_group ) ;
 	layout->addWidget( tls_group ) ;
 	layout->addStretch() ;
 	setLayout( layout ) ;
@@ -774,12 +899,13 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , c
 	connect( m_account_name , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_tls_certificate_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_account_pwd , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
-	connect( m_trust_address , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_auth_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_auth_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
 	connect( m_tls_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_tls_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
 	connect( m_tls_browse_button , SIGNAL(clicked()) , this , SLOT(browseCertificate()) ) ;
+	if( m_trust_address )
+		connect( m_trust_address , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 
 	onToggle() ;
 }
@@ -787,7 +913,7 @@ SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , c
 void SmtpServerPage::browseCertificate()
 {
 	QString s = browse( m_tls_certificate_edit_box->text() ) ;
-	if( ! s.isEmpty() )
+	if( ! s.trimmed().isEmpty() )
 		m_tls_certificate_edit_box->setText( s ) ;
 }
 
@@ -822,107 +948,138 @@ void SmtpServerPage::dump( std::ostream & stream , bool for_install ) const
 void SmtpServerPage::onToggle()
 {
 	m_account_group->setEnabled( m_auth_checkbox->isChecked() ) ;
-	m_trust_group->setEnabled( m_auth_checkbox->isChecked() ) ;
 	m_tls_starttls->setEnabled( m_tls_checkbox->isChecked() ) ;
 	m_tls_tunnel->setEnabled( m_tls_checkbox->isChecked() ) ;
 	m_tls_certificate_label->setEnabled( m_tls_checkbox->isChecked() ) ;
 	m_tls_certificate_edit_box->setEnabled( m_tls_checkbox->isChecked() ) ;
 	m_tls_browse_button->setEnabled( m_tls_checkbox->isChecked() ) ;
+	if( m_trust_group )
+		m_trust_group->setEnabled( m_auth_checkbox->isChecked() ) ;
 }
 
 bool SmtpServerPage::isComplete()
 {
 	return
-		! m_port_edit_box->text().isEmpty() &&
+		! m_port_edit_box->text().trimmed().isEmpty() &&
 		(
 			!m_tls_checkbox->isChecked() ||
-			!m_tls_certificate_edit_box->text().isEmpty()
+			m_can_generate ||
+			!m_tls_certificate_edit_box->text().trimmed().isEmpty()
 		) &&
 		(
 			m_have_account ||
 			!m_auth_checkbox->isChecked() || (
-				! m_account_name->text().isEmpty() &&
-				! m_account_pwd->text().isEmpty() )
+				! m_account_name->text().trimmed().isEmpty() &&
+				! m_account_pwd->text().trimmed().isEmpty() )
 		) ;
-}
-
-std::string SmtpServerPage::helpName() const
-{
-	return name() ;
 }
 
 // ==
 
 FilterPage::FilterPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
-	bool is_windows ) :
-		GPage(dialog,name,next_1,next_2,finish,close) ,
+	const std::string & next_1 , const std::string & next_2 ,
+	bool installing , bool is_windows ) :
+		GPage(dialog,name,next_1,next_2) ,
+		m_installing(installing) ,
 		m_is_windows(is_windows) ,
 		m_dot_exe(is_windows?".exe":"") ,
 		m_dot_script(is_windows?".js":".sh") ,
-		m_pop_page_with_filter_copy(false)
+		m_first_show(true) ,
+		m_pop_page_with_filter_copy(false) ,
+		m_server_filter_spam_default("spam-edit:127.0.0.1:783")
 {
-	m_filter_checkbox = new QCheckBox( tr("&Filter") ) ;
-	tip( m_filter_checkbox , "--filter" ) ;
-	m_filter_label = new QLabel(tr("Filter &script:")) ;
-	m_filter_edit_box = new QLineEdit ;
-	m_filter_label->setBuddy( m_filter_edit_box ) ;
+	//: label for an edit box that contains the filename of a server-side filter script
+	m_server_filter_label = new QLabel( tr("Filter:") ) ;
+	m_server_filter_edit_box = new QLineEdit ;
+	m_server_filter_label->setBuddy( m_server_filter_edit_box ) ;
 
-	m_client_filter_checkbox = new QCheckBox( tr("&Client filter") ) ;
-	tip( m_client_filter_checkbox , "--client-filter" ) ;
-	m_client_filter_label = new QLabel(tr("Filter &script:")) ;
+	//: server-side filtering options...
+	m_server_filter_choice_none = new QRadioButton( tr("None") ) ;
+	//: run the specified filter script
+	m_server_filter_choice_script = new QRadioButton( tr("Script") ) ;
+	//: use the spamassassin 'spamd' daemon
+	m_server_filter_choice_spamd = new QRadioButton( tr("Spamd") ) ;
+	//: copy emails into directories for multiple pop clients
+	m_server_filter_choice_copy = new QRadioButton( tr("Copy") ) ;
+
+	auto * filter_choice_layout = new QVBoxLayout ;
+	filter_choice_layout->addWidget( m_server_filter_choice_none ) ;
+	filter_choice_layout->addWidget( m_server_filter_choice_script ) ;
+	filter_choice_layout->addWidget( m_server_filter_choice_spamd ) ;
+	filter_choice_layout->addWidget( m_server_filter_choice_copy ) ;
+
+	//: client-side filtering options: none or script
+	m_client_filter_choice_none = new QRadioButton( tr("None") ) ;
+	m_client_filter_choice_script = new QRadioButton( tr("Script") ) ;
+	tip( m_client_filter_choice_script , tr("--client-filter") ) ;
+
+	auto * client_filter_choice_layout = new QVBoxLayout ;
+	client_filter_choice_layout->addWidget( m_client_filter_choice_none ) ;
+	client_filter_choice_layout->addWidget( m_client_filter_choice_script ) ;
+
+	//: label for an edit box that contains the filename of a client-side filter script
+	m_client_filter_label = new QLabel( tr("Filter:") ) ;
 	m_client_filter_edit_box = new QLineEdit ;
 	m_client_filter_label->setBuddy( m_client_filter_edit_box ) ;
 
 	auto * script_layout = new QHBoxLayout ;
-	script_layout->addWidget( m_filter_label ) ;
-	script_layout->addWidget( m_filter_edit_box ) ;
+	script_layout->addWidget( m_server_filter_label ) ;
+	script_layout->addWidget( m_server_filter_edit_box ) ;
 
 	auto * client_script_layout = new QHBoxLayout ;
 	client_script_layout->addWidget( m_client_filter_label ) ;
 	client_script_layout->addWidget( m_client_filter_edit_box ) ;
 
 	auto * server_layout = new QVBoxLayout ;
-	server_layout->addWidget( m_filter_checkbox ) ;
+	server_layout->addLayout( filter_choice_layout ) ;
 	server_layout->addLayout( script_layout ) ;
 
-	QGroupBox * server_group = new QGroupBox(tr("Server")) ;
+	//: group label for server-side filtering options
+	QGroupBox * server_group = new QGroupBox( tr("Server") ) ;
 	server_group->setLayout( server_layout ) ;
 
 	auto * client_layout = new QVBoxLayout ;
-	client_layout->addWidget( m_client_filter_checkbox ) ;
+	client_layout->addLayout( client_filter_choice_layout ) ;
 	client_layout->addLayout( client_script_layout ) ;
 
-	QGroupBox * client_group = new QGroupBox(tr("Client")) ;
+	//: group label for client-side filtering options
+	QGroupBox * client_group = new QGroupBox( tr("Client") ) ;
 	client_group->setLayout( client_layout ) ;
 
-	auto *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("Filters"))) ;
+	auto * layout = new QVBoxLayout ;
+	//: page title of filters page
+	layout->addWidget( newTitle(tr("Filters")) ) ;
 	layout->addWidget( server_group ) ;
 	layout->addWidget( client_group ) ;
 	layout->addStretch() ;
 	setLayout( layout ) ;
 
-	connect( m_filter_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
-	connect( m_filter_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
-	connect( m_filter_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
-
-	connect( m_client_filter_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
-	connect( m_client_filter_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
-	connect( m_client_filter_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
-
 	// directories are fixed by the first page, so keep the paths locked down
-	m_filter_edit_box->setEnabled( false ) ;
+	m_server_filter_edit_box->setEnabled( false ) ;
 	m_client_filter_edit_box->setEnabled( false ) ;
 
-	bool pop_filter_copy = config.value("filter").find("emailrelay-filter-copy") != std::string::npos ;
-	m_filter_path = G::Path( pop_filter_copy ? std::string() : config.value("filter") ) ;
-	m_filter_checkbox->setChecked( m_filter_path != G::Path() ) ;
+	connect( m_server_filter_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_server_filter_choice_none , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
+	connect( m_server_filter_choice_none , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
+	connect( m_server_filter_choice_script , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
+	connect( m_server_filter_choice_script , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
+	connect( m_server_filter_choice_spamd , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
+	connect( m_server_filter_choice_spamd , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
+	connect( m_server_filter_choice_copy , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
+	connect( m_server_filter_choice_copy , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
 
-	m_client_filter_path = config.value( "client-filter" ) ;
-	m_client_filter_checkbox->setChecked( m_client_filter_path != G::Path() ) ;
+	connect( m_client_filter_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_client_filter_choice_script , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
+	connect( m_client_filter_choice_script , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
 
-	onToggle() ;
+	m_server_filter = config.value( "filter" ) ;
+	m_client_filter = config.value( "client-filter" ) ;
+	m_first_show = true ;
+
+	m_server_filter_choice_none->setChecked( true ) ;
+	m_client_filter_choice_none->setChecked( true ) ;
+
+	//onToggle() ;
 }
 
 std::string FilterPage::nextPage()
@@ -932,73 +1089,148 @@ std::string FilterPage::nextPage()
 
 void FilterPage::onShow( bool )
 {
-	// initialise after contruction because we need data from other pages
-
 	PopPage & pop_page = dynamic_cast<PopPage&>( dialog().page("pop") ) ;
+	DoWhatPage & do_what_page = dynamic_cast<DoWhatPage&>( dialog().page("dowhat") ) ;
 	DirectoryPage & dir_page = dynamic_cast<DirectoryPage&>( dialog().page("directory") ) ;
-	m_pop_page_with_filter_copy = pop_page.withFilterCopy() ;
 
-	m_filter_checkbox->setEnabled( !m_pop_page_with_filter_copy ) ;
-	if( m_pop_page_with_filter_copy )
-		m_filter_checkbox->setChecked( true ) ;
-
-	// todo -- refactor wrt. installer and payload
 	G::Path script_dir = m_is_windows ? dir_page.configDir() : ( dir_page.installDir() + "lib" + "emailrelay" ) ;
 	G::Path exe_dir = m_is_windows ? dir_page.installDir() : ( dir_page.installDir() + "lib" + "emailrelay" ) ;
 
-	m_filter_path_default = script_dir + ("emailrelay-filter"+m_dot_script) ;
-	m_client_filter_path_default = script_dir + ("emailrelay-client-filter"+m_dot_script) ;
-	m_filter_copy_path = exe_dir + ("emailrelay-filter-copy"+m_dot_exe) ;
+	m_server_filter_script_path_default = script_dir + ("emailrelay-filter"+m_dot_script) ;
+	m_server_filter_copy_path_default = exe_dir + ("emailrelay-filter-copy"+m_dot_exe) ;
+	m_client_filter_script_path_default = script_dir + ("emailrelay-client-filter"+m_dot_script) ;
+	m_pop_page_with_filter_copy = do_what_page.pop() && pop_page.withFilterCopy() ;
 
+	if( m_pop_page_with_filter_copy )
+	{
+		m_server_filter_choice_none->setEnabled( false ) ;
+		m_server_filter_choice_script->setEnabled( false ) ;
+		m_server_filter_choice_spamd->setEnabled( false ) ;
+		m_server_filter_choice_copy->setEnabled( false ) ;
+		//: the edit boxes are disabled because of what was selected on the pop-server page
+		QString tooltip = tr("see pop server page") ;
+		tip( m_server_filter_choice_none , tooltip ) ;
+		tip( m_server_filter_choice_script , tooltip ) ;
+		tip( m_server_filter_choice_spamd , tooltip ) ;
+		tip( m_server_filter_choice_copy , tooltip ) ;
+	}
+	else
+	{
+		m_server_filter_choice_none->setEnabled( true ) ;
+		m_server_filter_choice_script->setEnabled( true ) ;
+		m_server_filter_choice_spamd->setEnabled( true ) ;
+		m_server_filter_choice_copy->setEnabled( true ) ;
+		tip( m_server_filter_choice_script , tr("--filter") ) ;
+		tip( m_server_filter_choice_spamd , tr("--filter") ) ;
+		tip( m_server_filter_choice_copy , tr("--filter") ) ;
+	}
+
+	if( m_installing )
+	{
+		// if installing the the directories can change on each show
+		// and there is no existing config to preserve
+		m_server_filter_script_path = m_server_filter_script_path_default ;
+		m_server_filter_copy_path = m_server_filter_copy_path_default ;
+		m_server_filter_spam = m_server_filter_spam_default ;
+		m_client_filter_script_path = m_client_filter_script_path_default ;
+	}
+	else if( m_first_show )
+	{
+		// if reconfiguring then set the initial checkboxes from the configuration
+		// value, unless overridden by the pop page (below)
+		m_server_filter_script_path = m_server_filter_script_path_default ;
+		m_server_filter_copy_path = m_server_filter_copy_path_default ;
+		m_server_filter_spam = m_server_filter_spam_default ;
+		if( m_server_filter.empty() )
+		{
+			m_server_filter_choice_none->setChecked( true ) ;
+		}
+		else if( m_server_filter.find("spam:") == 0U || m_server_filter.find("spam-edit:") == 0U )
+		{
+			m_server_filter_choice_spamd->setChecked( true ) ;
+			m_server_filter_spam = m_server_filter ;
+		}
+		else if( m_server_filter.find("emailrelay-filter-copy") != std::string::npos )
+		{
+			m_server_filter_choice_copy->setChecked( true ) ;
+			m_server_filter_copy_path = m_server_filter ;
+		}
+		else
+		{
+			m_server_filter_choice_script->setChecked( true ) ;
+			m_server_filter_script_path = m_server_filter ;
+		}
+
+		m_client_filter_script_path = m_client_filter_script_path_default ;
+		if( m_client_filter.empty() )
+		{
+			m_client_filter_choice_none->setChecked( true ) ;
+		}
+		else
+		{
+			m_client_filter_choice_script->setChecked( true ) ;
+			m_client_filter_script_path = m_client_filter ;
+		}
+	}
+
+	if( m_pop_page_with_filter_copy )
+	{
+		m_server_filter_choice_copy->setChecked( true ) ;
+	}
+
+	m_first_show = false ;
 	onToggle() ;
 }
 
 void FilterPage::onToggle()
 {
-	G::Path filter_path =
-		m_pop_page_with_filter_copy ?
-			m_filter_copy_path :
-			( m_filter_path.str().empty() ?
-				m_filter_path_default :
-				m_filter_path ) ;
+	if( m_server_filter_choice_none->isChecked() )
+	{
+		m_server_filter_edit_box->setText( qstr("") ) ;
+	}
+	else if( m_server_filter_choice_script->isChecked() )
+	{
+		m_server_filter_edit_box->setText( qstr(m_server_filter_script_path.str()) ) ;
+	}
+	else if( m_server_filter_choice_spamd->isChecked() )
+	{
+		m_server_filter_edit_box->setText( qstr(m_server_filter_spam) ) ;
+	}
+	else if( m_server_filter_choice_copy->isChecked() )
+	{
+		m_server_filter_edit_box->setText( qstr(m_server_filter_copy_path.str()) ) ;
+	}
 
-	G::Path client_filter_path = m_client_filter_path.str().empty() ?
-		m_client_filter_path_default :
-		m_client_filter_path ;
-
-	bool with_filter = m_filter_checkbox->isChecked() ;
-	m_filter_label->setEnabled( with_filter ) ;
-	m_filter_edit_box->setText( qstr(with_filter?filter_path.str():std::string()) ) ;
-
-	bool with_client_filter = m_client_filter_checkbox->isChecked() ;
-	m_client_filter_label->setEnabled( with_client_filter ) ;
-	m_client_filter_edit_box->setText( qstr(with_client_filter?client_filter_path.str():std::string()) ) ;
+	if( m_client_filter_choice_none->isChecked() )
+	{
+		m_client_filter_edit_box->setText( qstr("") ) ;
+	}
+	else if( m_client_filter_choice_script->isChecked() )
+	{
+		m_client_filter_edit_box->setText( qstr(m_client_filter_script_path.str()) ) ;
+	}
 }
 
 void FilterPage::dump( std::ostream & stream , bool for_install ) const
 {
 	GPage::dump( stream , for_install ) ;
-	dumpItem( stream , for_install , "filter-server" , value(m_filter_edit_box) ) ; // see also "pop-filter-copy"
+	dumpItem( stream , for_install , "filter-server" , value(m_server_filter_edit_box) ) ;
 	dumpItem( stream , for_install , "filter-client" , value(m_client_filter_edit_box) ) ;
-}
-
-std::string FilterPage::helpName() const
-{
-	return name() ;
 }
 
 // ==
 
 SmtpClientPage::SmtpClientPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close , bool have_account ) :
-		GPage(dialog,name,next_1,next_2,finish,close) ,
+	const std::string & next_1 , const std::string & next_2 , bool have_account ) :
+		GPage(dialog,name,next_1,next_2) ,
 		m_have_account(have_account)
 {
-	QLabel * server_label = new QLabel(tr("&Hostname:")) ;
+	//: internet address, hostname of remote smtp server
+	QLabel * server_label = new QLabel( tr("Hostname:") ) ;
 	m_server_edit_box = new QLineEdit ;
 	server_label->setBuddy( m_server_edit_box ) ;
 
-	tip( m_server_edit_box , "--forward-to" ) ;
+	tip( m_server_edit_box , tr("--forward-to") ) ;
 	std::string address = config.value("forward-to") ;
 	address = address.empty() ? config.value("as-client") : address ;
 	address = address.empty() ? std::string("smtp.example.com:25") : address ;
@@ -1006,7 +1238,8 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const G::MapFile & config , c
 	std::string port = G::Str::tail( address , address.find_last_of(".:") , std::string() ) ;
 	m_server_edit_box->setText( qstr(net_address) ) ;
 
-	QLabel * port_label = new QLabel( tr("P&ort:") ) ;
+	//: internet address, port number of remote smtp server
+	QLabel * port_label = new QLabel( tr("Port:") ) ;
 	m_port_edit_box = new QLineEdit( qstr(port) ) ;
 	port_label->setBuddy( m_port_edit_box ) ;
 
@@ -1017,54 +1250,60 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const G::MapFile & config , c
 	server_layout->addWidget( m_port_edit_box ) ;
 	server_layout->setStretchFactor( m_server_edit_box , 4 ) ;
 
-	QGroupBox * server_group = new QGroupBox(tr("Remote server")) ;
+	QGroupBox * server_group = new QGroupBox( tr("Remote server") ) ;
 	server_group->setLayout( server_layout ) ;
 
-	m_tls_checkbox = new QCheckBox( tr("&Use TLS encryption") ) ;
+	m_tls_checkbox = new QCheckBox( tr("Use TLS encryption") ) ;
+	tip( m_tls_checkbox , tr("--client-tls, --client-tls-connection") ) ;
 	const bool config_tls = config.booleanValue( "client-tls" , false ) ;
 	const bool config_tls_connection = config.booleanValue( "client-tls-connection" , false ) ;
 	m_tls_checkbox->setChecked( config_tls || config_tls_connection ) ;
-	m_tls_starttls = new QRadioButton( tr("&STARTTLS")) ;
+	//: not translatable, see RFC-2487
+	m_tls_starttls = new QRadioButton( tr("STARTTLS")) ;
 	m_tls_starttls->setChecked( !config_tls_connection ) ;
-	tip( m_tls_starttls , "--client-tls" ) ;
-	m_tls_tunnel = new QRadioButton( tr("&Implicit TLS (smtps)") ) ;
+	tip( m_tls_starttls , tr("--client-tls") ) ;
+	//: 'implicit' because encryption is assumed to be always active, see RFC-8314 3.
+	m_tls_tunnel = new QRadioButton( tr("Implicit TLS (smtps)") ) ;
 	m_tls_tunnel->setChecked( config_tls_connection ) ;
-	tip( m_tls_tunnel , "--client-tls-connection" ) ;
+	tip( m_tls_tunnel , tr("--client-tls-connection") ) ;
 
 	auto * tls_layout = new QHBoxLayout ;
 	tls_layout->addWidget( m_tls_checkbox ) ;
 	tls_layout->addWidget( m_tls_starttls ) ;
 	tls_layout->addWidget( m_tls_tunnel ) ;
 
-	QGroupBox * tls_group = new QGroupBox(tr("TLS encryption")) ;
+	QGroupBox * tls_group = new QGroupBox( tr("TLS encryption") ) ;
 	tls_group->setLayout( tls_layout ) ;
 
-	m_auth_checkbox = new QCheckBox( tr("&Supply authentication") ) ;
+	//: client should supply authentication credentials when connecting to the server
+	m_auth_checkbox = new QCheckBox( tr("Supply authentication") ) ;
 	m_auth_checkbox->setChecked( config.contains("client-auth") ) ;
-	tip( m_auth_checkbox , "--client-auth" ) ;
+	tip( m_auth_checkbox , tr("--client-auth") ) ;
 
 	auto * auth_layout = new QVBoxLayout ;
 	auth_layout->addWidget( m_auth_checkbox ) ;
 
-	QGroupBox * auth_group = new QGroupBox(tr("Authentication")) ;
+	QGroupBox * auth_group = new QGroupBox( tr("Authentication") ) ;
 	auth_group->setLayout( auth_layout ) ;
 
-	QLabel * account_name_label = new QLabel(tr("&Name:")) ;
+	//: smtp client account, username
+	QLabel * account_name_label = new QLabel( tr("Name:") ) ;
 	m_account_name = new QLineEdit ;
 	tip( m_account_name , NameTip() ) ;
 	account_name_label->setBuddy( m_account_name ) ;
 
-	QLabel * account_pwd_label = new QLabel(tr("&Password:")) ;
+	//: smtp client account, password
+	QLabel * account_pwd_label = new QLabel( tr("Password:") ) ;
 	m_account_pwd = new QLineEdit ;
 	tip( m_account_pwd , PasswordTip() ) ;
 	m_account_pwd->setEchoMode( QLineEdit::Password ) ;
 	account_pwd_label->setBuddy( m_account_pwd ) ;
 
-	if( testMode() )
+	if( testMode() && !have_account )
 	{
-		m_auth_checkbox->setChecked(true) ;
-		m_account_name->setText("me") ;
-		m_account_pwd->setText("secret") ;
+		m_auth_checkbox->setChecked( true ) ;
+		m_account_name->setText( "me" ) ;
+		m_account_pwd->setText( "secret" ) ;
 	}
 
 	auto * account_layout = new QGridLayout ;
@@ -1075,12 +1314,15 @@ SmtpClientPage::SmtpClientPage( GDialog & dialog , const G::MapFile & config , c
 
 	m_account_group =
 		m_have_account ?
-			new QGroupBox(tr("New Account")) :
-			new QGroupBox(tr("Account")) ;
+			//: group label for username/password edit box when installing
+			new QGroupBox( tr("New Account") ) :
+			//: group label for username/password edit box when reconfiguring
+			new QGroupBox( tr("Account") ) ;
 	m_account_group->setLayout( account_layout ) ;
 
-	auto *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("SMTP client"))) ;
+	auto * layout = new QVBoxLayout ;
+	//: page title of smtp-client page
+	layout->addWidget( newTitle(tr("SMTP client")) ) ;
 	layout->addWidget( server_group ) ;
 	layout->addWidget( auth_group ) ;
 	layout->addWidget( m_account_group ) ;
@@ -1136,84 +1378,105 @@ void SmtpClientPage::dump( std::ostream & stream , bool for_install ) const
 bool SmtpClientPage::isComplete()
 {
 	return
-		! m_port_edit_box->text().isEmpty() &&
-		! m_server_edit_box->text().isEmpty() && (
+		! m_port_edit_box->text().trimmed().isEmpty() &&
+		! m_server_edit_box->text().trimmed().isEmpty() && (
 		m_have_account ||
 		! m_auth_checkbox->isChecked() || (
-			! m_account_name->text().isEmpty() &&
-			! m_account_pwd->text().isEmpty() ) ) ;
-}
-
-std::string SmtpClientPage::helpName() const
-{
-	return name() ;
+			! m_account_name->text().trimmed().isEmpty() &&
+			! m_account_pwd->text().trimmed().isEmpty() ) ) ;
 }
 
 // ==
 
 LoggingPage::LoggingPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) :
-		GPage(dialog,name,next_1,next_2,finish,close)
+	const std::string & next_1 , const std::string & next_2 ) :
+		GPage(dialog,name,next_1,next_2)
 {
 	m_config_log_file = config.value( "log-file" ) ;
 
-	m_debug_checkbox = new QCheckBox( tr("&Debug messages") ) ;
-	tip( m_debug_checkbox , "--debug" ) ;
-	m_verbose_checkbox = new QCheckBox( tr("&Verbose logging") ) ;
-	tip( m_verbose_checkbox , "--verbose" ) ;
-	m_syslog_checkbox = new QCheckBox( tr("&Write to the system log") ) ;
-	tip( m_syslog_checkbox , "--syslog" ) ;
-	m_logfile_checkbox = new QCheckBox( tr("Write to &log file") ) ;
-	tip( m_logfile_checkbox , "--log-file" ) ;
-	m_logfile_label = new QLabel(tr("Log &file:")) ;
-	m_logfile_edit_box = new QLineEdit ;
-	m_logfile_label->setBuddy( m_logfile_edit_box ) ;
-	m_logfile_browse_button = new QPushButton(tr("B&rowse")) ;
-	m_logfile_browse_button->setVisible( false ) ; // moot
+	//: enable debug-level logging
+	m_log_level_debug_checkbox = new QCheckBox( tr("Debug messages") ) ;
+	tip( m_log_level_debug_checkbox , tr("--debug") ) ;
+	//: enable more verbose logging
+	m_log_level_verbose_checkbox = new QCheckBox( tr("Verbose logging") ) ;
+	tip( m_log_level_verbose_checkbox , tr("--verbose") ) ;
 
-	auto * logfile_layout = new QHBoxLayout ;
-	logfile_layout->addWidget( m_logfile_label ) ;
-	logfile_layout->addWidget( m_logfile_edit_box ) ;
-	logfile_layout->addWidget( m_logfile_browse_button ) ;
+	m_log_output_syslog_checkbox = new QCheckBox( tr("Write to the system log") ) ;
+	tip( m_log_output_syslog_checkbox , tr("--syslog") ) ;
 
-	auto * level_layout = new QVBoxLayout ;
-	level_layout->addWidget( m_verbose_checkbox ) ;
-	level_layout->addWidget( m_debug_checkbox ) ;
+	m_log_output_file_checkbox = new QCheckBox( tr("Write to log file") ) ;
+	m_log_output_file_checkbox->setChecked( true ) ;
+	tip( m_log_output_file_checkbox , tr("--log-file") ) ;
 
-	auto * output_layout = new QVBoxLayout ;
-	output_layout->addWidget( m_syslog_checkbox ) ;
-	output_layout->addWidget( m_logfile_checkbox ) ;
-	output_layout->addLayout( logfile_layout ) ;
+	m_log_output_file_label = new QLabel( tr("Log file:") ) ;
+	m_log_output_file_edit_box = new QLineEdit ;
+	m_log_output_file_label->setBuddy( m_log_output_file_edit_box ) ;
+	m_log_output_file_browse_button = new QPushButton( tr("Browse") ) ;
+	m_log_output_file_browse_button->setVisible( false ) ; // moot
+
+	m_log_fields_time_checkbox = new QCheckBox( tr("Timestamps") ) ;
+	tip( m_log_fields_time_checkbox , tr("--log-time") ) ;
+
+	m_log_fields_address_checkbox = new QCheckBox( tr("Network addresses") ) ;
+	tip( m_log_fields_address_checkbox , tr("--log-address") ) ;
+
+	auto * log_output_file_layout = new QHBoxLayout ;
+	log_output_file_layout->addWidget( m_log_output_file_label ) ;
+	log_output_file_layout->addWidget( m_log_output_file_edit_box ) ;
+	log_output_file_layout->addWidget( m_log_output_file_browse_button ) ;
+
+	auto * log_level_layout = new QVBoxLayout ;
+	log_level_layout->addWidget( m_log_level_verbose_checkbox ) ;
+	log_level_layout->addWidget( m_log_level_debug_checkbox ) ;
+
+	auto * log_output_layout = new QVBoxLayout ;
+	log_output_layout->addWidget( m_log_output_syslog_checkbox ) ;
+	log_output_layout->addWidget( m_log_output_file_checkbox ) ;
+	log_output_layout->addLayout( log_output_file_layout ) ;
+
+	auto * log_fields_layout = new QVBoxLayout ;
+	log_fields_layout->addWidget( m_log_fields_time_checkbox ) ;
+	log_fields_layout->addWidget( m_log_fields_address_checkbox ) ;
 
 	bool syslog_override = config.booleanValue("syslog",false) ;
 	bool as_client = config.booleanValue("as-client",false) ;
 	bool no_syslog = config.booleanValue("no-syslog",false) ;
 	bool syslog = syslog_override || !(as_client||no_syslog) ; // true by default
 
-	m_syslog_checkbox->setChecked( syslog ) ;
-	m_verbose_checkbox->setChecked( config.booleanValue("verbose",true) ) ; // true, because windows users
-	m_debug_checkbox->setChecked( config.booleanValue("debug",false) ) ;
-	m_debug_checkbox->setEnabled( config.booleanValue("debug",false) ) ; // todo
+	m_log_output_syslog_checkbox->setChecked( syslog ) ;
+	m_log_level_verbose_checkbox->setChecked( config.booleanValue("verbose",true) ) ; // true, because windows users
+	m_log_level_debug_checkbox->setChecked( config.booleanValue("debug",false) ) ;
+	m_log_level_debug_checkbox->setEnabled( config.booleanValue("debug",false) ) ; // todo, enable if debugging is built-in
+	m_log_fields_time_checkbox->setChecked( config.booleanValue("log-time",true) ) ;
+	m_log_fields_address_checkbox->setChecked( config.booleanValue("log-address",false) ) ;
 
-	QGroupBox * level_group = new QGroupBox(tr("Level")) ;
-	level_group->setLayout( level_layout ) ;
+	//: group label for the logging verbosity level
+	QGroupBox * level_group = new QGroupBox( tr("Level") ) ;
+	level_group->setLayout( log_level_layout ) ;
 
-	QGroupBox * output_group = new QGroupBox(tr("Output")) ;
-	output_group->setLayout( output_layout ) ;
+	//: group label for the logging output selection
+	QGroupBox * output_group = new QGroupBox( tr("Output") ) ;
+	output_group->setLayout( log_output_layout ) ;
+
+	//: group label for the selection of additional logging information fields
+	QGroupBox * fields_group = new QGroupBox( tr("Extra information") ) ;
+	fields_group->setLayout( log_fields_layout ) ;
 
 	//
 
-	auto *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("Logging"))) ;
+	auto * layout = new QVBoxLayout ;
+	//: page title of logging page
+	layout->addWidget( newTitle(tr("Logging")) ) ;
 	layout->addWidget(level_group) ;
+	layout->addWidget(fields_group) ;
 	layout->addWidget(output_group) ;
 	layout->addStretch() ;
 	setLayout( layout ) ;
 
-	connect( m_logfile_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
-	connect( m_logfile_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
-	connect( m_logfile_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
-	connect( m_logfile_browse_button , SIGNAL(clicked()) , this , SLOT(browseLogFile()) ) ;
+	connect( m_log_output_file_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_log_output_file_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
+	connect( m_log_output_file_checkbox , SIGNAL(toggled(bool)), this, SLOT(onToggle()) ) ;
+	connect( m_log_output_file_browse_button , SIGNAL(clicked()) , this , SLOT(browseLogFile()) ) ;
 
 	onToggle() ;
 }
@@ -1225,17 +1488,17 @@ std::string LoggingPage::nextPage()
 
 bool LoggingPage::isComplete()
 {
-    G_DEBUG( "LoggingPage::isComplete: " << m_logfile_checkbox->isChecked() << " " << value(m_logfile_edit_box) ) ;
+    G_DEBUG( "LoggingPage::isComplete: " << m_log_output_file_checkbox->isChecked() << " " << value(m_log_output_file_edit_box) ) ;
     return
-        !m_logfile_checkbox->isChecked() ||
-        !m_logfile_edit_box->text().isEmpty() ;
+        !m_log_output_file_checkbox->isChecked() ||
+        !m_log_output_file_edit_box->text().trimmed().isEmpty() ;
 }
 
 void LoggingPage::browseLogFile()
 {
-	QString s = browse(m_logfile_edit_box->text()) ;
-	if( ! s.isEmpty() )
-		m_logfile_edit_box->setText( s ) ;
+	QString s = browse(m_log_output_file_edit_box->text()) ;
+	if( ! s.trimmed().isEmpty() )
+		m_log_output_file_edit_box->setText( s ) ;
 }
 
 QString LoggingPage::browse( QString /*ignored*/ )
@@ -1243,24 +1506,18 @@ QString LoggingPage::browse( QString /*ignored*/ )
 	return QFileDialog::getOpenFileName( this ) ;
 }
 
-void LoggingPage::onShow( bool /*back*/ )
+void LoggingPage::onShow( bool )
 {
 	// initialise after contruction because we need the directory-page state
-	bool first_time = m_logfile_edit_box->text().isEmpty() ;
-	if( m_config_log_file == G::Path() )
+	if( m_config_log_file.empty() )
 	{
 		DirectoryPage & dir_page = dynamic_cast<DirectoryPage&>( dialog().page("directory") ) ;
 		G::Path default_log_file = dir_page.runtimeDir() + "emailrelay-log-%d.txt" ;
-		m_logfile_edit_box->setText( qstr(default_log_file.str()) ) ;
+		m_log_output_file_edit_box->setText( qstr(default_log_file.str()) ) ;
 	}
 	else
 	{
-		m_logfile_edit_box->setText( qstr(m_config_log_file.str()) ) ;
-	}
-	if( first_time )
-	{
-		// enable log file output by default, because windows users
-		m_logfile_checkbox->setChecked( true ) ; // was 'm_config_log_file != G::Path()'
+		m_log_output_file_edit_box->setText( qstr(m_config_log_file.str()) ) ;
 	}
 
 	onToggle() ;
@@ -1269,87 +1526,120 @@ void LoggingPage::onShow( bool /*back*/ )
 void LoggingPage::onToggle()
 {
 	// directories are fixed by the first page, so keep everything locked down
-	m_logfile_edit_box->setEnabled( false ) ;
-	m_logfile_browse_button->setEnabled( false ) ;
-	m_logfile_label->setEnabled( m_logfile_checkbox->isChecked() ) ;
+	m_log_output_file_edit_box->setEnabled( false ) ;
+	m_log_output_file_browse_button->setEnabled( false ) ;
+	m_log_output_file_label->setEnabled( m_log_output_file_checkbox->isChecked() ) ;
 }
 
 void LoggingPage::dump( std::ostream & stream , bool for_install ) const
 {
 	GPage::dump( stream , for_install ) ;
-	dumpItem( stream , for_install , "logging-verbose" , value(m_verbose_checkbox) ) ;
-	dumpItem( stream , for_install , "logging-debug" , value(m_debug_checkbox) ) ;
-	dumpItem( stream , for_install , "logging-syslog" , value(m_syslog_checkbox) ) ;
-	dumpItem( stream , for_install , "logging-file" , m_logfile_checkbox->isChecked() ? G::Path(value(m_logfile_edit_box)) : G::Path() ) ;
-	dumpItem( stream , for_install , "logging-time" , value(m_logfile_checkbox) ) ;
-}
-
-std::string LoggingPage::helpName() const
-{
-	return name() ;
+	dumpItem( stream , for_install , "logging-verbose" , value(m_log_level_verbose_checkbox) ) ;
+	dumpItem( stream , for_install , "logging-debug" , value(m_log_level_debug_checkbox) ) ;
+	dumpItem( stream , for_install , "logging-syslog" , value(m_log_output_syslog_checkbox) ) ;
+	dumpItem( stream , for_install , "logging-file" , m_log_output_file_checkbox->isChecked() ? G::Path(value(m_log_output_file_edit_box)) : G::Path() ) ;
+	dumpItem( stream , for_install , "logging-time" , value(m_log_fields_time_checkbox) ) ;
+	dumpItem( stream , for_install , "logging-address" , value(m_log_fields_address_checkbox) ) ;
 }
 
 // ==
 
 ListeningPage::ListeningPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ) :
-		GPage(dialog,name,next_1,next_2,finish,close)
+	const std::string & next_1 , const std::string & next_2 ) :
+		GPage(dialog,name,next_1,next_2)
 {
+	//: server listening-address options...
+	m_all_checkbox = new QRadioButton( tr("Any address") ) ;
+	//: listen on any ipv4 address
+	m_ipv4_checkbox = new QRadioButton( tr("Any IPv&4") ) ;
+	//: listen on any ipv6 address
+	m_ipv6_checkbox = new QRadioButton( tr("Any IPv&6") ) ;
+	//: listen on the ipv4 and ipv6 'localhost' addresses
+	m_loopback_checkbox = new QRadioButton( tr("Localhost") ) ;
+	//: listen on specific addresses given in the edit-box
+	m_list_checkbox = new QRadioButton( tr("List") ) ;
+
 	m_listening_interface = new QLineEdit ;
-	tip( m_listening_interface , "eg. 127.0.0.1,192.168.1.1" ) ;
-	m_all_radio = new QRadioButton(tr("&All interfaces")) ;
-	m_one_radio = new QRadioButton(tr("&One")) ;
-	tip( m_one_radio , "--interface" ) ;
-	QLabel * listening_interface_label = new QLabel(tr("&Interface:")) ;
-	listening_interface_label->setBuddy( m_listening_interface ) ;
+	tip( m_listening_interface , tr("--interface") ) ;
 
 	if( config.contains("interface") )
 	{
-		m_one_radio->setChecked( true ) ;
-		std::string interfaces = config.value("interface") ;
-		m_listening_interface->setEnabled( true ) ;
-		m_listening_interface->setText( qstr(interfaces) ) ;
+		m_value = config.value( "interface" ) ;
+		if( m_value == "0.0.0.0" )
+		{
+			m_ipv4_checkbox->setChecked( true ) ;
+		}
+		else if( m_value == "::" )
+		{
+			m_ipv6_checkbox->setChecked( true ) ;
+		}
+		else if( m_value == "127.0.0.1,::1" || m_value == "::1,127.0.0.1" )
+		{
+			m_loopback_checkbox->setChecked( true ) ;
+		}
+		else if( m_value.empty() )
+		{
+			m_all_checkbox->setChecked( true ) ;
+		}
+		else
+		{
+			m_list_checkbox->setChecked( true ) ;
+			m_listening_interface->setEnabled( true ) ;
+		}
+		m_listening_interface->setText( qstr(m_value) ) ;
 	}
 	else
 	{
-		m_all_radio->setChecked( true ) ;
-		m_listening_interface->setEnabled( false ) ;
+		m_all_checkbox->setChecked( true ) ;
 	}
+	m_listening_interface->setEnabled( m_list_checkbox->isChecked() ) ;
 
 	auto * listening_layout = new QGridLayout ;
-	listening_layout->addWidget( m_all_radio , 0 , 0 ) ;
-	listening_layout->addWidget( m_one_radio , 1 , 0 ) ;
-	listening_layout->addWidget( listening_interface_label , 1 , 1 ) ;
-	listening_layout->addWidget( m_listening_interface , 1 , 2 ) ;
+	listening_layout->addWidget( m_all_checkbox , 0 , 0 ) ;
+	listening_layout->addWidget( m_ipv4_checkbox , 1 , 0 ) ;
+	listening_layout->addWidget( m_ipv6_checkbox , 2 , 0 ) ;
+	listening_layout->addWidget( m_loopback_checkbox , 3 , 0 ) ;
+	listening_layout->addWidget( m_list_checkbox , 4 , 0 ) ;
+	listening_layout->addWidget( m_listening_interface , 4 , 1 ) ;
 
-	QGroupBox * listening_group = new QGroupBox(tr("Listen on")) ;
+	//: group label for the network address that the server should listen on
+	QGroupBox * listening_group = new QGroupBox( tr("Listen on") ) ;
 	listening_group->setLayout( listening_layout ) ;
 
 	//
 
-	m_remote_checkbox = new QCheckBox(tr("&Allow remote clients")) ;
-	tip( m_remote_checkbox , "--remote-clients" ) ;
+	m_remote_checkbox = new QCheckBox( tr("Allow remote clients") ) ;
+	tip( m_remote_checkbox , tr("--remote-clients") ) ;
 	m_remote_checkbox->setChecked( config.booleanValue("remote-clients",false) ) ;
 
 	auto * connections_layout = new QHBoxLayout ;
 	connections_layout->addWidget( m_remote_checkbox ) ;
 
-	QGroupBox * connections_group = new QGroupBox(tr("Clients")) ;
+	//: group label for allow-remote-clients checkbox
+	QGroupBox * connections_group = new QGroupBox( tr("Clients") ) ;
 	connections_group->setLayout( connections_layout ) ;
 
 	//
 
-	auto *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("Connections"))) ;
-	layout->addWidget(listening_group) ;
-	layout->addWidget(connections_group) ;
+	auto * layout = new QVBoxLayout ;
+	//: page title of connections page
+	layout->addWidget( newTitle(tr("Connections")) ) ;
+	layout->addWidget( listening_group ) ;
+	layout->addWidget( connections_group ) ;
 	layout->addStretch() ;
 	setLayout( layout ) ;
 
-	connect( m_all_radio , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
-	connect( m_all_radio , SIGNAL(toggled(bool)) , this , SIGNAL(pageUpdateSignal()) ) ;
-	connect( m_one_radio , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
-	connect( m_one_radio , SIGNAL(toggled(bool)) , this , SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_all_checkbox , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
+	connect( m_all_checkbox , SIGNAL(toggled(bool)) , this , SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_ipv4_checkbox , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
+	connect( m_ipv4_checkbox , SIGNAL(toggled(bool)) , this , SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_ipv6_checkbox , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
+	connect( m_ipv6_checkbox , SIGNAL(toggled(bool)) , this , SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_loopback_checkbox , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
+	connect( m_loopback_checkbox , SIGNAL(toggled(bool)) , this , SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_list_checkbox , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
+	connect( m_list_checkbox , SIGNAL(toggled(bool)) , this , SIGNAL(pageUpdateSignal()) ) ;
+	connect( m_listening_interface , SIGNAL(textChanged(QString)), this, SLOT(onTextChanged()) ) ;
 	connect( m_listening_interface , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()) ) ;
 
 	onToggle() ;
@@ -1360,42 +1650,61 @@ std::string ListeningPage::nextPage()
 	return next1() ;
 }
 
+void ListeningPage::onTextChanged()
+{
+	if( m_list_checkbox->isChecked() )
+		m_value = value( m_listening_interface ) ;
+}
+
 void ListeningPage::onToggle()
 {
-	m_listening_interface->setEnabled( ! m_all_radio->isChecked() ) ;
+	m_listening_interface->setEnabled( m_list_checkbox->isChecked() ) ;
+	std::string value ;
+	if( m_all_checkbox->isChecked() )
+		value.clear() ;
+	else if( m_ipv4_checkbox->isChecked() )
+		value = "0.0.0.0" ;
+	else if( m_ipv6_checkbox->isChecked() )
+		value = "::" ;
+	else if( m_loopback_checkbox->isChecked() )
+		value = "127.0.0.1,::1" ;
+	else if( m_list_checkbox->isChecked() )
+		value = normalise( m_value ) ;
+	m_listening_interface->setText( qstr(value) ) ;
+	m_listening_interface->setEnabled( m_list_checkbox->isChecked() ) ;
 }
 
 bool ListeningPage::isComplete()
 {
 	G_DEBUG( "ListeningPage::isComplete" ) ;
 	return
-		m_all_radio->isChecked() ||
-		!m_listening_interface->text().isEmpty() ;
+		m_list_checkbox->isChecked() ?
+			!m_listening_interface->text().trimmed().isEmpty() :
+			true ;
+}
+
+std::string ListeningPage::normalise( const std::string & s )
+{
+	return G::Str::join( "," , G::Str::splitIntoTokens(s," ,") ) ;
 }
 
 void ListeningPage::dump( std::ostream & stream , bool for_install ) const
 {
 	GPage::dump( stream , for_install ) ;
-	dumpItem( stream , for_install , "listening-all" , value(m_all_radio) ) ;
-	dumpItem( stream , for_install , "listening-interface" , value(m_listening_interface) ) ;
+	dumpItem( stream , for_install , "listening-interface" , normalise(value(m_listening_interface)) ) ;
 	dumpItem( stream , for_install , "listening-remote" , value(m_remote_checkbox) ) ;
-}
-
-std::string ListeningPage::helpName() const
-{
-	return name() ;
 }
 
 // ==
 
 StartupPage::StartupPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
+	const std::string & next_1 , const std::string & next_2 ,
 	bool start_on_boot_able , bool is_mac ) :
-		GPage(dialog,name,next_1,next_2,finish,close) ,
+		GPage(dialog,name,next_1,next_2) ,
 		m_is_mac(is_mac)
 {
-	m_on_boot_checkbox = new QCheckBox( tr("At &system startup") ) ;
-	m_at_login_checkbox = new QCheckBox( tr("&When logging in") ) ;
+	m_on_boot_checkbox = new QCheckBox( tr("At system startup") ) ;
+	m_at_login_checkbox = new QCheckBox( tr("When logging in") ) ;
 	auto * auto_layout = new QVBoxLayout ;
 	auto_layout->addWidget( m_on_boot_checkbox ) ;
 	auto_layout->addWidget( m_at_login_checkbox ) ;
@@ -1420,22 +1729,19 @@ StartupPage::StartupPage( GDialog & dialog , const G::MapFile & config , const s
 	m_add_desktop_item_checkbox->setChecked( !m_is_mac && config.booleanValue("start-link-desktop",false) ) ;
 	m_on_boot_checkbox->setChecked( start_on_boot_able && config.booleanValue("start-on-boot",false) ) ;
 
-	QGroupBox * auto_group = new QGroupBox(tr("Automatic")) ;
+	QGroupBox * auto_group = new QGroupBox( tr("Automatic") ) ;
 	auto_group->setLayout( auto_layout ) ;
 
-	QGroupBox * manual_group = new QGroupBox(tr("Manual")) ;
+	QGroupBox * manual_group = new QGroupBox( tr("Manual") ) ;
 	manual_group->setLayout( manual_layout ) ;
 
-	auto *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("Server startup"))) ;
-	layout->addWidget(auto_group) ;
-	layout->addWidget(manual_group) ;
+	auto * layout = new QVBoxLayout ;
+	//: page title of server-startup page
+	layout->addWidget( newTitle(tr("Server startup")) ) ;
+	layout->addWidget( auto_group ) ;
+	layout->addWidget( manual_group ) ;
 	layout->addStretch() ;
 	setLayout( layout ) ;
-
-	tip( m_at_login_checkbox , Dir::autostart().str() ) ;
-	tip( m_add_menu_item_checkbox , Dir::menu().str() ) ;
-	tip( m_add_desktop_item_checkbox , Dir::desktop().str() ) ;
 
 	connect( m_on_boot_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
 	connect( m_add_desktop_item_checkbox , SIGNAL(toggled(bool)), this, SIGNAL(pageUpdateSignal()));
@@ -1464,43 +1770,34 @@ void StartupPage::dump( std::ostream & stream , bool for_install ) const
 	}
 }
 
-std::string StartupPage::helpName() const
-{
-	return name() ;
-}
-
 // ==
 
 ReadyPage::ReadyPage( GDialog & dialog , const G::MapFile & , const std::string & name , const std::string & next_1 ,
-	const std::string & next_2 , bool finish , bool close , bool installing ) :
-		GPage(dialog,name,next_1,next_2,finish,close) ,
+	const std::string & next_2 , bool installing ) :
+		GPage(dialog,name,next_1,next_2) ,
 		m_installing(installing)
 {
 	m_label = new QLabel( text() ) ;
 
-	auto *layout = new QVBoxLayout;
-	std::string message = std::string() + "Ready to " + verb(false) ;
-	layout->addWidget(newTitle(tr(message.c_str()))) ;
-	layout->addWidget(m_label);
-	setLayout(layout);
+	auto * layout = new QVBoxLayout ;
+	if( installing )
+		layout->addWidget( newTitle(tr("Ready to install")) ) ;
+	else
+		layout->addWidget( newTitle(tr("Ready to configure")) ) ;
+	layout->addWidget( m_label ) ;
+	setLayout( layout ) ;
 }
 
 void ReadyPage::onShow( bool )
 {
 }
 
-std::string ReadyPage::verb( bool pp ) const
-{
-	return std::string( m_installing ? (pp?"installed":"install") : (pp?"configured":"configure") ) ;
-}
-
 QString ReadyPage::text() const
 {
-	std::string html = std::string() +
-		"<center>" +
-		"<p>E-MailRelay will now be " + verb(true) + ".</p>" +
-		"</center>" ;
-	return GPage::tr(html.c_str()) ;
+	QString para = m_installing ?
+		tr("E-MailRelay will now be installed.") :
+		tr("E-MailRelay will now be configured.") ;
+	return QString("<center><p>") + para + QString("</p></center>") ;
 }
 
 std::string ReadyPage::nextPage()
@@ -1508,33 +1805,61 @@ std::string ReadyPage::nextPage()
 	return next1() ;
 }
 
+bool ReadyPage::isReadyToFinishPage() const
+{
+	return true ;
+}
+
 void ReadyPage::dump( std::ostream & s , bool for_install ) const
 {
 	GPage::dump( s , for_install ) ;
 }
 
-std::string ReadyPage::helpName() const
-{
-	return name() ;
-}
-
 // ==
 
+LogWatchThread::LogWatchThread( G::Path path ) :
+	m_path(path)
+{
+	m_stream.open( m_path.cstr() , std::ios_base::ate ) ;
+}
+
+void LogWatchThread::run()
+{
+	while( !m_stream.is_open() )
+	{
+		m_stream.open( m_path.cstr() ) ;
+		if( !m_stream.is_open() )
+			msleep( 100 ) ;
+	}
+	std::string line ;
+	for(;;)
+	{
+		line.clear() ;
+		std::getline( m_stream , line ) ;
+		if( !line.empty() ) // !eof
+			emit newLine( GQt::qstr(line) ) ;
+		m_stream.clear( m_stream.rdstate() & ~(std::ios_base::failbit | std::ios_base::eofbit) ) ;
+		msleep( 100 ) ;
+	}
+}
+
 ProgressPage::ProgressPage( GDialog & dialog , const G::MapFile & , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 , bool finish , bool close ,
+	const std::string & next_1 , const std::string & next_2 ,
 	Installer & installer ) :
-		GPage(dialog,name,next_1,next_2,finish,close) ,
-		m_timer(nullptr) ,
-		m_installer(installer)
+		GPage(dialog,name,next_1,next_2) ,
+		m_text_pos(0) ,
+		m_installer(installer) ,
+		m_state(0)
 {
 	m_text_edit = new QTextEdit ;
-	m_text_edit->setReadOnly(true) ;
-	m_text_edit->setWordWrapMode(QTextOption::NoWrap) ;
-	m_text_edit->setLineWrapMode(QTextEdit::NoWrap) ;
-	m_text_edit->setFontFamily("courier") ;
+	m_text_edit->setReadOnly( true ) ;
+	m_text_edit->setWordWrapMode( QTextOption::NoWrap ) ;
+	m_text_edit->setLineWrapMode( QTextEdit::NoWrap ) ;
+	//m_text_edit->setFontFamily( "courier" ) ;
 
-	auto *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("Installing"))) ;
+	auto * layout = new QVBoxLayout ;
+	//: page title of installation progress page
+	layout->addWidget( newTitle(tr("Installing")) ) ;
 	layout->addWidget(m_text_edit) ;
 	setLayout( layout ) ;
 }
@@ -1543,51 +1868,98 @@ void ProgressPage::onShow( bool back )
 {
 	if( ! back )
 	{
-		// dump install variables into a stringstream
-		std::stringstream ss ;
-		dialog().dumpInstallVariables( ss ) ;
-		if( testMode() )
+		// log the install variables
 		{
-			std::ofstream f( "installer.txt" ) ;
-			f << ss.str() ;
+			std::stringstream ss ;
+			dialog().dumpInstallVariables( ss ) ;
+			if( testMode() )
+			{
+				std::ofstream f ;
+				G::File::open( f , "installer.txt" , G::File::Text() ) ;
+				f << ss.str() ;
+			}
+			std::string line ;
+			while( !std::getline(ss,line).eof() )
+			{
+				if( line.find("-password=") == std::string::npos )
+					G_LOG( "ProgressPage::onShow: install: " << line ) ;
+			}
 		}
 
 		// start running the installer
+		std::stringstream ss ;
+		dialog().dumpInstallVariables( ss ) ;
 		m_installer.start( ss ) ; // reads from istream
-		dialog().wait( true ) ; // disable buttons
 
-		// run a continuous zero-length timer that calls poke()
 		m_text = QString() ;
 		m_text_edit->setPlainText( m_text ) ;
-		m_timer = new QTimer( this ) ;
-		connect( m_timer , SIGNAL(timeout()) , this , SLOT(poke()) ) ;
-		m_timer->start() ;
+
+		// run a continuous zero-length timer that calls onInstallTimeout()
+		m_install_timer = std::make_unique<QTimer>( this ) ;
+		connect( m_install_timer.get() , SIGNAL(timeout()) , this , SLOT(onInstallTimeout()) ) ;
+		m_state = 0 ;
+		m_install_timer->start() ;
 	}
 }
 
-void ProgressPage::poke()
+void ProgressPage::onLaunch()
+{
+	if( m_logwatch_thread == nullptr )
+	{
+		G::Path log_path = m_installer.addLauncher() ;
+		m_logwatch_thread = new LogWatchThread( log_path ) ;
+		connect( m_logwatch_thread , &LogWatchThread::newLine , this , &ProgressPage::onLogWatchLine ) ;
+	}
+	if( m_install_timer == nullptr )
+	{
+		m_install_timer = std::make_unique<QTimer>( this ) ;
+		connect( m_install_timer.get() , SIGNAL(timeout()) , this , SLOT(onInstallTimeout()) ) ;
+	}
+	m_state = 10 ;
+	m_install_timer->start() ;
+}
+
+void ProgressPage::onInstallTimeout()
 {
 	try
 	{
-		if( m_timer == nullptr )
-			throw std::runtime_error("internal error: no timer") ;
-
-		bool more = m_installer.next() ;
-		if( more )
+		if( m_state == 0 || m_state == 10 )
 		{
-			addLine( m_installer.beforeText() + "... " ) ;
-			m_installer.run() ;
-			addLine( m_installer.afterText() + "\n" ) ;
-		}
-		else
-		{
-			dialog().wait( false ) ;
-			m_timer->stop() ;
-			{ QTimer * p = m_timer ; m_timer = nullptr ; delete p ; }
-			if( m_installer.failed() )
-				addLine( "** failed **" ) ;
+			if( m_installer.next() )
+			{
+				addOutput( m_installer.output() ) ;
+				m_state += 1 ;
+			}
 			else
-				addLine( "== finished ==" ) ;
+			{
+				m_state += 2 ;
+			}
+		}
+		else if( m_state == 1 || m_state == 11 )
+		{
+			m_installer.run() ; // doesnt throw
+			replaceOutput( m_installer.output() ) ;
+			m_state -= 1 ;
+		}
+		else if( m_state == 2 || m_state == 12 )
+		{
+			m_install_timer->stop() ;
+			if( m_installer.failed() )
+			{
+				if( m_state == 2 )
+					addLine( GQt::qstr(m_installer.failedText(),GQt::Utf8()) ) ;
+				else
+					m_installer.back() ;
+				m_state += 1 ;
+			}
+			else
+			{
+				if( m_state == 2 )
+					addLine( GQt::qstr(m_installer.finishedText(),GQt::Utf8()) ) ;
+				m_state += 2 ;
+				if( m_logwatch_thread )
+					m_logwatch_thread->start() ;
+			}
 		}
 		emit pageUpdateSignal() ;
 	}
@@ -1603,11 +1975,91 @@ void ProgressPage::poke()
 	}
 }
 
-void ProgressPage::addLine( const std::string & line )
+void ProgressPage::onLogWatchLine( QString line )
 {
-	G_DEBUG( "ProgressPage::addLine: [" << G::Str::printable(line) << "]" ) ;
-	m_text.append( qstr(line) ) ;
-	m_text_edit->setFontFamily("courier") ;
+	if( !line.isEmpty() )
+		addLine( line ) ;
+}
+
+void ProgressPage::addOutput( const Installer::Output & output )
+{
+	addLine( format(output) ) ;
+}
+
+QString ProgressPage::format( const Installer::Output & output )
+{
+	QString action_tr = GQt::qstr( output.action_utf8 , GQt::Utf8() ) ;
+	QString subject_native = GQt::qstr( output.subject ) ;
+	QString result_tr = GQt::qstr( output.result_utf8 , GQt::Utf8() ) ;
+	QString error_tr = GQt::qstr( output.error_utf8 , GQt::Utf8() ) ;
+	QString error_native = GQt::qstr( output.error ) ;
+
+	// use the translation mechanism to format the line because
+	// bidirectional text is tricky -- use higher numbered substitution
+	// numbers for untranslated values so they can be discarded
+
+	if( result_tr.isEmpty() && error_tr.isEmpty() && error_native.isEmpty() )
+	{
+		if( subject_native.isEmpty() )
+			//: installer progress item, no subject, not yet run
+			return tr("%1... ","1").arg(action_tr) ;
+		else
+			//: installer progress item, untranslated subject, not yet run
+			return tr("%1 [%2]... ","2").arg(action_tr,subject_native) ;
+	}
+	else if( !result_tr.isEmpty() )
+	{
+		if( subject_native.isEmpty() )
+			//: installer progress item, no subject, with non-error result
+			return tr("%1... %2","3").arg(action_tr,result_tr) ;
+		else
+			//: installer progress item, untranslated subject, with non-error result
+			return tr("%1 [%3]... %2","4").arg(action_tr,result_tr,subject_native) ;
+	}
+	else if( error_native.isEmpty() )
+	{
+		if( subject_native.isEmpty() )
+			//: installer progress item, no subject, with translated error result
+			return tr("%1... %2","5").arg(action_tr,error_tr) ;
+		else
+			//: installer progress item, untranslated subject, with translated error result
+			return tr("%1 [%3]... %2","6").arg(action_tr,error_tr,subject_native) ;
+	}
+	else if( error_tr.isEmpty() )
+	{
+		if( subject_native.isEmpty() )
+			//: installer progress item, no subject, with native error result
+			return tr("%1... %2","7").arg(action_tr,error_native) ;
+		else
+			//: installer progress item, untranslated subject, with native error result
+			return tr("%1 [%3]... %2","8").arg(action_tr,error_native,subject_native)  ;
+	}
+	else
+	{
+		if( subject_native.isEmpty() )
+			//: installer progress item, no subject, with translated error result and untranslated error subject
+			return tr("%1... %2: %3","9").arg(action_tr,error_tr,error_native) ;
+		else
+			//: installer progress item, untranslated subject, with translated error result and untranslated error subject
+			return tr("%1 [%3]... %2: %4","10").arg(action_tr,error_tr,subject_native,error_native)  ;
+	}
+}
+
+void ProgressPage::replaceOutput( const Installer::Output & output )
+{
+	m_text.resize( m_text_pos ) ;
+	addOutput( output ) ;
+}
+
+void ProgressPage::addLine( const QString & line )
+{
+	addText( line + QString("\n") ) ;
+}
+
+void ProgressPage::addText( const QString & text )
+{
+	m_text_pos = m_text.size() ;
+	m_text.append( text ) ;
 	m_text_edit->setPlainText( m_text ) ;
 }
 
@@ -1621,45 +2073,23 @@ void ProgressPage::dump( std::ostream & s , bool for_install ) const
 	GPage::dump( s , for_install ) ;
 }
 
-bool ProgressPage::closeButton() const
+bool ProgressPage::isFinishPage() const
 {
-	bool close_button = GPage::closeButton() ;
-	if( m_installer.done() && m_installer.failed() )
-		close_button = false ;
+	return true ;
+}
 
-	G_DEBUG( "ProgressPage::closeButton: " << close_button ) ;
-	return close_button ;
+bool ProgressPage::isFinishing()
+{
+	return !m_installer.done() && m_state < 2 ;
 }
 
 bool ProgressPage::isComplete()
 {
-	return m_installer.done() && !m_installer.failed() ;
+	return m_state >= 4 ;
 }
 
-std::string ProgressPage::helpName() const
+bool ProgressPage::canLaunch()
 {
-	return name() ;
+	return m_state == 4 || m_state == 13 ;
 }
 
-// ==
-
-EndPage_::EndPage_( GDialog & dialog , const G::MapFile & , const std::string & name ) :
-	GPage(dialog,name,"","",true,true)
-{
-	auto *layout = new QVBoxLayout;
-	layout->addWidget(newTitle(tr("Finish"))) ;
-	layout->addStretch() ;
-	setLayout( layout ) ;
-}
-
-std::string EndPage_::nextPage()
-{
-	return std::string() ;
-}
-
-void EndPage_::dump( std::ostream & s , bool for_install ) const
-{
-	GPage::dump( s , for_install ) ;
-}
-
-/// \file pages.cpp

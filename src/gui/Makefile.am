@@ -1,16 +1,16 @@
 #
-## Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-##
+## Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
-##
+## 
 ## This program is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-##
+## 
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -18,6 +18,9 @@
 # Makefile.am
 #
 # Builds emailrelay-gui.real.
+#
+# Note that the gui can be built with compiler options that are incompatible
+# with the rest of the project because of glibsources.cpp.
 #
 # The following additional targets can be used for packaging:
 #
@@ -32,6 +35,30 @@
 MAC_SOURCES = access_mac.cpp dir_mac.cpp boot_mac.cpp glink_mac.cpp
 WIN32_SOURCES = access_win32.cpp dir_win32.cpp boot_win32.cpp glink_win32.cpp emailrelay-gui.rc
 UNIX_SOURCES = access_unix.cpp dir_unix.cpp boot_unix.cpp glink_unix.cpp
+
+QT_SOURCES = \
+	installer.cpp \
+	gdialog.cpp \
+	gdialog.h \
+	gpage.cpp \
+	gpage.h \
+	pages.h \
+	pages.cpp \
+	gqt.h
+
+LIB_SOURCES = \
+	$(OS_SOURCES) \
+	access.h \
+	boot.h \
+	dir.cpp \
+	dir.h \
+	glibsources.cpp \
+	glink.h \
+	installer.h \
+	legal.cpp \
+	legal.h \
+	serverconfiguration.cpp \
+	serverconfiguration.h
 
 if GCONFIG_WINDOWS
 OS_EXTRA_DIST = $(MAC_SOURCES) $(UNIX_SOURCES)
@@ -61,19 +88,19 @@ AM_INSTALL_PROGRAM_FLAGS=-s
 MOC_OUTPUT=\
 	moc_gdialog.cpp \
 	moc_gpage.cpp \
-	moc_pages.cpp \
-	moc_launcher.cpp
+	moc_pages.cpp
 
 MOC_OBJECTS=\
 	moc_gdialog.o \
 	moc_gpage.o \
-	moc_pages.o \
-	moc_launcher.o
+	moc_pages.o
 
 CLEANFILES = $(MOC_OUTPUT)
+DISTCLEANFILES = ./.deps/moc*
 
 AM_CPPFLAGS=\
 	-I$(top_srcdir)/src/glib \
+	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
 	-I$(top_srcdir)/src/gsmtp \
 	-I$(top_srcdir)/src/gpop \
@@ -100,42 +127,33 @@ moc_gpage.cpp: $(srcdir)/gpage.h
 moc_pages.cpp: $(srcdir)/pages.h
 	$(GCONFIG_QT_MOC) $(srcdir)/pages.h -o $@
 
-moc_launcher.cpp: $(srcdir)/launcher.h
-	$(GCONFIG_QT_MOC) $(srcdir)/launcher.h -o $@
+noinst_SCRIPTS = $(OS_NOINST)
+noinst_LIBRARIES = libguimain.a
+libguimain_a_SOURCES = $(LIB_SOURCES)
+
+if GCONFIG_WINDOWS
+
+sbin_PROGRAMS = emailrelay-gui
+
+emailrelay_gui_SOURCES = guimain.cpp $(QT_SOURCES)
+emailrelay_gui_DEPENDENCIES = $(MOC_OBJECTS) libguimain.a
+emailrelay_gui_LDADD = \
+	$(MOC_OBJECTS) \
+	libguimain.a \
+	$(GCONFIG_QT_LIBS)
+
+else
 
 sbin_PROGRAMS = emailrelay-gui.real
-noinst_SCRIPTS = $(OS_NOINST)
 
-emailrelay_gui_real_SOURCES = \
-	$(OS_SOURCES) \
-	access.h \
-	boot.h \
-	dir.cpp \
-	dir.h \
-	gdialog.cpp \
-	gdialog.h \
-	glink.h \
-	gpage.cpp \
-	gpage.h \
-	guimain.cpp \
-	installer.cpp \
-	installer.h \
-	launcher.cpp \
-	launcher.h \
-	legal.cpp \
-	legal.h \
-	pages.cpp \
-	pages.h \
-	qt.h \
-	serverconfiguration.cpp \
-	serverconfiguration.h \
-	glibsources.cpp
-
-emailrelay_gui_real_DEPENDENCIES = $(MOC_OBJECTS)
-
+emailrelay_gui_real_SOURCES = guimain.cpp $(QT_SOURCES)
+emailrelay_gui_real_DEPENDENCIES = $(MOC_OBJECTS) libguimain.a
 emailrelay_gui_real_LDADD = \
 	$(MOC_OBJECTS) \
+	libguimain.a \
 	$(GCONFIG_QT_LIBS)
+
+endif
 
 install-exec-hook:
 	-mkdir -p "$(DESTDIR)$(sbindir)" 2>/dev/null
@@ -151,6 +169,15 @@ uninstall-hook:
 
 clean-local:
 	-rm -f payload
+
+TS_FILE=emailrelay_tr.en_SC.ts
+QM_FILE=emailrelay_tr.en_SC.qm
+.PHONY: translate
+translate:
+	rm $(TS_FILE) 2>/dev/null || true
+	lupdate $(QT_SOURCES) --target-language en_SC -ts $(TS_FILE)
+	translate.pl $(TS_FILE)
+	lrelease $(TS_FILE)
 
 else
 

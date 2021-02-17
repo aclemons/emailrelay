@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -31,7 +31,7 @@ namespace G
 	class Arg ;
 }
 
-/// \class G::Arg
+//| \class G::Arg
 /// A class which holds a represention of the argc/argv command line array,
 /// and supports simple command-line parsing.
 ///
@@ -75,8 +75,9 @@ public:
 		///< overload has never been used. See also exe().
 
 	static std::string exe( bool do_throw = true ) ;
-		///< Returns Process::exe() or an absolute path constructed from v0().
-		///< Throws on error by default, or optionally returns the empty string.
+		///< Returns Process::exe() or an absolute path constructed from v0()
+		///< and possibly using the cwd. Throws on error by default, or
+		///< optionally returns the empty string.
 		///< See also v0().
 
 	std::size_t c() const ;
@@ -86,6 +87,9 @@ public:
 	std::string v( std::size_t i ) const ;
 		///< Returns the i'th argument.
 		///< Precondition: i < c()
+
+	std::string v( std::size_t i , const std::string & default_ ) const ;
+		///< Returns the i'th argument or the default if out of range.
 
 	std::string prefix() const ;
 		///< Returns the basename of v(0) without any extension. Typically used
@@ -102,27 +106,35 @@ public:
 		///< with a dash, but that is not required here; it's just a string
 		///< that is matched against command-line arguments.)
 
-	std::size_t index( const std::string & option , std::size_t option_args = 0U ) const ;
-		///< Returns the index of the given option. Returns zero if not present.
+	std::size_t count( const std::string & option ) ;
+		///< Returns the number of times the given string appears in the
+		///< list of arguments.
+
+	std::size_t index( const std::string & option , std::size_t option_args = 0U ,
+		std::size_t default_ = 0U ) const ;
+			///< Returns the index of the given option. Returns zero
+			///< (or the given default) if not present.
+
+	std::size_t match( const std::string & prefix ) const ;
+		///< Returns the index of the first argument that matches the
+		///< given prefix. Returns zero if none.
 
 	bool remove( const std::string & option , std::size_t option_args = 0U ) ;
 		///< Removes the given option and its arguments. Returns false if
 		///< the option does not exist.
 
-	void removeAt( std::size_t option_index , std::size_t option_args = 0U ) ;
+	std::string removeAt( std::size_t option_index , std::size_t option_args = 0U ) ;
 		///< Removes the given argument and the following 'option_args' ones.
+		///< Returns v(option_index+(option_args?1:0),"").
 
 	StringArray array( unsigned int shift = 0U ) const ;
-		///< Returns the arguments as a string array, including the program name
-		///< in the first position.
+		///< Returns the arguments as a string array, with an optional shift.
+		///< A shift of one will remove the program name.
 
 private:
-	bool find( bool , const std::string & , std::size_t , std::size_t * ) const ;
-	static bool match( bool , const std::string & , const std::string & ) ;
-	void parseCore( const std::string & ) ;
-	static void protect( std::string & ) ;
-	static void unprotect( StringArray & ) ;
-	static void dequote( StringArray & ) ;
+	std::size_t find( bool , const std::string & , std::size_t , std::size_t * ) const ;
+	static bool strmatch( bool , const std::string & , const std::string & ) ;
+	void parseImp( const std::string & ) ;
 
 private:
 	StringArray m_array ;

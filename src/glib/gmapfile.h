@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -37,7 +37,7 @@ namespace G
 	class MapFile ;
 }
 
-/// \class G::MapFile
+//| \class G::MapFile
 /// A class for reading, writing and editing key=value files,
 /// supporting variable expansion of percent-key-percent values,
 /// comments, creation of backup files, and logging.
@@ -56,9 +56,10 @@ namespace G
 class G::MapFile
 {
 public:
-	G_EXCEPTION( ReadError , "cannot open map file" ) ;
-	G_EXCEPTION( WriteError , "cannot write map file" ) ;
-	G_EXCEPTION( Missing , "cannot find map file item" ) ;
+	struct Error : public Exception /// Exception class for G::MapFile.
+	{
+		using Exception::Exception ;
+	} ;
 
 	MapFile() ;
 		///< Constructor for an empty map.
@@ -75,7 +76,7 @@ public:
 		///< Multi-valued options are loaded as a comma-separated
 		///< list.
 
-	explicit MapFile( const G::Path & ) ;
+	explicit MapFile( const G::Path & , const std::string & kind = std::string() ) ;
 		///< Constructor that reads from a file. Lines can have a key
 		///< and no value (see booleanValue()). Comments must be at
 		///< the start of the line. Values are left and right-trimmed,
@@ -85,15 +86,17 @@ public:
 		///< Constructor that reads from a stream.
 
 	const G::StringArray & keys() const ;
-		///< Returns a reference to the ordered list of keys.
+		///< Returns a reference to the internal ordered list of keys.
 
-	static void check( const G::Path & ) ;
+	static void check( const G::Path & , const std::string & kind = std::string() ) ;
 		///< Throws if the file is invalid. This is equivalent to
 		///< constructing a temporary MapFile object, but it
 		///< specifically does not do any logging.
 
-	void add( const std::string & key , const std::string & value ) ;
+	void add( const std::string & key , const std::string & value , bool clear = false ) ;
 		///< Adds or updates a single item in the map.
+		///< If updating then by default the new value
+		///< is appended with a comma separator.
 
 	void writeItem( std::ostream & , const std::string & key ) const ;
 		///< Writes a single item from this map to the stream.
@@ -137,7 +140,7 @@ public:
 	const G::StringMap & map() const ;
 		///< Returns a reference to the internal map.
 
-	void log() const ;
+	void log( const std::string & prefix = std::string() ) const ;
 		///< Logs the contents.
 
 	std::string expand( const std::string & value ) const ;
@@ -157,23 +160,27 @@ public:
 
 private:
 	using List = std::list<std::string> ;
-	void readFrom( const G::Path & ) ;
+	void readFrom( const G::Path & , const std::string & ) ;
 	void readFrom( std::istream & ss ) ;
 	static std::string quote( const std::string & ) ;
-	List read( const G::Path & , bool ) const ;
+	List read( const G::Path & , const std::string & , bool ) const ;
 	void commentOut( List & ) const ;
 	void replace( List & ) const ;
 	bool expand_( std::string & ) const ;
 	std::string expandAll( const std::string & ) const ;
 	static void backup( const G::Path & ) ;
 	static void save( const G::Path & , List & , bool ) ;
-	void log( const std::string & , const std::string & ) const ;
-	static void log( bool , const std::string & , const std::string & ) ;
 	std::string mandatoryValue( const std::string & ) const ;
 	bool ignore( const std::string & ) const ;
+	static std::string ekind( const std::string & ) ;
+	static std::string epath( const G::Path & ) ;
+	static Error readError( const G::Path & , const std::string & ) ;
+	static Error writeError( const G::Path & , const std::string & = std::string() ) ;
+	static Error missingValueError( const G::Path & , const std::string & , const std::string & ) ;
 
 private:
-	bool m_logging{true} ;
+	G::Path m_path ; // if any
+	std::string m_kind ;
 	G::StringMap m_map ;
 	G::StringArray m_keys ; // kept in input order
 } ;

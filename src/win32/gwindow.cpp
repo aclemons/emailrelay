@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gwindow.cpp
-//
+///
+/// \file gwindow.cpp
+///
 
 #include "gdef.h"
 #include "gwindow.h"
@@ -36,7 +36,7 @@ GGui::Window::Window( HWND hwnd ) :
 GGui::Window::~Window()
 {
 	if( handle() )
-		::SetWindowLongPtr( handle() , 0 , 0 ) ;
+		SetWindowLongPtr( handle() , 0 , 0 ) ;
 }
 
 bool GGui::Window::registerWindowClass( const std::string & class_name_in ,
@@ -89,18 +89,18 @@ bool GGui::Window::create( const std::string & class_name ,
 void GGui::Window::update()
 {
 	G_ASSERT( handle() != HNULL ) ;
-	::UpdateWindow( handle() ) ;
+	UpdateWindow( handle() ) ;
 }
 
 void GGui::Window::show( int style )
 {
 	G_ASSERT( handle() != HNULL ) ;
-	::ShowWindow( handle() , style ) ;
+	ShowWindow( handle() , style ) ;
 }
 
 void GGui::Window::invalidate( bool erase )
 {
-	::InvalidateRect( handle() , nullptr , erase ) ;
+	InvalidateRect( handle() , nullptr , erase ) ;
 }
 
 GGui::Window * GGui::Window::instance( HWND hwnd )
@@ -120,7 +120,13 @@ extern "C" LRESULT CALLBACK gwindow_wndproc_export( HWND hwnd , UINT message , W
 	catch( std::exception & e )
 	{
 		// never gets here
-		G_DEBUG( "gwindow_wndproc_export: exception absorbed: " << e.what() ) ; G__IGNORE_VARIABLE(std::exception&,e) ;
+		GDEF_IGNORE_PARAM( e ) ;
+		G_DEBUG( "gwindow_wndproc_export: exception absorbed: " << e.what() ) ;
+		return 0 ;
+	}
+	catch(...) // callback
+	{
+		// never gets here
 		return 0 ;
 	}
 }
@@ -188,7 +194,7 @@ LRESULT GGui::Window::wndProcCore( Window * window , HWND hwnd , UINT msg , WPAR
 		G_DEBUG( "GGui::Window::wndProc: WM_CREATE: hwnd " << hwnd ) ;
 		void * vp = reinterpret_cast<void*>(window) ;
 		LONG_PTR wl = reinterpret_cast<LONG_PTR>(vp) ;
-		::SetWindowLongPtr( hwnd , 0 , wl ) ;
+		SetWindowLongPtr( hwnd , 0 , wl ) ;
 		window->setHandle( hwnd ) ;
 		result = window->onCreate() ? 0 : -1 ;
 	}
@@ -221,7 +227,7 @@ LRESULT GGui::Window::onUserString( const char * )
 
 void GGui::Window::destroy()
 {
-	::DestroyWindow( handle() ) ;
+	DestroyWindow( handle() ) ;
 }
 
 namespace GGui
@@ -321,7 +327,7 @@ void GGui::Window::resize( Size new_size , bool repaint )
 			rect.top = 0 ;
 		}
 
-		::MoveWindow( handle() , rect.left , rect.top , new_size.dx , new_size.dy , repaint ) ;
+		MoveWindow( handle() , rect.left , rect.top , new_size.dx , new_size.dy , repaint ) ;
 	}
 }
 
@@ -332,4 +338,3 @@ void GGui::Window::onWindowException( std::exception & e )
 	Pump::quit( e.what() ) ;
 }
 
-/// \file gwindow.cpp

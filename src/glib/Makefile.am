@@ -1,16 +1,16 @@
 #
-## Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-##
+## Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
-##
+## 
 ## This program is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-##
+## 
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -23,8 +23,6 @@ if GCONFIG_WINDOWS
 
 EXTRA_DIST=\
 	gcleanup_unix.cpp \
-	gconvert_none.cpp \
-	gconvert_unix.cpp \
 	gdaemon_unix.cpp \
 	gdirectory_unix.cpp \
 	genvironment_unix.cpp \
@@ -47,6 +45,7 @@ libglib_a_SOURCES = \
 	gbase64.cpp \
 	gbatchfile.h \
 	gbatchfile.cpp \
+	gbuffer.h \
 	gcall.h \
 	gcleanup.h \
 	gcleanup_win32.cpp \
@@ -75,8 +74,11 @@ libglib_a_SOURCES = \
 	gfile.h \
 	gfile.cpp \
 	gfile_win32.cpp \
+	gformat.h \
+	gformat.cpp \
 	ggetopt.h \
 	ggetopt.cpp \
+	ggettext.h \
 	ghash.h \
 	ghash.cpp \
 	ghashstate.h \
@@ -84,6 +86,7 @@ libglib_a_SOURCES = \
 	ghostname_win32.cpp \
 	gidentity.h \
 	gidentity_win32.cpp \
+	gimembuf.h \
 	glimits.h \
 	glog.h \
 	glog.cpp \
@@ -130,6 +133,9 @@ libglib_a_SOURCES = \
 	gstr.h \
 	gstr.cpp \
 	gstrings.h \
+	gstringwrap.cpp \
+	gstringwrap.h \
+	gstringview.h \
 	gtest.h \
 	gtest.cpp \
 	gthread.cpp \
@@ -148,18 +154,11 @@ PAM_EXTRA_DIST = gpam_linux.cpp
 PAM_SOURCES = gpam_none.cpp
 endif
 
-if GCONFIG_ICONV
-ICONV_EXTRA_DIST = gconvert_none.cpp gconvert_win32.cpp
-ICONV_SOURCES = gconvert_unix.cpp
-else
-ICONV_EXTRA_DIST = gconvert_unix.cpp gconvert_win32.cpp
-ICONV_SOURCES = gconvert_none.cpp
-endif
-
 EXTRA_DIST=\
 	$(PAM_EXTRA_DIST) \
-	$(ICONV_EXTRA_DIST) \
 	gcleanup_win32.cpp \
+	gconvert.cpp \
+	gconvert_win32.cpp \
 	gdaemon_win32.cpp \
 	gdirectory_win32.cpp \
 	genvironment_win32.cpp \
@@ -174,7 +173,6 @@ EXTRA_DIST=\
 
 libglib_a_SOURCES = \
 	$(PAM_SOURCES) \
-	$(ICONV_SOURCES) \
 	garg.h \
 	garg.cpp \
 	gassert.h \
@@ -182,11 +180,11 @@ libglib_a_SOURCES = \
 	gbase64.cpp \
 	gbatchfile.h \
 	gbatchfile.cpp \
+	gbuffer.h \
 	gcall.h \
 	gcleanup.h \
 	gcleanup_unix.cpp \
 	gconvert.h \
-	gconvert.cpp \
 	gdaemon.h \
 	gdaemon_unix.cpp \
 	gdate.h \
@@ -208,14 +206,18 @@ libglib_a_SOURCES = \
 	gfile.h \
 	gfile.cpp \
 	gfile_unix.cpp \
+	gformat.h \
+	gformat.cpp \
 	ggetopt.h \
 	ggetopt.cpp \
+	ggettext.h \
 	ghash.h \
 	ghash.cpp \
 	ghostname.h \
 	ghostname_unix.cpp \
 	gidentity.h \
 	gidentity_unix.cpp \
+	gimembuf.h \
 	glimits.h \
 	glog.h \
 	glog.cpp \
@@ -260,6 +262,9 @@ libglib_a_SOURCES = \
 	gstr.h \
 	gstr.cpp \
 	gstrings.h \
+	gstringwrap.cpp \
+	gstringwrap.h \
+	gstringview.h \
 	gtest.h \
 	gtest.cpp \
 	gthread.cpp \

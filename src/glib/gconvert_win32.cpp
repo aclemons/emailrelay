@@ -1,26 +1,27 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gconvert_win32.cpp
-//
+///
+/// \file gconvert_win32.cpp
+///
 
 #include "gdef.h"
 #include "gconvert.h"
 #include "gstr.h"
+#include <vector>
 
 #if defined(G_MINGW) && !defined(WC_ERR_INVALID_CHARS)
 #define WC_ERR_INVALID_CHARS 0
@@ -41,22 +42,20 @@ std::wstring G::Convert::widen( const std::string & s , bool is_utf8 , const std
 	{
 		DWORD flags = MB_ERR_INVALID_CHARS ;
 		int n = MultiByteToWideChar( codepage , flags , s.c_str() , static_cast<int>(s.size()) , nullptr , 0 ) ;
-		if( n == 0 )
+		if( n <= 0 )
 		{
-			DWORD e = ::GetLastError() ;
+			DWORD e = GetLastError() ;
 			throw Convert::Error( message(context,e,Str::toPrintableAscii(s)) ) ;
 		}
 
-		wchar_t * buffer = new wchar_t[n] ;
-		n = MultiByteToWideChar( codepage , flags , s.c_str() , static_cast<int>(s.size()) , buffer , n ) ;
+		std::vector<wchar_t> buffer( static_cast<std::size_t>(n) ) ;
+		n = MultiByteToWideChar( codepage , flags , s.c_str() , static_cast<int>(s.size()) , &buffer[0] , n ) ;
 		if( n == 0 )
 		{
-			DWORD e = ::GetLastError() ;
-			delete [] buffer ;
+			DWORD e = GetLastError() ;
 			throw Convert::Error( message(context,e,Str::toPrintableAscii(s)) ) ;
 		}
-		result = std::wstring( buffer , n ) ;
-		delete [] buffer ;
+		result = std::wstring( &buffer[0] , n ) ;
 	}
 	return result ;
 }
@@ -71,25 +70,22 @@ std::string G::Convert::narrow( const std::wstring & s , bool is_utf8 , const st
 		BOOL defaulted = FALSE ;
 		int n = WideCharToMultiByte( codepage , flags , s.c_str() , static_cast<int>(s.size()) , nullptr , 0 ,
 			nullptr , is_utf8 ? nullptr : &defaulted ) ;
-		if( n == 0 || defaulted )
+		if( n <= 0 || defaulted )
 		{
-			DWORD e = n == 0 ? ::GetLastError() : 0 ;
+			DWORD e = n == 0 ? GetLastError() : 0 ;
 			throw Convert::Error( message(context,e,Str::toPrintableAscii(s)) ) ;
 		}
 
-		char * buffer = new char[n] ;
-		n = WideCharToMultiByte( codepage , flags , s.c_str() , static_cast<int>(s.size()) , buffer , n ,
+		std::vector<char> buffer( static_cast<std::size_t>(n) ) ;
+		n = WideCharToMultiByte( codepage , flags , s.c_str() , static_cast<int>(s.size()) , &buffer[0] , n ,
 			nullptr , is_utf8 ? nullptr : &defaulted ) ;
 		if( n == 0 || defaulted )
 		{
-			DWORD e = n == 0 ? ::GetLastError() : 0 ;
-			delete [] buffer ;
+			DWORD e = n == 0 ? GetLastError() : 0 ;
 			throw Convert::Error( message(context,e,Str::toPrintableAscii(s)) ) ;
 		}
-		result = std::string( buffer , n ) ;
-		delete [] buffer ;
+		result = std::string( &buffer[0] , n ) ;
 	}
 	return result ;
 }
 
-/// \file gconvert_win32.cpp

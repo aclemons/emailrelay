@@ -1,32 +1,35 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gtask.cpp
-//
+///
+/// \file gtask.cpp
+///
 
 #include "gdef.h"
 #include "gtask.h"
 #include "gfutureevent.h"
 #include "gnewprocess.h"
+#include "gcleanup.h"
+#include "gtimer.h"
 #include "gstr.h"
+#include "gtest.h"
 #include "gassert.h"
 #include "glog.h"
 
-/// \class GNet::TaskImp
+//| \class GNet::TaskImp
 /// A private implementation class used by GNet::Task.
 ///
 class GNet::TaskImp : private FutureEventHandler
@@ -58,8 +61,9 @@ public:
 		// Runs waitpid() synchronously.
 		// Precondition: ctor 'sync'
 
-	void kill() ;
-		// Kills the task.
+	bool zombify() ;
+		// Kills the process and makes this object a zombie that lives
+		// only on the timer-list, or returns false.
 
 private: // overrides
 	void onFutureEvent() override ; // Override from GNet::FutureEventHandler.
@@ -71,14 +75,20 @@ public:
 	void operator=( TaskImp && ) = delete ;
 
 private:
+	void onTimeout() ;
 	static void waitThread( TaskImp * , FutureEvent::handle_type ) ; // thread function
 
 private:
-	Task & m_task ;
+	Task * m_task ;
 	FutureEvent m_future_event ;
+	Timer<TaskImp> m_timer ;
+	bool m_logged ;
 	G::NewProcess m_process ;
 	G::threading::thread_type m_thread ;
+	static std::size_t m_zcount ;
 } ;
+
+std::size_t GNet::TaskImp::m_zcount = 0U ;
 
 // ==
 
@@ -87,8 +97,10 @@ GNet::TaskImp::TaskImp( Task & task , ExceptionSink es , bool sync ,
 	G::NewProcess::Fd fd_stdin , G::NewProcess::Fd fd_stdout , G::NewProcess::Fd fd_stderr ,
 	const G::Path & cd , const std::string & exec_error_format ,
 	const G::Identity & id ) :
-		m_task(task) ,
+		m_task(&task) ,
 		m_future_event(*this,es) ,
+		m_timer(*this,&TaskImp::onTimeout,es) ,
+		m_logged(false) ,
 		m_process(commandline.exe(),commandline.args(),
 			env,
 			fd_stdin ,
@@ -103,6 +115,7 @@ GNet::TaskImp::TaskImp( Task & task , ExceptionSink es , bool sync ,
 {
 	if( sync )
 	{
+		// no thread -- caller will call synchronous wait() method
 	}
 	else if( !G::threading::works() )
 	{
@@ -112,28 +125,73 @@ GNet::TaskImp::TaskImp( Task & task , ExceptionSink es , bool sync ,
 	}
 	else
 	{
+		G_ASSERT( G::threading::using_std_thread ) ;
+		G::Cleanup::Block block_signals ;
 		m_thread = G::threading::thread_type( TaskImp::waitThread , this , m_future_event.handle() ) ;
 	}
 }
 
 GNet::TaskImp::~TaskImp()
 {
-	if( m_thread.joinable() )
+	try
 	{
-		m_process.kill( /*yield=*/true ) ;
+		// (should be already join()ed)
+		if( m_thread.joinable() )
+			m_process.kill( true ) ;
+		if( m_thread.joinable() )
+			m_thread.join() ;
 	}
+	catch(...)
+	{
+	}
+}
+
+bool GNet::TaskImp::zombify()
+{
+	m_task = nullptr ;
 	if( m_thread.joinable() )
 	{
-		G_LOG_S( "TaskImp::dtor: waiting for killed process to terminate: pid " << m_process.id() ) ;
-		m_thread.join() ; // blocks the main event-loop thread
-		G_LOG( "TaskImp::dtor: killed process has terminated: pid " << m_process.id() ) ;
+		if( !G::Test::enabled("task-no-kill") )
+			m_process.kill( true ) ;
+
+		m_zcount++ ;
+		m_timer.startTimer( 1U ) ;
+
+		std::size_t threshold = G::Test::enabled("task-warning") ? 3U : 100U ;
+		if( m_zcount == threshold )
+			G_WARNING_ONCE( "GNet::Task::dtor: large number of threads waiting for processes to finish" ) ;
+
+		return true ;
+	}
+	else
+	{
+		return false ;
+	}
+}
+
+void GNet::TaskImp::onTimeout()
+{
+	if( m_thread.joinable() )
+	{
+		if( !m_logged )
+			G_LOG( "TaskImp::dtor: waiting for killed process to terminate: pid " << m_process.id() ) ;
+		m_logged = true ;
+		m_timer.startTimer( 1U ) ;
+	}
+	else
+	{
+		if( m_logged )
+			G_LOG( "TaskImp::dtor: killed process has terminated: pid " << m_process.id() ) ;
+		delete this ;
+		m_zcount-- ;
 	}
 }
 
 std::pair<int,std::string> GNet::TaskImp::wait()
 {
-	m_process.wait().run() ;
-	return std::make_pair( m_process.wait().get() , m_process.wait().output() ) ;
+	m_process.waitable().wait() ;
+	int exit_code = m_process.waitable().get() ;
+	return std::make_pair( exit_code , m_process.waitable().output() ) ;
 }
 
 void GNet::TaskImp::waitThread( TaskImp * This , FutureEvent::handle_type handle )
@@ -141,36 +199,29 @@ void GNet::TaskImp::waitThread( TaskImp * This , FutureEvent::handle_type handle
 	// worker-thread -- keep it simple
 	try
 	{
-		This->m_process.wait().run() ;
+		This->m_process.waitable().wait() ;
 		FutureEvent::send( handle ) ;
 	}
 	catch(...) // worker thread outer function
 	{
-		FutureEvent::send( handle ) ; // nothrow
+		FutureEvent::send( handle ) ; // noexcept
 	}
 }
 
 void GNet::TaskImp::onFutureEvent()
 {
 	G_DEBUG( "GNet::TaskImp::onFutureEvent: future event" ) ;
-	if( G::threading::works() )
-	{
+	if( m_thread.joinable() )
 		m_thread.join() ;
-		G_DEBUG( "GNet::TaskImp::onFutureEvent: thread joined" ) ;
-	}
 
-	int exit_code = m_process.wait().get() ;
+	int exit_code = m_process.waitable().get( std::nothrow ) ;
 	G_DEBUG( "GNet::TaskImp::onFutureEvent: exit code " << exit_code ) ;
 
-	std::string pipe_output = m_process.wait().output() ;
+	std::string pipe_output = m_process.waitable().output() ;
 	G_DEBUG( "GNet::TaskImp::onFutureEvent: output: [" << G::Str::printable(pipe_output) << "]" ) ;
 
-	m_task.done( exit_code , pipe_output ) ; // last
-}
-
-void GNet::TaskImp::kill()
-{
-	m_process.kill() ;
+	if( m_task )
+		m_task->done( exit_code , pipe_output ) ; // last
 }
 
 // ==
@@ -186,7 +237,24 @@ GNet::Task::Task( TaskCallback & callback , ExceptionSink es ,
 }
 
 GNet::Task::~Task()
-= default;
+{
+	try
+	{
+		stop() ;
+	}
+	catch(...) // dtor
+	{
+	}
+}
+
+void GNet::Task::stop()
+{
+	// kill the process and release the imp to an independent life
+	// on the timer-list while the thread finishes up
+	if( m_imp && m_imp->zombify() )
+		GDEF_IGNORE_RETURN m_imp.release() ;
+	m_busy = false ;
+}
 
 std::pair<int,std::string> GNet::Task::run( const G::ExecutableCommand & commandline ,
 	const G::Environment & env ,
@@ -225,13 +293,6 @@ void GNet::Task::start( const G::ExecutableCommand & commandline ,
 	m_imp = std::make_unique<TaskImp>( *this , m_es , false , commandline ,
 		env , fd_stdin , fd_stdout , fd_stderr , cd ,
 		m_exec_error_format , m_id ) ;
-}
-
-void GNet::Task::stop()
-{
-	// best effort - may block
-	m_busy = false ;
-	m_imp.reset() ;
 }
 
 void GNet::Task::done( int exit_code , const std::string & output )

@@ -1,30 +1,29 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// boot_win32.cpp
-//
+///
+/// \file boot_win32.cpp
+///
 
 #include "gdef.h"
 #include "boot.h"
 #include "gpath.h"
 #include "gmapfile.h"
 #include "gfile.h"
-#include "serviceinstall.h"
-#include "serviceremove.h"
+#include "servicecontrol.h"
 #include <stdexcept>
 
 namespace
@@ -32,7 +31,8 @@ namespace
 	bool createConfigurationFile( const G::Path & bat , const G::Path & wrapper_exe , bool do_throw )
 	{
 		G::Path config_file = wrapper_exe.withoutExtension() ;
-		std::ofstream file( (config_file.str()+".cfg").c_str() , std::ios_base::out | std::ios_base::trunc ) ;
+		std::ofstream file ;
+		G::File::open( file , config_file.str()+".cfg" , G::File::Text() ) ;
 		G::MapFile::writeItem( file , "dir-config" , bat.dirname().str() ) ;
 		file.close() ;
 		if( file.fail() && do_throw )
@@ -49,14 +49,14 @@ bool Boot::able( const G::Path & )
 	return ok ;
 }
 
-bool Boot::install( const G::Path & , const std::string & name , const G::Path & bat , const G::Path & wrapper_exe )
+void Boot::install( const G::Path & , const std::string & name , const G::Path & bat , const G::Path & wrapper_exe )
 {
 	// the 'bat' path is the batch file containing the full command-line
 	// for the server process -- the service wrapper knows how to read it
 	// at service start time to assemble the full server command-line -- the
 	// batch file must be located in a directory given by a configuration
-	// file having the same name as the wrapper but with ".exe" replaced
-	// by ".cfg" -- for backwards compatibility it can also be located
+	// file "<wrapper-basename>.cfg" (so typically "emailrelay-service.cfg") --
+	// for backwards compatibility the batch file can also be located
 	// in the same directory as the wrapper
 
 	// install the service
@@ -70,8 +70,6 @@ bool Boot::install( const G::Path & , const std::string & name , const G::Path &
 
 	// create the config file
 	createConfigurationFile( bat , wrapper_exe , true/*do_throw*/ ) ;
-
-	return true ;
 }
 
 bool Boot::uninstall( const G::Path & , const std::string & name , const G::Path & bat , const G::Path & wrapper_exe )
@@ -87,4 +85,10 @@ bool Boot::installed( const G::Path & , const std::string & name )
 	return ::service_installed( name ) ;
 }
 
-/// \file boot_win32.cpp
+void Boot::launch( const G::Path & , const std::string & name )
+{
+	std::string e = ::service_start( name ) ;
+	if( !e.empty() )
+		throw std::runtime_error( e ) ;
+}
+

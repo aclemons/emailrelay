@@ -1,25 +1,25 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gpage.h
-//
+///
+/// \file gpage.cpp
+///
 
 #include "gdef.h"
-#include "qt.h"
+#include "gqt.h"
 #include "gstr.h"
 #include "gpage.h"
 #include "gdialog.h"
@@ -29,16 +29,15 @@
 int GPage::m_test_mode = 0 ;
 
 GPage::GPage( GDialog & dialog , const std::string & name , const std::string & next_1 ,
-	const std::string & next_2 , bool finish_button , bool close_button ) :
+	const std::string & next_2 ) :
 		QWidget(&dialog) ,
 		m_dialog(dialog) ,
 		m_name(name) ,
 		m_next_1(next_1) ,
-		m_next_2(next_2) ,
-		m_finish_button(finish_button) ,
-		m_close_button(close_button)
+		m_next_2(next_2)
 {
 	hide() ;
+	addHelpAction() ;
 }
 
 GDialog & GPage::dialog()
@@ -51,24 +50,29 @@ const GDialog & GPage::dialog() const
 	return m_dialog ;
 }
 
-std::string GPage::helpName() const
+bool GPage::isReadyToFinishPage() const
 {
-	return std::string() ;
+	return false ;
 }
 
-bool GPage::useFinishButton() const
+bool GPage::isFinishPage() const
 {
-	return m_finish_button ;
-}
-
-bool GPage::closeButton() const
-{
-	return m_close_button ;
+	return false ;
 }
 
 bool GPage::isComplete()
 {
 	return true ;
+}
+
+bool GPage::isFinishing()
+{
+	return false ;
+}
+
+bool GPage::canLaunch()
+{
+	return false ;
 }
 
 std::string GPage::name() const
@@ -120,41 +124,39 @@ std::string GPage::value( bool b )
 
 std::string GPage::value( const QAbstractButton * p )
 {
-	return p->isChecked() ? "y" : "n" ;
+	return p && p->isChecked() ? "y" : "n" ;
 }
 
 std::string GPage::stdstr( const QString & s )
 {
 	// (config files and batch scripts are in the local 8bit code page)
-	QByteArray a = s.toLocal8Bit() ; //
-	return std::string( a.constData() , a.length() ) ;
+	return GQt::stdstr( s ) ;
 }
 
 std::string GPage::stdstr_utf8( const QString & s )
 {
 	// (userids and passwords are in utf8 (RFC-4954) and then either xtext-ed or hashed)
-	QByteArray a = s.toUtf8() ;
-	return std::string( a.constData() , a.length() ) ;
+	return GQt::stdstr( s , GQt::Utf8() ) ;
 }
 
 QString GPage::qstr( const std::string & s )
 {
-	return QString::fromLocal8Bit( s.data() , static_cast<int>(s.size()) ) ;
+	return GQt::qstr( s ) ;
 }
 
 std::string GPage::value_utf8( const QLineEdit * p )
 {
-	return stdstr_utf8(p->text()) ;
+	return stdstr_utf8( p->text().trimmed() ) ;
 }
 
 std::string GPage::value( const QLineEdit * p )
 {
-	return stdstr(p->text()) ;
+	return p ? stdstr( p->text().trimmed() ) : std::string() ;
 }
 
 std::string GPage::value( const QComboBox * p )
 {
-	return stdstr(p->currentText()) ;
+	return p ? stdstr( p->currentText().trimmed() ) : std::string() ;
 }
 
 void GPage::setTestMode( int test_mode )
@@ -177,36 +179,52 @@ void GPage::onShow( bool )
 	// no-op
 }
 
-void GPage::tip( QWidget * w , const std::string & s )
+void GPage::onLaunch()
 {
-	if( !s.empty() )
-		w->setToolTip( tip(s.c_str()) ) ;
+	// no-op
 }
 
-void GPage::tip( QWidget * w , const char * p )
+void GPage::tip( QWidget * w , const QString & s )
 {
-	// see also QWidget::setWhatsThis()
-	w->setToolTip( tip(p) ) ;
+	if( !s.isEmpty() )
+		w->setToolTip( s ) ; // see also QWidget::setWhatsThis()
+}
+
+void GPage::tip( QWidget * w , const char * s )
+{
+	if( s && s[0] )
+		w->setToolTip( s ) ;
 }
 
 void GPage::tip( QWidget * w , NameTip )
 {
-	w->setToolTip( tip() ) ;
+	//: used as a tool-tip for edit boxes containing an authentication username
+	w->setToolTip( tr("Username to be added to the secrets file") ) ;
 }
 
 void GPage::tip( QWidget * w , PasswordTip )
 {
-	w->setToolTip( tip() ) ;
+	//: used as a tool-tip for edit boxes containing an authentication password
+	w->setToolTip( tr("Password to be added to the secrets file") ) ;
 }
 
-QString GPage::tip( const char * p )
+void GPage::addHelpAction()
 {
-	return QString( p ) ;
+	auto action = new QAction( this ) ;
+	action->setShortcut( QKeySequence::HelpContents ) ;
+	connect( action , SIGNAL(triggered()) , this , SLOT(helpKeyTriggered()) ) ;
+	addAction( action ) ;
 }
 
-QString GPage::tip()
+void GPage::helpKeyTriggered()
 {
-	return QString( tr("Username or password added to the secrets file") ) ;
+	std::string language = GQt::stdstr( QLocale().bcp47Name() ) ;
+	std::string url = helpUrl( language.empty() || language == "C" ? std::string("en") : G::Str::head(language,"-",false) ) ;
+	QDesktopServices::openUrl( QString(url.c_str()) ) ;
 }
 
-/// \file gpage.cpp
+std::string GPage::helpUrl( const std::string & language ) const
+{
+	return "http://emailrelay.sourceforge.net/help/" + G::Str::lower(m_name) + "#" + language ;
+}
+

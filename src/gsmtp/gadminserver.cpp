@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gadminserver.cpp
-//
+///
+/// \file gadminserver.cpp
+///
 
 #include "gdef.h"
 #include "geventloop.h"
@@ -52,7 +52,9 @@ GSmtp::AdminServerPeer::AdminServerPeer( GNet::ExceptionSinkUnbound esu , const 
 }
 
 GSmtp::AdminServerPeer::~AdminServerPeer()
-= default;
+{
+	m_client_ptr.deletedSignal().disconnect() ; // fwiw
+}
 
 void GSmtp::AdminServerPeer::clientDone( const std::string & s )
 {
@@ -68,11 +70,12 @@ void GSmtp::AdminServerPeer::onDelete( const std::string & reason )
 		<< peerAddress().second.displayString() ) ;
 }
 
-void GSmtp::AdminServerPeer::onSecure( const std::string & , const std::string & )
+void GSmtp::AdminServerPeer::onSecure( const std::string & , const std::string & , const std::string & )
 {
 }
 
-bool GSmtp::AdminServerPeer::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
+bool GSmtp::AdminServerPeer::onReceive( const char * line_data , std::size_t line_size , std::size_t ,
+	std::size_t , char )
 {
 	std::string line( line_data , line_size ) ;
 	if( is(line,"flush") )
@@ -114,6 +117,8 @@ bool GSmtp::AdminServerPeer::onReceive( const char * line_data , std::size_t lin
 	}
 	else if( is(line,"terminate") && m_with_terminate )
 	{
+		G_LOG_S( "GSmtp::AdminServerPeer::onReceive: received a terminate command from "
+			<< peerAddress().second.displayString() ) ;
 		if( GNet::EventLoop::exists() )
 			GNet::EventLoop::instance().quit("") ;
 	}
@@ -211,7 +216,7 @@ void GSmtp::AdminServerPeer::flush()
 	}
 	else
 	{
-		m_client_ptr.reset( new GSmtp::Client( GNet::ExceptionSink(m_client_ptr,m_es.esrc()) ,
+		m_client_ptr.reset( std::make_unique<GSmtp::Client>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()) ,
 			GNet::Location(m_remote_address) , m_server.clientSecrets() , m_server.clientConfig() ) ) ;
 
 		m_client_ptr->sendMessagesFrom( m_server.store() ) ; // once connected
@@ -264,9 +269,10 @@ void GSmtp::AdminServerPeer::status()
 	std::ostringstream ss ;
 	if( GNet::Monitor::instance() )
 	{
-		GNet::Monitor::instance()->report( ss , "" , eol() ) ;
+		std::string eolstr = eol() ;
+		GNet::Monitor::instance()->report( ss , "" , eolstr ) ;
 		std::string report = ss.str() ;
-		G::Str::trimRight( report , eol() ) ;
+		G::Str::trimRight( report , {eolstr.data(),eolstr.size()} ) ;
 		sendLine( report ) ;
 	}
 	else
@@ -340,7 +346,8 @@ GSmtp::AdminServer::~AdminServer()
 	serverCleanup() ; // base class early cleanup
 }
 
-std::unique_ptr<GNet::ServerPeer> GSmtp::AdminServer::newPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo peer_info , GNet::MultiServer::ServerInfo )
+std::unique_ptr<GNet::ServerPeer> GSmtp::AdminServer::newPeer( GNet::ExceptionSinkUnbound esu ,
+	GNet::ServerPeerInfo peer_info , GNet::MultiServer::ServerInfo )
 {
 	std::unique_ptr<GNet::ServerPeer> ptr ;
 	try
@@ -352,8 +359,8 @@ std::unique_ptr<GNet::ServerPeer> GSmtp::AdminServer::newPeer( GNet::ExceptionSi
 		}
 		else
 		{
-			ptr.reset( new AdminServerPeer( esu , peer_info , *this , m_remote_address ,
-				m_info_commands , m_config_commands , m_with_terminate ) ) ; // upcast
+			ptr = std::make_unique<AdminServerPeer>( esu , peer_info , *this , m_remote_address ,
+				m_info_commands , m_config_commands , m_with_terminate ) ; // up-cast
 		}
 	}
 	catch( std::exception & e ) // newPeer()
@@ -428,4 +435,3 @@ bool GSmtp::AdminServer::notifying() const
 	return result ;
 }
 
-/// \file gadminserver.cpp

@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// serverconfiguration.cpp
-//
+///
+/// \file serverconfiguration.cpp
+///
 
 #include "gdef.h"
 #include "serverconfiguration.h"
@@ -44,12 +44,12 @@ G::MapFile ServerConfiguration::read( const G::Path & config_file )
 	else if( config_file.extension() == "bat" )
 	{
 		// read the batch file and parse the command-line
-		G::BatchFile batch_file( config_file , G::BatchFile::NoThrow() ) ;
+		G::BatchFile batch_file( config_file , std::nothrow ) ;
 		G::StringArray const args = batch_file.args() ;
 		if( args.size() != 0U )
 		{
 			G::OptionMap option_map ;
-			G::Options options( spec() ) ;
+			G::Options options = Main::Options::spec( G::is_windows() ) ;
 			G::OptionParser parser( options , option_map ) ;
 			parser.parse( args , 1U ) ; // ignore errors
 			config = G::MapFile( option_map , G::Str::positive() ) ;
@@ -99,18 +99,13 @@ std::string ServerConfiguration::quote( const std::string & s )
 	return s.find_first_of(" \t") == std::string::npos ? s : (std::string()+"\""+s+"\"") ;
 }
 
-std::string ServerConfiguration::spec()
-{
-	return Main::Options::spec( G::is_windows() ) ;
-}
-
 std::string ServerConfiguration::exe( const G::Path & config_file )
 {
 	return
 		G::File::exists(config_file) &&
 		config_file.extension() == "bat" &&
-		!G::BatchFile(config_file,G::BatchFile::NoThrow()).args().empty() ?
-			G::BatchFile(config_file,G::BatchFile::NoThrow()).args().at(0U) :
+		!G::BatchFile(config_file,std::nothrow).args().empty() ?
+			G::BatchFile(config_file,std::nothrow).args().at(0U) :
 			std::string() ;
 }
 
@@ -134,7 +129,7 @@ G::StringArray ServerConfiguration::args( bool no_close_stderr ) const
 	return result ;
 }
 
-ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages , const G::Path & copy_filter )
+ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages )
 {
 	G::StringMap out ;
 
@@ -222,10 +217,6 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages , c
 		{
 			out["pop-by-name"] ;
 		}
-		if( pages.booleanValue("pop-filter-copy",true) )
-		{
-			out["filter"] = copy_filter.str() ;
-		}
 		out["pop-auth"] = auth ;
 	}
 	if( pages.booleanValue("logging-verbose",true) )
@@ -248,11 +239,15 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages , c
 	{
 		out["log-time"] ;
 	}
+	if( pages.booleanValue("logging-address",true) )
+	{
+		out["log-address"] ;
+	}
 	if( pages.booleanValue("listening-remote",true) )
 	{
 		out["remote-clients"] ;
 	}
-	if( !pages.booleanValue("listening-all",true) && !pages.value("listening-interface").empty() )
+	if( !pages.value("listening-interface").empty() )
 	{
 		out["interface"] = pages.value("listening-interface") ;
 	}
@@ -267,4 +262,3 @@ const G::MapFile & ServerConfiguration::map() const
 	return m_config ;
 }
 
-/// \file serverconfiguration.cpp

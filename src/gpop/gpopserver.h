@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -39,7 +39,7 @@ namespace GPop
 	class ServerPeer ;
 }
 
-/// \class GPop::ServerPeer
+//| \class GPop::ServerPeer
 /// Represents a connection from a POP client. Instances are created
 /// on the heap by GPop::Server.
 /// \see GPop::Server
@@ -58,7 +58,7 @@ private: // overrides
 	bool protocolSend( const std::string & line , std::size_t ) override ; // Override from GPop::ServerProtocol::Sender.
 	void onDelete( const std::string & ) override ; // Override from GNet::ServerPeer.
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::ServerPeer.
-	void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
+	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
 	void onSendComplete() override ; // Override from GNet::ServerPeer.
 	bool securityEnabled() const override ; // Override from GPop::ServerProtocol::Security.
 	void securityStart() override ; // Override from GPop::ServerProtocol::Security.
@@ -78,7 +78,7 @@ private:
 	ServerProtocol m_protocol ; // order dependency -- last
 } ;
 
-/// \class GPop::Server
+//| \class GPop::Server
 /// A POP server class.
 ///
 class GPop::Server : public GNet::MultiServer

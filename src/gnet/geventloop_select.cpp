@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// geventloop_unix.cpp
-//
+///
+/// \file geventloop_select.cpp
+///
 
 #include "gdef.h"
 #include "gscope.h"
@@ -41,7 +41,7 @@ namespace GNet
 	class FdSet ;
 }
 
-/// \class GNet::FdSet
+//| \class GNet::FdSet
 /// An "fd_set" wrapper class used by GNet::EventLoopImp.
 ///
 class GNet::FdSet
@@ -50,7 +50,8 @@ public:
 	FdSet() ;
 	void init( const EventHandlerList & ) ;
 	void raiseEvents( EventHandlerList & , void (EventHandler::*method)() ) ;
-	void raiseEvents( EventHandlerList & , void (EventHandler::*method)(EventHandler::Reason) , EventHandler::Reason ) ;
+	void raiseEvents( EventHandlerList & , void (EventHandler::*method)(EventHandler::Reason) ,
+		EventHandler::Reason ) ;
 	void invalidate() noexcept ;
 	int fdmax( int = 0 ) const ;
 	fd_set * operator()() ;
@@ -62,14 +63,14 @@ private:
 	fd_set m_set_external ; // passed to select() and modified by it
 } ;
 
-/// \class GNet::EventLoopImp
+//| \class GNet::EventLoopImp
 /// A concrete implementation of GNet::EventLoop using select() in its
 /// implementation.
 ///
 class GNet::EventLoopImp : public EventLoop
 {
 public:
-	G_EXCEPTION( Error , "select() error" ) ;
+	G_EXCEPTION( Error , "select error" ) ;
 	EventLoopImp() ;
 	~EventLoopImp() override ;
 
@@ -172,7 +173,8 @@ void GNet::FdSet::raiseEvents( EventHandlerList & list , void (EventHandler::*me
 	}
 }
 
-void GNet::FdSet::raiseEvents( EventHandlerList & list , void (EventHandler::*method)(EventHandler::Reason) , EventHandler::Reason reason )
+void GNet::FdSet::raiseEvents( EventHandlerList & list , void (EventHandler::*method)(EventHandler::Reason) ,
+	EventHandler::Reason reason )
 {
 	EventHandlerList::Lock lock( list ) ; // since event handlers may change the list while we iterate
 	const EventHandlerList::Iterator end = list.end() ;
@@ -188,9 +190,9 @@ void GNet::FdSet::raiseEvents( EventHandlerList & list , void (EventHandler::*me
 
 // ===
 
-GNet::EventLoop * GNet::EventLoop::create()
+std::unique_ptr<GNet::EventLoop> GNet::EventLoop::create()
 {
-	return new EventLoopImp ;
+	return std::make_unique<EventLoopImp>() ;
 }
 
 // ===
@@ -262,7 +264,7 @@ void GNet::EventLoopImp::runOnce()
 
 	if( G::Test::enabled("event-loop-quitfile") ) // esp. for profiling
 	{
-		if( G::File::remove(".quit",G::File::NoThrow()) )
+		if( G::File::remove(".quit",std::nothrow) )
 			m_quit = true ;
 		if( timeout_p == nullptr || timeout.tv_sec > 0 )
 		{

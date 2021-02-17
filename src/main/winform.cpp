@@ -1,26 +1,27 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// winform.cpp
-//
+///
+/// \file winform.cpp
+///
 
 #include "gdef.h"
 #include "gssl.h"
 #include "gstr.h"
+#include "gstringwrap.h"
 #include "gmonitor.h"
 #include "gtime.h"
 #include "run.h"
@@ -150,7 +151,8 @@ void Main::WinForm::setStatus( const std::string & category , const std::string 
 	else if( ( category == "poll" || category == "forward" ) && s1 == "end" )
 	{
 		std::string reason = G::Str::printable( s2 ) ;
-		m_status_map["Forwarding"] = std::make_pair( timestamp() , reason.empty() ? std::string("finished") : reason ) ;
+		m_status_map["Forwarding"] = std::make_pair( timestamp() ,
+			reason.empty() ? std::string("finished") : reason ) ;
 	}
 	else if( category == "client" && s1 == "sending" )
 	{
@@ -161,7 +163,8 @@ void Main::WinForm::setStatus( const std::string & category , const std::string 
 	{
 		const std::string & message_id = s2 ;
 		std::string reason = G::Str::printable( s3 ) ;
-		m_status_map["Message"] = std::make_pair( timestamp() , (reason.empty()?std::string("sent"):reason) + ": " + message_id ) ;
+		m_status_map["Message"] = std::make_pair( timestamp() ,
+			(reason.empty()?std::string("sent"):reason) + ": " + message_id ) ;
 	}
 
 	// update the gui
@@ -195,7 +198,7 @@ G::StringArray Main::WinForm::versionData() const
 	}
 	add( s , Main::Legal::warranty("","\n") ) ;
 	add( s , "" ) ;
-	add( s , G::Str::wrap(Main::News::text(""),"","",60U) ) ;
+	add( s , G::StringWrap::wrap(Main::News::text(""),"","",60U) ) ;
 	return s ;
 }
 
@@ -269,4 +272,3 @@ void Main::WinForm::add( G::StringArray & list , std::string s )
 		list.push_back( *p ) ;
 }
 
-/// \file winform.cpp

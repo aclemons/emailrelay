@@ -1,11 +1,11 @@
 Summary: Simple e-mail message transfer agent and proxy using SMTP
 Name: emailrelay
-Version: 2.2rc3
+Version: 2.2
 Release: 1
 License: GPL3
 Group: System Environment/Daemons
 URL: http://emailrelay.sourceforge.net
-Source: http://sourceforge.net/projects/emailrelay/files/emailrelay/2.2rc3/emailrelay-2.2rc3-src.tar.gz
+Source: http://sourceforge.net/projects/emailrelay/files/emailrelay/2.2/emailrelay-2.2-src.tar.gz
 BuildRoot: /tmp/emailrelay-install
 
 %description
@@ -34,7 +34,7 @@ General Public License V3.
 %setup
 
 %build
-./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d --without-doxygen --without-man2html --with-openssl --without-mbedtls --with-pam --disable-gui --disable-install-hook --disable-testing
+./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d e_systemddir=/usr/lib/systemd/system --without-doxygen --without-man2html --with-openssl --without-mbedtls --with-pam --disable-gui --disable-install-hook --disable-testing
 make
 
 %install
@@ -54,9 +54,12 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %files
 
 /etc/emailrelay.auth.template
+/etc/emailrelay.auth.template
 %config /etc/emailrelay.conf
 /etc/emailrelay.conf.template
+/etc/emailrelay.conf.template
 /etc/init.d/emailrelay
+%config /etc/pam.d/emailrelay
 %config /etc/pam.d/emailrelay
 %dir /usr/lib/emailrelay
 %attr(2755, root, daemon) /usr/lib/emailrelay/emailrelay-filter-copy
@@ -65,7 +68,10 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /usr/lib/emailrelay/examples/emailrelay-bcc-check.pl
 /usr/lib/emailrelay/examples/emailrelay-deliver.sh
 /usr/lib/emailrelay/examples/emailrelay-fail2ban-filter
+/usr/lib/emailrelay/examples/emailrelay-fail2ban-filter
 /usr/lib/emailrelay/examples/emailrelay-fail2ban-jail
+/usr/lib/emailrelay/examples/emailrelay-fail2ban-jail
+/usr/lib/emailrelay/examples/emailrelay-ldap-verify.py
 /usr/lib/emailrelay/examples/emailrelay-multicast.sh
 /usr/lib/emailrelay/examples/emailrelay-notify.sh
 /usr/lib/emailrelay/examples/emailrelay-resubmit.sh
@@ -74,6 +80,7 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /usr/lib/emailrelay/examples/emailrelay-set-from.js
 /usr/lib/emailrelay/examples/emailrelay-set-from.pl
 /usr/lib/emailrelay/examples/emailrelay-submit.sh
+/usr/lib/systemd/system/emailrelay.service
 /usr/sbin/emailrelay
 /usr/sbin/emailrelay-passwd
 %attr(2755, root, daemon) /usr/sbin/emailrelay-submit

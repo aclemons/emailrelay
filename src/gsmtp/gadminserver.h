@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gadminserver.h
 ///
 
-#ifndef G_SMTP_ADMIN__H
-#define G_SMTP_ADMIN__H
+#ifndef G_SMTP_ADMIN_H
+#define G_SMTP_ADMIN_H
 
 #include "gdef.h"
 #include "gmultiserver.h"
@@ -39,7 +39,7 @@ namespace GSmtp
 	class AdminServer ;
 }
 
-/// \class GSmtp::AdminServerPeer
+//| \class GSmtp::AdminServerPeer
 /// A derivation of ServerPeer for the administration interface.
 ///
 /// The AdminServerPeer instantiates its own Smtp::Client in order
@@ -70,7 +70,7 @@ private: // overrides
 	void onSendComplete() override ; // Override from GNet::BufferedServerPeer.
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::BufferedServerPeer.
 	void onDelete( const std::string & ) override ; // Override from GNet::ServerPeer.
-	void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
+	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
 
 public:
 	AdminServerPeer( const AdminServerPeer & ) = delete ;
@@ -110,7 +110,7 @@ private:
 	bool m_with_terminate ;
 } ;
 
-/// \class GSmtp::AdminServer
+//| \class GSmtp::AdminServer
 /// A server class which implements the emailrelay administration interface.
 ///
 class GSmtp::AdminServer : public GNet::MultiServer

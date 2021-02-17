@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file glinebuffer.h
 ///
 
-#ifndef G_NET_LINE_BUFFER__H
-#define G_NET_LINE_BUFFER__H
+#ifndef G_NET_LINE_BUFFER_H
+#define G_NET_LINE_BUFFER_H
 
 #include "gdef.h"
 #include "gexception.h"
@@ -35,7 +35,7 @@ namespace GNet
 	class LineBufferState ;
 }
 
-/// \class GNet::LineBuffer
+//| \class GNet::LineBuffer
 /// A class that does line buffering, supporting auto-detection of
 /// line endings and fixed-size block extraction. Raw data is
 /// added, and newline-delimited lines are extracted, optionally
@@ -188,12 +188,16 @@ public:
 		///< line ending.
 		///< Precondition: more()
 
+	bool empty() const ;
+		///< Returns state().empty().
+
 	std::size_t eolsize() const ;
 		///< Returns the size of line-ending associated with the
 		///< current data(). This will be zero for a fixed-size
-		///< block or line fragment. (It will never be zero as a
-		///< result of auto-detection because the precondition
-		///< means that auto-detection has already happened.)
+		///< block or non-terminal line fragment. (It will never
+		///< be zero as a result of auto-detection because the
+		///< precondition means that auto-detection has already
+		///< happened.)
 		///< Precondition: more()
 
 	std::size_t linesize() const ;
@@ -282,7 +286,7 @@ private:
 	std::size_t m_pos ;
 } ;
 
-/// \class GNet::LineBufferIterator
+//| \class GNet::LineBufferIterator
 /// Syntactic sugar for calling GNet::LineBuffer iteration methods.
 ///
 class GNet::LineBufferIterator
@@ -317,7 +321,7 @@ private:
 	LineBuffer & m_line_buffer ;
 } ;
 
-/// \class GNet::LineBufferConfig
+//| \class GNet::LineBufferConfig
 /// A configuration structure for GNet::LineBuffer.
 ///
 class GNet::LineBufferConfig
@@ -330,7 +334,7 @@ public:
 			///< A non-zero warn-limit generates a one-shot warning when
 			///< breached. The fmin value can be used to prevent trivially
 			///< small line fragments from being returned. This is useful
-			///< for SMTP where a fagment containing a single dot character
+			///< for SMTP where a fragment containing a single dot character
 			///< and no end-of-line can cause confusion with respect to
 			///< the end-of-text marker. The initial-expect parameter
 			///< is useful for defining transparent operation.
@@ -375,7 +379,7 @@ private:
 	std::size_t m_expect ;
 } ;
 
-/// \class GNet::LineBufferState
+//| \class GNet::LineBufferState
 /// Provides information abount the state of a line buffer.
 ///
 class GNet::LineBufferState

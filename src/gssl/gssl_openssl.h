@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gssl_openssl.h
 ///
 
-#ifndef G_SSL_OPENSSL__H
-#define G_SSL_OPENSSL__H
+#ifndef G_SSL_OPENSSL_H
+#define G_SSL_OPENSSL_H
 
 #include "gdef.h"
 #include "gssl.h"
@@ -30,8 +30,9 @@
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 #include <openssl/evp.h>
-#include <map>
 #include <stdexcept>
+#include <functional>
+#include <map>
 
 // debugging...
 //  * network logging
@@ -50,10 +51,7 @@
 
 namespace GSsl
 {
-	/// \namespace GSsl::OpenSSL
-	/// A namespace for implementing the GSsl interface using the OpenSSL library.
-	///
-	namespace OpenSSL
+	namespace OpenSSL /// A namespace for implementing the GSsl interface using the OpenSSL library.
 	{
 		class Error ;
 		class Certificate ;
@@ -66,7 +64,7 @@ namespace GSsl
 	}
 }
 
-/// \class GSsl::OpenSSL::Certificate
+//| \class GSsl::OpenSSL::Certificate
 /// Holds a certificate taken from an OpenSSL X509 structure.
 ///
 class GSsl::OpenSSL::Certificate
@@ -79,7 +77,7 @@ private:
 	std::string m_str ;
 } ;
 
-/// \class GSsl::OpenSSL::Config
+//| \class GSsl::OpenSSL::Config
 /// Holds protocol version information, etc.
 ///
 class GSsl::OpenSSL::Config
@@ -108,7 +106,7 @@ private:
 	bool m_noverify ;
 } ;
 
-/// \class GSsl::OpenSSL::CertificateChain
+//| \class GSsl::OpenSSL::CertificateChain
 /// Holds a certificate chain taken from a stack of OpenSSL X509 structures.
 ///
 class GSsl::OpenSSL::CertificateChain
@@ -121,7 +119,7 @@ private:
 	std::string m_str ;
 } ;
 
-/// \class GSsl::OpenSSL::Error
+//| \class GSsl::OpenSSL::Error
 /// An exception class for GSsl::OpenSSL classes.
 ///
 class GSsl::OpenSSL::Error : public std::runtime_error
@@ -136,7 +134,7 @@ private:
 	static std::string text( unsigned long ) ;
 } ;
 
-/// \class GSsl::OpenSSL::ProfileImp
+//| \class GSsl::OpenSSL::ProfileImp
 /// An implementation of the GSsl::Profile interface for OpenSSL.
 ///
 class GSsl::OpenSSL::ProfileImp : public Profile
@@ -175,10 +173,10 @@ private:
 	const LibraryImp & m_library_imp ;
 	const std::string m_default_peer_certificate_name ;
 	const std::string m_default_peer_host_name ;
-	std::unique_ptr<SSL_CTX,std::pointer_to_unary_function<SSL_CTX*,void> > m_ssl_ctx ;
+	std::unique_ptr<SSL_CTX,std::function<void(SSL_CTX*)>> m_ssl_ctx ;
 } ;
 
-/// \class GSsl::OpenSSL::LibraryImp
+//| \class GSsl::OpenSSL::LibraryImp
 /// An implementation of the GSsl::LibraryImpBase interface for OpenSSL.
 ///
 class GSsl::OpenSSL::LibraryImp : public LibraryImpBase
@@ -205,6 +203,8 @@ private: // overrides
 	bool hasProfile( const std::string & ) const override ;
 	const GSsl::Profile & profile( const std::string & ) const override ;
 	std::string id() const override ;
+	bool generateKeyAvailable() const override ;
+	std::string generateKey( const std::string & ) const override ;
 	G::StringArray digesters( bool ) const override ;
 	Digester digester( const std::string & , const std::string & , bool ) const override ;
 
@@ -227,7 +227,7 @@ private:
 	Config m_config ;
 } ;
 
-/// \class GSsl::OpenSSL::ProtocolImp
+//| \class GSsl::OpenSSL::ProtocolImp
 /// An implementation of the GSsl::ProtocolImpBase interface for OpenSSL.
 ///
 class GSsl::OpenSSL::ProtocolImp : public ProtocolImpBase
@@ -250,6 +250,7 @@ private: // overrides
 	Result write( const char * buffer , std::size_t size_in , ssize_t & size_out ) override ;
 	std::string peerCertificate() const override ;
 	std::string peerCertificateChain() const override ;
+	std::string protocol() const override ;
 	std::string cipher() const override ;
 	bool verified() const override ;
 
@@ -271,7 +272,7 @@ private:
 	static void deleter( SSL * ) ;
 
 private:
-	std::unique_ptr<SSL,std::pointer_to_unary_function<SSL*,void> > m_ssl ;
+	std::unique_ptr<SSL,std::function<void(SSL*)>> m_ssl ;
 	Library::LogFn m_log_fn ;
 	bool m_verbose ;
 	bool m_fd_set ;
@@ -281,7 +282,7 @@ private:
 	bool m_verified ;
 } ;
 
-/// \class GSsl::OpenSSL::DigesterImp
+//| \class GSsl::OpenSSL::DigesterImp
 /// An implementation of the GSsl::DigesterImpBase interface for OpenSSL.
 ///
 class GSsl::OpenSSL::DigesterImp : public GSsl::DigesterImpBase

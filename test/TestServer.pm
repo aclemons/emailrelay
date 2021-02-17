@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-#
+# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-#
+# 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
+# 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
@@ -24,6 +24,7 @@
 #
 # Synopsis:
 #
+#	use TestServer ;
 #	$TestServer::bin_dir = "." ;
 #	my $ts = new TestServer( 10025 ) ;
 #	$ts->run() ;
@@ -84,13 +85,15 @@ sub run
 	$wait_cs ||= 50 ;
 	my $log = $this->{m_logfile} ;
 
-	my $cmd = System::mangledpath($this->exe()) . " --port " . $this->port() . " --pid-file " . $this->{m_pidfile} . " $sw" ;
+	my $cmd = System::sanepath($this->exe()) . " --port " . $this->port() . " --pid-file " . $this->{m_pidfile} . " $sw" ;
 	my $full_cmd = System::commandline( $cmd , { stdout => $log , stderr => $log , background => 1 } ) ;
 	System::log_( "running [$full_cmd]" ) ;
 	system( $full_cmd ) ;
 
-	$this->{m_pid} = System::waitForPid( $this->{m_pidfile} ) ;
-	return $this->{m_pid} && System::processIsRunning($this->{m_pid}) ;
+	my $pid = System::waitForPid( $this->{m_pidfile} ) ;
+	$this->{m_pid} = $pid ;
+	push @pid_list , $pid if $pid ;
+	return $pid && System::processIsRunning($pid) ;
 }
 
 sub kill

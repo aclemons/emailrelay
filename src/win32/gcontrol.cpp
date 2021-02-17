@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gcontrol.cpp
-//
+///
+/// \file gcontrol.cpp
+///
 
 #include "gdef.h"
 #include "gdialog.h"
@@ -58,9 +58,7 @@ void GGui::Control::load()
 
 void GGui::Control::load( DWORD types )
 {
- #ifdef G_MINGW
-	::InitCommonControls() ;
- #else
+ #if GCONFIG_HAVE_WINDOWS_INIT_COMMON_CONTROLS_EX
 	INITCOMMONCONTROLSEX controls{} ;
 	controls.dwSize = sizeof(controls) ;
 	controls.dwICC = types ; // ICC_LISTVIEW_CLASSES | ICC_STANDARD_CLASSES ;
@@ -69,6 +67,8 @@ void GGui::Control::load( DWORD types )
 		G_ERROR( "GGui::Control::load: InitCommonControlsEx() failed: " << types ) ;
 		//throw std::runtime_error( "InitCommonControlsEx() failed" ) ;
 	}
+ #else
+	::InitCommonControls() ;
  #endif
 }
 
@@ -150,36 +150,43 @@ LRESULT GGui::Control::onMessage( unsigned int , WPARAM , LPARAM , WNDPROC , boo
 
 LRESULT CALLBACK gcontrol_wndproc_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
 {
-	// get the dialog box window handle
-	HWND hwnd_dialog = GetParent(hwnd) ;
-	if( hwnd_dialog == HNULL )
+	try
 	{
-		G_ASSERT( false ) ;
+		// get the dialog box window handle
+		HWND hwnd_dialog = GetParent( hwnd ) ;
+		if( hwnd_dialog == HNULL )
+		{
+			G_ASSERT( false ) ;
+			return ::DefWindowProc( hwnd , message , wparam , lparam ) ;
+		}
+
+		// find the dialog box object
+		GGui::Dialog * dialog = reinterpret_cast<GGui::Dialog*>( ::GetWindowLongPtr( hwnd_dialog , DWLP_USER ) ) ;
+		if( dialog == nullptr )
+		{
+			G_ASSERT( false ) ;
+			return ::DefWindowProc( hwnd , message , wparam , lparam ) ;
+		}
+		G_ASSERT( dialog->isValid() ) ;
+
+		// find the control object and the super-class window procedure
+		void * context = nullptr ;
+		auto super_class = reinterpret_cast<GGui::SubClassMap::Proc>( dialog->map().find(hwnd,&context) ) ;
+		GGui::Control * control = static_cast<GGui::Control*>(context) ;
+		G_ASSERT( control != nullptr ) ;
+		G_ASSERT( control->handle() == hwnd ) ;
+		G_ASSERT( control->id() == ::GetDlgCtrlID(hwnd) ) ;
+
+		// remove the control from the map if it is being destroyed
+		if( message == WM_NCDESTROY )
+			dialog->map().remove( hwnd ) ;
+
+		return control->wndProc( message , wparam , lparam , super_class ) ;
+	}
+	catch(...) // callback
+	{
 		return ::DefWindowProc( hwnd , message , wparam , lparam ) ;
 	}
-
-	// find the dialog box object
-	GGui::Dialog * dialog = reinterpret_cast<GGui::Dialog*>( ::GetWindowLongPtr( hwnd_dialog , DWLP_USER ) ) ;
-	if( dialog == nullptr )
-	{
-		G_ASSERT( false ) ;
-		return ::DefWindowProc( hwnd , message , wparam , lparam ) ;
-	}
-	G_ASSERT( dialog->isValid() ) ;
-
-	// find the control object and the super-class window procedure
-	void * context = nullptr ;
-	GGui::SubClassMap::Proc super_class = reinterpret_cast<GGui::SubClassMap::Proc>(dialog->map().find(hwnd,&context)) ;
-	GGui::Control * control = static_cast<GGui::Control*>(context) ;
-	G_ASSERT( control != nullptr ) ;
-	G_ASSERT( control->handle() == hwnd ) ;
-	G_ASSERT( control->id() == ::GetDlgCtrlID(hwnd) ) ;
-
-	// remove the control from the map if it is being destroyed
-	if( message == WM_NCDESTROY )
-		dialog->map().remove( hwnd ) ;
-
-	return control->wndProc( message , wparam , lparam , super_class ) ;
 }
 
 // ==
@@ -411,7 +418,7 @@ void GGui::EditBox::scrollBack( int lines )
 void GGui::EditBox::scrollToEnd()
 {
 	// (add ten just to make sure)
-	sendMessage( EM_LINESCROLL , 0 , lines() + 10 ) ;
+	sendMessage( EM_LINESCROLL , 0 , lines() + 10U ) ;
 }
 
 std::string GGui::EditBox::get() const
@@ -525,4 +532,3 @@ void GGui::Button::disable()
 	::EnableWindow( handle() , false ) ;
 }
 
-/// \file gcontrol.cpp

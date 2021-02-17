@@ -110,45 +110,43 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libglib_a_AR = $(AR) $(ARFLAGS)
 libglib_a_LIBADD =
-am__libglib_a_SOURCES_DIST = gpam_none.cpp gpam_linux.cpp \
-	gconvert_none.cpp gconvert_unix.cpp garg.h garg.cpp gassert.h \
-	gbase64.h gbase64.cpp gbatchfile.h gbatchfile.cpp gcall.h \
-	gcleanup.h gcleanup_unix.cpp gconvert.h gconvert.cpp gdaemon.h \
-	gdaemon_unix.cpp gdate.h gdate.cpp gdatetime.h gdatetime.cpp \
-	gdef.h gdirectory.h gdirectory.cpp gdirectory_unix.cpp \
-	genvironment.h genvironment.cpp genvironment_unix.cpp \
-	gexception.h gexception.cpp gexecutablecommand.h \
-	gexecutablecommand.cpp gexecutablecommand_unix.cpp gfile.h \
-	gfile.cpp gfile_unix.cpp ggetopt.h ggetopt.cpp ghash.h \
+am__libglib_a_SOURCES_DIST = gpam_none.cpp gpam_linux.cpp garg.h \
+	garg.cpp gassert.h gbase64.h gbase64.cpp gbatchfile.h \
+	gbatchfile.cpp gbuffer.h gcall.h gcleanup.h gcleanup_unix.cpp \
+	gconvert.h gdaemon.h gdaemon_unix.cpp gdate.h gdate.cpp \
+	gdatetime.h gdatetime.cpp gdef.h gdirectory.h gdirectory.cpp \
+	gdirectory_unix.cpp genvironment.h genvironment.cpp \
+	genvironment_unix.cpp gexception.h gexception.cpp \
+	gexecutablecommand.h gexecutablecommand.cpp \
+	gexecutablecommand_unix.cpp gfile.h gfile.cpp gfile_unix.cpp \
+	gformat.h gformat.cpp ggetopt.h ggetopt.cpp ggettext.h ghash.h \
 	ghash.cpp ghostname.h ghostname_unix.cpp gidentity.h \
-	gidentity_unix.cpp glimits.h glog.h glog.cpp glogoutput.h \
-	glogoutput.cpp glogoutput_unix.cpp gmapfile.h gmapfile.cpp \
-	gmd5.h gmd5.cpp gmsg_unix.cpp gmsg.h gnewprocess.h \
-	gnewprocess_unix.cpp gomembuf.h goptionmap.h goptionmap.cpp \
-	goptionparser.h goptionparser.cpp goptions.h goptions.cpp \
-	goptionvalue.h gpam.h gpath.h gpath.cpp gpidfile.h \
-	gpidfile.cpp gprocess.h gprocess_unix.cpp grandom.h \
+	gidentity_unix.cpp gimembuf.h glimits.h glog.h glog.cpp \
+	glogoutput.h glogoutput.cpp glogoutput_unix.cpp gmapfile.h \
+	gmapfile.cpp gmd5.h gmd5.cpp gmsg_unix.cpp gmsg.h \
+	gnewprocess.h gnewprocess_unix.cpp gomembuf.h goptionmap.h \
+	goptionmap.cpp goptionparser.h goptionparser.cpp goptions.h \
+	goptions.cpp goptionvalue.h gpam.h gpath.h gpath.cpp \
+	gpidfile.h gpidfile.cpp gprocess.h gprocess_unix.cpp grandom.h \
 	grandom.cpp greadwrite.h greadwrite.cpp groot.h groot.cpp \
 	gscope.h gsignalsafe.h gsleep.h gslot.h gslot.cpp \
-	gstatemachine.h gstr.h gstr.cpp gstrings.h gtest.h gtest.cpp \
-	gthread.cpp gtime.h gtime.cpp gxtext.h gxtext.cpp galign.h \
-	gcleanup_win32.cpp gconvert_win32.cpp gdaemon_win32.cpp \
-	gdirectory_win32.cpp geightbit.h genvironment_win32.cpp \
-	gexecutablecommand_win32.cpp gfile_win32.cpp ghashstate.h \
-	ghostname_win32.cpp gidentity_win32.cpp glogoutput_win32.cpp \
-	gstrmacros.h gmsg_win32.cpp gnewprocess_win32.cpp \
-	gprocess_win32.cpp
+	gstatemachine.h gstr.h gstr.cpp gstrings.h gstringwrap.cpp \
+	gstringwrap.h gstringview.h gtest.h gtest.cpp gthread.cpp \
+	gtime.h gtime.cpp gxtext.h gxtext.cpp galign.h \
+	gcleanup_win32.cpp gconvert.cpp gconvert_win32.cpp \
+	gdaemon_win32.cpp gdirectory_win32.cpp geightbit.h \
+	genvironment_win32.cpp gexecutablecommand_win32.cpp \
+	gfile_win32.cpp ghashstate.h ghostname_win32.cpp \
+	gidentity_win32.cpp glogoutput_win32.cpp gstrmacros.h \
+	gmsg_win32.cpp gnewprocess_win32.cpp gprocess_win32.cpp
 @GCONFIG_PAM_FALSE@@GCONFIG_WINDOWS_FALSE@am__objects_1 =  \
 @GCONFIG_PAM_FALSE@@GCONFIG_WINDOWS_FALSE@	gpam_none.$(OBJEXT)
 @GCONFIG_PAM_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_1 =  \
 @GCONFIG_PAM_TRUE@@GCONFIG_WINDOWS_FALSE@	gpam_linux.$(OBJEXT)
-@GCONFIG_ICONV_FALSE@@GCONFIG_WINDOWS_FALSE@am__objects_2 = gconvert_none.$(OBJEXT)
-@GCONFIG_ICONV_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_2 = gconvert_unix.$(OBJEXT)
 @GCONFIG_WINDOWS_FALSE@am_libglib_a_OBJECTS = $(am__objects_1) \
-@GCONFIG_WINDOWS_FALSE@	$(am__objects_2) garg.$(OBJEXT) \
-@GCONFIG_WINDOWS_FALSE@	gbase64.$(OBJEXT) gbatchfile.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	garg.$(OBJEXT) gbase64.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gbatchfile.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	gcleanup_unix.$(OBJEXT) \
-@GCONFIG_WINDOWS_FALSE@	gconvert.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	gdaemon_unix.$(OBJEXT) gdate.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	gdatetime.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	gdirectory.$(OBJEXT) \
@@ -159,7 +157,8 @@ am__libglib_a_SOURCES_DIST = gpam_none.cpp gpam_linux.cpp \
 @GCONFIG_WINDOWS_FALSE@	gexecutablecommand.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	gexecutablecommand_unix.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	gfile.$(OBJEXT) gfile_unix.$(OBJEXT) \
-@GCONFIG_WINDOWS_FALSE@	ggetopt.$(OBJEXT) ghash.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gformat.$(OBJEXT) ggetopt.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	ghash.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	ghostname_unix.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	gidentity_unix.$(OBJEXT) glog.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	glogoutput.$(OBJEXT) \
@@ -174,9 +173,9 @@ am__libglib_a_SOURCES_DIST = gpam_none.cpp gpam_linux.cpp \
 @GCONFIG_WINDOWS_FALSE@	gprocess_unix.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	grandom.$(OBJEXT) greadwrite.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	groot.$(OBJEXT) gslot.$(OBJEXT) \
-@GCONFIG_WINDOWS_FALSE@	gstr.$(OBJEXT) gtest.$(OBJEXT) \
-@GCONFIG_WINDOWS_FALSE@	gthread.$(OBJEXT) gtime.$(OBJEXT) \
-@GCONFIG_WINDOWS_FALSE@	gxtext.$(OBJEXT)
+@GCONFIG_WINDOWS_FALSE@	gstr.$(OBJEXT) gstringwrap.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gtest.$(OBJEXT) gthread.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gtime.$(OBJEXT) gxtext.$(OBJEXT)
 @GCONFIG_WINDOWS_TRUE@am_libglib_a_OBJECTS = garg.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	gbase64.$(OBJEXT) gbatchfile.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	gcleanup_win32.$(OBJEXT) \
@@ -191,7 +190,8 @@ am__libglib_a_SOURCES_DIST = gpam_none.cpp gpam_linux.cpp \
 @GCONFIG_WINDOWS_TRUE@	gexecutablecommand.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	gexecutablecommand_win32.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	gfile.$(OBJEXT) gfile_win32.$(OBJEXT) \
-@GCONFIG_WINDOWS_TRUE@	ggetopt.$(OBJEXT) ghash.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gformat.$(OBJEXT) ggetopt.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	ghash.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	ghostname_win32.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	gidentity_win32.$(OBJEXT) glog.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	glogoutput.$(OBJEXT) \
@@ -206,9 +206,9 @@ am__libglib_a_SOURCES_DIST = gpam_none.cpp gpam_linux.cpp \
 @GCONFIG_WINDOWS_TRUE@	gprocess_win32.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	grandom.$(OBJEXT) greadwrite.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	groot.$(OBJEXT) gslot.$(OBJEXT) \
-@GCONFIG_WINDOWS_TRUE@	gstr.$(OBJEXT) gtest.$(OBJEXT) \
-@GCONFIG_WINDOWS_TRUE@	gthread.$(OBJEXT) gtime.$(OBJEXT) \
-@GCONFIG_WINDOWS_TRUE@	gxtext.$(OBJEXT)
+@GCONFIG_WINDOWS_TRUE@	gstr.$(OBJEXT) gstringwrap.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gtest.$(OBJEXT) gthread.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gtime.$(OBJEXT) gxtext.$(OBJEXT)
 libglib_a_OBJECTS = $(am_libglib_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -376,6 +376,7 @@ e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
+e_systemddir = @e_systemddir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -406,8 +407,9 @@ AM_CPPFLAGS =
 noinst_LIBRARIES = libglib.a
 @GCONFIG_WINDOWS_FALSE@EXTRA_DIST = \
 @GCONFIG_WINDOWS_FALSE@	$(PAM_EXTRA_DIST) \
-@GCONFIG_WINDOWS_FALSE@	$(ICONV_EXTRA_DIST) \
 @GCONFIG_WINDOWS_FALSE@	gcleanup_win32.cpp \
+@GCONFIG_WINDOWS_FALSE@	gconvert.cpp \
+@GCONFIG_WINDOWS_FALSE@	gconvert_win32.cpp \
 @GCONFIG_WINDOWS_FALSE@	gdaemon_win32.cpp \
 @GCONFIG_WINDOWS_FALSE@	gdirectory_win32.cpp \
 @GCONFIG_WINDOWS_FALSE@	genvironment_win32.cpp \
@@ -422,8 +424,6 @@ noinst_LIBRARIES = libglib.a
 
 @GCONFIG_WINDOWS_TRUE@EXTRA_DIST = \
 @GCONFIG_WINDOWS_TRUE@	gcleanup_unix.cpp \
-@GCONFIG_WINDOWS_TRUE@	gconvert_none.cpp \
-@GCONFIG_WINDOWS_TRUE@	gconvert_unix.cpp \
 @GCONFIG_WINDOWS_TRUE@	gdaemon_unix.cpp \
 @GCONFIG_WINDOWS_TRUE@	gdirectory_unix.cpp \
 @GCONFIG_WINDOWS_TRUE@	genvironment_unix.cpp \
@@ -439,7 +439,6 @@ noinst_LIBRARIES = libglib.a
 
 @GCONFIG_WINDOWS_FALSE@libglib_a_SOURCES = \
 @GCONFIG_WINDOWS_FALSE@	$(PAM_SOURCES) \
-@GCONFIG_WINDOWS_FALSE@	$(ICONV_SOURCES) \
 @GCONFIG_WINDOWS_FALSE@	garg.h \
 @GCONFIG_WINDOWS_FALSE@	garg.cpp \
 @GCONFIG_WINDOWS_FALSE@	gassert.h \
@@ -447,11 +446,11 @@ noinst_LIBRARIES = libglib.a
 @GCONFIG_WINDOWS_FALSE@	gbase64.cpp \
 @GCONFIG_WINDOWS_FALSE@	gbatchfile.h \
 @GCONFIG_WINDOWS_FALSE@	gbatchfile.cpp \
+@GCONFIG_WINDOWS_FALSE@	gbuffer.h \
 @GCONFIG_WINDOWS_FALSE@	gcall.h \
 @GCONFIG_WINDOWS_FALSE@	gcleanup.h \
 @GCONFIG_WINDOWS_FALSE@	gcleanup_unix.cpp \
 @GCONFIG_WINDOWS_FALSE@	gconvert.h \
-@GCONFIG_WINDOWS_FALSE@	gconvert.cpp \
 @GCONFIG_WINDOWS_FALSE@	gdaemon.h \
 @GCONFIG_WINDOWS_FALSE@	gdaemon_unix.cpp \
 @GCONFIG_WINDOWS_FALSE@	gdate.h \
@@ -473,14 +472,18 @@ noinst_LIBRARIES = libglib.a
 @GCONFIG_WINDOWS_FALSE@	gfile.h \
 @GCONFIG_WINDOWS_FALSE@	gfile.cpp \
 @GCONFIG_WINDOWS_FALSE@	gfile_unix.cpp \
+@GCONFIG_WINDOWS_FALSE@	gformat.h \
+@GCONFIG_WINDOWS_FALSE@	gformat.cpp \
 @GCONFIG_WINDOWS_FALSE@	ggetopt.h \
 @GCONFIG_WINDOWS_FALSE@	ggetopt.cpp \
+@GCONFIG_WINDOWS_FALSE@	ggettext.h \
 @GCONFIG_WINDOWS_FALSE@	ghash.h \
 @GCONFIG_WINDOWS_FALSE@	ghash.cpp \
 @GCONFIG_WINDOWS_FALSE@	ghostname.h \
 @GCONFIG_WINDOWS_FALSE@	ghostname_unix.cpp \
 @GCONFIG_WINDOWS_FALSE@	gidentity.h \
 @GCONFIG_WINDOWS_FALSE@	gidentity_unix.cpp \
+@GCONFIG_WINDOWS_FALSE@	gimembuf.h \
 @GCONFIG_WINDOWS_FALSE@	glimits.h \
 @GCONFIG_WINDOWS_FALSE@	glog.h \
 @GCONFIG_WINDOWS_FALSE@	glog.cpp \
@@ -525,6 +528,9 @@ noinst_LIBRARIES = libglib.a
 @GCONFIG_WINDOWS_FALSE@	gstr.h \
 @GCONFIG_WINDOWS_FALSE@	gstr.cpp \
 @GCONFIG_WINDOWS_FALSE@	gstrings.h \
+@GCONFIG_WINDOWS_FALSE@	gstringwrap.cpp \
+@GCONFIG_WINDOWS_FALSE@	gstringwrap.h \
+@GCONFIG_WINDOWS_FALSE@	gstringview.h \
 @GCONFIG_WINDOWS_FALSE@	gtest.h \
 @GCONFIG_WINDOWS_FALSE@	gtest.cpp \
 @GCONFIG_WINDOWS_FALSE@	gthread.cpp \
@@ -542,6 +548,7 @@ noinst_LIBRARIES = libglib.a
 @GCONFIG_WINDOWS_TRUE@	gbase64.cpp \
 @GCONFIG_WINDOWS_TRUE@	gbatchfile.h \
 @GCONFIG_WINDOWS_TRUE@	gbatchfile.cpp \
+@GCONFIG_WINDOWS_TRUE@	gbuffer.h \
 @GCONFIG_WINDOWS_TRUE@	gcall.h \
 @GCONFIG_WINDOWS_TRUE@	gcleanup.h \
 @GCONFIG_WINDOWS_TRUE@	gcleanup_win32.cpp \
@@ -570,8 +577,11 @@ noinst_LIBRARIES = libglib.a
 @GCONFIG_WINDOWS_TRUE@	gfile.h \
 @GCONFIG_WINDOWS_TRUE@	gfile.cpp \
 @GCONFIG_WINDOWS_TRUE@	gfile_win32.cpp \
+@GCONFIG_WINDOWS_TRUE@	gformat.h \
+@GCONFIG_WINDOWS_TRUE@	gformat.cpp \
 @GCONFIG_WINDOWS_TRUE@	ggetopt.h \
 @GCONFIG_WINDOWS_TRUE@	ggetopt.cpp \
+@GCONFIG_WINDOWS_TRUE@	ggettext.h \
 @GCONFIG_WINDOWS_TRUE@	ghash.h \
 @GCONFIG_WINDOWS_TRUE@	ghash.cpp \
 @GCONFIG_WINDOWS_TRUE@	ghashstate.h \
@@ -579,6 +589,7 @@ noinst_LIBRARIES = libglib.a
 @GCONFIG_WINDOWS_TRUE@	ghostname_win32.cpp \
 @GCONFIG_WINDOWS_TRUE@	gidentity.h \
 @GCONFIG_WINDOWS_TRUE@	gidentity_win32.cpp \
+@GCONFIG_WINDOWS_TRUE@	gimembuf.h \
 @GCONFIG_WINDOWS_TRUE@	glimits.h \
 @GCONFIG_WINDOWS_TRUE@	glog.h \
 @GCONFIG_WINDOWS_TRUE@	glog.cpp \
@@ -625,6 +636,9 @@ noinst_LIBRARIES = libglib.a
 @GCONFIG_WINDOWS_TRUE@	gstr.h \
 @GCONFIG_WINDOWS_TRUE@	gstr.cpp \
 @GCONFIG_WINDOWS_TRUE@	gstrings.h \
+@GCONFIG_WINDOWS_TRUE@	gstringwrap.cpp \
+@GCONFIG_WINDOWS_TRUE@	gstringwrap.h \
+@GCONFIG_WINDOWS_TRUE@	gstringview.h \
 @GCONFIG_WINDOWS_TRUE@	gtest.h \
 @GCONFIG_WINDOWS_TRUE@	gtest.cpp \
 @GCONFIG_WINDOWS_TRUE@	gthread.cpp \
@@ -637,10 +651,6 @@ noinst_LIBRARIES = libglib.a
 @GCONFIG_PAM_TRUE@@GCONFIG_WINDOWS_FALSE@PAM_EXTRA_DIST = gpam_none.cpp
 @GCONFIG_PAM_FALSE@@GCONFIG_WINDOWS_FALSE@PAM_SOURCES = gpam_none.cpp
 @GCONFIG_PAM_TRUE@@GCONFIG_WINDOWS_FALSE@PAM_SOURCES = gpam_linux.cpp
-@GCONFIG_ICONV_FALSE@@GCONFIG_WINDOWS_FALSE@ICONV_EXTRA_DIST = gconvert_unix.cpp gconvert_win32.cpp
-@GCONFIG_ICONV_TRUE@@GCONFIG_WINDOWS_FALSE@ICONV_EXTRA_DIST = gconvert_none.cpp gconvert_win32.cpp
-@GCONFIG_ICONV_FALSE@@GCONFIG_WINDOWS_FALSE@ICONV_SOURCES = gconvert_none.cpp
-@GCONFIG_ICONV_TRUE@@GCONFIG_WINDOWS_FALSE@ICONV_SOURCES = gconvert_unix.cpp
 all: all-am
 
 .SUFFIXES:
@@ -695,8 +705,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcleanup_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcleanup_win32.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconvert.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconvert_none.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconvert_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconvert_win32.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdaemon_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdaemon_win32.Po@am__quote@
@@ -715,6 +723,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfile_unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfile_win32.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gformat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ggetopt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ghash.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ghostname_unix.Po@am__quote@
@@ -745,6 +754,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/groot.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gslot.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstringwrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gthread.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtime.Po@am__quote@

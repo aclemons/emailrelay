@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// start.cpp
-//
+///
+/// \file start.cpp
+///
 // A simple wrapper that runs the main emailrelay binary with a
 // command-line assembled from the main configuration file (as used
 // by the init.d startup script). Always adds "--as-server".
@@ -131,7 +131,7 @@ static void trim( std::string & s )
 
 static void remove( std::string & s , char c )
 {
-	s.erase( std::remove_if( s.begin() , s.end() , std::bind1st(std::equal_to<char>(),c) ) , s.end() ) ;
+	s.erase( std::remove_if( s.begin() , s.end() , [=](char x){return c == x;} ) , s.end() ) ;
 }
 
 static void sanitise( std::string & s )
@@ -150,7 +150,7 @@ static std::string sanitised( std::string s )
 static std::list<std::string> read( std::string path )
 {
 	std::list<std::string> result ;
-	result.emplace_back( "--as-server" ) ;
+	result.push_back( "--as-server" ) ;
 
 	std::ifstream s( path.c_str() ) ;
 	while( s.good() )
@@ -241,7 +241,6 @@ static void run( std::string exe , std::list<std::string> args )
 
 std::string join( const std::list<std::string> & list )
 {
-	using List = std::list<std::string> ;
 	std::ostringstream ss ;
 	const char * sep = "" ;
 	for( auto p = list.begin() ; p != list.end() ; ++p , sep = " " )
@@ -286,10 +285,9 @@ int main( int , char * argv [] )
 		{
 			std::stringstream ss ;
 			ss << gui << " --message " << sanitised(e.what()) ;
-			int rc = ::system( ss.str().c_str() ) ; G__IGNORE_VARIABLE(int,rc) ;
+			GDEF_IGNORE_RETURN ::system( ss.str().c_str() ) ;
 		}
 	}
 	return 1 ;
 }
 
-/// \file start.cpp

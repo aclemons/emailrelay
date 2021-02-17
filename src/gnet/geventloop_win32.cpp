@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// geventloop_win32.cpp
-//
+///
+/// \file geventloop_win32.cpp
+///
 
 #include "gdef.h"
 #include "gscope.h"
@@ -33,6 +33,7 @@
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
+#include <new>
 
 #if ! GCONFIG_HAVE_WINDOWS_CREATE_WAITABLE_TIMER_EX
 HANDLE CreateWaitableTimerEx( LPSECURITY_ATTRIBUTES sec , LPCTSTR name , DWORD flags , DWORD )
@@ -90,10 +91,9 @@ public:
 private:
 	using Handles = std::vector<HANDLE> ;
 	using Sockets = std::vector<SOCKET> ;
-	struct NoThrow {} ;
 	DWORD interval() ;
 	void updateSocket( Descriptor ) ;
-	bool updateSocket( Descriptor , NoThrow ) noexcept ;
+	bool updateSocket( Descriptor , std::nothrow_t ) noexcept ;
 	void updateHandles() ;
 	void loadHandles( Handles & , Sockets & ) ;
 	static void getHandles( EventHandlerList & , Handles & , Sockets & ) ;
@@ -118,9 +118,9 @@ private:
 
 // ===
 
-GNet::EventLoop * GNet::EventLoop::create()
+std::unique_ptr<GNet::EventLoop> GNet::EventLoop::create()
 {
-	return new EventLoopImp ;
+	return std::make_unique<EventLoopImp>() ;
 }
 
 // ===
@@ -267,19 +267,19 @@ void GNet::EventLoopImp::addOther( Descriptor fdd , EventHandler & handler , Exc
 void GNet::EventLoopImp::dropRead( Descriptor fdd ) noexcept
 {
 	m_read_list.remove( fdd ) ;
-	updateSocket( fdd , NoThrow() ) ;
+	updateSocket( fdd , std::nothrow ) ;
 }
 
 void GNet::EventLoopImp::dropWrite( Descriptor fdd ) noexcept
 {
 	m_write_list.remove( fdd ) ;
-	updateSocket( fdd , NoThrow() ) ;
+	updateSocket( fdd , std::nothrow ) ;
 }
 
 void GNet::EventLoopImp::dropOther( Descriptor fdd ) noexcept
 {
 	m_other_list.remove( fdd ) ;
-	updateSocket( fdd , NoThrow() ) ;
+	updateSocket( fdd , std::nothrow ) ;
 }
 
 void GNet::EventLoopImp::updateSocket( Descriptor fdd )
@@ -293,7 +293,7 @@ void GNet::EventLoopImp::updateSocket( Descriptor fdd )
 	}
 }
 
-bool GNet::EventLoopImp::updateSocket( Descriptor fdd , NoThrow ) noexcept
+bool GNet::EventLoopImp::updateSocket( Descriptor fdd , std::nothrow_t ) noexcept
 {
 	int rc = 0 ;
 	if( fdd.fd() != INVALID_SOCKET )
@@ -318,7 +318,6 @@ void GNet::EventLoopImp::loadHandles( Handles & handles , Sockets & sockets )
 
 void GNet::EventLoopImp::getHandles( EventHandlerList & list , Handles & handles , Sockets & sockets )
 {
-	// TODO optimise getHandles()
 	G_ASSERT( handles.size() == sockets.size() ) ;
 	using Range = std::pair<Handles::iterator,Handles::iterator> ;
 	for( EventHandlerList::Iterator p = list.begin() ; p != list.end() ; ++p )
@@ -441,4 +440,3 @@ GNet::EventLoopImp::Library::~Library()
 	// WSACleanup() not
 }
 
-/// \file geventloop_win32.cpp

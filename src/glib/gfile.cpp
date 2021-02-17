@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gfile.cpp
-//
+///
+/// \file gfile.cpp
+///
 
 #include "gdef.h"
 #include "glimits.h"
@@ -26,7 +26,7 @@
 #include <iostream>
 #include <cstdio>
 
-bool G::File::remove( const Path & path , const G::File::NoThrow & ) noexcept
+bool G::File::remove( const Path & path , std::nothrow_t ) noexcept
 {
 	int rc = std::remove( path.cstr() ) ;
 	return rc == 0 ;
@@ -43,7 +43,7 @@ void G::File::remove( const Path & path )
 	}
 }
 
-bool G::File::rename( const Path & from , const Path & to , const NoThrow & ) noexcept
+bool G::File::rename( const Path & from , const Path & to , std::nothrow_t ) noexcept
 {
 	bool ok = 0 == std::rename( from.cstr() , to.cstr() ) ;
 	if( !ok )
@@ -80,9 +80,18 @@ void G::File::copy( const Path & from , const Path & to )
 		throw CannotCopy( std::string() + "[" + from.str() + "] to [" + to.str() + "]: " + reason ) ;
 }
 
-bool G::File::copy( const Path & from , const Path & to , const NoThrow & )
+bool G::File::copy( const Path & from , const Path & to , std::nothrow_t )
 {
 	return copy(from,to,0).empty() ;
+}
+
+bool G::File::copyInto( const Path & from , const Path & to_dir , std::nothrow_t )
+{
+	G::Path to = to_dir + from.basename() ;
+	bool ok = copy(from,to,0).empty() ;
+	if( ok && isExecutable(from,std::nothrow) )
+		ok = chmodx( to , std::nothrow ) ;
+	return ok ;
 }
 
 std::string G::File::copy( const Path & from , const Path & to , int )
@@ -91,7 +100,7 @@ std::string G::File::copy( const Path & from , const Path & to , int )
 	if( !in.good() )
 		return "cannot open input file" ;
 
-	std::ofstream out ; open( out , to , std::ios_base::trunc ) ;
+	std::ofstream out ; open( out , to ) ;
 	if( !out.good() )
 		return "cannot open output file" ;
 
@@ -139,27 +148,21 @@ void G::File::copy( std::istream & in , std::ostream & out , std::streamsize lim
 	in.clear( (in.rdstate() & ~std::ios_base::failbit) | (in_state & std::ios_base::failbit) ) ;
 }
 
-void G::File::mkdir( const Path & dir )
-{
-	if( ! mkdir( dir , NoThrow() ) )
-		throw CannotMkdir( dir.str() ) ;
-}
-
 bool G::File::exists( const Path & path )
 {
-	return exists( path , false , true ) ;
+	return path.empty() ? false : exists( path , false , true ) ;
 }
 
-bool G::File::exists( const Path & path , const NoThrow & )
+bool G::File::exists( const Path & path , std::nothrow_t )
 {
-	return exists( path , false , false ) ;
+	return path.empty() ? false : exists( path , false , false ) ;
 }
 
-bool G::File::exists( const Path & path , bool on_error , bool do_throw )
+bool G::File::exists( const Path & path , bool error_return_value , bool do_throw )
 {
 	bool enoent = false ;
 	bool eaccess = false ;
-	bool rc = exists( path.cstr() , enoent , eaccess ) ; // o/s-specific implementation
+	bool rc = existsImp( path.cstr() , enoent , eaccess ) ; // o/s-specific
 	if( !rc && enoent )
 	{
 		return false ;
@@ -170,12 +173,58 @@ bool G::File::exists( const Path & path , bool on_error , bool do_throw )
 	}
 	else if( !rc )
 	{
-		return on_error ;
+		return error_return_value ;
 	}
 	return true ;
 }
 
-bool G::File::chmodx( const Path & path , const NoThrow & )
+bool G::File::isLink( const Path & path , std::nothrow_t )
+{
+	Stat s = statImp( path.cstr() ) ;
+	return 0 == s.error && s.is_link ;
+}
+
+bool G::File::isDirectory( const Path & path , std::nothrow_t )
+{
+	Stat s = statImp( path.cstr() ) ;
+	return 0 == s.error && s.is_dir ;
+}
+
+bool G::File::isExecutable( const Path & path , std::nothrow_t )
+{
+	Stat s = statImp( path.cstr() ) ;
+	return 0 == s.error && s.is_executable ;
+}
+
+bool G::File::isEmpty( const Path & path , std::nothrow_t )
+{
+	Stat s = statImp( path.cstr() ) ;
+	return 0 == s.error && s.is_empty ;
+}
+
+std::string G::File::sizeString( const Path & path )
+{
+	Stat s = statImp( path.cstr() ) ;
+	return s.error ? std::string() : std::to_string(s.size) ;
+}
+
+G::SystemTime G::File::time( const Path & path )
+{
+	Stat s = statImp( path.cstr() ) ;
+	if( s.error )
+		throw TimeError( path.str() , Process::strerror(s.error) ) ;
+	return SystemTime( s.mtime_s , s.mtime_us ) ;
+}
+
+G::SystemTime G::File::time( const Path & path , std::nothrow_t )
+{
+	Stat s = statImp( path.cstr() ) ;
+	if( s.error )
+		return SystemTime( 0 ) ;
+	return SystemTime( s.mtime_s , s.mtime_us ) ;
+}
+
+bool G::File::chmodx( const Path & path , std::nothrow_t )
 {
 	return chmodx( path , false ) ;
 }
@@ -185,26 +234,24 @@ void G::File::chmodx( const Path & path )
 	chmodx( path , true ) ;
 }
 
-bool G::File::mkdirs( const Path & path , const NoThrow & , int limit )
+bool G::File::mkdir( const Path & dir , std::nothrow_t )
+{
+	return 0 == mkdirImp( dir ) ;
+}
+
+void G::File::mkdir( const Path & dir )
+{
+	int e = mkdirImp( dir ) ;
+	if( e )
+		throw CannotMkdir( dir.str() , Process::strerror(e) ) ;
+}
+
+bool G::File::mkdirsr( int * ep , const Path & path , int limit )
 {
 	// (recursive)
 
-	G_DEBUG( "File::mkdirs: " << path ) ;
 	if( limit == 0 )
 		return false ;
-
-	// use a trial mkdir() on the our way towards the root to avoid
-	// problems with the windows "virtual store" mis-feature
-	const bool mkdir_trial = true ;
-	if( mkdir_trial )
-	{
-		if( mkdir(path,NoThrow()) )
-		{
-			G_DEBUG( "File::mkdirs: mkdir(" << path << ") -> ok" ) ;
-			chmodx( path , NoThrow() ) ;
-			return true ;
-		}
-	}
 
 	if( exists(path) )
 		return true ;
@@ -212,33 +259,32 @@ bool G::File::mkdirs( const Path & path , const NoThrow & , int limit )
 	if( path.str().empty() )
 		return true ;
 
-	if( ! mkdirs( path.dirname() , NoThrow() , limit-1 ) ) // (recursion)
+	if( !mkdirsr( ep , path.dirname() , limit-1 ) ) // (recursion)
 		return false ;
 
-	G_DEBUG( "File::mkdirs: mkdir(" << path << ")" ) ;
-	bool ok = mkdir( path , NoThrow() ) ;
-	if( ok )
-		chmodx( path , NoThrow() ) ;
+	int e = mkdirImp( path ) ;
+	if( e )
+		*ep = e ;
+	else
+		chmodx( path , std::nothrow ) ;
 
-	G_DEBUG( "File::mkdirs: mkdir(" << path << ") -> " << (ok?"ok":"failed") ) ;
-	return ok ;
+	return e == 0 ;
+}
+
+bool G::File::mkdirs( const Path & path , std::nothrow_t , int limit )
+{
+	int e = 0 ;
+	return mkdirsr( &e , path , limit ) ;
 }
 
 void G::File::mkdirs( const Path & path , int limit )
 {
-	if( ! mkdirs(path,NoThrow(),limit) )
-		throw CannotMkdir(path.str()) ;
+	int e = 0 ;
+	if( !mkdirsr(&e,path,limit) )
+		throw CannotMkdir( path.str() , e ? G::Process::strerror(e) : std::string() ) ;
 }
 
-void G::File::create( const Path & path )
-{
-	std::ofstream f ; open( f , path , std::ios_base::app ) ;
-	f.close() ;
-	if( !exists(path) ) // race
-		throw CannotCreate( path.str() ) ;
-}
-
-int G::File::compare( const Path & path_1 , const Path & path_2 , const NoThrow & )
+int G::File::compare( const Path & path_1 , const Path & path_2 , bool ignore_whitespace )
 {
 	std::ifstream file_1 ; open( file_1 , path_1 ) ;
 	std::ifstream file_2 ; open( file_2 , path_2 ) ;
@@ -247,10 +293,13 @@ int G::File::compare( const Path & path_1 , const Path & path_2 , const NoThrow 
 	if( !file_1.good() ) return -1 ;
 	if( !file_2.good() ) return 1 ;
 	int result = 0 ;
+	int a = eof ;
+	int b = eof ;
+	auto isspace = [](int c){ return c == ' ' || c == '\t' || c == '\n' || c == '\r' ; } ;
 	for(;;)
 	{
-		int a = file_1.get() ;
-		int b = file_2.get() ;
+		do { a = file_1.get() ; } while( ignore_whitespace && isspace(a) ) ;
+		do { b = file_2.get() ; } while( ignore_whitespace && isspace(b) ) ;
 		if( a == eof && b == eof )
 			break ;
 		if( a != b )
@@ -262,4 +311,3 @@ int G::File::compare( const Path & path_1 , const Path & path_2 , const NoThrow 
 	return result ;
 }
 
-/// \file gfile.cpp

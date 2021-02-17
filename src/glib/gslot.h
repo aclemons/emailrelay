@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -29,119 +29,118 @@
 
 namespace G
 {
-	/// \namespace G::Slot
+	//| \namespace G::Slot
 	/// A callback mechanism that isolates event sinks from event sources.
 	///
-	/// The slot/signal pattern is used in several C++ libraries including
-	/// libsigc++, Qt and boost; it is completely unrelated to ANSI-C or POSIX
-	/// signals (signal(), sigaction(2)).
+	/// The slot/signal pattern has been used in several C++ libraries including
+	/// libsigc++, Qt and boost, although it is largely redudant with modern C++.
+	/// The pattern is completely unrelated to ANSI-C or POSIX signals (signal(),
+	/// sigaction(2)).
 	///
 	/// Usage:
 	/// \code
-	/// class Source
+	/// struct Source
 	/// {
-	/// public:
-	///   G::Slot::Signal1<int> m_signal ;
-	/// private:
+	///   G::Slot::Signal<int> m_signal ;
 	///   void Source::raiseEvent()
 	///   {
-	///     int n = 123 ;
-	///     m_signal.emit( n ) ;
+	///     m_signal.emit( 123 ) ;
 	///   }
 	/// } ;
 	///
-	/// class Sink
+	/// struct Sink
 	/// {
-	/// public:
 	///   void onEvent( int n ) ;
-	///   Sink( Source & source )
+	///   Sink( Source & source ) : m_source(source)
 	///   {
-	///      source.m_signal.connect( G::Slot::slot(*this,&Sink::onEvent) ) ;
+	///     source.m_signal.connect( G::Slot::slot(*this,&Sink::onEvent) ) ;
 	///   }
+	///   ~Sink()
+	///   {
+	///     m_source.m_signal.disconnect() ;
+	///   }
+	///   Source & m_source ;
 	/// } ;
 	/// \endcode
 	///
-	/// Slots can also be used on their own, without being connected to
-	/// signals, just like std::bind and std::function:
-	///
+	/// For comparison the equivalent modern C++ looks like this:
 	/// \code
-	/// struct Generator ;
-	/// struct Test
+	/// struct Source
 	/// {
-	///   void run()
+	///   std::function<void(int)> m_signal ;
+	///   void Source::raiseEvent()
 	///   {
-	///     // cf. std::bind(&Test::value,this,_1)
-	///     Generator generator( G::Slot::slot(*this,&Test::value) ) ;
-	///     generator.generateValues() ;
+	///     if( m_signal ) m_signal( 123 ) ; // emit()
 	///   }
-	///   void value( int n ) ;
 	/// } ;
-	/// struct Generator
+	///
+	/// struct Sink
 	/// {
-	///   Generator( G::Slot::Slot1<int> callback ) :
-	///     m_callback(callback)
+	///   void onEvent( int n ) ;
+	///   Sink( Source & source ) : m_source(source)
 	///   {
+	///     check( !source.m_signal ) ; // throw if already connected
+	///     source.m_signal = std::bind_front(&Sink::onEvent,this) ; // connect(slot())
 	///   }
-	///   void generateValues()
+	///   ~Sink()
 	///   {
-	///     for( int i = 0 ; i < 10 ; i++ )
-	///       m_callback.callback( i ) ;
+	///     m_source.m_signal = nullptr ; // disconnect()
 	///   }
-	///   // cf. std::function<void(int)>
-	///   G::Slot::Slot1<int> m_callback ;
+	///   Source & m_source ;
 	/// } ;
 	/// \endcode
 	///
-	/// The implementation of emit() uses perfect forwarding so beware
-	/// of emit()ing references to data members of objects that might
+	/// Slot methods should take parameters by value or const reference but
+	/// beware of emit()ing references to data members of objects that might
 	/// get deleted. Use temporaries in the emit() call if in doubt.
 	///
 	namespace Slot
 	{
-		/// \class G::Slot::SlotImp
-		/// A sink-specific functor class template. The types of these functors
-		/// are hidden by the std::function in the Slot class.
+		//| \class G::Slot::Binder
+		/// A functor class template that contains the target object pointer
+		/// and method pointer, similar to c++20 bind_front(&T::fn,tp).
+		/// These objects are hidden in the std::function data member of
+		/// the Slot class so that the Slot is not dependent on the target
+		/// type. Maybe replace with a lambda.
 		///
-		template <typename Treturn, typename Tsink, typename... Args>
-		struct SlotImp
+		template <typename T, typename... Args>
+		struct Binder
 		{
-			using Mf = Treturn (Tsink::*)(Args...) ;
-			Tsink * m_sink ;
+			using Mf = void (T::*)(Args...) ;
+			T * m_sink ;
 			Mf m_mf ;
-			SlotImp( Tsink * sink , Mf mf ) :
+			Binder( T * sink , Mf mf ) :
 				m_sink(sink) ,
 				m_mf(mf)
 			{
 			}
-			Treturn operator()( Args&&... args )
+			void operator()( Args... args )
 			{
-				return (m_sink->*m_mf)( std::forward<Args>(args)... ) ;
+				return (m_sink->*m_mf)( args... ) ;
 			}
 		} ;
 
-		/// \class G::Slot::Slot
+		//| \class G::Slot::Slot
 		/// A slot class template that is parameterised only on the target method's
 		/// signature (with an implicit void return) and not on the target class.
+		/// The implementation uses std::function to hide the type of the target.
 		///
 		template <typename... Args>
 		struct Slot
 		{
-			using Treturn = void ;
-			using std_function_type = std::function<Treturn (Args...)> ;
-			std_function_type m_fn ;
+			std::function<void(Args...)> m_fn ;
 			Slot() noexcept = default;
-			void reset() noexcept { m_fn = nullptr ; }
-			template <typename Tsink> Slot( Tsink & sink , Treturn (Tsink::*mf)(Args...) ) :
-				m_fn(std::function<Treturn(Args...)>(SlotImp<Treturn,Tsink,Args...>(&sink,mf)))
+			template <typename T> Slot( T & sink , void (T::*mf)(Args...) ) :
+				m_fn(std::function<void(Args...)>(Binder<T,Args...>(&sink,mf)))
 			{
 			}
-			void callback( Args... args ) // (for backwards compatibility)
+			void invoke( Args... args )
 			{
-				m_fn( std::forward<Args>(args)... ) ;
+				m_fn( args... ) ;
 			}
 		} ;
 
-		/// \class G::Slot::SignalImp
+		//| \class G::Slot::SignalImp
 		/// A slot/signal scoping class.
 		///
 		struct SignalImp
@@ -150,7 +149,7 @@ namespace G
 			SignalImp() = delete ;
 		} ;
 
-		/// \class G::Slot::Signal
+		//| \class G::Slot::Signal
 		/// A slot holder, with connect() and emit() methods.
 		///
 		template <typename... SlotArgs>
@@ -170,17 +169,16 @@ namespace G
 			}
 			void disconnect() noexcept
 			{
-				m_slot.reset() ;
+				m_slot.m_fn = nullptr ;
 				G_ASSERT( !connected() ) ;
 			}
-			template <typename... SignalArgs>
-			void emit( SignalArgs&&... args )
+			void emit( SlotArgs... args )
 			{
 				if( !m_once || !m_emitted )
 				{
 					m_emitted = true ;
 					if( connected() )
-						m_slot.m_fn( std::forward<SignalArgs>(args)... ) ;
+						m_slot.m_fn( args... ) ;
 				}
 			}
 			void reset()
@@ -202,6 +200,7 @@ namespace G
 		///
 		template <typename TSink,typename... Args> Slot<Args...> slot( TSink & sink , void (TSink::*method)(Args...) )
 		{
+			// or c++20: return std::function<void(Args...)>( std::bind_front(method,&sink) )
 			return Slot<Args...>( sink , method ) ;
 		}
 

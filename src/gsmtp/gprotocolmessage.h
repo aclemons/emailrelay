@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gprotocolmessage.h
 ///
 
-#ifndef G_SMTP_PROTOCOL_MESSAGE__H
-#define G_SMTP_PROTOCOL_MESSAGE__H
+#ifndef G_SMTP_PROTOCOL_MESSAGE_H
+#define G_SMTP_PROTOCOL_MESSAGE_H
 
 #include "gdef.h"
 #include "gslot.h"
@@ -33,7 +33,7 @@ namespace GSmtp
 	class ProtocolMessage ;
 }
 
-/// \class GSmtp::ProtocolMessage
+//| \class GSmtp::ProtocolMessage
 /// An interface used by the ServerProtocol class to assemble and
 /// process an incoming message. It implements the three 'buffers'
 /// mentioned in RFC-2821 (esp. section 4.1.1).
@@ -62,10 +62,12 @@ namespace GSmtp
 class GSmtp::ProtocolMessage
 {
 public:
+	using DoneSignal = G::Slot::Signal<bool,unsigned long,const std::string&,const std::string&> ;
+
 	virtual ~ProtocolMessage() = default ;
 		///< Destructor.
 
-	virtual G::Slot::Signal<bool,unsigned long,const std::string&,const std::string&> & doneSignal() = 0 ;
+	virtual DoneSignal & doneSignal() = 0 ;
 		///< Returns a signal which is raised once process() has
 		///< completed.
 		///<

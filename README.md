@@ -70,7 +70,7 @@ To run E-MailRelay as a [POP][] server without SMTP use `--pop` and `--no-smtp`:
 The `emailrelay-submit` utility can be used to put messages straight into the
 spool directory so that the POP clients can fetch them.
 
-By default E-MailRelay will always reject connections from remote machines. To
+By default E-MailRelay will always reject connections from remote networks. To
 allow connections from anywhere use the `--remote-clients` option, but please
 check your firewall settings to make sure this cannot be exploited by spammers.
 

@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -34,7 +34,7 @@ namespace G
 	class OptionParser ;
 }
 
-/// \class G::OptionParser
+//| \class G::OptionParser
 /// A parser for command-line arguments that operates according to an Options
 /// specification and returns an OptionValue multimap.
 /// \see G::Options, G::OptionValue
@@ -48,10 +48,10 @@ public:
 		///< that also allow it to be used as a simple map with multi-valued
 		///< options concatenated into a comma-separated list.
 
-	OptionParser( const Options & spec , OptionMap & values_out ) ;
-		///< Constructor for when errors can be ignored.
+	OptionParser( const Options & spec , OptionMap & values_out , StringArray * errors_out = nullptr ) ;
+		///< Constructor overload taking an optional errors-out parameter.
 
-	StringArray parse( const StringArray & args , std::size_t start_position = 1U ,
+	StringArray parse( const StringArray & args_in , std::size_t start_position = 1U ,
 		std::size_t ignore_non_options = 0U ) ;
 			///< Parses the given command-line arguments into the value map and/or
 			///< error list defined by the constructor. This can be called
@@ -73,13 +73,20 @@ public:
 			///< Entries in the output map are keyed by the option's long name,
 			///< even if supplied in short-form.
 			///<
-			///< Errors are reported into the constructor's error list.
+			///< Errors are appended to the caller's error list.
 			///<
 			///< Returns the non-option arguments.
 
 	void errorDuplicate( const std::string & ) ;
 		///< Adds a 'duplicate' error in the constructor's error list
 		///< for the given option.
+
+	static StringArray parse( const StringArray & args_in , const Options & spec ,
+		OptionMap & values_out , StringArray * errors_out = nullptr ,
+		std::size_t start_position = 1U , std::size_t ignore_non_options = 0U ) ;
+			///< A static function to contruct an OptionParser object
+			///< and call its parse() method. Returns the residual
+			///< non-option arguments. Throws on error.
 
 public:
 	~OptionParser() = default ;
@@ -107,6 +114,7 @@ private:
 	void errorExtraValue( char , const std::string & ) ;
 	void errorExtraValue( const std::string & , const std::string & ) ;
 	void errorConflict( const std::string & ) ;
+	void error( const std::string & ) ;
 	bool haveSeenOn( const std::string & name ) const ;
 	bool haveSeenOff( const std::string & name ) const ;
 	static bool isOldOption( const std::string & ) ;
@@ -117,8 +125,7 @@ private:
 private:
 	const Options & m_spec ;
 	OptionMap & m_map ;
-	StringArray m_errors_ignored ;
-	StringArray & m_errors ;
+	StringArray * m_errors ;
 } ;
 
 #endif

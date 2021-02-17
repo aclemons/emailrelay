@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// filter.cpp
-//
+///
+/// \file filter.cpp
+///
 // A utility that can be installed as a "--filter" program to copy the message
 // envelope into all spool sub-directories for use by "--pop-by-name".
 //
@@ -24,7 +24,7 @@
 // once sub-directory then it is removed from the parent directory and the
 // program exits with a value of 100.
 //
-// Does nothing successfully if there are no sub-directories.
+// Fails if there are no sub-directories to copy in to.
 //
 
 #include "gdef.h"
@@ -95,7 +95,7 @@ void Filter::process_envelope()
 	// which gets inherited by sub-directories and all message
 	// files
 	//
-	G::Process::Umask::set( G::Process::Umask::Mode::Tighter ) ; // 0177
+	G::Process::Umask::set( G::Process::Umask::Mode::Tighter ) ; // 0117
 
 	// copy the envelope into all sub-directories
 	//
@@ -110,7 +110,7 @@ void Filter::process_envelope()
 			G::Path subdir = iter.filePath() ;
 			copies++ ;
 			G::Path target = G::Path( subdir , m_envelope_name ) ;
-			bool copied = m_dryrun ? true : G::File::copy( m_envelope_path , target , G::File::NoThrow() ) ;
+			bool copied = m_dryrun ? true : G::File::copy( m_envelope_path , target , std::nothrow ) ;
 			if( m_verbose )
 				std::cout << (copied?"copied":"failed") << ": " << m_envelope_path << " " << target << "\n" ;
 			if( !copied )
@@ -127,7 +127,7 @@ void Filter::process_envelope()
 	//
 	if( copies > 0 && failures == 0 )
 	{
-		m_envelope_deleted = m_dryrun ? true : G::File::remove( m_envelope_path , G::File::NoThrow() ) ;
+		m_envelope_deleted = m_dryrun ? true : G::File::remove( m_envelope_path , std::nothrow ) ;
 	}
 }
 
@@ -191,7 +191,7 @@ void Filter::throwFailures( bool one )
 	}
 	if( one && m_directory_count == 0 ) // probably a permissioning problem
 	{
-		throw FilterError( "no sub-directories to copy into: check permissions" ) ;
+		throw FilterError( "no sub-directories to copy into" , G::is_windows() ? "" : "check permissions" ) ;
 	}
 }
 
@@ -281,4 +281,3 @@ int main( int argc , char * argv [] )
 	return 1 ;
 }
 
-/// \file filter.cpp

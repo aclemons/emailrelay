@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// emailrelay_test_verifier.cpp
-//
+///
+/// \file emailrelay_test_verifier.cpp
+///
 // A dummy network address verifier for testing "emailrelay --verifier net:<transport-address>".
 //
 // usage: emailrelay-test-verifier [--ipv6] [--port <port>] [--log] [--log-file <file>] [--debug] [--pid-file <pidfile>]
@@ -40,6 +40,7 @@
 #include "gtimerlist.h"
 #include "gprocess.h"
 #include "gserverpeer.h"
+#include "gfile.h"
 #include "ggetopt.h"
 #include "garg.h"
 #include "gsleep.h"
@@ -62,7 +63,7 @@ public:
 private:
 	void onDelete( const std::string & ) override ;
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ;
-	void onSecure( const std::string & , const std::string & ) override ;
+	void onSecure( const std::string & , const std::string & , const std::string & ) override ;
 	void onSendComplete() override {}
 	bool processLine( std::string ) ;
 } ;
@@ -78,7 +79,7 @@ void Main::VerifierPeer::onDelete( const std::string & )
 	G_LOG_S( "VerifierPeer::onDelete: disconnected" ) ;
 }
 
-void Main::VerifierPeer::onSecure( const std::string & , const std::string & )
+void Main::VerifierPeer::onSecure( const std::string & , const std::string & , const std::string & )
 {
 }
 
@@ -172,7 +173,7 @@ std::unique_ptr<GNet::ServerPeer> Main::Verifier::newPeer( GNet::ExceptionSinkUn
 
 static int run( bool ipv6 , unsigned int port , unsigned int idle_timeout )
 {
-	std::unique_ptr<GNet::EventLoop> loop( GNet::EventLoop::create() ) ;
+	std::unique_ptr<GNet::EventLoop> loop = GNet::EventLoop::create() ;
 	GNet::ExceptionSink es ;
 	GNet::TimerList timer_list ;
 	Main::Verifier verifier( es , ipv6 , port , idle_timeout ) ;
@@ -201,7 +202,7 @@ int main( int argc , char * argv [] )
 		}
 		if( opt.contains("help") )
 		{
-			opt.options().showUsage( std::cout , arg.prefix() ) ;
+			opt.options().showUsage( {} , std::cout , arg.prefix() ) ;
 			return 0 ;
 		}
 		bool log = opt.contains("log") ;
@@ -214,7 +215,8 @@ int main( int argc , char * argv [] )
 
 		if( !pid_file.empty() )
 		{
-			std::ofstream file( pid_file.c_str() ) ;
+			std::ofstream file ;
+			G::File::open( file , pid_file , G::File::Text() ) ;
 			file << G::Process::Id().str() << std::endl ;
 		}
 
@@ -234,4 +236,3 @@ int main( int argc , char * argv [] )
 	return 1 ;
 }
 
-/// \file emailrelay_test_verifier.cpp

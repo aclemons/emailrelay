@@ -20,7 +20,8 @@ has been introduced as a dependency to support TLS_ encryption, and the optional
 configuration and installation GUI has been developed using the Qt toolkit.
 
 In those early years multi-threading support in C++ libraries was poor, so up
-until version 2.0 the code was single-threaded throughout.
+until version 2.0 the code was single-threaded throughout, and multi-threading
+is still optional.
 
 Portability
 ===========
@@ -45,11 +46,11 @@ alternatives.
 
 Event model
 ===========
-The E-MailRelay server uses non-blocking socket i/o, with a select() event loop.
-This event model means that the server can handle multiple network connections
-simultaneously from a single thread, and even if multi-threading is disabled at
-build-time the only blocking occurs when external programs are executed (see
-*--filter* and *--address-verifier*).
+The E-MailRelay server uses non-blocking socket i/o, with a select() or epoll()
+event loop. This event model means that the server can handle multiple network
+connections simultaneously from a single thread, and even if multi-threading is
+disabled at build-time the only blocking occurs when external programs are
+executed (see *--filter* and *--address-verifier*).
 
 This event model can make the code more complicated than the equivalent
 multi-threaded approach since (for example) it is not possible to wait for a
@@ -166,7 +167,7 @@ child, without the exception killing the whole server.
 Event sources in the event loop are held as a file descriptor, a windows event
 handle, an EventHandler pointer, an ExceptionHandler pointer and an
 ExceptionSource pointer. The first two together are known as a Descriptor, and
-the last two together are known as an *ExceptionSink*.
+the last two together are known as an ExceptionSink.
 
 Multi-threading
 ===============
@@ -217,10 +218,10 @@ MSVC, Qt and mbedTLS source are installed in the right way then the
 *winbuild.bat* batch file should be able to do a complete MSVC release build
 in one go.
 
-For MinGW cross-builds use *./configure.sh -m* and *make* on a Linux box
-and copy the built executables and the MinGW run-time to the target. The
-run-time files can be identified by *dumpbin /dependents* in the normal
-way. This is particularly useful for running on ancient versions of Windows.
+For MinGW cross-builds use *./configure.sh -m* and *make* on a Linux box and
+copy the built executables and the MinGW run-time to the target. Any extra
+run-time files can be identified by running *dumpbin /dependents* in the normal
+way.
 
 Windows packaging
 =================
@@ -232,6 +233,10 @@ again, and while this duplication is not ideal it is at least straightforward.
 The Qt tool *windeployqt* is used to add run-time dependencies, such as the
 Qt DLLs.
 
+To target ancient versions of Windows start with a cross-build using MinGW;
+then *winbuild.pl mingw* can be used to assemble a slimmed-down package for
+distribution.
+
 Unix packaging
 ==============
 On Unix-like operating systems it is more natural to use some sort of package
@@ -240,6 +245,19 @@ the emailrelay GUI is not normally used.
 
 Top-level makefile targets *dist*, *deb* and *rpm* can be used to create a
 binary tarball, a debian package, and an RPM package respectively.
+
+Internationalisation
+====================
+The GUI code has i18n support using the Qt framework, with the tr() function
+used throughout the GUI source code. The GUI main() function loads translations
+from the *translations* sub-directory (relative to the executable), although
+that can be overridden with the *--qm* command-line option. Qt's *-reverse*
+option can also be used to reverse the widgets when using RTL languages.
+
+The non-GUI code has minimal i18n support using gettext(), mostly for startup
+error messages and usage help. This is disabled by default and requires a
+configure-script option (\ *--with-gettext*\ ) to enable it at build-time and
+a *--localedir* option at run-time. See also *po/Makefile.am*.
 
 Source control
 ==============
@@ -259,6 +277,7 @@ script. These include the following:
 * Multi-threading (\ *--enable-std-thread*\ )
 * TLS library (\ *--with-openssl*\ , *--with-mbedtls*)
 * Debug-level logging (\ *--enable-debug*\ )
+* Event loop using epoll (\ *--enable-epoll*\ )
 * PAM_ support (\ *--with-pam*\ )
 
 Use *./configure --help* to see a complete list of options.
@@ -271,4 +290,4 @@ Use *./configure --help* to see a complete list of options.
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 .. _TLS: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
-.. footer:: Copyright (C) 2001-2020 Graeme Walker
+.. footer:: Copyright (C) 2001-2021 Graeme Walker

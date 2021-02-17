@@ -1,30 +1,29 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// serviceimp_none.cpp
-//
-// A dummy implementation that might be useful when testing the service
-// wrapper without a service manager, eg. with Wine.
+///
+/// \file serviceimp_none.cpp
+///
+// A do-nothing implementation that might be useful when testing the
+// service wrapper without a service manager, eg. with Wine.
 //
 
 #include "gdef.h"
 #include "serviceimp.h"
-#include "serviceinstall.h"
-#include "serviceremove.h"
+#include "servicecontrol.h"
 #include <iostream>
 
 // from winsvc.h
@@ -49,9 +48,9 @@ std::string ServiceImp::remove( const std::string & name )
 	return std::string() ;
 }
 
-std::pair<ServiceImp::ServiceHandle,DWORD> ServiceImp::statusHandle( const std::string & , HandlerFn )
+std::pair<ServiceImp::StatusHandle,DWORD> ServiceImp::statusHandle( const std::string & , HandlerFn )
 {
-	ServiceHandle h = 1 ;
+	StatusHandle h = 1 ;
 	return std::make_pair( h , 0 ) ;
 }
 
@@ -64,7 +63,7 @@ DWORD ServiceImp::dispatch( ServiceMainFn fn )
 	return 0 ;
 }
 
-DWORD ServiceImp::setStatus( ServiceHandle , DWORD new_state , DWORD ) noexcept
+DWORD ServiceImp::setStatus( StatusHandle , DWORD new_state , DWORD ) noexcept
 {
 	std::string s ;
 	if( new_state == SERVICE_STOPPED ) s = "stopped" ;
@@ -80,4 +79,3 @@ void ServiceImp::log( const std::string & s ) noexcept
 	std::cout << s << std::endl ;
 }
 
-/// \file serviceimp_none.cpp

@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -31,7 +31,7 @@ namespace G
 	class Environment ;
 }
 
-/// \class G::Environment
+//| \class G::Environment
 /// Holds a set of environment variables and also provides static methods
 /// to wrap getenv() and putenv().
 ///
@@ -49,7 +49,7 @@ public:
 
 	static Environment inherit() ;
 		///< Returns an empty() environment, as if default constructed.
-		///< This is syntactic sugar for G::NewProcess.
+		///< This is syntactic sugar for the G::NewProcess interface.
 
 	explicit Environment( const std::map<std::string,std::string> & ) ;
 		///< Constructor from a map.
@@ -104,6 +104,7 @@ private:
 private:
 	using Map = std::map<std::string,std::string> ;
 	using List = std::vector<std::string> ;
+	static char * stringdup( const std::string & ) ;
 	void setup() ;
 	void setList() ;
 	void setPointers() ;
@@ -112,7 +113,7 @@ private:
 private:
 	Map m_map ;
 	std::vector<std::string> m_list ;
-	std::vector<char *> m_pointers ;
+	std::vector<char*> m_pointers ;
 	std::string m_block ;
 } ;
 

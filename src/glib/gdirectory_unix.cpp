@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gdirectory_unix.cpp
-//
+///
+/// \file gdirectory_unix.cpp
+///
 
 #include "gdef.h"
 #include "gdirectory.h"
@@ -36,7 +36,7 @@ namespace G
 	class DirectoryIteratorImp ;
 }
 
-/// \class G::DirectoryIteratorImp
+//| \class G::DirectoryIteratorImp
 /// A pimple-pattern implementation class for DirectoryIterator using
 /// opendir()/readdir().
 ///
@@ -63,56 +63,51 @@ private:
 	struct dirent * m_dp ;
 	Directory m_dir ;
 	bool m_error ;
+	bool m_is_dir ;
 } ;
 
 //
 
-bool G::Directory::valid( bool for_creation ) const
+int G::Directory::usable( bool for_creation ) const
 {
-	bool rc = true ;
-	struct stat statbuf {} ;
-	if( ::stat( m_path.str().c_str() , &statbuf ) )
-	{
-		rc = false ; // doesnt exist
-	}
-	else if( !(statbuf.st_mode & S_IFDIR) )
-	{
-		rc = false ; // not a directory
-	}
-	else
-	{
-		DIR * p = ::opendir( m_path.str().c_str() ) ;
-		if( p == nullptr )
-			rc = false ; // cant open directory for reading
-		else
-			::closedir( p ) ;
-	}
+	if( m_path.empty() )
+		return ENOTDIR ;
 
-	if( rc && for_creation )
+	// use opendir("foo/.") rather than opendir("foo") to verify
+	// that any contained files can be stat()ed -- ie. that all
+	// directory parts in the m_path have '--x'
+	std::string path_dot = m_path.str() + (m_path.str()=="/"?"":"/") + "." ;
+
+	DIR * p = ::opendir( path_dot.c_str() ) ;
+	int error = p ? 0 : Process::errno_() ;
+	if( p )
+		::closedir( p ) ;
+
+	if( !error && for_creation )
 	{
 		// (not definitive -- see also GNU/Linux ::euidaccess())
-		if( 0 != ::access( m_path.str().c_str() , W_OK ) )
-			rc = false ;
+		int rc = ::access( m_path.cstr() , W_OK ) ;
+		error = rc == 0 ? 0 : Process::errno_() ;
 	}
-	return rc ;
+	return error ;
 }
 
 bool G::Directory::writeable( const std::string & filename ) const
 {
 	// use open(2) so we can use O_EXCL, ie. fail if it already exists
 	Path path( m_path , filename.empty() ? tmp() : filename ) ;
-	int fd = ::open( path.str().c_str() , O_WRONLY | O_CREAT | O_EXCL , S_IRWXU ) ;
+	int fd = ::open( path.cstr() , O_WRONLY | O_CREAT | O_EXCL , S_IRWXU ) ;
 	if( fd == -1 )
 		return false ;
 
 	::close( fd ) ;
-	return 0 == std::remove( path.str().c_str() ) ;
+	return 0 == std::remove( path.cstr() ) ;
 }
 
 // ===
 
 G::DirectoryIterator::DirectoryIterator( const Directory & dir ) :
-	m_imp( new DirectoryIteratorImp(dir) )
+	m_imp(std::make_unique<DirectoryIteratorImp>(dir))
 {
 }
 
@@ -155,9 +150,10 @@ G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory & dir ) :
 	m_d(nullptr) ,
 	m_dp(nullptr) ,
 	m_dir(dir) ,
-	m_error(true)
+	m_error(true) ,
+	m_is_dir(false)
 {
-	m_d = ::opendir( dir.path().str().c_str() ) ;
+	m_d = ::opendir( dir.path().cstr() ) ;
 	m_error = m_d == nullptr ;
 }
 
@@ -173,6 +169,7 @@ bool G::DirectoryIteratorImp::more()
 		m_dp = ::readdir( m_d ) ;
 		m_error = m_dp == nullptr ;
 		bool special = !m_error && ( fileName() == "." || fileName() == ".." ) ;
+		m_is_dir = !m_error && ( special || File::isDirectory(filePath(),std::nothrow) ) ;
 		if( !special )
 			break ;
 	}
@@ -191,8 +188,7 @@ std::string G::DirectoryIteratorImp::fileName() const
 
 bool G::DirectoryIteratorImp::isDir() const
 {
-	struct stat statbuf {} ;
-	return ::stat( filePath().str().c_str() , &statbuf ) == 0 && (statbuf.st_mode & S_IFDIR) ;
+	return m_is_dir ;
 }
 
 G::DirectoryIteratorImp::~DirectoryIteratorImp()

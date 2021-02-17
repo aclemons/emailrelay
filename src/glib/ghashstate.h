@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file ghashstate.h
 ///
 
-#ifndef G_HASH_STATE__H
-#define G_HASH_STATE__H
+#ifndef G_HASH_STATE_H
+#define G_HASH_STATE_H
 
 #include "gdef.h"
 #include <string>
@@ -31,7 +31,7 @@ namespace G
 	template <unsigned int N, typename U, typename S> class HashState ;
 }
 
-/// \class G::HashStateImp
+//| \class G::HashStateImp
 /// The non-template part of G::HashState.
 ///
 class G::HashStateImp
@@ -49,7 +49,7 @@ public:
 	HashStateImp() = delete ;
 } ;
 
-/// \class G::HashState
+//| \class G::HashState
 /// Functions for representing the intermediate state of a hash function
 /// as a non-printable string. The input is an array of 'N/4' 32-bit
 /// values. The output is a string of N non-printable characters, or N+4
@@ -78,9 +78,10 @@ public:
 	static std::string encode( uint_type hi , uint_type low , const uint_type * ) ;
 		///< An overload with a hi/low bit count.
 
-	static std::string encode( uint_type hi , uint_type low , uint_type v0 , uint_type v1 , uint_type v2 , uint_type v3 , uint_type v4 = 0 ) ;
-		///< An overload for N=16 or N=20 with broken-out
-		///< values and a hi/low bit count.
+	static std::string encode( uint_type hi , uint_type low , uint_type v0 , uint_type v1 ,
+		uint_type v2 , uint_type v3 , uint_type v4 = 0 ) ;
+			///< An overload for N=16 or N=20 with broken-out
+			///< values and a hi/low bit count.
 
 	static void decode( const std::string & s , uint_type * values_out , size_type & size_out ) ;
 		///< Converts an encode()d string back into a hash
@@ -141,7 +142,8 @@ std::string G::HashState<N,U,S>::encode( uint_type hi , uint_type low , const ui
 }
 
 template <unsigned int N, typename U, typename S>
-std::string G::HashState<N,U,S>::encode( uint_type hi , uint_type low , uint_type v0 , uint_type v1 , uint_type v2 , uint_type v3 , uint_type v4 )
+std::string G::HashState<N,U,S>::encode( uint_type hi , uint_type low , uint_type v0 ,
+	uint_type v1 , uint_type v2 , uint_type v3 , uint_type v4 )
 {
 	uint_type n = hi ;
 	n <<= 29 ;
@@ -166,7 +168,8 @@ std::string G::HashStateImp::extension( U n )
 template <unsigned int N, typename U, typename S>
 void G::HashState<N,U,S>::decode( const std::string & str , uint_type * values_out , size_type & size_out )
 {
-	if( str.length() < (N+4U) ) return decode( str+std::string(N+4U,'\0') , values_out , size_out ) ; // call ourselves again if too short
+	if( str.length() < (N+4U) )
+		return decode( str+std::string(N+4U,'\0') , values_out , size_out ) ; // call ourselves again if too short
 	convert( str , values_out , size_out ) ;
 }
 
@@ -188,7 +191,8 @@ void G::HashState<N,U,S>::decode( const std::string & str , uint_type & hi , uin
 }
 
 template <unsigned int N, typename U, typename S>
-void G::HashState<N,U,S>::decode( const std::string & str , uint_type & hi , uint_type & low , uint_type * values_out )
+void G::HashState<N,U,S>::decode( const std::string & str , uint_type & hi , uint_type & low ,
+	uint_type * values_out )
 {
 	if( str.length() < (N+4U) ) return decode( str+std::string(N+4U,'\0') , hi , low , values_out ) ;
 	uint_type n ;

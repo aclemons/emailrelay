@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -20,8 +20,8 @@
 /// An interface to an underlying TLS library.
 ///
 
-#ifndef G_SSL__H
-#define G_SSL__H
+#ifndef G_SSL_H
+#define G_SSL_H
 
 #include "gdef.h"
 #include "gstrings.h"
@@ -40,7 +40,7 @@ namespace GSsl
 	class DigesterImpBase ;
 }
 
-/// \class GSsl::Protocol
+//| \class GSsl::Protocol
 /// A TLS protocol class. A protocol object should be constructed for each
 /// secure socket. The Protocol::connect() and Protocol::accept() methods
 /// are used to link the connection's i/o methods with the Protocol object.
@@ -171,6 +171,10 @@ public:
 		///< Returns the cipher name, or the empty string if not
 		///< yet available.
 
+	std::string protocol() const ;
+		///< Returns the protocol version like "TLSv1.2" or the empty
+		///< string.
+
 	bool verified() const ;
 		///< Returns true if the peer certificate has been verified.
 
@@ -192,7 +196,7 @@ private:
 	std::unique_ptr<ProtocolImpBase> m_imp ;
 } ;
 
-/// \class GSsl::Digester
+//| \class GSsl::Digester
 /// A class for objects that can perform a cryptographic hash.
 /// Instances are created by the Library::digester() factory
 /// method and can then be copied around.
@@ -207,7 +211,7 @@ private:
 class GSsl::Digester
 {
 public:
-	explicit Digester( DigesterImpBase * ) ;
+	explicit Digester( std::unique_ptr<DigesterImpBase> ) ;
 		///< Constructor, used by the Library class.
 
 	std::size_t blocksize() const ;
@@ -238,7 +242,7 @@ private:
 	std::shared_ptr<DigesterImpBase> m_imp ;
 } ;
 
-/// \class GSsl::Library
+//| \class GSsl::Library
 /// A singleton class for initialising the underlying TLS library.
 /// The library is configured with one or more named "profiles", and
 /// Protocol objects are constructed with reference to a particular
@@ -324,6 +328,15 @@ public:
 	std::string id() const ;
 		///< Returns the TLS library name and version.
 
+	bool generateKeyAvailable() const ;
+		///< Returns true if generateKey() is implemented.
+
+	std::string generateKey( const std::string & name ) const ;
+		///< Generates a test certificate as a PEM string with embedded newlines,
+		///< also containing the private-key. Returns the empty string if not
+		///< implemented. Throws on error. The implementation will
+		///< normally be slow and blocking.
+
 	static LibraryImpBase & impstance() ;
 		///< Returns a reference to the pimple object when enabled(). Used in
 		///< implementations. Throws if none.
@@ -368,7 +381,7 @@ private:
 	std::unique_ptr<LibraryImpBase> m_imp ;
 } ;
 
-/// \class GSsl::LibraryImpBase
+//| \class GSsl::LibraryImpBase
 /// A base interface for GSsl::Library pimple classes. A common base allows
 /// for multiple TLS libraries to be built in and then selected at run-time.
 ///
@@ -397,12 +410,18 @@ public:
 	virtual Digester digester( const std::string & , const std::string & , bool ) const = 0 ;
 		///< Implements Library::digester().
 
+	virtual bool generateKeyAvailable() const = 0 ;
+		///< Implements Library::generateKeyAvailable().
+
+	virtual std::string generateKey( const std::string & ) const = 0 ;
+		///< Implements Library::generateKey().
+
 	static bool consume( G::StringArray & list , const std::string & item ) ;
 		///< A convenience function that removes the item from
 		///< the list and returns true iff is was removed.
 } ;
 
-/// \class GSsl::Profile
+//| \class GSsl::Profile
 /// A base interface for profile classes that work with concrete classes
 /// derived from GSsl::LibraryImpBase and GSsl::ProtocolImpBase.
 ///
@@ -416,7 +435,7 @@ public:
 		///< Factory method for a new Protocol object on the heap.
 } ;
 
-/// \class GSsl::ProtocolImpBase
+//| \class GSsl::ProtocolImpBase
 /// A base interface for GSsl::Protocol pimple classes.
 ///
 class GSsl::ProtocolImpBase
@@ -449,11 +468,14 @@ public:
 	virtual std::string cipher() const = 0 ;
 		///< Implements Protocol::cipher().
 
+	virtual std::string protocol() const = 0 ;
+		///< Implements Protocol::protocol().
+
 	virtual bool verified() const = 0 ;
 		///< Implements Protocol::verified().
 } ;
 
-/// \class GSsl::DigesterImpBase
+//| \class GSsl::DigesterImpBase
 /// A base interface for GSsl::Digester pimple classes.
 ///
 class GSsl::DigesterImpBase

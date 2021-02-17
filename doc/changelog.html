@@ -11,14 +11,18 @@
   <h1><a class="a-header" name="H_1">E-MailRelay Change Log</a></h1> <!-- index:1:H:1::E-MailRelay Change Log -->
    <h2><a class="a-header" name="SH_1_1">2.1 -> 2.2</a></h2> <!-- index:2:SH:1:1:2.1 -> 2.2 -->
     <ul>
-     <li>Connections from all IPv4 'private use' addresses are allowed by default (see <em>--remote-clients</em>).</li>
+     <li>Connections from IPv4 'private use' addresses are allowed by default (see <em>--remote-clients</em>).</li>
      <li>Interface names can be used with <em>--interface</em> (eg. <em>--interface=eth0</em>).</li>
      <li>New <em>--server-tls-connection</em> option for server-side implicit TLS.</li>
-     <li>New <em>--forward-to-some</em> option to allow some message recipients to be rejected.</li>
+     <li>New <em>--forward-to-some</em> option to permit some message recipients to be rejected.</li>
      <li>New <em>--log-address</em> option to aid adaptive firewalling.</li>
-     <li>Choice of syslog 'facility' on Linux with <em>--syslog=local0</em> etc.</li>
      <li>Dynamic log file rolling when using <em>--log-file=%d</em>.</li>
-     <li>Tolerance of SMTP pipelined commands sent by broken clients.</li>
+     <li>Choice of syslog 'facility' on Linux with <em>--syslog=local0</em> etc.</li>
+     <li>Pipelined SMTP QUIT commands sent by broken clients are tolerated.</li>
+     <li>Better handling of overly-verbose or unkillable <em>--filter</em> scripts.</li>
+     <li>Optional epoll event loop on Linux (<em>configure --enable-epoll</em>).</li>
+     <li>Some internationalisation support (see NEWS file).</li>
+     <li>Support for Windows XP restored when built with mingw-w64.</li>
      <li>C++ 2011 compiler is required.</li>
     </ul>
    <h2><a class="a-header" name="SH_1_2">2.0.1 -> 2.1</a></h2> <!-- index:2:SH:1:2:2.0.1 -> 2.1 -->
@@ -405,4 +409,4 @@
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

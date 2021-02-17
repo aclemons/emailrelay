@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// ggetopt.cpp
-//
+///
+/// \file ggetopt.cpp
+///
 
 #include "gdef.h"
 #include "ggetopt.h"
@@ -32,18 +32,30 @@
 
 G::GetOpt::GetOpt( const Arg & args_in , const std::string & spec , std::size_t ignore_non_options ) :
 	m_spec(spec) ,
-	m_args(args_in) ,
-	m_parser(m_spec,m_map,m_errors)
+	m_args(args_in)
 {
-	parseArgs( m_args , ignore_non_options ) ;
+	parseArgs( ignore_non_options ) ;
+}
+
+G::GetOpt::GetOpt( const Arg & args_in , const Options & spec , std::size_t ignore_non_options ) :
+	m_spec(spec) ,
+	m_args(args_in)
+{
+	parseArgs( ignore_non_options ) ;
 }
 
 G::GetOpt::GetOpt( const G::StringArray & args_in , const std::string & spec , std::size_t ignore_non_options ) :
 	m_spec(spec) ,
-	m_args(args_in) ,
-	m_parser(m_spec,m_map,m_errors)
+	m_args(args_in)
 {
-	parseArgs( m_args , ignore_non_options ) ;
+	parseArgs( ignore_non_options ) ;
+}
+
+G::GetOpt::GetOpt( const G::StringArray & args_in , const Options & spec , std::size_t ignore_non_options ) :
+	m_spec(spec) ,
+	m_args(args_in)
+{
+	parseArgs( ignore_non_options ) ;
 }
 
 void G::GetOpt::reload( const G::StringArray & args_in , std::size_t ignore_non_options )
@@ -51,17 +63,17 @@ void G::GetOpt::reload( const G::StringArray & args_in , std::size_t ignore_non_
 	m_map.clear() ;
 	m_errors.clear() ;
 	m_args = Arg( args_in ) ;
-	parseArgs( m_args , ignore_non_options ) ;
+	parseArgs( ignore_non_options ) ;
 }
 
-void G::GetOpt::parseArgs( Arg & args , std::size_t ignore_non_options )
+void G::GetOpt::parseArgs( std::size_t ignore_non_options )
 {
-	StringArray new_args = m_parser.parse( args.array() , 1U , ignore_non_options ) ;
-	new_args.insert( new_args.begin() , args.v(0U) ) ;
+	StringArray new_args = OptionParser::parse( m_args.array() , m_spec , m_map , &m_errors , 1U , ignore_non_options ) ;
+	new_args.insert( new_args.begin() , m_args.v(0U) ) ;
 	m_args = Arg( new_args ) ;
 }
 
-void G::GetOpt::addOptionsFromFile( std::size_t n )
+void G::GetOpt::addOptionsFromFile( std::size_t n , const std::string & varkey , const std::string & varvalue )
 {
 	if( n < m_args.c() )
 	{
@@ -69,19 +81,23 @@ void G::GetOpt::addOptionsFromFile( std::size_t n )
 		m_args.removeAt( n ) ;
 
 		if( !filename.empty() )
+		{
+			if( !varkey.empty() && !varvalue.empty() && filename.find(varkey) == 0 )
+				G::Str::replace( filename , varkey , varvalue ) ;
 			addOptionsFromFile( filename ) ;
+		}
 	}
 }
 
-G::StringArray G::GetOpt::optionsFromFile( const G::Path & filename ) const
+G::StringArray G::GetOpt::optionsFromFile( const Options & spec , const Path & filename )
 {
 	StringArray result ;
-	StringMap map = MapFile(filename).map() ;
+	StringMap map = MapFile(filename,"config").map() ;
 	for( const auto & map_item : map )
 	{
 		const std::string & key = map_item.first ;
 		const std::string & value = map_item.second ;
-		if( m_spec.valued(key) )
+		if( spec.valued(key) )
 			result.push_back( std::string("--").append(key).append(1U,'=').append(value) ) ;
 		else
 			result.push_back( std::string("--").append(key) ) ;
@@ -91,7 +107,7 @@ G::StringArray G::GetOpt::optionsFromFile( const G::Path & filename ) const
 
 void G::GetOpt::addOptionsFromFile( const G::Path & filename )
 {
-	m_parser.parse( optionsFromFile(filename) , 0U ) ;
+	OptionParser::parse( optionsFromFile(m_spec,filename) , m_spec , m_map , &m_errors , 0U ) ;
 }
 
 const G::Options & G::GetOpt::options() const
@@ -158,4 +174,3 @@ void G::GetOpt::showErrors( std::ostream & stream , const std::string & prefix_1
 	}
 }
 
-/// \file ggetopt.cpp

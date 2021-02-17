@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gresolver.h
 ///
 
-#ifndef G_NET_RESOLVER__H
-#define G_NET_RESOLVER__H
+#ifndef G_NET_RESOLVER_H
+#define G_NET_RESOLVER_H
 
 #include "gdef.h"
 #include "glocation.h"
@@ -34,10 +34,11 @@ namespace GNet
 	class ResolverImp ;
 }
 
-/// \class GNet::Resolver
+//| \class GNet::Resolver
 /// A class for synchronous or asynchronous network name to address resolution.
 /// The implementation uses getaddrinfo() at its core, with std::thread used for
-/// asynchronous resolve requests, and with hooks into the GNet::EventLoop.
+/// asynchronous resolve requests, with hooks into the GNet::EventLoop via
+/// GNet::FutureEvent.
 ///
 class GNet::Resolver
 {

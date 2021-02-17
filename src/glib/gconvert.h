@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -30,12 +30,17 @@ namespace G
 	class Convert ;
 }
 
-/// \class G::Convert
+//| \class G::Convert
 /// A static class which provides string encoding conversion functions. Supported
-/// encodings are "ANSI" (CP-1252/ISO-8859-1) char, UTF-16 wchar, and UTF-8
-/// multi-byte char. Conversions that can fail take a ThrowOnError parameter
-/// which is used to add context information to the G::Convert::Error exception
-/// that is thrown.
+/// encodings are ISO-8859-15 eight-bit char, UTF-16 wchar, and UTF-8 multi-byte char.
+///
+/// On Windows the eight-bit char encoding uses the 'active code page', typically
+/// CP-1252, rather than ISO-8859-15. Note that the active code page is also used
+/// by the Win32 API "A()" functions when they have to convert from 'ansi' to UTF-16
+/// (UCS-2) wide characters (see GetACP()).
+///
+/// Conversions that can fail take a ThrowOnError parameter which is used to add
+/// context information to the G::Convert::Error exception that is thrown.
 ///
 /// Eg:
 /// \code
@@ -56,7 +61,7 @@ namespace G
 class G::Convert
 {
 public:
-	G_EXCEPTION_CLASS( Error , "string conversion error" ) ;
+	G_EXCEPTION_CLASS( Error , "string character-set conversion error" ) ;
 	using tstring = std::basic_string<TCHAR> ;
 
 	struct utf8 /// A string wrapper that indicates UTF-8 encoding.

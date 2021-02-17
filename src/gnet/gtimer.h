@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gtimer.h
 ///
 
-#ifndef G_NET_TIMER__H
-#define G_NET_TIMER__H
+#ifndef G_NET_TIMER_H
+#define G_NET_TIMER_H
 
 #include "gdef.h"
 #include "gdatetime.h"
@@ -32,7 +32,7 @@ namespace GNet
 	class TimerBase ;
 }
 
-/// \class GNet::TimerBase
+//| \class GNet::TimerBase
 /// An interface used by GNet::TimerList to keep track of pending timeouts
 /// and to deliver timeout events. The public methods to start and cancel
 /// the timer are normally used via GNet::Timer<>.
@@ -59,7 +59,7 @@ public:
 	void cancelTimer() ;
 		///< Cancels the timer. Does nothing if not running.
 
-	bool active() const ;
+	bool active() const noexcept ;
 		///< Returns true if the timer is started and not cancelled.
 
 	bool immediate() const ;
@@ -100,16 +100,15 @@ private:
 	G::TimerTime m_time ;
 } ;
 
-inline
-bool GNet::TimerBase::active() const
+inline bool GNet::TimerBase::active() const noexcept
 {
-	return !m_time.sameSecond( G::TimerTime::zero() ) ;
+	return !m_time.isZero() ;
 }
 
 namespace GNet
 {
 
-/// \class Timer
+//| \class Timer
 /// A timer class template in which the timeout is delivered to the specified
 /// method. Any exception thrown out of the timeout handler is delivered to
 /// the specified ExceptionHandler interface so that it can be handled or
@@ -145,7 +144,7 @@ public:
 	void cancelTimer() ;
 		///< Cancels the timer. Does nothing if not running.
 
-	bool active() const ;
+	bool active() const noexcept ;
 		///< Returns true if the timer is running.
 
 public:
@@ -190,7 +189,7 @@ void Timer<T>::cancelTimer()
 }
 
 template <typename T>
-bool Timer<T>::active() const
+bool Timer<T>::active() const noexcept
 {
 	return TimerBase::active() ;
 }

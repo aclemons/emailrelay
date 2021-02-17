@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gnetworkfilter.cpp
-//
+///
+/// \file gnetworkfilter.cpp
+///
 
 #include "gdef.h"
 #include "gnetworkfilter.h"
@@ -55,7 +55,10 @@ void GSmtp::NetworkFilter::start( const std::string & path )
 	m_text.erase() ;
 	if( m_client_ptr.get() == nullptr )
 	{
-		m_client_ptr.reset( new RequestClient(GNet::ExceptionSink(m_client_ptr,m_es.esrc()),"scanner","ok",m_location,m_connection_timeout,m_response_timeout) );
+		m_client_ptr.reset( std::make_unique<RequestClient>(
+			GNet::ExceptionSink(m_client_ptr,m_es.esrc()),
+			"scanner" , "ok" ,
+			m_location , m_connection_timeout , m_response_timeout ) ) ;
 	}
 	m_client_ptr->request( path ) ; // (no need to wait for connection)
 }
@@ -109,4 +112,3 @@ bool GSmtp::NetworkFilter::abandoned() const
 {
 	return false ;
 }
-/// \file gnetworkfilter.cpp

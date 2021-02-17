@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gpump.cpp
-//
+///
+/// \file gpump.cpp
+///
 
 #include "gdef.h"
 #include "gpump.h"
@@ -77,7 +77,8 @@ namespace GGui
 	} ;
 }
 
-std::pair<bool,std::string> GGui::Pump::runImp( bool send_idle_messages , HWND hwnd_idle , unsigned int wm_idle , bool run_to_empty )
+std::pair<bool,std::string> GGui::Pump::runImp( bool send_idle_messages , HWND hwnd_idle ,
+	unsigned int wm_idle , bool run_to_empty )
 {
 	ScopeEndIncrement inc( m_run_id ) ; // enable quit() for this run or the next
 	MSG msg ;
@@ -144,4 +145,3 @@ bool GGui::Pump::sendIdle( HWND hwnd_idle , unsigned int wm_idle )
 	return 1 == SendMessage( hwnd_idle , wm_idle , 0 , 0 ) ;
 }
 
-/// \file gpump.cpp

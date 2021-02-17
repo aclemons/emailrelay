@@ -1,32 +1,34 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gpidfile.cpp
-//
+///
+/// \file gpidfile.cpp
+///
 
 #include "gdef.h"
 #include "gpidfile.h"
 #include "gprocess.h"
 #include "groot.h"
+#include "gstr.h"
 #include "gcleanup.h"
 #include "gfile.h"
 #include "glog.h"
 #include <fstream>
 #include <string>
+#include <array>
 
 G::PidFile::PidFile()
 = default;
@@ -34,7 +36,14 @@ G::PidFile::PidFile()
 G::PidFile::~PidFile()
 {
 	if( valid() )
-		cleanup( SignalSafe() , m_path.str().c_str() ) ;
+	{
+		bool done = cleanup( SignalSafe() , m_path.cstr() ) ;
+		if( !done )
+		{
+			Root::atExit() ;
+			cleanup( SignalSafe() , m_path.cstr() ) ;
+		}
+	}
 }
 
 G::PidFile::PidFile( const Path & path ) :
@@ -49,11 +58,11 @@ void G::PidFile::init( const Path & path )
 
 void G::PidFile::create( const Path & pid_file )
 {
-	if( pid_file != Path() )
+	if( !pid_file.empty() )
 	{
 		// (the effective user-id and umask is set by the caller)
 		std::ofstream file ;
-		File::open( file , pid_file , std::ios_base::trunc ) ;
+		File::open( file , pid_file , File::Text() ) ;
 		int e = G::Process::errno_() ;
 		if( !file.good() )
 			throw Error( "cannot create file" , pid_file.str() , G::Process::strerror(e) ) ;
@@ -62,30 +71,55 @@ void G::PidFile::create( const Path & pid_file )
 		file.close() ;
 		if( file.fail() )
 			throw Error( "cannot write file" , pid_file.str() ) ;
-		Cleanup::add( cleanup , new_string_ignore_leak(pid_file.str())->c_str() ) ;
+
+		// (leak only if necessary)
+		static constexpr std::size_t buffer_size = 60U ; // eg. "/var/run/whatever/whatever.pid"
+		static std::array<char,buffer_size> buffer ;
+		const char * cleanup_arg = &buffer[0] ;
+		if( buffer[0] == '\0' && pid_file.size() < buffer.size() )
+			G::Str::strncpy_s( &buffer[0] , buffer.size() , pid_file.cstr() , pid_file.size() ) ;
+		else
+			cleanup_arg = new_string_ignore_leak(pid_file.str())->c_str() ;
+
+		Cleanup::add( cleanup , cleanup_arg ) ;
 	}
 }
 
-bool G::PidFile::mine( SignalSafe safe , const char * path )
+G::Process::Id G::PidFile::read( SignalSafe , const char * path ) noexcept
 {
-	// signal-safe, reentrant implementation...
-	Process::Id this_pid ;
-	Process::Id file_pid( safe , path ) ;
-	return this_pid == file_pid ;
+	int fd = File::open( path , File::InOutAppend::In ) ;
+	if( fd < 0 )
+		return Process::Id::invalid() ;
+
+	constexpr std::size_t buffer_size = 11U ;
+	std::array<char,buffer_size> buffer ; // NOLINT cppcoreguidelines-pro-type-member-init
+	buffer[0U] = '\0' ;
+
+	ssize_t rc = File::read( fd , &buffer[0] , buffer_size-1U ) ;
+	File::close( fd ) ;
+	if( rc <= 0 )
+		return Process::Id::invalid() ;
+
+	return Process::Id( &buffer[0] , &buffer[0]+static_cast<std::size_t>(rc) ) ;
 }
 
-void G::PidFile::cleanup( SignalSafe safe , const char * path )
+bool G::PidFile::cleanup( SignalSafe safe , const char * path ) noexcept
 {
-	// signal-safe, reentrant implementation...
 	try
 	{
-		Identity id = Root::start( SignalSafe() ) ; // claim_root
-		if( path && *path && mine(safe,path) )
-			std::remove( path ) ;
-		Root::stop( safe , id ) ;
+		if( path == nullptr || *path == '\0' )
+			return true ; // nothing to do
+
+		Process::Id this_pid ;
+		Process::Id file_pid = read( safe , path ) ;
+		if( this_pid != file_pid )
+			return false ; // try again in case we didnt have read permission
+
+		return 0 == std::remove( path ) ;
 	}
 	catch(...)
 	{
+		return false ;
 	}
 }
 
@@ -116,12 +150,11 @@ G::Path G::PidFile::path() const
 
 bool G::PidFile::valid() const
 {
-	return m_path != Path() ;
+	return !m_path.empty() ;
 }
 
 std::string * G::PidFile::new_string_ignore_leak( const std::string & s )
 {
-	return new std::string( s ) ; // (ignore leak)
+	return new std::string( s ) ; // ignore leak
 }
 
-/// \file gpidfile.cpp

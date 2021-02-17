@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gexecutableverifier.cpp
-//
+///
+/// \file gexecutableverifier.cpp
+///
 
 #include "gdef.h"
 #include "gexecutableverifier.h"
@@ -59,7 +59,7 @@ void GSmtp::ExecutableVerifier::verify( const std::string & to_address ,
 void GSmtp::ExecutableVerifier::onTaskDone( int exit_code , const std::string & response_in )
 {
 	std::string response( response_in ) ;
-	G::Str::trimRight( response , " \n\t" ) ;
+	G::Str::trimRight( response , {" \n\t",3U} ) ;
 	G::Str::replaceAll( response , "\r\n" , "\n" ) ;
 	G::Str::replaceAll( response , "\r" , "" ) ;
 
@@ -69,7 +69,7 @@ void GSmtp::ExecutableVerifier::onTaskDone( int exit_code , const std::string & 
 	std::size_t parts = response_parts.size() ;
 	response_parts.resize( 2U ) ;
 
-	G_LOG( "GSmtp::ExecutableVerifier: address verifier: exit code " << exit_code << " "
+	G_LOG( "GSmtp::ExecutableVerifier: address verifier: exit code " << exit_code << ": "
 		<< "[" << G::Str::printable(response_parts[0]) << "] [" << G::Str::printable(response_parts[1]) << "]" ) ;
 
 	VerifierStatus status ;
@@ -111,4 +111,3 @@ void GSmtp::ExecutableVerifier::cancel()
 {
 }
 
-/// \file gexecutableverifier.cpp

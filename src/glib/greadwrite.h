@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file greadwrite.h
 ///
 
-#ifndef G_READ_WRITE__H
-#define G_READ_WRITE__H
+#ifndef G_READ_WRITE_H
+#define G_READ_WRITE_H
 
 #include "gdef.h"
 
@@ -28,7 +28,7 @@ namespace G
 	class ReadWrite ;
 }
 
-/// \class G::ReadWrite
+//| \class G::ReadWrite
 /// An abstract interface for reading and writing from a non-blocking
 /// i/o channel.
 ///
@@ -70,7 +70,7 @@ public:
 	virtual bool eWouldBlock() const = 0 ;
 		///< See read() and write().
 
-	virtual SOCKET fd() const = 0 ;
+	virtual SOCKET fd() const noexcept = 0 ;
 		///< Returns the file descriptor.
 
 	virtual ~ReadWrite() = default ;

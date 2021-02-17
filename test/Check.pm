@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-#
+# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-#
+# 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
+# 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
@@ -33,7 +33,7 @@ sub that
 	my ( $ok , @args ) = @_ ;
 	if( !$ok )
 	{
-		Carp::croak( "[ " . join(": ",grep{defined($_)} @args) . " ]" ) ;
+		Carp::croak( "[ " . join(": ",map {my $s=$_=~s/\n/\\n/gr=~s/\r/\\r/gr;$s} grep{defined($_)} @args) . " ]" ) ;
 	}
 }
 
@@ -68,14 +68,14 @@ sub fileNotEmpty
 sub running
 {
 	my ( $pid , $more ) = @_ ;
-	my $n = defined($pid) ? System::processIsRunning($pid) : -1 ;
-	Check::that( $n == 1 , "process [$pid] not running" , $pid , $more ) ;
+	my $n = defined($pid) ? System::processIsRunning($pid) : 0 ;
+	Check::that( $n == 1 , "process not running" , $pid , $more ) ;
 }
 
 sub notRunning
 {
 	my ( $pid , $more ) = @_ ;
-	my $n = System::processIsRunning($pid) ;
+	my $n = defined($pid) ? System::processIsRunning($pid) : 0 ;
 	Check::that( $n == 0 , "process still running" , $pid , $more ) ;
 }
 
@@ -136,7 +136,7 @@ sub processEffectiveUser
 	my ( $pid , $name ) = @_ ;
 	my $actual = System::effectiveUser($pid) ;
 	my $expected = System::uid($name) ;
-	Check::that( $actual == $expected , "wrong real user: [$actual]!=[$expected]" ) ;
+	Check::that( $actual == $expected , "wrong effective user: [$actual]!=[$expected]" ) ;
 }
 
 sub processSavedUser
@@ -144,7 +144,7 @@ sub processSavedUser
 	my ( $pid , $name ) = @_ ;
 	my $actual = System::savedUser($pid) ;
 	my $expected = System::uid($name) ;
-	Check::that( $actual == $expected , "wrong real user: [$actual]!=[$expected]" ) ;
+	Check::that( $actual == $expected , "wrong saved user: [$actual]!=[$expected]" ) ;
 }
 
 sub processRealGroup
@@ -160,15 +160,15 @@ sub processEffectiveGroup
 	my ( $pid , $name ) = @_ ;
 	my $actual = System::effectiveGroup($pid) ;
 	my $expected = System::gid($name) ;
-	Check::that( $actual == $expected , "wrong real group: [$actual]!=[$expected]" ) ;
+	Check::that( $actual == $expected , "wrong effective group: [$actual]!=[$expected]" ) ;
 }
 
 sub _fileLineCount
 {
 	my ( $path , $string ) = @_ ;
-	my $f = new FileHandle( $path ) ;
+	my $fh = new FileHandle( $path ) ;
 	my $n = 0 ;
-	while( <$f> )
+	while(<$fh>)
 	{
 		my $line = $_ ;
 		chomp $line ;
@@ -214,9 +214,9 @@ sub noFileContains
 sub fileContains
 {
 	my ( $path , $string , $more ) = @_ ;
-	my $f = new FileHandle( $path ) ;
+	my $fh = new FileHandle( $path ) ;
 	my $n = 0 ;
-	while( <$f> )
+	while(<$fh>)
 	{
 		my $line = $_ ;
 		chomp $line ;
@@ -228,9 +228,9 @@ sub fileContains
 sub fileContainsEither
 {
 	my ( $path , $string1 , $string2 , $more ) = @_ ;
-	my $f = new FileHandle( $path ) ;
+	my $fh = new FileHandle( $path ) ;
 	my $n = 0 ;
-	while( <$f> )
+	while(<$fh>)
 	{
 		my $line = $_ ;
 		chomp $line ;
@@ -267,4 +267,3 @@ sub match
 }
 
 1 ;
-

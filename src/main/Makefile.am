@@ -1,16 +1,16 @@
 #
-## Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-##
+## Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
-##
+## 
 ## This program is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-##
+## 
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -33,7 +33,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/gauth \
 	-I$(top_srcdir)/src/gsmtp \
 	-I$(top_srcdir)/src/gpop \
-	-D "G_SPOOLDIR=$(e_spooldir)"
+	-D "G_SPOOLDIR=$(e_spooldir)" \
+	-D "G_LOCALEDIR=$(localedir)"
 
 WINDOWS_MAIN_SOURCES = \
 	winmain.cpp \
@@ -68,20 +69,17 @@ WINDOWS_SERVICEWRAPPER_SOURCES = \
 
 WINDOWS_LIBMAIN_SOURCES = \
 	serviceimp_win32.cpp \
-	serviceinstall_win32.cpp \
-	serviceremove_win32.cpp
+	servicecontrol_win32.cpp
 
 UNIX_LIBMAIN_SOURCES = \
 	serviceimp_none.cpp \
-	serviceinstall_unix.cpp \
-	serviceremove_unix.cpp
+	servicecontrol_unix.cpp
 
 LIBMAIN_SOURCES = \
 	options.cpp \
 	options.h \
 	serviceimp.h \
-	serviceinstall.h \
-	serviceremove.h
+	servicecontrol.h
 
 MISC_EXTRA_DIST = \
 	doxygen.h \
@@ -194,7 +192,7 @@ endif
 
 emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 if GCONFIG_WINDOWS
- emailrelay_submit_FLAGS = -static
+ emailrelay_submit_LDFLAGS = -static
  emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/gauth/libgauth.a \
@@ -203,7 +201,7 @@ if GCONFIG_WINDOWS
 	$(top_builddir)/src/glib/libglib.a \
 	-lws2_32 -liphlpapi -lcomctl32
 else
- emailrelay_submit_FLAGS =
+ emailrelay_submit_LDFLAGS =
  emailrelay_submit_LDADD = \
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/gauth/libgauth.a \

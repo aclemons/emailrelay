@@ -1,25 +1,26 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gbatchfile.cpp
-//
+///
+/// \file gbatchfile.cpp
+///
 
 #include "gdef.h"
 #include "gbatchfile.h"
+#include "gfile.h"
 #include "garg.h"
 #include "gstr.h"
 #include "glog.h"
@@ -27,18 +28,20 @@
 #include <stdexcept>
 #include <fstream>
 
-G::BatchFile::BatchFile( const G::Path & path )
+G::BatchFile::BatchFile( const Path & path )
 {
-	std::ifstream stream( path.str().c_str() ) ;
+	std::ifstream stream ;
+	File::open( stream , path , File::Text() ) ;
 	if( !stream.good() )
 		throw Error( "cannot open batch file" , path.str() ) ;
 	m_line = readFrom( stream , path.str() , true ) ;
 	m_args = split( m_line ) ;
 }
 
-G::BatchFile::BatchFile( const G::Path & path , NoThrow )
+G::BatchFile::BatchFile( const Path & path , std::nothrow_t )
 {
-	std::ifstream stream( path.str().c_str() ) ;
+	std::ifstream stream ;
+	File::open( stream , path , File::Text() ) ;
 	if( stream.good() )
 	{
 		m_line = readFrom( stream , path.str() , false ) ;
@@ -101,10 +104,11 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 	{
 		using size_type = std::string::size_type ;
 		size_type const npos = std::string::npos ;
+		std::string ws = sv_to_string( Str::ws() ) ;
 
 		std::string start = "start " ;
 		size_type start_pos = Str::lower(line).find(start) ;
-		size_type command_pos = start_pos == npos ? 0U : line.find_first_not_of(' ',start_pos+start.size()) ;
+		size_type command_pos = start_pos == npos ? 0U : line.find_first_not_of( ws , start_pos+start.size() ) ;
 
 		bool named = start_pos != npos && line.at(command_pos) == '"' ;
 		if( named )
@@ -120,14 +124,11 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 			dequote( m_name ) ;
 			Str::trim( m_name , Str::ws() ) ;
 
-			command_pos = line.find_first_not_of(' ',name_end_pos+2U) ;
+			command_pos = line.find_first_not_of( ws , name_end_pos+2U ) ;
 		}
 
 		if( command_pos != npos )
-		{
 			line.erase( 0U , command_pos ) ;
-			Str::trimLeft( line , Str::ws() ) ;
-		}
 	}
 
 	// percent characters are doubled up in batch files so un-double them here
@@ -151,13 +152,42 @@ const G::StringArray & G::BatchFile::args() const
 	return m_args ;
 }
 
+std::size_t G::BatchFile::lineArgsPos() const
+{
+	// cf. G::Str::dequote()
+	const std::string ws = sv_to_string( Str::ws() ) ;
+	const char qq = '\"' ;
+	const char esc = '\\' ;
+	bool in_quote = false ;
+	bool escaped = false ;
+	std::size_t i = 0U ;
+	for( ; i < m_line.size() ; i++ )
+	{
+		char c = m_line[i] ;
+		if( c == esc && !escaped )
+		{
+			escaped = true ;
+		}
+		else
+		{
+			if( c == qq && !escaped && !in_quote )
+				in_quote = true ;
+			else if( c == qq && !escaped )
+				in_quote = false ;
+			else if( ws.find(c) != std::string::npos && !in_quote )
+				break ;
+		}
+	}
+	return i ;
+}
+
 void G::BatchFile::dequote( std::string & s )
 {
 	if( s.size() >= 2U && s.find('\"') == 0U && (s.rfind('\"')+1U) == s.size() )
 		s = s.substr( 1U , s.size()-2U ) ;
 }
 
-void G::BatchFile::write( const G::Path & path , const StringArray & args , const std::string & name_in )
+void G::BatchFile::write( const Path & path , const StringArray & args , const std::string & name_in )
 {
 	G_ASSERT( !args.empty() ) ;
 	if( args.empty() )
@@ -171,7 +201,8 @@ void G::BatchFile::write( const G::Path & path , const StringArray & args , cons
 		name = Path(name).withoutExtension().basename() ;
 	}
 
-	std::ofstream stream( path.str().c_str() , std::ios::binary | std::ios::out | std::ios::trunc ) ;
+	std::ofstream stream ;
+	File::open( stream , path ) ;
 	if( !stream.good() )
 		throw Error( "cannot create batch file" , path.str() ) ;
 
@@ -210,4 +241,3 @@ std::string G::BatchFile::quote( const std::string & s )
 			"\"" + s + "\"" : s ;
 }
 
-/// \file gbatchfile.cpp

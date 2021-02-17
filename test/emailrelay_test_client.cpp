@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// emailrelay_test_client.cpp
-//
+///
+/// \file emailrelay_test_client.cpp
+///
 // A bare-bones smtp client for testing purposes, using blocking
 // socket i/o and no event-loop.
 //
@@ -24,8 +24,8 @@
 // of email messages on each one in turn.
 //
 // usage:
-//		emailrelay-test-client [-qQ] [-v [-v]] [<port>]
-//		emailrelay-test-client [-qQ] [-v [-v]] <addr-ipv4> <port> [<connections> [<iterations> [<lines> [<line-length> [<messages>]]]]]
+//      emailrelay-test-client [-qQ] [-v [-v]] [<port>]
+//      emailrelay-test-client [-qQ] [-v [-v]] <addr-ipv4> <port> [<connections> [<iterations> [<lines> [<line-length> [<messages>]]]]]
 //         -v -- verbose logging
 //         -q -- send "."&"QUIT" instead of "."
 //         -Q -- send "."&"QUIT" and immediately disconnect
@@ -43,7 +43,7 @@
 #include <cstring> // std::strtoul()
 #include <cstdlib>
 #ifndef _WIN32
-#include <sys/signal.h>
+#include <csignal>
 #endif
 
 int cfg_verbosity = 0 ;
@@ -310,6 +310,7 @@ int main( int argc , char * argv [] )
 			argc-- ;
 		}
 
+		// by default loop forever with one connection sending two large messages
 		const char * arg_address = nullptr ;
 		const char * arg_port = "10025" ;
 		const char * arg_connections = "1" ;
@@ -317,6 +318,7 @@ int main( int argc , char * argv [] )
 		const char * arg_lines = "1000" ;
 		const char * arg_line_length = "998" ;
 		const char * arg_messages = "2" ;
+
 		if( argc == 2 ) arg_port = argv[1] ;
 		if( argc > 2 ) arg_address = argv[1] , arg_port = argv[2] ;
 		if( argc > 3 ) arg_connections = argv[3] ;
@@ -361,9 +363,9 @@ int main( int argc , char * argv [] )
 						done_count++ ;
 				}
 			}
+			for( auto & t : test )
 			{
-				for( auto & t : test )
-					t.close() ;
+				t.close() ;
 			}
 		}
 
@@ -376,4 +378,3 @@ int main( int argc , char * argv [] )
 	return 1 ;
 }
 
-/// \file emailrelay_test_client.cpp

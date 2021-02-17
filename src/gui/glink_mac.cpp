@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// glink_mac.cpp
-//
+///
+/// \file glink_mac.cpp
+///
 
 #include "gdef.h"
 #include "gstr.h"
@@ -27,39 +27,39 @@
 #include <fstream>
 #include <cstdlib> // std::system()
 
-class GLinkImp
+class G::LinkImp
 {
 public:
-	GLinkImp( const G::Path & target_path , const std::string & name , const std::string & description ,
-		const G::Path & working_dir , const G::StringArray & args , const G::Path & icon_source , GLink::Show show ) ;
+	LinkImp( const Path & target_path , const std::string & name , const std::string & description ,
+		const Path & working_dir , const StringArray & args , const Path & icon_source , Link::Show show ) ;
 	static std::string filename( const std::string & ) ;
-	void saveAs( const G::Path & ) ;
+	void saveAs( const Path & ) ;
 
 public:
-	~GLinkImp() = default ;
-	GLinkImp( const GLinkImp & ) = delete ;
-	GLinkImp( GLinkImp && ) = delete ;
-	void operator=( const GLinkImp & ) = delete ;
-	void operator=( GLinkImp && ) = delete ;
+	~LinkImp() = default ;
+	LinkImp( const LinkImp & ) = delete ;
+	LinkImp( LinkImp && ) = delete ;
+	void operator=( const LinkImp & ) = delete ;
+	void operator=( LinkImp && ) = delete ;
 
 private:
-	G::Path m_target_path ;
+	Path m_target_path ;
 	std::string m_name ;
 } ;
 
-GLinkImp::GLinkImp( const G::Path & target_path , const std::string & name , const std::string & ,
-	const G::Path & , const G::StringArray & , const G::Path & , GLink::Show ) :
+G::LinkImp::LinkImp( const Path & target_path , const std::string & name , const std::string & ,
+	const Path & , const StringArray & , const Path & , Link::Show ) :
 		m_target_path(target_path) ,
 		m_name(name)
 {
 }
 
-std::string GLinkImp::filename( const std::string & )
+std::string G::LinkImp::filename( const std::string & )
 {
 	return std::string() ;
 }
 
-void GLinkImp::saveAs( const G::Path & )
+void G::LinkImp::saveAs( const Path & )
 {
 	// TODO -- hardcoded Start.app name
 	//
@@ -68,9 +68,9 @@ void GLinkImp::saveAs( const G::Path & )
 	// the installer's LinkInfo structure at this interface and add a
 	// third section to it
 	//
-	G::Path start_app_path( m_target_path.dirname() , "E-MailRelay-Start.app" ) ;
-	if( !G::File::exists(start_app_path) )
-		start_app_path = G::Path( m_target_path.dirname() , "../E-MailRelay-Start.app" ) ;
+	Path start_app_path( m_target_path.dirname() , "E-MailRelay-Start.app" ) ;
+	if( !File::exists(start_app_path) )
+		start_app_path = Path( m_target_path.dirname() , "../E-MailRelay-Start.app" ) ;
 
 	std::ostringstream ss ;
 	ss
@@ -81,37 +81,37 @@ void GLinkImp::saveAs( const G::Path & )
 				<< "hidden:true}\" "
 			<< "-e \"end tell\"" ;
 
-	int rc = std::system( ss.str().c_str() ) ; G__IGNORE_VARIABLE(int,rc) ;
+	GDEF_IGNORE_RETURN std::system( ss.str().c_str() ) ;
 }
 
 // ==
 
-GLink::GLink( const G::Path & target_path , const std::string & name , const std::string & description ,
-	const G::Path & working_dir , const G::StringArray & args , const G::Path & icon_source , Show show ,
+G::Link::Link( const Path & target_path , const std::string & name , const std::string & description ,
+	const Path & working_dir , const StringArray & args , const Path & icon_source , Show show ,
 	const std::string & , const std::string & , const std::string & ) :
-		m_imp( std::make_unique<GLinkImp>(target_path,name,description,working_dir,args,icon_source,show) )
+		m_imp( std::make_unique<LinkImp>(target_path,name,description,working_dir,args,icon_source,show) )
 {
 }
 
-GLink::~GLink()
+G::Link::~Link()
 = default ;
 
-std::string GLink::filename( const std::string & name_in )
+std::string G::Link::filename( const std::string & name_in )
 {
-	return GLinkImp::filename( name_in ) ;
+	return LinkImp::filename( name_in ) ;
 }
 
-void GLink::saveAs( const G::Path & link_path )
+void G::Link::saveAs( const Path & link_path )
 {
 	m_imp->saveAs( link_path ) ;
 }
 
-bool GLink::exists( const G::Path & path )
+bool G::Link::exists( const Path & path )
 {
-	return G::File::exists( path.dirname()+"E-MailRelay-Start.app" , G::File::NoThrow() ) ; // not tested
+	return File::exists( path.dirname()+"E-MailRelay-Start.app" , std::nothrow ) ; // not tested
 }
 
-bool GLink::remove( const G::Path & )
+bool G::Link::remove( const Path & )
 {
 	std::ostringstream ss ;
 	ss
@@ -131,8 +131,7 @@ bool GLink::remove( const G::Path & )
 				<< "-e \"delete login item __\" "
 				<< "-e \"end tell\"" ;
 
-	int rc = std::system( ss.str().c_str() ) ; G__IGNORE_VARIABLE(int,rc) ;
+	GDEF_IGNORE_RETURN std::system( ss.str().c_str() ) ;
 	return true ;
 }
 
-/// \file glink_mac.cpp

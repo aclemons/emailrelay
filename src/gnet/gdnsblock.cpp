@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gdnsblock.cpp
-//
+///
+/// \file gdnsblock.cpp
+///
 
 #include "gdef.h"
 #include "gdnsblock.h"
@@ -33,21 +33,30 @@
 
 namespace GNet
 {
-	namespace DnsBlockImp /// An implementation namespace for G::DnsBlock.
+	namespace DnsBlockImp /// An implementation namespace for GNet::DnsBlock.
 	{
 		struct Responder /// A functor that tests a GNet::DnsBlockServerResult.
 		{
-			bool operator()( const GNet::DnsBlockServerResult & r ) const { return r.valid() ; }
+			bool operator()( const GNet::DnsBlockServerResult & r ) const
+			{
+				return r.valid() ;
+			}
 		} ;
 		struct Denier /// A functor that tests a GNet::DnsBlockServerResult.
 		{
-			bool operator()( const GNet::DnsBlockServerResult & r ) const { return r.valid() && !r.addresses().empty() ; }
+			bool operator()( const GNet::DnsBlockServerResult & r ) const
+			{
+				return r.valid() && !r.addresses().empty() ;
+			}
 		} ;
 		struct Laggard /// A functor that tests a GNet::DnsBlockServerResult.
 		{
-			bool operator()( const GNet::DnsBlockServerResult & r ) const { return !r.valid() ; }
+			bool operator()( const GNet::DnsBlockServerResult & r ) const
+			{
+				return !r.valid() ;
+			}
 		} ;
-		struct HostList /// A list of addresses used by G::DnsBlock.
+		struct HostList /// A list of addresses used by GNet::DnsBlock.
 		{
 			HostList( const std::vector<GNet::Address> & list ) : m_list(list) {}
 			const std::vector<GNet::Address> & m_list ;
@@ -109,11 +118,16 @@ void GNet::DnsBlock::configure( const std::string & config )
 void GNet::DnsBlock::configureImp( const std::string & config , DnsBlock * p )
 {
 	G::StringArray list = G::Str::splitIntoFields( config , "," ) ;
-	if( list.size() < 4U ) throw std::runtime_error( "not enough comma-sparated fields" ) ;
+	if( list.size() < 4U )
+		throw std::runtime_error( "not enough comma-sparated fields" ) ;
+
 	Address dns_server( list.at(0U) ) ;
-	unsigned int timeout_ms = static_cast<unsigned int>( std::abs(G::Str::toInt(list.at(1U))) ) ;
+
+	// normally allow on timeout, but deny on timeout if configured value is negative
 	std::size_t threshold = G::Str::toUInt( list.at(2U) ) ;
-	bool allow_on_timeout = G::Str::toInt(list.at(1U)) >= 0 || threshold == 0U ; // normally allow on timeout, deny if negative
+	bool allow_on_timeout = G::Str::toInt(list.at(1U)) >= 0 || threshold == 0U ;
+	unsigned int timeout_ms = static_cast<unsigned int>( std::abs(G::Str::toInt(list.at(1U))) ) ;
+
 	list.erase( list.begin() , list.begin()+3U ) ;
 	if( p )
 		p->configure( dns_server , threshold , allow_on_timeout , G::TimeInterval(0U,timeout_ms*1000U) , list ) ;
@@ -147,16 +161,20 @@ void GNet::DnsBlock::start( const Address & address )
 		return ;
 	}
 
+	// re-base the sequence number if necessary
 	static unsigned int id_generator = 10 ;
 	if( (id_generator+m_servers.size()) > 65535U )
 		id_generator = 10 ;
 
+	// create a socket to receive responses
 	m_socket_ptr = std::make_unique<DatagramSocket>( m_dns_server.domain() ) ;
 	m_socket_ptr->addReadHandler( *this , m_es ) ;
 
-	std::string prefix = queryString( address ) ;
+	// send a DNS query to each configured server
+	std::string prefix = queryString( address ) ; // eg. "1.0.0.127"
 	unsigned int id = m_id_base = id_generator ;
-	for( G::StringArray::const_iterator server_p = m_servers.begin() ; server_p != m_servers.end() ; ++server_p , id++ , id_generator++ )
+	for( G::StringArray::const_iterator server_p = m_servers.begin() ; server_p != m_servers.end() ;
+		++server_p , id++ , id_generator++ )
 	{
 		std::string server = G::Str::trimmed( *server_p , G::Str::ws() ) ;
 
@@ -164,7 +182,8 @@ void GNet::DnsBlock::start( const Address & address )
 
 		const char * type = address.family() == Address::Family::ipv4 ? "A" : "AAAA" ;
 		DnsMessage message = DnsMessage::request( type , std::string(prefix).append(1U,'.').append(server) , id ) ;
-		G_DEBUG( "GNet::DnsBlock::start: sending [" << prefix << "." << server << "] to [" << m_dns_server.displayString() << "]: id " << id ) ;
+		G_DEBUG( "GNet::DnsBlock::start: sending [" << prefix << "."
+			<< server << "] to [" << m_dns_server.displayString() << "]: id " << id ) ;
 
 		ssize_t rc = m_socket_ptr->writeto( message.p() , message.n() , m_dns_server ) ;
 		if( rc < 0 || static_cast<std::size_t>(rc) != message.n() )
@@ -188,9 +207,11 @@ void GNet::DnsBlock::readEvent()
 	buffer.resize( static_cast<std::size_t>(rc) ) ;
 
 	DnsMessage message( buffer ) ;
-	if( !message.QR() || message.ID() < m_id_base || message.ID() >= (m_id_base+m_servers.size()) || message.RCODE() > 5 )
+	if( !message.QR() || message.ID() < m_id_base ||
+		message.ID() >= (m_id_base+m_servers.size()) || message.RCODE() > 5 )
 	{
-		G_WARNING( "GNet::DnsBlock::readEvent: invalid dns response: qr=" << message.QR() << " rcode=" << message.RCODE() << " id=" << message.ID() ) ;
+		G_WARNING( "GNet::DnsBlock::readEvent: invalid dns response: qr=" << message.QR()
+			<< " rcode=" << message.RCODE() << " id=" << message.ID() ) ;
 		return ;
 	}
 
@@ -201,7 +222,8 @@ void GNet::DnsBlock::readEvent()
 	std::size_t laggard_count = server_count - responder_count ; G_ASSERT( laggard_count < server_count ) ;
 	std::size_t deny_count = countDeniers( m_result.list() ) ;
 
-	G_DEBUG( "GNet::DnsBlock::readEvent: id=" << message.ID() << " rcode=" << message.RCODE() << (message.ANCOUNT()?" deny ":" allow ")
+	G_DEBUG( "GNet::DnsBlock::readEvent: id=" << message.ID() << " rcode=" << message.RCODE()
+		<< (message.ANCOUNT()?" deny ":" allow ")
 		<< "got=" << responder_count << "/" << server_count << " deny-count=" << deny_count << "/" << m_threshold ) ;
 
 	bool finished = m_timer.active() && (
@@ -213,7 +235,9 @@ void GNet::DnsBlock::readEvent()
 	{
 		m_socket_ptr.reset() ;
 		m_timer.cancelTimer() ;
-		m_result.type() = ( m_threshold && deny_count >= m_threshold ) ? DnsBlockResult::Type::Deny : DnsBlockResult::Type::Allow ;
+		m_result.type() = ( m_threshold && deny_count >= m_threshold ) ?
+			DnsBlockResult::Type::Deny :
+			DnsBlockResult::Type::Allow ;
 		m_callback.onDnsBlockResult( m_result ) ;
 	}
 }
@@ -306,4 +330,3 @@ G::StringArray GNet::DnsBlockResult::laggards() const
 	return server_names_if( m_list.begin() , m_list.end() , Laggard() ) ;
 }
 
-/// \file gdnsblock.cpp

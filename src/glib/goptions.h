@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -30,42 +30,41 @@
 namespace G
 {
 	class Options ;
-	class OptionsLevel ;
-	class OptionsLayout ;
+	struct OptionsLayout ;
 }
 
-/// \class G::OptionsLevel
-/// Used by G::Options for extra type safety.
-///
-class G::OptionsLevel
-{
-public:
-	unsigned int level ;
-	explicit OptionsLevel( unsigned int ) ;
-} ;
-
-/// \class G::OptionsLayout
+//| \class G::OptionsLayout
 /// Describes the layout for G::Options output.
 ///
-class G::OptionsLayout
+struct G::OptionsLayout
 {
-public:
-	std::string separator ; ///< separator between columns for two-column output
-	std::string indent ; ///< indent for wrapped lines in two-column output
-	std::size_t column ; ///< left hand column width if no separator defined
-	std::size_t width ; ///< overall width for wrapping, or zero for no newlines
+	std::string separator ; ///< separator between syntax and description
+	std::size_t column ; ///< left hand column width if no separator (includes margin)
+	std::size_t width ; ///< overall width for wrapping, or zero for none
+	std::size_t width2 ; ///< width after the first line, or zero for 'width'
+	std::size_t margin ; ///< spaces to the left of the syntax part
+	unsigned int level ; ///< show options at-or-below this level
+	bool level_exact ; ///< .. or exactly at that level
+	bool extra ; ///< include descriptions' extra text
+	bool alt_usage ; ///< use alternate "usage:" string
+	OptionsLayout() ;
 	explicit OptionsLayout( std::size_t column ) ;
 	OptionsLayout( std::size_t column , std::size_t width ) ;
+	OptionsLayout & set_column( std::size_t ) ;
+	OptionsLayout & set_extra( bool = true ) ;
+	OptionsLayout & set_level( unsigned int ) ;
+	OptionsLayout & set_level_if( bool , unsigned int ) ;
+	OptionsLayout & set_level_exact( bool = true ) ;
+	OptionsLayout & set_alt_usage( bool = true ) ;
 } ;
 
-/// \class G::Options
+//| \class G::Options
 /// A class to represent allowed command-line options and to provide command-line
 /// usage text.
 ///
 class G::Options
 {
 public:
-	using Level = OptionsLevel ;
 	using Layout = OptionsLayout ;
 	G_EXCEPTION( InvalidSpecification , "invalid options specification string" ) ;
 
@@ -85,6 +84,14 @@ public:
 	Options() ;
 		///< Default constructor for no options.
 
+	void add( StringArray ) ;
+		///< Adds one component of the specification, broken down into its seven
+		///< separate parts.
+
+	void add( StringArray , char sep , char escape = '\\' ) ;
+		///< Adds one component of the specification broken down into six separate
+		///< parts with fields 3 and 4 joined by the given separator character.
+
 	const StringArray & names() const ;
 		///< Returns the sorted list of long-form option names.
 
@@ -95,9 +102,14 @@ public:
 	bool valid( const std::string & ) const ;
 		///< Returns true if the long-form option name is valid.
 
-	bool visible( const std::string & name , Level , bool exact ) const ;
+	bool visible( const std::string & name , unsigned int level , bool level_exact = false ) const ;
 		///< Returns true if the option is visible at the given level.
-		///< Returns false if not valid().
+		///< Deliberately hidden options at level zero are never
+		///< visible(). Returns false if not a valid() name .
+
+	bool visible( const std::string & name ) const ;
+		///< Returns true if the option is visible. Returns false if
+		///< the option is hidden or the name is not valid().
 
 	bool valued( char ) const ;
 		///< Returns true if the given short-form option takes a value,
@@ -130,36 +142,27 @@ public:
 		///< taking its default (empty) value followed by a separate
 		///< argument 'bar'.
 
-	static std::size_t widthDefault() ;
-		///< Returns a default, non-zero word-wrapping width, reflecting
-		///< the size of the standard output where possible.
-
-	static Layout layoutDefault() ;
-		///< Returns a default column layout.
-
-	static Level levelDefault() ;
-		///< Returns the default level.
-
-	static std::string introducerDefault() ;
-		///< Returns the string "usage: ".
-
-	std::string usageSummary( const std::string & exe , const std::string & args ,
-		const std::string & introducer = introducerDefault() ,
-		Level level = levelDefault() , std::size_t wrap_width = widthDefault() ) const ;
+	std::string usageSummary( const Layout & ,
+		const std::string & exe , const std::string & args = std::string() ) const ;
 			///< Returns a one-line (or line-wrapped) usage summary, as
-			///< "usage: <exe> <options> <args>"
+			///< "usage: <exe> <options> <args>". The 'args' parameter
+			///< should represent the non-option arguments (with a
+			///< leading space), like " <foo> [<bar>]".
+			///<
+			///< Eg:
+			///< \code
+			///< std::cout << options.usageSummary(
+			///<   OptionsLayout().set_level_if(!verbose,1U).set_extra(verbose) ,
+			///<   getopt.args().prefix() , " <arg> [<arg> ...]" ) << std::endl ;
+			///< \endcode
 
-	std::string usageHelp( Level level = levelDefault() ,
-		const Layout & layout = layoutDefault() , bool level_exact = false , bool extra = true ) const ;
-			///< Returns a multi-line string giving help on each option.
+	std::string usageHelp( const Layout & ) const ;
+		///< Returns a multi-line string giving help on each option.
 
-	void showUsage( std::ostream & stream , const std::string & exe ,
-		const std::string & args = std::string() , const std::string & introducer = introducerDefault() ,
-		Level level = levelDefault() , const Layout & layout = layoutDefault() ,
-		bool extra = true ) const ;
+	void showUsage( const Layout & , std::ostream & stream ,
+		const std::string & exe , const std::string & args = std::string() ) const ;
 			///< Streams out multi-line usage text using usageSummary() and
-			///< usageHelp(). The 'args' parameter should represent the non-option
-			///< arguments (with a leading space), like " <foo> [<bar>]".
+			///< usageHelp().
 
 private:
 	struct Option
@@ -179,40 +182,32 @@ private:
 			const std::string & vd_ , unsigned int level_ ) ;
 		static Multiplicity decode( const std::string & ) ;
 	} ;
+	using Map = std::map<std::string,Option> ;
 
 private:
 	void parseSpec( const std::string & spec , char , char , char ) ;
-	void addSpec( const std::string & , char c , const std::string & , const std::string & ,
+	void addImp( const std::string & , char c , const std::string & , const std::string & ,
 		const std::string & , const std::string & , unsigned int ) ;
-	static std::size_t widthFloor( std::size_t w ) ;
-	std::string usageSummaryPartOne( Level ) const ;
-	std::string usageSummaryPartTwo( Level ) const ;
-	std::string usageHelpCore( const std::string & , Level , const Layout & , bool , bool ) const ;
+	std::string usageSummaryPartOne( const Layout & ) const ;
+	std::string usageSummaryPartTwo( const Layout & ) const ;
+	std::string usageHelpSyntax( Map::const_iterator ) const ;
+	std::string usageHelpDescription( Map::const_iterator , const Layout & ) const ;
+	std::string usageHelpSeparator( const Layout & , std::size_t syntax_length ) const ;
+	std::string usageHelpWrap( const Layout & , const std::string & line_in ,
+		const std::string & ) const ;
+	std::string usageHelpImp( const Layout & ) const ;
+	static std::size_t longestSubLine( const std::string & ) ;
 
 private:
-	using Map = std::map<std::string,Option> ;
-	StringArray m_names ;
+	StringArray m_names ; // sorted
 	Map m_map ;
 } ;
 
-inline
-G::OptionsLevel::OptionsLevel( unsigned int l ) :
-	level(l)
-{
-}
-
-inline
-G::OptionsLayout::OptionsLayout( std::size_t column_ ) :
-	column(column_) ,
-	width(G::Options::widthDefault())
-{
-}
-
-inline
-G::OptionsLayout::OptionsLayout( std::size_t column_ , std::size_t width_ ) :
-	column(column_) ,
-	width(width_)
-{
-}
+inline G::OptionsLayout & G::OptionsLayout::set_column( std::size_t c ) { column = c ; return *this ; }
+inline G::OptionsLayout & G::OptionsLayout::set_extra( bool e ) { extra = e ; return *this ; }
+inline G::OptionsLayout & G::OptionsLayout::set_level( unsigned int l ) { level = l ; return *this ; }
+inline G::OptionsLayout & G::OptionsLayout::set_level_if( bool b , unsigned int l ) { if(b) level = l ; return *this ; }
+inline G::OptionsLayout & G::OptionsLayout::set_level_exact( bool le ) { level_exact = le ; return *this ; }
+inline G::OptionsLayout & G::OptionsLayout::set_alt_usage( bool au ) { alt_usage = au ; return *this ; }
 
 #endif

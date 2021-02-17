@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gclientptr.h
 ///
 
-#ifndef G_NET_CLIENT_PTR__H
-#define G_NET_CLIENT_PTR__H
+#ifndef G_NET_CLIENT_PTR_H
+#define G_NET_CLIENT_PTR_H
 
 #include "gdef.h"
 #include "gclient.h"
@@ -36,7 +36,7 @@ namespace GNet
 	template <typename T> class ClientPtr ;
 }
 
-/// \class GNet::ClientPtrBase
+//| \class GNet::ClientPtrBase
 /// The non-template part of GNet::ClientPtr. It is an ExcptionHandler
 /// so that exceptions thrown by the Client out to the event loop can
 /// be delivered back to reset the ClientPtr with the expected Client
@@ -87,7 +87,7 @@ private:
 	G::Slot::Signal<const std::string&> m_delete_signal ;
 } ;
 
-/// \class GNet::ClientPtr
+//| \class GNet::ClientPtr
 /// A smart pointer class for GNet::Client.
 ///
 /// The ClientPtr is-a ExceptionHandler, so it should normally be used
@@ -145,7 +145,11 @@ public:
 	bool busy() const ;
 		///< Returns true if the pointer is not nullptr.
 
-	void reset( T * p ) ;
+	void reset( T * p ) noexcept ;
+		///< Resets the pointer. There is no call to onDelete()
+		///< and no emitted signals.
+
+	void reset( std::unique_ptr<T> p ) noexcept ;
 		///< Resets the pointer. There is no call to onDelete()
 		///< and no emitted signals.
 
@@ -257,9 +261,15 @@ T * GNet::ClientPtr<T>::release() noexcept
 }
 
 template <typename T>
-void GNet::ClientPtr<T>::reset( T * p )
+void GNet::ClientPtr<T>::reset( T * p ) noexcept
 {
 	delete set( p ) ;
+}
+
+template <typename T>
+void GNet::ClientPtr<T>::reset( std::unique_ptr<T> p ) noexcept
+{
+	delete set( p.release() ) ;
 }
 
 template <typename T>

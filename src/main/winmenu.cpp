@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// winmenu.cpp
-//
+///
+/// \file winmenu.cpp
+///
 
 #include "gdef.h"
 #include "gappinst.h"
@@ -70,7 +70,8 @@ int Main::WinMenu::popup( const GGui::WindowBase & w , bool set_foreground , boo
 	// display the menu
 	//
 	G_DEBUG( "Main::WinMenu::popup: tracking start" ) ;
-	int rc = static_cast<int>( ::TrackPopupMenuEx( m_hmenu_popup , TPM_RETURNCMD , p.x , p.y , w.handle() , nullptr ) ) ;
+	int rc = static_cast<int>( ::TrackPopupMenuEx( m_hmenu_popup , TPM_RETURNCMD ,
+		p.x , p.y , w.handle() , nullptr ) ) ;
 	G_DEBUG( "Main::WinMenu::popup: tracking end: " << rc ) ;
 
 	// (from the TrackPopupMenu() documentation (not TrackPopupMenuEx()))
@@ -81,7 +82,8 @@ int Main::WinMenu::popup( const GGui::WindowBase & w , bool set_foreground , boo
 
 void Main::WinMenu::update( bool with_open , bool with_close )
 {
-	G_DEBUG( "Main::WinMenu::update: with-open=" << with_open << " with-close=" << with_close << " hmenu=" << m_hmenu_popup ) ;
+	G_DEBUG( "Main::WinMenu::update: with-open=" << with_open << " "
+		<< "with-close=" << with_close << " hmenu=" << m_hmenu_popup ) ;
 	if( m_hmenu_popup )
 	{
 		::EnableMenuItem( m_hmenu_popup , open_pos , MF_BYPOSITION | (with_open?0:MF_GRAYED) ) ;
@@ -95,4 +97,3 @@ Main::WinMenu::~WinMenu()
 		::DestroyMenu( m_hmenu ) ;
 }
 
-/// \file winmenu.cpp

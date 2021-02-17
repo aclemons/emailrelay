@@ -13,5 +13,12 @@ brings the IPv4 behaviour in line with IPv6, and it still honours the intent
 of the "--remote-clients" option in protecting the naive user against
 accidental exposore to the public internet.
 
-This release has a new "make lint" option that runs "clang-tidy" over the
+Some internationalisation support has been added, using gettext() for the
+main program and Qt's tr() for the GUI. See "doc/developer.txt".
+
+A systemd unit file has been added, although by default it is only installed
+as an "examples" file. Use "e_systemddir=/usr/lib/systemd/system" on the
+"./configure" command-line to have it installed by "make install".
+
+This release has a new "make tidy" option that runs "clang-tidy" over the
 code and also "make cmake" to generate simple cmake files for a unix build.

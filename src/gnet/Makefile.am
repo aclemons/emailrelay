@@ -1,31 +1,38 @@
 #
-## Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-##
+## Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
-##
+## 
 ## This program is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-##
+## 
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
 noinst_LIBRARIES = libgnet.a
 
+if GCONFIG_IPV6
+IP46_SOURCES = gaddress_ipv6.cpp
+EXTRA_DIST_IP46 = gaddress_ipv4.cpp
+else
+IP46_SOURCES = gaddress_ipv4.cpp
+EXTRA_DIST_IP46 = gaddress_ipv6.cpp
+endif
+
 if GCONFIG_WINDOWS
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/glib  -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/win32
+AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/win32
 
 EXTRA_DIST_COMMON=\
-	gaddress_ipv4.cpp \
-	gaddress_ipv6.cpp \
 	gdescriptor_unix.cpp \
-	geventloop_unix.cpp \
+	geventloop_select.cpp \
+	geventloop_epoll.cpp \
 	gfutureevent_unix.cpp \
 	gsocket_unix.cpp
 
@@ -33,6 +40,7 @@ if GCONFIG_INTERFACE_NAMES
 
 EXTRA_DIST = \
 	$(EXTRA_DIST_COMMON) \
+	$(EXTRA_DIST_IP46) \
 	ginterfaces_unix.cpp \
 	ginterfaces_none.cpp
 
@@ -44,6 +52,7 @@ else
 
 EXTRA_DIST = \
 	$(EXTRA_DIST_COMMON) \
+	$(EXTRA_DIST_IP46) \
 	ginterfaces_unix.cpp \
 	ginterfaces_common.cpp \
 	ginterfaces_win32.cpp
@@ -54,12 +63,12 @@ INTERFACES_SOURCES = \
 endif
 
 libgnet_a_SOURCES = \
+	$(IP46_SOURCES) \
 	gaddress4.cpp \
 	gaddress4.h \
 	gaddress6.cpp \
 	gaddress6.h \
 	gaddress.h \
-	gaddress_ip.cpp \
 	gclient.cpp \
 	gclient.h \
 	gclientptr.cpp \
@@ -133,19 +142,17 @@ libgnet_a_SOURCES = \
 
 else
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/glib  -I$(top_srcdir)/src/gssl
+AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl
 
 EXTRA_DIST_COMMON=\
-	gaddress_ipv4.cpp \
-	gaddress_ipv6.cpp \
-    gdescriptor_win32.cpp \
-    geventloop_win32.cpp \
+	gdescriptor_win32.cpp \
+	geventloop_win32.cpp \
 	gfutureevent_win32.cpp \
-    gsocket_win32.cpp
+	gsocket_win32.cpp
 
 if GCONFIG_INTERFACE_NAMES
 
-EXTRA_DIST = $(EXTRA_DIST_COMMON) \
+EXTRA_DIST_INTERFACES = \
 	ginterfaces_win32.cpp \
 	ginterfaces_none.cpp
 
@@ -155,7 +162,7 @@ INTERFACES_SOURCES = \
 
 else
 
-EXTRA_DIST = $(EXTRA_DIST_COMMON) \
+EXTRA_DIST_INTERFACES = \
 	ginterfaces_win32.cpp \
 	ginterfaces_unix.cpp \
 	ginterfaces_common.cpp
@@ -165,8 +172,32 @@ INTERFACES_SOURCES = \
 
 endif
 
+if GCONFIG_EPOLL
+
+EXTRA_DIST_EVENTLOOP = \
+	geventloop_select.cpp
+
+EVENTLOOP_SOURCES = \
+	geventloop_epoll.cpp
+
+else
+
+EXTRA_DIST_EVENTLOOP = \
+	geventloop_epoll.cpp
+
+EVENTLOOP_SOURCES = \
+	geventloop_select.cpp
+
+endif
+
+EXTRA_DIST = \
+	$(EXTRA_DIST_COMMON) \
+	$(EXTRA_DIST_INTERFACES) \
+	$(EXTRA_DIST_EVENTLOOP) \
+	$(EXTRA_DIST_IP46)
+
 libgnet_a_SOURCES = \
-	gaddress_ip.cpp \
+	$(IP46_SOURCES) \
 	gaddress.h \
 	gaddress4.h \
 	gaddress4.cpp \
@@ -193,7 +224,7 @@ libgnet_a_SOURCES = \
 	geventloggingcontext.h \
 	geventloop.cpp \
 	geventloop.h \
-	geventloop_unix.cpp \
+	$(EVENTLOOP_SOURCES) \
 	gexceptionhandler.cpp \
 	gexceptionhandler.h \
 	gexceptionsink.cpp \

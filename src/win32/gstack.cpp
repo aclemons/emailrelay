@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gstack.cpp
-//
+///
+/// \file gstack.cpp
+///
 
 #include "gdef.h"
 #include "gstack.h"
@@ -68,35 +68,64 @@ namespace GGui
 
 LRESULT CALLBACK GGui::StackImp::sheet_wndproc_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
 {
-	return GGui::Stack::wndProc( hwnd , message , wparam , lparam ) ;
+	try
+	{
+		return GGui::Stack::wndProc( hwnd , message , wparam , lparam ) ;
+	}
+	catch(...) // callback
+	{
+		return 0 ;
+	}
 }
 
 INT_PTR CALLBACK GGui::StackImp::dlgproc_export( HWND hdialog , UINT message , WPARAM wparam , LPARAM lparam )
 {
-	return GGui::Stack::dlgProc( hdialog , message , wparam , lparam ) ;
+	try
+	{
+		return GGui::Stack::dlgProc( hdialog , message , wparam , lparam ) ;
+	}
+	catch(...) // callback
+	{
+		return 0 ;
+	}
 }
 
 int CALLBACK GGui::StackImp::sheet_callback_export( HWND hwnd , UINT message , LPARAM lparam )
 {
-	return GGui::Stack::sheetProc( hwnd , message , lparam ) ;
+	try
+	{
+		return GGui::Stack::sheetProc( hwnd , message , lparam ) ;
+	}
+	catch(...) // callback
+	{
+		return 0 ;
+	}
 }
 
 UINT CALLBACK GGui::StackImp::page_callback_export( HWND hwnd , UINT message , PROPSHEETPAGE * page )
 {
-	return GGui::Stack::pageProc( hwnd , message , page ) ;
+	try
+	{
+		return GGui::Stack::pageProc( hwnd , message , page ) ;
+	}
+	catch(...) // callback
+	{
+		return 0 ;
+	}
 }
 
-GGui::Stack::Stack( StackPageCallback & callback , HINSTANCE hinstance , std::pair<DWORD,DWORD> style , bool set_style ) :
-	WindowBase(0) ,
-	m_magic(MAGIC) ,
-	m_hinstance(hinstance) ,
-	m_callback(callback) ,
-	m_style(style) ,
-	m_set_style(set_style) ,
-	m_fixed_size(false) ,
-	m_notify_hwnd(0) ,
-	m_notify_message(0U) ,
-	m_wndproc_orig(0)
+GGui::Stack::Stack( StackPageCallback & callback , HINSTANCE hinstance , std::pair<DWORD,DWORD> style ,
+	bool set_style ) :
+		WindowBase(0) ,
+		m_magic(MAGIC) ,
+		m_hinstance(hinstance) ,
+		m_callback(callback) ,
+		m_style(style) ,
+		m_set_style(set_style) ,
+		m_fixed_size(false) ,
+		m_notify_hwnd(0) ,
+		m_notify_message(0U) ,
+		m_wndproc_orig(0)
 {
 }
 
@@ -115,7 +144,8 @@ void GGui::Stack::create( HWND hparent , const std::string & title , int icon_id
 	PROPSHEETHEADER header{} ;
 
 	header.dwSize = sizeof(PROPSHEETHEADER) ;
-	header.dwFlags = PSH_MODELESS | PSH_NOAPPLYNOW | PSH_NOCONTEXTHELP | PSH_USECALLBACK | ( icon_id ? PSH_USEICONID : 0 ) ;
+	header.dwFlags = PSH_MODELESS | PSH_NOAPPLYNOW | PSH_NOCONTEXTHELP |
+		PSH_USECALLBACK | ( icon_id ? PSH_USEICONID : 0 ) ;
 	header.hwndParent = hparent ;
 	header.hInstance = m_hinstance ;
 	header.pszIcon = icon_id ? MAKEINTRESOURCE(icon_id) : 0 ;
@@ -136,7 +166,7 @@ void GGui::Stack::create( HWND hparent , const std::string & title , int icon_id
 	RedrawWindow( hsheet , nullptr , HNULL , RDW_FRAME | RDW_INVALIDATE | RDW_ERASENOW ) ;
 	m_fixed_size = fixed_size ;
 
-	PropSheet_CancelToClose( hsheet ) ; // 'ok' and 'cancel' makes no sense -- 'close' with disabled 'cancel' is better
+	PropSheet_CancelToClose( hsheet ) ; // 'ok' and 'cancel' is daft -- 'close' with disabled 'cancel' is better
 }
 
 void GGui::Stack::addPage( const std::string & title , int dialog_id )
@@ -391,4 +421,3 @@ GGui::StackPageCallback::~StackPageCallback()
 {
 }
 
-/// \file gstack.cpp

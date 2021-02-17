@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// glinebuffer.cpp
-//
+///
+/// \file glinebuffer.cpp
+///
 
 #include "gdef.h"
 #include "glinebuffer.h"
@@ -44,8 +44,12 @@ void GNet::LineBuffer::clear()
 	if( !transparent() )
 		m_expect = 0U ;
 
-	G_ASSERT( !m_in.empty() ) ;
-	G_ASSERT( !more(true) ) ;
+	G_ASSERT( m_in.empty() && empty() ) ;
+}
+
+bool GNet::LineBuffer::empty() const
+{
+	return state().empty() ;
 }
 
 void GNet::LineBuffer::add( const char * data , std::size_t size )
@@ -229,11 +233,12 @@ std::size_t GNet::LineBuffer::Output::set( LineStore & in , std::size_t pos , st
 
 // ==
 
-GNet::LineBufferConfig::LineBufferConfig( const std::string & eol , std::size_t warn , std::size_t fmin , std::size_t expect ) :
-	m_eol(eol) ,
-	m_warn(warn) ,
-	m_fmin(fmin) ,
-	m_expect(expect)
+GNet::LineBufferConfig::LineBufferConfig( const std::string & eol , std::size_t warn ,
+	std::size_t fmin , std::size_t expect ) :
+		m_eol(eol) ,
+		m_warn(warn) ,
+		m_fmin(fmin) ,
+		m_expect(expect)
 {
 }
 
@@ -273,4 +278,3 @@ GNet::LineBufferConfig GNet::LineBufferConfig::http()
 {
 	return crlf() ;
 }
-/// \file glinebuffer.cpp

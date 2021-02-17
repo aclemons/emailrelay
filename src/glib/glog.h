@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -30,7 +30,7 @@ namespace G
 	class Log ;
 }
 
-/// \class G::Log
+//| \class G::Log
 /// A class for doing iostream-based logging. The G_LOG/G_DEBUG/G_WARNING/G_ERROR
 /// macros are provided as a convenient way of using this interface.
 ///
@@ -86,17 +86,17 @@ private:
 	std::ostream & m_ostream ;
 } ;
 
-/// The DEBUG macro is for debugging during development. The LOG macro
-/// generates informational logging in verbose mode only, while the
-/// 'summary' macro LOG_S generates informational logging even when not
-/// verbose.  The warning and error macros are used for error warning/error
-/// messages, but in programs where logging can be disabled completely (see
-/// LogOutput) error conditions should be made visible by some other means
+/// The DEBUG macro is for debugging during development, the LOG macro
+/// generates informational logging in verbose mode only, the 'summary'
+/// LOG_S macro generates informational logging even when not verbose,
+/// and the WARNING and ERROR macros are used for error warning/error
+/// messages although in programs where logging can be disabled completely (see
+/// G::LogOutput) error conditions should be made visible by some other means
 /// (such as stderr).
 ///
-#define G_LOG_IMP( expr , severity ) do { if(G::Log::at(severity)) G::Log(severity,__FILE__,__LINE__) << expr ; } while(0)
-#define G_LOG_IMP_IF( cond , expr , severity ) do { if(G::Log::at(severity)&&(cond)) G::Log(severity,__FILE__,__LINE__) << expr ; } while(0)
-#define G_LOG_IMP_ONCE( expr , severity ) do { static bool done__ = false ; if(!done__) G::Log(severity,__FILE__,__LINE__) << expr ; done__ = true ; } while(0)
+#define G_LOG_IMP( expr , severity ) do { try { if(G::Log::at(severity)) G::Log((severity),__FILE__,__LINE__) << expr ; } catch(...) {} } while(0)
+#define G_LOG_IMP_IF( cond , expr , severity ) do { try { if(G::Log::at(severity)&&(cond)) G::Log((severity),__FILE__,__LINE__) << expr ; } catch(...) {} } while(0)
+#define G_LOG_IMP_ONCE( expr , severity ) do { static bool done__ = false ; try { if(!done__) G::Log((severity),__FILE__,__LINE__) << expr ; } catch(...) {} done__ = true ; } while(0)
 
 #if defined(G_WITH_DEBUG) || ( defined(_DEBUG) && ! defined(G_NO_DEBUG) )
 #define G_DEBUG( expr ) G_LOG_IMP( expr , G::Log::Severity::s_Debug )
@@ -120,8 +120,12 @@ private:
 
 #if ! defined(G_NO_LOG_S)
 #define G_LOG_S( expr ) G_LOG_IMP( expr , G::Log::Severity::s_InfoSummary )
+#define G_LOG_S_IF( cond , expr ) G_LOG_IMP_IF( cond , expr , G::Log::Severity::s_InfoSummary )
+#define G_LOG_S_ONCE( expr ) G_LOG_IMP_ONCE( expr , G::Log::Severity::s_InfoSummary )
 #else
 #define G_LOG_S( expr )
+#define G_LOG_S_IF( cond , expr )
+#define G_LOG_S_ONCE( expr )
 #endif
 
 #if ! defined(G_NO_WARNING)

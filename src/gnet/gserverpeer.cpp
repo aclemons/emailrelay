@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gserverpeer.cpp
-//
+///
+/// \file gserverpeer.cpp
+///
 
 #include "gdef.h"
 #include "gserver.h"
@@ -25,13 +25,14 @@
 #include "gassert.h"
 #include <sstream>
 
-GNet::ServerPeer::ServerPeer( ExceptionSink es , const ServerPeerInfo & peer_info , const LineBufferConfig & line_buffer_config ) :
-	m_address(peer_info.m_address) ,
-	m_socket(peer_info.m_socket) ,
-	m_sp(*this,es,*this,*m_socket,0U) ,
-	m_line_buffer(line_buffer_config) ,
-	m_config(peer_info.m_config) ,
-	m_idle_timer(*this,&ServerPeer::onIdleTimeout,es)
+GNet::ServerPeer::ServerPeer( ExceptionSink es , const ServerPeerInfo & peer_info ,
+	const LineBufferConfig & line_buffer_config ) :
+		m_address(peer_info.m_address) ,
+		m_socket(peer_info.m_socket) ,
+		m_sp(*this,es,*this,*m_socket,0U) ,
+		m_line_buffer(line_buffer_config) ,
+		m_config(peer_info.m_config) ,
+		m_idle_timer(*this,&ServerPeer::onIdleTimeout,es)
 {
 	G_ASSERT( peer_info.m_server != nullptr ) ;
 	G_ASSERT( m_socket.get() ) ;
@@ -104,7 +105,7 @@ bool GNet::ServerPeer::send( const std::string & data , std::string::size_type o
 	return m_sp.send( data , offset ) ;
 }
 
-bool GNet::ServerPeer::send( const std::vector<std::pair<const char*,std::size_t> > & segments )
+bool GNet::ServerPeer::send( const std::vector<G::string_view> & segments )
 {
 	return m_sp.send( segments ) ;
 }
@@ -137,7 +138,8 @@ void GNet::ServerPeer::onData( const char * data , std::size_t size )
 	m_line_buffer.apply( this , &ServerPeer::onDataImp , data , size , fragments ) ;
 }
 
-bool GNet::ServerPeer::onDataImp( const char * data , std::size_t size , std::size_t eolsize , std::size_t linesize , char c0 )
+bool GNet::ServerPeer::onDataImp( const char * data , std::size_t size , std::size_t eolsize ,
+	std::size_t linesize , char c0 )
 {
 	return onReceive( data , size , eolsize , linesize , c0 ) ;
 }
@@ -174,4 +176,3 @@ GNet::ServerPeerConfig & GNet::ServerPeerConfig::set_idle_timeout( unsigned int 
 	return *this ;
 }
 
-/// \file gserverpeer.cpp

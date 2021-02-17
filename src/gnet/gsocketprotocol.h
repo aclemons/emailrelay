@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,13 +18,14 @@
 /// \file gsocketprotocol.h
 ///
 
-#ifndef G_NET_SOCKET_PROTOCOL__H
-#define G_NET_SOCKET_PROTOCOL__H
+#ifndef G_NET_SOCKET_PROTOCOL_H
+#define G_NET_SOCKET_PROTOCOL_H
 
 #include "gdef.h"
 #include "gsocket.h"
 #include "geventhandler.h"
 #include "gexception.h"
+#include "gstringview.h"
 #include <string>
 #include <vector>
 #include <utility>
@@ -36,7 +37,7 @@ namespace GNet
 	class SocketProtocolSink ;
 }
 
-/// \class GNet::SocketProtocol
+//| \class GNet::SocketProtocol
 /// An interface for implementing a low-level TLS/SSL protocol layer on top
 /// of a connected non-blocking socket.
 ///
@@ -95,10 +96,11 @@ public:
 		///< call writeEvent(). There should be no new calls to send()
 		///< until writeEvent() returns true.
 
-	bool send( const std::vector<std::pair<const char *,std::size_t> > & data ) ;
+	bool send( const std::vector<G::string_view> & data , std::size_t offset = 0U ) ;
 		///< Overload to send data using scatter-gather segments.
-		///< If false is returned then segment data pointers must
-		///< stay valid until writeEvent() returns true.
+		///< In this overload any unsent residue is not copied
+		///< and the segment pointers must stay valid until
+		///< writeEvent() returns true.
 
 	void shutdown() ;
 		///< Initiates a TLS-close if secure, together with a
@@ -139,7 +141,7 @@ private:
 	std::unique_ptr<SocketProtocolImp> m_imp ;
 } ;
 
-/// \class GNet::SocketProtocolSink
+//| \class GNet::SocketProtocolSink
 /// An interface used by GNet::SocketProtocol to deliver data
 /// from a socket.
 ///
@@ -152,9 +154,10 @@ public:
 	virtual void onData( const char * , std::size_t ) = 0 ;
 		///< Called when data is read from the socket.
 
-	virtual void onSecure( const std::string & peer_certificate , const std::string & cipher ) = 0 ;
-		///< Called once the secure socket protocol has
-		///< been successfully negotiated.
+	virtual void onSecure( const std::string & peer_certificate ,
+		const std::string & protocol , const std::string & cipher ) = 0 ;
+			///< Called once the secure socket protocol has
+			///< been successfully negotiated.
 } ;
 
 #endif

@@ -223,8 +223,9 @@
       </dd>
      <dt>--hidden (-H)</dt>
       <dd>
-       Windows only. Hides the application window and disables all message boxes.
-       This is useful when running as a windows service.
+       Windows only. Hides the application window and disables all message boxes,
+       overriding any <em></em>--show<em></em> option. This is useful when running  as a windows
+       service.
       </dd>
      <dt>--idle-timeout &lt;time&gt;</dt>
       <dd>
@@ -251,6 +252,11 @@
        all the addresses associated with that interface at startup will used for
        listening. When an interface name is decorated with a <em>-ipv4</em> or <em>-ipv6</em>
        suffix only their IPv4 or IPv6 addresses will be used (eg. <em>ppp0-ipv4</em>).
+      </dd>
+     <dt>--localedir &lt;dir&gt;</dt>
+      <dd>
+       Specifies a locale base directory where localisation message catalogues  can
+       be found. An empty directory can be used for the built-in default.
       </dd>
      <dt>--log (-l)</dt>
       <dd>
@@ -1133,7 +1139,7 @@ password required pam_deny.so
     </p>
 
     <p>
-     For future-proofing a verifier must report a version number of <em>2.0</em> if called
+     For future-proofing a verifier should report a version number of <em>2.0</em> if called
      with a command-line starting with <em>--emailrelay-version</em>.
     </p>
 
@@ -1176,7 +1182,8 @@ exit 0
 
     <p>
      For invalid addresses the exit value should be non-zero and the first line
-     of output is the error response.
+     of output is the error response. A second output line can be used for
+     diagnostic information that gets put into the E-MailRelay log file.
     </p>
 
       <div class="div-pre">
@@ -1208,6 +1215,11 @@ exit 3
 exit 100
 </pre>
       </div><!-- div-pre -->
+    <p>
+     Any other exit code, from 4 to 99 or 101 and above, behaves in the same way
+     as an exit code of 2.
+    </p>
+
     <p>
      In this more complete example the verifier script accepts all addresses as
      valid as long as they contain an <em>at</em> character:
@@ -1293,7 +1305,7 @@ catch( e )
      send address verification requests as lines with pipe-delimited fields. The
      expected response is another pipe-delimited line containing the same
      information as returned by verifier scripts but in reverse, such as
-     <em>3|address unavailable</em> or <em>0|postmaster|Local Postmaster <postmaster@eg.com></em>.
+     <em>0|postmaster|Local Postmaster <postmaster@eg.com></em> or <em>2|mailbox unavailable</em>.
     </p>
    <h2><a class="a-header" name="SH_1_11">Connection blocking</a></h2> <!-- index:2:SH:1:11:Connection blocking -->
     <p>
@@ -1311,8 +1323,8 @@ catch( e )
     </p>
 
     <p>
-     The <em>--dnsbl</em> configuration starts with the DNS server network address and a
-     millisond timeout, followed by the threshold and list of servers:
+     The <em>--dnsbl</em> configuration starts with the DNS server transport address and a
+     millisecond timeout, followed by the threshold and list of servers:
     </p>
 
       <div class="div-pre">
@@ -1480,6 +1492,7 @@ E-MailRelay> quit
     <ul>
      <li>--mandir=&lt;dir&gt;</li>
      <li>--sbindir=&lt;dir&gt;</li>
+     <li>--localedir=&lt;dir&gt;</li>
      <li>e_bsdinitdir=&lt;dir&gt;</li>
      <li>e_docdir=&lt;dir&gt;</li>
      <li>e_examplesdir=&lt;dir&gt;</li>
@@ -1490,6 +1503,7 @@ E-MailRelay> quit
      <li>e_spooldir=&lt;dir&gt;</li>
      <li>e_sysconfdir=&lt;dir&gt;</li>
      <li>e_rundir=&lt;dir&gt;</li>
+     <li>e_systemddir=&lt;dir&gt;</li>
     </ul>
 
     <p>
@@ -1498,8 +1512,8 @@ E-MailRelay> quit
     </p>
 
     <p>
-     For a directory structure conforming more closely to the FHS use this configure
-     command:
+     For a directory structure conforming more closely to the File Hierarchy
+     Standard (FHS) use this configure command:
     </p>
 
       <div class="div-pre">
@@ -1509,7 +1523,7 @@ E-MailRelay> quit
     <p>
      It is possible to change the installation root directory after building by
      using <em>make DESTDIR=<root> install</em> or <em>DESTDIR=<root> make -e install</em>.
-     However, this will not affect the default spool directory path built into the
+     However, this will not change the default spool directory path built into the
      scripts and executables so the correct spool directory will have to be
      specified at run-time with the <em>--spool-dir</em> command-line option.
     </p>
@@ -1524,10 +1538,10 @@ E-MailRelay> quit
 
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2020 Graeme Walker
+      Copyright (C) 2001-2021 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

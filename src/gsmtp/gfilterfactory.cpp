@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gfilterfactory.cpp
-//
+///
+/// \file gfilterfactory.cpp
+///
 
 #include "gdef.h"
 #include "gstr.h"
@@ -39,7 +39,7 @@ std::unique_ptr<GSmtp::Filter> GSmtp::FilterFactory::newFilter( GNet::ExceptionS
 	FactoryParser::Result p = FactoryParser::parse( identifier , true ) ;
 	if( p.first.empty() )
 	{
-		return std::unique_ptr<GSmtp::Filter>( new NullFilter( es , server_side ) ) ;
+		return std::make_unique<NullFilter>( es , server_side ) ; // up-cast
 	}
 	else if( p.first == "spam" )
 	{
@@ -48,20 +48,19 @@ std::unique_ptr<GSmtp::Filter> GSmtp::FilterFactory::newFilter( GNet::ExceptionS
 		bool edit = p.third == 1 ;
 		bool read_only = !edit ;
 		bool always_pass = edit ;
-		return std::unique_ptr<GSmtp::Filter>( new SpamFilter( es , p.second , read_only , always_pass , timeout , timeout ) ) ;
+		return std::make_unique<SpamFilter>( es , p.second , read_only , always_pass , timeout , timeout ) ; // up-cast
 	}
 	else if( p.first == "net" )
 	{
-		return std::unique_ptr<GSmtp::Filter>( new NetworkFilter( es , p.second , timeout , timeout ) ) ;
+		return std::make_unique<NetworkFilter>( es , p.second , timeout , timeout ) ; // up-cast
 	}
 	else if( p.first == "exit" )
 	{
-		return std::unique_ptr<GSmtp::Filter>( new NullFilter( es , server_side , G::Str::toUInt(p.second) ) ) ;
+		return std::make_unique<NullFilter>( es , server_side , G::Str::toUInt(p.second) ) ; // up-cast
 	}
 	else
 	{
-		return std::unique_ptr<GSmtp::Filter>( new ExecutableFilter( es , server_side , p.second ) ) ;
+		return std::make_unique<ExecutableFilter>( es , server_side , p.second ) ; // up-cast
 	}
 }
 
-/// \file gfilterfactory.cpp

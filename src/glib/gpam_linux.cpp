@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gpam_linux.cpp
-//
+///
+/// \file gpam_linux.cpp
+///
 // See: http://www.linux-pam.org/Linux-PAM-html/
 //
 
@@ -47,7 +47,7 @@
 #define G_PAM_CONST
 #endif
 
-/// \class G::PamImp
+//| \class G::PamImp
 /// A pimple-pattern implementation class for G::Pam.
 ///
 class G::PamImp
@@ -88,7 +88,8 @@ public:
 	void operator=( const PamImp & ) = delete ;
 
 private:
-	static int converseCallback( int n , G_PAM_CONST struct pam_message ** in , struct pam_response ** out , void * vp ) ;
+	static int converseCallback( int n , G_PAM_CONST struct pam_message ** in ,
+		struct pam_response ** out , void * vp ) ;
 	static void delayCallback( int , unsigned , void * ) ;
 	static std::string decodeStyle( int pam_style ) ;
 	static void release( struct pam_response * , std::size_t ) ;
@@ -177,7 +178,7 @@ std::string G::PamImp::name() const
 	G_PAM_CONST void * vp = nullptr ;
 	m_rc = ::pam_get_item( hpam() , PAM_USER , &vp ) ;
 	check( "pam_get_item" , m_rc ) ;
-	const char * cp = reinterpret_cast<const char*>(vp) ;
+	const char * cp = static_cast<const char*>(vp) ;
 	return std::string( cp ? cp : "" ) ;
 }
 
@@ -212,7 +213,8 @@ void G::PamImp::release( struct pam_response * rsp , std::size_t n )
 	std::free( rsp ) ;
 }
 
-int G::PamImp::converseCallback( int n_in , G_PAM_CONST struct pam_message ** in , struct pam_response ** out , void * vp )
+int G::PamImp::converseCallback( int n_in , G_PAM_CONST struct pam_message ** in ,
+	struct pam_response ** out , void * vp )
 {
 	G_ASSERT( out != nullptr ) ;
 	if( n_in <= 0 )
@@ -228,7 +230,8 @@ int G::PamImp::converseCallback( int n_in , G_PAM_CONST struct pam_message ** in
 	//
 	if( n > 1U )
 	{
-		G_WARNING_ONCE( "PamImp::converseCallback: received a complex pam converse() structure: proceed with caution" ) ;
+		G_WARNING_ONCE( "PamImp::converseCallback: received a complex pam converse() structure: "
+			"proceed with caution" ) ;
 	}
 
 	*out = nullptr ;
@@ -236,7 +239,7 @@ int G::PamImp::converseCallback( int n_in , G_PAM_CONST struct pam_message ** in
 	try
 	{
 		G_DEBUG( "G::Pam::converseCallback: called back from pam with " << n << " item(s)" ) ;
-		PamImp * This = reinterpret_cast<PamImp*>(vp) ;
+		PamImp * This = static_cast<PamImp*>(vp) ;
 		G_ASSERT( This->m_magic == MAGIC ) ;
 
 		// convert the c items into a c++ container -- treat
@@ -263,7 +266,7 @@ int G::PamImp::converseCallback( int n_in , G_PAM_CONST struct pam_message ** in
 		// allocate the response - treat "out" as a pointer to a pointer
 		// to a contiguous array of structures (see linux man pam_conv)
 		//
-		rsp = reinterpret_cast<struct pam_response*>( std::malloc(n*sizeof(struct pam_response)) ) ;
+		rsp = static_cast<struct pam_response*>( std::malloc(n*sizeof(struct pam_response)) ) ;
 		if( rsp == nullptr )
 			throw std::bad_alloc() ;
 		for( std::size_t j = 0U ; j < n ; j++ )
@@ -302,7 +305,7 @@ void G::PamImp::delayCallback( int status , unsigned delay_usec , void * pam_vp 
 		G_DEBUG( "G::Pam::delayCallback: status=" << status << ", delay=" << delay_usec ) ;
 		if( status != PAM_SUCCESS )
 		{
-			PamImp * This = reinterpret_cast<PamImp*>(pam_vp) ;
+			PamImp * This = static_cast<PamImp*>(pam_vp) ;
 			if( This != nullptr )
 			{
 				G_ASSERT( This->m_magic == MAGIC ) ;
@@ -355,7 +358,7 @@ char * G::PamImp::strdup_( const char * p )
 // ==
 
 G::Pam::Pam( const std::string & application , const std::string & user , bool silent ) :
-	m_imp( new PamImp(*this,application,user,silent) )
+	m_imp(std::make_unique<PamImp>(*this,application,user,silent))
 {
 }
 

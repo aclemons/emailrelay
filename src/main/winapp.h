@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file winapp.h
 ///
 
-#ifndef WIN_APP_H
-#define WIN_APP_H
+#ifndef G_MAIN_WIN_APP_H
+#define G_MAIN_WIN_APP_H
 
 #include "gdef.h"
 #include "gappbase.h"
@@ -37,7 +37,7 @@ namespace Main
 	class WinApp ;
 }
 
-/// \class Main::WinApp
+//| \class Main::WinApp
 /// A main-window class for an invisible window that manages the
 /// Main::WinForm user interface, the system tray icon, and message
 /// boxes.
@@ -90,9 +90,9 @@ public:
 		///< can be displayed.
 
 private: // overrides
-	void output( const std::string & message , bool error ) override ; // Override from Main::Output.
-	G::Options::Layout layout() const override ; // Override from Main::Output.
-	bool simpleOutput() const override ; // Override from Main::Output.
+	void output( const std::string & message , bool error , bool ) override ; // Override from Main::Output.
+	G::Options::Layout outputLayout( bool verbose ) const override ; // Override from Main::Output.
+	bool outputSimple() const override ; // Override from Main::Output.
 	void onWindowException( std::exception & e ) override ; // Override from GGui::Window.
 	DWORD classStyle() const override ; // Override from GGui::ApplicationBase.
 	std::pair<DWORD,DWORD> windowStyle() const override ; // Override from GGui::ApplicationBase.

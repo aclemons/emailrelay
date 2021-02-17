@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gverifierstatus.cpp
-//
+///
+/// \file gverifierstatus.cpp
+///
 
 #include "gdef.h"
 #include "gverifier.h"
@@ -37,10 +37,9 @@ GSmtp::VerifierStatus GSmtp::VerifierStatus::parse( const std::string & line , s
 {
 	try
 	{
-		std::string sep( 1U , '|' ) ;
 		VerifierStatus s ;
 		G::StringArray part ;
-		G::Str::splitIntoFields( line , part , sep ) ;
+		G::Str::splitIntoFields( line , part , {"|",1U} ) ;
 		if( part.size() != 9U ) throw std::runtime_error( "incorrect number of parts" ) ;
 		std::size_t i = 0U ;
 		mbox = part.at(i++) ;
@@ -78,4 +77,3 @@ std::string GSmtp::VerifierStatus::str( const std::string & mbox ) const
 		reason ;
 }
 
-/// \file gverifierstatus.cpp

@@ -1,0 +1,14 @@
+[Unit]
+Description=E-MailRelay mail server
+Documentation=man:emailrelay(1)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+Restart=on-success
+KillMode=control-group
+ExecStart=/etc/init.d/emailrelay start
+ExecStop=/etc/init.d/emailrelay stop
+PIDFile=/run/emailrelay/emailrelay.pid
+SuccessExitStatus=0 143

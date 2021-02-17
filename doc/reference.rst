@@ -212,8 +212,9 @@ where \<option\> is:
 
 *   --hidden (-H)
 
-    Windows only. Hides the application window and disables all message boxes.
-    This is useful when running as a windows service.
+    Windows only. Hides the application window and disables all message boxes,
+    overriding any **--show** option. This is useful when running  as a windows
+    service.
 
 *   --idle-timeout \<time\>
 
@@ -240,6 +241,11 @@ where \<option\> is:
     all the addresses associated with that interface at startup will used for
     listening. When an interface name is decorated with a *-ipv4* or *-ipv6*
     suffix only their IPv4 or IPv6 addresses will be used (eg. *ppp0-ipv4*).
+
+*   --localedir \<dir\>
+
+    Specifies a locale base directory where localisation message catalogues  can
+    be found. An empty directory can be used for the built-in default.
 
 *   --log (-l)
 
@@ -976,7 +982,7 @@ the following command-line:
 The verifier program is expected to generate two lines of output on the
 standard output stream and then terminate with a specific exit code.
 
-For future-proofing a verifier must report a version number of *2.0* if called
+For future-proofing a verifier should report a version number of *2.0* if called
 with a command-line starting with *--emailrelay-version*.
 
 For valid addresses the first line of output is ignored, the second line should
@@ -1011,7 +1017,8 @@ created. This mechanism can be used to create a separate channel for
 administrative messages such as delivery reports.
 
 For invalid addresses the exit value should be non-zero and the first line
-of output is the error response.
+of output is the error response. A second output line can be used for
+diagnostic information that gets put into the E-MailRelay log file.
 
 ::
 
@@ -1037,6 +1044,9 @@ which may be useful in limiting the impact of denial of service attacks:
     #!/bin/sh
     # address verifier -- abort
     exit 100
+
+Any other exit code, from 4 to 99 or 101 and above, behaves in the same way
+as an exit code of 2.
 
 In this more complete example the verifier script accepts all addresses as
 valid as long as they contain an *at* character:
@@ -1114,7 +1124,7 @@ E-MailRelay will connect to the specified verifier daemon over the network and
 send address verification requests as lines with pipe-delimited fields. The
 expected response is another pipe-delimited line containing the same
 information as returned by verifier scripts but in reverse, such as
-*3|address unavailable* or *0|postmaster|Local Postmaster <postmaster@eg.com>*.
+*0|postmaster|Local Postmaster <postmaster@eg.com>* or *2|mailbox unavailable*.
 
 Connection blocking
 ===================
@@ -1128,8 +1138,8 @@ list of DNSBL servers, together with a rejection threshold. If the threshold
 number of servers 'deny' the incoming connection's network address then
 E-MailRelay will drop the connection immediately.
 
-The *--dnsbl* configuration starts with the DNS server network address and a
-millisond timeout, followed by the threshold and list of servers:
+The *--dnsbl* configuration starts with the DNS server transport address and a
+millisecond timeout, followed by the threshold and list of servers:
 
 ::
 
@@ -1274,6 +1284,7 @@ Installation directories can be defined at build-time by the following
 
 * --mandir=\<dir\>
 * --sbindir=\<dir\>
+* --localedir=\<dir\>
 * e_bsdinitdir=\<dir\>
 * e_docdir=\<dir\>
 * e_examplesdir=\<dir\>
@@ -1284,12 +1295,13 @@ Installation directories can be defined at build-time by the following
 * e_spooldir=\<dir\>
 * e_sysconfdir=\<dir\>
 * e_rundir=\<dir\>
+* e_systemddir=\<dir\>
 
 These are all defaulted to paths that are ultimately based on *--prefix*, so
 *./configure --prefix=$HOME* will work as expected.
 
-For a directory structure conforming more closely to the FHS_ use this configure
-command:
+For a directory structure conforming more closely to the File Hierarchy
+Standard (FHS_) use this configure command:
 
 ::
 
@@ -1297,7 +1309,7 @@ command:
 
 It is possible to change the installation root directory after building by
 using *make DESTDIR=<root> install* or *DESTDIR=<root> make -e install*.
-However, this will not affect the default spool directory path built into the
+However, this will not change the default spool directory path built into the
 scripts and executables so the correct spool directory will have to be
 specified at run-time with the *--spool-dir* command-line option.
 
@@ -1324,4 +1336,4 @@ and these default to *%ProgramFiles%/E-MailRelay* for programs and
 .. _SOCKS: https://en.wikipedia.org/wiki/SOCKS
 .. _TLS: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
-.. footer:: Copyright (C) 2001-2020 Graeme Walker
+.. footer:: Copyright (C) 2001-2021 Graeme Walker

@@ -1,46 +1,59 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// goptionparser.cpp
-//
+///
+/// \file goptionparser.cpp
+///
 
 #include "gdef.h"
 #include "goptionparser.h"
+#include "gformat.h"
+#include "ggettext.h"
 #include "gstr.h"
 #include "glog.h"
 #include <algorithm>
 #include <map>
+#include <sstream>
 #include <stdexcept>
+#include <utility>
 
 G::OptionParser::OptionParser( const Options & spec , OptionMap & values_out , StringArray & errors_out ) :
+	m_spec(spec) ,
+	m_map(values_out) ,
+	m_errors(&errors_out)
+{
+}
+
+G::OptionParser::OptionParser( const Options & spec , OptionMap & values_out , StringArray * errors_out ) :
 	m_spec(spec) ,
 	m_map(values_out) ,
 	m_errors(errors_out)
 {
 }
 
-G::OptionParser::OptionParser( const Options & spec , OptionMap & values_out ) :
-	m_spec(spec) ,
-	m_map(values_out) ,
-	m_errors(m_errors_ignored)
+G::StringArray G::OptionParser::parse( const StringArray & args_in , const Options & spec ,
+	OptionMap & map_out , StringArray * errors_out , std::size_t start_position ,
+	std::size_t ignore_non_options )
 {
+	OptionParser parser( spec , map_out , errors_out ) ;
+	return parser.parse( args_in , start_position , ignore_non_options ) ;
 }
 
-G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t start , std::size_t ignore_non_options )
+G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t start ,
+	std::size_t ignore_non_options )
 {
 	StringArray args_out ;
 	std::size_t i = start ;
@@ -133,7 +146,8 @@ void G::OptionParser::processOptionOff( const std::string & name )
 		m_map.insert( std::make_pair(name,OptionValue::off()) ) ;
 }
 
-void G::OptionParser::processOption( const std::string & name , const std::string & value , bool fail_if_dubious_value )
+void G::OptionParser::processOption( const std::string & name , const std::string & value ,
+	bool fail_if_dubious_value )
 {
 	if( !m_spec.valid(name) )
 		errorUnknownOption( name ) ;
@@ -213,52 +227,63 @@ bool G::OptionParser::isAnOptionSet( const std::string & arg )
 
 void G::OptionParser::errorDubiousValue( const std::string & name , const std::string & value )
 {
-	m_errors.push_back( "use of \"--"+name+" "+value+"\" is probably a mistake, or try \"--"+name+"="+value+"\" instead" ) ;
+	std::string s = str(
+		format(G::gettext("%1% is probably a mistake, use %2% or %3%")) %
+			("\"--"+name+" "+value+"\"") %
+			("\"--"+name+"=... "+value+"\"") %
+			("\"--"+name+"="+value+"\"") ) ;
+	error( s ) ;
 }
 
 void G::OptionParser::errorDuplicate( char c )
 {
-	m_errors.push_back( "duplicate use of \"-" + std::string(1U,c) + "\"" ) ;
+	error( str( format(gettext("duplicate use of %1%")) % ("\"-"+std::string(1U,c)+"\"") ) ) ;
 }
 
 void G::OptionParser::errorDuplicate( const std::string & name )
 {
-	m_errors.push_back( "duplicate use of \"--" + name + "\"" ) ;
+	error( str( format(gettext("duplicate use of %1%")) % ("\"--"+name+"\"") ) ) ;
 }
 
 void G::OptionParser::errorExtraValue( char c , const std::string & )
 {
-	m_errors.push_back( "cannot give a value with \"-" + std::string(1U,c) + "\"" ) ;
+	error( str( format(gettext("cannot give a value with %1%")) % ("\"-"+std::string(1U,c)+"\"") ) ) ;
 }
 
 void G::OptionParser::errorExtraValue( const std::string & name , const std::string & value )
 {
-	m_errors.push_back( "cannot give a value with \"--" + name + "\" (" + value + ")" ) ;
+	error( str( format(gettext("cannot give a value with %1% (%2%)")) % ("\"--"+name+"\"") % value ) ) ;
 }
 
 void G::OptionParser::errorNoValue( char c )
 {
-	m_errors.push_back( "no value supplied for -" + std::string(1U,c) ) ;
+	error( str( format(gettext("no value supplied for %1%")) % ("-"+std::string(1U,c)) ) ) ;
 }
 
 void G::OptionParser::errorNoValue( const std::string & name )
 {
-	m_errors.push_back( "no value supplied for \"--" + name + "\"" ) ;
+	error( str( format(gettext("no value supplied for %1%")) % ("\"--"+name+"\"") ) ) ;
 }
 
 void G::OptionParser::errorUnknownOption( char c )
 {
-	m_errors.push_back( "invalid option: \"-" + std::string(1U,c) + "\"" ) ;
+	error( str( format(gettext("invalid option: %1%")) % ("\"-"+std::string(1U,c)+"\"") ) ) ;
 }
 
 void G::OptionParser::errorUnknownOption( const std::string & name )
 {
-	m_errors.push_back( "invalid option: \"--" + name + "\"" ) ;
+	error( str( format(gettext("invalid option: %1%")) % ("\"--"+name+"\"") ) ) ;
 }
 
 void G::OptionParser::errorConflict( const std::string & name )
 {
-	m_errors.push_back( "conflicting values: \"--" + name + "\"" ) ;
+	error( str( format(gettext("conflicting values: %1%")) % ("\"--"+name+"\"") ) ) ;
+}
+
+void G::OptionParser::error( const std::string & s )
+{
+	if( m_errors )
+		m_errors->push_back( s ) ;
 }
 
 bool G::OptionParser::haveSeenOn( const std::string & name ) const
@@ -289,4 +314,3 @@ std::size_t G::OptionParser::valueCount( const std::string & s )
 	return 1U + std::count( s.begin() , s.end() , ',' ) ;
 }
 
-/// \file goptionparser.cpp

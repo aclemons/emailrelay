@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gdialog.h
 ///
 
-#ifndef G_DIALOG_H
-#define G_DIALOG_H
+#ifndef G_GUI_DIALOG_H
+#define G_GUI_DIALOG_H
 
 #include "gdef.h"
 #include "gwinbase.h"
@@ -33,18 +33,18 @@ namespace GGui
 	class Dialog ;
 }
 
-/// \class GGui::DialogHandle
+//| \class GGui::DialogHandle
 /// A private implementation class used by GGui::Dialog.
 ///
 class GGui::DialogHandle
 {
 public:
 	HWND h ;
-	explicit DialogHandle(HWND h_) ;
+	explicit DialogHandle( HWND ) ;
 	bool operator==( const DialogHandle & rhs ) const ;
 } ;
 
-/// \class GGui::Dialog
+//| \class GGui::Dialog
 /// A dialog box class for modal and modeless operation.
 /// \see GGui::Control
 ///
@@ -101,14 +101,14 @@ public:
 		///< resource id.
 
 	static BOOL dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam ) ;
-			///< Called directly from the exported dialog procedure.
+		///< Called directly from the exported dialog procedure.
 
 	void setFocus( int control ) ;
 		///< Sets focus to the specified control.
 
 	LRESULT sendMessage( int control , unsigned message ,
 		WPARAM wparam = 0 , LPARAM lparam = 0 ) const ;
-		///< Sends a message to the specified control.
+			///< Sends a message to the specified control.
 
 	SubClassMap & map() ;
 		///< Used by GGui::Control. (The sub-class map allows the Control
@@ -173,8 +173,10 @@ protected:
 		///< necessary.
 
 public:
-	Dialog( const Dialog &other ) = delete ;
-	void operator=( const Dialog &other ) = delete ;
+	Dialog( const Dialog & ) = delete ;
+	Dialog( Dialog && ) = delete ;
+	void operator=( const Dialog & ) = delete ;
+	void operator=( Dialog && ) = delete ;
 
 private:
 	using DialogList = std::list<DialogHandle> ;

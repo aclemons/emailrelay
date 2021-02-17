@@ -1,31 +1,33 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// ginterfaces_win32.cpp
-//
+///
+/// \file ginterfaces_win32.cpp
+///
 // Test with:
 //   netsh interface ipv4 add address name="Local Area Connection" address=10.0.0.1
 //   netsh interface ipv6 add address interface="Local Area Connection" dead::beef
+//   netsh interface ipv4 show addresses
 //   ipconfig /all
 //
 
 #include "gdef.h"
 #include "ginterfaces.h"
 #include "gconvert.h"
+#include "gbuffer.h"
 #include "gexception.h"
 #include <iphlpapi.h>
 #include <ipifcons.h>
@@ -78,17 +80,17 @@ void GNet::Interfaces::loadImp( ExceptionSink es , std::vector<Item> & list )
 	//flags |= GAA_FLAG_INCLUDE_ALL_INTERFACES ;
 	//flags |= GAA_FLAG_INCLUDE_PREFIX ;
 
-	std::vector<char> buffer ;
+	G::Buffer<char> buffer ;
 	buffer.resize( 15000U ) ; // size as recommended
 	ULONG size = static_cast<ULONG>( buffer.size() ) ;
-	IP_ADAPTER_ADDRESSES * p = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(&buffer[0]) ;
+	IP_ADAPTER_ADDRESSES * p = G::buffer_cast<IP_ADAPTER_ADDRESSES*>( buffer ) ;
 
 	ULONG rc = GetAdaptersAddresses( AF_UNSPEC , flags , /*reserved=*/nullptr , p , &size ) ;
 
 	if( rc == ERROR_BUFFER_OVERFLOW )
 	{
 		buffer.resize( size ) ;
-		IP_ADAPTER_ADDRESSES * p = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(&buffer[0]) ;
+		IP_ADAPTER_ADDRESSES * p = G::buffer_cast<IP_ADAPTER_ADDRESSES*>( buffer ) ;
 		rc = GetAdaptersAddresses( AF_UNSPEC , flags , nullptr , p , &size ) ;
 	}
 
@@ -139,8 +141,12 @@ GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * outer , Excepti
 	m_future_event(*outer,es)
 {
 	m_handle = m_future_event.handle() ;
-	NotifyIpInterfaceChange( AF_UNSPEC , &InterfacesNotifierImp::interface_callback_fn , this , FALSE , &m_notify_1 ) ;
-	NotifyUnicastIpAddressChange( AF_UNSPEC , &InterfacesNotifierImp::address_callback_fn , this , FALSE , &m_notify_2 ) ;
+
+	NotifyIpInterfaceChange( AF_UNSPEC , &InterfacesNotifierImp::interface_callback_fn ,
+		this , FALSE , &m_notify_1 ) ;
+
+	NotifyUnicastIpAddressChange( AF_UNSPEC , &InterfacesNotifierImp::address_callback_fn ,
+		this , FALSE , &m_notify_2 ) ;
 }
 
 GNet::InterfacesNotifierImp::~InterfacesNotifierImp()
@@ -150,20 +156,22 @@ GNet::InterfacesNotifierImp::~InterfacesNotifierImp()
 	if( m_notify_2 ) CancelMibChangeNotify2( m_notify_2 ) ;
 }
 
-void GNet::InterfacesNotifierImp::interface_callback_fn( void * this_vp , MIB_IPINTERFACE_ROW * , MIB_NOTIFICATION_TYPE )
+void GNet::InterfacesNotifierImp::interface_callback_fn( void * this_vp , MIB_IPINTERFACE_ROW * ,
+	MIB_NOTIFICATION_TYPE )
 {
 	// worker thread -- keep it simple
-	InterfacesNotifierImp * this_ = reinterpret_cast<InterfacesNotifierImp*>(this_vp) ;
+	InterfacesNotifierImp * this_ = static_cast<InterfacesNotifierImp*>(this_vp) ;
 	if( this_->m_magic == InterfacesNotifierImp::MAGIC && this_->m_handle )
 	{
 		; // no-op -- rely on address notifications
 	}
 }
 
-void GNet::InterfacesNotifierImp::address_callback_fn( void * this_vp , MIB_UNICASTIPADDRESS_ROW * , MIB_NOTIFICATION_TYPE )
+void GNet::InterfacesNotifierImp::address_callback_fn( void * this_vp , MIB_UNICASTIPADDRESS_ROW * ,
+	MIB_NOTIFICATION_TYPE )
 {
 	// worker thread -- keep it simple
-	InterfacesNotifierImp * this_ = reinterpret_cast<InterfacesNotifierImp*>(this_vp) ;
+	InterfacesNotifierImp * this_ = static_cast<InterfacesNotifierImp*>(this_vp) ;
 	if( this_->m_magic == InterfacesNotifierImp::MAGIC && this_->m_handle )
 	{
 		FutureEvent::send( this_->m_handle , false ) ;
@@ -181,4 +189,3 @@ std::string GNet::InterfacesNotifierImp::onFutureEvent()
 	return "network-change" ;
 }
 
-/// \file ginterfaces_win32.cpp

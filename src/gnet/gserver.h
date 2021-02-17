@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,10 +18,11 @@
 /// \file gserver.h
 ///
 
-#ifndef G_NET_SERVER__H
-#define G_NET_SERVER__H
+#ifndef G_NET_SERVER_H
+#define G_NET_SERVER_H
 
 #include "gdef.h"
+#include "ggettext.h"
 #include "gserverpeer.h"
 #include "gexceptionsink.h"
 #include "gsocket.h"
@@ -39,7 +40,7 @@ namespace GNet
 	class ServerPeerInfo ;
 }
 
-/// \class GNet::Server
+//| \class GNet::Server
 /// A network server class which listens on a specific port and spins off
 /// ServerPeer objects for each incoming connection.
 /// \see GNet::ServerPeer
@@ -47,7 +48,7 @@ namespace GNet
 class GNet::Server : public Listener, private EventHandler, private ExceptionHandler
 {
 public:
-	G_EXCEPTION( CannotBind , "cannot bind the listening port" ) ;
+	G_EXCEPTION( CannotBind , G::gettext_noop("cannot bind the listening port") ) ;
 
 	Server( ExceptionSink , const Address & listening_address , ServerPeerConfig ) ;
 		///< Constructor. The server listens on the given address,
@@ -120,7 +121,7 @@ private:
 	PeerList m_peer_list ;
 } ;
 
-/// \class GNet::ServerPeerInfo
+//| \class GNet::ServerPeerInfo
 /// A structure used in GNet::Server::newPeer().
 ///
 class GNet::ServerPeerInfo

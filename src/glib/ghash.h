@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file ghash.h
 ///
 
-#ifndef G_HASH__H
-#define G_HASH__H
+#ifndef G_HASH_H
+#define G_HASH_H
 
 #include "gdef.h"
 #include "gexception.h"
@@ -30,7 +30,7 @@ namespace G
 	class Hash ;
 }
 
-/// \class G::Hash
+//| \class G::Hash
 /// A class for creating HMACs using an arbitrary cryptographic hash function
 /// as per RFC-2104.
 ///
@@ -117,7 +117,6 @@ std::string G::Hash::keyx( Fn2 fn , std::size_t blocksize , std::string k )
 }
 
 template <typename Fn2>
-inline
 std::string G::Hash::hmac( Fn2 fn , std::size_t blocksize , const std::string & k , const std::string & input )
 {
 	const std::string kx = keyx( fn , blocksize , k ) ;
@@ -125,7 +124,6 @@ std::string G::Hash::hmac( Fn2 fn , std::size_t blocksize , const std::string & 
 }
 
 template <typename Fn, typename Fn2>
-inline
 std::string G::Hash::mask( Fn predigest_fn , Fn2 digest_fn , std::size_t blocksize , const std::string & k )
 {
 	std::string kx = keyx( digest_fn , blocksize , k ) ;
@@ -135,7 +133,6 @@ std::string G::Hash::mask( Fn predigest_fn , Fn2 digest_fn , std::size_t blocksi
 }
 
 template <typename Fn2>
-inline
 std::string G::Hash::hmac( Fn2 postdigest_fn , const std::string & masked_key , const std::string & input , Masked )
 {
 	return postdigest_fn( masked_key , input ) ;

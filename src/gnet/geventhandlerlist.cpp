@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// geventhandlerlist.cpp
-//
+///
+/// \file geventhandlerlist.cpp
+///
 
 #include "gdef.h"
 #include "gnetdone.h"
@@ -133,10 +133,16 @@ bool GNet::EventHandlerList::contains( Descriptor fd ) const noexcept
 {
 	namespace imp = EventHandlerListImp ;
 	using Range = std::pair<List::const_iterator,List::const_iterator> ;
-	Range range = std::equal_range( m_pending_list.begin() , m_pending_list.end() , List::value_type(fd) , imp::fdless() ) ;
+	Range range = std::equal_range( m_pending_list.begin() , m_pending_list.end() ,
+		List::value_type(fd) , imp::fdless() ) ;
 	if( range.first == range.second )
 		range = std::equal_range( m_list.begin() , m_list.end() , List::value_type(fd) , imp::fdless() ) ;
 	return range.first != range.second && (*range.first).m_event_handler != nullptr ;
+}
+
+std::size_t GNet::EventHandlerList::size() const noexcept
+{
+	return m_list.size() ;
 }
 
 void GNet::EventHandlerList::getHandles( std::vector<HANDLE> & out ) const
@@ -211,7 +217,7 @@ void GNet::EventHandlerList::collectGarbage()
 
 void GNet::EventHandlerList::Iterator::raiseEvent( void (EventHandler::*method)() )
 {
-	// TODO c++11 use std::make_exception_ptr and std::rethrow_exception
+	// TODO use std::make_exception_ptr and std::rethrow_exception
 	EventLoggingContext set_logging_context( (m_p!=m_end&&handler()&&es().set()) ? es().esrc() : nullptr ) ;
 	try
 	{
@@ -234,7 +240,8 @@ void GNet::EventHandlerList::Iterator::raiseEvent( void (EventHandler::*method)(
 	}
 }
 
-void GNet::EventHandlerList::Iterator::raiseEvent( void (EventHandler::*method)(EventHandler::Reason) , EventHandler::Reason reason )
+void GNet::EventHandlerList::Iterator::raiseEvent( void (EventHandler::*method)(EventHandler::Reason) ,
+	EventHandler::Reason reason )
 {
 	EventLoggingContext set_logging_context( (m_p!=m_end&&handler()&&es().set()) ? es().esrc() : nullptr ) ;
 	try
@@ -273,4 +280,3 @@ GNet::EventHandlerList::Lock::~Lock()
 		*m_invalid_p = true ;
 }
 
-/// \file geventhandlerlist.cpp

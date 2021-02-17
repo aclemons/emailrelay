@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gaddress.h
 ///
 
-#ifndef G_NET_ADDRESS__H
-#define G_NET_ADDRESS__H
+#ifndef G_NET_ADDRESS_H
+#define G_NET_ADDRESS_H
 
 #include "gdef.h"
 #include "gstrings.h"
@@ -35,7 +35,7 @@ namespace GNet
 	class AddressStorageImp ;
 }
 
-/// \class GNet::Address
+//| \class GNet::Address
 /// The GNet::Address class encapsulates a TCP/UDP transport address. The
 /// address is exposed as a 'sockaddr' structure for low-level socket
 /// operations.
@@ -80,6 +80,10 @@ public:
 		///< Constructor using a given sockaddr. Throws an exception if an
 		///< invalid structure. See also: validData()
 
+	Address( const sockaddr * addr , socklen_t len , bool fixup ) ;
+		///< An overload that conditionally applies the bsd ipv6 scope-id
+		///< fixup.
+
 	Address( Family , unsigned int port ) ;
 		///< Constructor for a wildcard INADDR_ANY address with the given port
 		///< number. Throws an exception if an invalid port number.
@@ -100,6 +104,12 @@ public:
 	~Address() ;
 		///< Destructor.
 
+	Address & operator=( const Address & ) ;
+		///< Assignment operator.
+
+	Address & operator=( Address && ) noexcept ;
+		///< Move assignment operator.
+
 	static Address defaultAddress() ;
 		///< Returns a default address, being the IPv4 wildcard address
 		///< with a zero port number.
@@ -118,7 +128,7 @@ public:
 	socklen_t length() const;
 		///< Returns the size of the sockaddr address. See address().
 
-	std::string displayString() const ;
+	std::string displayString( bool with_scope_id = false ) const ;
 		///< Returns a string which represents the transport address for
 		///< debugging and diagnostics purposes.
 
@@ -227,12 +237,6 @@ public:
 	void swap( Address & other ) noexcept ;
 		///< Swaps this with other.
 
-	Address & operator=( const Address & ) ;
-		///< Assignment operator.
-
-	Address & operator=( Address && ) noexcept ;
-		///< Move assigmnemt operator.
-
 private:
 	Address( Family , unsigned int , int ) ; // loopback()
 
@@ -249,7 +253,7 @@ namespace GNet
 	}
 }
 
-/// \class GNet::AddressStorage
+//| \class GNet::AddressStorage
 /// A helper class for calling accept(), getsockname() and getpeername()
 /// and hiding the definition of sockaddr_storage.
 ///

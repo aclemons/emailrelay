@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gclient.h
 ///
 
-#ifndef G_NET_CLIENT__H
-#define G_NET_CLIENT__H
+#ifndef G_NET_CLIENT_H
+#define G_NET_CLIENT_H
 
 #include "gdef.h"
 #include "gaddress.h"
@@ -31,6 +31,7 @@
 #include "gresolver.h"
 #include "glocation.h"
 #include "glinebuffer.h"
+#include "gstringview.h"
 #include "gcall.h"
 #include "gtimer.h"
 #include "gsocket.h"
@@ -45,7 +46,7 @@ namespace GNet
 	class Client ;
 }
 
-/// \class GNet::Client
+//| \class GNet::Client
 /// A class for making an outgoing connection to a remote server, with support
 /// for socket-level protocols such as TLS/SSL and SOCKS 4a.
 ///
@@ -86,12 +87,11 @@ public:
 		Config( const LineBufferConfig & , unsigned int all_timeouts ) ;
 		Config( const LineBufferConfig & , unsigned int connection_timeout ,
 			unsigned int secure_connection_timeout , unsigned int response_timeout , unsigned int idle_timeout ) ;
-		Config & setTimeouts( unsigned int all_timeouts ) ;
-		Config & setAutoStart( bool auto_start ) ;
+		Address local_address ;
+		LineBufferConfig line_buffer_config ;
 		bool sync_dns ;
 		bool auto_start{true} ;
 		bool bind_local_address{false} ;
-		Address local_address ;
 		unsigned int connection_timeout{0U} ;
 		unsigned int secure_connection_timeout{0U} ;
 		unsigned int response_timeout{0U} ;
@@ -104,7 +104,7 @@ public:
 		Config & set_secure_connection_timeout( unsigned int ) ;
 		Config & set_response_timeout( unsigned int ) ;
 		Config & set_idle_timeout( unsigned int ) ;
-		LineBufferConfig line_buffer_config ;
+		Config & set_all_timeouts( unsigned int ) ;
 	} ;
 
 	Client( ExceptionSink , const Location & remote_location , const Config & ) ;
@@ -159,6 +159,9 @@ public:
 		///< Returns false if flow control was asserted, in which
 		///< case the unsent portion is copied internally and
 		///< onSendComplete() called when complete. Throws on error.
+
+	bool send( const std::vector<G::string_view> & data , std::size_t offset = 0 ) ;
+		///< Overload for scatter/gather segments.
 
 	G::Slot::Signal<const std::string&,const std::string&,const std::string&> & eventSignal() noexcept ;
 		///< Returns a signal that indicates that something interesting

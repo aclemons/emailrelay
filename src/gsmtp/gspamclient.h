@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gspamclient.h
 ///
 
-#ifndef G_SMTP_SPAM_CLIENT__H
-#define G_SMTP_SPAM_CLIENT__H
+#ifndef G_SMTP_SPAM_CLIENT_H
+#define G_SMTP_SPAM_CLIENT_H
 
 #include "gdef.h"
 #include "gclient.h"
@@ -36,7 +36,7 @@ namespace GSmtp
 	class SpamClient ;
 }
 
-/// \class GSmtp::SpamClient
+//| \class GSmtp::SpamClient
 /// A client class that interacts with a remote process using a
 /// protocol somewhat similar to the spamassassin spamc/spamd
 /// protocol. The interface is similar to GSmtp::RequestClient
@@ -75,7 +75,7 @@ private: // overrides
 	void onConnect() override ; // Override from GNet::SimpleClient.
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::Client.
 	void onSendComplete() override ; // Override from GNet::SimpleClient.
-	void onSecure( const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
+	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
 	void onDelete( const std::string & ) override ; // Override from GNet::HeapClient.
 
 public:

@@ -1,17 +1,17 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-#
+# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-#
+# 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
+# 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
@@ -70,20 +70,20 @@ while getopts 'vfdnsa:' opt ; do
 	esac
 done
 shift `expr $OPTIND - 1`
-opt_exe_dir="${1}"
+opt_exe_dir="$1"
 
 # configuration
 #
-cfg_sw_debug="" ; test "${opt_debug}" -eq 0 || cfg_sw_debug="--debug"
-cfg_sw_extra="--domain chaintest.localnet" ; test "${opt_use_valgrind}" -eq 0 || cfg_sw_extra="--no-daemon"
-cfg_exe_dir="../src/main" ; test -z "${opt_exe_dir}" || cfg_exe_dir="${opt_exe_dir}"
-cfg_main_exe="${cfg_exe_dir}/emailrelay"
-cfg_null_filter="/bin/touch" ; test -f ${cfg_null_filter} || cfg_null_filter="/usr/bin/touch"
+cfg_sw_debug="" ; test "$opt_debug" -eq 0 || cfg_sw_debug="--debug"
+cfg_sw_extra="--domain chaintest.localnet" ; test "$opt_use_valgrind" -eq 0 || cfg_sw_extra="--no-daemon"
+cfg_exe_dir="../src/main" ; test -z "$opt_exe_dir" || cfg_exe_dir="$opt_exe_dir"
+cfg_main_exe="$cfg_exe_dir/emailrelay"
+cfg_null_filter="/bin/touch" ; test -f "$cfg_null_filter" || cfg_null_filter="/usr/bin/touch"
 cfg_pp="201" # port-prefix
 cfg_base_dir="/tmp/`basename $0`.$$.tmp"
 cfg_summary_log="/tmp/`basename $0`.out"
-cfg_sw_valgrind="--trace-children=yes --num-callers=40 --leak-check=yes --track-fds=yes --time-stamp=yes --log-file=${cfg_base_dir}/valgrind-"
-cfg_run="env IGNOREME=" ; test "${opt_use_valgrind}" -eq 0 || cfg_run="valgrind ${cfg_sw_valgrind}"
+cfg_sw_valgrind="--trace-children=yes --num-callers=40 --leak-check=yes --track-fds=yes --time-stamp=yes --log-file=$cfg_base_dir/valgrind-"
+cfg_run="env IGNOREME=" ; test "$opt_use_valgrind" -eq 0 || cfg_run="valgrind $cfg_sw_valgrind"
 
 Init()
 {
@@ -106,68 +106,76 @@ Trap()
 
 RunPoke()
 {
-	port_="${1}"
-	command_="${2}"
-	log_="${3}"
+	local port="$1"
+	local command="$2"
+	local log="$3"
 
-	echo ++ poke ${cfg_pp}${port_} flush > ${cfg_base_dir}/${log_}
-	Poke ${cfg_pp}${port_} ${command_} >> ${cfg_base_dir}/${log_}
+	echo ++ poke ${cfg_pp}${port} flush > "$cfg_base_dir/$log"
+	Poke "${cfg_pp}${port}" "$command" >> "$cfg_base_dir/$log"
 }
 
 Poke()
 {
-	# (or use netcat)
-	perl -e '
-		use IO::Socket ;
-		my $p = $ARGV[0] ;
-		my $c = $ARGV[1] || "flush" ;
-		my $s = new IO::Socket::INET( PeerHost=>"127.0.0.1" , PeerPort=>$p , Proto=>"tcp" ) or die ;
-		$s->send( $c . "\r\n" ) or die ;
-		my $buffer = "" ;
-		alarm( 10 ) ;
-		$s->recv( $buffer , 1024 ) ;
-		print $buffer , "\n" ;
-	' "$@"
+	local port="$1"
+	local command="$2"
+
+	if test "$command" = "" ; then command="flush" ; fi
+	if test "`perl -e 'use IO::Socket ; print 123' 2>/dev/null`0" -eq 1230
+	then
+		perl -e '
+			use IO::Socket ;
+			my $p = $ARGV[0] ;
+			my $c = $ARGV[1] ;
+			my $s = new IO::Socket::INET( PeerHost=>"127.0.0.1" , PeerPort=>$p , Proto=>"tcp" ) or die ;
+			$s->send( $c . "\r\n" ) or die ;
+			my $buffer = "" ;
+			alarm( 10 ) ;
+			$s->recv( $buffer , 1024 ) ;
+			print $buffer , "\n" ;
+		' "$port" "$command"
+	else
+		( echo "$command" ; sleep 2 ) | nc -w 3 127.0.0.1 "$port"
+	fi
 }
 
 Cleanup()
 {
-	Poke ${cfg_pp}11 terminate
-	Poke ${cfg_pp}12 terminate
-	Poke ${cfg_pp}13 terminate
-	Poke ${cfg_pp}14 terminate
-	Poke ${cfg_pp}15 terminate
-	Poke ${cfg_pp}16 terminate
-	if test "${opt_use_fetchmail}" -eq 1
+	Poke "${cfg_pp}11" terminate
+	Poke "${cfg_pp}12" terminate
+	Poke "${cfg_pp}13" terminate
+	Poke "${cfg_pp}14" terminate
+	Poke "${cfg_pp}15" terminate
+	Poke "${cfg_pp}16" terminate
+	if test "$opt_use_fetchmail" -eq 1
 	then
-		Poke ${cfg_pp}17 terminate
+		Poke "${cfg_pp}17" terminate
 	fi
 	sleep 2
 
-	kill `cat ${cfg_base_dir}/pid-* 2>/dev/null`
+	kill `cat $cfg_base_dir/pid-* 2>/dev/null`
 
-	if test -d ${cfg_base_dir}
+	if test -d "$cfg_base_dir"
 	then
-		grep "MailRelay-Reason" ${cfg_base_dir}/*/*envelope*bad > "${cfg_summary_log}"
-		grep "." ${cfg_base_dir}/log-? >> "${cfg_summary_log}"
-		if test "${opt_use_valgrind}" -eq 1
+		grep "MailRelay-Reason" $cfg_base_dir/*/*envelope*bad > "$cfg_summary_log"
+		grep "." $cfg_base_dir/log-? >> "$cfg_summary_log"
+		if test "$opt_use_valgrind" -eq 1
 		then
-			grep "." ${cfg_base_dir}/valgrind* >> "${cfg_summary_log}"
+			grep "." $cfg_base_dir/valgrind* >> "$cfg_summary_log"
 		fi
-		ls -lR ${cfg_base_dir} >> "${cfg_summary_log}"
-		if test "${opt_no_cleanup}" -eq 0
+		ls -lR "$cfg_base_dir" >> "$cfg_summary_log"
+		if test "$opt_no_cleanup" -eq 0
 		then
 			echo `basename $0`: cleaning up >&2
-			rm -rf ${cfg_base_dir}
+			rm -rf "$cfg_base_dir"
 		fi
 	fi
 }
 
 SanityChecks()
 {
-	if test "`${cfg_main_exe} --help | grep \"usage:\" | wc -l`" -ne 1
+	if test "`$cfg_main_exe --help 2>/dev/null | grep \"usage:\" | wc -l`" -ne 1
 	then
-		echo `basename $0`: cannot even run \"${cfg_main_exe} --help\" >&2
+		echo `basename $0`: cannot even run \"$cfg_main_exe --help\" >&2
 		trap 0
 		exit 1
 	fi
@@ -175,67 +183,67 @@ SanityChecks()
 
 RunServer()
 {
-	port_="${1}"
-	admin_port_="${2}"
-	spool_="${3}"
-	log_="${4}"
-	pidfile_="${5}"
-	extra_="${6}"
+	local port="$1"
+	local admin_port="$2"
+	local spool="$3"
+	local log="$4"
+	local pidfile="$5"
+	local extra="$6"
 
-	pop_port_="`expr ${port_} + 80`"
+	local pop_port="`expr ${port} + 80`"
 
-	mkdir -p ${cfg_base_dir}/${spool_}
-	chgrp daemon ${cfg_base_dir}/${spool_} 2>/dev/null
-	chmod 775 ${cfg_base_dir}/${spool_}
+	mkdir -p "$cfg_base_dir/$spool"
+	chgrp daemon "$cfg_base_dir/$spool" 2>/dev/null
+	chmod 775 "$cfg_base_dir/$spool"
 
-	cmd_="${cfg_main_exe} ${cfg_sw_extra} ${cfg_sw_debug}"
-	cmd_="${cmd_} --log --log-time --verbose --no-syslog"
-	cmd_="${cmd_} --port ${cfg_pp}${port_}"
-	cmd_="${cmd_} --spool-dir ${cfg_base_dir}/${spool_}"
-	cmd_="${cmd_} --admin ${cfg_pp}${admin_port_}"
-	cmd_="${cmd_} --admin-terminate"
-	cmd_="${cmd_} --pop --pop-port ${cfg_pp}${pop_port_}"
-	cmd_="${cmd_} --pop-auth ${cfg_base_dir}/pop.auth"
-	cmd_="${cmd_} --pid-file ${cfg_base_dir}/${pidfile_}"
-	cmd_="${cmd_} ${extra_}"
+	local cmd="$cfg_main_exe $cfg_sw_extra $cfg_sw_debug"
+	cmd="$cmd --log --log-time --verbose --no-syslog"
+	cmd="$cmd --port ${cfg_pp}${port}"
+	cmd="$cmd --spool-dir $cfg_base_dir/$spool"
+	cmd="$cmd --admin ${cfg_pp}${admin_port}"
+	cmd="$cmd --admin-terminate"
+	cmd="$cmd --pop --pop-port ${cfg_pp}${pop_port}"
+	cmd="$cmd --pop-auth $cfg_base_dir/pop.auth"
+	cmd="$cmd --pid-file $cfg_base_dir/$pidfile"
+	cmd="$cmd $extra"
 
-	echo ++ ${cmd_} > ${cfg_base_dir}/${log_}
-	${cfg_run}-server-${port_} ${cmd_} 2>> ${cfg_base_dir}/${log_} &
+	echo ++ $cmd > "$cfg_base_dir/$log"
+	${cfg_run}-server-${port_} $cmd 2>> "$cfg_base_dir/$log" &
 }
 
 RunClient()
 {
-	to_="${1}"
-	spool_="${2}"
-	log_="${3}"
-	pidfile_="${4}"
+	local to="$1"
+	local spool="$2"
+	local log="$3"
+	local pidfile="$4"
 
-	cmd_="${cfg_main_exe} ${cfg_sw_extra} ${cfg_sw_debug}"
-	cmd_="${cmd_} --forward --no-daemon --dont-serve --log --verbose --log-time --no-syslog"
-	cmd_="${cmd_} --pid-file ${cfg_base_dir}/${pidfile_}"
-	cmd_="${cmd_} --forward-to ${to_}"
-	cmd_="${cmd_} --spool-dir ${cfg_base_dir}/${spool_}"
+	local cmd="$cfg_main_exe $cfg_sw_extra $cfg_sw_debug"
+	cmd="$cmd --forward --no-daemon --dont-serve --log --verbose --log-time --no-syslog"
+	cmd="$cmd --pid-file $cfg_base_dir/$pidfile"
+	cmd="$cmd --forward-to $to"
+	cmd="$cmd --spool-dir $cfg_base_dir/$spool"
 
-	echo ++ ${cmd_} > ${cfg_base_dir}/${log_}
-	${cfg_run}-client ${cmd_} 2>> ${cfg_base_dir}/${log_}
+	echo ++ $cmd > "$cfg_base_dir/$log"
+	${cfg_run}-client $cmd 2>> "$cfg_base_dir/$log"
 }
 
 RunFetchmail()
 {
-	pop_port_="${1}"
-	smtp_port_="${2}"
+	local pop_port="$1"
+	local smtp_port="$2"
 
-	cfg_=${cfg_base_dir}/fetchmailrc
-	echo poll localhost username fetchmailer password fetchmail_secret > ${cfg_}
-	chmod 700 ${cfg_}
+	local cfg="$cfg_base_dir/fetchmailrc"
+	echo poll localhost username fetchmailer password fetchmail_secret > "$cfg"
+	chmod 700 "$cfg"
 
-	cmd_="fetchmail"
-	cmd_="${cmd_} -f ${cfg_} --verbose --protocol APOP"
-	cmd_="${cmd_} --port ${cfg_pp}${pop_port_}"
-	cmd_="${cmd_} --smtphost localhost/${cfg_pp}${smtp_port_} localhost"
+	local cmd="fetchmail"
+	cmd="$cmd -f $cfg --verbose --protocol APOP"
+	cmd="$cmd --port ${cfg_pp}${pop_port}"
+	cmd="$cmd --smtphost localhost/${cfg_pp}${smtp_port} localhost"
 
-	echo ++ ${cmd_} > ${cfg_base_dir}/log-fetchmail
-	${cmd_} >> ${cfg_base_dir}/log-fetchmail 2>&1
+	echo ++ $cmd > ${cfg_base_dir}/log-fetchmail
+	$cmd >> "$cfg_base_dir/log-fetchmail" 2>&1
 }
 
 Content()
@@ -270,65 +278,67 @@ Envelope()
 
 CrLf()
 {
-	perl -ne 'chomp($_) ; print $_ , "\r\n"'
+	sed 's/$/%/' | tr '%' '\r'
+	#sed 's/$/\r/'
+	#perl -ne 'chomp($_) ; print $_ , "\r\n"'
 }
 
 TestDone()
 {
-	store_="${1}"
+	local store="$1"
 	test \
-		"`ls -1 ${cfg_base_dir}/${store_}/emailrelay.*.content 2>/dev/null | wc -l`" -eq 2 -a \
-		"`ls -1 ${cfg_base_dir}/${store_}/emailrelay.*.envelope 2>/dev/null | wc -l`" -eq 2
+		"`ls -1 $cfg_base_dir/$store/emailrelay.*.content 2>/dev/null | wc -l`" -eq 2 -a \
+		"`ls -1 $cfg_base_dir/$store/emailrelay.*.envelope 2>/dev/null | wc -l`" -eq 2
 }
 
 ReportResults()
 {
-	ok_="${1}"
-	if test "${ok_}" -eq 1
+	local ok="$1"
+	if test "$ok" -eq 1
 	then
 		echo `basename $0`: succeeded
 	else
-		echo `basename $0`: failed: see ${cfg_summary_log} >&2
+		echo `basename $0`: failed: see $cfg_summary_log >&2
 	fi
 }
 
 CreateMessages()
 {
-	mkdir -p ${cfg_base_dir}/store-1
-	chgrp daemon ${cfg_base_dir}/store-1 2>/dev/null
-	chmod 775 ${cfg_base_dir}/store-1
+	mkdir -p "$cfg_base_dir/store-1"
+	chgrp daemon "$cfg_base_dir/store-1" 2>/dev/null
+	chmod 775 "$cfg_base_dir/store-1"
 
-	Content | CrLf > ${cfg_base_dir}/store-1/emailrelay.0.1.content
-	Envelope | CrLf > ${cfg_base_dir}/store-1/emailrelay.0.1.envelope
-	Content | CrLf > ${cfg_base_dir}/store-1/emailrelay.0.2.content
-	Envelope | CrLf > ${cfg_base_dir}/store-1/emailrelay.0.2.envelope
+	Content | CrLf > "$cfg_base_dir/store-1/emailrelay.0.1.content"
+	Envelope | CrLf > "$cfg_base_dir/store-1/emailrelay.0.1.envelope"
+	Content | CrLf > "$cfg_base_dir/store-1/emailrelay.0.2.content"
+	Envelope | CrLf > "$cfg_base_dir/store-1/emailrelay.0.2.envelope"
 }
 
 CreateAuth()
 {
-	mkdir -p "${cfg_base_dir}"
-	chmod 777 "${cfg_base_dir}"
+	mkdir -p "$cfg_base_dir"
+	chmod 777 "$cfg_base_dir"
 
 	# encrypted version "carols_password" provided by emailrelay-passwd
-	dotted_key="4001433821.398427562.3259251711.3361837303.2461660504.3615007459.2556666290.2918439953"
-	base64_key="3QiB7qqFvxf/O0TC95BhyFj1uZLjonjXsqFjmBHc860="
+	local dotted_key="4001433821.398427562.3259251711.3361837303.2461660504.3615007459.2556666290.2918439953"
+	local base64_key="3QiB7qqFvxf/O0TC95BhyFj1uZLjonjXsqFjmBHc860="
 
-	file="${cfg_base_dir}/server.auth"
-	echo "# server.auth" > ${file}
-	echo "server plain alice alices_password" >> ${file}
-	echo "server md5 carol ${base64_key}" >> ${file}
-	echo "server md5 bob dfgkljdflkgjdfg" >> ${file}
+	local file="$cfg_base_dir/server.auth"
+	echo "# server.auth" > "$file"
+	echo "server plain alice alices_password" >> "$file"
+	echo "server md5 carol ${base64_key}" >> "$file"
+	echo "server md5 bob dfgkljdflkgjdfg" >> "$file"
 
-	file="${cfg_base_dir}/client-alice.auth"
-	echo "# client-alice.auth" > ${file}
-	echo "client plain alice alices_password" >> ${file}
+	file="$cfg_base_dir/client-alice.auth"
+	echo "# client-alice.auth" > "$file"
+	echo "client plain alice alices_password" >> "$file"
 
-	file="${cfg_base_dir}/client-carol.auth"
-	echo "# client-carol.auth" > ${file}
-	echo "client CRAM-MD5 carol ${dotted_key}" >> ${file}
+	file="$cfg_base_dir/client-carol.auth"
+	echo "# client-carol.auth" > "$file"
+	echo "client CRAM-MD5 carol $dotted_key" >> "$file"
 
-	file="${cfg_base_dir}/pop.auth"
-	echo "server plain fetchmailer fetchmail_secret" >> ${file}
+	file="$cfg_base_dir/pop.auth"
+	echo "server plain fetchmailer fetchmail_secret" >> "$file"
 }
 
 CreateFilter()
@@ -341,12 +351,12 @@ CreateFilter()
             _tr 'a-zA-Z' 'A-Za-z' < "\$content" > \$tmp
             _cp \$tmp "\$content"
 EOF
-	chmod +x ${cfg_base_dir}/filter.sh
+	chmod +x "$cfg_base_dir/filter.sh"
 }
 
 Sleep()
 {
-	if test "${opt_use_valgrind}" -eq 1
+	if test "$opt_use_valgrind" -eq 1
 	then
 		sleep "$1"
 		sleep "$1"
@@ -367,17 +377,17 @@ Main()
 	CreateMessages
 
 	RunServer 01 11 store-2 log-1 pid-1
-	RunServer 02 12 store-2 log-2 pid-2 "--forward-to localhost:${cfg_pp}03 --client-auth ${cfg_base_dir}/client-carol.auth"
-	RunServer 03 13 store-3 log-3 pid-3 "--immediate --forward-to localhost:${cfg_pp}04 --filter ${cfg_null_filter} --client-auth ${cfg_base_dir}/client-alice.auth --server-auth ${cfg_base_dir}/server.auth"
-	RunServer 04 14 store-4 log-4 pid-4 "--server-auth ${cfg_base_dir}/server.auth"
-	RunServer 05 15 store-4 log-5 pid-5 "--poll 1 --forward-to localhost:${cfg_pp}06 --client-filter ${cfg_base_dir}/filter.sh"
-	RunServer 06 16 store-5 log-6 pid-6 "--filter ${cfg_base_dir}/filter.sh"
+	RunServer 02 12 store-2 log-2 pid-2 "--forward-to localhost:${cfg_pp}03 --client-auth $cfg_base_dir/client-carol.auth"
+	RunServer 03 13 store-3 log-3 pid-3 "--immediate --forward-to localhost:${cfg_pp}04 --filter $cfg_null_filter --client-auth $cfg_base_dir/client-alice.auth --server-auth $cfg_base_dir/server.auth"
+	RunServer 04 14 store-4 log-4 pid-4 "--server-auth $cfg_base_dir/server.auth"
+	RunServer 05 15 store-4 log-5 pid-5 "--poll 1 --forward-to localhost:${cfg_pp}06 --client-filter $cfg_base_dir/filter.sh"
+	RunServer 06 16 store-5 log-6 pid-6 "--filter $cfg_base_dir/filter.sh"
 
 	Sleep 1
-	RunClient localhost:${cfg_pp}01 store-1 log-c pid-c
+	RunClient "localhost:${cfg_pp}01" store-1 log-c pid-c
 	RunPoke 12 flush log-p
 
-	success="0"
+	local success="0"
 	for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 	do
 		Sleep 5
@@ -388,7 +398,7 @@ Main()
 		fi
 	done
 
-	if test "${success}" -eq 1 -a "${opt_use_fetchmail}" -eq 1
+	if test "$success" -eq 1 -a "$opt_use_fetchmail" -eq 1
 	then
 		success="0"
 		RunServer 07 17 store-6 log-7 pid-7

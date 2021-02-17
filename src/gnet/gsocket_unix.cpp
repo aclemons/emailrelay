@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gsocket_unix.cpp
-//
+///
+/// \file gsocket_unix.cpp
+///
 
 #include "gdef.h"
 #include "gsocket.h"
@@ -90,7 +90,7 @@ bool GNet::SocketBase::setNonBlock()
 		return false ;
 
 	int rc = ::fcntl( m_fd.fd() , F_SETFL , mode | O_NONBLOCK ) ;
-	return rc >= 0 ;
+	return rc == 0 ;
 }
 
 bool GNet::SocketBase::sizeError( ssize_t size )
@@ -127,12 +127,13 @@ std::string GNet::SocketBase::reasonString( int e )
 
 bool GNet::Socket::canBindHint( const Address & address )
 {
-	return bind( address , NoThrow() ) ;
+	return bind( address , std::nothrow ) ;
 }
 
 void GNet::Socket::setOptionReuse()
 {
-	setOption( SOL_SOCKET , "so_reuseaddr" , SO_REUSEADDR , 1 ) ; // allow bind on TIME_WAIT address -- see also SO_REUSEPORT
+	// allow bind on TIME_WAIT address -- see also SO_REUSEPORT
+	setOption( SOL_SOCKET , "so_reuseaddr" , SO_REUSEADDR , 1 ) ;
 }
 
 void GNet::Socket::setOptionExclusive()
@@ -151,10 +152,10 @@ void GNet::Socket::setOptionPureV6( bool active )
 	#endif
 }
 
-bool GNet::Socket::setOptionPureV6( bool active , NoThrow )
+bool GNet::Socket::setOptionPureV6( bool active , std::nothrow_t )
 {
 	#if GCONFIG_HAVE_IPV6
-		return active ? setOption( IPPROTO_IPV6 , "ipv6_v6only" , IPV6_V6ONLY , 1 , NoThrow() ) : true ;
+		return active ? setOption( IPPROTO_IPV6 , "ipv6_v6only" , IPV6_V6ONLY , 1 , std::nothrow ) : true ;
 	#else
 		return !active ;
 	#endif
@@ -192,4 +193,3 @@ GNet::SocketBase::ssize_type GNet::RawSocket::write( const char * buffer , size_
 	return writeImp( buffer , length ) ; // SocketBase
 }
 
-/// \file gsocket_unix.cpp

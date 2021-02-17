@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// emailrelay_test_server.cpp
-//
+///
+/// \file emailrelay_test_server.cpp
+///
 // A dummy smtp server for testing purposes.
 //
 // usage: emailrelay-test-server [--quiet] [--tls] [--auth-foo-bar] [--auth-cram] [--auth-login] [--auth-plain]
@@ -24,6 +24,7 @@
 //
 
 #include "gdef.h"
+#include "gfile.h"
 #include "geventloop.h"
 #include "gtimerlist.h"
 #include "gnetdone.h"
@@ -99,7 +100,7 @@ public:
 	void onDelete( const std::string & ) override ;
 	void onSendComplete() override ;
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ;
-	void onSecure( const std::string & , const std::string & ) override ;
+	void onSecure( const std::string & , const std::string & , const std::string & ) override ;
 	void tx( const std::string & ) ;
 
 private:
@@ -183,7 +184,7 @@ void Peer::onSendComplete()
 {
 }
 
-void Peer::onSecure( const std::string & , const std::string & )
+void Peer::onSecure( const std::string & , const std::string & , const std::string & )
 {
 }
 
@@ -331,7 +332,7 @@ int main( int argc , char * argv [] )
 			"s!slow!slow responses!!0!!1" "|"
 			"t!tls!enable tls!!0!!1" "|"
 			"q!quiet!less logging!!0!!1" "|"
-			"f!fail-at!fail the n'th message! (zero-based index)!1!n!1" "|"
+			"f!fail-at!fail from the n'th message! of the session (zero-based index)!1!n!1" "|"
 			"d!drop!drop the connection when content has DROP or when failing!!0!!1" "|"
 			"i!idle-timeout!idle timeout!!1!<seconds>!1" "|"
 			"P!port!port number!!1!port!1" "|"
@@ -345,7 +346,7 @@ int main( int argc , char * argv [] )
 		}
 		if( opt.contains("help") )
 		{
-			opt.options().showUsage( std::cout , arg.prefix() ) ;
+			opt.options().showUsage( {} , std::cout , arg.prefix() ) ;
 			return 0 ;
 		}
 
@@ -379,11 +380,12 @@ int main( int argc , char * argv [] )
 		G_LOG_S( "fail-at=[" << fail_at << "]" ) ;
 
 		{
-			std::ofstream pid_file( pid_file_name.c_str() ) ;
+			std::ofstream pid_file ;
+			G::File::open( pid_file , pid_file_name , G::File::Text() ) ;
 			pid_file << G::Process::Id().str() << std::endl ;
 		}
 
-		GNet::EventLoop * event_loop = GNet::EventLoop::create() ;
+		std::unique_ptr<GNet::EventLoop> event_loop = GNet::EventLoop::create() ;
 		GNet::ExceptionSink es ;
 		GNet::TimerList timer_list ;
 		Server server( es , Config(ipv6,port,auth_foo_bar,auth_cram,auth_login,auth_plain,auth_ok,slow,fail_at,drop,tls,quiet,idle_timeout) ) ;
@@ -399,4 +401,3 @@ int main( int argc , char * argv [] )
 	return 1 ;
 }
 
-/// \file emailrelay_test_server.cpp

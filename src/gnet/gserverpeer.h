@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gserverpeer.h
 ///
 
-#ifndef G_NET_SERVER_PEER__H
-#define G_NET_SERVER_PEER__H
+#ifndef G_NET_SERVER_PEER_H
+#define G_NET_SERVER_PEER_H
 
 #include "gdef.h"
 #include "gsocket.h"
@@ -31,6 +31,7 @@
 #include "gconnection.h"
 #include "gexceptionsource.h"
 #include "gevent.h"
+#include "gstringview.h"
 #include <utility>
 #include <memory>
 #include <string>
@@ -43,7 +44,7 @@ namespace GNet
 	class ServerPeerInfo ;
 }
 
-/// \class GNet::ServerPeerConfig
+//| \class GNet::ServerPeerConfig
 /// A structure that GNet::Server uses to configure its ServerPeer objects.
 ///
 class GNet::ServerPeerConfig
@@ -55,7 +56,7 @@ public:
 	ServerPeerConfig & set_idle_timeout( unsigned int ) ;
 } ;
 
-/// \class GNet::ServerPeer
+//| \class GNet::ServerPeer
 /// An abstract base class for the GNet::Server's connection to a remote
 /// client. Instances are created on the heap by the Server::newPeer()
 /// override. Exceptions are delivered to the owning Server and result
@@ -83,7 +84,7 @@ public:
 		///< send() until onSendComplete() is triggered.
 		///< Throws on error.
 
-	bool send( const std::vector<std::pair<const char *,std::size_t> > & data ) ;
+	bool send( const std::vector<G::string_view> & data ) ;
 		///< Overload to send data using scatter-gather segments. If false is
 		///< returned then segment data pointers must stay valid until
 		///< onSendComplete() is triggered.

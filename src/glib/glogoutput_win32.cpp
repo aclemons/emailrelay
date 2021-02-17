@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// glogoutput_win32.cpp
-//
+///
+/// \file glogoutput_win32.cpp
+///
 
 #include "gdef.h"
 #include "glogoutput.h"
@@ -56,6 +56,17 @@ namespace G
 				s.resize( pos2 ) ;
 			return s ;
 		}
+		bool oldWindows()
+		{
+			static bool old_windows_set = false ;
+			static bool old_windows = false ;
+			if( !old_windows_set )
+			{
+				old_windows_set = true ;
+				old_windows = !IsWindowsVistaOrGreater() ;
+			}
+			return old_windows ;
+		}
 	}
 }
 
@@ -65,23 +76,27 @@ void G::LogOutput::osoutput( int fd , G::Log::Severity severity , char * message
 	//
 	if( m_config.m_use_syslog && severity != Log::Severity::s_Debug && m_handle != HNULL )
 	{
-		DWORD id = 0x400003E9L ;
+		DWORD id = 0x400003E9L ; // 1001
 		WORD type = EVENTLOG_INFORMATION_TYPE ;
 		if( severity == Log::Severity::s_Warning )
 		{
-			id = 0x800003EAL ;
+			id = 0x800003EAL ; // 1002
 			type = EVENTLOG_WARNING_TYPE ;
 		}
 		else if( severity == Log::Severity::s_Error || severity == Log::Severity::s_Assertion )
 		{
-			id = 0xC00003EBL ;
+			id = 0xC00003EBL ; // 1003
 			type = EVENTLOG_ERROR_TYPE ;
 		}
 
+		// very old windowses do not seem to recognise "!S!" format specifiers so
+		// as a workround (fwiw) use additional entries in messages.mc (1011, etc)
+		if( LogOutputImp::oldWindows() )
+			id += 10 ;
+
 		message[n] = '\0' ;
 		const char * p[] = { message , nullptr } ;
-		BOOL rc = ReportEventA( m_handle , type , 0 , id , nullptr , 1 , 0 , p , nullptr ) ;
-		G__IGNORE_VARIABLE(BOOL,rc) ;
+		GDEF_UNUSED BOOL rc = ReportEventA( m_handle , type , 0 , id , nullptr , 1 , 0 , p , nullptr ) ;
 	}
 
 	// standard error or log file -- note that stderr is not accessible if a gui
@@ -141,4 +156,3 @@ void G::LogOutput::oscleanup() const noexcept
 		DeregisterEventSource( m_handle ) ;
 }
 
-/// \file glogoutput_win32.cpp

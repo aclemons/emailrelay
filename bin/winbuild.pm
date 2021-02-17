@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-#
+# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-#
+# 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
+# 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
@@ -60,24 +60,24 @@ package winbuild ;
 
 sub find_cmake
 {
-	return
+	return _fcache( "cmake" ,
 		_find_bypass( "cmake" ) ||
 		_find_basic( "find-cmake" , "cmake.exe" , _path_dirs() ) ||
 		_find_match( "find-cmake" , "cmake*/bin/cmake.exe" , undef ,
 			"$ENV{SystemDrive}" ,
-			"$ENV{ProgramFiles}" ) ;
+			"$ENV{ProgramFiles}" ) ) ;
 }
 
 sub find_msbuild
 {
-	return
+	return _fcache( "msbuild" ,
 		_find_bypass( "msbuild" ) ||
 		_find_basic( "find-msbuild" , "msbuild.exe" , _path_dirs() ) ||
 		_find_under( "find-msbuild" , "msbuild.exe" ,
 			$ENV{'ProgramFiles(x86)'}."/msbuild" ,
 			$ENV{'ProgramFiles(x86)'}."/Microsoft Visual Studio" ,
 			$ENV{'ProgramFiles(x86)'} ,
-			$ENV{ProgramFiles} ) ;
+			$ENV{ProgramFiles} ) ) ;
 }
 
 sub find_qt
@@ -96,17 +96,19 @@ sub find_qt
 		_find_bypass( "qt" , "x64" ) ||
 		_find_match( "find-qt(x64)" , "5*/msvc*_64/lib/cmake/qt5" , undef , @dirs ) ;
 
+	_fcache( "qt-x86" , $x86 ) ;
+	_fcache( "qt-x64" , $x64 ) ;
 	return { x86 => $x86 , x64 => $x64 } ;
 }
 
 sub find_mbedtls
 {
-	return
+	return _fcache( "mbedtls" ,
 		_find_bypass( "mbedtls" ) ||
 		_find_match( "find-mbedtls" , "mbedtls*" , undef ,
 			File::Basename::dirname($0)."/.." ,
 			"$ENV{HOMEDRIVE}$ENV{HOMEPATH}" ,
-			"$ENV{SystemDrive}" ) ;
+			"$ENV{SystemDrive}" ) ) ;
 }
 
 sub find_runtime
@@ -190,16 +192,51 @@ sub _find_all_under
 	return @result ;
 }
 
+my %fcache = () ;
+sub _fcache
+{
+	my ( $key , $value ) = @_ ;
+	$fcache{$key} = $value ;
+	return $value ;
+}
+
+sub fcache_delete
+{
+	my $path = join( "/" , File::Basename::dirname(Cwd::realpath($0)) , "winbuild.cfg" ) ;
+	rename( "$path" , "${path}.old" ) ;
+	unlink( $path ) ;
+}
+
+sub fcache_write
+{
+	my $path = join( "/" , File::Basename::dirname(Cwd::realpath($0)) , "winbuild.cfg" ) ;
+	my $fh = new FileHandle( $path , "w" ) or die "error: install: cannot create [$path]\n" ;
+	for my $k ( sort keys %fcache )
+	{
+		print $fh "$k $fcache{$k}\n" ;
+	}
+	$fh->close() or die ;
+}
+
 sub _find_bypass
 {
 	my ( $name , $arch ) = @_ ;
+
+	# winbuild.cfg
+	# eg.
+	# cmake c:/cmake/bin/cmake.exe
+	# mbedtls c:/mbedtls-2.99
+	# msbuild c:/msbuild/msbuild.exe
+	# qt-x64 c:/qt/5.0/msvc_64/lib/cmake/Qt5
+	# qt-x86 c:/qt/5.0/msvc/lib/cmake/Qt5
+
 	my $fh = new FileHandle( "winbuild.cfg" , "r" ) ;
 	return undef if !$fh ;
 	my $key = $arch ? "$name-$arch" : $name ;
 	while(<$fh>)
 	{
 		chomp( my $line = $_ ) ;
-		my ( $k , $v ) = split( /\s+/ , $line ) ;
+		my ( $k , $v ) = ( $line =~ m/(\S+)\s+(.*)/ ) ;
 		return $v if( $k eq $key ) ;
 	}
 	return undef ;
@@ -328,7 +365,7 @@ sub find_msvc_base
 	my $dir = File::Basename::dirname( $msvc_linker ) ;
 	my ( $base ) = ( $dir =~ m:(.*/vc)/.*:i ) ; # could to better
 	$base or die "error: install: cannot determine the msvc base directory from [$msvc_linker]\n" ;
-	return $base ;
+	return _fcache( "msvc" , $base ) ;
 }
 
 sub _cache_value_msvc_linker

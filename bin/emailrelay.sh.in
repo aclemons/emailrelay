@@ -1,17 +1,17 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-#
+# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-#
+# 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
+# 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
@@ -38,11 +38,11 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 NAME=emailrelay
 DESC="E-MailRelay mail server"
 CONFIG=__SYSCONF_DIR__/$NAME.conf
-PIDFILE=__RUNDIR__/$NAME.pid
+PIDFILE=__RUN_DIR__/$NAME.pid
 GROUP=daemon
 DAEMON=__SBIN_DIR__/$NAME
 SUBMIT=__SBIN_DIR__/$NAME-submit
-FACILITY=
+FACILITY=mail
 
 test -f __SYSCONF_DIR__/default/$NAME && . __SYSCONF_DIR__/default/$NAME
 test -f /etc/rc.conf.d/$NAME && . /etc/rc.conf.d/$NAME
@@ -125,7 +125,7 @@ root_root()
 	# True if the given file exists and is owned by 'root.root',
 	# as if newly copied by the install process and never
 	# subsequently chown'ed by the administrator
-	ls -nd "$1" 2>/dev/null | cut -d' ' --fields=3,4 | grep -q '^0 0$'
+	ls -nd "$1" 2>/dev/null | cut -d' ' -f 3,4 | grep -q '^0 0$'
 }
 spooldir()
 {
@@ -181,12 +181,17 @@ setup_tools()
 	setup_sgid "__SBIN_DIR__/emailrelay-submit"
 	setup_sgid "__LIBEXEC_DIR__/emailrelay-filter-copy"
 }
+setup_openrc()
+{
+	rc-update -q -q add "$NAME" >/dev/null 2>&1 || true
+}
 setup()
 {
 	setup_config
 	setup_rundir
 	setup_spooldir
 	setup_tools
+	setup_openrc
 }
 if test "$1" = "setup" ; then setup ; exit 0 ; fi
 
@@ -230,6 +235,7 @@ case "$1" in
 			start_daemon -p "$PIDFILE" -- "$DAEMON" --as-server --syslog=$FACILITY --pid-file "$PIDFILE" "$CONFIG"
 			e="$?"
 			log_end_msg $e
+			if test -d /run/systemd/system ; then sleep 0.2 2>/dev/null ; fi # pid file race
 			test "$e" -eq 0
 		else
 			log_warning_msg "$NAME startup is disabled in __SYSCONF_DIR__/default/$NAME"
@@ -241,7 +247,9 @@ case "$1" in
 		log_daemon_msg "Stopping $DESC"
 		log_progress_msg "$NAME"
 		killproc -p "$PIDFILE" "$DAEMON"
-		log_end_msg $?
+		e="$?"
+		log_end_msg $e
+		test "$e" -eq 0
 		;;
 
 	reload)

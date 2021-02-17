@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gprocess_win32.cpp
-//
+///
+/// \file gprocess_win32.cpp
+///
 
 #include "gdef.h"
 #include "gprocess.h"
@@ -40,27 +40,6 @@ G::Process::Id::Id() noexcept
 	m_pid = static_cast<unsigned int>(::_getpid()) ; // or ::GetCurrentProcessId()
 }
 
-G::Process::Id::Id( SignalSafe , const char * path ) noexcept
-{
-	try
-	{
-		std::ifstream file( path ? path : "" ) ;
-		file >> m_pid ;
-		if( file.fail() )
-			m_pid = 0 ;
-	}
-	catch( std::exception & )
-	{
-	}
-}
-
-G::Process::Id::Id( std::istream & stream )
-{
-	stream >> m_pid ;
-	if( stream.fail() )
-		throw Process::InvalidId() ;
-}
-
 std::string G::Process::Id::str() const
 {
 	std::ostringstream ss ;
@@ -71,6 +50,11 @@ std::string G::Process::Id::str() const
 bool G::Process::Id::operator==( const Id & rhs ) const noexcept
 {
 	return m_pid == rhs.m_pid ;
+}
+
+bool G::Process::Id::operator!=( const Id & rhs ) const noexcept
+{
+	return m_pid != rhs.m_pid ;
 }
 
 // ===
@@ -91,13 +75,13 @@ void G::Process::closeStderr()
 
 void G::Process::cd( const Path & dir )
 {
-	if( !cd(dir,NoThrow()) )
+	if( !cd(dir,std::nothrow) )
 		throw CannotChangeDirectory( dir.str() ) ;
 }
 
-bool G::Process::cd( const Path & dir , NoThrow )
+bool G::Process::cd( const Path & dir , std::nothrow_t )
 {
-	return 0 == ::_chdir( dir.str().c_str() ) ;
+	return 0 == ::_chdir( dir.cstr() ) ;
 }
 
 int G::Process::errno_( const SignalSafe & ) noexcept
@@ -124,31 +108,37 @@ std::string G::Process::strerror( int errno_ )
 	return Str::isPrintableAscii(s) ? Str::lower(s) : s ;
 }
 
-G::Identity G::Process::beOrdinary( Identity identity , bool )
+void G::Process::beOrdinary( Identity , bool )
 {
 	// not implemented -- see also ImpersonateLoggedOnUser()
-	return identity ;
 }
 
-G::Identity G::Process::beOrdinary( SignalSafe , Identity identity , bool ) noexcept
+G::Identity G::Process::beOrdinaryAtStartup( Identity identity , bool )
 {
-	// not implemented -- see also ImpersonateLoggedOnUser()
 	return identity ;
 }
 
-G::Identity G::Process::beSpecial( Identity identity , bool )
+void G::Process::beOrdinaryForExec( Identity ) noexcept
 {
-	// not implemented -- see also RevertToSelf()
-	return identity ;
+	// not implemented
 }
 
-G::Identity G::Process::beSpecial( SignalSafe , Identity identity , bool ) noexcept
+void G::Process::beSpecial( Identity identity , bool )
 {
 	// not implemented -- see also RevertToSelf()
-	return identity ;
 }
 
-void G::Process::revokeExtraGroups()
+void G::Process::beSpecialForExit( SignalSafe , Identity ) noexcept
+{
+	// not implemented
+}
+
+void G::Process::setEffectiveUser( Identity )
+{
+	// not implemented
+}
+
+void G::Process::setEffectiveGroup( Identity )
 {
 	// not implemented
 }
@@ -183,20 +173,14 @@ std::string G::Process::cwd( bool no_throw )
 	else
 	{
 		std::string result( p ) ;
-		free( p ) ;
+		std::free( p ) ;
 		return result ;
 	}
 }
 
-void G::Process::terminate() noexcept
-{
-	// never gets here in practice since beOrdinary() is stubbed out
-	std::terminate() ;
-}
-
 // ===
 
-class G::Process::Umask::UmaskImp
+class G::Process::UmaskImp
 {
 } ;
 
@@ -212,4 +196,3 @@ void G::Process::Umask::set( Process::Umask::Mode )
 	// not implemented
 }
 
-/// \file gprocess_win32.cpp

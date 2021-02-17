@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-#
+# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-#
+# 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
+# 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
@@ -23,6 +23,7 @@
 
 use strict ;
 use FileHandle ;
+use Fcntl qw(:seek :flock LOCK_EX);
 use File::Glob ;
 use Cwd ;
 use Check ;
@@ -33,10 +34,11 @@ our $bin_dir = ".." ;
 our $verbose = 0 ;
 our $keep = 0 ;
 our $ages = 30 ;
+our $localhost = "127.0.0.1" ;
 
 sub log_
 {
-	print STDERR join(" ",@_),"\n" if $verbose ;
+	print join(" ",@_),"\n" if $verbose ;
 }
 
 sub bsd
@@ -64,11 +66,85 @@ sub windows
 	return !unix() && ( $^O eq "MSWin32" ) ; # disallow msys elsewhere
 }
 
+sub amRoot
+{
+	my $id = `id -u` ;
+	return $id == 0 ;
+}
+
+sub _haveSudo
+{
+	return `sudo -n echo x 2>/dev/null` =~ m/x/ ;
+}
+
+sub _haveSu
+{
+	return `su root -c \"echo x\" 2>/dev/null </dev/null` =~ m/x/ ;
+}
+
+sub haveSudo
+{
+	return _haveSudo() || ( amRoot() && _haveSu() ) ;
+}
+
+sub sudoUserPrefix
+{
+	my ( $user ) = @_ ;
+	return _haveSudo() ? "sudo -u \"$user\" " : "su \"$user\" -c \"" ;
+}
+
+sub sudoPrefix
+{
+	return System::amRoot() ? "" : "sudo -n " ;
+}
+
+sub sudoCommand
+{
+	my ( $cmd ) = @_ ;
+	my $head = sudoPrefix() ;
+	my $tail = ( $head =~ m/"$/ ) ? "\"" : "" ; # not needed
+	return $head . $cmd . $tail ;
+}
+
+sub testAccount
+{
+	# Returns a non-root, non-"daemon" account that can be used with "su -c".
+	if( System::mac() )
+	{
+		my $user = $ENV{LOGNAME} ;
+		$user = $ENV{SUDO_USER} if( !$user || $user eq "root" ) ;
+		return $user ;
+	}
+	elsif( System::bsd() )
+	{
+		my $user = $ENV{LOGNAME} ;
+		$user = $ENV{SUDO_USER} if( !$user || $user eq "root" ) ;
+		if( !$user || $user eq "root" )
+		{
+			for my $name ( "operator" , "guest" )
+			{
+				if( `id -u "$name" 2>/dev/null` )
+				{
+					$user = $name ;
+					last ;
+				}
+			}
+		}
+		return $user ;
+	}
+	else
+	{
+		my $user = $ENV{LOGNAME} ;
+		$user = $ENV{SUDO_USER} if( !$user || $user eq "root" ) ;
+		return $user ;
+	}
+}
+
 sub unlink
 {
 	my ( $path , $wintries ) = @_ ;
 	$wintries = (windows()?20:0) if !defined($wintries) ;
-	my $pidfile = ( $path =~ m/\.pid$/ ) ;
+	my $pidfile = ( $path =~ m/pid$/ ) ;
 	my $keep_this = $keep && !$pidfile ;
 	if( -f $path )
 	{
@@ -102,7 +178,7 @@ sub path
 	return join( "/" , grep { m/./ } @_ ) ;
 }
 
-sub mangledpath
+sub sanepath
 {
 	my $p = path( @_ ) ;
 	if( !unix() ) { $p =~ s:/:\\:g }
@@ -136,7 +212,7 @@ sub commandline
 	if(!exists($args{background})) {$args{background} = 0}
 	if(!defined($args{stdout})) {$args{stdout} = ""}
 	if(!defined($args{stderr})) {$args{stderr} = ""}
-	if(!defined($args{prefix})) {$args{prefix} = ""} # eg. "sudo -c bin"
+	if(!defined($args{prefix})) {$args{prefix} = ""} # eg. 'sudo -u "nobody" ', 'su nobody -c "'
 	if(!defined($args{gtest})) {$args{gtest} = ""}
 
 	my $stderr = $args{stderr} ;
@@ -145,48 +221,85 @@ sub commandline
 		$stderr = "&1" ;
 	}
 
-	return
-		( System::unix() ? "" : "cmd /c \"" ) .
-		( System::unix() || $args{gtest} eq "" ? "" : "set G_TEST=$args{gtest} && " ) .
-		( $args{background} && !System::unix() ? "start /D. " : "" ) .
-		$args{prefix} . $command . " " .
-		( $args{stdout} ? ">$args{stdout} " : "" ) .
-		( $args{stderr} && System::unix() ? "2>$stderr " : "" ) .
-		( System::unix() ? "" : "\"" ) .
-		( System::unix() && $args{background} ? "&" : "" ) ;
+	if( System::unix() )
+	{
+		return
+			$args{prefix} . $command . " " .
+			( $args{stdout} ? ">$args{stdout} " : "" ) .
+			( $args{stderr} && System::unix() ? "2>$stderr " : "" ) .
+			( ( $args{prefix} =~ m/"$/ ) ? "\" " : "" ) .
+			( $args{background} ? "&" : "" ) ;
+	}
+	else
+	{
+		return
+			"cmd /c \"" .
+			( $args{gtest} ? "set G_TEST=$args{gtest} && " : "" ) .
+			( $args{background} ? "start /D. " : "" ) .
+			$command .
+			( $args{stdout} ? " >$args{stdout} " : "" ) .
+			"\"" ;
+	}
 }
 
-my $_generator = 0 ;
+sub _tempdir
+{
+	if( unix() )
+	{
+		# using Cwd::cwd() here can be awkward because permissioning tests
+		# typically need some unprivileged access to spool directories etc.
+		# (consider filter tests where the filter scripts run as "daemon",
+		# or submit tests where the submit tool is run from an unprivileted
+		# test account) -- when using absolute paths under the cwd every
+		# directory on the path requires "--------x" (see stat(2) and
+		# open(2)), but we might be running under a home directory with
+		# "rwx------" -- using "/tmp" itself is also awkward because of
+		# its 'restricted deletion' flag ("--------t"), so we make a
+		# subdirectory
+		my $dir = "/tmp/emailrelay-test" ;
+		my $old_mask = umask 0 ;
+		mkdir $dir , 0777 ;
+		umask $old_mask ;
+		return $dir ;
+	}
+	else
+	{
+		return Cwd::cwd() ;
+	}
+}
+
 sub tempfile
 {
 	# Returns the path of a temporary file with a unique name, optionally
-	# using the given name as the suffix.
-	my ( $name , $dir ) = @_ ;
-	$name = defined($name) ? $name : "tmp" ;
-	$dir = defined($dir) ? $dir : Cwd::cwd() ;
-	#my $rnd = int(1000*rand()) ; # pid is not very unique on windows
-	my $script_pid = $$ ;
-	$_generator++ ;
-	return "$dir/.tmp.$script_pid.$_generator.$name" ;
+	# using the given suffix and directory.
+	my ( $suffix , $dir ) = @_ ;
+	$suffix ||= "tmp" ;
+	$dir ||= _tempdir() ; # was Cwd::cwd(), but awkward if root and /root is rwx------
+	my $pid = $$ ;
+	my $seq = nextPort() ; # might as well
+	return "$dir/e.$pid.$seq.$suffix" ;
 }
 
 sub createFile
 {
 	# Creates a file, optionally containing one line of text.
 	my ( $path , $line ) = @_ ;
-	my $fh = new FileHandle( "> " . $path ) or die "cannot create [$path]" ;
+	my $fh = new FileHandle( $path , "w" ) or die "cannot create [$path]" ;
 	if( defined($line) ) { print $fh $line , unix() ? "\n" : "\r\n" }
 	$fh->close() or die "cannot write to [$path]" ;
 }
 
 sub waitFor
 {
-	my ( $fn , $what , $more ) = @_ ;
+	my ( $fn , $what , $more , $timeout ) = @_ ;
+	$timeout ||= $ages ;
 	my $t = time() ;
-	while( time() < ($t+$ages) )
+	my $t_end = $t + $timeout ;
+	while( $t <= $t_end )
 	{
 		return if &{$fn}() ;
 		sleep_cs( 5 ) ;
+		$t = time() ;
 	}
 	Check::that( undef , "timed out waiting for $what" , $more ) ;
 }
@@ -195,7 +308,7 @@ sub waitForFileLine
 {
 	my ( $file , $string , $more ) = @_ ;
 	waitFor( sub {
-		my $fh = new FileHandle($file) ;
+		my $fh = new FileHandle( $file ) ;
 		while(<$fh>)
 		{
 			chomp( my $line = $_ ) ;
@@ -207,65 +320,54 @@ sub waitForFileLine
 sub waitForFile
 {
 	my ( $file , $more ) = @_ ;
-	waitFor( sub { -f $file } , "file [$file]" , $more ) ;
+	waitFor( sub {
+		-f $file
+	} , "file [$file]" , $more ) ;
 }
 
 sub waitForFiles
 {
 	my ( $glob , $count , $more ) = @_ ;
-	waitFor( sub { scalar(glob_($glob)) == $count } , "$count files [$glob]" , $more ) ;
+	waitFor( sub {
+		$count == scalar(grep{-f $_} glob_($glob))
+	} , "$count files matching [$glob]" , $more ) ;
 }
 
 sub waitForPid
 {
 	my ( $pidfile ) = @_ ;
 	my $pid = undef ;
-	my $t = time() ;
-	while( time() < ($t+$ages) ) # todo use waitFor()
-	{
+	waitFor( sub {
 		my $fh = new FileHandle( $pidfile , "r" ) ;
-		if( $fh )
-		{
-			my $line = <$fh> ;
-			chomp( $line ) ;
-			$pid = $line ;
-			$fh->close() ;
-		}
-		last if $pid ;
-		sleep_cs( 20 ) ;
-	}
-	Check::numeric( $pid , "no pid from pidfile [$pidfile]" ) ;
+		$pid = $fh ? $fh->getline() : undef ;
+		$pid =~ s/[\r\n].*//g ;
+		int($pid)+0 > 0 ;
+	} , "pid from pidfile [$pidfile]" ) ;
 	return $pid ;
 }
 
 sub waitpid
 {
+	# Waits for a process to terminate.
 	my ( $pid ) = @_ ;
 	die if( !defined($pid) || $pid < 0 ) ;
-	my $t = time() ;
-	while( time() < ($t+$ages) )
-	{
-		return if !processIsRunning($pid) ;
-		sleep_cs( 50 ) ;
-	}
-	die "process [$pid] has not terminated"
+	waitFor( sub {
+		!processIsRunning( $pid )
+	} , "process [$pid] to terminate" ) ;
 }
 
 sub createSmallMessageFile
 {
-	# Creates a small message file.
-	my ( $dir ) = @_ ;
-	return createMessageFile( $dir , 10 ) ;
+	# Creates a small message file and returns its path.
+	return _createMessageFile( tempfile("message") , 10 ) ;
 }
 
-sub createMessageFile
+sub _createMessageFile
 {
-	# Creates a message file containing 'n' lines
-	# of gibberish text.
-	my ( $dir , $n ) = @_ ;
+	# Creates a message file containing 'n' lines of text.
+	my ( $path , $n ) = @_ ;
 	$n = defined($n) ? $n : 10 ;
-	my $path = tempfile("message",$dir) ;
-	my $fh = new FileHandle( "> " . $path ) ;
+	my $fh = new FileHandle( $path , "w" ) or die ;
 	print $fh "Subject: test\r\n" ;
 	print $fh "X-Foo: bar\r\n" ;
 	print $fh "\r\n" ;
@@ -277,20 +379,40 @@ sub createMessageFile
 	return $path ;
 }
 
+sub createPidDir
+{
+	# Creates a pid directory with open permissions and no sticky group.
+	my ( $dir ) = @_ ;
+	my $old_mask = umask 0 ;
+	my $ok = mkdir $dir , 0777 ;
+	umask $old_mask ;
+	Check::that( $ok , "failed to create pid-file directory" , $dir , $! ) ;
+	my $rc = system( "chmod g-s $dir" ) if unix() ;
+	Check::that( $rc == 0 , "failed to remove sticky group from pid-file directory" ) ;
+	return $dir ;
+}
+
+sub rmdir_
+{
+	my ( $dir ) = @_ ;
+	my $ok = rmdir $dir ;
+	Check::that( $ok , "failed to remove directory" , $dir , $! ) ;
+}
+
 sub createSpoolDir
 {
 	# Creates a spool directory with open permissions.
-	my ( $mode , $dir , $key , $group ) = @_ ;
-	$mode = defined($mode) ? $mode : 0777 ;
-	$key = defined($key) ? $key : "spool" ;
-	$group ||= "daemon" ;
-	my $path = tempfile($key,$dir) ;
+	my ( $key , $sticky_group ) = @_ ;
+	$key ||= "spool" ;
+	$sticky_group ||= "daemon" ;
+	my $mode = 0777 ;
+	my $path = tempfile( $key ) ;
 	my $old_mask = umask 0 ;
 	my $ok = mkdir $path , $mode ;
 	if( unix() && `id -u` == 0 )
 	{
-		my $rc = system( "chgrp $group $path" ) ;
-		$rc += system( "chmod g+s $path" ) ;
+		my $rc = system( "chgrp \"$sticky_group\" \"$path\"" ) ;
+		$rc += system( "chmod g+s \"$path\"" ) ;
 		Check::that( $rc == 0 , "cannot set spool dir permissions" ) ;
 	}
 	umask $old_mask ;
@@ -298,7 +420,7 @@ sub createSpoolDir
 	return $path ;
 }
 
-sub _deleteFiles
+sub _deleteMatchingFiles
 {
 	my ( $dir , $tail ) = @_ ;
 	for my $path ( glob_( "$dir/*$tail" ) )
@@ -314,18 +436,18 @@ sub _deleteFiles
 sub deleteSpoolDir
 {
 	# Deletes valid-looking message files from a spool
-	# directory. Optionally deletes all files.
+	# directory. Optionally deletes failed ones too.
 	my ( $path , $all ) = @_ ;
 	$all = defined($all) ? $all : 0 ;
 	if( defined($path) && -d $path )
 	{
-		_deleteFiles( $path , "content" ) ;
-		_deleteFiles( $path , "envelope" ) ;
+		_deleteMatchingFiles( $path , "content" ) ;
+		_deleteMatchingFiles( $path , "envelope" ) ;
 		if( $all )
 		{
-			_deleteFiles( $path , "envelope.bad" ) ;
-			_deleteFiles( $path , "envelope.busy" ) ;
-			_deleteFiles( $path , "envelope.new" ) ;
+			_deleteMatchingFiles( $path , "envelope.bad" ) ;
+			_deleteMatchingFiles( $path , "envelope.busy" ) ;
+			_deleteMatchingFiles( $path , "envelope.new" ) ;
 		}
 		rmdir( $path ) ;
 	}
@@ -361,18 +483,18 @@ sub matchOne
 
 sub submitSmallMessage
 {
-	# Submits a small message.
-	my ( $spool_dir , $tmp_dir , @to ) = @_ ;
-	submitMessage( $spool_dir , $tmp_dir , 10 , @to ) ;
+	# Submits a small message using emailrelay-submit.
+	my ( $spool_dir , @to ) = @_ ;
+	submitMessage( $spool_dir , 10 , @to ) ;
 }
 
 sub submitMessage
 {
 	# Submits a message of 'n' lines.
-	my ( $spool_dir , $tmp_dir , $n , @to ) = @_ ;
+	my ( $spool_dir , $n , @to ) = @_ ;
 	push @to , "me\@there.localnet" if( scalar(@to) == 0 ) ;
-	my $path = createMessageFile($tmp_dir,$n) ;
-	my $rc = system( mangledpath(exe($bin_dir,"emailrelay-submit")) . " --from me\@here.localnet " .
+	my $path = _createMessageFile( tempfile("message") , $n ) ;
+	my $rc = system( sanepath(exe($bin_dir,"emailrelay-submit")) . " --from me\@here.localnet " .
 		"--spool-dir $spool_dir " . join(" ",@to) . " < $path" ) ;
 	Check::that( $rc == 0 , "failed to submit" ) ;
 	System::unlink( $path ) ;
@@ -381,30 +503,62 @@ sub submitMessage
 sub submitMessages
 {
 	# Submits 'n' message of 'm' lines using the "emailrelay-submit" utility.
-	my ( $spool_dir , $tmp_dir , $n , $m ) = @_ ;
+	my ( $spool_dir , $n , $m ) = @_ ;
 	for my $i ( 1 .. $n )
 	{
-		submitMessage( $spool_dir , $tmp_dir , $m ) ;
+		submitMessage( $spool_dir , $m ) ;
 	}
 }
 
-sub _old_status
+sub _pstatus
 {
 	my ( $pid , $key , $field ) = @_ ;
-	# linux-specific
-	my $line = `cat /proc/$pid/status | fgrep $key: | head -1` ;
-	chomp $line ;
-	my @part = split( /\s+/ , $line ) ;
-	return $part[$field] ;
+
+	die if !unix() ;
+	my $value1 = eval { _psstatus( $pid , $key , $field ) } ;
+	my $error1 = $@ =~ s/\n//gr =~ s/\r//gr  =~ s; at /.*;;r ;
+	my $value2 = eval { _procstatus( $pid , $key , $field ) } ;
+	my $error2 = $@ =~ s/\n//gr =~ s/\r//gr =~ s; at /.*;;r ;
+	return $value1 if ( defined($value1) && !$error1 ) ;
+	return $value2 if ( defined($value2) && !$error2 ) ;
+	die join(" and ",$error1,$error2) if ( $error1 and $error2 ) ;
+	return undef ;
 }
 
-sub _status
+sub _procstatus
 {
 	my ( $pid , $key , $field ) = @_ ;
-	my $cmd = "ps -p $pid -o pid,ruid,uid,svuid,gid,rgid,svgid" ;
-	my $fh = new FileHandle( "$cmd |" ) ;
+	die "no /proc" if ! -d "/proc" ;
+	return undef if ! -e "/proc/$pid" ;
+	my $result ;
+	my $fh = new FileHandle( "/proc/$pid/status" ) ; # no die
+	while(<$fh>)
+	{
+		chomp( my $line = $_ ) ;
+		my ( $k , $rid , $eid , $sid ) = split( /\s+/ , $line ) ;
+		if( $k eq "$key:" )
+		{
+			$result = $rid if( $key eq "Uid" && $field == 1 ) ;
+			$result = $eid if( $key eq "Uid" && $field == 2 ) ;
+			$result = $sid if( $key eq "Uid" && $field == 3 ) ;
+			$result = $rid if( $key eq "Gid" && $field == 1 ) ;
+			$result = $eid if( $key eq "Gid" && $field == 2 ) ;
+		}
+	}
+	return $result ;
+}
+
+sub _psstatus
+{
+	my ( $pid , $key , $field ) = @_ ;
+	die "invalid pid for ps -p" if ( !$pid || int($pid) <= 0 || int($pid) ne $pid ) ;
+	my $cmd = "ps -p \"$pid\" -o pid,ruid,uid,svuid,gid,rgid,svgid" ;
+	my $fh = new FileHandle( "$cmd 2>&1 |" ) or die ;
 	my $header = <$fh> ;
-	chomp( my $line = <$fh> ) ;
+	my $line = <$fh> ;
+	die "no \"ps -p\"" if ! ( $header =~ m/^\s*PID\s/ ) ; # busybox
+	return undef if ( !defined($header) || !defined($line) ) ;
+	chomp( $line ) ;
 	$line =~ s/^\s+// ;
 	my ($pid_ignore,$ruid,$uid,$svuid,$gid,$rgid,$svgid) = split( /\s+/ , $line ) ;
 	my $result = undef ;
@@ -424,35 +578,35 @@ sub effectiveUser
 {
 	# Returns the calling process's effective user id.
 	my ( $pid ) = @_ ;
-	return _status($pid,"Uid",2) ;
+	return _pstatus($pid,"Uid",2) ;
 }
 
 sub effectiveGroup
 {
 	# Returns the calling process's effective group id.
 	my ( $pid ) = @_ ;
-	return _status($pid,"Gid",2) ;
+	return _pstatus($pid,"Gid",2) ;
 }
 
 sub realUser
 {
 	# Returns the calling process's real user id.
 	my ( $pid ) = @_ ;
-	return _status($pid,"Uid",1) ;
+	return _pstatus($pid,"Uid",1) ;
 }
 
 sub realGroup
 {
 	# Returns the calling process's group id.
 	my ( $pid ) = @_ ;
-	return _status($pid,"Gid",1) ;
+	return _pstatus($pid,"Gid",1) ;
 }
 
 sub savedUser
 {
 	# Returns the calling process's saved user id.
 	my ( $pid ) = @_ ;
-	return _status($pid,"Uid",3) ;
+	return _pstatus($pid,"Uid",3) ;
 }
 
 sub uid
@@ -496,89 +650,115 @@ sub sleep_cs
 	select( undef , undef , undef , 0.01 * $cs ) ;
 }
 
+sub killAll
+{
+	# Kills a set of processes without any retry shenanigans.
+	my ( @pids ) = @_ ;
+	for my $pid ( @pids )
+	{
+		if( defined($pid) && $pid > 1 )
+		{
+			kill( 15 , $pid ) ;
+		}
+	}
+}
+
+sub _kill1
+{
+	my ( $pid ) = @_ ;
+	kill( 15 , int($pid) ) if( int($pid) > 0 ) ;
+}
+
+sub _kill2
+{
+	my ( $pid ) = @_ ;
+	# in case started with sudo
+	system( "sudo -n kill \"".int($pid)."\" 2>/dev/null" ) if( unix() && int($pid) > 0 ) ;
+}
+
+sub _kill3
+{
+	my ( $pid ) = @_ ;
+	system( "taskkill /T /F /PID $pid >NUL 2>&1" ) if( windows() && int($pid) > 0 ) ;
+}
+
 sub kill_
 {
-	my ( $pid , $timeout_cs ) = @_ ;
-	$timeout_cs = defined($timeout_cs) ? $timeout_cs : 100 ;
-	return if( !defined($pid) || $pid <= 0 ) ;
-	if( unix() )
-	{
-		kill( 15 , $pid ) ;
-		sleep_cs( $timeout_cs ) ;
-		if( processIsRunning($pid) )
-		{
-			log_( "still killing pid [$pid]" ) ;
-			kill( 9 , $pid ) ;
-			sleep_cs( $timeout_cs ) ;
-		}
-	}
-	else
-	{
-		log_( "killing pid [$pid]" ) ;
-		kill( 15 , $pid ) ;
-		my $try = 0 ;
-		while( processIsRunning($pid) )
-		{
-			if( $try++ > 0 ) { log_( "still killing pid [$pid]" ) }
-			system( "taskkill /T /F /PID $pid >NUL 2>&1" ) ;
-			sleep_cs( $timeout_cs ) ;
-		}
-	}
+	my ( $pid ) = @_ ;
+	return if( int($pid) <= 0 ) ;
+	$pid = int($pid) ;
+	my $try = 1 ;
+	waitFor( sub {
+		_kill1($pid) ;
+		_kill2($pid) if $try > 1 ;
+		_kill3($pid) if $try > 1 ;
+		$try++ ;
+		return !processIsRunning($pid) ;
+	} , "pid [$pid] to be killed" ) ;
+}
+
+sub killOnce
+{
+	# Does a simple kill on the process, without waiting for it or
+	# checking whether it is killed. This might be preferred if the
+	# process becomes a zombie since in that case processIsRunning()
+	# will continue to return true.
+	my ( $pid ) = @_ ;
+	return if( int($pid) <= 0 ) ;
+	$pid = int($pid) ;
+	kill 15 , $pid ;
 }
 
 sub processIsRunning
 {
 	my ( $pid ) = @_ ;
+	return 0 if int($pid) <= 0 ;
+	$pid = int($pid) ;
 	if( unix() )
 	{
-		if( defined($pid) && $pid > 0 )
-		{
-			my $rc = kill 0 , $pid ;
-			return defined($rc) ? $rc : 0 ;
-		}
+		# use ps rather than kill(0) because permissions
+		my $uid = _pstatus( $pid , "Uid" , 1 ) ;
+		return defined($uid) ? 1 : 0 ;
 	}
 	else
 	{
-		if( defined($pid) && $pid > 0 )
+		my $fh = new FileHandle( "tasklist /FI \"PID eq $pid\" /FO csv /NH 2>NUL |" ) ;
+		$fh or die "tasklist error" ;
+		while(<$fh>)
 		{
-			my $fh = new FileHandle( "tasklist /FI \"PID eq $pid\" /FO csv /NH |" ) or
-				die "tasklist error" ;
-			while(<$fh>)
-			{
-				chomp( my $line = $_ ) ;
-				my ( $f_name , $f_pid ) = split( "," , $line ) ;
-				return ( $f_pid eq "\"$pid\"" ? 1 : 0 ) ;
-			}
+			chomp( my $line = $_ ) ;
+			my ( $f_name , $f_pid ) = split( "," , $line ) ;
+			return ( $f_pid eq "\"$pid\"" ? 1 : 0 ) ;
 		}
 	}
 	return 0 ;
 }
 
-my $_port = 10000 ;
 sub nextPort
 {
+	my $first = 16000 ;
+	my $last = 32000 ;
 	my $file = ".tmp.port" ;
-	if( -f $file )
+	my $fh ;
+	my $old_mask = umask 0 ;
+	$fh = new FileHandle( $file , "a" , 0666 ) ;
+	umask $old_mask ;
+	$fh->close() if $fh ;
+	for( my $i = 0 ; $i < 5 ; $i++ )
 	{
-		my $fh = new FileHandle( $file , "r" ) ;
-		if( chomp( my $line = <$fh> ) )
-		{
-			if( $line && ($line+0) >= 10000 )
-			{
-				$_port = $line + 0 ;
-			}
-		}
+		$fh = new FileHandle( $file , "r+" ) ;
+		last if $fh ;
+		sleep_cs( 1 ) ;
 	}
-
-	$_port++ ;
-	$_port = 10000 if( $_port > 32000 ) ;
-
-	{
-		my $fh = new FileHandle( $file , "w" ) ;
-		print $fh $_port , "\n" if $fh ;
-	}
-
-	return $_port ;
+	$fh or die "cannot lock: $!" ;
+	flock( $fh , Fcntl::LOCK_EX ) or die "cannot lock: $!" ;
+	my $line = $fh->getline() ;
+	my $port = int($line) || ( $first + int(rand($last-$first)) ) ;
+	$port = $port >= $last ? $first : ($port+1) ;
+	seek( $fh , 0 , Fcntl::SEEK_SET ) or die "cannot seek: $!" ;
+	$fh->print( "$port\n" ) or die ;
+	$fh->close() or die ;
+	return $port ;
 }
 
 1 ;

@@ -9,6 +9,8 @@
 failregex = emailrelay: warning: <HOST>; failed authentication
             emailrelay: warning: <HOST>; .* AUTH requested but not advertised
             emailrelay: warning: <HOST>; empty MAIL-FROM return path
+            emailrelay: info: <HOST>; address verifier: exit code
 
 ignoreregex = emailrelay: warning: <HOST>; dnsbl
+              emailrelay: info: <HOST>; address verifier: exit code 1:
 

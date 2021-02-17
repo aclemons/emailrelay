@@ -1,16 +1,16 @@
 /*
-   Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-
+   Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+   
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-
+   
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-
+   
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -26,8 +26,8 @@
  * to be defined on the compiler command-line.
  */
 
-#ifndef G_DEF__H
-#define G_DEF__H
+#ifndef G_DEF_H
+#define G_DEF_H
 
 	/* Pull in GCONFIG definitions. Uses an odd file name to avoid
 	 * picking up a header from some third-party library. If this
@@ -330,6 +330,13 @@
 			#define GCONFIG_HAVE_SETGROUPS 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_STATBUF_TIMESPEC)
+		#if defined(G_UNIX_MAC)
+			#define GCONFIG_HAVE_STATBUF_TIMESPEC 1
+		#else
+			#define GCONFIG_HAVE_STATBUF_TIMESPEC 0
+		#endif
+	#endif
 	#if !defined(GCONFIG_HAVE_STATBUF_NSEC)
 		#define GCONFIG_HAVE_STATBUF_NSEC 0
 	#endif
@@ -397,12 +404,15 @@
 			#define GCONFIG_HAVE_NET_IF_H 0
 		#endif
 	#endif
-	#if !defined(GCONFIG_HAVE_IPHLPAPI_H)
+	#if !defined(GCONFIG_HAVE_WINDOWS_IPHLPAPI_H)
 		#ifdef G_UNIX
-			#define GCONFIG_HAVE_IPHLPAPI_H 0
+			#define GCONFIG_HAVE_WINDOWS_IPHLPAPI_H 0
 		#else
-			#define GCONFIG_HAVE_IPHLPAPI_H 1
+			#define GCONFIG_HAVE_WINDOWS_IPHLPAPI_H 1
 		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_GAISTRERROR)
+		#define GCONFIG_HAVE_GAISTRERROR 1
 	#endif
 	#if !defined(GCONFIG_HAVE_INET_NTOP)
 		#define GCONFIG_HAVE_INET_NTOP 1
@@ -527,6 +537,9 @@
 	#if !defined(GCONFIG_HAVE_LIBV4L)
 		#define GCONFIG_HAVE_LIBV4L 0
 	#endif
+	#if !defined(GCONFIG_HAVE_GETTEXT)
+		#define GCONFIG_HAVE_GETTEXT 0
+	#endif
 	#if !defined(GCONFIG_ENABLE_IPV6)
 		#define GCONFIG_ENABLE_IPV6 GCONFIG_HAVE_IPV6
 	#endif
@@ -561,7 +574,7 @@
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_OPENSSL_MIN_MAX)
-		#define GCONFIG_HAVE_OPENSSL_MIN_MAX 0
+		#define GCONFIG_HAVE_OPENSSL_MIN_MAX 1
 	#endif
 	#if !defined(GCONFIG_HAVE_OPENSSL_SSLv23_METHOD)
 		#define GCONFIG_HAVE_OPENSSL_SSLv23_METHOD 0
@@ -624,6 +637,20 @@
 			#define GCONFIG_HAVE_WINDOWS_CREATE_EVENT_EX 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_WINDOWS_INIT_COMMON_CONTROLS_EX)
+		#if defined(G_WINDOWS) && !defined(G_MINGW)
+			#define GCONFIG_HAVE_WINDOWS_INIT_COMMON_CONTROLS_EX 1
+		#else
+			#define GCONFIG_HAVE_WINDOWS_INIT_COMMON_CONTROLS_EX 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_WINDOWS_VERSIONHELPERS_H)
+		#if defined(G_WINDOWS)
+			#define GCONFIG_HAVE_WINDOWS_VERSIONHELPERS_H 1
+		#else
+			#define GCONFIG_HAVE_WINDOWS_VERSIONHELPERS_H 0
+		#endif
+	#endif
 	#if !defined(GCONFIG_HAVE_DLOPEN)
 		#ifdef G_UNIX
 			#define GCONFIG_HAVE_DLOPEN 1
@@ -659,6 +686,20 @@
 			#define GCONFIG_HAVE_EXTENDED_OPEN 1
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_SIGPROCMASK)
+		#if defined(G_UNIX)
+			#define GCONFIG_HAVE_SIGPROCMASK 1
+		#else
+			#define GCONFIG_HAVE_SIGPROCMASK 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_PTHREAD_SIGMASK)
+		#if defined(G_UNIX)
+			#define GCONFIG_HAVE_PTHREAD_SIGMASK 1
+		#else
+			#define GCONFIG_HAVE_PTHREAD_SIGMASK 0
+		#endif
+	#endif
 
 	/* Include early o/s headers
 	 */
@@ -669,8 +710,11 @@
 		#include <winsock2.h>
 		#include <windows.h>
 		#include <ws2tcpip.h>
-		#if GCONFIG_HAVE_IPHLPAPI_H
+		#if GCONFIG_HAVE_WINDOWS_IPHLPAPI_H
 			#include <iphlpapi.h>
+		#endif
+		#if GCONFIG_HAVE_WINDOWS_VERSIONHELPERS_H
+			#include <versionhelpers.h>
 		#endif
 	#endif
 
@@ -759,6 +803,12 @@
 	#if GCONFIG_HAVE_NET_IF_H
 		#include <net/if.h>
 	#endif
+	#if GCONFIG_HAVE_PWD_H
+		#include <pwd.h>
+	#endif
+	#if GCONFIG_HAVE_GRP_H
+		#include <grp.h>
+	#endif
 	#ifndef __cplusplus
 		#include <wchar.h>
 	#endif
@@ -801,13 +851,13 @@
 		#endif
 
 		/* Define a null value for opaque pointer types that are
-	 	* never dereferenced
-	 	*/
+	 	 * never dereferenced
+	 	 */
 		#define HNULL 0
 
 		/* Define fixed-size types - the underlying types should come
-	 	* from C99's stdint.h, but they are all optional
-	 	*/
+	 	 * from C99's stdint.h, but they are all optional
+	 	 */
 		#if defined(G_WINDOWS)
 			#if GCONFIG_HAVE_INT64
 				using g_int64_t = INT64 ;
@@ -884,20 +934,34 @@
 
 		/* Attributes
 	 	*/
-		#define G__IGNORE_RETURN(expr) (void)(expr)
-		#define G__IGNORE_PARAMETER(type,name) (void)name
-		#define G__IGNORE_VARIABLE(type,name) (void)name
-		#ifdef __cplusplus
-			#define G__IGNORE [[maybe_unused]]
-			#define G__FALLTHROUGH [[fallthrough]]
-		#endif
-		#if __clang__
-			#if __has_feature(attribute_analyzer_noreturn)
-				#define G__NORETURN __attribute__((analyzer_noreturn))
+		#if __cplusplus >= 201700L
+			#define GDEF_UNUSED [[maybe_unused]]
+			#define GDEF_NORETURN [[noreturn]]
+			#define GDEF_FALLTHROUGH [[fallthrough]]
+		#else
+			#if defined(__GNUC__) || defined(__clang__)
+				#define GDEF_UNUSED __attribute__((__unused__))
+				#define GDEF_NORETURN __attribute__((__noreturn__))
+			#endif
+			#ifdef _MSC_VER
+				// __declspec(noreturn) goes on the lhs
 			#endif
 		#endif
-		#ifndef G__NORETURN
-			#define G__NORETURN
+		#ifndef GDEF_UNUSED
+			#define GDEF_UNUSED
+		#endif
+		#ifndef GDEF_NORETURN
+			#define GDEF_NORETURN
+		#endif
+		#ifndef GDEF_FALLTHROUGH
+			#define GDEF_FALLTHROUGH
+		#endif
+		#ifdef __cplusplus
+			#include <tuple>
+			namespace G { template <typename... T> inline void ignore( T&& ... ) {} }
+			#define GDEF_IGNORE_PARAMS(...) G::ignore(__VA_ARGS__)
+			#define GDEF_IGNORE_RETURN std::ignore =
+			#define GDEF_IGNORE_PARAM(name) std::ignore = name
 		#endif
 
 		/* C++ language backwards compatibility
@@ -925,7 +989,7 @@
 			{
 				struct threading /// Helper class for std::thread capabilities.
 				{
-					static constexpr int using_std_thread = 1 ;
+					static constexpr bool using_std_thread = true ;
 					using thread_type = std::thread ;
 					using mutex_type = std::mutex ;
 					using lock_type = std::lock_guard<std::mutex> ;
@@ -953,7 +1017,7 @@
 				class dummy_lock { public: explicit dummy_lock( dummy_mutex & ) {} } ;
 				struct threading
 				{
-					static constexpr int using_std_thread = 0 ;
+					static constexpr bool using_std_thread = false ;
 					using thread_type = G::dummy_thread ;
 					using mutex_type = G::dummy_mutex ;
 					using lock_type = G::dummy_lock ;
@@ -1021,7 +1085,7 @@
 	 	*/
 
 		#if GCONFIG_HAVE_IPV6
-			inline void gnet_address6_init( sockaddr_in6 & s )
+			inline void gdef_address6_init( sockaddr_in6 & s )
 			{
 				#if GCONFIG_HAVE_SIN6_LEN
 					s.sin6_len = sizeof(s) ;
@@ -1033,6 +1097,13 @@
 
 		/* Inline definitions of missing functions
 	 	*/
+
+		#if ! GCONFIG_HAVE_GAISTRERROR
+			inline const char * gai_strerror( int ) // wrt getaddrinfo(3)
+			{
+				return nullptr ;
+			}
+		#endif
 
 		namespace GNet { int inet_pton_imp( int f , const char * p , void * result ) ; }
 		#if ! GCONFIG_HAVE_INET_PTON
@@ -1050,9 +1121,27 @@
 			}
 		#endif
 
+		#if GCONFIG_HAVE_PTHREAD_SIGMASK && GCONFIG_ENABLE_STD_THREAD
+			#include <csignal>
+			inline int gdef_pthread_sigmask( int how , const sigset_t * set_p , sigset_t * oldset_p ) noexcept
+			{
+				return pthread_sigmask( how , set_p , oldset_p ) ;
+			}
+		#else
+			#if GCONFIG_HAVE_SIGPROCMASK
+				#include <csignal>
+				inline int gdef_pthread_sigmask( int how , const sigset_t * set_p , sigset_t * oldset_p ) noexcept
+				{
+					return sigprocmask( how , set_p , oldset_p ) ;
+				}
+			#else
+				template <typename... T> int gdef_pthread_sigmask(T...) noexcept { return 0 ; }
+			#endif
+		#endif
+
 		#if GCONFIG_HAVE_IFNAMETOLUID
 			#include <iphlpapi.h>
-			inline unsigned long g_if_nametoindex( const char * p )
+			inline unsigned long gdef_if_nametoindex( const char * p )
 			{
 				NET_LUID luid ;
 				if( ConvertInterfaceNameToLuidA( p , &luid ) )
@@ -1071,7 +1160,7 @@
 			}
 		#else
 			#if GCONFIG_HAVE_IFNAMETOINDEX
-				inline unsigned long g_if_nametoindex( const char * p )
+				inline unsigned long gdef_if_nametoindex( const char * p )
 				{
 					#ifdef G_WINDOWS
 						_set_errno( 0 ) ;
@@ -1081,7 +1170,7 @@
 					return if_nametoindex( p ) ; // int->long
 				}
 			#else
-				inline unsigned long g_if_nametoindex( const char * )
+				inline unsigned long gdef_if_nametoindex( const char * )
 				{
 					#ifdef G_WINDOWS
 						_set_errno( EINVAL ) ;
@@ -1236,6 +1325,21 @@
 			}
 		#endif
 
+		#if ! GCONFIG_HAVE_WINDOWS_VERSIONHELPERS_H && defined(G_WINDOWS)
+			inline bool IsWindowsVistaOrGreater()
+			{
+				WORD major = HIBYTE( _WIN32_WINNT_VISTA ) ;
+				WORD minor = LOBYTE( _WIN32_WINNT_VISTA ) ;
+				OSVERSIONINFOEXW info {} ;
+				info.dwOSVersionInfoSize = sizeof(info) ;
+				info.dwMajorVersion = major ;
+				info.dwMinorVersion = minor ;
+				return !! VerifyVersionInfoW( &info , VER_MAJORVERSION | VER_MINORVERSION ,
+					VerSetConditionMask( VerSetConditionMask(0,VER_MAJORVERSION,VER_GREATER_EQUAL) ,
+							VER_MINORVERSION , VER_GREATER_EQUAL ) ) ;
+			}
+		#endif
+
 		#if ! GCONFIG_HAVE_MREMAP && defined(G_UNIX)
 			inline void * mremap( void * , std::size_t , std::size_t , int )
 			{
@@ -1248,6 +1352,29 @@
 			inline int setpgrp()
 			{
 				return ::setpgrp( 0 , 0 ) ;
+			}
+		#endif
+
+		#if ! GCONFIG_HAVE_CXX_ALIGNMENT
+			namespace std
+			{
+				// missing in gcc 4.8.4 -- original copyright 2001-2016 FSF Inc, GPLv3
+				inline void * align( size_t align , size_t size , void * & ptr_inout , size_t & space ) noexcept
+				{
+					const auto ptr = reinterpret_cast<uintptr_t>( ptr_inout ) ;
+					const auto aligned = ( ptr - 1U + align ) & -align ;
+					const auto diff = aligned - ptr ;
+					if( (size + diff) > space )
+					{
+						return nullptr ;
+					}
+					else
+					{
+						space -= diff ;
+						ptr_inout = reinterpret_cast<void*>( aligned ) ;
+						return ptr_inout ;
+					}
+				}
 			}
 		#endif
 

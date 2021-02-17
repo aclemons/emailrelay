@@ -255,6 +255,7 @@ e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
+e_systemddir = @e_systemddir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -304,6 +305,7 @@ man_files_clean = \
 	emailrelay-filter-copy.1.gz
 
 html_files_noinstall = \
+	man2html-missing.html \
 	doxygen-missing.html
 
 html_files_install = \
@@ -346,7 +348,7 @@ EXTRA_DIST = \
 noinst_SCRIPTS = .dox
 man1_MANS = $(man_files_install)
 e_doc_DATA = $(txt_files_install) $(html_files_install) $(css_files_install) $(png_files_install)
-CLEANFILES = $(noinst_SCRIPTS) $(man_files_clean) doxygen.out doxygen.cfg doxygen/search/* doxygen/*
+CLEANFILES = $(noinst_SCRIPTS) $(man_files_clean) emailrelay-man.html doxygen.out doxygen.cfg doxygen/search/* doxygen/*
 SUFFIXES = .txt .html
 run_doxygen = $(top_srcdir)/bin/doxygen.sh
 all: all-am
@@ -610,7 +612,7 @@ uninstall-man: uninstall-man1
 	$(run_doxygen) "$(GCONFIG_HAVE_DOXYGEN)" "$(top_srcdir)" "$(top_builddir)" doxygen doxygen.cfg.in && touch .dox
 
 emailrelay-man.html: emailrelay.1
-	if test "$(GCONFIG_HAVE_MAN2HTML)" = "yes" ; then man2html -r -L. emailrelay.1 < /dev/null > emailrelay-man.html.tmp && mv emailrelay-man.html.tmp emailrelay-man.html ; grep -v '^Content-type:' < emailrelay-man.html | grep -v '^Time:' > emailrelay-man.html.tmp ; mv emailrelay-man.html.tmp emailrelay-man.html ; fi
+	if test "$(GCONFIG_HAVE_MAN2HTML)" = "yes" ; then man2html -r -L. emailrelay.1 < /dev/null > emailrelay-man.html.tmp && mv emailrelay-man.html.tmp emailrelay-man.html ; grep -v '^Content-type:' < emailrelay-man.html | grep -v '^Time:' > emailrelay-man.html.tmp ; mv emailrelay-man.html.tmp emailrelay-man.html ; else cp man2html-missing.html emailrelay-man.html ; fi
 
 emailrelay.1.gz : emailrelay.1
 	if test -n "$(GZIP)" ; then $(GZIP) -c "$(top_srcdir)/doc/emailrelay.1" > emailrelay.1.gz ; fi
@@ -648,8 +650,8 @@ sphinx:
 
 .PHONY: website
 website:
-	@chmod +x make-website || true
-	./make-website 2.1
+	@chmod +x $(top_srcdir)/doc/make-website || true
+	$(top_srcdir)/doc/make-website `cat $(top_srcdir)/VERSION`
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

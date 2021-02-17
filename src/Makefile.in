@@ -280,6 +280,7 @@ e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
+e_systemddir = @e_systemddir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -307,9 +308,8 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = glib gssl gnet gauth gsmtp gpop win32 main gui
-EXTRA_DIST = .clang-tidy
+EXTRA_DIST = .clang-tidy .clang-format
 CLEANFILES = compile_commands.json
-LINT = clang-tidy
 all: all-recursive
 
 .SUFFIXES:
@@ -616,18 +616,25 @@ uninstall-am:
 .PRECIOUS: Makefile
 
 
+TIDY ?= clang-tidy
+
 .PHONY: cdb
 cdb: compile_commands.json
 
 compile_commands.json:
-	@chmod +x ../bin/make2cdb || true
-	../bin/make2cdb > compile_commands.json
+	@chmod +x $(top_srcdir)/bin/make2cdb || true
+	$(top_srcdir)/bin/make2cdb > $@.tmp && mv $@.tmp $@
 
-.PHONY: lint
-lint: compile_commands.json
-	@chmod +x ../bin/make2cdb || true
-	@touch ../gconfig_defs.h
-	../bin/make2cdb --list | xargs $(LINT) -p . || true
+.PHONY: tidy
+tidy: compile_commands.json
+	@chmod +x $(top_srcdir)/bin/make2cdb || true
+	@touch $(top_srcdir)/gconfig_defs.h
+	$(top_srcdir)/bin/make2cdb --list | xargs -- "$(TIDY)" -p . || true
+
+.PHONY: format
+format:
+	@chmod +x $(top_srcdir)/bin/make-format || true
+	$(top_srcdir)/bin/make-format -f "$(FORMAT)" -d $(top_srcdir)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

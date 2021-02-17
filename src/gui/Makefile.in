@@ -21,6 +21,9 @@
 #
 # Builds emailrelay-gui.real.
 #
+# Note that the gui can be built with compiler options that are incompatible
+# with the rest of the project because of glibsources.cpp.
+#
 # The following additional targets can be used for packaging:
 #
 # payload
@@ -30,6 +33,7 @@
 #	Use "make MAKE_SETUP_DEBUG=-d payload" to stop the temporary
 #	directory getting cleaned up.
 #
+
 
 
 VPATH = @srcdir@
@@ -104,7 +108,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-@GCONFIG_GUI_TRUE@sbin_PROGRAMS = emailrelay-gui.real$(EXEEXT)
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@sbin_PROGRAMS = emailrelay-gui.real$(EXEEXT)
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@sbin_PROGRAMS = emailrelay-gui$(EXEEXT)
 subdir = src/gui
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acinclude.m4 \
@@ -118,16 +123,21 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__installdirs = "$(DESTDIR)$(sbindir)"
-PROGRAMS = $(sbin_PROGRAMS)
-am__emailrelay_gui_real_SOURCES_DIST = access_unix.cpp dir_unix.cpp \
+LIBRARIES = $(noinst_LIBRARIES)
+ARFLAGS = cru
+AM_V_AR = $(am__v_AR_@AM_V@)
+am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
+am__v_AR_0 = @echo "  AR      " $@;
+am__v_AR_1 = 
+libguimain_a_AR = $(AR) $(ARFLAGS)
+libguimain_a_LIBADD =
+am__libguimain_a_SOURCES_DIST = access_unix.cpp dir_unix.cpp \
 	boot_unix.cpp glink_unix.cpp access_mac.cpp dir_mac.cpp \
 	boot_mac.cpp glink_mac.cpp access_win32.cpp dir_win32.cpp \
 	boot_win32.cpp glink_win32.cpp emailrelay-gui.rc access.h \
-	boot.h dir.cpp dir.h gdialog.cpp gdialog.h glink.h gpage.cpp \
-	gpage.h guimain.cpp installer.cpp installer.h launcher.cpp \
-	launcher.h legal.cpp legal.h pages.cpp pages.h qt.h \
-	serverconfiguration.cpp serverconfiguration.h glibsources.cpp
+	boot.h dir.cpp dir.h glibsources.cpp glink.h installer.h \
+	legal.cpp legal.h serverconfiguration.cpp \
+	serverconfiguration.h
 am__objects_1 = access_unix.$(OBJEXT) dir_unix.$(OBJEXT) \
 	boot_unix.$(OBJEXT) glink_unix.$(OBJEXT)
 am__objects_2 = access_mac.$(OBJEXT) dir_mac.$(OBJEXT) \
@@ -139,15 +149,29 @@ am__objects_3 = access_win32.$(OBJEXT) dir_win32.$(OBJEXT) \
 @GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_4 =  \
 @GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@	$(am__objects_2)
 @GCONFIG_WINDOWS_TRUE@am__objects_4 = $(am__objects_3)
-@GCONFIG_GUI_TRUE@am_emailrelay_gui_real_OBJECTS = $(am__objects_4) \
-@GCONFIG_GUI_TRUE@	dir.$(OBJEXT) gdialog.$(OBJEXT) \
-@GCONFIG_GUI_TRUE@	gpage.$(OBJEXT) guimain.$(OBJEXT) \
-@GCONFIG_GUI_TRUE@	installer.$(OBJEXT) launcher.$(OBJEXT) \
-@GCONFIG_GUI_TRUE@	legal.$(OBJEXT) pages.$(OBJEXT) \
-@GCONFIG_GUI_TRUE@	serverconfiguration.$(OBJEXT) \
-@GCONFIG_GUI_TRUE@	glibsources.$(OBJEXT)
-emailrelay_gui_real_OBJECTS = $(am_emailrelay_gui_real_OBJECTS)
+am__objects_5 = $(am__objects_4) dir.$(OBJEXT) glibsources.$(OBJEXT) \
+	legal.$(OBJEXT) serverconfiguration.$(OBJEXT)
+@GCONFIG_GUI_TRUE@am_libguimain_a_OBJECTS = $(am__objects_5)
+libguimain_a_OBJECTS = $(am_libguimain_a_OBJECTS)
+am__installdirs = "$(DESTDIR)$(sbindir)"
+PROGRAMS = $(sbin_PROGRAMS)
+am__emailrelay_gui_SOURCES_DIST = guimain.cpp installer.cpp \
+	gdialog.cpp gdialog.h gpage.cpp gpage.h pages.h pages.cpp \
+	gqt.h
+am__objects_6 = installer.$(OBJEXT) gdialog.$(OBJEXT) gpage.$(OBJEXT) \
+	pages.$(OBJEXT)
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@am_emailrelay_gui_OBJECTS =  \
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@	guimain.$(OBJEXT) \
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@	$(am__objects_6)
+emailrelay_gui_OBJECTS = $(am_emailrelay_gui_OBJECTS)
 am__DEPENDENCIES_1 =
+am__emailrelay_gui_real_SOURCES_DIST = guimain.cpp installer.cpp \
+	gdialog.cpp gdialog.h gpage.cpp gpage.h pages.h pages.cpp \
+	gqt.h
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@am_emailrelay_gui_real_OBJECTS =  \
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	guimain.$(OBJEXT) \
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	$(am__objects_6)
+emailrelay_gui_real_OBJECTS = $(am_emailrelay_gui_real_OBJECTS)
 SCRIPTS = $(noinst_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -190,8 +214,11 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(emailrelay_gui_real_SOURCES)
-DIST_SOURCES = $(am__emailrelay_gui_real_SOURCES_DIST)
+SOURCES = $(libguimain_a_SOURCES) $(emailrelay_gui_SOURCES) \
+	$(emailrelay_gui_real_SOURCES)
+DIST_SOURCES = $(am__libguimain_a_SOURCES_DIST) \
+	$(am__emailrelay_gui_SOURCES_DIST) \
+	$(am__emailrelay_gui_real_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -315,6 +342,7 @@ e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
+e_systemddir = @e_systemddir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -344,6 +372,30 @@ top_srcdir = @top_srcdir@
 MAC_SOURCES = access_mac.cpp dir_mac.cpp boot_mac.cpp glink_mac.cpp
 WIN32_SOURCES = access_win32.cpp dir_win32.cpp boot_win32.cpp glink_win32.cpp emailrelay-gui.rc
 UNIX_SOURCES = access_unix.cpp dir_unix.cpp boot_unix.cpp glink_unix.cpp
+QT_SOURCES = \
+	installer.cpp \
+	gdialog.cpp \
+	gdialog.h \
+	gpage.cpp \
+	gpage.h \
+	pages.h \
+	pages.cpp \
+	gqt.h
+
+LIB_SOURCES = \
+	$(OS_SOURCES) \
+	access.h \
+	boot.h \
+	dir.cpp \
+	dir.h \
+	glibsources.cpp \
+	glink.h \
+	installer.h \
+	legal.cpp \
+	legal.h \
+	serverconfiguration.cpp \
+	serverconfiguration.h
+
 @GCONFIG_MAC_FALSE@@GCONFIG_WINDOWS_FALSE@OS_EXTRA_DIST = $(MAC_SOURCES) $(WIN32_SOURCES)
 @GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@OS_EXTRA_DIST = $(UNIX_SOURCES) $(WIN32_SOURCES)
 @GCONFIG_WINDOWS_TRUE@OS_EXTRA_DIST = $(MAC_SOURCES) $(UNIX_SOURCES)
@@ -365,18 +417,18 @@ AM_INSTALL_PROGRAM_FLAGS = -s
 MOC_OUTPUT = \
 	moc_gdialog.cpp \
 	moc_gpage.cpp \
-	moc_pages.cpp \
-	moc_launcher.cpp
+	moc_pages.cpp
 
 MOC_OBJECTS = \
 	moc_gdialog.o \
 	moc_gpage.o \
-	moc_pages.o \
-	moc_launcher.o
+	moc_pages.o
 
 CLEANFILES = $(MOC_OUTPUT)
+DISTCLEANFILES = ./.deps/moc*
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
+	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
 	-I$(top_srcdir)/src/gsmtp \
 	-I$(top_srcdir)/src/gpop \
@@ -393,36 +445,24 @@ AM_CPPFLAGS = \
 	$(GCONFIG_QT_CFLAGS)
 
 @GCONFIG_GUI_TRUE@noinst_SCRIPTS = $(OS_NOINST)
-@GCONFIG_GUI_TRUE@emailrelay_gui_real_SOURCES = \
-@GCONFIG_GUI_TRUE@	$(OS_SOURCES) \
-@GCONFIG_GUI_TRUE@	access.h \
-@GCONFIG_GUI_TRUE@	boot.h \
-@GCONFIG_GUI_TRUE@	dir.cpp \
-@GCONFIG_GUI_TRUE@	dir.h \
-@GCONFIG_GUI_TRUE@	gdialog.cpp \
-@GCONFIG_GUI_TRUE@	gdialog.h \
-@GCONFIG_GUI_TRUE@	glink.h \
-@GCONFIG_GUI_TRUE@	gpage.cpp \
-@GCONFIG_GUI_TRUE@	gpage.h \
-@GCONFIG_GUI_TRUE@	guimain.cpp \
-@GCONFIG_GUI_TRUE@	installer.cpp \
-@GCONFIG_GUI_TRUE@	installer.h \
-@GCONFIG_GUI_TRUE@	launcher.cpp \
-@GCONFIG_GUI_TRUE@	launcher.h \
-@GCONFIG_GUI_TRUE@	legal.cpp \
-@GCONFIG_GUI_TRUE@	legal.h \
-@GCONFIG_GUI_TRUE@	pages.cpp \
-@GCONFIG_GUI_TRUE@	pages.h \
-@GCONFIG_GUI_TRUE@	qt.h \
-@GCONFIG_GUI_TRUE@	serverconfiguration.cpp \
-@GCONFIG_GUI_TRUE@	serverconfiguration.h \
-@GCONFIG_GUI_TRUE@	glibsources.cpp
+@GCONFIG_GUI_TRUE@noinst_LIBRARIES = libguimain.a
+@GCONFIG_GUI_TRUE@libguimain_a_SOURCES = $(LIB_SOURCES)
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@emailrelay_gui_SOURCES = guimain.cpp $(QT_SOURCES)
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@emailrelay_gui_DEPENDENCIES = $(MOC_OBJECTS) libguimain.a
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@emailrelay_gui_LDADD = \
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@	$(MOC_OBJECTS) \
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@	libguimain.a \
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@	$(GCONFIG_QT_LIBS)
 
-@GCONFIG_GUI_TRUE@emailrelay_gui_real_DEPENDENCIES = $(MOC_OBJECTS)
-@GCONFIG_GUI_TRUE@emailrelay_gui_real_LDADD = \
-@GCONFIG_GUI_TRUE@	$(MOC_OBJECTS) \
-@GCONFIG_GUI_TRUE@	$(GCONFIG_QT_LIBS)
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@emailrelay_gui_real_SOURCES = guimain.cpp $(QT_SOURCES)
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@emailrelay_gui_real_DEPENDENCIES = $(MOC_OBJECTS) libguimain.a
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@emailrelay_gui_real_LDADD = \
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	$(MOC_OBJECTS) \
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	libguimain.a \
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	$(GCONFIG_QT_LIBS)
 
+@GCONFIG_GUI_TRUE@TS_FILE = emailrelay_tr.en_SC.ts
+@GCONFIG_GUI_TRUE@QM_FILE = emailrelay_tr.en_SC.qm
 all: all-am
 
 .SUFFIXES:
@@ -456,6 +496,14 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+
+libguimain.a: $(libguimain_a_OBJECTS) $(libguimain_a_DEPENDENCIES) $(EXTRA_libguimain_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libguimain.a
+	$(AM_V_AR)$(libguimain_a_AR) libguimain.a $(libguimain_a_OBJECTS) $(libguimain_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libguimain.a
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(sbin_PROGRAMS)'; test -n "$(sbindir)" || list=; \
@@ -499,6 +547,10 @@ uninstall-sbinPROGRAMS:
 clean-sbinPROGRAMS:
 	-test -z "$(sbin_PROGRAMS)" || rm -f $(sbin_PROGRAMS)
 
+emailrelay-gui$(EXEEXT): $(emailrelay_gui_OBJECTS) $(emailrelay_gui_DEPENDENCIES) $(EXTRA_emailrelay_gui_DEPENDENCIES) 
+	@rm -f emailrelay-gui$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(emailrelay_gui_OBJECTS) $(emailrelay_gui_LDADD) $(LIBS)
+
 emailrelay-gui.real$(EXEEXT): $(emailrelay_gui_real_OBJECTS) $(emailrelay_gui_real_DEPENDENCIES) $(EXTRA_emailrelay_gui_real_DEPENDENCIES) 
 	@rm -f emailrelay-gui.real$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(emailrelay_gui_real_OBJECTS) $(emailrelay_gui_real_LDADD) $(LIBS)
@@ -527,7 +579,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guimain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/installer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launcher.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/legal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pages.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serverconfiguration.Po@am__quote@
@@ -630,7 +681,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) $(SCRIPTS)
+all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(SCRIPTS)
 installdirs:
 	for dir in "$(DESTDIR)$(sbindir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
@@ -662,6 +713,7 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -669,7 +721,8 @@ maintainer-clean-generic:
 @GCONFIG_GUI_FALSE@clean-local:
 clean: clean-am
 
-clean-am: clean-generic clean-local clean-sbinPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-local clean-noinstLIBRARIES \
+	clean-sbinPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -741,18 +794,19 @@ uninstall-am: uninstall-sbinPROGRAMS
 .MAKE: install-am install-exec-am install-strip uninstall-am
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
-	clean-local clean-sbinPROGRAMS cscopelist-am ctags ctags-am \
-	distclean distclean-compile distclean-generic distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-exec-hook \
-	install-html install-html-am install-info install-info-am \
-	install-man install-pdf install-pdf-am install-ps \
-	install-ps-am install-sbinPROGRAMS install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-hook uninstall-sbinPROGRAMS
+	clean-local clean-noinstLIBRARIES clean-sbinPROGRAMS \
+	cscopelist-am ctags ctags-am distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-exec-hook install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-sbinPROGRAMS \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am uninstall-hook \
+	uninstall-sbinPROGRAMS
 
 .PRECIOUS: Makefile
 
@@ -765,9 +819,6 @@ uninstall-am: uninstall-sbinPROGRAMS
 
 @GCONFIG_GUI_TRUE@moc_pages.cpp: $(srcdir)/pages.h
 @GCONFIG_GUI_TRUE@	$(GCONFIG_QT_MOC) $(srcdir)/pages.h -o $@
-
-@GCONFIG_GUI_TRUE@moc_launcher.cpp: $(srcdir)/launcher.h
-@GCONFIG_GUI_TRUE@	$(GCONFIG_QT_MOC) $(srcdir)/launcher.h -o $@
 
 @GCONFIG_GUI_TRUE@install-exec-hook:
 @GCONFIG_GUI_TRUE@	-mkdir -p "$(DESTDIR)$(sbindir)" 2>/dev/null
@@ -783,6 +834,12 @@ uninstall-am: uninstall-sbinPROGRAMS
 
 @GCONFIG_GUI_TRUE@clean-local:
 @GCONFIG_GUI_TRUE@	-rm -f payload
+@GCONFIG_GUI_TRUE@.PHONY: translate
+@GCONFIG_GUI_TRUE@translate:
+@GCONFIG_GUI_TRUE@	rm $(TS_FILE) 2>/dev/null || true
+@GCONFIG_GUI_TRUE@	lupdate $(QT_SOURCES) --target-language en_SC -ts $(TS_FILE)
+@GCONFIG_GUI_TRUE@	translate.pl $(TS_FILE)
+@GCONFIG_GUI_TRUE@	lrelease $(TS_FILE)
 
 @GCONFIG_GUI_FALSE@install-exec-hook:
 

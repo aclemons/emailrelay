@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gmsg_unix.cpp
-//
+///
+/// \file gmsg_unix.cpp
+///
 
 #include "gdef.h"
 #include "gmsg.h"
@@ -32,13 +32,13 @@
 #include <sys/uio.h>
 
 ssize_t G::Msg::send( int fd , const void * buffer , std::size_t size , int flags ,
-	int fd_to_send )
+	int fd_to_send ) noexcept
 {
 	return sendto( fd , buffer , size , flags , nullptr , 0 , fd_to_send ) ;
 }
 
 ssize_t G::Msg::sendto( int fd , const void * buffer , std::size_t size , int flags ,
-	const sockaddr * address_p , socklen_t address_n , int fd_to_send )
+	const sockaddr * address_p , socklen_t address_n , int fd_to_send ) noexcept
 {
 	struct ::msghdr msg {} ;
 
@@ -51,7 +51,9 @@ ssize_t G::Msg::sendto( int fd , const void * buffer , std::size_t size , int fl
 	msg.msg_iov = &io ;
 	msg.msg_iovlen = 1 ;
 
-	std::array<char,CMSG_SPACE(sizeof(int))> control_buffer ; // NOLINT cppcoreguidelines-pro-type-member-init
+	constexpr std::size_t space = CMSG_SPACE( sizeof(int) ) ;
+	static_assert( space != 0U , "" ) ;
+	std::array<char,space> control_buffer {} ;
 	if( fd_to_send == -1 )
 	{
 		msg.msg_control = nullptr ;
@@ -65,10 +67,13 @@ ssize_t G::Msg::sendto( int fd , const void * buffer , std::size_t size , int fl
 
 		struct ::cmsghdr * cmsg = CMSG_FIRSTHDR( &msg ) ;
 		G_ASSERT( cmsg != nullptr ) ;
-		cmsg->cmsg_len = CMSG_LEN( sizeof(int) ) ;
-		cmsg->cmsg_level = SOL_SOCKET ;
-		cmsg->cmsg_type = SCM_RIGHTS ;
-		std::memcpy( CMSG_DATA(cmsg) , &fd_to_send , sizeof(int) ) ;
+		if( cmsg != nullptr )
+		{
+			cmsg->cmsg_len = CMSG_LEN( sizeof(int) ) ;
+			cmsg->cmsg_level = SOL_SOCKET ;
+			cmsg->cmsg_type = SCM_RIGHTS ;
+			std::memcpy( CMSG_DATA(cmsg) , &fd_to_send , sizeof(int) ) ;
+		}
 	}
 
 	return ::sendmsg( fd , &msg , flags | MSG_NOSIGNAL ) ;
@@ -121,7 +126,7 @@ ssize_t G::Msg::recvfrom( int fd , void * buffer , std::size_t size , int flags 
 	return rc ; // with errno
 }
 
-bool G::Msg::fatal( int error )
+bool G::Msg::fatal( int error ) noexcept
 {
 	return !(
 		error == 0 ||
@@ -133,4 +138,3 @@ bool G::Msg::fatal( int error )
 		false ) ;
 }
 
-/// \file gmsg_unix.cpp

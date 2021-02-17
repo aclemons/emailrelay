@@ -1,63 +1,68 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// legal.cpp
-//
+///
+/// \file legal.cpp
+///
 
 #include "gdef.h"
 #include "legal.h"
-#include "gdialog.h"
 
-QString Legal::text()
+// clang-format off
+
+const char * Legal::text()
 {
-	return GDialog::tr(
-		"<center>"
-		"<p>This program is free software: you can redistribute it and/or modify</p>"
-		"<p>it under the terms of the GNU General Public License as published by</p>"
-		"<p>the Free Software Foundation, either version 3 of the License, or </p>"
-		"<p>(at your option) any later version.</p>"
-		"<p></p>"
-		"<p>This program is distributed in the hope that it will be useful,</p>"
-		"<p>but WITHOUT ANY WARRANTY; without even the implied warranty of</p>"
-		"<p>MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</p>"
-		"<p>GNU General Public License for more details.</p>"
-		"<p></p>"
-		"<p>Copyright (C) 2001-2020 Graeme Walker</p>"
-		"</center>" ) ;
+	return
+		"This program is free software: you can redistribute it and/or modify\n"
+		"it under the terms of the GNU General Public License as published by\n"
+		"the Free Software Foundation, either version 3 of the License, or \n"
+		"(at your option) any later version.\n"
+		"\n\n"
+		"This program is distributed in the hope that it will be useful,\n"
+		"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+		"GNU General Public License for more details.\n"
+		"\n\n"
+		"Copyright (C) 2001-2021 Graeme Walker" ;
 }
 
-QString Legal::credit()
+std::vector<std::string> Legal::credits()
 {
-	// we should ise GSsl::Library::credit() here but that creates
-	// dependency problems so use a complile-time switch instead
+	return {
 	#if GCONFIG_HAVE_OPENSSL
-		return QString(
-			"<center>"
-			"<p>This product includes software developed by the OpenSSL Project</p>"
-        	"<p>for use in the OpenSSL Toolkit (http://www.openssl.org/)</p>"
-			"</center>" ) ;
-	#else
-		return QString() ;
+		"<p>OpenSSL: "
+		"This product includes software developed by the OpenSSL Project\n"
+        "for use in the OpenSSL Toolkit (http://www.openssl.org/)</p>"
+		,
 	#endif
+	#if GCONFIG_HAVE_MBEDTLS
+		"<p>MbedTLS: "
+		"Copyright (C) 2006-2015, ARM Limited, All Rights Reserved\n"
+		"SPDX-License-Identifier: Apache-2.0</p>"
+		,
+	#endif
+		"<p>Qt: "
+		"The Qt Toolkit is Copyright (C) 2018 The Qt Company Ltd.\n"
+		"and other contributors (https://www.qt.io/licensing/)</p>"
+	} ;
 }
 
-QString Legal::license()
+const char * Legal::license()
 {
-	return GDialog::tr(
+	return
 		"                    GNU GENERAL PUBLIC LICENSE\n"
 		"                       Version 3, 29 June 2007\n"
 		"\n"
@@ -732,7 +737,6 @@ QString Legal::license()
 		"the library.  If this is what you want to do, use the GNU Lesser General\n"
 		"Public License instead of this License.  But first, please read\n"
 		"<http://www.gnu.org/philosophy/why-not-lgpl.html>.\n"
-	) ;
+	;
 }
 
-/// \file legal.cpp

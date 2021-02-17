@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gcontrol.h
 ///
 
-#ifndef G_CONTROL_H
-#define G_CONTROL_H
+#ifndef G_GUI_CONTROL_H
+#define G_GUI_CONTROL_H
 
 #include "gdef.h"
 #include "gdialog.h"
@@ -38,7 +38,7 @@ namespace GGui
 	class Button ;
 }
 
-/// \class GGui::Control
+//| \class GGui::Control
 /// A base class for dialog box control objects. Normally a dialog
 /// box object (derived from Dialog) will have Control-derived
 /// objects embedded within it to represent some of the dialog
@@ -138,7 +138,9 @@ protected:
 
 public:
 	Control( const Control & ) = delete ;
+	Control( Control && ) = delete ;
 	void operator=( const Control & ) = delete ;
+	void operator=( Control && ) = delete ;
 
 private:
 	static void load() ;
@@ -153,7 +155,7 @@ private:
 	unsigned m_no_redraw_count ;
 } ;
 
-/// \class GGui::ListBox
+//| \class GGui::ListBox
 /// A list box class.
 ///
 class GGui::ListBox : public Control
@@ -184,10 +186,12 @@ public:
 
 public:
 	ListBox( const ListBox & ) = delete ;
+	ListBox( ListBox && ) = delete ;
 	void operator=( const ListBox & ) = delete ;
+	void operator=( ListBox && ) = delete ;
 } ;
 
-/// \class GGui::ListView
+//| \class GGui::ListView
 /// A simple write-only list-view class. The list-view resource
 /// is expected to use "report" mode so that a multi-column list
 /// box is displayed.
@@ -215,13 +219,15 @@ public:
 
 public:
 	ListView( const ListView & ) = delete ;
+	ListView( ListView && ) = delete ;
 	void operator=( const ListView & ) = delete ;
+	void operator=( ListView && ) = delete ;
 
 private:
 	static LPTSTR ptext( const std::string & s ) ;
 } ;
 
-/// \class GGui::EditBox
+//| \class GGui::EditBox
 /// An edit box class.
 ///
 class GGui::EditBox : public Control
@@ -279,7 +285,9 @@ public:
 
 public:
 	EditBox( const EditBox & ) = delete ;
+	EditBox( EditBox && ) = delete ;
 	void operator=( const EditBox & ) = delete ;
+	void operator=( EditBox && ) = delete ;
 
 private:
 	unsigned windowHeight() ; // not const
@@ -289,7 +297,7 @@ private:
 	unsigned m_character_height ;
 } ;
 
-/// \class GGui::CheckBox
+//| \class GGui::CheckBox
 /// A check box class.
 ///
 class GGui::CheckBox : public Control
@@ -309,10 +317,12 @@ public:
 
 public:
 	CheckBox( const CheckBox & ) = delete ;
-	void operator=( const CheckBox ) = delete ;
+	CheckBox( CheckBox && ) = delete ;
+	void operator=( const CheckBox & ) = delete ;
+	void operator=( CheckBox && ) = delete ;
 } ;
 
-/// \class GGui::Button
+//| \class GGui::Button
 /// A button class.
 ///
 class GGui::Button : public Control
@@ -336,7 +346,9 @@ public:
 
 public:
 	Button( const Button & ) = delete ;
+	Button( Button && ) = delete ;
 	void operator=( const Button & ) = delete ;
+	void operator=( Button && ) = delete ;
 } ;
 
 #endif

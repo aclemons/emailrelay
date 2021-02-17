@@ -154,7 +154,7 @@
     </p>
 
     <p>
-     By default E-MailRelay will always reject connections from remote machines. To
+     By default E-MailRelay will always reject connections from remote networks. To
      allow connections from anywhere use the <em>--remote-clients</em> option, but please
      check your firewall settings to make sure this cannot be exploited by spammers.
     </p>
@@ -261,12 +261,12 @@
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-server --pop --pop-auth=/etc/emailrelay.auth
+       <pre>emailrelay --as-server --pop --pop-auth=/etc/pop.auth
 </pre>
       </div><!-- div-pre -->
     <p>
-     You will need to create the authentication secrets file (<em>emailrelay.auth</em> in
-     this example) containing usernames and passwords. A simple example would look
+     You will need to create the authentication secrets file (<em>pop.auth</em> in this
+     example) containing usernames and passwords. A simple example would look
      like this:
     </p>
 
@@ -284,7 +284,7 @@ server plain user2 password2
      directory. The name of the sub-directory is simply the name that the client uses
      to authenticate with the E-MailRelay server. You just need to create the
      sub-directory for each client and then specify <em>emailrelay-filter-copy</em>
-     as the <em>--filter</em> program.
+     as the E-MailRelay <em>--filter</em> program.
     </p>
 
     <p>
@@ -328,14 +328,14 @@ exec /usr/local/sbin/emailrelay --as-client=smtp.example.com:smtp
 
     <p>
      You should check for <em>.bad</em> envelope files in the E-MailRelay spool directory
-     from time to time.
+     from time to time. If you want them to be retried next time then just remove
+     the <em>.bad</em> filename suffix.
     </p>
 
     <p>
-     If you want failed e-mails to be retried a few times you can run the
-     <em>emailrelay-resubmit</em> script periodically. This script simply removes the <em>.bad</em>
-     suffix from files in the spool directory, as long as they have not been retried
-     too many times already.
+     You can run the <em>emailrelay-resubmit</em> script periodically to automate this; it
+     removes the <em>.bad</em> suffix from files in the spool directory as long as they
+     have not been retried too many times already.
     </p>
    <h2><a class="a-header" name="SH_1_11">Usage patterns</a></h2> <!-- index:2:SH:1:11:Usage patterns -->
     <p>
@@ -509,10 +509,10 @@ exit 0</pre>
 
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2020 Graeme Walker
+      Copyright (C) 2001-2021 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

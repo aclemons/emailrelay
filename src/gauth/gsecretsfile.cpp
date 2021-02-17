@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gsecretsfile.cpp
-//
+///
+/// \file gsecretsfile.cpp
+///
 
 #include "gdef.h"
 #include "gsecretsfile.h"
@@ -114,7 +114,7 @@ GAuth::SecretsFile::Contents GAuth::SecretsFile::readContents( const G::Path & p
 	std::unique_ptr<std::ifstream> file ;
 	{
 		G::Root claim_root ;
-		file = std::make_unique<std::ifstream>( path.str().c_str() ) ;
+		file = std::make_unique<std::ifstream>( path.cstr() ) ;
 	}
 	if( !file->good() )
 	{
@@ -282,6 +282,8 @@ GAuth::Secret GAuth::SecretsFile::serverSecret( const std::string & encoding_typ
 
 std::pair<std::string,std::string> GAuth::SecretsFile::serverTrust( const std::string & address_range ) const
 {
+	reread() ; // (new)
+
 	std::pair<std::string,std::string> result ;
 	std::string encoding_type = "none" ;
 	const std::string & id = address_range ; // the address-range lives in the id field
@@ -308,4 +310,3 @@ std::string GAuth::SecretsFile::line( unsigned int line_number )
 {
 	return "line " + G::Str::fromUInt(line_number) ;
 }
-/// \file gsecretsfile.cpp

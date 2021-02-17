@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gcram.cpp
-//
+///
+/// \file gcram.cpp
+///
 
 #include "gdef.h"
 #include "gcram.h"
@@ -99,10 +99,12 @@ std::string GAuth::Cram::response( const std::string & hash_type , bool as_hmac 
 {
 	try
 	{
-		G_DEBUG( "GAuth::Cram::response: [" << hash_type << "][" << as_hmac << "]"
-			"[" << G::Str::printable(secret.key()) << "][" << secret.maskType() << "][" << challenge << "]"
-			"[" << G::Str::printable(id_prefix) << "]"
-			"[" << responseImp(hash_type,as_hmac,secret,challenge) << "]" ) ;
+		G_DEBUG( "GAuth::Cram::response: [" << hash_type << "]"
+			<< "[" << as_hmac << "]"
+			<< "[" << G::Str::printable(secret.key()) << "]"
+			<< "[" << secret.maskType() << "][" << challenge << "]"
+			<< "[" << G::Str::printable(id_prefix) << "]"
+			<< "[" << responseImp(hash_type,as_hmac,secret,challenge) << "]" ) ;
 
 		return id_prefix + " " + responseImp(hash_type,as_hmac,secret,challenge) ;
 	}
@@ -119,9 +121,13 @@ bool GAuth::Cram::validate( const std::string & hash_type , bool as_hmac ,
 {
 	try
 	{
-		G_DEBUG( "GAuth::Cram::validate: [" << hash_type << "][" << as_hmac << "]"
-				"[" << G::Str::printable(secret.key()) << "][" << secret.maskType() << "][" << challenge << "][" << response_in << "]"
-				"[" << responseImp(hash_type,as_hmac,secret,challenge) << "]" ) ;
+		G_DEBUG( "GAuth::Cram::validate: [" << hash_type << "]"
+			<< "[" << as_hmac << "]"
+			<< "[" << G::Str::printable(secret.key()) << "]"
+			<< "[" << secret.maskType() << "]"
+			<< "[" << challenge << "]"
+			<< "[" << response_in << "]"
+			<< "[" << responseImp(hash_type,as_hmac,secret,challenge) << "]" ) ;
 
 		std::string expectation = G::Str::tail( response_in , response_in.rfind(' ') ) ;
 		return !expectation.empty() && responseImp(hash_type,as_hmac,secret,challenge) == expectation ;
@@ -142,7 +148,10 @@ std::string GAuth::Cram::id( const std::string & response )
 std::string GAuth::Cram::responseImp( const std::string & mechanism_hash_type , bool as_hmac ,
 	const Secret & secret , const std::string & challenge )
 {
-	G_DEBUG( "GAuth::Cram::responseImp: mechanism-hash=[" << mechanism_hash_type << "] secret-hash=[" << secret.maskType() << "] as-hmac=" << as_hmac ) ;
+	G_DEBUG( "GAuth::Cram::responseImp: mechanism-hash=[" << mechanism_hash_type << "] "
+		<< "secret-hash=[" << secret.maskType() << "] "
+		<< "as-hmac=" << as_hmac ) ;
+
 	if( !as_hmac )
 	{
 		if( secret.masked() )
@@ -198,7 +207,8 @@ G::StringArray GAuth::Cram::hashTypes( const std::string & prefix , bool require
 		result.push_back( "FAKE" ) ;
 
 	G_DEBUG( "GAuth::Cram::hashTypes: tls library [" << GSsl::Library::ids() << "]" ) ;
-	G_DEBUG( "GAuth::Cram::hashTypes: tls library hash types: [" << G::Str::join(",",result) << "] (" << (require_state?1:0) << ")" ) ;
+	G_DEBUG( "GAuth::Cram::hashTypes: tls library hash types: [" << G::Str::join(",",result) << "] "
+		<< "(" << (require_state?1:0) << ")" ) ;
 
 	// always include MD5 since we use G::Md5 code
 	if( !G::Str::match( result , "MD5" ) )
@@ -215,8 +225,9 @@ G::StringArray GAuth::Cram::hashTypes( const std::string & prefix , bool require
 std::string GAuth::Cram::challenge( unsigned int random )
 {
 	std::ostringstream ss ;
-	ss << "<" << random << "." << G::SystemTime::now().s() << "@" << GNet::Local::canonicalName() << ">" ;
+	ss << "<" << random << "."
+		<< G::SystemTime::now().s() << "@"
+		<< GNet::Local::canonicalName() << ">" ;
 	return ss.str() ;
 }
 
-/// \file gcram.cpp

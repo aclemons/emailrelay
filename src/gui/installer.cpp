@@ -1,30 +1,30 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// installer.cpp
-//
+///
+/// \file installer.cpp
+///
 
 #include "gdef.h"
 #include "gcominit.h"
-#include "glog.h"
 #include "gstr.h"
 #include "gpath.h"
 #include "gfile.h"
 #include "gdate.h"
+#include "gtest.h"
 #include "gtime.h"
 #include "gdirectory.h"
 #include "gprocess.h"
@@ -33,12 +33,15 @@
 #include "glog.h"
 #include "glogoutput.h"
 #include "gexception.h"
+#include "gexecutablecommand.h"
 #include "gnewprocess.h"
 #include "gmapfile.h"
 #include "boot.h"
 #include "access.h"
 #include "serverconfiguration.h"
 #include "installer.h"
+#include <functional>
+#include <iterator>
 #include <exception>
 #include <iostream>
 #include <stdexcept>
@@ -47,11 +50,90 @@
 #include <list>
 #include <cstdlib>
 
+// internationalisation shenanigans
+#if 1
+#include "gqt.h"
+using trstring = QString ;
+static std::string from_trstring( const trstring & qs )
+{
+	return GQt::stdstr( qs , GQt::Utf8() ) ;
+}
+static bool empty( const trstring & s )
+{
+	return s.isEmpty() ;
+}
+struct TrError : std::runtime_error
+{
+	trstring m_text ;
+	std::string m_subject ;
+	explicit TrError( trstring text , std::string subject = std::string() ) :
+		std::runtime_error(from_trstring(text)) ,
+		m_text(text) ,
+		m_subject(subject)
+	{
+	}
+} ;
+#else
+#define Q_DECLARE_TR_FUNCTIONS(name)
+using trstring = std::string ;
+struct Proxy
+{
+	Proxy( const std::string & s ) :
+		m_s(s) ,
+		m_arg(1)
+	{
+	}
+	Proxy & arg( const std::string & value )
+	{
+		std::string key = "%" + G::Str::fromInt(m_arg++) ;
+		G::Str::replaceAll( m_s , key , value ) ;
+		return *this ;
+	}
+	operator std::string() const
+	{
+		return m_s ;
+	}
+	std::string operator+( const std::string & s ) const
+	{
+		return m_s + s ;
+	}
+	std::string m_s ;
+	int m_arg ;
+} ;
+struct QCoreApplication
+{
+	static Proxy translate( const char * , const std::string & s )
+	{
+		return Proxy(s) ;
+	}
+} ;
+static Proxy tr( const std::string & s )
+{
+	return Proxy(s) ;
+}
+static std::string from_trstring( const trstring & s )
+{
+	return s ;
+}
+static bool empty( const trstring & s )
+{
+	return s.empty() ;
+}
+struct TrError : std::runtime_error
+{
+	std::string m_text ;
+	std::string m_subject ;
+	explicit TrError( const std::string & text , const std::string & subject = std::string() ) :
+		std::runtime_error(text+(subject.empty()?"":": ")+subject) ,
+		m_text(text) ,
+		m_subject(subject)
+	{
+	}
+} ;
+#endif
+
 #ifdef CreateDirectory
 #undef CreateDirectory
-#endif
-#ifdef CopyFile
-#undef CopyFile
 #endif
 
 #ifdef G_GUI_DIR_H
@@ -61,9 +143,10 @@
 struct ActionInterface
 {
 	virtual void run() = 0 ;
-	virtual std::string text() const = 0 ;
-	virtual std::string ok() const = 0 ;
-	protected: virtual ~ActionInterface() = default;
+	virtual trstring text() const = 0 ;
+	virtual std::string subject() const = 0 ;
+	virtual trstring ok() const = 0 ;
+	virtual ~ActionInterface() = default ;
 } ;
 
 struct Helper
@@ -78,19 +161,21 @@ bool Helper::m_is_mac = false ;
 
 struct ActionBase : public ActionInterface , protected Helper
 {
-	std::string ok() const override ;
+	trstring ok() const override ;
 } ;
 
 struct CreateDirectory : public ActionBase
 {
-	std::string m_display_name ;
-	std::string m_ok ;
+	trstring m_display_name ;
+	trstring m_ok ;
 	G::Path m_path ;
 	bool m_tight_permissions ;
-	CreateDirectory( std::string display_name , std::string path , bool tight_permissions = false ) ;
-	std::string text() const override ;
-	std::string ok() const override ;
+	CreateDirectory( trstring display_name , std::string path , bool tight_permissions = false ) ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	trstring ok() const override ;
 	void run() override ;
+	Q_DECLARE_TR_FUNCTIONS(CreateDirectory)
 } ;
 
 struct CreatePointerFile : public ActionBase
@@ -101,51 +186,61 @@ struct CreatePointerFile : public ActionBase
 	G::Path m_dir_install ;
 	CreatePointerFile( const G::Path & pointer_file , const G::Path & gui_exe , const G::Path & dir_config , const G::Path & dir_install ) ;
 	void run() override ;
-	std::string text() const override ;
-	std::string ok() const override ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	trstring ok() const override ;
+	Q_DECLARE_TR_FUNCTIONS(CreatePointerFile)
 } ;
 
 struct CreateFilterScript : public ActionBase
 {
 	G::Path m_path ;
-	std::string m_type ;
-	std::string m_ok ;
+	bool m_client_filter ;
+	trstring m_ok ;
 	CreateFilterScript( const G::Path & path , bool client ) ;
 	void run() override ;
-	std::string text() const override ;
-	std::string ok() const override ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	trstring ok() const override ;
+	Q_DECLARE_TR_FUNCTIONS(CreateFilterScript)
 } ;
 
-struct CopyFile : public ActionBase
+struct CopyPayloadFile : public ActionBase
 {
 	G::Path m_src ;
 	G::Path m_dst ;
 	std::string m_flags ;
-	CopyFile( G::Path src , G::Path dst , std::string flags ) ;
+	CopyPayloadFile( G::Path src , G::Path dst , std::string flags ) ;
 	void run() override ;
-	std::string text() const override ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	Q_DECLARE_TR_FUNCTIONS(CopyPayloadFile)
 } ;
 
-struct CopyTree : public ActionBase
+struct CopyPayloadTree : public ActionBase
 {
 	G::Path m_src ;
 	G::Path m_dst ;
-	CopyTree( G::Path src , G::Path dst ) ;
+	CopyPayloadTree( G::Path src , G::Path dst ) ;
 	void run() override ;
-	std::string text() const override ;
+	trstring text() const override ;
+	std::string subject() const override ;
 	void add( int depth , G::Path , G::Path ) const ;
+	Q_DECLARE_TR_FUNCTIONS(CopyPayloadTree)
 } ;
 
 struct FileGroup : public ActionBase
 {
 	std::string m_path ;
 	std::string m_tail ;
-	std::string m_ok ;
+	trstring m_ok ;
 	FileGroup( const std::string & , const std::string & ) ;
 	void exec( const std::string & , const std::string & ) ;
 	void run() override ;
-	std::string text() const override ;
-	std::string ok() const override ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	trstring ok() const override ;
+	Q_DECLARE_TR_FUNCTIONS(FileGroup)
 } ;
 
 struct CreateSecrets : public ActionBase
@@ -153,10 +248,15 @@ struct CreateSecrets : public ActionBase
 	G::Path m_path ;
 	G::Path m_template ;
 	G::StringMap m_content ;
-	CreateSecrets( const std::string & config_dir , const std::string & filename , G::Path template_ , G::StringMap content ) ;
+	CreateSecrets( const std::string & config_dir , const std::string & filename , G::Path template_ , const G::MapFile & pvalues ) ;
 	void run() override ;
-	std::string text() const override ;
+	trstring text() const override ;
+	std::string subject() const override ;
 	static bool match( std::string , std::string ) ;
+	static bool yes( const std::string & ) ;
+	void addSecret( G::StringMap & , const G::MapFile & , const std::string & k ) const ;
+	void addSecret( G::StringMap & , const G::MapFile & , const std::string & side , const std::string & k1 , const std::string & k2 ) const ;
+	Q_DECLARE_TR_FUNCTIONS(CreateSecrets)
 } ;
 
 struct CreateBatchFile : public ActionBase
@@ -166,11 +266,21 @@ struct CreateBatchFile : public ActionBase
 	G::StringArray m_args ;
 	CreateBatchFile( const G::Path & bat , const G::Path & exe , const G::StringArray & args ) ;
 	void run() override ;
-	std::string text() const override ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	Q_DECLARE_TR_FUNCTIONS(CreateBatchFile)
 } ;
 
 struct UpdateLink : public ActionBase
 {
+	enum class LinkType
+	{
+		Desktop ,
+		StartMenu ,
+		AutoStart ,
+		BatchFile
+	} ;
+	LinkType m_link_type ;
 	bool m_active ;
 	G::Path m_link_dir ;
 	G::Path m_working_dir ;
@@ -178,37 +288,43 @@ struct UpdateLink : public ActionBase
 	G::StringArray m_args ;
 	G::Path m_icon ;
 	G::Path m_link_path ;
-	std::string m_ok ;
-	UpdateLink( bool active , G::Path link_dir , G::Path working_dir , G::Path target , const G::StringArray & args , G::Path icon ) ;
+	trstring m_ok ;
+	UpdateLink( LinkType , bool active , G::Path link_dir , G::Path working_dir , G::Path target , const G::StringArray & args , G::Path icon ) ;
 	void run() override ;
-	std::string text() const override ;
-	std::string ok() const override ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	trstring ok() const override ;
+	Q_DECLARE_TR_FUNCTIONS(UpdateLink)
 } ;
 
 struct UpdateBootLink : public ActionBase
 {
 	bool m_active ;
-	std::string m_ok ;
+	trstring m_ok ;
 	G::Path m_dir_boot ;
 	std::string m_name ;
 	G::Path m_startstop_src ;
 	G::Path m_exe ;
 	UpdateBootLink( bool active , G::Path dir_boot , std::string , G::Path startstop_src , G::Path exe ) ;
 	void run() override ;
-	std::string text() const override ;
-	std::string ok() const override ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	trstring ok() const override ;
+	Q_DECLARE_TR_FUNCTIONS(UpdateBootLink)
 } ;
 
 struct InstallService : public ActionBase
 {
 	bool m_active ;
-	std::string m_ok ;
+	trstring m_ok ;
 	G::Path m_bat ;
 	G::Path m_service_wrapper ;
 	InstallService( bool active , G::Path bat , G::Path wrapper ) ;
 	void run() override ;
-	std::string text() const override ;
-	std::string ok() const override ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	trstring ok() const override ;
+	Q_DECLARE_TR_FUNCTIONS(InstallService)
 } ;
 
 struct RegisterAsEventSource : public ActionBase
@@ -216,18 +332,22 @@ struct RegisterAsEventSource : public ActionBase
 	G::Path m_exe ;
 	explicit RegisterAsEventSource( const G::Path & ) ;
 	void run() override ;
-	std::string text() const override ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	Q_DECLARE_TR_FUNCTIONS(RegisterAsEventSource)
 } ;
 
 struct CreateConfigFile : public ActionBase
 {
-	std::string m_ok ;
+	trstring m_ok ;
 	G::Path m_template ;
 	G::Path m_dst ;
 	CreateConfigFile( G::Path dst_dir , std::string dst_name , G::Path template_ ) ;
 	void run() override ;
-	std::string text() const override ;
-	std::string ok() const override ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	trstring ok() const override ;
+	Q_DECLARE_TR_FUNCTIONS(CreateConfigFile)
 } ;
 
 struct EditConfigFile : public ActionBase
@@ -237,15 +357,58 @@ struct EditConfigFile : public ActionBase
 	bool m_do_backup ;
 	EditConfigFile( G::Path dir , std::string name , const G::MapFile & server_config , bool ) ;
 	void run() override ;
-	std::string text() const override ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	Q_DECLARE_TR_FUNCTIONS(EditConfigFile)
+} ;
+
+struct GenerateKey : public ActionBase
+{
+	GenerateKey( G::Path path_out , const std::string & issuer ) ;
+	static G::Path exe( bool is_windows ) ; // public & used early
+	void run() override ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	G::Path m_exe ;
+	G::Path m_path_out ;
+	std::string m_issuer ;
+	Q_DECLARE_TR_FUNCTIONS(GenerateKey)
+} ;
+
+struct Launcher : public ActionBase
+{
+	Launcher( bool as_service , const G::Path & bat , const G::Path & exe , const G::Path & conf , const G::Path & dir_boot ) ;
+	void run() override ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	trstring ok() const override ;
+	bool m_as_service ;
+	G::Path m_dir_boot ;
+	trstring m_text ;
+	std::string m_subject ;
+	trstring m_ok ;
+	G::ExecutableCommand m_cmd ;
+	Q_DECLARE_TR_FUNCTIONS(Launcher)
+} ;
+
+struct JustTesting : public ActionBase
+{
+	JustTesting() ;
+	trstring text() const override ;
+	std::string subject() const override ;
+	trstring ok() const override ;
+	void run() override ;
+	trstring m_ok ;
+	Q_DECLARE_TR_FUNCTIONS(JustTesting)
 } ;
 
 struct Action
 {
-	ActionInterface * m_p ; // should do reference counting, but just leak for now
+	std::shared_ptr<ActionInterface> m_p ;
 	explicit Action( ActionInterface * p ) ;
-	std::string text() const ;
-	std::string ok() const ;
+	trstring text() const ;
+	std::string subject() const ;
+	trstring ok() const ;
 	void run() ;
 } ;
 
@@ -255,25 +418,27 @@ public:
 	InstallerImp( bool installing , bool is_windows , bool is_mac , const G::Path & payload_path , std::istream & ) ;
 	~InstallerImp() ;
 	bool next() ;
-	Action & current() ;
-	G::ExecutableCommand launchCommand() const ;
+	bool done() ;
+	void back() ;
+	void run() ;
+	Installer::Output output() ;
+	bool failed() const ;
+	G::Path addLauncher() ;
 
 public:
 	InstallerImp( const InstallerImp & ) = delete ;
 	void operator=( const InstallerImp & ) = delete ;
 
 private:
-	void insertActions() ;
+	Action & current() ;
 	std::string pvalue( const std::string & key , const std::string & default_ ) const ;
 	std::string pvalue( const std::string & key ) const ;
 	std::string ivalue( const std::string & key ) const ;
 	bool exists( const std::string & key ) const ;
 	static bool yes( const std::string & ) ;
 	static bool no( const std::string & ) ;
-	G::StringMap allSecrets() const ;
-	void addSecret( G::StringMap & , const std::string & ) const ;
-	void addSecret( G::StringMap & , const std::string & , const std::string & , const std::string & ) const ;
-	void insert( ActionInterface * p ) ;
+	void addActions() ;
+	void addAction( ActionInterface * p ) ;
 
 private:
 	using List = std::list<Action> ;
@@ -284,32 +449,40 @@ private:
 	G::MapFile m_var ;
 	List m_list ;
 	List::iterator m_p ;
+	bool m_have_run ;
+	Installer::Output m_output ;
+	Q_DECLARE_TR_FUNCTIONS(InstallerImp)
 } ;
 
 // ==
 
-CreateDirectory::CreateDirectory( std::string display_name , std::string path , bool tight_permissions ) :
+CreateDirectory::CreateDirectory( trstring display_name , std::string path , bool tight_permissions ) :
 	m_display_name(display_name) ,
 	m_path(path) ,
 	m_tight_permissions(tight_permissions)
 {
 }
 
-std::string CreateDirectory::text() const
+trstring CreateDirectory::text() const
 {
-	return std::string() + "creating " + m_display_name + " directory [" + m_path.str() + "]" ;
+	return tr("creating %1 directory").arg(m_display_name) ;
 }
 
-std::string CreateDirectory::ok() const
+std::string CreateDirectory::subject() const
 {
-	return m_ok.empty() ? ActionBase::ok() : m_ok ;
+	return m_path.str() ;
+}
+
+trstring CreateDirectory::ok() const
+{
+	return empty(m_ok) ? ActionBase::ok() : m_ok ;
 }
 
 void CreateDirectory::run()
 {
-	if( m_path == G::Path() )
+	if( m_path.empty() )
 	{
-		m_ok = "nothing to do" ;
+		m_ok = tr("nothing to do") ;
 	}
 	else
 	{
@@ -317,8 +490,8 @@ void CreateDirectory::run()
 		if( G::File::exists(m_path) )
 		{
 			if( !directory.valid() )
-				throw std::runtime_error( "directory path exists but not valid a directory" ) ;
-			m_ok = "exists" ;
+				throw TrError( tr("directory path exists but not valid a directory") ) ;
+			m_ok = tr("exists") ;
 		}
 		else
 		{
@@ -326,7 +499,7 @@ void CreateDirectory::run()
 		}
 		Access::modify( m_path , m_tight_permissions ) ;
 		if( !directory.writeable() )
-			throw std::runtime_error( "directory exists but is not writable" ) ;
+			throw TrError( tr("directory exists but is not writable") ) ;
 	}
 }
 
@@ -343,21 +516,22 @@ CreatePointerFile::CreatePointerFile( const G::Path & pointer_file , const G::Pa
 
 void CreatePointerFile::run()
 {
-	if( m_pointer_file == G::Path() )
+	if( m_pointer_file.empty() )
 		return ;
 
 	// create the directory -- probably unnecessary
-	if( !G::File::isDirectory(m_pointer_file.dirname()) )
-		G::File::mkdirs( m_pointer_file.dirname() , G::File::NoThrow() ) ;
+	if( !G::File::isDirectory(m_pointer_file.dirname(),std::nothrow) )
+		G::File::mkdirs( m_pointer_file.dirname() , std::nothrow ) ;
 
 	// create the file
-	std::ofstream stream( m_pointer_file.str().c_str() ) ;
+	std::ofstream stream ;
+	G::File::open( stream , m_pointer_file , G::File::Text() ) ;
 
 	// add the exec preamble
 	if( !isWindows() )
 	{
 		stream << "#!/bin/sh\n" ;
-		if( m_gui_exe != G::Path() )
+		if( !m_gui_exe.empty() )
 			stream << "exec \"`dirname \\\"$0\\\"`/" << m_gui_exe.basename() << "\" \"$@\"\n" ;
 	}
 
@@ -367,7 +541,7 @@ void CreatePointerFile::run()
 
 	// close the file
 	if( !stream.good() )
-		throw std::runtime_error( std::string() + "cannot write to \"" + m_pointer_file.basename() + "\"" ) ;
+		throw TrError( tr("cannot write to file") , m_pointer_file.basename() ) ;
 	stream.close() ;
 
 	// make both files executable
@@ -378,74 +552,85 @@ void CreatePointerFile::run()
 	}
 }
 
-std::string CreatePointerFile::text() const
+trstring CreatePointerFile::text() const
 {
-	return m_pointer_file == G::Path() ?
-		std::string("creating pointer file") :
-		( "creating pointer file [" + m_pointer_file.str() + "]" ) ;
+	return tr("creating pointer file") ;
 }
 
-std::string CreatePointerFile::ok() const
+std::string CreatePointerFile::subject() const
 {
-	return m_pointer_file == G::Path() ? std::string("nothing to do") : ActionBase::ok() ;
+	return m_pointer_file.str() ; // possibly empty
+}
+
+trstring CreatePointerFile::ok() const
+{
+	if( m_pointer_file.empty() )
+		return tr("nothing to do") ;
+	else
+		return ActionBase::ok() ;
 }
 
 // ==
 
-CopyFile::CopyFile( G::Path src , G::Path dst , std::string flags ) :
+CopyPayloadFile::CopyPayloadFile( G::Path src , G::Path dst , std::string flags ) :
 	m_src(src) ,
 	m_dst(dst) ,
 	m_flags(flags)
 {
 }
 
-void CopyFile::run()
+void CopyPayloadFile::run()
 {
-	G_LOG( "CopyFile::run: copy file [" << m_src << "] -> [" << m_dst << "]" ) ;
-	G::File::mkdirs( m_dst.dirname() , G::File::NoThrow() , 8 ) ;
+	G_LOG( "CopyPayloadFile::run: copy file [" << m_src << "] -> [" << m_dst << "]" ) ;
+	G::File::mkdirs( m_dst.dirname() , std::nothrow , 8 ) ;
 	G::File::copy( m_src , m_dst ) ;
 
 	if( m_flags.find("x") != std::string::npos ||
-		G::File::executable(m_src) ||
+		G::File::isExecutable(m_src,std::nothrow) ||
 		m_dst.extension() == "sh" || m_dst.extension() == "bat" ||
 		m_dst.extension() == "exe" || m_dst.extension() == "pl" )
 			G::File::chmodx( m_dst ) ;
 }
 
-std::string CopyFile::text() const
+trstring CopyPayloadFile::text() const
 {
-	return "copying [" + m_dst.basename() + "] -> [" + m_dst.dirname().str() + "]" ;
+	return tr("copying payload file") ;
+}
+
+std::string CopyPayloadFile::subject() const
+{
+	return m_dst.str() ;
 }
 
 // ==
 
-CopyTree::CopyTree( G::Path src , G::Path dst ) :
+CopyPayloadTree::CopyPayloadTree( G::Path src , G::Path dst ) :
 	m_src(src) ,
 	m_dst(dst)
 {
 }
 
-void CopyTree::add( int depth , G::Path src_dir , G::Path dst_dir ) const
+void CopyPayloadTree::add( int depth , G::Path src_dir , G::Path dst_dir ) const
 {
 	if( depth > 10 ) return ;
-	G::File::mkdir( dst_dir , G::File::NoThrow() ) ;
-	G_LOG( "CopyTree::add: scanning [" << src_dir << "]" ) ;
+	G::File::mkdir( dst_dir , std::nothrow ) ;
+	G_LOG( "CopyPayloadTree::add: scanning [" << src_dir << "]" ) ;
 	G::Directory d( src_dir ) ;
 	G::DirectoryIterator iter( d ) ;
 	while( iter.more() )
 	{
 		if( iter.isDir() )
 		{
-			G_LOG( "CopyTree::add: recursion: [" << iter.filePath() << "] [" << dst_dir << "] [" << iter.fileName() << "]" ) ;
+			G_LOG( "CopyPayloadTree::add: recursion: [" << iter.filePath() << "] [" << dst_dir << "] [" << iter.fileName() << "]" ) ;
 			add( depth+1 , iter.filePath() , dst_dir+iter.fileName() ) ; // recurse
 		}
 		else
 		{
 			G::Path src = iter.filePath() ;
 			G::Path dst = dst_dir + iter.fileName() ;
-			G_LOG( "CopyTree::add: depth=" << depth << ": copy file [" << src << "] -> [" << dst << "]" ) ;
+			G_LOG( "CopyPayloadTree::add: depth=" << depth << ": copy file [" << src << "] -> [" << dst << "]" ) ;
 			G::File::copy( src , dst ) ;
-			if( G::File::executable(src) ||
+			if( G::File::isExecutable(src,std::nothrow) ||
 				dst.extension() == "sh" || dst.extension() == "bat" ||
 				dst.extension() == "exe" || dst.extension() == "pl" )
 					G::File::chmodx( dst ) ;
@@ -453,16 +638,20 @@ void CopyTree::add( int depth , G::Path src_dir , G::Path dst_dir ) const
 	}
 }
 
-void CopyTree::run()
+void CopyPayloadTree::run()
 {
-	G_LOG( "CopyTree::run: copy tree [" << m_src << "] -> [" << m_dst << "]" ) ;
+	G_LOG( "CopyPayloadTree::run: copy tree [" << m_src << "] -> [" << m_dst << "]" ) ;
 	add( 0 , m_src , m_dst ) ;
 }
 
-std::string CopyTree::text() const
+trstring CopyPayloadTree::text() const
 {
-	G::Path src_etc = m_src + "..." ;
-	return "copying [" + src_etc.str() + "] -> [" + m_dst.str() + "]" ;
+	return tr("copying payload directory") ;
+}
+
+std::string CopyPayloadTree::subject() const
+{
+	return m_dst.str() ;
 }
 
 // ==
@@ -476,47 +665,97 @@ FileGroup::FileGroup( const std::string & path , const std::string & tail ) :
 void FileGroup::run()
 {
 	G::StringArray parts ;
-	G::Str::splitIntoTokens( m_tail , parts , G::Str::ws() ) ;
-	if( parts.size() > 0U && !parts.at(0U).empty() ) exec( "/bin/chgrp" , parts.at(0U) + " " + m_path ) ;
-	if( parts.size() > 1U ) exec( "/bin/chmod" , parts.at(1U) + " " + m_path ) ;
-	if( parts.size() > 2U ) exec( "/bin/chmod" , parts.at(2U) + " " + m_path ) ;
+	G::Str::splitIntoTokens( m_tail , parts , G::Str::ws() ) ; // eg: "daemon 755 g+s"
+	if( parts.size() > 0U && !parts.at(0U).empty() )
+		m_ok = G::File::chgrp( m_path , parts.at(0U) , std::nothrow ) ? "" : "failed" ;
+	if( parts.size() > 1U )
+		G::File::chmod( m_path , parts.at(1U) ) ;
+	if( parts.size() > 2U )
+		G::File::chmod( m_path , parts.at(2U) ) ;
 }
 
-void FileGroup::exec( const std::string & exe , const std::string & tail )
+trstring FileGroup::text() const
 {
-	G_LOG( "FileGroup::exec: [" << exe << "] [" << tail << "]" ) ;
-
-	G::StringArray args ; G::Str::splitIntoTokens( tail , args , G::Str::ws() ) ;
-	G::NewProcess child( exe , args ) ;
-	int rc = child.wait().run().get() ;
-
-	if( rc != 0 )
-		m_ok = "failed" ;
+	return tr("setting group permissions") ;
 }
 
-std::string FileGroup::text() const
+std::string FileGroup::subject() const
 {
-	return "setting group permissions [" + m_path + " " + m_tail + "]" ;
+	return m_path + " " + m_tail ;
 }
 
-std::string FileGroup::ok() const
+trstring FileGroup::ok() const
 {
-	return m_ok.empty() ? ActionBase::ok() : m_ok ;
+	return empty(m_ok) ? ActionBase::ok() : m_ok ;
 }
 
 // ==
 
 CreateSecrets::CreateSecrets( const std::string & config_dir , const std::string & filename ,
-	G::Path template_ , G::StringMap content ) :
+	G::Path template_ , const G::MapFile & p ) :
 		m_path(config_dir,filename) ,
-		m_template(template_) ,
-		m_content(content)
+		m_template(template_)
 {
+	if( yes(p.value("do-pop")) )
+	{
+		addSecret( m_content , p , "server" , "pop-auth-mechanism" , "pop-account-1" ) ;
+		addSecret( m_content , p , "server" , "pop-auth-mechanism" , "pop-account-2" ) ;
+		addSecret( m_content , p , "server" , "pop-auth-mechanism" , "pop-account-3" ) ;
+	}
+	if( yes(p.value("do-smtp")) && yes(p.value("smtp-server-auth")) )
+	{
+		addSecret( m_content , p , "server" , "smtp-server-auth-mechanism" , "smtp-server-account" ) ;
+		addSecret( m_content , p , "smtp-server-trust" ) ;
+	}
+	if( yes(p.value("do-smtp")) && yes(p.value("smtp-client-auth")) )
+	{
+		addSecret( m_content , p , "client" , "smtp-client-auth-mechanism" , "smtp-client-account" ) ;
+	}
 }
 
-std::string CreateSecrets::text() const
+bool CreateSecrets::yes( const std::string & s )
 {
-	return std::string() + "creating authentication secrets file [" + m_path.str() + "]" ;
+	return G::Str::isPositive( s ) ;
+}
+
+void CreateSecrets::addSecret( G::StringMap & content , const G::MapFile & p , const std::string & k ) const
+{
+	if( !p.value(k).empty() )
+	{
+		std::string head = "server none " + p.value(k) ;
+		std::string tail = "trusted" ;
+		content[head] = head + " " + tail ;
+	}
+}
+
+void CreateSecrets::addSecret( G::StringMap & content , const G::MapFile & p ,
+	const std::string & side , const std::string & k1 , const std::string & k2 ) const
+{
+	if( !p.value(k2+"-name").empty() )
+	{
+		if( side == "server" )
+		{
+			std::string head = side + " " + p.value(k1) + " " + p.value(k2+"-name") ; // eg. "server plain joe"
+			std::string tail = p.value(k2+"-password") ; // eg. "secret"
+			content[head] = head + " " + tail ;
+		}
+		else
+		{
+			std::string head = side + " " + p.value(k1) ; // eg. "client plain"
+			std::string tail = p.value(k2+"-name") + " " + p.value(k2+"-password") ; // eg. "joe secret"
+			content[head] = head + " " + tail ;
+		}
+	}
+}
+
+trstring CreateSecrets::text() const
+{
+	return tr("creating authentication secrets file") ;
+}
+
+std::string CreateSecrets::subject() const
+{
+	return m_path.str() ;
 }
 
 bool CreateSecrets::match( std::string p1 , std::string p2 )
@@ -538,10 +777,12 @@ void CreateSecrets::run()
 	G::StringArray line_list ;
 	if( file_exists )
 	{
-		std::ifstream file( m_path.str().c_str() ) ;
+		std::ifstream file ;
+		G::File::open( file , m_path , G::File::Text() ) ;
 		while( file.good() )
 		{
 			std::string line = G::Str::readLineFrom( file , "\n" ) ;
+			G::Str::trimRight( line , {"\r",1U} ) ;
 			if( !file ) break ;
 			line_list.push_back( line ) ;
 		}
@@ -554,10 +795,11 @@ void CreateSecrets::run()
 		{
 			using pos_t = std::string::size_type ;
 			const pos_t npos = std::string::npos ;
-			pos_t pos1 = line.find_first_not_of(G::Str::ws()) ;
-			pos_t pos2 = pos1 == npos ? npos : line.find_first_of(G::Str::ws(),pos1) ;
-			pos_t pos3 = pos2 == npos ? npos : line.find_first_not_of(G::Str::ws(),pos2) ;
-			pos_t pos4 = pos3 == npos ? npos : line.find_first_of(G::Str::ws(),pos3) ;
+			const std::string ws = G::sv_to_string(G::Str::ws()) ;
+			pos_t pos1 = line.find_first_not_of( ws ) ;
+			pos_t pos2 = pos1 == npos ? npos : line.find_first_of(ws,pos1) ;
+			pos_t pos3 = pos2 == npos ? npos : line.find_first_not_of(ws,pos2) ;
+			pos_t pos4 = pos3 == npos ? npos : line.find_first_of(ws,pos3) ;
 			if( pos4 != npos )
 			{
 				std::string f1 = G::Str::lower(line.substr(pos1,pos2-pos1)) ;
@@ -576,12 +818,13 @@ void CreateSecrets::run()
 	// write a header if none
 	if( line_list.empty() )
 	{
-		if( m_template != G::Path() && G::File::exists(m_template) )
+		if( !m_template.empty() && G::File::exists(m_template) )
 		{
-			std::ifstream file( m_template.str().c_str() ) ;
+			std::ifstream file( m_template.cstr() ) ;
 			while( file.good() )
 			{
 				std::string line = G::Str::readLineFrom( file , "\n" ) ;
+				G::Str::trimRight( line , {"\r",1U} ) ;
 				if( !file ) break ;
 				line_list.push_back( line ) ;
 			}
@@ -626,11 +869,12 @@ void CreateSecrets::run()
 		std::string timestamp = G::Date(now).str(G::Date::Format::yyyy_mm_dd) + G::Time(now).hhmmss() ;
 		G::Path backup_path( m_path.dirname() , m_path.basename() + "." + timestamp ) ;
 		G::Process::Umask umask( G::Process::Umask::Mode::Tightest ) ;
-		G::File::copy( m_path , backup_path , G::File::NoThrow() ) ;
+		G::File::copy( m_path , backup_path , std::nothrow ) ;
 	}
 
 	// write the new file
-	std::ofstream file( m_path.str().c_str() ) ;
+	std::ofstream file ;
+	G::File::open( file , m_path, G::File::Text() ) ;
 	bool ok = file.good() ;
 	for( const auto & line : line_list )
 	{
@@ -639,7 +883,7 @@ void CreateSecrets::run()
 	ok = ok && file.good() ;
 	file.close() ;
 	if( !ok )
-		throw std::runtime_error(std::string()+"cannot create \""+m_path.basename()+"\"") ;
+		throw TrError( tr("cannot create file") , m_path.basename() ) ;
 }
 
 // ==
@@ -651,9 +895,14 @@ CreateBatchFile::CreateBatchFile( const G::Path & bat , const G::Path & exe , co
 {
 }
 
-std::string CreateBatchFile::text() const
+trstring CreateBatchFile::text() const
 {
-	return std::string() + "creating batch file [" + m_bat.str() + "]" ;
+	return tr("creating startup batch file") ;
+}
+
+std::string CreateBatchFile::subject() const
+{
+	return m_bat.str() ;
 }
 
 void CreateBatchFile::run()
@@ -665,8 +914,9 @@ void CreateBatchFile::run()
 
 // ==
 
-UpdateLink::UpdateLink( bool active , G::Path link_dir , G::Path working_dir ,
+UpdateLink::UpdateLink( LinkType link_type , bool active , G::Path link_dir , G::Path working_dir ,
 	G::Path target , const G::StringArray & args , G::Path icon ) :
+		m_link_type(link_type) ,
 		m_active(active) ,
 		m_link_dir(link_dir) ,
 		m_working_dir(working_dir) ,
@@ -674,15 +924,22 @@ UpdateLink::UpdateLink( bool active , G::Path link_dir , G::Path working_dir ,
 		m_args(args) ,
 		m_icon(icon)
 {
-	std::string link_filename = GLink::filename( "E-MailRelay" ) ;
+	std::string link_filename = G::Link::filename( "E-MailRelay" ) ;
 	m_link_path = G::Path( m_link_dir , link_filename ) ;
 }
 
-std::string UpdateLink::text() const
+trstring UpdateLink::text() const
 {
-	return m_link_dir.str().empty() ?
-		( std::string() + "updating startup link" ) :
-		( std::string() + "updating link in [" + m_link_dir.str() + "]" ) ;
+	if( m_link_type == LinkType::Desktop ) return tr("updating destkop link") ;
+	if( m_link_type == LinkType::StartMenu ) return tr("updating start menu link") ;
+	if( m_link_type == LinkType::AutoStart ) return tr("updating autostart link") ;
+	if( m_link_type == LinkType::BatchFile ) return tr("updating program-files link") ;
+	return tr("updating link" ) ;
+}
+
+std::string UpdateLink::subject() const
+{
+	return m_link_dir.str() ; // possibly empty
 }
 
 void UpdateLink::run()
@@ -690,8 +947,8 @@ void UpdateLink::run()
 	new GComInit ; // (leak ok)
 	if( m_active )
 	{
-		GLink link( m_target , "E-MailRelay" , "Starts the E-MailRelay server in the background" ,
-			m_working_dir , m_args , m_icon , GLink::Show::Hide ,
+		G::Link link( m_target , "E-MailRelay" , "Starts the E-MailRelay server in the background" ,
+			m_working_dir , m_args , m_icon , G::Link::Show::Hide ,
 			"E-MailRelay" , "Generated by the E-MailRelay configuration GUI" ) ;
 
 		//G::Process::Umask umask( G::Process::Umask::Mode::Tightest ) ;
@@ -700,13 +957,13 @@ void UpdateLink::run()
 	}
 	else
 	{
-		m_ok = GLink::remove( m_link_path ) ? "removed" : "nothing to do" ;
+		m_ok = G::Link::remove( m_link_path ) ? tr("removed") : tr("nothing to do") ;
 	}
 }
 
-std::string UpdateLink::ok() const
+trstring UpdateLink::ok() const
 {
-	return m_ok.empty() ? ActionBase::ok() : m_ok ;
+	return empty(m_ok) ? ActionBase::ok() : m_ok ;
 }
 
 // ==
@@ -720,30 +977,34 @@ InstallService::InstallService( bool active , G::Path bat , G::Path service_wrap
 
 void InstallService::run()
 {
-	if( m_bat == G::Path() || m_service_wrapper == G::Path() )
+	if( m_bat.empty() || m_service_wrapper.empty() )
 	{
-		m_ok = "nothing to do" ;
+		m_ok = tr("nothing to do") ;
 	}
 	else if( m_active )
 	{
-		bool ok = Boot::install( G::Path() , "emailrelay" , m_bat , m_service_wrapper ) ;
-		m_ok = ok ? "installed" : "failed" ;
+		Boot::install( G::Path() , "emailrelay" , m_bat , m_service_wrapper ) ;
 	}
 	else
 	{
 		bool ok = Boot::uninstall( G::Path() , "emailrelay" , m_bat , m_service_wrapper ) ;
-		m_ok = ok ? "uninstalled" : "nothing to do" ;
+		m_ok = ok ? tr("uninstalled") : tr("nothing to do") ;
 	}
 }
 
-std::string InstallService::text() const
+trstring InstallService::text() const
 {
-	return std::string(m_active?"":"un") + "installing service" ;
+	return m_active ? tr("installing service") : tr("uninstalling service") ;
 }
 
-std::string InstallService::ok() const
+std::string InstallService::subject() const
 {
-	return m_ok.empty() ? ActionBase::ok() : m_ok ;
+	return std::string() ;
+}
+
+trstring InstallService::ok() const
+{
+	return empty(m_ok) ? ActionBase::ok() : m_ok ;
 }
 
 // ==
@@ -757,33 +1018,36 @@ UpdateBootLink::UpdateBootLink( bool active , G::Path dir_boot , std::string nam
 {
 }
 
-std::string UpdateBootLink::text() const
+trstring UpdateBootLink::text() const
 {
-	return std::string() + "updating boot configuration [" + (m_dir_boot+m_name).str() + "]" ;
+	return tr("updating boot configuration") ;
+}
+
+std::string UpdateBootLink::subject() const
+{
+	return (m_dir_boot+m_name).str() ;
 }
 
 void UpdateBootLink::run()
 {
-	if( m_dir_boot == G::Path() || m_startstop_src == G::Path() || m_exe == G::Path() )
+	if( m_dir_boot.empty() || m_startstop_src.empty() || m_exe.empty() )
 	{
-		m_ok = "nothing to do" ;
+		m_ok = tr("nothing to do") ;
 	}
 	else if( m_active )
 	{
-		if( ! Boot::install( m_dir_boot , m_name , m_startstop_src , m_exe ) )
-			throw std::runtime_error( "failed to create links" ) ;
-		m_ok = "installed" ;
+		Boot::install( m_dir_boot , m_name , m_startstop_src , m_exe ) ;
 	}
 	else
 	{
 		bool removed = Boot::uninstall( m_dir_boot , m_name , m_startstop_src , m_exe ) ;
-		m_ok = removed ? "removed" : "nothing to remove" ;
+		m_ok = removed ? tr("removed") : tr("nothing to remove") ;
 	}
 }
 
-std::string UpdateBootLink::ok() const
+trstring UpdateBootLink::ok() const
 {
-	return m_ok.empty() ? ActionBase::ok() : m_ok ;
+	return empty(m_ok) ? ActionBase::ok() : m_ok ;
 }
 
 // ==
@@ -795,56 +1059,70 @@ RegisterAsEventSource::RegisterAsEventSource( const G::Path & exe ) :
 
 void RegisterAsEventSource::run()
 {
-	if( m_exe != G::Path() )
+	if( !m_exe.empty() )
 		G::LogOutput::register_( m_exe.str() ) ;
 }
 
-std::string RegisterAsEventSource::text() const
+trstring RegisterAsEventSource::text() const
 {
-	return std::string() + "registering [" + m_exe.str() + "]" ;
+	return tr("registering as a source for event viewer logging") ;
+}
+
+std::string RegisterAsEventSource::subject() const
+{
+	return m_exe.str() ;
 }
 
 // ==
 
 CreateFilterScript::CreateFilterScript( const G::Path & path , bool client_filter ) :
 	m_path(path) ,
-	m_type(client_filter?"client ":"")
+	m_client_filter(client_filter)
 {
 }
 
 void CreateFilterScript::run()
 {
-	if( m_path == G::Path() )
+	if( m_path.empty() )
 	{
-		m_ok = "nothing to do" ;
+		m_ok = tr("nothing to do") ;
 	}
 	else if( G::File::exists(m_path) )
 	{
-		m_ok = "exists" ;
+		m_ok = tr("exists") ;
 	}
 	else
 	{
-		std::ofstream f( m_path.str().c_str() ) ;
+		std::ofstream f ;
+		G::File::open( f , m_path , G::File::Text() ) ;
 		if( isWindows() )
-			f << "WScript.Quit(0);\r\n" << std::flush ;
+			f << "WScript.Quit(0);" << std::endl ;
 		else
 			f << "#!/bin/sh\nexit 0" << std::endl ;
 		if( !f.good() )
-			throw std::runtime_error( std::string() + "cannot write to \"" + m_path.basename() + "\"" ) ;
+			throw TrError( tr("cannot write to file") , m_path.basename() ) ;
 		f.close() ;
 		if( !isWindows() )
 			G::File::chmodx( m_path ) ;
 	}
 }
 
-std::string CreateFilterScript::text() const
+trstring CreateFilterScript::text() const
 {
-	return std::string() + "creating " + m_type + "filter script [" + m_path.str() + "]" ;
+	if( m_client_filter )
+		return tr("creating an empty client filter script") ;
+	else
+		return tr("creating an empty filter script") ;
 }
 
-std::string CreateFilterScript::ok() const
+std::string CreateFilterScript::subject() const
 {
-	return m_ok.empty() ? ActionBase::ok() : m_ok ;
+	return m_path.str() ;
+}
+
+trstring CreateFilterScript::ok() const
+{
+	return empty(m_ok) ? ActionBase::ok() : m_ok ;
 }
 
 // ==
@@ -858,21 +1136,26 @@ CreateConfigFile::CreateConfigFile( G::Path dst_dir , std::string dst_name , G::
 void CreateConfigFile::run()
 {
 	if( G::File::exists(m_dst) )
-		m_ok = "exists" ;
+		m_ok = tr("exists") ;
 	else if( G::File::exists(m_template) )
 		G::File::copy( m_template , m_dst ) ;
 	else
 		G::File::create( m_dst ) ;
 }
 
-std::string CreateConfigFile::text() const
+trstring CreateConfigFile::text() const
 {
-	return std::string() + "creating config file [" + m_dst.str() + "]" ;
+	return tr("creating configuration file") ;
 }
 
-std::string CreateConfigFile::ok() const
+std::string CreateConfigFile::subject() const
 {
-	return m_ok.empty() ? ActionBase::ok() : m_ok ;
+	return m_dst.str() ;
+}
+
+trstring CreateConfigFile::ok() const
+{
+	return empty(m_ok) ? ActionBase::ok() : m_ok ;
 }
 
 // ==
@@ -886,19 +1169,176 @@ EditConfigFile::EditConfigFile( G::Path dir , std::string name , const G::MapFil
 
 void EditConfigFile::run()
 {
-	m_server_config.editInto( m_path , m_do_backup , /*allow-read-error=*/false , /*allow-write-error=*/false ) ;
+	const bool allow_read_error = false ;
+	const bool allow_write_error = false ;
+	m_server_config.editInto( m_path , m_do_backup , allow_read_error , allow_write_error ) ;
 }
 
-std::string EditConfigFile::text() const
+trstring EditConfigFile::text() const
 {
-	return std::string() + "editing config file [" + m_path.str() + "]" ;
+	return tr("editing configuration file") ;
+}
+
+std::string EditConfigFile::subject() const
+{
+	return m_path.str() ;
 }
 
 // ==
 
-std::string ActionBase::ok() const
+GenerateKey::GenerateKey( G::Path path_out , const std::string & issuer ) :
+	m_exe(exe(isWindows())) ,
+	m_path_out(path_out) ,
+	m_issuer(issuer)
 {
-	return "ok" ;
+}
+
+G::Path GenerateKey::exe( bool is_windows )
+{
+	std::string this_exe = G::Process::exe() ;
+	return
+		this_exe.empty() ?
+			G::Path() :
+			G::Path(this_exe).dirname() + (is_windows?"emailrelay-test-keygen.exe":"emailrelay-test-keygen") ;
+}
+
+void GenerateKey::run()
+{
+	G::NewProcess task(
+		G::NewProcessConfig( m_exe , m_issuer , m_path_out.str() )
+			.set_fd_stdout( G::NewProcess::Fd::devnull() )
+			.set_fd_stderr( G::NewProcess::Fd::pipe() )
+			.set_exec_error_format( "failed to execute ["+m_exe.str()+"]: __strerror__" ) ) ;
+
+	int rc = task.waitable().wait().get() ;
+	std::string output = G::Str::printable( G::Str::trimmed(task.waitable().output(),G::Str::ws()) ) ;
+	if( rc != 0 && output.empty() )
+		output = "exit " + G::Str::fromInt(rc) ;
+
+	if( rc != 0 )
+		throw std::runtime_error( output ) ;
+}
+
+trstring GenerateKey::text() const
+{
+	return tr("generating tls server key") ;
+}
+
+std::string GenerateKey::subject() const
+{
+	return m_path_out.str() ;
+}
+
+// ==
+
+Launcher::Launcher( bool as_service , const G::Path & bat , const G::Path & exe , const G::Path & config_file ,
+	const G::Path & dir_boot ) :
+		m_as_service(as_service) ,
+		m_dir_boot(dir_boot)
+{
+	if( m_as_service )
+	{
+		m_text = tr("starting service") ;
+	}
+	else if( isWindows() )
+	{
+		m_cmd = G::ExecutableCommand( bat , G::StringArray() , false ) ;
+		m_text = tr("running startup batch file") ;
+		m_subject = bat.str() ;
+		m_ok = tr("done") ; // since not necessarily 'ok'
+	}
+	else
+	{
+		m_cmd = G::ExecutableCommand( exe , {config_file.str()} , false ) ;
+		m_text = tr("running") ;
+		m_subject = exe.str() + " " + config_file.str() ;
+	}
+}
+
+void Launcher::run()
+{
+	if( m_as_service )
+	{
+		Boot::launch( m_dir_boot , "emailrelay" ) ;
+	}
+	else
+	{
+		G::NewProcess task(
+			G::NewProcessConfig( m_cmd )
+				.set_fd_stdout( G::NewProcess::Fd::devnull() )
+				.set_fd_stderr( G::NewProcess::Fd::pipe() )
+				.set_exec_error_format( "failed to execute ["+m_cmd.exe().str()+"]: __strerror__" ) ) ;
+
+		int rc = task.waitable().wait().get() ;
+		std::string output = G::Str::printable( G::Str::trimmed(task.waitable().output(),G::Str::ws()) ) ;
+		if( rc != 0 && output.empty() )
+			output = "exit " + G::Str::fromInt(rc) ;
+
+		if( rc != 0 )
+			throw std::runtime_error( output ) ;
+	}
+}
+
+trstring Launcher::text() const
+{
+	return m_text ;
+}
+
+std::string Launcher::subject() const
+{
+	return m_subject ;
+}
+
+trstring Launcher::ok() const
+{
+	return empty(m_ok) ? ActionBase::ok() : m_ok ;
+}
+
+// ==
+
+JustTesting::JustTesting()
+{
+}
+
+trstring JustTesting::ok() const
+{
+	return empty(m_ok) ? ActionBase::ok() : m_ok ;
+}
+
+trstring JustTesting::text() const
+{
+	//: random text used in testing
+	return tr("doing something") ;
+}
+
+std::string JustTesting::subject() const
+{
+	return
+		G::Test::enabled("installer-test-subject") ?
+			std::string("/some/directory") :
+			std::string() ;
+}
+
+void JustTesting::run()
+{
+	if( G::Test::enabled("installer-test-nop") )
+		//: random text used in testing
+		m_ok = tr("nothing to do") ;
+	if( G::Test::enabled("installer-test-throw") )
+		//: random text used in testing
+		throw TrError( tr("some error") ) ;
+	if( G::Test::enabled("installer-test-throw-with-subject") )
+		//: random text used in testing
+		throw TrError( tr("another error") , "/some/file" ) ;
+	if( G::Test::enabled("installer-test-throw-native") )
+		throw std::runtime_error( "failed to do something to /some/file" ) ;
+}
+
+// ==
+
+trstring ActionBase::ok() const
+{
+	return QCoreApplication::translate( "Installer" , "ok" ) ;
 }
 
 // ==
@@ -908,12 +1348,17 @@ Action::Action( ActionInterface * p ) :
 {
 }
 
-std::string Action::text() const
+trstring Action::text() const
 {
 	return m_p->text() ;
 }
 
-std::string Action::ok() const
+std::string Action::subject() const
+{
+	return m_p->subject() ;
+}
+
+trstring Action::ok() const
 {
 	return m_p->ok() ;
 }
@@ -928,7 +1373,8 @@ void Action::run()
 InstallerImp::InstallerImp( bool installing , bool is_windows , bool is_mac , const G::Path & payload , std::istream & ss ) :
 	m_installing(installing) ,
 	m_payload(payload) ,
-	m_pages_output(ss)
+	m_pages_output(ss) ,
+	m_have_run(false)
 {
 	Helper::m_is_windows = is_windows ;
 	Helper::m_is_mac = is_mac ;
@@ -944,8 +1390,6 @@ InstallerImp::InstallerImp( bool installing , bool is_windows , bool is_mac , co
 	m_installer_config.add( "-pointer" , isWindows() ? "%dir-install%/emailrelay-gui.cfg" : "%dir-install%/sbin/emailrelay-gui" ) ;
 	m_installer_config.add( "-startstop" , isWindows() ? "" : "%dir-install%/lib/emailrelay/emailrelay-startstop.sh" ) ;
 	m_installer_config.add( "-servicewrapper" , isWindows() ? "%dir-install%/emailrelay-service.exe" : "" ) ;
-	m_installer_config.add( "-filtercopy" , isWindows() ?
-			"%dir-install%/emailrelay-filter-copy.exe" : "%dir-install%/lib/emailrelay/emailrelay-filter-copy" ) ;
 
 	// define some substitution variables (used for expansion of pvalues, ivalues and payload.cfg)
 	m_var.add( "dir-install" , pvalue("dir-install") ) ;
@@ -954,35 +1398,68 @@ InstallerImp::InstallerImp( bool installing , bool is_windows , bool is_mac , co
 	m_var.add( "dir-spool" , pvalue("dir-spool") ) ;
 	m_var.add( "payload" , m_payload.str() ) ;
 
-	insertActions() ;
-	m_p = m_list.end() ; // sic
+	addActions() ;
+	m_p = m_list.end() ;
 }
 
 InstallerImp::~InstallerImp()
 = default;
 
-G::ExecutableCommand InstallerImp::launchCommand() const
+bool InstallerImp::next()
 {
-	if( isWindows() )
+	m_output = Installer::Output() ;
+	if( m_list.empty() )
 	{
-		return G::ExecutableCommand( ivalue("-bat") , G::StringArray() ) ;
+		return false ;
+	}
+	else if( m_p == m_list.end() ) // inc. new
+	{
+		m_p = m_list.begin() ;
+		m_output.action_utf8 = from_trstring( (*m_p).text() ) ;
+		m_output.subject = (*m_p).subject() ;
+		return true ;
 	}
 	else
 	{
-		G::Path filter_copy = ivalue("-filtercopy") ;
-		G::Path target = ivalue("-exe") ;
-		ServerConfiguration sc = ServerConfiguration::fromPages( m_pages_output , filter_copy ) ;
-		return G::ExecutableCommand( target , sc.args() ) ;
+		++m_p ;
+		if( m_p != m_list.end() )
+		{
+			m_output.action_utf8 = from_trstring( (*m_p).text() ) ;
+			m_output.subject = (*m_p).subject() ;
+		}
+		return m_p != m_list.end() ;
 	}
 }
 
-bool InstallerImp::next()
+void InstallerImp::back()
 {
-	if( m_p == m_list.end() )
+	m_output = Installer::Output() ;
+	if( m_list.empty() || m_p == m_list.begin() )
+	{
+	}
+	else if( m_p == m_list.end() )
+	{
 		m_p = m_list.begin() ;
+		std::advance( m_p , m_list.size()-1U ) ;
+		m_output.action_utf8 = from_trstring( (*m_p).text() ) ;
+		m_output.subject = (*m_p).subject() ;
+	}
 	else
-		++m_p ;
-	return m_p != m_list.end() ;
+	{
+		--m_p ;
+		m_output.action_utf8 = from_trstring( (*m_p).text() ) ;
+		m_output.subject = (*m_p).subject() ;
+	}
+}
+
+bool InstallerImp::failed() const
+{
+	return m_have_run && ( !m_output.error.empty() || !m_output.error_utf8.empty() ) ;
+}
+
+bool InstallerImp::done()
+{
+	return m_p == m_list.end() ;
 }
 
 Action & InstallerImp::current()
@@ -1020,22 +1497,22 @@ bool InstallerImp::no( const std::string & value )
 	return !yes( value ) ;
 }
 
-void InstallerImp::insert( ActionInterface * p )
+void InstallerImp::addAction( ActionInterface * p )
 {
 	m_list.push_back( Action(p) ) ;
 }
 
-void InstallerImp::insertActions()
+void InstallerImp::addActions()
 {
 	// create base directories
 	//
 	if( m_installing )
 	{
-		insert( new CreateDirectory("install",pvalue("dir-install"),true) ) ;
-		insert( new CreateDirectory("configuration",pvalue("dir-config")) ) ;
+		addAction( new CreateDirectory(tr("install"),pvalue("dir-install"),true) ) ;
+		addAction( new CreateDirectory(tr("configuration"),pvalue("dir-config")) ) ;
 	}
-	insert( new CreateDirectory("runtime",pvalue("dir-run")) ) ;
-	insert( new CreateDirectory("spool",pvalue("dir-spool")) ) ;
+	addAction( new CreateDirectory(tr("runtime"),pvalue("dir-run")) ) ;
+	addAction( new CreateDirectory(tr("spool"),pvalue("dir-spool")) ) ;
 
 	// create pop-by-name sub-directories
 	//
@@ -1049,7 +1526,7 @@ void InstallerImp::insertActions()
 		{
 			if( name.empty() ) continue ;
 			G::Path dir( spool_dir , name ) ;
-			insert( new CreateDirectory("pop-by-name",dir.str()) ) ;
+			addAction( new CreateDirectory(tr("pop-by-name"),dir.str()) ) ;
 		}
 	}
 
@@ -1065,13 +1542,13 @@ void InstallerImp::insertActions()
 		// read the contents
 		G::MapFile payload_map( m_payload + "payload.cfg" ) ;
 
-		// insert the file copy tasks
+		// add the file copy tasks
 		const G::StringArray keys = payload_map.keys() ;
 		for( const auto & key : keys )
 		{
 			const std::string & value = payload_map.value( key ) ;
 			if( key.find("+") == 0U && key.length() > 1U && value.find("group ") == 0U && value.length() > 6U )
-				insert( new FileGroup(m_var.expand(key.substr(1U)),value.substr(6U)) ) ;
+				addAction( new FileGroup(m_var.expand(key.substr(1U)),value.substr(6U)) ) ;
 			if( key.find_first_of("-+=") == 0U )
 				continue ;
 
@@ -1085,27 +1562,16 @@ void InstallerImp::insertActions()
 
 			G::Path src = m_payload + key ;
 			if( is_directory_tree )
-				insert( new CopyTree(src,dst) ) ;
+				addAction( new CopyPayloadTree(src,dst) ) ;
 			else
-				insert( new CopyFile(src,dst,flags) ) ;
+				addAction( new CopyPayloadFile(src,dst,flags) ) ;
 		}
 	}
 
 	// create secrets
 	//
 	G::Path authtemplate_src = m_installing ? ivalue( "-authtemplate" ) : std::string() ;
-	insert( new CreateSecrets(pvalue("dir-config"),"emailrelay.auth",authtemplate_src,allSecrets()) ) ;
-
-	// create a startup batch file
-	//
-	if( isWindows() )
-	{
-		G::Path filter_copy = ivalue("-filtercopy") ;
-		G::Path exe = ivalue("-exe") ;
-		G::Path bat = ivalue("-bat") ;
-		G::StringArray args = ServerConfiguration::fromPages(m_pages_output,filter_copy).args() ;
-		insert( new CreateBatchFile(bat,exe,args) ) ;
-	}
+	addAction( new CreateSecrets(pvalue("dir-config"),"emailrelay.auth",authtemplate_src,m_pages_output) ) ;
 
 	// create the pointer file so that the gui program can be used to re-configure
 	//
@@ -1115,7 +1581,7 @@ void InstallerImp::insertActions()
 		G::Path gui_exe = ivalue( "-gui" ) ;
 		G::Path dir_config = pvalue( "dir-config" ) ;
 		G::Path dir_install = pvalue( "dir-install" ) ;
-		insert( new CreatePointerFile(pointer_file,gui_exe,dir_config,dir_install) ) ;
+		addAction( new CreatePointerFile(pointer_file,gui_exe,dir_config,dir_install) ) ;
 	}
 
 	// register for using the windows event log - doing it here since the server
@@ -1123,24 +1589,46 @@ void InstallerImp::insertActions()
 	//
 	if( m_installing && isWindows() )
 	{
-		insert( new RegisterAsEventSource(ivalue("-exe")) ) ;
+		addAction( new RegisterAsEventSource(ivalue("-exe")) ) ;
 	}
 
 	// create filter scripts
 	//
 	if( m_installing )
 	{
-		if( !pvalue("filter-server").empty() && no(pvalue("pop-filter-copy")) )
+		if( !pvalue("filter-server").empty() )
 		{
-			insert( new CreateDirectory( "filter" , G::Path(pvalue("filter-server")).dirname().str() ) ) ;
-			insert( new CreateFilterScript( pvalue("filter-server") , false ) ) ;
+			addAction( new CreateDirectory( tr("filter") , G::Path(pvalue("filter-server")).dirname().str() ) ) ;
+			addAction( new CreateFilterScript( pvalue("filter-server") , false ) ) ;
 		}
 
 		if( !pvalue("filter-client").empty() )
 		{
-			insert( new CreateDirectory( "client-filter" , G::Path(pvalue("filter-client")).dirname().str() ) ) ;
-			insert( new CreateFilterScript( pvalue("filter-client") , true ) ) ;
+			addAction( new CreateDirectory( tr("client-filter") , G::Path(pvalue("filter-client")).dirname().str() ) ) ;
+			addAction( new CreateFilterScript( pvalue("filter-client") , true ) ) ;
 		}
+	}
+
+	// generate tls certificates
+	if( m_installing )
+	{
+		bool server_tls = yes(pvalue("smtp-server-tls")) || yes(pvalue("smtp-server-tls-connection")) ;
+		if( server_tls && pvalue("smtp-server-tls-certificate").empty() )
+		{
+			G::Path path_out = G::Path(pvalue("dir-config")) + "emailrelay-install.pem" ;
+			addAction( new GenerateKey(path_out,"CN=example.com") ) ;
+			m_pages_output.add( "smtp-server-tls-certificate" , path_out.str() , true ) ;
+		}
+	}
+
+	// create a startup batch file
+	//
+	if( isWindows() )
+	{
+		G::Path exe = ivalue("-exe") ;
+		G::Path bat = ivalue("-bat") ;
+		G::StringArray args = ServerConfiguration::fromPages(m_pages_output).args() ;
+		addAction( new CreateBatchFile(bat,exe,args) ) ;
 	}
 
 	// create startup links and startup config
@@ -1162,83 +1650,81 @@ void InstallerImp::insertActions()
 		G::Path dir_boot = pvalue( "dir-boot" ) ;
 
 		G::Path bat = ivalue( "-bat" ) ;
-		G::Path filter_copy = ivalue("-filtercopy") ;
 		G::Path target = isWindows() ? bat : server_exe ;
-		G::StringArray args = isWindows() ? G::StringArray() : ServerConfiguration::fromPages(m_pages_output,filter_copy).args() ;
+		G::StringArray args = isWindows() ? G::StringArray() : ServerConfiguration::fromPages(m_pages_output).args() ;
 		G::Path icon = ivalue( "-icon" ) ;
 
-		insert( new UpdateLink(do_desktop,dir_desktop,working_dir,target,args,icon) ) ;
-		insert( new UpdateLink(do_menu,dir_menu,working_dir,target,args,icon) ) ;
-		insert( new UpdateLink(do_login,dir_login,working_dir,target,args,icon) ) ;
+		addAction( new UpdateLink(UpdateLink::LinkType::Desktop,do_desktop,dir_desktop,working_dir,target,args,icon) ) ;
+		addAction( new UpdateLink(UpdateLink::LinkType::StartMenu,do_menu,dir_menu,working_dir,target,args,icon) ) ;
+		addAction( new UpdateLink(UpdateLink::LinkType::AutoStart,do_login,dir_login,working_dir,target,args,icon) ) ;
 
 		if( isWindows() )
 		{
-			insert( new UpdateLink(true,dir_install,working_dir,target,args,icon) ) ;
-
+			addAction( new UpdateLink(UpdateLink::LinkType::BatchFile,true,dir_install,working_dir,target,args,icon) ) ;
 			G::Path service_wrapper = ivalue( "-servicewrapper" ) ;
-			insert( new InstallService(do_boot,bat,service_wrapper) ) ;
+			addAction( new InstallService(do_boot,bat,service_wrapper) ) ;
 		}
 		else
 		{
 			// install the startstop script and its config file
 			G::Path conftemplate_src = m_installing ? ivalue( "-conftemplate" ) : std::string() ;
-			G::MapFile server_config = ServerConfiguration::fromPages(m_pages_output,filter_copy).map() ;
-			insert( new UpdateBootLink(do_boot,dir_boot,"emailrelay",ivalue("-startstop"),server_exe) ) ;
-			insert( new CreateConfigFile(dir_config,"emailrelay.conf",conftemplate_src) ) ;
-			insert( new EditConfigFile(dir_config,"emailrelay.conf",server_config,!m_installing) ) ;
+			G::MapFile server_config = ServerConfiguration::fromPages(m_pages_output).map() ;
+			addAction( new UpdateBootLink(do_boot,dir_boot,"emailrelay",ivalue("-startstop"),server_exe) ) ;
+			addAction( new CreateConfigFile(dir_config,"emailrelay.conf",conftemplate_src) ) ;
+			addAction( new EditConfigFile(dir_config,"emailrelay.conf",server_config,!m_installing) ) ;
 		}
+	}
+
+	// testing
+	if( G::Test::enabled("installer-test") )
+		addAction( new JustTesting ) ;
+}
+
+G::Path InstallerImp::addLauncher()
+{
+	G::Path bat = ivalue( "-bat" ) ;
+	G::Path exe = ivalue( "-exe" ) ;
+	G::Path dir_boot = pvalue( "dir-boot" ) ;
+	G::Path dir_config = pvalue( "dir-config" ) ;
+	G::Path config_file = dir_config + "emailrelay.conf" ;
+	bool as_service = yes( pvalue("start-on-boot") ) ;
+
+	std::size_t list_size = m_list.size() ;
+	addAction( new Launcher( as_service , bat , exe , config_file , dir_boot ) ) ;
+	m_p = list_size ? m_list.begin() : m_list.end() ;
+	if( list_size )
+		std::advance( m_p , list_size-1U ) ;
+
+	std::string log = pvalue( "logging-file" ) ;
+	G::Str::replaceAll( log , "%d" , G::Date(G::Date::LocalTime()).str(G::Date::Format::yyyy_mm_dd) ) ;
+	return log ;
+}
+
+void InstallerImp::run()
+{
+	try
+	{
+		m_have_run = true ;
+		m_output.result_utf8.clear() ;
+		m_output.error.clear() ;
+		m_output.error_utf8.clear() ;
+		current().run() ;
+		m_output.result_utf8 = from_trstring( current().ok() ) ;
+	}
+	catch( TrError & e )
+	{
+		m_output.error_utf8 = from_trstring( e.m_text ) ;
+		m_output.error = e.m_subject ;
+	}
+	catch( std::exception & e )
+	{
+		m_output.error = e.what() ;
 	}
 }
 
-G::StringMap InstallerImp::allSecrets() const
+Installer::Output InstallerImp::output()
 {
-	G::StringMap map ;
-	if( yes(pvalue("do-pop")) )
-	{
-		addSecret( map , "server" , "pop-auth-mechanism" , "pop-account-1" ) ;
-		addSecret( map , "server" , "pop-auth-mechanism" , "pop-account-2" ) ;
-		addSecret( map , "server" , "pop-auth-mechanism" , "pop-account-3" ) ;
-	}
-	if( yes(pvalue("do-smtp")) && yes(pvalue("smtp-server-auth")) )
-	{
-		addSecret( map , "server" , "smtp-server-auth-mechanism" , "smtp-server-account" ) ;
-		addSecret( map , "smtp-server-trust" ) ;
-	}
-	if( yes(pvalue("do-smtp")) && yes(pvalue("smtp-client-auth")) )
-	{
-		addSecret( map , "client" , "smtp-client-auth-mechanism" , "smtp-client-account" ) ;
-	}
-	return map ;
-}
-
-void InstallerImp::addSecret( G::StringMap & map , const std::string & k ) const
-{
-	if( exists(k) && !pvalue(k).empty() )
-	{
-		std::string head = "server none " + pvalue(k) ;
-		std::string tail = "trusted" ;
-		map[head] = head + " " + tail ;
-	}
-}
-
-void InstallerImp::addSecret( G::StringMap & map ,
-	const std::string & side , const std::string & k1 , const std::string & k2 ) const
-{
-	if( exists(k2+"-name") && !pvalue(k2+"-name").empty() )
-	{
-		if( side == "server" )
-		{
-			std::string head = side + " " + pvalue(k1) + " " + pvalue(k2+"-name") ; // eg. "server plain joe"
-			std::string tail = pvalue(k2+"-password") ; // eg. "secret"
-			map[head] = head + " " + tail ;
-		}
-		else
-		{
-			std::string head = side + " " + pvalue(k1) ; // eg. "client plain"
-			std::string tail = pvalue(k2+"-name") + " " + pvalue(k2+"-password") ; // eg. "joe secret"
-			map[head] = head + " " + tail ;
-		}
-	}
+	return m_output ;
 }
 
 // ==
@@ -1247,88 +1733,78 @@ Installer::Installer( bool installing , bool is_windows , bool is_mac , const G:
 	m_installing(installing) ,
 	m_is_windows(is_windows) ,
 	m_is_mac(is_mac&&!is_windows) ,
-	m_payload(payload) ,
-	m_imp(nullptr)
+	m_payload(payload)
 {
 }
 
 Installer::~Installer()
 {
-	delete m_imp ;
 }
 
-void Installer::start( std::istream & s )
+void Installer::start( std::istream & input_stream )
 {
-	delete m_imp ;
-	m_imp = new InstallerImp( m_installing , m_is_windows , m_is_mac , m_payload , s ) ;
-	m_launch_command = m_imp->launchCommand() ;
-	m_reason.erase() ;
+	m_imp = std::make_unique<InstallerImp>( m_installing , m_is_windows , m_is_mac , m_payload , input_stream ) ;
 }
 
 bool Installer::next()
 {
-	bool more = false ;
-	if( m_imp != nullptr )
-		more = m_imp->next() ;
-	if( !more )
-		cleanup() ;
-	return more ;
+	if( !m_imp || failed() )
+		return false ;
+	return m_imp->next() ;
 }
 
-void Installer::cleanup( const std::string & reason )
+void Installer::back( int n )
 {
-	if( m_reason.empty() )
-	{
-		G_DEBUG( "Installer::cleanup: [" << reason << "]" ) ;
-		m_reason = reason ;
-	}
-	InstallerImp * imp = m_imp ;
-	m_imp = nullptr ;
-	delete imp ;
+	for( int i = 0 ; m_imp && i < n ; i++ )
+		m_imp->back() ;
 }
 
-std::string Installer::beforeText()
+Installer::Output Installer::output()
 {
-	return m_imp->current().text() ;
-}
-
-std::string Installer::afterText()
-{
-	return m_reason.empty() ? m_imp->current().ok() : m_reason ;
+	return m_imp ? m_imp->output() : Output() ;
 }
 
 void Installer::run()
 {
-	try
-	{
-		m_imp->current().run() ;
-	}
-	catch( std::exception & e )
-	{
-		cleanup( e.what() ) ;
-	}
+	if( m_imp )
+		m_imp->run() ;
 }
 
 bool Installer::failed() const
 {
-	if( !done() )
-		throw std::runtime_error( "internal error: invalid state" ) ;
-	return !m_reason.empty() ;
-}
-
-std::string Installer::reason() const
-{
-	return m_reason ;
+	return m_imp && m_imp->failed() ;
 }
 
 bool Installer::done() const
 {
-	return m_imp == nullptr ;
+	return failed() || const_cast<Installer*>(this)->doneImp() ;
 }
 
-G::ExecutableCommand Installer::launchCommand() const
+bool Installer::doneImp()
 {
-	return m_launch_command ;
+	return m_imp && m_imp->done() ;
+}
+
+bool Installer::canGenerateKey()
+{
+	return G::File::exists( GenerateKey::exe(m_is_windows) ) ;
+}
+
+G::Path Installer::addLauncher()
+{
+	return m_imp ? m_imp->addLauncher() : G::Path() ;
+}
+
+std::string Installer::failedText() const
+{
+	trstring failed = QCoreApplication::translate( "Installer" , "** failed **" ) ;
+	return from_trstring(failed) ;
+}
+
+std::string Installer::finishedText() const
+{
+	trstring finished = QCoreApplication::translate( "Installer" , "== finished ==" ) ;
+	return from_trstring(finished) ;
 }
 
 // ==
@@ -1343,4 +1819,3 @@ bool Helper::isMac()
 	return m_is_mac ;
 }
 
-/// \file installer.cpp

@@ -1,63 +1,59 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gstr.cpp
-//
+///
+/// \file gstr.cpp
+///
 
 #include "gdef.h"
 #include "gstr.h"
-#include "glog.h"
 #include "gassert.h"
 #include <algorithm>
 #include <type_traits> // std::make_unsigned
+#include <stdexcept>
 #include <iterator>
 #include <limits>
 #include <functional>
 #include <iomanip>
 #include <string>
 #include <sstream>
+#include <cstring>
 #include <cerrno>
 
 namespace G
 {
 	namespace StrImp /// An implementation namespace for G::Str.
 	{
-		void escape( std::string & s , char c_escape , const char * specials_in , const char * specials_out , bool with_nul ) ;
+		static constexpr string_view chars_meta( "~<>[]*$|?\\(){}\"`'&;=" , nullptr ) ; // bash meta-chars plus "~"
+
+		static constexpr string_view chars_alnum( "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			"0123456789" "abcdefghijklmnopqrstuvwxyz" , nullptr ) ;
+		static_assert( chars_alnum.size() == 26U+10U+26U , "" ) ;
+
+		static constexpr string_view chars_hexmap( "0123456789abcdef" , nullptr ) ;
+		static_assert( chars_hexmap.size() == 16U , "" ) ;
+
+		static constexpr string_view chars_ws( " \t\n\r" , nullptr ) ;
+		static_assert( chars_ws.size() == 4U , "" ) ;
+
 		bool isDigit( char c ) ;
 		bool isHex( char c ) ;
 		bool isPrintableAscii( char c ) ;
 		char toLower( char c )  ;
 		char toUpper( char c )  ;
-		void readLineFrom( std::istream & stream , const std::string & eol , std::string & line ) ;
-		template <typename T> void splitIntoTokens( const std::string & in , T & out , const std::string & ws ) ;
-		template <typename T> void splitIntoFields( const std::string & in , T & out , const std::string & ws ) ;
-		template <typename T> void splitIntoFields( const std::string & in_in , T & out , const std::string & ws ,
-			char escape , bool remove_escapes ) ;
-		template <typename Tchar = char , typename Tuchar = typename std::make_unsigned<Tchar>::type> struct PrintableAppender ;
-		template <typename T> struct Joiner ;
-		template <typename T1, typename T2, typename P> bool equal4( T1 p1 , T1 end1 , T2 p2 , T2 end2 , P p ) ;
-		bool ilessc( char c1 , char c2 ) ;
-		bool iless( const std::string & a , const std::string & b ) ;
-		bool imatchc( char c1 , char c2 ) ;
-		bool imatch( const std::string & a , const std::string & b ) ;
-		bool match( const std::string & a , const std::string & b , bool ignore_case ) ;
-		template <typename T, typename V> T unique( T in , T end , V repeat , V replacement ) ;
-		bool inList( StringArray::const_iterator begin , StringArray::const_iterator end , const std::string & s , bool i ) ;
-		bool notInList( StringArray::const_iterator begin , StringArray::const_iterator end , const std::string & s , bool i ) ;
 		unsigned short toUShort( const std::string & s , bool & overflow , bool & invalid ) ;
 		unsigned long toULong( const std::string & s , bool & overflow , bool & invalid ) ;
 		unsigned long toULongHex( const std::string & s , bool limited ) ;
@@ -65,8 +61,33 @@ namespace G
 		short toShort( const std::string & s , bool & overflow , bool & invalid ) ;
 		long toLong( const std::string & s , bool & overflow , bool & invalid ) ;
 		int toInt( const std::string & s , bool & overflow , bool & invalid ) ;
+		void strncpy( char * , const char * , size_t ) noexcept ;
+		void escape( std::string & s , char c_escape , const char * specials_in , const char * specials_out ,
+			bool with_nul ) ;
+		void readLineFrom( std::istream & stream , const std::string & eol , std::string & line ) ;
+		template <typename S, typename T, typename SV> void splitIntoTokens( const S & in , T & out , const SV & ws ) ;
+		template <typename S, typename T> void splitIntoTokens( const S & in , T & out , const S & ws , typename S::value_type esc ) ;
+		template <typename T> void splitIntoFields( const std::string & in , T & out , string_view ws ) ;
+		template <typename T> void splitIntoFields( const std::string & in_in , T & out , string_view ws ,
+			char escape , bool remove_escapes ) ;
+		template <typename T1, typename T2, typename P> bool equal4( T1 p1 , T1 end1 , T2 p2 , T2 end2 , P p ) ;
+		bool ilessc( char c1 , char c2 ) ;
+		bool iless( const std::string & a , const std::string & b ) ;
+		bool imatchc( char c1 , char c2 ) ;
+		bool imatch( const std::string & a , const std::string & b ) ;
+		bool match( const std::string & a , const std::string & b , bool ignore_case ) ;
+		template <typename T, typename V> T unique( T in , T end , V repeat , V replacement ) ;
+		bool inList( StringArray::const_iterator begin , StringArray::const_iterator end ,
+			const std::string & s , bool i ) ;
+		bool notInList( StringArray::const_iterator begin , StringArray::const_iterator end ,
+			const std::string & s , bool i ) ;
+		template <typename T> struct Joiner ;
 		void join( const std::string & , std::string & , const std::string & ) ;
-		void strncpy( char * , const char * , size_t ) ;
+		template <typename Tout> std::size_t outputHex( Tout out , char c ) ;
+		template <typename Tout> std::size_t outputHex( Tout out , wchar_t c ) ;
+		template <typename Tout, typename Tchar> std::size_t outputPrintable( Tout , Tchar , Tchar , char , bool ) ;
+		struct InPlaceBackInserter ;
+		template <typename Tchar = char> struct PrintableAppender ;
 	}
 }
 
@@ -77,23 +98,27 @@ std::string G::Str::escaped( const std::string & s_in )
 	return s ;
 }
 
-std::string G::Str::escaped( const std::string & s_in , char c_escape , const std::string & specials_in , const std::string & specials_out )
+std::string G::Str::escaped( const std::string & s_in , char c_escape , const std::string & specials_in ,
+	const std::string & specials_out )
 {
 	std::string s( s_in ) ;
 	escape( s , c_escape , specials_in , specials_out ) ;
 	return s ;
 }
 
-std::string G::Str::escaped( const std::string & s_in , char c_escape , const char * specials_in , const char * specials_out )
+std::string G::Str::escaped( const std::string & s_in , char c_escape , const char * specials_in ,
+	const char * specials_out )
 {
 	std::string s( s_in ) ;
 	escape( s , c_escape , specials_in , specials_out ) ;
 	return s ;
 }
 
-void G::StrImp::escape( std::string & s , char c_escape , const char * specials_in , const char * specials_out , bool with_nul )
+void G::StrImp::escape( std::string & s , char c_escape , const char * specials_in ,
+	const char * specials_out , bool with_nul )
 {
-	G_ASSERT( specials_in != nullptr && specials_out != nullptr && (std::strlen(specials_out)-std::strlen(specials_in)) <= 1U ) ;
+	G_ASSERT( specials_in != nullptr ) ;
+	G_ASSERT( specials_out != nullptr && (std::strlen(specials_out)-std::strlen(specials_in)) <= 1U ) ;
 	std::size_t pos = 0U ;
 	for(;;)
 	{
@@ -130,7 +155,8 @@ void G::Str::escape( std::string & s , char c_escape , const char * specials_in 
 	imp::escape( s , c_escape , specials_in , specials_out , with_nul ) ;
 }
 
-void G::Str::escape( std::string & s , char c_escape , const std::string & specials_in , const std::string & specials_out )
+void G::Str::escape( std::string & s , char c_escape , const std::string & specials_in ,
+	const std::string & specials_out )
 {
 	namespace imp = G::StrImp ;
 	G_ASSERT( specials_in.length() == specials_out.length() ) ;
@@ -138,7 +164,7 @@ void G::Str::escape( std::string & s , char c_escape , const std::string & speci
 	imp::escape( s , c_escape , specials_in.c_str() , specials_out.c_str() , with_nul ) ;
 }
 
-std::string G::Str::dequote( const std::string & s , char qq , char esc , const std::string & ws )
+std::string G::Str::dequote( const std::string & s , char qq , char esc , string_view ws , string_view nbws )
 {
 	std::string result ;
 	result.reserve( s.size() ) ;
@@ -149,9 +175,11 @@ std::string G::Str::dequote( const std::string & s , char qq , char esc , const 
 		if( c == esc && !escaped )
 		{
 			escaped = true ;
+			result.append( 1U , esc ) ;
 		}
 		else
 		{
+			std::size_t wspos = 0 ;
 			if( c == qq && !escaped && !in_quote )
 			{
 				in_quote = true ;
@@ -160,10 +188,17 @@ std::string G::Str::dequote( const std::string & s , char qq , char esc , const 
 			{
 				in_quote = false ;
 			}
-			else if( ws.find(c) != std::string::npos && in_quote )
+			else if( in_quote && (wspos=ws.find(c)) != std::string::npos )
 			{
-				result.append( 1U , esc ) ;
-				result.append( 1U , c ) ;
+				if( escaped )
+				{
+					result.append( 1U , nbws.at(wspos) ) ;
+				}
+				else
+				{
+					result.append( 1U , esc ) ;
+					result.append( 1U , c ) ;
+				}
 			}
 			else
 			{
@@ -182,7 +217,8 @@ void G::Str::unescape( std::string & s )
 
 void G::Str::unescape( std::string & s , char c_escape , const char * specials_in , const char * specials_out )
 {
-	G_ASSERT( specials_in != nullptr && specials_out != nullptr && (std::strlen(specials_in)-std::strlen(specials_out)) <= 1U ) ;
+	G_ASSERT( specials_in != nullptr ) ;
+	G_ASSERT( specials_out != nullptr && (std::strlen(specials_in)-std::strlen(specials_out)) <= 1U ) ;
 	bool escaped = false ;
 	auto out = s.begin() ; // output in-place
 	for( char & c_in : s )
@@ -208,6 +244,21 @@ std::string G::Str::unescaped( const std::string & s_in )
 	std::string s( s_in ) ;
 	unescape( s ) ;
 	return s ;
+}
+
+void G::Str::replace( std::string & s , char from , char to )
+{
+	for( char & c : s )
+	{
+		if( c == from )
+			c = to ;
+	}
+}
+
+void G::Str:: replace( StringArray & a , char from , char to )
+{
+	for( std::string & s : a )
+		replace( s , from , to ) ;
 }
 
 bool G::Str::replace( std::string & s , const std::string & from , const std::string & to , std::size_t * pos_p )
@@ -246,7 +297,8 @@ unsigned int G::Str::replaceAll( std::string & s , const char * from , const cha
 	if( s.find(from) != std::string::npos )
 	{
 		unsigned int count = 0U ;
-		for( std::size_t pos = 0U ; replace(s,from,to,&pos) ; count++ )
+		std::string f( from ) ;
+		for( std::size_t pos = 0U ; replace(s,f,to,&pos) ; count++ )
 			{;} // no-op
 		return count ;
 	}
@@ -263,10 +315,9 @@ std::string G::Str::replaced( const std::string & s , char from , char to )
 	return result ;
 }
 
-void G::Str::removeAll( std::string & s , char c_in )
+void G::Str::removeAll( std::string & s , char c )
 {
-	const auto end = s.end() ;
-	s.erase( std::remove_if( s.begin() , end , [c_in](char c){return c==c_in;} ) , end ) ;
+	s.erase( std::remove_if( s.begin() , s.end() , [c](char x){return x==c;} ) , s.end() ) ;
 }
 
 std::string G::Str::only( const std::string & chars , const std::string & s )
@@ -281,38 +332,44 @@ std::string G::Str::only( const std::string & chars , const std::string & s )
 	return result ;
 }
 
-void G::Str::trimLeft( std::string & s , const std::string & ws , std::size_t limit )
+std::string & G::Str::trimLeft( std::string & s , string_view ws , std::size_t limit )
 {
-	std::size_t n = s.find_first_not_of( ws ) ;
+	std::size_t n = s.find_first_not_of( ws.data() , 0U , ws.size() ) ;
 	if( limit != 0U && ( n == std::string::npos || n > limit ) )
 		n = limit >= s.length() ? std::string::npos : limit ;
 	if( n == std::string::npos )
 		s = std::string() ;
 	else if( n != 0U )
 		s.erase( 0U , n ) ;
+	return s ;
 }
 
-void G::Str::trimRight( std::string & s , const std::string & ws , std::size_t limit )
+std::string & G::Str::trimRight( std::string & s , string_view ws , std::size_t limit )
 {
-	std::size_t n = s.find_last_not_of( ws ) ;
+	std::size_t n = s.find_last_not_of( ws.data() , std::string::npos , ws.size() ) ;
 	if( limit != 0U && ( n == std::string::npos || s.length() > (limit+n+1U) ) )
 		n = limit >= s.length() ? std::string::npos : (s.length()-limit-1U) ;
 	if( n == std::string::npos )
 		s = std::string() ;
 	else if( (n+1U) != s.length() )
 		s.resize( n + 1U ) ;
+	return s ;
 }
 
-void G::Str::trim( std::string & s , const std::string & ws )
+std::string & G::Str::trim( std::string & s , string_view ws )
 {
-	trimLeft(s,ws) ; trimRight(s,ws) ;
+	return trimLeft( trimRight(s,ws) , ws ) ;
 }
 
-std::string G::Str::trimmed( const std::string & s_in , const std::string & ws )
+std::string G::Str::trimmed( const std::string & s_in , string_view ws )
 {
 	std::string s( s_in ) ;
-	trim( s , ws ) ;
-	return s ;
+	return trim( s , ws ) ;
+}
+
+std::string G::Str::trimmed( std::string && s , string_view ws )
+{
+	return std::move( trimLeft(trimRight(s,ws),ws) ) ;
 }
 
 bool G::StrImp::isDigit( char c )
@@ -410,38 +467,8 @@ std::string G::Str::fromBool( bool b )
 std::string G::Str::fromDouble( double d )
 {
 	std::ostringstream ss ;
-	ss << std::setprecision(16) << d ; // was "setprecision(DBL_DIG+1)"
+	ss << std::setprecision(16) << d ;
 	return ss.str() ;
-}
-
-std::string G::Str::fromInt( int i )
-{
-	return std::to_string( i ) ;
-}
-
-std::string G::Str::fromLong( long l )
-{
-	return std::to_string( l ) ;
-}
-
-std::string G::Str::fromShort( short s )
-{
-	return std::to_string( s ) ;
-}
-
-std::string G::Str::fromUInt( unsigned int ui )
-{
-	return std::to_string( ui ) ;
-}
-
-std::string G::Str::fromULong( unsigned long ul )
-{
-	return std::to_string( ul ) ;
-}
-
-std::string G::Str::fromUShort( unsigned short us )
-{
-	return std::to_string( us ) ;
 }
 
 bool G::Str::toBool( const std::string & s )
@@ -611,12 +638,14 @@ unsigned long G::Str::toULong( const std::string & s , Limited )
 
 unsigned long G::Str::toULong( const std::string & s , Hex , Limited )
 {
-	return StrImp::toULongHex( s , true ) ;
+	namespace imp = G::StrImp ;
+	return imp::toULongHex( s , true ) ;
 }
 
 unsigned long G::Str::toULong( const std::string & s , Hex )
 {
-	return StrImp::toULongHex( s , false ) ;
+	namespace imp = G::StrImp ;
+	return imp::toULongHex( s , false ) ;
 }
 
 unsigned long G::StrImp::toULongHex( const std::string & s , bool limited )
@@ -663,33 +692,9 @@ unsigned long G::Str::toULong( const std::string & s1 , const std::string & s2 )
 
 unsigned long G::StrImp::toULong( const std::string & s , bool & overflow , bool & invalid )
 {
-	try
-	{
-		if( s.empty() )
-		{
-			invalid = true ;
-			overflow = false ;
-			return 0UL ;
-		}
-		else
-		{
-			std::size_t end = 0U ;
-			unsigned long result = std::stoul( s , &end , 10 ) ;
-			if( end == 0U || end != s.size() )
-				invalid = true ;
-			return result ;
-		}
-	}
-	catch( std::invalid_argument & )
-	{
-		invalid = true ;
-		return 0UL ;
-	}
-	catch( std::out_of_range & )
-	{
-		overflow = true ;
-		return 0UL ;
-	}
+	// note that stoul()/strtoul() do too much in that they skip leading
+	// spaces, allow initial +/- (!) and are C-locale dependent
+	return Str::toUnsigned<unsigned long>( s.data() , s.data()+s.size() , overflow , invalid ) ;
 }
 
 unsigned short G::Str::toUShort( const std::string & s , Limited )
@@ -753,104 +758,156 @@ std::string G::Str::upper( const std::string & in )
 	return out ;
 }
 
-template <typename Tchar, typename Tuchar>
+template <typename Tout>
+std::size_t G::StrImp::outputHex( Tout out , char c )
+{
+	namespace imp = G::StrImp ;
+	std::size_t n = static_cast<unsigned char>( c ) ;
+	n &= 0xFFU ;
+	*out++ = imp::chars_hexmap[(n>>4)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>0)%16U] ;
+	return 2U ;
+}
+
+template <typename Tout>
+std::size_t G::StrImp::outputHex( Tout out , wchar_t c )
+{
+	namespace imp = G::StrImp ;
+	using uwchar_t = typename std::make_unsigned<wchar_t>::type ;
+	std::size_t n = static_cast<uwchar_t>( c ) ;
+	n &= 0xFFFFU ;
+	*out++ = imp::chars_hexmap[(n>>12)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>8)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>4)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>0)%16U] ;
+	return 4U ;
+}
+
+template <typename Tout, typename Tchar>
+std::size_t G::StrImp::outputPrintable( Tout out , Tchar c , Tchar escape_in , char escape_out , bool eight_bit )
+{
+	using Tuchar = typename std::make_unsigned<Tchar>::type ;
+	const auto uc = static_cast<Tuchar>( c ) ; // NOLINT not bugprone-signed-char-misuse
+	std::size_t n = 1U ;
+	if( c == escape_in )
+	{
+		*out++ = escape_out , n++ ;
+		*out++ = escape_out ;
+	}
+	else if( !eight_bit && uc >= 0x20U && uc < 0x7FU && uc != 0xFFU )
+	{
+		*out++ = static_cast<char>(c) ;
+	}
+	else if( eight_bit && ( ( uc >= 0x20U && uc < 0x7FU ) || uc >= 0xA0 ) && uc != 0xFFU )
+	{
+		*out++ = static_cast<char>(c) ;
+	}
+	else
+	{
+		*out++ = escape_out , n++ ;
+		if( uc == 10U )
+		{
+			*out++ = 'n' ;
+		}
+		else if( uc == 13U )
+		{
+			*out++ = 'r' ;
+		}
+		else if( uc == 9U )
+		{
+			*out++ = 't' ;
+		}
+		else if( uc == 0U )
+		{
+			*out++ = '0' ;
+		}
+		else
+		{
+			*out++ = 'x' ;
+			n += outputHex( out , c ) ;
+		}
+	}
+	return n ;
+}
+
+template <typename Tchar>
 struct G::StrImp::PrintableAppender /// A character appender used by G::Str.
 {
 	std::string & s ;
-	Tchar escape_in ;
-	char escape_out ;
-	bool eight_bit ;
-	PrintableAppender( std::string & s_ , Tchar escape_ , bool eight_bit_ ) :
+	const Tchar escape_in ;
+	const char escape_out ;
+	const bool eight_bit ;
+	PrintableAppender( std::string & s_ , Tchar escape_in_ , char escape_out_ , bool eight_bit_ ) :
 		s(s_) ,
-		escape_in(escape_) ,
-		escape_out(static_cast<char>(escape_)) ,
+		escape_in(escape_in_) ,
+		escape_out(escape_out_) ,
 		eight_bit(eight_bit_)
 	{
 	}
 	void operator()( Tchar c )
 	{
-		static_assert( sizeof(Tchar) == sizeof(Tuchar) , "char size mismatch" ) ;
-		const auto uc = static_cast<Tuchar>(c) ; // NOLINT bogus warning
-		if( c == escape_in )
-		{
-			s.append( 2U , escape_out ) ;
-		}
-		else if( !eight_bit && uc >= 0x20U && uc < 0x7FU && uc != 0xFFU )
-		{
-			s.append( 1U , static_cast<char>(c) ) ;
-		}
-		else if( eight_bit && ( ( uc >= 0x20U && uc < 0x7FU ) || uc >= 0xA0 ) && uc != 0xFFU )
-		{
-			s.append( 1U , static_cast<char>(c) ) ;
-		}
-		else
-		{
-			s.append( 1U , escape_out ) ;
-			if( static_cast<char>(c) == '\n' )
-			{
-				s.append( 1U , 'n' ) ;
-			}
-			else if( static_cast<char>(c) == '\r' )
-			{
-				s.append( 1U , 'r' ) ;
-			}
-			else if( static_cast<char>(c) == '\t' )
-			{
-				s.append( 1U , 't' ) ;
-			}
-			else if( c == 0 )
-			{
-				s.append( 1U , '0' ) ;
-			}
-			else
-			{
-				s.append( 1U , 'x' ) ;
-				const char * const map = "0123456789abcdef" ;
-				unsigned long n = uc ;
-				if( sizeof(Tchar) == 1 )
-				{
-					n &= 0xFFUL ;
-					s.append( 1U , map[(n/16UL)%16UL] ) ;
-					s.append( 1U , map[n%16UL] ) ;
-				}
-				else
-				{
-					n &= 0xFFFFUL ;
-					s.append( 1U , map[(n/4096UL)%16UL] ) ;
-					s.append( 1U , map[(n/256UL)%16UL] ) ;
-					s.append( 1U , map[(n/16UL)%16UL] ) ;
-					s.append( 1U , map[n%16UL] ) ;
-				}
-			}
-		}
+		outputPrintable( std::back_inserter(s) , c , escape_in , escape_out , eight_bit ) ;
 	}
+} ;
+
+struct G::StrImp::InPlaceBackInserter /// A character appender used by G::Str.
+{
+	std::string & m_s ;
+	std::size_t m_pos ;
+	std::size_t m_i{0U} ;
+	InPlaceBackInserter( std::string & s , std::size_t pos ) :
+		m_s(s) ,
+		m_pos(pos)
+	{
+	}
+	InPlaceBackInserter & operator=( char c )
+	{
+		if( m_i == 0U )
+			m_s.at(m_pos) = c ;
+		else
+			m_s.insert( m_pos , 1U , c ) ;
+		return *this ;
+	}
+	InPlaceBackInserter & operator*()
+	{
+		return *this ;
+	}
+	InPlaceBackInserter operator++(int) // NOLINT cert-dcl21-cpp
+	{
+		InPlaceBackInserter old( *this ) ;
+		m_pos++ ;
+		m_i++ ;
+		return old ;
+	}
+	void operator++() = delete ;
 } ;
 
 std::string G::Str::printable( const std::string & in , char escape )
 {
 	namespace imp = G::StrImp ;
 	std::string result ;
-	result.reserve( in.length() + 1U ) ;
-	std::for_each( in.begin() , in.end() , imp::PrintableAppender<>(result,escape,true) ) ;
+	result.reserve( in.length() + (in.length()/8U) + 1U ) ;
+	std::for_each( in.begin() , in.end() , imp::PrintableAppender<>(result,escape,escape,true) ) ;
 	return result ;
+}
+
+std::string G::Str::printable( std::string && s , char escape )
+{
+	namespace imp = G::StrImp ;
+	for( std::size_t pos = 0U ; pos < s.size() ; )
+	{
+		imp::InPlaceBackInserter out( s , pos ) ;
+		pos += imp::outputPrintable( out , s.at(pos) , escape , escape , true ) ;
+	}
+	return std::move( s ) ;
 }
 
 std::string G::Str::toPrintableAscii( const std::string & in , char escape )
 {
 	namespace imp = G::StrImp ;
 	std::string result ;
-	result.reserve( in.length() + 1U ) ;
-	std::for_each( in.begin() , in.end() , imp::PrintableAppender<>(result,escape,false) ) ;
-	return result ;
-}
-
-std::string G::Str::toPrintableAscii( char c , char escape )
-{
-	namespace imp = G::StrImp ;
-	std::string result ;
-	result.reserve( 2U ) ;
-	imp::PrintableAppender<> append_printable( result , escape , false ) ;
-	append_printable( c ) ;
+	result.reserve( in.length() + (in.length()/8U) + 1U ) ;
+	std::for_each( in.begin() , in.end() , imp::PrintableAppender<>(result,escape,escape,false) ) ;
 	return result ;
 }
 
@@ -858,8 +915,9 @@ std::string G::Str::toPrintableAscii( const std::wstring & in , wchar_t escape )
 {
 	namespace imp = G::StrImp ;
 	std::string result ;
-	result.reserve( in.length() * 3U ) ;
-	std::for_each( in.begin() , in.end() , imp::PrintableAppender<wchar_t>(result,escape,false) ) ;
+	result.reserve( in.length() + (in.length()/8U) + 1U ) ;
+	std::for_each( in.begin() , in.end() ,
+		imp::PrintableAppender<wchar_t>(result,escape,static_cast<char>(escape),false) ) ;
 	return result ;
 }
 
@@ -958,100 +1016,78 @@ void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std
 	}
 }
 
-std::string G::Str::wrap( std::string text , const std::string & prefix_1 ,
-	const std::string & prefix_2 , std::size_t width )
+template <typename S, typename T, typename SV>
+void G::StrImp::splitIntoTokens( const S & in , T & out , const SV & ws )
 {
-	std::string ws( " \t\n" ) ;
-	std::ostringstream ss ;
-	for( bool first_line = true ; text.length() ; first_line = false )
+	for( std::size_t p = 0U ; p != S::npos ; )
 	{
-		const std::size_t prefix_length =
-			first_line ? prefix_1.length() : prefix_2.length() ;
-		std::size_t w = (width > prefix_length) ? (width-prefix_length) : width ;
-
-		const std::size_t pos_nl = text.find_first_of('\n') ;
-		if( pos_nl != std::string::npos && pos_nl != 0U && pos_nl < w )
+		p = in.find_first_not_of( ws.data() , p , ws.size() ) ;
+		if( p != S::npos )
 		{
-			w = pos_nl ;
-		}
-
-		std::string line = text ;
-		if( text.length() > w ) // (should use wcwidth() for utf-8 compatibility)
-		{
-			line = text.substr( 0U , w ) ;
-			if( text.find_first_of(ws,w) != w )
-			{
-				const std::size_t white_space = line.find_last_of( ws ) ;
-				const std::size_t black_space = line.find_first_not_of( ws ) ;
-				if( white_space != std::string::npos &&
-					black_space != std::string::npos &&
-					(white_space+1U) != black_space )
-				{
-					line = line.substr( 0U , white_space ) ;
-				}
-			}
-		}
-
-		if( line.length() != 0U )
-		{
-			ss << ( first_line ? prefix_1 : prefix_2 ) << line << std::endl ;
-		}
-
-		text = text.length() == line.length() ?
-			std::string() : text.substr(line.length()) ;
-
-		const std::size_t black_space = text.find_first_not_of( ws ) ;
-		if( black_space != 0U && black_space != std::string::npos )
-		{
-			unsigned int newlines = 0U ;
-			for( std::size_t pos = 0U ; pos < black_space ; ++pos )
-			{
-				if( text.at(pos) == '\n' )
-				{
-					newlines++ ;
-					if( newlines > 1U )
-						ss << prefix_2 << std::endl ;
-				}
-			}
-
-			text = text.substr( black_space ) ;
-		}
-	}
-	return ss.str() ;
-}
-
-template <typename T>
-void G::StrImp::splitIntoTokens( const std::string & in , T & out , const std::string & ws )
-{
-	for( std::size_t p = 0U ; p != std::string::npos ; )
-	{
-		p = in.find_first_not_of( ws , p ) ;
-		if( p != std::string::npos )
-		{
-			std::size_t end = in.find_first_of( ws , p ) ;
-			std::size_t len = end == std::string::npos ? end : (end-p) ;
+			std::size_t end = in.find_first_of( ws.data() , p , ws.size() ) ;
+			std::size_t len = end == S::npos ? end : (end-p) ;
 			out.push_back( in.substr(p,len) ) ;
 			p = end ;
 		}
 	}
 }
 
-void G::Str::splitIntoTokens( const std::string & in , StringArray & out , const std::string & ws )
+template <typename S, typename T>
+void G::StrImp::splitIntoTokens( const S & in , T & out , const S & ws , typename S::value_type esc )
 {
-	namespace imp = G::StrImp ;
-	imp::splitIntoTokens( in , out , ws ) ;
+	using string_type = S ;
+	string_type ews = ws + string_type(1U,esc) ;
+	for( std::size_t p = 0U ; p != S::npos ; )
+	{
+		// find the token start
+		p = in.find_first_not_of( ws.data() , p , ws.size() ) ;
+		if( p == S::npos || ( in.at(p) == esc && (p+1) == in.size() ) )
+			break ;
+
+		// find the token end
+		std::size_t end = in.find_first_of( ews.data() , p , ews.size() ) ;
+		while( end != S::npos && end < in.size() && in.at(end) == esc )
+			end = (end+2) < in.size() ? in.find_first_of( ews.data() , end+2 , ews.size() ) : S::npos ;
+
+		// extract the token
+		std::size_t len = end == std::string::npos ? end : (end-p) ;
+		string_type w( in.substr(p,len) ) ;
+
+		// remove whitespace escapes
+		for( std::size_t i = 0 ; esc && i < w.size() ; i++ )
+		{
+			if( w[i] == esc )
+			{
+				if( (i+1) < w.size() && ws.find(w[i+1]) != S::npos )
+					w.erase( i , 1U ) ;
+				else
+					i++ ;
+			}
+		}
+
+		out.push_back( w ) ;
+		p = end ;
+	}
 }
 
-G::StringArray G::Str::splitIntoTokens( const std::string & in , const std::string & ws )
+void G::Str::splitIntoTokens( const std::string & in , StringArray & out , string_view ws , char esc )
 {
 	namespace imp = G::StrImp ;
+	if( esc && in.find(esc) != std::string::npos )
+		imp::splitIntoTokens( in , out , sv_to_string(ws) , esc ) ;
+	else
+		imp::splitIntoTokens( in , out , ws ) ;
+}
+
+G::StringArray G::Str::splitIntoTokens( const std::string & in , string_view ws , char esc )
+{
 	StringArray out ;
-	imp::splitIntoTokens( in , out , ws ) ;
+	splitIntoTokens( in , out , ws , esc ) ;
 	return out ;
 }
 
 template <typename T>
-void G::StrImp::splitIntoFields( const std::string & in , T & out , const std::string & ws )
+void G::StrImp::splitIntoFields( const std::string & in , T & out , string_view ws )
 {
 	if( in.length() )
 	{
@@ -1060,7 +1096,7 @@ void G::StrImp::splitIntoFields( const std::string & in , T & out , const std::s
 		for(;;)
 		{
 			if( pos >= in.length() ) break ;
-			pos = in.find_first_of( ws , pos ) ;
+			pos = in.find_first_of( ws.data() , pos , ws.size() ) ;
 			if( pos == std::string::npos ) break ;
 			out.push_back( in.substr(start,pos-start) ) ;
 			pos++ ;
@@ -1071,10 +1107,12 @@ void G::StrImp::splitIntoFields( const std::string & in , T & out , const std::s
 }
 
 template <typename T>
-void G::StrImp::splitIntoFields( const std::string & in_in , T & out , const std::string & ws ,
+void G::StrImp::splitIntoFields( const std::string & in_in , T & out , string_view ws ,
 	char escape , bool remove_escapes )
 {
-	std::string ews( ws ) ; // escape+whitespace
+	std::string ews ; // escape+whitespace
+	ews.reserve( ws.size() + 1U ) ;
+	ews.assign( ws.data() , ws.size() ) ;
 	if( escape != '\0' ) ews.append( 1U , escape ) ;
 	if( in_in.length() )
 	{
@@ -1105,14 +1143,14 @@ void G::StrImp::splitIntoFields( const std::string & in_in , T & out , const std
 	}
 }
 
-void G::Str::splitIntoFields( const std::string & in , StringArray & out , const std::string & ws ,
+void G::Str::splitIntoFields( const std::string & in , StringArray & out , string_view ws ,
 	char escape , bool remove_escapes )
 {
 	namespace imp = G::StrImp ;
 	imp::splitIntoFields( in , out , ws , escape , remove_escapes ) ;
 }
 
-G::StringArray G::Str::splitIntoFields( const std::string & in , const std::string & ws )
+G::StringArray G::Str::splitIntoFields( const std::string & in , string_view ws )
 {
 	namespace imp = G::StrImp ;
 	G::StringArray out ;
@@ -1145,7 +1183,7 @@ std::string G::Str::join( const std::string & sep , const StringMap & map ,
 	const std::string & pre_in , const std::string & post )
 {
 	namespace imp = G::StrImp ;
-	std::string pre = pre_in.empty() ? std::string("=") : pre_in ; // c++14: using namespace std::string_literals
+	std::string pre = pre_in.empty() ? std::string("=") : pre_in ;
 	std::string result ;
 	bool first = true ;
 	imp::Joiner<std::string> joiner( result , sep , first ) ;
@@ -1214,19 +1252,22 @@ G::StringArray G::Str::keys( const StringMap & map )
 	return result ;
 }
 
-std::string G::Str::ws()
+G::string_view G::Str::ws()
 {
-	return std::string(" \t\n\r") ;
+	namespace imp = G::StrImp ;
+	return imp::chars_ws ;
 }
 
-std::string G::Str::alnum()
+G::string_view G::Str::alnum()
 {
-	return std::string("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") ;
+	namespace imp = G::StrImp ;
+	return imp::chars_alnum ;
 }
 
-std::string G::Str::meta()
+G::string_view G::Str::meta()
 {
-	return std::string("~<>[]*$|?\\(){}\"`'&;=") ; // bash meta-characters plus "~"
+	namespace imp = G::StrImp ;
+	return imp::chars_meta ;
 }
 
 std::string G::Str::head( const std::string & in , std::size_t pos , const std::string & default_ )
@@ -1267,9 +1308,8 @@ bool G::Str::tailMatch( const std::string & in , const std::string & tail )
 
 bool G::Str::tailMatch( const StringArray & in , const std::string & tail )
 {
-	using namespace std::placeholders ;
-	bool (*tail_match_fn)(const std::string&,const std::string&) = &tailMatch ;
-	return std::any_of( in.begin() , in.end() , std::bind(tail_match_fn,_1,std::cref(tail)) ) ;
+	return std::any_of( in.begin() , in.end() ,
+		[&tail](const std::string &x){return tailMatch(x,tail);} ) ;
 }
 
 bool G::Str::headMatch( const std::string & in , const char * head )
@@ -1288,9 +1328,8 @@ bool G::Str::headMatch( const std::string & in , const std::string & head )
 
 bool G::Str::headMatch( const StringArray & in , const std::string & head )
 {
-	using namespace std::placeholders ;
-	bool (*head_match_fn)(const std::string&,const std::string&) = &headMatch ;
-	return std::any_of( in.begin() , in.end() , std::bind(head_match_fn,_1,std::cref(head)) ) ;
+	return std::any_of( in.begin() , in.end() ,
+		[&head](const std::string &x){return headMatch(x,head);} ) ;
 }
 
 std::string G::Str::headMatchResidue( const StringArray & in , const std::string & head )
@@ -1443,13 +1482,15 @@ std::string G::Str::unique( const std::string & s , char c )
 	return s.find(c) == std::string::npos ? s : unique( s , c , c ) ;
 }
 
-bool G::StrImp::inList( StringArray::const_iterator begin , StringArray::const_iterator end , const std::string & s , bool i )
+bool G::StrImp::inList( StringArray::const_iterator begin , StringArray::const_iterator end ,
+	const std::string & s , bool i )
 {
 	using namespace std::placeholders ;
 	return std::any_of( begin , end , std::bind(match,_1,std::cref(s),i) ) ;
 }
 
-bool G::StrImp::notInList( StringArray::const_iterator begin , StringArray::const_iterator end , const std::string & s , bool i )
+bool G::StrImp::notInList( StringArray::const_iterator begin , StringArray::const_iterator end ,
+	const std::string & s , bool i )
 {
 	return !inList( begin , end , s , i ) ;
 }
@@ -1460,7 +1501,8 @@ G::StringArray::iterator G::Str::keepMatch( StringArray::iterator begin , String
 	namespace imp = G::StrImp ;
 	using namespace std::placeholders ;
 	if( match_list.empty() ) return end ;
-	return std::remove_if( begin , end , std::bind(imp::notInList,match_list.begin(),match_list.end(),_1,ignore_case) ) ;
+	return std::remove_if( begin , end ,
+		std::bind(imp::notInList,match_list.begin(),match_list.end(),_1,ignore_case) ) ;
 }
 
 G::StringArray::iterator G::Str::removeMatch( StringArray::iterator begin , StringArray::iterator end ,
@@ -1468,11 +1510,13 @@ G::StringArray::iterator G::Str::removeMatch( StringArray::iterator begin , Stri
 {
 	namespace imp = G::StrImp ;
 	using namespace std::placeholders ;
-	return std::remove_if( begin , end , std::bind(imp::inList,match_list.begin(),match_list.end(),_1,ignore_case) ) ;
+	return std::remove_if( begin , end ,
+		std::bind(imp::inList,match_list.begin(),match_list.end(),_1,ignore_case) ) ;
 }
 
-void G::StrImp::strncpy( char * dst , const char * src , size_t n )
+void G::StrImp::strncpy( char * dst , const char * src , size_t n ) noexcept
 {
+	// (because 'strncpy considered dangerous' analytics)
 	for( ; n ; n-- , dst++ , src++ )
 	{
 		*dst = *src ;
@@ -1481,8 +1525,9 @@ void G::StrImp::strncpy( char * dst , const char * src , size_t n )
 	}
 }
 
-errno_t G::Str::strncpy_s( char * dst , size_t n_dst , const char * src , size_t count )
+errno_t G::Str::strncpy_s( char * dst , size_t n_dst , const char * src , size_t count ) noexcept
 {
+	namespace imp = G::StrImp ;
 	if( dst == nullptr || n_dst == 0U )
 		return EINVAL ;
 
@@ -1498,8 +1543,9 @@ errno_t G::Str::strncpy_s( char * dst , size_t n_dst , const char * src , size_t
 
 	if( count == truncate && n >= n_dst )
 	{
-		StrImp::strncpy( dst , src , n_dst ) ;
+		imp::strncpy( dst , src , n_dst ) ;
 		dst[n_dst-1U] = '\0' ;
+		return 0 ; // STRUNCATE
 	}
 	else if( n >= n_dst )
 	{
@@ -1508,10 +1554,9 @@ errno_t G::Str::strncpy_s( char * dst , size_t n_dst , const char * src , size_t
 	}
 	else
 	{
-		StrImp::strncpy( dst , src , n ) ;
+		imp::strncpy( dst , src , n ) ;
 		dst[n] = '\0' ;
+		return 0 ;
 	}
-	return 0 ;
 }
 
-/// \file gstr.cpp

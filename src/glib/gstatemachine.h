@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -30,7 +30,7 @@ namespace G
 
 G_EXCEPTION_CLASS( StateMachine_Error , "invalid state machine transition" ) ;
 
-/// \class StateMachine
+//| \class StateMachine
 /// A finite state machine class template.
 ///
 /// The finite state machine has a persistant 'state'. When an 'event' is
@@ -92,8 +92,8 @@ G_EXCEPTION_CLASS( StateMachine_Error , "invalid state machine transition" ) ;
 /// public:
 ///   Protocol() : m_fsm(State::sFoo,State::sBar,State::s_Same,State::s_Any)
 ///   {
-///      m_fsm.addTransition(Event::eFoo,State::sFoo,sBar,&Protocol::doFoo) ;
-///      m_fsm.addTransition(Event::eBar,State::sBar,sEnd,&Protocol::doBar) ;
+///      m_fsm(Event::eFoo,State::sFoo,sBar,&Protocol::doFoo) ;
+///      m_fsm(Event::eBar,State::sBar,sEnd,&Protocol::doBar) ;
 ///   }
 ///   void apply( const std::string & event_string )
 ///   {
@@ -114,11 +114,11 @@ public:
 	StateMachine( State s_start , State s_end , State s_same , State s_any ) ;
 		///< Constructor.
 
-	void addTransition( Event event , State from , State to , Action action ) ;
+	void operator()( Event event , State from , State to , Action action ) ;
 		///< Adds a transition. Special semantics apply if 'from' is
 		///< 's_any', or if 'to' is 's_same'.
 
-	void addTransition( Event event , State from , State to , Action action , State alt ) ;
+	void operator()( Event event , State from , State to , Action action , State alt ) ;
 		///< An overload which adds a transition with predicate support.
 		///< The 'alt' state is taken as an alternative 'to' state
 		///< if the action's predicate is returned as false.
@@ -174,13 +174,13 @@ StateMachine<T,State,Event,Arg>::StateMachine( State s_start , State s_end , Sta
 }
 
 template <typename T, typename State, typename Event, typename Arg>
-void StateMachine<T,State,Event,Arg>::addTransition( Event event , State from , State to , Action action )
+void StateMachine<T,State,Event,Arg>::operator()( Event event , State from , State to , Action action )
 {
-	addTransition( event , from , to , action , to ) ;
+	operator()( event , from , to , action , to ) ;
 }
 
 template <typename T, typename State, typename Event, typename Arg>
-void StateMachine<T,State,Event,Arg>::addTransition( Event event , State from , State to , Action action , State alt )
+void StateMachine<T,State,Event,Arg>::operator()( Event event , State from , State to , Action action , State alt )
 {
 	if( to == m_any || alt == m_any )
 		throw Error( "\"to any\" is invalid" ) ;

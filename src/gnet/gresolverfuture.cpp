@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gresolverfuture.cpp
-//
+///
+/// \file gresolverfuture.cpp
+///
 
 #include "gdef.h"
 #include "gresolverfuture.h"
@@ -55,11 +55,12 @@ GNet::ResolverFuture::~ResolverFuture()
 		::freeaddrinfo( m_ai ) ; // documented as "thread-safe"
 }
 
-void GNet::ResolverFuture::run()
+GNet::ResolverFuture & GNet::ResolverFuture::run() noexcept
 {
 	// worker thread - as simple as possible
 	if( m_test_mode ) sleep( 10 ) ;
 	m_rc = ::getaddrinfo( m_host_p , m_service_p , &m_ai_hint , &m_ai ) ;
+	return *this ;
 }
 
 std::string GNet::ResolverFuture::failure() const
@@ -69,7 +70,9 @@ std::string GNet::ResolverFuture::failure() const
 		ss << "no such " << ipvx() << "host: \"" << m_host << "\"" ;
 	else
 		ss << "no such " << ipvx() << "host or service: \"" << m_host << ":" << m_service << "\"" ;
-	//ss << " (" << G::Str::lower(gai_strerror(m_rc)) << ")" ; // not portable
+	const char * reason = gai_strerror( m_rc ) ; // not portable, but see gdef.h
+	if( reason && *reason )
+		ss << " (" << G::Str::lower(G::Str::trimmed(std::string(reason)," .")) << ")" ;
 	return ss.str() ;
 }
 
@@ -110,13 +113,17 @@ bool GNet::ResolverFuture::fetch( Pair & pair ) const
 bool GNet::ResolverFuture::fetch( List & list ) const
 {
 	// fetch all valid addresses
+	bool got_one = false ;
 	for( const struct addrinfo * p = m_ai ; p ; p = p->ai_next )
 	{
 		socklen_t addrlen = static_cast<socklen_t>(p->ai_addrlen) ;
 		if( Address::validData( p->ai_addr , addrlen ) )
+		{
 			list.push_back( Address( p->ai_addr , addrlen ) ) ;
+			got_one = true ;
+		}
 	}
-	return !list.empty() ;
+	return got_one ;
 }
 
 void GNet::ResolverFuture::get( List & list )
@@ -147,4 +154,3 @@ std::string GNet::ResolverFuture::reason() const
 	return m_reason ;
 }
 
-/// \file gresolverfuture.cpp

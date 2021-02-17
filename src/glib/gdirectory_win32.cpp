@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gdirectory_win32.cpp
-//
+///
+/// \file gdirectory_win32.cpp
+///
 
 #include "gdef.h"
 #include "gdirectory.h"
@@ -24,37 +24,45 @@
 #include "glog.h"
 #include "gassert.h"
 #include <iomanip>
+#include <cerrno>
 #include <fcntl.h>
 #include <io.h>
 #include <share.h>
+
+#ifndef INVALID_FILE_ATTRIBUTES
+#define INVALID_FILE_ATTRIBUTES 0xFFFFFFFF
+#endif
 
 namespace G
 {
 	class DirectoryIteratorImp ;
 }
 
-bool G::Directory::valid( bool for_creation ) const
+int G::Directory::usable( bool for_creation ) const
 {
-	DWORD attributes = ::GetFileAttributesA( m_path.str().c_str() ) ;
-	if( attributes == 0xFFFFFFFF )
+	DWORD attributes = ::GetFileAttributesA( m_path.cstr() ) ;
+	if( attributes == INVALID_FILE_ATTRIBUTES )
 	{
-		DWORD e = ::GetLastError() ; G__IGNORE_VARIABLE(DWORD,e) ;
-		return false ;
+		DWORD e = ::GetLastError() ;
+		if( e == ERROR_ACCESS_DENIED || e == ERROR_NETWORK_ACCESS_DENIED )
+			return EACCES ;
+		return ENOENT ;
 	}
-	return ( attributes & FILE_ATTRIBUTE_DIRECTORY ) != 0 ;
+	return ( attributes & FILE_ATTRIBUTE_DIRECTORY ) ? 0 : ENOTDIR ;
 }
 
 bool G::Directory::writeable( const std::string & filename ) const
 {
 	Path path( m_path , filename.empty() ? tmp() : filename ) ;
 	int fd = -1 ;
-	errno_t e = _sopen_s( &fd , path.str().c_str() , _O_WRONLY | _O_CREAT | _O_EXCL | _O_TEMPORARY , _SH_DENYNO , _S_IWRITE ) ;
+	const int oflags = _O_WRONLY | _O_CREAT | _O_EXCL | _O_TEMPORARY ;
+	errno_t e = _sopen_s( &fd , path.cstr() , oflags , _SH_DENYNO , _S_IWRITE ) ;
 	return e == 0 && fd != -1 && 0 == _close( fd ) ; // close and delete
 }
 
 // ===
 
-/// \class G::DirectoryIteratorImp
+//| \class G::DirectoryIteratorImp
 /// A pimple-pattern implementation class for DirectoryIterator.
 ///
 class G::DirectoryIteratorImp
@@ -86,7 +94,7 @@ private:
 // ===
 
 G::DirectoryIterator::DirectoryIterator( const Directory & dir ) :
-	m_imp( new DirectoryIteratorImp(dir) )
+	m_imp(std::make_unique<DirectoryIteratorImp>(dir))
 {
 }
 
@@ -130,7 +138,7 @@ G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory & dir ) :
 	m_error(false) ,
 	m_first(true)
 {
-	m_handle = FindFirstFileA( (dir.path()+"*").str().c_str() , &m_context ) ;
+	m_handle = FindFirstFileA( (dir.path()+"*").cstr() , &m_context ) ;
 	if( m_handle == INVALID_HANDLE_VALUE )
 	{
 		DWORD err = ::GetLastError() ;
@@ -206,6 +214,19 @@ std::string G::DirectoryIteratorImp::sizeString() const
 	const DWORD & hi = m_context.nFileSizeHigh ;
 	const DWORD & lo = m_context.nFileSizeLow ;
 
-	return File::sizeString( hi , lo ) ;
+	__int64 n = hi ;
+	n <<= 32 ;
+	n |= lo ;
+	if( n == 0 )
+		return "0" ;
+	std::string s ;
+	while( n != 0 )
+	{
+		int i = static_cast<int>( n % 10 ) ;
+		char c = static_cast<char>( '0' + i ) ;
+		s.insert( 0U , 1U , c ) ;
+		n /= 10 ;
+	}
+	return s ;
 }
 

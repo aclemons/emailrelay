@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gdnsblock.h
 ///
 
-#ifndef G_NET_DNS_BLOCK__H
-#define G_NET_DNS_BLOCK__H
+#ifndef G_NET_DNS_BLOCK_H
+#define G_NET_DNS_BLOCK_H
 
 #include "gdef.h"
 #include "gaddress.h"
@@ -40,7 +40,7 @@ namespace GNet
 	class DnsBlockCallback ;
 }
 
-/// \class GNet::DnsBlockServerResult
+//| \class GNet::DnsBlockServerResult
 /// A result structure for one DNSBL server.
 ///
 class GNet::DnsBlockServerResult
@@ -68,8 +68,11 @@ private:
 	std::vector<Address> m_addresses ;
 } ;
 
-/// \class GNet::DnsBlockResult
-/// A result structure for GNet::DnsBlock.
+//| \class GNet::DnsBlockResult
+/// A result structure for GNet::DnsBlock, as delivered by the
+/// DnsBlockCallback interface. The principal attribute is the
+/// type(), which indicates whether the connection should be
+/// allowed or denied.
 ///
 class GNet::DnsBlockResult
 {
@@ -129,8 +132,14 @@ private:
 	ResultList m_list ;
 } ;
 
-/// \class GNet::DnsBlock
-/// Implements DNS blocklisting, as per RFC-5782.
+//| \class GNet::DnsBlock
+/// Implements DNS blocklisting, as per RFC-5782. The implementation
+/// sends DNS requests for each configured block-list server
+/// incorporating the IP address to be tested, for example
+/// "1.0.0.127.nospam.com" and "1.0.0.127.blockme.org". All requests
+/// go to the same DNS server and are cached or routed in the
+/// normal way, so the block-list servers are not contacted
+/// directly.
 ///
 class GNet::DnsBlock : private EventHandler
 {
@@ -155,10 +164,11 @@ public:
 		///< Checks the configure() string, throwing on error.
 
 	void start( const Address & ) ;
-		///< Starts an asychronous check on the given address.
+		///< Starts an asychronous check on the given address. The result
+		///< is delivered via the callback interface passed to the ctor.
 
 	bool busy() const ;
-		///< Returns true after start() and before the callback.
+		///< Returns true after start() and before the completion callback.
 
 public:
 	~DnsBlock() override = default ;
@@ -191,7 +201,7 @@ private:
 	std::unique_ptr<DatagramSocket> m_socket_ptr ;
 } ;
 
-/// \class GNet::DnsBlockCallback
+//| \class GNet::DnsBlockCallback
 /// A callback interface for GNet::DnsBlock.
 ///
 class GNet::DnsBlockCallback

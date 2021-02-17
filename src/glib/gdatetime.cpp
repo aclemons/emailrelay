@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gdatetime.cpp
-//
+///
+/// \file gdatetime.cpp
+///
 
 #include "gdef.h"
 #include "gdatetime.h"
@@ -32,7 +32,7 @@ namespace G
 {
 	namespace DateTimeImp
 	{
-		static const char * good_format = "%ntYyCGgmUWVjdwuHIMSDFRT" ;
+		static constexpr const char * good_format = "%ntYyCGgmUWVjdwuHIMSDFRT" ;
 		static constexpr unsigned int million = 1000000U ;
 
 		template <typename Tp> TimeInterval interval( Tp start , Tp end )
@@ -57,8 +57,7 @@ namespace G
 	}
 }
 
-G::BrokenDownTime::BrokenDownTime() :
-	m_tm{}
+G::BrokenDownTime::BrokenDownTime()
 {
 	m_tm.tm_isdst = -1 ;
 }
@@ -251,7 +250,7 @@ G::SystemTime::SystemTime( time_point_type tp ) :
 {
 }
 
-G::SystemTime::SystemTime( std::time_t t , unsigned long us )
+G::SystemTime::SystemTime( std::time_t t , unsigned long us ) noexcept
 {
 	m_tp = std::chrono::system_clock::from_time_t(t) ;
 	m_tp += std::chrono::microseconds( us ) ;
@@ -278,7 +277,7 @@ G::SystemTime & G::SystemTime::add( unsigned long us )
 	return *this ;
 }
 
-bool G::SystemTime::sameSecond( const SystemTime & t ) const
+bool G::SystemTime::sameSecond( const SystemTime & t ) const noexcept
 {
 	return s() == t.s() ;
 }
@@ -305,7 +304,7 @@ unsigned int G::SystemTime::us() const
 	return static_cast<unsigned int>((duration_cast<microseconds>(m_tp.time_since_epoch()) % seconds(1)).count()) ;
 }
 
-std::time_t G::SystemTime::s() const
+std::time_t G::SystemTime::s() const noexcept
 {
 	using namespace std::chrono ;
 	G_ASSERT( duration_cast<seconds>(m_tp.time_since_epoch()).count() == system_clock::to_time_t(m_tp) ) ; // as per c++17
@@ -384,21 +383,22 @@ std::ostream & G::operator<<( std::ostream & stream , const SystemTime & t )
 
 G::TimerTime G::TimerTime::now()
 {
-	return TimerTime( std::chrono::steady_clock::now() ) ;
+	return TimerTime( std::chrono::steady_clock::now() , false ) ;
 }
 
 G::TimerTime G::TimerTime::zero()
 {
-	duration_type zero{0} ;
-	return TimerTime( time_point_type(zero) ) ;
+	duration_type zero_duration{0} ;
+	return TimerTime( time_point_type(zero_duration) , true ) ;
 }
 
 G::TimerTime G::TimerTime::test( int s , int us )
 {
-	return TimerTime( time_point_type(std::chrono::seconds(s)+std::chrono::microseconds(us)) ) ;
+	return TimerTime( time_point_type(std::chrono::seconds(s)+std::chrono::microseconds(us)) , s==0 && us==0 ) ;
 }
 
-G::TimerTime::TimerTime( time_point_type tp ) :
+G::TimerTime::TimerTime( time_point_type tp , bool is_zero ) :
+	m_is_zero(is_zero) ,
 	m_tp(tp)
 {
 }
@@ -419,6 +419,7 @@ G::TimerTime G::TimerTime::operator+( const TimeInterval & interval ) const
 {
 	TimerTime t( *this ) ;
 	t += interval ;
+	t.m_is_zero = m_is_zero && interval.s() == 0U && interval.us() == 0U ;
 	return t ;
 }
 
@@ -427,6 +428,7 @@ void G::TimerTime::operator+=( TimeInterval i )
 	using namespace std::chrono ;
 	m_tp += seconds(i.s()) ;
 	m_tp += microseconds(i.us()) ;
+	m_is_zero = m_is_zero && i.s() == 0U && i.us() == 0U ;
 }
 
 G::TimeInterval G::TimerTime::operator-( const TimerTime & start ) const
@@ -512,12 +514,10 @@ void G::TimeInterval::normalise()
 	if( m_us >= million )
 	{
 		m_us -= million ;
-		m_s++ ;
-		if( m_s == 0 )
-			throw DateTime::Error( "overflow" ) ;
+		increase( m_s ) ;
 		if( m_us >= million ) // still
 		{
-			m_s += m_us / million ;
+			increase( m_s , m_us / million ) ;
 			m_us = m_us % million ;
 		}
 	}
@@ -588,45 +588,44 @@ G::TimeInterval G::TimeInterval::operator-( const TimeInterval & other ) const
 	return t ;
 }
 
+void G::TimeInterval::increase( unsigned int & s , unsigned int ds )
+{
+	const auto old = s ;
+	s += ds ;
+	const bool overflow = s < old ;
+	if( overflow )
+		throw DateTime::Error( "overflow" ) ;
+}
+
 void G::TimeInterval::operator+=( TimeInterval i )
 {
 	using namespace G::DateTimeImp ;
-	bool overflow = false ;
-
 	m_us += i.m_us ;
 	if( m_us >= million )
 	{
 		m_us -= million ;
-		m_s++ ;
-		if( m_s == 0 ) overflow = true ;
+		increase( m_s ) ;
 	}
+	increase( m_s , i.m_s ) ;
+}
 
-	auto old = m_s ;
-	m_s += i.m_s ;
-	if( m_s < old ) overflow = true ;
-
-	if( overflow )
-		throw DateTime::Error( "overflow" ) ;
+void G::TimeInterval::decrease( unsigned int & s , unsigned int ds )
+{
+	if( s < ds )
+		throw DateTime::Error( "underflow" ) ;
+	s -= ds ;
 }
 
 void G::TimeInterval::operator-=( TimeInterval i )
 {
 	using namespace G::DateTimeImp ;
-	bool underflow = false ;
-
 	if( m_us < i.m_us )
 	{
-		if( m_s == 0U ) underflow = true ;
-		m_s-- ;
+		decrease( m_s ) ;
 		m_us += million ;
 	}
 	m_us -= i.m_us ;
-
-	if( m_s < i.m_s ) underflow = true ;
-	m_s -= i.m_s ;
-
-	if( underflow )
-		throw DateTime::Error( "underflow" ) ;
+	decrease( m_s , i.m_s ) ;
 }
 
 void G::TimeInterval::streamOut( std::ostream & stream ) const
@@ -677,4 +676,3 @@ std::string G::DateTime::offsetString( Offset offset )
 	return ss.str() ;
 }
 
-/// \file gdatetime.cpp

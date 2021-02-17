@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gprocess_unix.cpp
-//
+///
+/// \file gprocess_unix.cpp
+///
 
 #include "gdef.h"
 #include "gprocess.h"
@@ -24,6 +24,7 @@
 #include "gstr.h"
 #include "gfile.h"
 #include "gpath.h"
+#include "glimits.h"
 #include "glog.h"
 #include <iostream>
 #include <stdexcept>
@@ -41,35 +42,39 @@ namespace G
 		void reopen( int fd , int mode ) ;
 		mode_t umaskValue( G::Process::Umask::Mode mode ) ;
 		bool readlink_( const char * path , std::string & value ) ;
-		void setRealUserTo( Identity id ) ;
-		void setEffectiveUserTo( Identity id ) ;
-		bool setEffectiveUserTo( SignalSafe safe , Identity id ) noexcept ;
-		void setRealGroupTo( Identity id ) ;
-		void setEffectiveGroupTo( Identity id ) ;
-		bool setEffectiveGroupTo( SignalSafe safe , Identity id ) noexcept ;
-		void setEffectiveUserAndGroupTo( Identity id ) ;
-		void setEffectiveUserAndGroupAsRootTo( Identity id ) ;
-		void terminate() noexcept ;
+		bool setRealUser( Identity id , std::nothrow_t ) noexcept ;
+		bool setRealGroup( Identity id , std::nothrow_t ) noexcept ;
+		void setEffectiveUser( Identity id ) ;
+		bool setEffectiveUser( Identity id , std::nothrow_t ) noexcept ;
+		void setEffectiveGroup( Identity id ) ;
+		bool setEffectiveGroup( Identity id , std::nothrow_t ) noexcept ;
+		void throwError() ;
+		void beSpecial( Identity special_identity , bool change_group ) ;
+		void beSpecialForExit( SignalSafe , Identity special_identity ) noexcept ;
+		Identity beOrdinaryAtStartup( Identity , bool change_group ) ;
+		Identity beOrdinary( Identity , bool change_group ) ;
+		void beOrdinaryForExec( Identity run_as_id ) noexcept ;
+		void revokeExtraGroups() ;
 	}
 }
 
-class G::Process::Umask::UmaskImp
+class G::Process::UmaskImp /// A private implemetation class for G::Process::Umask that hides mode_t.
 {
 public:
 	mode_t m_old_mode ;
 } ;
 
-// ===
+// ==
 
 void G::Process::cd( const Path & dir )
 {
-	if( ! cd(dir,NoThrow()) )
+	if( ! cd(dir,std::nothrow) )
 		throw CannotChangeDirectory( dir.str() ) ;
 }
 
-bool G::Process::cd( const Path & dir , NoThrow )
+bool G::Process::cd( const Path & dir , std::nothrow_t )
 {
-	return 0 == ::chdir( dir.str().c_str() ) ;
+	return 0 == ::chdir( dir.cstr() ) ;
 }
 
 void G::Process::closeStderr()
@@ -107,12 +112,12 @@ void G::Process::closeOtherFiles( int fd_keep )
 	ProcessImp::noCloseOnExec( STDERR_FILENO ) ;
 }
 
-int G::Process::errno_( const G::SignalSafe & ) noexcept
+int G::Process::errno_( const SignalSafe & ) noexcept
 {
-	return errno ; // macro, not ::errno or std::errno
+	return errno ; // possible macro, not ::errno or std::errno
 }
 
-int G::Process::errno_( const G::SignalSafe & , int e_new ) noexcept
+int G::Process::errno_( const SignalSafe & , int e_new ) noexcept
 {
 	int e_old = errno ;
 	errno = e_new ;
@@ -127,99 +132,74 @@ std::string G::Process::strerror( int errno_ )
 	return Str::isPrintableAscii(s) ? Str::lower(s) : s ;
 }
 
-void G::Process::revokeExtraGroups()
+void G::Process::beSpecial( Identity special_identity , bool change_group )
 {
-	if( Identity::real().isRoot() || Identity::effective() != Identity::real() )
+	ProcessImp::beSpecial( special_identity , change_group ) ;
+}
+
+void G::Process::beSpecialForExit( SignalSafe , Identity special_identity ) noexcept
+{
+	ProcessImp::beSpecialForExit( SignalSafe() , special_identity ) ;
+}
+
+G::Identity G::Process::beOrdinaryAtStartup( Identity ordinary_id , bool change_group )
+{
+	// revoke extra groups, but not if we are leaving groups alone
+	// or we have been given root as the non-root user or we
+	// are running vanilla
+	if( change_group && !ordinary_id.isRoot() )
 	{
-		// set supplementary group-ids to a zero-length list
-		gid_t dummy = 0 ;
-		int rc = ::setgroups( 0U , &dummy ) ;
-		G__IGNORE_VARIABLE(int,rc) ; // (only works for root, so ignore the return code)
+		Identity real = Identity::real() ;
+		if( real.isRoot() || real != Identity::effective() )
+			ProcessImp::revokeExtraGroups() ;
 	}
+
+	return ProcessImp::beOrdinary( ordinary_id , change_group ) ;
 }
 
-G::Identity G::Process::beSpecial( Identity special_identity , bool change_group )
+void G::Process::beOrdinary( Identity ordinary_id , bool change_group )
 {
-	change_group = Identity::real().isRoot() ? change_group : true ;
-	Identity old_identity( Identity::effective() ) ;
-	if( change_group )
-		ProcessImp::setEffectiveUserAndGroupTo( special_identity ) ;
-	else
-		ProcessImp::setEffectiveUserTo( special_identity ) ;
-	return old_identity ;
-}
-
-G::Identity G::Process::beSpecial( SignalSafe safe , Identity special_identity , bool change_group ) noexcept
-{
-	change_group = Identity::real().isRoot() ? change_group : true ;
-	Identity old_identity( Identity::effective() ) ;
-	ProcessImp::setEffectiveUserTo( safe , special_identity ) ;
-	if( change_group )
-		ProcessImp::setEffectiveGroupTo( safe , special_identity ) ;
-	return old_identity ;
-}
-
-G::Identity G::Process::beOrdinary( Identity ordinary_id , bool change_group )
-{
-	Identity special_identity( Identity::effective() ) ;
-	if( Identity::real().isRoot() )
-		ProcessImp::setEffectiveUserAndGroupAsRootTo( ordinary_id ) ;
-	else if( change_group )
-		ProcessImp::setEffectiveUserAndGroupTo( Identity::real() ) ;
-	else
-		ProcessImp::setEffectiveUserTo( Identity::real() ) ;
-	return special_identity ;
-}
-
-G::Identity G::Process::beOrdinary( SignalSafe safe , Identity ordinary_id , bool change_group ) noexcept
-{
-	Identity special_identity( Identity::effective() ) ;
-	if( Identity::real().isRoot() )
-	{
-		ProcessImp::setEffectiveUserTo( safe , Identity::root() ) ;
-		if( change_group )
-			ProcessImp::setEffectiveGroupTo( safe , ordinary_id ) ;
-		ProcessImp::setEffectiveUserTo( safe , ordinary_id ) ;
-	}
-	else
-	{
-		ProcessImp::setEffectiveUserTo( safe , Identity::real() ) ;
-		if( change_group )
-			ProcessImp::setEffectiveGroupTo( safe , Identity::real() ) ;
-	}
-	return special_identity ;
+	ProcessImp::beOrdinary( ordinary_id , change_group ) ;
 }
 
 void G::Process::beOrdinaryForExec( Identity run_as_id ) noexcept
 {
-	using NoThrow = Identity::NoThrow ;
-	if( run_as_id != Identity::invalid() )
-	{
-		Identity::root().setEffectiveUser( NoThrow() ) ; // for root-suid
-		run_as_id.setRealGroup( NoThrow() ) ;
-		run_as_id.setEffectiveGroup( NoThrow() ) ;
-		run_as_id.setRealUser( NoThrow() ) ;
-		run_as_id.setEffectiveUser( NoThrow() ) ;
-	}
+	ProcessImp::beOrdinaryForExec( run_as_id ) ;
+}
+
+void G::Process::setEffectiveUser( Identity id )
+{
+	G::ProcessImp::setEffectiveUser( id ) ;
+}
+
+void G::Process::setEffectiveGroup( Identity id )
+{
+	G::ProcessImp::setEffectiveGroup( id ) ;
 }
 
 std::string G::Process::cwd( bool no_throw )
 {
-	std::size_t n = PATH_MAX ; n += 10U ;
-	std::vector<char> buffer( n ) ;
-	for( int i = 0 ; i < 1000 ; i++ )
+	std::string result ;
+	std::array<std::size_t,2U> sizes = {{ G::limits::path_buffer , PATH_MAX+1U }} ;
+	for( std::size_t n : sizes )
 	{
+		std::vector<char> buffer( n ) ;
 		char * p = getcwd( &buffer[0] , buffer.size() ) ;
 		int error = errno_() ;
-		if( p == nullptr && error == ERANGE )
-			buffer.resize( buffer.size() + n ) ;
-		else if( p == nullptr && !no_throw )
-			throw std::runtime_error( "getcwd() failed" ) ;
-		else
+		if( p != nullptr )
+		{
+			buffer.push_back( '\0' ) ;
+			result.assign( &buffer[0] ) ;
 			break ;
+		}
+		else if( error != ERANGE )
+		{
+			break ;
+		}
 	}
-	buffer.push_back( '\0' ) ;
-	return std::string( &buffer[0] ) ;
+	if( result.empty() && !no_throw )
+		throw std::runtime_error( "getcwd() failed" ) ;
+	return result ;
 }
 
 #ifdef G_UNIX_MAC
@@ -253,44 +233,11 @@ std::string G::Process::exe()
 }
 #endif
 
-void G::Process::terminate() noexcept
-{
-	ProcessImp::terminate() ;
-}
-
-// ===
+// ==
 
 G::Process::Id::Id() noexcept
 {
 	m_pid = ::getpid() ;
-}
-
-G::Process::Id::Id( SignalSafe , const char * path ) noexcept :
-	m_pid(0U)
-{
-	// signal-safe, reentrant implementation suitable for a signal handler...
-	int fd = ::open( path ? path : "" , O_RDONLY ) ;
-	if( fd >= 0 )
-	{
-		constexpr std::size_t buffer_size = 11U ;
-		std::array<char,buffer_size> buffer ; // NOLINT cppcoreguidelines-pro-type-member-init
-		buffer[0U] = '\0' ;
-		ssize_t rc = ::read( fd , &buffer[0] , buffer_size-1U ) ;
-		::close( fd ) ;
-		for( const char * p = &buffer[0] ; rc > 0 && *p >= '0' && *p <= '9' ; p++ , rc-- )
-		{
-			m_pid *= 10 ;
-			m_pid += ( *p - '0' ) ;
-		}
-	}
-}
-
-G::Process::Id::Id( std::istream & stream ) :
-	m_pid(0U)
-{
-	stream >> m_pid ;
-	if( !stream.good() )
-		throw Process::InvalidId() ;
 }
 
 std::string G::Process::Id::str() const
@@ -305,7 +252,12 @@ bool G::Process::Id::operator==( const Id & other ) const noexcept
 	return m_pid == other.m_pid ;
 }
 
-// ===
+bool G::Process::Id::operator!=( const Id & other ) const noexcept
+{
+	return m_pid != other.m_pid ;
+}
+
+// ==
 
 G::Process::Umask::Umask( Mode mode ) :
 	m_imp(std::make_unique<UmaskImp>())
@@ -315,12 +267,12 @@ G::Process::Umask::Umask( Mode mode ) :
 
 G::Process::Umask::~Umask()
 {
-	mode_t rc = ::umask( m_imp->m_old_mode ) ; G__IGNORE_VARIABLE(mode_t,rc) ;
+	GDEF_IGNORE_RETURN ::umask( m_imp->m_old_mode ) ;
 }
 
 void G::Process::Umask::set( Mode mode )
 {
-	mode_t rc = ::umask( ProcessImp::umaskValue(mode) ) ; G__IGNORE_VARIABLE(mode_t,rc) ;
+	GDEF_IGNORE_RETURN ::umask( ProcessImp::umaskValue(mode) ) ;
 }
 
 void G::Process::Umask::tighten()
@@ -328,69 +280,7 @@ void G::Process::Umask::tighten()
 	::umask( ::umask(2) | mode_t(7) ) ; // -xxxxxx---
 }
 
-// ===
-
-void G::ProcessImp::setRealUserTo( Identity id )
-{
-	id.setRealUser() ;
-}
-
-void G::ProcessImp::setEffectiveUserTo( Identity id )
-{
-	id.setEffectiveUser() ;
-}
-
-bool G::ProcessImp::setEffectiveUserTo( SignalSafe safe , Identity id ) noexcept
-{
-	return id.setEffectiveUser( safe ) ;
-}
-
-void G::ProcessImp::setRealGroupTo( Identity id )
-{
-	id.setRealGroup() ;
-}
-
-void G::ProcessImp::setEffectiveGroupTo( Identity id )
-{
-	id.setEffectiveGroup() ;
-}
-
-bool G::ProcessImp::setEffectiveGroupTo( SignalSafe safe , Identity id ) noexcept
-{
-	return id.setEffectiveGroup( safe ) ;
-}
-
-void G::ProcessImp::setEffectiveUserAndGroupTo( Identity id )
-{
-	using NoThrow = Identity::NoThrow ;
-	Identity old_id = Identity::effective() ;
-	id.setEffectiveUser() ; // throws
-	if( !id.setEffectiveGroup(NoThrow()) )
-	{
-		if( !old_id.setEffectiveUser(NoThrow()) ) // unwind
-			terminate() ;
-		throw Identity::GidError() ;
-	}
-}
-
-void G::ProcessImp::setEffectiveUserAndGroupAsRootTo( Identity id )
-{
-	using NoThrow = Identity::NoThrow ;
-	Identity old_id = Identity::effective() ;
-	Identity::root().setEffectiveUser() ; // throws
-	if( !id.setEffectiveGroup(NoThrow()) )
-	{
-		if( !old_id.setEffectiveUser(NoThrow()) ) // unwind
-			terminate() ;
-		throw Identity::GidError() ;
-	}
-	if( !id.setEffectiveUser(NoThrow()) )
-	{
-		if( !old_id.setEffectiveGroup(NoThrow()) || !old_id.setEffectiveUser(NoThrow()) ) // unwind
-			terminate() ;
-		throw Identity::UidError() ;
-	}
-}
+// ==
 
 void G::ProcessImp::noCloseOnExec( int fd ) noexcept
 {
@@ -399,39 +289,145 @@ void G::ProcessImp::noCloseOnExec( int fd ) noexcept
 
 void G::ProcessImp::reopen( int fd , int mode )
 {
-	int fd_null = ::open( Path::nullDevice().str().c_str() , mode ) ;
+	int fd_null = ::open( Path::nullDevice().cstr() , mode ) ;
 	if( fd_null < 0 ) throw std::runtime_error( "cannot open /dev/null" ) ;
 	::dup2( fd_null , fd ) ;
 	::close( fd_null ) ;
 }
 
-mode_t G::ProcessImp::umaskValue( G::Process::Umask::Mode mode )
+mode_t G::ProcessImp::umaskValue( Process::Umask::Mode mode )
 {
 	mode_t m = 0 ;
-	if( mode == G::Process::Umask::Mode::Tightest ) m = 0177 ; // -rw-------
-	if( mode == G::Process::Umask::Mode::Tighter ) m = 0117 ;  // -rw-rw----
-	if( mode == G::Process::Umask::Mode::Readable ) m = 0133 ; // -rw-r--r--
-	if( mode == G::Process::Umask::Mode::GroupOpen ) m = 0113 ;// -rw-rw-r--
+	if( mode == Process::Umask::Mode::Tightest ) m = 0177 ; // -rw-------
+	if( mode == Process::Umask::Mode::Tighter ) m = 0117 ;  // -rw-rw----
+	if( mode == Process::Umask::Mode::Readable ) m = 0133 ; // -rw-r--r--
+	if( mode == Process::Umask::Mode::GroupOpen ) m = 0113 ;// -rw-rw-r--
 	return m ;
 }
 
 bool G::ProcessImp::readlink_( const char * path , std::string & value )
 {
-	G::Path target = G::File::readlink( path , G::File::NoThrow() ) ;
-	if( target != G::Path() ) value = target.str() ;
-	return target != G::Path() ;
+	Path target = File::readlink( path , std::nothrow ) ;
+	if( !target.empty() ) value = target.str() ;
+	return !target.empty() ;
 }
 
-void G::ProcessImp::terminate() noexcept
+// ==
+
+G::Identity G::ProcessImp::beOrdinary( Identity nobody_id , bool change_group )
 {
-	try
+	Identity old_id = Identity::effective() ;
+	Identity real_id = Identity::real() ;
+	if( real_id.isRoot() )
 	{
-		G_ERROR( "G::ProcessImp::terminate: failed to give up process privileges" ) ;
+		if( change_group )
+		{
+			// make sure we have privilege to change group
+			if( !setEffectiveUser( Identity::root() , std::nothrow ) )
+				throwError() ;
+
+			if( !setEffectiveGroup( nobody_id , std::nothrow ) )
+			{
+				setEffectiveUser( old_id , std::nothrow ) ; // rollback
+				throwError() ;
+			}
+		}
+		if( !setEffectiveUser( nobody_id , std::nothrow ) )
+			throwError() ;
 	}
-	catch(...)
+	else
 	{
+		// change to real id -- drops suid privileges
+		if( !setEffectiveUser( real_id , std::nothrow ) )
+			throwError() ;
+
+		if( change_group && !setEffectiveGroup( real_id , std::nothrow ) )
+		{
+			setEffectiveUser( old_id , std::nothrow ) ; // rollback
+			throwError() ;
+		}
 	}
-	std::terminate() ;
+	return old_id ;
 }
 
-/// \file gprocess_unix.cpp
+void G::ProcessImp::beOrdinaryForExec( Identity run_as_id ) noexcept
+{
+	if( run_as_id != Identity::invalid() )
+	{
+		setEffectiveUser( Identity::root() , std::nothrow ) ; // for root-suid
+		setRealGroup( run_as_id , std::nothrow ) ;
+		setEffectiveGroup( run_as_id , std::nothrow ) ;
+		setRealUser( run_as_id , std::nothrow ) ;
+		setEffectiveUser( run_as_id , std::nothrow ) ;
+	}
+}
+
+void G::ProcessImp::beSpecial( Identity special_identity , bool change_group )
+{
+	setEffectiveUser( special_identity ) ;
+	if( change_group )
+		setEffectiveGroup( special_identity ) ;
+}
+
+void G::ProcessImp::beSpecialForExit( SignalSafe , Identity special_identity ) noexcept
+{
+	// changing effective ids is not strictly signal-safe :-<
+	setEffectiveUser( special_identity , std::nothrow ) ;
+	setEffectiveGroup( special_identity , std::nothrow ) ;
+}
+
+void G::ProcessImp::revokeExtraGroups()
+{
+	if( Identity::real().isRoot() || Identity::effective() != Identity::real() )
+	{
+		// set supplementary group-ids to a zero-length list
+		gid_t dummy = 0 ;
+		GDEF_IGNORE_RETURN ::setgroups( 0U , &dummy ) ; // (only works for root, so ignore the return code)
+	}
+}
+
+bool G::ProcessImp::setRealUser( Identity id , std::nothrow_t ) noexcept
+{
+	return 0 == ::setuid( id.userid() ) ;
+}
+
+void G::ProcessImp::setEffectiveUser( Identity id )
+{
+	if( ::seteuid(id.userid()) )
+	{
+		int e = errno ;
+		throw Process::UidError( Process::strerror(e) ) ;
+	}
+}
+
+bool G::ProcessImp::setEffectiveUser( Identity id , std::nothrow_t ) noexcept
+{
+	return 0 == ::seteuid( id.userid() ) ;
+}
+
+bool G::ProcessImp::setRealGroup( Identity id , std::nothrow_t ) noexcept
+{
+	return 0 == ::setgid( id.groupid() ) ;
+}
+
+void G::ProcessImp::setEffectiveGroup( Identity id )
+{
+	if( ::setegid(id.groupid()) )
+	{
+		int e = errno ;
+		throw Process::GidError( Process::strerror(e) ) ;
+	}
+}
+
+bool G::ProcessImp::setEffectiveGroup( Identity id , std::nothrow_t ) noexcept
+{
+	return 0 == ::setegid( id.groupid() ) ;
+}
+
+void G::ProcessImp::throwError()
+{
+	// typically we are about to std::terminate() so make sure there is an error message
+	G_ERROR( "G::ProcessImp::throwError: failed to give up process privileges" ) ;
+	throw G::Exception( "cannot give up process privileges" ) ;
+}
+

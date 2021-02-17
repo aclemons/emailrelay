@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file geventhandlerlist.h
 ///
 
-#ifndef G_NET_EVENT_HANDLER_LIST__H
-#define G_NET_EVENT_HANDLER_LIST__H
+#ifndef G_NET_EVENT_HANDLER_LIST_H
+#define G_NET_EVENT_HANDLER_LIST_H
 
 #include "gdef.h"
 #include "geventhandler.h"
@@ -33,7 +33,7 @@ namespace GNet
 	class EventHandlerList ;
 }
 
-/// \class GNet::EventHandlerList
+//| \class GNet::EventHandlerList
 /// A class that maps from a file descriptor to an event handler and
 /// exception handler, used in the implemention of classes derived
 /// from GNet::EventLoop.
@@ -100,7 +100,7 @@ public:
 		std::vector<Value>::const_iterator m_p ;
 		std::vector<Value>::const_iterator m_end ;
 	} ;
-	struct Lock /// A raii class to lock and unlock GNet::EventHandlerList.
+	struct Lock /// A RAII class to lock and unlock GNet::EventHandlerList.
 	{
 		explicit Lock( EventHandlerList & , bool * invalid_p = nullptr ) ;
 		~Lock() ;
@@ -145,7 +145,7 @@ public:
 
 	Iterator begin() const noexcept ;
 		///< Returns a forward iterator. If the list is lock()ed then the
-		///< iterator will skip over descriptors that have bee remove()d
+		///< iterator will skip over descriptors that have been remove()d
 		///< or add()ed while locked.
 
 	Iterator end() const noexcept ;
@@ -160,6 +160,10 @@ public:
 	void getHandles( std::vector<HANDLE> & ) const ;
 		///< Adds unique, non-zero Descriptor handles to the given
 		///< sorted list, including any add()ed while lock()ed.
+
+	std::size_t size() const noexcept ;
+		///< Returns the size of the list, ignoring any changes while
+		///< lock()ed.
 
 public:
 	~EventHandlerList() = default ;

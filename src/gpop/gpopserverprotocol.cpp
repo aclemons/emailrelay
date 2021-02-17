@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gpopserverprotocol.cpp
-//
+///
+/// \file gpopserverprotocol.cpp
+///
 
 #include "gdef.h"
 #include "gpopserverprotocol.h"
@@ -47,28 +47,28 @@ GPop::ServerProtocol::ServerProtocol( Sender & sender , Security & security , St
 {
 	// (dont send anything to the peer from this ctor -- the Sender object is not fuly constructed)
 
-	m_fsm.addTransition( Event::eStat , State::sActive , State::sActive , &GPop::ServerProtocol::doStat ) ;
-	m_fsm.addTransition( Event::eList , State::sActive , State::sActive , &GPop::ServerProtocol::doList ) ;
-	m_fsm.addTransition( Event::eRetr , State::sActive , State::sData , &GPop::ServerProtocol::doRetr , State::sActive ) ;
-	m_fsm.addTransition( Event::eTop , State::sActive , State::sData , &GPop::ServerProtocol::doTop , State::sActive ) ;
-	m_fsm.addTransition( Event::eDele , State::sActive , State::sActive , &GPop::ServerProtocol::doDele ) ;
-	m_fsm.addTransition( Event::eNoop , State::sActive , State::sActive , &GPop::ServerProtocol::doNoop ) ;
-	m_fsm.addTransition( Event::eRset , State::sActive , State::sActive , &GPop::ServerProtocol::doRset ) ;
-	m_fsm.addTransition( Event::eUidl , State::sActive , State::sActive , &GPop::ServerProtocol::doUidl ) ;
-	m_fsm.addTransition( Event::eSent , State::sData , State::sActive , &GPop::ServerProtocol::doNothing ) ;
-	m_fsm.addTransition( Event::eUser , State::sStart , State::sStart , &GPop::ServerProtocol::doUser ) ;
-	m_fsm.addTransition( Event::ePass , State::sStart , State::sActive , &GPop::ServerProtocol::doPass , State::sStart ) ;
-	m_fsm.addTransition( Event::eApop , State::sStart , State::sActive , &GPop::ServerProtocol::doApop , State::sStart ) ;
-	m_fsm.addTransition( Event::eQuit , State::sStart , State::sEnd , &GPop::ServerProtocol::doQuitEarly ) ;
-	m_fsm.addTransition( Event::eCapa , State::sStart , State::sStart , &GPop::ServerProtocol::doCapa ) ;
-	m_fsm.addTransition( Event::eCapa , State::sActive , State::sActive , &GPop::ServerProtocol::doCapa ) ;
+	m_fsm( Event::eStat , State::sActive , State::sActive , &GPop::ServerProtocol::doStat ) ;
+	m_fsm( Event::eList , State::sActive , State::sActive , &GPop::ServerProtocol::doList ) ;
+	m_fsm( Event::eRetr , State::sActive , State::sData , &GPop::ServerProtocol::doRetr , State::sActive ) ;
+	m_fsm( Event::eTop , State::sActive , State::sData , &GPop::ServerProtocol::doTop , State::sActive ) ;
+	m_fsm( Event::eDele , State::sActive , State::sActive , &GPop::ServerProtocol::doDele ) ;
+	m_fsm( Event::eNoop , State::sActive , State::sActive , &GPop::ServerProtocol::doNoop ) ;
+	m_fsm( Event::eRset , State::sActive , State::sActive , &GPop::ServerProtocol::doRset ) ;
+	m_fsm( Event::eUidl , State::sActive , State::sActive , &GPop::ServerProtocol::doUidl ) ;
+	m_fsm( Event::eSent , State::sData , State::sActive , &GPop::ServerProtocol::doNothing ) ;
+	m_fsm( Event::eUser , State::sStart , State::sStart , &GPop::ServerProtocol::doUser ) ;
+	m_fsm( Event::ePass , State::sStart , State::sActive , &GPop::ServerProtocol::doPass , State::sStart ) ;
+	m_fsm( Event::eApop , State::sStart , State::sActive , &GPop::ServerProtocol::doApop , State::sStart ) ;
+	m_fsm( Event::eQuit , State::sStart , State::sEnd , &GPop::ServerProtocol::doQuitEarly ) ;
+	m_fsm( Event::eCapa , State::sStart , State::sStart , &GPop::ServerProtocol::doCapa ) ;
+	m_fsm( Event::eCapa , State::sActive , State::sActive , &GPop::ServerProtocol::doCapa ) ;
 	if( m_security.securityEnabled() )
-		m_fsm.addTransition( Event::eStls , State::sStart , State::sStart , &GPop::ServerProtocol::doStls , State::sStart ) ;
-	m_fsm.addTransition( Event::eAuth , State::sStart , State::sAuth , &GPop::ServerProtocol::doAuth , State::sStart ) ;
-	m_fsm.addTransition( Event::eAuthData , State::sAuth , State::sAuth , &GPop::ServerProtocol::doAuthData , State::sStart ) ;
-	m_fsm.addTransition( Event::eAuthComplete , State::sAuth , State::sActive , &GPop::ServerProtocol::doAuthComplete ) ;
-	m_fsm.addTransition( Event::eCapa , State::sActive , State::sActive , &GPop::ServerProtocol::doCapa ) ;
-	m_fsm.addTransition( Event::eQuit , State::sActive , State::sEnd , &GPop::ServerProtocol::doQuit ) ;
+		m_fsm( Event::eStls , State::sStart , State::sStart , &GPop::ServerProtocol::doStls , State::sStart ) ;
+	m_fsm( Event::eAuth , State::sStart , State::sAuth , &GPop::ServerProtocol::doAuth , State::sStart ) ;
+	m_fsm( Event::eAuthData , State::sAuth , State::sAuth , &GPop::ServerProtocol::doAuthData , State::sStart ) ;
+	m_fsm( Event::eAuthComplete , State::sAuth , State::sActive , &GPop::ServerProtocol::doAuthComplete ) ;
+	m_fsm( Event::eCapa , State::sActive , State::sActive , &GPop::ServerProtocol::doCapa ) ;
+	m_fsm( Event::eQuit , State::sActive , State::sEnd , &GPop::ServerProtocol::doQuit ) ;
 }
 
 void GPop::ServerProtocol::init()
@@ -675,4 +675,3 @@ std::string GPop::ServerProtocolText::user( const std::string & id ) const
 	return std::string() + "user: " + id ;
 }
 
-/// \file gpopserverprotocol.cpp

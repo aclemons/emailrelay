@@ -1,16 +1,16 @@
 #
-## Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-##
+## Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
-##
+## 
 ## This program is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-##
+## 
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -38,6 +38,7 @@ man_files_clean=\
 	emailrelay-filter-copy.1.gz
 
 html_files_noinstall=\
+	man2html-missing.html \
 	doxygen-missing.html
 
 html_files_install=\
@@ -81,7 +82,7 @@ EXTRA_DIST = \
 noinst_SCRIPTS = .dox
 man1_MANS = $(man_files_install)
 e_doc_DATA = $(txt_files_install) $(html_files_install) $(css_files_install) $(png_files_install)
-CLEANFILES = $(noinst_SCRIPTS) $(man_files_clean) doxygen.out doxygen.cfg doxygen/search/* doxygen/*
+CLEANFILES = $(noinst_SCRIPTS) $(man_files_clean) emailrelay-man.html doxygen.out doxygen.cfg doxygen/search/* doxygen/*
 
 SUFFIXES = .txt .html
 
@@ -92,7 +93,7 @@ run_doxygen=$(top_srcdir)/bin/doxygen.sh
 	$(run_doxygen) "$(GCONFIG_HAVE_DOXYGEN)" "$(top_srcdir)" "$(top_builddir)" doxygen doxygen.cfg.in && touch .dox
 
 emailrelay-man.html: emailrelay.1
-	if test "$(GCONFIG_HAVE_MAN2HTML)" = "yes" ; then man2html -r -L. emailrelay.1 < /dev/null > emailrelay-man.html.tmp && mv emailrelay-man.html.tmp emailrelay-man.html ; grep -v '^Content-type:' < emailrelay-man.html | grep -v '^Time:' > emailrelay-man.html.tmp ; mv emailrelay-man.html.tmp emailrelay-man.html ; fi
+	if test "$(GCONFIG_HAVE_MAN2HTML)" = "yes" ; then man2html -r -L. emailrelay.1 < /dev/null > emailrelay-man.html.tmp && mv emailrelay-man.html.tmp emailrelay-man.html ; grep -v '^Content-type:' < emailrelay-man.html | grep -v '^Time:' > emailrelay-man.html.tmp ; mv emailrelay-man.html.tmp emailrelay-man.html ; else cp man2html-missing.html emailrelay-man.html ; fi
 
 emailrelay.1.gz : emailrelay.1
 	if test -n "$(GZIP)" ; then $(GZIP) -c "$(top_srcdir)/doc/emailrelay.1" > emailrelay.1.gz ; fi
@@ -130,6 +131,6 @@ sphinx:
 
 .PHONY: website
 website:
-	@chmod +x make-website || true
-	./make-website 2.1
+	@chmod +x $(top_srcdir)/doc/make-website || true
+	$(top_srcdir)/doc/make-website `cat $(top_srcdir)/VERSION`
 

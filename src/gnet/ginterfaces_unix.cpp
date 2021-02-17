@@ -1,21 +1,33 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
+///
+/// \file ginterfaces_unix.cpp
+///
+// Linux:
+//   ip address add 127.0.0.2/8 dev lo
+//   ip address del 127.0.0.2/8 dev lo
+//   ip address add fe80::dead:beef/64 dev eth0
+//   ip address del fe80::dead:beef/64 dev eth0
 //
-// ginterfaces_unix.cpp
+// BSD...
+//   ifconfig lo0 inet 127.0.0.2 alias netmask 255.0.0.0
+//   ifconfig lo0 inet 127.0.0.2 -alias
+//   ifconfig em0 inet6 fe80::dead:beef/64 alias
+//   ifconfig em0 inet6 fe80::dead:beef/64 -alias
 //
 
 #include "gdef.h"
@@ -24,10 +36,13 @@
 #include "gexception.h"
 #include "geventloop.h"
 #include "gprocess.h"
+#include "gbuffer.h"
 #include "gstr.h"
 #include "groot.h"
 #include <ifaddrs.h>
 #include <functional>
+#include <memory>
+#include <utility>
 #include <sstream>
 
 namespace GNet
@@ -35,7 +50,7 @@ namespace GNet
 	class InterfacesNotifierImp ;
 }
 
-/// \class GNet::InterfacesNotifierImp
+//| \class GNet::InterfacesNotifierImp
 /// Handles read events on a routing netlink socket.
 ///
 class GNet::InterfacesNotifierImp : public InterfacesNotifier
@@ -45,10 +60,10 @@ public:
 	InterfacesNotifierImp( Interfaces * , ExceptionSink es ) ;
 	std::string readEvent() override ; // unix
 	std::string onFutureEvent() override ; // windows
-	void readSocket() ;
+	template <typename T> std::pair<T*,std::size_t> readSocket() ;
 
 public:
-	std::vector<char> m_buffer ;
+	G::Buffer<char> m_buffer ;
 	std::unique_ptr<RawSocket> m_socket ;
 } ;
 
@@ -72,37 +87,42 @@ void GNet::Interfaces::loadImp( ExceptionSink es , std::vector<Item> & list )
 		throw G::Exception( "getifaddrs error" , G::Process::strerror(e) ) ;
 	}
 
-	using deleter_fn_t = std::pointer_to_unary_function<ifaddrs*,void> ;
+	using deleter_fn_t = std::function<void(ifaddrs*)> ;
 	using deleter_t = std::unique_ptr<ifaddrs,deleter_fn_t> ;
-	deleter_t deleter( info_p , std::ptr_fun(freeifaddrs) ) ;
+	deleter_t deleter( info_p , deleter_fn_t(freeifaddrs) ) ;
 
-	std::size_t nmax = AddressStorage().n() ;
+	const std::size_t nmax = AddressStorage().n() ;
+	const bool scope_id_fixup = G::is_bsd() ;
 	for( ; info_p != nullptr ; info_p = info_p->ifa_next )
 	{
-		G_ASSERT( info_p->ifa_name && info_p->ifa_name[0] ) ; if( info_p->ifa_name == nullptr ) continue ;
-		G_ASSERT( info_p->ifa_addr ) ; if( info_p->ifa_addr == nullptr ) continue ;
+		G_ASSERT( info_p->ifa_name && info_p->ifa_name[0] ) ;
+		if( info_p->ifa_name == nullptr )
+			continue ;
 
-		Item item ;
-		item.name = std::string( info_p->ifa_name ) ;
-		item.address_family = info_p->ifa_addr->sa_family ;
+		G_ASSERT( info_p->ifa_addr ) ;
+		if( info_p->ifa_addr == nullptr )
+			continue ;
 
 		if( !Address::supports(info_p->ifa_addr->sa_family,0) )
 			continue ;
 
-		item.address = Address( info_p->ifa_addr , nmax ) ;
+		Item item ;
+		item.name = std::string( info_p->ifa_name ) ;
+		item.address_family = info_p->ifa_addr->sa_family ;
+		item.address = Address( info_p->ifa_addr , nmax , scope_id_fixup ) ;
 		item.valid_address = !item.address.isAny() ; // just in case
-		if( item.address.family() == Address::Family::ipv6 )
-			item.address.setZone( item.name ) ;
-
+		item.up = !!( info_p->ifa_flags & IFF_UP ) ;
+		item.loopback = !!( info_p->ifa_flags & IFF_LOOPBACK ) ;
 		item.has_netmask = info_p->ifa_netmask != nullptr ;
+
 		if( item.has_netmask )
 		{
+			if( info_p->ifa_netmask->sa_family == AF_UNSPEC ) // openbsd
+				info_p->ifa_netmask->sa_family = info_p->ifa_addr->sa_family ;
+
 			Address netmask( info_p->ifa_netmask , nmax ) ;
 			item.netmask_bits = netmask.bits() ;
 		}
-
-		item.up = !!( info_p->ifa_flags & IFF_UP ) ;
-		item.loopback = !!( info_p->ifa_flags & IFF_LOOPBACK ) ;
 
 		list.push_back( item ) ;
 	}
@@ -110,20 +130,22 @@ void GNet::Interfaces::loadImp( ExceptionSink es , std::vector<Item> & list )
 
 // ==
 
-void GNet::InterfacesNotifierImp::readSocket()
+template <typename T>
+std::pair<T*,std::size_t> GNet::InterfacesNotifierImp::readSocket()
 {
+	static_assert( sizeof(T) <= 4096U , "" ) ;
 	m_buffer.resize( 4096U ) ;
+
 	ssize_t rc = m_socket->read( &m_buffer[0] , m_buffer.size() ) ;
-	int e = G::Process::errno_() ; G__IGNORE_VARIABLE(int,e) ;
 	if( rc < 0 )
 	{
+		GDEF_UNUSED int e = G::Process::errno_() ;
 		G_DEBUG( "GNet::InterfacesNotifierImp: read error: " << G::Process::strerror(e) ) ;
-		m_buffer.clear() ;
 	}
-	else
-	{
-		m_buffer.resize( static_cast<std::size_t>(rc) ) ;
-	}
+
+	T * p = G::buffer_cast<T*>( m_buffer , std::nothrow ) ;
+	std::size_t n = static_cast<std::size_t>( rc >= 0 && p ? rc : 0 ) ;
+	return { p , n } ;
 }
 
 std::string GNet::InterfacesNotifierImp::onFutureEvent()
@@ -173,12 +195,15 @@ GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * outer , Excepti
 
 std::string GNet::InterfacesNotifierImp::readEvent()
 {
-	readSocket() ;
+	auto buffer_pair = readSocket<nlmsghdr>() ;
 
-	std::ostringstream ss ;
-	const nlmsghdr * hdr = reinterpret_cast<const nlmsghdr*>( &m_buffer[0] ) ;
-	std::size_t size = m_buffer.size() ;
+	const nlmsghdr * hdr = buffer_pair.first ;
+	std::size_t size = buffer_pair.second ;
+	if( hdr == nullptr || size == 0U )
+		return std::string() ;
+
 	const char * sep = "" ;
+	std::ostringstream ss ;
 	for( ; NLMSG_OK(hdr,size) ; hdr = NLMSG_NEXT(hdr,size) , sep = ", " )
 	{
 		if( hdr->nlmsg_type == NLMSG_DONE || hdr->nlmsg_type == NLMSG_ERROR )
@@ -188,8 +213,8 @@ std::string GNet::InterfacesNotifierImp::readEvent()
 			hdr->nlmsg_type == RTM_DELLINK ||
 			hdr->nlmsg_type == RTM_GETLINK )
 		{
-			ifinfomsg * p = static_cast<ifinfomsg*>( NLMSG_DATA(hdr) ) ; G__IGNORE_VARIABLE(ifinfomsg*,p) ;
-			int n = NLMSG_PAYLOAD( hdr , size ) ; G__IGNORE_VARIABLE(int,n) ;
+			GDEF_UNUSED ifinfomsg * p = static_cast<ifinfomsg*>( NLMSG_DATA(hdr) ) ;
+			GDEF_UNUSED int n = NLMSG_PAYLOAD( hdr , size ) ;
 			ss << sep << "link" ;
 			if( hdr->nlmsg_type == RTM_NEWLINK ) ss << " new" ;
 			if( hdr->nlmsg_type == RTM_DELLINK ) ss << " deleted" ;
@@ -198,8 +223,8 @@ std::string GNet::InterfacesNotifierImp::readEvent()
 			hdr->nlmsg_type == RTM_DELADDR ||
 			hdr->nlmsg_type == RTM_GETADDR )
 		{
-			ifaddrmsg * p = static_cast<ifaddrmsg*>( NLMSG_DATA(hdr) ) ; G__IGNORE_VARIABLE(ifaddrmsg*,p) ;
-			int n = NLMSG_PAYLOAD( hdr , size ) ; G__IGNORE_VARIABLE(int,n) ;
+			GDEF_UNUSED ifaddrmsg * p = static_cast<ifaddrmsg*>( NLMSG_DATA(hdr) ) ;
+			GDEF_UNUSED int n = NLMSG_PAYLOAD( hdr , size ) ;
 			ss << sep << "address" ;
 			if( hdr->nlmsg_type == RTM_NEWADDR ) ss << " new" ;
 			if( hdr->nlmsg_type == RTM_DELADDR ) ss << " deleted" ;
@@ -234,14 +259,13 @@ GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * outer , Excepti
 
 std::string GNet::InterfacesNotifierImp::readEvent()
 {
-	readSocket() ;
-
+	using Header = struct rt_msghdr ;
 	std::string result ;
-	if( m_buffer.size() >= 4U )
+	auto buffer_pair = readSocket<Header>() ;
+	if( buffer_pair.second >= 4U )
 	{
-		using Header = struct rt_msghdr ;
-		Header * p = reinterpret_cast<Header*>(&m_buffer[0]) ;
-		if( p->rtm_msglen != m_buffer.size() )
+		Header * p = buffer_pair.first ;
+		if( p->rtm_msglen != buffer_pair.second )
 			G_DEBUG( "GNet::InterfacesNotifierImp::readEvent: invalid message length" ) ;
 		if( p->rtm_type == RTM_NEWADDR )
 			result = "address new" ;

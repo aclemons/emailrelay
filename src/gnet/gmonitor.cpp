@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gmonitor.cpp
-//
+///
+/// \file gmonitor.cpp
+///
 
 #include "gdef.h"
 #include "gmonitor.h"
@@ -27,7 +27,7 @@
 #include <algorithm> // std::swap()
 #include <utility> // std::swap()
 
-/// \class GNet::MonitorImp
+//| \class GNet::MonitorImp
 /// A pimple-pattern implementation class for GNet::Monitor.
 ///
 class GNet::MonitorImp
@@ -84,7 +84,7 @@ GNet::Monitor * & GNet::Monitor::pthis() noexcept
 }
 
 GNet::Monitor::Monitor() :
-	m_imp( new MonitorImp(*this) )
+	m_imp(std::make_unique<MonitorImp>(*this))
 {
 	G_ASSERT( pthis() == nullptr ) ;
 	pthis() = this ;
@@ -229,7 +229,7 @@ void GNet::MonitorImp::report( std::ostream & s , const std::string & px , const
 {
 	for( const auto & server : m_servers )
 	{
-		s << px << "LISTEN: " << server.second.displayString() << eol ;
+		s << px << "LISTEN: " << server.second.displayString(true) << eol ;
 	}
 
 	s << px << "OUT started: " << m_client_adds << eol ;

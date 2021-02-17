@@ -30,7 +30,8 @@
 
     <p>
      In those early years multi-threading support in C++ libraries was poor, so up
-     until version 2.0 the code was single-threaded throughout.
+     until version 2.0 the code was single-threaded throughout, and multi-threading
+     is still optional.
     </p>
    <h2><a class="a-header" name="SH_1_3">Portability</a></h2> <!-- index:2:SH:1:3:Portability -->
     <p>
@@ -61,11 +62,11 @@
     </p>
    <h2><a class="a-header" name="SH_1_4">Event model</a></h2> <!-- index:2:SH:1:4:Event model -->
     <p>
-     The E-MailRelay server uses non-blocking socket i/o, with a select() event loop.
-     This event model means that the server can handle multiple network connections
-     simultaneously from a single thread, and even if multi-threading is disabled at
-     build-time the only blocking occurs when external programs are executed (see
-     <em>--filter</em> and <em>--address-verifier</em>).
+     The E-MailRelay server uses non-blocking socket i/o, with a select() or epoll()
+     event loop. This event model means that the server can handle multiple network
+     connections simultaneously from a single thread, and even if multi-threading is
+     disabled at build-time the only blocking occurs when external programs are
+     executed (see <em>--filter</em> and <em>--address-verifier</em>).
     </p>
 
     <p>
@@ -210,7 +211,7 @@
      Event sources in the event loop are held as a file descriptor, a windows event
      handle, an EventHandler pointer, an ExceptionHandler pointer and an
      ExceptionSource pointer. The first two together are known as a Descriptor, and
-     the last two together are known as an <em>ExceptionSink</em>.
+     the last two together are known as an ExceptionSink.
     </p>
    <h2><a class="a-header" name="SH_1_8">Multi-threading</a></h2> <!-- index:2:SH:1:8:Multi-threading -->
     <p>
@@ -271,10 +272,10 @@
     </p>
 
     <p>
-     For MinGW cross-builds use <em>./configure.sh -m</em> and <em>make</em> on a Linux box
-     and copy the built executables and the MinGW run-time to the target. The
-     run-time files can be identified by <em>dumpbin /dependents</em> in the normal
-     way. This is particularly useful for running on ancient versions of Windows.
+     For MinGW cross-builds use <em>./configure.sh -m</em> and <em>make</em> on a Linux box and
+     copy the built executables and the MinGW run-time to the target. Any extra
+     run-time files can be identified by running <em>dumpbin /dependents</em> in the normal
+     way.
     </p>
    <h2><a class="a-header" name="SH_1_11">Windows packaging</a></h2> <!-- index:2:SH:1:11:Windows packaging -->
     <p>
@@ -288,6 +289,12 @@
      The Qt tool <em>windeployqt</em> is used to add run-time dependencies, such as the
      Qt DLLs.
     </p>
+
+    <p>
+     To target ancient versions of Windows start with a cross-build using MinGW;
+     then <em>winbuild.pl mingw</em> can be used to assemble a slimmed-down package for
+     distribution.
+    </p>
    <h2><a class="a-header" name="SH_1_12">Unix packaging</a></h2> <!-- index:2:SH:1:12:Unix packaging -->
     <p>
      On Unix-like operating systems it is more natural to use some sort of package
@@ -299,7 +306,22 @@
      Top-level makefile targets <em>dist</em>, <em>deb</em> and <em>rpm</em> can be used to create a
      binary tarball, a debian package, and an RPM package respectively.
     </p>
-   <h2><a class="a-header" name="SH_1_13">Source control</a></h2> <!-- index:2:SH:1:13:Source control -->
+   <h2><a class="a-header" name="SH_1_13">Internationalisation</a></h2> <!-- index:2:SH:1:13:Internationalisation -->
+    <p>
+     The GUI code has i18n support using the Qt framework, with the tr() function
+     used throughout the GUI source code. The GUI main() function loads translations
+     from the <em>translations</em> sub-directory (relative to the executable), although
+     that can be overridden with the <em>--qm</em> command-line option. Qt's <em>-reverse</em>
+     option can also be used to reverse the widgets when using RTL languages.
+    </p>
+
+    <p>
+     The non-GUI code has minimal i18n support using gettext(), mostly for startup
+     error messages and usage help. This is disabled by default and requires a
+     configure-script option (<em>--with-gettext</em>) to enable it at build-time and
+     a <em>--localedir</em> option at run-time. See also <em>po/Makefile.am</em>.
+    </p>
+   <h2><a class="a-header" name="SH_1_14">Source control</a></h2> <!-- index:2:SH:1:14:Source control -->
     <p>
      The source code is stored in the SourceForge <em>svn</em> repository. A working
      copy can be checked out as follows:
@@ -308,7 +330,7 @@
       <div class="div-pre">
        <pre>$ svn co https://svn.code.sf.net/p/emailrelay/code/trunk emailrelay</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_14">Compile-time features</a></h2> <!-- index:2:SH:1:14:Compile-time features -->
+   <h2><a class="a-header" name="SH_1_15">Compile-time features</a></h2> <!-- index:2:SH:1:15:Compile-time features -->
     <p>
      Compile-time features can be selected with options passed to the <em>configure</em>
      script. These include the following:
@@ -319,6 +341,7 @@
      <li>Multi-threading (<em>--enable-std-thread</em>)</li>
      <li>TLS library (<em>--with-openssl</em>, <em>--with-mbedtls</em>)</li>
      <li>Debug-level logging (<em>--enable-debug</em>)</li>
+     <li>Event loop using epoll (<em>--enable-epoll</em>)</li>
      <li>PAM support (<em>--with-pam</em>)</li>
     </ul>
 
@@ -330,10 +353,10 @@
 
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2020 Graeme Walker
+      Copyright (C) 2001-2021 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

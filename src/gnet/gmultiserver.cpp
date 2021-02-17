@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gmultiserver.cpp
-//
+///
+/// \file gmultiserver.cpp
+///
 
 #include "gdef.h"
 #include "gmultiserver.h"
@@ -55,10 +55,13 @@ GNet::MultiServer::MultiServer( ExceptionSink es , const G::StringArray & interf
 	if( !empty_names.empty() )
 	{
 		if( !address_list.empty() )
-			G_WARNING( "GNet::MultiServer::ctor: no addresses bound to named network interface" << (empty_names.size()==1U?"":"s")
+			G_WARNING( "GNet::MultiServer::ctor: no addresses bound to named network interface"
+				<< (empty_names.size()==1U?"":"s")
 				<< " \"" << G::Str::join("\", \"",empty_names) << "\"" ) ;
 		else if( Interfaces::active() )
-			G_WARNING( "GNet::MultiServer::ctor: no listening addresses: waiting for " << G::Str::join(",",empty_names) ) ;
+			G_WARNING( "GNet::MultiServer::ctor: no listening addresses: waiting for interface"
+				<< (empty_names.size()>1U?"s ":" ")
+				<< "[" << G::Str::join("] [",empty_names) << "]" ) ;
 	}
 
 	// bind the listening addresses, etc
@@ -90,7 +93,8 @@ std::vector<GNet::Address> GNet::MultiServer::addresses( unsigned int port ) con
 	return addresses( port , used_names , empty_names ) ;
 }
 
-std::vector<GNet::Address> GNet::MultiServer::addresses( unsigned int port , G::StringArray & used_names , G::StringArray & empty_names ) const
+std::vector<GNet::Address> GNet::MultiServer::addresses( unsigned int port , G::StringArray & used_names ,
+	G::StringArray & empty_names ) const
 {
 	AddressList result ;
 	if( m_interfaces.empty() )
@@ -111,26 +115,17 @@ void GNet::MultiServer::init( const AddressList & address_list , ServerPeerConfi
 {
 	for( const auto & address : address_list )
 	{
-		ServerPtr server_ptr = std::make_shared<MultiServerImp>( *this , m_es,address , server_peer_config ) ;
-        m_server_list.push_back( server_ptr ) ;
+		m_server_list.emplace_back( std::make_unique<MultiServerImp>( *this , m_es,address , server_peer_config ) ) ;
 	}
 }
 
 void GNet::MultiServer::onInterfaceEvent( const std::string & /*description*/ )
 {
-	// only occasional logging since notifications are bursty
-	{
-		static G::SystemTime logged_time = G::SystemTime::zero() ;
-		G::SystemTime now = G::SystemTime::now() ;
-		if( logged_time == G::SystemTime::zero() || (now-logged_time) > G::TimeInterval(10U) )
-		{
-			G_LOG( "GNet::MultiServer::onInterfaceEvent: network configuration change event" ) ;
-			logged_time = now ;
-		}
-	}
+	// notifications can be periodic and/or bursty, so minimal logging here
+	G_DEBUG( "GNet::MultiServer::onInterfaceEvent: network configuration change event" ) ;
 
 	m_if.load() ;
-	m_interface_event_timer.startTimer( 1U ) ; // maybe increase on windows for fewer bind warnings
+	m_interface_event_timer.startTimer( 1U , 500000U ) ; // maybe increase for fewer bind warnings
 }
 
 bool GNet::MultiServer::match( const Address & interface_address , const Address & server_address )
@@ -150,7 +145,8 @@ void GNet::MultiServer::onInterfaceEventTimeout()
 	for( auto server_ptr_p = m_server_list.begin() ; server_ptr_p != m_server_list.end() ; )
 	{
 		Address server_address = (*server_ptr_p)->address() ;
-		G_DEBUG( "GNet::MultiServer::onInterfaceEvent: server: " << server_address.displayString() << "%" << server_address.scopeId() ) ;
+		G_DEBUG( "GNet::MultiServer::onInterfaceEvent: server: "
+			<< displayString(server_address) ) ;
 
 		auto address_match_p = std::find_if( address_list.begin() , address_list.end() ,
 			[&](Address & a){return match(a,server_address);} ) ;
@@ -158,7 +154,7 @@ void GNet::MultiServer::onInterfaceEventTimeout()
 		if( address_match_p == address_list.end() )
 		{
 			G_LOG_S( "GNet::MultiServer::onInterfaceEvent: deleting " << m_server_type
-				<< " server on " << server_address.displayString() ) ;
+				<< " server on " << displayString(server_address) ) ;
 			server_ptr_p = m_server_list.erase( server_ptr_p ) ;
 		}
 		else
@@ -170,21 +166,21 @@ void GNet::MultiServer::onInterfaceEventTimeout()
 	// create new
 	for( const auto & address : address_list )
 	{
-		G_DEBUG( "GNet::MultiServer::onInterfaceEvent: address: " << address.displayString() << "%" << address.scopeId() ) ;
+		G_DEBUG( "GNet::MultiServer::onInterfaceEvent: address: " << displayString(address) ) ;
 		if( !gotServerFor(address) )
 		{
 			try
 			{
-        		ServerPtr server_ptr = std::make_shared<MultiServerImp>( *this , m_es , address , m_server_peer_config ) ;
-        		m_server_list.push_back( server_ptr ) ;
+				m_server_list.emplace_back( std::make_unique<MultiServerImp>( *this , m_es , address , m_server_peer_config ) ) ;
 				G_LOG_S( "GNet::MultiServer::onInterfaceEvent: new " << m_server_type
-					<< " server on " << address.displayString() ) ;
+					<< " server on " << displayString(address) ) ;
 			}
 			catch( Socket::SocketBindError & e )
 			{
 				// (can fail here if notified too soon, but succeeds later)
-				G_LOG( "GNet::MultiServer::onInterfaceEvent: failed to bind " << address.displayString()
-					<< " for new " << m_server_type << " server:" << G::Str::tail(e.what(),std::string(e.what()).rfind(':')) ) ;
+				G_LOG( "GNet::MultiServer::onInterfaceEvent: failed to bind " << displayString(address)
+					<< " for new " << m_server_type << " server:"
+					<< G::Str::tail(e.what(),std::string(e.what()).rfind(':')) ) ;
 			}
 		}
 	}
@@ -192,41 +188,38 @@ void GNet::MultiServer::onInterfaceEventTimeout()
 
 bool GNet::MultiServer::gotServerFor( const Address & interface_address ) const
 {
-	for( const auto & server_ptr : m_server_list )
-	{
-		Address server_address = server_ptr->address() ;
-		if( match( interface_address , server_address ) )
-			return true ;
-	}
-	return false ;
+	return std::any_of( m_server_list.begin() , m_server_list.end() ,
+		[&interface_address](const ServerPtr &ptr){return match(interface_address,ptr->address());} ) ;
 }
 
 bool GNet::MultiServer::canBind( const AddressList & address_list , bool do_throw )
 {
-	for( const auto & a : address_list)
-	{
-		if( ! Server::canBind( a , do_throw ) )
-			return false ;
-	}
-	return true ;
+	return std::all_of( address_list.begin() , address_list.end() ,
+		[do_throw](const Address & a){return Server::canBind(a,do_throw);} ) ;
+}
+
+std::string GNet::MultiServer::displayString( const Address & address )
+{
+	return address.displayString( true ) ;
 }
 
 void GNet::MultiServer::serverReport() const
 {
 	for( const auto & server : m_server_list )
 	{
-		G_LOG_S( "GNet::MultiServer: " << m_server_type << " server on " << server->address().displayString() ) ;
+		G_LOG_S( "GNet::MultiServer: " << m_server_type << " server on " << displayString(server->address()) ) ;
 	}
 }
 
-std::unique_ptr<GNet::ServerPeer> GNet::MultiServer::doNewPeer( ExceptionSinkUnbound esu , const ServerPeerInfo & pi , const ServerInfo & si )
+std::unique_ptr<GNet::ServerPeer> GNet::MultiServer::doNewPeer( ExceptionSinkUnbound esu ,
+	const ServerPeerInfo & pi , const ServerInfo & si )
 {
 	return newPeer( esu , pi , si ) ;
 }
 
 bool GNet::MultiServer::hasPeers() const
 {
-	for( const auto & server : m_server_list)
+	for( const auto & server : m_server_list )
 	{
 		if( server->hasPeers() )
 			return true ;
@@ -248,10 +241,11 @@ std::vector<std::weak_ptr<GNet::ServerPeer> > GNet::MultiServer::peers()
 
 // ==
 
-GNet::MultiServerImp::MultiServerImp( MultiServer & ms , ExceptionSink es , const Address & address , ServerPeerConfig server_peer_config ) :
-	GNet::Server(es,address,server_peer_config) ,
-	m_ms(ms) ,
-	m_address(address)
+GNet::MultiServerImp::MultiServerImp( MultiServer & ms , ExceptionSink es , const Address & address ,
+	ServerPeerConfig server_peer_config ) :
+		GNet::Server(es,address,server_peer_config) ,
+		m_ms(ms) ,
+		m_address(address)
 {
 }
 
@@ -276,4 +270,3 @@ GNet::MultiServer::ServerInfo::ServerInfo() :
 	m_address(Address::defaultAddress())
 {
 }
-/// \file gmultiserver.cpp

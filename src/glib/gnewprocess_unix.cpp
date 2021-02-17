@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gnewprocess_unix.cpp
-//
+///
+/// \file gnewprocess_unix.cpp
+///
 
 #include "gdef.h"
 #include "gnewprocess.h"
@@ -25,12 +25,14 @@
 #include "gfile.h"
 #include "gidentity.h"
 #include "gassert.h"
+#include "gtest.h"
 #include "gstr.h"
 #include "glog.h"
 #include <cerrno>
 #include <array>
 #include <algorithm> // std::swap()
 #include <utility> // std::swap()
+#include <tuple> // std::tie()
 #include <iostream>
 #include <csignal> // ::kill()
 #include <sys/types.h>
@@ -39,7 +41,11 @@
 #include <fcntl.h> // open()
 #include <unistd.h> // setuid() etc
 
-/// \class G::Pipe
+#ifndef WIFCONTINUED
+#define WIFCONTINUED(wstatus) 0
+#endif
+
+//| \class G::Pipe
 /// A private implementation class used by G::NewProcess that wraps
 /// a unix pipe.
 ///
@@ -61,11 +67,11 @@ public:
 	void operator=( Pipe && ) = delete ;
 
 private:
-	std::array<int,2U> m_fds ;
+	std::array<int,2U> m_fds{{-1,-1}} ;
 	int m_fd{-1} ;
 } ;
 
-/// \class G::NewProcessImp
+//| \class G::NewProcessImp
 /// A pimple-pattern implementation class used by G::NewProcess.
 ///
 class G::NewProcessImp
@@ -79,7 +85,7 @@ public:
 		std::string (*exec_error_format_fn)(std::string,int) ) ;
 	int id() const noexcept ;
 	static std::pair<bool,pid_t> fork() ;
-	NewProcessWaitFuture & wait() ;
+	NewProcessWaitable & waitable() noexcept ;
 	int run( const Path & , const StringArray & , const Environment & , bool strict_path ) ;
 	void kill() noexcept ;
 	static void printError( int , const std::string & s ) ;
@@ -95,7 +101,7 @@ public:
 
 private:
 	Pipe m_pipe ;
-	NewProcessWaitFuture m_wait_future ;
+	NewProcessWaitable m_waitable ;
 	pid_t m_child_pid{-1} ;
 	bool m_killed{false} ;
 } ;
@@ -107,17 +113,17 @@ G::NewProcess::NewProcess( const Path & exe , const StringArray & args , const E
 	bool strict_path , Identity run_as_id , bool strict_id ,
 	int exec_error_exit , const std::string & exec_error_format ,
 	std::string (*exec_error_format_fn)(std::string,int) ) :
-		m_imp(new NewProcessImp(exe,args,env,fd_stdin,fd_stdout,fd_stderr,cd,strict_path,
-			run_as_id,strict_id,exec_error_exit,exec_error_format,exec_error_format_fn) )
+		m_imp(std::make_unique<NewProcessImp>(exe,args,env,fd_stdin,fd_stdout,fd_stderr,cd,strict_path,
+			run_as_id,strict_id,exec_error_exit,exec_error_format,exec_error_format_fn))
 {
 }
 
 G::NewProcess::~NewProcess()
 = default;
 
-G::NewProcessWaitFuture & G::NewProcess::wait()
+G::NewProcessWaitable & G::NewProcess::waitable() noexcept
 {
-	return m_imp->wait() ;
+	return m_imp->waitable() ;
 }
 
 std::pair<bool,pid_t> G::NewProcess::fork()
@@ -152,7 +158,7 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 	// sanity checks
 	if( 1 != (fd_stdout==Fd::pipe()?1:0) + (fd_stderr==Fd::pipe()?1:0) || fd_stdin==Fd::pipe() )
 		throw NewProcess::InvalidParameter() ;
-	if( exe == G::Path() )
+	if( exe.empty() )
 		throw NewProcess::InvalidParameter() ;
 
 	// safety checks
@@ -163,16 +169,14 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 			throw NewProcess::Insecure() ;
 
 	// fork
-	std::pair<bool,pid_t> f = fork() ;
-	bool in_child = f.first ;
-	m_child_pid = f.second ;
-
+	bool in_child {} ;
+	std::tie(in_child,m_child_pid) = fork() ;
 	if( in_child )
 	{
 		try
 		{
 			// change directory
-			if( cd != G::Path() )
+			if( !cd.empty() )
 				Process::cd( cd ) ;
 
 			// set real id
@@ -219,7 +223,7 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 	else
 	{
 		m_pipe.inParent() ;
-		m_wait_future.assign( m_child_pid , m_pipe.fd() ) ;
+		m_waitable.assign( m_child_pid , m_pipe.fd() ) ;
 	}
 }
 
@@ -239,34 +243,30 @@ void G::NewProcessImp::printError( int stdxxx , const std::string & s )
 {
 	// write an exec-failure message back down the pipe
 	if( stdxxx <= 0 ) return ;
-	ssize_t rc = ::write( stdxxx , s.c_str() , s.length() ) ;
-	G__IGNORE_VARIABLE( ssize_t , rc ) ;
+	GDEF_IGNORE_RETURN ::write( stdxxx , s.c_str() , s.length() ) ;
 }
 
-int G::NewProcessImp::run( const G::Path & exe , const StringArray & args , const Environment & env , bool strict_path )
+int G::NewProcessImp::run( const G::Path & exe , const StringArray & args ,
+	const Environment & env , bool strict_path )
 {
 	char ** argv = new char* [ args.size() + 2U ] ;
-	std::string str_exe = exe.str() ;
-	argv[0U] = const_cast<char*>( str_exe.c_str() ) ;
+	argv[0U] = const_cast<char*>( exe.cstr() ) ;
 	unsigned int argc = 1U ;
 	for( auto arg_p = args.begin() ; arg_p != args.end() ; ++arg_p , argc++ )
 		argv[argc] = const_cast<char*>(arg_p->c_str()) ;
 	argv[argc] = nullptr ;
-
-	const std::string exe_str = exe.str() ;
-	const char * exe_p = exe_str.c_str() ;
 
 	int e = 0 ;
 	if( env.empty() )
 	{
 		if( strict_path )
 		{
-			::execv( exe_p , argv ) ;
+			::execv( exe.cstr() , argv ) ;
 			e = Process::errno_() ;
 		}
 		else
 		{
-			::execvp( exe_p , argv ) ;
+			::execvp( exe.cstr() , argv ) ;
 			e = Process::errno_() ;
 		}
 	}
@@ -274,12 +274,12 @@ int G::NewProcessImp::run( const G::Path & exe , const StringArray & args , cons
 	{
 		if( strict_path )
 		{
-			::execve( exe_p , argv , env.v() ) ;
+			::execve( exe.cstr() , argv , env.v() ) ;
 			e = Process::errno_() ;
 		}
 		else
 		{
-			::execvpe( exe_p , argv , env.v() ) ;
+			::execvpe( exe.cstr() , argv , env.v() ) ;
 			e = Process::errno_() ;
 		}
 	}
@@ -294,9 +294,9 @@ int G::NewProcessImp::id() const noexcept
 	return static_cast<int>(m_child_pid) ;
 }
 
-G::NewProcessWaitFuture & G::NewProcessImp::wait()
+G::NewProcessWaitable & G::NewProcessImp::waitable() noexcept
 {
-	return m_wait_future ;
+	return m_waitable ;
 }
 
 void G::NewProcessImp::kill() noexcept
@@ -322,7 +322,7 @@ bool G::NewProcessImp::duplicate( Fd fd , int fd_std )
 	G_ASSERT( !(fd==Fd::pipe()) ) ;
 	if( fd == Fd::devnull() )
 	{
-		int fd_null = ::open( G::Path::nullDevice().str().c_str() , fd_std == STDIN_FILENO ? O_RDONLY : O_WRONLY ) ;
+		int fd_null = ::open( G::Path::nullDevice().cstr() , fd_std == STDIN_FILENO ? O_RDONLY : O_WRONLY ) ;
 		if( fd_null < 0 ) throw NewProcess::Error( "failed to open /dev/null" ) ;
 		::dup2( fd_null , fd_std ) ;
 		return true ;
@@ -342,8 +342,7 @@ bool G::NewProcessImp::duplicate( Fd fd , int fd_std )
 
 // ==
 
-G::Pipe::Pipe() :
-	m_fds{{-1,-1}}
+G::Pipe::Pipe()
 {
 	if( ::socketpair( AF_UNIX , SOCK_STREAM , 0 , &m_fds[0] ) < 0 ) // must be a stream to dup() onto stdout
 		throw NewProcess::PipeError() ;
@@ -386,17 +385,20 @@ void G::Pipe::dupTo( int fd_std )
 
 // ==
 
-G::NewProcessWaitFuture::NewProcessWaitFuture()
-= default;
-
-G::NewProcessWaitFuture::NewProcessWaitFuture( pid_t pid , int fd ) :
-	m_buffer(1024U) ,
-	m_pid(pid) ,
-	m_fd(fd)
+G::NewProcessWaitable::NewProcessWaitable() :
+	m_test_mode(G::Test::enabled("waitpid-slow"))
 {
 }
 
-void G::NewProcessWaitFuture::assign( pid_t pid , int fd )
+G::NewProcessWaitable::NewProcessWaitable( pid_t pid , int fd ) :
+	m_buffer(1024U) ,
+	m_pid(pid) ,
+	m_fd(fd) ,
+	m_test_mode(G::Test::enabled("waitpid-slow"))
+{
+}
+
+void G::NewProcessWaitable::assign( pid_t pid , int fd )
 {
 	m_buffer.resize( 1024U ) ;
 	m_hprocess = 0 ;
@@ -409,19 +411,33 @@ void G::NewProcessWaitFuture::assign( pid_t pid , int fd )
 	m_read_error = 0 ;
 }
 
-G::NewProcessWaitFuture & G::NewProcessWaitFuture::run()
+void G::NewProcessWaitable::waitp( std::promise<std::pair<int,std::string>> p ) noexcept
 {
-	// (worker thread - keep it simple - read then wait)
+	try
 	{
-		std::array<char,64U> more ; // NOLINT cppcoreguidelines-pro-type-member-init
+		wait() ;
+		int rc = get() ;
+		p.set_value( std::make_pair(rc,output()) ) ;
+	}
+	catch(...)
+	{
+		try { p.set_exception( std::current_exception() ) ; } catch(...) {}
+	}
+}
+
+G::NewProcessWaitable & G::NewProcessWaitable::wait()
+{
+	// (worker thread - keep it simple - never throws - does read then waitpid)
+	{
+		std::array<char,64U> discard ; // NOLINT cppcoreguidelines-pro-type-member-init
 		char * p = &m_buffer[0] ;
 		std::size_t space = m_buffer.size() ;
 		std::size_t size = 0U ;
 		while( m_fd >= 0 )
 		{
-			ssize_t n = ::read( m_fd , p?p:&more[0] , p?space:more.size() ) ;
+			ssize_t n = ::read( m_fd , p?p:&discard[0] , p?space:discard.size() ) ;
 			m_read_error = errno ;
-			if( n < 0 && m_error == EINTR )
+			if( n < 0 && m_read_error == EINTR )
 			{
 				; // keep reading
 			}
@@ -432,15 +448,17 @@ G::NewProcessWaitFuture & G::NewProcessWaitFuture::run()
 			}
 			else if( n == 0 )
 			{
-				m_buffer.resize( size ) ;
+				m_buffer.resize( std::min(size,m_buffer.size()) ) ; // shrink, so no-throw
 				m_read_error = 0 ;
 				break ;
 			}
 			else if( p )
 			{
-				p += n ;
-				size += n ;
-				space -= n ;
+				std::size_t nn = static_cast<std::size_t>(n) ; // n>0
+				nn = std::min( nn , space ) ; // just in case
+				p += nn ;
+				size += nn ;
+				space -= nn ;
 				if( space == 0U )
 					p = nullptr ;
 			}
@@ -451,38 +469,68 @@ G::NewProcessWaitFuture & G::NewProcessWaitFuture::run()
 		errno = 0 ;
 		m_rc = ::waitpid( m_pid , &m_status , 0 ) ;
 		m_error = errno ;
-		if( m_rc == -1 && m_error == EINTR )
-			; // signal in parent -- keep waiting
+		if( m_rc >= 0 && ( WIFSTOPPED(m_status) || WIFCONTINUED(m_status) ) )
+			; // keep waiting
+		else if( m_rc == -1 && m_error == EINTR )
+			; // keep waiting
 		else
 			break ;
 	}
+	if( m_test_mode )
+		sleep( 10 ) ;
 	return *this ;
 }
 
-int G::NewProcessWaitFuture::get()
+int G::NewProcessWaitable::get() const
 {
 	int result = 0 ;
 	if( m_pid != 0 )
 	{
-		if( m_error || m_read_error )
+		if( m_error == ECHILD )
+		{
+			// only here if SIGCHLD is explicitly ignored, but in that case
+			// we get no zombie process and cannot recover the exit code
+			result = 126 ;
+		}
+		else if( m_error || m_read_error )
 		{
 			std::ostringstream ss ;
 			ss << "errno=" << (m_read_error?m_read_error:m_error) ;
 			throw NewProcess::WaitError( ss.str() ) ;
 		}
-		if( ! WIFEXITED(m_status) )
+		else if( !WIFEXITED(m_status) )
 		{
-			// uncaught signal or stopped
+			// uncaught signal
 			std::ostringstream ss ;
-			ss << "status=" << m_status ;
+			ss << "pid=" << m_pid ;
+			if( WIFSIGNALED(m_status) )
+				ss << " signal=" << WTERMSIG(m_status) ;
 			throw NewProcess::ChildError( ss.str() ) ;
 		}
-		result = WEXITSTATUS(m_status) ;
+		else
+		{
+			result = WEXITSTATUS( m_status ) ;
+		}
 	}
 	return result ;
 }
 
-std::string G::NewProcessWaitFuture::output()
+int G::NewProcessWaitable::get( std::nothrow_t , int ec ) const
+{
+	int result = 0 ;
+	if( m_pid != 0 )
+	{
+		if( m_error || m_read_error )
+			result = ec ;
+		else if( !WIFEXITED(m_status) )
+			result = 128 + WTERMSIG(m_status) ;
+		else
+			result = WEXITSTATUS( m_status ) ;
+	}
+	return result ;
+}
+
+std::string G::NewProcessWaitable::output() const
 {
 	if( m_fd < 0 || m_read_error != 0 )
 		return std::string() ;

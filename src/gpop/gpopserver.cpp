@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gpopserver.cpp
-//
+///
+/// \file gpopserver.cpp
+///
 
 #include "gdef.h"
 #include "gpopserver.h"
@@ -76,7 +76,7 @@ void GPop::ServerPeer::securityStart()
 	secureAccept() ; // base class
 }
 
-void GPop::ServerPeer::onSecure( const std::string & /*certificate*/ , const std::string & )
+void GPop::ServerPeer::onSecure( const std::string & , const std::string & , const std::string & )
 {
 	m_protocol.secure() ;
 }
@@ -114,8 +114,8 @@ std::unique_ptr<GNet::ServerPeer> GPop::Server::newPeer( GNet::ExceptionSinkUnbo
 		}
 		else
 		{
-			ptr.reset( new ServerPeer( esu , peer_info , m_store , m_secrets , m_config.sasl_server_config ,
-				newProtocolText(peer_info.m_address) , ServerProtocol::Config() ) ) ; // upcast
+			ptr = std::make_unique<ServerPeer>( esu , peer_info , m_store , m_secrets , m_config.sasl_server_config ,
+				newProtocolText(peer_info.m_address) , ServerProtocol::Config() ) ; // up-cast (GPop::ServerPeer to GNet::ServerPeer)
 		}
 	}
 	catch( std::exception & e ) // newPeer()
@@ -127,7 +127,7 @@ std::unique_ptr<GNet::ServerPeer> GPop::Server::newPeer( GNet::ExceptionSinkUnbo
 
 std::unique_ptr<GPop::ServerProtocol::Text> GPop::Server::newProtocolText( const GNet::Address & peer_address ) const
 {
-	return std::unique_ptr<ServerProtocol::Text>( new ServerProtocolText(peer_address) ) ; // upcast
+	return std::make_unique<ServerProtocolText>(peer_address) ; // up-cast
 }
 
 // ===
@@ -147,4 +147,3 @@ GPop::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const G:
 {
 }
 
-/// \file gpopserver.cpp

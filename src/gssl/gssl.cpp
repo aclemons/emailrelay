@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gssl.cpp
-//
+///
+/// \file gssl.cpp
+///
 
 #include "gdef.h"
 #include "gssl.h"
@@ -66,6 +66,16 @@ bool GSsl::Library::enabled() const
 std::string GSsl::Library::id() const
 {
 	return m_imp->id() ;
+}
+
+bool GSsl::Library::generateKeyAvailable() const
+{
+	return m_imp && m_imp->generateKeyAvailable() ;
+}
+
+std::string GSsl::Library::generateKey( const std::string & name ) const
+{
+	return m_imp ? m_imp->generateKey( name ) : std::string() ;
 }
 
 void GSsl::Library::addProfile( const std::string & profile_name , bool is_server_profile ,
@@ -118,12 +128,12 @@ const GSsl::LibraryImpBase & GSsl::Library::imp() const
 
 void GSsl::Library::log( int level , const std::string & log_line )
 {
-    if( level == 1 )
-        G_DEBUG( "GSsl::Library::log: tls: " << log_line ) ;
-    else if( level == 2 )
-        G_LOG( "GSsl::Library::log: tls: " << log_line ) ;
-    else
-        G_WARNING( "GSsl::Library::log: tls: " << log_line ) ;
+	if( level == 1 )
+		G_DEBUG( "GSsl::Library::log: tls: " << log_line ) ;
+	else if( level == 2 )
+		G_LOG( "GSsl::Library::log: tls: " << log_line ) ;
+	else
+		G_WARNING( "GSsl::Library::log: tls: " << log_line ) ;
 }
 
 G::StringArray GSsl::Library::digesters( bool require_state )
@@ -154,6 +164,11 @@ std::string GSsl::Protocol::peerCertificate() const
 std::string GSsl::Protocol::peerCertificateChain() const
 {
 	return m_imp->peerCertificateChain() ;
+}
+
+std::string GSsl::Protocol::protocol() const
+{
+	return m_imp->protocol() ;
 }
 
 std::string GSsl::Protocol::cipher() const
@@ -202,8 +217,8 @@ GSsl::Protocol::Result GSsl::Protocol::shutdown()
 
 // ==
 
-GSsl::Digester::Digester( DigesterImpBase * p ) :
-	m_imp(p)
+GSsl::Digester::Digester( std::unique_ptr<DigesterImpBase> p ) :
+	m_imp(p.release())
 {
 }
 
@@ -253,4 +268,3 @@ bool GSsl::LibraryImpBase::consume( G::StringArray & list , const std::string & 
 	}
 }
 
-/// \file gssl.cpp

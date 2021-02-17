@@ -1,15 +1,15 @@
-.\" Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-.\"
+.\" Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+.\" 
 .\" This program is free software: you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
 .\" the Free Software Foundation, either version 3 of the License, or
 .\" (at your option) any later version.
-.\"
+.\" 
 .\" This program is distributed in the hope that it will be useful,
 .\" but WITHOUT ANY WARRANTY; without even the implied warranty of
 .\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 .\" GNU General Public License for more details.
-.\"
+.\" 
 .\" You should have received a copy of the GNU General Public License
 .\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .TH EMAILRELAY 1 local
@@ -146,7 +146,7 @@ Allow forwarding to continue even if some recipient addresses on an e-mail envel
 Displays help text and then exits. Use with \fI--verbose\fR for more complete output.
 .TP
 .B \-H, --hidden
-Windows only. Hides the application window and disables all message boxes. This is useful when running as a windows service.
+Windows only. Hides the application window and disables all message boxes, overriding any \fI\fR\fI--show\fR\fI\fR option. This is useful when running  as a windows service.
 .TP
 .B --idle-timeout \fI<time>\fR
 Specifies a timeout (in seconds) for receiving network traffic from remote SMTP and POP clients. The default is 1800 seconds.
@@ -156,6 +156,9 @@ Causes mail messages to be forwarded as they are received, even before they have
 .TP
 .B \-I, --interface \fI<ip-address-list>\fR
 Specifies the IP network addresses or interface names used to bind listening ports. By default listening ports for incoming SMTP, POP and administration connections will bind the 'any' address for IPv4 and for IPv6, ie. \fI0.0.0.0\fR and \fI::\fR. Multiple addresses can be specified by using the option more than once or by using a comma-separated list. Use a prefix of \fIsmtp=\fR, \fIpop=\fR or \fIadmin=\fR on addresses that should apply only to those types of listening port. Any link-local IPv6 addresses must include a zone name or scope id.  Interface names can be used instead of addresses, in which case all the addresses associated with that interface at startup will used for listening. When an interface name is decorated with a \fI-ipv4\fR or \fI-ipv6\fR suffix only their IPv4 or IPv6 addresses will be used (eg. \fIppp0-ipv4\fR).
+.TP
+.B --localedir \fI<dir>\fR
+Specifies a locale base directory where localisation message catalogues  can be found. An empty directory can be used for the built-in default.
 .TP
 .B \-l, --log
 Enables logging to the standard error stream and to the syslog. The \fI--close-stderr\fR and \fI--no-syslog\fR options can be used to disable output to standard error stream and the syslog separately. Note that \fI--as-server\fR, \fI--as-client\fR and \fI--as-proxy\fR imply \fI--log\fR, and \fI--as-server\fR and \fI--as-proxy\fR also imply \fI--close-stderr\fR.

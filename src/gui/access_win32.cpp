@@ -1,26 +1,28 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// access_win32.cpp
-//
+///
+/// \file access_win32.cpp
+///
 
 #include "gdef.h"
 #include "access.h"
+#include "gbuffer.h"
 #include "gexception.h"
+#include "gassert.h"
 #include <processthreadsapi.h>
 #include <sddl.h>
 #include <aclapi.h>
@@ -98,7 +100,7 @@ namespace
 		}
 		virtual PSID ptr() const override
 		{
-			const TOKEN_USER * user_info = reinterpret_cast<const TOKEN_USER*>(&m_buffer[0]) ;
+			const TOKEN_USER * user_info = G::buffer_cast<TOKEN_USER*>( m_buffer ) ;
 			return user_info->User.Sid ;
 		}
 		std::string str() const
@@ -114,7 +116,7 @@ namespace
 			return s ;
 		}
 		~UserSid() override = default ;
-		std::vector<char> m_buffer ;
+		G::Buffer<char> m_buffer ;
 	} ;
 	struct DirectoryWriteAccessFor : public EXPLICIT_ACCESS
 	{
@@ -182,4 +184,3 @@ static void add_user_write_permissions_to_directory( const std::string & path )
 	dacl.applyTo( path ) ;
 }
 
-/// \file access_win32.cpp

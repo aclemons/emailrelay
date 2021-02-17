@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// glinestore.cpp
-//
+///
+/// \file glinestore.cpp
+///
 
 #include "gdef.h"
 #include "glinestore.h"
@@ -30,7 +30,7 @@ namespace GNet
 	class LineStoreIterator ;
 }
 
-/// \class GNet::LineStoreIterator
+//| \class GNet::LineStoreIterator
 /// An iterator class for GNet::LineStore.
 ///
 class GNet::LineStoreIterator : public std::iterator<std::bidirectional_iterator_tag,char,ptrdiff_t>
@@ -39,26 +39,109 @@ public:
 	G_EXCEPTION( Error , "line buffer internal error" ) ;
 	LineStoreIterator() = default;
 	~LineStoreIterator() = default;
-	explicit LineStoreIterator( const LineStore & line_store , bool end = false ) : m_p(&line_store) , m_pos(end?line_store.size():0U) {}
-	LineStoreIterator( const LineStoreIterator & other ) : m_p(other.m_p) , m_pos(other.m_pos) {}
-	LineStoreIterator( LineStoreIterator && other ) noexcept : m_p(other.m_p) , m_pos(other.m_pos) {}
-	void swap( LineStoreIterator & other ) noexcept { using std::swap ; swap( m_p , other.m_p ) ; swap( m_pos , other.m_pos ) ; }
-	LineStoreIterator & operator=( const LineStoreIterator & other ) { LineStoreIterator(other).swap(*this) ; return *this ; }
-	LineStoreIterator & operator=( LineStoreIterator && other ) noexcept { LineStoreIterator(other).swap(*this) ; return *this ; }
-	LineStoreIterator & operator++() { m_pos++ ; return *this ; }
-	LineStoreIterator & operator--() { m_pos-- ; return *this ; }
-	bool operator==( const LineStoreIterator & other ) const { return m_pos == other.m_pos ; }
-	bool operator!=( const LineStoreIterator & other ) const { return m_pos != other.m_pos ; }
-	bool operator<( const LineStoreIterator & other ) const { return m_pos < other.m_pos ; }
-	bool operator<=( const LineStoreIterator & other ) const { return m_pos <= other.m_pos ; }
-	bool operator>( const LineStoreIterator & other ) const { return m_pos > other.m_pos ; }
-	bool operator>=( const LineStoreIterator & other ) const { return m_pos >= other.m_pos ; }
-	char operator*() const { G_ASSERT( m_p != nullptr ) ; if( m_p == nullptr ) throw Error() ; return m_p->at( m_pos ) ; }
-	char operator[]( std::size_t n ) const { G_ASSERT( m_p != nullptr ) ; if( m_p == nullptr ) throw Error() ; return m_p->at( m_pos + n ) ; }
-	void operator+=( ptrdiff_t n ) { if( n < 0 ) m_pos -= static_cast<std::size_t>(-n) ; else m_pos += static_cast<std::size_t>(n) ; }
-	void operator-=( ptrdiff_t n ) { if( n < 0 ) m_pos += static_cast<std::size_t>(-n) ; else m_pos -= static_cast<std::size_t>(n) ; }
-	ptrdiff_t distanceTo( const LineStoreIterator & other ) const { if( other.m_pos >= m_pos ) return static_cast<ptrdiff_t>(other.m_pos-m_pos) ; else return -static_cast<ptrdiff_t>(m_pos-other.m_pos) ; }
-	std::size_t pos() const { return ( m_p == nullptr || m_pos >= m_p->size() ) ? std::string::npos : m_pos ; }
+	explicit LineStoreIterator( const LineStore & line_store , bool end = false ) :
+		m_p(&line_store) ,
+		m_pos(end?line_store.size():0U)
+	{
+	}
+	LineStoreIterator( const LineStoreIterator & other ) :
+		m_p(other.m_p) ,
+		m_pos(other.m_pos)
+	{
+	}
+	LineStoreIterator( LineStoreIterator && other ) noexcept :
+		m_p(other.m_p) ,
+		m_pos(other.m_pos)
+	{
+	}
+	void swap( LineStoreIterator & other ) noexcept
+	{
+		using std::swap ;
+		swap( m_p , other.m_p ) ;
+		swap( m_pos , other.m_pos ) ;
+	}
+	LineStoreIterator & operator=( const LineStoreIterator & other )
+	{
+		LineStoreIterator(other).swap(*this) ; return *this ;
+	}
+	LineStoreIterator & operator=( LineStoreIterator && other ) noexcept
+	{
+		LineStoreIterator(other).swap(*this) ;
+		return *this ;
+	}
+	LineStoreIterator & operator++()
+	{
+		m_pos++ ;
+		return *this ;
+	}
+	LineStoreIterator & operator--()
+	{
+		m_pos-- ;
+		return *this ;
+	}
+	bool operator==( const LineStoreIterator & other ) const
+	{
+		return m_pos == other.m_pos ;
+	}
+	bool operator!=( const LineStoreIterator & other ) const
+	{
+		return m_pos != other.m_pos ;
+	}
+	bool operator<( const LineStoreIterator & other ) const
+	{
+		return m_pos < other.m_pos ;
+	}
+	bool operator<=( const LineStoreIterator & other ) const
+	{
+		return m_pos <= other.m_pos ;
+	}
+	bool operator>( const LineStoreIterator & other ) const
+	{
+		return m_pos > other.m_pos ;
+	}
+	bool operator>=( const LineStoreIterator & other ) const
+	{
+		return m_pos >= other.m_pos ;
+	}
+	char operator*() const
+	{
+		G_ASSERT( m_p != nullptr ) ;
+		if( m_p == nullptr )
+			throw Error() ;
+		return m_p->at( m_pos ) ;
+	}
+	char operator[]( std::size_t n ) const
+	{
+		G_ASSERT( m_p != nullptr ) ;
+		if( m_p == nullptr )
+			throw Error() ;
+		return m_p->at( m_pos + n ) ;
+	}
+	void operator+=( ptrdiff_t n )
+	{
+		if( n < 0 )
+			m_pos -= static_cast<std::size_t>(-n) ;
+		else
+			m_pos += static_cast<std::size_t>(n) ;
+	}
+	void operator-=( ptrdiff_t n )
+	{
+		if( n < 0 )
+			m_pos += static_cast<std::size_t>(-n) ;
+		else
+			m_pos -= static_cast<std::size_t>(n) ;
+	}
+	ptrdiff_t distanceTo( const LineStoreIterator & other ) const
+	{
+		if( other.m_pos >= m_pos )
+			return static_cast<ptrdiff_t>(other.m_pos-m_pos) ;
+		else
+			return -static_cast<ptrdiff_t>(m_pos-other.m_pos) ;
+	}
+	std::size_t pos() const
+	{
+		return ( m_p == nullptr || m_pos >= m_p->size() ) ? std::string::npos : m_pos ;
+	}
 
 private:
 	const LineStore * m_p{nullptr} ;
@@ -250,7 +333,8 @@ std::size_t GNet::LineStore::find( const std::string & s , std::size_t startpos 
 	return result ;
 }
 
-std::size_t GNet::LineStore::search( std::string::const_iterator begin , std::string::const_iterator end , std::size_t startpos ) const
+std::size_t GNet::LineStore::search( std::string::const_iterator begin , std::string::const_iterator end ,
+	std::size_t startpos ) const
 {
 	return std::search( LineStoreIterator(*this)+startpos , LineStoreIterator(*this,true) , begin , end ).pos() ;
 }

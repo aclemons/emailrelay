@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gmapfile.cpp
-//
+///
+/// \file gmapfile.cpp
+///
 
 #include "gdef.h"
 #include "gmapfile.h"
@@ -37,10 +37,14 @@
 G::MapFile::MapFile()
 = default;
 
-G::MapFile::MapFile( const G::Path & path )
+G::MapFile::MapFile( const G::Path & path , const std::string & kind ) :
+	m_kind(kind)
 {
-	if( path != Path() )
-		readFrom( path ) ;
+	if( !path.empty() )
+	{
+		m_path = path ;
+		readFrom( path , kind ) ;
+	}
 }
 
 G::MapFile::MapFile( std::istream & stream )
@@ -64,7 +68,6 @@ G::MapFile::MapFile( const OptionMap & map , const std::string & yes )
 		if( !(*p).second.isOff() )
 		{
 			std::string value = (*p).second.isOn() ? yes : map.value(key) ;
-			log( key , value ) ;
 			add( key , value ) ;
 		}
 		while( p != map.end() && (*p).first == key ) // since we used OptionMap::value() to get them all
@@ -72,24 +75,28 @@ G::MapFile::MapFile( const OptionMap & map , const std::string & yes )
 	}
 }
 
-void G::MapFile::readFrom( const G::Path & path )
+void G::MapFile::readFrom( const G::Path & path , const std::string & kind )
 {
-	std::ifstream stream( path.str().c_str() ) ;
+	std::ifstream stream ;
+	File::open( stream , path , File::Text() ) ;
 	if( !stream.good() )
-		throw ReadError( path.str() ) ;
+		throw readError( path , kind ) ;
 	G_LOG( "MapFile::read: reading [" << path.str() << "]" ) ;
 	readFrom( stream ) ;
+	if( stream.bad() ) // eg. EISDIR
+		throw readError( path , kind ) ;
 }
 
-void G::MapFile::readFrom( std::istream & ss )
+void G::MapFile::readFrom( std::istream & stream )
 {
 	std::string line ;
-	while( ss.good() )
+	while( stream.good() )
 	{
-		Str::readLineFrom( ss , "\n" , line ) ;
+		Str::readLineFrom( stream , "\n" , line ) ;
+		Str::trimRight( line , {"\r",1U} ) ;
 		if( line.empty() )
 			continue ;
-		if( !ss )
+		if( !stream )
 			break ;
 		if( ignore(line) )
 			continue ;
@@ -105,14 +112,12 @@ void G::MapFile::readFrom( std::istream & ss )
 			key = parts[0] ;
 
 			value = Str::tail( line , line.find(key)+key.size() , std::string() ) ;
-			Str::trimLeft( value , " =\t" ) ;
+			Str::trimLeft( value , {" =\t",3U} ) ;
 			Str::trimRight( value , Str::ws() ) ;
 
 			if( value.length() >= 2U && value.at(0U) == '"' && value.at(value.length()-1U) == '"' )
 				value = value.substr(1U,value.length()-2U) ;
 		}
-
-		log( key , value ) ;
 		add( key , value ) ;
 	}
 }
@@ -130,32 +135,26 @@ bool G::MapFile::ignore( const std::string & line ) const
 	return false ;
 }
 
-void G::MapFile::check( const G::Path & path )
+void G::MapFile::check( const G::Path & path , const std::string & kind )
 {
 	MapFile tmp ;
-	tmp.m_logging = false ;
-	tmp.readFrom( path ) ;
+	tmp.readFrom( path , kind ) ;
 }
 
-void G::MapFile::log() const
+void G::MapFile::log( const std::string & prefix_in ) const
 {
+	std::string prefix = prefix_in.empty() ? std::string() : ( prefix_in + ": " ) ;
 	for( const auto & key : m_keys )
-		log( (*(m_map.find(key))).first , (*(m_map.find(key))).second ) ;
-}
-
-void G::MapFile::log( const std::string & key , const std::string & value ) const
-{
-	log( m_logging , key , value ) ;
-}
-
-void G::MapFile::log( bool logging , const std::string & key , const std::string & value )
-{
-	if( logging )
-		G_LOG( "MapFile::item: " << key << "=[" <<
+	{
+		auto p = m_map.find( key ) ;
+		if( p == m_map.end() ) continue ;
+		std::string value = (*p).second ;
+		G_LOG( "MapFile::item: " << prefix << key << "=[" <<
 			( Str::ifind(key,"password") == std::string::npos ?
 				Str::printable(value) :
 				std::string("<not-logged>")
-		) << "]" ) ;
+			) << "]" ) ;
+	}
 }
 
 void G::MapFile::writeItem( std::ostream & stream , const std::string & key ) const
@@ -166,7 +165,6 @@ void G::MapFile::writeItem( std::ostream & stream , const std::string & key ) co
 
 void G::MapFile::writeItem( std::ostream & stream , const std::string & key , const std::string & value )
 {
-	log( true , key , value ) ;
 	const char * qq = value.find(' ') == std::string::npos ? "" : "\"" ;
 	stream << key << "=" << qq << value << qq << "\n" ;
 }
@@ -176,25 +174,27 @@ std::string G::MapFile::quote( const std::string & s )
 	return s.find_first_of(" \t") == std::string::npos ? s : ("\""+s+"\"") ;
 }
 
-void G::MapFile::editInto( const G::Path & path , bool make_backup , bool allow_read_error , bool allow_write_error ) const
+void G::MapFile::editInto( const G::Path & path , bool make_backup ,
+	bool allow_read_error , bool allow_write_error ) const
 {
-	using List = std::list<std::string> ;
-	List lines = read( path , allow_read_error ) ;
+	List lines = read( path , m_kind , allow_read_error ) ;
 	commentOut( lines ) ;
 	replace( lines ) ;
 	if( make_backup ) backup( path ) ;
 	save( path , lines , allow_write_error ) ;
 }
 
-G::MapFile::List G::MapFile::read( const G::Path & path , bool allow_read_error ) const
+G::MapFile::List G::MapFile::read( const G::Path & path , const std::string & kind , bool allow_read_error ) const
 {
 	List line_list ;
-	std::ifstream file_in( path.str().c_str() ) ;
+	std::ifstream file_in ;
+	File::open( file_in , path , File::Text() ) ;
 	if( !file_in.good() && !allow_read_error )
-		throw ReadError( path.str() ) ;
+		throw readError( path , kind ) ;
 	while( file_in.good() )
 	{
 		std::string line = Str::readLineFrom( file_in , "\n" ) ;
+		Str::trimRight( line , {"\r",1U} ) ;
 		if( !file_in ) break ;
 		line_list.push_back( line ) ;
 	}
@@ -207,7 +207,7 @@ void G::MapFile::commentOut( List & line_list ) const
 	{
 		if( line.empty() || line.at(0U) == '#' )
 			continue ;
-		line.insert( line.cbegin() , '#' ) ;
+		line.insert( 0U , 1U , '#' ) ;
 	}
 }
 
@@ -220,7 +220,7 @@ void G::MapFile::replace( List & line_list ) const
 		{
 			if( line.empty() ) continue ;
 			StringArray parts ;
-			Str::splitIntoTokens( line , parts , Str::ws()+"=#" ) ;
+			Str::splitIntoTokens( line , parts , " \r\n\t=#" ) ;
 			if( parts.empty() ) continue ;
 			if( parts.at(0U) == map_item.first )
 			{
@@ -246,16 +246,17 @@ void G::MapFile::backup( const G::Path & path )
 	std::string timestamp = Date(now).str(Date::Format::yyyy_mm_dd) + Time(now).hhmmss() ;
 	Path backup( path.dirname() , path.basename() + "." + timestamp ) ;
 	Process::Umask umask( Process::Umask::Mode::Tightest ) ;
-	File::copy( path , backup , File::NoThrow() ) ;
+	File::copy( path , backup , std::nothrow ) ;
 }
 
 void G::MapFile::save( const G::Path & path , List & line_list , bool allow_write_error )
 {
-	std::ofstream file_out( path.str().c_str() , std::ios_base::out | std::ios_base::trunc ) ;
+	std::ofstream file_out ;
+	File::open( file_out , path , File::Text() ) ;
 	std::copy( line_list.begin() , line_list.end() , std::ostream_iterator<std::string>(file_out,"\n") ) ;
 	file_out.close() ;
 	if( file_out.fail() && !allow_write_error )
-		throw WriteError( path.str() ) ;
+		throw writeError( path ) ;
 }
 
 bool G::MapFile::booleanValue( const std::string & key , bool default_ ) const
@@ -290,7 +291,7 @@ std::string G::MapFile::value( const std::string & key , const char * default_ )
 std::string G::MapFile::mandatoryValue( const std::string & key ) const
 {
 	if( m_map.find(key) == m_map.end() )
-		throw Missing( key ) ;
+		throw missingValueError( m_path , m_kind , key ) ;
 	return value( key ) ;
 }
 
@@ -401,16 +402,20 @@ bool G::MapFile::expand_( std::string & value ) const
 	return changed ;
 }
 
-void G::MapFile::add( const std::string & key , const std::string & value )
+void G::MapFile::add( const std::string & key , const std::string & value , bool clear )
 {
 	if( m_map.find(key) == m_map.end() )
 	{
 		m_keys.push_back( key ) ;
 		m_map[key] = value ;
 	}
+	else if( clear )
+	{
+		m_map[key] = value ;
+	}
 	else
 	{
-		m_map[key].append( std::string(1U,',') ) ;
+		m_map[key].append( 1U , ',' ) ;
 		m_map[key].append( value ) ;
 	}
 }
@@ -430,4 +435,32 @@ const G::StringArray & G::MapFile::keys() const
 	return m_keys ;
 }
 
-/// \file gmapfile.cpp
+std::string G::MapFile::ekind( const std::string & kind_in )
+{
+	return kind_in.empty() ? std::string("map") : kind_in ;
+}
+
+std::string G::MapFile::epath( const G::Path & path_in )
+{
+	return path_in.empty() ? std::string() : (" ["+path_in.str()+"]") ;
+}
+
+G::MapFile::Error G::MapFile::readError( const Path & path , const std::string & kind_in )
+{
+	std::string description = "cannot read " + ekind(kind_in) + " file" + epath(path) ;
+	return Error( description ) ;
+}
+
+G::MapFile::Error G::MapFile::writeError( const Path & path , const std::string & kind_in )
+{
+	std::string description = "cannot create " + ekind(kind_in) + " file" + epath(path) ;
+	return Error( description ) ;
+}
+
+G::MapFile::Error G::MapFile::missingValueError( const Path & path , const std::string & kind ,
+	const std::string & key )
+{
+	std::string description = "no item [" + key + "] in " + ekind(kind) + " file" + epath(path) ;
+	return Error( description ) ;
+}
+

@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gexceptionsink.h
 ///
 
-#ifndef G_NET_EXCEPTION_SINK__H
-#define G_NET_EXCEPTION_SINK__H
+#ifndef G_NET_EXCEPTION_SINK_H
+#define G_NET_EXCEPTION_SINK_H
 
 #include "gdef.h"
 #include "gexceptionhandler.h"
@@ -33,7 +33,7 @@ namespace GNet
 	class ExceptionSinkUnbound ;
 }
 
-/// \class GNet::ExceptionSink
+//| \class GNet::ExceptionSink
 /// A tuple containing an ExceptionHandler interface pointer and
 /// a bound 'exception source' pointer.
 ///
@@ -143,7 +143,7 @@ private:
 	ExceptionSource * m_esrc{nullptr} ;
 } ;
 
-/// \class GNet::ExceptionSinkUnbound
+//| \class GNet::ExceptionSinkUnbound
 /// A potential ExceptionSink that is realised by bind()ing an
 /// exception source pointer. This is used in factory functions
 /// such as GNet::Server::newPeer() where the container that

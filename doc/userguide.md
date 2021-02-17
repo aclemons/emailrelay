@@ -98,7 +98,7 @@ To run E-MailRelay as a POP server without SMTP use `--pop` and `--no-smtp`:
 The `emailrelay-submit` utility can be used to put messages straight into the
 spool directory so that the POP clients can fetch them.
 
-By default E-MailRelay will always reject connections from remote machines. To
+By default E-MailRelay will always reject connections from remote networks. To
 allow connections from anywhere use the `--remote-clients` option, but please
 check your firewall settings to make sure this cannot be exploited by spammers.
 
@@ -181,10 +181,10 @@ messages from the E-MailRelay spool directory directly.
 
 To allow POP access to spooled messages use a command-line something like this:
 
-        emailrelay --as-server --pop --pop-auth=/etc/emailrelay.auth
+        emailrelay --as-server --pop --pop-auth=/etc/pop.auth
 
-You will need to create the authentication secrets file (`emailrelay.auth` in
-this example) containing usernames and passwords. A simple example would look
+You will need to create the authentication secrets file (`pop.auth` in this
+example) containing usernames and passwords. A simple example would look
 like this:
 
         server plain user1 password1
@@ -198,7 +198,7 @@ copy of the e-mail messages, stored in its own sub-directory of the main spool
 directory. The name of the sub-directory is simply the name that the client uses
 to authenticate with the E-MailRelay server. You just need to create the
 sub-directory for each client and then specify `emailrelay-filter-copy`
-as the `--filter` program.
+as the E-MailRelay `--filter` program.
 
 Refer to the documentation of the various `--pop` command-line options for
 more detail: `--pop`, `--pop-port`, `--pop-auth`, `--pop-no-delete` and
@@ -230,12 +230,12 @@ envelope files in the spool directory are given a `.bad` suffix. The reason for
 the failure will be recorded in the envelope file itself.
 
 You should check for `.bad` envelope files in the E-MailRelay spool directory
-from time to time.
+from time to time. If you want them to be retried next time then just remove
+the `.bad` filename suffix.
 
-If you want failed e-mails to be retried a few times you can run the
-`emailrelay-resubmit` script periodically. This script simply removes the `.bad`
-suffix from files in the spool directory, as long as they have not been retried
-too many times already.
+You can run the `emailrelay-resubmit` script periodically to automate this; it
+removes the `.bad` suffix from files in the spool directory as long as they
+have not been retried too many times already.
 
 Usage patterns
 --------------
@@ -369,4 +369,4 @@ to `fail2ban`.
 [TLS]: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
 _____________________________________
-Copyright (C) 2001-2020 Graeme Walker
+Copyright (C) 2001-2021 Graeme Walker

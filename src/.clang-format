@@ -1,0 +1,44 @@
+﻿#
+# clang-format
+#
+# Configuration for clang-format v10.
+#
+---
+BasedOnStyle: WebKit
+AlignEscapedNewlines: DontAlign
+#AlignOperands: DontAlign
+AlignOperands: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+AllowAllArgumentsOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortLambdasOnASingleLine: All
+AlwaysBreakTemplateDeclarations: true
+AlwaysBreakBeforeMultilineStrings: true
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBraces: Allman
+BreakBeforeTernaryOperators: false
+BreakBeforeBinaryOperators: None
+BreakConstructorInitializers: AfterColon
+BreakInheritanceList: AfterColon
+ColumnLimit: 120
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+NamespaceIndentation: All
+PointerAlignment: Middle
+#SortIncludes: false
+#SpaceAroundPointerQualifiers: Both
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: Never
+SpaceBeforeRangeBasedForLoopColon: true
+SpacesInConditionalStatement: true
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesInParentheses: true
+TabWidth: 4
+UseTab: ForContinuationAndIndentation
+#WhitespaceSensitiveMacros: ['G_DEBUG', 'G_WARNING', 'G_LOG']
+
+...

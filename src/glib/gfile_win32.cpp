@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gfile_win32.cpp
-//
+///
+/// \file gfile_win32.cpp
+///
 
 #include "gdef.h"
 #include "gfile.h"
@@ -62,35 +62,19 @@ namespace G
 	}
 }
 
-int G::File::open( const Path & path , std::ios_base::openmode mode )
-{
-	return open( path.cstr() , mode ) ;
-}
-
-int G::File::open( const char * path , std::ios_base::openmode mode ) noexcept
-{
-	int flags = 0 ;
-	if( ( mode & std::ios_base::out ) || ( mode & std::ios_base::app ) ) flags = (_O_WRONLY|_O_CREAT|_O_BINARY) ;
-	if( mode & std::ios_base::in ) flags = (_O_RDONLY|_O_BINARY) ;
-	if( mode & std::ios_base::trunc ) flags |= _O_TRUNC ;
-	if( mode & std::ios_base::app ) flags |= _O_APPEND ;
-	int fd = FileImp::open( path , flags , _S_IREAD|_S_IWRITE ) ;
-	if( fd >= 0 && ( mode & std::ios_base::ate ) )
-	{
-		auto rc = _lseek( fd , 0 , SEEK_END ) ;
-		if( rc < 0 ) _close(fd) , fd=-1 ;
-	}
-	return fd ;
-}
-
 void G::File::open( std::ofstream & ofstream , const Path & path )
 {
 	FileImp::open( ofstream , path.cstr() , std::ios_base::out | std::ios_base::binary ) ;
 }
 
-void G::File::open( std::ofstream & ofstream , const Path & path , std::ios_base::openmode mode )
+void G::File::open( std::ofstream & ofstream , const Path & path , Text )
 {
-	FileImp::open( ofstream , path.cstr() , mode | std::ios_base::out | std::ios_base::binary ) ;
+	FileImp::open( ofstream , path.cstr() , std::ios_base::out ) ;
+}
+
+void G::File::open( std::ofstream & ofstream , const Path & path , Append )
+{
+	FileImp::open( ofstream , path.cstr() , std::ios_base::app | std::ios_base::binary ) ;
 }
 
 void G::File::open( std::ifstream & ifstream , const Path & path )
@@ -98,27 +82,48 @@ void G::File::open( std::ifstream & ifstream , const Path & path )
 	FileImp::open( ifstream , path.cstr() , std::ios_base::in | std::ios_base::binary ) ;
 }
 
-void G::File::open( std::ifstream & ifstream , const Path & path , std::ios_base::openmode mode )
+void G::File::open( std::ifstream & ifstream , const Path & path , Text )
 {
-	FileImp::open( ifstream , path.cstr() , mode | std::ios_base::in | std::ios_base::binary ) ;
+	FileImp::open( ifstream , path.cstr() , std::ios_base::in ) ;
 }
 
-std::filebuf * G::File::open( std::filebuf & fb , const Path & path , std::ios_base::openmode mode )
+std::filebuf * G::File::open( std::filebuf & fb , const Path & path , InOut inout )
 {
-	FileImp::open( fb , path.cstr() , mode | std::ios_base::binary ) ;
+	inout == InOut::In ?
+		FileImp::open( fb , path.cstr() , std::ios_base::in | std::ios_base::binary ) :
+		FileImp::open( fb , path.cstr() , std::ios_base::out | std::ios_base::binary ) ;
 	return &fb ;
+}
+
+int G::File::open( const char * path , InOutAppend mode ) noexcept
+{
+	int pmode = _S_IREAD | _S_IWRITE ;
+	if( mode == InOutAppend::In )
+		return FileImp::open( path , _O_RDONLY|_O_BINARY , pmode ) ;
+	else if( mode == InOutAppend::Out )
+		return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_TRUNC|_O_BINARY , pmode ) ;
+	else
+		return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_APPEND|_O_BINARY , pmode ) ;
+}
+
+void G::File::create( const Path & path )
+{
+	int fd = FileImp::open( path.cstr() , _O_RDONLY|_O_CREAT , _S_IREAD|_S_IWRITE ) ;
+	if( fd < 0 )
+		throw CannotCreate( path.str() ) ;
+	_close( fd ) ;
 }
 
 ssize_t G::File::read( int fd , char * p , std::size_t n ) noexcept
 {
-	std::size_t limit = std::numeric_limits<unsigned int>::max() ;
+	constexpr std::size_t limit = std::numeric_limits<unsigned int>::max() ;
 	unsigned int un = static_cast<unsigned int>(std::min(limit,n)) ;
 	return _read( fd , p , un ) ;
 }
 
 ssize_t G::File::write( int fd , const char * p , std::size_t n ) noexcept
 {
-	std::size_t limit = std::numeric_limits<unsigned int>::max() ;
+	constexpr std::size_t limit = std::numeric_limits<unsigned int>::max() ;
 	unsigned int un = static_cast<unsigned int>(std::min(limit,n)) ;
 	return _write( fd , p , un ) ;
 }
@@ -128,101 +133,71 @@ void G::File::close( int fd ) noexcept
 	_close( fd ) ;
 }
 
-bool G::File::mkdir( const Path & dir , const NoThrow & )
+int G::File::mkdirImp( const Path & dir ) noexcept
 {
-	return 0 == ::_mkdir( dir.str().c_str() ) ;
-}
-
-bool G::File::executable( const Path & path )
-{
-	return exists( path , NoThrow() ) ;
-}
-
-bool G::File::empty( const Path & path )
-{
-	WIN32_FIND_DATAA info ;
-	HANDLE h = ::FindFirstFileA( path.str().c_str() , &info ) ;
-	if( h != INVALID_HANDLE_VALUE ) ::FindClose( h ) ;
-	return h != INVALID_HANDLE_VALUE && info.nFileSizeHigh == 0 && info.nFileSizeLow == 0 ;
-}
-
-std::string G::File::sizeString( const Path & path )
-{
-	WIN32_FIND_DATAA info ;
-	HANDLE h = ::FindFirstFileA( path.str().c_str() , &info ) ;
-	if( h == INVALID_HANDLE_VALUE )
-		return std::string() ;
-
-	const DWORD & hi = info.nFileSizeHigh ;
-	const DWORD & lo = info.nFileSizeLow ;
-
-	::FindClose( h ) ;
-
-	return sizeString( hi , lo ) ;
-}
-
-std::string G::File::sizeString( g_uint32_t hi , g_uint32_t lo )
-{
-	__int64 n = hi ;
-	n <<= 32U ;
-	n |= lo ;
-	if( n < 0 )
-		throw SizeOverflow() ;
-
-	if( n == 0 )
-		return std::string("0") ;
-
-	std::string s ;
-	while( n != 0 )
+	int rc = _mkdir( dir.cstr() ) ;
+	if( rc != 0 )
 	{
-		int i = static_cast<int>( n % 10 ) ;
-		char c = static_cast<char>( '0' + i ) ;
-		s.insert( 0U , 1U , c ) ;
-		n /= 10 ;
+		rc = G::Process::errno_() ;
+		if( rc == 0 ) rc = EINVAL ;
+	}
+	return rc ;
+}
+
+G::File::Stat G::File::statImp( const char * path , bool ) noexcept
+{
+	Stat s ;
+	struct _stat64 statbuf {} ;
+	if( 0 == _stat64( path , &statbuf ) )
+	{
+		s.error = 0 ;
+		s.enoent = false ;
+		s.eaccess = false ;
+		s.is_dir = (statbuf.st_mode & S_IFDIR) ;
+		s.is_link = !s.is_dir ; // good enough for now
+		s.is_executable = (statbuf.st_mode & _S_IEXEC) ; // based on filename extension
+		s.is_empty = statbuf.st_size == 0 ;
+		s.mtime_s = static_cast<std::time_t>(statbuf.st_mtime) ;
+		s.mtime_us = 0 ;
+		s.mode = static_cast<unsigned long>( statbuf.st_mode & 07777 ) ;
+		s.size = static_cast<unsigned long long>( statbuf.st_size ) ;
+		s.blocks = static_cast<unsigned long long>( statbuf.st_size >> 24 ) ;
+	}
+	else
+	{
+		int error = Process::errno_() ;
+		s.error = error ? error : EINVAL ;
+		s.enoent = true ; // could do better
+		s.eaccess = false ;
 	}
 	return s ;
 }
 
-bool G::File::exists( const char * path , bool & enoent , bool & eaccess )
+bool G::File::existsImp( const char * path , bool & enoent , bool & eaccess ) noexcept
 {
-	struct _stat statbuf ;
-	bool ok = 0 == ::_stat( path , &statbuf ) ;
-	enoent = !ok ; // could do better
-	eaccess = false ;
-	return ok ;
-}
-
-bool G::File::isLink( const Path & path )
-{
-	// this is weak, but good enough
-	struct _stat statbuf ;
-	return 0 == ::_stat( path.str().c_str() , &statbuf ) && !(statbuf.st_mode & S_IFDIR) ;
-}
-
-bool G::File::isDirectory( const Path & path )
-{
-	struct _stat statbuf ;
-	return 0 == ::_stat( path.str().c_str() , &statbuf ) && (statbuf.st_mode & S_IFDIR) ;
-}
-
-G::SystemTime G::File::time( const Path & path )
-{
-	struct _stat statbuf ;
-	if( 0 != ::_stat( path.str().c_str() , &statbuf ) )
+	Stat s = statImp( path ) ;
+	if( s.error )
 	{
-		int e = G::Process::errno_() ;
-		throw TimeError( path.str() , G::Process::strerror(e) ) ;
+		enoent = s.enoent ;
+		eaccess = s.eaccess ;
 	}
-	return SystemTime(statbuf.st_mtime) ;
-}
-
-G::SystemTime G::File::time( const Path & path , const NoThrow & )
-{
-	struct _stat statbuf ;
-	return SystemTime( ::_stat( path.str().c_str() , &statbuf ) == 0 ? statbuf.st_mtime : 0 ) ;
+	return s.error == 0 ;
 }
 
 bool G::File::chmodx( const Path & , bool )
+{
+	return true ; // no-op
+}
+
+void G::File::chmod( const Path & , const std::string & )
+{
+}
+
+void G::File::chgrp( const Path & , const std::string & )
+{
+}
+
+bool G::File::chgrp( const Path & , const std::string & , std::nothrow_t )
 {
 	return true ; // no-op
 }
@@ -237,9 +212,8 @@ void G::File::link( const Path & , const Path & new_link )
 	throw CannotLink( new_link.str() , "not supported" ) ;
 }
 
-bool G::File::link( const Path & , const Path & , const NoThrow & )
+bool G::File::link( const Path & , const Path & , std::nothrow_t )
 {
 	return false ; // not supported
 }
 
-/// \file gfile_win32.cpp

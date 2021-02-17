@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gmd5.cpp
-//
+///
+/// \file gmd5.cpp
+///
 
 #include "gdef.h"
 #include "gmd5.h"
@@ -40,7 +40,7 @@ namespace G
 	}
 }
 
-/// \class G::Md5Imp::digest
+//| \class G::Md5Imp::digest
 /// A class that calculates an md5 digest from one or more 64-byte blocks of
 /// data using the algorithm described by RFC-1321.
 ///
@@ -98,7 +98,7 @@ private:
 	static big_t I( big_t x , big_t y , big_t z ) ;
 } ;
 
-/// \class G::Md5Imp::format
+//| \class G::Md5Imp::format
 /// A thin veneer over G::HashState.
 ///
 class G::Md5Imp::format
@@ -120,7 +120,7 @@ public:
 	format() = delete ;
 } ;
 
-/// \class G::Md5Imp::block
+//| \class G::Md5Imp::block
 /// A helper class used by the Md5Imp::digest implementation to represent a
 /// 64-character data block.
 ///
@@ -280,7 +280,8 @@ void G::Md5Imp::digest::round4( const block & m )
 	r(m,I,P::ABCD, 4, 6,61); r(m,I,P::DABC,11,10,62); r(m,I,P::CDAB, 2,15,63); r(m,I,P::BCDA, 9,21,64);
 }
 
-void G::Md5Imp::digest::operator()( const block & m , aux_fn_t aux , Permutation p , small_t k , small_t s , small_t i )
+void G::Md5Imp::digest::operator()( const block & m , aux_fn_t aux , Permutation p ,
+	small_t k , small_t s , small_t i )
 {
 	if( p == P::ABCD ) a = op( m , aux , a , b , c , d , k , s , i ) ;
 	if( p == P::DABC ) d = op( m , aux , d , a , b , c , k , s , i ) ;
@@ -423,9 +424,9 @@ G::Md5Imp::digest_state G::Md5Imp::format::decode( const std::string & str , sma
 
 // ===
 
-G::Md5Imp::block::block( const std::string & s , small_t block , big_t end_value ) :
+G::Md5Imp::block::block( const std::string & s , small_t block_in , big_t end_value ) :
 	m_s(s) ,
-	m_block(block) ,
+	m_block(block_in) ,
 	m_end_value(end_value)
 {
 }
@@ -490,13 +491,11 @@ G::Md5Imp::small_t G::Md5Imp::block::x( small_t i ) const
 // ==
 
 G::Md5::Md5() :
-	m_n(0) ,
 	m_d(Md5Imp::digest().state())
 {
 }
 
 G::Md5::Md5( const std::string & str_state ) :
-	m_n(0) ,
 	m_d(Md5Imp::format::decode(str_state,m_n))
 {
 	G_ASSERT( str_state.size() == (valuesize()+4U) ) ;

@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gfutureevent.h
 ///
 
-#ifndef G_NET_FUTURE_EVENT__H
-#define G_NET_FUTURE_EVENT__H
+#ifndef G_NET_FUTURE_EVENT_H
+#define G_NET_FUTURE_EVENT_H
 
 #include "gdef.h"
 #include "gexceptionsink.h"
@@ -32,10 +32,13 @@ namespace GNet
 	class FutureEventImp ;
 }
 
-/// \class GNet::FutureEvent
-/// An object that hooks into the event loop and calls back to the client
-/// code. The thread-safe trigger function send() is typically called from
-/// a "future/promise" worker thread just before it finishes.
+//| \class GNet::FutureEvent
+/// A FutureEvent object can be used to send a one-shot event via the
+/// event loop to the relevant event handler. Used in the implementation
+/// of 'future' classes.
+///
+/// The thread-safe trigger function send() is typically called from
+/// a 'future' worker thread just before it finishes.
 ///
 /// Eg:
 /// \code
@@ -59,6 +62,11 @@ namespace GNet
 ///   FutureEvent::send( h ) ; // raise 'work complete' event
 /// }
 /// \endcode
+///
+/// The typical implementation uses a socketpair, with the read socket's
+/// file descriptor registered with the event loop in the normal way
+/// and the socket event handler delegating to the future-event
+/// handler.
 ///
 class GNet::FutureEvent
 {
@@ -98,7 +106,7 @@ private:
 	std::unique_ptr<FutureEventImp> m_imp ;
 } ;
 
-/// \class GNet::FutureEventHandler
+//| \class GNet::FutureEventHandler
 /// A callback interface for GNet::FutureEvent.
 ///
 class GNet::FutureEventHandler

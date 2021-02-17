@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gsmtpserverprotocol.h
 ///
 
-#ifndef G_SMTP_SERVER_PROTOCOL__H
-#define G_SMTP_SERVER_PROTOCOL__H
+#ifndef G_SMTP_SERVER_PROTOCOL_H
+#define G_SMTP_SERVER_PROTOCOL_H
 
 #include "gdef.h"
 #include "gprotocolmessage.h"
@@ -41,7 +41,7 @@ namespace GSmtp
 	class ServerProtocolText ;
 }
 
-/// \class GSmtp::ServerProtocol
+//| \class GSmtp::ServerProtocol
 /// Implements the SMTP server-side protocol.
 ///
 /// Uses the ProtocolMessage class as its down-stream interface,
@@ -84,7 +84,7 @@ public:
 			///< Returns a hello response.
 
 		virtual std::string received( const std::string & smtp_peer_name , bool auth , bool secure ,
-			const std::string & cipher ) const = 0 ;
+			const std::string & protocol , const std::string & cipher ) const = 0 ;
 				///< Returns a complete 'Received' line.
 
 		virtual ~Text() = default ;
@@ -177,7 +177,7 @@ public:
 		///< currently inDataState(). Returns true. Throws
 		///< ProtocolDone at the end of the protocol.
 
-	void secure( const std::string & certificate , const std::string & cipher ) ;
+	void secure( const std::string & certificate , const std::string & protocol , const std::string & cipher ) ;
 		///< To be called when the transport protocol goes
 		///< into secure mode.
 
@@ -344,6 +344,7 @@ private:
 	GNet::Address m_peer_address ;
 	bool m_secure ;
 	std::string m_certificate ;
+	std::string m_protocol ;
 	std::string m_cipher ;
 	unsigned int m_bad_client_count ;
 	unsigned int m_bad_client_limit ;
@@ -352,7 +353,7 @@ private:
 	std::string m_buffer ;
 } ;
 
-/// \class GSmtp::ServerProtocolText
+//| \class GSmtp::ServerProtocolText
 /// A default implementation for the
 /// ServerProtocol::Text interface.
 ///
@@ -365,7 +366,8 @@ public:
 
 	static std::string receivedLine( const std::string & smtp_peer_name_from_helo ,
 		const std::string & peer_address , const std::string & thishost ,
-		bool authenticated , bool secure , const std::string & secure_cipher ) ;
+		bool authenticated , bool secure , const std::string & secure_protocol ,
+		const std::string & secure_cipher ) ;
 			///< Returns a standard "Received:" line.
 
 public:
@@ -378,7 +380,7 @@ public:
 private: // overrides
 	std::string greeting() const override ; // Override from GSmtp::ServerProtocol::Text.
 	std::string hello( const std::string & smtp_peer_name_from_helo ) const override ; // Override from GSmtp::ServerProtocol::Text.
-	std::string received( const std::string & smtp_peer_name_from_helo , bool authenticated , bool secure , const std::string & cipher ) const override ; // Override from GSmtp::ServerProtocol::Text.
+	std::string received( const std::string & , bool , bool , const std::string & , const std::string & ) const override ; // Override from GSmtp::ServerProtocol::Text.
 
 private:
 	std::string m_code_ident ;

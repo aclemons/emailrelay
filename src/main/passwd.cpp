@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// passwd.cpp
-//
+///
+/// \file passwd.cpp
+///
 // A utility which hashes a password so that it can be pasted
 // into the emailrelay secrets file(s) and used for CRAM-xxx
 // authentication.
@@ -109,8 +109,11 @@ int main( int argc , char * argv [] )
 		}
 		if( opt.contains("help") )
 		{
-			opt.options().showUsage( std::cout , arg.prefix() , std::string() , G::Options::introducerDefault() ,
-				opt.contains("verbose")?G::Options::Level(99):G::Options::Level(1) ) ;
+			G::OptionsLayout layout ;
+			if( !opt.contains("verbose") )
+				layout.set_level( 1U ) ;
+
+			opt.options().showUsage( layout , std::cout , arg.prefix() ) ;
 
 			std::cout
 				<< "\n"
@@ -154,7 +157,7 @@ int main( int argc , char * argv [] )
 		if( !opt.contains("password") )
 		{
 			password = G::Str::readLineFrom( std::cin ) ;
-			G::Str::trim( password , " \t\n\r" ) ;
+			G::Str::trim( password , {" \t\n\r",4U} ) ;
 		}
 		if( password.empty() )
 		{
@@ -217,4 +220,3 @@ std::string as_dotted( const std::string & masked_key )
 	return ss.str() ;
 }
 
-/// \file passwd.cpp

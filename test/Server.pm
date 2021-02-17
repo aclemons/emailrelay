@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-#
+# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-#
+# 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
+# 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
@@ -23,7 +23,7 @@
 # Synopsis:
 #
 #	$Server::bin_dir = "." ;
-#	my $server = new Server( 10025 , 10101 , 10026 , "/var/tmp" , "/tmp" ) ;
+#	my $server = new Server( 10025 , 10101 , 10026 , "/var/tmp" ) ;
 #	$server->run( { AsServer => 1 , ForwardTo => "localhost:10020" ... } ) ;
 #	open $server->logFile() ... ;
 #	$server->kill() ;
@@ -33,102 +33,105 @@
 
 use strict ;
 use FileHandle ;
+use File::Basename ;
 use System ;
 
 package Server ;
 
 our @pid_list = () ;
 our $bin_dir = ".." ;
-our $localhost = "127.0.0.1" ;
 our $tls_config = "x" ;
 our $with_valgrind = undef ;
 my $exe_name = "emailrelay" ;
 
 sub new
 {
-	my ( $classname , $smtp_port , $pop_port , $admin_port , $spool_dir , $tmp_dir , $tls_certificate , $tls_verify ) = @_ ;
+	my ( $classname , $smtp_port , $pop_port , $admin_port , $spool_dir , $tls_certificate , $tls_verify ) = @_ ;
 
-	$smtp_port = defined($smtp_port) ? $smtp_port : System::nextPort() ;
-	$pop_port = defined($pop_port) ? $pop_port : System::nextPort() ;
-	$admin_port = defined($admin_port) ? $admin_port : System::nextPort() ;
+	my $exe = System::exe( $bin_dir , $exe_name ) ;
+	if( !-x $exe ) { die "invalid server executable [$exe]" }
+
+	$spool_dir ||= System::createSpoolDir() ;
+	$smtp_port ||= System::nextPort() ;
+	$pop_port ||= System::nextPort() ;
+	$admin_port ||= System::nextPort() ;
+
 	my $scanner_port = System::nextPort() ;
 	my $verifier_port = System::nextPort() ;
+	my $stdout = System::tempfile( "stdout" ) ;
+	my $stderr = System::tempfile( "stderr" ) ;
+	my $piddir = System::createPidDir( System::tempfile("piddir") ) ;
+	my $pidfile = "$piddir/pid" ;
 
-	my %me = (
-		m_exe => System::exe( $bin_dir , $exe_name ) ,
+	my $filter = System::tempfile("filter") ;
+	$filter .= ".js" if System::windows() ;
+
+	my $client_filter = System::tempfile("client-filter") ;
+	$client_filter .= ".js" if System::windows() ;
+
+	return bless {
+		m_exe => $exe ,
 		m_smtp_port => $smtp_port ,
 		m_pop_port => $pop_port ,
 		m_admin_port => $admin_port ,
 		m_rc => undef ,
-		m_stdout => System::tempfile("stdout",$tmp_dir) ,
-		m_stderr => System::tempfile("stderr",$tmp_dir) ,
-		m_log_file => undef ,
-		m_pidfile => System::tempfile("pidfile",$tmp_dir) ,
+		m_stdout => $stdout ,
+		m_stderr => $stderr ,
+		m_log_file => (System::unix()?undef:$stderr) ,
+		m_piddir => $piddir ,
+		m_pidfile => $pidfile ,
 		m_pid => undef ,
-		m_pop_secrets => System::tempfile("pop.auth",$tmp_dir) ,
-		m_client_secrets => System::tempfile("client.auth",$tmp_dir) ,
-		m_server_secrets => System::tempfile("server.auth",$tmp_dir) ,
+		m_pop_secrets => System::tempfile("pop.auth") ,
+		m_client_secrets => System::tempfile("client.auth") ,
+		m_server_secrets => System::tempfile("server.auth") ,
 		m_tls_certificate => $tls_certificate ,
 		m_tls_verify => $tls_verify ,
 		m_tls_config => $tls_config ,
 		m_poll_timeout => 1 ,
 		m_dst => "dummy3450930958349:25" ,
-		m_spool_dir => (defined($spool_dir)?$spool_dir:System::createSpoolDir(undef,$tmp_dir)) ,
+		m_spool_dir => $spool_dir ,
 		m_user => "nobody" ,
 		m_full_command => undef ,
-		m_filter => System::tempfile("filter",$tmp_dir) . ( System::unix() ? "" : ".js" ) ,
-		m_client_filter => System::tempfile("client-filter",$tmp_dir) . ( System::unix() ? "" : ".js" ) ,
+		m_filter => $filter ,
+		m_client_filter => $client_filter ,
 		m_scanner_port => $scanner_port ,
 		m_verifier_port => $verifier_port ,
 		m_max_size => 1000 ,
-	) ;
-	$me{m_log_file} = $me{m_stderr} if !System::unix() ;
-	my $this = bless \%me , $classname ;
-	$this->_check() ;
-	return $this ;
+	} , $classname ;
 }
 
-sub exe { return shift->{'m_exe'} }
-sub set_exe { $_[0]->{'m_exe'} = $_[1] }
-sub smtpPort { return shift->{'m_smtp_port'} }
-sub adminPort { return shift->{'m_admin_port'} }
-sub scannerPort { return shift->{'m_scanner_port'} }
-sub scannerAddress { return "net:$localhost:" . shift->{'m_scanner_port'} }
-sub verifierPort { return shift->{'m_verifier_port'} }
-sub verifierAddress { return "net:$localhost:" . shift->{'m_verifier_port'} }
-sub popPort { return shift->{'m_pop_port'} }
-sub popSecrets { return shift->{'m_pop_secrets'} }
-sub clientSecrets { return shift->{'m_client_secrets'} }
-sub serverSecrets { return shift->{'m_server_secrets'} }
-sub tlsCertificate { return shift->{'m_tls_certificate'} }
-sub tlsVerify { return shift->{'m_tls_verify'} }
-sub tlsConfig { return shift->{'m_tls_config'} }
-sub pollTimeout { return shift->{'m_poll_timeout'} }
-sub set_pollTimeout { $_[0]->{'m_poll_timeout'} = $_[1] }
-sub stdout { return shift->{'m_stdout'} }
-sub stderr { return shift->{'m_stderr'} }
-sub pidFile { return shift->{'m_pidfile'} }
-sub pid { return shift->{'m_pid'} }
-sub dst { return shift->{'m_dst'} }
-sub set_dst { $_[0]->{'m_dst'} = $_[1] }
-sub spoolDir { return shift->{'m_spool_dir'} }
-sub set_spoolDir { $_[0]->{'m_spool_dir'} = $_[1] }
-sub user { return shift->{'m_user'} }
-sub command { return shift->{'m_full_command'} }
-sub filter { return shift->{'m_filter'} }
-sub clientFilter { return shift->{'m_client_filter'} }
-sub maxSize { return shift->{'m_max_size'} }
-sub rc { return shift->{'m_rc'} }
-sub logFile { return shift->{'m_log_file'} }
-
-sub _check
-{
-	my ( $this ) = @_ ;
-	if( ! -x $this->exe() )
-	{
-		die "invalid server executable [".$this->exe()."]" ;
-	}
-}
+sub exe { return shift->{m_exe} }
+sub set_exe { $_[0]->{m_exe} = $_[1] }
+sub smtpPort { return shift->{m_smtp_port} }
+sub adminPort { return shift->{m_admin_port} }
+sub scannerPort { return shift->{m_scanner_port} }
+sub scannerAddress { return "net:$System::localhost:" . shift->{m_scanner_port} }
+sub verifierPort { return shift->{m_verifier_port} }
+sub verifierAddress { return "net:$System::localhost:" . shift->{m_verifier_port} }
+sub popPort { return shift->{m_pop_port} }
+sub popSecrets { return shift->{m_pop_secrets} }
+sub clientSecrets { return shift->{m_client_secrets} }
+sub serverSecrets { return shift->{m_server_secrets} }
+sub tlsCertificate { return shift->{m_tls_certificate} }
+sub tlsVerify { return shift->{m_tls_verify} }
+sub tlsConfig { return shift->{m_tls_config} }
+sub pollTimeout { return shift->{m_poll_timeout} }
+sub set_pollTimeout { $_[0]->{m_poll_timeout} = $_[1] }
+sub stdout { return shift->{m_stdout} }
+sub stderr { return shift->{m_stderr} }
+sub pidFile { return shift->{m_pidfile} }
+sub pid { return shift->{m_pid} }
+sub dst { return shift->{m_dst} }
+sub set_dst { $_[0]->{m_dst} = $System::localhost . ":" . $_[1] }
+sub spoolDir { return shift->{m_spool_dir} }
+sub set_spoolDir { $_[0]->{m_spool_dir} = $_[1] }
+sub user { return shift->{m_user} }
+sub command { return shift->{m_full_command} }
+sub filter { return shift->{m_filter} }
+sub clientFilter { return shift->{m_client_filter} }
+sub maxSize { return shift->{m_max_size} }
+sub rc { return shift->{m_rc} }
+sub logFile { return shift->{m_log_file} }
 
 sub _pid
 {
@@ -196,7 +199,7 @@ sub _switches
 		( (exists($sw{ServerTlsVerify}) && $sw{ServerTlsVerify}) ? "--server-tls-verify __TLS_VERIFY__ " : "" ) .
 		( exists($sw{ClientTlsCertificate}) ? "--client-tls-certificate __TLS_CERTIFICATE__ " : "" ) .
 		( (exists($sw{ClientTlsVerify}) && $sw{ClientTlsVerify}) ? "--client-tls-verify __TLS_VERIFY__ " : "" ) .
-		( exists($sw{TlsConfig}) ? "--tls-config __TLS_CONFIG__ " : "" ) .
+		( exists($sw{TlsConfig}) ? "--tls-config=__TLS_CONFIG__ " : "" ) .
 		"" ;
 }
 
@@ -253,61 +256,68 @@ sub run
 	if( defined($gtest) ) { $main::ENV{G_TEST} = $gtest }
 	my $rc = system( $full ) ;
 	if( defined($gtest) ) { $main::ENV{G_TEST} = "xx" }
-
-	my $ok = $rc >= 0 && ($rc & 127) == 0 ;
 	$this->{'m_rc'} = $rc ;
+
+	# check for an immediate startup error
+	my $error = $this->error() ;
+	if( $error )
+	{
+		System::log_( "error in the log file [".File::Basename::basename($this->stderr())."]: [$error]" ) ;
+		return undef ;
+	}
 
 	# read the pid from the pid-file
 	if( defined($switches_ref->{PidFile}) )
 	{
 		# wait for the pid file to be written
-		my $t_start = time() ;
-		for( my $i = 0 ; $i < 1000 ; $i++ )
-		{
-			sleep_cs() ;
-			if( -f $this->pidFile() ) { sleep_cs() ; last }
-		}
-		my $t_end = time() ;
-		System::log_( "no pid file created in ".($t_end-$t_start)."s" ) if( ! -f $this->pidFile() ) ;
-		my $pid = $this->_pid() ;
-		$ok = defined($pid) && $pid > 0 ;
+		my $pid = System::waitForPid( $this->pidFile() ) ;
 		$this->{'m_pid'} = $pid ;
-		push @pid_list , $this->{'m_pid'} if $ok ;
+		push @pid_list , $this->{'m_pid'} ;
 	}
 
-	return $ok ;
+	my $ok = $rc >= 0 && ($rc & 127) == 0 ;
+	if( !$ok )
+	{
+		System::log_( "non-zero exit code: $rc" ) ;
+		return undef ;
+	}
+	return 1 ;
+}
+
+sub error
+{
+	# Returns the first error from the server's log file. As a
+	# required feature this only returns errors with a timestamp.
+	my ( $this ) = @_ ;
+	my $fh = new FileHandle( $this->stderr() ) or return undef ;
+	while(<$fh>)
+	{
+		chomp( my $line = $_ ) ;
+		my ( $error ) = ( $line =~ m/^(?:emailrelay: [0123456789.]*: error: )(.*)/ ) ;
+		return $error if $error ;
+	}
+	return undef ;
 }
 
 sub message
 {
 	# Returns the first warning or error from the server's log file.
 	my ( $this ) = @_ ;
-	my $err = new FileHandle($this->stderr()) ;
-	while( <$err> )
+	my $fh = new FileHandle( $this->stderr() ) or return undef ;
+	while(<$fh>)
 	{
-		my $line = $_ ;
-		chomp $line ;
-		if( $line =~ m/warning:/ || $line =~ m/error:/ || $line =~ m/exception:/ )
-		{
-			return $line ;
-		}
+		chomp( my $line = $_ ) ;
+		return $line
+			if( $line =~ m/: warning:/ || $line =~ m/: error:/ || $line =~ m/: exception:/ ) ;
 	}
 	return undef ;
-}
-
-sub sleep_cs
-{
-	# Sleeps for a number of centiseconds.
-	my ( $cs ) = @_ ;
-	$cs = defined($cs) ? $cs : 1 ;
-	select( undef , undef , undef , 0.01 * $cs ) ;
 }
 
 sub wait
 {
 	# Waits for the server to exit. This does not work well for synchronising the
 	# exit of a short-lived 'client-like' process because it requires a pid-file
-	# to provide the pid but the pid reading in run() is racey.
+	# to provide the pid but the pid reading in run() is racy.
 	my ( $this ) = @_ ;
 	if( $this->pidFile() && $this->pid() )
 	{
@@ -318,8 +328,8 @@ sub wait
 sub kill
 {
 	# Kills the server and waits for it to die.
-	my ( $this , $signal__not_used , $timeout_cs ) = @_ ;
-	System::kill_( $this->pid() , $timeout_cs ) ;
+	my ( $this ) = @_ ;
+	System::kill_( $this->pid() ) ;
 }
 
 sub cleanup
@@ -336,6 +346,7 @@ sub cleanup
 	# System::unlink( $this->tlsCertificate() ) ; # done in Openssl::cleanup()
 	System::unlink( $this->pidFile() ) if System::windows() ;
 	System::deleteSpoolDir( $this->spoolDir() , 1 ) ;
+	System::rmdir_( $this->{m_piddir} ) ;
 }
 
 sub hasDebug
@@ -352,7 +363,7 @@ sub hasDebug
 	}
 	else
 	{
-		$exe = System::mangledpath( $exe ) ;
+		$exe = System::sanepath( $exe ) ;
 		$main::ENV{G_TEST} = "special-exit-code" ;
 		my $rc = system( "$exe --version --verbose --hidden" ) ;
 		$main::ENV{G_TEST} = "xx" ;
@@ -374,7 +385,7 @@ sub hasThreads
 	}
 	else
 	{
-		return 1 ; # assume msvc build
+		return 1 ; # assume msvc build with threads
 	}
 }
 

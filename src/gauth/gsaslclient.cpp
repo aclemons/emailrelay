@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gsaslclient.cpp
-//
+///
+/// \file gsaslclient.cpp
+///
 
 #include "gdef.h"
 #include "gsaslclient.h"
@@ -31,7 +31,7 @@
 #include <algorithm>
 #include <sstream>
 
-/// \class GAuth::SaslClientImp
+//| \class GAuth::SaslClientImp
 /// A private pimple-pattern implementation class used by GAuth::SaslClient.
 ///
 class GAuth::SaslClientImp
@@ -57,12 +57,12 @@ private:
 	mutable std::string m_id ;
 	std::string PLAIN ;
 	std::string LOGIN ;
-	static const char * login_challenge_1 ;
-	static const char * login_challenge_2 ;
+	static const char * const login_challenge_1 ;
+	static const char * const login_challenge_2 ;
 } ;
 
-const char * GAuth::SaslClientImp::login_challenge_1 = "Username:" ;
-const char * GAuth::SaslClientImp::login_challenge_2 = "Password:" ;
+const char * const GAuth::SaslClientImp::login_challenge_1 = "Username:" ;
+const char * const GAuth::SaslClientImp::login_challenge_2 = "Password:" ;
 
 // ===
 
@@ -268,7 +268,7 @@ bool GAuth::SaslClientImp::match( const G::StringArray & mechanisms , const std:
 // ===
 
 GAuth::SaslClient::SaslClient( const SaslClientSecrets & secrets , const std::string & config ) :
-	m_imp(new SaslClientImp(secrets,config))
+	m_imp(std::make_unique<SaslClientImp>(secrets,config))
 {
 }
 

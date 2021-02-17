@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// glogoutput.cpp
-//
+///
+/// \file glogoutput.cpp
+///
 
 #include "gdef.h"
 #include "glogoutput.h"
@@ -34,28 +34,33 @@
 
 namespace G
 {
-	namespace LogOutputImp
+	namespace LogOutputImp /// An implementation namespace for G::LogOutput.
 	{
-		static constexpr int stderr_fileno = 2 ; // STDERR_FILENO
+		static std::string s_info ;
+		static std::string s_warning ;
+		static std::string s_error ;
+		static std::string s_fatal ;
+		constexpr int stderr_fileno = 2 ; // STDERR_FILENO
 		LogOutput * this_ = nullptr ;
 		constexpr std::size_t margin = 7U ;
 		constexpr std::size_t buffer_base_size = limits::log + 40U ;
 		std::array<char,buffer_base_size+margin> buffer_1 ;
 		std::array<char,8> buffer_2 ;
-		struct ostream : std::ostream
+		struct ostream : std::ostream /// An ostream using a G::omembuf streambuf.
 		{
 			explicit ostream( G::omembuf * p ) : std::ostream(p) {}
 			void reset() { clear() ; seekp(0) ; }
 		} ;
 		std::ostream & ostream1()
 		{
-			static G::omembuf buf( &buffer_1[0] , buffer_1.size() ) ;
+			static G::omembuf buf( &buffer_1[0] , buffer_1.size() ) ; // bogus clang-tidy cert-err58-cpp
 			static ostream s( &buf ) ;
 			s.reset() ;
 			return s ;
 		}
 		std::ostream & ostream2()
 		{
+			// an ostream for junk that gets discarded
 			static G::omembuf buf( &buffer_2[0] , buffer_2.size() ) ;
 			static ostream s( &buf ) ;
 			s.reset() ;
@@ -73,8 +78,7 @@ G::LogOutput::LogOutput( const std::string & exename , const Config & config ,
 	const std::string & path ) :
 		m_exename(exename) ,
 		m_config(config) ,
-		m_path(path) ,
-		m_context_fn(nullptr)
+		m_path(path)
 {
 	updateTime() ;
 	open( m_path , true ) ;
@@ -86,8 +90,7 @@ G::LogOutput::LogOutput( const std::string & exename , const Config & config ,
 
 G::LogOutput::LogOutput( bool output_enabled_and_summary_info ,
 	bool verbose_info_and_debug , const std::string & path ) :
-		m_path(path) ,
-		m_context_fn(nullptr)
+		m_path(path)
 {
 	m_config = Config()
 		.set_output_enabled(output_enabled_and_summary_info)
@@ -181,7 +184,7 @@ void G::LogOutput::open( std::string path , bool do_throw )
 		if( pos != std::string::npos )
 			path.replace( pos , 2U , std::string(&m_time_buffer[0],8U) ) ;
 
-		int fd = G::File::open( path.c_str() , std::ios_base::app ) ;
+		int fd = File::open( path.c_str() , File::InOutAppend::Append ) ;
 		if( fd < 0 )
 		{
 			if( do_throw )
@@ -257,8 +260,8 @@ void G::LogOutput::output( std::ostream & ss , int )
 
 	// last-ditch removal of ansi escape sequences
 	p[n] = '\0' ;
-	for( char * p = std::strchr(buffer,'\033') ; p ; p = std::strchr(p+1,'\033') )
-		*p = '.' ;
+	for( char * pp = std::strchr(buffer,'\033') ; pp ; pp = std::strchr(p+1,'\033') )
+		*pp = '.' ;
 
 	// do the actual output in an o/s-specific manner -- the margin
 	// allows the implementation to extend the text with eg. a newline
@@ -296,7 +299,7 @@ bool G::LogOutput::updateTime()
 	{
 		m_time_s = now.s() ;
 		m_time_buffer.resize( 17U ) ;
-		now.local().format( m_time_buffer , "%Y" "%m" "%d." "%H" "%M" "%S." ) ;
+		now.local().format( m_time_buffer , "%Y%m%d.%H%M%S." ) ;
 		m_time_buffer[16U] = '\0' ;
 		new_day = 0 != std::memcmp( &m_date_buffer[0] , &m_time_buffer[0] , m_date_buffer.size() ) ;
 		std::memcpy( &m_date_buffer[0] , &m_time_buffer[0] , m_date_buffer.size() ) ;
@@ -324,13 +327,24 @@ const char * G::LogOutput::basename( const char * file ) noexcept
 
 const char * G::LogOutput::levelString( Log::Severity s ) noexcept
 {
+	namespace imp = LogOutputImp ;
 	if( s == Log::Severity::s_Debug ) return "debug: " ;
-	else if( s == Log::Severity::s_InfoSummary ) return "info: " ;
-	else if( s == Log::Severity::s_InfoVerbose ) return "info: " ;
-	else if( s == Log::Severity::s_Warning ) return "warning: " ;
-	else if( s == Log::Severity::s_Error ) return "error: " ;
-	else if( s == Log::Severity::s_Assertion ) return "fatal: " ;
+	else if( s == Log::Severity::s_InfoSummary ) return imp::s_info.empty() ? "info: " : imp::s_info.c_str() ;
+	else if( s == Log::Severity::s_InfoVerbose ) return imp::s_info.empty() ? "info: " : imp::s_info.c_str() ;
+	else if( s == Log::Severity::s_Warning ) return imp::s_warning.empty() ? "warning: " : imp::s_warning.c_str() ;
+	else if( s == Log::Severity::s_Error ) return imp::s_error.empty() ? "error: " : imp::s_error.c_str() ;
+	else if( s == Log::Severity::s_Assertion ) return imp::s_fatal.empty() ? "fatal: " : imp::s_fatal.c_str() ;
 	return "" ;
+}
+
+void G::LogOutput::translate( const std::string & info , const std::string & warning ,
+	const std::string & error , const std::string & fatal )
+{
+	namespace imp = LogOutputImp ;
+	imp::s_info = info ;
+	imp::s_warning = warning ;
+	imp::s_error = error ;
+	imp::s_fatal = fatal ;
 }
 
 // ==
@@ -410,4 +424,3 @@ G::LogOutput::Config & G::LogOutput::Config::set_facility( SyslogFacility facili
 	return *this ;
 }
 
-/// \file glogoutput.cpp

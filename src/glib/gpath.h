@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -33,7 +33,7 @@ namespace G
 	class PathImp ;
 }
 
-/// \class G::Path
+//| \class G::Path
 /// A Path object represents a file system path. The class is concerned with
 /// path syntax, not file system i/o.
 ///
@@ -55,10 +55,8 @@ namespace G
 /// collapsed(). Path components of "." are eliminated by split(), except
 /// in the degenerate case.
 ///
-/// This class is agnostic on the choice of utf8 or eight-bit characters since
-/// the delimiters are all seven-bit ascii. On Windows it might make sense to
-/// obtain paths from the win32 api as multi-byte and convert immediately to
-/// utf8 before wrapping in G::Path.
+/// This class is agnostic on the choice of UTF-8 or eight-bit characters since
+/// the delimiters are all seven-bit ascii.
 ///
 /// Both posix and windows behaviours are available at run-time; the default
 /// behaviour is the native behaviour, but this can be overridden, typically
@@ -75,7 +73,7 @@ class G::Path
 public:
 	Path() ;
 		///< Default constructor for a zero-length path.
-		///< Postcondition: str().empty()
+		///< Postcondition: empty()
 
 	Path( const std::string & path ) ;
 		///< Implicit constructor from a string.
@@ -93,7 +91,15 @@ public:
 		///< Constructor with three implicit pathAppend()s.
 
 	Path( std::initializer_list<std::string> ) ;
-		///< Constructor with implicit pathAppend()s.
+		///< Constructor with implicit pathAppend()s. (Recall that this
+		///< overload will be strongly preferred when using curly-brace
+		///< initialisation.)
+
+	std::size_t size() const noexcept ;
+		///< Returns the length of the path string.
+
+	bool empty() const noexcept ;
+		///< Returns true if size() is zero.
 
 	std::string str() const ;
 		///< Returns the path string.
@@ -186,12 +192,36 @@ public:
 		///< comparisons of each path component. This is slightly different
 		///< from a lexicographical comparison of the compete strings
 		///< (eg. "a/b" compared to "a./b"), and it is not suitable for
-		///< utf8 paths.
+		///< UTF-8 paths.
 
 private:
 	friend class G::PathImp ;
 	std::string m_str ;
 } ;
+
+inline
+bool G::Path::empty() const noexcept
+{
+	return m_str.empty() ;
+}
+
+inline
+std::size_t G::Path::size() const noexcept
+{
+	return m_str.size() ;
+}
+
+inline
+std::string G::Path::str() const
+{
+	return m_str ;
+}
+
+inline
+const char * G::Path::cstr() const noexcept
+{
+	return m_str.c_str() ;
+}
 
 namespace G
 {

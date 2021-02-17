@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gsaslserverbasic.cpp
-//
+///
+/// \file gsaslserverbasic.cpp
+///
 
 #include "gdef.h"
 #include "gsaslserverbasic.h"
@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <functional>
 
-/// \class GAuth::SaslServerBasicImp
+//| \class GAuth::SaslServerBasicImp
 /// A private pimple-pattern implementation class used by GAuth::SaslServerBasic.
 ///
 class GAuth::SaslServerBasicImp
@@ -260,12 +260,8 @@ bool GAuth::SaslServerBasicImp::trusted( const GNet::Address & address ) const
 {
 	G_DEBUG( "GAuth::SaslServerBasicImp::trusted: \"" << address.hostPartString() << "\"" ) ;
 	G::StringArray wildcards = address.wildcards() ;
-	for( const auto & wc : wildcards )
-	{
-		if( trustedCore(wc,address) )
-			return true ;
-	}
-	return false ;
+	return std::any_of( wildcards.cbegin() , wildcards.cend() ,
+		[&](const std::string &wca){return trustedCore(wca,address);} ) ;
 }
 
 bool GAuth::SaslServerBasicImp::trustedCore( const std::string & address_wildcard , const GNet::Address & address ) const
@@ -309,7 +305,7 @@ bool GAuth::SaslServerBasicImp::authenticated() const
 // ===
 
 GAuth::SaslServerBasic::SaslServerBasic( const SaslServerSecrets & secrets , const std::string & config , bool allow_apop ) :
-	m_imp(new SaslServerBasicImp(secrets,config,allow_apop))
+	m_imp(std::make_unique<SaslServerBasicImp>(secrets,config,allow_apop))
 {
 }
 

@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gsocket.cpp
-//
+///
+/// \file gsocket.cpp
+///
 
 #include "gdef.h"
 #include "gsocket.h"
@@ -85,7 +85,7 @@ GNet::SocketBase::ssize_type GNet::SocketBase::writeImp( const char * buffer , s
 	if( sizeError(nsent) ) // if -1
 	{
 		saveReason() ;
-		G_DEBUG( "GNet::SocketBase::writeImp: write error " << m_reason ) ;
+		G_DEBUG( "GNet::SocketBase::writeImp: write error: " << m_reason_string ) ;
 		return -1 ;
 	}
 	else if( nsent < 0 || static_cast<size_type>(nsent) < length )
@@ -131,7 +131,7 @@ void GNet::SocketBase::dropOtherHandler() noexcept
 		EventLoop::ptr()->dropOther( m_fd ) ;
 }
 
-SOCKET GNet::SocketBase::fd() const
+SOCKET GNet::SocketBase::fd() const noexcept
 {
 	return m_fd.fd() ;
 }
@@ -184,7 +184,7 @@ void GNet::Socket::bind( const Address & local_address )
 	m_bound_scope_id = local_address.scopeId() ;
 }
 
-bool GNet::Socket::bind( const Address & local_address , NoThrow )
+bool GNet::Socket::bind( const Address & local_address , std::nothrow_t )
 {
 	G_DEBUG( "Socket::bind: binding " << local_address.displayString() << " on fd " << fd() ) ;
 	if( local_address.domain() != domain() ) return false ;
@@ -304,7 +304,7 @@ bool GNet::StreamSocket::supports( Address::Family af )
 			if( !Address::supports(af) )
 				G_WARNING( "GNet::StreamSocket::supports: no ipv6 support built-in" ) ;
 			else if( !SocketBase::supports(Address(af,0U).domain(),SOCK_STREAM,0) )
-				G_WARNING( "GNet::StreamSocket::supports: no ipv6 support at run-time" ) ;
+				G_WARNING( "GNet::StreamSocket::supports: no ipv6 support detected" ) ;
 			else
 				result = true ;
 		}
@@ -370,8 +370,8 @@ GNet::AcceptPair GNet::StreamSocket::accept()
 		throw SocketError( "testing" ) ;
 
 	AcceptPair pair ;
-	pair.second = Address( addr.p() , addr.n() ) ;
-	pair.first.reset( new StreamSocket(domain(),new_fd,Socket::Accepted()) ) ;
+	pair.second = Address( addr ) ;
+	pair.first.reset( new StreamSocket( domain() , new_fd , Socket::Accepted() ) ) ; // 'new' for access
 
 	G_DEBUG( "GNet::StreamSocket::accept: accepted from " << fd()
 		<< " to " << new_fd << " (" << pair.second.displayString() << ")" ) ;
@@ -469,7 +469,7 @@ void GNet::StreamSocket::setOptionsOnAccept()
 
 void GNet::Socket::setOptionsOnConnect( bool ipv6 )
 {
-	setOptionPureV6( ipv6 , NoThrow() ) ; // ignore errors - may fail if already bound
+	setOptionPureV6( ipv6 , std::nothrow ) ; // ignore errors - may fail if already bound
 }
 
 void GNet::Socket::setOptionsOnBind( bool ipv6 )
@@ -498,7 +498,7 @@ void GNet::Socket::setOptionLingerImp( int onoff , int time )
 	struct linger options {} ;
 	options.l_onoff = onoff ;
 	options.l_linger = time ;
-	bool ok = setOptionImp( SOL_SOCKET , SO_LINGER , reinterpret_cast<char*>(&options) , sizeof(options) ) ;
+	bool ok = setOptionImp( SOL_SOCKET , SO_LINGER , &options , sizeof(options) ) ;
 	if( !ok )
 	{
 		saveReason() ;
@@ -506,9 +506,9 @@ void GNet::Socket::setOptionLingerImp( int onoff , int time )
 	}
 }
 
-bool GNet::Socket::setOption( int level , const char * , int op , int arg , NoThrow )
+bool GNet::Socket::setOption( int level , const char * , int op , int arg , std::nothrow_t )
 {
-	const void * const vp = reinterpret_cast<const void*>(&arg) ;
+	const void * const vp = static_cast<const void*>(&arg) ;
 	bool ok = setOptionImp( level , op , vp , sizeof(int) ) ;
 	if( !ok )
 		saveReason() ;
@@ -517,8 +517,7 @@ bool GNet::Socket::setOption( int level , const char * , int op , int arg , NoTh
 
 void GNet::Socket::setOption( int level , const char * opp , int op , int arg )
 {
-	if( !setOption( level , opp , op , arg , NoThrow() ) )
+	if( !setOption( level , opp , op , arg , std::nothrow ) )
 		throw SocketError( opp , reason() ) ;
 }
 
-/// \file gsocket.cpp

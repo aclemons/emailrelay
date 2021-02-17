@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -26,10 +26,7 @@
 
 namespace G
 {
-	/// \namespace G::AlignImp
-	/// An implementation namespace for G::align().
-	///
-	namespace AlignImp
+	namespace AlignImp /// An implementation namespace for G::align().
 	{
 		template <unsigned int N>
 		struct log2of /// Evaluates the number of bits in the template parameter N.
@@ -58,25 +55,11 @@ namespace G
 		}
 
 		template <typename Talign, typename Tchar>
-		inline void * align_imp_local( const Tchar * p , const std::size_t n_in )
-		{
-			Tchar * out = reinterpret_cast<Tchar*>(mask<Talign>(reinterpret_cast<g_uintptr_t>(p)+sizeof(Talign)-1)) ;
-			if( (out+sizeof(Talign)) > (p+n_in) ) out = nullptr ;
-			return out ;
-		}
-
-		template <typename Talign, typename Tchar>
-		inline void * align_imp_std( const Tchar * p , const std::size_t n_in )
+		inline void * align_imp( const Tchar * p , const std::size_t n_in )
 		{
 			void * vp = const_cast<Tchar*>(p) ;
 			std::size_t n = n_in ;
 			return std::align( alignof(Talign) , sizeof(Talign) , vp , n ) ;
-		}
-
-		template <typename Talign, typename Tchar>
-		inline void * align_imp( const Tchar * p , const std::size_t n_in )
-		{
-			return align_imp_std<Talign,Tchar>( p , n_in ) ;
 		}
 	}
 
@@ -86,8 +69,7 @@ namespace G
 	template <typename T>
 	inline void * align( const char * buffer , std::size_t buffer_size )
 	{
-		namespace imp = AlignImp ;
-		return imp::align_imp<T>( buffer , buffer_size ) ;
+		return AlignImp::align_imp<T>( buffer , buffer_size ) ;
 	}
 
 	/// Returns a pointer inside the given unsigned-char buffer that
@@ -96,8 +78,7 @@ namespace G
 	template <typename T>
 	inline void * align( const unsigned char * buffer , std::size_t buffer_size )
 	{
-		namespace imp = AlignImp ;
-		return imp::align_imp<T>( buffer , buffer_size ) ;
+		return AlignImp::align_imp<T>( buffer , buffer_size ) ;
 	}
 
 	/// Divides the number of bytes in a range to give the number

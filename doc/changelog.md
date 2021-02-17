@@ -4,14 +4,18 @@ E-MailRelay Change Log
 2.1 -> 2.2
 ----------
 
-* Connections from all IPv4 'private use' addresses are allowed by default (see `--remote-clients`).
+* Connections from IPv4 'private use' addresses are allowed by default (see `--remote-clients`).
 * Interface names can be used with `--interface` (eg. `--interface=eth0`).
 * New `--server-tls-connection` option for server-side implicit [TLS][].
-* New `--forward-to-some` option to allow some message recipients to be rejected.
+* New `--forward-to-some` option to permit some message recipients to be rejected.
 * New `--log-address` option to aid adaptive firewalling.
-* Choice of syslog 'facility' on Linux with `--syslog=local0` etc.
 * Dynamic log file rolling when using `--log-file=%d`.
-* Tolerance of [SMTP][] pipelined commands sent by broken clients.
+* Choice of syslog 'facility' on Linux with `--syslog=local0` etc.
+* Pipelined [SMTP][] QUIT commands sent by broken clients are tolerated.
+* Better handling of overly-verbose or unkillable `--filter` scripts.
+* Optional epoll event loop on Linux (`configure --enable-epoll`).
+* Some internationalisation support (see NEWS file).
+* Support for Windows XP restored when built with mingw-w64.
 * C++ 2011 compiler is required.
 
 2.0.1 -> 2.1

@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gsocket.h
 ///
 
-#ifndef G_NET_SOCKET__H
-#define G_NET_SOCKET__H
+#ifndef G_NET_SOCKET_H
+#define G_NET_SOCKET_H
 
 #include "gdef.h"
 #include "gaddress.h"
@@ -28,6 +28,7 @@
 #include "gdescriptor.h"
 #include "greadwrite.h"
 #include <string>
+#include <new>
 
 namespace GNet
 {
@@ -40,7 +41,7 @@ namespace GNet
 	class AcceptPair ;
 }
 
-/// \class GNet::SocketBase
+//| \class GNet::SocketBase
 /// A socket base class that holds a non-blocking socket file descriptor and
 /// interfaces to the event loop.
 ///
@@ -53,8 +54,6 @@ public:
 	G_EXCEPTION_CLASS( SocketTooMany , "socket accept error" ) ;
 	using size_type = G::ReadWrite::size_type ;
 	using ssize_type = G::ReadWrite::ssize_type ;
-	struct NoThrow /// Overload discriminator class for GNet::Socket.
-		{} ;
 	struct Accepted /// Overload discriminator class for GNet::Socket.
 		{} ;
 
@@ -66,7 +65,7 @@ public:
 		///< Destructor. The socket file descriptor is closed and
 		///< removed from the event loop.
 
-	SOCKET fd() const override ;
+	SOCKET fd() const noexcept override ;
 		///< Returns the socket descriptor. Override from G::ReadWrite.
 
 	bool eWouldBlock() const override ;
@@ -167,7 +166,7 @@ private:
 	Descriptor m_fd ;
 } ;
 
-/// \class GNet::Socket
+//| \class GNet::Socket
 /// An internet-protocol socket class. Provides bind(), listen(),
 /// and connect(); the base class provide write(); and derived
 /// classes provide accept() and read().
@@ -190,7 +189,7 @@ public:
 	void bind( const Address & ) ;
 		///< Binds the socket with the given address.
 
-	bool bind( const Address & , NoThrow ) ;
+	bool bind( const Address & , std::nothrow_t ) ;
 		///< No-throw overload. Returns false on error.
 
 	bool canBindHint( const Address & address ) ;
@@ -251,7 +250,7 @@ protected:
 	Socket( int domain , Descriptor s , const Accepted & ) ;
 	std::pair<bool,Address> getAddress( bool ) const ;
 	void setOption( int , const char * , int , int ) ;
-	bool setOption( int , const char * , int , int , NoThrow ) ;
+	bool setOption( int , const char * , int , int , std::nothrow_t ) ;
 	bool setOptionImp( int , int , const void * , socklen_t ) ;
 	void setOptionsOnBind( bool ) ;
 	void setOptionsOnConnect( bool ) ;
@@ -260,14 +259,14 @@ protected:
 	void setOptionReuse() ;
 	void setOptionExclusive() ;
 	void setOptionPureV6( bool ) ;
-	bool setOptionPureV6( bool , NoThrow ) ;
+	bool setOptionPureV6( bool , std::nothrow_t ) ;
 	void setOptionKeepAlive() ;
 
 private:
 	unsigned long m_bound_scope_id{0UL} ;
 } ;
 
-/// \class GNet::AcceptPair
+//| \class GNet::AcceptPair
 /// A class which is used to return a new()ed socket to calling code, together
 /// with associated address information.
 ///
@@ -279,7 +278,7 @@ public:
 	AcceptPair() : second(Address::defaultAddress()) {}
 } ;
 
-/// \class GNet::StreamSocket
+//| \class GNet::StreamSocket
 /// A derivation of GNet::Socket for a stream socket.
 ///
 class GNet::StreamSocket : public Socket
@@ -327,7 +326,7 @@ private:
 	void setOptionsOnAccept() ;
 } ;
 
-/// \class GNet::DatagramSocket
+//| \class GNet::DatagramSocket
 /// A derivation of GNet::Socket for a datagram socket.
 ///
 class GNet::DatagramSocket : public Socket
@@ -363,7 +362,7 @@ public:
 	void operator=( DatagramSocket && ) = delete ;
 } ;
 
-/// \class GNet::RawSocket
+//| \class GNet::RawSocket
 /// A derivation of GNet::SocketBase for a raw socket.
 ///
 class GNet::RawSocket : public SocketBase

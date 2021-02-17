@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gsmtpclientprotocol.cpp
-//
+///
+/// \file gsmtpclientprotocol.cpp
+///
 
 #include "gdef.h"
 #include "glocal.h"
@@ -38,7 +38,7 @@ GSmtp::ClientProtocol::ClientProtocol( GNet::ExceptionSink es , Sender & sender 
 		GNet::TimerBase(es) ,
 		m_sender(sender) ,
 		m_secrets(secrets) ,
-		m_sasl(new GAuth::SaslClient(m_secrets,sasl_client_config)) ,
+		m_sasl(std::make_unique<GAuth::SaslClient>(m_secrets,sasl_client_config)) ,
 		m_config(config) ,
 		m_state(State::sInit) ,
 		m_to_index(0U) ,
@@ -74,7 +74,7 @@ std::shared_ptr<GSmtp::StoredMessage> GSmtp::ClientProtocol::message()
 {
 	G_ASSERT( !m_message.expired() ) ;
 	if( m_message.expired() )
-		return std::shared_ptr<StoredMessage>( new StoredMessageStub ) ;
+		return std::make_shared<StoredMessageStub>() ; // up-cast
 	return m_message.lock() ;
 }
 
@@ -256,11 +256,13 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		reply.is(Reply::Value::NotImplemented_502) ) )
 	{
 		// server didn't like EHLO so fall back to HELO
-		if( m_config.must_use_tls && !m_in_secure_tunnel ) throw SmtpError( "tls is mandated but the server cannot do esmtp" ) ;
+		if( m_config.must_use_tls && !m_in_secure_tunnel )
+			throw SmtpError( "tls is mandated but the server cannot do esmtp" ) ;
 		m_state = State::sSentHelo ;
 		sendHelo() ;
 	}
-	else if( ( m_state == State::sSentEhlo || m_state == State::sSentHelo || m_state == State::sSentTlsEhlo ) && reply.is(Reply::Value::Ok_250) )
+	else if( ( m_state == State::sSentEhlo || m_state == State::sSentHelo || m_state == State::sSentTlsEhlo ) &&
+		reply.is(Reply::Value::Ok_250) )
 	{
 		// hello accepted, start a new session
 		G_DEBUG( "GSmtp::ClientProtocol::applyEvent: ehlo/rset reply \"" << G::Str::printable(reply.text()) << "\"" ) ;
@@ -351,14 +353,16 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	{
 		// authenticated -- proceed to first message
 		m_authenticated_with_server = true ;
-		G_LOG( "GSmtp::ClientProtocol::applyEvent: successful authentication with remote server " << (m_server_secure?"over tls ":"") << m_sasl->info() ) ;
+		G_LOG( "GSmtp::ClientProtocol::applyEvent: successful authentication with remote server "
+			<< (m_server_secure?"over tls ":"") << m_sasl->info() ) ;
 		m_state = State::sFiltering ;
 		startFiltering() ;
 	}
 	else if( m_state == State::sAuth && !reply.positive() && m_sasl->next() )
 	{
 		// authentication failed -- try the next mechanism
-		G_LOG( "GSmtp::ClientProtocol::applyEvent: " << AuthError(*m_sasl,reply).str() << ": trying [" << G::Str::lower(m_sasl->mechanism()) << "]" ) ;
+		G_LOG( "GSmtp::ClientProtocol::applyEvent: " << AuthError(*m_sasl,reply).str()
+			<< ": trying [" << G::Str::lower(m_sasl->mechanism()) << "]" ) ;
 		m_auth_mechanism = m_sasl->mechanism() ;
 		send( "AUTH " , m_auth_mechanism , initialResponse(*m_sasl) ) ;
 	}
@@ -490,7 +494,8 @@ void GSmtp::ClientProtocol::onTimeout()
 	if( m_state == State::sStarted )
 	{
 		// no 220 greeting seen -- go on regardless
-		G_WARNING( "GSmtp::ClientProtocol: timeout: no greeting from remote server after " << m_config.ready_timeout << "s: continuing" ) ;
+		G_WARNING( "GSmtp::ClientProtocol: timeout: no greeting from remote server after "
+			<< m_config.ready_timeout << "s: continuing" ) ;
 		m_state = State::sSentEhlo ;
 		sendEhlo() ;
 	}
@@ -552,7 +557,8 @@ void GSmtp::ClientProtocol::filterDone( bool ok , const std::string & response ,
 	}
 }
 
-void GSmtp::ClientProtocol::raiseDoneSignal( int response_code , const std::string & response , const std::string & reason )
+void GSmtp::ClientProtocol::raiseDoneSignal( int response_code , const std::string & response ,
+	const std::string & reason )
 {
 	if( !response.empty() && response_code == 0 )
 		G_WARNING( "GSmtp::ClientProtocol: smtp client protocol: " << response ) ;
@@ -690,7 +696,8 @@ GSmtp::ClientProtocolReply GSmtp::ClientProtocolReply::ok( Value v , const std::
 	return reply ;
 }
 
-GSmtp::ClientProtocolReply GSmtp::ClientProtocolReply::error( Value v , const std::string & response , const std::string & reason )
+GSmtp::ClientProtocolReply GSmtp::ClientProtocolReply::error( Value v , const std::string & response ,
+	const std::string & reason )
 {
 	ClientProtocolReply reply( std::string("500 ")+G::Str::printable(response) ) ;
 	int vv = static_cast<int>(v) ;
@@ -821,8 +828,9 @@ GSmtp::ClientProtocol::Config::Config( const std::string & name_ ,
 
 // ==
 
-GSmtp::ClientProtocol::AuthError::AuthError( const GAuth::SaslClient & sasl , const GSmtp::ClientProtocolReply & reply ) :
-	SmtpError( "authentication failed " + sasl.info() + ": [" + G::Str::printable(reply.text()) + "]" )
+GSmtp::ClientProtocol::AuthError::AuthError( const GAuth::SaslClient & sasl ,
+	const GSmtp::ClientProtocolReply & reply ) :
+		SmtpError( "authentication failed " + sasl.info() + ": [" + G::Str::printable(reply.text()) + "]" )
 {
 }
 
@@ -831,4 +839,3 @@ std::string GSmtp::ClientProtocol::AuthError::str() const
 	return std::string( what() ) ;
 }
 
-/// \file gsmtpclientprotocol.cpp

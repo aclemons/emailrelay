@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gnetworkverifier.cpp
-//
+///
+/// \file gnetworkverifier.cpp
+///
 
 #include "gdef.h"
 #include "gnetworkverifier.h"
@@ -49,7 +49,10 @@ void GSmtp::NetworkVerifier::verify( const std::string & mail_to_address ,
 {
 	if( m_client_ptr.get() == nullptr )
 	{
-		m_client_ptr.reset( new RequestClient(GNet::ExceptionSink(m_client_ptr,m_es.esrc()),"verify","",m_location,m_connection_timeout,m_response_timeout) ) ;
+		m_client_ptr.reset( std::make_unique<RequestClient>(
+			GNet::ExceptionSink(m_client_ptr,m_es.esrc()),
+			"verify" , "" ,
+			m_location , m_connection_timeout , m_response_timeout ) ) ;
 	}
 
 	G::StringArray args ;
@@ -90,31 +93,33 @@ void GSmtp::NetworkVerifier::clientEvent( const std::string & s1 , const std::st
 		// parse the output from the remote verifier using pipe-delimited
 		// fields based on the script-based verifier interface, but backwards
 		//
-		G::StringArray part ;
-		G::Str::splitIntoFields( s2 , part , "|" ) ;
-		if( !part.empty() && part[0U] == "100" )
+		G::StringArray parts ;
+		G::Str::splitIntoFields( s2 , parts , "|" ) ;
+		if( !parts.empty() && parts[0U] == "100" )
 		{
 			status.is_valid = false ;
 			status.abort = true ;
 		}
-		else if( part.size() >= 2U && part[0U] == "1" )
+		else if( parts.size() >= 2U && parts[0U] == "1" )
 		{
 			status.is_valid = true ;
 			status.is_local = false ;
-			status.address = part[1U] ;
+			status.address = parts[1U] ;
 		}
-		else if( part.size() >= 3U && part[0U] == "0" )
+		else if( parts.size() >= 3U && parts[0U] == "0" )
 		{
 			status.is_valid = true ;
 			status.is_local = true ;
-			status.address = part[1U] ;
-			status.full_name = part[2U] ;
+			status.address = parts[1U] ;
+			status.full_name = parts[2U] ;
 		}
-		else if( part.size() >= 2U && ( part[0U] == "2" || part[0U] == "3" ) )
+		else if( parts.size() >= 2U && ( parts[0U] == "2" || parts[0U] == "3" ) )
 		{
 			status.is_valid = false ;
-			status.response = part[1U] ;
-			status.temporary = part[0U] == "3" ;
+			status.response = parts[1U] ;
+			status.temporary = parts[0U] == "3" ;
+			if( parts.size() >= 3U )
+				status.reason = parts[2U] ; // (new)
 		}
 		else
 		{
@@ -137,4 +142,3 @@ void GSmtp::NetworkVerifier::cancel()
 	m_client_ptr.reset() ;
 }
 
-/// \file gnetworkverifier.cpp

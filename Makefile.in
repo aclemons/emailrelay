@@ -17,26 +17,35 @@
 #
 #
 #
+# Makefile.am
+#
 # Top-level makefile
 #
-# Additional pseudo-targets for packaging:
+# Additional pseudo-targets:
 #	* rpm - builds an rpm package using rpmbuild
 #	* deb - builds a deb package using debhelper
+#	* cmake - generates simplistic cmake files under ./build/
+#	* tidy - runs cmake-tidy
+#	* format - runs cmake-format
 #
 # Eg:
 #	$ dnf install g++ make automake openssl-devel pam-devel rpm-build # rpm
 #	$ ./bootstrap
 #	$ ./configure.sh
+#	$ make
 #	$ sudo make rpm
 #
 # or:
 #	$ apt install g++ make automake libssl-dev libpam0g-dev debhelper # deb
 #	$ ./bootstrap
 #	$ ./configure.sh
+#	$ make
 #	$ sudo make deb
 #
-# When running "make distcheck" consider doing this to avoid
-# a lengthy testing stage:
+# and possibly:
+#	$ make cmake ; cd build ; make
+#	$ make tidy TIDY=clang-tidy-10
+#	$ make format FORMAT=clang-format-10
 #	$ make distcheck DISTCHECK_CONFIGURE_FLAGS=--disable-testing
 #
 
@@ -356,6 +365,7 @@ e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
+e_systemddir = @e_systemddir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -396,7 +406,7 @@ EXTRA_DIST = \
 	winbuild.pl \
 	runperl.bat
 
-SUBDIRS = bin src etc doc debian test m4 bsd
+SUBDIRS = bin src etc doc debian test m4 bsd po
 
 # work-round PKG_CHECK_MODULES if no pkg-config
 ACLOCAL_AMFLAGS = -I m4
@@ -902,7 +912,7 @@ uninstall-am: uninstall-e_docDATA uninstall-local
 
 
 uninstall-local:
-	-for try in 1 2 3 4 ; do echo "$(e_pamdir)" "$(e_initdir)" "$(e_sysconfdir)" "$(e_examplesdir)" "$(e_libexecdir)" "$(e_spooldir)" "$(e_docdir)" "$(pkgdatadir)" | tr ' ' '\n' | grep "emailrelay$" | while read d ; do rmdir "$(DESTDIR)/$$d" 2>/dev/null ; done ; done
+	-for try in 1 2 3 4 ; do echo "$(e_pamdir)/" "$(e_initdir)/" "$(e_sysconfdir)/" "$(e_examplesdir)/" "$(e_libexecdir)/" "$(e_spooldir)/" "$(e_docdir)/" "$(pkgdatadir)/" | tr ' ' '\n' | grep "/emailrelay/" | while read d ; do rmdir "$(DESTDIR)/$$d" 2>/dev/null ; done ; done
 
 RPM_ROOT ?= ${HOME}/rpmbuild
 #ARCH ?= $(shell arch)
@@ -944,16 +954,20 @@ deb-src: dist
 	echo 1.0 > emailrelay-$(VERSION)/debian/source/format
 	dpkg-source --build emailrelay-$(VERSION)
 
-.PHONY: lint
-lint:
-	cd src && make lint
+.PHONY: tidy
+tidy:
+	$(MAKE) -C src tidy
+
+.PHONY: format
+format:
+	$(MAKE) -C src format
 
 .PHONY: cmake
 cmake:
 	@chmod +x bin/make2cmake || true
 	bin/make2cmake
 	mkdir build || true
-	cd build && cmake -DCMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/make -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. && make
+	cd build && cmake -DCMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/make -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

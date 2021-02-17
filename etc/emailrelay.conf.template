@@ -15,7 +15,7 @@
 #
 
 # Name: address-verifier
-# Format: address-verifier<program>
+# Format: address-verifier <program>
 # Description: Runs the specified external program to verify a message
 # recipent's e-mail address. A network verifier can be specified as
 # "net:<transport-address>".
@@ -23,7 +23,7 @@
 #address-verifier /usr/local/sbin/emailrelay-verifier.sh
 
 # Name: admin
-# Format: admin<admin-port>
+# Format: admin <admin-port>
 # Description: Enables an administration interface on the specified listening
 # port number. Use telnet or something similar to connect. The administration
 # interface can be used to trigger forwarding of spooled mail messages if the
@@ -47,7 +47,7 @@
 #anonymous
 
 # Name: as-client
-# Format: as-client<host:port>
+# Format: as-client <host:port>
 # Description: This is equivalent to "--log", "--no-syslog", "--no-daemon",
 # "--dont-serve", "--forward" and "--forward-to". It is a convenient way of
 # running a forwarding agent that forwards spooled mail messages and then
@@ -56,7 +56,7 @@
 #as-client smtp.example.com:25
 
 # Name: as-proxy
-# Format: as-proxy<host:port>
+# Format: as-proxy <host:port>
 # Description: This is equivalent to "--log", "--close-stderr",
 # "--forward-on-disconnect" and "--forward-to". It is a convenient way of
 # running a store-and-forward daemon. Use "--log", "--forward-on-disconnect"
@@ -75,7 +75,7 @@
 #as-server
 
 # Name: client-auth
-# Format: client-auth<file>
+# Format: client-auth <file>
 # Description: Enables SMTP client authentication with the remote server,
 # using the client account details taken from the specified secrets file. The
 # secrets file should normally contain one line that starts with "client" and
@@ -89,7 +89,7 @@
 #client-auth /etc/emailrelay.auth
 
 # Name: client-auth-config
-# Format: client-auth-config<config>
+# Format: client-auth-config <config>
 # Description: Configures the SMTP client authentication module using a
 # semicolon-separated list of configuration items. Each item is a
 # single-character key, followed by a colon and then a comma-separated list.
@@ -99,7 +99,7 @@
 #client-auth-config m:cram-sha1,cram-md5
 
 # Name: client-filter
-# Format: client-filter<program>
+# Format: client-filter <program>
 # Description: Runs the specified external filter program whenever a mail
 # message is forwarded. The filter is passed the name of the message file in
 # the spool directory so that it can edit it as required. A network filter
@@ -112,7 +112,7 @@
 #client-filter /usr/local/sbin/emailrelay-client-filter
 
 # Name: client-interface
-# Format: client-interface<ip-address>
+# Format: client-interface <ip-address>
 # Description: Specifies the IP network address to be used to bind the local
 # end of outgoing SMTP connections. By default the address will depend on the
 # routing tables in the normal way. Use "0.0.0.0" to use only IPv4 addresses
@@ -128,7 +128,7 @@
 #client-tls
 
 # Name: client-tls-certificate
-# Format: client-tls-certificate<pem-file>
+# Format: client-tls-certificate <pem-file>
 # Description: Defines the TLS certificate file when acting as a SMTP client.
 # This file must contain the client's private key and certificate chain using
 # the PEM file format. Keep the file permissions tight to avoid accidental
@@ -154,7 +154,7 @@
 #client-tls-required
 
 # Name: client-tls-server-name
-# Format: client-tls-server-name<hostname>
+# Format: client-tls-server-name <hostname>
 # Description: Defines the target server hostname in the TLS handshake. With
 # "--client-tls-connection" this can be used for SNI, allowing the remote
 # server to adopt an appropriate identity.
@@ -162,7 +162,7 @@
 #client-tls-server-name smtp.example.com
 
 # Name: client-tls-verify
-# Format: client-tls-verify<ca-list>
+# Format: client-tls-verify <ca-list>
 # Description: Enables verification of the remote SMTP server's certificate
 # against any of the trusted CA certificates in the specified file or
 # directory. In many use cases this should be a file containing just your
@@ -171,7 +171,7 @@
 #client-tls-verify /etc/ssl/certs/ca-certificates.crt
 
 # Name: client-tls-verify-name
-# Format: client-tls-verify-name<cname>
+# Format: client-tls-verify-name <cname>
 # Description: Enables verification of the CNAME within the remote SMTP
 # server's certificate.
 #
@@ -186,7 +186,7 @@
 #close-stderr
 
 # Name: connection-timeout
-# Format: connection-timeout<time>
+# Format: connection-timeout <time>
 # Description: Specifies a timeout (in seconds) for establishing a TCP
 # connection to remote SMTP servers. The default is 40 seconds.
 #
@@ -201,7 +201,7 @@
 #debug
 
 # Name: dnsbl
-# Format: dnsbl<config>
+# Format: dnsbl <config>
 # Description: Specifies a list of DNSBL servers that are used to reject SMTP
 # connections from blocked addresses. The configuration string is made up of
 # comma-separated fields: the DNS server's transport address, a timeout in
@@ -210,7 +210,7 @@
 #dnsbl 1.1.1.1:53,1000,1,spam.dnsbl.example.com,block.dnsbl.example.com
 
 # Name: domain
-# Format: domain<fqdn>
+# Format: domain <fqdn>
 # Description: Specifies the network name that is used in SMTP EHLO commands,
 # "Received" lines, and for generating authentication challenges. The default
 # is derived from a DNS lookup of the local hostname.
@@ -226,7 +226,7 @@
 #dont-serve
 
 # Name: filter
-# Format: filter<program>
+# Format: filter <program>
 # Description: Runs the specified external filter program whenever a mail
 # message is stored. The filter is passed the name of the message file in the
 # spool directory so that it can edit it as required. The mail message is
@@ -240,7 +240,7 @@
 #filter /usr/local/sbin/emailrelay-filter
 
 # Name: filter-timeout
-# Format: filter-timeout<time>
+# Format: filter-timeout <time>
 # Description: Specifies a timeout (in seconds) for running a "--filter"
 # program. The default is 300 seconds.
 #
@@ -261,7 +261,7 @@
 #forward-on-disconnect
 
 # Name: forward-to
-# Format: forward-to<host:port>
+# Format: forward-to <host:port>
 # Description: Specifies the transport address of the remote SMTP server that
 # is use for mail message forwarding.
 #
@@ -277,12 +277,13 @@
 # Name: hidden
 # Format: hidden
 # Description: Windows only. Hides the application window and disables all
-# message boxes. This is useful when running as a windows service.
+# message boxes, overriding any ""--show"" option. This is useful when
+# running  as a windows service.
 #
 #hidden
 
 # Name: idle-timeout
-# Format: idle-timeout<time>
+# Format: idle-timeout <time>
 # Description: Specifies a timeout (in seconds) for receiving network traffic
 # from remote SMTP and POP clients. The default is 1800 seconds.
 #
@@ -298,7 +299,7 @@
 #immediate
 
 # Name: interface
-# Format: interface<ip-address-list>
+# Format: interface <ip-address-list>
 # Description: Specifies the IP network addresses or interface names used to
 # bind listening ports. By default listening ports for incoming SMTP, POP and
 # administration connections will bind the 'any' address for IPv4 and for
@@ -313,6 +314,14 @@
 # "ppp0-ipv4").
 #
 #interface 127.0.0.1,smtp=eth0
+
+# Name: localedir
+# Format: localedir <dir>
+# Description: Specifies a locale base directory where localisation message
+# catalogues  can be found. An empty directory can be used for the built-in
+# default.
+#
+#localedir /opt/share/locale
 
 # Name: log
 # Format: log
@@ -332,7 +341,7 @@
 #log-address
 
 # Name: log-file
-# Format: log-file<file>
+# Format: log-file <file>
 # Description: Redirects standard-error logging to the specified file.
 # Logging to the log file is not affected by "--close-stderr". The filename
 # can include "%d" to get daily log files; the "%d" is replaced by the
@@ -370,7 +379,7 @@
 #no-syslog
 
 # Name: pid-file
-# Format: pid-file<pid-file>
+# Format: pid-file <pid-file>
 # Description: Causes the process-id to be written into the specified file
 # when the program starts up, typically after it has become a backgroud
 # daemon.
@@ -378,7 +387,7 @@
 #pid-file /run/emailrelay/emailrelay.pid
 
 # Name: poll
-# Format: poll<period>
+# Format: poll <period>
 # Description: Causes forwarding of spooled mail messages to happen at
 # regular intervals (with the time given in seconds).
 #
@@ -393,7 +402,7 @@
 #pop
 
 # Name: pop-auth
-# Format: pop-auth<file>
+# Format: pop-auth <file>
 # Description: Specifies a file containing valid POP account details. The
 # file format is the same as for the SMTP server secrets file, ie. lines
 # starting with "server", with user-id and password in the third and fourth
@@ -423,20 +432,20 @@
 #pop-no-delete
 
 # Name: pop-port
-# Format: pop-port<port>
+# Format: pop-port <port>
 # Description: Sets the POP server's listening port number.
 #
 #pop-port 995
 
 # Name: port
-# Format: port<port>
+# Format: port <port>
 # Description: Sets the port number used for listening for incoming SMTP
 # connections.
 #
 #port 587
 
 # Name: prompt-timeout
-# Format: prompt-timeout<time>
+# Format: prompt-timeout <time>
 # Description: Specifies a timeout (in seconds) for getting the initial
 # prompt from a remote SMTP server. If no prompt is received after this time
 # then the SMTP dialog goes ahead without it.
@@ -454,14 +463,14 @@
 #remote-clients
 
 # Name: response-timeout
-# Format: response-timeout<time>
+# Format: response-timeout <time>
 # Description: Specifies a timeout (in seconds) for getting responses from
 # remote SMTP servers. The default is 1800 seconds.
 #
 #response-timeout 2
 
 # Name: server-auth
-# Format: server-auth<file>
+# Format: server-auth <file>
 # Description: Enables SMTP server authentication of remote SMTP clients.
 # Account names and passwords are taken from the specified secrets file. The
 # secrets file should contain lines that have four space-separated fields,
@@ -474,7 +483,7 @@
 #server-auth /etc/private/emailrelay.auth
 
 # Name: server-auth-config
-# Format: server-auth-config<config>
+# Format: server-auth-config <config>
 # Description: Configures the SMTP server authentication module using a
 # semicolon-separated list of configuration items. Each item is a
 # single-character key, followed by a colon and then a comma-separated list.
@@ -493,7 +502,7 @@
 #server-tls
 
 # Name: server-tls-certificate
-# Format: server-tls-certificate<pem-file>
+# Format: server-tls-certificate <pem-file>
 # Description: Defines the TLS certificate file when acting as a SMTP or POP
 # server. This file must contain the server's private key and certificate
 # chain using the PEM file format. Keep the file permissions tight to avoid
@@ -517,7 +526,7 @@
 #server-tls-required
 
 # Name: server-tls-verify
-# Format: server-tls-verify<ca-list>
+# Format: server-tls-verify <ca-list>
 # Description: Enables verification of remote SMTP and POP clients'
 # certificates against any of the trusted CA certificates in the specified
 # file or directory. In many use cases this should be a file containing just
@@ -526,14 +535,14 @@
 #server-tls-verify /etc/ssl/certs/ca-certificates.crt
 
 # Name: size
-# Format: size<bytes>
+# Format: size <bytes>
 # Description: Limits the size of mail messages that can be submitted over
 # SMTP.
 #
 #size 10000000
 
 # Name: spool-dir
-# Format: spool-dir<dir>
+# Format: spool-dir <dir>
 # Description: Specifies the directory used for holding mail messages that
 # have been received but not yet forwarded.
 #
@@ -548,7 +557,7 @@
 #syslog
 
 # Name: tls-config
-# Format: tls-config<options>
+# Format: tls-config <options>
 # Description: Selects and configures the low-level TLS library, using a
 # comma-separated list of keywords. If OpenSSL and mbedTLS are both built in
 # then keywords of "openssl" and "mbedtls" will select one or the other.
@@ -558,7 +567,7 @@
 #tls-config mbedtls,tlsv1.2
 
 # Name: user
-# Format: user<username>
+# Format: user <username>
 # Description: When started as root the program switches to an non-privileged
 # effective user-id when idle. This option can be used to define which
 # user-id is used. Specify "root" to disable all user-id switching. Ignored

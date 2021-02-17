@@ -40,3 +40,27 @@ Language=English
 %1!S!
 .
 
+MessageId=1011
+Severity=Informational
+Facility=Application
+SymbolicName=MSG_INFO
+Language=English
+%1
+.
+
+MessageId=1012
+Severity=Warning
+Facility=Application
+SymbolicName=MSG_WARNING
+Language=English
+%1
+.
+
+MessageId=1013
+Severity=Error
+Facility=Application
+SymbolicName=MSG_ERROR
+Language=English
+%1
+.
+

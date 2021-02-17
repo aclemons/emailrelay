@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -24,19 +24,22 @@
 #include "gdef.h"
 #include "gexception.h"
 #include "gstrings.h"
+#include "gstringview.h"
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <list>
 #include <vector>
 #include <set>
+#include <limits>
+#include <type_traits>
 
 namespace G
 {
 	class Str ;
 }
 
-/// \class G::Str
+//| \class G::Str
 /// A static class which provides string helper functions.
 ///
 class G::Str
@@ -58,6 +61,12 @@ public:
 			///< Returns true if a substitution was made, and adjusts
 			///< '*pos_p' by to.length().
 
+	static void replace( std::string & s , char from , char to ) ;
+		///< Replaces all 'from' characters with 'to'.
+
+	static void replace( StringArray & , char from , char to ) ;
+		///< Replaces 'from' characters with 'to' in all the strings in the array.
+
 	static unsigned int replaceAll( std::string & s , const std::string & from , const std::string & to ) ;
 		///< Does a global replace on string 's', replacing all occurrences
 		///< of sub-string 'from' with 'to'. Returns the number of substitutions
@@ -73,16 +82,22 @@ public:
 	static void removeAll( std::string & , char ) ;
 		///< Removes all occurrences of the character from the string. See also only().
 
-	static void trimLeft( std::string & s , const std::string & ws , std::size_t limit = 0U ) ;
+	static std::string & trimLeft( std::string & s , string_view ws , std::size_t limit = 0U ) ;
 		///< Trims the lhs of s, taking off up to 'limit' of the 'ws' characters.
+		///< Returns s.
 
-	static void trimRight( std::string & s , const std::string & ws , std::size_t limit = 0U ) ;
+	static std::string & trimRight( std::string & s , string_view ws , std::size_t limit = 0U ) ;
 		///< Trims the rhs of s, taking off up to 'limit' of the 'ws' characters.
+		///< Returns s.
 
-	static void trim( std::string & s , const std::string & ws ) ;
+	static std::string & trim( std::string & s , string_view ws ) ;
 		///< Trims both ends of s, taking off any of the 'ws' characters.
+		///< Returns s.
 
-	static std::string trimmed( const std::string & s , const std::string & ws ) ;
+	static std::string trimmed( const std::string & s , string_view ws ) ;
+		///< Returns a trim()med version of s.
+
+	static std::string trimmed( std::string && s , string_view ws ) ;
 		///< Returns a trim()med version of s.
 
 	static bool isNumeric( const std::string & s , bool allow_minus_sign = false ) ;
@@ -201,6 +216,17 @@ public:
 		///< results in the return of the maximum value. To avoid
 		///< exceptions use isHex().
 
+	template <typename T> static T toUnsigned( const char * p , const char * end ,
+		bool & overflow , bool & invalid ) noexcept ;
+			///< Low-level conversion from an unsigned decimal string to a number.
+			///< All characters in the range are used; any character
+			///< not 0..9 yields an 'invalid' result.
+
+	template <typename T> static T toUnsigned( const char * &p , const char * end ,
+		bool & overflow ) noexcept ;
+			///< Low-level conversion from an unsigned decimal string to a number.
+			///< Consumes charaters until the first invalid character.
+
 	static unsigned long toULong( const std::string & s ) ;
 		///< Converts string 's' to an unsigned long.
 		///<
@@ -241,10 +267,6 @@ public:
 		///< Returns a copy of 's' in which all Latin-1 upper-case characters
 		///< have been replaced by lower-case characters.
 
-	static std::string toPrintableAscii( char c , char escape = '\\' ) ;
-		///< Returns a 7-bit printable representation of the given input character,
-		///< using character codes 0x20 to 0x7e inclusive.
-
 	static std::string toPrintableAscii( const std::string & in , char escape = '\\' ) ;
 		///< Returns a 7-bit printable representation of the given input string.
 
@@ -252,7 +274,12 @@ public:
 		///< Returns a 7-bit printable representation of the given wide input string.
 
 	static std::string printable( const std::string & in , char escape = '\\' ) ;
-		///< Returns a printable represention of the given input string, using
+		///< Returns a printable representation of the given input string, using
+		///< chacter code ranges 0x20 to 0x7e and 0xa0 to 0xfe inclusive.
+		///< Typically used to prevent escape sequences getting into log files.
+
+	static std::string printable( std::string && in , char escape = '\\' ) ;
+		///< Returns a printable representation of the given input string, using
 		///< chacter code ranges 0x20 to 0x7e and 0xa0 to 0xfe inclusive.
 		///< Typically used to prevent escape sequences getting into log files.
 
@@ -304,7 +331,7 @@ public:
 	static std::string unescaped( const std::string & s ) ;
 		///< Returns the unescape()d version of s.
 
-	static std::string meta() ;
+	static string_view meta() ;
 		///< Returns a list of shell meta-characters with a tilde as the
 		///< first character. Does not contain the nul character. This is
 		///< typically used with escape().
@@ -339,26 +366,25 @@ public:
 		bool pre_erase_result = true ) ;
 			///< An overload which avoids string copying.
 
-	static std::string wrap( std::string text ,
-		const std::string & prefix_first_line , const std::string & prefix_subsequent_lines ,
-		std::size_t width = 70U ) ;
-			///< Does word-wrapping. The return value is a string with
-			///< embedded newlines.
-
-	static void splitIntoTokens( const std::string & in , StringArray & out , const std::string & ws ) ;
+	static void splitIntoTokens( const std::string & in , StringArray & out , string_view ws , char esc = '\0' ) ;
 		///< Splits the string into 'ws'-delimited tokens. The behaviour is like
 		///< strtok() in that adjacent delimiters count as one and leading and
 		///< trailing delimiters are ignored. The output array is _not_ cleared
-		///< first; new tokens are appended to the output list.
+		///< first; new tokens are appended to the output list. If the escape
+		///< character is supplied then it can be used to escape whitespace
+		///< characters, preventing a split, with those escape characters being
+		///< consumed in the process. For shell-like tokenising use dequote()
+		///< before splitIntoTokens(), and revert the non-breaking spaces
+		///< afterwards.
 
-	static StringArray splitIntoTokens( const std::string & in , const std::string & ws = Str::ws() ) ;
+	static StringArray splitIntoTokens( const std::string & in , string_view ws = Str::ws() , char esc = '\0' ) ;
 		///< Overload that returns by value.
 
 	static void splitIntoFields( const std::string & in , StringArray & out ,
-		const std::string & separators , char escape = '\0' ,
+		string_view ws , char escape = '\0' ,
 		bool remove_escapes = true ) ;
 			///< Splits the string into fields. Duplicated, leading and trailing
-			///< separator characters are all significant. Ths output array is
+			///< separator characters are all significant. The output array is
 			///< cleared first.
 			///<
 			///< If a non-null escape character is given then escaped separators
@@ -369,13 +395,15 @@ public:
 			///< unescaped escapes are used to prevent splitting but they remain
 			///< in the output.
 
-	static StringArray splitIntoFields( const std::string & in , const std::string & ws = Str::ws() ) ;
+	static StringArray splitIntoFields( const std::string & in , string_view ws = Str::ws() ) ;
 		///< Overload that returns by value.
 
-	static std::string dequote( const std::string & , char qq = '\"' , char esc = '\\' , const std::string & ws = Str::ws() ) ;
-		///< Dequotes a string by removing unescaped quotes and escaping
-		///< quoted whitespace, so "qq-aaa-esc-qq-bbb-ws-ccc-qq" becomes
-		///< "aaa-qq-bbb-esc-ws-ccc".
+	static std::string dequote( const std::string & , char qq = '\"' , char esc = '\\' ,
+		string_view ws = Str::ws() , string_view nbws = Str::ws() ) ;
+			///< Dequotes a string by removing unescaped quotes and escaping
+			///< quoted whitespace, so "qq-aaa-esc-qq-bbb-ws-ccc-qq" becomes
+			///< "aaa-qq-bbb-esc-ws-ccc". Escaped whitespace characters within
+			///< quotes can optionally be converted to non-breaking equivalents.
 
 	static std::string join( const std::string & sep , const StringArray & strings ) ;
 		///< Concatenates an array of strings with separators.
@@ -475,10 +503,10 @@ public:
 		///< the given start. Returns the empty string if nothing matches or if
 		///< the first match is an exact match.
 
-	static std::string ws() ;
+	static string_view ws() ;
 		///< Returns a string of standard whitespace characters.
 
-	static std::string alnum() ;
+	static string_view alnum() ;
 		///< Returns a string of seven-bit alphanumeric characters, ie A-Z, a-z and 0-9.
 
 	static std::string positive() ;
@@ -511,17 +539,102 @@ public:
 	static StringArray::iterator removeMatch( StringArray::iterator begin , StringArray::iterator end ,
 		const StringArray & match_list , bool ignore_case = false ) ;
 			///< Removes items in the begin/end list that match one of the elements
-			///< in the match-list (blacklist). (Removes nothing if the match-list is
+			///< in the match-list (blocklist). (Removes nothing if the match-list is
 			///< empty.) Returns an iterator for erase().
 
 	static constexpr size_t truncate = (~(static_cast<std::size_t>(0U))) ;
 		///< A special value for the G::Str::strncpy_s() 'count' parameter.
 
-	static errno_t strncpy_s( char * dst , size_t n_dst , const char * src , size_t count ) ;
-		///< Does the same as windows strncpy_s().
+	static errno_t strncpy_s( char * dst , size_t n_dst , const char * src , size_t count ) noexcept ;
+		///< Does the same as windows strncpy_s(). Copies count characters
+		///< from src to dst and adds a terminator character, but fails
+		///< if dst is too small. If the count is 'truncate' then as
+		///< much of src is copied as will fit in dst, allowing for the
+		///< terminator character. Returns zero on success or on
+		///< truncation (unlike windows strncpy_s()).
 
 public:
 	Str() = delete ;
 } ;
+
+inline
+std::string G::Str::fromInt( int i )
+{
+	return std::to_string( i ) ;
+}
+
+inline
+std::string G::Str::fromLong( long l )
+{
+	return std::to_string( l ) ;
+}
+
+inline
+std::string G::Str::fromShort( short s )
+{
+	return std::to_string( s ) ;
+}
+
+inline
+std::string G::Str::fromUInt( unsigned int ui )
+{
+	return std::to_string( ui ) ;
+}
+
+inline
+std::string G::Str::fromULong( unsigned long ul )
+{
+	return std::to_string( ul ) ;
+}
+
+inline
+std::string G::Str::fromUShort( unsigned short us )
+{
+	return std::to_string( us ) ;
+}
+
+template <typename T>
+T G::Str::toUnsigned( const char * p , const char * end , bool & overflow , bool & invalid ) noexcept
+{
+	if( p == nullptr || end == nullptr || p == end )
+	{
+		invalid = true ;
+		overflow = false ;
+		return 0UL ;
+	}
+	T result = toUnsigned<T>( p , end , overflow ) ;
+	if( p != end )
+		invalid = true ;
+	return result ;
+}
+
+template <typename T>
+T G::Str::toUnsigned( const char * &p , const char * end , bool & overflow ) noexcept
+{
+	static_assert( std::is_integral<T>::value , "" ) ;
+	T result = 0 ;
+	for( ; p != end ; p++ )
+	{
+		T n = 0 ;
+		if( *p == '0' ) n = 0 ;
+		else if( *p == '1' ) n = 1 ;
+		else if( *p == '2' ) n = 2 ;
+		else if( *p == '3' ) n = 3 ;
+		else if( *p == '4' ) n = 4 ;
+		else if( *p == '5' ) n = 5 ;
+		else if( *p == '6' ) n = 6 ;
+		else if( *p == '7' ) n = 7 ;
+		else if( *p == '8' ) n = 8 ;
+		else if( *p == '9' ) n = 9 ;
+		else break ;
+
+		auto old = result ;
+		result = result * 10 ;
+		result += n ;
+		if( result < old )
+			overflow = true ;
+	}
+	return result ;
+}
 
 #endif

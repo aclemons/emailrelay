@@ -1,17 +1,17 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-#
+# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-#
+# 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
+# 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ===
@@ -20,8 +20,9 @@
 #
 # usage: make-website [--host=<key>] <version-for-download-button>
 #
-# Pulls together a doxygen-based website. Developed against
-# doxygen version 1.8.14.
+# Pulls together a doxygen-based website. Requires doxygen and dot
+# on the path. Developed against doxygen version 1.8.14.
+#
 #
 
 use strict ;
@@ -35,7 +36,7 @@ die "usage error" if scalar(@ARGV) == 0 ;
 my $cfg_upload_version = $ARGV[0] ;
 
 my $cfg_author = "Graeme Walker" ;
-my $cfg_copyright = "Copyright (C) 2018 $cfg_author" ;
+my $cfg_copyright = "Copyright (C) 2021 $cfg_author" ;
 my $cfg_output_dir = "website" ;
 my %colour = ( h => 195 , s => 255 , v => 100 ) ; # #0090c0
 my %cfg_meta = (
@@ -114,13 +115,18 @@ my %config = (
 sub make_config
 {
 	my ( $fname ) = @_ ;
-	my $fh_in = new FileHandle( "doxygen -g - |" ) or die ;
-	my $fh = new FileHandle( $fname , "w" ) or die ;
+
+	# use "doxygen -g" to create a template config file
+	my $fh_in = new FileHandle( "doxygen -g - |" ) or die "make-website: error: cannot run \"doxygen -g\"\n" ;
+
+	# edit the config file according to %config
+	my $fh = new FileHandle( $fname , "w" ) or die "make-website: error: cannot create file [$fname]\n" ;
 	my $line_number = 0 ;
 	while(<$fh_in>)
 	{
 		chomp( my $line = $_ ) ;
 
+		# check the doxygen version number while we're here
 		if( $line_number++ == 0 && $line =~ m/^# Doxyfile/ )
 		{
 			my ( $a , $b , $c ) = ( $line =~ m/# Doxyfile (\d+).?(\d*).?(\d*)/ ) ;
@@ -130,7 +136,7 @@ sub make_config
 			my $version = $a * 1000000 + $b * 1000 + $c ;
 			if( $version < 1008014 )
 			{
-				warn "warning: doxygen is too old: [$version]: please use 1.8.14 or later" ;
+				warn "make-website: warning: doxygen is too old: [$version]: please use 1.8.14 or later" ;
 			}
 		}
 
@@ -157,7 +163,7 @@ sub make_mainpage_md
 	print $fh "\\mainpage E-MailRelay\n\n" ;
 	for my $fname ( @cfg_mainpage )
 	{
-		my $fh_in = new FileHandle( $fname , "r" ) or die "cannot open [$fname]" ;
+		my $fh_in = new FileHandle( $fname , "r" ) or die "make-website: error: cannot open file [$fname]\n" ;
 		my @lines = () ;
 		while(<$fh_in>)
 		{
@@ -281,15 +287,27 @@ sub make_pages_md
 sub make_header
 {
 	my ( $header_out , $config_in ) = @_ ;
+
+	-e $config_in or die ;
+
 	my $header_tmp = ".header.$$.tmp" ;
 	my $footer_tmp = ".footer.$$.tmp" ;
 	my $layout_tmp = ".layout.$$.tmp" ;
 
-	system( "doxygen -w html $header_tmp $footer_tmp $layout_tmp $config_in" ) ;
+	# the header_out file is referred to in the config, so make sure it exists
+	{ my $fh = new FileHandle( $header_out , "w" ) or die ; }
+
+	# get doxygen to create header, footer and layout files
+	my $cmd = "doxygen -w html $header_tmp $footer_tmp $layout_tmp $config_in" ;
+	system( $cmd ) ;
+	-e $footer_tmp && -e $layout_tmp or die "make-website: error: \"doxygen -w\" failed\n" ;
+
+	# discard the generated footer and layout files
 	unlink( $footer_tmp ) ;
 	unlink( $layout_tmp ) ;
 
-	my $fh_in = new FileHandle( $header_tmp , "r" ) or die ;
+	# edit the generated header file into the output file
+	my $fh_in = new FileHandle( $header_tmp , "r" ) or die "make-website: error \"doxygen -w\" did not create a header file\n" ;
 	my $fh = new FileHandle( "$header_out.tmp" , "w" ) or die ;
 	my $active = 1 ;
 	my $seen = 0 ;
@@ -456,7 +474,7 @@ sub fixup
 sub copy_doxygen_tree
 {
 	my $this_dir = dirname($0) ;
-	die "no doxygen tree" if ( ! -d "$this_dir/doxygen" ) ;
+	die "make-website: error: no doxygen tree\n" if ( ! -d "$this_dir/doxygen" ) ;
 	#if( -d "$this_dir/doxygen" )
 	{
 		system( "cp -r $this_dir/doxygen $cfg_output_dir" ) ;

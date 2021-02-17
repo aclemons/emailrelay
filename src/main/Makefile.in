@@ -117,15 +117,13 @@ am__v_AR_1 =
 libmain_a_AR = $(AR) $(ARFLAGS)
 libmain_a_LIBADD =
 am__libmain_a_SOURCES_DIST = serviceimp_none.cpp \
-	serviceinstall_unix.cpp serviceremove_unix.cpp options.cpp \
-	options.h serviceimp.h serviceinstall.h serviceremove.h \
-	serviceimp_win32.cpp serviceinstall_win32.cpp \
-	serviceremove_win32.cpp
+	servicecontrol_unix.cpp options.cpp options.h serviceimp.h \
+	servicecontrol.h serviceimp_win32.cpp servicecontrol_win32.cpp
 am__objects_1 = serviceimp_none.$(OBJEXT) \
-	serviceinstall_unix.$(OBJEXT) serviceremove_unix.$(OBJEXT)
+	servicecontrol_unix.$(OBJEXT)
 am__objects_2 = options.$(OBJEXT)
 am__objects_3 = serviceimp_win32.$(OBJEXT) \
-	serviceinstall_win32.$(OBJEXT) serviceremove_win32.$(OBJEXT)
+	servicecontrol_win32.$(OBJEXT)
 @GCONFIG_WINDOWS_FALSE@am_libmain_a_OBJECTS = $(am__objects_1) \
 @GCONFIG_WINDOWS_FALSE@	$(am__objects_2)
 @GCONFIG_WINDOWS_TRUE@am_libmain_a_OBJECTS = $(am__objects_3) \
@@ -219,6 +217,8 @@ emailrelay_submit_OBJECTS = $(am_emailrelay_submit_OBJECTS)
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/gnet/libgnet.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/win32/libextra.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a
+emailrelay_submit_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(emailrelay_submit_LDFLAGS) $(LDFLAGS) -o $@
 am__emailrelay_textmode_SOURCES_DIST = main.cpp commandline.h \
 	commandline.cpp configuration.h configuration.cpp legal.cpp \
 	legal.h output.cpp output.h run.cpp run.h
@@ -481,6 +481,7 @@ e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
+e_systemddir = @e_systemddir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -522,7 +523,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/gauth \
 	-I$(top_srcdir)/src/gsmtp \
 	-I$(top_srcdir)/src/gpop \
-	-D "G_SPOOLDIR=$(e_spooldir)"
+	-D "G_SPOOLDIR=$(e_spooldir)" \
+	-D "G_LOCALEDIR=$(localedir)"
 
 WINDOWS_MAIN_SOURCES = \
 	winmain.cpp \
@@ -557,20 +559,17 @@ WINDOWS_SERVICEWRAPPER_SOURCES = \
 
 WINDOWS_LIBMAIN_SOURCES = \
 	serviceimp_win32.cpp \
-	serviceinstall_win32.cpp \
-	serviceremove_win32.cpp
+	servicecontrol_win32.cpp
 
 UNIX_LIBMAIN_SOURCES = \
 	serviceimp_none.cpp \
-	serviceinstall_unix.cpp \
-	serviceremove_unix.cpp
+	servicecontrol_unix.cpp
 
 LIBMAIN_SOURCES = \
 	options.cpp \
 	options.h \
 	serviceimp.h \
-	serviceinstall.h \
-	serviceremove.h
+	servicecontrol.h
 
 MISC_EXTRA_DIST = \
 	doxygen.h \
@@ -660,8 +659,8 @@ emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_TRUE@	-lws2_32 -liphlpapi -lcomctl32
 
 emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
-@GCONFIG_WINDOWS_FALSE@emailrelay_submit_FLAGS = 
-@GCONFIG_WINDOWS_TRUE@emailrelay_submit_FLAGS = -static
+@GCONFIG_WINDOWS_FALSE@emailrelay_submit_LDFLAGS = 
+@GCONFIG_WINDOWS_TRUE@emailrelay_submit_LDFLAGS = -static
 @GCONFIG_WINDOWS_FALSE@emailrelay_submit_LDADD = \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gsmtp/libgsmtp.a \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gauth/libgauth.a \
@@ -850,7 +849,7 @@ emailrelay-start$(EXEEXT): $(emailrelay_start_OBJECTS) $(emailrelay_start_DEPEND
 
 emailrelay-submit$(EXEEXT): $(emailrelay_submit_OBJECTS) $(emailrelay_submit_DEPENDENCIES) $(EXTRA_emailrelay_submit_DEPENDENCIES) 
 	@rm -f emailrelay-submit$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(emailrelay_submit_OBJECTS) $(emailrelay_submit_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(emailrelay_submit_LINK) $(emailrelay_submit_OBJECTS) $(emailrelay_submit_LDADD) $(LIBS)
 
 emailrelay-textmode$(EXEEXT): $(emailrelay_textmode_OBJECTS) $(emailrelay_textmode_DEPENDENCIES) $(EXTRA_emailrelay_textmode_DEPENDENCIES) 
 	@rm -f emailrelay-textmode$(EXEEXT)
@@ -873,12 +872,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/passwd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/run.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/servicecontrol_unix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/servicecontrol_win32.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serviceimp_none.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serviceimp_win32.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serviceinstall_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serviceinstall_win32.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serviceremove_unix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serviceremove_win32.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/servicewrapper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/start.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/submit.Po@am__quote@

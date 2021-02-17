@@ -1,25 +1,25 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gnewfile.cpp
-//
+///
+/// \file gnewfile.cpp
+///
 
 #include "gdef.h"
-#include "gmessagestore.h"
+#include "gfilestore.h"
 #include "gnewfile.h"
 #include "gprocess.h"
 #include "groot.h"
@@ -170,7 +170,7 @@ void GSmtp::NewFile::discardContent()
 void GSmtp::NewFile::deleteContent()
 {
 	FileWriter claim_writer ;
-	G::File::remove( m_content_path , G::File::NoThrow() ) ;
+	G::File::remove( m_content_path , std::nothrow ) ;
 }
 
 void GSmtp::NewFile::deleteEnvelope()
@@ -178,7 +178,7 @@ void GSmtp::NewFile::deleteEnvelope()
 	if( ! m_envelope_path_0.str().empty() )
 	{
 		FileWriter claim_writer ;
-		G::File::remove( m_envelope_path_0 , G::File::NoThrow() ) ;
+		G::File::remove( m_envelope_path_0 , std::nothrow ) ;
 	}
 }
 
@@ -200,7 +200,7 @@ bool GSmtp::NewFile::saveEnvelope()
 bool GSmtp::NewFile::commitEnvelope()
 {
 	FileWriter claim_writer ;
-	m_saved = G::File::rename( m_envelope_path_0 , m_envelope_path_1 , G::File::NoThrow() ) ;
+	m_saved = G::File::rename( m_envelope_path_0 , m_envelope_path_1 , std::nothrow ) ;
 	return m_saved ;
 }
 
@@ -232,4 +232,3 @@ G::Path GSmtp::NewFile::contentPath() const
 	return m_content_path ;
 }
 
-/// \file gnewfile.cpp

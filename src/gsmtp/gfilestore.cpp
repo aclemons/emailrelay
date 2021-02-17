@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gfilestore.cpp
-//
+///
+/// \file gfilestore.cpp
+///
 
 #include "gdef.h"
 #include "gfilestore.h"
@@ -24,6 +24,8 @@
 #include "gstoredfile.h"
 #include "gprocess.h"
 #include "gdirectory.h"
+#include "gformat.h"
+#include "ggettext.h"
 #include "groot.h"
 #include "gpath.h"
 #include "gfile.h"
@@ -87,14 +89,14 @@ std::unique_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
 		const bool check_recipients = m_lock ; // check for no-remote-recipients
 		bool ok = m->readEnvelope(reason,check_recipients) && m->openContent(reason) ;
 		if( ok )
-			return std::unique_ptr<StoredMessage>( m.release() ) ; // up-cast to base
+			return std::unique_ptr<StoredMessage>( m.release() ) ; // up-cast
 
 		if( m_lock )
 			m->fail( reason , 0 ) ;
 		else
 			G_WARNING( "GSmtp::MessageStore: ignoring \"" << m_iter.filePath() << "\": " << reason ) ;
 	}
-	return std::unique_ptr<StoredMessage>() ;
+	return {} ;
 }
 
 // ===
@@ -152,15 +154,18 @@ void GSmtp::FileStore::checkPath( const G::Path & directory_path )
 {
 	G::Directory dir_test( directory_path ) ;
 	bool ok = false ;
+	int error = 0 ;
+	std::string reason  ;
 
 	// fail if not readable (after switching effective userid)
 	{
 		FileWriter claim_writer ;
-		ok = dir_test.valid() ;
+		error = dir_test.usable() ;
+		ok = error == 0 ;
 	}
 	if( !ok )
 	{
-		throw InvalidDirectory( directory_path.str() ) ;
+		throw InvalidDirectory( directory_path.str() , G::Process::strerror(error) ) ;
 	}
 
 	// warn if not writeable (after switching effective userid)
@@ -171,16 +176,18 @@ void GSmtp::FileStore::checkPath( const G::Path & directory_path )
 	}
 	if( !ok )
 	{
-		G_WARNING( "GSmtp::MessageStore: directory not writable: \"" << directory_path << "\"" ) ;
+		using G::format ;
+		using G::gettext ;
+		G_WARNING( "GSmtp::MessageStore: " << format(gettext("directory not writable: \"%1%\"")) % directory_path ) ;
 	}
 }
 
 std::unique_ptr<std::ofstream> GSmtp::FileStore::stream( const G::Path & path )
 {
-	std::unique_ptr<std::ofstream> stream_ptr( new std::ofstream ) ;
+	auto stream_ptr = std::make_unique<std::ofstream>() ;
 	{
 		FileWriter claim_writer ; // seteuid(), umask(Tighter)
-		G::File::open( *stream_ptr , path , std::ios_base::trunc ) ;
+		G::File::open( *stream_ptr , path ) ;
 	}
 	return stream_ptr ;
 }
@@ -253,12 +260,12 @@ std::shared_ptr<GSmtp::MessageStore::Iterator> GSmtp::FileStore::iterator( bool 
 
 std::shared_ptr<GSmtp::MessageStore::Iterator> GSmtp::FileStore::iteratorImp( bool lock )
 {
-	return std::shared_ptr<MessageStore::Iterator>( new FileIterator(*this,m_dir,lock,false) ) ; // upcast
+	return std::make_shared<FileIterator>( *this , m_dir , lock , false ) ; // up-cast
 }
 
 std::shared_ptr<GSmtp::MessageStore::Iterator> GSmtp::FileStore::failures()
 {
-	return std::shared_ptr<MessageStore::Iterator>( new FileIterator(*this,m_dir,false,true) ) ; // upcast
+	return std::make_shared<FileIterator>( *this , m_dir , false , true ) ; // up-cast
 }
 
 std::unique_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( unsigned long id )
@@ -279,14 +286,15 @@ std::unique_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( unsigned long id )
 
 	G_LOG( "GSmtp::FileStore::get: processing message \"" << message->name() << "\"" ) ;
 
-	return std::unique_ptr<StoredMessage>( message.release() ) ; // up-cast to base
+	return std::unique_ptr<StoredMessage>( message.release() ) ; // up-cast
 }
 
 std::unique_ptr<GSmtp::NewMessage> GSmtp::FileStore::newMessage( const std::string & from ,
 	const std::string & from_auth_in , const std::string & from_auth_out )
 {
 	m_empty = false ;
-	return std::unique_ptr<NewMessage>( new NewFile(*this,from,from_auth_in,from_auth_out,m_max_size,m_test_for_eight_bit) ) ;
+	return std::make_unique<NewFile>( *this , from , from_auth_in , from_auth_out ,
+		m_max_size , m_test_for_eight_bit ) ; // up-cast
 }
 
 void GSmtp::FileStore::updated()
@@ -369,4 +377,3 @@ GSmtp::FileWriter::FileWriter() :
 GSmtp::FileWriter::~FileWriter()
 = default;
 
-/// \file gfilestore.cpp

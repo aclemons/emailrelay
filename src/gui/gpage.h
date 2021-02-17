@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,11 +18,11 @@
 /// \file gpage.h
 ///
 
-#ifndef G_PAGE_H
-#define G_PAGE_H
+#ifndef G_MAIN_GUI_PAGE_H
+#define G_MAIN_GUI_PAGE_H
 
 #include "gdef.h"
-#include "qt.h"
+#include "gqt.h"
 #include "gstrings.h"
 #include "gpath.h"
 #include "gexecutablecommand.h"
@@ -33,14 +33,14 @@ class QAbstractButton ;
 class QLineEdit ;
 class QComboBox ;
 
-/// \class GPage
+//| \class GPage
 /// A page widget that can be installed in a GDialog.
 ///
 class GPage : public QWidget
 {Q_OBJECT
 protected:
-	GPage( GDialog & , const std::string & name , const std::string & next_1 ,
-		const std::string & next_2 , bool finish_button , bool close_button ) ;
+	GPage( GDialog & , const std::string & name ,
+		const std::string & next_1 , const std::string & next_2 ) ;
 			///< Constructor.
 
 public:
@@ -53,25 +53,21 @@ public:
 	std::string name() const ;
 		///< Returns the page name.
 
-	bool useFinishButton() const ;
-		///< Returns the ctor's finish_button parameter.
+	virtual bool isReadyToFinishPage() const ;
+		///< Returns true if the dialog is nearly complete so the
+		///< 'next' button should be disabled on this page.
 
-	virtual std::string helpName() const ;
-		///< Returns this page's help-page name. Returns the
-		///< empty string if the help button should be disabled.
-		///< This default implementation returns the empty string.
-
-	virtual bool closeButton() const ;
-		///< Returns true if the page should have _only_ a close
-		///< (and maybe help) button, typically if the last page.
-		///<
-		///< This default implementation returns the constructor
-		///< parameter.
+	virtual bool isFinishPage() const ;
+		///< Returns true if this is the finishing page and no
+		///< further page navigation should be allowed.
 
 	virtual void onShow( bool back ) ;
 		///< Called as this page becomes visible as a result
 		///< of the previous page's 'next' button being clicked.
 		///< This default implementation does nothing.
+
+	virtual void onLaunch() ;
+		///< Called when the launch button is clicked.
 
 	virtual std::string nextPage() = 0 ;
 		///< Returns the name of the next page.
@@ -84,12 +80,22 @@ public:
 		///< button can be enabled. This default implementation
 		///< returns true.
 
+	virtual bool isFinishing() ;
+		///< Returns true if isFinishPage() and still busy finishing.
+
+	virtual bool canLaunch() ;
+		///< Returns true if isFinishPage() and the launch button
+		///< can be enabled.
+
 	virtual void dump( std::ostream & , bool for_install ) const ;
 		///< Dumps the page's state to the given stream.
 		///< Overrides should start by calling this base-class
 		///< implementation.
 
-	static void setTestMode( int ) ;
+	virtual std::string helpUrl( const std::string & language ) const ;
+		///< Overridable help url.
+
+	static void setTestMode( int = 1 ) ;
 		///< Sets a test-mode. Typically this causes widgets
 		///< to be initialised in a way that helps with testing,
 		///< such as avoiding unnecessary clicks and causing
@@ -101,16 +107,17 @@ signals:
 		///< This allows the dialog box to update its
 		///< buttons according to the page's new state.
 
+private slots:
+	void helpKeyTriggered() ;
+
 protected:
 	struct NameTip {} ;
 	struct PasswordTip {} ;
 	static QLabel * newTitle( QString ) ;
-	static void tip( QWidget * , const std::string & ) ;
 	static void tip( QWidget * , const char * ) ;
+	static void tip( QWidget * , const QString & ) ;
 	static void tip( QWidget * , NameTip ) ;
 	static void tip( QWidget * , PasswordTip ) ;
-	static QString tip( const char * ) ;
-	static QString tip() ;
 	std::string next1() const ;
 	std::string next2() const ;
 	static std::string value( bool ) ;
@@ -127,14 +134,13 @@ protected:
 private:
 	static std::string stdstr( const QString & ) ;
 	static std::string stdstr_utf8( const QString & ) ;
+	void addHelpAction() ;
 
 private:
 	GDialog & m_dialog ;
 	std::string m_name ;
 	std::string m_next_1 ;
 	std::string m_next_2 ;
-	bool m_finish_button ;
-	bool m_close_button ;
 	static int m_test_mode ;
 } ;
 

@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gspamclient.cpp
-//
+///
+/// \file gspamclient.cpp
+///
 
 #include "gdef.h"
 #include "gstr.h"
@@ -80,7 +80,7 @@ void GSmtp::SpamClient::onDelete( const std::string & )
 {
 }
 
-void GSmtp::SpamClient::onSecure( const std::string & , const std::string & )
+void GSmtp::SpamClient::onSecure( const std::string & , const std::string & , const std::string & )
 {
 }
 
@@ -176,7 +176,7 @@ GSmtp::SpamClient::Response::~Response()
 	if( m_stream.is_open() )
 	{
 		m_stream.close() ;
-		G::File::remove( m_path_tmp.c_str() , G::File::NoThrow() ) ;
+		G::File::remove( m_path_tmp.c_str() , std::nothrow ) ;
 	}
 }
 
@@ -202,7 +202,8 @@ void GSmtp::SpamClient::Response::add( const std::string & path , const std::str
 	}
 	if( m_state == 1 ) // spamc/spamd headers
 	{
-		G_LOG( "GSmtp::SpamClient::Response::add: spam response line: [" << G::Str::printable(G::Str::trimmed(line,G::Str::ws())) << "]" ) ;
+		G_LOG( "GSmtp::SpamClient::Response::add: spam response line: ["
+			<< G::Str::printable(G::Str::trimmed(line,G::Str::ws())) << "]" ) ;
 		if( line.find("Spam:") == 0U )
 			m_result = G::Str::trimmed( line.substr(5U) , G::Str::ws() ) ;
 		else if( G::Str::imatch(line.substr(0U,15U),"Content-length:") )
@@ -263,4 +264,3 @@ std::string GSmtp::SpamClient::Response::result() const
 		return m_result ; // eg. "True ; 4.5 / 5.0"
 }
 
-/// \file gspamclient.cpp

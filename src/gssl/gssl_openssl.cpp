@@ -1,27 +1,29 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gssl_openssl.cpp
-//
+///
+/// \file gssl_openssl.cpp
+///
 
 #include "gdef.h"
 #include "gssl.h"
 #include "gssl_openssl.h"
 #include "ghashstate.h"
+#include "gformat.h"
+#include "ggettext.h"
 #include "gtest.h"
 #include "gstr.h"
 #include "gpath.h"
@@ -39,9 +41,6 @@
 #include <exception>
 #include <functional>
 #include <vector>
-#include <map>
-#include <iomanip>
-#include <fstream>
 #include <sstream>
 #include <utility>
 #include <algorithm>
@@ -61,7 +60,7 @@ GSsl::OpenSSL::LibraryImp::LibraryImp( G::StringArray & library_config , Library
 	// "on systems without /dev/*random devices providing entropy from the kernel the EGD entropy
 	// gathering daemon can be used to collect entropy... OpenSSL automatically queries EGD when
 	// entropy is ... checked via RAND_status() for the first time" (man RAND_egd(3))
-	int rc = RAND_status() ; G__IGNORE_VARIABLE(int,rc) ;
+	GDEF_IGNORE_RETURN RAND_status() ;
 
 	// allocate a slot for a pointer from SSL to ProtocolImp
 	m_index = SSL_get_ex_new_index( 0 , nullptr , nullptr , nullptr , nullptr ) ;
@@ -89,15 +88,26 @@ void GSsl::OpenSSL::LibraryImp::cleanup()
 std::string GSsl::OpenSSL::LibraryImp::sid()
 {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-	return G::Str::printable( SSLeay_version(SSLEAY_VERSION) ) ;
+	std::string v = SSLeay_version(SSLEAY_VERSION) ;
 #else
-	return G::Str::printable( OpenSSL_version(OPENSSL_VERSION) ) ;
+	std::string v = OpenSSL_version(OPENSSL_VERSION) ;
 #endif
+	return G::Str::unique( G::Str::printable(v) , ' ' ) ;
 }
 
 std::string GSsl::OpenSSL::LibraryImp::id() const
 {
 	return sid() ;
+}
+
+bool GSsl::OpenSSL::LibraryImp::generateKeyAvailable() const
+{
+	return false ;
+}
+
+std::string GSsl::OpenSSL::LibraryImp::generateKey( const std::string & ) const
+{
+	return std::string() ;
 }
 
 GSsl::OpenSSL::Config GSsl::OpenSSL::LibraryImp::config() const
@@ -120,9 +130,9 @@ void GSsl::OpenSSL::LibraryImp::addProfile( const std::string & profile_name , b
 	const std::string & default_peer_certificate_name , const std::string & default_peer_host_name ,
 	const std::string & profile_config )
 {
-	std::shared_ptr<ProfileImp> profile_ptr(
-		new ProfileImp(*this,is_server_profile,key_file,cert_file,ca_file,
-			default_peer_certificate_name,default_peer_host_name,profile_config) ) ;
+	std::shared_ptr<ProfileImp> profile_ptr =
+		std::make_shared<ProfileImp>(*this,is_server_profile,key_file,cert_file,ca_file,
+			default_peer_certificate_name,default_peer_host_name,profile_config) ;
 	m_profile_map.insert( Map::value_type(profile_name,profile_ptr) ) ;
 }
 
@@ -167,7 +177,7 @@ G::StringArray GSsl::OpenSSL::LibraryImp::digesters( bool need_state ) const
 
 GSsl::Digester GSsl::OpenSSL::LibraryImp::digester( const std::string & hash_type , const std::string & state , bool need_state ) const
 {
-	return Digester( new OpenSSL::DigesterImp(hash_type,state,need_state) ) ;
+	return Digester( std::make_unique<GSsl::OpenSSL::DigesterImp>(hash_type,state,need_state) ) ;
 }
 
 GSsl::OpenSSL::DigesterImp::DigesterImp( const std::string & hash_type , const std::string & state , bool need_state ) :
@@ -313,8 +323,10 @@ GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 		m_library_imp(library_imp) ,
 		m_default_peer_certificate_name(default_peer_certificate_name) ,
 		m_default_peer_host_name(default_peer_host_name) ,
-		m_ssl_ctx(nullptr,std::ptr_fun(deleter))
+		m_ssl_ctx(nullptr,std::function<void(SSL_CTX*)>(deleter))
 {
+	using G::format ;
+	using G::gettext ;
 	Config extra_config = m_library_imp.config() ;
 	if( !profile_config.empty() )
 	{
@@ -340,7 +352,7 @@ GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 	{
 		G::Root claim_root ;
 		if( !G::File::exists(key_file) )
-			G_WARNING( "GSsl::Profile: cannot open ssl key file: " + key_file ) ;
+			G_WARNING( "GSsl::Profile: " << format(gettext("cannot open ssl key file: %1%")) % key_file ) ;
 
 		check( SSL_CTX_use_PrivateKey_file(m_ssl_ctx.get(),key_file.c_str(),SSL_FILETYPE_PEM) ,
 			"use_PrivateKey_file" , key_file ) ;
@@ -350,7 +362,7 @@ GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 	{
 		G::Root claim_root ;
 		if( !G::File::exists(cert_file) )
-			G_WARNING( "GSsl::Profile: cannot open ssl certificate file: " + cert_file ) ;
+			G_WARNING( "GSsl::Profile: " << format(gettext("cannot open ssl certificate file: %1%")) % cert_file ) ;
 
 		check( SSL_CTX_use_certificate_chain_file(m_ssl_ctx.get(),cert_file.c_str()) ,
 			"use_certificate_chain_file" , cert_file ) ;
@@ -377,7 +389,7 @@ GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 	else
 	{
 		// ask for certificates, make sure they verify against the given ca database, and check the name in the certificate (if given)
-		bool ca_path_is_dir = G::File::isDirectory( ca_path ) ;
+		bool ca_path_is_dir = G::File::isDirectory( ca_path , std::nothrow ) ;
 		const char * ca_file_p = ca_path_is_dir ? nullptr : ca_path.c_str() ;
 		const char * ca_dir_p = ca_path_is_dir ? ca_path.c_str() : nullptr ;
 		bool no_verify = extra_config.noverify() ;
@@ -406,10 +418,9 @@ void GSsl::OpenSSL::ProfileImp::deleter( SSL_CTX * p )
 std::unique_ptr<GSsl::ProtocolImpBase> GSsl::OpenSSL::ProfileImp::newProtocol( const std::string & peer_certificate_name ,
 	const std::string & peer_host_name ) const
 {
-	return std::unique_ptr<ProtocolImpBase>(
-		new OpenSSL::ProtocolImp( *this ,
+	return std::make_unique<OpenSSL::ProtocolImp>( *this ,
 			peer_certificate_name.empty()?defaultPeerCertificateName():peer_certificate_name ,
-			peer_host_name.empty()?defaultPeerHostName():peer_host_name ) ) ;
+			peer_host_name.empty()?defaultPeerHostName():peer_host_name ) ; // up-cast
 }
 
 SSL_CTX * GSsl::OpenSSL::ProfileImp::p() const
@@ -469,9 +480,15 @@ int GSsl::OpenSSL::ProfileImp::verifyPeerName( int ok , X509_STORE_CTX * ctx )
 	{
 		if( ok && X509_STORE_CTX_get_error_depth(ctx) == 0 )
 		{
-			SSL * ssl = reinterpret_cast<SSL*>( X509_STORE_CTX_get_ex_data( ctx , SSL_get_ex_data_X509_STORE_CTX_idx() ) ) ; if(ssl==nullptr) throw 1 ;
+			SSL * ssl = static_cast<SSL*>( X509_STORE_CTX_get_ex_data( ctx , SSL_get_ex_data_X509_STORE_CTX_idx() ) ) ;
+			if( ssl == nullptr )
+				return 0 ; // never gets here
+
 			OpenSSL::LibraryImp & library = dynamic_cast<OpenSSL::LibraryImp&>( Library::impstance() ) ;
-			OpenSSL::ProtocolImp * protocol = reinterpret_cast<OpenSSL::ProtocolImp*>( SSL_get_ex_data(ssl,library.index()) ) ; if(protocol==nullptr) throw 1 ;
+			OpenSSL::ProtocolImp * protocol = static_cast<OpenSSL::ProtocolImp*>( SSL_get_ex_data(ssl,library.index()) ) ;
+			if( protocol == nullptr )
+				return 0 ; // never gets here
+
 			std::string required_peer_certificate_name = protocol->requiredPeerCertificateName() ;
 			if( !required_peer_certificate_name.empty() )
 			{
@@ -507,7 +524,7 @@ std::string GSsl::OpenSSL::ProfileImp::name( X509_NAME * x509_name )
 
 GSsl::OpenSSL::ProtocolImp::ProtocolImp( const ProfileImp & profile , const std::string & required_peer_certificate_name ,
 	const std::string & target_peer_host_name ) :
-		m_ssl(nullptr,std::ptr_fun(deleter)) ,
+		m_ssl(nullptr,std::function<void(SSL*)>(deleter)) ,
 		m_log_fn(profile.lib().log()) ,
 		m_verbose(profile.lib().verbose()) ,
 		m_fd_set(false) ,
@@ -700,6 +717,32 @@ std::string GSsl::OpenSSL::ProtocolImp::cipher() const
 	return name ? G::Str::printable(name) : std::string() ;
 }
 
+std::string GSsl::OpenSSL::ProtocolImp::protocol() const
+{
+	#if OPENSSL_VERSION_NUMBER < 0x10100000L
+		int v = SSL_version( m_ssl.get() ) ;
+	#else
+		const SSL_SESSION * session = SSL_get_session( const_cast<SSL*>(m_ssl.get()) ) ;
+		if( session == nullptr ) return std::string() ;
+		int v = SSL_SESSION_get_protocol_version( session ) ;
+	#endif
+	#ifdef TLS1_VERSION
+		if( v == TLS1_VERSION ) return "TLSv1.0" ; // cf. mbedtls
+	#endif
+	#ifdef TLS1_1_VERSION
+		if( v == TLS1_1_VERSION ) return "TLSv1.1" ;
+	#endif
+	#ifdef TLS1_2_VERSION
+		if( v == TLS1_2_VERSION ) return "TLSv1.2" ;
+	#endif
+	#ifdef TLS1_3_VERSION
+		if( v == TLS1_3_VERSION ) return "TLSv1.3" ;
+	#else
+		if( v == 0x304 ) return "TLSv1.3" ; // grr libressl
+	#endif
+	return "#" + G::Str::fromInt(v) ;
+}
+
 bool GSsl::OpenSSL::ProtocolImp::verified() const
 {
 	return m_verified ;
@@ -771,7 +814,7 @@ GSsl::OpenSSL::CertificateChain::CertificateChain( STACK_OF(X509) * chain )
 	for( int i = 0 ; chain != nullptr && i < sk_X509_num(chain) ; i++ )
 	{
 		void * p = sk_X509_value(chain,i) ; if( p == nullptr ) break ;
-		X509 * x509 = reinterpret_cast<X509*>(p) ;
+		X509 * x509 = static_cast<X509*>(p) ;
 		m_str.append( Certificate(x509,false).str() ) ;
 	}
 }
@@ -826,29 +869,33 @@ GSsl::OpenSSL::Config::Config( G::StringArray & cfg ) :
 		m_client_fn = SSLv23_client_method ;
 	#endif
 
-	#ifdef SSL3_VERSION
-		if( consume(cfg,"sslv3") ) m_min = SSL3_VERSION ;
-		if( consume(cfg,"-sslv3") ) m_max = SSL3_VERSION ;
-	#endif
+	#if GCONFIG_HAVE_OPENSSL_MIN_MAX
 
-	#ifdef TLS1_VERSION
-		if( consume(cfg,"tlsv1.0") ) m_min = TLS1_VERSION ;
-		if( consume(cfg,"-tlsv1.0") ) m_max = TLS1_VERSION ;
-	#endif
+		#ifdef SSL3_VERSION
+			if( consume(cfg,"sslv3") ) m_min = SSL3_VERSION ;
+			if( consume(cfg,"-sslv3") ) m_max = SSL3_VERSION ;
+		#endif
 
-	#ifdef TLS1_1_VERSION
-		if( consume(cfg,"tlsv1.1") ) m_min = TLS1_1_VERSION ;
-		if( consume(cfg,"-tlsv1.1") ) m_max = TLS1_1_VERSION ;
-	#endif
+		#ifdef TLS1_VERSION
+			if( consume(cfg,"tlsv1.0") ) m_min = TLS1_VERSION ;
+			if( consume(cfg,"-tlsv1.0") ) m_max = TLS1_VERSION ;
+		#endif
 
-	#ifdef TLS1_2_VERSION
-		if( consume(cfg,"tlsv1.2") ) m_min = TLS1_2_VERSION ;
-		if( consume(cfg,"-tlsv1.2") ) m_max = TLS1_2_VERSION ;
-	#endif
+		#ifdef TLS1_1_VERSION
+			if( consume(cfg,"tlsv1.1") ) m_min = TLS1_1_VERSION ;
+			if( consume(cfg,"-tlsv1.1") ) m_max = TLS1_1_VERSION ;
+		#endif
 
-	#ifdef TLS1_3_VERSION
-		if( consume(cfg,"tlsv1.3") ) m_min = TLS1_3_VERSION ;
-		if( consume(cfg,"-tlsv1.3") ) m_max = TLS1_3_VERSION ;
+		#ifdef TLS1_2_VERSION
+			if( consume(cfg,"tlsv1.2") ) m_min = TLS1_2_VERSION ;
+			if( consume(cfg,"-tlsv1.2") ) m_max = TLS1_2_VERSION ;
+		#endif
+
+		#ifdef TLS1_3_VERSION
+			if( consume(cfg,"tlsv1.3") ) m_min = TLS1_3_VERSION ;
+			if( consume(cfg,"-tlsv1.3") ) m_max = TLS1_3_VERSION ;
+		#endif
+
 	#endif
 
 	#ifdef SSL_OP_ALL
@@ -857,6 +904,14 @@ GSsl::OpenSSL::Config::Config( G::StringArray & cfg ) :
 
 	#ifdef SSL_OP_NO_TICKET
 		if( consume(cfg,"op_no_ticket") ) m_options_set |= SSL_OP_NO_TICKET ;
+	#endif
+
+	#ifdef SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION
+		if( consume(cfg,"op_no_resumption") ) m_options_set |= SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION ;
+	#endif
+
+	#ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
+		if( consume(cfg,"op_server_preference") ) m_options_set |= SSL_OP_CIPHER_SERVER_PREFERENCE ;
 	#endif
 }
 
@@ -894,4 +949,3 @@ bool GSsl::OpenSSL::Config::noverify() const
 {
 	return m_noverify ;
 }
-/// \file gssl_openssl.cpp

@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gtask.h
 ///
 
-#ifndef G_NET_TASK__H
-#define G_NET_TASK__H
+#ifndef G_NET_TASK_H
+#define G_NET_TASK_H
 
 #include "gdef.h"
 #include "geventhandler.h"
@@ -37,7 +37,7 @@ namespace GNet
 	class TaskCallback ;
 }
 
-/// \class GNet::Task
+//| \class GNet::Task
 /// A class for running an exectuable in a separate process with an asychronous
 /// completion callback.
 ///
@@ -61,8 +61,9 @@ public:
 		///< Starts the task by spawning a new process with the given
 		///< command-line and also starting a thread to wait for it. The
 		///< wait thread signals completion of the child process via the
-		///< event loop and the TaskCallback interface. Throws Busy if
-		///< still busy from a prior call to start().
+		///< event loop and the TaskCallback interface. Standard
+		///< output goes to the pipe and standard error is discarded.
+		///< Throws Busy if still busy from a prior call to start().
 
 	void start( const G::ExecutableCommand & commandline , const G::Environment & env ,
 		G::NewProcess::Fd fd_stdin = G::NewProcess::Fd::devnull() ,
@@ -73,8 +74,8 @@ public:
 			///< environment. See also G::NewProcess.
 
 	void stop() ;
-		///< Attempts to kill the spawned process and waits for it
-		///< to terminate. No task-done callback will be triggered.
+		///< Attempts to kill the spawned process. No task-done
+		///< callback will be triggered.
 
 	std::pair<int,std::string> run( const G::ExecutableCommand & commandline , const G::Environment & env ,
 		G::NewProcess::Fd fd_stdin = G::NewProcess::Fd::devnull() ,
@@ -82,7 +83,8 @@ public:
 		G::NewProcess::Fd fd_stderr = G::NewProcess::Fd::devnull() ,
 		const G::Path & cd = G::Path() ) ;
 			///< Runs the task synchronously and returns the exit code
-			///< and pipe output. The callback interface is not used.
+			///< and pipe output. Throws if killed. The callback interface
+			///< is not used.
 
 public:
 	Task( const Task & ) = delete ;
@@ -104,7 +106,7 @@ private:
 	bool m_busy ;
 } ;
 
-/// \class GNet::TaskCallback
+//| \class GNet::TaskCallback
 /// An abstract interface for callbacks from GNet::Task.
 ///
 class GNet::TaskCallback

@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -34,10 +34,16 @@ namespace G
 	class LogOutput ;
 }
 
-/// \class G::LogOutput
+//| \class G::LogOutput
 /// Controls and implements low-level logging output, as used by G::Log.
+///
 /// Applications should instantiate a LogOutput object in main() to
-/// enable log output.
+/// enable and configure log output.
+///
+/// The implementation uses a file descriptor for osoutput() rather than
+/// a stream because windows file-sharing options are not accessible
+/// when building with mingw streams, and to avoid double buffering.
+///
 /// \see G::Log
 ///
 class G::LogOutput
@@ -66,7 +72,7 @@ public:
 		bool m_with_level{false} ;
 		bool m_with_timestamp{false} ;
 		bool m_with_context{false} ;
-		bool m_strip{false} ; // first word
+		bool m_strip{false} ; // strip first word
 		bool m_quiet_stderr{false} ;
 		bool m_use_syslog{false} ;
 		bool m_allow_bad_syslog{false} ;
@@ -87,7 +93,7 @@ public:
 	} ;
 
 	LogOutput( const std::string & exename , const Config & config ,
-		const std::string & stderr_replacement = std::string() ) ;
+		const std::string & filename = std::string() ) ;
 			///< Constructor. If there is no LogOutput object, or if
 			///< 'config.output_enabled' is false, then there is no
 			///< output of any sort (except for assertions to stderr).
@@ -100,12 +106,19 @@ public:
 			///< is true then debug messages will also be generated (but
 			///< only if compiled in).
 			///<
+			///< If an output filename is given it has a "%d" substitution
+			///< applied and it is then opened or created before this
+			///< constructor returns. If no filename is given then
+			///< logging is sent to the standard error stream; the user
+			///< is free to close stderr and reopen it onto /dev/null if
+			///< only syslog logging is required.
+			///<
 			///< More than one LogOutput object may be created, but only
 			///< the first one controls output.
 
 	explicit LogOutput( bool output_enabled_and_summary_info ,
 		bool verbose_info_and_debug = true ,
-		const std::string & stderr_replacement = std::string() ) ;
+		const std::string & filename = std::string() ) ;
 			///< Constructor for test programs. Only generates output if the
 			///< first parameter is true. Never uses syslog.
 
@@ -156,14 +169,19 @@ public:
 	static void assertionFailure( const char * file , int line , const char * test_expression ) noexcept ;
 		///< Reports an assertion failure.
 
-	static void assertionAbort() G__NORETURN ;
+	static void assertionAbort() GDEF_NORETURN ;
 		///< Aborts the program when an assertion has failed.
 
 	static void register_( const std::string & exe ) ;
 		///< Registers the given executable as a source of logging.
 		///< This is called from osinit(), but it might also need to be
-		///< done as an installation task with the necessary process
-		///< permissions.
+		///< done as a program installation step with the necessary
+		///< process permissions.
+
+	static void translate( const std::string & info , const std::string & warning ,
+		const std::string & error , const std::string & fatal ) ;
+			///< Sets the prefix string for the various log levels
+			///< (including trailing punctuation).
 
 public:
 	LogOutput( const LogOutput & ) = delete ;

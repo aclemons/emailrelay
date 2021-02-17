@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gpopstore.cpp
-//
+///
+/// \file gpopstore.cpp
+///
 
 #include "gdef.h"
 #include "gpopstore.h"
@@ -36,16 +36,16 @@ namespace GPop
 	struct FileDeleter ;
 }
 
-/// \class GPop::FileReader
+//| \class GPop::FileReader
 /// A trivial class which is used like G::Root by GPop::Store for reading files.
 /// The implementation does nothing because files in the pop store are group-readable.
 ///
 struct GPop::FileReader
 {
-	FileReader() = default;
+	FileReader() ;
 } ;
 
-/// \class GPop::DirectoryReader
+//| \class GPop::DirectoryReader
 /// A trivial class which is used like G::Root by GPop::Store for reading
 /// directory listings.
 ///
@@ -54,7 +54,7 @@ struct GPop::DirectoryReader : private G::Root
 	DirectoryReader() = default;
 } ;
 
-/// \class GPop::FileDeleter
+//| \class GPop::FileDeleter
 /// A trivial specialisation of G::Root used by GPop::Store for deleting files.
 /// The specialisation is not really necessary because the pop store directory
 /// is group-writeable.
@@ -137,7 +137,7 @@ bool GPop::Store::valid( const G::Path & dir_path , bool allow_delete )
 	}
 	else
 	{
-		FileReader claim_reader ; G__IGNORE_VARIABLE(FileReader,claim_reader) ;
+		FileReader claim_reader ;
 		ok = dir_test.valid() ;
 	}
 	if( !ok )
@@ -302,14 +302,15 @@ std::unique_ptr<std::istream> GPop::StoreLock::get( int id ) const
 
 	G_DEBUG( "GPop::StoreLock::get: " << id << ": " << path(id) ) ;
 
-	std::unique_ptr<std::ifstream> file ;
+	auto file = std::make_unique<std::ifstream>() ;
+	G::Path file_path = path( id ) ;
 	{
-		FileReader claim_reader ; G__IGNORE_VARIABLE(FileReader,claim_reader) ;
-		file = std::make_unique<std::ifstream>( path(id).str().c_str() , std::ios_base::binary | std::ios_base::in ) ;
+		FileReader claim_reader ;
+		G::File::open( *file , file_path ) ;
 	}
 
-	if( ! file->good() )
-		throw CannotRead( path(id).str() ) ;
+	if( !file->good() )
+		throw CannotRead( file_path.str() ) ;
 
 	return std::unique_ptr<std::istream>( file.release() ) ;
 }
@@ -365,7 +366,7 @@ void GPop::StoreLock::deleteFile( const G::Path & path , bool & all_ok ) const
 	bool ok = false ;
 	{
 		FileDeleter claim_deleter ;
-		ok = G::File::remove( path , G::File::NoThrow() ) ;
+		ok = G::File::remove( path , std::nothrow ) ;
 	}
 	all_ok = ok && all_ok ;
 	if( ! ok )
@@ -397,7 +398,7 @@ G::Path GPop::StoreLock::path( const std::string & filename , bool fallback ) co
 	G::Path path_2 = m_dir ; path_2.pathAppend("..") ;
 	path_2.pathAppend( filename ) ;
 
-	return ( fallback && !G::File::exists(path_1,G::File::NoThrow()) ) ? path_2 : path_1 ;
+	return ( fallback && !G::File::exists(path_1,std::nothrow) ) ? path_2 : path_1 ;
 }
 
 std::string GPop::StoreLock::envelopeName( const std::string & content_name ) const
@@ -448,7 +449,7 @@ bool GPop::StoreLock::unlinked( Store & store , const File & file ) const
 	}
 
 	G::Path normal_content_path = m_dir ; normal_content_path.pathAppend( file.name ) ;
-	if( G::File::exists(normal_content_path,G::File::NoThrow()) )
+	if( G::File::exists(normal_content_path,std::nothrow) )
 	{
 		G_DEBUG( "StoreLock::unlinked: unlinked since in its own directory: " << normal_content_path ) ;
 		return true ;
@@ -467,7 +468,7 @@ bool GPop::StoreLock::unlinked( Store & store , const File & file ) const
 			if( ! iter.isDir() ) continue ;
 			G_DEBUG( "Store::unlinked: checking sub-directory: " << iter.fileName() ) ;
 			G::Path envelope_path = iter.filePath() ; envelope_path.pathAppend(envelopeName(file.name)) ;
-			if( G::File::exists(envelope_path,G::File::NoThrow()) )
+			if( G::File::exists(envelope_path,std::nothrow) )
 			{
 				G_DEBUG( "StoreLock::unlinked: still in use: envelope exists: " << envelope_path ) ;
 				found = true ;
@@ -483,5 +484,9 @@ bool GPop::StoreLock::unlinked( Store & store , const File & file ) const
 	}
 
 	return false ;
+}
+
+GPop::FileReader::FileReader() // NOLINT modernize-use-equals-default because of -Wunused
+{
 }
 

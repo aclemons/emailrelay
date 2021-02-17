@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// dir_unix.cpp
-//
+///
+/// \file dir_unix.cpp
+///
 
 #include "gdef.h"
 #include "dir.h"
@@ -72,20 +72,19 @@ namespace
 		if( !arg_3.empty() ) args.push_back( arg_3 ) ;
 		if( !arg_4.empty() ) args.push_back( arg_4 ) ;
 		G::NewProcess child( exe , args ) ;
-		child.wait().run() ;
-		return child.wait().output() ;
+		return child.waitable().wait().output() ;
 	}
 
 	G::Path kde( const std::string & key , const G::Path & default_ )
 	{
 		G::Path result = run( "/usr/bin/kde4-config" , "kde4-config" , "--userpath" , key ) ;
-		return result == G::Path() ? default_ : result ;
+		return result.empty() ? default_ : result ;
 	}
 
 	G::Path xdg( const std::string & key , const G::Path & default_ )
 	{
 		G::Path result = run( "/usr/dir/xdg-user-dir" , "xdg-user-dir" , key ) ;
-		return result == G::Path() ? default_ : result ;
+		return result.empty() ? default_ : result ;
 	}
 
 	G::Path queryDesktop( const G::Path & default_ = G::Path() )
@@ -175,4 +174,3 @@ G::Path Dir::home()
 {
 	return envPath( "HOME" , "~" ) ;
 }
-/// \file dir_unix.cpp

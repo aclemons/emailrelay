@@ -1,95 +1,106 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gfile_unix.cpp
-//
+///
+/// \file gfile_unix.cpp
+///
 
 #include "gdef.h"
 #include "gfile.h"
+#include "gstr.h"
 #include "gprocess.h"
 #include "glog.h"
 #include "gassert.h"
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <vector>
 #include <sstream>
 #include <cerrno> // ENOENT etc
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <fcntl.h>
 
 namespace G
 {
 	namespace FileImp
 	{
-		G::SystemTime mtime( struct stat & statbuf )
+		std::pair<bool,mode_t> newmode( mode_t , const std::string & ) ;
+		std::pair<std::time_t,unsigned int> mtime( struct stat & statbuf ) noexcept
 		{
-			#if GCONFIG_HAVE_STATBUF_NSEC
-				return G::SystemTime( statbuf.st_mtime , statbuf.st_mtim.tv_nsec/1000U ) ;
+			#if GCONFIG_HAVE_STATBUF_TIMESPEC
+				return { statbuf.st_mtimespec.tv_sec , statbuf.st_mtimespec.tv_nsec/1000U } ;
 			#else
-				return G::SystemTime( statbuf.st_mtime ) ;
+				#if GCONFIG_HAVE_STATBUF_NSEC
+					return { statbuf.st_mtime , statbuf.st_mtim.tv_nsec/1000U } ;
+				#else
+					return { statbuf.st_mtime , 0U } ;
+				#endif
 			#endif
 		}
 	}
 }
 
-int G::File::open( const Path & path , std::ios_base::openmode mode )
-{
-	return open( path.cstr() , mode ) ;
-}
-
-int G::File::open( const char * path , std::ios_base::openmode mode ) noexcept
-{
-	int flags = 0 ;
-	if( ( mode & std::ios_base::out ) || ( mode & std::ios_base::app ) ) flags = O_WRONLY|O_CREAT ;
-	if( mode & std::ios_base::in ) flags = O_RDONLY ;
-	if( mode & std::ios_base::trunc ) flags |= O_TRUNC ;
-	if( mode & std::ios_base::app ) flags |= O_APPEND ;
-	int fd = ::open( path , flags , 0666 ) ;
-	if( fd >= 0 && ( mode & std::ios_base::ate ) )
-	{
-		auto rc = ::lseek( fd , 0 , SEEK_END ) ;
-		if( rc < 0 ) ::close(fd) , fd=-1 ;
-	}
-	return fd ;
-}
-
 void G::File::open( std::ofstream & ofstream , const Path & path )
 {
-	open( ofstream , path , std::ios_base::out | std::ios_base::binary ) ; // 'out' for uclibc
+	ofstream.open( path.cstr() , std::ios_base::out | std::ios_base::binary ) ;
 }
 
-void G::File::open( std::ofstream & ofstream , const Path & path , std::ios_base::openmode mode )
+void G::File::open( std::ofstream & ofstream , const Path & path , Text )
 {
-	ofstream.open( path.cstr() , mode | std::ios_base::out | std::ios_base::binary ) ;
+	ofstream.open( path.cstr() , std::ios_base::out ) ;
+}
+
+void G::File::open( std::ofstream & ofstream , const Path & path , Append )
+{
+	ofstream.open( path.cstr() , std::ios_base::app | std::ios_base::binary ) ;
 }
 
 void G::File::open( std::ifstream & ifstream , const Path & path )
 {
-	open( ifstream , path , std::ios_base::in | std::ios_base::binary ) ; // 'in' for uclibc
+	ifstream.open( path.cstr() , std::ios_base::in | std::ios_base::binary ) ;
 }
 
-void G::File::open( std::ifstream & ifstream , const Path & path , std::ios_base::openmode mode )
+void G::File::open( std::ifstream & ifstream , const Path & path , Text )
 {
-	ifstream.open( path.cstr() , mode | std::ios_base::in | std::ios_base::binary ) ;
+	ifstream.open( path.cstr() , std::ios_base::in ) ;
 }
 
-std::filebuf * G::File::open( std::filebuf & fb , const Path & path , std::ios_base::openmode mode )
+std::filebuf * G::File::open( std::filebuf & fb , const Path & path , InOut inout )
 {
-	return fb.open( path.cstr() , mode | std::ios_base::binary ) ;
+	return
+		inout == InOut::In ?
+			fb.open( path.cstr() , std::ios_base::in | std::ios_base::binary ) :
+			fb.open( path.cstr() , std::ios_base::out | std::ios_base::binary ) ;
+}
+
+int G::File::open( const char * path , InOutAppend mode ) noexcept
+{
+	if( mode == InOutAppend::In )
+		return ::open( path , O_RDONLY ) ;
+	else if( mode == InOutAppend::Out )
+		return ::open( path , O_WRONLY|O_CREAT|O_TRUNC , 0666 ) ;
+	else
+		return ::open( path , O_WRONLY|O_CREAT|O_APPEND , 0666 ) ;
+}
+
+void G::File::create( const Path & path )
+{
+	int fd = ::open( path.cstr() , O_RDONLY|O_CREAT , 0666 ) ;
+	if( fd < 0 )
+		throw CannotCreate( path.str() ) ;
+	::close( fd ) ;
 }
 
 ssize_t G::File::read( int fd , char * p , std::size_t n ) noexcept
@@ -107,110 +118,182 @@ void G::File::close( int fd ) noexcept
 	::close( fd ) ;
 }
 
-bool G::File::mkdir( const Path & dir , const NoThrow & )
+int G::File::mkdirImp( const Path & dir ) noexcept
 {
-	// open permissions, but limited by umask
-	return 0 == ::mkdir( dir.str().c_str() , 0777 ) ;
+	int rc = ::mkdir( dir.cstr() , 0777 ) ; // open permissions, but limited by umask
+	if( rc != 0 )
+	{
+		rc = G::Process::errno_() ;
+		if( rc == 0 ) rc = EINVAL ;
+	}
+	return rc ;
 }
 
-bool G::File::exists( const char * path , bool & enoent , bool & eaccess )
+G::File::Stat G::File::statImp( const char * path , bool link ) noexcept
 {
+	Stat s ;
 	struct stat statbuf {} ;
-	if( 0 == ::stat( path , &statbuf ) )
+	if( 0 == ( link ? (::lstat(path,&statbuf)) : (::stat(path,&statbuf)) ) )
 	{
-		return true ;
+		s.error = 0 ;
+		s.enoent = false ;
+		s.eaccess = false ;
+		s.is_link = (statbuf.st_mode & S_IFLNK) ;
+		s.is_dir = (statbuf.st_mode & S_IFDIR) ;
+		s.is_executable = !!(statbuf.st_mode & S_IXUSR) && !!(statbuf.st_mode & S_IRUSR) ; // indicitive
+		s.is_empty = statbuf.st_size == 0 ;
+		s.mtime_s = FileImp::mtime(statbuf).first ;
+		s.mtime_us = FileImp::mtime(statbuf).second ;
+		s.mode = static_cast<unsigned long>( statbuf.st_mode & 07777 ) ;
+		s.size = static_cast<unsigned long long>( statbuf.st_size ) ;
+		s.blocks = static_cast<unsigned long long>( statbuf.st_size >> 24 ) ;
 	}
 	else
 	{
 		int error = Process::errno_() ;
-		enoent = error == ENOENT || error == ENOTDIR ;
-		eaccess = error == EACCES ;
-		return false ;
+		s.error = error ? error : EINVAL ;
+		s.enoent = error == ENOENT || error == ENOTDIR ;
+		s.eaccess = error == EACCES ;
 	}
+	return s ;
 }
 
-bool G::File::isLink( const Path & path )
+bool G::File::existsImp( const char * path , bool & enoent , bool & eaccess ) noexcept
 {
-	struct stat statbuf {} ;
-	return 0 == ::stat( path.str().c_str() , &statbuf ) && (statbuf.st_mode & S_IFLNK) ;
-}
-
-bool G::File::isDirectory( const Path & path )
-{
-	struct stat statbuf {} ;
-	return 0 == ::stat( path.str().c_str() , &statbuf ) && (statbuf.st_mode & S_IFDIR) ;
-}
-
-bool G::File::executable( const Path & path )
-{
-	struct stat statbuf {} ;
-	if( 0 == ::stat( path.str().c_str() , &statbuf ) )
+	Stat s = statImp( path ) ;
+	if( s.error )
 	{
-		bool x = !!( statbuf.st_mode & S_IXUSR ) ;
-		bool r =
-			( statbuf.st_mode & S_IFMT ) == S_IFREG ||
-			( statbuf.st_mode & S_IFMT ) == S_IFLNK ;
-		return x && r ; // indicitive only
+		enoent = s.enoent ;
+		eaccess = s.eaccess ;
 	}
-	else
-	{
-		return false ;
-	}
-}
-
-bool G::File::empty( const Path & path )
-{
-	struct stat statbuf {} ;
-	return 0 == ::stat( path.str().c_str() , &statbuf ) && statbuf.st_size == 0 ;
-}
-
-std::string G::File::sizeString( const Path & path )
-{
-	struct stat statbuf {} ;
-	if( 0 != ::stat( path.str().c_str() , &statbuf ) )
-		return std::string() ;
-
-	std::ostringstream ss ;
-	ss << statbuf.st_size ;
-	return ss.str() ;
-}
-
-G::SystemTime G::File::time( const Path & path )
-{
-	struct stat statbuf {} ;
-	if( 0 != ::stat( path.str().c_str() , &statbuf ) )
-		throw TimeError( path.str() ) ;
-	return FileImp::mtime( statbuf ) ;
-}
-
-G::SystemTime G::File::time( const Path & path , const NoThrow & )
-{
-	struct stat statbuf {} ;
-	if( ::stat( path.str().c_str() , &statbuf ) != 0 )
-		return SystemTime( 0 ) ;
-	return FileImp::mtime( statbuf ) ;
+	return s.error == 0 ;
 }
 
 bool G::File::chmodx( const Path & path , bool do_throw )
 {
-	struct stat statbuf {} ;
-	mode_t mode =
-		0 == ::stat( path.str().c_str() , &statbuf ) ?
-			statbuf.st_mode :
-			mode_t(0777) ; // default to open permissions, but limited by umask
+	Stat s = statImp( path.cstr() ) ;
+	mode_t mode = s.error ? mode_t(0777) : mode_t(s.mode) ;
 
 	mode |= ( S_IRUSR | S_IXUSR ) ; // add user-read and user-executable
 	if( mode & S_IRGRP ) mode |= S_IXGRP ; // add group-executable iff group-read
 	if( mode & S_IROTH ) mode |= S_IXOTH ; // add world-executable iff world-read
 
 	// apply the current umask
-	mode_t mask = ::umask( ::umask(0) ) ;
+	mode_t mask = ::umask( 0 ) ; ::umask( mask ) ;
 	mode &= ~mask ;
 
-	bool ok = 0 == ::chmod( path.str().c_str() , mode ) ;
+	bool ok = 0 == ::chmod( path.cstr() , mode ) ;
 	if( !ok && do_throw )
 		throw CannotChmod( path.str() ) ;
 	return ok ;
+}
+
+void G::File::chmod( const Path & path , const std::string & spec )
+{
+	if( !chmod( path , spec , std::nothrow ) )
+		throw CannotChmod( path.str() ) ;
+}
+
+bool G::File::chmod( const Path & path , const std::string & spec , std::nothrow_t )
+{
+	if( spec.empty() )
+	{
+		return false ;
+	}
+	else if( spec.find_first_not_of("01234567") == std::string::npos )
+	{
+		mode_t mode = static_cast<mode_t>( strtoul( spec.c_str() , nullptr , 8 ) ) ;
+		return mode <= 07777 && 0 == ::chmod( path.cstr() , mode ) ;
+	}
+	else
+	{
+		Stat s = statImp( path.cstr() ) ;
+		if( s.error )
+			return false ;
+		std::pair<bool,mode_t> pair = FileImp::newmode( s.mode , spec ) ;
+		return pair.first && 0 == ::chmod( path.cstr() , pair.second ) ;
+	}
+}
+
+std::pair<bool,mode_t> G::FileImp::newmode( mode_t mode , const std::string & spec_in )
+{
+	mode &= 07777 ;
+	G::StringArray spec_list = G::Str::splitIntoFields( spec_in , "," ) ;
+	bool ok = !spec_list.empty() ;
+	for( auto spec : spec_list )
+	{
+		if( spec.size() >= 2U &&
+			( spec.at(0U) == '+' || spec.at(0U) == '-' || spec.at(0U) == '=' ) )
+		{
+			spec.insert( 0U , "a" ) ;
+		}
+		if( spec.size() >= 3U &&
+			( spec.at(0U) == 'u' || spec.at(0U) == 'g' || spec.at(0U) == 'o' || spec.at(0U) == 'a' ) &&
+			( spec.at(1U) == '+' || spec.at(1U) == '-' || spec.at(1U) == '=' ) )
+		{
+			mode_t part = 0 ;
+			mode_t special = 0 ;
+			for( const char * p = spec.c_str()+2 ; *p ; p++ )
+			{
+				if( *p == 'r' )
+					part |= 4 ;
+				else if( *p == 'w' )
+					part |= 2 ;
+				else if( *p == 'x' )
+					part |= 1 ;
+				else if( *p == 's' && spec[0] == 'u' )
+					special |= S_ISUID ;
+				else if( *p == 's' && spec[0] == 'g' )
+					special |= S_ISGID ;
+				else if( *p == 't' && spec[0] == 'o' )
+					special |= S_ISVTX ;
+				else
+					ok = false ;
+			}
+			int shift = spec[0]=='u' ? 6 : (spec[0]=='g'?3:0) ;
+			if( spec[0] == 'a' )
+			{
+				mode_t mask = umask(0) ; umask( mask ) ;
+				part = ( ((part<<6)|(part<<3)|part) & ~mask ) ;
+			}
+			if( spec[1] == '=' && spec[0] == 'a' )
+			{
+				mode = part ;
+			}
+			else if( spec[1] == '=' )
+			{
+				mode_t clearbits = (7<<shift) | (spec[0]=='u'?S_ISUID:(spec[0]=='g'?S_ISGID:S_ISVTX)) ;
+				mode &= ~clearbits ;
+				mode |= (part<<shift) ;
+				mode |= special ;
+			}
+			else if( spec[1] == '+' )
+			{
+				mode |= ( (part<<shift) | special ) ;
+			}
+			else
+			{
+				mode &= ~( (part<<shift) | special ) ;
+			}
+		}
+		else
+		{
+			ok = false ;
+		}
+	}
+	return std::make_pair( ok , mode ) ;
+}
+
+void G::File::chgrp( const Path & path , const std::string & group )
+{
+	bool ok = 0 == ::chown( path.cstr() , -1 , Identity::lookupGroup(group) ) ;
+	if( !ok )
+		throw CannotChgrp( path.str() ) ;
+}
+
+bool G::File::chgrp( const Path & path , const std::string & group , std::nothrow_t )
+{
+	return 0 == ::chown( path.cstr() , -1 , Identity::lookupGroup(group) ) ;
 }
 
 void G::File::link( const Path & target , const Path & new_link )
@@ -219,9 +302,9 @@ void G::File::link( const Path & target , const Path & new_link )
 		return ;
 
 	if( exists(new_link) )
-		remove( new_link , NoThrow() ) ;
+		remove( new_link , std::nothrow ) ;
 
-	int error = link( target.str().c_str() , new_link.str().c_str() ) ;
+	int error = link( target.cstr() , new_link.cstr() ) ;
 
 	if( error != 0 )
 	{
@@ -231,15 +314,15 @@ void G::File::link( const Path & target , const Path & new_link )
 	}
 }
 
-bool G::File::link( const Path & target , const Path & new_link , const NoThrow & )
+bool G::File::link( const Path & target , const Path & new_link , std::nothrow_t )
 {
 	if( linked(target,new_link) ) // optimisation
 		return true ;
 
 	if( exists(new_link) )
-		remove( new_link , NoThrow() ) ;
+		remove( new_link , std::nothrow ) ;
 
-	return 0 == link( target.str().c_str() , new_link.str().c_str() ) ;
+	return 0 == link( target.cstr() , new_link.cstr() ) ;
 }
 
 int G::File::link( const char * target , const char * new_link )
@@ -251,26 +334,28 @@ int G::File::link( const char * target , const char * new_link )
 
 G::Path G::File::readlink( const Path & link )
 {
-	Path result = readlink( link , NoThrow() ) ;
-	if( result == Path() )
+	Path result = readlink( link , std::nothrow ) ;
+	if( result.empty() )
 		throw CannotReadLink( link.str() ) ;
 	return result ;
 }
 
-G::Path G::File::readlink( const Path & link , const NoThrow & )
+G::Path G::File::readlink( const Path & link , std::nothrow_t )
 {
 	Path result ;
 	struct stat statbuf {} ;
-	int rc = ::lstat( link.str().c_str() , &statbuf ) ;
+	int rc = ::lstat( link.cstr() , &statbuf ) ;
 	if( rc == 0 )
 	{
 		std::size_t buffer_size = statbuf.st_size ? (statbuf.st_size+1U) : 1024U ;
 		std::vector<char> buffer( buffer_size , '\0' ) ;
-		ssize_t rc = ::readlink( link.str().c_str() , &buffer[0] , buffer.size() ) ;
-		if( rc > 0 && static_cast<std::size_t>(rc) < buffer.size() ) // filesystem race can cause truncation -- treat as an error
+		ssize_t nread = ::readlink( link.cstr() , &buffer[0] , buffer.size() ) ;
+
+		// (filesystem race can cause truncation -- treat as an error)
+		if( nread > 0 && static_cast<std::size_t>(nread) < buffer.size() )
 		{
-			G_ASSERT( buffer.at(static_cast<std::size_t>(rc-1)) != '\0' ) ; // readlink does not null-terminate
-			result = Path( std::string( &buffer[0] , static_cast<std::size_t>(rc) ) ) ;
+			G_ASSERT( buffer.at(static_cast<std::size_t>(nread-1)) != '\0' ) ; // readlink does not null-terminate
+			result = Path( std::string( &buffer[0] , static_cast<std::size_t>(nread) ) ) ;
 		}
 	}
 	return result ;
@@ -279,7 +364,6 @@ G::Path G::File::readlink( const Path & link , const NoThrow & )
 bool G::File::linked( const Path & target , const Path & new_link )
 {
 	// see if already linked correctly - errors and overflows are not fatal
-	return readlink(new_link,NoThrow()) == target ;
+	return readlink(new_link,std::nothrow) == target ;
 }
 
-/// \file gfile_unix.cpp

@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// configuration.cpp
-//
+///
+/// \file configuration.cpp
+///
 
 #include "gdef.h"
 #include "gstr.h"
@@ -24,6 +24,8 @@
 #include "commandline.h"
 #include "gmessagestore.h"
 #include "gprocess.h"
+#include "gformat.h"
+#include "ggettext.h"
 #include "glog.h"
 #include <array>
 
@@ -65,7 +67,8 @@ bool Main::Configuration::useSyslog() const
 bool Main::Configuration::validSyslogFacility() const
 {
 	std::string s = m_map.value( "syslog" ) ;
-	return s.empty() || s == "mail" || s == "user" || s == "daemon" ||
+	return s.empty() || s == G::Str::positive() ||
+		s == "mail" || s == "user" || s == "daemon" ||
 		( s.length() == 6U && s.find("local") == 0U &&
 			( s.at(5U) >= '0' && s.at(5U) <= '7' ) ) ;
 }
@@ -203,7 +206,7 @@ std::string Main::Configuration::serverAddress() const
 
 bool Main::Configuration::forwardOnStartup() const
 {
-	return m_map.contains("forward") || m_map.contains("as-client") ;
+	return m_map.contains( "forward" ) || m_map.contains( "as-client" ) ;
 }
 
 bool Main::Configuration::forwardToSome() const
@@ -213,22 +216,22 @@ bool Main::Configuration::forwardToSome() const
 
 bool Main::Configuration::dontServe() const
 {
-	return m_map.contains("dont-serve") || m_map.contains("as-client") ;
+	return m_map.contains( "dont-serve" ) || m_map.contains( "as-client" ) ;
 }
 
 bool Main::Configuration::doServing() const
 {
-	return !m_map.contains("dont-serve") && !m_map.contains("as-client") ;
+	return !m_map.contains( "dont-serve" ) && !m_map.contains( "as-client" ) ;
 }
 
 bool Main::Configuration::immediate() const
 {
-	return m_map.contains("immediate") ;
+	return m_map.contains( "immediate" ) ;
 }
 
 bool Main::Configuration::doPolling() const
 {
-	return m_map.contains("poll") && pollingTimeout() > 0U ;
+	return m_map.contains( "poll" ) && pollingTimeout() > 0U ;
 }
 
 unsigned int Main::Configuration::pollingTimeout() const
@@ -245,8 +248,8 @@ bool Main::Configuration::pollingLog() const
 bool Main::Configuration::forwardOnDisconnect() const
 {
 	return
-		m_map.contains("forward-on-disconnect") ||
-		m_map.contains("as-proxy") ;
+		m_map.contains( "forward-on-disconnect" ) ||
+		m_map.contains( "as-proxy" ) ;
 }
 
 unsigned int Main::Configuration::promptTimeout() const
@@ -503,17 +506,21 @@ std::string Main::Configuration::semanticError() const
 
 G::StringArray Main::Configuration::semantics( bool want_errors ) const
 {
+	using G::format ;
+	using G::gettext ;
 	G::StringArray errors ;
 	G::StringArray warnings ;
 
 	if( m_map.contains("syslog") && !validSyslogFacility() )
 	{
-		errors.push_back( "invalid --syslog facility [" + m_map.value("syslog") + "]: use " + validSyslogFacilities() ) ;
+		errors.push_back( str(
+			format(gettext("invalid --syslog facility [%1%]: use %2%")) %
+				m_map.value("syslog") % validSyslogFacilities() ) ) ;
 	}
 
 	if( m_map.contains("poll") && G::Str::toUInt(m_map.value("poll","0")) == 0U )
 	{
-		errors.push_back( "invalid --poll period: try --forward-on-disconnect" ) ;
+		errors.push_back( gettext("invalid --poll period: try --forward-on-disconnect") ) ;
 	}
 
 	if(
@@ -521,7 +528,7 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 		( m_map.contains("pop") && popPort() == port() ) ||
 		( m_map.contains("pop") && m_map.contains("admin") && popPort() == adminPort() ) )
 	{
-		errors.push_back( "the listening ports must be different" ) ;
+		errors.push_back( gettext("the listening ports must be different") ) ;
 	}
 
 	if( ! m_map.contains("pop") && (
@@ -530,36 +537,37 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 		m_map.contains("pop-by-name") ||
 		m_map.contains("pop-no-delete") ) )
 	{
-		errors.push_back( "pop options require --pop" ) ;
+		errors.push_back( gettext("pop options require --pop") ) ;
 	}
 
 	if( m_map.contains("pop") && !m_map.contains("pop-auth") )
 	{
-		errors.push_back( "the --pop option requires --pop-auth" ) ;
+		errors.push_back( gettext("the --pop option requires --pop-auth") ) ;
 	}
 
 	if( m_map.contains("admin-terminate") && !m_map.contains("admin") )
 	{
-		errors.push_back( "the --admin-terminate option requires --admin" ) ;
+		errors.push_back( gettext("the --admin-terminate option requires --admin") ) ;
 	}
 
 	if( daemon() && spoolDir().isRelative() )
 	{
-		errors.push_back( "in daemon mode the spool-dir must be an absolute path" ) ;
+		// (in case m_base_dir is relative)
+		errors.push_back( gettext("in daemon mode the spool-dir must be an absolute path") ) ;
 	}
 
 	if( daemon() && (
-		( m_map.contains("client-auth") && ( clientSecretsFile() == G::Path() || clientSecretsFile().isRelative() ) ) ||
-		( m_map.contains("server-auth") && ( serverSecretsFile() == G::Path() || serverSecretsFile().isRelative() ) ) ||
-		( m_map.contains("pop-auth") && ( popSecretsFile() == G::Path() || popSecretsFile().isRelative() ) ) ) )
+		( m_map.contains("client-auth") && ( clientSecretsFile().empty() || clientSecretsFile().isRelative() ) ) ||
+		( m_map.contains("server-auth") && ( serverSecretsFile().empty() || serverSecretsFile().isRelative() ) ) ||
+		( m_map.contains("pop-auth") && ( popSecretsFile().empty() || popSecretsFile().isRelative() ) ) ) )
 	{
-		// (never gets here)
-		errors.push_back( "in daemon mode the authorisation secrets file(s) must be absolute paths" ) ;
+		// (in case m_base_dir is relative)
+		errors.push_back( gettext("in daemon mode the authorisation secrets file(s) must be absolute paths") ) ;
 	}
 
 	if( m_map.contains("forward-to") && ( m_map.contains("as-proxy") || m_map.contains("as-client") ) )
 	{
-		errors.push_back( "--forward-to cannot be used with --as-client or --as-proxy" ) ;
+		errors.push_back( gettext("--forward-to cannot be used with --as-client or --as-proxy") ) ;
 	}
 
 	const bool have_forward_to =
@@ -578,7 +586,7 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 		for( const char * p : need_forward_to )
 		{
 			if( m_map.contains(p) && !have_forward_to )
-				errors.push_back( "--" + std::string(p) + " requires --forward-to" ) ;
+				errors.push_back( str( format(gettext("%1% requires --forward-to")) % ("--"+std::string(p)) ) ) ;
 		}
 	}
 
@@ -601,34 +609,34 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 	if( not_serving ) // ie. if not serving admin, smtp or pop
 	{
 		if( m_map.contains("filter") )
-			errors.push_back( "the --filter option cannot be used with --as-client or --dont-serve" ) ;
+			errors.push_back( gettext("the --filter option cannot be used with --as-client or --dont-serve") ) ;
 
 		if( m_map.contains("port") )
-			errors.push_back( "the --port option cannot be used with --as-client or --dont-serve" ) ;
+			errors.push_back( gettext("the --port option cannot be used with --as-client or --dont-serve") ) ;
 
 		if( m_map.contains("server-auth") )
-			errors.push_back( "the --server-auth option cannot be used with --as-client or --dont-serve" ) ;
+			errors.push_back( gettext("the --server-auth option cannot be used with --as-client or --dont-serve") ) ;
 
 		if( m_map.contains("pop") )
-			errors.push_back( "the --pop option cannot be used with --as-client or --dont-serve" ) ;
+			errors.push_back( gettext("the --pop option cannot be used with --as-client or --dont-serve") ) ;
 
 		if( m_map.contains("admin") )
-			errors.push_back( "the --admin option cannot be used with --as-client or --dont-serve" ) ;
+			errors.push_back( gettext("the --admin option cannot be used with --as-client or --dont-serve") ) ;
 
 		if( m_map.contains("poll") )
-			errors.push_back( "the --poll option cannot be used with --as-client or --dont-serve" ) ;
+			errors.push_back( gettext("the --poll option cannot be used with --as-client or --dont-serve") ) ;
 	}
 
 	if( m_map.contains("no-smtp") ) // ie. if not serving smtp
 	{
 		if( m_map.contains("filter") )
-			errors.push_back( "the --filter option cannot be used with --no-smtp" ) ;
+			errors.push_back( gettext("the --filter option cannot be used with --no-smtp") ) ;
 
 		if( m_map.contains("port") )
-			errors.push_back( "the --port option cannot be used with --no-smtp" ) ;
+			errors.push_back( gettext("the --port option cannot be used with --no-smtp") ) ;
 
 		if( m_map.contains("server-auth") )
-			errors.push_back( "the --server-auth option cannot be used with --no-smtp" ) ;
+			errors.push_back( gettext("the --server-auth option cannot be used with --no-smtp") ) ;
 	}
 
 	const bool contains_log =
@@ -639,13 +647,14 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 
 	if( m_map.contains("verbose") && ! ( m_map.contains("help") || contains_log ) )
 	{
-		errors.push_back( "the --verbose option must be used with --log, --help, "
-			"--as-client, --as-server or --as-proxy" ) ;
+		errors.push_back(
+			gettext("the --verbose option must be used with --log, --help, --as-client, --as-server or --as-proxy") ) ;
 	}
 
 	if( m_map.contains("debug") && !contains_log )
 	{
-		errors.push_back( "the --debug option requires --log, --as-client, --as-server or --as-proxy" ) ;
+		errors.push_back(
+			gettext("the --debug option requires --log, --as-client, --as-server or --as-proxy") ) ;
 	}
 
 	const bool no_daemon =
@@ -654,68 +663,79 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 
 	if( m_map.contains("client-tls") && m_map.contains("client-tls-connection") )
 	{
-		errors.push_back( "the --client-tls and --client-tls-connection options cannot be used together" ) ;
+		errors.push_back(
+			gettext("the --client-tls and --client-tls-connection options cannot be used together") ) ;
 	}
 
 	if( m_map.contains("server-tls") && m_map.contains("server-tls-connection") )
 	{
-		errors.push_back( "the --server-tls and --server-tls-connection options cannot be used together" ) ;
+		errors.push_back(
+			gettext("the --server-tls and --server-tls-connection options cannot be used together") ) ;
 	}
 
 	if( m_map.contains("server-tls") && !m_map.contains("server-tls-certificate") )
 	{
-		errors.push_back( "the --server-tls option requires --server-tls-certificate" ) ;
+		errors.push_back(
+			gettext("the --server-tls option requires --server-tls-certificate") ) ;
 	}
 
 	if( m_map.contains("server-tls-connection") && !m_map.contains("server-tls-certificate") )
 	{
-		errors.push_back( "the --server-tls-connection option requires --server-tls-certificate" ) ;
+		errors.push_back(
+			gettext("the --server-tls-connection option requires --server-tls-certificate") ) ;
 	}
 
 	if( ( m_map.contains("server-tls-certificate") || m_map.contains("server-tls-verify") ) &&
 		!( m_map.contains("server-tls") || m_map.contains("server-tls-connection") ) )
 	{
-		errors.push_back( "the --server-tls options require either --server-tls or --server-tls-connection" ) ;
+		errors.push_back(
+			gettext("the --server-tls options require either --server-tls or --server-tls-connection") ) ;
 	}
 
 	if( ( m_map.contains("client-tls-certificate") || m_map.contains("client-tls-verify") ||
 		m_map.contains("client-tls-required") ) &&
 		!( m_map.contains("client-tls") || m_map.contains("client-tls-connection") ) )
 	{
-		errors.push_back( "the --client-tls- options require --client-tls or --client-tls-connection" ) ;
+		errors.push_back(
+			gettext("the --client-tls- options require --client-tls or --client-tls-connection") ) ;
 	}
 
 	if( m_map.contains("client-tls-verify-name") && !m_map.contains("client-tls-verify") )
 	{
-		errors.push_back( "the --client-tls-verify-name options requires --client-tls-verify" ) ;
+		errors.push_back(
+			gettext("the --client-tls-verify-name options requires --client-tls-verify") ) ;
 	}
 
 	if( m_map.contains("server-auth") && m_map.value("server-auth") == "/pam" &&
 		!( m_map.contains("server-tls" ) || m_map.contains("server-tls-connection") ) )
 	{
-		errors.push_back( "--server-auth using pam requires --server-tls or --server-tls-connection" ) ;
+		errors.push_back(
+			gettext("--server-auth using pam requires --server-tls or --server-tls-connection") ) ;
 	}
 
 	if( m_map.contains("server-tls-required") &&
 		!( m_map.contains("server-tls" ) || m_map.contains("server-tls-connection") ) )
 	{
-		errors.push_back( "--server-tls-required requires --server-tls or --server-tls-connection" ) ;
+		errors.push_back(
+			gettext("--server-tls-required requires --server-tls or --server-tls-connection") ) ;
 	}
 
 	if( m_map.contains("pop-auth") && m_map.value("pop-auth") == "/pam" &&
 		!( m_map.contains("server-tls" ) || m_map.contains("server-tls-connection") ) )
 	{
-		errors.push_back( "--pop-auth using pam requires --server-tls or --server-tls-connection" ) ;
+		errors.push_back(
+			gettext("--pop-auth using pam requires --server-tls or --server-tls-connection") ) ;
 	}
 
 	if( m_map.contains("interface") && m_map.value("interface").find("client=") != std::string::npos )
 	{
-		errors.push_back( "using --interface with client= is no longer supported: use --client-interface instead" ) ;
+		errors.push_back(
+			gettext("using --interface with client= is no longer supported: use --client-interface instead") ) ;
 	}
 
 	if( m_map.contains("dnsbl") && !m_map.contains("remote-clients") )
 	{
-		errors.push_back( "--dnsbl requires --remote-clients or -r" ) ;
+		errors.push_back( gettext("--dnsbl requires --remote-clients or -r") ) ;
 	}
 
 	// warnings...
@@ -739,18 +759,21 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 			( m_map.contains("as-server") ? "--as-server" :
 			"--as-proxy" ) ) ;
 
-		warnings.push_back( "logging will stop because " + close_stderr_option +
-			" closes the standard error stream soon after startup" ) ;
+		warnings.push_back( str( format(
+			gettext("logging will stop because %1% closes the standard error stream soon after startup")) %
+				close_stderr_option ) ) ;
 	}
 
 	if( m_map.contains("show") && ( no_daemon || m_map.contains("hidden") ) ) // (windows)
 	{
-		warnings.push_back( "the --show option is ignored when using --no-daemon, --as-client or --hidden" ) ;
+		warnings.push_back(
+			gettext("the --show option is ignored when using --no-daemon, --as-client or --hidden") ) ;
 	}
 
 	if( m_map.contains("dnsblock") && !m_map.contains("remote-clients") )
 	{
-		warnings.push_back( "the --dnsblock option should be used with --remote-clients" ) ;
+		warnings.push_back(
+			gettext("the --dnsblock option should be used with --remote-clients") ) ;
 	}
 
 	return want_errors ? errors : warnings ;
@@ -769,10 +792,10 @@ G::Path Main::Configuration::pathValue( const std::string & option_name ) const
 	}
 	else
 	{
-		if( value.find("@app") == 0U && m_app_dir != G::Path() )
+		if( value.find("@app") == 0U && !m_app_dir.empty() )
 			G::Str::replace( value , "@app" , m_app_dir.str() ) ;
 
-		return G::Path(value).isAbsolute() ? G::Path(value) : ( m_base_dir + value ) ;
+		return G::Path(value).isAbsolute() ? G::Path(value) : ( daemon() ? (m_base_dir+value) : value ) ;
 	}
 }
 
@@ -831,7 +854,7 @@ G::StringArray Main::Configuration::display() const
 	G::StringArray names = m_options.names() ;
 	for( const auto & name : names )
 	{
-			if( m_options.visible(name,G::OptionsLevel(99),false) &&
+		if( m_options.visible(name) &&
 			name != "version" &&
 			name != "help" &&
 			name != "no-syslog" &&
@@ -874,4 +897,3 @@ G::StringArray Main::Configuration::display() const
 	return result ;
 }
 
-/// \file configuration.cpp

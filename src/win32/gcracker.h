@@ -1,16 +1,16 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
@@ -18,8 +18,8 @@
 /// \file gcracker.h
 ///
 
-#ifndef G_CRACKER_H
-#define G_CRACKER_H
+#ifndef G_GUI_CRACKER_H
+#define G_GUI_CRACKER_H
 
 #include "gdef.h"
 #include "gwinbase.h"
@@ -32,7 +32,7 @@ namespace GGui
 	class Cracker ;
 }
 
-/// \class GGui::Cracker
+//| \class GGui::Cracker
 /// The Cracker class encapsulates a typical window procedure by
 /// 'cracking' Windows messages into virtual functions.
 ///
@@ -290,8 +290,10 @@ protected:
 		/// \see GGui::Pump
 
 public:
-	Cracker( const Cracker &other ) = delete ;
-	void operator=( const Cracker & other ) = delete ;
+	Cracker( const Cracker & ) = delete ;
+	Cracker( Cracker && ) = delete ;
+	void operator=( const Cracker & ) = delete ;
+	void operator=( Cracker && ) = delete ;
 
 private:
 	using Fn = void (Cracker::*)(int,int,bool,bool) ;

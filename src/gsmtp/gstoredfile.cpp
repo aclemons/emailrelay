@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gstoredfile.cpp
-//
+///
+/// \file gstoredfile.cpp
+///
 
 #include "gdef.h"
 #include "gfilestore.h"
@@ -30,7 +30,7 @@
 
 GSmtp::StoredFile::StoredFile( FileStore & store , const G::Path & envelope_path ) :
 	m_store(store) ,
-	m_content(new std::ifstream) ,
+	m_content(std::make_unique<std::ifstream>()) , // up-cast
 	m_envelope_path(envelope_path) ,
 	m_locked(false)
 {
@@ -48,7 +48,7 @@ GSmtp::StoredFile::~StoredFile()
 		{
 			// unlock
 			FileWriter claim_writer ;
-			G::File::rename( m_envelope_path , m_old_envelope_path , G::File::NoThrow() ) ;
+			G::File::rename( m_envelope_path , m_old_envelope_path , std::nothrow ) ;
 		}
 	}
 	catch(...) // dtor
@@ -135,7 +135,7 @@ bool GSmtp::StoredFile::openContent( std::string & reason )
 			return false ;
 		}
 		stream->exceptions( std::ios_base::badbit ) ; // (new)
-		m_content.reset( stream.release() ) ; // NOLINT upcast from ifstream to stream
+		m_content = std::unique_ptr<std::istream>( stream.release() ) ; // up-cast
 		return true ;
 	}
 	catch( std::exception & e ) // invalid file in store
@@ -160,7 +160,7 @@ bool GSmtp::StoredFile::lock()
 	bool ok = false ;
 	{
 		FileWriter claim_writer ;
-		ok = G::File::rename( src , dst , G::File::NoThrow() ) ;
+		ok = G::File::rename( src , dst , std::nothrow ) ;
 	}
 	if( ok )
 	{
@@ -191,7 +191,7 @@ void GSmtp::StoredFile::edit( const G::StringArray & rejectees )
 	}
 	if( !out.good() )
 		throw EditError( path_in.str() ) ;
-	G::ScopeExit file_deleter( [=](){G::File::remove(path_out,G::File::NoThrow());} ) ;
+	G::ScopeExit file_deleter( [=](){G::File::remove(path_out,std::nothrow);} ) ;
 
 	// write new file
 	std::size_t endpos = GSmtp::Envelope::write( out , env_copy ) ;
@@ -228,7 +228,7 @@ void GSmtp::StoredFile::edit( const G::StringArray & rejectees )
 	bool ok = false ;
 	{
 		FileWriter claim_writer ;
-		ok = G::File::rename( path_out , path_in , G::File::NoThrow() ) ;
+		ok = G::File::rename( path_out , path_in , std::nothrow ) ;
 	}
 	if( !ok )
 		throw EditError( path_in.str() ) ;
@@ -241,7 +241,12 @@ void GSmtp::StoredFile::edit( const G::StringArray & rejectees )
 
 void GSmtp::StoredFile::fail( const std::string & reason , int reason_code )
 {
-	if( G::File::exists(m_envelope_path) ) // client-side preprocessing may have removed it
+	bool exists = false ;
+	{
+		FileReader claim_reader ;
+		exists = G::File::exists( m_envelope_path ) ;
+	}
+	if( exists ) // client-side preprocessing may have removed it
 	{
 		addReason( m_envelope_path , reason , reason_code ) ;
 
@@ -251,7 +256,7 @@ void GSmtp::StoredFile::fail( const std::string & reason , int reason_code )
 			<< "\"" << bad_path.basename() << "\"" ) ;
 
 		FileWriter claim_writer ;
-		G::File::rename( m_envelope_path , bad_path , G::File::NoThrow() ) ;
+		G::File::rename( m_envelope_path , bad_path , std::nothrow ) ;
 	}
 }
 
@@ -264,7 +269,7 @@ void GSmtp::StoredFile::unfail()
 		bool ok = false ;
 		{
 			FileWriter claim_writer ;
-			ok = G::File::rename( m_envelope_path , dst , G::File::NoThrow() ) ;
+			ok = G::File::rename( m_envelope_path , dst , std::nothrow ) ;
 		}
 		if( ok )
 		{
@@ -285,7 +290,7 @@ void GSmtp::StoredFile::addReason( const G::Path & path , const std::string & re
 	std::ofstream file ;
 	{
 		FileWriter claim_writer ;
-		G::File::open( file , path , std::ios_base::app ) ; // "app", not "ate", for win32
+		G::File::open( file , path , G::File::Append() ) ;
 	}
 	file << FileStore::x() << "Reason: " << G::Str::toPrintableAscii(reason) << eol() ;
 	file << FileStore::x() << "ReasonCode:" ; if( reason_code ) file << " " << reason_code ; file << eol() ;
@@ -301,7 +306,7 @@ void GSmtp::StoredFile::destroy()
 	G_LOG( "GSmtp::StoredMessage: deleting file: \"" << m_envelope_path.basename() << "\"" ) ;
 	{
 		FileWriter claim_writer ;
-		G::File::remove( m_envelope_path , G::File::NoThrow() ) ;
+		G::File::remove( m_envelope_path , std::nothrow ) ;
 	}
 
 	G::Path content_path = contentPath() ;
@@ -309,7 +314,7 @@ void GSmtp::StoredFile::destroy()
 	m_content.reset() ; // close it before deleting
 	{
 		FileWriter claim_writer ;
-		G::File::remove( content_path , G::File::NoThrow() ) ;
+		G::File::remove( content_path , std::nothrow ) ;
 	}
 }
 
@@ -332,7 +337,7 @@ std::istream & GSmtp::StoredFile::contentStream()
 {
 	G_ASSERT( m_content != nullptr ) ;
 	if( m_content == nullptr )
-		m_content.reset( new std::ifstream ) ; // upcast
+		m_content = std::make_unique<std::ifstream>() ; // up-cast
 
 	return *m_content ;
 }
@@ -363,4 +368,3 @@ std::string GSmtp::StoredFile::fromAuthOut() const
 	return m_env.m_from_auth_out ;
 }
 
-/// \file gstoredfile.cpp

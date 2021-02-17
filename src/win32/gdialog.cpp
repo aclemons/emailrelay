@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gdialog.cpp
-//
+///
+/// \file gdialog.cpp
+///
 
 #include "gdef.h"
 #include "gdialog.h"
@@ -26,7 +26,14 @@
 
 BOOL CALLBACK gdialog_dlgproc_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
 {
-	return GGui::Dialog::dlgProc( hwnd , message , wparam , lparam ) ;
+	try
+	{
+		return GGui::Dialog::dlgProc( hwnd , message , wparam , lparam ) ;
+	}
+	catch(...) // callback
+	{
+		return FALSE ;
+	}
 }
 
 GGui::Dialog::DialogList GGui::Dialog::m_list ;
@@ -84,7 +91,7 @@ void GGui::Dialog::cleanup()
 		// remove from the modeless list
 		if( !m_modal && find(handle()) != m_list.end() )
 		{
-			G_DEBUG( "GGui::Dialog::dlgProc: removing modeless dialog box window " << handle() ) ;
+			G_DEBUG( "GGui::Dialog::cleanup: removing modeless dialog box window " << handle() ) ;
 			m_list.erase( find(handle()) ) ;
 			G_ASSERT( find(handle()) == m_list.end() ) ; // assert only one
 		}
@@ -468,4 +475,3 @@ DLGPROC GGui::Dialog::dlgproc_export_fn()
 	return reinterpret_cast<DLGPROC>(gdialog_dlgproc_export) ;
 }
 
-/// \file gdialog.cpp

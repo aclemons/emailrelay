@@ -220,6 +220,7 @@ e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
+e_systemddir = @e_systemddir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -249,6 +250,7 @@ top_srcdir = @top_srcdir@
 EXTRA_DIST = \
 	emailrelay.init \
 	emailrelay.default \
+	emailrelay.service \
 	changelog \
 	control \
 	compat \

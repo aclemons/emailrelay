@@ -1,22 +1,22 @@
 //
-// Copyright (C) 2001-2020 Graeme Walker <graeme_walker@users.sourceforge.net>
-//
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-//
-// gfutureevent_unix.cpp
-//
+///
+/// \file gfutureevent_unix.cpp
+///
 
 #include "gdef.h"
 #include "gfutureevent.h"
@@ -27,7 +27,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-/// \class GNet::FutureEventImp
+//| \class GNet::FutureEventImp
 /// A pimple-pattern implementation class used by GNet::FutureEvent.
 ///
 class GNet::FutureEventImp : public EventHandler
@@ -97,7 +97,7 @@ GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , ExceptionSi
 
 int GNet::FutureEventImp::init( int fd )
 {
-	int rc = ::fcntl( fd , F_SETFL , ::fcntl(fd,F_GETFL) | O_NONBLOCK ) ; G__IGNORE_VARIABLE(int,rc) ;
+	GDEF_IGNORE_RETURN ::fcntl( fd , F_SETFL , ::fcntl(fd,F_GETFL) | O_NONBLOCK ) ;
 	return fd ;
 }
 
@@ -120,7 +120,7 @@ GNet::FutureEventImp::handle_type GNet::FutureEventImp::handle() noexcept
 void GNet::FutureEventImp::receive()
 {
 	char c = '\0' ;
-	ssize_t rc = ::recv( m_read.fd , &c , 1 , 0 ) ; G__IGNORE_VARIABLE(ssize_t,rc) ;
+	GDEF_IGNORE_RETURN ::recv( m_read.fd , &c , 1 , 0 ) ;
 }
 
 bool GNet::FutureEventImp::send( handle_type handle , bool close ) noexcept
@@ -147,7 +147,7 @@ void GNet::FutureEventImp::readEvent()
 // ==
 
 GNet::FutureEvent::FutureEvent( FutureEventHandler & handler , ExceptionSink es ) :
-	m_imp(new FutureEventImp(handler,es))
+	m_imp(std::make_unique<FutureEventImp>(handler,es))
 {
 }
 
