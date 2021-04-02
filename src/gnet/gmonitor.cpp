@@ -241,7 +241,7 @@ void GNet::MonitorImp::report( std::ostream & s , const std::string & px , const
 			{
 				s << px
 					<< "OUT: "
-					<< connection.first->localAddress().second.displayString() << " -> "
+					<< connection.first->localAddress().displayString() << " -> "
 					<< connection.first->connectionState() << eol ;
 			}
 		}
@@ -256,8 +256,8 @@ void GNet::MonitorImp::report( std::ostream & s , const std::string & px , const
 			{
 				s << px
 					<< "IN: "
-					<< connection.first->localAddress().second.displayString() << " <- "
-					<< connection.first->peerAddress().second.displayString() << eol ;
+					<< connection.first->localAddress().displayString() << " <- "
+					<< connection.first->peerAddress().displayString() << eol ;
 			}
 		}
 	}
@@ -274,15 +274,15 @@ void GNet::MonitorImp::report( G::StringArray & out ) const
 	{
 		if( connection.second.is_client )
 		{
-			add( out , "Outgoing connection" , connection.first->localAddress().second.displayString() , "-->" ,
+			add( out , "Outgoing connection" , connection.first->localAddress().displayString() , "-->" ,
 				connection.first->connectionState() , "" ) ;
 		}
 	}
 	for( const auto & connection : m_connections )
 	{
 		if( !connection.second.is_client )
-			add( out , "Incoming connection" , connection.first->localAddress().second.displayString() , "<--" ,
-				connection.first->peerAddress().second.displayString() , "" ) ;
+			add( out , "Incoming connection" , connection.first->localAddress().displayString() , "<--" ,
+				connection.first->peerAddress().displayString() , "" ) ;
 	}
 }
 

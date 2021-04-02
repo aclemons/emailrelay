@@ -89,6 +89,10 @@ public:
 		///< Returns true if the previous socket operation
 		///< failed with the EMFILE error status, or similar.
 
+	bool eNotConn() const ;
+		///< Returns true if the previous socket operation
+		///< failed with the ENOTCONN error status, or similar.
+
 	void addReadHandler( EventHandler & , ExceptionSink ) ;
 		///< Adds this socket to the event source list so that
 		///< the given handler receives read events.
@@ -164,6 +168,7 @@ private:
 	std::string m_reason_string ;
 	int m_domain ;
 	Descriptor m_fd ;
+	bool m_added ;
 } ;
 
 //| \class GNet::Socket
@@ -174,17 +179,13 @@ private:
 class GNet::Socket : public SocketBase
 {
 public:
-	std::pair<bool,Address> getLocalAddress() const ;
+	Address getLocalAddress() const ;
 		///< Retrieves local address of the socket.
-		///< The boolean value is false on error.
 
 	std::pair<bool,Address> getPeerAddress() const ;
 		///< Retrieves address of socket's peer.
-		///< The boolean value is false on error.
-
-	bool hasPeer() const ;
-		///< Returns true if the socket has a valid peer. This
-		///< can be used to see if a connect succeeded.
+		///< Returns false in 'first' if none, ie. not yet
+		///< connected.
 
 	void bind( const Address & ) ;
 		///< Binds the socket with the given address.

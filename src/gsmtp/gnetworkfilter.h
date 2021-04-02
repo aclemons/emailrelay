@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gfilter.h"
 #include "gclientptr.h"
+#include "gfilestore.h"
 #include "grequestclient.h"
 #include "geventhandler.h"
 
@@ -40,7 +41,8 @@ namespace GSmtp
 class GSmtp::NetworkFilter : public Filter
 {
 public:
-	NetworkFilter( GNet::ExceptionSink , const std::string & server_location ,
+	NetworkFilter( GNet::ExceptionSink , FileStore & ,
+		const std::string & server_location ,
 		unsigned int connection_timeout , unsigned int response_timeout ) ;
 			///< Constructor.
 
@@ -51,7 +53,7 @@ private: // overrides
 	std::string id() const override ; // Override from from GSmtp::Filter.
 	bool simple() const override ; // Override from from GSmtp::Filter.
 	G::Slot::Signal<int> & doneSignal() override ; // Override from from GSmtp::Filter.
-	void start( const std::string & path ) override ; // Override from from GSmtp::Filter.
+	void start( const MessageId & ) override ; // Override from from GSmtp::Filter.
 	void cancel() override ; // Override from from GSmtp::Filter.
 	bool abandoned() const override ; // Override from from GSmtp::Filter.
 	std::string response() const override ; // Override from from GSmtp::Filter.
@@ -70,6 +72,7 @@ private:
 
 private:
 	GNet::ExceptionSink m_es ;
+	FileStore & m_file_store ;
 	G::Slot::Signal<int> m_done_signal ;
 	GNet::Location m_location ;
 	unsigned int m_connection_timeout ;

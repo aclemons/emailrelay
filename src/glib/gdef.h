@@ -418,13 +418,17 @@
 		#define GCONFIG_HAVE_INET_NTOP 1
 	#endif
 	#if !defined(GCONFIG_HAVE_IFNAMETOINDEX)
-		#define GCONFIG_HAVE_IFNAMETOINDEX 1
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_IFNAMETOINDEX 1
+		#else
+			#define GCONFIG_HAVE_IFNAMETOINDEX 0
+		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_IFNAMETOLUID)
-		#ifdef G_UNIX
-			#define GCONFIG_HAVE_IFNAMETOLUID 0
-		#else
+		#if defined(G_WINDOWS) && !defined(G_MINGW)
 			#define GCONFIG_HAVE_IFNAMETOLUID 1
+		#else
+			#define GCONFIG_HAVE_IFNAMETOLUID 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_INET_PTON)
@@ -890,21 +894,19 @@
 		#else
 			using g_uintptr_t = std::size_t ; // assumes a non-segmented architecture - see also windows LONG_PTR
 		#endif
-		#if __cplusplus
-			#if GCONFIG_HAVE_INT64
-				static_assert( sizeof(g_int64_t) == 8U , "uint64 wrong size" ) ;
-				static_assert( sizeof(g_uint64_t) == 8U , "int64 wrong size" ) ;
-			#endif
-			#if GCONFIG_HAVE_INT32
-				static_assert( sizeof(g_uint32_t) == 4U , "uint32 wrong size" ) ;
-				static_assert( sizeof(g_int32_t) == 4U , "int32 wrong size" ) ;
-			#endif
-			#if GCONFIG_HAVE_INT16
-				static_assert( sizeof(g_uint16_t) == 2U , "uint16 wrong size" ) ;
-				static_assert( sizeof(g_int16_t) == 2U , "int16 wrong size" ) ;
-			#endif
-			static_assert( sizeof(g_uintptr_t) >= sizeof(void*) , "uintptr_t wrong size; try using g_uintptr_t = unsigned long" ) ;
+		#if GCONFIG_HAVE_INT64
+			static_assert( sizeof(g_int64_t) == 8U , "uint64 wrong size" ) ;
+			static_assert( sizeof(g_uint64_t) == 8U , "int64 wrong size" ) ;
 		#endif
+		#if GCONFIG_HAVE_INT32
+			static_assert( sizeof(g_uint32_t) == 4U , "uint32 wrong size" ) ;
+			static_assert( sizeof(g_int32_t) == 4U , "int32 wrong size" ) ;
+		#endif
+		#if GCONFIG_HAVE_INT16
+			static_assert( sizeof(g_uint16_t) == 2U , "uint16 wrong size" ) ;
+			static_assert( sizeof(g_int16_t) == 2U , "int16 wrong size" ) ;
+		#endif
+		static_assert( sizeof(g_uintptr_t) >= sizeof(void*) , "" ) ; // try 'using g_uintptr_t = unsigned long'
 
 		/* Define missing standard types
 	 	*/
@@ -944,7 +946,7 @@
 				#define GDEF_NORETURN __attribute__((__noreturn__))
 			#endif
 			#ifdef _MSC_VER
-				// __declspec(noreturn) goes on the lhs
+				/* __declspec(noreturn) goes on the lhs :( */
 			#endif
 		#endif
 		#ifndef GDEF_UNUSED
@@ -956,13 +958,11 @@
 		#ifndef GDEF_FALLTHROUGH
 			#define GDEF_FALLTHROUGH
 		#endif
-		#ifdef __cplusplus
-			#include <tuple>
-			namespace G { template <typename... T> inline void ignore( T&& ... ) {} }
-			#define GDEF_IGNORE_PARAMS(...) G::ignore(__VA_ARGS__)
-			#define GDEF_IGNORE_RETURN std::ignore =
-			#define GDEF_IGNORE_PARAM(name) std::ignore = name
-		#endif
+		#include <tuple>
+		namespace G { template <typename... T> inline void gdef_ignore( T&& ... ) {} }
+		#define GDEF_IGNORE_PARAMS(...) G::gdef_ignore(__VA_ARGS__)
+		#define GDEF_IGNORE_RETURN std::ignore =
+		#define GDEF_IGNORE_PARAM(name) std::ignore = name
 
 		/* C++ language backwards compatibility
 	 	*/
@@ -1311,7 +1311,7 @@
 		#endif
 
 		#if ! GCONFIG_HAVE_GET_WINDOW_LONG_PTR && defined(G_WINDOWS)
-			static_assert( sizeof(void*) == 4U , "unexpected pointer size" ) ; // if this fails then we are on win64 so no need for this block at all
+			static_assert( sizeof(void*) == 4U , "" ) ; // if this fails then we are on win64 so no need for this block at all
 			const int GWLP_HINSTANCE = GWL_HINSTANCE ;
 			const int GWLP_WNDPROC = GWL_WNDPROC ;
 			const int DWLP_USER = DWL_USER ;
@@ -1356,7 +1356,7 @@
 		#endif
 
 		#if ! GCONFIG_HAVE_CXX_ALIGNMENT
-			namespace std
+			namespace std // NOLINT
 			{
 				// missing in gcc 4.8.4 -- original copyright 2001-2016 FSF Inc, GPLv3
 				inline void * align( size_t align , size_t size , void * & ptr_inout , size_t & space ) noexcept

@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gfilter.h"
+#include "gfilestore.h"
 #include "gclientptr.h"
 #include "gspamclient.h"
 
@@ -40,7 +41,8 @@ namespace GSmtp
 class GSmtp::SpamFilter : public Filter
 {
 public:
-	SpamFilter( GNet::ExceptionSink , const std::string & server_location ,
+	SpamFilter( GNet::ExceptionSink , FileStore & ,
+		const std::string & server_location ,
 		bool read_only , bool always_pass , unsigned int connection_timeout ,
 		unsigned int response_timeout ) ;
 			///< Constructor.
@@ -52,7 +54,7 @@ private: // overrides
 	std::string id() const override ; // Override from from GSmtp::Filter.
 	bool simple() const override ; // Override from from GSmtp::Filter.
 	G::Slot::Signal<int> & doneSignal() override ; // Override from from GSmtp::Filter.
-	void start( const std::string & path ) override ; // Override from from GSmtp::Filter.
+	void start( const MessageId & ) override ; // Override from from GSmtp::Filter.
 	void cancel() override ; // Override from from GSmtp::Filter.
 	bool abandoned() const override ; // Override from from GSmtp::Filter.
 	std::string response() const override ; // Override from from GSmtp::Filter.
@@ -73,6 +75,7 @@ private:
 private:
 	G::Slot::Signal<int> m_done_signal ;
 	GNet::ExceptionSink m_es ;
+	FileStore & m_file_store ;
 	GNet::Location m_location ;
 	bool m_read_only ;
 	bool m_always_pass ;

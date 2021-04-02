@@ -51,7 +51,7 @@ namespace GNet
 class GNet::EventLoop
 {
 public:
-	G_EXCEPTION( Error , "failed to initialise the event loop" ) ;
+	G_EXCEPTION( Error , "event loop error" ) ;
 	G_EXCEPTION( NoInstance , "no event loop instance" ) ;
 	G_EXCEPTION( Overflow , "event loop overflow" ) ;
 
@@ -126,10 +126,6 @@ public:
 		///< Removes the given event source descriptor from the
 		///< list of exception sources.
 		///< See also Socket::dropOtherHandler().
-
-	virtual std::string report() const = 0 ;
-		///< Returns a line of text reporting the status of the event loop.
-		///< Used in debugging and diagnostics.
 
 	virtual void disarm( ExceptionHandler * ) noexcept = 0 ;
 		///< Used to prevent the given interface from being used,

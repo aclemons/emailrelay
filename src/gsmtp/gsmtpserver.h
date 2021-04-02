@@ -28,6 +28,7 @@
 #include "glinebuffer.h"
 #include "gverifier.h"
 #include "gmessagestore.h"
+#include "gfilterfactory.h"
 #include "gsmtpserverprotocol.h"
 #include "gprotocolmessage.h"
 #include "gexception.h"
@@ -88,7 +89,7 @@ public:
 		Config & set_dnsbl_config( const std::string & ) ;
 	} ;
 
-	Server( GNet::ExceptionSink es , MessageStore & store ,
+	Server( GNet::ExceptionSink es , MessageStore & file_store , FilterFactory & ,
 		const GAuth::Secrets & client_secrets , const GAuth::Secrets & server_secrets ,
 		const Config & server_config , const std::string & forward_to ,
 		const GSmtp::Client::Config & client_config ) ;
@@ -128,6 +129,7 @@ private:
 
 private:
 	MessageStore & m_store ;
+	FilterFactory & m_ff ;
 	Config m_server_config ;
 	Client::Config m_client_config ;
 	const GAuth::Secrets & m_server_secrets ;

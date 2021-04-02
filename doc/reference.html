@@ -503,7 +503,7 @@
      <li>as each message is submitted, just before receipt is acknowledged (<em>--immediate</em>)</li>
      <li>as soon as the submitting client connection disconnects (<em>--forward-on-disconnect</em>)</li>
      <li>periodically (<em>--poll=<seconds></em>)</li>
-     <li>on demand using the administration interface's <em>flush</em> command (<em>--admin=<port></em>)</li>
+     <li>on demand using the administration interface's <em>forward</em> command (<em>--admin=<port></em>)</li>
      <li>when a <em>--filter</em> script exits with an exit code of 103</li>
     </ul>
 
@@ -1449,8 +1449,18 @@ E-MailRelay> quit
 </pre>
       </div><!-- div-pre -->
     <p>
-     The <em>flush</em> command is used to get the E-MailRelay server to forward spooled
-     mail to the next SMTP server.
+     The <em>forward</em> command is used to trigger the E-MailRelay server into forwarding
+     spooled mail to the next SMTP server.
+    </p>
+
+    <p>
+     The <em>flush</em> command is similar but it uses its own connection to the SMTP
+     server and waits for the messages to be sent.
+    </p>
+
+    <p>
+     The <em>unfail-all</em> command can be used to remove the <em>.bad</em> filename extension
+     from files in the spool directory.
     </p>
 
     <p>

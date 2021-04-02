@@ -24,8 +24,10 @@
 #include "gdef.h"
 #include "gpath.h"
 #include "gfilter.h"
+#include "gfilestore.h"
 #include "geventhandler.h"
 #include "gfutureevent.h"
+#include "gtimer.h"
 #include "gtask.h"
 #include <utility>
 
@@ -40,8 +42,9 @@ namespace GSmtp
 class GSmtp::ExecutableFilter : public Filter, private GNet::TaskCallback
 {
 public:
-	ExecutableFilter( GNet::ExceptionSink , bool server_side , const std::string & ) ;
-		///< Constructor.
+	ExecutableFilter( GNet::ExceptionSink , FileStore & , bool server_side ,
+		const std::string & path , unsigned int timeout ) ;
+			///< Constructor.
 
 	~ExecutableFilter() override ;
 		///< Destructor.
@@ -50,7 +53,7 @@ private: // overrides
 	std::string id() const override ; // Override from from GSmtp::Filter.
 	bool simple() const override ; // Override from from GSmtp::Filter.
 	G::Slot::Signal<int> & doneSignal() override ; // Override from from GSmtp::Filter.
-	void start( const std::string & path ) override ; // Override from from GSmtp::Filter.
+	void start( const MessageId & ) override ; // Override from from GSmtp::Filter.
 	void cancel() override ; // Override from from GSmtp::Filter.
 	bool abandoned() const override ; // Override from from GSmtp::Filter.
 	std::string response() const override ; // Override from from GSmtp::Filter.
@@ -66,13 +69,17 @@ public:
 
 private:
 	std::pair<std::string,std::string> parseOutput( std::string , const std::string & ) const ;
+	void onTimeout() ;
 
 private:
+	FileStore & m_file_store ;
 	G::Slot::Signal<int> m_done_signal ;
 	bool m_server_side ;
 	std::string m_prefix ;
 	Exit m_exit ;
 	G::Path m_path ;
+	unsigned int m_timeout ;
+	GNet::Timer<ExecutableFilter> m_timer ;
 	std::string m_response ;
 	std::string m_reason ;
 	GNet::Task m_task ;

@@ -58,7 +58,12 @@ bool GNet::SocketBase::prepare( bool accepted )
 	if( accepted )
 	{
 		G_ASSERT( m_fd.h() == HNULL ) ;
-		HANDLE h = WSACreateEvent() ; // handle errors in the event loop
+		HANDLE h = WSACreateEvent() ;
+		if( h == HNULL )
+		{
+			saveReason() ;
+			return false ;
+		}
 		m_fd = Descriptor( m_fd.fd() , h ) ;
 	}
 
@@ -93,6 +98,11 @@ void GNet::SocketBase::saveReason()
 bool GNet::SocketBase::sizeError( ssize_t size )
 {
 	return size == SOCKET_ERROR ;
+}
+
+bool GNet::SocketBase::eNotConn() const
+{
+	return m_reason == WSAENOTCONN ;
 }
 
 bool GNet::SocketBase::eWouldBlock() const

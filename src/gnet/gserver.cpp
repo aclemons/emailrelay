@@ -68,7 +68,7 @@ bool GNet::Server::canBind( const Address & address , bool do_throw )
 GNet::Address GNet::Server::address() const
 {
 	bool with_scope = true ; // was false
-	Address result = m_socket.getLocalAddress().second ;
+	Address result = m_socket.getLocalAddress() ;
 	if( with_scope )
 		result.setScopeId( m_socket.getBoundScopeId() ) ;
 	return result ;

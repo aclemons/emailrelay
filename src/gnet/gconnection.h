@@ -40,18 +40,17 @@ public:
 	virtual ~Connection() = default ;
 		///< Destructor.
 
-	virtual std::pair<bool,Address> localAddress() const = 0 ;
+	virtual Address localAddress() const = 0 ;
 		///< Returns the connection's local address.
-		///< Pair.first is false if none.
 
-	virtual std::pair<bool,Address> peerAddress() const = 0 ;
+	virtual Address peerAddress() const = 0 ;
 		///< Returns the connection's peer address.
-		///< Pair.first is false if none.
+		///< Throws if a client connection that has not yet connected.
 
 	virtual std::string connectionState() const = 0 ;
 		///< Returns the connection state as a display string.
-		///< This should normally return the peerAddress() string
-		///< when the connection is fully established.
+		///< This should be the peerAddress() display string, unless
+		///< a client connection that has not yet connected.
 
 	virtual std::string peerCertificate() const = 0 ;
 		///< Returns the peer's TLS certificate. Returns the

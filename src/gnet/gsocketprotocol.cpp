@@ -223,7 +223,7 @@ void GNet::SocketProtocolImp::otherEvent( EventHandler::Reason reason )
 	}
 	else
 	{
-		throw G::Exception( "socket disconnect event" , EventHandler::str(reason) ) ;
+		throw SocketProtocol::OtherEventError( EventHandler::str(reason) ) ;
 	}
 }
 
@@ -571,14 +571,20 @@ void GNet::SocketProtocolImp::sslReadImp()
 
 void GNet::SocketProtocolImp::rawOtherEvent()
 {
-	// got a clean socket shutdown indication on windows --  no read events will
-	// follow but there might be data to read -- so try reading in a loop
+	// got a clean socket shutdown indication on windows -- no read events will
+	// follow but there might be data to read, so try reading in a loop --
+	// always end up throwing an exception
 	G_DEBUG( "GNet::SocketProtocolImp::rawOtherEvent: clearing receive queue" ) ;
 	for(;;)
 	{
 		const ssize_t rc = m_socket.read( &m_read_buffer[0] , m_read_buffer.size() ) ;
 		G_DEBUG( "GNet::SocketProtocolImp::rawOtherEvent: read " << m_socket.asString() << ": " << rc ) ;
-		if( rc <= 0 )
+		if( rc == 0 )
+		{
+			m_socket.shutdown() ;
+			throw SocketProtocol::Shutdown() ;
+		}
+		else if( rc < 0 )
 		{
 			m_socket.shutdown() ;
 			throw SocketProtocol::ReadError( m_socket.reason() ) ;

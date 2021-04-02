@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gmultiserver.h"
+#include "gtimer.h"
 #include "gstr.h"
 #include "glinebuffer.h"
 #include "gsmtpserverprotocol.h"
@@ -84,6 +85,7 @@ private:
 	static std::pair<bool,std::string> find( const std::string & line , const G::StringMap & map ) ;
 	static std::string argument( const std::string & ) ;
 	void flush() ;
+	void forward() ;
 	void help() ;
 	void status() ;
 	std::shared_ptr<MessageStore::Iterator> spooled() ;
@@ -116,7 +118,8 @@ private:
 class GSmtp::AdminServer : public GNet::MultiServer
 {
 public:
-	AdminServer( GNet::ExceptionSink , MessageStore & store ,
+	AdminServer( GNet::ExceptionSink , MessageStore & store , FilterFactory & ,
+		G::Slot::Signal<std::string> & forward_request ,
 		const GNet::ServerPeerConfig & server_peer_config ,
 		const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
 		const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
@@ -135,6 +138,10 @@ public:
 		///< Returns a reference to the message store, as
 		///< passed in to the constructor.
 
+	FilterFactory & ff() ;
+		///< Returns a reference to the filter factory, as
+		///< passed in to the constructor.
+
 	const GAuth::Secrets & clientSecrets() const ;
 		///< Returns a reference to the client secrets object, as passed
 		///< in to the constructor. This is a client-side secrets file,
@@ -146,6 +153,9 @@ public:
 	unsigned int connectionTimeout() const ;
 		///< Returns the connection timeout, as passed in to the
 		///< constructor.
+
+	void forward() ;
+		///< Called to trigger asynchronous forwarding.
 
 	bool notifying() const ;
 		///< Returns true if the remote user has asked for notifications.
@@ -166,7 +176,13 @@ public:
 	void operator=( AdminServer && ) = delete ;
 
 private:
+	void onForwardTimeout() ;
+
+private:
+	GNet::Timer<AdminServer> m_forward_timer ;
 	MessageStore & m_store ;
+	FilterFactory & m_ff ;
+	G::Slot::Signal<std::string> & m_forward_request ;
 	GSmtp::Client::Config m_client_config ;
 	const GAuth::Secrets & m_client_secrets ;
 	bool m_allow_remote ;

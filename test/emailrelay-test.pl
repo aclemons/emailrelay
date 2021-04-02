@@ -1045,6 +1045,46 @@ sub testFilterFailure
 	$server->cleanup() ;
 }
 
+sub testFilterTimeout
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		Verbose => 1 ,
+		Domain => 1 ,
+		Port => 1 ,
+		SpoolDir => 1 ,
+		PidFile => 1 ,
+		Filter => 1 ,
+		FilterTimeout => 1 ,
+	) ;
+	my $server = new Server() ;
+	Filter::create( $server->filter() , {} , {
+			unix => [
+				"sleep 3" ,
+				"exit 0" ,
+			] ,
+			win32 => [
+				"WScript.Sleep(3000) ;" ,
+				"WScript.Quit(0) ;" ,
+			] ,
+		} ) ;
+	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
+	Check::running( $server->pid() , $server->message() ) ;
+	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
+	Check::ok( $smtp_client->open() ) ;
+
+	# test that the filter times out
+	$smtp_client->submit( 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 0 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope*" , 0 ) ;
+	Check::fileContains( $server->stderr() , "filter done: ok=0 response=.error. reason=.*timeout" ) ;
+
+	# tear down
+	$server->kill() ;
+	$server->cleanup() ;
+}
+
 sub testFilterWithBadFileDeletion
 {
 	_testFilterWithFileDeletion(0,1) ;
@@ -1287,13 +1327,14 @@ sub testScannerTimeout
 	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
 	Check::ok( $smtp_client->open() ) ;
 
-	# test that the scanner is used
+	# test that the scanner times out
 	$smtp_client->submit_start() ;
 	$smtp_client->submit_line( "sleep 3" ) ;
 	$smtp_client->submit_line( "send foobar" ) ;
 	$smtp_client->submit_end( 1 ) ;
 	Check::fileDoesNotContain( $server->stderr() , "452 foobar" ) ;
-	Check::fileContains( $server->stderr() , "452 .*time.*out" ) ;
+	Check::fileContains( $server->stderr() , "filter done: ok=0 response=.failed. reason=.*timeout" ) ;
+	Check::fileContains( $server->stderr() , "452 failed" ) ;
 
 	# tear down
 	$server->kill() ;

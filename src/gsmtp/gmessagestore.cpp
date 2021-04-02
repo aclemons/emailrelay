@@ -20,5 +20,9 @@
 
 #include "gdef.h"
 #include "gmessagestore.h"
+#include "gstoredmessage.h"
 
-// empty
+std::unique_ptr<GSmtp::StoredMessage> GSmtp::operator++( std::shared_ptr<MessageStore::Iterator> & iter )
+{
+	return iter.get() ? iter->next() : std::unique_ptr<StoredMessage>() ;
+}

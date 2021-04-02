@@ -61,7 +61,7 @@ namespace G
 		short toShort( const std::string & s , bool & overflow , bool & invalid ) ;
 		long toLong( const std::string & s , bool & overflow , bool & invalid ) ;
 		int toInt( const std::string & s , bool & overflow , bool & invalid ) ;
-		void strncpy( char * , const char * , size_t ) noexcept ;
+		void strncpy( char * , const char * , std::size_t ) noexcept ;
 		void escape( std::string & s , char c_escape , const char * specials_in , const char * specials_out ,
 			bool with_nul ) ;
 		void readLineFrom( std::istream & stream , const std::string & eol , std::string & line ) ;
@@ -1514,7 +1514,7 @@ G::StringArray::iterator G::Str::removeMatch( StringArray::iterator begin , Stri
 		std::bind(imp::inList,match_list.begin(),match_list.end(),_1,ignore_case) ) ;
 }
 
-void G::StrImp::strncpy( char * dst , const char * src , size_t n ) noexcept
+void G::StrImp::strncpy( char * dst , const char * src , std::size_t n ) noexcept
 {
 	// (because 'strncpy considered dangerous' analytics)
 	for( ; n ; n-- , dst++ , src++ )
@@ -1525,7 +1525,7 @@ void G::StrImp::strncpy( char * dst , const char * src , size_t n ) noexcept
 	}
 }
 
-errno_t G::Str::strncpy_s( char * dst , size_t n_dst , const char * src , size_t count ) noexcept
+errno_t G::Str::strncpy_s( char * dst , std::size_t n_dst , const char * src , std::size_t count ) noexcept
 {
 	namespace imp = G::StrImp ;
 	if( dst == nullptr || n_dst == 0U )

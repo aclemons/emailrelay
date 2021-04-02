@@ -475,7 +475,7 @@ command-line options:
 * as each message is submitted, just before receipt is acknowledged (`--immediate`)
 * as soon as the submitting client connection disconnects (`--forward-on-disconnect`)
 * periodically (`--poll=<seconds>`)
-* on demand using the administration interface's `flush` command (`--admin=<port>`)
+* on demand using the administration interface's `forward` command (`--admin=<port>`)
 * when a `--filter` script exits with an exit code of 103
 
 These can be mixed.
@@ -1183,8 +1183,14 @@ simple command-line interface which is compatible with `netcat` and `telnet`:
         E-MailRelay> help
         E-MailRelay> quit
 
-The `flush` command is used to get the E-MailRelay server to forward spooled
-mail to the next SMTP server.
+The `forward` command is used to trigger the E-MailRelay server into forwarding
+spooled mail to the next SMTP server.
+
+The `flush` command is similar but it uses its own connection to the SMTP
+server and waits for the messages to be sent.
+
+The `unfail-all` command can be used to remove the `.bad` filename extension
+from files in the spool directory.
 
 The `list` command lists the messages in the spool directory, `status` provides
 network status information and activity statistics, and `notify` enables

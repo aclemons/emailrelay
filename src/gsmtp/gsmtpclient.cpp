@@ -31,14 +31,15 @@
 #include "gassert.h"
 #include "glog.h"
 
-GSmtp::Client::Client( GNet::ExceptionSink es , const GNet::Location & remote ,
-	const GAuth::Secrets & secrets , const Config & config ) :
+GSmtp::Client::Client( GNet::ExceptionSink es , MessageStore & store , FilterFactory & ff ,
+	const GNet::Location & remote , const GAuth::Secrets & secrets , const Config & config ) :
 		GNet::Client(es,remote,netConfig(config)) ,
-		m_store(nullptr) ,
-		m_filter(FilterFactory::newFilter(es,false,config.filter_address,config.filter_timeout)) ,
+		m_store(store) ,
+		m_filter(ff.newFilter(es,false,config.filter_address,config.filter_timeout)) ,
 		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_secure_tunnel(config.secure_tunnel) ,
-		m_message_count(0U)
+		m_message_count(0U) ,
+		m_send_all(false)
 {
 	m_protocol.doneSignal().connect( G::Slot::slot(*this,&Client::protocolDone) ) ;
 	m_protocol.filterSignal().connect( G::Slot::slot(*this,&Client::filterStart) ) ;
@@ -69,11 +70,10 @@ G::Slot::Signal<const std::string&> & GSmtp::Client::messageDoneSignal()
 	return m_message_done_signal ;
 }
 
-void GSmtp::Client::sendMessagesFrom( MessageStore & store )
+void GSmtp::Client::sendAllMessages()
 {
-	G_ASSERT( m_store == nullptr ) ;
-	G_ASSERT( !connected() ) ; // ie. immediately after construction
-	m_store = &store ;
+    G_ASSERT( !connected() ) ; // ie. immediately after construction
+	m_send_all = true ;
 }
 
 void GSmtp::Client::sendMessage( std::unique_ptr<StoredMessage> message )
@@ -105,11 +105,11 @@ void GSmtp::Client::onSecure( const std::string & , const std::string & , const 
 
 void GSmtp::Client::startSending()
 {
-	G_LOG_S( "GSmtp::Client::startSending: smtp connection to " << peerAddress().second.displayString() ) ;
-	if( m_store != nullptr )
+	G_LOG_S( "GSmtp::Client::startSending: smtp connection to " << peerAddress().displayString() ) ;
+	if( m_send_all )
 	{
 		// initialise the message iterator
-		m_iter = m_store->iterator( true ) ;
+		m_iter = m_store.iterator( true ) ;
 
 		// start sending the first message
 		bool started = sendNext() ;
@@ -153,7 +153,7 @@ void GSmtp::Client::start()
 	m_message_count++ ;
 
 	G::CallFrame this_( m_stack ) ;
-	eventSignal().emit( "sending" , message()->name() , std::string() ) ;
+	eventSignal().emit( "sending" , message()->location() , std::string() ) ;
 	if( this_.deleted() ) return ;
 
 	m_protocol.start( std::weak_ptr<StoredMessage>(message()) ) ;
@@ -183,7 +183,7 @@ void GSmtp::Client::filterStart()
 		G_LOG( "GSmtp::Client::filterStart: client filter: [" << m_filter->id() << "]" ) ;
 		message()->close() ; // allow external editing
 	}
-	m_filter->start( message()->location() ) ;
+	m_filter->start( message()->id() ) ;
 }
 
 void GSmtp::Client::filterDone( int filter_result )
@@ -234,7 +234,7 @@ void GSmtp::Client::protocolDone( int response_code , const std::string & respon
 	std::string response = response_in.empty() ? std::string() : ( "smtp client failure: " + response_in ) ;
 	std::string reason = reason_in.empty() ? response : reason_in ;
 	std::string short_reason = ( response_in.empty() || reason_in.empty() ) ? response_in : reason_in ;
-	std::string message_id = message()->name() ;
+	std::string message_location = message()->location() ;
 
 	if( response_code == -1 ) // filter abandon
 	{
@@ -267,10 +267,10 @@ void GSmtp::Client::protocolDone( int response_code , const std::string & respon
 	}
 
 	G::CallFrame this_( m_stack ) ;
-	eventSignal().emit( "sent" , message_id , short_reason ) ;
+	eventSignal().emit( "sent" , message_location , short_reason ) ;
 	if( this_.deleted() ) return ; // just in case
 
-	if( m_store != nullptr )
+	if( m_send_all )
 	{
 		if( !sendNext() )
 		{

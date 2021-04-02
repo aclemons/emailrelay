@@ -84,15 +84,18 @@ libgnet_a_SOURCES = \
 	gdnsmessage.cpp \
 	gdnsmessage.h \
 	gevent.h \
+	geventemitter.cpp \
+	geventemitter.h \
 	geventhandler.cpp \
 	geventhandler.h \
-	geventhandlerlist.cpp \
-	geventhandlerlist.h \
 	geventloggingcontext.cpp \
 	geventloggingcontext.h \
 	geventloop.cpp \
 	geventloop.h \
+	geventloophandles.h \
+	geventloophandles.cpp \
 	geventloop_win32.cpp \
+	geventloop_win32.h \
 	gexceptionhandler.cpp \
 	gexceptionhandler.h \
 	gexceptionsink.cpp \
@@ -146,7 +149,10 @@ AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl
 
 EXTRA_DIST_COMMON=\
 	gdescriptor_win32.cpp \
+	geventloophandles.cpp \
+	geventloophandles.h \
 	geventloop_win32.cpp \
+	geventloop_win32.h \
 	gfutureevent_win32.cpp \
 	gsocket_win32.cpp
 
@@ -216,10 +222,10 @@ libgnet_a_SOURCES = \
 	gdnsmessage.cpp \
 	gdnsmessage.h \
 	gevent.h \
+	geventemitter.cpp \
+	geventemitter.h \
 	geventhandler.cpp \
 	geventhandler.h \
-	geventhandlerlist.cpp \
-	geventhandlerlist.h \
 	geventloggingcontext.cpp \
 	geventloggingcontext.h \
 	geventloop.cpp \

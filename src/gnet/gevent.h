@@ -22,10 +22,12 @@
 #define G_NET_EVENT_H
 
 #include "gdef.h"
-#include "gexceptionhandler.h"
 #include "geventloop.h"
 #include "geventhandler.h"
-#include "geventhandlerlist.h"
+#include "geventemitter.h"
+#include "gexceptionhandler.h"
+#include "gexceptionsink.h"
+#include "gexceptionsource.h"
 
 #endif
 

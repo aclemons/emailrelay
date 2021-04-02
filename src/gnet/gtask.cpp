@@ -76,7 +76,7 @@ public:
 
 private:
 	void onTimeout() ;
-	static void waitThread( TaskImp * , FutureEvent::handle_type ) ; // thread function
+	static void waitThread( TaskImp * , HANDLE ) ; // thread function
 
 private:
 	Task * m_task ;
@@ -157,7 +157,7 @@ bool GNet::TaskImp::zombify()
 		m_zcount++ ;
 		m_timer.startTimer( 1U ) ;
 
-		std::size_t threshold = G::Test::enabled("task-warning") ? 3U : 100U ;
+		const std::size_t threshold = 30U ;
 		if( m_zcount == threshold )
 			G_WARNING_ONCE( "GNet::Task::dtor: large number of threads waiting for processes to finish" ) ;
 
@@ -194,7 +194,7 @@ std::pair<int,std::string> GNet::TaskImp::wait()
 	return std::make_pair( exit_code , m_process.waitable().output() ) ;
 }
 
-void GNet::TaskImp::waitThread( TaskImp * This , FutureEvent::handle_type handle )
+void GNet::TaskImp::waitThread( TaskImp * This , HANDLE handle )
 {
 	// worker-thread -- keep it simple
 	try

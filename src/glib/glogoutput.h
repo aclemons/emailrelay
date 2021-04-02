@@ -96,7 +96,7 @@ public:
 		const std::string & filename = std::string() ) ;
 			///< Constructor. If there is no LogOutput object, or if
 			///< 'config.output_enabled' is false, then there is no
-			///< output of any sort (except for assertions to stderr).
+			///< output at all except for assertions to stderr.
 			///< Otherwise at least warning and error messages are
 			///< generated.
 			///<

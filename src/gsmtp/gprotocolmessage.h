@@ -22,6 +22,7 @@
 #define G_SMTP_PROTOCOL_MESSAGE_H
 
 #include "gdef.h"
+#include "gmessagestore.h"
 #include "gslot.h"
 #include "gstrings.h"
 #include "gverifier.h"
@@ -62,7 +63,7 @@ namespace GSmtp
 class GSmtp::ProtocolMessage
 {
 public:
-	using DoneSignal = G::Slot::Signal<bool,unsigned long,const std::string&,const std::string&> ;
+	using DoneSignal = G::Slot::Signal<bool,const MessageId&,const std::string&,const std::string&> ;
 
 	virtual ~ProtocolMessage() = default ;
 		///< Destructor.
@@ -83,9 +84,8 @@ public:
 		///< Clears the message state and terminates any asynchronous
 		///< message processing.
 
-	virtual bool setFrom( const std::string & from_user , const std::string & from_auth ) = 0 ;
-		///< Sets the message envelope 'from'. Returns false if an
-		///< invalid user.
+	virtual MessageId setFrom( const std::string & from_user , const std::string & from_auth ) = 0 ;
+		///< Sets the message envelope 'from'. Returns a unique message id.
 
 	virtual bool addTo( const std::string & to_user , VerifierStatus to_status ) = 0 ;
 		///< Adds an envelope 'to'. The 'to_status' parameter comes
@@ -109,7 +109,7 @@ public:
 		///< a string parameter and adding CR-LF.
 
 	virtual std::string from() const = 0 ;
-		///< Returns the setFrom() string.
+		///< Returns the setFrom() user string.
 
 	virtual void process( const std::string & session_auth_id , const std::string & peer_socket_address ,
 		const std::string & peer_certificate ) = 0 ;

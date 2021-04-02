@@ -39,7 +39,7 @@ GPop::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu , const GNet::Serve
 void GPop::ServerPeer::onDelete( const std::string & reason )
 {
 	G_LOG_S( "GPop::ServerPeer: pop connection closed: " << reason << (reason.empty()?"":": ")
-		<< peerAddress().second.displayString() ) ;
+		<< peerAddress().displayString() ) ;
 }
 
 bool GPop::ServerPeer::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )

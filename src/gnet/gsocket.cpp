@@ -28,7 +28,8 @@
 
 GNet::SocketBase::SocketBase( int domain , int type , int protocol ) :
 	m_reason(0) ,
-	m_domain(domain)
+	m_domain(domain) ,
+	m_added(false)
 {
 	if( !create(domain,type,protocol) )
 		throw SocketCreateError( "cannot create socket" , m_reason_string ) ;
@@ -43,7 +44,8 @@ GNet::SocketBase::SocketBase( int domain , int type , int protocol ) :
 GNet::SocketBase::SocketBase( int domain , Descriptor fd , const Accepted & ) :
 	m_reason(0) ,
 	m_domain(domain),
-	m_fd(fd)
+	m_fd(fd) ,
+	m_added(false)
 {
 	if( !prepare(true) )
 	{
@@ -99,35 +101,38 @@ void GNet::SocketBase::addReadHandler( EventHandler & handler , ExceptionSink es
 {
 	G_DEBUG( "GNet::SocketBase::addReadHandler: fd " << m_fd ) ;
 	EventLoop::instance().addRead( m_fd , handler , es ) ;
+	m_added = true ;
 }
 
 void GNet::SocketBase::addWriteHandler( EventHandler & handler , ExceptionSink es )
 {
 	G_DEBUG( "GNet::SocketBase::addWriteHandler: fd " << m_fd ) ;
 	EventLoop::instance().addWrite( m_fd , handler , es ) ;
+	m_added = true ;
 }
 
 void GNet::SocketBase::addOtherHandler( EventHandler & handler , ExceptionSink es )
 {
 	G_DEBUG( "GNet::SocketBase::addOtherHandler: fd " << m_fd ) ;
 	EventLoop::instance().addOther( m_fd , handler , es ) ;
+	m_added = true ;
 }
 
 void GNet::SocketBase::dropReadHandler() noexcept
 {
-	if( EventLoop::ptr() )
+	if( m_added && EventLoop::ptr() )
 		EventLoop::ptr()->dropRead( m_fd ) ;
 }
 
 void GNet::SocketBase::dropWriteHandler() noexcept
 {
-	if( EventLoop::ptr() )
+	if( m_added && EventLoop::ptr() )
 		EventLoop::ptr()->dropWrite( m_fd ) ;
 }
 
 void GNet::SocketBase::dropOtherHandler() noexcept
 {
-	if( EventLoop::ptr() )
+	if( m_added && EventLoop::ptr() )
 		EventLoop::ptr()->dropOther( m_fd ) ;
 }
 
@@ -206,7 +211,7 @@ unsigned long GNet::Socket::getBoundScopeId() const
 	return m_bound_scope_id ;
 }
 
-bool GNet::Socket::connect( const Address & address , bool *done )
+bool GNet::Socket::connect( const Address & address , bool * done )
 {
 	G_DEBUG( "GNet::Socket::connect: connecting to " << address.displayString() ) ;
 	if( address.domain() != domain() )
@@ -251,37 +256,30 @@ void GNet::Socket::listen( int backlog )
 	}
 }
 
-std::pair<bool,GNet::Address> GNet::Socket::getAddress( bool local ) const
+GNet::Address GNet::Socket::getLocalAddress() const
 {
-	std::pair<bool,Address> error_pair( false , Address::defaultAddress() ) ;
 	AddressStorage address_storage ;
-	int rc =
-		local ?
-			::getsockname( fd() , address_storage.p1() , address_storage.p2() ) :
-			::getpeername( fd() , address_storage.p1() , address_storage.p2() ) ;
-
+	int rc = ::getsockname( fd() , address_storage.p1() , address_storage.p2() ) ;
 	if( error(rc) )
 	{
 		saveReason() ;
-		return error_pair ;
+		throw SocketError( "getsockname" , reason() ) ;
 	}
-
-	return std::pair<bool,Address>( true , Address(address_storage) ) ;
-}
-
-std::pair<bool,GNet::Address> GNet::Socket::getLocalAddress() const
-{
-	return getAddress( true ) ;
+	return Address( address_storage ) ;
 }
 
 std::pair<bool,GNet::Address> GNet::Socket::getPeerAddress() const
 {
-	return getAddress( false ) ;
-}
-
-bool GNet::Socket::hasPeer() const
-{
-	return getPeerAddress().first ;
+	AddressStorage address_storage ;
+	int rc = ::getpeername( fd() , address_storage.p1() , address_storage.p2() ) ;
+	if( error(rc) )
+	{
+		saveReason() ;
+		if( eNotConn() )
+			return std::make_pair( false , Address::defaultAddress() ) ;
+		throw SocketError( "getpeername" , reason() ) ;
+	}
+	return std::make_pair( true , Address( address_storage ) ) ;
 }
 
 void GNet::Socket::shutdown( int how )

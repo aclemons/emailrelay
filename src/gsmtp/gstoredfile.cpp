@@ -28,27 +28,33 @@
 #include "gassert.h"
 #include <fstream>
 
-GSmtp::StoredFile::StoredFile( FileStore & store , const G::Path & envelope_path ) :
+GSmtp::StoredFile::StoredFile( FileStore & store , const G::Path & path ) :
 	m_store(store) ,
 	m_content(std::make_unique<std::ifstream>()) , // up-cast
-	m_envelope_path(envelope_path) ,
-	m_locked(false)
+	m_id(MessageId::none()) ,
+	m_state(State::Normal)
 {
-	m_name = m_envelope_path.basename() ;
-	std::size_t pos = m_name.rfind(".envelope") ;
-	if( pos != std::string::npos ) m_name.erase( pos ) ;
-	G_DEBUG( "GSmtp::StoredFile::ctor: name=[" << m_name << "]" ) ;
+	G_ASSERT( path.basename().find(".envelope") != std::string::npos ) ; // inc .bad
+	if( G::Str::tailMatch( path.basename() , ".bad" ) )
+	{
+		m_id = MessageId( path.withoutExtension().withoutExtension().basename() ) ;
+		m_state = State::Bad ;
+	}
+	else
+	{
+		m_id = MessageId( path.withoutExtension().basename() ) ;
+	}
+	G_DEBUG( "GSmtp::StoredFile::ctor: id=[" << m_id.str() << "]" ) ;
 }
 
 GSmtp::StoredFile::~StoredFile()
 {
 	try
 	{
-		if( m_locked )
+		if( m_state == State::Locked )
 		{
-			// unlock
 			FileWriter claim_writer ;
-			G::File::rename( m_envelope_path , m_old_envelope_path , std::nothrow ) ;
+			G::File::rename( epath(State::Locked) , epath(State::Normal) , std::nothrow ) ;
 		}
 	}
 	catch(...) // dtor
@@ -56,14 +62,28 @@ GSmtp::StoredFile::~StoredFile()
 	}
 }
 
-std::string GSmtp::StoredFile::name() const
+GSmtp::MessageId GSmtp::StoredFile::id() const
 {
-	return m_name ;
+	return m_id ;
 }
 
 std::string GSmtp::StoredFile::location() const
 {
-	return contentPath().str() ;
+	return cpath().str() ;
+}
+
+G::Path GSmtp::StoredFile::cpath() const
+{
+	return m_store.contentPath( m_id ) ;
+}
+
+G::Path GSmtp::StoredFile::epath( State state ) const
+{
+	if( state == State::Locked )
+		return m_store.envelopePath(m_id).str() + ".busy" ;
+	else if( state == State::Bad )
+		return m_store.envelopePath(m_id).str() + ".bad" ;
+	return m_store.envelopePath( m_id ) ;
 }
 
 int GSmtp::StoredFile::eightBit() const
@@ -104,10 +124,10 @@ void GSmtp::StoredFile::readEnvelopeCore( bool check_recipients )
 	std::ifstream stream ;
 	{
 		FileReader claim_reader ;
-		G::File::open( stream , m_envelope_path ) ;
+		G::File::open( stream , epath(m_state) ) ;
 	}
 	if( ! stream.good() )
-		throw ReadError( m_envelope_path.str() ) ;
+		throw ReadError( epath(m_state).str() ) ;
 
 	GSmtp::Envelope::read( stream , m_env ) ;
 
@@ -115,19 +135,18 @@ void GSmtp::StoredFile::readEnvelopeCore( bool check_recipients )
 		throw FormatError( "no recipients" ) ;
 
 	if( ! stream.good() )
-		throw ReadError( m_envelope_path.str() ) ;
+		throw ReadError( epath(m_state).str() ) ;
 }
 
 bool GSmtp::StoredFile::openContent( std::string & reason )
 {
 	try
 	{
-		G::Path content_path = contentPath() ;
-		G_DEBUG( "GSmtp::FileStore::openContent: \"" << content_path << "\"" ) ;
+		G_DEBUG( "GSmtp::FileStore::openContent: \"" << cpath() << "\"" ) ;
 		auto stream = std::make_unique<std::ifstream>() ;
 		{
 			FileReader claim_reader ;
-			G::File::open( *stream , content_path ) ;
+			G::File::open( *stream , cpath() ) ;
 		}
 		if( !stream->good() )
 		{
@@ -155,8 +174,8 @@ const std::string & GSmtp::StoredFile::eol() const
 
 bool GSmtp::StoredFile::lock()
 {
-	const G::Path src = m_envelope_path ;
-	const G::Path dst( src.str() + ".busy" ) ;
+	const G::Path src = epath( m_state ) ;
+	const G::Path dst = epath( State::Locked ) ;
 	bool ok = false ;
 	{
 		FileWriter claim_writer ;
@@ -165,11 +184,9 @@ bool GSmtp::StoredFile::lock()
 	if( ok )
 	{
 		G_LOG( "GSmtp::StoredMessage: locking file \"" << src.basename() << "\"" ) ;
-		m_envelope_path = dst ;
-		m_old_envelope_path = src ;
-		m_locked = true ;
+		m_state = State::Locked ;
 	}
-	m_store.updated() ;
+	static_cast<MessageStore&>(m_store).updated() ;
 	return ok ;
 }
 
@@ -180,8 +197,8 @@ void GSmtp::StoredFile::edit( const G::StringArray & rejectees )
 	GSmtp::Envelope env_copy( m_env ) ;
 	env_copy.m_to_remote = rejectees ;
 
-	G::Path path_in( m_envelope_path.str() ) ;
-	G::Path path_out( m_envelope_path.str() + ".tmp" ) ;
+	const G::Path path_in = epath( m_state ) ;
+	const G::Path path_out = epath(m_state).str() + ".tmp" ;
 
 	// create new file
 	std::ofstream out ;
@@ -244,43 +261,45 @@ void GSmtp::StoredFile::fail( const std::string & reason , int reason_code )
 	bool exists = false ;
 	{
 		FileReader claim_reader ;
-		exists = G::File::exists( m_envelope_path ) ;
+		exists = G::File::exists( epath(m_state) ) ;
 	}
 	if( exists ) // client-side preprocessing may have removed it
 	{
-		addReason( m_envelope_path , reason , reason_code ) ;
+		addReason( epath(m_state) , reason , reason_code ) ;
 
-		G::Path bad_path = badPath( m_envelope_path ) ;
+		G::Path bad_path = epath( State::Bad ) ;
 		G_LOG_S( "GSmtp::StoredMessage: failing file: "
-			<< "\"" << m_envelope_path.basename() << "\" -> "
+			<< "\"" << epath(m_state).basename() << "\" -> "
 			<< "\"" << bad_path.basename() << "\"" ) ;
 
 		FileWriter claim_writer ;
-		G::File::rename( m_envelope_path , bad_path , std::nothrow ) ;
+		G::File::rename( epath(m_state) , bad_path , std::nothrow ) ;
+		m_state = State::Bad ;
 	}
 }
 
 void GSmtp::StoredFile::unfail()
 {
-	G_DEBUG( "GSmtp::StoredMessage: unfailing file: " << m_envelope_path ) ;
-	if( m_envelope_path.extension() == "bad" )
+	G_DEBUG( "GSmtp::StoredMessage: unfailing file: " << epath(m_state) ) ;
+	if( m_state == State::Bad )
 	{
-		G::Path dst = m_envelope_path.withoutExtension() ; // "foo.envelope.bad" -> "foo.envelope"
+		const G::Path src = epath( m_state ) ;
+		const G::Path dst = epath( State::Normal ) ;
 		bool ok = false ;
 		{
 			FileWriter claim_writer ;
-			ok = G::File::rename( m_envelope_path , dst , std::nothrow ) ;
+			ok = G::File::rename( src , dst , std::nothrow ) ;
 		}
 		if( ok )
 		{
 			G_LOG( "GSmtp::StoredMessage: unfailed file: "
-				<< "\"" << m_envelope_path.basename() << "\" -> "
+				<< "\"" << src.basename() << "\" -> "
 				<< "\"" << dst.basename() << "\"" ) ;
-			m_envelope_path = dst ;
+			m_state = State::Normal ;
 		}
 		else
 		{
-			G_WARNING( "GSmtp::StoredMessage: failed to unfail file: \"" << m_envelope_path << "\"" ) ;
+			G_WARNING( "GSmtp::StoredMessage: failed to unfail file: \"" << src << "\"" ) ;
 		}
 	}
 }
@@ -296,25 +315,19 @@ void GSmtp::StoredFile::addReason( const G::Path & path , const std::string & re
 	file << FileStore::x() << "ReasonCode:" ; if( reason_code ) file << " " << reason_code ; file << eol() ;
 }
 
-G::Path GSmtp::StoredFile::badPath( const G::Path & busy_path )
-{
-	return busy_path.withExtension("bad") ; ; // "foo.envelope.busy" -> "foo.envelope.bad"
-}
-
 void GSmtp::StoredFile::destroy()
 {
-	G_LOG( "GSmtp::StoredMessage: deleting file: \"" << m_envelope_path.basename() << "\"" ) ;
+	G_LOG( "GSmtp::StoredMessage: deleting file: \"" << epath(m_state).basename() << "\"" ) ;
 	{
 		FileWriter claim_writer ;
-		G::File::remove( m_envelope_path , std::nothrow ) ;
+		G::File::remove( epath(m_state) , std::nothrow ) ;
 	}
 
-	G::Path content_path = contentPath() ;
-	G_LOG( "GSmtp::StoredMessage: deleting file: \"" << content_path.basename() << "\"" ) ;
+	G_LOG( "GSmtp::StoredMessage: deleting file: \"" << cpath().basename() << "\"" ) ;
 	m_content.reset() ; // close it before deleting
 	{
 		FileWriter claim_writer ;
-		G::File::remove( content_path , std::nothrow ) ;
+		G::File::remove( cpath() , std::nothrow ) ;
 	}
 }
 
@@ -340,17 +353,6 @@ std::istream & GSmtp::StoredFile::contentStream()
 		m_content = std::make_unique<std::ifstream>() ; // up-cast
 
 	return *m_content ;
-}
-
-G::Path GSmtp::StoredFile::contentPath() const
-{
-	std::string filename = m_envelope_path.str() ;
-
-	std::size_t pos = filename.rfind( ".envelope" ) ; // also works for ".envelope.bad" etc.
-	if( pos == std::string::npos )
-		throw FilenameError( filename ) ;
-
-	return G::Path( G::Str::head(filename,pos,std::string()) + ".content" ) ;
 }
 
 std::string GSmtp::StoredFile::authentication() const

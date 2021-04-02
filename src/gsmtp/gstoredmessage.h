@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gstrings.h"
+#include "gmessagestore.h"
 #include "gpath.h"
 #include <iostream>
 #include <fstream>
@@ -40,11 +41,11 @@ namespace GSmtp
 class GSmtp::StoredMessage
 {
 public:
-	virtual std::string name() const = 0 ;
-		///< Returns a readble identifier for internal logging.
+	virtual MessageId id() const = 0 ;
+		///< Returns the message identifier.
 
 	virtual std::string location() const = 0 ;
-		///< Returns a unique identifier for the message.
+		///< Returns the message location.
 
 	virtual std::string from() const = 0 ;
 		///< Returns the envelope 'from' field.
@@ -114,7 +115,7 @@ public:
 		///< Destructor.
 
 private: // overrides
-	std::string name() const override ;
+	MessageId id() const override ;
 	std::string location() const override ;
 	std::string from() const override ;
 	std::string to( std::size_t ) const override ;
@@ -142,7 +143,7 @@ private:
 	std::ifstream m_content_stream ;
 } ;
 
-inline std::string GSmtp::StoredMessageStub::name() const { return std::string() ; }
+inline GSmtp::MessageId GSmtp::StoredMessageStub::id() const { return MessageId(std::string()) ; }
 inline std::string GSmtp::StoredMessageStub::location() const { return std::string() ; }
 inline std::string GSmtp::StoredMessageStub::from() const { return std::string() ; }
 inline std::string GSmtp::StoredMessageStub::to( std::size_t ) const { return std::string() ; }

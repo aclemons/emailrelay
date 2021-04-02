@@ -954,10 +954,10 @@ mbedtls_ctr_drbg_context * GSsl::MbedTls::Rng::ptr() const
 
 // ==
 
-static void scrub( unsigned char *p_in , std::size_t n )
+static void scrub( unsigned char * p_in , std::size_t n )
 {
 	// see also SecureZeroMemory(), memset_s(3), explicit_bzero(BSD) and mbedtls_zeroize()
-	volatile unsigned char *p = p_in ;
+	volatile unsigned char * p = p_in ;
 	while( n-- )
 		*p++ = 0U ;
 }
@@ -1003,12 +1003,12 @@ const char * GSsl::MbedTls::SecureFile::p() const
 
 const unsigned char * GSsl::MbedTls::SecureFile::pu() const
 {
-	return reinterpret_cast<const unsigned char*>(p()) ;
+	return reinterpret_cast<const unsigned char*>( p() ) ;
 }
 
 unsigned char * GSsl::MbedTls::SecureFile::pu()
 {
-	return const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>(p())) ;
+	return const_cast<unsigned char*>( reinterpret_cast<const unsigned char*>(p()) ) ;
 }
 
 std::size_t GSsl::MbedTls::SecureFile::size() const
@@ -1018,7 +1018,7 @@ std::size_t GSsl::MbedTls::SecureFile::size() const
 
 bool GSsl::MbedTls::SecureFile::empty() const
 {
-	return size() == 0U ;
+	return m_buffer.empty() ;
 }
 
 // ==
@@ -1053,7 +1053,7 @@ mbedtls_pk_context * GSsl::MbedTls::Key::ptr()
 
 mbedtls_pk_context * GSsl::MbedTls::Key::ptr() const
 {
-	return const_cast<mbedtls_pk_context*>(&x) ;
+	return const_cast<mbedtls_pk_context*>( &x ) ;
 }
 
 // ==
@@ -1096,7 +1096,7 @@ mbedtls_x509_crt * GSsl::MbedTls::Certificate::ptr()
 mbedtls_x509_crt * GSsl::MbedTls::Certificate::ptr() const
 {
 	if( loaded() )
-		return const_cast<mbedtls_x509_crt*>(&x) ;
+		return const_cast<mbedtls_x509_crt*>( &x ) ;
 	else
 		return nullptr ;
 }
@@ -1147,7 +1147,7 @@ void GSsl::MbedTls::randomFillImp( char * p , std::size_t n )
 			throw Error( "cannot read /dev/random" ) ;
 
 		std::size_t nread = static_cast<std::size_t>( nread_s ) ;
-		if( nread > n )
+		if( nread > n ) // sanity check
 			throw Error( "cannot read /dev/random" ) ;
 
 		n -= nread ;

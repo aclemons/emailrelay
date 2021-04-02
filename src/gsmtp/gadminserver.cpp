@@ -67,7 +67,7 @@ void GSmtp::AdminServerPeer::clientDone( const std::string & s )
 void GSmtp::AdminServerPeer::onDelete( const std::string & reason )
 {
 	G_LOG_S( "GSmtp::AdminServerPeer: admin connection closed: " << reason << (reason.empty()?"":": ")
-		<< peerAddress().second.displayString() ) ;
+		<< peerAddress().displayString() ) ;
 }
 
 void GSmtp::AdminServerPeer::onSecure( const std::string & , const std::string & , const std::string & )
@@ -82,6 +82,10 @@ bool GSmtp::AdminServerPeer::onReceive( const char * line_data , std::size_t lin
 	{
 		flush() ;
 	}
+	else if( is(line,"forward") )
+	{
+		forward() ;
+	}
 	else if( is(line,"help") )
 	{
 		help() ;
@@ -93,6 +97,7 @@ bool GSmtp::AdminServerPeer::onReceive( const char * line_data , std::size_t lin
 	else if( is(line,"notify") )
 	{
 		m_notifying = true ;
+		setIdleTimeout( 0U ) ; // GNet::ServerPeer
 	}
 	else if( is(line,"list") )
 	{
@@ -118,7 +123,7 @@ bool GSmtp::AdminServerPeer::onReceive( const char * line_data , std::size_t lin
 	else if( is(line,"terminate") && m_with_terminate )
 	{
 		G_LOG_S( "GSmtp::AdminServerPeer::onReceive: received a terminate command from "
-			<< peerAddress().second.displayString() ) ;
+			<< peerAddress().displayString() ) ;
 		if( GNet::EventLoop::exists() )
 			GNet::EventLoop::instance().quit("") ;
 	}
@@ -185,6 +190,7 @@ void GSmtp::AdminServerPeer::help()
 {
 	std::set<std::string> commands ;
 	commands.insert( "flush" ) ;
+	commands.insert( "forward" ) ;
 	commands.insert( "help" ) ;
 	commands.insert( "status" ) ;
 	commands.insert( "list" ) ;
@@ -217,10 +223,24 @@ void GSmtp::AdminServerPeer::flush()
 	else
 	{
 		m_client_ptr.reset( std::make_unique<GSmtp::Client>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()) ,
-			GNet::Location(m_remote_address) , m_server.clientSecrets() , m_server.clientConfig() ) ) ;
+			m_server.store() , m_server.ff() , GNet::Location(m_remote_address) ,
+			m_server.clientSecrets() , m_server.clientConfig() ) ) ;
 
-		m_client_ptr->sendMessagesFrom( m_server.store() ) ; // once connected
+		m_client_ptr->sendAllMessages() ; // once connected
 		// no sendLine() -- sends "OK" or "error:" when complete -- see AdminServerPeer::clientDone()
+	}
+}
+
+void GSmtp::AdminServerPeer::forward()
+{
+	if( m_remote_address.empty() )
+	{
+		sendLine( "error: no remote server configured: use --forward-to" ) ;
+	}
+	else
+	{
+		m_server.forward() ;
+		sendLine( "OK" ) ;
 	}
 }
 
@@ -299,7 +319,7 @@ void GSmtp::AdminServerPeer::sendList( std::shared_ptr<MessageStore::Iterator> i
 		std::unique_ptr<StoredMessage> message( ++iter ) ;
 		if( message == nullptr ) break ;
 		if( !first ) ss << eol() ;
-		ss << message->name() ;
+		ss << message->id().str() ;
 	}
 
 	std::string result = ss.str() ;
@@ -322,6 +342,7 @@ bool GSmtp::AdminServerPeer::notifying() const
 // ===
 
 GSmtp::AdminServer::AdminServer( GNet::ExceptionSink es , MessageStore & store ,
+	FilterFactory & ff , G::Slot::Signal<std::string> & forward_request ,
 	const GNet::ServerPeerConfig & server_peer_config ,
 	const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
 	const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
@@ -329,7 +350,10 @@ GSmtp::AdminServer::AdminServer( GNet::ExceptionSink es , MessageStore & store ,
 	const G::StringMap & info_commands , const G::StringMap & config_commands ,
 	bool with_terminate ) :
 		GNet::MultiServer(es,interfaces,port,"admin",server_peer_config) ,
+		m_forward_timer(*this,&AdminServer::onForwardTimeout,es) ,
 		m_store(store) ,
+		m_ff(ff) ,
+		m_forward_request(forward_request) ,
 		m_client_config(client_config) ,
 		m_client_secrets(client_secrets) ,
 		m_allow_remote(allow_remote) ,
@@ -370,6 +394,24 @@ std::unique_ptr<GNet::ServerPeer> GSmtp::AdminServer::newPeer( GNet::ExceptionSi
 	return ptr ;
 }
 
+void GSmtp::AdminServer::forward()
+{
+	// asychronous emit() for safety
+	m_forward_timer.startTimer( 0 ) ;
+}
+
+void GSmtp::AdminServer::onForwardTimeout()
+{
+	try
+	{
+		m_forward_request.emit( std::string("admin") ) ;
+	}
+	catch( std::exception & e )
+	{
+		G_WARNING( "GSmtp::AdminServer: exception: " << e.what() ) ;
+	}
+}
+
 void GSmtp::AdminServer::report() const
 {
 	serverReport() ;
@@ -396,6 +438,11 @@ void GSmtp::AdminServer::notify( const std::string & s0 , const std::string & s1
 GSmtp::MessageStore & GSmtp::AdminServer::store()
 {
 	return m_store ;
+}
+
+GSmtp::FilterFactory & GSmtp::AdminServer::ff()
+{
+	return m_ff ;
 }
 
 const GAuth::Secrets & GSmtp::AdminServer::clientSecrets() const

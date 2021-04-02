@@ -193,11 +193,11 @@ sub fileLineCountLessThan
 
 sub allFilesContain
 {
-	my ( $glob , $string , $more ) = @_ ;
+	my ( $glob , $re , $more ) = @_ ;
 	my @files = System::glob_( $glob ) ;
 	for my $file ( @files )
 	{
-		fileContains( $file , $string , $more ) ;
+		fileContains( $file , $re , $more ) ;
 	}
 }
 
@@ -213,16 +213,16 @@ sub noFileContains
 
 sub fileContains
 {
-	my ( $path , $string , $more ) = @_ ;
+	my ( $path , $re , $more ) = @_ ;
 	my $fh = new FileHandle( $path ) ;
 	my $n = 0 ;
 	while(<$fh>)
 	{
 		my $line = $_ ;
 		chomp $line ;
-		if( !defined($string) || $line =~ m/$string/ ) { $n++ }
+		if( !defined($re) || $line =~ m/$re/ ) { $n++ }
 	}
-	Check::that( $n > 0 , "file does not contain expected string" , $path , "[$string]" , $more ) ;
+	Check::that( $n > 0 , "file does not contain expected string" , $path , "[$re]" , $more ) ;
 }
 
 sub fileContainsEither

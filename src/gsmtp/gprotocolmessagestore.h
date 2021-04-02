@@ -49,7 +49,7 @@ public:
 	~ProtocolMessageStore() override ;
 		///< Destructor.
 
-	G::Slot::Signal<bool,unsigned long,const std::string&,const std::string&> & doneSignal() override ;
+	ProtocolMessage::DoneSignal & doneSignal() override ;
 		///< Override from GSmtp::ProtocolMessage.
 
 	void reset() override ;
@@ -58,7 +58,7 @@ public:
 	void clear() override ;
 		///< Override from GSmtp::ProtocolMessage.
 
-	bool setFrom( const std::string & from_user , const std::string & ) override ;
+	MessageId setFrom( const std::string & from_user , const std::string & ) override ;
 		///< Override from GSmtp::ProtocolMessage.
 
 	bool addTo( const std::string & to_user , VerifierStatus to_status ) override ;
@@ -91,7 +91,7 @@ private:
 	std::unique_ptr<Filter> m_filter ;
 	std::unique_ptr<NewMessage> m_new_msg ;
 	std::string m_from ;
-	G::Slot::Signal<bool,unsigned long,const std::string&,const std::string&> m_done_signal ;
+	ProtocolMessage::DoneSignal m_done_signal ;
 } ;
 
 #endif

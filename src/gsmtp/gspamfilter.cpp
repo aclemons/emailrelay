@@ -23,10 +23,12 @@
 #include "gstr.h"
 #include "glog.h"
 
-GSmtp::SpamFilter::SpamFilter( GNet::ExceptionSink es , const std::string & server ,
+GSmtp::SpamFilter::SpamFilter( GNet::ExceptionSink es , FileStore & file_store ,
+	const std::string & server ,
 	bool read_only , bool always_pass , unsigned int connection_timeout ,
 	unsigned int response_timeout ) :
 		m_es(es) ,
+		m_file_store(file_store) ,
 		m_location(server) ,
 		m_read_only(read_only) ,
 		m_always_pass(always_pass) ,
@@ -53,14 +55,14 @@ bool GSmtp::SpamFilter::simple() const
 	return false ;
 }
 
-void GSmtp::SpamFilter::start( const std::string & path )
+void GSmtp::SpamFilter::start( const MessageId & message_id )
 {
 	// the spam client can do more than one request, but it is simpler to start fresh
 	m_client_ptr.reset( std::make_unique<SpamClient>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()) ,
 		m_location , m_read_only , m_connection_timeout , m_response_timeout ) ) ;
 
 	m_text.erase() ;
-	m_client_ptr->request( path ) ; // (no need to wait for connection)
+	m_client_ptr->request( m_file_store.contentPath(message_id).str() ) ; // (no need to wait for connection)
 }
 
 void GSmtp::SpamFilter::clientDeleted( const std::string & reason )

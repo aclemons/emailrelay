@@ -280,6 +280,7 @@ void GNet::Client::writeEvent()
 
 void GNet::Client::onWriteable()
 {
+	bool has_peer = m_state == State::Connecting && socket().getPeerAddress().first ;
 	if( m_state == State::Connected )
 	{
 		if( m_sp->writeEvent() )
@@ -291,7 +292,7 @@ void GNet::Client::onWriteable()
 		setState( State::Connecting ) ;
 		m_connected_timer.startTimer( 2U , 100000U ) ; // -> onConnectedTimeout()
 	}
-	else if( m_state == State::Connecting && socket().hasPeer() && m_remote_location.socks() )
+	else if( m_state == State::Connecting && has_peer && m_remote_location.socks() )
 	{
 		setState( State::Socksing ) ;
 		m_socks = std::make_unique<Socks>( m_remote_location ) ;
@@ -308,7 +309,7 @@ void GNet::Client::onWriteable()
 			socket().dropReadHandler() ;
 		}
 	}
-	else if( m_state == State::Connecting && socket().hasPeer() )
+	else if( m_state == State::Connecting && has_peer )
 	{
 		socket().dropWriteHandler() ;
 		socket().addReadHandler( *this , m_es ) ;
@@ -358,7 +359,6 @@ void GNet::Client::otherEvent( EventHandler::Reason reason )
 
 void GNet::Client::readEvent()
 {
-	G_ASSERT( m_sp != nullptr ) ;
 	if( m_state == State::Socksing )
 	{
 		G_ASSERT( m_socks != nullptr ) ;
@@ -371,6 +371,7 @@ void GNet::Client::readEvent()
 	}
 	else
 	{
+		G_ASSERT( m_sp != nullptr ) ;
 		if( m_sp != nullptr )
 			m_sp->readEvent() ;
 	}
@@ -428,33 +429,29 @@ void GNet::Client::setState( State new_state )
 	m_state = new_state ;
 }
 
-std::pair<bool,GNet::Address> GNet::Client::localAddress() const
+GNet::Address GNet::Client::localAddress() const
 {
-	return
-		m_socket != nullptr ?
-			socket().getLocalAddress() :
-			std::make_pair(false,GNet::Address::defaultAddress()) ;
+	return socket().getLocalAddress() ;
 }
 
-std::pair<bool,GNet::Address> GNet::Client::peerAddress() const
+GNet::Address GNet::Client::peerAddress() const
 {
-	return
-		m_socket != nullptr ?
-			socket().getPeerAddress() :
-			std::make_pair(false,GNet::Address::defaultAddress()) ;
+	if( m_state != State::Connected )
+		throw NotConnected() ;
+
+	auto pair = socket().getPeerAddress() ;
+	if( !pair.first )
+		throw NotConnected() ;
+
+	return pair.second ;
 }
 
 std::string GNet::Client::connectionState() const
 {
-	std::pair<bool,Address> pair =
-		m_socket != nullptr ?
-			socket().getPeerAddress() :
-			std::make_pair(false,GNet::Address::defaultAddress()) ;
-
-	return
-		pair.first ?
-			pair.second.displayString() :
-			("("+m_remote_location.displayString()+")") ;
+	if( m_state == State::Connected )
+		return socket().getPeerAddress().second.displayString() ;
+	else
+		return "("+m_remote_location.displayString()+")" ;
 }
 
 std::string GNet::Client::peerCertificate() const

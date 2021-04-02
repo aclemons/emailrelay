@@ -60,6 +60,8 @@ public:
 	G_EXCEPTION( SendError , "peer disconnected" ) ;
 	G_EXCEPTION( ShutdownError , "shutdown error" ) ;
 	G_EXCEPTION( SecureConnectionTimeout , "secure connection timeout" ) ;
+	G_EXCEPTION( Shutdown , "peer shutdown" ) ;
+	G_EXCEPTION( OtherEventError , "network event" ) ;
 
 	SocketProtocol( EventHandler & , ExceptionSink ,
 		Sink & , StreamSocket & , unsigned int secure_connection_timeout ) ;

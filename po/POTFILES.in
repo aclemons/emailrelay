@@ -120,11 +120,13 @@
 ./src/gnet/geventloop_epoll.cpp
 ./src/gnet/geventloop.cpp
 ./src/gnet/ginterfaces_common.cpp
+./src/gnet/geventloophandles.cpp
 ./src/gnet/gmonitor.cpp
 ./src/gnet/ginterfaces_unix.cpp
 ./src/gnet/gclientptr.cpp
 ./src/gnet/geventhandler.cpp
 ./src/gnet/gfutureevent_unix.cpp
+./src/gnet/geventemitter.cpp
 ./src/gnet/glinestore.cpp
 ./src/gnet/gresolverfuture.cpp
 ./src/gnet/gtask.cpp

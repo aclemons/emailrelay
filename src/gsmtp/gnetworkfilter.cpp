@@ -23,9 +23,11 @@
 #include "gstr.h"
 #include "glog.h"
 
-GSmtp::NetworkFilter::NetworkFilter( GNet::ExceptionSink es , const std::string & server ,
+GSmtp::NetworkFilter::NetworkFilter( GNet::ExceptionSink es , FileStore & file_store ,
+	const std::string & server ,
 	unsigned int connection_timeout , unsigned int response_timeout ) :
 		m_es(es) ,
+		m_file_store(file_store) ,
 		m_location(server) ,
 		m_connection_timeout(connection_timeout) ,
 		m_response_timeout(response_timeout)
@@ -50,7 +52,7 @@ bool GSmtp::NetworkFilter::simple() const
 	return false ;
 }
 
-void GSmtp::NetworkFilter::start( const std::string & path )
+void GSmtp::NetworkFilter::start( const MessageId & message_id )
 {
 	m_text.erase() ;
 	if( m_client_ptr.get() == nullptr )
@@ -60,7 +62,7 @@ void GSmtp::NetworkFilter::start( const std::string & path )
 			"scanner" , "ok" ,
 			m_location , m_connection_timeout , m_response_timeout ) ) ;
 	}
-	m_client_ptr->request( path ) ; // (no need to wait for connection)
+	m_client_ptr->request( m_file_store.contentPath(message_id).str() ) ; // (no need to wait for connection)
 }
 
 void GSmtp::NetworkFilter::clientDeleted( const std::string & reason )

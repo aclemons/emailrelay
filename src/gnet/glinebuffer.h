@@ -98,10 +98,10 @@ public:
 		///< See also apply().
 
 	void expect( std::size_t n ) ;
-		///< Requests that the next 'n' bytes extracted be extracted
-		///< in one contiguous block, without regard to line endings.
-		///< Once the expected number of bytes have been extracted
-		///< the line buffering returns to normal.
+		///< Requests that the next 'n' bytes are extracted in one
+		///< contiguous block, without regard to line endings. Once
+		///< the expected number of bytes have been extracted the
+		///< line buffering returns to normal.
 		///<
 		///< This method can be used during a data-transfer phase to
 		///< obtain a chunk of data of known size, as in http with a

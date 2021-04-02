@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gslot.h"
+#include "gmessagestore.h"
 
 namespace GSmtp
 {
@@ -58,8 +59,8 @@ public:
 		///< Returns true if the concrete filter class is one that can
 		///< never change the file (eg. a do-nothing filter class).
 
-	virtual void start( const std::string & path ) = 0 ;
-		///< Starts the filter for the given message file. Any previous,
+	virtual void start( const MessageId & ) = 0 ;
+		///< Starts the filter for the given message. Any previous,
 		///< incomplete filtering is cancel()ed. Asynchronous completion
 		///< is indicated by a doneSignal().
 

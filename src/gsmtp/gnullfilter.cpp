@@ -70,7 +70,7 @@ void GSmtp::NullFilter::cancel()
 {
 }
 
-void GSmtp::NullFilter::start( const std::string & )
+void GSmtp::NullFilter::start( const MessageId & )
 {
 	m_timer.startTimer( 0U ) ;
 }

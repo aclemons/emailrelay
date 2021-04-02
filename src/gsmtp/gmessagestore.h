@@ -22,8 +22,6 @@
 #define G_SMTP_MESSAGE_STORE_H
 
 #include "gdef.h"
-#include "gnewmessage.h"
-#include "gstoredmessage.h"
 #include "gexception.h"
 #include "gslot.h"
 #include "gstrings.h"
@@ -31,8 +29,36 @@
 
 namespace GSmtp
 {
+	class NewMessage ;
+	class StoredMessage ;
+	class MessageId ;
 	class MessageStore ;
 }
+
+//| \class GSmtp::MessageId
+/// A somewhat opaque identifer for a MessageStore message.
+///
+class GSmtp::MessageId
+{
+public:
+	explicit MessageId( const std::string & ) ;
+		///< Constructor.
+
+	static MessageId none() ;
+		///< Returns an in-valid() id.
+
+	bool valid() const ;
+		///< Returns true if valid.
+
+	std::string str() const ;
+		///< Returns the id string.
+
+private:
+	MessageId() = default ;
+
+private:
+	std::string m_s ;
+} ;
 
 //| \class GSmtp::MessageStore
 /// A class which allows SMTP messages to be stored and retrieved.
@@ -46,7 +72,6 @@ public:
 	{
 		virtual std::unique_ptr<StoredMessage> next() = 0 ;
 			///< Returns the next stored message or a null pointer.
-			///< See also GSmtp::operator++(std::shared_ptr<Iterator>).
 
 		virtual ~Iterator() = default ;
 			///< Destructor.
@@ -66,11 +91,12 @@ public:
 	virtual bool empty() const = 0 ;
 		///< Returns true if the message store is empty.
 
-	virtual std::unique_ptr<StoredMessage> get( unsigned long id ) = 0 ;
+	virtual std::string location( const MessageId & ) const = 0 ;
+		///< Returns the location of the given message.
+
+	virtual std::unique_ptr<StoredMessage> get( const MessageId & id ) = 0 ;
 		///< Pulls the specified message out of the store. Throws
 		///< execptions on error.
-		///<
-		///< See also NewMessage::id().
 		///<
 		///< As a side effect some stored messages may be marked as bad,
 		///< or deleted (if they have no recipients).
@@ -115,10 +141,12 @@ public:
 
 namespace GSmtp
 {
-	inline std::unique_ptr<StoredMessage> operator++( std::shared_ptr<MessageStore::Iterator> & iter )
-	{
-		return iter.get() ? iter->next() : std::unique_ptr<StoredMessage>() ;
-	}
+	std::unique_ptr<StoredMessage> operator++( std::shared_ptr<MessageStore::Iterator> & iter ) ;
 }
+
+inline GSmtp::MessageId::MessageId( const std::string & s ) : m_s(s) {}
+inline GSmtp::MessageId GSmtp::MessageId::none() { return MessageId() ; }
+inline std::string GSmtp::MessageId::str() const { return m_s ; }
+inline bool GSmtp::MessageId::valid() const { return !m_s.empty() ; }
 
 #endif

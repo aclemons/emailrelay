@@ -52,7 +52,7 @@ public:
 		// Disarms the callback and schedules a 'delete this' for when
 		// the workder thread has finished.
 
-	static void start( ResolverImp * , FutureEvent::handle_type ) noexcept ;
+	static void start( ResolverImp * , HANDLE ) noexcept ;
 		// Static worker-thread function to do name resolution. Calls
 		// ResolverFuture::run() to do the work and then FutureEvent::send()
 		// to signal the main thread. The event plumbing then results in a
@@ -116,7 +116,7 @@ std::size_t GNet::ResolverImp::zcount() noexcept
 	return m_zcount ;
 }
 
-void GNet::ResolverImp::start( ResolverImp * This , FutureEvent::handle_type handle ) noexcept
+void GNet::ResolverImp::start( ResolverImp * This , HANDLE handle ) noexcept
 {
 	// thread function, spawned from ctor and join()ed from dtor
 	try

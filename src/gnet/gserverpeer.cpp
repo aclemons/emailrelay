@@ -79,15 +79,15 @@ void GNet::ServerPeer::readEvent()
 	m_sp.readEvent() ;
 }
 
-std::pair<bool,GNet::Address> GNet::ServerPeer::localAddress() const
+GNet::Address GNet::ServerPeer::localAddress() const
 {
 	G_ASSERT( m_socket != nullptr ) ;
 	return m_socket->getLocalAddress() ;
 }
 
-std::pair<bool,GNet::Address> GNet::ServerPeer::peerAddress() const
+GNet::Address GNet::ServerPeer::peerAddress() const
 {
-	return std::pair<bool,Address>( true , m_address ) ;
+	return m_address ;
 }
 
 std::string GNet::ServerPeer::connectionState() const
@@ -153,11 +153,17 @@ std::string GNet::ServerPeer::exceptionSourceId() const
 {
 	if( m_exception_source_id.empty() )
 	{
-		std::pair<bool,Address> pair = peerAddress() ; // GNet::Connection
-		if( pair.first )
-			m_exception_source_id = pair.second.hostPartString() ;
+		m_exception_source_id = peerAddress().hostPartString() ; // GNet::Connection
 	}
 	return m_exception_source_id ;
+}
+
+void GNet::ServerPeer::setIdleTimeout( unsigned int s )
+{
+	m_config.idle_timeout = s ;
+	m_idle_timer.cancelTimer() ;
+	if( m_config.idle_timeout )
+		m_idle_timer.startTimer( m_config.idle_timeout ) ;
 }
 
 // ==

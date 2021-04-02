@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gfilter.h"
 #include "gexceptionsink.h"
+#include "gfilestore.h"
 #include <string>
 #include <utility>
 
@@ -38,11 +39,16 @@ namespace GSmtp
 class GSmtp::FilterFactory
 {
 public:
-	static std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ,
+	explicit FilterFactory( FileStore & ) ;
+		///< Constructor. The FileStore reference is retained and passed
+		///< to new filter objects so that they can derive the paths of
+		///< the content and envelope files that they process.
+
+	std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ,
 		bool server_side , const std::string & identifier , unsigned int timeout ) ;
-			///< Returns a Filter on the heap. The identifier
-			///< is normally prefixed with a processor type, or it
-			///< is the file system path of an exectuable.
+			///< Returns a Filter on the heap. The identifier is
+			///< normally prefixed with a processor type, or it is
+			///< the file system path of a filter exectuable.
 
 	static std::string check( const std::string & identifier ) ;
 		///< Checks an identifier. Returns an empty string if okay,
@@ -50,6 +56,9 @@ public:
 
 public:
 	FilterFactory() = delete ;
+
+private:
+	FileStore & m_file_store ;
 } ;
 
 #endif

@@ -29,6 +29,7 @@
 #include "gsmtpclientprotocol.h"
 #include "gmessagestore.h"
 #include "gstoredmessage.h"
+#include "gfilterfactory.h"
 #include "gfilter.h"
 #include "gcall.h"
 #include "gsocket.h"
@@ -82,21 +83,22 @@ public:
 		Config & set_sasl_client_config( const std::string & ) ;
 	} ;
 
-	Client( GNet::ExceptionSink , const GNet::Location & remote ,
-		const GAuth::Secrets & secrets , const Config & config ) ;
+	Client( GNet::ExceptionSink , MessageStore & , FilterFactory & ,
+		const GNet::Location & remote , const GAuth::Secrets & secrets ,
+		const Config & config ) ;
 			///< Constructor. Starts connecting immediately.
 			///<
-			///< Use sendMessagesFrom() once, or use sendMessage()
+			///< Use sendAllMessages() once or use sendMessage()
 			///< repeatedly. Wait for a messageDoneSignal() between
 			///< each sendMessage().
 
 	~Client() override ;
 		///< Destructor.
 
-	void sendMessagesFrom( MessageStore & store ) ;
+	void sendAllMessages() ;
 		///< Sends all messages from the given message store once
-		///< connected. This must be used immediately after
-		///< construction with a non-empty message store.
+		///< connected. This must be used after construction
+		///< without any intervening calls to sendMessage().
 		///<
 		///< Once all messages have been sent the client will throw
 		///< GNet::Done. See GNet::ClientPtr.
@@ -149,7 +151,7 @@ private:
 	static GNet::Client::Config netConfig( const Config & smtp_config ) ;
 
 private:
-	MessageStore * m_store ;
+	MessageStore & m_store ;
 	G::CallStack m_stack ;
 	std::unique_ptr<Filter> m_filter ;
 	std::shared_ptr<StoredMessage> m_message ;
@@ -158,6 +160,7 @@ private:
 	bool m_secure_tunnel ;
 	G::Slot::Signal<const std::string&> m_message_done_signal ;
 	unsigned int m_message_count ;
+	bool m_send_all ;
 } ;
 
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_address( const std::string & s ) { filter_address = s ; return *this ; }

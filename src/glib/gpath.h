@@ -132,9 +132,10 @@ public:
 
 	Path withoutExtension() const ;
 		///< Returns a path without the basename extension, if any.
-		///< As a special case, a basename() that starts with a dot
-		///< is replaced by a single dot. Prefer withExtension()
-		///< where appropriate to avoid this.
+		///< Returns this path if there is no dot in the basename.
+		///< As a special case, a basename() like ".foo" ends up as
+		///< "."; prefer withExtension() where appropriate to avoid
+		///< this.
 
 	bool isAbsolute() const ;
 		///< Returns !isRelative().

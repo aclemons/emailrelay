@@ -34,15 +34,14 @@
 #include <string>
 #include <tuple>
 
-GSmtp::ServerProtocol::ServerProtocol( GNet::ExceptionSink es , Sender & sender ,
-	Verifier & verifier , ProtocolMessage & pmessage ,
-	const GAuth::Secrets & secrets , const std::string & sasl_server_config ,
-	Text & text , const GNet::Address & peer_address , const Config & config ) :
+GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier ,
+	ProtocolMessage & pmessage , const GAuth::Secrets & secrets ,
+	const std::string & sasl_server_config , Text & text ,
+	const GNet::Address & peer_address , const Config & config ) :
 		m_sender(sender) ,
 		m_verifier(verifier) ,
 		m_text(text) ,
 		m_message(pmessage) ,
-		m_process_timer(*this,&ServerProtocol::onProcessTimeout,es) ,
 		m_sasl(GAuth::SaslServerFactory::newSaslServer(secrets,sasl_server_config,false/*apop*/)) ,
 		m_config(config) ,
 		m_fsm(State::sStart,State::sEnd,State::s_Same,State::s_Any) ,
@@ -87,7 +86,6 @@ GSmtp::ServerProtocol::ServerProtocol( GNet::ExceptionSink es , Sender & sender 
 	m_fsm( Event::eContent , State::sData , State::sData , &ServerProtocol::doContent , State::sDiscarding ) ;
 	m_fsm( Event::eEot , State::sData , State::sProcessing , &ServerProtocol::doEot ) ;
 	m_fsm( Event::eDone , State::sProcessing , State::sIdle , &ServerProtocol::doComplete ) ;
-	m_fsm( Event::eTimeout , State::sProcessing , State::sIdle , &ServerProtocol::doComplete ) ;
 	m_fsm( Event::eContent , State::sDiscarding , State::sDiscarding , &ServerProtocol::doDiscard ) ;
 	m_fsm( Event::eEot , State::sDiscarding , State::sIdle , &ServerProtocol::doDiscarded ) ;
 
@@ -179,9 +177,13 @@ bool GSmtp::ServerProtocol::halfDuplexBusy( const char * , std::size_t ) const
 
 bool GSmtp::ServerProtocol::halfDuplexBusy() const
 {
+	// return true if the line buffer must stop apply()ing because we are
+	// waiting for an asynchronous filter or verifier completion event
 	return
 		m_config.allow_pipelining && (
+			// states expecting eDone...
 			m_fsm.state() == State::sProcessing ||
+			// states expecting eVrfyReply...
 			m_fsm.state() == State::sVrfyStart ||
 			m_fsm.state() == State::sVrfyIdle ||
 			m_fsm.state() == State::sVrfyGotMail ||
@@ -248,33 +250,18 @@ void GSmtp::ServerProtocol::doEot( EventData , bool & )
 {
 	G_LOG( "GSmtp::ServerProtocol: rx<<: [message content not logged]" ) ;
 	G_LOG( "GSmtp::ServerProtocol: rx<<: \".\"" ) ;
-	if( m_config.filter_timeout != 0U )
-	{
-		G_DEBUG( "GSmtp::ServerProtocol: starting filter timer: " << m_config.filter_timeout ) ;
-		m_process_timer.startTimer( m_config.filter_timeout ) ;
-	}
 	m_message.process( m_sasl->id() , m_peer_address.hostPartString() , m_certificate ) ;
 }
 
-void GSmtp::ServerProtocol::processDone( bool success , unsigned long id ,
+void GSmtp::ServerProtocol::processDone( bool success , const MessageId & id ,
 	const std::string & response , const std::string & reason )
 {
 	GDEF_IGNORE_PARAMS( success , id , reason ) ;
-	G_DEBUG( "GSmtp::ServerProtocol::processDone: " << (success?1:0) << " " << id
+	G_DEBUG( "GSmtp::ServerProtocol::processDone: " << (success?1:0) << " " << id.str()
 		<< " [" << response << "] [" << reason << "]" ) ;
 	G_ASSERT( success == response.empty() ) ;
 
 	State new_state = m_fsm.apply( *this , Event::eDone , EventData(response.data(),response.size()) ) ;
-	if( new_state == State::s_Any )
-		throw ProtocolDone( "protocol error" ) ;
-}
-
-void GSmtp::ServerProtocol::onProcessTimeout()
-{
-	G_WARNING( "GSmtp::ServerProtocol::onProcessTimeout: message filter timed out after "
-		<< m_config.filter_timeout << "s" ) ;
-	std::string response = "timed out" ;
-	State new_state = m_fsm.apply( *this , Event::eTimeout , EventData(response.data(),response.size()) ) ;
 	if( new_state == State::s_Any )
 		throw ProtocolDone( "protocol error" ) ;
 }
@@ -588,7 +575,8 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 		std::string from_address ;
 		std::string from_error_response ;
 		std::tie(from_address,from_error_response) = parseMailFrom( line ) ;
-		bool ok = from_error_response.empty() && m_message.setFrom( from_address , parseMailAuth(line) ) ;
+		bool ok = from_error_response.empty() ;
+		m_message.setFrom( from_address , parseMailAuth(line) ) ;
 		predicate = ok ;
 		if( ok )
 		{
@@ -643,7 +631,6 @@ void GSmtp::ServerProtocol::doUnknown( EventData event_data , bool & )
 void GSmtp::ServerProtocol::reset()
 {
 	// cancel the current message transaction -- ehlo/quit session unaffected
-	m_process_timer.cancelTimer() ;
 	m_message.clear() ;
 	m_verifier.cancel() ;
 }
@@ -1088,11 +1075,11 @@ std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_pe
 GSmtp::ServerProtocol::Config::Config()
 = default;
 
-GSmtp::ServerProtocol::Config::Config( bool with_vrfy_in , unsigned int filter_timeout_in ,
-	std::size_t max_size_in , bool authentication_requires_encryption_in , bool mail_requires_encryption_in ,
-	bool tls_starttls_in , bool tls_connection_in ) :
+GSmtp::ServerProtocol::Config::Config( bool with_vrfy_in ,
+	std::size_t max_size_in , bool authentication_requires_encryption_in ,
+	bool mail_requires_encryption_in , bool tls_starttls_in ,
+	bool tls_connection_in ) :
 		with_vrfy(with_vrfy_in) ,
-		filter_timeout(filter_timeout_in) ,
 		max_size(max_size_in) ,
 		authentication_requires_encryption(authentication_requires_encryption_in) ,
 		mail_requires_encryption(mail_requires_encryption_in) ,

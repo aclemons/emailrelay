@@ -57,12 +57,13 @@
 #include <exception>
 #include <iostream>
 #include <sstream>
+#include <tuple>
 #include <memory>
 #include <cstdlib>
 
 G_EXCEPTION_CLASS( NoBody , "no body text" ) ;
 
-static std::string writeFiles( const G::Path & spool_dir ,
+static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
 	const G::StringArray & to_list , const std::string & from ,
 	const std::string & from_auth_in , const std::string & from_auth_out ,
 	const G::StringArray & content , std::istream & instream )
@@ -70,7 +71,8 @@ static std::string writeFiles( const G::Path & spool_dir ,
 	// create the output file
 	//
 	std::string envelope_from = from.empty() ? "anonymous" : from ;
-	GSmtp::FileStore store( spool_dir , /*optimise_empty_test=*/true , /*max_size=*/0U , /*test_for_eight_bit=*/true ) ;
+	GSmtp::FileStore file_store( spool_dir , /*optimise_empty_test=*/true , /*max_size=*/0U , /*test_for_eight_bit=*/true ) ;
+	GSmtp::MessageStore & store = file_store ;
 	std::unique_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from , from_auth_in , from_auth_out ) ;
 
 	// add "To:" lines to the envelope
@@ -109,16 +111,18 @@ static std::string writeFiles( const G::Path & spool_dir ,
 	//
 	GNet::Address ip = GNet::Address::loopback( GNet::Address::Family::ipv4 ) ;
 	std::string auth_id = std::string() ;
-	std::string new_path = msg->prepare( auth_id , ip.hostPartString() , std::string() ) ;
+	msg->prepare( auth_id , ip.hostPartString() , std::string() ) ;
 	msg->commit( true ) ;
 
-	return new_path ; // content file
+	return std::make_pair(
+		file_store.contentPath(msg->id()) ,
+		file_store.envelopePath(msg->id()) ) ;
 }
 
-static void copyIntoSubDirectories( const G::Path & content_path )
+static void copyIntoSubDirectories( const G::Path & envelope_path )
 {
-	G::Directory spool_dir( content_path.simple() ? G::Path(".") : content_path.dirname() ) ;
-	std::string envelope_filename = content_path.withExtension("envelope").basename() ;
+	G::Directory spool_dir( envelope_path.simple() ? G::Path(".") : envelope_path.dirname() ) ;
+	std::string envelope_filename = envelope_path.basename() ;
 	G::Path src = spool_dir.path() + envelope_filename ;
 
 	G::Process::Umask::set( G::Process::Umask::Mode::Tighter ) ; // 0117 => -rw-rw----
@@ -162,7 +166,7 @@ static void run( const G::Arg & arg )
 		"c!copy!copy into spool sub-directories!!0!!2|"
 		"n!filename!prints the name of the created content file!!0!!2|"
 
-		"C!content!set a line of content! and ignore stdin!2!base64!3|"
+		"C!content!sets a line of content! and ignores stdin!2!base64!3|"
 		"a!auth!sets the envelope authentication value!!1!name!3|"
 		"i!from-auth-in!sets the envelope from-auth-in value!!1!name!3|"
 		"o!from-auth-out!sets the envelope from-auth-out value!!1!name!3|"
@@ -290,19 +294,22 @@ static void run( const G::Arg & arg )
 
 		// generate the two files
 		std::stringstream empty ;
-		std::string new_path = writeFiles( opt_spool_dir , opt_to_list , from ,
+		G::Path new_content ;
+		G::Path new_envelope ;
+		std::tie( new_content , new_envelope ) = writeFiles( opt_spool_dir ,
+			opt_to_list , from ,
 			opt_from_auth_in , opt_from_auth_out , content ,
 			opt.contains("content") ? empty : std::cin ) ;
 
 		// copy into spool-dir subdirectories (cf. emailrelay-filter-copy)
 		if( opt_copy )
-			copyIntoSubDirectories( new_path ) ;
+			copyIntoSubDirectories( new_envelope ) ;
 
 		// print the content filename
 		if( opt.contains("verbose") )
-			std::cout << new_path << std::endl ;
+			std::cout << new_content << std::endl ;
 		else if( opt.contains("filename") )
-			std::cout << G::Path(new_path).basename() << std::endl ;
+			std::cout << new_content.basename() << std::endl ;
 	}
 }
 

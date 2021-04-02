@@ -27,8 +27,8 @@
 std::unique_ptr<GAuth::SaslServer> GAuth::SaslServerFactory::newSaslServer( const SaslServerSecrets & secrets , const std::string & config , bool allow_apop )
 {
 	if( secrets.source() == "/pam" )
-		return std::make_unique<SaslServerPam>(secrets,config,allow_apop) ; // up-cast
+		return std::make_unique<SaslServerPam>( secrets , config , allow_apop ) ; // up-cast
 	else
-		return std::make_unique<SaslServerBasic>(secrets,config,allow_apop) ; // up-cast
+		return std::make_unique<SaslServerBasic>( secrets , config , allow_apop ) ; // up-cast
 }
 

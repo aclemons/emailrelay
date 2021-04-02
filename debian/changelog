@@ -1,3 +1,12 @@
+emailrelay (2.3) unstable; urgency=low
+  * New admin 'forward' command to trigger forwarding without waiting.
+  * More simultaneous connections supported on Windows.
+  * EPIPELINE SMTP extension (todo)
+  * Windows event log not used for verbose logging (todo)
+  * Uses epoll by default on Linux (todo)
+  * No 7-bit/8-bit check by default (todo)
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Fri,  2 Apr 2021 00:00:00 +0000
+
 emailrelay (2.2) unstable; urgency=low
   * Connections from IPv4 'private use' addresses are allowed by default (see "--remote-clients").
   * Interface names can be used with "--interface" (eg. "--interface=eth0").

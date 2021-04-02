@@ -73,14 +73,13 @@ public:
 		///< Returns the empty string if none is supported or if not active().
 
 	bool next() ;
-		///< Moves to the next preferred mechanism. Returns the empty
-		///< string if there are no more mechanisms.
+		///< Moves to the next preferred mechanism. Returns false if there
+		///< are no more mechanisms.
 
 	std::string next( const std::string & ) ;
 		///< A convenience overload that moves to the next() mechanism
-		///< and returns it. Returns the empty string if the
-		///< given string is empty or if there are no more
-		///< mechanisms.
+		///< and returns it. Returns the empty string if the given string
+		///< is empty or if there are no more mechanisms.
 
 	std::string mechanism() const ;
 		///< Returns the name of the current mechanism once next() has

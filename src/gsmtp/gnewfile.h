@@ -64,13 +64,17 @@ public:
 
 private: // overrides
 	void commit( bool strict ) override ; // Override from GSmtp::NewMessage.
-	unsigned long id() const override ; // Override from GSmtp::NewMessage.
+	MessageId id() const override ; // Override from GSmtp::NewMessage.
+	std::string location() const override ; // Override from GSmtp::NewMessage.
 	void addTo( const std::string & to , bool local ) override ; // Override from GSmtp::NewMessage.
 	bool addText( const char * , std::size_t ) override ; // Override from GSmtp::NewMessage.
-	std::string prepare( const std::string & auth_id , const std::string & peer_socket_address ,
+	bool prepare( const std::string & auth_id , const std::string & peer_socket_address ,
 		const std::string & peer_certificate ) override ; // Override from GSmtp::NewMessage.
 
 private:
+	enum class State { New , Normal } ;
+	G::Path cpath() const ;
+	G::Path epath( State ) const ;
 	void cleanup() ;
 	void flushContent() ;
 	void discardContent() ;
@@ -84,11 +88,8 @@ private:
 
 private:
 	FileStore & m_store ;
-	unsigned long m_seq ;
+	MessageId m_id ;
 	std::unique_ptr<std::ofstream> m_content ;
-	G::Path m_content_path ;
-	G::Path m_envelope_path_0 ;
-	G::Path m_envelope_path_1 ;
 	bool m_committed ;
 	bool m_test_for_eight_bit ;
 	bool m_saved ;

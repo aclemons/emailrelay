@@ -112,12 +112,12 @@ std::string GAuth::SaslClientImp::mechanism( const G::StringArray & server_mecha
 		our_list.push_back( LOGIN ) ;
 	}
 
-	// use the configuration string as a mechanism whitelist and/or blacklist
+	// use the configuration string as a mechanism whitelist and/or blocklist
 	if( !m_config.empty() )
 	{
 		bool simple = G::Str::imatch( our_list , m_config ) ; // eg. allow "plain" as well as "m:plain"
 		G::StringArray list = G::Str::splitIntoTokens( G::Str::upper(m_config) , ";" ) ;
-		G::StringArray whitelist = G::Str::splitIntoTokens( simple?G::Str::upper(m_config): G::Str::headMatchResidue( list , "M:" ) , "," ) ;
+		G::StringArray whitelist = G::Str::splitIntoTokens( simple ? G::Str::upper(m_config) : G::Str::headMatchResidue( list , "M:" ) , "," ) ;
 		G::StringArray blacklist = G::Str::splitIntoTokens( G::Str::headMatchResidue( list , "X:" ) , "," ) ;
 		our_list.erase( G::Str::keepMatch( our_list.begin() , our_list.end() , whitelist , true ) , our_list.end() ) ;
 		our_list.erase( G::Str::removeMatch( our_list.begin() , our_list.end() , blacklist , true ) , our_list.end() ) ;

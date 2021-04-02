@@ -98,6 +98,11 @@ bool GNet::SocketBase::sizeError( ssize_t size )
 	return size < 0 ;
 }
 
+bool GNet::SocketBase::eNotConn() const
+{
+	return m_reason == ENOTCONN ;
+}
+
 bool GNet::SocketBase::eWouldBlock() const
 {
 	return m_reason == EWOULDBLOCK || m_reason == EAGAIN || m_reason == EINTR ;

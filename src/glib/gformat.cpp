@@ -58,7 +58,7 @@ std::string G::format::str() const
 {
 	std::string s = m_fmt ;
 	const std::size_t npos = std::string::npos ;
-	for( std::size_t p = s.find('%') ; p != npos ; p = s.find('%',p) )
+	for( std::size_t p = s.find('%') ; p != npos && (p+2U) < s.size() ; )
 	{
 		std::size_t q = s.find( '%' , p+1 ) ;
 		if( q != npos && q == (p+2U) && isdigit(s.at(p+1U)) ) // kiss 1..9 only
@@ -78,6 +78,7 @@ std::string G::format::str() const
 		{
 			p++ ;
 		}
+		p = p < s.size() ? s.find('%',p) : npos ;
 	}
 	return s ;
 }

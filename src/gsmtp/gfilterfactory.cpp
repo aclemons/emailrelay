@@ -28,6 +28,11 @@
 #include "gexception.h"
 #include "gfactoryparser.h"
 
+GSmtp::FilterFactory::FilterFactory( FileStore & file_store ) :
+	m_file_store(file_store)
+{
+}
+
 std::string GSmtp::FilterFactory::check( const std::string & identifier )
 {
 	return FactoryParser::check( identifier , true ) ;
@@ -48,11 +53,11 @@ std::unique_ptr<GSmtp::Filter> GSmtp::FilterFactory::newFilter( GNet::ExceptionS
 		bool edit = p.third == 1 ;
 		bool read_only = !edit ;
 		bool always_pass = edit ;
-		return std::make_unique<SpamFilter>( es , p.second , read_only , always_pass , timeout , timeout ) ; // up-cast
+		return std::make_unique<SpamFilter>( es , m_file_store , p.second , read_only , always_pass , timeout , timeout ) ; // up-cast
 	}
 	else if( p.first == "net" )
 	{
-		return std::make_unique<NetworkFilter>( es , p.second , timeout , timeout ) ; // up-cast
+		return std::make_unique<NetworkFilter>( es , m_file_store , p.second , timeout , timeout ) ; // up-cast
 	}
 	else if( p.first == "exit" )
 	{
@@ -60,7 +65,7 @@ std::unique_ptr<GSmtp::Filter> GSmtp::FilterFactory::newFilter( GNet::ExceptionS
 	}
 	else
 	{
-		return std::make_unique<ExecutableFilter>( es , server_side , p.second ) ; // up-cast
+		return std::make_unique<ExecutableFilter>( es , m_file_store , server_side , p.second , timeout ) ; // up-cast
 	}
 }
 

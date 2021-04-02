@@ -51,13 +51,13 @@ connections simultaneously from a single thread, and even if multi-threading is
 disabled at build-time the only blocking occurs when external programs are
 executed (see `--filter` and `--address-verifier`).
 
+The advantages of a non-blocking event model are discussed in the well-known
+[C10K Problem](http://www.kegel.com/c10k.html) document.
+
 This event model can make the code more complicated than the equivalent
 multi-threaded approach since (for example) it is not possible to wait for a
 complete line of input to be received from a remote [SMTP][] client because there
 might be other connections that need servicing half way through.
-
-The advantages of a non-blocking event model are discussed in the well-known
-[C10K Problem](http://www.kegel.com/c10k.html) document.
 
 At higher levels the C++ slot/signal design pattern is used to propagate events
 between objects (not to be confused with operating system signals). The
@@ -158,15 +158,15 @@ code lets it propagate back to `main()`, typically terminating the program.
 However, sometimes there are objects that need to be more resilient to
 exceptions. In particular, a network server should not terminate just because
 one of its connections fails unexpectedly. In these cases the owning parent
-object receives the exception notification together with a pointer that
-identifies the child object that threw the exception (ie. the exception
-source). This allows the parent object to absorb the exception and delete the
-child, without the exception killing the whole server.
+object receives the exception notification together with an `ExceptionSource`
+pointer that identifies the child object that threw the exception. This allows
+the parent object to absorb the exception and delete the child, without the
+exception killing the whole server.
 
-Event sources in the event loop are held as a file descriptor, a windows event
-handle, an EventHandler pointer, an ExceptionHandler pointer and an
-ExceptionSource pointer. The first two together are known as a Descriptor, and
-the last two together are known as an ExceptionSink.
+Event sources in the event loop are typically held as a file descriptor and a
+windows event handle, together known as a `Descriptor`. Event loop
+implementations typically watch a set of Descriptors for events and call the
+relevant EventHandler/ExceptionHandler code via the `EventEmitter` class.
 
 Multi-threading
 ---------------

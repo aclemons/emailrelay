@@ -40,18 +40,16 @@ HANDLE CreateEventEx( LPSECURITY_ATTRIBUTES sec , LPCTSTR name , DWORD flags , D
 class GNet::FutureEventImp : public EventHandler
 {
 public:
-	using handle_type = FutureEvent::handle_type ;
-
 	FutureEventImp( FutureEventHandler & handler , ExceptionSink es ) ;
 		// Constructor.
 
 	~FutureEventImp() override ;
 		// Destructor.
 
-	static bool send( handle_type , bool ) noexcept ;
+	static bool send( HANDLE , bool ) noexcept ;
 		// Raises an event.
 
-	handle_type handle() noexcept ;
+	HANDLE handle() noexcept ;
 		// Extracts the event-object handle.
 
 private: // overrides
@@ -70,7 +68,7 @@ private:
 	struct Handle
 	{
 		Handle() = default ;
-		~Handle() { if(h) ::CloseHandle(h) ; }
+		~Handle() { if(h) CloseHandle(h) ; }
 		void operator=( HANDLE h_ ) { h = h_ ; }
 		bool operator==( HANDLE h_ ) const { return h == h_ ; }
 		Handle( const Handle & ) = delete ;
@@ -91,14 +89,11 @@ GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , ExceptionSi
 	m_handler(handler) ,
 	m_es(es)
 {
-	// (the event loop requires manual-reset because it re-tests the handle state after WFMO has been released)
-	const DWORD access = DELETE | SYNCHRONIZE | EVENT_MODIFY_STATE | PROCESS_DUP_HANDLE ;
-	m_h = CreateEventEx( nullptr , nullptr , CREATE_EVENT_MANUAL_RESET , access ) ;
+	m_h = FutureEvent::createHandle() ;
 	if( m_h == 0 )
 		throw FutureEvent::Error( "CreateEventEx" ) ;
 
 	m_h2 = dup() ;
-	G_DEBUG( "GNet::FutureEventImp::ctor: h=" << m_h.h << " h2=" << m_h2.h ) ;
 
 	EventLoop::instance().addRead( Descriptor(INVALID_SOCKET,m_h.h) , *this , es ) ;
 }
@@ -115,30 +110,30 @@ HANDLE GNet::FutureEventImp::dup()
 	// once both handles are closed -- we need the main thread and the
 	// worker thread to both keep the kernel event-object alive
 	HANDLE h = 0 ;
-	BOOL ok = ::DuplicateHandle(
-		::GetCurrentProcess() , m_h.h ,
-		::GetCurrentProcess() , &h ,
+	BOOL ok = DuplicateHandle(
+		GetCurrentProcess() , m_h.h ,
+		GetCurrentProcess() , &h ,
 		0 , FALSE , DUPLICATE_SAME_ACCESS ) ;
 	if( !ok )
 	{
-		DWORD e = ::GetLastError() ;
+		DWORD e = GetLastError() ;
 		throw FutureEvent::Error( "DuplicateHandle" , G::Str::fromUInt(static_cast<unsigned int>(e)) ) ;
 	}
 	return h ;
 }
 
-GNet::FutureEventImp::handle_type GNet::FutureEventImp::handle() noexcept
+HANDLE GNet::FutureEventImp::handle() noexcept
 {
 	HANDLE h2 = 0 ;
 	std::swap( h2 , m_h2.h ) ;
 	return h2 ;
 }
 
-bool GNet::FutureEventImp::send( handle_type handle , bool close ) noexcept
+bool GNet::FutureEventImp::send( HANDLE handle , bool close ) noexcept
 {
-	bool ok = ::SetEvent( handle ) != 0 ;
+	bool ok = SetEvent( handle ) != 0 ;
 	if( close )
-		::CloseHandle( handle ) ; // kernel event-object still open
+		CloseHandle( handle ) ; // kernel event-object still open
 	return ok ;
 }
 
@@ -158,13 +153,19 @@ GNet::FutureEvent::FutureEvent( FutureEventHandler & handler , ExceptionSink es 
 GNet::FutureEvent::~FutureEvent()
 = default ;
 
-bool GNet::FutureEvent::send( handle_type handle , bool close ) noexcept
+bool GNet::FutureEvent::send( HANDLE handle , bool close ) noexcept
 {
 	return FutureEventImp::send( handle , close ) ;
 }
 
-GNet::FutureEvent::handle_type GNet::FutureEvent::handle() noexcept
+HANDLE GNet::FutureEvent::handle() noexcept
 {
 	return m_imp->handle() ;
+}
+
+HANDLE GNet::FutureEvent::createHandle()
+{
+	const DWORD access = DELETE | SYNCHRONIZE | EVENT_MODIFY_STATE | PROCESS_DUP_HANDLE ;
+	return CreateEventEx( nullptr , nullptr , CREATE_EVENT_MANUAL_RESET , access ) ;
 }
 

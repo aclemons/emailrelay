@@ -180,8 +180,6 @@ private:
 	std::size_t m_n{0U} ;
 } ;
 
-static_assert( G::string_view("foo",nullptr).length() == 3U , "" ) ;
-
 namespace G
 {
 	template <typename Tchar> std::basic_string<Tchar> sv_to_string( basic_string_view<Tchar> sv )
@@ -189,18 +187,39 @@ namespace G
 		// (greppable name -- remove when using c++17 std::string_view)
 		return std::basic_string<Tchar>( sv.sv_to_string_imp() ) ;
 	}
-	inline std::ostream & operator<<( std::ostream & stream , const string_view & s )
+	inline std::ostream & operator<<( std::ostream & stream , const string_view & sv )
 	{
-		return stream.write( s.data() , s.size() ) ;
+		return stream.write( sv.data() , sv.size() ) ;
 	}
-	inline std::wostream & operator<<( std::wostream & stream , const wstring_view & s )
+	inline std::wostream & operator<<( std::wostream & stream , const wstring_view & sv )
 	{
-		return stream.write( s.data() , s.size() ) ;
+		return stream.write( sv.data() , sv.size() ) ;
 	}
 	template <typename Tchar> void swap( basic_string_view<Tchar> & a , basic_string_view<Tchar> b ) noexcept
 	{
 		a.swap( b ) ;
 	}
+	inline bool operator==( const std::string & s , string_view sv )
+	{
+		return 0 == s.compare( 0 , s.size() , sv.data() , sv.size() ) ;
+	}
+	inline bool operator==( string_view sv , const std::string & s )
+	{
+		return 0 == s.compare( 0 , s.size() , sv.data() , sv.size() ) ;
+	}
+	inline bool operator!=( const std::string & s , string_view sv )
+	{
+		return 0 != s.compare( 0 , s.size() , sv.data() , sv.size() ) ;
+	}
+	inline bool operator!=( string_view sv , const std::string & s )
+	{
+		return 0 != s.compare( 0 , s.size() , sv.data() , sv.size() ) ;
+	}
+}
+
+constexpr G::basic_string_view<char> operator "" _sv( const char * p , std::size_t n )
+{
+	return G::basic_string_view<char>( p , n ) ;
 }
 
 #endif

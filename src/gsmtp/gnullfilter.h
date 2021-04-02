@@ -48,7 +48,7 @@ private: // overrides
 	std::string id() const override ; // Override from from GSmtp::Filter.
 	bool simple() const override ; // Override from from GSmtp::Filter.
 	G::Slot::Signal<int> & doneSignal() override ; // Override from from GSmtp::Filter.
-	void start( const std::string & path ) override ; // Override from from GSmtp::Filter.
+	void start( const MessageId & ) override ; // Override from from GSmtp::Filter.
 	void cancel() override ; // Override from from GSmtp::Filter.
 	bool abandoned() const override ; // Override from from GSmtp::Filter.
 	std::string response() const override ; // Override from from GSmtp::Filter.

@@ -51,14 +51,17 @@ namespace GSmtp
 /// that the content file is valid and that it has been commited
 /// to the care of the SMTP system for delivery.
 ///
-/// Passes out unique sequence numbers, filesystem paths and
-/// i/o streams to NewMessageImp.
-///
 class GSmtp::FileStore : public MessageStore
 {
 public:
 	G_EXCEPTION( InvalidDirectory , "invalid spool directory" ) ;
 	G_EXCEPTION( GetError , "error reading specific message" ) ;
+	enum class State // see GSmtp::FileStore::envelopePath()
+	{
+		Normal ,
+		New ,
+		Locked
+	} ;
 
 	FileStore( const G::Path & dir , bool optimise_empty_test ,
 		unsigned long max_size , bool test_for_eight_bit ) ;
@@ -74,37 +77,17 @@ public:
 			///< sensititive to messages deposited into its spool
 			///< directory by other processes.
 
-	unsigned long newSeq() ;
-		///< Hands out a new non-zero sequence number.
+	MessageId newId() ;
+		///< Hands out a new unique message id.
 
 	std::unique_ptr<std::ofstream> stream( const G::Path & path ) ;
 		///< Returns a stream to the given content.
 
-	G::Path contentPath( unsigned long seq ) const ;
+	G::Path contentPath( const MessageId & id ) const ;
 		///< Returns the path for a content file.
 
-	G::Path envelopePath( unsigned long seq ) const ;
+	G::Path envelopePath( const MessageId & id , State = State::Normal ) const ;
 		///< Returns the path for an envelope file.
-
-	G::Path envelopeWorkingPath( unsigned long seq ) const ;
-		///< Returns the path for an envelope file
-		///< which is in the process of being written.
-
-	bool empty() const override ;
-		///< Override from GSmtp::MessageStore.
-
-	std::unique_ptr<StoredMessage> get( unsigned long id ) override ;
-		///< Override from GSmtp::MessageStore.
-
-	std::shared_ptr<MessageStore::Iterator> iterator( bool lock ) override ;
-		///< Override from GSmtp::MessageStore.
-
-	std::shared_ptr<MessageStore::Iterator> failures() override ;
-		///< Override from GSmtp::MessageStore.
-
-	std::unique_ptr<NewMessage> newMessage( const std::string & from ,
-		const std::string & from_auth_in , const std::string & from_auth_out ) override ;
-			///< Override from GSmtp::MessageStore.
 
 	static std::string x() ;
 		///< Returns the prefix for envelope header lines.
@@ -117,18 +100,18 @@ public:
 		///< Returns true if the storage format string is
 		///< recognised and supported for reading.
 
-	void updated() override ;
-		///< Override from GSmtp::MessageStore.
-
-	G::Slot::Signal<> & messageStoreUpdateSignal() override ;
-		///< Override from GSmtp::MessageStore.
-
-	G::Slot::Signal<> & messageStoreRescanSignal() override ;
-		///< Override from GSmtp::MessageStore.
-
 private: // overrides
-	void rescan() override ; // Override from GSmtp::MessageStore.
-	void unfailAll() override ; // Override from GSmtp::MessageStore.
+	bool empty() const override ;
+	std::string location( const MessageId & ) const override ;
+	std::unique_ptr<StoredMessage> get( const MessageId & ) override ;
+	std::shared_ptr<MessageStore::Iterator> iterator( bool lock ) override ;
+	std::shared_ptr<MessageStore::Iterator> failures() override ;
+	std::unique_ptr<NewMessage> newMessage( const std::string & , const std::string & , const std::string & ) override ;
+	void updated() override ;
+	G::Slot::Signal<> & messageStoreUpdateSignal() override ;
+	G::Slot::Signal<> & messageStoreRescanSignal() override ;
+	void rescan() override ;
+	void unfailAll() override ;
 
 public:
 	~FileStore() override = default ;
@@ -140,7 +123,6 @@ public:
 private:
 	static void checkPath( const G::Path & dir ) ;
 	G::Path fullPath( const std::string & filename ) const ;
-	std::string filePrefix( unsigned long seq ) const ;
 	std::string getline( std::istream & ) const ;
 	std::string value( const std::string & ) const ;
 	std::shared_ptr<MessageStore::Iterator> iteratorImp( bool ) ;
@@ -156,7 +138,6 @@ private:
 	mutable bool m_empty ;
 	unsigned long m_max_size ;
 	bool m_test_for_eight_bit ;
-	unsigned long m_pid_modifier ;
 	G::Slot::Signal<> m_update_signal ;
 	G::Slot::Signal<> m_rescan_signal ;
 } ;

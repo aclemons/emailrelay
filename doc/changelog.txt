@@ -1,6 +1,15 @@
 E-MailRelay Change Log
 ======================
 
+2.2 -> 2.3
+----------
+* New admin 'forward' command to trigger forwarding without waiting.
+* More simultaneous connections supported on Windows.
+* EPIPELINE SMTP extension (todo)
+* Windows event log not used for verbose logging (todo)
+* Uses epoll by default on Linux (todo)
+* No 7-bit/8-bit check by default (todo)
+
 2.1 -> 2.2
 ----------
 * Connections from IPv4 'private use' addresses are allowed by default (see "--remote-clients").

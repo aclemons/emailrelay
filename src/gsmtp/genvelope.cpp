@@ -22,6 +22,7 @@
 #include "genvelope.h"
 #include "gfilestore.h"
 #include "gstr.h"
+#include "gstringview.h"
 #include "gxtext.h"
 
 namespace GSmtp
@@ -51,7 +52,7 @@ std::size_t GSmtp::Envelope::write( std::ostream & stream , const GSmtp::Envelop
 {
 	namespace imp = GSmtp::EnvelopeImp ;
 	const std::string x( GSmtp::FileStore::x() ) ;
-	const char * crlf = "\r\n" ;
+	G::string_view crlf { "\r\n" , 2U } ;
 
 	std::streampos pos = stream.tellp() ;
 	if( pos < 0 || stream.fail() )

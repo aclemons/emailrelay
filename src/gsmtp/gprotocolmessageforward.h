@@ -30,6 +30,7 @@
 #include "gsmtpclient.h"
 #include "gmessagestore.h"
 #include "gnewmessage.h"
+#include "gfilterfactory.h"
 #include "gverifierstatus.h"
 #include "gcall.h"
 #include <string>
@@ -54,13 +55,13 @@ namespace GSmtp
 class GSmtp::ProtocolMessageForward : public ProtocolMessage
 {
 public:
-	ProtocolMessageForward( GNet::ExceptionSink , MessageStore & store ,
+	ProtocolMessageForward( GNet::ExceptionSink ,
+		MessageStore & store , FilterFactory & ,
 		std::unique_ptr<ProtocolMessage> pm ,
 		const GSmtp::Client::Config & client_config ,
 		const GAuth::Secrets & client_secrets ,
 		const std::string & remote_server_address ) ;
-			///< Constructor. The 'store' and 'client-secrets' references
-			///< are kept.
+			///< Constructor.
 
 	~ProtocolMessageForward() override ;
 		///< Destructor.
@@ -72,16 +73,16 @@ protected:
 		///< intercept the storage-done signal emit()ed by
 		///< the ProtocolMessageStore object.
 
-	void processDone( bool , unsigned long , const std::string & , const std::string & ) ;
+	void processDone( bool , const MessageId & , const std::string & , const std::string & ) ;
 		///< Called by derived classes that have intercepted
 		///< the storageDoneSignal() when their own post-storage
 		///< processing is complete.
 
 private: // overrides
-	G::Slot::Signal<bool,unsigned long,const std::string&,const std::string&> & doneSignal() override ; // Override from GSmtp::ProtocolMessage.
+	ProtocolMessage::DoneSignal & doneSignal() override ; // Override from GSmtp::ProtocolMessage.
 	void reset() override ; // Override from GSmtp::ProtocolMessage.
 	void clear() override ; // Override from GSmtp::ProtocolMessage.
-	bool setFrom( const std::string & from_user , const std::string & ) override ; // Override from GSmtp::ProtocolMessage.
+	MessageId setFrom( const std::string & from_user , const std::string & ) override ; // Override from GSmtp::ProtocolMessage.
 	bool addTo( const std::string & to_user , VerifierStatus to_status ) override ; // Override from GSmtp::ProtocolMessage.
 	void addReceived( const std::string & ) override ; // Override from GSmtp::ProtocolMessage.
 	bool addText( const char * , std::size_t ) override ; // Override from GSmtp::ProtocolMessage.
@@ -98,19 +99,20 @@ public:
 private:
 	void clientDone( const std::string & ) ; // GNet::Client::doneSignal()
 	void messageDone( const std::string & ) ; // GSmtp::Client::messageDoneSignal()
-	std::string forward( unsigned long , bool & ) ;
+	std::string forward( const MessageId & , bool & ) ;
 
 private:
 	GNet::ExceptionSink m_es ;
 	MessageStore & m_store ;
+	FilterFactory & m_ff ;
 	G::CallStack m_call_stack ;
 	GNet::Location m_client_location ;
 	Client::Config m_client_config ;
 	const GAuth::Secrets & m_client_secrets ;
 	std::unique_ptr<ProtocolMessage> m_pm ;
 	GNet::ClientPtr<GSmtp::Client> m_client_ptr ;
-	unsigned long m_id ;
-	G::Slot::Signal<bool,unsigned long,const std::string&,const std::string&> m_done_signal ;
+	MessageId m_id ;
+	ProtocolMessage::DoneSignal m_done_signal ;
 } ;
 
 #endif

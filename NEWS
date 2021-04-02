@@ -1,24 +1,21 @@
 News
 ----
-E-MailRelay 2.2 is now fully C++11, so older compilers will not work unless
-they have a "-std=c++11" option or similar, and this also means that
-"uclibc++" is no longer supported.
+Non-functional code changes for v2.3dev1...
 
-The behaviour with respect to the "--remote-clients" command-line option is
-changed in this release: previously IPv4 connections were allowed only from
-the host's local address, as determined by a DNS lookup, unless using
-"--remote-clients". The new implementation allows connections from any
-loopback or 'private use' address, defined in RFC-1918 and RFC-5735. This
-brings the IPv4 behaviour in line with IPv6, and it still honours the intent
-of the "--remote-clients" option in protecting the naive user against
-accidental exposore to the public internet.
+Event loops have been rewritten; having common code for the list of event
+sources (EventHandlerList) was an unnecessary complication, so the common
+parts have been stripped out and moved to a new 'EventEmitter' class. The
+re-write includes a multi-threaded event loop for windows that allows for
+more simultaneous connections.
 
-Some internationalisation support has been added, using gettext() for the
-main program and Qt's tr() for the GUI. See "doc/developer.txt".
+The SMTP message-store code has been cleaned up to better separate the
+abstract interface from the concrete implementation that uses content and
+envelope files. The separation was not completely clean when executing
+message filters because they have to know where the message files are
+stored. This has been resolved by passing a reference to the file-store
+through the FilterFactory.
 
-A systemd unit file has been added, although by default it is only installed
-as an "examples" file. Use "e_systemddir=/usr/lib/systemd/system" on the
-"./configure" command-line to have it installed by "make install".
+The filter timeout mechanism has been moved out of the SMTP protocol class
+and into the filters themseleves. This makes the protocol implementation
+independent of the lower-level GNet classes.
 
-This release has a new "make tidy" option that runs "clang-tidy" over the
-code and also "make cmake" to generate simple cmake files for a unix build.
