@@ -83,7 +83,7 @@ try
 
 	WScript.Quit( 0 ) ;
 }
-catch
+catch( e )
 {
 	WScript.StdOut.WriteLine( "<<edit failed>>" ) ;
 	WScript.StdOut.WriteLine( "<<" + e + ">>" ) ;
