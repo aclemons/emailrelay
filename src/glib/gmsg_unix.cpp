@@ -31,52 +31,15 @@
 #include <sys/socket.h>
 #include <sys/uio.h>
 
-ssize_t G::Msg::send( int fd , const void * buffer , std::size_t size , int flags ,
-	int fd_to_send ) noexcept
+ssize_t G::Msg::send( int fd , const void * buffer , std::size_t size , int flags ) noexcept
 {
-	return sendto( fd , buffer , size , flags , nullptr , 0 , fd_to_send ) ;
+	return ::sendto( fd , buffer , size , flags | MSG_NOSIGNAL , nullptr , 0U ) ;
 }
 
 ssize_t G::Msg::sendto( int fd , const void * buffer , std::size_t size , int flags ,
-	const sockaddr * address_p , socklen_t address_n , int fd_to_send ) noexcept
+	const sockaddr * address_p , socklen_t address_n ) noexcept
 {
-	struct ::msghdr msg {} ;
-
-	msg.msg_name = const_cast<sockaddr*>(address_p) ;
-	msg.msg_namelen = address_n ;
-
-	struct ::iovec io {} ;
-	io.iov_base = const_cast<void*>(buffer) ;
-	io.iov_len = size ;
-	msg.msg_iov = &io ;
-	msg.msg_iovlen = 1 ;
-
-	constexpr std::size_t space = CMSG_SPACE( sizeof(int) ) ;
-	static_assert( space != 0U , "" ) ;
-	std::array<char,space> control_buffer {} ;
-	if( fd_to_send == -1 )
-	{
-		msg.msg_control = nullptr ;
-		msg.msg_controllen = 0U ;
-	}
-	else
-	{
-		std::memset( &control_buffer[0] , 0 , control_buffer.size() ) ;
-		msg.msg_control = &control_buffer[0] ;
-		msg.msg_controllen = control_buffer.size() ;
-
-		struct ::cmsghdr * cmsg = CMSG_FIRSTHDR( &msg ) ;
-		G_ASSERT( cmsg != nullptr ) ;
-		if( cmsg != nullptr )
-		{
-			cmsg->cmsg_len = CMSG_LEN( sizeof(int) ) ;
-			cmsg->cmsg_level = SOL_SOCKET ;
-			cmsg->cmsg_type = SCM_RIGHTS ;
-			std::memcpy( CMSG_DATA(cmsg) , &fd_to_send , sizeof(int) ) ;
-		}
-	}
-
-	return ::sendmsg( fd , &msg , flags | MSG_NOSIGNAL ) ;
+	return ::sendto( fd , buffer , size , flags | MSG_NOSIGNAL , const_cast<sockaddr*>(address_p) , address_n ) ;
 }
 
 ssize_t G::Msg::recv( int fd , void * buffer , std::size_t size , int flags )
@@ -84,46 +47,10 @@ ssize_t G::Msg::recv( int fd , void * buffer , std::size_t size , int flags )
 	return ::recv( fd , buffer , size , flags ) ;
 }
 
-ssize_t G::Msg::recv( int fd , void * buffer , std::size_t size , int flags ,
-	int * fd_received_p )
-{
-	return recvfrom( fd , buffer , size , flags , nullptr , nullptr , fd_received_p ) ;
-}
-
 ssize_t G::Msg::recvfrom( int fd , void * buffer , std::size_t size , int flags ,
-	sockaddr * address_p , socklen_t * address_np , int * fd_received_p )
+	sockaddr * address_p , socklen_t * address_np )
 {
-	struct ::msghdr msg {} ;
-
-	msg.msg_name = address_p ;
-	msg.msg_namelen = address_np == nullptr ? socklen_t(0) : *address_np ;
-
-	struct ::iovec io {} ;
-	io.iov_base = buffer ;
-	io.iov_len = size ;
-	msg.msg_iov = &io ;
-	msg.msg_iovlen = 1 ;
-
-	std::array<char,CMSG_SPACE(sizeof(int))> control_buffer ; // NOLINT cppcoreguidelines-pro-type-member-init
-	msg.msg_control = &control_buffer[0] ;
-	msg.msg_controllen = control_buffer.size() ;
-
-	ssize_t rc = ::recvmsg( fd , &msg , flags ) ;
-	int e = Process::errno_() ;
-	if( rc >= 0 && msg.msg_controllen > 0U && fd_received_p != nullptr )
-	{
-		struct cmsghdr * cmsg = CMSG_FIRSTHDR( &msg ) ;
-		if( cmsg != nullptr && cmsg->cmsg_type == SCM_RIGHTS )
-		{
-			std::memcpy( fd_received_p , CMSG_DATA(cmsg) , sizeof(int) ) ;
-		}
-	}
-	if( rc >= 0 && address_np != nullptr )
-	{
-		*address_np = msg.msg_namelen ;
-	}
-	Process::errno_( SignalSafe() , e ) ;
-	return rc ; // with errno
+	return ::recvfrom( fd , buffer , size , flags , address_p , address_np ) ;
 }
 
 bool G::Msg::fatal( int error ) noexcept
