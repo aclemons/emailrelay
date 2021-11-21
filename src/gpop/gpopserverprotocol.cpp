@@ -623,7 +623,7 @@ void GPop::ServerProtocol::sendLines( std::ostringstream & ss )
 		const std::size_t npos = std::string::npos ;
 		std::size_t p0 = 0U ;
 		std::size_t p1 = s.find( '\n' ) ;
-		for( size_t i = 0U ; i < lines ; i++ , p0 = p1+1U , p1 = s.find('\n',p0+1U) )
+		for( std::size_t i = 0U ; i < lines ; i++ , p0 = p1+1U , p1 = s.find('\n',p0+1U) )
 		{
 			G_ASSERT( p0 != npos && p0 < s.size() ) ;
 			std::size_t n = p1 == npos ? (s.size()-p0) : (p1-p0) ;
