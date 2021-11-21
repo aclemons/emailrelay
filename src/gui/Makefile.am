@@ -175,7 +175,7 @@ QM_FILE=emailrelay_tr.en_SC.qm
 .PHONY: translate
 translate:
 	rm $(TS_FILE) 2>/dev/null || true
-	lupdate $(QT_SOURCES) --target-language en_SC -ts $(TS_FILE)
+	lupdate $(QT_SOURCES) -target-language en_SC -ts $(TS_FILE)
 	translate.pl $(TS_FILE)
 	lrelease $(TS_FILE)
 
