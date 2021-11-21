@@ -31,11 +31,20 @@
 
 bool Boot::able( const G::Path & dir )
 {
-	// check /etc/init.d is writable
-	return
+	// check /etc/init.d and /etc/rc?.d are writable
+	static bool result =
 		!dir.empty() &&
 		G::Directory(dir).valid(true) &&
-		G::Directory(dir).writeable() ; // (creates a probe file)
+		G::Directory(dir+".."+"rc2.d").valid(true) &&
+		G::Directory(dir+".."+"rc3.d").valid(true) &&
+		G::Directory(dir+".."+"rc4.d").valid(true) &&
+		G::Directory(dir+".."+"rc5.d").valid(true) &&
+		G::Directory(dir).writeable() && // (creates a probe file)
+		G::Directory(dir+".."+"rc2.d").writeable() &&
+		G::Directory(dir+".."+"rc3.d").writeable() &&
+		G::Directory(dir+".."+"rc4.d").writeable() &&
+		G::Directory(dir+".."+"rc5.d").writeable() ;
+	return result ;
 }
 
 void Boot::install( const G::Path & dir_boot , const std::string & name , const G::Path & startstop_src , const G::Path & )
