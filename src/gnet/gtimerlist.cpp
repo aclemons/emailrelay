@@ -121,6 +121,9 @@ void GNet::TimerList::updateOnStart( TimerBase & timer )
 	if( timer.immediate() )
 		timer.adjust( m_adjust++ ) ; // well-defined t() order for immediate timers
 
+	if( m_soonest == &timer )
+		m_soonest = nullptr ;
+
 	if( m_soonest != nullptr && timer.t() < m_soonest->t() )
 		m_soonest = &timer ;
 }
