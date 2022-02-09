@@ -523,14 +523,6 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 		errors.push_back( gettext("invalid --poll period: try --forward-on-disconnect") ) ;
 	}
 
-	if(
-		( m_map.contains("admin") && adminPort() == port() ) ||
-		( m_map.contains("pop") && popPort() == port() ) ||
-		( m_map.contains("pop") && m_map.contains("admin") && popPort() == adminPort() ) )
-	{
-		errors.push_back( gettext("the listening ports must be different") ) ;
-	}
-
 	if( ! m_map.contains("pop") && (
 		m_map.contains("pop-port") ||
 		m_map.contains("pop-auth") ||

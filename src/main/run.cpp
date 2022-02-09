@@ -292,11 +292,18 @@ void Main::Run::run()
 	if( configuration().log() && !configuration().serverAddress().empty() && !configuration().forwardOnStartup() )
 	{
 		GNet::Location location( configuration().serverAddress() , resolverFamily() ) ;
-		std::string error = GNet::Resolver::resolve( location ) ;
-		if( !error.empty() )
-			G_WARNING( "Main::Run::run: " << format(gettext("dns lookup of forward-to address failed: %1%")) % error ) ;
+		if( !location.host().empty() && location.host().at(0U) == '/' )
+		{
+			; // no-op
+		}
 		else
-			G_LOG( "Main::Run::run: " << format(gettext("forwarding address %1%")) % location.displayString() ) ;
+		{
+			std::string error = GNet::Resolver::resolve( location ) ;
+			if( !error.empty() )
+				G_WARNING( "Main::Run::run: " << format(gettext("dns lookup of forward-to address failed: %1%")) % error ) ;
+			else
+				G_LOG( "Main::Run::run: " << format(gettext("forwarding address %1%")) % location.displayString() ) ;
+		}
 	}
 
 	// early check on the DNSBL configuration string
@@ -492,7 +499,7 @@ void Main::Run::checkPort( bool check , const std::string & ip , unsigned int po
 			}
 			else if( GNet::Address::validStrings(ip,"0") )
 			{
-				GNet::Address address( ip , port ) ;
+				GNet::Address address = GNet::Address::parse( ip , port ) ;
 				GNet::Server::canBind( address , do_throw ) ;
 			}
 		}
@@ -617,7 +624,7 @@ GNet::Address Main::Run::asAddress( const std::string & s )
 	// (port number is optional)
 	return s.empty() ?
 		GNet::Address::defaultAddress() :
-		( GNet::Address::validString(s) ? GNet::Address(s) : GNet::Address(s,0U) ) ;
+		( GNet::Address::validString(s,GNet::Address::NotLocal()) ? GNet::Address::parse(s,GNet::Address::NotLocal()) : GNet::Address::parse(s,0U) ) ;
 }
 
 void Main::Run::onPollTimeout()
@@ -796,10 +803,11 @@ int Main::Run::resolverFamily() const
 {
 	// choose an address family for the DNS lookup based on the "--client-interface" address
 	std::string client_bind_address = configuration().clientBindAddress() ;
-	return
-		client_bind_address.empty() ?
-			AF_UNSPEC :
-			asAddress(client_bind_address).domain() ;
+	if( client_bind_address.empty() )
+		return AF_UNSPEC ;
+
+	GNet::Address address = asAddress( client_bind_address ) ;
+	return ( address.af() == AF_INET || address.af() == AF_INET6 ) ? address.af() : AF_UNSPEC ;
 }
 
 void Main::Run::checkScripts() const

@@ -30,6 +30,7 @@
 #include "gassert.h"
 #include "gtest.h"
 #include "glog.h"
+#include <numeric> // std::accumulate
 #include <sstream>
 #include <cstdlib>
 
@@ -178,7 +179,7 @@ void GNet::Client::startConnecting()
 	// create and open a socket
 	//
 	m_sp.reset() ;
-	m_socket = std::make_unique<StreamSocket>( m_remote_location.address().domain() ) ;
+	m_socket = std::make_unique<StreamSocket>( m_remote_location.address().family() ) ;
 	socket().addWriteHandler( *this , m_es ) ;
 
 	// create a socket protocol object
@@ -280,6 +281,7 @@ void GNet::Client::writeEvent()
 
 void GNet::Client::onWriteable()
 {
+	bool has_peer = m_state == State::Connecting && socket().getPeerAddress().first ;
 	if( m_state == State::Connected )
 	{
 		if( m_sp->writeEvent() )
@@ -291,7 +293,7 @@ void GNet::Client::onWriteable()
 		setState( State::Connecting ) ;
 		m_connected_timer.startTimer( 2U , 100000U ) ; // -> onConnectedTimeout()
 	}
-	else if( m_state == State::Connecting && socket().hasPeer() && m_remote_location.socks() )
+	else if( m_state == State::Connecting && has_peer && m_remote_location.socks() )
 	{
 		setState( State::Socksing ) ;
 		m_socks = std::make_unique<Socks>( m_remote_location ) ;
@@ -308,7 +310,7 @@ void GNet::Client::onWriteable()
 			socket().dropReadHandler() ;
 		}
 	}
-	else if( m_state == State::Connecting && socket().hasPeer() )
+	else if( m_state == State::Connecting && has_peer )
 	{
 		socket().dropWriteHandler() ;
 		socket().addReadHandler( *this , m_es ) ;
@@ -432,7 +434,7 @@ std::pair<bool,GNet::Address> GNet::Client::localAddress() const
 {
 	return
 		m_socket != nullptr ?
-			socket().getLocalAddress() :
+			std::make_pair(true,socket().getLocalAddress()) :
 			std::make_pair(false,GNet::Address::defaultAddress()) ;
 }
 
@@ -478,7 +480,9 @@ bool GNet::Client::send( const std::string & data , std::size_t offset )
 
 bool GNet::Client::send( const std::vector<G::string_view> & data , std::size_t offset )
 {
-	if( m_response_timeout && data.size() > offset )
+	std::size_t total_size = std::accumulate( data.begin() , data.end() , std::size_t(0U) ,
+		[](std::size_t n,G::string_view s){return n+s.size();} ) ;
+	if( m_response_timeout && offset < total_size )
 		m_response_timer.startTimer( m_response_timeout ) ;
 	return m_sp->send( data , offset ) ;
 }

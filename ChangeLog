@@ -1,6 +1,10 @@
 E-MailRelay Change Log
 ======================
 
+2.2 -> 2.2.1
+------------
+* Unix domain sockets.
+
 2.1 -> 2.2
 ----------
 * Connections from IPv4 'private use' addresses are allowed by default (see "--remote-clients").

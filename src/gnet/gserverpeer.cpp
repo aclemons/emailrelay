@@ -82,7 +82,7 @@ void GNet::ServerPeer::readEvent()
 std::pair<bool,GNet::Address> GNet::ServerPeer::localAddress() const
 {
 	G_ASSERT( m_socket != nullptr ) ;
-	return m_socket->getLocalAddress() ;
+	return std::make_pair( true , m_socket->getLocalAddress() ) ;
 }
 
 std::pair<bool,GNet::Address> GNet::ServerPeer::peerAddress() const

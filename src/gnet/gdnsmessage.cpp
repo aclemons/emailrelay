@@ -439,7 +439,7 @@ GNet::Address GNet::DnsMessageRR::address() const
 	{
 		throw DnsMessage::Error( "not an address" ) ;
 	}
-	return Address( ss.str() ) ;
+	return Address::parse( ss.str() , Address::NotLocal() ) ;
 }
 
 // ==

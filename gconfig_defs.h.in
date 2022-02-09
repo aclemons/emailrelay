@@ -264,6 +264,9 @@
 /* Define true if sys/wait.h is available */
 #undef GCONFIG_HAVE_SYS_WAIT_H
 
+/* Define true to use unix domain sockets */
+#undef GCONFIG_HAVE_UDS
+
 /* Define true if uid_t is a type */
 #undef GCONFIG_HAVE_UID_T
 

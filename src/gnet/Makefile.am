@@ -30,6 +30,7 @@ if GCONFIG_WINDOWS
 AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/win32
 
 EXTRA_DIST_COMMON=\
+	gaddresslocal_unix.cpp \
 	gdescriptor_unix.cpp \
 	geventloop_select.cpp \
 	geventloop_epoll.cpp \
@@ -64,6 +65,8 @@ endif
 
 libgnet_a_SOURCES = \
 	$(IP46_SOURCES) \
+	gaddresslocal_none.cpp \
+	gaddresslocal.h \
 	gaddress4.cpp \
 	gaddress4.h \
 	gaddress6.cpp \
@@ -150,6 +153,24 @@ EXTRA_DIST_COMMON=\
 	gfutureevent_win32.cpp \
 	gsocket_win32.cpp
 
+if GCONFIG_UDS
+
+UDS_SOURCES = \
+	gaddresslocal_unix.cpp
+
+EXTRA_DIST_UDS = \
+	gaddresslocal_none.cpp
+
+else
+
+UDS_SOURCES = \
+	gaddresslocal_none.cpp
+
+EXTRA_DIST_UDS = \
+	gaddresslocal_unix.cpp
+
+endif
+
 if GCONFIG_INTERFACE_NAMES
 
 EXTRA_DIST_INTERFACES = \
@@ -192,13 +213,16 @@ endif
 
 EXTRA_DIST = \
 	$(EXTRA_DIST_COMMON) \
+	$(EXTRA_DIST_UDS) \
 	$(EXTRA_DIST_INTERFACES) \
 	$(EXTRA_DIST_EVENTLOOP) \
 	$(EXTRA_DIST_IP46)
 
 libgnet_a_SOURCES = \
 	$(IP46_SOURCES) \
+	$(UDS_SOURCES) \
 	gaddress.h \
+	gaddresslocal.h \
 	gaddress4.h \
 	gaddress4.cpp \
 	gaddress6.h \

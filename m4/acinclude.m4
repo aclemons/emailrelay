@@ -148,6 +148,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_NET],[
 	AC_REQUIRE([GCONFIG_FN_IFNAMETOINDEX])
 	AC_REQUIRE([GCONFIG_FN_IFNAMETOLUID])
 	AC_REQUIRE([GCONFIG_FN_GAISTRERROR])
+	AC_REQUIRE([GCONFIG_FN_UDS])
 ])
 
 dnl GCONFIG_FN_CHECK_TYPES
@@ -2811,6 +2812,35 @@ AC_DEFUN([GCONFIG_FN_TYPE_UINTPTR_T],
 	fi
 ])
 
+dnl GCONFIG_FN_UDS
+dnl --------------
+dnl Tests for unix domain socket support.
+dnl
+AC_DEFUN([GCONFIG_FN_UDS],
+[AC_CACHE_CHECK([for unix domain sockets],[gconfig_cv_uds],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <sys/types.h>]
+			[#include <sys/socket.h>]
+			[#include <sys/un.h>]
+			[struct sockaddr_un a ;]
+		] ,
+		[
+			[a.sun_family = AF_UNIX | PF_UNIX ;]
+			[a.sun_path[0] = '\0' ;]
+		])] ,
+		[gconfig_cv_uds=yes],
+		[gconfig_cv_uds=no])
+])
+	if test "$gconfig_cv_uds" = "yes"
+	then
+		AC_DEFINE(GCONFIG_HAVE_UDS,1,[Define true to use unix domain sockets])
+	else
+		AC_DEFINE(GCONFIG_HAVE_UDS,0,[Define true to use unix domain sockets])
+	fi
+])
+
 dnl GCONFIG_FN_WARNINGS
 dnl -------------------
 dnl Displays a summary warning.
@@ -2935,5 +2965,26 @@ AC_DEFUN([GCONFIG_FN_WITH_PAM],
 		AC_DEFINE(GCONFIG_HAVE_PAM,0,[Define true to use pam])
 	fi
 	AM_CONDITIONAL([GCONFIG_PAM],[test "$gconfig_use_pam" = "yes"])
+])
+
+dnl GCONFIG_FN_WITH_UDS
+dnl --------------------------
+dnl Enables unix domain sockets if "--with-uds" is used.
+dnl Requires GCONFIG_FN_UDS to set gconfig_cv_uds.
+dnl Typically used after AC_ARG_WITH(uds).
+dnl
+AC_DEFUN([GCONFIG_FN_WITH_UDS],
+[
+	AC_REQUIRE([GCONFIG_FN_UDS])
+	if test "$with_uds" = "no"
+	then
+		AM_CONDITIONAL([GCONFIG_UDS],[false])
+	else
+		if test "$with_uds" = "yes" -a "$gconfig_cv_uds" = "no"
+		then
+			AC_MSG_WARN([forcing use of unix domain sockets even though not detected])
+		fi
+		AM_CONDITIONAL([GCONFIG_UDS],[true])
+	fi
 ])
 

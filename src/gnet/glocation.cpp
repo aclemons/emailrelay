@@ -24,65 +24,59 @@
 #include "gresolver.h"
 #include "gassert.h"
 
-namespace GNet
-{
-	namespace LocationImp
-	{
-		constexpr const char * host_service_separators = ":/" ;
-	}
-}
-
-GNet::Location::Location( const std::string & host , const std::string & service , int family ) :
-	m_host(host) ,
-	m_service(service) ,
+GNet::Location::Location( const std::string & spec , int family ) :
+	m_host(head(sockless(spec))) ,
+	m_service(tail(sockless(spec))) ,
 	m_address_valid(false) ,
 	m_address(Address::defaultAddress()) ,
 	m_family(family) ,
-	m_dgram(false) ,
 	m_update_time(0U) ,
-	m_socks(false) ,
-	m_socks_far_port(0U)
+	m_using_socks(false)
+{
+	m_using_socks = socksified( spec , m_socks_far_host , m_socks_far_port ) ;
+	if( m_host.empty() )
+		throw InvalidFormat( spec ) ;
+	G_DEBUG( "GNet::Location::ctor: unresolved location [" << displayString() << "]" << (m_using_socks?" (using socks)":"") ) ;
+}
+
+GNet::Location::Location( const std::string & spec , int family , int ) : // nosocks() overload
+	m_host(head(spec)) ,
+	m_service(tail(spec)) ,
+	m_address_valid(false) ,
+	m_address(Address::defaultAddress()) ,
+	m_family(family) ,
+	m_update_time(0U) ,
+	m_using_socks(false)
 {
 	G_DEBUG( "GNet::Location::ctor: unresolved location [" << displayString() << "]" ) ;
 }
 
-GNet::Location::Location( const std::string & socks_host , const std::string & socks_service ,
-	const std::string & far_host , const std::string & far_service , int family ) :
-		m_host(socks_host) ,
-		m_service(socks_service) ,
-		m_address_valid(false) ,
-		m_address(Address::defaultAddress()) ,
-		m_family(family) ,
-		m_dgram(false) ,
-		m_update_time(0U) ,
-		m_socks(!far_host.empty()) ,
-		m_socks_far_host(far_host) ,
-		m_socks_far_port(0U)
-{
-	if( far_host.empty() != far_service.empty() )
-		throw InvalidFormat() ;
-	if( m_socks && !G::Str::isUInt(far_service) )
-		throw InvalidFormat( "invalid port number: [" + far_service + "]" ) ;
-	if( m_socks )
-		m_socks_far_port = G::Str::toUInt( far_service ) ;
-	G_DEBUG( "GNet::Location::ctor: unresolved location [" << displayString() << "]" << (m_socks?" (using socks)":"") ) ;
-}
-
-GNet::Location::Location( const std::string & location_string , int family ) :
-	m_host(head(sockless(location_string))) ,
-	m_service(tail(sockless(location_string))) ,
+GNet::Location::Location( const std::string & socks_server , const std::string & far_server , int family ) : // socks() overload
+	m_host(head(socks_server)) ,
+	m_service(tail(socks_server)) ,
 	m_address_valid(false) ,
 	m_address(Address::defaultAddress()) ,
 	m_family(family) ,
-	m_dgram(false) ,
 	m_update_time(0U) ,
-	m_socks(false) ,
-	m_socks_far_port(0U)
+	m_using_socks(true) ,
+	m_socks_far_host(head(far_server)) ,
+	m_socks_far_port(tail(far_server))
 {
-	m_socks = socksified( location_string , m_socks_far_host , m_socks_far_port ) ;
-	if( m_host.empty() || m_service.empty() )
-		throw InvalidFormat( location_string ) ;
-	G_DEBUG( "GNet::Location::ctor: unresolved location [" << displayString() << "]" << (m_socks?" (using socks)":"") ) ;
+	if( m_socks_far_host.empty() || m_socks_far_port.empty() )
+		throw InvalidFormat() ;
+	if( !G::Str::isUInt(m_socks_far_port) )
+		throw InvalidFormat( "invalid port number: [" + m_socks_far_port + "]" ) ;
+	G_DEBUG( "GNet::Location::ctor: unresolved location [" << displayString() << "]" << " (using socks)" ) ;
+}
+
+GNet::Location GNet::Location::nosocks( const std::string & spec , int family )
+{
+	return { spec , family , 1 } ;
+}
+
+GNet::Location GNet::Location::socks( const std::string & socks_server , const std::string & far_server )
+{
+	return { socks_server , far_server , AF_UNSPEC } ;
 }
 
 std::string GNet::Location::sockless( const std::string & s )
@@ -91,32 +85,31 @@ std::string GNet::Location::sockless( const std::string & s )
 	return G::Str::tail( s , s.find('@') , s ) ;
 }
 
-bool GNet::Location::socksified( const std::string & s , std::string & far_host , unsigned int & far_port )
+bool GNet::Location::socksified( const std::string & s , std::string & far_host_out , std::string & far_port_out )
 {
-	namespace imp = LocationImp ;
 	std::string::size_type pos = s.find('@') ;
 	if( pos != std::string::npos )
 	{
 		std::string ss = G::Str::head( s , pos ) ;
-		far_host = G::Str::head( ss , ss.find_last_of(imp::host_service_separators) ) ;
-		far_port = G::Str::toUInt( G::Str::tail( ss , ss.find_last_of(imp::host_service_separators) ) ) ;
+		far_host_out = G::Str::head( ss , ss.rfind(':') ) ;
+		far_port_out = G::Str::tail( ss , ss.rfind(':') ) ;
+		G::Str::toUInt( far_port_out ) ; // throw if not a number
 	}
 	return pos != std::string::npos ;
 }
 
 std::string GNet::Location::head( const std::string & s )
 {
-	namespace imp = LocationImp ;
-	std::string result = G::Str::head( s , s.find_last_of(imp::host_service_separators) ) ;
-	if( result.size() > 1U && result.at(0U) == '[' && result.at(result.size()-1U) == ']' )
-		result = result.substr( 1U , result.size()-2U ) ;
-	return result ;
+	std::size_t pos = s.rfind( ':' ) ;
+	std::string h = ( pos == std::string::npos && !s.empty() && s[0] == '/' ) ? s : G::Str::head( s , pos ) ;
+	if( h.size() > 1U && h.at(0U) == '[' && h.at(h.size()-1U) == ']' )
+		h = h.substr( 1U , h.size()-2U ) ;
+	return h ;
 }
 
 std::string GNet::Location::tail( const std::string & s )
 {
-	namespace imp = LocationImp ;
-	return G::Str::tail( s , s.find_last_of(imp::host_service_separators) ) ;
+	return G::Str::tail( s , s.rfind(':') ) ;
 }
 
 std::string GNet::Location::host() const
@@ -134,16 +127,16 @@ int GNet::Location::family() const
 	return m_family ;
 }
 
-bool GNet::Location::dgram() const
-{
-	return m_dgram ;
-}
-
-void GNet::Location::resolveTrivially()
+bool GNet::Location::resolveTrivially()
 {
 	std::string reason ;
-	if( !resolved() && Address::validStrings(m_host,m_service,&reason) )
-		update( Address(m_host,G::Str::toUInt(m_service)) , std::string() ) ;
+	std::string address_string = G::Str::join( ":" , m_host , m_service ) ;
+	if( !resolved() && Address::validString(address_string,&reason) )
+	{
+		Address address = Address::parse( address_string ) ;
+		update( address , std::string() ) ;
+	}
+	return resolved() ;
 }
 
 bool GNet::Location::resolved() const
@@ -158,13 +151,27 @@ GNet::Address GNet::Location::address() const
 
 void GNet::Location::update( const Address & address , const std::string & name )
 {
-	G_ASSERT( m_family == AF_UNSPEC || address.domain() == m_family ) ;
+	if( !update(address,name,std::nothrow) )
+		throw InvalidFamily() ;
+}
+
+bool GNet::Location::update( const Address & address , const std::string & name , std::nothrow_t )
+{
+	bool valid_family =
+		address.family() == Address::Family::ipv4 ||
+		address.family() == Address::Family::ipv6 ||
+		address.family() == Address::Family::local ;
+
+	if( !valid_family || ( m_family != AF_UNSPEC && address.af() != m_family ) )
+		return false ;
+
 	m_address = address ;
-	m_family = address.domain() ; // not family()
+	m_family = address.af() ; // not enum
 	m_address_valid = true ;
 	m_canonical_name = name ;
 	m_update_time = G::SystemTime::now() ;
 	G_DEBUG( "GNet::Location::ctor: resolved location [" << displayString() << "]" ) ;
+	return true ;
 }
 
 std::string GNet::Location::name() const
@@ -174,8 +181,19 @@ std::string GNet::Location::name() const
 
 std::string GNet::Location::displayString() const
 {
-	const char * ipvx = m_family == AF_UNSPEC ? "ip" : ( m_family == AF_INET ? "ipv4" : "ipv6" ) ;
-	return resolved() ? address().displayString() : (m_host+"/"+m_service+"/"+ipvx) ;
+	if( resolved() )
+	{
+		return address().displayString() ;
+	}
+	else if( m_host.find('/') == 0U )
+	{
+		return m_host ;
+	}
+	else
+	{
+		const char * ipvx = m_family == AF_UNSPEC ? "ip" : ( m_family == AF_INET ? "ipv4" : "ipv6" ) ;
+		return m_host + "/" + m_service + "/" + ipvx ;
+	}
 }
 
 G::SystemTime GNet::Location::updateTime() const
@@ -185,12 +203,13 @@ G::SystemTime GNet::Location::updateTime() const
 
 bool GNet::Location::socks() const
 {
-	return m_socks ;
+	return m_using_socks ;
 }
 
 unsigned int GNet::Location::socksFarPort() const
 {
-	return m_socks_far_port ;
+	G_ASSERT( m_socks_far_port.empty() || G::Str::isUInt(m_socks_far_port) ) ;
+	return m_socks_far_port.empty() ? 0U : G::Str::toUInt(m_socks_far_port) ;
 }
 
 std::string GNet::Location::socksFarHost() const

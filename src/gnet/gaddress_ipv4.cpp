@@ -31,6 +31,9 @@ namespace GNet
 	class Address6
 	{
 	} ;
+	class AddressLocal
+	{
+	} ;
 	namespace AddressImp
 	{
 		void check( GNet::Address::Family f )

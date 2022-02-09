@@ -91,7 +91,7 @@ GNet::ResolverImp::ResolverImp( Resolver & resolver , ExceptionSink es , const L
 	m_future_event(std::make_unique<FutureEvent>(static_cast<FutureEventHandler&>(*this),es)) ,
 	m_timer(*this,&ResolverImp::onTimeout,es) ,
 	m_location(location) ,
-	m_future(location.host(),location.service(),location.family(),location.dgram(),true)
+	m_future(location.host(),location.service(),location.family(),/*dgram=*/false,true)
 {
 	G_ASSERT( G::threading::works() ) ; // see Resolver::start()
 	G::Cleanup::Block block_signals ;
@@ -197,7 +197,7 @@ std::string GNet::Resolver::resolve( Location & location )
 	using Pair = ResolverFuture::Pair ;
 	G_DEBUG( "GNet::Resolver::resolve: resolve request [" << location.displayString() << "]"
 		<< " (" << location.family() << ")" ) ;
-	ResolverFuture future( location.host() , location.service() , location.family() , location.dgram() ) ;
+	ResolverFuture future( location.host() , location.service() , location.family() , /*dgram=*/false ) ;
 	future.run() ; // blocks until complete
 	Pair result = future.get() ;
 	if( future.error() )

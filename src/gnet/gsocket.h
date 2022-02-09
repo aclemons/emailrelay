@@ -24,10 +24,13 @@
 #include "gdef.h"
 #include "gaddress.h"
 #include "gexceptionsink.h"
+#include "gexception.h"
 #include "gevent.h"
 #include "gdescriptor.h"
 #include "greadwrite.h"
+#include "gstringview.h"
 #include <string>
+#include <memory>
 #include <new>
 
 namespace GNet
@@ -54,10 +57,12 @@ public:
 	G_EXCEPTION_CLASS( SocketTooMany , "socket accept error" ) ;
 	using size_type = G::ReadWrite::size_type ;
 	using ssize_type = G::ReadWrite::ssize_type ;
-	struct Accepted /// Overload discriminator class for GNet::Socket.
+	struct Accepted /// Overload discriminator class for GNet::SocketBase.
+		{} ;
+	struct Raw /// Overload discriminator class for GNet::SocketBase.
 		{} ;
 
-	static bool supports( int domain , int type , int protocol ) ;
+	static bool supports( Address::Family , int type , int protocol ) ;
 		///< Returns true if sockets can be created with the
 		///< given parameters.
 
@@ -66,12 +71,11 @@ public:
 		///< removed from the event loop.
 
 	SOCKET fd() const noexcept override ;
-		///< Returns the socket descriptor. Override from G::ReadWrite.
+		///< Returns the socket file descriptor.
 
 	bool eWouldBlock() const override ;
 		///< Returns true if the previous socket operation
 		///< failed because the socket would have blocked.
-		///< Override from G::ReadWrite.
 
 	bool eInProgress() const ;
 		///< Returns true if the previous socket operation
@@ -88,6 +92,10 @@ public:
 	bool eTooMany() const ;
 		///< Returns true if the previous socket operation
 		///< failed with the EMFILE error status, or similar.
+
+	bool eNotConn() const ;
+		///< Returns true if the previous socket operation
+		///< failed with the ENOTCONN error status, or similar.
 
 	void addReadHandler( EventHandler & , ExceptionSink ) ;
 		///< Adds this socket to the event source list so that
@@ -123,35 +131,56 @@ public:
 		///< Returns the reason for the previous error.
 
 protected:
-	SocketBase( int domain , int type , int protocol ) ;
+	SocketBase( Address::Family , int type , int protocol ) ;
 		///< Constructor used by derived classes. Creates the
-		///< socket using socket().
+		///< socket using socket() and makes it non-blocking.
 
-	SocketBase( int domain , Descriptor s , const Accepted & ) ;
-		///< Constructor which creates a socket object from
-		///< a socket handle from accept(). Used only by
-		///< StreamSocket::accept().
+	SocketBase( Address::Family , Descriptor s ) ;
+		///< Constructor used by derived classes. Creates the
+		///< socket object from a newly-created socket handle
+		///< and makes it non-blocking.
+
+	SocketBase( Address::Family , Descriptor s , const Accepted & ) ;
+		///< Constructor used by StreamSocket::accept() to create
+		///< a socket object from a newly accept()ed socket
+		///< handle.
+
+	SocketBase( const Raw & , int domain , int type , int protocol ) ;
+		///< Constructor for a raw socket.
 
 	ssize_type writeImp( const char * buf , size_type len ) ;
 		///< Writes to the socket. This is a default implementation
 		///< for write() that can be called from derived classes'
 		///< overrides.
 
-protected:
-	static std::string reasonString( int ) ;
 	static bool error( int rc ) ;
+		///< Returns true if the given return code indicates an
+		///< error.
+
 	static bool sizeError( ssize_type size ) ;
-	bool create( int , int , int ) ;
+		///< Returns true if the given write() return value
+		///< indicates an error.
+
 	void clearReason() ;
+		///< Clears the saved errno.
+
 	void saveReason() ;
+		///< Saves the current errno following error()/sizeError().
+
 	void saveReason() const ;
-	int domain() const ;
-	bool prepare( bool ) ;
+		///< Saves the current errno following error()/sizeError().
+
+	bool isFamily( Address::Family ) const ;
+		///< Returns true if the socket family is as given.
 
 private:
+	static std::string reasonString( int ) ;
+	bool create( int , int , int ) ;
+	bool prepare( bool ) ;
 	void drop() noexcept ;
 	void destroy() noexcept ;
-	bool setNonBlock() ;
+	void unlink() noexcept ;
+	bool setNonBlocking() ;
 
 public:
 	SocketBase( const SocketBase & ) = delete ;
@@ -161,30 +190,28 @@ public:
 
 private:
 	int m_reason ;
-	std::string m_reason_string ;
 	int m_domain ;
+	Address::Family m_family ; // valid depending on m_domain
 	Descriptor m_fd ;
+	bool m_added ;
+	bool m_accepted ;
 } ;
 
 //| \class GNet::Socket
 /// An internet-protocol socket class. Provides bind(), listen(),
-/// and connect(); the base class provide write(); and derived
+/// and connect(); the base classes provide write(); and derived
 /// classes provide accept() and read().
 ///
 class GNet::Socket : public SocketBase
 {
 public:
-	std::pair<bool,Address> getLocalAddress() const ;
+	Address getLocalAddress() const ;
 		///< Retrieves local address of the socket.
-		///< The boolean value is false on error.
 
 	std::pair<bool,Address> getPeerAddress() const ;
 		///< Retrieves address of socket's peer.
-		///< The boolean value is false on error.
-
-	bool hasPeer() const ;
-		///< Returns true if the socket has a valid peer. This
-		///< can be used to see if a connect succeeded.
+		///< Returns false in 'first' if none, ie. not yet
+		///< connected.
 
 	void bind( const Address & ) ;
 		///< Binds the socket with the given address.
@@ -192,12 +219,11 @@ public:
 	bool bind( const Address & , std::nothrow_t ) ;
 		///< No-throw overload. Returns false on error.
 
-	bool canBindHint( const Address & address ) ;
-		///< Returns true if the socket can probably be bound
-		///< with the given address. Some implementations will
-		///< always return true. This method should be used on
-		///< a temporary socket of the correct dynamic type
-		///< since this socket may become unusable.
+	static std::string canBindHint( const Address & address , bool stream_socket = true ) ;
+		///< Returns the empty string if a socket could probably be
+		///< bound with the given address or a failure reason.
+		///< Some implementations will always return the empty
+		///< string.
 
 	unsigned long getBoundScopeId() const ;
 		///< Returns the scope-id of the address last successfully
@@ -246,20 +272,20 @@ public:
 	void operator=( Socket && ) = delete ;
 
 protected:
-	Socket( int domain , int type , int protocol ) ;
-	Socket( int domain , Descriptor s , const Accepted & ) ;
-	std::pair<bool,Address> getAddress( bool ) const ;
+	Socket( Address::Family , int type , int protocol ) ;
+	Socket( Address::Family , Descriptor s , const Accepted & ) ;
+	std::pair<bool,Address> getLocalAddress( std::nothrow_t ) const ;
 	void setOption( int , const char * , int , int ) ;
 	bool setOption( int , const char * , int , int , std::nothrow_t ) ;
 	bool setOptionImp( int , int , const void * , socklen_t ) ;
-	void setOptionsOnBind( bool ) ;
-	void setOptionsOnConnect( bool ) ;
+	void setOptionsOnBind( Address::Family ) ;
+	void setOptionsOnConnect( Address::Family ) ;
 	void setOptionLingerImp( int , int ) ;
 	void setOptionNoLinger() ;
 	void setOptionReuse() ;
 	void setOptionExclusive() ;
-	void setOptionPureV6( bool ) ;
-	bool setOptionPureV6( bool , std::nothrow_t ) ;
+	void setOptionPureV6() ;
+	bool setOptionPureV6( std::nothrow_t ) ;
 	void setOptionKeepAlive() ;
 
 private:
@@ -267,15 +293,15 @@ private:
 } ;
 
 //| \class GNet::AcceptPair
-/// A class which is used to return a new()ed socket to calling code, together
-/// with associated address information.
+/// A class which is used to return a new()ed socket to calling
+/// code, together with associated address information.
 ///
 class GNet::AcceptPair
 {
 public:
-	std::shared_ptr<StreamSocket> first ;
-	Address second ;
-	AcceptPair() : second(Address::defaultAddress()) {}
+	std::shared_ptr<StreamSocket> socket_ptr ;
+	Address address ;
+	AcceptPair() : address(Address::defaultAddress()) {}
 } ;
 
 //| \class GNet::StreamSocket
@@ -296,12 +322,13 @@ public:
 		///< Note that a run-time check is useful when running a
 		///< new binary on an old operating system.
 
-	explicit StreamSocket( int address_domain ) ;
+	explicit StreamSocket( Address::Family ) ;
 		///< Constructor.
 
-	StreamSocket( int address_domain , const Listener & ) ;
+	StreamSocket( Address::Family , const Listener & ) ;
 		///< Constructor overload specifically for a listening
-		///< socket. This can be used modify the socket options.
+		///< socket, which might need slightly different socket
+		///< options.
 
 	ssize_type read( char * buffer , size_type buffer_length ) override ;
 		///< Override from ReadWrite::read().
@@ -321,9 +348,9 @@ public:
 	void operator=( StreamSocket && ) = delete ;
 
 private:
-	StreamSocket( int , Descriptor s , const Socket::Accepted & ) ;
-	void setOptionsOnCreate( bool ) ;
-	void setOptionsOnAccept() ;
+	StreamSocket( Address::Family , Descriptor s , const Accepted & ) ;
+	void setOptionsOnCreate( Address::Family , bool listener ) ;
+	void setOptionsOnAccept( Address::Family ) ;
 } ;
 
 //| \class GNet::DatagramSocket
@@ -332,7 +359,7 @@ private:
 class GNet::DatagramSocket : public Socket
 {
 public:
-	explicit DatagramSocket( int address_domain , int protocol = 0 ) ;
+	explicit DatagramSocket( Address::Family , int protocol = 0 ) ;
 		///< Constructor.
 
 	ssize_type read( char * buffer , size_type len ) override ;
@@ -363,12 +390,13 @@ public:
 } ;
 
 //| \class GNet::RawSocket
-/// A derivation of GNet::SocketBase for a raw socket.
+/// A derivation of GNet::SocketBase for a raw socket, typically of
+/// type AF_NETLINK or PF_ROUTE.
 ///
 class GNet::RawSocket : public SocketBase
 {
 public:
-	explicit RawSocket( int domain , int protocol = 0 ) ;
+	RawSocket( int domain , int type , int protocol ) ;
 		///< Constructor.
 
 	ssize_type read( char * buffer , size_type buffer_length ) override ;

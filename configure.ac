@@ -19,7 +19,7 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([E-MailRelay],[2.2],[],[emailrelay])
+AC_INIT([E-MailRelay],[2.2.1],[],[emailrelay])
 AC_CONFIG_SRCDIR([src/glib/gdef.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])
@@ -115,6 +115,8 @@ AC_ARG_WITH([mbedtls],AS_HELP_STRING([--with-mbedtls],[use mbedtls for tls layer
 GCONFIG_FN_TLS
 AC_ARG_WITH([pam],AS_HELP_STRING([--with-pam],[use linux pam for authentication (default auto)]))
 GCONFIG_FN_WITH_PAM
+AC_ARG_WITH([uds],AS_HELP_STRING([--with-uds],[enable unix domain sockets (default auto)]))
+GCONFIG_FN_WITH_UDS
 
 dnl directory tweaking -- define e_ prefixed directory variables
 dnl

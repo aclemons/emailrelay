@@ -26,6 +26,7 @@
 #include "glog.h"
 #include <algorithm> // std::swap()
 #include <utility> // std::swap()
+#include <cstring> // std::memcpy()
 #include <climits>
 #include <sys/types.h>
 #include <sstream>
@@ -37,17 +38,17 @@ namespace GNet
 {
 	namespace Address6Imp
 	{
-		const char * port_separators = ":/." ;
+		const char * port_separators = ":." ;
 		char port_separator = '.' ;
 	}
 }
 
-unsigned short GNet::Address6::family()
+unsigned short GNet::Address6::af() noexcept
 {
 	return AF_INET6 ;
 }
 
-int GNet::Address6::domain()
+int GNet::Address6::domain() noexcept
 {
 	return PF_INET6 ;
 }
@@ -55,7 +56,7 @@ int GNet::Address6::domain()
 GNet::Address6::Address6( std::nullptr_t ) :
 	m_inet{}
 {
-	m_inet.sin6_family = family() ;
+	m_inet.sin6_family = af() ;
 	m_inet.sin6_port = 0 ;
 	m_inet.sin6_flowinfo = 0 ;
 	gdef_address6_init( m_inet ) ; // gdef.h
@@ -69,7 +70,7 @@ GNet::Address6::Address6( unsigned int port ) :
 	if( reason ) throw Address::Error(reason) ;
 }
 
-GNet::Address6::Address6( unsigned int port , int ) :
+GNet::Address6::Address6( unsigned int port , int /*loopback_overload*/ ) :
 	Address6(nullptr)
 {
 	m_inet.sin6_addr = in6addr_loopback ;
@@ -77,23 +78,23 @@ GNet::Address6::Address6( unsigned int port , int ) :
 	if( reason ) throw Address::Error(reason) ;
 }
 
-GNet::Address6::Address6( const sockaddr * addr , socklen_t len , bool scope_id_fixup ) :
+GNet::Address6::Address6( const sockaddr * addr , socklen_t len , bool ipv6_scope_id_fixup ) :
 	Address6(nullptr)
 {
 	if( addr == nullptr )
 		throw Address::Error() ;
-	if( addr->sa_family != family() || static_cast<std::size_t>(len) < sizeof(sockaddr_type) )
+	if( addr->sa_family != af() || static_cast<std::size_t>(len) < sizeof(sockaddr_type) )
 		throw Address::BadFamily() ;
 
 	std::memcpy( &m_inet , addr , sizeof(m_inet) ) ;
 
-	if( scope_id_fixup ) // for eg. NetBSD v7 getifaddrs() -- see FreeBSD Handbook "Scope Index"
+	if( ipv6_scope_id_fixup ) // for eg. NetBSD v7 getifaddrs() -- see FreeBSD Handbook "Scope Index"
 	{
 		auto hi = static_cast<unsigned int>( m_inet.sin6_addr.s6_addr[2] ) ;
 		auto lo = static_cast<unsigned int>( m_inet.sin6_addr.s6_addr[3] ) ;
 		m_inet.sin6_addr.s6_addr[2] = 0 ;
 		m_inet.sin6_addr.s6_addr[3] = 0 ;
-		m_inet.sin6_scope_id = ( hi << 8 | lo ) ;
+		m_inet.sin6_scope_id = ( hi << 8U | lo ) ;
 	}
 }
 
@@ -155,7 +156,7 @@ const char * GNet::Address6::setHostAddress( sockaddr_type & inet , const std::s
 	std::string zone = G::Str::tail( host_part , host_part.find('%') , std::string() ) ;
 	std::string host_part_head = G::Str::head( host_part , host_part.find('%') , host_part ) ;
 
-	int rc = inet_pton( family() , host_part_head.c_str() , &inet.sin6_addr ) ;
+	int rc = inet_pton( af() , host_part_head.c_str() , &inet.sin6_addr ) ;
 
 	if( rc == 1 && !zone.empty() )
 	{
@@ -211,30 +212,30 @@ bool GNet::Address6::setZone( sockaddr_type & inet , const std::string & zone )
 	return no_overflow ;
 }
 
-void GNet::Address6::setScopeId( unsigned long scope_id )
+void GNet::Address6::setScopeId( unsigned long ipv6_scope_id )
 {
-	m_inet.sin6_scope_id = scope_id ; // narrowing conversion on unix
+	m_inet.sin6_scope_id = ipv6_scope_id ; // narrowing conversion on unix
 }
 
-std::string GNet::Address6::displayString( bool with_scope_id ) const
+std::string GNet::Address6::displayString( bool ipv6_with_scope_id ) const
 {
 	std::ostringstream ss ;
 	ss << hostPartString() ;
-	if( with_scope_id && scopeId() != 0U )
+	if( ipv6_with_scope_id && scopeId() != 0U )
 		ss << "%" << scopeId() ;
 	ss << Address6Imp::port_separator << port() ;
 	return ss.str() ;
 }
 
-std::string GNet::Address6::hostPartString() const
+std::string GNet::Address6::hostPartString( bool /*raw*/ ) const
 {
-	std::array<char,INET6_ADDRSTRLEN+1U> buffer ; // NOLINT cppcoreguidelines-pro-type-member-init
+	std::array<char,INET6_ADDRSTRLEN+1U> buffer {} ;
 	const void * vp = & m_inet.sin6_addr ;
-	const char * p = inet_ntop( family() , const_cast<void*>(vp) , &buffer[0] , buffer.size() ) ; // cast for win32
+	const char * p = inet_ntop( af() , const_cast<void*>(vp) , &buffer[0] , buffer.size() ) ; // cast for win32
 	if( p == nullptr )
 		throw Address::Error( "inet_ntop() failure" ) ;
 	buffer[buffer.size()-1U] = '\0' ;
-	return std::string(&buffer[0]) ;
+	return { &buffer[0] } ; // sic
 }
 
 std::string GNet::Address6::queryString() const
@@ -251,7 +252,7 @@ std::string GNet::Address6::queryString() const
 
 bool GNet::Address6::validData( const sockaddr * addr , socklen_t len )
 {
-	return addr != nullptr && addr->sa_family == family() && len == sizeof(sockaddr_type) ;
+	return addr != nullptr && addr->sa_family == af() && len == sizeof(sockaddr_type) ;
 }
 
 bool GNet::Address6::validString( const std::string & s , std::string * reason_p )
@@ -285,8 +286,8 @@ bool GNet::Address6::validPort( unsigned int port )
 bool GNet::Address6::same( const Address6 & other , bool with_scope ) const
 {
 	return
-		m_inet.sin6_family == family() &&
-		other.m_inet.sin6_family == family() &&
+		m_inet.sin6_family == af() &&
+		other.m_inet.sin6_family == af() &&
 		sameAddr( m_inet.sin6_addr , other.m_inet.sin6_addr ) &&
 		( !with_scope || m_inet.sin6_scope_id == other.m_inet.sin6_scope_id ) &&
 		m_inet.sin6_port == other.m_inet.sin6_port ;
@@ -295,8 +296,8 @@ bool GNet::Address6::same( const Address6 & other , bool with_scope ) const
 bool GNet::Address6::sameHostPart( const Address6 & other , bool with_scope ) const
 {
 	return
-		m_inet.sin6_family == family() &&
-		other.m_inet.sin6_family == family() &&
+		m_inet.sin6_family == af() &&
+		other.m_inet.sin6_family == af() &&
 		sameAddr( m_inet.sin6_addr , other.m_inet.sin6_addr ) &&
 		( !with_scope || m_inet.sin6_scope_id == other.m_inet.sin6_scope_id ) ;
 }
@@ -316,7 +317,7 @@ unsigned int GNet::Address6::port() const
 	return ntohs( m_inet.sin6_port ) ;
 }
 
-unsigned long GNet::Address6::scopeId() const
+unsigned long GNet::Address6::scopeId( unsigned long /*default*/ ) const
 {
 	return m_inet.sin6_scope_id ;
 }

@@ -32,7 +32,7 @@ GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
 	ServerPeerConfig server_peer_config ) :
 		m_es(es) ,
 		m_server_peer_config(server_peer_config) ,
-		m_socket(listening_address.domain(),StreamSocket::Listener())
+		m_socket(listening_address.family(),StreamSocket::Listener())
 {
 	G_DEBUG( "GNet::Server::ctor: listening on socket " << m_socket.asString()
 		<< " with address " << listening_address.displayString() ) ;
@@ -54,21 +54,20 @@ GNet::Server::~Server()
 
 bool GNet::Server::canBind( const Address & address , bool do_throw )
 {
-	StreamSocket socket( address.domain() ) ;
-	bool ok = false ;
+	std::string reason ;
 	{
 		G::Root claim_root ;
-		ok = socket.canBindHint( address ) ;
+		reason = Socket::canBindHint( address ) ;
 	}
-	if( !ok && do_throw )
-		throw CannotBind( address.displayString() , socket.reason() ) ;
-	return ok ;
+	if( !reason.empty() && do_throw )
+		throw CannotBind( address.displayString() , reason ) ;
+	return reason.empty() ;
 }
 
 GNet::Address GNet::Server::address() const
 {
 	bool with_scope = true ; // was false
-	Address result = m_socket.getLocalAddress().second ;
+	Address result = m_socket.getLocalAddress() ;
 	if( with_scope )
 		result.setScopeId( m_socket.getBoundScopeId() ) ;
 	return result ;
@@ -121,8 +120,8 @@ void GNet::Server::accept( ServerPeerInfo & peer_info )
 		G::Root claim_root ;
 		accept_pair = m_socket.accept() ;
 	}
-	peer_info.m_socket = accept_pair.first ;
-	peer_info.m_address = accept_pair.second ;
+	peer_info.m_socket = accept_pair.socket_ptr ;
+	peer_info.m_address = accept_pair.address ;
 }
 
 void GNet::Server::onException( ExceptionSource * esrc , std::exception & e , bool done )

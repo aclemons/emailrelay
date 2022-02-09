@@ -20,14 +20,14 @@
 
 #include "gdef.h"
 #include "gsocket.h"
-#include "gconvert.h"
+#include "gprocess.h"
 #include "gstr.h"
 #include "gassert.h"
 #include <errno.h>
 
-bool GNet::SocketBase::supports( int domain , int type , int protocol )
+bool GNet::SocketBase::supports( Address::Family af , int type , int protocol )
 {
-	SOCKET fd = ::socket( domain , type , protocol ) ;
+	SOCKET fd = ::socket( Address::domain(af) , type , protocol ) ;
 	if( fd == INVALID_SOCKET )
 		return false ;
 	::closesocket( fd ) ;
@@ -58,11 +58,16 @@ bool GNet::SocketBase::prepare( bool accepted )
 	if( accepted )
 	{
 		G_ASSERT( m_fd.h() == HNULL ) ;
-		HANDLE h = WSACreateEvent() ; // handle errors in the event loop
+		HANDLE h = WSACreateEvent() ;
+		if( h == HNULL )
+		{
+			saveReason() ;
+			return false ;
+		}
 		m_fd = Descriptor( m_fd.fd() , h ) ;
 	}
 
-	if( !setNonBlock() )
+	if( !setNonBlocking() )
 	{
 		saveReason() ;
 		return false ;
@@ -87,12 +92,16 @@ bool GNet::SocketBase::error( int rc )
 void GNet::SocketBase::saveReason()
 {
 	m_reason = WSAGetLastError() ;
-	m_reason_string = reasonString( m_reason ) ;
 }
 
 bool GNet::SocketBase::sizeError( ssize_t size )
 {
 	return size == SOCKET_ERROR ;
+}
+
+bool GNet::SocketBase::eNotConn() const
+{
+	return m_reason == WSAENOTCONN ;
 }
 
 bool GNet::SocketBase::eWouldBlock() const
@@ -115,7 +124,7 @@ bool GNet::SocketBase::eTooMany() const
 	return m_reason == WSAEMFILE ; // or WSAENOBUFS ?
 }
 
-bool GNet::SocketBase::setNonBlock()
+bool GNet::SocketBase::setNonBlocking()
 {
 	unsigned long ul = 1 ;
 	return ioctlsocket( m_fd.fd() , FIONBIO , &ul ) != SOCKET_ERROR ;
@@ -123,50 +132,14 @@ bool GNet::SocketBase::setNonBlock()
 
 std::string GNet::SocketBase::reasonString( int e )
 {
-	//if( e == WSANOTINITIALISED )
-	if( e == WSAENETDOWN ) return "network down" ;
-	//if( e == WSAEFAULT )
-	//if( e == WSAENOTCONN )
-	//if( e == WSAEINTR )
-	//if( e == WSAEINPROGRESS )
-	if( e == WSAENETRESET ) return "network reset" ;
-	//if( e == WSAENOTSOCK )
-	//if( e == WSAEOPNOTSUPP )
-	if( e == WSAESHUTDOWN ) return "already shut down" ;
-	//if( e == WSAEWOULDBLOCK )
-	//if( e == WSAEMSGSIZE )
-	//if( e == WSAEINVAL )
-	if( e == WSAECONNABORTED ) return "aborted" ;
-	if( e == WSAETIMEDOUT ) return "timed out" ;
-	if( e == WSAECONNRESET ) return "connection reset by peer" ;
-
-	std::string result = "unknown error" ;
-	DWORD size_limit = 128U ;
-	TCHAR * buffer = nullptr ;
-	DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS ;
-	DWORD rc = FormatMessage( flags , nullptr , e , 0 , reinterpret_cast<LPSTR>(&buffer) , size_limit , nullptr ) ;
-	if( buffer == nullptr || rc == 0U ) return result ;
-	G::Convert::tstring tmessage( buffer , static_cast<std::size_t>(rc) ) ;
-	::LocalFree( buffer ) ;
-	try
-	{
-		G::Convert::convert( result , tmessage , G::Convert::ThrowOnError() ) ;
-	}
-	catch( G::Convert::Error & )
-	{
-	}
-	G::Str::removeAll( result , '\r' ) ;
-	G::Str::trimRight( result , ".\n" ) ;
-	G::Str::replaceAll( result , "\n" , " " ) ;
-	G_DEBUG( "GNet::SocketBase::reasonString: " << e << " -> [" << G::Str::printable(result) << "]" ) ;
-	return G::Str::lower(G::Str::printable(result)) ;
+	return G::Process::strerror( e ) ;
 }
 
 // ==
 
-bool GNet::Socket::canBindHint( const Address & )
+std::string GNet::Socket::canBindHint( const Address & , bool )
 {
-	return true ; // rebinding the same port number fails, so a dummy implementation here
+	return std::string() ; // rebinding the same port number fails, so a dummy implementation here
 }
 
 void GNet::Socket::setOptionReuse()
@@ -179,12 +152,12 @@ void GNet::Socket::setOptionExclusive()
 	setOption( SOL_SOCKET , "so_exclusiveaddruse" , SO_EXCLUSIVEADDRUSE , 1 ) ;
 }
 
-void GNet::Socket::setOptionPureV6( bool )
+void GNet::Socket::setOptionPureV6()
 {
 	// no-op
 }
 
-bool GNet::Socket::setOptionPureV6( bool , std::nothrow_t )
+bool GNet::Socket::setOptionPureV6( std::nothrow_t )
 {
 	return true ; // no-op
 }

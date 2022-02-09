@@ -15,41 +15,55 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gaddress6.h
+/// \file gaddresslocal.h
 ///
 
-#ifndef G_NET_ADDRESS6_H
-#define G_NET_ADDRESS6_H
+#ifndef G_NET_ADDRESSLOCAL_H
+#define G_NET_ADDRESSLOCAL_H
 
 #include "gdef.h"
 #include "gaddress.h"
+#include "gstrings.h"
 #include <string>
+#if GCONFIG_HAVE_UDS
+#include <sys/types.h>
+#include <sys/un.h>
+#else
+struct sockaddr_un {} ;
+#endif
 
 namespace GNet
 {
-	class Address6 ;
+	class AddressLocal ;
 }
 
-//| \class GNet::Address6
-/// A 'sockaddr' wrapper class for IPv6 addresses.
+//| \class GNet::AddressLocal
+/// A 'sockaddr' wrapper class for local-domain addresses.
 ///
-class GNet::Address6
+/// Use "netcat -U" or "socat" to connect to local-domain
+/// sockets, eg:
+/// \code
+/// $ nc -U -C /run/cmd.s
+/// $ socat -d tcp-listen:8080,fork unix:/run/cmd.s
+/// \endcode
+///
+class GNet::AddressLocal
 {
 public:
-	using sockaddr_type = sockaddr_in6 ;
+	using sockaddr_type = sockaddr_un ;
 
-	explicit Address6( unsigned int ) ;
-	explicit Address6( const std::string & ) ;
-	Address6( const std::string & , const std::string & ) ;
-	Address6( const std::string & , unsigned int ) ;
-	Address6( unsigned int port , int /*for overload resolution*/ ) ; // canonical loopback address
-	Address6( const sockaddr * addr , socklen_t len , bool ipv6_scope_id_fixup = false ) ;
+	explicit AddressLocal( unsigned int ) ;
+	explicit AddressLocal( const std::string & ) ;
+	AddressLocal( const std::string & , const std::string & ) ;
+	AddressLocal( const std::string & , unsigned int ) ;
+	AddressLocal( unsigned int port , int /*for overload resolution*/ ) ;
+	AddressLocal( const sockaddr * addr , socklen_t len , bool ipv6_scope_id_fixup = false ) ;
 
 	static int domain() noexcept ;
 	static unsigned short af() noexcept ;
 	const sockaddr * address() const ;
 	sockaddr * address() ;
-	static socklen_t length() noexcept ;
+	socklen_t length() const noexcept ;
 	unsigned long scopeId( unsigned long default_ = 0UL ) const ;
 	unsigned int port() const ;
 	void setPort( unsigned int port ) ;
@@ -60,8 +74,8 @@ public:
 	static bool validPort( unsigned int port ) ;
 	static bool validData( const sockaddr * addr , socklen_t len ) ;
 
-	bool same( const Address6 & other , bool ipv6_compare_with_scope = false ) const ;
-	bool sameHostPart( const Address6 & other , bool ipv6_compare_with_scope = false ) const ;
+	bool same( const AddressLocal & other , bool ipv6_compare_with_scope = false ) const ;
+	bool sameHostPart( const AddressLocal & other ) const ;
 	bool isLoopback() const ;
 	bool isLocal( std::string & ) const ;
 	bool isLinkLocal() const ;
@@ -73,18 +87,15 @@ public:
 	std::string hostPartString( bool raw = false ) const ;
 	std::string queryString() const ;
 	G::StringArray wildcards() const ;
+	static bool format( const std::string & ) ;
 
 private:
-	explicit Address6( std::nullptr_t ) ;
-	static const char * setAddress( sockaddr_type & , const std::string & ) ;
-	static const char * setHostAddress( sockaddr_type & , const std::string & ) ;
-	static const char * setPort( sockaddr_type & , unsigned int ) ;
-	static const char * setPort( sockaddr_type & , const std::string & ) ;
-	static bool sameAddr( const ::in6_addr & a , const ::in6_addr & b ) ;
-	static bool setZone( sockaddr_type & , const std::string & ) ;
+	explicit AddressLocal( std::nullptr_t ) ;
+	std::string path() const ;
 
 private:
-	sockaddr_type m_inet ;
+	sockaddr_type m_local ;
+	std::size_t m_size ;
 } ;
 
 #endif

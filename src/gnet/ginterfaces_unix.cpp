@@ -183,7 +183,7 @@ GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * outer , Excepti
 		#endif
 		{
 			G::Root claim_root ;
-			m_socket = std::make_unique<RawSocket>( AF_NETLINK , NETLINK_ROUTE ) ;
+			m_socket = std::make_unique<RawSocket>( AF_NETLINK , SOCK_RAW , NETLINK_ROUTE ) ;
 			int rc = ::bind( m_socket->fd() , &address.generic , sizeof(address.specific) ) ;
 			int e = G::Process::errno_() ;
 			if( rc < 0 )
@@ -251,7 +251,7 @@ GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * outer , Excepti
 	{
 		{
 			G::Root claim_root ;
-			m_socket = std::make_unique<RawSocket>( PF_ROUTE , AF_UNSPEC ) ;
+			m_socket = std::make_unique<RawSocket>( PF_ROUTE , SOCK_RAW , AF_UNSPEC ) ;
 		}
 		m_socket->addReadHandler( *outer , es ) ;
 	}

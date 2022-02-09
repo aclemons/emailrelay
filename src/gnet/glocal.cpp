@@ -44,7 +44,7 @@ std::string GNet::Local::resolvedHostname()
 	if( first )
 	{
 		first = false ;
-		static Location location( hostname() , "0" ) ;
+		static Location location( hostname().append(":0") ) ;
 		bool ok = Resolver::resolve(location).empty() && !location.name().empty() ;
 		result = ok ? location.name() : (hostname()+".localnet") ;
 	}

@@ -293,7 +293,7 @@ bool GNet::SocketProtocolImp::send( const std::string & data , std::size_t offse
 
 bool GNet::SocketProtocolImp::send( const Segments & segments , std::size_t offset )
 {
-	if( segments.empty() || size(segments) == 0U )
+	if( segments.empty() || size(segments) == 0U || offset >= size(segments) )
 		return true ;
 
 	bool rc = true ;

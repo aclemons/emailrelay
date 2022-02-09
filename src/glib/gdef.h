@@ -700,6 +700,13 @@
 			#define GCONFIG_HAVE_PTHREAD_SIGMASK 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_UDS)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_UDS 1
+		#else
+			#define GCONFIG_HAVE_UDS 0
+		#endif
+	#endif
 
 	/* Include early o/s headers
 	 */
