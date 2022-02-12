@@ -10560,7 +10560,7 @@ else
 fi
 
 	else
-		if test "$gconfig_cv_uds" = "no"
+		if test "$with_uds" = "yes" -a "$gconfig_cv_uds" = "no"
 		then
 			{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: forcing use of unix domain sockets even though not detected" >&5
 $as_echo "$as_me: WARNING: forcing use of unix domain sockets even though not detected" >&2;}

@@ -128,6 +128,12 @@ public:
 		///< Factory function for Family::ipv4 or Family::ipv6.
 		///< Throws if an invalid string. See also validStrings().
 
+	static bool isFamilyLocal( const std::string & display_string ) ;
+		///< Returns true if the given address display string looks
+		///< will parse to Family::local and Family::local is
+		///< supported. The address may still fail to parse if
+		///< it invalid.
+
 	static Address defaultAddress() ;
 		///< Returns a default address, being the IPv4 wildcard address
 		///< with a zero port number.

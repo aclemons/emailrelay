@@ -112,6 +112,7 @@ public:
 
 private:
 	void accept( ServerPeerInfo & ) ;
+	static bool unlink( G::SignalSafe , const char * ) ;
 
 private:
 	using PeerList = std::vector<std::shared_ptr<ServerPeer> > ;

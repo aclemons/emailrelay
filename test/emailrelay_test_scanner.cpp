@@ -19,7 +19,7 @@
 ///
 // A dummy network processor for testing "emailrelay --filter net:<host>:<port>".
 //
-// usage: emailrelay-test-scanner [{--port <port>|--address <address>}] [--log] [--log-file <file>] [--debug] [--pid-file <pidfile>]
+// usage: emailrelay-test-scanner [--port <port-or-address>] [--log] [--log-file <file>] [--debug] [--pid-file <pidfile>]
 //
 // Listens on port 10020 by default. Each request is a 'content' filename
 // and the file should contain a mini script with commands of:
@@ -188,6 +188,7 @@ public:
 Main::Scanner::Scanner( GNet::ExceptionSink es , const GNet::Address & address , unsigned int idle_timeout ) :
 	GNet::Server(es,address,GNet::ServerPeerConfig(idle_timeout))
 {
+	G_LOG_S( "Scanner::ctor: listening on " << address.displayString() ) ;
 }
 
 Main::Scanner::~Scanner()
@@ -228,14 +229,13 @@ int main( int argc , char * argv [] )
 		bool log = arg.remove("--log") ;
 		bool debug = arg.remove("--debug") ;
 		std::string log_file = arg.index("--log-file",1U) ? arg.v(arg.index("--log-file",1U)+1U) : std::string() ;
-		unsigned int port = arg.index("--port",1U) ? G::Str::toUInt(arg.v(arg.index("--port",1U)+1U)) : 10020U ;
-		std::string address_str = arg.index("--address",1U) ? arg.v(arg.index("--address",1U)+1U) : std::string() ;
+		std::string port_str = arg.index("--port",1U) ? arg.v(arg.index("--port",1U)+1U) : std::string("10020") ;
 		std::string pid_file = arg.index("--pid-file",1U) ? arg.v(arg.index("--pid-file",1U)+1U) : std::string() ;
 		unsigned int idle_timeout = 30U ;
 
-		GNet::Address address( GNet::Address::Family::ipv4 , port ) ;
-		if( !address_str.empty() )
-			address = GNet::Address::parse( address_str ) ; // ignore '--port'
+		GNet::Address address = G::Str::isNumeric(port_str) ?
+			GNet::Address( GNet::Address::Family::ipv4 , G::Str::toUInt(port_str) ) :
+			GNet::Address::parse( port_str ) ;
 
 		if( !pid_file.empty() )
 		{

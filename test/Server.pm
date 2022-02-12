@@ -94,7 +94,7 @@ sub new
 		m_full_command => undef ,
 		m_filter => $filter ,
 		m_client_filter => $client_filter ,
-		m_scanner_port => $scanner_port ,
+		m_scanner_address => "${System::localhost}:${scanner_port}" ,
 		m_verifier_port => $verifier_port ,
 		m_max_size => 1000 ,
 	} , $classname ;
@@ -104,8 +104,8 @@ sub exe { return shift->{m_exe} }
 sub set_exe { $_[0]->{m_exe} = $_[1] }
 sub smtpPort { return shift->{m_smtp_port} }
 sub adminPort { return shift->{m_admin_port} }
-sub scannerPort { return shift->{m_scanner_port} }
-sub scannerAddress { return "net:$System::localhost:" . shift->{m_scanner_port} }
+sub scannerAddress { return shift->{m_scanner_address} }
+sub set_scannerAddress { $_[0]->{m_scanner_address} = $_[1] }
 sub verifierPort { return shift->{m_verifier_port} }
 sub verifierAddress { return "net:$System::localhost:" . shift->{m_verifier_port} }
 sub popPort { return shift->{m_pop_port} }
@@ -221,7 +221,7 @@ sub _set_all
 	$command_tail = _set( $command_tail , "__POLL_TIMEOUT__" , $this->pollTimeout() ) ;
 	$command_tail = _set( $command_tail , "__FILTER__" , $this->filter() ) ;
 	$command_tail = _set( $command_tail , "__CLIENT_FILTER__" , $this->clientFilter() ) ;
-	$command_tail = _set( $command_tail , "__SCANNER__" , $this->scannerAddress() ) ;
+	$command_tail = _set( $command_tail , "__SCANNER__" , "net:" . $this->scannerAddress() ) ;
 	$command_tail = _set( $command_tail , "__VERIFIER__" , $this->verifierAddress() ) ;
 	$command_tail = _set( $command_tail , "__CLIENT_SECRETS__" , $this->clientSecrets() ) ;
 	$command_tail = _set( $command_tail , "__MAX_SIZE__" , $this->maxSize() ) ;

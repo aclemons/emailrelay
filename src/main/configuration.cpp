@@ -23,6 +23,7 @@
 #include "configuration.h"
 #include "commandline.h"
 #include "gmessagestore.h"
+#include "gaddress.h"
 #include "gprocess.h"
 #include "gformat.h"
 #include "ggettext.h"
@@ -728,6 +729,13 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 	if( m_map.contains("dnsbl") && !m_map.contains("remote-clients") )
 	{
 		errors.push_back( gettext("--dnsbl requires --remote-clients or -r") ) ;
+	}
+
+	std::string forward_to = serverAddress() ;
+
+	if( m_map.contains("client-interface") && GNet::Address::isFamilyLocal(forward_to) )
+	{
+		errors.push_back( "cannot use --client-interface with a unix-domain forwarding address" ) ;
 	}
 
 	// warnings...

@@ -79,7 +79,7 @@ void G::PidFile::create( const Path & pid_file )
 		if( buffer[0] == '\0' && pid_file.size() < buffer.size() )
 			G::Str::strncpy_s( &buffer[0] , buffer.size() , pid_file.cstr() , pid_file.size() ) ;
 		else
-			cleanup_arg = new_string_ignore_leak(pid_file.str())->c_str() ;
+			cleanup_arg = Cleanup::strdup( pid_file.str() ) ;
 
 		Cleanup::add( cleanup , cleanup_arg ) ;
 	}
@@ -151,10 +151,5 @@ G::Path G::PidFile::path() const
 bool G::PidFile::valid() const
 {
 	return !m_path.empty() ;
-}
-
-std::string * G::PidFile::new_string_ignore_leak( const std::string & s )
-{
-	return new std::string( s ) ; // ignore leak
 }
 

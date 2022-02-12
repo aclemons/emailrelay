@@ -23,6 +23,7 @@
 #include "gprocess.h"
 #include "groot.h"
 #include "glog.h"
+#include <cstring> // ::strdup()
 #include <csignal> // ::sigaction() etc
 #include <array>
 
@@ -70,6 +71,9 @@ public:
 
 	static void release() noexcept ;
 		// Releases blocked signals.
+
+	static const char * strdup_ignore_leaks( const char * p ) ;
+		// A strdup() function.
 
 private:
 	struct Link /// A private linked-list structure used by G::CleanupImp.
@@ -127,6 +131,16 @@ void G::Cleanup::block() noexcept
 void G::Cleanup::release() noexcept
 {
 	CleanupImp::release() ;
+}
+
+const char * G::Cleanup::strdup( const char * p )
+{
+	return CleanupImp::strdup_ignore_leaks( p ) ;
+}
+
+const char * G::Cleanup::strdup( const std::string & s )
+{
+	return CleanupImp::strdup_ignore_leaks( s.c_str() ) ;
 }
 
 // ===
@@ -281,5 +295,10 @@ void G::CleanupImp::release() noexcept
 		sigdelset( &set , s ) ;
 	}
 	gdef_pthread_sigmask( SIG_SETMASK , &set , nullptr ) ;
+}
+
+const char * G::CleanupImp::strdup_ignore_leaks( const char * p )
+{
+	return ::strdup( p ) ; // NOLINT
 }
 

@@ -54,55 +54,70 @@ bool GNet::Address::supports( int af , int )
 	return af == AF_INET ;
 }
 
+bool GNet::Address::supports( const Address::Domain & , int domain )
+{
+	return domain == Address4::domain() ;
+}
+
 GNet::Address GNet::Address::defaultAddress()
 {
-	return Address( Family::ipv4 , 0U ) ;
+	return { Family::ipv4 , 0U } ;
 }
 
 GNet::Address::Address( Family f , unsigned int port ) :
-	m_4imp(std::make_unique<Address4>(port))
+	m_ipv4(std::make_unique<Address4>(port))
 {
 	AddressImp::check( f ) ;
 }
 
 GNet::Address::Address( const AddressStorage & storage ) :
-	m_4imp(std::make_unique<Address4>(storage.p(),storage.n()))
+	m_ipv4(std::make_unique<Address4>(storage.p(),storage.n()))
 {
 }
 
 GNet::Address::Address( const sockaddr * addr , socklen_t len ) :
-	m_4imp(std::make_unique<Address4>(addr,len))
+	m_ipv4(std::make_unique<Address4>(addr,len))
 {
 }
 
 GNet::Address::Address( const sockaddr * addr , socklen_t len , bool ) :
-	m_4imp(std::make_unique<Address4>(addr,len))
+	m_ipv4(std::make_unique<Address4>(addr,len))
 {
 }
 
 GNet::Address::Address( const std::string & s ) :
-	m_4imp(std::make_unique<Address4>(s))
+	m_ipv4(std::make_unique<Address4>(s))
+{
+}
+
+GNet::Address::Address( const std::string & s , NotLocal ) :
+	m_ipv4(std::make_unique<Address4>(s))
+{
+}
+
+GNet::Address::Address( const std::string & host_part , const std::string & port_part ) :
+	m_ipv4(std::make_unique<Address4>(host_part,port_part))
 {
 }
 
 GNet::Address::Address( const std::string & s , unsigned int port ) :
-	m_4imp(std::make_unique<Address4>(s,port))
+	m_ipv4(std::make_unique<Address4>(s,port))
 {
 }
 
 GNet::Address::Address( Family f , unsigned int port , int loopback_overload ) :
-	m_4imp(std::make_unique<Address4>(port,loopback_overload))
+	m_ipv4(std::make_unique<Address4>(port,loopback_overload))
 {
 	AddressImp::check( f ) ;
 }
 
 GNet::Address::Address( const Address & other ) :
-	m_4imp(std::make_unique<Address4>(*other.m_4imp))
+	m_ipv4(std::make_unique<Address4>(*other.m_ipv4))
 {
 }
 
 GNet::Address::Address( Address && other ) noexcept
-=default ;
+= default ;
 
 GNet::Address::~Address()
 = default;
@@ -110,7 +125,7 @@ GNet::Address::~Address()
 void GNet::Address::swap( Address & other ) noexcept
 {
 	using std::swap ;
-	swap( m_4imp , other.m_4imp ) ;
+	swap( m_ipv4 , other.m_ipv4 ) ;
 }
 
 GNet::Address & GNet::Address::operator=( const Address & other )
@@ -122,6 +137,31 @@ GNet::Address & GNet::Address::operator=( const Address & other )
 GNet::Address & GNet::Address::operator=( Address && other ) noexcept
 = default ;
 
+GNet::Address GNet::Address::parse( const std::string & s )
+{
+	return Address( s ) ;
+}
+
+GNet::Address GNet::Address::parse( const std::string & s , Address::NotLocal not_local )
+{
+	return { s , not_local } ;
+}
+
+GNet::Address GNet::Address::parse( const std::string & host_part , unsigned int port )
+{
+	return { host_part , port } ;
+}
+
+GNet::Address GNet::Address::parse( const std::string & host_part , const std::string & port_part )
+{
+	return { host_part , port_part } ;
+}
+
+bool GNet::Address::isFamilyLocal( const std::string & )
+{
+	return false ;
+}
+
 GNet::Address GNet::Address::loopback( Family f , unsigned int port )
 {
 	return Address( f , port , 1 ) ;
@@ -129,7 +169,7 @@ GNet::Address GNet::Address::loopback( Family f , unsigned int port )
 
 GNet::Address & GNet::Address::setPort( unsigned int port )
 {
-	m_4imp->setPort( port ) ;
+	m_ipv4->setPort( port ) ;
 	return *this ;
 }
 
@@ -145,32 +185,32 @@ bool GNet::Address::setZone( const std::string & )
 
 unsigned int GNet::Address::bits() const
 {
-	return m_4imp->bits() ;
+	return m_ipv4->bits() ;
 }
 
 bool GNet::Address::isLoopback() const
 {
-	return m_4imp->isLoopback() ;
+	return m_ipv4->isLoopback() ;
 }
 
 bool GNet::Address::isLocal( std::string & reason ) const
 {
-	return m_4imp->isLocal( reason ) ;
+	return m_ipv4->isLocal( reason ) ;
 }
 
 bool GNet::Address::isLinkLocal() const
 {
-	return m_4imp->isLinkLocal() ;
+	return m_ipv4->isLinkLocal() ;
 }
 
 bool GNet::Address::isUniqueLocal() const
 {
-	return m_4imp->isUniqueLocal() ;
+	return m_ipv4->isUniqueLocal() ;
 }
 
 bool GNet::Address::isAny() const
 {
-	return m_4imp->isAny() ;
+	return m_ipv4->isAny() ;
 }
 
 bool GNet::Address::is4() const
@@ -185,12 +225,12 @@ bool GNet::Address::is6() const
 
 bool GNet::Address::same( const Address & other , bool ) const
 {
-	return m_4imp->same( *other.m_4imp ) ;
+	return m_ipv4->same( *other.m_ipv4 ) ;
 }
 
 bool GNet::Address::operator==( const Address & other ) const
 {
-	return m_4imp->same( *other.m_4imp ) ;
+	return m_ipv4->same( *other.m_ipv4 ) ;
 }
 
 bool GNet::Address::operator!=( const Address & other ) const
@@ -200,25 +240,30 @@ bool GNet::Address::operator!=( const Address & other ) const
 
 bool GNet::Address::sameHostPart( const Address & other ) const
 {
-	return m_4imp->sameHostPart(*other.m_4imp) ;
+	return m_ipv4->sameHostPart(*other.m_ipv4) ;
 }
 
 std::string GNet::Address::displayString( bool ) const
 {
-	return m_4imp->displayString() ;
+	return m_ipv4->displayString() ;
 }
 
-std::string GNet::Address::hostPartString() const
+std::string GNet::Address::hostPartString( bool ) const
 {
-	return m_4imp->hostPartString() ;
+	return m_ipv4->hostPartString() ;
 }
 
 std::string GNet::Address::queryString() const
 {
-	return m_4imp->queryString() ;
+	return m_ipv4->queryString() ;
 }
 
 bool GNet::Address::validString( const std::string & s , std::string * reason_p )
+{
+	return Address4::validString( s , reason_p ) ;
+}
+
+bool GNet::Address::validString( const std::string & s , NotLocal , std::string * reason_p )
 {
 	return Address4::validString( s , reason_p ) ;
 }
@@ -230,12 +275,12 @@ bool GNet::Address::validStrings( const std::string & s1 , const std::string & s
 
 sockaddr * GNet::Address::address()
 {
-	return m_4imp->address() ;
+	return m_ipv4->address() ;
 }
 
 const sockaddr * GNet::Address::address() const
 {
-	return m_4imp->address() ;
+	return m_ipv4->address() ;
 }
 
 socklen_t GNet::Address::length() const
@@ -245,7 +290,7 @@ socklen_t GNet::Address::length() const
 
 unsigned int GNet::Address::port() const
 {
-	return m_4imp->port() ;
+	return m_ipv4->port() ;
 }
 
 unsigned long GNet::Address::scopeId( unsigned long default_ ) const
@@ -263,9 +308,9 @@ bool GNet::Address::validData( const sockaddr * addr , socklen_t len )
 	return Address4::validData( addr , len ) ;
 }
 
-int GNet::Address::domain() const
+int GNet::Address::domain( Family family )
 {
-	return Address4::domain() ;
+	return family == Family::ipv4 ? Address4::domain() : 0 ;
 }
 
 GNet::Address::Family GNet::Address::family() const
@@ -280,7 +325,7 @@ int GNet::Address::af() const
 
 G::StringArray GNet::Address::wildcards() const
 {
-	return m_4imp->wildcards() ;
+	return m_ipv4->wildcards() ;
 }
 
 // ==
@@ -291,7 +336,7 @@ G::StringArray GNet::Address::wildcards() const
 class GNet::AddressStorageImp
 {
 public:
-	Address4::storage_type u ;
+	sockaddr_storage u ;
 	socklen_t n ;
 } ;
 
@@ -300,9 +345,9 @@ public:
 GNet::AddressStorage::AddressStorage() :
 	m_imp(std::make_unique<AddressStorageImp>())
 {
-	static_assert( sizeof(Address4::sockaddr_type) <= sizeof(Address4::storage_type) , "" ) ;
-	static_assert( alignof(Address4::sockaddr_type) <= alignof(Address4::storage_type) , "" ) ;
-	m_imp->n = sizeof( Address4::storage_type ) ;
+	static_assert( sizeof(Address4::sockaddr_type) <= sizeof(sockaddr_storage) , "" ) ;
+	static_assert( alignof(Address4::sockaddr_type) <= alignof(sockaddr_storage) , "" ) ;
+	m_imp->n = sizeof( sockaddr_storage ) ;
 }
 
 GNet::AddressStorage::~AddressStorage()

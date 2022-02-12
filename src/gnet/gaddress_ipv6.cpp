@@ -30,9 +30,12 @@
 #include <sstream>
 #include <cstring>
 
-bool GNet::Address::supports( Family )
+bool GNet::Address::supports( Family f )
 {
-	return true ;
+	if( f == Address::Family::local && AddressLocal::af() == 0 )
+		return false ;
+	else
+		return true ;
 }
 
 bool GNet::Address::supports( int af , int )
@@ -47,94 +50,141 @@ bool GNet::Address::supports( const Address::Domain & , int domain )
 
 GNet::Address::Address( Family f , unsigned int port )
 {
-	if( Address4::af() && f == Address::Family::ipv4 ) m_ipv4 = std::make_unique<Address4>( port ) ;
-	else if( Address6::af() && f == Address::Family::ipv6 ) m_ipv6 = std::make_unique<Address6>( port ) ;
-	else if( AddressLocal::af() && f == Address::Family::local ) m_local = std::make_unique<AddressLocal>( port ) ;
-	else throw Address::BadFamily() ;
+	if( Address4::af() && f == Address::Family::ipv4 )
+		m_ipv4 = std::make_unique<Address4>( port ) ;
+	else if( Address6::af() && f == Address::Family::ipv6 )
+		m_ipv6 = std::make_unique<Address6>( port ) ;
+	else if( AddressLocal::af() && f == Address::Family::local )
+		m_local = std::make_unique<AddressLocal>( port ) ;
+	else
+		throw Address::BadFamily() ;
 }
 
 GNet::Address::Address( const AddressStorage & storage )
 {
-	if( storage.p()->sa_family == 0 ) throw Address::BadFamily() ;
-	else if( Address4::af() && storage.p()->sa_family == Address4::af() ) m_ipv4 = std::make_unique<Address4>( storage.p() , storage.n() ) ;
-	else if( Address6::af() && storage.p()->sa_family == Address6::af() ) m_ipv6 = std::make_unique<Address6>( storage.p() , storage.n() ) ;
-	else if( AddressLocal::af() && storage.p()->sa_family == AddressLocal::af() ) m_local = std::make_unique<AddressLocal>( storage.p() , storage.n() ) ;
-	else throw Address::BadFamily() ;
+	if( storage.p()->sa_family == 0 )
+		throw Address::BadFamily() ;
+	else if( Address4::af() && storage.p()->sa_family == Address4::af() )
+		m_ipv4 = std::make_unique<Address4>( storage.p() , storage.n() ) ;
+	else if( Address6::af() && storage.p()->sa_family == Address6::af() )
+		m_ipv6 = std::make_unique<Address6>( storage.p() , storage.n() ) ;
+	else if( AddressLocal::af() && storage.p()->sa_family == AddressLocal::af() )
+		m_local = std::make_unique<AddressLocal>( storage.p() , storage.n() ) ;
+	else
+		throw Address::BadFamily() ;
 }
 
 GNet::Address::Address( const sockaddr * addr , socklen_t len )
 {
-	if( addr == nullptr || len < sizeof(sockaddr::sa_family) ) throw Address::Error() ;
-	else if( addr->sa_family == 0 ) throw Address::BadFamily() ;
-	else if( Address4::af() && addr->sa_family == Address4::af() ) m_ipv4 = std::make_unique<Address4>( addr , len ) ;
-	else if( Address6::af() && addr->sa_family == Address6::af() ) m_ipv6 = std::make_unique<Address6>( addr , len ) ;
-	else if( AddressLocal::af() && addr->sa_family == AddressLocal::af() ) m_local = std::make_unique<AddressLocal>( addr , len ) ;
-	else throw Address::BadFamily() ;
+	if( addr == nullptr || len < sizeof(sockaddr::sa_family) )
+		throw Address::Error() ;
+	else if( addr->sa_family == 0 )
+		throw Address::BadFamily() ;
+	else if( Address4::af() && addr->sa_family == Address4::af() )
+		m_ipv4 = std::make_unique<Address4>( addr , len ) ;
+	else if( Address6::af() && addr->sa_family == Address6::af() )
+		m_ipv6 = std::make_unique<Address6>( addr , len ) ;
+	else if( AddressLocal::af() && addr->sa_family == AddressLocal::af() )
+		m_local = std::make_unique<AddressLocal>( addr , len ) ;
+	else
+		throw Address::BadFamily() ;
 }
 
 GNet::Address::Address( const sockaddr * addr , socklen_t len , bool ipv6_scope_id_fixup )
 {
-	if( addr == nullptr || len < sizeof(sockaddr::sa_family) ) throw Address::Error() ;
-	else if( addr->sa_family == 0 ) throw Address::BadFamily() ;
-	else if( Address4::af() && addr->sa_family == Address4::af() ) m_ipv4 = std::make_unique<Address4>( addr , len , ipv6_scope_id_fixup ) ;
-	else if( Address6::af() && addr->sa_family == Address6::af() ) m_ipv6 = std::make_unique<Address6>( addr , len , ipv6_scope_id_fixup ) ;
-	else if( AddressLocal::af() && addr->sa_family == AddressLocal::af() ) m_local = std::make_unique<AddressLocal>( addr , len , ipv6_scope_id_fixup ) ;
-	else throw Address::BadFamily() ;
+	if( addr == nullptr || len < sizeof(sockaddr::sa_family) )
+		throw Address::Error() ;
+	else if( addr->sa_family == 0 )
+		throw Address::BadFamily() ;
+	else if( Address4::af() && addr->sa_family == Address4::af() )
+		m_ipv4 = std::make_unique<Address4>( addr , len , ipv6_scope_id_fixup ) ;
+	else if( Address6::af() && addr->sa_family == Address6::af() )
+		m_ipv6 = std::make_unique<Address6>( addr , len , ipv6_scope_id_fixup ) ;
+	else if( AddressLocal::af() && addr->sa_family == AddressLocal::af() )
+		m_local = std::make_unique<AddressLocal>( addr , len , ipv6_scope_id_fixup ) ;
+	else
+		throw Address::BadFamily() ;
 }
 
 GNet::Address::Address( const std::string & s )
 {
 	std::string r1 , r2 , r3 ;
-	if( s.empty() ) throw Address::Error( "empty string" ) ;
-	else if( Address4::af() && Address4::validString(s,&r1) ) m_ipv4 = std::make_unique<Address4>( s ) ;
-	else if( Address6::af() && Address6::validString(s,&r2) ) m_ipv6 = std::make_unique<Address6>( s ) ;
-	else if( AddressLocal::af() && AddressLocal::validString(s,&r3) ) m_local = std::make_unique<AddressLocal>( s ) ;
-	else throw Address::Error( r1 , r1==r2?std::string():r2 , G::Str::printable(s) ) ;
+	if( s.empty() )
+		throw Address::Error( "empty string" ) ;
+	else if( Address4::af() && Address4::validString(s,&r1) )
+		m_ipv4 = std::make_unique<Address4>( s ) ;
+	else if( Address6::af() && Address6::validString(s,&r2) )
+		m_ipv6 = std::make_unique<Address6>( s ) ;
+	else if( AddressLocal::af() && AddressLocal::validString(s,&r3) )
+		m_local = std::make_unique<AddressLocal>( s ) ;
+	else
+		throw Address::Error( r1 , r1==r2?std::string():r2 , G::Str::printable(s) ) ;
 }
 
 GNet::Address::Address( const std::string & s , NotLocal )
 {
 	std::string r1 , r2 ;
-	if( s.empty() ) throw Address::Error( "empty string" ) ;
-	else if( Address4::af() && Address4::validString(s,&r1) ) m_ipv4 = std::make_unique<Address4>( s ) ;
-	else if( Address6::af() && Address6::validString(s,&r2) ) m_ipv6 = std::make_unique<Address6>( s ) ;
-	else throw Address::Error( r1 , r1==r2?std::string():r2 , G::Str::printable(s) ) ;
+	if( s.empty() )
+		throw Address::Error( "empty string" ) ;
+	else if( Address4::af() && Address4::validString(s,&r1) )
+		m_ipv4 = std::make_unique<Address4>( s ) ;
+	else if( Address6::af() && Address6::validString(s,&r2) )
+		m_ipv6 = std::make_unique<Address6>( s ) ;
+	else
+		throw Address::Error( r1 , r1==r2?std::string():r2 , G::Str::printable(s) ) ;
 }
 
 GNet::Address::Address( const std::string & host_part , const std::string & port_part )
 {
 	std::string r1 , r2 , r3 ;
-	if( host_part.empty() ) throw Address::Error( "empty string" ) ;
-	else if( Address4::af() && Address4::validStrings(host_part,port_part,&r1) ) m_ipv4 = std::make_unique<Address4>( host_part , port_part ) ;
-	else if( Address6::af() && Address6::validStrings(host_part,port_part,&r2) ) m_ipv6 = std::make_unique<Address6>( host_part , port_part ) ;
-	else if( AddressLocal::af() && AddressLocal::validStrings(host_part,port_part,&r3) ) m_local = std::make_unique<AddressLocal>( host_part , port_part ) ;
-	else throw Address::Error( r1 , r1==r2?std::string():r2 , G::Str::printable(host_part) + " " + G::Str::printable(port_part) ) ;
+	if( host_part.empty() )
+		throw Address::Error( "empty string" ) ;
+	else if( Address4::af() && Address4::validStrings(host_part,port_part,&r1) )
+		m_ipv4 = std::make_unique<Address4>( host_part , port_part ) ;
+	else if( Address6::af() && Address6::validStrings(host_part,port_part,&r2) )
+		m_ipv6 = std::make_unique<Address6>( host_part , port_part ) ;
+	else if( AddressLocal::af() && AddressLocal::validStrings(host_part,port_part,&r3) )
+		m_local = std::make_unique<AddressLocal>( host_part , port_part ) ;
+	else
+		throw Address::Error( r1 , r1==r2?std::string():r2 , G::Str::printable(host_part) + " " + G::Str::printable(port_part) ) ;
 }
 
 GNet::Address::Address( const std::string & host_part , unsigned int port )
 {
 	std::string r1 , r2 , r3 ;
-	if( host_part.empty() ) throw Address::Error( "empty string" ) ;
-	else if( Address4::af() && Address4::validStrings(host_part,"0",&r1) && Address4::validPort(port) ) m_ipv4 = std::make_unique<Address4>( host_part , port ) ;
-	else if( Address6::af() && Address6::validStrings(host_part,"0",&r2) && Address6::validPort(port) ) m_ipv6 = std::make_unique<Address6>( host_part , port ) ;
-	else if( AddressLocal::af() && AddressLocal::validStrings(host_part,"0",&r3) && AddressLocal::validPort(port) ) m_local = std::make_unique<AddressLocal>( host_part , port ) ;
-	else throw Address::Error( r1 , r1==r2?std::string():r2 , G::Str::printable(host_part) ) ;
+	if( host_part.empty() )
+		throw Address::Error( "empty string" ) ;
+	else if( Address4::af() && Address4::validStrings(host_part,"0",&r1) && Address4::validPort(port) )
+		m_ipv4 = std::make_unique<Address4>( host_part , port ) ;
+	else if( Address6::af() && Address6::validStrings(host_part,"0",&r2) && Address6::validPort(port) )
+		m_ipv6 = std::make_unique<Address6>( host_part , port ) ;
+	else if( AddressLocal::af() && AddressLocal::validStrings(host_part,"0",&r3) && AddressLocal::validPort(port) )
+		m_local = std::make_unique<AddressLocal>( host_part , port ) ;
+	else
+		throw Address::Error( r1 , r1==r2?std::string():r2 , G::Str::printable(host_part) ) ;
 }
 
 GNet::Address::Address( Family f , unsigned int port , int loopback_overload )
 {
-	if( Address4::af() && f == Address::Family::ipv4 ) m_ipv4 = std::make_unique<Address4>( port , loopback_overload ) ;
-	else if( Address6::af() && f == Address::Family::ipv6 ) m_ipv6 = std::make_unique<Address6>( port , loopback_overload ) ;
-	else if( AddressLocal::af() && f == Address::Family::local ) m_local = std::make_unique<AddressLocal>( port , loopback_overload ) ;
-	else throw Address::BadFamily() ;
+	if( Address4::af() && f == Address::Family::ipv4 )
+		m_ipv4 = std::make_unique<Address4>( port , loopback_overload ) ;
+	else if( Address6::af() && f == Address::Family::ipv6 )
+		m_ipv6 = std::make_unique<Address6>( port , loopback_overload ) ;
+	else if( AddressLocal::af() && f == Address::Family::local )
+		m_local = std::make_unique<AddressLocal>( port , loopback_overload ) ;
+	else
+		throw Address::BadFamily() ;
 }
 
 GNet::Address::Address( const Address & other )
 {
 	G_ASSERT( other.m_ipv4 || other.m_ipv6 || other.m_local ) ;
-	if( other.m_ipv4 ) m_ipv4 = std::make_unique<Address4>( *other.m_ipv4 ) ;
-	if( other.m_ipv6 ) m_ipv6 = std::make_unique<Address6>( *other.m_ipv6 ) ;
-	if( other.m_local ) m_local = std::make_unique<AddressLocal>( *other.m_local ) ;
+	if( other.m_ipv4 )
+		m_ipv4 = std::make_unique<Address4>( *other.m_ipv4 ) ;
+	if( other.m_ipv6 )
+		m_ipv6 = std::make_unique<Address6>( *other.m_ipv6 ) ;
+	if( other.m_local )
+		m_local = std::make_unique<AddressLocal>( *other.m_local ) ;
 }
 
 GNet::Address::Address( Address && other ) noexcept
@@ -178,6 +228,11 @@ GNet::Address GNet::Address::parse( const std::string & host_part , unsigned int
 GNet::Address GNet::Address::parse( const std::string & host_part , const std::string & port_part )
 {
 	return { host_part , port_part } ;
+}
+
+bool GNet::Address::isFamilyLocal( const std::string & s )
+{
+	return supports( Family::local ) && !s.empty() && s[0] == '/' ;
 }
 
 GNet::Address GNet::Address::defaultAddress()

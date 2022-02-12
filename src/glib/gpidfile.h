@@ -118,7 +118,6 @@ public:
 
 private:
 	static void create( const Path & pid_file ) ;
-	static std::string * new_string_ignore_leak( const std::string & ) ;
 	static Process::Id read( SignalSafe , const char * path ) noexcept ;
 	bool valid() const ;
 

@@ -23,6 +23,7 @@
 #include "gnetdone.h"
 #include "gmonitor.h"
 #include "geventloggingcontext.h"
+#include "gcleanup.h"
 #include "glimits.h"
 #include "groot.h"
 #include "glog.h"
@@ -45,6 +46,15 @@ GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
 	m_socket.listen( G::limits::net_listen_queue ) ;
 	m_socket.addReadHandler( *this , m_es ) ;
 	Monitor::addServer( *this ) ;
+
+	if( listening_address.family() == Address::Family::local )
+	{
+		std::string path = listening_address.hostPartString( true ) ;
+		if( path.size() > 1U && path.at(0U) == '/' ) // just in case
+		{
+			G::Cleanup::add( &Server::unlink , G::Cleanup::strdup(path) ) ;
+		}
+	}
 }
 
 GNet::Server::~Server()
@@ -172,6 +182,13 @@ std::vector<std::weak_ptr<GNet::ServerPeer> > GNet::Server::peers()
 void GNet::Server::writeEvent()
 {
 	G_DEBUG( "GNet::Server::writeEvent" ) ;
+}
+
+bool GNet::Server::unlink( G::SignalSafe , const char * path )
+{
+	if( path )
+		std::remove( path ) ;
+	return true ;
 }
 
 // ===

@@ -1,3 +1,26 @@
 News
 ----
-Unix domain socket support has been added for v2.2.1.
+E-MailRelay 2.2 is now fully C++11, so older compilers will not work unless
+they have a "-std=c++11" option or similar, and this also means that
+"uclibc++" is no longer supported.
+
+The behaviour with respect to the "--remote-clients" command-line option is
+changed in this release: previously IPv4 connections were allowed only from
+the host's local address, as determined by a DNS lookup, unless using
+"--remote-clients". The new implementation allows connections from any
+loopback or 'private use' address, defined in RFC-1918 and RFC-5735. This
+brings the IPv4 behaviour in line with IPv6, and it still honours the intent
+of the "--remote-clients" option in protecting the naive user against
+accidental exposore to the public internet.
+
+Some internationalisation support has been added, using gettext() for the
+main program and Qt's tr() for the GUI. See "doc/developer.txt".
+
+A systemd unit file has been added, although by default it is only installed
+as an "examples" file. Use "e_systemddir=/usr/lib/systemd/system" on the
+"./configure" command-line to have it installed by "make install".
+
+This release has a new "make tidy" option that runs "clang-tidy" over the
+code and also "make cmake" to generate simple cmake files for a unix build.
+
+Version 2.2.1 adds support for unix-domain sockets.

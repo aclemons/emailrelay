@@ -512,7 +512,7 @@ GNet::AcceptPair GNet::StreamSocket::accept()
 	return info ;
 }
 
-void GNet::StreamSocket::setOptionsOnCreate( Address::Family af , bool listener )
+void GNet::StreamSocket::setOptionsOnCreate( Address::Family af , bool /*listener*/ )
 {
 	if( af == Address::Family::ipv4 || af == Address::Family::ipv6 )
 	{

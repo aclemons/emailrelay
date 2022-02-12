@@ -287,23 +287,17 @@ void Main::Run::run()
 	m_monitor = std::make_unique<GNet::Monitor>() ;
 	m_monitor->signal().connect( G::Slot::slot(*this,&Run::onNetworkEvent) ) ;
 
-	// early check of the forward-to address
+	// early check that the forward-to address can be resolved
 	//
-	if( configuration().log() && !configuration().serverAddress().empty() && !configuration().forwardOnStartup() )
+	if( configuration().log() && !configuration().serverAddress().empty() && !configuration().forwardOnStartup() &&
+		!GNet::Address::isFamilyLocal( configuration().serverAddress() ) )
 	{
 		GNet::Location location( configuration().serverAddress() , resolverFamily() ) ;
-		if( !location.host().empty() && location.host().at(0U) == '/' )
-		{
-			; // no-op
-		}
+		std::string error = GNet::Resolver::resolve( location ) ;
+		if( !error.empty() )
+			G_WARNING( "Main::Run::run: " << format(gettext("dns lookup of forward-to address failed: %1%")) % error ) ;
 		else
-		{
-			std::string error = GNet::Resolver::resolve( location ) ;
-			if( !error.empty() )
-				G_WARNING( "Main::Run::run: " << format(gettext("dns lookup of forward-to address failed: %1%")) % error ) ;
-			else
-				G_LOG( "Main::Run::run: " << format(gettext("forwarding address %1%")) % location.displayString() ) ;
-		}
+			G_LOG( "Main::Run::run: " << format(gettext("forwarding address %1%")) % location.displayString() ) ;
 	}
 
 	// early check on the DNSBL configuration string

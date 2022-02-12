@@ -31,31 +31,39 @@ int GNet::AddressLocal::domain() noexcept
 	return 0 ;
 }
 
-GNet::AddressLocal::AddressLocal( std::nullptr_t )
+GNet::AddressLocal::AddressLocal( std::nullptr_t ) :
+	m_local{} ,
+	m_size(0U)
 {
 }
 
-GNet::AddressLocal::AddressLocal( unsigned int /*port*/ )
+GNet::AddressLocal::AddressLocal( unsigned int /*port*/ ) :
+	AddressLocal(nullptr)
 {
 }
 
-GNet::AddressLocal::AddressLocal( unsigned int /*port*/ , int /*loopback_overload*/ )
+GNet::AddressLocal::AddressLocal( unsigned int /*port*/ , int /*loopback_overload*/ ) :
+	AddressLocal(nullptr)
 {
 }
 
-GNet::AddressLocal::AddressLocal( const sockaddr * /*addr*/ , socklen_t /*len*/ , bool /*ipv6_scope_id_fixup*/ )
+GNet::AddressLocal::AddressLocal( const sockaddr * /*addr*/ , socklen_t /*len*/ , bool /*ipv6_scope_id_fixup*/ ) :
+	AddressLocal(nullptr)
 {
 }
 
-GNet::AddressLocal::AddressLocal( const std::string & /*host_part*/ , unsigned int /*port*/ )
+GNet::AddressLocal::AddressLocal( const std::string & /*host_part*/ , unsigned int /*port*/ ) :
+	AddressLocal(nullptr)
 {
 }
 
-GNet::AddressLocal::AddressLocal( const std::string & /*host_part*/ , const std::string & /*port_part*/ )
+GNet::AddressLocal::AddressLocal( const std::string & /*host_part*/ , const std::string & /*port_part*/ ) :
+	AddressLocal(nullptr)
 {
 }
 
-GNet::AddressLocal::AddressLocal( const std::string & /*display_string*/ )
+GNet::AddressLocal::AddressLocal( const std::string & /*display_string*/ ) :
+	AddressLocal(nullptr)
 {
 }
 
