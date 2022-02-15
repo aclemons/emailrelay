@@ -1,6 +1,7 @@
 emailrelay (2.2.1) unstable; urgency=low
   * Unix domain sockets.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Tue, 8 Feb 2022 00:00:00 +0000
+  * Support for MbedTLS version 3.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Tue, 14 Feb 2022 00:00:00 +0000
 
 emailrelay (2.2) unstable; urgency=low
   * Connections from IPv4 'private use' addresses are allowed by default (see "--remote-clients").

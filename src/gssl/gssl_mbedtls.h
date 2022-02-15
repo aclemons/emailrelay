@@ -42,6 +42,7 @@
 #include <mbedtls/sha1.h>
 #include <mbedtls/sha256.h>
 #include <mbedtls/sha512.h>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 #include <map>
@@ -118,7 +119,7 @@ class GSsl::MbedTls::Key
 public:
 	Key() ;
 	~Key() ;
-	void load( const std::string & file ) ;
+	void load( const std::string & file , const Rng & ) ;
 	mbedtls_pk_context * ptr() ;
 	mbedtls_pk_context * ptr() const ;
 
@@ -160,7 +161,7 @@ class GSsl::MbedTls::Error : public std::runtime_error
 {
 public:
 	explicit Error( const std::string & ) ;
-	Error( const std::string & , int rc , const std::string & more = std::string() ) ;
+	Error( const std::string & , int rc , const std::string & more = {} ) ;
 
 private:
 	static std::string format( const std::string & , int , const std::string & ) ;
@@ -283,6 +284,7 @@ public:
 	void logAt( int level_out , std::string ) const ;
 	const std::string & defaultPeerCertificateName() const ;
 	const std::string & defaultPeerHostName() const ;
+	int authmode() const ;
 
 private: // overrides
 	std::unique_ptr<ProtocolImpBase> newProtocol( const std::string & , const std::string & ) const override ;
@@ -305,6 +307,7 @@ private:
 	Key m_pk ;
 	Certificate m_certificate ;
 	Certificate m_ca_list ;
+	int m_authmode ;
 } ;
 
 //| \class GSsl::MbedTls::ProtocolImp

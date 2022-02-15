@@ -2,6 +2,12 @@
 E-MailRelay Change Log
 **********************
 
+2.2 -> 2.2.1
+============
+
+* Unix domain sockets.
+* Support for MbedTLS version 3.
+
 2.1 -> 2.2
 ==========
 
@@ -27,7 +33,7 @@ E-MailRelay Change Log
 * New *--idle-timeout* option for server-side connections.
 * Support for RFC-5782_ DNSBL_ blocking (\ *--dnsbl*\ ).
 * Filter scripts are given the path of the envelope file in argv2.
-* Message files can be editied by *--client-filter* scripts.
+* Message files can be edited by *--client-filter* scripts.
 * Better support for CRAM-SHAx authentication.
 * New *--client-auth-config* and *--server-auth-config* options.
 * New *--show* option on windows to better control the user interface style.

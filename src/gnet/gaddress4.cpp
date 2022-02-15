@@ -286,7 +286,7 @@ G::StringArray GNet::Address4::wildcards() const
 	part.reserve( 4U ) ;
 	G::Str::splitIntoFields( ip_string , part , "." ) ;
 
-	G_ASSERT( part.size() == 4U )
+	G_ASSERT( part.size() == 4U ) ;
 	if( part.size() != 4U )
 		return result ;
 

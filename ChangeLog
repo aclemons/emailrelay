@@ -4,6 +4,7 @@ E-MailRelay Change Log
 2.2 -> 2.2.1
 ------------
 * Unix domain sockets.
+* Support for MbedTLS version 3.
 
 2.1 -> 2.2
 ----------

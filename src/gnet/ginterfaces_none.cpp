@@ -60,7 +60,7 @@ std::vector<GNet::Address> GNet::Interfaces::addresses( const G::StringArray & n
 {
 	AddressList result ;
 	for( const auto & name : names )
-		result.push_back( Address(name,port) ) ; // throws if an interface name
+		result.push_back( Address::parse(name,port) ) ; // throws if an interface name
 	return result ;
 }
 
