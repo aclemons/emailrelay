@@ -66,7 +66,6 @@ public:
 	bool isLocal( std::string & ) const ;
 	bool isLinkLocal() const ;
 	bool isUniqueLocal() const ;
-	bool isMulticast() const ;
 	bool isAny() const ;
 	unsigned int bits() const ;
 	std::string displayString( bool ipv6_with_scope = false ) const ;

@@ -62,6 +62,7 @@ public:
 		std::string verifier_address ;
 		unsigned int verifier_timeout{0U} ;
 		GNet::ServerPeerConfig server_peer_config ;
+		GNet::ServerConfig server_config ;
 		ServerProtocol::Config protocol_config ;
 		std::string sasl_server_config ;
 		std::string dnsbl_config ;
@@ -83,6 +84,7 @@ public:
 		Config & set_verifier_address( const std::string & ) ;
 		Config & set_verifier_timeout( unsigned int ) ;
 		Config & set_server_peer_config( const GNet::ServerPeerConfig & ) ;
+		Config & set_server_config( const GNet::ServerConfig & ) ;
 		Config & set_protocol_config( const ServerProtocol::Config & ) ;
 		Config & set_sasl_server_config( const std::string & ) ;
 		Config & set_dnsbl_config( const std::string & ) ;
@@ -195,6 +197,7 @@ inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_timeout( unsign
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_address( const std::string & s ) { verifier_address = s ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_timeout( unsigned int t ) { verifier_timeout = t ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_server_peer_config( const GNet::ServerPeerConfig & c ) { server_peer_config = c ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_server_config( const GNet::ServerConfig & c ) { server_config = c ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_protocol_config( const ServerProtocol::Config & c ) { protocol_config = c ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_sasl_server_config( const std::string & s ) { sasl_server_config = s ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_dnsbl_config( const std::string & s ) { dnsbl_config = s ; return *this ; }

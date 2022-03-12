@@ -257,11 +257,6 @@ bool GNet::AddressLocal::isUniqueLocal() const
 	return true ;
 }
 
-bool GNet::AddressLocal::isMulticast() const
-{
-	return false ;
-}
-
 bool GNet::AddressLocal::isAny() const
 {
 	return path().empty() ;

@@ -207,7 +207,7 @@ GSmtp::Server::Server( GNet::ExceptionSink es , MessageStore & store ,
 	const GAuth::Secrets & client_secrets , const GAuth::Secrets & server_secrets ,
 	const Config & server_config , const std::string & forward_to ,
 	const GSmtp::Client::Config & client_config ) :
-		GNet::MultiServer(es,server_config.interfaces,server_config.port,"smtp",server_config.server_peer_config) ,
+		GNet::MultiServer(es,server_config.interfaces,server_config.port,"smtp",server_config.server_peer_config,server_config.server_config) ,
 		m_store(store) ,
 		m_server_config(server_config) ,
 		m_client_config(client_config) ,

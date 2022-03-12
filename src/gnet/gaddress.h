@@ -132,7 +132,7 @@ public:
 		///< Returns true if the given address display string looks
 		///< will parse to Family::local and Family::local is
 		///< supported. The address may still fail to parse if
-		///< it invalid.
+		///< it is invalid.
 
 	static Address defaultAddress() ;
 		///< Returns a default address, being the IPv4 wildcard address
@@ -248,9 +248,6 @@ public:
 		///< Returns true if this seems to be a 'local' address, ie. an
 		///< address that is likely to be more trusted. Returns an
 		///< explanation by reference otherwise.
-
-	bool isMulticast() const ;
-		///< Returns true if this is a multicast address.
 
 	bool is4() const ;
 		///< Returns true if family() is ipv4.

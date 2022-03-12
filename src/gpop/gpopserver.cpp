@@ -84,7 +84,7 @@ void GPop::ServerPeer::onSecure( const std::string & , const std::string & , con
 // ===
 
 GPop::Server::Server( GNet::ExceptionSink es , Store & store , const GAuth::SaslServerSecrets & secrets , const Config & config ) :
-	GNet::MultiServer(es,config.addresses,config.port,"pop",config.server_peer_config) ,
+	GNet::MultiServer(es,config.addresses,config.port,"pop",config.server_peer_config,config.server_config) ,
 	m_config(config) ,
 	m_store(store) ,
 	m_secrets(secrets)
@@ -138,11 +138,13 @@ GPop::Server::Config::Config() :
 }
 
 GPop::Server::Config::Config( bool allow_remote_ , unsigned int port_ , const G::StringArray & addresses_ ,
-	const GNet::ServerPeerConfig & server_peer_config_ , const std::string & sasl_server_config_ ) :
+	const GNet::ServerPeerConfig & server_peer_config_ , const GNet::ServerConfig & server_config_ ,
+	const std::string & sasl_server_config_ ) :
 		allow_remote(allow_remote_) ,
 		port(port_) ,
 		addresses(addresses_) ,
 		server_peer_config(server_peer_config_) ,
+		server_config(server_config_) ,
 		sasl_server_config(sasl_server_config_)
 {
 }

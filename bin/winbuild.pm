@@ -34,6 +34,7 @@
 #  winbuild::clean_cmake_cache_files(...) ;
 #  winbuild::deltree(...) ;
 #  winbuild::run_msbuild(...) ;
+#  winbuild::translate(...) ;
 #  winbuild::create_touchfile(...) ;
 #  winbuild::read_makefiles(...) ;
 #  winbuild::read_makefiles_imp(...) ;
@@ -323,6 +324,19 @@ sub run_msbuild
 	if( $^O eq "linux" ) { $msbuild = ("make") ; @msbuild_args = ( $target ) }
 	my $rc = system( $msbuild , @msbuild_args ) ;
 	print "msbuild-exit=[$rc]\n" ;
+	die unless $rc == 0 ;
+}
+
+sub translate
+{
+	my ( $arch , $qt_dirs , $xx_XX , $xx ) = @_ ;
+	my $dir = $qt_dirs->{$arch} ;
+	$dir = File::Basename::dirname( $dir ) ;
+	$dir = File::Basename::dirname( $dir ) ;
+	$dir = File::Basename::dirname( $dir ) ;
+	my $tool = join( "/" , $dir , "bin" , "lrelease.exe" ) ;
+	my $rc = system( $tool , "src/gui/emailrelay_tr.$xx_XX.ts" , "-qm" , "src/gui/emailrelay.$xx.qm" ) ;
+	print "lrelease-exit=[$rc]\n" ;
 	die unless $rc == 0 ;
 }
 

@@ -210,7 +210,7 @@ where &lt;option&gt; is:
 *   \-\-hidden (-H)
 
     Windows only. Hides the application window and disables all message boxes,
-    overriding any ``--show`` option. This is useful when running  as a windows
+    overriding any `--show` option. This is useful when running  as a windows
     service.
 
 *   \-\-idle-timeout &lt;time&gt;
@@ -895,6 +895,37 @@ Eg:
         --as-client ipv4or6.example.com:25 --client-interface 0.0.0.0
         --as-client ipv4or6.example.com:25 --client-interface ::
 
+Unix domain sockets
+-------------------
+E-MailRelay on Unix will listen on unix-domain sockets instead of IPv4 or IPv6
+if the `--interface` option is given as an absolute file-system path:
+
+Eg:
+
+        --interface=/run/smtp.s --port=0
+
+When listening on more than one unix-domain socket use the extended form of the
+`--interface` option with a prefix of `smtp=`, `pop=`, or `admin=`:
+
+Eg:
+
+        --interface=smtp=/run/smtp.s --port=0 --interface=pop=/run/pop.s --pop --pop-port=0
+
+The forwarding address can also be a unix-domain address:
+
+Eg:
+
+        --forward-to=/run/smtp.s
+
+And it is also possible to communicate with message filters over a unix-domain
+socket:
+
+Eg:
+
+        --filter=net:/run/filter.s
+        --filter=spam:/run/spamd.s
+        --filter=spam-edit:/run/spamd.s
+
 SOCKS
 -----
 E-MailRelay can use a [SOCKS][] 4a proxy for establishing outgoing SMTP
@@ -1184,7 +1215,8 @@ simple command-line interface which is compatible with `netcat` and `telnet`:
         E-MailRelay> quit
 
 The `flush` command is used to get the E-MailRelay server to forward spooled
-mail to the next SMTP server.
+mail to the next SMTP server. The `forward` command does the same but without
+waiting for completion.
 
 The `list` command lists the messages in the spool directory, `status` provides
 network status information and activity statistics, and `notify` enables
@@ -1222,6 +1254,7 @@ Installation directories can be defined at build-time by the following
 * e_docdir=&lt;dir&gt;
 * e_examplesdir=&lt;dir&gt;
 * e_icondir=&lt;dir&gt;
+* e_trdir=&lt;dir&gt;
 * e_initdir=&lt;dir&gt;
 * e_libexecdir=&lt;dir&gt;
 * e_pamdir=&lt;dir&gt;

@@ -23,4 +23,6 @@ as an "examples" file. Use "e_systemddir=/usr/lib/systemd/system" on the
 This release has a new "make tidy" option that runs "clang-tidy" over the
 code and also "make cmake" to generate simple cmake files for a unix build.
 
-Version 2.2.1 adds support for unix-domain sockets.
+Version 2.2.1 adds support for unix-domain sockets. 
+
+Thanks to Per-Arne Christensen for the Norwegian translation of the GUI.

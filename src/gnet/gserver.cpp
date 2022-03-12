@@ -24,13 +24,15 @@
 #include "gmonitor.h"
 #include "geventloggingcontext.h"
 #include "gcleanup.h"
+#include "gprocess.h"
 #include "glimits.h"
 #include "groot.h"
 #include "glog.h"
 #include "gassert.h"
+#include <algorithm>
 
 GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
-	ServerPeerConfig server_peer_config ) :
+	ServerPeerConfig server_peer_config , ServerConfig server_config ) :
 		m_es(es) ,
 		m_server_peer_config(server_peer_config) ,
 		m_socket(listening_address.family(),StreamSocket::Listener())
@@ -38,19 +40,29 @@ GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
 	G_DEBUG( "GNet::Server::ctor: listening on socket " << m_socket.asString()
 		<< " with address " << listening_address.displayString() ) ;
 
+	bool uds = listening_address.family() == Address::Family::local ;
+	if( uds )
+	{
+		bool open = server_config.uds_open_permissions ;
+		using Mode = G::Process::Umask::Mode ;
+		G::Root claim_root( false ) ; // group ownership from the effective group-id
+		G::Process::Umask set_umask( open ? Mode::Open : Mode::Tighter ) ;
+		m_socket.bind( listening_address ) ;
+	}
+	else
 	{
 		G::Root claim_root ;
 		m_socket.bind( listening_address ) ;
 	}
 
-	m_socket.listen( G::limits::net_listen_queue ) ;
+	m_socket.listen( std::max(1,server_config.listen_queue) ) ;
 	m_socket.addReadHandler( *this , m_es ) ;
 	Monitor::addServer( *this ) ;
 
-	if( listening_address.family() == Address::Family::local )
+	if( uds )
 	{
 		std::string path = listening_address.hostPartString( true ) ;
-		if( path.size() > 1U && path.at(0U) == '/' ) // just in case
+		if( path.size() > 1U && path.at(0U) == '/' ) // (just in case)
 		{
 			G::Cleanup::add( &Server::unlink , G::Cleanup::strdup(path) ) ;
 		}
@@ -184,11 +196,9 @@ void GNet::Server::writeEvent()
 	G_DEBUG( "GNet::Server::writeEvent" ) ;
 }
 
-bool GNet::Server::unlink( G::SignalSafe , const char * path )
+bool GNet::Server::unlink( G::SignalSafe , const char * path ) noexcept
 {
-	if( path )
-		std::remove( path ) ;
-	return true ;
+	return path ? ( std::remove(path) == 0 ) : true ;
 }
 
 // ===

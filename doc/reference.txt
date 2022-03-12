@@ -178,7 +178,7 @@ where <option> is:
 
 # --hidden (-H)
   Windows only. Hides the application window and disables all message boxes,
-  overriding any ""--show"" option. This is useful when running  as a windows
+  overriding any "--show" option. This is useful when running  as a windows
   service.
 
 # --idle-timeout <time>
@@ -1136,7 +1136,8 @@ simple command-line interface which is compatible with "netcat" and "telnet":
 	E-MailRelay> quit
 
 The "flush" command is used to get the E-MailRelay server to forward spooled
-mail to the next SMTP server.
+mail to the next SMTP server. The "forward" command does the same but without
+waiting for completion.
 
 The "list" command lists the messages in the spool directory, "status" provides
 network status information and activity statistics, and "notify" enables
@@ -1173,6 +1174,7 @@ Installation directories can be defined at build-time by the following
 * e_docdir=<dir>
 * e_examplesdir=<dir>
 * e_icondir=<dir>
+* e_trdir=<dir>
 * e_initdir=<dir>
 * e_libexecdir=<dir>
 * e_pamdir=<dir>

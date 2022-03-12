@@ -3,7 +3,9 @@ E-MailRelay Change Log
 
 2.2 -> 2.2.1
 ------------
-* Unix domain sockets.
+* Unix domain sockets supported (eg. "--interface=/tmp/smtp.s").
+* Windows event log not used for verbose logging (prefer "--log-file").
+* New admin 'forward' command to trigger forwarding without waiting.
 * Support for MbedTLS version 3.
 
 2.1 -> 2.2
@@ -29,7 +31,7 @@ E-MailRelay Change Log
 * New "--idle-timeout" option for server-side connections.
 * Support for RFC-5782 DNSBL blocking ("--dnsbl").
 * Filter scripts are given the path of the envelope file in argv2.
-* Message files can be editied by "--client-filter" scripts.
+* Message files can be edited by "--client-filter" scripts.
 * Better support for CRAM-SHAx authentication.
 * New "--client-auth-config" and "--server-auth-config" options.
 * New "--show" option on windows to better control the user interface style.

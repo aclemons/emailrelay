@@ -39,7 +39,7 @@ namespace G
 		template <typename T>
 		void open( T & io , const char * path , std::ios_base::openmode mode )
 		{
-			#if GCONFIG_HAVE_EXTENDEND_OPEN
+			#if GCONFIG_HAVE_EXTENDED_OPEN
 				io.open( path , mode , _SH_DENYNO ) ; // _fsopen()
 			#else
 				io.open( path , mode ) ;

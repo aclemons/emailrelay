@@ -54,7 +54,8 @@ public:
 	} ;
 
 	MultiServer( ExceptionSink listener_exception_sink , const G::StringArray & addresses ,
-		unsigned int port , const std::string & server_type , ServerPeerConfig server_peer_config ) ;
+		unsigned int port , const std::string & server_type , ServerPeerConfig server_peer_config ,
+		ServerConfig server_config ) ;
 			///< Constructor. The server listens on on the specific local
 			///< addresses, given as either interface names (eg. "eth0")
 			///< or IP network addresses (eg. "::1") together with a
@@ -106,7 +107,7 @@ private:
 	friend class GNet::MultiServerImp ;
 	AddressList addresses( unsigned int ) const ;
 	AddressList addresses( unsigned int , G::StringArray & , G::StringArray & ) const ;
-	void init( const AddressList & address_list , ServerPeerConfig ) ;
+	void init( const AddressList & address_list ) ;
 	bool gotServerFor( const Address & ) const ;
 	void onInterfaceEventTimeout() ;
 	static bool match( const Address & , const Address & ) ;
@@ -120,6 +121,7 @@ private:
 	unsigned int m_port ;
 	std::string m_server_type ;
 	ServerPeerConfig m_server_peer_config ;
+	ServerConfig m_server_config ;
 	Interfaces m_if ;
 	ServerList m_server_list ;
 	Timer<MultiServer> m_interface_event_timer ;
@@ -131,7 +133,7 @@ private:
 class GNet::MultiServerImp : public GNet::Server
 {
 public:
-	MultiServerImp( MultiServer & , ExceptionSink , const Address & , ServerPeerConfig ) ;
+	MultiServerImp( MultiServer & , ExceptionSink , const Address & , ServerPeerConfig , ServerConfig ) ;
 		///< Constructor.
 
 	~MultiServerImp() override ;

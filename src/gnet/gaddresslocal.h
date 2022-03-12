@@ -29,7 +29,11 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #else
+#ifdef G_DOXYGEN
+struct sockaddr_un ;
+#else
 struct sockaddr_un {} ;
+#endif
 #endif
 
 namespace GNet
@@ -80,7 +84,6 @@ public:
 	bool isLocal( std::string & ) const ;
 	bool isLinkLocal() const ;
 	bool isUniqueLocal() const ;
-	bool isMulticast() const ;
 	bool isAny() const ;
 	unsigned int bits() const ;
 	std::string displayString( bool ipv6_with_scope = false ) const ;

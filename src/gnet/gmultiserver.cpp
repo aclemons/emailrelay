@@ -29,12 +29,13 @@
 #include <algorithm>
 
 GNet::MultiServer::MultiServer( ExceptionSink es , const G::StringArray & interfaces , unsigned int port ,
-	const std::string & server_type , ServerPeerConfig server_peer_config ) :
+	const std::string & server_type , ServerPeerConfig server_peer_config , ServerConfig server_config ) :
 		m_es(es) ,
 		m_interfaces(interfaces) ,
 		m_port(port) ,
 		m_server_type(server_type) ,
 		m_server_peer_config(server_peer_config) ,
+		m_server_config(server_config) ,
 		m_if(es,*this) ,
 		m_interface_event_timer(*this,&MultiServer::onInterfaceEventTimeout,es)
 {
@@ -65,7 +66,7 @@ GNet::MultiServer::MultiServer( ExceptionSink es , const G::StringArray & interf
 	}
 
 	// bind the listening addresses, etc
-	init( address_list , server_peer_config ) ;
+	init( address_list ) ;
 
 	// warn if we got addresses from an interface name but won't get dynamic updates
 	if( !used_names.empty() && !Interfaces::active() )
@@ -111,11 +112,11 @@ std::vector<GNet::Address> GNet::MultiServer::addresses( unsigned int port , G::
 	return result ;
 }
 
-void GNet::MultiServer::init( const AddressList & address_list , ServerPeerConfig server_peer_config )
+void GNet::MultiServer::init( const AddressList & address_list )
 {
 	for( const auto & address : address_list )
 	{
-		m_server_list.emplace_back( std::make_unique<MultiServerImp>( *this , m_es,address , server_peer_config ) ) ;
+		m_server_list.emplace_back( std::make_unique<MultiServerImp>( *this , m_es , address , m_server_peer_config , m_server_config ) ) ;
 	}
 }
 
@@ -171,7 +172,7 @@ void GNet::MultiServer::onInterfaceEventTimeout()
 		{
 			try
 			{
-				m_server_list.emplace_back( std::make_unique<MultiServerImp>( *this , m_es , address , m_server_peer_config ) ) ;
+				m_server_list.emplace_back( std::make_unique<MultiServerImp>( *this , m_es , address , m_server_peer_config , m_server_config ) ) ;
 				G_LOG_S( "GNet::MultiServer::onInterfaceEvent: new " << m_server_type
 					<< " server on " << displayString(address) ) ;
 			}
@@ -242,8 +243,8 @@ std::vector<std::weak_ptr<GNet::ServerPeer> > GNet::MultiServer::peers()
 // ==
 
 GNet::MultiServerImp::MultiServerImp( MultiServer & ms , ExceptionSink es , const Address & address ,
-	ServerPeerConfig server_peer_config ) :
-		GNet::Server(es,address,server_peer_config) ,
+	ServerPeerConfig server_peer_config , ServerConfig server_config ) :
+		GNet::Server(es,address,server_peer_config,server_config) ,
 		m_ms(ms) ,
 		m_address(address)
 {

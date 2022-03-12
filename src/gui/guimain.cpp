@@ -284,11 +284,14 @@ int main( int argc , char * argv [] )
 				G_LOG( "main: locale: " << GQt::stdstr(QLocale::system().name()) ) ; // eg. "en_GB"
 				bool loaded = false ;
 				G::Path qmfile = value( args , "--qm" ) ;
+				G::Path qmdir = value( args , "--qmdir" ) ;
+				if( qmdir.empty() )
+					qmdir = argv0.dirname() + "translations" ;
 				if( !qmfile.empty() )
 					loaded = translator.load( GQt::qstr(qmfile.str()) ) ;
 				if( !loaded )
 					loaded = translator.load( QLocale() , GQt::qstr("emailrelay") , GQt::qstr(".") ,
-						GQt::qstr((argv0.dirname()+"translations").str()) ) ;
+						GQt::qstr(qmdir.str()) , GQt::qstr(".qm") ) ;
 				if( loaded )
 					QCoreApplication::installTranslator( &translator ) ;
 				else

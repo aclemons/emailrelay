@@ -83,6 +83,7 @@ Main::Run::Run( Main::Output & output , const G::Arg & arg , bool is_windows , b
 {
 	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&Run::onClientDone) ) ;
 	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&Run::onClientEvent) ) ;
+	m_forward_request_signal.connect( G::Slot::slot(*this,&Run::onForwardRequest) ) ;
 
 	// initialise gettext() early iff "--localedir" is used
 	std::string ldir = localedir() ;
@@ -111,6 +112,7 @@ Main::Run::~Run()
 	if( m_smtp_server ) m_smtp_server->eventSignal().disconnect() ;
 	if( m_store ) m_store->messageStoreRescanSignal().disconnect() ;
 	if( m_monitor ) m_monitor->signal().disconnect() ;
+	m_forward_request_signal.disconnect() ;
 	m_client_ptr.deletedSignal().disconnect() ;
 	m_client_ptr.eventSignal().disconnect() ;
 }
@@ -362,7 +364,7 @@ void Main::Run::run()
 			*m_store ,
 			*m_client_secrets ,
 			*m_server_secrets ,
-			serverConfig() ,
+			smtpServerConfig() ,
 			configuration().immediate() ? configuration().serverAddress() : std::string() ,
 			clientConfig() ) ;
 
@@ -392,7 +394,9 @@ void Main::Run::run()
 			m_es_rethrow ,
 			configuration() ,
 			*m_store ,
+			m_forward_request_signal ,
 			GNet::ServerPeerConfig(0U) ,
+			netServerConfig() ,
 			clientConfig() ,
 			*m_client_secrets ,
 			versionNumber() ) ;
@@ -555,7 +559,14 @@ GSmtp::ServerProtocol::Config Main::Run::serverProtocolConfig() const
 			.set_allow_pipelining( configuration().smtpPipelining() ) ;
 }
 
-GSmtp::Server::Config Main::Run::serverConfig() const
+GNet::ServerConfig Main::Run::netServerConfig() const
+{
+	bool open = configuration().user().empty() || configuration().user() == "root" ;
+	return GNet::ServerConfig()
+		.set_uds_open_permissions( open ) ;
+}
+
+GSmtp::Server::Config Main::Run::smtpServerConfig() const
 {
 	return
 		GSmtp::Server::Config()
@@ -569,6 +580,7 @@ GSmtp::Server::Config Main::Run::serverConfig() const
 			.set_verifier_address( configuration().verifier().str() )
 			.set_verifier_timeout( configuration().filterTimeout() )
 			.set_server_peer_config( GNet::ServerPeerConfig(configuration().idleTimeout()) )
+			.set_server_config( netServerConfig() )
 			.set_protocol_config( serverProtocolConfig() )
 			.set_sasl_server_config( configuration().smtpSaslServerConfig() )
 			.set_dnsbl_config( configuration().dnsbl() ) ;
@@ -584,6 +596,7 @@ GPop::Server::Config Main::Run::popConfig() const
 			.set_server_peer_config(
 				GNet::ServerPeerConfig()
 					.set_idle_timeout( configuration().idleTimeout()) )
+			.set_server_config( netServerConfig() )
 			.set_sasl_server_config( configuration().popSaslServerConfig() ) ;
 }
 
@@ -626,6 +639,11 @@ void Main::Run::onPollTimeout()
 	G_DEBUG( "Main::Run::onPollTimeout" ) ;
 	m_poll_timer->startTimer( configuration().pollingTimeout() ) ;
 	requestForwarding( "poll" ) ;
+}
+
+void Main::Run::onForwardRequest( std::string reason )
+{
+	requestForwarding( reason ) ;
 }
 
 void Main::Run::requestForwarding( const std::string & reason )
@@ -858,7 +876,8 @@ G::Path Main::Run::appDir() const
 
 std::unique_ptr<GSmtp::AdminServer> Main::Run::newAdminServer( GNet::ExceptionSink es ,
 	const Configuration & cfg , GSmtp::MessageStore & store ,
-	const GNet::ServerPeerConfig & server_peer_config ,
+	G::Slot::Signal<std::string> & forward_request_signal ,
+	const GNet::ServerPeerConfig & server_peer_config , const GNet::ServerConfig & net_server_config ,
 	const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
 	const std::string & version_number )
 {
@@ -875,7 +894,9 @@ std::unique_ptr<GSmtp::AdminServer> Main::Run::newAdminServer( GNet::ExceptionSi
 	return std::make_unique<GSmtp::AdminServer>(
 			es ,
 			store ,
+			forward_request_signal ,
 			server_peer_config ,
+			net_server_config ,
 			client_config ,
 			client_secrets ,
 			cfg.listeningAddresses("admin") ,

@@ -62,8 +62,13 @@
 
 G_EXCEPTION_CLASS( NoBody , "no body text" ) ;
 
+std::string versionNumber()
+{
+	return "2.2.1" ;
+}
+
 static std::string writeFiles( const G::Path & spool_dir ,
-	const G::StringArray & to_list , const std::string & from ,
+	const G::StringArray & envelope_to_list , const std::string & from ,
 	const std::string & from_auth_in , const std::string & from_auth_out ,
 	const G::StringArray & content , std::istream & instream )
 {
@@ -75,7 +80,7 @@ static std::string writeFiles( const G::Path & spool_dir ,
 
 	// add "To:" lines to the envelope
 	//
-	for( auto to : to_list )
+	for( auto to : envelope_to_list )
 	{
 		G::Str::trim( to , {" \t\r\n",4U} ) ;
 		GSmtp::VerifierStatus status( to ) ;
@@ -121,7 +126,7 @@ static void copyIntoSubDirectories( const G::Path & content_path )
 	std::string envelope_filename = content_path.withExtension("envelope").basename() ;
 	G::Path src = spool_dir.path() + envelope_filename ;
 
-	G::Process::Umask::set( G::Process::Umask::Mode::Tighter ) ; // 0117 => -rw-rw----
+	G::Process::Umask set_umask( G::Process::Umask::Mode::Tighter ) ; // 0117 => -rw-rw----
 	unsigned int dir_count = 0U ;
 	unsigned int copy_count = 0U ;
 	G::DirectoryIterator iter( spool_dir ) ;
@@ -162,12 +167,13 @@ static void run( const G::Arg & arg )
 		"c!copy!copy into spool sub-directories!!0!!2|"
 		"n!filename!prints the name of the created content file!!0!!2|"
 
-		"C!content!set a line of content! and ignore stdin!2!base64!3|"
+		"C!content!sets a line of content! and ignores stdin!2!base64!3|"
 		"a!auth!sets the envelope authentication value!!1!name!3|"
 		"i!from-auth-in!sets the envelope from-auth-in value!!1!name!3|"
 		"o!from-auth-out!sets the envelope from-auth-out value!!1!name!3|"
 
-		"h!help!shows this help!!0!!2"
+		"h!help!shows this help!!0!!2|"
+		"V!version!prints the version and exits!!0!!2|"
 	) ;
 
 	if( opt.hasErrors() )
@@ -192,6 +198,10 @@ static void run( const G::Arg & arg )
 			<< Main::Legal::copyright()
 			<< std::endl ;
 	}
+	else if( opt.contains("version") )
+	{
+		std::cout << versionNumber() << std::endl ;
+	}
 	else if( opt.args().c() == 1U )
 	{
 		std::cerr
@@ -215,9 +225,9 @@ static void run( const G::Arg & arg )
 			( opt.value("from-auth-out","").empty() ? std::string("<>") : G::Xtext::encode(opt.value("from-auth-out","")) ) :
 			std::string() ;
 
-		// prepare the to-list
-		G::StringArray opt_to_list = opt.args().array(1U) ;
-		std::for_each( opt_to_list.begin() , opt_to_list.end() ,
+		// prepare the envelope-to-list from command-line args
+		G::StringArray envelope_to_list = opt.args().array(1U) ;
+		std::for_each( envelope_to_list.begin() , envelope_to_list.end() ,
 			[](std::string &to){if(!to.empty()&&to[0]=='\\')to=to.substr(1U);} ) ;
 
 		// allow @app in the spool-dir
@@ -247,7 +257,7 @@ static void run( const G::Arg & arg )
 			}
 		}
 
-		// find the 'from' address if necessary from the headers
+		// find an 'envelope-from' address if necessary from the headers
 		std::string from = opt_from ;
 		bool from_in_headers = false ;
 		if( from.empty() )
@@ -270,17 +280,27 @@ static void run( const G::Arg & arg )
 		// add synthetic content headers
 		if( opt_content_date )
 		{
-			auto now = G::SystemTime::now() ;
-			auto tm = now.local() ;
-			G::Date date( tm ) ;
-			std::string zone = G::DateTime::offsetString( G::DateTime::offset(now) ) ;
-			std::string date_str = date.dd() + " " + date.monthName(true) + " " + date.yyyy() ;
-			std::string time_str = G::Time(tm).hhmmss(":") ;
-			content.insert( content.begin() , G::Str::join(" ","Date:",date_str,time_str,zone) ) ;
+			bool have_date = false ;
+			for( const auto & line : content )
+			{
+				have_date = line.find("Date: ") == 0U ;
+				if( have_date || line.empty() )
+					break ;
+			}
+			if( !have_date )
+			{
+				auto now = G::SystemTime::now() ;
+				auto tm = now.local() ;
+				G::Date date( tm ) ;
+				std::string zone = G::DateTime::offsetString( G::DateTime::offset(now) ) ;
+				std::string date_str = date.dd() + " " + date.monthName(true) + " " + date.yyyy() ;
+				std::string time_str = G::Time(tm).hhmmss(":") ;
+				content.insert( content.begin() , G::Str::join(" ","Date:",date_str,time_str,zone) ) ;
+			}
 		}
-		if( opt_content_to )
+		if( opt_content_to ) // add 'envelope-to' addresses as content To: headers
 		{
-			for( const auto & to : opt_to_list )
+			for( const auto & to : envelope_to_list )
 				content.insert( content.begin() , "To: "+to ) ;
 		}
 		if( opt_content_from && !from_in_headers )
@@ -290,7 +310,7 @@ static void run( const G::Arg & arg )
 
 		// generate the two files
 		std::stringstream empty ;
-		std::string new_path = writeFiles( opt_spool_dir , opt_to_list , from ,
+		std::string new_path = writeFiles( opt_spool_dir , envelope_to_list , from ,
 			opt_from_auth_in , opt_from_auth_out , content ,
 			opt.contains("content") ? empty : std::cin ) ;
 

@@ -105,7 +105,7 @@ public:
 
 	bool positive() const ;
 		///< Returns true if the numeric value of the
-		///< reply is less that four hundred.
+		///< reply is less than four hundred.
 
 	bool is( Value v ) const ;
 		///< Returns true if the reply value is 'v'.

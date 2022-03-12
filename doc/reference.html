@@ -15,7 +15,7 @@
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay [<option> [<option> ...]] [<config-file>]
+       <pre>emailrelay [&lt;option&gt; [&lt;option&gt; ...]] [&lt;config-file&gt;]
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -595,9 +595,9 @@ envelope="${2}"
 ip="`awk '/MailRelay-Client:/ {print $2;exit}' \"${envelope}\"`"
 if test "${ip}" = "192.168.0.2"
 then
-    /usr/sbin/sendmail -t < "${content}"
+    /usr/sbin/sendmail -t &lt; "${content}"
     rm -f "${envelope}" "${content}"
-    exit 100 # <= cancel further processing by emailrelay
+    exit 100 # &lt;= cancel further processing by emailrelay
 fi
 exit 0
 </pre>
@@ -1083,6 +1083,49 @@ password required pam_deny.so
        <pre>--as-client ipv4or6.example.com:25 --client-interface 0.0.0.0
 --as-client ipv4or6.example.com:25 --client-interface ::</pre>
       </div><!-- div-pre -->
+   <h2><a class="a-header" name="SH_1_99">Unix domain sockets</a></h2> <!-- index:2:SH:1:99:Unix domain sockets -->
+    <p>
+     E-MailRelay on Unix will listen on unix-domain sockets instead of IPv4 or IPv6
+     if the <em>--interface</em> option is given as an absolute file-system path:
+    </p>
+
+    <p>
+     Eg:
+    </p>
+      <div class="div-pre">
+       <pre>--interface=/run/smtp.s --port=0</pre>
+      </div><!-- div-pre -->
+    <p>
+     When listening on more than one unix-domain socket use the extended form of the
+     "--interface" option with a prefix of "smtp=", "pop=", or "admin=":
+    </p>
+    <p>
+     Eg:
+    </p>
+      <div class="div-pre">
+       <pre>--interface=smtp=/run/smtp.s --port=0 --interface=pop=/run/pop.s --pop --pop-port=0</pre>
+      </div><!-- div-pre -->
+    <p>
+     The forwarding address can also be a unix-domain address:
+    </p>
+    <p>
+     Eg:
+    </p>
+      <div class="div-pre">
+       <pre>--forward-to=/run/smtp.s</pre>
+      </div><!-- div-pre -->
+    <p>
+     And it is also possible to communicate with message filters over a unix-domain
+     socket:
+    </p>
+    <p>
+     Eg:
+    </p>
+      <div class="div-pre">
+       <pre>--filter=net:/run/filter.s
+--filter=spam:/run/spamd.s
+--filter=spam-edit:/run/spamd.s</pre>
+      </div><!-- div-pre -->
    <h2><a class="a-header" name="SH_1_9">SOCKS</a></h2> <!-- index:2:SH:1:9:SOCKS -->
     <p>
      E-MailRelay can use a SOCKS 4a proxy for establishing outgoing SMTP
@@ -1167,7 +1210,7 @@ exit 1
       <div class="div-pre">
        <pre>#!/bin/sh
 # address verifier -- accept as local (250)
-echo Local Postmaster '<postmaster@localhost>'
+echo Local Postmaster '&lt;postmaster@localhost&gt;'
 echo postmaster
 exit 0
 </pre>
@@ -1229,7 +1272,7 @@ exit 100
        <pre>#!/bin/sh
 # address verifier -- accept only if containing an at sign
 address="$1"
-expr "$address" : ".*@" > /dev/null || exit 2
+expr "$address" : ".*@" &gt; /dev/null || exit 2
 echo ""
 echo "$address"
 exit 1 # accept
@@ -1444,13 +1487,14 @@ catch( e )
       <div class="div-pre">
        <pre>$ emailrelay --as-server --port=125 --forward-to=localhost:25 --admin=10026
 $ telnet localhost 10026
-E-MailRelay> help
-E-MailRelay> quit
+E-MailRelay&gt; help
+E-MailRelay&gt; quit
 </pre>
       </div><!-- div-pre -->
     <p>
      The <em>flush</em> command is used to get the E-MailRelay server to forward spooled
-     mail to the next SMTP server.
+     mail to the next SMTP server. The <em>forward</em> command does the same but without
+     waiting for completion.
     </p>
 
     <p>
@@ -1497,6 +1541,7 @@ E-MailRelay> quit
      <li>e_docdir=&lt;dir&gt;</li>
      <li>e_examplesdir=&lt;dir&gt;</li>
      <li>e_icondir=&lt;dir&gt;</li>
+     <li>e_trdir=&lt;dir&gt;</li>
      <li>e_initdir=&lt;dir&gt;</li>
      <li>e_libexecdir=&lt;dir&gt;</li>
      <li>e_pamdir=&lt;dir&gt;</li>

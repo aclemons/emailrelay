@@ -58,7 +58,6 @@ private: // overrides
 	void dropRead( Descriptor fd ) noexcept override ;
 	void dropWrite( Descriptor fd ) noexcept override ;
 	void dropOther( Descriptor fd ) noexcept override ;
-	std::string report() const override ;
 	void disarm( ExceptionHandler * ) noexcept override ;
 
 public:
@@ -316,11 +315,6 @@ void GNet::EventLoopImp::addOther( Descriptor , EventHandler & , ExceptionSink )
 void GNet::EventLoopImp::dropOther( Descriptor ) noexcept
 {
 	// no-op
-}
-
-std::string GNet::EventLoopImp::report() const
-{
-	return std::string() ;
 }
 
 void GNet::EventLoopImp::disarm( ExceptionHandler * p ) noexcept

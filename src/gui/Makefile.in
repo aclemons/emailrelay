@@ -36,6 +36,7 @@
 
 
 
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -120,10 +121,10 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/gconfig_defs.h
+CONFIG_HEADER = $(top_builddir)/src/gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__installdirs = "$(DESTDIR)$(sbindir)"
+am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_trdir)"
 PROGRAMS = $(sbin_PROGRAMS)
 LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
@@ -185,7 +186,7 @@ AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
-DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
+DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/access_mac.Po \
@@ -235,6 +236,34 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__install_max = 40
+am__nobase_strip_setup = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+am__nobase_strip = \
+  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
+am__nobase_list = $(am__nobase_strip_setup); \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == $(am__install_max)) \
+      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir, files[dir] }'
+am__base_list = \
+  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+am__uninstall_files_from_dir = { \
+  test -z "$$files" \
+    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
+    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
+         $(am__cd) "$$dir" && rm -f $$files; }; \
+  }
+DATA = $(e_tr_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -318,6 +347,7 @@ PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 QT_CFLAGS = @QT_CFLAGS@
 QT_LIBS = @QT_LIBS@
+QT_LRELEASE = @QT_LRELEASE@
 QT_MOC = @QT_MOC@
 RANLIB = @RANLIB@
 SED = @SED@
@@ -354,6 +384,7 @@ e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
 e_sysconfdir = @e_sysconfdir@
 e_systemddir = @e_systemddir@
+e_trdir = @e_trdir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -407,6 +438,9 @@ LIB_SOURCES = \
 	serverconfiguration.cpp \
 	serverconfiguration.h
 
+TS_FILES = emailrelay_tr.no_NO.ts
+QM_IN_FILES = emailrelay.no.qm_in
+QM_FILES = emailrelay.no.qm
 @GCONFIG_MAC_FALSE@@GCONFIG_WINDOWS_FALSE@OS_EXTRA_DIST = $(MAC_SOURCES) $(WIN32_SOURCES)
 @GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@OS_EXTRA_DIST = $(UNIX_SOURCES) $(WIN32_SOURCES)
 @GCONFIG_WINDOWS_TRUE@OS_EXTRA_DIST = $(MAC_SOURCES) $(UNIX_SOURCES)
@@ -417,6 +451,8 @@ LIB_SOURCES = \
 @GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@OS_NOINST = 
 @GCONFIG_WINDOWS_TRUE@OS_NOINST = 
 EXTRA_DIST = \
+	$(TS_FILES) \
+	$(QM_IN_FILES) \
 	emailrelay-gui.exe.manifest \
 	gcominit.h \
 	messages.mc \
@@ -435,7 +471,7 @@ MOC_OBJECTS = \
 	moc_gpage.o \
 	moc_pages.o
 
-CLEANFILES = $(MOC_OUTPUT)
+CLEANFILES = $(MOC_OUTPUT) $(QM_FILES)
 DISTCLEANFILES = ./.deps/moc*
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
@@ -458,6 +494,7 @@ AM_CPPFLAGS = \
 @GCONFIG_GUI_TRUE@noinst_SCRIPTS = $(OS_NOINST)
 @GCONFIG_GUI_TRUE@noinst_LIBRARIES = libguimain.a
 @GCONFIG_GUI_TRUE@libguimain_a_SOURCES = $(LIB_SOURCES)
+@GCONFIG_GUI_TRUE@e_tr_DATA = $(QM_FILES)
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@emailrelay_gui_SOURCES = guimain.cpp $(QT_SOURCES)
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@emailrelay_gui_DEPENDENCIES = $(MOC_OBJECTS) libguimain.a
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@emailrelay_gui_LDADD = \
@@ -472,8 +509,6 @@ AM_CPPFLAGS = \
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	libguimain.a \
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	$(GCONFIG_QT_LIBS)
 
-@GCONFIG_GUI_TRUE@TS_FILE = emailrelay_tr.en_SC.ts
-@GCONFIG_GUI_TRUE@QM_FILE = emailrelay_tr.en_SC.qm
 all: all-am
 
 .SUFFIXES:
@@ -613,6 +648,27 @@ am--depfiles: $(am__depfiles_remade)
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+install-e_trDATA: $(e_tr_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(e_tr_DATA)'; test -n "$(e_trdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(e_trdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(e_trdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(e_trdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(e_trdir)" || exit $$?; \
+	done
+
+uninstall-e_trDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(e_tr_DATA)'; test -n "$(e_trdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(e_trdir)'; $(am__uninstall_files_from_dir)
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -701,9 +757,9 @@ distdir-am: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) $(LIBRARIES) $(SCRIPTS)
+all-am: Makefile $(PROGRAMS) $(LIBRARIES) $(SCRIPTS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(sbindir)"; do \
+	for dir in "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_trdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -782,7 +838,7 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-e_trDATA
 
 install-dvi: install-dvi-am
 
@@ -848,7 +904,7 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-sbinPROGRAMS
+uninstall-am: uninstall-e_trDATA uninstall-sbinPROGRAMS
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 .MAKE: install-am install-exec-am install-strip uninstall-am
@@ -859,17 +915,22 @@ uninstall-am: uninstall-sbinPROGRAMS
 	distclean-compile distclean-generic distclean-tags distdir dvi \
 	dvi-am html html-am info info-am install install-am \
 	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-exec-hook install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-sbinPROGRAMS install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	install-e_trDATA install-exec install-exec-am \
+	install-exec-hook install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-sbinPROGRAMS install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-hook uninstall-sbinPROGRAMS
+	uninstall-am uninstall-e_trDATA uninstall-hook \
+	uninstall-sbinPROGRAMS
 
 .PRECIOUS: Makefile
 
+
+emailrelay.no.qm: emailrelay.no.qm_in
+	-$(AWK) '/^[0123456789]/ {for(i=1;i<NF;i++){printf("%c",$$i)}}' $(srcdir)/emailrelay.no.qm_in > emailrelay.no.qm
+	@test -s $(QM_FILES)
 
 @GCONFIG_GUI_TRUE@moc_gdialog.cpp: $(srcdir)/gdialog.h
 @GCONFIG_GUI_TRUE@	$(GCONFIG_QT_MOC) $(srcdir)/gdialog.h -o $@
@@ -883,7 +944,7 @@ uninstall-am: uninstall-sbinPROGRAMS
 @GCONFIG_GUI_TRUE@install-exec-hook:
 @GCONFIG_GUI_TRUE@	-mkdir -p "$(DESTDIR)$(sbindir)" 2>/dev/null
 @GCONFIG_GUI_TRUE@	@echo "#!/bin/sh" > "$(DESTDIR)$(sbindir)/emailrelay-gui"
-@GCONFIG_GUI_TRUE@	@echo exec $(DESTDIR)$(sbindir)/emailrelay-gui.real \"$$\@\" \"$0\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
+@GCONFIG_GUI_TRUE@	@echo exec $(DESTDIR)$(sbindir)/emailrelay-gui.real --qmdir=$(DESTDIR)$(e_trdir) \"$$\@\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 @GCONFIG_GUI_TRUE@	@echo "dir-install"=\"$(DESTDIR)/usr\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 @GCONFIG_GUI_TRUE@	@echo "dir-spool"=\"$(DESTDIR)$(e_spooldir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 @GCONFIG_GUI_TRUE@	@echo "dir-config"=\"$(DESTDIR)$(e_sysconfdir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
@@ -894,12 +955,6 @@ uninstall-am: uninstall-sbinPROGRAMS
 
 @GCONFIG_GUI_TRUE@clean-local:
 @GCONFIG_GUI_TRUE@	-rm -f payload
-@GCONFIG_GUI_TRUE@.PHONY: translate
-@GCONFIG_GUI_TRUE@translate:
-@GCONFIG_GUI_TRUE@	rm $(TS_FILE) 2>/dev/null || true
-@GCONFIG_GUI_TRUE@	lupdate $(QT_SOURCES) -target-language en_SC -ts $(TS_FILE)
-@GCONFIG_GUI_TRUE@	translate.pl $(TS_FILE)
-@GCONFIG_GUI_TRUE@	lrelease $(TS_FILE)
 
 @GCONFIG_GUI_FALSE@install-exec-hook:
 
@@ -909,6 +964,10 @@ payload: $(top_srcdir)/bin/make-setup.sh
 	-mkdir payload 2>/dev/null
 	-@chmod +x $(top_srcdir)/bin/make-setup.sh
 	$(top_srcdir)/bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ "$(top_srcdir)/src/gui/emailrelay-icon.png"
+
+.PHONY: lrelease
+lrelease:
+	$(QT_LRELEASE) emailrelay_tr.no_NO.ts -qm emailrelay.no.qm
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

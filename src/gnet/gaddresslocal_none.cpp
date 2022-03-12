@@ -188,11 +188,6 @@ bool GNet::AddressLocal::isUniqueLocal() const
 	return false ;
 }
 
-bool GNet::AddressLocal::isMulticast() const
-{
-	return false ;
-}
-
 bool GNet::AddressLocal::isAny() const
 {
 	return false ;

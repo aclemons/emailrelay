@@ -132,6 +132,8 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %doc /usr/share/doc/emailrelay/windows.txt
 %dir /usr/share/emailrelay
 /usr/share/emailrelay/emailrelay-icon.png
+/usr/share/emailrelay/emailrelay.no.qm
+/usr/share/emailrelay/emailrelay_tr.no_NO.tr
 /usr/share/man/man1/emailrelay-filter-copy.1.gz
 /usr/share/man/man1/emailrelay-passwd.1.gz
 /usr/share/man/man1/emailrelay-submit.1.gz

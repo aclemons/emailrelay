@@ -442,12 +442,6 @@ bool GNet::Address4::isUniqueLocal() const
 		( ntohl(m_inet.sin_addr.s_addr) >> 16U ) == 0xC0A8U ; // 192.168.0.0/16
 }
 
-bool GNet::Address4::isMulticast() const
-{
-	// RFC-5771
-	return ( ntohl(m_inet.sin_addr.s_addr) >> 28U ) == 0x0EU ; // [224-239].x.x.x
-}
-
 bool GNet::Address4::isAny() const
 {
 	return m_inet.sin_addr.s_addr == htonl(INADDR_ANY) ;

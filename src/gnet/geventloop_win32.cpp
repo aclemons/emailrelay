@@ -80,7 +80,6 @@ private:
 	void dropRead( Descriptor ) noexcept override ;
 	void dropWrite( Descriptor ) noexcept override ;
 	void dropOther( Descriptor ) noexcept override ;
-	std::string report() const override ;
 
 public:
 	EventLoopImp( const EventLoopImp & ) = delete ;
@@ -410,11 +409,6 @@ void GNet::EventLoopImp::quit( const std::string & reason )
 void GNet::EventLoopImp::quit( const G::SignalSafe & )
 {
 	// not implemented
-}
-
-std::string GNet::EventLoopImp::report() const
-{
-	return std::string() ;
 }
 
 // ==

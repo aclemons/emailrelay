@@ -29,9 +29,9 @@
 
 namespace GNet
 {
-	namespace StreamSocketImp
+	namespace StreamSocketImp /// An implementation namespace for G::StreamSocket.
 	{
-		struct Options
+		struct Options /// StreamSocket options
 		{
 			enum class Linger { default_ , zero , nolinger } ;
 			Linger create_linger {Linger::nolinger} ;
@@ -40,9 +40,9 @@ namespace GNet
 			bool accept_keepalive { G::Test::enabled("socket-keepalive") } ;
 		} ;
 	}
-	namespace SocketImp
+	namespace SocketImp /// An implementation namespace for G::Socket.
 	{
-		struct Options
+		struct Options /// Socket options
 		{
 			bool connect_pureipv6 {true} ;
 			bool bind_pureipv6 {true} ;
@@ -504,7 +504,7 @@ GNet::AcceptPair GNet::StreamSocket::accept()
 
 	AcceptPair info ;
 	info.address = Address( addr ) ;
-	info.socket_ptr.reset( new StreamSocket( info.address.family() , new_fd , SocketBase::Accepted() ) ) ;
+	info.socket_ptr.reset( new StreamSocket( info.address.family() , new_fd , SocketBase::Accepted() ) ) ; // 'new' for access
 
 	G_DEBUG( "GNet::StreamSocket::accept: accepted from " << fd()
 		<< " to " << new_fd << " (" << info.address.displayString() << ")" ) ;

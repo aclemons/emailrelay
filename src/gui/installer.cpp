@@ -184,7 +184,8 @@ struct CreatePointerFile : public ActionBase
 	G::Path m_gui_exe ;
 	G::Path m_dir_config ;
 	G::Path m_dir_install ;
-	CreatePointerFile( const G::Path & pointer_file , const G::Path & gui_exe , const G::Path & dir_config , const G::Path & dir_install ) ;
+	G::Path m_dir_tr ;
+	CreatePointerFile( const G::Path & pointer_file , const G::Path & gui_exe , const G::Path & dir_config , const G::Path & dir_install , const G::Path & dir_tr ) ;
 	void run() override ;
 	trstring text() const override ;
 	std::string subject() const override ;
@@ -506,11 +507,12 @@ void CreateDirectory::run()
 // ==
 
 CreatePointerFile::CreatePointerFile( const G::Path & pointer_file , const G::Path & gui_exe ,
-	const G::Path & dir_config , const G::Path & dir_install ) :
+	const G::Path & dir_config , const G::Path & dir_install , const G::Path & dir_tr ) :
 		m_pointer_file(pointer_file) ,
 		m_gui_exe(gui_exe) ,
 		m_dir_config(dir_config) ,
-		m_dir_install(dir_install)
+		m_dir_install(dir_install) ,
+		m_dir_tr(dir_tr)
 {
 }
 
@@ -532,7 +534,7 @@ void CreatePointerFile::run()
 	{
 		stream << "#!/bin/sh\n" ;
 		if( !m_gui_exe.empty() )
-			stream << "exec \"`dirname \\\"$0\\\"`/" << m_gui_exe.basename() << "\" \"$@\"\n" ;
+			stream << "exec \"`dirname \\\"$0\\\"`/" << m_gui_exe.basename() << "\" --qmdir=\"" << m_dir_tr << "\" \"$@\"\n" ;
 	}
 
 	// write the pointer variable(s)
@@ -1386,7 +1388,8 @@ InstallerImp::InstallerImp( bool installing , bool is_windows , bool is_mac , co
 	m_installer_config.add( "-exe" , isWindows() ? "%dir-install%/emailrelay.exe" :
 		( isMac() ? "%dir-install%/E-MailRelay.app/Contents/MacOS/emailrelay" : "%dir-install%/sbin/emailrelay" ) ) ;
 	m_installer_config.add( "-gui" , isWindows() ? "%dir-install%/emailrelay-gui.exe" : "%dir-install%/sbin/emailrelay-gui.real" ) ;
-	m_installer_config.add( "-icon" , isWindows()?"%dir-install%/emailrelay.exe":"%dir-install%/lib/emailrelay/emailrelay-icon.png");
+	m_installer_config.add( "-icon" , isWindows()?"%dir-install%/emailrelay.exe":"%dir-install%/share/emailrelay/emailrelay-icon.png") ;
+	m_installer_config.add( "-trdir" , isWindows()?"%dir-install%/translations":"%dir-install%/share/emailrelay") ;
 	m_installer_config.add( "-pointer" , isWindows() ? "%dir-install%/emailrelay-gui.cfg" : "%dir-install%/sbin/emailrelay-gui" ) ;
 	m_installer_config.add( "-startstop" , isWindows() ? "" : "%dir-install%/lib/emailrelay/emailrelay-startstop.sh" ) ;
 	m_installer_config.add( "-servicewrapper" , isWindows() ? "%dir-install%/emailrelay-service.exe" : "" ) ;
@@ -1581,7 +1584,8 @@ void InstallerImp::addActions()
 		G::Path gui_exe = ivalue( "-gui" ) ;
 		G::Path dir_config = pvalue( "dir-config" ) ;
 		G::Path dir_install = pvalue( "dir-install" ) ;
-		addAction( new CreatePointerFile(pointer_file,gui_exe,dir_config,dir_install) ) ;
+		G::Path dir_tr = ivalue( "-trdir" ) ;
+		addAction( new CreatePointerFile(pointer_file,gui_exe,dir_config,dir_install,dir_tr) ) ;
 	}
 
 	// register for using the windows event log - doing it here since the server

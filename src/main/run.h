@@ -135,6 +135,7 @@ private:
 	std::string smtpIdent() const ;
 	void recordPid() ;
 	const CommandLine & commandline() const ;
+	void onForwardRequest( std::string ) ; // m_forward_request_signal
 	void onClientDone( const std::string & ) ; // Client::doneSignal()
 	void onClientEvent( const std::string & , const std::string & , const std::string & ) ; // Client::eventSignal()
 	void onServerEvent( const std::string & , const std::string & ) ; // Server::eventSignal()
@@ -152,7 +153,8 @@ private:
 	static void checkPort( bool , const std::string & , unsigned int ) ;
 	GSmtp::Client::Config clientConfig() const ;
 	GSmtp::ServerProtocol::Config serverProtocolConfig() const ;
-	GSmtp::Server::Config serverConfig() const ;
+	GSmtp::Server::Config smtpServerConfig() const ;
+	GNet::ServerConfig netServerConfig() const ;
 	int resolverFamily() const ;
 	static GNet::Address asAddress( const std::string & ) ;
 	GPop::Server::Config popConfig() const ;
@@ -164,8 +166,11 @@ private:
 	static std::string buildConfiguration() ;
 	G::Path appDir() const ;
 	std::unique_ptr<GSmtp::AdminServer> newAdminServer( GNet::ExceptionSink ,
-		const Configuration & , GSmtp::MessageStore & , const GNet::ServerPeerConfig & ,
-		const GSmtp::Client::Config & , const GAuth::Secrets & , const std::string & ) ;
+		const Configuration & , GSmtp::MessageStore & , 
+		G::Slot::Signal<std::string> & ,
+		const GNet::ServerPeerConfig & ,
+		const GNet::ServerConfig & , const GSmtp::Client::Config & , 
+		const GAuth::Secrets & , const std::string & ) ;
 
 private:
 	Output & m_output ;
@@ -173,6 +178,7 @@ private:
 	GNet::ExceptionSink m_es_nothrow ;
 	bool m_is_windows ;
 	G::Arg m_arg ;
+	G::Slot::Signal<std::string> m_forward_request_signal ;
 	G::Slot::Signal<std::string,std::string,std::string,std::string> m_signal ;
 	std::unique_ptr<CommandLine> m_commandline ;
 	std::unique_ptr<Configuration> m_configuration ;

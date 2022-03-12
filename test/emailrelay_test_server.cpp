@@ -126,7 +126,7 @@ public:
 } ;
 
 Server::Server( GNet::ExceptionSink es , Config config ) :
-	GNet::Server(es,GNet::Address(config.m_ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,config.m_port),GNet::ServerPeerConfig(config.m_idle_timeout)) ,
+	GNet::Server(es,GNet::Address(config.m_ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,config.m_port),GNet::ServerPeerConfig(config.m_idle_timeout),GNet::ServerConfig()) ,
 	m_config(config)
 {
 	if( m_config.m_slow )

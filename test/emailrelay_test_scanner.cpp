@@ -186,7 +186,7 @@ public:
 } ;
 
 Main::Scanner::Scanner( GNet::ExceptionSink es , const GNet::Address & address , unsigned int idle_timeout ) :
-	GNet::Server(es,address,GNet::ServerPeerConfig(idle_timeout))
+	GNet::Server(es,address,GNet::ServerPeerConfig(idle_timeout),GNet::ServerConfig())
 {
 	G_LOG_S( "Scanner::ctor: listening on " << address.displayString() ) ;
 }

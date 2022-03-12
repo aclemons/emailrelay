@@ -157,7 +157,7 @@ public:
 	class Umask /// Used to temporarily modify the process umask.
 	{
 	public:
-		enum class Mode { Readable , Tighter , Tightest , GroupOpen } ;
+		enum class Mode { Readable , Tighter , Tightest , GroupOpen , Open } ;
 		explicit Umask( Mode ) ;
 		~Umask() ;
 		static void set( Mode ) ;

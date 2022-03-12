@@ -28,6 +28,7 @@
 #include "gdescriptor.h"
 #include "gsignalsafe.h"
 #include <list>
+#include <memory>
 #include <string>
 
 namespace GNet
@@ -126,10 +127,6 @@ public:
 		///< Removes the given event source descriptor from the
 		///< list of exception sources.
 		///< See also Socket::dropOtherHandler().
-
-	virtual std::string report() const = 0 ;
-		///< Returns a line of text reporting the status of the event loop.
-		///< Used in debugging and diagnostics.
 
 	virtual void disarm( ExceptionHandler * ) noexcept = 0 ;
 		///< Used to prevent the given interface from being used,

@@ -102,6 +102,7 @@ my %vars = (
 	e_bsdinitdir => "c:/emailrelay" ,
 	e_rundir => "c:/emailrelay" ,
 	e_icondir => "c:/emailrelay" ,
+	e_trdir => "c:/emailrelay" ,
 	e_examplesdir => "c:/emailrelay" ,
 	e_libexecdir => "c:/emailrelay" ,
 	e_pamdir => "c:/emailrelay" ,
@@ -242,8 +243,8 @@ for my $part ( @run_parts )
 	}
 	elsif( $part eq "install" )
 	{
-		install( $install_x64 , "x64" , $switches{GCONFIG_GUI} ) ;
-		install( $install_x86 , "x86" , $switches{GCONFIG_GUI} ) ;
+		install( $install_x64 , "x64" , $qt_dirs , $switches{GCONFIG_GUI} ) ;
+		install( $install_x86 , "x86" , $qt_dirs , $switches{GCONFIG_GUI} ) ;
 	}
 	elsif( $part eq "mingw" )
 	{
@@ -590,7 +591,7 @@ sub clean_mbedtls_files
 
 sub install
 {
-	my ( $install , $arch , $with_gui ) = @_ ;
+	my ( $install , $arch , $qt_dirs , $with_gui ) = @_ ;
 
 	my $msvc_base = winbuild::find_msvc_base( $arch ) ;
 	print "msvc-base=[$msvc_base]\n" ;
@@ -618,6 +619,10 @@ sub install
 		install_gui_dependencies( $msvc_base , $arch ,
 			{ exe => "$install/emailrelay-setup.exe" } ,
 			{ exe => "$install/payload/files/emailrelay-gui.exe" } ) ;
+
+		winbuild::translate( $arch , $qt_dirs , "no_NO" , "no" ) ;
+		install_copy( "src/gui/emailrelay.no.qm" , "$install/translations" ) ;
+		install_copy( "src/gui/emailrelay.no.qm" , "$install/payload/files/translations" ) ;
 	}
 
 	install_runtime( $runtime , $arch , $install ) ;

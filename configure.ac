@@ -23,7 +23,7 @@ AC_INIT([E-MailRelay],[2.2.1],[],[emailrelay])
 AC_CONFIG_SRCDIR([src/glib/gdef.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])
-AC_CONFIG_HEADERS([gconfig_defs.h])
+AC_CONFIG_HEADERS([src/gconfig_defs.h])
 AM_MAINTAINER_MODE
 AC_DISABLE_OPTION_CHECKING
 
@@ -59,16 +59,17 @@ GCONFIG_FN_CHECK_CXX
 GCONFIG_FN_CHECK_NET
 GCONFIG_FN_CHECK_FUNCTIONS
 
-dnl check for packages
-dnl
-GCONFIG_FN_QT
-GCONFIG_FN_TLS_OPENSSL
-GCONFIG_FN_TLS_MBEDTLS
-
 dnl initialise aclocal/pkg.m4
 dnl
 # if the configure script fails in this area then you are probably missing pkg.m4
 PKG_PROG_PKG_CONFIG([0.9.0])
+
+dnl check for packages
+dnl
+GCONFIG_FN_QT
+GCONFIG_FN_QT_BUILD
+GCONFIG_FN_TLS_OPENSSL
+GCONFIG_FN_TLS_MBEDTLS
 
 dnl possibly enable full gettext support -- uncomment this after running
 dnl 'gettextize' and remove the other gettext lines below
