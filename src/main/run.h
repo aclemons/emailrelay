@@ -135,7 +135,7 @@ private:
 	std::string smtpIdent() const ;
 	void recordPid() ;
 	const CommandLine & commandline() const ;
-	void onForwardRequest( std::string ) ; // m_forward_request_signal
+	void onForwardRequest( const std::string & ) ; // m_forward_request_signal
 	void onClientDone( const std::string & ) ; // Client::doneSignal()
 	void onClientEvent( const std::string & , const std::string & , const std::string & ) ; // Client::eventSignal()
 	void onServerEvent( const std::string & , const std::string & ) ; // Server::eventSignal()
@@ -167,7 +167,7 @@ private:
 	G::Path appDir() const ;
 	std::unique_ptr<GSmtp::AdminServer> newAdminServer( GNet::ExceptionSink ,
 		const Configuration & , GSmtp::MessageStore & , 
-		G::Slot::Signal<std::string> & ,
+		G::Slot::Signal<const std::string&> & ,
 		const GNet::ServerPeerConfig & ,
 		const GNet::ServerConfig & , const GSmtp::Client::Config & , 
 		const GAuth::Secrets & , const std::string & ) ;
@@ -178,7 +178,7 @@ private:
 	GNet::ExceptionSink m_es_nothrow ;
 	bool m_is_windows ;
 	G::Arg m_arg ;
-	G::Slot::Signal<std::string> m_forward_request_signal ;
+	G::Slot::Signal<const std::string&> m_forward_request_signal ;
 	G::Slot::Signal<std::string,std::string,std::string,std::string> m_signal ;
 	std::unique_ptr<CommandLine> m_commandline ;
 	std::unique_ptr<Configuration> m_configuration ;

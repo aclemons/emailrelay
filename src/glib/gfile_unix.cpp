@@ -88,16 +88,26 @@ std::filebuf * G::File::open( std::filebuf & fb , const Path & path , InOut inou
 int G::File::open( const char * path , InOutAppend mode ) noexcept
 {
 	if( mode == InOutAppend::In )
-		return ::open( path , O_RDONLY ) ;
+		return ::open( path , O_RDONLY ) ; // NOLINT
 	else if( mode == InOutAppend::Out )
-		return ::open( path , O_WRONLY|O_CREAT|O_TRUNC , 0666 ) ;
+		return ::open( path , O_WRONLY|O_CREAT|O_TRUNC , 0666 ) ; // NOLINT
 	else
-		return ::open( path , O_WRONLY|O_CREAT|O_APPEND , 0666 ) ;
+		return ::open( path , O_WRONLY|O_CREAT|O_APPEND , 0666 ) ; // NOLINT
+}
+
+bool G::File::probe( const char * path ) noexcept
+{
+	int fd = ::open( path , O_WRONLY|O_CREAT|O_EXCL , 0666 ) ; // NOLINT
+	if( fd < 0 )
+		return false ;
+	std::remove( path ) ;
+	::close( fd ) ;
+	return true ;
 }
 
 void G::File::create( const Path & path )
 {
-	int fd = ::open( path.cstr() , O_RDONLY|O_CREAT , 0666 ) ;
+	int fd = ::open( path.cstr() , O_RDONLY|O_CREAT , 0666 ) ; // NOLINT
 	if( fd < 0 )
 		throw CannotCreate( path.str() ) ;
 	::close( fd ) ;
@@ -121,12 +131,16 @@ void G::File::close( int fd ) noexcept
 int G::File::mkdirImp( const Path & dir ) noexcept
 {
 	int rc = ::mkdir( dir.cstr() , 0777 ) ; // open permissions, but limited by umask
-	if( rc != 0 )
+	if( rc == 0 )
 	{
-		rc = G::Process::errno_() ;
-		if( rc == 0 ) rc = EINVAL ;
+		return 0 ;
 	}
-	return rc ;
+	else
+	{
+		int e = G::Process::errno_() ;
+		if( e == 0 ) e = EINVAL ;
+		return e ;
+	}
 }
 
 G::File::Stat G::File::statImp( const char * path , bool link ) noexcept
@@ -138,15 +152,15 @@ G::File::Stat G::File::statImp( const char * path , bool link ) noexcept
 		s.error = 0 ;
 		s.enoent = false ;
 		s.eaccess = false ;
-		s.is_link = (statbuf.st_mode & S_IFLNK) ;
-		s.is_dir = (statbuf.st_mode & S_IFDIR) ;
-		s.is_executable = !!(statbuf.st_mode & S_IXUSR) && !!(statbuf.st_mode & S_IRUSR) ; // indicitive
+		s.is_link = (statbuf.st_mode & S_IFMT) == S_IFLNK ; // NOLINT
+		s.is_dir = (statbuf.st_mode & S_IFMT) == S_IFDIR ; // NOLINT
+		s.is_executable = !!(statbuf.st_mode & S_IXUSR) && !!(statbuf.st_mode & S_IRUSR) ; // indicitive // NOLINT
 		s.is_empty = statbuf.st_size == 0 ;
 		s.mtime_s = FileImp::mtime(statbuf).first ;
 		s.mtime_us = FileImp::mtime(statbuf).second ;
-		s.mode = static_cast<unsigned long>( statbuf.st_mode & 07777 ) ;
+		s.mode = static_cast<unsigned long>( statbuf.st_mode & mode_t(07777) ) ; // NOLINT
 		s.size = static_cast<unsigned long long>( statbuf.st_size ) ;
-		s.blocks = static_cast<unsigned long long>( statbuf.st_size >> 24 ) ;
+		s.blocks = static_cast<unsigned long long>(statbuf.st_size) >> 24U ;
 	}
 	else
 	{
@@ -174,9 +188,9 @@ bool G::File::chmodx( const Path & path , bool do_throw )
 	Stat s = statImp( path.cstr() ) ;
 	mode_t mode = s.error ? mode_t(0777) : mode_t(s.mode) ;
 
-	mode |= ( S_IRUSR | S_IXUSR ) ; // add user-read and user-executable
-	if( mode & S_IRGRP ) mode |= S_IXGRP ; // add group-executable iff group-read
-	if( mode & S_IROTH ) mode |= S_IXOTH ; // add world-executable iff world-read
+	mode |= ( S_IRUSR | S_IXUSR ) ; // add user-read and user-executable // NOLINT
+	if( mode & S_IRGRP ) mode |= S_IXGRP ; // add group-executable iff group-read // NOLINT
+	if( mode & S_IROTH ) mode |= S_IXOTH ; // add world-executable iff world-read // NOLINT
 
 	// apply the current umask
 	mode_t mask = ::umask( 0 ) ; ::umask( mask ) ;
@@ -217,7 +231,7 @@ bool G::File::chmod( const Path & path , const std::string & spec , std::nothrow
 
 std::pair<bool,mode_t> G::FileImp::newmode( mode_t mode , const std::string & spec_in )
 {
-	mode &= 07777 ;
+	mode &= mode_t(07777) ;
 	G::StringArray spec_list = G::Str::splitIntoFields( spec_in , "," ) ;
 	bool ok = !spec_list.empty() ;
 	for( auto spec : spec_list )
@@ -236,25 +250,25 @@ std::pair<bool,mode_t> G::FileImp::newmode( mode_t mode , const std::string & sp
 			for( const char * p = spec.c_str()+2 ; *p ; p++ )
 			{
 				if( *p == 'r' )
-					part |= 4 ;
+					part |= mode_t(4) ;
 				else if( *p == 'w' )
-					part |= 2 ;
+					part |= mode_t(2) ;
 				else if( *p == 'x' )
-					part |= 1 ;
+					part |= mode_t(1) ;
 				else if( *p == 's' && spec[0] == 'u' )
-					special |= S_ISUID ;
+					special |= S_ISUID ; // NOLINT
 				else if( *p == 's' && spec[0] == 'g' )
-					special |= S_ISGID ;
+					special |= S_ISGID ; // NOLINT
 				else if( *p == 't' && spec[0] == 'o' )
-					special |= S_ISVTX ;
+					special |= S_ISVTX ; // NOLINT
 				else
 					ok = false ;
 			}
-			int shift = spec[0]=='u' ? 6 : (spec[0]=='g'?3:0) ;
+			unsigned int shift = spec[0]=='u' ? 6U : (spec[0]=='g'?3U:0U) ;
 			if( spec[0] == 'a' )
 			{
 				mode_t mask = umask(0) ; umask( mask ) ;
-				part = ( ((part<<6)|(part<<3)|part) & ~mask ) ;
+				part = ( ((part<<6U)|(part<<3U)|part) & ~mask ) ;
 			}
 			if( spec[1] == '=' && spec[0] == 'a' )
 			{
@@ -262,7 +276,7 @@ std::pair<bool,mode_t> G::FileImp::newmode( mode_t mode , const std::string & sp
 			}
 			else if( spec[1] == '=' )
 			{
-				mode_t clearbits = (7<<shift) | (spec[0]=='u'?S_ISUID:(spec[0]=='g'?S_ISGID:S_ISVTX)) ;
+				mode_t clearbits = (mode_t(7)<<shift) | (spec[0]=='u'?mode_t(S_ISUID):(spec[0]=='g'?mode_t(S_ISGID):mode_t(S_ISVTX))) ;
 				mode &= ~clearbits ;
 				mode |= (part<<shift) ;
 				mode |= special ;
@@ -281,7 +295,7 @@ std::pair<bool,mode_t> G::FileImp::newmode( mode_t mode , const std::string & sp
 			ok = false ;
 		}
 	}
-	return std::make_pair( ok , mode ) ;
+	return { ok , mode } ;
 }
 
 void G::File::chgrp( const Path & path , const std::string & group )
@@ -304,7 +318,7 @@ void G::File::link( const Path & target , const Path & new_link )
 	if( exists(new_link) )
 		remove( new_link , std::nothrow ) ;
 
-	int error = link( target.cstr() , new_link.cstr() ) ;
+	int error = linkImp( target.cstr() , new_link.cstr() ) ;
 
 	if( error != 0 )
 	{
@@ -322,10 +336,10 @@ bool G::File::link( const Path & target , const Path & new_link , std::nothrow_t
 	if( exists(new_link) )
 		remove( new_link , std::nothrow ) ;
 
-	return 0 == link( target.cstr() , new_link.cstr() ) ;
+	return 0 == linkImp( target.cstr() , new_link.cstr() ) ;
 }
 
-int G::File::link( const char * target , const char * new_link )
+int G::File::linkImp( const char * target , const char * new_link )
 {
 	int rc = ::symlink( target , new_link ) ;
 	int error = Process::errno_() ;

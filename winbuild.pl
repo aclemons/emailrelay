@@ -153,7 +153,7 @@ if( $no_cmake || $no_msbuild || $no_qt || $no_mbedtls )
 {
 	warn "error: missing prerequisites: please install the missing components" ,
 		( ($no_qt||$no_mbedtls) ? " or unset configuration items in winbuild.pl\n" : "\n" ) ;
-	die "error: missing prerequisites\n" ;
+	die "error: missing prerequisites\n" unless ( scalar(@ARGV) > 0 && $ARGV[0] eq "mingw" ) ;
 }
 
 # choose what to run ...
@@ -292,7 +292,6 @@ sub create_cmake_file
 		if( $switches{GCONFIG_GUI} )
 		{
 			# see https://doc.qt.io/qt-5/cmake-get-started.html
-			#was print $fh "find_package(Qt5 CONFIG REQUIRED Widgets Gui Core OpenGL)\n" ;
 			print $fh "find_package(Qt5 COMPONENTS Widgets Gui Core OpenGL REQUIRED)\n" ;
 		}
 		if( $switches{GCONFIG_TLS_USE_MBEDTLS} || $switches{GCONFIG_TLS_USE_BOTH} )
@@ -682,9 +681,9 @@ sub install_mingw
 		my $fh = new FileHandle( "$install_mingw/emailrelay-submit-test.bat" , "w" ) or die ;
 		my $cmd = "\@echo off\r\n" ;
 		$cmd .= "emailrelay-submit.exe -n -s \@app --from postmaster " ;
-		$cmd .= "-c U3ViamVjdDogdGVzdA== " ; # subject
-		$cmd .= "-c = " ;
-		$cmd .= "-c VGVzdCBtZXNzYWdl " ; # body
+		$cmd .= "-C U3ViamVjdDogdGVzdA== " ; # subject
+		$cmd .= "-C = " ;
+		$cmd .= "-C VGVzdCBtZXNzYWdl " ; # body
 		$cmd .= "-d -F -t " ;
 		$cmd .= "postmaster" ; # to
 		print $fh "$cmd\r\n" ;

@@ -77,8 +77,14 @@
 // mbedtls migration guide
 #if MBEDTLS_VERSION_MAJOR >= 3
 #define GET MBEDTLS_PRIVATE
+#if MBEDTLS_VERSION_MINOR >= 1
+#define GET_RAW(field) field
+#else
+#define GET_RAW MBEDTLS_PRIVATE
+#endif
 #else
 #define GET(field) field
+#define GET_RAW(field) field
 #endif
 
 namespace GSsl
@@ -352,6 +358,13 @@ GSsl::MbedTls::Config::Config( G::StringArray & config ) :
 	static_assert( TLS_v1_2 >= 0 , "" ) ;
 	if( consume(config,"tlsv1.2") ) m_min = TLS_v1_2 ;
 	if( consume(config,"-tlsv1.2") ) m_max = TLS_v1_2 ;
+#endif
+
+#ifdef MBEDTLS_SSL_MINOR_VERSION_4
+	static constexpr int TLS_v1_3 = MBEDTLS_SSL_MINOR_VERSION_4 ;
+	static_assert( TLS_v1_3 >= 0 , "" ) ;
+	if( consume(config,"tlsv1.3") ) m_min = TLS_v1_3 ;
+	if( consume(config,"-tlsv1.3") ) m_max = TLS_v1_3 ;
 #endif
 }
 
@@ -899,18 +912,20 @@ std::string GSsl::MbedTls::ProtocolImp::getPeerCertificate()
 		const char * head = "-----BEGIN CERTIFICATE-----\n" ;
 		const char * tail = "-----END CERTIFICATE-----\n" ;
 
+		const unsigned char * raw_p = certificate->GET_RAW(raw).GET_RAW(p) ;
+		std::size_t raw_n = certificate->GET_RAW(raw).GET_RAW(len) ;
+
 		// get the required buffer size
 		std::size_t n = 0U ;
 		unsigned char c = '\0' ;
-		int rc = mbedtls_pem_write_buffer( head , tail , certificate->GET(raw).GET(p) , certificate->GET(raw).GET(len) , &c , 0 , &n ) ;
+		int rc = mbedtls_pem_write_buffer( head , tail , raw_p , raw_n , &c , 0 , &n ) ;
 		if( n == 0U || rc != MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL )
 			throw Error( "certificate error" ) ;
 		n = n + n ; // old polarssl bug required this
 
 		// write it into the correctly sized buffer
 		std::vector<unsigned char> buffer( n ) ;
-		rc = mbedtls_pem_write_buffer( head , tail , certificate->GET(raw).GET(p) , certificate->GET(raw).GET(len) ,
-				&buffer[0] , buffer.size() , &n ) ;
+		rc = mbedtls_pem_write_buffer( head , tail , raw_p , raw_n , &buffer[0] , buffer.size() , &n ) ;
 		if( n == 0 || rc != 0 )
 			throw Error( "certificate error" ) ;
 

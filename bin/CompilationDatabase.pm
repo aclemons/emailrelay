@@ -26,8 +26,7 @@
 # Synopsis:
 #
 #    use CompilationDatabase ;
-#    my $cdb = new CompilationDatabase( $src_dir ,
-#        ["-DFOO=BAR",...] , ["-I_TOP_"] , ["-Wall"] , {WINDOWS=>0,...} , {top_srcdir=>'..'} ) ;
+#    my $cdb = new CompilationDatabase( $src_dir , {WINDOWS=>0,...} , {top_srcdir=>'..'} , {} ) ;
 #    my @files = $cdb->list() ;
 #    my @stanzas = $cdb->stanzas() ;
 #    $cdb->print() ;
@@ -42,16 +41,16 @@ our $debug = 0 ;
 
 sub new
 {
-	my ( $classname , $base_makefile_dir , $dflags , $iflags , $cxxflags , $switches , $ro_vars ) = @_ ;
+	my ( $classname , $base_makefile_dir , $switches , $ro_vars , $config ) = @_ ;
 	$AutoMakeParser::debug = 1 if $debug > 1 ;
+	$config ||= {} ;
+	$config->{test_mode} ||= 0 ;
+	$config->{full_paths} ||= 0 ;
 	my %me = (
 		m_base_dir => $base_makefile_dir ,
-		m_dflags => $dflags ,
-		m_iflags => $iflags ,
-		m_cxxflags => $cxxflags ,
 		m_switches => $switches ,
 		m_ro_vars => $ro_vars ,
-		m_full_paths => 0 ,
+		m_config => $config ,
 	) ;
 	return bless \%me , $classname ;
 }
@@ -95,26 +94,28 @@ sub stanzas
 	for my $m ( @makefiles )
 	{
 		my $dir = File::Basename::dirname( $m->path() ) ;
-		my @includes = map { "-I$_" } $m->includes( $m->top() , undef , join(" ",@{$this->{m_iflags}}) , $this->{m_full_paths} ) ;
+		my @includes = map { "-I$_" } $m->includes( $m->top() , undef , undef , $this->{m_config}->{full_paths} ) ;
 		my @definitions = map { "-D$_" } $m->definitions() ;
-		push @definitions , @{$this->{m_dflags}} ;
+		my @compile_options = $m->compile_options() ;
+		my @link_options = $m->link_options() ;
 
 		if( $debug )
 		{
 			print "cdb: makefile=" , $m->path() , "\n" ;
-			print "cdb:  AM_CPPFLAGS=[",join("|",$m->value("AM_CPPFLAGS")),"]\n" ;
 			print "cdb:  top=",$m->top(),"\n" ;
 			print "cdb:  \@includes=" , join("|",@includes) , "\n" ;
 			print "cdb:  \@definitions=" , join("|",@definitions) , "\n" ;
+			print "cdb:  \@compile_options=" , join("|",@compile_options) , "\n" ;
+			print "cdb:  \@link_options=" , join("|",@link_options) , "\n" ;
 		}
 
 		for my $library ( $m->libraries() )
 		{
-			map { push @output , $this->_stanza($dir,$_,\@includes,\@definitions) } $m->sources($library) ;
+			map { push @output , $this->_stanza($dir,$_,\@includes,\@definitions,\@compile_options) } $m->sources($library) ;
 		}
 		for my $program ( $m->programs() )
 		{
-			map { push @output , $this->_stanza($dir,$_,\@includes,\@definitions) } $m->sources($program) ;
+			map { push @output , $this->_stanza($dir,$_,\@includes,\@definitions,\@compile_options) } $m->sources($program) ;
 		}
 	}
 	return @output ;
@@ -122,15 +123,20 @@ sub stanzas
 
 sub _stanza
 {
-	my ( $this , $dir , $source , $includes , $definitions ) = @_ ;
+	my ( $this , $dir , $source , $includes , $definitions , $options ) = @_ ;
 
-	my @all_flags = ( @{$this->{m_cxxflags}} , @$definitions , @$includes ) ;
+	my @all_flags = ( @$definitions , @$includes , @$options ) ;
 
 	my $directory = Cwd::realpath( $dir ) ;
-	$source = join("/",$directory,$source) if $this->{m_full_paths} ;
+	$source = join("/",$directory,$source) if $this->{m_config}->{full_paths} ;
 
 	my $command = "/usr/bin/c++ @all_flags -c $source" ;
-	$command =~ s/"/\\"/g ;
+	$command =~ s/"/\\"/g unless $this->{m_config}->{test_mode} ;
+
+	if( $this->{m_config}->{test_mode} )
+	{
+		return "cd $directory && $command\n" ;
+	}
 
 	return
 		"{\n" .

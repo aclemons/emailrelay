@@ -120,7 +120,7 @@ class GSmtp::AdminServer : public GNet::MultiServer
 {
 public:
 	AdminServer( GNet::ExceptionSink , MessageStore & store ,
-		G::Slot::Signal<std::string> & forward_request ,
+		G::Slot::Signal<const std::string&> & forward_request ,
 		const GNet::ServerPeerConfig & server_peer_config , const GNet::ServerConfig & server_config ,
 		const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
 		const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
@@ -178,7 +178,7 @@ private:
 private:
 	GNet::Timer<AdminServer> m_forward_timer ;
 	MessageStore & m_store ;
-	G::Slot::Signal<std::string> & m_forward_request ;
+	G::Slot::Signal<const std::string&> & m_forward_request ;
 	GSmtp::Client::Config m_client_config ;
 	const GAuth::Secrets & m_client_secrets ;
 	bool m_allow_remote ;

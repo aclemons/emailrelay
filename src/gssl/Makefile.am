@@ -35,7 +35,8 @@ SSL_EXTRA_DIST = gssl_none.cpp gssl_openssl.cpp gssl_openssl.h gssl_use_openssl.
 SSL_SOURCES = gssl.h gssl.cpp gssl_mbedtls.cpp gssl_mbedtls.h gssl_use_mbedtls.cpp
 endif
 
-EXTRA_DIST=$(SSL_EXTRA_DIST)
+EXTRA_DIST = \
+	$(SSL_EXTRA_DIST)
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/glib
 noinst_LIBRARIES = libgssl.a

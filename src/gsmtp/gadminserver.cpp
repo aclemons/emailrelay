@@ -340,7 +340,7 @@ bool GSmtp::AdminServerPeer::notifying() const
 // ===
 
 GSmtp::AdminServer::AdminServer( GNet::ExceptionSink es , MessageStore & store ,
-	G::Slot::Signal<std::string> & forward_request ,
+	G::Slot::Signal<const std::string&> & forward_request ,
 	const GNet::ServerPeerConfig & server_peer_config , const GNet::ServerConfig & server_config ,
 	const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
 	const G::StringArray & interfaces , unsigned int port , bool allow_remote ,

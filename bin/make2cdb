@@ -38,73 +38,37 @@ use File::Find ;
 use File::Basename ;
 use File::Spec ;
 use File::Copy ;
+use Getopt::Long ;
 use lib dirname($0) ;
+use ConfigStatus ;
 use CompilationDatabase ;
-$CompilationDatabase::debug = 0 ;
 
-my $show_list = $ARGV[0] eq "--list" ;
-shift @ARGV if $show_list ;
+my %opt = () ;
+GetOptions( \%opt , "list" , "test" , "debug" ) or die "$0: usage error\n" ;
+my $cfg_show_list = exists( $opt{list} ) ;
+my $cfg_test_mode = exists( $opt{test} ) ;
+my $cfg_debug = exists( $opt{debug} ) ;
+$CompilationDatabase::debug = $cfg_debug ;
+$AutoMakeParser::debug = $cfg_debug ;
 
 my $src_dir = @ARGV ? $ARGV[0] : dirname($0)."/../src" ;
 my $top_dir = @ARGV >= 1 ? $ARGV[1] : "$src_dir/.." ;
 my $src_to_top = @ARGV >= 2 ? $ARGV[2] : ".." ;
 
-my @dflags = (
-	"-DG_UNIX=1" ,
-) ;
+my $cs = new ConfigStatus( "$top_dir/config.status" ) ;
+my %switches = $cs->switches() ;
+my %vars = $cs->vars() ;
+$vars{top_srcdir} = $src_to_top ;
+$vars{top_builddir} = "." ;
 
-# makefile conditionals
-my %switches = (
-	GCONFIG_BSD => 0 ,
-	GCONFIG_GUI => 0 ,
-	GCONFIG_ICONV => 0 ,
-	GCONFIG_INSTALL_HOOK => 0 ,
-	GCONFIG_INTERFACE_NAMES => 1 ,
-	GCONFIG_MAC => 0 ,
-	GCONFIG_PAM => 0 ,
-	GCONFIG_TESTING => 0 ,
-	GCONFIG_TLS_USE_BOTH => 0 ,
-	GCONFIG_TLS_USE_MBEDTLS => 0 ,
-	GCONFIG_TLS_USE_NONE => 0 ,
-	GCONFIG_TLS_USE_OPENSSL => 1 ,
-	GCONFIG_WINDOWS => 0 ,
-) ;
-
-# makefile expansion variables -- many are required but not relevant
-my %vars = (
-	top_srcdir => $src_to_top ,
-	top_builddir => "." ,
-	sbindir => "." ,
-	mandir => "." ,
-	localedir => "." ,
-	e_spooldir => "/var/spool/emailrelay" ,
-	e_docdir => "." ,
-	e_initdir => "." ,
-	e_bsdinitdir => "." ,
-	e_rundir => "." ,
-	e_icondir => "." ,
-	e_examplesdir => "." ,
-	e_libexecdir => "." ,
-	e_pamdir => "." ,
-	e_sysconfdir => "/etc" ,
-	GCONFIG_WINDRES => "" ,
-	GCONFIG_WINDMC => "" ,
-	GCONFIG_QT_LIBS => "" ,
-	GCONFIG_QT_CFLAGS => "" ,
-	GCONFIG_QT_MOC => "" ,
-	GCONFIG_TLS_LIBS => "" ,
-	GCONFIG_STATIC_START => "" ,
-	GCONFIG_STATIC_END => "" ,
-	RPM_ARCH => "x86" ,
-	RPM_ROOT => "rpm" ,
-) ;
-
-my $cdb = new CompilationDatabase( $src_dir , ["-DG_UNIX=1"], ["-I$src_to_top"] , ["-std=c++11","-pthread"] , \%switches , \%vars ) ;
-$cdb->{m_full_paths} = 1 ; # grr
-
-if( $show_list )
+my $cdb = new CompilationDatabase( $src_dir , \%switches , \%vars , {test_mode=>$cfg_test_mode,full_paths=>1} ) ;
+if( $cfg_show_list )
 {
 	print join( "\n" , $cdb->list() , "" ) ;
+}
+elsif( $cfg_test_mode )
+{
+	print join( "" , $cdb->stanzas() ) ;
 }
 else
 {

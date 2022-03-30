@@ -146,7 +146,9 @@ sub default_touchfile
 
 sub _path_dirs
 {
-	return split( ";" , $ENV{PATH} ) ;
+	my $path = $ENV{PATH} ;
+	my $sep = ( $path =~ m/;/ ) ? ";" : ":" ;
+	return split( $sep , $path ) ;
 }
 
 sub _sanepath
@@ -176,6 +178,7 @@ sub _find_under
 	my $result ;
 	for my $dir ( map {_sanepath($_)} @dirs )
 	{
+		next if !$dir ;
 		my @find_list = () ;
 		File::Find::find( sub { push @find_list , $File::Find::name if lc($_) eq $fname } , $dir ) ;
 		if( @find_list ) { $result = Cwd::realpath($find_list[0]) ; last }

@@ -48,6 +48,7 @@ namespace G
 		int open( const char * path , int flags , int pmode ) noexcept
 		{
 			#if GCONFIG_HAVE_SOPEN_S
+				_set_errno( 0 ) ; // mingw bug
 				int fd = -1 ;
 				errno_t rc = _sopen_s( &fd , path , flags , _SH_DENYNO , pmode ) ;
 				return rc == 0 ? fd : -1 ;
@@ -104,6 +105,15 @@ int G::File::open( const char * path , InOutAppend mode ) noexcept
 		return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_TRUNC|_O_BINARY , pmode ) ;
 	else
 		return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_APPEND|_O_BINARY , pmode ) ;
+}
+
+bool G::File::probe( const char * path ) noexcept
+{
+	int pmode = _S_IREAD | _S_IWRITE ;
+	int fd = FileImp::open( path , _O_WRONLY|_O_CREAT|_O_EXCL|O_TEMPORARY|_O_BINARY , pmode ) ;
+	if( fd >= 0 )
+		_close( fd ) ; // also deletes
+	return fd >= 0 ;
 }
 
 void G::File::create( const Path & path )

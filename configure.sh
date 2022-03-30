@@ -22,13 +22,15 @@
 # directories depending on the host environment and simplifies
 # cross-compilation.
 #
-# usage: configure.sh [-g] [{-d|-s <>}] [{-o|-m|-p}] -- [<configure-options>]
-#         -d  add debug compiler flags
-#         -s  add sanitiser compiler flags (eg. -s address)
-#         -o  cross-compile for openwrt (edit as required)
-#         -m  cross-compile for windows with mingw-w64
-#         -p  cross-compile for rpi
-#         -g  git-clone mbedtls
+# usage: configure.sh [-g] [{-d|-s <>}] [{-o|-w|-p}] -- [<configure-options>]
+#         -d   add debug compiler flags
+#         -s   add sanitiser compiler flags (eg. -s address)
+#         -o   cross-compile for openwrt (edit as required)
+#         -w   cross-compile for windows 32-bit with mingw-w64
+#         -w32 cross-compile for windows 32-bit with mingw-w64
+#         -w64 cross-compile for windows 64-bit with mingw-w64
+#         -p   cross-compile for rpi
+#         -g   git-clone mbedtls and exit
 #
 # For systemd add "e_systemddir=/usr/lib/systemd/system".
 #
@@ -39,16 +41,18 @@
 
 thisdir="`cd \`dirname $0\` && pwd`"
 
-usage="[-g] [{-d|-s <>}] [{-o|-m|-p}] -- <configure-args>"
+usage="[-g] [{-d|-s <>}] [{-o|-w|-p}] -- <configure-args>"
 while expr "x$1" : "x-" >/dev/null
 do
 	valued=0
-	case "`echo \"$1\" | sed 's/^-//'`" in
+	case "`echo \"$1\" | sed 's/^--*//'`" in
 		g) opt_git=1 ;;
 		d) opt_debug=1 ;;
 		s) opt_sanitise="$2" ; valued=1 ;;
 		o) opt_openwrt=1 ;;
-		m) opt_mingw=1 ;;
+		w) opt_mingw=1 ; opt_win=32 ;;
+		w32) opt_mingw=1 ; opt_win=32 ;;
+		w64) opt_mingw=1 ; opt_win=64 ;;
 		p) opt_rpi=1 ;;
 		h) echo usage: `basename $0` $usage "..." ; $thisdir/configure --help=short ; exit 0 ;;
 		#\?) echo usage: `basename $0` $usage >&2 ; exit 2 ;;
@@ -71,6 +75,14 @@ fi
 if test "0$opt_git" -eq 1
 then
 	git clone https://salsa.debian.org/debian/mbedtls.git
+	e="$?"
+	sed -i 's/defined._TRUNCATE./0/' mbedtls/library/platform.c
+	if test "$e" -eq 0 -a "0$opt_mingw" -eq 0
+	then
+		echo build with...
+		echo "  make -C mbedtls/library WINDOWS=0"
+	fi
+	exit "$e"
 fi
 
 enable_debug=""
@@ -114,7 +126,12 @@ fi
 
 if test "0$opt_mingw" -eq 1
 then
-	TARGET="i686-w64-mingw32"
+	if test "$opt_win" -eq 32
+	then
+		TARGET="i686-w64-mingw32" # 32-bit binaries
+	else
+		TARGET="x86_64-w64-mingw32" # 64-bit binaries
+	fi
 	export CXX="$TARGET-g++-posix"
 	export CC="$TARGET-gcc-posix"
 	export AR="$TARGET-ar"

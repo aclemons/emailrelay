@@ -641,7 +641,7 @@ void Main::Run::onPollTimeout()
 	requestForwarding( "poll" ) ;
 }
 
-void Main::Run::onForwardRequest( std::string reason )
+void Main::Run::onForwardRequest( const std::string & reason )
 {
 	requestForwarding( reason ) ;
 }
@@ -876,7 +876,7 @@ G::Path Main::Run::appDir() const
 
 std::unique_ptr<GSmtp::AdminServer> Main::Run::newAdminServer( GNet::ExceptionSink es ,
 	const Configuration & cfg , GSmtp::MessageStore & store ,
-	G::Slot::Signal<std::string> & forward_request_signal ,
+	G::Slot::Signal<const std::string&> & forward_request_signal ,
 	const GNet::ServerPeerConfig & server_peer_config , const GNet::ServerConfig & net_server_config ,
 	const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
 	const std::string & version_number )

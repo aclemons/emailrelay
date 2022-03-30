@@ -629,7 +629,7 @@ MISC_EXTRA_DIST = \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gnet/libgnet.a \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/glib/libglib.a \
-@GCONFIG_WINDOWS_FALSE@	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END)
+@GCONFIG_WINDOWS_FALSE@	$(GCONFIG_TLS_LIBS)
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_LDADD = \
 @GCONFIG_WINDOWS_TRUE@	libmain.a \
@@ -641,8 +641,8 @@ MISC_EXTRA_DIST = \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/win32/libextra.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
 @GCONFIG_WINDOWS_TRUE@	$(RESOURCES) \
-@GCONFIG_WINDOWS_TRUE@	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
-@GCONFIG_WINDOWS_TRUE@	-lgdi32 -lws2_32 -liphlpapi -ladvapi32 -lcomctl32
+@GCONFIG_WINDOWS_TRUE@	$(GCONFIG_TLS_LIBS) \
+@GCONFIG_WINDOWS_TRUE@	-lws2_32 -liphlpapi -lcomctl32
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_textmode_SOURCES = $(TEXTMODE_MAIN_SOURCES) $(OTHER_SOURCES)
 @GCONFIG_WINDOWS_TRUE@emailrelay_textmode_LDFLAGS = -static
@@ -655,7 +655,7 @@ MISC_EXTRA_DIST = \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/win32/libextra.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
-@GCONFIG_WINDOWS_TRUE@	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
+@GCONFIG_WINDOWS_TRUE@	$(GCONFIG_TLS_LIBS) \
 @GCONFIG_WINDOWS_TRUE@	-lws2_32 -liphlpapi -lcomctl32
 
 emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
@@ -664,12 +664,12 @@ emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_FALSE@emailrelay_passwd_LDADD = \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/glib/libglib.a \
-@GCONFIG_WINDOWS_FALSE@	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END)
+@GCONFIG_WINDOWS_FALSE@	$(GCONFIG_TLS_LIBS)
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_passwd_LDADD = \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
-@GCONFIG_WINDOWS_TRUE@	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
+@GCONFIG_WINDOWS_TRUE@	$(GCONFIG_TLS_LIBS) \
 @GCONFIG_WINDOWS_TRUE@	-lws2_32 -liphlpapi -lcomctl32
 
 emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h

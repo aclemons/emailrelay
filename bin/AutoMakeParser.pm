@@ -35,6 +35,7 @@
 #  $makefile->libraries() ;
 #  $makefile->includes() ;
 #  $makefile->definitions() ;
+#  $makefile->compile_options() ;
 #  $makefile->sources('foo') ;
 #  $makefile->our_libs('foo') ;
 #  $makefile->sys_libs('foo') ;
@@ -51,19 +52,20 @@ our $debug = 0 ;
 
 sub new
 {
-	my ( $classname , $path , $switches , $ro_vars ) = @_ ;
+	my ( $classname , $path , $switches , $vars_in ) = @_ ;
 	my %me = (
 		m_path => simplepath($path) ,
+		m_switches => $switches ,
+		m_vars => {} ,
 		m_depth => undef , # from readall()
 		m_lines => [] ,
-		m_vars => {} ,
-		m_switches => $switches ,
 		m_stack => [] ,
 	) ;
 	my $this = bless \%me , $classname ;
 	$this->read( $path ) ;
 	$this->parse( $path ) ;
-	$this->expand_all( $ro_vars ) ;
+	$this->expand_all( $vars_in ) ;
+	$this->copy( $vars_in ) ;
 	return $this ;
 }
 
@@ -74,22 +76,23 @@ sub path
 
 sub readall
 {
-	my ( $base_dir , $switches , $vars , $verbose ) = @_ ;
+	my ( $base_dir , $switches , $vars , $verbose , $verbose_prefix ) = @_ ;
 	my @makefiles = () ;
-	_readall_imp( \@makefiles , 0 , $base_dir , $switches , $vars , $verbose ) ; # recursive
+	_readall_imp( \@makefiles , 0 , $base_dir , $switches , $vars , $verbose , $verbose_prefix ) ; # recursive
 	return @makefiles ;
 }
 
 sub _readall_imp
 {
-	my ( $makefiles , $depth , $dir , $switches , $vars , $verbose ) = @_ ;
+	my ( $makefiles , $depth , $dir , $switches , $vars , $verbose , $verbose_prefix ) = @_ ;
+	$verbose_prefix ||= "" ;
 	my $m = new AutoMakeParser( "$dir/Makefile.am" , $switches , $vars ) ;
 	$m->{m_depth} = $depth ;
-	print "makefile=[" , $m->path() , "] ($depth)\n" if $verbose ;
+	print "${verbose_prefix}makefile=[" , $m->path() , "] ($depth)\n" if $verbose ;
 	push @$makefiles , $m ;
 	for my $subdir ( $m->value("SUBDIRS") )
 	{
-		_readall_imp( $makefiles , $depth+1 , "$dir/$subdir" , $switches , $vars , $verbose ) ;
+		_readall_imp( $makefiles , $depth+1 , "$dir/$subdir" , $switches , $vars , $verbose , $verbose_prefix ) ;
 	}
 }
 
@@ -159,10 +162,15 @@ sub sys_libs
 {
 	my ( $this , $program ) = @_ ;
 	( my $prefix = $program ) =~ s/[-.]/_/g ;
-	return
+	my @a =
+		map { s/-l// ; $_ }
+		grep { m/^-l/ }
+		$this->value( "LIBS" ) ;
+	my @b =
 		map { s/-l// ; $_ }
 		grep { m/^-l/ }
 		$this->value( "${prefix}_LDADD" ) ;
+	return ( @a , @b ) ;
 }
 
 sub sources
@@ -174,11 +182,51 @@ sub sources
 		$this->value( "${prefix}_SOURCES" ) ;
 }
 
+sub link_options
+{
+	my ( $this ) = @_ ;
+	my @a = $this->value( "AM_LDFLAGS" ) ;
+	my @b = $this->value( "LDFLAGS" ) ;
+	my @options = ( @a , @b ) ;
+	return wantarray ? @options : join(" ",@options) ;
+}
+
+sub compile_options
+{
+	my ( $this ) = @_ ;
+	my @a = $this->_compile_options_imp( "AM_CPPFLAGS" , $this->{m_vars} ) ;
+	my @b = $this->_compile_options_imp( "CXXFLAGS" , $this->{m_vars} ) ;
+	my @options = ( @a , @b ) ;
+	return wantarray ? @options : join(" ",@options) ;
+}
+
+sub _compile_options_imp
+{
+	my ( $this , $var , $vars ) = @_ ;
+	$vars ||= $this->{m_vars} ;
+	my $s = protect_quoted_spaces( simple_spaces( $vars->{$var} ) ) ;
+	$s =~ s/-D /-D/g ;
+	$s =~ s/-I /-I/g ;
+	return
+		map { s/\t/ /g ; $_ }
+		grep { !m/-I/ }
+		grep { !m/-D/ }
+		split( " " , $s ) ;
+}
+
 sub definitions
 {
-	my ( $this , $am_cppflags ) = @_ ;
-	$am_cppflags ||= "AM_CPPFLAGS" ;
-	my $s = protect_quoted_spaces( simple_spaces( $this->{m_vars}->{$am_cppflags} ) ) ;
+	my ( $this ) = @_ ;
+	my @a = $this->_definitions_imp( "AM_CPPFLAGS" , $this->{m_vars} ) ;
+	my @b = $this->_definitions_imp( "CXXFLAGS" , $this->{m_vars} ) ;
+	my @defs = ( @a , @b ) ;
+	return wantarray ? @defs : join(" ",@defs) ;
+}
+
+sub _definitions_imp
+{
+	my ( $this , $var , $vars ) = @_ ;
+	my $s = protect_quoted_spaces( simple_spaces( $vars->{$var} ) ) ;
 	$s =~ s/-D /-D/g ;
 	return
 		map { s/\t/ /g ; $_ }
@@ -194,29 +242,41 @@ sub includes
 	# with the 'top_srcdir' variable defined as "." gives
 	# ("./one/two","./three").
 	#
-	# However, since the 'top_srcdir' expansion is fixed, and the
+	# However, since the 'top_srcdir' expansion is fixed, and
 	# relative include paths need to vary through the source
-	# tree, a prefix parameter ('top') can be passed in here.
-	# So then "-I$(top_srcdir)/one/two" becomes "<top>/./one/two".
+	# tree, a prefix parameter ('top') should be passed in as
+	# the current value for expanding "$(top_srcdir)". So then
+	# "-I$(top_srcdir)/one/two" becomes "<top>/./one/two".
+	# (Absolute paths do not get the 'top' prefixed by 'top'.)
 	#
-	# The 'top' parameter can be from top() as long as readall()
-	# started at the 'top_srcdir' directory and the 'top_srcdir'
-	# variable is defined as ".". Otherwise, a simple approach
-	# is to still use top() for the 'top' parameter but define
-	# the 'top_srcdir' variable as the difference between the
-	# readall() base and the actual 'top_srcdir' directory.
+	# The "top()" method provides a candidate for the 'top'
+	# parameter but will only work if readall() started at the
+	# 'top_srcdir' directory and the 'top_srcdir' variable is
+	# defined as ".". Otherwise, a simple approach is to still
+	# use top() for the 'top' parameter but define the 'top_srcdir'
+	# variable as the difference between the readall() base and
+	# the actual 'top_srcdir' directory.
 	#
-	my ( $this , $top , $am_cppflags , $extra_includes , $full_paths ) = @_ ;
+	my ( $this , $top , $full_paths , $no_top_dir ) = @_ ;
 	$top ||= "" ;
-	$am_cppflags ||= "AM_CPPFLAGS" ;
-	$extra_includes ||= "" ;
-	my $cppflags = join( " " , $extra_includes , $this->{m_vars}->{$am_cppflags} ) ;
-	my $s = protect_quoted_spaces( simple_spaces( $cppflags ) ) ;
+	my $add_top = !$no_top_dir ;
+	my $real_top = simplepath( join( "/" , $this->value("top_srcdir") , $top ) ) ;
+	my @a = $this->_includes_imp( $top , "AM_CPPFLAGS" , $this->{m_vars} , $full_paths ) ;
+	my @b = $this->_includes_imp( $top , "CXXFLAGS" , $this->{m_vars} , $full_paths ) ;
+	my @c = ( $real_top && $add_top ) ? ( $real_top ) : () ;
+	my @incs = ( @c , @a , @b ) ;
+	return wantarray ? @incs : join(" ",@incs) ;
+}
+
+sub _includes_imp
+{
+	my ( $this , $top , $var , $vars , $full_paths ) = @_ ;
+	my $s = protect_quoted_spaces( simple_spaces( $vars->{$var} ) ) ;
 	$s =~ s/-I /-I/g ;
 	return
 		map { $full_paths?$this->fullpath($_):$_ }
 		map { simplepath($_) }
-		map { $top?join("/",$top,$_):$_ }
+		map { my $p=$_ ; ($top&&($p!~m;^/;))?join("/",$top,$p):$p }
 		map { s/\t/ /g ; $_ }
 		map { s:-I:: ; $_ } grep { m/-I\S+/ }
 		split( " " , $s ) ;
@@ -319,6 +379,19 @@ sub add
 	push @{$this->{m_lines}} , $line ;
 }
 
+sub copy
+{
+	my ( $this , $vars_in ) = @_ ;
+	return if !defined($vars_in) ;
+	for my $k ( keys %$vars_in )
+	{
+		if( !exists($this->{m_vars}->{$k}) )
+		{
+			$this->{m_vars}->{$k} = $vars_in->{$k} ;
+		}
+	}
+}
+
 sub read
 {
 	my ( $this , $path ) = @_ ;
@@ -357,7 +430,7 @@ sub parse
 				last ; # (new)
 			}
 		}
-		debug_( "$$this{m_path}($n): " , $this->enabled() ? $line : "..." ) ;
+		debug_( "$$this{m_path}($n): " , $line ) if ( $this->enabled() && ( $line =~ m/\S/ ) && ( $line !~ m/^#/ ) ) ;
 	}
 	for my $k ( sort keys %{$this->{m_vars}} )
 	{
@@ -469,7 +542,9 @@ sub do_assign_more
 
 sub debug_
 {
-	print @_ , "\n" if $debug ;
+	my $line = join( " " , @_ ) ;
+	$line =~ s/ *\t */ /g ;
+	print $line , "\n" if $debug ;
 }
 
 1 ;

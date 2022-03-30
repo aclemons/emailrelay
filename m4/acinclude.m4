@@ -2247,6 +2247,8 @@ AC_DEFUN([GCONFIG_FN_TLS],
 		gconfig_ssl_notice="openssl and mbedtls"
 		gconfig_ssl_use_none=no
 		gconfig_ssl_use_both=yes
+		gconfig_ssl_use_openssl_only=no
+		gconfig_ssl_use_mbedtls_only=no
 		GCONFIG_TLS_LIBS="$gconfig_ssl_mbedtls_libs $gconfig_ssl_openssl_libs"
 	fi
 	if test "$gconfig_ssl_use_openssl" = "yes" -a "$gconfig_ssl_use_mbedtls" = "no"
@@ -2254,6 +2256,8 @@ AC_DEFUN([GCONFIG_FN_TLS],
 		gconfig_ssl_notice="openssl"
 		gconfig_ssl_use_none=no
 		gconfig_ssl_use_both=no
+		gconfig_ssl_use_openssl_only=yes
+		gconfig_ssl_use_mbedtls_only=no
 		GCONFIG_TLS_LIBS="$gconfig_ssl_openssl_libs"
 	fi
 	if test "$gconfig_ssl_use_openssl" = "no" -a "$gconfig_ssl_use_mbedtls" = "yes"
@@ -2261,6 +2265,8 @@ AC_DEFUN([GCONFIG_FN_TLS],
 		gconfig_ssl_notice="mbedtls"
 		gconfig_ssl_use_none=no
 		gconfig_ssl_use_both=no
+		gconfig_ssl_use_openssl_only=no
+		gconfig_ssl_use_mbedtls_only=yes
 		GCONFIG_TLS_LIBS="$gconfig_ssl_mbedtls_libs"
 	fi
 	if test "$gconfig_ssl_use_openssl" = "no" -a "$gconfig_ssl_use_mbedtls" = "no"
@@ -2268,6 +2274,8 @@ AC_DEFUN([GCONFIG_FN_TLS],
 		gconfig_ssl_notice="none"
 		gconfig_ssl_use_none=yes
 		gconfig_ssl_use_both=no
+		gconfig_ssl_use_openssl_only=no
+		gconfig_ssl_use_mbedtls_only=no
 		GCONFIG_TLS_LIBS=""
 	fi
 
@@ -2278,8 +2286,8 @@ AC_DEFUN([GCONFIG_FN_TLS],
 
 	AC_SUBST([GCONFIG_TLS_LIBS])
 	AM_CONDITIONAL([GCONFIG_TLS_USE_BOTH],test "$gconfig_ssl_use_both" = "yes")
-	AM_CONDITIONAL([GCONFIG_TLS_USE_OPENSSL],test "$gconfig_ssl_use_openssl" = "yes")
-	AM_CONDITIONAL([GCONFIG_TLS_USE_MBEDTLS],test "$gconfig_ssl_use_mbedtls" = "yes")
+	AM_CONDITIONAL([GCONFIG_TLS_USE_OPENSSL],test "$gconfig_ssl_use_openssl_only" = "yes")
+	AM_CONDITIONAL([GCONFIG_TLS_USE_MBEDTLS],test "$gconfig_ssl_use_mbedtls_only" = "yes")
 	AM_CONDITIONAL([GCONFIG_TLS_USE_NONE],test "$gconfig_ssl_use_none" = "yes")
 	AC_MSG_NOTICE([using tls library: $gconfig_ssl_notice])
 ])

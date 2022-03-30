@@ -52,6 +52,7 @@ work_scripts = \
 	make2cdb \
 	AutoMakeParser.pm \
 	CompilationDatabase.pm \
+	ConfigStatus.pm \
 	winbuild.pm
 
 js_scripts = \

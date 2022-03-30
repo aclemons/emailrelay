@@ -106,18 +106,29 @@ public:
 		///< if necessary. Returns false on error.
 
 	static bool mkdirs( const Path & dir , std::nothrow_t , int = 100 ) ;
-		///< Creates a directory and all necessary parents. Returns false on error.
+		///< Creates a directory and all necessary parents.
 		///< Does chmodx() on all created directories.
+		///< Returns false on error, but EEXIST is not
+		///< an error and chmod errors are also ignored.
+		///<
+		///< Note that the EEXIST result is ignored even if
+		///< the target path already exists as a non-directory.
+		///< This is a feature not a bug because it can avoid
+		///< races.
 
 	static void mkdirs( const Path & dir , int = 100 ) ;
 		///< Creates a directory and all necessary parents.
-		///< Does chmodx() on all created directories.
+		///< Does chmodx() on all created directories.	
+		///< Throws on error, but EEXIST is not an error
+		///< and chmod errors are also ignored.
 
 	static bool mkdir( const Path & dir , std::nothrow_t ) ;
-		///< Creates a directory. Returns false on error.
+		///< Creates a directory. Returns false on error
+		///< (including EEXIST).
 
 	static void mkdir( const Path & dir ) ;
-		///< Creates a directory.
+		///< Creates a directory. Throws on error (including
+		///< EEXIST).
 
 	static bool isEmpty( const Path & file , std::nothrow_t ) ;
 		///< Returns true if the file size is zero.
@@ -228,6 +239,10 @@ public:
 		///< Opens a file descriptor. Returns -1 on error.
 		///< Uses SH_DENYNO and O_BINARY on windows.
 
+	static bool probe( const char * ) noexcept ;
+		///< Creates and deletes a temporary probe file. Fails if
+		///< the file already exists. Returns false on error.
+
 	static ssize_t read( int fd , char * , std::size_t ) noexcept ;
 		///< Calls ::read() or equivalent.
 
@@ -254,7 +269,7 @@ private:
 	static Stat statImp( const char * , bool = false ) noexcept ;
 	static bool rename( const char * , const char * to , bool & enoent ) noexcept ;
 	static bool chmodx( const Path & file , bool ) ;
-	static int link( const char * , const char * ) ;
+	static int linkImp( const char * , const char * ) ;
 	static bool linked( const Path & , const Path & ) ;
 	static int mkdirImp( const Path & dir ) noexcept ;
 	static bool mkdirsr( int * , const Path & dir , int ) ;
