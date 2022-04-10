@@ -46,21 +46,15 @@ public:
 		///< Checks the given secret sources. Logs warnings and throws
 		///< an exception if there are any fatal errors.
 
-	Secrets( const std::string & source_storage_path , const std::string & debug_name ,
-		const std::string & server_type = std::string() ) ;
-			///< Constructor. The connection string is a secrets file path
-			///< or "/pam".
-			///<
-			///< The 'debug-name' is used in log and error messages to
-			///< identify the repository.
-			///<
-			///< The 'server-type' parameter can be used to select
-			///< a different set of server-side authentication records
-			///< that may be stored in the same repository such as
-			///< "smtp" or "pop". The default is "server".
-			///<
-			///< Throws on error, although an empty path is not
-			///< considered an error: see valid().
+	Secrets( const std::string & source_storage_path , const std::string & debug_name ) ;
+		///< Constructor. The connection string is a secrets file path
+		///< or "/pam".
+		///<
+		///< The 'debug-name' is used in log and error messages to
+		///< identify the repository.
+		///<
+		///< Throws on error, although an empty path is not
+		///< considered an error: see valid().
 
 	Secrets() ;
 		///< Default constructor for an in-valid(), empty-path object.
@@ -68,10 +62,10 @@ public:
 	bool valid() const override ;
 		///< Override from GAuth::Valid virtual base.
 
-	Secret serverSecret( const std::string & mechanism , const std::string & id ) const override ;
+	Secret serverSecret( const std::string & type , const std::string & id ) const override ;
 		///< Override from GAuth::SaslServerSecrets.
 
-	bool contains( const std::string & mechanism ) const override ;
+	bool contains( const std::string & type ) const override ;
 		///< Override from GAuth::SaslServerSecrets.
 
 public:
@@ -83,7 +77,7 @@ public:
 
 private: // overrides
 	std::string source() const override ; // Override from GAuth::SaslServerSecrets.
-	Secret clientSecret( const std::string & mechanism ) const override ; // Override from GAuth::SaslClientSecrets.
+	Secret clientSecret( const std::string & type ) const override ; // Override from GAuth::SaslClientSecrets.
 	std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const override ; // Override from GAuth::SaslServerSecrets.
 
 private:

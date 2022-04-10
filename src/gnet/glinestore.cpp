@@ -336,7 +336,7 @@ std::size_t GNet::LineStore::find( const std::string & s , std::size_t startpos 
 std::size_t GNet::LineStore::search( std::string::const_iterator begin , std::string::const_iterator end ,
 	std::size_t startpos ) const
 {
-	return std::search( LineStoreIterator(*this)+startpos , LineStoreIterator(*this,true) , begin , end ).pos() ;
+	return std::search( LineStoreIterator(*this)+startpos , LineStoreIterator(*this,true) , begin , end ).pos() ; // NOLINT narrowing
 }
 
 std::size_t GNet::LineStore::findSubStringAtEnd( const std::string & s , std::size_t startpos ) const
@@ -359,7 +359,7 @@ std::size_t GNet::LineStore::findSubStringAtEnd( const std::string & s , std::si
 			{
 				// compare leading substring with the end of the store
 				const LineStoreIterator end( *this , true ) ;
-				LineStoreIterator p = end - s_size ;
+				LineStoreIterator p = end - s_size ; // NOLINT narrowing
 				if( imp::std_equal(s_start,s_end,p,end) )
 				{
 					result = p.pos() ;

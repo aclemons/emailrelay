@@ -28,6 +28,7 @@
 #include "gdescriptor.h"
 #include "gsignalsafe.h"
 #include <list>
+#include <memory>
 #include <string>
 
 namespace GNet
@@ -51,7 +52,7 @@ namespace GNet
 class GNet::EventLoop
 {
 public:
-	G_EXCEPTION( Error , "event loop error" ) ;
+	G_EXCEPTION( Error , "failed to initialise the event loop" ) ;
 	G_EXCEPTION( NoInstance , "no event loop instance" ) ;
 	G_EXCEPTION( Overflow , "event loop overflow" ) ;
 

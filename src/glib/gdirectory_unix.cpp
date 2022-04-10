@@ -94,14 +94,8 @@ int G::Directory::usable( bool for_creation ) const
 
 bool G::Directory::writeable( const std::string & filename ) const
 {
-	// use open(2) so we can use O_EXCL, ie. fail if it already exists
 	Path path( m_path , filename.empty() ? tmp() : filename ) ;
-	int fd = ::open( path.cstr() , O_WRONLY | O_CREAT | O_EXCL , S_IRWXU ) ;
-	if( fd == -1 )
-		return false ;
-
-	::close( fd ) ;
-	return 0 == std::remove( path.cstr() ) ;
+	return File::probe( path.cstr() ) ;
 }
 
 // ===

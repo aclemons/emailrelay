@@ -18,8 +18,8 @@
 /// \file servicecontrol_win32.cpp
 ///
 
+#include "gdef.h"
 #include "servicecontrol.h"
-#include <windows.h>
 #include <sstream>
 #include <utility>
 #include <stdexcept>
@@ -89,13 +89,13 @@ public:
 
 private:
 	SC_HANDLE open( SC_HANDLE , const std::string & ) ;
-	void remove( SC_HANDLE ) ;
-	void remove( SC_HANDLE , std::nothrow_t ) ;
+	static void removeImp( SC_HANDLE ) ;
+	static void removeImp( SC_HANDLE , std::nothrow_t ) ;
 	void stop( SC_HANDLE ) ;
 	void stop( SC_HANDLE , std::nothrow_t ) ;
 	DWORD status() const ;
 	SC_HANDLE h() const ;
-	SC_HANDLE create_imp( SC_HANDLE , const std::string & , const std::string & , DWORD , const std::string & ) ;
+	SC_HANDLE createImp( SC_HANDLE , const std::string & , const std::string & , DWORD , const std::string & ) ;
 
 private:
 	SC_HANDLE m_h{0} ;
@@ -153,7 +153,7 @@ SC_HANDLE ServiceControl::Manager::h() const
 
 // ==
 
-ServiceControl::Service::Service( const Manager & manager , const std::string & name , DWORD access ) :
+ServiceControl::Service::Service( const Manager & manager , const std::string & name , DWORD /*access*/ ) :
 	m_h(open(manager.h(),name))
 {
 }
@@ -182,7 +182,7 @@ SC_HANDLE ServiceControl::Service::h() const
 	return m_h ;
 }
 
-SC_HANDLE ServiceControl::Service::create_imp( SC_HANDLE hmanager , const std::string & name ,
+SC_HANDLE ServiceControl::Service::createImp( SC_HANDLE hmanager , const std::string & name ,
 	const std::string & display_name , DWORD start_type , const std::string & commandline )
 {
 	return CreateServiceA( hmanager , name.c_str() , display_name.c_str() ,
@@ -194,7 +194,7 @@ SC_HANDLE ServiceControl::Service::create_imp( SC_HANDLE hmanager , const std::s
 void ServiceControl::Service::create( const Manager & manager , const std::string & name ,
 	const std::string & display_name , DWORD start_type , const std::string & commandline )
 {
-	m_h = create_imp( manager.h() , name , display_name , start_type , commandline ) ;
+	m_h = createImp( manager.h() , name , display_name , start_type , commandline ) ;
 	if( m_h == 0 )
 	{
 		DWORD e = GetLastError() ;
@@ -204,10 +204,10 @@ void ServiceControl::Service::create( const Manager & manager , const std::strin
 				SC_HANDLE h = open( manager.h() , name ) ;
 				ScopeExitCloser closer( h ) ;
 				stop( h , std::nothrow ) ;
-				remove( h , std::nothrow ) ;
+				removeImp( h , std::nothrow ) ;
 			}
 
-			m_h = create_imp( manager.h() , name , display_name , start_type , commandline ) ;
+			m_h = createImp( manager.h() , name , display_name , start_type , commandline ) ;
 			if( m_h == 0 )
 				e = GetLastError() ;
 		}
@@ -222,9 +222,10 @@ void ServiceControl::Service::configure( const std::string & description_in , co
 	if( description.empty() )
 		description = ( display_name + " service" ) ;
 
-	if( REG_SZ > 5 && (description.length()+5) > REG_SZ )
+	static constexpr std::size_t limit = 2048U ;
+	if( (description.length()+5U) > limit )
 	{
-		description.resize( REG_SZ-5 ) ;
+		description.resize( limit-5U ) ;
 		description.append( "..." ) ;
 	}
 
@@ -248,17 +249,17 @@ void ServiceControl::Service::stop( SC_HANDLE h , std::nothrow_t )
 
 void ServiceControl::Service::remove()
 {
-	remove( m_h ) ;
+	removeImp( m_h ) ;
 }
 
-void ServiceControl::Service::remove( SC_HANDLE h , std::nothrow_t )
+void ServiceControl::Service::removeImp( SC_HANDLE h , std::nothrow_t )
 {
 	DeleteService( h ) ;
 }
 
-void ServiceControl::Service::remove( SC_HANDLE h )
+void ServiceControl::Service::removeImp( SC_HANDLE h )
 {
-	bool delete_ok = !!DeleteService( m_h ) ;
+	bool delete_ok = !!DeleteService( h ) ;
 	if( !delete_ok )
 	{
 		DWORD e = GetLastError() ;

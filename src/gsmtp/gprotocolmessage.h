@@ -74,7 +74,7 @@ public:
 		///<
 		///< The signal parameters are 'success', 'id', 'short-response' and
 		///< 'full-reason'. As a special case, if success is true and id
-		///< is zero then the message processing was either abandoned
+		///< is invalid then the message processing was either abandoned
 		///< or it only had local-mailbox recipients.
 
 	virtual void reset() = 0 ;
@@ -85,12 +85,11 @@ public:
 		///< message processing.
 
 	virtual MessageId setFrom( const std::string & from_user , const std::string & from_auth ) = 0 ;
-		///< Sets the message envelope 'from'. Returns a unique message id.
+		///< Sets the message envelope 'from'.
 
-	virtual bool addTo( const std::string & to_user , VerifierStatus to_status ) = 0 ;
-		///< Adds an envelope 'to'. The 'to_status' parameter comes
-		///< from GSmtp::Verifier.verify(). Returns false if an
-		///< invalid user.
+	virtual bool addTo( VerifierStatus to_status ) = 0 ;
+		///< Adds an envelope 'to'. See also GSmtp::Verifier::verify().
+		///< Returns false if an invalid user.
 		///<
 		///< Precondition: setFrom() called since clear() or process().
 
@@ -109,7 +108,7 @@ public:
 		///< a string parameter and adding CR-LF.
 
 	virtual std::string from() const = 0 ;
-		///< Returns the setFrom() user string.
+		///< Returns the setFrom() string.
 
 	virtual void process( const std::string & session_auth_id , const std::string & peer_socket_address ,
 		const std::string & peer_certificate ) = 0 ;

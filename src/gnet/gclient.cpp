@@ -30,6 +30,7 @@
 #include "gassert.h"
 #include "gtest.h"
 #include "glog.h"
+#include <numeric> // std::accumulate
 #include <sstream>
 #include <cstdlib>
 
@@ -178,7 +179,7 @@ void GNet::Client::startConnecting()
 	// create and open a socket
 	//
 	m_sp.reset() ;
-	m_socket = std::make_unique<StreamSocket>( m_remote_location.address().domain() ) ;
+	m_socket = std::make_unique<StreamSocket>( m_remote_location.address().family() ) ;
 	socket().addWriteHandler( *this , m_es ) ;
 
 	// create a socket protocol object
@@ -359,6 +360,7 @@ void GNet::Client::otherEvent( EventHandler::Reason reason )
 
 void GNet::Client::readEvent()
 {
+	G_ASSERT( m_sp != nullptr ) ;
 	if( m_state == State::Socksing )
 	{
 		G_ASSERT( m_socks != nullptr ) ;
@@ -371,7 +373,6 @@ void GNet::Client::readEvent()
 	}
 	else
 	{
-		G_ASSERT( m_sp != nullptr ) ;
 		if( m_sp != nullptr )
 			m_sp->readEvent() ;
 	}
@@ -429,29 +430,33 @@ void GNet::Client::setState( State new_state )
 	m_state = new_state ;
 }
 
-GNet::Address GNet::Client::localAddress() const
+std::pair<bool,GNet::Address> GNet::Client::localAddress() const
 {
-	return socket().getLocalAddress() ;
+	return
+		m_socket != nullptr ?
+			std::make_pair(true,socket().getLocalAddress()) :
+			std::make_pair(false,GNet::Address::defaultAddress()) ;
 }
 
-GNet::Address GNet::Client::peerAddress() const
+std::pair<bool,GNet::Address> GNet::Client::peerAddress() const
 {
-	if( m_state != State::Connected )
-		throw NotConnected() ;
-
-	auto pair = socket().getPeerAddress() ;
-	if( !pair.first )
-		throw NotConnected() ;
-
-	return pair.second ;
+	return
+		m_socket != nullptr ?
+			socket().getPeerAddress() :
+			std::make_pair(false,GNet::Address::defaultAddress()) ;
 }
 
 std::string GNet::Client::connectionState() const
 {
-	if( m_state == State::Connected )
-		return socket().getPeerAddress().second.displayString() ;
-	else
-		return "("+m_remote_location.displayString()+")" ;
+	std::pair<bool,Address> pair =
+		m_socket != nullptr ?
+			socket().getPeerAddress() :
+			std::make_pair(false,GNet::Address::defaultAddress()) ;
+
+	return
+		pair.first ?
+			pair.second.displayString() :
+			("("+m_remote_location.displayString()+")") ;
 }
 
 std::string GNet::Client::peerCertificate() const
@@ -475,7 +480,9 @@ bool GNet::Client::send( const std::string & data , std::size_t offset )
 
 bool GNet::Client::send( const std::vector<G::string_view> & data , std::size_t offset )
 {
-	if( m_response_timeout && data.size() > offset )
+	std::size_t total_size = std::accumulate( data.begin() , data.end() , std::size_t(0U) ,
+		[](std::size_t n,G::string_view s){return n+s.size();} ) ;
+	if( m_response_timeout && offset < total_size )
 		m_response_timer.startTimer( m_response_timeout ) ;
 	return m_sp->send( data , offset ) ;
 }

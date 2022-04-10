@@ -98,12 +98,12 @@ bool G::Identity::isRoot() const noexcept
 	return false ;
 }
 
-bool G::Identity::operator==( const Identity & other ) const noexcept
+bool G::Identity::operator==( const Identity & ) const noexcept
 {
 	return true ;
 }
 
-bool G::Identity::operator!=( const Identity & other ) const noexcept
+bool G::Identity::operator!=( const Identity & ) const noexcept
 {
 	return false ;
 }

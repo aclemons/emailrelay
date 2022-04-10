@@ -25,11 +25,19 @@
 #ifdef G_STR_IMP
 #undef G_STR_IMP
 #endif
-#define G_STR_IMP(X) #X
-
 #ifdef G_STR
 #undef G_STR
 #endif
-#define G_STR(X) G_STR_IMP(X)
+#ifdef G_STR_PASTE_IMP
+#undef G_STR_PASTE_IMP
+#endif
+#ifdef G_STR_PASTE
+#undef G_STR_PASTE
+#endif
+
+#define G_STR_IMP(a) #a
+#define G_STR(a) G_STR_IMP(a)
+#define G_STR_PASTE_IMP(a,b) a##b
+#define G_STR_PASTE(a,b) G_STR_PASTE_IMP(a,b)
 
 #endif

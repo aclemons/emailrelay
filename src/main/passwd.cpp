@@ -209,10 +209,10 @@ std::string as_dotted( const std::string & masked_key )
 	for( int i = 0 ; i < 8 ; i++ )
 	{
 		G::Md5::big_t d = 0U ;
-		for( int j = 0 ; j < 4 ; j++ )
+		for( unsigned int j = 0U ; j < 4U ; j++ )
 		{
 			G::Md5::big_t n = static_cast<unsigned char>( *p++ ) ;
-			n <<= (8*j) ;
+			n <<= (j*8U) ;
 			d |= n ;
 		}
 		ss << (i==0?"":".") << d ;

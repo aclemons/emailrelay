@@ -121,6 +121,9 @@ void GNet::TimerList::updateOnStart( TimerBase & timer )
 	if( timer.immediate() )
 		timer.adjust( m_adjust++ ) ; // well-defined t() order for immediate timers
 
+	if( m_soonest == &timer )
+		m_soonest = nullptr ;
+
 	if( m_soonest != nullptr && timer.t() < m_soonest->t() )
 		m_soonest = &timer ;
 }
@@ -135,11 +138,10 @@ const GNet::TimerBase * GNet::TimerList::findSoonest() const
 {
 	G_ASSERT( !m_locked ) ;
 	TimerBase * result = nullptr ;
-	auto end = m_list.cend() ;
-	for( auto p = m_list.cbegin() ; p != end ; ++p )
+	for( const auto & t : m_list )
 	{
-		if( (*p).m_timer != nullptr && (*p).m_timer->active() && ( result == nullptr || (*p).m_timer->t() < result->t() ) )
-			result = (*p).m_timer ;
+		if( t.m_timer != nullptr && t.m_timer->active() && ( result == nullptr || t.m_timer->t() < result->t() ) )
+			result = t.m_timer ;
 	}
 	return result ;
 }

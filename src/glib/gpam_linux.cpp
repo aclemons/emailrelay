@@ -54,24 +54,8 @@ class G::PamImp
 {
 public:
 	using Handle = pam_handle_t * ;
-
-private:
 	using Conversation = struct pam_conv ;
-	using Error = Pam::Error ;
-	using ItemArray = Pam::ItemArray ;
-	static constexpr int MAGIC = 3456 ;
-
-public:
-	Pam & m_pam ;
-	int m_magic ;
-	mutable int m_rc ; // required for pam_end()
-	Handle m_hpam ;
-	Conversation m_conv ;
-	bool m_silent ;
-
-public:
 	PamImp( Pam & pam , const std::string & app , const std::string & user , bool silent ) ;
-	~PamImp() ;
 	Handle hpam() const ;
 	bool silent() const ;
 	bool authenticate( bool ) ;
@@ -84,8 +68,24 @@ public:
 	std::string name() const ;
 
 public:
+	~PamImp() ;
 	PamImp( const PamImp & ) = delete ;
-	void operator=( const PamImp & ) = delete ;
+	PamImp( PamImp && ) = delete ;
+	PamImp & operator=( const PamImp & ) = delete ;
+	PamImp & operator=( PamImp && ) = delete ;
+
+public:
+	Pam & m_pam ;
+	int m_magic ;
+	mutable int m_rc ; // required for pam_end()
+	Handle m_hpam ;
+	Conversation m_conv ;
+	bool m_silent ;
+
+private:
+	using Error = Pam::Error ;
+	using ItemArray = Pam::ItemArray ;
+	static constexpr int MAGIC = 3456 ;
 
 private:
 	static int converseCallback( int n , G_PAM_CONST struct pam_message ** in ,
@@ -102,6 +102,8 @@ G::PamImp::PamImp( G::Pam & pam , const std::string & application , const std::s
 	m_pam(pam) ,
 	m_magic(MAGIC) ,
 	m_rc(PAM_SUCCESS) ,
+	m_hpam(nullptr) ,
+	m_conv{} ,
 	m_silent(silent)
 {
 	G_DEBUG( "G::PamImp::ctor: [" << application << "] [" << user << "]" ) ;
@@ -207,10 +209,10 @@ void G::PamImp::release( struct pam_response * rsp , std::size_t n )
 		for( std::size_t i = 0U ; i < n ; i++ )
 		{
 			if( rsp[i].resp != nullptr )
-				std::free( rsp[i].resp ) ;
+				std::free( rsp[i].resp ) ; // NOLINT
 		}
 	}
-	std::free( rsp ) ;
+	std::free( rsp ) ; // NOLINT
 }
 
 int G::PamImp::converseCallback( int n_in , G_PAM_CONST struct pam_message ** in ,
@@ -266,7 +268,7 @@ int G::PamImp::converseCallback( int n_in , G_PAM_CONST struct pam_message ** in
 		// allocate the response - treat "out" as a pointer to a pointer
 		// to a contiguous array of structures (see linux man pam_conv)
 		//
-		rsp = static_cast<struct pam_response*>( std::malloc(n*sizeof(struct pam_response)) ) ;
+		rsp = static_cast<struct pam_response*>( std::malloc(n*sizeof(struct pam_response)) ) ; // NOLINT
 		if( rsp == nullptr )
 			throw std::bad_alloc() ;
 		for( std::size_t j = 0U ; j < n ; j++ )
@@ -349,7 +351,7 @@ void G::PamImp::check( const std::string & op , int rc ) const
 char * G::PamImp::strdup_( const char * p )
 {
 	p = p ? p : "" ;
-	char * copy = static_cast<char*>( std::malloc(std::strlen(p)+1U) ) ;
+	char * copy = static_cast<char*>( std::malloc(std::strlen(p)+1U) ) ; // NOLINT
 	if( copy != nullptr )
 		std::strcpy( copy , p ) ; // NOLINT
 	return copy ;

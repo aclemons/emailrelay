@@ -20,7 +20,6 @@
 # setup.
 #
 
-
 store="__SPOOL_DIR__"
 postmaster="root"
 procmail="procmail"

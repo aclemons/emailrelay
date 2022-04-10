@@ -29,20 +29,8 @@
 
 namespace GGui
 {
-	class DialogHandle ;
 	class Dialog ;
 }
-
-//| \class GGui::DialogHandle
-/// A private implementation class used by GGui::Dialog.
-///
-class GGui::DialogHandle
-{
-public:
-	HWND h ;
-	explicit DialogHandle( HWND ) ;
-	bool operator==( const DialogHandle & rhs ) const ;
-} ;
 
 //| \class GGui::Dialog
 /// A dialog box class for modal and modeless operation.
@@ -51,7 +39,7 @@ public:
 class GGui::Dialog : public WindowBase
 {
 public:
-	Dialog( HINSTANCE hinstance , HWND hwnd_parent , const std::string & title = std::string() ) ;
+	Dialog( HINSTANCE hinstance , HWND hwnd_parent , const std::string & title = {} ) ;
 		///< Constructor. After contruction just call run() or
 		///< runModeless() with the appropriate dialog resource
 		///< id or name. The hdialog returned by WindowBase::handle()
@@ -179,18 +167,14 @@ public:
 	void operator=( Dialog && ) = delete ;
 
 private:
-	using DialogList = std::list<DialogHandle> ;
-	BOOL dlgProc( UINT message , WPARAM wparam , LPARAM lparam ) ;
+	using DialogList = std::list<HWND> ;
+	BOOL dlgProcImp( UINT message , WPARAM wparam , LPARAM lparam ) ;
 	void privateInit( HWND hwnd ) ;
 	void privateEnd( int n ) ;
 	bool privateFocusSet() const ;
 	void cleanup() ;
 	DialogList::iterator find( HWND h ) ;
 	BOOL onControlColour_( WPARAM wparam , LPARAM lparam , WORD type ) ;
-	static Dialog * from_lparam( LPARAM lparam ) ;
-	static Dialog * from_long_ptr( LONG_PTR l ) ;
-	static LPARAM to_lparam( Dialog * p ) ;
-	static DLGPROC dlgproc_export_fn() ;
 	bool runStart() ;
 	bool runCore( const char * ) ;
 	bool runCore( const wchar_t * ) ;
@@ -198,10 +182,14 @@ private:
 	bool runModelessCore( const char * , bool ) ;
 	bool runModelessCore( const wchar_t * , bool ) ;
 	bool runModelessEnd( HWND , bool ) ;
+	static LPARAM toLongParam( Dialog * p ) ;
+	static LONG_PTR toLongPtr( Dialog * p ) ;
+	static Dialog * fromLongParam( LPARAM ) ;
+	static Dialog * fromLongPtr( LONG_PTR ) ;
+	template <typename T> static DLGPROC toDlgProc( T ) ;
 
 private:
 	static constexpr int Magic = 4567 ;
-	std::string m_name ;
 	std::string m_title ;
 	bool m_modal ;
 	bool m_focus_set ;
@@ -212,16 +200,13 @@ private:
 	static DialogList m_list ;
 } ;
 
-inline
-GGui::DialogHandle::DialogHandle( HWND h_ ) :
-	h(h_)
+namespace GGui
 {
-}
-
-inline
-bool GGui::DialogHandle::operator==( const DialogHandle & rhs ) const
-{
-	return h == rhs.h ;
+	template <typename T>
+	DLGPROC Dialog::toDlgProc( T export_fn )
+	{
+		return reinterpret_cast<DLGPROC>(export_fn) ;
+	}
 }
 
 #endif

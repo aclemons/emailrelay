@@ -126,7 +126,7 @@ public:
 } ;
 
 Server::Server( GNet::ExceptionSink es , Config config ) :
-	GNet::Server(es,GNet::Address(config.m_ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,config.m_port),GNet::ServerPeerConfig(config.m_idle_timeout)) ,
+	GNet::Server(es,GNet::Address(config.m_ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,config.m_port),GNet::ServerPeerConfig(config.m_idle_timeout),GNet::ServerConfig()) ,
 	m_config(config)
 {
 	if( m_config.m_slow )
@@ -334,7 +334,7 @@ int main( int argc , char * argv [] )
 			"q!quiet!less logging!!0!!1" "|"
 			"f!fail-at!fail from the n'th message! of the session (zero-based index)!1!n!1" "|"
 			"d!drop!drop the connection when content has DROP or when failing!!0!!1" "|"
-			"i!idle-timeout!idle timeout!!1!<seconds>!1" "|"
+			"i!idle-timeout!idle timeout!!1!seconds!1" "|"
 			"P!port!port number!!1!port!1" "|"
 			"f!pid-file!pid file!!1!path!1" "|"
 			"6!ipv6!use ipv6!!0!!1" "|"

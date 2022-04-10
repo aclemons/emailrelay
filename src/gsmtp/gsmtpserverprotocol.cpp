@@ -34,10 +34,10 @@
 #include <string>
 #include <tuple>
 
-GSmtp::ServerProtocol::ServerProtocol( Sender & sender , Verifier & verifier ,
-	ProtocolMessage & pmessage , const GAuth::Secrets & secrets ,
-	const std::string & sasl_server_config , Text & text ,
-	const GNet::Address & peer_address , const Config & config ) :
+GSmtp::ServerProtocol::ServerProtocol( Sender & sender ,
+	Verifier & verifier , ProtocolMessage & pmessage ,
+	const GAuth::SaslServerSecrets & secrets , const std::string & sasl_server_config ,
+	Text & text , const GNet::Address & peer_address , const Config & config ) :
 		m_sender(sender) ,
 		m_verifier(verifier) ,
 		m_text(text) ,
@@ -177,13 +177,9 @@ bool GSmtp::ServerProtocol::halfDuplexBusy( const char * , std::size_t ) const
 
 bool GSmtp::ServerProtocol::halfDuplexBusy() const
 {
-	// return true if the line buffer must stop apply()ing because we are
-	// waiting for an asynchronous filter or verifier completion event
 	return
 		m_config.allow_pipelining && (
-			// states expecting eDone...
 			m_fsm.state() == State::sProcessing ||
-			// states expecting eVrfyReply...
 			m_fsm.state() == State::sVrfyStart ||
 			m_fsm.state() == State::sVrfyIdle ||
 			m_fsm.state() == State::sVrfyGotMail ||
@@ -362,13 +358,13 @@ void GSmtp::ServerProtocol::verify( const std::string & to , const std::string &
 	m_verifier.verify( to , from , m_peer_address , mechanism , id ) ;
 }
 
-void GSmtp::ServerProtocol::verifyDone( const std::string & mbox , const VerifierStatus & status )
+void GSmtp::ServerProtocol::verifyDone( const VerifierStatus & status )
 {
-	G_DEBUG( "GSmtp::ServerProtocol::verifyDone: verify done: [" << status.str(mbox) << "]" ) ;
+	G_DEBUG( "GSmtp::ServerProtocol::verifyDone: verify done: [" << status.str() << "]" ) ;
 	if( status.abort )
 		throw ProtocolDone( "address verifier abort" ) ; // denial-of-service countermeasure
 
-	std::string status_str = status.str( mbox ) ;
+	std::string status_str = status.str() ;
 	State new_state = m_fsm.apply( *this , Event::eVrfyReply , EventData(status_str.data(),status_str.size()) ) ;
 	if( new_state == State::s_Any )
 		throw ProtocolDone( "protocol error" ) ;
@@ -377,13 +373,12 @@ void GSmtp::ServerProtocol::verifyDone( const std::string & mbox , const Verifie
 void GSmtp::ServerProtocol::doVrfyReply( EventData event_data , bool & )
 {
 	std::string line( event_data.ptr , event_data.size ) ;
-	std::string mbox ;
-	VerifierStatus status = VerifierStatus::parse( line , mbox ) ;
+	VerifierStatus status = VerifierStatus::parse( line ) ;
 
 	if( status.is_valid && status.is_local )
 		sendVerified( status.full_name ) ; // 250
 	else if( status.is_valid )
-		sendWillAccept( mbox ) ; // 252
+		sendWillAccept( status.recipient ) ; // 252
 	else
 		sendNotVerified( status.response , status.temporary ) ; // 550 or 450
 }
@@ -608,10 +603,9 @@ void GSmtp::ServerProtocol::doRcpt( EventData event_data , bool & predicate )
 
 void GSmtp::ServerProtocol::doVrfyToReply( EventData event_data , bool & predicate )
 {
-	std::string to ;
-	VerifierStatus status = VerifierStatus::parse( std::string(event_data.ptr,event_data.size) , to ) ;
+	VerifierStatus status = VerifierStatus::parse( std::string(event_data.ptr,event_data.size) ) ;
 
-	bool ok = m_message.addTo( to , status ) ;
+	bool ok = m_message.addTo( status ) ;
 	if( ok )
 	{
 		sendRcptReply() ;
@@ -1075,11 +1069,11 @@ std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_pe
 GSmtp::ServerProtocol::Config::Config()
 = default;
 
-GSmtp::ServerProtocol::Config::Config( bool with_vrfy_in ,
-	std::size_t max_size_in , bool authentication_requires_encryption_in ,
-	bool mail_requires_encryption_in , bool tls_starttls_in ,
-	bool tls_connection_in ) :
+GSmtp::ServerProtocol::Config::Config( bool with_vrfy_in , unsigned int filter_timeout_in ,
+	std::size_t max_size_in , bool authentication_requires_encryption_in , bool mail_requires_encryption_in ,
+	bool tls_starttls_in , bool tls_connection_in ) :
 		with_vrfy(with_vrfy_in) ,
+		filter_timeout(filter_timeout_in) ,
 		max_size(max_size_in) ,
 		authentication_requires_encryption(authentication_requires_encryption_in) ,
 		mail_requires_encryption(mail_requires_encryption_in) ,

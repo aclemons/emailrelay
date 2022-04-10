@@ -41,16 +41,9 @@
 
 namespace
 {
-	std::string encode( const std::string & pwd_utf8 , const std::string & mechanism )
+	std::string encode( const std::string & s )
 	{
-		return
-			mechanism == "CRAM-MD5" ?
-				G::Base64::encode( G::Hash::mask(G::Md5::predigest,G::Md5::digest2,G::Md5::blocksize(),pwd_utf8) ) :
-				G::Xtext::encode( pwd_utf8 ) ;
-	}
-	std::string encode( const std::string & id_utf8 )
-	{
-		return G::Xtext::encode( id_utf8 ) ;
+		return G::Base64::encode( s ) ;
 	}
 }
 
@@ -712,16 +705,15 @@ void PopPage::dump( std::ostream & stream , bool for_install ) const
 	dumpItem( stream , for_install , "pop-shared-no-delete" , value(m_no_delete_checkbox) ) ;
 	dumpItem( stream , for_install , "pop-by-name" , value(m_pop_by_name) ) ;
 
-	std::string mechanism( "plain" ) ;
-	dumpItem( stream , for_install , "pop-auth-mechanism" , mechanism ) ;
+	dumpItem( stream , for_install , "pop-auth-mechanism" , std::string("plain:b") ) ;
 	if( for_install )
 	{
 		dumpItem( stream , for_install , "pop-account-1-name" , encode(value_utf8(m_name_1)) ) ;
-		dumpItem( stream , for_install , "pop-account-1-password" , encode(value_utf8(m_pwd_1),mechanism) ) ;
+		dumpItem( stream , for_install , "pop-account-1-password" , encode(value_utf8(m_pwd_1)) ) ;
 		dumpItem( stream , for_install , "pop-account-2-name" , encode(value_utf8(m_name_2)) ) ;
-		dumpItem( stream , for_install , "pop-account-2-password" , encode(value_utf8(m_pwd_2),mechanism) ) ;
+		dumpItem( stream , for_install , "pop-account-2-password" , encode(value_utf8(m_pwd_2)) ) ;
 		dumpItem( stream , for_install , "pop-account-3-name" , encode(value_utf8(m_name_3)) ) ;
-		dumpItem( stream , for_install , "pop-account-3-password" , encode(value_utf8(m_pwd_3),mechanism) ) ;
+		dumpItem( stream , for_install , "pop-account-3-password" , encode(value_utf8(m_pwd_3)) ) ;
 	}
 }
 
@@ -929,15 +921,14 @@ std::string SmtpServerPage::nextPage()
 
 void SmtpServerPage::dump( std::ostream & stream , bool for_install ) const
 {
-	std::string mechanism = "plain" ; // was value(m_mechanism_combo)
 	GPage::dump( stream , for_install ) ;
 	dumpItem( stream , for_install , "smtp-server-port" , value(m_port_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-server-auth" , value(m_auth_checkbox) ) ;
-	dumpItem( stream , for_install , "smtp-server-auth-mechanism" , mechanism ) ;
+	dumpItem( stream , for_install , "smtp-server-auth-mechanism" , std::string("plain:b") ) ;
 	if( for_install )
 	{
 		dumpItem( stream , for_install , "smtp-server-account-name" , encode(value_utf8(m_account_name)) ) ;
-		dumpItem( stream , for_install , "smtp-server-account-password" , encode(value_utf8(m_account_pwd),mechanism) ) ;
+		dumpItem( stream , for_install , "smtp-server-account-password" , encode(value_utf8(m_account_pwd)) ) ;
 	}
 	dumpItem( stream , for_install , "smtp-server-trust" , value(m_trust_address) ) ;
 	dumpItem( stream , for_install , "smtp-server-tls" , value(m_tls_checkbox->isChecked() && m_tls_starttls->isChecked()) ) ;
@@ -1361,17 +1352,16 @@ std::string SmtpClientPage::nextPage()
 void SmtpClientPage::dump( std::ostream & stream , bool for_install ) const
 {
 	GPage::dump( stream , for_install ) ;
-	std::string mechanism = "plain" ; // was value(m_mechanism_combo)
 	dumpItem( stream , for_install , "smtp-client-host" , value(m_server_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-client-port" , value(m_port_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-client-tls" , value(m_tls_checkbox->isChecked()&&!m_tls_tunnel->isChecked()) ) ;
 	dumpItem( stream , for_install , "smtp-client-tls-connection" , value(m_tls_checkbox->isChecked()&&m_tls_tunnel->isChecked()) ) ;
 	dumpItem( stream , for_install , "smtp-client-auth" , value(m_auth_checkbox) ) ;
-	dumpItem( stream , for_install , "smtp-client-auth-mechanism" , mechanism ) ;
+	dumpItem( stream , for_install , "smtp-client-auth-mechanism" , std::string("plain:b") ) ;
 	if( for_install )
 	{
 		dumpItem( stream , for_install , "smtp-client-account-name" , encode(value_utf8(m_account_name)) ) ;
-		dumpItem( stream , for_install , "smtp-client-account-password" , encode(value_utf8(m_account_pwd),mechanism) ) ;
+		dumpItem( stream , for_install , "smtp-client-account-password" , encode(value_utf8(m_account_pwd)) ) ;
 	}
 }
 
@@ -1488,10 +1478,10 @@ std::string LoggingPage::nextPage()
 
 bool LoggingPage::isComplete()
 {
-    G_DEBUG( "LoggingPage::isComplete: " << m_log_output_file_checkbox->isChecked() << " " << value(m_log_output_file_edit_box) ) ;
-    return
-        !m_log_output_file_checkbox->isChecked() ||
-        !m_log_output_file_edit_box->text().trimmed().isEmpty() ;
+	G_DEBUG( "LoggingPage::isComplete: " << m_log_output_file_checkbox->isChecked() << " " << value(m_log_output_file_edit_box) ) ;
+	return
+		!m_log_output_file_checkbox->isChecked() ||
+		!m_log_output_file_edit_box->text().trimmed().isEmpty() ;
 }
 
 void LoggingPage::browseLogFile()
@@ -1698,8 +1688,7 @@ void ListeningPage::dump( std::ostream & stream , bool for_install ) const
 // ==
 
 StartupPage::StartupPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 ,
-	bool start_on_boot_able , bool is_mac ) :
+	const std::string & next_1 , const std::string & next_2 , bool is_mac ) :
 		GPage(dialog,name,next_1,next_2) ,
 		m_is_mac(is_mac)
 {
@@ -1722,12 +1711,12 @@ StartupPage::StartupPage( GDialog & dialog , const G::MapFile & config , const s
 		m_add_desktop_item_checkbox->setEnabled( false ) ;
 	}
 	m_at_login_checkbox->setEnabled( !Dir::autostart().str().empty() ) ;
-	m_on_boot_checkbox->setEnabled( start_on_boot_able ) ;
+	m_on_boot_checkbox->setEnabled( config.booleanValue("=dir-boot-enabled",false) ) ;
 
 	m_at_login_checkbox->setChecked( !Dir::autostart().str().empty() && config.booleanValue("start-at-login",false) ) ;
 	m_add_menu_item_checkbox->setChecked( !m_is_mac && config.booleanValue("start-link-menu",true) ) ;
 	m_add_desktop_item_checkbox->setChecked( !m_is_mac && config.booleanValue("start-link-desktop",false) ) ;
-	m_on_boot_checkbox->setChecked( start_on_boot_able && config.booleanValue("start-on-boot",false) ) ;
+	m_on_boot_checkbox->setChecked( config.booleanValue("start-on-boot",false) ) ;
 
 	QGroupBox * auto_group = new QGroupBox( tr("Automatic") ) ;
 	auto_group->setLayout( auto_layout ) ;
@@ -1760,6 +1749,7 @@ std::string StartupPage::nextPage()
 void StartupPage::dump( std::ostream & stream , bool for_install ) const
 {
 	GPage::dump( stream , for_install ) ;
+	dumpItem( stream , for_install , "start-on-boot-enabled" , std::string(m_on_boot_checkbox->isEnabled()?"y":"n") ) ;
 	dumpItem( stream , for_install , "start-on-boot" , value(m_on_boot_checkbox) ) ;
 	dumpItem( stream , for_install , "start-at-login" , value(m_at_login_checkbox) ) ;
 	dumpItem( stream , for_install , "start-link-menu" , value(m_add_menu_item_checkbox) ) ;
@@ -1961,7 +1951,7 @@ void ProgressPage::onInstallTimeout()
 					m_logwatch_thread->start() ;
 			}
 		}
-		emit pageUpdateSignal() ;
+		emit pageUpdateSignal() ; // NOLINT
 	}
 	catch( std::exception & e )
 	{
@@ -2032,7 +2022,7 @@ QString ProgressPage::format( const Installer::Output & output )
 			return tr("%1... %2","7").arg(action_tr,error_native) ;
 		else
 			//: installer progress item, untranslated subject, with native error result
-			return tr("%1 [%3]... %2","8").arg(action_tr,error_native,subject_native)  ;
+			return tr("%1 [%3]... %2","8").arg(action_tr,error_native,subject_native) ;
 	}
 	else
 	{
@@ -2041,7 +2031,7 @@ QString ProgressPage::format( const Installer::Output & output )
 			return tr("%1... %2: %3","9").arg(action_tr,error_tr,error_native) ;
 		else
 			//: installer progress item, untranslated subject, with translated error result and untranslated error subject
-			return tr("%1 [%3]... %2: %4","10").arg(action_tr,error_tr,subject_native,error_native)  ;
+			return tr("%1 [%3]... %2: %4","10").arg(action_tr,error_tr,subject_native,error_native) ;
 	}
 }
 

@@ -76,15 +76,17 @@ void GSmtp::NewFile::cleanup()
 	}
 }
 
-bool GSmtp::NewFile::prepare( const std::string & session_auth_id ,
-	const std::string & peer_socket_address , const std::string & peer_certificate )
+bool GSmtp::NewFile::prepare( const std::string & session_auth_id , const std::string & peer_socket_address ,
+	const std::string & peer_certificate )
 {
 	// flush and close the content file
-	//
-	flushContent() ;
+	G_ASSERT( m_content != nullptr ) ;
+	m_content->close() ;
+	if( m_content->fail() ) // trap failbit/badbit
+		throw FileError( "cannot write content file " + cpath().str() ) ;
+	m_content.reset() ;
 
 	// write the envelope
-	//
 	m_env.m_authentication = session_auth_id ;
 	m_env.m_client_socket_address = peer_socket_address ;
 	m_env.m_client_certificate = peer_certificate ;
@@ -92,11 +94,10 @@ bool GSmtp::NewFile::prepare( const std::string & session_auth_id ,
 		throw FileError( "cannot write envelope file " + epath(State::New).str() ) ;
 
 	// copy or move aside for local mailboxes
-	//
 	if( !m_env.m_to_local.empty() && m_env.m_to_remote.empty() )
 	{
 		moveToLocal( cpath() , epath(State::New) , epath(State::Normal) ) ;
-		static_cast<MessageStore&>(m_store).updated() ; // (new)
+		m_store.updated() ; // (new)
 		return true ; // no commit() needed
 	}
 	else if( !m_env.m_to_local.empty() )
@@ -110,14 +111,14 @@ bool GSmtp::NewFile::prepare( const std::string & session_auth_id ,
 	}
 }
 
-void GSmtp::NewFile::commit( bool strict )
+void GSmtp::NewFile::commit( bool throw_on_error )
 {
 	m_committed = true ;
 	bool ok = commitEnvelope() ;
-	if( !ok && strict )
+	if( !ok && throw_on_error )
 		throw FileError( "cannot rename envelope file to " + epath(State::Normal).str() ) ;
 	if( ok )
-		static_cast<MessageStore&>(m_store).updated() ;
+		m_store.updated() ;
 }
 
 void GSmtp::NewFile::addTo( const std::string & to , bool local )
@@ -144,18 +145,9 @@ bool GSmtp::NewFile::addText( const char * line_data , std::size_t line_size )
 		m_env.m_eight_bit = isEightBit(line_data,line_size) ? 1 : 0 ;
 
 	std::ostream & stream = *m_content ;
-	stream.write( line_data , line_size ) ;
+	stream.write( line_data , line_size ) ; // NOLINT narrowing
 
 	return m_max_size == 0UL || m_size < m_max_size ;
-}
-
-void GSmtp::NewFile::flushContent()
-{
-	G_ASSERT( m_content != nullptr ) ;
-	m_content->close() ;
-	if( m_content->fail() ) // trap failbit/badbit
-		throw FileError( "cannot write content file " + cpath().str() ) ;
-	m_content.reset() ;
 }
 
 void GSmtp::NewFile::discardContent()

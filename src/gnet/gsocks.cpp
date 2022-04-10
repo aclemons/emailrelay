@@ -30,7 +30,7 @@ GNet::Socks::Socks( const Location & location ) :
 	if( location.socks() )
 	{
 		unsigned int far_port = location.socksFarPort() ;
-		if( !Address::validPort(far_port) )
+		if( !Address::validPort(far_port) || far_port > 0xffffU )
 			throw SocksError( "invalid port" ) ;
 
 		m_request = buildPdu( location.socksFarHost() , far_port ) ;

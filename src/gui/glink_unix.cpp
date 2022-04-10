@@ -108,7 +108,7 @@ void G::LinkImp::saveAs( const Path & path )
 	file << "Comment=" << m_description << eol ;
 	file << "Path=" << m_working_dir << eol ;
 	if( ! m_icon_source.str().empty() )
-	file << "Icon=" << m_icon_source << eol ;
+		file << "Icon=" << m_icon_source << eol ;
 	file << "Terminal=" << (m_terminal?"true":"false") << eol ;
 
 	file << "Categories=System;" << eol ;

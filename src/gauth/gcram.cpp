@@ -39,7 +39,7 @@ namespace GAuth
 		GSsl::Library & lib()
 		{
 			GSsl::Library * p = GSsl::Library::instance() ;
-			if( p == nullptr ) throw std::runtime_error( "no tsl library" ) ;
+			if( p == nullptr ) throw G::Exception( "no tls library" ) ;
 			return *p ;
 		}
 		struct DigesterAdaptor /// Used by GAuth::Cram to use GSsl::Digester.

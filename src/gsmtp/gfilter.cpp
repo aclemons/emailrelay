@@ -69,7 +69,7 @@ GSmtp::Filter::Exit::Exit( int exit_code , bool server_side ) :
 		{
 			result = Result::f_ok ; special = rescan ;
 		}
-		else if( exit_code == 104 && server_side )
+		else if( exit_code == 104 )
 		{
 			result = Result::f_fail ; special = rescan ;
 		}

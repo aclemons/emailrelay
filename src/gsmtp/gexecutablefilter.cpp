@@ -29,9 +29,8 @@
 #include "gassert.h"
 #include <tuple>
 
-GSmtp::ExecutableFilter::ExecutableFilter( GNet::ExceptionSink es ,
-	FileStore & file_store , bool server_side , const std::string & path ,
-	unsigned int timeout ) :
+GSmtp::ExecutableFilter::ExecutableFilter( GNet::ExceptionSink es , FileStore & file_store ,
+	bool server_side , const std::string & path , unsigned int timeout ) :
 		m_file_store(file_store) ,
 		m_server_side(server_side) ,
 		m_prefix(server_side?"filter":"client filter") ,
@@ -61,11 +60,6 @@ bool GSmtp::ExecutableFilter::special() const
 	return m_exit.special ;
 }
 
-bool GSmtp::ExecutableFilter::abandoned() const
-{
-	return m_exit.abandon() ;
-}
-
 std::string GSmtp::ExecutableFilter::response() const
 {
 	G_ASSERT( m_exit.ok() || m_exit.abandon() || !m_response.empty() ) ;
@@ -86,13 +80,13 @@ std::string GSmtp::ExecutableFilter::reason() const
 
 void GSmtp::ExecutableFilter::start( const MessageId & message_id )
 {
-	FileStore::State state = m_server_side ? FileStore::State::New : FileStore::State::Locked ;
 	G::Path cpath = m_file_store.contentPath( message_id ) ;
-	G::Path epath = m_file_store.envelopePath( message_id , state ) ;
+	G::Path epath = m_file_store.envelopePath( message_id , m_server_side ? ".new" : ".busy" ) ;
 
 	G::StringArray args ;
 	args.push_back( cpath.str() ) ;
 	args.push_back( epath.str() ) ;
+
 	G::ExecutableCommand commandline( m_path.str() , args ) ;
 	G_LOG( "GSmtp::ExecutableFilter::start: " << m_prefix << ": running " << commandline.displayString() ) ;
 	m_task.start( commandline ) ;
@@ -152,17 +146,17 @@ std::pair<std::string,std::string> GSmtp::ExecutableFilter::parseOutput( std::st
 
 	for( auto p = lines.begin() ; p != lines.end() ; )
 	{
-		const std::string & line = *p ;
-		std::size_t pos_start = line.find( start_1 ) ;
-		std::size_t pos_end = line.find( end_1 ) ;
+		std::string line = *p ;
+		std::size_t pos_start = line.find(start_1) ;
+		std::size_t pos_end = line.find(end_1) ;
 		if( pos_start != 0U )
 		{
-			pos_start = line.find( start_2 ) ;
-			pos_end = line.find( end_2 ) ;
+			pos_start = line.find(start_2) ;
+			pos_end = line.find(end_2) ;
 		}
 		if( pos_start == 0U && pos_end != std::string::npos )
 		{
-			*p++ = G::Str::printable( line.substr(2U,pos_end-2U) ) ;
+			*p++ = G::Str::printable(line.substr(2U,pos_end-2U)) ;
 		}
 		else
 		{
@@ -184,7 +178,12 @@ G::Slot::Signal<int> & GSmtp::ExecutableFilter::doneSignal()
 
 void GSmtp::ExecutableFilter::cancel()
 {
-	m_task.stop() ;
 	m_timer.cancelTimer() ;
+	m_task.stop() ;
+}
+
+bool GSmtp::ExecutableFilter::abandoned() const
+{
+	return m_exit.abandon() ;
 }
 

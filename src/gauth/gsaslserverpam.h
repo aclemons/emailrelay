@@ -53,11 +53,11 @@ public:
 		///< Constructor.
 
 public:
-	~SaslServerPam() ;
+	~SaslServerPam() override ;
 	SaslServerPam( const SaslServerPam & ) = delete ;
 	SaslServerPam( SaslServerPam && ) = delete ;
-	void operator=( const SaslServerPam & ) = delete ;
-	void operator=( SaslServerPam && ) = delete ;
+	SaslServerPam & operator=( const SaslServerPam & ) = delete ;
+	SaslServerPam & operator=( SaslServerPam && ) = delete ;
 
 private: // overrides
 	bool requiresEncryption() const override ; // Override from GAuth::SaslServer.

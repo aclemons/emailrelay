@@ -131,12 +131,14 @@ public:
 		///< only calls to hasConnected(), finished() and the dtor
 		///< are allowed.
 
-	Address localAddress() const override ;
-		///< Returns the local address.
+	std::pair<bool,Address> localAddress() const override ;
+		///< Override from Connection. Returns the local
+		///< address. Pair.first is false on error.
 		///< Override from GNet::Connection.
 
-	Address peerAddress() const override ;
-		///< Returns the peer address. Throws if not connected().
+	std::pair<bool,Address> peerAddress() const override ;
+		///< Override from Connection. Returns the peer
+		///< address. Pair.first is false on error.
 		///< Override from GNet::Connection.
 
 	std::string connectionState() const override ;
@@ -240,16 +242,7 @@ public:
 	void operator=( Client && ) = delete ;
 
 private:
-	enum class State
-	{
-		Idle ,
-		Resolving ,
-		Connecting ,
-		Connected ,
-		Socksing ,
-		Disconnected ,
-		Testing
-	} ;
+	enum class State { Idle , Resolving , Connecting , Connected , Socksing , Disconnected , Testing } ;
 	bool onDataImp( const char * , std::size_t , std::size_t , std::size_t , char ) ;
 	void emit( const std::string & ) ;
 	void startConnecting() ;

@@ -67,7 +67,7 @@ void GSmtp::AdminServerPeer::clientDone( const std::string & s )
 void GSmtp::AdminServerPeer::onDelete( const std::string & reason )
 {
 	G_LOG_S( "GSmtp::AdminServerPeer: admin connection closed: " << reason << (reason.empty()?"":": ")
-		<< peerAddress().displayString() ) ;
+		<< peerAddress().second.displayString() ) ;
 }
 
 void GSmtp::AdminServerPeer::onSecure( const std::string & , const std::string & , const std::string & )
@@ -97,7 +97,6 @@ bool GSmtp::AdminServerPeer::onReceive( const char * line_data , std::size_t lin
 	else if( is(line,"notify") )
 	{
 		m_notifying = true ;
-		setIdleTimeout( 0U ) ; // GNet::ServerPeer
 	}
 	else if( is(line,"list") )
 	{
@@ -123,7 +122,7 @@ bool GSmtp::AdminServerPeer::onReceive( const char * line_data , std::size_t lin
 	else if( is(line,"terminate") && m_with_terminate )
 	{
 		G_LOG_S( "GSmtp::AdminServerPeer::onReceive: received a terminate command from "
-			<< peerAddress().displayString() ) ;
+			<< peerAddress().second.displayString() ) ;
 		if( GNet::EventLoop::exists() )
 			GNet::EventLoop::instance().quit("") ;
 	}
@@ -223,10 +222,9 @@ void GSmtp::AdminServerPeer::flush()
 	else
 	{
 		m_client_ptr.reset( std::make_unique<GSmtp::Client>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()) ,
-			m_server.store() , m_server.ff() , GNet::Location(m_remote_address) ,
-			m_server.clientSecrets() , m_server.clientConfig() ) ) ;
+			m_server.ff() , GNet::Location(m_remote_address) , m_server.clientSecrets() , m_server.clientConfig() ) ) ;
 
-		m_client_ptr->sendAllMessages() ; // once connected
+		m_client_ptr->sendMessagesFrom( m_server.store() ) ; // once connected
 		// no sendLine() -- sends "OK" or "error:" when complete -- see AdminServerPeer::clientDone()
 	}
 }
@@ -342,14 +340,14 @@ bool GSmtp::AdminServerPeer::notifying() const
 // ===
 
 GSmtp::AdminServer::AdminServer( GNet::ExceptionSink es , MessageStore & store ,
-	FilterFactory & ff , G::Slot::Signal<std::string> & forward_request ,
-	const GNet::ServerPeerConfig & server_peer_config ,
-	const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
+	FilterFactory & ff , G::Slot::Signal<const std::string&> & forward_request ,
+	const GNet::ServerPeerConfig & server_peer_config , const GNet::ServerConfig & server_config ,
+	const GSmtp::Client::Config & client_config , const GAuth::SaslClientSecrets & client_secrets ,
 	const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
 	const std::string & remote_address , unsigned int connection_timeout ,
 	const G::StringMap & info_commands , const G::StringMap & config_commands ,
 	bool with_terminate ) :
-		GNet::MultiServer(es,interfaces,port,"admin",server_peer_config) ,
+		GNet::MultiServer(es,interfaces,port,"admin",server_peer_config,server_config) ,
 		m_forward_timer(*this,&AdminServer::onForwardTimeout,es) ,
 		m_store(store) ,
 		m_ff(ff) ,
@@ -393,7 +391,6 @@ std::unique_ptr<GNet::ServerPeer> GSmtp::AdminServer::newPeer( GNet::ExceptionSi
 	}
 	return ptr ;
 }
-
 void GSmtp::AdminServer::forward()
 {
 	// asychronous emit() for safety
@@ -445,7 +442,7 @@ GSmtp::FilterFactory & GSmtp::AdminServer::ff()
 	return m_ff ;
 }
 
-const GAuth::Secrets & GSmtp::AdminServer::clientSecrets() const
+const GAuth::SaslClientSecrets & GSmtp::AdminServer::clientSecrets() const
 {
 	return m_client_secrets ;
 }

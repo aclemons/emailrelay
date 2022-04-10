@@ -23,42 +23,61 @@
 
 #include "gdef.h"
 #include "gfilter.h"
-#include "gexceptionsink.h"
 #include "gfilestore.h"
+#include "gfactoryparser.h"
+#include "gexceptionsink.h"
 #include <string>
 #include <utility>
 
 namespace GSmtp
 {
 	class FilterFactory ;
+	class FilterFactoryFileStore ;
 }
 
 //| \class GSmtp::FilterFactory
-/// A factory for message processors.
+/// A factory interface for GSmtp::Filter message processors.
 ///
 class GSmtp::FilterFactory
 {
 public:
-	explicit FilterFactory( FileStore & ) ;
+	virtual std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ,
+		bool server_side , const std::string & identifier , unsigned int timeout ) = 0 ;
+			///< Returns a Filter on the heap. The identifier
+			///< is normally prefixed with a processor type, or it
+			///< is the file system path of an exectuable.
+
+	virtual ~FilterFactory() = default ;
+		///< Destructor.
+
+	static std::string check( const std::string & identifier ) ;
+		///< Checks an identifier. Returns an empty string if okay,
+		///< or a diagnostic reason string.
+} ;
+
+//| \class GSmtp::FilterFactoryFileStore
+/// A filter factory that holds a GSmtp::FileStore reference so that
+/// it can instantiate filters that operate on message files.
+///
+class GSmtp::FilterFactoryFileStore : public FilterFactory
+{
+public:
+	explicit FilterFactoryFileStore( FileStore & ) ;
 		///< Constructor. The FileStore reference is retained and passed
 		///< to new filter objects so that they can derive the paths of
 		///< the content and envelope files that they process.
 
 	std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ,
-		bool server_side , const std::string & identifier , unsigned int timeout ) ;
-			///< Returns a Filter on the heap. The identifier is
-			///< normally prefixed with a processor type, or it is
-			///< the file system path of a filter exectuable.
-
-	static std::string check( const std::string & identifier ) ;
-		///< Checks an identifier. Returns an empty string if okay,
-		///< or a diagnostic reason string.
-
-public:
-	FilterFactory() = delete ;
+		bool server_side , const std::string & identifier , unsigned int timeout ) override ;
 
 private:
 	FileStore & m_file_store ;
 } ;
+
+inline
+std::string GSmtp::FilterFactory::check( const std::string & identifier )
+{
+	return FactoryParser::check( identifier , true ) ;
+}
 
 #endif

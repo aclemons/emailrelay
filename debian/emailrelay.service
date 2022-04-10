@@ -12,3 +12,7 @@ ExecStart=/etc/init.d/emailrelay start
 ExecStop=/etc/init.d/emailrelay stop
 PIDFile=/run/emailrelay/emailrelay.pid
 SuccessExitStatus=0 143
+
+[Install]
+WantedBy=multi-user.target
+

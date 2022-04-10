@@ -1,21 +1,5 @@
 News
 ----
-Non-functional code changes for v2.3dev1...
-
-Event loops have been rewritten; having common code for the list of event
-sources (EventHandlerList) was an unnecessary complication, so the common
-parts have been stripped out and moved to a new 'EventEmitter' class. The
-re-write includes a multi-threaded event loop for windows that allows for
-more simultaneous connections.
-
-The SMTP message-store code has been cleaned up to better separate the
-abstract interface from the concrete implementation that uses content and
-envelope files. The separation was not completely clean when executing
-message filters because they have to know where the message files are
-stored. This has been resolved by passing a reference to the file-store
-through the FilterFactory.
-
-The filter timeout mechanism has been moved out of the SMTP protocol class
-and into the filters themseleves. This makes the protocol implementation
-independent of the lower-level GNet classes.
-
+Version 2.3 is a relatively minor release. The main functional change is to
+support unix domain sockets. Non-functional code changes include better 
+separation of interface and implementation in the SMTP message store.

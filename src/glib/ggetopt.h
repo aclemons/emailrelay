@@ -81,7 +81,7 @@ public:
 			///< Adds options from the config file named by the n'th non-option
 			///< command-line argument (zero-based and allowing for the program
 			///< name in argv0). The n'th argument is then removed. Does nothing
-			///< if the n'th argument does not exist or if it is empty. Throws
+			///< if the n'th argument does not exists or if it is empty. Throws
 			///< if the file is specified but cannot be opened. Parsing errors
 			///< are added to errorList(). The optional trailing string parameters
 			///< are used to perform leading sub-string substitution on the

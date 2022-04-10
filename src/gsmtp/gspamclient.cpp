@@ -147,7 +147,7 @@ void GSmtp::SpamClient::Request::send( const std::string & path , const std::str
 
 bool GSmtp::SpamClient::Request::sendMore()
 {
-	m_stream.read( &m_buffer[0] , m_buffer.size() ) ;
+	m_stream.read( &m_buffer[0] , m_buffer.size() ) ; // NOLINT narrowing
 	std::streamsize n = m_stream.gcount() ;
 	if( n <= 0 )
 	{

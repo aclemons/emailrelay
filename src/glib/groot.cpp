@@ -54,12 +54,14 @@ G::Root::Root( bool change_group ) :
 	}
 }
 
-G::Root::~Root()
+G::Root::~Root() // NOLINT bugprone-exception-escape
 {
 	if( m_this == this && m_initialised )
 	{
 		m_this = nullptr ;
-		Process::beOrdinary( m_nobody , m_change_group ) ; // std::terminate on error
+		int e_saved = Process::errno_() ;
+		Process::beOrdinary( m_nobody , m_change_group ) ; // can throw - std::terminate is correct
+		Process::errno_( SignalSafe() , e_saved ) ;
 	}
 }
 

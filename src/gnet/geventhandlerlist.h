@@ -18,4 +18,266 @@
 /// \file geventhandlerlist.h
 ///
 
-#error not used
+#ifndef G_NET_EVENT_HANDLER_LIST_H
+#define G_NET_EVENT_HANDLER_LIST_H
+
+#include "gdef.h"
+#include "geventhandler.h"
+#include "gexceptionsink.h"
+#include "gdescriptor.h"
+#include <vector>
+#include <string>
+
+namespace GNet
+{
+	class EventHandlerList ;
+}
+
+//| \class GNet::EventHandlerList
+/// A class that maps from a file descriptor to an event handler and
+/// exception handler, used in the implemention of classes derived
+/// from GNet::EventLoop.
+///
+/// If an event handler is removed from the list while the list is
+/// being iterated over then the relevant pointer is reset without
+/// affecting the iteration. The unlock() method does garbage collection
+/// once the iteration is complete.
+///
+/// If an event handler is added to the list while the list is being
+/// iterated over then it is added to a pending-list. The pending
+/// list is added to the main list by unlock() once the iteration
+/// is complete.
+///
+/// Each event handler has an associated exception handler, typically a
+/// more long-lived object that has the event handler as a sub-object.
+/// If the event hander throws an exception then the event
+/// handler list catches it and invokes the exception handler -- and
+/// if that throws then the exception escapes the event loop. This is
+/// safe even if the exception handler object is destroyed by the
+/// original exception because the exception handler base-class
+/// destructor uses the list's disarm() mechanism. This is the same
+/// behaviour as in the TimerList.
+///
+/// Exception handlers are combined with an additional 'source' pointer
+/// in an ExceptionSink tuple. The exception source pointer can be used
+/// to provide additional information to the exception handler, typically
+/// as a pointer to the event handler object. (The EventHandler class
+/// is not used as the exception source type because timers also refer
+/// to exception sources and because of possible multiple inheritance of
+/// the EventHandler base.)
+///
+/// Note that the Descriptor class is actually in two parts for Windows:
+/// a socket handle (file descriptor) and an event-object handle. The
+/// event handler list is keyed by the full Descriptor object rather than
+/// just the socket handle and this allows it to contain event-handling
+/// objects that are not sockets. See GNet::FutureEvent.
+///
+class GNet::EventHandlerList
+{
+public:
+	struct Value /// A tuple for GNet::EventHandlerList.
+	{
+		Descriptor m_fd ;
+		EventHandler * m_event_handler ; // handler for the event
+		ExceptionSink m_es ; // handler for any thrown exception
+		explicit Value( Descriptor fd ) noexcept ;
+		Value( Descriptor fd , EventHandler * , ExceptionSink ) noexcept ;
+	} ;
+	struct Iterator /// An iterator for GNet::EventHandlerList.
+	{
+		using Value = EventHandlerList::Value ;
+		Iterator( const std::vector<Value> & , bool ) noexcept ;
+		Iterator( std::vector<Value>::const_iterator , std::vector<Value>::const_iterator ) noexcept ;
+		Iterator & operator++() noexcept ;
+		const Value & operator*() const noexcept ;
+		bool operator==( const Iterator & ) const noexcept ;
+		bool operator!=( const Iterator & ) const noexcept ;
+		Descriptor fd() const noexcept ;
+		EventHandler * handler() noexcept ;
+		ExceptionSink es() noexcept ;
+		void raiseEvent( void (EventHandler::*method)() ) ;
+		void raiseEvent( void (EventHandler::*method)(EventHandler::Reason) , EventHandler::Reason ) ;
+		std::vector<Value>::const_iterator m_p ;
+		std::vector<Value>::const_iterator m_end ;
+	} ;
+	struct Lock /// A RAII class to lock and unlock GNet::EventHandlerList.
+	{
+		explicit Lock( EventHandlerList & , bool * invalid_p = nullptr ) ;
+		~Lock() ;
+		Lock( const Lock & ) = delete ;
+		Lock( Lock && ) = delete ;
+		void operator=( const Lock & ) = delete ;
+		void operator=( Lock && ) = delete ;
+		EventHandlerList & m_list ;
+		bool * m_invalid_p ;
+	} ;
+
+public:
+	explicit EventHandlerList( const std::string & type ) ;
+		///< Constructor. The type parameter (eg. "read") is used only in
+		///< debugging messages.
+
+	void add( Descriptor fd , EventHandler * handler , ExceptionSink ) ;
+		///< Adds a file-descriptor/handler tuple to the list.
+
+	void remove( Descriptor fd ) noexcept ;
+		///< Removes a file-descriptor from the list. Does nothing if the
+		///< file-descriptor is not in the list.
+
+	Iterator find( Descriptor fd ) const ;
+		///< Finds an entry in the list. Returns end() if not found.
+		///< This ignores any pending changes, ie. descriptors add()ed
+		///< or remove()d while lock()ed.
+
+	bool contains( Descriptor fd ) const noexcept ;
+		///< Returns true if the list, taking account of any pending
+		///< changes, contains the given descriptor.
+
+	void lock() ;
+		///< To be called at the start of an begin()/end() iteration if the
+		///< list might change during the iteration. Must be paired with
+		///< unlock().
+
+	bool unlock() ;
+		///< Called at the end of a begin()/end() iteration to match a call
+		///< to lock(). Does garbage collection. Returns true if anything
+		///< might have changed.
+
+	Iterator begin() const noexcept ;
+		///< Returns a forward iterator. If the list is lock()ed then the
+		///< iterator will skip over descriptors that have been remove()d
+		///< or add()ed while locked.
+
+	Iterator end() const noexcept ;
+		///< Returns an end iterator.
+
+	void disarm( ExceptionHandler * ) noexcept ;
+		///< Resets any matching ExceptionHandler pointers, so exceptions
+		///< thrown out of the relevant file descriptors' event handlers
+		///< are rethrown by this class rather than being delivered to
+		///< the exception handler interface.
+
+	void getHandles( std::vector<HANDLE> & ) const ;
+		///< Adds unique, non-zero Descriptor handles to the given
+		///< sorted list, including any add()ed while lock()ed.
+
+	std::size_t size() const noexcept ;
+		///< Returns the size of the list, ignoring any changes while
+		///< lock()ed.
+
+public:
+	~EventHandlerList() = default ;
+	EventHandlerList( const EventHandlerList & ) = delete ;
+	EventHandlerList( EventHandlerList && ) = delete ;
+	void operator=( const EventHandlerList & ) = delete ;
+	void operator=( EventHandlerList && ) = delete ;
+
+private:
+	using List = std::vector<Value> ;
+	static void addImp( List & list , Descriptor fd , EventHandler * , ExceptionSink ) ;
+	static bool disable( List & list , Descriptor fd ) noexcept ;
+	static bool remove( List & list , Descriptor fd ) noexcept ;
+	static void getHandles( const List & , std::vector<HANDLE> & ) ;
+	void disarm( List & , ExceptionHandler * ) noexcept ;
+	void commitPending() ;
+	void collectGarbage() ;
+
+private:
+	std::string m_type ;
+	List m_list ;
+	List m_pending_list ;
+	unsigned int m_lock ;
+	bool m_has_garbage ;
+} ;
+
+inline
+GNet::EventHandlerList::Value::Value( Descriptor fd , EventHandler * event_handler , ExceptionSink es ) noexcept :
+	m_fd(fd),
+	m_event_handler(event_handler),
+	m_es(es)
+{
+}
+
+inline
+GNet::EventHandlerList::Value::Value( Descriptor fd ) noexcept :
+	m_fd(fd),
+	m_event_handler(nullptr),
+	m_es(ExceptionSink(ExceptionSink::Type::Null))
+{
+}
+
+inline
+GNet::EventHandlerList::Iterator GNet::EventHandlerList::begin() const noexcept
+{
+	return Iterator( m_list , false ) ;
+}
+
+inline
+GNet::EventHandlerList::Iterator GNet::EventHandlerList::end() const noexcept
+{
+	return Iterator( m_list , true ) ;
+}
+
+inline
+GNet::EventHandlerList::Iterator::Iterator( std::vector<Value>::const_iterator p ,
+	std::vector<Value>::const_iterator end ) noexcept :
+		m_p(p) ,
+		m_end(end)
+{
+}
+
+inline
+GNet::EventHandlerList::Iterator::Iterator( const std::vector<Value> & v , bool end ) noexcept :
+	m_p(end?v.end():v.begin()) ,
+	m_end(v.end())
+{
+	while( m_p != m_end && (*m_p).m_event_handler == nullptr )
+		++m_p ;
+}
+
+inline
+GNet::EventHandlerList::Iterator & GNet::EventHandlerList::Iterator::operator++() noexcept
+{
+	++m_p ;
+	while( m_p != m_end && (*m_p).m_event_handler == nullptr )
+		++m_p ;
+	return *this ;
+}
+
+inline
+const GNet::EventHandlerList::Value & GNet::EventHandlerList::Iterator::operator*() const noexcept
+{
+	return *m_p ;
+}
+
+inline
+GNet::Descriptor GNet::EventHandlerList::Iterator::fd() const noexcept
+{
+	return (*m_p).m_fd ;
+}
+
+inline
+GNet::EventHandler * GNet::EventHandlerList::Iterator::handler() noexcept
+{
+	return (*m_p).m_event_handler ;
+}
+
+inline
+GNet::ExceptionSink GNet::EventHandlerList::Iterator::es() noexcept
+{
+	return (*m_p).m_es ;
+}
+
+inline
+bool GNet::EventHandlerList::Iterator::operator==( const Iterator & other ) const noexcept
+{
+	return m_p == other.m_p ;
+}
+
+inline
+bool GNet::EventHandlerList::Iterator::operator!=( const Iterator & other ) const noexcept
+{
+	return !(*this == other) ;
+}
+
+#endif

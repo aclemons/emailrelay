@@ -39,8 +39,9 @@ namespace GAuth
 class GAuth::SaslServerSecrets : public virtual Valid
 {
 public:
-	virtual Secret serverSecret( const std::string & encoding_type , const std::string & id ) const = 0 ;
+	virtual Secret serverSecret( const std::string & type , const std::string & id ) const = 0 ;
 		///< Returns the server secret for the given client id.
+		///< The type is "plain" or the CRAM hash algorithm.
 		///< Returns an invalid secret if not found.
 
 	virtual std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const = 0 ;

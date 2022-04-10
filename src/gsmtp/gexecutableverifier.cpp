@@ -56,53 +56,58 @@ void GSmtp::ExecutableVerifier::verify( const std::string & to_address ,
 	m_task.start( commandline ) ;
 }
 
-void GSmtp::ExecutableVerifier::onTaskDone( int exit_code , const std::string & response_in )
+void GSmtp::ExecutableVerifier::onTaskDone( int exit_code , const std::string & result_in )
 {
-	std::string response( response_in ) ;
-	G::Str::trimRight( response , {" \n\t",3U} ) ;
-	G::Str::replaceAll( response , "\r\n" , "\n" ) ;
-	G::Str::replaceAll( response , "\r" , "" ) ;
+	std::string result( result_in ) ;
+	G::Str::trimRight( result , {" \n\t",3U} ) ;
+	G::Str::replaceAll( result , "\r\n" , "\n" ) ;
+	G::Str::replaceAll( result , "\r" , "" ) ;
 
-	G::StringArray response_parts ;
-	response_parts.reserve( 2U ) ;
-	G::Str::splitIntoFields( response , response_parts , "\n" ) ;
-	std::size_t parts = response_parts.size() ;
-	response_parts.resize( 2U ) ;
+	G::StringArray result_parts ;
+	result_parts.reserve( 2U ) ;
+	G::Str::splitIntoFields( result , result_parts , {"\n",1U} ) ;
+	std::size_t parts = result_parts.size() ;
+	result_parts.resize( 2U ) ;
 
 	G_LOG( "GSmtp::ExecutableVerifier: address verifier: exit code " << exit_code << ": "
-		<< "[" << G::Str::printable(response_parts[0]) << "] [" << G::Str::printable(response_parts[1]) << "]" ) ;
+		<< "[" << G::Str::printable(result_parts[0]) << "] [" << G::Str::printable(result_parts[1]) << "]" ) ;
 
-	VerifierStatus status ;
-	if( ( exit_code == 0 || exit_code == 1 ) && parts >= 2 )
+	VerifierStatus status = VerifierStatus::invalid( m_to_address ) ;
+	if( exit_code == 0 && parts >= 2 )
 	{
-		status.is_valid = true ;
-		status.is_local = exit_code == 0 ;
-		status.full_name = G::Str::printable( response_parts.at(0U) ) ;
-		status.address = G::Str::printable( response_parts.at(1U) ) ;
+		std::string full_name = G::Str::printable( result_parts.at(0U) ) ;
+		std::string mbox = G::Str::printable( result_parts.at(1U) ) ;
+		status = VerifierStatus::local( m_to_address , full_name , mbox ) ;
+	}
+	else if( exit_code == 1 && parts >= 2 )
+	{
+		std::string address = G::Str::printable( result_parts.at(1U) ) ;
+		status = VerifierStatus::remote( m_to_address , address ) ;
 	}
 	else if( exit_code == 100 )
 	{
-		status.is_valid = false ;
 		status.abort = true ;
 	}
 	else
 	{
-		status.is_valid = false ;
-		status.temporary = exit_code == 3 ;
+		bool temporary = exit_code == 3 ;
 
-		status.response = parts > 0U ?
-			G::Str::printable(response_parts.at(0U)) :
+		std::string response = parts > 0U ?
+			G::Str::printable(result_parts.at(0U)) :
 			std::string("mailbox unavailable") ;
 
-		status.reason = parts > 1U ?
-			G::Str::printable(response_parts.at(1U)) :
+		std::string reason = parts > 1U ?
+			G::Str::printable(result_parts.at(1U)) :
 			( "exit code " + G::Str::fromInt(exit_code) ) ;
+
+		status = VerifierStatus::invalid( m_to_address ,
+			temporary , response , reason ) ;
 	}
 
-	doneSignal().emit( std::string(m_to_address) , status ) ;
+	doneSignal().emit( status ) ;
 }
 
-G::Slot::Signal<const std::string&,const GSmtp::VerifierStatus&> & GSmtp::ExecutableVerifier::doneSignal()
+G::Slot::Signal<const GSmtp::VerifierStatus&> & GSmtp::ExecutableVerifier::doneSignal()
 {
 	return m_done_signal ;
 }

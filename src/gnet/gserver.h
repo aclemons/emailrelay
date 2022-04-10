@@ -25,8 +25,10 @@
 #include "ggettext.h"
 #include "gserverpeer.h"
 #include "gexceptionsink.h"
+#include "gexception.h"
 #include "gsocket.h"
 #include "glistener.h"
+#include "glimits.h"
 #include "gevent.h"
 #include <utility>
 #include <memory>
@@ -34,11 +36,22 @@
 
 namespace GNet
 {
+	struct ServerConfig ;
 	class Server ;
 	class ServerPeer ;
 	class ServerPeerConfig ;
 	class ServerPeerInfo ;
 }
+
+//| \class GNet::ServerConfig
+/// A configuration structure for GNet::Server.
+///
+struct GNet::ServerConfig
+{
+	int listen_queue { G::limits::net_listen_queue } ; // Socket::listen() 'backlog'
+	bool uds_open_permissions { true } ;
+	ServerConfig & set_uds_open_permissions( bool b = true ) ;
+} ;
 
 //| \class GNet::Server
 /// A network server class which listens on a specific port and spins off
@@ -50,7 +63,7 @@ class GNet::Server : public Listener, private EventHandler, private ExceptionHan
 public:
 	G_EXCEPTION( CannotBind , G::gettext_noop("cannot bind the listening port") ) ;
 
-	Server( ExceptionSink , const Address & listening_address , ServerPeerConfig ) ;
+	Server( ExceptionSink , const Address & listening_address , ServerPeerConfig , ServerConfig ) ;
 		///< Constructor. The server listens on the given address,
 		///< which can be the 'any' address. The ExceptionSink
 		///< is used for exceptions relating to the listening
@@ -112,6 +125,7 @@ public:
 
 private:
 	void accept( ServerPeerInfo & ) ;
+	static bool unlink( G::SignalSafe , const char * ) noexcept ;
 
 private:
 	using PeerList = std::vector<std::shared_ptr<ServerPeer> > ;
@@ -133,5 +147,7 @@ public:
 	Server * m_server ;
 	ServerPeerInfo( Server * , ServerPeerConfig ) ;
 } ;
+
+inline GNet::ServerConfig & GNet::ServerConfig::set_uds_open_permissions( bool b ) { uds_open_permissions = b ; return *this ; }
 
 #endif

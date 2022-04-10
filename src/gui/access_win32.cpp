@@ -35,8 +35,8 @@ bool Access::modify( const G::Path & path , bool b )
 	{
 		// this is used to open up permissions on ProgramData/E-MailRelay so
 		// that the installing-user can edit emailrelay-start.bat (etc) -- if
-		// it doesnt work then it doesn't stop anything working, it's just then
-		// a pain to modify startup options
+		// it fails then it doesn't stop anything else working, but it becomes
+		// a pain to modify server startup options
 		if( !b )
 			add_user_write_permissions_to_directory( path.str() ) ;
 		return true ;
@@ -106,7 +106,7 @@ namespace
 		std::string str() const
 		{
 			char * p = nullptr ;
-			ConvertSidToStringSid( ptr() , &p ) ;
+			ConvertSidToStringSidA( ptr() , &p ) ;
 			std::string s ;
 			if( p )
 			{
@@ -118,12 +118,12 @@ namespace
 		~UserSid() override = default ;
 		G::Buffer<char> m_buffer ;
 	} ;
-	struct DirectoryWriteAccessFor : public EXPLICIT_ACCESS
+	struct DirectoryWriteAccessFor : public EXPLICIT_ACCESS_A
 	{
 		explicit DirectoryWriteAccessFor( const Sid & sid )
 		{
-			EXPLICIT_ACCESS zero{} ;
-			*static_cast<EXPLICIT_ACCESS*>(this) = zero ;
+			EXPLICIT_ACCESS_A zero{} ;
+			*static_cast<EXPLICIT_ACCESS_A*>(this) = zero ;
 			grfAccessPermissions = GENERIC_ALL ;
 			grfAccessMode = GRANT_ACCESS ;
 			grfInheritance = OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE ;
@@ -139,7 +139,7 @@ namespace
 			m_dacl(nullptr) ,
 			m_free_me(false)
 		{
-			DWORD rc = GetNamedSecurityInfo( path.c_str() , SE_FILE_OBJECT , DACL_SECURITY_INFORMATION ,
+			DWORD rc = GetNamedSecurityInfoA( path.c_str() , SE_FILE_OBJECT , DACL_SECURITY_INFORMATION ,
 				nullptr , nullptr , &m_dacl , nullptr , &m_sd ) ;
 			if( rc != ERROR_SUCCESS || m_dacl == nullptr )
 				throw Error() ;
@@ -151,10 +151,10 @@ namespace
 			if( m_free_me )
 				LocalFree( m_dacl ) ;
 		}
-		void add( const EXPLICIT_ACCESS & access )
+		void add( const EXPLICIT_ACCESS_A & access )
 		{
 			ACL * new_dacl = nullptr ;
-			DWORD rc = SetEntriesInAcl( 1 , const_cast<EXPLICIT_ACCESS*>(&access) , m_dacl , &new_dacl ) ;
+			DWORD rc = SetEntriesInAclA( 1 , const_cast<EXPLICIT_ACCESS_A*>(&access) , m_dacl , &new_dacl ) ;
 			if( rc != ERROR_SUCCESS || new_dacl == nullptr )
 				throw Error() ;
 			m_dacl = new_dacl ;
@@ -162,7 +162,7 @@ namespace
 		}
 		void applyTo( const std::string & path )
 		{
-			DWORD rc = SetNamedSecurityInfo( const_cast<char*>(path.c_str()) , SE_FILE_OBJECT ,
+			DWORD rc = SetNamedSecurityInfoA( const_cast<char*>(path.c_str()) , SE_FILE_OBJECT ,
 				DACL_SECURITY_INFORMATION , nullptr , nullptr , m_dacl , nullptr ) ;
 			if( rc != ERROR_SUCCESS )
 				throw Error() ;

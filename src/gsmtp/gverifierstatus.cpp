@@ -21,28 +21,60 @@
 #include "gdef.h"
 #include "gverifier.h"
 #include "gverifierstatus.h"
+#include "gstringview.h"
 #include "gstr.h"
 #include "glog.h"
 
 GSmtp::VerifierStatus::VerifierStatus()
 = default;
 
-GSmtp::VerifierStatus::VerifierStatus( const std::string & mbox ) :
-	is_valid(true) ,
-	address(mbox)
+GSmtp::VerifierStatus GSmtp::VerifierStatus::invalid( const std::string & recipient ,
+	bool temporary , const std::string & response , const std::string & reason )
 {
+	VerifierStatus status ;
+	status.is_valid = false ;
+	status.temporary = temporary ;
+	status.recipient = recipient ;
+	status.response = response ;
+	status.reason = reason ;
+	return status ;
 }
 
-GSmtp::VerifierStatus GSmtp::VerifierStatus::parse( const std::string & line , std::string & mbox )
+GSmtp::VerifierStatus GSmtp::VerifierStatus::remote( const std::string & recipient ,
+	const std::string & address )
+{
+	VerifierStatus status ;
+	status.is_valid = true ;
+	status.is_local = false ;
+	status.recipient = recipient ;
+	status.address = address.empty() ? recipient : address ;
+	return status ;
+}
+
+GSmtp::VerifierStatus GSmtp::VerifierStatus::local( const std::string & recipient ,
+	const std::string & full_name , const std::string & mbox )
+{
+	VerifierStatus status ;
+	status.is_valid = true ;
+	status.is_local = true ;
+	status.recipient = recipient ;
+	status.full_name = full_name ;
+	status.address = mbox ;
+	return status ;
+}
+
+GSmtp::VerifierStatus GSmtp::VerifierStatus::parse( const std::string & line )
 {
 	try
 	{
-		VerifierStatus s ;
 		G::StringArray part ;
-		G::Str::splitIntoFields( line , part , {"|",1U} ) ;
-		if( part.size() != 9U ) throw std::runtime_error( "incorrect number of parts" ) ;
+		G::Str::splitIntoFields( line , part , {"|",1U} , '\\' ) ;
+		if( part.size() != 9U )
+			throw InvalidStatus() ;
+
 		std::size_t i = 0U ;
-		mbox = part.at(i++) ;
+		VerifierStatus s ;
+		s.recipient = part.at(i++) ;
 		s.is_valid = part.at(i++) == "1" ;
 		s.is_local = part.at(i++) == "1" ;
 		s.temporary = part.at(i++) == "1" ;
@@ -55,25 +87,26 @@ GSmtp::VerifierStatus GSmtp::VerifierStatus::parse( const std::string & line , s
 	}
 	catch( std::exception & )
 	{
-		G_ERROR( "GSmtp::VerifierStatus::parse: invalid stringised status: [" << line << "]" ) ;
+		G_ERROR( "GSmtp::VerifierStatus::parse: invalid verifier status: [" << line << "]" ) ;
 		throw ;
 	}
 }
 
-std::string GSmtp::VerifierStatus::str( const std::string & mbox ) const
+std::string GSmtp::VerifierStatus::str() const
 {
-	std::string sep( 1U , '|' ) ;
-	std::string t( "1" ) ;
-	std::string f( "0" ) ;
-	return
-		mbox + sep +
-		(is_valid?t:f) + sep +
-		(is_local?t:f) + sep +
-		(temporary?t:f) + sep +
-		(abort?t:f) + sep +
-		full_name + sep +
-		address + sep +
-		response + sep +
-		reason ;
+	auto escape = [](const std::string &s){ return G::Str::escaped( s , '\\' , "\\|" , "\\|" ) ; } ;
+	const char sep = '|' ;
+	const char t = '1' ;
+	const char f = '0' ;
+	return escape(recipient)
+		.append(1U,sep)
+		.append(1U,is_valid?t:f).append(1U,sep)
+		.append(1U,is_local?t:f).append(1U,sep)
+		.append(1U,temporary?t:f).append(1U,sep)
+		.append(1U,abort?t:f).append(1U,sep)
+		.append(escape(full_name)).append(1U,sep)
+		.append(escape(address)).append(1U,sep)
+		.append(escape(response)).append(1U,sep)
+		.append(escape(reason)) ;
 }
 

@@ -42,7 +42,7 @@ public:
 		///< Constructor.
 
 private: // overrides
-	G::Slot::Signal<const std::string&,const VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
+	G::Slot::Signal<const VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
 	void cancel() override ; // Override from GSmtp::Verifier.
 	void verify( const std::string & rcpt_to_parameter ,
 		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
@@ -56,7 +56,7 @@ public:
 	void operator=( InternalVerifier && ) = delete ;
 
 private:
-	G::Slot::Signal<const std::string&,const VerifierStatus&> m_done_signal ;
+	G::Slot::Signal<const VerifierStatus&> m_done_signal ;
 	VerifierStatus verifyInternal( const std::string & address ) const ;
 } ;
 

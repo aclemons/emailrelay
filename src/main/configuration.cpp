@@ -23,6 +23,7 @@
 #include "configuration.h"
 #include "commandline.h"
 #include "gmessagestore.h"
+#include "gaddress.h"
 #include "gprocess.h"
 #include "gformat.h"
 #include "ggettext.h"
@@ -523,14 +524,6 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 		errors.push_back( gettext("invalid --poll period: try --forward-on-disconnect") ) ;
 	}
 
-	if(
-		( m_map.contains("admin") && adminPort() == port() ) ||
-		( m_map.contains("pop") && popPort() == port() ) ||
-		( m_map.contains("pop") && m_map.contains("admin") && popPort() == adminPort() ) )
-	{
-		errors.push_back( gettext("the listening ports must be different") ) ;
-	}
-
 	if( ! m_map.contains("pop") && (
 		m_map.contains("pop-port") ||
 		m_map.contains("pop-auth") ||
@@ -738,6 +731,13 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 		errors.push_back( gettext("--dnsbl requires --remote-clients or -r") ) ;
 	}
 
+	std::string forward_to = serverAddress() ;
+
+	if( m_map.contains("client-interface") && GNet::Address::isFamilyLocal(forward_to) )
+	{
+		errors.push_back( "cannot use --client-interface with a unix-domain forwarding address" ) ;
+	}
+
 	// warnings...
 
 	const bool no_syslog =
@@ -768,12 +768,6 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 	{
 		warnings.push_back(
 			gettext("the --show option is ignored when using --no-daemon, --as-client or --hidden") ) ;
-	}
-
-	if( m_map.contains("dnsblock") && !m_map.contains("remote-clients") )
-	{
-		warnings.push_back(
-			gettext("the --dnsblock option should be used with --remote-clients") ) ;
 	}
 
 	return want_errors ? errors : warnings ;

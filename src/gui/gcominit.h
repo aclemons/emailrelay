@@ -26,12 +26,13 @@
 #include <objbase.h>
 struct GComInit
 {
-	GComInit() { GDEF_UNUSED HRESULT h = CoInitializeEx(0,0) ; }
+	static void init() { GDEF_UNUSED HRESULT h = CoInitializeEx(0,0) ; }
+	GComInit() { init() ; }
 	~GComInit() { CoUninitialize() ; }
 	GComInit( const GComInit & ) = delete ;
 	GComInit( GComInit && ) = delete ;
-	void operator=( const GComInit & ) = delete ;
-	void operator=( GComInit && ) = delete ;
+	GComInit & operator=( const GComInit & ) = delete ;
+	GComInit & operator=( GComInit && ) = delete ;
 } ;
 #else
 struct GComInit

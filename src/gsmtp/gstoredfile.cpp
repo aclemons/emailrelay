@@ -28,21 +28,21 @@
 #include "gassert.h"
 #include <fstream>
 
-GSmtp::StoredFile::StoredFile( FileStore & store , const G::Path & path ) :
+GSmtp::StoredFile::StoredFile( FileStore & store , const G::Path & envelope_path ) :
 	m_store(store) ,
 	m_content(std::make_unique<std::ifstream>()) , // up-cast
 	m_id(MessageId::none()) ,
 	m_state(State::Normal)
 {
-	G_ASSERT( path.basename().find(".envelope") != std::string::npos ) ; // inc .bad
-	if( G::Str::tailMatch( path.basename() , ".bad" ) )
+	G_ASSERT( envelope_path.basename().find(".envelope") != std::string::npos ) ; // inc .bad
+	if( G::Str::tailMatch( envelope_path.basename() , ".bad" ) )
 	{
-		m_id = MessageId( path.withoutExtension().withoutExtension().basename() ) ;
+		m_id = MessageId( envelope_path.withoutExtension().withoutExtension().basename() ) ;
 		m_state = State::Bad ;
 	}
 	else
 	{
-		m_id = MessageId( path.withoutExtension().basename() ) ;
+		m_id = MessageId( envelope_path.withoutExtension().basename() ) ;
 	}
 	G_DEBUG( "GSmtp::StoredFile::ctor: id=[" << m_id.str() << "]" ) ;
 }
@@ -53,6 +53,7 @@ GSmtp::StoredFile::~StoredFile()
 	{
 		if( m_state == State::Locked )
 		{
+			// unlock
 			FileWriter claim_writer ;
 			G::File::rename( epath(State::Locked) , epath(State::Normal) , std::nothrow ) ;
 		}
@@ -80,9 +81,9 @@ G::Path GSmtp::StoredFile::cpath() const
 G::Path GSmtp::StoredFile::epath( State state ) const
 {
 	if( state == State::Locked )
-		return m_store.envelopePath(m_id).str() + ".busy" ;
+		return m_store.envelopePath(m_id).str().append(".busy") ;
 	else if( state == State::Bad )
-		return m_store.envelopePath(m_id).str() + ".bad" ;
+		return m_store.envelopePath(m_id).str().append(".bad") ;
 	return m_store.envelopePath( m_id ) ;
 }
 
@@ -186,7 +187,7 @@ bool GSmtp::StoredFile::lock()
 		G_LOG( "GSmtp::StoredMessage: locking file \"" << src.basename() << "\"" ) ;
 		m_state = State::Locked ;
 	}
-	static_cast<MessageStore&>(m_store).updated() ;
+	m_store.updated() ;
 	return ok ;
 }
 
@@ -198,7 +199,7 @@ void GSmtp::StoredFile::edit( const G::StringArray & rejectees )
 	env_copy.m_to_remote = rejectees ;
 
 	const G::Path path_in = epath( m_state ) ;
-	const G::Path path_out = epath(m_state).str() + ".tmp" ;
+	const G::Path path_out = epath(m_state).str().append(".tmp") ;
 
 	// create new file
 	std::ofstream out ;
@@ -231,7 +232,7 @@ void GSmtp::StoredFile::edit( const G::StringArray & rejectees )
 		G_WARNING( "GSmtp::StoredFile::edit: unexpected change to envelope file detected: " << path_in ) ;
 
 	// copy the existing file's tail to the new file
-	in.seekg( env_check.m_endpos ) ;
+	in.seekg( env_check.m_endpos ) ; // NOLINT narrowing
 	if( !in.good() )
 		throw EditError( path_in.str() ) ;
 	GSmtp::Envelope::copy( in , out ) ;
@@ -311,6 +312,8 @@ void GSmtp::StoredFile::addReason( const G::Path & path , const std::string & re
 		FileWriter claim_writer ;
 		G::File::open( file , path , G::File::Append() ) ;
 	}
+	if( !file.is_open() )
+		G_ERROR( "GSmtp::StoredFile::addReason: cannot re-open envelope file to append the failure reason: " << path ) ;
 	file << FileStore::x() << "Reason: " << G::Str::toPrintableAscii(reason) << eol() ;
 	file << FileStore::x() << "ReasonCode:" ; if( reason_code ) file << " " << reason_code ; file << eol() ;
 }

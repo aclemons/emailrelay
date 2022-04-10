@@ -24,7 +24,7 @@
 #include "gassert.h"
 #include <algorithm> // find
 
-BOOL CALLBACK gdialog_dlgproc_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
+BOOL CALLBACK gdialog_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
 {
 	try
 	{
@@ -75,7 +75,7 @@ GGui::Dialog::~Dialog()
 
 GGui::Dialog::DialogList::iterator GGui::Dialog::find( HWND h )
 {
-	return std::find( m_list.begin() , m_list.end() , DialogHandle(h) ) ;
+	return std::find( m_list.begin() , m_list.end() , h ) ;
 }
 
 void GGui::Dialog::cleanup()
@@ -86,7 +86,7 @@ void GGui::Dialog::cleanup()
 		G_DEBUG( "GGui::Dialog::cleanup" ) ;
 
 		// reset the object pointer
-		SetWindowLongPtr( handle() , DWLP_USER , LPARAM(0) ) ;
+		SetWindowLongPtr( handle() , DWLP_USER , LONG_PTR(0) ) ;
 
 		// remove from the modeless list
 		if( !m_modal && find(handle()) != m_list.end() )
@@ -119,8 +119,8 @@ BOOL GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lp
 {
 	if( message == WM_INITDIALOG )
 	{
-		Dialog * dialog = from_lparam( lparam ) ;
-		SetWindowLongPtr( hwnd , DWLP_USER , to_lparam(dialog) ) ;
+		Dialog * dialog = fromLongParam( lparam ) ;
+		SetWindowLongPtr( hwnd , DWLP_USER , toLongPtr(dialog) ) ;
 		dialog->privateInit( hwnd ) ;
 		G_DEBUG( "GGui::Dialog::dlgProc: WM_INITDIALOG" ) ;
 		if( !dialog->onInit() )
@@ -133,7 +133,7 @@ BOOL GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lp
 		if( !dialog->m_modal )
 		{
 			G_DEBUG( "GGui::Dialog::dlgProc: adding modeless dialog box window " << hwnd ) ;
-			m_list.push_front( DialogHandle(hwnd) ) ;
+			m_list.push_front( hwnd ) ;
 			G_DEBUG( "GGui::Dialog::dlgProc: now " << m_list.size() << " modeless dialog box(es)" ) ;
 		}
 
@@ -141,15 +141,15 @@ BOOL GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lp
 	}
 	else
 	{
-		Dialog * dialog = from_long_ptr( GetWindowLongPtr(hwnd,DWLP_USER) ) ;
+		Dialog * dialog = fromLongPtr( GetWindowLongPtr(hwnd,DWLP_USER) ) ;
 		if( dialog != nullptr )
-			return dialog->dlgProc( message , wparam , lparam ) ;
+			return dialog->dlgProcImp( message , wparam , lparam ) ;
 		else
 			return 0 ; // WM_SETFONT etc.
 	}
 }
 
-BOOL GGui::Dialog::dlgProc( UINT message , WPARAM wparam , LPARAM lparam )
+BOOL GGui::Dialog::dlgProcImp( UINT message , WPARAM wparam , LPARAM lparam )
 {
 	switch( message )
 	{
@@ -296,9 +296,9 @@ bool GGui::Dialog::run( int resource_id )
 	return runStart() && runCore( MAKEINTRESOURCE(resource_id) ) ;
 }
 
-bool GGui::Dialog::run( const char * f_name )
+bool GGui::Dialog::run( const char * template_name )
 {
-	return runStart() && runCore( f_name ) ;
+	return runStart() && runCore( template_name ) ;
 }
 
 bool GGui::Dialog::runStart()
@@ -312,20 +312,20 @@ bool GGui::Dialog::runStart()
 	return true ;
 }
 
-bool GGui::Dialog::runCore( const char * f_name )
+bool GGui::Dialog::runCore( const char * resource )
 {
 	m_modal = true ;
-	INT_PTR end_dialog_value = DialogBoxParamA( m_hinstance , f_name ,
-		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
+	INT_PTR end_dialog_value = DialogBoxParamA( m_hinstance , resource ,
+		m_hwnd_parent , toDlgProc(gdialog_export) , toLongParam(this) ) ;
 	int rc = static_cast<int>(end_dialog_value) ;
 	return runEnd( rc ) ;
 }
 
-bool GGui::Dialog::runCore( const wchar_t * f_name )
+bool GGui::Dialog::runCore( const wchar_t * resource )
 {
 	m_modal = true ;
-	INT_PTR end_dialog_value = DialogBoxParamW( m_hinstance , f_name ,
-		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
+	INT_PTR end_dialog_value = DialogBoxParamW( m_hinstance , resource ,
+		m_hwnd_parent , toDlgProc(gdialog_export) , toLongParam(this) ) ;
 	int rc = static_cast<int>(end_dialog_value) ;
 	return runEnd( rc ) ;
 }
@@ -352,24 +352,24 @@ bool GGui::Dialog::runModeless( int resource_id , bool visible )
 	return runStart() && runModelessCore( MAKEINTRESOURCE(resource_id) , visible ) ;
 }
 
-bool GGui::Dialog::runModeless( const char * f_name , bool visible )
+bool GGui::Dialog::runModeless( const char * resource_name , bool visible )
 {
-	return runStart() && runModelessCore( f_name , visible ) ;
+	return runStart() && runModelessCore( resource_name , visible ) ;
 }
 
-bool GGui::Dialog::runModelessCore( const char * f_name , bool visible )
+bool GGui::Dialog::runModelessCore( const char * resource , bool visible )
 {
 	m_modal = false ;
-	HWND hwnd = CreateDialogParamA( m_hinstance , f_name ,
-		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
+	HWND hwnd = CreateDialogParamA( m_hinstance , resource ,
+		m_hwnd_parent , toDlgProc(gdialog_export) , toLongParam(this) ) ;
 	return runModelessEnd( hwnd , visible ) ;
 }
 
-bool GGui::Dialog::runModelessCore( const wchar_t * f_name , bool visible )
+bool GGui::Dialog::runModelessCore( const wchar_t * resource , bool visible )
 {
 	m_modal = false ;
-	HWND hwnd = CreateDialogParamW( m_hinstance , f_name ,
-		m_hwnd_parent , dlgproc_export_fn() , to_lparam(this) ) ;
+	HWND hwnd = CreateDialogParamW( m_hinstance , resource ,
+		m_hwnd_parent , toDlgProc(gdialog_export) , toLongParam(this) ) ;
 	return runModelessEnd( hwnd , visible ) ;
 }
 
@@ -391,9 +391,9 @@ bool GGui::Dialog::runModelessEnd( HWND hwnd , bool visible )
 
 bool GGui::Dialog::dialogMessage( MSG & msg )
 {
-	for( DialogList::iterator p = m_list.begin() ; p != m_list.end() ; ++p )
+	for( HWND hdialog : m_list )
 	{
-		if( IsDialogMessage( (*p).h , &msg ) )
+		if( IsDialogMessage( hdialog , &msg ) )
 			return true ;
 	}
 	return false ;
@@ -455,23 +455,24 @@ BOOL GGui::Dialog::onControlColour_( WPARAM wparam , LPARAM lparam , WORD type )
 	return 0 != onControlColour( reinterpret_cast<HDC>(wparam) , reinterpret_cast<HWND>(lparam) , type ) ;
 }
 
-GGui::Dialog * GGui::Dialog::from_lparam( LPARAM lparam )
-{
-	return reinterpret_cast<Dialog*>( reinterpret_cast<void*>(lparam) ) ;
-}
-
-GGui::Dialog * GGui::Dialog::from_long_ptr( LONG_PTR p )
-{
-	return static_cast<Dialog*>( reinterpret_cast<void*>(p) ) ;
-}
-
-LPARAM GGui::Dialog::to_lparam( Dialog * p )
+LPARAM GGui::Dialog::toLongParam( Dialog * p )
 {
 	return reinterpret_cast<LPARAM>( static_cast<void*>(p) ) ;
 }
 
-DLGPROC GGui::Dialog::dlgproc_export_fn()
+LONG_PTR GGui::Dialog::toLongPtr( Dialog * p )
 {
-	return reinterpret_cast<DLGPROC>(gdialog_dlgproc_export) ;
+	return reinterpret_cast<LONG_PTR>( static_cast<void*>(p) ) ;
 }
+
+GGui::Dialog * GGui::Dialog::fromLongParam( LPARAM lparam )
+{
+	return reinterpret_cast<Dialog*>( reinterpret_cast<void*>(lparam) ) ;
+}
+
+GGui::Dialog * GGui::Dialog::fromLongPtr( LONG_PTR p )
+{
+	return static_cast<Dialog*>( reinterpret_cast<void*>(p) ) ;
+}
+
 

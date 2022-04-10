@@ -42,7 +42,7 @@ namespace GSmtp
 class GSmtp::ExecutableFilter : public Filter, private GNet::TaskCallback
 {
 public:
-	ExecutableFilter( GNet::ExceptionSink , FileStore & , bool server_side ,
+	ExecutableFilter( GNet::ExceptionSink , FileStore & , bool server_side , 
 		const std::string & path , unsigned int timeout ) ;
 			///< Constructor.
 

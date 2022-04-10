@@ -345,8 +345,8 @@ G::Path G::Path::dirname() const
 
 G::Path G::Path::withoutExtension() const
 {
-	std::string::size_type sp = PathImp::slashpos( m_str ) ;
-	std::string::size_type dp = PathImp::dotpos( m_str ) ;
+	std::string::size_type sp = PathImp::slashpos(m_str) ;
+	std::string::size_type dp = PathImp::dotpos(m_str) ;
 	if( dp != std::string::npos )
 	{
 		std::string result = m_str ;

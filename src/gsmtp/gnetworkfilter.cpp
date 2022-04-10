@@ -24,8 +24,7 @@
 #include "glog.h"
 
 GSmtp::NetworkFilter::NetworkFilter( GNet::ExceptionSink es , FileStore & file_store ,
-	const std::string & server ,
-	unsigned int connection_timeout , unsigned int response_timeout ) :
+	const std::string & server , unsigned int connection_timeout , unsigned int response_timeout ) :
 		m_es(es) ,
 		m_file_store(file_store) ,
 		m_location(server) ,

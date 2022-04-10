@@ -57,7 +57,8 @@ namespace G
 	}
 }
 
-G::BrokenDownTime::BrokenDownTime()
+G::BrokenDownTime::BrokenDownTime() :
+	m_tm{}
 {
 	m_tm.tm_isdst = -1 ;
 }
@@ -97,7 +98,7 @@ std::time_t G::BrokenDownTime::epochTimeFromUtcImp() const
 std::time_t G::BrokenDownTime::epochTimeFromUtcImp( bool & diff_set , std::time_t & diff ) const
 {
 	constexpr int day = 24 * 60 * 60 ;
-	constexpr std::time_t dt = 60 * 15 ; // india 30mins, nepal 45mins
+	constexpr std::time_t dt = 60 * 15 ; // india 30mins, nepal 45mins // NOLINT
 	constexpr std::time_t day_and_a_bit = day + dt ;
 	constexpr std::time_t t_rounding = 30 ;
 
@@ -136,7 +137,7 @@ G::BrokenDownTime G::BrokenDownTime::local( SystemTime t )
 {
 	BrokenDownTime tm ;
 	std::time_t s = t.s() ;
-	if( ! localtime_r( &s , &tm.m_tm ) )
+	if( localtime_r( &s , &tm.m_tm ) == nullptr )
 		throw DateTime::Error() ;
 	return tm ;
 }
@@ -145,7 +146,7 @@ G::BrokenDownTime G::BrokenDownTime::utc( SystemTime t )
 {
 	BrokenDownTime tm ;
 	std::time_t s = t.s() ;
-	if( ! gmtime_r( &s , &tm.m_tm ) )
+	if( gmtime_r( &s , &tm.m_tm ) == nullptr )
 		throw DateTime::Error() ;
 	return tm ;
 }
@@ -364,7 +365,7 @@ void G::SystemTime::operator+=( TimeInterval i )
 
 void G::SystemTime::streamOut( std::ostream & stream ) const
 {
-	std::streamsize w = stream.width() ;
+	int w = static_cast<int>( stream.width() ) ;
 	char c = stream.fill() ;
 	stream
 		<< s() << "."
@@ -630,7 +631,7 @@ void G::TimeInterval::operator-=( TimeInterval i )
 
 void G::TimeInterval::streamOut( std::ostream & stream ) const
 {
-	std::streamsize w = stream.width() ;
+	int w = static_cast<int>( stream.width() ) ;
 	char c = stream.fill() ;
 	stream
 		<< s() << "."

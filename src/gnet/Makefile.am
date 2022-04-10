@@ -17,19 +17,12 @@
 
 noinst_LIBRARIES = libgnet.a
 
-if GCONFIG_IPV6
-IP46_SOURCES = gaddress_ipv6.cpp
-EXTRA_DIST_IP46 = gaddress_ipv4.cpp
-else
-IP46_SOURCES = gaddress_ipv4.cpp
-EXTRA_DIST_IP46 = gaddress_ipv6.cpp
-endif
-
 if GCONFIG_WINDOWS
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/win32
 
 EXTRA_DIST_COMMON=\
+	gaddresslocal_unix.cpp \
 	gdescriptor_unix.cpp \
 	geventloop_select.cpp \
 	geventloop_epoll.cpp \
@@ -40,7 +33,6 @@ if GCONFIG_INTERFACE_NAMES
 
 EXTRA_DIST = \
 	$(EXTRA_DIST_COMMON) \
-	$(EXTRA_DIST_IP46) \
 	ginterfaces_unix.cpp \
 	ginterfaces_none.cpp
 
@@ -52,7 +44,6 @@ else
 
 EXTRA_DIST = \
 	$(EXTRA_DIST_COMMON) \
-	$(EXTRA_DIST_IP46) \
 	ginterfaces_unix.cpp \
 	ginterfaces_common.cpp \
 	ginterfaces_win32.cpp
@@ -63,11 +54,13 @@ INTERFACES_SOURCES = \
 endif
 
 libgnet_a_SOURCES = \
-	$(IP46_SOURCES) \
+	gaddresslocal_none.cpp \
+	gaddresslocal.h \
 	gaddress4.cpp \
 	gaddress4.h \
 	gaddress6.cpp \
 	gaddress6.h \
+	gaddress.cpp \
 	gaddress.h \
 	gclient.cpp \
 	gclient.h \
@@ -84,18 +77,15 @@ libgnet_a_SOURCES = \
 	gdnsmessage.cpp \
 	gdnsmessage.h \
 	gevent.h \
-	geventemitter.cpp \
-	geventemitter.h \
 	geventhandler.cpp \
 	geventhandler.h \
+	geventhandlerlist.cpp \
+	geventhandlerlist.h \
 	geventloggingcontext.cpp \
 	geventloggingcontext.h \
 	geventloop.cpp \
 	geventloop.h \
-	geventloophandles.h \
-	geventloophandles.cpp \
 	geventloop_win32.cpp \
-	geventloop_win32.h \
 	gexceptionhandler.cpp \
 	gexceptionhandler.h \
 	gexceptionsink.cpp \
@@ -149,12 +139,27 @@ AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl
 
 EXTRA_DIST_COMMON=\
 	gdescriptor_win32.cpp \
-	geventloophandles.cpp \
-	geventloophandles.h \
 	geventloop_win32.cpp \
-	geventloop_win32.h \
 	gfutureevent_win32.cpp \
 	gsocket_win32.cpp
+
+if GCONFIG_UDS
+
+UDS_SOURCES = \
+	gaddresslocal_unix.cpp
+
+EXTRA_DIST_UDS = \
+	gaddresslocal_none.cpp
+
+else
+
+UDS_SOURCES = \
+	gaddresslocal_none.cpp
+
+EXTRA_DIST_UDS = \
+	gaddresslocal_unix.cpp
+
+endif
 
 if GCONFIG_INTERFACE_NAMES
 
@@ -198,13 +203,15 @@ endif
 
 EXTRA_DIST = \
 	$(EXTRA_DIST_COMMON) \
+	$(EXTRA_DIST_UDS) \
 	$(EXTRA_DIST_INTERFACES) \
-	$(EXTRA_DIST_EVENTLOOP) \
-	$(EXTRA_DIST_IP46)
+	$(EXTRA_DIST_EVENTLOOP)
 
 libgnet_a_SOURCES = \
-	$(IP46_SOURCES) \
+	$(UDS_SOURCES) \
+	gaddress.cpp \
 	gaddress.h \
+	gaddresslocal.h \
 	gaddress4.h \
 	gaddress4.cpp \
 	gaddress6.h \
@@ -222,10 +229,10 @@ libgnet_a_SOURCES = \
 	gdnsmessage.cpp \
 	gdnsmessage.h \
 	gevent.h \
-	geventemitter.cpp \
-	geventemitter.h \
 	geventhandler.cpp \
 	geventhandler.h \
+	geventhandlerlist.cpp \
+	geventhandlerlist.h \
 	geventloggingcontext.cpp \
 	geventloggingcontext.h \
 	geventloop.cpp \

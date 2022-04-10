@@ -37,22 +37,18 @@ namespace G
 class G::Msg
 {
 public:
-	static ssize_t send( SOCKET , const void * , std::size_t , int ,
-		int fd_to_send = -1 ) noexcept ;
+	static ssize_t send( SOCKET , const void * , std::size_t , int flags ) noexcept ;
 			///< A send() replacement using sendmsg().
 
-	static ssize_t sendto( SOCKET , const void * , std::size_t , int , const sockaddr * , socklen_t ,
-		int fd_to_send = -1 ) noexcept ;
+	static ssize_t sendto( SOCKET , const void * , std::size_t , int flags , 
+		const sockaddr * , socklen_t ) noexcept ;
 			///< A sendto() replacement using sendmsg().
 
-	static ssize_t recv( SOCKET , void * , std::size_t , int ) ;
+	static ssize_t recv( SOCKET , void * , std::size_t , int flags ) ;
 		///< A recv() wrapper.
 
-	static ssize_t recv( SOCKET , void * , std::size_t , int , int * fd_received_p ) ;
-		///< A recv() replacement using recvmsg().
-
-	static ssize_t recvfrom( SOCKET , void * , std::size_t , int , sockaddr * , socklen_t * ,
-		int * fd_received_p = nullptr ) ;
+	static ssize_t recvfrom( SOCKET , void * , std::size_t , int flags ,
+		sockaddr * , socklen_t * ) ;
 			///< A recvfrom() replacement using recvmsg().
 
 	static bool fatal( int error ) noexcept ;

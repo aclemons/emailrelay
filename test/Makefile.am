@@ -89,7 +89,6 @@ test_names = \
 	testFilter.test \
 	testFilterIdentity.test \
 	testFilterFailure.test \
-	testFilterTimeout.test \
 	testFilterWithBadFileDeletion.test \
 	testFilterWithGoodFileDeletion.test \
 	testFilterRescan.test \
@@ -97,6 +96,7 @@ test_names = \
 	testScannerPass.test \
 	testScannerBlock.test \
 	testScannerTimeout.test \
+	testScannerOverUnixDomainSockets.test \
 	testNetworkVerifierPass.test \
 	testNetworkVerifierFail.test \
 	testProxyConnectsOnce.test \

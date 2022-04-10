@@ -25,7 +25,7 @@
 #include "gdirectory.h"
 #include <stdexcept>
 
-bool Boot::able( const G::Path & dir )
+bool Boot::installable( const G::Path & dir )
 {
 	// nasty side-effect required because Library/StartupItems may not exist
 	if( !dir.empty() )
@@ -57,6 +57,11 @@ bool Boot::uninstall( const G::Path & dir_boot , const std::string & , const G::
 bool Boot::installed( const G::Path & dir_boot , const std::string & name )
 {
 	return G::File::exists( dir_boot + name + name , std::nothrow ) ; // not tested
+}
+
+void Boot::launchable( const G::Path & , const std::string & )
+{
+	return false ;
 }
 
 void Boot::launch( const G::Path & , const std::string & )

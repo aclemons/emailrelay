@@ -121,7 +121,7 @@ std::size_t G::Arg::match( const std::string & prefix ) const
 {
 	for( std::size_t i = 1U ; i < m_array.size() ; i++ )
 	{
-		if( G::Str::headMatch(m_array[i],prefix) )
+		if( Str::headMatch(m_array[i],prefix) )
 		{
 			return i ;
 		}
@@ -205,8 +205,8 @@ void G::Arg::parseImp( const std::string & command_line )
 	string_view nbws( "\0\0" , 2U ) ;
 	const char esc = '\\' ;
 	const char qq = '\"' ;
-	G::Str::splitIntoTokens( G::Str::dequote(command_line,qq,esc,ws,nbws) , m_array , ws , esc ) ;
-	G::Str::replace( m_array , '\0' , ' ' ) ;
+	Str::splitIntoTokens( Str::dequote(command_line,qq,esc,ws,nbws) , m_array , ws , esc ) ;
+	Str::replace( m_array , '\0' , ' ' ) ;
 }
 
 std::string G::Arg::exe( bool do_throw )

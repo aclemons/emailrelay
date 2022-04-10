@@ -25,12 +25,14 @@
 #include "gstrings.h"
 #include "gexception.h"
 #include <string>
+#include <memory>
 
 namespace GNet
 {
 	class Address ;
 	class Address4 ;
 	class Address6 ;
+	class AddressLocal ;
 	class AddressStorage ;
 	class AddressStorageImp ;
 }
@@ -40,12 +42,10 @@ namespace GNet
 /// address is exposed as a 'sockaddr' structure for low-level socket
 /// operations.
 ///
-/// A double pimple pattern is used for the implementation; this class
-/// instantiates either a GNet::Address4 implementation sub-object or a
-/// GNet::Address6 sub-object depending on the address family, and forwards
-/// its method calls directly to the one instantiated sub-object. In an
-/// IPv4-only build the GNet::Address6 is forward-declared but not defined
-/// and all methods are forwarded to the GNet::Address4 sub-object.
+/// A multi-pimple pattern is used for the implementation, with implementation
+/// classes including GNet::Address4 and GNet::Address6. In an IPv4-only build
+/// the GNet::Address6 can be forward-declared but not defined, with all methods
+/// forwarded to the GNet::Address4 sub-object.
 ///
 /// \see GNet::Resolver
 ///
@@ -55,20 +55,27 @@ public:
 	enum class Family
 	{
 		ipv4 ,
-		ipv6
+		ipv6 ,
+		local
 	} ;
+	struct Domain /// Overload discriminator for Address::supports()
+		{} ;
 
 	G_EXCEPTION( Error , "address error" ) ;
 	G_EXCEPTION( BadString , "invalid address" ) ;
 	G_EXCEPTION_CLASS( BadFamily , "unsupported address family" ) ;
 
 	static bool supports( Family ) ;
-		///< Returns true if the implementation supports the given address family,
-		///< either ipv4 or ipv6.
+		///< Returns true if the implementation supports the given
+		///< address family.
 
 	static bool supports( int af , int dummy ) ;
-		///< Returns true if the implementation supports the given address family,
-		///< either AF_INET or AF_INET6.
+		///< Returns true if the implementation supports the given
+		///< address family given as AF_INET etc.
+
+	static bool supports( const Domain & , int domain ) ;
+		///< Returns true if the implementation supports the given
+		///< address domain given as PF_INET etc.
 
 	Address( const Address & ) ;
 		///< Copy constructor.
@@ -85,18 +92,10 @@ public:
 		///< fixup.
 
 	Address( Family , unsigned int port ) ;
-		///< Constructor for a wildcard INADDR_ANY address with the given port
-		///< number. Throws an exception if an invalid port number.
+		///< Constructor for a wildcard address like INADDR_ANY with the
+		///< given port number. Throws an exception if an invalid port number.
 		///< Postcondition: isAny()
 		/// \see validPort()
-
-	explicit Address( const std::string & display_string ) ;
-		///< Constructor taking a string originally obtained from displayString().
-		///< Throws an exception if an invalid string. See also validString().
-
-	Address( const std::string & ip , unsigned int port ) ;
-		///< Constructor taking an ip-address and a port number. Throws an
-		///< exception if an invalid string.
 
 	Address( Address && ) noexcept ;
 		///< Move constructor.
@@ -109,6 +108,31 @@ public:
 
 	Address & operator=( Address && ) noexcept ;
 		///< Move assignment operator.
+
+	struct NotLocal /// Overload discriminator for Address::parse()
+		{} ;
+
+	static Address parse( const std::string & display_string ) ;
+		///< Factory function for any address family. Throws if
+		///< an invalid string. See also validString().
+
+	static Address parse( const std::string & display_string , NotLocal ) ;
+		///< Factory function for Family::ipv4 or Family::ipv6.
+		///< Throws if an invalid string. See also validString().
+
+	static Address parse( const std::string & host_part_string , unsigned int port ) ;
+		///< Factory function for Family::ipv4 or Family::ipv6.
+		///< Throws if an invalid string. See also validStrings().
+
+	static Address parse( const std::string & host_part_string , const std::string & port ) ;
+		///< Factory function for Family::ipv4 or Family::ipv6.
+		///< Throws if an invalid string. See also validStrings().
+
+	static bool isFamilyLocal( const std::string & display_string ) ;
+		///< Returns true if the given address display string looks
+		///< will parse to Family::local and Family::local is
+		///< supported. The address may still fail to parse if
+		///< it is invalid.
 
 	static Address defaultAddress() ;
 		///< Returns a default address, being the IPv4 wildcard address
@@ -129,12 +153,13 @@ public:
 		///< Returns the size of the sockaddr address. See address().
 
 	std::string displayString( bool with_scope_id = false ) const ;
-		///< Returns a string which represents the transport address for
-		///< debugging and diagnostics purposes.
+		///< Returns a string which represents the transport address.
 
-	std::string hostPartString() const ;
-		///< Returns a string which represents the network address for
-		///< debugging and diagnostics purposes.
+	std::string hostPartString( bool raw = false ) const ;
+		///< Returns a string which represents the network address.
+		///< For unix-domain sockets this returns the address path
+		///< and if the 'raw' parameter is set then any non-printing
+		///< characters are not escaped.
 
 	std::string queryString() const ;
 		///< Returns a string that can be used as a prefix for rDNS or
@@ -143,20 +168,25 @@ public:
 	unsigned int port() const;
 		///< Returns port part of the address.
 
-	int domain() const ;
-		///< Returns the address 'domain', eg. PF_INET.
+	static int domain( Family ) ;
+		///< Returns the address 'domain' for the given family, eg. PF_INET
+		///< for Family::ipv4.
 
 	Family family() const ;
 		///< Returns the address family enumeration.
 
 	int af() const ;
-		///< Returns the address family number, AF_INET or AFINET6.
+		///< Returns the address family number such as AF_INET or AFINET6.
 
 	static bool validPort( unsigned int n ) ;
 		///< Returns true if the port number is within the valid range. This
 		///< can be used to avoid exceptions from the relevant constructors.
 
 	static bool validString( const std::string & display_string , std::string * reason = nullptr ) ;
+		///< Returns true if the transport-address display string is valid.
+		///< This can be used to avoid exceptions from the relevant constructor.
+
+	static bool validString( const std::string & display_string , NotLocal , std::string * reason = nullptr ) ;
 		///< Returns true if the transport-address display string is valid.
 		///< This can be used to avoid exceptions from the relevant constructor.
 
@@ -216,7 +246,7 @@ public:
 
 	bool isLocal( std::string & reason ) const ;
 		///< Returns true if this seems to be a 'local' address, ie. an
-		///< address that is inherently more trusted. Returns an
+		///< address that is likely to be more trusted. Returns an
 		///< explanation by reference otherwise.
 
 	bool is4() const ;
@@ -225,7 +255,7 @@ public:
 	bool is6() const ;
 		///< Returns true if family() is ipv6.
 
-	bool same( const Address & , bool with_scope ) const ;
+	bool same( const Address & , bool ipv6_compare_with_scope ) const ;
 		///< Comparison function.
 
 	bool operator==( const Address & ) const ;
@@ -239,10 +269,15 @@ public:
 
 private:
 	Address( Family , unsigned int , int ) ; // loopback()
+	explicit Address( const std::string & display_string ) ; // parse()
+	Address( const std::string & display_string , NotLocal ) ; // parse(NotLocal)
+	Address( const std::string & ip , const std::string & port ) ; // parse(ip,port)
+	Address( const std::string & ip , unsigned int port ) ; // parse(ip,port)
 
 private:
-	std::unique_ptr<Address4> m_4imp ;
-	std::unique_ptr<Address6> m_6imp ;
+	std::unique_ptr<Address4> m_ipv4 ;
+	std::unique_ptr<Address6> m_ipv6 ;
+	std::unique_ptr<AddressLocal> m_local ;
 } ;
 
 namespace GNet

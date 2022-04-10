@@ -29,6 +29,8 @@
 #include "gprocess.h"
 #include "gpath.h"
 #include "gstrings.h"
+#include <memory>
+#include <new>
 #include <string>
 #include <future>
 
@@ -207,7 +209,7 @@ public:
 		///< \code
 		///< std::promise<int,std::string> p ;
 		///< std::future<int,std::string> f = p.get_future() ;
-		///< std::thread t( std::bind(&NewPromiseWaitable::waitp,waitable,_1) , std::move(p) ) ;
+		///< std::thread t( std::bind(&NewProcessWaitable::waitp,waitable,_1) , std::move(p) ) ;
 		///< f.wait() ;
 		///< t.join() ;
 		///< int e = f.get() ;

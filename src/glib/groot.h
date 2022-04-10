@@ -64,7 +64,7 @@ public:
 		///< Constructor overload with explicit control over whether to change the
 		///< group-id or not.
 
-	~Root() ;
+	~Root() ; // NOLINT
 		///< Desctructor. Releases special privileges if this instance acquired them.
 		///< The implementation uses G::Process::beOrdinary(). Errors from seteuid()
 		///< will call Process::terminate().

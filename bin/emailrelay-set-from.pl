@@ -25,7 +25,7 @@ my $new_from = 'noreply@example.com' ;
 my $new_sender = '' ;
 my $new_reply_to = $new_from ;
 
-my $content = @ARGV[0] or die "usage error\n" ;
+my $content = $ARGV[0] or die "usage error\n" ;
 
 my $in = new FileHandle( $content , "r" ) or die ;
 my $out = new FileHandle( "$content.tmp" , "w" ) or die ;

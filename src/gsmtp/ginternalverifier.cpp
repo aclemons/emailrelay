@@ -28,21 +28,12 @@ GSmtp::InternalVerifier::InternalVerifier()
 void GSmtp::InternalVerifier::verify( const std::string & to , const std::string & , const GNet::Address & ,
 	const std::string & , const std::string & )
 {
-	VerifierStatus status = verifyInternal( to ) ;
-	doneSignal().emit( std::string(to) , status ) ;
-}
-
-GSmtp::VerifierStatus GSmtp::InternalVerifier::verifyInternal( const std::string & address ) const
-{
 	// accept all addresses as if remote
-	VerifierStatus status ;
-	status.is_valid = true ;
-	status.is_local = false ;
-	status.address = address ;
-	return status ;
+	VerifierStatus status = VerifierStatus::remote( to ) ;
+	doneSignal().emit( status ) ;
 }
 
-G::Slot::Signal<const std::string&,const GSmtp::VerifierStatus&> & GSmtp::InternalVerifier::doneSignal()
+G::Slot::Signal<const GSmtp::VerifierStatus&> & GSmtp::InternalVerifier::doneSignal()
 {
 	return m_done_signal ;
 }

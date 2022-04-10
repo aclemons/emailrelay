@@ -22,7 +22,7 @@
 # Additional pseudo-targets:
 #	* rpm - builds an rpm package using rpmbuild
 #	* deb - builds a deb package using debhelper
-#	* cmake - generates simplistic cmake files under ./build/
+#	* cmake - generates cmake files under ./build/
 #	* tidy - runs cmake-tidy
 #	* format - runs cmake-format
 #
@@ -41,7 +41,7 @@
 #	$ sudo make deb
 #
 # and possibly:
-#	$ make cmake ; cd build ; make
+#	$ make cmake ; make -C build
 #	$ make tidy TIDY=clang-tidy-10
 #	$ make format FORMAT=clang-format-10
 #	$ make distcheck DISTCHECK_CONFIGURE_FLAGS=--disable-testing
@@ -126,6 +126,7 @@ format:
 cmake:
 	@chmod +x bin/make2cmake || true
 	bin/make2cmake
-	mkdir build || true
+	test -d build || mkdir build
 	cd build && cmake -DCMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/make -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
+	@echo now run make from the '"build"' directory
 

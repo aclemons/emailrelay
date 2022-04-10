@@ -23,28 +23,50 @@
 #include "gnetdone.h"
 #include "gmonitor.h"
 #include "geventloggingcontext.h"
+#include "gcleanup.h"
+#include "gprocess.h"
 #include "glimits.h"
 #include "groot.h"
 #include "glog.h"
 #include "gassert.h"
+#include <algorithm>
 
 GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
-	ServerPeerConfig server_peer_config ) :
+	ServerPeerConfig server_peer_config , ServerConfig server_config ) :
 		m_es(es) ,
 		m_server_peer_config(server_peer_config) ,
-		m_socket(listening_address.domain(),StreamSocket::Listener())
+		m_socket(listening_address.family(),StreamSocket::Listener())
 {
 	G_DEBUG( "GNet::Server::ctor: listening on socket " << m_socket.asString()
 		<< " with address " << listening_address.displayString() ) ;
 
+	bool uds = listening_address.family() == Address::Family::local ;
+	if( uds )
+	{
+		bool open = server_config.uds_open_permissions ;
+		using Mode = G::Process::Umask::Mode ;
+		G::Root claim_root( false ) ; // group ownership from the effective group-id
+		G::Process::Umask set_umask( open ? Mode::Open : Mode::Tighter ) ;
+		m_socket.bind( listening_address ) ;
+	}
+	else
 	{
 		G::Root claim_root ;
 		m_socket.bind( listening_address ) ;
 	}
 
-	m_socket.listen( G::limits::net_listen_queue ) ;
+	m_socket.listen( std::max(1,server_config.listen_queue) ) ;
 	m_socket.addReadHandler( *this , m_es ) ;
 	Monitor::addServer( *this ) ;
+
+	if( uds )
+	{
+		std::string path = listening_address.hostPartString( true ) ;
+		if( path.size() > 1U && path.at(0U) == '/' ) // (just in case)
+		{
+			G::Cleanup::add( &Server::unlink , G::Cleanup::strdup(path) ) ;
+		}
+	}
 }
 
 GNet::Server::~Server()
@@ -54,15 +76,14 @@ GNet::Server::~Server()
 
 bool GNet::Server::canBind( const Address & address , bool do_throw )
 {
-	StreamSocket socket( address.domain() ) ;
-	bool ok = false ;
+	std::string reason ;
 	{
 		G::Root claim_root ;
-		ok = socket.canBindHint( address ) ;
+		reason = Socket::canBindHint( address ) ;
 	}
-	if( !ok && do_throw )
-		throw CannotBind( address.displayString() , socket.reason() ) ;
-	return ok ;
+	if( !reason.empty() && do_throw )
+		throw CannotBind( address.displayString() , reason ) ;
+	return reason.empty() ;
 }
 
 GNet::Address GNet::Server::address() const
@@ -121,8 +142,8 @@ void GNet::Server::accept( ServerPeerInfo & peer_info )
 		G::Root claim_root ;
 		accept_pair = m_socket.accept() ;
 	}
-	peer_info.m_socket = accept_pair.first ;
-	peer_info.m_address = accept_pair.second ;
+	peer_info.m_socket = accept_pair.socket_ptr ;
+	peer_info.m_address = accept_pair.address ;
 }
 
 void GNet::Server::onException( ExceptionSource * esrc , std::exception & e , bool done )
@@ -173,6 +194,11 @@ std::vector<std::weak_ptr<GNet::ServerPeer> > GNet::Server::peers()
 void GNet::Server::writeEvent()
 {
 	G_DEBUG( "GNet::Server::writeEvent" ) ;
+}
+
+bool GNet::Server::unlink( G::SignalSafe , const char * path ) noexcept
+{
+	return path ? ( std::remove(path) == 0 ) : true ;
 }
 
 // ===

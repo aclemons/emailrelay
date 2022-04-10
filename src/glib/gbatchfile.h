@@ -44,10 +44,10 @@ class G::BatchFile
 public:
 	G_EXCEPTION( Error , "batch file error" ) ;
 
-	explicit BatchFile( const G::Path & ) ;
+	explicit BatchFile( const Path & ) ;
 		///< Constructor that reads from a file.
 
-	BatchFile( const G::Path & , std::nothrow_t ) ;
+	BatchFile( const Path & , std::nothrow_t ) ;
 		///< Constructor that reads from a file that might be missing
 		///< or empty.
 
@@ -61,14 +61,14 @@ public:
 	std::string name() const ;
 		///< Returns the "start" window name, if any.
 
-	const G::StringArray & args() const ;
+	const StringArray & args() const ;
 		///< Returns the startup command-line broken up into de-quoted pieces.
 		///< The first item in the list will be the executable.
 
 	std::size_t lineArgsPos() const ;
 		///< Returns the position in line() where the arguments start.
 
-	static void write( const G::Path & , const StringArray & args ,
+	static void write( const Path & , const StringArray & args ,
 		const std::string & start_window_name = std::string() ) ;
 			///< Writes a startup batch file, including a "start" prefix.
 			///< If the "start" window name is not supplied then it is
@@ -87,7 +87,7 @@ private:
 private:
 	std::string m_line ;
 	std::string m_name ;
-	G::StringArray m_args ;
+	StringArray m_args ;
 } ;
 
 #endif

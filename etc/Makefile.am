@@ -63,7 +63,7 @@ install-data-hook:
 	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else sed -e "s:^#spool-dir .*:spool-dir $(e_spooldir):g" -e 's:"/var/spool/emailrelay":"'"$(e_spooldir)"'":g' -e "s:/etc:$(e_sysconfdir):g" -e "s:/usr/local/bin:$(e_libexecdir):g" < "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" > "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
 	cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.makeinstall"
 
-# remove the .conf file if it has not been editied
+# remove the .conf file if it has not been edited
 uninstall-hook:
 	if diff -q "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.makeinstall" ; then rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
 	-rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.makeinstall"

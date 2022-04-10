@@ -24,11 +24,11 @@
 #include "gdef.h"
 #include "gmultiserver.h"
 #include "gsmtpclient.h"
+#include "gfilterfactory.h"
 #include "gdnsblock.h"
 #include "glinebuffer.h"
 #include "gverifier.h"
 #include "gmessagestore.h"
-#include "gfilterfactory.h"
 #include "gsmtpserverprotocol.h"
 #include "gprotocolmessage.h"
 #include "gexception.h"
@@ -63,6 +63,7 @@ public:
 		std::string verifier_address ;
 		unsigned int verifier_timeout{0U} ;
 		GNet::ServerPeerConfig server_peer_config ;
+		GNet::ServerConfig server_config ;
 		ServerProtocol::Config protocol_config ;
 		std::string sasl_server_config ;
 		std::string dnsbl_config ;
@@ -84,13 +85,14 @@ public:
 		Config & set_verifier_address( const std::string & ) ;
 		Config & set_verifier_timeout( unsigned int ) ;
 		Config & set_server_peer_config( const GNet::ServerPeerConfig & ) ;
+		Config & set_server_config( const GNet::ServerConfig & ) ;
 		Config & set_protocol_config( const ServerProtocol::Config & ) ;
 		Config & set_sasl_server_config( const std::string & ) ;
 		Config & set_dnsbl_config( const std::string & ) ;
 	} ;
 
-	Server( GNet::ExceptionSink es , MessageStore & file_store , FilterFactory & ,
-		const GAuth::Secrets & client_secrets , const GAuth::Secrets & server_secrets ,
+	Server( GNet::ExceptionSink es , MessageStore & store , FilterFactory & ,
+		const GAuth::SaslClientSecrets & client_secrets , const GAuth::SaslServerSecrets & server_secrets ,
 		const Config & server_config , const std::string & forward_to ,
 		const GSmtp::Client::Config & client_config ) ;
 			///< Constructor. Listens on the given port number using INET_ANY
@@ -132,10 +134,10 @@ private:
 	FilterFactory & m_ff ;
 	Config m_server_config ;
 	Client::Config m_client_config ;
-	const GAuth::Secrets & m_server_secrets ;
+	const GAuth::SaslServerSecrets & m_server_secrets ;
 	std::string m_sasl_server_config ;
 	std::string m_forward_to ;
-	const GAuth::Secrets & m_client_secrets ;
+	const GAuth::SaslClientSecrets & m_client_secrets ;
 	std::string m_sasl_client_config ;
 	G::Slot::Signal<const std::string&,const std::string&> m_event_signal ;
 } ;
@@ -150,7 +152,7 @@ public:
 	G_EXCEPTION( SendError , "failed to send smtp response" ) ;
 
 	ServerPeer( GNet::ExceptionSinkUnbound , const GNet::ServerPeerInfo & peer_info , Server & server ,
-		const GAuth::Secrets & server_secrets , const Server::Config & server_config ,
+		const GAuth::SaslServerSecrets & server_secrets , const Server::Config & server_config ,
 		std::unique_ptr<ServerProtocol::Text> ptext ) ;
 			///< Constructor.
 
@@ -197,6 +199,7 @@ inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_timeout( unsign
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_address( const std::string & s ) { verifier_address = s ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_timeout( unsigned int t ) { verifier_timeout = t ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_server_peer_config( const GNet::ServerPeerConfig & c ) { server_peer_config = c ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_server_config( const GNet::ServerConfig & c ) { server_config = c ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_protocol_config( const ServerProtocol::Config & c ) { protocol_config = c ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_sasl_server_config( const std::string & s ) { sasl_server_config = s ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_dnsbl_config( const std::string & s ) { dnsbl_config = s ; return *this ; }

@@ -105,22 +105,18 @@ private:
 
 private:
 	bool m_installing ;
-	QLabel * m_install_dir_title ;
 	QLabel * m_install_dir_label ;
 	QString m_install_dir_start ;
 	QLineEdit * m_install_dir_edit_box ;
 	QPushButton * m_install_dir_browse_button ;
-	QLabel * m_spool_dir_title ;
 	QLabel * m_spool_dir_label ;
 	QString m_spool_dir_start ;
 	QLineEdit * m_spool_dir_edit_box ;
 	QPushButton * m_spool_dir_browse_button ;
-	QLabel * m_config_dir_title ;
 	QLabel * m_config_dir_label ;
 	QString m_config_dir_start ;
 	QLineEdit * m_config_dir_edit_box ;
 	QPushButton * m_config_dir_browse_button ;
-	QLabel * m_runtime_dir_title ;
 	QLabel * m_runtime_dir_label ;
 	QString m_runtime_dir_start ;
 	QLineEdit * m_runtime_dir_edit_box ;
@@ -214,7 +210,6 @@ private:
 	QPushButton * m_tls_browse_button ;
 	QLabel * m_tls_certificate_label ;
 	QLineEdit * m_tls_certificate_edit_box ;
-	QHBoxLayout * m_tls_inner_layout ;
 
 private slots:
 	void onToggle() ;
@@ -295,8 +290,7 @@ class StartupPage : public GPage
 {Q_OBJECT
 public:
 	StartupPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-		const std::string & next_1 , const std::string & next_2 ,
-		bool start_on_boot_able , bool is_mac ) ;
+		const std::string & next_1 , const std::string & next_2 , bool is_mac ) ;
 
 	std::string nextPage() override ;
 	void dump( std::ostream & , bool ) const override ;

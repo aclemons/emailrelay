@@ -100,18 +100,3 @@ G::Exception::Exception( const std::string & what , const std::string & more1 , 
 {
 }
 
-G::Exception G::Exception::translated() const
-{
-	try
-	{
-		std::string head = G::Str::head( what() , ": " , false ) ;
-		std::string tail = G::Str::tail( what() , ": " ) ;
-		std::string new_head = G::gettext( head.c_str() ) ;
-		return G::Exception( new_head , tail ) ;
-	}
-	catch( std::exception & )
-	{
-		return *this ;
-	}
-}
-

@@ -150,7 +150,8 @@ bool GAuth::Secret::isDotted( const std::string & s )
 
 std::string GAuth::Secret::undotted( const std::string & s )
 {
-	G::StringArray decimals = G::Str::splitIntoFields( s , "." ) ; decimals.resize( 8U ) ;
+	G::StringArray decimals = G::Str::splitIntoFields( s , "." ) ; 
+	decimals.resize( 8U ) ;
 	std::string result ;
 	for( std::size_t i = 0U ; i < 8U ; i++ )
 	{

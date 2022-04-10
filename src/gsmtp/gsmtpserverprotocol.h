@@ -28,9 +28,8 @@
 #include "gverifier.h"
 #include "gverifierstatus.h"
 #include "gsaslserver.h"
-#include "gsecrets.h"
+#include "gsaslserversecrets.h"
 #include "gstatemachine.h"
-#include "gtimer.h"
 #include "gexception.h"
 #include <utility>
 #include <memory>
@@ -94,6 +93,7 @@ public:
 	struct Config /// A structure containing configuration parameters for ServerProtocol.
 	{
 		bool with_vrfy{false} ;
+		unsigned int filter_timeout{0U} ;
 		std::size_t max_size{0U} ;
 		bool authentication_requires_encryption{false} ;
 		bool mail_requires_encryption{false} ;
@@ -104,12 +104,13 @@ public:
 		bool allow_pipelining{false} ;
 
 		Config() ;
-		Config( bool with_vrfy , std::size_t max_size ,
+		Config( bool with_vrfy , unsigned int filter_timeout , std::size_t max_size ,
 			bool authentication_requires_encryption ,
 			bool mail_requires_encryption ,
 			bool tls_starttls ,
 			bool tls_connection ) ;
 		Config & set_with_vrfy( bool = true ) ;
+		Config & set_filter_timeout( unsigned int ) ;
 		Config & set_max_size( std::size_t ) ;
 		Config & set_authentication_requires_encryption( bool = true ) ;
 		Config & set_mail_requires_encryption( bool = true ) ;
@@ -121,7 +122,7 @@ public:
 	} ;
 
 	ServerProtocol( Sender & , Verifier & , ProtocolMessage & ,
-		const GAuth::Secrets & secrets , const std::string & sasl_server_config ,
+		const GAuth::SaslServerSecrets & secrets , const std::string & sasl_server_config ,
 		Text & text , const GNet::Address & peer_address , const Config & config ) ;
 			///< Constructor.
 			///<
@@ -288,7 +289,7 @@ private:
 	void doStartTls( EventData , bool & ) ;
 	void doSecure( EventData , bool & ) ;
 	void doSecureGreeting( EventData , bool & ) ;
-	void verifyDone( const std::string & , const VerifierStatus & ) ;
+	void verifyDone( const VerifierStatus & ) ;
 	void sendBadFrom( const std::string & ) ;
 	void sendTooBig( bool disconnecting = false ) ;
 	void sendChallenge( const std::string & ) ;
@@ -384,6 +385,7 @@ private:
 } ;
 
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_with_vrfy( bool b ) { with_vrfy = b ; return *this ; }
+inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_filter_timeout( unsigned int t ) { filter_timeout = t ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_max_size( std::size_t n ) { max_size = n ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_authentication_requires_encryption( bool b ) { authentication_requires_encryption = b ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_mail_requires_encryption( bool b ) { mail_requires_encryption = b ; return *this ; }

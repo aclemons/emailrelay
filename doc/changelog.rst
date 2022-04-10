@@ -5,12 +5,11 @@ E-MailRelay Change Log
 2.2 -> 2.3
 ==========
 
-* New admin 'forward' command to trigger forwarding without waiting.
-* More simultaneous connections supported on Windows.
-* EPIPELINE SMTP_ extension (todo)
-* Windows event log not used for verbose logging (todo)
-* Uses epoll by default on Linux (todo)
-* No 7-bit/8-bit check by default (todo)
+* Unix domain sockets supported (eg. *--interface=/tmp/smtp.s*).
+* Windows event log not used for verbose logging (prefer *--log-file*).
+* New admin *forward* command to trigger forwarding without waiting.
+* Optional base64 encoding of passwords in secrets files (*plain:b*).
+* Support for MbedTLS version 3.
 
 2.1 -> 2.2
 ==========
@@ -22,7 +21,7 @@ E-MailRelay Change Log
 * New *--log-address* option to aid adaptive firewalling.
 * Dynamic log file rolling when using *--log-file=%d*.
 * Choice of syslog 'facility' on Linux with *--syslog=local0* etc.
-* Pipelined SMTP QUIT commands sent by broken clients are tolerated.
+* Pipelined SMTP_ QUIT commands sent by broken clients are tolerated.
 * Better handling of overly-verbose or unkillable *--filter* scripts.
 * Optional epoll event loop on Linux (\ *configure --enable-epoll*\ ).
 * Some internationalisation support (see NEWS file).
@@ -37,7 +36,7 @@ E-MailRelay Change Log
 * New *--idle-timeout* option for server-side connections.
 * Support for RFC-5782_ DNSBL_ blocking (\ *--dnsbl*\ ).
 * Filter scripts are given the path of the envelope file in argv2.
-* Message files can be editied by *--client-filter* scripts.
+* Message files can be edited by *--client-filter* scripts.
 * Better support for CRAM-SHAx authentication.
 * New *--client-auth-config* and *--server-auth-config* options.
 * New *--show* option on windows to better control the user interface style.

@@ -117,10 +117,10 @@ std::string GAuth::SaslClientImp::mechanism( const G::StringArray & server_mecha
 	{
 		bool simple = G::Str::imatch( our_list , m_config ) ; // eg. allow "plain" as well as "m:plain"
 		G::StringArray list = G::Str::splitIntoTokens( G::Str::upper(m_config) , ";" ) ;
-		G::StringArray whitelist = G::Str::splitIntoTokens( simple ? G::Str::upper(m_config) : G::Str::headMatchResidue( list , "M:" ) , "," ) ;
-		G::StringArray blacklist = G::Str::splitIntoTokens( G::Str::headMatchResidue( list , "X:" ) , "," ) ;
+		G::StringArray whitelist = G::Str::splitIntoTokens( simple?G::Str::upper(m_config): G::Str::headMatchResidue( list , "M:" ) , "," ) ;
+		G::StringArray blocklist = G::Str::splitIntoTokens( G::Str::headMatchResidue( list , "X:" ) , "," ) ;
 		our_list.erase( G::Str::keepMatch( our_list.begin() , our_list.end() , whitelist , true ) , our_list.end() ) ;
-		our_list.erase( G::Str::removeMatch( our_list.begin() , our_list.end() , blacklist , true ) , our_list.end() ) ;
+		our_list.erase( G::Str::removeMatch( our_list.begin() , our_list.end() , blocklist , true ) , our_list.end() ) ;
 	}
 
 	// build the list of mechanisms that we can use with the server

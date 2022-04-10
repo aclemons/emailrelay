@@ -115,6 +115,11 @@ sub requireUnix
 		if !System::unix() ;
 }
 
+sub requireUnixDomainSockets
+{
+	requireUnix() ; # assume --with-uds
+}
+
 sub requireRoot
 {
 	# (typically called after requireUnix())
@@ -1045,46 +1050,6 @@ sub testFilterFailure
 	$server->cleanup() ;
 }
 
-sub testFilterTimeout
-{
-	# setup
-	my %args = (
-		Log => 1 ,
-		Verbose => 1 ,
-		Domain => 1 ,
-		Port => 1 ,
-		SpoolDir => 1 ,
-		PidFile => 1 ,
-		Filter => 1 ,
-		FilterTimeout => 1 ,
-	) ;
-	my $server = new Server() ;
-	Filter::create( $server->filter() , {} , {
-			unix => [
-				"sleep 3" ,
-				"exit 0" ,
-			] ,
-			win32 => [
-				"WScript.Sleep(3000) ;" ,
-				"WScript.Quit(0) ;" ,
-			] ,
-		} ) ;
-	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
-	Check::running( $server->pid() , $server->message() ) ;
-	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
-	Check::ok( $smtp_client->open() ) ;
-
-	# test that the filter times out
-	$smtp_client->submit( 1 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 0 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope*" , 0 ) ;
-	Check::fileContains( $server->stderr() , "filter done: ok=0 response=.error. reason=.*timeout" ) ;
-
-	# tear down
-	$server->kill() ;
-	$server->cleanup() ;
-}
-
 sub testFilterWithBadFileDeletion
 {
 	_testFilterWithFileDeletion(0,1) ;
@@ -1248,7 +1213,7 @@ sub testScannerPass
 		Scanner => 1 ,
 	) ;
 	my $server = new Server() ;
-	my $scanner = new Scanner( $server->scannerPort() ) ;
+	my $scanner = new Scanner( $server->scannerAddress() ) ;
 	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	$scanner->run() ;
@@ -1284,7 +1249,7 @@ sub testScannerBlock
 		Scanner => 1 ,
 	) ;
 	my $server = new Server() ;
-	my $scanner = new Scanner( $server->scannerPort() ) ;
+	my $scanner = new Scanner( $server->scannerAddress() ) ;
 	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	$scanner->run() ;
@@ -1320,7 +1285,7 @@ sub testScannerTimeout
 		FilterTimeout => 1 ,
 	) ;
 	my $server = new Server() ;
-	my $scanner = new Scanner( $server->scannerPort() ) ;
+	my $scanner = new Scanner( $server->scannerAddress() ) ;
 	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	$scanner->run() ;
@@ -1335,6 +1300,44 @@ sub testScannerTimeout
 	Check::fileDoesNotContain( $server->stderr() , "452 foobar" ) ;
 	Check::fileContains( $server->stderr() , "filter done: ok=0 response=.failed. reason=.*timeout" ) ;
 	Check::fileContains( $server->stderr() , "452 failed" ) ;
+
+	# tear down
+	$server->kill() ;
+	$scanner->kill() ;
+	$scanner->cleanup() ;
+	$server->cleanup() ;
+}
+
+sub testScannerOverUnixDomainSockets
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		Verbose => 1 ,
+		Domain => 1 ,
+		Port => 1 ,
+		SpoolDir => 1 ,
+		PidFile => 1 ,
+		Scanner => 1 ,
+	) ;
+	requireUnixDomainSockets() ;
+	my $server = new Server() ;
+	$server->set_scannerAddress( System::tempfile() ) ;
+	my $scanner = new Scanner( $server->scannerAddress() ) ;
+	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
+	Check::running( $server->pid() , $server->message() ) ;
+	$scanner->run() ;
+	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
+	Check::ok( $smtp_client->open() ) ;
+
+	# test that the scanner is used
+	$smtp_client->submit_start() ;
+	$smtp_client->submit_line( "send ok" ) ; # (the test scanner treats the message body as a script)
+	$smtp_client->submit_end() ;
+	Check::fileContains( $scanner->logfile() , "new connection from (/|\\\\0)" ) ;
+	Check::fileContains( $scanner->logfile() , "send ok" ) ;
+	Check::fileDoesNotContain( $server->stderr() , "452 " ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 1 ) ;
 
 	# tear down
 	$server->kill() ;

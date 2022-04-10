@@ -23,8 +23,8 @@
 
 #include "gdef.h"
 #include "gfilter.h"
-#include "gclientptr.h"
 #include "gfilestore.h"
+#include "gclientptr.h"
 #include "grequestclient.h"
 #include "geventhandler.h"
 
@@ -41,8 +41,7 @@ namespace GSmtp
 class GSmtp::NetworkFilter : public Filter
 {
 public:
-	NetworkFilter( GNet::ExceptionSink , FileStore & ,
-		const std::string & server_location ,
+	NetworkFilter( GNet::ExceptionSink , FileStore & , const std::string & server_location ,
 		unsigned int connection_timeout , unsigned int response_timeout ) ;
 			///< Constructor.
 

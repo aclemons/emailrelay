@@ -58,13 +58,14 @@ void Main::WinForm::addSystemMenuItem( const char * name , unsigned int id )
 	HMENU hmenu = GetSystemMenu( handle() , FALSE ) ;
 	if( hmenu )
 	{
-		MENUITEMINFO item{} ;
+		MENUITEMINFOA item{} ;
 		item.cbSize = sizeof( item ) ;
-		item.fMask = MIIM_STRING | MIIM_ID ;
+		item.fMask = MIIM_STRING | MIIM_ID ; // setting dwTypeData and wID
 		item.fType = MFT_STRING ;
 		item.wID = id ;
 		item.dwTypeData = const_cast<LPSTR>(name) ;
-		InsertMenuItem( hmenu , 0 , TRUE , &item ) ;
+		item.cch = static_cast<UINT>( std::strlen(name) ) ;
+		InsertMenuItemA( hmenu , 0 , TRUE , &item ) ;
 	}
 }
 

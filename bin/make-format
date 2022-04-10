@@ -177,9 +177,9 @@ sub fixup
 		}
 
 		# add some more whitespace
-		$line =~ s:(\S);$:\1 ;: ;
-		$line =~ s:(\S); //(.*):\1 ; //\2: ;
-		$line =~ s:(\S),:\1 ,:g unless ( $line =~ m/["']/ or $line =~ m://.*,: ) ;
+		$line =~ s:(\S);$:$1 ;: ;
+		$line =~ s:(\S); //(.*):$1 ; //$2: ;
+		$line =~ s:(\S),:$1 ,:g unless ( $line =~ m/["']/ or $line =~ m://.*,: ) ;
 
 		print $fh_out $line , "\n" or die ;
 	}

@@ -23,7 +23,6 @@
 
 #include "gdef.h"
 #include "gpath.h"
-#include "gstrings.h"
 
 //| \class Boot
 /// Provides support for installing as a boot-time service.
@@ -31,10 +30,10 @@
 class Boot
 {
 public:
-	static bool able( const G::Path & dir_boot ) ;
+	static bool installable( const G::Path & dir_boot ) ;
 		///< Returns true if the operating-system is supported and the supplied
-		///< boot-system directory is valid. The parameter normally comes
-		///< from Dir::boot().
+		///< boot-system directory is valid and accessible. The parameter normally
+		///< comes from Dir::boot().
 
 	static void install( const G::Path & dir_boot , const std::string & name ,
 		const G::Path & path_1 , const G::Path & path_2 ) ;
@@ -51,6 +50,9 @@ public:
 
 	static bool installed( const G::Path & dir_boot , const std::string & name ) ;
 		///< Returns true if currently installed.
+
+	static bool launchable( const G::Path & dir_boot , const std::string & name ) ;
+		///< Returns true if launch() is possible.
 
 	static void launch( const G::Path & dir_boot , const std::string & name ) ;
 		///< Starts the service.

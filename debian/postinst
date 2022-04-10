@@ -27,7 +27,7 @@ emailrelay_fix_html()
 
 emailrelay_create_config()
 {
-	if test ! -f /etc/emailrelay.conf -a -f /etc/emailrelay.conf.template
+	if test ! -e /etc/emailrelay.conf -a -f /etc/emailrelay.conf.template
 	then
 		cp /etc/emailrelay.conf.template /etc/emailrelay.conf
 	fi

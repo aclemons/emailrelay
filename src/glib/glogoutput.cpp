@@ -209,6 +209,7 @@ std::ostream & G::LogOutput::start( Log::Severity severity )
 		open( m_path , false ) ;
 
 	std::ostream & ss = LogOutputImp::ostream1() ;
+	ss << std::dec ;
 	if( m_exename.length() )
 		ss << m_exename << ": " ;
 	if( m_config.m_with_timestamp )

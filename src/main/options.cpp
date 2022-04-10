@@ -52,7 +52,7 @@ G::Options Main::Options::spec( bool is_windows )
 			gettext("hides the application window and suppresses message boxes (requires --no-daemon)") ,
 			"0" , "" , "3" } , '!' ) ;
 				// Windows only. Hides the application window and disables all message
-				// boxes, overriding any "--show" option. This is useful when running
+				// boxes, overriding any --show option. This is useful when running
 				// as a windows service.
 
 		opt.add( { "" , "show" ,
@@ -60,8 +60,8 @@ G::Options Main::Options::spec( bool is_windows )
 			"1" , "style" , "3" } , '!' ) ;
 				// Windows only. Starts the application window in the given style: "hidden",
 				// "popup", "window", "window,tray", or "tray". Ignored if also using
-				// "--no-daemon" or "--hidden". If none of "--window", "--no-daemon" and
-				// "--hidden" are used then the default style is "tray".
+				// --no-daemon or --hidden. If none of --window, --no-daemon and
+				// --hidden are used then the default style is "tray".
 	}
 	else
 	{
@@ -91,9 +91,10 @@ G::Options Main::Options::spec( bool is_windows )
 			"1" , "username" , "3" } , '!' ) ;
 				//default: daemon
 				//example: nobody
-				// When started as root the program switches to an non-privileged effective
-				// user-id when idle. This option can be used to define which user-id is
-				// used. Specify "root" to disable all user-id switching. Ignored on Windows.
+				// When started as root the program switches to a non-privileged effective
+				// user-id when idle. This option can be used to define the idle user-id and
+				// also the group ownership of new files and sockets. Specify "root" to 
+				// disable all user-id switching. Ignored on Windows.
 
 		opt.add( { "k" , "syslog" ,
 			gettext("forces syslog output if logging is enabled (overrides --no-syslog)") ,
@@ -112,8 +113,9 @@ G::Options Main::Options::spec( bool is_windows )
 			gettext("enables text localisation using the given locale base directory") ,
 				"1" , "dir" , "3" } , '!' ) ;
 					//example: /opt/share/locale
-					// Specifies a locale base directory where localisation message catalogues
-					// can be found. An empty directory can be used for the built-in default.
+					// Enables localisation and specifies the locale base directory where
+					// message catalogues can be found. An empty directory can be used
+					// for the built-in default.
 	}
 
 	{

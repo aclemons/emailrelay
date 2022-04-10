@@ -46,7 +46,7 @@ namespace GNet
 /// {
 ///  Foo() ;
 ///  void onFutureEvent() ;
-///  void run( HANDLE ) ;
+///  void run( FutureEvent::handle_type ) ;
 ///  FutureEvent m_future_event ;
 ///  std::thread m_thread ;
 ///  int m_result ;
@@ -56,7 +56,7 @@ namespace GNet
 ///    m_thread(&Foo::run,this,m_future_event.handle())
 /// {
 /// }
-/// void Foo::run( HANDLE h )
+/// void Foo::run( FutureEvent::handle_type h )
 /// {
 ///   m_result = ... ; // do blocking work in worker thread
 ///   FutureEvent::send( h ) ; // raise 'work complete' event
@@ -72,6 +72,7 @@ class GNet::FutureEvent
 {
 public:
 	G_EXCEPTION( Error , "FutureEvent error" ) ;
+	using handle_type = HANDLE ;
 
 	FutureEvent( FutureEventHandler & , ExceptionSink ) ;
 		///< Constructor. Installs itself in the event loop.
@@ -79,12 +80,12 @@ public:
 	~FutureEvent() ;
 		///< Destructor.
 
-	HANDLE handle() noexcept ;
+	handle_type handle() noexcept ;
 		///< Extracts a handle that can be passed between threads
 		///< and used in send(). This should be called once,
 		///< typically as the worker thread is created.
 
-	static bool send( HANDLE handle , bool close = true ) noexcept ;
+	static bool send( handle_type handle , bool close = true ) noexcept ;
 		///< Pokes an event into the main event loop so that the
 		///< FutureEventHandler callback is called asynchronously.
 		///<
@@ -94,10 +95,6 @@ public:
 		///<
 		///< This is safe even if the FutureEvent object has been
 		///< deleted. Returns true on success.
-
-	static HANDLE createHandle() ;
-		///< Used by some event loop implementations to create the
-		///< underlying synchronisation object.
 
 public:
 	FutureEvent( const FutureEvent & ) = delete ;

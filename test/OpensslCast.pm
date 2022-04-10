@@ -44,7 +44,7 @@
 #	$keyfile = $fs->infile( "alice.key" ) ;
 #	$pemfile = $fs->catfile( "alice.key" , "alice.crt" ) ;
 #
-# Each actor has a ".key" file for their private key and a ".csr"
+# Each actor has a ".key" file for their private key and a ".crt"
 # file for their certificate.
 #
 # When creating a concatenated certificate the component

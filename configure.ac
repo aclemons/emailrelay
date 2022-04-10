@@ -19,11 +19,11 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([E-MailRelay],[2.3dev1],[],[emailrelay])
+AC_INIT([E-MailRelay],[2.3],[],[emailrelay])
 AC_CONFIG_SRCDIR([src/glib/gdef.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])
-AC_CONFIG_HEADERS([gconfig_defs.h])
+AC_CONFIG_HEADERS([src/gconfig_defs.h])
 AM_MAINTAINER_MODE
 AC_DISABLE_OPTION_CHECKING
 
@@ -59,16 +59,17 @@ GCONFIG_FN_CHECK_CXX
 GCONFIG_FN_CHECK_NET
 GCONFIG_FN_CHECK_FUNCTIONS
 
-dnl check for packages
-dnl
-GCONFIG_FN_QT
-GCONFIG_FN_TLS_OPENSSL
-GCONFIG_FN_TLS_MBEDTLS
-
 dnl initialise aclocal/pkg.m4
 dnl
 # if the configure script fails in this area then you are probably missing pkg.m4
 PKG_PROG_PKG_CONFIG([0.9.0])
+
+dnl check for packages
+dnl
+GCONFIG_FN_QT
+GCONFIG_FN_QT_BUILD
+GCONFIG_FN_TLS_OPENSSL
+GCONFIG_FN_TLS_MBEDTLS
 
 dnl possibly enable full gettext support -- uncomment this after running
 dnl 'gettextize' and remove the other gettext lines below
@@ -89,8 +90,6 @@ AC_ARG_ENABLE([install-hook],AS_HELP_STRING([--enable-install-hook],[enable fixi
 GCONFIG_FN_ENABLE_INSTALL_HOOK
 AC_ARG_ENABLE([interface-names],AS_HELP_STRING([--enable-interface-names],[allow network interface names for defining listening addresses (default yes)]))
 GCONFIG_FN_ENABLE_INTERFACE_NAMES
-AC_ARG_ENABLE([ipv6],AS_HELP_STRING([--enable-ipv6],[enable ipv6 (default auto)]))
-GCONFIG_FN_ENABLE_IPV6
 AC_ARG_ENABLE([mac],AS_HELP_STRING([--enable-mac],[enable building for mac os x (default auto)]))
 GCONFIG_FN_ENABLE_MAC
 AC_ARG_ENABLE([std-thread],AS_HELP_STRING([--enable-std-thread],[use std::thread or not (default auto)]))
@@ -115,6 +114,8 @@ AC_ARG_WITH([mbedtls],AS_HELP_STRING([--with-mbedtls],[use mbedtls for tls layer
 GCONFIG_FN_TLS
 AC_ARG_WITH([pam],AS_HELP_STRING([--with-pam],[use linux pam for authentication (default auto)]))
 GCONFIG_FN_WITH_PAM
+AC_ARG_WITH([uds],AS_HELP_STRING([--with-uds],[enable unix domain sockets (default auto)]))
+GCONFIG_FN_WITH_UDS
 
 dnl directory tweaking -- define e_ prefixed directory variables
 dnl

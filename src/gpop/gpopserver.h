@@ -91,15 +91,18 @@ public:
 		unsigned int port{110} ;
 		G::StringArray addresses ;
 		GNet::ServerPeerConfig server_peer_config ;
+		GNet::ServerConfig server_config ;
 		std::string sasl_server_config ;
 
 		Config() ;
 		Config( bool , unsigned int port , const G::StringArray & addresses ,
-			const GNet::ServerPeerConfig & , const std::string & sasl_server_config ) ;
+			const GNet::ServerPeerConfig & , const GNet::ServerConfig & ,
+			const std::string & sasl_server_config ) ;
 		Config & set_allow_remote( bool = true ) ;
 		Config & set_port( unsigned int ) ;
 		Config & set_addresses( const G::StringArray & ) ;
 		Config & set_server_peer_config( const GNet::ServerPeerConfig & ) ;
+		Config & set_server_config( const GNet::ServerConfig & ) ;
 		Config & set_sasl_server_config( const std::string & ) ;
 	} ;
 
@@ -134,6 +137,7 @@ inline GPop::Server::Config & GPop::Server::Config::set_allow_remote( bool b ) {
 inline GPop::Server::Config & GPop::Server::Config::set_port( unsigned int p ) { port = p ; return *this ; }
 inline GPop::Server::Config & GPop::Server::Config::set_addresses( const G::StringArray & a ) { addresses = a ; return *this ; }
 inline GPop::Server::Config & GPop::Server::Config::set_server_peer_config( const GNet::ServerPeerConfig & c ) { server_peer_config = c ; return *this ; }
+inline GPop::Server::Config & GPop::Server::Config::set_server_config( const GNet::ServerConfig & c ) { server_config = c ; return *this ; }
 inline GPop::Server::Config & GPop::Server::Config::set_sasl_server_config( const std::string & s ) { sasl_server_config = s ; return *this ; }
 
 #endif

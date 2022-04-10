@@ -38,7 +38,7 @@ class G::HashStateImp
 {
 public:
 	template <typename U> static std::string extension( U n ) ;
-		///< Returns the given data size a four-character
+		///< Returns the given data size as a four-character
 		///< string.
 
 protected:
@@ -115,7 +115,7 @@ std::string G::HashState<N,U,S>::encode( const uint_type * values )
 	std::string result( N , '\0' ) ;
 	for( std::size_t i = 0U ; i < N/4 ; i++ )
 	{
-		convert_( values[i] , result.begin() + (i*4U) ) ;
+		convert_( values[i] , result.begin() + (i*4U) ) ; // NOLINT narrowing
 	}
 	return result ;
 }
@@ -126,7 +126,7 @@ std::string G::HashState<N,U,S>::encode( const uint_type * values , size_type n 
 	std::string result( N+4U , '\0' ) ;
 	for( std::size_t i = 0U ; i < N/4 ; i++ )
 	{
-		convert_( values[i] , result.begin() + (i*4U) ) ;
+		convert_( values[i] , result.begin() + (i*4U) ) ; // NOLINT narrowing
 	}
 	convert_( n , result.begin() + N ) ;
 	return result ;
@@ -229,7 +229,7 @@ void G::HashState<N,U,S>::convert( const std::string & str , uint_type & n_out )
 template <unsigned int N, typename U, typename S>
 void G::HashState<N,U,S>::convert( const std::string & str , uint_type * state_out )
 {
-	for( unsigned int i = 0U ; i < (N/4U) ; i++ )
+	for( std::size_t i = 0U ; i < (N/4U) ; i++ )
 	{
 		convert( str.at(i*4U+3U) , str.at(i*4U+2U) , str.at(i*4U+1U) , str.at(i*4U+0U) , state_out[i] ) ;
 	}

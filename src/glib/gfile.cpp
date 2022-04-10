@@ -274,13 +274,14 @@ bool G::File::mkdirsr( int * ep , const Path & path , int limit )
 bool G::File::mkdirs( const Path & path , std::nothrow_t , int limit )
 {
 	int e = 0 ;
-	return mkdirsr( &e , path , limit ) ;
+	bool ok = mkdirsr( &e , path , limit ) ;
+	return ok || e == EEXIST ;
 }
 
 void G::File::mkdirs( const Path & path , int limit )
 {
 	int e = 0 ;
-	if( !mkdirsr(&e,path,limit) )
+	if( !mkdirsr(&e,path,limit) && e != EEXIST )
 		throw CannotMkdir( path.str() , e ? G::Process::strerror(e) : std::string() ) ;
 }
 

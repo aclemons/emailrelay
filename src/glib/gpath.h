@@ -132,16 +132,15 @@ public:
 
 	Path withoutExtension() const ;
 		///< Returns a path without the basename extension, if any.
-		///< Returns this path if there is no dot in the basename.
-		///< As a special case, a basename() like ".foo" ends up as
-		///< "."; prefer withExtension() where appropriate to avoid
-		///< this.
+		///< As a special case, a basename() that starts with a dot
+		///< is replaced by a single dot. Prefer withExtension()
+		///< where appropriate to avoid this.
 
 	bool isAbsolute() const ;
 		///< Returns !isRelative().
 
 	bool isRelative() const ;
-		///< Returns true if the path is a relative path.
+		///< Returns true if the path is a relative path or empty().
 
 	void pathAppend( const std::string & tail ) ;
 		///< Appends a filename or a relative path to this path.

@@ -652,7 +652,7 @@ unsigned long G::StrImp::toULongHex( const std::string & s , bool limited )
 {
 	unsigned long n = 0U ;
 	if( s.empty() ) return 0U ;
-	size_t i0 = s.find_first_not_of('0') ;
+	std::size_t i0 = s.find_first_not_of('0') ;
 	if( i0 == std::string::npos ) i0 = 0U ;
 	if( (s.size()-i0) > (sizeof(unsigned long)*2U) )
 	{
@@ -666,7 +666,7 @@ unsigned long G::StrImp::toULongHex( const std::string & s , bool limited )
 		else if( c >= 65U && c <= 70U ) c -= 55U ;
 		else if( c >= 48U && c <= 57U ) c -= 48U ;
 		else throw Str::InvalidFormat( "invalid hexadecimal" , s ) ;
-		n <<= 4 ;
+		n <<= 4U ;
 		n += c ;
 	}
 	return n ;
@@ -764,8 +764,8 @@ std::size_t G::StrImp::outputHex( Tout out , char c )
 	namespace imp = G::StrImp ;
 	std::size_t n = static_cast<unsigned char>( c ) ;
 	n &= 0xFFU ;
-	*out++ = imp::chars_hexmap[(n>>4)%16U] ;
-	*out++ = imp::chars_hexmap[(n>>0)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>4U)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>0U)%16U] ;
 	return 2U ;
 }
 
@@ -776,10 +776,10 @@ std::size_t G::StrImp::outputHex( Tout out , wchar_t c )
 	using uwchar_t = typename std::make_unsigned<wchar_t>::type ;
 	std::size_t n = static_cast<uwchar_t>( c ) ;
 	n &= 0xFFFFU ;
-	*out++ = imp::chars_hexmap[(n>>12)%16U] ;
-	*out++ = imp::chars_hexmap[(n>>8)%16U] ;
-	*out++ = imp::chars_hexmap[(n>>4)%16U] ;
-	*out++ = imp::chars_hexmap[(n>>0)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>12U)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>8U)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>4U)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>0U)%16U] ;
 	return 4U ;
 }
 
@@ -1443,7 +1443,7 @@ std::size_t G::Str::ifind( const std::string & s , const std::string & key , std
 {
 	namespace imp = G::StrImp ;
 	if( s.empty() || key.empty() || pos > s.length() ) return std::string::npos ;
-	auto p = std::search( s.begin()+pos , s.end() , key.begin() , key.end() , imp::imatchc ) ;
+	auto p = std::search( s.begin()+pos , s.end() , key.begin() , key.end() , imp::imatchc ) ; // NOLINT narrowing
 	return p == s.end() ? std::string::npos : std::distance(s.begin(),p) ;
 }
 

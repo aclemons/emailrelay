@@ -277,8 +277,8 @@
 # Name: hidden
 # Format: hidden
 # Description: Windows only. Hides the application window and disables all
-# message boxes, overriding any ""--show"" option. This is useful when
-# running  as a windows service.
+# message boxes, overriding any "--show" option. This is useful when
+# running as a windows service.
 #
 #hidden
 
@@ -317,9 +317,9 @@
 
 # Name: localedir
 # Format: localedir <dir>
-# Description: Specifies a locale base directory where localisation message
-# catalogues  can be found. An empty directory can be used for the built-in
-# default.
+# Description: Enables localisation and specifies the locale base directory
+# where message catalogues can be found. An empty directory can be used for
+# the built-in default.
 #
 #localedir /opt/share/locale
 
@@ -568,10 +568,10 @@
 
 # Name: user
 # Format: user <username>
-# Description: When started as root the program switches to an non-privileged
-# effective user-id when idle. This option can be used to define which
-# user-id is used. Specify "root" to disable all user-id switching. Ignored
-# on Windows.
+# Description: When started as root the program switches to a non-privileged
+# effective user-id when idle. This option can be used to define the idle
+# user-id and also the group ownership of new files and sockets. Specify
+# "root" to  disable all user-id switching. Ignored on Windows.
 #
 #user nobody
 

@@ -22,14 +22,15 @@
 #define G_SMTP_STORED_MESSAGE_H
 
 #include "gdef.h"
-#include "gstrings.h"
 #include "gmessagestore.h"
+#include "gstrings.h"
 #include "gpath.h"
 #include <iostream>
 #include <fstream>
 
 namespace GSmtp
 {
+	class MessageId ;
 	class StoredMessage ;
 	class StoredMessageStub ;
 }
@@ -143,7 +144,7 @@ private:
 	std::ifstream m_content_stream ;
 } ;
 
-inline GSmtp::MessageId GSmtp::StoredMessageStub::id() const { return MessageId(std::string()) ; }
+inline GSmtp::MessageId GSmtp::StoredMessageStub::id() const { return MessageId::none() ; }
 inline std::string GSmtp::StoredMessageStub::location() const { return std::string() ; }
 inline std::string GSmtp::StoredMessageStub::from() const { return std::string() ; }
 inline std::string GSmtp::StoredMessageStub::to( std::size_t ) const { return std::string() ; }

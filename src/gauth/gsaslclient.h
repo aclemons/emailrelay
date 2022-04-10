@@ -25,6 +25,7 @@
 #include "gsaslclientsecrets.h"
 #include "gexception.h"
 #include "gstrings.h"
+#include <memory>
 
 namespace GAuth
 {
@@ -78,8 +79,9 @@ public:
 
 	std::string next( const std::string & ) ;
 		///< A convenience overload that moves to the next() mechanism
-		///< and returns it. Returns the empty string if the given string
-		///< is empty or if there are no more mechanisms.
+		///< and returns it. Returns the empty string if the
+		///< given string is empty or if there are no more
+		///< mechanisms.
 
 	std::string mechanism() const ;
 		///< Returns the name of the current mechanism once next() has

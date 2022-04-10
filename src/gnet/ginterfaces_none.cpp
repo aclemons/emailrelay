@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "ginterfaces.h"
+#include "gstr.h"
 
 GNet::Interfaces::Interfaces()
 = default;
@@ -56,11 +57,21 @@ std::vector<GNet::Address> GNet::Interfaces::find( const std::string & , unsigne
 }
 
 std::vector<GNet::Address> GNet::Interfaces::addresses( const G::StringArray & names , unsigned int port ,
-	G::StringArray & , G::StringArray & ) const
+	G::StringArray & used_names , G::StringArray & , G::StringArray & bad_names ) const
 {
 	AddressList result ;
 	for( const auto & name : names )
-		result.push_back( Address(name,port) ) ; // throws if an interface name
+	{
+		if( !Address::validStrings( name , G::Str::fromUInt(port) ) )
+		{
+			bad_names.push_back( name ) ;
+		}
+		else
+		{
+			used_names.push_back( name ) ;
+			result.push_back( Address::parse(name,port) ) ;
+		}
+	}
 	return result ;
 }
 

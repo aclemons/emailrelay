@@ -121,7 +121,7 @@ void GNet::DnsBlock::configureImp( const std::string & config , DnsBlock * p )
 	if( list.size() < 4U )
 		throw std::runtime_error( "not enough comma-sparated fields" ) ;
 
-	Address dns_server( list.at(0U) ) ;
+	Address dns_server = Address::parse( list.at(0U) , Address::NotLocal() ) ;
 
 	// normally allow on timeout, but deny on timeout if configured value is negative
 	std::size_t threshold = G::Str::toUInt( list.at(2U) ) ;
@@ -167,7 +167,7 @@ void GNet::DnsBlock::start( const Address & address )
 		id_generator = 10 ;
 
 	// create a socket to receive responses
-	m_socket_ptr = std::make_unique<DatagramSocket>( m_dns_server.domain() ) ;
+	m_socket_ptr = std::make_unique<DatagramSocket>( m_dns_server.family() ) ;
 	m_socket_ptr->addReadHandler( *this , m_es ) ;
 
 	// send a DNS query to each configured server

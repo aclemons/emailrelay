@@ -70,15 +70,15 @@
     </p>
 
     <p>
-     The advantages of a non-blocking event model are discussed in the well-known
-     <a href="http://www.kegel.com/c10k.html">C10K Problem</a> document.
-    </p>
-
-    <p>
      This event model can make the code more complicated than the equivalent
      multi-threaded approach since (for example) it is not possible to wait for a
      complete line of input to be received from a remote SMTP client because there
      might be other connections that need servicing half way through.
+    </p>
+
+    <p>
+     The advantages of a non-blocking event model are discussed in the well-known
+     <a href="http://www.kegel.com/c10k.html">C10K Problem</a> document.
     </p>
 
     <p>
@@ -201,17 +201,17 @@
      However, sometimes there are objects that need to be more resilient to
      exceptions. In particular, a network server should not terminate just because
      one of its connections fails unexpectedly. In these cases the owning parent
-     object receives the exception notification together with an <em>ExceptionSource</em>
-     pointer that identifies the child object that threw the exception. This allows
-     the parent object to absorb the exception and delete the child, without the
-     exception killing the whole server.
+     object receives the exception notification together with a pointer that
+     identifies the child object that threw the exception (ie. the exception
+     source). This allows the parent object to absorb the exception and delete the
+     child, without the exception killing the whole server.
     </p>
 
     <p>
-     Event sources in the event loop are typically held as a file descriptor and a
-     windows event handle, together known as a <em>Descriptor</em>. Event loop
-     implementations typically watch a set of Descriptors for events and call the
-     relevant EventHandler/ExceptionHandler code via the <em>EventEmitter</em> class.
+     Event sources in the event loop are held as a file descriptor, a windows event
+     handle, an EventHandler pointer, an ExceptionHandler pointer and an
+     ExceptionSource pointer. The first two together are known as a Descriptor, and
+     the last two together are known as an ExceptionSink.
     </p>
    <h2><a class="a-header" name="SH_1_8">Multi-threading</a></h2> <!-- index:2:SH:1:8:Multi-threading -->
     <p>

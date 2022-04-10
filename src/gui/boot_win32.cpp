@@ -41,7 +41,7 @@ namespace
 	}
 }
 
-bool Boot::able( const G::Path & )
+bool Boot::installable( const G::Path & )
 {
 	SC_HANDLE hmanager = OpenSCManager( nullptr , nullptr , SC_MANAGER_ALL_ACCESS ) ;
 	bool ok = hmanager != HNULL ;
@@ -69,13 +69,15 @@ void Boot::install( const G::Path & , const std::string & name , const G::Path &
 		throw std::runtime_error( reason ) ;
 
 	// create the config file
-	createConfigurationFile( bat , wrapper_exe , true/*do_throw*/ ) ;
+	bool do_throw = true ;
+	createConfigurationFile( bat , wrapper_exe , do_throw ) ;
 }
 
 bool Boot::uninstall( const G::Path & , const std::string & name , const G::Path & bat , const G::Path & wrapper_exe )
 {
 	// create an unused config file -- the user can edit it for a manual service install
-	createConfigurationFile( bat , wrapper_exe , false/*do_throw*/ ) ;
+	bool do_throw = false ;
+	createConfigurationFile( bat , wrapper_exe , do_throw ) ;
 
 	return ::service_remove(name).empty() ;
 }
@@ -83,6 +85,11 @@ bool Boot::uninstall( const G::Path & , const std::string & name , const G::Path
 bool Boot::installed( const G::Path & , const std::string & name )
 {
 	return ::service_installed( name ) ;
+}
+
+bool Boot::launchable( const G::Path & dir , const std::string & )
+{
+	return installable( dir ) ;
 }
 
 void Boot::launch( const G::Path & , const std::string & name )

@@ -179,7 +179,7 @@ bool GPop::ServerProtocol::sendContentLine( std::string & line , bool & stop )
 
 	// read the line of text
 	line.erase( 1U ) ; // leave "."
-	G::Str::readLineFrom( *(m_content.get()) , crlf() , line , false/*erase*/ ) ;
+	G::Str::readLineFrom( *m_content , crlf() , line , false/*erase*/ ) ;
 
 	// add crlf and choose an offset
 	bool eof = m_content->fail() || m_content->bad() ;

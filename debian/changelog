@@ -1,11 +1,10 @@
 emailrelay (2.3) unstable; urgency=low
+  * Unix domain sockets supported (eg. "--interface=/tmp/smtp.s").
+  * Windows event log not used for verbose logging (prefer "--log-file").
   * New admin 'forward' command to trigger forwarding without waiting.
-  * More simultaneous connections supported on Windows.
-  * EPIPELINE SMTP extension (todo)
-  * Windows event log not used for verbose logging (todo)
-  * Uses epoll by default on Linux (todo)
-  * No 7-bit/8-bit check by default (todo)
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Fri,  2 Apr 2021 00:00:00 +0000
+  * Optional base64 encoding of passwords in secrets files ("plain:b").
+  * Support for MbedTLS version 3.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Tue, 14 Feb 2022 00:00:00 +0000
 
 emailrelay (2.2) unstable; urgency=low
   * Connections from IPv4 'private use' addresses are allowed by default (see "--remote-clients").
@@ -29,7 +28,7 @@ emailrelay (2.1) unstable; urgency=low
   * New "--idle-timeout" option for server-side connections.
   * Support for RFC-5782 DNSBL blocking ("--dnsbl").
   * Filter scripts are given the path of the envelope file in argv2.
-  * Message files can be editied by "--client-filter" scripts.
+  * Message files can be edited by "--client-filter" scripts.
   * Better support for CRAM-SHAx authentication.
   * New "--client-auth-config" and "--server-auth-config" options.
   * New "--show" option on windows to better control the user interface style.

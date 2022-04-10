@@ -105,10 +105,14 @@ public:
 			///< found or if found but not up. Does lazy load()ing.
 
 	std::vector<Address> addresses( const G::StringArray & names , unsigned int port ,
-		G::StringArray & used_names , G::StringArray & empty_names ) const ;
+		G::StringArray & used_names , G::StringArray & empty_names , 
+		G::StringArray & bad_names ) const ;
 			///< Treats each name given as an address or interface name and
 			///< returns the total set of addresses. Returns by reference
-			///< lists of interface names with and without addresses.
+			///< (1) names that are, or have, addresses, (2) names that might
+			///< be interfaces with no bound addresses, and (3) the remainder,
+			///< ie. names that are not addresses and cannot be a valid
+			///< interface name.
 
 private: // overrides
 	void readEvent() override ; // GNet::EventHandler

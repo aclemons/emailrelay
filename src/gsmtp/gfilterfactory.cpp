@@ -28,17 +28,12 @@
 #include "gexception.h"
 #include "gfactoryparser.h"
 
-GSmtp::FilterFactory::FilterFactory( FileStore & file_store ) :
+GSmtp::FilterFactoryFileStore::FilterFactoryFileStore( FileStore & file_store ) :
 	m_file_store(file_store)
 {
 }
 
-std::string GSmtp::FilterFactory::check( const std::string & identifier )
-{
-	return FactoryParser::check( identifier , true ) ;
-}
-
-std::unique_ptr<GSmtp::Filter> GSmtp::FilterFactory::newFilter( GNet::ExceptionSink es ,
+std::unique_ptr<GSmtp::Filter> GSmtp::FilterFactoryFileStore::newFilter( GNet::ExceptionSink es ,
 	bool server_side , const std::string & identifier , unsigned int timeout )
 {
 	FactoryParser::Result p = FactoryParser::parse( identifier , true ) ;

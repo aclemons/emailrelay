@@ -30,6 +30,7 @@
 #include "gpath.h"
 #include "gfile.h"
 #include "gstr.h"
+#include "gassert.h"
 #include "gtest.h"
 #include "glog.h"
 #include <iostream>
@@ -78,40 +79,38 @@ std::unique_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
 {
 	while( m_iter.more() )
 	{
-		auto message_ptr = std::make_unique<StoredFile>( m_store , m_iter.filePath() ) ;
-		if( m_lock && !message_ptr->lock() )
+		auto m = std::make_unique<StoredFile>( m_store , m_iter.filePath() ) ;
+		if( !m->id().valid() )
+			continue ;
+
+		if( m_lock && !m->lock() )
 		{
 			G_WARNING( "GSmtp::MessageStore: cannot lock file: \"" << m_iter.filePath() << "\"" ) ;
 			continue ;
 		}
 
-		if( !message_ptr->id().valid() )
-			continue ;
-
 		std::string reason ;
 		const bool check_recipients = m_lock ; // check for no-remote-recipients
-		bool ok = message_ptr->readEnvelope(reason,check_recipients) && message_ptr->openContent(reason) ;
+		bool ok = m->readEnvelope(reason,check_recipients) && m->openContent(reason) ;
 		if( !ok && m_lock )
-			static_cast<StoredMessage&>(*message_ptr).fail( reason , 0 ) ;
+			m->fail( reason , 0 ) ;
 		else if( !ok )
 			G_WARNING( "GSmtp::MessageStore: ignoring \"" << m_iter.filePath() << "\": " << reason ) ;
 		else
-			return std::unique_ptr<StoredMessage>( message_ptr.release() ) ; // up-cast
+			return std::unique_ptr<StoredMessage>( m.release() ) ; // up-cast
 	}
 	return {} ;
 }
 
 // ===
 
-GSmtp::FileStore::FileStore( const G::Path & dir , bool optimise ,
-	unsigned long max_size , bool test_for_eight_bit ) :
-		m_seq(0UL) ,
+GSmtp::FileStore::FileStore( const G::Path & dir , unsigned long max_size , bool test_for_eight_bit ) :
+		m_seq(1UL) ,
 		m_dir(dir) ,
-		m_optimise(optimise) ,
-		m_empty(false) ,
 		m_max_size(max_size) ,
 		m_test_for_eight_bit(test_for_eight_bit)
 {
+	m_pid_modifier = static_cast<unsigned long>(G::SystemTime::now().s()) ;
 	checkPath( dir ) ;
 
 	if( G::Test::enabled("message-store-with-8bit-test") )
@@ -203,14 +202,10 @@ G::Path GSmtp::FileStore::contentPath( const MessageId & id ) const
 	return envelopePath(id).withExtension( "content" ) ;
 }
 
-G::Path GSmtp::FileStore::envelopePath( const MessageId & id , State state ) const
+G::Path GSmtp::FileStore::envelopePath( const MessageId & id , const char * modifier ) const
 {
-	if( state == State::New )
-		return m_dir + ( id.str() + ".envelope.new" ) ;
-	else if( state == State::Locked )
-		return m_dir + ( id.str() + ".envelope.busy" ) ;
-	else
-		return m_dir + ( id.str() + ".envelope" ) ;
+	G_ASSERT( modifier != nullptr ) ;
+	return m_dir + id.str().append(".envelope").append(modifier) ;
 }
 
 GSmtp::MessageId GSmtp::FileStore::newId()
@@ -227,20 +222,6 @@ GSmtp::MessageId GSmtp::FileStore::newId()
 }
 
 bool GSmtp::FileStore::empty() const
-{
-	if( m_optimise )
-	{
-		if( !m_empty )
-			m_empty = emptyCore() ;
-		return m_empty ;
-	}
-	else
-	{
-		return emptyCore() ;
-	}
-}
-
-bool GSmtp::FileStore::emptyCore() const
 {
 	G::DirectoryList list ;
 	DirectoryReader claim_reader ;
@@ -286,7 +267,6 @@ std::unique_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( const MessageId & i
 std::unique_ptr<GSmtp::NewMessage> GSmtp::FileStore::newMessage( const std::string & from ,
 	const std::string & from_auth_in , const std::string & from_auth_out )
 {
-	m_empty = false ;
 	return std::make_unique<NewFile>( *this , from , from_auth_in , from_auth_out ,
 		m_max_size , m_test_for_eight_bit ) ; // up-cast
 }

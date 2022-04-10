@@ -51,21 +51,19 @@ public:
 		///< Checks the given file. Logs warnings and throws an exception
 		///< if there are any fatal errors.
 
-	SecretsFile( const G::Path & path , bool auto_reread , const std::string & debug_name ,
-		const std::string & server_type = std::string() ) ;
-			///< Constructor to read "client" and "<server-type>" records
-			///< from the named file. The server type defaults to "server".
-			///< The filename path is optional; see valid().
+	SecretsFile( const G::Path & path , bool auto_reread , const std::string & debug_name ) ;
+		///< Constructor to read "client" and "server" records from
+		///< the named file. The path is optional; see valid().
 
 	bool valid() const ;
 		///< Returns true if the file path was supplied in the ctor.
 
-	Secret clientSecret( const std::string & encoding_type ) const ;
-		///< Returns the client id and secret for the given encoding-type.
+	Secret clientSecret( const std::string & type ) const ;
+		///< Returns the client id and secret for the given type.
 		///< Returns the empty string if none.
 
-	Secret serverSecret( const std::string & encoding_type , const std::string & id ) const ;
-		///< Returns the server secret for the given id and encoding-type.
+	Secret serverSecret( const std::string & type , const std::string & id ) const ;
+		///< Returns the server secret for the given id and type.
 		///< Returns the empty string if none.
 
 	std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const ;
@@ -75,8 +73,9 @@ public:
 	std::string path() const ;
 		///< Returns the file path, as supplied to the ctor.
 
-	bool contains( const std::string & server_encoding_type ) const ;
-		///< Returns true if the given server encoding-type is represented.
+	bool contains( const std::string & type , const std::string & id = {} ) const ;
+		///< Returns true if a server secret of the given type
+		///< is available for the particular user or any user.
 
 private:
 	struct Value
@@ -97,16 +96,17 @@ private:
 	} ;
 
 private:
-	void read( const G::Path & , bool ) ;
+	void read( const G::Path & ) ;
 	void reread() const ;
 	void reread( int ) ;
-	static void checkImp( const std::string & path , bool strict , const std::string & server_type ) ;
-	static Contents readContents( const G::Path & , const std::string & , bool ) ;
-	static Contents readContents( std::istream & , const std::string & , bool ) ;
-	static void processLine( Contents & , const std::string & server_type ,
-		unsigned int , const std::string & side , const std::string & , const std::string & , const std::string & , bool ) ;
-	static void showWarnings( const Warnings & warnings , const G::Path & path , const std::string & debug_name = std::string() ) ;
-	static void addWarning( Contents & , unsigned int , const std::string & , const std::string & ) ;
+	static Contents readContents( const G::Path & ) ;
+	static Contents readContents( std::istream & ) ;
+	static void processLine( Contents & ,
+		unsigned int , const std::string & side , const std::string & , const std::string & , const std::string & ) ;
+	static void processLineImp( Contents & ,
+		unsigned int , const std::string & side , const std::string & , const std::string & , const std::string & ) ;
+	static void showWarnings( const Warnings & warnings , const G::Path & path , const std::string & debug_name = {} ) ;
+	static void addWarning( Contents & , unsigned int , const std::string & , const std::string & = {} ) ;
 	static std::string canonical( const std::string & encoding_type ) ;
 	static std::string serverKey( const std::string & , const std::string & ) ;
 	static std::string clientKey( const std::string & ) ;
@@ -117,7 +117,6 @@ private:
 	G::Path m_path ;
 	bool m_auto ;
 	std::string m_debug_name ;
-	std::string m_server_type ;
 	bool m_valid ;
 	Contents m_contents ;
 	G::SystemTime m_file_time ;

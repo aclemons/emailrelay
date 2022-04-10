@@ -136,7 +136,7 @@ struct TrError : std::runtime_error
 #undef CreateDirectory
 #endif
 
-#ifdef G_GUI_DIR_H
+#ifdef G_MAIN_GUI_DIR_H
 #error do not use dir.h from installer.cpp
 #endif
 
@@ -184,7 +184,8 @@ struct CreatePointerFile : public ActionBase
 	G::Path m_gui_exe ;
 	G::Path m_dir_config ;
 	G::Path m_dir_install ;
-	CreatePointerFile( const G::Path & pointer_file , const G::Path & gui_exe , const G::Path & dir_config , const G::Path & dir_install ) ;
+	G::Path m_dir_tr ;
+	CreatePointerFile( const G::Path & pointer_file , const G::Path & gui_exe , const G::Path & dir_config , const G::Path & dir_install , const G::Path & dir_tr ) ;
 	void run() override ;
 	trstring text() const override ;
 	std::string subject() const override ;
@@ -300,12 +301,13 @@ struct UpdateLink : public ActionBase
 struct UpdateBootLink : public ActionBase
 {
 	bool m_active ;
+	bool m_start_on_boot ;
 	trstring m_ok ;
 	G::Path m_dir_boot ;
 	std::string m_name ;
 	G::Path m_startstop_src ;
 	G::Path m_exe ;
-	UpdateBootLink( bool active , G::Path dir_boot , std::string , G::Path startstop_src , G::Path exe ) ;
+	UpdateBootLink( bool active , bool start_on_boot , G::Path dir_boot , std::string , G::Path startstop_src , G::Path exe ) ;
 	void run() override ;
 	trstring text() const override ;
 	std::string subject() const override ;
@@ -316,10 +318,11 @@ struct UpdateBootLink : public ActionBase
 struct InstallService : public ActionBase
 {
 	bool m_active ;
+	bool m_start_on_boot ;
 	trstring m_ok ;
 	G::Path m_bat ;
 	G::Path m_service_wrapper ;
-	InstallService( bool active , G::Path bat , G::Path wrapper ) ;
+	InstallService( bool active , bool start_on_boot , G::Path bat , G::Path wrapper ) ;
 	void run() override ;
 	trstring text() const override ;
 	std::string subject() const override ;
@@ -427,7 +430,9 @@ public:
 
 public:
 	InstallerImp( const InstallerImp & ) = delete ;
-	void operator=( const InstallerImp & ) = delete ;
+	InstallerImp( InstallerImp && ) = delete ;
+	InstallerImp & operator=( const InstallerImp & ) = delete ;
+	InstallerImp & operator=( InstallerImp && ) = delete ;
 
 private:
 	Action & current() ;
@@ -506,11 +511,12 @@ void CreateDirectory::run()
 // ==
 
 CreatePointerFile::CreatePointerFile( const G::Path & pointer_file , const G::Path & gui_exe ,
-	const G::Path & dir_config , const G::Path & dir_install ) :
+	const G::Path & dir_config , const G::Path & dir_install , const G::Path & dir_tr ) :
 		m_pointer_file(pointer_file) ,
 		m_gui_exe(gui_exe) ,
 		m_dir_config(dir_config) ,
-		m_dir_install(dir_install)
+		m_dir_install(dir_install) ,
+		m_dir_tr(dir_tr)
 {
 }
 
@@ -532,7 +538,7 @@ void CreatePointerFile::run()
 	{
 		stream << "#!/bin/sh\n" ;
 		if( !m_gui_exe.empty() )
-			stream << "exec \"`dirname \\\"$0\\\"`/" << m_gui_exe.basename() << "\" \"$@\"\n" ;
+			stream << "exec \"`dirname \\\"$0\\\"`/" << m_gui_exe.basename() << "\" --qmdir=\"" << m_dir_tr << "\" \"$@\"\n" ;
 	}
 
 	// write the pointer variable(s)
@@ -585,7 +591,7 @@ void CopyPayloadFile::run()
 	G::File::mkdirs( m_dst.dirname() , std::nothrow , 8 ) ;
 	G::File::copy( m_src , m_dst ) ;
 
-	if( m_flags.find("x") != std::string::npos ||
+	if( m_flags.find('x') != std::string::npos ||
 		G::File::isExecutable(m_src,std::nothrow) ||
 		m_dst.extension() == "sh" || m_dst.extension() == "bat" ||
 		m_dst.extension() == "exe" || m_dst.extension() == "pl" )
@@ -666,7 +672,7 @@ void FileGroup::run()
 {
 	G::StringArray parts ;
 	G::Str::splitIntoTokens( m_tail , parts , G::Str::ws() ) ; // eg: "daemon 755 g+s"
-	if( parts.size() > 0U && !parts.at(0U).empty() )
+	if( !parts.empty() && !parts.at(0U).empty() )
 		m_ok = G::File::chgrp( m_path , parts.at(0U) , std::nothrow ) ? "" : "failed" ;
 	if( parts.size() > 1U )
 		G::File::chmod( m_path , parts.at(1U) ) ;
@@ -788,33 +794,6 @@ void CreateSecrets::run()
 		}
 	}
 
-	// impose the new field order - remove this eventually
-	{
-		G::StringArray result ;
-		for( auto & line : line_list )
-		{
-			using pos_t = std::string::size_type ;
-			const pos_t npos = std::string::npos ;
-			const std::string ws = G::sv_to_string(G::Str::ws()) ;
-			pos_t pos1 = line.find_first_not_of( ws ) ;
-			pos_t pos2 = pos1 == npos ? npos : line.find_first_of(ws,pos1) ;
-			pos_t pos3 = pos2 == npos ? npos : line.find_first_not_of(ws,pos2) ;
-			pos_t pos4 = pos3 == npos ? npos : line.find_first_of(ws,pos3) ;
-			if( pos4 != npos )
-			{
-				std::string f1 = G::Str::lower(line.substr(pos1,pos2-pos1)) ;
-				std::string f2 = G::Str::lower(line.substr(pos3,pos4-pos3)) ;
-				if( ( f1 == "apop" || f1 == "cram-md5" || f1 == "none" || f1 == "login" || f1 == "plain" ) &&
-					( f2 == "server" || f2 == "client" ) )
-				{
-					line.replace( pos1 , pos4-pos1 , line.substr(pos3,pos4-pos3)+" "+line.substr(pos1,pos2-pos1) ) ;
-				}
-			}
-			result.push_back( line ) ;
-		}
-		line_list.swap( result ) ;
-	}
-
 	// write a header if none
 	if( line_list.empty() )
 	{
@@ -834,10 +813,12 @@ void CreateSecrets::run()
 			line_list.push_back( "#" ) ;
 			line_list.push_back( std::string() + "# " + m_path.basename() ) ;
 			line_list.push_back( "#" ) ;
-			line_list.push_back( "# client plain <name> <password>" ) ;
-			line_list.push_back( "# client md5 <name> <password-hash>" ) ;
-			line_list.push_back( "# server plain <name> <password>" ) ;
-			line_list.push_back( "# server md5 <name> <password-hash>" ) ;
+			line_list.push_back( "# client plain <name(xtext)> <password(xtext)>" ) ;
+			line_list.push_back( "# client plain:b <name(base64)> <password(base64)>" ) ;
+			line_list.push_back( "# client md5 <name(xtext)> <password-hash>" ) ;
+			line_list.push_back( "# server plain <name(xtext)> <password(xtext)>" ) ;
+			line_list.push_back( "# server plain:b <name(base64)> <password(base64)>" ) ;
+			line_list.push_back( "# server md5 <name(xtext)> <password-hash>" ) ;
 			line_list.push_back( "# server none <address-range> <verifier-keyword>" ) ;
 			line_list.push_back( "#" ) ;
 		}
@@ -944,7 +925,7 @@ std::string UpdateLink::subject() const
 
 void UpdateLink::run()
 {
-	new GComInit ; // (leak ok)
+	GDEF_UNUSED GComInit com_init ;
 	if( m_active )
 	{
 		G::Link link( m_target , "E-MailRelay" , "Starts the E-MailRelay server in the background" ,
@@ -968,8 +949,9 @@ trstring UpdateLink::ok() const
 
 // ==
 
-InstallService::InstallService( bool active , G::Path bat , G::Path service_wrapper ) :
+InstallService::InstallService( bool active , bool start_on_boot , G::Path bat , G::Path service_wrapper ) :
 	m_active(active) ,
+	m_start_on_boot(start_on_boot) ,
 	m_bat(bat) ,
 	m_service_wrapper(service_wrapper)
 {
@@ -977,11 +959,15 @@ InstallService::InstallService( bool active , G::Path bat , G::Path service_wrap
 
 void InstallService::run()
 {
-	if( m_bat.empty() || m_service_wrapper.empty() )
+	if( !m_active )
+	{
+		m_ok = tr("nothing to do") ; // see Boot::installable()
+	}
+	else if( m_bat.empty() || m_service_wrapper.empty() )
 	{
 		m_ok = tr("nothing to do") ;
 	}
-	else if( m_active )
+	else if( m_start_on_boot )
 	{
 		Boot::install( G::Path() , "emailrelay" , m_bat , m_service_wrapper ) ;
 	}
@@ -994,7 +980,7 @@ void InstallService::run()
 
 trstring InstallService::text() const
 {
-	return m_active ? tr("installing service") : tr("uninstalling service") ;
+	return (!m_active || m_start_on_boot) ? tr("installing service") : tr("uninstalling service") ;
 }
 
 std::string InstallService::subject() const
@@ -1009,8 +995,9 @@ trstring InstallService::ok() const
 
 // ==
 
-UpdateBootLink::UpdateBootLink( bool active , G::Path dir_boot , std::string name , G::Path startstop_src , G::Path exe ) :
+UpdateBootLink::UpdateBootLink( bool active , bool start_on_boot , G::Path dir_boot , std::string name , G::Path startstop_src , G::Path exe ) :
 	m_active(active) ,
+	m_start_on_boot(start_on_boot) ,
 	m_dir_boot(dir_boot) ,
 	m_name(name) ,
 	m_startstop_src(startstop_src) ,
@@ -1030,11 +1017,15 @@ std::string UpdateBootLink::subject() const
 
 void UpdateBootLink::run()
 {
-	if( m_dir_boot.empty() || m_startstop_src.empty() || m_exe.empty() )
+	if( !m_active )
+	{
+		m_ok = tr("nothing to do") ; // see Boot::installable()
+	}
+	else if( m_dir_boot.empty() || m_startstop_src.empty() || m_exe.empty() )
 	{
 		m_ok = tr("nothing to do") ;
 	}
-	else if( m_active )
+	else if( m_start_on_boot )
 	{
 		Boot::install( m_dir_boot , m_name , m_startstop_src , m_exe ) ;
 	}
@@ -1263,19 +1254,13 @@ void Launcher::run()
 	}
 	else
 	{
-		G::NewProcess task(
-			G::NewProcessConfig( m_cmd )
-				.set_fd_stdout( G::NewProcess::Fd::devnull() )
-				.set_fd_stderr( G::NewProcess::Fd::pipe() )
-				.set_exec_error_format( "failed to execute ["+m_cmd.exe().str()+"]: __strerror__" ) ) ;
-
-		int rc = task.waitable().wait().get() ;
-		std::string output = G::Str::printable( G::Str::trimmed(task.waitable().output(),G::Str::ws()) ) ;
-		if( rc != 0 && output.empty() )
-			output = "exit " + G::Str::fromInt(rc) ;
-
-		if( rc != 0 )
-			throw std::runtime_error( output ) ;
+		// (keep it simple -- a console window will pop up to show 
+		// problems running the batch file and the emailrelay log 
+		// file is tail-ed by ProgressPage -- using G::NewProcess
+		// doesn't work well because stderr is not always inherited 
+		// and then closed cleanly)
+		std::string s = m_cmd.exe().str() ;
+		(void) system( s.c_str() ) ;
 	}
 }
 
@@ -1297,8 +1282,7 @@ trstring Launcher::ok() const
 // ==
 
 JustTesting::JustTesting()
-{
-}
+= default ;
 
 trstring JustTesting::ok() const
 {
@@ -1386,7 +1370,8 @@ InstallerImp::InstallerImp( bool installing , bool is_windows , bool is_mac , co
 	m_installer_config.add( "-exe" , isWindows() ? "%dir-install%/emailrelay.exe" :
 		( isMac() ? "%dir-install%/E-MailRelay.app/Contents/MacOS/emailrelay" : "%dir-install%/sbin/emailrelay" ) ) ;
 	m_installer_config.add( "-gui" , isWindows() ? "%dir-install%/emailrelay-gui.exe" : "%dir-install%/sbin/emailrelay-gui.real" ) ;
-	m_installer_config.add( "-icon" , isWindows()?"%dir-install%/emailrelay.exe":"%dir-install%/lib/emailrelay/emailrelay-icon.png");
+	m_installer_config.add( "-icon" , isWindows()?"%dir-install%/emailrelay.exe":"%dir-install%/share/emailrelay/emailrelay-icon.png") ;
+	m_installer_config.add( "-trdir" , isWindows()?"%dir-install%/translations":"%dir-install%/share/emailrelay") ;
 	m_installer_config.add( "-pointer" , isWindows() ? "%dir-install%/emailrelay-gui.cfg" : "%dir-install%/sbin/emailrelay-gui" ) ;
 	m_installer_config.add( "-startstop" , isWindows() ? "" : "%dir-install%/lib/emailrelay/emailrelay-startstop.sh" ) ;
 	m_installer_config.add( "-servicewrapper" , isWindows() ? "%dir-install%/emailrelay-service.exe" : "" ) ;
@@ -1543,20 +1528,20 @@ void InstallerImp::addActions()
 		G::MapFile payload_map( m_payload + "payload.cfg" ) ;
 
 		// add the file copy tasks
-		const G::StringArray keys = payload_map.keys() ;
+		G::StringArray keys = payload_map.keys() ;
 		for( const auto & key : keys )
 		{
 			const std::string & value = payload_map.value( key ) ;
-			if( key.find("+") == 0U && key.length() > 1U && value.find("group ") == 0U && value.length() > 6U )
+			if( key.find('+') == 0U && key.length() > 1U && value.find("group ") == 0U && value.length() > 6U )
 				addAction( new FileGroup(m_var.expand(key.substr(1U)),value.substr(6U)) ) ;
 			if( key.find_first_of("-+=") == 0U )
 				continue ;
 
 			std::string dst = m_var.expand( value ) ;
-			bool is_directory_tree = key.size() && key.at(key.size()-1U) == '/' ;
+			bool is_directory_tree = !key.empty() && key.at(key.size()-1U) == '/' ;
 
 			// allow for flags such as "+x" decorating the destination
-			std::string::size_type flags_pos = dst.find_last_of("+") ;
+			std::string::size_type flags_pos = dst.find_last_of('+') ;
 			std::string flags = G::Str::tail( dst , flags_pos , std::string() ) ;
 			dst = G::Str::trimmed( G::Str::head( dst , flags_pos , dst ) , G::Str::ws() ) ;
 
@@ -1581,7 +1566,8 @@ void InstallerImp::addActions()
 		G::Path gui_exe = ivalue( "-gui" ) ;
 		G::Path dir_config = pvalue( "dir-config" ) ;
 		G::Path dir_install = pvalue( "dir-install" ) ;
-		addAction( new CreatePointerFile(pointer_file,gui_exe,dir_config,dir_install) ) ;
+		G::Path dir_tr = ivalue( "-trdir" ) ;
+		addAction( new CreatePointerFile(pointer_file,gui_exe,dir_config,dir_install,dir_tr) ) ;
 	}
 
 	// register for using the windows event log - doing it here since the server
@@ -1643,6 +1629,7 @@ void InstallerImp::addActions()
 		bool do_menu = yes(pvalue("start-link-menu")) && !yes(pvalue("start-is-mac")) ;
 		bool do_login = yes(pvalue("start-at-login")) ;
 		bool do_boot = yes(pvalue("start-on-boot")) ;
+		bool do_boot_enabled = yes(pvalue("start-on-boot-enabled")) ; // see Boot::installable()
 
 		G::Path dir_desktop = pvalue( "dir-desktop" ) ;
 		G::Path dir_menu = pvalue( "dir-menu" ) ;
@@ -1662,14 +1649,14 @@ void InstallerImp::addActions()
 		{
 			addAction( new UpdateLink(UpdateLink::LinkType::BatchFile,true,dir_install,working_dir,target,args,icon) ) ;
 			G::Path service_wrapper = ivalue( "-servicewrapper" ) ;
-			addAction( new InstallService(do_boot,bat,service_wrapper) ) ;
+			addAction( new InstallService(do_boot_enabled,do_boot,bat,service_wrapper) ) ;
 		}
 		else
 		{
 			// install the startstop script and its config file
 			G::Path conftemplate_src = m_installing ? ivalue( "-conftemplate" ) : std::string() ;
 			G::MapFile server_config = ServerConfiguration::fromPages(m_pages_output).map() ;
-			addAction( new UpdateBootLink(do_boot,dir_boot,"emailrelay",ivalue("-startstop"),server_exe) ) ;
+			addAction( new UpdateBootLink(do_boot_enabled,do_boot,dir_boot,"emailrelay",ivalue("-startstop"),server_exe) ) ;
 			addAction( new CreateConfigFile(dir_config,"emailrelay.conf",conftemplate_src) ) ;
 			addAction( new EditConfigFile(dir_config,"emailrelay.conf",server_config,!m_installing) ) ;
 		}
@@ -1738,8 +1725,7 @@ Installer::Installer( bool installing , bool is_windows , bool is_mac , const G:
 }
 
 Installer::~Installer()
-{
-}
+= default ;
 
 void Installer::start( std::istream & input_stream )
 {

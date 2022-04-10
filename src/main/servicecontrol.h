@@ -21,6 +21,7 @@
 #ifndef G_MAIN_SERVICE_CONTROL_H
 #define G_MAIN_SERVICE_CONTROL_H
 
+#include "gdef.h"
 #include <string>
 
 std::string service_install( const std::string & commandline , const std::string & name ,

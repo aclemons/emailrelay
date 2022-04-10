@@ -22,11 +22,11 @@
 #define G_SMTP_NEW_MESSAGE_H
 
 #include "gdef.h"
-#include "gmessagestore.h"
 
 namespace GSmtp
 {
 	class NewMessage ;
+	class MessageStoreImp ;
 }
 
 //| \class GSmtp::NewMessage
@@ -47,7 +47,7 @@ public:
 	virtual bool prepare( const std::string & session_auth_id ,
 		const std::string & peer_socket_address , const std::string & peer_certificate ) = 0 ;
 			///< Prepares to store the message in the message store.
-			///< Returns true if a local-mailbox only message that
+			///< Returns true if a local-mailbox only message that 
 			///< has been fully written and needs no commit().
 
 	virtual void commit( bool strict ) = 0 ;
@@ -55,11 +55,11 @@ public:
 		///< ignored (eg. missing files) if the 'strict' parameter
 		///< is false.
 
-	virtual MessageId id() const = 0 ;
-		///< Returns the message's unique identifier.
-
 	virtual std::string location() const = 0 ;
 		///< Returns the message's unique location.
+
+	virtual MessageId id() const = 0 ;
+		///< Returns the message's unique identifier.
 
 	bool addTextLine( const std::string & ) ;
 		///< A convenience function that calls addText() taking
@@ -71,3 +71,4 @@ public:
 } ;
 
 #endif
+

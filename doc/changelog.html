@@ -8,15 +8,14 @@
  <body>
   <!-- index:0::::E-MailRelay Change Log -->
  <div class="div-main">
-  <h1><a class="a-header" name="H_1">E-MailRelay Change Log</a></h1> <!-- index:1:H:1::E-MailRelay Change Log -->
+  <h1><a class="a-header" name="H_1">E-MailRelay Change Log</a></h1> <!-- index:1:H:E-MailRelay Change Log -->
    <h2><a class="a-header" name="SH_1_1">2.2 -> 2.3</a></h2> <!-- index:2:SH:1:1:2.2 -> 2.3 -->
     <ul>
-     <li>New admin 'forward' command to trigger forwarding without waiting.</li>
-     <li>More simultaneous connections supported on Windows.</li>
-     <li>EPIPELINE SMTP extension (todo)</li>
-     <li>Windows event log not used for verbose logging (todo)</li>
-     <li>Uses epoll by default on Linux (todo)</li>
-     <li>No 7-bit/8-bit check by default (todo)</li>
+     <li>Unix domain sockets supported (eg. <em>--interface=/tmp/smtp.s</em>.</li>
+     <li>Windows event log not used for verbose logging (prefer <em>--log-file</em>).</li>
+     <li>New admin <em>forward</em> command to trigger forwarding without waiting.</li>
+     <li>Optional base64 encoding of passwords in secrets files (<em>plain:b</em>).</li>
+     <li>Support for MbedTLS version 3.</li>
     </ul>
    <h2><a class="a-header" name="SH_1_2">2.1 -> 2.2</a></h2> <!-- index:2:SH:1:2:2.1 -> 2.2 -->
     <ul>
@@ -41,7 +40,7 @@
      <li>New <em>--idle-timeout</em> option for server-side connections.</li>
      <li>Support for RFC-5782 DNSBL blocking (<em>--dnsbl</em>).</li>
      <li>Filter scripts are given the path of the envelope file in argv2.</li>
-     <li>Message files can be editied by <em>--client-filter</em> scripts.</li>
+     <li>Message files can be edited by <em>--client-filter</em> scripts.</li>
      <li>Better support for CRAM-SHAx authentication.</li>
      <li>New <em>--client-auth-config</em> and <em>--server-auth-config</em> options.</li>
      <li>New <em>--show</em> option on windows to better control the user interface style.</li>

@@ -22,6 +22,7 @@
 #define G_SMTP_VERIFIER_STATUS_H
 
 #include "gdef.h"
+#include "gexception.h"
 #include <string>
 
 namespace GSmtp
@@ -31,7 +32,7 @@ namespace GSmtp
 
 //| \class GSmtp::VerifierStatus
 /// A structure returned by GSmtp::Verifier to describe the status of
-/// a 'rcpt-to' recipient.
+/// a 'rcpt-to' or 'vrfy' recipient.
 ///
 /// If describing an invalid recipient then 'is_valid' is set false
 /// and a 'response' is supplied. The response is typically reported back
@@ -45,36 +46,46 @@ namespace GSmtp
 /// to the recipient's mailbox name (which should not have an at sign).
 ///
 /// If a valid remote recipient then 'is_local' is set false, 'full_name'
-/// is empty, and 'address' is copied from the original recipient 'to' address.
+/// is empty, and 'address' is typically a copy of the original recipient.
 ///
 class GSmtp::VerifierStatus
 {
 public:
-	VerifierStatus() ;
-		///< Default constructor for an invalid remote mailbox.
+	G_EXCEPTION( InvalidStatus , "invalid verifier status" ) ;
 
-	explicit VerifierStatus( const std::string & ) ;
-		///< Constructor for a valid remote mailbox with the
-		///< given 'address' field.
+	static VerifierStatus invalid( const std::string & recipient ,
+		bool temporary = false ,
+		const std::string & response = {} ,
+		const std::string & reason = {} ) ;
+			///< Factory for an invalid address.
 
-	static VerifierStatus parse( const std::string & str , std::string & to_ref ) ;
-		///< Parses a str() string into a structure and a
-		///< recipient 'to' address (by reference).
+	static VerifierStatus remote( const std::string & recipient ,
+		const std::string & address = {} ) ;
+			///< Constructor for a valid remote mailbox.
 
-	std::string str( const std::string & to ) const ;
-		///< Returns a string representation of the structure
-		///< plus the original recipient 'to' address.
+	static VerifierStatus local( const std::string & recipient ,
+		const std::string & full_name , const std::string & mbox ) ;
+			///< Constructor for a valid local mailbox.
+
+	static VerifierStatus parse( const std::string & str ) ;
+		///< Parses a str() string into a structure.
+
+	std::string str() const ;
+		///< Returns a string representation of the structure.
 
 public:
 	bool is_valid{false} ;
 	bool is_local{false} ;
 	bool temporary{false} ;
 	bool abort{false} ;
-	std::string full_name ;
-	std::string address ;
+	std::string recipient ; // verifier input, even if not valid
+	std::string full_name ; // description iff local
+	std::string address ; // mailbox if local, output address if remote
 	std::string response ;
 	std::string reason ;
 
+private:
+	VerifierStatus() ;
 } ;
 
 #endif

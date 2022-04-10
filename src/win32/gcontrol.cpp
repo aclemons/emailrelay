@@ -53,7 +53,7 @@ GGui::Control::Control( HWND hdialog , int id , HWND hcontrol ) :
 
 void GGui::Control::load()
 {
-	::InitCommonControls() ;
+	InitCommonControls() ;
 }
 
 void GGui::Control::load( DWORD types )
@@ -62,13 +62,13 @@ void GGui::Control::load( DWORD types )
 	INITCOMMONCONTROLSEX controls{} ;
 	controls.dwSize = sizeof(controls) ;
 	controls.dwICC = types ; // ICC_LISTVIEW_CLASSES | ICC_STANDARD_CLASSES ;
-	if( ! ::InitCommonControlsEx( &controls ) )
+	if( ! InitCommonControlsEx( &controls ) )
 	{
 		G_ERROR( "GGui::Control::load: InitCommonControlsEx() failed: " << types ) ;
 		//throw std::runtime_error( "InitCommonControlsEx() failed" ) ;
 	}
  #else
-	::InitCommonControls() ;
+	InitCommonControls() ;
  #endif
 }
 
@@ -95,7 +95,7 @@ int GGui::Control::id() const
 
 LRESULT GGui::Control::sendMessage( unsigned int message , WPARAM wparam , LPARAM lparam ) const
 {
-	return ::SendMessage( handle() , message , wparam , lparam ) ;
+	return SendMessage( handle() , message , wparam , lparam ) ;
 }
 
 HWND GGui::Control::handle() const
@@ -103,7 +103,7 @@ HWND GGui::Control::handle() const
 	if( m_hwnd == 0 )
 	{
 		HWND hdialog_ = hdialog() ;
-		const_cast<Control*>(this)->m_hwnd = ::GetDlgItem( hdialog_ , m_id ) ;
+		const_cast<Control*>(this)->m_hwnd = GetDlgItem( hdialog_ , m_id ) ;
 		G_DEBUG( "GGui::Control::handle: GetDlgItem(" << m_id << ") -> " << m_hwnd ) ;
 		if( m_hwnd == HNULL )
 		{
@@ -124,9 +124,9 @@ GGui::Control::~Control()
 void GGui::Control::subClass( SubClassMap & map )
 {
 	G_ASSERT( handle() != 0 ) ;
-	SubClassMap::Proc old = reinterpret_cast<SubClassMap::Proc>( ::GetWindowLongPtr( handle() , GWLP_WNDPROC ) ) ;
+	SubClassMap::Proc old = reinterpret_cast<SubClassMap::Proc>( GetWindowLongPtr( handle() , GWLP_WNDPROC ) ) ;
 	map.add( handle() , old , static_cast<void*>(this) ) ;
-	::SetWindowLongPtr( handle() , GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(gcontrol_wndproc_export) ) ;
+	SetWindowLongPtr( handle() , GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(gcontrol_wndproc_export) ) ;
 }
 
 LRESULT GGui::Control::wndProc( unsigned int message , WPARAM wparam , LPARAM lparam , WNDPROC super_class )
@@ -157,15 +157,15 @@ LRESULT CALLBACK gcontrol_wndproc_export( HWND hwnd , UINT message , WPARAM wpar
 		if( hwnd_dialog == HNULL )
 		{
 			G_ASSERT( false ) ;
-			return ::DefWindowProc( hwnd , message , wparam , lparam ) ;
+			return DefWindowProc( hwnd , message , wparam , lparam ) ;
 		}
 
 		// find the dialog box object
-		GGui::Dialog * dialog = reinterpret_cast<GGui::Dialog*>( ::GetWindowLongPtr( hwnd_dialog , DWLP_USER ) ) ;
+		GGui::Dialog * dialog = reinterpret_cast<GGui::Dialog*>( GetWindowLongPtr( hwnd_dialog , DWLP_USER ) ) ;
 		if( dialog == nullptr )
 		{
 			G_ASSERT( false ) ;
-			return ::DefWindowProc( hwnd , message , wparam , lparam ) ;
+			return DefWindowProc( hwnd , message , wparam , lparam ) ;
 		}
 		G_ASSERT( dialog->isValid() ) ;
 
@@ -175,7 +175,7 @@ LRESULT CALLBACK gcontrol_wndproc_export( HWND hwnd , UINT message , WPARAM wpar
 		GGui::Control * control = static_cast<GGui::Control*>(context) ;
 		G_ASSERT( control != nullptr ) ;
 		G_ASSERT( control->handle() == hwnd ) ;
-		G_ASSERT( control->id() == ::GetDlgCtrlID(hwnd) ) ;
+		G_ASSERT( control->id() == GetDlgCtrlID(hwnd) ) ;
 
 		// remove the control from the map if it is being destroyed
 		if( message == WM_NCDESTROY )
@@ -185,7 +185,7 @@ LRESULT CALLBACK gcontrol_wndproc_export( HWND hwnd , UINT message , WPARAM wpar
 	}
 	catch(...) // callback
 	{
-		return ::DefWindowProc( hwnd , message , wparam , lparam ) ;
+		return DefWindowProc( hwnd , message , wparam , lparam ) ;
 	}
 }
 
@@ -356,14 +356,14 @@ GGui::EditBox::~EditBox()
 void GGui::EditBox::set( const std::string & text )
 {
 	NoRedraw no_redraw( *this ) ;
-	::SetWindowTextA( handle() , text.c_str() ) ;
+	SetWindowTextA( handle() , text.c_str() ) ;
 }
 
 void GGui::EditBox::set( const G::StringArray & list )
 {
 	if( list.size() == 0U )
 	{
-		::SetWindowTextA( handle() , "" ) ;
+		SetWindowTextA( handle() , "" ) ;
 	}
 	else
 	{
@@ -378,7 +378,7 @@ void GGui::EditBox::set( const G::StringArray & list )
 			total.append( *iter ) ;
 		}
 
-		::SetWindowTextA( handle() , total.c_str() ) ;
+		SetWindowTextA( handle() , total.c_str() ) ;
 		G_ASSERT( lines() >= list.size() ) ;
 	}
 }
@@ -386,7 +386,7 @@ void GGui::EditBox::set( const G::StringArray & list )
 unsigned int GGui::EditBox::lines()
 {
 	// handle an empty control since em_getlinecount returns one
-	int length = ::GetWindowTextLength( handle() ) ;
+	int length = GetWindowTextLength( handle() ) ;
 	if( length == 0 )
 		return 0 ;
 
@@ -418,7 +418,7 @@ void GGui::EditBox::scrollBack( int lines )
 void GGui::EditBox::scrollToEnd()
 {
 	// (add ten just to make sure)
-	sendMessage( EM_LINESCROLL , 0 , lines() + 10U ) ;
+	sendMessage( EM_LINESCROLL , 0 , lines() + WPARAM(10U) ) ;
 }
 
 std::string GGui::EditBox::get() const
@@ -458,7 +458,7 @@ unsigned int GGui::EditBox::characterHeight()
 	{
 		DeviceContext dc( handle() ) ;
 		TEXTMETRIC tm ;
-		::GetTextMetrics( dc() , &tm ) ;
+		GetTextMetrics( dc() , &tm ) ;
 		m_character_height = static_cast<unsigned int>( tm.tmHeight + tm.tmExternalLeading ) ;
 		G_ASSERT( m_character_height != 0 ) ;
 	}
@@ -468,7 +468,7 @@ unsigned int GGui::EditBox::characterHeight()
 unsigned int GGui::EditBox::windowHeight()
 {
 	RECT rect ;
-	::GetWindowRect( handle() , &rect ) ;
+	GetWindowRect( handle() , &rect ) ;
 	G_ASSERT( rect.bottom >= rect.top ) ;
 	return static_cast<unsigned int>( rect.bottom - rect.top ) ;
 }
@@ -498,12 +498,12 @@ GGui::CheckBox::~CheckBox()
 
 bool GGui::CheckBox::get() const
 {
-	return !! ::IsDlgButtonChecked( hdialog() , id() ) ;
+	return !! IsDlgButtonChecked( hdialog() , id() ) ;
 }
 
 void GGui::CheckBox::set( bool b )
 {
-	::CheckDlgButton( hdialog() , id() , b ) ;
+	CheckDlgButton( hdialog() , id() , b ) ;
 }
 
 // ==
@@ -519,16 +519,16 @@ GGui::Button::~Button()
 
 bool GGui::Button::enabled() const
 {
-	return !!::IsWindowEnabled( handle() ) ;
+	return !!IsWindowEnabled( handle() ) ;
 }
 
 void GGui::Button::enable( bool b )
 {
-	::EnableWindow( handle() , !!b ) ;
+	EnableWindow( handle() , !!b ) ;
 }
 
 void GGui::Button::disable()
 {
-	::EnableWindow( handle() , false ) ;
+	EnableWindow( handle() , false ) ;
 }
 

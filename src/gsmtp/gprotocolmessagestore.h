@@ -61,7 +61,7 @@ public:
 	MessageId setFrom( const std::string & from_user , const std::string & ) override ;
 		///< Override from GSmtp::ProtocolMessage.
 
-	bool addTo( const std::string & to_user , VerifierStatus to_status ) override ;
+	bool addTo( VerifierStatus to_status ) override ;
 		///< Override from GSmtp::ProtocolMessage.
 
 	void addReceived( const std::string & ) override ;

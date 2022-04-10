@@ -22,8 +22,8 @@
 #define G_SMTP_FILTER_H
 
 #include "gdef.h"
-#include "gslot.h"
 #include "gmessagestore.h"
+#include "gslot.h"
 
 namespace GSmtp
 {

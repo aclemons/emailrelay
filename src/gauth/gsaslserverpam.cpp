@@ -45,9 +45,11 @@ public:
 	std::string id() const ;
 	bool authenticated() const ;
 
-private:
-	SaslServerPamImp( const SaslServerPamImp & ) ;
-	void operator=( const SaslServerPamImp & ) ;
+public:
+	SaslServerPamImp( const SaslServerPamImp & ) = delete ;
+	SaslServerPamImp( SaslServerPamImp && ) = delete ;
+	void operator=( const SaslServerPamImp & ) = delete ;
+	void operator=( SaslServerPamImp && ) = delete ;
 
 private:
 	bool m_active ;
@@ -76,9 +78,11 @@ protected:
 	void converse( ItemArray & ) override ;
 	void delay( unsigned int usec ) override ;
 
-private:
-	PamImp( const PamImp & ) ;
-	void operator=( const PamImp & ) ;
+public:
+	PamImp( const PamImp & ) = delete ;
+	PamImp( PamImp && ) = delete ;
+	void operator=( const PamImp & ) = delete ;
+	void operator=( PamImp && ) = delete ;
 
 private:
 	std::string m_app ;
@@ -159,7 +163,7 @@ bool GAuth::SaslServerPamImp::init( const std::string & mechanism )
 
 std::string GAuth::SaslServerPamImp::id() const
 {
-	return m_pam.get() ? m_pam->id() : std::string() ;
+	return m_pam ? m_pam->id() : std::string() ;
 }
 
 std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool & done )

@@ -26,6 +26,7 @@
 #include "gslot.h"
 #include "gstrings.h"
 #include "gpath.h"
+#include <memory>
 
 namespace GSmtp
 {
@@ -52,6 +53,9 @@ public:
 
 	std::string str() const ;
 		///< Returns the id string.
+
+public:
+	explicit MessageId( int ) = delete ;
 
 private:
 	MessageId() = default ;
@@ -94,7 +98,7 @@ public:
 	virtual std::string location( const MessageId & ) const = 0 ;
 		///< Returns the location of the given message.
 
-	virtual std::unique_ptr<StoredMessage> get( const MessageId & id ) = 0 ;
+	virtual std::unique_ptr<StoredMessage> get( const MessageId & ) = 0 ;
 		///< Pulls the specified message out of the store. Throws
 		///< execptions on error.
 		///<

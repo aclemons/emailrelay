@@ -31,15 +31,14 @@
 #include "gassert.h"
 #include "glog.h"
 
-GSmtp::Client::Client( GNet::ExceptionSink es , MessageStore & store , FilterFactory & ff ,
-	const GNet::Location & remote , const GAuth::Secrets & secrets , const Config & config ) :
+GSmtp::Client::Client( GNet::ExceptionSink es , FilterFactory & ff , const GNet::Location & remote ,
+	const GAuth::SaslClientSecrets & client_secrets , const Config & config ) :
 		GNet::Client(es,remote,netConfig(config)) ,
-		m_store(store) ,
+		m_store(nullptr) ,
 		m_filter(ff.newFilter(es,false,config.filter_address,config.filter_timeout)) ,
-		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
+		m_protocol(es,*this,client_secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_secure_tunnel(config.secure_tunnel) ,
-		m_message_count(0U) ,
-		m_send_all(false)
+		m_message_count(0U)
 {
 	m_protocol.doneSignal().connect( G::Slot::slot(*this,&Client::protocolDone) ) ;
 	m_protocol.filterSignal().connect( G::Slot::slot(*this,&Client::filterStart) ) ;
@@ -70,10 +69,11 @@ G::Slot::Signal<const std::string&> & GSmtp::Client::messageDoneSignal()
 	return m_message_done_signal ;
 }
 
-void GSmtp::Client::sendAllMessages()
+void GSmtp::Client::sendMessagesFrom( MessageStore & store )
 {
-    G_ASSERT( !connected() ) ; // ie. immediately after construction
-	m_send_all = true ;
+	G_ASSERT( m_store == nullptr ) ;
+	G_ASSERT( !connected() ) ; // ie. immediately after construction
+	m_store = &store ;
 }
 
 void GSmtp::Client::sendMessage( std::unique_ptr<StoredMessage> message )
@@ -105,11 +105,11 @@ void GSmtp::Client::onSecure( const std::string & , const std::string & , const 
 
 void GSmtp::Client::startSending()
 {
-	G_LOG_S( "GSmtp::Client::startSending: smtp connection to " << peerAddress().displayString() ) ;
-	if( m_send_all )
+	G_LOG_S( "GSmtp::Client::startSending: smtp connection to " << peerAddress().second.displayString() ) ;
+	if( m_store != nullptr )
 	{
 		// initialise the message iterator
-		m_iter = m_store.iterator( true ) ;
+		m_iter = m_store->iterator( true ) ;
 
 		// start sending the first message
 		bool started = sendNext() ;
@@ -270,7 +270,7 @@ void GSmtp::Client::protocolDone( int response_code , const std::string & respon
 	eventSignal().emit( "sent" , message_location , short_reason ) ;
 	if( this_.deleted() ) return ; // just in case
 
-	if( m_send_all )
+	if( m_store != nullptr )
 	{
 		if( !sendNext() )
 		{

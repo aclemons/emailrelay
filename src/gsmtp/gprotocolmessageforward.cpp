@@ -30,7 +30,7 @@
 GSmtp::ProtocolMessageForward::ProtocolMessageForward( GNet::ExceptionSink es ,
 	MessageStore & store , FilterFactory & ff , std::unique_ptr<ProtocolMessage> pm ,
 	const GSmtp::Client::Config & client_config ,
-	const GAuth::Secrets & client_secrets , const std::string & server ) :
+	const GAuth::SaslClientSecrets & client_secrets , const std::string & server ) :
 		m_es(es) ,
 		m_store(store) ,
 		m_ff(ff) ,
@@ -80,9 +80,9 @@ GSmtp::MessageId GSmtp::ProtocolMessageForward::setFrom( const std::string & fro
 	return m_pm->setFrom( from , from_auth ) ;
 }
 
-bool GSmtp::ProtocolMessageForward::addTo( const std::string & to , VerifierStatus to_status )
+bool GSmtp::ProtocolMessageForward::addTo( VerifierStatus to_status )
 {
-	return m_pm->addTo( to , to_status ) ;
+	return m_pm->addTo( to_status ) ;
 }
 
 void GSmtp::ProtocolMessageForward::addReceived( const std::string & line )
@@ -155,7 +155,7 @@ std::string GSmtp::ProtocolMessageForward::forward( const MessageId & id , bool 
 			if( m_client_ptr.get() == nullptr )
 			{
 				m_client_ptr.reset( std::make_unique<Client>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()),
-					m_store , m_ff , m_client_location , m_client_secrets , m_client_config ) ) ;
+					m_ff , m_client_location , m_client_secrets , m_client_config ) ) ;
 				m_client_ptr->messageDoneSignal().connect( G::Slot::slot( *this ,
 					&GSmtp::ProtocolMessageForward::messageDone ) ) ;
 			}

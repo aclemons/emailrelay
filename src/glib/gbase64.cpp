@@ -112,7 +112,7 @@ void G::Base64Imp::encode_imp( iterator_out result_p , string_in input , string_
 	auto const end = input.end() ;
 	for( auto p = input.begin() ; p != end ; blocks++ )
 	{
-		if( !eol.empty() && blocks && (blocks % blocks_per_line) == 0U )
+		if( !eol.empty() && blocks != 0U && (blocks % blocks_per_line) == 0U )
 			std::copy( eol.begin() , eol.end() , result_p ) ;
 
 		uint32_type n = 0UL ;
@@ -252,7 +252,7 @@ void G::Base64Imp::generate_8( g_uint32_t & n , std::size_t & bits , iterator_ou
 		*result++ = to_char(hi_8(n)) ;
 		n <<= 8U ;
 	}
-	else if( hi_8(n) )
+	else if( hi_8(n) != 0U )
 	{
 		error = true ;
 	}
@@ -261,7 +261,7 @@ void G::Base64Imp::generate_8( g_uint32_t & n , std::size_t & bits , iterator_ou
 std::size_t G::Base64Imp::index( char c , bool & error ) noexcept
 {
 	std::size_t pos = character_map.find( c ) ;
-	error = error || !c || pos == std::string::npos ;
+	error = error || (c=='\0') || pos == std::string::npos ;
 	return pos == std::string::npos ? std::size_t(0) : pos ;
 }
 

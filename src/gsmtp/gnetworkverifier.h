@@ -49,7 +49,7 @@ private: // overrides
 	void verify( const std::string & rcpt_to_parameter ,
 		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
 		const std::string & auth_mechanism , const std::string & auth_extra ) override ; // Override from GSmtp::Verifier.
-	G::Slot::Signal<const std::string&,const VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
+	G::Slot::Signal<const VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
 	void cancel() override ; // Override from GSmtp::Verifier.
 
 public:
@@ -64,7 +64,7 @@ private:
 
 private:
 	GNet::ExceptionSink m_es ;
-	G::Slot::Signal<const std::string&,const VerifierStatus&> m_done_signal ;
+	G::Slot::Signal<const VerifierStatus&> m_done_signal ;
 	GNet::Location m_location ;
 	unsigned int m_connection_timeout ;
 	unsigned int m_response_timeout ;

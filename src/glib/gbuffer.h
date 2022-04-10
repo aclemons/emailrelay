@@ -87,10 +87,14 @@ namespace G
 		const T & at( std::size_t i ) const { checkindex( i ) ; return *(m_p+i) ; }
 		T & at( std::size_t i ) { checkindex( i ) ; return *(m_p+i) ; }
 		std::size_t size() const noexcept { return m_n ; }
+		std::size_t capacity() const noexcept { return m_c ; }
 		bool empty() const noexcept { return m_n == 0U ; }
 		void clear() noexcept { m_n = 0 ; }
+		void shrink_to_fit() noexcept { if( empty() && m_p ) { std::free(m_p) ; m_p = nullptr ; m_c = 0U ; } } // NOLINT cppcoreguidelines-no-malloc
 		iterator begin() noexcept { return m_p ? m_p : &m_c0 ; }
 		iterator end() noexcept { return m_p ? (m_p+m_n) : &m_c0 ; }
+		const value_type * data() const noexcept { return m_p ? m_p : &m_c0 ; }
+		value_type * data() noexcept { return m_p ? m_p : &m_c0 ; }
 		const_iterator begin() const noexcept { return m_p ? m_p : &m_c0 ; }
 		const_iterator end() const noexcept { return m_p ? (m_p+m_n) : &m_c0 ; }
 		const_iterator cbegin() const noexcept { return m_p ? m_p : &m_c0 ; }
@@ -182,7 +186,7 @@ namespace G
 		char * m_p{nullptr} ;
 		std::size_t m_n{0U} ;
 		std::size_t m_c{0U} ;
-		char m_c0{'\0'} ;
+		value_type m_c0{'\0'} ;
 	} ;
 
 	template <typename Uptr, typename T = char>
@@ -193,7 +197,7 @@ namespace G
 		G_ASSERT( p == nullptr || p == &buffer[0] ) ; // assert malloc is behaving
 		if( p != &buffer[0] )
 			throw std::bad_cast() ; // buffer too small for a U
-		return new(p) U ; // placement new
+		return new(p) U ;
 	}
 
 	template <typename Uptr, typename T = char>
@@ -204,7 +208,7 @@ namespace G
 		G_ASSERT( p == nullptr || p == &buffer[0] ) ; // assert malloc is behaving
 		if( p != &buffer[0] )
 			return nullptr ; // buffer too small for a U
-		return new(p) U ; // placement new
+		return new(p) U ;
 	}
 
 	template <typename Uptr, typename T = char>
@@ -214,7 +218,7 @@ namespace G
 		return const_cast<Uptr>( buffer_cast<U*>( const_cast<Buffer<T>&>(buffer) ) ) ;
 	}
 
-	template <typename T> void swap( Buffer<T> & a , Buffer<T> & b )
+	template <typename T> void swap( Buffer<T> & a , Buffer<T> & b ) noexcept
 	{
 		a.swap( b ) ;
 	}

@@ -26,6 +26,7 @@
 #include "gexceptionsink.h"
 #include <string>
 #include <utility>
+#include <memory>
 
 namespace GSmtp
 {

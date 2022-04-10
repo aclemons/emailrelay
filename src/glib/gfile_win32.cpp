@@ -39,7 +39,7 @@ namespace G
 		template <typename T>
 		void open( T & io , const char * path , std::ios_base::openmode mode )
 		{
-			#if GCONFIG_HAVE_EXTENDEND_OPEN
+			#if GCONFIG_HAVE_EXTENDED_OPEN
 				io.open( path , mode , _SH_DENYNO ) ; // _fsopen()
 			#else
 				io.open( path , mode ) ;
@@ -48,6 +48,7 @@ namespace G
 		int open( const char * path , int flags , int pmode ) noexcept
 		{
 			#if GCONFIG_HAVE_SOPEN_S
+				_set_errno( 0 ) ; // mingw bug
 				int fd = -1 ;
 				errno_t rc = _sopen_s( &fd , path , flags , _SH_DENYNO , pmode ) ;
 				return rc == 0 ? fd : -1 ;
@@ -92,7 +93,7 @@ std::filebuf * G::File::open( std::filebuf & fb , const Path & path , InOut inou
 	inout == InOut::In ?
 		FileImp::open( fb , path.cstr() , std::ios_base::in | std::ios_base::binary ) :
 		FileImp::open( fb , path.cstr() , std::ios_base::out | std::ios_base::binary ) ;
-	return &fb ;
+	return fb.is_open() ? &fb : nullptr ;
 }
 
 int G::File::open( const char * path , InOutAppend mode ) noexcept
@@ -104,6 +105,15 @@ int G::File::open( const char * path , InOutAppend mode ) noexcept
 		return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_TRUNC|_O_BINARY , pmode ) ;
 	else
 		return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_APPEND|_O_BINARY , pmode ) ;
+}
+
+bool G::File::probe( const char * path ) noexcept
+{
+	int pmode = _S_IREAD | _S_IWRITE ;
+	int fd = FileImp::open( path , _O_WRONLY|_O_CREAT|_O_EXCL|O_TEMPORARY|_O_BINARY , pmode ) ;
+	if( fd >= 0 )
+		_close( fd ) ; // also deletes
+	return fd >= 0 ;
 }
 
 void G::File::create( const Path & path )
@@ -136,12 +146,16 @@ void G::File::close( int fd ) noexcept
 int G::File::mkdirImp( const Path & dir ) noexcept
 {
 	int rc = _mkdir( dir.cstr() ) ;
-	if( rc != 0 )
+	if( rc == 0 )
 	{
-		rc = G::Process::errno_() ;
-		if( rc == 0 ) rc = EINVAL ;
+		return 0 ;
 	}
-	return rc ;
+	else
+	{
+		int e = G::Process::errno_() ;
+		if( e == 0 ) e = EINVAL ;
+		return e ;
+	}
 }
 
 G::File::Stat G::File::statImp( const char * path , bool ) noexcept

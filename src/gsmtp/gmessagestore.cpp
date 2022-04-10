@@ -26,3 +26,4 @@ std::unique_ptr<GSmtp::StoredMessage> GSmtp::operator++( std::shared_ptr<Message
 {
 	return iter.get() ? iter->next() : std::unique_ptr<StoredMessage>() ;
 }
+

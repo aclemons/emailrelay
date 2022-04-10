@@ -33,6 +33,7 @@
 #include <stdexcept>
 #include <functional>
 #include <map>
+#include <memory>
 
 // debugging...
 //  * network logging

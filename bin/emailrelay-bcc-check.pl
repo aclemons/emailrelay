@@ -30,7 +30,7 @@ use strict ;
 use FileHandle ;
 $SIG{__DIE__} = sub { (my $e = join(" ",@_)) =~ s/\n/ /g ; print "<<error: $e>>\n" ; exit 99 } ;
 
-my $content = @ARGV[0] or die "usage error\n" ;
+my $content = $ARGV[0] or die "usage error\n" ;
 my $verbose = 1 ;
 
 # read the bcc list from the content file

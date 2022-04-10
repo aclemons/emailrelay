@@ -23,6 +23,7 @@
 #include "glink.h"
 #include "gstr.h"
 #include "gfile.h"
+#include "gcominit.h"
 #include <stdexcept>
 #include <string>
 #include <sstream>
@@ -76,6 +77,7 @@ private:
 	void setShow( int ) ;
 
 private:
+	GComInit m_com_init ;
 	ComPtr<IShellLink> m_ilink ;
 	ComPtr<IPersistFile> m_ipf ;
 

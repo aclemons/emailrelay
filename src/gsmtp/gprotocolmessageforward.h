@@ -30,8 +30,8 @@
 #include "gsmtpclient.h"
 #include "gmessagestore.h"
 #include "gnewmessage.h"
-#include "gfilterfactory.h"
 #include "gverifierstatus.h"
+#include "gfilterfactory.h"
 #include "gcall.h"
 #include <string>
 #include <memory>
@@ -55,13 +55,13 @@ namespace GSmtp
 class GSmtp::ProtocolMessageForward : public ProtocolMessage
 {
 public:
-	ProtocolMessageForward( GNet::ExceptionSink ,
-		MessageStore & store , FilterFactory & ,
+	ProtocolMessageForward( GNet::ExceptionSink , MessageStore & store , FilterFactory & ,
 		std::unique_ptr<ProtocolMessage> pm ,
 		const GSmtp::Client::Config & client_config ,
-		const GAuth::Secrets & client_secrets ,
+		const GAuth::SaslClientSecrets & client_secrets ,
 		const std::string & remote_server_address ) ;
-			///< Constructor.
+			///< Constructor. The 'store' and 'client-secrets' references
+			///< are kept.
 
 	~ProtocolMessageForward() override ;
 		///< Destructor.
@@ -83,7 +83,7 @@ private: // overrides
 	void reset() override ; // Override from GSmtp::ProtocolMessage.
 	void clear() override ; // Override from GSmtp::ProtocolMessage.
 	MessageId setFrom( const std::string & from_user , const std::string & ) override ; // Override from GSmtp::ProtocolMessage.
-	bool addTo( const std::string & to_user , VerifierStatus to_status ) override ; // Override from GSmtp::ProtocolMessage.
+	bool addTo( VerifierStatus to_status ) override ; // Override from GSmtp::ProtocolMessage.
 	void addReceived( const std::string & ) override ; // Override from GSmtp::ProtocolMessage.
 	bool addText( const char * , std::size_t ) override ; // Override from GSmtp::ProtocolMessage.
 	std::string from() const override ; // Override from GSmtp::ProtocolMessage.
@@ -108,7 +108,7 @@ private:
 	G::CallStack m_call_stack ;
 	GNet::Location m_client_location ;
 	Client::Config m_client_config ;
-	const GAuth::Secrets & m_client_secrets ;
+	const GAuth::SaslClientSecrets & m_client_secrets ;
 	std::unique_ptr<ProtocolMessage> m_pm ;
 	GNet::ClientPtr<GSmtp::Client> m_client_ptr ;
 	MessageId m_id ;

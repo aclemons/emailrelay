@@ -33,7 +33,7 @@
 #include "gassert.h"
 
 GSmtp::ClientProtocol::ClientProtocol( GNet::ExceptionSink es , Sender & sender ,
-	const GAuth::Secrets & secrets , const std::string & sasl_client_config ,
+	const GAuth::SaslClientSecrets & secrets , const std::string & sasl_client_config ,
 	const Config & config , bool in_secure_tunnel ) :
 		GNet::TimerBase(es) ,
 		m_sender(sender) ,

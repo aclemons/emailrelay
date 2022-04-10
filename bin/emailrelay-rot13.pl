@@ -31,7 +31,7 @@ while(<$fh_in>)
 
 	if( $in_header && ( $line =~ m/^\s/ ) && scalar(@headers) ) # folding
 	{
-		@headers[-1] .= "\r\n$line" ;
+		$headers[-1] .= "\r\n$line" ;
 	}
 	elsif( $in_header && ( $line =~ m/^$/ ) )
 	{

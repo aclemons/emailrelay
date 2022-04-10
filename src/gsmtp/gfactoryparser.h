@@ -31,9 +31,9 @@ namespace GSmtp
 }
 
 //| \class GSmtp::FactoryParser
-/// A simple static class to parse identifiers that can be a
-/// program in the file system or a network address. Used by
-/// the filter factory and the address-verifier factory.
+/// A simple static class to parse identifiers that are either a
+/// program path or a network address. Used by the filter factory
+/// and the address-verifier factory.
 ///
 class GSmtp::FactoryParser
 {
@@ -50,9 +50,10 @@ public:
 
 	static Result parse( const std::string & identifier , bool allow_spam ) ;
 		///< Parses an identifier like "/usr/bin/foo" or "net:127.0.0.1:99"
-		///< returning the type and the specification in a result tuple, eg.
-		///< ("file","/usr/bin/foo") or ("net","127.0.0.1:99"). Returns
-		///< a default-constructed Result if not parsable.
+		///< or "net:/run/spamd.s", returning the type and the specification
+		///< in a result tuple, eg. ("file","/usr/bin/foo") or
+		///< ("net","127.0.0.1:99"). Returns a default-constructed Result
+		///< if not parsable.
 
 	static std::string check( const std::string & identifier , bool allow_spam ) ;
 		///< Parses and checks an identifier. Returns a diagnostic if

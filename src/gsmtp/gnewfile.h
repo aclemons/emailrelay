@@ -44,6 +44,7 @@ class GSmtp::NewFile : public NewMessage
 public:
 	G_EXCEPTION( InvalidPath , "invalid path: must be absolute" ) ;
 	G_EXCEPTION( FileError , "message store error" ) ;
+	G_EXCEPTION( TooBig , "message too big" ) ;
 
 	NewFile( FileStore & store , const std::string & from , const std::string & from_auth_in ,
 		const std::string & from_auth_out , std::size_t max_size , bool test_for_eight_bit ) ;
@@ -64,8 +65,8 @@ public:
 
 private: // overrides
 	void commit( bool strict ) override ; // Override from GSmtp::NewMessage.
-	MessageId id() const override ; // Override from GSmtp::NewMessage.
 	std::string location() const override ; // Override from GSmtp::NewMessage.
+	MessageId id() const override ; // Override from GSmtp::NewMessage.
 	void addTo( const std::string & to , bool local ) override ; // Override from GSmtp::NewMessage.
 	bool addText( const char * , std::size_t ) override ; // Override from GSmtp::NewMessage.
 	bool prepare( const std::string & auth_id , const std::string & peer_socket_address ,
@@ -76,7 +77,6 @@ private:
 	G::Path cpath() const ;
 	G::Path epath( State ) const ;
 	void cleanup() ;
-	void flushContent() ;
 	void discardContent() ;
 	bool commitEnvelope() ;
 	void deleteContent() ;

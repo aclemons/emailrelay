@@ -25,6 +25,7 @@
 #include "gaddress.h"
 #include "gdatetime.h"
 #include "gexception.h"
+#include <new>
 
 namespace GNet
 {
@@ -33,68 +34,95 @@ namespace GNet
 }
 
 //| \class GNet::Location
-/// A class that holds a host/service name pair and the preferred address
-/// family (if any), and also the results of a name-to-address lookup, ie. the
-/// remote address and canonical host name. The actual name-to-address lookup
-/// is done externally, and the results are deposited into the Location object
-/// with update().
+/// A class that represents the remote target for out-going client connections.
+/// It holds a host/service name pair and the preferred address family (if any)
+/// and also the results of a DNS lookup, ie. the remote address and canonical
+/// host name.
 ///
-/// One of the constructors allows an extended host/service format for
-/// transparent SOCKS support: before the "@" separator is the host/service
-/// pair passed verbatim to the socks server for it to resolve (see
-/// socksFarHost()); after the "@" is the host/service pair for the
-/// socks server itself, which we resolve and connect to (see host()).
+/// The actual DNS lookup of host() and service() should be done externally,
+/// with the results deposited into the Location object with update().
 ///
-/// \see GNet::Client
+/// An extended format is supported for transparent SOCKS connection: before
+/// the "@" separator is the host/port pair passed verbatim to the socks
+/// server for it to resolve; after the "@" is the host/service pair for
+/// the socks server itself, which should be resolved as normal.
+///
+/// URL-style square brackets can be used for IPv6 address, eg( "[::1]:1").
+///
+/// Local-domain socket addresses are supported, but obviously DNS lookups
+/// of host() and service() will never work, update() will reject them,
+/// and the socks code will not allow them as the 'far' address.
+///
+/// Synopsis:
+/// \code
+/// Location location( remote_server ) ;
+/// location.resolveTrivially() ;
+/// if( !location.resolved() )
+/// {
+///   Resolver resolver( location.host() , location.service() , location.family() ) ;
+///   if( resolver.resolve() )
+///     location.update( resolver.address() , resolver.cname() ) ;
+/// }
+/// \endcode
+///
+/// \see GNet::Client, GNet::Resolver
 ///
 class GNet::Location
 {
 public:
 	G_EXCEPTION( InvalidFormat , "invalid host:service format" ) ;
+	G_EXCEPTION( InvalidFamily , "invalid address family" ) ;
 
-	Location( const std::string & host , const std::string & service , int family = AF_UNSPEC ) ;
-		///< Constructor taking a host/service string.
+	explicit Location( const std::string & spec , int family = AF_UNSPEC ) ;
+		///< Constructor taking a formatted "host:service" string.
+		///< The location specification allows an extended format for
+		///< socks, as "far-host:far-port@socks-host:socks-service".
+		///< Throws if incorrectly formatted. The optional 'family'
+		///< parameter is made available to the resolver via
+		///< the family() method.
 
-	Location( const std::string & socks_host , const std::string & socks_service ,
-		const std::string & far_host , const std::string & far_service ,
-		int family = AF_UNSPEC ) ;
-			///< Constructor for socks. The first pair of parameters are for
-			///< the socks server, and the second pair are for the target
-			///< server.
+	static Location nosocks( const std::string & spec , int family = AF_UNSPEC ) ;
+		///< Factory function for a remote location but not allowing
+		///< the extended syntax for socks.
 
-	explicit Location( const std::string & location_string , int family = AF_UNSPEC ) ;
-		///< Constructor taking a formatted host/service string.
-		///< The format supports the extended format for socks as
-		///< "far-host:far-service@socks-host:socks-service".
-		///< Throws if incorrectly formatted.
+	static Location socks( const std::string & socks_server , const std::string & far_server ) ;
+		///< Factory function for a remote location explicitly
+		///< accessed via socks.
+
+	std::string host() const ;
+		///< Returns the remote host name derived from the constructor
+		///< parameter.
+
+	std::string service() const ;
+		///< Returns the remote service name derived from the constructor
+		///< parameter.
+
+	int family() const ;
+		///< Returns the preferred name resolution address family as
+		///< passed to the constructor.
 
 	bool socks() const ;
 		///< Returns true if a socks location.
 
-	std::string host() const ;
-		///< Returns the remote host name, as passed in to the constructor.
-
-	std::string service() const ;
-		///< Returns the remote service name, as passed in to the constructor.
-
-	void resolveTrivially() ;
+	bool resolveTrivially() ;
 		///< If host() and service() are already in address format then do a trivial
 		///< update() so that the location is immediately resolved(), albeit with an
-		///< empty canonical name().
+		///< empty canonical name(). Does nothing if already resolved(). Returns
+		///< resolved().
 
 	void update( const Address & address , const std::string & canonical_name ) ;
 		///< Updates the address and canonical name, typically after doing
-		///< a name lookup on host() and service().
+		///< a name lookup on host() and service(). Throws if an invalid address
+		///< family.
 
-	int family() const ;
-		///< Returns the preferred name resolution address family, or AF_UNSPEC.
-
-	bool dgram() const ;
-		///< Returns true if the name resolution should be specifically for datagram
-		///< sockets.
+	bool update( const Address & address , const std::string & canonical_name , std::nothrow_t ) ;
+		///< Updates the address and canonical name, typically after doing
+		///< a name lookup on host() and service(). Returns false if an invalid
+		///< address family.
 
 	bool resolved() const ;
-		///< Returns true after update() has been called.
+		///< Returns true after update() has been called or resolveTrivially()
+		///< succeeded.
 
 	Address address() const ;
 		///< Returns the remote address.
@@ -118,9 +146,11 @@ public:
 		///< Precondition: socks()
 
 private:
+	Location( const std::string & socks , const std::string & far_ , int family ) ; // socks()
+	Location( const std::string & spec , int family , int ) ; // nosocks()
 	static std::string head( const std::string & ) ;
 	static std::string tail( const std::string & ) ;
-	static bool socksified( const std::string & , std::string & , unsigned int & ) ;
+	static bool socksified( const std::string & , std::string & , std::string & ) ;
 	static std::string sockless( const std::string & ) ;
 
 private:
@@ -129,12 +159,11 @@ private:
 	bool m_address_valid ;
 	Address m_address ;
 	int m_family ;
-	bool m_dgram ;
 	std::string m_canonical_name ;
 	G::SystemTime m_update_time ;
-	bool m_socks ;
+	bool m_using_socks ;
 	std::string m_socks_far_host ;
-	unsigned int m_socks_far_port ;
+	std::string m_socks_far_port ;
 } ;
 
 namespace GNet

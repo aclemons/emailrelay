@@ -28,6 +28,7 @@
 #include "greadwrite.h"
 #include <string>
 #include <utility>
+#include <memory>
 
 namespace GSsl
 {
@@ -334,8 +335,8 @@ public:
 	std::string generateKey( const std::string & name ) const ;
 		///< Generates a test certificate as a PEM string with embedded newlines,
 		///< also containing the private-key. Returns the empty string if not
-		///< implemented. Throws on error. The implementation will normally
-		///< be slow and blocking.
+		///< implemented. Throws on error. The implementation will
+		///< normally be slow and blocking.
 
 	static LibraryImpBase & impstance() ;
 		///< Returns a reference to the pimple object when enabled(). Used in

@@ -52,10 +52,9 @@ public:
 			///< The 'mail-from' address is passed in for RCPT commands, but
 			///< not VRFY.
 
-	virtual G::Slot::Signal<const std::string&,const VerifierStatus&> & doneSignal() = 0 ;
+	virtual G::Slot::Signal<const VerifierStatus&> & doneSignal() = 0 ;
 		///< Returns a signal that is emit()ed when the verify() request
-		///< is complete. The first signal parameter is the mailbox
-		///< name (ie. rcpt_to_parameter).
+		///< is complete.
 
 	virtual void cancel() = 0 ;
 		///< Aborts any current processing.

@@ -32,6 +32,7 @@
 #include "glog.h"
 #include <memory>
 #include <numeric>
+#include <algorithm>
 
 //| \class GNet::SocketProtocolImp
 /// A pimple-pattern implementation class used by GNet::SocketProtocol.
@@ -165,9 +166,7 @@ GNet::SocketProtocolImp::~SocketProtocolImp()
 
 void GNet::SocketProtocolImp::setReadBufferSize( std::size_t n )
 {
-	m_read_buffer_size = n ;
-	if( m_read_buffer_size == 0U )
-		m_read_buffer_size = 1U ;
+	m_read_buffer_size = std::max( std::size_t(1U) , n ) ;
 }
 
 void GNet::SocketProtocolImp::onSecureConnectionTimeout()
@@ -223,7 +222,7 @@ void GNet::SocketProtocolImp::otherEvent( EventHandler::Reason reason )
 	}
 	else
 	{
-		throw SocketProtocol::OtherEventError( EventHandler::str(reason) ) ;
+		throw G::Exception( "socket disconnect event" , EventHandler::str(reason) ) ;
 	}
 }
 
@@ -293,7 +292,7 @@ bool GNet::SocketProtocolImp::send( const std::string & data , std::size_t offse
 
 bool GNet::SocketProtocolImp::send( const Segments & segments , std::size_t offset )
 {
-	if( segments.empty() || size(segments) == 0U )
+	if( segments.empty() || size(segments) == 0U || offset >= size(segments) )
 		return true ;
 
 	bool rc = true ;
@@ -571,20 +570,14 @@ void GNet::SocketProtocolImp::sslReadImp()
 
 void GNet::SocketProtocolImp::rawOtherEvent()
 {
-	// got a clean socket shutdown indication on windows -- no read events will
-	// follow but there might be data to read, so try reading in a loop --
-	// always end up throwing an exception
+	// got a clean socket shutdown indication on windows --  no read events will
+	// follow but there might be data to read -- so try reading in a loop
 	G_DEBUG( "GNet::SocketProtocolImp::rawOtherEvent: clearing receive queue" ) ;
 	for(;;)
 	{
 		const ssize_t rc = m_socket.read( &m_read_buffer[0] , m_read_buffer.size() ) ;
 		G_DEBUG( "GNet::SocketProtocolImp::rawOtherEvent: read " << m_socket.asString() << ": " << rc ) ;
-		if( rc == 0 )
-		{
-			m_socket.shutdown() ;
-			throw SocketProtocol::Shutdown() ;
-		}
-		else if( rc < 0 )
+		if( rc <= 0 )
 		{
 			m_socket.shutdown() ;
 			throw SocketProtocol::ReadError( m_socket.reason() ) ;

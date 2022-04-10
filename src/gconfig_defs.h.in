@@ -1,10 +1,7 @@
-/* gconfig_defs.h.in.  Generated from configure.ac by autoheader.  */
+/* src/gconfig_defs.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define true to use epoll */
 #undef GCONFIG_ENABLE_EPOLL
-
-/* Define true to use IPv6 */
-#undef GCONFIG_ENABLE_IPV6
 
 /* Define true to use std::thread */
 #undef GCONFIG_ENABLE_STD_THREAD
@@ -15,53 +12,11 @@
 /* Define true if compiler has std::align() */
 #undef GCONFIG_HAVE_CXX_ALIGNMENT
 
-/* Define true if compiler supports c++ constexpr */
-#undef GCONFIG_HAVE_CXX_CONSTEXPR
-
-/* Define true if compiler supports c++ =default */
-#undef GCONFIG_HAVE_CXX_DEFAULTED
-
-/* Define true if compiler supports c++ =delete */
-#undef GCONFIG_HAVE_CXX_DELETED
-
-/* Define true if compiler has std::vector::emplace_back() */
-#undef GCONFIG_HAVE_CXX_EMPLACE
-
-/* Define true if compiler supports c++ class enums */
-#undef GCONFIG_HAVE_CXX_ENUM_CLASS
-
-/* Define true if compiler supports c++ final keyword */
-#undef GCONFIG_HAVE_CXX_FINAL
-
-/* Define true if compiler supports c++ initializer_list */
-#undef GCONFIG_HAVE_CXX_INITIALIZER_LIST
-
 /* Define true if compiler has std::make_unique */
 #undef GCONFIG_HAVE_CXX_MAKE_UNIQUE
 
-/* Define true if compiler has std::move() */
-#undef GCONFIG_HAVE_CXX_MOVE
-
-/* Define true if compiler supports c++ noexcept */
-#undef GCONFIG_HAVE_CXX_NOEXCEPT
-
-/* Define true if compiler supports c++ nullptr */
-#undef GCONFIG_HAVE_CXX_NULLPTR
-
-/* Define true if compiler supports c++ override */
-#undef GCONFIG_HAVE_CXX_OVERRIDE
-
-/* Define true if compiler has std::shared_ptr */
-#undef GCONFIG_HAVE_CXX_SHARED_PTR
-
 /* Define true if compiler has std::thread */
 #undef GCONFIG_HAVE_CXX_STD_THREAD
-
-/* Define true if compiler has std::wstring */
-#undef GCONFIG_HAVE_CXX_STD_WSTRING
-
-/* Define true if compiler has <type_traits> make_unsigned */
-#undef GCONFIG_HAVE_CXX_TYPE_TRAITS_MAKE_UNSIGNED
 
 /* Define true to enable use of epoll */
 #undef GCONFIG_HAVE_EPOLL
@@ -99,7 +54,7 @@
 /* Define true if getpwnam_r in pwd.h */
 #undef GCONFIG_HAVE_GETPWNAM_R
 
-/* Define true to use GNU gettext */
+/* Define true to use gettext */
 #undef GCONFIG_HAVE_GETTEXT
 
 /* Define true if gid_t is a type */
@@ -137,6 +92,9 @@
 
 /* Define true if inttypes.h is available */
 #undef GCONFIG_HAVE_INTTYPES_H
+
+/* Define true if struct iovec has a simple layout */
+#undef GCONFIG_HAVE_IOVEC_SIMPLE
 
 /* Define true if ipv6 is available */
 #undef GCONFIG_HAVE_IPV6
@@ -263,6 +221,9 @@
 
 /* Define true if sys/wait.h is available */
 #undef GCONFIG_HAVE_SYS_WAIT_H
+
+/* Define true to use unix domain sockets */
+#undef GCONFIG_HAVE_UDS
 
 /* Define true if uid_t is a type */
 #undef GCONFIG_HAVE_UID_T

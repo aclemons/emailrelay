@@ -54,10 +54,7 @@ int G::Directory::usable( bool for_creation ) const
 bool G::Directory::writeable( const std::string & filename ) const
 {
 	Path path( m_path , filename.empty() ? tmp() : filename ) ;
-	int fd = -1 ;
-	const int oflags = _O_WRONLY | _O_CREAT | _O_EXCL | _O_TEMPORARY ;
-	errno_t e = _sopen_s( &fd , path.cstr() , oflags , _SH_DENYNO , _S_IWRITE ) ;
-	return e == 0 && fd != -1 && 0 == _close( fd ) ; // close and delete
+	return File::probe( path.cstr() ) ;
 }
 
 // ===

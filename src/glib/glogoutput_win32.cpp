@@ -74,7 +74,10 @@ void G::LogOutput::osoutput( int fd , G::Log::Severity severity , char * message
 {
 	// event log
 	//
-	if( m_config.m_use_syslog && severity != Log::Severity::s_Debug && m_handle != HNULL )
+	if( m_config.m_use_syslog && 
+		severity != Log::Severity::s_Debug &&
+		severity != Log::Severity::s_InfoVerbose && // (new)
+		m_handle != HNULL )
 	{
 		DWORD id = 0x400003E9L ; // 1001
 		WORD type = EVENTLOG_INFORMATION_TYPE ;

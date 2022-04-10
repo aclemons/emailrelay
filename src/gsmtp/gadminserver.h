@@ -33,6 +33,7 @@
 #include <list>
 #include <sstream>
 #include <utility>
+#include <memory>
 
 namespace GSmtp
 {
@@ -118,10 +119,10 @@ private:
 class GSmtp::AdminServer : public GNet::MultiServer
 {
 public:
-	AdminServer( GNet::ExceptionSink , MessageStore & store , FilterFactory & ,
-		G::Slot::Signal<std::string> & forward_request ,
-		const GNet::ServerPeerConfig & server_peer_config ,
-		const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
+	AdminServer( GNet::ExceptionSink , MessageStore & store , FilterFactory & ff ,
+		G::Slot::Signal<const std::string&> & forward_request ,
+		const GNet::ServerPeerConfig & server_peer_config , const GNet::ServerConfig & server_config ,
+		const GSmtp::Client::Config & client_config , const GAuth::SaslClientSecrets & client_secrets ,
 		const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
 		const std::string & remote_address , unsigned int connection_timeout ,
 		const G::StringMap & info_commands , const G::StringMap & config_commands ,
@@ -142,7 +143,7 @@ public:
 		///< Returns a reference to the filter factory, as
 		///< passed in to the constructor.
 
-	const GAuth::Secrets & clientSecrets() const ;
+	const GAuth::SaslClientSecrets & clientSecrets() const ;
 		///< Returns a reference to the client secrets object, as passed
 		///< in to the constructor. This is a client-side secrets file,
 		///< used to authenticate ourselves with a remote server.
@@ -182,9 +183,9 @@ private:
 	GNet::Timer<AdminServer> m_forward_timer ;
 	MessageStore & m_store ;
 	FilterFactory & m_ff ;
-	G::Slot::Signal<std::string> & m_forward_request ;
+	G::Slot::Signal<const std::string&> & m_forward_request ;
 	GSmtp::Client::Config m_client_config ;
-	const GAuth::Secrets & m_client_secrets ;
+	const GAuth::SaslClientSecrets & m_client_secrets ;
 	bool m_allow_remote ;
 	std::string m_remote_address ;
 	unsigned int m_connection_timeout ;

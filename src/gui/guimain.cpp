@@ -204,7 +204,7 @@ bool Application::notify( QObject * p1 , QEvent * p2 )
 		G_ERROR( "exception: " << e.what() ) ;
 		error( e.what() ) ;
 		std::string message = G::StringWrap::wrap( e.what() , "" , "" , 40U ) ;
-		qCritical( "exception: %s" , message.c_str() ) ;
+		qCritical( message.find(' ')==std::string::npos ? "exception: %s" : "%s" , message.c_str() ) ;
 		exit( 3 ) ;
 	}
 	return false ;
@@ -284,11 +284,14 @@ int main( int argc , char * argv [] )
 				G_LOG( "main: locale: " << GQt::stdstr(QLocale::system().name()) ) ; // eg. "en_GB"
 				bool loaded = false ;
 				G::Path qmfile = value( args , "--qm" ) ;
+				G::Path qmdir = value( args , "--qmdir" ) ;
+				if( qmdir.empty() )
+					qmdir = argv0.dirname() + "translations" ;
 				if( !qmfile.empty() )
 					loaded = translator.load( GQt::qstr(qmfile.str()) ) ;
 				if( !loaded )
 					loaded = translator.load( QLocale() , GQt::qstr("emailrelay") , GQt::qstr(".") ,
-						GQt::qstr((argv0.dirname()+"translations").str()) ) ;
+						GQt::qstr(qmdir.str()) , GQt::qstr(".qm") ) ;
 				if( loaded )
 					QCoreApplication::installTranslator( &translator ) ;
 				else
@@ -351,7 +354,7 @@ int main( int argc , char * argv [] )
 				if( G::File::exists(pointer_file) )
 				{
 					G_LOG_S( "main: reading directories from [" << pointer_file << "]" ) ;
-					pointer_map = G::MapFile( pointer_file ) ;
+					pointer_map = G::MapFile( pointer_file , "pointer" ) ;
 				}
 				else
 				{
@@ -410,6 +413,8 @@ int main( int argc , char * argv [] )
 			pages_config.add( "=dir-config" , dir_config.str() ) ;
 			pages_config.add( "=dir-install" , dir_install.str() ) ;
 			pages_config.add( "=dir-run" , dir_run.str() ) ;
+			pages_config.add( "=dir-boot" , Dir::boot().str() ) ;
+			pages_config.add( "=dir-boot-enabled" , Boot::installable(Dir::boot()) ? "y" : "n" ) ;
 
 			// set widget states based on the current file-system state
 			if( configure_mode )
@@ -478,7 +483,7 @@ int main( int argc , char * argv [] )
 			d.add( new FilterPage(d,pages_config,"filter","logging","",!configure_mode,isWindows()) ) ;
 			d.add( new ListeningPage(d,pages_config,"listening","startup","") ) ;
 			d.add( new LoggingPage(d,pages_config,"logging","listening","") ) ;
-			d.add( new StartupPage(d,pages_config,"startup","ready","",Boot::able(Dir::boot()),is_mac) ) ;
+			d.add( new StartupPage(d,pages_config,"startup","ready","",is_mac) ) ;
 			d.add( new ReadyPage(d,pages_config,"ready","progress","",!configure_mode) ) ;
 			d.add( new ProgressPage(d,pages_config,"progress","","",installer) ) ;
 			d.add() ;

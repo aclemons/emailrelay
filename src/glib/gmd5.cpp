@@ -298,8 +298,8 @@ G::Md5Imp::big_t G::Md5Imp::digest::op( const block & m , aux_fn_t aux , big_t a
 G::Md5Imp::big_t G::Md5Imp::digest::rot32( small_t places , big_t n )
 {
 	// circular rotate of 32 LSBs, with corruption of higher bits
-	big_t overflow_mask = ( 1UL << places ) - 1UL ; // in case big_t is more than 32 bits
-	big_t overflow = ( n >> ( 32U - places ) ) ;
+	big_t overflow_mask = ( big_t(1U) << places ) - big_t(1U) ; // in case big_t is more than 32 bits
+	big_t overflow = ( n >> ( small_t(32U) - places ) ) ;
 	return ( n << places ) | ( overflow & overflow_mask ) ;
 }
 

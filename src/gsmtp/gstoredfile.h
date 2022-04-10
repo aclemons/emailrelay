@@ -70,9 +70,13 @@ public:
 	MessageId id() const override ;
 		///< Override from GSmtp::StoredMessage.
 
-private: // overrides
 	void edit( const G::StringArray & ) override ;
+		///< Override from GSmtp::StoredMessage.
+
 	void fail( const std::string & reason , int reason_code ) override ;
+		///< Override from GSmtp::StoredMessage.
+
+private: // overrides
 	std::string location() const override ; // Override from GSmtp::StoredMessage.
 	int eightBit() const override ; // Override from GSmtp::StoredMessage.
 	std::string from() const override ; // Override from GSmtp::StoredMessage.
@@ -99,8 +103,8 @@ private:
 	G::Path epath( State ) const ;
 	void readEnvelopeCore( bool check_recipients ) ;
 	const std::string & eol() const ;
+	G::Path contentPath() const ;
 	void addReason( const G::Path & path , const std::string & , int ) const ;
-	static MessageId parse( const G::Path & ) ;
 
 private:
 	FileStore & m_store ;

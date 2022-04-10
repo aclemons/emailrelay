@@ -41,8 +41,7 @@ namespace GSmtp
 class GSmtp::SpamFilter : public Filter
 {
 public:
-	SpamFilter( GNet::ExceptionSink , FileStore & ,
-		const std::string & server_location ,
+	SpamFilter( GNet::ExceptionSink , FileStore & , const std::string & server_location ,
 		bool read_only , bool always_pass , unsigned int connection_timeout ,
 		unsigned int response_timeout ) ;
 			///< Constructor.

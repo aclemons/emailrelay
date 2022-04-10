@@ -36,5 +36,8 @@
 # "password" fields should be encoded using the RFC-1891 "xtext" encoding
 # scheme so that they are representing as hexadecimal ascii as "+XX".
 #
+# Alternatively use "plain:b" instead of "plain" and then use Base64 encoding 
+# for the id and password.
+#
 # The "none" rows allow trusted IP addresses to bypass authentication.
 #

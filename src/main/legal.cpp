@@ -25,7 +25,7 @@
 
 std::string Main::Legal::copyright()
 {
-	return "Copyright (C) 2001-2021 Graeme Walker" ;
+	return "Copyright (C) 2001-2022 Graeme Walker" ;
 }
 
 std::string Main::Legal::warranty( const std::string & prefix , const std::string & eol )

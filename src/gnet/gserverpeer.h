@@ -89,12 +89,12 @@ public:
 		///< returned then segment data pointers must stay valid until
 		///< onSendComplete() is triggered.
 
-	Address localAddress() const override ;
-		///< Returns the local address. Throws on error.
+	std::pair<bool,Address> localAddress() const override ;
+		///< Returns the local address. Pair.first is false on error.
 		///< Override from GNet::Connection.
 
-	Address peerAddress() const override ;
-		///< Returns the peer address. Throws on error.
+	std::pair<bool,Address> peerAddress() const override ;
+		///< Returns the peer address.
 		///< Override from GNet::Connection.
 
 	std::string connectionState() const override ;
@@ -111,9 +111,6 @@ public:
 	LineBufferState lineBuffer() const ;
 		///< Returns information about the state of the internal
 		///< line-buffer.
-
-	void setIdleTimeout( unsigned int seconds ) ;
-		///< Sets the idle timeout.
 
 protected:
 	virtual void onSendComplete() = 0 ;

@@ -67,28 +67,24 @@ GSmtp::MessageId GSmtp::ProtocolMessageStore::setFrom( const std::string & from 
 	return m_new_msg->id() ;
 }
 
-bool GSmtp::ProtocolMessageStore::addTo( const std::string & to , VerifierStatus to_status )
+bool GSmtp::ProtocolMessageStore::addTo( VerifierStatus to_status )
 {
-	G_DEBUG( "GSmtp::ProtocolMessageStore::addTo: " << to ) ;
-
+	G_DEBUG( "GSmtp::ProtocolMessageStore::addTo: " << to_status.recipient ) ;
 	G_ASSERT( m_new_msg != nullptr ) ;
-	if( to.length() > 0U && m_new_msg != nullptr )
+	if( to_status.recipient.empty() )
 	{
-		if( !to_status.is_valid )
-		{
-			G_WARNING( "GSmtp::ProtocolMessage: rejecting recipient \"" << to << "\": "
-				<< to_status.response << (to_status.reason.empty()?"":": ") << to_status.reason ) ;
-			return false ;
-		}
-		else
-		{
-			m_new_msg->addTo( to_status.address , to_status.is_local ) ;
-			return true ;
-		}
+		return false ;
+	}
+	else if( !to_status.is_valid )
+	{
+		G_WARNING( "GSmtp::ProtocolMessage: rejecting recipient \"" << to_status.recipient << "\": "
+			<< to_status.response << (to_status.reason.empty()?"":": ") << to_status.reason ) ;
+		return false ;
 	}
 	else
 	{
-		return false ;
+		m_new_msg->addTo( to_status.address , to_status.is_local ) ;
+		return true ;
 	}
 }
 
@@ -164,12 +160,12 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 		if( !m_filter->simple() )
 			G_LOG( "GSmtp::ProtocolMessageStore::filterDone: filter done: " << m_filter->str(true) ) ;
 
-		MessageId message_id = MessageId::none() ;
+		MessageId id = MessageId::none() ;
 		if( ok )
 		{
 			// commit the message to the store
 			m_new_msg->commit( true ) ;
-			message_id = m_new_msg->id() ;
+			id = m_new_msg->id() ;
 		}
 		else if( abandon )
 		{
@@ -193,7 +189,7 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 		std::string filter_reason = (ok||abandon) ? std::string() : m_filter->reason() ;
 
 		clear() ;
-		m_done_signal.emit( ok || abandon , message_id , filter_response , filter_reason ) ;
+		m_done_signal.emit( ok || abandon , id , filter_response , filter_reason ) ;
 	}
 	catch( std::exception & e ) // catch filtering errors
 	{

@@ -147,7 +147,7 @@ public:
 } ;
 
 Main::Verifier::Verifier( GNet::ExceptionSink es , bool ipv6 , unsigned int port , unsigned int idle_timeout ) :
-	GNet::Server( es , GNet::Address(ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,port) , GNet::ServerPeerConfig(idle_timeout) )
+	GNet::Server( es , GNet::Address(ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,port) , GNet::ServerPeerConfig(idle_timeout) , GNet::ServerConfig() )
 {
 }
 

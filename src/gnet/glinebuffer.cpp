@@ -44,12 +44,7 @@ void GNet::LineBuffer::clear()
 	if( !transparent() )
 		m_expect = 0U ;
 
-	G_ASSERT( m_in.empty() && empty() ) ;
-}
-
-bool GNet::LineBuffer::empty() const
-{
-	return state().empty() ;
+	G_ASSERT( m_in.empty() && state().empty() ) ;
 }
 
 void GNet::LineBuffer::add( const char * data , std::size_t size )
@@ -244,8 +239,8 @@ GNet::LineBufferConfig::LineBufferConfig( const std::string & eol , std::size_t 
 
 GNet::LineBufferConfig GNet::LineBufferConfig::transparent()
 {
-	const std::size_t inf = ~(std::size_t(0)) ;
-	//G_ASSERT( (inf+1U) == 0U ) ;
+	static constexpr std::size_t inf = ~(std::size_t(0)) ;
+	static_assert( (inf+1U) == 0U , "" ) ;
 	return LineBufferConfig( std::string(1U,'\n') , 0U , 0U , inf ) ;
 }
 

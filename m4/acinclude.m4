@@ -18,23 +18,9 @@ dnl ----------------------
 dnl Checks c++ language features.
 dnl
 AC_DEFUN([GCONFIG_FN_CHECK_CXX],[
-	AC_REQUIRE([GCONFIG_FN_CXX_NULLPTR])
-	AC_REQUIRE([GCONFIG_FN_CXX_CONSTEXPR])
-	AC_REQUIRE([GCONFIG_FN_CXX_ENUM_CLASS])
-	AC_REQUIRE([GCONFIG_FN_CXX_NOEXCEPT])
-	AC_REQUIRE([GCONFIG_FN_CXX_OVERRIDE])
-	AC_REQUIRE([GCONFIG_FN_CXX_FINAL])
-	AC_REQUIRE([GCONFIG_FN_CXX_TYPE_TRAITS])
-	AC_REQUIRE([GCONFIG_FN_CXX_EMPLACE])
 	AC_REQUIRE([GCONFIG_FN_CXX_ALIGNMENT])
-	AC_REQUIRE([GCONFIG_FN_CXX_MOVE])
-	AC_REQUIRE([GCONFIG_FN_CXX_SHARED_PTR])
 	AC_REQUIRE([GCONFIG_FN_CXX_MAKE_UNIQUE])
 	AC_REQUIRE([GCONFIG_FN_CXX_STD_THREAD])
-	AC_REQUIRE([GCONFIG_FN_CXX_STD_WSTRING])
-	AC_REQUIRE([GCONFIG_FN_CXX_DELETED])
-	AC_REQUIRE([GCONFIG_FN_CXX_DEFAULTED])
-	AC_REQUIRE([GCONFIG_FN_CXX_INITIALIZER_LIST])
 ])
 
 dnl GCONFIG_FN_CHECK_FUNCTIONS
@@ -46,6 +32,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_FUNCTIONS],[
 	AC_REQUIRE([GCONFIG_FN_GETPWNAM_R])
 	AC_REQUIRE([GCONFIG_FN_GETGRNAM])
 	AC_REQUIRE([GCONFIG_FN_GETGRNAM_R])
+	AC_REQUIRE([GCONFIG_FN_GETTEXT])
 	AC_REQUIRE([GCONFIG_FN_GMTIME_R])
 	AC_REQUIRE([GCONFIG_FN_GMTIME_S])
 	AC_REQUIRE([GCONFIG_FN_LOCALTIME_R])
@@ -148,6 +135,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_NET],[
 	AC_REQUIRE([GCONFIG_FN_IFNAMETOINDEX])
 	AC_REQUIRE([GCONFIG_FN_IFNAMETOLUID])
 	AC_REQUIRE([GCONFIG_FN_GAISTRERROR])
+	AC_REQUIRE([GCONFIG_FN_UDS])
 ])
 
 dnl GCONFIG_FN_CHECK_TYPES
@@ -173,6 +161,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_TYPES],[
 		AC_DEFINE([GCONFIG_HAVE_GID_T],0,[Define true if gid_t is a type]))
 	AC_REQUIRE([GCONFIG_FN_STATBUF_TIMESPEC])
 	AC_REQUIRE([GCONFIG_FN_STATBUF_NSEC])
+	AC_REQUIRE([GCONFIG_FN_IOVEC_SIMPLE])
 ])
 
 dnl GCONFIG_FN_CXX_ALIGNMENT
@@ -205,308 +194,8 @@ AC_DEFUN([GCONFIG_FN_CXX_ALIGNMENT],
 	fi
 ])
 
-dnl GCONFIG_FN_CXX_CONSTEXPR
-dnl ------------------------
-dnl Tests for c++ support for constexpr in a static initialisation.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_CONSTEXPR],
-[AC_CACHE_CHECK([for c++ constexpr],[gconfig_cv_cxx_constexpr],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[template <typename T> struct Foo {static constexpr int foo = 1;} ;]
-		],
-		[
-		])],
-		gconfig_cv_cxx_constexpr=yes ,
-		gconfig_cv_cxx_constexpr=no )
-])
-	if test "$gconfig_cv_cxx_constexpr" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_CONSTEXPR,1,[Define true if compiler supports c++ constexpr])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_CONSTEXPR,0,[Define true if compiler supports c++ constexpr])
-	fi
-])
-
-dnl GCONFIG_FN_CXX_DEFAULTED
-dnl ----------------------
-dnl Tests for c++ =default.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_DEFAULTED],
-[AC_CACHE_CHECK([for c++ eq default],[gconfig_cv_cxx_defaulted],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#if defined(__GNUC__) && __cplusplus < 200000L]
-			[#error gcc is too noisy when using =delete without std=c++11]
-			[#endif]
-			[struct X { X() = default ; } ;]
-		] ,
-		[
-		])],
-		gconfig_cv_cxx_defaulted=yes ,
-		gconfig_cv_cxx_defaulted=no )
-])
-	if test "$gconfig_cv_cxx_defaulted" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_DEFAULTED,1,[Define true if compiler supports c++ =default])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_DEFAULTED,0,[Define true if compiler supports c++ =default])
-	fi
-])
-
-dnl GCONFIG_FN_CXX_DELETED
-dnl ----------------------
-dnl Tests for c++ =delete.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_DELETED],
-[AC_CACHE_CHECK([for c++ eq delete],[gconfig_cv_cxx_deleted],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#if defined(__GNUC__) && __cplusplus < 200000L]
-			[#error gcc is too noisy when using =delete without std=c++11]
-			[#endif]
-			[struct X { X(const X&) = delete ; } ;]
-		],
-		[
-		])],
-		gconfig_cv_cxx_deleted=yes ,
-		gconfig_cv_cxx_deleted=no )
-])
-	if test "$gconfig_cv_cxx_deleted" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_DELETED,1,[Define true if compiler supports c++ =delete])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_DELETED,0,[Define true if compiler supports c++ =delete])
-	fi
-])
-
-dnl GCONFIG_FN_CXX_EMPLACE
-dnl ----------------------
-dnl Tests for c++ std::vector::emplace_back() etc.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_EMPLACE],
-[AC_CACHE_CHECK([for c++ emplace_back and friends],[gconfig_cv_cxx_emplace],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#include <vector>]
-			[std::vector<int> v ;]
-		],
-		[
-			[v.emplace_back(1) ;]
-		])],
-		gconfig_cv_cxx_emplace=yes ,
-		gconfig_cv_cxx_emplace=no )
-])
-	if test "$gconfig_cv_cxx_emplace" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_EMPLACE,1,[Define true if compiler has std::vector::emplace_back()])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_EMPLACE,0,[Define true if compiler has std::vector::emplace_back()])
-	fi
-])
-
-dnl GCONFIG_FN_CXX_ENUM_CLASS
-dnl -------------------------
-dnl Tests for c++ support for class enums.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_ENUM_CLASS],
-[AC_CACHE_CHECK([for c++ class enums],[gconfig_cv_cxx_enum_class],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[enum class Type { t1 , t2 } ;]
-			[Type t = Type::t1 ;]
-		],
-		[
-		])],
-		gconfig_cv_cxx_enum_class=yes ,
-		gconfig_cv_cxx_enum_class=no )
-])
-	if test "$gconfig_cv_cxx_enum_class" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_ENUM_CLASS,1,[Define true if compiler supports c++ class enums])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_ENUM_CLASS,0,[Define true if compiler supports c++ class enums])
-	fi
-])
-
-dnl GCONFIG_FN_CXX_FINAL
-dnl --------------------
-dnl Tests for c++ final keyword.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_FINAL],
-[AC_CACHE_CHECK([for c++ final keyword],[gconfig_cv_cxx_final],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#if defined(__GNUC__) && __cplusplus < 200000L]
-			[#error gcc is too noisy when using override/final without std=c++11]
-			[#endif]
-			[struct base { virtual void fn() {} } ;]
-			[struct derived : public base { virtual void fn() final {} } ;]
-			[derived d ;]
-		],
-		[
-		])],
-		gconfig_cv_cxx_final=yes ,
-		gconfig_cv_cxx_final=no )
-])
-	if test "$gconfig_cv_cxx_final" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_FINAL,1,[Define true if compiler supports c++ final keyword])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_FINAL,0,[Define true if compiler supports c++ final keyword])
-	fi
-])
-
-dnl GCONFIG_FN_CXX_INITIALIZER_LIST
-dnl -------------------------------
-dnl Tests for c++ initializer_list.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_INITIALIZER_LIST],
-[AC_CACHE_CHECK([for c++ initializer_list],[gconfig_cv_cxx_initializer_list],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#include <initializer_list>]
-			[struct X { X( std::initializer_list<int> ) {} } ;]
-		],
-		[
-		])],
-		gconfig_cv_cxx_initializer_list=yes ,
-		gconfig_cv_cxx_initializer_list=no )
-])
-	if test "$gconfig_cv_cxx_initializer_list" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_INITIALIZER_LIST,1,[Define true if compiler supports c++ initializer_list])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_INITIALIZER_LIST,0,[Define true if compiler supports c++ initializer_list])
-	fi
-])
-
-dnl GCONFIG_FN_CXX_MOVE
-dnl -------------------
-dnl Tests for c++ std::move.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_MOVE],
-[AC_CACHE_CHECK([for c++ std::move],[gconfig_cv_cxx_move],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#include <utility>]
-			[struct X {} x ;]
-			[void fn( X&& ) ;]
-		],
-		[
-			[fn( std::move(x) ) ;]
-		])],
-		gconfig_cv_cxx_move=yes ,
-		gconfig_cv_cxx_move=no )
-])
-	if test "$gconfig_cv_cxx_move" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_MOVE,1,[Define true if compiler has std::move()])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_MOVE,0,[Define true if compiler has std::move()])
-	fi
-])
-
-dnl GCONFIG_FN_CXX_NOEXCEPT
-dnl -----------------------
-dnl Tests for c++ noexcept support.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_NOEXCEPT],
-[AC_CACHE_CHECK([for c++ noexcept],[gconfig_cv_cxx_noexcept],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[void fn() noexcept ;]
-		],
-		[
-		])],
-		gconfig_cv_cxx_noexcept=yes ,
-		gconfig_cv_cxx_noexcept=no )
-])
-	if test "$gconfig_cv_cxx_noexcept" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_NOEXCEPT,1,[Define true if compiler supports c++ noexcept])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_NOEXCEPT,0,[Define true if compiler supports c++ noexcept])
-	fi
-])
-
-dnl GCONFIG_FN_CXX_NULLPTR
-dnl ----------------------
-dnl Tests for c++ nullptr keyword.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_NULLPTR],
-[AC_CACHE_CHECK([for c++ nullptr],[gconfig_cv_cxx_nullptr],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[void * p = nullptr ;]
-		] ,
-		[
-		])],
-		gconfig_cv_cxx_nullptr=yes ,
-		gconfig_cv_cxx_nullptr=no )
-])
-	if test "$gconfig_cv_cxx_nullptr" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_NULLPTR,1,[Define true if compiler supports c++ nullptr])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_NULLPTR,0,[Define true if compiler supports c++ nullptr])
-	fi
-])
-
-dnl GCONFIG_FN_CXX_OVERRIDE
-dnl -----------------------
-dnl Tests for c++ override support.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_OVERRIDE],
-[AC_CACHE_CHECK([for c++ override],[gconfig_cv_cxx_override],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#if defined(__GNUC__) && __cplusplus < 200000L]
-			[#error gcc is too noisy when using override/final without std=c++11]
-			[#endif]
-			[struct base { virtual void fn() {} } ;]
-			[struct derived : public base { virtual void fn() override {} } ;]
-			[derived d ;]
-		],
-		[
-		])],
-		gconfig_cv_cxx_override=yes ,
-		gconfig_cv_cxx_override=no )
-])
-	if test "$gconfig_cv_cxx_override" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_OVERRIDE,1,[Define true if compiler supports c++ override])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_OVERRIDE,0,[Define true if compiler supports c++ override])
-	fi
-])
-
-dnl GCONFIG_FN_CXX_SHARED_PTR
-dnl -------------------------
-dnl Tests for c++ std::shared_ptr.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_SHARED_PTR],
-[AC_CACHE_CHECK([for c++ std::shared_ptr and friends],[gconfig_cv_cxx_std_shared_ptr],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#include <memory>]
-			[typedef std::shared_ptr<int> ptr ;]
-		],
-		[
-		])],
-		gconfig_cv_cxx_std_shared_ptr=yes ,
-		gconfig_cv_cxx_std_shared_ptr=no )
-])
-	if test "$gconfig_cv_cxx_std_shared_ptr" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_SHARED_PTR,1,[Define true if compiler has std::shared_ptr])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_SHARED_PTR,0,[Define true if compiler has std::shared_ptr])
-	fi
-])
-
-dnl GCONFIG_FN_CXX_SHARED_PTR
-dnl -------------------------
+dnl GCONFIG_FN_CXX_MAKE_UNIQUE
+dnl --------------------------
 dnl Tests for c++ std::make_unique.
 dnl
 AC_DEFUN([GCONFIG_FN_CXX_MAKE_UNIQUE],
@@ -625,54 +314,6 @@ AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD],
 	GCONFIG_FN_CXX_STD_THREAD_IMP([std::thread_asynchronous_script_execution])
 ])
 
-dnl GCONFIG_FN_CXX_STD_WSTRING
-dnl --------------------------
-dnl Tests for std::wstring typedef.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_STD_WSTRING],
-[AC_CACHE_CHECK([for c++ std::wstring],[gconfig_cv_cxx_std_wstring],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#include <string>]
-			[std::wstring ws;]
-		],
-		[
-		])],
-		gconfig_cv_cxx_std_wstring=yes ,
-		gconfig_cv_cxx_std_wstring=no )
-])
-	if test "$gconfig_cv_cxx_std_wstring" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_STD_WSTRING,1,[Define true if compiler has std::wstring])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_STD_WSTRING,0,[Define true if compiler has std::wstring])
-	fi
-])
-
-dnl GCONFIG_FN_CXX_TYPE_TRAITS
-dnl --------------------------
-dnl Tests for c++ <type_traits> std::make_unsigned.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_TYPE_TRAITS],
-[AC_CACHE_CHECK([for c++ type_traits],[gconfig_cv_cxx_type_traits_make_unsigned],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#include <type_traits>]
-			[std::make_unsigned<int>::type i = 0U ;]
-		],
-		[
-		])],
-		gconfig_cv_cxx_type_traits_make_unsigned=yes ,
-		gconfig_cv_cxx_type_traits_make_unsigned=no )
-])
-	if test "$gconfig_cv_cxx_type_traits_make_unsigned" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CXX_TYPE_TRAITS_MAKE_UNSIGNED,1,[Define true if compiler has <type_traits> make_unsigned])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CXX_TYPE_TRAITS_MAKE_UNSIGNED,0,[Define true if compiler has <type_traits> make_unsigned])
-	fi
-])
-
 dnl GCONFIG_FN_ENABLE_BSD
 dnl ---------------------
 dnl Enables bsd tweaks if "--enable-bsd" is used. Typically used after
@@ -734,39 +375,46 @@ AC_DEFUN([GCONFIG_FN_ENABLE_EPOLL],
 dnl GCONFIG_FN_ENABLE_GUI
 dnl ---------------------
 dnl Allows for "if GCONFIG_GUI" conditionals in makefiles, based on "--enable-gui"
-dnl or QT_MOC. Typically used after GCONFIG_FN_QT and AC_ARG_ENABLE(gui).
+dnl or "gconfig_have_qt" and "gconfig_qt_build" if "auto". Typically used after
+dnl GCONFIG_FN_QT, GCONFIG_FN_QT_BUILD and AC_ARG_ENABLE(gui).
 dnl
 AC_DEFUN([GCONFIG_FN_ENABLE_GUI],
 [
 	if test "$enable_gui" = "no"
 	then
-		QT_MOC=""
-	fi
-
-	if test "$enable_gui" = "yes"
+		gconfig_gui="no"
+	:
+	elif test "$enable_gui" = "yes"
 	then
+		gconfig_gui="yes"
 		if test "$gconfig_have_qt" = "no"
 		then
-			AC_MSG_WARN([ignoring --enable-gui: set QT_MOC to override])
-			QT_MOC=""
+			AC_MSG_WARN([gui enabled but no qt tools found])
+		fi
+		if test "$gconfig_qt_build" = "no"
+		then
+			AC_MSG_WARN([gui enabled but qt does not compile])
+		fi
+	:
+	else
+		if test "$gconfig_have_qt" = "yes" -a "$gconfig_qt_build" = "yes"
+		then
+			gconfig_gui="yes"
+		else
+			gconfig_gui="no"
 		fi
 	fi
 
-	if test "$enable_gui" != "no" -a "$QT_MOC" = ""
+	if test "$gconfig_gui" = "no" -a "$enable_gui" != "no"
 	then
 		gconfig_warnings="$gconfig_warnings qt_graphical_user_interface"
-	fi
-
-	if test "$QT_MOC" != ""
-	then
-		AC_MSG_NOTICE([QT moc command: $QT_MOC])
 	fi
 
 	AC_SUBST([GCONFIG_QT_LIBS],[$QT_LIBS])
 	AC_SUBST([GCONFIG_QT_CFLAGS],[$QT_CFLAGS])
 	AC_SUBST([GCONFIG_QT_MOC],[$QT_MOC])
 
-	AM_CONDITIONAL([GCONFIG_GUI],[test "$QT_MOC" != ""])
+	AM_CONDITIONAL([GCONFIG_GUI],[test "$gconfig_gui" = "yes"])
 ])
 
 dnl GCONFIG_FN_ENABLE_INSTALL_HOOK
@@ -842,7 +490,7 @@ dnl GCONFIG_FN_ENABLE_STD_THREAD
 dnl ----------------------------
 dnl Defines GCONFIG_ENABLE_STD_THREAD based on the GCONFIG_FN_CXX_STD_THREAD
 dnl result, unless "--disable-std-thread" has disabled it. Using
-dnl "--disable-std-thread" is useful for current versions of mingw32-w64.
+dnl "--disable-std-thread" is useful for old versions of mingw32-w64.
 dnl
 dnl Typically used after GCONFIG_FN_CXX_STD_THREAD and AC_ARG_ENABLE(std-thread).
 dnl
@@ -1195,6 +843,36 @@ AC_DEFUN([GCONFIG_FN_GETGRNAM_R],
 	fi
 ])
 
+dnl GCONFIG_FN_GETTEXT
+dnl --------------------
+dnl Tests for gettext and sets gconfig_cv_gettext. Used before
+dnl AC_ARG_WITH and GCONFIG_FN_WITH_GETTEXT.
+dnl
+dnl Typically needs CFLAGS, LIBS and LDFLAGS etc. to be set
+dnl correctly.
+dnl
+dnl See also GCONFIG_FN_GETTEXT_NEW and AM_GNU_GETTEXT.
+dnl
+AC_DEFUN([GCONFIG_FN_GETTEXT],
+[AC_CACHE_CHECK([for gettext],[gconfig_cv_gettext],
+[
+	AC_LINK_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <libintl.h>]
+			[const char * p = 0;]
+			[const char * dir = 0;]
+			[const char * md = 0;]
+		],
+		[
+			[p = gettext( "foo" );]
+			[dir = bindtextdomain( "foo" , "bar" );]
+			[md = textdomain( "foo" );]
+		])],
+		gconfig_cv_gettext=yes ,
+		gconfig_cv_gettext=no )
+])
+])
+
 dnl GCONFIG_FN_GMTIME_R
 dnl -------------------
 dnl Tests for gmtime_r().
@@ -1459,6 +1137,39 @@ AC_DEFUN([GCONFIG_FN_INET_PTON],
 	fi
 ])
 
+dnl GCONFIG_FN_IOVEC_SIMPLE
+dnl -----------------------
+dnl Tests whether struct iovec is available and matches
+dnl the layout of a trivial {char*,size_t} structure.
+dnl
+AC_DEFUN([GCONFIG_FN_IOVEC_SIMPLE],
+[AC_CACHE_CHECK([for iovec layout],[gconfig_cv_iovec_is_simple],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <cstddef>]
+			[#include <sys/types.h>]
+			[#include <sys/uio.h>]
+			[struct simple { const char * p ; std::size_t n ; } ;]
+		],
+		[
+            static_assert( sizeof(simple) == sizeof(::iovec) , "" ) ;
+            static_assert( alignof(simple) == alignof(::iovec) , "" ) ;
+            static_assert( sizeof(simple::p) == sizeof(::iovec::iov_base) , "" ) ;
+            static_assert( sizeof(simple::n) == sizeof(::iovec::iov_len) , "" ) ;
+            static_assert( offsetof(simple,p) == offsetof(::iovec,iov_base) , "" ) ;
+            static_assert( offsetof(simple,n) == offsetof(::iovec,iov_len) , "" ) ;
+		])],
+		gconfig_cv_iovec_is_simple=yes ,
+		gconfig_cv_iovec_is_simple=no )
+])
+	if test "$gconfig_cv_iovec_is_simple" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_IOVEC_SIMPLE,1,[Define true if struct iovec has a simple layout])
+	else
+		AC_DEFINE(GCONFIG_HAVE_IOVEC_SIMPLE,0,[Define true if struct iovec has a simple layout])
+	fi
+])
+
 dnl GCONFIG_FN_IPV6
 dnl ---------------
 dnl Tests for a minimum set of IPv6 features available.
@@ -1573,7 +1284,7 @@ AC_DEFUN([GCONFIG_FN_NETROUTE],
 			[struct ifa_msghdr header2 ;]
 		] ,
 		[
-			[int fd = socket( PF_ROUTE , SOCK_RAW , AF_INET ) ;]
+			[(void) socket( PF_ROUTE , SOCK_RAW , AF_INET ) ;]
 			[header1.rtm_msglen = header2.ifam_msglen = 0 ;]
 			[header1.rtm_type = RTM_ADD ;]
 			[header2.ifam_type = RTM_NEWADDR ;]
@@ -1801,13 +1512,14 @@ AC_DEFUN([GCONFIG_FN_PTHREAD_SIGMASK],
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 		[
 			[#include <csignal>]
+			[#include <cstddef>]
 			[sigset_t set ;]
 			[int rc ;]
 		],
 		[
 			[sigemptyset( &set ) ;]
 			[sigaddset( &set , SIGTERM ) ;]
-			[rc = pthread_sigmask( SIG_BLOCK|SIG_UNBLOCK|SIG_SETMASK , &set , &set ) ;]
+			[rc = pthread_sigmask( SIG_BLOCK|SIG_UNBLOCK|SIG_SETMASK , &set , NULL ) ;]
 		])],
 		gconfig_cv_pthread_sigmask=yes ,
 		gconfig_cv_pthread_sigmask=no )
@@ -1850,12 +1562,13 @@ AC_DEFUN([GCONFIG_FN_PUTENV_S],
 
 dnl GCONFIG_FN_QT
 dnl -------------
-dnl Tests for Qt5. Sets gconfig_have_qt, QT_MOC, QT_LIBS and QT_CFLAGS.
-dnl A fallback copy of "pkg.m4" should be included in the distribution.
+dnl Tests for Qt5. Sets gconfig_have_qt, QT_MOC, QT_LRELEASE, QT_LIBS and
+dnl QT_CFLAGS. A fallback copy of "pkg.m4" should be included in the
+dnl distribution.
 dnl
 AC_DEFUN([GCONFIG_FN_QT],
 [
-	# try pkg-config
+	# try pkg-config -- this says 'checking for QT'
 	PKG_CHECK_MODULES([QT],[Qt5Widgets > 5],
 		[
 			gconfig_pkgconfig_qt=yes
@@ -1867,9 +1580,16 @@ AC_DEFUN([GCONFIG_FN_QT],
 	)
 
 	# allow the moc command to be defined with QT_MOC on the configure
-	# command-line, typically with CXXFLAGS and LIBS pointing to Qt
+	# command-line, typically also with CXXFLAGS and LIBS pointing to Qt
 	# headers and libraries
 	AC_ARG_VAR([QT_MOC],[moc command for QT])
+
+	if echo "$QT_MOC" | grep -q /
+	then
+		QT_LRELEASE="`dirname \"$QT_MOC\"`/lrelease"
+	else
+		QT_LRELEASE="lrelease"
+	fi
 
 	# or build the moc command using pkg-config results
 	if test "$QT_MOC" = ""
@@ -1877,12 +1597,18 @@ AC_DEFUN([GCONFIG_FN_QT],
 		if test "$gconfig_pkgconfig_qt" = "yes"
 		then
 			QT_MOC="`$PKG_CONFIG --variable=host_bins Qt5Core`/moc"
+			QT_LRELEASE="`$PKG_CONFIG --variable=host_bins Qt5Core`/lrelease"
 			QT_CHOOSER="`$PKG_CONFIG --variable=exec_prefix Qt5Core`/bin/qtchooser"
 			if test -x "$QT_MOC" ; then : ; else QT_MOC="" ; fi
+			if test -x "$QT_LRELEASE" ; then : ; else QT_LRELEASE="" ; fi
 			if test -x "$QT_CHOOSER" ; then : ; else QT_CHOOSER="" ; fi
 			if test "$QT_MOC" = "" -a "$QT_CHOOSER" != ""
 			then
 				QT_MOC="$QT_CHOOSER -run-tool=moc -qt=qt5"
+			fi
+			if test "$QT_LRELEASE" = "" -a "$QT_CHOOSER" != ""
+			then
+				QT_LRELEASE="$QT_CHOOSER -run-tool=lrelease -qt=qt5"
 			fi
 		fi
 	fi
@@ -1891,6 +1617,20 @@ AC_DEFUN([GCONFIG_FN_QT],
 	if test "$QT_MOC" = ""
 	then
 		AC_PATH_PROG([QT_MOC],[moc])
+	fi
+
+	if test "$QT_LRELEASE" = ""
+	then
+		AC_PATH_PROG([QT_LRELEASE],[lrelease])
+		if test "$QT_LRELEASE" = ""
+		then
+			QT_LRELEASE=false
+		fi
+	fi
+
+	if test "$QT_MOC" != ""
+	then
+		AC_MSG_NOTICE([QT moc command: $QT_MOC])
 	fi
 
 	# set gconfig_have_qt, QT_CFLAGS and QT_LIBS iff we have a moc command
@@ -1916,6 +1656,44 @@ AC_DEFUN([GCONFIG_FN_QT],
 		QT_CFLAGS="-F $QT_DIR/lib"
 		QT_LIBS="-F $QT_DIR/lib -framework QtWidgets -framework QtGui -framework QtCore"
 	fi
+])
+
+dnl GCONFIG_FN_QT_BUILD
+dnl -------------------
+dnl Tests for successful Qt5 compilation if GCONFIG_FN_QT
+dnl has set gconfig_have_qt. Sets gconfig_qt_build.
+dnl
+AC_DEFUN([GCONFIG_FN_QT_BUILD],
+[AC_CACHE_CHECK([for QT compilation],[gconfig_cv_qt_build],
+[
+	if test "$gconfig_have_qt" = "yes"
+	then
+		gconfig_save_LIBS="$LIBS"
+		gconfig_save_CXXFLAGS="$CXXFLAGS"
+		LIBS="$LIBS $QT_LIBS"
+		CXXFLAGS="$CXXFLAGS $QT_CFLAGS"
+		AC_LINK_IFELSE([AC_LANG_PROGRAM(
+			[
+				[#include <QtCore/QtCore>]
+				[#if QT_VERSION < 0x050000]
+				[#error Qt is too old]
+				[#endif]
+				[#include <QtGui/QtGui>]
+				[#include <QtWidgets/QtWidgets>]
+				[#include <QtCore/QtPlugin>]
+			],
+			[
+				[throw QSize(1,1).width() ;]
+			])],
+			gconfig_cv_qt_build=yes ,
+			gconfig_cv_qt_build=no )
+		LIBS="$gconfig_save_LIBS"
+		CXXFLAGS="$gconfig_save_CXXFLAGS"
+	else
+		gconfig_cv_qt_build=no
+	fi
+])
+	gconfig_qt_build="$gconfig_cv_qt_build"
 ])
 
 dnl GCONFIG_FN_READLINK
@@ -2048,6 +1826,10 @@ AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES_E],
 	then
 		e_icondir="$datadir/$PACKAGE"
 	fi
+	if test "$e_trdir" = ""
+	then
+		e_trdir="$datadir/$PACKAGE"
+	fi
 	if test "$e_rundir" = ""
 	then
 		# (linux fhs says "/run", not "/var/run")
@@ -2064,6 +1846,7 @@ AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES_E],
 	AC_SUBST([e_initdir])
 	AC_SUBST([e_bsdinitdir])
 	AC_SUBST([e_icondir])
+	AC_SUBST([e_trdir])
 	AC_SUBST([e_spooldir])
 	AC_SUBST([e_examplesdir])
 	AC_SUBST([e_libexecdir])
@@ -2134,13 +1917,14 @@ AC_DEFUN([GCONFIG_FN_SIGPROCMASK],
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 		[
 			[#include <csignal>]
+			[#include <cstddef>]
 			[sigset_t set ;]
 			[int rc ;]
 		],
 		[
 			[sigemptyset( &set ) ;]
 			[sigaddset( &set , SIGTERM ) ;]
-			[rc = sigprocmask( SIG_BLOCK|SIG_UNBLOCK|SIG_SETMASK , &set , &set ) ;]
+			[rc = sigprocmask( SIG_BLOCK|SIG_UNBLOCK|SIG_SETMASK , &set , NULL ) ;]
 		])],
 		gconfig_cv_sigprocmask=yes ,
 		gconfig_cv_sigprocmask=no )
@@ -2463,6 +2247,8 @@ AC_DEFUN([GCONFIG_FN_TLS],
 		gconfig_ssl_notice="openssl and mbedtls"
 		gconfig_ssl_use_none=no
 		gconfig_ssl_use_both=yes
+		gconfig_ssl_use_openssl_only=no
+		gconfig_ssl_use_mbedtls_only=no
 		GCONFIG_TLS_LIBS="$gconfig_ssl_mbedtls_libs $gconfig_ssl_openssl_libs"
 	fi
 	if test "$gconfig_ssl_use_openssl" = "yes" -a "$gconfig_ssl_use_mbedtls" = "no"
@@ -2470,6 +2256,8 @@ AC_DEFUN([GCONFIG_FN_TLS],
 		gconfig_ssl_notice="openssl"
 		gconfig_ssl_use_none=no
 		gconfig_ssl_use_both=no
+		gconfig_ssl_use_openssl_only=yes
+		gconfig_ssl_use_mbedtls_only=no
 		GCONFIG_TLS_LIBS="$gconfig_ssl_openssl_libs"
 	fi
 	if test "$gconfig_ssl_use_openssl" = "no" -a "$gconfig_ssl_use_mbedtls" = "yes"
@@ -2477,6 +2265,8 @@ AC_DEFUN([GCONFIG_FN_TLS],
 		gconfig_ssl_notice="mbedtls"
 		gconfig_ssl_use_none=no
 		gconfig_ssl_use_both=no
+		gconfig_ssl_use_openssl_only=no
+		gconfig_ssl_use_mbedtls_only=yes
 		GCONFIG_TLS_LIBS="$gconfig_ssl_mbedtls_libs"
 	fi
 	if test "$gconfig_ssl_use_openssl" = "no" -a "$gconfig_ssl_use_mbedtls" = "no"
@@ -2484,6 +2274,8 @@ AC_DEFUN([GCONFIG_FN_TLS],
 		gconfig_ssl_notice="none"
 		gconfig_ssl_use_none=yes
 		gconfig_ssl_use_both=no
+		gconfig_ssl_use_openssl_only=no
+		gconfig_ssl_use_mbedtls_only=no
 		GCONFIG_TLS_LIBS=""
 	fi
 
@@ -2494,8 +2286,8 @@ AC_DEFUN([GCONFIG_FN_TLS],
 
 	AC_SUBST([GCONFIG_TLS_LIBS])
 	AM_CONDITIONAL([GCONFIG_TLS_USE_BOTH],test "$gconfig_ssl_use_both" = "yes")
-	AM_CONDITIONAL([GCONFIG_TLS_USE_OPENSSL],test "$gconfig_ssl_use_openssl" = "yes")
-	AM_CONDITIONAL([GCONFIG_TLS_USE_MBEDTLS],test "$gconfig_ssl_use_mbedtls" = "yes")
+	AM_CONDITIONAL([GCONFIG_TLS_USE_OPENSSL],test "$gconfig_ssl_use_openssl_only" = "yes")
+	AM_CONDITIONAL([GCONFIG_TLS_USE_MBEDTLS],test "$gconfig_ssl_use_mbedtls_only" = "yes")
 	AM_CONDITIONAL([GCONFIG_TLS_USE_NONE],test "$gconfig_ssl_use_none" = "yes")
 	AC_MSG_NOTICE([using tls library: $gconfig_ssl_notice])
 ])
@@ -2811,6 +2603,35 @@ AC_DEFUN([GCONFIG_FN_TYPE_UINTPTR_T],
 	fi
 ])
 
+dnl GCONFIG_FN_UDS
+dnl --------------
+dnl Tests for unix domain socket support.
+dnl
+AC_DEFUN([GCONFIG_FN_UDS],
+[AC_CACHE_CHECK([for unix domain sockets],[gconfig_cv_uds],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <sys/types.h>]
+			[#include <sys/socket.h>]
+			[#include <sys/un.h>]
+			[struct sockaddr_un a ;]
+		] ,
+		[
+			[a.sun_family = AF_UNIX | PF_UNIX ;]
+			[a.sun_path[0] = '\0' ;]
+		])] ,
+		[gconfig_cv_uds=yes],
+		[gconfig_cv_uds=no])
+])
+	if test "$gconfig_cv_uds" = "yes"
+	then
+		AC_DEFINE(GCONFIG_HAVE_UDS,1,[Define true to use unix domain sockets])
+	else
+		AC_DEFINE(GCONFIG_HAVE_UDS,0,[Define true to use unix domain sockets])
+	fi
+])
+
 dnl GCONFIG_FN_WARNINGS
 dnl -------------------
 dnl Displays a summary warning.
@@ -2857,18 +2678,25 @@ dnl relevant library code. See also AM_GNU_GETTEXT.
 dnl
 AC_DEFUN([GCONFIG_FN_WITH_GETTEXT],
 [
-	if test "$with_gettext" = "yes"
+	if test "$with_gettext" = "no"
 	then
-		gconfig_use_gettext="yes"
-	else
-		gconfig_use_gettext="no"
+		gconfig_cv_gettext="no"
+	:
+	elif test "$with_gettext" = "yes"
+	then
+		if test "$gconfig_cv_gettext" = "no"
+		then
+			AC_MSG_WARN([forcing use of gettext even though not detected])
+			gconfig_cv_gettext="yes"
+		fi
 	fi
 
-	if test "$gconfig_use_gettext" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_GETTEXT,1,[Define true to use GNU gettext])
+	if test "$gconfig_cv_gettext" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_GETTEXT,1,[Define true to use gettext])
 	else
-		AC_DEFINE(GCONFIG_HAVE_GETTEXT,0,[Define true to use GNU gettext])
+		AC_DEFINE(GCONFIG_HAVE_GETTEXT,0,[Define true to use gettext])
 	fi
+	AM_CONDITIONAL([GCONFIG_GETTEXT],[test "$gconfig_cv_gettext" = "yes"])
 ])
 
 dnl GCONFIG_FN_WITH_MAN2HTML
@@ -2935,5 +2763,26 @@ AC_DEFUN([GCONFIG_FN_WITH_PAM],
 		AC_DEFINE(GCONFIG_HAVE_PAM,0,[Define true to use pam])
 	fi
 	AM_CONDITIONAL([GCONFIG_PAM],[test "$gconfig_use_pam" = "yes"])
+])
+
+dnl GCONFIG_FN_WITH_UDS
+dnl -------------------
+dnl Enables unix domain sockets if detected unless "--without-uds" is
+dnl used. Requires GCONFIG_FN_UDS to set gconfig_cv_uds.
+dnl Typically used after AC_ARG_WITH(uds).
+dnl
+AC_DEFUN([GCONFIG_FN_WITH_UDS],
+[
+	AC_REQUIRE([GCONFIG_FN_UDS])
+	if test "$with_uds" = "no"
+	then
+		AM_CONDITIONAL([GCONFIG_UDS],[false])
+	else
+		if test "$with_uds" = "yes" -a "$gconfig_cv_uds" = "no"
+		then
+			AC_MSG_WARN([forcing use of unix domain sockets even though not detected])
+		fi
+		AM_CONDITIONAL([GCONFIG_UDS],[true])
+	fi
 ])
 

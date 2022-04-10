@@ -67,11 +67,6 @@ public:
 
 	Exception( const std::string & what , const std::string & more1 , const std::string & more2 , const std::string & more3 ) ;
 		///< Constructor.
-
-	Exception translated() const ;
-		///< Returns a new exception that is possibly translated using
-		///< gettext(). (Use gettext_noop() in G_EXCEPTION declarations
-		///< to mark the string for translation.)
 } ;
 
 #define G_EXCEPTION_CLASS( class_name , description ) class class_name : public G::Exception { public: class_name() : G::Exception((description)) {} explicit class_name(const char *more) : G::Exception((description),more) {} explicit class_name(const std::string &more) : G::Exception((description),more) {} class_name(const std::string &more1,const std::string &more2) : G::Exception((description),more1,more2) {} class_name(const std::string &more1,const std::string &more2,const std::string &more3) : G::Exception((description),more1,more2,more3) {} }

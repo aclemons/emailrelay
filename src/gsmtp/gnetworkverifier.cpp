@@ -74,12 +74,11 @@ void GSmtp::NetworkVerifier::clientDeleted( const std::string & reason )
 	{
 		std::string to_address = m_to_address ;
 		m_to_address.erase() ;
-		VerifierStatus status( to_address ) ;
-		status.is_valid = false ;
-		status.temporary = true ;
-		status.response = "cannot verify" ;
-		status.reason = reason ;
-		doneSignal().emit( G::Str::printable(to_address) , status ) ;
+
+		VerifierStatus status = VerifierStatus::invalid( to_address ,
+			true , "cannot verify" , reason ) ;
+
+		doneSignal().emit( status ) ;
 	}
 }
 
@@ -88,13 +87,12 @@ void GSmtp::NetworkVerifier::clientEvent( const std::string & s1 , const std::st
 	G_DEBUG( "GSmtp::NetworkVerifier::clientEvent: [" << s1 << "] [" << s2 << "]" ) ;
 	if( s1 == "verify" )
 	{
-		VerifierStatus status ;
-
 		// parse the output from the remote verifier using pipe-delimited
 		// fields based on the script-based verifier interface, but backwards
 		//
 		G::StringArray parts ;
-		G::Str::splitIntoFields( s2 , parts , "|" ) ;
+		G::Str::splitIntoFields( s2 , parts , {"|",1U} ) ;
+		VerifierStatus status = VerifierStatus::invalid( m_to_address ) ;
 		if( !parts.empty() && parts[0U] == "100" )
 		{
 			status.is_valid = false ;
@@ -102,36 +100,29 @@ void GSmtp::NetworkVerifier::clientEvent( const std::string & s1 , const std::st
 		}
 		else if( parts.size() >= 2U && parts[0U] == "1" )
 		{
-			status.is_valid = true ;
-			status.is_local = false ;
-			status.address = parts[1U] ;
+			const std::string & address = parts[1U] ;
+			status = VerifierStatus::remote( m_to_address , address ) ;
 		}
 		else if( parts.size() >= 3U && parts[0U] == "0" )
 		{
-			status.is_valid = true ;
-			status.is_local = true ;
-			status.address = parts[1U] ;
-			status.full_name = parts[2U] ;
+			const std::string & mbox = parts[1U] ;
+			const std::string & full_name = parts[2U] ;
+			status = VerifierStatus::local( m_to_address , full_name , mbox ) ;
 		}
 		else if( parts.size() >= 2U && ( parts[0U] == "2" || parts[0U] == "3" ) )
 		{
-			status.is_valid = false ;
-			status.response = parts[1U] ;
-			status.temporary = parts[0U] == "3" ;
-			if( parts.size() >= 3U )
-				status.reason = parts[2U] ; // (new)
-		}
-		else
-		{
-			status.is_valid = false ;
-			status.temporary = false ;
+			bool temporary = parts[0U] == "3" ;
+			const std::string & response = parts[1U] ;
+			std::string reason = parts.size() >= 3 ? parts[2U] : std::string() ;
+			status = VerifierStatus::invalid( m_to_address ,
+				temporary , response , reason ) ;
 		}
 
-		doneSignal().emit( G::Str::printable(m_to_address) , status ) ;
+		doneSignal().emit( status ) ;
 	}
 }
 
-G::Slot::Signal<const std::string&,const GSmtp::VerifierStatus&> & GSmtp::NetworkVerifier::doneSignal()
+G::Slot::Signal<const GSmtp::VerifierStatus&> & GSmtp::NetworkVerifier::doneSignal()
 {
 	return m_done_signal ;
 }

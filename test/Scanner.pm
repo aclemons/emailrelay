@@ -30,8 +30,8 @@ package Scanner ;
 
 sub new
 {
-	my ( $classname , $port ) = @_ ;
-	return bless { h => new Helper( "emailrelay-test-scanner" , $port ) } , $classname ;
+	my ( $classname , $address ) = @_ ;
+	return bless { h => new Helper( "emailrelay-test-scanner" , $address ) } , $classname ; # "--port <address>"
 }
 
 sub port { return shift->{h}->port(@_) }

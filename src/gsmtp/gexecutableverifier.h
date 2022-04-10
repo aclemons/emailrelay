@@ -41,7 +41,7 @@ public:
 		///< Constructor.
 
 private: // overrides
-	G::Slot::Signal<const std::string&,const VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
+	G::Slot::Signal<const VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
 	void cancel() override ; // Override from GSmtp::Verifier.
 	void onTaskDone( int , const std::string & ) override ; // override from GNet::TaskCallback
 	void verify( const std::string & rcpt_to_parameter ,
@@ -57,7 +57,7 @@ public:
 
 private:
 	G::Path m_path ;
-	G::Slot::Signal<const std::string&,const VerifierStatus&> m_done_signal ;
+	G::Slot::Signal<const VerifierStatus&> m_done_signal ;
 	std::string m_to_address ;
 	GNet::Task m_task ;
 } ;
